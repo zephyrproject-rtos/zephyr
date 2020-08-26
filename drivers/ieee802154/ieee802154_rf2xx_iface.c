@@ -25,8 +25,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 void rf2xx_iface_phy_rst(struct device *dev)
 {
-	const struct rf2xx_config *conf = dev->config_info;
-	const struct rf2xx_context *ctx = dev->driver_data;
+	const struct rf2xx_config *conf = dev->config;
+	const struct rf2xx_context *ctx = dev->data;
 
 	/* Ensure control lines have correct levels. */
 	gpio_pin_set(ctx->reset_gpio, conf->reset.pin, 0);
@@ -41,8 +41,8 @@ void rf2xx_iface_phy_rst(struct device *dev)
 }
 void rf2xx_iface_phy_tx_start(struct device *dev)
 {
-	const struct rf2xx_config *conf = dev->config_info;
-	const struct rf2xx_context *ctx = dev->driver_data;
+	const struct rf2xx_config *conf = dev->config;
+	const struct rf2xx_context *ctx = dev->data;
 
 	/* Start TX transmission at rise edge */
 	gpio_pin_set(ctx->slptr_gpio, conf->slptr.pin, 1);
@@ -55,7 +55,7 @@ void rf2xx_iface_phy_tx_start(struct device *dev)
 uint8_t rf2xx_iface_reg_read(struct device *dev,
 			  uint8_t addr)
 {
-	const struct rf2xx_context *ctx = dev->driver_data;
+	const struct rf2xx_context *ctx = dev->data;
 	uint8_t status;
 	uint8_t regval = 0;
 
@@ -99,7 +99,7 @@ void rf2xx_iface_reg_write(struct device *dev,
 			   uint8_t addr,
 			   uint8_t data)
 {
-	const struct rf2xx_context *ctx = dev->driver_data;
+	const struct rf2xx_context *ctx = dev->data;
 	uint8_t status;
 
 	addr |= RF2XX_RF_CMD_REG_W;
@@ -170,7 +170,7 @@ void rf2xx_iface_frame_read(struct device *dev,
 			    uint8_t *data,
 			    uint8_t length)
 {
-	const struct rf2xx_context *ctx = dev->driver_data;
+	const struct rf2xx_context *ctx = dev->data;
 	uint8_t cmd = RF2XX_RF_CMD_FRAME_R;
 
 	const struct spi_buf tx_buf = {
@@ -202,7 +202,7 @@ void rf2xx_iface_frame_write(struct device *dev,
 			     uint8_t *data,
 			     uint8_t length)
 {
-	const struct rf2xx_context *ctx = dev->driver_data;
+	const struct rf2xx_context *ctx = dev->data;
 	uint8_t cmd = RF2XX_RF_CMD_FRAME_W;
 	uint8_t status;
 	uint8_t phr;
@@ -254,7 +254,7 @@ void rf2xx_iface_sram_read(struct device *dev,
 			    uint8_t *data,
 			    uint8_t length)
 {
-	const struct rf2xx_context *ctx = dev->driver_data;
+	const struct rf2xx_context *ctx = dev->data;
 	uint8_t cmd = RF2XX_RF_CMD_SRAM_R;
 	uint8_t status[2];
 

@@ -54,7 +54,7 @@
 #include <stm32h7xx_ll_usart.h>
 #endif /* CONFIG_SERIAL_HAS_DRIVER */
 
-#ifdef CONFIG_HWINFO_STM32
+#if defined(CONFIG_HWINFO_STM32) || defined(CONFIG_CLOCK_CONTROL_STM32_CUBE)
 #include <stm32h7xx_ll_utils.h>
 #endif
 
@@ -75,6 +75,10 @@
 #ifdef CONFIG_PWM_STM32
 #include <stm32h7xx_ll_tim.h>
 #endif /* CONFIG_PWM_STM32 */
+
+#ifdef CONFIG_ENTROPY_STM32_RNG
+#include <stm32h7xx_ll_rng.h>
+#endif /* CONFIG_ENTROPY_STM32_RNG */
 
 #endif /* !_ASMLANGUAGE */
 

@@ -33,186 +33,137 @@ struct init_stack_frame {
 	uint32_t r0;
 };
 
-/*
- * @brief Initialize a new thread from its stack space
- *
- * The thread control structure is put at the lower address of the stack. An
- * initial context, to be "restored" by __return_from_coop(), is put at
- * the other end of the stack, and thus reusable by the stack when not
- * needed anymore.
- *
- * The initial context is a basic stack frame that contains arguments for
- * z_thread_entry() return address, that points at z_thread_entry()
- * and status register.
- *
- * <options> is currently unused.
- *
- * @param pStackmem the pointer to aligned stack memory
- * @param stackSize the stack size in bytes
- * @param pEntry thread entry point routine
- * @param parameter1 first param to entry point
- * @param parameter2 second param to entry point
- * @param parameter3 third param to entry point
- * @param priority thread priority
- * @param options thread options: K_ESSENTIAL
- *
- * @return N/A
- */
-void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		     size_t stackSize, k_thread_entry_t pEntry,
-		     void *parameter1, void *parameter2, void *parameter3,
-		     int priority, unsigned int options)
-{
-	char *pStackMem = Z_THREAD_STACK_BUFFER(stack);
-
-	char *stackEnd;
-	char *priv_stack_end;
-	struct init_stack_frame *pInitCtx;
-
 #ifdef CONFIG_USERSPACE
+struct user_init_stack_frame {
+	struct init_stack_frame iframe;
+	uint32_t user_sp;
+};
 
-	size_t stackAdjSize;
-	size_t offset = 0;
-
-
-	stackAdjSize = Z_ARC_MPU_SIZE_ALIGN(stackSize);
-
-	stackEnd = pStackMem + stackAdjSize;
-
-#ifdef CONFIG_STACK_POINTER_RANDOM
-	offset = stackAdjSize - stackSize;
+static bool is_user(struct k_thread *thread)
+{
+	return (thread->base.user_options & K_USER) != 0;
+}
 #endif
 
-	if (options & K_USER) {
+/* Set all stack-related architecture variables for the provided thread */
+static void setup_stack_vars(struct k_thread *thread)
+{
+#ifdef CONFIG_USERSPACE
+	if (is_user(thread)) {
 #ifdef CONFIG_GEN_PRIV_STACKS
 		thread->arch.priv_stack_start =
 			(uint32_t)z_priv_stack_find(thread->stack_obj);
 #else
-		thread->arch.priv_stack_start =
-			(uint32_t)(stackEnd + STACK_GUARD_SIZE);
-#endif
-
-		priv_stack_end = (char *)Z_STACK_PTR_ALIGN(
-				thread->arch.priv_stack_start +
-				CONFIG_PRIVILEGED_STACK_SIZE);
-
-		/* reserve 4 bytes for the start of user sp */
-		priv_stack_end -= 4;
-		(*(uint32_t *)priv_stack_end) = Z_STACK_PTR_ALIGN(
-			(uint32_t)stackEnd - offset);
-
-#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
-		/* reserve stack space for the userspace local data struct */
-		thread->userspace_local_data =
-			(struct _thread_userspace_local_data *)
-			Z_STACK_PTR_ALIGN(stackEnd -
-			sizeof(*thread->userspace_local_data) - offset);
-		/* update the start of user sp */
-		(*(uint32_t *)priv_stack_end) =
-			(uint32_t) thread->userspace_local_data;
-#endif
-
+		thread->arch.priv_stack_start =	(uint32_t)(thread->stack_obj);
+#endif /* CONFIG_GEN_PRIV_STACKS */
+		thread->arch.priv_stack_start += Z_ARC_STACK_GUARD_SIZE;
 	} else {
-		pStackMem += STACK_GUARD_SIZE;
-		stackEnd += STACK_GUARD_SIZE;
-
 		thread->arch.priv_stack_start = 0;
+	}
+#endif /* CONFIG_USERSPACE */
 
-#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
-		/* reserve stack space for the userspace local data struct */
-		priv_stack_end = (char *)Z_STACK_PTR_ALIGN(stackEnd
-			- sizeof(*thread->userspace_local_data) - offset);
-		thread->userspace_local_data =
-			(struct _thread_userspace_local_data *)priv_stack_end;
-#else
-		priv_stack_end = (char *)Z_STACK_PTR_ALIGN(stackEnd - offset);
+#ifdef CONFIG_ARC_STACK_CHECKING
+#ifdef CONFIG_USERSPACE
+	if (is_user(thread)) {
+		thread->arch.k_stack_top = thread->arch.priv_stack_start;
+		thread->arch.k_stack_base = (thread->arch.priv_stack_start +
+					     CONFIG_PRIVILEGED_STACK_SIZE);
+		thread->arch.u_stack_top = thread->stack_info.start;
+		thread->arch.u_stack_base = (thread->stack_info.start +
+					     thread->stack_info.size);
+	} else
+#endif /* CONFIG_USERSPACE */
+	{
+		thread->arch.k_stack_top = (uint32_t)thread->stack_info.start;
+		thread->arch.k_stack_base = (uint32_t)(thread->stack_info.start +
+						    thread->stack_info.size);
+#ifdef CONFIG_USERSPACE
+		thread->arch.u_stack_top = 0;
+		thread->arch.u_stack_base = 0;
+#endif /* CONFIG_USERSPACE */
+	}
+#endif /* CONFIG_ARC_STACK_CHECKING */
+}
+
+/* Get the initial stack frame pointer from the thread's stack buffer. */
+static struct init_stack_frame *get_iframe(struct k_thread *thread,
+					   char *stack_ptr)
+{
+#ifdef CONFIG_USERSPACE
+	if (is_user(thread)) {
+		/* Initial stack frame for a user thread is slightly larger;
+		 * we land in z_user_thread_entry_wrapper on the privilege
+		 * stack, and pop off an additional value for the user
+		 * stack pointer.
+		 */
+		struct user_init_stack_frame *uframe;
+
+		uframe = Z_STACK_PTR_TO_FRAME(struct user_init_stack_frame,
+					      thread->arch.priv_stack_start +
+					      CONFIG_PRIVILEGED_STACK_SIZE);
+		uframe->user_sp = (uint32_t)stack_ptr;
+		return &uframe->iframe;
+	}
 #endif
-	}
+	return Z_STACK_PTR_TO_FRAME(struct init_stack_frame, stack_ptr);
+}
 
-	z_new_thread_init(thread, pStackMem, stackAdjSize);
+/*
+ * The initial context is a basic stack frame that contains arguments for
+ * z_thread_entry() return address, that points at z_thread_entry()
+ * and status register.
+ */
+void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
+		     char *stack_ptr, k_thread_entry_t entry,
+		     void *p1, void *p2, void *p3)
+{
+	struct init_stack_frame *iframe;
 
-	/* carve the thread entry struct from the "base" of
-		the privileged stack */
-	pInitCtx = (struct init_stack_frame *)(
-		priv_stack_end - sizeof(struct init_stack_frame));
+	setup_stack_vars(thread);
 
-	/* fill init context */
-	pInitCtx->status32 = 0U;
-	if (options & K_USER) {
-		pInitCtx->pc = ((uint32_t)z_user_thread_entry_wrapper);
-	} else {
-		pInitCtx->pc = ((uint32_t)z_thread_entry_wrapper);
-	}
+	/* Set up initial stack frame */
+	iframe = get_iframe(thread, stack_ptr);
 
-	/*
-	 * enable US bit, US is read as zero in user mode. This will allow use
+#ifdef CONFIG_USERSPACE
+	/* enable US bit, US is read as zero in user mode. This will allow user
 	 * mode sleep instructions, and it enables a form of denial-of-service
 	 * attack by putting the processor in sleep mode, but since interrupt
 	 * level/mask can't be set from user space that's not worse than
 	 * executing a loop without yielding.
 	 */
-	pInitCtx->status32 |= _ARC_V2_STATUS32_US;
-#else /* For no USERSPACE feature */
-	pStackMem += STACK_GUARD_SIZE;
-	stackEnd = pStackMem + stackSize;
-
-	z_new_thread_init(thread, pStackMem, stackSize);
-
-	priv_stack_end = stackEnd;
-
-	pInitCtx = (struct init_stack_frame *)(
-		Z_STACK_PTR_ALIGN(priv_stack_end) -
-		sizeof(struct init_stack_frame));
-
-	pInitCtx->status32 = 0U;
-	pInitCtx->pc = ((uint32_t)z_thread_entry_wrapper);
-#endif
-
-#ifdef CONFIG_ARC_SECURE_FIRMWARE
-	pInitCtx->sec_stat = z_arc_v2_aux_reg_read(_ARC_V2_SEC_STAT);
-#endif
-
-	pInitCtx->r0 = (uint32_t)pEntry;
-	pInitCtx->r1 = (uint32_t)parameter1;
-	pInitCtx->r2 = (uint32_t)parameter2;
-	pInitCtx->r3 = (uint32_t)parameter3;
-
-/* stack check configuration */
-#ifdef CONFIG_ARC_STACK_CHECKING
-#ifdef CONFIG_ARC_SECURE_FIRMWARE
-	pInitCtx->sec_stat |= _ARC_V2_SEC_STAT_SSC;
-#else
-	pInitCtx->status32 |= _ARC_V2_STATUS32_SC;
-#endif
-#ifdef CONFIG_USERSPACE
-	if (options & K_USER) {
-		thread->arch.u_stack_top = (uint32_t)pStackMem;
-		thread->arch.u_stack_base = (uint32_t)stackEnd;
-		thread->arch.k_stack_top =
-			 (uint32_t)(thread->arch.priv_stack_start);
-		thread->arch.k_stack_base = (uint32_t)
-		(thread->arch.priv_stack_start + CONFIG_PRIVILEGED_STACK_SIZE);
+	iframe->status32 = _ARC_V2_STATUS32_US;
+	if (is_user(thread)) {
+		iframe->pc = (uint32_t)z_user_thread_entry_wrapper;
 	} else {
-		thread->arch.k_stack_top = (uint32_t)pStackMem;
-		thread->arch.k_stack_base = (uint32_t)stackEnd;
-		thread->arch.u_stack_top = 0;
-		thread->arch.u_stack_base = 0;
+		iframe->pc = (uint32_t)z_thread_entry_wrapper;
 	}
 #else
-	thread->arch.k_stack_top = (uint32_t) pStackMem;
-	thread->arch.k_stack_base = (uint32_t) stackEnd;
+	iframe->status32 = 0;
+	iframe->pc = ((uint32_t)z_thread_entry_wrapper);
+#endif /* CONFIG_USERSPACE */
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+	iframe->sec_stat = z_arc_v2_aux_reg_read(_ARC_V2_SEC_STAT);
 #endif
-#endif
+	iframe->r0 = (uint32_t)entry;
+	iframe->r1 = (uint32_t)p1;
+	iframe->r2 = (uint32_t)p2;
+	iframe->r3 = (uint32_t)p3;
 
+#ifdef CONFIG_ARC_STACK_CHECKING
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+	iframe->sec_stat |= _ARC_V2_SEC_STAT_SSC;
+#else
+	iframe->status32 |= _ARC_V2_STATUS32_SC;
+#endif /* CONFIG_ARC_SECURE_FIRMWARE */
+#endif /* CONFIG_ARC_STACK_CHECKING */
 #ifdef CONFIG_ARC_USE_UNALIGNED_MEM_ACCESS
-	pInitCtx->status32 |= _ARC_V2_STATUS32_AD;
+	iframe->status32 |= _ARC_V2_STATUS32_AD;
 #endif
-
+	/* Set required thread members */
 	thread->switch_handle = thread;
 	thread->arch.relinquish_cause = _CAUSE_COOP;
 	thread->callee_saved.sp =
-		(uint32_t)pInitCtx - ___callee_saved_stack_t_SIZEOF;
-
+		(uint32_t)iframe - ___callee_saved_stack_t_SIZEOF;
 	/* initial values in all other regs/k_thread entries are irrelevant */
 }
 
@@ -224,42 +175,21 @@ void *z_arch_get_next_switch_handle(struct k_thread **old_thread)
 }
 
 #ifdef CONFIG_USERSPACE
-
 FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 					void *p1, void *p2, void *p3)
 {
-
-
-	_current->stack_info.start = (uint32_t)_current->stack_obj;
-#ifdef CONFIG_GEN_PRIV_STACKS
-	_current->arch.priv_stack_start =
-			(uint32_t)z_priv_stack_find(_current->stack_obj);
-#else
-	_current->arch.priv_stack_start =
-			(uint32_t)(_current->stack_info.start +
-				_current->stack_info.size + STACK_GUARD_SIZE);
-#endif
-
-
-#ifdef CONFIG_ARC_STACK_CHECKING
-	_current->arch.k_stack_top = _current->arch.priv_stack_start;
-	_current->arch.k_stack_base = _current->arch.priv_stack_start +
-				CONFIG_PRIVILEGED_STACK_SIZE;
-	_current->arch.u_stack_top = _current->stack_info.start;
-	_current->arch.u_stack_base = _current->stack_info.start +
-				_current->stack_info.size;
-#endif
+	setup_stack_vars(_current);
 
 	/* possible optimizaiton: no need to load mem domain anymore */
 	/* need to lock cpu here ? */
 	configure_mpu_thread(_current);
 
 	z_arc_userspace_enter(user_entry, p1, p2, p3,
-			      (uint32_t)_current->stack_obj,
-			      _current->stack_info.size, _current);
+			      (uint32_t)_current->stack_info.start,
+			      (_current->stack_info.size -
+			       _current->stack_info.delta), _current);
 	CODE_UNREACHABLE;
 }
-
 #endif
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)

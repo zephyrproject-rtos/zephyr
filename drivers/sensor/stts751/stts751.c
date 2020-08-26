@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(STTS751, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int stts751_set_odr_raw(struct device *dev, uint8_t odr)
 {
-	struct stts751_data *data = dev->driver_data;
+	struct stts751_data *data = dev->data;
 
 	return stts751_temp_data_rate_set(data->ctx, odr);
 }
@@ -32,7 +32,7 @@ static inline int stts751_set_odr_raw(struct device *dev, uint8_t odr)
 static int stts751_sample_fetch(struct device *dev,
 				enum sensor_channel chan)
 {
-	struct stts751_data *data = dev->driver_data;
+	struct stts751_data *data = dev->data;
 	union axis1bit16_t raw_temp;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
@@ -58,7 +58,7 @@ static int stts751_channel_get(struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	struct stts751_data *data = dev->driver_data;
+	struct stts751_data *data = dev->data;
 
 	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 		stts751_temp_convert(val, data->sample_temp);
@@ -141,7 +141,7 @@ static const struct sensor_driver_api stts751_api_funcs = {
 
 static int stts751_init_chip(struct device *dev)
 {
-	struct stts751_data *data = dev->driver_data;
+	struct stts751_data *data = dev->data;
 	stts751_id_t chip_id;
 
 	if (stts751_device_id_get(data->ctx, &chip_id) < 0) {
@@ -169,8 +169,8 @@ static int stts751_init_chip(struct device *dev)
 
 static int stts751_init(struct device *dev)
 {
-	const struct stts751_config * const config = dev->config_info;
-	struct stts751_data *data = dev->driver_data;
+	const struct stts751_config * const config = dev->config;
+	struct stts751_data *data = dev->data;
 
 	data->bus = device_get_binding(config->master_dev_name);
 	if (!data->bus) {

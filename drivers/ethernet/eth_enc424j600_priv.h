@@ -289,7 +289,7 @@ struct enc424j600_config {
 struct enc424j600_runtime {
 	struct net_if *iface;
 
-	K_THREAD_STACK_MEMBER(thread_stack,
+	K_KERNEL_STACK_MEMBER(thread_stack,
 			      CONFIG_ETH_ENC424J600_RX_THREAD_STACK_SIZE);
 
 	struct k_thread thread;

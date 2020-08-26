@@ -51,9 +51,9 @@ static ALWAYS_INLINE void cavs_ictl_dispatch_child_isrs(uint32_t intr_status,
 static void cavs_ictl_isr(void *arg)
 {
 	struct device *port = (struct device *)arg;
-	struct cavs_ictl_runtime *context = port->driver_data;
+	struct cavs_ictl_runtime *context = port->data;
 
-	const struct cavs_ictl_config *config = port->config_info;
+	const struct cavs_ictl_config *config = port->config;
 
 	volatile struct cavs_registers * const regs =
 					get_base_address(context);
@@ -64,7 +64,7 @@ static void cavs_ictl_isr(void *arg)
 
 static inline void cavs_ictl_irq_enable(struct device *dev, unsigned int irq)
 {
-	struct cavs_ictl_runtime *context = dev->driver_data;
+	struct cavs_ictl_runtime *context = dev->data;
 
 	volatile struct cavs_registers * const regs =
 			(struct cavs_registers *)context->base_addr;
@@ -74,7 +74,7 @@ static inline void cavs_ictl_irq_enable(struct device *dev, unsigned int irq)
 
 static inline void cavs_ictl_irq_disable(struct device *dev, unsigned int irq)
 {
-	struct cavs_ictl_runtime *context = dev->driver_data;
+	struct cavs_ictl_runtime *context = dev->data;
 
 	volatile struct cavs_registers * const regs =
 			(struct cavs_registers *)context->base_addr;
@@ -84,7 +84,7 @@ static inline void cavs_ictl_irq_disable(struct device *dev, unsigned int irq)
 
 static inline unsigned int cavs_ictl_irq_get_state(struct device *dev)
 {
-	struct cavs_ictl_runtime *context = dev->driver_data;
+	struct cavs_ictl_runtime *context = dev->data;
 
 	volatile struct cavs_registers * const regs =
 			(struct cavs_registers *)context->base_addr;
@@ -102,7 +102,7 @@ static inline unsigned int cavs_ictl_irq_get_state(struct device *dev)
 
 static int cavs_ictl_irq_get_line_state(struct device *dev, unsigned int irq)
 {
-	struct cavs_ictl_runtime *context = dev->driver_data;
+	struct cavs_ictl_runtime *context = dev->data;
 
 	volatile struct cavs_registers * const regs =
 			(struct cavs_registers *)context->base_addr;

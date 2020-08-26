@@ -527,11 +527,20 @@ struct _thread_stack_info {
 	 */
 	uintptr_t start;
 
-	/* Stack Size - Thread writable stack buffer size. Represents
-	 * the size of the actual area, starting from the start member,
-	 * that should be writable by the thread
+	/* Thread writable stack buffer size. Represents the size of the actual
+	 * buffer, starting from the 'start' member, that should be writable by
+	 * the thread. This comprises of the thread stack area, any area reserved
+	 * for local thread data storage, as well as any area left-out due to
+	 * random adjustments applied to the initial thread stack pointer during
+	 * thread initialization.
 	 */
 	size_t size;
+
+	/* Adjustment value to the size member, removing any storage
+	 * used for TLS or random stack base offsets. (start + size - delta)
+	 * is the initial stack pointer for a thread. May be 0.
+	 */
+	size_t delta;
 };
 
 typedef struct _thread_stack_info _thread_stack_info_t;
@@ -772,10 +781,25 @@ extern void k_thread_foreach_unlocked(
  * K_FP_REGS, and K_SSE_REGS. Multiple options may be specified by separating
  * them using "|" (the logical OR operator).
  *
- * Historically, users often would use the beginning of the stack memory region
- * to store the struct k_thread data, although corruption will occur if the
- * stack overflows this region and stack protection features may not detect this
- * situation.
+ * Stack objects passed to this function must be originally defined with
+ * either of these macros in order to be portable:
+ *
+ * - K_THREAD_STACK_DEFINE() - For stacks that may support either user or
+ *   supervisor threads.
+ * - K_KERNEL_STACK_DEFINE() - For stacks that may support supervisor
+ *   threads only. These stacks use less memory if CONFIG_USERSPACE is
+ *   enabled.
+ *
+ * The stack_size parameter has constraints. It must either be:
+ *
+ * - The original size value passed to K_THREAD_STACK_DEFINE() or
+ *   K_KERNEL_STACK_DEFINE()
+ * - The return value of K_THREAD_STACK_SIZEOF(stack) if the stack was
+ *   defined with K_THREAD_STACK_DEFINE()
+ * - The return value of K_KERNEL_STACK_SIZEOF(stack) if the stack was
+ *   defined with K_KERNEL_STACK_DEFINE().
+ *
+ * Using other values, or sizeof(stack) may produce undefined behavior.
  *
  * @param new_thread Pointer to uninitialized struct k_thread
  * @param stack Pointer to the stack space.
@@ -2848,7 +2872,7 @@ struct k_lifo {
 /**
  * @brief Get an element from a LIFO queue.
  *
- * This routine removes a data item from @a lifo in a "last in, first out"
+ * This routine removes a data item from @a LIFO in a "last in, first out"
  * manner. The first word of the data item is reserved for the kernel's use.
  *
  * @note Can be called by ISRs, but @a timeout must be set to K_NO_WAIT.
@@ -3198,6 +3222,10 @@ static inline int k_work_submit_to_user_queue(struct k_work_q *work_q,
  * This routine indicates if work item @a work is pending in a workqueue's
  * queue.
  *
+ * @note Checking if the work is pending gives no guarantee that the
+ *       work will still be pending when this information is used. It is up to
+ *       the caller to make sure that this information is used in a safe manner.
+ *
  * @note Can be called by ISRs.
  *
  * @param work Address of work item.
@@ -3208,6 +3236,25 @@ static inline bool k_work_pending(struct k_work *work)
 {
 	return atomic_test_bit(work->flags, K_WORK_STATE_PENDING);
 }
+
+/**
+ * @brief  Check if a delayed work item is pending.
+ *
+ * This routine indicates if the work item @a work is pending in a workqueue's
+ * queue or waiting for the delay timeout.
+ *
+ * @note Checking if the delayed work is pending gives no guarantee that the
+ *       work will still be pending when this information is used. It is up to
+ *       the caller to make sure that this information is used in a safe manner.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param work Address of delayed work item.
+ *
+ * @return true if work item is waiting for the delay to expire or pending on a
+ *         work queue, or false if it is not pending.
+ */
+bool k_delayed_work_pending(struct k_delayed_work *work);
 
 /**
  * @brief Start a workqueue.
@@ -4299,7 +4346,7 @@ struct k_pipe {
 	struct {
 		_wait_q_t      readers; /**< Reader wait queue */
 		_wait_q_t      writers; /**< Writer wait queue */
-	} wait_q;
+	} wait_q;			/** Wait queue */
 
 	_OBJECT_TRACING_NEXT_PTR(k_pipe)
 	_OBJECT_TRACING_LINKED_FLAG
@@ -4861,7 +4908,7 @@ enum _poll_types_bits {
 	/* semaphore availability */
 	_POLL_TYPE_SEM_AVAILABLE,
 
-	/* queue/fifo/lifo data availability */
+	/* queue/FIFO/LIFO data availability */
 	_POLL_TYPE_DATA_AVAILABLE,
 
 	_POLL_NUM_TYPES
@@ -4880,10 +4927,10 @@ enum _poll_states_bits {
 	/* semaphore is available */
 	_POLL_STATE_SEM_AVAILABLE,
 
-	/* data is available to read on queue/fifo/lifo */
+	/* data is available to read on queue/FIFO/LIFO */
 	_POLL_STATE_DATA_AVAILABLE,
 
-	/* queue/fifo/lifo wait was cancelled */
+	/* queue/FIFO/LIFO wait was cancelled */
 	_POLL_STATE_CANCELLED,
 
 	_POLL_NUM_STATES

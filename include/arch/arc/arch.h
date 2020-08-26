@@ -18,11 +18,11 @@
 
 #include <devicetree.h>
 #include <sw_isr_table.h>
+#include <arch/common/ffs.h>
 #include <arch/arc/thread.h>
 #ifdef CONFIG_CPU_ARCV2
 #include <arch/arc/v2/exc.h>
 #include <arch/arc/v2/irq.h>
-#include <arch/arc/v2/ffs.h>
 #include <arch/arc/v2/error.h>
 #include <arch/arc/v2/misc.h>
 #include <arch/arc/v2/aux_regs.h>
@@ -38,137 +38,162 @@
 #endif
 #endif
 
+#ifndef _ASMLANGUAGE
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define ARCH_STACK_PTR_ALIGN	4
 
-#if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
-	#if defined(CONFIG_ARC_CORE_MPU)
-		#if CONFIG_ARC_MPU_VER == 2
-		/*
-		 * The minimum MPU region of MPU v2 is 2048 bytes. The
-		 * start address of MPU region should be aligned to the
-		 * region size
-		 */
-			#define STACK_ALIGN  2048
-		#elif CONFIG_ARC_MPU_VER == 3
-			#define STACK_ALIGN 32
-		#else
-			#error "Unsupported MPU version"
-		#endif /* CONFIG_ARC_MPU_VER */
-
-	#else /* CONFIG_ARC_CORE_MPU */
-		#error "Requires to enable MPU"
-	#endif
-
-#else  /* CONFIG_MPU_STACK_GUARD  || CONFIG_USERSPACE */
-	#define STACK_ALIGN  4
+/* Indicate, for a minimally sized MPU region, how large it must be and what
+ * its base address must be aligned to.
+ *
+ * For regions that are NOT the minimum size, this define has no semantics
+ * on ARC MPUv2 as its regions must be power of two size and aligned to their
+ * own size. On ARC MPUv3, region sizes are arbitrary and this just indicates
+ * the required size granularity.
+ */
+#ifdef CONFIG_ARC_CORE_MPU
+#if CONFIG_ARC_MPU_VER == 2
+#define Z_ARC_MPU_ALIGN	2048
+#elif CONFIG_ARC_MPU_VER == 3
+#define Z_ARC_MPU_ALIGN	32
+#else
+#error "Unsupported MPU version"
+#endif
 #endif
 
-#if defined(CONFIG_MPU_STACK_GUARD)
-	#if CONFIG_ARC_MPU_VER == 3
-	#define STACK_GUARD_SIZE 32
-	#endif
-#else /* CONFIG_MPU_STACK_GUARD */
-	#define STACK_GUARD_SIZE 0
+#ifdef CONFIG_MPU_STACK_GUARD
+#define Z_ARC_STACK_GUARD_SIZE	Z_ARC_MPU_ALIGN
+#else
+#define Z_ARC_STACK_GUARD_SIZE	0
+#endif
+
+/* Kernel-only stacks have the following layout if a stack guard is enabled:
+ *
+ * +------------+ <- thread.stack_obj
+ * | Guard      | } Z_ARC_STACK_GUARD_SIZE
+ * +------------+ <- thread.stack_info.start
+ * | Kernel     |
+ * | stack      |
+ * |            |
+ * +............|
+ * | TLS        | } thread.stack_info.delta
+ * +------------+ <- thread.stack_info.start + thread.stack_info.size
+ */
+#ifdef CONFIG_MPU_STACK_GUARD
+#define ARCH_KERNEL_STACK_RESERVED	Z_ARC_STACK_GUARD_SIZE
+#define ARCH_KERNEL_STACK_OBJ_ALIGN	Z_ARC_MPU_ALIGN
+#endif
+
+#ifdef CONFIG_USERSPACE
+/* Any thread running In user mode will have full access to the region denoted
+ * by thread.stack_info.
+ *
+ * Thread-local storage is at the very highest memory locations of this area.
+ * Memory for TLS and any initial random stack pointer offset is captured
+ * in thread.stack_info.delta.
+ */
+#ifdef CONFIG_MPU_STACK_GUARD
+/* MPU guards are only supported with V3 MPU and later. In this configuration
+ * the stack object will contain the MPU guard, the privilege stack, and then
+ * the stack buffer in that order:
+ *
+ * +------------+ <- thread.stack_obj
+ * | Guard      | } Z_ARC_STACK_GUARD_SIZE
+ * +------------+ <- thread.arch.priv_stack_start
+ * | Priv Stack | } CONFIG_PRIVILEGED_STACK_SIZE
+ * +------------+ <- thread.stack_info.start
+ * | Thread     |
+ * | stack      |
+ * |            |
+ * +............|
+ * | TLS        | } thread.stack_info.delta
+ * +------------+ <- thread.stack_info.start + thread.stack_info.size
+ */
+#define ARCH_THREAD_STACK_RESERVED	(Z_ARC_STACK_GUARD_SIZE + \
+					 CONFIG_PRIVILEGED_STACK_SIZE)
+#define ARCH_THREAD_STACK_OBJ_ALIGN(size)	Z_ARC_MPU_ALIGN
+/* We need to be able to exactly cover the stack buffer with an MPU region,
+ * so round its size up to the required granularity of the MPU
+ */
+#define ARCH_THREAD_STACK_SIZE_ADJUST(size) \
+		(ROUND_UP((size), Z_ARC_MPU_ALIGN))
+BUILD_ASSERT(CONFIG_PRIVILEGED_STACK_SIZE % Z_ARC_MPU_ALIGN == 0,
+	     "improper privilege stack size");
+#else /* !CONFIG_MPU_STACK_GUARD */
+/* Userspace enabled, but supervisor stack guards are not in use */
+#ifdef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+/* Use defaults for everything. The privilege elevation stack is located
+ * in another area of memory generated at build time by gen_kobject_list.py
+ *
+ * +------------+ <- thread.arch.priv_stack_start
+ * | Priv Stack | } Z_KERNEL_STACK_LEN(CONFIG_PRIVILEGED_STACK_SIZE)
+ * +------------+
+ *
+ * +------------+ <- thread.stack_obj = thread.stack_info.start
+ * | Thread     |
+ * | stack      |
+ * |            |
+ * +............|
+ * | TLS        | } thread.stack_info.delta
+ * +------------+ <- thread.stack_info.start + thread.stack_info.size
+ */
+#define ARCH_THREAD_STACK_SIZE_ADJUST(size) \
+		Z_POW2_CEIL(ROUND_UP((size), Z_ARC_MPU_ALIGN))
+#define ARCH_THREAD_STACK_OBJ_ALIGN(size) \
+		ARCH_THREAD_STACK_SIZE_ADJUST(size)
+#define ARCH_THREAD_STACK_RESERVED		0
+#else /* !CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
+/* Reserved area of the thread object just contains the privilege stack:
+ *
+ * +------------+ <- thread.stack_obj = thread.arch.priv_stack_start
+ * | Priv Stack | } CONFIG_PRIVILEGED_STACK_SIZE
+ * +------------+ <- thread.stack_info.start
+ * | Thread     |
+ * | stack      |
+ * |            |
+ * +............|
+ * | TLS        | } thread.stack_info.delta
+ * +------------+ <- thread.stack_info.start + thread.stack_info.size
+ */
+#define ARCH_THREAD_STACK_RESERVED		CONFIG_PRIVILEGED_STACK_SIZE
+#define ARCH_THREAD_STACK_SIZE_ADJUST(size) \
+		(ROUND_UP((size), Z_ARC_MPU_ALIGN))
+#define ARCH_THREAD_STACK_OBJ_ALIGN(size)	Z_ARC_MPU_ALIGN
+
+BUILD_ASSERT(CONFIG_PRIVILEGED_STACK_SIZE % Z_ARC_MPU_ALIGN == 0,
+	     "improper privilege stack size");
+#endif /* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
 #endif /* CONFIG_MPU_STACK_GUARD */
 
+#else /* !CONFIG_USERSPACE */
 
-#define STACK_SIZE_ALIGN(x) ROUND_UP(x, STACK_ALIGN)
-
-/**
- * @brief Calculate power of two ceiling for a buffer size input
+#ifdef CONFIG_MPU_STACK_GUARD
+/* Only supported on ARC MPU V3 and higher. Reserve some memory for the stack
+ * guard. This is just a minimally-sized region at the beginning of the stack
+ * object, which is programmed to produce an exception if written to.
  *
+ * +------------+ <- thread.stack_obj
+ * | Guard      | } Z_ARC_STACK_GUARD_SIZE
+ * +------------+ <- thread.stack_info.start
+ * | Thread     |
+ * | stack      |
+ * |            |
+ * +............|
+ * | TLS        | } thread.stack_info.delta
+ * +------------+ <- thread.stack_info.start + thread.stack_info.size
  */
-#define POW2_CEIL(x) ((1 << (31 - __builtin_clz(x))) < x ?  \
-		1 << (31 - __builtin_clz(x) + 1) : \
-		1 << (31 - __builtin_clz(x)))
-
-#if CONFIG_ARC_MPU_VER == 2
-/* MPUv2 requires
- *  - region size must be power of 2 and >= 2048
- *  - region start must be aligned to its size
- */
-#define Z_ARC_MPU_SIZE_ALIGN(size) POW2_CEIL(STACK_SIZE_ALIGN(size))
-#elif CONFIG_ARC_MPU_VER == 3
-/* MPUv3 requires
- * - region size must be 32 bytes aligned
- * - region start must be 32 bytes aligned
- */
-#define Z_ARC_MPU_SIZE_ALIGN(size) STACK_SIZE_ALIGN(size)
-#endif
-
-
-
-#if  defined(CONFIG_USERSPACE)
-
-#if CONFIG_ARC_MPU_VER == 2
-/* MPU stack guard does not works for MPUv2 as it uses GEN_PRIV_STACK */
-#define ARCH_THREAD_STACK_RESERVED 0
-#define Z_PRIVILEGE_STACK_ALIGN CONFIG_PRIVILEGED_STACK_SIZE
-/*
- * user stack are protected using MPU regions, so need to adhere to
- * MPU start, size alignment
- */
-#define Z_ARC_THREAD_STACK_ALIGN(size)	Z_ARC_MPU_SIZE_ALIGN(size)
-#define ARCH_THREAD_STACK_LEN(size) Z_ARC_MPU_SIZE_ALIGN(size)
-
-#elif CONFIG_ARC_MPU_VER == 3
-#define ARCH_THREAD_STACK_RESERVED \
-		(STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE)
-#define Z_PRIVILEGE_STACK_ALIGN (STACK_ALIGN)
-
-#define Z_ARC_THREAD_STACK_ALIGN(size) (STACK_ALIGN)
-#define ARCH_THREAD_STACK_LEN(size) \
-		(Z_ARC_MPU_SIZE_ALIGN(size) + ARCH_THREAD_STACK_RESERVED)
-
-#endif /* CONFIG_ARC_MPU_VER == 2 */
-
-#else /* CONFIG_USERSPACE */
-/*
- * For MPU STACK_GUARD  kernel stacks do not need a MPU region to protect,
- * only guard needs to be protected and aligned. For MPUv3, MPU_STACK_GUARD
- * requires start 32 bytes aligned, also for size which is decided by stack
- * array and USERSPACE.
- *
- * When no-mpu and no USERSPACE/MPU_STACK_GUARD, everything is 4 bytes
- * aligned
- */
-#define ARCH_THREAD_STACK_RESERVED (STACK_GUARD_SIZE)
-
-#define Z_ARC_THREAD_STACK_ALIGN(size) (STACK_ALIGN)
-#define ARCH_THREAD_STACK_LEN(size) \
-		(STACK_SIZE_ALIGN(size) + ARCH_THREAD_STACK_RESERVED)
+#define ARCH_THREAD_STACK_RESERVED		Z_ARC_STACK_GUARD_SIZE
+#define ARCH_THREAD_STACK_OBJ_ALIGN(size)	Z_ARC_MPU_ALIGN
+/* Default for ARCH_THREAD_STACK_SIZE_ADJUST */
+#else /* !CONFIG_MPU_STACK_GUARD */
+/* No stack guard, no userspace, Use defaults for everything. */
+#endif /* CONFIG_MPU_STACK_GUARD */
 #endif /* CONFIG_USERSPACE */
 
-#define Z_ARC_THREAD_STACK_ARRAY_LEN(size) ARCH_THREAD_STACK_LEN(size)
-
-
-#define ARCH_THREAD_STACK_DEFINE(sym, size) \
-		struct z_thread_stack_element __noinit \
-		__aligned(Z_ARC_THREAD_STACK_ALIGN(size)) \
-		sym[ARCH_THREAD_STACK_LEN(size)]
-
-#define ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-		struct z_thread_stack_element __noinit \
-		__aligned(Z_ARC_THREAD_STACK_ALIGN(size)) \
-		sym[nmemb][Z_ARC_THREAD_STACK_ARRAY_LEN(size)]
-
-#define ARCH_THREAD_STACK_MEMBER(sym, size) \
-		struct z_thread_stack_element \
-		__aligned(Z_ARC_THREAD_STACK_ALIGN(size)) \
-		sym[ARCH_THREAD_STACK_LEN(size)]
-
-#define ARCH_THREAD_STACK_SIZEOF(sym) \
-		(sizeof(sym) - ARCH_THREAD_STACK_RESERVED)
-
-#define ARCH_THREAD_STACK_BUFFER(sym) \
-		((char *)(sym))
-
 #ifdef CONFIG_ARC_MPU
-#ifndef _ASMLANGUAGE
 
 /* Legacy case: retain containing extern "C" with C++ */
 #include <arch/arc/v2/mpu/arc_mpu.h>
@@ -211,32 +236,30 @@ extern "C" {
 #define K_MEM_PARTITION_IS_EXECUTABLE(attr) \
 	((attr) & (AUX_MPU_ATTR_KE | AUX_MPU_ATTR_UE))
 
-#endif /* _ASMLANGUAGE */
-
 #if CONFIG_ARC_MPU_VER == 2
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
-	BUILD_ASSERT(!(((size) & ((size) - 1))) && (size) >= STACK_ALIGN \
+	BUILD_ASSERT(!(((size) & ((size) - 1))) && (size) >= Z_ARC_MPU_ALIGN \
 		 && !((uint32_t)(start) & ((size) - 1)), \
 		"the size of the partition must be power of 2" \
 		" and greater than or equal to the mpu adddress alignment." \
 		"start address of the partition must align with size.")
 #elif CONFIG_ARC_MPU_VER == 3
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
-	BUILD_ASSERT((size) % STACK_ALIGN == 0 && (size) >= STACK_ALIGN \
-		 && (uint32_t)(start) % STACK_ALIGN == 0, \
-		"the size of the partition must align with 32" \
-		" and greater than or equal to 32." \
-		"start address of the partition must align with 32.")
+	BUILD_ASSERT((size) % Z_ARC_MPU_ALIGN == 0 && \
+		     (size) >= Z_ARC_MPU_ALIGN && \
+		     (uint32_t)(start) % Z_ARC_MPU_ALIGN == 0, \
+		     "the size of the partition must align with 32" \
+		     " and greater than or equal to 32." \
+		     "start address of the partition must align with 32.")
 #endif
 #endif /* CONFIG_ARC_MPU*/
 
-#ifndef _ASMLANGUAGE
 /* Typedef for the k_mem_partition attribute*/
 typedef uint32_t k_mem_partition_attr_t;
 
 static ALWAYS_INLINE void arch_nop(void)
 {
-	__asm__ volatile("nop");
+	__builtin_arc_nop();
 }
 
 #endif /* _ASMLANGUAGE */

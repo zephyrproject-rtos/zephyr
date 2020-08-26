@@ -26,12 +26,12 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 /**
  * @brief Initialization parameters for the external high frequency oscillator
  */
-static const CMU_HFXOInit_TypeDef hfxoInit = CMU_HFXOINIT_DEFAULT;
+static CMU_HFXOInit_TypeDef hfxoInit = CMU_HFXOINIT_DEFAULT;
 #elif (defined CONFIG_CMU_HFCLK_LFXO)
 /**
  * @brief Initialization parameters for the external low frequency oscillator
  */
-static const CMU_LFXOInit_TypeDef lfxoInit = CMU_LFXOINIT_DEFAULT;
+static CMU_LFXOInit_TypeDef lfxoInit = CMU_LFXOINIT_DEFAULT;
 #endif
 
 /**
@@ -43,6 +43,28 @@ static const CMU_LFXOInit_TypeDef lfxoInit = CMU_LFXOINIT_DEFAULT;
 static ALWAYS_INLINE void clock_init(void)
 {
 #ifdef CONFIG_CMU_HFCLK_HFXO
+#if defined(_SILICON_LABS_32B_SERIES_2)
+	if (CMU_ClockSelectGet(cmuClock_SYSCLK) != cmuSelect_HFXO) {
+		/*
+		 * Check if device has HFXO configuration info in DEVINFO
+		 * See AN0016.2
+		 */
+		if ((DEVINFO->MODULEINFO & DEVINFO_MODULEINFO_HFXOCALVAL) ==
+				DEVINFO_MODULEINFO_HFXOCALVAL_VALID) {
+			hfxoInit.ctuneXoAna = (DEVINFO->MODXOCAL
+				& _DEVINFO_MODXOCAL_HFXOCTUNEXOANA_MASK)
+				>> _DEVINFO_MODXOCAL_HFXOCTUNEXOANA_SHIFT;
+			hfxoInit.ctuneXiAna = (DEVINFO->MODXOCAL
+				& _DEVINFO_MODXOCAL_HFXOCTUNEXIANA_MASK)
+				>> _DEVINFO_MODXOCAL_HFXOCTUNEXIANA_SHIFT;
+		}
+
+		CMU_HFXOInit(&hfxoInit);
+		CMU_ClockSelectSet(cmuClock_SYSCLK, cmuSelect_HFXO);
+	}
+
+	SystemHFXOClockSet(CONFIG_CMU_HFXO_FREQ);
+#else
 	if (CMU_ClockSelectGet(cmuClock_HF) != cmuSelect_HFXO) {
 		CMU_HFXOInit(&hfxoInit);
 		CMU_OscillatorEnable(cmuOsc_HFXO, true, true);
@@ -50,7 +72,25 @@ static ALWAYS_INLINE void clock_init(void)
 	}
 	SystemHFXOClockSet(CONFIG_CMU_HFXO_FREQ);
 	CMU_OscillatorEnable(cmuOsc_HFRCO, false, false);
+#endif /* _SILICON_LABS_32B_SERIES_2 */
 #elif (defined CONFIG_CMU_HFCLK_LFXO)
+#if defined(_SILICON_LABS_32B_SERIES_2)
+	if (CMU_ClockSelectGet(cmuClock_SYSCLK) != cmuSelect_LFXO) {
+		/*
+		 * Start the LFXO Oscillator as well (use by RTCC)
+		 * Check if device has HFXO configuration info in DEVINFO
+		 * See AN0016.2
+		 */
+		if ((DEVINFO->MODULEINFO & DEVINFO_MODULEINFO_LFXOCALVAL) ==
+				DEVINFO_MODULEINFO_LFXOCALVAL_VALID) {
+			lfxoInit.capTune = (DEVINFO->MODXOCAL
+				& _DEVINFO_MODXOCAL_LFXOCAPTUNE_MASK)
+				>> _DEVINFO_MODXOCAL_LFXOCAPTUNE_SHIFT;
+		}
+	}
+
+	SystemLFXOClockSet(CONFIG_CMU_LFXO_FREQ);
+#else
 	if (CMU_ClockSelectGet(cmuClock_HF) != cmuSelect_LFXO) {
 		CMU_LFXOInit(&lfxoInit);
 		CMU_OscillatorEnable(cmuOsc_LFXO, true, true);
@@ -58,6 +98,7 @@ static ALWAYS_INLINE void clock_init(void)
 	}
 	SystemLFXOClockSet(CONFIG_CMU_LFXO_FREQ);
 	CMU_OscillatorEnable(cmuOsc_HFRCO, false, false);
+#endif /* _SILICON_LABS_32B_SERIES_2 */
 #elif (defined CONFIG_CMU_HFCLK_HFRCO)
 	/*
 	 * This is the default clock, the controller starts with
@@ -76,8 +117,13 @@ static ALWAYS_INLINE void clock_init(void)
 #error "Unsupported clock source for HFCLK selected"
 #endif
 
-	/* Enable the High Frequency Peripheral Clock */
-	CMU_ClockEnable(cmuClock_HFPER, true);
+#if defined(_SILICON_LABS_32B_SERIES_2)
+		/* Enable the High Frequency Peripheral Clock */
+		CMU_ClockEnable(cmuClock_PCLK, true);
+#else
+		/* Enable the High Frequency Peripheral Clock */
+		CMU_ClockEnable(cmuClock_HFPER, true);
+#endif /* _SILICON_LABS_32B_SERIES_2 */
 
 #if defined(CONFIG_GPIO_GECKO) || defined(CONFIG_LOG_BACKEND_SWO)
 	CMU_ClockEnable(cmuClock_GPIO, true);
@@ -108,6 +154,9 @@ static void swo_init(void)
 {
 	struct soc_gpio_pin pin_swo = PIN_SWO;
 
+#if defined(_SILICON_LABS_32B_SERIES_2)
+	GPIO->TRACEROUTEPEN = GPIO_TRACEROUTEPEN_SWVPEN;
+#else
 	/* Select HFCLK as the debug trace clock */
 	CMU->DBGCLKSEL = CMU_DBGCLKSEL_DBG_HFCLK;
 
@@ -120,6 +169,8 @@ static void swo_init(void)
 #else
 	GPIO->ROUTE = GPIO_ROUTE_SWOPEN | (SWO_LOCATION << 8);
 #endif
+#endif /* _SILICON_LABS_32B_SERIES_2 */
+
 	soc_gpio_configure(&pin_swo);
 }
 #endif /* CONFIG_LOG_BACKEND_SWO */

@@ -46,7 +46,7 @@ endif()
 
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
-  ${ZEPHYR_BASE}/arch/${ARCH}/include
+  ${ARCH_DIR}/${ARCH}/include
   )
 
 if(CONFIG_NET_SHELL)

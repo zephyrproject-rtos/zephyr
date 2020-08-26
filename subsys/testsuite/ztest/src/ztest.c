@@ -93,7 +93,7 @@ static int cleanup_test(struct unit_test *test)
 #define CPUHOLD_STACK_SZ (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 
 static struct k_thread cpuhold_threads[NUM_CPUHOLD];
-K_THREAD_STACK_ARRAY_DEFINE(cpuhold_stacks, NUM_CPUHOLD, CPUHOLD_STACK_SZ);
+K_KERNEL_STACK_ARRAY_DEFINE(cpuhold_stacks, NUM_CPUHOLD, CPUHOLD_STACK_SZ);
 static struct k_sem cpuhold_sem;
 volatile int cpuhold_active;
 
@@ -135,7 +135,11 @@ void z_impl_z_test_1cpu_start(void)
 
 	/* Spawn N-1 threads to "hold" the other CPUs, waiting for
 	 * each to signal us that it's locked and spinning.
+	 *
+	 * Note that NUM_CPUHOLD can be a value that causes coverity
+	 * to flag the following loop as DEADCODE so suppress the warning.
 	 */
+	/* coverity[DEADCODE] */
 	for (int i = 0; i < NUM_CPUHOLD; i++)  {
 		k_thread_create(&cpuhold_threads[i],
 				cpuhold_stacks[i], CPUHOLD_STACK_SZ,
@@ -149,6 +153,10 @@ void z_impl_z_test_1cpu_stop(void)
 {
 	cpuhold_active = 0;
 
+	/* Note that NUM_CPUHOLD can be a value that causes coverity
+	 * to flag the following loop as DEADCODE so suppress the warning.
+	 */
+	/* coverity[DEADCODE] */
 	for (int i = 0; i < NUM_CPUHOLD; i++)  {
 		k_thread_abort(&cpuhold_threads[i]);
 	}

@@ -25,8 +25,8 @@ LOG_MODULE_REGISTER(LSM9DS0_MFD, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int lsm9ds0_mfd_reboot_memory(struct device *dev)
 {
-	struct lsm9ds0_mfd_data *data = dev->driver_data;
-	const struct lsm9ds0_mfd_config *config = dev->config_info;
+	struct lsm9ds0_mfd_data *data = dev->data;
+	const struct lsm9ds0_mfd_config *config = dev->config;
 
 	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
 				LSM9DS0_MFD_REG_CTRL_REG0_XM,
@@ -44,8 +44,8 @@ static inline int lsm9ds0_mfd_reboot_memory(struct device *dev)
 #if !defined(LSM9DS0_MFD_ACCEL_DISABLED)
 static inline int lsm9ds0_mfd_accel_set_odr_raw(struct device *dev, uint8_t odr)
 {
-	struct lsm9ds0_mfd_data *data = dev->driver_data;
-	const struct lsm9ds0_mfd_config *config = dev->config_info;
+	struct lsm9ds0_mfd_data *data = dev->data;
+	const struct lsm9ds0_mfd_config *config = dev->config;
 
 	return i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
 				   LSM9DS0_MFD_REG_CTRL_REG1_XM,
@@ -88,8 +88,8 @@ static int lsm9ds0_mfd_accel_set_odr(struct device *dev,
 
 static inline int lsm9ds0_mfd_accel_set_fs_raw(struct device *dev, uint8_t fs)
 {
-	struct lsm9ds0_mfd_data *data = dev->driver_data;
-	const struct lsm9ds0_mfd_config *config = dev->config_info;
+	struct lsm9ds0_mfd_data *data = dev->data;
+	const struct lsm9ds0_mfd_config *config = dev->config;
 
 	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
 				LSM9DS0_MFD_REG_CTRL_REG2_XM,
@@ -133,8 +133,8 @@ static int lsm9ds0_mfd_accel_set_fs(struct device *dev, int val)
 #if !defined(LSM9DS0_MFD_MAGN_DISABLED)
 static inline int lsm9ds0_mfd_magn_set_odr_raw(struct device *dev, uint8_t odr)
 {
-	struct lsm9ds0_mfd_data *data = dev->driver_data;
-	const struct lsm9ds0_mfd_config *config = dev->config_info;
+	struct lsm9ds0_mfd_data *data = dev->data;
+	const struct lsm9ds0_mfd_config *config = dev->config;
 
 	return i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
 				   LSM9DS0_MFD_REG_CTRL_REG5_XM,
@@ -173,8 +173,8 @@ static int lsm9ds0_mfd_magn_set_odr(struct device *dev,
 
 static inline int lsm9ds0_mfd_magn_set_fs_raw(struct device *dev, uint8_t fs)
 {
-	struct lsm9ds0_mfd_data *data = dev->driver_data;
-	const struct lsm9ds0_mfd_config *config = dev->config_info;
+	struct lsm9ds0_mfd_data *data = dev->data;
+	const struct lsm9ds0_mfd_config *config = dev->config;
 
 	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
 				LSM9DS0_MFD_REG_CTRL_REG6_XM,
@@ -218,8 +218,8 @@ static int lsm9ds0_mfd_magn_set_fs(struct device *dev,
 #if !defined(LSM9DS0_MFD_ACCEL_DISABLED)
 static inline int lsm9ds0_mfd_sample_fetch_accel(struct device *dev)
 {
-	struct lsm9ds0_mfd_data *data = dev->driver_data;
-	const struct lsm9ds0_mfd_config *config = dev->config_info;
+	struct lsm9ds0_mfd_data *data = dev->data;
+	const struct lsm9ds0_mfd_config *config = dev->config;
 	uint8_t out_l, out_h;
 
 #if defined(CONFIG_LSM9DS0_MFD_ACCEL_ENABLE_X)
@@ -272,8 +272,8 @@ static inline int lsm9ds0_mfd_sample_fetch_accel(struct device *dev)
 #if !defined(LSM9DS0_MFD_MAGN_DISABLED)
 static inline int lsm9ds0_mfd_sample_fetch_magn(struct device *dev)
 {
-	struct lsm9ds0_mfd_data *data = dev->driver_data;
-	const struct lsm9ds0_mfd_config *config = dev->config_info;
+	struct lsm9ds0_mfd_data *data = dev->data;
+	const struct lsm9ds0_mfd_config *config = dev->config;
 	uint8_t out_l, out_h;
 
 	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
@@ -320,8 +320,8 @@ static inline int lsm9ds0_mfd_sample_fetch_magn(struct device *dev)
 #if !defined(LSM9DS0_MFD_TEMP_DISABLED)
 static inline int lsm9ds0_mfd_sample_fetch_temp(struct device *dev)
 {
-	struct lsm9ds0_mfd_data *data = dev->driver_data;
-	const struct lsm9ds0_mfd_config *config = dev->config_info;
+	struct lsm9ds0_mfd_data *data = dev->data;
+	const struct lsm9ds0_mfd_config *config = dev->config;
 	uint8_t out_l, out_h;
 
 	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
@@ -430,7 +430,7 @@ static inline int lsm9ds0_mfd_get_accel(struct device *dev,
 					enum sensor_channel chan,
 					struct sensor_value *val)
 {
-	struct lsm9ds0_mfd_data *data = dev->driver_data;
+	struct lsm9ds0_mfd_data *data = dev->data;
 
 #if defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_RUNTIME)
 	switch (data->sample_accel_fs) {
@@ -516,7 +516,7 @@ static inline int lsm9ds0_mfd_get_magn(struct device *dev,
 				       enum sensor_channel chan,
 				       struct sensor_value *val)
 {
-	struct lsm9ds0_mfd_data *data = dev->driver_data;
+	struct lsm9ds0_mfd_data *data = dev->data;
 
 #if defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_RUNTIME)
 	switch (data->sample_magn_fs) {
@@ -554,7 +554,7 @@ static int lsm9ds0_mfd_channel_get(struct device *dev,
 				   struct sensor_value *val)
 {
 #if !defined(LSM9DS0_MFD_TEMP_DISABLED)
-	struct lsm9ds0_mfd_data *data = dev->driver_data;
+	struct lsm9ds0_mfd_data *data = dev->data;
 #endif
 
 	switch (chan) {
@@ -667,8 +667,8 @@ static const struct sensor_driver_api lsm9ds0_mfd_api_funcs = {
 
 static int lsm9ds0_mfd_init_chip(struct device *dev)
 {
-	struct lsm9ds0_mfd_data *data = dev->driver_data;
-	const struct lsm9ds0_mfd_config *config = dev->config_info;
+	struct lsm9ds0_mfd_data *data = dev->data;
+	const struct lsm9ds0_mfd_config *config = dev->config;
 	uint8_t chip_id;
 
 	if (lsm9ds0_mfd_reboot_memory(dev) < 0) {
@@ -769,9 +769,8 @@ static int lsm9ds0_mfd_init_chip(struct device *dev)
 
 int lsm9ds0_mfd_init(struct device *dev)
 {
-	const struct lsm9ds0_mfd_config * const config =
-				dev->config_info;
-	struct lsm9ds0_mfd_data *data = dev->driver_data;
+	const struct lsm9ds0_mfd_config * const config = dev->config;
+	struct lsm9ds0_mfd_data *data = dev->data;
 
 	data->i2c_master = device_get_binding(config->i2c_master_dev_name);
 	if (!data->i2c_master) {

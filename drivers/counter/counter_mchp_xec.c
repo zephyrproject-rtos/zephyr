@@ -48,14 +48,14 @@ struct counter_xec_data {
 #define COUNTER_XEC_REG_BASE(_dev)			\
 	((BTMR_Type *)					\
 	 ((const struct counter_xec_config * const)	\
-	  _dev->config_info)->base_address)
+	  _dev->config)->base_address)
 
 #define COUNTER_XEC_CONFIG(_dev)			\
 	(((const struct counter_xec_config * const)	\
-	  _dev->config_info))
+	  _dev->config))
 
 #define COUNTER_XEC_DATA(_dev)				\
-	((struct counter_xec_data *)dev->driver_data)
+	((struct counter_xec_data *)dev->data)
 
 static int counter_xec_start(struct device *dev)
 {

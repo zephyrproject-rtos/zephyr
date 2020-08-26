@@ -70,7 +70,7 @@ void z_sys_init_run_level(int32_t level)
 				 * so that device_get_binding() will not succeed
 				 * for it.
 				 */
-				dev->driver_api = NULL;
+				dev->api = NULL;
 			}
 		}
 	}

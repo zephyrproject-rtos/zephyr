@@ -8,6 +8,6 @@ toolchain:
   - xtools
 testing:
   default: true
-  ignore_tags:
-     - net
-     - bluetooth
+  only_tags:
+     - kernel
+     - userspace

@@ -110,12 +110,13 @@ static void h4_acl_recv(struct net_buf *buf, int *remaining)
 	LOG_DBG("len %u", *remaining);
 }
 
-static void bt_uart_isr(struct device *unused)
+static void bt_uart_isr(struct device *unused, void *user_data)
 {
 	static struct net_buf *buf;
 	static int remaining;
 
 	ARG_UNUSED(unused);
+	ARG_UNUSED(user_data);
 
 	while (uart_irq_update(hci_uart_dev) &&
 	       uart_irq_is_pending(hci_uart_dev)) {
@@ -343,6 +344,7 @@ void main(void)
 	k_thread_create(&tx_thread_data, tx_thread_stack,
 			K_THREAD_STACK_SIZEOF(tx_thread_stack), tx_thread,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+	k_thread_name_set(&tx_thread_data, "HCI uart TX");
 
 	while (1) {
 		struct net_buf *buf;

@@ -32,7 +32,7 @@ static const struct flash_parameters flash_gecko_parameters = {
 
 #define DEV_NAME(dev) ((dev)->name)
 #define DEV_DATA(dev) \
-	((struct flash_gecko_data *const)(dev)->driver_data)
+	((struct flash_gecko_data *const)(dev)->data)
 
 static bool write_range_is_valid(off_t offset, uint32_t size);
 static bool read_range_is_valid(off_t offset, uint32_t size);
@@ -126,7 +126,11 @@ static int flash_gecko_write_protection(struct device *dev, bool enable)
 		MSC->LOCK = 0;
 	} else {
 		/* Unlock the MSC module. */
+	#if defined(MSC_LOCK_LOCKKEY_UNLOCK)
+		MSC->LOCK = MSC_LOCK_LOCKKEY_UNLOCK;
+	#else
 		MSC->LOCK = MSC_UNLOCK_CODE;
+	#endif
 	}
 
 	k_sem_give(&dev_data->mutex);

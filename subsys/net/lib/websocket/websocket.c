@@ -418,23 +418,24 @@ int websocket_disconnect(int ws_sock)
 	return ret;
 }
 
-static int websocket_ioctl_vmeth(void *obj, unsigned int request, va_list args)
+static int websocket_close_vmeth(void *obj)
 {
-	if (request == ZFD_IOCTL_CLOSE) {
-		struct websocket_context *ctx = obj;
-		int ret;
+	struct websocket_context *ctx = obj;
+	int ret;
 
-		ret = websocket_disconnect(ctx->sock);
-		if (ret < 0) {
-			NET_DBG("[%p] Cannot close (%d)", obj, ret);
+	ret = websocket_disconnect(ctx->sock);
+	if (ret < 0) {
+		NET_DBG("[%p] Cannot close (%d)", obj, ret);
 
-			errno = -ret;
-			return -1;
-		}
-
-		return ret;
+		errno = -ret;
+		return -1;
 	}
 
+	return ret;
+}
+
+static int websocket_ioctl_vmeth(void *obj, unsigned int request, va_list args)
+{
 	return sock_fd_op_vtable.fd_vtable.ioctl(obj, request, args);
 }
 
@@ -954,6 +955,7 @@ static const struct socket_op_vtable websocket_fd_op_vtable = {
 	.fd_vtable = {
 		.read = websocket_read_vmeth,
 		.write = websocket_write_vmeth,
+		.close = websocket_close_vmeth,
 		.ioctl = websocket_ioctl_vmeth,
 	},
 	.sendto = websocket_sendto_ctx,

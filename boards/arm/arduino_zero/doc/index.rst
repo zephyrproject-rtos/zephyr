@@ -53,6 +53,8 @@ features:
 +-----------+------------+------------------------------------------+
 | USB       | on-chip    | USB device                               |
 +-----------+------------+------------------------------------------+
+| DAC       | on-chip    | Digital to analogue converter            |
++-----------+------------+------------------------------------------+
 
 Other hardware features are not currently supported by Zephyr.
 
@@ -100,6 +102,12 @@ The SAMD21 MCU has a USB device port that can be used to communicate
 with a host PC.  See the :ref:`usb-samples` sample applications for
 more, such as the :ref:`usb_cdc-acm` sample which sets up a virtual
 serial port that echos characters back to the host PC.
+
+DAC
+===
+
+The SAMD21 MCU has a single channel DAC with 10 bits of resolution. On the
+Arduino Zero, the DAC is available on pin A0.
 
 Programming and Debugging
 *************************

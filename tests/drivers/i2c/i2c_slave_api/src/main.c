@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 BayLibre, SAS
+ * Copyright (c) 2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,14 +18,16 @@ LOG_MODULE_REGISTER(main);
 #include <sys/util.h>
 
 #include <drivers/i2c.h>
-#include <drivers/i2c/slave/eeprom.h>
+#include "eeprom.h"
 
 #include <ztest.h>
 
-#define TEST_DATA_SIZE	20
+#define NODE_EP0 DT_NODELABEL(eeprom0)
+#define NODE_EP1 DT_NODELABEL(eeprom1)
 
-static uint8_t eeprom_0_data[TEST_DATA_SIZE] = "0123456789abcdefghij";
-static uint8_t eeprom_1_data[TEST_DATA_SIZE] = "jihgfedcba9876543210";
+#define TEST_DATA_SIZE	20
+static const uint8_t eeprom_0_data[TEST_DATA_SIZE] = "0123456789abcdefghij";
+static const uint8_t eeprom_1_data[TEST_DATA_SIZE] = "jihgfedcba9876543210";
 static uint8_t i2c_buffer[TEST_DATA_SIZE];
 
 /*
@@ -43,7 +46,8 @@ static void to_display_format(const uint8_t *src, size_t size, char *dst)
 	}
 }
 
-static void run_full_read(struct device *i2c, uint8_t addr, uint8_t *comp_buffer)
+static int run_full_read(struct device *i2c, uint8_t addr,
+			 const uint8_t *comp_buffer)
 {
 	int ret;
 
@@ -62,15 +66,16 @@ static void run_full_read(struct device *i2c, uint8_t addr, uint8_t *comp_buffer
 				  buffer_print_eeprom);
 		LOG_ERR("Buffer contents are different: %s",
 			    buffer_print_i2c);
-		LOG_ERR("                           vs: %s",
+		LOG_ERR("                 vs expected: %s",
 			    buffer_print_eeprom);
-
-		ztest_test_fail();
+		return -EIO;
 	}
+
+	return 0;
 }
 
-static void run_partial_read(struct device *i2c, uint8_t addr, uint8_t *comp_buffer,
-			     unsigned int offset)
+static int run_partial_read(struct device *i2c, uint8_t addr,
+			    const uint8_t *comp_buffer, unsigned int offset)
 {
 	int ret;
 
@@ -88,14 +93,15 @@ static void run_partial_read(struct device *i2c, uint8_t addr, uint8_t *comp_buf
 				  buffer_print_eeprom);
 		LOG_ERR("Buffer contents are different: %s",
 			    buffer_print_i2c);
-		LOG_ERR("                           vs: %s",
+		LOG_ERR("                  vs expected: %s",
 			    buffer_print_eeprom);
-
-		ztest_test_fail();
+		return -EIO;
 	}
+
+	return 0;
 }
 
-static void run_program_read(struct device *i2c, uint8_t addr, unsigned int offset)
+static int run_program_read(struct device *i2c, uint8_t addr, unsigned int offset)
 {
 	int ret, i;
 
@@ -121,130 +127,100 @@ static void run_program_read(struct device *i2c, uint8_t addr, unsigned int offs
 		if (i2c_buffer[i] != i) {
 			to_display_format(i2c_buffer, TEST_DATA_SIZE-offset,
 					  buffer_print_i2c);
-			LOG_ERR("Invalid Buffer content: %s",
-				    buffer_print_i2c);
-
-			ztest_test_fail();
+			LOG_ERR("Invalid Buffer content: %s", buffer_print_i2c);
+			return -EIO;
 		}
 	}
+
+	return 0;
 }
 
 void test_eeprom_slave(void)
 {
-	struct device *eeprom_0;
-	struct device *eeprom_1;
-	struct device *i2c_0;
-	struct device *i2c_1;
+	const char *label_0 = DT_LABEL(NODE_EP0);
+	struct device *eeprom_0 = device_get_binding(label_0);
+	struct device *i2c_0 = device_get_binding(DT_BUS_LABEL(NODE_EP0));
+	int addr_0 = DT_REG_ADDR(NODE_EP0);
+	const char *label_1 = DT_LABEL(NODE_EP1);
+	struct device *eeprom_1 = device_get_binding(label_1);
+	struct device *i2c_1 = device_get_binding(DT_BUS_LABEL(NODE_EP1));
+	int addr_1 = DT_REG_ADDR(NODE_EP1);
 	int ret, offset;
 
+	zassert_not_null(i2c_0, "EP0 I2C device %s not found",
+			 DT_BUS_LABEL(NODE_EP0));
+	zassert_not_null(eeprom_0, "EEPROM device %s not found", label_0);
 
-	i2c_0 = device_get_binding(
-			DT_BUS_LABEL(DT_INST(0, atmel_at24)));
-	zassert_not_null(i2c_0, "I2C device %s not found",
-			 DT_BUS_LABEL(DT_INST(0, atmel_at24)));
+	LOG_INF("Found EP0 %s on I2C Master device %s at addr %02x",
+		label_0, DT_BUS_LABEL(NODE_EP0), addr_0);
 
-	LOG_INF("Found I2C Master device %s",
-		    DT_BUS_LABEL(DT_INST(0, atmel_at24)));
-
-	i2c_1 = device_get_binding(
-			DT_BUS_LABEL(DT_INST(1, atmel_at24)));
 	zassert_not_null(i2c_1, "I2C device %s not found",
-			 DT_BUS_LABEL(DT_INST(1, atmel_at24)));
+			 DT_BUS_LABEL(NODE_EP1));
+	zassert_not_null(eeprom_1, "EEPROM device %s not found", label_1);
 
-	LOG_INF("Found I2C Master device %s",
-		    DT_BUS_LABEL(DT_INST(1, atmel_at24)));
+	LOG_INF("Found EP1 %s on I2C Master device %s at addr %02x",
+		label_1, DT_BUS_LABEL(NODE_EP1), addr_1);
 
-	/*
-	 * Normal applications would interact with an EEPROM
-	 * identified by the string literal used in the binding node
-	 * label property ("EEPROM_SLAVE_0") rather than the generated
-	 * macro DT_LABEL(DT_INST(0, atmel_at24)).  There is no guarantee that
-	 * the index for the compatible is persistent across builds;
-	 * for example DT_LABEL(DT_INST(0, atmel_at24)) might refer to
-	 * "EEPROM_SLAVE_1" * if the order of the node declarations were changed
-	 * in the overlay file.
-	 *
-	 * The label string cannot be directly used to determine the
-	 * correct parent bus and device index for whitebox testing in
-	 * this application.  So for this application only, where the
-	 * devices are interchangeable, the device is selected the
-	 * using the generated macro.
+	/* Program differentiable data into the two devices through a back door
+	 * that doesn't use I2C.
 	 */
-
-	eeprom_0 = device_get_binding(DT_LABEL(DT_INST(0, atmel_at24)));
-	zassert_not_null(eeprom_0, "EEPROM device %s not found",
-			 DT_LABEL(DT_INST(0, atmel_at24)));
-
-	LOG_INF("Found EEPROM device %s", DT_LABEL(DT_INST(0, atmel_at24)));
-
-	eeprom_1 = device_get_binding(DT_LABEL(DT_INST(1, atmel_at24)));
-	zassert_not_null(eeprom_1, "EEPROM device %s not found",
-			 DT_LABEL(DT_INST(1, atmel_at24)));
-
-	LOG_INF("Found EEPROM device %s", DT_LABEL(DT_INST(1, atmel_at24)));
-
-	/* Program dummy bytes */
 	ret = eeprom_slave_program(eeprom_0, eeprom_0_data, TEST_DATA_SIZE);
-	zassert_equal(ret, 0, "Failed to program EEPROM %s",
-		      DT_LABEL(DT_INST(0, atmel_at24)));
-
+	zassert_equal(ret, 0, "Failed to program EEPROM %s", label_0);
 	ret = eeprom_slave_program(eeprom_1, eeprom_1_data, TEST_DATA_SIZE);
-	zassert_equal(ret, 0, "Failed to program EEPROM %s",
-		      DT_LABEL(DT_INST(1, atmel_at24)));
+	zassert_equal(ret, 0, "Failed to program EEPROM %s", label_1);
 
-	/* Attach EEPROM */
+	/* Attach each EEPROM to its owning bus as a follower device. */
 	ret = i2c_slave_driver_register(eeprom_0);
-	zassert_equal(ret, 0, "Failed to register EEPROM %s",
-		      DT_LABEL(DT_INST(0, atmel_at24)));
-
-	LOG_INF("EEPROM %s Attached !", DT_LABEL(DT_INST(0, atmel_at24)));
+	zassert_equal(ret, 0, "Failed to register EEPROM %s", label_0);
+	LOG_INF("EEPROM %s Attached !", label_0);
 
 	ret = i2c_slave_driver_register(eeprom_1);
-	zassert_equal(ret, 0, "Failed to register EEPROM %s",
-		      DT_LABEL(DT_INST(1, atmel_at24)));
+	zassert_equal(ret, 0, "Failed to register EEPROM %s", label_1);
+	LOG_INF("EEPROM %s Attached !", label_1);
 
-	LOG_INF("EEPROM %s Attached !", DT_LABEL(DT_INST(1, atmel_at24)));
-
-	/* Run Tests without bus access conflicts */
-	run_full_read(i2c_0, DT_REG_ADDR(DT_INST(1, atmel_at24)), eeprom_1_data);
-	run_full_read(i2c_1, DT_REG_ADDR(DT_INST(0, atmel_at24)), eeprom_0_data);
+	/* The simulated EP0 is configured to be accessed as a follower device
+	 * at addr_0 on i2c_0 and should expose eeprom_0_data.  The validation
+	 * uses i2c_1 as a bus leader to access this device, which works because
+	 * i2c_0 and i2_c have their SDA (SCL) pins shorted (they are on the
+	 * same physical bus).  Thus in these calls i2c_1 is a leader device
+	 * operating on the follower address addr_0.
+	 *
+	 * Similarly validation of EP1 uses i2c_0 as a leader with addr_1 and
+	 * eeprom_1_data for validation.
+	 */
+	ret = run_full_read(i2c_1, addr_0, eeprom_0_data);
+	zassert_equal(ret, 0,
+		     "Full I2C read from EP0 failed");
+	ret = run_full_read(i2c_0, addr_1, eeprom_1_data);
+	zassert_equal(ret, 0,
+		     "Full I2C read from EP1 failed");
 
 	for (offset = 0 ; offset < TEST_DATA_SIZE-1 ; ++offset) {
-		run_partial_read(i2c_0, DT_REG_ADDR(DT_INST(1, atmel_at24)),
-				 eeprom_1_data, offset);
+		zassert_equal(0, run_partial_read(i2c_1, addr_0,
+			      eeprom_0_data, offset),
+			      "Partial I2C read EP0 failed");
+		zassert_equal(0, run_partial_read(i2c_0, addr_1,
+			      eeprom_1_data, offset),
+			      "Partial I2C read EP1 failed");
 	}
 
 	for (offset = 0 ; offset < TEST_DATA_SIZE-1 ; ++offset) {
-		run_partial_read(i2c_1, DT_REG_ADDR(DT_INST(0, atmel_at24)),
-				 eeprom_0_data, offset);
-	}
-
-	for (offset = 0 ; offset < TEST_DATA_SIZE-1 ; ++offset) {
-		run_program_read(i2c_0, DT_REG_ADDR(DT_INST(1, atmel_at24)),
-				 offset);
-	}
-
-	for (offset = 0 ; offset < TEST_DATA_SIZE-1 ; ++offset) {
-		run_program_read(i2c_1, DT_REG_ADDR(DT_INST(0, atmel_at24)),
-				 offset);
+		zassert_equal(0, run_program_read(i2c_1, addr_0, offset),
+			      "Program I2C read EP0 failed");
+		zassert_equal(0, run_program_read(i2c_0, addr_1, offset),
+			      "Program I2C read EP1 failed");
 	}
 
 	LOG_INF("Success !");
 
 	/* Detach EEPROM */
 	ret = i2c_slave_driver_unregister(eeprom_0);
-	zassert_equal(ret, 0, "Failed to unregister EEPROM %s",
-		      DT_LABEL(DT_INST(0, atmel_at24)));
-
-	LOG_INF("EEPROM %s Detached !",
-		    DT_LABEL(DT_INST(0, atmel_at24)));
+	zassert_equal(ret, 0, "Failed to unregister EEPROM %s", label_0);
+	LOG_INF("EEPROM %s Detached !", label_0);
 
 	ret = i2c_slave_driver_unregister(eeprom_1);
-	zassert_equal(ret, 0, "Failed to unregister EEPROM %s",
-		      DT_LABEL(DT_INST(1, atmel_at24)));
-
-	LOG_INF("EEPROM %s Detached !",
-		    DT_LABEL(DT_INST(1, atmel_at24)));
+	zassert_equal(ret, 0, "Failed to unregister EEPROM %s", label_1);
+	LOG_INF("EEPROM %s Detached !", label_1);
 }
 
 void test_main(void)

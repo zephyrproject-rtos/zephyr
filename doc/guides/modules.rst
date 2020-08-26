@@ -40,6 +40,112 @@ Finally, you can also specify the list of modules yourself in various ways, or
 not use modules at all if your application doesn't need them.
 
 
+Module yaml file description
+****************************
+
+A module can be described using a file named :file:`zephyr/module.yml`.
+The format of :file:`zephyr/module.yml` is described in the following:
+
+
+Build files
+===========
+
+Inclusion of build files, :file:`CMakeLists.txt` and :file:`Kconfig`, can be
+described as:
+
+.. code-block:: yaml
+
+   build:
+     cmake: <cmake-directory>
+     kconfig: <directory>/Kconfig
+
+The ``cmake: <cmake-directory>`` part specifies that
+:file:`<cmake-directory>` contains the :file:`CMakeLists.txt` to use. The
+``kconfig: <directory>/Kconfig`` part specifies the Kconfig file to use.
+Neither is required: ``cmake`` defaults to ``zephyr``, and ``kconfig``
+defaults to ``zephyr/Kconfig``.
+
+Here is an example :file:`module.yml` file referring to
+:file:`CMakeLists.txt` and :file:`Kconfig` files in the root directory of the
+module:
+
+.. code-block:: yaml
+
+   build:
+     cmake: .
+     kconfig: Kconfig
+
+.. _modules_build_settings:
+
+Build settings
+==============
+
+It is possible to specify additional build settings that must be used when
+including the module into the build system.
+
+All ``root`` settings are relative to the root of the module.
+
+Build settings supported in the :file:`module.yml` file are:
+
+- ``board_root``: Contains additional boards that are available to the build
+  system. Additional boards must be located in a :file:`<board_root>/boards`
+  folder.
+- ``dts_root``: Contains additional dts files related to the architecture/soc
+  families. Additional dts files must be located in a :file:`<dts_root>/dts`
+  folder.
+- ``soc_root``: Contains additional SoCs that are available to the build
+  system. Additional SoCs must be located in a :file:`<soc_root>/soc` folder.
+- ``arch_root``: Contains additional architectures that are available to the
+  build system. Additional architectures must be located in a
+  :file:`<arch_root>/arch` folder.
+
+Example of a :file:`module.yaml` file containing additional roots, and the
+corresponding file system layout.
+
+.. code-block:: yaml
+
+   build:
+     settings:
+       board_root: .
+       dts_root: .
+       soc_root: .
+       arch_root: .
+
+
+requires the following folder structure:
+
+.. code-block:: none
+
+   <module-root>
+   ├── arch
+   ├── boards
+   ├── dts
+   └── soc
+
+
+
+Sanitycheck
+===========
+
+To execute both tests and samples available in modules, the Zephyr test runner
+(sanitycheck) should be pointed to the directories containing those samples and
+tests. This can be done by specifying the path to both samples and tests in the
+:file:`zephyr/module.yml` file.  Additionally, if a module defines out of tree
+boards, the module file can point sanitycheck to the path where those files
+are maintained in the module. For example:
+
+
+.. code-block:: yaml
+
+    build:
+      cmake: .
+    samples:
+      - samples
+    tests:
+      - tests
+    boards:
+      - boards
+
 
 Module Inclusion
 ****************
@@ -57,50 +163,9 @@ just those projects which have the necessary module metadata files.
 
 Each project in the ``west list`` output is tested like this:
 
-- If the project contains a file named :file:`zephyr/module.yml`, then
-  its contents should look like this:
-
-  .. code-block:: yaml
-
-     build:
-       cmake: <cmake-directory>
-       kconfig: <directory>/Kconfig
-
-  The ``cmake: <cmake-directory>`` part specifies that
-  :file:`<cmake-directory>` contains the :file:`CMakeLists.txt` to use. The
-  ``kconfig: <directory>/Kconfig`` part specifies the Kconfig file to use.
-  Neither is required: ``cmake`` defaults to ``zephyr``, and ``kconfig``
-  defaults to ``zephyr/Kconfig``.
-
-  Here is an example :file:`module.yml` file referring to
-  :file:`CMakeLists.txt` and :file:`Kconfig` files in the root directory of the
-  module:
-
-  .. code-block:: yaml
-
-     build:
-       cmake: .
-       kconfig: Kconfig
-
-- To execute both tests and samples available in modules, the Zephyr test runner
-  (sanitycheck) should be pointed to the directories containing those samples and
-  tests. This can be done by specifying the path to both samples and tests in the
-  :file:`zephyr/module.yml` file.  Additionally, if a module defines out of tree
-  boards, the module file can point sanitycheck to the path where those files
-  are maintained in the module. For example:
-
-
-  .. code-block:: yaml
-
-      build:
-        cmake: .
-      samples:
-        - samples
-      tests:
-        - tests
-      boards:
-        - boards
-
+- If the project contains a file named :file:`zephyr/module.yml`, then the
+  content of that file will be used to determine which files should be added
+  to the build, as described in the previous section.
 
 - Otherwise (i.e. if the project has no :file:`zephyr/module.yml`), the
   build system looks for :file:`zephyr/CMakeLists.txt` and

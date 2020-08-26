@@ -168,7 +168,7 @@ static const struct ms5607_transfer_function ms5607_spi_transfer_function = {
 
 int ms5607_spi_init(struct device *dev)
 {
-	struct ms5607_data *data = dev->driver_data;
+	struct ms5607_data *data = dev->data;
 
 	data->tf = &ms5607_spi_transfer_function;
 

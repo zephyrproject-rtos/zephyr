@@ -34,8 +34,8 @@ LOG_MODULE_REGISTER(LIS2DW12, CONFIG_SENSOR_LOG_LEVEL);
 static int lis2dw12_set_range(struct device *dev, uint16_t range)
 {
 	int err;
-	struct lis2dw12_data *lis2dw12 = dev->driver_data;
-	const struct lis2dw12_device_config *cfg = dev->config_info;
+	struct lis2dw12_data *lis2dw12 = dev->data;
+	const struct lis2dw12_device_config *cfg = dev->config;
 	uint8_t shift_gain = 0U;
 	uint8_t fs = LIS2DW12_FS_TO_REG(range);
 
@@ -62,7 +62,7 @@ static int lis2dw12_set_range(struct device *dev, uint16_t range)
  */
 static int lis2dw12_set_odr(struct device *dev, uint16_t odr)
 {
-	struct lis2dw12_data *lis2dw12 = dev->driver_data;
+	struct lis2dw12_data *lis2dw12 = dev->data;
 	uint8_t val;
 
 	/* check if power off */
@@ -98,7 +98,7 @@ static inline void lis2dw12_channel_get_acc(struct device *dev,
 {
 	int i;
 	uint8_t ofs_start, ofs_stop;
-	struct lis2dw12_data *lis2dw12 = dev->driver_data;
+	struct lis2dw12_data *lis2dw12 = dev->data;
 	struct sensor_value *pval = val;
 
 	switch (chan) {
@@ -177,8 +177,8 @@ static int lis2dw12_attr_set(struct device *dev, enum sensor_channel chan,
 
 static int lis2dw12_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct lis2dw12_data *lis2dw12 = dev->driver_data;
-	const struct lis2dw12_device_config *cfg = dev->config_info;
+	struct lis2dw12_data *lis2dw12 = dev->data;
+	const struct lis2dw12_device_config *cfg = dev->config;
 	uint8_t shift;
 	union axis3bit16_t buf;
 
@@ -213,8 +213,8 @@ static const struct sensor_driver_api lis2dw12_driver_api = {
 
 static int lis2dw12_init_interface(struct device *dev)
 {
-	struct lis2dw12_data *lis2dw12 = dev->driver_data;
-	const struct lis2dw12_device_config *cfg = dev->config_info;
+	struct lis2dw12_data *lis2dw12 = dev->data;
+	const struct lis2dw12_device_config *cfg = dev->config;
 
 	lis2dw12->bus = device_get_binding(cfg->bus_name);
 	if (!lis2dw12->bus) {
@@ -255,8 +255,8 @@ static int lis2dw12_set_power_mode(struct lis2dw12_data *lis2dw12,
 
 static int lis2dw12_init(struct device *dev)
 {
-	struct lis2dw12_data *lis2dw12 = dev->driver_data;
-	const struct lis2dw12_device_config *cfg = dev->config_info;
+	struct lis2dw12_data *lis2dw12 = dev->data;
+	const struct lis2dw12_device_config *cfg = dev->config;
 	uint8_t wai;
 
 	if (lis2dw12_init_interface(dev)) {

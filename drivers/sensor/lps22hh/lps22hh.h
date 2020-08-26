@@ -73,7 +73,7 @@ struct lps22hh_data {
 	struct device *dev;
 
 #if defined(CONFIG_LPS22HH_TRIGGER_OWN_THREAD)
-	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_LPS22HH_THREAD_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_LPS22HH_THREAD_STACK_SIZE);
 	struct k_thread thread;
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_LPS22HH_TRIGGER_GLOBAL_THREAD)

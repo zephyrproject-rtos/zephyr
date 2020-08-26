@@ -24,7 +24,7 @@ LOG_MODULE_DECLARE(IIS3DHHC, CONFIG_SENSOR_LOG_LEVEL);
  */
 static int iis3dhhc_enable_int(struct device *dev, int enable)
 {
-	struct iis3dhhc_data *iis3dhhc = dev->driver_data;
+	struct iis3dhhc_data *iis3dhhc = dev->data;
 
 	/* set interrupt */
 #ifdef CONFIG_IIS3DHHC_DRDY_INT1
@@ -41,7 +41,7 @@ int iis3dhhc_trigger_set(struct device *dev,
 			 const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler)
 {
-	struct iis3dhhc_data *iis3dhhc = dev->driver_data;
+	struct iis3dhhc_data *iis3dhhc = dev->data;
 	union axis3bit16_t raw;
 
 	if (trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
@@ -65,11 +65,11 @@ int iis3dhhc_trigger_set(struct device *dev,
 static void iis3dhhc_handle_interrupt(void *arg)
 {
 	struct device *dev = arg;
-	struct iis3dhhc_data *iis3dhhc = dev->driver_data;
+	struct iis3dhhc_data *iis3dhhc = dev->data;
 	struct sensor_trigger drdy_trigger = {
 		.type = SENSOR_TRIG_DATA_READY,
 	};
-	const struct iis3dhhc_config *cfg = dev->config_info;
+	const struct iis3dhhc_config *cfg = dev->config;
 
 	if (iis3dhhc->handler_drdy != NULL) {
 		iis3dhhc->handler_drdy(dev, &drdy_trigger);
@@ -84,7 +84,7 @@ static void iis3dhhc_gpio_callback(struct device *dev,
 {
 	struct iis3dhhc_data *iis3dhhc =
 		CONTAINER_OF(cb, struct iis3dhhc_data, gpio_cb);
-	const struct iis3dhhc_config *cfg = iis3dhhc->dev->config_info;
+	const struct iis3dhhc_config *cfg = iis3dhhc->dev->config;
 
 	ARG_UNUSED(pins);
 
@@ -102,7 +102,7 @@ static void iis3dhhc_gpio_callback(struct device *dev,
 static void iis3dhhc_thread(int dev_ptr, int unused)
 {
 	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct iis3dhhc_data *iis3dhhc = dev->driver_data;
+	struct iis3dhhc_data *iis3dhhc = dev->data;
 
 	ARG_UNUSED(unused);
 
@@ -125,8 +125,8 @@ static void iis3dhhc_work_cb(struct k_work *work)
 
 int iis3dhhc_init_interrupt(struct device *dev)
 {
-	struct iis3dhhc_data *iis3dhhc = dev->driver_data;
-	const struct iis3dhhc_config *cfg = dev->config_info;
+	struct iis3dhhc_data *iis3dhhc = dev->data;
+	const struct iis3dhhc_config *cfg = dev->config;
 	int ret;
 
 	/* setup data ready gpio interrupt (INT1 or INT2) */

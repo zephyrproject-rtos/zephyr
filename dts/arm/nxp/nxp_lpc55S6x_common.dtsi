@@ -13,6 +13,7 @@
 	aliases {
 		gpio-0 = &gpio0;
 		gpio-1 = &gpio1;
+		watchdog0 = &wwdt0;
 	};
 
 	chosen {
@@ -192,10 +193,12 @@
 
 	hs_lspi: spi@9f000 {
 		compatible = "nxp,lpc-spi";
-		cs-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>,
+		/* Enabling cs-gpios below will allow using GPIO CS,
+		 rather than Flexcomm SS */
+		/* cs-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>,
 			<&gpio1 1 GPIO_ACTIVE_LOW>,
 			<&gpio1 12 GPIO_ACTIVE_LOW>,
-			<&gpio1 26 GPIO_ACTIVE_LOW>;
+			<&gpio1 26 GPIO_ACTIVE_LOW>; */
 		reg = <0x9f000 0x1000>;
 		interrupts = <59 0>;
 		label = "HS_LSPI";
@@ -209,6 +212,15 @@
 		reg = <0x3a000 0x1000>;
 		status = "okay";
 		label = "RNG";
+	};
+
+	wwdt0: watchdog@c000 {
+		compatible = "nxp,lpc-wwdt";
+		reg = <0xc000 0x1000>;
+		interrupts = <0 0>;
+		status = "disabled";
+		clk-divider = <1>;
+		label = "WWDT_0";
 	};
 };
 

@@ -136,7 +136,7 @@ bool z_cc1200_access_reg(struct cc1200_context *ctx, bool read, uint8_t addr,
 
 static inline uint8_t *get_mac(struct device *dev)
 {
-	struct cc1200_context *cc1200 = dev->driver_data;
+	struct cc1200_context *cc1200 = dev->data;
 
 #if defined(CONFIG_IEEE802154_CC1200_RANDOM_MAC)
 	uint32_t *ptr = (uint32_t *)(cc1200->mac_addr + 4);
@@ -211,7 +211,7 @@ static void enable_gpio0_interrupt(struct cc1200_context *cc1200, bool enable)
 
 static void setup_gpio_callback(struct device *dev)
 {
-	struct cc1200_context *cc1200 = dev->driver_data;
+	struct cc1200_context *cc1200 = dev->data;
 
 	gpio_init_callback(&cc1200->rx_tx_cb, gpio0_int_handler,
 			   BIT(cc1200->gpios[CC1200_GPIO_IDX_GPIO0].pin));
@@ -325,7 +325,7 @@ static bool
 rf_install_settings(struct device *dev,
 		    const struct cc1200_rf_registers_set *rf_settings)
 {
-	struct cc1200_context *cc1200 = dev->driver_data;
+	struct cc1200_context *cc1200 = dev->data;
 
 	if (!z_cc1200_access_reg(cc1200, false, CC1200_REG_SYNC3,
 				 (void *)rf_settings->registers,
@@ -450,7 +450,7 @@ static inline bool verify_crc(struct cc1200_context *ctx, struct net_pkt *pkt)
 
 static void cc1200_rx(struct device *dev)
 {
-	struct cc1200_context *cc1200 = dev->driver_data;
+	struct cc1200_context *cc1200 = dev->data;
 	struct net_pkt *pkt;
 	uint8_t pkt_len;
 
@@ -525,7 +525,7 @@ static enum ieee802154_hw_caps cc1200_get_capabilities(struct device *dev)
 
 static int cc1200_cca(struct device *dev)
 {
-	struct cc1200_context *cc1200 = dev->driver_data;
+	struct cc1200_context *cc1200 = dev->data;
 
 	if (atomic_get(&cc1200->rx) == 0) {
 		uint8_t status = read_reg_rssi0(cc1200);
@@ -543,7 +543,7 @@ static int cc1200_cca(struct device *dev)
 
 static int cc1200_set_channel(struct device *dev, uint16_t channel)
 {
-	struct cc1200_context *cc1200 = dev->driver_data;
+	struct cc1200_context *cc1200 = dev->data;
 
 	/* Unlike usual 15.4 chips, cc1200 is closer to a bare metal radio modem
 	 * and thus does not provide any means to select a channel directly, but
@@ -568,7 +568,7 @@ static int cc1200_set_channel(struct device *dev, uint16_t channel)
 
 static int cc1200_set_txpower(struct device *dev, int16_t dbm)
 {
-	struct cc1200_context *cc1200 = dev->driver_data;
+	struct cc1200_context *cc1200 = dev->data;
 	uint8_t pa_power_ramp;
 
 	LOG_DBG("%d dbm", dbm);
@@ -596,7 +596,7 @@ static int cc1200_tx(struct device *dev,
 		     struct net_pkt *pkt,
 		     struct net_buf *frag)
 {
-	struct cc1200_context *cc1200 = dev->driver_data;
+	struct cc1200_context *cc1200 = dev->data;
 	uint8_t *frame = frag->data;
 	uint8_t len = frag->len;
 	bool status = false;
@@ -667,7 +667,7 @@ out:
 
 static int cc1200_start(struct device *dev)
 {
-	struct cc1200_context *cc1200 = dev->driver_data;
+	struct cc1200_context *cc1200 = dev->data;
 
 	if (!instruct_sidle(cc1200) ||
 	    !instruct_sftx(cc1200) ||
@@ -686,7 +686,7 @@ static int cc1200_start(struct device *dev)
 
 static int cc1200_stop(struct device *dev)
 {
-	struct cc1200_context *cc1200 = dev->driver_data;
+	struct cc1200_context *cc1200 = dev->data;
 
 	enable_gpio0_interrupt(cc1200, false);
 
@@ -700,7 +700,7 @@ static int cc1200_stop(struct device *dev)
 
 static uint16_t cc1200_get_channel_count(struct device *dev)
 {
-	struct cc1200_context *cc1200 = dev->driver_data;
+	struct cc1200_context *cc1200 = dev->data;
 
 	return cc1200->rf_settings->channel_limit;
 }
@@ -711,7 +711,7 @@ static uint16_t cc1200_get_channel_count(struct device *dev)
 
 static int power_on_and_setup(struct device *dev)
 {
-	struct cc1200_context *cc1200 = dev->driver_data;
+	struct cc1200_context *cc1200 = dev->data;
 
 	if (!instruct_sres(cc1200)) {
 		LOG_ERR("Cannot reset");
@@ -736,7 +736,7 @@ static int power_on_and_setup(struct device *dev)
 
 static struct cc1200_gpio_configuration *configure_gpios(struct device *dev)
 {
-	struct cc1200_context *cc1200 = dev->driver_data;
+	struct cc1200_context *cc1200 = dev->data;
 	struct device *gpio = device_get_binding(DT_INST_GPIO_LABEL(0, int_gpios));
 
 	if (!gpio) {
@@ -753,7 +753,7 @@ static struct cc1200_gpio_configuration *configure_gpios(struct device *dev)
 
 static int configure_spi(struct device *dev)
 {
-	struct cc1200_context *cc1200 = dev->driver_data;
+	struct cc1200_context *cc1200 = dev->data;
 
 	cc1200->spi = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!cc1200->spi) {
@@ -789,7 +789,7 @@ static int configure_spi(struct device *dev)
 
 static int cc1200_init(struct device *dev)
 {
-	struct cc1200_context *cc1200 = dev->driver_data;
+	struct cc1200_context *cc1200 = dev->data;
 
 	atomic_set(&cc1200->tx, 0);
 	atomic_set(&cc1200->tx_start, 0);
@@ -828,7 +828,7 @@ static int cc1200_init(struct device *dev)
 static void cc1200_iface_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
-	struct cc1200_context *cc1200 = dev->driver_data;
+	struct cc1200_context *cc1200 = dev->data;
 	uint8_t *mac = get_mac(dev);
 
 	LOG_DBG("");

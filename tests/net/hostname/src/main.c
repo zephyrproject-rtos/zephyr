@@ -69,7 +69,7 @@ static int net_iface_dev_init(struct device *dev)
 
 static uint8_t *net_iface_get_mac(struct device *dev)
 {
-	struct net_if_test *data = dev->driver_data;
+	struct net_if_test *data = dev->data;
 
 	if (data->mac_addr[2] == 0x00) {
 		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
@@ -141,7 +141,7 @@ static struct eth_fake_context eth_fake_data;
 static void eth_fake_iface_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
-	struct eth_fake_context *ctx = dev->driver_data;
+	struct eth_fake_context *ctx = dev->data;
 
 	ctx->iface = iface;
 
@@ -176,7 +176,7 @@ static struct ethernet_api eth_fake_api_funcs = {
 
 static int eth_fake_init(struct device *dev)
 {
-	struct eth_fake_context *ctx = dev->driver_data;
+	struct eth_fake_context *ctx = dev->data;
 
 	ctx->promisc_mode = false;
 
@@ -229,7 +229,7 @@ static void test_iface_setup(void)
 
 	idx = net_if_get_by_iface(iface1);
 	((struct net_if_test *)
-	 net_if_get_device(iface1)->driver_data)->idx = idx;
+	 net_if_get_device(iface1)->data)->idx = idx;
 
 	DBG("Interfaces: [%d] iface1 %p\n",
 	    net_if_get_by_iface(iface1), iface1);

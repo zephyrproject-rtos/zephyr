@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_driver_dac
- * @{
- * @defgroup t_dac_basic test_dac_basic_operations
- * @}
- */
-
 #include <zephyr.h>
 #include <ztest.h>
 

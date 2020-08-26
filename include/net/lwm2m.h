@@ -24,6 +24,7 @@
 #define ZEPHYR_INCLUDE_NET_LWM2M_H_
 
 #include <kernel.h>
+#include <sys/mutex.h>
 #include <net/coap.h>
 
 /**
@@ -69,6 +70,7 @@ struct lwm2m_ctx {
 	struct coap_pending pendings[CONFIG_LWM2M_ENGINE_MAX_PENDING];
 	struct coap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES];
 	struct k_delayed_work retransmit_work;
+	struct sys_mutex send_lock;
 
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 	/** TLS tag is set by client as a reference used when the
@@ -90,6 +92,9 @@ struct lwm2m_ctx {
 
 	/** Current index of Security Object used for server credentials */
 	int sec_obj_inst;
+
+	/** Current index of Server Object used in this context. */
+	int srv_obj_inst;
 
 	/** Flag to enable BOOTSTRAP interface.  See Section 5.2
 	 *  "Bootstrap Interface" of LwM2M Technical Specification 1.0.2

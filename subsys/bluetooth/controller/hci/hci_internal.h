@@ -29,15 +29,6 @@ extern atomic_t hci_state_mask;
 				     * data)
 				     */
 
-
-#if defined(CONFIG_BT_LL_SW_SPLIT)
-#define PDU_DATA(node_rx) ((void *)node_rx->pdu)
-#else
-#define PDU_DATA(node_rx) ((void *) \
-				((struct radio_pdu_node_rx *)node_rx)->pdu_data)
-#endif /* CONFIG_BT_LL_SW_SPLIT */
-
-
 void hci_init(struct k_poll_signal *signal_host_buf);
 struct net_buf *hci_cmd_handle(struct net_buf *cmd, void **node_rx);
 void hci_evt_encode(struct node_rx_pdu *node_rx, struct net_buf *buf);
@@ -57,5 +48,3 @@ uint8_t hci_vendor_read_static_addr(struct bt_hci_vs_static_addr addrs[],
 void hci_vendor_read_key_hierarchy_roots(uint8_t ir[16], uint8_t er[16]);
 int hci_vendor_cmd_handle_common(uint16_t ocf, struct net_buf *cmd,
 			     struct net_buf **evt);
-void *hci_cmd_complete(struct net_buf **buf, uint8_t plen);
-void hci_evt_create(struct net_buf *buf, uint8_t evt, uint8_t len);

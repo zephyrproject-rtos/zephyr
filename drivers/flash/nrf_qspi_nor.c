@@ -16,7 +16,14 @@
 #include "flash_priv.h"
 #include <nrfx_qspi.h>
 
-#define qspi_nor_config spi_nor_config
+struct qspi_nor_config {
+       /* JEDEC id from devicetree */
+       uint8_t id[SPI_NOR_MAX_ID_LEN];
+
+       /* Size from devicetree, in bytes */
+       uint32_t size;
+};
+
 #define QSPI_NOR_MAX_ID_LEN SPI_NOR_MAX_ID_LEN
 
 /* Status register bits */
@@ -30,6 +37,8 @@
 #define QSPI_NODE DT_BUS(DT_DRV_INST(0))
 #define QSPI_PROP_AT(prop, idx) DT_PROP_BY_IDX(QSPI_NODE, prop, idx)
 #define QSPI_PROP_LEN(prop) DT_PROP_LEN(QSPI_NODE, prop)
+
+#define WORD_SIZE 4
 
 LOG_MODULE_REGISTER(qspi_nor, CONFIG_FLASH_LOG_LEVEL);
 
@@ -230,7 +239,7 @@ static inline int qspi_get_zephyr_ret_code(nrfx_err_t res)
 
 static inline struct qspi_nor_data *get_dev_data(struct device *dev)
 {
-	return dev->driver_data;
+	return dev->data;
 }
 
 static inline void qspi_lock(struct device *dev)
@@ -328,7 +337,7 @@ static int qspi_erase(struct device *dev, uint32_t addr, uint32_t size)
 	}
 
 	int rv = 0;
-	const struct qspi_nor_config *params = dev->config_info;
+	const struct qspi_nor_config *params = dev->config;
 
 	qspi_lock(dev);
 	while ((rv == 0) && (size > 0)) {
@@ -503,30 +512,89 @@ static inline int qspi_nor_read_id(struct device *dev,
 	return 0;
 }
 
+static inline nrfx_err_t read_non_aligned(struct device *dev, off_t addr,
+					  void *dest, size_t size)
+{
+	uint8_t __aligned(WORD_SIZE) buf[WORD_SIZE * 2];
+	uint8_t *dptr = dest;
+
+	off_t flash_prefix = (WORD_SIZE - (addr % WORD_SIZE)) % WORD_SIZE;
+
+	if (flash_prefix > size) {
+		flash_prefix = size;
+	}
+
+	off_t dest_prefix = (WORD_SIZE - (off_t)dptr % WORD_SIZE) % WORD_SIZE;
+
+	if (dest_prefix > size) {
+		dest_prefix = size;
+	}
+
+	off_t flash_suffix = (size - flash_prefix) % WORD_SIZE;
+	off_t flash_middle = size - flash_prefix - flash_suffix;
+	off_t dest_middle = size - dest_prefix -
+			    (size - dest_prefix) % WORD_SIZE;
+
+	if (flash_middle > dest_middle) {
+		flash_middle = dest_middle;
+		flash_suffix = size - flash_prefix - flash_middle;
+	}
+
+	nrfx_err_t res = NRFX_SUCCESS;
+
+	/* read from aligned flash to aligned memory */
+	if (flash_middle != 0) {
+		res = nrfx_qspi_read(dptr + dest_prefix, flash_middle,
+				     addr + flash_prefix);
+		qspi_wait_for_completion(dev, res);
+		if (res != NRFX_SUCCESS) {
+			return res;
+		}
+
+		/* perform shift in RAM */
+		if (flash_prefix != dest_prefix) {
+			memmove(dptr + flash_prefix, dptr + dest_prefix, flash_middle);
+		}
+	}
+
+	/* read prefix */
+	if (flash_prefix != 0) {
+		res = nrfx_qspi_read(buf, WORD_SIZE, addr -
+				     (WORD_SIZE - flash_prefix));
+		qspi_wait_for_completion(dev, res);
+		if (res != NRFX_SUCCESS) {
+			return res;
+		}
+		memcpy(dptr, buf + WORD_SIZE - flash_prefix, flash_prefix);
+	}
+
+	/* read suffix */
+	if (flash_suffix != 0) {
+		res = nrfx_qspi_read(buf, WORD_SIZE * 2,
+				     addr + flash_prefix + flash_middle);
+		qspi_wait_for_completion(dev, res);
+		if (res != NRFX_SUCCESS) {
+			return res;
+		}
+		memcpy(dptr + flash_prefix + flash_middle, buf, flash_suffix);
+	}
+
+	return res;
+}
+
 static int qspi_nor_read(struct device *dev, off_t addr, void *dest,
 			 size_t size)
 {
-	void *dptr = dest;
-	size_t dlen = size;
-	uint8_t __aligned(4) buf[4];
-
 	if (!dest) {
 		return -EINVAL;
 	}
 
-	/* read size must be non-zero multiple of 4 bytes */
-	if ((size > 0) && (size < 4U)) {
-		dest = buf;
-		size = sizeof(buf);
-	} else if (((size % 4U) != 0) || (size == 0)) {
-		return -EINVAL;
-	}
-	/* address must be 4-byte aligned */
-	if ((addr % 4U) != 0) {
-		return -EINVAL;
+	/* read size must be non-zero */
+	if (!size) {
+		return 0;
 	}
 
-	const struct qspi_nor_config *params = dev->config_info;
+	const struct qspi_nor_config *params = dev->config;
 
 	/* affected region should be within device */
 	if (addr < 0 ||
@@ -539,17 +607,11 @@ static int qspi_nor_read(struct device *dev, off_t addr, void *dest,
 
 	qspi_lock(dev);
 
-	nrfx_err_t res = nrfx_qspi_read(dest, size, addr);
-
-	qspi_wait_for_completion(dev, res);
+	nrfx_err_t res = read_non_aligned(dev, addr, dest, size);
 
 	qspi_unlock(dev);
 
 	int rc = qspi_get_zephyr_ret_code(res);
-
-	if ((rc == 0) && (dest != dptr)) {
-		memcpy(dptr, dest, dlen);
-	}
 
 	return rc;
 }
@@ -631,8 +693,8 @@ static int qspi_nor_write(struct device *dev, off_t addr, const void *src,
 		return -EINVAL;
 	}
 
-	struct qspi_nor_data *const driver_data = dev->driver_data;
-	const struct qspi_nor_config *params = dev->config_info;
+	struct qspi_nor_data *const driver_data = dev->data;
+	const struct qspi_nor_config *params = dev->config;
 
 	if (driver_data->write_protection) {
 		return -EACCES;
@@ -667,8 +729,8 @@ static int qspi_nor_write(struct device *dev, off_t addr, const void *src,
 
 static int qspi_nor_erase(struct device *dev, off_t addr, size_t size)
 {
-	struct qspi_nor_data *const driver_data = dev->driver_data;
-	const struct qspi_nor_config *params = dev->config_info;
+	struct qspi_nor_data *const driver_data = dev->data;
+	const struct qspi_nor_config *params = dev->config;
 
 	if (driver_data->write_protection) {
 		return -EACCES;
@@ -691,7 +753,7 @@ static int qspi_nor_erase(struct device *dev, off_t addr, size_t size)
 static int qspi_nor_write_protection_set(struct device *dev,
 					 bool write_protect)
 {
-	struct qspi_nor_data *const driver_data = dev->driver_data;
+	struct qspi_nor_data *const driver_data = dev->data;
 
 	int ret = 0;
 	struct qspi_cmd cmd = {
@@ -716,7 +778,7 @@ static int qspi_nor_write_protection_set(struct device *dev,
  */
 static int qspi_nor_configure(struct device *dev)
 {
-	const struct qspi_nor_config *params = dev->config_info;
+	const struct qspi_nor_config *params = dev->config;
 
 	int ret = qspi_nrfx_configure(dev);
 

@@ -132,7 +132,7 @@ struct bma280_data {
 	sensor_trigger_handler_t any_motion_handler;
 
 #if defined(CONFIG_BMA280_TRIGGER_OWN_THREAD)
-	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_BMA280_THREAD_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_BMA280_THREAD_STACK_SIZE);
 	struct k_thread thread;
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_BMA280_TRIGGER_GLOBAL_THREAD)

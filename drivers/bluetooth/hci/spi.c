@@ -77,7 +77,7 @@ static K_SEM_DEFINE(sem_initialised, 0, 1);
 static K_SEM_DEFINE(sem_request, 0, 1);
 static K_SEM_DEFINE(sem_busy, 1, 1);
 
-static K_THREAD_STACK_DEFINE(spi_rx_stack, 256);
+static K_KERNEL_STACK_DEFINE(spi_rx_stack, 256);
 static struct k_thread spi_rx_thread_data;
 
 #if defined(CONFIG_BT_DEBUG_HCI_DRIVER)
@@ -258,7 +258,8 @@ static int configure_cs(void)
 #ifdef GPIO_CS_PIN
 	static struct spi_cs_control spi_conf_cs;
 
-	spi_conf_cs.gpio_pin = GPIO_CS_PIN,
+	spi_conf_cs.gpio_pin = GPIO_CS_PIN;
+	spi_conf_cs.gpio_dt_flags = GPIO_CS_FLAGS;
 	spi_conf_cs.gpio_dev = device_get_binding(
 		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
 	if (!spi_conf_cs.gpio_dev) {
@@ -503,7 +504,7 @@ static int bt_spi_open(void)
 
 	/* Start RX thread */
 	k_thread_create(&spi_rx_thread_data, spi_rx_stack,
-			K_THREAD_STACK_SIZEOF(spi_rx_stack),
+			K_KERNEL_STACK_SIZEOF(spi_rx_stack),
 			(k_thread_entry_t)bt_spi_rx_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_RX_PRIO - 1),
 			0, K_NO_WAIT);

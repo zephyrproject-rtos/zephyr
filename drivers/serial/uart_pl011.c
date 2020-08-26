@@ -141,9 +141,9 @@ struct pl011_data {
 		PL011_IMSC_RTIM)
 
 #define DEV_CFG(dev) \
-	((const struct uart_device_config * const)(dev)->config_info)
+	((const struct uart_device_config * const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct pl011_data *)(dev)->driver_data)
+	((struct pl011_data *)(dev)->data)
 #define PL011_REGS(dev) \
 	((volatile struct pl011_regs  *)(DEV_CFG(dev))->base)
 
@@ -402,7 +402,7 @@ void pl011_isr(void *arg)
 
 	/* Verify if the callback has been registered */
 	if (data->irq_cb) {
-		data->irq_cb(data->irq_cb_data);
+		data->irq_cb(dev, data->irq_cb_data);
 	}
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */

@@ -1,0 +1,12 @@
+# NPCX PINMUX driver configuration options
+
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config PINMUX_NPCX
+	bool "Nuvoton NPCX embedd controller (EC) pinmux driver"
+	depends on SOC_FAMILY_NPCX
+	help
+	  This option enables the pin-mux driver for NPCX family
+	  of processors.
+	  Say y if you wish to use pin-mux module on NPCX MCU.

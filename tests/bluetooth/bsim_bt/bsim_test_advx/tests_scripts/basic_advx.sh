@@ -31,7 +31,7 @@ Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_advx_prj_conf\
   -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=scanx
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
-  -D=2 -sim_length=10e6 $@
+  -D=2 -sim_length=12e6 $@
 
 for process_id in $process_ids; do
   wait $process_id || let "exit_code=$?"

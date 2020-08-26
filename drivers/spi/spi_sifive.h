@@ -13,8 +13,8 @@
 #include <device.h>
 #include <drivers/spi.h>
 
-#define SPI_CFG(dev) ((struct spi_sifive_cfg *) ((dev)->config_info))
-#define SPI_DATA(dev) ((struct spi_sifive_data *) ((dev)->driver_data))
+#define SPI_CFG(dev) ((struct spi_sifive_cfg *) ((dev)->config))
+#define SPI_DATA(dev) ((struct spi_sifive_data *) ((dev)->data))
 
 #define SPI_REG(dev, offset) ((mem_addr_t) (SPI_CFG(dev)->base + (offset)))
 

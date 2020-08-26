@@ -21,6 +21,10 @@
 #define DAC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(dac0))
 #define DAC_CHANNEL_ID		0
 #define DAC_RESOLUTION		12
+#elif defined(CONFIG_BOARD_ARDUINO_ZERO)
+#define DAC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(dac0))
+#define DAC_CHANNEL_ID		0
+#define DAC_RESOLUTION		10
 #else
 #error "Unsupported board."
 #endif

@@ -44,9 +44,9 @@ struct uart_sam_dev_data {
 };
 
 #define DEV_CFG(dev) \
-	((const struct uart_sam_dev_cfg *const)(dev)->config_info)
+	((const struct uart_sam_dev_cfg *const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct uart_sam_dev_data *const)(dev)->driver_data)
+	((struct uart_sam_dev_data *const)(dev)->data)
 
 
 static int baudrate_set(Uart *const uart, uint32_t baudrate,
@@ -294,7 +294,7 @@ static void uart_sam_isr(void *arg)
 	struct uart_sam_dev_data *const dev_data = DEV_DATA(dev);
 
 	if (dev_data->irq_cb) {
-		dev_data->irq_cb(dev_data->irq_cb_data);
+		dev_data->irq_cb(dev, dev_data->irq_cb_data);
 	}
 }
 

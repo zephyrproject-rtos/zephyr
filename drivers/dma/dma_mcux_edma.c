@@ -37,9 +37,9 @@ static __aligned(32) edma_tcd_t
 struct call_back {
 	edma_transfer_config_t transferConfig;
 	edma_handle_t edma_handle;
-	void *callback_arg;
-	void (*dma_callback)(void *callback_arg, uint32_t channel,
-			     int error_code);
+	struct device *dev;
+	void *user_data;
+	dma_callback_t dma_callback;
 	enum dma_channel_direction dir;
 	bool busy;
 };
@@ -49,8 +49,8 @@ struct dma_mcux_edma_data {
 };
 
 #define DEV_CFG(dev)                                                           \
-	((const struct dma_mcux_edma_config *const)dev->config_info)
-#define DEV_DATA(dev) ((struct dma_mcux_edma_data *)dev->driver_data)
+	((const struct dma_mcux_edma_config *const)dev->config)
+#define DEV_DATA(dev) ((struct dma_mcux_edma_data *)dev->data)
 #define DEV_BASE(dev) ((DMA_Type *)DEV_CFG(dev)->base)
 
 #define DEV_DMAMUX_BASE(dev) ((DMAMUX_Type *)DEV_CFG(dev)->dmamux_base)
@@ -73,7 +73,7 @@ static void nxp_edma_callback(edma_handle_t *handle, void *param,
 		ret = 0;
 	}
 	LOG_DBG("transfer %d", tcds);
-	data->dma_callback(data->callback_arg, channel, ret);
+	data->dma_callback(data->dev, data->user_data, channel, ret);
 }
 
 static void channel_irq(edma_handle_t *handle)
@@ -328,8 +328,9 @@ static int dma_mcux_edma_configure(struct device *dev, uint32_t channel,
 	data->busy = false;
 	if (config->dma_callback) {
 		LOG_DBG("INSTALL call back on channel %d", channel);
-		data->callback_arg = config->callback_arg;
+		data->user_data = config->user_data;
 		data->dma_callback = config->dma_callback;
+		data->dev = dev;
 	}
 
 	irq_unlock(key);

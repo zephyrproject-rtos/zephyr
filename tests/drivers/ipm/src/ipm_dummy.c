@@ -24,7 +24,7 @@
 static void ipm_dummy_isr(void *data)
 {
 	struct device *d = (struct device *)data;
-	struct ipm_dummy_driver_data *driver_data = d->driver_data;
+	struct ipm_dummy_driver_data *driver_data = d->data;
 
 	/* In a real driver the interrupt simply wouldn't fire, we fake
 	 * that here
@@ -34,7 +34,8 @@ static void ipm_dummy_isr(void *data)
 	}
 
 	if (driver_data->cb) {
-		driver_data->cb(driver_data->cb_context, driver_data->regs.id,
+		driver_data->cb(d,
+				driver_data->cb_context, driver_data->regs.id,
 				(volatile void *)&driver_data->regs.data);
 	}
 	driver_data->regs.busy = 0U;
@@ -51,7 +52,7 @@ static int ipm_dummy_send(struct device *d, int wait, uint32_t id,
 	const uint8_t *data8;
 	int i;
 
-	driver_data = d->driver_data;
+	driver_data = d->data;
 	if (size > ipm_max_data_size_get(d)) {
 		return -EMSGSIZE;
 	}
@@ -84,14 +85,14 @@ static void ipm_dummy_register_callback(struct device *d, ipm_callback_t cb,
 {
 	struct ipm_dummy_driver_data *driver_data;
 
-	driver_data = d->driver_data;
+	driver_data = d->data;
 	driver_data->cb = cb;
 	driver_data->cb_context = cb_context;
 }
 
 static int ipm_dummy_set_enabled(struct device *d, int enable)
 {
-	struct ipm_dummy_driver_data *driver_data = d->driver_data;
+	struct ipm_dummy_driver_data *driver_data = d->data;
 
 	driver_data->regs.enabled = enable;
 	if (enable) {
@@ -127,7 +128,7 @@ int ipm_dummy_init(struct device *d)
 {
 	struct ipm_dummy_driver_data *driver_data;
 
-	driver_data = d->driver_data;
+	driver_data = d->data;
 
 	return 0;
 }

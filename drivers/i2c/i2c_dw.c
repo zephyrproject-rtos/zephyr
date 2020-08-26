@@ -34,15 +34,20 @@ LOG_MODULE_REGISTER(i2c_dw);
 
 #include "i2c-priv.h"
 
+static inline volatile struct i2c_dw_registers *get_regs(struct device *dev)
+{
+	return (volatile struct i2c_dw_registers *)DEVICE_MMIO_GET(dev);
+}
+
 static inline void i2c_dw_data_ask(struct device *dev)
 {
-	struct i2c_dw_dev_config * const dw = dev->driver_data;
+	struct i2c_dw_dev_config * const dw = dev->data;
 	uint32_t data;
 	uint8_t tx_empty;
 	int8_t rx_empty;
 	uint8_t cnt;
 
-	volatile struct i2c_dw_registers * const regs = dw->regs;
+	volatile struct i2c_dw_registers * const regs = get_regs(dev);
 
 	/* No more bytes to request, so command queue is no longer needed */
 	if (dw->request_bytes == 0U) {
@@ -93,9 +98,9 @@ static inline void i2c_dw_data_ask(struct device *dev)
 
 static void i2c_dw_data_read(struct device *dev)
 {
-	struct i2c_dw_dev_config * const dw = dev->driver_data;
+	struct i2c_dw_dev_config * const dw = dev->data;
 
-	volatile struct i2c_dw_registers * const regs = dw->regs;
+	volatile struct i2c_dw_registers * const regs = get_regs(dev);
 
 	while (regs->ic_status.bits.rfne && (dw->xfr_len > 0)) {
 		dw->xfr_buf[0] = regs->ic_data_cmd.raw;
@@ -119,10 +124,10 @@ static void i2c_dw_data_read(struct device *dev)
 
 static int i2c_dw_data_send(struct device *dev)
 {
-	struct i2c_dw_dev_config * const dw = dev->driver_data;
+	struct i2c_dw_dev_config * const dw = dev->data;
 	uint32_t data = 0U;
 
-	volatile struct i2c_dw_registers * const regs = dw->regs;
+	volatile struct i2c_dw_registers * const regs = get_regs(dev);
 
 	/* Nothing to send anymore, mask the interrupt */
 	if (dw->xfr_len == 0U) {
@@ -163,10 +168,10 @@ static int i2c_dw_data_send(struct device *dev)
 
 static inline void i2c_dw_transfer_complete(struct device *dev)
 {
-	struct i2c_dw_dev_config * const dw = dev->driver_data;
+	struct i2c_dw_dev_config * const dw = dev->data;
 	uint32_t value;
 
-	volatile struct i2c_dw_registers * const regs = dw->regs;
+	volatile struct i2c_dw_registers * const regs = get_regs(dev);
 
 	regs->ic_intr_mask.raw = DW_DISABLE_ALL_I2C_INT;
 	value = regs->ic_clr_intr;
@@ -177,12 +182,12 @@ static inline void i2c_dw_transfer_complete(struct device *dev)
 static void i2c_dw_isr(void *arg)
 {
 	struct device *port = (struct device *)arg;
-	struct i2c_dw_dev_config * const dw = port->driver_data;
+	struct i2c_dw_dev_config * const dw = port->data;
 	union ic_interrupt_register intr_stat;
 	uint32_t value;
 	int ret = 0;
 
-	volatile struct i2c_dw_registers * const regs = dw->regs;
+	volatile struct i2c_dw_registers * const regs = get_regs(port);
 
 	/* Cache ic_intr_stat for processing, so there is no need to read
 	 * the register multiple times.
@@ -257,10 +262,10 @@ done:
 
 static int i2c_dw_setup(struct device *dev, uint16_t slave_address)
 {
-	struct i2c_dw_dev_config * const dw = dev->driver_data;
+	struct i2c_dw_dev_config * const dw = dev->data;
 	uint32_t value;
 	union ic_con_register ic_con;
-	volatile struct i2c_dw_registers * const regs = dw->regs;
+	volatile struct i2c_dw_registers * const regs = get_regs(dev);
 
 	ic_con.raw = 0U;
 
@@ -381,13 +386,13 @@ static int i2c_dw_transfer(struct device *dev,
 			   struct i2c_msg *msgs, uint8_t num_msgs,
 			   uint16_t slave_address)
 {
-	struct i2c_dw_dev_config * const dw = dev->driver_data;
+	struct i2c_dw_dev_config * const dw = dev->data;
 	struct i2c_msg *cur_msg = msgs;
 	uint8_t msg_left = num_msgs;
 	uint8_t pflags;
 	int ret;
 
-	volatile struct i2c_dw_registers * const regs = dw->regs;
+	volatile struct i2c_dw_registers * const regs = get_regs(dev);
 
 	__ASSERT_NO_MSG(msgs);
 	if (!num_msgs) {
@@ -491,11 +496,11 @@ static int i2c_dw_transfer(struct device *dev,
 
 static int i2c_dw_runtime_configure(struct device *dev, uint32_t config)
 {
-	struct i2c_dw_dev_config * const dw = dev->driver_data;
+	struct i2c_dw_dev_config * const dw = dev->data;
 	uint32_t	value = 0U;
 	uint32_t	rc = 0U;
 
-	volatile struct i2c_dw_registers * const regs = dw->regs;
+	volatile struct i2c_dw_registers * const regs = get_regs(dev);
 
 	dw->app_config = config;
 
@@ -600,25 +605,32 @@ static const struct i2c_driver_api funcs = {
 
 static int i2c_dw_initialize(struct device *dev)
 {
-	const struct i2c_dw_rom_config * const rom = dev->config_info;
-	struct i2c_dw_dev_config * const dw = dev->driver_data;
+	const struct i2c_dw_rom_config * const rom = dev->config;
+	struct i2c_dw_dev_config * const dw = dev->data;
 	volatile struct i2c_dw_registers *regs;
 
 #ifdef I2C_DW_PCIE_ENABLED
 	if (rom->pcie) {
+		uintptr_t mmio_phys_addr;
+
 		if (!pcie_probe(rom->pcie_bdf, rom->pcie_id)) {
 			return -EINVAL;
 		}
 
-		dw->regs = UINT_TO_POINTER(pcie_get_mbar(rom->pcie_bdf, 0));
+		mmio_phys_addr = pcie_get_mbar(rom->pcie_bdf, 0);
 		pcie_set_cmd(rom->pcie_bdf, PCIE_CONF_CMDSTAT_MEM, true);
-	}
+
+		device_map(DEVICE_MMIO_RAM_PTR(dev), mmio_phys_addr,
+			   0x1000, K_MEM_CACHE_NONE);
+	} else
 #endif
+	{
+		DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+	}
 
 	k_sem_init(&dw->device_sync_sem, 0, UINT_MAX);
 
-	regs = dw->regs;
-
+	regs = get_regs(dev);
 	/* verify that we have a valid DesignWare register first */
 	if (regs->ic_comp_type != I2C_DW_MAGIC_KEY) {
 		LOG_DBG("I2C: DesignWare magic key not found, check base "

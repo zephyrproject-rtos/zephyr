@@ -90,7 +90,7 @@ static int lsm6dsl_gyro_range_to_fs_val(int32_t range)
 
 static inline int lsm6dsl_reboot(struct device *dev)
 {
-	struct lsm6dsl_data *data = dev->driver_data;
+	struct lsm6dsl_data *data = dev->data;
 
 	if (data->hw_tf->update_reg(data, LSM6DSL_REG_CTRL3_C,
 				    LSM6DSL_MASK_CTRL3_C_BOOT,
@@ -106,7 +106,7 @@ static inline int lsm6dsl_reboot(struct device *dev)
 
 static int lsm6dsl_accel_set_fs_raw(struct device *dev, uint8_t fs)
 {
-	struct lsm6dsl_data *data = dev->driver_data;
+	struct lsm6dsl_data *data = dev->data;
 
 	if (data->hw_tf->update_reg(data,
 				    LSM6DSL_REG_CTRL1_XL,
@@ -122,7 +122,7 @@ static int lsm6dsl_accel_set_fs_raw(struct device *dev, uint8_t fs)
 
 static int lsm6dsl_accel_set_odr_raw(struct device *dev, uint8_t odr)
 {
-	struct lsm6dsl_data *data = dev->driver_data;
+	struct lsm6dsl_data *data = dev->data;
 
 	if (data->hw_tf->update_reg(data,
 				    LSM6DSL_REG_CTRL1_XL,
@@ -138,7 +138,7 @@ static int lsm6dsl_accel_set_odr_raw(struct device *dev, uint8_t odr)
 
 static int lsm6dsl_gyro_set_fs_raw(struct device *dev, uint8_t fs)
 {
-	struct lsm6dsl_data *data = dev->driver_data;
+	struct lsm6dsl_data *data = dev->data;
 
 	if (fs == GYRO_FULLSCALE_125) {
 		if (data->hw_tf->update_reg(data,
@@ -161,7 +161,7 @@ static int lsm6dsl_gyro_set_fs_raw(struct device *dev, uint8_t fs)
 
 static int lsm6dsl_gyro_set_odr_raw(struct device *dev, uint8_t odr)
 {
-	struct lsm6dsl_data *data = dev->driver_data;
+	struct lsm6dsl_data *data = dev->data;
 
 	if (data->hw_tf->update_reg(data,
 				    LSM6DSL_REG_CTRL2_G,
@@ -196,7 +196,7 @@ static int lsm6dsl_accel_odr_set(struct device *dev, uint16_t freq)
 static int lsm6dsl_accel_range_set(struct device *dev, int32_t range)
 {
 	int fs;
-	struct lsm6dsl_data *data = dev->driver_data;
+	struct lsm6dsl_data *data = dev->data;
 
 	fs = lsm6dsl_accel_range_to_fs_val(range);
 	if (fs < 0) {
@@ -258,7 +258,7 @@ static int lsm6dsl_gyro_odr_set(struct device *dev, uint16_t freq)
 static int lsm6dsl_gyro_range_set(struct device *dev, int32_t range)
 {
 	int fs;
-	struct lsm6dsl_data *data = dev->driver_data;
+	struct lsm6dsl_data *data = dev->data;
 
 	fs = lsm6dsl_gyro_range_to_fs_val(range);
 	if (fs < 0) {
@@ -316,7 +316,7 @@ static int lsm6dsl_attr_set(struct device *dev, enum sensor_channel chan,
 
 static int lsm6dsl_sample_fetch_accel(struct device *dev)
 {
-	struct lsm6dsl_data *data = dev->driver_data;
+	struct lsm6dsl_data *data = dev->data;
 	uint8_t buf[6];
 
 	if (data->hw_tf->read_data(data, LSM6DSL_REG_OUTX_L_XL,
@@ -337,7 +337,7 @@ static int lsm6dsl_sample_fetch_accel(struct device *dev)
 
 static int lsm6dsl_sample_fetch_gyro(struct device *dev)
 {
-	struct lsm6dsl_data *data = dev->driver_data;
+	struct lsm6dsl_data *data = dev->data;
 	uint8_t buf[6];
 
 	if (data->hw_tf->read_data(data, LSM6DSL_REG_OUTX_L_G,
@@ -359,7 +359,7 @@ static int lsm6dsl_sample_fetch_gyro(struct device *dev)
 #if defined(CONFIG_LSM6DSL_ENABLE_TEMP)
 static int lsm6dsl_sample_fetch_temp(struct device *dev)
 {
-	struct lsm6dsl_data *data = dev->driver_data;
+	struct lsm6dsl_data *data = dev->data;
 	uint8_t buf[2];
 
 	if (data->hw_tf->read_data(data, LSM6DSL_REG_OUT_TEMP_L,
@@ -378,7 +378,7 @@ static int lsm6dsl_sample_fetch_temp(struct device *dev)
 #if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL)
 static int lsm6dsl_sample_fetch_magn(struct device *dev)
 {
-	struct lsm6dsl_data *data = dev->driver_data;
+	struct lsm6dsl_data *data = dev->data;
 	uint8_t buf[6];
 
 	if (lsm6dsl_shub_read_external_chip(dev, buf, sizeof(buf)) < 0) {
@@ -399,7 +399,7 @@ static int lsm6dsl_sample_fetch_magn(struct device *dev)
 #if defined(CONFIG_LSM6DSL_EXT0_LPS22HB)
 static int lsm6dsl_sample_fetch_press(struct device *dev)
 {
-	struct lsm6dsl_data *data = dev->driver_data;
+	struct lsm6dsl_data *data = dev->data;
 	uint8_t buf[5];
 
 	if (lsm6dsl_shub_read_external_chip(dev, buf, sizeof(buf)) < 0) {
@@ -651,7 +651,7 @@ static int lsm6dsl_channel_get(struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	struct lsm6dsl_data *data = dev->driver_data;
+	struct lsm6dsl_data *data = dev->data;
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
@@ -706,7 +706,7 @@ static const struct sensor_driver_api lsm6dsl_api_funcs = {
 
 static int lsm6dsl_init_chip(struct device *dev)
 {
-	struct lsm6dsl_data *data = dev->driver_data;
+	struct lsm6dsl_data *data = dev->data;
 	uint8_t chip_id;
 
 	if (lsm6dsl_reboot(dev) < 0) {
@@ -779,8 +779,8 @@ static struct lsm6dsl_config lsm6dsl_config = {
 
 static int lsm6dsl_init(struct device *dev)
 {
-	const struct lsm6dsl_config * const config = dev->config_info;
-	struct lsm6dsl_data *data = dev->driver_data;
+	const struct lsm6dsl_config * const config = dev->config;
+	struct lsm6dsl_data *data = dev->data;
 
 	data->comm_master = device_get_binding(config->comm_master_dev_name);
 	if (!data->comm_master) {

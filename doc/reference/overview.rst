@@ -134,11 +134,6 @@ current :ref:`stability level <api_lifecycle>`.
      - 1.14
      - 2.3
 
-   * - :ref:`i2c_eeprom_slave_api`
-     - Stable
-     - 1.13
-     - 1.13
-
    * - :ref:`i2c_api`
      - Stable
      - 1.0

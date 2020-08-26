@@ -19,8 +19,8 @@ LOG_MODULE_DECLARE(ADT7420, CONFIG_SENSOR_LOG_LEVEL);
 static void setup_int(struct device *dev,
 		      bool enable)
 {
-	struct adt7420_data *drv_data = dev->driver_data;
-	const struct adt7420_dev_config *cfg = dev->config_info;
+	struct adt7420_data *drv_data = dev->data;
+	const struct adt7420_dev_config *cfg = dev->config;
 	gpio_flags_t flags = enable
 		? GPIO_INT_EDGE_TO_ACTIVE
 		: GPIO_INT_DISABLE;
@@ -30,7 +30,7 @@ static void setup_int(struct device *dev,
 
 static void handle_int(struct device *dev)
 {
-	struct adt7420_data *drv_data = dev->driver_data;
+	struct adt7420_data *drv_data = dev->data;
 
 	setup_int(dev, false);
 
@@ -43,8 +43,8 @@ static void handle_int(struct device *dev)
 
 static void process_int(struct device *dev)
 {
-	struct adt7420_data *drv_data = dev->driver_data;
-	const struct adt7420_dev_config *cfg = dev->config_info;
+	struct adt7420_data *drv_data = dev->data;
+	const struct adt7420_dev_config *cfg = dev->config;
 	uint8_t status;
 
 	/* Clear the status */
@@ -80,7 +80,7 @@ static void adt7420_gpio_callback(struct device *dev,
 static void adt7420_thread(int dev_ptr, int unused)
 {
 	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct adt7420_data *drv_data = dev->driver_data;
+	struct adt7420_data *drv_data = dev->data;
 
 	ARG_UNUSED(unused);
 
@@ -104,8 +104,8 @@ int adt7420_trigger_set(struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
-	struct adt7420_data *drv_data = dev->driver_data;
-	const struct adt7420_dev_config *cfg = dev->config_info;
+	struct adt7420_data *drv_data = dev->data;
+	const struct adt7420_dev_config *cfg = dev->config;
 
 	setup_int(dev, false);
 
@@ -133,8 +133,8 @@ int adt7420_trigger_set(struct device *dev,
 
 int adt7420_init_interrupt(struct device *dev)
 {
-	struct adt7420_data *drv_data = dev->driver_data;
-	const struct adt7420_dev_config *cfg = dev->config_info;
+	struct adt7420_data *drv_data = dev->data;
+	const struct adt7420_dev_config *cfg = dev->config;
 
 	drv_data->gpio = device_get_binding(cfg->int_name);
 	if (drv_data->gpio == NULL) {

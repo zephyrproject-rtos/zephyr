@@ -73,7 +73,7 @@ static struct ieee802154_radio_api rapi = {
 	.ed_scan = scan_mock
 };
 
-static struct device radio = { .driver_api = &rapi };
+static struct device radio = { .api = &rapi };
 
 static int scan_mock(struct device *dev, uint16_t duration,
 		     energy_scan_done_cb_t done_cb)
@@ -149,7 +149,7 @@ static enum ieee802154_hw_caps get_capabilities(struct device *dev)
 
 	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ |
 	       IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_FILTER |
-	       IEEE802154_HW_ENERGY_SCAN;
+	       IEEE802154_HW_ENERGY_SCAN | IEEE802154_HW_SLEEP_TO_TX;
 }
 
 static enum ieee802154_hw_caps get_capabilities_caps_mock(struct device *dev)
@@ -659,9 +659,7 @@ static void test_get_caps_test(void)
 
 	/* proper mapping */
 	ztest_returns_value(get_capabilities_caps_mock, IEEE802154_HW_CSMA);
-	zassert_equal(otPlatRadioGetCaps(ot),
-		      OT_RADIO_CAPS_TRANSMIT_RETRIES |
-			      OT_RADIO_CAPS_CSMA_BACKOFF,
+	zassert_equal(otPlatRadioGetCaps(ot), OT_RADIO_CAPS_CSMA_BACKOFF,
 		      "Incorrect capabilities returned.");
 
 	ztest_returns_value(get_capabilities_caps_mock,
@@ -674,6 +672,11 @@ static void test_get_caps_test(void)
 	zassert_equal(otPlatRadioGetCaps(ot), OT_RADIO_CAPS_ACK_TIMEOUT,
 		      "Incorrect capabilities returned.");
 
+	ztest_returns_value(get_capabilities_caps_mock,
+			    IEEE802154_HW_SLEEP_TO_TX);
+	zassert_equal(otPlatRadioGetCaps(ot), OT_RADIO_CAPS_SLEEP_TO_TX,
+		      "Incorrect capabilities returned.");
+
 	/* all at once */
 	ztest_returns_value(
 		get_capabilities_caps_mock,
@@ -681,11 +684,11 @@ static void test_get_caps_test(void)
 			IEEE802154_HW_FILTER | IEEE802154_HW_CSMA |
 			IEEE802154_HW_2_4_GHZ | IEEE802154_HW_TX_RX_ACK |
 			IEEE802154_HW_SUB_GHZ | IEEE802154_HW_ENERGY_SCAN |
-			IEEE802154_HW_TXTIME);
+			IEEE802154_HW_TXTIME | IEEE802154_HW_SLEEP_TO_TX);
 	zassert_equal(
 		otPlatRadioGetCaps(ot),
-		OT_RADIO_CAPS_TRANSMIT_RETRIES | OT_RADIO_CAPS_CSMA_BACKOFF |
-			OT_RADIO_CAPS_ENERGY_SCAN | OT_RADIO_CAPS_ACK_TIMEOUT,
+		OT_RADIO_CAPS_CSMA_BACKOFF | OT_RADIO_CAPS_ENERGY_SCAN |
+			OT_RADIO_CAPS_ACK_TIMEOUT | OT_RADIO_CAPS_SLEEP_TO_TX,
 		"Incorrect capabilities returned.");
 
 	rapi.get_capabilities = get_capabilities;

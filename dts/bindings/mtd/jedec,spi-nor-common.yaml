@@ -8,13 +8,22 @@
 properties:
   jedec-id:
     type: uint8-array
-    required: true
+    required: false
     description: JEDEC ID as manufacturer ID, memory type, memory density
+
+  sfdp-bfp:
+    type: uint8-array
+    required: false
+    description: |
+      Contains the 32-bit words in little-endian byte order from the
+      JESD216 Serial Flash Discoverable Parameters Basic Flash
+      Parameters table.  This provides flash-specific configuration
+      information in cases were runtime configuration is not desired.
 
   has-be32k:
     type: boolean
     required: false
-    description: Indicates the device supports the BE32K (0xD8) command
+    description: Not used after Zephyr 2.3.0
 
   requires-ulbpr:
     type: boolean
@@ -83,5 +92,5 @@ properties:
 
   size:
     type: int
-    required: true
+    required: false
     description: flash capacity in bits

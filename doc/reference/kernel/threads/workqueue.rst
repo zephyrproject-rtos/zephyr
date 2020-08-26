@@ -179,7 +179,7 @@ Implementation
 Defining a Workqueue
 ====================
 
-A workqueue is defined using a variable of type :c:type:`struct k_work_q`.
+A workqueue is defined using a variable of type :c:type:`k_work_q`.
 The workqueue is initialized by defining the stack area used by its thread
 and then calling :cpp:func:`k_work_q_start()`. The stack area must be defined
 using :c:macro:`K_THREAD_STACK_DEFINE` to ensure it is properly set up in
@@ -202,7 +202,7 @@ The following code defines and initializes a workqueue.
 Submitting a Work Item
 ======================
 
-A work item is defined using a variable of type :c:type:`struct k_work`.
+A work item is defined using a variable of type :c:type:`k_work`.
 It must then be initialized by calling :cpp:func:`k_work_init()`.
 
 An initialized work item can be submitted to the system workqueue by
@@ -250,7 +250,7 @@ Submitting a Delayed Work Item
 ==============================
 
 A delayed work item is defined using a variable of type
-:c:type:`struct k_delayed_work`. It must then be initialized by calling
+:c:type:`k_delayed_work`. It must then be initialized by calling
 :cpp:func:`k_delayed_work_init()`.
 
 An initialized delayed work item can be submitted to the system workqueue by

@@ -77,7 +77,7 @@ static int write_read(const char *tag,
 	TC_PRINT("creating and writing %zu %zu-byte blocks\n",
 		 nbuf, buf_size);
 
-	rc = fs_open(&file, path.path);
+	rc = fs_open(&file, path.path, FS_O_CREATE | FS_O_RDWR);
 	if (rc != 0) {
 		TC_PRINT("Failed to open %s for write: %d\n", path.path, rc);
 		goto out_buf;
@@ -116,7 +116,7 @@ static int write_read(const char *tag,
 		 (uint32_t)(total * 1000U / (t1 - t0)),
 		 (uint32_t)(total * 1000U / (t1 - t0) / 1024U));
 
-	rc = fs_open(&file, path.path);
+	rc = fs_open(&file, path.path, FS_O_CREATE | FS_O_RDWR);
 	if (rc != 0) {
 		TC_PRINT("Failed to open %s for write: %d\n", path.path, rc);
 		goto out_buf;

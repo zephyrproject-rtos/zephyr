@@ -136,11 +136,9 @@ int cmd_test_end(const struct shell *shell, size_t  argc, char *argv[])
 #define AD_OP 0x03
 #define AD_FRAG_PREF 0x00
 
-#if defined(CONFIG_BT_LL_SW_SPLIT)
 static const struct bt_data adv_data[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_NO_BREDR),
 	};
-#endif
 
 int cmd_advx(const struct shell *shell, size_t argc, char *argv[])
 {
@@ -257,7 +255,6 @@ do_enable:
 		goto exit;
 	}
 
-#if defined(CONFIG_BT_LL_SW_SPLIT)
 	if (ad) {
 		shell_print(shell, "ad data set...");
 		err = ll_adv_aux_ad_data_set(handle, AD_OP, AD_FRAG_PREF,
@@ -267,17 +264,23 @@ do_enable:
 			goto exit;
 		}
 	}
-#endif
 
 disable:
 	shell_print(shell, "adv enable (%u)...", enable);
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	err = ll_adv_enable(handle, enable, 0, 0, 0, 0, 0);
 #else /* !CONFIG_BT_HCI_MESH_EXT */
-	err = ll_adv_enable(handle, enable);
+	err = ll_adv_enable(handle, enable, 0, 0);
 #endif /* !CONFIG_BT_HCI_MESH_EXT */
 	if (err) {
 		goto exit;
+	}
+
+	if (!enable) {
+		err = ll_adv_aux_set_remove(handle);
+		if (err) {
+			goto exit;
+		}
 	}
 
 exit:
@@ -350,13 +353,3 @@ exit:
 }
 #endif /* CONFIG_BT_OBSERVER */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
-
-#if defined(CONFIG_BT_LL_SW_SPLIT)
-int cmd_ull_reset(const struct shell *shell, size_t  argc, char *argv[])
-{
-	ll_reset();
-
-	return 0;
-}
-
-#endif /* CONFIG_BT_LL_SW_SPLIT */

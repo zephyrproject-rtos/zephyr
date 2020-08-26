@@ -1,4 +1,4 @@
-# Copyright (c) 2017, NXP
+# Copyright (c) 2017-2020, NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_IMX
@@ -14,8 +14,10 @@ config SOC_FAMILY
 source "soc/arm/nxp_imx/*/Kconfig.soc"
 
 config SOC_PART_NUMBER
+	default SOC_PART_NUMBER_IMX_RT6XX if SOC_SERIES_IMX_RT6XX
 	default SOC_PART_NUMBER_IMX_RT if SOC_SERIES_IMX_RT
 	default SOC_PART_NUMBER_IMX_6X_M4 if SOC_SERIES_IMX_6X_M4
 	default SOC_PART_NUMBER_IMX7_M4 if SOC_SERIES_IMX7_M4
+	default SOC_PART_NUMBER_IMX8MM_M4 if SOC_SERIES_IMX8MM_M4
 
 endif # SOC_FAMILY_IMX

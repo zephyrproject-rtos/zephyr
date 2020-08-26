@@ -67,7 +67,7 @@ Implementation
 Defining a Memory Slab
 ======================
 
-A memory slab is defined using a variable of type :c:type:`struct k_mem_slab`.
+A memory slab is defined using a variable of type :c:type:`k_mem_slab`.
 It must then be initialized by calling :cpp:func:`k_mem_slab_init()`.
 
 The following code defines and initializes a memory slab that has 6 blocks

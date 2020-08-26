@@ -1,0 +1,80 @@
+#
+# Copyright (c) 2020 Siddharth Chandrasekaran <siddharth@embedjournal.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig OSDP
+	bool "Open Supervised Device Protocol (OSDP) driver"
+	select RING_BUFFER
+	select SERIAL
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select UART_INTERRUPT_DRIVEN
+	select ENTROPY_GENERATOR
+	select TEST_RANDOM_GENERATOR
+	help
+	  Add support for Open Supervised Device Protocol (OSDP)
+
+if OSDP
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_OSDP_UART := zephyr,osdp-uart
+
+config OSDP_UART_DEV_NAME
+	string "Device name of UART device for OSDP"
+	default "$(dt_chosen_label,$(DT_CHOSEN_Z_OSDP_UART))" if HAS_DTS
+	default "UART_2"
+	help
+	  This option specifies the name of UART device to be used for
+	  OSDP
+
+config OSDP_UART_BAUD_RATE
+	int "OSDP UART baud rate"
+	default 115200
+	help
+	  OSDP defines that baud rate can be either 9600 or 38400 or
+	  115200.
+
+config OSDP_LOG_LEVEL
+	int "OSDP Logging Level"
+	default 1
+	help
+	  Set the logging level for the OSDP driver
+
+config OSDP_UART_BUFFER_LENGTH
+	int "OSDP UART buffer length"
+	default 256
+	help
+	  OSDP RX and TX buffer FIFO length.
+
+config OSDP_THREAD_STACK_SIZE
+	int "OSDP Thread stack size"
+	default 512
+	help
+	  Thread stack size for osdp refresh thread
+
+config OSDP_PACKET_TRACE
+	bool "Print bytes sent/received over OSDP to console"
+	help
+	  Prints bytes sent/received over OSDP to console for debugging.
+	  LOG_HEXDUMP_DBG() is used to achieve this and can be very verbose.
+
+choice
+	prompt "OSDP Mode of Operation"
+	default OSDP_MODE_PD
+	config OSDP_MODE_CP
+		bool "Configure OSDP in Control Panel mode"
+		help
+		  Configure this device to operate as a CP (Control Panel)
+	config OSDP_MODE_PD
+		bool "Configure OSDP in Peripheral Device mode"
+		help
+		  Configure this device to operate as a PD (Peripheral Device)
+endchoice
+
+if OSDP_MODE_PD
+source "subsys/mgmt/osdp/Kconfig.pd"
+endif
+
+endif # OSDP

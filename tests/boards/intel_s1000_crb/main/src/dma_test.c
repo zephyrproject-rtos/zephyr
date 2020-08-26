@@ -100,7 +100,8 @@ static struct transfers transfer_blocks[MAX_TRANSFERS] = {
 static struct device *dma_device;
 static uint32_t current_block_count, total_block_count;
 
-static void test_done(void *arg, uint32_t channel, int error_code)
+static void test_done(struct device *dma_dev, void *arg,
+		      uint32_t channel, int error_code)
 {
 	uint32_t src, dst;
 	size_t size;
@@ -114,8 +115,8 @@ static void test_done(void *arg, uint32_t channel, int error_code)
 		src = (uint32_t)transfer_blocks[current_block_count].source;
 		dst = (uint32_t)transfer_blocks[current_block_count].destination;
 		size = transfer_blocks[current_block_count].size;
-		dma_reload(dma_device, channel, src, dst, size);
-		dma_start(dma_device, channel);
+		dma_reload(dma_dev, channel, src, dst, size);
+		dma_start(dma_dev, channel);
 	} else {
 		printk("DMA transfer done\n");
 		k_sem_give(&dma_sem);
@@ -165,7 +166,7 @@ static int test_task(uint32_t chan_id, uint32_t blen, uint32_t block_count)
 	(void)memset(rx_data4, 0, sizeof(rx_data4));
 
 	/*
-	 * dma_block_cfg4 is assigned to 0 by default. Hence if callback_arg is
+	 * dma_block_cfg4 is assigned to 0 by default. Hence if user_data is
 	 * not assigned, it will be NULL implying there are no more blocks to
 	 * transfer
 	 */

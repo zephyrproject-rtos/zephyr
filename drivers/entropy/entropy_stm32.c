@@ -29,10 +29,10 @@ struct entropy_stm32_rng_dev_data {
 };
 
 #define DEV_DATA(dev) \
-	((struct entropy_stm32_rng_dev_data *)(dev)->driver_data)
+	((struct entropy_stm32_rng_dev_data *)(dev)->data)
 
 #define DEV_CFG(dev) \
-	((const struct entropy_stm32_rng_dev_cfg *)(dev)->config_info)
+	((const struct entropy_stm32_rng_dev_cfg *)(dev)->config)
 
 static void entropy_stm32_rng_reset(RNG_TypeDef *rng)
 {

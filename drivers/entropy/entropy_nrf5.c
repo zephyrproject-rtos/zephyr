@@ -98,7 +98,7 @@ struct entropy_nrf5_dev_data {
 static struct entropy_nrf5_dev_data entropy_nrf5_data;
 
 #define DEV_DATA(dev) \
-	((struct entropy_nrf5_dev_data *)(dev)->driver_data)
+	((struct entropy_nrf5_dev_data *)(dev)->data)
 
 static int random_byte_get(void)
 {

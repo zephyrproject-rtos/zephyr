@@ -112,7 +112,7 @@ static inline void gd7965_busy_wait(struct gd7965_data *driver)
 
 static int gd7965_update_display(const struct device *dev)
 {
-	struct gd7965_data *driver = dev->driver_data;
+	struct gd7965_data *driver = dev->data;
 
 	LOG_DBG("Trigger update sequence");
 	if (gd7965_write_cmd(driver, GD7965_CMD_DRF, NULL, 0)) {
@@ -126,7 +126,7 @@ static int gd7965_update_display(const struct device *dev)
 
 static int gd7965_blanking_off(const struct device *dev)
 {
-	struct gd7965_data *driver = dev->driver_data;
+	struct gd7965_data *driver = dev->data;
 
 	if (blanking_on) {
 		/* Update EPD pannel in normal mode */
@@ -152,7 +152,7 @@ static int gd7965_write(const struct device *dev, const uint16_t x, const uint16
 			const struct display_buffer_descriptor *desc,
 			const void *buf)
 {
-	struct gd7965_data *driver = dev->driver_data;
+	struct gd7965_data *driver = dev->data;
 	uint16_t x_end_idx = x + desc->width - 1;
 	uint16_t y_end_idx = y + desc->height - 1;
 	uint8_t ptl[GD7965_PTL_REG_LENGTH] = {0};
@@ -314,7 +314,7 @@ static int gd7965_clear_and_write_buffer(struct device *dev,
 
 static int gd7965_controller_init(struct device *dev)
 {
-	struct gd7965_data *driver = dev->driver_data;
+	struct gd7965_data *driver = dev->data;
 	uint8_t tmp[GD7965_TRES_REG_LENGTH];
 
 	gpio_pin_set(driver->reset, GD7965_RESET_PIN, 1);
@@ -392,7 +392,7 @@ static int gd7965_controller_init(struct device *dev)
 
 static int gd7965_init(struct device *dev)
 {
-	struct gd7965_data *driver = dev->driver_data;
+	struct gd7965_data *driver = dev->data;
 
 	LOG_DBG("");
 

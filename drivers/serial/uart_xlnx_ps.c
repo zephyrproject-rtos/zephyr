@@ -152,9 +152,9 @@ struct uart_xlnx_ps_dev_data_t {
 
 #define DEV_CFG(dev) \
 	((const struct uart_xlnx_ps_dev_config * const) \
-	 (dev)->config_info)
+	 (dev)->config)
 #define DEV_DATA(dev) \
-	((struct uart_xlnx_ps_dev_data_t *)(dev)->driver_data)
+	((struct uart_xlnx_ps_dev_data_t *)(dev)->data)
 
 static const struct uart_driver_api uart_xlnx_ps_driver_api;
 
@@ -1139,7 +1139,7 @@ static void uart_xlnx_ps_isr(void *arg)
 	const struct uart_xlnx_ps_dev_data_t *data = DEV_DATA(dev);
 
 	if (data->user_cb) {
-		data->user_cb(data->user_data);
+		data->user_cb(dev, data->user_data);
 	}
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */

@@ -1,0 +1,8 @@
+# Digilent Arty board configuration
+
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ARTY_A7_ARM_DESIGNSTART_M1
+	bool "Digilent Arty A7 ARM DesignStart Cortex-M1"
+	depends on SOC_SERIES_ARM_DESIGNSTART

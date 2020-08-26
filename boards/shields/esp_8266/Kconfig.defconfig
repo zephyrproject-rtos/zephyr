@@ -1,7 +1,9 @@
 # Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-if SHIELD_ESP_8266
+if SHIELD_ESP_8266 || \
+	SHIELD_ESP_8266_ARDUINO || \
+	SHIELD_ESP_8266_MIKROBUS
 
 if NETWORKING
 
@@ -14,8 +16,10 @@ choice WIFI_ESP_AT_VERSION
 	depends on WIFI_ESP
 endchoice
 
-rsource "boards/*.defconfig"
+orsource "boards/*.defconfig"
 
 endif # NETWORKING
 
-endif # SHIELD_ESP_8266
+endif   # SHIELD_ESP_8266 || \
+	# SHIELD_ESP_8266_ARDUINO || \
+	# SHIELD_ESP_8266_MIKROBUS

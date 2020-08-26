@@ -9,7 +9,7 @@
 static int flash_get_page_info(struct device *dev, off_t offs,
 				   bool use_addr, struct flash_pages_info *info)
 {
-	const struct flash_driver_api *api = dev->driver_api;
+	const struct flash_driver_api *api = dev->api;
 	const struct flash_pages_layout *layout;
 	size_t page_count = 0;
 	off_t group_offs = 0;
@@ -66,7 +66,7 @@ int z_impl_flash_get_page_info_by_idx(struct device *dev, uint32_t page_index,
 
 size_t z_impl_flash_get_page_count(struct device *dev)
 {
-	const struct flash_driver_api *api = dev->driver_api;
+	const struct flash_driver_api *api = dev->api;
 	const struct flash_pages_layout *layout;
 	size_t layout_size;
 	size_t count = 0;
@@ -83,7 +83,7 @@ size_t z_impl_flash_get_page_count(struct device *dev)
 
 void flash_page_foreach(struct device *dev, flash_page_cb cb, void *data)
 {
-	const struct flash_driver_api *api = dev->driver_api;
+	const struct flash_driver_api *api = dev->api;
 	const struct flash_pages_layout *layout;
 	struct flash_pages_info page_info;
 	size_t block, num_blocks, page = 0, i;

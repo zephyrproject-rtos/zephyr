@@ -66,8 +66,7 @@ struct z_heap {
 
 static inline bool big_heap_chunks(size_t chunks)
 {
-	return IS_ENABLED(CONFIG_SYS_HEAP_ALIGNED_ALLOC)
-		|| sizeof(void *) > 4 || chunks > 0x7fff;
+	return sizeof(void *) > 4 || chunks > 0x7fff;
 }
 
 static inline bool big_heap_bytes(size_t bytes)
@@ -192,6 +191,11 @@ static inline void set_left_chunk_size(struct z_heap *h, chunkid_t c,
 				       size_t size)
 {
 	chunk_set(h, c, LEFT_SIZE, size);
+}
+
+static inline bool solo_free_header(struct z_heap *h, chunkid_t c)
+{
+	return big_heap(h) && chunk_size(h, c) == 1;
 }
 
 static inline size_t chunk_header_bytes(struct z_heap *h)

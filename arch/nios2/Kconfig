@@ -21,9 +21,6 @@ endmenu
 
 menu "Nios II Family Options"
 
-config XIP
-	default y
-
 config GEN_ISR_TABLES
 	default y
 

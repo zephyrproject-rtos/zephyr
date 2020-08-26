@@ -53,7 +53,7 @@ static struct device *upipe_dev;
 
 static bool received_dest_addr_matched(uint8_t *rx_buffer)
 {
-	struct upipe_context *upipe = upipe_dev->driver_data;
+	struct upipe_context *upipe = upipe_dev->data;
 
 	/* Check destination PAN Id */
 	if (memcmp(&rx_buffer[PAN_ID_OFFSET],
@@ -108,7 +108,7 @@ static uint8_t *upipe_rx(uint8_t *buf, size_t *off)
 		goto done;
 	}
 
-	upipe = upipe_dev->driver_data;
+	upipe = upipe_dev->data;
 	if (!upipe->rx && *buf == UART_PIPE_RADIO_15_4_FRAME_TYPE) {
 		upipe->rx = true;
 		goto done;
@@ -186,7 +186,7 @@ static enum ieee802154_hw_caps upipe_get_capabilities(struct device *dev)
 
 static int upipe_cca(struct device *dev)
 {
-	struct upipe_context *upipe = dev->driver_data;
+	struct upipe_context *upipe = dev->data;
 
 	if (upipe->stopped) {
 		return -EIO;
@@ -271,7 +271,7 @@ static int upipe_tx(struct device *dev,
 		    struct net_pkt *pkt,
 		    struct net_buf *frag)
 {
-	struct upipe_context *upipe = dev->driver_data;
+	struct upipe_context *upipe = dev->data;
 	uint8_t *pkt_buf = frag->data;
 	uint8_t len = frag->len;
 	uint8_t i, data;
@@ -302,7 +302,7 @@ static int upipe_tx(struct device *dev,
 
 static int upipe_start(struct device *dev)
 {
-	struct upipe_context *upipe = dev->driver_data;
+	struct upipe_context *upipe = dev->data;
 
 	if (!upipe->stopped) {
 		return -EALREADY;
@@ -315,7 +315,7 @@ static int upipe_start(struct device *dev)
 
 static int upipe_stop(struct device *dev)
 {
-	struct upipe_context *upipe = dev->driver_data;
+	struct upipe_context *upipe = dev->data;
 
 	if (upipe->stopped) {
 		return -EALREADY;
@@ -328,7 +328,7 @@ static int upipe_stop(struct device *dev)
 
 static int upipe_init(struct device *dev)
 {
-	struct upipe_context *upipe = dev->driver_data;
+	struct upipe_context *upipe = dev->data;
 
 	(void)memset(upipe, 0, sizeof(struct upipe_context));
 
@@ -341,7 +341,7 @@ static int upipe_init(struct device *dev)
 
 static inline uint8_t *get_mac(struct device *dev)
 {
-	struct upipe_context *upipe = dev->driver_data;
+	struct upipe_context *upipe = dev->data;
 
 	upipe->mac_addr[0] = 0x00;
 	upipe->mac_addr[1] = 0x10;
@@ -364,7 +364,7 @@ static inline uint8_t *get_mac(struct device *dev)
 static void upipe_iface_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
-	struct upipe_context *upipe = dev->driver_data;
+	struct upipe_context *upipe = dev->data;
 	uint8_t *mac = get_mac(dev);
 
 	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);

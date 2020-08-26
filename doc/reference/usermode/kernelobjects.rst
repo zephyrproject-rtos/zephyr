@@ -6,7 +6,7 @@ Kernel Objects
 A kernel object can be one of three classes of data:
 
 * A core kernel object, such as a semaphore, thread, pipe, etc.
-* A thread stack, which is an array of :c:type:`struct z_thread_stack_element`
+* A thread stack, which is an array of :c:type:`z_thread_stack_element`
   and declared with :c:macro:`K_THREAD_STACK_DEFINE()`
 * A device driver instance (struct device) that belongs to one of a defined
   set of subsystems
@@ -109,14 +109,14 @@ When a system call is made and the kernel is presented with a memory address
 of what may or may not be a valid kernel object, the address can be validated
 with a constant-time lookup in this table.
 
-Drivers are a special case. All drivers are instances of :c:type:`struct
-device`, but it is important to know what subsystem a driver belongs to so that
+Drivers are a special case. All drivers are instances of :c:type:`device`, but
+it is important to know what subsystem a driver belongs to so that
 incorrect operations, such as calling a UART API on a sensor driver object, can
 be prevented. When a device struct is found, its API pointer is examined to
 determine what subsystem the driver belongs to.
 
 The table itself maps kernel object memory addresses to instances of
-:c:type:`struct z_object`, which has all the metadata for that object. This
+:c:type:`z_object`, which has all the metadata for that object. This
 includes:
 
 * A bitfield indicating permissions on that object. All threads have a
@@ -129,7 +129,7 @@ includes:
 * A set of flags for that object. This is currently used to track
   initialization state and whether an object is public or not.
 * An extra data field. The semantics of this field vary by object type, see
-  the definition of :c:type:`union z_object_data`.
+  the definition of :c:type:`z_object_data`.
 
 Dynamic objects allocated at runtime are tracked in a runtime red/black tree
 which is used in parallel to the gperf table when validating object pointers.
@@ -250,7 +250,7 @@ Instances of the new struct should now be tracked.
 Creating New Driver Subsystem Kernel Objects
 ============================================
 
-All driver instances are :c:type:`struct device`. They are differentiated by
+All driver instances are :c:type:`device`. They are differentiated by
 what API struct they are set to.
 
 * In ``scripts/gen_kobject_list.py``, add the name of the API struct for the

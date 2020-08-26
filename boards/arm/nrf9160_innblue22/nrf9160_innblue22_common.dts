@@ -98,6 +98,10 @@
 		compatible = "ti,bq274xx";
 		label = "BQ274XX";
 		reg = <0x55>;
+		design-voltage = <3700>;
+		design-capacity = <1800>;
+		taper-current = <45>;
+		terminate-voltage = <3000>;
 	};
 
 	lis2dh12-accel@19 {
@@ -166,7 +170,7 @@
 &flash0 {
 	/*
 	 * For more information, see:
-	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
+	 * https://docs.zephyrproject.org/latest/guides/dts/legacy-macros.html#legacy-flash-partitions
 	 */
 	partitions {
 		compatible = "fixed-partitions";
@@ -203,13 +207,11 @@
 / {
 	/* SRAM allocated and used by the BSD library */
 	sram0_bsd: memory@20010000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 	};
 
 	/* SRAM allocated to the Non-Secure image */
 	sram0_ns: memory@20020000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 	};
 };

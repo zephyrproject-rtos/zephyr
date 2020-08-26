@@ -27,6 +27,14 @@ config SENSOR_SHELL
 	help
 	  This shell provides access to basic sensor data.
 
+config SENSOR_SHELL_BATTERY
+	bool "Enable sensor shell 'battery' command"
+	depends on SHELL
+	help
+	  This enables the 'battery' command which reports charging information
+	  in a convenient format. It makes use of a fuel gauge to read its
+	  information.
+
 comment "Device Drivers"
 
 source "drivers/sensor/adt7420/Kconfig"
@@ -123,6 +131,8 @@ source "drivers/sensor/lsm9ds0_gyro/Kconfig"
 
 source "drivers/sensor/lsm9ds0_mfd/Kconfig"
 
+source "drivers/sensor/max17055/Kconfig"
+
 source "drivers/sensor/max30101/Kconfig"
 
 source "drivers/sensor/max44009/Kconfig"
@@ -151,6 +161,8 @@ source "drivers/sensor/sht3xd/Kconfig"
 
 source "drivers/sensor/si7006/Kconfig"
 
+source "drivers/sensor/si7055/Kconfig"
+
 source "drivers/sensor/si7060/Kconfig"
 
 source "drivers/sensor/stts751/Kconfig"
@@ -168,5 +180,7 @@ source "drivers/sensor/tmp116/Kconfig"
 source "drivers/sensor/vl53l0x/Kconfig"
 
 source "drivers/sensor/nxp_kinetis_temp/Kconfig"
+
+source "drivers/sensor/wsen_itds/Kconfig"
 
 endif # SENSOR

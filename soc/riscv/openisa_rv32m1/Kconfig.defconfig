@@ -20,9 +20,6 @@ config NUM_IRQS
 	default 64 if RV32M1_INTMUX_CHANNEL_0
 	default 32
 
-config XIP
-	default y
-
 config RISCV_GENERIC_TOOLCHAIN
 	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr"
 	default n

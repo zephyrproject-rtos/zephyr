@@ -11,6 +11,23 @@ config SPI
 config ILI9340
 	default y
 
+if KSCAN
+
+config I2C
+	default y
+
+config KSCAN_FT5336
+	default y
+
+# NOTE: Enable if IRQ line is available (requires to solder jumper)
+config KSCAN_FT5336_INTERRUPT
+	default n
+
+config KSCAN_INIT_PRIORITY
+	default 60
+
+endif # KSCAN
+
 if LVGL
 
 config LVGL_DISPLAY_DEV_NAME
@@ -27,6 +44,15 @@ config LVGL_VDB_SIZE
 
 config LVGL_BITS_PER_PIXEL
 	default 24
+
+config KSCAN
+	default y
+
+config LVGL_POINTER_KSCAN
+	default y
+
+config LVGL_POINTER_KSCAN_DEV_NAME
+	default "FT5336"
 
 endif # LVGL
 

@@ -131,6 +131,32 @@ config BT_EXT_ADV_MAX_ADV_SET
 	  Maximum number of simultaneous Bluetooth advertising sets
 	  supported.
 
+config BT_PER_ADV
+	bool "Periodic Advertising and Scanning support [EXPERIMENTAL]"
+	help
+	  Select this to enable Periodic Advertising API support. This allows
+	  the device to send advertising data periodically at deterministic
+	  intervals. Scanners can synchronize to the periodic advertisements
+	  to periodically get the data.
+
+config BT_PER_ADV_SYNC
+	bool "Periodic advertising sync support [EXPERIMENTAL]"
+	depends on BT_OBSERVER
+	help
+	  Select this to enable Periodic Advertising Sync API support.
+	  Syncing with a periodic advertiser allows the device to periodically
+	  and deterministic receive data from that device in a connectionless
+	  manner.
+
+if BT_PER_ADV_SYNC
+config BT_PER_ADV_SYNC_MAX
+	int "Maximum number of simultaneous periodic advertising syncs"
+	range 1 64
+	default 1
+	help
+	  Maximum number of simultaneous periodic advertising syncs supported.
+endif # BT_PER_ADV_SYNC
+
 endif # BT_EXT_ADV
 
 menu "Observer"

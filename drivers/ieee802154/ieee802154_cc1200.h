@@ -53,7 +53,7 @@ struct cc1200_context {
 	atomic_t tx;
 	atomic_t tx_start;
 	/************RX************/
-	K_THREAD_STACK_MEMBER(rx_stack,
+	K_KERNEL_STACK_MEMBER(rx_stack,
 			      CONFIG_IEEE802154_CC1200_RX_STACK_SIZE);
 	struct k_thread rx_thread;
 	struct k_sem rx_lock;

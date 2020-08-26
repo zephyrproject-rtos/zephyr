@@ -18,7 +18,7 @@ struct trng_sam_dev_cfg {
 };
 
 #define DEV_CFG(dev) \
-	((const struct trng_sam_dev_cfg *const)(dev)->config_info)
+	((const struct trng_sam_dev_cfg *const)(dev)->config)
 
 static inline bool _ready(Trng * const trng)
 {

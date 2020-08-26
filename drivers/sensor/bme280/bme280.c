@@ -112,12 +112,12 @@ struct bme280_reg_io {
 
 static inline struct bme280_data *to_data(struct device *dev)
 {
-	return dev->driver_data;
+	return dev->data;
 }
 
 static inline const struct bme280_config *to_config(struct device *dev)
 {
-	return dev->config_info;
+	return dev->config;
 }
 
 static inline struct device *to_bus(struct device *dev)

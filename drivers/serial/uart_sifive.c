@@ -66,11 +66,11 @@ struct uart_sifive_data {
 
 #define DEV_CFG(dev)						\
 	((const struct uart_sifive_device_config * const)	\
-	 (dev)->config_info)
+	 (dev)->config)
 #define DEV_UART(dev)						\
 	((struct uart_sifive_regs_t *)(DEV_CFG(dev))->port)
 #define DEV_DATA(dev)						\
-	((struct uart_sifive_data * const)(dev)->driver_data)
+	((struct uart_sifive_data * const)(dev)->data)
 
 /**
  * @brief Output a character in polled mode.
@@ -323,7 +323,7 @@ static void uart_sifive_irq_handler(void *arg)
 	struct uart_sifive_data *data = DEV_DATA(dev);
 
 	if (data->callback)
-		data->callback(data->cb_data);
+		data->callback(dev, data->cb_data);
 }
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */

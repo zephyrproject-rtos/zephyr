@@ -73,29 +73,29 @@
 #define BUF_TIMEOUT                 K_NO_WAIT
 
 static struct seg_tx {
-	struct bt_mesh_subnet   *sub;
-	void                    *seg[CONFIG_BT_MESH_TX_SEG_MAX];
-	uint64_t                    seq_auth;
-	uint16_t                    src;
-	uint16_t                    dst;
-	uint16_t                    len;
-	uint8_t                     hdr;
-	uint8_t                     xmit;
-	uint8_t                     seg_n:5,       /* Last segment index */
-				 ctl:1,
-				 aszmic:1,
-				 friend_cred:1;
-	uint8_t                     seg_o;         /* Segment being sent. */
-	uint8_t                     nack_count;    /* Number of unacked segs */
-	uint8_t                     ttl;
-	uint8_t                     seg_pending;   /* Number of segments pending */
-	uint8_t			 attempts;      /* Transmit attempts */
-	uint8_t			 started:1,     /* Start cb called */
-				 sending:1,     /* Sending is in progress */
-				 blocked:1;     /* Blocked by ongoing tx */
+	struct bt_mesh_subnet *sub;
+	void                  *seg[CONFIG_BT_MESH_TX_SEG_MAX];
+	uint64_t              seq_auth;
+	uint16_t              src;
+	uint16_t              dst;
+	uint16_t              len;
+	uint8_t               hdr;
+	uint8_t               xmit;
+	uint8_t               seg_n;         /* Last segment index */
+	uint8_t               seg_o;         /* Segment being sent */
+	uint8_t               nack_count;    /* Number of unacked segs */
+	uint8_t               attempts;      /* Remaining tx attempts */
+	uint8_t               ttl;           /* Transmitted TTL value */
+	uint8_t               seg_pending;   /* Number of segments pending */
+	uint8_t               blocked:1,     /* Blocked by ongoing tx */
+			      ctl:1,         /* Control packet */
+			      aszmic:1,      /* MIC size */
+			      started:1,     /* Start cb called */
+			      sending:1,     /* Sending is in progress */
+			      friend_cred:1; /* Using Friend credentials */
 	const struct bt_mesh_send_cb *cb;
-	void                    *cb_data;
-	struct k_delayed_work    retransmit;    /* Retransmit timer */
+	void                  *cb_data;
+	struct k_delayed_work retransmit;    /* Retransmit timer */
 } seg_tx[CONFIG_BT_MESH_TX_SEG_MSG_COUNT];
 
 static struct seg_rx {
@@ -291,24 +291,11 @@ static void schedule_retransmit(struct seg_tx *tx)
 		return;
 	}
 
-	if (--tx->seg_pending) {
+	if (--tx->seg_pending || tx->sending) {
 		return;
 	}
 
-	/* Group address sending should stop when the last segment goes out for
-	 * the last time. Normally, this happens after the attempts counter has
-	 * been set to 0. For self-rx, this callback is called inline, which
-	 * means that the attempt counter is still 1. Since this is group based
-	 * sar, we know that segments aren't removed by acks, so seg_o will be
-	 * the last segment that goes out.
-	 */
-	if (!BT_MESH_ADDR_IS_UNICAST(tx->dst) &&
-	    (!tx->attempts ||
-	     (tx->sending && tx->attempts == 1 && tx->seg_n == tx->seg_o))) {
-		BT_DBG("SDU TX complete");
-		seg_tx_complete(tx, 0);
-		return;
-	}
+	BT_DBG("");
 
 	/* If we haven't gone through all the segments for this attempt yet,
 	 * (likely because of a buffer allocation failure or because we
@@ -316,9 +303,8 @@ static void schedule_retransmit(struct seg_tx *tx)
 	 * retransmit immediately, as we just freed up a tx buffer.
 	 */
 	k_delayed_work_submit(&tx->retransmit,
-			      (tx->sending || !tx->seg_o) ?
-				      K_MSEC(SEG_RETRANSMIT_TIMEOUT(tx)) :
-				      K_NO_WAIT);
+			      tx->seg_o ? K_NO_WAIT :
+					  K_MSEC(SEG_RETRANSMIT_TIMEOUT(tx)));
 }
 
 static void seg_send_start(uint16_t duration, int err, void *user_data)
@@ -366,6 +352,10 @@ static void seg_tx_buf_build(struct seg_tx *tx, uint8_t seg_o,
 
 static void seg_tx_send_unacked(struct seg_tx *tx)
 {
+	if (!tx->nack_count) {
+		return;
+	}
+
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = tx->sub->net_idx,
 		/* App idx only used by network to detect control messages: */
@@ -384,8 +374,16 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 	};
 
 	if (!tx->attempts) {
-		BT_ERR("Ran out of retransmit attempts");
-		seg_tx_complete(tx, -ETIMEDOUT);
+		if (BT_MESH_ADDR_IS_UNICAST(tx->dst)) {
+			BT_ERR("Ran out of retransmit attempts");
+			seg_tx_complete(tx, -ETIMEDOUT);
+		} else {
+			/* Segmented sending to groups doesn't have acks, so
+			 * running out of attempts is the expected behavior.
+			 */
+			seg_tx_complete(tx, 0);
+		}
+
 		return;
 	}
 
@@ -534,6 +532,8 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 
 		BT_DBG("seg %u: %s", seg_o, bt_hex(buf, len));
 
+		tx->seg[seg_o] = buf;
+
 		if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
 			enum bt_mesh_friend_pdu_type type;
 
@@ -554,11 +554,11 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 				 * out through the Friend Queue.
 				 */
 				k_mem_slab_free(&segs, &buf);
-				continue;
+				tx->seg[seg_o] = NULL;
 			}
+
 		}
 
-		tx->seg[seg_o] = buf;
 	}
 
 	/* This can happen if segments only went into the Friend Queue */
@@ -1641,7 +1641,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 
 found_rx:
 	if (BIT(seg_o) & rx->block) {
-		BT_WARN("Received already received fragment");
+		BT_DBG("Received already received fragment");
 		return -EALREADY;
 	}
 
@@ -1859,7 +1859,7 @@ void bt_mesh_rpl_clear(void)
 	(void)memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
 }
 
-void bt_mesh_heartbeat_send(void)
+int bt_mesh_heartbeat_send(const struct bt_mesh_send_cb *cb, void *cb_data)
 {
 	struct bt_mesh_cfg_srv *cfg = bt_mesh_cfg_get();
 	uint16_t feat = 0U;
@@ -1882,7 +1882,7 @@ void bt_mesh_heartbeat_send(void)
 
 	/* Do nothing if heartbeat publication is not enabled */
 	if (cfg->hb_pub.dst == BT_MESH_ADDR_UNASSIGNED) {
-		return;
+		return 0;
 	}
 
 	hb.init_ttl = cfg->hb_pub.ttl;
@@ -1907,8 +1907,8 @@ void bt_mesh_heartbeat_send(void)
 
 	BT_DBG("InitTTL %u feat 0x%04x", cfg->hb_pub.ttl, feat);
 
-	bt_mesh_ctl_send(&tx, TRANS_CTL_OP_HEARTBEAT, &hb, sizeof(hb),
-			 NULL, NULL);
+	return bt_mesh_ctl_send(&tx, TRANS_CTL_OP_HEARTBEAT, &hb, sizeof(hb),
+				cb, cb_data);
 }
 
 int bt_mesh_app_key_get(const struct bt_mesh_subnet *subnet, uint16_t app_idx,

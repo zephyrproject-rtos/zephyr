@@ -35,9 +35,9 @@ LOG_MODULE_REGISTER(dma_dw);
 #define DW_CFG_LOW_DEF			0x0
 
 #define DEV_NAME(dev) ((dev)->name)
-#define DEV_DATA(dev) ((struct dw_dma_dev_data *const)(dev)->driver_data)
+#define DEV_DATA(dev) ((struct dw_dma_dev_data *const)(dev)->data)
 #define DEV_CFG(dev) \
-	((const struct dw_dma_dev_cfg *const)(dev)->config_info)
+	((const struct dw_dma_dev_cfg *const)(dev)->config)
 
 /* number of tries to wait for reset */
 #define DW_DMA_CFG_TRIES	10000
@@ -98,8 +98,9 @@ static void dw_dma_isr(void *arg)
 			 * freed in the user callback function once
 			 * all the blocks are transferred.
 			 */
-			chan_data->dma_blkcallback(chan_data->blkcallback_arg,
-					channel, 0);
+			chan_data->dma_blkcallback(dev,
+						   chan_data->blkuser_data,
+						   channel, 0);
 		}
 	}
 
@@ -108,8 +109,9 @@ static void dw_dma_isr(void *arg)
 		status_tfr &= ~(1 << channel);
 		chan_data = &dev_data->chan[channel];
 		if (chan_data->dma_tfrcallback) {
-			chan_data->dma_tfrcallback(chan_data->tfrcallback_arg,
-					channel, 0);
+			chan_data->dma_tfrcallback(dev,
+						   chan_data->tfruser_data,
+						   channel, 0);
 		}
 	}
 }
@@ -214,11 +216,11 @@ static int dw_dma_config(struct device *dev, uint32_t channel,
 	 */
 	if (cfg->complete_callback_en) {
 		chan_data->dma_blkcallback = cfg->dma_callback;
-		chan_data->blkcallback_arg = cfg->callback_arg;
+		chan_data->blkuser_data = cfg->user_data;
 		dw_write(dev_cfg->base, DW_MASK_BLOCK, INT_UNMASK(channel));
 	} else {
 		chan_data->dma_tfrcallback = cfg->dma_callback;
-		chan_data->tfrcallback_arg = cfg->callback_arg;
+		chan_data->tfruser_data = cfg->user_data;
 		dw_write(dev_cfg->base, DW_MASK_TFR, INT_UNMASK(channel));
 	}
 

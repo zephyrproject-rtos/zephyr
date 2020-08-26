@@ -27,7 +27,7 @@ struct iwdg_stm32_data {
 };
 
 #define IWDG_STM32_DATA(dev)					\
-	((struct iwdg_stm32_data * const)(dev)->driver_data)
+	((struct iwdg_stm32_data * const)(dev)->data)
 
 #define IWDG_STM32_STRUCT(dev)					\
 	((IWDG_TypeDef *)(IWDG_STM32_DATA(dev))->Instance)

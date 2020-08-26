@@ -20,7 +20,7 @@ LOG_MODULE_DECLARE(IIS2MDC, CONFIG_SENSOR_LOG_LEVEL);
 
 static int iis2mdc_enable_int(struct device *dev, int enable)
 {
-	struct iis2mdc_data *iis2mdc = dev->driver_data;
+	struct iis2mdc_data *iis2mdc = dev->data;
 
 	/* set interrupt on mag */
 	return iis2mdc_drdy_on_pin_set(iis2mdc->ctx, enable);
@@ -31,7 +31,7 @@ int iis2mdc_trigger_set(struct device *dev,
 			  const struct sensor_trigger *trig,
 			  sensor_trigger_handler_t handler)
 {
-	struct iis2mdc_data *iis2mdc = dev->driver_data;
+	struct iis2mdc_data *iis2mdc = dev->data;
 	union axis3bit16_t raw;
 
 	if (trig->chan == SENSOR_CHAN_MAGN_XYZ) {
@@ -53,9 +53,8 @@ int iis2mdc_trigger_set(struct device *dev,
 static void iis2mdc_handle_interrupt(void *arg)
 {
 	struct device *dev = arg;
-	struct iis2mdc_data *iis2mdc = dev->driver_data;
-	const struct iis2mdc_config *const config =
-						dev->config_info;
+	struct iis2mdc_data *iis2mdc = dev->data;
+	const struct iis2mdc_config *const config = dev->config;
 	struct sensor_trigger drdy_trigger = {
 		.type = SENSOR_TRIG_DATA_READY,
 	};
@@ -73,7 +72,7 @@ static void iis2mdc_gpio_callback(struct device *dev,
 {
 	struct iis2mdc_data *iis2mdc =
 		CONTAINER_OF(cb, struct iis2mdc_data, gpio_cb);
-	const struct iis2mdc_config *const config = iis2mdc->dev->config_info;
+	const struct iis2mdc_config *const config = iis2mdc->dev->config;
 
 	ARG_UNUSED(pins);
 
@@ -90,7 +89,7 @@ static void iis2mdc_gpio_callback(struct device *dev,
 static void iis2mdc_thread(int dev_ptr, int unused)
 {
 	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct iis2mdc_data *iis2mdc = dev->driver_data;
+	struct iis2mdc_data *iis2mdc = dev->data;
 
 	ARG_UNUSED(unused);
 
@@ -113,8 +112,8 @@ static void iis2mdc_work_cb(struct k_work *work)
 
 int iis2mdc_init_interrupt(struct device *dev)
 {
-	struct iis2mdc_data *iis2mdc = dev->driver_data;
-	const struct iis2mdc_config *const config = dev->config_info;
+	struct iis2mdc_data *iis2mdc = dev->data;
+	const struct iis2mdc_config *const config = dev->config;
 
 	/* setup data ready gpio interrupt */
 	iis2mdc->gpio = device_get_binding(config->drdy_port);

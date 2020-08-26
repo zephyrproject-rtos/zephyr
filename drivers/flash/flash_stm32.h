@@ -41,7 +41,7 @@ struct flash_stm32_priv {
 	/* as flash node property 'write-block-size' */
 #endif
 
-#define FLASH_STM32_PRIV(dev) ((struct flash_stm32_priv *)((dev)->driver_data))
+#define FLASH_STM32_PRIV(dev) ((struct flash_stm32_priv *)((dev)->data))
 #define FLASH_STM32_REGS(dev) (FLASH_STM32_PRIV(dev)->regs)
 
 #ifdef CONFIG_FLASH_PAGE_LAYOUT

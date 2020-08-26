@@ -26,29 +26,13 @@ struct ppp_packet {
 	uint16_t length;
 } __packed;
 
-/** Timeout in milliseconds */
-#define PPP_TIMEOUT K_SECONDS(3)
-
 /** Max Terminate-Request transmissions */
 #define MAX_TERMINATE_REQ  CONFIG_NET_L2_PPP_MAX_TERMINATE_REQ_RETRANSMITS
 
 /** Max Configure-Request transmissions */
 #define MAX_CONFIGURE_REQ CONFIG_NET_L2_PPP_MAX_CONFIGURE_REQ_RETRANSMITS
 
-/** Max number of LCP options */
-#define MAX_LCP_OPTIONS CONFIG_NET_L2_PPP_MAX_OPTIONS
-
-/** Max number of IPCP options */
-#define MAX_IPCP_OPTIONS 4
-
-/** Max number of IPV6CP options */
-#define MAX_IPV6CP_OPTIONS 1
-
-/*
- * Special alignment is needed for ppp_protocol_handler. This is the
- * same issue as in net_if. See net_if.h __net_if_align for explanation.
- */
-#define __ppp_proto_align __aligned(32)
+#define PPP_BUF_ALLOC_TIMEOUT	K_MSEC(100)
 
 /** Protocol handler information. */
 struct ppp_protocol_handler {
@@ -74,7 +58,31 @@ struct ppp_protocol_handler {
 
 	/** PPP protocol number */
 	uint16_t protocol;
-} __ppp_proto_align;
+};
+
+struct ppp_peer_option_info {
+	uint8_t code;
+	int (*parse)(struct ppp_fsm *fsm, struct net_pkt *pkt,
+		     void *user_data);
+	int (*nack)(struct ppp_fsm *fsm, struct net_pkt *ret_pkt,
+		    void *user_data);
+};
+
+#define PPP_PEER_OPTION(_code, _parse, _nack)	\
+	{					\
+		.code = _code,			\
+		.parse = _parse,		\
+		.nack = _nack,			\
+	}
+
+int ppp_config_info_req(struct ppp_fsm *fsm,
+			struct net_pkt *pkt,
+			uint16_t length,
+			struct net_pkt *ret_pkt,
+			enum ppp_protocol_type protocol,
+			const struct ppp_peer_option_info *options_info,
+			size_t num_options_info,
+			void *user_data);
 
 #define PPP_PROTO_GET_NAME(proto_name)		\
 	(ppp_protocol_handler_##proto_name)
@@ -82,9 +90,8 @@ struct ppp_protocol_handler {
 #define PPP_PROTOCOL_REGISTER(name, proto, init_func, proto_handler,	\
 			      proto_lower_up, proto_lower_down,		\
 			      proto_open, proto_close)			\
-	static const struct ppp_protocol_handler			\
-	(PPP_PROTO_GET_NAME(name)) __used				\
-	__attribute__((__section__(".net_ppp_proto.data"))) = {		\
+	static const Z_STRUCT_SECTION_ITERABLE(ppp_protocol_handler,	\
+					PPP_PROTO_GET_NAME(name)) = {	\
 		.protocol = proto,					\
 		.init = init_func,					\
 		.handler = proto_handler,				\
@@ -93,9 +100,6 @@ struct ppp_protocol_handler {
 		.open = proto_open,					\
 		.close = proto_close,					\
 	}
-
-extern struct ppp_protocol_handler __net_ppp_proto_start[];
-extern struct ppp_protocol_handler __net_ppp_proto_end[];
 
 const char *ppp_phase_str(enum ppp_phase phase);
 const char *ppp_state_str(enum ppp_state state);
@@ -122,7 +126,8 @@ void ppp_change_state_debug(struct ppp_fsm *fsm, enum ppp_state new_state,
 			    const char *caller, int line);
 #endif
 
-struct net_buf *ppp_get_net_buf(struct net_buf *root_buf, uint8_t len);
+struct ppp_context *ppp_fsm_ctx(struct ppp_fsm *fsm);
+struct net_if *ppp_fsm_iface(struct ppp_fsm *fsm);
 int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 		 enum ppp_packet_type type, uint8_t id,
 		 void *data, uint32_t data_len);
@@ -151,13 +156,14 @@ enum net_verdict ppp_fsm_recv_discard_req(struct ppp_fsm *fsm,
 					  struct net_pkt *pkt);
 
 const struct ppp_protocol_handler *ppp_lcp_get(void);
-enum net_verdict ppp_parse_options(struct ppp_fsm *fsm,
-				   struct net_pkt *pkt,
-				   uint16_t length,
-				   struct ppp_option_pkt options[],
-				   int options_len);
+int ppp_parse_options(struct ppp_fsm *fsm, struct net_pkt *pkt,
+		      uint16_t length,
+		      int (*parse)(struct net_pkt *pkt, uint8_t code,
+				   uint8_t len, void *user_data),
+		      void *user_data);
 
 void ppp_link_established(struct ppp_context *ctx, struct ppp_fsm *fsm);
+void ppp_link_authenticated(struct ppp_context *ctx);
 void ppp_link_terminated(struct ppp_context *ctx);
 void ppp_link_down(struct ppp_context *ctx);
 void ppp_link_needed(struct ppp_context *ctx);
@@ -166,3 +172,42 @@ void ppp_network_up(struct ppp_context *ctx, int proto);
 void ppp_network_down(struct ppp_context *ctx, int proto);
 void ppp_network_done(struct ppp_context *ctx, int proto);
 void ppp_network_all_down(struct ppp_context *ctx);
+
+struct ppp_my_option_info {
+	uint8_t code;
+	int (*conf_req_add)(struct ppp_context *ctx, struct net_pkt *pkt);
+	int (*conf_ack_handle)(struct ppp_context *ctx, struct net_pkt *pkt,
+			       uint8_t oplen);
+	int (*conf_nak_handle)(struct ppp_context *ctx, struct net_pkt *pkt,
+			       uint8_t oplen);
+};
+
+#define PPP_MY_OPTION(_code, _req_add, _handle_ack, _handle_nak)	\
+	{								\
+		.code = _code,						\
+		.conf_req_add = _req_add,				\
+		.conf_ack_handle = _handle_ack,				\
+		.conf_nak_handle = _handle_nak,				\
+	}
+
+struct net_pkt *ppp_my_options_add(struct ppp_fsm *fsm, size_t packet_len);
+
+int ppp_my_options_parse_conf_ack(struct ppp_fsm *fsm,
+				  struct net_pkt *pkt,
+				  uint16_t length);
+
+int ppp_my_options_parse_conf_nak(struct ppp_fsm *fsm,
+				  struct net_pkt *pkt,
+				  uint16_t length);
+
+int ppp_my_options_parse_conf_rej(struct ppp_fsm *fsm,
+				  struct net_pkt *pkt,
+				  uint16_t length);
+
+uint32_t ppp_my_option_flags(struct ppp_fsm *fsm, uint8_t code);
+
+static inline bool ppp_my_option_is_acked(struct ppp_fsm *fsm,
+					  uint8_t code)
+{
+	return ppp_my_option_flags(fsm, code) & PPP_MY_OPTION_ACKED;
+}

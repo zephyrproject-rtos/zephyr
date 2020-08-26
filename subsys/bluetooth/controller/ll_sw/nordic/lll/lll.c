@@ -141,7 +141,7 @@ int lll_init(void)
 
 	/* Initialize Clocks */
 	err = lll_clock_init();
-	if (err) {
+	if (err < 0) {
 		return err;
 	}
 
@@ -486,7 +486,7 @@ void lll_isr_cleanup(void *param)
 	radio_tmr_stop();
 
 	err = lll_hfclock_off();
-	LL_ASSERT(!err || err == -EBUSY);
+	LL_ASSERT(err >= 0);
 
 	lll_done(NULL);
 }
@@ -754,7 +754,7 @@ static void mfy_ticker_job_idle_get(void *param)
 
 	/* Ticker Job Silence */
 	ret = ticker_job_idle_get(TICKER_INSTANCE_ID_CTLR,
-				  TICKER_USER_ID_LLL,
+				  TICKER_USER_ID_ULL_LOW,
 				  ticker_op_job_disable, NULL);
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));

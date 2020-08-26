@@ -5,11 +5,11 @@ zephyr_include_directories(.)
 zephyr_sources(
   getaddrinfo.c
   sockets.c
+  sockets_select.c
 )
 
 if(NOT CONFIG_NET_SOCKETS_OFFLOAD)
 zephyr_sources(
-  sockets_select.c
   getnameinfo.c
   sockets_misc.c
   )

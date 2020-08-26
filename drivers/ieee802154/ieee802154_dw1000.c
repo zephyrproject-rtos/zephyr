@@ -66,7 +66,7 @@ LOG_MODULE_REGISTER(dw1000, LOG_LEVEL_INF);
 #define DWT_WORK_QUEUE_STACK_SIZE	512
 
 static struct k_work_q dwt_work_queue;
-static K_THREAD_STACK_DEFINE(dwt_work_queue_stack,
+static K_KERNEL_STACK_DEFINE(dwt_work_queue_stack,
 			     DWT_WORK_QUEUE_STACK_SIZE);
 
 struct dwt_phy_config {
@@ -652,7 +652,7 @@ static uint32_t dwt_get_pkt_duration_ns(struct dwt_context *ctx, uint8_t psdu_le
 
 static int dwt_cca(struct device *dev)
 {
-	struct dwt_context *ctx = dev->driver_data;
+	struct dwt_context *ctx = dev->data;
 	uint32_t cca_dur = (dwt_get_pkt_duration_ns(ctx, 127) +
 			 dwt_get_pkt_duration_ns(ctx, 5)) /
 			 UWB_PHY_TDSYM_PHR_6M8;
@@ -693,7 +693,7 @@ static int dwt_ed(struct device *dev, uint16_t duration,
 
 static int dwt_set_channel(struct device *dev, uint16_t channel)
 {
-	struct dwt_context *ctx = dev->driver_data;
+	struct dwt_context *ctx = dev->data;
 	struct dwt_phy_config *rf_cfg = &ctx->rf_cfg;
 
 	rf_cfg->channel = channel;
@@ -715,7 +715,7 @@ static int dwt_set_channel(struct device *dev, uint16_t channel)
 
 static int dwt_set_pan_id(struct device *dev, uint16_t pan_id)
 {
-	struct dwt_context *ctx = dev->driver_data;
+	struct dwt_context *ctx = dev->data;
 
 	k_sem_take(&ctx->dev_lock, K_FOREVER);
 	dwt_reg_write_u16(ctx, DWT_PANADR_ID, DWT_PANADR_PAN_ID_OFFSET, pan_id);
@@ -728,7 +728,7 @@ static int dwt_set_pan_id(struct device *dev, uint16_t pan_id)
 
 static int dwt_set_short_addr(struct device *dev, uint16_t short_addr)
 {
-	struct dwt_context *ctx = dev->driver_data;
+	struct dwt_context *ctx = dev->data;
 
 	k_sem_take(&ctx->dev_lock, K_FOREVER);
 	dwt_reg_write_u16(ctx, DWT_PANADR_ID, DWT_PANADR_SHORT_ADDR_OFFSET,
@@ -742,7 +742,7 @@ static int dwt_set_short_addr(struct device *dev, uint16_t short_addr)
 
 static int dwt_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
 {
-	struct dwt_context *ctx = dev->driver_data;
+	struct dwt_context *ctx = dev->data;
 
 	LOG_INF("IEEE address %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
 		ieee_addr[7], ieee_addr[6], ieee_addr[5], ieee_addr[4],
@@ -778,7 +778,7 @@ static int dwt_filter(struct device *dev,
 
 static int dwt_set_power(struct device *dev, int16_t dbm)
 {
-	struct dwt_context *ctx = dev->driver_data;
+	struct dwt_context *ctx = dev->data;
 
 	LOG_INF("set_txpower not supported %p", ctx);
 
@@ -788,7 +788,7 @@ static int dwt_set_power(struct device *dev, int16_t dbm)
 static int dwt_tx(struct device *dev, enum ieee802154_tx_mode tx_mode,
 		  struct net_pkt *pkt, struct net_buf *frag)
 {
-	struct dwt_context *ctx = dev->driver_data;
+	struct dwt_context *ctx = dev->data;
 	size_t len = frag->len;
 	uint32_t tx_time = 0;
 	struct net_ptp_time *txts;
@@ -918,7 +918,7 @@ static void dwt_set_frame_filter(struct dwt_context *ctx,
 static int dwt_configure(struct device *dev, enum ieee802154_config_type type,
 			 const struct ieee802154_config *config)
 {
-	struct dwt_context *ctx = dev->driver_data;
+	struct dwt_context *ctx = dev->data;
 
 	LOG_DBG("API configure %p", ctx);
 
@@ -955,8 +955,8 @@ static int dwt_configure(struct device *dev, enum ieee802154_config_type type,
  */
 static int dwt_hw_reset(struct device *dev)
 {
-	struct dwt_context *ctx = dev->driver_data;
-	const struct dwt_hi_cfg *hi_cfg = dev->config_info;
+	struct dwt_context *ctx = dev->data;
+	const struct dwt_hi_cfg *hi_cfg = dev->config;
 
 	if (gpio_pin_configure(ctx->rst_gpio, hi_cfg->rst_pin,
 			       GPIO_OUTPUT_ACTIVE | hi_cfg->rst_flags)) {
@@ -1020,7 +1020,7 @@ static void dwt_set_rx_mode(struct dwt_context *ctx)
 
 static int dwt_start(struct device *dev)
 {
-	struct dwt_context *ctx = dev->driver_data;
+	struct dwt_context *ctx = dev->data;
 	uint8_t cswakeup_buf[32] = {0};
 
 	k_sem_take(&ctx->dev_lock, K_FOREVER);
@@ -1068,7 +1068,7 @@ static int dwt_start(struct device *dev)
 
 static int dwt_stop(struct device *dev)
 {
-	struct dwt_context *ctx = dev->driver_data;
+	struct dwt_context *ctx = dev->data;
 
 	k_sem_take(&ctx->dev_lock, K_FOREVER);
 	dwt_disable_txrx(ctx);
@@ -1489,8 +1489,8 @@ static int dwt_configure_rf_phy(struct dwt_context *ctx)
 
 static int dw1000_init(struct device *dev)
 {
-	struct dwt_context *ctx = dev->driver_data;
-	const struct dwt_hi_cfg *hi_cfg = dev->config_info;
+	struct dwt_context *ctx = dev->data;
+	const struct dwt_hi_cfg *hi_cfg = dev->config;
 
 	LOG_INF("Initialize DW1000 Transceiver");
 	k_sem_init(&ctx->phy_sem, 0, 1);
@@ -1607,7 +1607,7 @@ static int dw1000_init(struct device *dev)
 	/* Initialize IRQ event work queue */
 	k_work_q_start(&dwt_work_queue,
 		       dwt_work_queue_stack,
-		       K_THREAD_STACK_SIZEOF(dwt_work_queue_stack),
+		       K_KERNEL_STACK_SIZEOF(dwt_work_queue_stack),
 		       CONFIG_SYSTEM_WORKQUEUE_PRIORITY);
 
 	k_work_init(&ctx->irq_cb_work, dwt_irq_work_handler);
@@ -1621,7 +1621,7 @@ static int dw1000_init(struct device *dev)
 
 static inline uint8_t *get_mac(struct device *dev)
 {
-	struct dwt_context *dw1000 = dev->driver_data;
+	struct dwt_context *dw1000 = dev->data;
 	uint32_t *ptr = (uint32_t *)(dw1000->mac_addr);
 
 	UNALIGNED_PUT(sys_rand32_get(), ptr);
@@ -1636,7 +1636,7 @@ static inline uint8_t *get_mac(struct device *dev)
 static void dwt_iface_api_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
-	struct dwt_context *dw1000 = dev->driver_data;
+	struct dwt_context *dw1000 = dev->data;
 	uint8_t *mac = get_mac(dev);
 
 	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);

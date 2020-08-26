@@ -33,13 +33,13 @@ GDATA(_sw_isr_table)
 
 GTEXT(_isr_wrapper)
 SECTION_FUNC(TEXT, _isr_wrapper)
-	z_arm64_enter_exc
+	z_arm64_enter_exc x0, x1, x2
 
 	/* ++(_kernel->nested) to be checked by arch_is_in_isr() */
-	ldr	x1, =_kernel
-	ldr	x2, [x1, #_kernel_offset_to_nested]
-	add	x2, x2, #1
-	str	x2, [x1, #_kernel_offset_to_nested]
+	ldr	x0, =_kernel
+	ldr	x1, [x0, #_kernel_offset_to_nested]
+	add	x1, x1, #1
+	str	x1, [x0, #_kernel_offset_to_nested]
 
 #ifdef CONFIG_TRACING
 	bl	sys_trace_isr_enter
@@ -80,18 +80,18 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 #endif
 
 	/* --(_kernel->nested) */
-	ldr	x1, =_kernel
-	ldr	x2, [x1, #_kernel_offset_to_nested]
-	sub	x2, x2, #1
-	str	x2, [x1, #_kernel_offset_to_nested]
+	ldr	x0, =_kernel
+	ldr	x1, [x0, #_kernel_offset_to_nested]
+	sub	x1, x1, #1
+	str	x1, [x0, #_kernel_offset_to_nested]
 
-	cmp	x2, #0
+	cmp	x1, #0
 	bne	exit
 
 	/* Check if we need to context switch */
-	ldr	x2, [x1, #_kernel_offset_to_current]
-	ldr	x3, [x1, #_kernel_offset_to_ready_q_cache]
-	cmp	x2, x3
+	ldr	x1, [x0, #_kernel_offset_to_current]
+	ldr	x2, [x0, #_kernel_offset_to_ready_q_cache]
+	cmp	x1, x2
 	beq	exit
 
 	/* Switch thread */
@@ -108,5 +108,5 @@ exit:
 #ifdef CONFIG_STACK_SENTINEL
 	bl	z_check_stack_sentinel
 #endif
-	z_arm64_exit_exc
+	z_arm64_exit_exc x0, x1, x2
 

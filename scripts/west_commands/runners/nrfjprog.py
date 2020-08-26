@@ -8,6 +8,7 @@
 import os
 import shlex
 import sys
+from re import fullmatch, escape
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps
 
@@ -45,7 +46,8 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
                             action='store_true',
                             help='use reset instead of pinreset')
         parser.add_argument('--snr', required=False,
-                            help='serial number of board to use')
+                            help="""Serial number of board to use.
+                            '*' matches one or more characters/digits.""")
         parser.add_argument('--tool-opt', default=[], action='append',
                             help='''Additional options for nrfjprog,
                             e.g. "--recover"''')
@@ -57,10 +59,23 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
                                     tool_opt=args.tool_opt)
 
     def ensure_snr(self):
-        if not self.snr:
-            self.snr = self.get_board_snr()
+        self.snr = self.get_board_snr(self.snr or "*")
 
-    def get_board_snr(self):
+    def get_boards(self):
+        snrs = self.check_output(['nrfjprog', '--ids'])
+        snrs = snrs.decode(sys.getdefaultencoding()).strip().splitlines()
+        if not snrs:
+            raise RuntimeError('"nrfjprog --ids" did not find a board; '
+                               'is the board connected?')
+        return snrs
+
+    @staticmethod
+    def verify_snr(snr):
+        if snr == '0':
+            raise RuntimeError('"nrfjprog --ids" returned 0; '
+                                'is a debugger already connected?')
+
+    def get_board_snr(self, glob):
         # Use nrfjprog --ids to discover connected boards.
         #
         # If there's exactly one board connected, it's safe to assume
@@ -68,16 +83,17 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         # multiple boards and we are connected to a terminal, in which
         # case use print() and input() to ask what the user wants.
 
-        snrs = self.check_output(['nrfjprog', '--ids'])
-        snrs = snrs.decode(sys.getdefaultencoding()).strip().splitlines()
-        if not snrs:
-            raise RuntimeError('"nrfjprog --ids" did not find a board; '
-                               'is the board connected?')
+        re_glob = escape(glob).replace(r"\*", ".+")
+        snrs = [snr for snr in self.get_boards() if fullmatch(re_glob, snr)]
+
+        if len(snrs) == 0:
+            raise RuntimeError(
+                'There are no boards connected{}.'.format(
+                        f" matching '{glob}'" if glob != "*" else ""))
         elif len(snrs) == 1:
             board_snr = snrs[0]
-            if board_snr == '0':
-                raise RuntimeError('"nrfjprog --ids" returned 0; '
-                                   'is a debugger already connected?')
+            self.verify_snr(board_snr)
+            print("Using board {}".format(board_snr))
             return board_snr
         elif not sys.stdin.isatty():
             raise RuntimeError(
@@ -87,7 +103,8 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
                 'Please specify a serial number on the command line.')
 
         snrs = sorted(snrs)
-        print('There are multiple boards connected.')
+        print('There are multiple boards connected{}.'.format(
+                        f" matching '{glob}'" if glob != "*" else ""))
         for i, snr in enumerate(snrs, 1):
             print('{}. {}'.format(i, snr))
 

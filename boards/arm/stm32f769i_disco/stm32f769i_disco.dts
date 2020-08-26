@@ -78,3 +78,7 @@ arduino_serial: &usart6 {};
 &spi2 {
 	status = "okay";
 };
+
+&mac {
+	status = "okay";
+};

@@ -8,6 +8,8 @@ documentation on your local system using the same documentation sources
 as we use to create the online documentation found at
 https://docs.zephyrproject.org
 
+.. _documentation-overview:
+
 Documentation overview
 **********************
 
@@ -44,6 +46,8 @@ The reStructuredText files are processed by the Sphinx documentation system,
 and make use of the breathe extension for including the doxygen-generated API
 material.  Additional tools are required to generate the
 documentation locally, as described in the following sections.
+
+.. _documentation-processors:
 
 Installing the documentation processors
 ***************************************

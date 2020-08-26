@@ -32,7 +32,7 @@
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv7m-mpu";
 				reg = <0xe000ed90 0x40>;
-				arm,num-mpu-regions = <8>;
+				arm,num-mpu-regions = <16>;
 			};
 		};
 	};
@@ -597,6 +597,18 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000040>;
 			status = "disabled";
 			label = "RNG";
+		};
+
+		mac: ethernet@40028000 {
+			compatible = "st,stm32-ethernet";
+			reg = <0x40028000 0x8000>;
+			label = "ETH_0";
+			interrupts = <61 0>;
+			clock-names = "stmmaceth", "mac-clk-tx", "mac-clk-rx";
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00008000>,
+				 <&rcc STM32_CLOCK_BUS_AHB1 0x00010000>,
+				 <&rcc STM32_CLOCK_BUS_AHB1 0x00020000>;
+			status = "disabled";
 		};
 	};
 };

@@ -67,43 +67,7 @@ static inline uint32_t arch_k_cycle_get_32(void);
  */
 
 /**
- * @def ARCH_THREAD_STACK_DEFINE(sym, size)
- *
- * @see K_THREAD_STACK_DEFINE()
- */
-
-/**
- * @def ARCH_THREAD_STACK_ARRAY_DEFINE(sym, size)
- *
- * @see K_THREAD_STACK_ARRAY_DEFINE()
- */
-
-/**
- * @def ARCH_THREAD_STACK_LEN(size)
- *
- * @see K_THREAD_STACK_LEN()
- */
-
-/**
- * @def ARCH_THREAD_STACK_MEMBER(sym, size)
- *
- * @see K_THREAD_STACK_MEMBER()
- */
-
-/*
- * @def ARCH_THREAD_STACK_SIZEOF(sym)
- *
- * @see K_THREAD_STACK_SIZEOF()
- */
-
-/**
  * @def ARCH_THREAD_STACK_RESERVED
- *
- * @see K_THREAD_STACK_RESERVED
- */
-
-/**
- * @def ARCH_THREAD_STACK_BUFFER(sym)
  *
  * @see K_THREAD_STACK_RESERVED
  */
@@ -116,6 +80,59 @@ static inline uint32_t arch_k_cycle_get_32(void);
  *
  * @see Z_STACK_PTR_ALIGN
  */
+
+/**
+ * @def ARCH_THREAD_STACK_OBJ_ALIGN(size)
+ *
+ * Required alignment of the lowest address of a stack object.
+ *
+ * Optional definition.
+ *
+ * @see Z_THREAD_STACK_OBJ_ALIGN
+ */
+
+/**
+ * @def ARCH_THREAD_STACK_SIZE_ADJUST(size)
+ * @brief Round up a stack buffer size to alignment constraints
+ *
+ * Adjust a requested stack buffer size to the true size of its underlying
+ * buffer, defined as the area usable for thread stack context and thread-
+ * local storage.
+ *
+ * The size value passed here does not include storage reserved for platform
+ * data.
+ *
+ * The returned value is either the same size provided (if already properly
+ * aligned), or rounded up to satisfy alignment constraints.  Calculations
+ * performed here *must* be idempotent.
+ *
+ * Optional definition. If undefined, stack buffer sizes are either:
+ * - Rounded up to the next power of two if user mode is enabled on an arch
+ *   with an MPU that requires such alignment
+ * - Rounded up to ARCH_STACK_PTR_ALIGN
+ *
+ * @see Z_THREAD_STACK_SIZE_ADJUST
+ */
+
+/**
+ * @def ARCH_KERNEL_STACK_RESERVED
+ * @brief MPU guard size for kernel-only stacks
+ *
+ * If MPU stack guards are used to catch stack overflows, specify the
+ * amount of space reserved in kernel stack objects. If guard sizes are
+ * context dependent, this should be in the minimum guard size, with
+ * remaining space carved out if needed.
+ *
+ * Optional definition, defaults to 0.
+ *
+ * @see K_KERNEL_STACK_RESERVED
+ */
+
+/**
+ * @def ARCH_KERNEL_STACK_OBJ_ALIGN
+ * @brief Required alignment of the lowest address of a kernel-only stack.
+ */
+
 /** @} */
 
 /**
@@ -673,6 +690,41 @@ extern uint64_t arch_timing_value_swap_common;
 extern uint64_t arch_timing_value_swap_temp;
 #endif /* CONFIG_EXECUTION_BENCHMARKING */
 
+/** @} */
+
+/**
+ * @defgroup arch_cache Architecture-specific cache functions
+ * @ingroup arch-interface
+ * @{
+ */
+
+#ifdef CONFIG_CACHE_FLUSHING
+/**
+ *
+ * @brief Flush d-cache lines to main memory
+ *
+ * @see sys_cache_flush
+ */
+void arch_dcache_flush(void *addr, size_t size);
+
+/**
+ *
+ * @brief Invalidate d-cache lines
+ *
+ * @see sys_cache_invd
+ */
+void arch_dcache_invd(void *addr, size_t size);
+
+#ifndef CONFIG_CACHE_LINE_SIZE
+/**
+ *
+ * @brief Get d-cache line size
+ *
+ * @see sys_cache_line_size_get
+ */
+size_t arch_cache_line_size_get(void);
+#endif
+#endif
 /** @} */
 
 #ifdef __cplusplus

@@ -13,19 +13,16 @@
 #include "util/memq.h"
 #include "util/mayfly.h"
 
+#include "ll_sw/lll.h"
+
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_hal_mayfly
 #include "common/log.h"
 #include "hal/debug.h"
 
-#if defined(CONFIG_BT_LL_SW_SPLIT)
-#include "ll_sw/lll.h"
 #define MAYFLY_CALL_ID_LLL    TICKER_USER_ID_LLL
 #define MAYFLY_CALL_ID_WORKER TICKER_USER_ID_ULL_HIGH
 #define MAYFLY_CALL_ID_JOB    TICKER_USER_ID_ULL_LOW
-#else
-#error Unknown LL variant.
-#endif
 
 void mayfly_enable_cb(uint8_t caller_id, uint8_t callee_id, uint8_t enable)
 {
@@ -45,10 +42,8 @@ uint32_t mayfly_is_enabled(uint8_t caller_id, uint8_t callee_id)
 	(void)caller_id;
 
 	switch (callee_id) {
-#if defined(CONFIG_BT_LL_SW_SPLIT)
 	case MAYFLY_CALL_ID_LLL:
 		return irq_is_enabled(HAL_SWI_RADIO_IRQ);
-#endif /* CONFIG_BT_LL_SW_SPLIT */
 
 	case MAYFLY_CALL_ID_WORKER:
 		return irq_is_enabled(HAL_SWI_WORKER_IRQ);
@@ -67,7 +62,6 @@ uint32_t mayfly_is_enabled(uint8_t caller_id, uint8_t callee_id)
 uint32_t mayfly_prio_is_equal(uint8_t caller_id, uint8_t callee_id)
 {
 	return (caller_id == callee_id) ||
-#if defined(CONFIG_BT_LL_SW_SPLIT)
 #if (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_HIGH_PRIO)
 	       ((caller_id == MAYFLY_CALL_ID_LLL) &&
 		(callee_id == MAYFLY_CALL_ID_WORKER)) ||
@@ -86,7 +80,6 @@ uint32_t mayfly_prio_is_equal(uint8_t caller_id, uint8_t callee_id)
 	       ((caller_id == MAYFLY_CALL_ID_JOB) &&
 		(callee_id == MAYFLY_CALL_ID_WORKER)) ||
 #endif
-#endif
 	       0;
 }
 
@@ -95,11 +88,9 @@ void mayfly_pend(uint8_t caller_id, uint8_t callee_id)
 	(void)caller_id;
 
 	switch (callee_id) {
-#if defined(CONFIG_BT_LL_SW_SPLIT)
 	case MAYFLY_CALL_ID_LLL:
 		hal_swi_lll_pend();
 		break;
-#endif /* CONFIG_BT_LL_SW_SPLIT */
 
 	case MAYFLY_CALL_ID_WORKER:
 		hal_swi_worker_pend();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NXP
+ * Copyright (c) 2017-2020, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,7 +29,7 @@
 #define PORT1_IDX 1u
 
 #define PIN_TO_INPUT_MUX_CONNECTION(port, pin) \
-	((PINTSEL0 << PMUX_SHIFT) + (32 * port) + (pin))
+	((PINTSEL_PMUX_ID << PMUX_SHIFT) + (32 * port) + (pin))
 
 #define NO_PINT_INT ((1 << sizeof(pint_pin_int_t)) - 1)
 
@@ -38,7 +38,11 @@ struct gpio_mcux_lpc_config {
 	struct gpio_driver_config common;
 	GPIO_Type *gpio_base;
 	PINT_Type *pint_base;
+#ifdef IOPCTL
+	IOPCTL_Type *pinmux_base;
+#else
 	IOCON_Type *pinmux_base;
+#endif
 	uint32_t port_no;
 	clock_ip_name_t clock_ip_name;
 };
@@ -59,7 +63,7 @@ struct gpio_mcux_lpc_data {
 static int gpio_mcux_lpc_configure(struct device *dev, gpio_pin_t pin,
 				   gpio_flags_t flags)
 {
-	const struct gpio_mcux_lpc_config *config = dev->config_info;
+	const struct gpio_mcux_lpc_config *config = dev->config;
 	GPIO_Type *gpio_base = config->gpio_base;
 	uint32_t port = config->port_no;
 
@@ -72,6 +76,17 @@ static int gpio_mcux_lpc_configure(struct device *dev, gpio_pin_t pin,
 	}
 
 	if (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) {
+#ifdef IOPCTL
+		IOPCTL_Type *pinmux_base = config->pinmux_base;
+		uint32_t *pinconfig = (uint32_t *)&(pinmux_base->PIO[port][pin]);
+
+		*pinconfig |= IOPCTL_PIO_PUPD_EN;
+		if ((flags & GPIO_PULL_UP) != 0) {
+			*pinconfig |= IOPCTL_PIO_PULLUP_EN;
+		} else if ((flags & GPIO_PULL_DOWN) != 0) {
+			*pinconfig &= ~(IOPCTL_PIO_PULLUP_EN);
+		}
+#else
 		IOCON_Type *pinmux_base = config->pinmux_base;
 		uint32_t *pinconfig = (uint32_t *)&(pinmux_base->PIO[port][pin]);
 
@@ -81,6 +96,7 @@ static int gpio_mcux_lpc_configure(struct device *dev, gpio_pin_t pin,
 		} else if ((flags & GPIO_PULL_DOWN) != 0) {
 			*pinconfig |= IOCON_PIO_MODE_PULLDOWN;
 		}
+#endif
 	}
 
 	/* supports access by pin now,you can add access by port when needed */
@@ -100,7 +116,7 @@ static int gpio_mcux_lpc_configure(struct device *dev, gpio_pin_t pin,
 
 static int gpio_mcux_lpc_port_get_raw(struct device *dev, uint32_t *value)
 {
-	const struct gpio_mcux_lpc_config *config = dev->config_info;
+	const struct gpio_mcux_lpc_config *config = dev->config;
 	GPIO_Type *gpio_base = config->gpio_base;
 
 	*value = gpio_base->PIN[config->port_no];
@@ -111,7 +127,7 @@ static int gpio_mcux_lpc_port_get_raw(struct device *dev, uint32_t *value)
 static int gpio_mcux_lpc_port_set_masked_raw(struct device *dev, uint32_t mask,
 					     uint32_t value)
 {
-	const struct gpio_mcux_lpc_config *config = dev->config_info;
+	const struct gpio_mcux_lpc_config *config = dev->config;
 	GPIO_Type *gpio_base = config->gpio_base;
 	uint32_t port = config->port_no;
 
@@ -126,7 +142,7 @@ static int gpio_mcux_lpc_port_set_masked_raw(struct device *dev, uint32_t mask,
 
 static int gpio_mcux_lpc_port_set_bits_raw(struct device *dev, uint32_t mask)
 {
-	const struct gpio_mcux_lpc_config *config = dev->config_info;
+	const struct gpio_mcux_lpc_config *config = dev->config;
 	GPIO_Type *gpio_base = config->gpio_base;
 
 	gpio_base->SET[config->port_no] = mask;
@@ -136,7 +152,7 @@ static int gpio_mcux_lpc_port_set_bits_raw(struct device *dev, uint32_t mask)
 
 static int gpio_mcux_lpc_port_clear_bits_raw(struct device *dev, uint32_t mask)
 {
-	const struct gpio_mcux_lpc_config *config = dev->config_info;
+	const struct gpio_mcux_lpc_config *config = dev->config;
 	GPIO_Type *gpio_base = config->gpio_base;
 
 	gpio_base->CLR[config->port_no] = mask;
@@ -146,7 +162,7 @@ static int gpio_mcux_lpc_port_clear_bits_raw(struct device *dev, uint32_t mask)
 
 static int gpio_mcux_lpc_port_toggle_bits(struct device *dev, uint32_t mask)
 {
-	const struct gpio_mcux_lpc_config *config = dev->config_info;
+	const struct gpio_mcux_lpc_config *config = dev->config;
 	GPIO_Type *gpio_base = config->gpio_base;
 
 	gpio_base->NOT[config->port_no] = mask;
@@ -157,8 +173,8 @@ static int gpio_mcux_lpc_port_toggle_bits(struct device *dev, uint32_t mask)
 static void gpio_mcux_lpc_port_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct gpio_mcux_lpc_config *config = dev->config_info;
-	struct gpio_mcux_lpc_data *data = dev->driver_data;
+	const struct gpio_mcux_lpc_config *config = dev->config;
+	struct gpio_mcux_lpc_data *data = dev->data;
 	uint32_t enabled_int;
 	uint32_t int_flags;
 	uint32_t pin;
@@ -229,13 +245,14 @@ static int gpio_mcux_lpc_pin_interrupt_configure(struct device *dev,
 		gpio_pin_t pin, enum gpio_int_mode mode,
 		enum gpio_int_trig trig)
 {
-	const struct gpio_mcux_lpc_config *config = dev->config_info;
-	struct gpio_mcux_lpc_data *data = dev->driver_data;
+	const struct gpio_mcux_lpc_config *config = dev->config;
+	struct gpio_mcux_lpc_data *data = dev->data;
 	pint_pin_enable_t interruptMode = kPINT_PinIntEnableNone;
 	GPIO_Type *gpio_base = config->gpio_base;
 	uint32_t port = config->port_no;
 	uint32_t isr;
 	uint32_t pint_idx;
+	static bool pint_inited;
 
 	/* Ensure pin used as interrupt is set as input*/
 	if ((mode & GPIO_INT_ENABLE) &&
@@ -280,6 +297,10 @@ static int gpio_mcux_lpc_pin_interrupt_configure(struct device *dev,
 		data->pint_id[pin] = pint_idx;
 	}
 
+	if (!pint_inited) {
+		PINT_Init(config->pint_base);
+		pint_inited = true;
+	}
 	PINT_PinInterruptConfig(config->pint_base, data->pint_id[pin],
 		interruptMode,
 		(pint_cb_t)gpio_mcux_lpc_port_isr);
@@ -290,18 +311,18 @@ static int gpio_mcux_lpc_pin_interrupt_configure(struct device *dev,
 static int gpio_mcux_lpc_manage_cb(struct device *port,
 				   struct gpio_callback *callback, bool set)
 {
-	struct gpio_mcux_lpc_data *data = port->driver_data;
+	struct gpio_mcux_lpc_data *data = port->data;
 
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
 static int gpio_mcux_lpc_init(struct device *dev)
 {
-	const struct gpio_mcux_lpc_config *config = dev->config_info;
-	struct gpio_mcux_lpc_data *data = dev->driver_data;
+	const struct gpio_mcux_lpc_config *config = dev->config;
+	struct gpio_mcux_lpc_data *data = dev->data;
 	int i;
 
-	CLOCK_EnableClock(config->clock_ip_name);
+	GPIO_PortInit(config->gpio_base, config->port_no);
 
 	for (i = 0; i < 32; i++) {
 		data->pint_id[i] = NO_PINT_INT;
@@ -323,6 +344,8 @@ static const struct gpio_driver_api gpio_mcux_lpc_driver_api = {
 	.manage_callback = gpio_mcux_lpc_manage_cb,
 };
 
+static const clock_ip_name_t gpio_clock_names[] = GPIO_CLOCKS;
+
 #ifdef CONFIG_GPIO_MCUX_LPC_PORT0
 static int lpc_gpio_0_init(struct device *dev);
 
@@ -332,9 +355,13 @@ static const struct gpio_mcux_lpc_config gpio_mcux_lpc_port0_config = {
 	},
 	.gpio_base = GPIO,
 	.pint_base = PINT, /* TODO: SECPINT issue #16330 */
+#ifdef IOPCTL
+	.pinmux_base = IOPCTL,
+#else
 	.pinmux_base = IOCON,
+#endif
 	.port_no = PORT0_IDX,
-	.clock_ip_name = kCLOCK_Gpio0,
+	.clock_ip_name = gpio_clock_names[0],
 };
 
 static struct gpio_mcux_lpc_data gpio_mcux_lpc_port0_data;
@@ -351,7 +378,7 @@ static int lpc_gpio_0_init(struct device *dev)
 	DT_INST_IRQ_HAS_IDX(0, 1) || \
 	DT_INST_IRQ_HAS_IDX(0, 2) || \
 	DT_INST_IRQ_HAS_IDX(0, 3)
-	struct gpio_mcux_lpc_data *data = dev->driver_data;
+	struct gpio_mcux_lpc_data *data = dev->data;
 #endif
 
 	gpio_mcux_lpc_init(dev);
@@ -402,9 +429,13 @@ static const struct gpio_mcux_lpc_config gpio_mcux_lpc_port1_config = {
 	},
 	.gpio_base = GPIO,
 	.pint_base = PINT,
+#ifdef IOPCTL
+	.pinmux_base = IOPCTL,
+#else
 	.pinmux_base = IOCON,
+#endif
 	.port_no = PORT1_IDX,
-	.clock_ip_name = kCLOCK_Gpio1,
+	.clock_ip_name = gpio_clock_names[1],
 };
 
 static struct gpio_mcux_lpc_data gpio_mcux_lpc_port1_data;
@@ -421,7 +452,7 @@ static int lpc_gpio_1_init(struct device *dev)
 	DT_INST_IRQ_HAS_IDX(1, 1) || \
 	DT_INST_IRQ_HAS_IDX(1, 2) || \
 	DT_INST_IRQ_HAS_IDX(1, 3)
-	struct gpio_mcux_lpc_data *data = dev->driver_data;
+	struct gpio_mcux_lpc_data *data = dev->data;
 #endif
 
 	gpio_mcux_lpc_init(dev);

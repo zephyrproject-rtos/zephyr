@@ -113,7 +113,7 @@ struct net_tcp_context {
 
 static int net_tcp_dev_init(struct device *dev)
 {
-	struct net_tcp_context *net_tcp_context = dev->driver_data;
+	struct net_tcp_context *net_tcp_context = dev->data;
 
 	net_tcp_context = net_tcp_context;
 
@@ -122,7 +122,7 @@ static int net_tcp_dev_init(struct device *dev)
 
 static uint8_t *net_tcp_get_mac(struct device *dev)
 {
-	struct net_tcp_context *context = dev->driver_data;
+	struct net_tcp_context *context = dev->data;
 
 	if (context->mac_addr[2] == 0x00) {
 		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
@@ -167,9 +167,8 @@ static void test_sem_give(void)
 static void test_sem_take(k_timeout_t timeout, int line)
 {
 	sem = true;
-	k_sem_take(&test_sem, timeout);
 
-	if (sem) {
+	if (k_sem_take(&test_sem, timeout) != 0) {
 		zassert_true(false, "semaphore timed out (line %d)", line);
 	}
 }
@@ -497,7 +496,7 @@ static void test_client_ipv4(void)
 	ret = net_context_connect(ctx, (struct sockaddr *)&peer_addr_s,
 				  sizeof(struct sockaddr_in),
 				  NULL,
-				  K_NO_WAIT, NULL);
+				  K_MSEC(100), NULL);
 	if (ret < 0) {
 		zassert_true(false, "Failed to connect to peer");
 	}
@@ -559,7 +558,7 @@ static void test_client_ipv6(void)
 	ret = net_context_connect(ctx, (struct sockaddr *)&peer_addr_v6_s,
 				  sizeof(struct sockaddr_in6),
 				  NULL,
-				  K_NO_WAIT, NULL);
+				  K_MSEC(100), NULL);
 	if (ret < 0) {
 		zassert_true(false, "Failed to connect to peer");
 	}
@@ -910,10 +909,9 @@ static void test_client_syn_resend(void)
 	ret = net_context_connect(ctx, (struct sockaddr *)&peer_addr_s,
 				  sizeof(struct sockaddr_in),
 				  NULL,
-				  K_NO_WAIT, NULL);
-	if (ret < 0) {
-		zassert_true(false, "Failed to connect to peer");
-	}
+				  K_MSEC(1000), NULL);
+
+	zassert_true(ret < 0, "Connect on no response from peer");
 
 	/* test handler will release the sem once it receives SYN again */
 	test_sem_take(K_MSEC(500), __LINE__);
@@ -1015,7 +1013,7 @@ static void test_client_fin_wait_2_ipv4(void)
 	ret = net_context_connect(ctx, (struct sockaddr *)&peer_addr_s,
 				  sizeof(struct sockaddr_in),
 				  NULL,
-				  K_NO_WAIT, NULL);
+				  K_MSEC(100), NULL);
 	if (ret < 0) {
 		zassert_true(false, "Failed to connect to peer");
 	}
@@ -1136,7 +1134,7 @@ static void test_client_closing_ipv6(void)
 	ret = net_context_connect(ctx, (struct sockaddr *)&peer_addr_v6_s,
 				  sizeof(struct sockaddr_in6),
 				  NULL,
-				  K_NO_WAIT, NULL);
+				  K_MSEC(100), NULL);
 	if (ret < 0) {
 		zassert_true(false, "Failed to connect to peer");
 	}

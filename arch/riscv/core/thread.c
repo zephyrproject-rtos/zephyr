@@ -13,30 +13,23 @@ void z_thread_entry_wrapper(k_thread_entry_t thread,
 			    void *arg3);
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		     size_t stack_size, k_thread_entry_t thread_func,
-		     void *arg1, void *arg2, void *arg3,
-		     int priority, unsigned int options)
+		     char *stack_ptr, k_thread_entry_t entry,
+		     void *p1, void *p2, void *p3)
 {
-	char *stack_memory = Z_THREAD_STACK_BUFFER(stack);
-
 	struct __esf *stack_init;
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 	const struct soc_esf soc_esf_init = {SOC_ESF_INIT};
 #endif
 
-	z_new_thread_init(thread, stack_memory, stack_size);
-
 	/* Initial stack frame for thread */
-	stack_init = (struct __esf *)
-		     Z_STACK_PTR_ALIGN(stack_memory +
-				       stack_size - sizeof(struct __esf));
+	stack_init = Z_STACK_PTR_TO_FRAME(struct __esf, stack_ptr);
 
 	/* Setup the initial stack frame */
-	stack_init->a0 = (ulong_t)thread_func;
-	stack_init->a1 = (ulong_t)arg1;
-	stack_init->a2 = (ulong_t)arg2;
-	stack_init->a3 = (ulong_t)arg3;
+	stack_init->a0 = (ulong_t)entry;
+	stack_init->a1 = (ulong_t)p1;
+	stack_init->a2 = (ulong_t)p2;
+	stack_init->a3 = (ulong_t)p3;
 	/*
 	 * Following the RISC-V architecture,
 	 * the MSTATUS register (used to globally enable/disable interrupt),

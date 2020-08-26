@@ -46,12 +46,12 @@ NET_BUF_POOL_DEFINE(mdm_recv_pool, MDM_RECV_MAX_BUF, MDM_RECV_BUF_SIZE,
 		    0, NULL);
 
 /* RX thread structures */
-K_THREAD_STACK_DEFINE(esp_rx_stack,
+K_KERNEL_STACK_DEFINE(esp_rx_stack,
 		      CONFIG_WIFI_ESP_RX_STACK_SIZE);
 struct k_thread esp_rx_thread;
 
 /* RX thread work queue */
-K_THREAD_STACK_DEFINE(esp_workq_stack,
+K_KERNEL_STACK_DEFINE(esp_workq_stack,
 		      CONFIG_WIFI_ESP_WORKQ_STACK_SIZE);
 
 struct esp_data esp_driver_data;
@@ -87,7 +87,7 @@ MODEM_CMD_DEFINE(on_cmd_error)
 /* RX thread */
 static void esp_rx(struct device *dev)
 {
-	struct esp_data *data = dev->driver_data;
+	struct esp_data *data = dev->data;
 
 	while (true) {
 		/* wait for incoming data */
@@ -229,20 +229,28 @@ MODEM_CMD_DEFINE(on_cmd_cipsta)
 
 static void esp_ip_addr_work(struct k_work *work)
 {
-	struct esp_data *data = CONTAINER_OF(work, struct esp_data,
-					     ip_addr_work);
+	struct esp_data *dev = CONTAINER_OF(work, struct esp_data,
+					    ip_addr_work);
+	int ret;
+
 	struct modem_cmd cmds[] = {
 		MODEM_CMD("+"_CIPSTA":", on_cmd_cipsta, 2U, ":"),
 	};
 
-	modem_cmd_send(&data->mctx.iface, &data->mctx.cmd_handler,
-			cmds, ARRAY_SIZE(cmds), "AT+"_CIPSTA"?",
-			&data->sem_response, ESP_CMD_TIMEOUT);
+	ret = modem_cmd_send(&dev->mctx.iface, &dev->mctx.cmd_handler,
+			     cmds, ARRAY_SIZE(cmds), "AT+"_CIPSTA"?",
+			     &dev->sem_response, ESP_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_WRN("Failed to query IP settings: ret %d", ret);
+		k_delayed_work_submit_to_queue(&dev->workq, &dev->ip_addr_work,
+					       K_SECONDS(5));
+		return;
+	}
 
 	/* update interface addresses */
-	net_if_ipv4_set_gw(data->net_iface, &data->gw);
-	net_if_ipv4_set_netmask(data->net_iface, &data->nm);
-	net_if_ipv4_addr_add(data->net_iface, &data->ip, NET_ADDR_DHCP, 0);
+	net_if_ipv4_set_gw(dev->net_iface, &dev->gw);
+	net_if_ipv4_set_netmask(dev->net_iface, &dev->nm);
+	net_if_ipv4_addr_add(dev->net_iface, &dev->ip, NET_ADDR_DHCP, 0);
 }
 
 MODEM_CMD_DEFINE(on_cmd_got_ip)
@@ -529,7 +537,7 @@ static void esp_mgmt_scan_work(struct k_work *work)
 
 static int esp_mgmt_scan(struct device *dev, scan_result_cb_t cb)
 {
-	struct esp_data *data = dev->driver_data;
+	struct esp_data *data = dev->data;
 
 	if (data->scan_cb != NULL) {
 		return -EINPROGRESS;
@@ -593,7 +601,7 @@ static void esp_mgmt_connect_work(struct k_work *work)
 static int esp_mgmt_connect(struct device *dev,
 			    struct wifi_connect_req_params *params)
 {
-	struct esp_data *data = dev->driver_data;
+	struct esp_data *data = dev->data;
 	int len;
 
 	if (!net_if_is_up(data->net_iface)) {
@@ -629,7 +637,7 @@ static int esp_mgmt_connect(struct device *dev,
 
 static int esp_mgmt_disconnect(struct device *dev)
 {
-	struct esp_data *data = dev->driver_data;
+	struct esp_data *data = dev->data;
 	int ret;
 
 	ret = modem_cmd_send(&data->mctx.iface, &data->mctx.cmd_handler,
@@ -644,7 +652,7 @@ static int esp_mgmt_ap_enable(struct device *dev,
 {
 	char cmd[sizeof("AT+"_CWSAP"=\"\",\"\",xx,x") + WIFI_SSID_MAX_LEN +
 		 WIFI_PSK_MAX_LEN];
-	struct esp_data *data = dev->driver_data;
+	struct esp_data *data = dev->data;
 	int ecn = 0, len, ret;
 
 	ret = modem_cmd_send(&data->mctx.iface, &data->mctx.cmd_handler,
@@ -680,7 +688,7 @@ static int esp_mgmt_ap_enable(struct device *dev,
 
 static int esp_mgmt_ap_disable(struct device *dev)
 {
-	struct esp_data *data = dev->driver_data;
+	struct esp_data *data = dev->data;
 	int ret;
 
 	ret = modem_cmd_send(&data->mctx.iface, &data->mctx.cmd_handler,
@@ -777,7 +785,7 @@ static void esp_reset(struct esp_data *dev)
 static void esp_iface_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
-	struct esp_data *data = dev->driver_data;
+	struct esp_data *data = dev->data;
 
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 	data->net_iface = iface;
@@ -796,7 +804,7 @@ static const struct net_wifi_mgmt_offload esp_api = {
 
 static int esp_init(struct device *dev)
 {
-	struct esp_data *data = dev->driver_data;
+	struct esp_data *data = dev->data;
 	int ret = 0;
 
 	k_sem_init(&data->sem_tx_ready, 0, 1);
@@ -813,7 +821,7 @@ static int esp_init(struct device *dev)
 
 	/* initialize the work queue */
 	k_work_q_start(&data->workq, esp_workq_stack,
-		       K_THREAD_STACK_SIZEOF(esp_workq_stack),
+		       K_KERNEL_STACK_SIZEOF(esp_workq_stack),
 		       K_PRIO_COOP(CONFIG_WIFI_ESP_WORKQ_THREAD_PRIORITY));
 	k_thread_name_set(&data->workq.thread, "esp_workq");
 
@@ -860,7 +868,7 @@ static int esp_init(struct device *dev)
 
 	/* start RX thread */
 	k_thread_create(&esp_rx_thread, esp_rx_stack,
-			K_THREAD_STACK_SIZEOF(esp_rx_stack),
+			K_KERNEL_STACK_SIZEOF(esp_rx_stack),
 			(k_thread_entry_t)esp_rx,
 			dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_WIFI_ESP_RX_THREAD_PRIORITY), 0,

@@ -33,14 +33,19 @@ void z_impl_k_thread_abort(k_tid_t thread)
 	z_thread_single_abort(thread);
 	z_thread_monitor_exit(thread);
 
-	if (thread == _current && !arch_is_in_isr()) {
-		/* Direct use of swap: reschedule doesn't have a test
-		 * for "is _current dead" and we don't want one for
-		 * performance reasons.
-		 */
-		z_swap_unlocked();
-	} else {
-		z_reschedule_unlocked();
+	/* If we're in an interrupt handler, we reschedule on the way out
+	 * anyway, nothing needs to be done here.
+	 */
+	if (!arch_is_in_isr()) {
+		if (thread == _current) {
+			/* Direct use of swap: reschedule doesn't have a test
+			 * for "is _current dead" and we don't want one for
+			 * performance reasons.
+			 */
+			z_swap_unlocked();
+		} else {
+			z_reschedule_unlocked();
+		}
 	}
 }
 #endif

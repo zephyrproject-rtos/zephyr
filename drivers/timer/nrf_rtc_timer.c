@@ -188,16 +188,7 @@ void rtc_nrf_isr(void *arg)
 
 int z_clock_driver_init(struct device *device)
 {
-	struct device *clock;
-
 	ARG_UNUSED(device);
-
-	clock = device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_clock)));
-	if (!clock) {
-		return -1;
-	}
-
-	clock_control_on(clock, CLOCK_CONTROL_NRF_SUBSYS_LF);
 
 	/* TODO: replace with counter driver to access RTC */
 	nrf_rtc_prescaler_set(RTC, 0);
@@ -214,6 +205,8 @@ int z_clock_driver_init(struct device *device)
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		set_comparator(counter() + CYC_PER_TICK);
 	}
+
+	z_nrf_clock_control_lf_on(NRF_LFCLK_START_MODE_NOWAIT);
 
 	return 0;
 }

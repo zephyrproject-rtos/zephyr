@@ -26,7 +26,7 @@ static int test_file_open(const char *path)
 	}
 
 	/* Verify fs_open() */
-	res = fs_open(&filep, path);
+	res = fs_open(&filep, path, FS_O_CREATE | FS_O_RDWR);
 	if (res) {
 		TC_PRINT("Failed opening file [%d]\n", res);
 		return res;

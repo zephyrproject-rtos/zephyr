@@ -24,7 +24,7 @@ struct fake_dev_context {
 static int fake_dev_pm_control(struct device *dev, uint32_t command,
 			       void *context, device_pm_cb cb, void *arg)
 {
-	struct fake_dev_context *ctx = dev->driver_data;
+	struct fake_dev_context *ctx = dev->data;
 	int ret = 0;
 
 	if (command == DEVICE_PM_SET_POWER_STATE) {
@@ -75,7 +75,7 @@ static uint8_t *fake_dev_get_mac(struct fake_dev_context *ctx)
 static void fake_dev_iface_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
-	struct fake_dev_context *ctx = dev->driver_data;
+	struct fake_dev_context *ctx = dev->data;
 	uint8_t *mac = fake_dev_get_mac(ctx);
 
 	net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET);
@@ -178,6 +178,8 @@ void test_pm(void)
 	ret = sendto(sock, data, ARRAY_SIZE(data), 0,
 		     (struct sockaddr *)&addr4, sizeof(struct sockaddr_in));
 	zassert_true(ret > 0, "Could not send data");
+
+	close(sock);
 }
 
 void test_main(void)

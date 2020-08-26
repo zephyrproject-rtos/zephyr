@@ -95,7 +95,7 @@ struct mcux_flexcan_data {
 static int mcux_flexcan_configure(struct device *dev, enum can_mode mode,
 				  uint32_t bitrate)
 {
-	const struct mcux_flexcan_config *config = dev->config_info;
+	const struct mcux_flexcan_config *config = dev->config;
 	flexcan_config_t flexcan_config;
 	struct device *clock_dev;
 	uint32_t clock_freq;
@@ -249,8 +249,8 @@ static int mcux_flexcan_send(struct device *dev, const struct zcan_frame *msg,
 			     k_timeout_t timeout,
 			     can_tx_callback_t callback_isr, void *callback_arg)
 {
-	const struct mcux_flexcan_config *config = dev->config_info;
-	struct mcux_flexcan_data *data = dev->driver_data;
+	const struct mcux_flexcan_config *config = dev->config;
+	struct mcux_flexcan_data *data = dev->data;
 	flexcan_mb_transfer_t xfer;
 	status_t status;
 	int alloc;
@@ -299,8 +299,8 @@ static int mcux_flexcan_attach_isr(struct device *dev, can_rx_callback_t isr,
 				   void *callback_arg,
 				   const struct zcan_filter *filter)
 {
-	const struct mcux_flexcan_config *config = dev->config_info;
-	struct mcux_flexcan_data *data = dev->driver_data;
+	const struct mcux_flexcan_config *config = dev->config;
+	struct mcux_flexcan_data *data = dev->data;
 	flexcan_mb_transfer_t xfer;
 	status_t status;
 	uint32_t mask;
@@ -353,7 +353,7 @@ static int mcux_flexcan_attach_isr(struct device *dev, can_rx_callback_t isr,
 static void mcux_flexcan_register_state_change_isr(struct device *dev,
 						   can_state_change_isr_t isr)
 {
-	struct mcux_flexcan_data *data = dev->driver_data;
+	struct mcux_flexcan_data *data = dev->data;
 
 	data->state_change_isr = isr;
 }
@@ -361,7 +361,7 @@ static void mcux_flexcan_register_state_change_isr(struct device *dev,
 static enum can_state mcux_flexcan_get_state(struct device *dev,
 					     struct can_bus_err_cnt *err_cnt)
 {
-	const struct mcux_flexcan_config *config = dev->config_info;
+	const struct mcux_flexcan_config *config = dev->config;
 	uint32_t status_flags;
 
 	if (err_cnt) {
@@ -386,7 +386,7 @@ static enum can_state mcux_flexcan_get_state(struct device *dev,
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 int mcux_flexcan_recover(struct device *dev, k_timeout_t timeout)
 {
-	const struct mcux_flexcan_config *config = dev->config_info;
+	const struct mcux_flexcan_config *config = dev->config;
 	int ret = 0;
 	uint64_t start_time;
 
@@ -414,8 +414,8 @@ int mcux_flexcan_recover(struct device *dev, k_timeout_t timeout)
 
 static void mcux_flexcan_detach(struct device *dev, int filter_id)
 {
-	const struct mcux_flexcan_config *config = dev->config_info;
-	struct mcux_flexcan_data *data = dev->driver_data;
+	const struct mcux_flexcan_config *config = dev->config;
+	struct mcux_flexcan_data *data = dev->data;
 
 	if (filter_id >= MCUX_FLEXCAN_MAX_RX) {
 		LOG_ERR("Detach: Filter id >= MAX_RX (%d >= %d)", filter_id,
@@ -443,8 +443,8 @@ static void mcux_flexcan_detach(struct device *dev, int filter_id)
 static inline void mcux_flexcan_transfer_error_status(struct device *dev,
 						      uint32_t error)
 {
-	const struct mcux_flexcan_config *config = dev->config_info;
-	struct mcux_flexcan_data *data = dev->driver_data;
+	const struct mcux_flexcan_config *config = dev->config;
+	struct mcux_flexcan_data *data = dev->data;
 	can_tx_callback_t function;
 	int status = CAN_TX_OK;
 	void *arg;
@@ -520,7 +520,7 @@ static inline void mcux_flexcan_transfer_error_status(struct device *dev,
 static inline void mcux_flexcan_transfer_tx_idle(struct device *dev,
 						 uint32_t mb)
 {
-	struct mcux_flexcan_data *data = dev->driver_data;
+	struct mcux_flexcan_data *data = dev->data;
 	can_tx_callback_t function;
 	void *arg;
 	int alloc;
@@ -545,8 +545,8 @@ static inline void mcux_flexcan_transfer_tx_idle(struct device *dev,
 static inline void mcux_flexcan_transfer_rx_idle(struct device *dev,
 						 uint32_t mb)
 {
-	const struct mcux_flexcan_config *config = dev->config_info;
-	struct mcux_flexcan_data *data = dev->driver_data;
+	const struct mcux_flexcan_config *config = dev->config;
+	struct mcux_flexcan_data *data = dev->data;
 	can_rx_callback_t function;
 	flexcan_mb_transfer_t xfer;
 	struct zcan_frame frame;
@@ -610,16 +610,16 @@ static void mcux_flexcan_transfer_callback(CAN_Type *base,
 static void mcux_flexcan_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct mcux_flexcan_config *config = dev->config_info;
-	struct mcux_flexcan_data *data = dev->driver_data;
+	const struct mcux_flexcan_config *config = dev->config;
+	struct mcux_flexcan_data *data = dev->data;
 
 	FLEXCAN_TransferHandleIRQ(config->base, &data->handle);
 }
 
 static int mcux_flexcan_init(struct device *dev)
 {
-	const struct mcux_flexcan_config *config = dev->config_info;
-	struct mcux_flexcan_data *data = dev->driver_data;
+	const struct mcux_flexcan_config *config = dev->config;
+	struct mcux_flexcan_data *data = dev->data;
 	int err;
 	int i;
 
@@ -734,7 +734,7 @@ static void mcux_flexcan_config_func_0(struct device *dev)
 static int socket_can_init_0(struct device *dev)
 {
 	struct device *can_dev = DEVICE_GET(can_mcux_flexcan_0);
-	struct socket_can_context *socket_context = dev->driver_data;
+	struct socket_can_context *socket_context = dev->data;
 
 	LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",
 		dev, dev->name, can_dev, can_dev->name);
@@ -745,7 +745,7 @@ static int socket_can_init_0(struct device *dev)
 	socket_context->rx_tid =
 		k_thread_create(&socket_context->rx_thread_data,
 				rx_thread_stack,
-				K_THREAD_STACK_SIZEOF(rx_thread_stack),
+				K_KERNEL_STACK_SIZEOF(rx_thread_stack),
 				rx_thread, socket_context, NULL, NULL,
 				RX_THREAD_PRIORITY, 0, K_NO_WAIT);
 

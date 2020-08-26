@@ -70,7 +70,7 @@ static inline void sys_set_mask(mem_addr_t addr, uint32_t mask, uint32_t value)
 
 static int pwm_sifive_init(struct device *dev)
 {
-	const struct pwm_sifive_cfg *config = dev->config_info;
+	const struct pwm_sifive_cfg *config = dev->config;
 
 	/* When pwms == pwmcmp0, reset the counter */
 	sys_set_bit(PWM_REG(config, REG_PWMCFG), SF_PWMZEROCMP);
@@ -116,7 +116,7 @@ static int pwm_sifive_pin_set(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	config = dev->config_info;
+	config = dev->config;
 	if (config == NULL) {
 		LOG_ERR("The device configuration is NULL\n");
 		return -EFAULT;
@@ -199,7 +199,7 @@ static int pwm_sifive_get_cycles_per_sec(struct device *dev,
 		return -EFAULT;
 	}
 
-	config = dev->config_info;
+	config = dev->config;
 	if (config == NULL) {
 		LOG_ERR("The device configuration is NULL\n");
 		return -EFAULT;

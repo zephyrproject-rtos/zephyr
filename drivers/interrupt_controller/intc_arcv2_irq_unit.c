@@ -26,7 +26,6 @@ extern void *_VectorTable;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 #include <power/power.h>
 #include <kernel_structs.h>
-#include <v2/irq.h>
 
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
 #undef _ARC_V2_IRQ_VECT_BASE

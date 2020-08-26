@@ -16,12 +16,13 @@ static int test_file_open(void)
 {
 	int res;
 
-	res = open(TEST_FILE, O_RDWR);
+	res = open(TEST_FILE, O_CREAT | O_RDWR);
+
 	zassert_true(res >= 0, "Failed opening file: %d, errno=%d\n", res, errno);
 
 	file = res;
 
-	return 0;
+	return TC_PASS;
 }
 
 int test_file_write(void)

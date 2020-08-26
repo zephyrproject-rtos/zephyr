@@ -25,6 +25,8 @@
 #endif
 
 #define SHELL_MSG_CMD_NOT_FOUND		": command not found"
+#define SHELL_MSG_BACKEND_NOT_ACTIVE	\
+	"WARNING: A print request was detected on not active shell backend.\n"
 
 #define SHELL_INIT_OPTION_PRINTER	(NULL)
 
@@ -79,14 +81,24 @@ static int cmd_precheck(const struct shell *shell,
 	return 0;
 }
 
-static void state_set(const struct shell *shell, enum shell_state state)
+static inline void state_set(const struct shell *shell, enum shell_state state)
 {
 	shell->ctx->state = state;
 
 	if (state == SHELL_STATE_ACTIVE) {
 		cmd_buffer_clear(shell);
+		if (flag_print_noinit_get(shell)) {
+			shell_internal_fprintf(shell, SHELL_WARNING, "%s",
+					       SHELL_MSG_BACKEND_NOT_ACTIVE);
+			flag_print_noinit_set(shell, false);
+		}
 		shell_print_prompt_and_cmd(shell);
 	}
+}
+
+static inline enum shell_state state_get(const struct shell *shell)
+{
+	return shell->ctx->state;
 }
 
 static void tab_item_print(const struct shell *shell, const char *option,
@@ -236,8 +248,8 @@ static bool tab_prepare(const struct shell *shell,
 	(void)shell_make_argv(argc, *argv, shell->ctx->temp_buff,
 			      CONFIG_SHELL_ARGC_MAX);
 
-	if (IS_ENABLED(CONFIG_SHELL_CMDS_SELECT) &&
-	    (strcmp("select", (*argv)[0]) == 0)	 &&
+	if (IS_ENABLED(CONFIG_SHELL_CMDS_SELECT) && (*argc > 0) &&
+	    (strcmp("select", (*argv)[0]) == 0) &&
 	    !shell_in_select_mode(shell)) {
 		*argv = *argv + 1;
 		*argc = *argc - 1;
@@ -271,15 +283,6 @@ static bool tab_prepare(const struct shell *shell,
 	return true;
 }
 
-/* Empty command is identified by null handler and subcommand but contrary
- * to array termination null command, it has non-null syntax address.
- */
-static inline bool is_empty_cmd(const struct shell_static_entry *entry)
-{
-	return entry->syntax &&
-		(entry->handler == NULL) && (entry->subcmd == NULL);
-}
-
 static inline bool is_completion_candidate(const char *candidate,
 					   const char *str, size_t len)
 {
@@ -302,10 +305,9 @@ static void find_completion_candidates(const struct shell *shell,
 
 	while ((candidate = shell_cmd_get(cmd, idx, &dloc)) != NULL) {
 		bool is_candidate;
-
 		is_candidate = is_completion_candidate(candidate->syntax,
 						incompl_cmd, incompl_cmd_len);
-		if (!is_empty_cmd(candidate) && is_candidate) {
+		if (is_candidate) {
 			*longest = Z_MAX(strlen(candidate->syntax), *longest);
 			if (*cnt == 0) {
 				*first_idx = idx;
@@ -389,17 +391,14 @@ static void tab_options_print(const struct shell *shell,
 	tab_item_print(shell, SHELL_INIT_OPTION_PRINTER, longest);
 
 	while (cnt) {
-		bool is_empty;
-
 		/* shell->ctx->active_cmd can be safely used outside of command
 		 * context to save stack
 		 */
 		match = shell_cmd_get(cmd, idx, &shell->ctx->active_cmd);
 		__ASSERT_NO_MSG(match != NULL);
 		idx++;
-		is_empty = is_empty_cmd(match);
-		if (is_empty || (str && match->syntax &&
-		    !is_completion_candidate(match->syntax, str, str_len))) {
+		if (str && match->syntax &&
+		    !is_completion_candidate(match->syntax, str, str_len)) {
 			continue;
 		}
 
@@ -752,7 +751,6 @@ static void tab_handle(const struct shell *shell)
 
 	find_completion_candidates(shell, cmd, argv[arg_idx], &first, &cnt,
 				   &longest);
-
 	if (cnt == 1) {
 		/* Autocompletion.*/
 		autocomplete(shell, cmd, argv[arg_idx], first);
@@ -1123,7 +1121,6 @@ static int instance_init(const struct shell *shell, const void *p_config,
 	flag_echo_set(shell, IS_ENABLED(CONFIG_SHELL_ECHO_STATUS));
 	flag_mode_delete_set(shell,
 			     IS_ENABLED(CONFIG_SHELL_BACKSPACE_MODE_DELETE));
-	shell->ctx->state = SHELL_STATE_INITIALIZED;
 	shell->ctx->vt100_ctx.cons.terminal_wid =
 					CONFIG_SHELL_DEFAULT_TERMINAL_WIDTH;
 	shell->ctx->vt100_ctx.cons.terminal_hei =
@@ -1131,9 +1128,14 @@ static int instance_init(const struct shell *shell, const void *p_config,
 	shell->ctx->vt100_ctx.cons.name_len = shell_strlen(shell->ctx->prompt);
 	flag_use_colors_set(shell, IS_ENABLED(CONFIG_SHELL_VT100_COLORS));
 
-	return shell->iface->api->init(shell->iface, p_config,
-				       transport_evt_handler,
-				       (void *) shell);
+	int ret = shell->iface->api->init(shell->iface, p_config,
+					  transport_evt_handler,
+					  (void *)shell);
+	if (ret == 0) {
+		state_set(shell, SHELL_STATE_INITIALIZED);
+	}
+
+	return ret;
 }
 
 static int instance_uninit(const struct shell *shell)
@@ -1158,8 +1160,7 @@ static int instance_uninit(const struct shell *shell)
 	}
 
 	history_purge(shell);
-
-	shell->ctx->state = SHELL_STATE_UNINITIALIZED;
+	state_set(shell, SHELL_STATE_UNINITIALIZED);
 
 	return 0;
 }
@@ -1218,8 +1219,10 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 			     K_FOREVER);
 
 		if (err != 0) {
+			k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
 			shell_internal_fprintf(shell, SHELL_ERROR,
 					       "Shell thread error: %d", err);
+			k_mutex_unlock(&shell->ctx->wr_mtx);
 			return;
 		}
 
@@ -1286,17 +1289,20 @@ int shell_start(const struct shell *shell)
 	__ASSERT_NO_MSG(shell);
 	__ASSERT_NO_MSG(shell->ctx && shell->iface && shell->default_prompt);
 
-	if (shell->ctx->state != SHELL_STATE_INITIALIZED) {
+	if (state_get(shell) != SHELL_STATE_INITIALIZED) {
 		return -ENOTSUP;
 	}
+
+	k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
 
 	if (IS_ENABLED(CONFIG_SHELL_VT100_COLORS)) {
 		shell_vt100_color_set(shell, SHELL_NORMAL);
 	}
 
 	shell_raw_fprintf(shell->fprintf_ctx, "\n\n");
-
 	state_set(shell, SHELL_STATE_ACTIVE);
+
+	k_mutex_unlock(&shell->ctx->wr_mtx);
 
 	return 0;
 }
@@ -1306,8 +1312,10 @@ int shell_stop(const struct shell *shell)
 	__ASSERT_NO_MSG(shell);
 	__ASSERT_NO_MSG(shell->ctx);
 
-	if ((shell->ctx->state == SHELL_STATE_INITIALIZED) ||
-	    (shell->ctx->state == SHELL_STATE_UNINITIALIZED)) {
+	enum shell_state state = state_get(shell);
+
+	if ((state == SHELL_STATE_INITIALIZED) ||
+	    (state == SHELL_STATE_UNINITIALIZED)) {
 		return -ENOTSUP;
 	}
 
@@ -1361,6 +1369,12 @@ void shell_vfprintf(const struct shell *shell, enum shell_vt100_color color,
 	__ASSERT_NO_MSG(shell->ctx);
 	__ASSERT_NO_MSG(shell->fprintf_ctx);
 	__ASSERT_NO_MSG(fmt);
+
+	/* Sending a message to a non-active shell leads to a dead lock. */
+	if (state_get(shell) != SHELL_STATE_ACTIVE) {
+		flag_print_noinit_set(shell, true);
+		return;
+	}
 
 	k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
 	if (!flag_cmd_ctx_get(shell)) {

@@ -158,7 +158,7 @@
 &flash0 {
 	/*
 	 * For more information, see:
-	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
+	 * https://docs.zephyrproject.org/latest/guides/dts/legacy-macros.html#legacy-flash-partitions
 	 */
 	partitions {
 		compatible = "fixed-partitions";
@@ -195,13 +195,11 @@
 / {
 	/* SRAM allocated and used by the BSD library */
 	sram0_bsd: memory@20010000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 	};
 
 	/* SRAM allocated to the Non-Secure image */
 	sram0_ns: memory@20020000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 	};
 };

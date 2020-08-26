@@ -144,7 +144,7 @@ static const struct lsm6dsl_transfer_function lsm6dsl_spi_transfer_fn = {
 
 int lsm6dsl_spi_init(struct device *dev)
 {
-	struct lsm6dsl_data *data = dev->driver_data;
+	struct lsm6dsl_data *data = dev->data;
 
 	data->hw_tf = &lsm6dsl_spi_transfer_fn;
 

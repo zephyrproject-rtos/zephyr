@@ -365,7 +365,7 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 
 static int slip_init(struct device *dev)
 {
-	struct slip_context *slip = dev->driver_data;
+	struct slip_context *slip = dev->data;
 
 	LOG_DBG("[%p] dev %p", slip, dev);
 
@@ -392,7 +392,7 @@ static inline struct net_linkaddr *slip_get_mac(struct slip_context *slip)
 
 static void slip_iface_init(struct net_if *iface)
 {
-	struct slip_context *slip = net_if_get_device(iface)->driver_data;
+	struct slip_context *slip = net_if_get_device(iface)->data;
 	struct net_linkaddr *ll_addr;
 
 #if defined(CONFIG_NET_L2_ETHERNET)

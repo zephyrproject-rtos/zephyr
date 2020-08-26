@@ -1,0 +1,112 @@
+/*
+ * Copyright (c) 2020 Brian Bradley <brian.bradley.p@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f4/stm32f411Xe.dtsi>
+
+/ {
+	model = "WeAct Studio Black Pill V2.0 Board";
+	compatible = "weact,blackpill-f411ce","st,stm32f411";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		user_led: led {
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			label = "User LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "KEY";
+			gpios = <&gpioa 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+	};
+
+	aliases {
+		led0 = &user_led;
+		sw0 = &user_button;
+	};
+};
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * https://docs.zephyrproject.org/latest/guides/dts/legacy-macros.html#legacy-flash-partitions
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00008000>;
+			read-only;
+		};
+
+		/*
+		 * The flash starting at offset 0x00008000 and ending at
+		 * offset 0x0001ffff (sectors 2 through 4) is reserved for
+		 * use by the application.
+		 */
+
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 0x00020000>;
+		};
+		slot1_partition: partition@40000 {
+			label = "image-1";
+			reg = <0x00040000 0x00020000>;
+		};
+		scratch_partition: partition@60000 {
+			label = "image-scratch";
+			reg = <0x00060000 0x00020000>;
+		};
+	};
+};
+
+&timers4 {
+	status = "okay";
+
+	pwm4: pwm {
+		status = "okay";
+	};
+};
+
+&usart1 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&i2c1 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi1 {
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
+
+&usbotg_fs {
+	status = "okay";
+};
+
+&adc1 {
+	status = "okay";
+};

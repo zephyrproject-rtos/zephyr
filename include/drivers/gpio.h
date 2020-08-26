@@ -311,7 +311,7 @@ typedef uint32_t gpio_flags_t;
 
 /**
  * This structure is common to all GPIO drivers and is expected to be
- * the first element in the object pointed to by the config_info field
+ * the first element in the object pointed to by the config field
  * in the device structure.
  */
 struct gpio_driver_config {
@@ -431,7 +431,7 @@ static inline int z_impl_gpio_config(struct device *port,
 				     gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_driver_api *api =
-		(const struct gpio_driver_api *)port->driver_api;
+		(const struct gpio_driver_api *)port->api;
 
 	return api->pin_configure(port, pin, flags);
 }
@@ -469,11 +469,11 @@ static inline int z_impl_gpio_pin_interrupt_configure(struct device *port,
 						      gpio_flags_t flags)
 {
 	const struct gpio_driver_api *api =
-		(const struct gpio_driver_api *)port->driver_api;
+		(const struct gpio_driver_api *)port->api;
 	const struct gpio_driver_config *const cfg =
-		(const struct gpio_driver_config *)port->config_info;
+		(const struct gpio_driver_config *)port->config;
 	const struct gpio_driver_data *const data =
-		(const struct gpio_driver_data *)port->driver_data;
+		(const struct gpio_driver_data *)port->data;
 	enum gpio_int_trig trig;
 	enum gpio_int_mode mode;
 
@@ -534,11 +534,11 @@ static inline int gpio_pin_configure(struct device *port, gpio_pin_t pin,
 				     gpio_flags_t flags)
 {
 	const struct gpio_driver_api *api =
-		(const struct gpio_driver_api *)port->driver_api;
+		(const struct gpio_driver_api *)port->api;
 	const struct gpio_driver_config *const cfg =
-		(const struct gpio_driver_config *)port->config_info;
+		(const struct gpio_driver_config *)port->config;
 	struct gpio_driver_data *data =
-		(struct gpio_driver_data *)port->driver_data;
+		(struct gpio_driver_data *)port->data;
 	int ret;
 
 	__ASSERT((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) !=
@@ -613,7 +613,7 @@ static inline int z_impl_gpio_port_get_raw(struct device *port,
 					   gpio_port_value_t *value)
 {
 	const struct gpio_driver_api *api =
-		(const struct gpio_driver_api *)port->driver_api;
+		(const struct gpio_driver_api *)port->api;
 
 	return api->port_get_raw(port, value);
 }
@@ -639,7 +639,7 @@ static inline int z_impl_gpio_port_get_raw(struct device *port,
 static inline int gpio_port_get(struct device *port, gpio_port_value_t *value)
 {
 	const struct gpio_driver_data *const data =
-			(const struct gpio_driver_data *)port->driver_data;
+			(const struct gpio_driver_data *)port->data;
 	int ret;
 
 	ret = gpio_port_get_raw(port, value);
@@ -674,7 +674,7 @@ static inline int z_impl_gpio_port_set_masked_raw(struct device *port,
 		gpio_port_pins_t mask, gpio_port_value_t value)
 {
 	const struct gpio_driver_api *api =
-		(const struct gpio_driver_api *)port->driver_api;
+		(const struct gpio_driver_api *)port->api;
 
 	return api->port_set_masked_raw(port, mask, value);
 }
@@ -703,7 +703,7 @@ static inline int gpio_port_set_masked(struct device *port,
 		gpio_port_pins_t mask, gpio_port_value_t value)
 {
 	const struct gpio_driver_data *const data =
-			(const struct gpio_driver_data *)port->driver_data;
+			(const struct gpio_driver_data *)port->data;
 
 	value ^= data->invert;
 
@@ -727,7 +727,7 @@ static inline int z_impl_gpio_port_set_bits_raw(struct device *port,
 						gpio_port_pins_t pins)
 {
 	const struct gpio_driver_api *api =
-		(const struct gpio_driver_api *)port->driver_api;
+		(const struct gpio_driver_api *)port->api;
 
 	return api->port_set_bits_raw(port, pins);
 }
@@ -764,7 +764,7 @@ static inline int z_impl_gpio_port_clear_bits_raw(struct device *port,
 						  gpio_port_pins_t pins)
 {
 	const struct gpio_driver_api *api =
-		(const struct gpio_driver_api *)port->driver_api;
+		(const struct gpio_driver_api *)port->api;
 
 	return api->port_clear_bits_raw(port, pins);
 }
@@ -801,7 +801,7 @@ static inline int z_impl_gpio_port_toggle_bits(struct device *port,
 					       gpio_port_pins_t pins)
 {
 	const struct gpio_driver_api *api =
-		(const struct gpio_driver_api *)port->driver_api;
+		(const struct gpio_driver_api *)port->api;
 
 	return api->port_toggle_bits(port, pins);
 }
@@ -862,7 +862,7 @@ static inline int gpio_port_set_clr_bits(struct device *port,
 static inline int gpio_pin_get_raw(struct device *port, gpio_pin_t pin)
 {
 	const struct gpio_driver_config *const cfg =
-		(const struct gpio_driver_config *)port->config_info;
+		(const struct gpio_driver_config *)port->config;
 	gpio_port_value_t value;
 	int ret;
 
@@ -900,7 +900,7 @@ static inline int gpio_pin_get_raw(struct device *port, gpio_pin_t pin)
 static inline int gpio_pin_get(struct device *port, gpio_pin_t pin)
 {
 	const struct gpio_driver_config *const cfg =
-		(const struct gpio_driver_config *)port->config_info;
+		(const struct gpio_driver_config *)port->config;
 	gpio_port_value_t value;
 	int ret;
 
@@ -935,7 +935,7 @@ static inline int gpio_pin_set_raw(struct device *port, gpio_pin_t pin,
 				   int value)
 {
 	const struct gpio_driver_config *const cfg =
-		(const struct gpio_driver_config *)port->config_info;
+		(const struct gpio_driver_config *)port->config;
 	int ret;
 
 	(void)cfg;
@@ -975,9 +975,9 @@ static inline int gpio_pin_set_raw(struct device *port, gpio_pin_t pin,
 static inline int gpio_pin_set(struct device *port, gpio_pin_t pin, int value)
 {
 	const struct gpio_driver_config *const cfg =
-		(const struct gpio_driver_config *)port->config_info;
+		(const struct gpio_driver_config *)port->config;
 	const struct gpio_driver_data *const data =
-			(const struct gpio_driver_data *)port->driver_data;
+			(const struct gpio_driver_data *)port->data;
 
 	(void)cfg;
 	__ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U,
@@ -1003,7 +1003,7 @@ static inline int gpio_pin_set(struct device *port, gpio_pin_t pin, int value)
 static inline int gpio_pin_toggle(struct device *port, gpio_pin_t pin)
 {
 	const struct gpio_driver_config *const cfg =
-		(const struct gpio_driver_config *)port->config_info;
+		(const struct gpio_driver_config *)port->config;
 
 	(void)cfg;
 	__ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U,
@@ -1045,7 +1045,7 @@ static inline int gpio_add_callback(struct device *port,
 				    struct gpio_callback *callback)
 {
 	const struct gpio_driver_api *api =
-		(const struct gpio_driver_api *)port->driver_api;
+		(const struct gpio_driver_api *)port->api;
 
 	if (api->manage_callback == NULL) {
 		return -ENOTSUP;
@@ -1074,7 +1074,7 @@ static inline int gpio_remove_callback(struct device *port,
 				       struct gpio_callback *callback)
 {
 	const struct gpio_driver_api *api =
-		(const struct gpio_driver_api *)port->driver_api;
+		(const struct gpio_driver_api *)port->api;
 
 	if (api->manage_callback == NULL) {
 		return -ENOTSUP;
@@ -1101,7 +1101,7 @@ __syscall int gpio_get_pending_int(struct device *dev);
 static inline int z_impl_gpio_get_pending_int(struct device *dev)
 {
 	const struct gpio_driver_api *api =
-		(const struct gpio_driver_api *)dev->driver_api;
+		(const struct gpio_driver_api *)dev->api;
 
 	if (api->get_pending_int == NULL) {
 		return -ENOTSUP;

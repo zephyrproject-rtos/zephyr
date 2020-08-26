@@ -2658,8 +2658,8 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 
 static int usdhc_access_init(const struct device *dev)
 {
-	const struct usdhc_config *config = dev->config_info;
-	struct usdhc_priv *priv = dev->driver_data;
+	const struct usdhc_config *config = dev->config;
+	struct usdhc_priv *priv = dev->data;
 	int ret;
 
 	(void)k_mutex_lock(&z_usdhc_init_lock, K_FOREVER);
@@ -2709,7 +2709,7 @@ static int usdhc_access_init(const struct device *dev)
 static int disk_usdhc_access_status(struct disk_info *disk)
 {
 	struct device *dev = disk->dev;
-	struct usdhc_priv *priv = dev->driver_data;
+	struct usdhc_priv *priv = dev->data;
 
 	return priv->status;
 }
@@ -2718,7 +2718,7 @@ static int disk_usdhc_access_read(struct disk_info *disk, uint8_t *buf,
 				 uint32_t sector, uint32_t count)
 {
 	struct device *dev = disk->dev;
-	struct usdhc_priv *priv = dev->driver_data;
+	struct usdhc_priv *priv = dev->data;
 
 	LOG_DBG("sector=%u count=%u", sector, count);
 
@@ -2729,7 +2729,7 @@ static int disk_usdhc_access_write(struct disk_info *disk, const uint8_t *buf,
 				  uint32_t sector, uint32_t count)
 {
 	struct device *dev = disk->dev;
-	struct usdhc_priv *priv = dev->driver_data;
+	struct usdhc_priv *priv = dev->data;
 
 	LOG_DBG("sector=%u count=%u", sector, count);
 
@@ -2739,7 +2739,7 @@ static int disk_usdhc_access_write(struct disk_info *disk, const uint8_t *buf,
 static int disk_usdhc_access_ioctl(struct disk_info *disk, uint8_t cmd, void *buf)
 {
 	struct device *dev = disk->dev;
-	struct usdhc_priv *priv = dev->driver_data;
+	struct usdhc_priv *priv = dev->data;
 	int err;
 
 	err = sdhc_map_disk_status(priv->status);
@@ -2769,7 +2769,7 @@ static int disk_usdhc_access_ioctl(struct disk_info *disk, uint8_t cmd, void *bu
 static int disk_usdhc_access_init(struct disk_info *disk)
 {
 	struct device *dev = disk->dev;
-	struct usdhc_priv *priv = dev->driver_data;
+	struct usdhc_priv *priv = dev->data;
 
 	if (priv->status == DISK_STATUS_OK) {
 		/* Called twice, don't re-init. */
@@ -2794,7 +2794,7 @@ static struct disk_info usdhc_disk = {
 
 static int disk_usdhc_init(struct device *dev)
 {
-	struct usdhc_priv *priv = dev->driver_data;
+	struct usdhc_priv *priv = dev->data;
 
 	priv->status = DISK_STATUS_UNINIT;
 

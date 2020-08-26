@@ -277,11 +277,11 @@ int pthread_setschedparam(pthread_t pthread, int policy,
 		return EINVAL;
 	}
 
-	new_prio = posix_to_zephyr_priority(param->sched_priority, policy);
-
-	if (is_posix_prio_valid(new_prio, policy) == false) {
+	if (is_posix_prio_valid(param->sched_priority, policy) == false) {
 		return EINVAL;
 	}
+
+	new_prio = posix_to_zephyr_priority(param->sched_priority, policy);
 
 	k_thread_priority_set(thread, new_prio);
 	return 0;

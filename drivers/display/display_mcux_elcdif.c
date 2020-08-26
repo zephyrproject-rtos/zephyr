@@ -44,8 +44,8 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x,
 			     const struct display_buffer_descriptor *desc,
 			     const void *buf)
 {
-	const struct mcux_elcdif_config *config = dev->config_info;
-	struct mcux_elcdif_data *data = dev->driver_data;
+	const struct mcux_elcdif_config *config = dev->config;
+	struct mcux_elcdif_data *data = dev->data;
 
 	uint8_t write_idx = data->write_idx;
 	uint8_t read_idx = !write_idx;
@@ -132,7 +132,7 @@ static int mcux_elcdif_set_pixel_format(const struct device *dev,
 					const enum display_pixel_format
 					pixel_format)
 {
-	const struct mcux_elcdif_config *config = dev->config_info;
+	const struct mcux_elcdif_config *config = dev->config;
 
 	if (pixel_format == config->pixel_format) {
 		return 0;
@@ -154,7 +154,7 @@ static int mcux_elcdif_set_orientation(const struct device *dev,
 static void mcux_elcdif_get_capabilities(const struct device *dev,
 		struct display_capabilities *capabilities)
 {
-	const struct mcux_elcdif_config *config = dev->config_info;
+	const struct mcux_elcdif_config *config = dev->config;
 
 	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = config->rgb_mode.panelWidth;
@@ -167,8 +167,8 @@ static void mcux_elcdif_get_capabilities(const struct device *dev,
 static void mcux_elcdif_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct mcux_elcdif_config *config = dev->config_info;
-	struct mcux_elcdif_data *data = dev->driver_data;
+	const struct mcux_elcdif_config *config = dev->config;
+	struct mcux_elcdif_data *data = dev->data;
 	uint32_t status;
 
 	status = ELCDIF_GetInterruptStatus(config->base);
@@ -179,8 +179,8 @@ static void mcux_elcdif_isr(void *arg)
 
 static int mcux_elcdif_init(struct device *dev)
 {
-	const struct mcux_elcdif_config *config = dev->config_info;
-	struct mcux_elcdif_data *data = dev->driver_data;
+	const struct mcux_elcdif_config *config = dev->config;
+	struct mcux_elcdif_data *data = dev->data;
 	int i;
 
 	elcdif_rgb_mode_config_t rgb_mode = config->rgb_mode;

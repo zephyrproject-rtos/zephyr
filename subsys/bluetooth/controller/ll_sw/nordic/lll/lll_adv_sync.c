@@ -72,7 +72,7 @@ void lll_adv_sync_prepare(void *param)
 	int err;
 
 	err = lll_hfclock_on();
-	LL_ASSERT(!err || err == -EINPROGRESS);
+	LL_ASSERT(err >= 0);
 
 	/* Instants elapsed */
 	elapsed = p->lazy + 1;
@@ -83,37 +83,6 @@ void lll_adv_sync_prepare(void *param)
 	/* Invoke common pipeline handling of prepare */
 	err = lll_prepare(lll_is_abort_cb, abort_cb, prepare_cb, 0, p);
 	LL_ASSERT(!err || err == -EINPROGRESS);
-}
-
-void lll_adv_sync_offset_fill(uint32_t ticks_offset, uint32_t start_us,
-			     struct pdu_adv *pdu)
-{
-	struct pdu_adv_com_ext_adv *p;
-	struct pdu_adv_sync_info *si;
-	struct pdu_adv_hdr *h;
-	uint8_t *ptr;
-
-	p = (void *)&pdu->adv_ext_ind;
-	h = (void *)p->ext_hdr_adi_adv_data;
-	ptr = (uint8_t *)h + sizeof(*h);
-
-	if (h->adv_addr) {
-		ptr += BDADDR_SIZE;
-	}
-
-	if (h->adi) {
-		ptr += sizeof(struct pdu_adv_adi);
-	}
-
-	if (h->aux_ptr) {
-		ptr += sizeof(struct pdu_adv_aux_ptr);
-	}
-
-	si = (void *)ptr;
-	si->offs = (HAL_TICKER_TICKS_TO_US(ticks_offset) - start_us) / 30;
-	if (si->offs_units) {
-		si->offs /= 10;
-	}
 }
 
 static int init_reset(void)
@@ -239,7 +208,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	 * currently in preparation pipeline.
 	 */
 	err = lll_hfclock_off();
-	LL_ASSERT(!err || err == -EBUSY);
+	LL_ASSERT(err >= 0);
 
 	lll_done(param);
 }

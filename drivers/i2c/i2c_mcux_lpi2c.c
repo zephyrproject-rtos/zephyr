@@ -34,7 +34,7 @@ struct mcux_lpi2c_data {
 
 static int mcux_lpi2c_configure(struct device *dev, uint32_t dev_config_raw)
 {
-	const struct mcux_lpi2c_config *config = dev->config_info;
+	const struct mcux_lpi2c_config *config = dev->config;
 	LPI2C_Type *base = config->base;
 	struct device *clock_dev;
 	uint32_t clock_freq;
@@ -81,7 +81,7 @@ static void mcux_lpi2c_master_transfer_callback(LPI2C_Type *base,
 		lpi2c_master_handle_t *handle, status_t status, void *userData)
 {
 	struct device *dev = userData;
-	struct mcux_lpi2c_data *data = dev->driver_data;
+	struct mcux_lpi2c_data *data = dev->data;
 
 	ARG_UNUSED(handle);
 	ARG_UNUSED(base);
@@ -108,8 +108,8 @@ static uint32_t mcux_lpi2c_convert_flags(int msg_flags)
 static int mcux_lpi2c_transfer(struct device *dev, struct i2c_msg *msgs,
 		uint8_t num_msgs, uint16_t addr)
 {
-	const struct mcux_lpi2c_config *config = dev->config_info;
-	struct mcux_lpi2c_data *data = dev->driver_data;
+	const struct mcux_lpi2c_config *config = dev->config;
+	struct mcux_lpi2c_data *data = dev->data;
 	LPI2C_Type *base = config->base;
 	lpi2c_master_transfer_t transfer;
 	status_t status;
@@ -171,8 +171,8 @@ static int mcux_lpi2c_transfer(struct device *dev, struct i2c_msg *msgs,
 static void mcux_lpi2c_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct mcux_lpi2c_config *config = dev->config_info;
-	struct mcux_lpi2c_data *data = dev->driver_data;
+	const struct mcux_lpi2c_config *config = dev->config;
+	struct mcux_lpi2c_data *data = dev->data;
 	LPI2C_Type *base = config->base;
 
 	LPI2C_MasterTransferHandleIRQ(base, &data->handle);
@@ -180,8 +180,8 @@ static void mcux_lpi2c_isr(void *arg)
 
 static int mcux_lpi2c_init(struct device *dev)
 {
-	const struct mcux_lpi2c_config *config = dev->config_info;
-	struct mcux_lpi2c_data *data = dev->driver_data;
+	const struct mcux_lpi2c_config *config = dev->config;
+	struct mcux_lpi2c_data *data = dev->data;
 	LPI2C_Type *base = config->base;
 	struct device *clock_dev;
 	uint32_t clock_freq, bitrate_cfg;

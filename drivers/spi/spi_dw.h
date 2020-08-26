@@ -231,8 +231,8 @@ DEFINE_TEST_BIT_OP(sr_busy, DW_SPI_REG_SR, DW_SPI_SR_BUSY_BIT)
 
 static inline int clock_config(struct device *dev)
 {
-	const struct spi_dw_config *info = dev->config_info;
-	struct spi_dw_data *spi = dev->driver_data;
+	const struct spi_dw_config *info = dev->config;
+	struct spi_dw_data *spi = dev->data;
 
 	if (!info->clock_name || strlen(info->clock_name) == 0) {
 		spi->clock = NULL;
@@ -249,10 +249,10 @@ static inline int clock_config(struct device *dev)
 
 static inline void clock_on(struct device *dev)
 {
-	struct spi_dw_data *spi = dev->driver_data;
+	struct spi_dw_data *spi = dev->data;
 
 	if (spi->clock) {
-		const struct spi_dw_config *info = dev->config_info;
+		const struct spi_dw_config *info = dev->config;
 
 		clock_control_on(spi->clock, info->clock_data);
 	}
@@ -262,10 +262,10 @@ static inline void clock_on(struct device *dev)
 
 static inline void clock_off(struct device *dev)
 {
-	struct spi_dw_data *spi = dev->driver_data;
+	struct spi_dw_data *spi = dev->data;
 
 	if (spi->clock) {
-		const struct spi_dw_config *info = dev->config_info;
+		const struct spi_dw_config *info = dev->config;
 
 		clock_control_off(spi->clock, info->clock_data);
 	}

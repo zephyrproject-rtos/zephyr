@@ -37,6 +37,7 @@ source "drivers/i2c/Kconfig.sifive"
 source "drivers/i2c/Kconfig.stm32"
 source "drivers/i2c/Kconfig.sam0"
 source "drivers/i2c/Kconfig.litex"
+source "drivers/i2c/Kconfig.lpc11u6x"
 
 config I2C_INIT_PRIORITY
 	int "Init priority"

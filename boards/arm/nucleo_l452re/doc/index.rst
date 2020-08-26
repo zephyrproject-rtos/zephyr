@@ -6,11 +6,15 @@ ST Nucleo L452RE
 Overview
 ********
 
-The Nucleo L452RE board features an ARM Cortex-M4 based STM32L452RE MCU
-with a wide range of connectivity support and configurations. Here are
-some highlights of the Nucleo L452RE board:
+The Nucleo L452RE(-P) boards feature an ARM Cortex-M4 based STM32L452RE MCU
+with a wide range of connectivity support and configurations. There are two variants:
 
-- STM32 microcontroller in UFQFPN32 package
+- ST Nucleo L452RE
+- ST Nucleo L452RE-P
+
+Here some highlights of these boards:
+
+- STM32 microcontroller in LQFP64 package
 - Arduino Uno V3 connectivity
 - On-board ST-LINK/V2-1 debugger/programmer with SWD connector
 - Flexible board power supply:
@@ -21,13 +25,18 @@ some highlights of the Nucleo L452RE board:
 - Three LEDs: USB communication (LD1), user LED (LD2), power LED (LD3)
 - One push-button: RESET
 
-.. image:: img/nucleo_l452re.jpg
-  :width: 250px
+.. image:: img/nucleo_l452re_p.jpg
+  :width: 363px
   :align: center
-  :height: 188px
-  :alt: Nucleo L452RE
+  :height: 408px
+  :alt: Nucleo L452RE-P
 
-More information about the board can be found at the `Nucleo L452RE website`_.
+The main difference between the ST Nucleo L452RE and the L452RE-P (note the missing
+"-P" at the end) lays in the External Switched Mode Power Supply (SMPS) included in
+the P series.
+
+More information about the boards can be found at the `Nucleo L452RE website`_ and
+the `Nucleo L452RE-P website`_.
 
 Hardware
 ********
@@ -136,13 +145,20 @@ input/output, pull-up, etc.
 
 Available pins:
 ---------------
-.. image:: img/nucleo-l452re-pinout.png
+.. image:: img/nucleo_l452re_pinout.png
    :width: 496px
    :align: center
    :height: 446px
    :alt: Nucleo L452RE Pinout
 
-For mode details please refer to `STM32 Nucleo-32 board User Manual`_.
+.. image:: img/nucleo_l452re_p_pinout.png
+   :width: 537px
+   :align: center
+   :height: 446px
+   :alt: Nucleo L452RE-P Pinout
+
+For more details please refer to `ST Nucleo L452RE User Manual`_ or
+`ST Nucleo L452RE-P User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
@@ -150,10 +166,15 @@ Default Zephyr Peripheral Mapping:
 - UART_1_TX : PA9
 - UART_1_RX : PA10
 - UART_2_TX : PA2
-- UART_2_RX : PA15
+- UART_2_RX : PA3
 - I2C_1_SCL : PB6
 - I2C_1_SDA : PB7
 - PWM_2_CH1 : PA0
+- SPI_SCK : PA5
+- SPI_MISO : PA6
+- SPI_MOSI : PA7
+- CAN_TX : PA11
+- CAN_RX : PA12
 - LD2 : PA5
 
 System Clock
@@ -224,8 +245,14 @@ You can debug an application in the usual way.  Here is an example for the
 .. _Nucleo L452RE website:
    https://www.st.com/en/evaluation-tools/nucleo-l452re.html
 
-.. _STM32 Nucleo-32 board User Manual:
+.. _Nucleo L452RE-P website:
+   https://www.st.com/en/evaluation-tools/nucleo-l452re-p.html
+
+.. _ST Nucleo L452RE User Manual:
    https://www.st.com/resource/en/user_manual/dm00105823.pdf
+
+.. _ST Nucleo L452RE-P User Manual:
+   https://www.st.com/resource/en/user_manual/dm00387966.pdf
 
 .. _STM32L452RE on www.st.com:
    https://www.st.com/en/microcontrollers-microprocessors/stm32l452re.html

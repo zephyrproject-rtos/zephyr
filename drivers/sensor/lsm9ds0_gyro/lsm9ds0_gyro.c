@@ -25,8 +25,8 @@ LOG_MODULE_REGISTER(LSM9DS0_GYRO, CONFIG_SENSOR_LOG_LEVEL);
 static inline int lsm9ds0_gyro_power_ctrl(struct device *dev, int power,
 					  int x_en, int y_en, int z_en)
 {
-	struct lsm9ds0_gyro_data *data = dev->driver_data;
-	const struct lsm9ds0_gyro_config *config = dev->config_info;
+	struct lsm9ds0_gyro_data *data = dev->data;
+	const struct lsm9ds0_gyro_config *config = dev->config;
 	uint8_t state = (power << LSM9DS0_GYRO_SHIFT_CTRL_REG1_G_PD) |
 			(x_en << LSM9DS0_GYRO_SHIFT_CTRL_REG1_G_XEN) |
 			(y_en << LSM9DS0_GYRO_SHIFT_CTRL_REG1_G_YEN) |
@@ -43,8 +43,8 @@ static inline int lsm9ds0_gyro_power_ctrl(struct device *dev, int power,
 
 static int lsm9ds0_gyro_set_fs_raw(struct device *dev, uint8_t fs)
 {
-	struct lsm9ds0_gyro_data *data = dev->driver_data;
-	const struct lsm9ds0_gyro_config *config = dev->config_info;
+	struct lsm9ds0_gyro_data *data = dev->data;
+	const struct lsm9ds0_gyro_config *config = dev->config;
 
 	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
 				LSM9DS0_GYRO_REG_CTRL_REG4_G,
@@ -84,8 +84,8 @@ static int lsm9ds0_gyro_set_fs(struct device *dev, int fs)
 
 static inline int lsm9ds0_gyro_set_odr_raw(struct device *dev, uint8_t odr)
 {
-	struct lsm9ds0_gyro_data *data = dev->driver_data;
-	const struct lsm9ds0_gyro_config *config = dev->config_info;
+	struct lsm9ds0_gyro_data *data = dev->data;
+	const struct lsm9ds0_gyro_config *config = dev->config;
 
 	return i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
 				   LSM9DS0_GYRO_REG_CTRL_REG1_G,
@@ -121,8 +121,8 @@ static int lsm9ds0_gyro_set_odr(struct device *dev, int odr)
 static int lsm9ds0_gyro_sample_fetch(struct device *dev,
 				     enum sensor_channel chan)
 {
-	struct lsm9ds0_gyro_data *data = dev->driver_data;
-	const struct lsm9ds0_gyro_config *config = dev->config_info;
+	struct lsm9ds0_gyro_data *data = dev->data;
+	const struct lsm9ds0_gyro_config *config = dev->config;
 	uint8_t x_l, x_h, y_l, y_h, z_l, z_h;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
@@ -196,7 +196,7 @@ static int lsm9ds0_gyro_channel_get(struct device *dev,
 				    enum sensor_channel chan,
 				    struct sensor_value *val)
 {
-	struct lsm9ds0_gyro_data *data = dev->driver_data;
+	struct lsm9ds0_gyro_data *data = dev->data;
 
 #if defined(CONFIG_LSM9DS0_GYRO_FULLSCALE_RUNTIME)
 	switch (data->sample_fs) {
@@ -261,8 +261,8 @@ static const struct sensor_driver_api lsm9ds0_gyro_api_funcs = {
 
 static int lsm9ds0_gyro_init_chip(struct device *dev)
 {
-	struct lsm9ds0_gyro_data *data = dev->driver_data;
-	const struct lsm9ds0_gyro_config *config = dev->config_info;
+	struct lsm9ds0_gyro_data *data = dev->data;
+	const struct lsm9ds0_gyro_config *config = dev->config;
 	uint8_t chip_id;
 
 	if (lsm9ds0_gyro_power_ctrl(dev, 0, 0, 0, 0) < 0) {
@@ -317,9 +317,8 @@ err_poweroff:
 
 static int lsm9ds0_gyro_init(struct device *dev)
 {
-	const struct lsm9ds0_gyro_config * const config =
-					   dev->config_info;
-	struct lsm9ds0_gyro_data *data = dev->driver_data;
+	const struct lsm9ds0_gyro_config * const config = dev->config;
+	struct lsm9ds0_gyro_data *data = dev->data;
 
 	data->i2c_master = device_get_binding(config->i2c_master_dev_name);
 	if (!data->i2c_master) {

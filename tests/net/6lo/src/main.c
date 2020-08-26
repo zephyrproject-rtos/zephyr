@@ -247,7 +247,7 @@ struct net_6lo_data {
 
 int net_6lo_dev_init(struct device *dev)
 {
-	struct net_6lo_context *net_6lo_context = dev->driver_data;
+	struct net_6lo_context *net_6lo_context = dev->data;
 
 	net_6lo_context = net_6lo_context;
 

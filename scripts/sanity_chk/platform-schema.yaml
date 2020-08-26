@@ -17,22 +17,20 @@ mapping:
     type: str
   "type":
     type: str
-    enum: [ 'mcu', 'qemu', 'sim', 'unit', 'native']
+    enum: ["mcu", "qemu", "sim", "unit", "native"]
   "simulation":
     type: str
-    enum: [ 'qemu', 'simics', 'xt-sim', 'renode', 'nsim', 'mdb']
+    enum: ["qemu", "simics", "xt-sim", "renode", "nsim", "mdb"]
   "arch":
     type: str
   "toolchain":
     type: seq
     seq:
-      -
-        type: str
+      - type: str
   "env":
     type: seq
     seq:
-      -
-        type: str
+      - type: str
   "ram":
     type: int
   "flash":
@@ -42,15 +40,18 @@ mapping:
   "supported":
     type: seq
     seq:
-      -
-        type: str
+      - type: str
   "testing":
     type: map
     mapping:
       "default":
         type: bool
-      "ignore_tags":
+      "only_tags":
         type: seq
         seq:
           -
             type: str
+      "ignore_tags":
+        type: seq
+        seq:
+          - type: str

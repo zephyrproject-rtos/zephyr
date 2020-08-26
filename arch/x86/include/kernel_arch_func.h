@@ -111,6 +111,10 @@ void z_x86_apply_mem_domain(struct x86_page_tables *ptables,
 
 void z_x86_do_kernel_oops(const z_arch_esf_t *esf);
 
+#ifdef CONFIG_X86_STACK_PROTECTION
+void z_x86_set_stack_guard(k_thread_stack_t *stack);
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_FUNC_H_ */

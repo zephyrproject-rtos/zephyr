@@ -2,4 +2,7 @@ tests:
   drivers.i2c_slave:
     depends_on: i2c
     tags: drivers i2c
+    harness: ztest
+    harness_config:
+      fixture: i2c_bus_short
     platform_whitelist: nucleo_f091rc stm32f072b_disco

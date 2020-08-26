@@ -1,17 +1,27 @@
 # Copyright (c) 2020 NXP
+# Copyright (c) 2020 Teslabs Engineering S.L.
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig KSCAN_FT5336
-	bool "FT5336 capacitive touch panel driver"
+	bool "FT5XX6/FT6XX6 capacitive touch panel driver"
 	depends on I2C && HAS_DTS_I2C
 	help
-	  Enable driver for the FT5336 capacitive touch panel controller.
+	  Enable driver for multiple Focaltech capacitive touch panel
+	  controllers. This driver should support FT5x06, FT5606, FT5x16,
+	  FT6x06, Ft6x36, FT5x06i, FT5336, FT3316, FT5436i, FT5336i and FT5x46.
+
+if KSCAN_FT5336
 
 config KSCAN_FT5336_PERIOD
-	int "Sample period (ms)"
+	int "Sample period"
+	depends on !KSCAN_FT5336_INTERRUPT
 	default 10
-	depends on KSCAN_FT5336
+	help
+	  Sample period in milliseconds when in polling mode.
 
 config KSCAN_FT5336_INTERRUPT
 	bool "Enable interrupt"
-	depends on KSCAN_FT5336
+	help
+	  Enable interrupt support (requires GPIO).
+
+endif # KSCAN_FT5336

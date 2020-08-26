@@ -90,7 +90,7 @@ static int ism330dhcx_gyro_range_to_fs_val(int32_t range)
 
 static inline int ism330dhcx_reboot(struct device *dev)
 {
-	struct ism330dhcx_data *data = dev->driver_data;
+	struct ism330dhcx_data *data = dev->data;
 
 	if (ism330dhcx_boot_set(data->ctx, 1) < 0) {
 		return -EIO;
@@ -104,7 +104,7 @@ static inline int ism330dhcx_reboot(struct device *dev)
 
 static int ism330dhcx_accel_set_fs_raw(struct device *dev, uint8_t fs)
 {
-	struct ism330dhcx_data *data = dev->driver_data;
+	struct ism330dhcx_data *data = dev->data;
 
 	if (ism330dhcx_xl_full_scale_set(data->ctx, fs) < 0) {
 		return -EIO;
@@ -117,7 +117,7 @@ static int ism330dhcx_accel_set_fs_raw(struct device *dev, uint8_t fs)
 
 static int ism330dhcx_accel_set_odr_raw(struct device *dev, uint8_t odr)
 {
-	struct ism330dhcx_data *data = dev->driver_data;
+	struct ism330dhcx_data *data = dev->data;
 
 	if (ism330dhcx_xl_data_rate_set(data->ctx, odr) < 0) {
 		return -EIO;
@@ -130,7 +130,7 @@ static int ism330dhcx_accel_set_odr_raw(struct device *dev, uint8_t odr)
 
 static int ism330dhcx_gyro_set_fs_raw(struct device *dev, uint8_t fs)
 {
-	struct ism330dhcx_data *data = dev->driver_data;
+	struct ism330dhcx_data *data = dev->data;
 
 	if (ism330dhcx_gy_full_scale_set(data->ctx, fs) < 0) {
 		return -EIO;
@@ -141,7 +141,7 @@ static int ism330dhcx_gyro_set_fs_raw(struct device *dev, uint8_t fs)
 
 static int ism330dhcx_gyro_set_odr_raw(struct device *dev, uint8_t odr)
 {
-	struct ism330dhcx_data *data = dev->driver_data;
+	struct ism330dhcx_data *data = dev->data;
 
 	if (ism330dhcx_gy_data_rate_set(data->ctx, odr) < 0) {
 		return -EIO;
@@ -173,7 +173,7 @@ static int ism330dhcx_accel_odr_set(struct device *dev, uint16_t freq)
 static int ism330dhcx_accel_range_set(struct device *dev, int32_t range)
 {
 	int fs;
-	struct ism330dhcx_data *data = dev->driver_data;
+	struct ism330dhcx_data *data = dev->data;
 
 	fs = ism330dhcx_accel_range_to_fs_val(range);
 	if (fs < 0) {
@@ -234,7 +234,7 @@ static int ism330dhcx_gyro_odr_set(struct device *dev, uint16_t freq)
 static int ism330dhcx_gyro_range_set(struct device *dev, int32_t range)
 {
 	int fs;
-	struct ism330dhcx_data *data = dev->driver_data;
+	struct ism330dhcx_data *data = dev->data;
 
 	fs = ism330dhcx_gyro_range_to_fs_val(range);
 	if (fs < 0) {
@@ -297,7 +297,7 @@ static int ism330dhcx_attr_set(struct device *dev, enum sensor_channel chan,
 
 static int ism330dhcx_sample_fetch_accel(struct device *dev)
 {
-	struct ism330dhcx_data *data = dev->driver_data;
+	struct ism330dhcx_data *data = dev->data;
 	union axis3bit16_t buf;
 
 	if (ism330dhcx_acceleration_raw_get(data->ctx, buf.u8bit) < 0) {
@@ -314,7 +314,7 @@ static int ism330dhcx_sample_fetch_accel(struct device *dev)
 
 static int ism330dhcx_sample_fetch_gyro(struct device *dev)
 {
-	struct ism330dhcx_data *data = dev->driver_data;
+	struct ism330dhcx_data *data = dev->data;
 	union axis3bit16_t buf;
 
 	if (ism330dhcx_angular_rate_raw_get(data->ctx, buf.u8bit) < 0) {
@@ -332,7 +332,7 @@ static int ism330dhcx_sample_fetch_gyro(struct device *dev)
 #if defined(CONFIG_ISM330DHCX_ENABLE_TEMP)
 static int ism330dhcx_sample_fetch_temp(struct device *dev)
 {
-	struct ism330dhcx_data *data = dev->driver_data;
+	struct ism330dhcx_data *data = dev->data;
 	union axis1bit16_t buf;
 
 	if (ism330dhcx_temperature_raw_get(data->ctx, buf.u8bit) < 0) {
@@ -629,7 +629,7 @@ static int ism330dhcx_channel_get(struct device *dev,
 				  enum sensor_channel chan,
 				  struct sensor_value *val)
 {
-	struct ism330dhcx_data *data = dev->driver_data;
+	struct ism330dhcx_data *data = dev->data;
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
@@ -687,7 +687,7 @@ static const struct sensor_driver_api ism330dhcx_api_funcs = {
 
 static int ism330dhcx_init_chip(struct device *dev)
 {
-	struct ism330dhcx_data *ism330dhcx = dev->driver_data;
+	struct ism330dhcx_data *ism330dhcx = dev->data;
 	uint8_t chip_id;
 
 	if (ism330dhcx_device_id_get(ism330dhcx->ctx, &chip_id) < 0) {
@@ -805,8 +805,8 @@ static const struct ism330dhcx_config ism330dhcx_config = {
 
 static int ism330dhcx_init(struct device *dev)
 {
-	const struct ism330dhcx_config * const config = dev->config_info;
-	struct ism330dhcx_data *data = dev->driver_data;
+	const struct ism330dhcx_config * const config = dev->config;
+	struct ism330dhcx_data *data = dev->data;
 
 	data->bus = device_get_binding(config->bus_name);
 	if (!data->bus) {

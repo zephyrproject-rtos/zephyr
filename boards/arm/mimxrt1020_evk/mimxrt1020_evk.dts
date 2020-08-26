@@ -25,7 +25,6 @@
 	sdram0: memory@80000000 {
 		/* ISSI IS42S16160J-6TLI */
 		device_type = "memory";
-		compatible = "mmio-sram";
 		reg = <0x80000000 0x2000000>;
 	};
 

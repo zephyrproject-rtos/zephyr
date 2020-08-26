@@ -168,8 +168,8 @@ static uint32_t qmspi_config_get_lines(const struct spi_config *config)
 static int qmspi_configure(struct device *dev,
 			   const struct spi_config *config)
 {
-	const struct spi_qmspi_config *cfg = dev->config_info;
-	struct spi_qmspi_data *data = dev->driver_data;
+	const struct spi_qmspi_config *cfg = dev->config;
+	struct spi_qmspi_data *data = dev->data;
 	QMSPI_Type *regs = cfg->regs;
 	uint32_t smode;
 
@@ -508,8 +508,8 @@ static int qmspi_transceive(struct device *dev,
 			    const struct spi_buf_set *tx_bufs,
 			    const struct spi_buf_set *rx_bufs)
 {
-	const struct spi_qmspi_config *cfg = dev->config_info;
-	struct spi_qmspi_data *data = dev->driver_data;
+	const struct spi_qmspi_config *cfg = dev->config;
+	struct spi_qmspi_data *data = dev->data;
 	QMSPI_Type *regs = cfg->regs;
 	const struct spi_buf *ptx;
 	const struct spi_buf *prx;
@@ -592,8 +592,8 @@ static int qmspi_transceive_async(struct device *dev,
 static int qmspi_release(struct device *dev,
 			 const struct spi_config *config)
 {
-	struct spi_qmspi_data *data = dev->driver_data;
-	const struct spi_qmspi_config *cfg = dev->config_info;
+	struct spi_qmspi_data *data = dev->data;
+	const struct spi_qmspi_config *cfg = dev->config;
 	QMSPI_Type *regs = cfg->regs;
 
 	/* Force CS# to de-assert on next unit boundary */
@@ -616,8 +616,8 @@ static int qmspi_release(struct device *dev,
  */
 static int qmspi_init(struct device *dev)
 {
-	const struct spi_qmspi_config *cfg = dev->config_info;
-	struct spi_qmspi_data *data = dev->driver_data;
+	const struct spi_qmspi_config *cfg = dev->config;
+	struct spi_qmspi_data *data = dev->data;
 	QMSPI_Type *regs = cfg->regs;
 
 	mchp_pcr_periph_slp_ctrl(PCR_QMSPI, MCHP_PCR_SLEEP_DIS);

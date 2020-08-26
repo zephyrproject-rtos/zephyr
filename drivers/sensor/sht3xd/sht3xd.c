@@ -85,7 +85,7 @@ int sht3xd_write_reg(struct device *dev, uint16_t cmd, uint16_t val)
 
 static int sht3xd_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct sht3xd_data *data = dev->driver_data;
+	struct sht3xd_data *data = dev->data;
 	struct device *i2c = sht3xd_i2c_device(dev);
 	uint8_t address = sht3xd_i2c_address(dev);
 	uint8_t rx_buf[6];
@@ -143,7 +143,7 @@ static int sht3xd_channel_get(struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	const struct sht3xd_data *data = dev->driver_data;
+	const struct sht3xd_data *data = dev->data;
 	uint64_t tmp;
 
 	/*
@@ -179,8 +179,8 @@ static const struct sensor_driver_api sht3xd_driver_api = {
 
 static int sht3xd_init(struct device *dev)
 {
-	struct sht3xd_data *data = dev->driver_data;
-	const struct sht3xd_config *cfg = dev->config_info;
+	struct sht3xd_data *data = dev->data;
+	const struct sht3xd_config *cfg = dev->config;
 	struct device *i2c = device_get_binding(cfg->bus_name);
 
 	if (i2c == NULL) {

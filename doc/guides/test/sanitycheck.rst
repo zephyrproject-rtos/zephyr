@@ -154,6 +154,8 @@ testing:
   ignore_tags:
     Do not attempt to build (and therefore run) tests marked with this list of
     tags.
+  only_tags:
+    Only execute tests with this list of tags on a specific platform.
 
 Test Cases
 **********
@@ -303,7 +305,16 @@ arch_exclude: <list of arches, such as x86, arm, arc>
     Set of architectures that this test case should not run on.
 
 platform_whitelist: <list of platforms>
-    Set of platforms that this test case should only be run for.
+    Set of platforms that this test case should only be run for. Do not use
+    this option to limit testing or building in CI due to time or resource
+    constraints, this option should only be used if the test or sample can
+    only be run on the whitelisted platform and nothing else.
+
+integration_platforms: <YML list of platforms/boards>
+    This option limits the scope to the listed platforms when sanitycheck is
+    invoked with the --integration option. Use this instead of
+    platform_whitelist if the goal is to limit scope due to timing or
+    resource constraints.
 
 platform_exclude: <list of platforms>
     Set of platforms that this test case should not run on.
@@ -458,6 +469,16 @@ To load arguments from a file, write '+' before the file name, e.g.,
 line break instead of white spaces.
 
 Most everyday users will run with no arguments.
+
+Running in Integration Mode
+***************************
+
+This mode is used in continuous integration (CI) and other automated
+environments used to give developers fast feedback on changes. The mode can
+be activated using the --integration option of sanitycheck and narrows down
+the scope of builds and tests if applicable to platforms defined under the
+integration keyword in the testcase definition file (testcase.yaml and
+sample.yaml).
 
 
 Running Tests on Hardware

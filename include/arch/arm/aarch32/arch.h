@@ -150,97 +150,34 @@ extern "C" {
 #define Z_MPU_GUARD_ALIGN MPU_GUARD_ALIGN_AND_SIZE
 #endif
 
-/**
- * @brief Define alignment of a stack buffer
- *
- * This is used for two different things:
- *
- * -# Used in checks for stack size to be a multiple of the stack buffer
- *    alignment
- * -# Used to determine the alignment of a stack buffer
- *
- */
-#define STACK_ALIGN MAX(Z_THREAD_MIN_STACK_ALIGN, Z_MPU_GUARD_ALIGN)
-
-/**
- * @brief Define alignment of a privilege stack buffer
- *
- * This is used to determine the required alignment of threads'
- * privilege stacks when building with support for user mode.
- *
- * @note
- * The privilege stacks do not need to respect the minimum MPU
- * region alignment requirement (unless this is enforced via
- * the MPU Stack Guard feature).
- */
-#if defined(CONFIG_USERSPACE)
-#define Z_PRIVILEGE_STACK_ALIGN MAX(ARCH_STACK_PTR_ALIGN, Z_MPU_GUARD_ALIGN)
-#endif
-
-/**
- * @brief Calculate power of two ceiling for a buffer size input
- *
- */
-#define POW2_CEIL(x) ((1 << (31 - __builtin_clz(x))) < x ?  \
-		1 << (31 - __builtin_clz(x) + 1) : \
-		1 << (31 - __builtin_clz(x)))
-
 #if defined(CONFIG_USERSPACE) && \
 	defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
-/* Guard is 'carved-out' of the thread stack region, and the supervisor
- * mode stack is allocated elsewhere by gen_priv_stack.py
+/* This MPU requires regions to be sized to a power of two, and aligned to
+ * their own size. Since an MPU region must be able to cover the entire
+ * user-accessible stack buffer, we size/align to match. The privilege
+ * mode stack is generated elsewhere in memory.
  */
+#define ARCH_THREAD_STACK_OBJ_ALIGN(size)	Z_POW2_CEIL(size)
+#define ARCH_THREAD_STACK_SIZE_ADJUST(size)	Z_POW2_CEIL(size)
+#else
+#define ARCH_THREAD_STACK_OBJ_ALIGN(size)	MAX(Z_THREAD_MIN_STACK_ALIGN, \
+						    Z_MPU_GUARD_ALIGN)
+#ifdef CONFIG_USERSPACE
+#define ARCH_THREAD_STACK_SIZE_ADJUST(size) \
+	ROUND_UP(size, CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE)
+#endif
+#endif
+
+#ifdef CONFIG_MPU_STACK_GUARD
+/* Kernel-only stacks need an MPU guard region programmed at the beginning of
+ * the stack object, so align the object appropriately.
+ */
+#define ARCH_KERNEL_STACK_RESERVED	MPU_GUARD_ALIGN_AND_SIZE
+#define ARCH_KERNEL_STACK_OBJ_ALIGN	Z_MPU_GUARD_ALIGN
+#endif
+
+/* On arm, all MPU guards are carve-outs. */
 #define ARCH_THREAD_STACK_RESERVED 0
-#else
-#define ARCH_THREAD_STACK_RESERVED MPU_GUARD_ALIGN_AND_SIZE
-#endif
-
-#if defined(CONFIG_USERSPACE) && \
-	defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
-#define ARCH_THREAD_STACK_DEFINE(sym, size) \
-	struct z_thread_stack_element __noinit \
-		__aligned(POW2_CEIL(size)) sym[POW2_CEIL(size)]
-#else
-#define ARCH_THREAD_STACK_DEFINE(sym, size) \
-	struct z_thread_stack_element __noinit __aligned(STACK_ALIGN) \
-		sym[size+MPU_GUARD_ALIGN_AND_SIZE]
-#endif
-
-#if defined(CONFIG_USERSPACE) && \
-	defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
-#define ARCH_THREAD_STACK_LEN(size) (POW2_CEIL(size))
-#else
-#define ARCH_THREAD_STACK_LEN(size) ((size)+MPU_GUARD_ALIGN_AND_SIZE)
-#endif
-
-#if defined(CONFIG_USERSPACE) && \
-	defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
-#define ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct z_thread_stack_element __noinit \
-		__aligned(POW2_CEIL(size)) \
-		sym[nmemb][ARCH_THREAD_STACK_LEN(size)]
-#else
-#define ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct z_thread_stack_element __noinit \
-		__aligned(STACK_ALIGN) \
-		sym[nmemb][ARCH_THREAD_STACK_LEN(size)]
-#endif
-
-#if defined(CONFIG_USERSPACE) && \
-	defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
-#define ARCH_THREAD_STACK_MEMBER(sym, size) \
-	struct z_thread_stack_element __aligned(POW2_CEIL(size)) \
-		sym[POW2_CEIL(size)]
-#else
-#define ARCH_THREAD_STACK_MEMBER(sym, size) \
-	struct z_thread_stack_element __aligned(STACK_ALIGN) \
-		sym[size+MPU_GUARD_ALIGN_AND_SIZE]
-#endif
-
-#define ARCH_THREAD_STACK_SIZEOF(sym) (sizeof(sym) - MPU_GUARD_ALIGN_AND_SIZE)
-
-#define ARCH_THREAD_STACK_BUFFER(sym) \
-		((char *)(sym) + MPU_GUARD_ALIGN_AND_SIZE)
 
 /* Legacy case: retain containing extern "C" with C++ */
 #ifdef CONFIG_ARM_MPU

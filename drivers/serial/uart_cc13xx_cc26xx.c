@@ -42,12 +42,12 @@ struct uart_cc13xx_cc26xx_data {
 
 static inline struct uart_cc13xx_cc26xx_data *get_dev_data(struct device *dev)
 {
-	return dev->driver_data;
+	return dev->data;
 }
 
 static inline const struct uart_device_config *get_dev_conf(struct device *dev)
 {
-	return dev->config_info;
+	return dev->config;
 }
 
 static int uart_cc13xx_cc26xx_poll_in(struct device *dev, unsigned char *c)
@@ -345,10 +345,11 @@ static void uart_cc13xx_cc26xx_irq_callback_set(
 
 static void uart_cc13xx_cc26xx_isr(void *arg)
 {
-	struct uart_cc13xx_cc26xx_data *data = get_dev_data(arg);
+	struct device *dev = (struct device *)arg;
+	struct uart_cc13xx_cc26xx_data *data = get_dev_data(dev);
 
 	if (data->callback) {
-		data->callback(data->user_data);
+		data->callback(dev, data->user_data);
 	}
 }
 

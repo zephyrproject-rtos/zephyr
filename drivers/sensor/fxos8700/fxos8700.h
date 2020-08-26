@@ -162,7 +162,7 @@ struct fxos8700_data {
 	sensor_trigger_handler_t motion_handler;
 #endif
 #ifdef CONFIG_FXOS8700_TRIGGER_OWN_THREAD
-	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_FXOS8700_THREAD_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_FXOS8700_THREAD_STACK_SIZE);
 	struct k_thread thread;
 	struct k_sem trig_sem;
 #endif

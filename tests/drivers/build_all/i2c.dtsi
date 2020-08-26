@@ -267,6 +267,12 @@ test_i2c_si7006: si7006@24 {
 	reg = <0x24>;
 };
 
+test_i2c_si7055: si7055@40 {
+	compatible = "silabs,si7055";
+	label = "SI7055";
+	reg = <0x40>;
+};
+
 test_i2c_si7060: si7060@25 {
 	compatible = "silabs,si7060";
 	label = "SI7060";
@@ -535,4 +541,21 @@ test_i2c_iis2dh: iis2dh@18 {
 	label = "IIS2DH";
 	reg = <0x18>;
 	drdy-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_itds: itds@18 {
+	compatible = "we,wsen-itds";
+	label = "WSEN-ITDS";
+	reg = <0x18>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_max17055: max17055@49 {
+	compatible = "maxim,max17055";
+	label = "max17055";
+	reg = <0x49>;
+	design-voltage = <3860>;
+	desired-voltage = <4400>;
+	desired-charging-current = <2000>;
+	rsense-mohms = <5>;
 };

@@ -167,16 +167,7 @@ static void tracing_backend_usb_output(const struct tracing_backend *backend,
 	}
 }
 
-static void tracing_backend_usb_init(void)
-{
-	int ret;
-
-	ret = usb_enable(NULL);
-	__ASSERT(ret == 0, "usb backend enable failed");
-}
-
 const struct tracing_backend_api tracing_backend_usb_api = {
-	.init = tracing_backend_usb_init,
 	.output = tracing_backend_usb_output
 };
 

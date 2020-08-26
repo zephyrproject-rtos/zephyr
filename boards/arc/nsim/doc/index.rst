@@ -11,7 +11,7 @@ ARC EM or ARC HS based board including the following features:
 
 * ARC EM or ARC HS processor
 * ARC internal timer
-* a virtual output only console (uart-nsim)
+* a virtual console (ns16550 based UART model)
 
 There are four supported board sub-configurations:
 
@@ -39,7 +39,7 @@ The following hardware features are supported:
 +===========+============+=====+=======+=====+=======================+
 | INT       | on-chip    | Y   | Y     | Y   | interrupt_controller  |
 +-----------+------------+-----+-------+-----+-----------------------+
-| UART      | nsim uart  | Y   | Y     | Y   | serial port-polling   |
+| UART      | ns16550    | Y   | Y     | Y   | serial port           |
 +-----------+------------+-----+-------+-----+-----------------------+
 | TIMER     | on-chip    | Y   | Y     | Y   | system clock          |
 +-----------+------------+-----+-------+-----+-----------------------+

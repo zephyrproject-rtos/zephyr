@@ -732,6 +732,17 @@ config BT_TESTING
 	  This option enables custom Bluetooth testing interface.
 	  Shall only be used for testing purposes.
 
+config BT_CONN_DISABLE_SECURITY
+	bool "Disable security"
+	depends on BT_TESTING
+	help
+	  This option disables security checks for incoming requests enabling
+	  to test accessing GATT attributes and L2CAP channels that would
+	  otherwise require encryption/authentication in order to be accessed.
+
+	  WARNING: This option enables anyone to snoop on-air traffic.
+	  Use of this feature in production is strongly discouraged.
+
 config BT_BREDR
 	bool "Bluetooth BR/EDR support [EXPERIMENTAL]"
 	depends on BT_HCI_HOST

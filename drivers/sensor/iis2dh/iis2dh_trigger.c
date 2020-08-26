@@ -23,7 +23,7 @@ LOG_MODULE_DECLARE(IIS2DH, CONFIG_SENSOR_LOG_LEVEL);
 static int iis2dh_enable_drdy(struct device *dev,
 			      enum sensor_trigger_type type, int enable)
 {
-	struct iis2dh_data *iis2dh = dev->driver_data;
+	struct iis2dh_data *iis2dh = dev->data;
 	iis2dh_ctrl_reg3_t reg3;
 
 	/* set interrupt for pin INT1 */
@@ -41,7 +41,7 @@ int iis2dh_trigger_set(struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
-	struct iis2dh_data *iis2dh = dev->driver_data;
+	struct iis2dh_data *iis2dh = dev->data;
 	union axis3bit16_t raw;
 	int state = (handler != NULL) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
 
@@ -61,7 +61,7 @@ int iis2dh_trigger_set(struct device *dev,
 
 static int iis2dh_handle_drdy_int(struct device *dev)
 {
-	struct iis2dh_data *data = dev->driver_data;
+	struct iis2dh_data *data = dev->data;
 
 	struct sensor_trigger drdy_trig = {
 		.type = SENSOR_TRIG_DATA_READY,
@@ -82,8 +82,8 @@ static int iis2dh_handle_drdy_int(struct device *dev)
 static void iis2dh_handle_interrupt(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	struct iis2dh_data *iis2dh = dev->driver_data;
-	const struct iis2dh_device_config *cfg = dev->config_info;
+	struct iis2dh_data *iis2dh = dev->data;
+	const struct iis2dh_device_config *cfg = dev->config;
 
 	iis2dh_handle_drdy_int(dev);
 
@@ -115,7 +115,7 @@ static void iis2dh_gpio_callback(struct device *dev,
 static void iis2dh_thread(int dev_ptr, int unused)
 {
 	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct iis2dh_data *iis2dh = dev->driver_data;
+	struct iis2dh_data *iis2dh = dev->data;
 
 	ARG_UNUSED(unused);
 
@@ -138,8 +138,8 @@ static void iis2dh_work_cb(struct k_work *work)
 
 int iis2dh_init_interrupt(struct device *dev)
 {
-	struct iis2dh_data *iis2dh = dev->driver_data;
-	const struct iis2dh_device_config *cfg = dev->config_info;
+	struct iis2dh_data *iis2dh = dev->data;
+	const struct iis2dh_device_config *cfg = dev->config;
 	int ret;
 
 	/* setup data ready gpio interrupt */

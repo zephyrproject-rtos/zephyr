@@ -85,7 +85,7 @@ static inline int pcie_ep_conf_read(struct device *dev,
 				    uint32_t offset, uint32_t *data)
 {
 	const struct pcie_ep_driver_api *api =
-			(const struct pcie_ep_driver_api *)dev->driver_api;
+			(const struct pcie_ep_driver_api *)dev->api;
 
 	return api->conf_read(dev, offset, data);
 }
@@ -106,7 +106,7 @@ static inline void pcie_ep_conf_write(struct device *dev,
 				      uint32_t offset, uint32_t data)
 {
 	const struct pcie_ep_driver_api *api =
-			(const struct pcie_ep_driver_api *)dev->driver_api;
+			(const struct pcie_ep_driver_api *)dev->api;
 
 	api->conf_write(dev, offset, data);
 }
@@ -141,7 +141,7 @@ static inline int pcie_ep_map_addr(struct device *dev, uint64_t pcie_addr,
 				   enum pcie_ob_mem_type ob_mem_type)
 {
 	const struct pcie_ep_driver_api *api =
-			(const struct pcie_ep_driver_api *)dev->driver_api;
+			(const struct pcie_ep_driver_api *)dev->api;
 
 	return api->map_addr(dev, pcie_addr, mapped_addr, size, ob_mem_type);
 }
@@ -162,7 +162,7 @@ static inline int pcie_ep_map_addr(struct device *dev, uint64_t pcie_addr,
 static inline void pcie_ep_unmap_addr(struct device *dev, uint64_t mapped_addr)
 {
 	const struct pcie_ep_driver_api *api =
-			(const struct pcie_ep_driver_api *)dev->driver_api;
+			(const struct pcie_ep_driver_api *)dev->api;
 
 	api->unmap_addr(dev, mapped_addr);
 }
@@ -184,7 +184,7 @@ static inline int pcie_ep_raise_irq(struct device *dev,
 				    uint32_t irq_num)
 {
 	const struct pcie_ep_driver_api *api =
-			(const struct pcie_ep_driver_api *)dev->driver_api;
+			(const struct pcie_ep_driver_api *)dev->api;
 	return api->raise_irq(dev, irq_type, irq_num);
 }
 
@@ -209,7 +209,7 @@ static inline int pcie_ep_register_reset_cb(struct device *dev,
 					    void *arg)
 {
 	const struct pcie_ep_driver_api *api =
-			(const struct pcie_ep_driver_api *)dev->driver_api;
+			(const struct pcie_ep_driver_api *)dev->api;
 
 	if (api->register_reset_cb) {
 		return api->register_reset_cb(dev, reset, cb, arg);

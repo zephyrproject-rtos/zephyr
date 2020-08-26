@@ -19,9 +19,9 @@ LOG_MODULE_REGISTER(ipm_stm32_ipcc, CONFIG_IPM_LOG_LEVEL);
 
 /* convenience defines */
 #define DEV_CFG(dev)							\
-	((const struct stm32_ipcc_mailbox_config * const)(dev)->config_info)
+	((const struct stm32_ipcc_mailbox_config * const)(dev)->config)
 #define DEV_DATA(dev)							\
-	((struct stm32_ipcc_mbx_data * const)(dev)->driver_data)
+	((struct stm32_ipcc_mbx_data * const)(dev)->data)
 #define MBX_STRUCT(dev)					\
 	((IPCC_TypeDef *)(DEV_CFG(dev))->uconf.base)
 
@@ -96,7 +96,7 @@ struct stm32_ipcc_mailbox_config {
 struct stm32_ipcc_mbx_data {
 	uint32_t num_ch;
 	ipm_callback_t callback;
-	void *callback_ctx;
+	void *user_data;
 };
 
 static struct stm32_ipcc_mbx_data stm32_IPCC_data;
@@ -122,7 +122,7 @@ static void stm32_ipcc_mailbox_rx_isr(void *arg)
 
 		if (data->callback) {
 			/* Only one MAILBOX, id is unused and set to 0 */
-			data->callback(data->callback_ctx, i, &value);
+			data->callback(dev, data->user_data, i, &value);
 		}
 		/* clear status to acknoledge message reception */
 		IPCC_ClearFlag_CHx(cfg->ipcc, i);
@@ -155,7 +155,7 @@ static void stm32_ipcc_mailbox_tx_isr(void *arg)
 static int stm32_ipcc_mailbox_ipm_send(struct device *dev, int wait, uint32_t id,
 				       const void *buff, int size)
 {
-	struct stm32_ipcc_mbx_data *data = dev->driver_data;
+	struct stm32_ipcc_mbx_data *data = dev->data;
 	const struct stm32_ipcc_mailbox_config *cfg = DEV_CFG(dev);
 
 	ARG_UNUSED(wait);
@@ -203,12 +203,12 @@ static uint32_t stm32_ipcc_mailbox_ipm_max_id_val_get(struct device *d)
 
 static void stm32_ipcc_mailbox_ipm_register_callback(struct device *d,
 						     ipm_callback_t cb,
-						     void *context)
+						     void *user_data)
 {
 	struct stm32_ipcc_mbx_data *data = DEV_DATA(d);
 
 	data->callback = cb;
-	data->callback_ctx = context;
+	data->user_data = user_data;
 }
 
 static int stm32_ipcc_mailbox_ipm_set_enabled(struct device *dev, int enable)

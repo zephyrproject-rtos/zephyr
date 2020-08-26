@@ -98,8 +98,6 @@ struct perm_ctx {
  * mode stacks are allocated as an array. The base of the array is
  * aligned to Z_PRIVILEGE_STACK_ALIGN, and all members must be as well.
  */
-BUILD_ASSERT(CONFIG_PRIVILEGED_STACK_SIZE % Z_PRIVILEGE_STACK_ALIGN == 0);
-
 uint8_t *z_priv_stack_find(k_thread_stack_t *stack)
 {
 	struct z_object *obj = z_object_find(stack);

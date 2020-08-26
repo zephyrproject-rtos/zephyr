@@ -30,7 +30,7 @@ static int ppp_stats_get(uint32_t mgmt_request, struct net_if *iface,
 			return -ENOENT;
 		}
 
-		ppp = net_if_get_device(iface)->driver_api;
+		ppp = net_if_get_device(iface)->api;
 		if (ppp->get_stats == NULL) {
 			return -ENOENT;
 		}

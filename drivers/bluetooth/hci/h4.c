@@ -34,7 +34,7 @@
 #define H4_SCO  0x03
 #define H4_EVT  0x04
 
-static K_THREAD_STACK_DEFINE(rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 static struct k_thread rx_thread_data;
 
 static struct {
@@ -391,9 +391,10 @@ static inline void process_rx(void)
 	}
 }
 
-static void bt_uart_isr(struct device *unused)
+static void bt_uart_isr(struct device *unused, void *user_data)
 {
 	ARG_UNUSED(unused);
+	ARG_UNUSED(user_data);
 
 	while (uart_irq_update(h4_dev) && uart_irq_is_pending(h4_dev)) {
 		if (uart_irq_tx_ready(h4_dev)) {
@@ -445,7 +446,7 @@ static int h4_open(void)
 	uart_irq_callback_set(h4_dev, bt_uart_isr);
 
 	k_thread_create(&rx_thread_data, rx_thread_stack,
-			K_THREAD_STACK_SIZEOF(rx_thread_stack),
+			K_KERNEL_STACK_SIZEOF(rx_thread_stack),
 			rx_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_RX_PRIO),
 			0, K_NO_WAIT);

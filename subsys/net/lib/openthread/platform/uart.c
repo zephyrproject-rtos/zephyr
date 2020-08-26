@@ -29,7 +29,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "platform-zephyr.h"
 
 struct openthread_uart {
-	struct ring_buf *tx_ringbuf;
 	struct ring_buf *rx_ringbuf;
 	struct device *dev;
 	atomic_t tx_busy;
@@ -37,10 +36,8 @@ struct openthread_uart {
 };
 
 #define OT_UART_DEFINE(_name, _ringbuf_size) \
-	RING_BUF_DECLARE(_name##_tx_ringbuf, _ringbuf_size); \
 	RING_BUF_DECLARE(_name##_rx_ringbuf, _ringbuf_size); \
 	static struct openthread_uart _name = { \
-		.tx_ringbuf = &_name##_tx_ringbuf, \
 		.rx_ringbuf = &_name##_rx_ringbuf, \
 	}
 
@@ -48,7 +45,11 @@ OT_UART_DEFINE(ot_uart, CONFIG_OPENTHREAD_NCP_UART_RING_BUFFER_SIZE);
 
 #define RX_FIFO_SIZE 128
 
-static void uart_rx_handle(void)
+static bool is_panic_mode;
+static const uint8_t *write_buffer;
+static uint16_t write_length;
+
+static void uart_rx_handle(struct device *dev)
 {
 	uint8_t *data;
 	uint32_t len;
@@ -60,9 +61,7 @@ static void uart_rx_handle(void)
 			ot_uart.rx_ringbuf, &data,
 			ot_uart.rx_ringbuf->size);
 		if (len > 0) {
-			rd_len = uart_fifo_read(
-				ot_uart.dev, data, len);
-
+			rd_len = uart_fifo_read(dev, data, len);
 			if (rd_len > 0) {
 				new_data = true;
 			}
@@ -77,8 +76,7 @@ static void uart_rx_handle(void)
 			/* No space in the ring buffer - consume byte. */
 			LOG_WRN("RX ring buffer full.");
 
-			rd_len = uart_fifo_read(
-				ot_uart.dev, &dummy, 1);
+			rd_len = uart_fifo_read(dev, &dummy, 1);
 		}
 	} while (rd_len && (rd_len == len));
 
@@ -87,41 +85,34 @@ static void uart_rx_handle(void)
 	}
 }
 
-static void uart_tx_handle(void)
+static void uart_tx_handle(struct device *dev)
 {
 	uint32_t len;
-	const uint8_t *data;
 
-	len = ring_buf_get_claim(ot_uart.tx_ringbuf, (uint8_t **)&data,
-				 ot_uart.tx_ringbuf->size);
-	if (len) {
-		int err;
-
-		len = uart_fifo_fill(ot_uart.dev, data, len);
-		err = ring_buf_get_finish(ot_uart.tx_ringbuf, len);
-		(void)err;
-		__ASSERT_NO_MSG(err == 0);
+	if (write_length) {
+		len = uart_fifo_fill(dev, write_buffer, write_length);
+		write_buffer += len;
+		write_length -= len;
 	} else {
-		uart_irq_tx_disable(ot_uart.dev);
+		uart_irq_tx_disable(dev);
 		ot_uart.tx_busy = 0;
 		atomic_set(&(ot_uart.tx_finished), 1);
 		otSysEventSignalPending();
 	}
 }
 
-static void uart_callback(void *user_data)
+static void uart_callback(struct device *dev, void *user_data)
 {
 	ARG_UNUSED(user_data);
 
-	while (uart_irq_update(ot_uart.dev) &&
-	       uart_irq_is_pending(ot_uart.dev)) {
+	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
 
-		if (uart_irq_rx_ready(ot_uart.dev)) {
-			uart_rx_handle();
+		if (uart_irq_rx_ready(dev)) {
+			uart_rx_handle(dev);
 		}
 
-		if (uart_irq_tx_ready(ot_uart.dev)) {
-			uart_tx_handle();
+		if (uart_irq_tx_ready(dev)) {
+			uart_tx_handle(dev);
 		}
 	}
 }
@@ -164,32 +155,9 @@ otError otPlatUartEnable(void)
 		return OT_ERROR_FAILED;
 	}
 
-#ifdef CONFIG_OPENTHREAD_NCP_SPINEL_ON_UART_ACM
-	int ret = usb_enable(NULL);
-	uint32_t baudrate = 0U;
-
-	if (ret != 0) {
-		LOG_ERR("Failed to enable USB");
-		return OT_ERROR_FAILED;
-	}
-
-	LOG_INF("Wait for host to settle");
-	k_sleep(K_SECONDS(1));
-
-	ret = uart_line_ctrl_get(ot_uart.dev,
-				 UART_LINE_CTRL_BAUD_RATE,
-				 &baudrate);
-	if (ret) {
-		LOG_WRN("Failed to get baudrate, ret code %d", ret);
-	} else {
-		LOG_INF("Baudrate detected: %d", baudrate);
-	}
-#endif
-
-	uart_irq_callback_user_data_set(
-		ot_uart.dev,
-		uart_callback,
-		(void *)&ot_uart);
+	uart_irq_callback_user_data_set(ot_uart.dev,
+					uart_callback,
+					(void *)&ot_uart);
 	uart_irq_rx_enable(ot_uart.dev);
 
 	return OT_ERROR_NONE;
@@ -197,23 +165,65 @@ otError otPlatUartEnable(void)
 
 otError otPlatUartDisable(void)
 {
-	/* TODO: uninit UART */
-	LOG_WRN("%s not implemented.", __func__);
-	return OT_ERROR_NOT_IMPLEMENTED;
+#ifdef CONFIG_OPENTHREAD_NCP_SPINEL_ON_UART_ACM
+	int ret = usb_disable();
+
+	if (ret) {
+		LOG_WRN("Failed to disable USB (%d)", ret);
+	}
+#endif
+
+	uart_irq_tx_disable(ot_uart.dev);
+	uart_irq_rx_disable(ot_uart.dev);
+	return OT_ERROR_NONE;
 };
 
 
 otError otPlatUartSend(const uint8_t *aBuf, uint16_t aBufLength)
 {
-	size_t cnt = ring_buf_put(ot_uart.tx_ringbuf, aBuf, aBufLength);
+	if (aBuf == NULL) {
+		return OT_ERROR_FAILED;
+	}
+
+	write_buffer = aBuf;
+	write_length = aBufLength;
 
 	if (atomic_set(&(ot_uart.tx_busy), 1) == 0) {
-		uart_irq_tx_enable(ot_uart.dev);
+		if (is_panic_mode) {
+			/* In panic mode all data have to be send immediately
+			 * without using interrupts
+			 */
+			otPlatUartFlush();
+		} else {
+			uart_irq_tx_enable(ot_uart.dev);
+		}
 	}
 
-	if (cnt == aBufLength) {
-		return OT_ERROR_NONE;
-	} else {
-		return OT_ERROR_BUSY;
-	}
+	return OT_ERROR_NONE;
 };
+
+otError otPlatUartFlush(void)
+{
+	otError result = OT_ERROR_NONE;
+
+	if (write_length) {
+		for (size_t i = 0; i < write_length; i++) {
+			uart_poll_out(ot_uart.dev, *(write_buffer+i));
+		}
+	}
+
+	ot_uart.tx_busy = 0;
+	atomic_set(&(ot_uart.tx_finished), 1);
+	otSysEventSignalPending();
+	return result;
+}
+
+void platformUartPanic(void)
+{
+	is_panic_mode = true;
+	/* In panic mode data are send without using interrupts.
+	 * Reception in this mode is not supported.
+	 */
+	uart_irq_tx_disable(ot_uart.dev);
+	uart_irq_rx_disable(ot_uart.dev);
+}

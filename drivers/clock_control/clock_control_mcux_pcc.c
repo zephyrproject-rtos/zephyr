@@ -22,7 +22,7 @@ struct mcux_pcc_config {
 	uint32_t base_address;
 };
 
-#define DEV_CFG(dev)  ((struct mcux_pcc_config *)(dev->config_info))
+#define DEV_CFG(dev)  ((struct mcux_pcc_config *)(dev->config))
 #define DEV_BASE(dev) (DEV_CFG(dev)->base_address)
 #ifndef MAKE_PCC_REGADDR
 #define MAKE_PCC_REGADDR(base, offset) ((base) + (offset))

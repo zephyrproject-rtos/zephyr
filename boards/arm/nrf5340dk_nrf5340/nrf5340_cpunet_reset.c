@@ -76,6 +76,13 @@ static int remoteproc_mgr_boot(struct device *dev)
 	remoteproc_mgr_config();
 #endif /* !CONFIG_TRUSTED_EXECUTION_NONSECURE */
 
+#if !defined(CONFIG_TRUSTED_EXECUTION_SECURE)
+	/*
+	 * Building Zephyr with CONFIG_TRUSTED_EXECUTION_SECURE=y implies
+	 * building also a Non-Secure image. The Non-Secure image will, in
+	 * this case do the remainder of actions to properly configure and
+	 * boot the Network MCU.
+	 */
 #if defined(SHM_BASE_ADDRESS) && (SHM_BASE_ADDRESS != 0)
 
 	/* Initialize inter-processor shared memory block to zero. It is
@@ -89,6 +96,7 @@ static int remoteproc_mgr_boot(struct device *dev)
 	NRF_RESET->NETWORK.FORCEOFF = RESET_NETWORK_FORCEOFF_FORCEOFF_Release;
 
 	LOG_DBG("Network MCU released.");
+#endif /* !CONFIG_TRUSTED_EXECUTION_SECURE */
 
 	return 0;
 }

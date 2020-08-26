@@ -68,7 +68,7 @@ static struct gsm_modem {
 
 NET_BUF_POOL_DEFINE(gsm_recv_pool, GSM_RECV_MAX_BUF, GSM_RECV_BUF_SIZE,
 		    0, NULL);
-K_THREAD_STACK_DEFINE(gsm_rx_stack, GSM_RX_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(gsm_rx_stack, GSM_RX_STACK_SIZE);
 
 struct k_thread gsm_rx_thread;
 
@@ -112,12 +112,18 @@ static struct modem_cmd response_cmds[] = {
 #define MDM_MODEL_LENGTH         16
 #define MDM_REVISION_LENGTH      64
 #define MDM_IMEI_LENGTH          16
+#define MDM_IMSI_LENGTH          16
+#define MDM_ICCID_LENGTH         32
 
 struct modem_info {
 	char mdm_manufacturer[MDM_MANUFACTURER_LENGTH];
 	char mdm_model[MDM_MODEL_LENGTH];
 	char mdm_revision[MDM_REVISION_LENGTH];
 	char mdm_imei[MDM_IMEI_LENGTH];
+#if defined(CONFIG_MODEM_SIM_NUMBERS)
+	char mdm_imsi[MDM_IMSI_LENGTH];
+	char mdm_iccid[MDM_ICCID_LENGTH];
+#endif
 };
 
 static struct modem_info minfo;
@@ -181,6 +187,46 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imei)
 
 	return 0;
 }
+
+#if defined(CONFIG_MODEM_SIM_NUMBERS)
+/* Handler: <IMSI> */
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imsi)
+{
+	size_t out_len;
+
+	out_len = net_buf_linearize(minfo.mdm_imsi, sizeof(minfo.mdm_imsi) - 1,
+				    data->rx_buf, 0, len);
+	minfo.mdm_imsi[out_len] = '\0';
+	LOG_INF("IMSI: %s", log_strdup(minfo.mdm_imsi));
+
+	return 0;
+}
+
+/* Handler: <ICCID> */
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_iccid)
+{
+	size_t out_len;
+
+	out_len = net_buf_linearize(minfo.mdm_iccid, sizeof(minfo.mdm_iccid) - 1,
+				    data->rx_buf, 0, len);
+	minfo.mdm_iccid[out_len] = '\0';
+	if (minfo.mdm_iccid[0] == '+') {
+		/* Seen on U-blox SARA: "+CCID: nnnnnnnnnnnnnnnnnnnn".
+		 * Skip over the +CCID bit, which other modems omit.
+		 */
+		char *p = strchr(minfo.mdm_iccid, ' ');
+
+		if (p) {
+			size_t len = strlen(p+1);
+
+			memmove(minfo.mdm_iccid, p+1, len+1);
+		}
+	}
+	LOG_INF("ICCID: %s", log_strdup(minfo.mdm_iccid));
+
+	return 0;
+}
+#endif /* CONFIG_MODEM_SIM_NUMBERS */
 #endif /* CONFIG_MODEM_SHELL */
 
 static struct setup_cmd setup_cmds[] = {
@@ -196,6 +242,10 @@ static struct setup_cmd setup_cmds[] = {
 	SETUP_CMD("AT+CGMI", "", on_cmd_atcmdinfo_manufacturer, 0U, ""),
 	SETUP_CMD("AT+CGMM", "", on_cmd_atcmdinfo_model, 0U, ""),
 	SETUP_CMD("AT+CGMR", "", on_cmd_atcmdinfo_revision, 0U, ""),
+# if defined(CONFIG_MODEM_SIM_NUMBERS)
+	SETUP_CMD("AT+CIMI", "", on_cmd_atcmdinfo_imsi, 0U, ""),
+	SETUP_CMD("AT+CCID", "", on_cmd_atcmdinfo_iccid, 0U, ""),
+# endif
 	SETUP_CMD("AT+CGSN", "", on_cmd_atcmdinfo_imei, 0U, ""),
 #endif
 
@@ -251,7 +301,7 @@ static void set_ppp_carrier_on(struct gsm_modem *gsm)
 		return;
 	}
 
-	api = (const struct ppp_api *)ppp_dev->driver_api;
+	api = (const struct ppp_api *)ppp_dev->api;
 	api->start(ppp_dev);
 }
 
@@ -561,7 +611,7 @@ static void gsm_configure(struct k_work *work)
 
 static int gsm_init(struct device *device)
 {
-	struct gsm_modem *gsm = device->driver_data;
+	struct gsm_modem *gsm = device->data;
 	int r;
 
 	LOG_DBG("Generic GSM modem (%p)", gsm);
@@ -591,7 +641,11 @@ static int gsm_init(struct device *device)
 	gsm->context.data_model = minfo.mdm_model;
 	gsm->context.data_revision = minfo.mdm_revision;
 	gsm->context.data_imei = minfo.mdm_imei;
-#endif
+#if defined(CONFIG_MODEM_SIM_NUMBERS)
+	gsm->context.data_imsi = minfo.mdm_imsi;
+	gsm->context.data_iccid = minfo.mdm_iccid;
+#endif	/* CONFIG_MODEM_SIM_NUMBERS */
+#endif	/* CONFIG_MODEM_SHELL */
 
 	gsm->gsm_data.isr_buf = &gsm->gsm_isr_buf[0];
 	gsm->gsm_data.isr_buf_len = sizeof(gsm->gsm_isr_buf);
@@ -615,7 +669,7 @@ static int gsm_init(struct device *device)
 		gsm->context.iface.read, gsm->context.iface.write);
 
 	k_thread_create(&gsm_rx_thread, gsm_rx_stack,
-			K_THREAD_STACK_SIZEOF(gsm_rx_stack),
+			K_KERNEL_STACK_SIZEOF(gsm_rx_stack),
 			(k_thread_entry_t) gsm_rx,
 			gsm, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 	k_thread_name_set(&gsm_rx_thread, "gsm_rx");

@@ -68,13 +68,13 @@ struct counter_nrfx_config {
 
 static inline struct counter_nrfx_data *get_dev_data(struct device *dev)
 {
-	return dev->driver_data;
+	return dev->data;
 }
 
 static inline const struct counter_nrfx_config *get_nrfx_config(
 							struct device *dev)
 {
-	return CONTAINER_OF(dev->config_info,
+	return CONTAINER_OF(dev->config,
 				struct counter_nrfx_config, info);
 }
 
@@ -524,7 +524,6 @@ static uint32_t get_pending_int(struct device *dev)
 
 static int init_rtc(struct device *dev, uint32_t prescaler)
 {
-	struct device *clock;
 	const struct counter_nrfx_config *nrfx_config = get_nrfx_config(dev);
 	struct counter_top_cfg top_cfg = {
 		.ticks = COUNTER_MAX_TOP_VALUE
@@ -532,12 +531,7 @@ static int init_rtc(struct device *dev, uint32_t prescaler)
 	NRF_RTC_Type *rtc = nrfx_config->rtc;
 	int err;
 
-	clock = device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_clock)));
-	if (!clock) {
-		return -ENODEV;
-	}
-
-	clock_control_on(clock, CLOCK_CONTROL_NRF_SUBSYS_LF);
+	z_nrf_clock_control_lf_on(NRF_LFCLK_START_MODE_NOWAIT);
 
 	nrf_rtc_prescaler_set(rtc, prescaler);
 

@@ -61,7 +61,7 @@ static int adxl362_reg_access(struct adxl362_data *ctx, uint8_t cmd,
 static inline int adxl362_set_reg(struct device *dev, uint16_t register_value,
 				  uint8_t register_address, uint8_t count)
 {
-	struct adxl362_data *adxl362_data = dev->driver_data;
+	struct adxl362_data *adxl362_data = dev->data;
 
 	return adxl362_reg_access(adxl362_data,
 				  ADXL362_WRITE_REG,
@@ -75,7 +75,7 @@ int adxl362_reg_write_mask(struct device *dev, uint8_t register_address,
 {
 	int ret;
 	uint8_t tmp;
-	struct adxl362_data *adxl362_data = dev->driver_data;
+	struct adxl362_data *adxl362_data = dev->data;
 
 	ret = adxl362_reg_access(adxl362_data,
 				 ADXL362_READ_REG,
@@ -100,7 +100,7 @@ int adxl362_reg_write_mask(struct device *dev, uint8_t register_address,
 static inline int adxl362_get_reg(struct device *dev, uint8_t *read_buf,
 				  uint8_t register_address, uint8_t count)
 {
-	struct adxl362_data *adxl362_data = dev->driver_data;
+	struct adxl362_data *adxl362_data = dev->data;
 
 	return adxl362_reg_access(adxl362_data,
 				  ADXL362_READ_REG,
@@ -114,7 +114,7 @@ static int adxl362_interrupt_config(struct device *dev,
 				 uint8_t int2)
 {
 	int ret;
-	struct adxl362_data *adxl362_data = dev->driver_data;
+	struct adxl362_data *adxl362_data = dev->data;
 
 	ret = adxl362_reg_access(adxl362_data,
 				  ADXL362_WRITE_REG,
@@ -235,7 +235,7 @@ static int32_t adxl362_range_to_reg_val(uint16_t range)
 
 static int adxl362_set_range(struct device *dev, uint8_t range)
 {
-	struct adxl362_data *adxl362_data = dev->driver_data;
+	struct adxl362_data *adxl362_data = dev->data;
 	uint8_t old_filter_ctl;
 	uint8_t new_filter_ctl;
 	int ret;
@@ -532,7 +532,7 @@ int adxl362_set_interrupt_mode(struct device *dev, uint8_t mode)
 
 static int adxl362_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct adxl362_data *data = dev->driver_data;
+	struct adxl362_data *data = dev->data;
 	int16_t buf[4];
 	int ret;
 
@@ -592,7 +592,7 @@ static int adxl362_channel_get(struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	struct adxl362_data *data = dev->driver_data;
+	struct adxl362_data *data = dev->data;
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X: /* Acceleration on the X axis, in m/s^2. */
@@ -721,8 +721,8 @@ static int adxl362_chip_init(struct device *dev)
  */
 static int adxl362_init(struct device *dev)
 {
-	const struct adxl362_config *config = dev->config_info;
-	struct adxl362_data *data = dev->driver_data;
+	const struct adxl362_config *config = dev->config;
+	struct adxl362_data *data = dev->data;
 	uint8_t value;
 	int err;
 

@@ -59,12 +59,12 @@ struct ws2812_spi_cfg {
 
 static struct ws2812_spi_data *dev_data(struct device *dev)
 {
-	return dev->driver_data;
+	return dev->data;
 }
 
 static const struct ws2812_spi_cfg *dev_cfg(struct device *dev)
 {
-	return dev->config_info;
+	return dev->config;
 }
 
 /*

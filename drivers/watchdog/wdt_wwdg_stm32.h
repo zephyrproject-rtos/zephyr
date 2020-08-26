@@ -37,10 +37,10 @@ struct wwdg_stm32_data {
 };
 
 #define WWDG_STM32_CFG(dev) \
-	((const struct wwdg_stm32_config *const)(dev)->config_info)
+	((const struct wwdg_stm32_config *const)(dev)->config)
 
 #define WWDG_STM32_DATA(dev) \
-	((struct wwdg_stm32_data *const)(dev)->driver_data)
+	((struct wwdg_stm32_data *const)(dev)->data)
 
 #define WWDG_STM32_STRUCT(dev) \
 	((WWDG_TypeDef *)(WWDG_STM32_CFG(dev))->Instance)

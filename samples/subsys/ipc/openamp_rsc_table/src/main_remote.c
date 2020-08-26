@@ -66,7 +66,8 @@ static struct rpmsg_endpoint rcv_ept;
 static K_SEM_DEFINE(data_sem, 0, 1);
 static K_SEM_DEFINE(data_rx_sem, 0, 1);
 
-static void platform_ipm_callback(void *context, uint32_t id, volatile void *data)
+static void platform_ipm_callback(struct device *device, void *context,
+				  uint32_t id, volatile void *data)
 {
 	LOG_DBG("%s: msg received from mb %d\n", __func__, id);
 	k_sem_give(&data_sem);

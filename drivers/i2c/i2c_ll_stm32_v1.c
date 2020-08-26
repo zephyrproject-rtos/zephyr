@@ -23,10 +23,24 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_v1);
 
 #include "i2c-priv.h"
 
+#define STM32_I2C_TRANSFER_TIMEOUT_MSEC  500
+
 #define STM32_I2C_TIMEOUT_USEC  1000
 #define I2C_REQUEST_WRITE       0x00
 #define I2C_REQUEST_READ        0x01
 #define HEADER                  0xF0
+
+static void stm32_i2c_generate_start_condition(I2C_TypeDef *i2c)
+{
+	uint16_t cr1 = LL_I2C_ReadReg(i2c, CR1);
+
+	if (cr1 & I2C_CR1_STOP) {
+		LOG_DBG("%s: START while STOP active!", __func__);
+		LL_I2C_WriteReg(i2c, CR1, cr1 & ~I2C_CR1_STOP);
+	}
+
+	LL_I2C_GenerateStartCondition(i2c);
+}
 
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 
@@ -52,7 +66,50 @@ static void stm32_i2c_enable_transfer_interrupts(struct device *dev)
 	LL_I2C_EnableIT_BUF(i2c);
 }
 
+static void stm32_i2c_reset(struct device *dev)
+{
+	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
+	I2C_TypeDef *i2c = cfg->i2c;
+	uint16_t cr1, cr2, oar1, oar2, trise, ccr;
+#if defined(I2C_FLTR_ANOFF) && defined(I2C_FLTR_DNF)
+	uint16_t fltr;
 #endif
+
+	/* disable i2c and disable IRQ's */
+	LL_I2C_Disable(i2c);
+	stm32_i2c_disable_transfer_interrupts(dev);
+
+	/* save all important registers before reset */
+	cr1 = LL_I2C_ReadReg(i2c, CR1);
+	cr2 = LL_I2C_ReadReg(i2c, CR2);
+	oar1 = LL_I2C_ReadReg(i2c, OAR1);
+	oar2 = LL_I2C_ReadReg(i2c, OAR2);
+	ccr = LL_I2C_ReadReg(i2c, CCR);
+	trise = LL_I2C_ReadReg(i2c, TRISE);
+#if defined(I2C_FLTR_ANOFF) && defined(I2C_FLTR_DNF)
+	fltr = LL_I2C_ReadReg(i2c, FLTR);
+#endif
+
+	/* reset i2c hardware */
+	LL_I2C_EnableReset(i2c);
+	LL_I2C_DisableReset(i2c);
+
+	/* restore all important registers after reset */
+	LL_I2C_WriteReg(i2c, CR1, cr1);
+	LL_I2C_WriteReg(i2c, CR2, cr2);
+
+	/* bit 14 of OAR1 must always be 1 */
+	oar1 |= (1 << 14);
+	LL_I2C_WriteReg(i2c, OAR1, oar1);
+	LL_I2C_WriteReg(i2c, OAR2, oar2);
+	LL_I2C_WriteReg(i2c, CCR, ccr);
+	LL_I2C_WriteReg(i2c, TRISE, trise);
+#if defined(I2C_FLTR_ANOFF) && defined(I2C_FLTR_DNF)
+	LL_I2C_WriteReg(i2c, FLTR, fltr);
+#endif
+}
+
+#endif /* CONFIG_I2C_STM32_INTERRUPT */
 
 static void stm32_i2c_master_finish(struct device *dev)
 {
@@ -110,7 +167,7 @@ static inline void msg_init(struct device *dev, struct i2c_msg *msg,
 	LL_I2C_DisableBitPOS(i2c);
 	LL_I2C_AcknowledgeNextData(i2c, LL_I2C_ACK);
 	if (msg->flags & I2C_MSG_RESTART) {
-		LL_I2C_GenerateStartCondition(i2c);
+		stm32_i2c_generate_start_condition(i2c);
 	}
 }
 
@@ -204,7 +261,7 @@ static inline void handle_addr(struct device *dev)
 		if (!data->current.is_write && data->current.is_restart) {
 			data->current.is_restart = 0U;
 			LL_I2C_ClearFlag_ADDR(i2c);
-			LL_I2C_GenerateStartCondition(i2c);
+			stm32_i2c_generate_start_condition(i2c);
 
 			return;
 		}
@@ -486,7 +543,6 @@ int i2c_stm32_slave_unregister(struct device *dev,
 }
 #endif /* defined(CONFIG_I2C_SLAVE) */
 
-
 void stm32_i2c_event_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
@@ -564,7 +620,12 @@ int32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 	stm32_i2c_enable_transfer_interrupts(dev);
 	LL_I2C_EnableIT_TX(i2c);
 
-	k_sem_take(&data->device_sync_sem, K_FOREVER);
+	if (k_sem_take(&data->device_sync_sem,
+			K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
+		LOG_DBG("%s: WRITE timeout", __func__);
+		stm32_i2c_reset(dev);
+		return -EIO;
+	}
 
 	return msg_end(dev, next_msg_flags, __func__);
 }
@@ -581,12 +642,17 @@ int32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 	stm32_i2c_enable_transfer_interrupts(dev);
 	LL_I2C_EnableIT_RX(i2c);
 
-	k_sem_take(&data->device_sync_sem, K_FOREVER);
+	if (k_sem_take(&data->device_sync_sem,
+			K_MSEC(STM32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
+		LOG_DBG("%s: READ timeout", __func__);
+		stm32_i2c_reset(dev);
+		return -EIO;
+	}
 
 	return msg_end(dev, next_msg_flags, __func__);
 }
 
-#else
+#else /* CONFIG_I2C_STM32_INTERRUPT */
 
 static inline int check_errors(struct device *dev, const char *funcname)
 {
@@ -778,7 +844,7 @@ int32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 			}
 
 			LL_I2C_ClearFlag_ADDR(i2c);
-			LL_I2C_GenerateStartCondition(i2c);
+			stm32_i2c_generate_start_condition(i2c);
 			timeout = STM32_I2C_TIMEOUT_USEC;
 			while (!LL_I2C_IsActiveFlag_SB(i2c)) {
 				if (stm32_i2c_wait_timeout(&timeout)) {
@@ -885,7 +951,7 @@ end:
 	check_errors(dev, __func__);
 	return msg_end(dev, next_msg_flags, __func__);
 }
-#endif
+#endif /* CONFIG_I2C_STM32_INTERRUPT */
 
 int32_t stm32_i2c_configure_timing(struct device *dev, uint32_t clock)
 {

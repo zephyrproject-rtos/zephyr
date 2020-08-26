@@ -17,7 +17,7 @@ struct uart_rtt_config {
 
 static inline const struct uart_rtt_config *get_dev_config(struct device *dev)
 {
-	return dev->config_info;
+	return dev->config;
 }
 
 static int uart_rtt_init(struct device *dev)

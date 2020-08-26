@@ -46,6 +46,10 @@ LOG_MODULE_REGISTER(mpu);
 #define _MPU_DYNAMIC_REGIONS_AREA_SIZE ((uint32_t)&__kernel_ram_end - \
 		_MPU_DYNAMIC_REGIONS_AREA_START)
 
+#if !defined(CONFIG_MULTITHREADING) && defined(CONFIG_MPU_STACK_GUARD)
+extern K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
+#endif
+
 /**
  * @brief Use the HW-specific MPU driver to program
  *        the static MPU regions.
@@ -86,6 +90,21 @@ void z_arm_configure_static_mpu_regions(void)
 		};
 #endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
 
+#if !defined(CONFIG_MULTITHREADING) && defined(CONFIG_MPU_STACK_GUARD)
+		/* Main stack MPU guard to detect overflow.
+		 * Note:
+		 * FPU_SHARING and USERSPACE are not supported features
+		 * under CONFIG_MULTITHREADING=n, so the MPU guard (if
+		 * exists) is reserved aside of CONFIG_MAIN_STACK_SIZE
+		 * and there is no requirement for larger guard area (FP
+		 * context is not stacked).
+		 */
+		const struct k_mem_partition main_stack_guard_region = {
+			.start = (uint32_t)z_main_stack,
+			.size = (uint32_t)MPU_GUARD_ALIGN_AND_SIZE,
+			.attr = K_MEM_PARTITION_P_RO_U_NA,
+		};
+#endif /* !CONFIG_MULTITHREADING && CONFIG_MPU_STACK_GUARD */
 	/* Define a constant array of k_mem_partition objects
 	 * to hold the configuration of the respective static
 	 * MPU regions.
@@ -97,6 +116,9 @@ void z_arm_configure_static_mpu_regions(void)
 #if defined(CONFIG_NOCACHE_MEMORY)
 		&nocache_region,
 #endif /* CONFIG_NOCACHE_MEMORY */
+#if !defined(CONFIG_MULTITHREADING) && defined(CONFIG_MPU_STACK_GUARD)
+		&main_stack_guard_region,
+#endif /* !CONFIG_MULTITHREADING && CONFIG_MPU_STACK_GUARD */
 #if defined(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT)
 		&ramfunc_region
 #endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
@@ -112,7 +134,8 @@ void z_arm_configure_static_mpu_regions(void)
 		(uint32_t)&_image_ram_start,
 		(uint32_t)&__kernel_ram_end);
 
-#if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
+#if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS) && \
+	defined(CONFIG_MULTITHREADING)
 	/* Define a constant array of k_mem_partition objects that holds the
 	 * boundaries of the areas, inside which dynamic region programming
 	 * is allowed. The information is passed to the underlying driver at
@@ -148,6 +171,21 @@ void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 	 * of the respective dynamic MPU regions to be programmed for
 	 * the given thread. The array of partitions (along with its
 	 * actual size) will be supplied to the underlying MPU driver.
+	 *
+	 * The drivers of what regions get configured are CONFIG_USERSPACE,
+	 * CONFIG_MPU_STACK_GUARD, and K_USER/supervisor threads.
+	 *
+	 * If CONFIG_USERSPACE is defined and the thread is a member of any
+	 * memory domain then any partitions defined within that domain get a
+	 * defined region.
+	 *
+	 * If CONFIG_USERSPACE is defined and the thread is a user thread
+	 * (K_USER) the usermode thread stack is defined a region.
+	 *
+	 * IF CONFIG_MPU_STACK_GUARD is defined the thread is a supervisor
+	 * thread, the stack guard will be defined in front of the
+	 * thread->stack_info.start. On a K_USER thread, the guard is defined
+	 * in front of the privilege mode stack, thread->arch.priv_stack_start.
 	 */
 	struct k_mem_partition *dynamic_regions[_MAX_DYNAMIC_MPU_REGIONS_NUM];
 
@@ -193,6 +231,7 @@ void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 	/* Thread user stack */
 	LOG_DBG("configure user thread %p's context", thread);
 	if (thread->arch.priv_stack_start) {
+		/* K_USER thread stack needs a region */
 		uint32_t base = (uint32_t)thread->stack_obj;
 		uint32_t size = thread->stack_info.size +
 			(thread->stack_info.start - base);
@@ -209,6 +248,10 @@ void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 #endif /* CONFIG_USERSPACE */
 
 #if defined(CONFIG_MPU_STACK_GUARD)
+	/* Define a stack guard region for either the thread stack or the
+	 * supervisor/privilege mode stack depending on the type of thread
+	 * being mapped.
+	 */
 	struct k_mem_partition guard;
 
 	/* Privileged stack guard */
@@ -223,15 +266,21 @@ void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 
 #if defined(CONFIG_USERSPACE)
 	if (thread->arch.priv_stack_start) {
+		/* A K_USER thread has the stack guard protecting the privilege
+		 * stack and not on the usermode stack because the user mode
+		 * stack already has its own defined memory region.
+		 */
 		guard_start = thread->arch.priv_stack_start - guard_size;
 
 		__ASSERT((uint32_t)&z_priv_stacks_ram_start <= guard_start,
 		"Guard start: (0x%x) below privilege stacks boundary: (0x%x)",
 		guard_start, (uint32_t)&z_priv_stacks_ram_start);
 	} else {
+		/* A supervisor thread only has the normal thread stack to
+		 * protect with a stack guard.
+		 */
 		guard_start = thread->stack_info.start - guard_size;
-
-		__ASSERT((uint32_t)thread->stack_obj == guard_start,
+	__ASSERT((uint32_t)thread->stack_obj == guard_start,
 		"Guard start (0x%x) not beginning at stack object (0x%x)\n",
 		guard_start, (uint32_t)thread->stack_obj);
 	}

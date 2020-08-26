@@ -13,46 +13,81 @@
 extern "C" {
 #endif
 
-#define _sys_cache_flush_sig(x) void (x)(vaddr_t virt, size_t size)
+void arch_dcache_flush(void *addr, size_t size);
+void arch_dcache_invd(void *addr, size_t size);
 
-#if defined(CONFIG_CACHE_FLUSHING)
-
-#if defined(CONFIG_ARCH_CACHE_FLUSH_DETECT)
-	typedef _sys_cache_flush_sig(_sys_cache_flush_t);
-	extern _sys_cache_flush_t *sys_cache_flush;
-#else
-	extern _sys_cache_flush_sig(sys_cache_flush);
-#endif
-
-#else
-
-/*
- * Provide NOP APIs for systems that do not have caches.
+/**
  *
- * An example is the Cortex-M chips. However, the functions are provided so
- * that code that need to manipulate caches can be written in an
- * architecture-agnostic manner. The functions do nothing. The cache line size
- * value is always 0.
+ * @brief Flush d-cache lines to main memory
+ *
+ * No alignment is required for either addr or size, but since
+ * sys_cache_flush() iterates on the d-cache lines, a d-cache line alignment for
+ * both is optimal.
+ *
+ * The d-cache line size is specified either via the CONFIG_CACHE_LINE_SIZE
+ * kconfig option or it is detected at runtime.
+ *
+ * @param addr the pointer to start the multi-line flush
+ * @param size the number of bytes that are to be flushed
+ *
+ * @return N/A
  */
+__syscall void sys_cache_flush(void *addr, size_t size);
 
-static inline _sys_cache_flush_sig(sys_cache_flush)
+static inline void z_impl_sys_cache_flush(void *addr, size_t size)
 {
-	ARG_UNUSED(virt);
-	ARG_UNUSED(size);
-
-	/* do nothing */
+	if (IS_ENABLED(CONFIG_CACHE_FLUSHING)) {
+		arch_dcache_flush(addr, size);
+	}
 }
 
-#endif /* CACHE_FLUSHING */
+/**
+ *
+ * @brief Invalidate d-cache lines
+ *
+ * No alignment is required for either addr or size, but since
+ * sys_cache_invd() iterates on the d-cache lines, a d-cache line alignment for
+ * both is optimal.
+ *
+ * The d-cache line size is specified either via the CONFIG_CACHE_LINE_SIZE
+ * kconfig option or it is detected at runtime.
+ *
+ * @param addr the pointer to start address
+ * @param size the number of bytes that are to be invalidated
+ *
+ * @return N/A
+ */
+__syscall void sys_cache_invd(void *addr, size_t size);
 
-#if defined(CONFIG_CACHE_LINE_SIZE_DETECT)
-	extern size_t sys_cache_line_size;
-#elif defined(CONFIG_CACHE_LINE_SIZE)
-	#define sys_cache_line_size CONFIG_CACHE_LINE_SIZE
+static inline void z_impl_sys_cache_invd(void *addr, size_t size)
+{
+	if (IS_ENABLED(CONFIG_CACHE_FLUSHING)) {
+		arch_dcache_invd(addr, size);
+	}
+}
+
+/**
+ *
+ * @brief Get the d-cache line size.
+ *
+ * The API is provided to get the cache line size.
+ *
+ * @return size of the cache line or 0 if the cache is not enabled.
+ */
+static inline size_t sys_cache_line_size_get(void)
+{
+#ifdef CONFIG_CACHE_FLUSHING
+#ifdef CONFIG_CACHE_LINE_SIZE
+	return CONFIG_CACHE_LINE_SIZE;
 #else
-	#define sys_cache_line_size 0
-#endif
+	return arch_cache_line_size_get();
+#endif /* CONFIG_CACHE_LINE_SIZE */
+#else
+	return 0;
+#endif /* CONFIG_CACHE_FLUSHING */
+}
 
+#include <syscalls/cache.h>
 #ifdef __cplusplus
 }
 #endif

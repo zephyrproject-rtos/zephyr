@@ -21,6 +21,10 @@ echo ""
 echo "--- ccache stats at start"
 ccache -s
 
+# Temporary fix: Install lpc_checksum, needed to build images for
+# lpcxpresso11u68 boards
+pip3 install lpc_checksum
+
 if [ -n "${DAILY_BUILD}" ]; then
    SANITYCHECK_OPTIONS=" --inline-logs -N --build-only --all --retry-failed 3 -v "
    echo "--- DAILY BUILD"
@@ -48,6 +52,10 @@ if [ ! -f sanity-out/sanitycheck.xml ]; then
 fi
 mv sanity-out/sanitycheck.xml sanitycheck-${BUILDKITE_JOB_ID}.xml
 buildkite-agent artifact upload sanitycheck-${BUILDKITE_JOB_ID}.xml
+
+
+# Upload test_file to get list of tests that are build/run
+buildkite-agent artifact upload test_file.txt
 
 # ccache stats
 echo "--- ccache stats at finish"

@@ -129,8 +129,10 @@ extern "C" {
 /**
  * @brief Get a GPIO specifier's flags cell at an index
  *
- * This macro only works for GPIO specifiers with cells named "flags".
- * Refer to the node's binding to check if necessary.
+ * This macro expects GPIO specifiers with cells named "flags".
+ * If there is no "flags" cell in the GPIO specifier, zero is returned.
+ * Refer to the node's binding to check specifier cell names if necessary.
+ *
  * Example devicetree fragment:
  *
  *     gpio1: gpio@... {
@@ -163,18 +165,18 @@ extern "C" {
  * @param gpio_pha lowercase-and-underscores GPIO property with
  *        type "phandle-array"
  * @param idx logical index into "gpio_pha"
- * @return the flags cell value at index "idx"
+ * @return the flags cell value at index "idx", or zero if there is none
  * @see DT_PHA_BY_IDX()
  */
 #define DT_GPIO_FLAGS_BY_IDX(node_id, gpio_pha, idx) \
-	DT_PHA_BY_IDX(node_id, gpio_pha, idx, flags)
+	DT_PHA_BY_IDX_OR(node_id, gpio_pha, idx, flags, 0)
 
 /**
  * @brief Equivalent to DT_GPIO_FLAGS_BY_IDX(node_id, gpio_pha, 0)
  * @param node_id node identifier
  * @param gpio_pha lowercase-and-underscores GPIO property with
  *        type "phandle-array"
- * @return the flags cell value at index 0
+ * @return the flags cell value at index 0, or zero if there is none
  * @see DT_GPIO_FLAGS_BY_IDX()
  */
 #define DT_GPIO_FLAGS(node_id, gpio_pha) \
@@ -233,7 +235,7 @@ extern "C" {
  * @param gpio_pha lowercase-and-underscores GPIO property with
  *        type "phandle-array"
  * @param idx logical index into "gpio_pha"
- * @return the flags cell value at index "idx"
+ * @return the flags cell value at index "idx", or zero if there is none
  * @see DT_GPIO_FLAGS_BY_IDX()
  */
 #define DT_INST_GPIO_FLAGS_BY_IDX(inst, gpio_pha, idx) \
@@ -244,7 +246,7 @@ extern "C" {
  * @param inst DT_DRV_COMPAT instance number
  * @param gpio_pha lowercase-and-underscores GPIO property with
  *        type "phandle-array"
- * @return the flags cell value at index 0
+ * @return the flags cell value at index 0, or zero if there is none
  * @see DT_INST_GPIO_FLAGS_BY_IDX()
  */
 #define DT_INST_GPIO_FLAGS(inst, gpio_pha) \

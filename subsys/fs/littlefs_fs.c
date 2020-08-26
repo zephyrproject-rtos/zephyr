@@ -181,14 +181,29 @@ static void release_file_data(struct fs_file_t *fp)
 	fp->filep = NULL;
 }
 
-static int littlefs_open(struct fs_file_t *fp, const char *path)
+static int lfs_flags_from_zephyr(unsigned int zflags)
+{
+	int flags = (zflags & FS_O_CREATE) ? LFS_O_CREAT : 0;
+
+	/* LFS_O_READONLY and LFS_O_WRONLY can be selected at the same time,
+	 * this is not a mistake, together they create RDWR access.
+	 */
+	flags |= (zflags & FS_O_READ) ? LFS_O_RDONLY : 0;
+	flags |= (zflags & FS_O_WRITE) ? LFS_O_WRONLY : 0;
+
+	flags |= (zflags & FS_O_APPEND) ? LFS_O_APPEND : 0;
+
+	return flags;
+}
+
+static int littlefs_open(struct fs_file_t *fp, const char *path,
+			 fs_mode_t zflags)
 {
 	struct fs_littlefs *fs = fp->mp->fs_data;
 	struct lfs *lfs = &fs->lfs;
-	int flags = LFS_O_CREAT | LFS_O_RDWR;
-	int ret;
+	int flags = lfs_flags_from_zephyr(zflags);
+	int ret = k_mem_slab_alloc(&file_data_pool, &fp->filep, K_NO_WAIT);
 
-	ret = k_mem_slab_alloc(&file_data_pool, &fp->filep, K_NO_WAIT);
 	if (ret != 0) {
 		return ret;
 	}

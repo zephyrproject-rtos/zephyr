@@ -22,8 +22,8 @@ LOG_MODULE_REGISTER(TMP116);
 
 static int tmp116_reg_read(struct device *dev, uint8_t reg, uint16_t *val)
 {
-	struct tmp116_data *drv_data = dev->driver_data;
-	const struct tmp116_dev_config *cfg = dev->config_info;
+	struct tmp116_data *drv_data = dev->data;
+	const struct tmp116_dev_config *cfg = dev->config;
 
 	if (i2c_burst_read(drv_data->i2c, cfg->i2c_addr, reg, (uint8_t *)val, 2)
 	    < 0) {
@@ -64,7 +64,7 @@ static inline int tmp116_device_id_check(struct device *dev)
 
 static int tmp116_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct tmp116_data *drv_data = dev->driver_data;
+	struct tmp116_data *drv_data = dev->data;
 	uint16_t value;
 	int rc;
 
@@ -91,7 +91,7 @@ static int tmp116_sample_fetch(struct device *dev, enum sensor_channel chan)
 static int tmp116_channel_get(struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	struct tmp116_data *drv_data = dev->driver_data;
+	struct tmp116_data *drv_data = dev->data;
 	int32_t tmp;
 
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
@@ -116,7 +116,7 @@ static const struct sensor_driver_api tmp116_driver_api = {
 
 static int tmp116_init(struct device *dev)
 {
-	struct tmp116_data *drv_data = dev->driver_data;
+	struct tmp116_data *drv_data = dev->data;
 	int rc;
 
 	/* Bind to the I2C bus that the sensor is connected */

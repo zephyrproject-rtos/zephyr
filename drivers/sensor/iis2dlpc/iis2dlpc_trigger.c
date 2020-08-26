@@ -25,8 +25,8 @@ LOG_MODULE_DECLARE(IIS2DLPC, CONFIG_SENSOR_LOG_LEVEL);
 static int iis2dlpc_enable_int(struct device *dev,
 			       enum sensor_trigger_type type, int enable)
 {
-	const struct iis2dlpc_device_config *cfg = dev->config_info;
-	struct iis2dlpc_data *iis2dlpc = dev->driver_data;
+	const struct iis2dlpc_device_config *cfg = dev->config;
+	struct iis2dlpc_data *iis2dlpc = dev->data;
 	iis2dlpc_reg_t int_route;
 
 	if (cfg->int_pin == 1U) {
@@ -79,7 +79,7 @@ int iis2dlpc_trigger_set(struct device *dev,
 			  const struct sensor_trigger *trig,
 			  sensor_trigger_handler_t handler)
 {
-	struct iis2dlpc_data *iis2dlpc = dev->driver_data;
+	struct iis2dlpc_data *iis2dlpc = dev->data;
 	union axis3bit16_t raw;
 	int state = (handler != NULL) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
 
@@ -107,7 +107,7 @@ int iis2dlpc_trigger_set(struct device *dev,
 
 static int iis2dlpc_handle_drdy_int(struct device *dev)
 {
-	struct iis2dlpc_data *data = dev->driver_data;
+	struct iis2dlpc_data *data = dev->data;
 
 	struct sensor_trigger drdy_trig = {
 		.type = SENSOR_TRIG_DATA_READY,
@@ -124,7 +124,7 @@ static int iis2dlpc_handle_drdy_int(struct device *dev)
 #ifdef CONFIG_IIS2DLPC_PULSE
 static int iis2dlpc_handle_single_tap_int(struct device *dev)
 {
-	struct iis2dlpc_data *data = dev->driver_data;
+	struct iis2dlpc_data *data = dev->data;
 	sensor_trigger_handler_t handler = data->tap_handler;
 
 	struct sensor_trigger pulse_trig = {
@@ -141,7 +141,7 @@ static int iis2dlpc_handle_single_tap_int(struct device *dev)
 
 static int iis2dlpc_handle_double_tap_int(struct device *dev)
 {
-	struct iis2dlpc_data *data = dev->driver_data;
+	struct iis2dlpc_data *data = dev->data;
 	sensor_trigger_handler_t handler = data->double_tap_handler;
 
 	struct sensor_trigger pulse_trig = {
@@ -164,8 +164,8 @@ static int iis2dlpc_handle_double_tap_int(struct device *dev)
 static void iis2dlpc_handle_interrupt(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	struct iis2dlpc_data *iis2dlpc = dev->driver_data;
-	const struct iis2dlpc_device_config *cfg = dev->config_info;
+	struct iis2dlpc_data *iis2dlpc = dev->data;
+	const struct iis2dlpc_device_config *cfg = dev->config;
 	iis2dlpc_all_sources_t sources;
 
 	iis2dlpc_all_sources_get(iis2dlpc->ctx, &sources);
@@ -210,7 +210,7 @@ static void iis2dlpc_gpio_callback(struct device *dev,
 static void iis2dlpc_thread(int dev_ptr, int unused)
 {
 	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct iis2dlpc_data *iis2dlpc = dev->driver_data;
+	struct iis2dlpc_data *iis2dlpc = dev->data;
 
 	ARG_UNUSED(unused);
 
@@ -233,8 +233,8 @@ static void iis2dlpc_work_cb(struct k_work *work)
 
 int iis2dlpc_init_interrupt(struct device *dev)
 {
-	struct iis2dlpc_data *iis2dlpc = dev->driver_data;
-	const struct iis2dlpc_device_config *cfg = dev->config_info;
+	struct iis2dlpc_data *iis2dlpc = dev->data;
+	const struct iis2dlpc_device_config *cfg = dev->config;
 	int ret;
 
 	/* setup data ready gpio interrupt (INT1 or INT2) */

@@ -61,7 +61,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
-		timer0: serial@e0002800 {
+		timer0: timer@e0002800 {
 			compatible = "litex,timer0";
 			interrupt-parent = <&intc0>;
 			interrupts = <1 0>;

@@ -14,6 +14,7 @@
 #define OPENTHREAD_CORE_ZEPHYR_CONFIG_H_
 
 #include <devicetree.h>
+#include <toolchain.h>
 
 /**
  * @def OPENTHREAD_CONFIG_NUM_MESSAGE_BUFFERS
@@ -161,9 +162,13 @@
 
 #define OPENTHREAD_CONFIG_PLAT_LOG_FUNCTION__COUNT_ARGS(aLogLevel, unused, \
 							aFormat, ...) \
-	otPlatLog(aLogLevel, \
+	do { \
+		ARG_UNUSED(unused); \
+		otPlatLog( \
+		  aLogLevel, \
 		  (otLogRegion)_OT_CONF_PLAT_LOG_FUN_NARGS__GET(__VA_ARGS__),\
-		  aFormat, ##__VA_ARGS__)
+		  aFormat, ##__VA_ARGS__); \
+	} while (false)
 
 #ifdef OPENTHREAD_CONFIG_PLAT_LOG_FUNCTION
 #error OPENTHREAD_CONFIG_PLAT_LOG_FUNCTION \

@@ -66,8 +66,8 @@ static int mcux_adc16_channel_setup(struct device *dev,
 
 static int start_read(struct device *dev, const struct adc_sequence *sequence)
 {
-	const struct mcux_adc16_config *config = dev->config_info;
-	struct mcux_adc16_data *data = dev->driver_data;
+	const struct mcux_adc16_config *config = dev->config;
+	struct mcux_adc16_data *data = dev->data;
 	adc16_hardware_average_mode_t mode;
 	adc16_resolution_t resolution;
 	int error;
@@ -134,7 +134,7 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 static int mcux_adc16_read(struct device *dev,
 			   const struct adc_sequence *sequence)
 {
-	struct mcux_adc16_data *data = dev->driver_data;
+	struct mcux_adc16_data *data = dev->data;
 	int error;
 
 	adc_context_lock(&data->ctx, false, NULL);
@@ -149,7 +149,7 @@ static int mcux_adc16_read_async(struct device *dev,
 				 const struct adc_sequence *sequence,
 				 struct k_poll_signal *async)
 {
-	struct mcux_adc16_data *data = dev->driver_data;
+	struct mcux_adc16_data *data = dev->data;
 	int error;
 
 	adc_context_lock(&data->ctx, true, async);
@@ -162,8 +162,8 @@ static int mcux_adc16_read_async(struct device *dev,
 
 static void mcux_adc16_start_channel(struct device *dev)
 {
-	const struct mcux_adc16_config *config = dev->config_info;
-	struct mcux_adc16_data *data = dev->driver_data;
+	const struct mcux_adc16_config *config = dev->config;
+	struct mcux_adc16_data *data = dev->data;
 
 	adc16_channel_config_t channel_config;
 	uint32_t channel_group = 0U;
@@ -205,8 +205,8 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 static void mcux_adc16_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct mcux_adc16_config *config = dev->config_info;
-	struct mcux_adc16_data *data = dev->driver_data;
+	const struct mcux_adc16_config *config = dev->config;
+	struct mcux_adc16_data *data = dev->data;
 	ADC_Type *base = config->base;
 	uint32_t channel_group = 0U;
 	uint16_t result;
@@ -227,8 +227,8 @@ static void mcux_adc16_isr(void *arg)
 
 static int mcux_adc16_init(struct device *dev)
 {
-	const struct mcux_adc16_config *config = dev->config_info;
-	struct mcux_adc16_data *data = dev->driver_data;
+	const struct mcux_adc16_config *config = dev->config;
+	struct mcux_adc16_data *data = dev->data;
 	ADC_Type *base = config->base;
 	adc16_config_t adc_config;
 

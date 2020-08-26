@@ -65,6 +65,8 @@
 		tcc-2 = &tcc2;
 		tcc-3 = &tcc3;
 		tcc-4 = &tcc4;
+
+		watchdog0 = &wdog;
 	};
 
 	chosen {

@@ -1,6 +1,6 @@
 common:
-  tags: dac drivers userspace
+  tags: dac drivers
 tests:
   drivers.dac:
-    platform_whitelist: frdm_k64f nucleo_l073rz nucleo_l152re twr_ke18f
     depends_on: dac
+    platform_exclude: arduino_zero

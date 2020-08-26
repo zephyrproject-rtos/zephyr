@@ -412,8 +412,10 @@ Artificially long but functional example:
              "run. Intended to be run by CI when tagging an official "
              "release. This database is used as a basis for comparison "
              "when looking for deltas in metrics such as footprint")
-    parser.add_argument("-w", "--warnings-as-errors", action="store_true",
+
+    parser.add_argument("-W", "--disable-warnings-as-errors", action="store_true",
                         help="Treat warning conditions as errors")
+
     parser.add_argument(
         "-v",
         "--verbose",
@@ -438,6 +440,13 @@ Artificially long but functional example:
         action="store_true",
         help="do not update the results of the last run of the sanity "
              "checks")
+
+    parser.add_argument(
+        "-G",
+        "--integration",
+        action="store_true",
+        help="Run integration tests")
+
     case_select.add_argument(
         "-F",
         "--load-tests",
@@ -573,9 +582,21 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     parser.add_argument(
         "-X", "--fixture", action="append", default=[],
         help="Specify a fixture that a board might support")
-    parser.add_argument(
-        "--device-serial",
-        help="Serial device for accessing the board (e.g., /dev/ttyACM0)")
+
+    serial = parser.add_mutually_exclusive_group()
+    serial.add_argument("--device-serial",
+                        help="""Serial device for accessing the board
+                        (e.g., /dev/ttyACM0)
+                        """)
+
+    serial.add_argument("--device-serial-pty",
+                        help="""Script for controlling pseudoterminal.
+                        Sanitycheck believes that it interacts with a terminal
+                        when it actually interacts with the script.
+
+                        E.g "sanitycheck --device-testing
+                        --device-serial-pty <script>
+                        """)
 
     parser.add_argument("--generate-hardware-map",
                         help="""Probe serial devices connected to this platform
@@ -799,6 +820,8 @@ def main():
     suite.west_flash = options.west_flash
     suite.west_runner = options.west_runner
     suite.verbose = VERBOSE
+    suite.warnings_as_errors = not options.disable_warnings_as_errors
+    suite.integration = options.integration
 
     if options.ninja:
         suite.generator_cmd = "ninja"
@@ -834,13 +857,22 @@ def main():
                     if platform['connected']:
                         options.platform.append(platform['platform'])
 
-        elif options.device_serial:  # back-ward compatibility
+        elif options.device_serial or options.device_serial_pty:
             if options.platform and len(options.platform) == 1:
-                hwm.load_device_from_cmdline(options.device_serial, options.platform[0])
+                if options.device_serial:
+                    hwm.load_device_from_cmdline(options.device_serial,
+                                                 options.platform[0],
+                                                 False)
+                else:
+                    hwm.load_device_from_cmdline(options.device_serial_pty,
+                                                 options.platform[0],
+                                                 True)
+
                 suite.connected_hardware = hwm.connected_hardware
             else:
-                logger.error("""When --device-testing is used with --device-serial, only one
-                      platform is allowed""")
+                logger.error("""When --device-testing is used with
+                             --device-serial or --device-serial-pty,
+                             only one platform is allowed""")
 
     if suite.load_errors:
         sys.exit(1)
@@ -942,10 +974,11 @@ def main():
         suite.load_from_file(last_run, filter_status=['skipped', 'passed'])
         suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
     elif options.load_tests:
-        suite.load_from_file(options.load_tests)
+        suite.load_from_file(options.load_tests, filter_status=['skipped'])
         suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
     elif options.test_only:
         suite.load_from_file(last_run, filter_status=['skipped'])
+        suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
     else:
         discards = suite.apply_filters(
             build_only=options.build_only,
@@ -1046,7 +1079,7 @@ def main():
         return
 
     logger.info("%d test configurations selected, %d configurations discarded due to filters." %
-                (len(suite.instances), len(discards)))
+                (len(suite.instances), len(discards) - suite.total_skipped))
 
     if options.device_testing:
         print("\nDevice testing on:")

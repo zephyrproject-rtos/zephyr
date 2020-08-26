@@ -4,11 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * @filesystem
- * @brief test_filesystem
- * Demonstrates the ZEPHYR File System APIs
- */
 
 #include "test_fat.h"
 #include <stdio.h>
@@ -40,7 +35,7 @@ static int test_mkdir(void)
 		return res;
 	}
 
-	res = fs_open(&filep, TEST_DIR_FILE);
+	res = fs_open(&filep, TEST_DIR_FILE, FS_O_CREATE | FS_O_RDWR);
 	if (res) {
 		TC_PRINT("Failed opening file [%d]\n", res);
 		return res;

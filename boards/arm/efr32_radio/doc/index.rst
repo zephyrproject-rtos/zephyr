@@ -8,6 +8,7 @@ EFR32 Radio Boards
 
    brd4104a.rst
    brd4250b.rst
+   brd4180a.rst
 
 Overview
 ********
@@ -17,6 +18,7 @@ Support for EFR32 Radio boards is provided by one of the starter kits
 - `SLWSTK6020B Bluetooth SoC Starter Kit`_
 - `SLWSTK6000B Mighty Gecko Wireless Starter Kit`_
 - `SLWSTK6061B Proprietary Wireless Starter Kit`_
+- `SLWSTK6006A Mighty Gecko Wireless Starter Kit`_
 
 .. figure:: ./efr32_slwstk6020b.jpg
    :width: 490px
@@ -34,12 +36,14 @@ Wireless Starter Kit Mainboard:
   consumption of an application or prototype design.
 - Ultra-low power 128x128 pixel memory LCD
 - 2 user buttons and 2 LEDs
+- 20 pin expansion header
 - Si7021 Humidity and Temperature Sensor
 - On-board Segger J-Link USB and Ethernet debugger
 
 For more information about the BRD4001A board, refer to these documents:
 
 - `EFR32BG13 Blue Gecko Bluetooth Starter Kit User's Guide`_
+- `EFR32MG21 Mighty Gecko Wireless Starter Kit User's Guide`_
 - `WSTK Main Board BRD4001A Schematics`_
 
 .. _efr32_radio_supported_features:
@@ -165,8 +169,14 @@ Reset the board and you should see the following message in the terminal:
 .. _SLWSTK6061B Proprietary Wireless Starter Kit:
    https://www.silabs.com/products/development-tools/wireless/proprietary/slwstk6061b-efr32-flex-gecko-868-mhz-2-4-ghz-and-sub-ghz-starter-kit
 
+.. _SLWSTK6006A Mighty Gecko Wireless Starter Kit:
+   https://www.silabs.com/products/development-tools/wireless/efr32xg21-wireless-starter-kit
+
 .. _EFR32BG13 Blue Gecko Bluetooth Starter Kit User's Guide:
    https://www.silabs.com/documents/public/user-guides/ug279-brd4104a-user-guide.pdf
+
+.. _EFR32MG21 Mighty Gecko Wireless Starter Kit User's Guide:
+   https://www.silabs.com/documents/public/user-guides/ug385-brd4180a-user-guide.pdf
 
 .. _WSTK Main Board BRD4001A Schematics:
    https://www.silabs.com/documents/public/schematic-files/WSTK-Main-BRD4001A-A01-schematic.pdf

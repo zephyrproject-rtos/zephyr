@@ -6,7 +6,7 @@
 
 menu "Modules"
 
-source "$(CMAKE_BINARY_DIR)/Kconfig.modules"
+source "$(KCONFIG_BINARY_DIR)/Kconfig.modules"
 source "modules/Kconfig"
 
 endmenu
@@ -22,10 +22,10 @@ endmenu
 # $ARCH and $BOARD_DIR will be glob patterns when building documentation.
 source "boards/shields/*/Kconfig.defconfig"
 source "$(BOARD_DIR)/Kconfig.defconfig"
-source "$(SOC_DIR)/$(ARCH)/*/Kconfig.defconfig"
+source "$(KCONFIG_BINARY_DIR)/Kconfig.soc.defconfig"
 
 source "boards/Kconfig"
-source "$(SOC_DIR)/Kconfig"
+source "soc/Kconfig"
 source "arch/Kconfig"
 source "kernel/Kconfig"
 source "dts/Kconfig"
@@ -287,39 +287,40 @@ config OUTPUT_PRINT_MEMORY_USAGE
 	  ram_report and
 	  https://sourceware.org/binutils/docs/ld/MEMORY.html
 
+config BUILD_NO_GAP_FILL
+	bool "Don't fill gaps in generated hex/bin/s19 files."
+
 config BUILD_OUTPUT_HEX
 	bool "Build a binary in HEX format"
 	help
-	  Build a binary in HEX format. This will build a zephyr.hex file need
-	  by some platforms.
+	  Build an Intel HEX binary zephyr/zephyr.hex in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
 config BUILD_OUTPUT_BIN
 	bool "Build a binary in BIN format"
 	default y
 	help
-	  Build a binary in BIN format. This will build a zephyr.bin file need
-	  by some platforms.
+	  Build a "raw" binary zephyr/zephyr.bin in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
 config BUILD_OUTPUT_EXE
 	bool "Build a binary in ELF format with .exe extension"
 	help
-	  Build a binary in ELF format that can run in the host system. This
-	  will build a zephyr.exe file.
+	  Build an ELF binary that can run in the host system at
+	  zephyr/zephyr.exe in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
 config BUILD_OUTPUT_S19
 	bool "Build a binary in S19 format"
 	help
-	  Build a binary in S19 format. This will build a zephyr.s19 file need
-	  by some platforms.
-
-config BUILD_NO_GAP_FILL
-	bool "Don't fill gaps in generated hex/bin/s19 files."
+	  Build an S19 binary zephyr/zephyr.s19 in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
 config BUILD_OUTPUT_STRIPPED
 	bool "Build a stripped binary"
 	help
-	  Build a stripped binary. This will build a zephyr.stripped file need
-	  by some platforms.
+	  Build a stripped binary zephyr/zephyr.strip in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
 config APPLICATION_DEFINED_SYSCALL
 	bool "Scan application folder for any syscall definition"
@@ -396,6 +397,41 @@ config BOOTLOADER_ESP_IDF
 	  This option will trigger the compilation of the ESP-IDF bootloader
 	  inside the build folder.
 	  At flash time, the bootloader will be flashed with the zephyr image
+
+config BOOTLOADER_BOSSA
+	bool "BOSSA bootloader support"
+	select USE_DT_CODE_PARTITION
+	depends on SOC_FAMILY_SAM0
+
+	help
+	  Signifies that the target uses a BOSSA compatible bootloader.  If CDC
+	  ACM USB support is also enabled then the board will reboot into the
+	  bootloader automatically when bossac is run.
+
+config BOOTLOADER_BOSSA_DEVICE_NAME
+	string "BOSSA CDC ACM device name"
+	depends on BOOTLOADER_BOSSA && CDC_ACM_DTE_RATE_CALLBACK_SUPPORT
+	default "CDC_ACM_0"
+	help
+	  Sets the CDC ACM port to watch for reboot commands.
+
+choice
+	prompt "BOSSA bootloader variant"
+	depends on BOOTLOADER_BOSSA
+
+config BOOTLOADER_BOSSA_ARDUINO
+	bool "Arduino"
+	help
+	  Select the Arduino variant of the BOSSA bootloader.  Uses 0x07738135
+	  as the magic value to enter the bootloader.
+
+config BOOTLOADER_BOSSA_ADAFRUIT_UF2
+	bool "Adafruit UF2"
+	help
+	  Select the Adafruit UF2 variant of the BOSSA bootloader.  Uses
+	  0xf01669ef as the magic value to enter the bootloader.
+
+endchoice
 
 config BOOTLOADER_KEXEC
 	bool "Boot using Linux kexec() system call"

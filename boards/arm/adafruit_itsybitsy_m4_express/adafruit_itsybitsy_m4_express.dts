@@ -22,6 +22,8 @@
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;
+		pwm-led0 = &pwm_led0;
+		pwm-0 = &tcc0;
 	};
 
 	leds {
@@ -29,6 +31,13 @@
 		led0: led_0 {
 			gpios = <&porta 22 0>;
 			label = "LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = <&tcc0 2>;
 		};
 	};
 };
@@ -43,6 +52,32 @@
 	current-speed = <115200>;
 	rxpo = <1>;
 	txpo = <0>;
+};
+
+&sercom1 {
+	status = "okay";
+	compatible = "atmel,sam0-spi";
+	dipo = <3>;
+	dopo = <0>;
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
+&tcc0 {
+	status = "okay";
+	compatible = "atmel,sam0-tcc-pwm";
+	prescaler = <8>;
+
+	#pwm-cells = <1>;
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&dmac {
+	status = "okay";
 };
 
 &flash0 {

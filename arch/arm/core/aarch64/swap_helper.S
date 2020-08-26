@@ -38,44 +38,44 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	bl	sys_trace_thread_switched_in
 	ldp	xzr, x30, [sp], #16
 #endif
-	/* load _kernel into x1 and current k_thread into x2 */
-	ldr	x1, =_kernel
-	ldr	x2, [x1, #_kernel_offset_to_current]
+	/* load _kernel into x0 and current k_thread into x1 */
+	ldr	x0, =_kernel
+	ldr	x1, [x0, #_kernel_offset_to_current]
 
-	/* addr of callee-saved regs in thread in x0 */
-	ldr	x0, =_thread_offset_to_callee_saved
-	add	x0, x0, x2
+	/* addr of callee-saved regs in thread in x2 */
+	ldr	x2, =_thread_offset_to_callee_saved
+	add	x2, x2, x1
 
 	/* Store rest of process context including x30 */
-	stp	x19, x20, [x0], #16
-	stp	x21, x22, [x0], #16
-	stp	x23, x24, [x0], #16
-	stp	x25, x26, [x0], #16
-	stp	x27, x28, [x0], #16
-	stp	x29, x30, [x0], #16
+	stp	x19, x20, [x2], #16
+	stp	x21, x22, [x2], #16
+	stp	x23, x24, [x2], #16
+	stp	x25, x26, [x2], #16
+	stp	x27, x28, [x2], #16
+	stp	x29, x30, [x2], #16
 
 	/* Save the current SP */
-	mov	x6, sp
-	str	x6, [x0]
+	mov	x1, sp
+	str	x1, [x2]
 
 	/* fetch the thread to run from the ready queue cache */
-	ldr	x2, [x1, #_kernel_offset_to_ready_q_cache]
-	str	x2, [x1, #_kernel_offset_to_current]
+	ldr	x1, [x0, #_kernel_offset_to_ready_q_cache]
+	str	x1, [x0, #_kernel_offset_to_current]
 
-	/* addr of callee-saved regs in thread in x0 */
-	ldr	x0, =_thread_offset_to_callee_saved
-	add	x0, x0, x2
+	/* addr of callee-saved regs in thread in x2 */
+	ldr	x2, =_thread_offset_to_callee_saved
+	add	x2, x2, x1
 
 	/* Restore x19-x29 plus x30 */
-	ldp	x19, x20, [x0], #16
-	ldp	x21, x22, [x0], #16
-	ldp	x23, x24, [x0], #16
-	ldp	x25, x26, [x0], #16
-	ldp	x27, x28, [x0], #16
-	ldp	x29, x30, [x0], #16
+	ldp	x19, x20, [x2], #16
+	ldp	x21, x22, [x2], #16
+	ldp	x23, x24, [x2], #16
+	ldp	x25, x26, [x2], #16
+	ldp	x27, x28, [x2], #16
+	ldp	x29, x30, [x2], #16
 
-	ldr	x6, [x0]
-	mov	sp, x6
+	ldr	x1, [x2]
+	mov	sp, x1
 
 #ifdef CONFIG_TRACING
 	stp	xzr, x30, [sp, #-16]!
@@ -152,9 +152,9 @@ SECTION_FUNC(TEXT, z_thread_entry_wrapper)
 
 GTEXT(z_arm64_svc)
 SECTION_FUNC(TEXT, z_arm64_svc)
-	z_arm64_enter_exc
+	z_arm64_enter_exc x0, x1, x2
 
-	switch_el x3, 3f, 2f, 1f
+	switch_el x1, 3f, 2f, 1f
 3:
 	mrs	x0, esr_el3
 	b	0f
@@ -170,49 +170,49 @@ SECTION_FUNC(TEXT, z_arm64_svc)
 	bne	inv
 
 	/* Demux the SVC call */
-	and	x2, x0, #0xff
-	cmp	x2, #_SVC_CALL_CONTEXT_SWITCH
+	and	x1, x0, #0xff
+	cmp	x1, #_SVC_CALL_CONTEXT_SWITCH
 	beq	context_switch
 
 #ifdef CONFIG_IRQ_OFFLOAD
-	cmp	x2, #_SVC_CALL_IRQ_OFFLOAD
+	cmp	x1, #_SVC_CALL_IRQ_OFFLOAD
 	beq	offload
 	b	inv
 offload:
 	/* ++(_kernel->nested) to be checked by arch_is_in_isr() */
-	ldr	x1, =_kernel
-	ldr	x2, [x1, #_kernel_offset_to_nested]
-	add	x2, x2, #1
-	str	x2, [x1, #_kernel_offset_to_nested]
+	ldr	x0, =_kernel
+	ldr	x1, [x0, #_kernel_offset_to_nested]
+	add	x1, x1, #1
+	str	x1, [x0, #_kernel_offset_to_nested]
 
 	bl	z_irq_do_offload
 
 	/* --(_kernel->nested) */
-	ldr	x1, =_kernel
-	ldr	x2, [x1, #_kernel_offset_to_nested]
-	sub	x2, x2, #1
-	str	x2, [x1, #_kernel_offset_to_nested]
+	ldr	x0, =_kernel
+	ldr	x1, [x0, #_kernel_offset_to_nested]
+	sub	x1, x1, #1
+	str	x1, [x0, #_kernel_offset_to_nested]
 	b	exit
 #endif
 	b	inv
 
 context_switch:
 	/* Check if we need to context switch */
-	ldr	x1, =_kernel
-	ldr	x2, [x1, #_kernel_offset_to_current]
-	ldr	x3, [x1, #_kernel_offset_to_ready_q_cache]
-	cmp	x2, x3
+	ldr	x0, =_kernel
+	ldr	x1, [x0, #_kernel_offset_to_current]
+	ldr	x2, [x0, #_kernel_offset_to_ready_q_cache]
+	cmp	x1, x2
 	beq	exit
 
 	/* Switch thread */
 	bl	z_arm64_context_switch
 
 exit:
-	z_arm64_exit_exc
+	z_arm64_exit_exc x0, x1, x2
 
 inv:
-	mov	x1, sp
 	mov	x0, #0 /* K_ERR_CPU_EXCEPTION */
+	mov	x1, sp
 	b	z_arm64_fatal_error
 
 GTEXT(z_arm64_call_svc)

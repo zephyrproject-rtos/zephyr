@@ -77,9 +77,14 @@ enum dma_addr_adj {
  *     reserved           [ 13 : 15 ]
  */
 struct dma_block_config {
+#ifdef CONFIG_DMA_64BIT
+	uint64_t source_address;
+	uint64_t dest_address;
+#else
 	uint32_t source_address;
-	uint32_t source_gather_interval;
 	uint32_t dest_address;
+#endif
+	uint32_t source_gather_interval;
 	uint32_t dest_scatter_interval;
 	uint16_t dest_scatter_count;
 	uint16_t source_gather_count;
@@ -95,6 +100,21 @@ struct dma_block_config {
 	uint16_t  flow_control_mode : 1;
 	uint16_t  reserved :          3;
 };
+
+/**
+ * @typedef dma_callback_t
+ * @brief Callback function for DMA transfer completion
+ *
+ *  If enabled, callback function will be invoked at transfer completion
+ *  or when error happens.
+ *
+ * @param dev Pointer to the DMA device calling the callback.
+ * @param user_data A pointer to some user data or NULL
+ * @param channel The channel number
+ * @param status 0 on success, a negative errno otherwise
+ */
+typedef void (*dma_callback_t)(struct device *dev, void *user_data,
+			       uint32_t channel, int status);
 
 /**
  * @brief DMA configuration structure.
@@ -132,11 +152,9 @@ struct dma_block_config {
  *     block_count  is the number of blocks used for block chaining, this
  *     depends on availability of the DMA controller.
  *
- *     callback_arg  private argument from DMA client.
+ *     user_data  private data from DMA client.
  *
- * dma_callback is the callback function pointer. If enabled, callback function
- *              will be invoked at transfer completion or when error happens
- *              (error_code: zero-transfer success, non zero-error happens).
+ *     dma_callback see dma_callback_t for details
  */
 struct dma_config {
 	uint32_t  dma_slot :             7;
@@ -156,9 +174,8 @@ struct dma_config {
 	uint32_t  dest_burst_length :   16;
 	uint32_t block_count;
 	struct dma_block_config *head_block;
-	void *callback_arg;
-	void (*dma_callback)(void *callback_arg, uint32_t channel,
-			     int error_code);
+	void *user_data;
+	dma_callback_t dma_callback;
 };
 
 /**
@@ -186,8 +203,13 @@ struct dma_status {
 typedef int (*dma_api_config)(struct device *dev, uint32_t channel,
 			      struct dma_config *config);
 
+#ifdef CONFIG_DMA_64BIT
+typedef int (*dma_api_reload)(struct device *dev, uint32_t channel,
+		uint64_t src, uint64_t dst, size_t size);
+#else
 typedef int (*dma_api_reload)(struct device *dev, uint32_t channel,
 		uint32_t src, uint32_t dst, size_t size);
+#endif
 
 typedef int (*dma_api_start)(struct device *dev, uint32_t channel);
 
@@ -222,7 +244,7 @@ static inline int dma_config(struct device *dev, uint32_t channel,
 			     struct dma_config *config)
 {
 	const struct dma_driver_api *api =
-		(const struct dma_driver_api *)dev->driver_api;
+		(const struct dma_driver_api *)dev->api;
 
 	return api->config(dev, channel, config);
 }
@@ -240,11 +262,16 @@ static inline int dma_config(struct device *dev, uint32_t channel,
  * @retval 0 if successful.
  * @retval Negative errno code if failure.
  */
+#ifdef CONFIG_DMA_64BIT
+static inline int dma_reload(struct device *dev, uint32_t channel,
+		uint64_t src, uint64_t dst, size_t size)
+#else
 static inline int dma_reload(struct device *dev, uint32_t channel,
 		uint32_t src, uint32_t dst, size_t size)
+#endif
 {
 	const struct dma_driver_api *api =
-		(const struct dma_driver_api *)dev->driver_api;
+		(const struct dma_driver_api *)dev->api;
 
 	if (api->reload) {
 		return api->reload(dev, channel, src, dst, size);
@@ -272,7 +299,7 @@ __syscall int dma_start(struct device *dev, uint32_t channel);
 static inline int z_impl_dma_start(struct device *dev, uint32_t channel)
 {
 	const struct dma_driver_api *api =
-		(const struct dma_driver_api *)dev->driver_api;
+		(const struct dma_driver_api *)dev->api;
 
 	return api->start(dev, channel);
 }
@@ -295,7 +322,7 @@ __syscall int dma_stop(struct device *dev, uint32_t channel);
 static inline int z_impl_dma_stop(struct device *dev, uint32_t channel)
 {
 	const struct dma_driver_api *api =
-		(const struct dma_driver_api *)dev->driver_api;
+		(const struct dma_driver_api *)dev->api;
 
 	return api->stop(dev, channel);
 }
@@ -318,7 +345,7 @@ static inline int dma_get_status(struct device *dev, uint32_t channel,
 				 struct dma_status *stat)
 {
 	const struct dma_driver_api *api =
-		(const struct dma_driver_api *)dev->driver_api;
+		(const struct dma_driver_api *)dev->api;
 
 	if (api->get_status) {
 		return api->get_status(dev, channel, stat);

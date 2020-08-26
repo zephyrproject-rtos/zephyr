@@ -23,8 +23,8 @@ LOG_MODULE_REGISTER(MPR, CONFIG_SENSOR_LOG_LEVEL);
 
 static int mpr_init(struct device *dev)
 {
-	struct mpr_data *data = dev->driver_data;
-	const struct mpr_config *cfg = dev->config_info;
+	struct mpr_data *data = dev->data;
+	const struct mpr_config *cfg = dev->config;
 
 	data->i2c_master = device_get_binding(cfg->i2c_bus);
 	if (!data->i2c_master) {
@@ -36,8 +36,8 @@ static int mpr_init(struct device *dev)
 
 static int mpr_read_reg(struct device *dev)
 {
-	struct mpr_data *data = dev->driver_data;
-	const struct mpr_config *cfg = dev->config_info;
+	struct mpr_data *data = dev->data;
+	const struct mpr_config *cfg = dev->config;
 
 	uint8_t write_buf[] = { MPR_OUTPUT_MEASUREMENT_COMMAND, 0x00, 0x00 };
 	uint8_t read_buf[4] = { 0x0 };
@@ -82,18 +82,22 @@ static int mpr_read_reg(struct device *dev)
 	return 0;
 }
 
-/*			  (reg_value - out_min) * (p_max - p_min)
+/*            (reg_value - out_min) * (p_max - p_min)
  * pressure = --------------------------------------- + p_min
- *					out_max - out_min
+ *                     out_max - out_min
  *
  * returns pressure [kPa] * 10^6
  */
-static inline void mpr_convert_reg(const uint32_t *reg, int64_t *value)
+static inline void mpr_convert_reg(const uint32_t *reg, uint64_t *value)
 {
-	*value = (*reg - MPR_OUTPUT_MIN) * (MPR_P_MAX - MPR_P_MIN);
-	*value *= MPR_CONVERSION_FACTOR;
-	*value /= MPR_OUTPUT_RANGE;
-	*value += MPR_P_MIN;
+	if (*reg > MPR_OUTPUT_MIN) {
+		*value = (uint64_t)(*reg - MPR_OUTPUT_MIN) * (MPR_P_MAX - MPR_P_MIN);
+		*value *= MPR_CONVERSION_FACTOR;
+		*value /= MPR_OUTPUT_RANGE;
+		*value += MPR_P_MIN;
+	} else {
+		*value = MPR_P_MIN;
+	}
 }
 
 static int mpr_sample_fetch(struct device *dev, enum sensor_channel chan)
@@ -107,11 +111,11 @@ static int mpr_channel_get(struct device *dev,
 			   enum sensor_channel chan,
 			   struct sensor_value *val)
 {
-	const struct mpr_data *data = dev->driver_data;
+	const struct mpr_data *data = dev->data;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_PRESS);
 
-	int64_t value;
+	uint64_t value;
 
 	mpr_convert_reg(&data->reg_val, &value);
 

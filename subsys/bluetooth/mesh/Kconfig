@@ -195,6 +195,14 @@ config BT_MESH_ADV_BUF_COUNT
 	  be at least three more advertising buffers than the maximum
 	  supported outgoing segment count (BT_MESH_TX_SEG_MAX).
 
+config BT_MESH_ADV_STACK_SIZE
+	int "Mesh advertiser thread stack size"
+	default 1024 if BT_HOST_CRYPTO
+	default 768
+	help
+	  NOTE: This is an advanced setting and should not be changed unless
+	  absolutely necessary
+
 config BT_MESH_IVU_DIVIDER
 	int "Divider for IV Update state refresh timer"
 	default 4

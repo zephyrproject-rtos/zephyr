@@ -267,7 +267,7 @@ static void uart_liteuart_irq_callback_set(struct device *dev,
 {
 	struct uart_liteuart_data *data;
 
-	data = (struct uart_liteuart_data *)dev->driver_data;
+	data = (struct uart_liteuart_data *)dev->data;
 	data->callback = cb;
 	data->cb_data = cb_data;
 }
@@ -279,7 +279,7 @@ static void liteuart_uart_irq_handler(void *arg)
 	int key = irq_lock();
 
 	if (data->callback) {
-		data->callback(data->cb_data);
+		data->callback(dev, data->cb_data);
 	}
 
 	/* clear events */

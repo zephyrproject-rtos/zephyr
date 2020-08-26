@@ -1,0 +1,88 @@
+/*
+ * Copyright (c) 2020 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+/* Macros for device tree declarations */
+#include <dt-bindings/clock/npcx_clock.h>
+
+/* NPCX7 series pinmux mapping table */
+#include "npcx/npcx7-alts-map.dtsi"
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+		};
+	};
+
+	flash0: flash@10090000 {
+		reg = <0x10090000 0x30000>;
+	};
+
+	sram0: memory@200c0000 {
+		compatible = "mmio-sram";
+		reg = <0x200C0000 0x10000>;
+	};
+
+	def_io_conf: def_io_conf_list {
+		compatible = "nuvoton,npcx-pinctrl-def";
+		pinctrl = <&alt0_gpio_no_spip
+			   &alt1_no_pwrgd
+			   &alt1_no_lpc_espi
+			   &alta_no_peci_en>;
+	};
+
+	soc {
+		pcc: clock-controller@4000d000 {
+			compatible = "nuvoton,npcx-pcc";
+			/* Cells for bus type, clock control reg and bit */
+			#clock-cells = <3>;
+			/* First reg region is Power Management Controller */
+			/* Second reg region is Core Domain Clock Generator */
+			reg = <0x4000d000 0x2000
+			       0x400b5000 0x2000>;
+			reg-names = "pmc", "cdcg";
+			label = "PMC_CDCG";
+		};
+
+		scfg: pin-controller@400c3000 {
+			compatible = "nuvoton,npcx-pinctrl";
+			reg = <0x400c3000 0x2000>;
+			#alt-cells = <3>;
+			#lvol-cells = <2>;
+			label = "SCFG";
+		};
+
+		uart1: serial@400c4000 {
+			compatible = "nuvoton,npcx-uart";
+			reg = <0x400C4000 0x2000>;
+			interrupts = <33 0>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL1 4>;
+			pinctrl = <&alta_uart1_sl1>; /* PIN10.11 */
+			status = "disabled";
+			label = "UART_1";
+		};
+
+		uart2: serial@400c6000 {
+			compatible = "nuvoton,npcx-uart";
+			reg = <0x400C6000 0x2000>;
+			interrupts = <32 0>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL7 6>;
+			pinctrl = <&alta_uart2_sl>; /* PIN75.86 */
+			status = "disabled";
+			label = "UART_2";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

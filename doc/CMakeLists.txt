@@ -42,6 +42,8 @@ endif()
 # Include version info
 include(${ZEPHYR_BASE}/cmake/version.cmake)
 # Process modules
+set(KCONFIG_BINARY_DIR ${CMAKE_BINARY_DIR}/Kconfig)
+file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
 include(${ZEPHYR_BASE}/cmake/zephyr_module.cmake)
 
 # Note that this won't force fatal error if latexmk is not found.
@@ -195,6 +197,17 @@ else()
   set(SEP :)
 endif()
 
+file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.soc.defconfig
+     "osource \"${ZEPHYR_BASE}/soc/$(ARCH)/*/Kconfig.defconfig\"\n"
+)
+file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.soc
+     "osource \"${ZEPHYR_BASE}/soc/$(ARCH)/*/Kconfig.soc\"\n"
+)
+file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.soc.arch
+     "osource \"${ZEPHYR_BASE}/soc/$(ARCH)/Kconfig\"\n"
+     "osource \"${ZEPHYR_BASE}/soc/$(ARCH)/*/Kconfig\"\n"
+)
+
 add_custom_target(
   kconfig
   COMMAND ${CMAKE_COMMAND} -E make_directory ${RST_OUT}/doc/reference/kconfig
@@ -206,7 +219,7 @@ add_custom_target(
   ARCH=*
   ARCH_DIR=arch
   SOC_DIR=soc
-  CMAKE_BINARY_DIR=${CMAKE_BINARY_DIR}
+  KCONFIG_BINARY_DIR=${KCONFIG_BINARY_DIR}
   KCONFIG_WARN_UNDEF=y
   KCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}
   KCONFIG_DOC_MODE=1

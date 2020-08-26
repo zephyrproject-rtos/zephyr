@@ -4,15 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * @addtogroup t_i2s_api
- * @{
- * @defgroup t_i2s_states test_i2s_states
- * @brief TestPurpose: verify handling of API calls in all defined interface
- *        states.
- * @}
- */
-
 #include <zephyr.h>
 #include <ztest.h>
 #include <drivers/i2s.h>

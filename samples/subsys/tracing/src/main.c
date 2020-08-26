@@ -7,6 +7,8 @@
 
 #include <zephyr.h>
 #include <sys/printk.h>
+#include <logging/log.h>
+#include <usb/usb_device.h>
 
 /*
  * The hello world demo has two threads that utilize semaphores and sleeping
@@ -84,6 +86,16 @@ void threadA(void *dummy1, void *dummy2, void *dummy3)
 	ARG_UNUSED(dummy1);
 	ARG_UNUSED(dummy2);
 	ARG_UNUSED(dummy3);
+
+#if (defined(CONFIG_USB) && defined(CONFIG_USB_DEVICE_STACK))
+	int ret;
+
+	ret = usb_enable(NULL);
+	if (ret) {
+		printk("usb backend enable failed");
+		return;
+	}
+#endif /* CONFIG_USB */
 
 	/* spawn threadB */
 	k_tid_t tid = k_thread_create(&threadB_data, threadB_stack_area,

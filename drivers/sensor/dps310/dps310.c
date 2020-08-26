@@ -571,8 +571,8 @@ static bool dps310_measure_tmp(struct dps310_data *data,
 /* Initialize the sensor and apply the configuration */
 static int dps310_init(struct device *dev)
 {
-	struct dps310_data *data = dev->driver_data;
-	const struct dps310_cfg *config = dev->config_info;
+	struct dps310_data *data = dev->data;
+	const struct dps310_cfg *config = dev->config;
 
 	data->i2c_master = device_get_binding(config->i2c_bus_name);
 	if (data->i2c_master == NULL) {
@@ -663,8 +663,8 @@ static int dps310_init(struct device *dev)
 /* Do a measurement and fetch the data from the sensor */
 static int dps310_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct dps310_data *data = dev->driver_data;
-	const struct dps310_cfg *config = dev->config_info;
+	struct dps310_data *data = dev->data;
+	const struct dps310_cfg *config = dev->config;
 
 	LOG_DBG("Fetching sample from DPS310");
 
@@ -698,7 +698,7 @@ static int dps310_sample_fetch(struct device *dev, enum sensor_channel chan)
 static int dps310_channel_get(struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	struct dps310_data *data = dev->driver_data;
+	struct dps310_data *data = dev->data;
 
 	switch (chan) {
 	case SENSOR_CHAN_AMBIENT_TEMP:

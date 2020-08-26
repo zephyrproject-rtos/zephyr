@@ -59,7 +59,7 @@ static int dummy_read(struct device *dev, uint32_t *val)
 
 	printk("read()\n");
 
-	api = (struct dummy_parent_api *)parent->driver_api;
+	api = (struct dummy_parent_api *)parent->api;
 	ret = api->transfer(parent, DUMMY_PARENT_RD, val);
 	return ret;
 }
@@ -70,7 +70,7 @@ static int dummy_write(struct device *dev, uint32_t val)
 	int ret;
 
 	printk("write()\n");
-	api = (struct dummy_parent_api *)parent->driver_api;
+	api = (struct dummy_parent_api *)parent->api;
 	ret = api->transfer(parent, DUMMY_PARENT_WR, &val);
 	return ret;
 }

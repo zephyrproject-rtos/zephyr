@@ -32,7 +32,7 @@
 static int gpio_mmio32_config(struct device *dev,
 			      gpio_pin_t pin, gpio_flags_t flags)
 {
-	struct gpio_mmio32_context *context = dev->driver_data;
+	struct gpio_mmio32_context *context = dev->data;
 	const struct gpio_mmio32_config *config = context->config;
 
 	if ((config->mask & (1 << pin)) == 0) {
@@ -64,7 +64,7 @@ static int gpio_mmio32_config(struct device *dev,
 
 static int gpio_mmio32_port_get_raw(struct device *dev, uint32_t *value)
 {
-	struct gpio_mmio32_context *context = dev->driver_data;
+	struct gpio_mmio32_context *context = dev->data;
 	const struct gpio_mmio32_config *config = context->config;
 
 	*value = *config->reg & config->mask;
@@ -75,7 +75,7 @@ static int gpio_mmio32_port_get_raw(struct device *dev, uint32_t *value)
 static int gpio_mmio32_port_set_masked_raw(struct device *dev, uint32_t mask,
 					  uint32_t value)
 {
-	struct gpio_mmio32_context *context = dev->driver_data;
+	struct gpio_mmio32_context *context = dev->data;
 	const struct gpio_mmio32_config *config = context->config;
 	volatile uint32_t *reg = config->reg;
 	unsigned int key;
@@ -93,7 +93,7 @@ static int gpio_mmio32_port_set_masked_raw(struct device *dev, uint32_t mask,
 
 static int gpio_mmio32_port_set_bits_raw(struct device *dev, uint32_t mask)
 {
-	struct gpio_mmio32_context *context = dev->driver_data;
+	struct gpio_mmio32_context *context = dev->data;
 	const struct gpio_mmio32_config *config = context->config;
 	volatile uint32_t *reg = config->reg;
 	unsigned int key;
@@ -110,7 +110,7 @@ static int gpio_mmio32_port_set_bits_raw(struct device *dev, uint32_t mask)
 
 static int gpio_mmio32_port_clear_bits_raw(struct device *dev, uint32_t mask)
 {
-	struct gpio_mmio32_context *context = dev->driver_data;
+	struct gpio_mmio32_context *context = dev->data;
 	const struct gpio_mmio32_config *config = context->config;
 	volatile uint32_t *reg = config->reg;
 	unsigned int key;
@@ -127,7 +127,7 @@ static int gpio_mmio32_port_clear_bits_raw(struct device *dev, uint32_t mask)
 
 static int gpio_mmio32_port_toggle_bits(struct device *dev, uint32_t mask)
 {
-	struct gpio_mmio32_context *context = dev->driver_data;
+	struct gpio_mmio32_context *context = dev->data;
 	const struct gpio_mmio32_config *config = context->config;
 	volatile uint32_t *reg = config->reg;
 	unsigned int key;
@@ -165,11 +165,11 @@ static const struct gpio_driver_api gpio_mmio32_api = {
 
 int gpio_mmio32_init(struct device *dev)
 {
-	struct gpio_mmio32_context *context = dev->driver_data;
-	const struct gpio_mmio32_config *config = dev->config_info;
+	struct gpio_mmio32_context *context = dev->data;
+	const struct gpio_mmio32_config *config = dev->config;
 
 	context->config = config;
-	dev->driver_api = &gpio_mmio32_api;
+	dev->api = &gpio_mmio32_api;
 
 	return 0;
 }

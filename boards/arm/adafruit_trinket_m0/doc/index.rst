@@ -109,6 +109,9 @@ Programming and Debugging
 The Trinket M0 ships the BOSSA compatible UF2 bootloader.  The
 bootloader can be entered by quickly tapping the reset button twice.
 
+Additionally, if :code:`CONFIG_USB_CDC_ACM` is enabled then the bootloader
+will be entered automatically when you run :code:`west flash`.
+
 Flashing
 ========
 

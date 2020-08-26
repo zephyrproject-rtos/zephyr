@@ -21,9 +21,9 @@ LOG_MODULE_DECLARE(BMG160, CONFIG_SENSOR_LOG_LEVEL);
 static inline void setup_int(struct device *dev,
 			      bool enable)
 {
-	struct bmg160_device_data *data = dev->driver_data;
+	struct bmg160_device_data *data = dev->data;
 	const struct bmg160_device_config *const cfg =
-		dev->config_info;
+		dev->config;
 
 	gpio_pin_interrupt_configure(data->gpio,
 				     cfg->int_pin,
@@ -51,7 +51,7 @@ static void bmg160_gpio_callback(struct device *port, struct gpio_callback *cb,
 static int bmg160_anymotion_set(struct device *dev,
 				sensor_trigger_handler_t handler)
 {
-	struct bmg160_device_data *bmg160 = dev->driver_data;
+	struct bmg160_device_data *bmg160 = dev->data;
 	uint8_t anymotion_en = 0U;
 
 	if (handler) {
@@ -72,7 +72,7 @@ static int bmg160_anymotion_set(struct device *dev,
 
 static int bmg160_drdy_set(struct device *dev, sensor_trigger_handler_t handler)
 {
-	struct bmg160_device_data *bmg160 = dev->driver_data;
+	struct bmg160_device_data *bmg160 = dev->data;
 
 	if (bmg160_update_byte(dev, BMG160_REG_INT_EN0,
 			       BMG160_DATA_EN,
@@ -88,7 +88,7 @@ static int bmg160_drdy_set(struct device *dev, sensor_trigger_handler_t handler)
 int bmg160_slope_config(struct device *dev, enum sensor_attribute attr,
 			const struct sensor_value *val)
 {
-	struct bmg160_device_data *bmg160 = dev->driver_data;
+	struct bmg160_device_data *bmg160 = dev->data;
 
 	if (attr == SENSOR_ATTR_SLOPE_TH) {
 		uint16_t any_th_dps, range_dps;
@@ -135,7 +135,7 @@ int bmg160_trigger_set(struct device *dev,
 
 static int bmg160_handle_anymotion_int(struct device *dev)
 {
-	struct bmg160_device_data *bmg160 = dev->driver_data;
+	struct bmg160_device_data *bmg160 = dev->data;
 	struct sensor_trigger any_trig = {
 		.type = SENSOR_TRIG_DELTA,
 		.chan = SENSOR_CHAN_GYRO_XYZ,
@@ -150,7 +150,7 @@ static int bmg160_handle_anymotion_int(struct device *dev)
 
 static int bmg160_handle_dataready_int(struct device *dev)
 {
-	struct bmg160_device_data *bmg160 = dev->driver_data;
+	struct bmg160_device_data *bmg160 = dev->data;
 	struct sensor_trigger drdy_trig = {
 		.type = SENSOR_TRIG_DATA_READY,
 		.chan = SENSOR_CHAN_GYRO_XYZ,
@@ -180,13 +180,13 @@ static void bmg160_handle_int(void *arg)
 }
 
 #ifdef CONFIG_BMG160_TRIGGER_OWN_THREAD
-static K_THREAD_STACK_DEFINE(bmg160_thread_stack, CONFIG_BMG160_THREAD_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(bmg160_thread_stack, CONFIG_BMG160_THREAD_STACK_SIZE);
 static struct k_thread bmg160_thread;
 
 static void bmg160_thread_main(void *arg1, void *arg2, void *arg3)
 {
 	struct device *dev = (struct device *)arg1;
-	struct bmg160_device_data *bmg160 = dev->driver_data;
+	struct bmg160_device_data *bmg160 = dev->data;
 
 	while (true) {
 		k_sem_take(&bmg160->trig_sem, K_FOREVER);
@@ -208,8 +208,8 @@ static void bmg160_work_cb(struct k_work *work)
 
 int bmg160_trigger_init(struct device *dev)
 {
-	const struct bmg160_device_config *cfg = dev->config_info;
-	struct bmg160_device_data *bmg160 = dev->driver_data;
+	const struct bmg160_device_config *cfg = dev->config;
+	struct bmg160_device_data *bmg160 = dev->data;
 
 	/* set INT1 pin to: push-pull, active low */
 	if (bmg160_write_byte(dev, BMG160_REG_INT_EN1, 0) < 0) {

@@ -11,8 +11,7 @@
 # 1.4. board_*
 # 1.5. Misc.
 # 2. Kconfig-aware extensions
-# 2.1 *_if_kconfig
-# 2.2 Misc
+# 2.1 Misc
 # 3. CMake-generic extensions
 # 3.1. *_ifdef
 # 3.2. *_ifndef
@@ -1020,42 +1019,8 @@ endfunction()
 # Kconfig is a configuration language developed for the Linux
 # kernel. The below functions integrate CMake with Kconfig.
 #
-# 2.1 *_if_kconfig
-#
-# Functions for conditionally including directories and source files
-# that have matching KConfig values.
-#
-# zephyr_library_sources_if_kconfig(fft.c)
-# is the same as
-# zephyr_library_sources_ifdef(CONFIG_FFT fft.c)
-#
-# add_subdirectory_if_kconfig(serial)
-# is the same as
-# add_subdirectory_ifdef(CONFIG_SERIAL serial)
-function(add_subdirectory_if_kconfig dir)
-  string(TOUPPER config_${dir} UPPER_CASE_CONFIG)
-  add_subdirectory_ifdef(${UPPER_CASE_CONFIG} ${dir})
-endfunction()
 
-function(target_sources_if_kconfig target scope item)
-  get_filename_component(item_basename ${item} NAME_WE)
-  string(TOUPPER CONFIG_${item_basename} UPPER_CASE_CONFIG)
-  target_sources_ifdef(${UPPER_CASE_CONFIG} ${target} ${scope} ${item})
-endfunction()
-
-function(zephyr_library_sources_if_kconfig item)
-  get_filename_component(item_basename ${item} NAME_WE)
-  string(TOUPPER CONFIG_${item_basename} UPPER_CASE_CONFIG)
-  zephyr_library_sources_ifdef(${UPPER_CASE_CONFIG} ${item})
-endfunction()
-
-function(zephyr_sources_if_kconfig item)
-  get_filename_component(item_basename ${item} NAME_WE)
-  string(TOUPPER CONFIG_${item_basename} UPPER_CASE_CONFIG)
-  zephyr_sources_ifdef(${UPPER_CASE_CONFIG} ${item})
-endfunction()
-
-# 2.2 Misc
+# 2.1 Misc
 #
 # import_kconfig(<prefix> <kconfig_fragment> [<keys>])
 #

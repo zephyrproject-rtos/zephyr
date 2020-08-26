@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <mgmt/smp_udp.h>
+#include <mgmt/mcumgr/smp_udp.h>
 #include <net/net_mgmt.h>
 #include <net/net_event.h>
 #include <net/net_conn_mgr.h>

@@ -207,10 +207,10 @@ static size_t tcp_data_len(struct net_pkt *pkt)
 {
 	struct tcphdr *th = th_get(pkt);
 	size_t tcp_options_len = (th->th_off - 5) * 4;
-	ssize_t len = net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) -
+	int len = net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) -
 		net_pkt_ip_opts_len(pkt) - sizeof(*th) - tcp_options_len;
 
-	return len > 0 ? len : 0;
+	return len > 0 ? (size_t)len : 0;
 }
 
 static const char *tcp_th(struct net_pkt *pkt)
@@ -281,10 +281,19 @@ static void tcp_send_queue_flush(struct tcp *conn)
 
 static int tcp_conn_unref(struct tcp *conn)
 {
-	int ref_count = atomic_dec(&conn->ref_count) - 1;
-	int key;
+	int key, ref_count = atomic_get(&conn->ref_count);
 
 	NET_DBG("conn: %p, ref_count=%d", conn, ref_count);
+
+#if !defined(CONFIG_NET_TEST_PROTOCOL)
+	if (conn->in_connect) {
+		NET_DBG("conn: %p is waiting on connect semaphore", conn);
+		tcp_send_queue_flush(conn);
+		goto out;
+	}
+#endif /* CONFIG_NET_TEST_PROTOCOL */
+
+	ref_count = atomic_dec(&conn->ref_count) - 1;
 
 	if (ref_count) {
 		tp_out(net_context_get_family(conn->context), conn->iface,
@@ -317,9 +326,9 @@ static int tcp_conn_unref(struct tcp *conn)
 
 	k_delayed_work_cancel(&conn->timewait_timer);
 
-	memset(conn, 0, sizeof(*conn));
-
 	sys_slist_find_and_remove(&tcp_conns, (sys_snode_t *)conn);
+
+	memset(conn, 0, sizeof(*conn));
 
 	k_mem_slab_free(&tcp_conns_slab, (void **)&conn);
 
@@ -441,26 +450,33 @@ static const char *tcp_conn_state(struct tcp *conn, struct net_pkt *pkt)
 	return buf;
 }
 
-static uint8_t *tcp_options_get(struct net_pkt *pkt, int tcp_options_len)
+static uint8_t *tcp_options_get(struct net_pkt *pkt, int tcp_options_len,
+				uint8_t *buf, size_t buf_len)
 {
-	static uint8_t options[40]; /* TCP header max options size is 40 */
 	struct net_pkt_cursor backup;
+	int ret;
 
 	net_pkt_cursor_backup(pkt, &backup);
 	net_pkt_cursor_init(pkt);
 	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) + net_pkt_ip_opts_len(pkt) +
 		     sizeof(struct tcphdr));
-	net_pkt_read(pkt, options, tcp_options_len);
+	ret = net_pkt_read(pkt, buf, MIN(tcp_options_len, buf_len));
+	if (ret < 0) {
+		buf = NULL;
+	}
+
 	net_pkt_cursor_restore(pkt, &backup);
 
-	return options;
+	return buf;
 }
 
 static bool tcp_options_check(struct tcp_options *recv_options,
 			      struct net_pkt *pkt, ssize_t len)
 {
+	uint8_t options_buf[40]; /* TCP header max options size is 40 */
 	bool result = len > 0 && ((len % 4) == 0) ? true : false;
-	uint8_t *options = tcp_options_get(pkt, len);
+	uint8_t *options = tcp_options_get(pkt, len, options_buf,
+					   sizeof(options_buf));
 	uint8_t opt, opt_len;
 
 	NET_DBG("len=%zd", len);
@@ -468,7 +484,7 @@ static bool tcp_options_check(struct tcp_options *recv_options,
 	recv_options->mss_found = false;
 	recv_options->wnd_found = false;
 
-	for ( ; len >= 1; options += opt_len, len -= opt_len) {
+	for ( ; options && len >= 1; options += opt_len, len -= opt_len) {
 		opt = options[0];
 
 		if (opt == TCPOPT_END) {
@@ -499,7 +515,8 @@ static bool tcp_options_check(struct tcp_options *recv_options,
 				goto end;
 			}
 
-			recv_options->mss = ntohs(*((uint16_t *)(options + 2)));
+			recv_options->mss =
+				ntohs(UNALIGNED_GET((uint16_t *)(options + 2)));
 			recv_options->mss_found = true;
 			NET_DBG("MSS=%hu", recv_options->mss);
 			break;
@@ -524,9 +541,9 @@ end:
 	return result;
 }
 
-static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
+static int tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
 {
-	ssize_t len = tcp_data_len(pkt);
+	int len = tcp_data_len(pkt);
 
 	if (tcp_recv_cb) {
 		tcp_recv_cb(conn, pkt);
@@ -871,6 +888,9 @@ static struct tcp *tcp_conn_alloc(void)
 	conn->send_data = tcp_pkt_alloc(conn, 0);
 	k_delayed_work_init(&conn->send_data_timer, tcp_resend_data);
 
+	k_sem_init(&conn->connect_sem, 0, UINT_MAX);
+	conn->in_connect = false;
+
 	tcp_conn_ref(conn);
 
 	sys_slist_append(&tcp_conns, (sys_snode_t *)conn);
@@ -1116,6 +1136,7 @@ next_state:
 			next = TCP_ESTABLISHED;
 			net_context_set_state(conn->context,
 					      NET_CONTEXT_CONNECTED);
+
 			if (len) {
 				if (tcp_data_get(conn, pkt) < 0) {
 					break;
@@ -1130,20 +1151,20 @@ next_state:
 		 * ACK , shouldn't we go to SYN RECEIVED state? See Figure
 		 * 6 of RFC 793
 		 */
-		if (FL(&fl, &, ACK, th && th_ack(th) == conn->seq)) {
+		if (FL(&fl, &, SYN | ACK, th && th_ack(th) == conn->seq)) {
 			tcp_send_timer_cancel(conn);
-			next = TCP_ESTABLISHED;
-			net_context_set_state(conn->context,
-					      NET_CONTEXT_CONNECTED);
-			if (FL(&fl, &, PSH)) {
+			conn_ack(conn, th_seq(th) + 1);
+			if (len) {
 				if (tcp_data_get(conn, pkt) < 0) {
 					break;
 				}
+				conn_ack(conn, + len);
 			}
-			if (FL(&fl, &, SYN)) {
-				conn_ack(conn, th_seq(th) + 1);
-				tcp_out(conn, ACK);
-			}
+			k_sem_give(&conn->connect_sem);
+			next = TCP_ESTABLISHED;
+			net_context_set_state(conn->context,
+					      NET_CONTEXT_CONNECTED);
+			tcp_out(conn, ACK);
 		}
 		break;
 	case TCP_ESTABLISHED:
@@ -1284,7 +1305,7 @@ int net_tcp_put(struct net_context *context)
 
 	NET_DBG("%s", conn ? log_strdup(tcp_conn_state(conn, NULL)) : "");
 
-	if (conn) {
+	if (conn && conn->state == TCP_ESTABLISHED) {
 		k_mutex_lock(&conn->lock, K_FOREVER);
 
 		tcp_out(conn, FIN | ACK);
@@ -1374,9 +1395,7 @@ int net_tcp_connect(struct net_context *context,
 		    void *user_data)
 {
 	struct tcp *conn;
-	int ret;
-
-	ARG_UNUSED(timeout);
+	int ret = 0;
 
 	NET_DBG("context: %p, local: %s, remote: %s", context,
 		log_strdup(net_sprint_addr(
@@ -1434,7 +1453,7 @@ int net_tcp_connect(struct net_context *context,
 		break;
 
 	default:
-		return -EPROTONOSUPPORT;
+		ret = -EPROTONOSUPPORT;
 	}
 
 	NET_DBG("conn: %p src: %s, dst: %s", conn,
@@ -1452,7 +1471,7 @@ int net_tcp_connect(struct net_context *context,
 				tcp_recv, context,
 				&context->conn_handler);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	/* Input of a (nonexistent) packet with no flags set will cause
@@ -1460,7 +1479,22 @@ int net_tcp_connect(struct net_context *context,
 	 */
 	tcp_in(conn, NULL);
 
-	return 0;
+	if (!IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)) {
+		conn->in_connect = true;
+
+		if (k_sem_take(&conn->connect_sem, timeout) != 0 &&
+		    conn->state != TCP_ESTABLISHED) {
+			conn->in_connect = false;
+			tcp_conn_unref(conn);
+			ret = -ETIMEDOUT;
+			goto out;
+		}
+		conn->in_connect = false;
+	}
+ out:
+	NET_DBG("conn: %p, ret=%d", conn, ret);
+
+	return ret;
 }
 
 int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
@@ -1522,6 +1556,11 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 	}
 
 	context->user_data = user_data;
+
+	/* Remove the temporary connection handler and register
+	 * a proper now as we have an established connection.
+	 */
+	net_conn_unregister(context->conn_handler);
 
 	return net_conn_register(net_context_get_ip_proto(context),
 				 local_addr.sa_family,

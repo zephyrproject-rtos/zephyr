@@ -22,18 +22,9 @@
 LOG_MODULE_REGISTER(test);
 
 /**
- * @addtogroup t_ringbuffer
+ * @defgroup lib_ringbuffer_tests Ringbuffer
+ * @ingroup all_tests
  * @{
- * @defgroup t_ringbuffer_api test_ringbuffer_api
- * @brief TestPurpose: verify zephyr ring buffer API functionality
- * - API coverage
- *   -# RING_BUF_ITEM_DECLARE_POW2
- *   -# RING_BUF_ITEM_DECLARE_SIZE
- *   -# ring_buf_init
- *   -# ring_buf_is_empty
- *   -# ring_buf_space_get
- *   -# ring_buf_item_put
- *   -# ring_buf_item_get
  * @}
  */
 

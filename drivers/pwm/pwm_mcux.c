@@ -35,8 +35,8 @@ static int mcux_pwm_pin_set(struct device *dev, uint32_t pwm,
 			    uint32_t period_cycles, uint32_t pulse_cycles,
 			    pwm_flags_t flags)
 {
-	const struct pwm_mcux_config *config = dev->config_info;
-	struct pwm_mcux_data *data = dev->driver_data;
+	const struct pwm_mcux_config *config = dev->config;
+	struct pwm_mcux_data *data = dev->data;
 	uint8_t duty_cycle;
 
 	if (pwm >= CHANNEL_COUNT) {
@@ -111,7 +111,7 @@ static int mcux_pwm_pin_set(struct device *dev, uint32_t pwm,
 static int mcux_pwm_get_cycles_per_sec(struct device *dev, uint32_t pwm,
 				       uint64_t *cycles)
 {
-	const struct pwm_mcux_config *config = dev->config_info;
+	const struct pwm_mcux_config *config = dev->config;
 
 	*cycles = CLOCK_GetFreq(config->clock_source) >> config->prescale;
 
@@ -120,8 +120,8 @@ static int mcux_pwm_get_cycles_per_sec(struct device *dev, uint32_t pwm,
 
 static int pwm_mcux_init(struct device *dev)
 {
-	const struct pwm_mcux_config *config = dev->config_info;
-	struct pwm_mcux_data *data = dev->driver_data;
+	const struct pwm_mcux_config *config = dev->config;
+	struct pwm_mcux_data *data = dev->data;
 	pwm_config_t pwm_config;
 	status_t status;
 

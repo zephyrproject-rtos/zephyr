@@ -50,8 +50,221 @@ struct __packed z_thread_stack_element {
  * Take the provided value and round it down such that the value is aligned
  * to the CPU and ABI requirements. This is not used for any memory protection
  * hardware requirements.
+ *
+ * @param ptr Proposed stack pointer address
+ * @return Properly aligned stack pointer address
  */
-#define Z_STACK_PTR_ALIGN(ptr) ROUND_DOWN((ptr), ARCH_STACK_PTR_ALIGN)
+static inline char *z_stack_ptr_align(char *ptr)
+{
+	return (char *)ROUND_DOWN(ptr, ARCH_STACK_PTR_ALIGN);
+}
+#define Z_STACK_PTR_ALIGN(ptr) ((uintptr_t)z_stack_ptr_align((char *)(ptr)))
+
+/**
+ * @brief Helper macro for getting a stack frame struct
+ *
+ * It is very common for architectures to define a struct which contains
+ * all the data members that are pre-populated in arch_new_thread().
+ *
+ * Given a type and an initial stack pointer, return a properly cast
+ * pointer to the frame struct.
+ *
+ * @param type Type of the initial stack frame struct
+ * @param ptr Initial aligned stack pointer value
+ * @return Pointer to stack frame struct within the stack buffer
+ */
+#define Z_STACK_PTR_TO_FRAME(type, ptr) \
+	(type *)((ptr) - sizeof(type))
+
+#ifdef ARCH_KERNEL_STACK_RESERVED
+#define K_KERNEL_STACK_RESERVED	((size_t)ARCH_KERNEL_STACK_RESERVED)
+#else
+#define K_KERNEL_STACK_RESERVED	((size_t)0)
+#endif
+
+#define Z_KERNEL_STACK_SIZE_ADJUST(size) (ROUND_UP(size, \
+						   ARCH_STACK_PTR_ALIGN) + \
+					  K_KERNEL_STACK_RESERVED)
+
+#ifdef ARCH_KERNEL_STACK_OBJ_ALIGN
+#define Z_KERNEL_STACK_OBJ_ALIGN	ARCH_KERNEL_STACK_OBJ_ALIGN
+#else
+#define Z_KERNEL_STACK_OBJ_ALIGN	ARCH_STACK_PTR_ALIGN
+#endif
+
+/**
+ * @brief Obtain an extern reference to a stack
+ *
+ * This macro properly brings the symbol of a thread stack declared
+ * elsewhere into scope.
+ *
+ * @param sym Thread stack symbol name
+ */
+#define K_KERNEL_STACK_EXTERN(sym) extern k_thread_stack_t sym[]
+
+/**
+ * @def K_KERNEL_STACK_DEFINE
+ * @brief Define a toplevel kernel stack memory region
+ *
+ * This declares a region of memory for use as a thread stack, for threads
+ * that exclusively run in supervisor mode. This is also suitable for
+ * declaring special stacks for interrupt or exception handling.
+ *
+ * Stacks declared with this macro may not host user mode threads.
+ *
+ * It is legal to precede this definition with the 'static' keyword.
+ *
+ * It is NOT legal to take the sizeof(sym) and pass that to the stackSize
+ * parameter of k_thread_create(), it may not be the same as the
+ * 'size' parameter. Use K_KERNEL_STACK_SIZEOF() instead.
+ *
+ * The total amount of memory allocated may be increased to accommodate
+ * fixed-size stack overflow guards.
+ *
+ * @param sym Thread stack symbol name
+ * @param size Size of the stack memory region
+ */
+#define K_KERNEL_STACK_DEFINE(sym, size) \
+	struct z_thread_stack_element __noinit \
+		__aligned(Z_KERNEL_STACK_OBJ_ALIGN) \
+		sym[Z_KERNEL_STACK_SIZE_ADJUST(size)]
+
+#define Z_KERNEL_STACK_LEN(size) \
+	ROUND_UP(Z_KERNEL_STACK_SIZE_ADJUST(size), Z_KERNEL_STACK_OBJ_ALIGN)
+
+/**
+ * @def K_KERNEL_STACK_ARRAY_DEFINE
+ * @brief Define a toplevel array of kernel stack memory regions
+ *
+ * Stacks declared with this macro may not host user mode threads.
+ *
+ * @param sym Kernel stack array symbol name
+ * @param nmemb Number of stacks to declare
+ * @param size Size of the stack memory region
+ */
+#define K_KERNEL_STACK_ARRAY_DEFINE(sym, nmemb, size) \
+	struct z_thread_stack_element __noinit \
+		__aligned(Z_KERNEL_STACK_OBJ_ALIGN) \
+		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
+
+/**
+ * @def K_KERNEL_STACK_MEMBER
+ * @brief Declare an embedded stack memory region
+ *
+ * Used for kernel stacks embedded within other data structures.
+ *
+ * Stacks declared with this macro may not host user mode threads.
+ * @param sym Thread stack symbol name
+ * @param size Size of the stack memory region
+ */
+#define K_KERNEL_STACK_MEMBER(sym, size) \
+	struct z_thread_stack_element \
+		__aligned(Z_KERNEL_STACK_OBJ_ALIGN) \
+		sym[Z_KERNEL_STACK_SIZE_ADJUST(size)]
+
+#define K_KERNEL_STACK_SIZEOF(sym) (sizeof(sym) - K_KERNEL_STACK_RESERVED)
+
+static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
+{
+	return (char *)sym + K_KERNEL_STACK_RESERVED;
+}
+#ifndef CONFIG_USERSPACE
+#define K_THREAD_STACK_RESERVED		K_KERNEL_STACK_RESERVED
+#define K_THREAD_STACK_SIZEOF		K_KERNEL_STACK_SIZEOF
+#define K_THREAD_STACK_LEN		Z_KERNEL_STACK_LEN
+#define K_THREAD_STACK_DEFINE		K_KERNEL_STACK_DEFINE
+#define K_THREAD_STACK_ARRAY_DEFINE	K_KERNEL_STACK_ARRAY_DEFINE
+#define K_THREAD_STACK_MEMBER		K_KERNEL_STACK_MEMBER
+#define Z_THREAD_STACK_BUFFER		Z_KERNEL_STACK_BUFFER
+#define K_THREAD_STACK_EXTERN		K_KERNEL_STACK_EXTERN
+#else
+/**
+ * @def K_THREAD_STACK_RESERVED
+ * @brief Indicate how much additional memory is reserved for stack objects
+ *
+ * Any given stack declaration may have additional memory in it for guard
+ * areas, supervisor mode stacks, or platform-specific data.  This macro
+ * indicates how much space is reserved for this.
+ *
+ * This value only indicates memory that is permanently reserved in the stack
+ * object. Memory that is "borrowed" from the thread's stack buffer is never
+ * accounted for here.
+ *
+ * Reserved memory is at the beginning of the stack object. The reserved area
+ * must be appropriately sized such that the stack buffer immediately following
+ * it is correctly aligned.
+ */
+#ifdef ARCH_THREAD_STACK_RESERVED
+#define K_THREAD_STACK_RESERVED		((size_t)(ARCH_THREAD_STACK_RESERVED))
+#else
+#define K_THREAD_STACK_RESERVED		((size_t)0U)
+#endif
+
+/**
+ * @brief Properly align the lowest address of a stack object
+ *
+ * Return an alignment value for the lowest address of a stack object, taking
+ * into consideration all alignment constraints imposed by the CPU, ABI, and
+ * any memory management policies, including any alignment required by
+ * reserved platform data within the stack object. This will always be at least
+ * ARCH_STACK_PTR_ALIGN or an even multiple thereof.
+ *
+ * Depending on hardware, this is either a fixed value or a function of the
+ * provided size. The requested size is significant only if
+ * CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT is enabled.
+ *
+ * If CONFIG_USERSPACE is enabled, this determines the alignment of stacks
+ * which may be used by user mode threads, or threads running in supervisor
+ * mode which may later drop privileges to user mode.
+ *
+ * Arches define this with ARCH_THREAD_STACK_OBJ_ALIGN().
+ *
+ * If ARCH_THREAD_STACK_OBJ_ALIGN is not defined assume ARCH_STACK_PTR_ALIGN
+ * is appropriate.
+ *
+ * @param size Requested size of the stack buffer (which could be ignored)
+ * @return Alignment of the stack object
+ */
+#if defined(ARCH_THREAD_STACK_OBJ_ALIGN)
+#define Z_THREAD_STACK_OBJ_ALIGN(size)	ARCH_THREAD_STACK_OBJ_ALIGN(size)
+#else
+#define Z_THREAD_STACK_OBJ_ALIGN(size)	ARCH_STACK_PTR_ALIGN
+#endif /* ARCH_THREAD_STACK_OBJ_ALIGN */
+
+/**
+ * @def Z_THREAD_STACK_SIZE_ADJUST
+ * @brief Round up a requested stack size to satisfy constraints
+ *
+ * Given a requested stack buffer size, return an adjusted size value for
+ * the entire stack object which takes into consideration:
+ *
+ * - Reserved memory for platform data
+ * - Alignment of stack buffer bounds to CPU/ABI constraints
+ * - Alignment of stack buffer bounds to satisfy memory management hardware
+ *   constraints such that a protection region can cover the stack buffer area
+ *
+ * If CONFIG_USERSPACE is enabled, this determines the size of stack objects
+ * which  may be used by user mode threads, or threads running in supervisor
+ * mode which may later drop privileges to user mode.
+ *
+ * Arches define this with ARCH_THREAD_STACK_SIZE_ADJUST().
+ *
+ * If ARCH_THREAD_STACK_SIZE_ADJUST is not defined, assume rounding up to
+ * ARCH_STACK_PTR_ALIGN is appropriate.
+ *
+ * Any memory reserved for platform data is also included in the total
+ * returned.
+ *
+ * @param size Requested size of the stack buffer
+ * @return Adjusted size of the stack object
+ */
+#if defined(ARCH_THREAD_STACK_SIZE_ADJUST)
+#define Z_THREAD_STACK_SIZE_ADJUST(size) \
+	(ARCH_THREAD_STACK_SIZE_ADJUST(size) + K_THREAD_STACK_RESERVED)
+#else
+#define Z_THREAD_STACK_SIZE_ADJUST(size) \
+	(ROUND_UP((size), ARCH_STACK_PTR_ALIGN) + K_THREAD_STACK_RESERVED)
+#endif /* ARCH_THREAD_STACK_SIZE_ADJUST */
 
 /**
  * @brief Obtain an extern reference to a stack
@@ -63,29 +276,28 @@ struct __packed z_thread_stack_element {
  */
 #define K_THREAD_STACK_EXTERN(sym) extern k_thread_stack_t sym[]
 
-/* arch/cpu.h may declare an architecture or platform-specific macro
- * for properly declaring stacks, compatible with MMU/MPU constraints if
- * enabled
+/**
+ * @brief Return the size in bytes of a stack memory region
+ *
+ * Convenience macro for passing the desired stack size to k_thread_create()
+ * since the underlying implementation may actually create something larger
+ * (for instance a guard area).
+ *
+ * The value returned here is not guaranteed to match the 'size' parameter
+ * passed to K_THREAD_STACK_DEFINE and may be larger, but is always safe to
+ * pass to k_thread_create() for the associated stack object.
+ *
+ * @param sym Stack memory symbol
+ * @return Size of the stack buffer
  */
-#ifdef ARCH_THREAD_STACK_DEFINE
-#define K_THREAD_STACK_DEFINE(sym, size) ARCH_THREAD_STACK_DEFINE(sym, size)
-#define K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-		ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size)
-#define K_THREAD_STACK_LEN(size) ARCH_THREAD_STACK_LEN(size)
-#define K_THREAD_STACK_MEMBER(sym, size) ARCH_THREAD_STACK_MEMBER(sym, size)
-#define K_THREAD_STACK_SIZEOF(sym) ARCH_THREAD_STACK_SIZEOF(sym)
-#define K_THREAD_STACK_RESERVED ((size_t)ARCH_THREAD_STACK_RESERVED)
-static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
-{
-	return ARCH_THREAD_STACK_BUFFER(sym);
-}
-#else
+#define K_THREAD_STACK_SIZEOF(sym)	(sizeof(sym) - K_THREAD_STACK_RESERVED)
+
 /**
  * @brief Declare a toplevel thread stack memory region
  *
  * This declares a region of memory suitable for use as a thread's stack.
  *
- * This is the generic, historical definition. Align to ARCH_STACK_PTR_ALIGN
+ * This is the generic, historical definition. Align to Z_THREAD_STACK_OBJ_ALIGN
  * and put in 'noinit' section so that it isn't zeroed at boot
  *
  * The declared symbol will always be a k_thread_stack_t which can be passed to
@@ -107,8 +319,9 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  * @param size Size of the stack memory region
  */
 #define K_THREAD_STACK_DEFINE(sym, size) \
-	struct z_thread_stack_element __noinit \
-		__aligned(ARCH_STACK_PTR_ALIGN) sym[size]
+	struct z_thread_stack_element Z_GENERIC_SECTION(.user_stacks) \
+		__aligned(Z_THREAD_STACK_OBJ_ALIGN(size)) \
+		sym[Z_THREAD_STACK_SIZE_ADJUST(size)]
 
 /**
  * @brief Calculate size of stacks to be allocated in a stack array
@@ -117,10 +330,15 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  * inside a stack array. It accepts the indicated "size" as a parameter
  * and if required, pads some extra bytes (e.g. for MPU scenarios). Refer
  * K_THREAD_STACK_ARRAY_DEFINE definition to see how this is used.
+ * The returned size ensures each array member will be aligned to the
+ * required stack base alignment.
  *
  * @param size Size of the stack memory region
+ * @return Appropriate size for an array member
  */
-#define K_THREAD_STACK_LEN(size) (size)
+#define K_THREAD_STACK_LEN(size) \
+	ROUND_UP(Z_THREAD_STACK_SIZE_ADJUST(size), \
+		 Z_THREAD_STACK_OBJ_ALIGN(Z_THREAD_STACK_SIZE_ADJUST(size)))
 
 /**
  * @brief Declare a toplevel array of thread stack memory regions
@@ -128,7 +346,7 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  * Create an array of equally sized stacks. See K_THREAD_STACK_DEFINE
  * definition for additional details and constraints.
  *
- * This is the generic, historical definition. Align to ARCH_STACK_PTR_ALIGN
+ * This is the generic, historical definition. Align to Z_THREAD_STACK_OBJ_ALIGN
  * and put in 'noinit' section so that it isn't zeroed at boot
  *
  * @param sym Thread stack symbol name
@@ -136,8 +354,8 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  * @param size Size of the stack memory region
  */
 #define K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct z_thread_stack_element __noinit \
-		__aligned(ARCH_STACK_PTR_ALIGN) \
+	struct z_thread_stack_element Z_GENERIC_SECTION(.user_stacks) \
+		__aligned(Z_THREAD_STACK_OBJ_ALIGN(size)) \
 		sym[nmemb][K_THREAD_STACK_LEN(size)]
 
 /**
@@ -149,52 +367,38 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  * by threads else a stack overflow will lead to silent corruption. In other
  * words, the containing data structure should live in RAM owned by the kernel.
  *
+ * A user thread can only be started with a stack defined in this way if
+ * the thread starting it is in supervisor mode.
+ *
+ * This is now deprecated, as stacks defined in this way are not usable from
+ * user mode. Use K_KERNEL_STACK_MEMBER.
+ *
  * @param sym Thread stack symbol name
  * @param size Size of the stack memory region
  */
 #define K_THREAD_STACK_MEMBER(sym, size) \
-	struct z_thread_stack_element __aligned(ARCH_STACK_PTR_ALIGN) sym[size]
-
-/**
- * @brief Return the size in bytes of a stack memory region
- *
- * Convenience macro for passing the desired stack size to k_thread_create()
- * since the underlying implementation may actually create something larger
- * (for instance a guard area).
- *
- * The value returned here is not guaranteed to match the 'size' parameter
- * passed to K_THREAD_STACK_DEFINE and may be larger.
- *
- * @param sym Stack memory symbol
- * @return Size of the stack
- */
-#define K_THREAD_STACK_SIZEOF(sym) sizeof(sym)
-
-
-/**
- * @brief Indicate how much additional memory is reserved for stack objects
- *
- * Any given stack declaration may have additional memory in it for guard
- * areas or supervisor mode stacks. This macro indicates how much space
- * is reserved for this. The memory reserved may not be contiguous within
- * the stack object, and does not account for additional space used due to
- * enforce alignment.
- */
-#define K_THREAD_STACK_RESERVED		((size_t)0U)
+	struct z_thread_stack_element \
+		__aligned(Z_THREAD_STACK_OBJ_ALIGN(size)) \
+		sym[Z_THREAD_STACK_SIZE_ADJUST(size)]
 
 /**
  * @brief Get a pointer to the physical stack buffer
  *
- * This macro is deprecated. If a stack buffer needs to be examined, the
- * bounds should be obtained from the associated thread's stack_info struct.
+ * Obtain a pointer to the non-reserved area of a stack object.
+ * This is not guaranteed to be the beginning of the thread-writable region;
+ * this does not account for any memory carved-out for MPU stack overflow
+ * guards.
+ *
+ * Use with care. The true bounds of the stack buffer are available in the
+ * stack_info member of its associated thread.
  *
  * @param sym Declared stack symbol name
  * @return The buffer itself, a char *
  */
 static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 {
-	return (char *)sym;
+	return (char *)sym + K_THREAD_STACK_RESERVED;
 }
-#endif /* _ARCH_DECLARE_STACK */
+#endif /* CONFIG_USERSPACE */
 #endif /* _ASMLANGUAGE */
 #endif /* ZEPHYR_INCLUDE_SYS_THREAD_STACK_H */

@@ -947,6 +947,13 @@ static void sc_process(struct k_work *work)
 	atomic_set_bit(sc->flags, SC_INDICATE_PENDING);
 }
 
+static void clear_ccc_cfg(struct bt_gatt_ccc_cfg *cfg)
+{
+	bt_addr_le_copy(&cfg->peer, BT_ADDR_LE_ANY);
+	cfg->id = 0U;
+	cfg->value = 0U;
+}
+
 #if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
 static struct gatt_ccc_store {
 	struct bt_conn *conn_list[CONFIG_BT_MAX_CONN];
@@ -965,6 +972,20 @@ static void gatt_ccc_conn_unqueue(struct bt_conn *conn)
 	if (gatt_ccc_store.conn_list[index] != NULL) {
 		bt_conn_unref(gatt_ccc_store.conn_list[index]);
 		gatt_ccc_store.conn_list[index] = NULL;
+	}
+}
+
+static void gatt_ccc_conn_enqueue(struct bt_conn *conn)
+{
+	if ((!gatt_ccc_conn_is_queued(conn)) &&
+	    bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+		/* Store the connection with the same index it has in
+		 * the conns array
+		 */
+		gatt_ccc_store.conn_list[bt_conn_index(conn)] =
+			bt_conn_ref(conn);
+
+		k_delayed_work_submit(&gatt_ccc_store.work, CCC_STORE_DELAY);
 	}
 }
 
@@ -992,9 +1013,9 @@ static void ccc_delayed_store(struct k_work *work)
 		}
 
 		if (bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+			ccc_store->conn_list[i] = NULL;
 			bt_gatt_store_ccc(conn->id, &conn->le.dst);
 			bt_conn_unref(conn);
-			ccc_store->conn_list[i] = NULL;
 		}
 	}
 }
@@ -1093,6 +1114,56 @@ static void db_changed(void)
 #endif
 }
 
+static void gatt_unregister_ccc(struct _bt_gatt_ccc *ccc)
+{
+	ccc->value = 0;
+
+	for (size_t i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
+		struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
+
+		if (bt_addr_le_cmp(&cfg->peer, BT_ADDR_LE_ANY)) {
+			struct bt_conn *conn;
+			bool store = true;
+
+			conn = bt_conn_lookup_addr_le(cfg->id, &cfg->peer);
+			if (conn) {
+				if (conn->state == BT_CONN_CONNECTED) {
+#if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
+					gatt_ccc_conn_enqueue(conn);
+#endif
+					store = false;
+				}
+
+				bt_conn_unref(conn);
+			}
+
+			if (IS_ENABLED(CONFIG_BT_SETTINGS) && store &&
+			    bt_addr_le_is_bonded(cfg->id, &cfg->peer)) {
+				bt_gatt_store_ccc(cfg->id, &cfg->peer);
+			}
+
+			clear_ccc_cfg(cfg);
+		}
+	}
+}
+
+static int gatt_unregister(struct bt_gatt_service *svc)
+{
+	if (!sys_slist_find_and_remove(&db, &svc->node)) {
+		return -ENOENT;
+	}
+
+	for (uint16_t i = 0; i < svc->attr_count; i++) {
+		struct bt_gatt_attr *attr = &svc->attrs[i];
+
+		if (attr->write == bt_gatt_attr_write_ccc) {
+			gatt_unregister_ccc(attr->user_data);
+		}
+	}
+
+	return 0;
+}
+
 int bt_gatt_service_register(struct bt_gatt_service *svc)
 {
 	int err;
@@ -1125,10 +1196,13 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 
 int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 {
+	int err;
+
 	__ASSERT(svc, "invalid parameters\n");
 
-	if (!sys_slist_find_and_remove(&db, &svc->node)) {
-		return -ENOENT;
+	err = gatt_unregister(svc);
+	if (err) {
+		return err;
 	}
 
 	sc_indicate(svc->attrs[0].handle,
@@ -1442,13 +1516,6 @@ struct bt_gatt_attr *bt_gatt_attr_next(const struct bt_gatt_attr *attr)
 	return next;
 }
 
-static void clear_ccc_cfg(struct bt_gatt_ccc_cfg *cfg)
-{
-	bt_addr_le_copy(&cfg->peer, BT_ADDR_LE_ANY);
-	cfg->id = 0U;
-	cfg->value = 0U;
-}
-
 static struct bt_gatt_ccc_cfg *find_ccc_cfg(const struct bt_conn *conn,
 					    struct _bt_gatt_ccc *ccc)
 {
@@ -1575,16 +1642,7 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 		gatt_ccc_changed(attr, ccc);
 
 #if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
-		if ((!gatt_ccc_conn_is_queued(conn)) &&
-		    bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
-			/* Store the connection with the same index it has in
-			 * the conns array
-			 */
-			gatt_ccc_store.conn_list[bt_conn_index(conn)] =
-				bt_conn_ref(conn);
-			k_delayed_work_submit(&gatt_ccc_store.work,
-					      CCC_STORE_DELAY);
-		}
+		gatt_ccc_conn_enqueue(conn);
 #endif
 	}
 
@@ -2138,6 +2196,10 @@ uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr
 	if ((mask & BT_GATT_PERM_WRITE) &&
 	    (!(attr->perm & BT_GATT_PERM_WRITE_MASK) || !attr->write)) {
 		return BT_ATT_ERR_WRITE_NOT_PERMITTED;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CONN_DISABLE_SECURITY)) {
+		return 0;
 	}
 
 	mask &= attr->perm;
@@ -3893,6 +3955,62 @@ static int gatt_write_ccc(struct bt_conn *conn, uint16_t handle, uint16_t value,
 	return gatt_send(conn, buf, func, params, NULL);
 }
 
+#if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
+static uint8_t gatt_ccc_discover_cb(struct bt_conn *conn,
+				    const struct bt_gatt_attr *attr,
+				    struct bt_gatt_discover_params *params)
+{
+	struct bt_gatt_subscribe_params *sub_params = params->sub_params;
+
+	if (!attr) {
+		memset(params, 0, sizeof(*params));
+		sub_params->notify(conn, sub_params, NULL, 0);
+		return BT_GATT_ITER_STOP;
+	}
+
+	if (params->type == BT_GATT_DISCOVER_DESCRIPTOR) {
+		memset(params, 0, sizeof(*params));
+		sub_params->ccc_handle = attr->handle;
+
+		if (bt_gatt_subscribe(conn, sub_params)) {
+			sub_params->notify(conn, sub_params, NULL, 0);
+		}
+		/* else if no error occurred, then `bt_gatt_subscribe` will
+		 * call the notify function once subscribed.
+		 */
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static int gatt_ccc_discover(struct bt_conn *conn,
+			     struct bt_gatt_subscribe_params *params)
+{
+	int err;
+	static struct bt_uuid_16 ccc_uuid = BT_UUID_INIT_16(0);
+
+	memcpy(&ccc_uuid, BT_UUID_GATT_CCC, sizeof(ccc_uuid));
+	memset(params->disc_params, 0, sizeof(*params->disc_params));
+
+	params->disc_params->sub_params = params;
+	params->disc_params->uuid = &ccc_uuid.uuid;
+	params->disc_params->type = BT_GATT_DISCOVER_DESCRIPTOR;
+	params->disc_params->start_handle = params->value_handle;
+	params->disc_params->end_handle = params->end_handle;
+	params->disc_params->func = gatt_ccc_discover_cb;
+
+	err = bt_gatt_discover(conn, params->disc_params);
+	if (err) {
+		BT_DBG("CCC Discovery failed (err %d)", err);
+		return err;
+	}
+	return 0;
+
+}
+#endif /* CONFIG_BT_GATT_AUTO_DISCOVER_CCC */
+
 int bt_gatt_subscribe(struct bt_conn *conn,
 		      struct bt_gatt_subscribe_params *params)
 {
@@ -3903,7 +4021,13 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 	__ASSERT(conn, "invalid parameters\n");
 	__ASSERT(params && params->notify,  "invalid parameters\n");
 	__ASSERT(params->value, "invalid parameters\n");
+#if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
+	__ASSERT(params->ccc_handle ||
+		 (params->end_handle && params->disc_params),
+		 "invalid parameters\n");
+#else
 	__ASSERT(params->ccc_handle, "invalid parameters\n");
+#endif
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
@@ -3933,6 +4057,14 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 	if (!has_subscription) {
 		int err;
 
+#if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
+		if (!params->ccc_handle) {
+			err = gatt_ccc_discover(conn, params);
+			if (err) {
+				return err;
+			}
+		}
+#endif
 		err = gatt_write_ccc(conn, params->ccc_handle, params->value,
 				     gatt_write_ccc_rsp, params);
 		if (err) {

@@ -87,7 +87,7 @@ void main(void)
 
 	struct fs_file_t file;
 
-	rc = fs_open(&file, fname);
+	rc = fs_open(&file, fname, FS_O_CREATE | FS_O_RDWR);
 	if (rc < 0) {
 		printk("FAIL: open %s: %d\n", fname, rc);
 		goto out;

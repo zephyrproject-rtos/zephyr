@@ -4,6 +4,8 @@ common:
   extra_args: DEBUG_PRINTF=1
   tags: introduction
   harness: console
+  integration_platforms:
+    - native_posix
   harness_config:
     type: multi_line
     ordered: false

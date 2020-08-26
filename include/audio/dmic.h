@@ -17,10 +17,18 @@
 #ifndef ZEPHYR_INCLUDE_AUDIO_DMIC_H_
 #define ZEPHYR_INCLUDE_AUDIO_DMIC_H_
 
+
+/**
+ * @defgroup audio_interface Audio
+ * @{
+ * @}
+ */
+
 /**
  * @brief Abstraction for digital microphones
  *
  * @defgroup audio_dmic_interface Digital Microphone Interface
+ * @ingroup audio_interface
  * @{
  */
 
@@ -240,7 +248,7 @@ static inline uint32_t dmic_build_clk_skew_map(uint8_t pdm, uint8_t skew)
 static inline int dmic_configure(struct device *dev, struct dmic_cfg *cfg)
 {
 	const struct _dmic_ops *api =
-		(const struct _dmic_ops *)dev->driver_api;
+		(const struct _dmic_ops *)dev->api;
 
 	return api->configure(dev, cfg);
 }
@@ -258,7 +266,7 @@ static inline int dmic_configure(struct device *dev, struct dmic_cfg *cfg)
 static inline int dmic_trigger(struct device *dev, enum dmic_trigger cmd)
 {
 	const struct _dmic_ops *api =
-		(const struct _dmic_ops *)dev->driver_api;
+		(const struct _dmic_ops *)dev->api;
 
 	return api->trigger(dev, cmd);
 }
@@ -282,7 +290,7 @@ static inline int dmic_read(struct device *dev, uint8_t stream, void **buffer,
 		size_t *size, int32_t timeout)
 {
 	const struct _dmic_ops *api =
-		(const struct _dmic_ops *)dev->driver_api;
+		(const struct _dmic_ops *)dev->api;
 
 	return api->read(dev, stream, buffer, size, timeout);
 }

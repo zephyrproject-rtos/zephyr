@@ -31,11 +31,11 @@ struct gpio_stellaris_runtime {
 
 #define DEV_CFG(dev)                                     \
 	((const struct gpio_stellaris_config *const)     \
-	(dev)->config_info)
+	(dev)->config)
 
 #define DEV_DATA(dev)					 \
 	((struct gpio_stellaris_runtime *const)          \
-	(dev)->driver_data)
+	(dev)->data)
 
 #define GPIO_REG_ADDR(base, offset) (base + offset)
 

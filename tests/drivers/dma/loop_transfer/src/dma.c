@@ -26,8 +26,8 @@ static __aligned(16) char tx_data[64] __used
 static __aligned(16) char rx_data[TRANSFER_LOOPS][RX_BUFF_SIZE] __used
 	__attribute__((__section__(".nocache.dma")));
 #else
-/* pad to times of 8*/
-static const char tx_data[] =
+/* this src memory shall be in RAM to support usingas a DMA source pointer.*/
+static char tx_data[] =
 	"The quick brown fox jumps over the lazy dog ....";
 static __aligned(16) char rx_data[TRANSFER_LOOPS][RX_BUFF_SIZE] = { { 0 } };
 #endif
@@ -59,12 +59,11 @@ static void test_error(void)
 	printk("DMA could not proceed, an error occurred\n");
 }
 
-static void dma_user_callback(void *arg, uint32_t id, int error_code)
+static void dma_user_callback(struct device *dma_dev, void *arg,
+			      uint32_t id, int error_code)
 {
-	struct device *dev = (struct device *)arg;
-
 	if (error_code == 0) {
-		test_transfer(dev, id);
+		test_transfer(dma_dev, id);
 	} else {
 		test_error();
 	}
@@ -97,7 +96,7 @@ void main(void)
 	dma_cfg.dest_data_size = 1U;
 	dma_cfg.source_burst_length = 1U;
 	dma_cfg.dest_burst_length = 1U;
-	dma_cfg.callback_arg = dma;
+	dma_cfg.user_data = NULL;
 	dma_cfg.dma_callback = dma_user_callback;
 	dma_cfg.block_count = 1U;
 	dma_cfg.head_block = &dma_block_cfg;

@@ -55,14 +55,31 @@ static struct nrf5_802154_data nrf5_data;
 
 /* Convenience defines for RADIO */
 #define NRF5_802154_DATA(dev) \
-	((struct nrf5_802154_data * const)(dev)->driver_data)
+	((struct nrf5_802154_data * const)(dev)->data)
 
 #define NRF5_802154_CFG(dev) \
-	((const struct nrf5_802154_config * const)(dev)->config_info)
+	((const struct nrf5_802154_config * const)(dev)->config)
+
+#if CONFIG_IEEE802154_VENDOR_OUI_ENABLE
+#define IEEE802154_NRF5_VENDOR_OUI CONFIG_IEEE802154_VENDOR_OUI
+#else
+#define IEEE802154_NRF5_VENDOR_OUI (uint32_t)0xF4CE36
+#endif
 
 static void nrf5_get_eui64(uint8_t *mac)
 {
-	memcpy(mac, (const uint32_t *)&NRF_FICR->DEVICEID, 8);
+	uint64_t factoryAddress;
+	uint32_t index = 0;
+
+	/* Set the MAC Address Block Larger (MA-L) formerly called OUI. */
+	mac[index++] = (IEEE802154_NRF5_VENDOR_OUI >> 16) & 0xff;
+	mac[index++] = (IEEE802154_NRF5_VENDOR_OUI >> 8) & 0xff;
+	mac[index++] = IEEE802154_NRF5_VENDOR_OUI & 0xff;
+
+	/* Use device identifier assigned during the production. */
+	factoryAddress = (uint64_t)NRF_FICR->DEVICEID[0] << 32;
+	factoryAddress |= NRF_FICR->DEVICEID[1];
+	memcpy(mac + index, &factoryAddress, sizeof(factoryAddress) - index);
 }
 
 static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
@@ -159,7 +176,8 @@ static enum ieee802154_hw_caps nrf5_get_capabilities(struct device *dev)
 {
 	return IEEE802154_HW_FCS | IEEE802154_HW_FILTER |
 	       IEEE802154_HW_CSMA | IEEE802154_HW_2_4_GHZ |
-	       IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_ENERGY_SCAN;
+	       IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_ENERGY_SCAN |
+	       IEEE802154_HW_SLEEP_TO_TX;
 }
 
 static int nrf5_cca(struct device *dev)

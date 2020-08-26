@@ -21,8 +21,6 @@ LOG_MODULE_REGISTER(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 #include "ppp_stats.h"
 #include "ppp_internal.h"
 
-#define BUF_ALLOC_TIMEOUT K_MSEC(100)
-
 static const struct ppp_protocol_handler *ppp_lcp;
 
 static void ppp_update_rx_stats(struct net_if *iface,
@@ -60,11 +58,10 @@ static enum net_verdict process_ppp_msg(struct net_if *iface,
 {
 	struct ppp_context *ctx = net_if_l2_data(iface);
 	enum net_verdict verdict = NET_DROP;
-	struct ppp_protocol_handler *proto;
 	uint16_t protocol;
 	int ret;
 
-	if (!ctx->is_init || !ctx->is_ready_to_serve) {
+	if (!ctx->is_ready_to_serve) {
 		goto quit;
 	}
 
@@ -83,9 +80,7 @@ static enum net_verdict process_ppp_msg(struct net_if *iface,
 		return NET_CONTINUE;
 	}
 
-	for (proto = __net_ppp_proto_start;
-	     proto != __net_ppp_proto_end;
-	     proto++) {
+	Z_STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
 		if (proto->protocol != protocol) {
 			continue;
 		}
@@ -155,16 +150,12 @@ static enum net_verdict ppp_recv(struct net_if *iface,
 
 static int ppp_send(struct net_if *iface, struct net_pkt *pkt)
 {
-	const struct ppp_api *api = net_if_get_device(iface)->driver_api;
+	const struct ppp_api *api = net_if_get_device(iface)->api;
 	struct ppp_context *ctx = net_if_l2_data(iface);
 	int ret;
 
 	if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
 		net_pkt_hexdump(pkt, "send L2");
-	}
-
-	if (!ctx->is_init) {
-		return -EIO;
 	}
 
 	/* If PPP is not yet ready, then just give error to caller as there
@@ -213,12 +204,9 @@ static void start_ppp(struct ppp_context *ctx)
 static int ppp_enable(struct net_if *iface, bool state)
 {
 	const struct ppp_api *ppp =
-		net_if_get_device(iface)->driver_api;
+		net_if_get_device(iface)->api;
 	struct ppp_context *ctx = net_if_l2_data(iface);
 
-	if (!ctx->is_init) {
-		return -EIO;
-	}
 
 	if (ctx->is_enabled == state) {
 		return 0;
@@ -418,23 +406,17 @@ static void ppp_startup(struct k_work *work)
 {
 	struct ppp_context *ctx = CONTAINER_OF(work, struct ppp_context,
 					       startup);
-	const struct ppp_protocol_handler *proto;
-	int count;
-
-	if (!ctx->is_init) {
-		return;
-	}
+	int count = 0;
 
 	NET_DBG("PPP %p startup for interface %p", ctx, ctx->iface);
 
-	for (proto = __net_ppp_proto_start, count = 0;
-	     proto != __net_ppp_proto_end;
-	     proto++, count++) {
+	Z_STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
 		if (proto->protocol == PPP_LCP) {
 			ppp_lcp = proto;
 		}
 
 		proto->init(ctx);
+		count++;
 	}
 
 	if (count == 0) {
@@ -464,30 +446,24 @@ void net_ppp_init(struct net_if *iface)
 
 	NET_DBG("Initializing PPP L2 %p for iface %p", ctx, iface);
 
-	if (!ctx->is_init) {
-		memset(ctx, 0, sizeof(*ctx));
-	}
+	memset(ctx, 0, sizeof(*ctx));
 
 	ctx->ppp_l2_flags = NET_L2_MULTICAST | NET_L2_POINT_TO_POINT;
 	ctx->iface = iface;
 
-	if (!ctx->is_init) {
-		ctx->is_init = true;
-
 #if defined(CONFIG_NET_SHELL)
-		k_sem_init(&ctx->shell.wait_echo_reply, 0, UINT_MAX);
+	k_sem_init(&ctx->shell.wait_echo_reply, 0, UINT_MAX);
 #endif
 
-		/* TODO: Unify the startup worker code so that we can save
-		 * some memory if there are more than one PPP context in the
-		 * system. The issue is not very likely as typically there
-		 * would be only one PPP network interface in the system.
-		 */
-		k_delayed_work_init(&ctx->startup, ppp_startup);
+	/* TODO: Unify the startup worker code so that we can save
+	 * some memory if there are more than one PPP context in the
+	 * system. The issue is not very likely as typically there
+	 * would be only one PPP network interface in the system.
+	 */
+	k_delayed_work_init(&ctx->startup, ppp_startup);
 
-		ctx->is_startup_pending = true;
+	ctx->is_startup_pending = true;
 
-		k_delayed_work_submit(&ctx->startup,
-				K_MSEC(CONFIG_NET_L2_PPP_DELAY_STARTUP_MS));
-	}
+	k_delayed_work_submit(&ctx->startup,
+			      K_MSEC(CONFIG_NET_L2_PPP_DELAY_STARTUP_MS));
 }

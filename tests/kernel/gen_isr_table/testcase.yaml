@@ -1,13 +1,18 @@
 tests:
-  arch.interrupt.gen_isr_table:
+  arch.interrupt.gen_isr_table.arm_baseline:
+    platform_whitelist: bbc_microbit atsamr21_xpro nrf51dk_nrf51422 nucleo_g071rb qemu_cortex_m0
+    filter: CONFIG_GEN_ISR_TABLES and CONFIG_ARMV6_M_ARMV8_M_BASELINE
+    tags: interrupt isr_table
+  arch.interrupt.gen_isr_table.arm_mainline:
     platform_exclude: nucleo_f103rb olimexino_stm32 stm32_min_dev_black
         stm32_min_dev_blue usb_kw24d512 v2m_beetle cc1352r1_launchxl
-        cc26x2r1_launchxl
+        cc26x2r1_launchxl olimex_stm32_h103
     filter: CONFIG_GEN_ISR_TABLES and CONFIG_ARMV7_M_ARMV8_M_MAINLINE
     tags: interrupt isr_table
-  arch.interrupt.arc:
+  arch.interrupt.gen_isr_table.arc:
     arch_whitelist: arc
     filter: CONFIG_RGF_NUM_BANKS > 1
     extra_configs:
       - CONFIG_ARC_FIRQ_STACK=y
       - CONFIG_TEST_HW_STACK_PROTECTION=n
+    tags: interrupt isr_table

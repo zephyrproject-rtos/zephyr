@@ -74,7 +74,7 @@ static int iis2dh_set_fs_raw(struct iis2dh_data *iis2dh, uint8_t fs)
 static int iis2dh_set_range(struct device *dev, uint16_t range)
 {
 	int err;
-	struct iis2dh_data *iis2dh = dev->driver_data;
+	struct iis2dh_data *iis2dh = dev->data;
 	uint8_t fs = IIS2DH_FS_TO_REG(range);
 
 	err = iis2dh_set_fs_raw(iis2dh, fs);
@@ -91,8 +91,8 @@ static int iis2dh_set_range(struct device *dev, uint16_t range)
  */
 static int iis2dh_set_odr(struct device *dev, uint16_t odr)
 {
-	struct iis2dh_data *iis2dh = dev->driver_data;
-	const struct iis2dh_device_config *cfg = dev->config_info;
+	struct iis2dh_data *iis2dh = dev->data;
+	const struct iis2dh_device_config *cfg = dev->config;
 	iis2dh_odr_t val;
 
 	val = IIS2DH_ODR_TO_REG_HR(cfg->pm, odr);
@@ -119,7 +119,7 @@ static inline void iis2dh_channel_get_acc(struct device *dev,
 {
 	int i;
 	uint8_t ofs_start, ofs_stop;
-	struct iis2dh_data *iis2dh = dev->driver_data;
+	struct iis2dh_data *iis2dh = dev->data;
 	struct sensor_value *pval = val;
 
 	switch (chan) {
@@ -202,7 +202,7 @@ static int iis2dh_attr_set(struct device *dev, enum sensor_channel chan,
 
 static int iis2dh_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct iis2dh_data *iis2dh = dev->driver_data;
+	struct iis2dh_data *iis2dh = dev->data;
 	union axis3bit16_t buf;
 
 	/* fetch raw data sample */
@@ -229,8 +229,8 @@ static const struct sensor_driver_api iis2dh_driver_api = {
 
 static int iis2dh_init_interface(struct device *dev)
 {
-	struct iis2dh_data *iis2dh = dev->driver_data;
-	const struct iis2dh_device_config *cfg = dev->config_info;
+	struct iis2dh_data *iis2dh = dev->data;
+	const struct iis2dh_device_config *cfg = dev->config;
 
 	iis2dh->bus = device_get_binding(cfg->bus_name);
 	if (!iis2dh->bus) {
@@ -251,8 +251,8 @@ static int iis2dh_init_interface(struct device *dev)
 
 static int iis2dh_init(struct device *dev)
 {
-	struct iis2dh_data *iis2dh = dev->driver_data;
-	const struct iis2dh_device_config *cfg = dev->config_info;
+	struct iis2dh_data *iis2dh = dev->data;
+	const struct iis2dh_device_config *cfg = dev->config;
 	uint8_t wai;
 
 	if (iis2dh_init_interface(dev)) {

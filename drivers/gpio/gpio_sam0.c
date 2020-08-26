@@ -38,9 +38,9 @@ struct gpio_sam0_data {
 };
 
 #define DEV_CFG(dev) \
-	((const struct gpio_sam0_config *const)(dev)->config_info)
+	((const struct gpio_sam0_config *const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct gpio_sam0_data *const)(dev)->driver_data)
+	((struct gpio_sam0_data *const)(dev)->data)
 
 #ifdef CONFIG_SAM0_EIC
 static void gpio_sam0_isr(uint32_t pins, void *arg)

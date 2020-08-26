@@ -44,7 +44,7 @@ static const struct flash_parameters flash_mcux_parameters = {
 
 static int flash_mcux_erase(struct device *dev, off_t offset, size_t len)
 {
-	struct flash_priv *priv = dev->driver_data;
+	struct flash_priv *priv = dev->data;
 	uint32_t addr;
 	status_t rc;
 	unsigned int key;
@@ -67,7 +67,7 @@ static int flash_mcux_erase(struct device *dev, off_t offset, size_t len)
 static int flash_mcux_read(struct device *dev, off_t offset,
 				void *data, size_t len)
 {
-	struct flash_priv *priv = dev->driver_data;
+	struct flash_priv *priv = dev->data;
 	uint32_t addr;
 
 	/*
@@ -85,7 +85,7 @@ static int flash_mcux_read(struct device *dev, off_t offset,
 static int flash_mcux_write(struct device *dev, off_t offset,
 				const void *data, size_t len)
 {
-	struct flash_priv *priv = dev->driver_data;
+	struct flash_priv *priv = dev->data;
 	uint32_t addr;
 	status_t rc;
 	unsigned int key;
@@ -107,7 +107,7 @@ static int flash_mcux_write(struct device *dev, off_t offset,
 
 static int flash_mcux_write_protection(struct device *dev, bool enable)
 {
-	struct flash_priv *priv = dev->driver_data;
+	struct flash_priv *priv = dev->data;
 	int rc = 0;
 
 	if (enable) {
@@ -159,7 +159,7 @@ static const struct flash_driver_api flash_mcux_api = {
 
 static int flash_mcux_init(struct device *dev)
 {
-	struct flash_priv *priv = dev->driver_data;
+	struct flash_priv *priv = dev->data;
 	uint32_t pflash_block_base;
 	status_t rc;
 

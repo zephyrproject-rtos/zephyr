@@ -68,9 +68,9 @@ struct i2c_sam_twi_dev_data {
 
 #define DEV_NAME(dev) ((dev)->name)
 #define DEV_CFG(dev) \
-	((const struct i2c_sam_twi_dev_cfg *const)(dev)->config_info)
+	((const struct i2c_sam_twi_dev_cfg *const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct i2c_sam_twi_dev_data *const)(dev)->driver_data)
+	((struct i2c_sam_twi_dev_data *const)(dev)->data)
 
 static int i2c_clk_set(Twi *const twi, uint32_t speed)
 {

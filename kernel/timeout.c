@@ -109,8 +109,6 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 
 		to->dticks = ticks + elapsed();
 		for (t = first(); t != NULL; t = next(t)) {
-			__ASSERT(t->dticks >= 0, "");
-
 			if (t->dticks > to->dticks) {
 				t->dticks -= to->dticks;
 				sys_dlist_insert(&t->node, &to->node);
@@ -194,12 +192,13 @@ int32_t z_get_next_timeout_expiry(void)
 	return ret;
 }
 
-void z_set_timeout_expiry(int32_t ticks, bool idle)
+void z_set_timeout_expiry(int32_t ticks, bool is_idle)
 {
 	LOCKED(&timeout_lock) {
-		int next = next_timeout();
-		bool sooner = (next == K_TICKS_FOREVER) || (ticks < next);
-		bool imminent = next <= 1;
+		int next_to = next_timeout();
+		bool sooner = (next_to == K_TICKS_FOREVER)
+			      || (ticks < next_to);
+		bool imminent = next_to <= 1;
 
 		/* Only set new timeouts when they are sooner than
 		 * what we have.  Also don't try to set a timeout when
@@ -212,7 +211,7 @@ void z_set_timeout_expiry(int32_t ticks, bool idle)
 		 * in.
 		 */
 		if (!imminent && (sooner || IS_ENABLED(CONFIG_SMP))) {
-			z_clock_set_timeout(ticks, idle);
+			z_clock_set_timeout(ticks, is_idle);
 		}
 	}
 }

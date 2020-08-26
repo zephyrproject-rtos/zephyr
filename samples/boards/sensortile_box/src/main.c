@@ -12,6 +12,8 @@
 #include <drivers/i2c.h>
 #include <drivers/spi.h>
 #include <drivers/sensor.h>
+#include <usb/usb_device.h>
+#include <drivers/uart.h>
 
 #include <stdio.h>
 
@@ -248,8 +250,21 @@ static void iis3dhhc_config(struct device *iis3dhhc)
 void main(void)
 {
 	static struct device *led0, *led1;
+	struct device *dev = device_get_binding(
+			CONFIG_UART_CONSOLE_ON_DEV_NAME);
 	int i, on = 1;
 	int cnt = 1;
+	uint32_t dtr = 0;
+
+	/* Application must enable USB by itself */
+	if (usb_enable(NULL)) {
+		return;
+	}
+
+	/* Poll if the DTR flag was set, optional */
+	while (!dtr) {
+		uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
+	}
 
 	led0 = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led0), gpios));
 	gpio_pin_configure(led0, DT_GPIO_PIN(DT_ALIAS(led0), gpios),

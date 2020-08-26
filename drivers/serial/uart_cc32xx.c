@@ -25,9 +25,9 @@ struct uart_cc32xx_dev_data_t {
 };
 
 #define DEV_CFG(dev) \
-	((const struct uart_device_config * const)(dev)->config_info)
+	((const struct uart_device_config * const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct uart_cc32xx_dev_data_t * const)(dev)->driver_data)
+	((struct uart_cc32xx_dev_data_t * const)(dev)->data)
 
 #define PRIME_CHAR '\r'
 
@@ -282,7 +282,7 @@ static void uart_cc32xx_isr(void *arg)
 						    1);
 
 	if (dev_data->cb) {
-		dev_data->cb(dev_data->cb_data);
+		dev_data->cb(dev, dev_data->cb_data);
 	}
 	/*
 	 * RX/TX interrupt should have been implicitly cleared by Zephyr UART

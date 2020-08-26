@@ -34,6 +34,12 @@ config DMA_2_NAME
 	help
 	  Device name for DMA Controller 2.
 
+config DMA_64BIT
+	bool "DMA 64 bit address support"
+	help
+	  When this option is true, 64 bit source and dest
+	  DMA addresses are supported.
+
 module = DMA
 module-str = dma
 source "subsys/logging/Kconfig.template.log_config"
@@ -49,5 +55,7 @@ source "drivers/dma/Kconfig.nios2_msgdma"
 source "drivers/dma/Kconfig.sam0"
 
 source "drivers/dma/Kconfig.mcux_edma"
+
+source "drivers/dma/Kconfig.dma_pl330"
 
 endif # DMA

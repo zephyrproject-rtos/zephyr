@@ -13,8 +13,8 @@ Creating a Heap
 ===============
 
 The simplest way to define a heap is statically, with the
-:c:macro:`K_HEAP_DEFINE` macro.  This creates a static :c:type:`struct
-k_heap` variable with a given name that manages a memory region of the
+:c:macro:`K_HEAP_DEFINE` macro.  This creates a static :c:type:`k_heap` variable
+with a given name that manages a memory region of the
 specified size.
 
 Heaps can also be created to manage arbitrary regions of
@@ -46,9 +46,9 @@ returned by :cpp:func:`k_heap_alloc()` for the same heap.  Freeing a
 Low Level Heap Allocator
 ************************
 
-The underlying implementation of the :c:type:`struct k_heap`
-abstraction is provided a data structure named :c:type:`struct
-sys_heap`.  This implements exactly the same allocation semantics, but
+The underlying implementation of the :c:type:`k_heap`
+abstraction is provided a data structure named :c:type:`sys_heap`.  This
+implements exactly the same allocation semantics, but
 provides no kernel synchronization tools.  It is available for
 applications that want to manage their own blocks of memory in
 contexts (for example, userspace) where synchronization is unavailable
@@ -79,7 +79,7 @@ combined with adjacent free blocks to prevent fragmentation.
 All metadata is stored at the beginning of the contiguous block of
 heap memory, including the variable-length list of bucket list heads
 (which depend on heap size).  The only external memory required is the
-:c:type:`struct sys_heap` structure itself.
+:c:type:`sys_heap` structure itself.
 
 The ``sys_heap`` functions are unsynchronized.  Care must be taken by
 any users to prevent concurrent access.  Only one context may be
@@ -124,7 +124,9 @@ The size of the heap memory pool is specified using the
 :option:`CONFIG_HEAP_MEM_POOL_SIZE` configuration option.
 
 By default, the heap memory pool size is zero bytes. This value instructs
-the kernel not to define the heap memory pool object.
+the kernel not to define the heap memory pool object. The maximum size is limited
+by the amount of available memory in the system. The project build will fail in
+the link stage if the size specified can not be supported.
 
 Allocating Memory
 =================

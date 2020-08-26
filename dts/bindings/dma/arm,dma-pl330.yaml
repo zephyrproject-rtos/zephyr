@@ -1,0 +1,18 @@
+# Copyright 2020 Broadcom
+# SPDX-License-Identifier: Apache-2.0
+
+description: PL330 DMA Controller
+
+compatible: "arm,dma-pl330"
+
+include: dma-controller.yaml
+
+properties:
+    reg:
+      required: true
+    microcode:
+      type: array
+      required: true
+      description: microcode's physical memory address
+    label:
+      required: true

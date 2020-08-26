@@ -76,7 +76,7 @@ struct sht3xd_data {
 	struct sensor_trigger trigger;
 
 #if defined(CONFIG_SHT3XD_TRIGGER_OWN_THREAD)
-	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_SHT3XD_THREAD_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_SHT3XD_THREAD_STACK_SIZE);
 	struct k_sem gpio_sem;
 	struct k_thread thread;
 #elif defined(CONFIG_SHT3XD_TRIGGER_GLOBAL_THREAD)
@@ -88,14 +88,14 @@ struct sht3xd_data {
 
 static inline uint8_t sht3xd_i2c_address(struct device *dev)
 {
-	const struct sht3xd_config *dcp = dev->config_info;
+	const struct sht3xd_config *dcp = dev->config;
 
 	return dcp->base_address;
 }
 
 static inline struct device *sht3xd_i2c_device(struct device *dev)
 {
-	const struct sht3xd_data *ddp = dev->driver_data;
+	const struct sht3xd_data *ddp = dev->data;
 
 	return ddp->bus;
 }

@@ -104,7 +104,7 @@ static int uart_read_bytes(struct device *dev, uint8_t *data, int len, int timeo
 
 static int pms7003_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct pms7003_data *drv_data = dev->driver_data;
+	struct pms7003_data *drv_data = dev->data;
 
 	/* sample output */
 	/* 42 4D 00 1C 00 01 00 01 00 01 00 01 00 01 00 01 01 92
@@ -142,7 +142,7 @@ static int pms7003_sample_fetch(struct device *dev, enum sensor_channel chan)
 static int pms7003_channel_get(struct device *dev, enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	struct pms7003_data *drv_data = dev->driver_data;
+	struct pms7003_data *drv_data = dev->data;
 
 	if (chan == SENSOR_CHAN_PM_1_0) {
 		val->val1 = drv_data->pm_1_0;
@@ -166,7 +166,7 @@ static const struct sensor_driver_api pms7003_api = {
 
 static int pms7003_init(struct device *dev)
 {
-	struct pms7003_data *drv_data = dev->driver_data;
+	struct pms7003_data *drv_data = dev->data;
 
 	drv_data->uart_dev = device_get_binding(DT_INST_BUS_LABEL(0));
 

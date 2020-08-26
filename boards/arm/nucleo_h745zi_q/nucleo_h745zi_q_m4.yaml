@@ -6,13 +6,13 @@ toolchain:
   - zephyr
   - gnuarmemb
   - xtools
-ram: 128
+ram: 288
 flash: 1024
 supported:
   - arduino_gpio
   - gpio
+  - netif:eth
 testing:
   ignore_tags:
     - mpu
     - nfc
-    - net

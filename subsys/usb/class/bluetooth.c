@@ -38,9 +38,9 @@ static K_FIFO_DEFINE(tx_queue);
 #define BLUETOOTH_INT_EP_MPS            MIN(BT_BUF_RX_SIZE, USB_MAX_FS_INT_MPS)
 
 /* HCI RX/TX threads */
-static K_THREAD_STACK_DEFINE(rx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 static struct k_thread rx_thread_data;
-static K_THREAD_STACK_DEFINE(tx_thread_stack, 512);
+static K_KERNEL_STACK_DEFINE(tx_thread_stack, 512);
 static struct k_thread tx_thread_data;
 
 struct usb_bluetooth_config {
@@ -350,14 +350,14 @@ static int bluetooth_init(struct device *dev)
 	}
 
 	k_thread_create(&rx_thread_data, rx_thread_stack,
-			K_THREAD_STACK_SIZEOF(rx_thread_stack),
+			K_KERNEL_STACK_SIZEOF(rx_thread_stack),
 			(k_thread_entry_t)hci_rx_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(8), 0, K_NO_WAIT);
 
 	k_thread_name_set(&rx_thread_data, "usb_bt_rx");
 
 	k_thread_create(&tx_thread_data, tx_thread_stack,
-			K_THREAD_STACK_SIZEOF(tx_thread_stack),
+			K_KERNEL_STACK_SIZEOF(tx_thread_stack),
 			(k_thread_entry_t)hci_tx_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(8), 0, K_NO_WAIT);
 

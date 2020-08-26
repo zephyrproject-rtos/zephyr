@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(log_backend_net, CONFIG_LOG_DEFAULT_LEVEL);
 #define MAX_HOSTNAME_LEN NET_IPV4_ADDR_LEN
 #endif
 
-static char hostname[MAX_HOSTNAME_LEN + 1];
+static char dev_hostname[MAX_HOSTNAME_LEN + 1];
 
 static uint8_t output_buf[CONFIG_LOG_BACKEND_NET_MAX_BUF_SIZE];
 static bool net_init_done;
@@ -73,7 +73,7 @@ fail:
 	return length;
 }
 
-LOG_OUTPUT_DEFINE(log_output, line_out, output_buf, sizeof(output_buf));
+LOG_OUTPUT_DEFINE(log_output_net, line_out, output_buf, sizeof(output_buf));
 
 static int do_net_init(void)
 {
@@ -111,7 +111,7 @@ static int do_net_init(void)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_HOSTNAME_ENABLE)) {
-		(void)strncpy(hostname, net_hostname_get(), MAX_HOSTNAME_LEN);
+		(void)strncpy(dev_hostname, net_hostname_get(), MAX_HOSTNAME_LEN);
 
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		   server_addr.sa_family == AF_INET6) {
@@ -120,7 +120,7 @@ static int do_net_init(void)
 		src = net_if_ipv6_select_src_addr(
 			NULL, &net_sin6(&server_addr)->sin6_addr);
 		if (src) {
-			net_addr_ntop(AF_INET6, src, hostname,
+			net_addr_ntop(AF_INET6, src, dev_hostname,
 				      MAX_HOSTNAME_LEN);
 
 			net_ipaddr_copy(&local_addr6.sin6_addr, src);
@@ -130,18 +130,20 @@ static int do_net_init(void)
 
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		   server_addr.sa_family == AF_INET) {
-		struct net_if_ipv4 *ipv4;
-		struct net_if *iface;
+		const struct in_addr *src;
 
-		iface = net_if_ipv4_select_src_iface(
-					&net_sin(&server_addr)->sin_addr);
-		ipv4 = iface->config.ip.ipv4;
+		src = net_if_ipv4_select_src_addr(
+				  NULL, &net_sin(&server_addr)->sin_addr);
 
-		net_ipaddr_copy(&local_addr4.sin_addr,
-				&ipv4->unicast[0].address.in_addr);
+		if (src) {
+			net_addr_ntop(AF_INET, src, dev_hostname,
+				      MAX_HOSTNAME_LEN);
 
-		net_addr_ntop(AF_INET, &local_addr4.sin_addr, hostname,
-			      MAX_HOSTNAME_LEN);
+			net_ipaddr_copy(&local_addr4.sin_addr, src);
+		} else {
+			goto unknown;
+		}
+
 	} else {
 	unknown:
 		DBG("Cannot setup local context\n");
@@ -164,8 +166,8 @@ static int do_net_init(void)
 
 	net_context_setup_pools(ctx, get_tx_slab, get_data_pool);
 
-	log_output_ctx_set(&log_output, ctx);
-	log_output_hostname_set(&log_output, hostname);
+	log_output_ctx_set(&log_output_net, ctx);
+	log_output_hostname_set(&log_output_net, dev_hostname);
 
 	return 0;
 }
@@ -183,7 +185,7 @@ static void send_output(const struct log_backend *const backend,
 
 	log_msg_get(msg);
 
-	log_output_msg_process(&log_output, msg,
+	log_output_msg_process(&log_output_net, msg,
 			       LOG_OUTPUT_FLAG_FORMAT_SYSLOG |
 			       LOG_OUTPUT_FLAG_TIMESTAMP |
 			(IS_ENABLED(CONFIG_LOG_BACKEND_NET_SYST_ENABLE) ?
@@ -229,7 +231,8 @@ static void sync_string(const struct log_backend *const backend,
 	}
 
 	key = irq_lock();
-	log_output_string(&log_output, src_level, timestamp, fmt, ap, flags);
+	log_output_string(&log_output_net, src_level,
+			  timestamp, fmt, ap, flags);
 	irq_unlock(key);
 }
 

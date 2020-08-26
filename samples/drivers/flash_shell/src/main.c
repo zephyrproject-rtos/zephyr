@@ -49,6 +49,18 @@ LOG_MODULE_REGISTER(app);
 	("<off> <byte1> [... byteN]\n\n" \
 	 "Write given bytes, starting at device offset <off>.\n" \
 	 "Pages must be erased before they can be written.")
+#define WRITE_UNALIGNED_HELP \
+	("<off> <byte1> [... byteN]\n\n" \
+	 "Write given bytes, starting at device offset <off>.\n" \
+	 "Being unaligned, affected memory areas are backed up, erased, protected" \
+	 " and then overwritten.\n" \
+	 "This command is designed to test writing to large flash pages.")
+#define WRITE_PATTERN_HELP \
+	("<off> <len>\n\n" \
+	 "Writes a pattern of (0x00 0x01 .. 0xFF 0x00 ..) of length" \
+	 "<len> at the offset <off>.\n" \
+	 "Unaligned writing is used, i.e. protection and erasing are automated." \
+	 "This command is designed to test writing to large flash pages.")
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 #define PAGE_COUNT_HELP \
 	"\n\nPrint the number of pages on the flash device."
@@ -98,11 +110,20 @@ static void dump_buffer(const struct shell *shell, uint8_t *buf, size_t size)
 	bool newline = false;
 	uint8_t *p = buf;
 
-	while (size >= 8) {
+	while (size >= 16) {
+		PR_SHELL(shell, "%02x %02x %02x %02x | %02x %02x %02x %02x |" \
+		       "%02x %02x %02x %02x | %02x %02x %02x %02x\n",
+		       p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
+			   p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);
+		p += 16;
+		size -= 16;
+	}
+	if (size >= 8) {
 		PR_SHELL(shell, "%02x %02x %02x %02x | %02x %02x %02x %02x\n",
 		       p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
 		p += 8;
 		size -= 8;
+		newline = true;
 	}
 	if (size > 4) {
 		PR_SHELL(shell, "%02x %02x %02x %02x | ",
@@ -227,15 +248,139 @@ static int do_write(const struct shell *shell, off_t offset, uint8_t *buf,
 	return ret;
 }
 
-static int cmd_flash(const struct shell *shell, size_t argc, char **argv)
+static int do_write_unaligned(const struct shell *shell, off_t offset, uint8_t *buf,
+		    size_t len, bool read_back)
 {
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
+	int ret;
+	size_t page_size = flash_get_write_block_size(flash_device);
+	size_t size_before = offset % page_size;
+	size_t size_after = page_size - ((size_before + len) % page_size);
+	size_t aligned_size = size_before + len + size_after;
+	off_t  start_page = offset - size_before;
+	off_t  last_page = start_page + aligned_size - page_size;
+	bool single_page_write = (size_before + len < page_size);
 
-	shell_help(shell);
-	return 0;
+	char *before_data;
+	char *after_data;
+
+	ret = flash_write_protection_set(flash_device, false);
+	if (ret) {
+		PR_ERROR(shell, "Failed to disable flash protection (err: %d)."
+				"\n", ret);
+		return ret;
+	}
+
+	if (0 == size_before && 0 == size_after) {
+		/* Aligned write */
+		flash_erase(flash_device, offset, len);
+		flash_write(flash_device, offset, buf, len);
+		ret = flash_write_protection_set(flash_device, true);
+		if (ret) {
+			PR_ERROR(shell, "Failed to enable flash protection (err: %d)."
+					"\n", ret);
+		}
+		return ret;
+	}
+
+	before_data = k_malloc(page_size);
+	after_data = k_malloc(page_size);
+
+	if (!before_data || !after_data) {
+		PR_ERROR(shell, "No heap memory for flash manipulation\n");
+		ret = -ENOMEM;
+		goto free_buffers;
+	}
+
+	/* Stash useful data from the pages that will be affected. */
+	if (single_page_write) {
+		/* Read old data before new data is written. */
+		if (size_before) {
+			flash_read(flash_device, start_page, before_data, size_before);
+		}
+		/* Fill the with new data. */
+		memcpy(before_data + size_before, buf, len);
+		/* Fill the last part of old data. */
+		if (size_after) {
+			flash_read(flash_device, offset + len,
+					before_data + size_before + len,
+					size_after);
+		}
+	} else {
+		/* Multipage write, different start and end pages. */
+		if (size_before) {
+			flash_read(flash_device, start_page, before_data,
+					size_before);
+			/* Fill the rest with new data. */
+			memcpy(before_data + size_before, buf,
+			       page_size - size_before);
+		}
+		if (size_after) {
+			/* Copy ending part of new data. */
+			memcpy((void *)after_data,
+			       (void *)(buf + len -
+				   ((len + size_before) % page_size)),
+			       page_size - size_after);
+			/* Copy ending part of flash page. */
+			flash_read(flash_device, offset + len,
+					after_data + (page_size - size_after),
+					size_after);
+		}
+	}
+
+	/* Erase all the pages that overlap with new data. */
+	flash_erase(flash_device, start_page, aligned_size);
+
+	/* Write stashed and new data. */
+	if (single_page_write || size_before > 0) {
+		/* Write first page if available. */
+		flash_write(flash_device, start_page, before_data,
+				 page_size);
+	}
+	if (!single_page_write) {
+		size_t middle_data_len = aligned_size;
+		off_t middle_page_start = start_page;
+		off_t data_offset = (off_t)buf;
+
+		/* Write the middle bit if available */
+		if (size_before > 0) {
+			middle_page_start += page_size;
+			middle_data_len -= page_size;
+			data_offset += (page_size - size_before);
+		}
+		if (size_after > 0) {
+			middle_data_len -= page_size;
+		}
+		if (middle_data_len > 0) {
+			flash_write(flash_device, middle_page_start,
+					 (const void *)data_offset,
+					 middle_data_len);
+		}
+
+		/* Write the last page if needed. */
+		if (size_after > 0) {
+			flash_write(flash_device, last_page, after_data,
+					 page_size);
+		}
+	}
+
+	if (read_back) {
+		PR_SHELL(shell, "Reading back written bytes:\n");
+		ret = do_read(shell, offset, len);
+	}
+
+free_buffers:
+	k_free(before_data);
+	k_free(after_data);
+
+	int ret1 = flash_write_protection_set(flash_device, true);
+	if (ret1) {
+		PR_ERROR(shell, "Failed to enable flash protection (err: %d)."
+				"\n", ret1);
+		return ret1;
+	}
+
+	return ret;
 }
-
 
 static int cmd_write_block_size(const struct shell *shell, size_t argc,
 				char **argv)
@@ -295,7 +440,7 @@ exit:
 	return err;
 }
 
-static int cmd_write(const struct shell *shell, size_t argc, char **argv)
+static int cmd_write_template(const struct shell *shell, size_t argc, char **argv, bool unaligned)
 {
 	unsigned long int i, offset;
 	uint8_t buf[ARGC_MAX];
@@ -336,7 +481,57 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 		}
 	}
 
-	err = do_write(shell, offset, buf, i, true);
+	if (!unaligned) {
+		err = do_write(shell, offset, buf, i, true);
+	} else {
+		err = do_write_unaligned(shell, offset, buf, i, true);
+	}
+
+exit:
+	return err;
+}
+
+static int cmd_write(const struct shell *shell, size_t argc, char **argv)
+{
+	return cmd_write_template(shell, argc, argv, false);
+}
+
+static int cmd_write_unaligned(const struct shell *shell, size_t argc, char **argv)
+{
+	return cmd_write_template(shell, argc, argv, true);
+}
+
+static int cmd_write_pattern(const struct shell *shell, size_t argc, char **argv)
+{
+	int err = check_flash_device(shell);
+	unsigned long int offset, len, i;
+	static uint8_t *buf;
+
+	if (err) {
+		goto exit;
+	}
+
+	if (parse_ul(argv[1], &offset) || parse_ul(argv[2], &len)) {
+		PR_ERROR(shell, "Invalid arguments.\n");
+		err = -EINVAL;
+		goto exit;
+	}
+
+	buf = k_malloc(len);
+
+	if (!buf) {
+		PR_ERROR(shell, "No heap memory for data pattern\n");
+		err = -ENOMEM;
+		goto exit;
+	}
+
+	for (i = 0; i < len; i++) {
+		buf[i] = i & 0xFF;
+	}
+
+	err = do_write_unaligned(shell, offset, buf, i, true);
+
+	k_free(buf);
 
 exit:
 	return err;
@@ -610,7 +805,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_flash,
 	SHELL_CMD_ARG(write,	  NULL,	WRITE_HELP,	cmd_write, 3, 255),
 	SHELL_CMD_ARG(write_block_size,	NULL,	WRITE_BLOCK_SIZE_HELP,
 						    cmd_write_block_size, 1, 0),
+	SHELL_CMD_ARG(write_unaligned,  NULL,	WRITE_UNALIGNED_HELP,
+							cmd_write_unaligned, 3, 255),
+	SHELL_CMD_ARG(write_pattern,  	NULL,	WRITE_PATTERN_HELP,
+							cmd_write_pattern, 3, 255),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
-SHELL_CMD_REGISTER(flash, &sub_flash, "Flash realated commands.", cmd_flash);
+SHELL_CMD_REGISTER(flash, &sub_flash, "Flash realated commands.", NULL);

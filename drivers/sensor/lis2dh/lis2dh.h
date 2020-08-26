@@ -246,7 +246,7 @@ struct lis2dh_data {
 	enum sensor_channel chan_drdy;
 
 #if defined(CONFIG_LIS2DH_TRIGGER_OWN_THREAD)
-	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_LIS2DH_THREAD_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_LIS2DH_THREAD_STACK_SIZE);
 	struct k_thread thread;
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_LIS2DH_TRIGGER_GLOBAL_THREAD)

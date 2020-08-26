@@ -840,24 +840,24 @@ struct net_buf_pool {
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
 #define NET_BUF_POOL_INITIALIZER(_pool, _alloc, _bufs, _count, _destroy) \
 	{                                                                    \
-		.alloc = _alloc,                                             \
 		.free = Z_LIFO_INITIALIZER(_pool.free),                     \
-		.__bufs = _bufs,                                             \
 		.buf_count = _count,                                         \
 		.uninit_count = _count,                                      \
 		.avail_count = _count,                                       \
-		.destroy = _destroy,                                         \
 		.name = STRINGIFY(_pool),                                    \
+		.destroy = _destroy,                                         \
+		.alloc = _alloc,                                             \
+		.__bufs = _bufs,                                             \
 	}
 #else
 #define NET_BUF_POOL_INITIALIZER(_pool, _alloc, _bufs, _count, _destroy)     \
 	{                                                                    \
-		.alloc = _alloc,                                             \
 		.free = Z_LIFO_INITIALIZER(_pool.free),                     \
-		.__bufs = _bufs,                                             \
 		.buf_count = _count,                                         \
 		.uninit_count = _count,                                      \
 		.destroy = _destroy,                                         \
+		.alloc = _alloc,                                             \
+		.__bufs = _bufs,                                             \
 	}
 #endif /* CONFIG_NET_BUF_POOL_USAGE */
 

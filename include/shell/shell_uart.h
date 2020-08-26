@@ -10,9 +10,7 @@
 #include <shell/shell.h>
 #include <sys/ring_buffer.h>
 #include <sys/atomic.h>
-#ifdef CONFIG_MCUMGR_SMP_SHELL
-#include "mgmt/smp_shell.h"
-#endif
+#include "mgmt/mcumgr/smp_shell.h"
 
 #ifdef __cplusplus
 extern "C" {

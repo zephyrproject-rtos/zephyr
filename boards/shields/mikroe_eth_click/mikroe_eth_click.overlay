@@ -4,15 +4,14 @@
 
 &mikrobus_spi {
 	status = "okay";
-	cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>; /* CS */
 
-	eth_click@0 {
+	eth_click: eth_click@0 {
 		compatible = "microchip,enc28j60";
+		reg = <0x0>;
 		local-mac-address = [00 00 00 01 02 03];
 		/* Errata B7/1 specifies min 8Mhz, 20MHz max according to RM */
 		spi-max-frequency = <10000000>;
 		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;	/* INT */
-		label = "ETH_0";
-		reg = <0>;
+		label = "ETH_CLICK";
 	};
 };

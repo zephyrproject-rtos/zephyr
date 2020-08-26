@@ -14,16 +14,6 @@
 #include <drivers/pwm.h>
 
 /*
- * Devicetree helper macro which gets the 'flags' cell from a 'pwms'
- * property, or returns 0 if the property has no 'flags' cell.
- */
-
-#define FLAGS_OR_ZERO(node)						\
-	COND_CODE_1(DT_PHA_HAS_CELL(node, pwms, flags),			\
-		    (DT_PWMS_FLAGS(node)),				\
-		    (0))
-
-/*
  * Extract devicetree configuration.
  */
 
@@ -34,7 +24,7 @@
 #if DT_NODE_HAS_STATUS(RED_NODE, okay)
 #define RED_LABEL	DT_PWMS_LABEL(RED_NODE)
 #define RED_CHANNEL	DT_PWMS_CHANNEL(RED_NODE)
-#define RED_FLAGS	FLAGS_OR_ZERO(RED_NODE)
+#define RED_FLAGS	DT_PWMS_FLAGS(RED_NODE)
 #else
 #error "Unsupported board: red-pwm-led devicetree alias is not defined"
 #define RED_LABEL	""
@@ -45,7 +35,7 @@
 #if DT_NODE_HAS_STATUS(GREEN_NODE, okay)
 #define GREEN_LABEL	DT_PWMS_LABEL(GREEN_NODE)
 #define GREEN_CHANNEL	DT_PWMS_CHANNEL(GREEN_NODE)
-#define GREEN_FLAGS	FLAGS_OR_ZERO(GREEN_NODE)
+#define GREEN_FLAGS	DT_PWMS_FLAGS(GREEN_NODE)
 #else
 #error "Unsupported board: green-pwm-led devicetree alias is not defined"
 #define GREEN_LABEL	""
@@ -56,7 +46,7 @@
 #if DT_NODE_HAS_STATUS(BLUE_NODE, okay)
 #define BLUE_LABEL	DT_PWMS_LABEL(BLUE_NODE)
 #define BLUE_CHANNEL	DT_PWMS_CHANNEL(BLUE_NODE)
-#define BLUE_FLAGS	FLAGS_OR_ZERO(BLUE_NODE)
+#define BLUE_FLAGS	DT_PWMS_FLAGS(BLUE_NODE)
 #else
 #error "Unsupported board: blue-pwm-led devicetree alias is not defined"
 #define BLUE_LABEL	""

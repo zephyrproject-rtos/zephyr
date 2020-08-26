@@ -36,7 +36,7 @@
 #endif
 
 static struct k_thread ecc_thread_data;
-static K_THREAD_STACK_DEFINE(ecc_thread_stack, CONFIG_BT_HCI_ECC_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(ecc_thread_stack, CONFIG_BT_HCI_ECC_STACK_SIZE);
 
 /* based on Core Specification 4.2 Vol 3. Part H 2.3.5.6.1 */
 static const uint32_t debug_private_key[8] = {
@@ -194,7 +194,7 @@ static void emulate_le_generate_dhkey(void)
 
 	if (ret == TC_CRYPTO_FAIL) {
 		evt->status = BT_HCI_ERR_UNSPECIFIED;
-		(void)memset(evt->dhkey, 0, sizeof(evt->dhkey));
+		(void)memset(evt->dhkey, 0xff, sizeof(evt->dhkey));
 	} else {
 		evt->status = 0U;
 		/* Convert from big-endian (provided by crypto API) to
@@ -322,7 +322,7 @@ int default_CSPRNG(uint8_t *dst, unsigned int len)
 void bt_hci_ecc_init(void)
 {
 	k_thread_create(&ecc_thread_data, ecc_thread_stack,
-			K_THREAD_STACK_SIZEOF(ecc_thread_stack), ecc_thread,
+			K_KERNEL_STACK_SIZEOF(ecc_thread_stack), ecc_thread,
 			NULL, NULL, NULL, K_PRIO_PREEMPT(10), 0, K_NO_WAIT);
 	k_thread_name_set(&ecc_thread_data, "BT ECC");
 }

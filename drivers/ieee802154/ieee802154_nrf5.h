@@ -31,7 +31,7 @@ struct nrf5_802154_data {
 	uint8_t mac[8];
 
 	/* RX thread stack. */
-	K_THREAD_STACK_MEMBER(rx_stack, CONFIG_IEEE802154_NRF5_RX_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(rx_stack, CONFIG_IEEE802154_NRF5_RX_STACK_SIZE);
 
 	/* RX thread control block. */
 	struct k_thread rx_thread;

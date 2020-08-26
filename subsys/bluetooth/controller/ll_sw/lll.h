@@ -163,53 +163,54 @@ enum node_rx_type {
 	NODE_RX_TYPE_EXT_1M_REPORT = 0x05,
 	NODE_RX_TYPE_EXT_2M_REPORT = 0x06,
 	NODE_RX_TYPE_EXT_CODED_REPORT = 0x07,
+	NODE_RX_TYPE_EXT_ADV_TERMINATE = 0x08,
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
-	NODE_RX_TYPE_SCAN_REQ = 0x08,
+	NODE_RX_TYPE_SCAN_REQ = 0x09,
 #endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
 
 #if defined(CONFIG_BT_CONN)
-	NODE_RX_TYPE_CONNECTION = 0x09,
-	NODE_RX_TYPE_TERMINATE = 0x0a,
-	NODE_RX_TYPE_CONN_UPDATE = 0x0b,
-	NODE_RX_TYPE_ENC_REFRESH = 0x0c,
+	NODE_RX_TYPE_CONNECTION = 0x0a,
+	NODE_RX_TYPE_TERMINATE = 0x0b,
+	NODE_RX_TYPE_CONN_UPDATE = 0x0c,
+	NODE_RX_TYPE_ENC_REFRESH = 0x0d,
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
-	NODE_RX_TYPE_APTO = 0x0d,
+	NODE_RX_TYPE_APTO = 0x0e,
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
-	NODE_RX_TYPE_CHAN_SEL_ALGO = 0x0e,
+	NODE_RX_TYPE_CHAN_SEL_ALGO = 0x0f,
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	NODE_RX_TYPE_PHY_UPDATE = 0x0f,
+	NODE_RX_TYPE_PHY_UPDATE = 0x10,
 #endif /* CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
-	NODE_RX_TYPE_RSSI = 0x10,
+	NODE_RX_TYPE_RSSI = 0x11,
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
-	NODE_RX_TYPE_PROFILE = 0x11,
+	NODE_RX_TYPE_PROFILE = 0x12,
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
 #if defined(CONFIG_BT_CTLR_ADV_INDICATION)
-	NODE_RX_TYPE_ADV_INDICATION = 0x12,
+	NODE_RX_TYPE_ADV_INDICATION = 0x13,
 #endif /* CONFIG_BT_CTLR_ADV_INDICATION */
 
 #if defined(CONFIG_BT_CTLR_SCAN_INDICATION)
-	NODE_RX_TYPE_SCAN_INDICATION = 0x13,
+	NODE_RX_TYPE_SCAN_INDICATION = 0x14,
 #endif /* CONFIG_BT_CTLR_SCAN_INDICATION */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
-	NODE_RX_TYPE_MESH_ADV_CPLT = 0x14,
-	NODE_RX_TYPE_MESH_REPORT = 0x15,
+	NODE_RX_TYPE_MESH_ADV_CPLT = 0x15,
+	NODE_RX_TYPE_MESH_REPORT = 0x16,
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
 /* Following proprietary defines must be at end of enum range */
 #if defined(CONFIG_BT_CTLR_USER_EXT)
-	NODE_RX_TYPE_USER_START = 0x16,
+	NODE_RX_TYPE_USER_START = 0x17,
 	NODE_RX_TYPE_USER_END = NODE_RX_TYPE_USER_START +
 				CONFIG_BT_CTLR_USER_EVT_RANGE,
 #endif /* CONFIG_BT_CTLR_USER_EXT */
@@ -218,8 +219,15 @@ enum node_rx_type {
 
 /* Footer of node_rx_hdr */
 struct node_rx_ftr {
-	void  *param;
-	void  *extra;
+	union {
+		void *param;
+		struct {
+			uint8_t  status;
+			uint8_t  num_events;
+			uint16_t conn_handle;
+		} param_adv_term;
+	};
+	void     *extra;
 	uint32_t ticks_anchor;
 	uint32_t radio_end_us;
 	uint8_t  rssi;
@@ -239,14 +247,14 @@ struct node_rx_ftr {
 /* Header of node_rx_pdu */
 struct node_rx_hdr {
 	union {
-		void        *next;
-		memq_link_t *link;
-		uint8_t        ack_last;
+		void        *next;    /* For slist, by hci module */
+		memq_link_t *link;    /* Supply memq_link from ULL to LLL */
+		uint8_t     ack_last; /* Tx ack queue index at this node rx */
 	};
 
-	enum node_rx_type   type;
-	uint8_t                user_meta; /* User metadata */
-	uint16_t               handle;
+	enum node_rx_type type;
+	uint8_t           user_meta; /* User metadata */
+	uint16_t          handle;    /* State/Role instance handle */
 
 	union {
 #if defined(CONFIG_BT_CTLR_RX_PDU_META)
@@ -264,6 +272,10 @@ struct node_rx_pdu {
 enum {
 	EVENT_DONE_EXTRA_TYPE_NONE,
 	EVENT_DONE_EXTRA_TYPE_CONN,
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	EVENT_DONE_EXTRA_TYPE_ADV,
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_OBSERVER)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)

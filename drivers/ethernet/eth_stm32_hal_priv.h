@@ -26,7 +26,9 @@ struct eth_stm32_hal_dev_cfg {
 	struct stm32_pclken pclken;
 	struct stm32_pclken pclken_rx;
 	struct stm32_pclken pclken_tx;
+#if !defined(CONFIG_SOC_SERIES_STM32H7X)
 	struct stm32_pclken pclken_ptp;
+#endif /* !defined(CONFIG_SOC_SERIES_STM32H7X) */
 };
 
 /* Device run time data */
@@ -38,15 +40,15 @@ struct eth_stm32_hal_dev_data {
 	struct device *clock;
 	struct k_mutex tx_mutex;
 	struct k_sem rx_int_sem;
-	K_THREAD_STACK_MEMBER(rx_thread_stack,
+	K_KERNEL_STACK_MEMBER(rx_thread_stack,
 		CONFIG_ETH_STM32_HAL_RX_THREAD_STACK_SIZE);
 	struct k_thread rx_thread;
 	bool link_up;
 };
 
 #define DEV_CFG(dev) \
-	((const struct eth_stm32_hal_dev_cfg *)(dev)->config_info)
+	((const struct eth_stm32_hal_dev_cfg *)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct eth_stm32_hal_dev_data *)(dev)->driver_data)
+	((struct eth_stm32_hal_dev_data *)(dev)->data)
 
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_STM32_HAL_PRIV_H_ */

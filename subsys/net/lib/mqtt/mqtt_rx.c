@@ -42,6 +42,8 @@ static int mqtt_handle_packet(struct mqtt_client *client,
 						MQTT_CONNECTION_ACCEPTED) {
 				/* Set state. */
 				MQTT_SET_STATE(client, MQTT_STATE_CONNECTED);
+			} else {
+				err_code = -ECONNREFUSED;
 			}
 
 			evt.result = evt.param.connack.return_code;

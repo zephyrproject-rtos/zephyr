@@ -5,4 +5,5 @@ tests:
   sample.sensor.adxl362:
     harness: sensor
     tags: sensors
-    depends_on: spi adxl362
+    depends_on: spi
+    platform_whitelist: nrf52dk_nrf52832

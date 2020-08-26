@@ -43,7 +43,7 @@ stmdev_ctx_t iis2dh_i2c_ctx = {
 
 int iis2dh_i2c_init(struct device *dev)
 {
-	struct iis2dh_data *data = dev->driver_data;
+	struct iis2dh_data *data = dev->data;
 
 	data->ctx = &iis2dh_i2c_ctx;
 	data->ctx->handle = data;

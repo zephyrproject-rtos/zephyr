@@ -4,7 +4,7 @@
 # part of the recommended workflow
 
 # used by various build scripts
-pyelftools>=0.24
+pyelftools>=0.26
 
 # used by dts generation to parse binding YAMLs, also used by
 # sanitycheck to parse YAMLs
@@ -14,6 +14,9 @@ PyYAML>=5.1
 canopen
 packaging
 progress
+
+# for ram/rom reports
+anytree
 
 # intelhex used by mergehex.py
 intelhex

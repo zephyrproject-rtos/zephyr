@@ -59,7 +59,7 @@ static int lis2ds12_freq_to_odr_val(uint16_t freq)
 
 static int lis2ds12_accel_odr_set(struct device *dev, uint16_t freq)
 {
-	struct lis2ds12_data *data = dev->driver_data;
+	struct lis2ds12_data *data = dev->data;
 	int odr;
 
 	odr = lis2ds12_freq_to_odr_val(freq);
@@ -99,7 +99,7 @@ static int lis2ds12_accel_range_to_fs_val(int32_t range)
 static int lis2ds12_accel_range_set(struct device *dev, int32_t range)
 {
 	int fs;
-	struct lis2ds12_data *data = dev->driver_data;
+	struct lis2ds12_data *data = dev->data;
 
 	fs = lis2ds12_accel_range_to_fs_val(range);
 	if (fs < 0) {
@@ -157,7 +157,7 @@ static int lis2ds12_attr_set(struct device *dev, enum sensor_channel chan,
 
 static int lis2ds12_sample_fetch_accel(struct device *dev)
 {
-	struct lis2ds12_data *data = dev->driver_data;
+	struct lis2ds12_data *data = dev->data;
 	uint8_t buf[6];
 
 	if (data->hw_tf->read_data(data, LIS2DS12_REG_OUTX_L,
@@ -240,7 +240,7 @@ static int lis2ds12_channel_get(struct device *dev,
 				enum sensor_channel chan,
 				struct sensor_value *val)
 {
-	struct lis2ds12_data *data = dev->driver_data;
+	struct lis2ds12_data *data = dev->data;
 
 	return lis2ds12_get_channel(chan, val, data, data->gain);
 }
@@ -256,8 +256,8 @@ static const struct sensor_driver_api lis2ds12_api_funcs = {
 
 static int lis2ds12_init(struct device *dev)
 {
-	const struct lis2ds12_config * const config = dev->config_info;
-	struct lis2ds12_data *data = dev->driver_data;
+	const struct lis2ds12_config * const config = dev->config;
+	struct lis2ds12_data *data = dev->data;
 	uint8_t chip_id;
 
 	data->comm_master = device_get_binding(config->comm_master_dev_name);

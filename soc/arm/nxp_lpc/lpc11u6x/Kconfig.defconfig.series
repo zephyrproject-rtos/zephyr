@@ -1,0 +1,38 @@
+# LPC11U6X series configuration options
+
+# Copyright (c) 2020, Seagate
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_LPC11U6X
+
+source "soc/arm/nxp_lpc/lpc11u6x/Kconfig.defconfig.lp*"
+
+config SOC_SERIES
+	default "lpc11u6x"
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 40
+
+if CLOCK_CONTROL
+
+config CLOCK_CONTROL_LPC11U6X
+	default y
+
+endif # CLOCK_CONTROL
+
+if SERIAL
+
+config UART_LPC11U6X
+	default y
+
+endif # SERIAL
+
+if I2C
+
+config I2C_LPC11U6X
+	default y
+
+endif # I2C
+
+endif # SOC_SERIES_LPC11U6X

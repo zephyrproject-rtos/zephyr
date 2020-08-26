@@ -123,7 +123,7 @@ static int lp3943_set_dim_states(struct lp3943_data *data, uint32_t led, uint8_t
 static int lp3943_led_blink(struct device *dev, uint32_t led,
 			    uint32_t delay_on, uint32_t delay_off)
 {
-	struct lp3943_data *data = dev->driver_data;
+	struct lp3943_data *data = dev->data;
 	struct led_data *dev_data = &data->dev_data;
 	int ret;
 	uint16_t period;
@@ -166,7 +166,7 @@ static int lp3943_led_blink(struct device *dev, uint32_t led,
 static int lp3943_led_set_brightness(struct device *dev, uint32_t led,
 				     uint8_t value)
 {
-	struct lp3943_data *data = dev->driver_data;
+	struct lp3943_data *data = dev->data;
 	struct led_data *dev_data = &data->dev_data;
 	int ret;
 	uint8_t reg, val, mode;
@@ -206,7 +206,7 @@ static int lp3943_led_set_brightness(struct device *dev, uint32_t led,
 
 static inline int lp3943_led_on(struct device *dev, uint32_t led)
 {
-	struct lp3943_data *data = dev->driver_data;
+	struct lp3943_data *data = dev->data;
 	int ret;
 	uint8_t reg, mode;
 
@@ -230,7 +230,7 @@ static inline int lp3943_led_on(struct device *dev, uint32_t led)
 
 static inline int lp3943_led_off(struct device *dev, uint32_t led)
 {
-	struct lp3943_data *data = dev->driver_data;
+	struct lp3943_data *data = dev->data;
 	int ret;
 	uint8_t reg;
 
@@ -252,7 +252,7 @@ static inline int lp3943_led_off(struct device *dev, uint32_t led)
 
 static int lp3943_led_init(struct device *dev)
 {
-	struct lp3943_data *data = dev->driver_data;
+	struct lp3943_data *data = dev->data;
 	struct led_data *dev_data = &data->dev_data;
 
 	data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));

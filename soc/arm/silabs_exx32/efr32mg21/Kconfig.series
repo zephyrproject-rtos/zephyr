@@ -1,0 +1,26 @@
+# Silicon Labs EFR32MG21 (Mighty Gecko) MCU
+
+# Copyright (c) 2020 TriaGnoSys GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_EFR32MG21
+	bool "EFR32MG21 Series MCU"
+	select ARM
+	select CPU_CORTEX_M33
+	select CPU_CORTEX_M_HAS_DWT
+	select ARMV8_M_DSP
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
+	select SOC_FAMILY_EXX32
+	select HAS_SILABS_GECKO
+	select HAS_SWO
+	select HAS_SYS_POWER_STATE_SLEEP_1
+	select HAS_SYS_POWER_STATE_SLEEP_2
+	select HAS_SYS_POWER_STATE_SLEEP_3
+	select SOC_GECKO_CORE
+	select SOC_GECKO_CMU
+	select SOC_GECKO_EMU
+	select SOC_GECKO_GPIO
+	select SOC_GECKO_SE
+	help
+	  Enable support for EFR32MG21 Mighty Gecko MCU series

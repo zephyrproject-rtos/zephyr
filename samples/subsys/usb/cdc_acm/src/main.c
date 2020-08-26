@@ -28,8 +28,10 @@ uint8_t ring_buffer[RING_BUF_SIZE];
 
 struct ring_buf ringbuf;
 
-static void interrupt_handler(struct device *dev)
+static void interrupt_handler(struct device *dev, void *user_data)
 {
+	ARG_UNUSED(user_data);
+
 	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
 		if (uart_irq_rx_ready(dev)) {
 			int recv_len, rb_len;

@@ -12,9 +12,9 @@
 #include "ipm_mhu.h"
 
 #define DEV_CFG(dev) \
-	((const struct ipm_mhu_device_config * const)(dev)->config_info)
+	((const struct ipm_mhu_device_config * const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct ipm_mhu_data *)(dev)->driver_data)
+	((struct ipm_mhu_data *)(dev)->data)
 #define IPM_MHU_REGS(dev) \
 	((volatile struct ipm_mhu_reg_map_t *)(DEV_CFG(dev))->base)
 
@@ -137,8 +137,8 @@ static void ipm_mhu_isr(void *arg)
 	ipm_mhu_clear_val(d, cpu_id, ipm_mhu_status);
 
 	if (driver_data->callback) {
-		driver_data->callback(driver_data->callback_ctx, cpu_id,
-					&ipm_mhu_status);
+		driver_data->callback(d, driver_data->user_data, cpu_id,
+				      &ipm_mhu_status);
 	}
 }
 
@@ -157,13 +157,13 @@ static int ipm_mhu_max_data_size_get(struct device *d)
 }
 
 static void ipm_mhu_register_cb(struct device *d,
-						ipm_callback_t cb,
-						void *context)
+				ipm_callback_t cb,
+				void *user_data)
 {
 	struct ipm_mhu_data *driver_data = DEV_DATA(d);
 
 	driver_data->callback = cb;
-	driver_data->callback_ctx = context;
+	driver_data->user_data = user_data;
 }
 
 static const struct ipm_driver_api ipm_mhu_driver_api = {
@@ -183,7 +183,7 @@ static const struct ipm_mhu_device_config ipm_mhu_cfg_0 = {
 
 static struct ipm_mhu_data ipm_mhu_data_0 = {
 	.callback = NULL,
-	.callback_ctx = NULL,
+	.user_data = NULL,
 };
 
 DEVICE_AND_API_INIT(mhu_0,
@@ -214,7 +214,7 @@ static const struct ipm_mhu_device_config ipm_mhu_cfg_1 = {
 
 static struct ipm_mhu_data ipm_mhu_data_1 = {
 	.callback = NULL,
-	.callback_ctx = NULL,
+	.user_data = NULL,
 };
 
 DEVICE_AND_API_INIT(mhu_1,

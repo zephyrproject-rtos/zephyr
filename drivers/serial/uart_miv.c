@@ -108,7 +108,7 @@
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static struct k_thread rx_thread;
-static K_THREAD_STACK_DEFINE(rx_stack, 512);
+static K_KERNEL_STACK_DEFINE(rx_stack, 512);
 #endif
 
 struct uart_miv_regs_t {
@@ -146,11 +146,11 @@ struct uart_miv_data {
 
 #define DEV_CFG(dev)						\
 	((const struct uart_miv_device_config * const)		\
-	 (dev)->config_info)
+	 (dev)->config)
 #define DEV_UART(dev)						\
 	((struct uart_miv_regs_t *)(DEV_CFG(dev))->uart_addr)
 #define DEV_DATA(dev)						\
-	((struct uart_miv_data * const)(dev)->driver_data)
+	((struct uart_miv_data * const)(dev)->data)
 
 static void uart_miv_poll_out(struct device *dev,
 				       unsigned char c)
@@ -300,7 +300,7 @@ static void uart_miv_irq_handler(void *arg)
 	struct uart_miv_data *data = DEV_DATA(dev);
 
 	if (data->callback) {
-		data->callback(data->cb_data);
+		data->callback(dev, data->cb_data);
 	}
 }
 

@@ -1,0 +1,113 @@
+/*
+ * Copyright (c) 2020, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt6xx.dtsi>
+
+/ {
+	model = "NXP MIMXRT685-EVK board";
+	compatible = "nxp,mimxrt685";
+
+	aliases {
+		sw0 = &user_button_1;
+		sw1 = &user_button_2;
+		led0 = &green_led;
+		led1 = &blue_led;
+		led2 = &red_led;
+		usart-0 = &flexcomm0;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &flexcomm0;
+		zephyr,shell-uart = &flexcomm0;
+	};
+
+	flash0: flash@18000000 {
+		/* Octal flash MX25UM51345G */
+		reg = <0x18000000 DT_SIZE_K(65536)>;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_1: button_0 {
+			label = "User SW1";
+			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
+		};
+		user_button_2: button_1 {
+			label = "User SW2";
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led_1 {
+			gpios = <&gpio0 14 0>;
+			label = "User LED_GREEN";
+		};
+		blue_led: led_2 {
+			gpios = <&gpio0 26 0>;
+			label = "User LED_BLUE";
+		};
+		red_led: led_3 {
+			gpios = <&gpio0 31 0>;
+			label = "User LED_RED";
+		};
+	};
+};
+
+&flexcomm0 {
+	compatible = "nxp,lpc-usart";
+	status = "okay";
+	current-speed = <115200>;
+};
+
+arduino_i2c: &flexcomm2 {
+	compatible = "nxp,lpc-i2c";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	fxos8700@1e {
+		compatible = "nxp,fxos8700";
+		reg = <0x1e>;
+		label = "FXOS8700";
+		int1-gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&user_button_1 {
+	status = "okay";
+};
+
+&user_button_2 {
+	status = "okay";
+};
+
+&green_led {
+	status = "okay";
+};
+
+&blue_led {
+	status = "okay";
+};
+
+&red_led {
+	status = "okay";
+};

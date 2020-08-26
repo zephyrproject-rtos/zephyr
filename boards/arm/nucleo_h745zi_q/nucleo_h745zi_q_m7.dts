@@ -13,7 +13,7 @@
 	model = "STMicroelectronics STM32H745ZI-Q-NUCLEO board";
 	compatible = "st,stm32h745zi-q-nucleo", "st,stm32h745";
 
-	/* HW resources are split between CM7/CM4 */
+	/* HW resources belonging to CM7 */
 	chosen {
 		zephyr,console = &usart3;
 		zephyr,shell-uart = &usart3;
@@ -58,4 +58,12 @@
 	pwm12: pwm {
 		status = "okay";
 	};
+};
+
+&mac {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
 };

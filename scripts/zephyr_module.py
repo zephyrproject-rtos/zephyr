@@ -48,6 +48,22 @@ mapping:
         type: seq
         sequence:
           - type: str
+      settings:
+        required: false
+        type: map
+        mapping:
+          board_root:
+            required: false
+            type: str
+          dts_root:
+            required: false
+            type: str
+          soc_root:
+            required: false
+            type: str
+          arch_root:
+            required: false
+            type: str
   tests:
     required: false
     type: seq
@@ -124,6 +140,20 @@ def process_cmake(module, meta):
     else:
         return ""
 
+def process_settings(module, meta):
+    section = meta.get('build', dict())
+    build_settings = section.get('settings', None)
+    out_text = ""
+
+    if build_settings is not None:
+        for root in ['board', 'dts', 'soc', 'arch']:
+            setting = build_settings.get(root+'_root', None)
+            if setting is not None:
+                root_path = PurePath(module) / setting
+                out_text += f'"{root.upper()}_ROOT":"{root_path}"\n'
+
+    return out_text
+
 def process_kconfig(module, meta):
     section = meta.get('build', dict())
     module_path = PurePath(module)
@@ -175,6 +205,9 @@ def main():
     parser.add_argument('--cmake-out',
                         help="""File to write with resulting <name>:<path>
                              values to use for including in CMake""")
+    parser.add_argument('--settings-out',
+                        help="""File to write with resulting <name>:<value>
+                             values to use for including in CMake""")
     parser.add_argument('-m', '--modules', nargs='+',
                         help="""List of modules to parse instead of using `west
                              list`""")
@@ -197,12 +230,15 @@ def main():
             # workspace. Such setup is allowed, as west may be installed
             # but the project is not required to use west.
             projects = []
+    else:
+        projects = args.modules.copy()
 
     projects += args.extra_modules
     extra_modules = set(args.extra_modules)
 
     kconfig = ""
     cmake = ""
+    settings = ""
     sanitycheck = ""
 
     Module = namedtuple('Module', ['project', 'meta', 'depends'])
@@ -257,6 +293,7 @@ def main():
     for module in sorted_modules:
         kconfig += process_kconfig(module.project, module.meta)
         cmake += process_cmake(module.project, module.meta)
+        settings += process_settings(module.project, module.meta)
         sanitycheck += process_sanitycheck(module.project, module.meta)
 
     if args.kconfig_out:
@@ -266,6 +303,10 @@ def main():
     if args.cmake_out:
         with open(args.cmake_out, 'w', encoding="utf-8") as fp:
             fp.write(cmake)
+
+    if args.settings_out:
+        with open(args.settings_out, 'w', encoding="utf-8") as fp:
+            fp.write(settings)
 
     if args.sanitycheck_out:
         with open(args.sanitycheck_out, 'w', encoding="utf-8") as fp:

@@ -77,7 +77,7 @@ static inline int uart_mux_attach(struct device *mux, struct device *uart,
 				  void *user_data)
 {
 	const struct uart_mux_driver_api *api =
-		(const struct uart_mux_driver_api *)mux->driver_api;
+		(const struct uart_mux_driver_api *)mux->api;
 
 	return api->attach(mux, uart, dlci_address, cb, user_data);
 }

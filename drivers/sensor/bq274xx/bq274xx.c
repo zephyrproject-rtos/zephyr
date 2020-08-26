@@ -135,7 +135,7 @@ static int bq274xx_get_device_type(struct bq274xx_data *bq274xx, uint16_t *val)
 static int bq274xx_channel_get(struct device *dev, enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	struct bq274xx_data *bq274xx = dev->driver_data;
+	struct bq274xx_data *bq274xx = dev->data;
 	float int_temp;
 
 	switch (chan) {
@@ -211,7 +211,7 @@ static int bq274xx_channel_get(struct device *dev, enum sensor_channel chan,
 
 static int bq274xx_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct bq274xx_data *bq274xx = dev->driver_data;
+	struct bq274xx_data *bq274xx = dev->data;
 	int status = 0;
 
 	switch (chan) {
@@ -350,8 +350,8 @@ static int bq274xx_sample_fetch(struct device *dev, enum sensor_channel chan)
  */
 static int bq274xx_gauge_init(struct device *dev)
 {
-	struct bq274xx_data *bq274xx = dev->driver_data;
-	const struct bq274xx_config *const config = dev->config_info;
+	struct bq274xx_data *bq274xx = dev->data;
+	const struct bq274xx_config *const config = dev->config;
 	int status = 0;
 	uint8_t tmp_checksum = 0, checksum_old = 0, checksum_new = 0;
 	uint16_t flags = 0, designenergy_mwh = 0, taperrate = 0, id;

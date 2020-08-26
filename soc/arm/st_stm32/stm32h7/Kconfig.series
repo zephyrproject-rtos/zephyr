@@ -12,7 +12,6 @@ config SOC_SERIES_STM32H7X
 	select HAS_STM32CUBE
 	select CPU_HAS_ARM_MPU
 	select HAS_SWO
-	select REQUIRES_FULL_LIBC
 	select USE_STM32_HAL_RCC_EX if CPU_CORTEX_M4
 	select USE_STM32_HAL_CORTEX
 	help
@@ -21,26 +20,3 @@ config SOC_SERIES_STM32H7X
 config STM32H7_DUAL_CORE
 	bool "Enable Dual Core"
 	depends on SOC_SERIES_STM32H7X
-
-choice STM32H7_DUAL_CORE_BOOT
-	prompt "STM32H7x Boot type selection"
-	depends on STM32H7_DUAL_CORE
-
-config STM32H7_BOOT_CM4_CM7
-	bool "Boot both CM4 and CM7"
-	help
-	  Cortex-M7 and Cortex-M4 running from the flash (each from a bank)
-	  System configuration performed by the Cortex-M7
-	  Cortex-M4 goes to STOP after boot, then woken-up by Cortex-M7 using
-	  a HW semaphore
-
-config STM32H7_BOOT_CM7_CM4GATED
-	bool "Boot CM7. CM4 boot gated"
-	help
-	  Cortex-M4 boot is gated using Flash option bytes
-	  Cortex-M7 and Cortex-M4 running from the flash (each from a bank)
-	  Cortex-M7 boots , performs the System configuration then enable the
-	  Cortex-M4 boot using RCC.
-	  This mode requires option byte setting update (BCM4 unchecked)
-
-endchoice

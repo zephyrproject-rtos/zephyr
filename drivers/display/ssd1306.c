@@ -79,7 +79,7 @@ static inline int ssd1306_reg_update(struct ssd1306_data *driver, uint8_t reg,
 
 static inline int ssd1306_set_panel_orientation(struct device *dev)
 {
-	struct ssd1306_data *driver = dev->driver_data;
+	struct ssd1306_data *driver = dev->data;
 	uint8_t cmd_buf[] = {
 		SSD1306_CONTROL_BYTE_CMD,
 		(SSD1306_PANEL_SEGMENT_REMAP ?
@@ -97,7 +97,7 @@ static inline int ssd1306_set_panel_orientation(struct device *dev)
 
 static inline int ssd1306_set_timing_setting(struct device *dev)
 {
-	struct ssd1306_data *driver = dev->driver_data;
+	struct ssd1306_data *driver = dev->data;
 	uint8_t cmd_buf[] = {
 		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_CLOCK_DIV_RATIO,
@@ -119,7 +119,7 @@ static inline int ssd1306_set_timing_setting(struct device *dev)
 
 static inline int ssd1306_set_hardware_config(struct device *dev)
 {
-	struct ssd1306_data *driver = dev->driver_data;
+	struct ssd1306_data *driver = dev->data;
 	uint8_t cmd_buf[] = {
 		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_START_LINE,
@@ -143,7 +143,7 @@ static inline int ssd1306_set_hardware_config(struct device *dev)
 
 static inline int ssd1306_set_charge_pump(const struct device *dev)
 {
-	struct ssd1306_data *driver = dev->driver_data;
+	struct ssd1306_data *driver = dev->data;
 	uint8_t cmd_buf[] = {
 #if defined(CONFIG_SSD1306_DEFAULT)
 		SSD1306_CONTROL_BYTE_CMD,
@@ -167,7 +167,7 @@ static inline int ssd1306_set_charge_pump(const struct device *dev)
 
 static int ssd1306_resume(const struct device *dev)
 {
-	struct ssd1306_data *driver = dev->driver_data;
+	struct ssd1306_data *driver = dev->data;
 	/* set display on */
 	return ssd1306_reg_write(driver, SSD1306_CONTROL_LAST_BYTE_CMD,
 				 SSD1306_DISPLAY_ON);
@@ -175,7 +175,7 @@ static int ssd1306_resume(const struct device *dev)
 
 static int ssd1306_suspend(const struct device *dev)
 {
-	struct ssd1306_data *driver = dev->driver_data;
+	struct ssd1306_data *driver = dev->data;
 	/* set display on */
 	return ssd1306_reg_write(driver, SSD1306_CONTROL_LAST_BYTE_CMD,
 				 SSD1306_DISPLAY_OFF);
@@ -185,7 +185,7 @@ static int ssd1306_write(const struct device *dev, const uint16_t x, const uint1
 			 const struct display_buffer_descriptor *desc,
 			 const void *buf)
 {
-	struct ssd1306_data *driver = dev->driver_data;
+	struct ssd1306_data *driver = dev->data;
 	size_t buf_len;
 
 	if (desc->pitch < desc->width) {
@@ -309,7 +309,7 @@ static int ssd1306_set_brightness(const struct device *dev,
 
 static int ssd1306_set_contrast(const struct device *dev, const uint8_t contrast)
 {
-	struct ssd1306_data *driver = dev->driver_data;
+	struct ssd1306_data *driver = dev->data;
 	uint8_t cmd_buf[] = {
 		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_CONTRAST_CTRL,
@@ -352,7 +352,7 @@ static int ssd1306_set_pixel_format(const struct device *dev,
 
 static int ssd1306_init_device(struct device *dev)
 {
-	struct ssd1306_data *driver = dev->driver_data;
+	struct ssd1306_data *driver = dev->data;
 
 	uint8_t cmd_buf[] = {
 		SSD1306_CONTROL_BYTE_CMD,
@@ -412,7 +412,7 @@ static int ssd1306_init_device(struct device *dev)
 
 static int ssd1306_init(struct device *dev)
 {
-	struct ssd1306_data *driver = dev->driver_data;
+	struct ssd1306_data *driver = dev->data;
 
 	LOG_DBG("");
 

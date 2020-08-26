@@ -364,7 +364,7 @@ static int close_socket(struct net_context *ctx)
 
 	iface = net_context_get_iface(ctx);
 	dev = net_if_get_device(iface);
-	api = dev->driver_api;
+	api = dev->api;
 
 	if (!api || !api->close) {
 		return -ENOTSUP;
@@ -407,17 +407,23 @@ static int can_close_socket(struct net_context *ctx)
 	return 0;
 }
 
-static int can_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
+static int can_sock_close_vmeth(void *obj)
 {
-	if (request == ZFD_IOCTL_CLOSE) {
-		int ret;
+	int ret;
 
-		ret = can_close_socket(obj);
-		if (ret < 0) {
-			NET_DBG("Cannot detach net_context %p (%d)", obj, ret);
-		}
+	ret = can_close_socket(obj);
+	if (ret < 0) {
+		NET_DBG("Cannot detach net_context %p (%d)", obj, ret);
+
+		errno = -ret;
+		ret = -1;
 	}
 
+	return ret;
+}
+
+static int can_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
+{
 	return sock_fd_op_vtable.fd_vtable.ioctl(obj, request, args);
 }
 
@@ -484,7 +490,7 @@ static int can_sock_getsockopt_vmeth(void *obj, int level, int optname,
 
 		iface = net_context_get_iface(obj);
 		dev = net_if_get_device(iface);
-		api = dev->driver_api;
+		api = dev->api;
 
 		if (!api || !api->getsockopt) {
 			errno = ENOTSUP;
@@ -606,7 +612,7 @@ static int can_sock_setsockopt_vmeth(void *obj, int level, int optname,
 
 	iface = net_context_get_iface(obj);
 	dev = net_if_get_device(iface);
-	api = dev->driver_api;
+	api = dev->api;
 
 	if (!api || !api->setsockopt) {
 		errno = ENOTSUP;
@@ -670,6 +676,7 @@ static const struct socket_op_vtable can_sock_fd_op_vtable = {
 	.fd_vtable = {
 		.read = can_sock_read_vmeth,
 		.write = can_sock_write_vmeth,
+		.close = can_sock_close_vmeth,
 		.ioctl = can_sock_ioctl_vmeth,
 	},
 	.bind = can_sock_bind_vmeth,

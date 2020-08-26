@@ -49,6 +49,19 @@ const char *sensor_channel_name[SENSOR_CHAN_ALL] = {
 	[SENSOR_CHAN_VOLTAGE] =		"voltage",
 	[SENSOR_CHAN_CURRENT] =		"current",
 	[SENSOR_CHAN_ROTATION] =	"rotation",
+	[SENSOR_CHAN_GAUGE_VOLTAGE] =	"gauge_voltage",
+	[SENSOR_CHAN_GAUGE_AVG_CURRENT] = "gauge_avg_current",
+	[SENSOR_CHAN_GAUGE_STATE_OF_CHARGE] =	"gauge_state_of_charge",
+	[SENSOR_CHAN_GAUGE_TEMP] =	"gauge_temp",
+	[SENSOR_CHAN_GAUGE_FULL_CHARGE_CAPACITY] =	"gauge_full_cap",
+	[SENSOR_CHAN_GAUGE_REMAINING_CHARGE_CAPACITY] = "gauge_remaining_cap",
+	[SENSOR_CHAN_GAUGE_NOM_AVAIL_CAPACITY] =	"gauge_nominal_cap",
+	[SENSOR_CHAN_GAUGE_TIME_TO_EMPTY] =	"gauge_time_to_empty",
+	[SENSOR_CHAN_GAUGE_TIME_TO_FULL] =	"gauge_time_to_full",
+	[SENSOR_CHAN_GAUGE_CYCLE_COUNT] =	"gauge_cycle_count",
+	[SENSOR_CHAN_GAUGE_DESIGN_VOLTAGE] =	"gauge_design_voltage",
+	[SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT] =
+		 "gauge_desired_charging_current",
 };
 
 static int handle_channel_by_name(const struct shell *shell, struct device *dev,
@@ -116,7 +129,7 @@ static int cmd_get_sensor(const struct shell *shell, size_t argc, char *argv[])
 
 	err = sensor_sample_fetch(dev);
 	if (err < 0) {
-		shell_error(shell, "Failed to read sensor");
+		shell_error(shell, "Failed to read sensor: %d", err);
 	}
 
 	if (argc == 2) {

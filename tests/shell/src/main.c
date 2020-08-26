@@ -38,8 +38,8 @@ static void test_cmd_help(void)
 	test_shell_execute_cmd("help", 0);
 	test_shell_execute_cmd("help -h", 1);
 	test_shell_execute_cmd("help --help", 1);
-	test_shell_execute_cmd("help dummy", 0);
-	test_shell_execute_cmd("help dummy dummy", 0);
+	test_shell_execute_cmd("help dummy", -EINVAL);
+	test_shell_execute_cmd("help dummy dummy", -EINVAL);
 }
 
 static void test_cmd_clear(void)
@@ -327,7 +327,7 @@ static void test_shell_fprintf(void)
 	zassert_not_null(shell, "Failed to get shell");
 
 	/* Clear the output buffer */
-	shell_backend_dummy_get_output(shell, &size);
+	shell_backend_dummy_clear_output(shell);
 
 	shell_fprintf(shell, SHELL_VT100_COLOR_DEFAULT, "testing %d %s %c",
 		      1, "2", '3');
@@ -388,6 +388,9 @@ void test_main(void)
 			ztest_unit_test(test_set_root_cmd),
 			ztest_unit_test(test_raw_arg)
 			);
+
+	/* Let the shell backend initialize. */
+	k_msleep(20);
 
 	ztest_run_test_suite(shell_test_suite);
 }

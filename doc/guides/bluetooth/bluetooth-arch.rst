@@ -379,6 +379,8 @@ should also be enabled.
 The API reference for Mesh can be found in the
 :ref:`Mesh API reference section <bluetooth_mesh>`.
 
+.. _bluetooth-persistent-storage:
+
 Persistent storage
 ==================
 

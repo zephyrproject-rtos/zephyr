@@ -16,4 +16,11 @@ config DMA_STM32_V1
 	default y
 	depends on DMA_STM32
 
+if ENTROPY_GENERATOR
+
+config ENTROPY_STM32_RNG
+	default y
+
+endif # ENTROPY_GENERATOR
+
 endif # SOC_SERIES_STM32H7X

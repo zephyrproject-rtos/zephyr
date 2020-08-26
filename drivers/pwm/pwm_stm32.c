@@ -77,12 +77,12 @@ static void (*const set_timer_compare[TIMER_MAX_CH])(TIM_TypeDef *,
 
 static inline struct pwm_stm32_data *to_data(struct device *dev)
 {
-	return dev->driver_data;
+	return dev->data;
 }
 
 static inline const struct pwm_stm32_config *to_config(struct device *dev)
 {
-	return dev->config_info;
+	return dev->config;
 }
 
 /**

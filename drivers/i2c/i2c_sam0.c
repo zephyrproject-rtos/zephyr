@@ -60,9 +60,9 @@ struct i2c_sam0_dev_data {
 
 #define DEV_NAME(dev) ((dev)->name)
 #define DEV_CFG(dev) \
-	((const struct i2c_sam0_dev_config *const)(dev)->config_info)
+	((const struct i2c_sam0_dev_config *const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct i2c_sam0_dev_data *const)(dev)->driver_data)
+	((struct i2c_sam0_dev_data *const)(dev)->data)
 
 static void wait_synchronization(SercomI2cm *regs)
 {
@@ -181,13 +181,15 @@ static void i2c_sam0_isr(void *arg)
 
 #ifdef CONFIG_I2C_SAM0_DMA_DRIVEN
 
-static void i2c_sam0_dma_write_done(void *arg, uint32_t id, int error_code)
+static void i2c_sam0_dma_write_done(struct device *dma_dev, void *arg,
+				    uint32_t id, int error_code)
 {
 	struct device *dev = arg;
 	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
 	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
 	SercomI2cm *i2c = cfg->regs;
 
+	ARG_UNUSED(dma_dev);
 	ARG_UNUSED(id);
 
 	int key = irq_lock();
@@ -246,7 +248,7 @@ static bool i2c_sam0_dma_write_start(struct device *dev)
 	dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
 	dma_cfg.source_data_size = 1;
 	dma_cfg.dest_data_size = 1;
-	dma_cfg.callback_arg = dev;
+	dma_cfg.user_data = dev;
 	dma_cfg.dma_callback = i2c_sam0_dma_write_done;
 	dma_cfg.block_count = 1;
 	dma_cfg.head_block = &dma_blk;
@@ -274,13 +276,15 @@ static bool i2c_sam0_dma_write_start(struct device *dev)
 	return true;
 }
 
-static void i2c_sam0_dma_read_done(void *arg, uint32_t id, int error_code)
+static void i2c_sam0_dma_read_done(struct device *dma_dev, void *arg,
+				   uint32_t id, int error_code)
 {
 	struct device *dev = arg;
 	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
 	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
 	SercomI2cm *i2c = cfg->regs;
 
+	ARG_UNUSED(dma_dev);
 	ARG_UNUSED(id);
 
 	int key = irq_lock();
@@ -341,7 +345,7 @@ static bool i2c_sam0_dma_read_start(struct device *dev)
 	dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
 	dma_cfg.source_data_size = 1;
 	dma_cfg.dest_data_size = 1;
-	dma_cfg.callback_arg = dev;
+	dma_cfg.user_data = dev;
 	dma_cfg.dma_callback = i2c_sam0_dma_read_done;
 	dma_cfg.block_count = 1;
 	dma_cfg.head_block = &dma_blk;

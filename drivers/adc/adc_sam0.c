@@ -59,9 +59,9 @@ struct adc_sam0_cfg {
 };
 
 #define DEV_CFG(dev) \
-	((const struct adc_sam0_cfg *const)(dev)->config_info)
+	((const struct adc_sam0_cfg *const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct adc_sam0_data *)(dev)->driver_data)
+	((struct adc_sam0_data *)(dev)->data)
 
 static void wait_synchronization(Adc *const adc)
 {

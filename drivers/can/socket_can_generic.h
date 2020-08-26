@@ -21,7 +21,7 @@
 
 /* TODO: make msgq size configurable */
 CAN_DEFINE_MSGQ(socket_can_msgq, 5);
-K_THREAD_STACK_DEFINE(rx_thread_stack, RX_THREAD_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(rx_thread_stack, RX_THREAD_STACK_SIZE);
 
 struct socket_can_context {
 	struct device *can_dev;
@@ -36,7 +36,7 @@ struct socket_can_context {
 static inline void socket_can_iface_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
-	struct socket_can_context *socket_context = dev->driver_data;
+	struct socket_can_context *socket_context = dev->data;
 
 	socket_context->iface = iface;
 
@@ -55,7 +55,7 @@ static inline void tx_irq_callback(uint32_t error_flags, void *arg)
 /* This is called by net_if.c when packet is about to be sent */
 static inline int socket_can_send(struct device *dev, struct net_pkt *pkt)
 {
-	struct socket_can_context *socket_context = dev->driver_data;
+	struct socket_can_context *socket_context = dev->data;
 	int ret;
 
 	if (net_pkt_family(pkt) != AF_CAN) {
@@ -79,7 +79,7 @@ static inline int socket_can_setsockopt(struct device *dev, void *obj,
 					int level, int optname,
 					const void *optval, socklen_t optlen)
 {
-	struct socket_can_context *socket_context = dev->driver_data;
+	struct socket_can_context *socket_context = dev->data;
 	struct net_context *ctx = obj;
 	int ret;
 
@@ -104,7 +104,7 @@ static inline int socket_can_setsockopt(struct device *dev, void *obj,
 
 static inline void socket_can_close(struct device *dev, int filter_id)
 {
-	struct socket_can_context *socket_context = dev->driver_data;
+	struct socket_can_context *socket_context = dev->data;
 
 	can_detach(socket_context->can_dev, filter_id);
 }

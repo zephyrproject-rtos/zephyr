@@ -16,6 +16,7 @@
 .mailmap
 .uncrustify.cfg
 CODEOWNERS
+MAINTAINERS.yml
 LICENSE
 Makefile
 tests/*

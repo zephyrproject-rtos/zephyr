@@ -87,6 +87,22 @@
 	};
 
 	soc {
+		edma: dma-controller@40008000 {
+			compatible = "nxp,mcux-edma";
+			dma-channels = <16>;
+			dma-requests = <64>;
+			nxp,mem2mem;
+			reg = <0x40008000 0x1000>, <0x40021000 0x1000>;
+			interrupts = <0 0>, <1 0>, <2 0>, <3 0>,
+				     <4 0>, <5 0>, <6 0>, <7 0>,
+				     <8 0>, <9 0>, <10 0>, <11 0>,
+				     <12 0>, <13 0>, <14 0>, <15 0>,
+				     <16 0>;
+			status = "disabled";
+			label = "EDMA";
+			#dma-cells = <2>;
+		};
+
 		mpu: mpu@4000d000 {
 			compatible = "nxp,kinetis-mpu";
 			reg = <0x4000d000 0x1000>;

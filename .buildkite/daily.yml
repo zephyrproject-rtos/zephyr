@@ -5,7 +5,7 @@ steps:
       ZEPHYR_TOOLCHAIN_VARIANT: "zephyr"
       ZEPHYR_SDK_INSTALL_DIR: "/opt/sdk/zephyr-sdk-0.11.3"
     parallelism: 120
-    timeout_in_minutes: 150
+    timeout_in_minutes: 210
     retry:
       manual: true
     plugins:

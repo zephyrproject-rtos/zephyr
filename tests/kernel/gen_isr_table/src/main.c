@@ -43,6 +43,13 @@ extern uint32_t _irq_vector_table[];
  * the test, so that it does not try to use some unavailable ones.
  */
 #define TEST_NUM_IRQS	33
+#elif defined(CONFIG_SOC_STM32G071XX)
+/* In STM32G071XX limit the number of interrupts reported to
+ * the test, so that it does not try to use some of the IRQs
+ * at the end of the vector table that are already used by
+ * the board.
+ */
+#define TEST_NUM_IRQS	30
 #else
 #define TEST_NUM_IRQS	CONFIG_NUM_IRQS
 #endif
@@ -66,7 +73,8 @@ static volatile int trigger_check[TRIG_CHECK_SIZE];
 
 void trigger_irq(int irq)
 {
-#if defined(CONFIG_SOC_TI_LM3S6965_QEMU)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || \
+	defined(CONFIG_SOC_TI_LM3S6965_QEMU)
 	/* QEMU does not simulate the STIR register: this is a workaround */
 	NVIC_SetPendingIRQ(irq);
 #else

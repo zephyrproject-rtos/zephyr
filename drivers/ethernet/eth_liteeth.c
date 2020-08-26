@@ -74,7 +74,7 @@ struct eth_liteeth_config {
 
 static int eth_initialize(struct device *dev)
 {
-	const struct eth_liteeth_config *config = dev->config_info;
+	const struct eth_liteeth_config *config = dev->config;
 
 	config->config_func();
 
@@ -85,7 +85,7 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 {
 	int key;
 	uint16_t len;
-	struct eth_liteeth_dev_data *context = dev->driver_data;
+	struct eth_liteeth_dev_data *context = dev->data;
 
 	key = irq_lock();
 
@@ -116,7 +116,7 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 static void eth_rx(struct device *port)
 {
 	struct net_pkt *pkt;
-	struct eth_liteeth_dev_data *context = port->driver_data;
+	struct eth_liteeth_dev_data *context = port->data;
 
 	unsigned int key, r;
 	uint16_t len = 0;
@@ -191,7 +191,7 @@ static const struct eth_liteeth_config eth_config = {
 static void eth_iface_init(struct net_if *iface)
 {
 	struct device *port = net_if_get_device(iface);
-	struct eth_liteeth_dev_data *context = port->driver_data;
+	struct eth_liteeth_dev_data *context = port->data;
 	static bool init_done;
 
 	/* initialize only once */

@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(BMA280, CONFIG_SENSOR_LOG_LEVEL);
 
 static int bma280_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct bma280_data *drv_data = dev->driver_data;
+	struct bma280_data *drv_data = dev->data;
 	uint8_t buf[6];
 	uint8_t lsb;
 
@@ -76,7 +76,7 @@ static int bma280_channel_get(struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	struct bma280_data *drv_data = dev->driver_data;
+	struct bma280_data *drv_data = dev->data;
 
 	/*
 	 * See datasheet "Sensor data" section for
@@ -115,7 +115,7 @@ static const struct sensor_driver_api bma280_driver_api = {
 
 int bma280_init(struct device *dev)
 {
-	struct bma280_data *drv_data = dev->driver_data;
+	struct bma280_data *drv_data = dev->data;
 	uint8_t id = 0U;
 
 	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));

@@ -85,7 +85,7 @@ static int stm32_sdmmc_clock_disable(struct stm32_sdmmc_priv *priv)
 static int stm32_sdmmc_access_init(struct disk_info *disk)
 {
 	struct device *dev = disk->dev;
-	struct stm32_sdmmc_priv *priv = dev->driver_data;
+	struct stm32_sdmmc_priv *priv = dev->data;
 	int err;
 
 	if (priv->status == DISK_STATUS_OK) {
@@ -121,7 +121,7 @@ static void stm32_sdmmc_access_deinit(struct stm32_sdmmc_priv *priv)
 static int stm32_sdmmc_access_status(struct disk_info *disk)
 {
 	struct device *dev = disk->dev;
-	struct stm32_sdmmc_priv *priv = dev->driver_data;
+	struct stm32_sdmmc_priv *priv = dev->data;
 
 	return priv->status;
 }
@@ -130,7 +130,7 @@ static int stm32_sdmmc_access_read(struct disk_info *disk, uint8_t *data_buf,
 				   uint32_t start_sector, uint32_t num_sector)
 {
 	struct device *dev = disk->dev;
-	struct stm32_sdmmc_priv *priv = dev->driver_data;
+	struct stm32_sdmmc_priv *priv = dev->data;
 	int err;
 
 	err = HAL_SD_ReadBlocks(&priv->hsd, data_buf, start_sector,
@@ -151,7 +151,7 @@ static int stm32_sdmmc_access_write(struct disk_info *disk,
 				    uint32_t start_sector, uint32_t num_sector)
 {
 	struct device *dev = disk->dev;
-	struct stm32_sdmmc_priv *priv = dev->driver_data;
+	struct stm32_sdmmc_priv *priv = dev->data;
 	int err;
 
 	err = HAL_SD_WriteBlocks(&priv->hsd, (uint8_t *)data_buf, start_sector,
@@ -170,7 +170,7 @@ static int stm32_sdmmc_access_ioctl(struct disk_info *disk, uint8_t cmd,
 				    void *buff)
 {
 	struct device *dev = disk->dev;
-	struct stm32_sdmmc_priv *priv = dev->driver_data;
+	struct stm32_sdmmc_priv *priv = dev->data;
 	HAL_SD_CardInfoTypeDef info;
 	int err;
 
@@ -352,7 +352,7 @@ static int stm32_sdmmc_pwr_uninit(struct stm32_sdmmc_priv *priv)
 
 static int disk_stm32_sdmmc_init(struct device *dev)
 {
-	struct stm32_sdmmc_priv *priv = dev->driver_data;
+	struct stm32_sdmmc_priv *priv = dev->data;
 	int err;
 
 	k_work_init(&priv->work, stm32_sdmmc_cd_handler);

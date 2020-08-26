@@ -249,6 +249,13 @@ The `builds@lists.zephyrproject.org mailing list
 <https://lists.zephyrproject.org/g/builds>`_
 archives the CI (shippable) nightly build results.
 
+Coding Guidelines
+*****************
+
+Beyond the :ref:`coding_style` that Zephyr enforces for all code that is
+submitted for inclusion, the project targets compliance with a series of
+coding guidelines. Refer to the :ref:`coding_guidelines` section of the
+documentation for additional details.
 
  .. _Contribution Tools:
 
@@ -336,6 +343,8 @@ On Linux systems, you can install uncrustify with
 
 For Windows installation instructions see the `sourceforge listing for
 uncrustify <https://sourceforge.net/projects/uncrustify>`_.
+
+.. _coding_style:
 
 Coding Style
 ************
@@ -707,10 +716,15 @@ Contributing non-Apache 2.0 licensed components
 
 Importing code into the Zephyr OS from other projects that use a license
 other than the Apache 2.0 license needs to be fully understood in
-context and approved by the `Zephyr governing board`_.
+context and approved by the `Zephyr governing board`_. The board will
+automatically reject licenses that have not been approved by the `Open Source
+Initiative (OSI)`_.
 
 .. _Zephyr governing board:
    https://www.zephyrproject.org/governance/
+
+.. _Open Source Initiative (OSI):
+   https://opensource.org/licenses/alphabetical
 
 By carefully reviewing potential contributions and also enforcing a
 :ref:`DCO` for contributed code, we ensure that

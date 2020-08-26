@@ -280,7 +280,12 @@ uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
 #endif /* !_ASMLANGUAGE */
 
 /** @brief Number of bytes in @p x kibibytes */
+#ifdef _LINKER
+/* This is used in linker scripts so need to avoid type casting there */
 #define KB(x) ((x) << 10)
+#else
+#define KB(x) (((size_t)x) << 10)
+#endif
 /** @brief Number of bytes in @p x mebibytes */
 #define MB(x) (KB(x) << 10)
 /** @brief Number of bytes in @p x gibibytes */
@@ -488,7 +493,7 @@ uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
  *
  * @param a macro to check for emptiness
  */
-#define IS_EMPTY(a) Z_IS_EMPTY_(a, true, false,)
+#define IS_EMPTY(a) Z_IS_EMPTY_(a, 1, 0,)
 
 /**
  * @brief Remove empty arguments from list.

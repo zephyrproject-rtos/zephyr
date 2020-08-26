@@ -19,8 +19,8 @@ LOG_MODULE_DECLARE(ADXL372, CONFIG_SENSOR_LOG_LEVEL);
 static void adxl372_thread_cb(void *arg)
 {
 	struct device *dev = arg;
-	struct adxl372_data *drv_data = dev->driver_data;
-	const struct adxl372_dev_config *cfg = dev->config_info;
+	struct adxl372_data *drv_data = dev->data;
+	const struct adxl372_dev_config *cfg = dev->config;
 	uint8_t status1, status2;
 
 	/* Clear the status */
@@ -56,7 +56,7 @@ static void adxl372_gpio_callback(struct device *dev,
 {
 	struct adxl372_data *drv_data =
 		CONTAINER_OF(cb, struct adxl372_data, gpio_cb);
-	const struct adxl372_dev_config *cfg = drv_data->dev->config_info;
+	const struct adxl372_dev_config *cfg = drv_data->dev->config;
 
 	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_gpio,
 				     GPIO_INT_DISABLE);
@@ -72,7 +72,7 @@ static void adxl372_gpio_callback(struct device *dev,
 static void adxl372_thread(int dev_ptr, int unused)
 {
 	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct adxl372_data *drv_data = dev->driver_data;
+	struct adxl372_data *drv_data = dev->data;
 
 	ARG_UNUSED(unused);
 
@@ -96,8 +96,8 @@ int adxl372_trigger_set(struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
-	struct adxl372_data *drv_data = dev->driver_data;
-	const struct adxl372_dev_config *cfg = dev->config_info;
+	struct adxl372_data *drv_data = dev->data;
+	const struct adxl372_dev_config *cfg = dev->config;
 	uint8_t int_mask, int_en, status1, status2;
 	int ret;
 
@@ -140,8 +140,8 @@ out:
 
 int adxl372_init_interrupt(struct device *dev)
 {
-	struct adxl372_data *drv_data = dev->driver_data;
-	const struct adxl372_dev_config *cfg = dev->config_info;
+	struct adxl372_data *drv_data = dev->data;
+	const struct adxl372_dev_config *cfg = dev->config;
 
 	drv_data->gpio = device_get_binding(cfg->gpio_port);
 	if (drv_data->gpio == NULL) {

@@ -144,4 +144,10 @@ int __eswifi_bind(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket,
 int eswifi_socket_offload_init(struct eswifi_dev *leswifi);
 #endif
 
+#if defined(CONFIG_WIFI_ESWIFI_SHELL)
+void eswifi_shell_register(struct eswifi_dev *dev);
+#else
+#define eswifi_shell_register(dev)
+#endif
+
 #endif

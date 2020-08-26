@@ -35,14 +35,15 @@ extern "C" {
  * interrupt-safe APIS. Registration of callbacks is done via
  * @a ipm_register_callback
  *
- * @param "void *context" Arbitrary context pointer provided at
- *        registration time.
- * @param "uint32_t id" Message type identifier.
- * @param "volatile void *data" Message data pointer. The correct
- *        amount of data to read out
- * must be inferred using the message id/upper level protocol.
+ * @param ipmdev Driver instance
+ * @param user_data Pointer to some private data provided at registration
+ *        time.
+ * @param id Message type identifier.
+ * @param data Message data pointer. The correct amount of data to read out
+ *        must be inferred using the message id/upper level protocol.
  */
-typedef void (*ipm_callback_t)(void *context, uint32_t id, volatile void *data);
+typedef void (*ipm_callback_t)(struct device *ipmdev, void *user_data,
+			       uint32_t id, volatile void *data);
 
 /**
  * @typedef ipm_send_t
@@ -75,7 +76,7 @@ typedef uint32_t (*ipm_max_id_val_get_t)(struct device *ipmdev);
  * See @a ipm_register_callback() for argument definitions.
  */
 typedef void (*ipm_register_callback_t)(struct device *port, ipm_callback_t cb,
-					void *cb_context);
+					void *user_data);
 
 /**
  * @typedef ipm_set_enabled_t
@@ -135,7 +136,7 @@ static inline int z_impl_ipm_send(struct device *ipmdev, int wait, uint32_t id,
 			   const void *data, int size)
 {
 	const struct ipm_driver_api *api =
-		(const struct ipm_driver_api *)ipmdev->driver_api;
+		(const struct ipm_driver_api *)ipmdev->api;
 
 	return api->send(ipmdev, wait, id, data, size);
 }
@@ -145,16 +146,16 @@ static inline int z_impl_ipm_send(struct device *ipmdev, int wait, uint32_t id,
  *
  * @param ipmdev Driver instance pointer.
  * @param cb Callback function to execute on incoming message interrupts.
- * @param context Application-specific context pointer which will be passed
+ * @param user_data Application-specific data pointer which will be passed
  *        to the callback function when executed.
  */
 static inline void ipm_register_callback(struct device *ipmdev,
-					 ipm_callback_t cb, void *context)
+					 ipm_callback_t cb, void *user_data)
 {
 	const struct ipm_driver_api *api =
-		(const struct ipm_driver_api *)ipmdev->driver_api;
+		(const struct ipm_driver_api *)ipmdev->api;
 
-	api->register_callback(ipmdev, cb, context);
+	api->register_callback(ipmdev, cb, user_data);
 }
 
 /**
@@ -172,7 +173,7 @@ __syscall int ipm_max_data_size_get(struct device *ipmdev);
 static inline int z_impl_ipm_max_data_size_get(struct device *ipmdev)
 {
 	const struct ipm_driver_api *api =
-		(const struct ipm_driver_api *)ipmdev->driver_api;
+		(const struct ipm_driver_api *)ipmdev->api;
 
 	return api->max_data_size_get(ipmdev);
 }
@@ -193,7 +194,7 @@ __syscall uint32_t ipm_max_id_val_get(struct device *ipmdev);
 static inline uint32_t z_impl_ipm_max_id_val_get(struct device *ipmdev)
 {
 	const struct ipm_driver_api *api =
-		(const struct ipm_driver_api *)ipmdev->driver_api;
+		(const struct ipm_driver_api *)ipmdev->api;
 
 	return api->max_id_val_get(ipmdev);
 }
@@ -212,7 +213,7 @@ __syscall int ipm_set_enabled(struct device *ipmdev, int enable);
 static inline int z_impl_ipm_set_enabled(struct device *ipmdev, int enable)
 {
 	const struct ipm_driver_api *api =
-		(const struct ipm_driver_api *)ipmdev->driver_api;
+		(const struct ipm_driver_api *)ipmdev->api;
 
 	return api->set_enabled(ipmdev, enable);
 }

@@ -211,6 +211,7 @@ static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 				memcpy(&laddr,
 				       &ipv6->unicast[i].address.in6_addr,
 				       sizeof(laddr));
+				break;
 			}
 		}
 	}
@@ -250,7 +251,7 @@ static void setup_ipv6(struct net_if *iface, uint32_t flags)
 
 	if (sizeof(CONFIG_NET_CONFIG_MY_IPV6_ADDR) == 1) {
 		/* Empty address, skip setting ANY address in this case */
-		return;
+		goto exit;
 	}
 
 	if (net_addr_pton(AF_INET6, CONFIG_NET_CONFIG_MY_IPV6_ADDR, &laddr)) {
@@ -282,6 +283,8 @@ static void setup_ipv6(struct net_if *iface, uint32_t flags)
 		}
 	}
 
+exit:
+
 #if !defined(CONFIG_NET_IPV6_DAD)
 	services_notify_ready(NET_CONFIG_NEED_IPV6);
 #endif
@@ -298,7 +301,8 @@ static void iface_up_handler(struct net_mgmt_event_callback *cb,
 			     uint32_t mgmt_event, struct net_if *iface)
 {
 	if (mgmt_event == NET_EVENT_IF_UP) {
-		NET_INFO("Interface %p coming up", iface);
+		NET_INFO("Interface %d (%p) coming up",
+			 net_if_get_by_iface(iface), iface);
 
 		k_sem_reset(&counter);
 		k_sem_give(&waiter);
@@ -313,7 +317,8 @@ static bool check_interface(struct net_if *iface)
 		return true;
 	}
 
-	NET_INFO("Waiting interface %p to be up...", iface);
+	NET_INFO("Waiting interface %d (%p) to be up...",
+		 net_if_get_by_iface(iface), iface);
 
 	net_mgmt_init_event_callback(&mgmt_iface_cb, iface_up_handler,
 				     NET_EVENT_IF_UP);
@@ -331,10 +336,10 @@ static bool check_interface(struct net_if *iface)
 }
 #endif
 
-int net_config_init(const char *app_info, uint32_t flags, int32_t timeout)
+int net_config_init_by_iface(struct net_if *iface, const char *app_info,
+			     uint32_t flags, int32_t timeout)
 {
 #define LOOP_DIVIDER 10
-	struct net_if *iface = net_if_get_default();
 	int loop = timeout / LOOP_DIVIDER;
 	int count;
 
@@ -343,8 +348,7 @@ int net_config_init(const char *app_info, uint32_t flags, int32_t timeout)
 	}
 
 	if (!iface) {
-		NET_ERR("No network interfaces");
-		return -ENODEV;
+		iface = net_if_get_default();
 	}
 
 	if (timeout < 0) {
@@ -410,13 +414,25 @@ int net_config_init(const char *app_info, uint32_t flags, int32_t timeout)
 	return 0;
 }
 
-#if defined(CONFIG_NET_CONFIG_AUTO_INIT)
-static int init_app(struct device *device)
+int net_config_init(const char *app_info, uint32_t flags,
+		    int32_t timeout)
 {
+	return net_config_init_by_iface(NULL, app_info, flags, timeout);
+}
+
+int net_config_init_app(struct device *device, const char *app_info)
+{
+	struct net_if *iface = NULL;
 	uint32_t flags = 0U;
 	int ret;
 
-	ARG_UNUSED(device);
+	if (device) {
+		iface = net_if_lookup_by_dev(device);
+		if (iface == NULL) {
+			NET_WARN("No interface for device %p, using default",
+				 device);
+		}
+	}
 
 #if defined(CONFIG_NET_IPV6)
 	/* IEEE 802.15.4 is only usable if IPv6 is enabled */
@@ -444,8 +460,8 @@ static int init_app(struct device *device)
 	}
 
 	/* Initialize the application automatically if needed */
-	ret = net_config_init("Initializing network", flags,
-			      CONFIG_NET_CONFIG_INIT_TIMEOUT * MSEC_PER_SEC);
+	ret = net_config_init_by_iface(iface, app_info, flags,
+				CONFIG_NET_CONFIG_INIT_TIMEOUT * MSEC_PER_SEC);
 	if (ret < 0) {
 		NET_ERR("Network initialization failed (%d)", ret);
 	}
@@ -466,6 +482,16 @@ static int init_app(struct device *device)
 	}
 
 	return ret;
+}
+
+#if defined(CONFIG_NET_CONFIG_AUTO_INIT)
+static int init_app(struct device *device)
+{
+	ARG_UNUSED(device);
+
+	(void)net_config_init_app(NULL, "Initializing network");
+
+	return 0;
 }
 
 SYS_INIT(init_app, APPLICATION, CONFIG_NET_CONFIG_INIT_PRIO);

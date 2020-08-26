@@ -28,29 +28,14 @@ config FAT_FILESYSTEM_ELM
 	help
 	  Use the ELM FAT File system implementation.
 
-config FILE_SYSTEM_LITTLEFS
-	bool "LittleFS file system support"
-	depends on FLASH_MAP
-	depends on FLASH_PAGE_LAYOUT
-	help
-	  Enables LittleFS file system support.
-
-config FILE_SYSTEM_SHELL
-	bool "Enable file system shell"
-	depends on SHELL
-	depends on HEAP_MEM_POOL_SIZE > 0
-	help
-	  This shell provides basic browsing of the contents of the
-	  file system.
-
-config FUSE_FS_ACCESS
-	bool "Enable FUSE based access to file system partitions"
-	depends on ARCH_POSIX
-	help
-	  Expose file system partitions to the host system through FUSE.
-
 menu "FatFs Settings"
 	visible if FAT_FILESYSTEM_ELM
+
+config FS_FATFS_EXFAT
+	bool "Enable exFAT support"
+	select FS_FATFS_LFN
+	help
+	  Enable the exFAT format support for FatFs.
 
 config FS_FATFS_NUM_FILES
 	int "Maximum number of opened files"
@@ -130,6 +115,28 @@ config FS_FATFS_CODEPAGE
 	  950 - Traditional Chinese (DBCS)
 
 endmenu
+
+config FILE_SYSTEM_LITTLEFS
+	bool "LittleFS file system support"
+	depends on FLASH_MAP
+	depends on FLASH_PAGE_LAYOUT
+	help
+	  Enables LittleFS file system support.
+
+config FILE_SYSTEM_SHELL
+	bool "Enable file system shell"
+	depends on SHELL
+	depends on HEAP_MEM_POOL_SIZE > 0
+	help
+	  This shell provides basic browsing of the contents of the
+	  file system.
+
+config FUSE_FS_ACCESS
+	bool "Enable FUSE based access to file system partitions"
+	depends on ARCH_POSIX
+	help
+	  Expose file system partitions to the host system through FUSE.
+
 
 source "subsys/fs/Kconfig.littlefs"
 

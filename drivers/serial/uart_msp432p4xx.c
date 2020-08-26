@@ -29,9 +29,9 @@ struct uart_msp432p4xx_dev_data_t {
 };
 
 #define DEV_CFG(dev) \
-	((const struct uart_device_config * const)(dev)->config_info)
+	((const struct uart_device_config * const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct uart_msp432p4xx_dev_data_t * const)(dev)->driver_data)
+	((struct uart_msp432p4xx_dev_data_t * const)(dev)->data)
 
 DEVICE_DECLARE(uart_msp432p4xx_0);
 
@@ -329,7 +329,7 @@ static void uart_msp432p4xx_isr(void *arg)
 						(unsigned long)config->base);
 
 	if (dev_data->cb) {
-		dev_data->cb(dev_data->cb_data);
+		dev_data->cb(dev, dev_data->cb_data);
 	}
 	/*
 	 * Clear interrupts only after cb called, as Zephyr UART clients expect

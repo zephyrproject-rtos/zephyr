@@ -30,28 +30,32 @@ config PINMUX_INIT_PRIORITY
 	  rule for particular boards. Don't change this value unless you
 	  know what you are doing.
 
-source "drivers/pinmux/Kconfig.mcux"
-
-source "drivers/pinmux/Kconfig.mcux_lpc"
-
-source "drivers/pinmux/Kconfig.stm32"
-
 source "drivers/pinmux/Kconfig.beetle"
-
-source "drivers/pinmux/Kconfig.sifive"
 
 source "drivers/pinmux/Kconfig.cc13xx_cc26xx"
 
 source "drivers/pinmux/Kconfig.esp32"
 
-source "drivers/pinmux/Kconfig.sam0"
+source "drivers/pinmux/Kconfig.hsdk"
 
 source "drivers/pinmux/Kconfig.intel_s1000"
 
+source "drivers/pinmux/Kconfig.lpc11u6x"
+
+source "drivers/pinmux/Kconfig.mcux"
+
+source "drivers/pinmux/Kconfig.mcux_lpc"
+
 source "drivers/pinmux/Kconfig.rv32m1"
+
+source "drivers/pinmux/Kconfig.sifive"
+
+source "drivers/pinmux/Kconfig.sam0"
+
+source "drivers/pinmux/Kconfig.stm32"
 
 source "drivers/pinmux/Kconfig.xec"
 
-source "drivers/pinmux/Kconfig.hsdk"
+source "drivers/pinmux/Kconfig.npcx"
 
 endif # PINMUX

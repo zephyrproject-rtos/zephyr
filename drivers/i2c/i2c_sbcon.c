@@ -79,7 +79,7 @@ static const struct i2c_bitbang_io io_fns = {
 
 static int i2c_sbcon_configure(struct device *dev, uint32_t dev_config)
 {
-	struct i2c_sbcon_context *context = dev->driver_data;
+	struct i2c_sbcon_context *context = dev->data;
 
 	return i2c_bitbang_configure(&context->bitbang, dev_config);
 }
@@ -87,7 +87,7 @@ static int i2c_sbcon_configure(struct device *dev, uint32_t dev_config)
 static int i2c_sbcon_transfer(struct device *dev, struct i2c_msg *msgs,
 				uint8_t num_msgs, uint16_t slave_address)
 {
-	struct i2c_sbcon_context *context = dev->driver_data;
+	struct i2c_sbcon_context *context = dev->data;
 
 	return i2c_bitbang_transfer(&context->bitbang, msgs, num_msgs,
 							slave_address);
@@ -100,8 +100,8 @@ static struct i2c_driver_api api = {
 
 static int i2c_sbcon_init(struct device *dev)
 {
-	struct i2c_sbcon_context *context = dev->driver_data;
-	const struct i2c_sbcon_config *config = dev->config_info;
+	struct i2c_sbcon_context *context = dev->data;
+	const struct i2c_sbcon_config *config = dev->config;
 
 	i2c_bitbang_init(&context->bitbang, &io_fns, config->sbcon);
 

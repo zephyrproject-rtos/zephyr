@@ -48,7 +48,7 @@ static HwiP_Struct RF_hwiCpe0Obj;
 static inline struct ieee802154_cc13xx_cc26xx_data *
 get_dev_data(struct device *dev)
 {
-	return dev->driver_data;
+	return dev->data;
 }
 
 static enum ieee802154_hw_caps
@@ -434,7 +434,7 @@ static void ieee802154_cc13xx_cc26xx_data_init(struct device *dev)
 	k_sem_init(&drv_data->rx_done, 0, UINT_MAX);
 
 	k_thread_create(&drv_data->rx_thread, drv_data->rx_stack,
-			K_THREAD_STACK_SIZEOF(drv_data->rx_stack),
+			K_KERNEL_STACK_SIZEOF(drv_data->rx_stack),
 			ieee802154_cc13xx_cc26xx_rx, dev, NULL, NULL,
 			K_PRIO_COOP(2), 0, K_NO_WAIT);
 }

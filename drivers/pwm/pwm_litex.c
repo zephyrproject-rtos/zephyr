@@ -26,7 +26,7 @@ struct pwm_litex_cfg {
 };
 
 #define GET_PWM_CFG(dev)				       \
-	((const struct pwm_litex_cfg *) dev->config_info)
+	((const struct pwm_litex_cfg *) dev->config)
 
 static void litex_set_reg(volatile uint32_t *reg, uint32_t reg_size, uint32_t val)
 {

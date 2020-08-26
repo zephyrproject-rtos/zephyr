@@ -39,7 +39,7 @@ NET_BUF_POOL_VAR_DEFINE(isotp_tx_pool, CONFIG_ISOTP_TX_BUF_COUNT,
 			CONFIG_ISOTP_BUF_TX_DATA_POOL_SIZE, NULL);
 #endif
 
-K_THREAD_STACK_DEFINE(tx_stack, CONFIG_ISOTP_WORKQ_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(tx_stack, CONFIG_ISOTP_WORKQ_STACK_SIZE);
 static struct k_work_q isotp_workq;
 
 static void receive_state_machine(struct isotp_recv_ctx *ctx);
@@ -1263,7 +1263,7 @@ static int isotp_workq_init(struct device *dev)
 	LOG_DBG("Starting workqueue");
 	k_work_q_start(&isotp_workq,
 		       tx_stack,
-		       K_THREAD_STACK_SIZEOF(tx_stack),
+		       K_KERNEL_STACK_SIZEOF(tx_stack),
 		       CONFIG_ISOTP_WORKQUEUE_PRIO);
 	k_thread_name_set(&isotp_workq.thread, "isotp_work");
 

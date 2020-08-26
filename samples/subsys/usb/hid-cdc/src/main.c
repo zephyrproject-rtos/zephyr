@@ -17,17 +17,12 @@
 #define LOG_LEVEL LOG_LEVEL_DBG
 LOG_MODULE_REGISTER(main);
 
-#define FLAGS_OR_ZERO(node)						\
-	COND_CODE_1(DT_PHA_HAS_CELL(node, gpios, flags),		\
-		    (DT_GPIO_FLAGS(node, gpios)),			\
-		    (0))
-
 #define SW0_NODE DT_ALIAS(sw0)
 
 #if DT_NODE_HAS_STATUS(SW0_NODE, okay)
 #define PORT0		DT_GPIO_LABEL(SW0_NODE, gpios)
 #define PIN0		DT_GPIO_PIN(SW0_NODE, gpios)
-#define PIN0_FLAGS	FLAGS_OR_ZERO(SW0_NODE)
+#define PIN0_FLAGS	DT_GPIO_FLAGS(SW0_NODE, gpios)
 #else
 #error "Unsupported board: sw0 devicetree alias is not defined"
 #define PORT0		""
@@ -40,7 +35,7 @@ LOG_MODULE_REGISTER(main);
 #if DT_NODE_HAS_STATUS(SW1_NODE, okay)
 #define PORT1		DT_GPIO_LABEL(SW1_NODE, gpios)
 #define PIN1		DT_GPIO_PIN(SW1_NODE, gpios)
-#define PIN1_FLAGS	FLAGS_OR_ZERO(SW1_NODE)
+#define PIN1_FLAGS	DT_GPIO_FLAGS(SW1_NODE, gpios)
 #endif
 
 #define SW2_NODE DT_ALIAS(sw2)
@@ -48,7 +43,7 @@ LOG_MODULE_REGISTER(main);
 #if DT_NODE_HAS_STATUS(SW2_NODE, okay)
 #define PORT2		DT_GPIO_LABEL(SW2_NODE, gpios)
 #define PIN2		DT_GPIO_PIN(SW2_NODE, gpios)
-#define PIN2_FLAGS	FLAGS_OR_ZERO(SW2_NODE)
+#define PIN2_FLAGS	DT_GPIO_FLAGS(SW2_NODE, gpios)
 #endif
 
 #define SW3_NODE DT_ALIAS(sw3)
@@ -56,7 +51,7 @@ LOG_MODULE_REGISTER(main);
 #if DT_NODE_HAS_STATUS(SW3_NODE, okay)
 #define PORT3		DT_GPIO_LABEL(SW3_NODE, gpios)
 #define PIN3		DT_GPIO_PIN(SW3_NODE, gpios)
-#define PIN3_FLAGS	FLAGS_OR_ZERO(SW3_NODE)
+#define PIN3_FLAGS	DT_GPIO_FLAGS(SW3_NODE, gpios)
 #endif
 
 /* Event FIFO */
@@ -401,8 +396,10 @@ static void write_data(struct device *dev, const char *buf, int len)
 	uart_irq_tx_disable(dev);
 }
 
-static void cdc_mouse_int_handler(struct device *dev)
+static void cdc_mouse_int_handler(struct device *dev, void *user_data)
 {
+	ARG_UNUSED(user_data);
+
 	uart_irq_update(dev);
 
 	if (uart_irq_tx_ready(dev)) {
@@ -447,8 +444,10 @@ static void cdc_mouse_int_handler(struct device *dev)
 	}
 }
 
-static void cdc_kbd_int_handler(struct device *dev)
+static void cdc_kbd_int_handler(struct device *dev, void *user_data)
 {
+	ARG_UNUSED(user_data);
+
 	uart_irq_update(dev);
 
 	if (uart_irq_tx_ready(dev)) {

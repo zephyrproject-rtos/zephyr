@@ -67,42 +67,27 @@ static void dcache_enable(void)
 	dcache_dc_ctrl(DC_CTRL_DC_ENABLE);
 }
 
-
-/**
- *
- * @brief Flush multiple d-cache lines to memory
- *
- * No alignment is required for either <start_addr> or <size>, but since
- * dcache_flush_mlines() iterates on the d-cache lines, a cache line
- * alignment for both is optimal.
- *
- * The d-cache line size is specified either via the CONFIG_CACHE_LINE_SIZE
- * kconfig option or it is detected at runtime.
- *
- * @param start_addr the pointer to start the multi-line flush
- * @param size the number of bytes that are to be flushed
- *
- * @return N/A
- */
-static void dcache_flush_mlines(uint32_t start_addr, uint32_t size)
+void arch_dcache_flush(void *start_addr_ptr, size_t size)
 {
-	uint32_t end_addr;
+	uintptr_t start_addr = (uintptr_t)start_addr_ptr;
+	uintptr_t end_addr;
 	unsigned int key;
 
 	if (!dcache_available() || (size == 0U)) {
 		return;
 	}
 
-	end_addr = start_addr + size - 1;
-	start_addr &= (uint32_t)(~(DCACHE_LINE_SIZE - 1));
+	end_addr = start_addr + size;
+
+	start_addr = ROUND_DOWN(start_addr, DCACHE_LINE_SIZE);
 
 	key = arch_irq_lock(); /* --enter critical section-- */
 
 	do {
 		z_arc_v2_aux_reg_write(_ARC_V2_DC_FLDL, start_addr);
-		__asm__ volatile("nop_s");
-		__asm__ volatile("nop_s");
-		__asm__ volatile("nop_s");
+		__builtin_arc_nop();
+		__builtin_arc_nop();
+		__builtin_arc_nop();
 		/* wait for flush completion */
 		do {
 			if ((z_arc_v2_aux_reg_read(_ARC_V2_DC_CTRL) &
@@ -111,35 +96,35 @@ static void dcache_flush_mlines(uint32_t start_addr, uint32_t size)
 			}
 		} while (1);
 		start_addr += DCACHE_LINE_SIZE;
-	} while (start_addr <= end_addr);
+	} while (start_addr < end_addr);
 
 	arch_irq_unlock(key); /* --exit critical section-- */
 
 }
 
-
-/**
- *
- * @brief Flush d-cache lines to main memory
- *
- * No alignment is required for either <virt> or <size>, but since
- * sys_cache_flush() iterates on the d-cache lines, a d-cache line alignment for
- * both is optimal.
- *
- * The d-cache line size is specified either via the CONFIG_CACHE_LINE_SIZE
- * kconfig option or it is detected at runtime.
- *
- * @param start_addr the pointer to start the multi-line flush
- * @param size the number of bytes that are to be flushed
- *
- * @return N/A
- */
-
-void sys_cache_flush(vaddr_t start_addr, size_t size)
+void arch_dcache_invd(void *start_addr_ptr, size_t size)
 {
-	dcache_flush_mlines((uint32_t)start_addr, (uint32_t)size);
-}
+	uintptr_t start_addr = (uintptr_t)start_addr_ptr;
+	uintptr_t end_addr;
+	unsigned int key;
 
+	if (!dcache_available() || (size == 0U)) {
+		return;
+	}
+	end_addr = start_addr + size;
+	start_addr = ROUND_DOWN(start_addr, DCACHE_LINE_SIZE);
+
+	key = arch_irq_lock(); /* -enter critical section- */
+
+	do {
+		z_arc_v2_aux_reg_write(_ARC_V2_DC_IVDL, start_addr);
+		__builtin_arc_nop();
+		__builtin_arc_nop();
+		__builtin_arc_nop();
+		start_addr += DCACHE_LINE_SIZE;
+	} while (start_addr < end_addr);
+	irq_unlock(key); /* -exit critical section- */
+}
 
 #if defined(CONFIG_CACHE_LINE_SIZE_DETECT)
 size_t sys_cache_line_size;
@@ -154,6 +139,15 @@ static void init_dcache_line_size(void)
 	sys_cache_line_size = (size_t) val;
 }
 #endif
+
+size_t arch_cache_line_size_get(void)
+{
+#if defined(CONFIG_CACHE_LINE_SIZE_DETECT)
+	return sys_cache_line_size;
+#else
+	return 0;
+#endif
+}
 
 static int init_dcache(struct device *unused)
 {

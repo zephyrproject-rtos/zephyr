@@ -51,8 +51,8 @@ static int spi_slave_to_mr_pcs(int slave)
 static int spi_sam_configure(struct device *dev,
 			     const struct spi_config *config)
 {
-	const struct spi_sam_config *cfg = dev->config_info;
-	struct spi_sam_data *data = dev->driver_data;
+	const struct spi_sam_config *cfg = dev->config;
+	struct spi_sam_data *data = dev->data;
 	Spi *regs = cfg->regs;
 	uint32_t spi_mr = 0U, spi_csr = 0U;
 	int div;
@@ -272,7 +272,7 @@ static void spi_sam_fast_transceive(struct device *dev,
 				    const struct spi_buf_set *tx_bufs,
 				    const struct spi_buf_set *rx_bufs)
 {
-	const struct spi_sam_config *cfg = dev->config_info;
+	const struct spi_sam_config *cfg = dev->config;
 	size_t tx_count = 0;
 	size_t rx_count = 0;
 	Spi *regs = cfg->regs;
@@ -361,8 +361,8 @@ static int spi_sam_transceive(struct device *dev,
 			      const struct spi_buf_set *tx_bufs,
 			      const struct spi_buf_set *rx_bufs)
 {
-	const struct spi_sam_config *cfg = dev->config_info;
-	struct spi_sam_data *data = dev->driver_data;
+	const struct spi_sam_config *cfg = dev->config;
+	struct spi_sam_data *data = dev->data;
 	Spi *regs = cfg->regs;
 	int err;
 
@@ -420,7 +420,7 @@ static int spi_sam_transceive_async(struct device *dev,
 static int spi_sam_release(struct device *dev,
 			   const struct spi_config *config)
 {
-	struct spi_sam_data *data = dev->driver_data;
+	struct spi_sam_data *data = dev->data;
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
@@ -429,8 +429,8 @@ static int spi_sam_release(struct device *dev,
 
 static int spi_sam_init(struct device *dev)
 {
-	const struct spi_sam_config *cfg = dev->config_info;
-	struct spi_sam_data *data = dev->driver_data;
+	const struct spi_sam_config *cfg = dev->config;
+	struct spi_sam_data *data = dev->data;
 
 	soc_pmc_peripheral_enable(cfg->periph_id);
 

@@ -21,6 +21,11 @@ menuconfig CLOCK_CONTROL_NRF
 
 if CLOCK_CONTROL_NRF
 
+config CLOCK_CONTROL_NRF_SHELL
+	bool "Shell commands"
+	depends on SHELL
+	default y if SHELL
+
 choice CLOCK_CONTROL_NRF_SOURCE
 	prompt "32KHz clock source"
 	default CLOCK_CONTROL_NRF_K32SRC_XTAL
@@ -56,6 +61,13 @@ config CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
 	  risk.
 
 if CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
+
+config CLOCK_CONTROL_NRF_CALIBRATION_LF_ALWAYS_ON
+	bool "LF clock is always on"
+	default y if NRF_RTC_TIMER
+	help
+	  If RTC is used as system timer then LF clock is always on and handling
+	  can be simplified.
 
 config CLOCK_CONTROL_NRF_CALIBRATION_PERIOD
 	int "Calibration opportunity period in milliseconds"

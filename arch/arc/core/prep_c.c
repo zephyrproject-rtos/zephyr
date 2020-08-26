@@ -46,7 +46,7 @@ static void disable_icache(void)
 		return; /* skip if i-cache is not present */
 	}
 	z_arc_v2_aux_reg_write(_ARC_V2_IC_IVIC, 0);
-	__asm__ __volatile__ ("nop");
+	__builtin_arc_nop();
 	z_arc_v2_aux_reg_write(_ARC_V2_IC_CTRL, 1);
 }
 

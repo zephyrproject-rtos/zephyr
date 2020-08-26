@@ -25,7 +25,7 @@ struct imx_epit_data {
 
 static inline const struct imx_epit_config *get_epit_config(struct device *dev)
 {
-	return CONTAINER_OF(dev->config_info, struct imx_epit_config,
+	return CONTAINER_OF(dev->config, struct imx_epit_config,
 			    info);
 }
 
@@ -33,7 +33,7 @@ static void imx_epit_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
 	EPIT_Type *base = get_epit_config(dev)->base;
-	struct imx_epit_data *driver_data = dev->driver_data;
+	struct imx_epit_data *driver_data = dev->data;
 
 	EPIT_ClearStatusFlag(base);
 
@@ -100,7 +100,7 @@ static int imx_epit_set_top_value(struct device *dev,
 				  const struct counter_top_cfg *cfg)
 {
 	EPIT_Type *base = get_epit_config(dev)->base;
-	struct imx_epit_data *driver_data = dev->driver_data;
+	struct imx_epit_data *driver_data = dev->data;
 
 	/* Disable EPIT Output Compare interrupt for consistency */
 	EPIT_SetIntCmd(base, false);

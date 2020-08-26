@@ -19,9 +19,9 @@ LOG_MODULE_REGISTER(pwm_imx);
 				<<PWM_PWMCR_SWR_SHIFT))&PWM_PWMCR_SWR_MASK)
 
 #define DEV_CFG(dev) \
-	((const struct imx_pwm_config * const)(dev)->config_info)
+	((const struct imx_pwm_config * const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct imx_pwm_data * const)(dev)->driver_data)
+	((struct imx_pwm_data * const)(dev)->data)
 #define DEV_BASE(dev) \
 	((PWM_Type *)(DEV_CFG(dev))->base)
 

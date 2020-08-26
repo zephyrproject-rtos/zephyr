@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_DRIVERS_CLOCK_CONTROL_NRF_CLOCK_CALIBRATION_H_
 #define ZEPHYR_DRIVERS_CLOCK_CONTROL_NRF_CLOCK_CALIBRATION_H_
 
-#include <device.h>
+#include <sys/onoff.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,9 +15,9 @@ extern "C" {
 /**
  * @brief Initialize LFCLK RC calibration.
  *
- * @param hfclk_dev HFCLK device.
+ * @param mgrs Pointer to array of onoff managers for HF and LF clocks.
  */
-void z_nrf_clock_calibration_init(struct device *hfclk_dev);
+void z_nrf_clock_calibration_init(struct onoff_manager *mgrs);
 
 /**
  * @brief Calibration interrupts handler

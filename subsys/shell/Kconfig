@@ -146,9 +146,16 @@ config SHELL_CMDS_SELECT
 	  command. Exit to main command tree is with alt+r.
 
 config SHELL_LOG_BACKEND
-	bool
+	bool "Enable shell log backend"
 	depends on !LOG_MINIMAL
 	default y if LOG
+	help
+	  When enabled, backend will use the shell for logging.
+	  This option is enabled by default.
+	  Disabling this option disables log output to all shell backends.
+	  Disabling log output to a specific shell backend can be achieved
+	  using the shell backend's LOG_LEVEL option
+	  (e.g. CONFIG_SHELL_TELNET_INIT_LOG_LEVEL_NONE=y).
 
 source "subsys/shell/modules/Kconfig"
 

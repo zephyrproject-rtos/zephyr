@@ -77,9 +77,9 @@ struct uart_cmsdk_apb_dev_data {
 
 /* convenience defines */
 #define DEV_CFG(dev) \
-	((const struct uart_device_config * const)(dev)->config_info)
+	((const struct uart_device_config * const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct uart_cmsdk_apb_dev_data * const)(dev)->driver_data)
+	((struct uart_cmsdk_apb_dev_data * const)(dev)->data)
 #define UART_STRUCT(dev) \
 	((volatile struct uart_cmsdk_apb *)(DEV_CFG(dev))->base)
 
@@ -430,7 +430,7 @@ void uart_cmsdk_apb_isr(void *arg)
 
 	/* Verify if the callback has been registered */
 	if (data->irq_cb) {
-		data->irq_cb(data->irq_cb_data);
+		data->irq_cb(dev, data->irq_cb_data);
 	}
 }
 

@@ -27,7 +27,7 @@
 #include <linker/sections.h>
 
 GTEXT(__start)
-GTEXT(_vector_table)
+GDATA(_vector_table)
 GTEXT(_isr_wrapper)
 
 #else /* _ASMLANGUAGE */

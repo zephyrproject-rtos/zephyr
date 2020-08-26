@@ -237,8 +237,8 @@ static int _sock_send(struct esp_data *dev, struct esp_socket *sock)
 	k_sem_reset(&dev->sem_tx_ready);
 
 	ret = modem_cmd_send_nolock(&dev->mctx.iface, &dev->mctx.cmd_handler,
-			     NULL, 0, cmd_buf, &dev->sem_response,
-			     ESP_CMD_TIMEOUT);
+				    cmds, ARRAY_SIZE(cmds), cmd_buf,
+				    &dev->sem_response, ESP_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_DBG("Failed to send command");
 		goto out;
@@ -338,6 +338,10 @@ static int esp_sendto(struct net_pkt *pkt,
 	dev = esp_socket_to_dev(sock);
 
 	LOG_DBG("link %d, timeout %d", sock->link_id, timeout);
+
+	if (!esp_flag_is_set(dev, EDF_STA_CONNECTED)) {
+		return -ENETUNREACH;
+	}
 
 	if (sock->tx_pkt) {
 		return -EBUSY;

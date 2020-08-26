@@ -265,8 +265,10 @@ config NET_MAX_NEXTHOPS
 	  This determines how many entries can be stored in nexthop table.
 
 config NET_ROUTE_MCAST
-	bool
+	bool "Enable Multicast Routing / Forwarding"
 	depends on NET_ROUTE
+	help
+	  Activates multicast routing/forwarding
 
 config NET_MAX_MCAST_ROUTES
 	int "Max number of multicast routing entries stored."
@@ -378,19 +380,19 @@ config NET_TCP_RETRY_COUNT
 choice
 	prompt "Select TCP stack"
 	depends on NET_TCP
-	default NET_TCP1
+	default NET_TCP2
 	help
 	  Select the TCP stack implementation to use.
 
-config NET_TCP1
-	bool "Current stable TCP stack"
-	help
-	  The current TCP stack that has been in use since Zephyr 1.0.
-
 config NET_TCP2
-	bool "Experimental TCP stack"
+	bool "New TCP stack"
 	help
-	  Enable experimental TCP which is under development.
+	  Enable new TCP stack for Zephyr 2.4
+
+config NET_TCP1
+	bool "Legacy TCP stack"
+	help
+	  The legacy TCP stack that has been in use since Zephyr 1.0.
 
 endchoice
 
@@ -611,14 +613,6 @@ config NET_HEADERS_ALWAYS_CONTIGUOUS
 	  NET_BUF_FIXED_DATA_SIZE enabled and NET_BUF_DATA_SIZE of 128 for
 	  instance.
 
-config NET_IF_USERSPACE_ACCESS
-	bool "Allow userspace app to manipulate network interface"
-	depends on USERSPACE
-	help
-	  Only enable this if you want a userspace application to manipulate
-	  network interface. Currently this is limited to add or remove
-	  IP addresses. By default this is not allowed.
-
 choice
 	prompt "Default Network Interface"
 	default NET_DEFAULT_IF_FIRST
@@ -702,7 +696,7 @@ config NET_PKT_RXTIME_STATS
 	bool "Enable network packet RX time statistics"
 	select NET_PKT_TIMESTAMP
 	select NET_STATISTICS
-	depends on (NET_UDP || NET_TCP)
+	depends on (NET_UDP || NET_TCP || NET_SOCKETS_PACKET) && NET_NATIVE
 	help
 	  Enable network packet RX time statistics support. This is used to
 	  calculate how long on average it takes for a packet to travel from
@@ -711,22 +705,40 @@ config NET_PKT_RXTIME_STATS
 	  in net-shell.
 	  The RX statistics are only calculated for UDP and TCP packets.
 
+config NET_PKT_RXTIME_STATS_DETAIL
+	bool "Get extra receive detail statistics in RX path"
+	depends on NET_PKT_RXTIME_STATS
+	help
+	  Store receive statistics detail information in certain key points
+	  in RX path. This is very special configuration and will increase
+	  the size of net_pkt so in typical cases you should not enable it.
+	  The extra statistics can be seen in net-shell using "net stats"
+	  command.
+
 config NET_PKT_TXTIME_STATS
 	bool "Enable network packet TX time statistics"
 	select NET_PKT_TIMESTAMP
 	select NET_STATISTICS
-	depends on (NET_UDP || NET_TCP) && !NET_PKT_TXTIME
+	depends on (NET_UDP || NET_TCP || NET_SOCKETS_PACKET) && NET_NATIVE
 	help
 	  Enable network packet TX time statistics support. This is used to
 	  calculate how long on average it takes for a packet to travel from
 	  application to just before it is sent to network. The TX timing
 	  information can then be seen in network interface statistics in
 	  net-shell.
-	  The RX calculation is done only for UDP or TCP packets, but for TX
-	  we do not know the protocol so the TX packet timing is done for all
-	  network protocol packets.
-	  Note that CONFIG_NET_PKT_TXTIME cannot be set at the same time
-	  because net_pkt shares the time variable for statistics and TX time.
+	  The RX calculation is done only for UDP, TCP or RAW packets,
+	  but for TX we do not know the protocol so the TX packet timing is
+	  done for all network protocol packets.
+
+config NET_PKT_TXTIME_STATS_DETAIL
+	bool "Get extra transmit detail statistics in TX path"
+	depends on NET_PKT_TXTIME_STATS
+	help
+	  Store receive statistics detail information in certain key points
+	  in TX path. This is very special configuration and will increase
+	  the size of net_pkt so in typical cases you should not enable it.
+	  The extra statistics can be seen in net-shell using "net stats"
+	  command.
 
 config NET_PROMISCUOUS_MODE
 	bool "Enable promiscuous mode support [EXPERIMENTAL]"

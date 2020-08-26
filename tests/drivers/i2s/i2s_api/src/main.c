@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_driver_i2s
- * @{
- * @defgroup t_i2s_basic test_i2s_basic_operations
- * @}
- *
- */
 
 #include <zephyr.h>
 #include <ztest.h>

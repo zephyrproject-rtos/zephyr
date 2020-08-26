@@ -11,6 +11,7 @@ toolchain:
 supported:
   - adc
   - counter
+  - dac
   - dma
   - gpio
   - hwinfo

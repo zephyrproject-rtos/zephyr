@@ -62,6 +62,10 @@ struct modem_context {
 	char *data_model;
 	char *data_revision;
 	char *data_imei;
+#if defined(CONFIG_MODEM_SIM_NUMBERS)
+	char *data_imsi;
+	char *data_iccid;
+#endif
 	int   data_rssi;
 
 	/* pin config */

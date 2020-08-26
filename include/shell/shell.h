@@ -541,8 +541,9 @@ struct shell_flags {
 	uint32_t tx_rdy      :1;
 	uint32_t mode_delete :1; /*!< Operation mode of backspace key */
 	uint32_t history_exit:1; /*!< Request to exit history mode */
-	uint32_t cmd_ctx	  :1; /*!< Shell is executing command */
+	uint32_t cmd_ctx     :1; /*!< Shell is executing command */
 	uint32_t last_nl     :8; /*!< Last received new line character */
+	uint32_t print_noinit:1; /*!< Print request from not initialized shell*/
 };
 
 BUILD_ASSERT((sizeof(struct shell_flags) == sizeof(uint32_t)),
@@ -671,7 +672,7 @@ extern void shell_print_stream(const void *user_ctx, const char *data,
 			     true, shell_print_stream);			      \
 	LOG_INSTANCE_REGISTER(shell, _name, CONFIG_SHELL_LOG_LEVEL);	      \
 	SHELL_STATS_DEFINE(_name);					      \
-	static K_THREAD_STACK_DEFINE(_name##_stack, CONFIG_SHELL_STACK_SIZE); \
+	static K_KERNEL_STACK_DEFINE(_name##_stack, CONFIG_SHELL_STACK_SIZE); \
 	static struct k_thread _name##_thread;				      \
 	static const Z_STRUCT_SECTION_ITERABLE(shell, _name) = {	      \
 		.default_prompt = _prompt,				      \

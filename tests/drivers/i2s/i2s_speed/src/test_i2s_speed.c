@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * @addtogroup t_i2s_speed
- * @{
- * @defgroup t_i2s_speed test_i2s_speed
- * @brief TestPurpose: verify maximum speed the I2S driver can support
- * @}
- */
 
 #include <zephyr.h>
 #include <ztest.h>

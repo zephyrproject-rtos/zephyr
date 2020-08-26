@@ -10,3 +10,10 @@ config UART_XLNX_PS
 	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  This option enables the UART driver for Xilinx MPSoC platforms.
+
+config UART_XLNX_UARTLITE
+	bool "Xilinx UART Lite"
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the UART driver for Xilinx UART Lite IP.

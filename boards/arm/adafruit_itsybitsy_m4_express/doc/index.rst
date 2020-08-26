@@ -46,11 +46,30 @@ hardware features:
 +-----------+------------+------------------------------------------+
 | USART     | on-chip    | Serial ports                             |
 +-----------+------------+------------------------------------------+
+| SPI       | on-chip    | Serial Peripheral Interface ports        |
++-----------+------------+------------------------------------------+
+| TRNG      | on-chip    | True Random Number Generator             |
++-----------+------------+------------------------------------------+
+| HWINFO    | on-chip    | Unique 128 bit serial number             |
++-----------+------------+------------------------------------------+
+| RTC       | on-chip    | Real-Time Counter                        |
++-----------+------------+------------------------------------------+
+| USB       | on-chip    | USB device                               |
++-----------+------------+------------------------------------------+
+| WDT       | on-chip    | Watchdog Timer                           |
++-----------+------------+------------------------------------------+
+| PWM       | on-chip    | PWM                                      |
++-----------+------------+------------------------------------------+
 
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig file
 :zephyr_file:`boards/arm/adafruit_itsybitsy_m4_express/adafruit_itsybitsy_m4_express_defconfig`.
+
+Zephyr can use the default Cortex-M SYSTICK timer or the SAM0 specific RTC.
+To use the RTC, set :code:`CONFIG_CORTEX_M_SYSTICK=n` and set
+:code:`CONFIG_SYS_CLOCK_TICKS_PER_SEC` to no more than 32 kHZ divided by 7,
+i.e. no more than 4500.
 
 Connections and IOs
 ===================
@@ -70,11 +89,36 @@ Serial Port
 The SAMD51 MCU has 6 SERCOM based USARTs.  On the ItsyBitsy, SERCOM3 is
 the Zephyr console and is available on pins 0 (RX) and 1 (TX).
 
+SPI Port
+========
+
+The SAMD51 MCU has 6 SERCOM based SPIs.  On the ItsyBitsy, SERCOM1 can be put
+into SPI mode and used to connect to devices over the SCK (SCLK), MO (MOSI), and
+MI (MISO) pins.
+
+PWM
+===
+
+The SAMD51 has three PWM generators with up to six channels each.  :code:`TCC_0`
+has a resolution of 24 bits and all other generators are 16 bit.  :code:`TCC_1`
+pin 2 is mapped to PA18 (D7) and pin 3 is mapped to PA19 (D9).
+
+USB Device Port
+===============
+
+The SAMD51 MCU has a USB device port that can be used to communicate
+with a host PC.  See the :ref:`usb-samples` sample applications for
+more, such as the :ref:`usb_cdc-acm` sample which sets up a virtual
+serial port that echos characters back to the host PC.
+
 Programming and Debugging
 *************************
 
 The ItsyBitsy ships with a the BOSSA compatible UF2 bootloader.  The
 bootloader can be entered by quickly tapping the reset button twice.
+
+Additionally, if :code:`CONFIG_USB_CDC_ACM` is enabled then the bootloader
+will be entered automatically when you run :code:`west flash`.
 
 Flashing
 ========

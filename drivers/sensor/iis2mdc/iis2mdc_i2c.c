@@ -24,8 +24,8 @@ LOG_MODULE_DECLARE(IIS2MDC);
 static int iis2mdc_i2c_read(struct device *dev, uint8_t reg_addr,
 				 uint8_t *value, uint16_t len)
 {
-	struct iis2mdc_data *data = dev->driver_data;
-	const struct iis2mdc_config *cfg = dev->config_info;
+	struct iis2mdc_data *data = dev->data;
+	const struct iis2mdc_config *cfg = dev->config;
 
 	return i2c_burst_read(data->bus, cfg->i2c_slv_addr,
 			      reg_addr, value, len);
@@ -34,8 +34,8 @@ static int iis2mdc_i2c_read(struct device *dev, uint8_t reg_addr,
 static int iis2mdc_i2c_write(struct device *dev, uint8_t reg_addr,
 				  uint8_t *value, uint16_t len)
 {
-	struct iis2mdc_data *data = dev->driver_data;
-	const struct iis2mdc_config *cfg = dev->config_info;
+	struct iis2mdc_data *data = dev->data;
+	const struct iis2mdc_config *cfg = dev->config;
 
 	return i2c_burst_write(data->bus, cfg->i2c_slv_addr,
 			       reg_addr, value, len);
@@ -43,7 +43,7 @@ static int iis2mdc_i2c_write(struct device *dev, uint8_t reg_addr,
 
 int iis2mdc_i2c_init(struct device *dev)
 {
-	struct iis2mdc_data *data = dev->driver_data;
+	struct iis2mdc_data *data = dev->data;
 
 	data->ctx_i2c.read_reg = (stmdev_read_ptr) iis2mdc_i2c_read;
 	data->ctx_i2c.write_reg = (stmdev_write_ptr) iis2mdc_i2c_write;

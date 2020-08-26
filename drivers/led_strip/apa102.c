@@ -12,24 +12,6 @@
 #include <drivers/gpio.h>
 #include <sys/util.h>
 
-/*
- * Devicetree helper macros which gets the 'flags' cell from a 'cs_gpios'
- * property on the spi bus, or returns 0 if the property has no 'flags' cell.
- *
- * Hopefully these helpers will be removed once #25827 is resolved.
- */
-#define HAS_FLAGS(spi_dev, spi_reg)					\
-	DT_PHA_HAS_CELL_AT_IDX(spi_dev, cs_gpios, spi_reg, flags)
-
-#define INST_SPI_DEV_CS_GPIOS_HAS_FLAGS(node)			\
-	HAS_FLAGS(DT_BUS(node), DT_REG_ADDR(node))
-
-#define FLAGS_OR_ZERO(inst)						\
-	COND_CODE_1(							\
-		INST_SPI_DEV_CS_GPIOS_HAS_FLAGS(DT_DRV_INST(inst)),	\
-		(DT_INST_SPI_DEV_CS_GPIOS_FLAGS(inst)),			\
-		(0x0))
-
 struct apa102_data {
 	struct device *spi;
 	struct spi_config cfg;
@@ -40,7 +22,7 @@ struct apa102_data {
 
 static int apa102_update(struct device *dev, void *buf, size_t size)
 {
-	struct apa102_data *data = dev->driver_data;
+	struct apa102_data *data = dev->data;
 	static const uint8_t zeros[] = {0, 0, 0, 0};
 	static const uint8_t ones[] = {0xFF, 0xFF, 0xFF, 0xFF};
 	const struct spi_buf tx_bufs[] = {
@@ -104,7 +86,7 @@ static int apa102_update_channels(struct device *dev, uint8_t *channels,
 
 static int apa102_init(struct device *dev)
 {
-	struct apa102_data *data = dev->driver_data;
+	struct apa102_data *data = dev->data;
 
 	data->spi = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!data->spi) {
@@ -128,7 +110,8 @@ static int apa102_init(struct device *dev)
 	data->cfg.cs = &data->cs_ctl;
 
 	gpio_pin_configure(data->cs_ctl.gpio_dev, data->cs_ctl.gpio_pin,
-			   GPIO_OUTPUT_INACTIVE | FLAGS_OR_ZERO(0));
+			   GPIO_OUTPUT_INACTIVE |
+			   DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0));
 #endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 
 	return 0;

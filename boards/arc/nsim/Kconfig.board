@@ -9,4 +9,4 @@ config BOARD_NSIM
 	help
 	  The DesignWare ARC nSIM board is a virtual board based on
 	  the ARC nSIM simulator. It demonstrates the ARC core features
-	  and a console based on the legacy ARC UART model.
+	  and a console based on the ns16550 UART model.

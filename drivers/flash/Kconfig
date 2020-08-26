@@ -17,6 +17,21 @@ config FLASH_HAS_PAGE_LAYOUT
 	  This option is enabled when the SoC flash driver supports
 	  retrieving the layout of flash memory pages.
 
+config FLASH_JESD216
+	bool
+	help
+	 Selected by drivers that support JESD216-compatible flash
+	 devices to enable building a common support module.
+
+config FLASH_JESD216_API
+	bool "Provide API to read JESD216 flash parameters"
+	depends on FLASH_JESD216
+	help
+	  This option extends the Zephyr flash API with the ability
+	  to access the Serial Flash Discoverable Parameter section
+	  allowing runtime determination of serial flash parameters
+	  for flash drivers that expose this capability.
+
 menuconfig FLASH
 	bool "Flash hardware support"
 	help

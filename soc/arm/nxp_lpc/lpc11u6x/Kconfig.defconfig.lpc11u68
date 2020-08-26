@@ -1,0 +1,11 @@
+# NXP LPC11U68 platform configuration options
+
+# Copyright (c) 2020, Seagate
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_LPC11U68
+
+config SOC
+	default "lpc11u68"
+
+endif # SOC_LPC11U68

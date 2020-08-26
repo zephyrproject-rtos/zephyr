@@ -99,7 +99,7 @@ int bt_mesh_pb_gatt_close(struct bt_conn *conn)
 	BT_DBG("conn %p", conn);
 
 	if (link.conn != conn) {
-		BT_ERR("Not connected");
+		BT_DBG("Not connected");
 		return -ENOTCONN;
 	}
 

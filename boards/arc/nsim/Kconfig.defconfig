@@ -5,7 +5,7 @@ if BOARD_NSIM
 config BOARD
 	default "nsim"
 
-config UART_NSIM
+config UART_NS16550
 	default y
 	depends on SERIAL
 

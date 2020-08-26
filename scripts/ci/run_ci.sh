@@ -20,7 +20,7 @@
 
 set -xe
 
-sanitycheck_options=" --inline-logs -N -v"
+sanitycheck_options=" --inline-logs -N -v --integration"
 export BSIM_OUT_PATH="${BSIM_OUT_PATH:-/opt/bsim/}"
 if [ ! -d "${BSIM_OUT_PATH}" ]; then
         unset BSIM_OUT_PATH
@@ -268,6 +268,8 @@ if [ -n "$main_ci" ]; then
 	tail -n +2 test_file_2.txt > test_file_2_in.txt
 	tail -n +2 test_file_1.txt > test_file_1_in.txt
 	cat test_file_3.txt test_file_2_in.txt test_file_1_in.txt > test_file.txt
+
+	buildkite-agent artifact upload test_file.txt
 
 	echo "+++ run sanitycheck"
 

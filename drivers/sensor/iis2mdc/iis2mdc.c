@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(IIS2MDC, CONFIG_SENSOR_LOG_LEVEL);
 #ifdef CONFIG_IIS2MDC_MAG_ODR_RUNTIME
 static int iis2mdc_set_odr(struct device *dev, const struct sensor_value *val)
 {
-	struct iis2mdc_data *iis2mdc = dev->driver_data;
+	struct iis2mdc_data *iis2mdc = dev->data;
 	iis2mdc_odr_t odr;
 
 	switch (val->val1) {
@@ -56,7 +56,7 @@ static int iis2mdc_set_odr(struct device *dev, const struct sensor_value *val)
 static int iis2mdc_set_hard_iron(struct device *dev, enum sensor_channel chan,
 				   const struct sensor_value *val)
 {
-	struct iis2mdc_data *iis2mdc = dev->driver_data;
+	struct iis2mdc_data *iis2mdc = dev->data;
 	uint8_t i;
 	union axis3bit16_t offset;
 
@@ -75,7 +75,7 @@ static void iis2mdc_channel_get_mag(struct device *dev,
 	int32_t cval;
 	int i;
 	uint8_t ofs_start, ofs_stop;
-	struct iis2mdc_data *iis2mdc = dev->driver_data;
+	struct iis2mdc_data *iis2mdc = dev->data;
 	struct sensor_value *pval = val;
 
 	switch (chan) {
@@ -105,7 +105,7 @@ static void iis2mdc_channel_get_mag(struct device *dev,
 static void iis2mdc_channel_get_temp(struct device *dev,
 				       struct sensor_value *val)
 {
-	struct iis2mdc_data *drv_data = dev->driver_data;
+	struct iis2mdc_data *drv_data = dev->data;
 
 	val->val1 = drv_data->temp_sample / 100;
 	val->val2 = (drv_data->temp_sample % 100) * 10000;
@@ -173,7 +173,7 @@ static int iis2mdc_attr_set(struct device *dev,
 
 static int iis2mdc_sample_fetch_mag(struct device *dev)
 {
-	struct iis2mdc_data *iis2mdc = dev->driver_data;
+	struct iis2mdc_data *iis2mdc = dev->data;
 	union axis3bit16_t raw_mag;
 
 	/* fetch raw data sample */
@@ -191,7 +191,7 @@ static int iis2mdc_sample_fetch_mag(struct device *dev)
 
 static int iis2mdc_sample_fetch_temp(struct device *dev)
 {
-	struct iis2mdc_data *iis2mdc = dev->driver_data;
+	struct iis2mdc_data *iis2mdc = dev->data;
 	union axis1bit16_t raw_temp;
 	int32_t temp;
 
@@ -242,9 +242,8 @@ static const struct sensor_driver_api iis2mdc_driver_api = {
 
 static int iis2mdc_init_interface(struct device *dev)
 {
-	const struct iis2mdc_config *const config =
-						dev->config_info;
-	struct iis2mdc_data *iis2mdc = dev->driver_data;
+	const struct iis2mdc_config *const config = dev->config;
+	struct iis2mdc_data *iis2mdc = dev->data;
 
 	iis2mdc->bus = device_get_binding(config->master_dev_name);
 	if (!iis2mdc->bus) {
@@ -289,7 +288,7 @@ static const struct iis2mdc_config iis2mdc_dev_config = {
 
 static int iis2mdc_init(struct device *dev)
 {
-	struct iis2mdc_data *iis2mdc = dev->driver_data;
+	struct iis2mdc_data *iis2mdc = dev->data;
 	uint8_t wai;
 
 	if (iis2mdc_init_interface(dev)) {

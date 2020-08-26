@@ -80,9 +80,9 @@ struct uart_stellaris_dev_data_t {
 /* convenience defines */
 
 #define DEV_CFG(dev) \
-	((const struct uart_device_config * const)(dev)->config_info)
+	((const struct uart_device_config * const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct uart_stellaris_dev_data_t * const)(dev)->driver_data)
+	((struct uart_stellaris_dev_data_t * const)(dev)->data)
 #define UART_STRUCT(dev) \
 	((volatile struct _uart *)(DEV_CFG(dev))->base)
 
@@ -597,7 +597,7 @@ static void uart_stellaris_isr(void *arg)
 	struct uart_stellaris_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	if (dev_data->cb) {
-		dev_data->cb(dev_data->cb_data);
+		dev_data->cb(dev, dev_data->cb_data);
 	}
 }
 

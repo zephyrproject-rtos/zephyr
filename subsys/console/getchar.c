@@ -62,7 +62,7 @@ int console_init(void)
 	/* Checks device driver supports for interrupt driven data transfers. */
 	if (CONFIG_CONSOLE_GETCHAR_BUFSIZE + CONFIG_CONSOLE_PUTCHAR_BUFSIZE) {
 		const struct uart_driver_api *api =
-			(const struct uart_driver_api *)uart_dev->driver_api;
+			(const struct uart_driver_api *)uart_dev->api;
 		if (!api->irq_callback_set) {
 			return -ENOTSUP;
 		}

@@ -99,8 +99,8 @@ static void ms5837_compensate(struct ms5837_data *data,
 
 static int ms5837_sample_fetch(struct device *dev, enum sensor_channel channel)
 {
-	struct ms5837_data *data = dev->driver_data;
-	const struct ms5837_config *cfg = dev->config_info;
+	struct ms5837_data *data = dev->data;
+	const struct ms5837_config *cfg = dev->config;
 	int err;
 	uint32_t adc_pressure;
 	uint32_t adc_temperature;
@@ -131,7 +131,7 @@ static int ms5837_sample_fetch(struct device *dev, enum sensor_channel channel)
 static int ms5837_channel_get(struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	struct ms5837_data *data = dev->driver_data;
+	struct ms5837_data *data = dev->data;
 
 	switch (chan) {
 	case SENSOR_CHAN_AMBIENT_TEMP:
@@ -153,7 +153,7 @@ static int ms5837_attr_set(struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
 {
-	struct ms5837_data *data = dev->driver_data;
+	struct ms5837_data *data = dev->data;
 	uint8_t p_conv_cmd;
 	uint8_t t_conv_cmd;
 	uint8_t conv_delay;
@@ -245,8 +245,8 @@ static int ms5837_read_prom(struct device *i2c_master, const uint8_t i2c_address
 
 static int ms5837_init(struct device *dev)
 {
-	struct ms5837_data *data = dev->driver_data;
-	const struct ms5837_config *cfg = dev->config_info;
+	struct ms5837_data *data = dev->data;
+	const struct ms5837_config *cfg = dev->config;
 	int err;
 	uint8_t cmd;
 

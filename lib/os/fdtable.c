@@ -19,17 +19,13 @@
 #include <sys/fdtable.h>
 #include <sys/speculation.h>
 #include <syscall_handler.h>
+#include <sys/atomic.h>
 
 struct fd_entry {
 	void *obj;
 	const struct fd_op_vtable *vtable;
+	atomic_t refcount;
 };
-
-/* A few magic values for fd_entry::obj used in the code. */
-#define FD_OBJ_RESERVED (void *)1
-#define FD_OBJ_STDIN  (void *)0x10
-#define FD_OBJ_STDOUT (void *)0x11
-#define FD_OBJ_STDERR (void *)0x12
 
 #ifdef CONFIG_POSIX_API
 static const struct fd_op_vtable stdinout_fd_op_vtable;
@@ -38,24 +34,53 @@ static const struct fd_op_vtable stdinout_fd_op_vtable;
 static struct fd_entry fdtable[CONFIG_POSIX_MAX_FDS] = {
 #ifdef CONFIG_POSIX_API
 	/*
-	 * Predefine entries for stdin/stdout/stderr. Object pointer
-	 * is unused and just should be !0 (random different values
-	 * are used to posisbly help with debugging).
+	 * Predefine entries for stdin/stdout/stderr.
 	 */
-	{FD_OBJ_STDIN,  &stdinout_fd_op_vtable},
-	{FD_OBJ_STDOUT, &stdinout_fd_op_vtable},
-	{FD_OBJ_STDERR, &stdinout_fd_op_vtable},
+	{
+		/* STDIN */
+		.vtable = &stdinout_fd_op_vtable,
+		.refcount = ATOMIC_INIT(1)
+	},
+	{
+		/* STDOUT */
+		.vtable = &stdinout_fd_op_vtable,
+		.refcount = ATOMIC_INIT(1)
+	},
+	{
+		/* STDERR */
+		.vtable = &stdinout_fd_op_vtable,
+		.refcount = ATOMIC_INIT(1)
+	},
 #endif
 };
 
 static K_MUTEX_DEFINE(fdtable_lock);
+
+static int z_fd_ref(int fd)
+{
+	return atomic_inc(&fdtable[fd].refcount) + 1;
+}
+
+static int z_fd_unref(int fd)
+{
+	int old_rc = atomic_dec(&fdtable[fd].refcount);
+
+	if (old_rc != 1) {
+		return old_rc - 1;
+	}
+
+	fdtable[fd].obj = NULL;
+	fdtable[fd].vtable = NULL;
+
+	return 0;
+}
 
 static int _find_fd_entry(void)
 {
 	int fd;
 
 	for (fd = 0; fd < ARRAY_SIZE(fdtable); fd++) {
-		if (fdtable[fd].obj == NULL) {
+		if (!atomic_get(&fdtable[fd].refcount)) {
 			return fd;
 		}
 	}
@@ -73,7 +98,7 @@ static int _check_fd(int fd)
 
 	fd = k_array_index_sanitize(fd, ARRAY_SIZE(fdtable));
 
-	if (fdtable[fd].obj == NULL) {
+	if (!atomic_get(&fdtable[fd].refcount)) {
 		errno = EBADF;
 		return -1;
 	}
@@ -122,7 +147,8 @@ int z_reserve_fd(void)
 	fd = _find_fd_entry();
 	if (fd >= 0) {
 		/* Mark entry as used, z_finalize_fd() will fill it in. */
-		fdtable[fd].obj = FD_OBJ_RESERVED;
+		fdtable[fd].obj = NULL;
+		fdtable[fd].vtable = NULL;
 	}
 
 	k_mutex_unlock(&fdtable_lock);
@@ -145,12 +171,13 @@ void z_finalize_fd(int fd, void *obj, const struct fd_op_vtable *vtable)
 #endif
 	fdtable[fd].obj = obj;
 	fdtable[fd].vtable = vtable;
+	(void)z_fd_ref(fd);
 }
 
 void z_free_fd(int fd)
 {
 	/* Assumes fd was already bounds-checked. */
-	fdtable[fd].obj = NULL;
+	(void)z_fd_unref(fd);
 }
 
 int z_alloc_fd(void *obj, const struct fd_op_vtable *vtable)
@@ -195,7 +222,8 @@ int close(int fd)
 		return -1;
 	}
 
-	res = z_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_CLOSE);
+	res = fdtable[fd].vtable->close(fdtable[fd].obj);
+
 	z_free_fd(fd);
 
 	return res;
@@ -238,12 +266,6 @@ int ioctl(int fd, unsigned long request, ...)
 	return res;
 }
 
-/*
- * In the SimpleLink case, we have yet to add support for the fdtable
- * feature. The socket offload subsys has already defined fcntl, hence we
- * avoid redefining fcntl here.
- */
-#ifndef CONFIG_SOC_FAMILY_TISIMPLELINK
 int fcntl(int fd, int cmd, ...)
 {
 	va_list args;
@@ -268,7 +290,6 @@ int fcntl(int fd, int cmd, ...)
 
 	return res;
 }
-#endif
 
 /*
  * fd operations for stdio/stdout/stderr

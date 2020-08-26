@@ -1966,11 +1966,14 @@ PREDEFINED             = "CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT" \
                          "CONFIG_BT_SMP" \
                          "CONFIG_BT_SMP_APP_PAIRING_ACCEPT" \
                          "CONFIG_DEVICE_POWER_MANAGEMENT" \
+                         "CONFIG_DEVICE_IDLE_PM" \
                          "CONFIG_ERRNO" \
                          "CONFIG_EXECUTION_BENCHMARKING" \
+                         "CONFIG_FLASH_JESD216_API" \
                          "CONFIG_FLASH_PAGE_LAYOUT" \
                          "CONFIG_FPU" \
                          "CONFIG_FPU_SHARING" \
+                         "CONFIG_MMU" \
                          "CONFIG_NET_L2_ETHERNET_MGMT" \
                          "CONFIG_NET_MGMT_EVENT" \
                          "CONFIG_NET_TCP" \

@@ -195,36 +195,21 @@ struct z_x86_thread_stack_header {
 #endif /* CONFIG_USERSPACE */
 } __packed __aligned(Z_X86_STACK_BASE_ALIGN);
 
+#define ARCH_THREAD_STACK_OBJ_ALIGN(size)	Z_X86_STACK_BASE_ALIGN
+
+#define ARCH_THREAD_STACK_SIZE_ADJUST(size) \
+	ROUND_UP((size), Z_X86_STACK_SIZE_ALIGN)
+
 #define ARCH_THREAD_STACK_RESERVED \
 	sizeof(struct z_x86_thread_stack_header)
 
-#define ARCH_THREAD_STACK_DEFINE(sym, size) \
-	struct z_thread_stack_element __noinit \
-		__aligned(Z_X86_STACK_BASE_ALIGN) \
-		sym[ROUND_UP((size), Z_X86_STACK_SIZE_ALIGN) + \
-			ARCH_THREAD_STACK_RESERVED]
-
-#define ARCH_THREAD_STACK_LEN(size) \
-		(ROUND_UP((size), \
-			  MAX(Z_X86_STACK_BASE_ALIGN, \
-			      Z_X86_STACK_SIZE_ALIGN)) + \
-		ARCH_THREAD_STACK_RESERVED)
-
-#define ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct z_thread_stack_element __noinit \
-		__aligned(Z_X86_STACK_BASE_ALIGN) \
-		sym[nmemb][ARCH_THREAD_STACK_LEN(size)]
-
-#define ARCH_THREAD_STACK_MEMBER(sym, size) \
-	struct z_thread_stack_element __aligned(Z_X86_STACK_BASE_ALIGN) \
-		sym[ROUND_UP((size), Z_X86_STACK_SIZE_ALIGN) + \
-			ARCH_THREAD_STACK_RESERVED]
-
-#define ARCH_THREAD_STACK_SIZEOF(sym) \
-	(sizeof(sym) - ARCH_THREAD_STACK_RESERVED)
-
-#define ARCH_THREAD_STACK_BUFFER(sym) \
-	((char *)((sym) + ARCH_THREAD_STACK_RESERVED))
+#ifdef CONFIG_HW_STACK_PROTECTION
+#define ARCH_KERNEL_STACK_RESERVED	MMU_PAGE_SIZE
+#define ARCH_KERNEL_STACK_OBJ_ALIGN	MMU_PAGE_SIZE
+#else
+#define ARCH_KERNEL_STACK_RESERVED	0
+#define ARCH_KERNEL_STACK_OBJ_ALIGN	ARCH_STACK_PTR_ALIGN
+#endif
 
 #endif /* !_ASMLANGUAGE */
 #endif /* ZEPHYR_INCLUDE_ARCH_X86_THREAD_STACK_H */

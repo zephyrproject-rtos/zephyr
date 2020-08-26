@@ -188,11 +188,6 @@ config THREAD_USERSPACE_LOCAL_DATA
 	bool
 	depends on USERSPACE
 
-config THREAD_USERSPACE_LOCAL_DATA_ARCH_DEFER_SETUP
-	bool
-	depends on THREAD_USERSPACE_LOCAL_DATA
-	default y if ARC || ARM
-
 config ERRNO
 	bool "Enable errno support"
 	default y
@@ -429,7 +424,7 @@ config POLL
 	  Asynchronous notification framework. Enable the k_poll() and
 	  k_poll_signal_raise() APIs.  The former can wait on multiple events
 	  concurrently, which can be either directly triggered or triggered by
-	  the availability of some kernel objects (semaphores and fifos).
+	  the availability of some kernel objects (semaphores and FIFOs).
 
 endmenu
 
@@ -473,9 +468,9 @@ config HEAP_MEM_POOL_SIZE
 	default 1024 if POSIX_MQUEUE
 	help
 	  This option specifies the size of the heap memory pool used when
-	  dynamically allocating memory using k_malloc(). Supported values
-	  are: 256, 1024, 4096, and 16384. A size of zero means that no
-	  heap memory pool is defined.
+	  dynamically allocating memory using k_malloc(). The maximum size of
+	  the memory pool is only limited to available memory. A size of zero
+	  means that no heap memory pool is defined.
 
 config HEAP_MEM_POOL_MIN_SIZE
 	int "The smallest blocks in the heap memory pool (in bytes)"

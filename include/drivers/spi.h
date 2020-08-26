@@ -264,7 +264,7 @@ static inline int z_impl_spi_transceive(struct device *dev,
 				       const struct spi_buf_set *rx_bufs)
 {
 	const struct spi_driver_api *api =
-		(const struct spi_driver_api *)dev->driver_api;
+		(const struct spi_driver_api *)dev->api;
 
 	return api->transceive(dev, config, tx_bufs, rx_bufs);
 }
@@ -309,7 +309,6 @@ static inline int spi_write(struct device *dev,
 	return spi_transceive(dev, config, tx_bufs, NULL);
 }
 
-#ifdef CONFIG_SPI_ASYNC
 /**
  * @brief Read/write the specified amount of data from the SPI driver.
  *
@@ -336,10 +335,20 @@ static inline int spi_transceive_async(struct device *dev,
 				       const struct spi_buf_set *rx_bufs,
 				       struct k_poll_signal *async)
 {
+#ifdef CONFIG_SPI_ASYNC
 	const struct spi_driver_api *api =
-		(const struct spi_driver_api *)dev->driver_api;
+		(const struct spi_driver_api *)dev->api;
 
 	return api->transceive_async(dev, config, tx_bufs, rx_bufs, async);
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(config);
+	ARG_UNUSED(tx_bufs);
+	ARG_UNUSED(rx_bufs);
+	ARG_UNUSED(async);
+
+	return -ENOTSUP;
+#endif /* CONFIG_SPI_ASYNC */
 }
 
 /**
@@ -391,7 +400,6 @@ static inline int spi_write_async(struct device *dev,
 {
 	return spi_transceive_async(dev, config, tx_bufs, NULL, async);
 }
-#endif /* CONFIG_SPI_ASYNC */
 
 /**
  * @brief Release the SPI device locked on by the current config
@@ -413,7 +421,7 @@ static inline int z_impl_spi_release(struct device *dev,
 				    const struct spi_config *config)
 {
 	const struct spi_driver_api *api =
-		(const struct spi_driver_api *)dev->driver_api;
+		(const struct spi_driver_api *)dev->api;
 
 	return api->release(dev, config);
 }

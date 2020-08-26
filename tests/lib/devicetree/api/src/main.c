@@ -18,6 +18,26 @@
 #define TEST_PH	DT_NODELABEL(test_phandles)
 #define TEST_IRQ	DT_NODELABEL(test_irq)
 #define TEST_TEMP	DT_NODELABEL(test_temp_sensor)
+#define TEST_REG	DT_NODELABEL(test_reg)
+
+#define TEST_I2C_DEV DT_PATH(test, i2c_11112222, test_i2c_dev_10)
+#define TEST_I2C_BUS DT_BUS(TEST_I2C_DEV)
+
+#define TEST_SPI DT_NODELABEL(test_spi)
+
+#define TEST_SPI_DEV_0 DT_PATH(test, spi_33334444, test_spi_dev_0)
+#define TEST_SPI_BUS_0 DT_BUS(TEST_SPI_DEV_0)
+
+#define TEST_SPI_DEV_1 DT_PATH(test, spi_33334444, test_spi_dev_1)
+#define TEST_SPI_BUS_1 DT_BUS(TEST_SPI_DEV_1)
+
+#define TEST_SPI_NO_CS DT_NODELABEL(test_spi_no_cs)
+#define TEST_SPI_DEV_NO_CS DT_NODELABEL(test_spi_no_cs)
+
+#define TA_HAS_COMPAT(compat) DT_NODE_HAS_COMPAT(TEST_ARRAYS, compat)
+
+#define TO_STRING(x) TO_STRING_(x)
+#define TO_STRING_(x) #x
 
 static void test_path_props(void)
 {
@@ -139,6 +159,57 @@ static void test_inst_props(void)
 		     "inst 0 label");
 }
 
+static void test_default_prop_access(void)
+{
+	/*
+	 * The APIs guarantee that the default_value is not expanded
+	 * if the relevant property or cell is defined. This "X" macro
+	 * is meant as poison which causes (hopefully) easy to
+	 * understand build errors if this guarantee is not met due to
+	 * a regression.
+	 */
+#undef X
+#define X do.not.expand.this.argument
+
+	/* Node identifier variants. */
+	zassert_equal(DT_PROP_OR(TEST_REG, misc_prop, X), 1234, "");
+	zassert_equal(DT_PROP_OR(TEST_REG, not_a_property, -1), -1, "");
+
+	zassert_equal(DT_PHA_BY_IDX_OR(TEST_TEMP, dmas, 1, channel, X), 3, "");
+	zassert_equal(DT_PHA_BY_IDX_OR(TEST_TEMP, dmas, 1, not_a_cell, -1), -1,
+		      "");
+
+	zassert_equal(DT_PHA_OR(TEST_TEMP, dmas, channel, X), 1, "");
+	zassert_equal(DT_PHA_OR(TEST_TEMP, dmas, not_a_cell, -1), -1, "");
+
+	zassert_equal(DT_PHA_BY_NAME_OR(TEST_TEMP, dmas, tx, channel, X), 1,
+		      "");
+	zassert_equal(DT_PHA_BY_NAME_OR(TEST_TEMP, dmas, tx, not_a_cell, -1),
+		      -1, "");
+
+	/* Instance number variants. */
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_reg_holder
+	zassert_equal(DT_INST_PROP_OR(0, misc_prop, X), 1234, "");
+	zassert_equal(DT_INST_PROP_OR(0, not_a_property, -1), -1, "");
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_adc_temp_sensor
+	zassert_equal(DT_INST_PHA_BY_IDX_OR(0, dmas, 1, channel, X), 3, "");
+	zassert_equal(DT_INST_PHA_BY_IDX_OR(0, dmas, 1, not_a_cell, -1), -1,
+		      "");
+
+	zassert_equal(DT_INST_PHA_OR(0, dmas, channel, X), 1, "");
+	zassert_equal(DT_INST_PHA_OR(0, dmas, not_a_cell, -1), -1, "");
+
+	zassert_equal(DT_INST_PHA_BY_NAME_OR(0, dmas, tx, channel, X), 1,
+		      "");
+	zassert_equal(DT_INST_PHA_BY_NAME_OR(0, dmas, tx, not_a_cell, -1), -1,
+		      "");
+
+#undef X
+}
+
 static void test_has_path(void)
 {
 	zassert_equal(DT_NODE_HAS_STATUS(DT_PATH(test, gpio_0), okay), 0,
@@ -182,8 +253,6 @@ static void test_has_nodelabel(void)
 		      "TEST_NODELABEL_ALLCAPS");
 }
 
-#define TA_HAS_COMPAT(compat) DT_NODE_HAS_COMPAT(TEST_ARRAYS, compat)
-
 static void test_has_compat(void)
 {
 	unsigned int compats;
@@ -221,20 +290,6 @@ static void test_has_status(void)
 	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(disabled_gpio), okay),
 		      0, "vnd,disabled-compat not okay");
 }
-
-#define TEST_I2C_DEV DT_PATH(test, i2c_11112222, test_i2c_dev_10)
-#define TEST_I2C_BUS DT_BUS(TEST_I2C_DEV)
-
-#define TEST_SPI DT_NODELABEL(test_spi)
-
-#define TEST_SPI_DEV_0 DT_PATH(test, spi_33334444, test_spi_dev_0)
-#define TEST_SPI_BUS_0 DT_BUS(TEST_SPI_DEV_0)
-
-#define TEST_SPI_DEV_1 DT_PATH(test, spi_33334444, test_spi_dev_1)
-#define TEST_SPI_BUS_1 DT_BUS(TEST_SPI_DEV_1)
-
-#define TEST_SPI_NO_CS DT_NODELABEL(test_spi_no_cs)
-#define TEST_SPI_DEV_NO_CS DT_NODELABEL(test_spi_no_cs)
 
 static void test_bus(void)
 {
@@ -1118,9 +1173,6 @@ static void test_pwms(void)
 	zassert_equal(DT_INST_PWMS_FLAGS(0), 3, "pwm channel");
 }
 
-#define TO_STRING(x) TO_STRING_(x)
-#define TO_STRING_(x) #x
-
 static void test_macro_names(void)
 {
 	/* white box */
@@ -1142,6 +1194,9 @@ static void test_macro_names(void)
 
 	zassert_true(!strcmp(TO_STRING(CHILD_NODE_ID), TO_STRING(FULL_PATH_ID)),
 		     "child");
+
+#undef CHILD_NODE_ID
+#undef FULL_PATH_ID
 }
 
 static int a[] = DT_PROP(TEST_ARRAYS, a);
@@ -1212,7 +1267,7 @@ struct test_gpio_data {
 
 static int test_gpio_init(struct device *dev)
 {
-	struct test_gpio_data *data = dev->driver_data;
+	struct test_gpio_data *data = dev->data;
 
 	data->init_called = 1;
 	return 0;
@@ -1246,12 +1301,12 @@ DT_INST_FOREACH_STATUS_OKAY(TEST_GPIO_INIT)
 
 static inline struct test_gpio_data *to_data(struct device *dev)
 {
-	return (struct test_gpio_data *)dev->driver_data;
+	return (struct test_gpio_data *)dev->data;
 }
 
 static inline const struct test_gpio_info *to_info(struct device *dev)
 {
-	return (const struct test_gpio_info *)dev->config_info;
+	return (const struct test_gpio_info *)dev->config;
 }
 
 static void test_devices(void)
@@ -1485,6 +1540,7 @@ void test_main(void)
 			 ztest_unit_test(test_alias_props),
 			 ztest_unit_test(test_nodelabel_props),
 			 ztest_unit_test(test_inst_props),
+			 ztest_unit_test(test_default_prop_access),
 			 ztest_unit_test(test_has_path),
 			 ztest_unit_test(test_has_alias),
 			 ztest_unit_test(test_inst_checks),

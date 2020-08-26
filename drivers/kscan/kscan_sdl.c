@@ -19,7 +19,7 @@ struct sdl_data {
 static int sdl_filter(void *arg, SDL_Event *event)
 {
 	struct device *dev = arg;
-	struct sdl_data *data = dev->driver_data;
+	struct sdl_data *data = dev->data;
 	uint32_t row = 0;
 	uint32_t column = 0;
 	bool pressed = 0;
@@ -54,7 +54,7 @@ static int sdl_filter(void *arg, SDL_Event *event)
 
 static int sdl_configure(struct device *dev, kscan_callback_t callback)
 {
-	struct sdl_data *data = dev->driver_data;
+	struct sdl_data *data = dev->data;
 
 	if (!callback) {
 		LOG_ERR("Callback is null");
@@ -69,7 +69,7 @@ static int sdl_configure(struct device *dev, kscan_callback_t callback)
 
 static int sdl_enable_callback(struct device *dev)
 {
-	struct sdl_data *data = dev->driver_data;
+	struct sdl_data *data = dev->data;
 
 	LOG_DBG("%s: enable cb", dev->name);
 	data->enabled = true;
@@ -78,7 +78,7 @@ static int sdl_enable_callback(struct device *dev)
 
 static int sdl_disable_callback(struct device *dev)
 {
-	struct sdl_data *data = dev->driver_data;
+	struct sdl_data *data = dev->data;
 
 	LOG_DBG("%s: disable cb", dev->name);
 	data->enabled = false;

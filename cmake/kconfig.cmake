@@ -5,6 +5,22 @@
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig/include/generated)
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig/include/config)
 
+# Support multiple SOC_ROOT
+set(OPERATION WRITE)
+foreach(root ${SOC_ROOT})
+  file(${OPERATION} ${KCONFIG_BINARY_DIR}/Kconfig.soc.defconfig
+       "osource \"${root}/soc/$(ARCH)/*/Kconfig.defconfig\"\n"
+  )
+  file(${OPERATION} ${KCONFIG_BINARY_DIR}/Kconfig.soc
+       "osource \"${root}/soc/$(ARCH)/*/Kconfig.soc\"\n"
+  )
+  file(${OPERATION} ${KCONFIG_BINARY_DIR}/Kconfig.soc.arch
+       "osource \"${root}/soc/$(ARCH)/Kconfig\"\n"
+       "osource \"${root}/soc/$(ARCH)/*/Kconfig\"\n"
+  )
+  set(OPERATION APPEND)
+endforeach()
+
 if(KCONFIG_ROOT)
   # KCONFIG_ROOT has either been specified as a CMake variable or is
   # already in the CMakeCache.txt. This has precedence.
@@ -41,9 +57,8 @@ set(ENV{PYTHON_EXECUTABLE} ${PYTHON_EXECUTABLE})
 # files for other architectures
 set(ENV{ARCH}      ${ARCH})
 set(ENV{BOARD_DIR} ${BOARD_DIR})
-set(ENV{SOC_DIR}   ${SOC_DIR})
 set(ENV{SHIELD_AS_LIST} "${SHIELD_AS_LIST}")
-set(ENV{CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR})
+set(ENV{KCONFIG_BINARY_DIR} ${KCONFIG_BINARY_DIR})
 set(ENV{ARCH_DIR}   ${ARCH_DIR})
 set(ENV{TOOLCHAIN_KCONFIG_DIR} "${TOOLCHAIN_KCONFIG_DIR}")
 set(ENV{EDT_PICKLE} ${EDT_PICKLE})
@@ -85,9 +100,8 @@ foreach(kconfig_target
     KCONFIG_CONFIG=${DOTCONFIG}
     ARCH=$ENV{ARCH}
     BOARD_DIR=$ENV{BOARD_DIR}
-    SOC_DIR=$ENV{SOC_DIR}
     SHIELD_AS_LIST=$ENV{SHIELD_AS_LIST}
-    CMAKE_BINARY_DIR=$ENV{CMAKE_BINARY_DIR}
+    KCONFIG_BINARY_DIR=$ENV{KCONFIG_BINARY_DIR}
     ZEPHYR_TOOLCHAIN_VARIANT=${ZEPHYR_TOOLCHAIN_VARIANT}
     TOOLCHAIN_KCONFIG_DIR=${TOOLCHAIN_KCONFIG_DIR}
     ARCH_DIR=$ENV{ARCH_DIR}

@@ -32,14 +32,14 @@ static void main_cpu_1(void)
 	}
 }
 
-static void mhu_isr_callback(void *context, uint32_t cpu_id,
-					volatile void *data)
+static void mhu_isr_callback(struct device *dev, void *context,
+			     uint32_t cpu_id, volatile void *data)
 {
 	const uint32_t set_mhu = 1;
 
 	printk("MHU ISR on CPU %d\n", cpu_id);
 	if (cpu_id == MHU_CPU0) {
-		ipm_send(mhu0, 0, MHU_CPU1, &set_mhu, 1);
+		ipm_send(dev, 0, MHU_CPU1, &set_mhu, 1);
 	} else if (cpu_id == MHU_CPU1) {
 		printk("MHU Test Done.\n");
 	}
@@ -58,7 +58,7 @@ void main(void)
 	} else {
 		printk("CPU %d, get MHU0 success!\n",
 				sse_200_platform_get_cpu_id());
-		ipm_register_callback(mhu0, mhu_isr_callback, mhu0);
+		ipm_register_callback(mhu0, mhu_isr_callback, NULL);
 	}
 
 	if (sse_200_platform_get_cpu_id() == MHU_CPU0) {

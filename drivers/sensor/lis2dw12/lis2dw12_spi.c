@@ -99,7 +99,7 @@ stmdev_ctx_t lis2dw12_spi_ctx = {
 
 int lis2dw12_spi_init(struct device *dev)
 {
-	struct lis2dw12_data *data = dev->driver_data;
+	struct lis2dw12_data *data = dev->data;
 
 	data->ctx = &lis2dw12_spi_ctx;
 	data->ctx->handle = data;

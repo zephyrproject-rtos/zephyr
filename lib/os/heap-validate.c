@@ -22,22 +22,34 @@ static size_t max_chunkid(struct z_heap *h)
 	return h->len - min_chunk_size(h);
 }
 
+#define VALIDATE(cond) do { if (!(cond)) { return false; } } while (0)
+
 static bool in_bounds(struct z_heap *h, chunkid_t c)
 {
-	return (c >= right_chunk(h, 0))
-		&& (c <= max_chunkid(h))
-		&& (chunk_size(h, c) < h->len);
+	VALIDATE(c >= right_chunk(h, 0));
+	VALIDATE(c <= max_chunkid(h));
+	VALIDATE(chunk_size(h, c) < h->len);
+	return true;
 }
 
 static bool valid_chunk(struct z_heap *h, chunkid_t c)
 {
-	return (chunk_size(h, c) > 0
-		&& (c + chunk_size(h, c) <= h->len)
-		&& in_bounds(h, c)
-		&& (right_chunk(h, left_chunk(h, c)) == c)
-		&& (left_chunk(h, right_chunk(h, c)) == c)
-		&& (chunk_used(h, c) || in_bounds(h, prev_free_chunk(h, c)))
-		&& (chunk_used(h, c) || in_bounds(h, next_free_chunk(h, c))));
+	VALIDATE(chunk_size(h, c) > 0);
+	VALIDATE(c + chunk_size(h, c) <= h->len);
+	VALIDATE(in_bounds(h, c));
+	VALIDATE(right_chunk(h, left_chunk(h, c)) == c);
+	VALIDATE(left_chunk(h, right_chunk(h, c)) == c);
+	if (chunk_used(h, c)) {
+		VALIDATE(!solo_free_header(h, c));
+	} else {
+		VALIDATE(chunk_used(h, left_chunk(h, c)));
+		VALIDATE(chunk_used(h, right_chunk(h, c)));
+		if (!solo_free_header(h, c)) {
+			VALIDATE(in_bounds(h, prev_free_chunk(h, c)));
+			VALIDATE(in_bounds(h, next_free_chunk(h, c)));
+		}
+	}
+	return true;
 }
 
 /* Validate multiple state dimensions for the bucket "next" pointer
@@ -64,6 +76,18 @@ bool sys_heap_validate(struct sys_heap *heap)
 {
 	struct z_heap *h = heap->heap;
 	chunkid_t c;
+
+	/*
+	 * Walk through the chunks linearly, verifying sizes and end pointer.
+	 */
+	for (c = right_chunk(h, 0); c <= max_chunkid(h); c = right_chunk(h, c)) {
+		if (!valid_chunk(h, c)) {
+			return false;
+		}
+	}
+	if (c != h->len) {
+		return false;  /* Should have exactly consumed the buffer */
+	}
 
 	/* Check the free lists: entry count should match, empty bit
 	 * should be correct, and all chunk entries should point into
@@ -95,18 +119,15 @@ bool sys_heap_validate(struct sys_heap *heap)
 		}
 	}
 
-	/* Walk through the chunks linearly, verifying sizes and end
-	 * pointer and that the all chunks are now USED (i.e. all free
-	 * blocks were found during enumeration).  Mark all blocks
-	 * UNUSED
+	/*
+	 * Walk through the chunks linearly again, verifying that all chunks
+	 * but solo headers are now USED (i.e. all free blocks were found
+	 * during enumeration).  Mark all such blocks UNUSED and solo headers
+	 * USED.
 	 */
 	chunkid_t prev_chunk = 0;
-
 	for (c = right_chunk(h, 0); c <= max_chunkid(h); c = right_chunk(h, c)) {
-		if (!valid_chunk(h, c)) {
-			return false;
-		}
-		if (!chunk_used(h, c)) {
+		if (!chunk_used(h, c) && !solo_free_header(h, c)) {
 			return false;
 		}
 		if (left_chunk(h, c) != prev_chunk) {
@@ -114,7 +135,7 @@ bool sys_heap_validate(struct sys_heap *heap)
 		}
 		prev_chunk = c;
 
-		set_chunk_used(h, c, false);
+		set_chunk_used(h, c, solo_free_header(h, c));
 	}
 	if (c != h->len) {
 		return false;  /* Should have exactly consumed the buffer */

@@ -14,8 +14,8 @@ LOG_MODULE_REGISTER(MAX30101, CONFIG_SENSOR_LOG_LEVEL);
 
 static int max30101_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct max30101_data *data = dev->driver_data;
-	const struct max30101_config *config = dev->config_info;
+	struct max30101_data *data = dev->data;
+	const struct max30101_config *config = dev->config;
 	uint8_t buffer[MAX30101_MAX_BYTES_PER_SAMPLE];
 	uint32_t fifo_data;
 	int fifo_chan;
@@ -47,7 +47,7 @@ static int max30101_sample_fetch(struct device *dev, enum sensor_channel chan)
 static int max30101_channel_get(struct device *dev, enum sensor_channel chan,
 				struct sensor_value *val)
 {
-	struct max30101_data *data = dev->driver_data;
+	struct max30101_data *data = dev->data;
 	enum max30101_led_channel led_chan;
 	int fifo_chan;
 
@@ -93,8 +93,8 @@ static const struct sensor_driver_api max30101_driver_api = {
 
 static int max30101_init(struct device *dev)
 {
-	const struct max30101_config *config = dev->config_info;
-	struct max30101_data *data = dev->driver_data;
+	const struct max30101_config *config = dev->config;
+	struct max30101_data *data = dev->data;
 	uint8_t part_id;
 	uint8_t mode_cfg;
 	uint32_t led_chan;

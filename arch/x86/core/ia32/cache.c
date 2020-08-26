@@ -47,15 +47,15 @@ extern size_t z_cache_line_size_get(void);
  * @return N/A
  */
 
-_sys_cache_flush_sig(_cache_flush_clflush)
+void arch_dcache_flush(void *start_addr, size_t size)
 {
-	int end;
+	uintptr_t end;
 
 	size = ROUND_UP(size, sys_cache_line_size);
-	end = virt + size;
+	end = (uintptr_t)start_addr + size;
 
-	for (; virt < end; virt += sys_cache_line_size) {
-		__asm__ volatile("clflush %0;\n\t" :  : "m"(virt));
+	for (; (uintptr_t)start_addr < end; (uintptr_t)start_addr += sys_cache_line_size) {
+		__asm__ volatile("clflush %0;\n\t" :  : "m"((uintptr_t)start_addr));
 	}
 
 	__asm__ volatile("mfence;\n\t");
@@ -67,26 +67,6 @@ _sys_cache_flush_sig(_cache_flush_clflush)
 
 #include <init.h>
 
-#if defined(CONFIG_CLFLUSH_DETECT)
-_sys_cache_flush_t *sys_cache_flush;
-static void init_cache_flush(void)
-{
-	if (z_is_clflush_available()) {
-		sys_cache_flush = _cache_flush_clflush;
-	} else {
-		sys_cache_flush = z_cache_flush_wbinvd;
-	}
-}
-#else
-#define init_cache_flush() do { } while (false)
-
-#if defined(CONFIG_CLFLUSH_INSTRUCTION_SUPPORTED)
-FUNC_ALIAS(_cache_flush_clflush, sys_cache_flush, void);
-#endif
-
-#endif /* CONFIG_CLFLUSH_DETECT */
-
-
 #if defined(CONFIG_CACHE_LINE_SIZE_DETECT)
 size_t sys_cache_line_size;
 static void init_cache_line_size(void)
@@ -97,11 +77,19 @@ static void init_cache_line_size(void)
 #define init_cache_line_size() do { } while ((0))
 #endif
 
+size_t arch_cache_line_size_get(void)
+{
+#if defined(CONFIG_CACHE_LINE_SIZE_DETECT)
+	return sys_cache_line_size;
+#else
+	return 0;
+#endif
+}
+
 static int init_cache(struct device *unused)
 {
 	ARG_UNUSED(unused);
 
-	init_cache_flush();
 	init_cache_line_size();
 
 	return 0;

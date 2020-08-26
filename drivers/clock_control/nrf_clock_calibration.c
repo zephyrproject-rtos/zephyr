@@ -37,20 +37,17 @@ static uint8_t calib_skip_cnt; /* Counting down skipped calibrations. */
 static volatile int total_cnt; /* Total number of calibrations. */
 static volatile int total_skips_cnt; /* Total number of skipped calibrations. */
 
-/* Callback called on hfclk started. */
-static void cal_hf_on_callback(struct device *dev,
-				clock_control_subsys_t subsys,
-				void *user_data);
-static struct clock_control_async_data cal_hf_on_data = {
-	.cb = cal_hf_on_callback
-};
-static void cal_lf_on_callback(struct device *dev,
-				clock_control_subsys_t subsys, void *user_data);
-static struct clock_control_async_data cal_lf_on_data = {
-	.cb = cal_lf_on_callback
-};
 
-static struct device *clk_dev;
+static void cal_hf_callback(struct onoff_manager *mgr,
+			    struct onoff_client *cli,
+			    uint32_t state, int res);
+static void cal_lf_callback(struct onoff_manager *mgr,
+			    struct onoff_client *cli,
+			    uint32_t state, int res);
+
+static struct onoff_client cli;
+static struct onoff_manager *mgrs;
+
 static struct device *temp_sensor;
 
 static void measure_temperature(struct k_work *work);
@@ -59,30 +56,47 @@ static K_WORK_DEFINE(temp_measure_work, measure_temperature);
 static void timeout_handler(struct k_timer *timer);
 static K_TIMER_DEFINE(backoff_timer, timeout_handler, NULL);
 
-static void hf_request(void)
+static void clk_request(struct onoff_manager *mgr, struct onoff_client *cli,
+			onoff_client_callback callback)
 {
-	clock_control_async_on(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF,
-				&cal_hf_on_data);
+	int err;
+
+	sys_notify_init_callback(&cli->notify, callback);
+	err = onoff_request(mgr, cli);
+	__ASSERT_NO_MSG(err >= 0);
 }
 
-static void hf_release(void)
+static void clk_release(struct onoff_manager *mgr)
 {
-	clock_control_off(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF);
+	int err;
+
+	err = onoff_release(mgr);
+	__ASSERT_NO_MSG(err >= 0);
+}
+
+static void hf_request(void)
+{
+	clk_request(&mgrs[CLOCK_CONTROL_NRF_TYPE_HFCLK], &cli, cal_hf_callback);
 }
 
 static void lf_request(void)
 {
-	clock_control_async_on(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF,
-				&cal_lf_on_data);
+	clk_request(&mgrs[CLOCK_CONTROL_NRF_TYPE_LFCLK], &cli, cal_lf_callback);
+}
+
+static void hf_release(void)
+{
+	clk_release(&mgrs[CLOCK_CONTROL_NRF_TYPE_HFCLK]);
 }
 
 static void lf_release(void)
 {
-	clock_control_off(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
+	clk_release(&mgrs[CLOCK_CONTROL_NRF_TYPE_LFCLK]);
 }
 
-static void cal_lf_on_callback(struct device *dev,
-				clock_control_subsys_t subsys, void *user_data)
+static void cal_lf_callback(struct onoff_manager *mgr,
+			    struct onoff_client *cli,
+			    uint32_t state, int res)
 {
 	hf_request();
 }
@@ -106,7 +120,11 @@ static void start_cycle(void)
 		      K_MSEC(CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD),
 		      K_NO_WAIT);
 	hf_release();
-	lf_release();
+
+	if (!IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_LF_ALWAYS_ON)) {
+		lf_release();
+	}
+
 	cal_process_in_progress = 0;
 }
 
@@ -116,12 +134,17 @@ static void start_cal_process(void)
 		return;
 	}
 
-	/* LF clock is probably running but it is requested to ensure that
-	 * it is not released while calibration process in ongoing. If system
-	 * releases the clock during calibration process it will be released
-	 * at the end of calibration process and stopped in consequence.
-	 */
-	lf_request();
+	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_LF_ALWAYS_ON)) {
+		hf_request();
+	} else {
+		/* LF clock is probably running but it is requested to ensure
+		 * that it is not released while calibration process in ongoing.
+		 * If system releases the clock during calibration process it
+		 * will be released at the end of calibration process and
+		 * stopped in consequence.
+		 */
+		lf_request();
+	}
 }
 
 static void timeout_handler(struct k_timer *timer)
@@ -132,8 +155,9 @@ static void timeout_handler(struct k_timer *timer)
 /* Called when HFCLK XTAL is on. Schedules temperature measurement or triggers
  * calibration.
  */
-static void cal_hf_on_callback(struct device *dev,
-				clock_control_subsys_t subsys, void *user_data)
+static void cal_hf_callback(struct onoff_manager *mgr,
+			    struct onoff_client *cli,
+			    uint32_t state, int res)
 {
 	if ((temp_sensor == NULL) || !IS_ENABLED(CONFIG_MULTITHREADING)) {
 		start_hw_cal();
@@ -223,7 +247,7 @@ static inline struct device *temp_device(void)
 #define temp_device() NULL
 #endif
 
-void z_nrf_clock_calibration_init(struct device *dev)
+void z_nrf_clock_calibration_init(struct onoff_manager *onoff_mgrs)
 {
 	/* Anomaly 36: After watchdog timeout reset, CPU lockup reset, soft
 	 * reset, or pin reset EVENTS_DONE and EVENTS_CTTO are not reset.
@@ -231,7 +255,7 @@ void z_nrf_clock_calibration_init(struct device *dev)
 	nrf_clock_event_clear(NRF_CLOCK, NRF_CLOCK_EVENT_DONE);
 	nrf_clock_int_enable(NRF_CLOCK, NRF_CLOCK_INT_DONE_MASK);
 
-	clk_dev = dev;
+	mgrs = onoff_mgrs;
 	total_cnt = 0;
 	total_skips_cnt = 0;
 }

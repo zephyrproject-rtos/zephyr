@@ -77,6 +77,11 @@ static ALWAYS_INLINE void clock_init(void)
 	RESET_PeripheralReset(kHSLSPI_RST_SHIFT_RSTn);
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(wwdt0), nxp_lpc_wwdt, okay)
+	/* Enable 1 MHz FRO clock for WWDT */
+	SYSCON->CLOCK_CTRL |= SYSCON_CLOCK_CTRL_FRO1MHZ_CLK_ENA_MASK;
+#endif
+
 #endif /* CONFIG_SOC_LPC55S69_CPU0 */
 }
 

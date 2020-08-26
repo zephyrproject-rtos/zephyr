@@ -1280,6 +1280,16 @@ struct bt_conn_auth_cb {
 	 */
 	void (*pairing_failed)(struct bt_conn *conn,
 			       enum bt_security_err reason);
+
+	/** @brief Notify that bond has been deleted.
+	 *
+	 *  This callback notifies the application that the bond information
+	 *  for the remote peer has been deleted
+	 *
+	 *  @param id   Which local identity had the bond.
+	 *  @param peer Remote address.
+	 */
+	void (*bond_deleted)(uint8_t id, const bt_addr_le_t *peer);
 };
 
 /** @brief Register authentication callbacks.

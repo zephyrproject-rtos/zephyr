@@ -33,7 +33,7 @@ static int dummy_sensor_channel_get(struct device *dev,
 				enum sensor_channel chan,
 				struct sensor_value *val)
 {
-	struct dummy_sensor_data *data = dev->driver_data;
+	struct dummy_sensor_data *data = dev->data;
 
 	switch (chan) {
 	case SENSOR_CHAN_LIGHT:
@@ -73,8 +73,8 @@ static int dummy_init_interrupt(struct device *dev)
 
 static int dummy_sensor_init(struct device *dev)
 {
-	struct dummy_sensor_data *data = dev->driver_data;
-	const struct dummy_sensor_config *config = dev->config_info;
+	struct dummy_sensor_data *data = dev->data;
+	const struct dummy_sensor_config *config = dev->config;
 	/* i2c should be null for dummy driver */
 	struct device *i2c = device_get_binding(config->i2c_name);
 
@@ -102,7 +102,7 @@ int dummy_sensor_attr_set(struct device *dev,
 		      enum sensor_attribute attr,
 		      const struct sensor_value *val)
 {
-	struct dummy_sensor_data *data = dev->driver_data;
+	struct dummy_sensor_data *data = dev->data;
 
 	if (chan == SENSOR_CHAN_PROX &&
 	    attr == SENSOR_ATTR_UPPER_THRESH) {
@@ -119,7 +119,7 @@ int dummy_sensor_attr_get(struct device *dev,
 		      enum sensor_attribute attr,
 		      struct sensor_value *val)
 {
-	struct dummy_sensor_data *data = dev->driver_data;
+	struct dummy_sensor_data *data = dev->data;
 
 	if (chan == SENSOR_CHAN_PROX &&
 	    attr == SENSOR_ATTR_UPPER_THRESH) {
@@ -135,7 +135,7 @@ int dummy_sensor_trigger_set(struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
-	struct dummy_sensor_data *data = dev->driver_data;
+	struct dummy_sensor_data *data = dev->data;
 
 	switch (trig->type) {
 	case SENSOR_TRIG_THRESHOLD:

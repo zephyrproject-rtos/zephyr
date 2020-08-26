@@ -200,7 +200,8 @@ void arc_core_mpu_configure_thread(struct k_thread *thread)
 	if (thread->base.user_options & K_USER) {
 		LOG_DBG("configure user thread %p's stack", thread);
 		if (_mpu_configure(THREAD_STACK_USER_REGION,
-		(uint32_t)thread->stack_obj, thread->stack_info.size) < 0) {
+				   (uint32_t)thread->stack_info.start,
+				   thread->stack_info.size) < 0) {
 			LOG_ERR("user thread %p's stack failed", thread);
 			return;
 		}

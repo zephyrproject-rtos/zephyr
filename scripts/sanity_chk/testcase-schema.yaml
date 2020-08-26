@@ -14,94 +14,99 @@ mapping:
     type: map
     required: no
     mapping:
-     "arch_exclude":
-       type: str
-       required: no
-     "arch_whitelist":
-       type: str
-       required: no
-     "build_only":
-       type: bool
-       required: no
-     "build_on_all":
-       type: bool
-       required: no
-     "depends_on":
-       type: str
-       required: no
-     "extra_args":
-       type: str
-       required: no
-     "extra_sections":
-       type: str
-       required: no
-     "filter":
-       type: str
-       required: no
-     "harness":
-       type: str
-       required: no
-     "harness_config":
-       type: map
-       required: no
-       mapping:
-         "type":
+      "arch_exclude":
+        type: str
+        required: no
+      "arch_whitelist":
+        type: str
+        required: no
+      "build_only":
+        type: bool
+        required: no
+      "build_on_all":
+        type: bool
+        required: no
+      "depends_on":
+        type: str
+        required: no
+      "extra_args":
+        type: str
+        required: no
+      "extra_sections":
+        type: str
+        required: no
+      "filter":
+        type: str
+        required: no
+      "integration_platforms":
+        type: seq
+        required: no
+        sequence:
+          - type: str
+      "harness":
+        type: str
+        required: no
+      "harness_config":
+        type: map
+        required: no
+        mapping:
+          "type":
             type: str
             required: no
-         "fixture":
+          "fixture":
             type: str
             required: no
-         "ordered":
+          "ordered":
             type: bool
             required: no
-         "repeat":
+          "repeat":
             type: int
             required: no
-         "regex":
+          "regex":
             type: seq
             required: no
             sequence:
               - type: str
-         "record":
+          "record":
             type: map
             required: no
             mapping:
               "regex":
                 type: str
                 required: no
-     "min_ram":
-       type: int
-       required: no
-     "min_flash":
-       type: int
-       required: no
-     "platform_exclude":
-       type: str
-       required: no
-     "platform_whitelist":
-       type: str
-       required: no
-     "tags":
-       type: str
-       required: no
-     "timeout":
-       type: int
-       required: no
-     "toolchain_exclude":
-       type: str
-       required: no
-     "toolchain_whitelist":
-       type: str
-       required: no
-     "type":
-       type: str
-       enum: [ 'unit' ]
-     "skip":
-       type: bool
-       required: no
-     "slow":
-       type: bool
-       required: no
+      "min_ram":
+        type: int
+        required: no
+      "min_flash":
+        type: int
+        required: no
+      "platform_exclude":
+        type: str
+        required: no
+      "platform_whitelist":
+        type: str
+        required: no
+      "tags":
+        type: str
+        required: no
+      "timeout":
+        type: int
+        required: no
+      "toolchain_exclude":
+        type: str
+        required: no
+      "toolchain_whitelist":
+        type: str
+        required: no
+      "type":
+        type: str
+        enum: ["unit"]
+      "skip":
+        type: bool
+        required: no
+      "slow":
+        type: bool
+        required: no
   # The sample descriptor, if present
   "sample":
     type: map
@@ -117,108 +122,113 @@ mapping:
   # maps maps, shall just be a sequence of maps
   # maybe it is just an artifact?
   "tests":
-      type: map
-      matching-rule: "any"
-      mapping:
-          # The key for the testname is any, so
-          # regex;(([a-zA-Z0-9_]+)) for this to work, note below we
-          # make it required: no
-          regex;(([a-zA-Z0-9_]+)):
+    type: map
+    matching-rule: "any"
+    mapping:
+      # The key for the testname is any, so
+      # regex;(([a-zA-Z0-9_]+)) for this to work, note below we
+      # make it required: no
+      regex;(([a-zA-Z0-9_]+)):
+        type: map
+        # has to be not-required, otherwise the parser gets
+        # confused and things it never found it
+        required: no
+        mapping:
+          "arch_exclude":
+            type: str
+            required: no
+          "arch_whitelist":
+            type: str
+            required: no
+          "build_only":
+            type: bool
+            required: no
+          "build_on_all":
+            type: bool
+            required: no
+          "depends_on":
+            type: str
+            required: no
+          "extra_args":
+            type: str
+            required: no
+          "extra_configs":
+            type: seq
+            required: no
+            sequence:
+              - type: str
+          "extra_sections":
+            type: str
+            required: no
+          "filter":
+            type: str
+            required: no
+          "integration_platforms":
+            type: seq
+            required: no
+            sequence:
+              - type: str
+          "harness":
+            type: str
+            required: no
+          "harness_config":
             type: map
-            # has to be not-required, otherwise the parser gets
-            # confused and things it never found it
             required: no
             mapping:
-             "arch_exclude":
-               type: str
-               required: no
-             "arch_whitelist":
-               type: str
-               required: no
-             "build_only":
-               type: bool
-               required: no
-             "build_on_all":
-               type: bool
-               required: no
-             "depends_on":
-               type: str
-               required: no
-             "extra_args":
-               type: str
-               required: no
-             "extra_configs":
-               type: seq
-               required: no
-               sequence:
-                 - type: str
-             "extra_sections":
-               type: str
-               required: no
-             "filter":
-               type: str
-               required: no
-             "harness":
-               type: str
-               required: no
-             "harness_config":
-               type: map
-               required: no
-               mapping:
-                 "type":
+              "type":
+                type: str
+                required: no
+              "fixture":
+                type: str
+                required: no
+              "ordered":
+                type: bool
+                required: no
+              "repeat":
+                type: int
+                required: no
+              "regex":
+                type: seq
+                required: no
+                sequence:
+                  - type: str
+              "record":
+                type: map
+                required: no
+                mapping:
+                  "regex":
                     type: str
                     required: no
-                 "fixture":
-                    type: str
-                    required: no
-                 "ordered":
-                    type: bool
-                    required: no
-                 "repeat":
-                    type: int
-                    required: no
-                 "regex":
-                    type: seq
-                    required: no
-                    sequence:
-                      - type: str
-                 "record":
-                    type: map
-                    required: no
-                    mapping:
-                      "regex":
-                        type: str
-                        required: no
-             "min_ram":
-               type: int
-               required: no
-             "min_flash":
-               type: int
-               required: no
-             "platform_exclude":
-               type: str
-               required: no
-             "platform_whitelist":
-               type: str
-               required: no
-             "tags":
-               type: str
-               required: no
-             "timeout":
-               type: int
-               required: no
-             "toolchain_exclude":
-               type: str
-               required: no
-             "toolchain_whitelist":
-               type: str
-               required: no
-             "type":
-               type: str
-               enum: [ 'unit' ]
-             "skip":
-               type: bool
-               required: no
-             "slow":
-               type: bool
-               required: no
+          "min_ram":
+            type: int
+            required: no
+          "min_flash":
+            type: int
+            required: no
+          "platform_exclude":
+            type: str
+            required: no
+          "platform_whitelist":
+            type: str
+            required: no
+          "tags":
+            type: str
+            required: no
+          "timeout":
+            type: int
+            required: no
+          "toolchain_exclude":
+            type: str
+            required: no
+          "toolchain_whitelist":
+            type: str
+            required: no
+          "type":
+            type: str
+            enum: ["unit"]
+          "skip":
+            type: bool
+            required: no
+          "slow":
+            type: bool
+            required: no

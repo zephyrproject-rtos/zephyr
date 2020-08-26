@@ -30,7 +30,14 @@ extern "C" {
 enum {
 	/* The host should never send HCI_Reset */
 	BT_QUIRK_NO_RESET = BIT(0),
+	/* The controller does not auto-initiate a DLE procedure when the
+	 * initial connection data length parameters are not equal to the
+	 * default data length parameters. Therefore the host should initiate
+	 * the DLE procedure after connection establishment. */
+	BT_QUIRK_NO_AUTO_DLE = BIT(1),
 };
+
+#define IS_BT_QUIRK_NO_AUTO_DLE(bt_dev) ((bt_dev)->drv->quirks & BT_QUIRK_NO_AUTO_DLE)
 
 /* @brief The HCI event shall be given to bt_recv_prio */
 #define BT_HCI_EVT_FLAG_RECV_PRIO BIT(0)

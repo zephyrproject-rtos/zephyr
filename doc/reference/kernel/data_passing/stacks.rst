@@ -31,7 +31,7 @@ A stack must be initialized before it can be used. This sets its queue to empty.
 
 A data value can be **added** to a stack by a thread or an ISR.
 The value is given directly to a waiting thread, if one exists;
-otherwise the value is added to the lifo's queue.
+otherwise the value is added to the LIFO's queue.
 The kernel does *not* detect attempts to add a data value to a stack
 that has already reached its maximum quantity of queued values.
 
@@ -55,7 +55,7 @@ Implementation
 Defining a Stack
 ================
 
-A stack is defined using a variable of type :c:type:`struct k_stack`.
+A stack is defined using a variable of type :c:type:`k_stack`.
 It must then be initialized by calling :cpp:func:`k_stack_init()` or
 :cpp:func:`k_stack_alloc_init()`. In the latter case, a buffer is not
 provided and it is instead allocated from the calling thread's resource

@@ -127,8 +127,10 @@ static int slip_process_byte(unsigned char c)
 	return 0;
 }
 
-static void interrupt_handler(struct device *dev)
+static void interrupt_handler(struct device *dev, void *user_data)
 {
+	ARG_UNUSED(user_data);
+
 	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
 		unsigned char byte;
 
@@ -454,7 +456,7 @@ static bool init_ieee802154(void)
 		return false;
 	}
 
-	radio_api = (struct ieee802154_radio_api *)ieee802154_dev->driver_api;
+	radio_api = (struct ieee802154_radio_api *)ieee802154_dev->api;
 
 	/**
 	 * Do actual initialization of the chip

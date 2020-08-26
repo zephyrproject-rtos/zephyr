@@ -23,7 +23,7 @@ extern void z_sched_ipi(void);
 
 struct cavs_idc_data {
 	ipm_callback_t	cb;
-	void		*ctx;
+	void		*user_data;
 };
 
 DEVICE_DECLARE(cavs_idc);
@@ -31,7 +31,7 @@ static struct cavs_idc_data cavs_idc_device_data;
 
 static void cavs_idc_isr(struct device *dev)
 {
-	struct cavs_idc_data *drv_data = dev->driver_data;
+	struct cavs_idc_data *drv_data = dev->data;
 
 	uint32_t i, id;
 	void *ext;
@@ -68,7 +68,7 @@ static void cavs_idc_isr(struct device *dev)
 				ext = UINT_TO_POINTER(
 					idc_read(REG_IDCTEFC(i), curr_cpu_id) &
 					REG_IDCTEFC_MSG_MASK);
-				drv_data->cb(drv_data->ctx, id, ext);
+				drv_data->cb(dev, drv_data->user_data, id, ext);
 			}
 			break;
 		}
@@ -157,12 +157,12 @@ static uint32_t cavs_idc_max_id_val_get(struct device *dev)
 }
 
 static void cavs_idc_register_callback(struct device *dev, ipm_callback_t cb,
-				       void *context)
+				       void *user_data)
 {
-	struct cavs_idc_data *drv_data = dev->driver_data;
+	struct cavs_idc_data *drv_data = dev->data;
 
 	drv_data->cb = cb;
-	drv_data->ctx = context;
+	drv_data->user_data = user_data;
 }
 
 static int cavs_idc_set_enabled(struct device *dev, int enable)

@@ -165,7 +165,7 @@ __syscall int wdt_setup(struct device *dev, uint8_t options);
 static inline int z_impl_wdt_setup(struct device *dev, uint8_t options)
 {
 	const struct wdt_driver_api *api =
-		(const struct wdt_driver_api *)dev->driver_api;
+		(const struct wdt_driver_api *)dev->api;
 
 	return api->setup(dev, options);
 }
@@ -188,7 +188,7 @@ __syscall int wdt_disable(struct device *dev);
 static inline int z_impl_wdt_disable(struct device *dev)
 {
 	const struct wdt_driver_api *api =
-		(const struct wdt_driver_api *)dev->driver_api;
+		(const struct wdt_driver_api *)dev->api;
 
 	return api->disable(dev);
 }
@@ -219,7 +219,7 @@ static inline int wdt_install_timeout(struct device *dev,
 				      const struct wdt_timeout_cfg *cfg)
 {
 	const struct wdt_driver_api *api =
-		(const struct wdt_driver_api *) dev->driver_api;
+		(const struct wdt_driver_api *) dev->api;
 
 	return api->install_timeout(dev, cfg);
 }
@@ -241,7 +241,7 @@ __syscall int wdt_feed(struct device *dev, int channel_id);
 static inline int z_impl_wdt_feed(struct device *dev, int channel_id)
 {
 	const struct wdt_driver_api *api =
-		(const struct wdt_driver_api *)dev->driver_api;
+		(const struct wdt_driver_api *)dev->api;
 
 	return api->feed(dev, channel_id);
 }

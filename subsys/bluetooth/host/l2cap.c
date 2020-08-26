@@ -61,10 +61,7 @@ NET_BUF_POOL_FIXED_DEFINE(disc_pool, 1,
 			  BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU), NULL);
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-/* Size of MTU is based on the maximum amount of data the buffer can hold
- * excluding ACL and driver headers.
- */
-#define L2CAP_MAX_LE_MPS	BT_L2CAP_RX_MTU
+#define L2CAP_MAX_LE_MPS	CONFIG_BT_L2CAP_RX_MTU
 /* For now use MPS - SDU length to disable segmentation */
 #define L2CAP_MAX_LE_MTU	(L2CAP_MAX_LE_MPS - 2)
 
@@ -512,6 +509,8 @@ static int l2cap_ecred_conn_req(struct bt_l2cap_chan **chan, int channels)
 
 static void l2cap_le_encrypt_change(struct bt_l2cap_chan *chan, uint8_t status)
 {
+	int err;
+
 	/* Skip channels that are not pending waiting for encryption */
 	if (!atomic_test_and_clear_bit(chan->status,
 				       BT_L2CAP_STATUS_ENCRYPT_PENDING)) {
@@ -519,9 +518,7 @@ static void l2cap_le_encrypt_change(struct bt_l2cap_chan *chan, uint8_t status)
 	}
 
 	if (status) {
-		bt_l2cap_chan_remove(chan->conn, chan);
-		bt_l2cap_chan_del(chan);
-		return;
+		goto fail;
 	}
 
 	if (chan->ident) {
@@ -539,13 +536,21 @@ static void l2cap_le_encrypt_change(struct bt_l2cap_chan *chan, uint8_t status)
 	}
 
 	/* Retry to connect */
-	l2cap_le_conn_req(BT_L2CAP_LE_CHAN(chan));
+	err = l2cap_le_conn_req(BT_L2CAP_LE_CHAN(chan));
+	if (err) {
+		goto fail;
+	}
+
+	return;
+fail:
+	bt_l2cap_chan_remove(chan->conn, chan);
+	bt_l2cap_chan_del(chan);
 }
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
-void bt_l2cap_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
+void bt_l2cap_security_changed(struct bt_conn *conn, uint8_t hci_status)
 {
-	struct bt_l2cap_chan *chan;
+	struct bt_l2cap_chan *chan, *next;
 
 	if (IS_ENABLED(CONFIG_BT_BREDR) &&
 	    conn->type == BT_CONN_TYPE_BR) {
@@ -553,7 +558,7 @@ void bt_l2cap_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
 		return;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn->channels, chan, next, node) {
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 		l2cap_le_encrypt_change(chan, hci_status);
 #endif
@@ -777,9 +782,9 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 	if (!chan->rx.init_credits) {
 		if (chan->chan.ops->alloc_buf) {
 			/* Auto tune credits to receive a full packet */
-			chan->rx.init_credits = (chan->rx.mtu +
-						 (L2CAP_MAX_LE_MPS - 1)) /
-						L2CAP_MAX_LE_MPS;
+			chan->rx.init_credits =
+				ceiling_fraction(chan->rx.mtu,
+						 L2CAP_MAX_LE_MPS);
 		} else {
 			chan->rx.init_credits = L2CAP_LE_MAX_CREDITS;
 		}
@@ -981,6 +986,16 @@ static uint16_t l2cap_chan_accept(struct bt_conn *conn,
 	return BT_L2CAP_LE_SUCCESS;
 }
 
+static bool l2cap_check_security(struct bt_conn *conn,
+				 struct bt_l2cap_server *server)
+{
+	if (IS_ENABLED(CONFIG_BT_CONN_DISABLE_SECURITY)) {
+		return true;
+	}
+
+	return conn->sec_level >= server->sec_level;
+}
+
 static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 			struct net_buf *buf)
 {
@@ -1029,7 +1044,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	}
 
 	/* Check if connection has minimum required security level */
-	if (conn->sec_level < server->sec_level) {
+	if (!l2cap_check_security(conn, server)) {
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_LE_ERR_AUTHENTICATION);
 		goto rsp;
 	}
@@ -1095,7 +1110,7 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	}
 
 	/* Check if connection has minimum required security level */
-	if (conn->sec_level < server->sec_level) {
+	if (!l2cap_check_security(conn, server)) {
 		result = BT_L2CAP_LE_ERR_AUTHENTICATION;
 		goto response;
 	}
@@ -1301,6 +1316,8 @@ static void le_disconn_req(struct bt_l2cap *l2cap, uint8_t ident,
 
 static int l2cap_change_security(struct bt_l2cap_le_chan *chan, uint16_t err)
 {
+	struct bt_conn *conn = chan->chan.conn;
+	bt_security_t sec;
 	int ret;
 
 	if (atomic_test_bit(chan->chan.status,
@@ -1310,18 +1327,19 @@ static int l2cap_change_security(struct bt_l2cap_le_chan *chan, uint16_t err)
 
 	switch (err) {
 	case BT_L2CAP_LE_ERR_ENCRYPTION:
-		if (chan->chan.required_sec_level >= BT_SECURITY_L2) {
+		if (conn->sec_level >= BT_SECURITY_L2) {
 			return -EALREADY;
 		}
-		chan->chan.required_sec_level = BT_SECURITY_L2;
+
+		sec = BT_SECURITY_L2;
 		break;
 	case BT_L2CAP_LE_ERR_AUTHENTICATION:
-		if (chan->chan.required_sec_level < BT_SECURITY_L2) {
-			chan->chan.required_sec_level = BT_SECURITY_L2;
-		} else if (chan->chan.required_sec_level < BT_SECURITY_L3) {
-			chan->chan.required_sec_level = BT_SECURITY_L3;
-		} else if (chan->chan.required_sec_level < BT_SECURITY_L4) {
-			chan->chan.required_sec_level = BT_SECURITY_L4;
+		if (conn->sec_level < BT_SECURITY_L2) {
+			sec = BT_SECURITY_L2;
+		} else if (conn->sec_level < BT_SECURITY_L3) {
+			sec = BT_SECURITY_L3;
+		} else if (conn->sec_level < BT_SECURITY_L4) {
+			sec = BT_SECURITY_L4;
 		} else {
 			return -EALREADY;
 		}
@@ -1330,8 +1348,7 @@ static int l2cap_change_security(struct bt_l2cap_le_chan *chan, uint16_t err)
 		return -EINVAL;
 	}
 
-	ret = bt_conn_set_security(chan->chan.conn,
-				   chan->chan.required_sec_level);
+	ret = bt_conn_set_security(chan->chan.conn, sec);
 	if (ret < 0) {
 		return ret;
 	}
@@ -2336,6 +2353,8 @@ void bt_l2cap_init(void)
 static int l2cap_le_connect(struct bt_conn *conn, struct bt_l2cap_le_chan *ch,
 			    uint16_t psm)
 {
+	int err;
+
 	if (psm < L2CAP_LE_PSM_FIXED_START || psm > L2CAP_LE_PSM_DYN_END) {
 		return -EINVAL;
 	}
@@ -2349,7 +2368,29 @@ static int l2cap_le_connect(struct bt_conn *conn, struct bt_l2cap_le_chan *ch,
 
 	ch->chan.psm = psm;
 
-	return l2cap_le_conn_req(ch);
+	if (conn->sec_level < ch->chan.required_sec_level) {
+		err = bt_conn_set_security(conn, ch->chan.required_sec_level);
+		if (err) {
+			goto fail;
+		}
+
+		atomic_set_bit(ch->chan.status,
+			       BT_L2CAP_STATUS_ENCRYPT_PENDING);
+
+		return 0;
+	}
+
+	err = l2cap_le_conn_req(ch);
+	if (err) {
+		goto fail;
+	}
+
+	return 0;
+
+fail:
+	bt_l2cap_chan_remove(conn, &ch->chan);
+	bt_l2cap_chan_del(&ch->chan);
+	return err;
 }
 
 static int l2cap_ecred_init(struct bt_conn *conn,

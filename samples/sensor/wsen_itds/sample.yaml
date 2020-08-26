@@ -1,0 +1,8 @@
+sample:
+  name: WSEN-ITDS Sensor Sample
+tests:
+  sample.sensor.wsen-itds:
+    harness: sensor
+    tags: sensors
+    depends_on: i2c gpio
+    filter: dt_compat_enabled("we,wsen-itds")

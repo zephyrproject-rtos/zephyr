@@ -37,7 +37,7 @@ extern uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto);
 static struct canbus_l2_ctx l2_ctx;
 
 static struct k_work_q net_canbus_workq;
-K_THREAD_STACK_DEFINE(net_canbus_stack, 512);
+K_KERNEL_STACK_DEFINE(net_canbus_stack, 512);
 
 char *net_sprint_addr(sa_family_t af, const void *addr);
 
@@ -430,7 +430,7 @@ static int canbus_send_fc(struct device *net_can_dev,
 			  struct net_canbus_lladdr *dest,
 			  struct net_canbus_lladdr *src, uint8_t fs)
 {
-	const struct net_can_api *api = net_can_dev->driver_api;
+	const struct net_can_api *api = net_can_dev->api;
 	struct zcan_frame frame = {
 		.id_type = CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
@@ -699,7 +699,7 @@ static inline int canbus_send_cf(struct net_pkt *pkt)
 {
 	struct canbus_isotp_tx_ctx *ctx = pkt->canbus_tx_ctx;
 	struct device *net_can_dev = net_if_get_device(pkt->iface);
-	const struct net_can_api *api = net_can_dev->driver_api;
+	const struct net_can_api *api = net_can_dev->api;
 	struct zcan_frame frame;
 	struct net_pkt_cursor cursor_backup;
 	int ret, len;
@@ -874,7 +874,7 @@ static inline int canbus_send_ff(struct net_pkt *pkt, size_t len, bool mcast,
 				 struct net_canbus_lladdr *dest_addr)
 {
 	struct device *net_can_dev = net_if_get_device(pkt->iface);
-	const struct net_can_api *api = net_can_dev->driver_api;
+	const struct net_can_api *api = net_can_dev->api;
 	struct net_linkaddr *lladdr_inline;
 	struct zcan_frame frame;
 	int ret, index = 0;
@@ -944,7 +944,7 @@ static inline int canbus_send_single_frame(struct net_pkt *pkt, size_t len,
 					   struct net_canbus_lladdr *dest_addr)
 {
 	struct device *net_can_dev = net_if_get_device(pkt->iface);
-	const struct net_can_api *api = net_can_dev->driver_api;
+	const struct net_can_api *api = net_can_dev->api;
 	int index = 0;
 	struct zcan_frame frame;
 	struct net_linkaddr *lladdr_dest;
@@ -1499,7 +1499,7 @@ static enum net_verdict canbus_recv(struct net_if *iface,
 static inline int canbus_send_dad_request(struct device *net_can_dev,
 					  struct net_canbus_lladdr *ll_addr)
 {
-	const struct net_can_api *api = net_can_dev->driver_api;
+	const struct net_can_api *api = net_can_dev->api;
 	struct zcan_frame frame;
 	int ret;
 
@@ -1543,7 +1543,7 @@ static inline void canbus_send_dad_response(struct k_work *item)
 	struct net_if *iface = ctx->iface;
 	struct net_linkaddr *ll_addr = net_if_get_link_addr(iface);
 	struct device *net_can_dev = net_if_get_device(iface);
-	const struct net_can_api *api = net_can_dev->driver_api;
+	const struct net_can_api *api = net_can_dev->api;
 	struct zcan_frame frame;
 	int ret;
 
@@ -1565,7 +1565,7 @@ static inline void canbus_send_dad_response(struct k_work *item)
 static inline void canbus_detach_filter(struct device *net_can_dev,
 					int filter_id)
 {
-	const struct net_can_api *api = net_can_dev->driver_api;
+	const struct net_can_api *api = net_can_dev->api;
 
 	api->detach_filter(net_can_dev, filter_id);
 }
@@ -1582,7 +1582,7 @@ int canbus_attach_dad_resp_filter(struct device *net_can_dev,
 				  struct net_canbus_lladdr *ll_addr,
 				  struct k_sem *dad_sem)
 {
-	const struct net_can_api *api = net_can_dev->driver_api;
+	const struct net_can_api *api = net_can_dev->api;
 	struct zcan_filter filter = {
 		.id_type = CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
@@ -1613,7 +1613,7 @@ static inline int canbus_attach_dad_filter(struct device *net_can_dev,
 					   struct net_canbus_lladdr *ll_addr,
 					   struct k_work *dad_work)
 {
-	const struct net_can_api *api = net_can_dev->driver_api;
+	const struct net_can_api *api = net_can_dev->api;
 	struct zcan_filter filter = {
 		.id_type = CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_REMOTEREQUEST,
@@ -1735,7 +1735,7 @@ void net_6locan_init(struct net_if *iface)
 	thread_priority = 6;
 
 	k_work_q_start(&net_canbus_workq, net_canbus_stack,
-		       K_THREAD_STACK_SIZEOF(net_canbus_stack),
+		       K_KERNEL_STACK_SIZEOF(net_canbus_stack),
 		       K_PRIO_COOP(thread_priority));
 	k_thread_name_set(&net_canbus_workq.thread, "isotp_work");
 	NET_DBG("Workq started. Thread ID: %p", &net_canbus_workq.thread);
@@ -1744,7 +1744,7 @@ void net_6locan_init(struct net_if *iface)
 static int canbus_enable(struct net_if *iface, bool state)
 {
 	struct device *net_can_dev = net_if_get_device(iface);
-	const struct net_can_api *api = net_can_dev->driver_api;
+	const struct net_can_api *api = net_can_dev->api;
 	struct canbus_net_ctx *ctx = net_if_l2_data(iface);
 	int dad_retry_cnt, ret;
 

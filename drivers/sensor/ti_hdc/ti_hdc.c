@@ -37,7 +37,7 @@ static void ti_hdc_gpio_callback(struct device *dev,
 
 static int ti_hdc_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct ti_hdc_data *drv_data = dev->driver_data;
+	struct ti_hdc_data *drv_data = dev->data;
 	uint8_t buf[4];
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
@@ -78,7 +78,7 @@ static int ti_hdc_channel_get(struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	struct ti_hdc_data *drv_data = dev->driver_data;
+	struct ti_hdc_data *drv_data = dev->data;
 	uint64_t tmp;
 
 	/*
@@ -120,7 +120,7 @@ static uint16_t read16(struct device *dev, uint8_t a, uint8_t d)
 
 static int ti_hdc_init(struct device *dev)
 {
-	struct ti_hdc_data *drv_data = dev->driver_data;
+	struct ti_hdc_data *drv_data = dev->data;
 	uint16_t tmp;
 
 	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));

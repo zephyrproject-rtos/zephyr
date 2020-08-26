@@ -247,18 +247,20 @@ int z_impl_zsock_close(int sock)
 {
 	const struct socket_op_vtable *vtable;
 	void *ctx = get_sock_vtable(sock, &vtable);
+	int ret;
 
 	if (ctx == NULL) {
 		errno = EBADF;
 		return -1;
 	}
 
-	z_free_fd(sock);
-
 	NET_DBG("close: ctx=%p, fd=%d", ctx, sock);
 
-	return z_fdtable_call_ioctl((const struct fd_op_vtable *)vtable,
-				    ctx, ZFD_IOCTL_CLOSE);
+	ret = vtable->fd_vtable.close(ctx);
+
+	z_free_fd(sock);
+
+	return ret;
 }
 
 #ifdef CONFIG_USERSPACE
@@ -343,6 +345,8 @@ static void zsock_received_cb(struct net_context *ctx,
 	if (net_context_get_type(ctx) == SOCK_STREAM) {
 		net_context_update_recv_wnd(ctx, -net_pkt_remaining_data(pkt));
 	}
+
+	net_pkt_set_rx_stats_tick(pkt, k_cycle_get_32());
 
 	k_fifo_put(&ctx->recv_q, pkt);
 }
@@ -851,6 +855,36 @@ error:
 	return ret;
 }
 
+void net_socket_update_tc_rx_time(struct net_pkt *pkt, uint32_t end_tick)
+{
+	net_pkt_set_rx_stats_tick(pkt, end_tick);
+
+	net_stats_update_tc_rx_time(net_pkt_iface(pkt),
+				    net_pkt_priority(pkt),
+				    net_pkt_timestamp(pkt)->nanosecond,
+				    end_tick);
+
+	if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)) {
+		uint32_t val, prev = net_pkt_timestamp(pkt)->nanosecond;
+		int i;
+
+		for (i = 0; i < net_pkt_stats_tick_count(pkt); i++) {
+			if (!net_pkt_stats_tick(pkt)[i]) {
+				break;
+			}
+
+			val = net_pkt_stats_tick(pkt)[i] - prev;
+			prev = net_pkt_stats_tick(pkt)[i];
+			net_pkt_stats_tick(pkt)[i] = val;
+		}
+
+		net_stats_update_tc_rx_time_detail(
+			net_pkt_iface(pkt),
+			net_pkt_priority(pkt),
+			net_pkt_stats_tick(pkt));
+	}
+}
+
 static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 				       void *buf,
 				       size_t max_len,
@@ -922,10 +956,10 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 		goto fail;
 	}
 
-	net_stats_update_tc_rx_time(net_pkt_iface(pkt),
-				    net_pkt_priority(pkt),
-				    net_pkt_timestamp(pkt)->nanosecond,
-				    k_cycle_get_32());
+	if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS) &&
+	    !(flags & ZSOCK_MSG_PEEK)) {
+		net_socket_update_tc_rx_time(pkt, k_cycle_get_32());
+	}
 
 	if (!(flags & ZSOCK_MSG_PEEK)) {
 		net_pkt_unref(pkt);
@@ -1015,11 +1049,10 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 					sock_set_eof(ctx);
 				}
 
-				net_stats_update_tc_rx_time(
-					net_pkt_iface(pkt),
-					net_pkt_priority(pkt),
-					net_pkt_timestamp(pkt)->nanosecond,
-					k_cycle_get_32());
+				if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS)) {
+					net_socket_update_tc_rx_time(
+						pkt, k_cycle_get_32());
+				}
 
 				net_pkt_unref(pkt);
 			}
@@ -1646,8 +1679,7 @@ int z_impl_zsock_getsockname(int sock, struct sockaddr *addr,
 
 	NET_DBG("getsockname: ctx=%p, fd=%d", ctx, sock);
 
-	return z_fdtable_call_ioctl((const struct fd_op_vtable *)vtable, ctx,
-				    ZFD_IOCTL_GETSOCKNAME, addr, addrlen);
+	return vtable->getsockname(ctx, addr, addrlen);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -1716,9 +1748,6 @@ static int sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		return 0;
 	}
 
-	case ZFD_IOCTL_CLOSE:
-		return zsock_close_ctx(obj);
-
 	case ZFD_IOCTL_POLL_PREPARE: {
 		struct zsock_pollfd *pfd;
 		struct k_poll_event **pev;
@@ -1739,16 +1768,6 @@ static int sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		pev = va_arg(args, struct k_poll_event **);
 
 		return zsock_poll_update_ctx(obj, pfd, pev);
-	}
-
-	case ZFD_IOCTL_GETSOCKNAME: {
-		struct sockaddr *addr;
-		socklen_t *addrlen;
-
-		addr = va_arg(args, struct sockaddr *);
-		addrlen = va_arg(args, socklen_t *);
-
-		return zsock_getsockname_ctx(obj, addr, addrlen);
 	}
 
 	default:
@@ -1813,11 +1832,22 @@ static int sock_setsockopt_vmeth(void *obj, int level, int optname,
 	return zsock_setsockopt_ctx(obj, level, optname, optval, optlen);
 }
 
+static int sock_close_vmeth(void *obj)
+{
+	return zsock_close_ctx(obj);
+}
+
+static int sock_getsockname_vmeth(void *obj, struct sockaddr *addr,
+				  socklen_t *addrlen)
+{
+	return zsock_getsockname_ctx(obj, addr, addrlen);
+}
 
 const struct socket_op_vtable sock_fd_op_vtable = {
 	.fd_vtable = {
 		.read = sock_read_vmeth,
 		.write = sock_write_vmeth,
+		.close = sock_close_vmeth,
 		.ioctl = sock_ioctl_vmeth,
 	},
 	.bind = sock_bind_vmeth,
@@ -1829,4 +1859,5 @@ const struct socket_op_vtable sock_fd_op_vtable = {
 	.recvfrom = sock_recvfrom_vmeth,
 	.getsockopt = sock_getsockopt_vmeth,
 	.setsockopt = sock_setsockopt_vmeth,
+	.getsockname = sock_getsockname_vmeth,
 };

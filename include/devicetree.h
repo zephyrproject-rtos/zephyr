@@ -469,6 +469,23 @@
 #define DT_PROP_BY_IDX(node_id, prop, idx) DT_PROP(node_id, prop##_IDX_##idx)
 
 /**
+ * @brief Like DT_PROP(), but with a fallback to default_value
+ *
+ * If the value exists, this expands to DT_PROP(node_id, prop).
+ * The default_value parameter is not expanded in this case.
+ *
+ * Otherwise, this expands to default_value.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param default_value a fallback value to expand to
+ * @return the property's value or default_value
+ */
+#define DT_PROP_OR(node_id, prop, default_value) \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
+		    (DT_PROP(node_id, prop)), (default_value))
+
+/**
  * @brief Equivalent to DT_PROP(node_id, label)
  *
  * This is a convenience for the Zephyr device API, which uses label
@@ -630,6 +647,30 @@
 	DT_PROP(node_id, pha##_IDX_##idx##_VAL_##cell)
 
 /**
+ * @brief Like DT_PHA_BY_IDX(), but with a fallback to default_value.
+ *
+ * If the value exists, this expands to DT_PHA_BY_IDX(node_id, pha,
+ * idx, cell). The default_value parameter is not expanded in this
+ * case.
+ *
+ * Otherwise, this expands to default_value.
+ *
+ * @param node_id node identifier
+ * @param pha lowercase-and-underscores property with type "phandle-array"
+ * @param idx logical index into "pha"
+ * @param cell lowercase-and-underscores cell name within the specifier
+ *             at "pha" index "idx"
+ * @param default_value a fallback value to expand to
+ * @return the cell's value or "default_value"
+ */
+#define DT_PHA_BY_IDX_OR(node_id, pha, idx, cell, default_value) \
+	DT_PROP_OR(node_id, pha##_IDX_##idx##_VAL_##cell, default_value)
+/* Implementation note: the _IDX_##idx##_VAL_##cell##_EXISTS
+ * macros are defined, so it's safe to use DT_PROP_OR() here, because
+ * that uses an IS_ENABLED() on the _EXISTS macro.
+ */
+
+/**
  * @brief Equivalent to DT_PHA_BY_IDX(node_id, pha, 0, cell)
  * @param node_id node identifier
  * @param pha lowercase-and-underscores property with type "phandle-array"
@@ -637,6 +678,23 @@
  * @return the cell's value
  */
 #define DT_PHA(node_id, pha, cell) DT_PHA_BY_IDX(node_id, pha, 0, cell)
+
+/**
+ * @brief Like DT_PHA(), but with a fallback to default_value
+ *
+ * If the value exists, this expands to DT_PHA(node_id, pha, cell).
+ * The default_value parameter is not expanded in this case.
+ *
+ * Otherwise, this expands to default_value.
+ *
+ * @param node_id node identifier
+ * @param pha lowercase-and-underscores property with type "phandle-array"
+ * @param cell lowercase-and-underscores cell name
+ * @param default_value a fallback value to expand to
+ * @return the cell's value or default_value
+ */
+#define DT_PHA_OR(node_id, pha, cell, default_value) \
+	DT_PHA_BY_IDX_OR(node_id, pha, 0, cell, default_value)
 
 /**
  * @brief Get a value within a phandle-array specifier by name
@@ -674,6 +732,28 @@
  */
 #define DT_PHA_BY_NAME(node_id, pha, name, cell) \
 	DT_PROP(node_id, pha##_NAME_##name##_VAL_##cell)
+
+/**
+ * @brief Like DT_PHA_BY_NAME(), but with a fallback to default_value
+ *
+ * If the value exists, this expands to DT_PHA_BY_NAME(node_id, pha,
+ * name, cell). The default_value parameter is not expanded in this case.
+ *
+ * Otherwise, this expands to default_value.
+ *
+ * @param node_id node identifier
+ * @param pha lowercase-and-underscores property with type "phandle-array"
+ * @param name lowercase-and-underscores name of a specifier in "pha"
+ * @param cell lowercase-and-underscores cell name in the named specifier
+ * @param default_value a fallback value to expand to
+ * @return the cell's value or default_value
+ */
+#define DT_PHA_BY_NAME_OR(node_id, pha, name, cell, default_value) \
+	DT_PROP_OR(node_id, pha##_NAME_##name##_VAL_##cell, default_value)
+/* Implementation note: the _NAME_##name##_VAL_##cell##_EXISTS
+ * macros are defined, so it's safe to use DT_PROP_OR() here, because
+ * that uses an IS_ENABLED() on the _EXISTS macro.
+ */
 
 /**
  * @brief Get a phandle's node identifier from a phandle array by name
@@ -1368,14 +1448,12 @@
 #define DT_INST_PROP(inst, prop) DT_PROP(DT_DRV_INST(inst), prop)
 
 /**
- * @brief Get a DT_DRV_COMPAT element value in an array property
+ * @brief Get a DT_DRV_COMPAT property length
  * @param inst instance number
  * @param prop lowercase-and-underscores property name
- * @param idx the index to get
- * @return a representation of the idx-th element of the property
+ * @return logical length of the property
  */
-#define DT_INST_PROP_BY_IDX(inst, prop, idx) \
-	DT_PROP_BY_IDX(DT_DRV_INST(inst), prop, idx)
+#define DT_INST_PROP_LEN(inst, prop) DT_PROP_LEN(DT_DRV_INST(inst), prop)
 
 /**
  * @brief Is index "idx" valid for an array type property
@@ -1390,12 +1468,24 @@
 	DT_PROP_HAS_IDX(DT_DRV_INST(inst), prop, idx)
 
 /**
- * @brief Get a DT_DRV_COMPAT property length
+ * @brief Get a DT_DRV_COMPAT element value in an array property
  * @param inst instance number
  * @param prop lowercase-and-underscores property name
- * @return logical length of the property
+ * @param idx the index to get
+ * @return a representation of the idx-th element of the property
  */
-#define DT_INST_PROP_LEN(inst, prop) DT_PROP_LEN(DT_DRV_INST(inst), prop)
+#define DT_INST_PROP_BY_IDX(inst, prop, idx) \
+	DT_PROP_BY_IDX(DT_DRV_INST(inst), prop, idx)
+
+/**
+ * @brief Like DT_INST_PROP(), but with a fallback to default_value
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @param default_value a fallback value to expand to
+ * @return DT_INST_PROP(inst, prop) or default_value
+ */
+#define DT_INST_PROP_OR(inst, prop, default_value) \
+	DT_PROP_OR(DT_DRV_INST(inst), prop, default_value)
 
 /**
  * @brief Get a DT_DRV_COMPAT instance's "label" property
@@ -1441,6 +1531,18 @@
 	DT_PHA_BY_IDX(DT_DRV_INST(inst), pha, idx, cell)
 
 /**
+ * @brief Like DT_INST_PHA_BY_IDX(), but with a fallback to default_value
+ * @param inst instance number
+ * @param pha lowercase-and-underscores property with type "phandle-array"
+ * @param idx logical index into the property "pha"
+ * @param cell binding's cell name within the specifier at index "idx"
+ * @param default_value a fallback value to expand to
+ * @return DT_INST_PHA_BY_IDX(inst, pha, idx, cell) or default_value
+ */
+#define DT_INST_PHA_BY_IDX_OR(inst, pha, idx, cell, default_value) \
+	DT_PHA_BY_IDX_OR(DT_DRV_INST(inst), pha, idx, cell, default_value)
+
+/**
  * @brief Get a DT_DRV_COMPAT instance's phandle-array specifier value
  * Equivalent to DT_INST_PHA_BY_IDX(inst, pha, 0, cell)
  * @param inst instance number
@@ -1449,6 +1551,17 @@
  * @return the cell value
  */
 #define DT_INST_PHA(inst, pha, cell) DT_INST_PHA_BY_IDX(inst, pha, 0, cell)
+
+/**
+ * @brief Like DT_INST_PHA(), but with a fallback to default_value
+ * @param inst instance number
+ * @param pha lowercase-and-underscores property with type "phandle-array"
+ * @param cell binding's cell name for the specifier at "pha" index 0
+ * @param default_value a fallback value to expand to
+ * @return DT_INST_PHA(inst, pha, cell) or default_value
+ */
+#define DT_INST_PHA_OR(inst, pha, cell, default_value) \
+	DT_INST_PHA_BY_IDX_OR(inst, pha, 0, cell, default_value)
 
 /**
  * @brief Get a DT_DRV_COMPAT instance's value within a phandle-array
@@ -1461,6 +1574,18 @@
  */
 #define DT_INST_PHA_BY_NAME(inst, pha, name, cell) \
 	DT_PHA_BY_NAME(DT_DRV_INST(inst), pha, name, cell)
+
+/**
+ * @brief Like DT_INST_PHA_BY_NAME(), but with a fallback to default_value
+ * @param inst instance number
+ * @param pha lowercase-and-underscores property with type "phandle-array"
+ * @param name lowercase-and-underscores name of a specifier in "pha"
+ * @param cell binding's cell name for the named specifier
+ * @param default_value a fallback value to expand to
+ * @return DT_INST_PHA_BY_NAME(inst, pha, name, cell) or default_value
+ */
+#define DT_INST_PHA_BY_NAME_OR(inst, pha, name, cell, default_value) \
+	DT_PHA_BY_NAME_OR(DT_DRV_INST(inst), pha, name, cell, default_value)
 
 /**
  * @brief Get a DT_DRV_COMPAT instance's phandle node identifier from a

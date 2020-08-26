@@ -131,8 +131,8 @@ static int pwm_nrfx_pin_set(struct device *dev, uint32_t pwm,
 	 * be removed, see ISSUE #6958.
 	 * TODO: Remove this comment when issue has been resolved.
 	 */
-	const struct pwm_nrfx_config *config = dev->config_info;
-	struct pwm_nrfx_data *data = dev->driver_data;
+	const struct pwm_nrfx_config *config = dev->config;
+	struct pwm_nrfx_data *data = dev->data;
 	uint8_t channel;
 	bool was_stopped;
 
@@ -267,7 +267,7 @@ static const struct pwm_driver_api pwm_nrfx_drv_api_funcs = {
 
 static int pwm_nrfx_init(struct device *dev)
 {
-	const struct pwm_nrfx_config *config = dev->config_info;
+	const struct pwm_nrfx_config *config = dev->config;
 
 	nrfx_err_t result = nrfx_pwm_init(&config->pwm,
 					  &config->initial_config,
@@ -285,7 +285,7 @@ static int pwm_nrfx_init(struct device *dev)
 
 static void pwm_nrfx_uninit(struct device *dev)
 {
-	const struct pwm_nrfx_config *config = dev->config_info;
+	const struct pwm_nrfx_config *config = dev->config;
 
 	nrfx_pwm_uninit(&config->pwm);
 }

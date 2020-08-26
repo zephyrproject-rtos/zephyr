@@ -58,7 +58,7 @@ struct pll_cfg {
 #define DPORT_CPUPERIOD_SEL_160     1
 #define DPORT_CPUPERIOD_SEL_240     2
 
-#define DEV_CFG(dev)                ((struct esp32_clock_config *)(dev->config_info))
+#define DEV_CFG(dev)                ((struct esp32_clock_config *)(dev->config))
 #define GET_REG_BANK(module_id)     ((uint32_t)module_id / 32U)
 #define GET_REG_OFFSET(module_id)   ((uint32_t)module_id % 32U)
 

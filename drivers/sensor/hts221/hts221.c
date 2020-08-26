@@ -26,7 +26,7 @@ static int hts221_channel_get(struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	struct hts221_data *data = dev->driver_data;
+	struct hts221_data *data = dev->data;
 	int32_t conv_val;
 
 	/*
@@ -60,8 +60,8 @@ static int hts221_channel_get(struct device *dev,
 
 static int hts221_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct hts221_data *data = dev->driver_data;
-	const struct hts221_config *cfg = dev->config_info;
+	struct hts221_data *data = dev->data;
+	const struct hts221_config *cfg = dev->config;
 	uint8_t buf[4];
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
@@ -81,8 +81,8 @@ static int hts221_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 static int hts221_read_conversion_data(struct device *dev)
 {
-	struct hts221_data *data = dev->driver_data;
-	const struct hts221_config *cfg = dev->config_info;
+	struct hts221_data *data = dev->data;
+	const struct hts221_config *cfg = dev->config;
 	uint8_t buf[16];
 
 	if (i2c_burst_read(data->i2c, cfg->i2c_addr,
@@ -114,8 +114,8 @@ static const struct sensor_driver_api hts221_driver_api = {
 
 int hts221_init(struct device *dev)
 {
-	const struct hts221_config *cfg = dev->config_info;
-	struct hts221_data *data = dev->driver_data;
+	const struct hts221_config *cfg = dev->config;
+	struct hts221_data *data = dev->data;
 	uint8_t id, idx;
 
 	data->i2c = device_get_binding(cfg->i2c_bus);

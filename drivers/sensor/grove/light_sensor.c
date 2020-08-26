@@ -49,7 +49,7 @@ static struct adc_sequence adc_table = {
 
 static int gls_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct gls_data *drv_data = dev->driver_data;
+	struct gls_data *drv_data = dev->data;
 
 	return adc_read(drv_data->adc, &adc_table);
 }
@@ -58,7 +58,7 @@ static int gls_channel_get(struct device *dev,
 			   enum sensor_channel chan,
 			   struct sensor_value *val)
 {
-	struct gls_data *drv_data = dev->driver_data;
+	struct gls_data *drv_data = dev->data;
 	uint16_t analog_val = drv_data->raw;
 	double ldr_val, dval;
 
@@ -83,8 +83,8 @@ static const struct sensor_driver_api gls_api = {
 
 static int gls_init(struct device *dev)
 {
-	struct gls_data *drv_data = dev->driver_data;
-	const struct gls_config *cfg = dev->config_info;
+	struct gls_data *drv_data = dev->data;
+	const struct gls_config *cfg = dev->config;
 
 	drv_data->adc = device_get_binding(cfg->adc_label);
 

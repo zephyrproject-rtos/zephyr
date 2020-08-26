@@ -52,7 +52,7 @@ LOG_MODULE_REGISTER(usb_msc);
 #define MAX_PACKET	CONFIG_MASS_STORAGE_BULK_EP_MPS
 
 #define BLOCK_SIZE	512
-#define DISK_THREAD_STACK_SZ	512
+#define DISK_KERNEL_STACK_SZ	512
 #define DISK_THREAD_PRIO	-5
 
 #define THREAD_OP_READ_QUEUED		1
@@ -104,7 +104,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_mass_config mass_cfg = {
 };
 
 static volatile int thread_op;
-static K_THREAD_STACK_DEFINE(mass_thread_stack, DISK_THREAD_STACK_SZ);
+static K_KERNEL_STACK_DEFINE(mass_thread_stack, DISK_KERNEL_STACK_SZ);
 static struct k_thread mass_thread_data;
 static struct k_sem disk_wait_sem;
 static volatile uint32_t defered_wr_sz;
@@ -988,7 +988,7 @@ static int mass_storage_init(struct device *dev)
 
 	/* Start a thread to offload disk ops */
 	k_thread_create(&mass_thread_data, mass_thread_stack,
-			DISK_THREAD_STACK_SZ,
+			DISK_KERNEL_STACK_SZ,
 			(k_thread_entry_t)mass_thread_main, NULL, NULL, NULL,
 			DISK_THREAD_PRIO, 0, K_NO_WAIT);
 

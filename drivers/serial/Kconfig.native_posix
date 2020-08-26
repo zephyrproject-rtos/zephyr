@@ -66,5 +66,7 @@ config NATIVE_UART_AUTOATTACH_DEFAULT_CMD
 	  This is only applicable if the UART_0 is configured to use its own
 	  PTY with NATIVE_UART_0_ON_OWN_PTY.
 	  The 2nd UART will not be affected by this option.
+	  If you are using GNOME, then you can use this command string
+	  'gnome-terminal -- screen %s'
 
 endif # UART_NATIVE_POSIX

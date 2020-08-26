@@ -36,7 +36,7 @@ struct rv32m1_lpuart_data {
 
 static int rv32m1_lpuart_poll_in(struct device *dev, unsigned char *c)
 {
-	const struct rv32m1_lpuart_config *config = dev->config_info;
+	const struct rv32m1_lpuart_config *config = dev->config;
 	uint32_t flags = LPUART_GetStatusFlags(config->base);
 	int ret = -1;
 
@@ -50,7 +50,7 @@ static int rv32m1_lpuart_poll_in(struct device *dev, unsigned char *c)
 
 static void rv32m1_lpuart_poll_out(struct device *dev, unsigned char c)
 {
-	const struct rv32m1_lpuart_config *config = dev->config_info;
+	const struct rv32m1_lpuart_config *config = dev->config;
 
 	while (!(LPUART_GetStatusFlags(config->base)
 		& kLPUART_TxDataRegEmptyFlag)) {
@@ -61,7 +61,7 @@ static void rv32m1_lpuart_poll_out(struct device *dev, unsigned char c)
 
 static int rv32m1_lpuart_err_check(struct device *dev)
 {
-	const struct rv32m1_lpuart_config *config = dev->config_info;
+	const struct rv32m1_lpuart_config *config = dev->config;
 	uint32_t flags = LPUART_GetStatusFlags(config->base);
 	int err = 0;
 
@@ -88,7 +88,7 @@ static int rv32m1_lpuart_err_check(struct device *dev)
 static int rv32m1_lpuart_fifo_fill(struct device *dev, const uint8_t *tx_data,
 			       int len)
 {
-	const struct rv32m1_lpuart_config *config = dev->config_info;
+	const struct rv32m1_lpuart_config *config = dev->config;
 	uint8_t num_tx = 0U;
 
 	while ((len - num_tx > 0) &&
@@ -104,7 +104,7 @@ static int rv32m1_lpuart_fifo_fill(struct device *dev, const uint8_t *tx_data,
 static int rv32m1_lpuart_fifo_read(struct device *dev, uint8_t *rx_data,
 			       const int len)
 {
-	const struct rv32m1_lpuart_config *config = dev->config_info;
+	const struct rv32m1_lpuart_config *config = dev->config;
 	uint8_t num_rx = 0U;
 
 	while ((len - num_rx > 0) &&
@@ -119,7 +119,7 @@ static int rv32m1_lpuart_fifo_read(struct device *dev, uint8_t *rx_data,
 
 static void rv32m1_lpuart_irq_tx_enable(struct device *dev)
 {
-	const struct rv32m1_lpuart_config *config = dev->config_info;
+	const struct rv32m1_lpuart_config *config = dev->config;
 	uint32_t mask = kLPUART_TxDataRegEmptyInterruptEnable;
 
 	LPUART_EnableInterrupts(config->base, mask);
@@ -127,7 +127,7 @@ static void rv32m1_lpuart_irq_tx_enable(struct device *dev)
 
 static void rv32m1_lpuart_irq_tx_disable(struct device *dev)
 {
-	const struct rv32m1_lpuart_config *config = dev->config_info;
+	const struct rv32m1_lpuart_config *config = dev->config;
 	uint32_t mask = kLPUART_TxDataRegEmptyInterruptEnable;
 
 	LPUART_DisableInterrupts(config->base, mask);
@@ -135,7 +135,7 @@ static void rv32m1_lpuart_irq_tx_disable(struct device *dev)
 
 static int rv32m1_lpuart_irq_tx_complete(struct device *dev)
 {
-	const struct rv32m1_lpuart_config *config = dev->config_info;
+	const struct rv32m1_lpuart_config *config = dev->config;
 	uint32_t flags = LPUART_GetStatusFlags(config->base);
 
 	return (flags & kLPUART_TxDataRegEmptyFlag) != 0U;
@@ -143,7 +143,7 @@ static int rv32m1_lpuart_irq_tx_complete(struct device *dev)
 
 static int rv32m1_lpuart_irq_tx_ready(struct device *dev)
 {
-	const struct rv32m1_lpuart_config *config = dev->config_info;
+	const struct rv32m1_lpuart_config *config = dev->config;
 	uint32_t mask = kLPUART_TxDataRegEmptyInterruptEnable;
 
 	return (LPUART_GetEnabledInterrupts(config->base) & mask)
@@ -152,7 +152,7 @@ static int rv32m1_lpuart_irq_tx_ready(struct device *dev)
 
 static void rv32m1_lpuart_irq_rx_enable(struct device *dev)
 {
-	const struct rv32m1_lpuart_config *config = dev->config_info;
+	const struct rv32m1_lpuart_config *config = dev->config;
 	uint32_t mask = kLPUART_RxDataRegFullInterruptEnable;
 
 	LPUART_EnableInterrupts(config->base, mask);
@@ -160,7 +160,7 @@ static void rv32m1_lpuart_irq_rx_enable(struct device *dev)
 
 static void rv32m1_lpuart_irq_rx_disable(struct device *dev)
 {
-	const struct rv32m1_lpuart_config *config = dev->config_info;
+	const struct rv32m1_lpuart_config *config = dev->config;
 	uint32_t mask = kLPUART_RxDataRegFullInterruptEnable;
 
 	LPUART_DisableInterrupts(config->base, mask);
@@ -168,7 +168,7 @@ static void rv32m1_lpuart_irq_rx_disable(struct device *dev)
 
 static int rv32m1_lpuart_irq_rx_full(struct device *dev)
 {
-	const struct rv32m1_lpuart_config *config = dev->config_info;
+	const struct rv32m1_lpuart_config *config = dev->config;
 	uint32_t flags = LPUART_GetStatusFlags(config->base);
 
 	return (flags & kLPUART_RxDataRegFullFlag) != 0U;
@@ -176,7 +176,7 @@ static int rv32m1_lpuart_irq_rx_full(struct device *dev)
 
 static int rv32m1_lpuart_irq_rx_ready(struct device *dev)
 {
-	const struct rv32m1_lpuart_config *config = dev->config_info;
+	const struct rv32m1_lpuart_config *config = dev->config;
 	uint32_t mask = kLPUART_RxDataRegFullInterruptEnable;
 
 	return (LPUART_GetEnabledInterrupts(config->base) & mask)
@@ -185,7 +185,7 @@ static int rv32m1_lpuart_irq_rx_ready(struct device *dev)
 
 static void rv32m1_lpuart_irq_err_enable(struct device *dev)
 {
-	const struct rv32m1_lpuart_config *config = dev->config_info;
+	const struct rv32m1_lpuart_config *config = dev->config;
 	uint32_t mask = kLPUART_NoiseErrorInterruptEnable |
 			kLPUART_FramingErrorInterruptEnable |
 			kLPUART_ParityErrorInterruptEnable;
@@ -195,7 +195,7 @@ static void rv32m1_lpuart_irq_err_enable(struct device *dev)
 
 static void rv32m1_lpuart_irq_err_disable(struct device *dev)
 {
-	const struct rv32m1_lpuart_config *config = dev->config_info;
+	const struct rv32m1_lpuart_config *config = dev->config;
 	uint32_t mask = kLPUART_NoiseErrorInterruptEnable |
 			kLPUART_FramingErrorInterruptEnable |
 			kLPUART_ParityErrorInterruptEnable;
@@ -218,7 +218,7 @@ static void rv32m1_lpuart_irq_callback_set(struct device *dev,
 				       uart_irq_callback_user_data_t cb,
 				       void *cb_data)
 {
-	struct rv32m1_lpuart_data *data = dev->driver_data;
+	struct rv32m1_lpuart_data *data = dev->data;
 
 	data->callback = cb;
 	data->cb_data = cb_data;
@@ -227,17 +227,17 @@ static void rv32m1_lpuart_irq_callback_set(struct device *dev,
 static void rv32m1_lpuart_isr(void *arg)
 {
 	struct device *dev = arg;
-	struct rv32m1_lpuart_data *data = dev->driver_data;
+	struct rv32m1_lpuart_data *data = dev->data;
 
 	if (data->callback) {
-		data->callback(data->cb_data);
+		data->callback(dev, data->cb_data);
 	}
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 static int rv32m1_lpuart_init(struct device *dev)
 {
-	const struct rv32m1_lpuart_config *config = dev->config_info;
+	const struct rv32m1_lpuart_config *config = dev->config;
 	lpuart_config_t uart_config;
 	struct device *clock_dev;
 	uint32_t clock_freq;

@@ -124,7 +124,7 @@ static int gpio_ht16k33_pin_interrupt_configure(struct device *port,
 void ht16k33_process_keyscan_row_data(struct device *dev,
 				      uint32_t keys)
 {
-	struct gpio_ht16k33_data *data = dev->driver_data;
+	struct gpio_ht16k33_data *data = dev->data;
 
 	gpio_fire_callbacks(&data->callbacks, dev, keys);
 }
@@ -133,22 +133,22 @@ static int gpio_ht16k33_manage_callback(struct device *dev,
 					struct gpio_callback *callback,
 					bool set)
 {
-	struct gpio_ht16k33_data *data = dev->driver_data;
+	struct gpio_ht16k33_data *data = dev->data;
 
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
 static uint32_t gpio_ht16k33_get_pending_int(struct device *dev)
 {
-	struct gpio_ht16k33_data *data = dev->driver_data;
+	struct gpio_ht16k33_data *data = dev->data;
 
 	return ht16k33_get_pending_int(data->parent);
 }
 
 static int gpio_ht16k33_init(struct device *dev)
 {
-	const struct gpio_ht16k33_cfg *config = dev->config_info;
-	struct gpio_ht16k33_data *data = dev->driver_data;
+	const struct gpio_ht16k33_cfg *config = dev->config;
+	struct gpio_ht16k33_data *data = dev->data;
 
 	if (config->keyscan_idx >= HT16K33_KEYSCAN_ROWS) {
 		LOG_ERR("HT16K33 keyscan index out of bounds (%d)",

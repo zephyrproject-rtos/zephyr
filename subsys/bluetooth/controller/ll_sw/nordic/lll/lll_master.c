@@ -69,7 +69,7 @@ void lll_master_prepare(void *param)
 	int err;
 
 	err = lll_hfclock_on();
-	LL_ASSERT(!err || err == -EINPROGRESS);
+	LL_ASSERT(err >= 0);
 
 	/* Instants elapsed */
 	elapsed = p->lazy + 1;

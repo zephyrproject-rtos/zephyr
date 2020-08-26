@@ -48,24 +48,20 @@ config NET_L2_PPP_MAX_NACK_LOOPS
 	help
 	  How many times to accept NACK loops.
 
-config NET_L2_PPP_MAX_OPTIONS
-	int "Maximum number of options supported"
-	default 8
-	range 0 16
-	help
-	  How many options we support. This is used to allocate space for
-	  each option. The default (8) is a reasonably small value.
-
-config NET_L2_PPP_OPTION_MRU_NEG
-	bool "Negotiate MRU option if needed"
-	help
-	  Try to negotiate with peer for MRU (MTU) for the link.
-
 config NET_L2_PPP_OPTION_DNS_USE
 	bool "Use negotiated DNS servers"
 	depends on DNS_RESOLVER
 	help
 	  Use the DNS servers negotiated in the IPCP configuration.
+
+config NET_L2_PPP_AUTH_SUPPORT
+	bool
+
+config NET_L2_PPP_PAP
+	bool "PAP authentication protocol"
+	select NET_L2_PPP_AUTH_SUPPORT
+	help
+	  Enable support for PAP authentication protocol.
 
 module = NET_L2_PPP
 module-dep = NET_LOG

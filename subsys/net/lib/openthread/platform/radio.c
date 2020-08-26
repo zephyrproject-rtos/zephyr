@@ -82,7 +82,7 @@ static uint8_t  energy_detection_channel;
 static int16_t energy_detected_value;
 
 ATOMIC_DEFINE(pending_events, PENDING_EVENT_COUNT);
-K_THREAD_STACK_DEFINE(ot_task_stack, OT_WORKER_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(ot_task_stack, OT_WORKER_STACK_SIZE);
 static struct k_work_q ot_work_q;
 static otError tx_result;
 
@@ -189,13 +189,13 @@ void platformRadioInit(void)
 	radio_dev = device_get_binding(CONFIG_NET_CONFIG_IEEE802154_DEV_NAME);
 	__ASSERT_NO_MSG(radio_dev != NULL);
 
-	radio_api = (struct ieee802154_radio_api *)radio_dev->driver_api;
+	radio_api = (struct ieee802154_radio_api *)radio_dev->api;
 	if (!radio_api) {
 		return;
 	}
 
 	k_work_q_start(&ot_work_q, ot_task_stack,
-		       K_THREAD_STACK_SIZEOF(ot_task_stack),
+		       K_KERNEL_STACK_SIZEOF(ot_task_stack),
 		       OT_WORKER_PRIORITY);
 
 	if ((radio_api->get_capabilities(radio_dev) &
@@ -253,7 +253,7 @@ void transmit_message(struct k_work *tx_job)
 
 static inline void handle_tx_done(otInstance *aInstance)
 {
-	if (IS_ENABLED(OPENTHREAD_ENABLE_DIAG) && otPlatDiagModeGet()) {
+	if (IS_ENABLED(CONFIG_OPENTHREAD_DIAG) && otPlatDiagModeGet()) {
 		otPlatDiagRadioTransmitDone(aInstance, &sTransmitFrame,
 					    tx_result);
 	} else {
@@ -295,7 +295,7 @@ static void openthread_handle_received_frame(otInstance *instance,
 					      time->nanosecond / NSEC_PER_USEC;
 #endif
 
-	if (IS_ENABLED(OPENTHREAD_ENABLE_DIAG) && otPlatDiagModeGet()) {
+	if (IS_ENABLED(CONFIG_OPENTHREAD_DIAG) && otPlatDiagModeGet()) {
 		otPlatDiagRadioReceiveDone(instance,
 					   &recv_frame, OT_ERROR_NONE);
 	} else {
@@ -538,7 +538,12 @@ otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aPacket)
 
 	__ASSERT_NO_MSG(aPacket == &sTransmitFrame);
 
-	if (sState == OT_RADIO_STATE_RECEIVE) {
+	enum ieee802154_hw_caps radio_caps;
+
+	radio_caps = radio_api->get_capabilities(radio_dev);
+
+	if ((sState == OT_RADIO_STATE_RECEIVE) ||
+		(radio_caps & IEEE802154_HW_SLEEP_TO_TX)) {
 		if (run_tx_task(aInstance) == 0) {
 			error = OT_ERROR_NONE;
 		}
@@ -611,12 +616,15 @@ otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
 	}
 
 	if (radio_caps & IEEE802154_HW_CSMA) {
-		caps |= OT_RADIO_CAPS_CSMA_BACKOFF |
-			OT_RADIO_CAPS_TRANSMIT_RETRIES;
+		caps |= OT_RADIO_CAPS_CSMA_BACKOFF;
 	}
 
 	if (radio_caps & IEEE802154_HW_TX_RX_ACK) {
 		caps |= OT_RADIO_CAPS_ACK_TIMEOUT;
+	}
+
+	if (radio_caps & IEEE802154_HW_SLEEP_TO_TX) {
+		caps |= OT_RADIO_CAPS_SLEEP_TO_TX;
 	}
 
 	return caps;

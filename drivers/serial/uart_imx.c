@@ -22,7 +22,7 @@
 #include <uart_imx.h>
 
 #define DEV_CFG(dev) \
-	((const struct imx_uart_config *const)(dev)->config_info)
+	((const struct imx_uart_config *const)(dev)->config)
 #define UART_STRUCT(dev) \
 	((UART_Type *)(DEV_CFG(dev))->base)
 
@@ -55,7 +55,7 @@ struct imx_uart_data {
 static int uart_imx_init(struct device *dev)
 {
 	UART_Type *uart = UART_STRUCT(dev);
-	const struct imx_uart_config *config = dev->config_info;
+	const struct imx_uart_config *config = dev->config;
 	unsigned int old_level;
 
 	/* disable interrupts */
@@ -231,7 +231,7 @@ static void uart_imx_irq_callback_set(struct device *dev,
 		uart_irq_callback_user_data_t cb,
 		void *cb_data)
 {
-	struct imx_uart_data *data = dev->driver_data;
+	struct imx_uart_data *data = dev->data;
 
 	data->callback = cb;
 	data->cb_data = cb_data;
@@ -252,10 +252,10 @@ static void uart_imx_irq_callback_set(struct device *dev,
 void uart_imx_isr(void *arg)
 {
 	struct device *dev = arg;
-	struct imx_uart_data *data = dev->driver_data;
+	struct imx_uart_data *data = dev->data;
 
 	if (data->callback) {
-		data->callback(data->cb_data);
+		data->callback(dev, data->cb_data);
 	}
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */

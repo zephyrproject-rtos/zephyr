@@ -34,7 +34,7 @@ struct pwm_sam0_config {
 #endif
 };
 
-#define DEV_CFG(dev) ((const struct pwm_sam0_config *const)(dev)->config_info)
+#define DEV_CFG(dev) ((const struct pwm_sam0_config *const)(dev)->config)
 
 /* Wait for the peripheral to finish all commands */
 static void wait_synchronization(Tcc *regs)

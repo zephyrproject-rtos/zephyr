@@ -146,7 +146,7 @@ int net_test_dev_init(struct device *dev)
 
 static uint8_t *net_test_get_mac(struct device *dev)
 {
-	struct net_test_ipv6 *context = dev->driver_data;
+	struct net_test_ipv6 *context = dev->data;
 
 	if (context->mac_addr[2] == 0x00) {
 		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
@@ -1010,6 +1010,8 @@ static void test_change_ll_addr(void)
 	zassert_false(ret < 0, "Cannot send NA 1");
 
 	nbr = net_ipv6_nbr_lookup(iface, &peer_addr);
+	zassert_not_null(nbr, "Neighbor %s not found in cache\n",
+			 net_sprint_ipv6_addr(&peer_addr));
 	ll = net_nbr_get_lladdr(nbr->idx);
 
 	ll_iface = net_if_get_link_addr(iface);
@@ -1027,6 +1029,8 @@ static void test_change_ll_addr(void)
 	zassert_false(ret < 0, "Cannot send NA 2");
 
 	nbr = net_ipv6_nbr_lookup(iface, &peer_addr);
+	zassert_not_null(nbr, "Neighbor %s not found in cache\n",
+			 net_sprint_ipv6_addr(&peer_addr));
 	ll = net_nbr_get_lladdr(nbr->idx);
 
 	zassert_true(memcmp(ll->addr, ll_iface->addr, ll->len) != 0,

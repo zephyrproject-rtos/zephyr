@@ -126,7 +126,8 @@ void test_init_setup(void)
 
 	test_prepare_storage();
 
-	settings_subsys_init();
+	err = settings_subsys_init();
+	zassert_true(err == 0, "subsys init failed");
 
 	err = settings_register(&c1_settings);
 	zassert_true(err == 0, "can't regsister the settings handler");

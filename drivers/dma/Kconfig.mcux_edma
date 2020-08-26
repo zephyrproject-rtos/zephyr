@@ -6,7 +6,7 @@
 config DMA_MCUX_EDMA
 	bool "Enable MCUX DMA driver"
 	depends on HAS_MCUX_EDMA
-	select NOCACHE_MEMORY if HAS_MCUX_CACHE
+	imply NOCACHE_MEMORY if HAS_MCUX_CACHE
 	help
 	  DMA driver for MCUX series SoCs.
 
@@ -20,10 +20,10 @@ config DMA_TCD_QUEUE_SIZE
 
 config DMA_MCUX_TEST_SLOT_START
 	int "test slot start num"
-	depends on SOC_SERIES_KINETIS_K6X
-	default 58
+	depends on (SOC_SERIES_KINETIS_K6X || SOC_SERIES_KINETIS_KE1XF)
+	default 58 if SOC_SERIES_KINETIS_K6X
+	default 60 if SOC_SERIES_KINETIS_KE1XF
 	help
 	  test slot start num
-
 
 endif # DMA_MCUX_EDMA

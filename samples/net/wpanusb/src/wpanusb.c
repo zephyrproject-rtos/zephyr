@@ -417,7 +417,7 @@ void main(void)
 	/* Initialize transmit queue */
 	init_tx_queue();
 
-	radio_api = (struct ieee802154_radio_api *)ieee802154_dev->driver_api;
+	radio_api = (struct ieee802154_radio_api *)ieee802154_dev->api;
 
 	ret = usb_enable(NULL);
 	if (ret != 0) {

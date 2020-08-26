@@ -117,7 +117,7 @@ Implementation
 Defining a Ring Buffer
 ======================
 
-A ring buffer is defined using a variable of type :c:type:`struct ring_buf`.
+A ring buffer is defined using a variable of type :c:type:`ring_buf`.
 It must then be initialized by calling :cpp:func:`ring_buf_init()`.
 
 The following code defines and initializes an empty **data item mode** ring

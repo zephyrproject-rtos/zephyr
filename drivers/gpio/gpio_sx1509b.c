@@ -177,8 +177,8 @@ static inline int i2c_reg_write_byte_be(struct device *dev, uint16_t dev_addr,
 static int sx1509b_handle_interrupt(void *arg)
 {
 	struct device *dev = (struct device *) arg;
-	const struct sx1509b_config *cfg = dev->config_info;
-	struct sx1509b_drv_data *drv_data = dev->driver_data;
+	const struct sx1509b_config *cfg = dev->config;
+	struct sx1509b_drv_data *drv_data = dev->data;
 	int ret = 0;
 	uint16_t int_source;
 	uint8_t cmd = SX1509B_REG_INTERRUPT_SOURCE;
@@ -232,8 +232,8 @@ static int sx1509b_config(struct device *dev,
 			  gpio_pin_t pin,
 			  gpio_flags_t flags)
 {
-	const struct sx1509b_config *cfg = dev->config_info;
-	struct sx1509b_drv_data *drv_data = dev->driver_data;
+	const struct sx1509b_config *cfg = dev->config;
+	struct sx1509b_drv_data *drv_data = dev->data;
 	struct sx1509b_pin_state *pins = &drv_data->pin_state;
 	struct {
 		uint8_t reg;
@@ -370,8 +370,8 @@ out:
 static int port_get(struct device *dev,
 		    gpio_port_value_t *value)
 {
-	const struct sx1509b_config *cfg = dev->config_info;
-	struct sx1509b_drv_data *drv_data = dev->driver_data;
+	const struct sx1509b_config *cfg = dev->config;
+	struct sx1509b_drv_data *drv_data = dev->data;
 	uint16_t pin_data;
 	int rc = 0;
 
@@ -409,8 +409,8 @@ static int port_write(struct device *dev,
 		return -EWOULDBLOCK;
 	}
 
-	const struct sx1509b_config *cfg = dev->config_info;
-	struct sx1509b_drv_data *drv_data = dev->driver_data;
+	const struct sx1509b_config *cfg = dev->config;
+	struct sx1509b_drv_data *drv_data = dev->data;
 	uint16_t *outp = &drv_data->pin_state.data;
 
 	k_sem_take(&drv_data->lock, K_FOREVER);
@@ -473,8 +473,8 @@ static int pin_interrupt_configure(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	const struct sx1509b_config *cfg = dev->config_info;
-	struct sx1509b_drv_data *drv_data = dev->driver_data;
+	const struct sx1509b_config *cfg = dev->config;
+	struct sx1509b_drv_data *drv_data = dev->data;
 	struct sx1509b_irq_state *irq = &drv_data->irq_state;
 	struct {
 		uint8_t reg;
@@ -532,8 +532,8 @@ static int pin_interrupt_configure(struct device *dev,
  */
 static int sx1509b_init(struct device *dev)
 {
-	const struct sx1509b_config *cfg = dev->config_info;
-	struct sx1509b_drv_data *drv_data = dev->driver_data;
+	const struct sx1509b_config *cfg = dev->config;
+	struct sx1509b_drv_data *drv_data = dev->data;
 	int rc;
 
 	drv_data->i2c_master = device_get_binding(cfg->i2c_master_dev_name);
@@ -628,7 +628,7 @@ static int gpio_sx1509b_manage_callback(struct device *dev,
 					  struct gpio_callback *callback,
 					  bool set)
 {
-	struct sx1509b_drv_data *data = dev->driver_data;
+	struct sx1509b_drv_data *data = dev->data;
 
 	return gpio_manage_callback(&data->cb, callback, set);
 }

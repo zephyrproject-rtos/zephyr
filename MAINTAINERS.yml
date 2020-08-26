@@ -1,0 +1,1197 @@
+# This file contains information on who maintains what. It is parsed by
+# get_maintainer.py.
+#
+# File format
+# ###########
+#
+# "Area title" (the quotes are only needed for titles with special characters,
+#  like colons):
+#     status:
+#         One of the following:
+#
+#         * maintained:
+#             The area has a Maintainer (approved by the TSC) who
+#             looks after the area.
+#
+#         * orphaned:
+#             No current maintainer (but maybe you could take the role as you
+#             write your new code).
+#
+#         * obsolete:
+#             Old code. Something being marked obsolete generally means it has
+#             been replaced by something better that you should be using
+#             instead.
+#
+#     maintainers:
+#         List of GitHub handles for the people who maintain the area. Usually,
+#         there's only one maintainer.
+#
+#     collaborators (not to be confused with the GitHub collaborator role):
+#         Very involved contributors, who know the area well and contribute
+#         significantly to it.
+#
+#     labels:
+#         List of GitHub labels to add to pull requests that modify the area.
+#
+#     files:
+#         List of paths and/or glob patterns giving the files in the area,
+#         relative to the root directory.
+#
+#         If a path or glob pattern ends in a '/', it matches all files within
+#         the given directory or directories. Otherwise, an exact match is
+#         required.
+#
+#         Paths to directories should always have a trailing '/'.
+#
+#     files-regex:
+#         List of regular expressions applied to paths to determine if they
+#         belong to the area. The regular expression may match anywhere within
+#         the path, but can be anchored with ^ and $ as usual.
+#
+#         Can be combined with a 'files' key.
+#
+#         Note: Prefer plain 'files' patterns where possible. get_maintainer.py
+#         will check that they match some file, but won't check regexes
+#         (because it might be slow).
+#
+#     files-exclude:
+#         Like 'files', but any matching files will be excluded from the area.
+#
+#     files-regex-exclude:
+#         Like 'files-regex', but any matching files will be excluded from the
+#         area.
+#
+#     description: >-
+#         Plain-English description. Describe what the system is about, from an
+#         outsider's perspective.
+#
+#
+# All areas must have a 'files' and/or 'files-regex' key. The other keys are
+# optional.
+#
+# It is very advisable to have a `status` key in all entries. Exceptions to
+# this would be sub-areas which add extra fields (for ex. more `collaborators`
+# who work only in that sub-area) to other areas.
+#
+#
+# Workflow
+# ########
+#
+# Ideally, any file in the tree will be covered by some area.
+#
+# When a GitHub pull request is sent, this happens:
+#
+#     * A user mentioned in 'maintainers' is added as Assignee to
+#       the pull request
+#
+#     * Users mentioned in 'maintainers' and 'collaborators' are added as
+#       reviewers to the pull request
+#
+#     * The labels listed in 'labels' are automatically added to the pull
+#       request
+#
+#     * The bot posts this comment:
+#
+#         This PR affects the following areas:
+#         <area name>:
+#           Status: ...
+#           Maintainers: <list of maintainers>
+#           Collaborators: <list of sub-maintainers>
+#
+#         <area name>:
+#           ...
+#
+#
+# Changes to MAINTAINERS.yml need to be approved as follows:
+#
+#     * Changing the 'maintainers' for an area needs approval from the
+#       Technical Steering Committee
+#
+#     * Changing the 'collaborators' lines requires the maintainer and
+#       collaborators of that area to agree (or vote on it)
+
+# Areas are sorted by name
+
+ARC arch:
+    status: maintained
+    maintainers:
+        - ruuddw
+    collaborators:
+        - abrodkin
+        - evgeniy-paltsev
+        - IRISZZW
+    files:
+        - arch/arc/
+        - include/arch/arc/
+    labels:
+        - "area: ARC"
+
+ARM arch:
+    status: maintained
+    maintainers:
+        - ioannisg
+    collaborators:
+        - carlocaione
+        - galak
+        - MaureenHelm
+        - stephanosio
+    files:
+        - arch/arm/
+        - include/arch/arm/
+        - tests/arch/arm/
+    labels:
+        - "area: ARM"
+
+Bluetooth:
+    status: maintained
+    maintainers:
+        - jhedberg
+    collaborators:
+        - joerchan
+        - Vudentz
+    files:
+        - doc/reference/bluetooth/
+        - doc/guides/bluetooth/
+        - drivers/bluetooth/
+        - include/bluetooth/
+        - include/drivers/bluetooth/
+        - samples/bluetooth/
+        - subsys/bluetooth/
+        - tests/bluetooth/
+    labels:
+        - "area: Bluetooth"
+
+Bluetooth controller:
+    status: maintained
+    maintainers:
+        - cvinayak
+    collaborators:
+        - carlescufi
+        - thoh-ot
+    files:
+        - subsys/bluetooth/controller/
+
+Bluetooth Mesh:
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+            - trond-snekvik
+    collaborators:
+        - jhedberg
+    files:
+        - subsys/bluetooth/mesh/
+        - include/bluetooth/mesh/
+    labels:
+        - "area: Bluetooth Mesh"
+
+Build system:
+    status: maintained
+    maintainers:
+        - tejlmand
+    collaborators:
+        - nashif
+    files:
+        - cmake/
+    files-regex:
+        - CMakeLists.txt$
+        - \.cmake$
+    labels:
+        - "area: Build System"
+
+C library:
+    status: orphaned
+    collaborators:
+         - nashif
+         - andrewboie
+    files:
+         - lib/libc/
+         - tests/lib/c_lib/
+    labels:
+         - "area: C Library"
+
+CMSIS API layer:
+    status: orphaned
+    collaborators:
+         - nashif
+    files:
+         - lib/cmsis_rtos_v*/
+
+Common arch:
+    status: maintained
+    maintainers:
+        - andrewboie
+    files:
+        - arch/common/
+        - include/arch/common/
+    labels:
+        - "area: Architectures"
+
+Console:
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+        - pfalcon
+    files:
+        - include/console/
+        - subsys/console/
+    labels:
+        - "area: Console"
+
+Debug:
+    status: maintained
+    maintainers:
+        - nashif
+    files:
+        - include/debug/
+        - subsys/debug/
+    labels:
+        - "area: Debugging"
+
+DFU:
+    status: maintained
+    maintainers:
+        - nvlsianpu
+    files:
+        - include/dfu/
+        - subsys/dfu/
+        - tests/subsys/dfu/
+
+Devicetree:
+    status: maintained
+    maintainers:
+        - galak
+    collaborators:
+        - mbolivar-nordic
+    files:
+        - scripts/dts/
+        - dts/bindings/
+        - dts/common/
+    labels:
+        - "area: Device Tree"
+
+Disk:
+    status: orphaned
+    files:
+        - subsys/disk/
+        - include/disk/
+    labels:
+        - "area: Disk Access"
+
+Display drivers:
+    status: maintained
+    maintainers:
+        - vanwinkeljan
+    collaborators:
+        - jfischer-phytec-iot
+    files:
+        - drivers/display/
+        - dts/bindings/display/
+        - include/drivers/display.h
+        - include/display/
+        - include/drivers/display.h
+        - lib/gui/
+        - subsys/fb/
+    labels:
+        - "area: Display"
+
+Documentation:
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+        - carlescufi
+    collaborators:
+        - nashif
+    files:
+        - doc/
+    files-regex:
+        - \.rst$
+        - /doc/
+    labels:
+        - "area: Documentation"
+
+"Drivers: ADC":
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+        - anangl
+    files:
+        - drivers/adc/
+        - include/drivers/adc.h
+        - tests/drivers/adc/
+    labels:
+        - "area: ADC"
+
+"Drivers: Audio":
+    status: maintained
+    maintainers:
+        - Vudentz
+    files:
+        - drivers/audio/
+        - include/audio/
+
+"Drivers: CAN":
+    status: maintained
+    maintainers:
+        - alexanderwachter
+    collaborators:
+        - henrikbrixandersen
+        - karstenkoenig
+    files:
+        - drivers/can/
+        - dts/bindings/can/
+        - include/drivers/can.h
+        - samples/drivers/can/
+        - tests/drivers/can/
+    labels:
+        - "area: CAN"
+
+"Drivers: Clock control":
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+       - nordic-krch
+    files:
+        - drivers/clock_control/
+        - dts/bindings/clock/
+        - include/drivers/clock_control.h
+        - include/dt-bindings/clock/
+        - tests/drivers/clock_control/
+    labels:
+        - "area: Clock control"
+
+"Drivers: Console":
+    status: orphaned
+    collaborators:
+        - pfalcon
+    files:
+        - drivers/console/
+        - include/drivers/console/
+        - tests/drivers/console/
+    labels:
+        - "area: Console"
+
+"Drivers: Counter":
+    status: maintained
+    maintainers:
+        - nordic-krch
+    files:
+        - drivers/counter/
+        - include/drivers/counter.h
+        - tests/drivers/counter/
+    labels:
+        - "area: Counter"
+
+"Drivers: Crypto":
+    status: orphaned
+    files:
+        - drivers/crypto/
+        - dts/bindings/crypto/
+        - include/crypto/
+        - samples/drivers/crypto/
+    labels:
+        - "area: Crypto / RNG"
+
+"Drivers: DAC":
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+        - martinjaeger
+    files:
+        - drivers/dac/
+        - include/drivers/dac.h
+        - tests/drivers/dac/
+    labels:
+        - "area: DAC"
+
+"Drivers: DMA":
+    status: orphaned
+    files:
+        - drivers/dma/
+        - include/dt-bindings/dma/
+        - tests/drivers/dma/
+    labels:
+        - "area: DMA"
+
+"Drivers: EEPROM":
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+        - henrikbrixandersen
+    files:
+        - drivers/eeprom/
+        - dts/bindings/mtd/*eeprom*
+        - include/drivers/eeprom.h
+        - tests/drivers/eeprom/
+    labels:
+        - "area: EEPROM"
+
+"Drivers: Entropy":
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+        - ceolin
+    files:
+        - drivers/entropy/
+        - include/drivers/entropy.h
+        - samples/drivers/entropy/
+        - tests/drivers/entropy/
+
+"Drivers: ESPI":
+    status: orphaned
+    files:
+        - drivers/espi/
+        - include/drivers/espi.h
+        - samples/drivers/espi/
+    labels:
+        - "eSPI"
+
+"Drivers: Ethernet":
+    status: maintained
+    maintainers:
+        - tbursztyka
+    collaborators:
+        - jukkar
+        - pfalcon
+    files:
+        - drivers/ethernet/
+    labels:
+        - "area: Ethernet"
+
+"Drivers: Flash":
+    status: maintained
+    maintainers:
+        - nvlsianpu
+    files:
+        - drivers/flash/
+        - dts/bindings/flash_controller/
+        - include/drivers/flash.h
+        - samples/drivers/flash_shell/
+    labels:
+        - "area: Flash"
+
+"Drivers: GPIO":
+    status: maintained
+    maintainers:
+        - mnkp
+    files:
+        - doc/reference/peripherals/gpio.rst
+        - drivers/gpio/
+        - include/drivers/gpio/
+        - include/drivers/gpio.h
+        - include/dt-bindings/gpio/
+        - tests/drivers/gpio/
+        - samples/drivers/gpio/
+    labels:
+        - "area: GPIO"
+
+"Drivers: HW Info":
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+        - alexanderwachter
+    files:
+        - drivers/hwinfo/
+        - dts/bindings/hwinfo/
+        - include/drivers/hwinfo.h
+        - tests/drivers/hwinfo/
+    labels:
+        - "area: HWINFO"
+
+"Drivers: I2C":
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+        - pabigot
+    files:
+        - drivers/i2c/
+        - dts/bindings/i2c/
+        - include/drivers/i2c.h
+    labels:
+        - "area: I2C"
+
+"Drivers: I2S":
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+        - anangl
+    files:
+        - doc/reference/audio/i2s.rst
+        - drivers/i2s/
+        - dts/bindings/i2s/
+        - include/drivers/i2s.h
+        - tests/drivers/i2s/
+    labels:
+        - "area: I2S"
+
+"Drivers: IEEE 802.15.4":
+    status: maintained
+    maintainers:
+        - tbursztyka
+    collaborators:
+        - jukkar
+    files:
+        - drivers/ieee802154/
+
+"Drivers: Interrupt controllers":
+    status: orphaned
+    files:
+        - drivers/interrupt_controller/
+        - dts/bindings/interrupt-controller/
+        - include/drivers/interrupt_controller/
+        - include/dt-bindings/interrupt-controller/
+
+"Drivers: IPM":
+    status: maintained
+    maintainers:
+        - andrewboie
+    files:
+        - drivers/ipm/
+    description: >-
+        Inter-processor mailboxes
+
+"Drivers: kscan":
+    status: orphaned
+    files:
+        - drivers/kscan/
+        - include/drivers/kscan.h
+        - samples/drivers/espi/
+        - tests/drivers/kscan/
+
+"Drivers: LED":
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+        - Mani-Sadhasivam
+    files:
+        - drivers/led/
+        - include/drivers/led/
+        - include/drivers/led.h
+        - samples/drivers/led_*/
+    labels:
+        - "area: LED"
+
+"Drivers: LED Strip":
+    status: maintained
+    maintainers:
+        - mbolivar-nordic
+    files:
+        - drivers/led_strip/
+        - dts/bindings/led_strip/
+        - include/drivers/led_strip.h
+
+"Drivers: lora":
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+        - Mani-Sadhasivam
+    files:
+        - drivers/lora/
+        - include/drivers/lora.h
+        - samples/drivers/lora/
+
+"Drivers: Modem":
+    status: maintained
+    maintainers:
+        - mike-scott
+    files:
+        - drivers/modem/
+    labels:
+        - "area: Modem"
+
+"Drivers: Neural networking":
+    status: orphaned
+    files:
+        - drivers/neural_net/
+
+"Drivers: PCI":
+    status: maintained
+    maintainers:
+        - dcpleung
+    collaborators:
+        - andrewboie
+    files:
+        - drivers/pcie/
+        - include/drivers/pcie/
+    labels:
+        - "area: PCI"
+
+"Drivers: peci":
+    status: orphaned
+    files:
+        - drivers/peci/
+        - include/drivers/peci.h
+        - samples/drivers/peci/
+
+"Drivers: Pinmux":
+    status: maintained
+    maintainers:
+        - mnkp
+    files:
+        - doc/reference/peripherals/pinmux.rst
+        - drivers/pinmux/
+        - include/drivers/pinmux.h
+    labels:
+        - "area: Pinmux"
+
+"Drivers: PTP Clock":
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+        - jukkar
+    files:
+        - drivers/ptp_clock/
+        - include/ptp_clock.h
+
+"Drivers: PWM":
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+        - anangl
+    files:
+        - drivers/pwm/
+        - dts/bindings/pwm/
+        - include/drivers/pwm.h
+        - tests/drivers/pwm/
+    labels:
+        - "area: PWM"
+
+"Drivers: Serial/UART":
+    status: maintained
+    maintainers:
+        - dcpleung
+    files:
+        - drivers/serial/
+        - dts/bindings/serial/
+    labels:
+        - "area: UART"
+
+"Drivers: Sensors":
+    status: maintained
+    maintainers:
+        - MaureenHelm
+    collaborators:
+        - avisconti
+    files:
+        - drivers/sensor/
+        - include/drivers/sensor.h
+        - samples/sensor/
+    labels:
+        - "area: Sensors"
+
+"Drivers: SPI":
+    status: maintained
+    maintainers:
+        - tbursztyka
+    files:
+        - drivers/spi/
+        - include/drivers/spi.h
+        - tests/drivers/spi/
+    labels:
+        - "area: SPI"
+
+"Drivers: System timer":
+    status: maintained
+    maintainers:
+        - andyross
+    files:
+        - drivers/timer/
+        - include/drivers/timer/
+    labels:
+        - "area: Timer"
+
+"Drivers: video":
+    status: orphaned
+    collaborators:
+        - loicpoulain
+    files:
+        - drivers/video/
+        - include/drivers/video.h
+        - include/drivers/video-controls.h
+    labels:
+        - "area: Video"
+
+"Drivers: Watchdog":
+    status: orphaned
+    files:
+        - doc/reference/peripherals/watchdog.rst
+        - drivers/watchdog/
+        - dts/bindings/watchdog/
+        - include/drivers/watchdog.h
+        - samples/drivers/watchdog/
+        - tests/drivers/watchdog/
+    labels:
+        - "area: Watchdog"
+
+"Drivers: WiFi":
+    status: maintained
+    maintainers:
+        - tbursztyka
+    collaborators:
+        - jukkar
+    files:
+        - drivers/wifi/
+    labels:
+        - "area: Wifi"
+
+"Drivers: WiFi es-WiFi":
+    status: orphaned
+    collaborators:
+        - loicpoulain
+    files:
+        - drivers/wifi/eswifi/
+    description: >-
+        Inventek es-WiFi
+
+Filesystems:
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+        - nvlsianpu
+    collaborators:
+        - de-nordic
+        - Laczen
+        - nashif
+        - pabigot
+        - vanwinkeljan
+        - wentongwu
+    files:
+        - include/fs/
+        - samples/subsys/fs/
+        - subsys/fs/
+        - tests/subsys/fs/
+    labels:
+        - "area: File System"
+
+JSON Web Token:
+    status: orphaned
+    collaborators:
+        - mrfuchs
+    files:
+        - subsys/jwt/
+
+Kconfig:
+    # Provisional entry, subject to approval
+    status: orphaned
+    files:
+        - scripts/kconfig/
+    files-regex:
+        - Kconfig[\w._-]*$
+    labels:
+        - "area: Kconfig"
+    description: >-
+        See https://docs.zephyrproject.org/latest/guides/kconfig/index.html and
+        https://docs.zephyrproject.org/latest/guides/porting/board_porting.html#default-board-configuration
+
+Kernel:
+    status: maintained
+    maintainers:
+        - andyross
+    collaborators:
+        - andrewboie
+    files:
+        - doc/reference/kernel/
+        - include/kernel*.h
+        - kernel/
+        - tests/kernel/
+    labels:
+        - "area: Kernel"
+
+Little FS:
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+        - pabigot
+    files:
+        - subsys/fs/Kconfig.littlefs
+        - subsys/fs/littlefs_fs.c
+        - tests/subsys/fs/littlefs/
+    description: >-
+       Little FS
+
+Logging:
+    status: maintained
+    maintainers:
+        - nordic-krch
+    files:
+        - include/logging/
+        - samples/subsys/logging/
+        - subsys/logging/
+        - tests/subsys/logging/
+    labels:
+        - "area: Logging"
+
+MAINTAINERS file:
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+        - MaureenHelm
+    collaborators:
+        - ioannisg
+    files:
+        - MAINTAINERS.yml
+    labels:
+        - "area: Process"
+    description: >-
+        Zephyr Maintainers File
+
+MCU Manager:
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+        - de-nordic
+    files:
+        - subsys/mgmt/mcumgr/
+        - include/mgmt/mcumgr/
+        - samples/subsys/mgmt/mcumgr/
+    labels:
+        - "area: mcumgr"
+
+Native POSIX and POSIX arch:
+    status: maintained
+    maintainers:
+        - aescolar
+    files:
+        - arch/posix/
+        - boards/posix/native_posix/
+        - drivers/*/*native_posix*
+        - drivers/*/*/*native_posix*
+        - dts/posix/
+        - include/arch/posix/
+        - scripts/valgrind.supp
+        - soc/posix/
+        - tests/boards/native_posix/
+    labels:
+        - "area: native port"
+    description: >-
+        POSIX architecture and SOC, native_posix board, and related drivers
+
+Networking:
+    status: maintained
+    maintainers:
+        - jukkar
+    collaborators:
+        - tbursztyka
+        - pfalcon
+    files:
+        - drivers/net/
+        - include/net/
+        - samples/net/
+        - subsys/net/
+    files-exclude:
+        - samples/net/sockets/coap_*/
+        - samples/net/lwm2m_client/
+        - subsys/net/lib/coap/
+        - subsys/net/lib/lwm2m/
+        - subsys/net/lib/openthread/
+        - subsys/net/lib/tls_credentials/
+    labels:
+        - "area: Networking"
+
+"Networking: BSD sockets":
+    status: maintained
+    maintainers:
+        - pfalcon
+    collaborators:
+        - jukkar
+    files:
+        - samples/net/sockets/
+        - subsys/net/lib/sockets/
+        - tests/net/socket/
+    labels:
+        - "area: Sockets"
+
+"Networking: Buffers":
+    status: maintained
+    maintainers:
+        - jhedberg
+    collaborators:
+        - jukkar
+        - tbursztyka
+    files:
+        - include/net/buf.h
+        - subsys/net/buf.c
+        - tests/net/buf/
+
+"Networking: CoAP":
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+        - rlubos
+    collaborators:
+        - jukkar
+    files:
+        - subsys/net/lib/coap/
+        - samples/net/sockets/coap_*/
+        - tests/net/lib/coap/
+
+"Networking: LWM2M":
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+        - rlubos
+    collaborators:
+        - jukkar
+    files:
+        - samples/net/lwm2m_client/
+        - subsys/net/lib/lwm2m/
+    labels:
+        - "area: LWM2M"
+
+"Networking: MQTT":
+    status: maintained
+    maintainers:
+        - rlubos
+    collaborators:
+        - jukkar
+    files:
+        - subsys/net/lib/mqtt/
+        - tests/net/lib/mqtt_packet/
+        - samples/net/mqtt_publisher/
+
+NIOS-2 arch:
+    status: maintained
+    maintainers:
+        - nashif
+    files:
+        - arch/nios2/
+        - include/arch/nios2/
+    labels:
+        - "area: NIOS2"
+
+nRF52 BSIM:
+    status: maintained
+    maintainers:
+        - aescolar
+    files:
+        - boards/posix/nrf52_bsim/
+    labels:
+        - "platform: nrf52_bsim"
+
+POSIX API layer:
+    status: maintained
+    maintainers:
+        - pfalcon
+    files:
+        - include/posix/
+        - lib/posix/
+        - tests/posix/
+    labels:
+        - "area: POSIX"
+
+Power management:
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+        - wentongwu
+    files:
+        - include/power/power.h
+        - samples/subsys/power/
+        - subsys/power/
+    labels:
+        - "area: Power Management"
+
+RISCV arch:
+    # Provisional entry, subject to approval
+    status: orphaned
+    collaborators:
+        - mgielda
+        - nategraff-sifive
+    files:
+        - arch/riscv/
+        - include/arch/riscv/
+    labels:
+        - "area: RISCV"
+
+Sanitycheck:
+    status: maintained
+    maintainers:
+        - nashif
+    files:
+        - scripts/sanitycheck
+        - scripts/sanity_chk/
+    labels:
+        - "area: Sanitycheck"
+
+Settings:
+    status: maintained
+    maintainers:
+        - nvlsianpu
+    files:
+        - include/settings/
+        - subsys/settings/
+        - tests/subsys/settings/
+    labels:
+        - "area: Settings"
+
+Shell:
+    status: maintained
+    maintainers:
+        - jakub-uC
+    collaborators:
+        - carlescufi
+    files:
+        - include/shell/
+        - samples/subsys/shell/
+        - subsys/shell/
+        - tests/shell/
+        - tests/subsys/shell/
+    labels:
+        - "area: Shell"
+
+Shields:
+    status: maintained
+    maintainers:
+        - erwango
+    collaborators:
+        - avisconti
+        - jfischer-phytec-iot
+    files:
+        - boards/shields/
+    labels:
+        - "area: Shields"
+
+STM32:
+    status: maintained
+    maintainers:
+        - erwango
+    files:
+        - boards/arm/nucleo_*/
+        - boards/arm/stm32*_disco/
+        - boards/arm/stm32*_eval/
+        - drivers/*/*stm32*/
+        - drivers/*/*/*stm32*
+        - dts/arm/st/
+        - dts/bindings/*/*stm32*
+        - soc/arm/st_stm32/
+    labels:
+        - "platform: STM32"
+    description: >-
+        STM32 SOCs, dts files and related drivers. ST nucleo, disco and eval
+        boards.
+
+Storage:
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+        - nvlsianpu
+    files:
+        - subsys/storage/
+        - include/storage/
+        - tests/subsys/storage/
+    labels:
+        - "area: Storage"
+
+TF-M Integration:
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+        - microbuilder
+    collaborators:
+        - ioannisg
+    files:
+        - samples/tfm_integration/
+    labels:
+        - "area: TF-M"
+
+Tracing:
+    status: maintained
+    maintainers:
+        - nashif
+    collaborators:
+        - wentongwu
+    files:
+        - subsys/tracing/
+        - include/tracing/
+    labels:
+        - "area: tracing"
+
+USB:
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+        - jfischer-phytec-iot
+    collaborators:
+        - finikorg
+    files:
+        - drivers/usb/
+        - dts/bindings/usb/
+        - include/*/usb/
+        - include/usb/
+        - samples/subsys/usb/
+        - subsys/usb/
+        - tests/subsys/usb/
+    labels:
+        - "area: USB"
+
+Userspace:
+    status: maintained
+    maintainers:
+        - andrewboie
+    files:
+        - doc/reference/usermode/kernelobjects.rst
+        - include/app_memory/
+        - include/linker/app_smem*.ld
+    labels:
+        - "area: Userspace"
+
+VFS:
+    # Provisional entry, subject to approval
+    status: maintained
+    maintainers:
+        - de-nordic
+    files:
+        - subsys/fs/fat_fs.c
+        - tests/subsys/fs/fat_fs_api/
+    description: >-
+       VFS implementation
+
+West:
+    status: maintained
+    maintainers:
+        - mbolivar-nordic
+    collaborators:
+        - carlescufi
+    files:
+        - scripts/west-commands.yml
+        - scripts/west_commands/
+    labels:
+        - "area: West"
+
+Xtensa arch:
+    status: maintained
+    maintainers:
+        - dcpleung
+    collaborators:
+        - andyross
+        - andrewboie
+    files:
+        - arch/xtensa/
+        - include/arch/xtensa/
+        - dts/xtensa/
+        - tests/arch/xtensa_asm2/
+    labels:
+        - "area: Xtensa"
+
+x86 arch:
+    status: maintained
+    maintainers:
+        - ceolin
+    collaborators:
+        - andyross
+    files:
+        - arch/x86/
+        - include/arch/x86/
+        - tests/arch/x86/
+    labels:
+        - "area: X86"
+
+ZTest:
+    status: maintained
+    maintainers:
+        - nashif
+    files:
+        - subsys/testsuite/
+        - tests/ztest/
+        - tests/unit/util/
+    labels:
+        - "area: Testsuite"

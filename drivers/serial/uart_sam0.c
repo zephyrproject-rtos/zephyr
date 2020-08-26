@@ -52,6 +52,7 @@ struct uart_sam0_dev_data {
 	void *cb_data;
 #endif
 #if CONFIG_UART_ASYNC_API
+	struct device *dev;
 	const struct uart_sam0_dev_cfg *cfg;
 	struct device *dma;
 
@@ -77,8 +78,8 @@ struct uart_sam0_dev_data {
 };
 
 #define DEV_CFG(dev) \
-	((const struct uart_sam0_dev_cfg *const)(dev)->config_info)
-#define DEV_DATA(dev) ((struct uart_sam0_dev_data * const)(dev)->driver_data)
+	((const struct uart_sam0_dev_cfg *const)(dev)->config)
+#define DEV_DATA(dev) ((struct uart_sam0_dev_data * const)(dev)->data)
 
 static void wait_synchronization(SercomUsart *const usart)
 {
@@ -119,8 +120,10 @@ static int uart_sam0_set_baudrate(SercomUsart *const usart, uint32_t baudrate,
 
 #if CONFIG_UART_ASYNC_API
 
-static void uart_sam0_dma_tx_done(void *arg, uint32_t id, int error_code)
+static void uart_sam0_dma_tx_done(struct device *dma_dev, void *arg,
+				  uint32_t id, int error_code)
 {
+	ARG_UNUSED(dma_dev);
 	ARG_UNUSED(id);
 	ARG_UNUSED(error_code);
 
@@ -143,7 +146,7 @@ static void uart_sam0_dma_tx_done(void *arg, uint32_t id, int error_code)
 	dev_data->tx_len = 0U;
 
 	if (evt.data.tx.len != 0U && dev_data->async_cb) {
-		dev_data->async_cb(&evt, dev_data->async_cb_data);
+		dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
 	}
 
 	irq_unlock(key);
@@ -177,7 +180,8 @@ static int uart_sam0_tx_halt(struct uart_sam0_dev_data *dev_data)
 
 	if (tx_active) {
 		if (dev_data->async_cb) {
-			dev_data->async_cb(&evt, dev_data->async_cb_data);
+			dev_data->async_cb(dev_data->dev,
+					   &evt, dev_data->async_cb_data);
 		}
 	} else {
 		return -EINVAL;
@@ -216,11 +220,14 @@ static void uart_sam0_notify_rx_processed(struct uart_sam0_dev_data *dev_data,
 
 	dev_data->rx_processed_len = processed;
 
-	dev_data->async_cb(&evt, dev_data->async_cb_data);
+	dev_data->async_cb(dev_data->dev,
+			   &evt, dev_data->async_cb_data);
 }
 
-static void uart_sam0_dma_rx_done(void *arg, uint32_t id, int error_code)
+static void uart_sam0_dma_rx_done(struct device *dma_dev, void *arg,
+				  uint32_t id, int error_code)
 {
+	ARG_UNUSED(dma_dev);
 	ARG_UNUSED(id);
 	ARG_UNUSED(error_code);
 
@@ -245,7 +252,7 @@ static void uart_sam0_dma_rx_done(void *arg, uint32_t id, int error_code)
 			},
 		};
 
-		dev_data->async_cb(&evt, dev_data->async_cb_data);
+		dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
 	}
 
 	/* No next buffer, so end the transfer */
@@ -258,7 +265,7 @@ static void uart_sam0_dma_rx_done(void *arg, uint32_t id, int error_code)
 				.type = UART_RX_DISABLED,
 			};
 
-			dev_data->async_cb(&evt, dev_data->async_cb_data);
+			dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
 		}
 
 		irq_unlock(key);
@@ -295,7 +302,7 @@ static void uart_sam0_dma_rx_done(void *arg, uint32_t id, int error_code)
 		.type = UART_RX_BUF_REQUEST,
 	};
 
-	dev_data->async_cb(&evt, dev_data->async_cb_data);
+	dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
 
 	irq_unlock(key);
 }
@@ -556,6 +563,7 @@ static int uart_sam0_init(struct device *dev)
 #endif
 
 #ifdef CONFIG_UART_ASYNC_API
+	dev_data->dev = dev;
 	dev_data->cfg = cfg;
 	dev_data->dma = device_get_binding(cfg->dma_dev);
 
@@ -573,7 +581,7 @@ static int uart_sam0_init(struct device *dev)
 		dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
 		dma_cfg.source_data_size = 1;
 		dma_cfg.dest_data_size = 1;
-		dma_cfg.callback_arg = dev;
+		dma_cfg.user_data = dev;
 		dma_cfg.dma_callback = uart_sam0_dma_tx_done;
 		dma_cfg.block_count = 1;
 		dma_cfg.head_block = &dma_blk;
@@ -601,7 +609,7 @@ static int uart_sam0_init(struct device *dev)
 		dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
 		dma_cfg.source_data_size = 1;
 		dma_cfg.dest_data_size = 1;
-		dma_cfg.callback_arg = dev;
+		dma_cfg.user_data = dev;
 		dma_cfg.dma_callback = uart_sam0_dma_rx_done;
 		dma_cfg.block_count = 1;
 		dma_cfg.head_block = &dma_blk;
@@ -658,7 +666,7 @@ static void uart_sam0_isr(void *arg)
 
 #if CONFIG_UART_INTERRUPT_DRIVEN
 	if (dev_data->cb) {
-		dev_data->cb(dev_data->cb_data);
+		dev_data->cb(dev, dev_data->cb_data);
 	}
 #endif
 
@@ -677,7 +685,7 @@ static void uart_sam0_isr(void *arg)
 				.type = UART_RX_BUF_REQUEST,
 			};
 
-			dev_data->async_cb(&evt, dev_data->async_cb_data);
+			dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
 		}
 
 		/*
@@ -989,7 +997,7 @@ static int uart_sam0_rx_disable(struct device *dev)
 	dev_data->rx_len = 0U;
 
 	if (dev_data->async_cb) {
-		dev_data->async_cb(&evt, dev_data->async_cb_data);
+		dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
 	}
 
 	if (dev_data->rx_next_len) {
@@ -1004,13 +1012,13 @@ static int uart_sam0_rx_disable(struct device *dev)
 		dev_data->rx_next_len = 0U;
 
 		if (dev_data->async_cb) {
-			dev_data->async_cb(&evt, dev_data->async_cb_data);
+			dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
 		}
 	}
 
 	evt.type = UART_RX_DISABLED;
 	if (dev_data->async_cb) {
-		dev_data->async_cb(&evt, dev_data->async_cb_data);
+		dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
 	}
 
 	irq_unlock(key);

@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(spi_gecko);
 
 #define SPI_WORD_SIZE 8
 
-#define DEV_DATA(dev) ((struct spi_gecko_data *) ((dev)->driver_data))
+#define DEV_DATA(dev) ((struct spi_gecko_data *) ((dev)->data))
 
 /* Structure Declarations */
 
@@ -53,7 +53,7 @@ struct spi_gecko_config {
 static int spi_config(struct device *dev, const struct spi_config *config,
 		      uint16_t *control)
 {
-	const struct spi_gecko_config *gecko_config = dev->config_info;
+	const struct spi_gecko_config *gecko_config = dev->config;
 	struct spi_gecko_data *data = DEV_DATA(dev);
 
 	if (SPI_WORD_SIZE_GET(config->operation) != SPI_WORD_SIZE) {
@@ -168,7 +168,7 @@ static void spi_gecko_xfer(struct device *dev,
 {
 	int ret;
 	struct spi_context *ctx = &DEV_DATA(dev)->ctx;
-	const struct spi_gecko_config *gecko_config = dev->config_info;
+	const struct spi_gecko_config *gecko_config = dev->config;
 	struct spi_gecko_data *data = DEV_DATA(dev);
 
 	spi_context_cs_control(ctx, true);
@@ -183,7 +183,7 @@ static void spi_gecko_xfer(struct device *dev,
 
 static void spi_gecko_init_pins(struct device *dev)
 {
-	const struct spi_gecko_config *config = dev->config_info;
+	const struct spi_gecko_config *config = dev->config;
 
 	soc_gpio_configure(&config->pin_rx);
 	soc_gpio_configure(&config->pin_tx);
@@ -208,7 +208,7 @@ static void spi_gecko_init_pins(struct device *dev)
 
 static int spi_gecko_init(struct device *dev)
 {
-	const struct spi_gecko_config *config = dev->config_info;
+	const struct spi_gecko_config *config = dev->config;
 	USART_InitSync_TypeDef usartInit = USART_INITSYNC_DEFAULT;
 
 	/* The peripheral and gpio clock are already enabled from soc and gpio
@@ -269,7 +269,7 @@ static int spi_gecko_transceive_async(struct device *dev,
 static int spi_gecko_release(struct device *dev,
 			     const struct spi_config *config)
 {
-	const struct spi_gecko_config *gecko_config = dev->config_info;
+	const struct spi_gecko_config *gecko_config = dev->config;
 
 	if (!(gecko_config->base->STATUS & USART_STATUS_TXIDLE)) {
 		return -EBUSY;

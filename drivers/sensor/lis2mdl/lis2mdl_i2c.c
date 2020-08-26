@@ -24,8 +24,8 @@ LOG_MODULE_DECLARE(LIS2MDL);
 static int lis2mdl_i2c_read(struct device *dev, uint8_t reg_addr,
 				 uint8_t *value, uint16_t len)
 {
-	struct lis2mdl_data *data = dev->driver_data;
-	const struct lis2mdl_config *cfg = dev->config_info;
+	struct lis2mdl_data *data = dev->data;
+	const struct lis2mdl_config *cfg = dev->config;
 
 	return i2c_burst_read(data->bus, cfg->i2c_slv_addr,
 			      reg_addr, value, len);
@@ -34,8 +34,8 @@ static int lis2mdl_i2c_read(struct device *dev, uint8_t reg_addr,
 static int lis2mdl_i2c_write(struct device *dev, uint8_t reg_addr,
 				  uint8_t *value, uint16_t len)
 {
-	struct lis2mdl_data *data = dev->driver_data;
-	const struct lis2mdl_config *cfg = dev->config_info;
+	struct lis2mdl_data *data = dev->data;
+	const struct lis2mdl_config *cfg = dev->config;
 
 	return i2c_burst_write(data->bus, cfg->i2c_slv_addr,
 			       reg_addr, value, len);
@@ -43,7 +43,7 @@ static int lis2mdl_i2c_write(struct device *dev, uint8_t reg_addr,
 
 int lis2mdl_i2c_init(struct device *dev)
 {
-	struct lis2mdl_data *data = dev->driver_data;
+	struct lis2mdl_data *data = dev->data;
 
 	data->ctx_i2c.read_reg = (stmdev_read_ptr) lis2mdl_i2c_read;
 	data->ctx_i2c.write_reg = (stmdev_write_ptr) lis2mdl_i2c_write;

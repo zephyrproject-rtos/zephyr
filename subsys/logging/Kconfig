@@ -424,6 +424,52 @@ config LOG_BACKEND_RTT_FORCE_PRINTK
 
 endif # LOG_BACKEND_RTT
 
+config LOG_BACKEND_SPINEL
+	bool "Enable OpenThread dedicated Spinel protocol backend"
+	depends on (OPENTHREAD_NCP_SPINEL_ON_UART_DEV_NAME!=UART_CONSOLE_ON_DEV_NAME || !LOG_BACKEND_UART)
+	depends on NET_L2_OPENTHREAD
+	help
+	  When enabled, backend will use OpenThread dedicated SPINEL protocol for logging.
+	  This protocol is byte oriented and wrapps given messages into serial frames.
+	  Backend should be enabled only to OpenThread purposes and when UART backend is disabled
+	  or works on antoher UART device to avoid interference.
+
+if LOG_BACKEND_SPINEL
+
+config LOG_BACKEND_SPINEL_BUFFER_SIZE
+	int "Size of reserved up-buffer for logger output."
+	default 64
+	help
+	  Specify reserved size of up-buffer used for logger output.
+
+choice
+	prompt "Spinel backend log level"
+	help
+	  This option selects log level for Spinel backend stack.
+
+config LOG_BACKEND_SPINEL_LEVEL_CRITICAL
+	bool "Critical"
+config LOG_BACKEND_SPINEL_LEVEL_WARNING
+	bool "Warning"
+config LOG_BACKEND_SPINEL_LEVEL_NOTE
+	bool "Note"
+config LOG_BACKEND_SPINEL_LEVEL_INFO
+	bool "Info"
+config LOG_BACKEND_SPINEL_LEVEL_DEBUG
+	bool "Debug"
+endchoice
+
+config LOG_BACKEND_SPINEL_LEVEL
+	int
+	default 1 if LOG_BACKEND_SPINEL_LEVEL_CRITICAL
+	default 2 if LOG_BACKEND_SPINEL_LEVEL_WARNING
+	default 3 if LOG_BACKEND_SPINEL_LEVEL_NOTE
+	default 4 if LOG_BACKEND_SPINEL_LEVEL_INFO
+	default 5 if LOG_BACKEND_SPINEL_LEVEL_DEBUG
+	default 0
+
+endif # LOG_BACKEND_SPINEL
+
 config LOG_BACKEND_NATIVE_POSIX
 	bool "Enable native backend"
 	depends on ARCH_POSIX

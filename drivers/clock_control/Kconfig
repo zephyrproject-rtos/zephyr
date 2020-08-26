@@ -26,6 +26,8 @@ source "drivers/clock_control/Kconfig.stm32"
 
 source "drivers/clock_control/Kconfig.beetle"
 
+source "drivers/clock_control/Kconfig.lpc11u6x"
+
 source "drivers/clock_control/Kconfig.mcux_ccm"
 
 source "drivers/clock_control/Kconfig.mcux_mcg"
@@ -35,6 +37,8 @@ source "drivers/clock_control/Kconfig.mcux_pcc"
 source "drivers/clock_control/Kconfig.mcux_scg"
 
 source "drivers/clock_control/Kconfig.mcux_sim"
+
+source "drivers/clock_control/Kconfig.npcx"
 
 source "drivers/clock_control/Kconfig.rv32m1"
 

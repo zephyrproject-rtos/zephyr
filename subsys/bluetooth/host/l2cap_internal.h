@@ -227,13 +227,6 @@ struct bt_l2cap_ecred_reconf_rsp {
 
 #define BT_L2CAP_SDU_HDR_LEN            2
 
-#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
-#define BT_L2CAP_RX_MTU CONFIG_BT_L2CAP_RX_MTU
-#else
-#define BT_L2CAP_RX_MTU (CONFIG_BT_RX_BUF_LEN - \
-			 BT_HCI_ACL_HDR_SIZE - BT_L2CAP_HDR_SIZE)
-#endif
-
 struct bt_l2cap_fixed_chan {
 	uint16_t		cid;
 	int (*accept)(struct bt_conn *conn, struct bt_l2cap_chan **chan);
@@ -292,7 +285,7 @@ void bt_l2cap_chan_set_state(struct bt_l2cap_chan *chan,
  * Notify L2CAP channels of a change in encryption state passing additionally
  * HCI status of performed security procedure.
  */
-void bt_l2cap_encrypt_change(struct bt_conn *conn, uint8_t hci_status);
+void bt_l2cap_security_changed(struct bt_conn *conn, uint8_t hci_status);
 
 /* Prepare an L2CAP PDU to be sent over a connection */
 struct net_buf *bt_l2cap_create_pdu_timeout(struct net_buf_pool *pool,

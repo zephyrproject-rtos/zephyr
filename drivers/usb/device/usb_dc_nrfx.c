@@ -242,6 +242,9 @@ K_MEM_POOL_DEFINE(ep_buf_pool, EP_BUF_POOL_BLOCK_MIN_SZ,
  * @brief USBD control structure
  *
  * @param status_cb	Status callback for USB DC notifications
+ * @param hfxo_cli	Onoff client used to control HFXO
+ * @param hfxo_mgr	Pointer to onoff manager associated with HFXO.
+ * @param clk_requested	Flag used to protect against double stop.
  * @param attached	USBD Attached flag
  * @param ready		USBD Ready flag set after pullup
  * @param usb_work	USBD work item
@@ -251,6 +254,9 @@ K_MEM_POOL_DEFINE(ep_buf_pool, EP_BUF_POOL_BLOCK_MIN_SZ,
  */
 struct nrf_usbd_ctx {
 	usb_dc_status_callback status_cb;
+	struct onoff_client hfxo_cli;
+	struct onoff_manager *hfxo_mgr;
+	atomic_t clk_requested;
 
 	bool attached;
 	bool ready;
@@ -276,7 +282,7 @@ K_FIFO_DEFINE(usbd_evt_fifo);
  * of a system work queue item waiting for a USB transfer to be finished.
  */
 static struct k_work_q usbd_work_queue;
-static K_THREAD_STACK_DEFINE(usbd_work_queue_stack,
+static K_KERNEL_STACK_DEFINE(usbd_work_queue_stack,
 			     CONFIG_USB_NRFX_WORK_QUEUE_STACK_SIZE);
 
 
@@ -523,62 +529,26 @@ void usb_dc_nrfx_power_event_callback(nrf_power_event_t event)
 	}
 }
 
-/**
- * @brief Enable/Disable the HF clock
- *
- * Toggle the HF clock. It needs to be enabled for USBD data exchange
- *
- * @param on		Set true to enable the HF clock, false to disable.
- * @param blocking	Set true to block wait till HF clock stabilizes.
- *
- * @return 0 on success, error number otherwise
+/* Stopping HFXO, algorithm supports case when stop comes before clock is
+ * started. In that case, it is stopped from the callback context.
  */
-static int hf_clock_enable(bool on, bool blocking)
+static int hfxo_stop(struct nrf_usbd_ctx *ctx)
 {
-	int ret = -ENODEV;
-	struct device *clock;
-	static bool clock_requested;
-
-	clock = device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_clock)));
-	if (!clock) {
-		LOG_ERR("NRF HF Clock device not found!");
-		return ret;
+	if (atomic_cas(&ctx->clk_requested, 1, 0)) {
+		return onoff_cancel_or_release(ctx->hfxo_mgr, &ctx->hfxo_cli);
 	}
 
-	if (on) {
-		if (clock_requested) {
-			/* Do not request HFCLK multiple times. */
-			return 0;
-		}
-		ret = clock_control_on(clock, CLOCK_CONTROL_NRF_SUBSYS_HF);
-		while (blocking &&
-			clock_control_get_status(clock,
-						 CLOCK_CONTROL_NRF_SUBSYS_HF) !=
-					CLOCK_CONTROL_STATUS_ON) {
-		}
-	} else {
-		if (!clock_requested) {
-			/* Cancel the operation if clock has not
-			 * been requested by this driver before.
-			 */
-			return 0;
-		}
-		ret = clock_control_off(clock, CLOCK_CONTROL_NRF_SUBSYS_HF);
+	return 0;
+}
+
+static int hfxo_start(struct nrf_usbd_ctx *ctx)
+{
+	if (atomic_cas(&ctx->clk_requested, 0, 1)) {
+		sys_notify_init_spinwait(&ctx->hfxo_cli.notify);
+
+		return onoff_request(ctx->hfxo_mgr, &ctx->hfxo_cli);
 	}
 
-	if (ret && (blocking || (ret != -EINPROGRESS))) {
-		LOG_ERR("HF clock %s fail: %d",
-			on ? "start" : "stop", ret);
-		return ret;
-	}
-
-	clock_requested = on;
-	LOG_DBG("HF clock %s success (%d)", on ? "start" : "stop", ret);
-
-	/* NOTE: Non-blocking HF clock enable can return -EINPROGRESS
-	 * if HF clock start was already requested. Such error code
-	 * does not need to be propagated, hence returned value is 0.
-	 */
 	return 0;
 }
 
@@ -766,13 +736,15 @@ static void eps_ctx_uninit(void)
 static inline void usbd_work_process_pwr_events(struct usbd_pwr_event *pwr_evt)
 {
 	struct nrf_usbd_ctx *ctx = get_usbd_ctx();
+	int err;
 
 	switch (pwr_evt->state) {
 	case USBD_ATTACHED:
 		if (!nrfx_usbd_is_enabled()) {
 			LOG_DBG("USB detected");
 			nrfx_usbd_enable();
-			(void) hf_clock_enable(true, false);
+			err = hfxo_start(ctx);
+			__ASSERT_NO_MSG(err >= 0);
 		}
 
 		/* No callback here.
@@ -795,7 +767,8 @@ static inline void usbd_work_process_pwr_events(struct usbd_pwr_event *pwr_evt)
 	case USBD_DETACHED:
 		ctx->ready = false;
 		nrfx_usbd_disable();
-		(void) hf_clock_enable(false, false);
+		err = hfxo_stop(ctx);
+		__ASSERT_NO_MSG(err >= 0);
 
 		LOG_DBG("USB Removed");
 
@@ -1154,6 +1127,9 @@ static void usbd_event_handler(nrfx_usbd_evt_t const *const p_event)
 		break;
 	case NRFX_USBD_EVT_WUREQ:
 		LOG_DBG("RemoteWU initiated");
+		evt.evt_type = USBD_EVT_POWER;
+		evt.evt.pwr_evt.state = USBD_RESUMED;
+		put_evt = true;
 		break;
 	case NRFX_USBD_EVT_RESET:
 		evt.evt_type = USBD_EVT_RESET;
@@ -1358,11 +1334,13 @@ int usb_dc_attach(void)
 
 	k_work_q_start(&usbd_work_queue,
 		       usbd_work_queue_stack,
-		       K_THREAD_STACK_SIZEOF(usbd_work_queue_stack),
+		       K_KERNEL_STACK_SIZEOF(usbd_work_queue_stack),
 		       CONFIG_SYSTEM_WORKQUEUE_PRIORITY);
 
 	k_work_init(&ctx->usb_work, usbd_work_handler);
 	k_mutex_init(&ctx->drv_lock);
+	ctx->hfxo_mgr =
+		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
 
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    nrfx_isr, nrfx_usbd_irq_handler, 0);
@@ -1415,7 +1393,7 @@ int usb_dc_detach(void)
 		nrfx_usbd_uninit();
 	}
 
-	(void) hf_clock_enable(false, false);
+	(void)hfxo_stop(ctx);
 	nrf5_power_usb_power_int_enable(false);
 
 	ctx->attached = false;

@@ -57,6 +57,28 @@ extern "C" {
 
 #define NET_ASSERT(cond, ...) __ASSERT(cond, "" __VA_ARGS__)
 
+/* This needs to be here in order to avoid circular include dependency between
+ * net_pkt.h and net_if.h
+ */
+#if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL) || \
+	defined(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)
+#if !defined(NET_PKT_DETAIL_STATS_COUNT)
+#if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)
+
+#if defined(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)
+#define NET_PKT_DETAIL_STATS_COUNT 4
+#else
+#define NET_PKT_DETAIL_STATS_COUNT 3
+#endif /* CONFIG_NET_PKT_RXTIME_STATS_DETAIL */
+
+#else
+#define NET_PKT_DETAIL_STATS_COUNT 4
+#endif /* CONFIG_NET_PKT_TXTIME_STATS_DETAIL */
+
+#endif /* !NET_PKT_DETAIL_STATS_COUNT */
+#endif /* CONFIG_NET_PKT_TXTIME_STATS_DETAIL ||
+	  CONFIG_NET_PKT_RXTIME_STATS_DETAIL */
+
 /** @endcond */
 
 struct net_buf;

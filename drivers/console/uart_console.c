@@ -34,9 +34,6 @@
 #ifdef CONFIG_UART_CONSOLE_MCUMGR
 #include "mgmt/serial.h"
 #endif
-#ifdef CONFIG_USB_UART_CONSOLE
-#include <usb/usb_device.h>
-#endif
 
 static struct device *uart_console_dev;
 
@@ -434,9 +431,10 @@ static bool handle_mcumgr(struct console_input *cmd, uint8_t byte)
 
 #endif /* CONFIG_UART_CONSOLE_MCUMGR */
 
-static void uart_console_isr(struct device *unused)
+static void uart_console_isr(struct device *unused, void *user_data)
 {
 	ARG_UNUSED(unused);
+	ARG_UNUSED(user_data);
 
 	while (uart_irq_update(uart_console_dev) &&
 	       uart_irq_is_pending(uart_console_dev)) {
@@ -597,30 +595,8 @@ static int uart_console_init(struct device *arg)
 
 	ARG_UNUSED(arg);
 
+	/* Claim console device */
 	uart_console_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
-
-	__ASSERT_NO_MSG(uart_console_dev);
-
-#if defined(CONFIG_USB_UART_CONSOLE)
-	int ret;
-
-	ret = usb_enable(NULL);
-	if (ret != 0) {
-		return ret;
-	}
-
-#if defined(CONFIG_USB_UART_DTR_WAIT)
-	while (1) {
-		uint32_t dtr = 0U;
-
-		uart_line_ctrl_get(uart_console_dev, UART_LINE_CTRL_DTR, &dtr);
-		if (dtr) {
-			break;
-		}
-	}
-	k_busy_wait(1000000);
-#endif
-#endif
 
 	uart_console_hook_install();
 

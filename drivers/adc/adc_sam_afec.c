@@ -63,10 +63,10 @@ struct adc_sam_cfg {
 };
 
 #define DEV_CFG(dev) \
-	((const struct adc_sam_cfg *const)(dev)->config_info)
+	((const struct adc_sam_cfg *const)(dev)->config)
 
 #define DEV_DATA(dev) \
-	((struct adc_sam_data *)(dev)->driver_data)
+	((struct adc_sam_data *)(dev)->data)
 
 static int adc_sam_channel_setup(struct device *dev,
 				 const struct adc_channel_cfg *channel_cfg)

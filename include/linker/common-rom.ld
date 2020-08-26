@@ -86,26 +86,12 @@
 		__app_shmem_regions_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
-	SECTION_PROLOGUE(net_l2,,)
-	{
-		__net_l2_start = .;
-		*(".net_l2.init")
-		KEEP(*(SORT_BY_NAME(".net_l2.init*")))
-		__net_l2_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
-
 #if defined(CONFIG_NET_SOCKETS)
 	Z_ITERABLE_SECTION_ROM(net_socket_register, 4)
 #endif
 
 #if defined(CONFIG_NET_L2_PPP)
-	SECTION_PROLOGUE(net_ppp_proto,,)
-	{
-		__net_ppp_proto_start = .;
-		*(".net_ppp_proto.*")
-		KEEP(*(SORT_BY_NAME(".net_ppp_proto.*")))
-		__net_ppp_proto_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	Z_ITERABLE_SECTION_ROM(ppp_protocol_handler, 4)
 #endif
 
 	Z_ITERABLE_SECTION_ROM(bt_l2cap_fixed_chan, 4)

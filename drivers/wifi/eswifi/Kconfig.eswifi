@@ -8,6 +8,8 @@ menuconfig WIFI_ESWIFI
 	select NET_L2_WIFI_MGMT
 	select WIFI_OFFLOAD
 	select NET_OFFLOAD
+	select NET_SOCKETS
+	select NET_SOCKETS_OFFLOAD
 
 if WIFI_ESWIFI
 
@@ -21,5 +23,11 @@ config WIFI_ESWIFI_THREAD_PRIO
 	help
 	  This option sets the priority of the esWiFi threads.
 	  Do not touch it unless you know what you are doing.
+
+config WIFI_ESWIFI_SHELL
+	bool "esWiFi shell"
+	depends on SHELL
+	help
+	  Enable esWiFi shell
 
 endif

@@ -666,6 +666,7 @@ __aligned(PTABLES_ALIGN) struct x86_page_tables z_x86_user_ptables;
 
 extern char z_shared_kernel_page_start[];
 
+#ifdef CONFIG_X86_KPTI
 static inline bool is_within_system_ram(uintptr_t addr)
 {
 #ifdef CONFIG_X86_64
@@ -676,6 +677,7 @@ static inline bool is_within_system_ram(uintptr_t addr)
 		(addr < (PHYS_RAM_ADDR + PHYS_RAM_SIZE));
 #endif
 }
+#endif
 
 /* Ignored bit posiition at all levels */
 #define IGNORED		BIT64(11)
@@ -834,33 +836,51 @@ void z_x86_add_mmu_region(uintptr_t addr, size_t size, uint64_t flags)
 #endif
 }
 
-void __weak z_x86_soc_add_mmu_regions(void)
+int arch_mem_map(void *dest, uintptr_t addr, size_t size, uint32_t flags)
 {
+	uint64_t entry_flags = Z_X86_MMU_P;
+
+	__ASSERT((uintptr_t)dest == addr,
+		 "only identity mapping supported");
+
+	switch (flags & K_MEM_CACHE_MASK) {
+	case K_MEM_CACHE_NONE:
+		entry_flags |= Z_X86_MMU_PCD;
+		break;
+	case K_MEM_CACHE_WT:
+		entry_flags |= Z_X86_MMU_PWT;
+		break;
+	case K_MEM_CACHE_WB:
+		break;
+	default:
+		return -ENOTSUP;
+	}
+	if ((flags & K_MEM_PERM_RW) != 0) {
+		entry_flags |= Z_X86_MMU_RW;
+	}
+	if ((flags & K_MEM_PERM_USER) != 0) {
+		/* TODO: user mode support
+		 * entry_flags |= MMU_US;
+		 */
+		return -ENOTSUP;
+	}
+	if ((flags & K_MEM_PERM_EXEC) == 0) {
+		entry_flags |= Z_X86_MMU_XD;
+	}
+
+	z_x86_add_mmu_region(addr, size, entry_flags);
+
+	return 0;
 }
 
 /* Called from x86's arch_kernel_init() */
 void z_x86_paging_init(void)
 {
-	size_t pages_free;
-
 	Z_STRUCT_SECTION_FOREACH(mmu_region, rgn) {
 		add_mmu_region(&z_x86_kernel_ptables, rgn, false);
 #ifdef CONFIG_X86_KPTI
 		add_mmu_region(&z_x86_user_ptables, rgn, true);
 #endif
-	}
-
-	z_x86_soc_add_mmu_regions();
-
-#ifdef CONFIG_PCIE_MMIO_CFG
-	z_pcie_add_mmu_regions();
-#endif
-
-	pages_free = (page_pos - page_pool) / MMU_PAGE_SIZE;
-
-	if (pages_free != 0) {
-		printk("Optimal CONFIG_X86_MMU_PAGE_POOL_PAGES %zu\n",
-		       CONFIG_X86_MMU_PAGE_POOL_PAGES - pages_free);
 	}
 
 #ifdef CONFIG_X86_64
@@ -873,6 +893,30 @@ void z_x86_paging_init(void)
 	z_x86_enable_paging();
 #endif
 }
+
+#ifdef CONFIG_X86_STACK_PROTECTION
+void z_x86_set_stack_guard(k_thread_stack_t *stack)
+{
+#ifdef CONFIG_USERSPACE
+	if (z_stack_is_user_capable(stack)) {
+		struct z_x86_thread_stack_header *header =
+			(struct z_x86_thread_stack_header *)stack;
+
+		/* Set guard area to read-only to catch stack overflows */
+		z_x86_mmu_set_flags(&z_x86_kernel_ptables, &header->guard_page,
+				    MMU_PAGE_SIZE, MMU_ENTRY_READ, Z_X86_MMU_RW,
+				    true);
+
+	} else
+#endif /* CONFIG_USERSPACE */
+	{
+		/* Kernel-only stacks have the guard be the first page */
+		z_x86_mmu_set_flags(&z_x86_kernel_ptables, stack,
+				    MMU_PAGE_SIZE, MMU_ENTRY_READ, Z_X86_MMU_RW,
+				    true);
+	}
+}
+#endif /* CONFIG_X86_STACK_PROTECTION */
 
 #ifdef CONFIG_X86_USERSPACE
 int arch_buffer_validate(void *addr, size_t size, int write)

@@ -13,10 +13,10 @@
 
 /* Device data structure */
 #define DEV_CFG(dev)						\
-	((const struct uart_numicro_config * const)(dev)->config_info)
+	((const struct uart_numicro_config * const)(dev)->config)
 
 #define DRV_DATA(dev)						\
-	((struct uart_numicro_data * const)(dev)->driver_data)
+	((struct uart_numicro_data * const)(dev)->data)
 
 #define UART_STRUCT(dev)					\
 	((UART_T *)(DEV_CFG(dev))->devcfg.base)

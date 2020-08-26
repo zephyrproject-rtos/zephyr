@@ -1,0 +1,37 @@
+# MIMX8MM6 SoC defconfig
+
+# Copyright (c) 2020, Manivannan Sadhasivam <mani@kernel.org>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MIMX8MM6
+
+config SOC
+	string
+	default "mimx8mm6"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 400000000
+
+if CLOCK_CONTROL
+
+config CLOCK_CONTROL_MCUX_CCM
+	default y if HAS_MCUX_CCM
+
+endif # CLOCK_CONTROL
+
+if PINMUX
+
+config PINMUX_MCUX
+	default y
+
+endif # PINMUX
+
+if SERIAL
+
+config UART_MCUX_IUART
+	default y
+
+endif # SERIAL
+
+endif # SOC_MIMX8MM6

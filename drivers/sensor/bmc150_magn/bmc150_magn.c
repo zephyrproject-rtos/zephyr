@@ -52,8 +52,8 @@ static int bmc150_magn_set_power_mode(struct device *dev,
 				      enum bmc150_magn_power_modes mode,
 				      int state)
 {
-	struct bmc150_magn_data *data = dev->driver_data;
-	const struct bmc150_magn_config *config = dev->config_info;
+	struct bmc150_magn_data *data = dev->data;
+	const struct bmc150_magn_config *config = dev->config;
 
 	switch (mode) {
 	case BMC150_MAGN_POWER_MODE_SUSPEND:
@@ -90,8 +90,8 @@ static int bmc150_magn_set_power_mode(struct device *dev,
 
 static int bmc150_magn_set_odr(struct device *dev, uint8_t val)
 {
-	struct bmc150_magn_data *data = dev->driver_data;
-	const struct bmc150_magn_config *config = dev->config_info;
+	struct bmc150_magn_data *data = dev->data;
+	const struct bmc150_magn_config *config = dev->config;
 	uint8_t i;
 
 	for (i = 0U; i < ARRAY_SIZE(bmc150_magn_samp_freq_table); ++i) {
@@ -112,8 +112,8 @@ static int bmc150_magn_set_odr(struct device *dev, uint8_t val)
 #if defined(BMC150_MAGN_SET_ATTR)
 static int bmc150_magn_read_rep_xy(struct device *dev)
 {
-	struct bmc150_magn_data *data = dev->driver_data;
-	const struct bmc150_magn_config *config = dev->config_info;
+	struct bmc150_magn_data *data = dev->data;
+	const struct bmc150_magn_config *config = dev->config;
 	uint8_t reg_val;
 
 	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
@@ -128,8 +128,8 @@ static int bmc150_magn_read_rep_xy(struct device *dev)
 
 static int bmc150_magn_read_rep_z(struct device *dev)
 {
-	struct bmc150_magn_data *data = dev->driver_data;
-	const struct bmc150_magn_config *config = dev->config_info;
+	struct bmc150_magn_data *data = dev->data;
+	const struct bmc150_magn_config *config = dev->config;
 	uint8_t reg_val;
 
 	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
@@ -145,7 +145,7 @@ static int bmc150_magn_read_rep_z(struct device *dev)
 static int bmc150_magn_compute_max_odr(struct device *dev, int rep_xy,
 				       int rep_z, int *max_odr)
 {
-	struct bmc150_magn_data *data = dev->driver_data;
+	struct bmc150_magn_data *data = dev->data;
 
 	if (rep_xy == 0) {
 		if (data->rep_xy <= 0) {
@@ -174,8 +174,8 @@ static int bmc150_magn_compute_max_odr(struct device *dev, int rep_xy,
 #if defined(BMC150_MAGN_SET_ATTR_REP)
 static int bmc150_magn_read_odr(struct device *dev)
 {
-	struct bmc150_magn_data *data = dev->driver_data;
-	const struct bmc150_magn_config *config = dev->config_info;
+	struct bmc150_magn_data *data = dev->data;
+	const struct bmc150_magn_config *config = dev->config;
 	uint8_t i, odr_val, reg_val;
 
 	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
@@ -199,8 +199,8 @@ static int bmc150_magn_read_odr(struct device *dev)
 #if defined(CONFIG_BMC150_MAGN_SAMPLING_REP_XY)
 static int bmc150_magn_write_rep_xy(struct device *dev, int val)
 {
-	struct bmc150_magn_data *data = dev->driver_data;
-	const struct bmc150_magn_config *config = dev->config_info;
+	struct bmc150_magn_data *data = dev->data;
+	const struct bmc150_magn_config *config = dev->config;
 
 	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
 				BMC150_MAGN_REG_REP_XY,
@@ -218,8 +218,8 @@ static int bmc150_magn_write_rep_xy(struct device *dev, int val)
 #if defined(CONFIG_BMC150_MAGN_SAMPLING_REP_Z)
 static int bmc150_magn_write_rep_z(struct device *dev, int val)
 {
-	struct bmc150_magn_data *data = dev->driver_data;
-	const struct bmc150_magn_config *config = dev->config_info;
+	struct bmc150_magn_data *data = dev->data;
+	const struct bmc150_magn_config *config = dev->config;
 
 	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
 				BMC150_MAGN_REG_REP_Z,
@@ -291,8 +291,8 @@ static int32_t bmc150_magn_compensate_z(struct bmc150_magn_trim_regs *tregs,
 static int bmc150_magn_sample_fetch(struct device *dev,
 				    enum sensor_channel chan)
 {
-	struct bmc150_magn_data *data = dev->driver_data;
-	const struct bmc150_magn_config *config = dev->config_info;
+	struct bmc150_magn_data *data = dev->data;
+	const struct bmc150_magn_config *config = dev->config;
 	uint16_t values[BMC150_MAGN_AXIS_XYZR_MAX];
 	int16_t raw_x, raw_y, raw_z;
 	uint16_t rhall;
@@ -336,7 +336,7 @@ static int bmc150_magn_channel_get(struct device *dev,
 				   enum sensor_channel chan,
 				   struct sensor_value *val)
 {
-	struct bmc150_magn_data *data = dev->driver_data;
+	struct bmc150_magn_data *data = dev->data;
 
 	switch (chan) {
 	case SENSOR_CHAN_MAGN_X:
@@ -365,7 +365,7 @@ static inline int bmc150_magn_attr_set_rep(struct device *dev,
 					   enum sensor_channel chan,
 					   const struct sensor_value *val)
 {
-	struct bmc150_magn_data *data = dev->driver_data;
+	struct bmc150_magn_data *data = dev->data;
 	int max_odr;
 
 	switch (chan) {
@@ -436,7 +436,7 @@ static int bmc150_magn_attr_set(struct device *dev,
 				enum sensor_attribute attr,
 				const struct sensor_value *val)
 {
-	struct bmc150_magn_data *data = dev->driver_data;
+	struct bmc150_magn_data *data = dev->data;
 
 	switch (attr) {
 #if defined(CONFIG_BMC150_MAGN_SAMPLING_RATE_RUNTIME)
@@ -484,8 +484,8 @@ static const struct sensor_driver_api bmc150_magn_api_funcs = {
 
 static int bmc150_magn_init_chip(struct device *dev)
 {
-	struct bmc150_magn_data *data = dev->driver_data;
-	const struct bmc150_magn_config *config = dev->config_info;
+	struct bmc150_magn_data *data = dev->data;
+	const struct bmc150_magn_config *config = dev->config;
 	uint8_t chip_id;
 	struct bmc150_magn_preset preset;
 
@@ -571,8 +571,8 @@ err_poweroff:
 static int bmc150_magn_init(struct device *dev)
 {
 	const struct bmc150_magn_config * const config =
-					  dev->config_info;
-	struct bmc150_magn_data *data = dev->driver_data;
+					  dev->config;
+	struct bmc150_magn_data *data = dev->data;
 
 	data->i2c_master = device_get_binding(config->i2c_master_dev_name);
 	if (!data->i2c_master) {

@@ -56,13 +56,16 @@ static void clear_alloc_bit(struct sys_mem_pool_base *p, int level, int bn)
 	*word &= ~(1<<bit);
 }
 
-static inline bool alloc_bit_is_set(struct sys_mem_pool_base *p, int level, int bn)
+#ifdef CONFIG_ASSERT
+static inline bool alloc_bit_is_set(struct sys_mem_pool_base *p,
+				    int level, int bn)
 {
 	uint32_t *word;
 	int bit = get_bit_ptr(p, level, bn, &word);
 
 	return (*word >> bit) & 1;
 }
+#endif
 
 /* Returns all four of the allocated bits for the specified blocks
  * "partners" in the bottom 4 bits of the return value

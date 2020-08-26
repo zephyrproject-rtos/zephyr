@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(uart_mux, CONFIG_UART_MUX_LOG_LEVEL);
  * as the GSM modem uses global workqueue which causes difficulties if we do
  * the same here. This workqueue is shared between all the DLCI channels.
  */
-K_THREAD_STACK_DEFINE(uart_mux_stack, UART_MUX_WORKQ_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(uart_mux_stack, UART_MUX_WORKQ_STACK_SIZE);
 static struct k_work_q uart_mux_workq;
 
 /* The UART mux contains information about the real UART. It will synchronize
@@ -88,7 +88,7 @@ struct uart_mux_config {
 };
 
 #define DEV_DATA(dev) \
-	((struct uart_mux_dev_data *)(dev)->driver_data)
+	((struct uart_mux_dev_data *)(dev)->data)
 
 struct uart_mux_dev_data {
 	sys_snode_t node;
@@ -234,7 +234,7 @@ static int uart_mux_init(struct device *dev)
 	k_work_init(&dev_data->cb_work, uart_mux_cb_work);
 
 	LOG_DBG("Device %s dev %p dev_data %p cfg %p created",
-		dev->name, dev, dev_data, dev->config_info);
+		dev->name, dev, dev_data, dev->config);
 
 	return 0;
 }
@@ -243,16 +243,16 @@ static int uart_mux_init(struct device *dev)
  * data from it in uart_mux_rx_work(), we push the data to GSM mux API which
  * will call proper callbacks to pass data to correct recipient.
  */
-static void uart_mux_isr(void *user_data)
+static void uart_mux_isr(struct device *uart, void *user_data)
 {
 	struct uart_mux *real_uart = user_data;
 	int rx = 0;
 	size_t wrote = 0;
 
 	/* Read all data off UART, and send to RX worker for unmuxing */
-	while (uart_irq_update(real_uart->uart) &&
-	       uart_irq_rx_ready(real_uart->uart)) {
-		rx = uart_fifo_read(real_uart->uart, real_uart->rx_buf,
+	while (uart_irq_update(uart) &&
+	       uart_irq_rx_ready(uart)) {
+		rx = uart_fifo_read(uart, real_uart->rx_buf,
 				    sizeof(real_uart->rx_buf));
 		if (rx <= 0) {
 			continue;
@@ -848,7 +848,7 @@ static int init_uart_mux(struct device *device)
 	ARG_UNUSED(device);
 
 	k_work_q_start(&uart_mux_workq, uart_mux_stack,
-		       K_THREAD_STACK_SIZEOF(uart_mux_stack),
+		       K_KERNEL_STACK_SIZEOF(uart_mux_stack),
 		       K_PRIO_COOP(UART_MUX_WORKQ_PRIORITY));
 	k_thread_name_set(&uart_mux_workq.thread, "uart_mux_workq");
 

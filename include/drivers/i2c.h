@@ -210,7 +210,7 @@ __syscall int i2c_configure(struct device *dev, uint32_t dev_config);
 static inline int z_impl_i2c_configure(struct device *dev, uint32_t dev_config)
 {
 	const struct i2c_driver_api *api =
-		(const struct i2c_driver_api *)dev->driver_api;
+		(const struct i2c_driver_api *)dev->api;
 
 	return api->configure(dev, dev_config);
 }
@@ -250,7 +250,7 @@ static inline int z_impl_i2c_transfer(struct device *dev,
 				     uint16_t addr)
 {
 	const struct i2c_driver_api *api =
-		(const struct i2c_driver_api *)dev->driver_api;
+		(const struct i2c_driver_api *)dev->api;
 
 	return api->transfer(dev, msgs, num_msgs, addr);
 }
@@ -271,7 +271,7 @@ __syscall int i2c_recover_bus(struct device *dev);
 static inline int z_impl_i2c_recover_bus(struct device *dev)
 {
 	const struct i2c_driver_api *api =
-		(const struct i2c_driver_api *)dev->driver_api;
+		(const struct i2c_driver_api *)dev->api;
 
 	if (api->recover_bus == NULL) {
 		return -ENOTSUP;
@@ -307,7 +307,7 @@ static inline int i2c_slave_register(struct device *dev,
 				     struct i2c_slave_config *cfg)
 {
 	const struct i2c_driver_api *api =
-		(const struct i2c_driver_api *)dev->driver_api;
+		(const struct i2c_driver_api *)dev->api;
 
 	if (api->slave_register == NULL) {
 		return -ENOTSUP;
@@ -335,7 +335,7 @@ static inline int i2c_slave_unregister(struct device *dev,
 				       struct i2c_slave_config *cfg)
 {
 	const struct i2c_driver_api *api =
-		(const struct i2c_driver_api *)dev->driver_api;
+		(const struct i2c_driver_api *)dev->api;
 
 	if (api->slave_unregister == NULL) {
 		return -ENOTSUP;
@@ -361,7 +361,7 @@ __syscall int i2c_slave_driver_register(struct device *dev);
 static inline int z_impl_i2c_slave_driver_register(struct device *dev)
 {
 	const struct i2c_slave_driver_api *api =
-		(const struct i2c_slave_driver_api *)dev->driver_api;
+		(const struct i2c_slave_driver_api *)dev->api;
 
 	return api->driver_register(dev);
 }
@@ -383,7 +383,7 @@ __syscall int i2c_slave_driver_unregister(struct device *dev);
 static inline int z_impl_i2c_slave_driver_unregister(struct device *dev)
 {
 	const struct i2c_slave_driver_api *api =
-		(const struct i2c_slave_driver_api *)dev->driver_api;
+		(const struct i2c_slave_driver_api *)dev->api;
 
 	return api->driver_unregister(dev);
 }
@@ -627,6 +627,31 @@ static inline int i2c_reg_update_byte(struct device *dev, uint8_t dev_addr,
 
 	return i2c_reg_write_byte(dev, dev_addr, reg_addr, new_value);
 }
+
+/**
+ * @brief Dump out an I2C message
+ *
+ * Dumps out a list of I2C messages. For any that are writes (W), the data is
+ * displayed in hex.
+ *
+ * It looks something like this (with name "testing"):
+ *
+ * D: I2C msg: testing, addr=56
+ * D:    W len=01:
+ * D: contents:
+ * D: 06                      |.
+ * D:    W len=0e:
+ * D: contents:
+ * D: 00 01 02 03 04 05 06 07 |........
+ * D: 08 09 0a 0b 0c 0d       |......
+ *
+ * @param name Name of this dump, displayed at the top.
+ * @param msgs Array of messages to dump.
+ * @param num_msgs Number of messages to dump.
+ * @param addr Address of the I2C target device.
+ */
+void i2c_dump_msgs(const char *name, const struct i2c_msg *msgs,
+		   uint8_t num_msgs, uint16_t addr);
 
 struct i2c_client_config {
 	char *i2c_master;

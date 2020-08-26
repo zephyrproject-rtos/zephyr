@@ -52,10 +52,10 @@ static const struct flash_parameters flash_sam_parameters = {
 };
 
 #define DEV_CFG(dev) \
-	((const struct flash_sam_dev_cfg *const)(dev)->config_info)
+	((const struct flash_sam_dev_cfg *const)(dev)->config)
 
 #define DEV_DATA(dev) \
-	((struct flash_sam_dev_data *const)(dev)->driver_data)
+	((struct flash_sam_dev_data *const)(dev)->data)
 
 
 static inline void flash_sam_sem_take(struct device *dev)

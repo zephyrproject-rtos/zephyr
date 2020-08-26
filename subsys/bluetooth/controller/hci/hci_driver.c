@@ -45,10 +45,6 @@
 #include "ll_sw/lll.h"
 #include "ll.h"
 
-#if (!defined(CONFIG_BT_LL_SW_SPLIT))
-#include "ll_sw/ctrl.h"
-#endif /* CONFIG_BT_LL_SW_SPLIT */
-
 #include "hci_internal.h"
 
 #include "hal/debug.h"
@@ -57,10 +53,10 @@ static K_SEM_DEFINE(sem_prio_recv, 0, UINT_MAX);
 static K_FIFO_DEFINE(recv_fifo);
 
 struct k_thread prio_recv_thread_data;
-static K_THREAD_STACK_DEFINE(prio_recv_thread_stack,
+static K_KERNEL_STACK_DEFINE(prio_recv_thread_stack,
 			     CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE);
 struct k_thread recv_thread_data;
-static K_THREAD_STACK_DEFINE(recv_thread_stack, CONFIG_BT_RX_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(recv_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 static struct k_poll_signal hbuf_signal =
@@ -75,7 +71,7 @@ static struct net_buf *process_prio_evt(struct node_rx_pdu *node_rx,
 #if defined(CONFIG_BT_CONN)
 	if (node_rx->hdr.user_meta == HCI_CLASS_EVT_CONNECTION) {
 		uint16_t handle;
-		struct pdu_data *pdu_data = PDU_DATA(node_rx);
+		struct pdu_data *pdu_data = (void *)node_rx->pdu;
 
 		handle = node_rx->hdr.handle;
 		if (node_rx->hdr.type == NODE_RX_TYPE_TERMINATE) {
@@ -503,13 +499,13 @@ static int hci_driver_open(void)
 #endif
 
 	k_thread_create(&prio_recv_thread_data, prio_recv_thread_stack,
-			K_THREAD_STACK_SIZEOF(prio_recv_thread_stack),
+			K_KERNEL_STACK_SIZEOF(prio_recv_thread_stack),
 			prio_recv_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_CTLR_RX_PRIO), 0, K_NO_WAIT);
 	k_thread_name_set(&prio_recv_thread_data, "BT RX pri");
 
 	k_thread_create(&recv_thread_data, recv_thread_stack,
-			K_THREAD_STACK_SIZEOF(recv_thread_stack),
+			K_KERNEL_STACK_SIZEOF(recv_thread_stack),
 			recv_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_RX_PRIO), 0, K_NO_WAIT);
 	k_thread_name_set(&recv_thread_data, "BT RX");
@@ -522,6 +518,7 @@ static int hci_driver_open(void)
 static const struct bt_hci_driver drv = {
 	.name	= "Controller",
 	.bus	= BT_HCI_DRIVER_BUS_VIRTUAL,
+	.quirks = BT_QUIRK_NO_AUTO_DLE,
 	.open	= hci_driver_open,
 	.send	= hci_driver_send,
 };

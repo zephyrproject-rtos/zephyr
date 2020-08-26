@@ -34,13 +34,13 @@ struct i2c_nrfx_twim_config {
 
 static inline struct i2c_nrfx_twim_data *get_dev_data(struct device *dev)
 {
-	return dev->driver_data;
+	return dev->data;
 }
 
 static inline
 const struct i2c_nrfx_twim_config *get_dev_config(struct device *dev)
 {
-	return dev->config_info;
+	return dev->config;
 }
 
 static int i2c_nrfx_twim_transfer(struct device *dev, struct i2c_msg *msgs,

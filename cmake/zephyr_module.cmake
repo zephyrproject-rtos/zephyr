@@ -18,7 +18,8 @@ if(ZEPHYR_EXTRA_MODULES)
   set(ZEPHYR_EXTRA_MODULES_ARG "--extra-modules" ${ZEPHYR_EXTRA_MODULES})
 endif()
 
-set(KCONFIG_MODULES_FILE ${CMAKE_BINARY_DIR}/Kconfig.modules)
+set(KCONFIG_MODULES_FILE ${KCONFIG_BINARY_DIR}/Kconfig.modules)
+set(ZEPHYR_SETTINGS_FILE ${CMAKE_BINARY_DIR}/zephyr_settings.txt)
 
 if(WEST)
   set(WEST_ARG "--zephyr-base" ${ZEPHYR_BASE})
@@ -35,14 +36,27 @@ if(WEST OR ZEPHYR_MODULES)
     ${ZEPHYR_EXTRA_MODULES_ARG}
     --kconfig-out ${KCONFIG_MODULES_FILE}
     --cmake-out ${CMAKE_BINARY_DIR}/zephyr_modules.txt
+    --settings-out ${ZEPHYR_SETTINGS_FILE}
     ERROR_VARIABLE
     zephyr_module_error_text
     RESULT_VARIABLE
     zephyr_module_return
   )
 
- if(${zephyr_module_return})
+  if(${zephyr_module_return})
       message(FATAL_ERROR "${zephyr_module_error_text}")
+  endif()
+
+  if(EXISTS ${ZEPHYR_SETTINGS_FILE})
+    file(STRINGS ${ZEPHYR_SETTINGS_FILE} ZEPHYR_SETTINGS_TXT ENCODING UTF-8)
+    foreach(setting ${ZEPHYR_SETTINGS_TXT})
+      # Match <key>:<value> for each line of file, each corresponding to
+      # a setting.  The use of quotes is required due to CMake not supporting
+      # lazy regexes (it supports greedy only).
+      string(REGEX REPLACE "\"(.*)\":\".*\"" "\\1" key ${setting})
+      string(REGEX REPLACE "\".*\":\"(.*)\"" "\\1" value ${setting})
+      list(APPEND ${key} ${value})
+    endforeach()
   endif()
 
 else()

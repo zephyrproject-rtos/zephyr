@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-description: Cortex M7 DTCM (Data Tightly Coupled Memory)
+description: Cortex-M DTCM (Data Tightly Coupled Memory)
 
 compatible: "arm,dtcm"
 

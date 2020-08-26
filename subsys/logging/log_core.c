@@ -391,8 +391,12 @@ void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap,
 			backend = log_backend_get(i);
 
 			if (log_backend_is_active(backend)) {
+				va_list ap_tmp;
+
+				va_copy(ap_tmp, ap);
 				log_backend_put_sync_string(backend, src_level,
-						     timestamp, fmt, ap);
+						     timestamp, fmt, ap_tmp);
+				va_end(ap_tmp);
 			}
 		}
 	} else {
@@ -760,13 +764,14 @@ uint32_t z_impl_log_filter_set(struct log_backend const *const backend,
 		uint32_t *filters = log_dynamic_filters_get(src_id);
 
 		if (backend == NULL) {
-			struct log_backend const *backend;
+			struct log_backend const *iter_backend;
 			uint32_t max = 0U;
 			uint32_t current;
 
 			for (int i = 0; i < log_backend_count_get(); i++) {
-				backend = log_backend_get(i);
-				current = log_filter_set(backend, domain_id,
+				iter_backend = log_backend_get(i);
+				current = log_filter_set(iter_backend,
+							 domain_id,
 							 src_id, level);
 				max = MAX(current, max);
 			}
@@ -1181,7 +1186,7 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 	}
 }
 
-K_THREAD_STACK_DEFINE(logging_stack, CONFIG_LOG_PROCESS_THREAD_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(logging_stack, CONFIG_LOG_PROCESS_THREAD_STACK_SIZE);
 struct k_thread logging_thread;
 
 static int enable_logger(struct device *arg)
@@ -1193,7 +1198,7 @@ static int enable_logger(struct device *arg)
 				log_process_thread_timer_expiry_fn, NULL);
 		/* start logging thread */
 		k_thread_create(&logging_thread, logging_stack,
-				K_THREAD_STACK_SIZEOF(logging_stack),
+				K_KERNEL_STACK_SIZEOF(logging_stack),
 				log_process_thread_func, NULL, NULL, NULL,
 				K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
 		k_thread_name_set(&logging_thread, "logging");

@@ -42,9 +42,9 @@ struct counter_sam0_tc32_config {
 };
 
 #define DEV_CFG(dev) ((const struct counter_sam0_tc32_config *const) \
-		      (dev)->config_info)
+		      (dev)->config)
 #define DEV_DATA(dev) ((struct counter_sam0_tc32_data *const) \
-		       (dev)->driver_data)
+		       (dev)->data)
 
 
 static void wait_synchronization(TcCount32 *regs)

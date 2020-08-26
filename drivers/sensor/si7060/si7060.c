@@ -42,7 +42,7 @@ static int si7060_reg_write(struct si7060_data *drv_data, uint8_t reg,
 
 static int si7060_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct si7060_data *drv_data = dev->driver_data;
+	struct si7060_data *drv_data = dev->data;
 
 	if (si7060_reg_write(drv_data, SI7060_REG_CONFIG,
 		SI7060_ONE_BURST_VALUE) != 0) {
@@ -73,7 +73,7 @@ static int si7060_sample_fetch(struct device *dev, enum sensor_channel chan)
 static int si7060_channel_get(struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	struct si7060_data *drv_data = dev->driver_data;
+	struct si7060_data *drv_data = dev->data;
 	int32_t uval;
 
 	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
@@ -96,7 +96,7 @@ static const struct sensor_driver_api si7060_api = {
 
 static int si7060_chip_init(struct device *dev)
 {
-	struct si7060_data *drv_data = dev->driver_data;
+	struct si7060_data *drv_data = dev->data;
 	uint8_t value;
 
 	drv_data->i2c_dev = device_get_binding(

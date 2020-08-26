@@ -48,6 +48,12 @@ config CLOCK_STM32_SYSCLK_SRC_PLL
 	help
 	  Use PLL as source of SYSCLK
 
+config CLOCK_STM32_SYSCLK_SRC_CSI
+	bool "CSI"
+	depends on SOC_SERIES_STM32H7X
+	help
+	  Use CSI as source of SYSCLK
+
 endchoice #CLOCK_STM32_SYSCLK_SRC
 
 config CLOCK_STM32_HSE_BYPASS
@@ -109,6 +115,12 @@ config CLOCK_STM32_PLL_SRC_PLL2
 	help
 	  Use PLL2 as source of main PLL. This is equivalent of defining
 	  PLL2 as source PREDIV1SCR. If not selected, default source is HSE.
+
+config CLOCK_STM32_PLL_SRC_CSI
+	bool "CSI"
+	depends on SOC_SERIES_STM32H7X
+	help
+	  Use CSI 4MHz as source of the main PLL.
 
 endchoice
 

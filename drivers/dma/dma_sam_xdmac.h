@@ -17,9 +17,6 @@
 extern "C" {
 #endif
 
-/** DMA transfer callback */
-typedef void (*dma_callback)(void *arg, uint32_t channel, int error_code);
-
 /* XDMA_MBR_UBC */
 #define XDMA_UBC_NDE (0x1u << 24)
 #define   XDMA_UBC_NDE_FETCH_DIS (0x0u << 24)

@@ -50,9 +50,9 @@
 #endif /* CONFIG_I2S_STM32_USE_PLLI2S_ENABLE */
 
 #define DEV_CFG(dev) \
-	(const struct i2s_stm32_cfg * const)((dev)->config_info)
+	(const struct i2s_stm32_cfg * const)((dev)->config)
 #define DEV_DATA(dev) \
-	((struct i2s_stm32_data *const)(dev)->driver_data)
+	((struct i2s_stm32_data *const)(dev)->data)
 
 struct queue_item {
 	void *mem_block;

@@ -20,6 +20,8 @@ LOG_MODULE_DECLARE(espi, CONFIG_ESPI_LOG_LEVEL);
 
 /* Temperature command opcode */
 #define OOB_CMDCODE           0x01u
+#define OOB_RESPONSE_LEN      0x05u
+#define OOB_RESPONSE_INDEX    0x03u
 
 /* Maximum bytes for OOB transactions */
 #define MAX_RESP_SIZE         20u
@@ -48,16 +50,22 @@ struct oob_header {
 	uint8_t src_slave_addr;
 };
 
-struct oob_response {
-	struct oob_header hdr;
-	uint8_t buf[MAX_RESP_SIZE];
-};
-
-#ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
-static struct device *gpio_dev0;
-static struct device *gpio_dev1;
 #define PWR_SEQ_TIMEOUT    3000u
+
+/* The devicetree node identifier for the board power rails pins. */
+#define BRD_PWR_NODE DT_INST(0, microchip_mec15xx_board_power)
+
+#if DT_NODE_HAS_STATUS(BRD_PWR_NODE, okay)
+#define BRD_PWR_PWRGD           DT_GPIO_LABEL(BRD_PWR_NODE, pwrg_gpios)
+#define BRD_PWR_RSMRST          DT_GPIO_LABEL(BRD_PWR_NODE, rsm_gpios)
+#define BRD_PWR_RSMRST_PIN      DT_GPIO_PIN(BRD_PWR_NODE, rsm_gpios)
+#define BRD_PWR_PWRGD_PIN       DT_GPIO_PIN(BRD_PWR_NODE, pwrg_gpios)
+
+static struct device *pwrgd_dev;
+static struct device *rsm_dev;
 #endif
+
+#define ESPI_DEV      DT_LABEL(DT_NODELABEL(espi0))
 
 static struct device *espi_dev;
 static struct espi_callback espi_bus_cb;
@@ -113,10 +121,18 @@ static void espi_ch_handler(struct device *dev, struct espi_callback *cb,
 			    struct espi_event event)
 {
 	if (event.evt_type == ESPI_BUS_EVENT_CHANNEL_READY) {
-		if (event.evt_details == ESPI_CHANNEL_VWIRE) {
-			LOG_INF("VW channel is ready");
-		} else if (event.evt_details == ESPI_CHANNEL_FLASH) {
-			LOG_INF("Flash channel is ready");
+		switch (event.evt_details) {
+		case ESPI_CHANNEL_VWIRE:
+			LOG_INF("VW channel event %x", event.evt_data);
+			break;
+		case ESPI_CHANNEL_FLASH:
+			LOG_INF("Flash channel event %d", event.evt_data);
+			break;
+		case ESPI_CHANNEL_OOB:
+			LOG_INF("OOB channel event %d", event.evt_data);
+			break;
+		default:
+			LOG_ERR("Unknown channel event");
 		}
 	}
 }
@@ -217,6 +233,7 @@ int espi_init(void)
 	return ret;
 }
 
+#if DT_NODE_HAS_STATUS(BRD_PWR_NODE, okay)
 static int wait_for_pin(struct device *dev, uint8_t pin, uint16_t timeout,
 			int exp_level)
 {
@@ -246,6 +263,7 @@ static int wait_for_pin(struct device *dev, uint8_t pin, uint16_t timeout,
 
 	return 0;
 }
+#endif
 
 static int wait_for_vwire(struct device *espi_dev,
 			  enum espi_vwire_signal signal,
@@ -455,12 +473,12 @@ static int espi_flash_test(uint32_t start_flash_addr, uint8_t blocks)
 }
 #endif /* CONFIG_ESPI_FLASH_CHANNEL */
 
-int get_pch_temp(struct device *dev)
+int get_pch_temp(struct device *dev, int *temp)
 {
 	struct espi_oob_packet req_pckt;
 	struct espi_oob_packet resp_pckt;
 	struct oob_header oob_hdr;
-	struct oob_response rsp;
+	uint8_t buf[MAX_RESP_SIZE];
 	int ret;
 
 	LOG_INF("%s", __func__);
@@ -473,7 +491,7 @@ int get_pch_temp(struct device *dev)
 	/* Packetize OOB request */
 	req_pckt.buf = (uint8_t *)&oob_hdr;
 	req_pckt.len = sizeof(struct oob_header);
-	resp_pckt.buf = (uint8_t *)&rsp;
+	resp_pckt.buf = (uint8_t *)&buf;
 	resp_pckt.len = MAX_RESP_SIZE;
 
 	ret = espi_send_oob(dev, &req_pckt);
@@ -490,7 +508,13 @@ int get_pch_temp(struct device *dev)
 
 	LOG_INF("OOB transaction completed rcvd: %d bytes", resp_pckt.len);
 	for (int i = 0; i < resp_pckt.len; i++) {
-		LOG_INF("%x ", rsp.buf[i]);
+		LOG_INF("%x ", buf[i]);
+	}
+
+	if (resp_pckt.len == OOB_RESPONSE_LEN) {
+		*temp = buf[OOB_RESPONSE_INDEX];
+	} else {
+		LOG_ERR("Incorrect size response");
 	}
 
 	return 0;
@@ -505,62 +529,66 @@ int espi_test(void)
 	 */
 	k_sleep(K_SECONDS(1));
 
-#ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
-	gpio_dev0 = device_get_binding(CONFIG_ESPI_GPIO_DEV0);
-	if (!gpio_dev0) {
-		LOG_WRN("Fail to find: %s", CONFIG_ESPI_GPIO_DEV0);
+#if DT_NODE_HAS_STATUS(BRD_PWR_NODE, okay)
+	pwrgd_dev = device_get_binding(BRD_PWR_PWRGD);
+	if (!pwrgd_dev) {
+		LOG_WRN("%s not found", BRD_PWR_PWRGD);
 		return -1;
 	}
 
-	gpio_dev1 = device_get_binding(CONFIG_ESPI_GPIO_DEV1);
-	if (!gpio_dev1) {
-		LOG_WRN("Fail to find: %s", CONFIG_ESPI_GPIO_DEV1);
+	rsm_dev = device_get_binding(BRD_PWR_RSMRST);
+	if (!rsm_dev) {
+		LOG_WRN("%s not found", BRD_PWR_RSMRST);
 		return -1;
 	}
 
 #endif
-	espi_dev = device_get_binding(CONFIG_ESPI_DEV);
+	espi_dev = device_get_binding(ESPI_DEV);
 	if (!espi_dev) {
-		LOG_WRN("Fail to find %s", CONFIG_ESPI_DEV);
+		LOG_WRN("Fail to find %s", ESPI_DEV);
 		return -1;
 	}
 
 	LOG_INF("Hello eSPI test %s", CONFIG_BOARD);
 
-#ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
-	ret = gpio_pin_configure(gpio_dev0, CONFIG_PWRGD_PIN,
+#if DT_NODE_HAS_STATUS(BRD_PWR_NODE, okay)
+	ret = gpio_pin_configure(pwrgd_dev, BRD_PWR_PWRGD_PIN,
 				 GPIO_INPUT | GPIO_ACTIVE_HIGH);
 	if (ret) {
-		LOG_ERR("Unable to configure %d:%d", CONFIG_PWRGD_PIN, ret);
+		LOG_ERR("Unable to configure %d:%d",
+			BRD_PWR_PWRGD_PIN, ret);
 		return ret;
 	}
 
-	ret = gpio_pin_configure(gpio_dev1, CONFIG_ESPI_INIT_PIN,
+	ret = gpio_pin_configure(rsm_dev, BRD_PWR_RSMRST_PIN,
 				 GPIO_OUTPUT | GPIO_ACTIVE_HIGH);
 	if (ret) {
-		LOG_ERR("Unable to config %d: %d", CONFIG_ESPI_INIT_PIN, ret);
+		LOG_ERR("Unable to config %d: %d",
+			BRD_PWR_RSMRST_PIN, ret);
 		return ret;
 	}
 
-	ret = gpio_pin_set(gpio_dev1, CONFIG_ESPI_INIT_PIN, 0);
+	ret = gpio_pin_set(rsm_dev, BRD_PWR_RSMRST_PIN, 0);
 	if (ret) {
-		LOG_ERR("Unable to initialize %d", CONFIG_ESPI_INIT_PIN);
+		LOG_ERR("Unable to initialize %d",
+			BRD_PWR_RSMRST_PIN);
 		return -1;
 	}
 #endif
 
 	espi_init();
 
-#ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
-	ret = wait_for_pin(gpio_dev0, CONFIG_PWRGD_PIN, PWR_SEQ_TIMEOUT, 1);
+#if DT_NODE_HAS_STATUS(BRD_PWR_NODE, okay)
+	ret = wait_for_pin(pwrgd_dev, BRD_PWR_PWRGD_PIN,
+			   PWR_SEQ_TIMEOUT, 1);
 	if (ret) {
 		LOG_ERR("RSMRST_PWRGD timeout");
 		return ret;
 	}
 
-	ret = gpio_pin_set(gpio_dev1, CONFIG_ESPI_INIT_PIN, 1);
+	ret = gpio_pin_set(rsm_dev, BRD_PWR_RSMRST_PIN, 1);
 	if (ret) {
-		LOG_ERR("Failed to write %x %d", CONFIG_ESPI_INIT_PIN, ret);
+		LOG_ERR("Failed to set rsm err: %d", ret);
 		return ret;
 	}
 #endif
@@ -601,9 +629,15 @@ int espi_test(void)
 	/*  Attempt to use OOB channel to read temperature, regardless of
 	 * if is enabled or not.
 	 */
-	ret = get_pch_temp(espi_dev);
-	if (ret)  {
-		LOG_ERR("eSPI OOB transaction failed %d", ret);
+	for (int i = 0; i < 5; i++) {
+		int temp;
+
+		ret = get_pch_temp(espi_dev, &temp);
+		if (ret)  {
+			LOG_ERR("eSPI OOB transaction failed %d", ret);
+		} else {
+			LOG_INF("Temp: %d ", temp);
+		}
 	}
 
 	/* Cleanup */

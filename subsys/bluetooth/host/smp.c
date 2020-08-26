@@ -1835,7 +1835,8 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 		}
 
 		if (!atomic_test_bit(smp->flags, SMP_FLAG_KEYS_DISTR)) {
-			bt_conn_security_changed(smp->chan.chan.conn, auth_err);
+			bt_conn_security_changed(smp->chan.chan.conn, status,
+						 auth_err);
 		}
 
 		if (bt_auth && bt_auth->pairing_failed) {
@@ -2778,9 +2779,8 @@ bool bt_smp_request_ltk(struct bt_conn *conn, uint64_t rand, uint16_t ediv, uint
 		/* Notify higher level that security failed if security was
 		 * initiated by slave.
 		 */
-		bt_conn_security_changed(smp->chan.chan.conn,
+		bt_conn_security_changed(conn, BT_HCI_ERR_PIN_OR_KEY_MISSING,
 					 BT_SECURITY_ERR_PIN_OR_KEY_MISSING);
-
 	}
 
 	smp_reset(smp);
@@ -3859,6 +3859,11 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 		auth = req->auth_req & BT_SMP_AUTH_MASK_SC;
 	} else {
 		auth = req->auth_req & BT_SMP_AUTH_MASK;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY) &&
+	    !(auth & BT_SMP_AUTH_SC)) {
+		return BT_SMP_ERR_AUTH_REQUIREMENTS;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_BONDING_REQUIRED) &&

@@ -3,9 +3,6 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-#
-# OpenThread options
-#
 menuconfig NET_L2_OPENTHREAD
 	bool "OpenThread L2"
 	depends on NETWORKING
@@ -17,20 +14,9 @@ menuconfig NET_L2_OPENTHREAD
 	select MPU_ALLOW_FLASH_WRITE
 	select NVS
 
-	select OPENTHREAD_PLAT
 	select CPLUSPLUS
 	select REBOOT
 	select ENTROPY_GENERATOR
-
-	select MBEDTLS
-	select MBEDTLS_ENABLE_HEAP
-	select MBEDTLS_CIPHER_AES_ENABLED
-	select MBEDTLS_CIPHER_CCM_ENABLED
-	select MBEDTLS_MAC_SHA256_ENABLED
-	select MBEDTLS_ENTROPY_ENABLED
-	select MBEDTLS_MAC_CMAC_ENABLED
-	select MBEDTLS_CIPHER
-	select MBEDTLS_MD
 
 	imply NET_UDP
 	imply NET_IPV6
@@ -38,28 +24,45 @@ menuconfig NET_L2_OPENTHREAD
 
 if NET_L2_OPENTHREAD
 
-config OPENTHREAD_DTLS
-	# Hidden option to enable DTLS support in OpenThread
-	bool
-	select MBEDTLS_TLS_VERSION_1_2
-	select MBEDTLS_DTLS
-	select MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
-	select MBEDTLS_ECP_DP_SECP256R1_ENABLED
-	select MBEDTLS_ECP_NIST_OPTIM
-	select MBEDTLS_SSL_EXPORT_KEYS
-	select MBEDTLS_CTR_DRBG_ENABLED
-	select MBEDTLS_HMAC_DRBG_ENABLED
-
-config OPENTHREAD_PLAT
-	bool
+choice OPENTHREAD_IMPLEMENTATION
+	prompt "OpenThread origin selection"
 	help
-	  This option enables OpenThread platform
+	  Select OpenThread to use for build. Custom OpenThread implementations
+	  can be added to the application Kconfig.
+
+config OPENTHREAD_SOURCES
+	bool "OpenThread from sources"
+	help
+	  Build Zephyr's OpenThread port from sources.
+
+endchoice
+
+config OPENTHREAD_MANUAL_START
+	bool "Start OpenThread stack manually"
+	help
+	  If enabled, OpenThread stack will have to be configured and
+	  started manually, with respective API calls or CLI/NCP commands.
+	  Otherwise, OpenThread will configure the network parametrs and try to
+	  join the Thread network automatically during initialization (using
+	  credentials stored in persistend storage, obtained during
+	  commissioning or pre-commissioned with other Kconfig options,
+	  depending on configuration used).
+
+menu "OpenThread stack features"
+source "subsys/net/l2/openthread/Kconfig.features"
+endmenu
+
+menu "Thread Network configuration"
+source "subsys/net/l2/openthread/Kconfig.thread"
+endmenu
+
+menu "Logging"
 
 menuconfig OPENTHREAD_DEBUG
-	bool "OpenThread stack log support"
-	depends on OPENTHREAD_PLAT
+	bool "OpenThread stack logging support"
+	depends on NET_L2_OPENTHREAD
 	help
-	  This option enables log support for OpenThread
+	  This option enables logging support for OpenThread.
 
 choice
 	prompt "OpenThread stack log level"
@@ -91,27 +94,31 @@ config OPENTHREAD_LOG_LEVEL
 menuconfig OPENTHREAD_L2_DEBUG
 	bool "OpenThread L2 log support"
 	help
-	  This option enables log support for OpenThread
+	  This option enables log support for OpenThread.
 
 if OPENTHREAD_L2_DEBUG
 
 config OPENTHREAD_L2_DEBUG_DUMP_15_4
 	bool "Dump 802.15.4 packets"
 	help
-	  This option enables dumping of 802.15.4 packets
+	  This option enables dumping of 802.15.4 packets.
 
 config OPENTHREAD_L2_DEBUG_DUMP_IPV6
 	bool "Dump IPv6 packets"
 	help
-	  This option enables dumping of IPv6 packets
+	  This option enables dumping of IPv6 packets.
 
-endif
+endif # OPENTHREAD_L2_DEBUG
 
 module = OPENTHREAD_L2
 module-dep = NET_LOG
 module-str = Log level for OpenThread driver
 module-help = Enables OpenThread driver to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
+
+endmenu # "Logging"
+
+menu "Zephyr optimizations"
 
 config OPENTHREAD_THREAD_PREEMPTIVE
 	bool "Set Openthread thread to be preemptive"
@@ -127,192 +134,8 @@ config OPENTHREAD_THREAD_STACK_SIZE
 	default 3072
 
 config OPENTHREAD_PKT_LIST_SIZE
-	int "List size for Ip6 packet buffering"
+	int "List size for IPv6 packet buffering"
 	default 10
-
-config OPENTHREAD_MANUAL_START
-	bool "Start OpenThread stack manually"
-	help
-	  If enabled, OpenThread stack will have to be configured and
-	  started manually, with respective API calls or CLI/NCP commands.
-	  Otherwise, OpenThread will configure the network parametrs and try to
-	  join the Thread network automatically during initialization (using
-	  credentials stored in persistend storage, obtained during
-	  commissioning or pre-commissioned with other Kconfig options,
-	  depending on configuration used).
-
-config OPENTHREAD_PANID
-	int "Default PAN ID"
-	default 43981
-
-config OPENTHREAD_CHANNEL
-	int "Default Channel"
-	default 11
-
-config OPENTHREAD_NETWORK_NAME
-	string "Default network name"
-	default "ot_zephyr"
-	help
-	  Network name for OpenThread
-
-config OPENTHREAD_XPANID
-	string "Default Extended PAN ID"
-	default "de:ad:00:be:ef:00:ca:fe"
-	help
-	  Extended PAN ID for OpenThread with
-	  format "de:ad:00:be:ef:00:ca:fe"
-
-choice
-	prompt "OpenThread device type"
-	help
-	  This option selects Thread network device type
-
-config OPENTHREAD_FTD
-	bool "FTD - Full Thread Device"
-config OPENTHREAD_MTD
-	bool "MTD - Minimal Thread Device"
-endchoice
-
-config OPENTHREAD_MTD_SED
-	bool "SED - Sleepy End Device"
-	depends on OPENTHREAD_MTD
-
-config OPENTHREAD_POLL_PERIOD
-	int "Poll period for sleepy end devices [ms]"
-	default 236000
-	depends on OPENTHREAD_MTD_SED
-
-config OPENTHREAD_SHELL
-	bool "Enable OpenThread shell"
-	select SHELL
-	default y
-
-config OPENTHREAD_DIAG
-	bool "Diagnostic functions support"
-	help
-	  Enable OpenThread CLI diagnostic commands
-
-config OPENTHREAD_COMMISSIONER
-	bool "Commissioner functions support"
-	select OPENTHREAD_DTLS
-	help
-	  Enable commissioner capability in OpenThread stack. Note, that DTLS
-	  handshake used in the commissioning procedure requires a larger
-	  mbedTLS heap than the default value. A minimum recommended value of
-	  CONFIG_MBEDTLS_HEAP_SIZE for the commissioning is 10KB.
-
-config OPENTHREAD_JOINER
-	bool "Joiner functions support"
-	select OPENTHREAD_DTLS
-	help
-	  Enable joiner capability in OpenThread stack. Note, that DTLS
-	  handshake used in the commissioning procedure requires a larger
-	  mbedTLS heap than the default value. A minimum recommended value of
-	  CONFIG_MBEDTLS_HEAP_SIZE for the commissioning is 10KB.
-
-config OPENTHREAD_JOINER_AUTOSTART
-	bool "Support for automatic joiner start"
-	depends on OPENTHREAD_JOINER
-	depends on !OPENTHREAD_MANUAL_START
-	help
-	  Enable automatic joiner start
-
-config OPENTHREAD_JOINER_PSKD
-	string "Default Pre Shared key for the Device to start joiner"
-	depends on OPENTHREAD_JOINER_AUTOSTART
-	default "J01NME"
-	help
-	  Pre Shared Key for the Device to start joiner
-
-config OPENTHREAD_DHCP6_CLIENT
-	bool "DHCPv6 client support"
-	help
-	  Enable DHCPv6 client capability in OpenThread stack
-
-config OPENTHREAD_DHCP6_SERVER
-	bool "DHCPv6 server support"
-	help
-	  Enable DHCPv6 server capability in OpenThread stack
-
-config OPENTHREAD_SLAAC
-	bool "SLAAC support"
-	help
-	  Enable SLAAC capability in OpenThread stack
-
-config OPENTHREAD_ENABLE_SERVICE
-	bool "Service support"
-	help
-	  Enable service capability in OpenThread stack
-
-config OPENTHREAD_RAW
-	bool "Raw Link support"
-	help
-	  Enable raw link support in OpenThread stack
-
-config OPENTHREAD_BORDER_AGENT
-	bool "Border Agent support"
-	help
-	  Enable border agent support in OpenThread stack
-
-config OPENTHREAD_BORDER_ROUTER
-	bool "Border Router support"
-	help
-	  Enable border router support in OpenThread stack
-
-config OPENTHREAD_COAP
-	bool "OpenThread CoAP support"
-	help
-	  Enable CoAP api for the application communicates with use of OpenThread stack
-
-config OPENTHREAD_NCP
-	bool "Network Co-Processor"
-	select OPENTHREAD_MANUAL_START
-	select RING_BUFFER
-	select UART_INTERRUPT_DRIVEN
-	help
-	  Enable NCP in OpenThread stack
-
-config OPENTHREAD_NCP_RADIO
-	bool "Network Co-Processor as Radio"
-	depends on OPENTHREAD_NCP
-	help
-	  Enable NCP in OpenThread stack as radio-only
-
-config OPENTHREAD_NCP_SPINEL_ON_UART_DEV_NAME
-	string "UART device to use for NCP SPINEL"
-	default "UART_0"
-	depends on OPENTHREAD_NCP
-	help
-	  UART device to use for NCP SPINEL
-
-config OPENTHREAD_NCP_UART_RING_BUFFER_SIZE
-	int "Set NCP UART ring buffer size"
-	default 4096
-	depends on OPENTHREAD_NCP
-	help
-	  TX buffer size for the OpenThread NCP UART
-
-config OPENTHREAD_NCP_SPINEL_ON_UART_ACM
-	bool "Run SPINEL over USB-ACM"
-	depends on OPENTHREAD_NCP && USB_CDC_ACM
-	help
-	  Is the SPINEL device a USB-CDC-ACM device
-
-config OPENTHREAD_UDP_FORWARD
-	bool "UDP forward support"
-	help
-	  Enable UDP forward support in OpenThread stack
-
-config OPENTHREAD_PLATFORM_INFO
-	string "Platform information for OpenThread"
-	default "ZEPHYR"
-	help
-	  Platform information for OpenThread
-
-config OPENTHREAD_JAM_DETECTION
-	bool "Jam detection support"
-	help
-	  Enable jam detection in OpenThread stack
 
 config OT_PLAT_FLASH_PAGES_COUNT
 	int "Flash pages count used by OpenThread platform"
@@ -320,54 +143,88 @@ config OT_PLAT_FLASH_PAGES_COUNT
 	help
 	  This option sets flash pages count used by OpenThread to store its settings. They are located at the end of flash.
 
-config OPENTHREAD_REFERENCE_DEVICE
-	bool "Reference device support"
+endmenu # "Zephyr optimizations"
+
+config OPENTHREAD_SHELL
+	bool "Enable OpenThread shell"
+	select SHELL
+	default y
+
+config OPENTHREAD_MBEDTLS
+	bool "Enable built-in mbedtls for use with OpenThread"
+	default y
+	select MBEDTLS
+	select MBEDTLS_ENABLE_HEAP
+	select MBEDTLS_CIPHER_AES_ENABLED
+	select MBEDTLS_CIPHER_CCM_ENABLED
+	select MBEDTLS_MAC_SHA256_ENABLED
+	select MBEDTLS_ENTROPY_ENABLED
+	select MBEDTLS_MAC_CMAC_ENABLED
+	select MBEDTLS_CIPHER
+	select MBEDTLS_MD
+	select MBEDTLS_TLS_VERSION_1_2 if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	select MBEDTLS_DTLS if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	select MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	select MBEDTLS_ECP_DP_SECP256R1_ENABLED if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	select MBEDTLS_ECP_NIST_OPTIM if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	select MBEDTLS_SSL_EXPORT_KEYS if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	select MBEDTLS_CTR_DRBG_ENABLED if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	select MBEDTLS_HMAC_DRBG_ENABLED if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	select MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED if OPENTHREAD_ECDSA
+
+config OPENTHREAD_MBEDTLS_TARGET
+	string "mbedtls target name"
+	default "mbedTLS"
 	help
-	  Enable Thread Certification reference device support in OpenThread stack
+	  This option allows to specify custom mbedtls CMake target name for
+	  openthread. This is sometimes needed to utilize hardware cryptography
+	  acceleration.
 
-config OPENTHREAD_CHANNEL_MONITOR
-	bool "Enable channel monitor support"
+menuconfig OPENTHREAD_NCP
+	bool "Network Co-Processor"
+	select OPENTHREAD_MANUAL_START
+	select RING_BUFFER
+	select UART_INTERRUPT_DRIVEN
+	help
+	  Enable NCP in OpenThread stack.
 
-config OPENTHREAD_CHANNEL_MANAGER
-	bool "Enable channel manager support"
-	depends on OPENTHREAD_CHANNEL_MONITOR
+if OPENTHREAD_NCP
 
-config OPENTHREAD_CHILD_SUPERVISION
-	bool "Enable child supervision support"
+config OPENTHREAD_NCP_RADIO
+	bool "Network Co-Processor as Radio"
+	help
+	  Enable NCP in OpenThread stack as radio-only.
 
-config OPENTHREAD_COAPS
-	bool "Enable secure coap api support"
-	depends on OPENTHREAD_COAP
+config OPENTHREAD_NCP_SPINEL_ON_UART_DEV_NAME
+	string "UART device to use for NCP SPINEL"
+	default "UART_0"
+	help
+	  UART device to use for NCP SPINEL.
 
-config OPENTHREAD_DNS_CLIENT
-	bool "Enable DNS client support"
+config OPENTHREAD_NCP_UART_RING_BUFFER_SIZE
+	int "Set NCP UART ring buffer size"
+	default 4096
+	help
+	  TX buffer size for the OpenThread NCP UART.
 
-config OPENTHREAD_EXTERNAL_HEAP
-	bool "Enable external heap support"
+config OPENTHREAD_NCP_SPINEL_ON_UART_ACM
+	bool "Run SPINEL over USB-ACM"
+	depends on USB_CDC_ACM
+	help
+	  Is the SPINEL device a USB-CDC-ACM device.
 
-config OPENTHREAD_IP6_FRAGM
-	bool "Enable ipv6 fragmentation support"
+config OPENTHREAD_NCP_VENDOR_HOOK_SOURCE
+	string "Path to NCP vendor hook source file"
+	help
+	  Provides path to compile ncp vendor hook file inside NCP component.
 
-config OPENTHREAD_LEGACY
-	bool "Enable legacy network support"
+endif # OPENTHREAD_NCP
 
-config OPENTHREAD_LOG_LEVEL_DYNAMIC
-	bool "Enable dynamic log level control"
-
-config OPENTHREAD_MAC_FILTER
-	bool "Enable mac filter support"
-
-config OPENTHREAD_MTD_NETDIAG
-	bool "Enable TMF network diagnostics on MTDs"
-
-config OPENTHREAD_PLATFORM_NETIF
-	bool "Enable platform netif support"
-
-config OPENTHREAD_SETTINGS_RAM
-	bool "Enable volatile-only storage of settings"
-
-config OPENTHREAD_SNTP_CLIENT
-	bool "Enable SNTP Client support"
+config OPENTHREAD_PLATFORM_INFO
+	string "Platform information for OpenThread"
+	default "ZEPHYR"
+	help
+	  Platform information for OpenThread
 
 config OPENTHREAD_CUSTOM_PARAMETERS
 	string "Custom Parameters to pass to OpenThread build system"
@@ -379,4 +236,4 @@ config OPENTHREAD_CUSTOM_PARAMETERS
 	  space " ", for example:
 	  "OPENTHREAD_CONFIG_JOINER_ENABLE=1 OPENTHREAD_CONFIG_JOINER_MAX_CANDIDATES=3"
 
-endif
+endif # NET_L2_OPENTHREAD

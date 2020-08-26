@@ -8,7 +8,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
-#include <mgmt/smp_bt.h>
+#include <mgmt/mcumgr/smp_bt.h>
 
 #define LOG_LEVEL LOG_LEVEL_DBG
 #include <logging/log.h>

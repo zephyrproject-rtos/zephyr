@@ -2,6 +2,7 @@
 
 zephyr_library()
 
+zephyr_library_sources(i2c_common.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_SHELL		i2c_shell.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_BITBANG		i2c_bitbang.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_CC13XX_CC26XX		i2c_cc13xx_cc26xx.c)
@@ -9,6 +10,7 @@ zephyr_library_sources_ifdef(CONFIG_I2C_CC32XX		i2c_cc32xx.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_ESP32		i2c_esp32.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_GPIO		i2c_gpio.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_IMX		i2c_imx.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_LPC11U6X        i2c_lpc11u6x.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_XEC		i2c_mchp_xec.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_MCUX		i2c_mcux.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_MCUX_FLEXCOMM	i2c_mcux_flexcomm.c)

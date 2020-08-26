@@ -43,8 +43,8 @@ static int ataes132a_send_command(struct device *dev, uint8_t opcode,
 				  uint8_t *nresponse)
 {
 	int retry_count = 0;
-	struct ataes132a_device_data *data = dev->driver_data;
-	const struct ataes132a_device_config *cfg = dev->config_info;
+	struct ataes132a_device_data *data = dev->data;
+	const struct ataes132a_device_config *cfg = dev->config;
 	uint8_t count;
 	uint8_t status;
 	uint8_t crc[2];
@@ -166,8 +166,8 @@ static int ataes132a_send_command(struct device *dev, uint8_t opcode,
 
 int ataes132a_init(struct device *dev)
 {
-	struct ataes132a_device_data *ataes132a = dev->driver_data;
-	const struct ataes132a_device_config *cfg = dev->config_info;
+	struct ataes132a_device_data *ataes132a = dev->data;
+	const struct ataes132a_device_config *cfg = dev->config;
 	uint32_t i2c_cfg;
 
 	LOG_DBG("ATAES132A INIT");
@@ -197,7 +197,7 @@ int ataes132a_aes_ccm_decrypt(struct device *dev,
 			      uint8_t *nonce_buf)
 {
 	uint8_t command_mode = 0x0;
-	struct ataes132a_device_data *data = dev->driver_data;
+	struct ataes132a_device_data *data = dev->data;
 	uint8_t out_len;
 	uint8_t in_buf_len;
 	uint8_t return_code;
@@ -397,7 +397,7 @@ int ataes132a_aes_ccm_encrypt(struct device *dev,
 			      uint8_t *mac_count)
 {
 	uint8_t command_mode = 0x0;
-	struct ataes132a_device_data *data = dev->driver_data;
+	struct ataes132a_device_data *data = dev->data;
 	uint8_t buf_len;
 	uint8_t out_len;
 	uint8_t return_code;
@@ -581,7 +581,7 @@ int ataes132a_aes_ecb_block(struct device *dev,
 			    uint8_t key_id,
 			    struct cipher_pkt *pkt)
 {
-	struct ataes132a_device_data *data = dev->driver_data;
+	struct ataes132a_device_data *data = dev->data;
 	uint8_t buf_len;
 	uint8_t out_len;
 	uint8_t return_code;
@@ -797,8 +797,8 @@ static int ataes132a_session_setup(struct device *dev, struct cipher_ctx *ctx,
 				   enum cipher_op op_type)
 {
 	uint8_t key_id = *((uint8_t *)ctx->key.handle);
-	struct ataes132a_device_data *data = dev->driver_data;
-	const struct ataes132a_device_config *cfg = dev->config_info;
+	struct ataes132a_device_data *data = dev->data;
+	const struct ataes132a_device_config *cfg = dev->config;
 	uint8_t config;
 
 	if (ataes132a_state[key_id].in_use) {

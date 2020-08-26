@@ -28,6 +28,8 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_RV32M1     gpio_rv32m1.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_HT16K33    gpio_ht16k33.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_LMP90XXX   gpio_lmp90xxx.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_LITEX      gpio_litex.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_LPC11U6X   gpio_lpc11u6x.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_XLNX_AXI   gpio_xlnx_axi.c)
 
 zephyr_library_sources_ifdef(CONFIG_GPIO_SHELL      gpio_shell.c)
 

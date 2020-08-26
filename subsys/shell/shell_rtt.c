@@ -52,6 +52,10 @@ static int init(const struct shell_transport *transport,
 
 static int uninit(const struct shell_transport *transport)
 {
+	struct shell_rtt *sh_rtt = (struct shell_rtt *)transport->ctx;
+
+	k_timer_stop(&sh_rtt->timer);
+
 	return 0;
 }
 

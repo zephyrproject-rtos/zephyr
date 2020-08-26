@@ -17,6 +17,12 @@ properties:
   label:
     required: true
 
+  jedec-id:
+    required: true
+
+  size:
+    required: true
+
   readoc:
     type: string
     required: false

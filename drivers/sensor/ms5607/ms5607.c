@@ -111,7 +111,7 @@ static int ms5607_get_measurement(const struct ms5607_data *data,
 
 static int ms5607_sample_fetch(struct device *dev, enum sensor_channel channel)
 {
-	struct ms5607_data *data = dev->driver_data;
+	struct ms5607_data *data = dev->data;
 	int err;
 	uint32_t adc_pressure, adc_temperature;
 
@@ -140,7 +140,7 @@ static int ms5607_sample_fetch(struct device *dev, enum sensor_channel channel)
 static int ms5607_channel_get(struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	const struct ms5607_data *data = dev->driver_data;
+	const struct ms5607_data *data = dev->data;
 
 	switch (chan) {
 	case SENSOR_CHAN_AMBIENT_TEMP:
@@ -162,7 +162,7 @@ static int ms5607_attr_set(struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
 {
-	struct ms5607_data *data = dev->driver_data;
+	struct ms5607_data *data = dev->data;
 	uint8_t p_conv_cmd, t_conv_cmd, conv_delay;
 
 	if (attr != SENSOR_ATTR_OVERSAMPLING) {
@@ -228,8 +228,8 @@ static const struct ms5607_config ms5607_config = {
 
 static int ms5607_init(struct device *dev)
 {
-	const struct ms5607_config *const config = dev->config_info;
-	struct ms5607_data *data = dev->driver_data;
+	const struct ms5607_config *const config = dev->config;
+	struct ms5607_data *data = dev->data;
 	struct sensor_value val;
 	int err;
 

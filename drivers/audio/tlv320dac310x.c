@@ -51,9 +51,9 @@ static struct codec_driver_config codec_device_config = {
 static struct codec_driver_data codec_device_data;
 
 #define DEV_CFG(dev) \
-	((struct codec_driver_config *const)(dev)->config_info)
+	((struct codec_driver_config *const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct codec_driver_data *const)(dev)->driver_data)
+	((struct codec_driver_data *const)(dev)->data)
 
 static void codec_write_reg(struct device *dev, struct reg_addr reg, uint8_t val);
 static void codec_read_reg(struct device *dev, struct reg_addr reg, uint8_t *val);

@@ -224,7 +224,7 @@ static inline int z_impl_peci_config(struct device *dev, uint32_t bitrate)
 {
 	struct peci_driver_api *api;
 
-	api = (struct peci_driver_api *)dev->driver_api;
+	api = (struct peci_driver_api *)dev->api;
 	return api->config(dev, bitrate);
 }
 
@@ -242,7 +242,7 @@ static inline int z_impl_peci_enable(struct device *dev)
 {
 	struct peci_driver_api *api;
 
-	api = (struct peci_driver_api *)dev->driver_api;
+	api = (struct peci_driver_api *)dev->api;
 	return api->enable(dev);
 }
 
@@ -260,7 +260,7 @@ static inline int z_impl_peci_disable(struct device *dev)
 {
 	struct peci_driver_api *api;
 
-	api = (struct peci_driver_api *)dev->driver_api;
+	api = (struct peci_driver_api *)dev->api;
 	return api->disable(dev);
 }
 
@@ -281,7 +281,7 @@ static inline int z_impl_peci_transfer(struct device *dev,
 {
 	struct peci_driver_api *api;
 
-	api = (struct peci_driver_api *)dev->driver_api;
+	api = (struct peci_driver_api *)dev->api;
 	return api->transfer(dev, msg);
 }
 

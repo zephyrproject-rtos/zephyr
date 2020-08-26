@@ -949,7 +949,8 @@ static int configure_registers(struct device *dev,
 	return 0;
 }
 
-static void dmic_dma_callback(void *arg, uint32_t chan, int err_code)
+static void dmic_dma_callback(struct device *dev, void *arg,
+			      uint32_t chan, int err_code)
 {
 	void *buffer;
 	size_t size;

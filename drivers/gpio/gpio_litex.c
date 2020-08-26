@@ -43,7 +43,7 @@ struct gpio_litex_data {
 /* Helper macros for GPIO */
 
 #define DEV_GPIO_CFG(dev)						\
-	((const struct gpio_litex_cfg *)(dev)->config_info)
+	((const struct gpio_litex_cfg *)(dev)->config)
 
 /* Helper functions for bit / port access */
 

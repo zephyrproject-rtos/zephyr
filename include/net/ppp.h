@@ -80,6 +80,9 @@ enum ppp_protocol_type {
 	PPP_IPV6CP = 0x8057, /**< RFC 5072 */
 	PPP_CCP    = 0x80FD, /**< RFC 1962 */
 	PPP_LCP    = 0xc021, /**< RFC 1661 */
+	PPP_PAP    = 0xc023, /**< RFC 1334 */
+	PPP_CHAP   = 0xc223, /**< RFC 1334 */
+	PPP_EAP    = 0xc227, /**< RFC 2284 */
 };
 
 /**
@@ -212,25 +215,15 @@ enum ipv6cp_option_type {
 typedef void (*net_ppp_lcp_echo_reply_cb_t)(void *user_data,
 					    size_t user_data_len);
 
+struct ppp_my_option_data;
+struct ppp_my_option_info;
+
 /**
  * Generic PPP Finite State Machine
  */
 struct ppp_fsm {
 	/** Timeout timer */
 	struct k_delayed_work timer;
-
-	/* We need to send a packet from separate thread so that we do not
-	 * receive reply before we are ready to receive it. The issue was seen
-	 * with QEMU where the link to peer is so fast that we received the
-	 * reply before the net_send_data() returned.
-	 */
-	struct {
-		/** Packet sending timer. */
-		struct k_delayed_work work;
-
-		/** Packet to send */
-		struct net_pkt *pkt;
-	} sender;
 
 	struct {
 		/** Acknowledge Configuration Information */
@@ -239,7 +232,7 @@ struct ppp_fsm {
 				       uint16_t length);
 
 		/** Add Configuration Information */
-		struct net_buf *(*config_info_add)(struct ppp_fsm *fsm);
+		struct net_pkt *(*config_info_add)(struct ppp_fsm *fsm);
 
 		/** Length of Configuration Information */
 		int  (*config_info_len)(struct ppp_fsm *fsm);
@@ -254,7 +247,7 @@ struct ppp_fsm {
 		int (*config_info_req)(struct ppp_fsm *fsm,
 				       struct net_pkt *pkt,
 				       uint16_t length,
-				       struct net_buf **buf);
+				       struct net_pkt *ret_pkt);
 
 		/** Reject Configuration Information */
 		int (*config_info_rej)(struct ppp_fsm *fsm,
@@ -291,6 +284,17 @@ struct ppp_fsm {
 						    struct net_pkt *pkt);
 	} cb;
 
+	struct {
+		/** Options information */
+		const struct ppp_my_option_info *info;
+
+		/** Options negotiation data */
+		struct ppp_my_option_data *data;
+
+		/** Number of negotiated options */
+		size_t count;
+	} my_options;
+
 	/** Option bits */
 	uint32_t flags;
 
@@ -325,20 +329,11 @@ struct ppp_fsm {
 	uint8_t ack_received : 1;
 };
 
-/** PPP configuration options */
-struct ppp_option_pkt {
-	/** Option value */
-	struct net_pkt_cursor value;
+#define PPP_MY_OPTION_ACKED	BIT(0)
+#define PPP_MY_OPTION_REJECTED	BIT(1)
 
-	/** Option type */
-	union {
-		enum lcp_option_type lcp;
-		enum ipcp_option_type ipcp;
-		enum ipv6cp_option_type ipv6cp;
-	} type;
-
-	/** Option length */
-	uint8_t len;
+struct ppp_my_option_data {
+	uint32_t flags;
 };
 
 struct lcp_options {
@@ -351,22 +346,8 @@ struct lcp_options {
 	/** Maximum Receive Unit value */
 	uint16_t mru;
 
-	/* Flags what to negotiate */
-
-	/** Negotiate MRU */
-	uint16_t negotiate_mru : 1;
-
-	/** Negotiate */
-	uint16_t negotiate_async_map :1;
-
-	/** Negotiate HDLC protocol field compression*/
-	uint16_t negotiate_proto_compression :1;
-
-	/** Negotiate HDLC address/control field compression */
-	uint16_t negotiate_addr_compression :1;
-
-	/** Negotiate magic number */
-	uint16_t negotiate_magic :1;
+	/** Which authentication protocol was negotiated (0 means none) */
+	uint16_t auth_proto;
 };
 
 struct ipcp_options {
@@ -376,10 +357,14 @@ struct ipcp_options {
 	struct in_addr dns2_address;
 };
 
+#define IPCP_NUM_MY_OPTIONS	3
+
 struct ipv6cp_options {
 	/** Interface identifier */
 	uint8_t iid[PPP_INTERFACE_IDENTIFIER_LEN];
 };
+
+#define IPV6CP_NUM_MY_OPTIONS	1
 
 /** PPP L2 context specific to certain network interface */
 struct ppp_context {
@@ -409,12 +394,6 @@ struct ppp_context {
 		/** Options that peer want to request */
 		struct lcp_options peer_options;
 
-		/** Options that we accepted */
-		struct lcp_options my_accepted;
-
-		/** Options that peer accepted */
-		struct lcp_options peer_accepted;
-
 		/** Magic-Number value */
 		uint32_t magic;
 	} lcp;
@@ -430,11 +409,8 @@ struct ppp_context {
 		/** Options that peer want to request */
 		struct ipcp_options peer_options;
 
-		/** Options that we accepted */
-		struct ipcp_options my_accepted;
-
-		/** Options that peer accepted */
-		struct ipcp_options peer_accepted;
+		/** My options runtime data */
+		struct ppp_my_option_data my_options_data[IPCP_NUM_MY_OPTIONS];
 	} ipcp;
 #endif
 
@@ -449,12 +425,16 @@ struct ppp_context {
 		/** Options that peer want to request */
 		struct ipv6cp_options peer_options;
 
-		/** Options that we accepted */
-		struct ipv6cp_options my_accepted;
-
-		/** Options that peer accepted */
-		struct ipv6cp_options peer_accepted;
+		/** My options runtime data */
+		struct ppp_my_option_data my_options_data[IPV6CP_NUM_MY_OPTIONS];
 	} ipv6cp;
+#endif
+
+#if defined(CONFIG_NET_L2_PPP_PAP)
+	struct {
+		/** Finite state machine for PAP */
+		struct ppp_fsm fsm;
+	} pap;
 #endif
 
 #if defined(CONFIG_NET_SHELL)
@@ -497,9 +477,6 @@ struct ppp_context {
 	/** This tells how many network protocols are up */
 	int network_protos_up;
 
-	/** Is this context already initialized */
-	uint16_t is_init : 1;
-
 	/** Is PPP ready to receive packets */
 	uint16_t is_ready_to_serve : 1;
 
@@ -523,6 +500,12 @@ struct ppp_context {
 
 	/** IPV6CP open status (open / closed) */
 	uint16_t is_ipv6cp_open : 1;
+
+	/** PAP status (up / down) */
+	uint16_t is_pap_up : 1;
+
+	/** PAP open status (open / closed) */
+	uint16_t is_pap_open : 1;
 };
 
 /**

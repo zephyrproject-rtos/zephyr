@@ -52,6 +52,8 @@ BUILD_ASSERT((PROP(hw_flow_control) && HW_FLOW_CONTROL_AVAILABLE) ||
 
 static NRF_UART_Type *const uart0_addr = (NRF_UART_Type *)DT_INST_REG_ADDR(0);
 
+DEVICE_DECLARE(uart_nrfx_uart0);
+
 /* Device data structure */
 struct uart_nrfx_data {
 	struct uart_config uart_config;
@@ -59,7 +61,7 @@ struct uart_nrfx_data {
 
 static inline struct uart_nrfx_data *get_dev_data(struct device *dev)
 {
-	return dev->driver_data;
+	return dev->data;
 }
 
 #ifdef CONFIG_UART_0_ASYNC
@@ -394,10 +396,10 @@ static int uart_nrfx_config_get(struct device *dev, struct uart_config *cfg)
 
 #ifdef CONFIG_UART_0_ASYNC
 
-static void user_callback(struct uart_event *event)
+static void user_callback(struct device *dev, struct uart_event *event)
 {
 	if (uart0_cb.callback) {
-		uart0_cb.callback(event, uart0_cb.user_data);
+		uart0_cb.callback(dev, event, uart0_cb.user_data);
 	}
 }
 
@@ -455,7 +457,7 @@ static int uart_nrfx_tx_abort(struct device *dev)
 	uart0_cb.tx_buffer_length = 0;
 	uart0_cb.tx_counter = 0;
 
-	user_callback(&evt);
+	user_callback(dev, &evt);
 
 	return 0;
 }
@@ -492,16 +494,22 @@ static int uart_nrfx_rx_enable(struct device *dev, uint8_t *buf, size_t len,
 
 static int uart_nrfx_rx_buf_rsp(struct device *dev, uint8_t *buf, size_t len)
 {
-	if (!uart0_cb.rx_enabled) {
-		return -EACCES;
-	}
-	if (uart0_cb.rx_secondary_buffer_length != 0) {
-		return -EBUSY;
-	}
-	uart0_cb.rx_secondary_buffer = buf;
-	uart0_cb.rx_secondary_buffer_length = len;
+	int err;
+	int key = irq_lock();
 
-	return 0;
+	if (!uart0_cb.rx_enabled) {
+		err = -EACCES;
+	} else if (uart0_cb.rx_secondary_buffer_length != 0) {
+		err = -EBUSY;
+	} else {
+		uart0_cb.rx_secondary_buffer = buf;
+		uart0_cb.rx_secondary_buffer_length = len;
+		err = 0;
+	}
+
+	irq_unlock(key);
+
+	return err;
 }
 
 static int uart_nrfx_rx_disable(struct device *dev)
@@ -519,7 +527,7 @@ static int uart_nrfx_rx_disable(struct device *dev)
 	return 0;
 }
 
-static void rx_rdy_evt(void)
+static void rx_rdy_evt(struct device *dev)
 {
 	struct uart_event event;
 	size_t rx_cnt = uart0_cb.rx_counter;
@@ -531,24 +539,24 @@ static void rx_rdy_evt(void)
 
 	uart0_cb.rx_offset = rx_cnt;
 
-	user_callback(&event);
+	user_callback(dev, &event);
 }
 
-static void buf_released_evt(void)
+static void buf_released_evt(struct device *dev)
 {
 	struct uart_event event = {
 		.type = UART_RX_BUF_RELEASED,
 		.data.rx_buf.buf = uart0_cb.rx_buffer
 	};
-	user_callback(&event);
+	user_callback(dev, &event);
 }
 
-static void rx_disabled_evt(void)
+static void rx_disabled_evt(struct device *dev)
 {
 	struct uart_event event = {
 		.type = UART_RX_DISABLED
 	};
-	user_callback(&event);
+	user_callback(dev, &event);
 }
 
 static void rx_reset_state(void)
@@ -576,13 +584,13 @@ static void rx_isr(struct device *dev)
 	} else {
 		if (uart0_cb.rx_counter == 0) {
 			event.type = UART_RX_BUF_REQUEST;
-			user_callback(&event);
+			user_callback(dev, &event);
 		}
 		uart0_cb.rx_buffer[uart0_cb.rx_counter] =
 			nrf_uart_rxd_get(uart0_addr);
 		uart0_cb.rx_counter++;
 		if (uart0_cb.rx_timeout == 0) {
-			rx_rdy_evt();
+			rx_rdy_evt(dev);
 		} else if (uart0_cb.rx_timeout != SYS_FOREVER_MS) {
 			k_delayed_work_submit(&uart0_cb.rx_timeout_work,
 					      K_MSEC(uart0_cb.rx_timeout));
@@ -593,10 +601,17 @@ static void rx_isr(struct device *dev)
 		if (uart0_cb.rx_timeout != SYS_FOREVER_MS) {
 			k_delayed_work_cancel(&uart0_cb.rx_timeout_work);
 		}
-		rx_rdy_evt();
+		rx_rdy_evt(dev);
+
+		int key = irq_lock();
+
+		if (uart0_cb.rx_secondary_buffer_length == 0) {
+			uart0_cb.rx_enabled = 0;
+		}
+		irq_unlock(key);
 
 		if (uart0_cb.rx_secondary_buffer_length) {
-			buf_released_evt();
+			buf_released_evt(dev);
 			/* Switch to secondary buffer. */
 			uart0_cb.rx_buffer_length =
 				uart0_cb.rx_secondary_buffer_length;
@@ -606,14 +621,14 @@ static void rx_isr(struct device *dev)
 			uart0_cb.rx_offset = 0;
 
 			event.type = UART_RX_BUF_REQUEST;
-			user_callback(&event);
+			user_callback(dev, &event);
 		} else {
 			uart_nrfx_rx_disable(dev);
 		}
 	}
 }
 
-static void tx_isr(void)
+static void tx_isr(struct device *dev)
 {
 	uart0_cb.tx_counter++;
 	if (uart0_cb.tx_counter < uart0_cb.tx_buffer_length &&
@@ -648,7 +663,7 @@ static void tx_isr(void)
 		uart0_cb.tx_buffer = NULL;
 
 		nrf_uart_int_disable(uart0_addr, NRF_UART_INT_MASK_TXDRDY);
-		user_callback(&event);
+		user_callback(dev, &event);
 	}
 }
 
@@ -680,7 +695,7 @@ static void error_isr(struct device *dev)
 		.data.rx_stop.data.buf = uart0_cb.rx_buffer
 	};
 
-	user_callback(&event);
+	user_callback(dev, &event);
 	/* Abort transfer. */
 	uart_nrfx_rx_disable(dev);
 }
@@ -690,23 +705,23 @@ static void error_isr(struct device *dev)
  * it is used as a sign that peripheral has finished its operation and is
  * disabled.
  */
-static void rxto_isr(void)
+static void rxto_isr(struct device *dev)
 {
 	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_RXTO);
 
 	/* Send rxrdy if there is any data pending. */
 	if (uart0_cb.rx_counter - uart0_cb.rx_offset) {
-		rx_rdy_evt();
+		rx_rdy_evt(dev);
 	}
 
-	buf_released_evt();
+	buf_released_evt(dev);
 	if (uart0_cb.rx_secondary_buffer_length) {
 		uart0_cb.rx_buffer = uart0_cb.rx_secondary_buffer;
-		buf_released_evt();
+		buf_released_evt(dev);
 	}
 
 	rx_reset_state();
-	rx_disabled_evt();
+	rx_disabled_evt(dev);
 }
 
 void uart_nrfx_isr(void *arg)
@@ -725,17 +740,17 @@ void uart_nrfx_isr(void *arg)
 	if (nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_TXDRDY)
 	    && nrf_uart_int_enable_check(uart0_addr,
 					 NRF_UART_INT_MASK_TXDRDY)) {
-		tx_isr();
+		tx_isr(uart);
 	}
 
 	if (nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_RXTO)) {
-		rxto_isr();
+		rxto_isr(uart);
 	}
 }
 
 static void rx_timeout(struct k_work *work)
 {
-	rx_rdy_evt();
+	rx_rdy_evt(DEVICE_GET(uart_nrfx_uart0));
 }
 
 #if HW_FLOW_CONTROL_AVAILABLE
@@ -752,7 +767,7 @@ static void tx_timeout(struct k_work *work)
 	evt.data.tx.len = uart0_cb.tx_buffer_length;
 	uart0_cb.tx_buffer_length = 0;
 	uart0_cb.tx_counter = 0;
-	user_callback(&evt);
+	user_callback(DEVICE_GET(uart_nrfx_uart0), &evt);
 
 }
 #endif
@@ -948,12 +963,10 @@ static void uart_nrfx_isr(void *arg)
 	}
 
 	if (irq_callback) {
-		irq_callback(irq_cb_data);
+		irq_callback(dev, irq_cb_data);
 	}
 }
 #endif /* CONFIG_UART_0_INTERRUPT_DRIVEN */
-
-DEVICE_DECLARE(uart_nrfx_uart0);
 
 /**
  * @brief Initialize UART channel
@@ -968,6 +981,8 @@ DEVICE_DECLARE(uart_nrfx_uart0);
 static int uart_nrfx_init(struct device *dev)
 {
 	int err;
+
+	nrf_uart_disable(uart0_addr);
 
 	/* Setting default height state of the TX PIN to avoid glitches
 	 * on the line during peripheral activation/deactivation.

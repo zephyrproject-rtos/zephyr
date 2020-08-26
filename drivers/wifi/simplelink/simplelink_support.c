@@ -70,9 +70,7 @@ static int32_t configure_simplelink(void)
 {
 	int32_t retval = -1;
 	int32_t mode = -1;
-#if !defined(CONFIG_NET_IPV6)
 	uint32_t if_bitmap = 0U;
-#endif
 	SlWlanScanParamCommand_t scan_default = { 0 };
 	SlWlanRxFilterOperationCommandBuff_t rx_filterid_mask = { { 0 } };
 	uint8_t config_opt;
@@ -172,16 +170,17 @@ static int32_t configure_simplelink(void)
 	ASSERT_ON_ERROR(retval, NETAPP_ERROR);
 #endif
 
-
-#if !defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_IPV6)
+	if_bitmap = ~0;
+#else
 	/* Disable ipv6 */
 	if_bitmap = !(SL_NETCFG_IF_IPV6_STA_LOCAL |
 		      SL_NETCFG_IF_IPV6_STA_GLOBAL);
+#endif
 	retval = sl_NetCfgSet(SL_NETCFG_IF, SL_NETCFG_IF_STATE,
 			      sizeof(if_bitmap),
 			      (const unsigned char *)&if_bitmap);
 	ASSERT_ON_ERROR(retval, NETAPP_ERROR);
-#endif
 
 	/* Configure scan parameters to default */
 	scan_default.ChannelsMask = CHANNEL_MASK_ALL;
@@ -370,7 +369,7 @@ void SimpleLinkNetAppEventHandler(SlNetAppEvent_t *netapp_event)
 	}
 
 	switch (netapp_event->Id) {
-	case SL_DEVICE_EVENT_DROPPED_NETAPP_IPACQUIRED:
+	case SL_NETAPP_EVENT_IPV4_ACQUIRED:
 		SET_STATUS_BIT(nwp.status, STATUS_BIT_IP_ACQUIRED);
 
 		/* Ip Acquired Event Data */
@@ -395,7 +394,7 @@ void SimpleLinkNetAppEventHandler(SlNetAppEvent_t *netapp_event)
 		nwp.cb(SIMPLELINK_WIFI_CB_IPACQUIRED, &sl_conn);
 		break;
 
-	case SL_DEVICE_EVENT_DROPPED_NETAPP_IPACQUIRED_V6:
+	case SL_NETAPP_EVENT_IPV6_ACQUIRED:
 		SET_STATUS_BIT(nwp.status, STATUS_BIT_IPV6_ACQUIRED);
 
 		for (i = 0U; i < 4; i++) {
@@ -404,15 +403,20 @@ void SimpleLinkNetAppEventHandler(SlNetAppEvent_t *netapp_event)
 		}
 
 		if (LOG_LEVEL >= LOG_LEVEL_INF) {
-			char ipv6_addr[NET_IPV6_ADDR_LEN];
+			LOG_INF("[NETAPP EVENT] IP Acquired: "
+				"IPv6=%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x",
+				((sl_conn.ipv6_addr[0] >> 16) & 0xffff),
+				sl_conn.ipv6_addr[0] & 0xffff,
+				((sl_conn.ipv6_addr[1] >> 16) & 0xffff),
+				sl_conn.ipv6_addr[1] & 0xffff,
+				((sl_conn.ipv6_addr[2] >> 16) & 0xffff),
+				sl_conn.ipv6_addr[2] & 0xffff,
+				((sl_conn.ipv6_addr[3] >> 16) & 0xffff),
+				sl_conn.ipv6_addr[3] & 0xffff);
 
-			net_addr_ntop(AF_INET6, sl_conn.ipv6_addr,
-				      ipv6_addr,
-				      sizeof(ipv6_addr));
-			LOG_INF("[NETAPP EVENT] IP Acquired: IPv6= %s",
-				    ipv6_addr);
 		}
 
+		nwp.cb(SIMPLELINK_WIFI_CB_IPV6ACQUIRED, &sl_conn);
 		break;
 
 	case SL_DEVICE_EVENT_DROPPED_NETAPP_IP_LEASED:

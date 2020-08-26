@@ -1,0 +1,18 @@
+# Copyright (c) 2020, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: ST STM32 Ethernet
+
+compatible: "st,stm32-ethernet"
+
+include: ethernet.yaml
+
+properties:
+    reg:
+      required: true
+    interrupts:
+      required: true
+    clocks:
+      required: true
+    clock-names:
+      required: true

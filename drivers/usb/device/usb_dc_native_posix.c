@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(native_posix);
 
 #define USBIP_MAX_PACKET_SIZE	64
 
-K_THREAD_STACK_MEMBER(thread_stack, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
+K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
 static struct k_thread thread;
 
 static void thread_main(void *a, void *b, void *c)

@@ -22,8 +22,8 @@ LOG_MODULE_REGISTER(MCP9808, CONFIG_SENSOR_LOG_LEVEL);
 
 int mcp9808_reg_read(struct device *dev, uint8_t reg, uint16_t *val)
 {
-	const struct mcp9808_data *data = dev->driver_data;
-	const struct mcp9808_config *cfg = dev->config_info;
+	const struct mcp9808_data *data = dev->data;
+	const struct mcp9808_config *cfg = dev->config;
 	int rc = i2c_write_read(data->i2c_master, cfg->i2c_addr,
 				&reg, sizeof(reg),
 				val, sizeof(*val));
@@ -37,7 +37,7 @@ int mcp9808_reg_read(struct device *dev, uint8_t reg, uint16_t *val)
 
 static int mcp9808_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct mcp9808_data *data = dev->driver_data;
+	struct mcp9808_data *data = dev->data;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP);
 
@@ -48,7 +48,7 @@ static int mcp9808_channel_get(struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	const struct mcp9808_data *data = dev->driver_data;
+	const struct mcp9808_data *data = dev->data;
 	int temp = mcp9808_temp_signed_from_reg(data->reg_val);
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_AMBIENT_TEMP);
@@ -71,8 +71,8 @@ static const struct sensor_driver_api mcp9808_api_funcs = {
 
 int mcp9808_init(struct device *dev)
 {
-	struct mcp9808_data *data = dev->driver_data;
-	const struct mcp9808_config *cfg = dev->config_info;
+	struct mcp9808_data *data = dev->data;
+	const struct mcp9808_config *cfg = dev->config;
 	int rc = 0;
 
 	data->i2c_master = device_get_binding(cfg->i2c_bus);

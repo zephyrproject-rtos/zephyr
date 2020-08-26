@@ -41,9 +41,9 @@ struct counter_gecko_data {
 
 #define DEV_NAME(dev) ((dev)->name)
 #define DEV_CFG(dev) \
-	((const struct counter_gecko_config * const)(dev)->config_info)
+	((const struct counter_gecko_config * const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct counter_gecko_data *const)(dev)->driver_data)
+	((struct counter_gecko_data *const)(dev)->data)
 
 #ifdef CONFIG_SOC_GECKO_HAS_ERRATA_RTCC_E201
 #define ERRATA_RTCC_E201_MESSAGE \
@@ -240,7 +240,11 @@ static int counter_gecko_init(struct device *dev)
 		false,                /* Disable RTC during debug halt. */
 		false,                /* Don't wrap prescaler on CCV0 */
 		true,                 /* Counter wrap on CCV1 */
+#if defined(_SILICON_LABS_32B_SERIES_2)
+		(RTCC_CntPresc_TypeDef)(31UL - __CLZ(dev_cfg->prescaler)),
+#else
 		(RTCC_CntPresc_TypeDef)CMU_DivToLog2(dev_cfg->prescaler),
+#endif
 		rtccCntTickPresc,     /* Count according to prescaler value */
 #if defined(_RTCC_CTRL_BUMODETSEN_MASK)
 		false,                /* Don't store RTCC counter value in
@@ -272,14 +276,18 @@ static int counter_gecko_init(struct device *dev)
 #endif
 	};
 
-	/* Ensure LE modules are clocked */
+#if defined(cmuClock_CORELE)
+	/* Ensure LE modules are clocked. */
 	CMU_ClockEnable(cmuClock_CORELE, true);
+#endif
 
 #if defined(CMU_LFECLKEN0_RTCC)
-	/* Enable LFECLK in CMU (will also enable oscillator if not enabled) */
+	/* Enable LFECLK in CMU (will also enable oscillator if not enabled). */
 	CMU_ClockSelectSet(cmuClock_LFE, cmuSelect_LFXO);
+#elif defined(_SILICON_LABS_32B_SERIES_2)
+	CMU_ClockSelectSet(cmuClock_RTCC, cmuSelect_LFXO);
 #else
-	/* Enable LFACLK in CMU (will also enable oscillator if not enabled) */
+	/* Enable LFACLK in CMU (will also enable oscillator if not enabled). */
 	CMU_ClockSelectSet(cmuClock_LFA, cmuSelect_LFXO);
 #endif
 

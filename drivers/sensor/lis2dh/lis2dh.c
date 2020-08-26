@@ -56,7 +56,7 @@ static int lis2dh_channel_get(struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	struct lis2dh_data *lis2dh = dev->driver_data;
+	struct lis2dh_data *lis2dh = dev->data;
 	int ofs_start;
 	int ofs_end;
 	int i;
@@ -87,7 +87,7 @@ static int lis2dh_channel_get(struct device *dev,
 
 static int lis2dh_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	struct lis2dh_data *lis2dh = dev->driver_data;
+	struct lis2dh_data *lis2dh = dev->data;
 	size_t i;
 	int status;
 
@@ -148,7 +148,7 @@ static int lis2dh_acc_odr_set(struct device *dev, uint16_t freq)
 	int odr;
 	int status;
 	uint8_t value;
-	struct lis2dh_data *data = dev->driver_data;
+	struct lis2dh_data *data = dev->data;
 
 	odr = lis2dh_freq_to_odr_val(freq);
 	if (odr < 0) {
@@ -197,7 +197,7 @@ static int lis2dh_range_to_reg_val(uint16_t range)
 
 static int lis2dh_acc_range_set(struct device *dev, int32_t range)
 {
-	struct lis2dh_data *lis2dh = dev->driver_data;
+	struct lis2dh_data *lis2dh = dev->data;
 	int fs;
 
 	fs = lis2dh_range_to_reg_val(range);
@@ -268,8 +268,8 @@ static const struct sensor_driver_api lis2dh_driver_api = {
 
 int lis2dh_init(struct device *dev)
 {
-	struct lis2dh_data *lis2dh = dev->driver_data;
-	const struct lis2dh_config *cfg = dev->config_info;
+	struct lis2dh_data *lis2dh = dev->data;
+	const struct lis2dh_config *cfg = dev->config;
 	int status;
 	uint8_t id;
 	uint8_t raw[6];

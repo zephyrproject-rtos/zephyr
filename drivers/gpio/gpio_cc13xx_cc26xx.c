@@ -181,7 +181,7 @@ static int gpio_cc13xx_cc26xx_manage_callback(struct device *port,
 					      struct gpio_callback *callback,
 					      bool set)
 {
-	struct gpio_cc13xx_cc26xx_data *data = port->driver_data;
+	struct gpio_cc13xx_cc26xx_data *data = port->data;
 
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
@@ -196,7 +196,7 @@ DEVICE_DECLARE(gpio_cc13xx_cc26xx);
 static void gpio_cc13xx_cc26xx_isr(void *arg)
 {
 	struct device *dev = arg;
-	struct gpio_cc13xx_cc26xx_data *data = dev->driver_data;
+	struct gpio_cc13xx_cc26xx_data *data = dev->data;
 
 	uint32_t status = GPIO_getEventMultiDio(GPIO_DIO_ALL_MASK);
 

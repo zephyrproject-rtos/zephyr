@@ -29,7 +29,7 @@ description and units of measurement:
 Values
 ======
 
-Sensor devices return results as :c:type:`struct sensor_value`.  This
+Sensor devices return results as :c:type:`sensor_value`.  This
 representation avoids use of floating point values as they may not be
 supported on certain setups.
 
@@ -41,7 +41,7 @@ application instructs the driver to fetch a sample of all its channels.
 Then, individual channels may be read.  In the case of channels with
 multiple axes, they can be read in a single operation by supplying
 the corresponding :literal:`_XYZ` channel type and a buffer of 3
-:c:type:`struct sensor_value` objects.  This approach ensures consistency
+:c:type:`sensor_value` objects.  This approach ensures consistency
 of channels between reads and efficiency of communication by issuing a
 single transaction on the underlying bus.
 
@@ -55,8 +55,8 @@ compensates data for both channels.
    :lines: 12-
    :linenos:
 
-The example assumes that the returned values have type :c:type:`struct
-sensor_value`, which is the case for BME280.  A real application
+The example assumes that the returned values have type :c:type:`sensor_value`,
+which is the case for BME280.  A real application
 supporting multiple sensors should inspect the :c:data:`type` field of
 the :c:data:`temp` and :c:data:`press` values and use the other fields
 of the structure accordingly.
@@ -89,9 +89,9 @@ Many sensor chips support one or more triggers. Some examples of triggers
 include: new data is ready for reading, a channel value has crossed a
 threshold, or the device has sensed motion.
 
-To configure a trigger, an application needs to supply a :c:type:`struct
-sensor_trigger` and a handler function.  The structure contains the trigger
-type and the channel on which the trigger must be configured.
+To configure a trigger, an application needs to supply a
+:c:type:`sensor_trigger` and a handler function.  The structure contains the
+trigger type and the channel on which the trigger must be configured.
 
 Because most sensors are connected via SPI or I2C busses, it is not possible
 to communicate with them from the interrupt execution context.  The

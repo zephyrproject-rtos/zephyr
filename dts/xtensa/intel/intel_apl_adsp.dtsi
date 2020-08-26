@@ -27,13 +27,11 @@
 	};
 
 	sram0: memory@be000000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0xbe000000 DT_SIZE_K(512)>;
 	};
 
 	sram1: memory@be800000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0xbe800000 DT_SIZE_K(128)>;
 	};

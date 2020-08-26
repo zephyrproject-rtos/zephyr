@@ -79,3 +79,7 @@
 &hs_lspi {
 	status = "okay";
 };
+
+&wwdt0 {
+	status = "okay";
+};

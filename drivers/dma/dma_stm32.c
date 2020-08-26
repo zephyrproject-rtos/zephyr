@@ -38,7 +38,7 @@ static uint32_t table_p_size[] = {
 
 static void dma_stm32_dump_stream_irq(struct device *dev, uint32_t id)
 {
-	const struct dma_stm32_config *config = dev->config_info;
+	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 
 	stm32_dma_dump_stream_irq(dma, id);
@@ -46,7 +46,7 @@ static void dma_stm32_dump_stream_irq(struct device *dev, uint32_t id)
 
 static void dma_stm32_clear_stream_irq(struct device *dev, uint32_t id)
 {
-	const struct dma_stm32_config *config = dev->config_info;
+	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 
 	func_ll_clear_tc[id](dma);
@@ -57,8 +57,8 @@ static void dma_stm32_clear_stream_irq(struct device *dev, uint32_t id)
 static void dma_stm32_irq_handler(void *arg)
 {
 	struct device *dev = arg;
-	struct dma_stm32_data *data = dev->driver_data;
-	const struct dma_stm32_config *config = dev->config_info;
+	struct dma_stm32_data *data = dev->data;
+	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 	struct dma_stm32_stream *stream;
 	int id;
@@ -90,21 +90,21 @@ static void dma_stm32_irq_handler(void *arg)
 #ifdef CONFIG_DMAMUX_STM32
 		stream->busy = false;
 		/* the callback function expects the dmamux channel nb */
-		stream->dma_callback(stream->callback_arg,
-					stream->mux_channel, 0);
+		stream->dma_callback(dev, stream->user_data,
+				     stream->mux_channel, 0);
 #else
-		stream->dma_callback(stream->callback_arg, id + STREAM_OFFSET,
-				     0);
+		stream->dma_callback(dev, stream->user_data,
+				     id + STREAM_OFFSET, 0);
 #endif /* CONFIG_DMAMUX_STM32 */
 	} else if (stm32_dma_is_unexpected_irq_happened(dma, id)) {
 		LOG_ERR("Unexpected irq happened.");
 
 #ifdef CONFIG_DMAMUX_STM32
-		stream->dma_callback(stream->callback_arg,
-					stream->mux_channel, -EIO);
+		stream->dma_callback(dev, stream->user_data,
+				     stream->mux_channel, -EIO);
 #else
-		stream->dma_callback(stream->callback_arg, id + STREAM_OFFSET,
-				     -EIO);
+		stream->dma_callback(dev, stream->user_data,
+				     id + STREAM_OFFSET, -EIO);
 #endif /* CONFIG_DMAMUX_STM32 */
 	} else {
 		LOG_ERR("Transfer Error.");
@@ -112,11 +112,11 @@ static void dma_stm32_irq_handler(void *arg)
 		dma_stm32_clear_stream_irq(dev, id);
 
 #ifdef CONFIG_DMAMUX_STM32
-		stream->dma_callback(stream->callback_arg,
-					stream->mux_channel, -EIO);
+		stream->dma_callback(dev, stream->user_data,
+				     stream->mux_channel, -EIO);
 #else
-		stream->dma_callback(stream->callback_arg, id + STREAM_OFFSET,
-				     -EIO);
+		stream->dma_callback(dev, stream->user_data,
+				     id + STREAM_OFFSET, -EIO);
 #endif /* CONFIG_DMAMUX_STM32 */
 	}
 }
@@ -240,10 +240,10 @@ static int dma_stm32_configure(struct device *dev, uint32_t id,
 			       struct dma_config *config)
 #endif /* CONFIG_DMAMUX_STM32 */
 {
-	struct dma_stm32_data *data = dev->driver_data;
+	struct dma_stm32_data *data = dev->data;
 	struct dma_stm32_stream *stream = &data->streams[id - STREAM_OFFSET];
 	const struct dma_stm32_config *dev_config =
-					dev->config_info;
+					dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)dev_config->base;
 	LL_DMA_InitTypeDef DMA_InitStruct;
 	uint32_t msize;
@@ -310,7 +310,7 @@ static int dma_stm32_configure(struct device *dev, uint32_t id,
 	stream->busy		= true;
 	stream->dma_callback	= config->dma_callback;
 	stream->direction	= config->channel_direction;
-	stream->callback_arg    = config->callback_arg;
+	stream->user_data       = config->user_data;
 	stream->src_size	= config->source_data_size;
 	stream->dst_size	= config->dest_data_size;
 
@@ -477,9 +477,9 @@ static int dma_stm32_reload(struct device *dev, uint32_t id,
 			    uint32_t src, uint32_t dst, size_t size)
 #endif /* CONFIG_DMAMUX_STM32 */
 {
-	const struct dma_stm32_config *config = dev->config_info;
+	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
-	struct dma_stm32_data *data = dev->driver_data;
+	struct dma_stm32_data *data = dev->data;
 	struct dma_stm32_stream *stream = &data->streams[id - STREAM_OFFSET];
 
 	/* give channel from index 0 */
@@ -524,9 +524,9 @@ int dma_stm32_start(struct device *dev, uint32_t id)
 static int dma_stm32_start(struct device *dev, uint32_t id)
 #endif /* CONFIG_DMAMUX_STM32 */
 {
-	const struct dma_stm32_config *config = dev->config_info;
+	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
-	struct dma_stm32_data *data = dev->driver_data;
+	struct dma_stm32_data *data = dev->data;
 
 	/* give channel from index 0 */
 	id = id - STREAM_OFFSET;
@@ -549,10 +549,10 @@ int dma_stm32_stop(struct device *dev, uint32_t id)
 static int dma_stm32_stop(struct device *dev, uint32_t id)
 #endif /* CONFIG_DMAMUX_STM32 */
 {
-	struct dma_stm32_data *data = dev->driver_data;
+	struct dma_stm32_data *data = dev->data;
 	struct dma_stm32_stream *stream = &data->streams[id - STREAM_OFFSET];
 	const struct dma_stm32_config *config =
-				dev->config_info;
+				dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 
 	/* give channel from index 0 */
@@ -582,8 +582,8 @@ struct k_mem_block block;
 
 static int dma_stm32_init(struct device *dev)
 {
-	struct dma_stm32_data *data = dev->driver_data;
-	const struct dma_stm32_config *config = dev->config_info;
+	struct dma_stm32_data *data = dev->data;
+	const struct dma_stm32_config *config = dev->config;
 	struct device *clk =
 		device_get_binding(STM32_CLOCK_CONTROL_NAME);
 
@@ -623,9 +623,9 @@ static int dma_stm32_init(struct device *dev)
 static int dma_stm32_get_status(struct device *dev, uint32_t id,
 				struct dma_status *stat)
 {
-	const struct dma_stm32_config *config = dev->config_info;
+	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
-	struct dma_stm32_data *data = dev->driver_data;
+	struct dma_stm32_data *data = dev->data;
 	struct dma_stm32_stream *stream;
 
 	/* give channel from index 0 */
@@ -694,7 +694,7 @@ DMA_INIT(0);
 
 static void dma_stm32_config_irq_0(struct device *dev)
 {
-	struct dma_stm32_data *data = dev->driver_data;
+	struct dma_stm32_data *data = dev->data;
 
 	IRQ_INIT(0, 0);
 	IRQ_INIT(0, 1);
@@ -720,7 +720,7 @@ DMA_INIT(1);
 
 static void dma_stm32_config_irq_1(struct device *dev)
 {
-	struct dma_stm32_data *data = dev->driver_data;
+	struct dma_stm32_data *data = dev->data;
 
 	IRQ_INIT(1, 0);
 	IRQ_INIT(1, 1);

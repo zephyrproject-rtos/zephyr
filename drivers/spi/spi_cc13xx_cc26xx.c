@@ -41,13 +41,13 @@ struct spi_cc13xx_cc26xx_data {
 
 static inline struct spi_cc13xx_cc26xx_data *get_dev_data(struct device *dev)
 {
-	return dev->driver_data;
+	return dev->data;
 }
 
 static inline const struct spi_cc13xx_cc26xx_config *
 get_dev_config(struct device *dev)
 {
-	return dev->config_info;
+	return dev->config;
 }
 
 static int spi_cc13xx_cc26xx_configure(struct device *dev,

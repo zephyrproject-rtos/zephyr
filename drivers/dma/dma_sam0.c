@@ -15,12 +15,9 @@ LOG_MODULE_REGISTER(dma_sam0, CONFIG_DMA_LOG_LEVEL);
 
 #define DMA_REGS	((Dmac *)DT_INST_REG_ADDR(0))
 
-typedef void (*dma_callback)(void *callback_arg, uint32_t channel,
-			     int error_code);
-
 struct dma_sam0_channel {
-	dma_callback cb;
-	void *cb_arg;
+	dma_callback_t cb;
+	void *user_data;
 };
 
 struct dma_sam0_data {
@@ -30,7 +27,7 @@ struct dma_sam0_data {
 };
 
 #define DEV_DATA(dev) \
-	((struct dma_sam0_data *const)(dev)->driver_data)
+	((struct dma_sam0_data *const)(dev)->data)
 
 
 /* Handles DMA interrupts and dispatches to the individual channel */
@@ -50,11 +47,12 @@ static void dma_sam0_isr(void *arg)
 
 	if (pend & DMAC_INTPEND_TERR) {
 		if (chdata->cb) {
-			chdata->cb(chdata->cb_arg, channel, -DMAC_INTPEND_TERR);
+			chdata->cb(dev, chdata->user_data,
+				   channel, -DMAC_INTPEND_TERR);
 		}
 	} else if (pend & DMAC_INTPEND_TCMPL) {
 		if (chdata->cb) {
-			chdata->cb(chdata->cb_arg, channel, 0);
+			chdata->cb(dev, chdata->user_data, channel, 0);
 		}
 	}
 
@@ -251,7 +249,7 @@ static int dma_sam0_config(struct device *dev, uint32_t channel,
 
 	channel_control = &data->channels[channel];
 	channel_control->cb = config->dma_callback;
-	channel_control->cb_arg = config->callback_arg;
+	channel_control->user_data = config->user_data;
 
 	LOG_DBG("Configured channel %d for %08X to %08X (%u)",
 		channel,

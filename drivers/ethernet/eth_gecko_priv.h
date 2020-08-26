@@ -88,7 +88,7 @@ struct eth_gecko_dev_data {
 	struct k_sem tx_sem;
 	struct k_sem rx_sem;
 
-	K_THREAD_STACK_MEMBER(rx_thread_stack,
+	K_KERNEL_STACK_MEMBER(rx_thread_stack,
 		CONFIG_ETH_GECKO_RX_THREAD_STACK_SIZE);
 	struct k_thread rx_thread;
 	bool link_up;
@@ -96,9 +96,9 @@ struct eth_gecko_dev_data {
 
 #define DEV_NAME(dev) ((dev)->name)
 #define DEV_CFG(dev) \
-	((const struct eth_gecko_dev_cfg *)(dev)->config_info)
+	((const struct eth_gecko_dev_cfg *)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct eth_gecko_dev_data *)(dev)->driver_data)
+	((struct eth_gecko_dev_data *)(dev)->data)
 
 /* PHY Management pins */
 #define PIN_PHY_MDC {DT_INST_PROP_BY_IDX(0, location_phy_mdc, 1), \

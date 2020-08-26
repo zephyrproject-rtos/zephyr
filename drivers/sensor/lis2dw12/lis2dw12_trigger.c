@@ -25,8 +25,8 @@ LOG_MODULE_DECLARE(LIS2DW12, CONFIG_SENSOR_LOG_LEVEL);
 static int lis2dw12_enable_int(struct device *dev,
 			       enum sensor_trigger_type type, int enable)
 {
-	const struct lis2dw12_device_config *cfg = dev->config_info;
-	struct lis2dw12_data *lis2dw12 = dev->driver_data;
+	const struct lis2dw12_device_config *cfg = dev->config;
+	struct lis2dw12_data *lis2dw12 = dev->data;
 	lis2dw12_reg_t int_route;
 
 	if (cfg->int_pin == 1U) {
@@ -79,7 +79,7 @@ int lis2dw12_trigger_set(struct device *dev,
 			  const struct sensor_trigger *trig,
 			  sensor_trigger_handler_t handler)
 {
-	struct lis2dw12_data *lis2dw12 = dev->driver_data;
+	struct lis2dw12_data *lis2dw12 = dev->data;
 	union axis3bit16_t raw;
 	int state = (handler != NULL) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
 
@@ -110,7 +110,7 @@ int lis2dw12_trigger_set(struct device *dev,
 
 static int lis2dw12_handle_drdy_int(struct device *dev)
 {
-	struct lis2dw12_data *data = dev->driver_data;
+	struct lis2dw12_data *data = dev->data;
 
 	struct sensor_trigger drdy_trig = {
 		.type = SENSOR_TRIG_DATA_READY,
@@ -127,7 +127,7 @@ static int lis2dw12_handle_drdy_int(struct device *dev)
 #ifdef CONFIG_LIS2DW12_PULSE
 static int lis2dw12_handle_single_tap_int(struct device *dev)
 {
-	struct lis2dw12_data *data = dev->driver_data;
+	struct lis2dw12_data *data = dev->data;
 	sensor_trigger_handler_t handler = data->tap_handler;
 
 	struct sensor_trigger pulse_trig = {
@@ -144,7 +144,7 @@ static int lis2dw12_handle_single_tap_int(struct device *dev)
 
 static int lis2dw12_handle_double_tap_int(struct device *dev)
 {
-	struct lis2dw12_data *data = dev->driver_data;
+	struct lis2dw12_data *data = dev->data;
 	sensor_trigger_handler_t handler = data->double_tap_handler;
 
 	struct sensor_trigger pulse_trig = {
@@ -167,8 +167,8 @@ static int lis2dw12_handle_double_tap_int(struct device *dev)
 static void lis2dw12_handle_interrupt(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	struct lis2dw12_data *lis2dw12 = dev->driver_data;
-	const struct lis2dw12_device_config *cfg = dev->config_info;
+	struct lis2dw12_data *lis2dw12 = dev->data;
+	const struct lis2dw12_device_config *cfg = dev->config;
 	lis2dw12_all_sources_t sources;
 
 	lis2dw12_all_sources_get(lis2dw12->ctx, &sources);
@@ -213,7 +213,7 @@ static void lis2dw12_gpio_callback(struct device *dev,
 static void lis2dw12_thread(int dev_ptr, int unused)
 {
 	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct lis2dw12_data *lis2dw12 = dev->driver_data;
+	struct lis2dw12_data *lis2dw12 = dev->data;
 
 	ARG_UNUSED(unused);
 
@@ -236,8 +236,8 @@ static void lis2dw12_work_cb(struct k_work *work)
 
 int lis2dw12_init_interrupt(struct device *dev)
 {
-	struct lis2dw12_data *lis2dw12 = dev->driver_data;
-	const struct lis2dw12_device_config *cfg = dev->config_info;
+	struct lis2dw12_data *lis2dw12 = dev->data;
+	const struct lis2dw12_device_config *cfg = dev->config;
 	int ret;
 
 	/* setup data ready gpio interrupt (INT1 or INT2) */

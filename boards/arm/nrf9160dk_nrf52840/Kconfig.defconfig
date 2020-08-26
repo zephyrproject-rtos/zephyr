@@ -8,10 +8,6 @@ if BOARD_NRF9160DK_NRF52840
 config BOARD
 	default "nrf9160dk_nrf52840"
 
-config IEEE802154_NRF5
-	default y
-	depends on IEEE802154
-
 config BT_CTLR
 	default BT
 

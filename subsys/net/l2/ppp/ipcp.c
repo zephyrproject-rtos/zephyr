@@ -25,261 +25,197 @@ static enum net_verdict ipcp_handle(struct ppp_context *ctx,
 	return ppp_fsm_input(&ctx->ipcp.fsm, PPP_IPCP, pkt);
 }
 
-static bool append_to_buf(struct net_buf *buf, uint8_t *data, uint8_t data_len)
-{
-	if (data_len > net_buf_tailroom(buf)) {
-		return false;
-	}
-
-	/* FIXME: use net_pkt api so that we can handle a case where data might
-	 * split to two net_buf's
-	 */
-	net_buf_add_mem(buf, data, data_len);
-
-	return true;
-}
-
 /* Length is (6): code + id + IPv4 address length. RFC 1332 and also
  * DNS in RFC 1877.
  */
 #define IP_ADDRESS_OPTION_LEN (1 + 1 + 4)
 
-static struct net_buf *ipcp_config_info_add(struct ppp_fsm *fsm)
+static int ipcp_add_address(struct ppp_context *ctx, struct net_pkt *pkt,
+			    struct in_addr *addr)
 {
-	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
-					       ipcp.fsm);
-
-	/* Currently we support IP address and DNS servers */
-	uint8_t options[3 * IP_ADDRESS_OPTION_LEN];
-	const struct in_addr *my_addr;
-	struct net_buf *buf;
-	bool added;
-
-	my_addr = &ctx->ipcp.my_options.address;
-
-	uint8_t *option = options;
-	option[0] = IPCP_OPTION_IP_ADDRESS;
-	option[1] = IP_ADDRESS_OPTION_LEN;
-	memcpy(&option[2], &my_addr->s_addr, sizeof(my_addr->s_addr));
-	option += IP_ADDRESS_OPTION_LEN;
-
-	my_addr = &ctx->ipcp.my_options.dns1_address;
-	option[0] = IPCP_OPTION_DNS1;
-	option[1] = IP_ADDRESS_OPTION_LEN;
-	memcpy(&option[2], &my_addr->s_addr, sizeof(my_addr->s_addr));
-
-	option += IP_ADDRESS_OPTION_LEN;
-	my_addr = &ctx->ipcp.my_options.dns2_address;
-	option[0] = IPCP_OPTION_DNS2;
-	option[1] = IP_ADDRESS_OPTION_LEN;
-	memcpy(&option[2], &my_addr->s_addr, sizeof(my_addr->s_addr));
-
-	buf = ppp_get_net_buf(NULL, 0);
-	if (!buf) {
-		goto out_of_mem;
-	}
-
-	added = append_to_buf(buf, options, sizeof(options));
-	if (!added) {
-		goto out_of_mem;
-	}
-
-	NET_DBG("Added IPCP IP Address option %d.%d.%d.%d",
-		option[2], option[3], option[4], option[5]);
-
-	return buf;
-
-out_of_mem:
-	if (buf) {
-		net_buf_unref(buf);
-	}
-
-	return NULL;
+	net_pkt_write_u8(pkt, 1 + 1 + sizeof(addr->s_addr));
+	return net_pkt_write(pkt, &addr->s_addr, sizeof(addr->s_addr));
 }
+
+static int ipcp_add_ip_address(struct ppp_context *ctx, struct net_pkt *pkt)
+{
+	return ipcp_add_address(ctx, pkt, &ctx->ipcp.my_options.address);
+}
+
+static int ipcp_add_dns1(struct ppp_context *ctx, struct net_pkt *pkt)
+{
+	return ipcp_add_address(ctx, pkt, &ctx->ipcp.my_options.dns1_address);
+}
+
+static int ipcp_add_dns2(struct ppp_context *ctx, struct net_pkt *pkt)
+{
+	return ipcp_add_address(ctx, pkt, &ctx->ipcp.my_options.dns2_address);
+}
+
+static int ipcp_ack_check_address(struct net_pkt *pkt, size_t oplen,
+				  struct in_addr *addr)
+{
+	struct in_addr ack_addr;
+	int ret;
+
+	if (oplen != sizeof(ack_addr)) {
+		return -EINVAL;
+	}
+
+	ret = net_pkt_read(pkt, &ack_addr, sizeof(ack_addr));
+	if (ret) {
+		return ret;
+	}
+
+	if (memcmp(&ack_addr, addr, sizeof(ack_addr)) != 0) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int ipcp_ack_ip_address(struct ppp_context *ctx, struct net_pkt *pkt,
+			       uint8_t oplen)
+{
+	return ipcp_ack_check_address(pkt, oplen,
+				      &ctx->ipcp.my_options.address);
+}
+
+static int ipcp_ack_dns1(struct ppp_context *ctx, struct net_pkt *pkt,
+			 uint8_t oplen)
+{
+	return ipcp_ack_check_address(pkt, oplen,
+				      &ctx->ipcp.my_options.dns1_address);
+}
+
+static int ipcp_ack_dns2(struct ppp_context *ctx, struct net_pkt *pkt,
+			 uint8_t oplen)
+{
+	return ipcp_ack_check_address(pkt, oplen,
+				      &ctx->ipcp.my_options.dns2_address);
+}
+
+static int ipcp_nak_override_address(struct net_pkt *pkt, size_t oplen,
+				     struct in_addr *addr)
+{
+	if (oplen != sizeof(*addr)) {
+		return -EINVAL;
+	}
+
+	return net_pkt_read(pkt, addr, sizeof(*addr));
+}
+
+static int ipcp_nak_ip_address(struct ppp_context *ctx, struct net_pkt *pkt,
+			       uint8_t oplen)
+{
+	return ipcp_nak_override_address(pkt, oplen,
+					 &ctx->ipcp.my_options.address);
+}
+
+static int ipcp_nak_dns1(struct ppp_context *ctx, struct net_pkt *pkt,
+			 uint8_t oplen)
+{
+	return ipcp_nak_override_address(pkt, oplen,
+					 &ctx->ipcp.my_options.dns1_address);
+}
+
+static int ipcp_nak_dns2(struct ppp_context *ctx, struct net_pkt *pkt,
+			 uint8_t oplen)
+{
+	return ipcp_nak_override_address(pkt, oplen,
+					 &ctx->ipcp.my_options.dns2_address);
+}
+
+static const struct ppp_my_option_info ipcp_my_options[] = {
+	PPP_MY_OPTION(IPCP_OPTION_IP_ADDRESS, ipcp_add_ip_address,
+		      ipcp_ack_ip_address, ipcp_nak_ip_address),
+	PPP_MY_OPTION(IPCP_OPTION_DNS1, ipcp_add_dns1,
+		      ipcp_ack_dns1, ipcp_nak_dns1),
+	PPP_MY_OPTION(IPCP_OPTION_DNS2, ipcp_add_dns2,
+		      ipcp_ack_dns2, ipcp_nak_dns2),
+};
+
+BUILD_ASSERT(ARRAY_SIZE(ipcp_my_options) == IPCP_NUM_MY_OPTIONS);
+
+static struct net_pkt *ipcp_config_info_add(struct ppp_fsm *fsm)
+{
+	return ppp_my_options_add(fsm, 3 * IP_ADDRESS_OPTION_LEN);
+}
+
+struct ipcp_peer_option_data {
+	bool addr_present;
+	struct in_addr addr;
+};
+
+static int ipcp_ip_address_parse(struct ppp_fsm *fsm, struct net_pkt *pkt,
+				 void *user_data)
+{
+	struct ipcp_peer_option_data *data = user_data;
+	int ret;
+
+	ret = net_pkt_read(pkt, &data->addr, sizeof(data->addr));
+	if (ret < 0) {
+		/* Should not happen, is the pkt corrupt? */
+		return -EMSGSIZE;
+	}
+
+	if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
+		char dst[INET_ADDRSTRLEN];
+		char *addr_str;
+
+		addr_str = net_addr_ntop(AF_INET, &data->addr, dst,
+					 sizeof(dst));
+
+		NET_DBG("[IPCP] Received peer address %s",
+			log_strdup(addr_str));
+	}
+
+	data->addr_present = true;
+
+	return 0;
+}
+
+static const struct ppp_peer_option_info ipcp_peer_options[] = {
+	PPP_PEER_OPTION(IPCP_OPTION_IP_ADDRESS, ipcp_ip_address_parse, NULL),
+};
 
 static int ipcp_config_info_req(struct ppp_fsm *fsm,
 				struct net_pkt *pkt,
 				uint16_t length,
-				struct net_buf **ret_buf)
+				struct net_pkt *ret_pkt)
 {
-	int nack_idx = 0, address_option_idx = -1;
-	struct net_buf *buf = NULL;
-	struct ppp_option_pkt options[MAX_IPCP_OPTIONS];
-	struct ppp_option_pkt nack_options[MAX_IPCP_OPTIONS];
-	enum ppp_packet_type code;
-	enum net_verdict verdict;
-	int i;
+	struct ppp_context *ctx =
+		CONTAINER_OF(fsm, struct ppp_context, ipcp.fsm);
+	struct ipcp_peer_option_data data = {
+		.addr_present = false,
+	};
+	int ret;
 
-	memset(options, 0, sizeof(options));
-	memset(nack_options, 0, sizeof(nack_options));
-
-	verdict = ppp_parse_options(fsm, pkt, length, options,
-				    ARRAY_SIZE(options));
-	if (verdict != NET_OK) {
-		return -EINVAL;
+	ret = ppp_config_info_req(fsm, pkt, length, ret_pkt, PPP_IPCP,
+				  ipcp_peer_options,
+				  ARRAY_SIZE(ipcp_peer_options),
+				  &data);
+	if (ret != PPP_CONFIGURE_ACK) {
+		/* There are some issues with configuration still */
+		return ret;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(options); i++) {
-		if (options[i].type.ipcp != IPCP_OPTION_RESERVED) {
-			NET_DBG("[%s/%p] %s option %s (%d) len %d",
-				fsm->name, fsm, "Check",
-				ppp_option2str(PPP_IPCP, options[i].type.ipcp),
-				options[i].type.ipcp, options[i].len);
-		}
-
-		switch (options[i].type.ipcp) {
-		case IPCP_OPTION_RESERVED:
-			continue;
-
-		case IPCP_OPTION_IP_ADDRESS:
-			/* Currently we only accept one option (IP address) */
-			address_option_idx = i;
-			break;
-
-		default:
-			nack_options[nack_idx].type.ipcp =
-				options[i].type.ipcp;
-			nack_options[nack_idx].len = options[i].len;
-
-			if (options[i].len > 2) {
-				memcpy(&nack_options[nack_idx].value,
-				       &options[i].value,
-				       sizeof(nack_options[nack_idx].value));
-			}
-
-			nack_idx++;
-			break;
-		}
+	if (!data.addr_present) {
+		NET_DBG("[%s/%p] No %saddress provided",
+			fsm->name, fsm, "peer ");
+		return PPP_CONFIGURE_ACK;
 	}
 
-	if (nack_idx > 0) {
-		struct net_buf *nack_buf;
+	/* The address is the remote address, we then need
+	 * to figure out what our address should be.
+	 *
+	 * TODO:
+	 *   - check that the IP address can be accepted
+	 */
 
-		code = PPP_CONFIGURE_REJ;
+	memcpy(&ctx->ipcp.peer_options.address, &data.addr, sizeof(data.addr));
 
-		/* Create net_buf containing options that are not accepted */
-		for (i = 0; i < MIN(nack_idx, ARRAY_SIZE(nack_options)); i++) {
-			bool added;
-
-			nack_buf = ppp_get_net_buf(buf, nack_options[i].len);
-			if (!nack_buf) {
-				goto bail_out;
-			}
-
-			if (!buf) {
-				buf = nack_buf;
-			}
-
-			added = append_to_buf(nack_buf,
-					      &nack_options[i].type.ipcp, 1);
-			if (!added) {
-				goto bail_out;
-			}
-
-			added = append_to_buf(nack_buf, &nack_options[i].len,
-					      1);
-			if (!added) {
-				goto bail_out;
-			}
-
-			/* If there is some data, copy it to result buf */
-			if (nack_options[i].value.pos) {
-				added = append_to_buf(nack_buf,
-						nack_options[i].value.pos,
-						nack_options[i].len - 1 - 1);
-				if (!added) {
-					goto bail_out;
-				}
-			}
-		}
-	} else {
-		struct ppp_context *ctx;
-		struct in_addr addr;
-		int ret;
-
-		ctx = CONTAINER_OF(fsm, struct ppp_context, ipcp.fsm);
-
-		if (address_option_idx < 0) {
-			/* The address option was not present, but we
-			 * can continue without it.
-			 */
-			NET_DBG("[%s/%p] No %saddress provided",
-				fsm->name, fsm, "peer ");
-			return PPP_CONFIGURE_ACK;
-		}
-
-		code = PPP_CONFIGURE_ACK;
-
-		net_pkt_cursor_restore(pkt,
-				       &options[address_option_idx].value);
-
-		ret = net_pkt_read(pkt, (uint32_t *)&addr, sizeof(addr));
-		if (ret < 0) {
-			/* Should not happen, is the pkt corrupt? */
-			return -EMSGSIZE;
-		}
-
-		memcpy(&ctx->ipcp.peer_options.address, &addr, sizeof(addr));
-
-		if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
-			char dst[INET_ADDRSTRLEN];
-			char *addr_str;
-
-			addr_str = net_addr_ntop(AF_INET, &addr, dst,
-						 sizeof(dst));
-
-			NET_DBG("[%s/%p] Received %saddress %s",
-				fsm->name, fsm, "peer ", log_strdup(addr_str));
-		}
-
-		if (addr.s_addr) {
-			bool added;
-			uint8_t val;
-
-			/* The address is the remote address, we then need
-			 * to figure out what our address should be.
-			 *
-			 * TODO:
-			 *   - check that the IP address can be accepted
-			 */
-
-			buf = ppp_get_net_buf(NULL, IP_ADDRESS_OPTION_LEN);
-			if (!buf) {
-				goto bail_out;
-			}
-
-			val = IPCP_OPTION_IP_ADDRESS;
-			added = append_to_buf(buf, &val, sizeof(val));
-			if (!added) {
-				goto bail_out;
-			}
-
-			val = IP_ADDRESS_OPTION_LEN;
-			added = append_to_buf(buf, &val, sizeof(val));
-			if (!added) {
-				goto bail_out;
-			}
-
-			added = append_to_buf(buf, (uint8_t *)&addr.s_addr,
-					      sizeof(addr.s_addr));
-			if (!added) {
-				goto bail_out;
-			}
-		}
-	}
-
-	if (buf) {
-		*ret_buf = buf;
-	}
-
-	return code;
-
-bail_out:
-	if (buf) {
-		net_buf_unref(buf);
-	}
-
-	return -ENOMEM;
+	return PPP_CONFIGURE_ACK;
 }
 
 static void ipcp_set_dns_servers(struct ppp_fsm *fsm)
@@ -339,82 +275,14 @@ static int ipcp_config_info_nack(struct ppp_fsm *fsm,
 {
 	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
 					       ipcp.fsm);
-	struct ppp_option_pkt nack_options[MAX_IPCP_OPTIONS];
-	enum net_verdict verdict;
-	int i, ret, address_option_idx = -1;
-	struct in_addr addr, *dst_addr;
+	int ret;
 
-	memset(nack_options, 0, sizeof(nack_options));
-
-	verdict = ppp_parse_options(fsm, pkt, length, nack_options,
-				    ARRAY_SIZE(nack_options));
-	if (verdict != NET_OK) {
-		return -EINVAL;
+	ret = ppp_my_options_parse_conf_nak(fsm, pkt, length);
+	if (ret) {
+		return ret;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(nack_options); i++) {
-		if (nack_options[i].type.ipcp != IPCP_OPTION_RESERVED) {
-			NET_DBG("[%s/%p] %s option %s (%d) len %d",
-				fsm->name, fsm, "Check",
-				ppp_option2str(PPP_IPCP,
-					       nack_options[i].type.ipcp),
-				nack_options[i].type.ipcp,
-				nack_options[i].len);
-		}
-
-		switch (nack_options[i].type.ipcp) {
-		case IPCP_OPTION_RESERVED:
-			continue;
-
-		case IPCP_OPTION_IP_ADDRESSES:
-			continue;
-
-		case IPCP_OPTION_IP_COMP_PROTO:
-			continue;
-
-		case IPCP_OPTION_DNS1:
-			dst_addr = &ctx->ipcp.my_options.dns1_address;
-			break;
-
-		case IPCP_OPTION_DNS2:
-			dst_addr = &ctx->ipcp.my_options.dns2_address;
-			break;
-
-		case IPCP_OPTION_IP_ADDRESS:
-			dst_addr = &ctx->ipcp.my_options.address;
-			address_option_idx = i;
-			break;
-
-		default:
-			continue;
-		}
-
-		net_pkt_cursor_restore(pkt, &nack_options[i].value);
-
-		ret = net_pkt_read(pkt, (uint32_t *)&addr, sizeof(addr));
-		if (ret < 0) {
-			/* Should not happen, is the pkt corrupt? */
-			return -EMSGSIZE;
-		}
-
-		memcpy(dst_addr, &addr, sizeof(addr));
-
-		if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
-			char dst[INET_ADDRSTRLEN];
-			char *addr_str;
-
-			addr_str = net_addr_ntop(AF_INET, &addr, dst,
-						 sizeof(dst));
-
-			NET_DBG("[%s/%p] Received %s address %s",
-				fsm->name, fsm,
-				ppp_option2str(PPP_IPCP,
-					       nack_options[i].type.ipcp),
-				log_strdup(addr_str));
-		}
-	}
-
-	if (address_option_idx < 0) {
+	if (!ctx->ipcp.my_options.address.s_addr) {
 		return -EINVAL;
 	}
 
@@ -481,6 +349,10 @@ static void ipcp_down(struct ppp_fsm *fsm)
 	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
 					       ipcp.fsm);
 
+	if (ctx->is_ipcp_up) {
+		net_if_ipv4_addr_rm(ctx->iface, &ctx->ipcp.my_options.address);
+	}
+
 	memset(&ctx->ipcp.my_options.address, 0,
 	       sizeof(ctx->ipcp.my_options.address));
 	memset(&ctx->ipcp.my_options.dns1_address, 0,
@@ -527,6 +399,10 @@ static void ipcp_init(struct ppp_context *ctx)
 
 	ppp_fsm_name_set(&ctx->ipcp.fsm, ppp_proto2str(PPP_IPCP));
 
+	ctx->ipcp.fsm.my_options.info = ipcp_my_options;
+	ctx->ipcp.fsm.my_options.data = ctx->ipcp.my_options_data;
+	ctx->ipcp.fsm.my_options.count = ARRAY_SIZE(ipcp_my_options);
+
 	ctx->ipcp.fsm.cb.up = ipcp_up;
 	ctx->ipcp.fsm.cb.down = ipcp_down;
 	ctx->ipcp.fsm.cb.finished = ipcp_finished;
@@ -534,6 +410,7 @@ static void ipcp_init(struct ppp_context *ctx)
 	ctx->ipcp.fsm.cb.config_info_add = ipcp_config_info_add;
 	ctx->ipcp.fsm.cb.config_info_req = ipcp_config_info_req;
 	ctx->ipcp.fsm.cb.config_info_nack = ipcp_config_info_nack;
+	ctx->ipcp.fsm.cb.config_info_rej = ppp_my_options_parse_conf_rej;
 }
 
 PPP_PROTOCOL_REGISTER(IPCP, PPP_IPCP,

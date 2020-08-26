@@ -70,6 +70,8 @@ source "drivers/serial/Kconfig.mcux"
 
 source "drivers/serial/Kconfig.mcux_flexcomm"
 
+source "drivers/serial/Kconfig.mcux_iuart"
+
 source "drivers/serial/Kconfig.mcux_lpsci"
 
 source "drivers/serial/Kconfig.mcux_lpuart"
@@ -81,8 +83,6 @@ source "drivers/serial/Kconfig.imx"
 source "drivers/serial/Kconfig.stellaris"
 
 source "drivers/serial/Kconfig.native_posix"
-
-source "drivers/serial/Kconfig.nsim"
 
 source "drivers/serial/Kconfig.usart_sam"
 
@@ -127,5 +127,9 @@ source "drivers/serial/Kconfig.rtt"
 source "drivers/serial/Kconfig.xlnx"
 
 source "drivers/serial/Kconfig.xmc4xxx"
+
+source "drivers/serial/Kconfig.lpc11u6x"
+
+source "drivers/serial/Kconfig.npcx"
 
 endif # SERIAL

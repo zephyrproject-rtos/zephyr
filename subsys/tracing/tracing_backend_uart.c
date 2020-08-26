@@ -14,15 +14,17 @@
 #include <tracing_buffer.h>
 #include <tracing_backend.h>
 
-static struct device *dev;
+static struct device *tracing_uart_dev;
 
 #ifdef CONFIG_TRACING_HANDLE_HOST_CMD
-static void uart_isr(struct device *dev)
+static void uart_isr(struct device *dev, void *user_data)
 {
 	int rx;
 	uint8_t byte;
 	static uint8_t *cmd;
 	static uint32_t length, cur;
+
+	ARG_UNUSED(user_data);
 
 	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
 		if (!uart_irq_rx_ready(dev)) {
@@ -62,28 +64,29 @@ static void tracing_backend_uart_output(
 		uint8_t *data, uint32_t length)
 {
 	for (uint32_t i = 0; i < length; i++) {
-		uart_poll_out(dev, data[i]);
+		uart_poll_out(tracing_uart_dev, data[i]);
 	}
 }
 
 static void tracing_backend_uart_init(void)
 {
-	dev = device_get_binding(CONFIG_TRACING_BACKEND_UART_NAME);
-	__ASSERT(dev, "uart backend binding failed");
+	tracing_uart_dev =
+		device_get_binding(CONFIG_TRACING_BACKEND_UART_NAME);
+	__ASSERT(tracing_uart_dev, "uart backend binding failed");
 
 #ifdef CONFIG_TRACING_HANDLE_HOST_CMD
-	uart_irq_rx_disable(dev);
-	uart_irq_tx_disable(dev);
+	uart_irq_rx_disable(tracing_uart_dev);
+	uart_irq_tx_disable(tracing_uart_dev);
 
-	uart_irq_callback_set(dev, uart_isr);
+	uart_irq_callback_set(tracing_uart_dev, uart_isr);
 
-	while (uart_irq_rx_ready(dev)) {
+	while (uart_irq_rx_ready(tracing_uart_dev)) {
 		uint8_t c;
 
-		uart_fifo_read(dev, &c, 1);
+		uart_fifo_read(tracing_uart_dev, &c, 1);
 	}
 
-	uart_irq_rx_enable(dev);
+	uart_irq_rx_enable(tracing_uart_dev);
 #endif
 }
 

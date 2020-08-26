@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 add_subdirectory(utils)
-add_subdirectory_if_kconfig(coap)
-add_subdirectory_if_kconfig(lwm2m)
-add_subdirectory_if_kconfig(socks)
-add_subdirectory_if_kconfig(sntp)
+add_subdirectory_ifdef(CONFIG_COAP coap)
+add_subdirectory_ifdef(CONFIG_LWM2M lwm2m)
+add_subdirectory_ifdef(CONFIG_SOCKS socks)
+add_subdirectory_ifdef(CONFIG_SNTP sntp)
 add_subdirectory_ifdef(CONFIG_MQTT_LIB               mqtt)
 add_subdirectory_ifdef(CONFIG_TFTP_LIB               tftp)
 add_subdirectory_ifdef(CONFIG_NET_CONFIG_SETTINGS    config)
@@ -23,4 +23,4 @@ if(CONFIG_HTTP_PARSER_URL OR CONFIG_HTTP_PARSER OR CONFIG_HTTP_CLIENT)
 endif()
 
 add_subdirectory_ifdef(CONFIG_WEBSOCKET_CLIENT websocket)
-add_subdirectory_ifdef(CONFIG_OPENTHREAD_PLAT openthread)
+add_subdirectory_ifdef(CONFIG_NET_L2_OPENTHREAD openthread)

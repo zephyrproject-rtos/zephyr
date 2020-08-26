@@ -38,21 +38,23 @@
 	};
 
 	iccm0: iccm@ICCM_ADDR {
-		device_type = "memory";
 		compatible = "arc,iccm";
 		reg = <DT_ADDR(ICCM_ADDR) ICCM_SIZE>;
 	};
 
 	dccm0: dccm@DCCM_ADDR {
 		compatible = "arc,dccm";
-		device_type = "memory";
 		reg = <DT_ADDR(DCCM_ADDR) DCCM_SIZE>;
 	};
 
 	uart0: uart@f0000000 {
-		compatible = "snps,nsim-uart";
-		reg = <0xf0000000 0x100>;
+		compatible = "ns16550";
+		clock-frequency = <10000000>;
+		reg = <0xf0000000 0x400>;
+		current-speed = <115200>;
 		label = "UART_0";
+		interrupt-parent = <&intc>;
+		interrupts = <24 1>;
 	};
 
 	chosen {

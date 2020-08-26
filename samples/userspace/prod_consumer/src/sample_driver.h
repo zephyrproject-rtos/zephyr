@@ -43,7 +43,7 @@ __syscall int sample_driver_write(struct device *dev, void *buf);
 
 static inline int z_impl_sample_driver_write(struct device *dev, void *buf)
 {
-	const struct sample_driver_api *api = dev->driver_api;
+	const struct sample_driver_api *api = dev->api;
 
 	return api->write(dev, buf);
 }
@@ -59,7 +59,7 @@ __syscall int sample_driver_state_set(struct device *dev, bool active);
 static inline int z_impl_sample_driver_state_set(struct device *dev,
 						 bool active)
 {
-	const struct sample_driver_api *api = dev->driver_api;
+	const struct sample_driver_api *api = dev->api;
 
 	return api->state_set(dev, active);
 }
@@ -79,7 +79,7 @@ static inline int sample_driver_set_callback(struct device *dev,
 					     sample_driver_callback_t cb,
 					     void *context)
 {
-	const struct sample_driver_api *api = dev->driver_api;
+	const struct sample_driver_api *api = dev->api;
 
 	return api->set_callback(dev, cb, context);
 }

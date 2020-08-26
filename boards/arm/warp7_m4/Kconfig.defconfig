@@ -10,11 +10,11 @@ config BOARD
 
 config FXOS8700_DRDY_INT1
 	default y
-	depends on FXOS8700
+	depends on FXOS8700_TRIGGER
 
 config FXAS21002_DRDY_INT1
 	default y
-	depends on FXAS21002
+	depends on FXAS21002_TRIGGER
 
 if !XIP
 config FLASH_SIZE

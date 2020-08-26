@@ -23,8 +23,8 @@ LOG_MODULE_DECLARE(LSM9DS0_GYRO, CONFIG_SENSOR_LOG_LEVEL);
 static inline void setup_drdy(struct device *dev,
 			      bool enable)
 {
-	struct lsm9ds0_gyro_data *data = dev->driver_data;
-	const struct lsm9ds0_gyro_config *cfg = dev->config_info;
+	struct lsm9ds0_gyro_data *data = dev->data;
+	const struct lsm9ds0_gyro_config *cfg = dev->config;
 
 	gpio_pin_interrupt_configure(data->gpio_drdy,
 				     cfg->gpio_drdy_int_pin,
@@ -37,9 +37,9 @@ int lsm9ds0_gyro_trigger_set(struct device *dev,
 			     const struct sensor_trigger *trig,
 			     sensor_trigger_handler_t handler)
 {
-	struct lsm9ds0_gyro_data *data = dev->driver_data;
+	struct lsm9ds0_gyro_data *data = dev->data;
 	const struct lsm9ds0_gyro_config * const config =
-					 dev->config_info;
+					 dev->config;
 	uint8_t state;
 
 	if (trig->type == SENSOR_TRIG_DATA_READY) {
@@ -84,7 +84,7 @@ static void lsm9ds0_gyro_gpio_drdy_callback(struct device *dev,
 static void lsm9ds0_gyro_thread_main(void *arg1, void *arg2, void *arg3)
 {
 	struct device *dev = (struct device *) arg1;
-	struct lsm9ds0_gyro_data *data = dev->driver_data;
+	struct lsm9ds0_gyro_data *data = dev->data;
 
 	while (1) {
 		k_sem_take(&data->sem, K_FOREVER);
@@ -100,8 +100,8 @@ static void lsm9ds0_gyro_thread_main(void *arg1, void *arg2, void *arg3)
 int lsm9ds0_gyro_init_interrupt(struct device *dev)
 {
 	const struct lsm9ds0_gyro_config * const config =
-					   dev->config_info;
-	struct lsm9ds0_gyro_data *data = dev->driver_data;
+					   dev->config;
+	struct lsm9ds0_gyro_data *data = dev->data;
 
 	k_sem_init(&data->sem, 0, UINT_MAX);
 

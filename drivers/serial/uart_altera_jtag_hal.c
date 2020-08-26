@@ -17,7 +17,7 @@
 #define UART_ALTERA_JTAG_CONTROL_REG               1
 
 #define DEV_CFG(dev) \
-	((const struct uart_device_config * const)(dev)->config_info)
+	((const struct uart_device_config * const)(dev)->config)
 
 extern int altera_avalon_jtag_uart_read(altera_avalon_jtag_uart_state *sp,
 		char *buffer, int space, int flags);

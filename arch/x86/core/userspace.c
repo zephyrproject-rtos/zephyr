@@ -74,7 +74,8 @@ FUNC_NORETURN static void drop_to_user(k_thread_entry_t user_entry,
 	 * any old context since this is a one-way operation
 	 */
 	stack_end = Z_STACK_PTR_ALIGN(_current->stack_info.start +
-				     _current->stack_info.size);
+				      _current->stack_info.size -
+				      _current->stack_info.delta);
 
 	z_x86_userspace_enter(user_entry, p1, p2, p3, stack_end,
 			      _current->stack_info.start);

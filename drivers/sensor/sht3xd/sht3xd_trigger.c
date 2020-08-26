@@ -37,7 +37,7 @@ int sht3xd_attr_set(struct device *dev,
 		    enum sensor_attribute attr,
 		    const struct sensor_value *val)
 {
-	struct sht3xd_data *data = dev->driver_data;
+	struct sht3xd_data *data = dev->data;
 	uint16_t set_cmd, clear_cmd, reg_val, temp, rh;
 
 	if (attr == SENSOR_ATTR_LOWER_THRESH) {
@@ -84,9 +84,9 @@ int sht3xd_attr_set(struct device *dev,
 static inline void setup_alert(struct device *dev,
 			       bool enable)
 {
-	struct sht3xd_data *data = (struct sht3xd_data *)dev->driver_data;
+	struct sht3xd_data *data = (struct sht3xd_data *)dev->data;
 	const struct sht3xd_config *cfg =
-		(const struct sht3xd_config *)dev->config_info;
+		(const struct sht3xd_config *)dev->config;
 	unsigned int flags = enable
 		? GPIO_INT_EDGE_TO_ACTIVE
 		: GPIO_INT_DISABLE;
@@ -99,11 +99,11 @@ static inline void handle_alert(struct device *dev)
 	setup_alert(dev, false);
 
 #if defined(CONFIG_SHT3XD_TRIGGER_OWN_THREAD)
-	struct sht3xd_data *data = (struct sht3xd_data *)dev->driver_data;
+	struct sht3xd_data *data = (struct sht3xd_data *)dev->data;
 
 	k_sem_give(&data->gpio_sem);
 #elif defined(CONFIG_SHT3XD_TRIGGER_GLOBAL_THREAD)
-	struct sht3xd_data *data = (struct sht3xd_data *)dev->driver_data;
+	struct sht3xd_data *data = (struct sht3xd_data *)dev->data;
 
 	k_work_submit(&data->work);
 #endif
@@ -113,9 +113,9 @@ int sht3xd_trigger_set(struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
-	struct sht3xd_data *data = (struct sht3xd_data *)dev->driver_data;
+	struct sht3xd_data *data = (struct sht3xd_data *)dev->data;
 	const struct sht3xd_config *cfg =
-		(const struct sht3xd_config *)dev->config_info;
+		(const struct sht3xd_config *)dev->config;
 
 	setup_alert(dev, false);
 
@@ -154,7 +154,7 @@ static void sht3xd_gpio_callback(struct device *dev,
 static void sht3xd_thread_cb(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	struct sht3xd_data *data = (struct sht3xd_data *)dev->driver_data;
+	struct sht3xd_data *data = (struct sht3xd_data *)dev->data;
 
 	if (data->handler != NULL) {
 		data->handler(dev, &data->trigger);
@@ -167,7 +167,7 @@ static void sht3xd_thread_cb(void *arg)
 static void sht3xd_thread(int dev_ptr, int unused)
 {
 	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct sht3xd_data *data = dev->driver_data;
+	struct sht3xd_data *data = dev->data;
 
 	ARG_UNUSED(unused);
 
@@ -190,8 +190,8 @@ static void sht3xd_work_cb(struct k_work *work)
 
 int sht3xd_init_interrupt(struct device *dev)
 {
-	struct sht3xd_data *data = dev->driver_data;
-	const struct sht3xd_config *cfg = dev->config_info;
+	struct sht3xd_data *data = dev->data;
+	const struct sht3xd_config *cfg = dev->config;
 	struct device *gpio = device_get_binding(cfg->alert_gpio_name);
 	int rc;
 

@@ -1,7 +1,8 @@
+common:
+  tags: nvs
 tests:
   filesystem.nvs:
     platform_whitelist: qemu_x86
   filesystem.nvs_0x00:
     extra_args: DTC_OVERLAY_FILE=boards/qemu_x86_ev_0x00.overlay
     platform_whitelist: qemu_x86
-    build_only: true

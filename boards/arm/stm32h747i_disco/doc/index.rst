@@ -157,7 +157,11 @@ By default:
 
 Also, default out of the box board configuration enables CM7 and CM4 boot when
 board is powered (Option bytes BCM7 and BCM4 are checked).
-In that configuration, Kconfig boot option ``STM32H7_BOOT_CM4_CM7`` should be selected.
+It is possible to change Option Bytes so that CM7 boots first in stand alone,
+and CM7 will wakeup CM4 after clock initialization.
+Drivers are able to take into account both Option Bytes configurations
+automatically.
+
 Zephyr flash configuration has been set to meet these default settings.
 
 Flashing an application to STM32H747I M7 Core
