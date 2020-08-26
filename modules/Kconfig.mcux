@@ -35,6 +35,11 @@ config HAS_MCUX_CCM
 	help
 	  Set if the clock control module (CCM) module is present in the SoC.
 
+config HAS_MCUX_SYSCON
+	bool
+	help
+	  Set if the syscon module is present in the SoC.
+
 config HAS_MCUX_PCC
 	bool
 	help
