@@ -47,13 +47,13 @@ struct uart_npcx_data {
 	((struct uart_npcx_data *)(dev)->data)
 
 #define HAL_INSTANCE(dev) \
-	(struct uart_reg_t *)(DRV_CONFIG(dev)->uconf.base)
+	(struct uart_reg *)(DRV_CONFIG(dev)->uconf.base)
 
 /* UART local functions */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static int uart_npcx_tx_fifo_ready(struct device *dev)
 {
-	struct uart_reg_t *inst = HAL_INSTANCE(dev);
+	struct uart_reg *inst = HAL_INSTANCE(dev);
 
 	/* True if the Tx FIFO is not completely full */
 	return !(GET_FIELD(inst->UFTSTS, NPCX_UFTSTS_TEMPTY_LVL) == 0);
@@ -61,7 +61,7 @@ static int uart_npcx_tx_fifo_ready(struct device *dev)
 
 static int uart_npcx_rx_fifo_available(struct device *dev)
 {
-	struct uart_reg_t *inst = HAL_INSTANCE(dev);
+	struct uart_reg *inst = HAL_INSTANCE(dev);
 
 	/* True if at least one byte is in the Rx FIFO */
 	return IS_BIT_SET(inst->UFRSTS, NPCX_UFRSTS_RFIFO_NEMPTY_STS);
@@ -69,7 +69,7 @@ static int uart_npcx_rx_fifo_available(struct device *dev)
 
 static void uart_npcx_dis_all_tx_interrupts(struct device *dev)
 {
-	struct uart_reg_t *inst = HAL_INSTANCE(dev);
+	struct uart_reg *inst = HAL_INSTANCE(dev);
 
 	/* Disable all Tx interrupts */
 	inst->UFTCTL &= ~(BIT(NPCX_UFTCTL_TEMPTY_LVL_EN) |
@@ -79,7 +79,7 @@ static void uart_npcx_dis_all_tx_interrupts(struct device *dev)
 
 static void uart_npcx_clear_rx_fifo(struct device *dev)
 {
-	struct uart_reg_t *inst = HAL_INSTANCE(dev);
+	struct uart_reg *inst = HAL_INSTANCE(dev);
 	uint8_t scratch;
 
 	/* Read all dummy bytes out from Rx FIFO */
@@ -91,7 +91,7 @@ static void uart_npcx_clear_rx_fifo(struct device *dev)
 /* UART api functions */
 static int uart_npcx_poll_in(struct device *dev, unsigned char *c)
 {
-	struct uart_reg_t *inst = HAL_INSTANCE(dev);
+	struct uart_reg *inst = HAL_INSTANCE(dev);
 
 	/* Rx single byte buffer is not full */
 	if (!IS_BIT_SET(inst->UICTRL, NPCX_UICTRL_RBF))
@@ -103,7 +103,7 @@ static int uart_npcx_poll_in(struct device *dev, unsigned char *c)
 
 static void uart_npcx_poll_out(struct device *dev, unsigned char c)
 {
-	struct uart_reg_t *inst = HAL_INSTANCE(dev);
+	struct uart_reg *inst = HAL_INSTANCE(dev);
 
 	/* Wait while Tx single byte buffer is ready to send */
 	while (!IS_BIT_SET(inst->UICTRL, NPCX_UICTRL_TBE))
@@ -114,7 +114,7 @@ static void uart_npcx_poll_out(struct device *dev, unsigned char c)
 
 static int uart_npcx_err_check(struct device *dev)
 {
-	struct uart_reg_t *inst = HAL_INSTANCE(dev);
+	struct uart_reg *inst = HAL_INSTANCE(dev);
 	uint32_t err = 0U;
 	uint8_t stat = inst->USTAT;
 
@@ -134,7 +134,7 @@ static int uart_npcx_err_check(struct device *dev)
 static int uart_npcx_fifo_fill(struct device *dev, const uint8_t *tx_data,
 				  int size)
 {
-	struct uart_reg_t *inst = HAL_INSTANCE(dev);
+	struct uart_reg *inst = HAL_INSTANCE(dev);
 	uint8_t tx_bytes = 0U;
 
 	/* If Tx FIFO is still ready to send */
@@ -149,7 +149,7 @@ static int uart_npcx_fifo_fill(struct device *dev, const uint8_t *tx_data,
 static int uart_npcx_fifo_read(struct device *dev, uint8_t *rx_data,
 				  const int size)
 {
-	struct uart_reg_t *inst = HAL_INSTANCE(dev);
+	struct uart_reg *inst = HAL_INSTANCE(dev);
 	unsigned int rx_bytes = 0U;
 
 	/* If least one byte is in the Rx FIFO */
@@ -163,21 +163,21 @@ static int uart_npcx_fifo_read(struct device *dev, uint8_t *rx_data,
 
 static void uart_npcx_irq_tx_enable(struct device *dev)
 {
-	struct uart_reg_t *inst = HAL_INSTANCE(dev);
+	struct uart_reg *inst = HAL_INSTANCE(dev);
 
 	inst->UFTCTL |= BIT(NPCX_UFTCTL_TEMPTY_EN);
 }
 
 static void uart_npcx_irq_tx_disable(struct device *dev)
 {
-	struct uart_reg_t *inst = HAL_INSTANCE(dev);
+	struct uart_reg *inst = HAL_INSTANCE(dev);
 
 	inst->UFTCTL &= ~(BIT(NPCX_UFTCTL_TEMPTY_EN));
 }
 
 static int uart_npcx_irq_tx_ready(struct device *dev)
 {
-	struct uart_reg_t *inst = HAL_INSTANCE(dev);
+	struct uart_reg *inst = HAL_INSTANCE(dev);
 
 	/* Tx interrupt is enable and its FIFO is ready to send (not full) */
 	return (IS_BIT_SET(inst->UFTCTL, NPCX_UFTCTL_TEMPTY_EN) &&
@@ -186,7 +186,7 @@ static int uart_npcx_irq_tx_ready(struct device *dev)
 
 static int uart_npcx_irq_tx_complete(struct device *dev)
 {
-	struct uart_reg_t *inst = HAL_INSTANCE(dev);
+	struct uart_reg *inst = HAL_INSTANCE(dev);
 
 	/* Tx FIFO is empty or last byte is sending */
 	return IS_BIT_SET(inst->UFTSTS, NPCX_UFTSTS_NXMIP);
@@ -194,21 +194,21 @@ static int uart_npcx_irq_tx_complete(struct device *dev)
 
 static void uart_npcx_irq_rx_enable(struct device *dev)
 {
-	struct uart_reg_t *inst = HAL_INSTANCE(dev);
+	struct uart_reg *inst = HAL_INSTANCE(dev);
 
 	inst->UFRCTL |= BIT(NPCX_UFRCTL_RNEMPTY_EN);
 }
 
 static void uart_npcx_irq_rx_disable(struct device *dev)
 {
-	struct uart_reg_t *inst = HAL_INSTANCE(dev);
+	struct uart_reg *inst = HAL_INSTANCE(dev);
 
 	inst->UFRCTL &= ~(BIT(NPCX_UFRCTL_RNEMPTY_EN));
 }
 
 static int uart_npcx_irq_rx_ready(struct device *dev)
 {
-	struct uart_reg_t *inst = HAL_INSTANCE(dev);
+	struct uart_reg *inst = HAL_INSTANCE(dev);
 
 	/* Rx interrupt is enable and at least one byte is in its FIFO */
 	return (IS_BIT_SET(inst->UFRCTL, NPCX_UFRCTL_RNEMPTY_EN) &&
@@ -217,14 +217,14 @@ static int uart_npcx_irq_rx_ready(struct device *dev)
 
 static void uart_npcx_irq_err_enable(struct device *dev)
 {
-	struct uart_reg_t *inst = HAL_INSTANCE(dev);
+	struct uart_reg *inst = HAL_INSTANCE(dev);
 
 	inst->UICTRL |= BIT(NPCX_UICTRL_EEI);
 }
 
 static void uart_npcx_irq_err_disable(struct device *dev)
 {
-	struct uart_reg_t *inst = HAL_INSTANCE(dev);
+	struct uart_reg *inst = HAL_INSTANCE(dev);
 
 	inst->UICTRL &= ~(BIT(NPCX_UICTRL_EEI));
 }
@@ -290,7 +290,7 @@ static int uart_npcx_init(struct device *dev)
 {
 	const struct uart_npcx_config *config = DRV_CONFIG(dev);
 	const struct uart_npcx_data *data = DRV_DATA(dev);
-	struct uart_reg_t *inst = HAL_INSTANCE(dev);
+	struct uart_reg *inst = HAL_INSTANCE(dev);
 	struct device *clk_dev = device_get_binding(NPCX_CLOCK_CONTROL_NAME);
 	uint32_t uart_rate;
 

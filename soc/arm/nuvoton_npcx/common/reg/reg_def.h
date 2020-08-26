@@ -24,7 +24,7 @@
 /*
  * Core Domain Clock Generator (CDCG) device registers
  */
-struct cdcg_reg_t {
+struct cdcg_reg {
 	/* High Frequency Clock Generator (HFCG) registers */
 	/* 0x000: HFCG Control */
 	volatile uint8_t HFCGCTRL;
@@ -79,7 +79,7 @@ struct cdcg_reg_t {
 /*
  * Power Management Controller (PMC) device registers
  */
-struct pmc_reg_t {
+struct pmc_reg {
 	/* 0x000: Power Management Controller */
 	volatile uint8_t PMCSR;
 	volatile uint8_t reserved1[2];
@@ -121,7 +121,7 @@ struct pmc_reg_t {
 /*
  * System Configuration (SCFG) device registers
  */
-struct scfg_reg_t {
+struct scfg_reg {
 	/* 0x000: Device Control */
 	volatile uint8_t DEVCNT;
 	/* 0x001: Straps Status */
@@ -185,7 +185,7 @@ struct scfg_reg_t {
 /*
  * Universal Asynchronous Receiver-Transmitter (UART) device registers
  */
-struct uart_reg_t {
+struct uart_reg {
 	/* 0x000: Transmit Data Buffer */
 	volatile uint8_t UTBUF;
 	volatile uint8_t reserved1;
