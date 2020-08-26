@@ -102,7 +102,7 @@ endif # BT_SPI
 config BT_STM32_IPM_RX_STACK_SIZE
 	int "STM32 IPM stack size for RX thread"
 	depends on BT_STM32_IPM
-	default 256
+	default 512
 
 config BT_RPMSG_NRF53
 	bool "nRF53 configuration of RPMsg"
