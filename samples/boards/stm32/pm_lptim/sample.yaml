@@ -1,0 +1,15 @@
+sample:
+  name: Power Management LP Timer
+tests:
+  sample.boards.stm32.pm_lptim.lsi:
+    build_only: true
+    depends_on: lptim
+    filter: dt_compat_enabled_with_alias("gpio-leds", "led0") and
+            dt_compat_enabled("st,stm32-lptim")
+  sample.boards.stm32.pm_lptim.lse:
+    build_only: true
+    depends_on: lptim
+    filter: dt_compat_enabled_with_alias("gpio-leds", "led0") and
+            dt_compat_enabled("st,stm32-lptim")
+    extra_configs:
+      - CONFIG_STM32_LPTIM_CLOCK_LSE=y
