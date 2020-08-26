@@ -176,7 +176,8 @@ static int entropy_stm32_rng_init(struct device *dev)
 	 *  Linear Feedback Shift Register
 	 */
 	 LL_RCC_SetRNGClockSource(LL_RCC_RNG_CLKSOURCE_PLLSAI1);
-#elif defined(RCC_HSI48_SUPPORT)
+#elif defined(RCC_CR2_HSI48ON) || defined(RCC_CR_HSI48ON) \
+	|| defined(RCC_CRRCR_HSI48ON)
 
 #if CONFIG_SOC_SERIES_STM32L0X
 	/* We need SYSCFG to control VREFINT, so make sure it is clocked */
