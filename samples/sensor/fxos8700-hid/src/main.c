@@ -15,38 +15,22 @@
 #define LOG_LEVEL LOG_LEVEL_DBG
 LOG_MODULE_REGISTER(main);
 
-/* change this to use another GPIO port */
-#if DT_NODE_HAS_PROP(DT_ALIAS(sw0), gpios)
-#define PORT0 DT_GPIO_LABEL(DT_ALIAS(sw0), gpios)
-#else
-#error DT_GPIO_LABEL(DT_ALIAS(sw0), gpios) needs to be set
-#endif
+#define SW0_NODE DT_ALIAS(sw0)
+#define SW1_NODE DT_ALIAS(sw1)
 
-/* change this to use another GPIO pin */
-#if DT_PHA_HAS_CELL(DT_ALIAS(sw0), gpios, pin)
-#define PIN0     DT_GPIO_PIN(DT_ALIAS(sw0), gpios)
+#if DT_NODE_HAS_STATUS(SW0_NODE, okay)
+#define PORT0		DT_GPIO_LABEL(SW0_NODE, gpios)
+#define PIN0		DT_GPIO_PIN(SW0_NODE, gpios)
+#define PIN0_FLAGS	DT_GPIO_FLAGS(SW0_NODE, gpios)
 #else
-#error DT_GPIO_PIN(DT_ALIAS(sw0), gpios) needs to be set
-#endif
-
-/* The switch pin pull-up/down flags */
-#if DT_PHA_HAS_CELL(DT_ALIAS(sw0), gpios, flags)
-#define PIN0_FLAGS DT_GPIO_FLAGS(DT_ALIAS(sw0), gpios)
-#else
-#error DT_GPIO_FLAGS(DT_ALIAS(sw0), gpios) needs to be set
+#error SW0 is not available
 #endif
 
 /* If second button exists, use it as right-click. */
-#if DT_PHA_HAS_CELL(DT_ALIAS(sw1), gpios, pin)
-#define PIN1	DT_GPIO_PIN(DT_ALIAS(sw1), gpios)
-#endif
-
-#if DT_NODE_HAS_PROP(DT_ALIAS(sw1), gpios)
-#define PORT1	DT_GPIO_LABEL(DT_ALIAS(sw1), gpios)
-#endif
-
-#if DT_PHA_HAS_CELL(DT_ALIAS(sw1), gpios, flags)
-#define PIN1_FLAGS DT_GPIO_FLAGS(DT_ALIAS(sw1), gpios)
+#if DT_NODE_HAS_STATUS(SW1_NODE, okay)
+#define PORT1		DT_GPIO_LABEL(SW1_NODE, gpios)
+#define PIN1		DT_GPIO_PIN(SW1_NODE, gpios)
+#define PIN1_FLAGS	DT_GPIO_FLAGS(SW1_NODE, gpios)
 #endif
 
 #define LED_PORT	DT_GPIO_LABEL(DT_ALIAS(led0), gpios)
@@ -93,7 +77,7 @@ static void left_button(struct device *gpio, struct gpio_callback *cb,
 	}
 }
 
-#if DT_PHA_HAS_CELL(DT_ALIAS(sw1), gpios, pin)
+#ifdef PORT1
 static void right_button(struct device *gpio, struct gpio_callback *cb,
 			 uint32_t pins)
 {
@@ -217,7 +201,7 @@ void main(void)
 		return;
 	}
 
-#if DT_PHA_HAS_CELL(DT_ALIAS(sw1), gpios, pin)
+#ifdef PORT1
 	if (callbacks_configure(device_get_binding(PORT1), PIN1, PIN1_FLAGS,
 				&right_button, &callback[1], &def_val[1])) {
 		LOG_ERR("Failed configuring right button callback.");
