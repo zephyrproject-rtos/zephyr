@@ -215,6 +215,14 @@ if(CONFIG_MISRA_SANE)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:${CPP_MISRA_SANE_FLAG}>)
 endif()
 
+# This is intend to be temporary. Once we have fixed the violations that
+# prevents build Zephyr, these flags shall be part of the default flags.
+if(CONFIG_CODING_GUIDELINE_CHECK)
+  # @Intent: Obtain toolchain compiler flags relating to coding guideline
+  toolchain_cc_warning_error_coding_guideline_check(CC_CODING_GUIDELINE_CHECK_FLAG)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:${CC_CODING_GUIDELINE_CHECK_FLAG}>)
+endif()
+
 # @Intent: Set compiler specific macro inclusion of AUTOCONF_H
 toolchain_cc_imacros(${AUTOCONF_H})
 

@@ -116,6 +116,14 @@ macro(toolchain_cc_cpp_warning_error_misra_sane dest_var_name)
   set_ifndef(${dest_var_name} "-Werror=vla")
 endmacro()
 
+macro(toolchain_cc_warning_error_coding_guideline_check dest_var_name)
+  if (NOT ${dest_var_name})
+    set(${dest_var_name}
+      -Wvla
+      )
+  endif()
+endmacro()
+
 # List the warnings that are not supported for C++ compilations
 
 list(APPEND CXX_EXCLUDED_OPTIONS
