@@ -14,11 +14,7 @@
 #if DT_NODE_HAS_PROP(DT_ALIAS(led0), gpios)
 #define TEST_DEV             DT_GPIO_LABEL(DT_ALIAS(led0), gpios)
 #define TEST_PIN             DT_GPIO_PIN(DT_ALIAS(led0), gpios)
-#if DT_PHA_HAS_CELL(DT_ALIAS(led0), gpios, flags)
 #define TEST_PIN_DTS_FLAGS   DT_GPIO_FLAGS(DT_ALIAS(led0), gpios)
-#else
-#define TEST_PIN_DTS_FLAGS   0
-#endif
 #else
 #error Unsupported board
 #endif
