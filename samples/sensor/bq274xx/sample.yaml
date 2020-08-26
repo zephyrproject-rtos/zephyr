@@ -4,6 +4,6 @@ sample:
 tests:
   sample.sensor.bq274xx:
     harness: sensor
-    platform_whitelist: nrf9160_innblue22
+    platform_allow: nrf9160_innblue22
     tags: sensors
     depends_on: i2c

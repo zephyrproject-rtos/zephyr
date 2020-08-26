@@ -3,7 +3,7 @@ sample:
 common:
   tags: can canopen
   depends_on: can
-  platform_whitelist: twr_ke18f frdm_k64f
+  platform_allow: twr_ke18f frdm_k64f
   harness: console
   harness_config:
     type: one_line

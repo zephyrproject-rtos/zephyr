@@ -3,4 +3,4 @@ sample:
   name: FS shell
 tests:
   sample.filesystem.shell:
-    platform_whitelist: reel_board
+    platform_allow: reel_board

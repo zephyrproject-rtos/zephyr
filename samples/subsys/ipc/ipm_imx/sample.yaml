@@ -6,5 +6,5 @@ tests:
     sample.ipc.ipm.ipm_imx:
         build_only: true
         filter: CONFIG_SOC_FAMILY_IMX
-        platform_whitelist: udoo_neo_full_m4 colibri_imx7d_m4 warp7_m4
+        platform_allow: udoo_neo_full_m4 colibri_imx7d_m4 warp7_m4
         tags: samples ipm

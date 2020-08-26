@@ -1,7 +1,7 @@
 common:
   harness: net
   tags: net ipv4_autoconf
-  platform_whitelist: qemu_x86 native_posix native_posix_64
+  platform_allow: qemu_x86 native_posix native_posix_64
 sample:
   description: Test IPv4 autoconf functionality
   name: IPv4 autoconf sample app

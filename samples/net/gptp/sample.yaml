@@ -6,5 +6,5 @@ sample:
   name: gPTP sample app
 tests:
   sample.net.gptp:
-    platform_whitelist: frdm_k64f sam_e70_xplained native_posix native_posix_64
+    platform_allow: frdm_k64f sam_e70_xplained native_posix native_posix_64
     depends_on: netif

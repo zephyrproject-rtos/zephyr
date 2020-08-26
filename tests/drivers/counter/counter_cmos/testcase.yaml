@@ -1,4 +1,4 @@
 tests:
   drivers.counter.cmos:
     tags: drivers
-    arch_whitelist: x86
+    arch_allow: x86

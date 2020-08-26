@@ -14,12 +14,12 @@ tests:
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
   portability.posix.common.nsim:
-    platform_whitelist: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard
+    platform_allow: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard
     extra_configs:
       - CONFIG_NEWLIB_LIBC=n
       - CONFIG_TEST_HW_STACK_PROTECTION=n
   portability.posix.common.newlib.nsim:
-    platform_whitelist: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard
+    platform_allow: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y

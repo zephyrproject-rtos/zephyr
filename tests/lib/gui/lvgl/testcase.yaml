@@ -1,17 +1,17 @@
 tests:
   libraries.gui.lvgl:
     tags: display gui
-    platform_whitelist: native_posix
+    platform_allow: native_posix
   libraries.gui.lvgl.dynamic.heap.libc:
     tags: display gui
-    platform_whitelist: native_posix
+    platform_allow: native_posix
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
       - CONFIG_LVGL_BUFFER_ALLOC_DYNAMIC=y
       - CONFIG_LVGL_MEM_POOL_HEAP_LIB_C=y
   libraries.gui.lvgl.dynamic.pool.user:
     tags: display gui
-    platform_whitelist: native_posix
+    platform_allow: native_posix
     extra_configs:
       - CONFIG_LVGL_BUFFER_ALLOC_DYNAMIC=y
       - CONFIG_LVGL_MEM_POOL_USER=y
@@ -19,7 +19,7 @@ tests:
       - CONFIG_LVGL_MEM_POOL_MAX_SIZE=32768
   libraries.gui.lvgl.dynamic.pool.kernel:
     tags: display gui
-    platform_whitelist: native_posix
+    platform_allow: native_posix
     extra_configs:
       - CONFIG_LVGL_BUFFER_ALLOC_DYNAMIC=y
       - CONFIG_LVGL_MEM_POOL_KERNEL=y
@@ -27,22 +27,22 @@ tests:
       - CONFIG_LVGL_MEM_POOL_MAX_SIZE=32768
   libraries.gui.lvgl.16bit:
     tags: display gui
-    platform_whitelist: native_posix
+    platform_allow: native_posix
     extra_configs:
       - CONFIG_LVGL_COLOR_DEPTH_16=y
   libraries.gui.lvgl.8bit:
     tags: display gui
-    platform_whitelist: native_posix
+    platform_allow: native_posix
     extra_configs:
       - CONFIG_LVGL_COLOR_DEPTH_8=y
   libraries.gui.lvgl.mono:
     tags: display gui
-    platform_whitelist: native_posix
+    platform_allow: native_posix
     extra_configs:
       - CONFIG_LVGL_COLOR_DEPTH_1=y
   libraries.gui.lvgl.16bit.swap:
     tags: display gui
-    platform_whitelist: native_posix
+    platform_allow: native_posix
     extra_configs:
       - CONFIG_LVGL_COLOR_DEPTH_16=y
       - CONFIG_LVGL_COLOR_16_SWAP=y

@@ -8,5 +8,5 @@ tests:
   sample.net.sockets.echo:
     tags: net socket
   sample.net.sockets.echo.offload.simplelink:
-    platform_whitelist: cc3220sf_launchxl
+    platform_allow: cc3220sf_launchxl
     tags: net socket offload simplelink

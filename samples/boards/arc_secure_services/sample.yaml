@@ -6,7 +6,7 @@ tests:
   sample.board.arc_secure_services:
     # Requires multiple kernels in an AMP config. See README.rst
     build_only: true
-    platform_whitelist: nsim_sem em_starterkit_em7d_secure
+    platform_allow: nsim_sem em_starterkit_em7d_secure
     tags: secure
     harness: console
     harness_config:

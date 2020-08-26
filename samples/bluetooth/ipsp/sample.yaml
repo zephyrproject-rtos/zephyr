@@ -4,10 +4,10 @@ sample:
 tests:
   sample.bluetooth.ipsp:
     harness: bluetooth
-    platform_whitelist: qemu_x86 qemu_cortex_m3
+    platform_allow: qemu_x86 qemu_cortex_m3
     tags: bluetooth net
   sample.bluetooth.ipsp.zep1656:
     harness: bluetooth
     extra_args: CONF_FILE="prj_zep1656.conf"
-    platform_whitelist: qemu_x86 qemu_cortex_m3
+    platform_allow: qemu_x86 qemu_cortex_m3
     tags: bluetooth net

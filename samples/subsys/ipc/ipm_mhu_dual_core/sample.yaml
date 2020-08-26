@@ -5,4 +5,4 @@ sample:
 tests:
   sample.ipc.ipm.ipm_mhu_dual_core:
     tags: ipm
-    platform_whitelist: v2m_musca v2m_musca_nonsecure v2m_musca_b1 v2m_musca_b1_nonsecure
+    platform_allow: v2m_musca v2m_musca_nonsecure v2m_musca_b1 v2m_musca_b1_nonsecure

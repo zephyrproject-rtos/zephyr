@@ -7,7 +7,7 @@ tests:
   kernel.common.stack_protection_no_userspace:
     extra_args: CONF_FILE=protection_no_userspace.conf
     filter: CONFIG_ARCH_HAS_STACK_PROTECTION
-    arch_whitelist: arm
+    arch_allow: arm
     tags: kernel ignore_faults memory_protection
   kernel.common.stack_protection_arm_fpu_sharing:
     extra_args: CONF_FILE=prj_arm_fpu_sharing.conf
@@ -17,7 +17,7 @@ tests:
   kernel.common.stack_protection_armv8m_mpu_stack_guard:
     extra_args: CONF_FILE=prj_armv8m_mpu_stack_guard.conf
     filter: CONFIG_ARM_MPU and CONFIG_ARMV8_M_MAINLINE
-    arch_whitelist: arm
+    arch_allow: arm
     tags: kernel ignore_faults userspace
   kernel.common.stack_sentinel:
     extra_args: CONF_FILE=sentinel.conf

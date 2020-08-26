@@ -6,5 +6,5 @@ tests:
     min_ram: 36
     extra_args: CONF_FILE=prj_armv8m_mpu_stack_guard.conf
     filter: CONFIG_ARM_MPU and CONFIG_ARMV8_M_MAINLINE
-    arch_whitelist: arm
+    arch_allow: arm
     tags: kernel security userspace ignore_faults

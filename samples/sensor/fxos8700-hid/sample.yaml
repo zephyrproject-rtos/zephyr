@@ -3,6 +3,6 @@ sample:
 tests:
   sample.sensor.usb.fxos8700-hid:
     depends_on: usb_device
-    platform_whitelist: frdm_k64f
+    platform_allow: frdm_k64f
     harness: usb
     tags: usb sensors

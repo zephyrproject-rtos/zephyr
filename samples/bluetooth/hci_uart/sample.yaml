@@ -4,11 +4,11 @@ sample:
 tests:
   sample.bluetooth.hci_uart.arm:
     harness: bluetooth
-    platform_whitelist: 96b_nitrogen nrf51dk_nrf51422
+    platform_allow: 96b_nitrogen nrf51dk_nrf51422
       nrf52dk_nrf52832 bbc_microbit
     tags: uart bluetooth
   sample.bluetooth.hci_uart.nrf5:
     harness: bluetooth
-    platform_whitelist: 96b_nitrogen nrf51dk_nrf51422
+    platform_allow: 96b_nitrogen nrf51dk_nrf51422
       nrf52dk_nrf52832
     tags: uart bluetooth

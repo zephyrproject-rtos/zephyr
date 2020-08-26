@@ -5,4 +5,4 @@ tests:
     tags: drivers pwm
     depends_on: pwm
     harness: motor
-    platform_whitelist: bbc_microbit
+    platform_allow: bbc_microbit
