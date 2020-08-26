@@ -575,6 +575,10 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     )
 
     parser.add_argument(
+        "--emulation-only", action="store_true",
+        help="Only build and run emulation platforms")
+
+    parser.add_argument(
         "--device-testing", action="store_true",
         help="Test on device directly. Specify the serial device to "
              "use with the --device-serial option.")
@@ -990,6 +994,7 @@ def main():
             exclude_tag=options.exclude_tag,
             force_toolchain=options.force_toolchain,
             all=options.all,
+            emulation_only=options.emulation_only,
             run_individual_tests=run_individual_tests,
             device_testing=options.device_testing,
             force_platform=options.force_platform
