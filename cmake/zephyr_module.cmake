@@ -37,6 +37,7 @@ if(WEST OR ZEPHYR_MODULES)
     --kconfig-out ${KCONFIG_MODULES_FILE}
     --cmake-out ${CMAKE_BINARY_DIR}/zephyr_modules.txt
     --settings-out ${ZEPHYR_SETTINGS_FILE}
+    WORKING_DIRECTORY ${ZEPHYR_BASE}
     ERROR_VARIABLE
     zephyr_module_error_text
     RESULT_VARIABLE
