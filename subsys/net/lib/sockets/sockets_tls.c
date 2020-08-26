@@ -154,6 +154,11 @@ static struct tls_context tls_contexts[CONFIG_NET_SOCKETS_TLS_MAX_CONTEXTS];
 /* A mutex for protecting TLS context allocation. */
 static struct k_mutex context_lock;
 
+bool net_socket_is_tls(void *obj)
+{
+	return PART_OF_ARRAY(tls_contexts, (struct tls_context *)obj);
+}
+
 #if defined(MBEDTLS_DEBUG_C) && (CONFIG_NET_SOCKETS_LOG_LEVEL >= LOG_LEVEL_DBG)
 static void tls_debug(void *ctx, int level, const char *file,
 		      int line, const char *str)
@@ -1653,6 +1658,21 @@ ssize_t ztls_recvfrom_ctx(struct tls_context *ctx, void *buf, size_t max_len,
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 }
 
+static int ztls_poll_prepare_pollin(struct tls_context *ctx)
+{
+	/* If there already is mbedTLS data to read, there is no
+	 * need to set the k_poll_event object. Return EALREADY
+	 * so we won't block in the k_poll.
+	 */
+	if (!ctx->is_listening) {
+		if (mbedtls_ssl_get_bytes_avail(&ctx->ssl) > 0) {
+			return -EALREADY;
+		}
+	}
+
+	return 0;
+}
+
 static int ztls_poll_prepare_ctx(struct tls_context *ctx,
 				 struct zsock_pollfd *pfd,
 				 struct k_poll_event **pev,
@@ -1675,18 +1695,63 @@ static int ztls_poll_prepare_ctx(struct tls_context *ctx,
 	}
 
 	if (pfd->events & ZSOCK_POLLIN) {
-		/* If there already is mbedTLS data to read, there is no
-		 * need to set the k_poll_event object. Return EALREADY
-		 * so we won't block in the k_poll.
-		 */
-		if (!ctx->is_listening) {
-			if (mbedtls_ssl_get_bytes_avail(&ctx->ssl) > 0) {
-				return -EALREADY;
-			}
+		ret = ztls_poll_prepare_pollin(ctx);
+	}
+
+	return ret;
+}
+
+static int ztls_poll_update_pollin(int fd, struct tls_context *ctx,
+				   struct zsock_pollfd *pfd)
+{
+	int ret;
+
+	if (!ctx->is_listening) {
+		/* Already had TLS data to read on socket. */
+		if (mbedtls_ssl_get_bytes_avail(&ctx->ssl) > 0) {
+			pfd->revents |= ZSOCK_POLLIN;
+			goto next;
 		}
 	}
 
+	if (!(pfd->revents & ZSOCK_POLLIN)) {
+		/* No new data on a socket. */
+		goto next;
+	}
+
+	if (ctx->is_listening) {
+		goto next;
+	}
+
+	if (!is_handshake_complete(ctx)) {
+		goto again;
+	}
+
+	ret = zsock_recv(fd, NULL, 0, ZSOCK_MSG_DONTWAIT);
+	if (ret == 0 && ctx->type == SOCK_STREAM) {
+		pfd->revents |= ZSOCK_POLLHUP;
+		goto next;
+	/* EAGAIN might happen during or just after DTLS  handshake. */
+	} else if (ret < 0 && errno != EAGAIN) {
+		pfd->revents |= ZSOCK_POLLERR;
+		goto next;
+	}
+
+	if (mbedtls_ssl_get_bytes_avail(&ctx->ssl) == 0) {
+		goto again;
+	}
+
+next:
 	return 0;
+
+again:
+	/* Received encrypted data, but still not enough
+	 * to decrypt it and return data through socket,
+	 * ask for retry if no other events are set.
+	 */
+	pfd->revents &= ~ZSOCK_POLLIN;
+
+	return -EAGAIN;
 }
 
 static int ztls_poll_update_ctx(struct tls_context *ctx,
@@ -1710,58 +1775,118 @@ static int ztls_poll_update_ctx(struct tls_context *ctx,
 	}
 
 	if (pfd->events & ZSOCK_POLLIN) {
-		if (!ctx->is_listening) {
-			/* Already had TLS data to read on socket. */
-			if (mbedtls_ssl_get_bytes_avail(&ctx->ssl) > 0) {
-				pfd->revents |= ZSOCK_POLLIN;
-				goto next;
+		ret = ztls_poll_update_pollin(pfd->fd, ctx, pfd);
+		if (ret == -EAGAIN && pfd->revents != 0) {
+			(*pev - 1)->state = K_POLL_STATE_NOT_READY;
+			return -EAGAIN;
+		}
+	}
+
+	return ret;
+}
+
+static inline int ztls_poll_offload(struct pollfd *fds, int nfds, int timeout)
+{
+	int fd_backup[CONFIG_NET_SOCKETS_POLL_MAX];
+	const struct fd_op_vtable *vtable;
+	void *ctx;
+	int ret = 0;
+	int result;
+	int i;
+	bool retry;
+	int remaining;
+	uint32_t entry = k_uptime_get_32();
+
+	/* Overwrite TLS file decriptors with underlying ones. */
+	for (i = 0; i < nfds; i++) {
+		fd_backup[i] = fds[i].fd;
+
+		ctx = z_get_fd_obj(fds[i].fd,
+				   (const struct fd_op_vtable *)
+						     &tls_sock_fd_op_vtable,
+				   0);
+		if (ctx == NULL) {
+			continue;
+		}
+
+		if (fds[i].events & ZSOCK_POLLIN) {
+			ret = ztls_poll_prepare_pollin(ctx);
+			/* In case data is already available in mbedtls,
+			 * do not wait in poll.
+			 */
+			if (ret == -EALREADY) {
+				timeout = 0;
 			}
 		}
 
-		if (!(pfd->revents & ZSOCK_POLLIN)) {
-			/* No new data on a socket. */
-			goto next;
-		}
-
-		if (ctx->is_listening) {
-			goto next;
-		}
-
-		if (!is_handshake_complete(ctx)) {
-			goto again;
-		}
-
-		ret = zsock_recv(pfd->fd, NULL, 0, ZSOCK_MSG_DONTWAIT);
-		if (ret == 0 && ctx->type == SOCK_STREAM) {
-			pfd->revents |= ZSOCK_POLLHUP;
-			goto next;
-		/* EAGAIN might happen during or just after DTLS  handshake. */
-		} else if (ret < 0 && errno != EAGAIN) {
-			pfd->revents |= ZSOCK_POLLERR;
-			goto next;
-		}
-
-		if (mbedtls_ssl_get_bytes_avail(&ctx->ssl) == 0) {
-			goto again;
-		}
+		fds[i].fd = ((struct tls_context *)ctx)->sock;
 	}
 
-next:
-	return 0;
-
-again:
-	/* Received encrypted data, but still not enough
-	 * to decrypt it and return data through socket,
-	 * ask for retry if no other events are set.
-	 */
-	pfd->revents &= ~ZSOCK_POLLIN;
-
-	if (pfd->revents != 0) {
-		(*pev - 1)->state = K_POLL_STATE_NOT_READY;
-		return -EAGAIN;
+	/* Get offloaded sockets vtable. */
+	ctx = z_get_fd_obj_and_vtable(fds[0].fd,
+				      (const struct fd_op_vtable **)&vtable);
+	if (ctx == NULL) {
+		errno = EINVAL;
+		goto exit;
 	}
 
-	return 0;
+	remaining = timeout;
+
+	do {
+		for (i = 0; i < nfds; i++) {
+			fds[i].revents = 0;
+		}
+
+		ret = z_fdtable_call_ioctl(vtable, ctx, ZFD_IOCTL_POLL_OFFLOAD,
+					   fds, nfds, remaining);
+		if (ret < 0) {
+			goto exit;
+		}
+
+		retry = false;
+		ret = 0;
+
+		for (i = 0; i < nfds; i++) {
+			ctx = z_get_fd_obj(fd_backup[i],
+					   (const struct fd_op_vtable *)
+							&tls_sock_fd_op_vtable,
+					   0);
+			if (ctx != NULL) {
+				if (fds[i].events & ZSOCK_POLLIN) {
+					result = ztls_poll_update_pollin(
+						    fd_backup[i], ctx, &fds[i]);
+					if (result == -EAGAIN) {
+						retry = true;
+					}
+				}
+			}
+
+			if (fds[i].revents != 0) {
+				ret++;
+			}
+		}
+
+		if (retry) {
+			if (ret > 0 || timeout == 0) {
+				goto exit;
+			}
+
+			if (timeout > 0) {
+				remaining = time_left(entry, timeout);
+				if (remaining <= 0) {
+					goto exit;
+				}
+			}
+		}
+	} while (retry);
+
+exit:
+	/* Restore original fds. */
+	for (i = 0; i < nfds; i++) {
+		fds[i].fd = fd_backup[i];
+	}
+
+	return ret;
 }
 
 int ztls_getsockopt_ctx(struct tls_context *ctx, int level, int optname,
@@ -1904,6 +2029,18 @@ static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		pev = va_arg(args, struct k_poll_event **);
 
 		return ztls_poll_update_ctx(obj, pfd, pev);
+	}
+
+	case ZFD_IOCTL_POLL_OFFLOAD: {
+		struct zsock_pollfd *fds;
+		int nfds;
+		int timeout;
+
+		fds = va_arg(args, struct zsock_pollfd *);
+		nfds = va_arg(args, int);
+		timeout = va_arg(args, int);
+
+		return ztls_poll_offload(fds, nfds, timeout);
 	}
 
 	default:
