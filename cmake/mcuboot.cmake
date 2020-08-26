@@ -10,6 +10,12 @@
 # Since this file is brought in via include(), we do the work in a
 # function to avoid polluting the top-level scope.
 
+function(zephyr_runner_file type path)
+  # Property magic which makes west flash choose the signed build
+  # output of a given type.
+  set_target_properties(runners_yaml_props_target PROPERTIES "${type}_file" "${path}")
+endfunction()
+
 function(zephyr_mcuboot_tasks)
   set(keyfile "${CONFIG_MCUBOOT_SIGNATURE_KEY_FILE}")
 
@@ -97,6 +103,7 @@ function(zephyr_mcuboot_tasks)
   if(CONFIG_BUILD_OUTPUT_BIN)
     list(APPEND unconfirmed_args --bin --sbin ${output}.signed.bin)
     list(APPEND byproducts ${output}.signed.bin)
+    zephyr_runner_file(bin ${output}.signed.bin)
 
     if(CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE)
       list(APPEND confirmed_args --bin --sbin ${output}.signed.confirmed.bin)
@@ -108,6 +115,7 @@ function(zephyr_mcuboot_tasks)
   if(CONFIG_BUILD_OUTPUT_HEX)
     list(APPEND unconfirmed_args --hex --shex ${output}.signed.hex)
     list(APPEND byproducts ${output}.signed.hex)
+    zephyr_runner_file(hex ${output}.signed.hex)
 
     if(CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE)
       list(APPEND confirmed_args --hex --shex ${output}.signed.confirmed.hex)
