@@ -123,4 +123,5 @@ static int adsp_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(adsp_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+/* Init after IPM initialization and before logging (uses memory windows) */
+SYS_INIT(adsp_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
