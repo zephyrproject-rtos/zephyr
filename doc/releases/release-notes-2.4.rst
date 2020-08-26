@@ -197,6 +197,11 @@ Drivers and Sensors
 
 * Flash
 
+  * The driver selected by ``CONFIG_SPI_FLASH_W25QXXDV`` has been
+    removed as it is unmaintained and all its functionality is available
+    through ``CONFIG_SPI_NOR``.  Out of tree uses should convert to the
+    supported driver using the ``jedec,spi-nor`` compatible.
+
 
 * GPIO
 
