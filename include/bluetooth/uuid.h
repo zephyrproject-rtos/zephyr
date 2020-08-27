@@ -964,7 +964,7 @@ struct bt_uuid_128 {
  *  @brief OTS Object Size Characteristic
  */
 #define BT_UUID_OTS_SIZE \
-	BT_UUID_DECLARE_16(BT_UUID_OTS_SIZE)
+	BT_UUID_DECLARE_16(BT_UUID_OTS_SIZE_VAL)
 /** @def BT_UUID_OTS_FIRST_CREATED_VAL
  *  @brief OTS Object First-Created Characteristic UUID value
  */
