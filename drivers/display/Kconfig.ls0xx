@@ -1,0 +1,30 @@
+# Sharp memory display controller configuration options
+
+# Copyright (c) 2020 Rohit Gujarathi
+# SPDX-License-Identifier: Apache-2.0
+
+config LS0XX
+	bool "LS0XX memory display controller driver"
+	depends on SPI
+	help
+	  Enable driver for sharp memory display series LS0XXX7DXXX
+
+config LS0XX_VCOM_DRIVER
+	bool "VCOM toggling is handled by driver"
+	depends on LS0XX
+	default y if LS0XX
+	help
+	  VCOM will be toggled by driver based on LS0XX_EXTMODE_SERIAL, else
+	  user has to handle toggling. If LS0XX_VCOM_DRIVER=n and
+	  using serial mode then user has to handle contention between
+	  SPI transfers for write and VCOM toggle cmd.
+
+config LS0XX_VCOM_EXTERNAL
+	bool "Use EXTCOMIN pin for toggling VCOM in sharp memory LCD"
+	depends on LS0XX && LS0XX_VCOM_DRIVER
+	default n if LS0XX
+	help
+	  If 'n', control VCOM from software by toggling the M1 bit.
+	  Connect EXTMODE to VSS. If set to 'y' then VCOM is
+	  controlled using EXTCOMIN pin which is to be defined
+	  in the devicetree. Connect EXTMODE to VDD.

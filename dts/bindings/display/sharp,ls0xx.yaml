@@ -1,0 +1,42 @@
+# Copyright (c) 2020, Rohit Gujarathi
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sharp memory display controller
+
+compatible: "sharp,ls0xx"
+
+include: spi-device.yaml
+
+properties:
+    height:
+      type: int
+      required: true
+      description: Height in pixel of the panel driven by the controller
+
+    width:
+      type: int
+      required: true
+      description: Width in pixel of the panel driven by the controller
+
+    scs-gpios:
+      type: phandle-array
+      required: true
+      description: SCS pin
+
+        The SCS pin is the SPI chip select pin of sharp memory display.
+        It is active high.
+
+    extcomin-gpios:
+      type: phandle-array
+      required: false
+      description: EXTCOMIN pin
+
+        The EXTCOMIN pin is where a square pulse should be given
+
+    disp-gpios:
+      type: phandle-array
+      required: false
+      description: DISPLAY pin
+
+        The DISPLAY pin controls if the LCD displays memory contents or
+        white screen
