@@ -19,6 +19,10 @@ config UART_IMX
 	default y
 	depends on SERIAL
 
+config I2C_IMX
+	default y
+	depends on I2C
+
 config IPM_IMX
 	default y
 	depends on IPM
