@@ -26,3 +26,7 @@ tests:
     build_only: true
     platform_allow: native_posix_64
     tags: samples display gui
+  sample.display.buydisplay_2_8_tft_touch_arduino:
+    platform_allow: nrf52840dk_nrf52840
+    extra_args: SHIELD=buydisplay_2_8_tft_touch_arduino
+    tags: shield
