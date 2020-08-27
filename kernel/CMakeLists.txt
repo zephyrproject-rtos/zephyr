@@ -25,6 +25,7 @@ list(APPEND kernel_files
   version.c
   work_q.c
   smp.c
+  banner.c
   )
 
 if(CONFIG_XIP)
