@@ -1,3 +1,5 @@
+.. _updatehub_fota_sample:
+
 UpdateHub embedded Firmware Over-The-Air (FOTA) sample
 ######################################################
 
