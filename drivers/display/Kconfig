@@ -24,6 +24,7 @@ source "drivers/display/Kconfig.ssd16xx"
 source "drivers/display/Kconfig.st7789v"
 source "drivers/display/Kconfig.gd7965"
 source "drivers/display/Kconfig.dummy"
+source "drivers/display/Kconfig.ls0xx"
 
 config FRAMEBUF_DISPLAY
 	# Hidden, selected by client drivers.
