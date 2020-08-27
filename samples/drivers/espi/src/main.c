@@ -523,6 +523,25 @@ int get_pch_temp(struct device *dev, int *temp)
 	return 0;
 }
 
+#ifndef CONFIG_ESPI_AUTOMATIC_BOOT_DONE_ACKNOWLEDGE
+static void send_slave_bootdone(void)
+{
+	int ret;
+	uint8_t boot_done;
+
+	ret = espi_receive_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE,
+				 &boot_done);
+	LOG_INF("%s boot_done: %d", __func__, boot_done);
+	if (ret) {
+		LOG_WRN("Fail to retrieve slave boot done");
+	} else if (!boot_done) {
+		/* SLAVE_BOOT_DONE & SLAVE_LOAD_STS have to be sent together */
+		espi_send_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_STS, 1);
+		espi_send_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE, 1);
+	}
+}
+#endif
+
 int espi_test(void)
 {
 	int ret;
@@ -600,6 +619,26 @@ int espi_test(void)
 		LOG_INF("ESPI_RESET timeout");
 		return ret;
 	}
+
+#ifndef CONFIG_ESPI_AUTOMATIC_BOOT_DONE_ACKNOWLEDGE
+	/* When automatic acknowledge is disabled to perform lenghty operations
+	 * in the eSPI slave, need to explicitly send slave boot
+	 */
+	bool vw_ch_sts;
+
+	/* Simulate lenghty operation during boot */
+	k_sleep(K_SECONDS(2));
+
+	do {
+		vw_ch_sts = espi_get_channel_status(espi_dev,
+						    ESPI_CHANNEL_VWIRE);
+		k_busy_wait(100);
+	} while (!vw_ch_sts);
+
+
+	send_slave_bootdone();
+#endif
+
 
 #ifdef CONFIG_ESPI_FLASH_CHANNEL
 	/* Flash operation need to be perform before VW handshake or
