@@ -1,4 +1,4 @@
-.. jesd216-sample:
+.. _jesd216-sample:
 
 JESD216 Sample
 ##############

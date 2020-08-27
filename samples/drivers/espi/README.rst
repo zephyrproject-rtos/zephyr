@@ -1,4 +1,4 @@
-.. espi-sample:
+.. _espi-sample:
 
 Enhanced Serial Peripheral Interface
 ####################################

@@ -1,4 +1,4 @@
-.. i2s_litex_example:
+.. _i2s_litex_example:
 
 #####################
 I2S example

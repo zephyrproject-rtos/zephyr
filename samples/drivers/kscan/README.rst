@@ -1,4 +1,4 @@
-.. kscan-sample:
+.. _kscan-sample:
 
 KSCAN Interface
 ####################################

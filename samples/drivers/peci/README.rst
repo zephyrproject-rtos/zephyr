@@ -1,4 +1,4 @@
-.. peci-sample:
+.. _peci-sample:
 
 PECI Interface
 ####################################
