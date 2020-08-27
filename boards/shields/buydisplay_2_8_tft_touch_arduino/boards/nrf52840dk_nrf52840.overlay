@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2020 Teslabs Engineering S.L.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* NOTE: spi1 MISO pin is used by the display for the cmd/data line */
+&spi1 {
+	status = "disabled";
+};
