@@ -21,7 +21,7 @@ GTEXT(_k_neg_eagain)
  */
 SECTION_FUNC(exception.other, arch_swap)
 
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)
 	/* Get a reference to _kernel in r10 */
 	movhi r10, %hi(_kernel)
 	ori   r10, r10, %lo(_kernel)
@@ -34,7 +34,7 @@ SECTION_FUNC(exception.other, arch_swap)
 	stw ra,  _thread_offset_to_ra(r11)
 	stw sp,  _thread_offset_to_sp(r11)
 
-	call sys_trace_thread_switched_out
+	call z_thread_mark_switched_out
 	/* Get a reference to _kernel in r10 */
 	movhi r10, %hi(_kernel)
 	ori   r10, r10, %lo(_kernel)
@@ -135,7 +135,7 @@ no_unlock:
 	wrctl status, r3
 #endif
 
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)
 	/* Get a reference to _kernel in r10 */
 	movhi r10, %hi(_kernel)
 	ori   r10, r10, %lo(_kernel)
@@ -147,7 +147,7 @@ no_unlock:
 	stw ra,  _thread_offset_to_ra(r11)
 	stw sp,  _thread_offset_to_sp(r11)
 
-	call sys_trace_thread_switched_in
+	call z_thread_mark_switched_in
 
 	/* Get a reference to _kernel in r10 */
 	movhi r10, %hi(_kernel)

@@ -325,7 +325,7 @@ z_x86_switch:
 
 __resume:
 #if (!defined(CONFIG_X86_KPTI) && defined(CONFIG_USERSPACE)) \
-		|| defined(CONFIG_TRACING)
+		|| defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)
 	pushq %rdi	/* Caller-saved, stash it */
 #if !defined(CONFIG_X86_KPTI) && defined(CONFIG_USERSPACE)
 	/* If KPTI is enabled we're always on the kernel's page tables in
@@ -334,11 +334,12 @@ __resume:
 	 */
 	call z_x86_swap_update_page_tables
 #endif
-#ifdef CONFIG_TRACING
-	call sys_trace_thread_switched_in
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
+	call z_thread_mark_switched_in
 #endif
 	popq %rdi
-#endif /* (!CONFIG_X86_KPTI && CONFIG_USERSPACE) || CONFIG_TRACING */
+#endif /* (!CONFIG_X86_KPTI && CONFIG_USERSPACE) || \
+	   CONFIG_INSTRUMENT_THREAD_SWITCHING */
 
 #ifdef CONFIG_USERSPACE
 	/* Set up exception return stack frame */
