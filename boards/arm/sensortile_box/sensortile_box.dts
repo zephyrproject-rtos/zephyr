@@ -31,9 +31,18 @@
 		};
 	};
 
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User PB1";
+			gpios = <&gpiog 1 GPIO_ACTIVE_LOW>;
+		};
+	};
+
 	aliases {
 		led0 = &blue_led;
 		led1 = &green_led;
+		sw0 = &user_button;
 	};
 };
 
