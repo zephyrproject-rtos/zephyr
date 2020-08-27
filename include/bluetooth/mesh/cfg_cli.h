@@ -226,6 +226,18 @@ int bt_mesh_cfg_net_key_add(uint16_t net_idx, uint16_t addr, uint16_t key_net_id
 int bt_mesh_cfg_net_key_get(uint16_t net_idx, uint16_t addr, uint16_t *keys,
 			    size_t *key_cnt);
 
+/** @brief Delete a network key from the target node.
+ *
+ *  @param net_idx     Network index to encrypt with.
+ *  @param addr        Target node address.
+ *  @param key_net_idx Network key index.
+ *  @param status      Status response parameter.
+ *
+ *  @return 0 on success, or (negative) error code on failure.
+ */
+int bt_mesh_cfg_net_key_del(uint16_t net_idx, uint16_t addr,
+			    uint16_t key_net_idx, uint8_t *status);
+
 /** @brief Add an application key to the target node.
  *
  *  @param net_idx     Network index to encrypt with.
