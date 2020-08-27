@@ -581,6 +581,11 @@ The following peripherals are currently provided with this board:
 
   The flash content can be accessed from the host system, as explained in the
   `Host based flash access`_ section.
+**Radio**
+    An optional radio peripheral can be compiled for emulation with
+    native_posix. The connectivity between devices is provided with
+    `BabbleSim`_, a physical layer simulator. For more information refer to the
+    section `Radio physical layer simulation`_.
 
 UART
 ****
@@ -618,6 +623,76 @@ option ``-attach_uart_cmd=<"cmd">``. Where the default command is given by
 :option:`CONFIG_NATIVE_UART_AUTOATTACH_DEFAULT_CMD`.
 Note that the default command assumes both ``xterm`` and ``screen`` are
 installed in the system.
+
+Radio physical layer simulation
+*******************************
+
+The native_posix board can simulate a physical layer for sending radio packets
+using a radio module. This module can be enabled with the
+:option:`CONFIG_USE_BABBLESIM` during compilation.
+
+.. note::
+    The radio simulation currently does not fully support the physical layer of
+    IEEE 802.15.4 standard. See `Technical limitations`_ for details.
+
+The connectivity between devices is provided with `BabbleSim`_, a physical
+layer simulator. The simulation allows you to set up communication between
+several devices, choose transmission frequency, and complete transmission
+flawlessly. You can also configure the simulation to include different
+environment conditions, for example radio noise.
+
+From the higher layer perspective, this simulation does not differ from the
+real case scenario. It offers all advantages of the native_posix board,
+including deterministic, repeatable runs, and resilience to time differences.
+BabbleSim's radio simulation features are similar to :ref:`nrf52_bsim`'s, but
+more generic, because it does not emulate any specific hardware.
+
+Implementation details
+======================
+
+During the compilation using the native_posix board with
+:option:`CONFIG_USE_BABBLESIM` enabled, the build system will link against
+BabbleSim libraries. By default this option is disabled.
+
+Radio setup
+-----------
+
+To set up the radio stack physical layer simulation, complete the following steps:
+
+#. Enable the :option:`CONFIG_USE_BABBLESIM` Kconfig option.
+#. Build BabbleSim by following steps described in its `building manual`_.
+#. Define the following environment variables to point to the BabbleSim installation
+
+.. code-block:: console
+
+  $ export BSIM_OUT_PATH=${HOME}/bsim/
+  $ export BSIM_COMPONENTS_PATH=${HOME}/bsim/components/
+
+To run the binary with with BabbleSim, provide the following arguments
+
+.. code-block:: console
+
+  $ ./zephyr.elf -bsim -d=<device-index> -s=<simulation-name> -p=<phy-name>
+
+The simulation of the physical layer (phy) can be run as described in `BabbleSim's example`_.
+
+Technical limitations
+=====================
+
+The native_posix simulation of the radio stack physical layer has the same :ref:`limitations <native_important_limitations>` as the board.
+
+Additionally, the simulation does not currently include a specific physical layer that could be used for 802.15.4.
+Instead, it uses the Bluetooth layer, which leads to several inconsistencies:
+
+* Link Quality of a received packet cannot be read.
+* The data rate is limited to 1 Mb/s (instead of 250 kb/s).
+
+The physical layer access is made through a workaround, where all devices in this simulation have the same addresses.
+Bluetooth layer checks these addresses when sending or receiving packets.
+
+.. _`BabbleSim`: https://babblesim.github.io/
+.. _`BabbleSim's example`: https://babblesim.github.io/example_2g4.html
+.. _`building manual`: https://babblesim.github.io/building.html
 
 Subsystems backends
 *******************

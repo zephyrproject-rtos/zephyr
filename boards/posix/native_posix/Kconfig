@@ -25,4 +25,10 @@ config HAS_SDL
 	help
 	  This option specifies that the target board has SDL support
 
+config USE_BABBLESIM
+	bool "Enable BabbleSim support"
+	help
+	  When selected the bs_radio peripheral will be enabled and compiled
+	  against BabbleSim lib2G4PhyComv1 library.
+
 endif
