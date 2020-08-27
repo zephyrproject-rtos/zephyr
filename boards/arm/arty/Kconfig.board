@@ -6,3 +6,7 @@
 config BOARD_ARTY_A7_ARM_DESIGNSTART_M1
 	bool "Digilent Arty A7 ARM DesignStart Cortex-M1"
 	depends on SOC_SERIES_ARM_DESIGNSTART
+
+config BOARD_ARTY_A7_ARM_DESIGNSTART_M3
+	bool "Digilent Arty A7 ARM DesignStart Cortex-M3"
+	depends on SOC_SERIES_ARM_DESIGNSTART

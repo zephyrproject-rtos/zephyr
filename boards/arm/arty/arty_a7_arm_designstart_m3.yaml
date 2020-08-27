@@ -1,0 +1,13 @@
+identifier: arty_a7_arm_designstart_m3
+name: Digilent Arty A7 ARM DesignStart Cortex-M3
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 32
+flash: 32
+supported:
+  - flash
+  - spi
