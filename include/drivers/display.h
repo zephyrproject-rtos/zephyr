@@ -63,6 +63,10 @@ enum display_screen_info {
 	 * Screen has two alternating ram buffers
 	 */
 	SCREEN_INFO_DOUBLE_BUFFER	= BIT(3),
+	/**
+	 * Screen has x alignment constrained to width.
+	 */
+	SCREEN_INFO_X_ALIGNMENT_WIDTH	= BIT(4),
 };
 
 /**
@@ -98,7 +102,6 @@ enum display_orientation {
  *
  * @var enum display_orientation display_capabilities::current_orientation
  * Current display orientation
- *
  */
 struct display_capabilities {
 	uint16_t x_resolution;
