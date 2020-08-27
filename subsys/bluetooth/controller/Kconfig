@@ -51,9 +51,11 @@ config BT_CTLR_DTM_HCI_SUPPORT
 config BT_CTLR_SMI_SUPPORT
 	bool
 
+config BT_CTLR_CONN_RSSI_SUPPORT
+	bool
+
 config BT_CTLR
 	bool "Bluetooth Controller"
-	select BT_CTLR_CONN_RSSI if BT_CONN && BT_HCI_RAW
 	help
 	  Enables support for SoC native controller implementations.
 
@@ -351,6 +353,13 @@ config BT_CTLR_MIN_USED_CHAN
 	help
 	  Enable support for Bluetooth 5.0 Minimum Number of Used Channels
 	  Procedure in the Controller.
+
+config BT_CTLR_CONN_RSSI
+	bool "Connection RSSI"
+	depends on BT_CTLR_CONN_RSSI_SUPPORT
+	default y if BT_HCI_RAW
+	help
+	  Enable connection RSSI measurement.
 
 endif # BT_CONN
 
