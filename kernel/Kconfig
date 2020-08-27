@@ -351,6 +351,19 @@ config THREAD_MAX_NAME_LEN
 	  Thread names get stored in the k_thread struct. Indicate the max
 	  name length, including the terminating NULL byte. Reduce this value
 	  to conserve memory.
+
+config INSTRUMENT_THREAD_SWITCHING
+	bool
+
+config THREAD_RUNTIME_STATS
+	bool "Thread runtime statistics"
+	select INSTRUMENT_THREAD_SWITCHING
+	help
+	  Gather thread runtime statistics.
+
+	  For example:
+	    - Thread total execution cycles
+
 endmenu
 
 menu "Work Queue Options"

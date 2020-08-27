@@ -155,6 +155,18 @@ struct gdb_ctx;
 extern int z_gdb_main_loop(struct gdb_ctx *ctx, bool start);
 #endif
 
+#ifdef CONFIG_THREAD_RUNTIME_STATS
+void z_thread_mark_switched_in(void);
+void z_thread_mark_switched_out(void);
+#else
+static inline void z_thread_mark_switched_in(void)
+{
+}
+
+static inline void z_thread_mark_switched_out(void)
+{
+}
+#endif
 
 #ifdef __cplusplus
 }
