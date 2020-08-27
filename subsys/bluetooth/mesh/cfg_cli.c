@@ -1044,6 +1044,45 @@ int bt_mesh_cfg_net_key_get(uint16_t net_idx, uint16_t addr, uint16_t *keys,
 	return cli_wait();
 }
 
+int bt_mesh_cfg_net_key_del(uint16_t net_idx, uint16_t addr,
+			    uint16_t key_net_idx, uint8_t *status)
+{
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_NET_KEY_DEL, 2);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = BT_MESH_KEY_DEV_REMOTE,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct net_key_param param = {
+		.status = status,
+		.net_idx = key_net_idx,
+	};
+	int err;
+
+	err = cli_prepare(&param, OP_NET_KEY_STATUS);
+	if (err) {
+		return err;
+	}
+
+	bt_mesh_model_msg_init(&msg, OP_NET_KEY_DEL);
+	net_buf_simple_add_le16(&msg, key_net_idx);
+
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		cli_reset();
+		return err;
+	}
+
+	if (!status) {
+		cli_reset();
+		return 0;
+	}
+
+	return cli_wait();
+}
+
 int bt_mesh_cfg_app_key_add(uint16_t net_idx, uint16_t addr, uint16_t key_net_idx,
 			    uint16_t key_app_idx, const uint8_t app_key[16],
 			    uint8_t *status)

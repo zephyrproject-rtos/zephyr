@@ -387,6 +387,14 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 	Get a list of known network key indexes.
 
 
+``mesh net-key-del <NetKeyIndex>``
+----------------------------------------
+
+	Delete a network key from the target node.
+
+	* ``NetKeyIndex``: The network key index to delete.
+
+
 ``mesh app-key-add <NetKeyIndex> <AppKeyIndex> [val]``
 ------------------------------------------------------
 
