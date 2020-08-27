@@ -508,13 +508,6 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 	* ``Company ID``: If present, determines the Company ID of the model. If omitted, the model is a Bluetooth SIG defined model.
 
 
-Heartbeat Client model
-======================
-
-The Mesh Shell module instantiates a Health Client model for configuring itself and other nodes in the mesh network.
-
-The Health Client uses the general messages parameters set by ``mesh dst`` and ``mesh netidx`` to target specific nodes. When the Mesh Shell node is provisioned, the Health Client model targets itself by default. When another node has been provisioned by the Mesh Shell, the Health Client model targets the new node. The Health Client always sends messages using the Device key bound to the destination address, so it will only be able to configure itself and mesh nodes it provisioned.
-
 ``mesh hb-sub [<src> <dst> <period>]``
 --------------------------------------
 
@@ -555,6 +548,13 @@ The Health Client uses the general messages parameters set by ``mesh dst`` and `
 
 	* ``NetKeyIndex``: Index of the network key to publish Heartbeat messages with.
 
+
+Health Client model
+===================
+
+The Mesh Shell module instantiates a Health Client model for configuring itself and other nodes in the mesh network.
+
+The Health Client uses the general messages parameters set by ``mesh dst`` and ``mesh netidx`` to target specific nodes. When the Mesh Shell node is provisioned, the Health Client model targets itself by default. When another node has been provisioned by the Mesh Shell, the Health Client model targets the new node. The Health Client always sends messages using the Device key bound to the destination address, so it will only be able to configure itself and mesh nodes it provisioned.
 
 ``mesh fault-get <Company ID>``
 -------------------------------
@@ -642,8 +642,8 @@ The Health Client uses the general messages parameters set by ``mesh dst`` and `
 	* ``timer``: Duration of the attention state, in seconds (``0`` to ``255``)
 
 
-Heartbeat Server model
-======================
+Health Server model
+===================
 
 ``mesh add-fault <Fault ID>``
 -----------------------------
