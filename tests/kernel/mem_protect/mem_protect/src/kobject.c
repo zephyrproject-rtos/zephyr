@@ -532,7 +532,8 @@ static void new_thread_from_user_child(void *p1, void *p2, void *p3)
 /**
  * @brief Test thread create from a user thread and check permissions
  *
- * @details - Test user thread can create new thread.
+ * @details
+ * - Test user thread can create new thread.
  * - Verify that given thread and thread stack permissions to the user thread,
  *   allow to create new user thread.
  * - Veify that new created user thread have access to its own thread object
