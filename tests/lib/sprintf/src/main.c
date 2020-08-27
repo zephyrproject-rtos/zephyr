@@ -489,7 +489,6 @@ void test_snprintf(void)
 
 void test_sprintf_misc(void)
 {
-	int count;
 	char buffer[100];
 
 	/*******************/
@@ -497,6 +496,9 @@ void test_sprintf_misc(void)
 	zassert_false((strcmp(buffer, DEADBEEF_PTR_STR) != 0),
 		      "sprintf(%%p).  Expected '%s', got '%s'", DEADBEEF_PTR_STR, buffer);
 	/*******************/
+#if ((_FORTIFY_SOURCE - 0) < 2)
+	int count;
+
 	sprintf(buffer, "test data %n test data", &count);
 	zassert_false((count != 10), "sprintf(%%n).  Expected count to be %d, not %d",
 		      10, count);
@@ -504,7 +506,7 @@ void test_sprintf_misc(void)
 	zassert_false((strcmp(buffer, "test data  test data") != 0),
 		      "sprintf(%%p).  Expected '%s', got '%s'",
 		      "test data  test data", buffer);
-
+#endif
 	/*******************/
 	sprintf(buffer, "%*d", 10, 1234);
 	zassert_true((strcmp(buffer, "      1234") == 0),
