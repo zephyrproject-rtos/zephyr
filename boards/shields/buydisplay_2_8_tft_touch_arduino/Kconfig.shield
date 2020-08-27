@@ -1,0 +1,5 @@
+# Copyright (c) 2020 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_BUYDISPLAY_2_8_TFT_TOUCH_ARDUINO
+	def_bool $(shields_list_contains,buydisplay_2_8_tft_touch_arduino)
