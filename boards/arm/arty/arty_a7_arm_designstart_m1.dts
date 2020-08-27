@@ -11,6 +11,19 @@
 / {
 	model = "Digilent Arty A7 ARM DesignStart Cortex-M1";
 
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m1";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+
 	soc {
 		itcm: memory@0 {
 			compatible = "arm,itcm";
