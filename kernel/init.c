@@ -24,7 +24,6 @@
 #include <init.h>
 #include <linker/linker-defs.h>
 #include <ksched.h>
-#include <version.h>
 #include <string.h>
 #include <sys/dlist.h>
 #include <kernel_internal.h>
@@ -38,17 +37,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(os, CONFIG_KERNEL_LOG_LEVEL);
 
-/* boot banner items */
-#if defined(CONFIG_MULTITHREADING) && defined(CONFIG_BOOT_DELAY) \
-	&& CONFIG_BOOT_DELAY > 0
-#define BOOT_DELAY_BANNER " (delayed boot "	\
-	STRINGIFY(CONFIG_BOOT_DELAY) "ms)"
-#else
-#define BOOT_DELAY_BANNER ""
-#endif
-
 /* boot time measurement items */
-
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 uint32_t __noinit z_timestamp_main;  /* timestamp when main task starts */
 uint32_t __noinit z_timestamp_idle;  /* timestamp when CPU goes idle */
@@ -130,6 +119,7 @@ extern volatile uintptr_t __stack_chk_guard;
 /* LCOV_EXCL_STOP */
 
 bool z_sys_post_kernel;
+extern void boot_banner(void);
 
 /**
  *
@@ -146,33 +136,13 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	ARG_UNUSED(unused2);
 	ARG_UNUSED(unused3);
 
-#if defined(CONFIG_BOOT_DELAY) && CONFIG_BOOT_DELAY > 0
-	static const unsigned int boot_delay = CONFIG_BOOT_DELAY;
-#else
-	static const unsigned int boot_delay;
-#endif
-
 	z_sys_post_kernel = true;
 
 	z_sys_init_run_level(_SYS_INIT_LEVEL_POST_KERNEL);
 #if CONFIG_STACK_POINTER_RANDOM
 	z_stack_adjust_initialized = 1;
 #endif
-	if (boot_delay > 0 && IS_ENABLED(CONFIG_MULTITHREADING)) {
-		printk("***** delaying boot " STRINGIFY(CONFIG_BOOT_DELAY)
-		       "ms (per build configuration) *****\n");
-		k_busy_wait(CONFIG_BOOT_DELAY * USEC_PER_MSEC);
-	}
-
-#if defined(CONFIG_BOOT_BANNER)
-#ifdef BUILD_VERSION
-	printk("*** Booting Zephyr OS build %s %s ***\n",
-			STRINGIFY(BUILD_VERSION), BOOT_DELAY_BANNER);
-#else
-	printk("*** Booting Zephyr OS version %s %s ***\n",
-			KERNEL_VERSION_STRING, BOOT_DELAY_BANNER);
-#endif
-#endif
+	boot_banner();
 
 #ifdef CONFIG_CPLUSPLUS
 	/* Process the .ctors and .init_array sections */
@@ -247,7 +217,6 @@ static void init_idle_thread(int i)
 	thread->base.is_idle = 1U;
 #endif
 }
-#endif /* CONFIG_MULTITHREADING */
 
 /**
  *
@@ -261,7 +230,6 @@ static void init_idle_thread(int i)
  *
  * @return initial stack pointer for the main thread
  */
-#ifdef CONFIG_MULTITHREADING
 static char *prepare_multithreading(void)
 {
 	char *stack_ptr;
