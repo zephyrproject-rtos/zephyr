@@ -662,6 +662,7 @@ static int espi_xec_manage_callback(struct device *dev,
 	return espi_manage_callback(&data->callbacks, callback, set);
 }
 
+#ifdef CONFIG_ESPI_AUTOMATIC_BOOT_DONE_ACKNOWLEDGE
 static void send_slave_bootdone(struct device *dev)
 {
 	int ret;
@@ -671,9 +672,12 @@ static void send_slave_bootdone(struct device *dev)
 				     &boot_done);
 	if (!ret && !boot_done) {
 		/* SLAVE_BOOT_DONE & SLAVE_LOAD_STS have to be sent together */
-		ESPI_S2M_VW_REGS->SMVW01.SRC = 0x01000001;
+		espi_xec_send_vwire(dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_STS, 1);
+		espi_xec_send_vwire(dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE, 1);
 	}
 }
+#endif
+
 #ifdef CONFIG_ESPI_OOB_CHANNEL
 static void espi_init_oob(struct device *dev)
 {
@@ -871,7 +875,9 @@ static void espi_vwire_chanel_isr(struct device *dev)
 		evt.evt_data = 1;
 		/* VW channel interrupt can disabled at this point */
 		MCHP_GIRQ_ENCLR(config->bus_girq_id) = MCHP_ESPI_VW_EN_GIRQ_VAL;
+#ifdef CONFIG_ESPI_AUTOMATIC_BOOT_DONE_ACKNOWLEDGE
 		send_slave_bootdone(dev);
+#endif
 	}
 
 	espi_send_callbacks(&data->callbacks, dev, evt);
