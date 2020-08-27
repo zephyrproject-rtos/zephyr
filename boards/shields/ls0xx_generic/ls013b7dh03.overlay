@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2020 Rohit Gujarathi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_spi {
+	status = "okay";
+
+	ls0xx@0 {
+		compatible = "sharp,ls0xx";
+		label = "LS0XX";
+		spi-max-frequency = <2000000>;
+		reg = <0>;
+		width = <128>;
+		height = <128>;
+		scs-gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
+		extcomin-gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>; /* optional */
+		disp-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>; /* optional */
+	};
+};
