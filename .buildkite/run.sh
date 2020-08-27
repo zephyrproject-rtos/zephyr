@@ -2,6 +2,7 @@
 # Copyright (c) 2020 Linaro Limited
 #
 # SPDX-License-Identifier: Apache-2.0
+set -e
 
 echo "--- run $0"
 
