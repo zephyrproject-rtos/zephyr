@@ -280,6 +280,22 @@ struct z_poller {
 	uint8_t mode;
 };
 
+#ifdef CONFIG_THREAD_RUNTIME_STATS
+struct k_thread_runtime_stats {
+	/* Thread execution cycles */
+	uint64_t execution_cycles;
+};
+
+typedef struct k_thread_runtime_stats k_thread_runtime_stats_t;
+
+struct _thread_runtime_stats {
+	/* Timestamp when last switched in */
+	uint32_t last_switched_in;
+
+	k_thread_runtime_stats_t stats;
+};
+#endif
+
 /**
  * @ingroup thread_apis
  * Thread Structure
@@ -383,6 +399,11 @@ struct k_thread {
 	/* Pointer to arch-specific TLS area */
 	uintptr_t tls;
 #endif /* CONFIG_THREAD_LOCAL_STORAGE */
+
+#ifdef CONFIG_THREAD_RUNTIME_STATS
+	/** Runtime statistics */
+	struct _thread_runtime_stats rt_stats;
+#endif
 
 	/** arch-specifics: must always be at the end */
 	struct _thread_arch arch;
@@ -5061,6 +5082,28 @@ __syscall void k_str_out(char *c, size_t n);
  *         -EINVAL If the floating point disabling could not be performed.
  */
 __syscall int k_float_disable(struct k_thread *thread);
+
+#ifdef CONFIG_THREAD_RUNTIME_STATS
+
+/**
+ * @brief Get the runtime statistics of a thread
+ *
+ * @param thread ID of thread.
+ * @param stats Pointer to struct to copy statistics into.
+ * @return -EINVAL if null pointers, otherwise 0
+ */
+int k_thread_runtime_stats_get(k_tid_t thread,
+			       k_thread_runtime_stats_t *stats);
+
+/**
+ * @brief Get the runtime statistics of all threads
+ *
+ * @param stats Pointer to struct to copy statistics into.
+ * @return -EINVAL if null pointers, otherwise 0
+ */
+int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats);
+
+#endif
 
 #ifdef __cplusplus
 }

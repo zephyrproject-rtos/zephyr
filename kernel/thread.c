@@ -33,6 +33,10 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os);
 
+#ifdef CONFIG_THREAD_RUNTIME_STATS
+k_thread_runtime_stats_t threads_runtime_stats;
+#endif
+
 #ifdef CONFIG_THREAD_MONITOR
 /* This lock protects the linked list of active threads; i.e. the
  * initial _kernel.threads pointer and the linked list made up of
@@ -640,6 +644,10 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	new_thread->resource_pool = _current->resource_pool;
 	sys_trace_thread_create(new_thread);
 
+#ifdef CONFIG_THREAD_RUNTIME_STATS
+	memset(&new_thread->rt_stats, 0, sizeof(new_thread->rt_stats));
+#endif
+
 	return stack_ptr;
 }
 
@@ -1016,3 +1024,64 @@ static inline k_ticks_t z_vrfy_k_thread_timeout_expires_ticks(
 }
 #include <syscalls/k_thread_timeout_expires_ticks_mrsh.c>
 #endif
+
+#ifdef CONFIG_THREAD_RUNTIME_STATS
+void z_thread_mark_switched_in(void)
+{
+	struct k_thread *thread;
+
+	thread = k_current_get();
+	thread->rt_stats.last_switched_in = k_cycle_get_32();
+}
+
+void z_thread_mark_switched_out(void)
+{
+	uint32_t now;
+	uint64_t diff;
+	struct k_thread *thread;
+
+	thread = k_current_get();
+
+	if (unlikely(thread->rt_stats.last_switched_in == 0)) {
+		/* Has not run before */
+		return;
+	}
+
+	if (unlikely(thread->base.thread_state == _THREAD_DUMMY)) {
+		/* dummy thread has no stat struct */
+		return;
+	}
+
+	now = k_cycle_get_32();
+	diff = (uint64_t)now - thread->rt_stats.last_switched_in;
+	thread->rt_stats.stats.execution_cycles += diff;
+	thread->rt_stats.last_switched_in = 0;
+
+	threads_runtime_stats.execution_cycles += diff;
+}
+
+int k_thread_runtime_stats_get(k_tid_t thread,
+			       k_thread_runtime_stats_t *stats)
+{
+	if ((thread == NULL) || (stats == NULL)) {
+		return -EINVAL;
+	}
+
+	(void)memcpy(stats, &thread->rt_stats.stats,
+		     sizeof(thread->rt_stats.stats));
+
+	return 0;
+}
+
+int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats)
+{
+	if (stats == NULL) {
+		return -EINVAL;
+	}
+
+	(void)memcpy(stats, &threads_runtime_stats,
+		     sizeof(threads_runtime_stats));
+
+	return 0;
+}
+#endif /* CONFIG_THREAD_RUNTIME_STATS */
