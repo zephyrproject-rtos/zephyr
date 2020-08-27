@@ -112,7 +112,10 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         p = 'Please select one with desired serial number (1-{}): '.format(
                 len(snrs))
         while True:
-            value = input(p)
+            try:
+                value = input(p)
+            except EOFError:
+                sys.exit(0)
             try:
                 value = int(value)
             except ValueError:
