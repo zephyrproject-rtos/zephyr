@@ -27,6 +27,7 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_CHAN_SEL_2_SUPPORT
 	select BT_CTLR_MIN_USED_CHAN_SUPPORT
 	select BT_CTLR_DTM_HCI_SUPPORT
+	select BT_CTLR_CONN_RSSI_SUPPORT
 
 	select BT_CTLR_XTAL_ADVANCED_SUPPORT
 	select BT_CTLR_SCHED_ADVANCED_SUPPORT
@@ -373,11 +374,6 @@ config BT_CTLR_TX_RETRY_DISABLE
 	  latencies by one connection interval as the next attempt to send a PDU
 	  would happen in the next connection event instead of repeated retries
 	  in the current connection event.
-
-config BT_CTLR_CONN_RSSI
-	bool "Connection RSSI"
-	help
-	  Enable connection RSSI measurement.
 
 config BT_CTLR_CONN_RSSI_EVENT
 	bool "Connection RSSI event"
