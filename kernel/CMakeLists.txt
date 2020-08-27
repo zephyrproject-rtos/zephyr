@@ -2,7 +2,8 @@
 
 # kernel is a normal CMake library and not a zephyr_library because it
 # should not be --whole-archive'd
-add_library(kernel
+
+list(APPEND kernel_files
   device.c
   errno.c
   fatal.c
@@ -25,6 +26,13 @@ add_library(kernel
   work_q.c
   smp.c
   )
+
+if(CONFIG_XIP)
+list(APPEND kernel_files
+     xip.c)
+endif()
+
+add_library(kernel ${kernel_files})
 
 # Kernel files has the macro __ZEPHYR_SUPERVISOR__ set so that it
 # optimizes the code when userspace is enabled.
