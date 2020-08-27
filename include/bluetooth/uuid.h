@@ -964,7 +964,7 @@ struct bt_uuid_128 {
  *  @brief OTS Object Size Characteristic
  */
 #define BT_UUID_OTS_SIZE \
-	BT_UUID_DECLARE_16(BT_UUID_OTS_SIZE)
+	BT_UUID_DECLARE_16(BT_UUID_OTS_SIZE_VAL)
 /** @def BT_UUID_OTS_FIRST_CREATED_VAL
  *  @brief OTS Object First-Created Characteristic UUID value
  */
@@ -1126,7 +1126,7 @@ struct bt_uuid_128 {
 #define BT_UUID_FTP_VAL               0x000a
 #define BT_UUID_FTP                   BT_UUID_DECLARE_16(BT_UUID_FTP_VAL)
 #define BT_UUID_HTTP_VAL              0x000c
-#define BT_UUID_HTTP                  BT_UUID_DECLARE_16(BT_UUID_HTTP)
+#define BT_UUID_HTTP                  BT_UUID_DECLARE_16(BT_UUID_HTTP_VAL)
 #define BT_UUID_BNEP_VAL              0x000f
 #define BT_UUID_BNEP                  BT_UUID_DECLARE_16(BT_UUID_BNEP_VAL)
 #define BT_UUID_UPNP_VAL              0x0010
