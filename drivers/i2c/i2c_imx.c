@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT fsl_imx7d_i2c
+#define DT_DRV_COMPAT fsl_imx21_i2c
 
 #include <errno.h>
 #include <drivers/i2c.h>
