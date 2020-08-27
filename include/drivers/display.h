@@ -63,6 +63,10 @@ enum display_screen_info {
 	 * Screen has two alternating ram buffers
 	 */
 	SCREEN_INFO_DOUBLE_BUFFER	= BIT(3),
+	/**
+	 * Screen has minimum x or y pixel alignment contraint.
+	 */
+	SCREEN_INFO_ALIGNMENT_RESTRICTED	= BIT(4),
 };
 
 /**
@@ -99,6 +103,15 @@ enum display_orientation {
  * @var enum display_orientation display_capabilities::current_orientation
  * Current display orientation
  *
+ * @var uint16_t display_capabilities::x_alignment
+ * Minimum update contraint in the x-direction-1.
+ * if 8 pixels then value should be 7
+ * 0 means no contraint
+ *
+ * @var uint16_t display_capabilities::y_alignment
+ * Minimum update contraint in the y-direction-1.
+ * if 8 pixels then value should be 7
+ * 0 mean no contraint
  */
 struct display_capabilities {
 	uint16_t x_resolution;
@@ -107,6 +120,8 @@ struct display_capabilities {
 	uint32_t screen_info;
 	enum display_pixel_format current_pixel_format;
 	enum display_orientation current_orientation;
+	uint16_t x_alignment;
+	uint16_t y_alignment;
 };
 
 /**
