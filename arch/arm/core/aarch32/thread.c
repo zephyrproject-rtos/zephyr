@@ -391,8 +391,8 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 	z_arm_prepare_switch_to_main();
 
 	_current = main_thread;
-#ifdef CONFIG_TRACING
-	sys_trace_thread_switched_in();
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
+	z_thread_mark_switched_in();
 #endif
 
 	/* the ready queue cache already contains the main thread */

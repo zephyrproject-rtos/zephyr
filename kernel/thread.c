@@ -1025,17 +1025,24 @@ static inline k_ticks_t z_vrfy_k_thread_timeout_expires_ticks(
 #include <syscalls/k_thread_timeout_expires_ticks_mrsh.c>
 #endif
 
-#ifdef CONFIG_THREAD_RUNTIME_STATS
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
 void z_thread_mark_switched_in(void)
 {
+#ifdef CONFIG_TRACING
+	sys_trace_thread_switched_in();
+#endif
+
+#ifdef CONFIG_THREAD_RUNTIME_STATS
 	struct k_thread *thread;
 
 	thread = k_current_get();
 	thread->rt_stats.last_switched_in = k_cycle_get_32();
+#endif /* CONFIG_THREAD_RUNTIME_STATS */
 }
 
 void z_thread_mark_switched_out(void)
 {
+#ifdef CONFIG_THREAD_RUNTIME_STATS
 	uint32_t now;
 	uint64_t diff;
 	struct k_thread *thread;
@@ -1058,8 +1065,14 @@ void z_thread_mark_switched_out(void)
 	thread->rt_stats.last_switched_in = 0;
 
 	threads_runtime_stats.execution_cycles += diff;
+#endif /* CONFIG_THREAD_RUNTIME_STATS */
+
+#ifdef CONFIG_TRACING
+	sys_trace_thread_switched_out();
+#endif
 }
 
+#ifdef CONFIG_THREAD_RUNTIME_STATS
 int k_thread_runtime_stats_get(k_tid_t thread,
 			       k_thread_runtime_stats_t *stats)
 {
@@ -1085,3 +1098,5 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats)
 	return 0;
 }
 #endif /* CONFIG_THREAD_RUNTIME_STATS */
+
+#endif /* CONFIG_INSTRUMENT_THREAD_SWITCHING */

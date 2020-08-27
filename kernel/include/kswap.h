@@ -106,7 +106,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 			z_smp_release_global_lock(new_thread);
 		}
 #endif
-		sys_trace_thread_switched_out();
+		z_thread_mark_switched_out();
 		wait_for_switch(new_thread);
 		arch_cohere_stacks(old_thread, NULL, new_thread);
 		_current_cpu->current = new_thread;

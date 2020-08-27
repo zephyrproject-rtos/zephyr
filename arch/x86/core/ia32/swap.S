@@ -66,9 +66,9 @@
  */
 
 SECTION_FUNC(TEXT, arch_swap)
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)
 	pushl	%eax
-	call	sys_trace_thread_switched_out
+	call	z_thread_mark_switched_out
 	popl	%eax
 #endif
 	/*
@@ -344,9 +344,9 @@ CROHandlingDone:
 	pushl	4(%esp)
 	popfl
 
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)
 	pushl	%eax
-	call	sys_trace_thread_switched_in
+	call	z_thread_mark_switched_in
 	popl	%eax
 #endif
 	ret

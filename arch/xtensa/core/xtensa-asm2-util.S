@@ -241,8 +241,8 @@ flushloop:
 	 */
 	l32i a1, a2, BSA_A2_OFF
 
-#ifdef CONFIG_TRACING
-	call4 sys_trace_thread_switched_in
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
+	call4 z_thread_mark_switched_in
 #endif
 	j _restore_context
 _switch_restore_pc:

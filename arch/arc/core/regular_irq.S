@@ -309,10 +309,10 @@ _rirq_switch_from_coop:
 	 */
 	st_s r13, [sp, ___isf_t_r13_OFFSET]
 
-#ifdef CONFIG_TRACING
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
 	push_s blink
 
-	bl sys_trace_thread_switched_in
+	bl z_thread_mark_switched_in
 
 	pop_s blink
 #endif
@@ -326,10 +326,10 @@ _rirq_switch_from_rirq:
 
 	_set_misc_regs_irq_switch_from_irq
 
-#ifdef CONFIG_TRACING
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
 	push_s blink
 
-	bl sys_trace_thread_switched_in
+	bl z_thread_mark_switched_in
 
 	pop_s blink
 #endif

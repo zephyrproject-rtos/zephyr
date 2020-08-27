@@ -233,9 +233,12 @@ GTEXT(_k_neg_eagain)
 GTEXT(_is_next_thread_current)
 GTEXT(z_get_next_ready_thread)
 
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
+GTEXT(z_thread_mark_switched_in)
+GTEXT(z_thread_mark_switched_out)
 #ifdef CONFIG_TRACING
-GTEXT(sys_trace_thread_switched_in)
 GTEXT(sys_trace_isr_enter)
+#endif
 #endif
 
 #ifdef CONFIG_IRQ_OFFLOAD
@@ -812,8 +815,8 @@ skip_fp_move_irq:
 
 reschedule:
 
-#if CONFIG_TRACING
-	call sys_trace_thread_switched_out
+#if CONFIG_INSTRUMENT_THREAD_SWITCHING
+	call z_thread_mark_switched_out
 #endif
 	/* Get reference to _kernel */
 	la t0, _kernel
@@ -932,8 +935,8 @@ skip_load_fp_callee_saved:
 kernel_swap:
 #endif /* CONFIG_USERSPACE */
 
-#if CONFIG_TRACING
-	call sys_trace_thread_switched_in
+#if CONFIG_INSTRUMENT_THREAD_SWITCHING
+	call z_thread_mark_switched_in
 #endif
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE

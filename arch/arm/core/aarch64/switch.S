@@ -75,9 +75,9 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	ldr	x1, [x2]
 	mov	sp, x1
 
-#ifdef CONFIG_TRACING
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
 	stp	xzr, x30, [sp, #-16]!
-	bl	sys_trace_thread_switched_in
+	bl	z_thread_mark_switched_in
 	ldp	xzr, x30, [sp], #16
 #endif
 
