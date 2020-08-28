@@ -73,6 +73,20 @@ GTEXT(z_arm_exc_exit);
 extern "C" {
 #endif
 
+/* Additional register state that is not stacked by hardware on exception
+ * entry.
+ *
+ * These fields are ONLY valid in the ESF copy passed into z_arm_fatal_error().
+ * When information for a member is unavailable, the field is set to zero.
+ */
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+struct __extra_esf_info {
+	_callee_saved_t *callee;
+	uint32_t msp;
+	uint32_t exc_return;
+};
+#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
+
 struct __esf {
 	struct __basic_sf {
 		sys_define_gpr_with_alias(a1, r0);
@@ -88,6 +102,9 @@ struct __esf {
 	float s[16];
 	uint32_t fpscr;
 	uint32_t undefined;
+#endif
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+	struct __extra_esf_info extra_info;
 #endif
 };
 

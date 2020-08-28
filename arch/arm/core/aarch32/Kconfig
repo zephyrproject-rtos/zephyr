@@ -17,6 +17,7 @@ config CPU_CORTEX_M
 	select ARCH_HAS_RAMFUNC_SUPPORT
 	select ARCH_HAS_NESTED_EXCEPTION_DETECTION
 	select SWAP_NONATOMIC
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO
 	imply XIP
 	help
 	  This option signifies the use of a CPU of the Cortex-M family.
