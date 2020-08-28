@@ -355,6 +355,8 @@ error:
 	return ret;
 }
 
+#if defined(CONFIG_UPDATEHUB_DOWNLOAD_SHA256_VERIFICATION) || \
+	defined(CONFIG_UPDATEHUB_DOWNLOAD_STORAGE_SHA256_VERIFICATION)
 static bool install_update_cb_sha256(void)
 {
 	char sha256[SHA256_HEX_DIGEST_SIZE];
@@ -379,6 +381,7 @@ static bool install_update_cb_sha256(void)
 
 	return true;
 }
+#endif
 
 static int install_update_cb_check_blk_num(struct coap_packet *resp)
 {
@@ -406,6 +409,10 @@ static int install_update_cb_check_blk_num(struct coap_packet *resp)
 static void install_update_cb(void)
 {
 	struct coap_packet response_packet;
+#if defined(CONFIG_UPDATEHUB_STORAGE_SHA256_VERIFICATION) || \
+	defined(CONFIG_UPDATEHUB_DOWNLOAD_STORAGE_SHA256_VERIFICATION)
+	struct flash_img_check fic;
+#endif
 	uint8_t *data = k_malloc(MAX_DOWNLOAD_DATA);
 	int rcvd = -1;
 
@@ -442,6 +449,8 @@ static void install_update_cb(void)
 	ctx.downloaded_size = ctx.downloaded_size +
 			      (response_packet.max_len - response_packet.offset);
 
+#if defined(CONFIG_UPDATEHUB_DOWNLOAD_SHA256_VERIFICATION) || \
+	defined(CONFIG_UPDATEHUB_DOWNLOAD_STORAGE_SHA256_VERIFICATION)
 	if (tc_sha256_update(&ctx.sha256sum,
 			     response_packet.data + response_packet.offset,
 			     response_packet.max_len - response_packet.offset) < 1) {
@@ -449,6 +458,7 @@ static void install_update_cb(void)
 		ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
 		goto cleanup;
 	}
+#endif
 
 	if (flash_img_buffered_write(&ctx.flash_ctx,
 				     response_packet.data + response_packet.offset,
@@ -471,12 +481,37 @@ static void install_update_cb(void)
 			goto cleanup;
 		}
 
-		LOG_INF("Firmware downloaded successfully");
+		LOG_INF("Firmware download complete");
+
+#if defined(CONFIG_UPDATEHUB_DOWNLOAD_SHA256_VERIFICATION) || \
+	defined(CONFIG_UPDATEHUB_DOWNLOAD_STORAGE_SHA256_VERIFICATION)
 		if (!install_update_cb_sha256()) {
-			LOG_ERR("Firmware validation has failed");
+			LOG_ERR("Firmware - download validation has failed");
 			ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
 			goto cleanup;
 		}
+#else
+		if (hex2bin(update_info.sha256sum_image,
+			    SHA256_HEX_DIGEST_SIZE - 1, ctx.hash,
+			    TC_SHA256_DIGEST_SIZE) != TC_SHA256_DIGEST_SIZE) {
+			LOG_ERR("Firmware - metadata validation has failed");
+			ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
+			goto cleanup;
+		}
+#endif
+
+#if defined(CONFIG_UPDATEHUB_STORAGE_SHA256_VERIFICATION) || \
+	defined(CONFIG_UPDATEHUB_DOWNLOAD_STORAGE_SHA256_VERIFICATION)
+		fic.match = ctx.hash;
+		fic.clen = ctx.downloaded_size;
+
+		if (flash_img_check(&ctx.flash_ctx, &fic,
+				    FLASH_AREA_ID(image_1))) {
+			LOG_ERR("Firmware - flash validation has failed");
+			ctx.code_status = UPDATEHUB_INSTALL_ERROR;
+			goto cleanup;
+		}
+#endif
 	}
 
 	ctx.code_status = UPDATEHUB_OK;
@@ -493,11 +528,14 @@ static enum updatehub_response install_update(void)
 		goto error;
 	}
 
+#if defined(CONFIG_UPDATEHUB_DOWNLOAD_SHA256_VERIFICATION) || \
+	defined(CONFIG_UPDATEHUB_DOWNLOAD_STORAGE_SHA256_VERIFICATION)
 	if (tc_sha256_init(&ctx.sha256sum) < 1) {
 		LOG_ERR("Could not start sha256sum");
 		ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
 		goto error;
 	}
+#endif
 
 	if (!start_coap_client()) {
 		ctx.code_status = UPDATEHUB_NETWORKING_ERROR;
@@ -951,6 +989,16 @@ static void autohandler(struct k_work *work)
 
 void updatehub_autohandler(void)
 {
+#if defined(CONFIG_UPDATEHUB_DOWNLOAD_SHA256_VERIFICATION)
+	LOG_INF("SHA-256 verification on download only");
+#endif
+#if defined(CONFIG_UPDATEHUB_STORAGE_SHA256_VERIFICATION)
+	LOG_INF("SHA-256 verification from flash only");
+#endif
+#if defined(CONFIG_UPDATEHUB_DOWNLOAD_STORAGE_SHA256_VERIFICATION)
+	LOG_INF("SHA-256 verification on download and from flash");
+#endif
+
 	k_delayed_work_init(&updatehub_work_handle, autohandler);
 	k_delayed_work_submit(&updatehub_work_handle, K_NO_WAIT);
 }
