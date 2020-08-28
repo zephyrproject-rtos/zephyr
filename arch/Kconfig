@@ -55,6 +55,7 @@ config NIOS2
 	select ATOMIC_OPERATIONS_C
 	select HAS_DTS
 	imply XIP
+	select ARCH_HAS_TIMING_FUNCTIONS
 	help
 	  Nios II Gen 2 architecture
 
