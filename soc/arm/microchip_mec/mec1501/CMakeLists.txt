@@ -12,3 +12,5 @@ zephyr_sources_ifdef(CONFIG_SYS_POWER_MANAGEMENT
   device_power.c
   power.c
   )
+
+zephyr_library_sources_ifdef(CONFIG_TIMING_FUNCTIONS timing.c)
