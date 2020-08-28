@@ -8,8 +8,7 @@
  * @brief DMA low level driver implementation for F2/F4/F7 series SoCs.
  */
 
-#include <drivers/dma.h>
-#include <soc.h>
+#include "dma_stm32.h"
 
 #define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
 #include <logging/log.h>
@@ -54,154 +53,224 @@ uint32_t dma_stm32_slot_to_channel(uint32_t slot)
 	return channel_nr[slot];
 }
 
-void (*func_ll_clear_ht[])(DMA_TypeDef *DMAx) = {
-	LL_DMA_ClearFlag_HT0,
-	LL_DMA_ClearFlag_HT1,
-	LL_DMA_ClearFlag_HT2,
-	LL_DMA_ClearFlag_HT3,
-	LL_DMA_ClearFlag_HT4,
-	LL_DMA_ClearFlag_HT5,
-	LL_DMA_ClearFlag_HT6,
-	LL_DMA_ClearFlag_HT7,
-};
+void dma_stm32_clear_ht(DMA_TypeDef *DMAx, uint32_t id)
+{
+	static const dma_stm32_clear_flag_func func[] = {
+		LL_DMA_ClearFlag_HT0,
+		LL_DMA_ClearFlag_HT1,
+		LL_DMA_ClearFlag_HT2,
+		LL_DMA_ClearFlag_HT3,
+		LL_DMA_ClearFlag_HT4,
+		LL_DMA_ClearFlag_HT5,
+		LL_DMA_ClearFlag_HT6,
+		LL_DMA_ClearFlag_HT7,
+	};
 
-void (*func_ll_clear_tc[])(DMA_TypeDef *DMAx) = {
-	LL_DMA_ClearFlag_TC0,
-	LL_DMA_ClearFlag_TC1,
-	LL_DMA_ClearFlag_TC2,
-	LL_DMA_ClearFlag_TC3,
-	LL_DMA_ClearFlag_TC4,
-	LL_DMA_ClearFlag_TC5,
-	LL_DMA_ClearFlag_TC6,
-	LL_DMA_ClearFlag_TC7,
-};
+	__ASSERT_NO_MSG(id < ARRAY_SIZE(func));
 
-uint32_t (*func_ll_is_active_ht[])(DMA_TypeDef *DMAx) = {
-	LL_DMA_IsActiveFlag_HT0,
-	LL_DMA_IsActiveFlag_HT1,
-	LL_DMA_IsActiveFlag_HT2,
-	LL_DMA_IsActiveFlag_HT3,
-	LL_DMA_IsActiveFlag_HT4,
-	LL_DMA_IsActiveFlag_HT5,
-	LL_DMA_IsActiveFlag_HT6,
-	LL_DMA_IsActiveFlag_HT7,
-};
+	func[id](DMAx);
+}
 
-uint32_t (*func_ll_is_active_tc[])(DMA_TypeDef *DMAx) = {
-	LL_DMA_IsActiveFlag_TC0,
-	LL_DMA_IsActiveFlag_TC1,
-	LL_DMA_IsActiveFlag_TC2,
-	LL_DMA_IsActiveFlag_TC3,
-	LL_DMA_IsActiveFlag_TC4,
-	LL_DMA_IsActiveFlag_TC5,
-	LL_DMA_IsActiveFlag_TC6,
-	LL_DMA_IsActiveFlag_TC7,
-};
+void dma_stm32_clear_tc(DMA_TypeDef *DMAx, uint32_t id)
+{
+	static const dma_stm32_clear_flag_func func[] = {
+		LL_DMA_ClearFlag_TC0,
+		LL_DMA_ClearFlag_TC1,
+		LL_DMA_ClearFlag_TC2,
+		LL_DMA_ClearFlag_TC3,
+		LL_DMA_ClearFlag_TC4,
+		LL_DMA_ClearFlag_TC5,
+		LL_DMA_ClearFlag_TC6,
+		LL_DMA_ClearFlag_TC7,
+	};
 
-static void (*func_ll_clear_te[])(DMA_TypeDef *DMAx) = {
-	LL_DMA_ClearFlag_TE0,
-	LL_DMA_ClearFlag_TE1,
-	LL_DMA_ClearFlag_TE2,
-	LL_DMA_ClearFlag_TE3,
-	LL_DMA_ClearFlag_TE4,
-	LL_DMA_ClearFlag_TE5,
-	LL_DMA_ClearFlag_TE6,
-	LL_DMA_ClearFlag_TE7,
-};
+	__ASSERT_NO_MSG(id < ARRAY_SIZE(func));
 
-static void (*func_ll_clear_dme[])(DMA_TypeDef *DMAx) = {
-	LL_DMA_ClearFlag_DME0,
-	LL_DMA_ClearFlag_DME1,
-	LL_DMA_ClearFlag_DME2,
-	LL_DMA_ClearFlag_DME3,
-	LL_DMA_ClearFlag_DME4,
-	LL_DMA_ClearFlag_DME5,
-	LL_DMA_ClearFlag_DME6,
-	LL_DMA_ClearFlag_DME7,
-};
+	func[id](DMAx);
+}
 
-static void (*func_ll_clear_fe[])(DMA_TypeDef *DMAx) = {
-	LL_DMA_ClearFlag_FE0,
-	LL_DMA_ClearFlag_FE1,
-	LL_DMA_ClearFlag_FE2,
-	LL_DMA_ClearFlag_FE3,
-	LL_DMA_ClearFlag_FE4,
-	LL_DMA_ClearFlag_FE5,
-	LL_DMA_ClearFlag_FE6,
-	LL_DMA_ClearFlag_FE7,
-};
+bool dma_stm32_is_ht_active(DMA_TypeDef *DMAx, uint32_t id)
+{
+	static const dma_stm32_check_flag_func func[] = {
+		LL_DMA_IsActiveFlag_HT0,
+		LL_DMA_IsActiveFlag_HT1,
+		LL_DMA_IsActiveFlag_HT2,
+		LL_DMA_IsActiveFlag_HT3,
+		LL_DMA_IsActiveFlag_HT4,
+		LL_DMA_IsActiveFlag_HT5,
+		LL_DMA_IsActiveFlag_HT6,
+		LL_DMA_IsActiveFlag_HT7,
+	};
 
-static uint32_t (*func_ll_is_active_te[])(DMA_TypeDef *DMAx) = {
-	LL_DMA_IsActiveFlag_TE0,
-	LL_DMA_IsActiveFlag_TE1,
-	LL_DMA_IsActiveFlag_TE2,
-	LL_DMA_IsActiveFlag_TE3,
-	LL_DMA_IsActiveFlag_TE4,
-	LL_DMA_IsActiveFlag_TE5,
-	LL_DMA_IsActiveFlag_TE6,
-	LL_DMA_IsActiveFlag_TE7,
-};
+	__ASSERT_NO_MSG(id < ARRAY_SIZE(func));
 
-static uint32_t (*func_ll_is_active_dme[])(DMA_TypeDef *DMAx) = {
-	LL_DMA_IsActiveFlag_DME0,
-	LL_DMA_IsActiveFlag_DME1,
-	LL_DMA_IsActiveFlag_DME2,
-	LL_DMA_IsActiveFlag_DME3,
-	LL_DMA_IsActiveFlag_DME4,
-	LL_DMA_IsActiveFlag_DME5,
-	LL_DMA_IsActiveFlag_DME6,
-	LL_DMA_IsActiveFlag_DME7,
-};
+	return func[id](DMAx);
+}
 
-static uint32_t (*func_ll_is_active_fe[])(DMA_TypeDef *DMAx) = {
-	LL_DMA_IsActiveFlag_FE0,
-	LL_DMA_IsActiveFlag_FE1,
-	LL_DMA_IsActiveFlag_FE2,
-	LL_DMA_IsActiveFlag_FE3,
-	LL_DMA_IsActiveFlag_FE4,
-	LL_DMA_IsActiveFlag_FE5,
-	LL_DMA_IsActiveFlag_FE6,
-	LL_DMA_IsActiveFlag_FE7,
-};
+bool dma_stm32_is_tc_active(DMA_TypeDef *DMAx, uint32_t id)
+{
+	static const dma_stm32_check_flag_func func[] = {
+		LL_DMA_IsActiveFlag_TC0,
+		LL_DMA_IsActiveFlag_TC1,
+		LL_DMA_IsActiveFlag_TC2,
+		LL_DMA_IsActiveFlag_TC3,
+		LL_DMA_IsActiveFlag_TC4,
+		LL_DMA_IsActiveFlag_TC5,
+		LL_DMA_IsActiveFlag_TC6,
+		LL_DMA_IsActiveFlag_TC7,
+	};
+
+	__ASSERT_NO_MSG(id < ARRAY_SIZE(func));
+
+	return func[id](DMAx);
+}
+
+void dma_stm32_clear_te(DMA_TypeDef *DMAx, uint32_t id)
+{
+	static const dma_stm32_clear_flag_func func[] = {
+		LL_DMA_ClearFlag_TE0,
+		LL_DMA_ClearFlag_TE1,
+		LL_DMA_ClearFlag_TE2,
+		LL_DMA_ClearFlag_TE3,
+		LL_DMA_ClearFlag_TE4,
+		LL_DMA_ClearFlag_TE5,
+		LL_DMA_ClearFlag_TE6,
+		LL_DMA_ClearFlag_TE7,
+	};
+
+	__ASSERT_NO_MSG(id < ARRAY_SIZE(func));
+
+	func[id](DMAx);
+}
+
+void dma_stm32_clear_dme(DMA_TypeDef *DMAx, uint32_t id)
+{
+	static const dma_stm32_clear_flag_func func[] = {
+		LL_DMA_ClearFlag_DME0,
+		LL_DMA_ClearFlag_DME1,
+		LL_DMA_ClearFlag_DME2,
+		LL_DMA_ClearFlag_DME3,
+		LL_DMA_ClearFlag_DME4,
+		LL_DMA_ClearFlag_DME5,
+		LL_DMA_ClearFlag_DME6,
+		LL_DMA_ClearFlag_DME7,
+	};
+
+	__ASSERT_NO_MSG(id < ARRAY_SIZE(func));
+
+	func[id](DMAx);
+}
+
+void dma_stm32_clear_fe(DMA_TypeDef *DMAx, uint32_t id)
+{
+	static const dma_stm32_clear_flag_func func[] = {
+		LL_DMA_ClearFlag_FE0,
+		LL_DMA_ClearFlag_FE1,
+		LL_DMA_ClearFlag_FE2,
+		LL_DMA_ClearFlag_FE3,
+		LL_DMA_ClearFlag_FE4,
+		LL_DMA_ClearFlag_FE5,
+		LL_DMA_ClearFlag_FE6,
+		LL_DMA_ClearFlag_FE7,
+	};
+
+	__ASSERT_NO_MSG(id < ARRAY_SIZE(func));
+
+	func[id](DMAx);
+}
+
+bool dma_stm32_is_te_active(DMA_TypeDef *DMAx, uint32_t id)
+{
+	static const dma_stm32_check_flag_func func[] = {
+		LL_DMA_IsActiveFlag_TE0,
+		LL_DMA_IsActiveFlag_TE1,
+		LL_DMA_IsActiveFlag_TE2,
+		LL_DMA_IsActiveFlag_TE3,
+		LL_DMA_IsActiveFlag_TE4,
+		LL_DMA_IsActiveFlag_TE5,
+		LL_DMA_IsActiveFlag_TE6,
+		LL_DMA_IsActiveFlag_TE7,
+	};
+
+	__ASSERT_NO_MSG(id < ARRAY_SIZE(func));
+
+	return func[id](DMAx);
+}
+
+bool dma_stm32_is_dme_active(DMA_TypeDef *DMAx, uint32_t id)
+{
+	static const dma_stm32_check_flag_func func[] = {
+		LL_DMA_IsActiveFlag_DME0,
+		LL_DMA_IsActiveFlag_DME1,
+		LL_DMA_IsActiveFlag_DME2,
+		LL_DMA_IsActiveFlag_DME3,
+		LL_DMA_IsActiveFlag_DME4,
+		LL_DMA_IsActiveFlag_DME5,
+		LL_DMA_IsActiveFlag_DME6,
+		LL_DMA_IsActiveFlag_DME7,
+	};
+
+	__ASSERT_NO_MSG(id < ARRAY_SIZE(func));
+
+	return func[id](DMAx);
+}
+
+bool dma_stm32_is_fe_active(DMA_TypeDef *DMAx, uint32_t id)
+{
+	static const dma_stm32_check_flag_func func[] = {
+		LL_DMA_IsActiveFlag_FE0,
+		LL_DMA_IsActiveFlag_FE1,
+		LL_DMA_IsActiveFlag_FE2,
+		LL_DMA_IsActiveFlag_FE3,
+		LL_DMA_IsActiveFlag_FE4,
+		LL_DMA_IsActiveFlag_FE5,
+		LL_DMA_IsActiveFlag_FE6,
+		LL_DMA_IsActiveFlag_FE7,
+	};
+
+	__ASSERT_NO_MSG(id < ARRAY_SIZE(func));
+
+	return func[id](DMAx);
+}
 
 void stm32_dma_dump_stream_irq(DMA_TypeDef *dma, uint32_t id)
 {
 	LOG_INF("tc: %d, ht: %d, te: %d, dme: %d, fe: %d",
-		func_ll_is_active_tc[id](dma),
-		func_ll_is_active_ht[id](dma),
-		func_ll_is_active_te[id](dma),
-		func_ll_is_active_dme[id](dma),
-		func_ll_is_active_fe[id](dma));
+		dma_stm32_is_tc_active(dma, id),
+		dma_stm32_is_ht_active(dma, id),
+		dma_stm32_is_te_active(dma, id),
+		dma_stm32_is_dme_active(dma, id),
+		dma_stm32_is_fe_active(dma, id));
 }
 
 static inline bool stm32_dma_is_tc_irq_active(DMA_TypeDef *dma, uint32_t id)
 {
 	return LL_DMA_IsEnabledIT_TC(dma, id) &&
-	       func_ll_is_active_tc[id[(dma);
+	       dma_stm32_is_tc_active(dma, id);
 }
 
 static inline bool stm32_dma_is_ht_irq_active(DMA_TypeDef *dma, uint32_t id)
 {
 	return LL_DMA_IsEnabledIT_HT(dma, id) &&
-	       func_ll_is_active_ht[id](dma);
+	       dma_stm32_is_ht_active(dma, id);
 }
 
 static inline bool stm32_dma_is_te_irq_active(DMA_TypeDef *dma, uint32_t id)
 {
 	return LL_DMA_IsEnabledIT_TE(dma, id) &&
-	       func_ll_is_active_te[id](dma);
+	       dma_stm32_is_te_active(dma, id);
 }
 
 static inline bool stm32_dma_is_dme_irq_active(DMA_TypeDef *dma, uint32_t id)
 {
 	return LL_DMA_IsEnabledIT_DME(dma, id) &&
-	       func_ll_is_active_dme[id](dma);
+	       dma_stm32_is_dme_active(dma, id);
 }
 
 static inline bool stm32_dma_is_fe_irq_active(DMA_TypeDef *dma, uint32_t id)
 {
 	return LL_DMA_IsEnabledIT_FE(dma, id) &&
-	       func_ll_is_active_fe[id](dma);
+	       dma_stm32_is_fe_active(dma, id);
 }
 
 bool stm32_dma_is_irq_active(DMA_TypeDef *dma, uint32_t id)
@@ -215,14 +284,14 @@ bool stm32_dma_is_irq_active(DMA_TypeDef *dma, uint32_t id)
 
 void stm32_dma_clear_stream_irq(DMA_TypeDef *dma, uint32_t id)
 {
-	func_ll_clear_te[id](dma);
-	func_ll_clear_dme[id](dma);
-	func_ll_clear_fe[id](dma);
+	dma_stm32_clear_te(dma, id);
+	dma_stm32_clear_dme(dma, id);
+	dma_stm32_clear_fe(dma, id);
 }
 
 bool stm32_dma_is_irq_happened(DMA_TypeDef *dma, uint32_t id)
 {
-	if (func_ll_is_active_fe[id](dma) && LL_DMA_IsEnabledIT_FE(dma, id)) {
+	if (dma_stm32_is_fe_active(dma, id) && LL_DMA_IsEnabledIT_FE(dma, id)) {
 		return true;
 	}
 
@@ -231,7 +300,7 @@ bool stm32_dma_is_irq_happened(DMA_TypeDef *dma, uint32_t id)
 
 bool stm32_dma_is_unexpected_irq_happened(DMA_TypeDef *dma, uint32_t id)
 {
-	if (func_ll_is_active_fe[id](dma) && LL_DMA_IsEnabledIT_FE(dma, id)) {
+	if (dma_stm32_is_fe_active(dma, id) && LL_DMA_IsEnabledIT_FE(dma, id)) {
 		LOG_ERR("FiFo error.");
 		stm32_dma_dump_stream_irq(dma, id);
 		stm32_dma_clear_stream_irq(dma, id);

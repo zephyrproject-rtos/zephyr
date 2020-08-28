@@ -13,13 +13,10 @@
  *        implemented in dma_stm32_v*.c
  */
 
-#include <soc.h>
-#include <init.h>
-#include <drivers/dma.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/stm32_clock_control.h>
-
 #include "dma_stm32.h"
+
+#include <init.h>
+#include <drivers/clock_control.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
@@ -73,8 +70,8 @@ static void dma_stm32_clear_stream_irq(const struct device *dev, uint32_t id)
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 
-	func_ll_clear_tc[id](dma);
-	func_ll_clear_ht[id](dma);
+	dma_stm32_clear_tc(dma, id);
+	dma_stm32_clear_ht(dma, id);
 	stm32_dma_clear_stream_irq(dma, id);
 }
 
@@ -100,14 +97,14 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 	}
 
 	/* the dma stream id is in range from STREAM_OFFSET..<dma-requests> */
-	if (func_ll_is_active_tc[id](dma)) {
-		func_ll_clear_tc[id](dma);
+	if (dma_stm32_is_tc_active(dma, id)) {
+		dma_stm32_clear_tc(dma, id);
 #ifdef CONFIG_DMAMUX_STM32
 		stream->busy = false;
 #endif
 		stream->dma_callback(dev, stream->user_data, callback_arg, 0);
-	} else if (func_ll_is_active_ht[id](dma)) {
-		func_ll_clear_ht[id](dma);
+	} else if (dma_stm32_is_ht_active(dma, id)) {
+		dma_stm32_clear_ht(dma, id);
 	} else if (stm32_dma_is_unexpected_irq_happened(dma, id)) {
 		LOG_ERR("Unexpected irq happened.");
 		stream->dma_callback(dev, stream->user_data,

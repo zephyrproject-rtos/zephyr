@@ -7,6 +7,10 @@
 #ifndef DMA_STM32_H_
 #define DMA_STM32_H_
 
+#include <soc.h>
+#include <drivers/dma.h>
+#include <drivers/clock_control/stm32_clock_control.h>
+
 /* Maximum data sent in single transfer (Bytes) */
 #define DMA_STM32_MAX_DATA_ITEMS	0xffff
 
@@ -49,13 +53,26 @@ uint32_t dma_stm32_id_to_stream(uint32_t id);
 uint32_t dma_stm32_slot_to_channel(uint32_t id);
 #endif
 
-extern uint32_t (*func_ll_is_active_tc[])(DMA_TypeDef *DMAx);
-extern void (*func_ll_clear_tc[])(DMA_TypeDef *DMAx);
-extern uint32_t (*func_ll_is_active_ht[])(DMA_TypeDef *DMAx);
-extern void (*func_ll_clear_ht[])(DMA_TypeDef *DMAx);
+typedef void (*dma_stm32_clear_flag_func)(DMA_TypeDef *DMAx);
+typedef uint32_t (*dma_stm32_check_flag_func)(DMA_TypeDef *DMAx);
+
+bool dma_stm32_is_tc_active(DMA_TypeDef *DMAx, uint32_t id);
+void dma_stm32_clear_tc(DMA_TypeDef *DMAx, uint32_t id);
+bool dma_stm32_is_ht_active(DMA_TypeDef *DMAx, uint32_t id);
+void dma_stm32_clear_ht(DMA_TypeDef *DMAx, uint32_t id);
+bool dma_stm32_is_te_active(DMA_TypeDef *DMAx, uint32_t id);
+void dma_stm32_clear_te(DMA_TypeDef *DMAx, uint32_t id);
+
+#ifdef CONFIG_DMA_STM32_V1
+bool dma_stm32_is_dme_active(DMA_TypeDef *DMAx, uint32_t id);
+void dma_stm32_clear_dme(DMA_TypeDef *DMAx, uint32_t id);
+bool dma_stm32_is_fe_active(DMA_TypeDef *DMAx, uint32_t id);
+void dma_stm32_clear_fe(DMA_TypeDef *DMAx, uint32_t id);
+#endif
+
 #ifdef CONFIG_DMA_STM32_V2
-extern uint32_t (*func_ll_is_active_gi[])(DMA_TypeDef *DMAx);
-extern void (*func_ll_clear_gi[])(DMA_TypeDef *DMAx);
+bool dma_stm32_is_gi_active(DMA_TypeDef *DMAx, uint32_t id);
+void dma_stm32_clear_gi(DMA_TypeDef *DMAx, uint32_t id);
 #endif
 
 bool stm32_dma_is_irq_active(DMA_TypeDef *dma, uint32_t id);
