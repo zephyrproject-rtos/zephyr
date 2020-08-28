@@ -710,8 +710,8 @@ static void probe_cb(char *metadata, size_t metadata_size)
 enum updatehub_response updatehub_probe(void)
 {
 	struct probe request;
-	struct resp_probe_some_boards metadata_some_boards;
-	struct resp_probe_any_boards metadata_any_boards;
+	struct resp_probe_some_boards metadata_some_boards = { 0 };
+	struct resp_probe_any_boards metadata_any_boards = { 0 };
 
 	char *metadata = k_malloc(MAX_DOWNLOAD_DATA);
 	char *metadata_copy = k_malloc(MAX_DOWNLOAD_DATA);
@@ -802,6 +802,12 @@ enum updatehub_response updatehub_probe(void)
 			goto cleanup;
 		}
 
+		if (metadata_any_boards.objects_len != 2) {
+			LOG_ERR("Could not parse json");
+			ctx.code_status = UPDATEHUB_METADATA_ERROR;
+			goto cleanup;
+		}
+
 		sha256size = strlen(
 			metadata_any_boards.objects[1].objects.sha256sum) + 1;
 
@@ -817,6 +823,12 @@ enum updatehub_response updatehub_probe(void)
 		update_info.image_size = metadata_any_boards.objects[1].objects.size;
 		LOG_DBG("metadata_any: %s", update_info.sha256sum_image);
 	} else {
+		if (metadata_some_boards.objects_len != 2) {
+			LOG_ERR("Could not parse json");
+			ctx.code_status = UPDATEHUB_METADATA_ERROR;
+			goto cleanup;
+		}
+
 		if (!is_compatible_hardware(&metadata_some_boards)) {
 			LOG_ERR("Incompatible hardware");
 			ctx.code_status =
