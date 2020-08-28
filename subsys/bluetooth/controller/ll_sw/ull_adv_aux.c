@@ -165,6 +165,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	struct pdu_adv_com_ext_adv *sr_com_hdr;
 	struct pdu_adv *pri_pdu_prev;
 	struct pdu_adv_hdr *sr_hdr;
+	struct pdu_adv_adi *sr_adi;
 	struct pdu_adv *sr_prev;
 	struct pdu_adv *aux_pdu;
 	struct ll_adv_set *adv;
@@ -229,9 +230,11 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	sr_dptr = (void *)sr_hdr;
 
 	/* Flags */
-	/* TODO: include ADI (optional) */
 	*sr_dptr = 0;
 	sr_hdr->adv_addr = 1;
+#if defined(CONFIG_BT_CTRL_ADV_ADI_IN_SCAN_RSP)
+	sr_hdr->adi = 1;
+#endif
 	sr_dptr++;
 
 	/* AdvA */
@@ -239,8 +242,13 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	       BDADDR_SIZE);
 	sr_dptr += BDADDR_SIZE;
 
+#if defined(CONFIG_BT_CTRL_ADV_ADI_IN_SCAN_RSP)
 	/* ADI */
-	/* TODO: add support ((optional) */
+	sr_adi = (void *)sr_dptr;
+	sr_dptr += sizeof(struct pdu_adv_adi);
+#else
+	sr_adi = NULL;
+#endif
 
 	/* Check if data will fit in remaining space */
 	/* TODO: need aux_chain_ind support */
@@ -262,7 +270,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	sr_pdu->len = sr_dptr - &sr_pdu->payload[0];
 
 	/* Trigger DID update */
-	err = ull_adv_aux_hdr_set_clear(adv, 0, 0, NULL, NULL);
+	err = ull_adv_aux_hdr_set_clear(adv, 0, 0, NULL, sr_adi);
 	if (err) {
 		return err;
 	}
