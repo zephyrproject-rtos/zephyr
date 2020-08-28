@@ -48,7 +48,6 @@
 /soc/arm/silabs_exx32/efr32mg21/          @l-alfred
 /soc/arm/st_stm32/                        @erwango
 /soc/arm/st_stm32/*/power.c               @FRASTM
-/soc/arm/st_stm32/stm32f4/                @idlethread
 /soc/arm/st_stm32/stm32mp1/               @arnopo
 /soc/arm/ti_simplelink/cc13x2_cc26x2/     @bwitherspoon
 /soc/arm/ti_simplelink/cc32xx/            @vanti
@@ -185,7 +184,6 @@
 /drivers/flash/                           @nashif @nvlsianpu
 /drivers/flash/*nrf*                      @nvlsianpu
 /drivers/flash/*spi_nor*                  @pabigot
-/drivers/flash/*stm32*                    @superna9999
 /drivers/gpio/                            @mnkp @pabigot
 /drivers/gpio/*ht16k33*                   @henrikbrixandersen
 /drivers/gpio/*lmp90xxx*                  @henrikbrixandersen
@@ -220,7 +218,6 @@
 /drivers/modem/                           @mike-scott
 /drivers/pcie/                            @andrewboie
 /drivers/peci/                            @albertofloyd @franciscomunoz @scottwcpg
-/drivers/pinmux/stm32/                    @idlethread
 /drivers/pinmux/*hsdk*                    @iriszzw
 /drivers/pinmux/*npcx*                    @MulinChao
 /drivers/ps2/                             @albertofloyd @franciscomunoz @scottwcpg
@@ -256,7 +253,6 @@
 /drivers/pwm/*rv32m1*                     @henrikbrixandersen
 /drivers/pwm/pwm_shell.c                  @henrikbrixandersen
 /drivers/spi/                             @tbursztyka
-/drivers/spi/spi_ll_stm32.*               @superna9999
 /drivers/spi/spi_rv32m1_lpspi*            @karstenkoenig
 /drivers/timer/apic_timer.c               @andrewboie
 /drivers/timer/arm_arch_timer.c           @carlocaione
@@ -271,7 +267,7 @@
 /drivers/usb/                             @jfischer-phytec-iot @finikorg
 /drivers/usb/device/usb_dc_stm32.c        @ydamigos @loicpoulain
 /drivers/video/                           @loicpoulain
-/drivers/i2c/i2c_ll_stm32*                @ldts @ydamigos
+/drivers/i2c/i2c_ll_stm32*                @ydamigos
 /drivers/i2c/i2c_rv32m1_lpi2c*            @henrikbrixandersen
 /drivers/i2c/*sam0*                       @Sizurka
 /drivers/i2c/i2c_dw*                      @dcpleung
