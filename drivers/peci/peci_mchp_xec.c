@@ -170,16 +170,18 @@ static int peci_xec_write(struct device *dev, struct peci_msg *msg)
 	k_busy_wait(PECI_IO_DELAY);
 
 	/* Wait for transmission to complete */
+	uint8_t timeout_cnt = tx_buf->len + 1;
 #ifdef CONFIG_PECI_INTERRUPT_DRIVEN
-	if (k_sem_take(&peci_data.tx_lock, PECI_IO_DELAY * tx_buf->len)) {
+	if (k_sem_take(&peci_data.tx_lock, PECI_IO_DELAY * timeout_cnt)) {
 		return -ETIMEDOUT;
 	}
 #else
-	wait_timeout = tx_buf->len;
+	wait_timeout = timeout_cnt;
 	while (!(base->STATUS1 & MCHP_PECI_STS1_EOF)) {
 		k_busy_wait(PECI_IO_DELAY);
 
-		if (!wait_timeout) {
+		wait_timeout--;
+		if (wait_timeout == 0) {
 			LOG_WRN("Tx timeout\n");
 			base->CONTROL = MCHP_PECI_CTRL_FRST;
 			return -ETIMEDOUT;
