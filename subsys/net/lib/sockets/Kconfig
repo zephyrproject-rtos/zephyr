@@ -113,6 +113,15 @@ config NET_SOCKETS_OFFLOAD
 	  See NET_OFFLOAD for a more deeply integrated approach which offloads
 	  from the net_context() API within the Zephyr IP stack.
 
+config NET_SOCKETS_OFFLOAD_TLS
+	bool "Offload TLS socket calls to the offloaded sockets"
+	depends on NET_SOCKETS_OFFLOAD
+	default y
+	help
+	  If enabled, the offloading engine is expected to handle TLS/DTLS
+	  socket calls. Othwerwise, Zephyrs native TLS socket implementation
+	  will be used, and only TCP/UDP socket calls will be offloaded.
+
 config NET_SOCKETS_PACKET
 	bool "Enable packet socket support"
 	depends on NET_L2_ETHERNET
