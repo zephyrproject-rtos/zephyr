@@ -484,7 +484,7 @@ DMA_STM32_EXPORT_API int dma_stm32_reload(const struct device *dev, uint32_t id,
 {
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
-	struct dma_stm32_stream *stream = &config->streams[id - STREAM_OFFSET];
+	struct dma_stm32_stream *stream;
 
 	/* give channel from index 0 */
 	id = id - STREAM_OFFSET;
@@ -494,6 +494,7 @@ DMA_STM32_EXPORT_API int dma_stm32_reload(const struct device *dev, uint32_t id,
 	}
 
 	stm32_dma_disable_stream(dma, id);
+	stream = &config->streams[id];
 
 	switch (stream->direction) {
 	case MEMORY_TO_PERIPHERAL:
