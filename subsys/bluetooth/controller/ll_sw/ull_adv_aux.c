@@ -162,18 +162,18 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, uint8_t len,
 			    uint8_t const *const data)
 {
-	struct ll_adv_set *adv;
+	struct pdu_adv_com_ext_adv *sr_com_hdr;
 	struct pdu_adv *pri_pdu_prev;
+	struct pdu_adv_hdr *sr_hdr;
+	struct pdu_adv *sr_prev;
+	struct pdu_adv *aux_pdu;
+	struct ll_adv_set *adv;
+	struct pdu_adv *sr_pdu;
 	struct lll_adv *lll;
-
-	/* op param definitions:
-	 * 0x00 - Intermediate fragment of fragmented extended advertising data
-	 * 0x01 - First fragment of fragmented extended advertising data
-	 * 0x02 - Last fragemnt of fragemented extended advertising data
-	 * 0x03 - Complete extended advertising data
-	 * 0x04 - Unchanged data (just update the advertising data)
-	 * All other values, Reserved for future use
-	 */
+	uint8_t ext_hdr_len;
+	uint8_t *sr_dptr;
+	uint8_t idx;
+	uint8_t err;
 
 	/* TODO: handle other op values */
 	if ((op != BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA) &&
@@ -197,14 +197,65 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 		return ull_scan_rsp_set(adv, len, data);
 	}
 
-	/* FIXME: Workaround to not fail when no data is supplied */
-	if (!len) {
-		return 0;
+	LL_ASSERT(lll->aux);
+	aux_pdu = lll_adv_aux_data_peek(lll->aux);
+	sr_prev = lll_adv_scan_rsp_peek(lll);
+
+	/* Update scan response PDU fields. */
+	sr_pdu = lll_adv_scan_rsp_alloc(lll, &idx);
+	sr_pdu->type = PDU_ADV_TYPE_AUX_SCAN_RSP;
+	sr_pdu->rfu = 0;
+	sr_pdu->chan_sel = 0;
+	sr_pdu->tx_addr = aux_pdu->tx_addr;
+	sr_pdu->rx_addr = 0;
+	sr_pdu->len = 0;
+
+	sr_com_hdr = &sr_pdu->adv_ext_ind;
+	sr_hdr = (void *)&sr_com_hdr->ext_hdr_adi_adv_data[0];
+	sr_dptr = (void *)sr_hdr;
+
+	/* Flags */
+	/* TODO: include ADI (optional) */
+	*sr_dptr = 0;
+	sr_hdr->adv_addr = 1;
+	sr_dptr++;
+
+	/* AdvA */
+	memcpy(sr_dptr, &sr_prev->adv_ext_ind.ext_hdr_adi_adv_data[1],
+	       BDADDR_SIZE);
+	sr_dptr += BDADDR_SIZE;
+
+	/* ADI */
+	/* TODO: add support ((optional) */
+
+	/* Check if data will fit in remaining space */
+	/* TODO: need aux_chain_ind support */
+	ext_hdr_len = sr_dptr - &sr_com_hdr->ext_hdr_adi_adv_data[0];
+	if (sizeof(sr_com_hdr->ext_hdr_adi_adv_data) -
+	    sr_com_hdr->ext_hdr_len < len) {
+		return BT_HCI_ERR_PACKET_TOO_LONG;
 	}
 
-	/* TODO: Populate extended scan response data */
+	/* Copy data */
+	memcpy(sr_dptr, data, len);
+	sr_dptr += len;
 
-	return BT_HCI_ERR_CMD_DISALLOWED;
+	/* Finish Common ExtAdv Payload header */
+	sr_com_hdr->adv_mode = 0;
+	sr_com_hdr->ext_hdr_len = ext_hdr_len;
+
+	/* Finish PDU */
+	sr_pdu->len = sr_dptr - &sr_pdu->payload[0];
+
+	/* Trigger DID update */
+	err = ull_adv_aux_hdr_set_clear(adv, 0, 0, NULL);
+	if (err) {
+		return err;
+	}
+
+	lll_adv_scan_rsp_enqueue(&adv->lll, idx);
+
+	return 0;
 }
 
 uint16_t ll_adv_aux_max_data_length_get(void)
