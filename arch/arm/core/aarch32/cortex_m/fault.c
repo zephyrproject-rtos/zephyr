@@ -929,9 +929,11 @@ static inline z_arch_esf_t *get_esf(uint32_t msp, uint32_t psp, uint32_t exc_ret
  * @param msp MSP value immediately after the exception occurred
  * @param psp PSP value immediately after the exception occurred
  * @param exc_return EXC_RETURN value present in LR after exception entry.
+ * @param callee_regs Callee-saved registers (R4-R11, PSP)
  *
  */
-void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return)
+void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return,
+	_callee_saved_t *callee_regs)
 {
 	uint32_t reason = K_ERR_CPU_EXCEPTION;
 	int fault = SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk;
@@ -963,7 +965,20 @@ void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return)
 	}
 
 	/* Copy ESF */
+#if !defined(CONFIG_EXTRA_EXCEPTION_INFO)
 	memcpy(&esf_copy, esf, sizeof(z_arch_esf_t));
+	ARG_UNUSED(callee_regs);
+#else
+	/* the extra exception info is not present in the original esf
+	 * so we only copy the fields before those.
+	 */
+	memcpy(&esf_copy, esf, offsetof(z_arch_esf_t, extra_info));
+	esf_copy.extra_info = (struct __extra_esf_info) {
+		.callee = callee_regs,
+		.exc_return = exc_return,
+		.msp = msp
+	};
+#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
 
 	/* Overwrite stacked IPSR to mark a nested exception,
 	 * or a return to Thread mode. Note that this may be

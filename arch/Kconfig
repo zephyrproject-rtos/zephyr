@@ -367,6 +367,15 @@ config IRQ_OFFLOAD
 	  run in interrupt context. Only useful for test cases that need
 	  to validate the correctness of kernel objects in IRQ context.
 
+
+config EXTRA_EXCEPTION_INFO
+	bool "Collect extra exception info"
+	depends on ARCH_HAS_EXTRA_EXCEPTION_INFO
+	help
+	  This option enables the collection of extra information, such as
+	  register state, when a fault occurs. This information can be useful
+	  to collect for post-mortem analysis and debug of issues.
+
 endmenu # Interrupt configuration
 
 endmenu
@@ -397,6 +406,9 @@ config ARCH_HAS_NESTED_EXCEPTION_DETECTION
 	bool
 
 config ARCH_SUPPORTS_COREDUMP
+	bool
+
+config ARCH_HAS_EXTRA_EXCEPTION_INFO
 	bool
 
 #
