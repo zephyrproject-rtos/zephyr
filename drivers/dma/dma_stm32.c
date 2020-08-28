@@ -246,6 +246,24 @@ static int dma_stm32_get_periph_increment(enum dma_addr_adj increment,
 	return 0;
 }
 
+static int dma_stm32_disable_stream(DMA_TypeDef *dma, uint32_t id)
+{
+	int count = 0;
+
+	for (;;) {
+		if (stm32_dma_disable_stream(dma, id) == 0) {
+			return 0;
+		}
+		/* After trying for 5 seconds, give up */
+		if (count++ > (5 * 1000)) {
+			return -EBUSY;
+		}
+		k_sleep(K_MSEC(1));
+	}
+
+	return 0;
+}
+
 DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 					     uint32_t id,
 					     struct dma_config *config)
@@ -271,7 +289,11 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 		return -EBUSY;
 	}
 
-	stm32_dma_disable_stream(dma, id);
+	if (dma_stm32_disable_stream(dma, id) != 0) {
+		LOG_ERR("could not disable dma stream %d.", id);
+		return -EBUSY;
+	}
+
 	dma_stm32_clear_stream_irq(dev, id);
 
 	if (config->head_block->block_size > DMA_STM32_MAX_DATA_ITEMS) {
@@ -460,24 +482,6 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	return ret;
 }
 
-static int dma_stm32_disable_stream(DMA_TypeDef *dma, uint32_t id)
-{
-	int count = 0;
-
-	for (;;) {
-		if (!stm32_dma_disable_stream(dma, id)) {
-			return 0;
-		}
-		/* After trying for 5 seconds, give up */
-		if (count++ > (5 * 1000)) {
-			return -EBUSY;
-		}
-		k_sleep(K_MSEC(1));
-	}
-
-	return 0;
-}
-
 DMA_STM32_EXPORT_API int dma_stm32_reload(const struct device *dev, uint32_t id,
 					  uint32_t src, uint32_t dst,
 					  size_t size)
@@ -493,8 +497,11 @@ DMA_STM32_EXPORT_API int dma_stm32_reload(const struct device *dev, uint32_t id,
 		return -EINVAL;
 	}
 
-	stm32_dma_disable_stream(dma, id);
 	stream = &config->streams[id];
+
+	if (dma_stm32_disable_stream(dma, id) != 0) {
+		return -EBUSY;
+	}
 
 	switch (stream->direction) {
 	case MEMORY_TO_PERIPHERAL:
