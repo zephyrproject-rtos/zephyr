@@ -59,6 +59,7 @@ static struct updatehub_context {
 	struct flash_img_context flash_ctx;
 	struct tc_sha256_state_struct sha256sum;
 	enum updatehub_response code_status;
+	uint8_t hash[TC_SHA256_DIGEST_SIZE];
 	uint8_t uri_path[MAX_PATH_SIZE];
 	uint8_t payload[MAX_PAYLOAD_SIZE];
 	int downloaded_size;
@@ -110,7 +111,6 @@ static void prepare_fds(void)
 static int metadata_hash_get(char *metadata)
 {
 	struct tc_sha256_state_struct sha256sum;
-	unsigned char hash[TC_SHA256_DIGEST_SIZE];
 
 	if (tc_sha256_init(&sha256sum) == 0) {
 		return -1;
@@ -120,11 +120,11 @@ static int metadata_hash_get(char *metadata)
 		return -1;
 	}
 
-	if (tc_sha256_final(hash, &sha256sum) == 0) {
+	if (tc_sha256_final(ctx.hash, &sha256sum) == 0) {
 		return -1;
 	}
 
-	if (bin2hex_str(hash, TC_SHA256_DIGEST_SIZE,
+	if (bin2hex_str(ctx.hash, TC_SHA256_DIGEST_SIZE,
 		update_info.package_uid, SHA256_HEX_DIGEST_SIZE)) {
 		return -1;
 	}
@@ -357,15 +357,14 @@ error:
 
 static bool install_update_cb_sha256(void)
 {
-	uint8_t hash[TC_SHA256_DIGEST_SIZE];
 	char sha256[SHA256_HEX_DIGEST_SIZE];
 
-	if (tc_sha256_final(hash, &ctx.sha256sum) < 1) {
+	if (tc_sha256_final(ctx.hash, &ctx.sha256sum) < 1) {
 		LOG_ERR("Could not finish sha256sum");
 		return false;
 	}
 
-	if (bin2hex_str(hash, TC_SHA256_DIGEST_SIZE,
+	if (bin2hex_str(ctx.hash, TC_SHA256_DIGEST_SIZE,
 		sha256, SHA256_HEX_DIGEST_SIZE)) {
 		LOG_ERR("Could not create sha256sum hex representation");
 		return false;
