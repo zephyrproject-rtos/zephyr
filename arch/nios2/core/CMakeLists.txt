@@ -16,3 +16,4 @@ zephyr_library_sources(
   )
 
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
+zephyr_library_sources_ifdef(CONFIG_TIMING_FUNCTIONS timing.c)
