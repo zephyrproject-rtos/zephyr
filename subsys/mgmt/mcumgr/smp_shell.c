@@ -17,6 +17,10 @@
 #include "mgmt/mcumgr/buf.h"
 #include "mgmt/mcumgr/smp.h"
 #include "mgmt/mcumgr/smp_shell.h"
+#include "drivers/uart.h"
+#include "syscalls/uart.h"
+#include "shell/shell.h"
+#include "shell/shell_uart.h"
 
 static struct zephyr_smp_transport smp_shell_transport;
 
@@ -138,8 +142,16 @@ static uint16_t smp_shell_get_mtu(const struct net_buf *nb)
 
 static int smp_shell_tx_raw(const void *data, int len, void *arg)
 {
-	/* Cast away const. */
-	k_str_out((void *)data, len);
+	const struct shell_uart *const su = shell_backend_uart_get_ptr();
+	const struct shell_uart_ctrl_blk *const scb = su->ctrl_blk;
+	const uint8_t *out = data;
+
+	while ((out != NULL) && (len != 0)) {
+		uart_poll_out(scb->dev, *out);
+		++out;
+		--len;
+	}
+
 	return 0;
 }
 
