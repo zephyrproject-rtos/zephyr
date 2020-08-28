@@ -45,6 +45,7 @@ config X86
 	select CPU_HAS_MMU
 	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
 	select ARCH_HAS_GDBSTUB if !X86_64
+	select ARCH_HAS_TIMING_FUNCTIONS
 	help
 	  x86 architecture
 
@@ -384,6 +385,9 @@ endmenu
 #
 # Architecture Capabilities
 #
+
+config ARCH_HAS_TIMING_FUNCTIONS
+	bool
 
 config ARCH_HAS_TRUSTED_EXECUTION
 	bool

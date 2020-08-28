@@ -14,6 +14,12 @@ if(CONFIG_GEN_ISR_TABLES OR CONFIG_EXECUTION_BENCHMARKING)
     )
 endif()
 
+if(NOT CONFIG_ARCH_HAS_TIMING_FUNCTIONS AND
+    NOT CONFIG_SOC_HAS_TIMING_FUNCTIONS AND
+    NOT CONFIG_BOARD_HAS_TIMING_FUNCTIONS)
+zephyr_library_sources_ifdef(CONFIG_TIMING_FUNCTIONS timing.c)
+endif()
+
 # Put functions and data in their own binary sections so that ld can
 # garbage collect them
 zephyr_cc_option(-ffunction-sections -fdata-sections)
