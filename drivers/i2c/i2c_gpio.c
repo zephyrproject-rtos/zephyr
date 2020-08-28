@@ -142,7 +142,11 @@ static int i2c_gpio_init(struct device *dev)
 	}
 
 	err = gpio_config(context->sda_gpio, config->sda_pin,
-			  config->sda_flags | GPIO_OUTPUT_HIGH);
+			  config->sda_flags | GPIO_INPUT | GPIO_OUTPUT_HIGH);
+	if (err == -ENOTSUP) {
+		err = gpio_config(context->sda_gpio, config->sda_pin,
+				  config->sda_flags | GPIO_OUTPUT_HIGH);
+	}
 	if (err) {
 		LOG_ERR("failed to configure SDA GPIO pin (err %d)", err);
 		return err;
