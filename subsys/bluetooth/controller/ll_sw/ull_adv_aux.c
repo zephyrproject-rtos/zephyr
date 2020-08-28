@@ -120,7 +120,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	*val_ptr++ = len;
 	*((uint32_t *)val_ptr) = (uint32_t)data;
 	err = ull_adv_aux_hdr_set_clear(adv, ULL_ADV_PDU_HDR_FIELD_AD_DATA,
-					0, value);
+					0, value, NULL);
 	if (err) {
 		return err;
 	}
@@ -262,7 +262,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	sr_pdu->len = sr_dptr - &sr_pdu->payload[0];
 
 	/* Trigger DID update */
-	err = ull_adv_aux_hdr_set_clear(adv, 0, 0, NULL);
+	err = ull_adv_aux_hdr_set_clear(adv, 0, 0, NULL, NULL);
 	if (err) {
 		return err;
 	}
@@ -368,7 +368,7 @@ int ull_adv_aux_reset(void)
 uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 				  uint16_t sec_hdr_add_fields,
 				  uint16_t sec_hdr_rem_fields,
-				  void *value)
+				  void *value, struct pdu_adv_adi *adi)
 {
 	struct pdu_adv_com_ext_adv *pri_com_hdr, *pri_com_hdr_prev;
 	struct pdu_adv_com_ext_adv *sec_com_hdr, *sec_com_hdr_prev;
@@ -692,6 +692,10 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 
 		pri_adi->did = sys_cpu_to_le16(did);
 		sec_adi->did = sys_cpu_to_le16(did);
+
+		if (adi) {
+			*adi = *pri_adi;
+		}
 	}
 
 	/* No CTEInfo field in primary channel PDU */

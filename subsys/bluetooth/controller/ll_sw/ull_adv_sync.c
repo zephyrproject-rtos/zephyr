@@ -198,7 +198,7 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 		/* Remove sync_info from auxiliary PDU */
 		err = ull_adv_aux_hdr_set_clear(adv, 0,
 						ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
-						NULL);
+						NULL, NULL);
 		if (err) {
 			return err;
 		}
@@ -239,7 +239,7 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 		/* Add sync_info into auxiliary PDU */
 		err = ull_adv_aux_hdr_set_clear(adv,
 						ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
-						0, NULL);
+						0, NULL, NULL);
 		if (err) {
 			return err;
 		}

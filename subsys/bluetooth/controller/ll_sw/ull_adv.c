@@ -482,7 +482,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		if (pri_hdr->aux_ptr) {
 			uint8_t err;
 
-			err = ull_adv_aux_hdr_set_clear(adv, 0, 0, NULL);
+			err = ull_adv_aux_hdr_set_clear(adv, 0, 0, NULL, NULL);
 			if (err) {
 				/* TODO: cleanup? */
 				return err;
@@ -1139,7 +1139,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 					/* Add sync_info into auxiliary PDU */
 					ret = ull_adv_aux_hdr_set_clear(adv,
 						ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
-						0, NULL);
+						0, NULL, NULL);
 					if (ret) {
 						return ret;
 					}
