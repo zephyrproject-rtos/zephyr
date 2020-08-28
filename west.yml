@@ -56,7 +56,7 @@ manifest:
       revision: f1fa8241f8786198ba41155413243de36ed878a5
       path: modules/hal/infineon
     - name: hal_nordic
-      revision: 0f4ff90fbf8137086e2f9c1b78a6fc2aa5ef731f
+      revision: fc12f5e2b47cf143254234c05f9ecbdb603a7101
       path: modules/hal/nordic
     - name: hal_openisa
       revision: 40d049f69c50b58ea20473bee14cf93f518bf262
@@ -130,7 +130,7 @@ manifest:
       revision: 957d46bc3ce0d5f628f0d525196bb4db207672ee
     - name: nrf_hw_models
       path: modules/bsim_hw_models/nrf_hw_models
-      revision: f86079a7333968f0ba71fe1266e241295a4e9943
+      revision: 71a8a9ef086d57ff5f3974138b0951f24c2017ad
     - name: hal_xtensa
       revision: e7a57d0c252f9c5f3cab9d5ceadda8753cacee5b
       path: modules/hal/xtensa
