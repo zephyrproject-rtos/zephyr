@@ -32,6 +32,9 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #define DEV_DATA(dev)					\
 (struct spi_stm32_data * const)(dev->data)
 
+/* Value to shift out when no application data needs transmitting. */
+#define SPI_STM32_TX_NOP 0x00
+
 /*
  * Check for SPI_SR_FRE to determine support for TI mode frame format
  * error flag, because STM32F1 SoCs do not support it and  STM32CUBE
@@ -53,10 +56,28 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #endif /* CONFIG_SOC_SERIES_STM32MP1X */
 
 #ifdef CONFIG_SPI_STM32_DMA
-/* dummy value used for transferring NOP when tx buf is null
- * and use as dummy sink for when rx buf is null
- */
-uint32_t dummy_rx_tx_buffer;
+
+#if CONFIG_SPI_STM32_UNALIGNED_DMA
+
+#define SPI_STM32_ROUND_UP(x) ROUND_UP((uint32_t)(x), __SCB_DCACHE_LINE_SIZE)
+#define SPI_STM32_ROUND_DOWN(x) \
+			ROUND_DOWN((uint32_t)(x), __SCB_DCACHE_LINE_SIZE)
+
+void spi_stm32_flush_cache(const void *ptr, uint32_t size)
+{
+	if ((SCB->CCR & SCB_CCR_DC_Msk) != 0U && size > 0) {
+		SCB_CleanDCache_by_Addr((uint32_t *)ptr, size);
+	}
+}
+
+void spi_stm32_invalidate_cache(void *ptr, uint32_t size)
+{
+	if ((SCB->CCR & SCB_CCR_DC_Msk) != 0U && size > 0) {
+		SCB_InvalidateDCache_by_Addr((uint32_t *)ptr, size);
+	}
+}
+
+#endif /* CONFIG_SPI_STM32_UNALIGNED_DMA */
 
 /* This function is executed in the interrupt context */
 static void dma_callback(const struct device *dev, void *arg,
@@ -76,6 +97,19 @@ static void dma_callback(const struct device *dev, void *arg,
 		} else if (channel == data->dma_rx.channel) {
 			/* this part of the transfer ends */
 			data->status_flags |= SPI_STM32_DMA_RX_DONE_FLAG;
+#if CONFIG_SPI_STM32_UNALIGNED_DMA
+			if (data->dma_rx_buffer != NULL) {
+				spi_stm32_invalidate_cache(
+					data->dma_rx_buffer,
+					data->dma_rx_buffer_len);
+
+				if (data->dma_rx_buffer != data->ctx.rx_buf) {
+					memcpy(data->ctx.rx_buf,
+						data->dma_rx.dma_aligned_buffer,
+						data->dma_rx_buffer_len);
+				}
+			}
+#endif /* CONFIG_SPI_STM32_UNALIGNED_DMA */
 		} else {
 			LOG_ERR("DMA callback channel %d is not valid.",
 								channel);
@@ -105,9 +139,18 @@ static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf,
 
 	/* tx direction has memory as source and periph as dest. */
 	if (buf == NULL) {
-		dummy_rx_tx_buffer = 0;
 		/* if tx buff is null, then sends NOP on the line. */
-		blk_cfg->source_address = (uint32_t)&dummy_rx_tx_buffer;
+#if CONFIG_SPI_STM32_UNALIGNED_DMA
+		memset(stream->dma_aligned_buffer,
+		       SPI_STM32_TX_NOP, sizeof(uint32_t));
+		spi_stm32_flush_cache(stream->dma_aligned_buffer,
+							sizeof(uint32_t));
+		blk_cfg->source_address = (uint32_t)stream->dma_aligned_buffer;
+#else
+		memset(&stream->dma_dummy_buffer,
+		       SPI_STM32_TX_NOP, sizeof(uint32_t));
+		blk_cfg->source_address = (uint32_t)&stream->dma_dummy_buffer;
+#endif
 		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	} else {
 		blk_cfg->source_address = (uint32_t)buf;
@@ -166,7 +209,12 @@ static int spi_stm32_dma_rx_load(const struct device *dev, uint8_t *buf,
 	/* rx direction has periph as source and mem as dest. */
 	if (buf == NULL) {
 		/* if rx buff is null, then write data to dummy address. */
-		blk_cfg->dest_address = (uint32_t)&dummy_rx_tx_buffer;
+
+#if CONFIG_SPI_STM32_UNALIGNED_DMA
+		blk_cfg->dest_address = (uint32_t)stream->dma_aligned_buffer;
+#else
+		blk_cfg->dest_address = (uint32_t)&stream->dma_dummy_buffer;
+#endif /* CONFIG_SPI_STM32_UNALIGNED_DMA */
 		blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	} else {
 		blk_cfg->dest_address = (uint32_t)buf;
@@ -209,24 +257,70 @@ static int spi_dma_move_buffers(const struct device *dev, size_t len)
 	struct spi_stm32_data *data = DEV_DATA(dev);
 	int ret;
 	size_t dma_segment_len;
+	const uint8_t *tx_buf = data->ctx.tx_buf;
+	uint8_t *rx_buf = data->ctx.rx_buf;
+
+#if CONFIG_SPI_STM32_UNALIGNED_DMA
+
+	if (rx_buf != NULL) {
+		uint32_t addr_diff = SPI_STM32_ROUND_UP(rx_buf)
+							- (uint32_t)rx_buf;
+
+		if (addr_diff == 0 && len >= __SCB_DCACHE_LINE_SIZE) {
+			len = SPI_STM32_ROUND_DOWN(len);
+		} else {
+			if (addr_diff != 0) {
+				len = MIN(len, addr_diff);
+			}
+
+			len = MIN(len, __SCB_DCACHE_LINE_SIZE);
+			rx_buf = data->dma_rx.dma_aligned_buffer;
+		}
+
+	}
+
+	if (tx_buf != NULL) {
+		uint32_t addr_diff = SPI_STM32_ROUND_UP(tx_buf)
+							- (uint32_t)tx_buf;
+
+		if (addr_diff == 0 && len >= __SCB_DCACHE_LINE_SIZE) {
+			len = SPI_STM32_ROUND_DOWN(len);
+		} else {
+			if (addr_diff != 0) {
+				len = MIN(len, addr_diff);
+			}
+
+			len = MIN(len, __SCB_DCACHE_LINE_SIZE);
+
+			memcpy(data->dma_tx.dma_aligned_buffer,
+					data->ctx.tx_buf, len);
+			tx_buf = data->dma_tx.dma_aligned_buffer;
+		}
+
+		spi_stm32_flush_cache(tx_buf, len);
+	}
+
+	data->dma_rx_buffer = rx_buf;
+	data->dma_rx_buffer_len = len;
+
+#endif /* CONFIG_SPI_STM32_UNALIGNED_DMA */
 
 	dma_segment_len = len / data->dma_rx.dma_cfg.dest_data_size;
-	ret = spi_stm32_dma_rx_load(dev, data->ctx.rx_buf, dma_segment_len);
-
+	ret = spi_stm32_dma_rx_load(dev, rx_buf, dma_segment_len);
 	if (ret != 0) {
 		return ret;
 	}
 
 	dma_segment_len = len / data->dma_tx.dma_cfg.source_data_size;
-	ret = spi_stm32_dma_tx_load(dev, data->ctx.tx_buf, dma_segment_len);
+	ret = spi_stm32_dma_tx_load(dev, tx_buf, dma_segment_len);
+	if (ret != 0) {
+		return ret;
+	}
 
-	return ret;
+	return len;
 }
 
 #endif /* CONFIG_SPI_STM32_DMA */
-
-/* Value to shift out when no application data needs transmitting. */
-#define SPI_STM32_TX_NOP 0x00
 
 static bool spi_stm32_transfer_ongoing(struct spi_stm32_data *data)
 {
@@ -702,9 +796,14 @@ static int transceive_dma(const struct device *dev,
 		data->status_flags = 0;
 
 		ret = spi_dma_move_buffers(dev, dma_len);
-		if (ret != 0) {
+		if (ret <= 0) {
 			break;
 		}
+
+		/* spi_dma_move_buffers returns the len of the data it
+		 * passed to the DMA engine
+		 */
+		dma_len = ret;
 
 		LL_SPI_EnableDMAReq_RX(spi);
 		LL_SPI_EnableDMAReq_TX(spi);
@@ -815,7 +914,8 @@ static int spi_stm32_init(const struct device *dev)
 #ifdef CONFIG_SPI_STM32_DMA
 	if (data->dma_tx.dma_name != NULL) {
 		/* Get the binding to the DMA device */
-		data->dma_tx.dma_dev = device_get_binding(data->dma_tx.dma_name);
+		data->dma_tx.dma_dev =
+				device_get_binding(data->dma_tx.dma_name);
 		if (!data->dma_tx.dma_dev) {
 			LOG_ERR("%s device not found", data->dma_tx.dma_name);
 			return -ENODEV;
@@ -823,7 +923,8 @@ static int spi_stm32_init(const struct device *dev)
 	}
 
 	if (data->dma_rx.dma_name != NULL) {
-		data->dma_rx.dma_dev = device_get_binding(data->dma_rx.dma_name);
+		data->dma_rx.dma_dev =
+				device_get_binding(data->dma_rx.dma_name);
 		if (!data->dma_rx.dma_dev) {
 			LOG_ERR("%s device not found", data->dma_rx.dma_name);
 			return -ENODEV;
