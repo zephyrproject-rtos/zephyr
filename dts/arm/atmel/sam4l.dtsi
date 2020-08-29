@@ -156,6 +156,12 @@
 			status = "okay";
 			label = "TRNG";
 		};
+
+		uid: device_uid@0080020c {
+			compatible = "atmel,sam4l-uid";
+			reg = <0x0080020c 0xf>;
+			status = "okay";
+		};
 	};
 };
 
