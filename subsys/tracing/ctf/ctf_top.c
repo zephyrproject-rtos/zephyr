@@ -24,7 +24,7 @@ static void _get_thread_name(struct k_thread *thread,
 
 void sys_trace_thread_switched_out(void)
 {
-	ctf_bounded_string_t name = { "" };
+	ctf_bounded_string_t name = { "unknown" };
 	struct k_thread *thread;
 
 	thread = k_current_get();
@@ -36,7 +36,7 @@ void sys_trace_thread_switched_out(void)
 void sys_trace_thread_switched_in(void)
 {
 	struct k_thread *thread;
-	ctf_bounded_string_t name = { "" };
+	ctf_bounded_string_t name = { "unknown" };
 
 	thread = k_current_get();
 	_get_thread_name(thread, &name);
@@ -46,7 +46,7 @@ void sys_trace_thread_switched_in(void)
 
 void sys_trace_thread_priority_set(struct k_thread *thread)
 {
-	ctf_bounded_string_t name = { "" };
+	ctf_bounded_string_t name = { "unknown" };
 
 	_get_thread_name(thread, &name);
 	ctf_top_thread_priority_set((uint32_t)(uintptr_t)thread,
@@ -55,7 +55,7 @@ void sys_trace_thread_priority_set(struct k_thread *thread)
 
 void sys_trace_thread_create(struct k_thread *thread)
 {
-	ctf_bounded_string_t name = { "" };
+	ctf_bounded_string_t name = { "unknown" };
 
 	_get_thread_name(thread, &name);
 	ctf_top_thread_create(
@@ -76,7 +76,7 @@ void sys_trace_thread_create(struct k_thread *thread)
 
 void sys_trace_thread_abort(struct k_thread *thread)
 {
-	ctf_bounded_string_t name = { "" };
+	ctf_bounded_string_t name = { "unknown" };
 
 	_get_thread_name(thread, &name);
 	ctf_top_thread_abort((uint32_t)(uintptr_t)thread, name);
@@ -84,7 +84,7 @@ void sys_trace_thread_abort(struct k_thread *thread)
 
 void sys_trace_thread_suspend(struct k_thread *thread)
 {
-	ctf_bounded_string_t name = { "" };
+	ctf_bounded_string_t name = { "unknown" };
 
 	_get_thread_name(thread, &name);
 	ctf_top_thread_suspend((uint32_t)(uintptr_t)thread, name);
@@ -92,7 +92,7 @@ void sys_trace_thread_suspend(struct k_thread *thread)
 
 void sys_trace_thread_resume(struct k_thread *thread)
 {
-	ctf_bounded_string_t name = { "" };
+	ctf_bounded_string_t name = { "unknown" };
 
 	_get_thread_name(thread, &name);
 
@@ -101,7 +101,7 @@ void sys_trace_thread_resume(struct k_thread *thread)
 
 void sys_trace_thread_ready(struct k_thread *thread)
 {
-	ctf_bounded_string_t name = { "" };
+	ctf_bounded_string_t name = { "unknown" };
 
 	_get_thread_name(thread, &name);
 
@@ -110,7 +110,7 @@ void sys_trace_thread_ready(struct k_thread *thread)
 
 void sys_trace_thread_pend(struct k_thread *thread)
 {
-	ctf_bounded_string_t name = { "" };
+	ctf_bounded_string_t name = { "unknown" };
 
 	_get_thread_name(thread, &name);
 	ctf_top_thread_pend((uint32_t)(uintptr_t)thread, name);
@@ -119,7 +119,7 @@ void sys_trace_thread_pend(struct k_thread *thread)
 void sys_trace_thread_info(struct k_thread *thread)
 {
 #if defined(CONFIG_THREAD_STACK_INFO)
-	ctf_bounded_string_t name = { "" };
+	ctf_bounded_string_t name = { "unknown" };
 
 	_get_thread_name(thread, &name);
 	ctf_top_thread_info(
@@ -133,7 +133,7 @@ void sys_trace_thread_info(struct k_thread *thread)
 
 void sys_trace_thread_name_set(struct k_thread *thread)
 {
-	ctf_bounded_string_t name = { "" };
+	ctf_bounded_string_t name = { "unknown" };
 
 	_get_thread_name(thread, &name);
 	ctf_top_thread_name_set(
