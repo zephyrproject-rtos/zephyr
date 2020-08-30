@@ -869,12 +869,6 @@ Userspace
 .. doxygengroup:: arch-userspace
    :project: Zephyr
 
-Benchmarking
-============
-
-.. doxygengroup:: arch-benchmarking
-   :project: Zephyr
-
 Memory Management
 =================
 
