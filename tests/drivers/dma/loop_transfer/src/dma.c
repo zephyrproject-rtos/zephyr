@@ -32,7 +32,7 @@ static char tx_data[] =
 static __aligned(16) char rx_data[TRANSFER_LOOPS][RX_BUFF_SIZE] = { { 0 } };
 #endif
 
-#define DMA_DEVICE_NAME "DMA_0"
+#define DMA_DEVICE_NAME CONFIG_DMA_LOOP_TRANSFER_DRV_NAME
 
 volatile uint8_t transfer_count;
 static struct dma_config dma_cfg = {0};
@@ -104,7 +104,7 @@ void main(void)
 	dma_cfg.dma_slot = CONFIG_DMA_MCUX_TEST_SLOT_START;
 #endif
 
-	chan_id = 0U;
+	chan_id = CONFIG_DMA_LOOP_TRANSFER_CHANNEL_NR;
 	transfer_count = 0;
 	printk("Starting the transfer and waiting for 1 second\n");
 	printk("TX data: %s\n", tx_data);
