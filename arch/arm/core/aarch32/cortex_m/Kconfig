@@ -419,7 +419,6 @@ config CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_PAGE_SIZE
 
 endif # CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION
 
-rsource "mpu/Kconfig"
 rsource "tz/Kconfig"
 
 endif # CPU_CORTEX_M
