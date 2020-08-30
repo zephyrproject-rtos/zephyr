@@ -43,10 +43,23 @@ void test_arm_zero_latency_irqs(void)
 			NVIC_SetPendingIRQ(i);
 
 			if (NVIC_GetPendingIRQ(i)) {
-				/* If the NVIC line is pending, it is
-				 * guaranteed that it is implemented.
+				/*
+				 * If the NVIC line is pending, it is
+				 * guaranteed that it is implemented; clear the
+				 * line.
 				 */
-				break;
+				NVIC_ClearPendingIRQ(i);
+
+				if (!NVIC_GetPendingIRQ(i)) {
+					/*
+					 * If the NVIC line can be successfully
+					 * un-pended, it is guaranteed that it
+					 * can be used for software interrupt
+					 * triggering. Return the NVIC line
+					 * number.
+					 */
+					break;
+				}
 			}
 		}
 	}
