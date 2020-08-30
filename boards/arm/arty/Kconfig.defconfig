@@ -16,7 +16,7 @@ config CPU_HAS_ARM_MPU
 	default y if BOARD_ARTY_A7_ARM_DESIGNSTART_M3
 
 config NUM_IRQS
-	default 8
+	default 7
 
 if SERIAL
 
