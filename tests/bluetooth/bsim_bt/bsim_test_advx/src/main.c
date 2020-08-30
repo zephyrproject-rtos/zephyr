@@ -300,7 +300,7 @@ static void test_advx_main(void)
 
 	printk("Starting non-conn non-scan without aux 1M advertising...");
 	evt_prop = EVT_PROP_TXP;
-	adv_type = 0x05; /* Adv. Ext. */
+	adv_type = 0x07; /* Adv. Ext. */
 	phy_p = ADV_PHY_1M;
 	phy_s = ADV_PHY_2M;
 	err = ll_adv_params_set(handle, evt_prop, ADV_INTERVAL, adv_type,
