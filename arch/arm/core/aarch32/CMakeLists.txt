@@ -27,10 +27,11 @@ zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE ../common/tls.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S)
 
 add_subdirectory_ifdef(CONFIG_CPU_CORTEX_M cortex_m)
-add_subdirectory_ifdef(CONFIG_ARM_MPU cortex_m/mpu)
 add_subdirectory_ifdef(CONFIG_CPU_CORTEX_M_HAS_CMSE cortex_m/cmse)
 add_subdirectory_ifdef(CONFIG_ARM_SECURE_FIRMWARE cortex_m/tz)
 add_subdirectory_ifdef(CONFIG_ARM_NONSECURE_FIRMWARE cortex_m/tz)
+
+add_subdirectory_ifdef(CONFIG_ARM_MPU mpu)
 
 add_subdirectory_ifdef(CONFIG_CPU_CORTEX_R cortex_a_r)
 

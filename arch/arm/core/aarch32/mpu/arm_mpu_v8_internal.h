@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_ARCH_ARM_CORE_AARCH32_CORTEX_M_MPU_ARM_MPU_V8_INTERNAL_H_
-#define ZEPHYR_ARCH_ARM_CORE_AARCH32_CORTEX_M_MPU_ARM_MPU_V8_INTERNAL_H_
+#ifndef ZEPHYR_ARCH_ARM_CORE_AARCH32_MPU_ARM_MPU_V8_INTERNAL_H_
+#define ZEPHYR_ARCH_ARM_CORE_AARCH32_MPU_ARM_MPU_V8_INTERNAL_H_
 
 #include <aarch32/cortex_m/cmse.h>
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
@@ -583,4 +583,4 @@ static int mpu_configure_dynamic_mpu_regions(const struct z_arm_mpu_partition
 	return mpu_reg_index;
 }
 
-#endif	/* ZEPHYR_ARCH_ARM_CORE_AARCH32_CORTEX_M_MPU_ARM_MPU_V8_INTERNAL_H_ */
+#endif	/* ZEPHYR_ARCH_ARM_CORE_AARCH32_MPU_ARM_MPU_V8_INTERNAL_H_ */
