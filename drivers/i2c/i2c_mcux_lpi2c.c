@@ -16,6 +16,10 @@
 LOG_MODULE_REGISTER(mcux_lpi2c);
 
 #include "i2c-priv.h"
+/* Wait for the duration of 12 bits to detect a NAK after a bus
+ * address scan.  (10 appears sufficient, 20% safety factor.)
+ */
+#define SCAN_DELAY_US(baudrate) (12 * USEC_PER_SEC / baudrate)
 
 struct mcux_lpi2c_config {
 	LPI2C_Type *base;
@@ -161,7 +165,13 @@ static int mcux_lpi2c_transfer(const struct device *dev, struct i2c_msg *msgs,
 			LPI2C_MasterTransferAbort(base, &data->handle);
 			return -EIO;
 		}
-
+		if (msgs->len == 0) {
+			k_busy_wait(SCAN_DELAY_US(config->bitrate));
+			if (0 != (base->MSR & LPI2C_MSR_NDF_MASK)) {
+				LPI2C_MasterTransferAbort(base, &data->handle);
+				return -EIO;
+			}
+		}
 		/* Move to the next message */
 		msgs++;
 	}
