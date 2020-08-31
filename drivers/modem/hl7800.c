@@ -3279,6 +3279,9 @@ static void hl7800_rx(void)
 	static char rx_msg[MDM_HANDLER_MATCH_MAX_LEN];
 	bool unlock = false;
 	bool remove_line_from_buf = true;
+#ifdef HL7800_LOG_UNHANDLED_RX_MSGS
+	char msg[MDM_MAX_RESP_SIZE];
+#endif
 
 	static const struct cmd_handler handlers[] = {
 		/* MODEM Information */
@@ -3440,7 +3443,6 @@ static void hl7800_rx(void)
 			/* Handle unhandled commands */
 			if (IS_ENABLED(HL7800_LOG_UNHANDLED_RX_MSGS) &&
 			    !cmd_handled && frag && len > 1) {
-				char msg[len + 1];
 				out_len = net_buf_linearize(msg, sizeof(msg),
 							    rx_buf, 0, len);
 				msg[out_len] = 0;
