@@ -16,9 +16,9 @@ LOG_MODULE_REGISTER(clock_control_npcx, LOG_LEVEL_ERR);
 /* Driver config */
 struct npcx_pcc_config {
 	/* cdcg device base address */
-	uint32_t base_cdcg;
+	uintptr_t base_cdcg;
 	/* pmc device base address */
-	uint32_t base_pmc;
+	uintptr_t base_pmc;
 };
 
 /* Driver convenience defines */
