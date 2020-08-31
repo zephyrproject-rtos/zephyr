@@ -8237,7 +8237,16 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 	atomic_set_bit_to(adv->flags, BT_ADV_LIMITED, param &&
 			  (param->timeout > 0 || param->num_events > 0));
 
-	le_adv_set_private_addr(adv);
+	if (atomic_test_bit(adv->flags, BT_ADV_CONNECTABLE)) {
+		if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
+		    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
+			le_adv_set_private_addr(adv);
+		}
+	} else {
+		if (!atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
+			le_adv_set_private_addr(adv);
+		}
+	}
 
 	if (atomic_test_bit(adv->flags, BT_ADV_INCLUDE_NAME) &&
 	    !atomic_test_bit(adv->flags, BT_ADV_DATA_SET)) {
