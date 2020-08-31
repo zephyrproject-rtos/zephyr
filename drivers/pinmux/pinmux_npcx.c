@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(pimux_npcx, LOG_LEVEL_ERR);
 /* Driver config */
 struct npcx_pinctrl_config {
 	/* scfg device base address */
-	uint32_t base;
+	uintptr_t base;
 };
 
 /* Default io list which default functionality are not IOs */
