@@ -318,6 +318,7 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 #define MAX_PROFILE_LINE_LENGTH                                                \
 	MAX(sizeof(PROFILE_LINE_1), sizeof(PROFILE_LINE_2))
 
+#ifdef CONFIG_NEWLIB_LIBC
 /* The ? can be a + or - */
 static const char TIME_STRING_FORMAT[] = "\"yy/MM/dd,hh:mm:ss?zz\"";
 #define TIME_STRING_DIGIT_STRLEN 2
@@ -336,6 +337,7 @@ static const char TIME_STRING_FORMAT[] = "\"yy/MM/dd,hh:mm:ss?zz\"";
 #define TM_SEC_RANGE 0, 60 /* leap second */
 #define QUARTER_HOUR_RANGE 0, 96
 #define SECONDS_PER_QUARTER_HOUR (15 * 60)
+#endif
 
 #define SEND_AT_CMD_ONCE_EXPECT_OK(c)                                          \
 	do {                                                                   \
@@ -2387,7 +2389,6 @@ static bool valid_time_string(const char *time_string)
 	}
 	return false;
 }
-#endif
 
 int get_next_time_string_digit(int *failure_cnt, char **pp, int min, int max)
 {
@@ -2409,7 +2410,6 @@ int get_next_time_string_digit(int *failure_cnt, char **pp, int min, int max)
 	}
 }
 
-#ifdef CONFIG_NEWLIB_LIBC
 static bool convert_time_string_to_struct(struct tm *tm, int32_t *offset,
 					  char *time_string)
 {
@@ -3606,7 +3606,6 @@ void mdm_gpio6_callback_isr(const struct device *port,
 	check_hl7800_awake();
 #else
 	HL7800_IO_DBG_LOG("Spurious gpio6 interrupt from the modem");
-#endif
 #endif
 }
 
