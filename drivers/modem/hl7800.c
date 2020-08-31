@@ -4630,7 +4630,7 @@ static struct net_offload offload_funcs = {
 
 static inline uint8_t *hl7800_get_mac(const struct device *dev)
 {
-	struct hl7800_iface_ctx *ctx = dev->driver_data;
+	struct hl7800_iface_ctx *ctx = dev->data;
 
 	/* use the last 6 digits of the IMEI as the mac address */
 	ctx->mac_addr[0] = ictx.mdm_imei[MDM_HL7800_IMEI_STRLEN - 6];
@@ -4887,7 +4887,7 @@ static int hl7800_init(const struct device *dev)
 static void offload_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	struct hl7800_iface_ctx *ctx = dev->driver_data;
+	struct hl7800_iface_ctx *ctx = dev->data;
 
 	iface->if_dev->offload = &offload_funcs;
 	net_if_set_link_addr(iface, hl7800_get_mac(dev), sizeof(ctx->mac_addr),
