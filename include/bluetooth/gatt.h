@@ -125,9 +125,6 @@ struct bt_gatt_attr {
 
 	/** @brief Attribute write callback
 	 *
-	 *  The callback can also be used locally to read the contents of the
-	 *  attribute in which case no connection will be set.
-	 *
 	 *  @param conn   The connection that is requesting to write
 	 *  @param attr   The attribute that's being written
 	 *  @param buf    Buffer with the data to write
