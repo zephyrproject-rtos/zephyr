@@ -39,4 +39,11 @@ config DMA_STM32_SHARED_IRQS
 	help
 	  Enable shared IRQ support on devices where channels share 1 IRQ.
 
+if DMAMUX_STM32
+
+config HEAP_MEM_POOL_SIZE
+	default 1024
+
+endif # DMAMUX_STM32
+
 endif # DMA_STM32
