@@ -99,5 +99,10 @@
 			interrupt-parent = <&cavs0>;
 			label = "IPM_0";
 		};
+
+		ipm_console: ipm_console {
+			compatible = "zephyr,ipm-console";
+			label="IPM_0";
+		};
 	};
 };
