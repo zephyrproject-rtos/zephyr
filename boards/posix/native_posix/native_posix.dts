@@ -19,6 +19,7 @@
 		zephyr,flash = &flash0;
 		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flashcontroller0;
+		zephyr,ec-host-interface = &hcp;
 	};
 
 	aliases {
@@ -110,6 +111,12 @@
 		status = "okay";
 		compatible = "zephyr,native-posix-counter";
 		label = "COUNTER_0";
+	};
+
+	hcp: ec-host-cmd-periph {
+		status = "okay";
+		compatible = "zephyr,sim-ec-host-cmd-periph";
+		label = "EC_HOST_CMD_SIM";
 	};
 
 };

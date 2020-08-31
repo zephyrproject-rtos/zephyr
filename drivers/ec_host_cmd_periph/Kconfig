@@ -1,0 +1,20 @@
+# Host Command Peripheral simulator config
+
+# Copyright (c) 2020 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig EC_HOST_CMD_PERIPH
+	bool "Embedded Controller Host Command peripheral support"
+	help
+	  Enable the embedded controller host command peripheral driver. This
+	  is needed by the EC host command framework to send and receive data
+	  on the appropriate EC host bus.
+
+if EC_HOST_CMD_PERIPH
+
+config EC_HOST_CMD_SIMULATOR
+	bool "Embedded Controller Host Command Peripheral Simulator"
+	help
+	  Enable the EC host command simulator.
+
+endif # EC_HOST_CMD_PERIPH
