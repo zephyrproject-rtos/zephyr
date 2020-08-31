@@ -13,8 +13,6 @@
 
 LOG_MODULE_REGISTER(usb_transfer, CONFIG_USB_DEVICE_LOG_LEVEL);
 
-#define MAX_NUM_TRANSFERS           4 /** Max number of parallel transfers */
-
 struct usb_transfer_sync_priv {
 	int tsize;
 	struct k_sem sem;
@@ -43,7 +41,8 @@ struct usb_transfer_data {
 	unsigned int flags;
 };
 
-static struct usb_transfer_data ut_data[MAX_NUM_TRANSFERS];
+/** Max number of parallel transfers */
+static struct usb_transfer_data ut_data[CONFIG_USB_MAX_NUM_TRANSFERS];
 
 /* Transfer management */
 static struct usb_transfer_data *usb_ep_get_transfer(uint8_t ep)

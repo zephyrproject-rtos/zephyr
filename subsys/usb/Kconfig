@@ -56,6 +56,14 @@ config USB_COMPOSITE_DEVICE
 	help
 	  Enable composite USB device driver.
 
+config USB_MAX_NUM_TRANSFERS
+    int "Set number of USB transfer data buffers"
+    range 1 32
+    default 4
+    help
+        Allocates buffers used for parallel transfers. Increase this number
+        according to USB devices count.
+
 config USB_REQUEST_BUFFER_SIZE
 	int "Set buffer size for Standard, Class and Vendor request handlers"
 	range 256 65536 if USB_DEVICE_NETWORK_RNDIS
