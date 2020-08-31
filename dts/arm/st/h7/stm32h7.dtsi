@@ -595,6 +595,7 @@
 			compatible = "st,stm32-rng";
 			reg = <0x48021800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000040>;
+			interrupts = <80 0>;
 			status = "disabled";
 			label = "RNG";
 		};
