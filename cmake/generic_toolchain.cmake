@@ -11,7 +11,7 @@ if(NOT TOOLCHAIN_ROOT)
 endif()
 
 # Don't inherit compiler flags from the environment
-foreach(var CFLAGS CXXFLAGS)
+foreach(var CFLAGS CXXFLAGS CPPFLAGS)
   if(DEFINED ENV{${var}})
     message(WARNING "The environment variable '${var}' was set to $ENV{${var}},
 but Zephyr ignores flags from the environment. Use 'cmake -DEXTRA_${var}=$ENV{${var}}' instead.")
