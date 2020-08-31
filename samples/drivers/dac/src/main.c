@@ -8,7 +8,8 @@
 #include <sys/printk.h>
 #include <drivers/dac.h>
 
-#if defined(CONFIG_BOARD_NUCLEO_G431RB) || \
+#if defined(CONFIG_BOARD_NUCLEO_F091RC) || \
+	defined(CONFIG_BOARD_NUCLEO_G431RB) || \
 	defined(CONFIG_BOARD_NUCLEO_L073RZ) || \
 	defined(CONFIG_BOARD_NUCLEO_L152RE)
 #define DAC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(dac1))
