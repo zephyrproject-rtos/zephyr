@@ -380,6 +380,7 @@ static int fatfs_mount(struct fs_mount_t *mountp)
 
 	res = f_mount((FATFS *)mountp->fs_data, &mountp->mnt_point[1], 1);
 
+#if defined(CONFIG_FS_FATFS_MOUNT_MKFS)
 	/* If no file system found then create one */
 	if (res == FR_NO_FILESYSTEM) {
 		uint8_t work[_MAX_SS];
@@ -391,6 +392,7 @@ static int fatfs_mount(struct fs_mount_t *mountp)
 					&mountp->mnt_point[1], 1);
 		}
 	}
+#endif /* CONFIG_FS_FATFS_MOUNT_MKFS */
 
 	__ASSERT((res == FR_OK), "FS init failed (%d)", translate_error(res));
 

@@ -14,6 +14,23 @@ if FAT_FILESYSTEM_ELM
 menu "ELM FAT file system settings"
 	visible if FAT_FILESYSTEM_ELM
 
+config FS_FATFS_MKFS
+	bool
+	help
+	  This option translates to _USE_MKFS within ELM FAT file system
+	  driver; it enables additional code that is required for formatting
+	  volumes to ELM FAT.
+
+config FS_FATFS_MOUNT_MKFS
+	bool "Allow formatting volume when mounting fails"
+	default y
+	select FS_FATFS_MKFS
+	help
+	  This option adds code that allows fs_mount to attempt to format
+	  a volume if no file system is found.
+	  If formatting is not needed, disabling this flag will slightly
+	  reduce application size.
+
 config FS_FATFS_EXFAT
 	bool "Enable exFAT support"
 	select FS_FATFS_LFN
