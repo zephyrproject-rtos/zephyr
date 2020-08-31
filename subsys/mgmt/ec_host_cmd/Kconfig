@@ -1,0 +1,28 @@
+# Host command handler functionality
+
+# Copyright (c) 2020 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Host command handler subsystem"
+
+config EC_HOST_CMD
+	bool "Support Embedded Controller host command handler subsystem"
+	help
+	  Enable host command processing for embedded controllers on notebook
+	  computers. Enabling this option requires specifying a chosen
+	  zephyr,ec-host-interface device as the ec host command peripheral that
+	  receive incoming host command requests to process.
+
+if EC_HOST_CMD
+
+config EC_HOST_CMD_HANDLER_STACK_SIZE
+	int "Stack size for the EC host command handler thread"
+	default 512
+
+config EC_HOST_CMD_HANDLER_TX_BUFFER
+	int "Buffer size in bytes for TX buffer shared by all EC host commands"
+	default 256
+
+endif # EC_HOST_CMD
+
+endmenu
