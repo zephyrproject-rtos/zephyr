@@ -100,6 +100,8 @@ The Zephyr nucleo_f091rc board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | ADC controller                      |
 +-----------+------------+-------------------------------------+
+| DAC       | on-chip    | DAC controller                      |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
 
@@ -133,6 +135,7 @@ Default Zephyr Peripheral Mapping:
 - SPI2 SCK/MISO/MOSI : PB13/PB14/PB15
 - USER_PB : PC13
 - LD1 : PA5
+- DAC_OUT1 : PA4
 
 For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
 
