@@ -4534,7 +4534,6 @@ static void le_adv_ext_report(struct net_buf *buf)
 static void per_adv_sync_delete(struct bt_le_per_adv_sync *per_adv_sync)
 {
 	atomic_clear(per_adv_sync->flags);
-	per_adv_sync->cb = NULL; /* disable callbacks */
 }
 
 static struct bt_le_per_adv_sync *get_pending_per_adv_sync(void)
