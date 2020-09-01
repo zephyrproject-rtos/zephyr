@@ -327,6 +327,20 @@ static int stm32_clock_control_init(const struct device *dev)
 	stm32_clock_switch_to_hsi(LL_RCC_SYSCLK_DIV_1);
 	LL_RCC_PLL_Disable();
 
+#ifdef CONFIG_SOC_SERIES_STM32F7X
+	 /* Assuming we stay on Power Scale default value: Power Scale 1 */
+	 if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > 180000000) {
+		 LL_PWR_EnableOverDriveMode();
+		 while (LL_PWR_IsActiveFlag_OD() != 1) {
+		 /* Wait for OverDrive mode ready */
+		 }
+		 LL_PWR_EnableOverDriveSwitching();
+		 while (LL_PWR_IsActiveFlag_ODSW() != 1) {
+		 /* Wait for OverDrive switch ready */
+		 }
+	 }
+#endif
+
 #ifdef CONFIG_CLOCK_STM32_PLL_Q_DIVISOR
 	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLQ,
 		   CONFIG_CLOCK_STM32_PLL_Q_DIVISOR
