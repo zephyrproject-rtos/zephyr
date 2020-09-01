@@ -7,7 +7,6 @@ menuconfig MODEM_HL7800
 	bool "Enable Sierra Wireless HL7800 modem driver"
 	select MODEM_RECEIVER
 	select NET_OFFLOAD
-	select DEVICE_POWER_MANAGEMENT
 	imply GPIO
 	help
 	  Choose this setting to enable
