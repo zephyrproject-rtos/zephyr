@@ -340,4 +340,10 @@ config MBEDTLS_USER_CONFIG_FILE
 	  User config file that can contain mbedTLS configs that were not
 	  covered by the generic config file.
 
+config MBEDTLS_SERVER_NAME_INDICATION
+	bool "Enable support for RFC 6066 server name indication (SNI) in SSL"
+	help
+	  Enable this to support RFC 6066 server name indication (SNI) in SSL.
+	  This requires that MBEDTLS_X509_CRT_PARSE_C is also set.
+
 endmenu
