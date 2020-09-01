@@ -60,6 +60,11 @@ config TRACING_TEST
 	  Enable tracing for testing kinds of format purpose. It must
 	  implement the tracing hooks defined in tracing_test.h
 
+config TRACING_USER
+	bool "Tracing using user-defined functions"
+	help
+	  Use user-defined functions for tracing task switching and irqs
+
 endchoice
 
 
