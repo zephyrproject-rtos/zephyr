@@ -11,7 +11,6 @@ menuconfig OSDP
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	select UART_INTERRUPT_DRIVEN
-	select ENTROPY_GENERATOR
 	help
 	  Add support for Open Supervised Device Protocol (OSDP)
 
