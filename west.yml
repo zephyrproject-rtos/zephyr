@@ -21,6 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: BabbleSim
+      url-base: https://github.com/BabbleSim
 
   #
   # Please add items below based on alphabetical order
@@ -124,9 +126,10 @@ manifest:
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
       revision: 957d46bc3ce0d5f628f0d525196bb4db207672ee
-    - name: nrf_hw_models
+    - name: ext_NRF52_hw_models
       path: modules/bsim_hw_models/nrf_hw_models
-      revision: f86079a7333968f0ba71fe1266e241295a4e9943
+      remote: BabbleSim
+      revision: pull/14/head
     - name: hal_xtensa
       revision: e7a57d0c252f9c5f3cab9d5ceadda8753cacee5b
       path: modules/hal/xtensa
