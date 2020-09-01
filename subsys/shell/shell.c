@@ -500,16 +500,16 @@ static int exec_cmd(const struct shell *shell, size_t argc, const char **argv,
 	}
 
 	if (!ret_val) {
+		flag_cmd_ctx_set(shell, true);
 		/* Unlock thread mutex in case command would like to borrow
 		 * shell context to other thread to avoid mutex deadlock.
 		 */
 		k_mutex_unlock(&shell->ctx->wr_mtx);
-		flag_cmd_ctx_set(shell, 1);
 		ret_val = shell->ctx->active_cmd.handler(shell, argc,
 							 (char **)argv);
-		flag_cmd_ctx_set(shell, 0);
 		/* Bring back mutex to shell thread. */
 		k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
+		flag_cmd_ctx_set(shell, false);
 	}
 
 	return ret_val;
