@@ -68,10 +68,10 @@ static inline uint8_t get_num_regions(void)
 	defined(CONFIG_CPU_CORTEX_M3) || \
 	defined(CONFIG_CPU_CORTEX_M4) || \
 	defined(CONFIG_CPU_CORTEX_M7)
-#include <arm_mpu_v7_internal.h>
+#include "arm_mpu_v7_internal.h"
 #elif defined(CONFIG_CPU_CORTEX_M23) || \
 	defined(CONFIG_CPU_CORTEX_M33)
-#include <arm_mpu_v8_internal.h>
+#include "arm_mpu_v8_internal.h"
 #else
 #error "Unsupported ARM CPU"
 #endif
