@@ -20,15 +20,15 @@ LOG_MODULE_DECLARE(os);
 static struct k_spinlock mm_lock;
 
 /*
- * Overall virtual memory map:
+ * Overall virtual memory map. System RAM is identity-mapped:
  *
- * +--------------+ <- CONFIG_KERNEL_VM_BASE
+ * +--------------+ <- CONFIG_SRAM_BASE_ADDRESS
  * | Mapping for  |
  * | all RAM      |
  * |              |
  * |              |
- * +--------------+ <- mapping_limit
- * | Available    |
+ * +--------------+ <- CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_SIZE
+ * | Available    |    also the mapping limit as mappings grown downward
  * | virtual mem  |
  * |              |
  * |..............| <- mapping_pos (grows downward as more mappings are made)
@@ -39,7 +39,7 @@ static struct k_spinlock mm_lock;
  * | ...          |
  * +--------------+
  * | Mapping      |
- * +--------------+ <- CONFIG_KERNEL_VM_LIMIT
+ * +--------------+ <- CONFIG_SRAM_BASE_ADDRESS + CONFIG_KERNEL_VM_SIZE
  *
  * At the moment we just have one area for mappings and they are permanent.
  * This is under heavy development and may change.
@@ -50,16 +50,21 @@ static struct k_spinlock mm_lock;
   * k_mem_map() mappings start at the end of the address space, and grow
   * downward.
   *
-  * The Kconfig value is inclusive so add one, even if it wraps around to 0.
+  * TODO: If we ever encounter a board with RAM in high enough memory
+  * such that there isn't room in the address space, define mapping_pos
+  * and mapping_limit such that we have mappings grow downward from the
+  * beginning of system RAM.
   */
 static uint8_t *mapping_pos =
-		(uint8_t *)((uintptr_t)CONFIG_KERNEL_VM_LIMIT + 1UL);
+		(uint8_t *)((uintptr_t)(CONFIG_SRAM_BASE_ADDRESS +
+					CONFIG_KERNEL_VM_SIZE));
 
 /* Lower-limit of virtual address mapping. Immediately below this is the
- * permanent mapping for all SRAM.
+ * permanent identity mapping for all SRAM.
  */
-static uint8_t *mapping_limit = (uint8_t *)((uintptr_t)CONFIG_KERNEL_VM_BASE +
-					    KB((size_t)CONFIG_SRAM_SIZE));
+static uint8_t *mapping_limit =
+	(uint8_t *)((uintptr_t)CONFIG_SRAM_BASE_ADDRESS +
+		    KB((size_t)CONFIG_SRAM_SIZE));
 
 size_t k_mem_region_align(uintptr_t *aligned_addr, size_t *aligned_size,
 			  uintptr_t phys_addr, size_t size, size_t align)

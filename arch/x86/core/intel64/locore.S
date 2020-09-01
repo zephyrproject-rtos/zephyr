@@ -49,7 +49,7 @@
 	clts
 
 	/* Page tables created at build time by gen_mmu.py */
-	movl $Z_MEM_PHYS_ADDR(z_x86_kernel_ptables), %eax
+	movl $z_x86_kernel_ptables, %eax
 	movl %eax, %cr3
 
 	set_efer
@@ -70,7 +70,7 @@
 	movq %rax, %cr4
 	clts
 
-	movq $Z_MEM_PHYS_ADDR(z_x86_kernel_ptables), %rax
+	movq $z_x86_kernel_ptables, %rax
 	movq %rax, %cr3
 
 	set_efer

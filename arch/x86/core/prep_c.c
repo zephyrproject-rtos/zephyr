@@ -26,10 +26,6 @@ FUNC_NORETURN void z_x86_prep_c(void *arg)
 	z_x86_early_serial_init();
 #endif
 
-#ifdef CONFIG_MMU
-	z_x86_mmu_init();
-#endif
-
 #ifdef CONFIG_X86_64
 	x86_64_irq_init();
 #endif

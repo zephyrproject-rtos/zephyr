@@ -100,7 +100,7 @@ void *z_x86_userspace_prepare_thread(struct k_thread *thread)
 		z_x86_thread_pt_init(thread);
 		initial_entry = drop_to_user;
 	} else {
-		thread->arch.ptables = z_mem_phys_addr(&z_x86_kernel_ptables);
+		thread->arch.ptables = (uintptr_t)&z_x86_kernel_ptables;
 		initial_entry = z_thread_entry;
 	}
 
