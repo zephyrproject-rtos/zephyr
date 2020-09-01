@@ -29,25 +29,6 @@ vary:
   - On x86_64, the _locore region will have Present set and
     the _lorodata region will have Present and Execute Disable set.
 
-This script will establish a dual mapping at the address defined by
-CONFIG_KERNEL_VM_BASE if it is not the same as CONFIG_SRAM_BASE_ADDRESS.
-
-  - The double-mapping is used to transition the
-    instruction pointer from a physical address at early boot to the
-    virtual address where the kernel is actually linked.
-
-  - The mapping is always double-mapped at the top-level paging structure
-    and the physical/virtual base addresses must have the same alignment
-    with respect to the scope of top-level paging structure entries.
-    This allows the same second-level paging structure(s) to be used for
-    both memory bases.
-
-  - The double-mapping is needed so that we can still fetch instructions
-    from identity-mapped physical addresses after we program this table
-    into the MMU, then jump to the equivalent virtual address.
-    The kernel then unlinks the identity mapping before continuing,
-    the address space is purely virtual after that.
-
 Because the set of page tables are linked together by physical address,
 we must know a priori the physical address of each table. The linker
 script must define a z_x86_pagetables_start symbol where the page
@@ -72,7 +53,6 @@ import argparse
 import os
 import struct
 import elftools
-import math
 from distutils.version import LooseVersion
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
@@ -330,60 +310,20 @@ class PtableSet(object):
         # Set up entry in leaf page table
         table.map(virt_addr, phys_addr, flags)
 
-    def map(self, phys_base, virt_base, size, flags):
+    def map(self, phys_base, size, flags):
         """Identity map an address range in the page tables, with provided
         access flags.
-
-        If the virt_base argument is not the same address as phys_base,
-        the same memory will be double mapped to the virt_base address.
         """
         debug("Identity-mapping 0x%x (%d): %s" %
               (phys_base, size, dump_flags(flags)))
 
-        skip_vm_map = virt_base is None or virt_base == phys_base
-
         align_check(phys_base, size)
         for addr in range(phys_base, phys_base + size, 4096):
-            if addr == 0 and skip_vm_map:
+            if addr == 0:
                 # Never map the NULL page
                 continue
+
             self.map_page(addr, addr, flags)
-
-        if skip_vm_map:
-            return
-
-        # Find how much VM a top-level entry covers
-        scope = 1 << self.toplevel.addr_shift
-        debug("Double map %s entries with scope 0x%x" %
-              (self.toplevel.__class__.__name__, scope))
-
-        # Round bases down to the entry granularity
-        pd_virt_base = math.floor(virt_base / scope) * scope
-        pd_phys_base = math.floor(phys_base / scope) * scope
-        size = size + (phys_base - pd_phys_base)
-
-        # The base addresses have to line up such that they can be mapped
-        # by the same second-level table
-        if phys_base - pd_phys_base != virt_base - pd_virt_base:
-            error("mis-aligned virtual 0x%x and physical base addresses 0x%x" %
-                  (virt_base, phys_base))
-
-        # Round size up to entry granularity
-        size = math.ceil(size / scope) * scope
-
-        for offset in range(0, size, scope):
-            cur_virt = pd_virt_base + offset
-            cur_phys = pd_phys_base + offset
-
-            # Get the physical address of the second-level table that identity
-            # maps the current chunk of physical memory
-            table_link_phys = self.toplevel.lookup(cur_phys)
-
-            debug("copy mappings 0x%x - 0x%x to 0x%x, using table 0x%x" %
-                  (cur_phys, cur_phys + scope - 1, cur_virt, table_link_phys))
-
-            # Link that to the entry for the virtual mapping
-            self.toplevel.map(cur_virt, table_link_phys, INT_FLAGS)
 
     def set_region_perms(self, name, flags):
         """Set access permissions for a named region that is already mapped
@@ -488,16 +428,12 @@ def main():
     debug("building %s" % pclass.__name__)
 
     ram_base = syms["CONFIG_SRAM_BASE_ADDRESS"]
-    virt_base = syms["CONFIG_KERNEL_VM_BASE"]
     ram_size = syms["CONFIG_SRAM_SIZE"] * 1024
-    ptables_virt = syms["z_x86_pagetables_start"]
+    ptables_phys = syms["z_x86_pagetables_start"]
 
-    debug("Base addresses: physical 0x%x virtual 0x%x size %d" %
-          (ram_base, virt_base, ram_size))
+    debug("Base addresses: physical 0x%x size %d" % (ram_base, ram_size))
 
     is_perm_regions = isdef("CONFIG_SRAM_REGION_PERMISSIONS")
-
-    ptables_phys = ptables_virt - (virt_base - ram_base)
 
     if is_perm_regions:
         # Don't allow execution by default for any pages. We'll adjust this
@@ -507,14 +443,11 @@ def main():
         map_flags = FLAG_P
 
     pt = pclass(ptables_phys)
-    pt.map(ram_base, virt_base, ram_size, map_flags | FLAG_RW)
+    pt.map(ram_base, ram_size, map_flags | FLAG_RW)
 
     if isdef("CONFIG_XIP"):
-        if virt_base != ram_base:
-            error("XIP and virtual memory are currently incompatible")
-
         # Additionally identity-map all ROM as read-only
-        pt.map(syms["CONFIG_FLASH_BASE_ADDRESS"], None,
+        pt.map(syms["CONFIG_FLASH_BASE_ADDRESS"],
                syms["CONFIG_FLASH_SIZE"] * 1024, map_flags)
 
     # Adjust mapped region permissions if configured

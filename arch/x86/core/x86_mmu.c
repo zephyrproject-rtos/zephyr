@@ -141,14 +141,6 @@ static const struct paging_level paging_levels[] = {
  * Utility functions
  */
 
-/* For a physical address, return its permanent virtual mapping in the kernel's
- * address space
- */
-static inline void *ram_phys_to_virt(uintptr_t phys)
-{
-	return (void *)(phys + Z_MEM_VM_OFFSET);
-}
-
 /* For a table at a particular level, get the entry index that corresponds to
  * the provided virtual address
  */
@@ -177,7 +169,7 @@ static inline uintptr_t get_entry_phys(pentry_t entry, int level)
 /* Return the virtual address of a linked table stored in the provided entry */
 static inline pentry_t *next_table(pentry_t entry, int level)
 {
-	return ram_phys_to_virt(get_entry_phys(entry, level));
+	return (pentry_t *)(get_entry_phys(entry, level));
 }
 
 /* 4K for everything except PAE PDPTs */
@@ -324,12 +316,9 @@ static void print_entries(pentry_t entries_array[], uint8_t *base, int level,
 				if (phys == virt) {
 					/* Identity mappings */
 					COLOR(YELLOW);
-				} else if (phys + Z_MEM_VM_OFFSET == virt) {
-					/* Permanent ram mappings */
-					COLOR(GREEN);
 				} else {
-					/* general mapped pages */
-					COLOR(CYAN);
+					/* Other mappings */
+					COLOR(GREEN);
 				}
 			} else {
 				COLOR(MAGENTA);
@@ -364,8 +353,7 @@ static void dump_ptables(pentry_t *table, uint8_t *base, int level)
 	}
 #endif
 
-	printk("%s at %p (0x%" PRIxPTR ") ", info->name, table,
-		z_mem_phys_addr(table));
+	printk("%s at %p: ", info->name, table);
 	if (level == 0) {
 		printk("entire address space\n");
 	} else {
@@ -598,7 +586,7 @@ static int page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
 			if (new_table == NULL) {
 				return -ENOMEM;
 			}
-			*entryp = z_mem_phys_addr(new_table) | INT_FLAGS;
+			*entryp = ((uintptr_t)new_table) | INT_FLAGS;
 			table = new_table;
 		} else {
 			/* We fail an assertion here due to no support for
@@ -694,42 +682,6 @@ int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 	return 0;
 }
 
-static void identity_map_remove(void)
-{
-#if CONFIG_SRAM_BASE_ADDRESS != CONFIG_KERNEL_VM_BASE
-	size_t size, scope = get_entry_scope(0);
-	uint8_t *pos;
-
-	k_mem_region_align((uintptr_t *)&pos, &size,
-			   (uintptr_t)CONFIG_SRAM_BASE_ADDRESS,
-			   (size_t)CONFIG_SRAM_SIZE * 1024U, scope);
-
-	/* We booted with RAM mapped both to its identity and virtual
-	 * mapping starting at CONFIG_KERNEL_VM_BASE. This was done by
-	 * double-linking the relevant tables in the top-level table.
-	 * At this point we don't need the identity mapping(s) any more,
-	 * zero the top-level table entries corresponding to the
-	 * physical mapping.
-	 */
-	while (size) {
-		pentry_t *entry = get_entry_ptr(&z_x86_kernel_ptables, pos, 0);
-
-		/* set_pte */
-		*entry = 0;
-		pos += scope;
-		size -= scope;
-	}
-#endif
-}
-
-/* Invoked to remove the identity mappings in the page tables,
- * they were only needed to tranisition the instruction pointer at early boot
- */
-void z_x86_mmu_init(void)
-{
-	identity_map_remove();
-}
-
 #if CONFIG_X86_STACK_PROTECTION
 /* Legacy stack guard function. This will eventually be replaced in favor
  * of memory-mapping stacks (with a non-present mapping immediately below each
@@ -737,7 +689,7 @@ void z_x86_mmu_init(void)
  */
 static void stack_guard_set(void *guard_page)
 {
-	pentry_t pte = z_mem_phys_addr(guard_page) | MMU_P | MMU_XD;
+	pentry_t pte = ((uintptr_t)guard_page) | MMU_P | MMU_XD;
 	int ret;
 
 	assert_virt_addr_aligned(guard_page);
@@ -859,7 +811,7 @@ static void *thread_page_pool_get(void *context)
 	return ret;
 }
 
-#define RAM_BASE	((uintptr_t)CONFIG_KERNEL_VM_BASE)
+#define RAM_BASE	((uintptr_t)CONFIG_SRAM_BASE_ADDRESS)
 #define RAM_END		(RAM_BASE + (CONFIG_SRAM_SIZE * 1024UL))
 
 /* Establish a mapping in the thread's page tables */
@@ -889,7 +841,7 @@ static void thread_map(struct k_thread *thread, void *ptr, size_t size,
 			/* L1TF */
 			pte = 0U;
 		} else {
-			pte = z_mem_phys_addr(pos) | flags;
+			pte = ((uintptr_t)pos) | flags;
 		}
 
 		ret = page_map_set(ptables, pos, pte, thread_page_pool_get,
@@ -1043,7 +995,7 @@ static void setup_thread_tables(struct k_thread *thread,
 			(void)memcpy(user_table, master_table,
 				     table_size(level));
 
-			*link = z_mem_phys_addr(user_table) | INT_FLAGS;
+			*link = ((pentry_t)user_table) | INT_FLAGS;
 		}
 	}
 }
@@ -1080,7 +1032,7 @@ void z_x86_thread_pt_init(struct k_thread *thread)
 
 	ptables = (pentry_t *)&header->kernel_data.ptables;
 #endif
-	thread->arch.ptables = z_mem_phys_addr(ptables);
+	thread->arch.ptables = ((uintptr_t)ptables);
 
 	setup_thread_tables(thread, ptables);
 

@@ -16,7 +16,7 @@
 #include <x86_mmu.h>
 #include <linker/linker-defs.h>
 
-#define VM_BASE		((uint8_t *)CONFIG_KERNEL_VM_BASE)
+#define VM_BASE		((uint8_t *)CONFIG_SRAM_BASE_ADDRESS)
 #define VM_LIMIT	(VM_BASE + KB((size_t)CONFIG_SRAM_SIZE))
 
 #ifdef CONFIG_X86_64

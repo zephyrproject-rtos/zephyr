@@ -84,7 +84,7 @@ z_x86_syscall_entry_stub:
 
 	/* Load kernel's page table */
 	pushq	%rax
-	movq	$Z_MEM_PHYS_ADDR(z_x86_kernel_ptables), %rax
+	movq	$z_x86_kernel_ptables, %rax
 	movq	%rax, %cr3
 	popq	%rax
 	movq	$0, -8(%rsp)	/* Delete stashed RAX data */

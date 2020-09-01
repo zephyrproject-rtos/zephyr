@@ -16,7 +16,6 @@
 #include <kernel_arch_data.h>
 #include <arch/cpu.h>
 #include <arch/x86/multiboot.h>
-#include <sys/mem_manage.h>
 
 	/* exports (private APIs) */
 
@@ -42,55 +41,7 @@
 	GTEXT(_sys_resume_from_deep_sleep)
 #endif
 
-.macro install_page_tables
-#ifdef CONFIG_X86_MMU
-	/* Enable paging. If virtual memory is enabled, the instruction pointer
-	 * is currently at a physical address. There is an identity mapping
-	 * for all RAM, plus a virtual mapping of RAM starting at
-	 * CONFIG_KERNEL_VM_BASE using the same paging structures.
-	 *
-	 * Until we enable these page tables, only physical memory addresses
-	 * work.
-	 */
-	movl $Z_MEM_PHYS_ADDR(z_x86_kernel_ptables), %eax
-	movl %eax, %cr3
-
-#ifdef CONFIG_X86_PAE
-	/* Enable PAE */
-	movl %cr4, %eax
-	orl $CR4_PAE, %eax
-	movl %eax, %cr4
-
-	/* IA32_EFER NXE bit set */
-	movl $0xC0000080, %ecx
-	rdmsr
-	orl $0x800, %eax
-	wrmsr
-#endif /* CONFIG_X86_PAE */
-
-	/* Enable paging (CR0.PG, bit 31) / write protect (CR0.WP, bit 16) */
-	movl %cr0, %eax
-	orl $(CR0_PG | CR0_WP), %eax
-	movl %eax, %cr0
-
-#if CONFIG_KERNEL_VM_BASE != CONFIG_SRAM_BASE_ADDRESS
-	/* Jump to a virtual address, which works because the identity and
-	 * virtual mappings both are to the same physical address.
-	 */
-	lea vm_enter, %eax
-	jmp *%eax
-vm_enter:
-	/* We are now executing in virtual memory. We'll un-map the identity
-	 * mappings later once we are in the C domain
-	 */
-#endif /* CONFIG_KERNEL_VM_BASE != CONFIG_SRAM_BASE_ADDRESS */
-#endif /* CONFIG_X86_MMU */
-.endm
-
 SECTION_FUNC(TEXT_START, __start)
-#ifndef CONFIG_XIP
-	install_page_tables
-#endif /* CONFIG_XIP */
 
 #include "../common.S"
 
@@ -249,11 +200,6 @@ __csSet:
 
 	call	_x86_data_copy
 #endif /* CONFIG_USERSPACE */
-
-	/* Have to do this here, the page tables aren't loaded into RAM
-	 * until after the data copy
-	 */
-	install_page_tables
 #endif /* CONFIG_XIP */
 
 	/*
@@ -282,6 +228,30 @@ __csSet:
 	ltr %ax
 #endif
 	lidt	z_x86_idt		/* load 32-bit operand size IDT */
+
+#ifdef CONFIG_X86_MMU
+	/* Install page tables */
+	movl $z_x86_kernel_ptables, %eax
+	movl %eax, %cr3
+
+#ifdef CONFIG_X86_PAE
+	/* Enable PAE */
+	movl %cr4, %eax
+	orl $CR4_PAE, %eax
+	movl %eax, %cr4
+
+	/* IA32_EFER NXE bit set */
+	movl $0xC0000080, %ecx
+	rdmsr
+	orl $0x800, %eax
+	wrmsr
+#endif /* CONFIG_X86_PAE */
+
+	/* Enable paging (CR0.PG, bit 31) / write protect (CR0.WP, bit 16) */
+	movl %cr0, %eax
+	orl $(CR0_PG | CR0_WP), %eax
+	movl %eax, %cr0
+#endif /* CONFIG_X86_MMU */
 
 #ifdef CONFIG_LOAPIC
 	/* For BSP, cpu_number is 0 */
