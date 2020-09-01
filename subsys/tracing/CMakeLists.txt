@@ -40,7 +40,8 @@ zephyr_sources_ifdef(
 endif()
 
 if(NOT CONFIG_PERCEPIO_TRACERECORDER AND NOT CONFIG_TRACING_CTF
-  AND NOT CONFIG_SEGGER_SYSTEMVIEW AND NOT CONFIG_TRACING_TEST)
+  AND NOT CONFIG_SEGGER_SYSTEMVIEW AND NOT CONFIG_TRACING_TEST
+  AND NOT CONFIG_TRACING_USER)
   zephyr_sources(tracing_none.c)
 endif()
 
@@ -55,3 +56,4 @@ zephyr_include_directories_ifdef(CONFIG_TRACING include)
 add_subdirectory_ifdef(CONFIG_TRACING_CTF ctf)
 add_subdirectory_ifdef(CONFIG_SEGGER_SYSTEMVIEW sysview)
 add_subdirectory_ifdef(CONFIG_TRACING_TEST test)
+add_subdirectory_ifdef(CONFIG_TRACING_USER user)
