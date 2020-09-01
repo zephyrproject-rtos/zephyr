@@ -161,7 +161,7 @@ void z_irq_spurious(const void *unused)
 	z_arm_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 void _arch_isr_direct_pm(void)
 {
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \

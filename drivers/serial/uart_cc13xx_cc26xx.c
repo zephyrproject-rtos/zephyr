@@ -30,12 +30,12 @@ struct uart_cc13xx_cc26xx_data {
 	uart_irq_callback_user_data_t callback;
 	void *user_data;
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 	Power_NotifyObj postNotify;
 	bool tx_constrained;
 	bool rx_constrained;
 #endif
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	uint32_t pm_state;
 #endif
 };
@@ -231,8 +231,8 @@ static int uart_cc13xx_cc26xx_fifo_read(const struct device *dev,
 
 static void uart_cc13xx_cc26xx_irq_tx_enable(const struct device *dev)
 {
-#if defined(CONFIG_SYS_POWER_MANAGEMENT) && \
-	defined(CONFIG_SYS_POWER_SLEEP_STATES)
+#if defined(CONFIG_PM) && \
+	defined(CONFIG_PM_SLEEP_STATES)
 	if (!get_dev_data(dev)->tx_constrained) {
 		/*
 		 * When tx irq is enabled, it is implicit that we are expecting
@@ -256,8 +256,8 @@ static void uart_cc13xx_cc26xx_irq_tx_disable(const struct device *dev)
 {
 	UARTIntDisable(get_dev_conf(dev)->regs, UART_INT_TX);
 
-#if defined(CONFIG_SYS_POWER_MANAGEMENT) && \
-	defined(CONFIG_SYS_POWER_SLEEP_STATES)
+#if defined(CONFIG_PM) && \
+	defined(CONFIG_PM_SLEEP_STATES)
 	if (get_dev_data(dev)->tx_constrained) {
 		sys_pm_ctrl_enable_state(SYS_POWER_STATE_SLEEP_2);
 		get_dev_data(dev)->tx_constrained = false;
@@ -272,8 +272,8 @@ static int uart_cc13xx_cc26xx_irq_tx_ready(const struct device *dev)
 
 static void uart_cc13xx_cc26xx_irq_rx_enable(const struct device *dev)
 {
-#if defined(CONFIG_SYS_POWER_MANAGEMENT) && \
-	defined(CONFIG_SYS_POWER_SLEEP_STATES)
+#if defined(CONFIG_PM) && \
+	defined(CONFIG_PM_SLEEP_STATES)
 	/*
 	 * When rx is enabled, it is implicit that we are expecting
 	 * to receive from the uart, hence we can no longer go into
@@ -290,8 +290,8 @@ static void uart_cc13xx_cc26xx_irq_rx_enable(const struct device *dev)
 
 static void uart_cc13xx_cc26xx_irq_rx_disable(const struct device *dev)
 {
-#if defined(CONFIG_SYS_POWER_MANAGEMENT) && \
-	defined(CONFIG_SYS_POWER_SLEEP_STATES)
+#if defined(CONFIG_PM) && \
+	defined(CONFIG_PM_SLEEP_STATES)
 	if (get_dev_data(dev)->rx_constrained) {
 		sys_pm_ctrl_enable_state(SYS_POWER_STATE_SLEEP_2);
 		get_dev_data(dev)->rx_constrained = false;
@@ -359,11 +359,11 @@ static void uart_cc13xx_cc26xx_isr(const struct device *dev)
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 /*
  *  ======== postNotifyFxn ========
  *  Called by Power module when waking up the CPU from Standby, to support
- *  the case when SYS_POWER_MANAGEMENT is set but DEVICE_POWER_MANAGEMENT is
+ *  the case when PM is set but PM_DEVICE is
  *  not. The uart needs to be reconfigured afterwards unless Zephyr's device
  *  PM turned it off, in which case it'd be responsible for turning it back
  *  on and reconfiguring it.
@@ -400,7 +400,7 @@ static int postNotifyFxn(unsigned int eventType, uintptr_t eventArg,
 }
 #endif
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 static int uart_cc13xx_cc26xx_set_power_state(const struct device *dev,
 					      uint32_t new_state)
 {
@@ -471,7 +471,7 @@ static int uart_cc13xx_cc26xx_pm_control(const struct device *dev,
 
 	return ret;
 }
-#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
+#endif /* CONFIG_PM_DEVICE */
 
 static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 	.poll_in = uart_cc13xx_cc26xx_poll_in,
@@ -497,7 +497,7 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 #define UART_CC13XX_CC26XX_POWER_UART(n)				\
 	do {								\
 		get_dev_data(dev)->rx_constrained = false;		\
@@ -579,7 +579,17 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	     \
 		&uart_cc13xx_cc26xx_driver_api)
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#define UART_CC13XX_CC26XX_DEVICE_API_INIT(n)				     \
+	DEVICE_AND_API_INIT(uart_cc13xx_cc26xx_##n, DT_INST_LABEL(n),	     \
+		uart_cc13xx_cc26xx_init_##n, &uart_cc13xx_cc26xx_data_##n,   \
+		&uart_cc13xx_cc26xx_config_##n, PRE_KERNEL_1,		     \
+		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			     \
+		&uart_cc13xx_cc26xx_driver_api)
+
+#ifdef CONFIG_PM_DEVICE
+#define UART_CC13XX_CC26XX_DEVICE_INIT(n)				\
+	UART_CC13XX_CC26XX_DEVICE_DEFINE(n)
+
 #define UART_CC13XX_CC26XX_INIT_PM_STATE				\
 	do {								\
 		get_dev_data(dev)->pm_state = DEVICE_PM_ACTIVE_STATE;	\

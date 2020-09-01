@@ -13,7 +13,7 @@ config SOC_SERIES_NRF91X
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select SOC_FAMILY_NRF
-	select HAS_SYS_POWER_STATE_DEEP_SLEEP_1
+	select HAS_POWER_STATE_DEEP_SLEEP_1
 	select XIP
 	select HAS_NRFX
 	select HAS_SEGGER_RTT

@@ -233,7 +233,7 @@ typedef struct s_isrList {
 				   (flags_p)); \
 }
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 /*
  * FIXME: z_sys_power_save_idle_exit is defined in kernel.h, which cannot be
  *	  included here due to circular dependency

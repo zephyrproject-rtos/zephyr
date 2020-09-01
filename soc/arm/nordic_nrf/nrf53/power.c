@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #include <power/power.h>
 
-#ifdef CONFIG_HAS_SYS_POWER_STATE_DEEP_SLEEP_1
+#ifdef CONFIG_HAS_POWER_STATE_DEEP_SLEEP_1
 #include <hal/nrf_regulators.h>
 #endif
 
@@ -18,8 +18,8 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 void sys_set_power_state(enum power_states state)
 {
 	switch (state) {
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
- #ifdef CONFIG_HAS_SYS_POWER_STATE_DEEP_SLEEP_1
+#ifdef CONFIG_PM_DEEP_SLEEP_STATES
+ #ifdef CONFIG_HAS_POWER_STATE_DEEP_SLEEP_1
 	case SYS_POWER_STATE_DEEP_SLEEP_1:
 		nrf_regulators_system_off(NRF_REGULATORS);
 		break;
@@ -35,8 +35,8 @@ void sys_set_power_state(enum power_states state)
 void _sys_pm_power_state_exit_post_ops(enum power_states state)
 {
 	switch (state) {
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
- #ifdef CONFIG_HAS_SYS_POWER_STATE_DEEP_SLEEP_1
+#ifdef CONFIG_PM_DEEP_SLEEP_STATES
+ #ifdef CONFIG_HAS_POWER_STATE_DEEP_SLEEP_1
 	case SYS_POWER_STATE_DEEP_SLEEP_1:
 		/* Nothing to do. */
 		break;

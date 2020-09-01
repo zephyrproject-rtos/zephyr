@@ -448,7 +448,7 @@ static int board_pinmux_init(const struct device *dev)
 #endif /* DT_NODE_HAS_STATUS(DT_INST(0, microchip_xec_qmspi), okay) */
 #endif /* CONFIG_SPI_XEC_QMSPI */
 
-#ifdef CONFIG_SYS_PM_DEBUG
+#ifdef CONFIG_PM_DEBUG
 	/*
 	 * Deep sleep testing: Enable TEST_CLK_OUT on GPIO_060 function 2.
 	 * TEST_CLK_OUT is the PLL 48MHz conditioned output.

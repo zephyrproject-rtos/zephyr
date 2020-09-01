@@ -281,7 +281,7 @@ static int pwm_nrfx_init(const struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 
 static void pwm_nrfx_uninit(const struct device *dev)
 {
@@ -361,7 +361,7 @@ static int pwm_nrfx_pm_control(const struct device *dev,
 
 #define PWM_NRFX_PM_CONTROL(idx)
 
-#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
+#endif /* CONFIG_PM_DEVICE */
 
 #define PWM(dev_idx) DT_NODELABEL(pwm##dev_idx)
 #define PWM_PROP(dev_idx, prop) DT_PROP(PWM(dev_idx), prop)

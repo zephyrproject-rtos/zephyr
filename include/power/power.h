@@ -27,33 +27,33 @@ extern "C" {
 enum power_states {
 	SYS_POWER_STATE_AUTO	= (-2),
 	SYS_POWER_STATE_ACTIVE	= (-1),
-#ifdef CONFIG_SYS_POWER_SLEEP_STATES
-# ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_1
+#ifdef CONFIG_PM_SLEEP_STATES
+# ifdef CONFIG_HAS_POWER_STATE_SLEEP_1
 	SYS_POWER_STATE_SLEEP_1,
 # endif
-# ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_2
+# ifdef CONFIG_HAS_POWER_STATE_SLEEP_2
 	SYS_POWER_STATE_SLEEP_2,
 # endif
-# ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_3
+# ifdef CONFIG_HAS_POWER_STATE_SLEEP_3
 	SYS_POWER_STATE_SLEEP_3,
 # endif
-#endif /* CONFIG_SYS_POWER_SLEEP_STATES */
+#endif /* CONFIG_PM_SLEEP_STATES */
 
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
-# ifdef CONFIG_HAS_SYS_POWER_STATE_DEEP_SLEEP_1
+#ifdef CONFIG_PM_DEEP_SLEEP_STATES
+# ifdef CONFIG_HAS_POWER_STATE_DEEP_SLEEP_1
 	SYS_POWER_STATE_DEEP_SLEEP_1,
 # endif
-# ifdef CONFIG_HAS_SYS_POWER_STATE_DEEP_SLEEP_2
+# ifdef CONFIG_HAS_POWER_STATE_DEEP_SLEEP_2
 	SYS_POWER_STATE_DEEP_SLEEP_2,
 # endif
-# ifdef CONFIG_HAS_SYS_POWER_STATE_DEEP_SLEEP_3
+# ifdef CONFIG_HAS_POWER_STATE_DEEP_SLEEP_3
 	SYS_POWER_STATE_DEEP_SLEEP_3,
 # endif
-#endif /* CONFIG_SYS_POWER_DEEP_SLEEP_STATES */
+#endif /* CONFIG_PM_DEEP_SLEEP_STATES */
 	SYS_POWER_STATE_MAX
 };
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 
 extern unsigned char sys_pm_idle_exit_notify;
 
@@ -75,20 +75,20 @@ static inline bool sys_pm_is_sleep_state(enum power_states state)
 	bool ret = true;
 
 	switch (state) {
-#ifdef CONFIG_SYS_POWER_SLEEP_STATES
-# ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_1
+#ifdef CONFIG_PM_SLEEP_STATES
+# ifdef CONFIG_HAS_POWER_STATE_SLEEP_1
 	case SYS_POWER_STATE_SLEEP_1:
 		break;
 # endif
-# ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_2
+# ifdef CONFIG_HAS_POWER_STATE_SLEEP_2
 	case SYS_POWER_STATE_SLEEP_2:
 		break;
 # endif
-# ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_3
+# ifdef CONFIG_HAS_POWER_STATE_SLEEP_3
 	case SYS_POWER_STATE_SLEEP_3:
 		break;
 # endif
-#endif /* CONFIG_SYS_POWER_SLEEP_STATES */
+#endif /* CONFIG_PM_SLEEP_STATES */
 	default:
 		ret = false;
 		break;
@@ -107,20 +107,20 @@ static inline bool sys_pm_is_deep_sleep_state(enum power_states state)
 	bool ret = true;
 
 	switch (state) {
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
-# ifdef CONFIG_HAS_SYS_POWER_STATE_DEEP_SLEEP_1
+#ifdef CONFIG_PM_DEEP_SLEEP_STATES
+# ifdef CONFIG_HAS_POWER_STATE_DEEP_SLEEP_1
 	case SYS_POWER_STATE_DEEP_SLEEP_1:
 		break;
 # endif
-# ifdef CONFIG_HAS_SYS_POWER_STATE_DEEP_SLEEP_2
+# ifdef CONFIG_HAS_POWER_STATE_DEEP_SLEEP_2
 	case SYS_POWER_STATE_DEEP_SLEEP_2:
 		break;
 # endif
-# ifdef CONFIG_HAS_SYS_POWER_STATE_DEEP_SLEEP_3
+# ifdef CONFIG_HAS_POWER_STATE_DEEP_SLEEP_3
 	case SYS_POWER_STATE_DEEP_SLEEP_3:
 		break;
 # endif
-#endif /* CONFIG_SYS_POWER_DEEP_SLEEP_STATES */
+#endif /* CONFIG_PM_DEEP_SLEEP_STATES */
 
 	default:
 		ret = false;
@@ -152,7 +152,7 @@ static inline void _sys_pm_idle_exit_notification_disable(void)
  * And before the end of suspend, the state of forced_pm_state
  * is cleared with interrupt disabled.
  *
- * If enabled SYS_PM_DIRECT_FORCE_MODE, this function can only
+ * If enabled PM_DIRECT_FORCE_MODE, this function can only
  * run in thread context.
  *
  * @param state Power state which should be used in the ongoing
@@ -168,7 +168,7 @@ void sys_pm_force_power_state(enum power_states state);
  */
 void sys_set_power_state(enum power_states state);
 
-#ifdef CONFIG_SYS_PM_DEBUG
+#ifdef CONFIG_PM_DEBUG
 /**
  * @brief Dump Low Power states related debug info
  *
@@ -176,9 +176,9 @@ void sys_set_power_state(enum power_states state);
  */
 void sys_pm_dump_debug_info(void);
 
-#endif /* CONFIG_SYS_PM_DEBUG */
+#endif /* CONFIG_PM_DEBUG */
 
-#ifdef CONFIG_SYS_PM_STATE_LOCK
+#ifdef CONFIG_PM_STATE_LOCK
 /**
  * @brief Disable particular power state
  *
@@ -213,7 +213,7 @@ void sys_pm_ctrl_enable_state(enum power_states state);
  */
 bool sys_pm_ctrl_is_state_enabled(enum power_states state);
 
-#endif /* CONFIG_SYS_PM_STATE_LOCK */
+#endif /* CONFIG_PM_STATE_LOCK */
 
 /**
  * @}
@@ -318,7 +318,7 @@ void sys_pm_notify_power_state_exit(enum power_states state);
  * @}
  */
 
-#endif /* CONFIG_SYS_POWER_MANAGEMENT */
+#endif /* CONFIG_PM */
 
 #ifdef __cplusplus
 }

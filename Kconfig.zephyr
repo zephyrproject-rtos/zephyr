@@ -498,7 +498,7 @@ endchoice
 config BOOTLOADER_CONTEXT_RESTORE
 	bool "Boot loader has context restore support"
 	default y
-	depends on SYS_POWER_DEEP_SLEEP_STATES && BOOTLOADER_CONTEXT_RESTORE_SUPPORTED
+	depends on PM_DEEP_SLEEP_STATES && BOOTLOADER_CONTEXT_RESTORE_SUPPORTED
 	help
 	  This option signifies that the target has a bootloader
 	  that restores CPU context upon resuming from deep sleep

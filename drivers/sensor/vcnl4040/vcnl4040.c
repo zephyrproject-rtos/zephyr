@@ -217,7 +217,7 @@ static int vcnl4040_ambient_setup(const struct device *dev)
 }
 #endif
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 static int vcnl4040_device_ctrl(const struct device *dev,
 				uint32_t ctrl_command, void *context,
 				device_pm_cb cb, void *arg)

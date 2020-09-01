@@ -84,7 +84,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	bl sys_trace_isr_enter
 #endif
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 	/*
 	 * All interrupts are disabled when handling idle wakeup.  For tickless
 	 * idle, this ensures that the calculation and programming of the
@@ -139,7 +139,7 @@ _idle_state_cleared:
 	cpsie i		/* re-enable interrupts (PRIMASK = 0) */
 #endif
 
-#endif /* CONFIG_SYS_POWER_MANAGEMENT */
+#endif /* CONFIG_PM */
 
 #if defined(CONFIG_CPU_CORTEX_M)
 	mrs r0, IPSR	/* get exception number */

@@ -20,8 +20,8 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 void sys_set_power_state(enum power_states state)
 {
 	switch (state) {
-#ifdef CONFIG_SYS_POWER_SLEEP_STATES
-#ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_1
+#ifdef CONFIG_PM_SLEEP_STATES
+#ifdef CONFIG_HAS_POWER_STATE_SLEEP_1
 	case SYS_POWER_STATE_SLEEP_1:
 
 		/* this corresponds to the STOP0 mode: */
@@ -37,8 +37,8 @@ void sys_set_power_state(enum power_states state)
 		/* enter SLEEP mode : WFE or WFI */
 		k_cpu_idle();
 		break;
-#endif /* CONFIG_HAS_SYS_POWER_STATE_SLEEP_1 */
-#ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_2
+#endif /* CONFIG_HAS_POWER_STATE_SLEEP_1 */
+#ifdef CONFIG_HAS_POWER_STATE_SLEEP_2
 	case SYS_POWER_STATE_SLEEP_2:
 		/* this corresponds to the STOP1 mode: */
 #ifdef CONFIG_DEBUG
@@ -52,8 +52,8 @@ void sys_set_power_state(enum power_states state)
 		LL_LPM_EnableDeepSleep();
 		k_cpu_idle();
 		break;
-#endif /* CONFIG_HAS_SYS_POWER_STATE_SLEEP_2 */
-#ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_3
+#endif /* CONFIG_HAS_POWER_STATE_SLEEP_2 */
+#ifdef CONFIG_HAS_POWER_STATE_SLEEP_3
 	case SYS_POWER_STATE_SLEEP_3:
 		/* this corresponds to the STOP2 mode: */
 #ifdef CONFIG_DEBUG
@@ -70,8 +70,8 @@ void sys_set_power_state(enum power_states state)
 		LL_LPM_EnableDeepSleep();
 		k_cpu_idle();
 		break;
-#endif /* CONFIG_HAS_SYS_POWER_STATE_SLEEP_3 */
-#endif /* CONFIG_SYS_POWER_SLEEP_STATES */
+#endif /* CONFIG_HAS_POWER_STATE_SLEEP_3 */
+#endif /* CONFIG_PM_SLEEP_STATES */
 	default:
 		LOG_DBG("Unsupported power state %u", state);
 		break;
@@ -82,20 +82,20 @@ void sys_set_power_state(enum power_states state)
 void _sys_pm_power_state_exit_post_ops(enum power_states state)
 {
 	switch (state) {
-#ifdef CONFIG_SYS_POWER_SLEEP_STATES
-#ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_1
+#ifdef CONFIG_PM_SLEEP_STATES
+#ifdef CONFIG_HAS_POWER_STATE_SLEEP_1
 	case SYS_POWER_STATE_SLEEP_1:
-#endif /* CONFIG_HAS_SYS_POWER_STATE_SLEEP_1 */
-#ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_2
+#endif /* CONFIG_HAS_POWER_STATE_SLEEP_1 */
+#ifdef CONFIG_HAS_POWER_STATE_SLEEP_2
 	case SYS_POWER_STATE_SLEEP_2:
-#endif /* CONFIG_HAS_SYS_POWER_STATE_SLEEP_2 */
-#ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_3
+#endif /* CONFIG_HAS_POWER_STATE_SLEEP_2 */
+#ifdef CONFIG_HAS_POWER_STATE_SLEEP_3
 	case SYS_POWER_STATE_SLEEP_3:
-#endif /* CONFIG_HAS_SYS_POWER_STATE_SLEEP_3 */
+#endif /* CONFIG_HAS_POWER_STATE_SLEEP_3 */
 		LL_LPM_DisableSleepOnExit();
 		LL_LPM_EnableSleep();
 		break;
-#endif /* CONFIG_SYS_POWER_SLEEP_STATES */
+#endif /* CONFIG_PM_SLEEP_STATES */
 	default:
 		LOG_DBG("Unsupported power state %u", state);
 		break;

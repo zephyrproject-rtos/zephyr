@@ -407,7 +407,7 @@ static int apds9960_init_interrupt(const struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 static int apds9960_device_ctrl(const struct device *dev,
 				uint32_t ctrl_command,
 				void *context, device_pm_cb cb, void *arg)

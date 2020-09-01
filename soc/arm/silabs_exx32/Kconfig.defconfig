@@ -6,6 +6,6 @@ source "soc/arm/silabs_exx32/*/Kconfig.defconfig.series"
 
 config SOC_GECKO_EMU
 	default y
-	depends on SYS_POWER_MANAGEMENT
+	depends on PM
 
 endif

@@ -73,7 +73,7 @@ void posix_irq_priority_set(unsigned int irq, unsigned int prio,
 #define ARCH_ISR_DIRECT_HEADER()   do { } while (0)
 #define ARCH_ISR_DIRECT_FOOTER(a)  do { } while (0)
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 extern void posix_irq_check_idle_exit(void);
 #define ARCH_ISR_DIRECT_PM() posix_irq_check_idle_exit()
 #else

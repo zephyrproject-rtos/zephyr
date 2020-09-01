@@ -8,12 +8,12 @@ if BOARD_CC1352R1_LAUNCHXL
 config BOARD
 	default "cc1352r1_launchxl"
 
-if SYS_POWER_MANAGEMENT
+if PM
 
 # Ideally this value could be made to less than 1 ms, as there is
 # essentially no delay to come out of IDLE mode. However Zephyr only
 # supports millisecond precision here, so 1 ms is the best approximation.
-config SYS_PM_MIN_RESIDENCY_SLEEP_1
+config PM_MIN_RESIDENCY_SLEEP_1
 	default 1
 
 # The default here is deliberately made higher to be less agressive, to
@@ -25,8 +25,8 @@ config SYS_PM_MIN_RESIDENCY_SLEEP_1
 # given application, weighing tradeoffs between a lower value that leads to
 # higher power savings vs. a higher value that would accommodate for a higher
 # wakeup latency.
-config SYS_PM_MIN_RESIDENCY_SLEEP_2
+config PM_MIN_RESIDENCY_SLEEP_2
 	default 5
 
-endif # SYS_POWER_MANAGEMENT
+endif # PM
 endif # BOARD_CC1352R1_LAUNCHXL

@@ -4,7 +4,13 @@
 
 menu "Power Management"
 
-menuconfig SYS_POWER_MANAGEMENT
+config SYS_POWER_MANAGEMENT
+	bool "System Power management"
+	select PM
+	help
+	  This option is deprecated. Please use CONFIG_PM instead.
+
+menuconfig PM
 	bool "System Power management"
 	select TICKLESS_IDLE
 	help
@@ -13,12 +19,12 @@ menuconfig SYS_POWER_MANAGEMENT
 	  power management subsystem of the number of ticks until the next kernel
 	  timer is due to expire.
 
-if SYS_POWER_MANAGEMENT
-config SYS_POWER_SLEEP_STATES
+if PM
+config PM_SLEEP_STATES
 	bool "Low Power states"
-	depends on HAS_SYS_POWER_STATE_SLEEP_1 || \
-	           HAS_SYS_POWER_STATE_SLEEP_2 || \
-	           HAS_SYS_POWER_STATE_SLEEP_3
+	depends on HAS_POWER_STATE_SLEEP_1 || \
+	           HAS_POWER_STATE_SLEEP_2 || \
+	           HAS_POWER_STATE_SLEEP_3
 	help
 	  This option enables the kernel to interface with a power manager
 	  application.  This permits the system to enter a custom CPU low power
@@ -26,11 +32,11 @@ config SYS_POWER_SLEEP_STATES
 	  the CPU low power states supported by the processor.  Generally the one
 	  saving most power.
 
-config SYS_POWER_DEEP_SLEEP_STATES
+config PM_DEEP_SLEEP_STATES
 	bool "Deep Sleep states"
-	depends on HAS_SYS_POWER_STATE_DEEP_SLEEP_1 || \
-	           HAS_SYS_POWER_STATE_DEEP_SLEEP_2 || \
-	           HAS_SYS_POWER_STATE_DEEP_SLEEP_3
+	depends on HAS_POWER_STATE_DEEP_SLEEP_1 || \
+	           HAS_POWER_STATE_DEEP_SLEEP_2 || \
+	           HAS_POWER_STATE_DEEP_SLEEP_3
 	help
 	  This option enables the kernel to interface with a power manager
 	  application. This permits the system to enter a Deep sleep state
@@ -41,7 +47,7 @@ config SYS_POWER_DEEP_SLEEP_STATES
 	  restoration of states that were saved at the time of suspend.
 
 
-config SYS_PM_STATE_LOCK
+config PM_STATE_LOCK
 	bool "Enable Power State locking capability"
 	help
 	  Enable Power Management system state locking capability
@@ -49,7 +55,7 @@ config SYS_PM_STATE_LOCK
 	  Power States while doing any critical work or needs quick
 	  response from hardware resources.
 
-config SYS_PM_DIRECT_FORCE_MODE
+config PM_DIRECT_FORCE_MODE
 	bool "Enable system power management direct force trigger mode"
 	help
 	  Enable system power management direct force trigger mode. In
@@ -57,14 +63,14 @@ config SYS_PM_DIRECT_FORCE_MODE
 	  or deep sleep mode instead of waiting for idle thread to do
 	  it, so that it can reduce latency to enter low power mode.
 
-config SYS_PM_DEBUG
+config PM_DEBUG
 	bool "Enable System Power Management debug hooks"
 	help
 	  Enable System Power Management debugging hooks.
 
-config DEVICE_IDLE_PM
+config PM_DEVICE_IDLE
 	bool "Enable device Idle Power Management"
-	depends on DEVICE_POWER_MANAGEMENT
+	depends on PM_DEVICE
 	select POLL
 	help
 	  Enable device Idle Power Management to save power.
@@ -74,14 +80,14 @@ config DEVICE_IDLE_PM
 
 source "subsys/power/policy/Kconfig"
 
-module = SYS_PM
+module = PM
 module-str = System Power Management
 source "subsys/logging/Kconfig.template.log_config"
 
 
-endif # SYS_POWER_MANAGEMENT
+endif # PM
 
-config DEVICE_POWER_MANAGEMENT
+config PM_DEVICE
 	bool "Device power management"
 	help
 	  This option enables the device power management interface.  The
@@ -92,9 +98,15 @@ config DEVICE_POWER_MANAGEMENT
 	  like turning off device clocks and peripherals. The device drivers
 	  may also save and restore states in these hook functions.
 
+config DEVICE_POWER_MANAGEMENT
+	bool "Device Power Management"
+	select PM_DEVICE
+	help
+	  This option is deprecated, please use CONFIG_PM_DEVICE instead.
+
 config PM_MAX_DEVICES
 	int "Max number of devices support power management"
-	depends on DEVICE_POWER_MANAGEMENT
+	depends on PM_DEVICE
 	default 15
 
 endmenu

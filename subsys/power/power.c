@@ -11,7 +11,7 @@
 #include <power/power.h>
 #include "policy/pm_policy.h"
 
-#define LOG_LEVEL CONFIG_SYS_PM_LOG_LEVEL
+#define LOG_LEVEL CONFIG_PM_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(power);
 
@@ -19,7 +19,7 @@ static int post_ops_done = 1;
 static enum power_states forced_pm_state = SYS_POWER_STATE_AUTO;
 static enum power_states pm_state;
 
-#ifdef CONFIG_SYS_PM_DEBUG
+#ifdef CONFIG_PM_DEBUG
 
 struct pm_debug_info {
 	uint32_t count;
@@ -80,7 +80,7 @@ void sys_pm_force_power_state(enum power_states state)
 		 state <  SYS_POWER_STATE_MAX,
 		 "Invalid power state %d!", state);
 
-#ifdef CONFIG_SYS_PM_DIRECT_FORCE_MODE
+#ifdef CONFIG_PM_DIRECT_FORCE_MODE
 	(void)arch_irq_lock();
 	forced_pm_state = state;
 	_sys_suspend(K_TICKS_FOREVER);
@@ -92,7 +92,7 @@ void sys_pm_force_power_state(enum power_states state)
 enum power_states _sys_suspend(int32_t ticks)
 {
 	bool deep_sleep;
-#if CONFIG_DEVICE_POWER_MANAGEMENT
+#if CONFIG_PM_DEVICE
 	bool low_power = false;
 #endif
 
@@ -104,14 +104,14 @@ enum power_states _sys_suspend(int32_t ticks)
 		return pm_state;
 	}
 
-	deep_sleep = IS_ENABLED(CONFIG_SYS_POWER_DEEP_SLEEP_STATES) ?
+	deep_sleep = IS_ENABLED(CONFIG_PM_DEEP_SLEEP_STATES) ?
 		     sys_pm_is_deep_sleep_state(pm_state) : 0;
 
 	post_ops_done = 0;
 	sys_pm_notify_power_state_entry(pm_state);
 
 	if (deep_sleep) {
-#if CONFIG_DEVICE_POWER_MANAGEMENT
+#if CONFIG_PM_DEVICE
 		/* Suspend peripherals. */
 		if (sys_pm_suspend_devices()) {
 			LOG_DBG("Some devices didn't enter suspend state!");
@@ -126,7 +126,7 @@ enum power_states _sys_suspend(int32_t ticks)
 		 * in deep sleep mode.
 		 */
 		_sys_pm_idle_exit_notification_disable();
-#if CONFIG_DEVICE_POWER_MANAGEMENT
+#if CONFIG_PM_DEVICE
 	} else {
 		if (sys_pm_policy_low_power_devices(pm_state)) {
 			/* low power peripherals. */
@@ -148,7 +148,7 @@ enum power_states _sys_suspend(int32_t ticks)
 	sys_set_power_state(pm_state);
 	sys_pm_debug_stop_timer();
 
-#if CONFIG_DEVICE_POWER_MANAGEMENT
+#if CONFIG_PM_DEVICE
 	if (deep_sleep || low_power) {
 		/* Turn on peripherals and restore device states as necessary */
 		sys_pm_resume_devices();
@@ -191,7 +191,7 @@ void _sys_resume(void)
 	}
 }
 
-#if CONFIG_DEVICE_POWER_MANAGEMENT
+#if CONFIG_PM_DEVICE
 static int sys_pm_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -201,4 +201,4 @@ static int sys_pm_init(const struct device *dev)
 }
 
 SYS_INIT(sys_pm_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
+#endif /* CONFIG_PM_DEVICE */

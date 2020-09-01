@@ -344,11 +344,11 @@ static int transceive(const struct device *dev,
 
 	spi_context_lock(&spi->ctx, asynchronous, signal, config);
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	if (device_busy_check(dev) != (-EBUSY)) {
 		device_busy_set(dev);
 	}
-#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
+#endif /* CONFIG_PM_DEVICE */
 
 	/* Configure */
 	ret = spi_dw_configure(info, spi, config);

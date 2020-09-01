@@ -10,7 +10,7 @@
 #include <sys/atomic.h>
 #include "policy/pm_policy.h"
 
-#define LOG_LEVEL CONFIG_SYS_PM_LOG_LEVEL /* From power module Kconfig */
+#define LOG_LEVEL CONFIG_PM_LOG_LEVEL /* From power module Kconfig */
 #include <logging/log.h>
 LOG_MODULE_DECLARE(power);
 

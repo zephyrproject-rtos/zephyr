@@ -24,7 +24,7 @@
 GTEXT(_isr_wrapper)
 GTEXT(_isr_demux)
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#if defined(CONFIG_PM)
 GTEXT(z_sys_power_save_idle_exit)
 #endif
 
@@ -245,7 +245,7 @@ rirq_path:
 
 /* r0, r1, and r3 will be used in exit_tickless_idle macro */
 .macro exit_tickless_idle
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#if defined(CONFIG_PM)
 	clri r0 /* do not interrupt exiting tickless idle operations */
 	mov_s r1, _kernel
 	ld_s r3, [r1, _kernel_offset_to_idle] /* requested idle duration */

@@ -103,7 +103,7 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 } /* LCOV_EXCL_LINE */
 #endif
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 /**
  * If the kernel is in idle mode, take it out
  */

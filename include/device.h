@@ -335,7 +335,7 @@ struct device {
 	const void *api;
 	/** Address of the device instance private data */
 	void * const data;
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	/** Power Management function */
 	int (*device_pm_control)(const struct device *dev, uint32_t command,
 				 void *context, device_pm_cb cb, void *arg);
@@ -409,7 +409,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @{
  */
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 
 /** @def DEVICE_PM_ACTIVE_STATE
  *
@@ -464,7 +464,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 #define DEVICE_PM_SET_POWER_STATE       1
 #define DEVICE_PM_GET_POWER_STATE       2
 
-#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
+#endif /* CONFIG_PM_DEVICE */
 
 /**
  * @brief Get name of device PM state
@@ -492,7 +492,7 @@ void device_busy_set(const struct device *busy_dev);
  */
 void device_busy_clear(const struct device *busy_dev);
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 /*
  * Device PM functions
  */
@@ -615,7 +615,7 @@ int device_any_busy_check(void);
  */
 int device_busy_check(const struct device *chk_dev);
 
-#ifdef CONFIG_DEVICE_IDLE_PM
+#ifdef CONFIG_PM_DEVICE_IDLE
 
 /* Device PM FSM states */
 enum device_pm_fsm_state {
@@ -741,7 +741,7 @@ static inline int device_pm_put_sync(const struct device *dev) { return -ENOTSUP
 	Z_INIT_ENTRY_DEFINE(_CONCAT(__device_, dev_name), init_fn,	\
 			    (&_CONCAT(__device_, dev_name)), level, prio)
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 #define Z_DEVICE_DEFINE_PM(dev_name)					\
 	static struct device_pm _CONCAT(__pm_, dev_name) __used  = {	\
 		.usage = ATOMIC_INIT(0),				\

@@ -12,7 +12,7 @@
 #include <soc.h>
 #include "device_power.h"
 
-#if defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES)
+#if defined(CONFIG_PM_DEEP_SLEEP_STATES)
 
 /*
  * Deep Sleep
@@ -79,7 +79,7 @@ static void z_power_soc_deep_sleep(void)
 }
 #endif
 
-#ifdef CONFIG_SYS_POWER_SLEEP_STATES
+#ifdef CONFIG_PM_SLEEP_STATES
 
 /*
  * Light Sleep
@@ -110,12 +110,12 @@ static void z_power_soc_sleep(void)
 void sys_set_power_state(enum power_states state)
 {
 	switch (state) {
-#if (defined(CONFIG_SYS_POWER_SLEEP_STATES))
+#if (defined(CONFIG_PM_SLEEP_STATES))
 	case SYS_POWER_STATE_SLEEP_1:
 		z_power_soc_sleep();
 		break;
 #endif
-#if (defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES))
+#if (defined(CONFIG_PM_DEEP_SLEEP_STATES))
 	case SYS_POWER_STATE_DEEP_SLEEP_1:
 		z_power_soc_deep_sleep();
 		break;
@@ -128,12 +128,12 @@ void sys_set_power_state(enum power_states state)
 void _sys_pm_power_state_exit_post_ops(enum power_states state)
 {
 	switch (state) {
-#if (defined(CONFIG_SYS_POWER_SLEEP_STATES))
+#if (defined(CONFIG_PM_SLEEP_STATES))
 	case SYS_POWER_STATE_SLEEP_1:
 		__enable_irq();
 		break;
 #endif
-#if (defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES))
+#if (defined(CONFIG_PM_DEEP_SLEEP_STATES))
 	case SYS_POWER_STATE_DEEP_SLEEP_1:
 		__enable_irq();
 		break;

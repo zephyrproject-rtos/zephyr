@@ -19,7 +19,7 @@ struct i2c_nrfx_twi_data {
 	struct k_sem completion_sync;
 	volatile nrfx_err_t res;
 	uint32_t dev_config;
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	uint32_t pm_state;
 #endif
 };
@@ -205,14 +205,14 @@ static int init_twi(const struct device *dev)
 			    dev->name);
 		return -EBUSY;
 	}
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	get_dev_data(dev)->pm_state = DEVICE_PM_ACTIVE_STATE;
 #endif
 
 	return 0;
 }
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 static int twi_nrfx_pm_control(const struct device *dev,
 				uint32_t ctrl_command,
 				void *context, device_pm_cb cb, void *arg)
@@ -260,7 +260,7 @@ static int twi_nrfx_pm_control(const struct device *dev,
 
 	return ret;
 }
-#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
+#endif /* CONFIG_PM_DEVICE */
 
 #define I2C_NRFX_TWI_INVALID_FREQUENCY  ((nrf_twi_frequency_t)-1)
 #define I2C_NRFX_TWI_FREQUENCY(bitrate)					       \

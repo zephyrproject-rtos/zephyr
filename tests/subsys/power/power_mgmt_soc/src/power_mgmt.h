@@ -11,10 +11,10 @@
 /** @brief Alternates between light and deep sleep cycles.
  *
  * For light sleep, the test sleeps in main thread for 500 ms longer than
- * CONFIG_SYS_PM_MIN_RESIDENCY_SLEEP_1.
+ * CONFIG_PM_MIN_RESIDENCY_SLEEP_1.
  *
  * Similarly for deep sleep, the test sleeps in the main thread for 500 ms
- * longer than CONFIG_SYS_PM_MIN_RESIDENCY_DEEP_SLEEP_1.
+ * longer than CONFIG_PM_MIN_RESIDENCY_DEEP_SLEEP_1.
  *
  * @param cycles to repeat the cycle described above.
  * @retval 0 if successful, errno otherwise.

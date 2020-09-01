@@ -140,7 +140,7 @@ struct z_kernel {
 	sys_dlist_t timeout_q;
 #endif
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 	int32_t idle; /* Number of ticks for kernel idling */
 #endif
 

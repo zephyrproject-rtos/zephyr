@@ -106,7 +106,7 @@ static unsigned char timer_mode = TIMER_MODE_PERIODIC;
 #endif
 #endif /* CONFIG_TICKLESS_IDLE */
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 static uint32_t loapic_timer_device_power_state;
 static uint32_t reg_timer_save;
 static uint32_t reg_timer_cfg_save;
@@ -568,7 +568,7 @@ int z_clock_driver_init(const struct device *device)
 	periodic_mode_set();
 #endif
 	initial_count_register_set(cycles_per_tick - 1);
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	loapic_timer_device_power_state = DEVICE_PM_ACTIVE_STATE;
 #endif
 
@@ -579,7 +579,7 @@ int z_clock_driver_init(const struct device *device)
 	return 0;
 }
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 static int sys_clock_suspend(const struct device *dev)
 {
 	ARG_UNUSED(dev);

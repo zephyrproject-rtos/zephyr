@@ -90,7 +90,7 @@ System Power Management
 ***********************
 
 The kernel enters the idle state when it has nothing to schedule. If enabled via
-the :option:`CONFIG_SYS_POWER_MANAGEMENT` Kconfig option, the Power Management
+the :option:`CONFIG_PM` Kconfig option, the Power Management
 Subsystem can put an idle system in one of the supported power states, based
 on the selected power management policy and the duration of the idle time
 allotted by the kernel.
@@ -491,7 +491,7 @@ Power Management Configuration Flags
 The Power Management features can be individually enabled and disabled using
 the following configuration flags.
 
-:option:`CONFIG_SYS_POWER_MANAGEMENT`
+:option:`CONFIG_PM`
 
    This flag enables the power management subsystem.
 
@@ -499,20 +499,20 @@ the following configuration flags.
 
    This flag enables the tickless idle power saving feature.
 
-:option:`CONFIG_SYS_POWER_SLEEP_STATES`
+:option:`CONFIG_PM_SLEEP_STATES`
 
    This flag enables support for the Sleep states.
 
-:option:`CONFIG_SYS_POWER_DEEP_SLEEP_STATES`
+:option:`CONFIG_PM_DEEP_SLEEP_STATES`
 
    This flag enables support for the Deep Sleep states.
 
-:option:`CONFIG_DEVICE_POWER_MANAGEMENT`
+:option:`CONFIG_PM_DEVICE`
 
    This flag is enabled if the SOC interface and the devices support device power
    management.
 
-:code:`CONFIG_DEVICE_IDLE_PM`
+:code:`CONFIG_PM_DEVICE_IDLE`
 
    This flag enables the Device Idle Power Management.
 

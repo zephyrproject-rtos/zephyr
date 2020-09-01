@@ -58,7 +58,7 @@ extern PowerCC26X2_ModuleState PowerCC26X2_module;
 /* Invoke Low Power/System Off specific Tasks */
 void sys_set_power_state(enum power_states state)
 {
-#ifdef CONFIG_SYS_POWER_SLEEP_STATES
+#ifdef CONFIG_PM_SLEEP_STATES
 	uint32_t modeVIMS;
 	uint32_t constraints;
 #endif
@@ -74,7 +74,7 @@ void sys_set_power_state(enum power_states state)
 	irq_unlock(0);
 
 	switch (state) {
-#ifdef CONFIG_SYS_POWER_SLEEP_STATES
+#ifdef CONFIG_PM_SLEEP_STATES
 	case SYS_POWER_STATE_SLEEP_1:
 		/* query the declared constraints */
 		constraints = Power_getConstraintMask();
@@ -113,7 +113,7 @@ void sys_set_power_state(enum power_states state)
 		break;
 #endif
 
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
+#ifdef CONFIG_PM_DEEP_SLEEP_STATES
 	case SYS_POWER_STATE_DEEP_SLEEP_1:
 		Power_shutdown(0, 0);
 		break;
