@@ -595,9 +595,6 @@ uint8_t ll_adv_enable(uint8_t enable)
 	}
 
 	lll = &adv->lll;
-#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
-	lll->tx_pwr_lvl = RADIO_TXP_DEFAULT;
-#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 
 	pdu_adv = lll_adv_data_peek(lll);
 	pdu_scan = lll_adv_scan_rsp_peek(lll);
@@ -1524,6 +1521,11 @@ void ull_adv_done(struct node_rx_event_done *done)
 
 static int init_reset(void)
 {
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL) && \
+	!defined(CONFIG_BT_CTLR_ADV_EXT)
+	ll_adv[0].lll.tx_pwr_lvl = RADIO_TXP_DEFAULT;
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL && !CONFIG_BT_CTLR_ADV_EXT */
+
 	return 0;
 }
 
