@@ -40,6 +40,14 @@
   #define PHYS_LOAD_ADDR      DT_REG_ADDR(DT_CHOSEN(zephyr_flash))
 #endif
 
+#ifdef CONFIG_X86_64
+/* Locore must be addressable by real mode and so cannot extend past 64K.
+ * Skip reserved stuff in the first page
+ */
+#define LOCORE_BASE         0x1000
+#define LOCORE_SIZE         (0x10000 - LOCORE_BASE)
+#endif
+
 MEMORY
     {
 #if defined(CONFIG_XIP)
@@ -54,9 +62,13 @@ MEMORY
      */
     RAM (wx)        : ORIGIN = KERNEL_BASE_ADDR, LENGTH = KERNEL_RAM_SIZE
 
-#ifndef CONFIG_X86_64
+#ifdef CONFIG_X86_64
+    /* Special low-memory area for bootstrapping other CPUs from real mode */
+    LOCORE (wx)     : ORIGIN = LOCORE_BASE, LENGTH = LOCORE_SIZE
+#else
     /*
-     * Fake memory area for build-time IDT generation data
+     * On 32-bit x86, fake memory area for build-time IDT generation data.
+     * 64-bit doesn't use this, interrupts are all manaaged at runtime.
      *
      * It doesn't matter where this region goes as it is stripped from the
      * final ELF image. The address doesn't even have to be valid on the
