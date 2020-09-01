@@ -141,6 +141,28 @@ builtin table::
         # On Linux and MacOS
         cp ZEPHYR_BASE/subsys/tracing/sysview/SYSVIEW_Zephyr.txt ~/.config/SEGGER/
 
+User-Defined Tracing
+====================
+
+This tracing format allows the user to define functions to perform any work desired
+when a task is switched in or out, when an interrupt is entered or exited, and when the cpu
+is idle.
+
+Examples include:
+- simple toggling of GPIO for external scope tracing while minimizing extra cpu load
+- generating/outputting trace data in a non-standard or proprietary format that can
+not be supported by the other tracing systems
+
+The following functions can be defined by the user:
+- ``void sys_trace_thread_switched_in_user(struct k_thread *thread)``
+- ``void sys_trace_thread_switched_out_user(struct k_thread *thread)``
+- ``void sys_trace_isr_enter_user()``
+- ``void sys_trace_isr_exit_user()``
+- ``void sys_trace_idle_user()``
+
+Enable this format with the :kconfig:`CONFIG_TRACING_USER` option.
+
+
 Transport Backends
 ******************
 
