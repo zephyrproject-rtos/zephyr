@@ -1798,6 +1798,11 @@ error:
 	return ret;
 }
 
+void restart_modem_offload(void)
+{
+	modem_reset();
+}
+
 NET_DEVICE_OFFLOAD_INIT(modem_sara, CONFIG_MODEM_UBLOX_SARA_R4_NAME,
 			modem_init, device_pm_control_nop, &mdata, NULL,
 			CONFIG_MODEM_UBLOX_SARA_R4_INIT_PRIORITY, &api_funcs,
