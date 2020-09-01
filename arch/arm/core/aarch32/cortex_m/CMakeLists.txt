@@ -15,6 +15,10 @@ zephyr_library_sources(
 
 zephyr_library_sources_ifdef(CONFIG_DEBUG_COREDUMP coredump.c)
 
+if (CONFIG_TIMING_FUNCTIONS AND CONFIG_CORTEX_M_DWT)
+  zephyr_library_sources(timing.c)
+endif()
+
 if (CONFIG_SW_VECTOR_RELAY)
 if (CONFIG_CPU_CORTEX_M_HAS_VTOR)
   set(relay_vector_table_sort_key relay_vectors)

@@ -288,6 +288,13 @@ config SW_VECTOR_RELAY_CLIENT
 	  sure the vector table pointer in RAM is set properly by the image upon
 	  initialization.
 
+config CORTEX_M_DWT
+	bool "Enable and use the DWT"
+	depends on CPU_CORTEX_M_HAS_DWT
+	default y if TIMING_FUNCTIONS
+	help
+	  Enable and use the Data Watchpoint and Trace (DWT) unit for
+	  timing functions.
 endmenu
 
 rsource "mpu/Kconfig"
