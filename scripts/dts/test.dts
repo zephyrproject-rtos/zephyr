@@ -362,6 +362,22 @@
 	};
 
 	//
+	// zephyr,user binding inference
+	//
+
+	zephyr,user {
+		boolean;
+		bytes = [81 82 83];
+		number = <23>;
+		numbers = <1>, <2>, <3>;
+		string = "text";
+		strings = "a", "b", "c";
+		handle = <&{/props/ctrl-1}>;
+		phandles = <&{/props/ctrl-1}>, <&{/props/ctrl-2}>;
+		phandle-array-foos = <&{/props/ctrl-2} 1 2>;
+	};
+
+	//
 	// For testing that neither 'include: [foo.yaml, bar.yaml]' nor
 	// 'include: [bar.yaml, foo.yaml]' causes errors when one of the files
 	// has 'required: true' and the other 'required: false'

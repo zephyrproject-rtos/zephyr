@@ -83,8 +83,9 @@ try:
 except ImportError:
     from yaml import Loader
 
-from dtlib import DT, DTError, to_num, to_nums, TYPE_EMPTY, TYPE_NUMS, \
-                  TYPE_PHANDLE, TYPE_PHANDLES_AND_NUMS
+from dtlib import DT, DTError, to_num, to_nums, TYPE_EMPTY, TYPE_BYTES, \
+                  TYPE_NUM, TYPE_NUMS, TYPE_STRING, TYPE_STRINGS, \
+                  TYPE_PHANDLE, TYPE_PHANDLES, TYPE_PHANDLES_AND_NUMS
 from grutils import Graph
 
 
@@ -157,9 +158,9 @@ class EDT:
     def __init__(self, dts, bindings_dirs, warn_file=None,
                  warn_reg_unit_address_mismatch=True,
                  default_prop_types=True,
-                 support_fixed_partitions_on_any_bus=True):
-        """
-        EDT constructor. This is the top-level entry point to the library.
+                 support_fixed_partitions_on_any_bus=True,
+                 infer_binding_for_paths=None):
+        """EDT constructor. This is the top-level entry point to the library.
 
         dts:
           Path to devicetree .dts file
@@ -184,6 +185,12 @@ class EDT:
           If True, set the Node.bus for 'fixed-partitions' compatible nodes
           to None.  This allows 'fixed-partitions' binding to match regardless
           of the bus the 'fixed-partition' is under.
+
+        infer_binding_for_paths (default: None):
+          An iterable of devicetree paths identifying nodes for which bindings
+          should be inferred from the node content.  (Child nodes are not
+          processed.)  Pass none if no nodes should support inferred bindings.
+
         """
         # Do this indirection with None in case sys.stderr is
         # deliberately overridden. We'll only hold on to this file
@@ -193,6 +200,7 @@ class EDT:
         self._warn_reg_unit_address_mismatch = warn_reg_unit_address_mismatch
         self._default_prop_types = default_prop_types
         self._fixed_partitions_no_bus = support_fixed_partitions_on_any_bus
+        self._infer_binding_for_paths = set(infer_binding_for_paths or [])
 
         self.dts_path = dts
         self.bindings_dirs = bindings_dirs
@@ -957,6 +965,10 @@ class Node:
         # initialized, which is guaranteed by going through the nodes in
         # node_iter() order.
 
+        if self.path in self.edt._infer_binding_for_paths:
+            self._binding_from_properties()
+            return
+
         if self.compats:
             on_bus = self.on_bus
 
@@ -983,6 +995,43 @@ class Node:
 
         # No binding found
         self._binding = self.binding_path = self.matching_compat = None
+
+    def _binding_from_properties(self):
+        # Returns a binding synthesized from the properties in the node.
+
+        if self.compats:
+            _err(f"compatible in node with inferred binding: {self.path}")
+
+        self._binding = OrderedDict()
+        self.matching_compat = self.path.split('/')[-1]
+        self.compats = [self.matching_compat]
+        self.binding_path = None
+
+        properties = OrderedDict()
+        self._binding["properties"] = properties
+        for name, prop in self._node.props.items():
+            pp = OrderedDict()
+            properties[name] = pp
+            if prop.type == TYPE_EMPTY:
+                pp["type"] = "boolean"
+            elif prop.type == TYPE_BYTES:
+                pp["type"] = "uint8-array"
+            elif prop.type == TYPE_NUM:
+                pp["type"] = "int"
+            elif prop.type == TYPE_NUMS:
+                pp["type"] = "array"
+            elif prop.type == TYPE_STRING:
+                pp["type"] = "string"
+            elif prop.type == TYPE_STRINGS:
+                pp["type"] = "string-array"
+            elif prop.type == TYPE_PHANDLE:
+                pp["type"] = "phandle"
+            elif prop.type == TYPE_PHANDLES:
+                pp["type"] = "phandles"
+            elif prop.type == TYPE_PHANDLES_AND_NUMS:
+                pp["type"] = "phandle-array"
+            else:
+                _err(f"cannot infer binding from property: {prop}")
 
     def _binding_from_parent(self):
         # Returns the binding from 'child-binding:' in the parent node's
