@@ -148,7 +148,6 @@ static int secure_beacon_send(void)
 	return 0;
 }
 
-#if defined(CONFIG_BT_MESH_PB_ADV)
 static int unprovisioned_beacon_send(void)
 {
 	const struct bt_mesh_prov *prov;
@@ -204,11 +203,9 @@ static int unprovisioned_beacon_send(void)
 
 	return 0;
 }
-#endif
 
 static void unprovisioned_beacon_recv(struct net_buf_simple *buf)
 {
-#if defined(CONFIG_BT_MESH_PB_ADV)
 	const struct bt_mesh_prov *prov;
 	uint8_t *uuid;
 	uint16_t oob_info;
@@ -237,7 +234,6 @@ static void unprovisioned_beacon_recv(struct net_buf_simple *buf)
 					   (bt_mesh_prov_oob_info_t)oob_info,
 					   uri_hash);
 	}
-#endif
 }
 
 static void update_beacon_observation(void)
@@ -269,12 +265,10 @@ static void update_beacon_observation(void)
 static void beacon_send(struct k_work *work)
 {
 	/* Don't send anything if we have an active provisioning link */
-#if defined(CONFIG_BT_MESH_PB_ADV)
-	if (bt_prov_active()) {
+	if (IS_ENABLED(CONFIG_BT_MESH_PB_ADV) && bt_prov_active()) {
 		k_delayed_work_submit(&beacon_timer, K_SECONDS(CONFIG_BT_MESH_UNPROV_BEACON_INT));
 		return;
 	}
-#endif
 
 	BT_DBG("");
 
@@ -291,10 +285,11 @@ static void beacon_send(struct k_work *work)
 
 		return;
 	}
-#if defined(CONFIG_BT_MESH_PB_ADV)
-	unprovisioned_beacon_send();
-	k_delayed_work_submit(&beacon_timer, K_SECONDS(CONFIG_BT_MESH_UNPROV_BEACON_INT));
-#endif
+
+	if (IS_ENABLED(CONFIG_BT_MESH_PB_ADV)) {
+		unprovisioned_beacon_send();
+		k_delayed_work_submit(&beacon_timer, K_SECONDS(CONFIG_BT_MESH_UNPROV_BEACON_INT));
+	}
 }
 
 static void secure_beacon_recv(struct net_buf_simple *buf)
@@ -391,7 +386,9 @@ void bt_mesh_beacon_recv(struct net_buf_simple *buf)
 	type = net_buf_simple_pull_u8(buf);
 	switch (type) {
 	case BEACON_TYPE_UNPROVISIONED:
-		unprovisioned_beacon_recv(buf);
+		if (IS_ENABLED(CONFIG_BT_MESH_PB_ADV)) {
+			unprovisioned_beacon_recv(buf);
+		}
 		break;
 	case BEACON_TYPE_SECURE:
 		secure_beacon_recv(buf);
