@@ -30,10 +30,10 @@ config BT_MESH_PB_ADV
 	  the advertising bearer.
 
 config BT_MESH_UNPROV_BEACON_INT
-	int "The interval (in seconds) to send the unprovisioned beacon"
+	int
+	prompt "The interval (in seconds) to send the unprovisioned beacon" if BT_MESH_PB_ADV
 	default 5
 	range 1 10
-	depends on BT_MESH_PB_ADV
 	help
 	  This option specifies the interval (in seconds) at which the
 	  device sends unprovisioned beacon.
