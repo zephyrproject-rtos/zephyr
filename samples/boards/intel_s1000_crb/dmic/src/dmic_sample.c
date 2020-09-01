@@ -99,7 +99,7 @@ static void dmic_receive(void)
 
 	while (frame_counter++ < FRAMES_PER_ITERATION) {
 		ret = dmic_read(dmic_device, 0, (void **)&mic_in_buf, &size,
-				K_FOREVER);
+				SYS_FOREVER_MS);
 		if (ret) {
 			LOG_ERR("dmic_read failed %d", ret);
 		} else {
