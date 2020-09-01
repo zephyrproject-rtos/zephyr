@@ -39,6 +39,9 @@ static int stm32m4_init(const struct device *arg)
 
 	irq_unlock(key);
 
+	/*HW semaphore Clock enable*/
+	LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_HSEM);
+
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	SystemCoreClock = 209000000;
 
