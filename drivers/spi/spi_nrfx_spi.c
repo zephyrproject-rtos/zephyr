@@ -19,7 +19,7 @@ struct spi_nrfx_data {
 	const struct device *dev;
 	size_t chunk_len;
 	bool   busy;
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	uint32_t pm_state;
 #endif
 };
@@ -276,14 +276,14 @@ static int init_spi(const struct device *dev)
 		return -EBUSY;
 	}
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	dev_data->pm_state = DEVICE_PM_ACTIVE_STATE;
 #endif
 
 	return 0;
 }
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 static int spi_nrfx_pm_control(const struct device *dev,
 				uint32_t ctrl_command,
 				void *context, device_pm_cb cb, void *arg)
@@ -329,7 +329,7 @@ static int spi_nrfx_pm_control(const struct device *dev,
 
 	return ret;
 }
-#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
+#endif /* CONFIG_PM_DEVICE */
 
 /*
  * Current factors requiring use of DT_NODELABEL:

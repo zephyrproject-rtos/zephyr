@@ -29,11 +29,11 @@ struct i2c_cc13xx_cc26xx_data {
 	struct k_sem lock;
 	struct k_sem complete;
 	volatile uint32_t error;
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 	Power_NotifyObj postNotify;
 	uint32_t dev_config;
 #endif
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	uint32_t pm_state;
 #endif
 };
@@ -209,8 +209,8 @@ static int i2c_cc13xx_cc26xx_transfer(const struct device *dev,
 
 	k_sem_take(&get_dev_data(dev)->lock, K_FOREVER);
 
-#if defined(CONFIG_SYS_POWER_MANAGEMENT) && \
-	defined(CONFIG_SYS_POWER_SLEEP_STATES)
+#if defined(CONFIG_PM) && \
+	defined(CONFIG_PM_SLEEP_STATES)
 	sys_pm_ctrl_disable_state(SYS_POWER_STATE_SLEEP_2);
 #endif
 
@@ -234,8 +234,8 @@ static int i2c_cc13xx_cc26xx_transfer(const struct device *dev,
 		}
 	}
 
-#if defined(CONFIG_SYS_POWER_MANAGEMENT) && \
-	defined(CONFIG_SYS_POWER_SLEEP_STATES)
+#if defined(CONFIG_PM) && \
+	defined(CONFIG_PM_SLEEP_STATES)
 	sys_pm_ctrl_enable_state(SYS_POWER_STATE_SLEEP_2);
 #endif
 
@@ -277,7 +277,7 @@ static int i2c_cc13xx_cc26xx_configure(const struct device *dev,
 	/* Enables and configures I2C master */
 	I2CMasterInitExpClk(get_dev_config(dev)->base, CPU_FREQ, fast);
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 	get_dev_data(dev)->dev_config = dev_config;
 #endif
 
@@ -298,7 +298,7 @@ static void i2c_cc13xx_cc26xx_isr(const void *arg)
 	}
 }
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 /*
  *  ======== postNotifyFxn ========
  *  Called by Power module when waking up the CPU from Standby. The i2c needs
@@ -331,7 +331,7 @@ static int postNotifyFxn(unsigned int eventType, uintptr_t eventArg,
 }
 #endif
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 static int i2c_cc13xx_cc26xx_set_power_state(const struct device *dev,
 					     uint32_t new_state)
 {
@@ -395,18 +395,18 @@ static int i2c_cc13xx_cc26xx_pm_control(const struct device *dev,
 
 	return ret;
 }
-#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
+#endif /* CONFIG_PM_DEVICE */
 
 static int i2c_cc13xx_cc26xx_init(const struct device *dev)
 {
 	uint32_t cfg;
 	int err;
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	get_dev_data(dev)->pm_state = DEVICE_PM_ACTIVE_STATE;
 #endif
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 	/* Set Power dependencies & constraints */
 	Power_setDependency(PowerCC26XX_PERIPH_I2C0);
 

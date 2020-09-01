@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_sources_ifdef(CONFIG_SYS_PM_POLICY_DUMMY policy_dummy.c)
-zephyr_sources_ifdef(CONFIG_SYS_PM_POLICY_RESIDENCY_DEFAULT policy_residency.c)
-zephyr_sources_ifdef(CONFIG_SYS_PM_POLICY_RESIDENCY_CC13X2_CC26X2 policy_residency_cc13x2_cc26x2.c)
+zephyr_sources_ifdef(CONFIG_PM_POLICY_DUMMY policy_dummy.c)
+zephyr_sources_ifdef(CONFIG_PM_POLICY_RESIDENCY_DEFAULT policy_residency.c)
+zephyr_sources_ifdef(CONFIG_PM_POLICY_RESIDENCY_CC13X2_CC26X2 policy_residency_cc13x2_cc26x2.c)

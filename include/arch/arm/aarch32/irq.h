@@ -117,7 +117,7 @@ extern void z_arm_interrupt_init(void);
 	z_arm_irq_priority_set(irq_p, priority_p, flags_p); \
 }
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 extern void _arch_isr_direct_pm(void);
 #define ARCH_ISR_DIRECT_PM() _arch_isr_direct_pm()
 #else

@@ -29,7 +29,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 #define SMP_FALLBACK 0
 #endif
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 /*
  * Used to allow _sys_suspend() implementation to control notification
  * of the event that caused exit from kernel idling after pm operations.
@@ -40,20 +40,20 @@ unsigned char sys_pm_idle_exit_notify;
 /* LCOV_EXCL_START
  * These are almost certainly overidden and in any event do nothing
  */
-#if defined(CONFIG_SYS_POWER_SLEEP_STATES)
+#if defined(CONFIG_PM_SLEEP_STATES)
 void __attribute__((weak)) _sys_resume(void)
 {
 }
 #endif
 
-#if defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES)
+#if defined(CONFIG_PM_DEEP_SLEEP_STATES)
 void __attribute__((weak)) _sys_resume_from_deep_sleep(void)
 {
 }
 #endif
 /* LCOV_EXCL_STOP */
 
-#endif /* CONFIG_SYS_POWER_MANAGEMENT */
+#endif /* CONFIG_PM */
 
 /**
  *
@@ -69,7 +69,7 @@ void __attribute__((weak)) _sys_resume_from_deep_sleep(void)
 #if !SMP_FALLBACK
 static void set_kernel_idle_time_in_ticks(int32_t ticks)
 {
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 	_kernel.idle = ticks;
 #endif
 }
@@ -89,8 +89,8 @@ static void sys_power_save_idle(void)
 #endif
 
 	set_kernel_idle_time_in_ticks(ticks);
-#if (defined(CONFIG_SYS_POWER_SLEEP_STATES) || \
-	defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES))
+#if (defined(CONFIG_PM_SLEEP_STATES) || \
+	defined(CONFIG_PM_DEEP_SLEEP_STATES))
 
 	sys_pm_idle_exit_notify = 1U;
 
@@ -119,7 +119,7 @@ static void sys_power_save_idle(void)
 
 void z_sys_power_save_idle_exit(int32_t ticks)
 {
-#if defined(CONFIG_SYS_POWER_SLEEP_STATES)
+#if defined(CONFIG_PM_SLEEP_STATES)
 	/* Some CPU low power states require notification at the ISR
 	 * to allow any operations that needs to be done before kernel
 	 * switches task or processes nested interrupts. This can be

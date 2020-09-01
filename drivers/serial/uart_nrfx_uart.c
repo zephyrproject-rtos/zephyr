@@ -1091,7 +1091,7 @@ static const struct uart_driver_api uart_nrfx_uart_driver_api = {
 #endif /* CONFIG_UART_0_INTERRUPT_DRIVEN */
 };
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 
 static void uart_nrfx_pins_enable(const struct device *dev, bool enable)
 {
@@ -1178,7 +1178,7 @@ static int uart_nrfx_pm_control(const struct device *dev,
 
 	return 0;
 }
-#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
+#endif /* CONFIG_PM_DEVICE */
 
 static struct uart_nrfx_data uart_nrfx_uart0_data = {
 	.uart_config = {

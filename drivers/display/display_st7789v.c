@@ -52,7 +52,7 @@ struct st7789v_data {
 	uint16_t width;
 	uint16_t x_offset;
 	uint16_t y_offset;
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	uint32_t pm_state;
 #endif
 };
@@ -375,7 +375,7 @@ static int st7789v_init(const struct device *dev)
 	}
 #endif
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	data->pm_state = DEVICE_PM_ACTIVE_STATE;
 #endif
 
@@ -402,7 +402,7 @@ static int st7789v_init(const struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 static void st7789v_enter_sleep(struct st7789v_data *data)
 {
 	st7789v_transmit(data, ST7789V_CMD_SLEEP_IN, NULL, 0);
@@ -438,7 +438,7 @@ static int st7789v_pm_control(const struct device *dev, uint32_t ctrl_command,
 	}
 	return ret;
 }
-#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
+#endif /* CONFIG_PM_DEVICE */
 
 static const struct display_driver_api st7789v_api = {
 	.blanking_on = st7789v_blanking_on,

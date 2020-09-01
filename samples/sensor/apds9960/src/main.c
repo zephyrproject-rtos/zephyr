@@ -76,7 +76,7 @@ void main(void)
 		printk("ambient light intensity %d, proximity %d\n",
 		       intensity.val1, pdata.val1);
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 		uint32_t p_state;
 
 		p_state = DEVICE_PM_LOW_POWER_STATE;

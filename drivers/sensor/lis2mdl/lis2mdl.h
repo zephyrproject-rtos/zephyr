@@ -57,7 +57,7 @@ struct lis2mdl_data {
 
 	stmdev_ctx_t *ctx;
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	uint32_t power_state;
 #endif
 

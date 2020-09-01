@@ -232,7 +232,7 @@ static void gpio_cc13xx_cc26xx_isr(const struct device *dev)
 
 static int gpio_cc13xx_cc26xx_init(const struct device *dev)
 {
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 	/* Set dependency on gpio resource to turn on power domains */
 	Power_setDependency(PowerCC26XX_PERIPH_GPIO);
 #else

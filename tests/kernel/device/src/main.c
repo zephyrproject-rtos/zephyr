@@ -185,7 +185,7 @@ void test_pre_kernel_detection(void)
 	}
 }
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 /**
  * @brief Test system device list query API with PM enabled.
  *

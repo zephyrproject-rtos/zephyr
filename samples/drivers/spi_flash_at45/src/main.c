@@ -149,7 +149,7 @@ void main(void)
 
 	printk("OK\n");
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#if IS_ENABLED(CONFIG_PM_DEVICE)
 	printk("Putting the flash device into low power state... ");
 	err = device_set_power_state(flash_dev, DEVICE_PM_LOW_POWER_STATE,
 				     NULL, NULL);

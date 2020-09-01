@@ -10,8 +10,8 @@
 #include <device.h>
 #include "policy/pm_policy.h"
 
-#if defined(CONFIG_SYS_POWER_MANAGEMENT)
-#define LOG_LEVEL CONFIG_SYS_PM_LOG_LEVEL /* From power module Kconfig */
+#if defined(CONFIG_PM)
+#define LOG_LEVEL CONFIG_PM_LOG_LEVEL /* From power module Kconfig */
 #include <logging/log.h>
 LOG_MODULE_DECLARE(power);
 
@@ -182,4 +182,4 @@ void sys_pm_create_device_list(void)
 		}
 	}
 }
-#endif /* defined(CONFIG_SYS_POWER_MANAGEMENT) */
+#endif /* defined(CONFIG_PM) */

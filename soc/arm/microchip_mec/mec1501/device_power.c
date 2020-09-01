@@ -48,7 +48,7 @@ void soc_lite_sleep_enable(void)
  * will be ramping up from ~16 to 24 MHz.
  */
 
-#if defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES)
+#if defined(CONFIG_PM_DEEP_SLEEP_STATES)
 
 void soc_deep_sleep_enable(void)
 {
@@ -228,4 +228,4 @@ void soc_deep_sleep_periph_restore(void)
 
 #endif /* DEEP_SLEEP_PERIPH_SAVE_RESTORE */
 
-#endif /* CONFIG_SYS_POWER_DEEP_SLEEP_STATES */
+#endif /* CONFIG_PM_DEEP_SLEEP_STATES */

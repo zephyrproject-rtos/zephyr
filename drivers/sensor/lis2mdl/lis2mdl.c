@@ -357,7 +357,7 @@ static int lis2mdl_init(const struct device *dev)
 		return -EIO;
 	}
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	lis2mdl->power_state = DEVICE_PM_ACTIVE_STATE;
 #endif
 
@@ -371,7 +371,7 @@ static int lis2mdl_init(const struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 static int lis2mdl_set_power_state(struct lis2mdl_data *lis2mdl,
 		uint32_t new_state)
 {
@@ -430,7 +430,7 @@ static int lis2mdl_pm_control(const struct device *dev, uint32_t ctrl_command,
 
 	return status;
 }
-#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
+#endif /* CONFIG_PM_DEVICE */
 
 DEVICE_DEFINE(lis2mdl, DT_INST_LABEL(0), lis2mdl_init,
 		lis2mdl_pm_control, &lis2mdl_data, &lis2mdl_dev_config,

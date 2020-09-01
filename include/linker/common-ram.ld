@@ -30,7 +30,7 @@
 		. = . + DEVICE_BITFIELD_SIZE;	\
 		__device_init_status_end = .;
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 #define DEVICE_BUSY_BITFIELD()			\
 		FILL(0x00);			\
 		__device_busy_start = .;	\

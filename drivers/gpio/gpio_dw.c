@@ -28,7 +28,7 @@
 #include <drivers/interrupt_controller/ioapic.h>
 #endif
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 #include <power/power.h>
 #endif
 
@@ -424,7 +424,7 @@ static inline int gpio_dw_manage_callback(const struct device *port,
 	return gpio_manage_callback(&context->callbacks, callback, set);
 }
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 static void gpio_dw_set_power_state(const struct device *port,
 				    uint32_t power_state)
 {

@@ -59,7 +59,7 @@
 
 #define LOPIC_SSPND_BITS_PER_IRQ  1  /* Just the one for enable disable*/
 #define LOPIC_SUSPEND_BITS_REQD (ROUND_UP((LOAPIC_IRQ_COUNT * LOPIC_SSPND_BITS_PER_IRQ), 32))
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 #include <power/power.h>
 uint32_t loapic_suspend_buf[LOPIC_SUSPEND_BITS_REQD / 32] = {0};
 static uint32_t loapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
@@ -332,7 +332,7 @@ int z_irq_controller_isr_vector_get(void)
 	return -1;
 }
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 static int loapic_suspend(const struct device *port)
 {
 	volatile uint32_t lvt; /* local vector table entry value */
@@ -421,7 +421,7 @@ SYS_DEVICE_DEFINE("loapic", loapic_init, loapic_device_ctrl, PRE_KERNEL_1,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #else
 SYS_INIT(loapic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-#endif   /* CONFIG_DEVICE_POWER_MANAGEMENT */
+#endif   /* CONFIG_PM_DEVICE */
 
 
 #if CONFIG_LOAPIC_SPURIOUS_VECTOR

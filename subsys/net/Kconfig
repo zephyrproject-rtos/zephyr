@@ -78,7 +78,7 @@ if NETWORKING
 config NET_POWER_MANAGEMENT
 	bool
 	default n
-	depends on DEVICE_POWER_MANAGEMENT
+	depends on PM_DEVICE
 
 source "subsys/net/Kconfig.hostname"
 

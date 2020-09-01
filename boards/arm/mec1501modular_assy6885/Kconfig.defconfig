@@ -54,13 +54,13 @@ config TACH_XEC
 	depends on SENSOR
 
 # power management stuff
-if SYS_POWER_MANAGEMENT
+if PM
 
-config SYS_PM_MIN_RESIDENCY_SLEEP_1
+config PM_MIN_RESIDENCY_SLEEP_1
 	default 1000
 
-config SYS_PM_MIN_RESIDENCY_DEEP_SLEEP_1
+config PM_MIN_RESIDENCY_DEEP_SLEEP_1
 	default 2000
 
-endif # SYS_POWER_MANAGEMENT
+endif # PM
 endif # BOARD_MEC1501MODULAR_ASSY6885

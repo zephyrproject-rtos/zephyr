@@ -31,7 +31,7 @@
 
 	GTEXT(arch_swap)
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 	GTEXT(z_sys_power_save_idle_exit)
 #endif
 
@@ -144,11 +144,11 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 
 	pushl	%edi			/* Save stack pointer */
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 	cmpl	$0, _kernel_offset_to_idle(%ecx)
 	jne	handle_idle
 	/* fast path is !idle, in the pipeline */
-#endif /* CONFIG_SYS_POWER_MANAGEMENT */
+#endif /* CONFIG_PM */
 
 	/* fall through to nested case */
 
@@ -297,7 +297,7 @@ nestedInterrupt:
 	KPTI_IRET
 
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 handle_idle:
 	pushl	%eax
 	pushl	%edx
@@ -319,7 +319,7 @@ handle_idle:
 	popl	%edx
 	popl	%eax
 	jmp	alreadyOnIntStack
-#endif /* CONFIG_SYS_POWER_MANAGEMENT */
+#endif /* CONFIG_PM */
 
 /**
  *

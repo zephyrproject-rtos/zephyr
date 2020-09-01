@@ -3472,7 +3472,7 @@ static void hl7800_rx(void)
 
 static void shutdown_uart(void)
 {
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	int rc;
 
 	if (ictx.uart_on) {
@@ -3490,7 +3490,7 @@ static void shutdown_uart(void)
 
 static void power_on_uart(void)
 {
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	int rc;
 
 	if (!ictx.uart_on) {
