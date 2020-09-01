@@ -19,5 +19,3 @@ supported:
   - i2c
   - pinmux
   - serial
-testing:
-  default: true
