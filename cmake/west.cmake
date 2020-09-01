@@ -52,7 +52,7 @@ ${PYTHON_EXECUTABLE_OUT_OF_SYNC}")
   else()
     # WEST_PYTHON is undefined and we couldn't import west. That's
     # fine; it's optional.
-    set(WEST WEST-NOTFOUND)
+    set(WEST WEST-NOTFOUND CACHE INTERNAL "West")
   endif()
 else()
   # We can import west from PYTHON_EXECUTABLE and have its version.
@@ -78,7 +78,10 @@ else()
     # possible to run 'python -m west.app.main'.
     string(APPEND WEST_MODULE .app.main)
   endif()
-  set(WEST ${PYTHON_EXECUTABLE} -m ${WEST_MODULE})
+
+  # Need to cache this so the Zephyr Eclipse plugin knows
+  # how to invoke West.
+  set(WEST ${PYTHON_EXECUTABLE} -m ${WEST_MODULE} CACHE INTERNAL "West")
 
   # Print information about the west module we're relying on. This
   # will still work even after output is one line.
