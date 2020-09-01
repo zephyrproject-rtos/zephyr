@@ -9,6 +9,7 @@
 
 #ifndef _ASMLANGUAGE
 
+#include <toolchain.h>
 #include <sys/sys_io.h>
 #include <arch/arc/v2/aux_regs.h>
 
@@ -125,70 +126,58 @@ static ALWAYS_INLINE
 	return ret;
 }
 
-static ALWAYS_INLINE
-	void sys_write8(uint8_t data, mm_reg_t addr)
+static ALWAYS_INLINE uint8_t sys_read8(mem_addr_t addr)
 {
-	__asm__ volatile("stb%U1	%0, %1;\n\t"
-			 :
-			 : "r" (data), "m" (*(volatile uint8_t *) addr)
-			 : "memory");
+	uint8_t value;
+
+	compiler_barrier();
+	value = *(volatile uint8_t *)addr;
+	compiler_barrier();
+
+	return value;
 }
 
-static ALWAYS_INLINE
-	uint8_t sys_read8(mm_reg_t addr)
+static ALWAYS_INLINE void sys_write8(uint8_t data, mem_addr_t addr)
 {
-	uint8_t ret;
-
-	__asm__ volatile("ldb%U1	%0, %1;\n\t"
-			 : "=r" (ret)
-			 : "m" (*(volatile uint8_t *) addr)
-			 : "memory");
-
-	return ret;
+	compiler_barrier();
+	*(volatile uint8_t *)addr = data;
+	compiler_barrier();
 }
 
-static ALWAYS_INLINE
-	void sys_write16(uint16_t data, mm_reg_t addr)
+static ALWAYS_INLINE uint16_t sys_read16(mem_addr_t addr)
 {
-	__asm__ volatile("sth%U1	%0, %1;\n\t"
-			 :
-			 : "r" (data), "m" (*(volatile uint16_t *) addr)
-			 : "memory");
+	uint16_t value;
+
+	compiler_barrier();
+	value = *(volatile uint16_t *)addr;
+	compiler_barrier();
+
+	return value;
 }
 
-static ALWAYS_INLINE
-	uint16_t sys_read16(mm_reg_t addr)
+static ALWAYS_INLINE void sys_write16(uint16_t data, mem_addr_t addr)
 {
-	uint16_t ret;
-
-	__asm__ volatile("ldh%U1	%0, %1;\n\t"
-			 : "=r" (ret)
-			 : "m" (*(volatile uint16_t *) addr)
-			 : "memory");
-
-	return ret;
+	compiler_barrier();
+	*(volatile uint16_t *)addr = data;
+	compiler_barrier();
 }
 
-static ALWAYS_INLINE
-	void sys_write32(uint32_t data, mm_reg_t addr)
+static ALWAYS_INLINE uint32_t sys_read32(mem_addr_t addr)
 {
-	__asm__ volatile("st%U1	%0, %1;\n\t"
-			 :
-			 : "r" (data), "m" (*(volatile uint32_t *) addr)
-			 : "memory");
+	uint16_t value;
+
+	compiler_barrier();
+	value = *(volatile uint32_t *)addr;
+	compiler_barrier();
+
+	return value;
 }
 
-static ALWAYS_INLINE
-	uint32_t sys_read32(mm_reg_t addr)
+static ALWAYS_INLINE void sys_write32(uint32_t data, mem_addr_t addr)
 {
-	uint32_t ret;
-
-	__asm__ volatile("ld%U1	%0, %1;\n\t"
-			 : "=r" (ret)
-			 : "m" (*(volatile uint32_t *) addr)
-			 : "memory");
-
-	return ret;
+	compiler_barrier();
+	*(volatile uint32_t *)addr = data;
+	compiler_barrier();
 }
 
 #ifdef __cplusplus
