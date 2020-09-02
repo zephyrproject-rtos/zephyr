@@ -39,7 +39,7 @@
 #ifdef _LINKER
 #define Z_LINK_ITERABLE(struct_type) \
 	_CONCAT(_##struct_type, _list_start) = .; \
-	KEEP(*(SORT_BY_NAME(._##struct_type##.static.*))); \
+	KEEP(*(SORT_BY_NAME(._##struct_type.static.*))); \
 	_CONCAT(_##struct_type, _list_end) = .
 
 /* Define an output section which will set up an iterable area
@@ -74,8 +74,8 @@
  */
 #define CREATE_OBJ_LEVEL(object, level)				\
 		__##object##_##level##_start = .;		\
-		KEEP(*(SORT(.##object##_##level[0-9])));	\
-		KEEP(*(SORT(.##object##_##level[1-9][0-9])));
+		KEEP(*(SORT(.object##_##level[0-9]*)));		\
+		KEEP(*(SORT(.object##_##level[1-9][0-9]*)));
 
 /*
  * link in shell initialization objects for all modules that use shell and
