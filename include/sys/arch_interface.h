@@ -144,8 +144,8 @@ static inline uint32_t arch_k_cycle_get_32(void);
  * @brief Power save idle routine
  *
  * This function will be called by the kernel idle loop or possibly within
- * an implementation of z_sys_power_save_idle in the kernel when the
- * '_sys_power_save_flag' variable is non-zero.
+ * an implementation of z_pm_save_idle in the kernel when the
+ * '_pm_save_flag' variable is non-zero.
  *
  * Architectures that do not implement power management instructions may
  * immediately return, otherwise a power-saving instruction should be

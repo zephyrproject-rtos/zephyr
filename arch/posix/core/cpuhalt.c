@@ -11,7 +11,7 @@
  *
  * An implementation of the architecture-specific
  * arch_cpu_idle() primitive required by the kernel idle loop component.
- * It can be called within an implementation of _sys_power_save_idle(),
+ * It can be called within an implementation of _pm_save_idle(),
  * which is provided for the kernel by the platform.
  *
  * An implementation of arch_cpu_atomic_idle(), which

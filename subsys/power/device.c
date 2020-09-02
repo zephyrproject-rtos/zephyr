@@ -78,7 +78,7 @@ const char *device_pm_state_str(uint32_t state)
 	}
 }
 
-static int _sys_pm_devices(uint32_t state)
+static int _pm_devices(uint32_t state)
 {
 	num_susp = 0;
 
@@ -103,22 +103,22 @@ static int _sys_pm_devices(uint32_t state)
 	return 0;
 }
 
-int sys_pm_suspend_devices(void)
+int pm_suspend_devices(void)
 {
-	return _sys_pm_devices(DEVICE_PM_SUSPEND_STATE);
+	return _pm_devices(DEVICE_PM_SUSPEND_STATE);
 }
 
-int sys_pm_low_power_devices(void)
+int pm_low_power_devices(void)
 {
-	return _sys_pm_devices(DEVICE_PM_LOW_POWER_STATE);
+	return _pm_devices(DEVICE_PM_LOW_POWER_STATE);
 }
 
-int sys_pm_force_suspend_devices(void)
+int pm_force_suspend_devices(void)
 {
-	return _sys_pm_devices(DEVICE_PM_FORCE_SUSPEND_STATE);
+	return _pm_devices(DEVICE_PM_FORCE_SUSPEND_STATE);
 }
 
-void sys_pm_resume_devices(void)
+void pm_resume_devices(void)
 {
 	device_idx_t pmi = num_pm - num_susp;
 
@@ -133,7 +133,7 @@ void sys_pm_resume_devices(void)
 	}
 }
 
-void sys_pm_create_device_list(void)
+void pm_create_device_list(void)
 {
 	size_t count = z_device_get_all_static(&all_devices);
 	device_idx_t pmi, core_dev;

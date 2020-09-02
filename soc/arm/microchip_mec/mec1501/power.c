@@ -71,7 +71,7 @@ static void z_power_soc_deep_sleep(void)
 	soc_deep_sleep_periph_restore();
 
 	/*
-	 * _sys_pm_power_state_exit_post_ops() is not being called
+	 * _pm_power_state_exit_post_ops() is not being called
 	 * after exiting deep sleep, so need to unmask exceptions
 	 * and interrupts here.
 	 */
@@ -111,12 +111,12 @@ void sys_set_power_state(enum power_states state)
 {
 	switch (state) {
 #if (defined(CONFIG_PM_SLEEP_STATES))
-	case SYS_POWER_STATE_SLEEP_1:
+	case POWER_STATE_SLEEP_1:
 		z_power_soc_sleep();
 		break;
 #endif
 #if (defined(CONFIG_PM_DEEP_SLEEP_STATES))
-	case SYS_POWER_STATE_DEEP_SLEEP_1:
+	case POWER_STATE_DEEP_SLEEP_1:
 		z_power_soc_deep_sleep();
 		break;
 #endif
@@ -125,16 +125,16 @@ void sys_set_power_state(enum power_states state)
 	}
 }
 
-void _sys_pm_power_state_exit_post_ops(enum power_states state)
+void _pm_power_state_exit_post_ops(enum power_states state)
 {
 	switch (state) {
 #if (defined(CONFIG_PM_SLEEP_STATES))
-	case SYS_POWER_STATE_SLEEP_1:
+	case POWER_STATE_SLEEP_1:
 		__enable_irq();
 		break;
 #endif
 #if (defined(CONFIG_PM_DEEP_SLEEP_STATES))
-	case SYS_POWER_STATE_DEEP_SLEEP_1:
+	case POWER_STATE_DEEP_SLEEP_1:
 		__enable_irq();
 		break;
 #endif

@@ -244,7 +244,7 @@ static void uart_cc13xx_cc26xx_irq_tx_enable(const struct device *dev)
 		 * standby mode instead, since it is the power state that
 		 * would interfere with a transfer.
 		 */
-		sys_pm_ctrl_disable_state(SYS_POWER_STATE_SLEEP_2);
+		pm_ctrl_disable_state(POWER_STATE_SLEEP_2);
 		get_dev_data(dev)->tx_constrained = true;
 	}
 #endif
@@ -259,7 +259,7 @@ static void uart_cc13xx_cc26xx_irq_tx_disable(const struct device *dev)
 #if defined(CONFIG_PM) && \
 	defined(CONFIG_PM_SLEEP_STATES)
 	if (get_dev_data(dev)->tx_constrained) {
-		sys_pm_ctrl_enable_state(SYS_POWER_STATE_SLEEP_2);
+		pm_ctrl_enable_state(POWER_STATE_SLEEP_2);
 		get_dev_data(dev)->tx_constrained = false;
 	}
 #endif
@@ -280,7 +280,7 @@ static void uart_cc13xx_cc26xx_irq_rx_enable(const struct device *dev)
 	 * standby.
 	 */
 	if (!get_dev_data(dev)->rx_constrained) {
-		sys_pm_ctrl_disable_state(SYS_POWER_STATE_SLEEP_2);
+		pm_ctrl_disable_state(POWER_STATE_SLEEP_2);
 		get_dev_data(dev)->rx_constrained = true;
 	}
 #endif
@@ -293,7 +293,7 @@ static void uart_cc13xx_cc26xx_irq_rx_disable(const struct device *dev)
 #if defined(CONFIG_PM) && \
 	defined(CONFIG_PM_SLEEP_STATES)
 	if (get_dev_data(dev)->rx_constrained) {
-		sys_pm_ctrl_enable_state(SYS_POWER_STATE_SLEEP_2);
+		pm_ctrl_enable_state(POWER_STATE_SLEEP_2);
 		get_dev_data(dev)->rx_constrained = false;
 	}
 #endif

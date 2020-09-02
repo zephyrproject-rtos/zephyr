@@ -69,30 +69,30 @@ static void pm_latency_check(void)
 }
 
 /* Hooks to count entry/exit */
-void sys_pm_notify_power_state_entry(enum power_states state)
+void pm_notify_power_state_entry(enum power_states state)
 {
 	if (!checks_enabled) {
 		return;
 	}
 
-	if (sys_pm_is_sleep_state(state)) {
+	if (pm_is_sleep_state(state)) {
 		pm_counters[0].entry_cnt++;
 		pm_latency_check();
-	} else if (sys_pm_is_deep_sleep_state(state)) {
+	} else if (pm_is_deep_sleep_state(state)) {
 		pm_counters[1].entry_cnt++;
 		pm_latency_check();
 	}
 }
 
-void sys_pm_notify_power_state_exit(enum power_states state)
+void pm_notify_power_state_exit(enum power_states state)
 {
 	if (!checks_enabled) {
 		return;
 	}
 
-	if (sys_pm_is_sleep_state(state)) {
+	if (pm_is_sleep_state(state)) {
 		pm_counters[0].exit_cnt++;
-	} else if (sys_pm_is_deep_sleep_state(state)) {
+	} else if (pm_is_deep_sleep_state(state)) {
 		pm_counters[1].exit_cnt++;
 	}
 }

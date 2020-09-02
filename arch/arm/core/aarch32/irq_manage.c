@@ -184,7 +184,7 @@ void _arch_isr_direct_pm(void)
 		int32_t idle_val = _kernel.idle;
 
 		_kernel.idle = 0;
-		z_sys_power_save_idle_exit(idle_val);
+		z_pm_save_idle_exit(idle_val);
 	}
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \

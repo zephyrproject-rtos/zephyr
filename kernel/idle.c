@@ -34,7 +34,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
  * Used to allow _sys_suspend() implementation to control notification
  * of the event that caused exit from kernel idling after pm operations.
  */
-unsigned char sys_pm_idle_exit_notify;
+unsigned char pm_idle_exit_notify;
 
 
 /* LCOV_EXCL_START
@@ -74,7 +74,7 @@ static void set_kernel_idle_time_in_ticks(int32_t ticks)
 #endif
 }
 
-static void sys_power_save_idle(void)
+static void pm_save_idle(void)
 {
 	int32_t ticks = z_get_next_timeout_expiry();
 
@@ -92,12 +92,12 @@ static void sys_power_save_idle(void)
 #if (defined(CONFIG_PM_SLEEP_STATES) || \
 	defined(CONFIG_PM_DEEP_SLEEP_STATES))
 
-	sys_pm_idle_exit_notify = 1U;
+	pm_idle_exit_notify = 1U;
 
 	/*
 	 * Call the suspend hook function of the soc interface to allow
 	 * entry into a low power state. The function returns
-	 * SYS_POWER_STATE_ACTIVE if low power state was not entered, in which
+	 * POWER_STATE_ACTIVE if low power state was not entered, in which
 	 * case, kernel does normal idle processing.
 	 *
 	 * This function is entered with interrupts disabled. If a low power
@@ -107,8 +107,8 @@ static void sys_power_save_idle(void)
 	 * idle processing re-enables interrupts which is essential for
 	 * the kernel's scheduling logic.
 	 */
-	if (_sys_suspend(ticks) == SYS_POWER_STATE_ACTIVE) {
-		sys_pm_idle_exit_notify = 0U;
+	if (_sys_suspend(ticks) == POWER_STATE_ACTIVE) {
+		pm_idle_exit_notify = 0U;
 		k_cpu_idle();
 	}
 #else
@@ -117,16 +117,16 @@ static void sys_power_save_idle(void)
 }
 #endif
 
-void z_sys_power_save_idle_exit(int32_t ticks)
+void z_pm_save_idle_exit(int32_t ticks)
 {
 #if defined(CONFIG_PM_SLEEP_STATES)
 	/* Some CPU low power states require notification at the ISR
 	 * to allow any operations that needs to be done before kernel
 	 * switches task or processes nested interrupts. This can be
-	 * disabled by calling _sys_pm_idle_exit_notification_disable().
+	 * disabled by calling _pm_idle_exit_notification_disable().
 	 * Alternatively it can be simply ignored if not required.
 	 */
-	if (sys_pm_idle_exit_notify) {
+	if (pm_idle_exit_notify) {
 		_sys_resume();
 	}
 #endif
@@ -194,7 +194,7 @@ void idle(void *p1, void *unused2, void *unused3)
 		k_yield();
 #else
 		(void)arch_irq_lock();
-		sys_power_save_idle();
+		pm_save_idle();
 		IDLE_YIELD_IF_COOP();
 #endif
 	}

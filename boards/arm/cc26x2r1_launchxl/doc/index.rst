@@ -224,9 +224,9 @@ disable sleep state 2 while polling:
 
 .. code-block:: c
 
-    sys_pm_ctrl_disable_state(SYS_POWER_STATE_SLEEP_2);
+    pm_ctrl_disable_state(POWER_STATE_SLEEP_2);
     <code that calls uart_poll_in() and expects input at any point in time>
-    sys_pm_ctrl_enable_state(SYS_POWER_STATE_SLEEP_2);
+    pm_ctrl_enable_state(POWER_STATE_SLEEP_2);
 
 
 References
