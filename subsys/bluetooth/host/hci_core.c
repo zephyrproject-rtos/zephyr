@@ -4667,8 +4667,8 @@ static void le_per_adv_sync_lost(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_per_adv_sync_lost *evt =
 		(struct bt_hci_evt_le_per_adv_sync_lost *)buf->data;
-	struct bt_le_per_adv_sync *per_adv_sync;
 	struct bt_le_per_adv_sync_term_info term_info;
+	struct bt_le_per_adv_sync *per_adv_sync;
 
 	per_adv_sync = get_per_adv_sync(sys_le16_to_cpu(evt->handle));
 
