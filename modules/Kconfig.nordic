@@ -167,6 +167,9 @@ config NRFX_PDM
 config NRFX_POWER
 	bool "Enable POWER driver"
 	depends on HAS_HW_NRF_POWER
+	# On SoCs featuring the USBREG peripheral, the POWER driver uses
+	# internally the USBREG driver.
+	select NRFX_USBREG if HAS_HW_NRF_USBREG
 
 config NRFX_PPI
 	bool "Enable PPI allocator"
