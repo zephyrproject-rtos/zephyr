@@ -37,7 +37,7 @@ static const unsigned int pm_min_residency[] = {
 #endif /* CONFIG_PM_SLEEP_STATES */
 };
 
-enum power_states sys_pm_policy_next_state(int32_t ticks)
+enum power_states pm_policy_next_state(int32_t ticks)
 {
 	uint32_t constraints;
 	bool disallowed = false;
@@ -51,12 +51,12 @@ enum power_states sys_pm_policy_next_state(int32_t ticks)
 
 	if ((ticks != K_TICKS_FOREVER) && (ticks < pm_min_residency[0])) {
 		LOG_DBG("Not enough time for PM operations: %d", ticks);
-		return SYS_POWER_STATE_ACTIVE;
+		return POWER_STATE_ACTIVE;
 	}
 
 	for (i = ARRAY_SIZE(pm_min_residency) - 1; i >= 0; i--) {
 #ifdef CONFIG_PM_STATE_LOCK
-		if (!sys_pm_ctrl_is_state_enabled((enum power_states)(i))) {
+		if (!pm_ctrl_is_state_enabled((enum power_states)(i))) {
 			continue;
 		}
 #endif
@@ -132,13 +132,13 @@ enum power_states sys_pm_policy_next_state(int32_t ticks)
 	}
 
 	LOG_DBG("No suitable power state found!");
-	return SYS_POWER_STATE_ACTIVE;
+	return POWER_STATE_ACTIVE;
 }
 
-__weak bool sys_pm_policy_low_power_devices(enum power_states pm_state)
+__weak bool pm_policy_low_power_devices(enum power_states pm_state)
 {
 #ifdef CONFIG_PM_SLEEP_STATES
-	return (pm_state == SYS_POWER_STATE_SLEEP_2);
+	return (pm_state == POWER_STATE_SLEEP_2);
 #else
 	return false;
 #endif

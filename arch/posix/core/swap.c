@@ -113,7 +113,7 @@ void posix_irq_check_idle_exit(void)
 		int32_t idle_val = _kernel.idle;
 
 		_kernel.idle = 0;
-		z_sys_power_save_idle_exit(idle_val);
+		z_pm_save_idle_exit(idle_val);
 	}
 }
 #endif

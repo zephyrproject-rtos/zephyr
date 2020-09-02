@@ -22,7 +22,7 @@ void sys_set_power_state(enum power_states state)
 	switch (state) {
 #ifdef CONFIG_PM_SLEEP_STATES
 #ifdef CONFIG_HAS_POWER_STATE_SLEEP_1
-	case SYS_POWER_STATE_SLEEP_1:
+	case POWER_STATE_SLEEP_1:
 
 		/* this corresponds to the STOP0 mode: */
 #ifdef CONFIG_DEBUG
@@ -39,7 +39,7 @@ void sys_set_power_state(enum power_states state)
 		break;
 #endif /* CONFIG_HAS_POWER_STATE_SLEEP_1 */
 #ifdef CONFIG_HAS_POWER_STATE_SLEEP_2
-	case SYS_POWER_STATE_SLEEP_2:
+	case POWER_STATE_SLEEP_2:
 		/* this corresponds to the STOP1 mode: */
 #ifdef CONFIG_DEBUG
 		/* Enable the Debug Module during STOP mode */
@@ -54,7 +54,7 @@ void sys_set_power_state(enum power_states state)
 		break;
 #endif /* CONFIG_HAS_POWER_STATE_SLEEP_2 */
 #ifdef CONFIG_HAS_POWER_STATE_SLEEP_3
-	case SYS_POWER_STATE_SLEEP_3:
+	case POWER_STATE_SLEEP_3:
 		/* this corresponds to the STOP2 mode: */
 #ifdef CONFIG_DEBUG
 		/* Enable the Debug Module during STOP mode */
@@ -79,18 +79,18 @@ void sys_set_power_state(enum power_states state)
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-void _sys_pm_power_state_exit_post_ops(enum power_states state)
+void _pm_power_state_exit_post_ops(enum power_states state)
 {
 	switch (state) {
 #ifdef CONFIG_PM_SLEEP_STATES
 #ifdef CONFIG_HAS_POWER_STATE_SLEEP_1
-	case SYS_POWER_STATE_SLEEP_1:
+	case POWER_STATE_SLEEP_1:
 #endif /* CONFIG_HAS_POWER_STATE_SLEEP_1 */
 #ifdef CONFIG_HAS_POWER_STATE_SLEEP_2
-	case SYS_POWER_STATE_SLEEP_2:
+	case POWER_STATE_SLEEP_2:
 #endif /* CONFIG_HAS_POWER_STATE_SLEEP_2 */
 #ifdef CONFIG_HAS_POWER_STATE_SLEEP_3
-	case SYS_POWER_STATE_SLEEP_3:
+	case POWER_STATE_SLEEP_3:
 #endif /* CONFIG_HAS_POWER_STATE_SLEEP_3 */
 		LL_LPM_DisableSleepOnExit();
 		LL_LPM_EnableSleep();

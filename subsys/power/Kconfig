@@ -138,17 +138,17 @@ config HAS_POWER_STATE_SLEEP_3
 config HAS_POWER_STATE_DEEP_SLEEP_1
 	bool
 	help
-	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_1
+	  This option signifies that the target supports the POWER_STATE_DEEP_SLEEP_1
 	  configuration option.
 
 config HAS_POWER_STATE_DEEP_SLEEP_2
 	bool
 	help
-	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_2
+	  This option signifies that the target supports the POWER_STATE_DEEP_SLEEP_2
 	  configuration option.
 
 config HAS_POWER_STATE_DEEP_SLEEP_3
 	bool
 	help
-	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_3
+	  This option signifies that the target supports the POWER_STATE_DEEP_SLEEP_3
 	  configuration option.

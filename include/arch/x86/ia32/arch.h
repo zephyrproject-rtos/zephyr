@@ -235,10 +235,10 @@ typedef struct s_isrList {
 
 #ifdef CONFIG_PM
 /*
- * FIXME: z_sys_power_save_idle_exit is defined in kernel.h, which cannot be
+ * FIXME: z_pm_save_idle_exit is defined in kernel.h, which cannot be
  *	  included here due to circular dependency
  */
-extern void z_sys_power_save_idle_exit(int32_t ticks);
+extern void z_pm_save_idle_exit(int32_t ticks);
 
 static inline void arch_irq_direct_pm(void)
 {
@@ -246,7 +246,7 @@ static inline void arch_irq_direct_pm(void)
 		int32_t idle_val = _kernel.idle;
 
 		_kernel.idle = 0;
-		z_sys_power_save_idle_exit(idle_val);
+		z_pm_save_idle_exit(idle_val);
 	}
 }
 

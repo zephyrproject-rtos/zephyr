@@ -85,18 +85,18 @@ static void pm_latency_check(void)
 }
 
 /* Hooks to count entry/exit */
-void sys_pm_notify_power_state_entry(enum power_states state)
+void pm_notify_power_state_entry(enum power_states state)
 {
 	if (!checks_enabled) {
 		return;
 	}
 
 	switch (state) {
-	case SYS_POWER_STATE_SLEEP_1:
+	case POWER_STATE_SLEEP_1:
 		GPIO_CTRL_REGS->CTRL_0012 = 0x240ul;
 		pm_counters[0].entry_cnt++;
 		break;
-	case SYS_POWER_STATE_DEEP_SLEEP_1:
+	case POWER_STATE_DEEP_SLEEP_1:
 		GPIO_CTRL_REGS->CTRL_0013 = 0x240ul;
 		pm_counters[1].entry_cnt++;
 		pm_latency_check();
@@ -106,18 +106,18 @@ void sys_pm_notify_power_state_entry(enum power_states state)
 	}
 }
 
-void sys_pm_notify_power_state_exit(enum power_states state)
+void pm_notify_power_state_exit(enum power_states state)
 {
 	if (!checks_enabled) {
 		return;
 	}
 
 	switch (state) {
-	case SYS_POWER_STATE_SLEEP_1:
+	case POWER_STATE_SLEEP_1:
 		GPIO_CTRL_REGS->CTRL_0012 = 0x10240ul;
 		pm_counters[0].exit_cnt++;
 		break;
-	case SYS_POWER_STATE_DEEP_SLEEP_1:
+	case POWER_STATE_DEEP_SLEEP_1:
 		GPIO_CTRL_REGS->CTRL_0013 = 0x10240ul;
 		pm_counters[1].exit_cnt++;
 		break;
