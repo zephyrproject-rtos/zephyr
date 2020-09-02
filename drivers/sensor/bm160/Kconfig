@@ -216,4 +216,88 @@ config BMI160_GYRO_ODR_3200
 	bool "3200 Hz"
 endchoice
 
+config BMX160_MAG
+	depends on BMX160
+	bool "Magnetometer support"
+
+choice
+	prompt "Magnetometer power mode"
+	depends on BMX160_MAG
+	default BMX160_MAG_PMU_RUNTIME
+
+config BMX160_MAG_PMU_RUNTIME
+	bool "Set at runtime."
+
+config BMX160_MAG_PMU_SUSPEND
+	bool "suspended/not used"
+
+config BMX160_MAG_PMU_NORMAL
+	bool "normal"
+
+config BMX60_MAG_PMU_LOW_POWER
+	bool "low power"
+endchoice
+
+choice
+	prompt "Magnetometer sampling frequency"
+	depends on BMX160_MAG
+	default BMX160_MAG_ODR_RUNTIME
+
+config BMX160_MAG_ODR_RUNTIME
+	bool "Set at runtime."
+
+config BMX160_MAG_ODR_25_32
+	bool "0.78 Hz"
+
+config BMX160_MAG_ODR_25_16
+	bool "1.56 Hz"
+
+config BMX160_MAG_ODR_25_8
+	bool "3.125 Hz"
+
+config BMX160_MAG_ODR_25_4
+	bool "6.25 Hz"
+
+config BMX160_MAG_ODR_25_2
+	bool "12.5 Hz"
+
+config BMX160_MAG_ODR_25
+	bool "25 Hz"
+
+config BMX160_MAG_ODR_50
+	bool "50 Hz"
+
+config BMX160_MAG_ODR_100
+	bool "100 Hz"
+
+config BMX160_MAG_ODR_200
+	bool "200 Hz"
+
+config BMX160_MAG_ODR_400
+	bool "400 Hz"
+
+config BMX160_MAG_ODR_800
+	bool "800 Hz"
+
+endchoice
+
+choice
+	prompt "Magnetometer preset value"
+	depends on BMX160_MAG
+	default BMX160_MAG_PRESET_HIGH_ACCU
+
+config BMX160_MAG_PRESET_LP
+	bool "Low power"
+
+config BMX160_MAG_PRESET_REGULAR
+	bool "Regular"
+
+config BMX160_MAG_PRESET_ENHANCED
+	bool "Enhanced regular"
+
+config BMX160_MAG_PRESET_HIGH_ACCU
+	bool "High accuracy"
+
+endchoice
+
 endif # BMI160 || BMX160

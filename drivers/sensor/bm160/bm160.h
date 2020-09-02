@@ -97,6 +97,14 @@
 #define BMI160_REG_STEP_CONF1		0x7B
 #define BMI160_REG_CMD			0x7E
 
+#define BMX160_REG_MAG_IF0		0x4C
+#define BMX160_REG_MAG_IF1		0x4D
+#define BMX160_REG_MAG_IF2		0x4E
+#define BMX160_REG_MAG_IF3		0x4F
+
+#define BMX160_REG_TRIM_START		0x5D
+#define BMX160_REG_TRIM_END		0x71
+
 /* bitfields */
 
 /* BMI160_REG_ERR */
@@ -119,6 +127,29 @@
 #define BMI160_PMU_NORMAL		1
 #define BMI160_PMU_LOW_POWER		2
 #define BMI160_PMU_FAST_START		3
+
+/* BMI160_REG_MAG_IF0 */
+#define BMI160_MAG_MANUAL_EN		BIT(7)
+
+/* BMI160_REG_MAG_IF3 */
+#define BMI160_MAG_SLEEP_MODE		BIT(0)
+#define BMI160_MAG_DATA_MODE		BIT(1)
+
+#define BMX160_MAG_PRESET_XY_LP		0x01
+#define BMX160_MAG_PRESET_XY_REGULAR	0x04
+#define BMX160_MAG_PRESET_XY_ENHANCED	0x07
+#define BMX160_MAG_PRESET_XY_HIGH_ACCU	0x17
+
+#define BMX160_MAG_PRESET_Z_LP		0x2
+#define BMX160_MAG_PRESET_Z_REGULAR	0x0E
+#define BMX160_MAG_PRESET_Z_ENHANCED	0x1A
+#define BMX160_MAG_PRESET_Z_HIGH_ACCU	0x52
+
+/* BMI160_REG_MAG_IF2 */
+#define BMI160_MAG_REG_POWER_CTRL	0x4B
+#define BMI160_MAG_REG_DATA_MODE	0x4C
+#define BMI160_MAG_REG_PRESET_XY	0x51
+#define BMI160_MAG_REG_PRESET_Z		0x52
 
 /* BMI160_REG_STATUS */
 #define BMI160_STATUS_GYR_SELFTEST	BIT(1)
@@ -174,10 +205,14 @@
 #define BMI160_ACC_CONF_US		BIT(7)
 
 /* BMI160_REG_GYRO_CONF */
-#define BMI160_GYR_CONF_ODR_POS	0
+#define BMI160_GYR_CONF_ODR_POS		0
 #define BMI160_GYR_CONF_ODR_MASK	0xF
-#define BMI160_GYR_CONF_BWP_POS	4
+#define BMI160_GYR_CONF_BWP_POS		4
 #define BMI160_GYR_CONF_BWP_MASK	(0x3 << 4)
+
+/* BMI160_REG_MAG_CONF */
+#define BMI160_MAG_CONF_ODR_POS		0
+#define BMI160_MAG_CONF_ODR_MASK	0xF
 
 /* BMI160_REG_OFFSET_EN */
 #define BMI160_GYR_OFS_EN_POS		7
@@ -240,7 +275,7 @@
 #define BMI160_INT2_EDGE_CTRL		BIT(4)
 #define BMI160_INT1_OUT_EN		BIT(3)
 #define BMI160_INT1_OD			BIT(2)
-#define BMI160_INT1_LVL			BIT(1)
+#define BMI160_INT1_LVL_HIGH		BIT(1)
 #define BMI160_INT1_EDGE_CTRL		BIT(0)
 
 /* other */
@@ -308,6 +343,15 @@ enum bmi160_odr {
 #	define BMI160_DEFAULT_PMU_GYR		BMI160_PMU_SUSPEND
 #else
 #	define BMI160_DEFAULT_PMU_GYR		BMI160_PMU_FAST_START
+#endif
+
+#if defined(CONFIG_BMX160_MAG_PMU_RUNTIME) ||\
+		defined(CONFIG_BMX160_MAG_PMU_NORMAL)
+#	define BMX160_DEFAULT_PMU_MAG		BMI160_PMU_NORMAL
+#elif defined(CONFIG_BMX160_MAG_PMU_SUSPEND)
+#	define BMX160_DEFAULT_PMU_MAG		BMI160_PMU_SUSPEND
+#else
+#	define BMX160_DEFAULT_PMU_MAG		BMI160_PMU_LOW_POWER
 #endif
 
 #if defined(CONFIG_BMI160_ACCEL_RANGE_RUNTIME) ||\
@@ -380,6 +424,50 @@ enum bmi160_odr {
 #	define BMI160_DEFAULT_ODR_GYR		13
 #endif
 
+#if defined(CONFIG_BMX160_MAG_ODR_RUNTIME) ||\
+		defined(CONFIG_BMX160_MAG_ODR_800)
+#	define BMX160_DEFAULT_ODR_MAG		11
+#elif defined(CONFIG_BMX160_MAG_ODR_25_32)
+#	define BMX160_DEFAULT_ODR_MAG		1
+#elif defined(CONFIG_BMX160_MAG_ODR_25_16)
+#	define BMX160_DEFAULT_ODR_MAG		2
+#elif defined(CONFIG_BMX160_MAG_ODR_25_8)
+#	define BMX160_DEFAULT_ODR_MAG		3
+#elif defined(CONFIG_BMX160_MAG_ODR_25_4)
+#	define BMX160_DEFAULT_ODR_MAG		4
+#elif defined(CONFIG_BMX160_MAG_ODR_25_2)
+#	define BMX160_DEFAULT_ODR_MAG		5
+#elif defined(CONFIG_BMX160_MAG_ODR_25)
+#	define BMX160_DEFAULT_ODR_MAG		6
+#elif defined(CONFIG_BMX160_MAG_ODR_50)
+#	define BMX160_DEFAULT_ODR_MAG		7
+#elif defined(CONFIG_BMX160_MAG_ODR_100)
+#	define BMX160_DEFAULT_ODR_MAG		8
+#elif defined(CONFIG_BMX160_MAG_ODR_200)
+#	define BMX160_DEFAULT_ODR_MAG		9
+#elif defined(CONFIG_BMX160_MAG_ODR_400)
+#	define BMX160_DEFAULT_ODR_MAG		10
+#else
+#	define BMX160_DEFAULT_ODR_MAG		0
+#endif
+
+#if defined(CONFIG_BMX160_MAG_PRESET_LP)
+#	define BMX160_DEFAULT_XY_PRESET		BMX160_MAG_PRESET_XY_LP
+#	define BMX160_DEFAULT_Z_PRESET		BMX160_MAG_PRESET_Z_LP
+#elif defined(CONFIG_BMX160_MAG_PRESET_REGULAR)
+#	define BMX160_DEFAULT_XY_PRESET		BMX160_MAG_PRESET_XY_REGULAR
+#	define BMX160_DEFAULT_Z_PRESET		BMX160_MAG_PRESET_Z_REGULAR
+#elif defined(CONFIG_BMX160_MAG_PRESET_ENHANCED)
+#	define BMX160_DEFAULT_XY_PRESET		BMX160_MAG_PRESET_XY_ENHANCED
+#	define BMX160_DEFAULT_Z_PRESET		BMX160_MAG_PRESET_Z_ENHANCED
+#elif defined(CONFIG_BMX160_MAG_PRESET_HIGH_ACCU)
+#	define BMX160_DEFAULT_XY_PRESET		BMX160_MAG_PRESET_XY_HIGH_ACCU
+#	define BMX160_DEFAULT_Z_PRESET		BMX160_MAG_PRESET_Z_HIGH_ACCU
+#endif
+
+#define BMX160_XY_OVERFLOW_VAL			-4096
+#define BMX160_Z_OVERFLOW_VAL			-16384
+
 /* end of default settings */
 
 struct bmi160_range {
@@ -404,6 +492,12 @@ union bmi160_pmu_status {
 	};
 };
 
+#if defined(CONFIG_BMX160_MAG)
+#	define BMX160_MAG_SAMPLE_SIZE		(4 * sizeof(uint16_t))
+#else
+#	define BMX160_MAG_SAMPLE_SIZE		(0)
+#endif
+
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND) && \
 		!defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
 #	define BMI160_SAMPLE_SIZE		(6 * sizeof(uint16_t))
@@ -411,11 +505,17 @@ union bmi160_pmu_status {
 #	define BMI160_SAMPLE_SIZE		(3 * sizeof(uint16_t))
 #endif
 
-#define BMI160_BUF_SIZE			(BMI160_SAMPLE_SIZE)
+#define BMI160_BUF_SIZE		(BMI160_SAMPLE_SIZE + BMX160_MAG_SAMPLE_SIZE)
 union bmi160_sample {
 	uint8_t raw[BMI160_BUF_SIZE];
 	struct {
+#if !defined(CONFIG_BMX160)
 		uint8_t dummy_byte;
+#endif
+#if defined(CONFIG_BMX160_MAG)
+		uint16_t mag[3];
+		uint16_t rhall;
+#endif
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
 		uint16_t gyr[3];
 #endif
@@ -429,6 +529,23 @@ struct bmi160_scale {
 	uint16_t acc; /* micro m/s^2/lsb */
 	uint16_t gyr; /* micro radians/s/lsb */
 };
+
+struct bmx_magn_trim_regs {
+	int8_t x1;
+	int8_t y1;
+	uint16_t reserved1;
+	uint8_t reserved2;
+	int16_t z4;
+	int8_t x2;
+	int8_t y2;
+	uint16_t reserved3;
+	int16_t z2;
+	uint16_t z1;
+	uint16_t xyz1;
+	int16_t z3;
+	int8_t xy2;
+	uint8_t xy1;
+} __packed;
 
 struct bmi160_device_data {
 	const struct device *spi;
@@ -454,6 +571,9 @@ struct bmi160_device_data {
 	struct k_work work;
 #endif
 
+#if defined(CONFIG_BMX160_MAG)
+	struct bmx_magn_trim_regs tregs;
+#endif
 #ifdef CONFIG_BMI160_TRIGGER
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
 	sensor_trigger_handler_t handler_drdy_acc;
@@ -461,6 +581,9 @@ struct bmi160_device_data {
 #endif
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
 	sensor_trigger_handler_t handler_drdy_gyr;
+#endif
+#if defined(CONFIG_BMX160_MAG)
+	sensor_trigger_handler_t handler_drdy_mag;
 #endif
 #endif /* CONFIG_BMI160_TRIGGER */
 };

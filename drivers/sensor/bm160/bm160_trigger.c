@@ -47,6 +47,13 @@ static void bmi160_handle_drdy(const struct device *dev, uint8_t status)
 		bmi160->handler_drdy_gyr(dev, &drdy_trigger);
 	}
 #endif
+
+#if defined(CONFIG_BMX160_MAG)
+	if (bmi160->handler_drdy_mag && (status & BMI160_STATUS_MAG_DRDY)) {
+		drdy_trigger.chan = SENSOR_CHAN_MAGN_XYZ;
+		bmi160->handler_drdy_mag(dev, &drdy_trigger);
+	}
+#endif
 }
 
 static void bmi160_handle_interrupts(const struct device *dev)
@@ -54,7 +61,10 @@ static void bmi160_handle_interrupts(const struct device *dev)
 	union {
 		uint8_t raw[6];
 		struct {
+/* dummy byte in beginning!! not working for I2C, kept to not break exising */
+#if !defined(CONFIG_BMX160)
 			uint8_t dummy; /* spi related dummy byte */
+#endif
 			uint8_t status;
 			uint8_t int_status[4];
 		};
@@ -74,7 +84,6 @@ static void bmi160_handle_interrupts(const struct device *dev)
 	if (buf.int_status[1] & BMI160_INT_STATUS1_DRDY) {
 		bmi160_handle_drdy(dev, buf.status);
 	}
-
 }
 
 #ifdef CONFIG_BMI160_TRIGGER_OWN_THREAD
@@ -141,6 +150,16 @@ static int bmi160_trigger_drdy_set(const struct device *dev,
 	}
 
 	if (bmi160->handler_drdy_gyr) {
+		drdy_en = BMI160_INT_DRDY_EN;
+	}
+#endif
+
+#if defined(CONFIG_BMX160_MAG)
+	if (chan == SENSOR_CHAN_MAGN_XYZ) {
+		bmi160->handler_drdy_mag = handler;
+	}
+
+	if (bmi160->handler_drdy_mag) {
 		drdy_en = BMI160_INT_DRDY_EN;
 	}
 #endif
@@ -247,6 +266,19 @@ static int bmi160_trigger_set_gyr(const struct device *dev,
 }
 #endif
 
+#if defined(CONFIG_BMX160_MAG)
+static int bmi160_trigger_set_mag(const struct device *dev,
+				  const struct sensor_trigger *trig,
+				  sensor_trigger_handler_t handler)
+{
+	if (trig->type == SENSOR_TRIG_DATA_READY) {
+		return bmi160_trigger_drdy_set(dev, trig->chan, handler);
+	}
+
+	return -ENOTSUP;
+}
+#endif
+
 int bmi160_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
@@ -261,6 +293,12 @@ int bmi160_trigger_set(const struct device *dev,
 		return bmi160_trigger_set_gyr(dev, trig, handler);
 	}
 #endif
+#if defined(CONFIG_BMX160_MAG)
+	if (trig->chan == SENSOR_CHAN_MAGN_XYZ) {
+		return bmi160_trigger_set_mag(dev, trig, handler);
+	}
+#endif
+
 	return -ENOTSUP;
 }
 
@@ -309,5 +347,6 @@ int bmi160_trigger_mode_init(const struct device *dev)
 				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	return bmi160_byte_write(dev, BMI160_REG_INT_OUT_CTRL,
-				 BMI160_INT1_OUT_EN | BMI160_INT1_EDGE_CTRL);
+				 BMI160_INT1_OUT_EN | BMI160_INT1_EDGE_CTRL |
+				 BMI160_INT1_LVL_HIGH);
 }
