@@ -37,8 +37,6 @@
 
 #include "ll_feat.h"
 
-#include "ull_connections.h"
-
 #include "helper_pdu.h"
 #include "helper_util.h"
 #include "helper_features.h"
@@ -54,8 +52,6 @@ static void setup(void)
 	conn_from_pool = ll_conn_acquire();
 	zassert_not_null(conn_from_pool,
 			 "Could not allocate connection memory", NULL);
-
-	ll_conn_init_connection(conn_from_pool);
 
 	test_setup(conn_from_pool);
 
@@ -84,9 +80,10 @@ static void setup(void)
  */
 void test_hci_feature_exchange(void)
 {
-	u64_t err;
-	u64_t set_feature = DEFAULT_FEATURE;
-	u64_t rsp_feature = (LL_FEAT_BIT_MASK_VALID & FEAT_FILTER_OCTET0) | DEFAULT_FEATURE;
+	uint64_t err;
+	uint64_t set_feature = DEFAULT_FEATURE;
+	uint64_t rsp_feature = (LL_FEAT_BIT_MASK_VALID & FEAT_FILTER_OCTET0) |
+		DEFAULT_FEATURE;
 
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -131,7 +128,7 @@ void test_hci_feature_exchange(void)
 void test_hci_feature_exchange_wrong_handle(void)
 {
 	uint16_t conn_handle;
-	u64_t err;
+	uint64_t err;
 	int ctx_counter;
 	struct proc_ctx *ctx;
 
@@ -157,7 +154,7 @@ void test_hci_feature_exchange_wrong_handle(void)
 
 void test_hci_version_ind(void)
 {
-	u64_t err;
+	uint64_t err;
 	uint16_t conn_handle;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -201,7 +198,7 @@ void test_hci_version_ind(void)
 void test_hci_version_ind_wrong_handle(void)
 {
 	uint16_t conn_handle;
-	u64_t err;
+	uint64_t err;
 	int ctx_counter;
 	struct proc_ctx *ctx;
 
@@ -228,7 +225,7 @@ void test_hci_version_ind_wrong_handle(void)
 void test_hci_apto(void)
 {
 	uint16_t conn_handle;
-	u64_t err;
+	uint64_t err;
 
 	uint16_t dummy;
 
@@ -255,9 +252,9 @@ void test_hci_apto(void)
 void test_hci_phy(void)
 {
 	uint16_t conn_handle;
-	u64_t err;
+	uint64_t err;
 
-	u8_t phy_tx, phy_rx;
+	uint8_t phy_tx, phy_rx;
 
 	conn_handle = ll_conn_handle_get(conn_from_pool);
 
@@ -270,7 +267,8 @@ void test_hci_phy(void)
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, NULL);
 	conn_from_pool->llcp.fex.features_peer = 0x00;
 	err = ll_phy_req_send(conn_handle,  0x03, 0xFF, 0x03);
-	zassert_equal(err, BT_HCI_ERR_UNSUPP_REMOTE_FEATURE, "Errorcode %d", err);
+	zassert_equal(err, BT_HCI_ERR_UNSUPP_REMOTE_FEATURE,
+		      "Errorcode %d", err);
 
 	conn_from_pool->llcp.fex.features_peer = 0xFFFF;
 	err = ll_phy_req_send(conn_handle,  0x03, 0xFF, 0x03);
@@ -279,8 +277,9 @@ void test_hci_phy(void)
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, NULL);
 	err = ll_phy_get(conn_handle, &phy_tx, &phy_rx);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
-	zassert_equal(phy_tx, 0x00, NULL); /* EGON: to be filled with correct value */
-	zassert_equal(phy_rx, 0x00, NULL); /* EGON: to be filled with correct value */
+	/* EGON TODO: phy's to be filled with correct value */
+	zassert_equal(phy_tx, 0x00, NULL);
+	zassert_equal(phy_rx, 0x00, NULL);
 
 	err = ll_phy_default_set(0x00, 0x00);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
@@ -299,11 +298,11 @@ void test_hci_phy(void)
 void test_hci_dle(void)
 {
 	uint16_t conn_handle;
-	u64_t err;
+	uint64_t err;
 
-	u16_t tx_octets, tx_time;
-	u16_t max_tx_octets, max_tx_time;
-	u16_t max_rx_octets, max_rx_time;
+	uint16_t tx_octets, tx_time;
+	uint16_t max_tx_octets, max_tx_time;
+	uint16_t max_rx_octets, max_rx_time;
 
 	conn_handle = ll_conn_handle_get(conn_from_pool);
 
@@ -316,12 +315,15 @@ void test_hci_dle(void)
 
 	conn_from_pool->llcp.fex.features_peer = 0x00;
 	err = ll_length_req_send(conn_handle, tx_octets, tx_time);
-	zassert_equal(err, BT_HCI_ERR_UNSUPP_REMOTE_FEATURE, "Errorcode %d", err);
+	zassert_equal(err, BT_HCI_ERR_UNSUPP_REMOTE_FEATURE,
+		      "Errorcode %d", err);
 	conn_from_pool->llcp.fex.features_peer = 0xFFFFFFFF;
 	err = ll_length_req_send(conn_handle+1, tx_octets, tx_time);
-	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, "Errorcode %d", err);
+	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID,
+		      "Errorcode %d", err);
 	err = ll_length_req_send(conn_handle, tx_octets, tx_time);
-	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CMD, "Errorcode %d", err);
+	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CMD,
+		      "Errorcode %d", err);
 
 	ll_length_max_get(&max_tx_octets, &max_tx_time,
 			  &max_rx_octets, &max_rx_time);
@@ -349,9 +351,9 @@ void test_hci_dle(void)
 void test_hci_terminate(void)
 {
 	uint16_t conn_handle;
-	u64_t err;
+	uint64_t err;
 
-	u8_t reason;
+	uint8_t reason;
 
 	conn_handle = ll_conn_handle_get(conn_from_pool);
 
@@ -369,10 +371,10 @@ void test_hci_terminate(void)
 void test_hci_conn_update(void)
 {
 	uint16_t conn_handle;
-	u64_t err;
+	uint64_t err;
 
-	u8_t cmd, status;
-	u16_t interval_min, interval_max, latency, timeout;
+	uint8_t cmd, status;
+	uint16_t interval_min, interval_max, latency, timeout;
 
 	cmd = 0x00;
 	status = 0x00;
@@ -401,9 +403,9 @@ void test_hci_conn_update(void)
 void test_hci_chmap(void)
 {
 	uint16_t conn_handle;
-	u64_t err;
+	uint64_t err;
 
-	u8_t chmap[5];
+	uint8_t chmap[5];
 
 	conn_handle = ll_conn_handle_get(conn_from_pool);
 
@@ -427,9 +429,9 @@ void test_hci_chmap(void)
 void test_hci_rssi(void)
 {
 	uint16_t conn_handle;
-	u64_t err;
+	uint64_t err;
 
-	u8_t rssi;
+	uint8_t rssi;
 
 	conn_handle = ll_conn_handle_get(conn_from_pool);
 
@@ -451,12 +453,12 @@ void test_hci_rssi(void)
 void test_hci_enc(void)
 {
 	uint16_t conn_handle;
-	u64_t err;
+	uint64_t err;
 
-	u8_t rand;
-	u8_t ediv;
-	u8_t error_code;
-	u8_t ltk[5];
+	uint8_t rand;
+	uint8_t ediv;
+	uint8_t error_code;
+	uint8_t ltk[5];
 
 
 	conn_handle = ll_conn_handle_get(conn_from_pool);
