@@ -19,6 +19,19 @@ LOG_MODULE_REGISTER(i2c_shell, CONFIG_LOG_DEFAULT_LEVEL);
 /* Maximum bytes we can write or read at once */
 #define MAX_I2C_BYTES	16
 
+/*
+ * This sends I2C messages without any data (i.e. stop condition after
+ * sending just the address). If there is an ACK for the address, it
+ * is assumed there is a device present.
+ *
+ * WARNING: As there is no standard I2C detection command, this code
+ * uses arbitrary SMBus commands (namely SMBus quick write and SMBus
+ * receive byte) to probe for devices.  This operation can confuse
+ * your I2C bus, cause data loss, and is known to corrupt the Atmel
+ * AT24RF08 EEPROM found on many IBM Thinkpad laptops.
+ *
+ * https://manpages.debian.org/buster/i2c-tools/i2cdetect.8.en.html
+ */
 static int cmd_i2c_scan(const struct shell *shell,
 			size_t argc, char **argv)
 {
