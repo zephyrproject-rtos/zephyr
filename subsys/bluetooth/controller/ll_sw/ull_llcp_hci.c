@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/*
+ * EGON TODO:
+ * before merging with master these functions need to be re-visited
+ * and compared to their counterpart in ull_conn.c
+ * to verify that any bug-fixes and new features there are included here
+ */
 
 #include <stddef.h>
 #include <zephyr.h>
@@ -12,6 +18,7 @@
 
 #include "hal/ecb.h"
 #include "hal/ccm.h"
+#include "hal/ticker.h"
 
 #include "util/util.h"
 #include "util/mem.h"
@@ -24,12 +31,18 @@
 #include "pdu.h"
 #include "lll.h"
 #include "lll_conn.h"
+/*
+ * EGON TODO: required for compilation, to be removed when data types are updated
+ */
 #include "ull_conn_types.h"
 #include "ull_internal.h"
 #include "ull_sched_internal.h"
 #include "ull_slave_internal.h"
 #include "ull_master_internal.h"
 
+#include "ull_chan_internal.h"
+
+#include "lll_clock.h"
 #include "lll_scan.h"
 #include "ull_scan_types.h"
 #include "ull_scan_internal.h"
@@ -42,7 +55,6 @@
 #include "bluetooth/hci.h"
 #include "ll_feat.h"
 #include "ull_llcp_features.h"
-#include "ull_connections.h"
 #include "ll_settings.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
@@ -56,10 +68,12 @@
 #endif /* CONFIG_BT_CTLR_USER_EXT */
 
 
+#if defined(CONFIG_BT_PERIPHERAL)
+static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
+					       void *params);
+#endif /* CONFIG_BT_PERIPHERAL */
 
-
-
-u8_t ll_version_ind_send(u16_t handle)
+uint8_t ll_version_ind_send(uint16_t handle)
 {
 	struct ull_cp_conn *conn;
 
@@ -72,7 +86,7 @@ u8_t ll_version_ind_send(u16_t handle)
 }
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
-u8_t ll_apto_get(u16_t handle, u16_t *apto)
+uint8_t ll_apto_get(uint16_t handle, uint16_t *apto)
 {
 	struct ull_cp_conn *conn;
 
@@ -88,7 +102,7 @@ u8_t ll_apto_get(u16_t handle, u16_t *apto)
 	 */
 }
 
-u8_t ll_apto_set(u16_t handle, u16_t apto)
+uint8_t ll_apto_set(uint16_t handle, uint16_t apto)
 {
 	struct ull_cp_conn *conn;
 
@@ -107,7 +121,7 @@ u8_t ll_apto_set(u16_t handle, u16_t apto)
 }
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
-u8_t ll_feature_req_send(u16_t handle)
+uint8_t ll_feature_req_send(uint16_t handle)
 {
 	struct ull_cp_conn *conn;
 
@@ -122,17 +136,17 @@ u8_t ll_feature_req_send(u16_t handle)
 
 
 #if defined(CONFIG_BT_CTLR_PHY)
-u8_t ll_phy_default_set(u8_t tx, u8_t rx)
+uint8_t ll_phy_default_set(uint8_t tx, uint8_t rx)
 {
 	/* TODO: validate against supported phy */
 
-	default_phy_tx = tx;
-	default_phy_rx = rx;
+	ull_conn_default_phy_tx_set(tx);
+	ull_conn_default_phy_rx_set(rx);
 
 	return 0;
 }
 
-u8_t ll_phy_get(u16_t handle, u8_t *tx, u8_t *rx)
+uint8_t ll_phy_get(uint16_t handle, uint8_t *tx, uint8_t *rx)
 {
 	struct ull_cp_conn *conn;
 
@@ -154,7 +168,7 @@ u8_t ll_phy_get(u16_t handle, u8_t *tx, u8_t *rx)
 
 
 
-u8_t ll_phy_req_send(u16_t handle, u8_t tx, u8_t flags, u8_t rx)
+uint8_t ll_phy_req_send(uint16_t handle, uint8_t tx, uint8_t flags, uint8_t rx)
 {
 	struct ull_cp_conn *conn;
 
@@ -188,7 +202,7 @@ u8_t ll_phy_req_send(u16_t handle, u8_t tx, u8_t flags, u8_t rx)
 
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-u32_t ll_length_req_send(u16_t handle, u16_t tx_octets, u16_t tx_time)
+uint32_t ll_length_req_send(uint16_t handle, uint16_t tx_octets, uint16_t tx_time)
 {
 	struct ull_cp_conn *conn;
 
@@ -208,8 +222,8 @@ u32_t ll_length_req_send(u16_t handle, u16_t tx_octets, u16_t tx_time)
 	return BT_HCI_ERR_UNKNOWN_CMD;
 }
 
-void ll_length_max_get(u16_t *max_tx_octets, u16_t *max_tx_time,
-		       u16_t *max_rx_octets, u16_t *max_rx_time)
+void ll_length_max_get(uint16_t *max_tx_octets, uint16_t *max_tx_time,
+		       uint16_t *max_rx_octets, uint16_t *max_rx_time)
 {
 	*max_tx_octets = LL_LENGTH_OCTETS_RX_MAX;
 	*max_rx_octets = LL_LENGTH_OCTETS_RX_MAX;
@@ -224,18 +238,18 @@ void ll_length_max_get(u16_t *max_tx_octets, u16_t *max_tx_time,
 }
 
 
-void ll_length_default_get(u16_t *max_tx_octets, u16_t *max_tx_time)
+void ll_length_default_get(uint16_t *max_tx_octets, uint16_t *max_tx_time)
 {
-	*max_tx_octets = default_tx_octets;
-	*max_tx_time = default_tx_time;
+	*max_tx_octets = ull_conn_default_tx_octets_get();
+	*max_tx_time = ull_conn_default_tx_time_get();
 }
 
-u32_t ll_length_default_set(u16_t max_tx_octets, u16_t max_tx_time)
+uint32_t ll_length_default_set(uint16_t max_tx_octets, uint16_t max_tx_time)
 {
 	/* TODO: parameter check (for BT 5.0 compliance) */
 
-	default_tx_octets = max_tx_octets;
-	default_tx_time = max_tx_time;
+	ull_conn_default_tx_octets_set(max_tx_octets);
+	ull_conn_default_tx_time_set(max_tx_time);
 
 	return 0;
 }
@@ -245,7 +259,7 @@ u32_t ll_length_default_set(u16_t max_tx_octets, u16_t max_tx_time)
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 
-u8_t ll_terminate_ind_send(u16_t handle, u8_t reason)
+uint8_t ll_terminate_ind_send(uint16_t handle, uint8_t reason)
 {
 	struct ull_cp_conn *conn;
 
@@ -261,8 +275,13 @@ u8_t ll_terminate_ind_send(u16_t handle, u8_t reason)
 	return BT_HCI_ERR_UNKNOWN_CMD;
 }
 
-u8_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status, u16_t interval_min,
-		    u16_t interval_max, u16_t latency, u16_t timeout)
+
+/*
+ * EGON TODO: the use of cmd in the following function is unclear;
+ * to be re-evaluated before merging into master
+ */
+uint8_t ll_conn_update(uint16_t handle, uint8_t cmd, uint8_t status, uint16_t interval_min,
+		    uint16_t interval_max, uint16_t latency, uint16_t timeout)
 {
 	struct ull_cp_conn *conn;
 
@@ -342,7 +361,7 @@ u8_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status, u16_t interval_min,
 
 
 
-u8_t ll_chm_get(u16_t handle, u8_t *chm)
+uint8_t ll_chm_get(uint16_t handle, uint8_t *chm)
 {
 	struct ull_cp_conn *conn;
 
@@ -362,7 +381,7 @@ u8_t ll_chm_get(u16_t handle, u8_t *chm)
 
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
-u8_t ll_rssi_get(u16_t handle, u8_t *rssi)
+uint8_t ll_rssi_get(uint16_t handle, uint8_t *rssi)
 {
 	struct ull_cp_conn *conn;
 
@@ -383,8 +402,8 @@ u8_t ll_rssi_get(u16_t handle, u8_t *rssi)
  * the following are only valid for slave configuration
  */
 #if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_PERIPHERAL)
-u8_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
-			    u8_t const *const ltk)
+uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
+			    uint8_t const *const ltk)
 {
 	struct ull_cp_conn *conn;
 
@@ -417,203 +436,77 @@ u8_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC && CONFIG_BT_PERIPHERAL */
 
-#if defined(CONFIG_BT_CENTRAL)
-/** @brief Prepare access address as per BT Spec.
- *
- * - It shall have no more than six consecutive zeros or ones.
- * - It shall not be the advertising channel packets' Access Address.
- * - It shall not be a sequence that differs from the advertising channel
- *   packets Access Address by only one bit.
- * - It shall not have all four octets equal.
- * - It shall have no more than 24 transitions.
- * - It shall have a minimum of two transitions in the most significant six
- *   bits.
- *
- * LE Coded PHY requirements:
- * - It shall have at least three ones in the least significant 8 bits.
- * - It shall have no more than eleven transitions in the least significant 16
- *   bits.
- */
-static inline void access_addr_get(u8_t access_addr[])
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
+			  uint8_t filter_policy, uint8_t peer_addr_type,
+			  uint8_t const *const peer_addr, uint8_t own_addr_type,
+			  uint16_t interval, uint16_t latency, uint16_t timeout,
+			  uint8_t phy)
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
+			  uint8_t filter_policy, uint8_t peer_addr_type,
+			  uint8_t const *const peer_addr, uint8_t own_addr_type,
+			  uint16_t interval, uint16_t latency, uint16_t timeout)
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 {
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-	u8_t transitions_lsb16;
-	u8_t ones_count_lsb8;
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-	u8_t consecutive_cnt;
-	u8_t consecutive_bit;
-	u32_t adv_aa_check;
-	u32_t aa;
-	u8_t transitions;
-	u8_t bit_idx;
-	u8_t retry;
-
-	retry = 3U;
-again:
-	LL_ASSERT(retry);
-	retry--;
-
-	util_rand(access_addr, 4);
-	aa = sys_get_le32(access_addr);
-
-	bit_idx = 31U;
-	transitions = 0U;
-	consecutive_cnt = 1U;
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-	ones_count_lsb8 = 0U;
-	transitions_lsb16 = 0U;
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-	consecutive_bit = (aa >> bit_idx) & 0x01;
-	while (bit_idx--) {
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-		u8_t transitions_lsb16_prev = transitions_lsb16;
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-		u8_t consecutive_cnt_prev = consecutive_cnt;
-		u8_t transitions_prev = transitions;
-		u8_t bit;
-
-		bit = (aa >> bit_idx) & 0x01;
-		if (bit == consecutive_bit) {
-			consecutive_cnt++;
-		} else {
-			consecutive_cnt = 1U;
-			consecutive_bit = bit;
-			transitions++;
-
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-			if (bit_idx < 15) {
-				transitions_lsb16++;
-			}
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-		}
-
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-		if ((bit_idx < 8) && consecutive_bit) {
-			ones_count_lsb8++;
-		}
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-
-		/* It shall have no more than six consecutive zeros or ones. */
-		/* It shall have a minimum of two transitions in the most
-		 * significant six bits.
-		 */
-		if ((consecutive_cnt > 6) ||
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-		    (!consecutive_bit && (((bit_idx < 6) &&
-					   (ones_count_lsb8 < 1)) ||
-					  ((bit_idx < 5) &&
-					   (ones_count_lsb8 < 2)) ||
-					  ((bit_idx < 4) &&
-					   (ones_count_lsb8 < 3)))) ||
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-		    ((consecutive_cnt < 6) &&
-		     (((bit_idx < 29) && (transitions < 1)) ||
-		      ((bit_idx < 28) && (transitions < 2))))) {
-			if (consecutive_bit) {
-				consecutive_bit = 0U;
-				aa &= ~BIT(bit_idx);
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-				if (bit_idx < 8) {
-					ones_count_lsb8--;
-				}
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-			} else {
-				consecutive_bit = 1U;
-				aa |= BIT(bit_idx);
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-				if (bit_idx < 8) {
-					ones_count_lsb8++;
-				}
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-			}
-
-			if (transitions != transitions_prev) {
-				consecutive_cnt = consecutive_cnt_prev;
-				transitions = transitions_prev;
-			} else {
-				consecutive_cnt = 1U;
-				transitions++;
-			}
-
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-			if (bit_idx < 15) {
-				if (transitions_lsb16 !=
-				    transitions_lsb16_prev) {
-					transitions_lsb16 =
-						transitions_lsb16_prev;
-				} else {
-					transitions_lsb16++;
-				}
-			}
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-		}
-
-		/* It shall have no more than 24 transitions
-		 * It shall have no more than eleven transitions in the least
-		 * significant 16 bits.
-		 */
-		if ((transitions > 24) ||
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-		    (transitions_lsb16 > 11) ||
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-		    0) {
-			if (consecutive_bit) {
-				aa &= ~(BIT(bit_idx + 1) - 1);
-			} else {
-				aa |= (BIT(bit_idx + 1) - 1);
-			}
-
-			break;
-		}
-	}
-
-	/* It shall not be the advertising channel packets Access Address.
-	 * It shall not be a sequence that differs from the advertising channel
-	 * packets Access Address by only one bit.
-	 */
-	adv_aa_check = aa ^ PDU_AC_ACCESS_ADDR;
-	if (util_ones_count_get((u8_t *)&adv_aa_check,
-				sizeof(adv_aa_check)) <= 1) {
-		goto again;
-	}
-
-	/* It shall not have all four octets equal. */
-	if (!((aa & 0xFFFF) ^ (aa >> 16)) &&
-	    !((aa & 0xFF) ^ (aa >> 24))) {
-		goto again;
-	}
-
-	sys_put_le32(aa, access_addr);
-}
-
-
-u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
-			  u8_t filter_policy, u8_t peer_addr_type,
-			  u8_t *peer_addr, u8_t own_addr_type,
-			  u16_t interval, u16_t latency, u16_t timeout)
-{
-	/*
-	 * disabled for now
-	 */
+	/* EGON TODO: to be enabled after integration of datastructures */
 #if 0
-	struct ull_cp_conn *conn_lll;
+	struct lll_conn *conn_lll;
 	struct ll_scan_set *scan;
-	u32_t conn_interval_us;
+	uint32_t conn_interval_us;
 	struct lll_scan *lll;
 	struct ull_cp_conn *conn;
 	memq_link_t *link;
-	u8_t access_addr[4];
-	u8_t hop;
+	uint8_t hop;
 	int err;
 
-	scan = ull_scan_is_disabled_get(0);
+	scan = ull_scan_is_disabled_get(SCAN_HANDLE_1M);
 	if (!scan) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	lll = &scan->lll;
-	if (lll->conn) {
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	struct ll_scan_set *scan_coded;
+	struct lll_scan *lll_coded;
+
+	scan_coded = ull_scan_is_disabled_get(SCAN_HANDLE_PHY_CODED);
+	if (!scan_coded) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	lll = &scan->lll;
+	lll_coded = &scan_coded->lll;
+
+	if (phy & BT_HCI_LE_EXT_SCAN_PHY_CODED) {
+		if (!lll_coded->conn) {
+			lll_coded->conn = lll->conn;
+		}
+		scan = scan_coded;
+		lll = lll_coded;
+	} else {
+		if (!lll->conn) {
+			lll->conn = lll_coded->conn;
+		}
+	}
+
+#else /* !CONFIG_BT_CTLR_PHY_CODED */
+	if (phy & ~BT_HCI_LE_EXT_SCAN_PHY_1M) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	lll = &scan->lll;
+
+#endif /* !CONFIG_BT_CTLR_PHY_CODED */
+
+	lll->phy = phy;
+
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+	lll = &scan->lll;
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+
+	if (lll->conn) {
+		goto conn_is_valid;
 	}
 
 	link = ll_rx_link_alloc();
@@ -637,10 +530,10 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 
 	conn_lll = &conn->lll;
 
-	access_addr_get(access_addr);
-	memcpy(conn_lll->access_addr, &access_addr,
-	       sizeof(conn_lll->access_addr));
-	util_rand(&conn_lll->crc_init[0], 3);
+	err = util_aa_le32(conn_lll->access_addr);
+	LL_ASSERT(!err);
+
+	lll_csrand_get(conn_lll->crc_init, sizeof(conn_lll->crc_init));
 
 	conn_lll->handle = 0xFFFF;
 	conn_lll->interval = interval;
@@ -695,9 +588,8 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 	conn_lll->latency_event = 0;
 	conn_lll->event_counter = 0;
 
-	conn_lll->data_chan_count =
-		ull_conn_chan_map_cpy(conn_lll->data_chan_map);
-	util_rand(&hop, sizeof(u8_t));
+	conn_lll->data_chan_count = ull_chan_map_get(conn_lll->data_chan_map);
+	lll_csrand_get(&hop, sizeof(uint8_t));
 	conn_lll->data_chan_hop = 5 + (hop % 12);
 	conn_lll->data_chan_sel = 0;
 	conn_lll->data_chan_use = 0;
@@ -709,7 +601,7 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 
 	conn->connect_expire = 6U;
 	conn->supervision_expire = 0U;
-	conn_interval_us = (u32_t)interval * 1250U;
+	conn_interval_us = (uint32_t)interval * 1250U;
 	conn->supervision_reload = RADIO_CONN_EVENTS(timeout * 10000U,
 							 conn_interval_us);
 
@@ -789,6 +681,7 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 	ull_hdr_init(&conn->ull);
 	lll_hdr_init(&conn->lll, conn);
 
+conn_is_valid:
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	ull_filter_scan_update(filter_policy);
 
@@ -812,6 +705,9 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 
 	scan->own_addr_type = own_addr_type;
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	return 0;
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
 	/* wait for stable clocks */
 	err = lll_clock_wait();
 	if (err) {
@@ -821,12 +717,50 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 	}
 
 	return ull_scan_enable(scan);
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 #else
 	return 0;
 #endif /* 0 */
 }
 
-u8_t ll_connect_disable(void **rx)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+uint8_t ll_connect_enable(uint8_t is_coded_included)
+{
+	uint8_t err = BT_HCI_ERR_CMD_DISALLOWED;
+	struct ll_scan_set *scan;
+
+	scan = ull_scan_set_get(SCAN_HANDLE_1M);
+
+	/* wait for stable clocks */
+	err = lll_clock_wait();
+	if (err) {
+		conn_release(scan);
+
+		return BT_HCI_ERR_HW_FAILURE;
+	}
+
+	if (!is_coded_included ||
+	    (scan->lll.phy & BIT(0))) {
+		err = ull_scan_enable(scan);
+		if (err) {
+			return err;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) && is_coded_included) {
+		scan = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
+		err = ull_scan_enable(scan);
+		if (err) {
+			return err;
+		}
+	}
+
+	return err;
+}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
+
+uint8_t ll_connect_disable(void **rx)
 {
 	/*
 	 * disable for now
@@ -834,7 +768,7 @@ u8_t ll_connect_disable(void **rx)
 #if 0
 	struct lll_conn *conn_lll;
 	struct ll_scan_set *scan;
-	u8_t status;
+	uint8_t status;
 
 	scan = ull_scan_is_enabled_get(0);
 	if (!scan) {
@@ -862,7 +796,7 @@ u8_t ll_connect_disable(void **rx)
 
 		cc->hdr.type = NODE_RX_TYPE_CONNECTION;
 		cc->hdr.handle = 0xffff;
-		*((u8_t *)cc->pdu) = BT_HCI_ERR_UNKNOWN_CONN_ID;
+		*((uint8_t *)cc->pdu) = BT_HCI_ERR_UNKNOWN_CONN_ID;
 
 		ftr = &(cc->hdr.rx_ftr);
 		ftr->param = &scan->lll;
@@ -876,9 +810,9 @@ u8_t ll_connect_disable(void **rx)
 #endif /* 0 */
 }
 
-u8_t ll_chm_update(u8_t *chm)
+uint8_t ll_chm_update(uint8_t const *const chm)
 {
-	u16_t handle;
+	uint16_t handle;
 
 	ull_conn_chan_map_set(chm);
 
@@ -899,7 +833,8 @@ u8_t ll_chm_update(u8_t *chm)
 	return BT_HCI_ERR_UNKNOWN_CMD;
 }
 
-u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand, uint8_t const *const ediv, uint8_t const *const ltk)
 {
 	struct ull_cp_conn *conn;
 
@@ -913,53 +848,73 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 	 */
 	return ull_cp_encryption_start(conn);
 }
-#if defined(CONFIG_BT_CTLR_LE_ENC)
-
 #endif /* CONFIG_BT_CTLR_LE_ENC */
-#endif /* CONFIG_BT_CENTRAL */
 
 /*
  * EGON: the ll_tx_mem routines should go to their own module
  */
 void *ll_tx_mem_acquire(void)
 {
-	return ll_tx_mem_acquire();
+	return ull_conn_tx_mem_acquire();
 }
 
 void ll_tx_mem_release(void *tx)
 {
-	ll_tx_mem_release(tx);
+	ull_conn_tx_mem_release(tx);
 }
 
-int ll_tx_mem_enqueue(u16_t handle, void *tx)
+int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 {
-	return ll_tx_mem_enqueue(handle, tx);
-}
 
-uint8_t ull_llcp_hci_init(void)
-{
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	/* Initialize the DLE defaults */
-	default_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
-	default_tx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+	struct lll_tx *lll_tx;
+	struct ull_cp_conn *conn;
+	uint8_t idx;
 
-#if defined(CONFIG_BT_CTLR_PHY)
-	/* Initialize the PHY defaults */
-	default_phy_tx = BIT(0);
-	default_phy_rx = BIT(0);
+	conn = ll_connected_get(handle);
+	if (!conn) {
+		return -EINVAL;
+	}
 
-#if defined(CONFIG_BT_CTLR_PHY_2M)
-	default_phy_tx |= BIT(1);
-	default_phy_rx |= BIT(1);
-#endif /* CONFIG_BT_CTLR_PHY_2M */
+	idx = ull_conn_mfifo_get_tx((void **) &lll_tx);
+	if (!lll_tx) {
+		return -ENOBUFS;
+	}
 
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-	default_phy_tx |= BIT(2);
-	default_phy_rx |= BIT(2);
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-#endif /* CONFIG_BT_CTLR_PHY */
+	lll_tx->handle = handle;
+	lll_tx->node = tx;
 
+	ull_conn_mfifo_enqueue_tx(idx);
+
+#if defined(CONFIG_BT_PERIPHERAL)
+	/* break slave latency */
+	if (conn->lll.role && conn->lll.latency_event &&
+	    !conn->slave.latency_cancel) {
+		uint32_t ticker_status;
+
+		conn->slave.latency_cancel = 1U;
+
+		ticker_status =
+			ticker_update(TICKER_INSTANCE_ID_CTLR,
+				      TICKER_USER_ID_THREAD,
+				      (TICKER_ID_CONN_BASE + handle),
+				      0, 0, 0, 0, 1, 0,
+				      ticker_update_latency_cancel_op_cb,
+				      (void *)conn);
+		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
+			  (ticker_status == TICKER_STATUS_BUSY));
+	}
+#endif /* CONFIG_BT_PERIPHERAL */
 	return 0;
-
 }
+
+#if defined(CONFIG_BT_PERIPHERAL)
+static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
+					       void *params)
+{
+	struct ll_conn *conn = params;
+
+	LL_ASSERT(ticker_status == TICKER_STATUS_SUCCESS);
+
+	conn->slave.latency_cancel = 0U;
+}
+#endif /* CONFIG_BT_PERIPHERAL */
