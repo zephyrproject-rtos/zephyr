@@ -89,7 +89,7 @@ manifest:
       revision: 9638398d3c319074ae3878035138ef8a76001e5b
       path: modules/crypto/mbedtls
     - name: mcuboot
-      revision: 3ab5ab307cbfd1f7d3028dc7461b35c156d3e5ab
+      revision: 480421999ec2d8d2a20091e4f3a0393db04de5c4
       path: bootloader/mcuboot
     - name: mcumgr
       revision: cfe5eb98a9493017448846fd1a44a9340bd0a22f
