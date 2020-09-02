@@ -575,7 +575,7 @@ class DeviceHandler(Handler):
             master, slave = pty.openpty()
 
             try:
-                ser_pty_process = subprocess.Popen(serial_pty, stdout=master, stdin=master, stderr=master)
+                ser_pty_process = subprocess.Popen(re.split(',| ', serial_pty), stdout=master, stdin=master, stderr=master)
             except subprocess.CalledProcessError as error:
                 logger.error("Failed to run subprocess {}, error {}".format(serial_pty, error.output))
                 return
