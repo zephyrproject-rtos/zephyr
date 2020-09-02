@@ -88,6 +88,7 @@ static void eswifi_off_read_work(struct k_work *work)
 	struct eswifi_off_socket *socket;
 	struct eswifi_dev *eswifi;
 	struct net_pkt *pkt = NULL;
+	int next_timeout_ms = 100;
 	int err, len;
 	char *data;
 
@@ -146,11 +147,12 @@ do_recv_cb:
 	}
 
 	k_sem_give(&socket->read_sem);
+	next_timeout_ms = 0;
 
 done:
 	err = k_delayed_work_submit_to_queue(&eswifi->work_q,
 					     &socket->read_work,
-					     K_MSEC(500));
+					     K_MSEC(next_timeout_ms));
 	if (err) {
 		LOG_ERR("Rescheduling socket read error");
 	}
