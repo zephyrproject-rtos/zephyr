@@ -55,6 +55,7 @@ struct i2c_gpio_context {
 	struct device *sda_gpio;	/* GPIO used for I2C SDA line */
 	gpio_pin_t scl_pin;		/* Pin on gpio used for SCL line */
 	gpio_pin_t sda_pin;		/* Pin on gpio used for SDA line */
+	gpio_dt_flags_t sda_flags;	/* SDA Device tree flags */
 };
 
 static void i2c_gpio_set_scl(void *io_context, int state)
@@ -67,8 +68,14 @@ static void i2c_gpio_set_scl(void *io_context, int state)
 static void i2c_gpio_set_sda(void *io_context, int state)
 {
 	struct i2c_gpio_context *context = io_context;
+	gpio_flags_t flags = context->sda_flags;
 
-	gpio_pin_set(context->sda_gpio, context->sda_pin, state);
+	if (flags & GPIO_SINGLE_ENDED) {
+		gpio_pin_set(context->sda_gpio, context->sda_pin, state);
+	} else {
+		flags |= (state) ? GPIO_INPUT : GPIO_OUTPUT_LOW;
+		gpio_config(context->sda_gpio, context->sda_pin, flags);
+	}
 }
 
 static int i2c_gpio_get_sda(void *io_context)
@@ -141,16 +148,33 @@ static int i2c_gpio_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	err = gpio_config(context->sda_gpio, config->sda_pin,
-			  config->sda_flags | GPIO_INPUT | GPIO_OUTPUT_HIGH);
-	if (err == -ENOTSUP) {
+	gpio_flags_t flags = config->sda_flags;
+
+	if (flags & GPIO_SINGLE_ENDED){
 		err = gpio_config(context->sda_gpio, config->sda_pin,
-				  config->sda_flags | GPIO_OUTPUT_HIGH);
+				  flags | GPIO_OUTPUT_HIGH | GPIO_INPUT);
+		if (err == -ENOTSUP) {
+			err = gpio_config(context->sda_gpio, config->sda_pin,
+					  flags | GPIO_OUTPUT_HIGH);
+		}
+		if (err == -ENOTSUP) {
+			flags &= ~(GPIO_SINGLE_ENDED | GPIO_OPEN_DRAIN);
+                }
 	}
+	if (!(flags & GPIO_SINGLE_ENDED)) {
+		err = gpio_config(context->sda_gpio, config->sda_pin,
+				  flags | GPIO_INPUT);
+		if (!(err)){
+			err = gpio_config(context->sda_gpio, config->sda_pin,
+					  flags | GPIO_OUTPUT_HIGH);
+		}
+	}
+
 	if (err) {
 		LOG_ERR("failed to configure SDA GPIO pin (err %d)", err);
 		return err;
 	}
+	context->sda_flags = flags;
 
 	context->sda_pin = config->sda_pin;
 	context->scl_pin = config->scl_pin;
