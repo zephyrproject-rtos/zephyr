@@ -15,6 +15,7 @@ foreach(report ram_report rom_report)
     ${flag_for_${report}}
     DEPENDS ${logical_target_for_zephyr_elf}
             $<TARGET_PROPERTY:zephyr_property_target,${report}_DEPENDENCIES>
+    USES_TERMINAL
     )
 endforeach()
 
