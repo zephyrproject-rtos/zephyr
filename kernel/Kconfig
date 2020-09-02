@@ -164,6 +164,7 @@ config IDLE_STACK_SIZE
 	default 2048 if COVERAGE_GCOV
 	default 1024 if XTENSA
 	default 512 if RISCV
+	default 384 if DYNAMIC_OBJECTS
 	default 320 if ARC || (ARM && CPU_HAS_FPU)
 	default 256
 	help
