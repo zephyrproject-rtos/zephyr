@@ -84,7 +84,7 @@ extern "C" {
  * @param size Size of the memory region
  * @param flags Caching mode and access flags, see K_MAP_* macros
  */
-void k_mem_map(uint8_t **linear_addr, uintptr_t phys_addr, size_t size,
+void z_mem_map(uint8_t **linear_addr, uintptr_t phys_addr, size_t size,
 	       uint32_t flags);
 
 /**
