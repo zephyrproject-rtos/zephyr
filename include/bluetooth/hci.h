@@ -1335,6 +1335,12 @@ struct bt_hci_cp_le_set_privacy_mode {
 	uint8_t         mode;
 } __packed;
 
+#define BT_HCI_OP_LE_SET_PER_ADV_RECV_ENABLE     BT_OP(BT_OGF_LE, 0x0059)
+struct bt_hci_cp_le_set_per_adv_recv_enable {
+	uint16_t handle;
+	uint8_t  enable;
+} __packed;
+
 #define BT_HCI_OP_LE_READ_BUFFER_SIZE_V2        BT_OP(BT_OGF_LE, 0x0060)
 struct bt_hci_rp_le_read_buffer_size_v2 {
 	uint8_t  status;
