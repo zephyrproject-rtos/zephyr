@@ -413,6 +413,15 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 	* ``NetKeyIndex``: Network key indexes to get a list of application key indexes from.
 
 
+``mesh app-key-del <NetKeyIndex> <AppKeyIndex>``
+------------------------------------------------
+
+	Delete an application key from the target node.
+
+	* ``NetKeyIndex``: The network key index the application key is bound to.
+	* ``AppKeyIndex``: The application key index to delete.
+
+
 ``mesh mod-app-bind <addr> <AppIndex> <Model ID> [Company ID]``
 ---------------------------------------------------------------
 
@@ -421,6 +430,18 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 	* ``addr``: Address of the element the model is on.
 	* ``AppIndex``: The application key to bind to the model.
 	* ``Model ID``: The model ID of the model to bind the key to.
+	* ``Company ID``: If present, determines the Company ID of the model. If omitted, the model is a Bluetooth SIG defined model.
+
+
+
+``mesh mod-app-unbind <addr> <AppIndex> <Model ID> [Company ID]``
+-----------------------------------------------------------------
+
+	Unbind an application key from a model.
+
+	* ``addr``: Address of the element the model is on.
+	* ``AppIndex``: The application key to unbind from the model.
+	* ``Model ID``: The model ID of the model to unbind the key from.
 	* ``Company ID``: If present, determines the Company ID of the model. If omitted, the model is a Bluetooth SIG defined model.
 
 
