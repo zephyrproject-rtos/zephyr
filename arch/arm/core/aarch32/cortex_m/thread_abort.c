@@ -39,11 +39,22 @@ void z_impl_k_thread_abort(k_tid_t thread)
 	z_thread_monitor_exit(thread);
 
 	if (_current == thread) {
-		if ((SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) == 0) {
+		if (arch_is_in_isr()) {
+			/* ARM is unlike most arches in that this is true
+			 * even for non-peripheral interrupts, even though
+			 * for these types of faults there is not an implicit
+			 * reschedule on the way out. See #21923.
+			 *
+			 * We have to reschedule since the current thread
+			 * should no longer run after we return, so
+			 * Trigger PendSV, in case we are in one of the
+			 * situations where the isr check is true but there
+			 * is not an implicit scheduler invocation.
+			 */
+			SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+		} else {
 			(void)z_swap_irqlock(key);
 			CODE_UNREACHABLE;
-		} else {
-			SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 		}
 	}
 
