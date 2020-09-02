@@ -493,11 +493,7 @@ void z_impl_k_thread_abort(k_tid_t thread)
 
 	key = irq_lock();
 
-	__ASSERT(!(thread->base.user_options & K_ESSENTIAL),
-		 "essential thread aborted");
-
 	z_thread_single_abort(thread);
-	z_thread_monitor_exit(thread);
 
 	if (_current == thread) {
 		if (tstatus->aborted == 0) { /* LCOV_EXCL_BR_LINE */

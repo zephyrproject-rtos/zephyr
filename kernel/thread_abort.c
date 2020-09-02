@@ -27,11 +27,7 @@ extern void z_thread_single_abort(struct k_thread *thread);
 #if !defined(CONFIG_ARCH_HAS_THREAD_ABORT)
 void z_impl_k_thread_abort(k_tid_t thread)
 {
-	__ASSERT((thread->base.user_options & K_ESSENTIAL) == 0U,
-		 "essential thread aborted");
-
 	z_thread_single_abort(thread);
-	z_thread_monitor_exit(thread);
 
 	/* If we're in an interrupt handler, we reschedule on the way out
 	 * anyway, nothing needs to be done here.
