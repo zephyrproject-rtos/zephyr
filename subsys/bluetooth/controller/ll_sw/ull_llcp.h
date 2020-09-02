@@ -56,6 +56,16 @@ struct ull_cp_conn {
 		} muc;
 	} llcp;
 
+#if defined(CONFIG_BT_PERIPHERAL)
+		struct {
+			uint8_t  fex_valid:1;
+			uint8_t  latency_cancel:1;
+			uint8_t  sca:3;
+			uint32_t force;
+			uint32_t ticks_to_offset;
+		} slave;
+#endif /* CONFIG_BT_PERIPHERAL */
+
 	struct mocked_lll_conn {
 		uint16_t handle;
 

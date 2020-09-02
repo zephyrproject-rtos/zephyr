@@ -19,12 +19,12 @@
  *
  * @return popcnt of 'octets'
  */
-u8_t util_ones_count_get(u8_t *octets, u8_t octets_len)
+uint8_t util_ones_count_get(uint8_t *octets, uint8_t octets_len)
 {
-	u8_t one_count = 0U;
+	uint8_t one_count = 0U;
 
 	while (octets_len--) {
-		u8_t bite;
+		uint8_t bite;
 
 		bite = *octets;
 		while (bite) {
