@@ -4317,6 +4317,10 @@ static void encode_control(struct node_rx_pdu *node_rx,
 		le_adv_ext_coded_report(pdu_data, node_rx, buf);
 		break;
 
+	case NODE_RX_TYPE_EXT_SCAN_TERMINATE:
+		/* TODO: Generate the scan timeout */
+		break;
+
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	case NODE_RX_TYPE_SYNC:
 		le_per_adv_sync_established(pdu_data, node_rx, buf);
@@ -4335,9 +4339,6 @@ static void encode_control(struct node_rx_pdu *node_rx,
 		break;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_BROADCASTER */
-
-	case NODE_RX_TYPE_EXT_SCAN_TERMINATE:
-		break;
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
 	case NODE_RX_TYPE_SCAN_REQ:
@@ -4764,22 +4765,23 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_BROADCASTER)
+		case NODE_RX_TYPE_EXT_ADV_TERMINATE:
+#endif /* CONFIG_BT_BROADCASTER */
+
+#if defined(CONFIG_BT_OBSERVER)
+			__fallthrough;
+		case NODE_RX_TYPE_EXT_SCAN_TERMINATE:
+
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 			__fallthrough;
 		case NODE_RX_TYPE_SYNC:
 		case NODE_RX_TYPE_SYNC_LOST:
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
-
-#if defined(CONFIG_BT_BROADCASTER)
-		case NODE_RX_TYPE_EXT_ADV_TERMINATE:
-#endif /* CONFIG_BT_BROADCASTER */
+#endif /* CONFIG_BT_OBSERVER */
 
 			return HCI_CLASS_EVT_REQUIRED;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
-
-			/* fallthrough */
-		case NODE_RX_TYPE_EXT_SCAN_TERMINATE:
-			return HCI_CLASS_EVT_REQUIRED;
 
 #if defined(CONFIG_BT_CONN)
 		case NODE_RX_TYPE_CONNECTION:
