@@ -462,6 +462,9 @@ static int bmi160_acc_config(const struct device *dev,
 	case SENSOR_ATTR_SLOPE_TH:
 	case SENSOR_ATTR_SLOPE_DUR:
 		return bmi160_acc_slope_config(dev, attr, val);
+	case SENSOR_ATTR_LOWER_THRESH:
+	case SENSOR_ATTR_UPPER_THRESH:
+		return bmi160_acc_tap_config(dev, attr, val);
 #endif
 	default:
 		LOG_DBG("Accel attribute not supported.");

@@ -14,6 +14,8 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(BM160, CONFIG_SENSOR_LOG_LEVEL);
 
+static uint16_t tap_duration[] = {50, 100, 150, 200, 250, 375, 500, 700};
+
 static void bmi160_handle_anymotion(const struct device *dev)
 {
 	struct bmi160_device_data *bmi160 = dev->data;
@@ -24,6 +26,22 @@ static void bmi160_handle_anymotion(const struct device *dev)
 
 	if (bmi160->handler_anymotion) {
 		bmi160->handler_anymotion(dev, &anym_trigger);
+	}
+}
+
+static void bmi160_handle_tap(const struct device *dev, bool is_single)
+{
+	struct bmi160_device_data *bmi160 = dev->data;
+	struct sensor_trigger trigger;
+
+	trigger.type = is_single ? SENSOR_TRIG_TAP : SENSOR_TRIG_DOUBLE_TAP;
+
+	if (is_single && bmi160->handler_tap) {
+		bmi160->handler_tap(dev, &trigger);
+	}
+
+	if (!is_single && bmi160->handler_dtap) {
+		bmi160->handler_dtap(dev, &trigger);
 	}
 }
 
@@ -79,6 +97,20 @@ static void bmi160_handle_interrupts(const struct device *dev)
 				  BMI160_INT_STATUS2_ANYM_FIRST_Y |
 				  BMI160_INT_STATUS2_ANYM_FIRST_Z))) {
 		bmi160_handle_anymotion(dev);
+	}
+
+	if ((buf.int_status[0] & BMI160_INT_STATUS0_S_TAP) &&
+	    (buf.int_status[2] & (BMI160_INT_STATUS2_TAP_FIRST_X |
+				  BMI160_INT_STATUS2_TAP_FIRST_Y |
+				  BMI160_INT_STATUS2_TAP_FIRST_Z))) {
+		bmi160_handle_tap(dev, true);
+	}
+
+	if ((buf.int_status[0] & BMI160_INT_STATUS0_D_TAP) &&
+	    (buf.int_status[2] & (BMI160_INT_STATUS2_TAP_FIRST_X |
+				  BMI160_INT_STATUS2_TAP_FIRST_Y |
+				  BMI160_INT_STATUS2_TAP_FIRST_Z))) {
+		bmi160_handle_tap(dev, false);
 	}
 
 	if (buf.int_status[1] & BMI160_INT_STATUS1_DRDY) {
@@ -177,6 +209,7 @@ static int bmi160_trigger_anym_set(const struct device *dev,
 				   sensor_trigger_handler_t handler)
 {
 	struct bmi160_device_data *bmi160 = dev->data;
+	int ret;
 	uint8_t anym_en = 0U;
 
 	bmi160->handler_anymotion = handler;
@@ -187,9 +220,39 @@ static int bmi160_trigger_anym_set(const struct device *dev,
 			  BMI160_INT_ANYM_Z_EN;
 	}
 
-	if (bmi160_reg_update(dev, BMI160_REG_INT_EN0,
-			      BMI160_INT_ANYM_MASK, anym_en) < 0) {
-		return -EIO;
+	ret = bmi160_reg_update(dev, BMI160_REG_INT_EN0,
+				BMI160_INT_ANYM_MASK, anym_en);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+
+static int bmi160_trigger_tap_set(const struct device *dev,
+				  sensor_trigger_handler_t handler,
+				  bool is_single)
+{
+	struct bmi160_device_data *bmi160 = dev->data;
+	int ret;
+	uint8_t rval = 0U;
+	uint8_t mask;
+
+	if (is_single) {
+		bmi160->handler_tap = handler;
+		mask = BMI160_INT_S_TAP_EN;
+	} else {
+		bmi160->handler_dtap = handler;
+		mask = BMI160_INT_D_TAP_EN;
+	}
+
+	if (handler) {
+		rval = is_single ? BMI160_INT_S_TAP_EN : BMI160_INT_D_TAP_EN;
+	}
+
+	ret = bmi160_reg_update(dev, BMI160_REG_INT_EN0, mask, rval);
+	if (ret < 0) {
+		return ret;
 	}
 
 	return 0;
@@ -199,13 +262,64 @@ static int bmi160_trigger_set_acc(const struct device *dev,
 				  const struct sensor_trigger *trig,
 				  sensor_trigger_handler_t handler)
 {
-	if (trig->type == SENSOR_TRIG_DATA_READY) {
+	switch (trig->type) {
+	case SENSOR_TRIG_DATA_READY:
 		return bmi160_trigger_drdy_set(dev, trig->chan, handler);
-	} else if (trig->type == SENSOR_TRIG_DELTA) {
+
+	case SENSOR_TRIG_DELTA:
 		return bmi160_trigger_anym_set(dev, handler);
+
+	case SENSOR_TRIG_TAP:
+		return bmi160_trigger_tap_set(dev, handler, true);
+
+	case SENSOR_TRIG_DOUBLE_TAP:
+		return bmi160_trigger_tap_set(dev, handler, false);
+
+	default:
+		return -ENOTSUP;
+	}
+}
+
+int bmi160_acc_tap_config(const struct device *dev, enum sensor_attribute attr,
+			  const struct sensor_value *val)
+{
+	uint8_t rval;
+	int i, ret;
+
+	if (attr == SENSOR_ATTR_LOWER_THRESH) {
+		if (val->val1 == BMI160_INT_QUIET_20_MSEC) {
+			rval = BMI160_INT_TAP_QUIET;
+		} else if (val->val1 == BMI160_INT_QUIET_30_MSEC) {
+			rval = 0;
+		} else {
+			return -EINVAL;
+		}
+
+		ret = bmi160_reg_update(dev, BMI160_REG_INT_TAP0,
+					BMI160_INT_TAP_QUIET, rval);
+		if (ret < 0) {
+			return ret;
+		}
+	} else {
+		for (i = 0; i < ARRAY_SIZE(tap_duration); i++) {
+			if (tap_duration[i] == val->val1) {
+				rval = i;
+				break;
+			}
+		}
+
+		if (i == ARRAY_SIZE(tap_duration)) {
+			return -EINVAL;
+		}
+
+		ret = bmi160_reg_update(dev, BMI160_REG_INT_TAP0,
+					BMI160_INT_TAP_DURATION, rval);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
-	return -ENOTSUP;
+	return 0;
 }
 
 int bmi160_acc_slope_config(const struct device *dev,
@@ -214,10 +328,12 @@ int bmi160_acc_slope_config(const struct device *dev,
 {
 	uint8_t acc_range_g, reg_val;
 	uint32_t slope_th_ums2;
+	int ret;
 
 	if (attr == SENSOR_ATTR_SLOPE_TH) {
-		if (bmi160_byte_read(dev, BMI160_REG_ACC_RANGE, &reg_val) < 0) {
-			return -EIO;
+		ret = bmi160_byte_read(dev, BMI160_REG_ACC_RANGE, &reg_val);
+		if (ret < 0) {
+			return ret;
 		}
 
 		acc_range_g = bmi160_acc_reg_val_to_range(reg_val);
@@ -231,9 +347,9 @@ int bmi160_acc_slope_config(const struct device *dev,
 
 		reg_val = (slope_th_ums2 - 1) * 512U / (acc_range_g * SENSOR_G);
 
-		if (bmi160_byte_write(dev, BMI160_REG_INT_MOTION1,
-				      reg_val) < 0) {
-			return -EIO;
+		ret = bmi160_byte_write(dev, BMI160_REG_INT_MOTION1, reg_val);
+		if (ret < 0) {
+			return ret;
 		}
 	} else { /* SENSOR_ATTR_SLOPE_DUR */
 		/* slope duration is measured in number of samples */
@@ -241,11 +357,12 @@ int bmi160_acc_slope_config(const struct device *dev,
 			return -ENOTSUP;
 		}
 
-		if (bmi160_reg_field_update(dev, BMI160_REG_INT_MOTION0,
-					    BMI160_ANYM_DUR_POS,
-					    BMI160_ANYM_DUR_MASK,
-					    val->val1) < 0) {
-			return -EIO;
+		ret = bmi160_reg_field_update(dev, BMI160_REG_INT_MOTION0,
+					      BMI160_ANYM_DUR_POS,
+					      BMI160_ANYM_DUR_MASK,
+					      val->val1);
+		if (ret < 0) {
+			return ret;
 		}
 	}
 

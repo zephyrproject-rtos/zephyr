@@ -278,6 +278,13 @@
 #define BMI160_INT1_LVL_HIGH		BIT(1)
 #define BMI160_INT1_EDGE_CTRL		BIT(0)
 
+
+/* BMI160_REG_INT_TAP0 */
+#define BMI160_INT_TAP_QUIET		BIT(7)
+#define BMI160_INT_TAP_DURATION		(BIT(0) | BIT(1) | BIT(2))
+#define BMI160_INT_QUIET_20_MSEC	20
+#define BMI160_INT_QUIET_30_MSEC	30
+
 /* other */
 #define BMI160_TEMP_OFFSET		23
 
@@ -578,6 +585,8 @@ struct bmi160_device_data {
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
 	sensor_trigger_handler_t handler_drdy_acc;
 	sensor_trigger_handler_t handler_anymotion;
+	sensor_trigger_handler_t handler_tap;
+	sensor_trigger_handler_t handler_dtap;
 #endif
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
 	sensor_trigger_handler_t handler_drdy_gyr;
