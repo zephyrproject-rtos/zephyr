@@ -712,6 +712,10 @@ static bool usb_handle_std_device_req(struct usb_setup_packet *setup,
 		data[0] = 0U;
 		data[1] = 0U;
 
+		if (IS_ENABLED(CONFIG_USB_SELF_POWERED)) {
+			data[0] |= DEVICE_STATUS_SELF_POWERED;
+		}
+
 		if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
 			data[0] |= (usb_dev.remote_wakeup ?
 				    DEVICE_STATUS_REMOTE_WAKEUP : 0);
