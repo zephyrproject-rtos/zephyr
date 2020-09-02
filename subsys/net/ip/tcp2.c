@@ -1308,7 +1308,8 @@ int net_tcp_put(struct net_context *context)
 	if (conn && conn->state == TCP_ESTABLISHED) {
 		k_mutex_lock(&conn->lock, K_FOREVER);
 
-		tcp_out(conn, FIN | ACK);
+		tcp_out_ext(conn, FIN | ACK, NULL,
+			    conn->seq + conn->unacked_len);
 		conn_seq(conn, + 1);
 
 		conn_state(conn, TCP_FIN_WAIT_1);
