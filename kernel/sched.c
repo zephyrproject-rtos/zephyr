@@ -479,6 +479,9 @@ static _wait_q_t *pended_on(struct k_thread *thread)
 
 void z_thread_single_abort(struct k_thread *thread)
 {
+	__ASSERT(!(thread->base.user_options & K_ESSENTIAL),
+		 "essential thread aborted");
+
 	if (thread->fn_abort != NULL) {
 		thread->fn_abort();
 	}
@@ -554,6 +557,7 @@ void z_thread_single_abort(struct k_thread *thread)
 	}
 
 	sys_trace_thread_abort(thread);
+	z_thread_monitor_exit(thread);
 }
 
 static void unready_thread(struct k_thread *thread)
