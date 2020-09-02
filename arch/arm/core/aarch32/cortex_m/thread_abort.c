@@ -28,10 +28,6 @@ extern void z_thread_single_abort(struct k_thread *thread);
 
 void z_impl_k_thread_abort(k_tid_t thread)
 {
-	unsigned int key;
-
-	key = irq_lock();
-
 	__ASSERT(!(thread->base.user_options & K_ESSENTIAL),
 		 "essential thread aborted");
 
@@ -53,11 +49,10 @@ void z_impl_k_thread_abort(k_tid_t thread)
 			 */
 			SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 		} else {
-			(void)z_swap_irqlock(key);
-			CODE_UNREACHABLE;
+			z_swap_unlocked();
 		}
 	}
 
 	/* The abort handler might have altered the ready queue. */
-	z_reschedule_irqlock(key);
+	z_reschedule_unlocked();
 }
