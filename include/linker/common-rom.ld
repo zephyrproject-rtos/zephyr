@@ -82,7 +82,7 @@
 	SECTION_PROLOGUE(app_shmem_regions,,)
 	{
 		__app_shmem_regions_start = .;
-		KEEP(*(SORT(".app_regions.*")));
+		KEEP(*(SORT(.app_regions.*)));
 		__app_shmem_regions_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
