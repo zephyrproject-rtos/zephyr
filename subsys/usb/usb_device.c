@@ -687,6 +687,16 @@ static bool usb_set_interface(uint8_t iface, uint8_t alt_setting)
 	return ret;
 }
 
+/**
+ * @brief Check if the device is in Configured state
+ *
+ * @return true if Configured, false otherwise.
+ */
+static bool is_device_configured(void)
+{
+	return (usb_dev.configured && usb_dev.configuration);
+}
+
 /*
  * @brief handle a standard device request
  *
@@ -796,6 +806,35 @@ static bool usb_handle_std_device_req(struct usb_setup_packet *setup,
 	return ret;
 }
 
+/**
+ * @brief Check if the interface of given number is valid
+ *
+ * @param [in] interface Number of the addressed interface
+ *
+ * This function searches through descriptor and checks
+ * is the Host has addressed valid interface.
+ *
+ * @return true if interface exists - valid
+ */
+static bool is_interface_valid(uint8_t interface)
+{
+	const uint8_t *p = (uint8_t *)usb_dev.descriptors;
+	const struct usb_cfg_descriptor *cfg_descr;
+
+	/* Search through descriptor for matching interface */
+	while (p[DESC_bLength] != 0U) {
+		if (p[DESC_bDescriptorType] == USB_CONFIGURATION_DESC) {
+			cfg_descr = (const struct usb_cfg_descriptor *)p;
+			if (interface < cfg_descr->bNumInterfaces) {
+				return true;
+			}
+		}
+		p += p[DESC_bLength];
+	}
+
+	return false;
+}
+
 /*
  * @brief handle a standard interface request
  *
@@ -809,6 +848,14 @@ static bool usb_handle_std_interface_req(struct usb_setup_packet *setup,
 					 int32_t *len, uint8_t **data_buf)
 {
 	uint8_t *data = *data_buf;
+
+	/** The device must be configured to accept standard interface
+	 * requests and the addressed Interface must be valid.
+	 */
+	if (!is_device_configured() ||
+	   (!is_interface_valid((uint8_t)setup->wIndex))) {
+		return false;
+	}
 
 	switch (setup->bRequest) {
 	case REQ_GET_STATUS:
@@ -824,7 +871,11 @@ static bool usb_handle_std_interface_req(struct usb_setup_packet *setup,
 		return false;
 
 	case REQ_GET_INTERFACE:
-		/* there is only one interface, return n-1 (= 0) */
+		/** This handler is called for classes that does not support
+		 * alternate Interfaces so always return 0. Classes that
+		 * support alternative interfaces handles GET_INTERFACE
+		 * in custom_handler.
+		 */
 		data[0] = 0U;
 		*len = 1;
 		break;
@@ -843,6 +894,40 @@ static bool usb_handle_std_interface_req(struct usb_setup_packet *setup,
 	return true;
 }
 
+/**
+ * @brief Check if the endpoint of given address is valid
+ *
+ * @param [in] ep Address of the Endpoint
+ *
+ * This function checks if the Endpoint of given address
+ * is valid for the configured device. Valid Endpoint is
+ * either Control Endpoint or one used by the device.
+ *
+ * @return true if endpoint exists - valid
+ */
+static bool is_ep_valid(uint8_t ep)
+{
+	size_t size = (__usb_data_end - __usb_data_start);
+	const struct usb_ep_cfg_data *ep_data;
+	const struct usb_cfg_data *cfg;
+
+	/* Check if its Endpoint 0 */
+	if (USB_EP_GET_IDX(ep) == 0) {
+		return true;
+	}
+
+	for (size_t i = 0; i < size; i++) {
+		cfg = &__usb_data_start[i];
+		ep_data = cfg->endpoint;
+
+		if (ep_data[i].ep_addr == ep) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 /*
  * @brief handle a standard endpoint request
  *
@@ -858,44 +943,81 @@ static bool usb_handle_std_endpoint_req(struct usb_setup_packet *setup,
 	uint8_t ep = (uint8_t)setup->wIndex;
 	uint8_t *data = *data_buf;
 
+	/* Check if request addresses valid Endpoint */
+	if (!is_ep_valid(ep)) {
+		return false;
+	}
+
 	switch (setup->bRequest) {
 	case REQ_GET_STATUS:
-		/* bit 0 = endpointed halted or not */
-		usb_dc_ep_is_stalled(ep, &data[0]);
-		data[1] = 0U;
-		*len = 2;
-		break;
+		/** This request is valid for Control Endpoints when
+		 * the device is not yet configured. For other
+		 * Endpoints the device must be configured.
+		 * Firstly check if addressed ep is Control Endpoint.
+		 * If no then the device must be in Configured state
+		 * to accept the request.
+		 */
+		if ((USB_EP_GET_IDX(ep) == 0) || is_device_configured()) {
+			/* bit 0 - Endpoint halted or not */
+			usb_dc_ep_is_stalled(ep, &data[0]);
+			data[1] = 0U;
+			*len = 2;
+			break;
+		}
+		return false;
 
 	case REQ_CLEAR_FEATURE:
 		if (setup->wValue == FEA_ENDPOINT_HALT) {
-			/* clear HALT by unstalling */
-			LOG_INF("... EP clear halt %x", ep);
-			usb_dc_ep_clear_stall(ep);
-			if (usb_dev.status_callback) {
-				usb_dev.status_callback(USB_DC_CLEAR_HALT, &ep);
+			/** This request is valid for Control Endpoints when
+			 * the device is not yet configured. For other
+			 * Endpoints the device must be configured.
+			 * Firstly check if addressed ep is Control Endpoint.
+			 * If no then the device must be in Configured state
+			 * to accept the request.
+			 */
+			if ((USB_EP_GET_IDX(ep) == 0) || is_device_configured()) {
+				LOG_INF("... EP clear halt %x", ep);
+				usb_dc_ep_clear_stall(ep);
+				if (usb_dev.status_callback) {
+					usb_dev.status_callback(
+						USB_DC_CLEAR_HALT, &ep);
+				}
+				break;
 			}
-			break;
 		}
 		/* only ENDPOINT_HALT defined for endpoints */
 		return false;
 
 	case REQ_SET_FEATURE:
 		if (setup->wValue == FEA_ENDPOINT_HALT) {
-			/* set HALT by stalling */
-			LOG_INF("--- EP SET halt %x", ep);
-			usb_dc_ep_set_stall(ep);
-			if (usb_dev.status_callback) {
-				usb_dev.status_callback(USB_DC_SET_HALT, &ep);
+			/** This request is valid for Control Endpoints when
+			 * the device is not yet configured. For other
+			 * Endpoints the device must be configured.
+			 * Firstly check if addressed ep is Control Endpoint.
+			 * If no then the device must be in Configured state
+			 * to accept the request.
+			 */
+			if ((USB_EP_GET_IDX(ep) == 0) || is_device_configured()) {
+				/* set HALT by stalling */
+				LOG_INF("--- EP SET halt %x", ep);
+				usb_dc_ep_set_stall(ep);
+				if (usb_dev.status_callback) {
+					usb_dev.status_callback(
+						USB_DC_SET_HALT, &ep);
+				}
+				break;
 			}
-			break;
 		}
 		/* only ENDPOINT_HALT defined for endpoints */
 		return false;
 
 	case REQ_SYNCH_FRAME:
-		LOG_DBG("EP req 0x%02x not implemented", setup->bRequest);
+		/* For Synch Frame request the device must be configured */
+		if (is_device_configured()) {
+			/* Not supported, return false anyway */
+			LOG_DBG("EP req 0x%02x not implemented", setup->bRequest);
+		}
 		return false;
-
 	default:
 		LOG_DBG("Illegal EP req 0x%02x", setup->bRequest);
 		return false;
@@ -903,7 +1025,6 @@ static bool usb_handle_std_endpoint_req(struct usb_setup_packet *setup,
 
 	return true;
 }
-
 
 /*
  * @brief default handler for standard ('chapter 9') requests
