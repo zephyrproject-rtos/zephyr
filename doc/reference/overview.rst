@@ -157,6 +157,11 @@ current :ref:`stability level <api_lifecycle>`.
      - 1.0
      - 2.4
 
+   * - :ref:`i2c-slave-api`
+     - Experimental
+     - 1.12
+     - 1.12
+
    * - :ref:`i2s_api`
      - Stable
      - 1.9
