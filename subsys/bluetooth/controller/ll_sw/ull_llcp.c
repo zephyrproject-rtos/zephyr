@@ -285,6 +285,10 @@ void ull_cp_conn_init(struct ull_cp_conn *conn)
 	/* Reset encryption related state */
 	conn->lll.enc_tx = 0U;
 	conn->lll.enc_rx = 0U;
+
+	conn->lll.event_counter = 0;
+	lr_init(conn);
+	rr_init(conn);
 }
 
 void ull_cp_release_tx(struct node_tx *tx)
