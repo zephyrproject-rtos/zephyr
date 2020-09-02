@@ -21,25 +21,49 @@
 #include <ksched.h>
 #include <sys/__assert.h>
 #include <syscall_handler.h>
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
+
+FUNC_NORETURN void z_self_abort(void)
+{
+	/* Self-aborting threads don't clean themselves up, we
+	 * have the idle thread for the current CPU do it.
+	 */
+	int key;
+	struct _cpu *cpu;
+
+	/* Lock local IRQs to prevent us from migrating to another CPU
+	 * while we set this up
+	 */
+	key = arch_irq_lock();
+	cpu = _current_cpu;
+	__ASSERT(cpu->pending_abort == NULL, "already have a thread to abort");
+	cpu->pending_abort = _current;
+
+	LOG_DBG("%p self-aborting, handle on idle thread %p",
+		_current, cpu->idle_thread);
+
+	k_thread_suspend(_current);
+	z_swap_irqlock(key);
+	__ASSERT(false, "should never get here");
+	CODE_UNREACHABLE;
+}
 
 #if !defined(CONFIG_ARCH_HAS_THREAD_ABORT)
 void z_impl_k_thread_abort(k_tid_t thread)
 {
+	if (thread == _current && !arch_is_in_isr()) {
+		/* Thread is self-exiting, idle thread on this CPU will do
+		 * the cleanup
+		 */
+		z_self_abort();
+	}
+
 	z_thread_single_abort(thread);
 
-	/* If we're in an interrupt handler, we reschedule on the way out
-	 * anyway, nothing needs to be done here.
-	 */
 	if (!arch_is_in_isr()) {
-		if (thread == _current) {
-			/* Direct use of swap: reschedule doesn't have a test
-			 * for "is _current dead" and we don't want one for
-			 * performance reasons.
-			 */
-			z_swap_unlocked();
-		} else {
-			z_reschedule_unlocked();
-		}
+		/* Don't need to do this if we're in an ISR */
+		z_reschedule_unlocked();
 	}
 }
 #endif
