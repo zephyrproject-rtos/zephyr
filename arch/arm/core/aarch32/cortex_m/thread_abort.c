@@ -24,8 +24,6 @@
 #include <wait_q.h>
 #include <sys/__assert.h>
 
-extern void z_thread_single_abort(struct k_thread *thread);
-
 void z_impl_k_thread_abort(k_tid_t thread)
 {
 	z_thread_single_abort(thread);

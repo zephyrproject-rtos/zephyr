@@ -22,8 +22,6 @@
 #include <sys/__assert.h>
 #include <syscall_handler.h>
 
-extern void z_thread_single_abort(struct k_thread *thread);
-
 #if !defined(CONFIG_ARCH_HAS_THREAD_ABORT)
 void z_impl_k_thread_abort(k_tid_t thread)
 {
