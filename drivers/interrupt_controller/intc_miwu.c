@@ -305,7 +305,7 @@ int soc_miwu_manage_dev_callback(struct miwu_dev_callback *cb, bool set)
 #define NPCX_MIWU_ISR_FUNC(index) _CONCAT(intc_miwu_isr, index)
 #define NPCX_MIWU_INIT_FUNC(inst) _CONCAT(intc_miwu_init, inst)
 #define NPCX_MIWU_INIT_FUNC_DECL(inst) \
-	static int intc_miwu_init##inst(struct device *dev)
+	static int intc_miwu_init##inst(const struct device *dev)
 
 /* MIWU ISR implementation */
 #define NPCX_MIWU_ISR_FUNC_IMPL(inst)                                          \
@@ -326,7 +326,7 @@ int soc_miwu_manage_dev_callback(struct miwu_dev_callback *cb, bool set)
 
 /* MIWU init function implementation */
 #define NPCX_MIWU_INIT_FUNC_IMPL(inst)                                         \
-	static int intc_miwu_init##inst(const struct device *dev)                    \
+	static int intc_miwu_init##inst(const struct device *dev)              \
 	{                                                                      \
 		int i;                                                         \
 		uint32_t base = DRV_CONFIG(dev)->base;                         \
