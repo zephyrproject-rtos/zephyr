@@ -863,7 +863,7 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	conn_interval_us = lll->interval * CONN_INT_UNIT_US;
 	conn_offset_us = ftr->radio_end_us;
 	conn_offset_us += EVENT_TICKER_RES_MARGIN_US;
-	
+
 #if defined(CONFIG_BT_CTLR_PHY)
 	conn_offset_us -= lll_radio_tx_ready_delay_get(lll->phy_tx,
 						      lll->phy_flags);
