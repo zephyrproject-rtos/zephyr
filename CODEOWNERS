@@ -526,7 +526,7 @@
 /tests/drivers/can/                       @alexanderwachter
 /tests/drivers/counter/                   @nordic-krch
 /tests/drivers/counter/maxim_ds3231_api/  @pabigot
-/tests/drivers/eeprom/                    @sjg20
+/tests/drivers/eeprom/                    @henrikbrixandersen @sjg20
 /tests/drivers/flash_simulator/           @nvlsianpu
 /tests/drivers/gpio/                      @mnkp @pabigot
 /tests/drivers/hwinfo/                    @alexanderwachter
