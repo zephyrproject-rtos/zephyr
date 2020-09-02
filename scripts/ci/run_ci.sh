@@ -276,7 +276,7 @@ if [ -n "$main_ci" ]; then
 		--subset ${matrix}/${matrix_builds} --retry-failed 3
 
 	# Run module tests on matrix #1
-	if [ "$matrix" = "1" ]; then
+	if [ "$matrix" = "1" -a  "$SC" == "full" ]; then
 		if [ -s module_tests.args ]; then
 			${sanitycheck} ${sanitycheck_options} \
 				+module_tests.args --outdir module_tests
