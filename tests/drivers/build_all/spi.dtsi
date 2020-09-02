@@ -542,3 +542,12 @@ test_spi_dac80508: dac80508@35 {
 	channel6-gain = <0>;
 	channel7-gain = <0>;
 };
+
+test_spi_w5500: w5500@36 {
+	compatible = "wiznet,w5500";
+	label = "w5500";
+	reg = <0x36>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+	reset-gpios = <&test_gpio 0 0>;
+};
