@@ -439,7 +439,7 @@
 /scripts/sanity_chk/expr_parser.py        @nashif
 /scripts/gen_app_partitions.py            @andrewboie
 /scripts/get_maintainer.py                @nashif
-/scripts/dts/                             @ulfalizer @galak
+/scripts/dts/                             @mbolivar-nordic @galak
 /scripts/release/                         @nashif
 /scripts/ci/                              @nashif
 /arch/x86/gen_gdt.py                      @andrewboie
