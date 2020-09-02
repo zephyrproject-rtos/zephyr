@@ -1927,24 +1927,28 @@ int usb_dc_wakeup_request(void)
 
 static int usb_init(const struct device *arg)
 {
-
-#ifdef CONFIG_SOC_SERIES_NRF53X
-	#undef DT_DRV_COMPAT
-	#define DT_DRV_COMPAT nordic_nrf_clock
-
+#ifdef CONFIG_HAS_HW_NRF_USBREG
 	/* Use CLOCK/POWER priority for compatibility with other series where
 	 * USB events are handled by CLOCK interrupt handler.
 	 */
-	IRQ_CONNECT(USBREGULATOR_IRQn, DT_INST_IRQ(0, priority),
-		    nrfx_usbreg_irq_handler, 0, 0);
+	IRQ_CONNECT(USBREGULATOR_IRQn,
+		    DT_IRQ(DT_INST(0, nordic_nrf_clock), priority),
+		    nrfx_isr, nrfx_usbreg_irq_handler, 0);
 	irq_enable(USBREGULATOR_IRQn);
 #endif
 
-	static const nrfx_power_usbevt_config_t config = {
+	/* Use default configuration of the nrfx_power driver. */
+	static const nrfx_power_config_t power_config = { 0 };
+
+	static const nrfx_power_usbevt_config_t usbevt_config = {
 		.handler = usb_dc_power_event_handler
 	};
 
-	nrfx_power_usbevt_init(&config);
+	/* Ignore the return value, as NRFX_ERROR_ALREADY_INITIALIZED is not
+	 * a problem here.
+	 */
+	(void)nrfx_power_init(&power_config);
+	nrfx_power_usbevt_init(&usbevt_config);
 
 	return 0;
 }
