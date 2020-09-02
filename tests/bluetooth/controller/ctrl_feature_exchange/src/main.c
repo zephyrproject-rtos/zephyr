@@ -224,7 +224,7 @@ void test_feature_exchange_mas_rem_2(void)
 		DEFAULT_FEATURE & EXPECTED_FEAT_EXCH_VALID,
 		DEFAULT_FEATURE,
 		DEFAULT_FEATURE & 0xFFFFFFFFFFFFFF00 };
-	u64_t ut_featureset[] = {
+	uint64_t ut_featureset[] = {
 		DEFAULT_FEATURE,
 		DEFAULT_FEATURE,
 		DEFAULT_FEATURE,
