@@ -2103,9 +2103,9 @@ static void le_per_adv_terminate_sync(struct net_buf *buf, struct net_buf **evt)
 	ccst->status = status;
 }
 
-#if FIXME
 static void le_per_adv_recv_enable(struct net_buf *buf, struct net_buf **evt)
 {
+	struct bt_hci_cp_le_set_per_adv_recv_enable *cmd = (void *)buf->data;
 	struct bt_hci_evt_cc_status *ccst;
 	uint16_t handle;
 	uint8_t status;
@@ -2117,7 +2117,6 @@ static void le_per_adv_recv_enable(struct net_buf *buf, struct net_buf **evt)
 	ccst = hci_cmd_complete(evt, sizeof(*ccst));
 	ccst->status = status;
 }
-#endif
 #endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
 #endif /* CONFIG_BT_OBSERVER */
 
@@ -2448,12 +2447,9 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		le_per_adv_terminate_sync(cmd, evt);
 		break;
 
-	/* FIXME: Enable when definition is added to hci.h */
-#if FIXME
-	case BT_OCF(BT_HCI_OP_LE_PER_ADV_RECV_ENABLE:
+	case BT_OCF(BT_HCI_OP_LE_SET_PER_ADV_RECV_ENABLE):
 		le_per_adv_recv_enable(cmd, evt);
 		break;
-#endif
 #endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
 #endif /* CONFIG_BT_OBSERVER */
 
