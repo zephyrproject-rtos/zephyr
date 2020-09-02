@@ -110,3 +110,45 @@ config PM_MAX_DEVICES
 	default 15
 
 endmenu
+
+
+#
+# Hidden PM feature configs which are to be selected by
+# individual SoC.
+#
+
+config HAS_POWER_STATE_SLEEP_1
+	bool
+	help
+	  This option signifies that the target supports the POWER_STATE_SLEEP_1
+	  configuration option.
+
+config HAS_POWER_STATE_SLEEP_2
+	bool
+	help
+	  This option signifies that the target supports the POWER_STATE_SLEEP_2
+	  configuration option.
+
+config HAS_POWER_STATE_SLEEP_3
+	bool
+	help
+	  This option signifies that the target supports the POWER_STATE_SLEEP_3
+	  configuration option.
+
+config HAS_POWER_STATE_DEEP_SLEEP_1
+	bool
+	help
+	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_1
+	  configuration option.
+
+config HAS_POWER_STATE_DEEP_SLEEP_2
+	bool
+	help
+	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_2
+	  configuration option.
+
+config HAS_POWER_STATE_DEEP_SLEEP_3
+	bool
+	help
+	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_3
+	  configuration option.

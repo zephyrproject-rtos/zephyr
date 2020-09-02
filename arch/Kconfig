@@ -477,47 +477,6 @@ config ARCH_HAS_THREAD_LOCAL_STORAGE
 config ARCH_HAS_THREAD_ABORT
 	bool
 
-#
-# Hidden PM feature configs which are to be selected by
-# individual SoC.
-#
-
-config HAS_POWER_STATE_SLEEP_1
-	bool
-	help
-	  This option signifies that the target supports the SYS_POWER_STATE_SLEEP_1
-	  configuration option.
-
-config HAS_POWER_STATE_SLEEP_2
-	bool
-	help
-	  This option signifies that the target supports the SYS_POWER_STATE_SLEEP_2
-	  configuration option.
-
-config HAS_POWER_STATE_SLEEP_3
-	bool
-	help
-	  This option signifies that the target supports the SYS_POWER_STATE_SLEEP_3
-	  configuration option.
-
-config HAS_POWER_STATE_DEEP_SLEEP_1
-	bool
-	help
-	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_1
-	  configuration option.
-
-config HAS_POWER_STATE_DEEP_SLEEP_2
-	bool
-	help
-	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_2
-	  configuration option.
-
-config HAS_POWER_STATE_DEEP_SLEEP_3
-	bool
-	help
-	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_3
-	  configuration option.
-
 config BOOTLOADER_CONTEXT_RESTORE_SUPPORTED
 	bool
 	help
