@@ -13,8 +13,8 @@
 #define BT_CTLR_SCAN_MAX 1
 static struct ll_scan_set ll_scan[BT_CTLR_SCAN_MAX];
 
-u8_t ll_scan_params_set(u8_t type, u16_t interval, u16_t window,
-			u8_t own_addr_type, u8_t filter_policy)
+uint8_t ll_scan_params_set(uint8_t type, uint16_t interval, uint16_t window,
+			uint8_t own_addr_type, uint8_t filter_policy)
 {
 	struct ll_scan_set *scan;
 
@@ -28,7 +28,7 @@ u8_t ll_scan_params_set(u8_t type, u16_t interval, u16_t window,
 	return 0;
 }
 
-struct ll_scan_set *ull_scan_set_get(u16_t handle)
+struct ll_scan_set *ull_scan_set_get(uint16_t handle)
 {
 	if (handle >= BT_CTLR_SCAN_MAX) {
 		return NULL;
@@ -37,7 +37,7 @@ struct ll_scan_set *ull_scan_set_get(u16_t handle)
 	return &ll_scan[handle];
 }
 
-struct ll_scan_set *ull_scan_is_enabled_get(u16_t handle)
+struct ll_scan_set *ull_scan_is_enabled_get(uint16_t handle)
 {
 	struct ll_scan_set *scan;
 
@@ -49,7 +49,7 @@ struct ll_scan_set *ull_scan_is_enabled_get(u16_t handle)
 	return scan;
 }
 
-struct ll_scan_set *ull_scan_is_disabled_get(u16_t handle)
+struct ll_scan_set *ull_scan_is_disabled_get(uint16_t handle)
 {
 	struct ll_scan_set *scan;
 

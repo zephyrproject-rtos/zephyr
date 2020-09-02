@@ -34,7 +34,6 @@
 #include "lll_filter.h"
 
 #include "ull_adv_types.h"
-#include "ull_scan_types.h"
 #include "ull_filter.h"
 
 #include "ull_internal.h"
