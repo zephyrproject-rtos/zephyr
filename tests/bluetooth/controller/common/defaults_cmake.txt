@@ -16,8 +16,8 @@ include_directories(
 FILE(GLOB ll_sw_sources
         ${ZEPHYR_BASE}/subsys/bluetooth/controller/util/mem.c
         ${ZEPHYR_BASE}/subsys/bluetooth/controller/util/memq.c
+	${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_chan.c
         ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_tx_queue.c
-
         ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_local.c
         ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_remote.c
         ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_pdu.c
@@ -33,6 +33,10 @@ FILE(GLOB mock_sources
         ${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/ll.c
         ${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/ll_assert.c
 	${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/util.c
+	${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/ticker.c
+	${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/ull.c
+	${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/ull_slave.c
+	${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/ull_master.c
 )
 
 FILE(GLOB common_sources
