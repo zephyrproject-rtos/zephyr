@@ -11,8 +11,9 @@ particular devicetree are useful to :ref:`device drivers <device_model_api>` or
 
 *Devicetree bindings* provide the other half of this information. Zephyr
 devicetree bindings are YAML files in a custom format (Zephyr does not use the
-dt-schema tools used by the Linux kernel). The build system uses bindings
-when generating code for :ref:`dt-from-c`.
+dt-schema tools used by the Linux kernel). With one exception in
+:ref:`dt-inferred-bindings` the build system uses bindings when generating
+code for :ref:`dt-from-c`.
 
 .. _dt-binding-compat:
 
@@ -73,3 +74,32 @@ Below is a template that shows the Zephyr bindings file syntax. It is stored in
 
 .. literalinclude:: ../../../dts/binding-template.yaml
    :language: yaml
+
+.. _dt-inferred-bindings:
+
+Inferred bindings
+*****************
+
+For sample code and applications it can be inconvenient to define a devicetree
+binding when only a few simple properties are needed, such as the identify of
+a GPIO for an application task.  The devicetree syntax allows inference of a
+binding for properties based on the value observed.  This inference is
+supported only for the ``/zephyr,user`` node.  The properties referenced can
+be accessed through the standard devicetree macros,
+e.g. ``DT_PROP(DT_PATH(zephyr_user), bytes)``.
+
+.. code-block:: DTS
+
+   / {
+	zephyr,user {
+		boolean;
+		bytes = [81 82 83];
+		number = <23>;
+		numbers = <1>, <2>, <3>;
+		string = "text";
+		strings = "a", "b", "c";
+		handle = <&gpio0>;
+		handles = <&gpio0>, <&gpio1>;
+		signal-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+	};
+   };
