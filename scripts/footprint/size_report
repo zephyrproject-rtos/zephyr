@@ -27,7 +27,7 @@ from elftools.dwarf.locationlists import (
 if LooseVersion(elftools.__version__) < LooseVersion('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
 
-from colorama import Fore
+from colorama import init, Fore
 
 from anytree import RenderTree, NodeMixin, findall_by_attr
 from anytree.exporter import JsonExporter
@@ -585,6 +585,9 @@ def parse_args():
 
 def main():
     parse_args()
+
+    # Init colorama
+    init()
 
     assert os.path.exists(args.kernel), "{0} does not exist.".format(args.kernel)
 
