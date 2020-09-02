@@ -183,7 +183,8 @@
 /drivers/espi/                            @albertofloyd @franciscomunoz @scottwcpg
 /drivers/espi/*npcx*                      @MulinChao
 /drivers/ethernet/                        @jukkar @tbursztyka @pfalcon
-/drivers/ethernet/*stm32*                 @Nukersson @lochej
+/drivers/ethernet/*stm32*                 @Nukersson, @lochej
+/drivers/ethernet/*w5500*                 @parthitce
 /drivers/flash/                           @nashif @nvlsianpu
 /drivers/flash/*nrf*                      @nvlsianpu
 /drivers/flash/*spi_nor*                  @pabigot
