@@ -47,7 +47,7 @@ static struct k_spinlock mm_lock;
 
  /* Current position for memory mappings in kernel memory.
   * At the moment, all kernel memory mappings are permanent.
-  * k_mem_map() mappings start at the end of the address space, and grow
+  * z_mem_map() mappings start at the end of the address space, and grow
   * downward.
   *
   * TODO: If we ever encounter a board with RAM in high enough memory
@@ -81,7 +81,7 @@ size_t k_mem_region_align(uintptr_t *aligned_addr, size_t *aligned_size,
 	return addr_offset;
 }
 
-void k_mem_map(uint8_t **virt_addr, uintptr_t phys_addr, size_t size,
+void z_mem_map(uint8_t **virt_addr, uintptr_t phys_addr, size_t size,
 	       uint32_t flags)
 {
 	uintptr_t aligned_addr, addr_offset;
