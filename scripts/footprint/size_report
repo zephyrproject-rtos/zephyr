@@ -221,7 +221,13 @@ def get_die_filename(die, lineprog):
         path = output.joinpath(path)
 
     # Change path to relative to Zephyr base
-    path = path.resolve()
+    try:
+        path = path.resolve()
+    except OSError as e:
+        if '<built-in>' in str(path):
+            # This is expected, built-ins can't be resolved
+            return path
+        raise e
     try:
         new_path = path.relative_to(zephyrbase)
         path = new_path
