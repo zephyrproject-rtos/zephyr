@@ -145,6 +145,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 		return 0;
 	}
 
+	/* Initialize scanning state */
 	lll->state = 0U;
 
 	radio_reset();
@@ -500,9 +501,18 @@ static void isr_tx(void *param)
 static void isr_common_done(void *param)
 {
 	struct node_rx_pdu *node_rx;
+	struct lll_scan *lll;
 
 	/* Clear radio status and events */
 	lll_isr_status_reset();
+
+	/* Reset scanning state */
+	lll = param;
+	lll->state = 0U;
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	lll->is_adv_ind = 0U;
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
@@ -527,17 +537,9 @@ static void isr_common_done(void *param)
 
 static void isr_done(void *param)
 {
-	struct lll_scan *lll;
 	uint32_t start_us;
 
 	isr_common_done(param);
-
-	lll = param;
-	lll->state = 0U;
-
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-	lll->is_adv_ind = 0U;
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
 	start_us = radio_tmr_start_now(0);
