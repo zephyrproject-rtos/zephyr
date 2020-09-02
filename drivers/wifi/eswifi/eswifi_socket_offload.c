@@ -424,7 +424,7 @@ static int eswifi_socket_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 	int sock, ret;
 	void *obj;
 
-	if (nfds > 1) {
+	if (nfds != 1) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -445,6 +445,11 @@ static int eswifi_socket_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 		return -1;
 	}
 
+	if (!(fds[0].events & POLLIN)) {
+		errno = ENOTSUP;
+		return -1;
+	}
+
 	eswifi_lock(eswifi);
 	socket = &eswifi->socket[sock];
 	eswifi_unlock(eswifi);
@@ -453,8 +458,16 @@ static int eswifi_socket_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 		return -1;
 	}
 
-	ret = k_sem_take(&socket->read_sem, K_MSEC(msecs));
-	return ret;
+	ret = k_sem_take(&socket->read_sem, K_MSEC(msecs*10));
+	if (ret) {
+		errno = ETIMEDOUT;
+		return -1;
+	}
+
+	fds[0].revents = POLLIN;
+
+	/* Report one event */
+	return 1;
 }
 
 static int eswifi_socket_bind(void *obj, const struct sockaddr *addr,
