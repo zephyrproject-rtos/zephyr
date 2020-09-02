@@ -477,9 +477,6 @@ void posix_abort_thread(int thread_idx)
 
 
 #if defined(CONFIG_ARCH_HAS_THREAD_ABORT)
-
-extern void z_thread_single_abort(struct k_thread *thread);
-
 void z_impl_k_thread_abort(k_tid_t thread)
 {
 	unsigned int key;
