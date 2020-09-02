@@ -329,12 +329,6 @@ static int is_abort_cb(void *next, int prio, void *curr,
 	radio_isr_set(isr_window, lll);
 	radio_disable();
 
-	if (++lll->chan == 3U) {
-		lll->chan = 0U;
-	}
-
-	lll_chan_set(37 + lll->chan);
-
 	return 0;
 }
 
@@ -571,8 +565,17 @@ static void isr_window(void *param)
 {
 	uint32_t ticks_at_start;
 	uint32_t remainder_us;
+	struct lll_scan *lll;
 
 	isr_common_done(param);
+
+	lll = param;
+
+	/* Next radio channel to scan, round-robin 37, 38, and 39. */
+	if (++lll->chan == 3U) {
+		lll->chan = 0U;
+	}
+	lll_chan_set(37 + lll->chan);
 
 	ticks_at_start = ticker_ticks_now_get() +
 			 HAL_TICKER_CNTR_CMP_OFFSET_MIN;
