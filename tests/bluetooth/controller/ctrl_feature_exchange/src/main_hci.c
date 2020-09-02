@@ -33,8 +33,7 @@
 #include "ull_tx_queue.h"
 #include "ull_llcp.h"
 #include "ull_llcp_internal.h"
-
-#include "ull_connections.h"
+#include "ull_conn_llcp_internal.h"
 
 #include "helper_pdu.h"
 #include "helper_util.h"
@@ -50,8 +49,6 @@ static void setup(void)
 	conn_from_pool = ll_conn_acquire();
 	zassert_not_null(conn_from_pool,
 			 "Could not allocate connection memory", NULL);
-
-	ll_conn_init_connection(conn_from_pool);
 
 	test_setup(conn_from_pool);
 
@@ -80,11 +77,11 @@ static void setup(void)
  */
 void test_hci_feature_exchange_mas_loc(void)
 {
-	u64_t err;
-	u64_t set_featureset[] = {
+	uint64_t err;
+	uint64_t set_featureset[] = {
 		DEFAULT_FEATURE,
 		DEFAULT_FEATURE };
-	u64_t rsp_featureset[] = {
+	uint64_t rsp_featureset[] = {
 		(LL_FEAT_BIT_MASK_VALID & FEAT_FILTER_OCTET0) | DEFAULT_FEATURE,
 		0x0 };
 	int feat_to_test = ARRAY_SIZE(set_featureset);
@@ -146,7 +143,7 @@ void test_hci_feature_exchange_mas_loc(void)
 void test_hci_feature_exchange_wrong_handle(void)
 {
 	uint16_t conn_handle;
-	u64_t err;
+	uint64_t err;
 	int ctx_counter;
 	struct proc_ctx *ctx;
 
