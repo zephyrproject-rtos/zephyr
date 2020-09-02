@@ -220,8 +220,14 @@ static void test_packet_sockets_dgram(void)
 	setblocking(sock2, false);
 	memset(&src, 0, sizeof(src));
 
-	ret = recvfrom(sock2, data_to_receive, sizeof(data_to_receive), 0,
-		       (struct sockaddr *)&src, &addrlen);
+	errno = 0;
+
+	do {
+		ret = recvfrom(sock2, data_to_receive, sizeof(data_to_receive),
+			       0, (struct sockaddr *)&src, &addrlen);
+		k_msleep(10);
+	} while (ret < 0 && errno == EAGAIN);
+
 	zassert_equal(ret, sizeof(data_to_send),
 		      "Cannot receive all data (%d vs %zd) (%d)",
 		      ret, sizeof(data_to_send), -errno);
@@ -244,8 +250,15 @@ static void test_packet_sockets_dgram(void)
 	zassert_equal(errno, EAGAIN, "Wrong errno (%d)", errno);
 
 	memset(&src, 0, sizeof(src));
-	ret = recvfrom(sock2, data_to_receive, sizeof(data_to_receive), 0,
-		       (struct sockaddr *)&src, &addrlen);
+
+	errno = 0;
+
+	do {
+		ret = recvfrom(sock2, data_to_receive, sizeof(data_to_receive),
+			       0, (struct sockaddr *)&src, &addrlen);
+		k_msleep(10);
+	} while (ret < 0 && errno == EAGAIN);
+
 	zassert_equal(ret, sizeof(data_to_send), "Cannot receive all data (%d)",
 		      -errno);
 }
