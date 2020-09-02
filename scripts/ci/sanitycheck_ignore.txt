@@ -21,6 +21,7 @@ LICENSE
 Makefile
 tests/*
 samples/*
+boards/*/*/*
 doc/*
 # GH action have no impact on code
 .github/*
