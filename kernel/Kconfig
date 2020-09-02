@@ -10,9 +10,11 @@ module-str = kernel
 source "subsys/logging/Kconfig.template.log_config"
 
 config MULTITHREADING
-	bool "Multi-threading"
+	bool "Multi-threading (DEPRECATED)"
 	default y
 	help
+	  Disabling this option is DEPRECATED.
+
 	  If disabled, only the main thread is available, so a main() function
 	  must be provided. Interrupts are available. Kernel objects will most
 	  probably not behave as expected, especially with regards to pending,
@@ -22,6 +24,11 @@ config MULTITHREADING
 	  Many drivers and subsystems will not work with this option
 	  set to 'n'; disable only when you REALLY know what you are
 	  doing.
+
+if !MULTITHREADING
+comment "*** WARNING ***"
+comment "Single threaded mode (MULTITHREADING option disabled) is deprecated"
+endif
 
 config NUM_COOP_PRIORITIES
 	int "Number of coop priorities" if MULTITHREADING
