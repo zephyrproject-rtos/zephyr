@@ -223,9 +223,9 @@ struct _timeout {
 	_timeout_func_t fn;
 #ifdef CONFIG_TIMEOUT_64BIT
 	/* Can't use k_ticks_t for header dependency reasons */
-	uint64_t dticks;
+	int64_t dticks;
 #else
-	uint32_t dticks;
+	int32_t dticks;
 #endif
 };
 
