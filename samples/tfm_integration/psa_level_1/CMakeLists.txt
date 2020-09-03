@@ -7,12 +7,19 @@ set(QEMU_KERNEL_OPTION "-device;loader,file=${CMAKE_BINARY_DIR}/tfm_qemu.hex")
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
+if (CONFIG_TFM_BL2_TRUE)
+    set(TFM_BL2_ARGUMENT BL2 True)
+elseif (CONFIG_TFM_BL2_FALSE)
+    set(TFM_BL2_ARGUMENT BL2 False)
+endif()
+
 # Add "tfm" as an external project via the TF-M module's cmake file
 trusted_firmware_build(BINARY_DIR ${CMAKE_BINARY_DIR}/tfm
                        BOARD ${TFM_TARGET_PLATFORM}
                        IPC
                        CFGFILE "ConfigRegressionIPC"
                        OUT_VENEERS_FILE VENEERS_FILE
+                       ${TFM_BL2_ARGUMENT}
 )
 
 project(tfm_psa_level_1)
