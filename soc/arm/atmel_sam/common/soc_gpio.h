@@ -24,9 +24,12 @@
 
 #define SOC_GPIO_DEFAULT                (0)
 
-#define SOC_GPIO_PULLUP                 (1 << 0)
-#define SOC_GPIO_PULLDOWN               (1 << 1)
-#define SOC_GPIO_OPENDRAIN              (1 << 2)
+#define SOC_GPIO_PULLUP_POS		(0)
+#define SOC_GPIO_PULLUP                 (1 << SOC_GPIO_PULLUP_POS)
+#define SOC_GPIO_PULLDOWN_POS		(1)
+#define SOC_GPIO_PULLDOWN               (1 << SOC_GPIO_PULLDOWN_POS)
+#define SOC_GPIO_OPENDRAIN_POS		(2)
+#define SOC_GPIO_OPENDRAIN              (1 << SOC_GPIO_OPENDRAIN_POS)
 
 /* Bit field: SOC_GPIO_IN_FILTER */
 #define SOC_GPIO_IN_FILTER_POS          3

@@ -36,13 +36,24 @@
 #define ATMEL_SAM_PIN_PERIPH(inst, i) \
 	DT_PHA(NODE_ID_FROM_PINCTRL_0(inst, i), atmel_pins, peripheral)
 
+/* Helper function for ATMEL_SAM_PIN_FLAGS */
+#define ATMEL_SAM_PIN_FLAG(inst, i, flag) \
+	DT_PROP(NODE_ID_FROM_PINCTRL_0(inst, i), flag)
+
+/* Convert DT flags to SoC flags */
+#define ATMEL_SAM_PIN_FLAGS(inst, i) \
+	(ATMEL_SAM_PIN_FLAG(inst, i, bias_pull_up) << SOC_GPIO_PULLUP_POS | \
+	 ATMEL_SAM_PIN_FLAG(inst, i, bias_pull_down) << SOC_GPIO_PULLUP_POS | \
+	 ATMEL_SAM_PIN_FLAG(inst, i, drive_open_drain) << SOC_GPIO_OPENDRAIN_POS)
+
 /* Construct a soc_gpio_pin element for pin cfg */
 #define ATMEL_SAM_DT_PIN(inst, idx)				\
 	{							\
 		1 << ATMEL_SAM_PIN(inst, idx),			\
 		(Pio *)ATMEL_SAM_PIN_TO_PIO_REG_ADDR(inst, idx),\
 		ATMEL_SAM_PIN_2_PIO_PERIPH_ID(inst, idx),	\
-		ATMEL_SAM_PIN_PERIPH(inst, idx) << 16		\
+		ATMEL_SAM_PIN_PERIPH(inst, idx) << 16 |		\
+		ATMEL_SAM_PIN_FLAGS(inst, idx)			\
 	}
 
 /* Get the number of pins for pinctrl-0 */
