@@ -147,7 +147,7 @@ void test_spinlock_mutual_exclusion(void)
 	struct k_spinlock lock_runtime;
 	unsigned int irq_key;
 
-	lock_runtime.locked = 0;
+	(void)memset(&lock_runtime, 0, sizeof(lock_runtime));
 
 	key = k_spin_lock(&lock_runtime);
 
