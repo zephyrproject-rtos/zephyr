@@ -435,10 +435,10 @@ config MCUBOOT_EXTRA_IMGTOOL_ARGS
 	  For example, you could set this to "--version 1.2".
 
 config MCUBOOT_GENERATE_CONFIRMED_IMAGE
-	bool "Also generate a confirmed image"
+	bool "Also generate a padded, confirmed image"
 	help
-	  The signed and confirmed binaries are placed in the build directory
-	  at zephyr/zephyr.signed.confirmed.bin and
+	  The signed, padded, and confirmed binaries are placed in the build
+	  directory at zephyr/zephyr.signed.confirmed.bin and
 	  zephyr/zephyr.signed.confirmed.hex.
 
 	  The file names can be customized with CONFIG_KERNEL_BIN_NAME.
