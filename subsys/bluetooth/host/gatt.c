@@ -1275,9 +1275,17 @@ static uint8_t get_service_handles(const struct bt_gatt_attr *attr,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static uint16_t find_static_attr(const struct bt_gatt_attr *attr)
+uint16_t bt_gatt_attr_get_handle(const struct bt_gatt_attr *attr)
 {
 	uint16_t handle = 1;
+
+	if (!attr) {
+		return 0;
+	}
+
+	if (attr->handle) {
+		return attr->handle;
+	}
 
 	Z_STRUCT_SECTION_FOREACH(bt_gatt_service_static, static_svc) {
 		/* Skip ahead if start is not within service attributes array */
@@ -1302,7 +1310,7 @@ ssize_t bt_gatt_attr_read_included(struct bt_conn *conn,
 				   void *buf, uint16_t len, uint16_t offset)
 {
 	struct bt_gatt_attr *incl = attr->user_data;
-	uint16_t handle = incl->handle ? : find_static_attr(incl);
+	uint16_t handle = bt_gatt_attr_get_handle(incl);
 	struct bt_uuid *uuid = incl->user_data;
 	struct gatt_incl pdu;
 	uint8_t value_len;
@@ -1347,7 +1355,7 @@ uint16_t bt_gatt_attr_value_handle(const struct bt_gatt_attr *attr)
 		handle = chrc->value_handle;
 		if (handle == 0) {
 			/* Fall back to Zephyr value handle policy */
-			handle = (attr->handle ? : find_static_attr(attr)) + 1U;
+			handle = bt_gatt_attr_get_handle(attr) + 1U;
 		}
 	}
 
@@ -1514,7 +1522,7 @@ static uint8_t find_next(const struct bt_gatt_attr *attr, uint16_t handle,
 struct bt_gatt_attr *bt_gatt_attr_next(const struct bt_gatt_attr *attr)
 {
 	struct bt_gatt_attr *next = NULL;
-	uint16_t handle = attr->handle ? : find_static_attr(attr);
+	uint16_t handle = bt_gatt_attr_get_handle(attr);
 
 	bt_gatt_foreach_attr(handle + 1, handle + 1, find_next, &next);
 
@@ -2068,7 +2076,7 @@ int bt_gatt_notify_cb(struct bt_conn *conn,
 		return -ENOTCONN;
 	}
 
-	found.handle = found.attr->handle ? : find_static_attr(found.attr);
+	found.handle = bt_gatt_attr_get_handle(found.attr);
 	if (!found.handle) {
 		return -ENOENT;
 	}
@@ -2145,7 +2153,7 @@ int bt_gatt_indicate(struct bt_conn *conn,
 		return -ENOTCONN;
 	}
 
-	found.handle = found.attr->handle ? : find_static_attr(found.attr);
+	found.handle = bt_gatt_attr_get_handle(found.attr);
 	if (!found.handle) {
 		return -ENOENT;
 	}
