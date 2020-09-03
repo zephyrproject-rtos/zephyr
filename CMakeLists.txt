@@ -1387,6 +1387,26 @@ if(CONFIG_SOC_DEPRECATED_RELEASE)
   )
 endif()
 
+# Deprecated list of Kconfig values
+#
+# Add Kconfig items that are marked as deprecated the list below to generate
+# a build warning to the user. When the deprecation process is completed and
+# the feature/config is removed from the code base, the warning below can be
+# removed as well.
+#
+# if(CONFIG_somevalue)
+#   message(WARNING "
+#       Warning: << some meaningful warning message with Kconfig value>>"
+#   )
+# endif()
+#
+if(CONFIG_NET_TCP1)
+  message(WARNING "
+      WARNING: Legacy NET_TCP1 is being deprecated in favor of NET_TCP2"
+  )
+endif()
+# End of deprecated Kconfig values
+
 # In CMake projects, 'CMAKE_BUILD_TYPE' usually determines the
 # optimization flag, but in Zephyr it is determined through
 # Kconfig. Here we give a warning when there is a mismatch between the
