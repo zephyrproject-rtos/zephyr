@@ -63,7 +63,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 				.source_burst_length = CAVS_I2S_DMA_BURST_SIZE,\
 				.dest_burst_length = CAVS_I2S_DMA_BURST_SIZE,\
 				.dma_callback = i2s_dma_tx_callback,	\
-				.user_data = I2S_DEVICE_OBJECT(i2s_id),\
+				.user_data = (void *)I2S_DEVICE_OBJECT(i2s_id),\
 				.complete_callback_en = 1,	\
 				.error_callback_en = 1,		\
 				.block_count = 1,		\
@@ -79,7 +79,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 				.source_burst_length = CAVS_I2S_DMA_BURST_SIZE,\
 				.dest_burst_length = CAVS_I2S_DMA_BURST_SIZE,\
 				.dma_callback = i2s_dma_rx_callback,\
-				.user_data = I2S_DEVICE_OBJECT(i2s_id),\
+				.user_data = (void *)I2S_DEVICE_OBJECT(i2s_id),\
 				.complete_callback_en = 1,	\
 				.error_callback_en = 1,		\
 				.block_count = 1,		\
