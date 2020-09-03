@@ -117,7 +117,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		wait_for_switch(new_thread);
 		arch_switch(new_thread->switch_handle,
 			     &old_thread->switch_handle);
-		sys_trace_thread_switched_in();
+
 	}
 
 	if (is_spinlock) {
