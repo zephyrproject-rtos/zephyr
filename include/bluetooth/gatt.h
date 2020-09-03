@@ -394,6 +394,15 @@ static inline void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_hand
  */
 struct bt_gatt_attr *bt_gatt_attr_next(const struct bt_gatt_attr *attr);
 
+/** @brief Get Attribute handle.
+ *
+ *  @param attr Attribute object.
+ *
+ *  @return Handle of the corresponding attribute or zero if the attribute
+ *          could not be found.
+ */
+uint16_t bt_gatt_attr_get_handle(const struct bt_gatt_attr *attr);
+
 /** @brief Get the handle of the characteristic value descriptor.
  *
  * @param attr A Characteristic Attribute
