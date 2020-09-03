@@ -87,7 +87,7 @@ static int sdl_disable_callback(const struct device *dev)
 
 static int sdl_init(const struct device *dev)
 {
-	struct sdl_data *data = dev->driver_data;
+	struct sdl_data *data = dev->data;
 
 	data->dev = dev;
 
