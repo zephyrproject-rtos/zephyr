@@ -198,6 +198,7 @@ the following pyocd command:
 
 .. code-block:: console
 
+   $ pyocd pack --update
    $ pyocd pack --install stm32g431rb
 
 Note:

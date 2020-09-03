@@ -240,6 +240,7 @@ the following pyocd command:
 
 .. code-block:: console
 
+   $ pyocd pack --update
    $ pyocd pack --install stm32l552ze
 
 Nucleo L552ZE Q board includes an ST-LINK/V2-1 embedded debug tool
