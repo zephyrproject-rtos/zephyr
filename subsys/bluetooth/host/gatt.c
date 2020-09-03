@@ -1278,6 +1278,13 @@ static uint16_t find_static_attr(const struct bt_gatt_attr *attr)
 	uint16_t handle = 1;
 
 	Z_STRUCT_SECTION_FOREACH(bt_gatt_service_static, static_svc) {
+		/* Skip ahead if start is not within service attributes array */
+		if ((attr < &static_svc->attrs[0]) ||
+		    (attr > &static_svc->attrs[static_svc->attr_count - 1])) {
+			handle += static_svc->attr_count;
+			continue;
+		}
+
 		for (size_t i = 0; i < static_svc->attr_count; i++, handle++) {
 			if (attr == &static_svc->attrs[i]) {
 				return handle;
