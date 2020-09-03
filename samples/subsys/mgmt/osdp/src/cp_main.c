@@ -67,7 +67,7 @@ void main(void)
 	struct osdp_cmd_output pulse_output = {
 		.output_no = 0,     /* First output */
 		.control_code = 5,  /* Temporarily turn on output */
-		.tmr_count = 10,    /* Timer: 10 * 100ms = 1 second */
+		.timer_count = 10,    /* Timer: 10 * 100ms = 1 second */
 	};
 
 	dev = device_get_binding(LED0);

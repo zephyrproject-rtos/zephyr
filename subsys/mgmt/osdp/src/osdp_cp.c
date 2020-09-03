@@ -154,8 +154,8 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = pd->cmd_id;
 		buf[len++] = cmd->output.output_no;
 		buf[len++] = cmd->output.control_code;
-		buf[len++] = BYTE_0(cmd->output.tmr_count);
-		buf[len++] = BYTE_1(cmd->output.tmr_count);
+		buf[len++] = BYTE_0(cmd->output.timer_count);
+		buf[len++] = BYTE_1(cmd->output.timer_count);
 		ret = 0;
 		break;
 	case CMD_LED:
@@ -172,8 +172,8 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = cmd->led.temporary.off_count;
 		buf[len++] = cmd->led.temporary.on_color;
 		buf[len++] = cmd->led.temporary.off_color;
-		buf[len++] = BYTE_0(cmd->led.temporary.timer);
-		buf[len++] = BYTE_1(cmd->led.temporary.timer);
+		buf[len++] = BYTE_0(cmd->led.temporary.timer_count);
+		buf[len++] = BYTE_1(cmd->led.temporary.timer_count);
 
 		buf[len++] = cmd->led.permanent.control_code;
 		buf[len++] = cmd->led.permanent.on_count;
@@ -189,7 +189,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		cmd = (struct osdp_cmd *)pd->cmd_data;
 		buf[len++] = pd->cmd_id;
 		buf[len++] = cmd->buzzer.reader;
-		buf[len++] = cmd->buzzer.tone_code;
+		buf[len++] = cmd->buzzer.control_code;
 		buf[len++] = cmd->buzzer.on_count;
 		buf[len++] = cmd->buzzer.off_count;
 		buf[len++] = cmd->buzzer.rep_count;
@@ -202,7 +202,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		}
 		buf[len++] = pd->cmd_id;
 		buf[len++] = cmd->text.reader;
-		buf[len++] = cmd->text.cmd;
+		buf[len++] = cmd->text.control_code;
 		buf[len++] = cmd->text.temp_time;
 		buf[len++] = cmd->text.offset_row;
 		buf[len++] = cmd->text.offset_col;
@@ -486,19 +486,6 @@ static int cp_process_reply(struct osdp_pd *pd)
 	return cp_decode_response(pd, pd->rx_buf, pd->rx_buf_len);
 }
 
-static int cp_alloc_command(struct osdp_pd *pd, struct osdp_cmd **cmd)
-{
-	void *p;
-
-	p = osdp_cmd_alloc(pd);
-	if (p == NULL) {
-		LOG_WRN(TAG "Failed to alloc cmd");
-		return -1;
-	}
-	*cmd = p;
-	return 0;
-}
-
 static void cp_flush_command_queue(struct osdp_pd *pd)
 {
 	struct osdp_cmd *cmd;
@@ -620,7 +607,8 @@ static int cp_cmd_dispatcher(struct osdp_pd *pd, int cmd)
 		return 0;
 	}
 
-	if (cp_alloc_command(pd, &c)) {
+	c = osdp_cmd_alloc(pd);
+	if (c == NULL) {
 		return OSDP_CP_ERR_GENERIC;
 	}
 
@@ -723,7 +711,7 @@ int osdp_cp_set_callback_card_read(
 {
 	struct osdp *ctx = osdp_get_ctx();
 
-	ctx->cp->notifier.cardread = cb;
+	TO_CP(ctx)->notifier.cardread = cb;
 
 	return 0;
 }
@@ -733,6 +721,10 @@ int osdp_cp_send_cmd_output(int pd, struct osdp_cmd_output *p)
 	struct osdp *ctx = osdp_get_ctx();
 	struct osdp_cmd *cmd;
 
+	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
+		LOG_WRN(TAG "PD not online");
+		return -1;
+	}
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
 		LOG_ERR(TAG "Invalid PD number");
 		return -1;
@@ -754,6 +746,10 @@ int osdp_cp_send_cmd_led(int pd, struct osdp_cmd_led *p)
 	struct osdp *ctx = osdp_get_ctx();
 	struct osdp_cmd *cmd;
 
+	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
+		LOG_WRN(TAG "PD not online");
+		return -1;
+	}
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
 		LOG_ERR(TAG "Invalid PD number");
 		return -1;
@@ -775,6 +771,10 @@ int osdp_cp_send_cmd_buzzer(int pd, struct osdp_cmd_buzzer *p)
 	struct osdp *ctx = osdp_get_ctx();
 	struct osdp_cmd *cmd;
 
+	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
+		LOG_WRN(TAG "PD not online");
+		return -1;
+	}
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
 		LOG_ERR(TAG "Invalid PD number");
 		return -1;
@@ -796,6 +796,10 @@ int osdp_cp_send_cmd_text(int pd, struct osdp_cmd_text *p)
 	struct osdp *ctx = osdp_get_ctx();
 	struct osdp_cmd *cmd;
 
+	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
+		LOG_WRN(TAG "PD not online");
+		return -1;
+	}
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
 		LOG_ERR(TAG "Invalid PD number");
 		return -1;
@@ -817,6 +821,10 @@ int osdp_cp_send_cmd_comset(int pd, struct osdp_cmd_comset *p)
 	struct osdp *ctx = osdp_get_ctx();
 	struct osdp_cmd *cmd;
 
+	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
+		LOG_WRN(TAG "PD not online");
+		return -1;
+	}
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
 		LOG_ERR(TAG "Invalid PD number");
 		return -1;
