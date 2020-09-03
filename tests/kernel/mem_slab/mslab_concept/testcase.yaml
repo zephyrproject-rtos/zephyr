@@ -1,3 +1,4 @@
 tests:
   kernel.memory_slabs.concept:
     tags: kernel
+    filter: not CONFIG_NONDETERMINISTIC_TIMING

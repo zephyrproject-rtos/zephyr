@@ -7,6 +7,7 @@
 #include <ztest.h>
 #include "interrupt_util.h"
 
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 #define DURATION	5
 #define HANDLER_TOKEN	0xDEADBEEF
 
@@ -60,3 +61,9 @@ void test_prevent_interruption(void)
 
 	k_timer_stop(&irqlock_timer);
 }
+#else
+void test_prevent_interruption(void)
+{
+	ztest_test_skip();
+}
+#endif

@@ -139,11 +139,13 @@ static void stop_expire(struct k_timer *timer)
 	tdata.stop_count++;
 }
 
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 static void init_data_count(void)
 {
 	tdata.duration_count = 0;
 	tdata.stop_count = 0;
 }
+#endif
 
 /**
  * @brief Test millisecond time duration
@@ -159,6 +161,9 @@ static void init_data_count(void)
 
 void test_ms_time_duration(void)
 {
+#ifdef CONFIG_NONDETERMINISTIC_TIMING
+	ztest_test_skip();
+#else
 	init_data_count();
 	k_timer_start(&ktimer, K_MSEC(DURATION), K_NO_WAIT);
 
@@ -178,6 +183,7 @@ void test_ms_time_duration(void)
 
 	/** cleanup environemtn */
 	k_timer_stop(&ktimer);
+#endif
 }
 /**
  * @}

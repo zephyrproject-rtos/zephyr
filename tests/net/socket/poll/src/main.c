@@ -66,7 +66,9 @@ void test_poll(void)
 	/* Poll non-ready fd's with timeout of 0 */
 	tstamp = k_uptime_get_32();
 	res = poll(pollfds, ARRAY_SIZE(pollfds), 0);
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 	zassert_true(k_uptime_get_32() - tstamp <= FUZZ, "");
+#endif
 	zassert_equal(res, 0, "");
 
 	zassert_equal(pollfds[0].fd, c_sock, "");
@@ -81,8 +83,10 @@ void test_poll(void)
 	tstamp = k_uptime_get_32();
 	res = poll(pollfds, ARRAY_SIZE(pollfds), 30);
 	tstamp = k_uptime_get_32() - tstamp;
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 	zassert_true(tstamp >= 30U && tstamp <= 30 + FUZZ * 2, "tstamp %d",
 		     tstamp);
+#endif
 	zassert_equal(res, 0, "");
 
 
@@ -93,7 +97,9 @@ void test_poll(void)
 	tstamp = k_uptime_get_32();
 	res = poll(pollfds, ARRAY_SIZE(pollfds), 30);
 	tstamp = k_uptime_get_32() - tstamp;
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 	zassert_true(tstamp <= FUZZ, "");
+#endif
 	zassert_equal(res, 1, "");
 
 	zassert_equal(pollfds[0].fd, c_sock, "");
@@ -110,7 +116,9 @@ void test_poll(void)
 
 	tstamp = k_uptime_get_32();
 	res = poll(pollfds, ARRAY_SIZE(pollfds), 0);
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 	zassert_true(k_uptime_get_32() - tstamp <= FUZZ, "");
+#endif
 	zassert_equal(res, 0, "");
 	zassert_equal(pollfds[1].revents, 0, "");
 
@@ -125,7 +133,9 @@ void test_poll(void)
 
 	tstamp = k_uptime_get_32();
 	res = poll(pollout, ARRAY_SIZE(pollout), 200);
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 	zassert_true(k_uptime_get_32() - tstamp < 100, "");
+#endif
 	zassert_equal(res, 1, "");
 	zassert_equal(pollout[0].revents, POLLOUT, "");
 
@@ -147,7 +157,9 @@ void test_poll(void)
 
 	tstamp = k_uptime_get_32();
 	res = poll(pollout, ARRAY_SIZE(pollout), 200);
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 	zassert_true(k_uptime_get_32() - tstamp < 100, "");
+#endif
 	zassert_equal(res, 1, "");
 	zassert_equal(pollout[0].revents, POLLOUT, "");
 
@@ -163,7 +175,9 @@ void test_poll(void)
 
 	tstamp = k_uptime_get_32();
 	res = poll(pollfds, ARRAY_SIZE(pollfds), 0);
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 	zassert_true(k_uptime_get_32() - tstamp <= FUZZ, "");
+#endif
 	zassert_equal(res, 1, "");
 	zassert_equal(pollfds[0].revents, POLLNVAL, "");
 	zassert_equal(pollfds[1].revents, 0, "");

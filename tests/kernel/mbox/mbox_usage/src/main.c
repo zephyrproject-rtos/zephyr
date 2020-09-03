@@ -70,8 +70,10 @@ static void msg_receiver(struct k_mbox *pmbox, k_tid_t thd_id,
 			zassert_false(k_mbox_get(pmbox, &mmsg,
 				      rxdata, K_NO_WAIT) == 0, NULL);
 		} else {
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 			zassert_true(k_mbox_get(pmbox, &mmsg,
 				     rxdata, timeout) == 0, NULL);
+#endif
 		}
 		break;
 	default:

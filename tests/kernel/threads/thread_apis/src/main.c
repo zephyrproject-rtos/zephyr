@@ -400,8 +400,12 @@ void test_thread_join(void)
 	zassert_equal(join_scenario(OTHER_ABORT_TIMEOUT), 0,
 		      "failed other-abort case with timeout");
 	interval = k_uptime_get() - interval;
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 	zassert_true(interval < JOIN_TIMEOUT_MS, "join took too long (%lld ms)",
 		     interval);
+#else
+	(void)interval;
+#endif
 	zassert_equal(join_scenario(ALREADY_EXIT), 0,
 		      "failed already exit case");
 

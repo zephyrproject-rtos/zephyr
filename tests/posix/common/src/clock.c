@@ -112,16 +112,16 @@ void test_posix_realtime(void)
 		delta /= (NSEC_PER_SEC / 1000U);
 
 		zassert_true(delta > last_delta, "Clock moved backward");
-		int64_t error = delta - last_delta;
 
-		/* printk("Delta %d: %lld\n", i, delta); */
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
+		int64_t error = delta - last_delta;
 
 		/* Allow for a little drift upward, but not
 		 * downward
 		 */
 		zassert_true(error >= 90, "Clock inaccurate %d", error);
 		zassert_true(error <= 110, "Clock inaccurate %d", error);
-
+#endif
 		last_delta = delta;
 	}
 

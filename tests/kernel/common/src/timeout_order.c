@@ -8,6 +8,7 @@
 #include <sys/printk.h>
 #include <ztest.h>
 
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 #define NUM_TIMEOUTS 3
 
 static struct k_timer timer[NUM_TIMEOUTS];
@@ -98,7 +99,12 @@ void test_timeout_order(void)
 		zassert_equal(results[ii], ii, "");
 	}
 }
-
+#else
+void test_timeout_order(void)
+{
+	ztest_test_skip();
+}
+#endif
 /**
  * @}
  */

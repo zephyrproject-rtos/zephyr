@@ -23,9 +23,6 @@
 #define EVENTFD_STACK_SIZE	(1024 + CONFIG_TEST_EXTRA_STACKSIZE + \
 				 PTHREAD_STACK_MIN)
 
-K_THREAD_STACK_DEFINE(eventfd_stack, EVENTFD_STACK_SIZE);
-static pthread_t eventfd_thread;
-
 static void test_eventfd(void)
 {
 	int fd = eventfd(0, 0);
@@ -87,6 +84,10 @@ static void test_eventfd_write_then_read(void)
 
 	close(fd);
 }
+
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
+K_THREAD_STACK_DEFINE(eventfd_stack, EVENTFD_STACK_SIZE);
+static pthread_t eventfd_thread;
 
 static void test_eventfd_poll_timeout(void)
 {
@@ -203,6 +204,17 @@ static void test_eventfd_poll_event(void)
 
 	close(fd);
 }
+#else
+static void test_eventfd_poll_timeout(void)
+{
+	ztest_test_skip();
+}
+
+static void test_eventfd_poll_event(void)
+{
+	ztest_test_skip();
+}
+#endif
 
 void test_main(void)
 {

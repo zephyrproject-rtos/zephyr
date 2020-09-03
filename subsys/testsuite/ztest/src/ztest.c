@@ -108,7 +108,9 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
 	unsigned int key = arch_irq_lock();
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 	uint32_t dt, start_ms = k_uptime_get_32();
+#endif
 
 	k_sem_give(&cpuhold_sem);
 
@@ -116,6 +118,7 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 		k_busy_wait(1000);
 	}
 
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 	/* Holding the CPU via spinning is expensive, and abusing this
 	 * for long-running test cases tends to overload the CI system
 	 * (qemu runs separate CPUs in different threads, but the CI
@@ -124,6 +127,7 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 	dt = k_uptime_get_32() - start_ms;
 	zassert_true(dt < 3000,
 		     "1cpu test took too long (%d ms)", dt);
+#endif
 	arch_irq_unlock(key);
 }
 

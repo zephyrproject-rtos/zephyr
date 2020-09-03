@@ -98,7 +98,9 @@ void test_select(void)
 	 * preempt the thread. That's why we add FUZZ to the expected
 	 * delay time. Also applies to similar cases below.
 	 */
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 	zassert_true(tstamp <= FUZZ, "");
+#endif
 	zassert_equal(res, 0, "");
 
 	zassert_false(FD_ISSET(c_sock, &readfds), "");
@@ -112,7 +114,9 @@ void test_select(void)
 	tstamp = k_uptime_get_32();
 	res = select(s_sock + 1, &readfds, NULL, NULL, &tval);
 	tstamp = k_uptime_get_32() - tstamp;
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 	zassert_true(tstamp >= 30U && tstamp <= 30 + FUZZ, "");
+#endif
 	zassert_equal(res, 0, "");
 
 
@@ -127,7 +131,9 @@ void test_select(void)
 	tstamp = k_uptime_get_32();
 	res = select(s_sock + 1, &readfds, NULL, NULL, &tval);
 	tstamp = k_uptime_get_32() - tstamp;
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 	zassert_true(tstamp <= FUZZ, "");
+#endif
 	zassert_equal(res, 1, "");
 
 	zassert_false(FD_ISSET(c_sock, &readfds), "");
@@ -143,7 +149,9 @@ void test_select(void)
 	tval.tv_sec = tval.tv_usec = 0;
 	tstamp = k_uptime_get_32();
 	res = select(s_sock + 1, &readfds, NULL, NULL, &tval);
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 	zassert_true(k_uptime_get_32() - tstamp <= FUZZ, "");
+#endif
 	zassert_equal(res, 0, "");
 	zassert_false(FD_ISSET(s_sock, &readfds), "");
 
@@ -157,7 +165,9 @@ void test_select(void)
 	tval.tv_sec = tval.tv_usec = 0;
 	tstamp = k_uptime_get_32();
 	res = select(s_sock + 1, &readfds, NULL, NULL, &tval);
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 	zassert_true(k_uptime_get_32() - tstamp <= FUZZ, "");
+#endif
 	zassert_true(res < 0, "");
 	zassert_equal(errno, EBADF, "");
 

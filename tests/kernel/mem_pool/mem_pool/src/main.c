@@ -67,7 +67,7 @@ typedef int (*pool_move_block_func_t)(struct k_mem_block *, struct k_mem_pool *)
 static volatile int evidence;
 
 static struct k_mem_block block_list[NUM_BLOCKS];
-static struct k_mem_block helper_block;
+
 
 static struct TEST_CASE get_set[] = {
 	{ &block_list[0], &POOL_ID, 0, 0, 0 },
@@ -102,48 +102,7 @@ static struct TEST_CASE get_set2[] = {
 #endif
 };
 
-static struct TEST_CASE getwt_set[] = {
-	{ &block_list[0], &POOL_ID, 4096, TENTH_SECOND, 0 },
-	{ &block_list[1], &POOL_ID, 2048, TENTH_SECOND, -EAGAIN },
-	{ &block_list[2], &POOL_ID, 1024, TENTH_SECOND, -EAGAIN },
-#if defined(HEAP32)
-	{ &block_list[3], &POOL_ID, 512, TENTH_SECOND, -EAGAIN },
-	{ &block_list[4], &POOL_ID, 256, TENTH_SECOND, 0 }
-#elif defined(HEAP64)
-	{ &block_list[3], &POOL_ID, 512, TENTH_SECOND, 0 },
-	{ &block_list[4], &POOL_ID, 256, TENTH_SECOND, -EAGAIN }
-#else
-	{ &block_list[3], &POOL_ID, 512, TENTH_SECOND, -EAGAIN },
-	{ &block_list[4], &POOL_ID, 256, TENTH_SECOND, -EAGAIN }
-#endif
-};
 
-
-/**
- * @brief Wrapper for k_mem_pool_alloc()
- *
- * @return k_mem_pool_alloc() return value
- */
-static int pool_block_get_func(struct k_mem_block *block, struct k_mem_pool *pool,
-			int size, int32_t unused)
-{
-	ARG_UNUSED(unused);
-
-	return k_mem_pool_alloc(pool, block, size, K_NO_WAIT);
-}
-
-
-/**
- *
- * @brief Wrapper for k_mem_pool_alloc(timeout)
- *
- * @return k_mem_pool_alloc(timeout) return value
- */
-static int pool_block_get_wt_func(struct k_mem_block *block, struct k_mem_pool *pool,
-			   int size, int32_t timeout)
-{
-	return k_mem_pool_alloc(pool, block, size, K_MSEC(timeout));
-}
 
 /**
  *
@@ -183,6 +142,19 @@ static void pool_block_get_work(char *string, pool_block_get_func_t func,
 }
 
 /**
+ * @brief Wrapper for k_mem_pool_alloc()
+ *
+ * @return k_mem_pool_alloc() return value
+ */
+static int pool_block_get_func(struct k_mem_block *block, struct k_mem_pool *pool,
+			int size, int32_t unused)
+{
+	ARG_UNUSED(unused);
+
+	return k_mem_pool_alloc(pool, block, size, K_NO_WAIT);
+}
+
+/**
  * @ingroup kernel_memory_pool_tests
  * @brief Test the k_mem_pool_alloc(K_NO_WAIT) API
  *
@@ -207,6 +179,37 @@ static void test_pool_block_get(void)
 	}
 }
 
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
+static struct k_mem_block helper_block;
+
+static struct TEST_CASE getwt_set[] = {
+	{ &block_list[0], &POOL_ID, 4096, TENTH_SECOND, 0 },
+	{ &block_list[1], &POOL_ID, 2048, TENTH_SECOND, -EAGAIN },
+	{ &block_list[2], &POOL_ID, 1024, TENTH_SECOND, -EAGAIN },
+#if defined(HEAP32)
+	{ &block_list[3], &POOL_ID, 512, TENTH_SECOND, -EAGAIN },
+	{ &block_list[4], &POOL_ID, 256, TENTH_SECOND, 0 }
+#elif defined(HEAP64)
+	{ &block_list[3], &POOL_ID, 512, TENTH_SECOND, 0 },
+	{ &block_list[4], &POOL_ID, 256, TENTH_SECOND, -EAGAIN }
+#else
+	{ &block_list[3], &POOL_ID, 512, TENTH_SECOND, -EAGAIN },
+	{ &block_list[4], &POOL_ID, 256, TENTH_SECOND, -EAGAIN }
+#endif
+};
+
+/**
+ *
+ * @brief Wrapper for k_mem_pool_alloc(timeout)
+ *
+ * @return k_mem_pool_alloc(timeout) return value
+ */
+static int pool_block_get_wt_func(struct k_mem_block *block, struct k_mem_pool *pool,
+			   int size, int32_t timeout)
+{
+	return k_mem_pool_alloc(pool, block, size, K_MSEC(timeout));
+}
+
 /**
  * @brief Helper task to test_pool_block_get_timeout()
  *
@@ -219,6 +222,9 @@ void helper_task(void)
 	k_sem_give(&REGRESS_SEM);
 	k_mem_pool_free(&helper_block);
 }
+
+K_THREAD_DEFINE(t_helper, STACKSIZE, helper_task, NULL, NULL, NULL,
+		7, 0, 0);
 
 /**
  * @ingroup kernel_memory_pool_tests
@@ -308,6 +314,20 @@ void alternate_task(void)
 	evidence = 2;
 }
 
+
+K_THREAD_DEFINE(t_alternate, STACKSIZE, alternate_task, NULL, NULL, NULL,
+		6, 0, 0);
+#else
+static void test_pool_block_get_wait(void)
+{
+	ztest_test_skip();
+}
+static void test_pool_block_get_timeout(void)
+{
+	ztest_test_skip();
+}
+#endif
+
 /**
  * @ingroup kernel_memory_pool_tests
  * @brief Test the k_malloc() and k_free() APIs
@@ -385,11 +405,7 @@ static void test_pool_malloc(void)
 	zassert_is_null(k_calloc(0xffffffff, 2), "overflow check failed");
 }
 
-K_THREAD_DEFINE(t_alternate, STACKSIZE, alternate_task, NULL, NULL, NULL,
-		6, 0, 0);
 
-K_THREAD_DEFINE(t_helper, STACKSIZE, helper_task, NULL, NULL, NULL,
-		7, 0, 0);
 
 void test_main(void)
 {

@@ -259,6 +259,7 @@ void test_sem_take_timeout_fails(void)
  */
 void test_sem_take_timeout(void)
 {
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 	int32_t ret_value;
 #ifdef CONFIG_USERSPACE
 	int thread_flags = K_USER | K_INHERIT_PERMS;
@@ -276,6 +277,9 @@ void test_sem_take_timeout(void)
 	ret_value = sys_sem_take(&simple_sem, SEM_TIMEOUT);
 	zassert_true(ret_value == 0,
 		     "sys_sem_take failed when its shouldn't have");
+#else
+	ztest_test_skip();
+#endif
 }
 
 /**
@@ -307,6 +311,7 @@ void test_sem_take_timeout_forever(void)
  */
 void test_sem_take_timeout_isr(void)
 {
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 	int32_t ret_value;
 
 	sys_sem_init(&simple_sem, SEM_INIT_VAL, SEM_MAX_VAL);
@@ -318,6 +323,9 @@ void test_sem_take_timeout_isr(void)
 	ret_value = sys_sem_take(&simple_sem, SEM_TIMEOUT);
 	zassert_true(ret_value == 0,
 		     "sys_sem_take failed when its shouldn't have");
+#else
+	ztest_test_skip();
+#endif
 }
 
 /**

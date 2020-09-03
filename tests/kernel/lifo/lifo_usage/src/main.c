@@ -107,6 +107,7 @@ static void thread_entry_nowait(void *p1, void *p2, void *p3)
 
 static bool is_timeout_in_range(uint32_t start_time, uint32_t timeout)
 {
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 	uint32_t stop_time, diff;
 
 	stop_time = k_cycle_get_32();
@@ -114,11 +115,15 @@ static bool is_timeout_in_range(uint32_t start_time, uint32_t timeout)
 					start_time) / NSEC_PER_USEC;
 	diff = diff / USEC_PER_MSEC;
 	return timeout <= diff;
+#else
+	return true;
+#endif
 }
 
 static int test_multiple_threads_pending(struct timeout_order_data *test_data,
 					 int test_data_size)
 {
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 	int ii;
 
 	for (ii = 0; ii < test_data_size; ii++) {
@@ -143,7 +148,7 @@ static int test_multiple_threads_pending(struct timeout_order_data *test_data,
 			return TC_FAIL;
 		}
 	}
-
+#endif
 	return TC_PASS;
 }
 
@@ -262,6 +267,7 @@ static void test_lifo_wait(void)
  */
 static void test_timeout_empty_lifo(void)
 {
+
 	void *packet;
 
 	uint32_t start_time, timeout;

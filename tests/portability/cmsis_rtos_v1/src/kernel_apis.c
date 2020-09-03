@@ -54,6 +54,7 @@ void test_kernel_start(void)
  */
 void test_kernel_systick(void)
 {
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 	uint32_t start_time, stop_time, diff, max, min;
 
 	start_time = osKernelSysTick();
@@ -69,4 +70,7 @@ void test_kernel_systick(void)
 	zassert_true(diff <= max && diff >= min,
 		     "start %d stop %d (diff %d) wait %d\n",
 		     start_time, stop_time, diff, WAIT_TIME_US);
+#else
+	ztest_test_skip();
+#endif
 }

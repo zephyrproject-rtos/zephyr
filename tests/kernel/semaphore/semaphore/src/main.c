@@ -515,6 +515,7 @@ void test_sem_take_timeout_fails(void)
  */
 void test_sem_take_timeout(void)
 {
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 	int32_t ret_value;
 	uint32_t signal_count;
 
@@ -542,7 +543,9 @@ void test_sem_take_timeout(void)
 	zassert_true(ret_value == 0, "k_sem_take failed with returned %d",
 			ret_value);
 	k_thread_abort(&sem_tid_1);
-
+#else
+	ztest_test_skip();
+#endif
 }
 
 /**
@@ -945,6 +948,7 @@ void test_sem_multiple_threads_wait(void)
 	} while (repeat_count < 2);
 }
 
+#ifndef CONFIG_NONDETERMINISTIC_TIMING
 /**
  * @brief Test semaphore timeout period
  * @ingroup kernel_semaphore_tests
@@ -1169,6 +1173,24 @@ void test_sem_multi_take_timeout_diff_sem(void)
 	}
 
 }
+#else
+void test_sem_measure_timeouts(void)
+{
+	ztest_test_skip();
+}
+void test_sem_measure_timeout_from_thread(void)
+{
+	ztest_test_skip();
+}
+void test_sem_multiple_take_and_timeouts(void)
+{
+	ztest_test_skip();
+}
+void test_sem_multi_take_timeout_diff_sem(void)
+{
+	ztest_test_skip();
+}
+#endif
 
 /**
  * @brief Test thread mutual exclusion by semaphore

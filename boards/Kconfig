@@ -1,5 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
 
+config NONDETERMINISTIC_TIMING
+	bool
+	help
+	  This hidden option is selected if the system time varies due to
+	  circumstances beyond the OS itself. The most common case is QEMU systems
+	  that do not implement 'icount' and are subject to timing variance due
+	  to the host. This could also be enabled if Zephyr is a guest OS in
+	  a virtualized environment, where hypervisor or other guest OS activity
+	  could affect Zephyr's timing.
+
+	  If selected, certain test scenarios which require certain
+	  events to happen within a designated time period may be skipped.
+
 config BOARD_DEPRECATED_RELEASE
 	string
 	help
@@ -9,6 +22,7 @@ config BOARD_DEPRECATED_RELEASE
 	  deprecation warning.
 
 config QEMU_TARGET
+	select NONDETERMINISTIC_TIMING if !QEMU_ICOUNT
 	bool
 	help
 	  Mark all QEMU targets with this variable for checking whether we are

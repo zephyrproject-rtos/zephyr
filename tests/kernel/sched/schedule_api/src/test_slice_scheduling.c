@@ -7,7 +7,7 @@
 #include <ztest.h>
 #include "test_sched.h"
 
-#ifdef CONFIG_TIMESLICING
+#if defined(CONFIG_TIMESLICING) && !defined(CONFIG_NONDETERMINISTIC_TIMING)
 
 /* nrf 51 has lower ram, so creating less number of threads */
 #if CONFIG_SRAM_SIZE <= 24
