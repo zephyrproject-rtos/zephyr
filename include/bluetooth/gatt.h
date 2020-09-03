@@ -1441,6 +1441,25 @@ struct bt_gatt_subscribe_params {
 int bt_gatt_subscribe(struct bt_conn *conn,
 		      struct bt_gatt_subscribe_params *params);
 
+/** @brief Resubscribe Attribute Value Notification subscription
+ *
+ *  Resubscribe to Attribute Value Notification when already subscribed from a
+ *  previous connection. The GATT server will remember subscription from
+ *  previous connections when bonded, so resubscribing can be done without
+ *  performing a new subscribe procedure after a power cycle.
+ *
+ *  @note Notifications are asynchronous therefore the parameters need to
+ *        remain valid while subscribed.
+ *
+ *  @param id     Local identity (in most cases BT_ID_DEFAULT).
+ *  @param peer   Remote address.
+ *  @param params Subscribe parameters.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_gatt_resubscribe(uint8_t id, const bt_addr_le_t *peer,
+			     struct bt_gatt_subscribe_params *params);
+
 /** @brief Unsubscribe Attribute Value Notification
  *
  *  This procedure unsubscribe to value notification using the Client
