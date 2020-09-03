@@ -1430,8 +1430,8 @@ struct bt_gatt_subscribe_params {
  *  this callback. Notification callback with NULL data will not be called if
  *  subscription was removed by this method.
  *
- *  @note This procedure is asynchronous therefore the parameters need to
- *  remains valid while it is active.
+ *  @note Notifications are asynchronous therefore the parameters need to
+ *        remain valid while subscribed.
  *
  *  @param conn Connection object.
  *  @param params Subscribe parameters.
