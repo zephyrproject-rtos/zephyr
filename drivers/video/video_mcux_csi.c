@@ -419,7 +419,7 @@ static struct video_mcux_csi_data video_mcux_csi_data_0;
 
 static int video_mcux_csi_init_0(const struct device *dev)
 {
-	struct video_mcux_csi_data *data = dev->driver_data;
+	struct video_mcux_csi_data *data = dev->data;
 
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    video_mcux_csi_isr, NULL, 0);
