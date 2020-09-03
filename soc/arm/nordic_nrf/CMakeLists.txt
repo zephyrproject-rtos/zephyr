@@ -7,4 +7,9 @@ zephyr_sources(
   validate_enabled_instances.c
   )
 
-zephyr_library_sources_ifdef(CONFIG_TIMING_FUNCTIONS timing.c)
+if(CONFIG_TIMING_FUNCTIONS)
+# Use nRF-specific timing calculations only if DWT is not present
+if(NOT CONFIG_CORTEX_M_DWT)
+  zephyr_library_sources(timing.c)
+endif()
+endif()
