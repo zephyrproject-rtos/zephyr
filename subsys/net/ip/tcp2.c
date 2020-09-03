@@ -1179,6 +1179,12 @@ next_state:
 			tcp_out(conn, ACK);
 			next = TCP_CLOSE_WAIT;
 			break;
+		} else if (th && FL(&fl, ==, (FIN | ACK | PSH),
+				    th_seq(th) == conn->ack)) {
+			conn_ack(conn, + len + 1);
+			tcp_out(conn, FIN | ACK);
+			next = TCP_LAST_ACK;
+			break;
 		}
 
 		if (th && net_tcp_seq_cmp(th_ack(th), conn->seq) > 0) {
