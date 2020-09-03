@@ -620,6 +620,57 @@
 			status = "disabled";
 			label = "EDMA0";
 		};
+
+		flexcan1: can@401d0000 {
+			compatible = "nxp,kinetis-flexcan";
+			reg = <0x401d0000 0x1000>;
+			interrupts = <36 0>;
+			interrupt-names = "common";
+			clocks = <&ccm IMX_CCM_CAN_CLK 0x68 14>;
+			clk-source = <2>;
+			label = "CAN_1";
+			sjw = <1>;
+			prop-seg = <1>;
+			phase-seg1 = <3>;
+			phase-seg2 = <2>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		flexcan2: can@401d4000 {
+			compatible = "nxp,kinetis-flexcan";
+			reg = <0x401d4000 0x1000>;
+			interrupts = <37 0>;
+			interrupt-names = "common";
+			clocks = <&ccm IMX_CCM_CAN_CLK 0x68 18>;
+			clk-source = <2>;
+			label = "CAN_2";
+			sjw = <1>;
+			prop-seg = <1>;
+			phase-seg1 = <3>;
+			phase-seg2 = <2>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		flexcan3: can@401d8000 {
+			compatible = "nxp,kinetis-flexcan";
+			reg = <0x401d8000 0x1000>;
+			interrupts = <154 0>;
+			interrupt-names = "common";
+			clocks = <&ccm IMX_CCM_CAN_CLK 0x84 6>;
+			clk-source = <2>;
+			label = "CAN_3";
+			sjw = <1>;
+			prop-seg = <1>;
+			phase-seg1 = <3>;
+			phase-seg2 = <2>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
 	};
 };
 

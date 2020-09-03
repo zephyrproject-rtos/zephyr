@@ -110,6 +110,24 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 				10;
 		break;
 #endif
+
+#ifdef CONFIG_CAN_MCUX_FLEXCAN
+	case IMX_CCM_CAN_CLK:
+	{
+		uint32_t can_mux = CLOCK_GetMux(kCLOCK_CanMux);
+
+		if (can_mux == 0) {
+			*rate = CLOCK_GetPllFreq(kCLOCK_PllUsb1) / 8
+				/ (CLOCK_GetDiv(kCLOCK_CanDiv) + 1);
+		} else if  (can_mux == 1) {
+			*rate = CLOCK_GetOscFreq()
+				/ (CLOCK_GetDiv(kCLOCK_CanDiv) + 1);
+		} else {
+			*rate = CLOCK_GetPllFreq(kCLOCK_PllUsb1) / 6
+				/ (CLOCK_GetDiv(kCLOCK_CanDiv) + 1);
+		}
+	} break;
+#endif
 	}
 
 	return 0;

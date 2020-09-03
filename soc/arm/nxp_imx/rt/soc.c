@@ -208,6 +208,10 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetDiv(kCLOCK_CsiDiv, 0); /* Set CSI divider to 1 */
 	CLOCK_SetMux(kCLOCK_CsiMux, 0); /* Set CSI source to OSC 24M */
 #endif
+#ifdef CONFIG_CAN_MCUX_FLEXCAN
+	CLOCK_SetDiv(kCLOCK_CanDiv, 1); /* Set CAN_CLK_PODF. */
+	CLOCK_SetMux(kCLOCK_CanMux, 2); /* Set Can clock source. */
+#endif
 
 	/* Keep the system clock running so SYSTICK can wake up the system from
 	 * wfi.
