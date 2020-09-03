@@ -273,6 +273,13 @@ _firq_switch_from_coop:
 	pop_s r0 /* status32 into r0 */
 	sr r0, [_ARC_V2_STATUS32_P0]
 
+#ifdef CONFIG_TRACING
+	push_s blink
+
+	bl sys_trace_thread_switched_in
+
+	pop_s blink
+#endif
 	rtie
 
 .balign 4
@@ -287,5 +294,12 @@ _firq_switch_from_firq:
 	sr ilink, [_ARC_V2_STATUS32_P0]
 	ld ilink, [sp, -8] /* pc into ilink */
 
+#ifdef CONFIG_TRACING
+	push_s blink
+
+	bl sys_trace_thread_switched_in
+
+	pop_s blink
+#endif
 	/* LP registers are already restored, just switch back to bank 0 */
 	rtie

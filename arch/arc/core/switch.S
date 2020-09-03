@@ -132,6 +132,13 @@ _switch_return_from_coop:
 
 	pop_s blink
 #endif /* CONFIG_EXECUTION_BENCHMARKING */
+#ifdef CONFIG_TRACING
+	push_s blink
+
+	bl sys_trace_thread_switched_in
+
+	pop_s blink
+#endif
 	j_s [blink]
 
 
@@ -160,5 +167,12 @@ _switch_return_from_firq:
 	sjli SJLI_CALL_ARC_SECURE
 #else
 	sr r3, [_ARC_V2_AUX_IRQ_ACT]
+#endif
+#ifdef CONFIG_TRACING
+	push_s blink
+
+	bl sys_trace_thread_switched_in
+
+	pop_s blink
 #endif
 	rtie

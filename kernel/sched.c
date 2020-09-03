@@ -829,6 +829,7 @@ struct k_thread *z_get_next_ready_thread(void)
 /* Just a wrapper around _current = xxx with tracing */
 static inline void set_current(struct k_thread *new_thread)
 {
+	sys_trace_thread_switched_out();
 	_current_cpu->current = new_thread;
 }
 
@@ -862,7 +863,10 @@ void *z_get_next_switch_handle(void *interrupted)
 		}
 	}
 #else
-	set_current(z_get_next_ready_thread());
+	struct k_thread *thread = z_get_next_ready_thread();
+	if (_current != thread) {
+		set_current(thread);
+	}
 #endif
 
 	wait_for_switch(_current);

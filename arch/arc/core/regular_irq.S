@@ -309,6 +309,13 @@ _rirq_switch_from_coop:
 	 */
 	st_s r13, [sp, ___isf_t_r13_OFFSET]
 
+#ifdef CONFIG_TRACING
+	push_s blink
+
+	bl sys_trace_thread_switched_in
+
+	pop_s blink
+#endif
 	/* stack now has the IRQ stack frame layout, pointing to sp */
 	/* rtie will pop the rest from the stack */
 	rtie
@@ -319,5 +326,12 @@ _rirq_switch_from_rirq:
 
 	_set_misc_regs_irq_switch_from_irq
 
+#ifdef CONFIG_TRACING
+	push_s blink
+
+	bl sys_trace_thread_switched_in
+
+	pop_s blink
+#endif
 _rirq_no_switch:
 	rtie
