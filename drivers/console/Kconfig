@@ -194,14 +194,6 @@ config IPM_CONSOLE_LINE_BUF_LEN
 	  IPM console line buffer length specify amount of the buffer
 	  where characters are stored before sending the whole line.
 
-config IPM_CONSOLE_IMMEDIATE
-	bool "Immediate logging over IPM"
-	default y
-	depends on IPM_CONSOLE
-	help
-	  When enabled console output is processed in the context of the call. Output
-	  is blocked until read by the Host.
-
 config UART_PIPE
 	bool "Enable pipe UART driver"
 	select UART_INTERRUPT_DRIVEN
