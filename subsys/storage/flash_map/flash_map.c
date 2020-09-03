@@ -276,7 +276,7 @@ int flash_area_check_int_sha256(const struct flash_area *fa,
 {
 	unsigned char hash[TC_SHA256_DIGEST_SIZE];
 	struct tc_sha256_state_struct sha;
-	struct device *dev;
+	const struct device *dev;
 	int to_read;
 	int pos;
 	int rc;
