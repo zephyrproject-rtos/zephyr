@@ -1639,11 +1639,15 @@ class TestInstance(DisablePyTestCollectionMixin):
 
         runnable = bool(self.testcase.type == "unit" or \
                         self.platform.type == "native" or \
-                        self.platform.simulation in ["nsim", "renode", "qemu"] or \
+                        self.platform.simulation in ["mdb", "nsim", "renode", "qemu"] or \
                         device_testing)
 
         if self.platform.simulation == "nsim":
             if not find_executable("nsimdrv"):
+                runnable = False
+
+        if self.platform.simulation == "mdb":
+            if not find_executable("mdb"):
                 runnable = False
 
         if self.platform.simulation == "renode":
