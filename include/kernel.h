@@ -18,6 +18,7 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <toolchain.h>
+#include <deprecated.h>
 
 #ifdef __cplusplus
 extern "C" {
