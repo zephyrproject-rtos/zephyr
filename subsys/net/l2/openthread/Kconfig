@@ -172,13 +172,12 @@ config OPENTHREAD_MBEDTLS
 	select MBEDTLS_HMAC_DRBG_ENABLED if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
 	select MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED if OPENTHREAD_ECDSA
 
-config OPENTHREAD_MBEDTLS_TARGET
-	string "mbedtls target name"
+config OPENTHREAD_MBEDTLS_LIB_NAME
+	string "mbedtls lib name"
 	default "mbedTLS"
 	help
-	  This option allows to specify custom mbedtls CMake target name for
-	  openthread. This is sometimes needed to utilize hardware cryptography
-	  acceleration.
+	  This option allows to specify one or more mbedtls library files to be
+	  linked with OpenThread. Separate multiple values with space " ".
 
 menuconfig OPENTHREAD_NCP
 	bool "Network Co-Processor"
