@@ -176,9 +176,8 @@ static inline int i2c_reg_write_byte_be(const struct device *dev,
 }
 
 #ifdef CONFIG_GPIO_SX1509B_INTERRUPT
-static int sx1509b_handle_interrupt(void *arg)
+static int sx1509b_handle_interrupt(const struct device *dev)
 {
-	const struct device *dev = (const struct device *) arg;
 	const struct sx1509b_config *cfg = dev->config;
 	struct sx1509b_drv_data *drv_data = dev->data;
 	int ret = 0;
