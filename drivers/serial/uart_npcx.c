@@ -291,7 +291,7 @@ static int uart_npcx_init(const struct device *dev)
 	const struct uart_npcx_config *config = DRV_CONFIG(dev);
 	const struct uart_npcx_data *data = DRV_DATA(dev);
 	struct uart_reg *inst = HAL_INSTANCE(dev);
-	const struct device *clk_dev = device_get_binding(NPCX_CLOCK_CONTROL_NAME);
+	const struct device *clk_dev = device_get_binding(NPCX_CLK_CTRL_NAME);
 	uint32_t uart_rate;
 
 	/* Turn on device clock first */
