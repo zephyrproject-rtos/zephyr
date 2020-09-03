@@ -247,7 +247,10 @@ static int package_uri_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 
 	if (state == STATE_IDLE) {
 		lwm2m_firmware_set_update_result(RESULT_DEFAULT);
-		lwm2m_firmware_start_transfer(package_uri);
+
+		if (data_len > 0) {
+			lwm2m_firmware_start_transfer(package_uri);
+		}
 	} else if (state == STATE_DOWNLOADED && data_len == 0U) {
 		/* reset to state idle and result default */
 		lwm2m_firmware_set_update_result(RESULT_DEFAULT);
