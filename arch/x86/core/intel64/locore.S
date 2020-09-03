@@ -403,6 +403,11 @@ __resume:
 	lfence
 #endif /* CONFIG_X86_BOUNDS_CHECK_BYPASS_MITIGATION */
 
+#ifdef CONFIG_TRACING
+	pushq %rdi
+	call sys_trace_thread_switched_in
+	popq %rdi
+#endif
 	iretq
 
 
