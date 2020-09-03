@@ -22,3 +22,7 @@ tests:
     platform_allow: nrf52840dk_nrf52840
     extra_args: SHIELD=waveshare_epaper_gdeh029a1
     tags: shield
+  sample.display.lvgl.sdl:
+    build_only: true
+    platform_allow: native_posix_64
+    tags: samples display gui
