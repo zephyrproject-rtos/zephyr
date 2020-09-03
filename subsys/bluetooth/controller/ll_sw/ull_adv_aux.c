@@ -43,8 +43,10 @@ static int init_reset(void);
 static inline struct ll_adv_aux_set *aux_acquire(void);
 static inline void aux_release(struct ll_adv_aux_set *aux);
 static inline uint8_t aux_handle_get(struct ll_adv_aux_set *aux);
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 static inline void sync_info_fill(struct lll_adv_sync *lll_sync,
 				  uint8_t **dptr);
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 static void mfy_aux_offset_get(void *param);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, void *param);
@@ -558,6 +560,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 		*--sec_dptr = *--sec_dptr_prev;
 	}
 
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 	/* No SyncInfo in primary channel PDU */
 	/* Fill SyncInfo in secondary channel PDU */
 	if (sec_hdr_prev.sync_info) {
@@ -566,6 +569,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	if (sec_hdr->sync_info) {
 		sync_info_fill(lll->sync, &sec_dptr);
 	}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 
 	/* AuxPtr */
 	if (pri_hdr_prev.aux_ptr) {
@@ -850,6 +854,7 @@ static inline uint8_t aux_handle_get(struct ll_adv_aux_set *aux)
 			     sizeof(struct ll_adv_aux_set));
 }
 
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 static inline void sync_info_fill(struct lll_adv_sync *lll_sync,
 				  uint8_t **dptr)
 {
@@ -871,6 +876,7 @@ static inline void sync_info_fill(struct lll_adv_sync *lll_sync,
 
 	si->evt_cntr = 0U; /* NOTE: Filled by secondary prepare */
 }
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 
 static void mfy_aux_offset_get(void *param)
 {
