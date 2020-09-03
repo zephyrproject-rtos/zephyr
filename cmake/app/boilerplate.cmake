@@ -473,6 +473,30 @@ if(CONF_FILE)
   # CONF_FILE has either been specified on the cmake CLI or is already
   # in the CMakeCache.txt. This has precedence over the environment
   # variable CONF_FILE and the default prj.conf
+
+  # In order to support a `prj_<name>.conf pattern for auto inclusion of board
+  # overlays, then we must first ensure only a single conf file is provided.
+  string(REPLACE " " ";" CONF_FILE_AS_LIST "${CONF_FILE}")
+  list(LENGTH CONF_FILE_AS_LIST CONF_FILE_LENGTH)
+  if(${CONF_FILE_LENGTH} EQUAL 1)
+    # Need the file name to look for match.
+    # Need path in order to check if it is absolute.
+    get_filename_component(CONF_FILE_NAME ${CONF_FILE} NAME)
+    get_filename_component(CONF_FILE_DIR ${CONF_FILE} DIRECTORY)
+    if(${CONF_FILE} MATCHES "prj_(.*).conf")
+      if(NOT IS_ABSOLUTE ${CONF_FILE_DIR})
+        set(CONF_FILE_DIR ${APPLICATION_SOURCE_DIR}/${CONF_FILE_DIR})
+      endif()
+      if(EXISTS ${CONF_FILE_DIR}/boards/${BOARD}_${CMAKE_MATCH_1}.conf)
+        list(APPEND CONF_FILE ${CONF_FILE_DIR}/boards/${BOARD}_${CMAKE_MATCH_1}.conf)
+      endif()
+    endif()
+  endif()
+elseif(CACHED_CONF_FILE)
+  # Cached conf file is present.
+  # That value has precedence over anything else than a new
+  # `cmake -DCONF_FILE=<file>` invocation.
+  set(CONF_FILE ${CACHED_CONF_FILE})
 elseif(DEFINED ENV{CONF_FILE})
   set(CONF_FILE $ENV{CONF_FILE})
 
@@ -490,10 +514,13 @@ elseif(EXISTS   ${APPLICATION_SOURCE_DIR}/prj.conf)
   set(CONF_FILE ${APPLICATION_SOURCE_DIR}/prj.conf)
 endif()
 
-set(CONF_FILE ${CONF_FILE} CACHE STRING "If desired, you can build the application using\
+set(CACHED_CONF_FILE ${CONF_FILE} CACHE STRING "If desired, you can build the application using\
 the configuration settings specified in an alternate .conf file using this parameter. \
 These settings will override the settings in the application’s .config file or its default .conf file.\
-Multiple files may be listed, e.g. CONF_FILE=\"prj1.conf prj2.conf\"")
+Multiple files may be listed, e.g. CONF_FILE=\"prj1.confi;prj2.conf\" \
+The CACHED_CONF_FILE is internal Zephyr variable used between CMake runs. \
+To change CONF_FILE, use the CONF_FILE variable.")
+unset(CONF_FILE CACHE)
 
 if(ZEPHYR_EXTRA_MODULES)
   # ZEPHYR_EXTRA_MODULES has either been specified on the cmake CLI or is

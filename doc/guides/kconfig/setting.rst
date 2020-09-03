@@ -141,19 +141,25 @@ The application configuration can come from the sources below. By default,
    merged and used as the application configuration. ``CONF_FILE`` can be set
    in various ways:
 
-   1. In :file:`CMakeLists.txt`, before including :file:`boilerplate.cmake`
+   1. In :file:`CMakeLists.txt`, before calling ``find_package(Zephyr)``
 
    2. By passing ``-DCONF_FILE=<conf file(s)>``, either directly or via ``west``
 
    3. From the CMake variable cache
 
-2. Otherwise, :file:`prj_<BOARD>.conf` is used if it exists in the application
+2. Otherwise if ``CONF_FILE`` is set, and a single configuration file of the
+   form :file:`prj_<build>.conf` is used, then if file
+   :file:`boards/<BOARD>_<build>.conf` exists in same folder as file
+   :file:`prj_<build>.conf`, the result of merging :file:`prj_<build>.conf` and
+   :file:`boards/<BOARD>_<build>.conf` is used.
+
+3. Otherwise, :file:`prj_<BOARD>.conf` is used if it exists in the application
    directory.
 
-3. Otherwise, if :file:`boards/<BOARD>.conf` exists in the application
+4. Otherwise, if :file:`boards/<BOARD>.conf` exists in the application
    directory, the result of merging it with :file:`prj.conf` is used.
 
-4. Otherwise, :file:`prj.conf` is used if it exists in the application
+5. Otherwise, :file:`prj.conf` is used if it exists in the application
    directory
 
 If a symbol is assigned both in :file:`<BOARD>_defconfig` and in the
