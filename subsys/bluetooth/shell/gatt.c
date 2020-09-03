@@ -27,6 +27,8 @@
 
 #define CHAR_SIZE_MAX           512
 
+extern uint8_t selected_id;
+
 #if defined(CONFIG_BT_GATT_CLIENT)
 static void exchange_func(struct bt_conn *conn, uint8_t err,
 			  struct bt_gatt_exchange_params *params)
@@ -586,6 +588,44 @@ static int cmd_subscribe(const struct shell *shell, size_t argc, char *argv[])
 	return err;
 }
 
+static int cmd_resubscribe(const struct shell *shell, size_t argc,
+				char *argv[])
+{
+	bt_addr_le_t addr;
+	int err;
+
+	if (subscribe_params.value_handle) {
+		shell_error(shell, "Cannot resubscribe: subscription to %x"
+			    " already exists", subscribe_params.value_handle);
+		return -ENOEXEC;
+	}
+
+	err = bt_addr_le_from_str(argv[1], argv[2], &addr);
+	if (err) {
+		shell_error(shell, "Invalid peer address (err %d)", err);
+		return -ENOEXEC;
+	}
+
+	subscribe_params.ccc_handle = strtoul(argv[3], NULL, 16);
+	subscribe_params.value_handle = strtoul(argv[4], NULL, 16);
+	subscribe_params.value = BT_GATT_CCC_NOTIFY;
+	subscribe_params.notify = notify_func;
+
+	if (argc > 5 && !strcmp(argv[5], "ind")) {
+		subscribe_params.value = BT_GATT_CCC_INDICATE;
+	}
+
+	err = bt_gatt_resubscribe(selected_id, &addr, &subscribe_params);
+	if (err) {
+		subscribe_params.value_handle = 0U;
+		shell_error(shell, "Resubscribe failed (err %d)", err);
+	} else {
+		shell_print(shell, "Resubscribed");
+	}
+
+	return err;
+}
+
 static int cmd_unsubscribe(const struct shell *shell,
 			   size_t argc, char *argv[])
 {
@@ -1081,6 +1121,7 @@ int cmd_att_mtu(const struct shell *shell, size_t argc, char *argv[])
 }
 
 #define HELP_NONE "[none]"
+#define HELP_ADDR_LE "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>"
 
 SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
 #if defined(CONFIG_BT_GATT_CLIENT)
@@ -1106,6 +1147,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
 		      cmd_write_without_rsp, 3, 2),
 	SHELL_CMD_ARG(subscribe, NULL, "<CCC handle> <value handle> [ind]",
 		      cmd_subscribe, 3, 1),
+	SHELL_CMD_ARG(resubscribe, NULL, HELP_ADDR_LE" <CCC handle> "
+		      "<value handle> [ind]", cmd_resubscribe, 5, 1),
 	SHELL_CMD_ARG(write, NULL, "<handle> <offset> <data> [length]",
 		      cmd_write, 4, 1),
 	SHELL_CMD_ARG(write-without-response, NULL,
