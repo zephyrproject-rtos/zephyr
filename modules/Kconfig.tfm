@@ -3,7 +3,7 @@
 # Copyright (c) 2019, 2020 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-config BUILD_WITH_TFM
+menuconfig BUILD_WITH_TFM
 	bool "Build with TF-M as the Secure Execution Environment"
 	depends on TRUSTED_EXECUTION_NONSECURE
 	help
@@ -20,6 +20,8 @@ config BUILD_WITH_TFM
 	    Building with the "_nonsecure" BOARD variant (e.g.
 	    "mps2_an521_nonsecure") ensures that
 	    CONFIG_TRUSTED_EXECUTION_NONSECURE ie enabled.
+
+if BUILD_WITH_TFM
 
 config TFM_KEY_FILE_S
 	string "Path to private key used to sign secure firmware images."
@@ -38,3 +40,20 @@ config TFM_KEY_FILE_NS
 	  The path and filename for the .pem file containing the private key
 	  that should be used by the BL2 bootloader when signing non-secure
 	  firmware images.
+
+choice TFM_BL2
+        prompt "BL2 configuration, should TFM build with MCUboot support"
+        default TFM_BL2_CONFIG_FILE_DEFAULT
+
+config TFM_BL2_CONFIG_FILE_DEFAULT
+        bool "Use TFM BL2 setting from TFM configuration file"
+
+config TFM_BL2_TRUE
+        bool "TFM BL2 enabled"
+
+config TFM_BL2_FALSE
+        bool "TFM BL2 disabled"
+
+endchoice
+
+endif # BUILD_WITH_TFM
