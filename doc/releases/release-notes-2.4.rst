@@ -85,6 +85,11 @@ API Changes
 * The ``_gatt_`` and ``_GATT_`` infixes have been removed for the HRS, DIS
   and BAS APIs and the Kconfig options.
 
+* ``<include/bluetooth/gatt.h>`` callback :c:func:`bt_gatt_attr_func_t` used by
+  :c:func:`bt_gatt_foreach_attr` and :c:func:`bt_gatt_foreach_attr_type` has
+  been changed to always pass the original pointer of attributes along with its
+  resolved handle.
+
 Deprecated in this release
 ==========================
 

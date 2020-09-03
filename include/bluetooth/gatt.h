@@ -339,12 +339,14 @@ enum {
  *  @brief Attribute iterator callback.
  *
  *  @param attr Attribute found.
+ *  @param handle Attribute handle found.
  *  @param user_data Data given.
  *
  *  @return BT_GATT_ITER_CONTINUE if should continue to the next attribute.
  *  @return BT_GATT_ITER_STOP to stop.
  */
 typedef uint8_t (*bt_gatt_attr_func_t)(const struct bt_gatt_attr *attr,
+				       uint16_t handle,
 				       void *user_data);
 
 /** @brief Attribute iterator by type.
