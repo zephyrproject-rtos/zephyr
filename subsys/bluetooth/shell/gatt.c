@@ -659,7 +659,8 @@ static struct db_stats {
 	uint16_t ccc_count;
 } stats;
 
-static uint8_t print_attr(const struct bt_gatt_attr *attr, void *user_data)
+static uint8_t print_attr(const struct bt_gatt_attr *attr, uint16_t handle,
+			  void *user_data)
 {
 	const struct shell *shell = user_data;
 	char str[BT_UUID_STR_LEN];
@@ -682,7 +683,7 @@ static uint8_t print_attr(const struct bt_gatt_attr *attr, void *user_data)
 
 	bt_uuid_to_str(attr->uuid, str, sizeof(str));
 	shell_print(shell, "attr %p handle 0x%04x uuid %s perm 0x%02x",
-		    attr, attr->handle, str, attr->perm);
+		    attr, handle, str, attr->perm);
 
 	return BT_GATT_ITER_CONTINUE;
 }
@@ -1007,7 +1008,8 @@ static int cmd_metrics(const struct shell *shell, size_t argc, char *argv[])
 }
 #endif /* CONFIG_BT_GATT_DYNAMIC_DB */
 
-static uint8_t get_cb(const struct bt_gatt_attr *attr, void *user_data)
+static uint8_t get_cb(const struct bt_gatt_attr *attr, uint16_t handle,
+		      void *user_data)
 {
 	struct shell *shell = user_data;
 	uint8_t buf[256];
@@ -1056,7 +1058,8 @@ struct set_data {
 	int err;
 };
 
-static uint8_t set_cb(const struct bt_gatt_attr *attr, void *user_data)
+static uint8_t set_cb(const struct bt_gatt_attr *attr, uint16_t handle,
+		      void *user_data)
 {
 	struct set_data *data = user_data;
 	uint8_t buf[256];
