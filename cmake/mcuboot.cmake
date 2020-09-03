@@ -134,7 +134,7 @@ function(zephyr_mcuboot_tasks)
     ${west_sign} ${unconfirmed_args} ${imgtool_args})
   if(confirmed_args)
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
-      ${west_sign} ${confirmed_args} ${imgtool_args} --confirm)
+      ${west_sign} ${confirmed_args} ${imgtool_args} --pad --confirm)
   endif()
   set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts ${byproducts})
 endfunction()
