@@ -2489,48 +2489,37 @@ static void gatt_sub_remove(struct bt_conn *conn, struct gatt_sub *sub,
 }
 
 #if defined(CONFIG_BT_GATT_CLIENT)
-static struct gatt_sub *gatt_sub_find_free(struct bt_conn *conn,
-					   struct gatt_sub **free_sub)
+static struct gatt_sub *gatt_sub_find(struct bt_conn *conn)
 {
-	int i;
-
-	if (free_sub) {
-		*free_sub = NULL;
-	}
-
-	for (i = 0; i < ARRAY_SIZE(subscriptions); i++) {
+	for (int i = 0; i < ARRAY_SIZE(subscriptions); i++) {
 		struct gatt_sub *sub = &subscriptions[i];
 
-		if (bt_conn_is_peer_addr_le(conn, sub->id, &sub->peer)) {
+		if (!conn) {
+			if (!bt_addr_le_cmp(&sub->peer, BT_ADDR_LE_ANY)) {
+				return sub;
+			}
+		} else if (bt_conn_is_peer_addr_le(conn, sub->id, &sub->peer)) {
 			return sub;
-		} else if (free_sub &&
-			   !bt_addr_le_cmp(BT_ADDR_LE_ANY, &sub->peer)) {
-			*free_sub = sub;
 		}
 	}
 
 	return NULL;
 }
 
-#define gatt_sub_find(_conn) \
-	gatt_sub_find_free(_conn, NULL)
-
 static struct gatt_sub *gatt_sub_add(struct bt_conn *conn)
 {
-	struct gatt_sub *sub, *free_sub;
+	struct gatt_sub *sub;
 
-	sub = gatt_sub_find_free(conn, &free_sub);
-	if (sub) {
-		return sub;
+	sub = gatt_sub_find(conn);
+	if (!sub) {
+		sub = gatt_sub_find(NULL);
+		if (sub) {
+			bt_addr_le_copy(&sub->peer, &conn->le.dst);
+			sub->id = conn->id;
+		}
 	}
 
-	if (free_sub) {
-		bt_addr_le_copy(&free_sub->peer, &conn->le.dst);
-		free_sub->id = conn->id;
-		return free_sub;
-	}
-
-	return NULL;
+	return sub;
 }
 
 void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
