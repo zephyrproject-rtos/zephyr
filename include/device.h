@@ -617,12 +617,12 @@ int device_busy_check(const struct device *chk_dev);
 
 #ifdef CONFIG_PM_DEVICE_IDLE
 
-/* Device PM FSM states */
-enum device_pm_fsm_state {
-	DEVICE_PM_FSM_STATE_ACTIVE = 1,
-	DEVICE_PM_FSM_STATE_SUSPENDED,
-	DEVICE_PM_FSM_STATE_SUSPENDING,
-	DEVICE_PM_FSM_STATE_RESUMING,
+/* Device PM states */
+enum device_pm_state {
+	DEVICE_PM_STATE_ACTIVE = 1,
+	DEVICE_PM_STATE_SUSPENDED,
+	DEVICE_PM_STATE_SUSPENDING,
+	DEVICE_PM_STATE_RESUMING,
 };
 
 /**
