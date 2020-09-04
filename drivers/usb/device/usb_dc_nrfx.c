@@ -1341,7 +1341,10 @@ int usb_dc_attach(void)
 	k_work_init(&ctx->usb_work, usbd_work_handler);
 	k_mutex_init(&ctx->drv_lock);
 	ctx->hfxo_mgr =
-		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
+		z_nrf_clock_control_get_onoff(
+			COND_CODE_1(NRF_CLOCK_HAS_HFCLK192,
+				    (CLOCK_CONTROL_NRF_SUBSYS_HF192M),
+				    (CLOCK_CONTROL_NRF_SUBSYS_HF)));
 
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    nrfx_isr, nrfx_usbd_irq_handler, 0);
