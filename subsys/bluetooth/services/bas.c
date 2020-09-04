@@ -21,7 +21,7 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/services/bas.h>
 
-#define LOG_LEVEL CONFIG_BT_GATT_BAS_LOG_LEVEL
+#define LOG_LEVEL CONFIG_BT_BAS_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(bas);
 
@@ -64,12 +64,12 @@ static int bas_init(const struct device *dev)
 	return 0;
 }
 
-uint8_t bt_gatt_bas_get_battery_level(void)
+uint8_t bt_bas_get_battery_level(void)
 {
 	return battery_level;
 }
 
-int bt_gatt_bas_set_battery_level(uint8_t level)
+int bt_bas_set_battery_level(uint8_t level)
 {
 	int rc;
 
