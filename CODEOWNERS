@@ -177,12 +177,9 @@
 /drivers/eeprom/eeprom_stm32.c            @KwonTae-young
 /drivers/entropy/*rv32m1*                 @MaureenHelm
 /drivers/entropy/*gecko*                  @chrta
-/drivers/espi/                            @albertofloyd @franciscomunoz @scottwcpg
-/drivers/ps2/                             @albertofloyd @franciscomunoz @scottwcpg
-/drivers/kscan/                           @albertofloyd @franciscomunoz @scottwcpg
-/drivers/peci/                            @albertofloyd @franciscomunoz @scottwcpg
-/drivers/ethernet/                        @jukkar @tbursztyka @pfalcon
 /drivers/entropy/*litex*                  @mateusz-holenko @kgugala @pgielda
+/drivers/espi/                            @albertofloyd @franciscomunoz @scottwcpg
+/drivers/ethernet/                        @jukkar @tbursztyka @pfalcon
 /drivers/flash/                           @nashif @nvlsianpu
 /drivers/flash/*nrf*                      @nvlsianpu
 /drivers/flash/*spi_nor*                  @pabigot
@@ -214,14 +211,17 @@
 /drivers/ipm/ipm_nrfx_ipc.c               @masz-nordic @ioannisg
 /drivers/ipm/ipm_nrfx_ipc.h               @masz-nordic @ioannisg
 /drivers/ipm/ipm_stm32_ipcc.c             @arnopo
+/drivers/kscan/                           @albertofloyd @franciscomunoz @scottwcpg
 /drivers/led/                             @Mani-Sadhasivam
 /drivers/led_strip/                       @mbolivar-nordic
 /drivers/lora/                            @Mani-Sadhasivam
 /drivers/modem/                           @mike-scott
 /drivers/pcie/                            @andrewboie
+/drivers/peci/                            @albertofloyd @franciscomunoz @scottwcpg
 /drivers/pinmux/stm32/                    @idlethread
 /drivers/pinmux/*hsdk*                    @iriszzw
 /drivers/pinmux/*npcx*                    @MulinChao
+/drivers/ps2/                             @albertofloyd @franciscomunoz @scottwcpg
 /drivers/pwm/*litex*                      @mateusz-holenko @kgugala @pgielda
 /drivers/pwm/*sam0*                       @nzmichaelh
 /drivers/sensor/                          @MaureenHelm
