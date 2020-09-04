@@ -1181,6 +1181,12 @@ next_state:
 			break;
 		} else if (th && FL(&fl, ==, (FIN | ACK | PSH),
 				    th_seq(th) == conn->ack)) {
+			if (len) {
+				if (tcp_data_get(conn, pkt) < 0) {
+					break;
+				}
+			}
+
 			conn_ack(conn, + len + 1);
 			tcp_out(conn, FIN | ACK);
 			next = TCP_LAST_ACK;
