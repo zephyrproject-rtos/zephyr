@@ -28,6 +28,7 @@
 
 #include <arch/common/addr_types.h>
 #include <arch/x86/ia32/segmentation.h>
+#include <power/power.h>
 
 #endif /* _ASMLANGUAGE */
 
@@ -234,12 +235,6 @@ typedef struct s_isrList {
 }
 
 #ifdef CONFIG_PM
-/*
- * FIXME: z_pm_save_idle_exit is defined in kernel.h, which cannot be
- *	  included here due to circular dependency
- */
-extern void z_pm_save_idle_exit(int32_t ticks);
-
 static inline void arch_irq_direct_pm(void)
 {
 	if (_kernel.idle) {
