@@ -909,9 +909,7 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 
 		BT_DBG("First, len %u final %u", buf->len,
 		       (buf->len < sizeof(uint16_t)) ?
-		       0 :
-		       sys_le16_to_cpu(
-			       ((struct bt_l2cap_hdr *)buf->data)->len));
+		       0 : sys_get_le16(buf->data));
 
 		conn->rx = buf;
 		break;
