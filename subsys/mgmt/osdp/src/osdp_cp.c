@@ -878,7 +878,7 @@ static int state_update(struct osdp_pd *pd)
 }
 
 #ifdef CONFIG_OSDP_SC_ENABLED
-static int osdp_cp_send_cmd_keyset(struct osdp_cmd_keyset *cmd)
+static int osdp_cp_send_command_keyset(struct osdp_cmd_keyset *cmd)
 {
 	int i;
 	struct osdp_cmd *p;
@@ -931,6 +931,8 @@ int osdp_setup(struct osdp *ctx, uint8_t *key)
 	return 0;
 }
 
+/* --- Exported Methods --- */
+
 int osdp_cp_set_callback_key_press(int (*cb)(int address, uint8_t key))
 {
 	struct osdp *ctx = osdp_get_ctx();
@@ -950,127 +952,50 @@ int osdp_cp_set_callback_card_read(
 	return 0;
 }
 
-int osdp_cp_send_cmd_output(int pd, struct osdp_cmd_output *p)
+int osdp_cp_send_command(int pd, struct osdp_cmd *cmd)
 {
 	struct osdp *ctx = osdp_get_ctx();
-	struct osdp_cmd *cmd;
+	struct osdp_cmd *p;
+	int cmd_id;
 
-	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
-		LOG_WRN(TAG "PD not online");
-		return -1;
-	}
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
 		LOG_ERR(TAG "Invalid PD number");
 		return -1;
 	}
-
-	cmd = osdp_cmd_alloc(TO_PD(ctx, pd));
-	if (cmd == NULL) {
-		return -1;
-	}
-
-	cmd->id = CMD_OUT;
-	memcpy(&cmd->output, p, sizeof(struct osdp_cmd_output));
-	osdp_cmd_enqueue(TO_PD(ctx, pd), cmd);
-	return 0;
-}
-
-int osdp_cp_send_cmd_led(int pd, struct osdp_cmd_led *p)
-{
-	struct osdp *ctx = osdp_get_ctx();
-	struct osdp_cmd *cmd;
-
 	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
 		LOG_WRN(TAG "PD not online");
 		return -1;
 	}
-	if (pd < 0 || pd >= NUM_PD(ctx)) {
-		LOG_ERR(TAG "Invalid PD number");
+
+	switch (cmd->id) {
+	case OSDP_CMD_OUTPUT:
+		cmd_id = CMD_OUT;
+		break;
+	case OSDP_CMD_LED:
+		cmd_id = CMD_LED;
+		break;
+	case OSDP_CMD_BUZZER:
+		cmd_id = CMD_BUZ;
+		break;
+	case OSDP_CMD_TEXT:
+		cmd_id = CMD_TEXT;
+		break;
+	case OSDP_CMD_COMSET:
+		cmd_id = CMD_COMSET;
+		break;
+	case OSDP_CMD_KEYSET:
+		return osdp_cp_send_command_keyset(&cmd->keyset);
+	default:
+		LOG_ERR(TAG "Invalid command ID %d", cmd->id);
 		return -1;
 	}
 
-	cmd = osdp_cmd_alloc(TO_PD(ctx, pd));
-	if (cmd == NULL) {
+	p = osdp_cmd_alloc(TO_PD(ctx, pd));
+	if (p == NULL) {
 		return -1;
 	}
-
-	cmd->id = CMD_LED;
-	memcpy(&cmd->led, p, sizeof(struct osdp_cmd_led));
-	osdp_cmd_enqueue(TO_PD(ctx, pd), cmd);
-	return 0;
-}
-
-int osdp_cp_send_cmd_buzzer(int pd, struct osdp_cmd_buzzer *p)
-{
-	struct osdp *ctx = osdp_get_ctx();
-	struct osdp_cmd *cmd;
-
-	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
-		LOG_WRN(TAG "PD not online");
-		return -1;
-	}
-	if (pd < 0 || pd >= NUM_PD(ctx)) {
-		LOG_ERR(TAG "Invalid PD number");
-		return -1;
-	}
-
-	cmd = osdp_cmd_alloc(TO_PD(ctx, pd));
-	if (cmd == NULL) {
-		return -1;
-	}
-
-	cmd->id = CMD_BUZ;
-	memcpy(&cmd->buzzer, p, sizeof(struct osdp_cmd_buzzer));
-	osdp_cmd_enqueue(TO_PD(ctx, pd), cmd);
-	return 0;
-}
-
-int osdp_cp_send_cmd_text(int pd, struct osdp_cmd_text *p)
-{
-	struct osdp *ctx = osdp_get_ctx();
-	struct osdp_cmd *cmd;
-
-	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
-		LOG_WRN(TAG "PD not online");
-		return -1;
-	}
-	if (pd < 0 || pd >= NUM_PD(ctx)) {
-		LOG_ERR(TAG "Invalid PD number");
-		return -1;
-	}
-
-	cmd = osdp_cmd_alloc(TO_PD(ctx, pd));
-	if (cmd == NULL) {
-		return -1;
-	}
-
-	cmd->id = CMD_TEXT;
-	memcpy(&cmd->text, p, sizeof(struct osdp_cmd_text));
-	osdp_cmd_enqueue(TO_PD(ctx, pd), cmd);
-	return 0;
-}
-
-int osdp_cp_send_cmd_comset(int pd, struct osdp_cmd_comset *p)
-{
-	struct osdp *ctx = osdp_get_ctx();
-	struct osdp_cmd *cmd;
-
-	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
-		LOG_WRN(TAG "PD not online");
-		return -1;
-	}
-	if (pd < 0 || pd >= NUM_PD(ctx)) {
-		LOG_ERR(TAG "Invalid PD number");
-		return -1;
-	}
-
-	cmd = osdp_cmd_alloc(TO_PD(ctx, pd));
-	if (cmd == NULL) {
-		return -1;
-	}
-
-	cmd->id = CMD_COMSET;
-	memcpy(&cmd->text, p, sizeof(struct osdp_cmd_comset));
-	osdp_cmd_enqueue(TO_PD(ctx, pd), cmd);
+	memcpy(p, cmd, sizeof(struct osdp_cmd));
+	p->id = cmd_id; /* translate to internal */
+	osdp_cmd_enqueue(TO_PD(ctx, pd), p);
 	return 0;
 }

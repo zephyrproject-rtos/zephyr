@@ -794,6 +794,8 @@ int osdp_setup(struct osdp *ctx, uint8_t *key)
 	return 0;
 }
 
+/* --- Exported Methods --- */
+
 int osdp_pd_get_cmd(struct osdp_cmd *cmd)
 {
 	struct osdp_cmd *c;
