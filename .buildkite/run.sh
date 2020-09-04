@@ -2,7 +2,34 @@
 # Copyright (c) 2020 Linaro Limited
 #
 # SPDX-License-Identifier: Apache-2.0
-set -e
+set -eE
+
+function cleanup()
+{
+	# Rename sanitycheck junit xml for use with junit-annotate-buildkite-plugin
+	# create dummy file if sanitycheck did nothing
+	if [ ! -f sanity-out/sanitycheck.xml ]; then
+	   touch sanity-out/sanitycheck.xml
+	fi
+	mv sanity-out/sanitycheck.xml sanitycheck-${BUILDKITE_JOB_ID}.xml
+	buildkite-agent artifact upload sanitycheck-${BUILDKITE_JOB_ID}.xml
+
+
+	# Upload test_file to get list of tests that are build/run
+	if [ -f test_file.txt ]; then
+		buildkite-agent artifact upload test_file.txt
+	fi
+
+	# ccache stats
+	echo "--- ccache stats at finish"
+	ccache -s
+
+	# disk usage
+	echo "--- disk usage at finish"
+	df -h
+}
+
+trap cleanup ERR
 
 echo "--- run $0"
 
@@ -46,24 +73,6 @@ fi
 
 SANITY_EXIT_STATUS=$?
 
-# Rename sanitycheck junit xml for use with junit-annotate-buildkite-plugin
-# create dummy file if sanitycheck did nothing
-if [ ! -f sanity-out/sanitycheck.xml ]; then
-   touch sanity-out/sanitycheck.xml
-fi
-mv sanity-out/sanitycheck.xml sanitycheck-${BUILDKITE_JOB_ID}.xml
-buildkite-agent artifact upload sanitycheck-${BUILDKITE_JOB_ID}.xml
-
-
-# Upload test_file to get list of tests that are build/run
-buildkite-agent artifact upload test_file.txt
-
-# ccache stats
-echo "--- ccache stats at finish"
-ccache -s
-
-# disk usage
-echo "--- disk usage at finish"
-df -h
+cleanup
 
 exit ${SANITY_EXIT_STATUS}
