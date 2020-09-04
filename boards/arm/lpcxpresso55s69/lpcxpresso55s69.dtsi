@@ -103,32 +103,32 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0x00020000>;
+			reg = <0x00000000 0x00008000>;
 			read-only;
 		};
-		slot0_partition: partition@20000 {
+		slot0_partition: partition@8000 {
 			label = "image-0";
-			reg = <0x00020000 0x00020000>;
+			reg = <0x00008000 0x00038000>;
 		};
 		slot1_partition: partition@40000 {
 			label = "image-1";
-			reg = <0x00040000 0x00018000>;
+			reg = <0x00040000 0x00010000>;
 		};
-		slot2_partition: partition@58000 {
+		slot2_partition: partition@50000 {
 			label = "image-2";
-			reg = <0x00058000 0x00020000>;
+			reg = <0x00050000 0x00038000>;
 		};
-		slot3_partition: partition@78000 {
+		slot3_partition: partition@88000 {
 			label = "image-3";
-			reg = <0x00078000 0x00018000>;
+			reg = <0x00088000 0x00010000>;
 		};
 		/*
-		 * The flash starting at 0x90000 and ending at
-		 * 0x9D7FF is reserved for the application.
+		 * The flash starting at 0x98000 and ending at
+		 * 0x9A000 is reserved for the application.
 		 */
-		storage_partition: partition@90000 {
+		storage_partition: partition@98000 {
 			label = "storage";
-			reg = <0x00090000 0x0000d800>;
+			reg = <0x00098000 0x00002000>;
 		};
 	};
 };
