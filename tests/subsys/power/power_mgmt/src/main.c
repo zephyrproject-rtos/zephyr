@@ -53,8 +53,8 @@ __weak void sys_set_power_state(enum power_states state)
 
 __weak void _pm_power_state_exit_post_ops(enum power_states state)
 {
-	/* _sys_suspend is entered with irq locked
-	 * unlock irq before leave _sys_suspend
+	/* pm_system_suspend is entered with irq locked
+	 * unlock irq before leave pm_system_suspend
 	 */
 	irq_unlock(0);
 }

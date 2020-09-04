@@ -38,7 +38,7 @@
 #endif
 
 #ifdef CONFIG_PM_DEEP_SLEEP_STATES
-	GTEXT(_sys_resume_from_deep_sleep)
+	GTEXT(pm_system_resume_from_deep_sleep)
 #endif
 
 SECTION_FUNC(TEXT_START, __start)
@@ -134,13 +134,13 @@ __csSet:
 	 * the ISR stack size are some multiple of ARCH_STACK_PTR_ALIGN, which
 	 * is at least 4.
 	 *
-	 * This is also used to call the _sys_resume_from_deep_sleep()
+	 * This is also used to call the pm_system_resume_from_deep_sleep()
 	 * routine to avoid memory corruption if the system is resuming from
-	 * deep sleep. It is important that _sys_resume_from_deep_sleep()
+	 * deep sleep. It is important that pm_system_resume_from_deep_sleep()
 	 * restores the stack pointer to what it was at deep sleep before
          * enabling interrupts.  This is necessary to avoid
 	 * interfering with interrupt handler use of this stack.
-	 * If it is a cold boot then _sys_resume_from_deep_sleep() should
+	 * If it is a cold boot then pm_system_resume_from_deep_sleep() should
 	 * not do anything and must return immediately.
 	 */
 #ifdef CONFIG_INIT_STACKS
@@ -166,7 +166,7 @@ __csSet:
 #if defined(CONFIG_PM_DEEP_SLEEP_STATES) && \
              !defined(CONFIG_BOOTLOADER_CONTEXT_RESTORE)
 	/*
-	 * Invoke _sys_resume_from_deep_sleep() hook to handle resume from
+	 * Invoke pm_system_resume_from_deep_sleep() hook to handle resume from
 	 * deep sleep. It should first check whether system is recovering from
 	 * deep sleep state. If it is, then this function should restore
 	 * states and resume at the point system went to deep sleep.
@@ -177,7 +177,7 @@ __csSet:
 	 * return and execution falls through to cold boot path.
 	 */
 
-	call _sys_resume_from_deep_sleep
+	call pm_system_resume_from_deep_sleep
 
 #endif
 
