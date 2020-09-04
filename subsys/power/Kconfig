@@ -48,7 +48,7 @@ config PM_DEEP_SLEEP_STATES
 
 
 config PM_STATE_LOCK
-	bool "Enable Power State locking capability"
+	bool "Power State locking capability"
 	help
 	  Enable Power Management system state locking capability
 	  if any application wants to temporarily disable certain
@@ -56,7 +56,7 @@ config PM_STATE_LOCK
 	  response from hardware resources.
 
 config PM_DIRECT_FORCE_MODE
-	bool "Enable system power management direct force trigger mode"
+	bool "System power management direct force trigger mode"
 	help
 	  Enable system power management direct force trigger mode. In
 	  this mode application thread can directly put system in sleep
@@ -64,19 +64,9 @@ config PM_DIRECT_FORCE_MODE
 	  it, so that it can reduce latency to enter low power mode.
 
 config PM_DEBUG
-	bool "Enable System Power Management debug hooks"
+	bool "System Power Management debug hooks"
 	help
 	  Enable System Power Management debugging hooks.
-
-config PM_DEVICE_IDLE
-	bool "Enable device Idle Power Management"
-	depends on PM_DEVICE
-	select POLL
-	help
-	  Enable device Idle Power Management to save power.
-	  With device Idle PM enabled, devices can be suspended or
-	  resumed based on the device usage even while the CPU or
-	  system is running.
 
 source "subsys/power/policy/Kconfig"
 
@@ -109,6 +99,15 @@ config PM_MAX_DEVICES
 	depends on PM_DEVICE
 	default 15
 
+config PM_DEVICE_IDLE
+	bool "Device Idle Power Management"
+	depends on PM_DEVICE
+	select POLL
+	help
+	  Enable device Idle Power Management to save power.
+	  With device Idle PM enabled, devices can be suspended or
+	  resumed based on the device usage even while the CPU or
+	  system is running.
 endmenu
 
 
