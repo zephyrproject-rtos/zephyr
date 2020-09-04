@@ -8,7 +8,7 @@
  * @file
  * @brief TrustZone API for use in nonsecure firmware
  *
- * TrustZone API for Cortex-M23/M33 CPUs implementing the Security Extension.
+ * TrustZone API for Cortex-M CPUs implementing the Security Extension.
  * The following API can be used by the nonsecure firmware to interact with the
  * secure firmware.
  */
@@ -23,7 +23,8 @@
 #else
 
 /**
- * @brief Macro for "sandwiching" a function call (@p name) in two other calls
+ * @brief Macro for "sandwiching" a function call (@p name) between two other
+ *	  calls
  *
  * This macro should be called via @ref __TZ_WRAP_FUNC.
  *
@@ -47,19 +48,23 @@
  */
 #define __TZ_WRAP_FUNC_RAW(preface, name, postface, store_lr, load_lr) \
 	do { \
-		__asm(".global "#preface"; .type "#preface", %function"); \
-		__asm(".global "#name"; .type "#name", %function"); \
-		__asm(".global "#postface"; .type "#postface", %function"); \
-		\
-		__asm(store_lr); \
-		__asm("push {r0-r3}"); \
-		__asm("bl "#preface); \
-		__asm("pop {r0-r3}"); \
-		__asm("bl "#name); \
-		__asm("push {r0-r3}"); \
-		__asm("bl "#postface); \
-		__asm("pop {r0-r3}"); \
-		__asm(load_lr); \
+		__asm__ volatile( \
+			".global "#preface"; .type "#preface", %function"); \
+		__asm__ volatile( \
+			".global "#name"; .type "#name", %function"); \
+		__asm__ volatile( \
+			".global "#postface"; .type "#postface", %function"); \
+		__asm__ volatile( \
+			store_lr "\n\t" \
+			"push {r0-r3}\n\t" \
+			"bl " #preface "\n\t" \
+			"pop {r0-r3}\n\t" \
+			"bl " #name " \n\t" \
+			"push {r0-r3}\n\t" \
+			"bl " #postface "\n\t" \
+			"pop {r0-r3}\n\t" \
+			load_lr "\n\t" \
+			::); \
 	} while (0)
 
 /**
@@ -91,8 +96,7 @@
  *	}
  *
  * @note __attribute__((naked)) is not mandatory, but without it, GCC gives a
- *       warning for functions with a return value. It also saves a bit of space
- *       since it removes a little code that is not necessary.
+ *       warning for functions with a return value. It also reduces flash use.
  *
  * See @ref __TZ_WRAP_FUNC_RAW for more information.
  */
@@ -103,7 +107,7 @@
 
 #ifdef CONFIG_ARM_FIRMWARE_USES_SECURE_ENTRY_FUNCS
 /**
- * @brief Create a thread safe wrapper function for an non-secure entry function
+ * @brief Create a thread safe wrapper function for a non-secure entry function
  *
  * This locks the scheduler before calling the function by wrapping the NS entry
  * function in @ref k_sched_lock / @ref k_sched_unlock, using
@@ -119,7 +123,7 @@
  *	int ret = foo_safe("my arg");
  *
  * If NS entry functions are called without such a wrapper, and a thread switch
- * happens while execution is in the secure binary, the possibly app will crash
+ * happens while execution is in the secure binary, the app will possibly crash
  * upon returning to the non-secure binary.
  *
  * @param ret   The return type of the NS entry function.
