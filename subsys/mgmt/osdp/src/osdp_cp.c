@@ -225,6 +225,19 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		}
 		ret = 0;
 		break;
+	case CMD_COMSET:
+		if (max_len < CMD_COMSET_LEN) {
+			break;
+		}
+		cmd = (struct osdp_cmd *)pd->cmd_data;
+		buf[len++] = pd->cmd_id;
+		buf[len++] = cmd->comset.address;
+		buf[len++] = BYTE_0(cmd->comset.baud_rate);
+		buf[len++] = BYTE_1(cmd->comset.baud_rate);
+		buf[len++] = BYTE_2(cmd->comset.baud_rate);
+		buf[len++] = BYTE_3(cmd->comset.baud_rate);
+		ret = 0;
+		break;
 #ifdef CONFIG_OSDP_SC_ENABLED
 	case CMD_KEYSET:
 		if (!ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
