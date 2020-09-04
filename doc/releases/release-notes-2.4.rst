@@ -197,6 +197,7 @@ Drivers and Sensors
 
 * EEPROM
 
+  * Added driver supporting the on-chip EEPROM found on NXP LPC11U6X MCUs.
 
 * Entropy
 
