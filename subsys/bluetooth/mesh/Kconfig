@@ -38,6 +38,13 @@ config BT_MESH_UNPROV_BEACON_INT
 	  This option specifies the interval (in seconds) at which the
 	  device sends unprovisioned beacon.
 
+config BT_MESH_PB_ADV_RETRANS_TIMEOUT
+	int "Timeout value of retransmit provisioning PDUs"
+	default 500
+	range 100 800
+	help
+	  Timeout value of retransmit provisioning PDUs.
+
 config BT_MESH_PROVISIONER
 	bool "Provisioner support"
 	select BT_MESH_PROV
@@ -315,6 +322,28 @@ config BT_MESH_LOOPBACK_BUFS
 	help
 	  The number of buffers allocated for the network loopback mechanism.
 	  Loopback is used when the device sends messages to itself.
+
+config BT_MESH_TX_SEG_RETRANS_COUNT
+	int "Transport message segment retransmit attempts"
+	default 4
+	range 1 8
+	help
+	  Maximum number of transport message segment retransmit attempts
+	  for outgoing segment message.
+
+config BT_MESH_TX_SEG_RETRANS_TIMEOUT_UNICAST
+	int "Transport message segment retransmit interval for unicast messages"
+	default 400
+	range 200 500
+	help
+	  Maximum time of retransmit segment message to unicast address.
+
+config BT_MESH_TX_SEG_RETRANS_TIMEOUT_GROUP
+	int "Transport message segment retransmit interval for group messages"
+	default 50
+	range 20 200
+	help
+	  Maximum time of retransmit segment message to group address.
 
 config BT_MESH_RELAY
 	bool "Relay support"
