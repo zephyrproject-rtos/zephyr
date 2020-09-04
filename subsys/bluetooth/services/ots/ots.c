@@ -320,20 +320,6 @@ int bt_ots_init(struct bt_ots *ots,
 		BT_GATT_PERM_READ | BT_GATT_PERM_WRITE)			\
 }
 
-#define BT_GATT_OTS_ATTRS_DEF(n, _ots_instances)			\
-	static struct bt_gatt_attr ots_attrs_##n[] =			\
-		BT_GATT_OTS_ATTRS(_ots_instances[n]);
-
-#define BT_GATT_OTS_SVC_ITEM(n, _) BT_GATT_SERVICE(ots_attrs_##n),
-
-#define BT_GATT_OTS_INSTANCE_LIST_DEF(_instance_num)			\
-	static struct bt_ots ots_instances[_instance_num];		\
-	UTIL_EVAL(UTIL_REPEAT(						\
-		_instance_num, BT_GATT_OTS_ATTRS_DEF, ots_instances))   \
-	static struct bt_gatt_service ots_service_list[] = {		\
-		UTIL_LISTIFY(_instance_num, BT_GATT_OTS_SVC_ITEM)	\
-	}
-
 #define BT_GATT_OTS_INSTANCE_LIST_SIZE	(ARRAY_SIZE(ots_instances))
 #define BT_GATT_OTS_INSTANCE_LIST_START	ots_instances
 #define BT_GATT_OTS_INSTANCE_LIST_END	\
@@ -341,8 +327,11 @@ int bt_ots_init(struct bt_ots *ots,
 
 #define BT_GATT_OTS_SERVICE_LIST_START	ots_service_list
 
-BT_GATT_OTS_INSTANCE_LIST_DEF(CONFIG_BT_OTS_MAX_INST_CNT);
+static struct bt_ots ots_instances[CONFIG_BT_OTS_MAX_INST_CNT];
 static uint32_t instance_cnt;
+BT_GATT_SERVICE_INSTANCE_DEFINE(ots_service_list, ots_instances,
+				CONFIG_BT_OTS_MAX_INST_CNT,
+				BT_GATT_OTS_ATTRS);
 
 struct bt_ots *bt_ots_free_instance_get(void)
 {
