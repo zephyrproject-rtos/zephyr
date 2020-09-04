@@ -107,6 +107,14 @@
 	Z_ITERABLE_SECTION_ROM(bt_mesh_app_key_cb, 4)
 #endif
 
+#if defined(CONFIG_BT_MESH_FRIEND)
+	Z_ITERABLE_SECTION_ROM(bt_mesh_friend_cb, 4)
+#endif
+
+#if defined(CONFIG_BT_MESH_LOW_POWER)
+	Z_ITERABLE_SECTION_ROM(bt_mesh_lpn_cb, 4)
+#endif
+
 #if defined(CONFIG_EC_HOST_CMD)
 	Z_ITERABLE_SECTION_ROM(ec_host_cmd_handler, 4)
 #endif

@@ -500,16 +500,24 @@ static int cmd_poll(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-static void lpn_cb(uint16_t friend_addr, bool established)
+static void lpn_established(uint16_t net_idx, uint16_t friend_addr,
+					uint8_t queue_size, uint8_t recv_win)
 {
-	if (established) {
-		shell_print(ctx_shell, "Friendship (as LPN) established to "
-			    "Friend 0x%04x", friend_addr);
-	} else {
-		shell_print(ctx_shell, "Friendship (as LPN) lost with Friend "
-			    "0x%04x", friend_addr);
-	}
+	shell_print(ctx_shell, "Friendship (as LPN) established to "
+			"Friend 0x%04x Queue Size %d Receive Window %d",
+			friend_addr, queue_size, recv_win);
 }
+
+static void lpn_terminated(uint16_t net_idx, uint16_t friend_addr)
+{
+	shell_print(ctx_shell, "Friendship (as LPN) lost with Friend "
+			"0x%04x", friend_addr);
+}
+
+BT_MESH_LPN_CB_DEFINE(lpn_cb) = {
+	.established = lpn_established,
+	.terminated = lpn_terminated,
+};
 
 #endif /* MESH_LOW_POWER */
 
@@ -544,10 +552,6 @@ static int cmd_init(const struct shell *shell, size_t argc, char *argv[])
 		shell_print(shell, "Use \"pb-adv on\" or \"pb-gatt on\" to "
 			    "enable advertising");
 	}
-
-#if IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)
-	bt_mesh_lpn_set_cb(lpn_cb);
-#endif
 
 	return 0;
 }
