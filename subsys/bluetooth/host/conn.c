@@ -886,6 +886,7 @@ void bt_conn_reset_rx_state(struct bt_conn *conn)
 
 void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 {
+	uint16_t acl_total_len;
 	/* Make sure we notify any pending TX callbacks before processing
 	 * new data for this connection.
 	 */
@@ -955,8 +956,7 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 		return;
 	}
 
-	const struct bt_l2cap_hdr *hdr = (struct bt_l2cap_hdr *)conn->rx->data;
-	const uint16_t acl_total_len = sys_le16_to_cpu(hdr->len) + sizeof(*hdr);
+	acl_total_len = sys_get_le16(buf->data) + sizeof(struct bt_l2cap_hdr);
 
 	if (conn->rx->len < acl_total_len) {
 		/* L2CAP frame not complete. */
