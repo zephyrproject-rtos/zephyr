@@ -47,32 +47,32 @@ static struct bt_conn_cb conn_callbacks = {
 
 static int settings_runtime_load(void)
 {
-#if defined(CONFIG_BT_GATT_DIS_SETTINGS)
+#if defined(CONFIG_BT_DIS_SETTINGS)
 	settings_runtime_set("bt/dis/model",
 			     "Zephyr Model",
 			     sizeof("Zephyr Model"));
 	settings_runtime_set("bt/dis/manuf",
 			     "Zephyr Manufacturer",
 			     sizeof("Zephyr Manufacturer"));
-#if defined(CONFIG_BT_GATT_DIS_SERIAL_NUMBER)
+#if defined(CONFIG_BT_DIS_SERIAL_NUMBER)
 	settings_runtime_set("bt/dis/serial",
-			     CONFIG_BT_GATT_DIS_SERIAL_NUMBER_STR,
-			     sizeof(CONFIG_BT_GATT_DIS_SERIAL_NUMBER_STR));
+			     CONFIG_BT_DIS_SERIAL_NUMBER_STR,
+			     sizeof(CONFIG_BT_DIS_SERIAL_NUMBER_STR));
 #endif
-#if defined(CONFIG_BT_GATT_DIS_SW_REV)
+#if defined(CONFIG_BT_DIS_SW_REV)
 	settings_runtime_set("bt/dis/sw",
-			     CONFIG_BT_GATT_DIS_SW_REV_STR,
-			     sizeof(CONFIG_BT_GATT_DIS_SW_REV_STR));
+			     CONFIG_BT_DIS_SW_REV_STR,
+			     sizeof(CONFIG_BT_DIS_SW_REV_STR));
 #endif
-#if defined(CONFIG_BT_GATT_DIS_FW_REV)
+#if defined(CONFIG_BT_DIS_FW_REV)
 	settings_runtime_set("bt/dis/fw",
-			     CONFIG_BT_GATT_DIS_FW_REV_STR,
-			     sizeof(CONFIG_BT_GATT_DIS_FW_REV_STR));
+			     CONFIG_BT_DIS_FW_REV_STR,
+			     sizeof(CONFIG_BT_DIS_FW_REV_STR));
 #endif
-#if defined(CONFIG_BT_GATT_DIS_HW_REV)
+#if defined(CONFIG_BT_DIS_HW_REV)
 	settings_runtime_set("bt/dis/hw",
-			     CONFIG_BT_GATT_DIS_HW_REV_STR,
-			     sizeof(CONFIG_BT_GATT_DIS_HW_REV_STR));
+			     CONFIG_BT_DIS_HW_REV_STR,
+			     sizeof(CONFIG_BT_DIS_HW_REV_STR));
 #endif
 #endif
 	return 0;
