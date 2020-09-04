@@ -53,18 +53,20 @@
 #define SEQ_AUTH(iv_index, seq)     (((uint64_t)iv_index) << 24 | (uint64_t)seq)
 
 /* Number of retransmit attempts (after the initial transmit) per segment */
-#define SEG_RETRANSMIT_ATTEMPTS     4
+#define SEG_RETRANSMIT_ATTEMPTS     CONFIG_BT_MESH_TX_SEG_RETRANS_COUNT
 
 /* "This timer shall be set to a minimum of 200 + 50 * TTL milliseconds.".
  * We use 400 since 300 is a common send duration for standard HCI, and we
  * need to have a timeout that's bigger than that.
  */
-#define SEG_RETRANSMIT_TIMEOUT_UNICAST(tx) (400 + 50 * (tx)->ttl)
+#define SEG_RETRANSMIT_TIMEOUT_UNICAST(tx) \
+	(CONFIG_BT_MESH_TX_SEG_RETRANS_TIMEOUT_UNICAST + 50 * (tx)->ttl)
+
 /* When sending to a group, the messages are not acknowledged, and there's no
  * reason to delay the repetitions significantly. Delaying by more than 0 ms
  * to avoid flooding the network.
  */
-#define SEG_RETRANSMIT_TIMEOUT_GROUP 50
+#define SEG_RETRANSMIT_TIMEOUT_GROUP CONFIG_BT_MESH_TX_SEG_RETRANS_TIMEOUT_GROUP
 
 #define SEG_RETRANSMIT_TIMEOUT(tx)                                             \
 	(BT_MESH_ADDR_IS_UNICAST(tx->dst) ?                                    \
