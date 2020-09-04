@@ -520,7 +520,7 @@ static _wait_q_t *pended_on(struct k_thread *thread)
 
 void z_thread_single_abort(struct k_thread *thread)
 {
-	void (*fn_abort)(void) = NULL;
+	void (*fn_abort)(struct k_thread *aborted) = NULL;
 
 	__ASSERT(!(thread->base.user_options & K_ESSENTIAL),
 		 "essential thread aborted");
@@ -629,7 +629,8 @@ void z_thread_single_abort(struct k_thread *thread)
 	}
 
 	if (fn_abort != NULL) {
-		fn_abort();
+		/* Thread object provided to be freed or recycled */
+		fn_abort(thread);
 	}
 }
 
