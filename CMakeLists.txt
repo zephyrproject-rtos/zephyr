@@ -1089,7 +1089,9 @@ if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
     # Or fix the output name, by the use of `get_property`
     list(APPEND
       post_build_commands
-      COMMAND ${memusage_build_command}
+      COMMAND $<TARGET_PROPERTY:bintools,memusage_command>
+              $<TARGET_PROPERTY:bintools,memusage_flag>
+              $<TARGET_PROPERTY:bintools,memusage_infile>${KERNEL_ELF_NAME}
       )
 
     # For now, the byproduct can only be supported upstream on byproducts name,

@@ -54,6 +54,7 @@
 #                               instead a linker flag is used for this)
 #   memusage_flag       : Flags that must always be applied when calling memusage command
 #   memusage_flag_final : Flags that must always be applied last at the memusage command
+#   memusage_flag_infile: Flag for specifying the input file
 #   memusage_byproducts : Byproducts (files) generated when calling memusage
 #
 #
