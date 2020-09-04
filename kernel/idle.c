@@ -67,7 +67,7 @@ void __attribute__((weak)) pm_system_resume_from_deep_sleep(void)
  * @return N/A
  */
 #if !SMP_FALLBACK
-static void set_kernel_idle_time_in_ticks(int32_t ticks)
+static void _set_kernel_idle_time_in_ticks(int32_t ticks)
 {
 #ifdef CONFIG_PM
 	_kernel.idle = ticks;
@@ -88,7 +88,7 @@ static void pm_save_idle(void)
 	z_set_timeout_expiry((ticks < IDLE_THRESH) ? 1 : ticks, true);
 #endif
 
-	set_kernel_idle_time_in_ticks(ticks);
+	_set_kernel_idle_time_in_ticks(ticks);
 #if (defined(CONFIG_PM_SLEEP_STATES) || \
 	defined(CONFIG_PM_DEEP_SLEEP_STATES))
 
@@ -115,7 +115,7 @@ static void pm_save_idle(void)
 	k_cpu_idle();
 #endif
 }
-#endif
+#endif /* !SMP_FALLBACK */
 
 void z_pm_save_idle_exit(int32_t ticks)
 {
