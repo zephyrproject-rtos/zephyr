@@ -64,10 +64,11 @@ void main(void)
 	int ret, led_state;
 	uint32_t cnt = 0;
 	const struct device *dev;
-	struct osdp_cmd_output pulse_output = {
-		.output_no = 0,     /* First output */
-		.control_code = 5,  /* Temporarily turn on output */
-		.timer_count = 10,    /* Timer: 10 * 100ms = 1 second */
+	struct osdp_cmd pulse_output = {
+		.id = OSDP_CMD_OUTPUT,
+		.output.output_no = 0,     /* First output */
+		.output.control_code = 5,  /* Temporarily turn on output */
+		.output.timer_count = 10,  /* Timer: 10 * 100ms = 1 second */
 	};
 
 	dev = device_get_binding(LED0);
@@ -92,7 +93,7 @@ void main(void)
 			led_state = !led_state;
 		}
 		if ((cnt % COMMAND_WAIT_COUNT) == 0) {
-			osdp_cp_send_cmd_output(OSDP_PD_0, &pulse_output);
+			osdp_cp_send_command(OSDP_PD_0, &pulse_output);
 		}
 		gpio_pin_set(dev, PIN, led_state);
 		k_msleep(SLEEP_TIME_MS);
