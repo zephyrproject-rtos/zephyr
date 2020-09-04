@@ -133,10 +133,10 @@ static inline bool pm_is_deep_sleep_state(enum power_states state)
 /**
  * @brief Function to disable power management idle exit notification
  *
- * The _sys_resume() would be called from the ISR of the event that caused
+ * The pm_system_resume() would be called from the ISR of the event that caused
  * exit from kernel idling after PM operations. For some power operations,
  * this notification may not be necessary. This function can be called in
- * _sys_suspend to disable the corresponding _sys_resume notification.
+ * pm_system_suspend to disable the corresponding pm_system_resume notification.
  *
  */
 static inline void _pm_idle_exit_notification_disable(void)
@@ -240,13 +240,13 @@ bool pm_ctrl_is_state_enabled(enum power_states state);
  *
  * @note This function is not supported on all architectures.
  */
-void _sys_resume_from_deep_sleep(void);
+void pm_system_resume_from_deep_sleep(void);
 
 /**
  * @brief Notify exit from kernel idling after PM operations
  *
  * This function would notify exit from kernel idling if a corresponding
- * _sys_suspend() notification was handled and did not return
+ * pm_system_suspend() notification was handled and did not return
  * POWER_STATE_ACTIVE.
  *
  * This function would be called from the ISR context of the event
@@ -259,9 +259,9 @@ void _sys_resume_from_deep_sleep(void);
  * the CPU, before code following the CPU wait, gets a chance to execute. This
  * can be ignored if no operation needs to be done at the wake event
  * notification. Alternatively _pm_idle_exit_notification_disable() can
- * be called in _sys_suspend to disable this notification.
+ * be called in pm_system_suspend to disable this notification.
  */
-void _sys_resume(void);
+void pm_system_resume(void);
 
 /**
  * @brief Allow entry to power state
@@ -286,7 +286,7 @@ void _sys_resume(void);
  * @return Power state which was entered or POWER_STATE_ACTIVE if SoC was
  *         kept in the active state.
  */
-enum power_states _sys_suspend(int32_t ticks);
+enum power_states pm_system_suspend(int32_t ticks);
 
 /**
  * @brief Do any SoC or architecture specific post ops after sleep state exits.

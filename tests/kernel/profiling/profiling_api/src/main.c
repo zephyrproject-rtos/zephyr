@@ -93,7 +93,7 @@ void test_call_stacks_analyze_main(void)
  *
  * @ingroup kernel_profiling_tests
  *
- * @see k_thread_foreach(), _sys_suspend(), _sys_resume(),
+ * @see k_thread_foreach(), pm_system_suspend(), pm_system_resume(),
  * log_stack_usage()
  */
 void test_call_stacks_analyze_idle(void)

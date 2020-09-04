@@ -31,7 +31,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef CONFIG_PM
 /*
- * Used to allow _sys_suspend() implementation to control notification
+ * Used to allow pm_system_suspend() implementation to control notification
  * of the event that caused exit from kernel idling after pm operations.
  */
 unsigned char pm_idle_exit_notify;
@@ -41,13 +41,13 @@ unsigned char pm_idle_exit_notify;
  * These are almost certainly overidden and in any event do nothing
  */
 #if defined(CONFIG_PM_SLEEP_STATES)
-void __attribute__((weak)) _sys_resume(void)
+void __attribute__((weak)) pm_system_resume(void)
 {
 }
 #endif
 
 #if defined(CONFIG_PM_DEEP_SLEEP_STATES)
-void __attribute__((weak)) _sys_resume_from_deep_sleep(void)
+void __attribute__((weak)) pm_system_resume_from_deep_sleep(void)
 {
 }
 #endif
@@ -107,7 +107,7 @@ static void pm_save_idle(void)
 	 * idle processing re-enables interrupts which is essential for
 	 * the kernel's scheduling logic.
 	 */
-	if (_sys_suspend(ticks) == POWER_STATE_ACTIVE) {
+	if (pm_system_suspend(ticks) == POWER_STATE_ACTIVE) {
 		pm_idle_exit_notify = 0U;
 		k_cpu_idle();
 	}
@@ -127,7 +127,7 @@ void z_pm_save_idle_exit(int32_t ticks)
 	 * Alternatively it can be simply ignored if not required.
 	 */
 	if (pm_idle_exit_notify) {
-		_sys_resume();
+		pm_system_resume();
 	}
 #endif
 

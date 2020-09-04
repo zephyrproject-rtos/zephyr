@@ -103,8 +103,8 @@ static void z_power_soc_sleep(void)
 #endif
 
 /*
- * Called from _sys_suspend(int32_t ticks) in subsys/power.c
- * For deep sleep _sys_suspend has executed all the driver
+ * Called from pm_system_suspend(int32_t ticks) in subsys/power.c
+ * For deep sleep pm_system_suspend has executed all the driver
  * power management call backs.
  */
 void sys_set_power_state(enum power_states state)

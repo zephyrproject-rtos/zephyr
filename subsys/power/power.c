@@ -83,13 +83,13 @@ void pm_force_power_state(enum power_states state)
 #ifdef CONFIG_PM_DIRECT_FORCE_MODE
 	(void)arch_irq_lock();
 	forced_pm_state = state;
-	_sys_suspend(K_TICKS_FOREVER);
+	pm_system_suspend(K_TICKS_FOREVER);
 #else
 	forced_pm_state = state;
 #endif
 }
 
-enum power_states _sys_suspend(int32_t ticks)
+enum power_states pm_system_suspend(int32_t ticks)
 {
 	bool deep_sleep;
 #if CONFIG_PM_DEVICE
@@ -167,7 +167,7 @@ enum power_states _sys_suspend(int32_t ticks)
 	return pm_state;
 }
 
-void _sys_resume(void)
+void pm_system_resume(void)
 {
 	/*
 	 * This notification is called from the ISR of the event
