@@ -166,8 +166,13 @@ do {                                                                    \
 #endif /* !CONFIG_XIP */
 
 #ifndef __fallthrough
+#if __GNUC__ >= 7
 #define __fallthrough        __attribute__((fallthrough))
+#else
+#define __fallthrough
+#endif	/* __GNUC__ >= 7 */
 #endif
+
 #ifndef __packed
 #define __packed        __attribute__((__packed__))
 #endif
