@@ -140,7 +140,7 @@ static void hrs_notify(void)
 		heartrate = 90U;
 	}
 
-	bt_gatt_hrs_notify(heartrate);
+	bt_hrs_notify(heartrate);
 }
 
 static void test_con2_main(void)

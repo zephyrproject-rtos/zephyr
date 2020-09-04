@@ -225,7 +225,7 @@ static void hrs_notify(void)
 		heartrate = 90U;
 	}
 
-	bt_gatt_hrs_notify(heartrate);
+	bt_hrs_notify(heartrate);
 }
 
 void modulate_tx_power(void *p1, void *p2, void *p3)
