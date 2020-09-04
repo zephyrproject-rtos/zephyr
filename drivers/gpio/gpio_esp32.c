@@ -11,6 +11,7 @@
 #include <soc/gpio_reg.h>
 #include <soc/io_mux_reg.h>
 #include <soc/soc.h>
+#include <soc/periph_defs.h>
 
 #include <soc.h>
 #include <errno.h>
@@ -22,6 +23,7 @@
 
 #include "gpio_utils.h"
 
+#if defined(CONFIG_SOC_ESP32)
 #define GET_GPIO_PIN_REG(pin) ((uint32_t *)GPIO_REG(pin))
 
 /* ESP3 TRM v4.0 and gpio_reg.h header both incorrectly identify bit3
@@ -37,6 +39,34 @@
  */
 #define ESP32_IRQ_EDGE_TRIG 0x50400400
 #define ESP32_IRQ_LEVEL_TRIG 0x8fbe333f
+
+#elif defined(CONFIG_SOC_ESP32S2)
+
+/* Conform to ESP32 GPIO register macros; ESP32-S2 defines them slightly
+ * differently */
+#define GET_GPIO_PIN_REG(pin) ((uint32_t *) (GPIO_PIN0_REG + ((pin) << 2)))
+
+#define GPIO_PIN_INT_ENA_M  GPIO_PIN0_INT_ENA_M
+#define GPIO_PIN_INT_ENA_S  GPIO_PIN0_INT_ENA_S
+#define GPIO_PIN_INT_TYPE_M GPIO_PIN0_INT_TYPE_M
+#define GPIO_PIN_INT_TYPE_S GPIO_PIN0_INT_TYPE_S
+
+#define GPIO_PIN_PAD_DRIVER GPIO_PIN_PAD_DRIVER_SET(1)
+
+/* ESP32-S2 is single core where bit0 of the INT_ENA field enables
+ * interrupts
+ */
+#define GPIO_CPU0_INT_ENABLE (BIT(0) << GPIO_PIN_INT_ENA_S)
+
+/* ESP32-S2 TRM table 8: CPU Interrupts
+ *
+ * Edge-triggered are: 10, 22, 28, 30
+ * Level-triggered are: 0-5, 8, 9, 12, 13, 17-21, 23-27, 31
+ */
+#define ESP32_IRQ_EDGE_TRIG 0x50400400
+#define ESP32_IRQ_LEVEL_TRIG 0x8fbe333f
+
+#endif
 
 struct gpio_esp32_data {
 	/* gpio_driver_data needs to be first */

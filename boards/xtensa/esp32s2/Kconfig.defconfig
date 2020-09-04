@@ -1,0 +1,11 @@
+# ESP32 board configuration
+
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD
+	default "esp32s2"
+	depends on BOARD_ESP32S2
+
+config ENTROPY_ESP32_RNG
+	default y if ENTROPY_GENERATOR

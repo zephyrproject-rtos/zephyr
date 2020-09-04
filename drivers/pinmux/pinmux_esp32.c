@@ -28,6 +28,7 @@
  *       is "internally" depends on it.
  */
 #define PIN(id)   ((PERIPHS_IO_MUX_ ## id ## _U) - (DR_REG_IO_MUX_BASE))
+#if defined(CONFIG_SOC_ESP32)
 static const uint8_t pin_mux_off[] = {
 	PIN(GPIO0),    PIN(U0TXD),    PIN(GPIO2),    PIN(U0RXD),
 	PIN(GPIO4),    PIN(GPIO5),    PIN(SD_CLK),   PIN(SD_DATA0),
@@ -40,6 +41,22 @@ static const uint8_t pin_mux_off[] = {
 	PIN(GPIO32),   PIN(GPIO33),   PIN(GPIO34),   PIN(GPIO35),
 	PIN(GPIO36),   PIN(GPIO37),   PIN(GPIO38),   PIN(GPIO39)
 };
+#elif defined(CONFIG_SOC_ESP32S2)
+static const uint8_t pin_mux_off[] = {
+	PIN(GPIO0),      PIN(GPIO1),      PIN(GPIO2),      PIN(GPIO3),
+	PIN(GPIO4),      PIN(GPIO5),      PIN(GPIO6),      PIN(GPIO7),
+	PIN(GPIO8),      PIN(GPIO9),      PIN(GPIO10),     PIN(GPIO11),
+	PIN(GPIO12),     PIN(GPIO13),     PIN(GPIO14),     PIN(XTAL_32K_P),
+	PIN(XTAL_32K_N), PIN(DAC_1),      PIN(DAC_2),      PIN(GPIO19),
+	PIN(GPIO20),     PIN(GPIO21),     0,               0,
+	0,               0,               PIN(SPICS1),     PIN(SPIHD),
+	PIN(SPIWP),      PIN(SPICS0),     PIN(SPICLK),     PIN(SPIQ),
+	PIN(SPID),       PIN(GPIO33),     PIN(GPIO34),     PIN(GPIO35),
+	PIN(GPIO36),     PIN(GPIO37),     PIN(GPIO38),     PIN(MTCK),
+	PIN(MTDO),       PIN(MTDI),       PIN(MTMS),       PIN(U0TXD),
+	PIN(U0RXD),      PIN(GPIO45),     PIN(GPIO46)
+};
+#endif
 #undef PIN
 
 static uint32_t *reg_for_pin(uint32_t pin)

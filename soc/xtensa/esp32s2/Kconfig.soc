@@ -1,10 +1,10 @@
-# Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2020 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_ESP32
-	bool "ESP32"
+config SOC_ESP32S2
+	bool "ESP32S2"
 	select XTENSA
-	select ATOMIC_OPERATIONS_CUSTOM
+	select ATOMIC_OPERATIONS_BUILTIN
 	select CLOCK_CONTROL
 	select CLOCK_CONTROL_ESP32
 	select HAS_ESP_IDF
