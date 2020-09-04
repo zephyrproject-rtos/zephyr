@@ -445,7 +445,7 @@ static int eswifi_socket_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 		return -1;
 	}
 
-	if (!(fds[0].events & POLLIN)) {
+	if (!(fds[0].events & ZSOCK_POLLIN)) {
 		errno = ENOTSUP;
 		return -1;
 	}
@@ -464,7 +464,7 @@ static int eswifi_socket_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 		return -1;
 	}
 
-	fds[0].revents = POLLIN;
+	fds[0].revents = ZSOCK_POLLIN;
 
 	/* Report one event */
 	return 1;
@@ -618,7 +618,7 @@ static int eswifi_off_getaddrinfo(const char *node, const char *service,
 	*res = calloc(1, sizeof(struct zsock_addrinfo));
 	ai = *res;
 	if (!ai) {
-		err = EAI_MEMORY;
+		err = DNS_EAI_MEMORY;
 		goto done_unlock;
 	}
 
@@ -626,7 +626,7 @@ static int eswifi_off_getaddrinfo(const char *node, const char *service,
 	ai_addr = calloc(1, sizeof(*ai_addr));
 	if (!ai_addr) {
 		free(*res);
-		err = EAI_MEMORY;
+		err = DNS_EAI_MEMORY;
 		goto done_unlock;
 	}
 
