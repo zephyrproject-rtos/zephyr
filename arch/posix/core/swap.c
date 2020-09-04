@@ -18,6 +18,7 @@
 #include "posix_core.h"
 #include "irq.h"
 #include "kswap.h"
+#include <power/power.h>
 
 int arch_swap(unsigned int key)
 {

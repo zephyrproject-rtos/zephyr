@@ -318,6 +318,8 @@ void pm_notify_power_state_exit(enum power_states state);
  * @}
  */
 
+
+void z_pm_save_idle_exit(int32_t ticks);
 #endif /* CONFIG_PM */
 
 #ifdef __cplusplus
