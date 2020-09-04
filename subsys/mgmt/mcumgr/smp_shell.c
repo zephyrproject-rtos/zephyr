@@ -149,7 +149,8 @@ static uint16_t smp_shell_get_mtu(const struct net_buf *nb)
 
 static int smp_shell_tx_raw(const void *data, int len, void *arg)
 {
-	const struct shell_uart *const su = shell_backend_uart_get_ptr();
+	const struct shell *const sh = shell_backend_uart_get_ptr();
+	const struct shell_uart *const su = sh->iface->ctx;
 	const struct shell_uart_ctrl_blk *const scb = su->ctrl_blk;
 	const uint8_t *out = data;
 
