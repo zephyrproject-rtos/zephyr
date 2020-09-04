@@ -6,7 +6,6 @@
 config MQTT_LIB
 	bool "Socket MQTT Library Support"
 	select NET_SOCKETS
-	select NET_SOCKETS_POSIX_NAMES
 	help
 	  Enable the Zephyr MQTT Library
 
