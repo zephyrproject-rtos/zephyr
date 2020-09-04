@@ -82,6 +82,9 @@ API Changes
   const qualifier loss on ISRs, all ISRs now take a ``const *void`` as a
   paremeter as well.
 
+* The ``_gatt_`` and ``_GATT_`` infixes have been removed for the HRS, DIS
+  and BAS APIs and the Kconfig options.
+
 Deprecated in this release
 ==========================
 
