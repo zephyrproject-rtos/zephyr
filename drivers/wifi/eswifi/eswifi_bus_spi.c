@@ -27,12 +27,24 @@ struct eswifi_spi_data {
 	const struct device *spi_dev;
 	struct eswifi_gpio csn;
 	struct eswifi_gpio dr;
+	struct gpio_callback dr_cb;
+	struct k_sem dr_sem;
 	struct k_thread poll_thread;
 	struct spi_config spi_cfg;
 	struct spi_cs_control spi_cs;
 };
 
 static struct eswifi_spi_data eswifi_spi0; /* Static instance */
+
+static void __data_ready_cb(struct device *dev, struct gpio_callback *cb,
+			    unsigned int pins)
+{
+	struct eswifi_spi_data *spi =
+		CONTAINER_OF(cb, struct eswifi_spi_data, dr_cb);
+	gpio_pin_interrupt_configure(spi->dr.dev, spi->dr.pin,
+				     GPIO_INT_DISABLE);
+	k_sem_give(&spi->dr_sem);
+}
 
 static bool eswifi_spi_cmddata_ready(struct eswifi_spi_data *spi)
 {
@@ -43,12 +55,20 @@ static int eswifi_spi_wait_cmddata_ready(struct eswifi_spi_data *spi)
 {
 	unsigned int max_retries = 60 * 1000; /* 1 minute */
 
-	do {
-		/* allow other threads to be scheduled */
+	while (!eswifi_spi_cmddata_ready(spi) && --max_retries) {
 		k_sleep(K_MSEC(1));
-	} while (!eswifi_spi_cmddata_ready(spi) && --max_retries);
+	}
 
 	return max_retries ? 0 : -ETIMEDOUT;
+}
+
+static int eswifi_spi_wait_data_edge(struct eswifi_spi_data *spi,
+				     k_timeout_t timeout)
+{
+	k_sem_reset(&spi->dr_sem);
+	gpio_pin_interrupt_configure(spi->dr.dev, spi->dr.pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
+	return k_sem_take(&spi->dr_sem, timeout);
 }
 
 static int eswifi_spi_write(struct eswifi_dev *eswifi, char *data, size_t dlen)
@@ -147,14 +167,14 @@ static int eswifi_spi_request(struct eswifi_dev *eswifi, char *cmd, size_t clen,
 	/* Our device is flagged with SPI_HOLD_ON_CS|SPI_LOCK_ON, release */
 	spi_release(spi->spi_dev, &spi->spi_cfg);
 
-data:
-	/* CMD/DATA READY signals the Data Phase */
-	err = eswifi_spi_wait_cmddata_ready(spi);
+	/* wait for steps 5/6 (data edge) */
+	err = eswifi_spi_wait_data_edge(spi, K_MSEC(10000));
 	if (err) {
-		LOG_ERR("DATA ready timeout\n");
+		LOG_ERR("DATA ready timeout");
 		return err;
 	}
 
+data:
 	while (eswifi_spi_cmddata_ready(spi) && to_read) {
 		to_read = MIN(rlen - offset, to_read);
 		memset(rsp + offset, 0, to_read);
@@ -245,6 +265,12 @@ int eswifi_spi_init(struct eswifi_dev *eswifi)
 	gpio_pin_configure(spi->dr.dev, spi->dr.pin,
 			   DT_INST_GPIO_FLAGS(0, data_gpios) |
 			   GPIO_INPUT);
+	gpio_init_callback(&spi->dr_cb, &__data_ready_cb, BIT(spi->dr.pin));
+	if (gpio_add_callback(spi->dr.dev, &spi->dr_cb) < 0) {
+		LOG_ERR("Could not set data-ready gpio callback.");
+		return -EIO;
+	}
+	k_sem_init(&spi->dr_sem, 0, 1);
 
 	/* SPI CONFIG/CS */
 	spi->spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
