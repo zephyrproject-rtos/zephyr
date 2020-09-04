@@ -452,6 +452,37 @@ ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
 	const Z_STRUCT_SECTION_ITERABLE(bt_gatt_service_static, _name) =\
 						BT_GATT_SERVICE(attr_##_name)
 
+#define _BT_GATT_ATTRS_ARRAY_DEFINE(n, _instances, _attrs_def)	\
+	static struct bt_gatt_attr attrs_##n[] = _attrs_def(_instances[n]);
+
+#define _BT_GATT_SERVICE_ARRAY_ITEM(_n, _) BT_GATT_SERVICE(attrs_##_n),
+
+/** @def BT_GATT_SERVICE_INSTANCE_DEFINE
+ *  @brief Statically define service structure array.
+ *
+ *  Helper macro to statically define service structure array. Each element
+ *  of the array is linked to the service attribute array which is also
+ *  defined in this scope using _attrs_def macro.
+ *
+ *  @param _name         Name of service structure array.
+ *  @param _instances    Array of instances to pass as user context to the
+ *                       attribute callbacks.
+ *  @param _instance_num Number of elements in instance array.
+ *  @param _attrs_def    Macro provided by the user that defines attribute
+ *                       array for the serivce. This macro should accept single
+ *                       parameter which is the instance context.
+ */
+#define BT_GATT_SERVICE_INSTANCE_DEFINE(				 \
+	_name, _instances, _instance_num, _attrs_def)			 \
+	BUILD_ASSERT(ARRAY_SIZE(_instances) == _instance_num,		 \
+		"The number of array elements does not match its size"); \
+	UTIL_EVAL(UTIL_REPEAT(						 \
+		_instance_num, _BT_GATT_ATTRS_ARRAY_DEFINE, _instances,  \
+		_attrs_def))						 \
+	static struct bt_gatt_service _name[] = {			 \
+		UTIL_LISTIFY(_instance_num, _BT_GATT_SERVICE_ARRAY_ITEM) \
+	}
+
 /** @def BT_GATT_SERVICE
  *  @brief Service Structure Declaration Macro.
  *
