@@ -694,7 +694,7 @@ static bool usb_set_interface(uint8_t iface, uint8_t alt_setting)
  */
 static bool is_device_configured(void)
 {
-	return (usb_dev.configured && usb_dev.configuration);
+	return (usb_dev.configuration != 0);
 }
 
 /*
