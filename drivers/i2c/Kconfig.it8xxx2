@@ -1,0 +1,7 @@
+# Copyright (c) 2020 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_ITE_IT8XXX2
+	bool "ITE IT8XXX2 I2C driver"
+	help
+	  Enable I2C support on it8xxx2_evb
