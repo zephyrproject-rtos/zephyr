@@ -107,10 +107,14 @@ void test_threads_abort_repeat(void)
 bool abort_called;
 void *block;
 
-static void abort_function(void)
+static void abort_function(struct k_thread *aborted)
 {
 	printk("Child thread's abort handler called\n");
 	abort_called = true;
+
+	zassert_equal(aborted, &tdata, "wrong thread pointer");
+	zassert_not_equal(k_current_get(), aborted,
+			  "fn_abort ran on its own thread");
 	k_free(block);
 }
 
