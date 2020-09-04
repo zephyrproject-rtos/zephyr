@@ -172,13 +172,6 @@ static int dmamux_stm32_init(const struct device *dev)
 		return -EIO;
 	}
 
-	int size_stream =
-		sizeof(struct dmamux_stm32_channel) * config->channel_nb;
-	data->mux_channels = k_malloc(size_stream);
-	if (!data->mux_channels) {
-		LOG_ERR("HEAP_MEM_POOL_SIZE is too small");
-		return -ENOMEM;
-	}
 	for (int i = 0; i < config->channel_nb; i++) {
 		/*
 		 * associates the dmamux channel
@@ -209,26 +202,29 @@ static const struct dma_driver_api dma_funcs = {
 	.get_status	 = dmamux_stm32_get_status,
 };
 
-#define DMAMUX_INIT(index) \
-								\
-const struct dmamux_stm32_config dmamux_stm32_config_##index = {\
-	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),	\
-		    .enr = DT_INST_CLOCKS_CELL(index, bits) },	\
-	.base = DT_INST_REG_ADDR(index),			\
-	.channel_nb = DT_INST_PROP(index, dma_channels),	\
-	.gen_nb = DT_INST_PROP(index, dma_generators),		\
-	.req_nb = DT_INST_PROP(index, dma_requests),		\
-};								\
-								\
-static struct dmamux_stm32_data dmamux_stm32_data_##index = {	\
-	.mux_channels = NULL,					\
-};								\
-								\
-DEVICE_DT_INST_DEFINE(index,					\
-		    &dmamux_stm32_init,				\
-		    device_pm_control_nop,			\
+#define DMAMUX_INIT(index)						\
+									\
+const struct dmamux_stm32_config dmamux_stm32_config_##index = {	\
+	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),		\
+		    .enr = DT_INST_CLOCKS_CELL(index, bits) },		\
+	.base = DT_INST_REG_ADDR(index),				\
+	.channel_nb = DT_INST_PROP(index, dma_channels),		\
+	.gen_nb = DT_INST_PROP(index, dma_generators),			\
+	.req_nb = DT_INST_PROP(index, dma_requests),			\
+};									\
+									\
+static struct dmamux_stm32_channel					\
+	dmamux_stm32_channels_##index[DT_INST_PROP(index, dma_channels)]; \
+									\
+static struct dmamux_stm32_data dmamux_stm32_data_##index = {		\
+	.mux_channels = dmamux_stm32_channels_##index,			\
+};									\
+									\
+DEVICE_DT_INST_DEFINE(index,						\
+		    &dmamux_stm32_init,					\
+		    device_pm_control_nop,				\
 		    &dmamux_stm32_data_##index, &dmamux_stm32_config_##index,\
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,\
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 		    &dma_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(DMAMUX_INIT)
