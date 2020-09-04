@@ -4,6 +4,7 @@
 #                 In this implementation `objcopy` is used
 #   elfconvert_formats            : Formats supported: ihex, srec, binary
 #   elfconvert_flag               : empty
+#   elfconvert_flag_final         : empty
 #   elfconvert_flag_strip_all     : -S
 #   elfconvert_flag_strip_debug   : -g
 #   elfconvert_flag_intarget      : --input-target=
@@ -28,6 +29,7 @@ set_property(TARGET bintools PROPERTY elfconvert_command ${CMAKE_OBJCOPY})
 set_property(TARGET bintools PROPERTY elfconvert_formats ihex srec binary)
 
 set_property(TARGET bintools PROPERTY elfconvert_flag "")
+set_property(TARGET bintools PROPERTY elfconvert_flag_final "")
 
 set_property(TARGET bintools PROPERTY elfconvert_flag_strip_all "-S")
 set_property(TARGET bintools PROPERTY elfconvert_flag_strip_debug "-g")
@@ -53,6 +55,7 @@ set_property(TARGET bintools PROPERTY elfconvert_flag_outfile "")
 # - disassembly : Name of command for disassembly of files
 #                 In this implementation `objdump` is used
 #   disassembly_flag               : -d
+#   disassembly_flag_final         : empty
 #   disassembly_flag_inline_source : -S
 #   disassembly_flag_all           : -SDz
 #   disassembly_flag_infile        : empty, objdump doesn't take arguments for filenames
@@ -60,6 +63,7 @@ set_property(TARGET bintools PROPERTY elfconvert_flag_outfile "")
 
 set_property(TARGET bintools PROPERTY disassembly_command ${CMAKE_OBJDUMP})
 set_property(TARGET bintools PROPERTY disassembly_flag -d)
+set_property(TARGET bintools PROPERTY disassembly_flag_final "")
 set_property(TARGET bintools PROPERTY disassembly_flag_inline_source -S)
 set_property(TARGET bintools PROPERTY disassembly_flag_all -SDz)
 
@@ -70,6 +74,7 @@ set_property(TARGET bintools PROPERTY disassembly_flag_outfile > )
 # - strip: Name of command for stripping symbols
 #          In this implementation `strip` is used
 #   strip_flag         : empty
+#   strip_flag_final   : empty
 #   strip_flag_all     : --strip-all
 #   strip_flag_debug   : --strip-debug
 #   strip_flag_dwo     : --strip-dwo
@@ -81,6 +86,7 @@ set_property(TARGET bintools PROPERTY strip_command ${CMAKE_STRIP})
 
 # Any flag the strip command requires for processing
 set_property(TARGET bintools PROPERTY strip_flag "")
+set_property(TARGET bintools PROPERTY strip_flag_final "")
 
 set_property(TARGET bintools PROPERTY strip_flag_all --strip-all)
 set_property(TARGET bintools PROPERTY strip_flag_debug --strip-debug)
@@ -93,6 +99,7 @@ set_property(TARGET bintools PROPERTY strip_flag_outfile -o )
 # - readelf : Name of command for reading elf files.
 #             In this implementation `readelf` is used
 #   readelf_flag          : empty
+#   readelf_flag_final    : empty
 #   readelf_flag_headers  : -e
 #   readelf_flag_infile   : empty, readelf doesn't take arguments for filenames
 #   readelf_flag_outfile  : '>', readelf doesn't take arguments for output
@@ -103,6 +110,7 @@ set_property(TARGET bintools PROPERTY strip_flag_outfile -o )
 set_property(TARGET bintools PROPERTY readelf_command ${CMAKE_READELF})
 
 set_property(TARGET bintools PROPERTY readelf_flag "")
+set_property(TARGET bintools PROPERTY readelf_flag_final "")
 set_property(TARGET bintools PROPERTY readelf_flag_headers -e)
 
 set_property(TARGET bintools PROPERTY readelf_flag_infile "")

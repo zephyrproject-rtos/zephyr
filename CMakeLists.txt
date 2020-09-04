@@ -726,6 +726,7 @@ if(CONFIG_GEN_ISR_TABLES)
             $<TARGET_PROPERTY:bintools,elfconvert_flag_section_only>.intList
             $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>$<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
             $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>isrList.bin
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
     COMMAND ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/arch/common/gen_isr_tables.py
     --output-source isr_tables.c
@@ -864,6 +865,7 @@ if(CONFIG_USERSPACE)
             $<TARGET_PROPERTY:bintools,elfconvert_flag_section_rename>.rodata=.kobject_data.rodata
             $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${OUTPUT_OBJ_PATH}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${OUTPUT_OBJ_RENAMED}
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
     DEPENDS output_lib
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMAND_EXPAND_LISTS
@@ -1114,6 +1116,7 @@ if(CONFIG_BUILD_OUTPUT_HEX OR BOARD_FLASH_RUNNER STREQUAL openocd)
               $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.eh_frame
               $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${KERNEL_HEX_NAME}
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
       )
     list(APPEND
       post_build_byproducts
@@ -1137,6 +1140,7 @@ if(CONFIG_BUILD_OUTPUT_BIN)
               $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.eh_frame
               $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${KERNEL_BIN_NAME}
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
       )
     list(APPEND
       post_build_byproducts
@@ -1159,6 +1163,7 @@ if(CONFIG_BUILD_OUTPUT_S19)
               $<TARGET_PROPERTY:bintools,elfconvert_flag_srec_len>1
               $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${KERNEL_S19_NAME}
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
       )
     list(APPEND
       post_build_byproducts
@@ -1182,6 +1187,7 @@ if(CONFIG_OUTPUT_DISASSEMBLE_ALL)
             ${disassembly_type}
             $<TARGET_PROPERTY:bintools,disassembly_flag_infile>${KERNEL_ELF_NAME}
             $<TARGET_PROPERTY:bintools,disassembly_flag_outfile>${KERNEL_LST_NAME}
+            $<TARGET_PROPERTY:bintools,disassembly_flag_final>
     )
   list(APPEND
     post_build_byproducts
@@ -1199,6 +1205,7 @@ if(CONFIG_OUTPUT_STAT)
             $<TARGET_PROPERTY:bintools,readelf_flag_headers>
             $<TARGET_PROPERTY:bintools,readelf_flag_infile> ${KERNEL_ELF_NAME}
             $<TARGET_PROPERTY:bintools,readelf_flag_outfile> ${KERNEL_STAT_NAME}
+            $<TARGET_PROPERTY:bintools,readelf_flag_final>
     )
   list(APPEND
     post_build_byproducts
@@ -1214,6 +1221,7 @@ if(CONFIG_BUILD_OUTPUT_STRIPPED)
             $<TARGET_PROPERTY:bintools,strip_flag_all>
             $<TARGET_PROPERTY:bintools,strip_flag_infile>${KERNEL_ELF_NAME}
             $<TARGET_PROPERTY:bintools,strip_flag_outfile>${KERNEL_STRIP_NAME}
+            $<TARGET_PROPERTY:bintools,strip_flag_final>
     )
   list(APPEND
     post_build_byproducts
