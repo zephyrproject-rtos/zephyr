@@ -87,9 +87,7 @@ SECTIONS {
  * table and debug information.
  */
 #include <snippets-rom-start.ld>
-
-		*(.text)
-		*(".text.*")
+		*(.text .text.*)
 		*(.gnu.linkonce.t.*)
 
 #include <linker/kobject-text.ld>

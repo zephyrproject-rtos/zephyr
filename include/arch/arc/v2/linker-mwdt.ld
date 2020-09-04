@@ -83,9 +83,7 @@ SECTIONS {
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-rom-start.ld>
-		*(".text")
-		*(".text*")
-		*(".text.*")
+		*(.text .text* .text.*)
 
 #ifdef CONFIG_USERSPACE
 /* to make sure .kobject_data.text occupies a fixed hole, we use the trick
