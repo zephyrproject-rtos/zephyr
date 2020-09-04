@@ -231,6 +231,18 @@ static void hfclk_stop(void)
 	nrfx_clock_hfclk_stop();
 }
 
+#if NRF_CLOCK_HAS_HFCLK192M
+static void hfclk192m_start(void)
+{
+	nrfx_clock_start(NRF_CLOCK_DOMAIN_HFCLK192M);
+}
+
+static void hfclk192m_stop(void)
+{
+	nrfx_clock_stop(NRF_CLOCK_DOMAIN_HFCLK192M);
+}
+#endif
+
 static uint32_t *get_hf_flags(void)
 {
 	struct nrf_clock_control_data *data = DEVICE_GET(clock_nrf)->data;
@@ -568,7 +580,14 @@ static const struct nrf_clock_control_config config = {
 			.start = lfclk_start,
 			.stop = lfclk_stop,
 			IF_ENABLED(CONFIG_LOG, (.name = "lfclk",))
-		}
+		},
+#if NRF_CLOCK_HAS_HFCLK192M
+		[CLOCK_CONTROL_NRF_TYPE_HFCLK192M] = {
+			.start = hfclk192m_start,
+			.stop = hfclk192m_stop,
+			IF_ENABLED(CONFIG_LOG, (.name = "hfclk192m",))
+		},
+#endif
 	}
 };
 
