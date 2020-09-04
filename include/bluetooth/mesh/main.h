@@ -425,14 +425,107 @@ int bt_mesh_lpn_set(bool enable);
  */
 int bt_mesh_lpn_poll(void);
 
-/** @brief Register a callback for Friendship changes.
+/** Low Power Node callback functions. */
+struct bt_mesh_lpn_cb {
+	/** @brief Friendship established.
+	 *
+	 *  This callback notifies the application that friendship has
+	 *  been successfully established.
+	 *
+	 *  @param net_idx  NetKeyIndex used during friendship establishment.
+	 *  @param friend_addr Friend address.
+	 *  @param queue_size  Friend queue size.
+	 *  @param recv_window Low Power Node's listens duration for
+	 *  Friend response.
+	 */
+	void (*established)(uint16_t net_idx, uint16_t friend_addr,
+			    uint8_t queue_size, uint8_t recv_window);
+
+	/** @brief Friendship terminated.
+	 *
+	 *  This callback notifies the application that friendship has
+	 *  been terminated.
+	 *
+	 *  @param net_idx  NetKeyIndex used during friendship establishment.
+	 *  @param friend_addr Friend address.
+	 */
+	void (*terminated)(uint16_t net_idx, uint16_t friend_addr);
+
+	/** @brief Local Poll Request.
+	 *
+	 *  This callback notifies the application that the local node has
+	 *  polled the friend node.
+	 *
+	 *  This callback will be called before @ref bt_mesh_lpn_cb::established
+	 *  when attempting to establish a friendship.
+	 *
+	 *  @param net_idx  NetKeyIndex used during friendship establishment.
+	 *  @param friend_addr Friend address.
+	 *  @param retry Retry or first poll request for each transaction.
+	 */
+	void (*polled)(uint16_t net_idx, uint16_t friend_addr, bool retry);
+};
+
+/** @def BT_MESH_LPN_CB_DEFINE
  *
- *  Registers a callback that will be called whenever Friendship gets
- *  established or is lost.
+ *  @brief Register a callback structure for Friendship events.
  *
- *  @param cb Function to call when the Friendship status changes.
+ *  @param _name Name of callback structure.
  */
-void bt_mesh_lpn_set_cb(void (*cb)(uint16_t friend_addr, bool established));
+#define BT_MESH_LPN_CB_DEFINE(_name)                                    \
+	static const Z_STRUCT_SECTION_ITERABLE(bt_mesh_lpn_cb,         \
+					       _CONCAT(bt_mesh_lpn_cb, \
+						       _name))
+
+/** Friend Node callback functions. */
+struct bt_mesh_friend_cb {
+	/** @brief Friendship established.
+	 *
+	 *  This callback notifies the application that friendship has
+	 *  been successfully established.
+	 *
+	 *  @param net_idx  NetKeyIndex used during friendship establishment.
+	 *  @param lpn_addr Low Power Node address.
+	 *  @param recv_delay Receive Delay in units of 1 millisecond.
+	 *  @param polltimeout PollTimeout in units of 1 millisecond.
+	 */
+	void (*established)(uint16_t net_idx, uint16_t lpn_addr,
+			    uint8_t recv_delay, uint32_t polltimeout);
+
+	/** @brief Friendship terminated.
+	 *
+	 *  This callback notifies the application that friendship has
+	 *  been terminated.
+	 *
+	 *  @param net_idx  NetKeyIndex used during friendship establishment.
+	 *  @param lpn_addr Low Power Node address.
+	 */
+	void (*terminated)(uint16_t net_idx, uint16_t lpn_addr);
+};
+
+/** @def BT_MESH_FRIEND_CB_DEFINE
+ *
+ *  @brief Register a callback structure for Friendship events.
+ *
+ *  Registers a callback structure that will be called whenever Friendship
+ *  gets established or terminated.
+ *
+ *  @param _name Name of callback structure.
+ */
+#define BT_MESH_FRIEND_CB_DEFINE(_name)                                   \
+	static const Z_STRUCT_SECTION_ITERABLE(bt_mesh_friend_cb,         \
+					       _CONCAT(bt_mesh_friend_cb, \
+						       _name))
+
+/** @brief Terminate Friendship.
+ *
+ *  Terminated Friendship for given LPN.
+ *
+ *  @param lpn_addr Low Power Node address.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_mesh_friend_terminate(uint16_t lpn_addr);
 
 #ifdef __cplusplus
 }

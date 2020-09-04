@@ -172,6 +172,12 @@ static void friend_clear(struct bt_mesh_friend *frnd)
 		seg->seg_count = 0U;
 	}
 
+	Z_STRUCT_SECTION_FOREACH(bt_mesh_friend_cb, cb) {
+		if (frnd->established && cb->terminated) {
+			cb->terminated(frnd->subnet->net_idx, frnd->lpn);
+		}
+	}
+
 	frnd->subnet = NULL;
 	frnd->established = 0U;
 	frnd->pending_buf = 0U;
@@ -689,6 +695,13 @@ int bt_mesh_friend_poll(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 	if (!frnd->established) {
 		BT_DBG("Friendship established with 0x%04x", frnd->lpn);
 		frnd->established = 1U;
+
+		Z_STRUCT_SECTION_FOREACH(bt_mesh_friend_cb, cb) {
+			if (cb->established) {
+				cb->established(frnd->subnet->net_idx, frnd->lpn, frnd->recv_delay,
+						frnd->poll_to);
+			}
+		}
 	}
 
 	if (msg->fsn == frnd->fsn && frnd->last) {
@@ -1650,6 +1663,20 @@ bool bt_mesh_friend_enqueue_tx(struct bt_mesh_net_tx *tx,
 	}
 
 	return matched;
+}
+
+int bt_mesh_friend_terminate(uint16_t lpn_addr)
+{
+	struct bt_mesh_friend *frnd;
+
+	frnd = bt_mesh_friend_find(BT_MESH_KEY_ANY, lpn_addr, false, false);
+	if (!frnd) {
+		return -ENOENT;
+	}
+
+	friend_clear(frnd);
+
+	return 0;
 }
 
 void bt_mesh_friend_clear_incomplete(struct bt_mesh_subnet *sub, uint16_t src,

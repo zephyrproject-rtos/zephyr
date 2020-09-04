@@ -70,8 +70,6 @@
 /* 2 transmissions, 20ms interval */
 #define POLL_XMIT BT_MESH_TRANSMIT(1, 20)
 
-static void (*lpn_cb)(uint16_t friend_addr, bool established);
-
 #if defined(CONFIG_BT_MESH_DEBUG_LOW_POWER)
 static const char *state2str(int state)
 {
@@ -221,8 +219,10 @@ static void clear_friendship(bool force, bool disable)
 		lpn->old_friend = lpn->frnd;
 	}
 
-	if (lpn_cb && lpn->frnd != BT_MESH_ADDR_UNASSIGNED) {
-		lpn_cb(lpn->frnd, false);
+	Z_STRUCT_SECTION_FOREACH(bt_mesh_lpn_cb, cb) {
+		if (cb->terminated && lpn->frnd != BT_MESH_ADDR_UNASSIGNED) {
+			cb->terminated(lpn->sub->net_idx, lpn->frnd);
+		}
 	}
 
 	lpn->frnd = BT_MESH_ADDR_UNASSIGNED;
@@ -328,6 +328,12 @@ static void req_sent(uint16_t duration, int err, void *user_data)
 		lpn->sent_req = 0U;
 		group_zero(lpn->pending);
 		return;
+	}
+
+	Z_STRUCT_SECTION_FOREACH(bt_mesh_lpn_cb, cb) {
+		if (cb->polled) {
+			cb->polled(lpn->sub->net_idx, lpn->frnd, !!(lpn->req_attempts));
+		}
 	}
 
 	lpn->req_attempts++;
@@ -986,8 +992,11 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
 			(void)bt_mesh_heartbeat_send(NULL, NULL);
 		}
 
-		if (lpn_cb) {
-			lpn_cb(lpn->frnd, true);
+		Z_STRUCT_SECTION_FOREACH(bt_mesh_lpn_cb, cb) {
+			if (cb->established) {
+				cb->established(lpn->sub->net_idx, lpn->frnd,
+					lpn->queue_size, lpn->recv_win);
+			}
 		}
 
 		/* Set initial poll timeout */
@@ -1035,11 +1044,6 @@ int bt_mesh_lpn_poll(void)
 	BT_DBG("Requesting more messages");
 
 	return send_friend_poll();
-}
-
-void bt_mesh_lpn_set_cb(void (*cb)(uint16_t friend_addr, bool established))
-{
-	lpn_cb = cb;
 }
 
 static void subnet_evt(struct bt_mesh_subnet *sub, enum bt_mesh_key_evt evt)
