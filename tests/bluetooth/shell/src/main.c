@@ -30,7 +30,7 @@
 
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 
-#if defined(CONFIG_BT_GATT_HRS)
+#if defined(CONFIG_BT_HRS)
 static bool hrs_simulate;
 
 static const struct bt_data ad[] = {
@@ -80,17 +80,17 @@ static int cmd_hrs_simulate(const struct shell *shell,
 
 	return 0;
 }
-#endif /* CONFIG_BT_GATT_HRS */
+#endif /* CONFIG_BT_HRS */
 
 #define HELP_NONE "[none]"
 #define HELP_ADDR_LE "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>"
 
 SHELL_STATIC_SUBCMD_SET_CREATE(hrs_cmds,
-#if defined(CONFIG_BT_GATT_HRS)
+#if defined(CONFIG_BT_HRS)
 	SHELL_CMD_ARG(simulate, NULL,
 		"register and simulate Heart Rate Service <value: on, off>",
 		cmd_hrs_simulate, 2, 0),
-#endif /* CONFIG_BT_GATT_HRS*/
+#endif /* CONFIG_BT_HRS*/
 	SHELL_SUBCMD_SET_END
 );
 
@@ -104,7 +104,7 @@ static int cmd_hrs(const struct shell *shell, size_t argc, char **argv)
 SHELL_CMD_ARG_REGISTER(hrs, &hrs_cmds, "Heart Rate Service shell commands",
 		       cmd_hrs, 2, 0);
 
-#if defined(CONFIG_BT_GATT_HRS)
+#if defined(CONFIG_BT_HRS)
 static void hrs_notify(void)
 {
 	static uint8_t heartrate = 90U;
@@ -115,9 +115,9 @@ static void hrs_notify(void)
 		heartrate = 90U;
 	}
 
-	bt_gatt_hrs_notify(heartrate);
+	bt_hrs_notify(heartrate);
 }
-#endif /* CONFIG_BT_GATT_HRS */
+#endif /* CONFIG_BT_HRS */
 
 void main(void)
 {
@@ -128,11 +128,11 @@ void main(void)
 	while (1) {
 		k_sleep(K_SECONDS(1));
 
-#if defined(CONFIG_BT_GATT_HRS)
+#if defined(CONFIG_BT_HRS)
 		/* Heartrate measurements simulation */
 		if (hrs_simulate) {
 			hrs_notify();
 		}
-#endif /* CONFIG_BT_GATT_HRS */
+#endif /* CONFIG_BT_HRS */
 	}
 }

@@ -3,15 +3,15 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig BT_GATT_HRS
+menuconfig BT_HRS
 	bool "Enable GATT Heart Rate service"
 
-config BT_GATT_HRS_LOG_LEVEL
+config BT_HRS_LOG_LEVEL
 	int "Heart Rate service log level"
 	depends on LOG
 	range 0 4
 	default 0
-	depends on BT_GATT_HRS
+	depends on BT_HRS
 	help
 	  Sets log level for the Heart Rate service.
 	  Levels are:
