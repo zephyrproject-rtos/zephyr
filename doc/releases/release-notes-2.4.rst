@@ -128,8 +128,24 @@ Architectures
 
 * ARM:
 
-  * Interrupt vector relaying feature support is extended to Cortex-M Mainline
-    architecture variants
+  * AARCH32
+
+    * Added support for ARM Cortex-M1 architecture.
+    * Implemented the timing API in Cortex-M architecture using the Data
+      Watchpoint and Trace (DWT) unit.
+    * The interrupt vector relaying feature support was extended to Cortex-M
+      Mainline architecture variants.
+    * Cortex-M fault handling implementation was enhanced by adding an option to
+      generate and supply the full register state to the kernel fatal error
+      handling mechanism.
+    * Fixed Cortex-M boot sequence for single-threaded applications
+      (CONFIG_MULTITHREADING=n).
+    * Added thread safety to Non-Secure entry function calls in ARMv8-M
+      architecture.
+    * Fixed stack randomization for main thread.
+    * Fixed exception vector table alignment in Cortex-M architecture
+    * Increased test coverage in QEMU for ARMv6-M architecture variant.
+    * Removed the implementation of arch_mem_domain_* APIs for Cortex-M
 
 
 * POSIX:
