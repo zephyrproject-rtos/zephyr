@@ -179,10 +179,6 @@ _arc_go_to_user_space:
 	mov_s r30, 0
 	mov_s blink, 0
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	bl read_timer_end_of_userspace_enter
-#endif
-
 	rtie
 
 /**

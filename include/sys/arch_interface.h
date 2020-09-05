@@ -694,27 +694,6 @@ size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err);
 /** @} */
 
 /**
- * @defgroup arch-benchmarking Architecture-specific benchmarking globals
- * @ingroup arch-interface
- * @{
- */
-
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-extern uint64_t arch_timing_swap_start;
-extern uint64_t arch_timing_swap_end;
-extern uint64_t arch_timing_irq_start;
-extern uint64_t arch_timing_irq_end;
-extern uint64_t arch_timing_tick_start;
-extern uint64_t arch_timing_tick_end;
-extern uint64_t arch_timing_user_mode_end;
-extern uint32_t arch_timing_value_swap_end;
-extern uint64_t arch_timing_value_swap_common;
-extern uint64_t arch_timing_value_swap_temp;
-#endif /* CONFIG_EXECUTION_BENCHMARKING */
-
-/** @} */
-
-/**
  * @defgroup arch-gdbstub Architecture-specific gdbstub APIs
  * @ingroup arch-interface
  * @{
