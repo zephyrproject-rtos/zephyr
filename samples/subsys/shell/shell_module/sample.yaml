@@ -16,3 +16,9 @@ tests:
     tags: shell
     harness: keyboard
     extra_args: CONF_FILE="prj_minimal_rtt.conf"
+  sample.shell.shell_module.littlefs:
+    filter: CONFIG_HAS_SEGGER_RTT
+    tags: shell
+    harness: keyboard
+    fixture: fixture_partition_storage
+    extra_args: OVERLAY_CONFIG="overlay-littlefs.conf"
