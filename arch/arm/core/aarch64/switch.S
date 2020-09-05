@@ -97,19 +97,9 @@ SECTION_FUNC(TEXT, z_thread_entry_wrapper)
 	 * arch_new_thread()
 	 */
 	ldp	x0, x1, [sp], #16
-	switch_el x3, 3f, 2f, 1f
-3:
-	msr	spsr_el3, x0
-	msr	elr_el3, x1
-	b	0f
-2:
-	msr	spsr_el2, x0
-	msr	elr_el2, x1
-	b	0f
-1:
 	msr	spsr_el1, x0
 	msr	elr_el1, x1
-0:
+
 	/*
 	 * z_thread_entry_wrapper is called for every new thread upon the return
 	 * of arch_swap() or ISR. Its address, as well as its input function
@@ -140,16 +130,7 @@ GTEXT(z_arm64_svc)
 SECTION_FUNC(TEXT, z_arm64_svc)
 	z_arm64_enter_exc x2, x3, x4
 
-	switch_el x1, 3f, 2f, 1f
-3:
-	mrs	x0, esr_el3
-	b	0f
-2:
-	mrs	x0, esr_el2
-	b	0f
-1:
 	mrs	x0, esr_el1
-0:
 	lsr	x1, x0, #26
 
 	cmp	x1, #0x15 /* 0x15 = SVC */

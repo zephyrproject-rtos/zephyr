@@ -162,36 +162,17 @@ void z_arm64_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	if (reason != K_ERR_SPURIOUS_IRQ) {
 		__asm__ volatile("mrs %0, CurrentEL" : "=r" (el));
 
-		switch (GET_EL(el)) {
-		case MODE_EL1:
+		if (GET_EL(el) != MODE_EL0) {
 			__asm__ volatile("mrs %0, esr_el1" : "=r" (esr));
 			__asm__ volatile("mrs %0, far_el1" : "=r" (far));
 			__asm__ volatile("mrs %0, elr_el1" : "=r" (elr));
-			break;
-		case MODE_EL2:
-			__asm__ volatile("mrs %0, esr_el2" : "=r" (esr));
-			__asm__ volatile("mrs %0, far_el2" : "=r" (far));
-			__asm__ volatile("mrs %0, elr_el2" : "=r" (elr));
-			break;
-		case MODE_EL3:
-			__asm__ volatile("mrs %0, esr_el3" : "=r" (esr));
-			__asm__ volatile("mrs %0, far_el3" : "=r" (far));
-			__asm__ volatile("mrs %0, elr_el3" : "=r" (elr));
-			break;
-		default:
-			/* Just to keep the compiler happy */
-			esr = elr = far = 0;
-			break;
-		}
 
-		if (GET_EL(el) != MODE_EL0) {
 			LOG_ERR("ESR_ELn: 0x%016llx", esr);
 			LOG_ERR("FAR_ELn: 0x%016llx", far);
 			LOG_ERR("ELR_ELn: 0x%016llx", elr);
 
 			print_EC_cause(esr);
 		}
-
 	}
 
 	if (esf != NULL) {
