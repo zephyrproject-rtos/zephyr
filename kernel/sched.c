@@ -630,12 +630,17 @@ ALWAYS_INLINE struct k_thread *z_find_first_thread_to_unpend(_wait_q_t *wait_q,
 	return ret;
 }
 
+static inline void unpend_thread_no_timeout(struct k_thread *thread)
+{
+	_priq_wait_remove(&pended_on(thread)->waitq, thread);
+	z_mark_thread_as_not_pending(thread);
+	thread->base.pended_on = NULL;
+}
+
 ALWAYS_INLINE void z_unpend_thread_no_timeout(struct k_thread *thread)
 {
 	LOCKED(&sched_spinlock) {
-		_priq_wait_remove(&pended_on(thread)->waitq, thread);
-		z_mark_thread_as_not_pending(thread);
-		thread->base.pended_on = NULL;
+		unpend_thread_no_timeout(thread);
 	}
 }
 
@@ -643,15 +648,17 @@ ALWAYS_INLINE void z_unpend_thread_no_timeout(struct k_thread *thread)
 /* Timeout handler for *_thread_timeout() APIs */
 void z_thread_timeout(struct _timeout *timeout)
 {
-	struct k_thread *thread = CONTAINER_OF(timeout,
-					       struct k_thread, base.timeout);
+	LOCKED(&sched_spinlock) {
+		struct k_thread *thread = CONTAINER_OF(timeout,
+						struct k_thread, base.timeout);
 
-	if (thread->base.pended_on != NULL) {
-		z_unpend_thread_no_timeout(thread);
+		if (thread->base.pended_on != NULL) {
+			unpend_thread_no_timeout(thread);
+		}
+		z_mark_thread_as_started(thread);
+		z_mark_thread_as_not_suspended(thread);
+		ready_thread(thread);
 	}
-	z_mark_thread_as_started(thread);
-	z_mark_thread_as_not_suspended(thread);
-	z_ready_thread(thread);
 }
 #endif
 
