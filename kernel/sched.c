@@ -303,9 +303,9 @@ void k_sched_time_slice_set(int32_t slice, int prio)
 static inline int sliceable(struct k_thread *thread)
 {
 	return is_preempt(thread)
+		&& !z_is_thread_prevented_from_running(thread)
 		&& !z_is_prio_higher(thread->base.prio, slice_max_prio)
-		&& !z_is_idle_thread_object(thread)
-		&& !z_is_thread_timeout_active(thread);
+		&& !z_is_idle_thread_object(thread);
 }
 
 /* Called out of each timer interrupt */
