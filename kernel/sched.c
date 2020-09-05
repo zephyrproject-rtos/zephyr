@@ -57,6 +57,8 @@ struct z_kernel _kernel;
 
 static struct k_spinlock sched_spinlock;
 
+static void update_cache(int);
+
 #define LOCKED(lck) for (k_spinlock_key_t __i = {},			\
 					  __key = k_spin_lock(lck);	\
 			!__i.key;					\
@@ -264,6 +266,16 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 #endif
 }
 
+static void move_thread_to_end_of_prio_q(struct k_thread *thread)
+{
+	if (z_is_thread_queued(thread)) {
+		_priq_run_remove(&_kernel.ready_q.runq, thread);
+	}
+	_priq_run_add(&_kernel.ready_q.runq, thread);
+	z_mark_thread_as_queued(thread);
+	update_cache(thread == _current);
+}
+
 #ifdef CONFIG_TIMESLICING
 
 static int slice_time;
@@ -311,9 +323,19 @@ static inline int sliceable(struct k_thread *thread)
 /* Called out of each timer interrupt */
 void z_time_slice(int ticks)
 {
+	/* Hold sched_spinlock, so that activity on another CPU
+	 * (like a call to k_thread_abort() at just the wrong time)
+	 * won't affect the correctness of the decisions made here.
+	 * Also prevents any nested interrupts from changing
+	 * thread state to avoid similar issues, since this would
+	 * normally run with IRQs enabled.
+	 */
+	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
+
 #ifdef CONFIG_SWAP_NONATOMIC
 	if (pending_current == _current) {
 		z_reset_time_slice();
+		k_spin_unlock(&sched_spinlock, key);
 		return;
 	}
 	pending_current = NULL;
@@ -321,7 +343,7 @@ void z_time_slice(int ticks)
 
 	if (slice_time && sliceable(_current)) {
 		if (ticks >= _current_cpu->slice_ticks) {
-			z_move_thread_to_end_of_prio_q(_current);
+			move_thread_to_end_of_prio_q(_current);
 			z_reset_time_slice();
 		} else {
 			_current_cpu->slice_ticks -= ticks;
@@ -329,6 +351,7 @@ void z_time_slice(int ticks)
 	} else {
 		_current_cpu->slice_ticks = 0;
 	}
+	k_spin_unlock(&sched_spinlock, key);
 }
 #endif
 
@@ -401,12 +424,7 @@ void z_ready_thread(struct k_thread *thread)
 void z_move_thread_to_end_of_prio_q(struct k_thread *thread)
 {
 	LOCKED(&sched_spinlock) {
-		if (z_is_thread_queued(thread)) {
-			_priq_run_remove(&_kernel.ready_q.runq, thread);
-		}
-		_priq_run_add(&_kernel.ready_q.runq, thread);
-		z_mark_thread_as_queued(thread);
-		update_cache(thread == _current);
+		move_thread_to_end_of_prio_q(thread);
 	}
 }
 
