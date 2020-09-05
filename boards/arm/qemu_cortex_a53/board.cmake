@@ -8,6 +8,6 @@ set(QEMU_CPU_TYPE_${ARCH} cortex-a53)
 set(QEMU_FLAGS_${ARCH}
   -cpu ${QEMU_CPU_TYPE_${ARCH}}
   -nographic
-  -machine virt
+  -machine virt,secure=on
   )
 board_set_debugger_ifnset(qemu)
