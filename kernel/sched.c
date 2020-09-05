@@ -1221,21 +1221,16 @@ static int32_t z_tick_sleep(int32_t ticks)
 
 	expected_wakeup_time = ticks + z_tick_get_32();
 
-	/* Spinlock purely for local interrupt locking to prevent us
-	 * from being interrupted while _current is in an intermediate
-	 * state.  Should unify this implementation with pend().
-	 */
-	struct k_spinlock local_lock = {};
-	k_spinlock_key_t key = k_spin_lock(&local_lock);
+	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
 
 #if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
 	pending_current = _current;
 #endif
-	z_remove_thread_from_ready_q(_current);
+	unready_thread(_current);
 	z_add_thread_timeout(_current, timeout);
 	z_mark_thread_as_suspended(_current);
 
-	(void)z_swap(&local_lock, key);
+	(void)z_swap(&sched_spinlock, key);
 
 	__ASSERT(!z_is_thread_state_set(_current, _THREAD_SUSPENDED), "");
 
