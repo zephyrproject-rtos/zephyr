@@ -201,9 +201,6 @@ static inline void program_max_cycles(void)
 void timer_int_handler(const void *unused /* parameter is not used */
 				 )
 {
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	arch_timing_tick_start = z_tsc_read();
-#endif
 	ARG_UNUSED(unused);
 
 #if defined(CONFIG_TICKLESS_KERNEL)
@@ -281,9 +278,6 @@ void timer_int_handler(const void *unused /* parameter is not used */
 	z_clock_announce(_sys_idle_elapsed_ticks);
 #endif /*CONFIG_TICKLESS_IDLE*/
 #endif
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	arch_timing_tick_end = z_tsc_read();
-#endif /* CONFIG_EXECUTION_BENCHMARKING */
 }
 
 #ifdef CONFIG_TICKLESS_KERNEL

@@ -54,17 +54,6 @@ GTEXT(z_arc_switch)
 
 SECTION_FUNC(TEXT, z_arc_switch)
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	push_s r0
-	push_s r1
-	push_s blink
-
-	bl read_timer_start_of_swap
-
-	pop_s blink
-	pop_s r1
-	pop_s r0
-#endif
 	/*
 	 * r0 = new_thread->switch_handle = switch_to thread,
 	 * r1 = &old_thread->switch_handle
@@ -125,13 +114,6 @@ _switch_return_from_coop:
 	pop_s r3    /* status32 into r3 */
 	kflag r3    /* write status32 */
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	push_s blink
-
-	bl read_timer_end_of_swap
-
-	pop_s blink
-#endif /* CONFIG_EXECUTION_BENCHMARKING */
 #ifdef CONFIG_TRACING
 	push_s blink
 

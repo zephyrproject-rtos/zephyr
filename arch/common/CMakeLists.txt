@@ -1,16 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if(CONFIG_GEN_ISR_TABLES OR CONFIG_EXECUTION_BENCHMARKING)
+if(CONFIG_GEN_ISR_TABLES)
   zephyr_library()
 
   zephyr_library_sources_ifdef(
     CONFIG_GEN_ISR_TABLES
     sw_isr_common.c
-    )
-
-  zephyr_library_sources_ifdef(
-    CONFIG_EXECUTION_BENCHMARKING
-    timing_info_bench.c
     )
 endif()
 

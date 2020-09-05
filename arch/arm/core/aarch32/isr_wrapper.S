@@ -80,10 +80,6 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	str r0, [r2, #_kernel_offset_to_nested]
 #endif /* CONFIG_CPU_CORTEX_M */
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	bl read_timer_start_of_isr
-#endif
-
 #ifdef CONFIG_TRACING_ISR
 	bl sys_trace_isr_enter
 #endif
@@ -187,11 +183,6 @@ _idle_state_cleared:
 			 * in thumb mode */
 
 	ldm r1!,{r0,r3}	/* arg in r0, ISR in r3 */
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	push {r0, r3}	/* Save r0 and r3 into stack */
-	bl read_timer_end_of_isr
-	pop {r0, r3}	/* Restore r0 and r3 regs */
-#endif /* CONFIG_EXECUTION_BENCHMARKING */
 	blx r3		/* call ISR */
 
 #if defined(CONFIG_CPU_CORTEX_R)
