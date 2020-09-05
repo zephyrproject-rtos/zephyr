@@ -26,13 +26,6 @@ config CPU_CORTEX_A72
 	help
 	  This option signifies the use of a Cortex-A72 CPU
 
-config SWITCH_TO_EL1
-	bool "Switch to EL1 at boot"
-	default y
-	help
-	  This option indicates that we want to switch to EL1 at boot. Only
-	  switching to EL1 from EL3 is supported.
-
 config NUM_IRQS
 	int
 

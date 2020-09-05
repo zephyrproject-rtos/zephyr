@@ -88,7 +88,6 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	/* Platform specific configurations needed in EL3 */
 	bl	z_arch_el3_plat_init
 
-#ifdef CONFIG_SWITCH_TO_EL1
 	/*
 	* Zephyr entry happened in EL3. Do EL3 specific init before
 	* dropping to lower EL.
@@ -119,17 +118,6 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	adr	x0, 1f
 	msr	elr_el3, x0
 	eret
-#endif
-	/*
-	 * Enable the instruction cache, stack pointer and data access
-	 * alignment checks.
-	 */
-	mov	x1, #(SCTLR_I_BIT | SCTLR_A_BIT | SCTLR_SA_BIT)
-	mrs	x0, sctlr_el3
-	orr	x0, x0, x1
-	msr	sctlr_el3, x0
-	isb
-	b	0f
 
 2:
 	/* Initialize VBAR */
