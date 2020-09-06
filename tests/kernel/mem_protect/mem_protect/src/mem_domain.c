@@ -120,7 +120,7 @@ static void mem_domain_test_1(void *tc_number, void *p2, void *p3)
  *
  * @see k_mem_domain_init()
  */
-void test_mem_domain_valid_access(void *p1, void *p2, void *p3)
+void test_mem_domain_valid_access(void)
 {
 	uintptr_t tc_number = 1U;
 
@@ -145,7 +145,7 @@ void test_mem_domain_valid_access(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_mem_domain_invalid_access(void *p1, void *p2, void *p3)
+void test_mem_domain_invalid_access(void)
 {
 	uintptr_t tc_number = 2U;
 
@@ -342,7 +342,7 @@ static void mem_domain_for_user_tc3(void *max_partitions, void *p2, void *p3)
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_mem_domain_add_partitions_invalid(void *p1, void *p2, void *p3)
+void test_mem_domain_add_partitions_invalid(void)
 {
 	/* Subtract one since the domain is initialized with one partition
 	 * already present.
@@ -404,7 +404,7 @@ static void mem_domain_for_user_tc4(void *max_partitions, void *p2, void *p3)
  * @see k_mem_domain_init(), k_mem_domain_add_partition(),
  * k_mem_domain_add_thread(), k_thread_user_mode_enter()
  */
-void test_mem_domain_add_partitions_simple(void *p1, void *p2, void *p3)
+void test_mem_domain_add_partitions_simple(void)
 {
 
 	uint8_t max_partitions = (uint8_t)arch_mem_domain_max_partitions_get();
@@ -450,7 +450,7 @@ static void mem_domain_for_user_tc5(void *p1, void *p2, void *p3)
  * @see k_mem_domain_remove_partition(),
  * k_mem_domain_add_thread(), k_thread_user_mode_enter()
  */
-void test_mem_domain_remove_partitions_simple(void *p1, void *p2, void *p3)
+void test_mem_domain_remove_partitions_simple(void)
 {
 	k_mem_domain_add_thread(&mem_domain_tc3_mem_domain,
 				k_current_get());
@@ -491,7 +491,7 @@ static void mem_domain_test_6_2(void *p1, void *p2, void *p3)
  *
  * @see k_mem_domain_remove_partition()
  */
-void test_mem_domain_remove_partitions(void *p1, void *p2, void *p3)
+void test_mem_domain_remove_partitions(void)
 {
 	uint8_t max_partitions = (uint8_t)arch_mem_domain_max_partitions_get();
 
