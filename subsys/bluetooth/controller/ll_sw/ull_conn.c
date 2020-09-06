@@ -63,6 +63,7 @@ static void ticker_start_conn_op_cb(uint32_t status, void *param);
 
 static inline void disable(uint16_t handle);
 static void conn_cleanup(struct ll_conn *conn, uint8_t reason);
+static struct node_tx *tx_ull_dequeue(struct ll_conn *conn, struct node_tx *tx);
 static void tx_ull_flush(struct ll_conn *conn);
 static void tx_lll_flush(void *param);
 
@@ -1288,46 +1289,6 @@ ull_conn_tx_demux_release:
 	} while (--count);
 }
 
-static struct node_tx *tx_ull_dequeue(struct ll_conn *conn,
-					  struct node_tx *tx)
-{
-	if (!conn->tx_ctrl && (conn->tx_head != conn->tx_data)) {
-		struct pdu_data *pdu_data_tx;
-
-		pdu_data_tx = (void *)conn->tx_head->pdu;
-		if ((pdu_data_tx->ll_id != PDU_DATA_LLID_CTRL) ||
-		    ((pdu_data_tx->llctrl.opcode !=
-		      PDU_DATA_LLCTRL_TYPE_ENC_REQ) &&
-		     (pdu_data_tx->llctrl.opcode !=
-		      PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ))) {
-			conn->tx_ctrl = conn->tx_ctrl_last = conn->tx_head;
-		}
-	}
-
-	if (conn->tx_head == conn->tx_ctrl) {
-		conn->tx_head = conn->tx_head->next;
-		if (conn->tx_ctrl == conn->tx_ctrl_last) {
-			conn->tx_ctrl = NULL;
-			conn->tx_ctrl_last = NULL;
-		} else {
-			conn->tx_ctrl = conn->tx_head;
-		}
-
-		/* point to self to indicate a control PDU mem alloc */
-		tx->next = tx;
-	} else {
-		if (conn->tx_head == conn->tx_data) {
-			conn->tx_data = conn->tx_data->next;
-		}
-		conn->tx_head = conn->tx_head->next;
-
-		/* point to NULL to indicate a Data PDU mem alloc */
-		tx->next = NULL;
-	}
-
-	return tx;
-}
-
 void ull_conn_tx_lll_enqueue(struct ll_conn *conn, uint8_t count)
 {
 	bool pause_tx = false;
@@ -1733,6 +1694,45 @@ static void conn_cleanup(struct ll_conn *conn, uint8_t reason)
 
 	/* Demux and flush Tx PDUs that remain enqueued in thread context */
 	ull_conn_tx_demux(UINT8_MAX);
+}
+
+static struct node_tx *tx_ull_dequeue(struct ll_conn *conn, struct node_tx *tx)
+{
+	if (!conn->tx_ctrl && (conn->tx_head != conn->tx_data)) {
+		struct pdu_data *pdu_data_tx;
+
+		pdu_data_tx = (void *)conn->tx_head->pdu;
+		if ((pdu_data_tx->ll_id != PDU_DATA_LLID_CTRL) ||
+		    ((pdu_data_tx->llctrl.opcode !=
+		      PDU_DATA_LLCTRL_TYPE_ENC_REQ) &&
+		     (pdu_data_tx->llctrl.opcode !=
+		      PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ))) {
+			conn->tx_ctrl = conn->tx_ctrl_last = conn->tx_head;
+		}
+	}
+
+	if (conn->tx_head == conn->tx_ctrl) {
+		conn->tx_head = conn->tx_head->next;
+		if (conn->tx_ctrl == conn->tx_ctrl_last) {
+			conn->tx_ctrl = NULL;
+			conn->tx_ctrl_last = NULL;
+		} else {
+			conn->tx_ctrl = conn->tx_head;
+		}
+
+		/* point to self to indicate a control PDU mem alloc */
+		tx->next = tx;
+	} else {
+		if (conn->tx_head == conn->tx_data) {
+			conn->tx_data = conn->tx_data->next;
+		}
+		conn->tx_head = conn->tx_head->next;
+
+		/* point to NULL to indicate a Data PDU mem alloc */
+		tx->next = NULL;
+	}
+
+	return tx;
 }
 
 static void tx_ull_flush(struct ll_conn *conn)
