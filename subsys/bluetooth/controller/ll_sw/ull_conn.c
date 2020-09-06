@@ -1386,10 +1386,8 @@ void ull_conn_lll_ack_enqueue(uint16_t handle, struct node_tx *tx)
 	MFIFO_ENQUEUE(conn_ack, idx);
 }
 
-struct ll_conn *ull_conn_tx_ack(uint16_t handle, memq_link_t *link,
-				struct node_tx *tx)
+void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx)
 {
-	struct ll_conn *conn = NULL;
 	struct pdu_data *pdu_tx;
 
 	pdu_tx = (void *)tx->pdu;
@@ -1397,32 +1395,32 @@ struct ll_conn *ull_conn_tx_ack(uint16_t handle, memq_link_t *link,
 
 	if (pdu_tx->ll_id == PDU_DATA_LLID_CTRL) {
 		if (handle != 0xFFFF) {
-			conn = ll_conn_get(handle);
+			struct ll_conn *conn = ll_conn_get(handle);
 
 			ctrl_tx_ack(conn, &tx, pdu_tx);
 		}
 
-		/* release mem if points to itself */
+		/* release ctrl mem if points to itself */
 		if (link->next == (void *)tx) {
-
 			LL_ASSERT(link->next);
 
 			mem_release(tx, &mem_conn_tx_ctrl.free);
-			return conn;
+			return;
 		} else if (!tx) {
-			return conn;
+			/* Tx Node re-used to enqueue new ctrl PDU */
+			return;
 		} else {
 			LL_ASSERT(!link->next);
 		}
-	} else if (handle != 0xFFFF) {
-		conn = ll_conn_get(handle);
-	} else {
+	} else if (handle == 0xFFFF) {
 		pdu_tx->ll_id = PDU_DATA_LLID_RESV;
+	} else {
+		LL_ASSERT(handle != 0xFFFF);
 	}
 
 	ll_tx_ack_put(handle, tx);
 
-	return conn;
+	return;
 }
 
 uint8_t ull_conn_llcp_req(void *conn)
