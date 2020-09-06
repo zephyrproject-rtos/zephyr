@@ -68,7 +68,7 @@ void main(void)
 	 * controlled delay.  Here we need to override that, then
 	 * force entry to deep sleep on any delay.
 	 */
-	pm_force_power_state(POWER_STATE_DEEP_SLEEP_1);
+	pm_power_state_force(POWER_STATE_DEEP_SLEEP_1);
 	k_sleep(K_MSEC(1));
 
 	printk("ERROR: System off failed\n");

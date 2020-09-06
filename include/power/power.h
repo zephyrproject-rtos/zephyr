@@ -158,7 +158,7 @@ static inline void _pm_idle_exit_notification_disable(void)
  * @param state Power state which should be used in the ongoing
  *		suspend operation or POWER_STATE_AUTO.
  */
-void pm_force_power_state(enum power_states state);
+void pm_power_state_force(enum power_states state);
 
 /**
  * @brief Put processor into a power state.

@@ -74,7 +74,7 @@ __weak void pm_notify_power_state_exit(enum power_states state)
 	/* This function can be overridden by the application. */
 }
 
-void pm_force_power_state(enum power_states state)
+void pm_power_state_force(enum power_states state)
 {
 	__ASSERT(state >= POWER_STATE_AUTO &&
 		 state <  POWER_STATE_MAX,
