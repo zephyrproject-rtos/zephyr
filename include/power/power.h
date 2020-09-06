@@ -166,7 +166,7 @@ void pm_force_power_state(enum power_states state);
  * This function implements the SoC specific details necessary
  * to put the processor into available power states.
  */
-void sys_set_power_state(enum power_states state);
+void pm_power_state_set(enum power_states state);
 
 #ifdef CONFIG_PM_DEBUG
 /**

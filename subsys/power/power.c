@@ -145,7 +145,7 @@ enum power_states pm_system_suspend(int32_t ticks)
 
 	/* Enter power state */
 	pm_debug_start_timer();
-	sys_set_power_state(pm_state);
+	pm_power_state_set(pm_state);
 	pm_debug_stop_timer();
 
 #if CONFIG_PM_DEVICE
