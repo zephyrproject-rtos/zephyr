@@ -209,6 +209,7 @@ void lll_conn_isr_rx(void *param)
 
 	/* Decide on event continuation and hence Radio Shorts to use */
 	is_done = is_done || ((crc_ok) && (pdu_data_rx->md == 0) &&
+			      (pdu_data_tx->md == 0) &&
 			      (pdu_data_tx->len == 0));
 
 	if (is_done) {
