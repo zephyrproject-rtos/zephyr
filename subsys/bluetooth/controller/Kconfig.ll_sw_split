@@ -385,6 +385,18 @@ config BT_CTLR_TX_RETRY_DISABLE
 	  would happen in the next connection event instead of repeated retries
 	  in the current connection event.
 
+config BT_CTLR_FORCE_MD_COUNT
+	int "Forced MD bit count"
+	range 0 255
+	default 0
+	help
+	  No. of times to force MD bit to be set in Tx PDU after a successful
+	  transmission of non-empty PDU.
+
+	  This will prolong the connection event to from being closed in cases
+	  where applications want to send data in same connection event but are
+	  slow in providing new Tx data.
+
 config BT_CTLR_CONN_RSSI_EVENT
 	bool "Connection RSSI event"
 	depends on BT_CTLR_CONN_RSSI

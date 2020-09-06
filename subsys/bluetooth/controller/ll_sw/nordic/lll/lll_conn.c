@@ -51,6 +51,11 @@ static uint16_t trx_cnt;
 static uint8_t mic_state;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
+#if defined(CONFIG_BT_CTLR_FORCE_MD_COUNT) && \
+	(CONFIG_BT_CTLR_FORCE_MD_COUNT > 0)
+static uint8_t force_md_cnt;
+#endif /* CONFIG_BT_CTLR_FORCE_MD_COUNT */
+
 int lll_conn_init(void)
 {
 	int err;
@@ -73,6 +78,11 @@ int lll_conn_reset(void)
 	if (err) {
 		return err;
 	}
+
+#if defined(CONFIG_BT_CTLR_FORCE_MD_COUNT) && \
+	(CONFIG_BT_CTLR_FORCE_MD_COUNT > 0)
+	force_md_cnt = 0U;
+#endif /* CONFIG_BT_CTLR_FORCE_MD_COUNT */
 
 	return 0;
 }
@@ -355,6 +365,13 @@ lll_conn_isr_rx_exit:
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
 	lll_prof_send();
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
+
+#if defined(CONFIG_BT_CTLR_FORCE_MD_COUNT) && \
+	(CONFIG_BT_CTLR_FORCE_MD_COUNT > 0)
+	if (force_md_cnt && crc_ok) {
+		force_md_cnt--;
+	}
+#endif /* CONFIG_BT_CTLR_FORCE_MD_COUNT */
 }
 
 void lll_conn_isr_tx(void *param)
@@ -519,7 +536,15 @@ void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx)
 		if (link) {
 			p->md = 1U;
 		} else {
-			p->md = 0U;
+#if defined(CONFIG_BT_CTLR_FORCE_MD_COUNT) && \
+	(CONFIG_BT_CTLR_FORCE_MD_COUNT > 0)
+			if (force_md_cnt) {
+				p->md = 1U;
+			} else
+#endif /* CONFIG_BT_CTLR_FORCE_MD_COUNT */
+			{
+				p->md = 0U;
+			}
 		}
 	} else {
 		uint16_t max_tx_octets;
@@ -544,7 +569,15 @@ void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx)
 		} else if (link->next != lll->memq_tx.tail) {
 			p->md = 1U;
 		} else {
-			p->md = 0U;
+#if defined(CONFIG_BT_CTLR_FORCE_MD_COUNT) && \
+	(CONFIG_BT_CTLR_FORCE_MD_COUNT > 0)
+			if (force_md_cnt) {
+				p->md = 1U;
+			} else
+#endif /* CONFIG_BT_CTLR_FORCE_MD_COUNT */
+			{
+				p->md = 0U;
+			}
 		}
 
 		p->rfu = 0U;
@@ -700,6 +733,11 @@ static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 				tx->next = link;
 
 				*tx_release = tx;
+
+#if defined(CONFIG_BT_CTLR_FORCE_MD_COUNT) && \
+	(CONFIG_BT_CTLR_FORCE_MD_COUNT > 0)
+				force_md_cnt = CONFIG_BT_CTLR_FORCE_MD_COUNT;
+#endif /* CONFIG_BT_CTLR_FORCE_MD_COUNT */
 			}
 
 			if (IS_ENABLED(CONFIG_BT_CENTRAL) && !lll->role) {
