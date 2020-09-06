@@ -63,6 +63,7 @@ static void ticker_start_conn_op_cb(uint32_t status, void *param);
 
 static inline void disable(uint16_t handle);
 static void conn_cleanup(struct ll_conn *conn, uint8_t reason);
+static void tx_demux(void *param);
 static struct node_tx *tx_ull_dequeue(struct ll_conn *conn, struct node_tx *tx);
 static void tx_ull_flush(struct ll_conn *conn);
 static void tx_lll_flush(void *param);
@@ -235,6 +236,16 @@ int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 	lll_tx->node = tx;
 
 	MFIFO_ENQUEUE(conn_tx, idx);
+
+	if (ull_ref_get(&conn->ull)) {
+		static memq_link_t link;
+		static struct mayfly mfy = {0, 0, &link, NULL, tx_demux};
+
+		mfy.param = conn;
+
+		mayfly_enqueue(TICKER_USER_ID_THREAD, TICKER_USER_ID_ULL_HIGH,
+			       0, &mfy);
+	}
 
 #if defined(CONFIG_BT_PERIPHERAL)
 	/* break slave latency */
@@ -1692,6 +1703,13 @@ static void conn_cleanup(struct ll_conn *conn, uint8_t reason)
 
 	/* Demux and flush Tx PDUs that remain enqueued in thread context */
 	ull_conn_tx_demux(UINT8_MAX);
+}
+
+static void tx_demux(void *param)
+{
+	ull_conn_tx_demux(1);
+
+	ull_conn_tx_lll_enqueue(param, 1);
 }
 
 static struct node_tx *tx_ull_dequeue(struct ll_conn *conn, struct node_tx *tx)
