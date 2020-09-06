@@ -1526,24 +1526,14 @@ static inline void rx_demux_conn_tx_ack(uint8_t ack_last, uint16_t handle,
 #if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 	do {
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
-		struct ll_conn *conn;
-
 		/* Dequeue node */
 		ull_conn_ack_dequeue();
 
 		/* Process Tx ack */
-		conn = ull_conn_tx_ack(handle, link, node_tx);
+		ull_conn_tx_ack(handle, link, node_tx);
 
 		/* Release link mem */
 		ull_conn_link_tx_release(link);
-
-		/* De-mux 1 tx node from FIFO */
-		ull_conn_tx_demux(1);
-
-		/* Enqueue towards LLL */
-		if (conn) {
-			ull_conn_tx_lll_enqueue(conn, 1);
-		}
 
 		/* check for more rx ack */
 		link = ull_conn_ack_by_last_peek(ack_last, &handle, &node_tx);
