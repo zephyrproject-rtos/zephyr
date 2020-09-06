@@ -112,7 +112,6 @@ static struct osdp *osdp_build_ctx(struct osdp_channel *channel)
 	if (osdp_extract_address(pd_adddres)) {
 		return NULL;
 	}
-	return NULL;
 #endif
 	ctx = &osdp_ctx;
 	ctx->cp = &osdp_cp_ctx;
@@ -199,6 +198,10 @@ static int osdp_init(const struct device *arg)
 
 	/* setup OSDP */
 	ctx = osdp_build_ctx(&channel);
+	if (ctx == NULL) {
+		LOG_ERR("OSDP build ctx failed!");
+		k_panic();
+	}
 	if (osdp_setup(ctx)) {
 		LOG_ERR("Failed to setup OSDP device!");
 		k_panic();
