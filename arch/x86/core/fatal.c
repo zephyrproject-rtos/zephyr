@@ -308,9 +308,10 @@ static void dump_page_fault(z_arch_esf_t *esf)
 
 	if ((err & RSVD) != 0) {
 		LOG_ERR("Reserved bits set in page tables");
-	} else if ((err & PRESENT) == 0) {
-		LOG_ERR("Linear address not present in page tables");
 	} else {
+		if ((err & PRESENT) == 0) {
+			LOG_ERR("Linear address not present in page tables");
+		}
 		LOG_ERR("Access violation: %s thread not allowed to %s",
 			(err & US) != 0U ? "user" : "supervisor",
 			(err & ID) != 0U ? "execute" : ((err & WR) != 0U ?
