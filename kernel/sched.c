@@ -15,6 +15,7 @@
 #include <stdbool.h>
 #include <kernel_internal.h>
 #include <logging/log.h>
+#include <sys/atomic.h>
 LOG_MODULE_DECLARE(os);
 
 /* Maximum time between the time a self-aborting thread flags itself
@@ -603,6 +604,9 @@ void z_thread_single_abort(struct k_thread *thread)
 		 * somewhat undefined behavoir. It must be safe to call
 		 * k_thread_create() or free the object at this point.
 		 */
+#if __ASSERT_ON
+		atomic_clear(&thread->base.cookie);
+#endif
 	}
 
 	if (fn_abort != NULL) {
