@@ -18,7 +18,7 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
  */
 
 /* Invoke Low Power/System Off specific Tasks */
-void sys_set_power_state(enum power_states state)
+void pm_power_state_set(enum power_states state)
 {
 	LOG_DBG("SoC entering power state %d", state);
 

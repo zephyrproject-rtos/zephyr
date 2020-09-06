@@ -107,7 +107,7 @@ static void z_power_soc_sleep(void)
  * For deep sleep pm_system_suspend has executed all the driver
  * power management call backs.
  */
-void sys_set_power_state(enum power_states state)
+void pm_power_state_set(enum power_states state)
 {
 	switch (state) {
 #if (defined(CONFIG_PM_SLEEP_STATES))

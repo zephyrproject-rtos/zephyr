@@ -30,7 +30,7 @@ static struct dummy_driver_api *api;
  * Weak power hook functions. Used on systems that have not implemented
  * power management.
  */
-__weak void sys_set_power_state(enum power_states state)
+__weak void pm_power_state_set(enum power_states state)
 {
 	/* at this point, pm_notify_power_state_entry() implemented in
 	 * this file has been called and set_pm should have been set

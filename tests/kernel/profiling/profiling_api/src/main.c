@@ -26,7 +26,7 @@ static void tdata_dump_callback(const struct k_thread *thread, void *user_data)
  * Weak power hook functions. Used on systems that have not implemented
  * power management.
  */
-__weak void sys_set_power_state(enum power_states state)
+__weak void pm_power_state_set(enum power_states state)
 {
 	/* Never called. */
 	__ASSERT_NO_MSG(false);
