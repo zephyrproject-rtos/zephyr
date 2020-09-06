@@ -516,6 +516,12 @@ struct _thread_base {
 #endif
 
 	_wait_q_t join_waiters;
+#if __ASSERT_ON
+	/* For detecting calls to k_thread_create() on threads that are
+	 * already active
+	 */
+	atomic_t cookie;
+#endif
 };
 
 typedef struct _thread_base _thread_base_t;
