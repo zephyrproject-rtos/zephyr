@@ -125,7 +125,7 @@ enum power_states pm_system_suspend(int32_t ticks)
 		 * Disable idle exit notification as it is not needed
 		 * in deep sleep mode.
 		 */
-		_pm_idle_exit_notification_disable();
+		pm_idle_exit_notification_disable();
 #if CONFIG_PM_DEVICE
 	} else {
 		if (pm_policy_low_power_devices(pm_state)) {
@@ -181,7 +181,7 @@ void pm_system_resume(void)
 	 * The kernel scheduler will get control after the ISR finishes
 	 * and it may schedule another thread.
 	 *
-	 * Call _pm_idle_exit_notification_disable() if this
+	 * Call pm_idle_exit_notification_disable() if this
 	 * notification is not required.
 	 */
 	if (!post_ops_done) {

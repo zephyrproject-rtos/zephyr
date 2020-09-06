@@ -123,7 +123,7 @@ void z_pm_save_idle_exit(int32_t ticks)
 	/* Some CPU low power states require notification at the ISR
 	 * to allow any operations that needs to be done before kernel
 	 * switches task or processes nested interrupts. This can be
-	 * disabled by calling _pm_idle_exit_notification_disable().
+	 * disabled by calling pm_idle_exit_notification_disable().
 	 * Alternatively it can be simply ignored if not required.
 	 */
 	if (pm_idle_exit_notify) {
