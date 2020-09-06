@@ -752,11 +752,11 @@ void ull_master_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t
 	ref = ull_ref_inc(&conn->ull);
 	LL_ASSERT(ref);
 
-	/* De-mux 1 tx node from FIFO */
-	ull_conn_tx_demux(1);
+	/* De-mux 2 tx node from FIFO, sufficient to be able to set MD bit */
+	ull_conn_tx_demux(2);
 
 	/* Enqueue towards LLL */
-	ull_conn_tx_lll_enqueue(conn, 1);
+	ull_conn_tx_lll_enqueue(conn, 2);
 
 	/* Append timing parameters */
 	p.ticks_at_expire = ticks_at_expire;
