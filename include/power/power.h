@@ -139,7 +139,7 @@ static inline bool pm_is_deep_sleep_state(enum power_states state)
  * pm_system_suspend to disable the corresponding pm_system_resume notification.
  *
  */
-static inline void _pm_idle_exit_notification_disable(void)
+static inline void pm_idle_exit_notification_disable(void)
 {
 	pm_idle_exit_notify = 0U;
 }
@@ -258,7 +258,7 @@ void pm_system_resume_from_deep_sleep(void);
  * those cases, the ISR would be invoked immediately after the event wakes up
  * the CPU, before code following the CPU wait, gets a chance to execute. This
  * can be ignored if no operation needs to be done at the wake event
- * notification. Alternatively _pm_idle_exit_notification_disable() can
+ * notification. Alternatively pm_idle_exit_notification_disable() can
  * be called in pm_system_suspend to disable this notification.
  */
 void pm_system_resume(void);
