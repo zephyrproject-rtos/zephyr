@@ -77,7 +77,7 @@ manifest:
       revision: cea57f86d3ade46c0b99dab32b2ac63435ed0693
       path: modules/hal/stm32
     - name: hal_ti
-      revision: deb246ade0d4d64f470482017caec600cc48086e
+      revision: 405dfc8faba13e01c1cb9e29e70b31b50f71d117
       path: modules/hal/ti
     - name: libmetal
       revision: 87e9e7f2c5b4e238236fe703db61ba23e48dc2ef
