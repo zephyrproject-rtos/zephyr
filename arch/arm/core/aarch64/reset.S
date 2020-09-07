@@ -120,26 +120,8 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	eret
 
 2:
-	/* Initialize VBAR */
-	msr	vbar_el2, x19
-
-	/* SError, IRQ and FIQ routing enablement in EL2 */
-	mrs	x0, hcr_el2
-	orr	x0, x0, #(HCR_EL2_FMO | HCR_EL2_IMO | HCR_EL2_AMO)
-	msr	hcr_el2, x0
-
-	/* Disable access trapping in EL2 for NEON/FP */
-	msr	cptr_el2, xzr
-
-	/*
-	 * Enable the instruction cache, stack pointer and data access
-	 * alignment checks.
-	 */
-	mov	x1, #(SCTLR_I_BIT | SCTLR_A_BIT | SCTLR_SA_BIT)
-	mrs	x0, sctlr_el2
-	orr	x0, x0, x1
-	msr	sctlr_el2, x0
-	b	0f
+	/* Booting from EL2 is not supported */
+	b	.
 
 1:
 	/* Initialize VBAR */
