@@ -103,18 +103,12 @@ SECTION_FUNC(TEXT, z_arm64_svc)
 	b	inv
 offload:
 	/* ++(_kernel->nested) to be checked by arch_is_in_isr() */
-	ldr	x0, =_kernel
-	ldr	x1, [x0, #_kernel_offset_to_nested]
-	add	x1, x1, #1
-	str	x1, [x0, #_kernel_offset_to_nested]
+	inc_nest_counter x0, x1
 
 	bl	z_irq_do_offload
 
 	/* --(_kernel->nested) */
-	ldr	x0, =_kernel
-	ldr	x1, [x0, #_kernel_offset_to_nested]
-	sub	x1, x1, #1
-	str	x1, [x0, #_kernel_offset_to_nested]
+	dec_nest_counter x0, x1
 	b	exit
 #endif
 	b	inv
