@@ -115,20 +115,30 @@ static struct wdt_timeout_cfg m_cfg_wdt0;
 static struct wdt_timeout_cfg m_cfg_wdt1;
 #endif
 
+#if defined(CONFIG_SOC_SERIES_STM32F7X) || defined(CONFIG_SOC_SERIES_STM32H7X)
+/* STM32H7 and STM32F7 guarantee last write RAM retention over reset,
+ * only for 64bits
+ * See details in Application Note AN5342
+ */
+#define DATATYPE uint64_t
+#else
+#define DATATYPE uint32_t
+#endif
+
 /* m_state indicates state of particular test. Used to check whether testcase
  * should go to reset state or check other values after reset.
  */
-volatile uint32_t m_state __attribute__((section(".noinit.test_wdt")));
+volatile DATATYPE m_state __attribute__((section(".noinit.test_wdt")));
 
 /* m_testcase_index is incremented after each test to make test possible
  * switch to next testcase.
  */
-volatile uint32_t m_testcase_index __attribute__((section(".noinit.test_wdt")));
+volatile DATATYPE m_testcase_index __attribute__((section(".noinit.test_wdt")));
 
 /* m_testvalue contains value set in interrupt callback to point whether
  * first or second interrupt was fired.
  */
-volatile uint32_t m_testvalue __attribute__((section(".noinit.test_wdt")));
+volatile DATATYPE m_testvalue __attribute__((section(".noinit.test_wdt")));
 
 #if TEST_WDT_CALLBACK_1
 static void wdt_int_cb0(const struct device *wdt_dev, int channel_id)
