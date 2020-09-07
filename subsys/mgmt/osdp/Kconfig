@@ -7,8 +7,8 @@
 menuconfig OSDP
 	bool "Open Supervised Device Protocol (OSDP) driver"
 	select RING_BUFFER
-	select SERIAL
-	select SERIAL_SUPPORT_INTERRUPT
+	imply SERIAL_SUPPORT_INTERRUPT
+	imply UART_INTERRUPT_DRIVEN
 	help
 	  Add support for Open Supervised Device Protocol (OSDP)
 
