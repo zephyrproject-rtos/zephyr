@@ -231,6 +231,14 @@ Drivers and Sensors
 
 * Ethernet
 
+  * Added VLAN support to Intel e1000 driver.
+  * Added Ethernet support to stm32h7 based boards.
+  * Added support for setting fixed configuration and read from device tree
+    for ENET ETH interface and PHY in mcux driver.
+  * Added support for device that do not use SMI for PHY setup in mcux driver.
+  * Added support for multiport gPTP in native_posix driver. This allows gPTP
+    bridging testing.
+  * Fixed MAC registers in enc28j60 driver to the latest Microchip reference manual.
 
 * Flash
 
@@ -254,6 +262,9 @@ Drivers and Sensors
 
 * IEEE 802.15.4
 
+  * Allow user to disable auto-start of IEEE 802.15.4 network interface.
+    By default the IEEE 802.15.4 network interface is automatically started.
+  * Added support for setting TX power in rf2xx driver.
 
 * Interrupt Controller
 
@@ -275,6 +286,8 @@ Drivers and Sensors
 
 * Modem
 
+  * Added option to query the IMSI and ICCID from the SIM.
+  * Added support for offloaded Sierra Wireless HL7800 modem.
 
 * PECI
 
@@ -330,10 +343,72 @@ Drivers and Sensors
 
 * WiFi
 
+  * Added IPv6 support to Simplelink driver.
+  * Added DNS offloading support to eswifi driver.
+  * Fixed esp driver offload protocol parsing.
+  * Fixed esp driver GPIO reset control logic.
+  * Fixed eswifi driver offloading packet parsing.
 
 
 Networking
 **********
+
+* The new TCP stack is enabled by default. The legacy TCP stack is not yet
+  removed and can be used if needed.
+* The network interface is made a kernel object. This allows better access
+  control handling when usermode is enabled.
+* The kernel stacks are used in network related threads to save memory when
+  usermode is enabled.
+* Network statistics collection can be enabled in key points of the network
+  stack. This can be used to get information where time is spent in RX or TX.
+* The BSD socket sendmsg() can now be used with AF_PACKET type sockets.
+* Added support for enabling OpenThread reference device.
+* Added support for enabling MQTT persistent sessions.
+* Added "net tcp recv" command to net shell to enable TCP RX in manual testing.
+* Added ObjLnk resource type support to LWM2M.
+* Added userspace support to MQTT publisher, echo-server and echo-client
+  sample applications.
+* Added support to rejecting received and unsupported PPP options.
+* Added support for select() when using socket offloading.
+* Added support for IPv6 multicast packet routing.
+* Added support to SOCK_DGRAM type sockets for AF_PACKET family.
+* Added support for using TLS sockets when using socket offloading.
+* Added additonal checks in IPv6 to ensure that multicasts are only passed to the
+  upper layer if the originating interface actually joined the destination
+  multicast group.
+* Allow user to specify TCP port number in HTTP request.
+* Allow application to initialize the network config library instead of network
+  stack calling initialization at startup. This enables better control of
+  network resources but requires application to call net_config_init_app()
+  manually.
+* Allow using wildcards in CoAP resource path description.
+* Allow user to specify used network interface in net-shell ping command.
+* Allow user to select a custom mbedtls library in OpenThread.
+* Removed dependency to :option:`CONFIG_NET_SOCKETS_POSIX_NAMES` from offloaded
+  WiFi device drivers.
+* Print more gPTP status information in gptp net shell.
+* Fixed the network traffic class statistics collection.
+* Fixed WiFi shell when doing a scan.
+* Fixed IPv6 routes when nexthop is link local address of the connected peer.
+* Fixed IPv6 Router Solicitation message handling.
+* Fixed BSD socket lib and set errno to EBADF if socket descriptor is invalid.
+* Fixed received DNS packet parsing.
+* Fixed DNS resolving by ignoring incoming queries while we are resolving a name.
+* Fixed CoAP zero length option parsing.
+* Fixed gPTP port numbering to start from 1.
+* Fixed gPTP BMCA priority vector calculation.
+* Fixed multiple interface bound socket recv() for AF_PACKET sockets.
+* Fixed PPP Term-Req and Term-Ack packet length when sending them.
+* Fixed PPP ipv6cp and ipcp Configure-Rej handling.
+* Fixed PPP option parsing and negotiation handling.
+* Fixed PPP ipcp option handling when the protocol goes down.
+* Fixed PPP ipv6cp and ipcp network address removal when connection goes down.
+* Fixed LWM2M FOTA socket closing.
+* Fixed LWM2M block transfer retransmissions.
+* Fixed LWM2M opaque data transfer in block mode.
+* Fixed LWM2M Security and Server object instance matching.
+* Fixed LWM2M updating lifetime on Register Update event.
+* Fixed MQTT double CONNACK event notification on server reject.
 
 
 Bluetooth
