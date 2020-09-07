@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Jan Van Winkel <jan.van_winkel@dxplore.eu>
  * Copyright (c) 2019 Nordic Semiconductor ASA
+ * Copyright (c) 2020 Teslabs Engineering S.L.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,16 +20,27 @@ LOG_MODULE_REGISTER(display_ili9340);
 #include <drivers/spi.h>
 #include <string.h>
 
+struct ili9340_config {
+	const char *spi_name;
+	uint16_t spi_addr;
+	uint32_t spi_max_freq;
+	const char *spi_cs_label;
+	gpio_pin_t spi_cs_pin;
+	gpio_dt_flags_t spi_cs_flags;
+	const char *cmd_data_label;
+	gpio_pin_t cmd_data_pin;
+	gpio_dt_flags_t cmd_data_flags;
+	const char *reset_label;
+	gpio_pin_t reset_pin;
+	gpio_dt_flags_t reset_flags;
+};
+
 struct ili9340_data {
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	const struct device *reset_gpio;
-#endif
 	const struct device *command_data_gpio;
 	const struct device *spi_dev;
 	struct spi_config spi_config;
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	struct spi_cs_control cs_ctrl;
-#endif
 };
 
 #define ILI9340_CMD_DATA_PIN_COMMAND 1
@@ -41,95 +53,82 @@ struct ili9340_data {
 #define ILI9340_RGB_SIZE 3U
 #endif
 
-static void ili9340_exit_sleep(struct ili9340_data *data)
+static void ili9340_exit_sleep(const struct device *dev)
 {
-	ili9340_transmit(data, ILI9340_CMD_EXIT_SLEEP, NULL, 0);
+	ili9340_transmit(dev, ILI9340_CMD_EXIT_SLEEP, NULL, 0);
 	k_sleep(K_MSEC(120));
 }
 
 static int ili9340_init(const struct device *dev)
 {
+	const struct ili9340_config *config = (struct ili9340_config *)dev->config;
 	struct ili9340_data *data = (struct ili9340_data *)dev->data;
 
 	LOG_DBG("Initializing display driver");
 
-	data->spi_dev = device_get_binding(DT_INST_BUS_LABEL(0));
+	data->spi_dev = device_get_binding(config->spi_name);
 	if (data->spi_dev == NULL) {
 		LOG_ERR("Could not get SPI device for ILI9340");
 		return -EPERM;
 	}
 
-	data->spi_config.frequency = DT_INST_PROP(0, spi_max_frequency);
+	data->spi_config.frequency = config->spi_max_freq;
 	data->spi_config.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
-	data->spi_config.slave = DT_INST_REG_ADDR(0);
+	data->spi_config.slave = config->spi_addr;
 
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	data->cs_ctrl.gpio_dev =
-		device_get_binding(DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-	data->cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
-	data->cs_ctrl.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
-	data->cs_ctrl.delay = 0U;
-	data->spi_config.cs = &(data->cs_ctrl);
-#else
-	data->spi_config.cs = NULL;
-#endif
-
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	data->reset_gpio =
-		device_get_binding(DT_INST_GPIO_LABEL(0, reset_gpios));
-	if (data->reset_gpio == NULL) {
-		LOG_ERR("Could not get GPIO port for ILI9340 reset");
-		return -EPERM;
+	data->cs_ctrl.gpio_dev = device_get_binding(config->spi_cs_label);
+	if (data->cs_ctrl.gpio_dev) {
+		data->cs_ctrl.gpio_pin = config->spi_cs_pin;
+		data->cs_ctrl.gpio_dt_flags = config->spi_cs_flags;
+		data->cs_ctrl.delay = 0U;
+		data->spi_config.cs = &(data->cs_ctrl);
 	}
 
-	gpio_pin_configure(data->reset_gpio, DT_INST_GPIO_PIN(0, reset_gpios),
-			   GPIO_OUTPUT_INACTIVE |
-			   DT_INST_GPIO_FLAGS(0, reset_gpios));
-#endif
+	data->reset_gpio = device_get_binding(config->reset_label);
+	if (data->reset_gpio) {
+		gpio_pin_configure(data->reset_gpio, config->reset_pin,
+				   GPIO_OUTPUT_INACTIVE | config->reset_flags);
+	}
 
-	data->command_data_gpio =
-		device_get_binding(DT_INST_GPIO_LABEL(0, cmd_data_gpios));
+	data->command_data_gpio = device_get_binding(config->cmd_data_label);
 	if (data->command_data_gpio == NULL) {
 		LOG_ERR("Could not get GPIO port for ILI9340 command/data");
 		return -EPERM;
 	}
 
-	gpio_pin_configure(data->command_data_gpio, DT_INST_GPIO_PIN(0, cmd_data_gpios),
-			   GPIO_OUTPUT |
-			   DT_INST_GPIO_FLAGS(0, cmd_data_gpios));
+	gpio_pin_configure(data->command_data_gpio, config->cmd_data_pin,
+			   GPIO_OUTPUT | config->cmd_data_flags);
 
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	LOG_DBG("Resetting display driver");
-	k_sleep(K_MSEC(1));
-	gpio_pin_set(data->reset_gpio,
-		     DT_INST_GPIO_PIN(0, reset_gpios), 1);
-	k_sleep(K_MSEC(1));
-	gpio_pin_set(data->reset_gpio,
-		     DT_INST_GPIO_PIN(0, reset_gpios), 0);
-	k_sleep(K_MSEC(5));
-#endif
+	if (data->reset_gpio) {
+		LOG_DBG("Resetting display driver");
+		k_sleep(K_MSEC(1));
+		gpio_pin_set(data->reset_gpio, config->reset_pin, 1);
+		k_sleep(K_MSEC(1));
+		gpio_pin_set(data->reset_gpio, config->reset_pin, 0);
+		k_sleep(K_MSEC(5));
+	}
 
 	LOG_DBG("Initializing LCD");
-	ili9340_lcd_init(data);
+	ili9340_lcd_init(dev);
 
 	LOG_DBG("Exiting sleep mode");
-	ili9340_exit_sleep(data);
+	ili9340_exit_sleep(dev);
 
 	return 0;
 }
 
-static void ili9340_set_mem_area(struct ili9340_data *data, const uint16_t x,
+static void ili9340_set_mem_area(const struct device *dev, const uint16_t x,
 				 const uint16_t y, const uint16_t w, const uint16_t h)
 {
 	uint16_t spi_data[2];
 
 	spi_data[0] = sys_cpu_to_be16(x);
 	spi_data[1] = sys_cpu_to_be16(x + w - 1);
-	ili9340_transmit(data, ILI9340_CMD_COLUMN_ADDR, &spi_data[0], 4);
+	ili9340_transmit(dev, ILI9340_CMD_COLUMN_ADDR, &spi_data[0], 4);
 
 	spi_data[0] = sys_cpu_to_be16(y);
 	spi_data[1] = sys_cpu_to_be16(y + h - 1);
-	ili9340_transmit(data, ILI9340_CMD_PAGE_ADDR, &spi_data[0], 4);
+	ili9340_transmit(dev, ILI9340_CMD_PAGE_ADDR, &spi_data[0], 4);
 }
 
 static int ili9340_write(const struct device *dev, const uint16_t x,
@@ -151,7 +150,7 @@ static int ili9340_write(const struct device *dev, const uint16_t x,
 
 	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)", desc->width, desc->height,
 			x, y);
-	ili9340_set_mem_area(data, x, y, desc->width, desc->height);
+	ili9340_set_mem_area(dev, x, y, desc->width, desc->height);
 
 	if (desc->pitch > desc->width) {
 		write_h = 1U;
@@ -161,7 +160,7 @@ static int ili9340_write(const struct device *dev, const uint16_t x,
 		nbr_of_writes = 1U;
 	}
 
-	ili9340_transmit(data, ILI9340_CMD_MEM_WRITE,
+	ili9340_transmit(dev, ILI9340_CMD_MEM_WRITE,
 			 (void *) write_data_start,
 			 desc->width * ILI9340_RGB_SIZE * write_h);
 
@@ -196,19 +195,15 @@ static void *ili9340_get_framebuffer(const struct device *dev)
 
 static int ili9340_display_blanking_off(const struct device *dev)
 {
-	struct ili9340_data *data = (struct ili9340_data *)dev->data;
-
 	LOG_DBG("Turning display blanking off");
-	ili9340_transmit(data, ILI9340_CMD_DISPLAY_ON, NULL, 0);
+	ili9340_transmit(dev, ILI9340_CMD_DISPLAY_ON, NULL, 0);
 	return 0;
 }
 
 static int ili9340_display_blanking_on(const struct device *dev)
 {
-	struct ili9340_data *data = (struct ili9340_data *)dev->data;
-
 	LOG_DBG("Turning display blanking on");
-	ili9340_transmit(data, ILI9340_CMD_DISPLAY_OFF, NULL, 0);
+	ili9340_transmit(dev, ILI9340_CMD_DISPLAY_OFF, NULL, 0);
 	return 0;
 }
 
@@ -266,22 +261,23 @@ static void ili9340_get_capabilities(const struct device *dev,
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
-void ili9340_transmit(struct ili9340_data *data, uint8_t cmd, void *tx_data,
+void ili9340_transmit(const struct device *dev, uint8_t cmd, void *tx_data,
 		      size_t tx_len)
 {
+	const struct ili9340_config *config = (struct ili9340_config *)dev->config;
+	struct ili9340_data *data = (struct ili9340_data *)dev->data;
+
 	struct spi_buf tx_buf = { .buf = &cmd, .len = 1 };
 	struct spi_buf_set tx_bufs = { .buffers = &tx_buf, .count = 1 };
 
-	gpio_pin_set(data->command_data_gpio,
-		     DT_INST_GPIO_PIN(0, cmd_data_gpios),
+	gpio_pin_set(data->command_data_gpio, config->cmd_data_pin,
 		     ILI9340_CMD_DATA_PIN_COMMAND);
 	spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
 
 	if (tx_data != NULL) {
 		tx_buf.buf = tx_data;
 		tx_buf.len = tx_len;
-		gpio_pin_set(data->command_data_gpio,
-			     DT_INST_GPIO_PIN(0, cmd_data_gpios),
+		gpio_pin_set(data->command_data_gpio, config->cmd_data_pin,
 			     ILI9340_CMD_DATA_PIN_DATA);
 		spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
 	}
@@ -300,8 +296,42 @@ static const struct display_driver_api ili9340_api = {
 	.set_orientation = ili9340_set_orientation,
 };
 
-static struct ili9340_data ili9340_data;
+#define ILI9340_INIT(index)                                                    \
+	static const struct ili9340_config ili9340_config_##index = {          \
+		.spi_name = DT_INST_BUS_LABEL(index),                          \
+		.spi_addr = DT_INST_REG_ADDR(index),                           \
+		.spi_max_freq = UTIL_AND(                                      \
+			DT_INST_HAS_PROP(index, spi_max_frequency),            \
+			DT_INST_PROP(index, spi_max_frequency)                 \
+		),                                                             \
+		.spi_cs_label = UTIL_AND(                                      \
+			DT_INST_SPI_DEV_HAS_CS_GPIOS(index),                   \
+			DT_INST_SPI_DEV_CS_GPIOS_LABEL(index)),                \
+		.spi_cs_pin = UTIL_AND(                                        \
+			DT_INST_SPI_DEV_HAS_CS_GPIOS(index),                   \
+			DT_INST_SPI_DEV_CS_GPIOS_PIN(index)),                  \
+		.spi_cs_flags = UTIL_AND(                                      \
+			DT_INST_SPI_DEV_HAS_CS_GPIOS(index),                   \
+			DT_INST_SPI_DEV_CS_GPIOS_FLAGS(index)),                \
+		.cmd_data_label = DT_INST_GPIO_LABEL(index, cmd_data_gpios),   \
+		.cmd_data_pin = DT_INST_GPIO_PIN(index, cmd_data_gpios),       \
+		.cmd_data_flags = DT_INST_GPIO_FLAGS(index, cmd_data_gpios),   \
+		.reset_label = UTIL_AND(                                       \
+			DT_INST_NODE_HAS_PROP(index, reset_gpios),             \
+			DT_INST_GPIO_LABEL(index, reset_gpios)),               \
+		.reset_pin = UTIL_AND(                                         \
+			DT_INST_NODE_HAS_PROP(index, reset_gpios),             \
+			DT_INST_GPIO_PIN(index, reset_gpios)),                 \
+		.reset_flags = UTIL_AND(                                       \
+			DT_INST_NODE_HAS_PROP(index, reset_gpios),             \
+			DT_INST_GPIO_FLAGS(index, reset_gpios)),               \
+	};                                                                     \
+									       \
+	static struct ili9340_data ili9340_data_##index;                       \
+									       \
+	DEVICE_AND_API_INIT(ili9340_##index, DT_INST_LABEL(index),             \
+			    ili9340_init, &ili9340_data_##index,               \
+			    &ili9340_config_##index, POST_KERNEL,              \
+			    CONFIG_APPLICATION_INIT_PRIORITY, &ili9340_api);
 
-DEVICE_AND_API_INIT(ili9340, DT_INST_LABEL(0), &ili9340_init,
-		    &ili9340_data, NULL, APPLICATION,
-		    CONFIG_APPLICATION_INIT_PRIORITY, &ili9340_api);
+DT_INST_FOREACH_STATUS_OKAY(ILI9340_INIT)
