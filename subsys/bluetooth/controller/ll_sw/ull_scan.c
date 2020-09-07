@@ -294,10 +294,14 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 			(lll->ticks_window +
 			 HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US));
 	} else {
-		scan->evt.ticks_slot =
-			(ticks_interval -
-			 HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US));
-		lll->ticks_window = 0;
+		if (IS_ENABLED(CONFIG_BT_CTLR_SCAN_UNRESERVED)) {
+			scan->evt.ticks_slot = 0U;
+		} else {
+			scan->evt.ticks_slot = ticks_interval -
+				HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
+		}
+
+		lll->ticks_window = 0U;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
