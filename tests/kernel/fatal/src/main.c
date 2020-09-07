@@ -349,8 +349,6 @@ void test_fatal(void)
 	check_stack_overflow(stack_hw_overflow, K_FP_REGS);
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
-#endif /* CONFIG_HW_STACK_PROTECTION */
-
 #ifdef CONFIG_USERSPACE
 
 	TC_PRINT("test stack HW-based overflow - user 1\n");
@@ -374,6 +372,8 @@ void test_fatal(void)
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 #endif /* CONFIG_USERSPACE */
+
+#endif /* CONFIG_HW_STACK_PROTECTION */
 
 #endif /* !CONFIG_ARCH_POSIX */
 }
