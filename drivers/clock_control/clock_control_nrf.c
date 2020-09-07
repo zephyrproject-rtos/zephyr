@@ -14,6 +14,11 @@
 #include <logging/log.h>
 #include <shell/shell.h>
 
+#if defined(CONFIG_SOC_NRF5340_CPUAPP) && \
+	!defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+#include <hal/nrf_gpio.h>
+#endif
+
 LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 #define DT_DRV_COMPAT nordic_nrf_clock
@@ -581,6 +586,23 @@ static int clk_init(const struct device *dev)
 		    nrfx_isr, nrfx_power_clock_irq_handler, 0);
 	irq_enable(DT_INST_IRQN(0));
 
+#if defined(CONFIG_SOC_NRF5340_CPUAPP) && \
+	!defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+
+	#define PIN_XL1 0
+	#define PIN_XL2 1
+
+	bool ext_clk = IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_XTAL) ||
+		    IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_EXT_LOW_SWING) ||
+		    IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_EXT_FULL_SWING);
+
+	if (ext_clk) {
+		nrf_gpio_pin_mcu_select(PIN_XL1,
+					NRF_GPIO_PIN_MCUSEL_PERIPHERAL);
+		nrf_gpio_pin_mcu_select(PIN_XL2,
+					NRF_GPIO_PIN_MCUSEL_PERIPHERAL);
+	}
+#endif
 	nrfx_err = nrfx_clock_init(clock_event_handler);
 	if (nrfx_err != NRFX_SUCCESS) {
 		return -EIO;
