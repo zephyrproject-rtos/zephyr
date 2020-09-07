@@ -63,7 +63,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	isb
 
 	/* Initialize sctlr_el3 to reset value */
-	mov_imm	x1, SCTLR_EL3_RES1
+	mov_imm	x1, (SCTLR_EL3_RES1 | SCTLR_EIS | SCTLR_EOS)
 	mrs     x0, sctlr_el3
 	orr	x0, x0, x1
 	msr	sctlr_el3, x0
@@ -101,7 +101,10 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	msr	actlr_el3, x0
 
 	/* Initialize sctlr_el1 to reset value */
-	mov_imm	x0, SCTLR_EL1_RES1
+	mov_imm	x0, (SCTLR_EL1_LSMAOE | SCTLR_EL1_nTLSMD)
+	orr	x0, x0, #(SCTLR_EL1_SPAN | SCTLR_EIS)
+	orr	x0, x0, #(SCTLR_EL1_TSCXT)
+	orr	x0, x0, #(SCTLR_EOS)
 	msr	sctlr_el1, x0
 
 	/* Disable EA/IRQ/FIQ routing to EL3 and set EL1 to AArch64 */
@@ -124,7 +127,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	 * Enable the instruction cache, stack pointer and data access
 	 * alignment checks.
 	 */
-	mov	x1, #(SCTLR_I_BIT | SCTLR_A_BIT | SCTLR_SA_BIT)
+	mov	x1, #(SCTLR_I | SCTLR_A | SCTLR_SA)
 	mrs	x0, sctlr_el3
 	orr	x0, x0, x1
 	msr	sctlr_el3, x0
@@ -147,7 +150,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	 * Enable the instruction cache, stack pointer and data access
 	 * alignment checks.
 	 */
-	mov	x1, #(SCTLR_I_BIT | SCTLR_A_BIT | SCTLR_SA_BIT)
+	mov	x1, #(SCTLR_I | SCTLR_A | SCTLR_SA)
 	mrs	x0, sctlr_el2
 	orr	x0, x0, x1
 	msr	sctlr_el2, x0
@@ -164,7 +167,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	/*
 	 * Enable the instruction cache and el1 stack alignment check.
 	 */
-	mov	x1, #(SCTLR_I_BIT | SCTLR_SA_BIT)
+	mov	x1, #(SCTLR_I | SCTLR_SA)
 	mrs	x0, sctlr_el1
 	orr	x0, x0, x1
 	msr	sctlr_el1, x0

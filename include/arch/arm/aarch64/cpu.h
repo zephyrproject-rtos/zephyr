@@ -23,16 +23,21 @@
 #define SPSR_MODE_EL1H		(0x5)
 
 #define SCTLR_EL3_RES1		(BIT(29) | BIT(28) | BIT(23) | \
-				BIT(22) | BIT(18) | BIT(16) | \
-				BIT(11) | BIT(5) | BIT(4))
+				 BIT(18) | BIT(16) | BIT(5)  | \
+				 BIT(4))
 
-#define SCTLR_EL1_RES1		(BIT(29) | BIT(28) | BIT(23) | \
-				BIT(22) | BIT(20) | BIT(11))
-#define SCTLR_M_BIT		BIT(0)
-#define SCTLR_A_BIT		BIT(1)
-#define SCTLR_C_BIT		BIT(2)
-#define SCTLR_SA_BIT		BIT(3)
-#define SCTLR_I_BIT		BIT(12)
+#define SCTLR_M			BIT(0)
+#define SCTLR_A			BIT(1)
+#define SCTLR_C			BIT(2)
+#define SCTLR_SA		BIT(3)
+#define SCTLR_EOS		BIT(11)
+#define SCTLR_I			BIT(12)
+#define SCTLR_EIS		BIT(22)
+
+#define SCTLR_EL1_TSCXT		BIT(20)
+#define SCTLR_EL1_SPAN		BIT(23)
+#define SCTLR_EL1_nTLSMD	BIT(28)
+#define SCTLR_EL1_LSMAOE	BIT(29)
 
 #define CPACR_EL1_FPEN_NOTRAP	(0x3 << 20)
 

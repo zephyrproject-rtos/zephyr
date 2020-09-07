@@ -409,7 +409,7 @@ static void enable_mmu_el1(unsigned int flags)
 	__asm__ volatile("mrs %0, sctlr_el1" : "=r" (val));
 	__asm__ volatile("msr sctlr_el1, %0"
 			:
-			: "r" (val | SCTLR_M_BIT | SCTLR_C_BIT)
+			: "r" (val | SCTLR_M | SCTLR_C)
 			: "memory", "cc");
 
 	/* Ensure the MMU enable takes effect immediately */
@@ -439,7 +439,7 @@ static int arm_mmu_init(const struct device *arg)
 
 	/* Ensure that MMU is already not enabled */
 	__asm__ volatile("mrs %0, sctlr_el1" : "=r" (val));
-	__ASSERT((val & SCTLR_M_BIT) == 0, "MMU is already enabled\n");
+	__ASSERT((val & SCTLR_M) == 0, "MMU is already enabled\n");
 
 	MMU_DEBUG("xlat tables:\n");
 	MMU_DEBUG("base table(L%d): %p, %d entries\n", XLAT_TABLE_BASE_LEVEL,
