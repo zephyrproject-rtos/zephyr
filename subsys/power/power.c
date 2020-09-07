@@ -89,7 +89,17 @@ void pm_power_state_force(enum power_states state)
 #endif
 }
 
-enum power_states pm_system_suspend(int32_t ticks)
+
+static enum power_states _handle_device_abort(enum power_states state)
+{
+	LOG_DBG("Some devices didn't enter suspend state!");
+	pm_resume_devices();
+	pm_notify_power_state_exit(pm_state);
+	pm_state = POWER_STATE_ACTIVE;
+	return pm_state;
+}
+
+enum power_states pm_policy_mgr(int32_t ticks)
 {
 	bool deep_sleep;
 #if CONFIG_PM_DEVICE
@@ -100,7 +110,7 @@ enum power_states pm_system_suspend(int32_t ticks)
 		   pm_policy_next_state(ticks) : forced_pm_state;
 
 	if (pm_state == POWER_STATE_ACTIVE) {
-		LOG_DBG("No PM operations done.");
+		LOG_DBG("No PM operations to be done.");
 		return pm_state;
 	}
 
@@ -111,16 +121,10 @@ enum power_states pm_system_suspend(int32_t ticks)
 	pm_notify_power_state_entry(pm_state);
 
 	if (deep_sleep) {
-#if CONFIG_PM_DEVICE
 		/* Suspend peripherals. */
-		if (pm_suspend_devices()) {
-			LOG_DBG("Some devices didn't enter suspend state!");
-			pm_resume_devices();
-			pm_notify_power_state_exit(pm_state);
-			pm_state = POWER_STATE_ACTIVE;
-			return pm_state;
+		if (IS_ENABLED(CONFIG_PM_DEVICE) && pm_suspend_devices()) {
+			return _handle_device_abort(pm_state);
 		}
-#endif
 		/*
 		 * Disable idle exit notification as it is not needed
 		 * in deep sleep mode.
@@ -131,11 +135,7 @@ enum power_states pm_system_suspend(int32_t ticks)
 		if (pm_policy_low_power_devices(pm_state)) {
 			/* low power peripherals. */
 			if (pm_low_power_devices()) {
-				LOG_DBG("Someone didn't enter low power state");
-				pm_resume_devices();
-				pm_notify_power_state_exit(pm_state);
-				pm_state = POWER_STATE_ACTIVE;
-				return pm_state;
+				return _handle_device_abort(pm_state);
 			}
 
 			low_power = true;
@@ -143,11 +143,12 @@ enum power_states pm_system_suspend(int32_t ticks)
 #endif
 	}
 
-	/* Enter power state */
 	pm_debug_start_timer();
+	/* Enter power state */
 	pm_power_state_set(pm_state);
 	pm_debug_stop_timer();
 
+	/* Wake up sequence starts here */
 #if CONFIG_PM_DEVICE
 	if (deep_sleep || low_power) {
 		/* Turn on peripherals and restore device states as necessary */
@@ -165,6 +166,12 @@ enum power_states pm_system_suspend(int32_t ticks)
 	}
 
 	return pm_state;
+}
+
+
+enum power_states pm_system_suspend(int32_t ticks)
+{
+	return pm_policy_mgr(ticks);
 }
 
 void pm_system_resume(void)

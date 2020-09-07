@@ -66,29 +66,11 @@ void __attribute__((weak)) pm_system_resume_from_deep_sleep(void)
  *
  * @return N/A
  */
-#if !SMP_FALLBACK
-static void _set_kernel_idle_time_in_ticks(int32_t ticks)
+#if !SMP_FALLBACK && CONFIG_PM
+static enum power_states pm_save_idle(int32_t ticks)
 {
-#ifdef CONFIG_PM
-	_kernel.idle = ticks;
-#endif
-}
+	static enum power_states pm_state = POWER_STATE_ACTIVE;
 
-static void pm_save_idle(void)
-{
-	int32_t ticks = z_get_next_timeout_expiry();
-
-	/* The documented behavior of CONFIG_TICKLESS_IDLE_THRESH is
-	 * that the system should not enter a tickless idle for
-	 * periods less than that.  This seems... silly, given that it
-	 * saves no power and does not improve latency.  But it's an
-	 * API we need to honor...
-	 */
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-	z_set_timeout_expiry((ticks < IDLE_THRESH) ? 1 : ticks, true);
-#endif
-
-	_set_kernel_idle_time_in_ticks(ticks);
 #if (defined(CONFIG_PM_SLEEP_STATES) || \
 	defined(CONFIG_PM_DEEP_SLEEP_STATES))
 
@@ -107,15 +89,16 @@ static void pm_save_idle(void)
 	 * idle processing re-enables interrupts which is essential for
 	 * the kernel's scheduling logic.
 	 */
-	if (pm_system_suspend(ticks) == POWER_STATE_ACTIVE) {
+	pm_state = pm_system_suspend(ticks);
+	if (pm_state == POWER_STATE_ACTIVE) {
 		pm_idle_exit_notify = 0U;
-		k_cpu_idle();
 	}
-#else
-	k_cpu_idle();
 #endif
+	return pm_state;
+
 }
 #endif /* !SMP_FALLBACK */
+
 
 void z_pm_save_idle_exit(int32_t ticks)
 {
@@ -154,7 +137,7 @@ void idle(void *p1, void *unused2, void *unused3)
 	extern uint32_t z_timestamp_idle;
 
 	z_timestamp_idle = k_cycle_get_32();
-#endif
+#endif /* CONFIG_BOOT_TIME_MEASUREMENT */
 
 	while (true) {
 		/* Lock interrupts to atomically check if to_abort is non-NULL,
@@ -194,8 +177,30 @@ void idle(void *p1, void *unused2, void *unused3)
 		k_yield();
 #else
 		(void)arch_irq_lock();
-		pm_save_idle();
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+		int32_t ticks = z_get_next_timeout_expiry();
+
+		/* The documented behavior of CONFIG_TICKLESS_IDLE_THRESH is
+		 * that the system should not enter a tickless idle for
+		 * periods less than that.  This seems... silly, given that it
+		 * saves no power and does not improve latency.  But it's an
+		 * API we need to honor...
+		 */
+		z_set_timeout_expiry((ticks < IDLE_THRESH) ? 1 : ticks, true);
+#endif /* CONFIG_SYS_CLOCK_EXISTS */
+#ifdef CONFIG_PM
+		_kernel.idle = ticks;
+		/* Check power policy and decide if we are going to sleep or
+		 * just idle.
+		 */
+		if (pm_save_idle(ticks) == POWER_STATE_ACTIVE) {
+			k_cpu_idle();
+		}
+#else
+		k_cpu_idle();
+#endif /* CONFIG_PM */
+
 		IDLE_YIELD_IF_COOP();
-#endif
+#endif /* SMP_FALLBACK */
 	}
 }
