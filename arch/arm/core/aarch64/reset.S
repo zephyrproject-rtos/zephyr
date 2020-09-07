@@ -127,11 +127,11 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	mov	sp, x0
 
 	/* Disable access trapping in EL1 for NEON/FP */
-	mov	x0, #(CPACR_EL1_FPEN_NOTRAP)
+	mov_imm	x0, CPACR_EL1_FPEN_NOTRAP
 	msr	cpacr_el1, x0
 
 	/* Enable the instruction cache and EL1 stack alignment check. */
-	mov	x1, #(SCTLR_I_BIT | SCTLR_SA_BIT)
+	mov_imm	x1, (SCTLR_I_BIT | SCTLR_SA_BIT)
 	mrs	x0, sctlr_el1
 	orr	x0, x0, x1
 	msr	sctlr_el1, x0
