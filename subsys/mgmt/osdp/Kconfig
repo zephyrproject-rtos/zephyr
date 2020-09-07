@@ -14,6 +14,18 @@ menuconfig OSDP
 
 if OSDP
 
+choice
+	prompt "OSDP Mode of Operation"
+	config OSDP_MODE_PD
+		bool "Configure OSDP in Peripheral Device mode"
+		help
+		  Configure this device to operate as a PD (Peripheral Device)
+	config OSDP_MODE_CP
+		bool "Configure OSDP in Control Panel mode"
+		help
+		  Configure this device to operate as a CP (Control Panel)
+endchoice
+
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_OSDP_UART := zephyr,osdp-uart
 
@@ -55,19 +67,6 @@ config OSDP_PACKET_TRACE
 	help
 	  Prints bytes sent/received over OSDP to console for debugging.
 	  LOG_HEXDUMP_DBG() is used to achieve this and can be very verbose.
-
-choice
-	prompt "OSDP Mode of Operation"
-	default OSDP_MODE_PD
-	config OSDP_MODE_CP
-		bool "Configure OSDP in Control Panel mode"
-		help
-		  Configure this device to operate as a CP (Control Panel)
-	config OSDP_MODE_PD
-		bool "Configure OSDP in Peripheral Device mode"
-		help
-		  Configure this device to operate as a PD (Peripheral Device)
-endchoice
 
 if OSDP_MODE_PD
 source "subsys/mgmt/osdp/Kconfig.pd"
