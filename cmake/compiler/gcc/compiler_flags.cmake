@@ -91,7 +91,7 @@ check_set_compiler_property(APPEND PROPERTY warning_dw_3
 
 set_compiler_property(PROPERTY warning_extended -Wno-unused-but-set-variable)
 
-set_compiler_property(PROPERTY warning_error_implicit_int -Werror=implicit-int)
+check_set_compiler_property(PROPERTY warning_error_implicit_int -Werror=implicit-int)
 
 set_compiler_property(PROPERTY warning_error_misra_sane -Werror=vla)
 
