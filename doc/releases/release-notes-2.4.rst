@@ -263,6 +263,15 @@ Drivers and Sensors
 
 * I2C
 
+  * Introduced new driver for NXP LPC11U6x SoCs.  See
+    :option:`CONFIG_I2C_LPC11U6X`.
+
+  * Introduced new driver for emulated I2C devices, where I2C operations
+    are forwarded to a module that emulates responses from hardware.
+    This enables testing without hardware and allows unusual conditions
+    to be synthesized to test driver behavior.  See
+    :option:`CONFIG_I2C_EMUL`.
+
 
 * I2S
 
