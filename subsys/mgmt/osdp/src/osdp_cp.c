@@ -627,6 +627,14 @@ static inline void cp_set_state(struct osdp_pd *pd, enum osdp_cp_state_e state)
 	CLEAR_FLAG(pd, PD_FLAG_AWAIT_RESP);
 }
 
+static void cp_reset_channel(struct osdp_pd *pd)
+{
+	pd->rx_buf_len = 0;
+	if (pd->channel.flush) {
+		pd->channel.flush(pd->channel.data);
+	}
+}
+
 /**
  * Note: This method must not dequeue cmd unless it reaches an invalid state.
  */
@@ -647,6 +655,7 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		pd->cmd_id = cmd->id;
 		memcpy(pd->cmd_data, cmd, sizeof(struct osdp_cmd));
 		osdp_cmd_free(pd, cmd);
+		cp_reset_channel(pd);
 		/* fall-thru */
 	case OSDP_CP_PHY_STATE_SEND_CMD:
 		if ((cp_send_command(pd)) < 0) {
@@ -688,10 +697,7 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		pd->phy_state = OSDP_CP_PHY_STATE_IDLE;
 		break;
 	case OSDP_CP_PHY_STATE_ERR:
-		pd->rx_buf_len = 0;
-		if (pd->channel.flush) {
-			pd->channel.flush(pd->channel.data);
-		}
+		cp_reset_channel(pd);
 		cp_flush_command_queue(pd);
 		pd->phy_state = OSDP_CP_PHY_STATE_ERR_WAIT;
 		ret = OSDP_CP_ERR_GENERIC;
