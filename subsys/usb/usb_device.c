@@ -920,8 +920,10 @@ static bool is_ep_valid(uint8_t ep)
 		cfg = &__usb_data_start[i];
 		ep_data = cfg->endpoint;
 
-		if (ep_data[i].ep_addr == ep) {
-			return true;
+		for (uint8_t n = 0; n < cfg->num_endpoints; n++) {
+			if (ep_data[n].ep_addr == ep) {
+				return true;
+			}
 		}
 	}
 
