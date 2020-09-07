@@ -140,16 +140,19 @@ Build Zephyr with a non-secure configuration:
 
       $ west build -p -b lpcxpresso55s69_ns samples/tfm_integration/tfm_ipc/ --
 
-Next we need to manually flash the secure (``tfm_s.hex``)
-and non-secure (``zephyr.hex``) images wth a J-Link as follows:
+Next we need to manually flash the resulting image (``tfm_image.bin``) with a
+J-Link as follows:
 
    .. code-block:: console
 
       JLinkExe -device lpc55s69 -if swd -speed 2000 -autoconnect 1
-      J-Link>loadfile build/tfm/install/outputs/LPC55S69/tfm_s.hex
-      J-Link>loadfile build/zephyr/zephyr.hex
+      J-Link>loadfile build/tfm_image.hex
 
-NOTE: At present, the LPC55S69 doesn't include support for the MCUBoot bootloader.
+or
+
+   .. code-block:: console
+
+      west flash --skip-rebuild --bin-file build/tfm_image.bin
 
 We need to reset the board manually after flashing the image to run this code.
 

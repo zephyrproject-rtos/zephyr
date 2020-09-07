@@ -90,7 +90,7 @@ if (CONFIG_BUILD_WITH_TFM)
 			COMMAND ${SREC_CAT}
 			ARGS ${CMAKE_BINARY_DIR}/mcuboot.bin -Binary
 				${CMAKE_BINARY_DIR}/tfm_sign.bin -Binary
-				-offset 0x8000
+				-offset 0x8000 #needs to be the same value as image-0 partion
 				-o ${CMAKE_BINARY_DIR}/tfm_image.bin -Binary
 		)
 	endif()
