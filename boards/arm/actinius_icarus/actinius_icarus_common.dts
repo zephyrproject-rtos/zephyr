@@ -73,6 +73,13 @@
 		blue-pwm-led = &blue_pwm_led;
 		sw0 = &button0;
 	};
+
+	vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc 0>;
+		output-ohms = <10000000>;
+		full-ohms = <(10000000 + 4700000)>;
+	};
 };
 
 &adc {
