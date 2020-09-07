@@ -147,6 +147,9 @@ Architectures
     * Increased test coverage in QEMU for ARMv6-M architecture variant.
     * Removed the implementation of arch_mem_domain_* APIs for Cortex-M
 
+  * AARCH64
+
+    * Re-implemented thread context-switch to use the _arch_switch() API
 
 * POSIX:
 
