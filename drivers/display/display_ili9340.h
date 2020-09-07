@@ -1,13 +1,14 @@
 /*
  * Copyright (c) 2017 Jan Van Winkel <jan.van_winkel@dxplore.eu>
  * Copyright (c) 2019 Nordic Semiconductor ASA
+ * Copyright (c) 2020 Teslabs Engineering S.L.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #ifndef ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9340_H_
 #define ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9340_H_
 
-#include <zephyr.h>
+#include <device.h>
 
 #define ILI9340_CMD_SOFTWARE_RESET 0x01
 #define ILI9340_CMD_ENTER_SLEEP 0x10
@@ -50,8 +51,6 @@
 #define ILI9340_DATA_PIXEL_FORMAT_MCU_18_BIT 0x06
 #define ILI9340_DATA_PIXEL_FORMAT_MCU_16_BIT 0x05
 
-struct ili9340_data;
-
 /**
  * Send data to ILI9340 display controller
  *
@@ -62,7 +61,7 @@ struct ili9340_data;
  * @param tx_len Number of bytes in tx_data buffer
  *
  */
-void ili9340_transmit(struct ili9340_data *data, uint8_t cmd, void *tx_data,
+void ili9340_transmit(const struct device *dev, uint8_t cmd, void *tx_data,
 		      size_t tx_len);
 
 /**
@@ -70,6 +69,6 @@ void ili9340_transmit(struct ili9340_data *data, uint8_t cmd, void *tx_data,
  *
  * @param data Device data structure
  */
-void ili9340_lcd_init(struct ili9340_data *data);
+void ili9340_lcd_init(const struct device *dev);
 
 #endif /* ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9340_H_ */
