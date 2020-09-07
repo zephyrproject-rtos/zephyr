@@ -7748,7 +7748,8 @@ static int le_adv_start_add_conn(const struct bt_le_ext_adv *adv,
 	return 0;
 }
 
-int bt_le_adv_start_legacy(const struct bt_le_adv_param *param,
+int bt_le_adv_start_legacy(struct bt_le_ext_adv *adv,
+			   const struct bt_le_adv_param *param,
 			   const struct bt_data *ad, size_t ad_len,
 			   const struct bt_data *sd, size_t sd_len)
 {
@@ -7757,7 +7758,6 @@ int bt_le_adv_start_legacy(const struct bt_le_adv_param *param,
 	struct net_buf *buf;
 	bool dir_adv = (param->peer != NULL), scannable;
 	int err;
-	struct bt_le_ext_adv *adv;
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EAGAIN;
@@ -7771,17 +7771,16 @@ int bt_le_adv_start_legacy(const struct bt_le_adv_param *param,
 		return -EINVAL;
 	}
 
+	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
+		return -EALREADY;
+	}
+
 	(void)memset(&set_param, 0, sizeof(set_param));
 
 	set_param.min_interval = sys_cpu_to_le16(param->interval_min);
 	set_param.max_interval = sys_cpu_to_le16(param->interval_max);
 	set_param.channel_map  = 0x07;
 	set_param.filter_policy = get_filter_policy(param->options);
-
-	adv = adv_new_legacy();
-	if (!adv || atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
-		return -EALREADY;
-	}
 
 	if (adv->id != param->id) {
 		atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
@@ -8122,24 +8121,25 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		    const struct bt_data *ad, size_t ad_len,
 		    const struct bt_data *sd, size_t sd_len)
 {
-	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	    BT_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
-		struct bt_le_ext_adv *adv = adv_new_legacy();
-		int err;
+	struct bt_le_ext_adv *adv = adv_new_legacy();
+	int err;
 
-		if (!adv) {
-			return -ENOMEM;
-		}
-
-		err = bt_le_adv_start_ext(adv, param, ad, ad_len, sd, sd_len);
-		if (err) {
-			adv_delete_legacy();
-		}
-
-		return err;
+	if (!adv) {
+		return -ENOMEM;
 	}
 
-	return bt_le_adv_start_legacy(param, ad, ad_len, sd, sd_len);
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+	    BT_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+		err = bt_le_adv_start_ext(adv, param, ad, ad_len, sd, sd_len);
+	} else {
+		err = bt_le_adv_start_legacy(adv, param, ad, ad_len, sd, sd_len);
+	}
+
+	if (err) {
+		adv_delete_legacy();
+	}
+
+	return err;
 }
 
 int bt_le_adv_stop(void)
