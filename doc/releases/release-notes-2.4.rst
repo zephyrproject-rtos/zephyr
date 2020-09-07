@@ -90,6 +90,8 @@ API Changes
   been changed to always pass the original pointer of attributes along with its
   resolved handle.
 
+* Established the unrestricted alignment of flash reads for all drivers.
+
 Deprecated in this release
 ==========================
 
@@ -303,6 +305,10 @@ Drivers and Sensors
     removed as it is unmaintained and all its functionality is available
     through ``CONFIG_SPI_NOR``.  Out of tree uses should convert to the
     supported driver using the ``jedec,spi-nor`` compatible.
+  * Enhanced nRF QSPI NOR flash driver (nrf_qspi_nor) so it supports unaligned read offset, read length and buffer offset.
+  * Added SFDP support in spi_nor driver.
+  * Fixed regression in nRF flash driver (soc_flash_nrf) with :option:`CONFIG_BT_CTLR_LOW_LAT` option.
+  * Introduced NRF radio scheduler interface in nRF flash driver (soc_flash_nrf).
 
 
 * GPIO
