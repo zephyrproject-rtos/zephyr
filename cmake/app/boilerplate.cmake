@@ -469,7 +469,11 @@ please check your installation. ARCH roots searched: \n\
 ${ARCH_ROOT}")
 endif()
 
-if(CONF_FILE)
+if(DEFINED CONF_FILE)
+  # This ensures that CACHE{CONF_FILE} will be set correctly to current scope
+  # variable CONF_FILE. An already current scope variable will stay the same.
+  set(CONF_FILE ${CONF_FILE})
+
   # CONF_FILE has either been specified on the cmake CLI or is already
   # in the CMakeCache.txt. This has precedence over the environment
   # variable CONF_FILE and the default prj.conf
