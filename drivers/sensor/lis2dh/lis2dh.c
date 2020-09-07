@@ -339,7 +339,7 @@ int lis2dh_init(const struct device *dev)
 #endif
 
 	LOG_INF("bus=%s fs=%d, odr=0x%x lp_en=0x%x scale=%d",
-		    LIS2DH_BUS_DEV_NAME, 1 << (LIS2DH_FS_IDX + 1),
+		    cfg->bus_name, 1 << (LIS2DH_FS_IDX + 1),
 		    LIS2DH_ODR_IDX, (uint8_t)LIS2DH_LP_EN_BIT, lis2dh->scale);
 
 	/* enable accel measurements and set power mode and data rate */
@@ -348,33 +348,105 @@ int lis2dh_init(const struct device *dev)
 					LIS2DH_ODR_BITS);
 }
 
-static struct lis2dh_data lis2dh_data;
-
-static const struct lis2dh_config lis2dh_config = {
-	.bus_name = DT_INST_BUS_LABEL(0),
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	.bus_init = lis2dh_spi_init,
-	.spi_conf.frequency = DT_INST_PROP(0, spi_max_frequency),
-	.spi_conf.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
-			       SPI_MODE_CPHA | SPI_WORD_SET(8) |
-			       SPI_LINES_SINGLE),
-	.spi_conf.slave     = DT_INST_REG_ADDR(0),
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	.gpio_cs_port	    = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
-	.cs_gpio	    = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
-	.cs_gpio_flags	    = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0),
-	.spi_conf.cs        =  &lis2dh_data.cs_ctrl,
-#else
-	.spi_conf.cs        = NULL,
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
+#warning "LIS2DH driver enabled without any devices"
 #endif
-#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	.bus_init = lis2dh_i2c_init,
-	.i2c_slv_addr = DT_INST_REG_ADDR(0),
-#else
-#error "BUS MACRO NOT DEFINED IN DTS"
-#endif
-};
 
-DEVICE_AND_API_INIT(lis2dh, DT_INST_LABEL(0), lis2dh_init, &lis2dh_data,
-		    &lis2dh_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		    &lis2dh_driver_api);
+/*
+ * Device creation macro, shared by LIS2DH_DEFINE_SPI() and
+ * LIS2DH_DEFINE_I2C().
+ */
+
+#define LIS2DH_DEVICE_INIT(inst)					\
+	DEVICE_AND_API_INIT(lis2dh_##inst,				\
+			    DT_INST_LABEL(inst),			\
+			    lis2dh_init,				\
+			    &lis2dh_data_##inst,			\
+			    &lis2dh_config_##inst,			\
+			    POST_KERNEL,				\
+			    CONFIG_SENSOR_INIT_PRIORITY,		\
+			    &lis2dh_driver_api);
+
+/*
+ * Instantiation macros used when a device is on a SPI bus.
+ */
+
+#define LIS2DH_HAS_CS(inst) DT_INST_SPI_DEV_HAS_CS_GPIOS(inst)
+
+#define LIS2DH_DATA_SPI_CS(inst)					\
+	{ .cs_ctrl = {							\
+		.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(inst),		\
+		.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(inst),	\
+		},							\
+	}
+
+#define LIS2DH_DATA_SPI(inst)						\
+	COND_CODE_1(LIS2DH_HAS_CS(inst),				\
+		    (LIS2DH_DATA_SPI_CS(inst)),				\
+		    ({}))
+
+#define LIS2DH_SPI_CS_PTR(inst)						\
+	COND_CODE_1(LIS2DH_HAS_CS(inst),				\
+		    (&(lis2dh_data_##inst.cs_ctrl)),			\
+		    (NULL))
+
+#define LIS2DH_SPI_CS_LABEL(inst)					\
+	COND_CODE_1(LIS2DH_HAS_CS(inst),				\
+		    (DT_INST_SPI_DEV_CS_GPIOS_LABEL(inst)), (NULL))
+
+#define LIS2DH_SPI_CFG(inst)						\
+	(&(struct lis2dh_spi_cfg) {					\
+		.spi_conf = {						\
+			.frequency =					\
+				DT_INST_PROP(inst, spi_max_frequency),	\
+			.operation = (SPI_WORD_SET(8) |			\
+				      SPI_OP_MODE_MASTER |		\
+				      SPI_MODE_CPOL |			\
+				      SPI_MODE_CPHA),			\
+			.slave = DT_INST_REG_ADDR(inst),		\
+			.cs = LIS2DH_SPI_CS_PTR(inst),			\
+		},							\
+		.cs_gpios_label = LIS2DH_SPI_CS_LABEL(inst),		\
+	})
+
+#define LIS2DH_CONFIG_SPI(inst)						\
+	{								\
+		.bus_name = DT_INST_BUS_LABEL(inst),			\
+		.bus_init = lis2dh_spi_init,				\
+		.bus_cfg = { .spi_cfg = LIS2DH_SPI_CFG(inst)	}	\
+	}
+
+#define LIS2DH_DEFINE_SPI(inst)						\
+	static struct lis2dh_data lis2dh_data_##inst =			\
+		LIS2DH_DATA_SPI(inst);					\
+	static const struct lis2dh_config lis2dh_config_##inst =	\
+		LIS2DH_CONFIG_SPI(inst);				\
+	LIS2DH_DEVICE_INIT(inst)
+
+/*
+ * Instantiation macros used when a device is on an I2C bus.
+ */
+
+#define LIS2DH_CONFIG_I2C(inst)						\
+	{								\
+		.bus_name = DT_INST_BUS_LABEL(inst),			\
+		.bus_init = lis2dh_i2c_init,				\
+		.bus_cfg = { .i2c_slv_addr = DT_INST_REG_ADDR(inst), }	\
+	}
+
+#define LIS2DH_DEFINE_I2C(inst)						\
+	static struct lis2dh_data lis2dh_data_##inst;			\
+	static const struct lis2dh_config lis2dh_config_##inst =	\
+		LIS2DH_CONFIG_I2C(inst);				\
+	LIS2DH_DEVICE_INIT(inst)
+/*
+ * Main instantiation macro. Use of COND_CODE_1() selects the right
+ * bus-specific macro at preprocessor time.
+ */
+
+#define LIS2DH_DEFINE(inst)						\
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
+		    (LIS2DH_DEFINE_SPI(inst)),				\
+		    (LIS2DH_DEFINE_I2C(inst)))
+
+DT_INST_FOREACH_STATUS_OKAY(LIS2DH_DEFINE)
