@@ -54,7 +54,35 @@ static uint8_t mic_state;
 #if defined(CONFIG_BT_CTLR_FORCE_MD_COUNT) && \
 	(CONFIG_BT_CTLR_FORCE_MD_COUNT > 0)
 static uint8_t force_md_cnt;
-#endif /* CONFIG_BT_CTLR_FORCE_MD_COUNT */
+
+#define FORCE_MD_CNT_INIT() \
+		{ \
+			force_md_cnt = 0U; \
+		}
+
+#define FORCE_MD_CNT_DEC() \
+		do { \
+			if (force_md_cnt) { \
+				force_md_cnt--; \
+			} \
+		} while (0)
+
+#define FORCE_MD_CNT_GET() force_md_cnt
+
+#define FORCE_MD_CNT_SET() \
+		do { \
+			if (force_md_cnt || \
+			    (trx_cnt >= ((CONFIG_BT_CTLR_TX_BUFFERS) - 1))) { \
+				force_md_cnt = CONFIG_BT_CTLR_FORCE_MD_COUNT; \
+			} \
+		} while (0)
+
+#else /* !CONFIG_BT_CTLR_FORCE_MD_COUNT */
+#define FORCE_MD_CNT_INIT()
+#define FORCE_MD_CNT_DEC()
+#define FORCE_MD_CNT_GET() 0
+#define FORCE_MD_CNT_SET()
+#endif /* !CONFIG_BT_CTLR_FORCE_MD_COUNT */
 
 int lll_conn_init(void)
 {
@@ -79,10 +107,7 @@ int lll_conn_reset(void)
 		return err;
 	}
 
-#if defined(CONFIG_BT_CTLR_FORCE_MD_COUNT) && \
-	(CONFIG_BT_CTLR_FORCE_MD_COUNT > 0)
-	force_md_cnt = 0U;
-#endif /* CONFIG_BT_CTLR_FORCE_MD_COUNT */
+	FORCE_MD_CNT_INIT();
 
 	return 0;
 }
@@ -365,13 +390,6 @@ lll_conn_isr_rx_exit:
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
 	lll_prof_send();
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
-
-#if defined(CONFIG_BT_CTLR_FORCE_MD_COUNT) && \
-	(CONFIG_BT_CTLR_FORCE_MD_COUNT > 0)
-	if (force_md_cnt && crc_ok) {
-		force_md_cnt--;
-	}
-#endif /* CONFIG_BT_CTLR_FORCE_MD_COUNT */
 }
 
 void lll_conn_isr_tx(void *param)
@@ -533,18 +551,10 @@ void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx)
 		lll->empty = 1U;
 
 		p = (void *)radio_pkt_empty_get();
-		if (link) {
+		if (link || FORCE_MD_CNT_GET()) {
 			p->md = 1U;
 		} else {
-#if defined(CONFIG_BT_CTLR_FORCE_MD_COUNT) && \
-	(CONFIG_BT_CTLR_FORCE_MD_COUNT > 0)
-			if (force_md_cnt) {
-				p->md = 1U;
-			} else
-#endif /* CONFIG_BT_CTLR_FORCE_MD_COUNT */
-			{
-				p->md = 0U;
-			}
+			p->md = 0U;
 		}
 	} else {
 		uint16_t max_tx_octets;
@@ -566,18 +576,11 @@ void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx)
 		if (p->len > max_tx_octets) {
 			p->len = max_tx_octets;
 			p->md = 1U;
-		} else if (link->next != lll->memq_tx.tail) {
+		} else if ((link->next != lll->memq_tx.tail) ||
+			   FORCE_MD_CNT_GET()) {
 			p->md = 1U;
 		} else {
-#if defined(CONFIG_BT_CTLR_FORCE_MD_COUNT) && \
-	(CONFIG_BT_CTLR_FORCE_MD_COUNT > 0)
-			if (force_md_cnt) {
-				p->md = 1U;
-			} else
-#endif /* CONFIG_BT_CTLR_FORCE_MD_COUNT */
-			{
-				p->md = 0U;
-			}
+			p->md = 0U;
 		}
 
 		p->rfu = 0U;
@@ -685,6 +688,8 @@ static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 		}
 #endif /* CONFIG_BT_PERIPHERAL */
 
+		FORCE_MD_CNT_DEC();
+
 		if (!lll->empty) {
 			link = memq_peek(lll->memq_tx.head, lll->memq_tx.tail,
 					 (void **)&tx);
@@ -734,10 +739,7 @@ static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 
 				*tx_release = tx;
 
-#if defined(CONFIG_BT_CTLR_FORCE_MD_COUNT) && \
-	(CONFIG_BT_CTLR_FORCE_MD_COUNT > 0)
-				force_md_cnt = CONFIG_BT_CTLR_FORCE_MD_COUNT;
-#endif /* CONFIG_BT_CTLR_FORCE_MD_COUNT */
+				FORCE_MD_CNT_SET();
 			}
 
 			if (IS_ENABLED(CONFIG_BT_CENTRAL) && !lll->role) {
