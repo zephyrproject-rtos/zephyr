@@ -26,7 +26,7 @@ static int lis2dh_i2c_read_data(const struct device *dev, uint8_t reg_addr,
 	struct lis2dh_data *data = dev->data;
 	const struct lis2dh_config *cfg = dev->config;
 
-	return i2c_burst_read(data->bus, cfg->i2c_slv_addr,
+	return i2c_burst_read(data->bus, cfg->bus_cfg.i2c_slv_addr,
 			      reg_addr | LIS2DH_AUTOINCREMENT_ADDR,
 			      value, len);
 }
@@ -37,7 +37,7 @@ static int lis2dh_i2c_write_data(const struct device *dev, uint8_t reg_addr,
 	struct lis2dh_data *data = dev->data;
 	const struct lis2dh_config *cfg = dev->config;
 
-	return i2c_burst_write(data->bus, cfg->i2c_slv_addr,
+	return i2c_burst_write(data->bus, cfg->bus_cfg.i2c_slv_addr,
 			       reg_addr | LIS2DH_AUTOINCREMENT_ADDR,
 			       value, len);
 }
@@ -49,7 +49,7 @@ static int lis2dh_i2c_read_reg(const struct device *dev, uint8_t reg_addr,
 	const struct lis2dh_config *cfg = dev->config;
 
 	return i2c_reg_read_byte(data->bus,
-				 cfg->i2c_slv_addr,
+				 cfg->bus_cfg.i2c_slv_addr,
 				 reg_addr, value);
 }
 
@@ -60,7 +60,7 @@ static int lis2dh_i2c_write_reg(const struct device *dev, uint8_t reg_addr,
 	const struct lis2dh_config *cfg = dev->config;
 
 	return i2c_reg_write_byte(data->bus,
-				  cfg->i2c_slv_addr,
+				  cfg->bus_cfg.i2c_slv_addr,
 				  reg_addr, value);
 }
 
@@ -71,7 +71,7 @@ static int lis2dh_i2c_update_reg(const struct device *dev, uint8_t reg_addr,
 	const struct lis2dh_config *cfg = dev->config;
 
 	return i2c_reg_update_byte(data->bus,
-				   cfg->i2c_slv_addr,
+				   cfg->bus_cfg.i2c_slv_addr,
 				   reg_addr, mask, value);
 }
 
