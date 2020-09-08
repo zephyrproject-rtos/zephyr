@@ -64,3 +64,7 @@ bool lll_adv_scan_req_check(struct lll_adv *lll, struct pdu_adv *sr,
 int lll_adv_scan_req_report(struct lll_adv *lll, struct pdu_adv *pdu_adv_rx,
 			    uint8_t rl_idx, uint8_t rssi_ready);
 #endif
+
+bool lll_adv_connect_ind_check(struct lll_adv *lll, struct pdu_adv *adv,
+			       struct pdu_adv *ci, uint8_t devmatch_ok,
+			       uint8_t *rl_idx);
