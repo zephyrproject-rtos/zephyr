@@ -2140,11 +2140,14 @@ static void gptp_print_port_info(const struct shell *shell, int port)
 	struct gptp_port_bmca_data *port_bmca_data;
 	struct gptp_port_param_ds *port_param_ds;
 	struct gptp_port_states *port_state;
+	struct gptp_domain *gptp_domain;
 	struct gptp_port_ds *port_ds;
 	struct net_if *iface;
 	int ret, i;
 
-	ret = gptp_get_port_data(gptp_get_domain(),
+	gptp_domain = gptp_get_domain();
+
+	ret = gptp_get_port_data(gptp_domain,
 				 port,
 				 &port_ds,
 				 &port_param_ds,
@@ -2241,6 +2244,12 @@ static void gptp_print_port_info(const struct shell *shell, int port)
 	   "transmission interval for the port",
 	   USCALED_NS_TO_NS(port_ds->pdelay_req_itv.low) /
 					(NSEC_PER_USEC * USEC_PER_MSEC));
+	PR("BMCA %s %s%d%s: %d\n", "default", "priority", 1,
+	   "                                        ",
+	   gptp_domain->default_ds.priority1);
+	PR("BMCA %s %s%d%s: %d\n", "default", "priority", 2,
+	   "                                        ",
+	   gptp_domain->default_ds.priority2);
 
 	PR("\nRuntime status:\n");
 	PR("Current global port state                          "
