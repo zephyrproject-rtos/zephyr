@@ -168,6 +168,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+			girq = <13>;
+			girq-bit = <0>;
 		};
 
 		i2c_smb_1: i2c@40004400 {
@@ -178,6 +180,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+			girq = <13>;
+			girq-bit = <1>;
 		};
 
 		i2c_smb_2: i2c@40004800 {
@@ -188,6 +192,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+			girq = <13>;
+			girq-bit = <2>;
 		};
 
 		i2c_smb_3: i2c@40004c00 {
@@ -198,6 +204,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+			girq = <13>;
+			girq-bit = <3>;
 		};
 
 		i2c_smb_4: i2c@40005000 {
@@ -208,6 +216,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+			girq = <13>;
+			girq-bit = <4>;
 		};
 
 		espi0: espi@400f3400 {
