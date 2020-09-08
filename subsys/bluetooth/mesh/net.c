@@ -521,6 +521,11 @@ bool bt_mesh_kr_update(struct bt_mesh_subnet *sub, uint8_t new_kr, bool new_key)
 		if (sub->kr_phase == BT_MESH_KR_PHASE_1) {
 			BT_DBG("Phase 1 -> Phase 2");
 			sub->kr_phase = BT_MESH_KR_PHASE_2;
+			if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+				BT_DBG("Storing krp phase persistently");
+				bt_mesh_store_subnet(sub);
+			}
+
 			return true;
 		}
 	} else {
@@ -545,6 +550,7 @@ bool bt_mesh_kr_update(struct bt_mesh_subnet *sub, uint8_t new_kr, bool new_key)
 			    IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
 				friend_cred_refresh(sub->net_idx);
 			}
+
 			sub->kr_phase = BT_MESH_KR_NORMAL;
 			return true;
 		}
