@@ -594,8 +594,8 @@ static int dma_stm32_init(const struct device *dev)
 	config->config_irq(dev);
 
 #ifdef CONFIG_DMAMUX_STM32
-	int offset = ((dev == device_get_binding((const char *)"DMA_1"))
-			? 0 : config->max_streams);
+	int offset = (strncmp(dev->name, "DMA_1", 5)
+			? config->max_streams : 0);
 #endif /* CONFIG_DMAMUX_STM32 */
 
 	for (uint32_t i = 0; i < config->max_streams; i++) {
