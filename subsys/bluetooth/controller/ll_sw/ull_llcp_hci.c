@@ -501,9 +501,24 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 
 	lll->phy = phy;
 
-#else /* !CONFIG_BT_CTLR_ADV_EXT */
-	lll = &scan->lll;
-#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
+			  u8_t filter_policy, u8_t peer_addr_type,
+			  u8_t *peer_addr, u8_t own_addr_type,
+			  u16_t interval, u16_t latency, u16_t timeout)
+{
+	/*
+	 * disabled for now
+	 */
+#if 0
+	struct ull_cp_conn *conn_lll;
+	struct ll_scan_set *scan;
+	u32_t conn_interval_us;
+	struct lll_scan *lll;
+	struct ull_cp_conn *conn;
+	memq_link_t *link;
+	u8_t access_addr[4];
+	u8_t hop;
+	int err;
 
 	if (lll->conn) {
 		goto conn_is_valid;

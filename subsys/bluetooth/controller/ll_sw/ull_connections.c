@@ -567,13 +567,8 @@ static inline void disable(uint16_t handle)
 		LL_ASSERT(!ret);
 	}
 
-	/*
-	 * EGON TODO: add proper assignment when data structure
-	 * is in place
-	 */
-#if 0
+
 	conn->lll.link_tx_free = NULL;
-#endif
 
 	mark = ull_disable_unmark(conn);
 	LL_ASSERT(mark == conn);

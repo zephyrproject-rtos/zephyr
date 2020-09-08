@@ -70,15 +70,15 @@ struct ull_cp_conn {
 		uint16_t handle;
 
 		/* Encryption State (temporary) */
-		uint8_t enc_tx;
-		uint8_t enc_rx;
+		u8_t enc_tx;
+		u8_t enc_rx;
 
 		/**/
-		 uint16_t latency_prepare;
-		 uint16_t latency_event;
-		 uint16_t event_counter;
+		 u16_t latency_prepare;
+		 u16_t latency_event;
+		 u16_t event_counter;
 
-		 uint8_t role;
+		 u8_t role;
 	} lll;
 };
 
