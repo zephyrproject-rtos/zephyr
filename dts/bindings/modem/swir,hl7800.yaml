@@ -6,7 +6,7 @@
 
 description: Sierra Wireless HL7800 Modem
 
-compatible: "swi,hl7800"
+compatible: "swir,hl7800"
 
 include: uart-device.yaml
 
