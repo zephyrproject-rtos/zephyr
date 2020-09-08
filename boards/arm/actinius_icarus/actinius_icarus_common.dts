@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Actinius
+ * Copyright (c) 2019-2020 Actinius
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -234,6 +234,9 @@
 		};
 	};
 };
+
+/* Include file with mappings and aliases for feather compatibility */
+#include "feather_connector.dtsi"
 
 /* Include partition configuration file */
 #include "actinius_icarus_partition_conf.dts"
