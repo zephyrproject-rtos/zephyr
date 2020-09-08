@@ -62,13 +62,6 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	msr	vbar_el3, x19
 	isb
 
-	/* Initialize sctlr_el3 to reset value */
-	mov_imm	x1, (SCTLR_EL3_RES1 | SCTLR_EIS | SCTLR_EOS)
-	mrs     x0, sctlr_el3
-	orr	x0, x0, x1
-	msr	sctlr_el3, x0
-	isb
-
 	/* SError, IRQ and FIQ routing enablement in EL3 */
 	mrs	x0, scr_el3
 	orr	x0, x0, #(SCR_EL3_IRQ | SCR_EL3_FIQ | SCR_EL3_EA)
@@ -93,19 +86,6 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	* Zephyr entry happened in EL3. Do EL3 specific init before
 	* dropping to lower EL.
 	*/
-	/* Enable access control configuration from lower EL */
-	mrs	x0, actlr_el3
-	orr     x0, x0, #(ACTLR_EL3_L2ACTLR | ACTLR_EL3_L2ECTLR \
-			 | ACTLR_EL3_L2CTLR)
-	orr     x0, x0, #(ACTLR_EL3_CPUACTLR | ACTLR_EL3_CPUECTLR)
-	msr	actlr_el3, x0
-
-	/* Initialize sctlr_el1 to reset value */
-	mov_imm	x0, (SCTLR_EL1_LSMAOE | SCTLR_EL1_nTLSMD)
-	orr	x0, x0, #(SCTLR_EL1_SPAN | SCTLR_EIS)
-	orr	x0, x0, #(SCTLR_EL1_TSCXT)
-	orr	x0, x0, #(SCTLR_EOS)
-	msr	sctlr_el1, x0
 
 	/* Disable EA/IRQ/FIQ routing to EL3 and set EL1 to AArch64 */
 	mov	x0, xzr
