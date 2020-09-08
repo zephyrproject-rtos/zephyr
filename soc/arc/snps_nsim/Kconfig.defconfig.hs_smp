@@ -16,7 +16,8 @@ config RGF_NUM_BANKS
 	default 2
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 500000
+        # SMP simulation is slower than single core, 1 Mhz seems reasonable match with wallclock
+	default 1000000
 
 config HARVARD
 	default y
