@@ -69,11 +69,6 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	msr	sctlr_el3, x0
 	isb
 
-	/* SError, IRQ and FIQ routing enablement in EL3 */
-	mrs	x0, scr_el3
-	orr	x0, x0, #(SCR_EL3_IRQ | SCR_EL3_FIQ | SCR_EL3_EA)
-	msr	scr_el3, x0
-
 	/*
 	* Disable access traps to EL3 for CPACR, Trace, FP, ASIMD,
 	* SVE from lower EL.
