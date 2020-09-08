@@ -22,6 +22,7 @@ foreach(root ${SOC_ROOT})
 endforeach()
 
 if(KCONFIG_ROOT)
+  zephyr_file(APPLICATION_ROOT KCONFIG_ROOT)
   # KCONFIG_ROOT has either been specified as a CMake variable or is
   # already in the CMakeCache.txt. This has precedence.
 elseif(EXISTS   ${APPLICATION_SOURCE_DIR}/Kconfig)
