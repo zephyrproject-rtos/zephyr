@@ -531,40 +531,15 @@ static int sm_do_init(void)
 }
 
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
-static int sm_do_bootstrap_reg(void)
+static int sm_send_bootstrap_registration(void)
 {
 	struct lwm2m_message *msg;
 	int ret;
 
-	/* clear out existing connection data */
-	if (client.ctx->sock_fd > -1) {
-		lwm2m_engine_context_close(client.ctx);
-	}
-
-	client.ctx->bootstrap_mode = true;
-	ret = sm_select_security_inst(client.ctx->bootstrap_mode,
-				      &client.ctx->sec_obj_inst);
-	if (ret < 0) {
-		/* no bootstrap server found, let's move to registration */
-		LOG_WRN("Bootstrap server not found! Try normal registration.");
-		set_sm_state(ENGINE_DO_REGISTRATION);
-		return ret;
-	}
-
-	LOG_INF("Bootstrap started with endpoint '%s' with client lifetime %d",
-		log_strdup(client.ep_name), client.lifetime);
-
-	ret = lwm2m_engine_start(client.ctx);
-	if (ret < 0) {
-		LOG_ERR("Cannot init LWM2M engine (%d)", ret);
-		return ret;
-	}
-
 	msg = lwm2m_get_message(client.ctx);
 	if (!msg) {
 		LOG_ERR("Unable to get a lwm2m message!");
-		ret = -ENOMEM;
-		goto cleanup_engine;
+		return -ENOMEM;
 	}
 
 	msg->type = COAP_TYPE_CON;
@@ -600,13 +575,51 @@ static int sm_do_bootstrap_reg(void)
 		goto cleanup;
 	}
 
-	set_sm_state(ENGINE_BOOTSTRAP_REG_SENT);
 	return 0;
 
 cleanup:
 	lwm2m_reset_message(msg, true);
-cleanup_engine:
-	lwm2m_engine_context_close(client.ctx);
+	return ret;
+}
+
+static int sm_do_bootstrap_reg(void)
+{
+	struct lwm2m_message *msg;
+	int ret;
+
+	/* clear out existing connection data */
+	if (client.ctx->sock_fd > -1) {
+		lwm2m_engine_context_close(client.ctx);
+	}
+
+	client.ctx->bootstrap_mode = true;
+	ret = sm_select_security_inst(client.ctx->bootstrap_mode,
+				      &client.ctx->sec_obj_inst);
+	if (ret < 0) {
+		/* no bootstrap server found, let's move to registration */
+		LOG_WRN("Bootstrap server not found! Try normal registration.");
+		set_sm_state(ENGINE_DO_REGISTRATION);
+		return ret;
+	}
+
+	LOG_INF("Bootstrap started with endpoint '%s' with client lifetime %d",
+		log_strdup(client.ep_name), client.lifetime);
+
+	ret = lwm2m_engine_start(client.ctx);
+	if (ret < 0) {
+		LOG_ERR("Cannot init LWM2M engine (%d)", ret);
+		return ret;
+	}
+
+	ret = sm_send_bootstrap_registration();
+	if (!ret) {
+		set_sm_state(ENGINE_BOOTSTRAP_REG_SENT);
+	} else {
+		LOG_ERR("Bootstrap registration err: %d", ret);
+		lwm2m_engine_context_close(client.ctx);
+		/* exit and try again */
+	}
+
 	return ret;
 }
 
