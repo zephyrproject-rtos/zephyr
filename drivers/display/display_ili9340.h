@@ -51,6 +51,26 @@
 #define ILI9340_DATA_PIXEL_FORMAT_MCU_18_BIT 0x06
 #define ILI9340_DATA_PIXEL_FORMAT_MCU_16_BIT 0x05
 
+/** Command/data GPIO level for commands. */
+#define ILI9340_CMD 1U
+/** Command/data GPIO level for data. */
+#define ILI9340_DATA 0U
+
+/** Sleep out time (ms), ref. 8.2.12 of ILI9340 manual. */
+#define ILI9340_SLEEP_OUT_TIME 120
+
+/** Reset pulse time (ms), ref 15.4 of ILI9340 manual. */
+#define ILI9340_RESET_PULSE_TIME 1
+
+/** Reset wait time (ms), ref 15.4 of ILI9340 manual. */
+#define ILI9340_RESET_WAIT_TIME 5
+
+/** X resolution (pixels). */
+#define ILI9340_X_RES 320U
+
+/** Y resolution (pixels). */
+#define ILI9340_Y_RES 240U
+
 /**
  * Send data to ILI9340 display controller
  *
@@ -62,7 +82,7 @@
  *
  * @return 0 on success, errno otherwise.
  */
-int ili9340_transmit(const struct device *dev, uint8_t cmd, void *tx_data,
+int ili9340_transmit(const struct device *dev, uint8_t cmd, const void *tx_data,
 		     size_t tx_len);
 
 /**

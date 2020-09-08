@@ -220,21 +220,5 @@ int ili9340_lcd_init(const struct device *dev)
 		return r;
 	}
 
-	/* Sleep Out */
-	cmd = ILI9340_CMD_EXIT_SLEEP;
-	r = ili9340_transmit(dev, cmd, NULL, 0);
-	if (r < 0) {
-		return r;
-	}
-
-	k_sleep(K_MSEC(120));
-
-	/* Display Off */
-	cmd = ILI9340_CMD_DISPLAY_OFF;
-	r = ili9340_transmit(dev, cmd, NULL, 0);
-	if (r < 0) {
-		return r;
-	}
-
 	return 0;
 }
