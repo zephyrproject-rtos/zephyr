@@ -1,0 +1,24 @@
+# RAKWIRELESS RAK5010 Board configuration
+
+# Copyright (c) 2020 Guillaume Paquet <guillaume.paquet@smile.fr>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_RAK5010_NRF52840
+
+config BOARD
+	default "rak5010_nrf52840"
+
+if USB
+
+config USB_NRFX
+	default y
+
+config USB_DEVICE_STACK
+	default y
+
+endif # USB
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_RAK5010_NRF52840
