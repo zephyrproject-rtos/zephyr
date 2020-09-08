@@ -37,8 +37,9 @@
 
 static int init_reset(void);
 static void isr_done(void *param);
-static int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
-		      struct node_tx **tx_release, uint8_t *is_rx_enqueue);
+static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
+			     uint8_t *is_rx_enqueue,
+			     struct node_tx **tx_release, uint8_t *is_done);
 static struct pdu_data *empty_tx_enqueue(struct lll_conn *lll);
 
 static uint16_t const sca_ppm_lut[] = {500, 250, 150, 100, 75, 50, 30, 20};
@@ -132,12 +133,11 @@ void lll_conn_isr_rx(void *param)
 	struct pdu_data *pdu_data_tx;
 	struct node_rx_pdu *node_rx;
 	uint8_t is_empty_pdu_tx_retry;
-	uint8_t is_crc_backoff = 0U;
 	uint8_t is_rx_enqueue = 0U;
 	uint8_t is_ull_rx = 0U;
+	uint8_t is_done = 0U;
 	uint8_t rssi_ready;
 	uint8_t trx_done;
-	uint8_t is_done;
 	uint8_t crc_ok;
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
@@ -174,7 +174,8 @@ void lll_conn_isr_rx(void *param)
 	if (crc_ok) {
 		uint32_t err;
 
-		err = isr_rx_pdu(lll, pdu_data_rx, &tx_release, &is_rx_enqueue);
+		err = isr_rx_pdu(lll, pdu_data_rx, &is_rx_enqueue, &tx_release,
+				 &is_done);
 		if (err) {
 			goto lll_conn_isr_rx_exit;
 		}
@@ -192,7 +193,7 @@ void lll_conn_isr_rx(void *param)
 
 		/* CRC error countdown */
 		crc_expire--;
-		is_crc_backoff = (crc_expire == 0U);
+		is_done = (crc_expire == 0U);
 	}
 
 	/* prepare tx packet */
@@ -200,8 +201,8 @@ void lll_conn_isr_rx(void *param)
 	lll_conn_pdu_tx_prep(lll, &pdu_data_tx);
 
 	/* Decide on event continuation and hence Radio Shorts to use */
-	is_done = is_crc_backoff || ((crc_ok) && (pdu_data_rx->md == 0) &&
-				     (pdu_data_tx->len == 0));
+	is_done = is_done || ((crc_ok) && (pdu_data_rx->md == 0) &&
+			      (pdu_data_tx->len == 0));
 
 	if (is_done) {
 		radio_isr_set(isr_done, param);
@@ -607,8 +608,9 @@ static inline bool ctrl_pdu_len_check(uint8_t len)
 
 }
 
-static int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
-		      struct node_tx **tx_release, uint8_t *is_rx_enqueue)
+static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
+			     uint8_t *is_rx_enqueue,
+			     struct node_tx **tx_release, uint8_t *is_done)
 {
 #if defined(CONFIG_SOC_COMPATIBLE_NRF52832) && \
 	defined(CONFIG_BT_CTLR_LE_ENC) && \
@@ -625,10 +627,11 @@ static int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 
 	/* Ack for tx-ed data */
 	if (pdu_data_rx->nesn != lll->sn) {
+		struct pdu_data *pdu_data_tx;
 		struct node_tx *tx;
 		memq_link_t *link;
 
-		/* Increment serial number */
+		/* Increment sequence number */
 		lll->sn++;
 
 #if defined(CONFIG_BT_PERIPHERAL)
@@ -645,11 +648,16 @@ static int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 					 (void **)&tx);
 		} else {
 			lll->empty = 0;
+
+			pdu_data_tx = (void *)radio_pkt_empty_get();
+			if (IS_ENABLED(CONFIG_BT_CENTRAL) && !lll->role) {
+				*is_done = !pdu_data_tx->md;
+			}
+
 			link = NULL;
 		}
 
 		if (link) {
-			struct pdu_data *pdu_data_tx;
 			uint8_t pdu_data_tx_len;
 			uint8_t offset;
 
@@ -683,6 +691,10 @@ static int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 				tx->next = link;
 
 				*tx_release = tx;
+			}
+
+			if (IS_ENABLED(CONFIG_BT_CENTRAL) && !lll->role) {
+				*is_done = !pdu_data_tx->md;
 			}
 		}
 	}
