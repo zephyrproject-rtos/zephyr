@@ -25,12 +25,6 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 #include "sockets_internal.h"
 #include "tls_internal.h"
 
-/* Need these for POLLIN, POLLOUT, MSG_PEEK, etc. */
-#if defined(CONFIG_POSIX_API)
-#include "posix/poll.h"
-#include "posix/sys/socket.h"
-#endif
-
 #define FAILED (-1)
 
 /* Increment by 1 to make sure we do not store the value of 0, which has
@@ -577,10 +571,10 @@ static int simplelink_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 				goto exit;
 			}
 		}
-		if (fds[i].events & POLLIN) {
+		if (fds[i].events & ZSOCK_POLLIN) {
 			SL_SOCKET_FD_SET(sd, &rfds);
 		}
-		if (fds[i].events & POLLOUT) {
+		if (fds[i].events & ZSOCK_POLLOUT) {
 			SL_SOCKET_FD_SET(sd, &wfds);
 		}
 		if (sd > max_sd) {
@@ -600,10 +594,10 @@ static int simplelink_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 					ENOTSUP);
 				sd = OBJ_TO_SD(obj);
 				if (SL_SOCKET_FD_ISSET(sd, &rfds)) {
-					fds[i].revents |= POLLIN;
+					fds[i].revents |= ZSOCK_POLLIN;
 				}
 				if (SL_SOCKET_FD_ISSET(sd, &wfds)) {
-					fds[i].revents |= POLLOUT;
+					fds[i].revents |= ZSOCK_POLLOUT;
 				}
 			}
 		}
@@ -856,9 +850,9 @@ static int handle_recv_flags(int sd, int flags, bool set, int *nb_enabled)
 	SlSocklen_t optlen = sizeof(SlSockNonblocking_t);
 	SlSockNonblocking_t enableOption;
 
-	if (flags & MSG_PEEK) {
+	if (flags & ZSOCK_MSG_PEEK) {
 		retval = ENOTSUP;
-	} else if (flags & MSG_DONTWAIT) {
+	} else if (flags & ZSOCK_MSG_DONTWAIT) {
 		if (set) {
 			/* Get previous state, to restore later: */
 			sl_GetSockOpt(sd, SL_SOL_SOCKET, SL_SO_NONBLOCKING,
