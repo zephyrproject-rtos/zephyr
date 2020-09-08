@@ -484,7 +484,7 @@ void test_hci_enc(void)
 
 void test_main(void)
 {
-	ztest_test_suite(hci_feature_exchange_master,
+	ztest_test_suite(hci_interface,
 			 ztest_unit_test_setup_teardown(test_hci_feature_exchange, setup, unit_test_noop),
 			 ztest_unit_test_setup_teardown(test_hci_feature_exchange_wrong_handle, setup, unit_test_noop),
 			 ztest_unit_test_setup_teardown(test_hci_version_ind, setup, unit_test_noop),
@@ -499,5 +499,5 @@ void test_main(void)
 
 		);
 
-	ztest_run_test_suite(hci_feature_exchange_master);
+	ztest_run_test_suite(hci_interface);
 }
