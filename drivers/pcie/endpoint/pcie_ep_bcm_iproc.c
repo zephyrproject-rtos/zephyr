@@ -260,9 +260,8 @@ static int iproc_pcie_register_reset_cb(const struct device *dev,
 }
 
 #if DT_INST_IRQ_HAS_NAME(0, perst)
-static void iproc_pcie_perst(void *arg)
+static void iproc_pcie_perst(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct iproc_pcie_ep_ctx *ctx = dev->data;
 	void *reset_data;
 	uint32_t data;
@@ -282,9 +281,8 @@ static void iproc_pcie_perst(void *arg)
 #endif
 
 #if DT_INST_IRQ_HAS_NAME(0, perst_inband)
-static void iproc_pcie_hot_reset(void *arg)
+static void iproc_pcie_hot_reset(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct iproc_pcie_ep_ctx *ctx = dev->data;
 	void *reset_data;
 	uint32_t data;
