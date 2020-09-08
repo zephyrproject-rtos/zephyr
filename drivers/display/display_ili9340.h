@@ -60,15 +60,18 @@
  * In case no data should be transmitted pass a NULL pointer
  * @param tx_len Number of bytes in tx_data buffer
  *
+ * @return 0 on success, errno otherwise.
  */
-void ili9340_transmit(const struct device *dev, uint8_t cmd, void *tx_data,
-		      size_t tx_len);
+int ili9340_transmit(const struct device *dev, uint8_t cmd, void *tx_data,
+		     size_t tx_len);
 
 /**
  * Perform LCD specific initialization
  *
  * @param data Device data structure
+ *
+ * @return 0 on success, errno otherwise.
  */
-void ili9340_lcd_init(const struct device *dev);
+int ili9340_lcd_init(const struct device *dev);
 
 #endif /* ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9340_H_ */
