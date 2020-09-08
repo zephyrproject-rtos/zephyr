@@ -1,0 +1,165 @@
+/*
+ * Copyright (c) 2020 Guillaume Paquet <guillaume.paquet@smile.fr>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+
+/ {
+	model = "RAKWireless RAK5010 Wistrio Board with a Nordic NRF52840 SoC";
+	compatible = "nordic,rak5010_nrf52840";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+			label = "Green LED 0";
+		};
+	};
+
+	/* Declaration of aliases */
+	aliases {
+		led0 = &led0;
+	};
+};
+
+&adc {
+	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uart";
+	current-speed = <115200>;
+	status = "okay";
+	tx-pin = <33>;
+	rx-pin = <34>;
+};
+
+&uart1 {
+	compatible = "nordic,nrf-uart";
+	status = "okay";
+	current-speed = <115200>;
+	tx-pin = <8>;
+	rx-pin = <6>;
+	rts-pin = <7>;
+	cts-pin = <11>;
+};
+
+&i2c1 {
+	compatible = "nordic,nrf-twi";
+	status = "okay";
+	sda-pin = <14>;
+	scl-pin = <13>;
+
+	/* TI OPT3001 light sensor */
+	opt3001@44 {
+		compatible = "ti,opt3001";
+		label = "OPT3001";
+		reg = <0x44>;
+	};
+
+	/* ST Microelectronics LIS3DH motion sensor */
+	lis3dh@19 {
+		compatible = "st,lis3dh";
+		label = "LIS3DH";
+		reg = <0x19>;
+		irq-gpios = <&gpio0 15 0>;
+	};
+
+	/* ST Microelectronics LPS22HB pressure sensor */
+	lps22hb-press@5c {
+		compatible = "st,lps22hb-press";
+		reg = <0x5c>;
+		label = "LPS22HB";
+	};
+};
+
+&qspi {
+	status = "okay";
+	sck-pin = <43>;
+	io-pins = <47>, <46>, <45>, <44>;
+	csn-pins = <42>;
+	is25wp064a: is25wp064a@0 {
+		compatible = "nordic,qspi-nor";
+		reg = <0>;
+		writeoc = "pp4io";
+		readoc = "read4io";
+		sck-frequency = <16000000>;
+		label = "IS25WP064A";
+		jedec-id = [9d 70 17];
+		size = <67108864>;
+		has-dpd;
+		t-enter-dpd = <3000>;
+		t-exit-dpd = <5000>;
+	};
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x000000000 0x0000C000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x00067000>;
+		};
+		slot1_partition: partition@73000 {
+			label = "image-1";
+			reg = <0x00073000 0x00067000>;
+		};
+		scratch_partition: partition@da000 {
+			label = "image-scratch";
+			reg = <0x000da000 0x0001e000>;
+		};
+
+		/*
+		 * The flash starting at 0x000f8000 and ending at
+		 * 0x000fffff is reserved for use by the application.
+		 */
+
+		/*
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
+		storage_partition: partition@f8000 {
+			label = "storage";
+			reg = <0x000f8000 0x00008000>;
+		};
+	};
+};
+
+&usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};
