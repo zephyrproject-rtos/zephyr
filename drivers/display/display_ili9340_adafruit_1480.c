@@ -43,18 +43,6 @@ int ili9340_lcd_init(const struct device *dev)
 		return r;
 	}
 
-#ifdef CONFIG_ILI9340_RGB565
-	tx_data[0] = ILI9340_DATA_PIXEL_FORMAT_MCU_16_BIT |
-		     ILI9340_DATA_PIXEL_FORMAT_RGB_16_BIT;
-#else
-	tx_data[0] = ILI9340_DATA_PIXEL_FORMAT_MCU_18_BIT |
-		     ILI9340_DATA_PIXEL_FORMAT_RGB_18_BIT;
-#endif
-	r = ili9340_transmit(dev, ILI9340_CMD_PIXEL_FORMAT_SET, tx_data, 1);
-	if (r < 0) {
-		return r;
-	}
-
 	tx_data[0] = 0x00;
 	tx_data[1] = 0x18;
 	r = ili9340_transmit(dev, ILI9340_CMD_FRAME_CTRL_NORMAL_MODE, tx_data, 2);

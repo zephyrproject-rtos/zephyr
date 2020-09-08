@@ -45,6 +45,10 @@ config LVGL_VDB_SIZE
 config LVGL_BITS_PER_PIXEL
 	default 24
 
+choice LVGL_COLOR_DEPTH
+	default LVGL_COLOR_DEPTH_32
+endchoice
+
 config KSCAN
 	default y
 

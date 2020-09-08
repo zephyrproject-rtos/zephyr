@@ -12,6 +12,7 @@
 
 #include <string.h>
 
+#include <dt-bindings/display/ili9340.h>
 #include <drivers/display.h>
 #include <drivers/gpio.h>
 #include <drivers/spi.h>
@@ -33,6 +34,7 @@ struct ili9340_config {
 	const char *reset_label;
 	gpio_pin_t reset_pin;
 	gpio_dt_flags_t reset_flags;
+	uint8_t pixel_format;
 };
 
 struct ili9340_data {
@@ -41,14 +43,9 @@ struct ili9340_data {
 	const struct device *spi_dev;
 	struct spi_config spi_config;
 	struct spi_cs_control cs_ctrl;
+	uint8_t bytes_per_pixel;
+	enum display_pixel_format pixel_format;
 };
-
-/* The number of bytes taken by a RGB pixel */
-#ifdef CONFIG_ILI9340_RGB565
-#define ILI9340_RGB_SIZE 2U
-#else
-#define ILI9340_RGB_SIZE 3U
-#endif
 
 static int ili9340_exit_sleep(const struct device *dev)
 {
@@ -119,7 +116,7 @@ static int ili9340_write(const struct device *dev, const uint16_t x,
 	uint16_t write_h;
 
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
-	__ASSERT((desc->pitch * ILI9340_RGB_SIZE * desc->height) <= desc->buf_size,
+	__ASSERT((desc->pitch * data->bytes_per_pixel * desc->height) <= desc->buf_size,
 		 "Input buffer to small");
 
 	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)", desc->width, desc->height,
@@ -139,7 +136,7 @@ static int ili9340_write(const struct device *dev, const uint16_t x,
 
 	r = ili9340_transmit(dev, ILI9340_CMD_MEM_WRITE,
 			     write_data_start,
-			     desc->width * ILI9340_RGB_SIZE * write_h);
+			     desc->width * data->bytes_per_pixel * write_h);
 	if (r < 0) {
 		return r;
 	}
@@ -147,17 +144,17 @@ static int ili9340_write(const struct device *dev, const uint16_t x,
 	tx_bufs.buffers = &tx_buf;
 	tx_bufs.count = 1;
 
-	write_data_start += (desc->pitch * ILI9340_RGB_SIZE);
+	write_data_start += desc->pitch * data->bytes_per_pixel;
 	for (write_cnt = 1U; write_cnt < nbr_of_writes; ++write_cnt) {
 		tx_buf.buf = (void *)write_data_start;
-		tx_buf.len = desc->width * ILI9340_RGB_SIZE * write_h;
+		tx_buf.len = desc->width * data->bytes_per_pixel * write_h;
 
 		r = spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
 		if (r < 0) {
 			return r;
 		}
 
-		write_data_start += desc->pitch * ILI9340_RGB_SIZE;
+		write_data_start += desc->pitch * data->bytes_per_pixel;
 	}
 
 	return 0;
@@ -207,15 +204,34 @@ static int ili9340_set_pixel_format(const struct device *dev,
 				    const enum display_pixel_format
 				    pixel_format)
 {
-#ifdef CONFIG_ILI9340_RGB565
+	struct ili9340_data *data = (struct ili9340_data *)dev->data;
+
+	int r;
+	uint8_t tx_data;
+	uint8_t bytes_per_pixel;
+
 	if (pixel_format == PIXEL_FORMAT_RGB_565) {
-#else
-	if (pixel_format == PIXEL_FORMAT_RGB_888) {
-#endif
-		return 0;
+		bytes_per_pixel = 2U;
+		tx_data = ILI9340_DATA_PIXEL_FORMAT_MCU_16_BIT |
+			  ILI9340_DATA_PIXEL_FORMAT_RGB_16_BIT;
+	} else if (pixel_format == PIXEL_FORMAT_RGB_888) {
+		bytes_per_pixel = 3U;
+		tx_data = ILI9340_DATA_PIXEL_FORMAT_MCU_18_BIT |
+			  ILI9340_DATA_PIXEL_FORMAT_RGB_18_BIT;
+	} else {
+		LOG_ERR("Unsupported pixel format");
+		return -ENOTSUP;
 	}
-	LOG_ERR("Pixel format change not implemented");
-	return -ENOTSUP;
+
+	r = ili9340_transmit(dev, ILI9340_CMD_PIXEL_FORMAT_SET, &tx_data, 1U);
+	if (r < 0) {
+		return r;
+	}
+
+	data->pixel_format = pixel_format;
+	data->bytes_per_pixel = bytes_per_pixel;
+
+	return 0;
 }
 
 static int ili9340_set_orientation(const struct device *dev,
@@ -231,16 +247,16 @@ static int ili9340_set_orientation(const struct device *dev,
 static void ili9340_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
+	struct ili9340_data *data = (struct ili9340_data *)dev->data;
+
 	memset(capabilities, 0, sizeof(struct display_capabilities));
+
+	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565 |
+						PIXEL_FORMAT_RGB_888;
+	capabilities->current_pixel_format = data->pixel_format;
+
 	capabilities->x_resolution = ILI9340_X_RES;
 	capabilities->y_resolution = ILI9340_Y_RES;
-#ifdef CONFIG_ILI9340_RGB565
-	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565;
-	capabilities->current_pixel_format = PIXEL_FORMAT_RGB_565;
-#else
-	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_888;
-	capabilities->current_pixel_format = PIXEL_FORMAT_RGB_888;
-#endif
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
@@ -274,6 +290,28 @@ int ili9340_transmit(const struct device *dev, uint8_t cmd, const void *tx_data,
 		if (r < 0) {
 			return r;
 		}
+	}
+
+	return 0;
+}
+
+static int ili9340_configure(const struct device *dev)
+{
+	const struct ili9340_config *config = (struct ili9340_config *)dev->config;
+
+	int r;
+	enum display_pixel_format pixel_format;
+
+	/* pixel format */
+	if (config->pixel_format == ILI9340_PIXEL_FORMAT_RGB565) {
+		pixel_format = PIXEL_FORMAT_RGB_565;
+	} else {
+		pixel_format = PIXEL_FORMAT_RGB_888;
+	}
+
+	r = ili9340_set_pixel_format(dev, pixel_format);
+	if (r < 0) {
+		return r;
 	}
 
 	return 0;
@@ -328,6 +366,12 @@ static int ili9340_init(const struct device *dev)
 	}
 
 	ili9340_hw_reset(dev);
+
+	r = ili9340_configure(dev);
+	if (r < 0) {
+		LOG_ERR("Could not configure display (%d)", r);
+		return r;
+	}
 
 	r = ili9340_lcd_init(dev);
 	if (r < 0) {
@@ -386,6 +430,7 @@ static const struct display_driver_api ili9340_api = {
 		.reset_flags = UTIL_AND(                                       \
 			DT_INST_NODE_HAS_PROP(index, reset_gpios),             \
 			DT_INST_GPIO_FLAGS(index, reset_gpios)),               \
+		.pixel_format = DT_INST_PROP(index, pixel_format),             \
 	};                                                                     \
 									       \
 	static struct ili9340_data ili9340_data_##index;                       \
