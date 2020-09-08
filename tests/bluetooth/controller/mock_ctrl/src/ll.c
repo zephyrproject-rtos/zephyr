@@ -30,3 +30,5 @@
 #include "ull_conn_types.h"
 #include "ull_tx_queue.h"
 #include "ull_llcp.h"
+
+extern sys_slist_t ut_rx_q;
