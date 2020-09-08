@@ -13,14 +13,18 @@
  * https://github.com/Seeed-Studio/TFT_Touch_Shield_V2
  */
 
-void ili9340_lcd_init(const struct device *dev)
+int ili9340_lcd_init(const struct device *dev)
 {
+	int r;
 	uint8_t cmd;
 	uint8_t data[15];
 
 	/* Software reset */
 	cmd = ILI9340_CMD_SOFTWARE_RESET;
-	ili9340_transmit(dev, cmd, NULL, 0);
+	r = ili9340_transmit(dev, cmd, NULL, 0);
+	if (r < 0) {
+		return r;
+	}
 
 	k_sleep(K_MSEC(5));
 
@@ -28,20 +32,29 @@ void ili9340_lcd_init(const struct device *dev)
 	data[0] = 0x00U;
 	data[1] = 0x8BU;
 	data[2] = 0x30U;
-	ili9340_transmit(dev, cmd, data, 3);
+	r = ili9340_transmit(dev, cmd, data, 3);
+	if (r < 0) {
+		return r;
+	}
 
 	cmd = ILI9341_CMD_POWER_ON_SEQ_CTRL;
 	data[0] = 0x67U;
 	data[1] = 0x03U;
 	data[2] = 0x12U;
 	data[3] = 0x81U;
-	ili9340_transmit(dev, cmd, data, 4);
+	r = ili9340_transmit(dev, cmd, data, 4);
+	if (r < 0) {
+		return r;
+	}
 
 	cmd = ILI9341_CMD_DRVR_TIMING_CTRL_A_I;
 	data[0] = 0x85U;
 	data[1] = 0x10U;
 	data[2] = 0x7AU;
-	ili9340_transmit(dev, cmd, data, 3);
+	r = ili9340_transmit(dev, cmd, data, 3);
+	if (r < 0) {
+		return r;
+	}
 
 	cmd = ILI9341_CMD_POWER_CTRL_A;
 	data[0] = 0x39U;
@@ -49,39 +62,60 @@ void ili9340_lcd_init(const struct device *dev)
 	data[2] = 0x00U;
 	data[3] = 0x34U;
 	data[4] = 0x02U;
-	ili9340_transmit(dev, cmd, data, 5);
+	r = ili9340_transmit(dev, cmd, data, 5);
+	if (r < 0) {
+		return r;
+	}
 
 	cmd = ILI9341_CMD_PUMP_RATIO_CTRL;
 	data[0] = 0x20U;
-	ili9340_transmit(dev, cmd, data, 1);
+	r = ili9340_transmit(dev, cmd, data, 1);
+	if (r < 0) {
+		return r;
+	}
 
 	cmd = ILI9341_CMD_DRVR_TIMING_CTRL_B;
 	data[0] = 0x00U;
 	data[1] = 0x00U;
-	ili9340_transmit(dev, cmd, data, 2);
+	r = ili9340_transmit(dev, cmd, data, 2);
+	if (r < 0) {
+		return r;
+	}
 
 	/* Power control */
 	/* VRH[5:0] */
 	cmd = ILI9340_CMD_POWER_CTRL_1;
 	data[0] = 0x1BU;
-	ili9340_transmit(dev, cmd, data, 1);
+	r = ili9340_transmit(dev, cmd, data, 1);
+	if (r < 0) {
+		return r;
+	}
 
 	/* Power control */
 	/* SAP[2:0];BT[3:0] */
 	cmd = ILI9340_CMD_POWER_CTRL_2;
 	data[0] = 0x10U;
-	ili9340_transmit(dev, cmd, data, 1);
+	r = ili9340_transmit(dev, cmd, data, 1);
+	if (r < 0) {
+		return r;
+	}
 
 	/* VCM control */
 	cmd = ILI9340_CMD_VCOM_CTRL_1;
 	data[0] = 0x3FU;
 	data[1] = 0x3CU;
-	ili9340_transmit(dev, cmd, data, 2);
+	r = ili9340_transmit(dev, cmd, data, 2);
+	if (r < 0) {
+		return r;
+	}
 
 	/* VCM control2 */
 	cmd = ILI9340_CMD_VCOM_CTRL_2;
 	data[0] = 0xB7U;
-	ili9340_transmit(dev, cmd, data, 1);
+	r = ili9340_transmit(dev, cmd, data, 1);
+	if (r < 0) {
+		return r;
+	}
 
 	/* Memory Access Control */
 	cmd = ILI9340_CMD_MEM_ACCESS_CTRL;
@@ -89,7 +123,10 @@ void ili9340_lcd_init(const struct device *dev)
 		  ILI9340_DATA_MEM_ACCESS_CTRL_MV |
 		  ILI9340_DATA_MEM_ACCESS_CTRL_ML |
 		  ILI9340_DATA_MEM_ACCESS_CTRL_BGR;
-	ili9340_transmit(dev, cmd, data, 1);
+	r = ili9340_transmit(dev, cmd, data, 1);
+	if (r < 0) {
+		return r;
+	}
 
 	/* Pixel Format Set */
 	cmd = ILI9340_CMD_PIXEL_FORMAT_SET;
@@ -100,29 +137,44 @@ void ili9340_lcd_init(const struct device *dev)
 	data[0] = ILI9340_DATA_PIXEL_FORMAT_MCU_18_BIT |
 		  ILI9340_DATA_PIXEL_FORMAT_RGB_18_BIT;
 #endif
-	ili9340_transmit(dev, cmd, data, 1);
+	r = ili9340_transmit(dev, cmd, data, 1);
+	if (r < 0) {
+		return r;
+	}
 
 	/* Frame Rate */
 	cmd = ILI9340_CMD_FRAME_CTRL_NORMAL_MODE;
 	data[0] = 0x00U;
 	data[1] = 0x1BU;
-	ili9340_transmit(dev, cmd, data, 2);
+	r = ili9340_transmit(dev, cmd, data, 2);
+	if (r < 0) {
+		return r;
+	}
 
 	/* Display Function Control */
 	cmd = ILI9340_CMD_DISPLAY_FUNCTION_CTRL;
 	data[0] = 0x0AU;
 	data[1] = 0xA2U;
-	ili9340_transmit(dev, cmd, data, 2);
+	r = ili9340_transmit(dev, cmd, data, 2);
+	if (r < 0) {
+		return r;
+	}
 
 	/* 3Gamma Function Disable */
 	cmd = ILI9341_CMD_ENABLE_3G;
 	data[0] = 0x00U;
-	ili9340_transmit(dev, cmd, data, 1);
+	r = ili9340_transmit(dev, cmd, data, 1);
+	if (r < 0) {
+		return r;
+	}
 
 	/* Gamma curve selected */
 	cmd = ILI9340_CMD_GAMMA_SET;
 	data[0] = 0x01U;
-	ili9340_transmit(dev, cmd, data, 1);
+	r = ili9340_transmit(dev, cmd, data, 1);
+	if (r < 0) {
+		return r;
+	}
 
 	/* Positive Gamma Correction */
 	cmd = ILI9340_CMD_POSITIVE_GAMMA_CORRECTION;
@@ -141,7 +193,10 @@ void ili9340_lcd_init(const struct device *dev)
 	data[12] = 0x00U;
 	data[13] = 0x00U;
 	data[14] = 0x00U;
-	ili9340_transmit(dev, cmd, data, 15);
+	r = ili9340_transmit(dev, cmd, data, 15);
+	if (r < 0) {
+		return r;
+	}
 
 	/* Negative Gamma Correction */
 	cmd = ILI9340_CMD_NEGATIVE_GAMMA_CORRECTION;
@@ -160,15 +215,26 @@ void ili9340_lcd_init(const struct device *dev)
 	data[12] = 0x3FU;
 	data[13] = 0x3FU;
 	data[14] = 0x0FU;
-	ili9340_transmit(dev, cmd, data, 15);
+	r = ili9340_transmit(dev, cmd, data, 15);
+	if (r < 0) {
+		return r;
+	}
 
 	/* Sleep Out */
 	cmd = ILI9340_CMD_EXIT_SLEEP;
-	ili9340_transmit(dev, cmd, NULL, 0);
+	r = ili9340_transmit(dev, cmd, NULL, 0);
+	if (r < 0) {
+		return r;
+	}
 
 	k_sleep(K_MSEC(120));
 
 	/* Display Off */
 	cmd = ILI9340_CMD_DISPLAY_OFF;
-	ili9340_transmit(dev, cmd, NULL, 0);
+	r = ili9340_transmit(dev, cmd, NULL, 0);
+	if (r < 0) {
+		return r;
+	}
+
+	return 0;
 }
