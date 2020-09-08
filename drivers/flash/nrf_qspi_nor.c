@@ -43,7 +43,7 @@ struct qspi_nor_config {
 LOG_MODULE_REGISTER(qspi_nor, CONFIG_FLASH_LOG_LEVEL);
 
 static const struct flash_parameters qspi_flash_parameters = {
-	.write_block_size = 1,
+	.write_block_size = 4,
 	.erase_value = 0xff,
 };
 
