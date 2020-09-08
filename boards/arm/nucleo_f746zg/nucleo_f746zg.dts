@@ -151,6 +151,15 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
+&can2 {
+	bus-speed = <125000>;
+	sjw = <1>;
+	prop-seg = <0>;
+	phase-seg1 = <6>;
+	phase-seg2 = <5>;
+	status = "okay";
+};
+
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pa0>;
 	status = "okay";
