@@ -133,8 +133,9 @@ static inline int z_impl_flash_read(const struct device *dev, off_t offset,
  *  @brief  Write buffer into flash memory.
  *
  *  All flash drivers support a source buffer located either in RAM or
- *  SoC flash, without alignment restrictions on the source address, or
- *  write size or offset.
+ *  SoC flash, without alignment restrictions on the source address.
+ *  Write size and offset must be multiples of the minimum write block size
+ *  supported by the driver.
  *
  *  Prior to the invocation of this API, the flash_write_protection_set needs
  *  to be called first to disable the write protection.
