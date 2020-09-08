@@ -31,9 +31,6 @@
 #include "pdu.h"
 #include "lll.h"
 #include "lll_conn.h"
-/*
- * EGON TODO: required for compilation, to be removed when data types are updated
- */
 #include "ull_conn_types.h"
 #include "ull_internal.h"
 #include "ull_sched_internal.h"
@@ -449,7 +446,9 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 			  uint16_t interval, uint16_t latency, uint16_t timeout)
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 {
-	/* EGON TODO: to be enabled after integration of datastructures */
+	/*
+	 * disabled for now
+	 */
 #if 0
 	struct lll_conn *conn_lll;
 	struct ll_scan_set *scan;
@@ -457,53 +456,9 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	struct lll_scan *lll;
 	struct ull_cp_conn *conn;
 	memq_link_t *link;
+	uint8_t access_addr[4];
 	uint8_t hop;
 	int err;
-
-	scan = ull_scan_is_disabled_get(SCAN_HANDLE_1M);
-	if (!scan) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
-
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-	struct ll_scan_set *scan_coded;
-	struct lll_scan *lll_coded;
-
-	scan_coded = ull_scan_is_disabled_get(SCAN_HANDLE_PHY_CODED);
-	if (!scan_coded) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
-
-	lll = &scan->lll;
-	lll_coded = &scan_coded->lll;
-
-	if (phy & BT_HCI_LE_EXT_SCAN_PHY_CODED) {
-		if (!lll_coded->conn) {
-			lll_coded->conn = lll->conn;
-		}
-		scan = scan_coded;
-		lll = lll_coded;
-	} else {
-		if (!lll->conn) {
-			lll->conn = lll_coded->conn;
-		}
-	}
-
-#else /* !CONFIG_BT_CTLR_PHY_CODED */
-	if (phy & ~BT_HCI_LE_EXT_SCAN_PHY_1M) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
-
-	lll = &scan->lll;
-
-#endif /* !CONFIG_BT_CTLR_PHY_CODED */
-
-	lll->phy = phy;
-
-#else /* !CONFIG_BT_CTLR_ADV_EXT */
-	lll = &scan->lll;
-#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 	if (lll->conn) {
 		goto conn_is_valid;
@@ -624,7 +579,9 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
 	conn->common.fex_valid = 0U;
+	conn->master.terminate_ack = 0U;
 
+	conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0U;
 	conn->llcp_rx = NULL;
 	conn->llcp_feature.features_conn = LL_FEAT;
 	conn->llcp_feature.features_peer = 0;
@@ -635,19 +592,26 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	 */
 	conn->llcp_terminate.node_rx.hdr.link = link;
 
+#if 0 /* EGON TODO: set correct variable to 0 when implementing terminate proc */
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	conn_lll->enc_rx = conn_lll->enc_tx = 0U;
+
 	conn->llcp_enc.pause_tx = conn->llcp_enc.pause_rx = 0U;
 	conn->llcp_enc.refresh = 0U;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+#endif
 
+#if 0 /* EGON TODO: set correct variable to 0 when implementing terminate proc */
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	conn->llcp_conn_param.disabled = 0U;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+#endif
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+#if 0 /* EGON TODO: set correct variable to 0 when implementing terminate proc */
 	conn->llcp_length.disabled = 0U;
 	conn->llcp_length.cache.tx_octets = 0U;
+#endif
 	conn->default_tx_octets = ull_conn_default_tx_octets_get();
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -656,8 +620,6 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	conn->llcp_phy.disabled = 0U;
-	conn->llcp_phy.pause_tx = 0U;
 	conn->phy_pref_tx = ull_conn_default_phy_tx_get();
 	conn->phy_pref_rx = ull_conn_default_phy_rx_get();
 	conn->phy_pref_flags = 0U;
