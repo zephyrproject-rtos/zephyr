@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2020 Actinius
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	feather_header: feather_connector {
+		compatible = "adafruit-feather-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 14 0>,	/* A1 */
+			   <1 0 &gpio0 15 0>,	/* A2 */
+			   <2 0 &gpio0 16 0>,	/* A3 */
+			   <3 0 &gpio0 17 0>,	/* A4 */
+			   <4 0 &gpio0 18 0>,	/* A5 */
+			   <5 0 &gpio0 19 0>,	/* A6 */
+			   <6 0 &gpio0 20 0>,	/* SCK */
+			   <7 0 &gpio0 21 0>,	/* MOSI */
+			   <8 0 &gpio0 22 0>,	/* MISO */
+			   <9 0 &gpio0 23 0>,	/* RX */
+			   <10 0 &gpio0 24 0>,	/* TX */
+			   /* 11 is VIN */
+			   <12 0 &gpio0 26 0>,	/* SDA */
+			   <13 0 &gpio0 27 0>,	/* SCL */
+			   <14 0 &gpio0 31 0>,	/* 31 */
+			   <15 0 &gpio0 30 0>,	/* 30 */
+			   <16 0 &gpio0 0 0>,	/* 0 */
+			   <17 0 &gpio0 1 0>,	/* 1 */
+			   <18 0 &gpio0 2 0>,	/* 2 */
+			   <19 0 &gpio0 3 0>,	/* 3 */
+			   <20 0 &gpio0 4 0>;	/* 4 */
+	};
+};
+
+feather_adc: &adc { };
+feather_serial: &uart0 { };
+feather_i2c: &i2c2 { };
+feather_spi: &spi3 { };
+
+arduino_adc: &adc { };
+arduino_serial: &uart0 { };
+arduino_i2c: &i2c2 { };
+arduino_spi: &spi3 { };
