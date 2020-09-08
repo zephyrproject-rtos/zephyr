@@ -9,4 +9,5 @@ tests:
         ordered: true
         regex:
             - "kb data(.*)"
+        fixture: fixture_connect_keyboard
     depends_on: kscan
