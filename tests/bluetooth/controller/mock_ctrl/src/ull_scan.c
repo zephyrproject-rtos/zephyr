@@ -7,8 +7,17 @@
 
 #include <zephyr/types.h>
 
-#include "ull_scan_types.h"
+#include "hci_err.h"
+#include "util/mem.h"
+#include "util/memq.h"
+#include "pdu.h"
+
+#include "lll.h"
 #include "lll_scan.h"
+
+#include "ull_scan_types.h"
+#include "ull_scan_internal.h"
+
 
 #define BT_CTLR_SCAN_MAX 1
 static struct ll_scan_set ll_scan[BT_CTLR_SCAN_MAX];
@@ -28,7 +37,7 @@ uint8_t ll_scan_params_set(uint8_t type, uint16_t interval, uint16_t window,
 	return 0;
 }
 
-struct ll_scan_set *ull_scan_set_get(uint16_t handle)
+struct ll_scan_set *ull_scan_set_get(uint8_t handle)
 {
 	if (handle >= BT_CTLR_SCAN_MAX) {
 		return NULL;
@@ -37,7 +46,7 @@ struct ll_scan_set *ull_scan_set_get(uint16_t handle)
 	return &ll_scan[handle];
 }
 
-struct ll_scan_set *ull_scan_is_enabled_get(uint16_t handle)
+struct ll_scan_set *ull_scan_is_enabled_get(uint8_t handle)
 {
 	struct ll_scan_set *scan;
 
@@ -49,7 +58,7 @@ struct ll_scan_set *ull_scan_is_enabled_get(uint16_t handle)
 	return scan;
 }
 
-struct ll_scan_set *ull_scan_is_disabled_get(uint16_t handle)
+struct ll_scan_set *ull_scan_is_disabled_get(uint8_t handle)
 {
 	struct ll_scan_set *scan;
 
