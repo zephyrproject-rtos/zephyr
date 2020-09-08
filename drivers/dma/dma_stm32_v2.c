@@ -144,15 +144,15 @@ void dma_stm32_clear_te(DMA_TypeDef *DMAx, uint32_t id)
 		LL_DMA_ClearFlag_TE3,
 		LL_DMA_ClearFlag_TE4,
 		LL_DMA_ClearFlag_TE5,
-#if defined(LL_DMA_IFCR_CTEF6)
+#if defined(LL_DMA_IFCR_CTEIF6)
 		LL_DMA_ClearFlag_TE6,
-#if defined(LL_DMA_IFCR_CTEF7)
+#if defined(LL_DMA_IFCR_CTEIF7)
 		LL_DMA_ClearFlag_TE7,
-#if defined(LL_DMA_IFCR_CTEF8)
+#if defined(LL_DMA_IFCR_CTEIF8)
 		LL_DMA_ClearFlag_TE8,
-#endif /* LL_DMA_IFCR_CTEF6 */
-#endif /* LL_DMA_IFCR_CTEF7 */
-#endif /* LL_DMA_IFCR_CTEF8 */
+#endif /* LL_DMA_IFCR_CTEIF6 */
+#endif /* LL_DMA_IFCR_CTEIF7 */
+#endif /* LL_DMA_IFCR_CTEIF8 */
 	};
 
 	__ASSERT_NO_MSG(id < ARRAY_SIZE(func));
