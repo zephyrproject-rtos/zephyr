@@ -95,7 +95,7 @@
 /boards/arm/mps2_an385/                   @fvincenzo
 /boards/arm/msp_exp432p401r_launchxl/     @Mani-Sadhasivam
 /boards/arm/nrf*/                         @carlescufi @lemrey @ioannisg
-/boards/arm/nucleo*/                      @erwango, @ABOSTM, @FRASTM
+/boards/arm/nucleo*/                      @erwango @ABOSTM @FRASTM
 /boards/arm/nucleo_f401re/                @idlethread
 /boards/arm/nuvoton_pfm_m487/             @ssekar15
 /boards/arm/qemu_cortex_a53/              @carlocaione
@@ -113,9 +113,9 @@
 /boards/arm/sensortile_box/               @avisconti
 /boards/arm/steval_fcu001v1/              @Navin-Sankar
 /boards/arm/stm32l1_disco/                @karlp
-/boards/arm/stm32*_disco/                 @erwango, @ABOSTM, @FRASTM
+/boards/arm/stm32*_disco/                 @erwango @ABOSTM @FRASTM
 /boards/arm/stm32f3_disco/                @ydamigos
-/boards/arm/stm32*_eval/                  @erwango, @ABOSTM, @FRASTM
+/boards/arm/stm32*_eval/                  @erwango @ABOSTM @FRASTM
 /boards/common/                           @mbolivar-nordic
 /boards/deprecated.cmake                  @tejlmand
 /boards/nios2/                            @wentongwu
@@ -148,9 +148,9 @@
 /drivers/debug/                           @nashif
 /drivers/*/*cc13xx_cc26xx*                @bwitherspoon
 /drivers/*/*mcux*                         @MaureenHelm
-/drivers/*/*stm32*                        @erwango, @ABOSTM, @FRASTM
+/drivers/*/*stm32*                        @erwango @ABOSTM @FRASTM
 /drivers/*/*native_posix*                 @aescolar @daor-oti
-/drivers/*/*lpc11u6x*			  @mbittan @simonguinot
+/drivers/*/*lpc11u6x*                     @mbittan @simonguinot
 /drivers/adc/                             @anangl
 /drivers/adc/adc_stm32.c                  @cybertale
 /drivers/bluetooth/                       @joerchan @jhedberg @Vudentz
@@ -171,7 +171,7 @@
 /drivers/dac/                             @martinjaeger
 /drivers/dma/*dw*                         @tbursztyka
 /drivers/dma/*sam0*                       @Sizurka
-/drivers/dma/dma_stm32*                   @cybertale, @lowlander
+/drivers/dma/dma_stm32*                   @cybertale @lowlander
 /drivers/dma/*pl330*                      @raveenp
 /drivers/ec_host_cmd_periph/              @jettr
 /drivers/eeprom/                          @henrikbrixandersen
@@ -181,7 +181,7 @@
 /drivers/entropy/*litex*                  @mateusz-holenko @kgugala @pgielda
 /drivers/espi/                            @albertofloyd @franciscomunoz @scottwcpg
 /drivers/ethernet/                        @jukkar @tbursztyka @pfalcon
-/drivers/ethernet/*stm32*                 @Nukersson, @lochej
+/drivers/ethernet/*stm32*                 @Nukersson @lochej
 /drivers/flash/                           @nashif @nvlsianpu
 /drivers/flash/*nrf*                      @nvlsianpu
 /drivers/flash/*spi_nor*                  @pabigot
