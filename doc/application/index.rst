@@ -673,6 +673,12 @@ You can also define the ``BOARD_ROOT`` variable in the application
 :file:`CMakeLists.txt` file. Make sure to do so **before** pulling in the Zephyr
 boilerplate with ``find_package(Zephyr ...)``.
 
+.. note::
+
+   When specifying ``BOARD_ROOT`` in a CMakeLists.txt, then an absolute path must
+   be provided, for example ``list(APPEND BOARD_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/<extra-board-root>``.
+   When using ``-DBOARD_ROOT=<board-root>`` both absolute and relative paths can
+   be used. Relative paths are treated relatively to the application directory.
 
 SOC Definitions
 ===============
@@ -750,6 +756,13 @@ Or you can define the ``SOC_ROOT`` variable in the application
 :file:`CMakeLists.txt` file. Make sure to do so **before** pulling in the
 Zephyr boilerplate with ``find_package(Zephyr ...)``.
 
+.. note::
+
+   When specifying ``SOC_ROOT`` in a CMakeLists.txt, then an absolute path must
+   be provided, for example ``list(APPEND SOC_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/<extra-soc-root>``.
+   When using ``-DSOC_ROOT=<soc-root>`` both absolute and relative paths can be
+   used. Relative paths are treated relatively to the application directory.
+
 .. _dts_root:
 
 Devicetree Definitions
@@ -782,6 +795,13 @@ its location through the ``DTS_ROOT`` CMake Cache variable:
 You can also define the variable in the application :file:`CMakeLists.txt`
 file. Make sure to do so **before** pulling in the Zephyr boilerplate with
 ``find_package(Zephyr ...)``.
+
+.. note::
+
+   When specifying ``DTS_ROOT`` in a CMakeLists.txt, then an absolute path must
+   be provided, for example ``list(APPEND DTS_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/<extra-dts-root>``.
+   When using ``-DDTS_ROOT=<dts-root>`` both absolute and relative paths can be
+   used. Relative paths are treated relatively to the application directory.
 
 Devicetree source are passed through the C preprocessor, so you can
 include files that can be located in a ``DTS_ROOT`` directory.  By

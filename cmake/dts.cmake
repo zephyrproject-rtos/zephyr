@@ -35,6 +35,8 @@ if(DEFINED DTS_COMMON_OVERLAYS)
   message(FATAL_ERROR "DTS_COMMON_OVERLAYS is no longer supported. Use DTC_OVERLAY_FILE instead.")
 endif()
 
+zephyr_file(APPLICATION_ROOT DTS_ROOT)
+
 # 'DTS_ROOT' is a list of directories where a directory tree with DT
 # files may be found. It always includes the application directory,
 # the board directory, and ${ZEPHYR_BASE}.

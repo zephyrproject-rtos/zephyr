@@ -305,14 +305,17 @@ set(CACHED_SHIELD ${SHIELD} CACHE STRING "Selected shield")
 
 # 'BOARD_ROOT' is a prioritized list of directories where boards may
 # be found. It always includes ${ZEPHYR_BASE} at the lowest priority.
+zephyr_file(APPLICATION_ROOT BOARD_ROOT)
 list(APPEND BOARD_ROOT ${ZEPHYR_BASE})
 
 # 'SOC_ROOT' is a prioritized list of directories where socs may be
 # found. It always includes ${ZEPHYR_BASE}/soc at the lowest priority.
+zephyr_file(APPLICATION_ROOT SOC_ROOT)
 list(APPEND SOC_ROOT ${ZEPHYR_BASE})
 
 # 'ARCH_ROOT' is a prioritized list of directories where archs may be
 # found. It always includes ${ZEPHYR_BASE} at the lowest priority.
+zephyr_file(APPLICATION_ROOT ARCH_ROOT)
 list(APPEND ARCH_ROOT ${ZEPHYR_BASE})
 
 if(DEFINED SHIELD)
