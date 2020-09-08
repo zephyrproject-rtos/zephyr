@@ -82,6 +82,13 @@ API Changes
   const qualifier loss on ISRs, all ISRs now take a ``const *void`` as a
   paremeter as well.
 
+* Formerly ``device_get_binding()`` would return the device pointer if
+  invoked before the corresponding device was initialized.  As of this
+  release it only returns the pointer if the device successfully
+  initialized.  A behavior change can be observed if initialization for
+  a device fetches (but does not use) the pointer for a device it
+  depends on before that device has been initialized.
+
 * The ``_gatt_`` and ``_GATT_`` infixes have been removed for the HRS, DIS
   and BAS APIs and the Kconfig options.
 
