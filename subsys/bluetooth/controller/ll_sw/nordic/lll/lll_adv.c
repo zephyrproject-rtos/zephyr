@@ -64,9 +64,6 @@ static bool isr_rx_sr_adva_check(uint8_t tx_addr, uint8_t *addr,
 				 struct pdu_adv *sr);
 
 
-static inline bool isr_rx_ci_check(struct lll_adv *lll, struct pdu_adv *adv,
-				   struct pdu_adv *ci, uint8_t devmatch_ok,
-				   uint8_t *rl_idx);
 static inline bool isr_rx_ci_tgta_check(struct lll_adv *lll,
 					struct pdu_adv *adv, struct pdu_adv *ci,
 					uint8_t rl_idx);
@@ -357,6 +354,37 @@ int lll_adv_scan_req_report(struct lll_adv *lll, struct pdu_adv *pdu_adv_rx,
 }
 #endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
 
+bool lll_adv_connect_ind_check(struct lll_adv *lll, struct pdu_adv *adv,
+			       struct pdu_adv *ci, uint8_t devmatch_ok,
+			       uint8_t *rl_idx)
+{
+	/* LL 4.3.2: filter policy shall be ignored for directed adv */
+	if (adv->type == PDU_ADV_TYPE_DIRECT_IND) {
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+		return ull_filter_lll_rl_addr_allowed(ci->tx_addr,
+						      ci->connect_ind.init_addr,
+						      rl_idx) &&
+#else
+		return (1) &&
+#endif
+		       isr_rx_ci_adva_check(adv, ci) &&
+		       isr_rx_ci_tgta_check(lll, adv, ci, *rl_idx);
+	}
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	return ((((lll->filter_policy & 0x02) == 0) &&
+		 ull_filter_lll_rl_addr_allowed(ci->tx_addr,
+						ci->connect_ind.init_addr,
+						rl_idx)) ||
+		(((lll->filter_policy & 0x02) != 0) &&
+		 (devmatch_ok || ull_filter_lll_irk_whitelisted(*rl_idx)))) &&
+	       isr_rx_ci_adva_check(adv, ci);
+#else
+	return (((lll->filter_policy & 0x02) == 0) ||
+		(devmatch_ok)) &&
+	       isr_rx_ci_adva_check(adv, ci);
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+}
 
 /* Helper function to initialize data variable both at power up and on
  * HCI reset.
@@ -968,8 +996,8 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 #if defined(CONFIG_BT_PERIPHERAL)
 	} else if ((pdu_rx->type == PDU_ADV_TYPE_CONNECT_IND) &&
 		   (pdu_rx->len == sizeof(struct pdu_adv_connect_ind)) &&
-		   isr_rx_ci_check(lll, pdu_adv, pdu_rx, devmatch_ok,
-				   &rl_idx) &&
+		   lll_adv_connect_ind_check(lll, pdu_adv, pdu_rx, devmatch_ok,
+					     &rl_idx) &&
 		   lll->conn) {
 		struct node_rx_ftr *ftr;
 		struct node_rx_pdu *rx;
@@ -1042,38 +1070,6 @@ static bool isr_rx_sr_adva_check(uint8_t tx_addr, uint8_t *addr,
 {
 	return (tx_addr == sr->rx_addr) &&
 		!memcmp(addr, sr->scan_req.adv_addr, BDADDR_SIZE);
-}
-
-static inline bool isr_rx_ci_check(struct lll_adv *lll, struct pdu_adv *adv,
-				   struct pdu_adv *ci, uint8_t devmatch_ok,
-				   uint8_t *rl_idx)
-{
-	/* LL 4.3.2: filter policy shall be ignored for directed adv */
-	if (adv->type == PDU_ADV_TYPE_DIRECT_IND) {
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-		return ull_filter_lll_rl_addr_allowed(ci->tx_addr,
-						      ci->connect_ind.init_addr,
-						      rl_idx) &&
-#else
-		return (1) &&
-#endif
-		       isr_rx_ci_adva_check(adv, ci) &&
-		       isr_rx_ci_tgta_check(lll, adv, ci, *rl_idx);
-	}
-
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-	return ((((lll->filter_policy & 0x02) == 0) &&
-		 ull_filter_lll_rl_addr_allowed(ci->tx_addr,
-						ci->connect_ind.init_addr,
-						rl_idx)) ||
-		(((lll->filter_policy & 0x02) != 0) &&
-		 (devmatch_ok || ull_filter_lll_irk_whitelisted(*rl_idx)))) &&
-	       isr_rx_ci_adva_check(adv, ci);
-#else
-	return (((lll->filter_policy & 0x02) == 0) ||
-		(devmatch_ok)) &&
-	       isr_rx_ci_adva_check(adv, ci);
-#endif /* CONFIG_BT_CTLR_PRIVACY */
 }
 
 static inline bool isr_rx_ci_tgta_check(struct lll_adv *lll,
