@@ -8,6 +8,8 @@
 
 #ifndef _ASMLANGUAGE
 
+#define ACPI_RSDP_SIGNATURE 0x2052545020445352 /* == "RSD PTR " */
+
 /* Root System Description Pointer */
 struct acpi_rsdp {
 	char     signature[8];
