@@ -126,6 +126,48 @@ Stable API changes in this release
 Kernel
 ******
 
+* Initial support for virtual memory management
+
+  * API definitions in ``include/sys/mem_manage.h``.
+  * Supporting architectures will implement ``arch_mem_map()`` and enable
+    ``CONFIG_MMU``.
+  * The kernel is linked at its physical memory location in RAM.
+  * The size of the address space is controlled via ``CONFIG_KERNEL_VM_SIZE``
+    with memory mapping calls allocating virtual memory growing downward
+    from the address space limit towards the system RAM mappings.
+  * This infrastructure is still under heavy development.
+
+* Device memory mapped I/O APIs
+
+  * Namedspaced as DEVICE_MMIO and specified in a new
+    ``include/sys/device_mmio.h`` header.
+  * This is added to facilitate the specification and the storage location of
+    device driver memory-mapped I/O regions based on system configuration.
+
+    * Maintained entirely in ROM for most systems.
+    * Maintained in RAM with hooks to memory-mapping APIs for MMU or PCI-E
+      systems.
+
+* Updates for Memory Domain APIs
+
+  * All threads now are always a member of a memory domain. A new
+    memory domain ``k_mem_domain_default`` introduced for initial threads
+    like the main thread.
+  * The ``k_mem_domain_destroy()`` and ``k_mem_domain_remove_thread()`` APIs
+    are now deprecated and will be removed in a future release.
+  * Header definitions moved to ``include/app_memory/mem_domain.h``.
+
+* Thread stack specification improvements
+
+  * Introduced a parallel set of ``K_KERNEL_STACK_*`` APIs for specifying
+    thread stacks that will never host user threads. This will conserve memory
+    as ancillary data structures (such as privilege mode elevation stacks) will
+    not need to be created, and certain alignment requirements are less strict.
+
+  * Internal interfaces to the architecture code have been simplified. All
+    thread stack macros are now centrally defined, with arches declaring
+    support macros to indicate the alignment of the stack pointer, the
+    stack buffer base address, and the stack buffer size.
 
 Architectures
 *************
@@ -166,6 +208,18 @@ Architectures
 
 * x86:
 
+  * x86 MMU paging support has been overhauled to meet CONFIG_MMU requirements.
+
+    * ``arch_mem_map()`` is implemented.
+    * Restored support for 32-bit non-PAE paging. PAE use is now controlled
+      via the ``CONFIG_X86_PAE`` option
+    * Initial kernel page tables are now created at build time.
+    * Page tables are no longer strictly identity-mapped
+
+  * Added ``zefi`` infrastructure for packaging the 64-bit Zephyr kernel into
+    an EFI application.
+
+  * Added a GDB stub implementation that works over serial for x86 32-bit.
 
 Boards & SoC Support
 ********************
