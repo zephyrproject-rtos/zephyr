@@ -24,6 +24,7 @@
 /* Private includes for raw Network & Transport layer access */
 #include "mesh.h"
 #include "net.h"
+#include "rpl.h"
 #include "transport.h"
 #include "foundation.h"
 #include "settings.h"

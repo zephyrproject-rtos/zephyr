@@ -22,6 +22,7 @@
 #include "mesh.h"
 #include "adv.h"
 #include "net.h"
+#include "rpl.h"
 #include "transport.h"
 #include "prov.h"
 #include "beacon.h"
