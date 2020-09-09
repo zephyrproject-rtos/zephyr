@@ -942,8 +942,9 @@ static struct tcp *tcp_conn_search(struct net_pkt *pkt)
 {
 	bool found = false;
 	struct tcp *conn;
+	struct tcp *tmp;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&tcp_conns, conn, next) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&tcp_conns, conn, tmp, next) {
 
 		found = tcp_conn_cmp(conn, pkt);
 		if (found) {
