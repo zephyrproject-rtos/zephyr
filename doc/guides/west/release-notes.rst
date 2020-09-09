@@ -1,6 +1,35 @@
 West Release Notes
 ##################
 
+v0.7.3
+******
+
+This is a bugfix release.
+
+- Fix an error where a failed import could leave the workspace in an unusable
+  state (see [PR #415](https://github.com/zephyrproject-rtos/west/pull/415) for
+  details)
+
+v0.7.2
+******
+
+This is a bugfix and minor feature release.
+
+- Filter out duplicate extension commands brought in by manifest imports
+- Fix ``west.Manifest.get_projects()`` when finding the manifest repository by
+  path
+
+v0.7.1
+******
+
+This is a bugfix and minor feature release.
+
+- ``west update --stats`` now prints timing for operations which invoke a
+  subprocess, time spent in west's Python process for each project, and total
+  time updating each project.
+- ``west topdir`` always prints a POSIX style path
+- minor console output changes
+
 v0.7.0
 ******
 
