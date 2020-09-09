@@ -1322,11 +1322,6 @@ add_subdirectory(cmake/flash)
 add_subdirectory(cmake/usage)
 add_subdirectory(cmake/reports)
 
-add_subdirectory_ifdef(
-  CONFIG_MAKEFILE_EXPORTS
-  cmake/makefile_exports
-  )
-
 if(NOT CONFIG_TEST)
 if(CONFIG_ASSERT AND (NOT CONFIG_FORCE_NO_ASSERT))
   message(WARNING "__ASSERT() statements are globally ENABLED")
@@ -1370,3 +1365,9 @@ endif()
 # Note, the compile flags are moved, but the system include is still present here.
 zephyr_compile_options($<TARGET_PROPERTY:compiler,nostdinc>)
 target_include_directories(zephyr_interface SYSTEM INTERFACE $<TARGET_PROPERTY:compiler,nostdinc_include>)
+
+# Finally export all build flags from Zephyr
+add_subdirectory_ifdef(
+  CONFIG_MAKEFILE_EXPORTS
+  cmake/makefile_exports
+  )
