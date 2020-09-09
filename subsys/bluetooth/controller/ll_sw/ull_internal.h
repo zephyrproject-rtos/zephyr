@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+static inline uint8_t ull_ref_get(struct ull_hdr *hdr)
+{
+	return hdr->ref;
+}
+
 static inline uint8_t ull_ref_inc(struct ull_hdr *hdr)
 {
 	return ++hdr->ref;

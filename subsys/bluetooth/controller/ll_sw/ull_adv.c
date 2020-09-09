@@ -1675,7 +1675,7 @@ static void ticker_op_stop_cb(uint32_t status, void *param)
 	adv = param;
 	hdr = &adv->ull;
 	mfy.param = &adv->lll;
-	if (hdr->ref) {
+	if (ull_ref_get(hdr)) {
 		LL_ASSERT(!hdr->disabled_cb);
 		hdr->disabled_param = mfy.param;
 		hdr->disabled_cb = disabled_cb;
