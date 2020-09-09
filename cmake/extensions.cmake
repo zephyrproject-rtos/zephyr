@@ -1012,9 +1012,12 @@ endfunction(zephyr_linker_sources)
 # Helper function for CONFIG_CODE_DATA_RELOCATION
 # Call this function with 2 arguments file and then memory location
 function(zephyr_code_relocate file location)
+  if(NOT IS_ABSOLUTE ${file})
+    set(file ${CMAKE_CURRENT_SOURCE_DIR}/${file})
+  endif()
   set_property(TARGET code_data_relocation_target
     APPEND PROPERTY COMPILE_DEFINITIONS
-    "${location}:${CMAKE_CURRENT_SOURCE_DIR}/${file}")
+    "${location}:${file}")
 endfunction()
 
 # Usage:
