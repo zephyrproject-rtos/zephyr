@@ -175,6 +175,8 @@ Boards & SoC Support
 
 * Added support for these ARM boards:
 
+  * nRF21540 Devkit (nrf21540dk_nrf52840).
+
 
 * Made these changes in other boards
 
@@ -229,6 +231,7 @@ Drivers and Sensors
 * EEPROM
 
   * Added driver supporting the on-chip EEPROM found on NXP LPC11U6X MCUs.
+  * Fixed at2x cs gpio flags extraction from DT.
 
 * Entropy
 
@@ -281,6 +284,8 @@ Drivers and Sensors
   * Allow user to disable auto-start of IEEE 802.15.4 network interface.
     By default the IEEE 802.15.4 network interface is automatically started.
   * Added support for setting TX power in rf2xx driver.
+  * Added Nordic 802.15.4 multiprotocol support, see :option:`CONFIG_NRF_802154_MULTIPROTOCOL_SUPPORT`.
+  * Added Kconfig :option:`CONFIG_IEEE802154_VENDOR_OUI_ENABLE` option for defining OUI.
 
 * Interrupt Controller
 
@@ -318,6 +323,8 @@ Drivers and Sensors
 
 
 * Sensor
+
+  * Added support for wsen-itds Accel Sensor.
 
 
 * Serial
@@ -419,6 +426,9 @@ Networking
 * Fixed PPP option parsing and negotiation handling.
 * Fixed PPP ipcp option handling when the protocol goes down.
 * Fixed PPP ipv6cp and ipcp network address removal when connection goes down.
+* Added support to rejecting received and unsupported PPP options.
+* Added initial support for PAP authentication in PPP.
+* Fixed a race PPP when ppp_fsm_open() was called in CLOSED state.
 * Fixed LWM2M FOTA socket closing.
 * Fixed LWM2M block transfer retransmissions.
 * Fixed LWM2M opaque data transfer in block mode.
@@ -464,6 +474,29 @@ Libraries / Subsystems
 * Disk
 
 
+* Management
+
+  * MCUmgr:
+
+    * Moved mcumgr into its own directory.
+    * UDP port switched to using kernel stack.
+    * smp: added missing socket close in error path.
+
+  * Added support for Open Supervised Device Protocol (OSDP), see :option:`CONFIG_OSDP`.
+
+  * updatehub:
+
+    * Moved updatehub from lib to subsys/mgmt directory.
+    * Fixed out-of-bounds access and add flash_img_init return value check.
+    * Fixed getaddrinfo resource leak.
+
+
+* Settings:
+
+  * If a setting read is attempted from a channel that doesn't support reading return an error rather than faulting.
+  * disallow modifying the content of a static subtree name.
+
+
 * Random
 
 
@@ -472,6 +505,13 @@ Libraries / Subsystems
 
 * Power management:
 
+* Logging:
+
+  * Fixed immediate logging with multiple backends.
+  * Switched logging thread to use kernel stack.
+  * Allow users to disable all shell backends at one using :option:`CONFIG_SHELL_LOG_BACKEND`.
+  * Added Spinel protocol logging backend.
+  * Fixed timestamp calculation when using NEWLIB
 
 * LVGL
 
@@ -505,6 +545,14 @@ Libraries / Subsystems
     library footprint when some options are not enabled, so you should wait for
     future releases if higher ROM usage is a concern for your application.
 
+
+* Shell:
+
+  * Switched to use kernel stacks.
+  * Fixed select command.
+  * Fixed prompting dynamic commands.
+
+
 * Tracing:
   * Tracing backed API now checks if init function exists prio to calling it.
 
@@ -526,7 +574,13 @@ Documentation
 
 Tests and Samples
 *****************
-
+  * nvs: Do full chip erase when flashing.
+  * nrf: onoff_level_lighting_vnd_app: Fixed build with mcumgr.
+  * drivers: flash_shell: new commands write_unaligned and write_pattern.
+  * bluetooth: hci_spi: Fixed cmd_hdr and acl_hdr usage.
+  * Removed zephyr nfc sample.
+  * drivers: Fixed uninitialized spi_cfg in spi_fujitsu_fram sample.
+  * Updated configuration for extended advertising in Bluetooth hci_uart and hci_rpmsg examples.
 
 Issue Related Items
 *******************
