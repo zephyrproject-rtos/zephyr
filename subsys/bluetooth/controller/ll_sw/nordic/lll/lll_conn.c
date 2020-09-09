@@ -75,6 +75,11 @@ int lll_conn_reset(void)
 	return 0;
 }
 
+void lll_conn_flush(uint16_t handle, struct lll_conn *lll)
+{
+	/* Nothing to be flushed */
+}
+
 uint8_t lll_conn_sca_local_get(void)
 {
 	return CLOCK_CONTROL_NRF_K32SRC_ACCURACY;
@@ -783,9 +788,4 @@ static struct pdu_data *empty_tx_enqueue(struct lll_conn *lll)
 	}
 
 	return p;
-}
-
-void lll_conn_flush(uint16_t handle, struct lll_conn *lll)
-{
-	/* Nothing to be flushed */
 }
