@@ -34,6 +34,7 @@ static bool check_sum(struct acpi_sdt *t)
 	for (int i = 0; i < t->length; i++) {
 		sum += p[i];
 	}
+
 	return sum == 0;
 }
 
@@ -74,6 +75,7 @@ static struct acpi_rsdp *find_rsdp(void)
 	 * real mode memory.
 	 */
 	search = (uint64_t *)0xe0000;
+
 	for (int i = 0; i < 128*1024/8; i++) {
 		if (search[i] == magic) {
 			return (void *)&search[i];
@@ -126,6 +128,7 @@ void *z_acpi_find_table(uint32_t signature)
 			}
 		}
 	}
+
 	return NULL;
 }
 
@@ -145,14 +148,13 @@ struct acpi_cpu *z_acpi_get_cpu(int n)
 		while (offset < madt->sdt.length) {
 			struct acpi_madt_entry *entry;
 
-			entry = (struct acpi_madt_entry *) (offset + base);
-
+			entry = (struct acpi_madt_entry *)(offset + base);
 			if (entry->type == ACPI_MADT_ENTRY_CPU) {
-				if (n) {
-					--n;
-				} else {
+				if (n == 0) {
 					return (struct acpi_cpu *) entry;
 				}
+
+				--n;
 			}
 
 			offset += entry->length;
