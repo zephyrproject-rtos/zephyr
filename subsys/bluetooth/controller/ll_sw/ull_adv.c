@@ -482,7 +482,10 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		if (pri_hdr->aux_ptr) {
 			uint8_t err;
 
-			err = ull_adv_aux_hdr_set_clear(adv, 0, 0, NULL, NULL);
+			err = ull_adv_aux_hdr_set_clear(adv,
+							ULL_ADV_PDU_HDR_FIELD_ADVA,
+							0, &own_addr_type,
+							NULL);
 			if (err) {
 				/* TODO: cleanup? */
 				return err;
