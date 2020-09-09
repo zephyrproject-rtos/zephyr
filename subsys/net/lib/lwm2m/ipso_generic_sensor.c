@@ -39,6 +39,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define SENSOR_NAME CONFIG_LWM2M_IPSO_GENERIC_SENSOR_NAME
 
 #define UNIT_STR_MAX_SIZE 8
+#define APP_TYPE_STR_MAX_SIZE 32
+#define SENSOR_TYPE_STR_MAX_SIZE 32
+
+BUILD_ASSERT(SENSOR_TYPE_STR_MAX_SIZE >=
+	     sizeof(CONFIG_LWM2M_IPSO_GENERIC_SENSOR_TYPE),
+	     "CONFIG_LWM2M_IPSO_GENERIC_SENSOR_TYPE is too long.");
 
 /*
  * Calculate resource instances as follows:
@@ -54,8 +60,8 @@ static float32_value_t min_measured_value[MAX_INSTANCE_COUNT];
 static float32_value_t max_measured_value[MAX_INSTANCE_COUNT];
 static float32_value_t min_range_value[MAX_INSTANCE_COUNT];
 static float32_value_t max_range_value[MAX_INSTANCE_COUNT];
-static char app_type[MAX_INSTANCE_COUNT][UNIT_STR_MAX_SIZE];
-static char sensor_type[MAX_INSTANCE_COUNT][UNIT_STR_MAX_SIZE];
+static char app_type[MAX_INSTANCE_COUNT][APP_TYPE_STR_MAX_SIZE];
+static char sensor_type[MAX_INSTANCE_COUNT][SENSOR_TYPE_STR_MAX_SIZE];
 
 static struct lwm2m_engine_obj sensor;
 static struct lwm2m_engine_obj_field fields[] = {
@@ -191,7 +197,7 @@ static struct lwm2m_engine_obj_inst *generic_sensor_create(uint16_t obj_inst_id)
 	max_range_value[index].val2 = 0;
 	app_type[index][0] = '\0';
 	strncpy(sensor_type[index], CONFIG_LWM2M_IPSO_GENERIC_SENSOR_TYPE,
-		UNIT_STR_MAX_SIZE);
+		SENSOR_TYPE_STR_MAX_SIZE);
 
 	(void)memset(res[index], 0,
 		     sizeof(res[index][0]) * ARRAY_SIZE(res[index]));
@@ -216,9 +222,9 @@ static struct lwm2m_engine_obj_inst *generic_sensor_create(uint16_t obj_inst_id)
 	INIT_OBJ_RES_EXECUTE(RESET_MIN_MAX_MEASURED_VALUES_RID, res[index], i,
 			     reset_min_max_measured_values_cb);
 	INIT_OBJ_RES_DATA(APPLICATION_TYPE_RID, res[index], i, res_inst[index],
-			  j, app_type[index], UNIT_STR_MAX_SIZE);
+			  j, app_type[index], APP_TYPE_STR_MAX_SIZE);
 	INIT_OBJ_RES_DATA(SENSOR_TYPE_RID, res[index], i, res_inst[index], j,
-			  sensor_type[index], UNIT_STR_MAX_SIZE);
+			  sensor_type[index], SENSOR_TYPE_STR_MAX_SIZE);
 
 #if ADD_TIMESTAMPS
 	INIT_OBJ_RES_OPTDATA(TIMESTAMP_RID, res[index], i, res_inst[index], j);
