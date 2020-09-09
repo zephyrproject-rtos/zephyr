@@ -5,6 +5,9 @@
 #include <kernel.h>
 #include <arch/x86/acpi.h>
 
+static struct acpi_rsdp *rsdp;
+bool is_rdsp_searched = false;
+
 static bool check_sum(struct acpi_sdt *t)
 {
 	uint8_t sum = 0, *p = (uint8_t *)t;
@@ -16,13 +19,18 @@ static bool check_sum(struct acpi_sdt *t)
 	return sum == 0;
 }
 
+
 /* We never identity map the NULL page, but may need to read some BIOS data */
 static uint8_t *zero_page_base;
 
-static struct acpi_rsdp *find_rsdp(void)
+static void find_rsdp(void)
 {
-	uint64_t magic = 0x2052545020445352; /* == "RSD PTR " */
 	uint8_t *bda_seg;
+
+	if (is_rdsp_searched) {
+		/* Looking up for RSDP has already been done */
+		return;
+	}
 
 	if (zero_page_base == NULL) {
 		z_mem_map(&zero_page_base, 0, 4096, K_MEM_PERM_RW);
@@ -43,8 +51,9 @@ static struct acpi_rsdp *find_rsdp(void)
 	/* Might be nothing there, check before we inspect */
 	if (search != NULL) {
 		for (int i = 0; i < 1024/8; i++) {
-			if (search[i] == magic) {
-				return (void *)&search[i];
+			if (search[i] == ACPI_RSDP_SIGNATURE) {
+				rsdp = (void *)&search[i];
+				goto out;
 			}
 		}
 	}
@@ -55,8 +64,9 @@ static struct acpi_rsdp *find_rsdp(void)
 	search = (uint64_t *)0xe0000;
 
 	for (int i = 0; i < 128*1024/8; i++) {
-		if (search[i] == magic) {
-			return (void *)&search[i];
+		if (search[i] == ACPI_RSDP_SIGNATURE) {
+			rsdp = (void *)&search[i];
+			goto out;
 		}
 	}
 
@@ -64,12 +74,14 @@ static struct acpi_rsdp *find_rsdp(void)
 	 * is passed as a function argument to the bootloader and long
 	 * forgotten by now...
 	 */
-	return NULL;
+	rsdp = NULL;
+out:
+	is_rdsp_searched = true;
 }
 
 void *z_acpi_find_table(uint32_t signature)
 {
-	struct acpi_rsdp *rsdp = find_rsdp();
+	find_rsdp();
 
 	if (!rsdp) {
 		return NULL;
