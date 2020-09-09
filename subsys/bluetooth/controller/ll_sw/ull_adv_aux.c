@@ -395,6 +395,10 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 
 	lll = &adv->lll;
 
+	/* Can't have both flags set here since both use 'value' extra param */
+	LL_ASSERT(!(sec_hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_ADVA) ||
+		  !(sec_hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_AD_DATA));
+
 	/* Get reference to previous primary PDU data */
 	pri_pdu_prev = lll_adv_data_peek(lll);
 	if (pri_pdu_prev->type != PDU_ADV_TYPE_EXT_IND) {
@@ -485,32 +489,35 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	*(uint8_t *)sec_hdr = 0U;
 
 	/* AdvA flag */
-	/* NOTE: as we will use auxiliary packet, we remove AdvA in
-	 * primary channel. i.e. Do nothing to not add AdvA in the primary
-	 * PDU. Connectable or scannable advertising always has AdvA in aux.
+	/* NOTE: as we will use auxiliary packet, we remove AdvA in primary
+	 * channel, i.e. do nothing to not add AdvA in the primary PDU.
+	 * AdvA can be either set explicitly (i.e. needs own_addr_type to be
+	 * set), can be copied from primary PDU (i.e. adding AD to existing set)
+	 * or can be copied from previous secondary PDU.
 	 */
-	if (pri_hdr_prev.adv_addr) {
-		pri_dptr_prev += BDADDR_SIZE;
+	sec_hdr->adv_addr = 1;
+	if (sec_hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_ADVA) {
+		uint8_t own_addr_type = *(uint8_t *)value;
 
-		/* Prepare to add AdvA in secondary PDU */
-		sec_hdr->adv_addr = 1;
-
-		/* NOTE: AdvA is filled at enable */
+		sec_pdu->tx_addr = own_addr_type & 0x1;
+	} else if (pri_hdr_prev.adv_addr) {
 		sec_pdu->tx_addr = pri_pdu->tx_addr;
-	} else if (pri_com_hdr->adv_mode) {
-		sec_hdr->adv_addr = 1;
-		sec_pdu->tx_addr = adv->own_addr_type & 0x1;
+	} else if (sec_hdr_prev.adv_addr) {
+		sec_pdu->tx_addr = sec_pdu_prev->tx_addr;
+	} else {
+		/* We do not have valid address info, this should not happen */
+		return BT_HCI_ERR_UNSPECIFIED;
 	}
 	pri_pdu->tx_addr = 0U;
 	pri_pdu->rx_addr = 0U;
 
+	if (pri_hdr_prev.adv_addr) {
+		pri_dptr_prev += BDADDR_SIZE;
+	}
 	if (sec_hdr_prev.adv_addr) {
 		sec_dptr_prev += BDADDR_SIZE;
-		sec_hdr->adv_addr = 1;
 	}
-	if (sec_hdr->adv_addr) {
-		sec_dptr += BDADDR_SIZE;
-	}
+	sec_dptr += BDADDR_SIZE;
 
 	/* No TargetA in primary and secondary channel for undirected */
 	/* No CTEInfo flag in primary and secondary channel PDU */

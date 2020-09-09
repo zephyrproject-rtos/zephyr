@@ -48,6 +48,7 @@ uint8_t ull_scan_rsp_set(struct ll_adv_set *adv, uint8_t len,
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 
+#define ULL_ADV_PDU_HDR_FIELD_ADVA      BIT(0)
 #define ULL_ADV_PDU_HDR_FIELD_SYNC_INFO BIT(5)
 #define ULL_ADV_PDU_HDR_FIELD_AD_DATA   BIT(8)
 
