@@ -5623,35 +5623,28 @@ static int le_init(void)
 	    IS_ENABLED(CONFIG_BT_DATA_LEN_UPDATE) &&
 	    IS_ENABLED(CONFIG_BT_AUTO_DATA_LEN_UPDATE) &&
 	    BT_FEAT_LE_DLE(bt_dev.le.features)) {
-		if (!IS_BT_QUIRK_NO_AUTO_DLE(&bt_dev)) {
-			struct bt_hci_cp_le_write_default_data_len *cp;
-			uint16_t tx_octets, tx_time;
+		struct bt_hci_cp_le_write_default_data_len *cp;
+		uint16_t tx_octets, tx_time;
 
-			err = hci_le_read_max_data_len(&tx_octets, &tx_time);
-			if (err) {
-				return err;
-			}
+		err = hci_le_read_max_data_len(&tx_octets, &tx_time);
+		if (err) {
+			return err;
+		}
 
-			buf = bt_hci_cmd_create(BT_HCI_OP_LE_WRITE_DEFAULT_DATA_LEN,
-						sizeof(*cp));
-			if (!buf) {
-				return -ENOBUFS;
-			}
+		buf = bt_hci_cmd_create(BT_HCI_OP_LE_WRITE_DEFAULT_DATA_LEN,
+					sizeof(*cp));
+		if (!buf) {
+			return -ENOBUFS;
+		}
 
-			cp = net_buf_add(buf, sizeof(*cp));
-			cp->max_tx_octets = sys_cpu_to_le16(tx_octets);
-			cp->max_tx_time = sys_cpu_to_le16(tx_time);
+		cp = net_buf_add(buf, sizeof(*cp));
+		cp->max_tx_octets = sys_cpu_to_le16(tx_octets);
+		cp->max_tx_time = sys_cpu_to_le16(tx_time);
 
-			err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_WRITE_DEFAULT_DATA_LEN,
-						   buf, NULL);
-			if (err) {
-				return err;
-			}
-		} else {
-			/* No need to set default data length.
-			 * The host needs to explicitly initiate
-			 * a Data Length procedure.
-			 */
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_WRITE_DEFAULT_DATA_LEN,
+					   buf, NULL);
+		if (err) {
+			return err;
 		}
 	}
 
