@@ -35,7 +35,7 @@ static void pcie_mm_init(void)
 	struct acpi_mcfg *m = z_acpi_find_table(ACPI_MCFG_SIGNATURE);
 
 	if (m != NULL) {
-		int n = (m->sdt.len - sizeof(*m)) / sizeof(m->pci_segs[0]);
+		int n = (m->sdt.length - sizeof(*m)) / sizeof(m->pci_segs[0]);
 
 		for (int i = 0; i < n && i < MAX_PCI_BUS_SEGMENTS; i++) {
 			size_t size;

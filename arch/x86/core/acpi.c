@@ -31,7 +31,7 @@ static bool check_sum(struct acpi_sdt *t)
 {
 	uint8_t sum = 0, *p = (uint8_t *)t;
 
-	for (int i = 0; i < t->len; i++) {
+	for (int i = 0; i < t->length; i++) {
 		sum += p[i];
 	}
 	return sum == 0;
@@ -98,12 +98,12 @@ void *z_acpi_find_table(uint32_t signature)
 	struct acpi_rsdt *rsdt = (void *)(long)rsdp->rsdt_ptr;
 
 	if (rsdt && check_sum(&rsdt->sdt)) {
-		uint32_t *end = (uint32_t *)((char *)rsdt + rsdt->sdt.len);
+		uint32_t *end = (uint32_t *)((char *)rsdt + rsdt->sdt.length);
 
 		for (uint32_t *tp = &rsdt->table_ptrs[0]; tp < end; tp++) {
 			struct acpi_sdt *t = (void *)(long)*tp;
 
-			if (t->sig == signature && check_sum(t)) {
+			if (t->signature == signature && check_sum(t)) {
 				return t;
 			}
 		}
@@ -116,12 +116,12 @@ void *z_acpi_find_table(uint32_t signature)
 	struct acpi_xsdt *xsdt = (void *)(long)rsdp->xsdt_ptr;
 
 	if (xsdt && check_sum(&xsdt->sdt)) {
-		uint64_t *end = (uint64_t *)((char *)xsdt + xsdt->sdt.len);
+		uint64_t *end = (uint64_t *)((char *)xsdt + xsdt->sdt.length);
 
 		for (uint64_t *tp = &xsdt->table_ptrs[0]; tp < end; tp++) {
 			struct acpi_sdt *t = (void *)(long)*tp;
 
-			if (t->sig == signature && check_sum(t)) {
+			if (t->signature == signature && check_sum(t)) {
 				return t;
 			}
 		}
@@ -142,7 +142,7 @@ struct acpi_cpu *z_acpi_get_cpu(int n)
 	if (madt) {
 		offset = POINTER_TO_UINT(madt->entries) - base;
 
-		while (offset < madt->sdt.len) {
+		while (offset < madt->sdt.length) {
 			struct acpi_madt_entry *entry;
 
 			entry = (struct acpi_madt_entry *) (offset + base);
