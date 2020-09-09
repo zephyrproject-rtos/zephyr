@@ -201,7 +201,10 @@ static void on_write(int retry_cnt)
 static int data_out_block_mode(uint8_t *data, size_t length, void *ctx)
 {
 	int ret = 0;
-	int retry_cnt = CONFIG_LOG_BACKEND_RTT_RETRY_CNT;
+	/* This function is also called in drop mode for synchronous operation
+	 * in that case retry is undesired */
+	int retry_cnt = IS_ENABLED(CONFIG_LOG_BACKEND_RTT_MODE_BLOCK) ?
+			 CONFIG_LOG_BACKEND_RTT_RETRY_CNT : 1;
 
 	do {
 		if (!is_sync_mode()) {
