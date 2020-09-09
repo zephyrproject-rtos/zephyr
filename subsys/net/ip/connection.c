@@ -149,8 +149,9 @@ static struct net_conn *conn_find_handler(uint16_t proto, uint8_t family,
 					  uint16_t local_port)
 {
 	struct net_conn *conn;
+	struct net_conn *tmp;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_used, conn, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn_used, conn, tmp, node) {
 		if (conn->proto != proto) {
 			continue;
 		}
