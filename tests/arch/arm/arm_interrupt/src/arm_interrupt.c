@@ -153,6 +153,8 @@ void set_regs_with_known_pattern(void)
 
 void test_arm_esf_collection(void)
 {
+	int test_validation_rv;
+
 	/* if the check in the fault handler succeeds,
 	 * this will be set to TC_PASS
 	 */
@@ -178,7 +180,10 @@ void test_arm_esf_collection(void)
 			(k_thread_entry_t)set_regs_with_known_pattern,
 			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
 			K_NO_WAIT);
-	zassert_not_equal(esf_validation_rv, TC_FAIL,
+
+	test_validation_rv = esf_validation_rv;
+
+	zassert_not_equal(test_validation_rv, TC_FAIL,
 		"ESF fault collection failed");
 }
 
