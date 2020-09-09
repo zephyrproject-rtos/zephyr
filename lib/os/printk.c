@@ -247,6 +247,8 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 						break;
 					}
 					d = (printk_val_t) lld;
+				} else if (*fmt == 'u') {
+					d = va_arg(ap, unsigned int);
 				} else {
 					d = va_arg(ap, int);
 				}
