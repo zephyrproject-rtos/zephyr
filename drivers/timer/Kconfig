@@ -145,6 +145,13 @@ config ALTERA_AVALON_TIMER
 	  with Nios II and possibly other Altera soft CPUs. It provides the
 	  standard "system clock driver" interfaces.
 
+config ITE_IT8XXX2_TIMER
+	bool "ITE it8xxx2 timer driver"
+	depends on SOC_IT8XXX2
+	help
+	  This module implements a kernel device driver for the ITE it8xxx2
+	  HW timer model
+
 config NRF_RTC_TIMER
 	bool "nRF Real Time Counter (NRF_RTC1) Timer"
 	depends on CLOCK_CONTROL
