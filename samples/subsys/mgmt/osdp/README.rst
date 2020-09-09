@@ -1,13 +1,18 @@
 .. _osdp-sample:
 
-OSDP
-####
+Open Supervised Device Protocol (OSDP)
+######################################
 
-OSDP describes the communication interface one or more Peripheral Devices (PD)
-to a Control Panel (CP). The specification describes the protocol
-implementation over a two-wire RS-485 multi-drop serial communication channel.
-Nevertheless, this protocol can be used to transfer secure byte stream over any
-physical channel in low memory embedded devices.
+Open Supervised Device Protocol (OSDP) is an IEC standard (IEC 60839-11-5)
+intended to improve interoperability among access control and security products.
+It supports Secure Channel (SC) for encrypted and authenticated communication
+between configured devices.
+
+OSDP describes the communication protocol for interfacing one or more Peripheral
+Devices (PD) to a Control Panel (CP) over a two-wire RS-485 multi-drop serial
+communication channel. Nevertheless, this protocol can be used to transfer
+secure data over any stream based physical channel. Read more about `OSDP here
+<https://libosdp.gotomain.io/>`_..
 
 Although OSDP is steered towards the Access and Security industries, it can be
 used as a general communication protocol for devices in a secure way without

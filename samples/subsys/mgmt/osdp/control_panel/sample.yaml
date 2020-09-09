@@ -1,8 +1,8 @@
 sample:
-  description: OSDP Sample
+  description: OSDP Control Panel Sample
   name: osdp
 tests:
-  sample.mgmt.osdp:
+  sample.mgmt.osdp.control_panel:
     tags: osdp
     filter: dt_compat_enabled_with_alias("gpio-leds", "led0") and CONFIG_SERIAL
     harness: osdp
