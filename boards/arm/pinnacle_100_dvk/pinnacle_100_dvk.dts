@@ -1,0 +1,243 @@
+/*
+ * Copyright (c) 2019 Laird Connectivity
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+
+/ {
+	model = "Pinnacle 100 Dev Kit";
+	compatible = "lairdconnect,pinnacle-100-dvk";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led1: led_1 {
+			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+			label = "Blue LED 1";
+		};
+		led2: led_2 {
+			gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+			label = "Green LED 2";
+		};
+		led3: led_3 {
+			gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+			label = "Red LED 3";
+		};
+		led4: led_4 {
+			gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
+			label = "Green LED 4";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button1: button_1 {
+			gpios = <&gpio0 31 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 1";
+		};
+		button2: button_2 {
+			gpios = <&gpio0 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 2";
+		};
+		button3: button_3 {
+			gpios = <&gpio0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 3";
+		};
+		button4: button_4 {
+			gpios = <&gpio0 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 4";
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led1;
+		led1 = &led2;
+		led2 = &led3;
+		led3 = &led4;
+		sw0 = &button1;
+		sw1 = &button2;
+		sw2 = &button3;
+		sw3 = &button4;
+	};
+};
+
+&adc {
+	status ="okay";
+};
+
+&gpiote {
+	status ="okay";
+};
+
+&gpio0 {
+	status ="okay";
+};
+
+&gpio1 {
+	status ="okay";
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uart";
+	status = "okay";
+	current-speed = <115200>;
+	tx-pin = <6>;
+	rx-pin = <8>;
+	rts-pin = <5>;
+	cts-pin = <7>;
+};
+
+&uart1 {
+	compatible = "nordic,nrf-uarte";
+	status = "okay";
+	current-speed = <115200>;
+	tx-pin = <14>;
+	rx-pin = <16>;
+	rts-pin = <13>;
+	cts-pin = <15>;
+	hl7800 {
+		compatible = "swir,hl7800";
+		status = "okay";
+		label = "hl7800";
+		mdm-reset-gpios = <&gpio1 15 0>;
+		mdm-wake-gpios = <&gpio1 13 0>;
+		mdm-pwr-on-gpios = <&gpio1 2 0>;
+		mdm-fast-shutd-gpios = <&gpio1 14 0>;
+		mdm-uart-dtr-gpios = <&gpio0 24 0>;
+		mdm-vgpio-gpios = <&gpio1 11 0>;
+		mdm-uart-dsr-gpios = <&gpio0 25 0>;
+		mdm-uart-cts-gpios = <&gpio0 15 0>;
+		mdm-gpio6-gpios = <&gpio1 12 0>;
+	};
+};
+
+&i2c0 {
+	compatible = "nordic,nrf-twi";
+	status = "okay";
+	sda-pin = <26>;
+	scl-pin = <27>;
+
+	bme680@76 {
+		compatible = "bosch,bme680";
+		status = "okay";
+		label = "BME680";
+		reg = <0x76>;
+	};
+};
+
+&spi0 {
+	compatible = "nordic,nrf-spi";
+	/* Cannot be used together with i2c0. */
+	/* status = "okay"; */
+	sck-pin = <27>;
+	mosi-pin = <26>;
+	miso-pin = <29>;
+};
+
+&spi1 {
+	compatible = "nordic,nrf-spi";
+	status = "okay";
+	sck-pin = <11>;
+	mosi-pin = <32>;
+	miso-pin = <12>;
+};
+
+&qspi {
+	status = "okay";
+	sck-pin = <19>;
+	io-pins = <20>, <21>, <22>, <23>;
+	csn-pins = <17>;
+	mx25r64: mx25r6435f@0 {
+		compatible = "nordic,qspi-nor";
+		reg = <0>;
+		writeoc = "pp4io";
+		readoc = "read4io";
+		sck-frequency = <8000000>;
+		label = "MX25R64";
+		jedec-id = [c2 28 17];
+		size = <67108864>;
+		has-be32k;
+		has-dpd;
+		t-enter-dpd = <10000>;
+		t-exit-dpd = <35000>;
+	};
+};
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* 96K */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x000000000 0x00018000>;
+		};
+		/* 896K */
+		slot0_partition: partition@18000 {
+			label = "image-0";
+			reg = <0x00018000 0x000E0000>;
+		};
+
+		/*
+		 * The flash starting at 0x000f8000 and ending at
+		 * 0x000fffff is reserved for use by the application.
+		 */
+
+		/*
+		 * Storage partition will be used by FCB/NVS
+		 * if enabled. 32K
+		 */
+		storage_partition: partition@f8000 {
+			label = "storage";
+			reg = <0x000f8000 0x00008000>;
+		};
+	};
+};
+
+&mx25r64 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* 896K */
+		slot1_partition: partition@0 {
+			label = "image-1";
+			reg = <0x0000000 0x000E0000>;
+		};
+		/* 128K */
+		scratch_partition: partition@E0000 {
+			label = "image-scratch";
+			reg = <0x000E0000 0x00020000>;
+		};
+		/* 7MB */
+		lfs_partition: partition@100000 {
+			label = "lfs_storage";
+			reg = <0x00100000 0x000700000>;
+		};
+	};
+};
+
+&usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};

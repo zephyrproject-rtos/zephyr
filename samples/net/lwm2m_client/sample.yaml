@@ -5,13 +5,13 @@ tests:
   sample.net.lwm2m_client:
     harness: net
     depends_on: netif
-    platform_allow: qemu_x86 frdm_k64f
+    platform_allow: qemu_x86 frdm_k64f pinnacle_100_dvk
     tags: net lwm2m
   sample.net.lwm2m_client.dtls:
     harness: net
     depends_on: netif
     extra_args: OVERLAY_CONFIG=overlay-dtls.conf
-    platform_allow: qemu_x86 frdm_k64f
+    platform_allow: qemu_x86 frdm_k64f pinnacle_100_dvk
     tags: net lwm2m
   sample.net.lwm2m_client.bt:
     harness: net
