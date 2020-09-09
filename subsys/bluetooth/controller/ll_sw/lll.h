@@ -111,7 +111,9 @@ struct evt_hdr {
 };
 
 struct ull_hdr {
-	uint8_t ref; /* Number of ongoing (between Prepare and Done) events */
+	uint8_t volatile ref;  /* Number of ongoing (between Prepare and Done)
+				* events
+				*/
 	void (*disabled_cb)(void *param);
 	void *disabled_param;
 };
