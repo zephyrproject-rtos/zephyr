@@ -8,6 +8,19 @@
 
 #ifndef _ASMLANGUAGE
 
+/* Root System Description Pointer */
+struct acpi_rsdp {
+	char     signature[8];
+	uint8_t  chksum;
+	char     oem_id[6];
+	uint8_t  revision;
+	uint32_t rsdt_ptr;
+	uint32_t length;
+	uint64_t xsdt_ptr;
+	uint8_t  ext_chksum;
+	uint8_t  _reserved[3];
+} __packed;
+
 /* Standard table header */
 struct acpi_sdt {
 	uint32_t signature;
@@ -19,6 +32,18 @@ struct acpi_sdt {
 	uint32_t oem_revision;
 	uint32_t creator_id;
 	uint32_t creator_revision;
+} __packed;
+
+/* Root System Description Table */
+struct acpi_rsdt {
+	struct acpi_sdt sdt;
+	uint32_t table_ptrs[];
+} __packed;
+
+/* eXtended System Descriptor Table */
+struct acpi_xsdt {
+	struct acpi_sdt sdt;
+	uint64_t table_ptrs[];
 } __packed;
 
 /* MCFG table storing MMIO addresses for PCI configuration space */
