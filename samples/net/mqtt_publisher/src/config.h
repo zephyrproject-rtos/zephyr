@@ -45,8 +45,6 @@
 #endif
 
 #define APP_SLEEP_MSECS		500
-#define APP_TX_RX_TIMEOUT       300
-#define APP_NET_INIT_TIMEOUT    10000
 
 #define APP_CONNECT_TRIES	10
 

@@ -51,12 +51,6 @@ Application sleep time:
 
 	#define APP_SLEEP_MSECS		500
 
-Application RX and TX timeout:
-
-.. code-block:: c
-
-	#define APP_TX_RX_TIMEOUT       300
-
 Max number of connection tries:
 
 .. code-block:: c
