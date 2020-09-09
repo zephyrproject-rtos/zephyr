@@ -40,7 +40,7 @@ static void isr_done(void *param);
 static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 			     uint8_t *is_rx_enqueue,
 			     struct node_tx **tx_release, uint8_t *is_done);
-static struct pdu_data *empty_tx_enqueue(struct lll_conn *lll);
+static void empty_tx_init(void);
 
 static uint16_t const sca_ppm_lut[] = {500, 250, 150, 100, 75, 50, 30, 20};
 static uint8_t crc_expire;
@@ -59,6 +59,8 @@ int lll_conn_init(void)
 	if (err) {
 		return err;
 	}
+
+	empty_tx_init();
 
 	return 0;
 }
@@ -508,14 +510,16 @@ void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx)
 	struct pdu_data *p;
 	memq_link_t *link;
 
-	if (lll->empty) {
-		*pdu_data_tx = empty_tx_enqueue(lll);
-		return;
-	}
-
 	link = memq_peek(lll->memq_tx.head, lll->memq_tx.tail, (void **)&tx);
-	if (!link) {
-		p = empty_tx_enqueue(lll);
+	if (lll->empty || !link) {
+		lll->empty = 1U;
+
+		p = (void *)radio_pkt_empty_get();
+		if (link) {
+			p->md = 1U;
+		} else {
+			p->md = 0U;
+		}
 	} else {
 		uint16_t max_tx_octets;
 
@@ -530,25 +534,24 @@ void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx)
 		}
 
 		p->len = lll->packet_tx_head_len - lll->packet_tx_head_offset;
-		p->md = 0;
 
 		max_tx_octets = ull_conn_lll_max_tx_octets_get(lll);
 
 		if (p->len > max_tx_octets) {
 			p->len = max_tx_octets;
-			p->md = 1;
+			p->md = 1U;
+		} else if (link->next != lll->memq_tx.tail) {
+			p->md = 1U;
+		} else {
+			p->md = 0U;
 		}
 
-		if (link->next != lll->memq_tx.tail) {
-			p->md = 1;
-		}
-	}
-
-	p->rfu = 0U;
+		p->rfu = 0U;
 
 #if !defined(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR)
-	p->resv = 0U;
+		p->resv = 0U;
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH_CLEAR */
+	}
 
 	*pdu_data_tx = p;
 }
@@ -772,20 +775,10 @@ static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 	return 0;
 }
 
-static struct pdu_data *empty_tx_enqueue(struct lll_conn *lll)
+static void empty_tx_init(void)
 {
 	struct pdu_data *p;
 
-	lll->empty = 1;
-
 	p = (void *)radio_pkt_empty_get();
 	p->ll_id = PDU_DATA_LLID_DATA_CONTINUE;
-	p->len = 0;
-	if (memq_peek(lll->memq_tx.head, lll->memq_tx.tail, NULL)) {
-		p->md = 1;
-	} else {
-		p->md = 0;
-	}
-
-	return p;
 }
