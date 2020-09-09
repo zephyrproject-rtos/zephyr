@@ -233,6 +233,7 @@
 /drivers/pcie/                            @andrewboie
 /drivers/peci/                            @albertofloyd @franciscomunoz @scottwcpg
 /drivers/pinmux/*hsdk*                    @iriszzw
+/drivers/pinmux/*it8xxx2*                 @ite
 /drivers/ps2/                             @albertofloyd @franciscomunoz @scottwcpg
 /drivers/pwm/*sam0*                       @nzmichaelh
 /drivers/pwm/*stm32*                      @gmarull
@@ -272,6 +273,7 @@
 /drivers/timer/cortex_m_systick.c         @ioannisg
 /drivers/timer/altera_avalon_timer_hal.c  @wentongwu
 /drivers/timer/riscv_machine_timer.c      @nategraff-sifive @kgugala @pgielda
+/drivers/timer/ite_it8xxx2_timer.c        @ite
 /drivers/timer/xlnx_psttc_timer*          @wjliang @stephanosio
 /drivers/timer/cc13x2_cc26x2_rtc_timer.c  @vanti
 /drivers/timer/cavs_timer.c               @dcpleung
@@ -317,6 +319,7 @@
 /dts/arm/silabs/efm32jg12b*               @chrta
 /dts/arm/silabs/efm32pg12b*               @chrta
 /dts/arm/silabs/efr32mg21*                @l-alfred
+/dts/riscv/it8xxx2.dtsi                   @ite
 /dts/riscv/microsemi-miv.dtsi             @galak
 /dts/riscv/rv32m1*                        @MaureenHelm
 /dts/riscv/riscv32-fe310.dtsi             @nategraff-sifive
