@@ -5,28 +5,6 @@
 #include <kernel.h>
 #include <arch/x86/acpi.h>
 
-struct acpi_rsdp {
-	char     sig[8];
-	uint8_t  csum;
-	char     oemid[6];
-	uint8_t  rev;
-	uint32_t rsdt_ptr;
-	uint32_t len;
-	uint64_t xsdt_ptr;
-	uint8_t  ext_csum;
-	uint8_t  _rsvd[3];
-} __packed;
-
-struct acpi_rsdt {
-	struct acpi_sdt sdt;
-	uint32_t table_ptrs[];
-} __packed;
-
-struct acpi_xsdt {
-	struct acpi_sdt sdt;
-	uint64_t table_ptrs[];
-} __packed;
-
 static bool check_sum(struct acpi_sdt *t)
 {
 	uint8_t sum = 0, *p = (uint8_t *)t;
@@ -111,7 +89,7 @@ void *z_acpi_find_table(uint32_t signature)
 		}
 	}
 
-	if (rsdp->rev < 2) {
+	if (rsdp->revision < 2) {
 		return NULL;
 	}
 
