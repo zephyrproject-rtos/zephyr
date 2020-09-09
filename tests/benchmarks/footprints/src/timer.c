@@ -102,6 +102,5 @@ void run_timer(void)
 
 	k_thread_join(tid, K_FOREVER);
 
-	k_mem_domain_remove_thread(tid);
 #endif
 }

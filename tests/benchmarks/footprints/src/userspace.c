@@ -126,5 +126,4 @@ void run_userspace(void)
 
 	validation_overhead();
 
-	k_mem_domain_remove_thread(k_current_get());
 }
