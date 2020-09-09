@@ -52,9 +52,10 @@ void test_rbtree_container(void)
 	struct rbnode *foreach_node;
 	struct container_node tree_node[10];
 
-	test_tree_l.lessthan_fn = node_lessthan;
-	test_tree_l.root = NULL;
+	(void)memset(&test_tree_l, 0, sizeof(test_tree_l));
+	(void)memset(tree_node, 0, sizeof(tree_node));
 
+	test_tree_l.lessthan_fn = node_lessthan;
 	for (uint32_t i = 0; i < ARRAY_SIZE(tree_node); i++) {
 		tree_node[i].value = i;
 		rb_insert(&test_tree_l, &tree_node[i].node);
