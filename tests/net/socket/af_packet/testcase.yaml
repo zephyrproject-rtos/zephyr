@@ -1,5 +1,5 @@
 common:
-  depends_on: netif
+  pre-filter: subsys_dt_compat_enabled("ethernet")
   tags: net socket af_packet
   # The test do not work in native_posix as the zeth interface creation
   # needs root permission.

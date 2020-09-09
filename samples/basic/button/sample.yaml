@@ -4,5 +4,5 @@ tests:
   sample.basic.button:
     tags: button gpio
     filter: dt_compat_enabled_with_alias("gpio-keys", "sw0")
-    depends_on: gpio
+    pre-filter: subsys_dt_compat_enabled("gpio")
     harness: button

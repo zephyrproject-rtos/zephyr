@@ -1,7 +1,7 @@
 common:
   min_ram: 16
   tags: net hostname
-  depends_on: netif
+  pre-filter: subsys_dt_compat_enabled("ethernet")
 tests:
   net.hostname:
     extra_configs:

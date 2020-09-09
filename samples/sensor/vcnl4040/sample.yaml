@@ -5,5 +5,5 @@ tests:
     harness: sensor
     platform_allow: adafruit_feather_stm32f405
     tags: sensors
-    depends_on: i2c gpio
+    pre-filter: subsys_dt_compat_enabled("i2c") and subsys_dt_compat_enabled("gpio")
     filter: dt_compat_enabled("vishay,vcnl4040")

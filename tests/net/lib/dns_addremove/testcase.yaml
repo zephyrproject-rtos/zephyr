@@ -1,6 +1,6 @@
 common:
   tags: dns net
-  depends_on: netif
+  pre-filter: subsys_dt_compat_enabled("ethernet")
   min_ram: 16
   timeout: 600
 tests:

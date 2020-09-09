@@ -2,6 +2,6 @@ sample:
   name: USB loopback sample
 tests:
   sample.usb.loopback:
-    depends_on: usb_device
+    pre-filter: subsys_dt_compat_enabled("usb")
     tags: usb
     harness: button

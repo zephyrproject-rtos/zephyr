@@ -17,12 +17,12 @@ tests:
       - CONFIG_NET_SOCKETS_POSIX_NAMES=n
       - CONFIG_POSIX_API=y
   sample.net.sockets.dumb_http_server.netusb:
-    depends_on: usb_device
+    pre-filter: subsys_dt_compat_enabled("usb")
     harness: net
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
     tags: usb
   sample.net.sockets.dumb_http_server.netusb_zeroconf:
-    depends_on: usb_device
+    pre-filter: subsys_dt_compat_enabled("usb")
     harness: net
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf;overlay-zeroconf.conf"
     tags: usb

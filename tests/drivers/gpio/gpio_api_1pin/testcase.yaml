@@ -1,7 +1,7 @@
 tests:
   peripheral.gpio.1pin:
     tags: drivers gpio
-    depends_on: gpio
+    pre-filter: subsys_dt_compat_enabled("gpio")
     min_flash: 48
     # Fix exclude when we can exclude just sim run
     platform_exclude: mps2_an385 mps2_an521

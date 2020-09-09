@@ -2,7 +2,7 @@ sample:
   name: CANopen sample
 common:
   tags: can canopen
-  depends_on: can
+  pre-filter: dt_bus_enabled("can")
   platform_allow: twr_ke18f frdm_k64f
   harness: console
   harness_config:

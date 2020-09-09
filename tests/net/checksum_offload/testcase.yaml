@@ -1,5 +1,5 @@
 common:
-  depends_on: netif
+  pre-filter: subsys_dt_compat_enabled("ethernet")
 tests:
   net.offload:
     min_ram: 16

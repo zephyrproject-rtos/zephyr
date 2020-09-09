@@ -3,6 +3,6 @@ sample:
 tests:
   sample.basic.fade_led:
     tags: drivers pwm
-    depends_on: pwm
+    pre-filter: subsys_dt_compat_enabled("pwm")
     harness: led
     filter: dt_alias_exists("pwm-led0")

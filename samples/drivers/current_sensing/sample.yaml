@@ -3,5 +3,5 @@ sample:
 tests:
   sample.drivers.current_sensing:
     tags: sensors
-    depends_on: i2c
+    pre-filter: subsys_dt_compat_enabled("i2c")
     harness: sensor

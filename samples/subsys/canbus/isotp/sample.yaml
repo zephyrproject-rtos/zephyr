@@ -3,7 +3,7 @@ sample:
 tests:
   sample.subsys.canbus.isotp:
     tags: CAN
-    depends_on: can
+    pre-filter: dt_bus_enabled("can")
     harness: console
     harness_config:
       type: one_line

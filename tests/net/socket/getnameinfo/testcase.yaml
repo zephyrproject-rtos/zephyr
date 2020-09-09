@@ -1,5 +1,5 @@
 common:
-  depends_on: netif
+  pre-filter: subsys_dt_compat_enabled("ethernet")
 tests:
   net.socket.get_name_info:
     min_ram: 21

@@ -2931,6 +2931,7 @@ class TestSuite(DisablePyTestCollectionMixin):
 
 
                 dts_path = os.path.join(ZEPHYR_BASE, "dts_db", plat.name + ".dts.pre.tmp")
+
                 if os.path.exists(dts_path) and tc.tc_pre_filter:
                     try:
                         if os.path.exists(dts_path) and not self.edt_cache.get(plat.name):

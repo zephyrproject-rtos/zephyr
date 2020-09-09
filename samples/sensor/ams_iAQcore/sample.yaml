@@ -5,4 +5,4 @@ tests:
   sample.sensor.iaqcore:
     harness: sensor
     tags: samples
-    depends_on: i2c arduino_i2c
+    pre-filter: dt_label_enabled("arduino_i2c")

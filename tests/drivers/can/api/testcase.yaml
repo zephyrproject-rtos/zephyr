@@ -1,4 +1,4 @@
 tests:
   drivers.can:
     tags: driver can
-    depends_on: can
+    pre-filter: dt_bus_enabled("can")

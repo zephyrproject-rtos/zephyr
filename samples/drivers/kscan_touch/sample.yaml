@@ -9,4 +9,4 @@ tests:
         ordered: true
         regex:
             - "kb data(.*)"
-    depends_on: kscan:touch
+    pre-filter: subsys_dt_compat_enabled("kscan")

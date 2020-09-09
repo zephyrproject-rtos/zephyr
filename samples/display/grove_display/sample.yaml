@@ -4,4 +4,4 @@ tests:
   sample.display.grove_display:
     tags: drivers
     harness: grove
-    depends_on: i2c
+    pre-filter: subsys_dt_compat_enabled("i2c")

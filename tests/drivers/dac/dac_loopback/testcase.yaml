@@ -2,7 +2,7 @@ common:
   tags: dac drivers
 tests:
   drivers.dac:
-    depends_on: dac adc
+    pre-filter: subsys_dt_compat_enabled("dac") and subsys_dt_compat_enabled("adc")
     harness: ztest
     harness_config:
       fixture: dac_adc_loopback

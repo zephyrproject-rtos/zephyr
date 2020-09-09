@@ -11,4 +11,4 @@ tests:
         regex:
             - "sfdp-bfp ="
             - "jedec-id ="
-    depends_on: spi
+    pre-filter: subsys_dt_compat_enabled("spi")

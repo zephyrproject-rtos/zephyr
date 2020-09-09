@@ -1,7 +1,7 @@
 common:
   tags: net mqtt
   harness: net
-  depends_on: netif
+  pre-filter: subsys_dt_compat_enabled("ethernet")
 tests:
   net.mqtt:
     min_ram: 16

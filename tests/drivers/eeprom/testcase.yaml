@@ -4,5 +4,5 @@ tests:
     tags: drivers userspace
   peripheral.eeprom.generic:
     build_only: true
-    depends_on: eeprom
+    pre-filter: subsys_dt_compat_enabled_and_match("mtd", "eeprom")
     tags: drivers userspace

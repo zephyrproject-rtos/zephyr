@@ -4,5 +4,5 @@ tests:
   sample.sensor.th02:
     harness: sensor
     tags: sensors
-    depends_on: i2c
+    pre-filter: subsys_dt_compat_enabled("i2c")
     filter: dt_compat_enabled("hoperf,th02")

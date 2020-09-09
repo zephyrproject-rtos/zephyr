@@ -10,4 +10,4 @@ tests:
         regex:
             - "kb data(.*)"
         fixture: fixture_connect_keyboard
-    depends_on: kscan
+    pre-filter: subsys_dt_compat_enabled("kscan")

@@ -7,4 +7,3 @@ tests:
     tags: sensors
     integration_platforms:
       - frdm_k64f
-    harness: console

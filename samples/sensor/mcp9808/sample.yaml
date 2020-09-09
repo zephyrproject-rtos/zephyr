@@ -4,5 +4,5 @@ tests:
   sample.sensor.mcp9808:
     harness: sensor
     tags: sensors
-    depends_on: i2c
+    pre-filter: subsys_dt_compat_enabled("i2c")
     filter: dt_compat_enabled("microchip,mcp9808")

@@ -2,4 +2,4 @@ common:
   tags: adc drivers userspace
 tests:
   drivers.adc:
-    depends_on: adc
+    pre-filter: subsys_dt_compat_enabled("adc")

@@ -4,5 +4,5 @@ tests:
   sample.basic.blink_led:
     filter: dt_alias_exists("pwm-led0")
     tags: drivers pwm
-    depends_on: pwm
+    pre-filter: subsys_dt_compat_enabled("pwm")
     harness: led

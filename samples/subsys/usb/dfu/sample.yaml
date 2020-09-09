@@ -4,5 +4,5 @@ tests:
   sample.usb.dfu:
     build_only: True
     platform_allow: nrf52840dk_nrf52840 intel_s1000_crb
-    depends_on: usb_device
+    pre-filter: subsys_dt_compat_enabled("usb")
     tags: usb

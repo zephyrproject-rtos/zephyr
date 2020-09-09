@@ -5,5 +5,5 @@ tests:
   sample.sensor.adxl362:
     harness: sensor
     tags: sensors
-    depends_on: spi
+    pre-filter: subsys_dt_compat_enabled("spi")
     platform_allow: nrf52dk_nrf52832

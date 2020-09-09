@@ -1,6 +1,6 @@
 tests:
   drivers.i2c:
-    depends_on: i2c
+    pre-filter: subsys_dt_compat_enabled("i2c")
     tags: drivers i2c
     harness: sensor
     filter: dt_alias_exists("i2c-0") or

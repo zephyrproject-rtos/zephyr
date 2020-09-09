@@ -269,7 +269,7 @@ extra_configs: <list of extra configurations>
           tags: drivers adc
         tests:
           test:
-            depends_on: adc
+            pre-filter: subsys_dt_compat_enabled("adc")
           test_async:
             extra_configs:
               - CONFIG_ADC_ASYNC=y
@@ -388,7 +388,7 @@ harness_config: <harness configuration options>
          tests:
            test:
              tags: sensors
-             depends_on: i2c
+             pre-filter: subsys_dt_compat_enabled("i2c")
 
 filter: <expression>
     Filter whether the testcase should be run by evaluating an expression

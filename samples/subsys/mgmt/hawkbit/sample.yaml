@@ -5,6 +5,6 @@ tests:
   samples.net.hawkbit:
     harness: net
     tags: net
-    depends_on: netif
+    pre-filter: subsys_dt_compat_enabled("ethernet")
     build_only: true
     platform_allow: frdm_k64f

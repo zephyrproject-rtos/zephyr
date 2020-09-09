@@ -4,7 +4,7 @@ sample:
 common:
   harness: net
   tags: net wifi updatehub
-  depends_on: netif
+  pre-filter: subsys_dt_compat_enabled("ethernet")
   build_only: true
   platform_allow: frdm_k64f
 tests:

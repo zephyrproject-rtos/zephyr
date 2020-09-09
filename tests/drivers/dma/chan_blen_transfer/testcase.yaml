@@ -1,10 +1,10 @@
 tests:
   drivers.dma:
     min_ram: 16
-    depends_on: dma
+    pre-filter: subsys_dt_compat_enabled("dma")
     tags: drivers dma
   drivers.dma.interactive:
-    depends_on: dma
+    pre-filter: subsys_dt_compat_enabled("dma")
     extra_args: CONF_FILE=prj_shell.conf
     min_ram: 16
     tags: drivers dma

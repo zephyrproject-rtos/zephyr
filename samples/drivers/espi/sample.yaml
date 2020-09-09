@@ -6,7 +6,7 @@ tests:
   sample.drivers.espi:
     tags: drivers espi
     filter: dt_compat_enabled("microchip,mec15xx-board-power")
-    depends_on: espi
+    pre-filter: subsys_dt_compat_enabled("espi")
     harness: console
     harness_config:
         type: multi_line
@@ -43,4 +43,4 @@ tests:
             - "espi: Postcode fe"
             - "espi: Postcode 7f"
             - "espi: eSPI sample completed"
-    depends_on: espi
+    pre-filter: subsys_dt_compat_enabled("espi")

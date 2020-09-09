@@ -14,4 +14,4 @@ tests:
             - "Set alarm in 2 sec"
             - "!!! Alarm !!!"
             - "Now: [2|3]"
-    depends_on: counter
+    pre-filter: subsys_dt_compat_enabled("counter")

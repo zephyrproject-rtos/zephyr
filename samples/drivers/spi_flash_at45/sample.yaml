@@ -3,12 +3,12 @@ sample:
 tests:
   sample.drivers.spi.flash.at45.build:
     tags: spi flash
-    depends_on: spi
+    pre-filter: subsys_dt_compat_enabled("spi")
     filter: dt_compat_enabled("atmel,at45")
     build_only: true
   sample.drivers.spi.flash.at45:
     tags: spi flash
-    depends_on: spi
+    pre-filter: subsys_dt_compat_enabled("spi")
     filter: dt_compat_enabled("atmel,at45")
     harness: console
     harness_config:
