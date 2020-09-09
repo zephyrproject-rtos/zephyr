@@ -120,7 +120,5 @@ void run_workq(void)
 	k_thread_start(tid);
 	k_thread_join(tid, K_FOREVER);
 
-	k_mem_domain_remove_thread(tid);
-	k_mem_domain_remove_thread(&user_workq.thread);
 #endif
 }
