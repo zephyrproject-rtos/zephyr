@@ -13,17 +13,18 @@
 #define LED0_NODE DT_ALIAS(led0)
 
 #if DT_NODE_HAS_STATUS(LED0_NODE, okay)
-#define LED0    DT_GPIO_LABEL(LED0_NODE, gpios)
-#define PIN     DT_GPIO_PIN(LED0_NODE, gpios)
-#define FLAGS   DT_GPIO_FLAGS(LED0_NODE, gpios)
+#define LED0         DT_GPIO_LABEL(LED0_NODE, gpios)
+#define LED0_PIN     DT_GPIO_PIN(LED0_NODE, gpios)
+#define FLAGS        DT_GPIO_FLAGS(LED0_NODE, gpios)
 #else
 #error "BOARD does not define a debug LED"
-#define LED0    ""
-#define PIN     0
-#define FLAGS   0
+#define LED0         ""
+#define LED0_PIN     0
+#define FLAGS        0
 #endif
 
-#define SLEEP_TIME_MS                  10
+#define SLEEP_TIME_MS                  (20)
+#define CNT_PER_SEC                    (1000 / SLEEP_TIME_MS)
 
 int cmd_handler(struct osdp_cmd *p)
 {
@@ -44,7 +45,7 @@ void main(void)
 		return;
 	}
 
-	ret = gpio_pin_configure(dev, PIN, GPIO_OUTPUT_ACTIVE | FLAGS);
+	ret = gpio_pin_configure(dev, LED0_PIN, GPIO_OUTPUT_ACTIVE | FLAGS);
 	if (ret < 0) {
 		printk("Failed to configure gpio pin\n");
 		return;
@@ -59,7 +60,7 @@ void main(void)
 		if (osdp_pd_get_cmd(&cmd) == 0) {
 			cmd_handler(&cmd);
 		}
-		gpio_pin_set(dev, PIN, led_state);
+		gpio_pin_set(dev, LED0_PIN, led_state);
 		k_msleep(SLEEP_TIME_MS);
 		cnt++;
 	}
