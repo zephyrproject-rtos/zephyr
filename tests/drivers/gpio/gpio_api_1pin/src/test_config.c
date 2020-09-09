@@ -118,6 +118,7 @@ void test_gpio_pin_configure_push_pull(void)
 	 */
 	ret = gpio_pin_configure(port, TEST_PIN, GPIO_INPUT);
 	zassert_equal(ret, 0, "Failed to configure the pin as an input");
+	k_busy_wait(TEST_GPIO_MAX_RISE_FALL_TIME_US);
 
 	int pin_in_val;
 
