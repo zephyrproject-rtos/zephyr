@@ -354,6 +354,37 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS v1.14.0-rc1 *****
    Hello World! mimxrt1050_evk
 
+Troubleshooting
+===============
+
+If the debug probe fails to connect with the following error, it's possible
+that the boot header in HyperFlash is invalid or corrupted. The boot header is
+configured by :option:`CONFIG_NXP_IMX_RT_BOOT_HEADER`.
+
+.. code-block:: console
+
+   Remote debugging using :2331
+   Remote communication error.  Target disconnected.: Connection reset by peer.
+   "monitor" command not supported by this target.
+   "monitor" command not supported by this target.
+   You can't do that when your target is `exec'
+   (gdb) Could not connect to target.
+   Please check power, connection and settings.
+
+You can fix it by erasing and reprogramming the HyperFlash with the following
+steps:
+
+#. Set the SW7 DIP switches to ON-ON-ON-OFF to prevent booting from HyperFlash.
+
+#. Reset by pressing SW4
+
+#. Run ``west debug`` or ``west flash`` again with a known working Zephyr
+   application.
+
+#. Set the SW7 DIP switches to OFF-ON-ON-OFF to boot from HyperFlash.
+
+#. Reset by pressing SW4
+
 Board Revisions
 ***************
 
