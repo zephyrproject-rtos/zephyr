@@ -497,7 +497,7 @@ static int dtls_rx(void *ctx, unsigned char *buf, size_t len,
 	bool is_block = !((tls_ctx->flags & ZSOCK_MSG_DONTWAIT) ||
 			  (zsock_fcntl(tls_ctx->sock, F_GETFL, 0) &
 			   O_NONBLOCK));
-	int timeout = (dtls_timeout == 0U) ? -1 : timeout;
+	int timeout = (dtls_timeout == 0U) ? -1 : dtls_timeout;
 	uint32_t entry_time = k_uptime_get_32();
 	socklen_t addrlen = sizeof(struct sockaddr);
 	struct sockaddr addr;
