@@ -231,7 +231,7 @@ Manifest and sub-objects
 
    .. automethod:: __init__
    .. versionchanged:: 0.7.0
-      The ``importer`` and ``import_flags`` keyword arguments.
+      The *importer* and *import_flags* keyword arguments.
 
    .. automethod:: from_file
    .. versionchanged:: 0.7.0
@@ -239,7 +239,7 @@ Manifest and sub-objects
 
    .. automethod:: from_data
    .. versionchanged:: 0.7.0
-      ``**kwargs`` added, and ``source_data`` may be a ``str``.
+      ``**kwargs`` added, and *source_data* may be a ``str``.
 
    Conveniences for accessing sub-objects by name or other identifier:
 
@@ -257,17 +257,19 @@ Manifest and sub-objects
    .. versionadded:: 0.7.0
 
 .. autoclass:: west.manifest.ImportFlag
+   :members:
+   :member-order: bysource
 
 .. autoclass:: west.manifest.Project
 
    .. (note: attributes are part of the class docstring)
 
    .. versionchanged:: 0.7.0
-      The ``remote`` attribute was removed. Its semantics could no longer
+      The *remote* attribute was removed. Its semantics could no longer
       be preserved when support for manifest ``import`` keys was added.
 
    .. versionadded:: 0.7.0
-      The ``remote_name`` and ``name_and_path`` attributes.
+      The *remote_name* and *name_and_path* attributes.
 
    Constructor:
 
@@ -283,7 +285,7 @@ Manifest and sub-objects
 
    .. automethod:: git
    .. versionchanged:: 0.6.1
-      The ``capture_stderr`` kwarg.
+      The *capture_stderr* kwarg.
    .. versionchanged:: 0.7.0
       The (now removed) ``Project.format`` method is no longer called on
       arguments.
