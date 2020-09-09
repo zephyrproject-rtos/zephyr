@@ -16,19 +16,25 @@ LOG_MODULE_REGISTER(usb_transport);
 #include "usb_transport.h"
 
 /* callback function list */
-static int usb_transport_get_report(struct usb_setup_packet *setup,
+static int usb_transport_get_report(const struct device *dev,
+		struct usb_setup_packet *setup,
 		int32_t *len, uint8_t **data);
-static int usb_transport_get_idle(struct usb_setup_packet *setup,
+static int usb_transport_get_idle(const struct device *dev,
+		struct usb_setup_packet *setup,
 		int32_t *len, uint8_t **data);
-static int usb_transport_get_protocol(struct usb_setup_packet *setup,
+static int usb_transport_get_protocol(const struct device *dev,
+		struct usb_setup_packet *setup,
 		int32_t *len, uint8_t **data);
-static int usb_transport_set_report(struct usb_setup_packet *setup,
+static int usb_transport_set_report(const struct device *dev,
+		struct usb_setup_packet *setup,
 		int32_t *len, uint8_t **data);
-static int usb_transport_set_idle(struct usb_setup_packet *setup,
+static int usb_transport_set_idle(const struct device *dev,
+		struct usb_setup_packet *setup,
 		int32_t *len, uint8_t **data);
-static int usb_transport_set_protocol(struct usb_setup_packet *setup,
+static int usb_transport_set_protocol(const struct device *dev,
+		struct usb_setup_packet *setup,
 		int32_t *len, uint8_t **data);
-static void usb_transport_host_ready(void);
+static void usb_transport_host_ready(const struct device *dev);
 
 static const struct hid_ops usb_transport_callbacks = {
 	.get_report	= usb_transport_get_report,
@@ -155,28 +161,32 @@ int usb_transport_send_reply(uint8_t *data, uint32_t len)
 	return ret;
 }
 
-static int usb_transport_get_report(struct usb_setup_packet *setup,
+static int usb_transport_get_report(const struct device *dev,
+		struct usb_setup_packet *setup,
 		int32_t *len, uint8_t **data)
 {
 	LOG_DBG("usb_transport_get_report");
 	return 0;
 }
 
-static int usb_transport_get_idle(struct usb_setup_packet *setup,
+static int usb_transport_get_idle(const struct device *dev,
+		struct usb_setup_packet *setup,
 		int32_t *len, uint8_t **data)
 {
 	LOG_DBG("usb_transport_get_idle");
 	return 0;
 }
 
-static int usb_transport_get_protocol(struct usb_setup_packet *setup,
+static int usb_transport_get_protocol(const struct device *dev,
+		struct usb_setup_packet *setup,
 		int32_t *len, uint8_t **data)
 {
 	LOG_DBG("usb_transport_get_protocol");
 	return 0;
 }
 
-static int usb_transport_set_report(struct usb_setup_packet *setup,
+static int usb_transport_set_report(const struct device *dev,
+		struct usb_setup_packet *setup,
 		int32_t *len, uint8_t **data)
 {
 	uint8_t	*buffer;
@@ -190,21 +200,23 @@ static int usb_transport_set_report(struct usb_setup_packet *setup,
 	return 0;
 }
 
-static int usb_transport_set_idle(struct usb_setup_packet *setup,
+static int usb_transport_set_idle(const struct device *dev,
+		struct usb_setup_packet *setup,
 		int32_t *len, uint8_t **data)
 {
 	LOG_DBG("usb_transport_set_idle");
 	return 0;
 }
 
-static int usb_transport_set_protocol(struct usb_setup_packet *setup,
+static int usb_transport_set_protocol(const struct device *dev,
+		struct usb_setup_packet *setup,
 		int32_t *len, uint8_t **data)
 {
 	LOG_DBG("usb_transport_set_protocol");
 	return 0;
 }
 
-static void usb_transport_host_ready(void)
+static void usb_transport_host_ready(const struct device *dev)
 {
 	LOG_DBG("usb_transport_host_ready");
 }
