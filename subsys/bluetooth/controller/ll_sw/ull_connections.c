@@ -567,8 +567,10 @@ static inline void disable(uint16_t handle)
 		LL_ASSERT(!ret);
 	}
 
-
+	/*
+	 * EGON TODO: use proper variable when available
 	conn->lll.link_tx_free = NULL;
+	*/
 
 	mark = ull_disable_unmark(conn);
 	LL_ASSERT(mark == conn);

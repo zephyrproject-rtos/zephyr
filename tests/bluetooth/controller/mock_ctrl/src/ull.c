@@ -16,7 +16,7 @@
 
 static struct {
 	void *free;
-	u8_t pool[PDU_RX_POOL_SIZE];
+	uint8_t pool[PDU_RX_POOL_SIZE];
 } mem_pdu_rx;
 
 /*
@@ -25,10 +25,10 @@ static struct {
 #define LINK_RX_POOL_SIZE 16384
 
 static struct {
-	u8_t quota_pdu; /* Number of un-utilized buffers */
+	uint8_t quota_pdu; /* Number of un-utilized buffers */
 
 	void *free;
-	u8_t pool[LINK_RX_POOL_SIZE];
+	uint8_t pool[LINK_RX_POOL_SIZE];
 } mem_link_rx;
 
 

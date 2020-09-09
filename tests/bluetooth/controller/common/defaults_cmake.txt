@@ -43,7 +43,6 @@ FILE(GLOB mock_sources
 	${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/lll_clock.c
 )
 
-
 FILE(GLOB common_sources
         ${ZEPHYR_BASE}/tests/bluetooth/controller/common/src/helper_pdu.c
         ${ZEPHYR_BASE}/tests/bluetooth/controller/common/src/helper_util.c

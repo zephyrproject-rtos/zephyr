@@ -66,19 +66,26 @@ struct ull_cp_conn {
 		} slave;
 #endif /* CONFIG_BT_PERIPHERAL */
 
+#if defined(CONFIG_BT_CENTRAL)
+		struct {
+			uint8_t fex_valid:1;
+			uint8_t terminate_ack:1;
+		} master;
+#endif /* CONFIG_BT_CENTRAL */
+
 	struct mocked_lll_conn {
 		uint16_t handle;
 
 		/* Encryption State (temporary) */
-		u8_t enc_tx;
-		u8_t enc_rx;
+		uint8_t enc_tx;
+		uint8_t enc_rx;
 
 		/**/
-		 u16_t latency_prepare;
-		 u16_t latency_event;
-		 u16_t event_counter;
+		uint16_t latency_prepare;
+		uint16_t latency_event;
+		uint16_t event_counter;
 
-		 u8_t role;
+		uint8_t role;
 	} lll;
 };
 
