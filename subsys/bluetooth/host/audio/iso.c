@@ -742,6 +742,7 @@ void bt_iso_disconnected(struct bt_conn *conn)
 			chan->ops->disconnected(chan);
 		}
 
+		bt_conn_unref(chan->conn);
 		chan->conn = NULL;
 		bt_iso_chan_set_state(chan, BT_ISO_DISCONNECTED);
 	}
