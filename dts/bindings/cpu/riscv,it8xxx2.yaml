@@ -1,0 +1,8 @@
+# Copyright (c) 2020 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE IT8XXX2 RISC-V CPU
+
+compatible: "riscv-ite"
+
+include: cpu.yaml
