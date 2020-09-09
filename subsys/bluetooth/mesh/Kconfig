@@ -589,6 +589,12 @@ config BT_MESH_DEBUG_NET
 	  Use this option to enable Network layer debug logs for the
 	  Bluetooth Mesh functionality.
 
+config BT_MESH_DEBUG_RPL
+	bool "Replay protection list debug"
+	help
+	  Use this option to enable Replay protection list debug logs
+	  for the Bluetooth Mesh functionality.
+
 config BT_MESH_DEBUG_TRANS
 	bool "Transport layer debug"
 	help
