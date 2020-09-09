@@ -1,0 +1,37 @@
+# Copyright (c) 2020 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RISCV32_IT8XXX2
+
+config SOC_SERIES
+	default "it8xxx2"
+
+config ITE_IT8XXX2_INTC
+	default y
+	select FLASH
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select HAS_FLASH_LOAD_OFFSET
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 660000
+
+if ITE_IT8XXX2_INTC
+config NUM_IRQS
+	default 162
+
+config DYNAMIC_INTERRUPTS
+	default y
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_START_VECTOR
+	default 0
+
+config GEN_SW_ISR_TABLE
+	default y
+
+endif # ITE_IT8XXX2_INTC
+
+endif # SOC_SERIES_RISCV32_IT8XXX2
