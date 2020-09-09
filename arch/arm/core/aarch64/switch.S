@@ -32,14 +32,6 @@ GDATA(_kernel)
 
 GTEXT(z_arm64_context_switch)
 SECTION_FUNC(TEXT, z_arm64_context_switch)
-#ifdef CONFIG_TRACING
-	stp	x0, x1, [sp, #-16]!
-	stp	xzr, x30, [sp, #-16]!
-	bl	sys_trace_thread_switched_out
-	ldp	xzr, x30, [sp], #16
-	ldp	x0, x1, [sp], #16
-#endif
-
 	/* addr of callee-saved regs in thread in x2 */
 	ldr	x2, =_thread_offset_to_callee_saved
 	add	x2, x2, x1
