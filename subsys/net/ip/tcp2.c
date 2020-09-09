@@ -326,7 +326,7 @@ static int tcp_conn_unref(struct tcp *conn)
 
 	k_delayed_work_cancel(&conn->timewait_timer);
 
-	sys_slist_find_and_remove(&tcp_conns, (sys_snode_t *)conn);
+	sys_slist_find_and_remove(&tcp_conns, &conn->next);
 
 	memset(conn, 0, sizeof(*conn));
 
@@ -893,7 +893,7 @@ static struct tcp *tcp_conn_alloc(void)
 
 	tcp_conn_ref(conn);
 
-	sys_slist_append(&tcp_conns, (sys_snode_t *)conn);
+	sys_slist_append(&tcp_conns, &conn->next);
 out:
 	NET_DBG("conn: %p", conn);
 
