@@ -210,6 +210,7 @@ iom	Iomega Corporation
 isee	ISEE 2007 S.L.
 isil	Intersil
 issi	Integrated Silicon Solutions Inc.
+ite	ITE Tech. Inc.
 itead	ITEAD Intelligent Systems Co.Ltd
 iwave	iWave Systems Technologies Pvt. Ltd.
 jdi	Japan Display Inc.
