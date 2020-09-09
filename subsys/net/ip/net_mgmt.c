@@ -45,7 +45,7 @@ static int16_t in_event;
 static int16_t out_event;
 
 static inline void mgmt_push_event(uint32_t mgmt_event, struct net_if *iface,
-				   void *info, size_t length)
+				   const void *info, size_t length)
 {
 	int16_t i_idx;
 
@@ -335,7 +335,7 @@ void net_mgmt_del_event_callback(struct net_mgmt_event_callback *cb)
 }
 
 void net_mgmt_event_notify_with_info(uint32_t mgmt_event, struct net_if *iface,
-				     void *info, size_t length)
+				     const void *info, size_t length)
 {
 	if (mgmt_is_event_handled(mgmt_event)) {
 		NET_DBG("Notifying Event layer %u code %u type %u",
