@@ -5,3 +5,23 @@
  */
 
 #include <st/g4/stm32g4.dtsi>
+
+/ {
+	soc {
+		dma1: dma@40020000 {
+			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0>;
+			dma-requests = <6>;
+		};
+
+		dma2: dma@40020400 {
+			interrupts = <56 0 57 0 58 0 59 0 60 0 97 0>;
+			dma-requests = <6>;
+			dma-offset = <6>;
+		};
+
+		dmamux1: dmamux@40020800 {
+			dma-channels = <12>;
+		};
+
+	};
+};
