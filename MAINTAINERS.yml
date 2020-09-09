@@ -846,6 +846,17 @@ MCU Manager:
     labels:
         - "area: mcumgr"
 
+OSDP:
+    status: maintained
+    collaborators:
+        - cbsiddharth
+    files:
+        - subsys/mgmt/osdp/
+        - include/mgmt/osdp.h
+        - samples/subsys/mgmt/osdp/
+    labels:
+        - "area: OSDP"
+
 Native POSIX and POSIX arch:
     status: maintained
     maintainers:
