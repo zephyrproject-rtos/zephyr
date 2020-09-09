@@ -354,6 +354,7 @@ these in order, using examples:
    - :ref:`west-manifest-ex3.1`
    - :ref:`west-manifest-ex3.2`
    - :ref:`west-manifest-ex3.3`
+   - :ref:`west-manifest-ex3.4`
 - :ref:`Sequence of paths and mappings <west-manifest-import-seq>`
    - :ref:`west-manifest-ex4.1`
    - :ref:`west-manifest-ex4.2`
@@ -757,6 +758,10 @@ The ``import`` key can also contain a mapping with the following keys:
   names to exclude rather than include.
 - ``path-blacklist``: Optional. Like ``path-whitelist``, but contains project
   paths to exclude rather than include.
+- ``path-prefix``: Optional (new in v0.8.0). If given, this will be prepended
+  to the project's path in the workspace, as well as the paths of any imported
+  projects. This can be used to place these projects in a subdirectory of the
+  workspace.
 
 .. _re: https://docs.python.org/3/library/re.html
 .. _pathlib:
@@ -947,6 +952,71 @@ An equivalent manifest in a single file would be:
        - name: hal_foo
          path: modules/hals/foo
          url: https://git.example.com/downstream/hal_foo
+
+.. _west-manifest-ex3.4:
+
+Example 3.4: Import into a subdirectory
+---------------------------------------
+
+You want to import a manifest and its projects, placing everything into a
+subdirectory of your :term:`west workspace`.
+
+For example, suppose you want to import this manifest from project ``foo``,
+adding this project and its projects ``bar`` and ``baz`` to your workspace:
+
+.. code-block:: yaml
+
+   # foo/west.yml:
+   manifest:
+     defaults:
+       remote: example
+     remotes:
+       - name: example
+         url-base: https://git.example.com
+     projects:
+       - name: bar
+       - name: baz
+
+Instead of importing these into the top level workspace, you want to place all
+three project repositories in an :file:`external-code` subdirectory, like this:
+
+.. code-block:: none
+
+   workspace/
+   └── external-code/
+       ├── foo/
+       ├── bar/
+       └── baz/
+
+You can do this using this manifest:
+
+.. code-block:: yaml
+
+   manifest:
+     projects:
+       - name: foo
+         url: https://git.example.com/foo
+         import:
+           path-prefix: external-code
+
+An equivalent manifest in a single file would be:
+
+.. code-block:: yaml
+
+   # foo/west.yml:
+   manifest:
+     defaults:
+       remote: example
+     remotes:
+       - name: example
+         url-base: https://git.example.com
+     projects:
+       - name: foo
+         path: external-code/foo
+       - name: bar
+         path: external-code/bar
+       - name: baz
+         path: external-code/baz
 
 .. _west-manifest-import-seq:
 
@@ -1167,3 +1237,17 @@ or fails with an error:
    west manifest --validate
 
 The error message can help diagnose errors.
+
+.. _west-manifest-path:
+
+Get the manifest path
+=====================
+
+The ``--path`` action prints the path to the top level manifest file:
+
+.. code-block:: none
+
+   west manifest --path
+
+The output is something like ``/path/to/workspace/west.yml``. The path format
+depends on your operating system.
