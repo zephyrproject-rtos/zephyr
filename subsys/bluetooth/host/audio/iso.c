@@ -470,7 +470,11 @@ int bt_conn_bind_iso(struct bt_iso_create_param *param)
 
 failed:
 	for (i = 0; i < param->num_conns; i++) {
-		bt_iso_cleanup(param->conns[i]);
+		conn = param->conns[i];
+
+		if (conn->type == BT_CONN_TYPE_ISO) {
+			bt_iso_cleanup(conn);
+		}
 	}
 
 	return err;
