@@ -30,10 +30,20 @@
 typedef uintptr_t efi_status_t;
 
 typedef struct {
-	uint32_t Data1;
-	uint16_t Data2;
-	uint16_t Data3;
-	uint8_t Data4[8];
+	union {
+		struct {
+			uint32_t Data1;
+			uint16_t Data2;
+			uint16_t Data3;
+			uint8_t Data4[8];
+		};
+
+		/* Easier for comparison */
+		struct {
+			uint64_t Part1;
+			uint64_t Part2;
+		};
+	};
 } efi_guid_t;
 
 struct efi_input_key {
@@ -547,7 +557,9 @@ struct efi_boot_services {
 };
 
 struct efi_configuration_table {
+	/** Vendor EFI GUID Identifier */
 	efi_guid_t VendorGuid;
+	/** Vendor table pointer */
 	void *VendorTable;
 };
 
@@ -563,7 +575,9 @@ struct efi_system_table {
 	struct efi_simple_text_output *StdErr;
 	struct efi_runtime_services *RuntimeServices;
 	struct efi_boot_services *BootServices;
+	/** The amount of entries to expect in the next attribute */
 	uint64_t NumberOfTableEntries;
+	/** A pointer to the configuration table(s) */
 	struct efi_configuration_table *ConfigurationTable;
 };
 
