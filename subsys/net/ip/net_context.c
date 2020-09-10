@@ -1369,9 +1369,7 @@ static int context_sendto(struct net_context *context,
 		msghdr = buf;
 	}
 
-	if (!msghdr && !dst_addr &&
-	    !(IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
-	      net_context_get_ip_proto(context) == CAN_RAW)) {
+	if (!msghdr && !dst_addr) {
 		return -EDESTADDRREQ;
 	}
 
