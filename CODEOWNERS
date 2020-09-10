@@ -37,6 +37,7 @@
 /soc/arm/atmel_sam/sam4s/                 @fallrisk
 /soc/arm/atmel_sam/same70/                @nandojve
 /soc/arm/atmel_sam/samv71/                @nandojve
+/soc/arm/cypress/                         @nandojve
 /soc/arm/bcm*/                            @sbranden
 /soc/arm/infineon_xmc/                    @parthitce
 /soc/arm/nxp*/                            @MaureenHelm
