@@ -18,6 +18,27 @@
 	  .bit  = DT_PHA(DT_DRV_INST(inst), clocks, bit),                      \
 	}
 
+/* Construct a npcx_clk_cfg structure from clocks property at index 'i' */
+#define DT_NPCX_CLK_CFG_ITEM_BY_IDX(inst, i)                                   \
+	{                                                                      \
+	  .bus  = DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(inst), i, bus),            \
+	  .ctrl = DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(inst), i, ctl),            \
+	  .bit  = DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(inst), i, bit),            \
+	},
+
+/* Length of npcx_clk_cfg structures in clocks property */
+#define DT_NPCX_CLK_CFG_ITEMS_LEN(inst) DT_INST_PROP_LEN(inst, clocks)
+
+/* Macro function to construct a list of npcx_clk_cfg items by UTIL_LISTIFY */
+#define DT_NPCX_CLK_CFG_ITEMS_FUC(idx, inst) \
+					DT_NPCX_CLK_CFG_ITEM_BY_IDX(inst, idx)
+
+#define DT_NPCX_CLK_CFG_ITEMS_LIST(inst) {             \
+	UTIL_LISTIFY(DT_NPCX_CLK_CFG_ITEMS_LEN(inst),  \
+		     DT_NPCX_CLK_CFG_ITEMS_FUC,        \
+		     inst)                             \
+	}
+
 /* Get phandle from "pinctrl" prop which type is 'phandles' at index 'i' */
 #define DT_PHANDLE_FROM_PINCTRL(inst, i) \
 	DT_INST_PHANDLE_BY_IDX(inst, pinctrl, i)
@@ -97,6 +118,50 @@
 			DT_PROP(child, group_mask),                            \
 			0);						       \
 		irq_enable(DT_PROP(child, irq));                               \
+	}
+
+/* Get a child node from path '/npcx7_espi_vws_map/name' */
+#define DT_NODE_FROM_VWTABLE(name) DT_CHILD(DT_PATH(npcx7_espi_vws_map), name)
+
+/* Get a handle from wui_map property of child node */
+#define DT_PHANDLE_VW_WUI(name) DT_PHANDLE(DT_NODE_FROM_VWTABLE(name), wui_map)
+
+/* Construct a npcx_wui structure from wui_map property of vw table by name */
+#define DT_NPCX_VW_WUI_ITEM(name)			                       \
+	{                                                                      \
+	  .table = DT_PROP(DT_PHANDLE(DT_PHANDLE_VW_WUI(name), miwus),  index),\
+	  .group = DT_PHA(DT_PHANDLE_VW_WUI(name), miwus, group),              \
+	  .bit   = DT_PHA(DT_PHANDLE_VW_WUI(name), miwus, bit),                \
+	}
+
+/* Construct a npcx espi device configuration for vw input signal by name */
+#define DT_NPCX_VW_IN_CONF(signal, name)                                       \
+	{                                                                      \
+	  .sig = signal,                                                       \
+	  .reg_idx = DT_PROP_BY_IDX(DT_NODE_FROM_VWTABLE(name), vw_reg, 0),    \
+	  .bitmask = DT_PROP_BY_IDX(DT_NODE_FROM_VWTABLE(name), vw_reg, 1),    \
+	  .vw_wui  = DT_NPCX_VW_WUI_ITEM(name),                                \
+	}
+
+/* Construct a npcx espi device configuration for vw output signal by name */
+#define DT_NPCX_VW_OUT_CONF(signal, name)                                      \
+	{                                                                      \
+	  .sig = signal,                                                       \
+	  .reg_idx = DT_PROP_BY_IDX(DT_NODE_FROM_VWTABLE(name), vw_reg, 0),    \
+	  .bitmask = DT_PROP_BY_IDX(DT_NODE_FROM_VWTABLE(name), vw_reg, 1),    \
+	}
+
+/* Get phandle from "name" prop */
+#define DT_PHANDLE_FROM_WUI_NAME(name) \
+	DT_INST_PHANDLE(0, name)
+
+/* Construct a npcx_wui structure from wui_map property */
+#define DT_NPCX_ESPI_WUI_ITEM(name)				               \
+	{                                                                      \
+	  .table = DT_PROP(DT_PHANDLE(DT_PHANDLE_FROM_WUI_NAME(name),          \
+					miwus), index),                        \
+	  .group = DT_PHA(DT_PHANDLE_FROM_WUI_NAME(name), miwus, group),       \
+	  .bit   = DT_PHA(DT_PHANDLE_FROM_WUI_NAME(name), miwus, bit),         \
 	}
 
 #endif /* _NUVOTON_NPCX_SOC_DT_H_ */

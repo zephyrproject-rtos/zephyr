@@ -1,0 +1,93 @@
+/*
+ * Copyright (c) 2020 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ *                Nuvoton NPCX7 eSPI Virtual Wires Mapping Table
+ * |--------------------------------------------------------------------------|
+ * | VW idx | SLV reg | Wire Bit 3   | Wire Bit 2   | Wire Bit 1| Wire Bit 0  |
+ * |--------------------------------------------------------------------------|
+ * |                 Input (Master-to-Slave) Virtual Wires                    |
+ * |--------------------------------------------------------------------------|
+ * | 02h[S] | VWEVMS0 | Reserved     | SLP_S5#      | SLP_S4#   | SLP_S3#     |
+ * | 03h[S] | VWEVMS1 | Reserved     | OOB_RST_WARN | PLTRST#   | SUS_STAT#   |
+ * | 07h[S] | VWEVMS2 | Reserved     | Reserved     | Reserved  | HOS_RST_WARN|
+ * | 41h[P] | VWEVMS3 | SLP_A#       | Reserved     | SUS_PDNACK| SUS_WARN#   |
+ * | 42h[P] | VWEVMS4 | Reserved     | Reserved     | SLP_WLAN# | SLP_LAN#    |
+ * |--------------------------------------------------------------------------|
+ * |                Output (Slave-to-Master) Virtual Wires                    |
+ * |--------------------------------------------------------------------------|
+ * | 04h[S] | VWEVSM0 | PME#         | WAKE#        | Reserved  | OOB_RST_ACK |
+ * | 05h[S] | VWEVSM1 | SLV_BOOT_STS | ERR_NONFATAL | ERR_FATAL | SLV_BT_DONE |
+ * | 06h[S] | VWEVSM2 | HOST_RST_ACK | Reserved     | SMI#      | SCI#        |
+ * | 40h[P] | VWEVSM3 | Reserved     | Reserved     | Reserved  | SUS_ACK#    |
+ * |--------------------------------------------------------------------------|
+ *  [S] System-/[P] Platform-Specific Virtual Wires
+ */
+
+/ {
+	npcx7_espi_vws_map {
+		compatible = "nuvoton,npcx-espi-vw-conf";
+
+		/* eSPI Virtual Vire (VW) input configuration */
+		/* index 02h (In) */
+		vw_slp_s3 { vw_reg =
+			<NPCX_VWEVMS0 0x01>; wui_map = <&wui_vw_slp_s3>; };
+		vw_slp_s4 { vw_reg =
+			<NPCX_VWEVMS0 0x02>; wui_map = <&wui_vw_slp_s4>; };
+		vw_slp_s5 { vw_reg =
+			<NPCX_VWEVMS0 0x04>; wui_map = <&wui_vw_slp_s5>; };
+
+		/* index 03h (In) */
+		vw_sus_stat { vw_reg =
+			<NPCX_VWEVMS1 0x01>; wui_map = <&wui_vw_sus_stat>; };
+		vw_plt_rst { vw_reg =
+			<NPCX_VWEVMS1 0x02>; wui_map = <&wui_vw_plt_rst>; };
+		vw_oob_rst_warn { vw_reg =
+			<NPCX_VWEVMS1 0x04>; wui_map = <&wui_vw_oob_rst_warn>;};
+
+		/* index 07h (In) */
+		vw_host_rst_warn { vw_reg =
+			<NPCX_VWEVMS2 0x01>; wui_map =<&wui_vw_host_rst_warn>;};
+
+		/* index 41h (In) */
+		vw_sus_warn { vw_reg =
+			<NPCX_VWEVMS3 0x01>; wui_map = <&wui_vw_sus_warn>; };
+		vw_sus_pwrdn_ack { vw_reg =
+			<NPCX_VWEVMS3 0x02>; wui_map =<&wui_vw_sus_pwrdn_ack>;};
+		vw_slp_a { vw_reg =
+			<NPCX_VWEVMS3 0x08>; wui_map = <&wui_vw_slp_a>; };
+
+		/* index 42h (In) */
+		vw_slp_lan { vw_reg =
+			<NPCX_VWEVMS4 0x01>; wui_map = <&wui_vw_slp_lan>; };
+		vw_slp_wlan { vw_reg =
+			<NPCX_VWEVMS4 0x02>; wui_map = <&wui_vw_slp_wlan>; };
+
+		/* eSPI Virtual Vire (VW) output configuration */
+		/* index 04h (Out) */
+		vw_oob_rst_ack   { vw_reg = <NPCX_VWEVSM0 0x01>; };
+		vw_wake          { vw_reg = <NPCX_VWEVSM0 0x04>; };
+		vw_pme           { vw_reg = <NPCX_VWEVSM0 0x08>; };
+
+		/* index 05h (Out) */
+		vw_slv_boot_done { vw_reg = <NPCX_VWEVSM1 0x01>; };
+		vw_err_fatal     { vw_reg = <NPCX_VWEVSM1 0x02>; };
+		vw_err_non_fatal { vw_reg = <NPCX_VWEVSM1 0x04>; };
+		/*
+		 * SLAVE_BOOT_DONE & SLAVE_LOAD_STS bits (bit 0 & bit 3) have
+		 * to be sent together. Hence its bitmask is 0x09.
+		 */
+		vw_slv_boot_sts_with_done { vw_reg = <NPCX_VWEVSM1 0x09>; };
+
+		/* index 06h (Out) */
+		vw_sci           { vw_reg = <NPCX_VWEVSM2 0x01>; };
+		vw_smi           { vw_reg = <NPCX_VWEVSM2 0x02>; };
+		vw_host_rst_ack  { vw_reg = <NPCX_VWEVSM2 0x08>; };
+
+		/* index 40h (Out) */
+		vw_sus_ack       { vw_reg = <NPCX_VWEVSM3 0x01>; };
+	};
+};

@@ -308,4 +308,163 @@ struct gpio_reg {
 	volatile uint8_t PLOCK_CTL;
 };
 
+/*
+ * Enhanced Serial Peripheral Interface (eSPI) device registers
+ */
+struct espi_reg {
+	/* 0x000: eSPI Identification */
+	volatile uint32_t ESPIID;
+	/* 0x004: eSPI Configuration */
+	volatile uint32_t ESPICFG;
+	/* 0x008: eSPI Status */
+	volatile uint32_t ESPISTS;
+	/* 0x00C: eSPI Interrupt Enable */
+	volatile uint32_t ESPIIE;
+	/* 0x010: eSPI Wake-Up Enable */
+	volatile uint32_t ESPIWE;
+	/* 0x014: Virtual Wire Register Index */
+	volatile uint32_t VWREGIDX;
+	/* 0x018: Virtual Wire Register Data */
+	volatile uint32_t VWREGDATA;
+	/* 0x01C: OOB Receive Buffer Read Head */
+	volatile uint32_t OOBRXRDHEAD;
+	/* 0x020: OOB Transmit Buffer Write Head */
+	volatile uint32_t OOBTXWRHEAD;
+	/* 0x024: OOB Channel Control */
+	volatile uint32_t OOBCTL;
+	/* 0x028: Flash Receive Buffer Read Head */
+	volatile uint32_t FLASHRXRDHEAD;
+	/* 0x02C: Flash Transmit Buffer Write Head */
+	volatile uint32_t FLASHTXWRHEAD;
+	volatile uint32_t reserved1;
+	/* 0x034: Flash Channel Configuration */
+	volatile uint32_t FLASHCFG;
+	/* 0x038: Flash Channel Control */
+	volatile uint32_t FLASHCTL;
+	/* 0x03C: eSPI Error Status */
+	volatile uint32_t ESPIERR;
+	/* 0x040: Peripheral Bus Master Receive Buffer Read Head */
+	volatile uint32_t PBMRXRDHEAD;
+	/* 0x044: Peripheral Bus Master Transmit Buffer Write Head */
+	volatile uint32_t PBMTXWRHEAD;
+	/* 0x048: Peripheral Channel Configuration */
+	volatile uint32_t PERCFG;
+	/* 0x04C: Peripheral Channel Control */
+	volatile uint32_t PERCTL;
+	volatile uint32_t reserved2[44];
+	/* 0x100 - 127: Virtual Wire Event Slave-to-Master 0 - 9 */
+	volatile uint32_t VWEVSM[10];
+	volatile uint32_t reserved3[6];
+	/* 0x140 - 16F: Virtual Wire Event Master-to-Slave 0 - 11 */
+	volatile uint32_t VWEVMS[12];
+	volatile uint32_t reserved4[99];
+	/* 0x2FC: Virtual Wire Channel Control */
+	volatile uint32_t VWCTL;
+	/* 0x300 - 34F: OOB Receive Buffer 0 - 19 */
+	volatile uint32_t OOBRXBUF[20];
+	volatile uint32_t reserved5[12];
+	/* 0x380 - 3CF: OOB Transmit Buffer 0-19 */
+	volatile uint32_t OOBTXBUF[20];
+	volatile uint32_t reserved6[11];
+	/* 0x3FC: OOB Channel Control used in 'direct' mode */
+	volatile uint32_t OOBCTL_DIRECT;
+	/* 0x400 - 443: Flash Receive Buffer 0-16 */
+	volatile uint32_t FLASHRXBUF[17];
+	volatile uint32_t reserved7[15];
+	/* 0x480 - 497: Flash Transmit Buffer 0-5 */
+	volatile uint32_t FLASHTXBUF[6];
+	volatile uint32_t reserved8[25];
+	/* 0x4FC: Flash Channel Control used in 'direct' mode */
+	volatile uint32_t FLASHCTL_DIRECT;
+};
+
+/* eSPI register fields */
+#define NPCX_ESPICFG_PCHANEN             0
+#define NPCX_ESPICFG_VWCHANEN            1
+#define NPCX_ESPICFG_OOBCHANEN           2
+#define NPCX_ESPICFG_FLASHCHANEN         3
+#define NPCX_ESPICFG_HPCHANEN            4
+#define NPCX_ESPICFG_HVWCHANEN           5
+#define NPCX_ESPICFG_HOOBCHANEN          6
+#define NPCX_ESPICFG_HFLASHCHANEN        7
+#define NPCX_ESPICFG_CHANS_FIELD         FIELD(0, 4)
+#define NPCX_ESPICFG_HCHANS_FIELD        FIELD(4, 4)
+#define NPCX_ESPICFG_IOMODE_FIELD        FIELD(8, 9)
+#define NPCX_ESPICFG_MAXFREQ_FIELD       FIELD(10, 12)
+#define NPCX_ESPICFG_PCCHN_SUPP          24
+#define NPCX_ESPICFG_VWCHN_SUPP          25
+#define NPCX_ESPICFG_OOBCHN_SUPP         26
+#define NPCX_ESPICFG_FLASHCHN_SUPP       27
+#define NPCX_ESPIIE_IBRSTIE              0
+#define NPCX_ESPIIE_CFGUPDIE             1
+#define NPCX_ESPIIE_BERRIE               2
+#define NPCX_ESPIIE_OOBRXIE              3
+#define NPCX_ESPIIE_FLASHRXIE            4
+#define NPCX_ESPIIE_SFLASHRDIE           5
+#define NPCX_ESPIIE_PERACCIE             6
+#define NPCX_ESPIIE_DFRDIE               7
+#define NPCX_ESPIIE_VWUPDIE              8
+#define NPCX_ESPIIE_ESPIRSTIE            9
+#define NPCX_ESPIIE_PLTRSTIE             10
+#define NPCX_ESPIIE_AMERRIE              15
+#define NPCX_ESPIIE_AMDONEIE             16
+#define NPCX_ESPIIE_BMTXDONEIE           19
+#define NPCX_ESPIIE_PBMRXIE              20
+#define NPCX_ESPIIE_PMSGRXIE             21
+#define NPCX_ESPIIE_BMBURSTERRIE         22
+#define NPCX_ESPIIE_BMBURSTDONEIE        23
+#define NPCX_ESPIWE_IBRSTWE              0
+#define NPCX_ESPIWE_CFGUPDWE             1
+#define NPCX_ESPIWE_BERRWE               2
+#define NPCX_ESPIWE_OOBRXWE              3
+#define NPCX_ESPIWE_FLASHRXWE            4
+#define NPCX_ESPIWE_PERACCWE             6
+#define NPCX_ESPIWE_DFRDWE               7
+#define NPCX_ESPIWE_VWUPDWE              8
+#define NPCX_ESPIWE_ESPIRSTWE            9
+#define NPCX_ESPIWE_PBMRXWE              20
+#define NPCX_ESPIWE_PMSGRXWE             21
+#define NPCX_ESPISTS_IBRST               0
+#define NPCX_ESPISTS_CFGUPD              1
+#define NPCX_ESPISTS_BERR                2
+#define NPCX_ESPISTS_OOBRX               3
+#define NPCX_ESPISTS_FLASHRX             4
+#define NPCX_ESPISTS_PERACC              6
+#define NPCX_ESPISTS_DFRD                7
+#define NPCX_ESPISTS_VWUPD               8
+#define NPCX_ESPISTS_ESPIRST             9
+#define NPCX_ESPISTS_PLTRST              10
+#define NPCX_ESPISTS_AMERR               15
+#define NPCX_ESPISTS_AMDONE              16
+#define NPCX_ESPISTS_VWUPDW              17
+#define NPCX_ESPISTS_BMTXDONE            19
+#define NPCX_ESPISTS_PBMRX               20
+#define NPCX_ESPISTS_PMSGRX              21
+#define NPCX_ESPISTS_BMBURSTERR          22
+#define NPCX_ESPISTS_BMBURSTDONE         23
+#define NPCX_ESPISTS_ESPIRST_LVL         24
+#define NPCX_VWEVMS_WIRE                 FIELD(0, 4)
+#define NPCX_VWEVMS_VALID                FIELD(4, 4)
+#define NPCX_VWEVMS_IE                   18
+#define NPCX_VWEVMS_WE                   20
+#define NPCX_VWEVSM_WIRE                 FIELD(0, 4)
+#define NPCX_VWEVSM_VALID                FIELD(4, 4)
+#define NPCX_VWEVSM_BIT_VALID(n)         (4+n)
+#define NPCX_OOBCTL_OOB_FREE             0
+#define NPCX_OOBCTL_OOB_AVAIL            1
+#define NPCX_OOBCTL_RSTBUFHEADS          2
+#define NPCX_OOBCTL_OOBPLSIZE            FIELD(10, 3)
+#define NPCX_FLASHCFG_FLASHBLERSSIZE     FIELD(7, 3)
+#define NPCX_FLASHCFG_FLASHPLSIZE        FIELD(10, 3)
+#define NPCX_FLASHCFG_FLASHREQSIZE       FIELD(13, 3)
+#define NPCX_FLASHCTL_FLASH_NP_FREE      0
+#define NPCX_FLASHCTL_FLASH_TX_AVAIL     1
+#define NPCX_FLASHCTL_STRPHDR            2
+#define NPCX_FLASHCTL_DMATHRESH          FIELD(3, 2)
+#define NPCX_FLASHCTL_AMTSIZE            FIELD(5, 8)
+#define NPCX_FLASHCTL_RSTBUFHEADS        13
+#define NPCX_FLASHCTL_CRCEN              14
+#define NPCX_FLASHCTL_CHKSUMSEL          15
+#define NPCX_FLASHCTL_AMTEN              16
+
 #endif /* _NUVOTON_NPCX_REG_DEF_H */
