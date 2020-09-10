@@ -85,6 +85,10 @@ config BT_UART_ON_DEV_NAME
 
 if BT_SPI
 
+config BT_SPI_INIT_PRIORITY
+	int "BT SPI init priority"
+	default 75
+
 config BT_BLUENRG_ACI
 	bool "Enable ACI message with with BlueNRG-based devices"
 	help

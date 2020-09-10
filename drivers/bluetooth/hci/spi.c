@@ -568,4 +568,4 @@ static int bt_spi_init(const struct device *unused)
 	return 0;
 }
 
-SYS_INIT(bt_spi_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(bt_spi_init, POST_KERNEL, CONFIG_BT_SPI_INIT_PRIORITY);
