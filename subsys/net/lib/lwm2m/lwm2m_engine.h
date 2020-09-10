@@ -35,8 +35,14 @@
 #define NOTIFY_OBSERVER(o, i, r)	lwm2m_notify_observer(o, i, r)
 #define NOTIFY_OBSERVER_PATH(path)	lwm2m_notify_observer_path(path)
 
+/* Use this value to generate new token */
+#define LWM2M_MSG_TOKEN_GENERATE_NEW 0U
+
 /* Use this value to skip token generation */
 #define LWM2M_MSG_TOKEN_LEN_SKIP	0xFF
+
+/* Use this value to generate a new message id */
+#define LWM2M_MSG_ID_GENERATE_NEW   0U
 
 /* length of time in milliseconds to wait for buffer allocations */
 #define BUF_ALLOC_TIMEOUT K_SECONDS(1)
