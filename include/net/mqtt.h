@@ -522,7 +522,7 @@ struct mqtt_client {
 	uint8_t will_retain : 1;
 
 	/** Clean session flag indicating a fresh (1) or a retained session (0).
-	 *  Default is 1.
+	 *  Default is CONFIG_MQTT_CLEAN_SESSION.
 	 */
 	uint8_t clean_session : 1;
 };
