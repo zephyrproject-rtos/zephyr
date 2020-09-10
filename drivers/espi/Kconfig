@@ -112,6 +112,12 @@ config ESPI_PERIPHERAL_DEBUG_PORT_80
 	help
 	  Enables debug Port 80 over eSPI peripheral channel.
 
+config ESPI_PERIPHERAL_EC_HOST_CMD
+	bool "Host peripheral device support EC host command subsystem"
+	help
+	  Enables Embedded Controller (EC) host command subsystem via eSPI
+	  peripheral channel.
+
 endif # ESPI_PERIPHERAL_CHANNEL
 
 endif # ESPI

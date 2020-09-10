@@ -14,6 +14,7 @@
 #include <kernel.h>
 #include <soc.h>
 #include "espi_utils.h"
+#include "soc_host.h"
 #include "soc_miwu.h"
 
 #include <logging/log.h>
@@ -386,6 +387,8 @@ static void espi_vw_notify_plt_rst(const struct device *dev)
 	if (wire) {
 		/* Set Peripheral Channel ready when PLTRST is de-asserted */
 		inst->ESPICFG |= BIT(NPCX_ESPICFG_PCHANEN);
+		/* Configure all host sub-modules in host doamin */
+		soc_host_init_subs_host_domain();
 	}
 
 	/* PLT_RST will be received several times */
@@ -623,9 +626,12 @@ static int espi_npcx_read_lpc_request(const struct device *dev,
 				     uint32_t  *data)
 {
 	ARG_UNUSED(dev);
+	struct espi_reg *const inst = HAL_INSTANCE(dev);
 
-	/* TODO: Implement it in next commit */
-	return 0;
+	if (!IS_BIT_SET(inst->ESPICFG, NPCX_ESPICFG_PCHANEN))
+		return -ENOTSUP;
+
+	return soc_host_periph_read_request(op, data);
 }
 
 static int espi_npcx_write_lpc_request(const struct device *dev,
@@ -633,9 +639,12 @@ static int espi_npcx_write_lpc_request(const struct device *dev,
 				      uint32_t *data)
 {
 	ARG_UNUSED(dev);
+	struct espi_reg *const inst = HAL_INSTANCE(dev);
 
-	/* TODO: Implement it in next commit */
-	return 0;
+	if (!IS_BIT_SET(inst->ESPICFG, NPCX_ESPICFG_PCHANEN))
+		return -ENOTSUP;
+
+	return soc_host_periph_write_request(op, data);
 }
 
 #if defined(CONFIG_ESPI_OOB_CHANNEL)
@@ -767,6 +776,7 @@ static int espi_npcx_receive_oob(const struct device *dev,
 	/* Read remaining bytes of package */
 	if (sz_oob_rx % 4) {
 		int i;
+
 		oob_data = inst->OOBRXBUF[idx_rx_buf + 1];
 		for (i = 0; i < sz_oob_rx % 4; i++)
 			*(oob_buf++) = (oob_data >> (8 * i)) & 0xFF;
@@ -852,6 +862,9 @@ static int espi_npcx_init(const struct device *dev)
 
 	/* Configure pin-mux for eSPI bus device */
 	soc_pinctrl_mux_configure(config->alts_list, config->alts_size, 1);
+
+	/* Configure host sub-modules which HW blocks belong to core domain */
+	soc_host_init_subs_core_domain(dev, &data->callbacks);
 
 	/* eSPI Bus interrupt installation */
 	IRQ_CONNECT(DT_INST_IRQN(0),
