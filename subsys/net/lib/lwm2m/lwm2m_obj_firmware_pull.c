@@ -84,7 +84,7 @@ static int transfer_request(struct coap_block_context *ctx,
 
 	msg->type = COAP_TYPE_CON;
 	msg->code = COAP_METHOD_GET;
-	msg->mid = 0U;
+	msg->mid = LWM2M_MSG_ID_GENERATE_NEW;
 	msg->token = token;
 	msg->tkl = tkl;
 	msg->reply_cb = reply_cb;
