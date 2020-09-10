@@ -105,13 +105,10 @@ static int apa102_init(const struct device *dev)
 		return -ENODEV;
 	}
 	data->cs_ctl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
+	data->cs_ctl.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
 	data->cs_ctl.delay = 0;
 
 	data->cfg.cs = &data->cs_ctl;
-
-	gpio_pin_configure(data->cs_ctl.gpio_dev, data->cs_ctl.gpio_pin,
-			   GPIO_OUTPUT_INACTIVE |
-			   DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0));
 #endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 
 	return 0;
