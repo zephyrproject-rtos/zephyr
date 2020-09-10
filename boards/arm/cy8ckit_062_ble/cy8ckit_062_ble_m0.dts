@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2018, Cypress
+ * Copyright (c) 2020, ATL Electronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <cypress/psoc6_cm0.dtsi>
+
+/ {
+	model = "Cypress PSoC6 BLE Pioneer Kit";
+	compatible = "cypress,cy8c6xx7_cm0p", "cypress,psoc6";
+
+	aliases {
+		uart-5 = &uart5;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart5;
+		zephyr,shell-uart = &uart5;
+	};
+};
+
+&uart5 {
+	status = "okay";
+	current-speed = <115200>;
+};
