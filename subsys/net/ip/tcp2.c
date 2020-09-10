@@ -126,7 +126,12 @@ static int tcp_endpoint_set(union tcp_endpoint *ep, struct net_pkt *pkt,
 	case AF_INET:
 		if (IS_ENABLED(CONFIG_NET_IPV4)) {
 			struct net_ipv4_hdr *ip = NET_IPV4_HDR(pkt);
-			struct tcphdr *th = th_get(pkt);
+			struct tcphdr *th;
+
+			th = th_get(pkt);
+			if (!th) {
+				return -ENOBUFS;
+			}
 
 			memset(ep, 0, sizeof(*ep));
 
@@ -145,7 +150,12 @@ static int tcp_endpoint_set(union tcp_endpoint *ep, struct net_pkt *pkt,
 	case AF_INET6:
 		if (IS_ENABLED(CONFIG_NET_IPV6)) {
 			struct net_ipv6_hdr *ip = NET_IPV6_HDR(pkt);
-			struct tcphdr *th = th_get(pkt);
+			struct tcphdr *th;
+
+			th = th_get(pkt);
+			if (!th) {
+				return -ENOBUFS;
+			}
 
 			memset(ep, 0, sizeof(*ep));
 
@@ -361,8 +371,12 @@ static void tcp_send_process(struct k_work *work)
 
 	if (conn->in_retransmission) {
 		if (conn->send_retries > 0) {
-			tcp_send(tcp_pkt_clone(pkt));
-			conn->send_retries--;
+			struct net_pkt *clone = tcp_pkt_clone(pkt);
+
+			if (clone) {
+				tcp_send(clone);
+				conn->send_retries--;
+			}
 		} else {
 			tcp_conn_unref(conn);
 			conn = NULL;
@@ -376,7 +390,6 @@ static void tcp_send_process(struct k_work *work)
 						next) : tcp_pkt_clone(pkt);
 		if (!pkt) {
 			NET_ERR("net_pkt alloc failure");
-			tcp_conn_unref(conn);
 			return;
 		}
 
@@ -634,14 +647,15 @@ static int ip_header_add(struct tcp *conn, struct net_pkt *pkt)
 	return -EINVAL;
 }
 
-static void tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
-			uint32_t seq)
+static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
+		       uint32_t seq)
 {
 	struct net_pkt *pkt;
-	int ret;
+	int ret = 0;
 
 	pkt = tcp_pkt_alloc(conn, sizeof(struct tcphdr));
 	if (!pkt) {
+		ret = -ENOBUFS;
 		goto out;
 	}
 
@@ -649,7 +663,6 @@ static void tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 		/* Append the data buffer to the pkt */
 		net_pkt_append_buffer(pkt, data->buffer);
 		data->buffer = NULL;
-		tcp_pkt_unref(data);
 	}
 
 	ret = ip_header_add(conn, pkt);
@@ -673,7 +686,7 @@ static void tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 	NET_DBG("%s", log_strdup(tcp_th(pkt)));
 
 	if (tcp_send_cb) {
-		tcp_send_cb(pkt);
+		ret = tcp_send_cb(pkt);
 		goto out;
 	}
 
@@ -681,12 +694,12 @@ static void tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 
 	tcp_send_process((struct k_work *)&conn->send_timer);
 out:
-	return;
+	return ret;
 }
 
 static void tcp_out(struct tcp *conn, uint8_t flags)
 {
-	tcp_out_ext(conn, flags, NULL /* no data */, conn->seq);
+	(void)tcp_out_ext(conn, flags, NULL /* no data */, conn->seq);
 }
 
 static int tcp_pkt_pull(struct net_pkt *pkt, size_t len)
@@ -707,8 +720,8 @@ static int tcp_pkt_pull(struct net_pkt *pkt, size_t len)
 	return ret;
 }
 
-static void tcp_pkt_peek(struct net_pkt *to, struct net_pkt *from, size_t pos,
-			 size_t len)
+static int tcp_pkt_peek(struct net_pkt *to, struct net_pkt *from, size_t pos,
+			size_t len)
 {
 	net_pkt_cursor_init(to);
 	net_pkt_cursor_init(from);
@@ -718,7 +731,7 @@ static void tcp_pkt_peek(struct net_pkt *to, struct net_pkt *from, size_t pos,
 		net_pkt_skip(from, pos);
 	}
 
-	net_pkt_copy(to, from, len);
+	return net_pkt_copy(to, from, len);
 }
 
 static bool tcp_window_full(struct tcp *conn)
@@ -766,14 +779,27 @@ static int tcp_send_data(struct tcp *conn)
 		goto out;
 	}
 
-	tcp_pkt_peek(pkt, conn->send_data, pos, len);
+	ret = tcp_pkt_peek(pkt, conn->send_data, pos, len);
+	if (ret < 0) {
+		tcp_pkt_unref(pkt);
+		ret = -ENOBUFS;
+		goto out;
+	}
 
-	tcp_out_ext(conn, PSH | ACK, pkt, conn->seq + conn->unacked_len);
+	ret = tcp_out_ext(conn, PSH | ACK, pkt, conn->seq + conn->unacked_len);
+	if (ret == 0) {
+		conn->unacked_len += len;
+	}
 
-	conn->unacked_len += len;
- out:
+	/* The data we want to send, has been moved to the send queue so we
+	 * can unref the head net_pkt. If there was an error, we need to remove
+	 * the packet anyway.
+	 */
+	tcp_pkt_unref(pkt);
+
 	conn_send_data_dump(conn);
 
+ out:
 	return ret;
 }
 
@@ -809,6 +835,14 @@ static int tcp_send_queued_data(struct tcp *conn)
 		subscribe = false;
 	}
 
+	/* If we have out-of-bufs case, then do not start retransmit timer
+	 * yet. The socket layer will catch this and resend data if needed.
+	 */
+	if (ret == -ENOBUFS) {
+		NET_DBG("No bufs, cancelling retransmit timer");
+		k_delayed_work_cancel(&conn->send_data_timer);
+	}
+
 	if (subscribe) {
 		conn->send_data_retries = 0;
 		k_delayed_work_submit(&conn->send_data_timer, K_MSEC(tcp_rto));
@@ -821,6 +855,7 @@ static void tcp_resend_data(struct k_work *work)
 {
 	struct tcp *conn = CONTAINER_OF(work, struct tcp, send_data_timer);
 	bool conn_unref = false;
+	int ret;
 
 	NET_DBG("send_data_retries=%hu", conn->send_data_retries);
 
@@ -832,10 +867,14 @@ static void tcp_resend_data(struct k_work *work)
 
 	conn->data_mode = TCP_DATA_MODE_RESEND;
 	conn->unacked_len = 0;
-	tcp_send_data(conn);
 
-	conn->send_data_retries++;
+	ret = tcp_send_data(conn);
+	if (ret == 0) {
+		conn->send_data_retries++;
+	}
+
 	k_delayed_work_submit(&conn->send_data_timer, K_MSEC(tcp_rto));
+
  out:
 	if (conn_unref) {
 		tcp_conn_unref(conn);
@@ -1088,6 +1127,7 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 	uint8_t next = 0, fl = th ? th->th_flags : 0;
 	size_t tcp_options_len = th ? (th->th_off - 5) * 4 : 0;
 	size_t len;
+	int ret;
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
@@ -1217,10 +1257,8 @@ next_state:
 			conn_send_data_dump(conn);
 
 			if (!k_delayed_work_remaining_get(&conn->send_data_timer)) {
-				NET_ERR("conn: %p, Missing a subscription "
+				NET_DBG("conn: %p, Missing a subscription "
 					"of the send_data queue timer", conn);
-				tcp_out(conn, RST);
-				conn_state(conn, TCP_CLOSED);
 				break;
 			}
 			conn->send_data_retries = 0;
@@ -1230,7 +1268,8 @@ next_state:
 			}
 			conn->data_mode = TCP_DATA_MODE_SEND;
 
-			if (tcp_send_queued_data(conn) < 0) {
+			ret = tcp_send_queued_data(conn);
+			if (ret < 0 && ret != -ENOBUFS) {
 				tcp_out(conn, RST);
 				conn_state(conn, TCP_CLOSED);
 				break;
@@ -1324,7 +1363,6 @@ int net_tcp_put(struct net_context *context)
 		tcp_out_ext(conn, FIN | ACK, NULL,
 			    conn->seq + conn->unacked_len);
 		conn_seq(conn, + 1);
-
 		conn_state(conn, TCP_FIN_WAIT_1);
 
 		k_mutex_unlock(&conn->lock);
@@ -1355,17 +1393,21 @@ int net_tcp_update_recv_wnd(struct net_context *context, int32_t delta)
 int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 {
 	struct tcp *conn = context->tcp;
+	struct net_buf *orig_buf = NULL;
 	int ret = 0;
 	size_t len;
 
 	if (!conn || conn->state != TCP_ESTABLISHED) {
-		ret = -ENOTCONN;
-		goto out;
+		return -ENOTCONN;
 	}
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
 	len = net_pkt_get_len(pkt);
+
+	if (conn->send_data->buffer) {
+		orig_buf = net_buf_frag_last(conn->send_data->buffer);
+	}
 
 	net_pkt_append_buffer(conn->send_data, pkt->buffer);
 	conn->send_data_total += len;
@@ -1375,14 +1417,28 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 	tcp_pkt_unref(pkt);
 
 	ret = tcp_send_queued_data(conn);
-	if (ret < 0) {
-		k_mutex_unlock(&conn->lock);
+	if (ret < 0 && ret != -ENOBUFS) {
 		tcp_conn_unref(conn);
 		goto out;
 	}
 
+	if (ret == -ENOBUFS) {
+		/* Restore the original data so that we do not resend the pkt
+		 * data multiple times.
+		 */
+		conn->send_data_total -= len;
+
+		if (orig_buf) {
+			pkt->buffer = orig_buf->frags;
+			orig_buf->frags = NULL;
+		} else {
+			pkt->buffer = conn->send_data->buffer;
+			conn->send_data->buffer = NULL;
+		}
+	}
+out:
 	k_mutex_unlock(&conn->lock);
- out:
+
 	return ret;
 }
 
