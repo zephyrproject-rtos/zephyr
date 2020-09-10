@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdint.h>
-#include "efi.h"
+#include <arch/x86/efi.h>
 #include "printf.h"
 #include <zefi-segments.h>
 
