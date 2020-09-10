@@ -864,7 +864,7 @@ class QEMUHandler(Handler):
             log_out_fp.write(line)
             log_out_fp.flush()
             line = line.strip()
-            logger.debug("QEMU: %s" % line)
+            logger.debug(f"QEMU ({pid}): {line}")
 
             harness.handle(line)
             if harness.state:
@@ -890,8 +890,7 @@ class QEMUHandler(Handler):
         handler.record(harness)
 
         handler_time = time.time() - start_time
-        logger.debug("QEMU complete (%s) after %f seconds" %
-                     (out_state, handler_time))
+        logger.debug(f"QEMU ({pid}) complete ({out_state}) after {handler_time} seconds")
 
         if out_state == "timeout":
             handler.instance.reason = "Timeout"
@@ -954,9 +953,11 @@ class QEMUHandler(Handler):
         command += ["-C", self.build_dir, "run"]
 
         is_timeout = False
+        qemu_pid = None
 
         with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.build_dir) as proc:
             logger.debug("Spawning QEMUHandler Thread for %s" % self.name)
+
             try:
                 proc.wait(self.timeout)
             except subprocess.TimeoutExpired:
@@ -981,7 +982,9 @@ class QEMUHandler(Handler):
                     proc.kill()
                     self.returncode = proc.returncode
             else:
-                logger.debug(f"No timeout, return code from qemu: {proc.returncode}")
+                if os.path.exists(self.pid_fn):
+                    qemu_pid = int(open(self.pid_fn).read())
+                logger.debug(f"No timeout, return code from QEMU ({qemu_pid}): {proc.returncode}")
                 self.returncode = proc.returncode
 
             # Need to wait for harness to finish processing
@@ -990,9 +993,10 @@ class QEMUHandler(Handler):
             self.thread.join()
 
             if os.path.exists(self.pid_fn):
+                qemu_pid = int(open(self.pid_fn).read())
                 os.unlink(self.pid_fn)
 
-        logger.debug(f"return code from qemu: {self.returncode}")
+        logger.debug(f"return code from QEMU ({qemu_pid}): {self.returncode}")
 
         if (self.returncode != 0 and not self.ignore_qemu_crash) or not harness.state:
             self.set_state("failed", 0)
