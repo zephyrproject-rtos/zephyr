@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #include "tcp2_priv.h"
 
 static int tcp_rto = CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT;
-static int tcp_retries = 3;
+static int tcp_retries = CONFIG_NET_TCP_RETRY_COUNT;
 static int tcp_window = NET_IPV6_MTU;
 
 static sys_slist_t tcp_conns = SYS_SLIST_STATIC_INIT(&tcp_conns);
