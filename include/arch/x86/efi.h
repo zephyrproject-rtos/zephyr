@@ -10,6 +10,7 @@
 
 #include <zephyr/types.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #define __abi __attribute__((ms_abi))
 
@@ -539,8 +540,13 @@ struct efi_boot_services {
 	efi_create_event_ex_t CreateEventEx;
 };
 
+/**
+ * @brief EFI Configuration Table structure
+ */
 struct efi_configuration_table {
+	/** Vendor EFI GUID Identifier */
 	efi_guid_t VendorGuid;
+	/** Vendor table pointer */
 	void *VendorTable;
 };
 
@@ -559,7 +565,9 @@ struct efi_system_table {
 	struct efi_simple_text_output *StdErr;
 	struct efi_runtime_services *RuntimeServices;
 	struct efi_boot_services *BootServices;
+	/** The amount of entries to expect in the next attribute */
 	uint64_t NumberOfTableEntries;
+	/** A pointer to the configuration table(s) */
 	struct efi_configuration_table *ConfigurationTable;
 };
 
@@ -576,9 +584,24 @@ struct efi_system_table {
 void efi_init(struct efi_system_table *efi_sys_table);
 
 
+/** @brief Look up for a vendor table via its EFI GUID
+ *
+ * @param guid The Vendor EFI GUID too look for
+ *
+ * @return the Vendor table pointer on success, or NULL otherwise.
+ */
+void *efi_config_get_vendor_table_by_guid(efi_guid_t *guid);
+
 #else /* CONFIG_X86_EFI_SYSTEM_TABLE */
 
 #define efi_init(...)
+
+static inline void * efi_config_get_vendor_table_by_guid(efi_guid_t *guid)
+{
+	(void)guid;
+
+	return NULL;
+}
 
 #endif /* CONFIG_X86_EFI_SYSTEM_TABLE */
 
