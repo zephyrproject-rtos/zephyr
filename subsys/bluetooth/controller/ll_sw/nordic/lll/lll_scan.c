@@ -42,7 +42,7 @@
 #include "hal/debug.h"
 
 static int init_reset(void);
-static int prepare_cb(struct lll_prepare_param *prepare_param);
+static int prepare_cb(struct lll_prepare_param *p);
 static int is_abort_cb(void *next, int prio, void *curr,
 		       lll_prepare_cb_t *resume_cb, int *resume_prio);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
@@ -102,13 +102,12 @@ int lll_scan_reset(void)
 
 void lll_scan_prepare(void *param)
 {
-	struct lll_prepare_param *p = param;
 	int err;
 
 	err = lll_hfclock_on();
 	LL_ASSERT(err >= 0);
 
-	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0, p);
+	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0, param);
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 
@@ -119,15 +118,17 @@ static int init_reset(void)
 
 static int prepare_cb(struct lll_prepare_param *p)
 {
-	uint32_t aa = sys_cpu_to_le32(PDU_AC_ACCESS_ADDR);
 	uint32_t ticks_at_event, ticks_at_start;
-	struct lll_scan *lll = p->param;
 	struct node_rx_pdu *node_rx;
-	struct evt_hdr *evt;
 	uint32_t remainder_us;
+	struct lll_scan *lll;
+	struct evt_hdr *evt;
 	uint32_t remainder;
+	uint32_t aa;
 
 	DEBUG_RADIO_START_O(1);
+
+	lll = p->param;
 
 	/* Check if stopped (on connection establishment race between LLL and
 	 * ULL.
@@ -170,6 +171,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	radio_pkt_rx_set(node_rx->pdu);
 
+	aa = sys_cpu_to_le32(PDU_AC_ACCESS_ADDR);
 	radio_aa_set((uint8_t *)&aa);
 	radio_crc_configure(((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16)),
 			    0x555555);
@@ -198,7 +200,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_FILTER) && lll->filter_policy) {
 		/* Setup Radio Filter */
-
 		struct lll_filter *wl = ull_filter_lll_get(true);
 
 		radio_filter_configure(wl->enable_bitmask,
@@ -294,8 +295,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 static int resume_prepare_cb(struct lll_prepare_param *p)
 {
-	struct evt_hdr *evt = HDR_LLL2EVT(p->param);
+	struct evt_hdr *evt;
 
+	evt = HDR_LLL2EVT(p->param);
 	p->ticks_at_expire = ticker_ticks_now_get() - lll_evt_offset_get(evt);
 	p->remainder = 0;
 	p->lazy = 0;
@@ -381,14 +383,14 @@ static void ticker_op_start_cb(uint32_t status, void *param)
 
 static void isr_rx(void *param)
 {
-	struct lll_scan *lll = (void *)param;
-	uint8_t trx_done;
-	uint8_t crc_ok;
+	struct lll_scan *lll;
 	uint8_t devmatch_ok;
 	uint8_t devmatch_id;
 	uint8_t irkmatch_ok;
 	uint8_t irkmatch_id;
 	uint8_t rssi_ready;
+	uint8_t trx_done;
+	uint8_t crc_ok;
 	uint8_t rl_idx;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
@@ -411,6 +413,8 @@ static void isr_rx(void *param)
 
 	/* Clear radio status and events */
 	lll_isr_status_reset();
+
+	lll = param;
 
 	/* No Rx */
 	if (!trx_done) {
@@ -523,11 +527,12 @@ static void isr_common_done(void *param)
 
 static void isr_done(void *param)
 {
-	struct lll_scan *lll = param;
+	struct lll_scan *lll;
 	uint32_t start_us;
 
 	isr_common_done(param);
 
+	lll = param;
 	lll->state = 0U;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
@@ -555,7 +560,8 @@ static void isr_done(void *param)
 
 static void isr_window(void *param)
 {
-	uint32_t ticks_at_start, remainder_us;
+	uint32_t ticks_at_start;
+	uint32_t remainder_us;
 
 	isr_common_done(param);
 
@@ -598,8 +604,8 @@ static void isr_abort(void *param)
 
 static void isr_cleanup(void *param)
 {
-	struct lll_scan *lll = param;
 	struct node_rx_hdr *node_rx;
+	struct lll_scan *lll;
 
 	if (lll_is_done(param)) {
 		return;
@@ -607,6 +613,7 @@ static void isr_cleanup(void *param)
 
 	radio_filter_disable();
 
+	lll = param;
 	if (++lll->chan == 3U) {
 		lll->chan = 0U;
 	}

@@ -68,15 +68,16 @@ void lll_sync_prepare(void *param)
 	uint16_t elapsed;
 	int err;
 
-	p = param;
-	lll = p->param;
-
 	/* Request to start HF Clock */
 	err = lll_hfclock_on();
 	LL_ASSERT(err >= 0);
 
+	p = param;
+
 	/* Instants elapsed */
 	elapsed = p->lazy + 1;
+
+	lll = p->param;
 
 	/* Save the (skip + 1) for use in event */
 	lll->skip_prepare += elapsed;
@@ -238,8 +239,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 static void isr_rx(void *param)
 {
-	struct lll_sync *lll = param;
 	struct event_done_extra *e;
+	struct lll_sync *lll;
 	uint8_t rssi_ready;
 	uint8_t trx_done;
 	uint8_t trx_cnt;
@@ -256,6 +257,8 @@ static void isr_rx(void *param)
 
 	/* Clear radio rx status and events */
 	lll_isr_rx_status_reset();
+
+	lll = param;
 
 	/* No Rx */
 	trx_cnt = 0U;
