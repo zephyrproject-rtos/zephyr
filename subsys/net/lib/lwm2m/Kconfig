@@ -120,6 +120,13 @@ config LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP
 	help
 	  Enabling this setting allows the RD client to support bootstrap mode.
 
+config LWM2M_RD_CLIENT_ENDPOINT_NAME_MAX_LENGTH
+	int "Maximum length of client endpoint name"
+	depends on LWM2M_RD_CLIENT_SUPPORT
+	default 33
+	help
+	  Default: room for 32 hexadeciaml digits (UUID) + NULL
+
 config LWM2M_PEER_PORT
 	int "LWM2M server port"
 	depends on LWM2M_RD_CLIENT_SUPPORT
