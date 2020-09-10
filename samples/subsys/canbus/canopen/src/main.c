@@ -296,6 +296,6 @@ void main(void)
 
 	LOG_INF("Resetting device");
 
-	CO_delete(CAN_INTERFACE);
+	CO_delete(&can);
 	sys_reboot(SYS_REBOOT_COLD);
 }
