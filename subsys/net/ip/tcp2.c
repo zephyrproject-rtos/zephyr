@@ -1414,7 +1414,6 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 	NET_DBG("conn: %p Queued %zu bytes (total %zu)", conn, len,
 		conn->send_data_total);
 	pkt->buffer = NULL;
-	tcp_pkt_unref(pkt);
 
 	ret = tcp_send_queued_data(conn);
 	if (ret < 0 && ret != -ENOBUFS) {
@@ -1435,6 +1434,11 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 			pkt->buffer = conn->send_data->buffer;
 			conn->send_data->buffer = NULL;
 		}
+	} else {
+		/* We should not free the pkt if there was an error. It will be
+		 * freed in net_context.c:context_sendto()
+		 */
+		tcp_pkt_unref(pkt);
 	}
 out:
 	k_mutex_unlock(&conn->lock);
