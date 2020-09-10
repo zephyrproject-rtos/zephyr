@@ -20,7 +20,7 @@
  *
  * @return 0 on success, negative errno otherwise.
  */
-static int espi_manage_callback(sys_slist_t *callbacks,
+static inline int espi_manage_callback(sys_slist_t *callbacks,
 				struct espi_callback *callback, bool set)
 {
 	__ASSERT(callback, "No callback!");
