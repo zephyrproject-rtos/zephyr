@@ -467,4 +467,296 @@ struct espi_reg {
 #define NPCX_FLASHCTL_CHKSUMSEL          15
 #define NPCX_FLASHCTL_AMTEN              16
 
+/*
+ * Mobile System Wake-Up Control (MSWC) device registers
+ */
+struct mswc_reg {
+	/* 0x000: MSWC Control Status 1 */
+	volatile uint8_t MSWCTL1;
+	volatile uint8_t reserved1;
+	/* 0x002: MSWC Control Status 2 */
+	volatile uint8_t MSWCTL2;
+	volatile uint8_t reserved2[5];
+	/* 0x008: Host Configuration Base Address Low */
+	volatile uint8_t HCBAL;
+	volatile uint8_t reserved3;
+	/* 0x00A: Host Configuration Base Address High */
+	volatile uint8_t HCBAH;
+	volatile uint8_t reserved4;
+	/* 0X00C: MSWC INTERRUPT ENABLE 2 */
+	volatile uint8_t MSIEN2;
+	volatile uint8_t reserved5;
+	/* 0x00E: MSWC Host Event Status 0 */
+	volatile uint8_t MSHES0;
+	volatile uint8_t reserved6;
+	/* 0x010: MSWC Host Event Interrupt Enable */
+	volatile uint8_t MSHEIE0;
+	volatile uint8_t reserved7;
+	/* 0x012: Host Control */
+	volatile uint8_t HOST_CTL;
+	volatile uint8_t reserved8;
+	/* 0x014: SMI Pulse Length */
+	volatile uint8_t SMIP_LEN;
+	volatile uint8_t reserved9;
+	/* 0x016: SCI Pulse Length */
+	volatile uint8_t SCIP_LEN;
+	volatile uint8_t reserved10[5];
+	/* 0x01C: SRID Core Access */
+	volatile uint8_t SRID_CR;
+	volatile uint8_t reserved11[3];
+	/* 0x020: SID Core Access */
+	volatile uint8_t SID_CR;
+	volatile uint8_t reserved12;
+	/* 0x022: DEVICE_ID Core Access */
+	volatile uint8_t DEVICE_ID_CR;
+	volatile uint8_t reserved13[5];
+	/* 0x028: Chip Revision Core Access */
+	volatile uint8_t CHPREV_CR;
+	volatile uint8_t reserved14[5];
+	/* 0x02E: Virtual Wire Sleep States */
+	volatile uint8_t VW_SLPST1;
+	volatile uint8_t reserved15;
+};
+
+/* MSWC register fields */
+#define NPCX_MSWCTL1_HRSTOB              0
+#define NPCS_MSWCTL1_HWPRON              1
+#define NPCX_MSWCTL1_PLTRST_ACT          2
+#define NPCX_MSWCTL1_VHCFGA              3
+#define NPCX_MSWCTL1_HCFGLK              4
+#define NPCX_MSWCTL1_PWROFFB             6
+#define NPCX_MSWCTL1_A20MB               7
+
+/*
+ * Shared Memory (SHM) device registers
+ */
+struct shm_reg {
+	/* 0x000: Shared Memory Core Status */
+	volatile uint8_t SMC_STS;
+	/* 0x001: Shared Memory Core Control */
+	volatile uint8_t SMC_CTL;
+	/* 0x002: Shared Memory Host Control */
+	volatile uint8_t SHM_CTL;
+	volatile uint8_t reserved1[2];
+	/* 0x005: Indirect Memory Access Window Size */
+	volatile uint8_t IMA_WIN_SIZE;
+	volatile uint8_t reserved2;
+	/* 0x007: Shared Access Windows Size */
+	volatile uint8_t WIN_SIZE;
+	/* 0x008: Shared Access Window 1, Semaphore */
+	volatile uint8_t SHAW1_SEM;
+	/* 0x009: Shared Access Window 2, Semaphore */
+	volatile uint8_t SHAW2_SEM;
+	volatile uint8_t reserved3;
+	/* 0x00B: Indirect Memory Access, Semaphore */
+	volatile uint8_t IMA_SEM;
+	volatile uint8_t reserved4[2];
+	/* 0x00E: Shared Memory Configuration */
+	volatile uint16_t SHCFG;
+	/* 0x010: Shared Access Window 1 Write Protect */
+	volatile uint8_t WIN1_WR_PROT;
+	/* 0x011: Shared Access Window 1 Read Protect */
+	volatile uint8_t WIN1_RD_PROT;
+	/* 0x012: Shared Access Window 2 Write Protect */
+	volatile uint8_t WIN2_WR_PROT;
+	/* 0x013: Shared Access Window 2 Read Protect */
+	volatile uint8_t WIN2_RD_PROT;
+	volatile uint8_t reserved5[2];
+	/* 0x016: Indirect Memory Access Write Protect */
+	volatile uint8_t IMA_WR_PROT;
+	/* 0x017: Indirect Memory Access Read Protect */
+	volatile uint8_t IMA_RD_PROT;
+	volatile uint8_t reserved6[8];
+	/* 0x020: Shared Access Window 1 Base */
+	volatile uint32_t WIN_BASE1;
+	/* 0x024: Shared Access Window 2 Base */
+	volatile uint32_t WIN_BASE2;
+	volatile uint32_t reserved7;
+	/* 0x02C: Indirect Memory Access Base */
+	volatile uint32_t IMA_BASE;
+	volatile uint8_t reserved8[10];
+	/* 0x03A: Reset Configuration */
+	volatile uint8_t RST_CFG;
+	volatile uint8_t reserved9[5];
+	/* 0x040: Debug Port 80 Buffered Data */
+	volatile uint16_t DP80BUF;
+	/* 0x042: Debug Port 80 Status */
+	volatile uint8_t DP80STS;
+	volatile uint8_t reserved10;
+	/* 0x044: Debug Port 80 Control */
+	volatile uint8_t DP80CTL;
+	volatile uint8_t reserved11[3];
+	/* 0x048: Host_Offset in Windows 1, 2 Status */
+	volatile uint8_t HOFS_STS;
+	/* 0x049: Host_Offset in Windows 1, 2 Control */
+	volatile uint8_t HOFS_CTL;
+	/* 0x04A: Core_Offset in Window 2 Address */
+	volatile uint16_t COFS2;
+	/* 0x04C: Core_Offset in Window 1 Address */
+	volatile uint16_t COFS1;
+	volatile uint16_t reserved12;
+};
+
+/* SHM register fields */
+#define NPCX_SMC_STS_HRERR               0
+#define NPCX_SMC_STS_HWERR               1
+#define NPCX_SMC_STS_HSEM1W              4
+#define NPCX_SMC_STS_HSEM2W              5
+#define NPCX_SMC_STS_SHM_ACC             6
+#define NPCX_SMC_CTL_HERR_IE             2
+#define NPCX_SMC_CTL_HSEM1_IE            3
+#define NPCX_SMC_CTL_HSEM2_IE            4
+#define NPCX_SMC_CTL_ACC_IE              5
+#define NPCX_SMC_CTL_PREF_EN             6
+#define NPCX_SMC_CTL_HOSTWAIT            7
+#define NPCX_FLASH_SIZE_STALL_HOST       6
+#define NPCX_FLASH_SIZE_RD_BURST         7
+#define NPCX_WIN_PROT_RW1L_RP            0
+#define NPCX_WIN_PROT_RW1L_WP            1
+#define NPCX_WIN_PROT_RW1H_RP            2
+#define NPCX_WIN_PROT_RW1H_WP            3
+#define NPCX_WIN_PROT_RW2L_RP            4
+#define NPCX_WIN_PROT_RW2L_WP            5
+#define NPCX_WIN_PROT_RW2H_RP            6
+#define NPCX_WIN_PROT_RW2H_WP            7
+#define NPCX_PWIN_SIZEI_RPROT            13
+#define NPCX_PWIN_SIZEI_WPROT            14
+#define NPCX_CSEM2                       6
+#define NPCX_CSEM3                       7
+#define NPCX_DP80STS_FWR                 5
+#define NPCX_DP80STS_FNE                 6
+#define NPCX_DP80STS_FOR                 7
+#define NPCX_DP80CTL_DP80EN              0
+#define NPCX_DP80CTL_SYNCEN              1
+#define NPCX_DP80CTL_ADV                 2
+#define NPCX_DP80CTL_RAA                 3
+#define NPCX_DP80CTL_RFIFO               4
+#define NPCX_DP80CTL_CIEN                5
+#define NPCX_DP80CTL_DP80_HF_CFG         7
+
+/*
+ * Keyboard and Mouse Controller (KBC) device registers
+ */
+struct kbc_reg {
+	/* 0x000h: Host Interface Control */
+	volatile uint8_t HICTRL;
+	volatile uint8_t reserved1;
+	/* 0x002h: Host Interface IRQ Control */
+	volatile uint8_t HIIRQC;
+	volatile uint8_t reserved2;
+	/* 0x004h: Host Interface Keyboard/Mouse Status */
+	volatile uint8_t HIKMST;
+	volatile uint8_t reserved3;
+	/* 0x006h: Host Interface Keyboard Data Out Buffer */
+	volatile uint8_t HIKDO;
+	volatile uint8_t reserved4;
+	/* 0x008h: Host Interface Mouse Data Out Buffer */
+	volatile uint8_t HIMDO;
+	volatile uint8_t reserved5;
+	/* 0x00Ah: Host Interface Keyboard/Mouse Data In Buffer */
+	volatile uint8_t HIKMDI;
+	/* 0x00Bh: Host Interface Keyboard/Mouse Shadow Data In Buffer */
+	volatile uint8_t SHIKMDI;
+};
+
+/* KBC register field */
+#define NPCX_HICTRL_OBFKIE               0
+#define NPCX_HICTRL_OBFMIE               1
+#define NPCX_HICTRL_OBECIE               2
+#define NPCX_HICTRL_IBFCIE               3
+#define NPCX_HICTRL_PMIHIE               4
+#define NPCX_HICTRL_PMIOCIE              5
+#define NPCX_HICTRL_PMICIE               6
+#define NPCX_HICTRL_FW_OBF               7
+#define NPCX_HIKMST_OBF                  0
+#define NPCX_HIKMST_IBF                  1
+#define NPCX_HIKMST_F0                   2
+#define NPCX_HIKMST_A2                   3
+#define NPCX_HIKMST_ST0                  4
+#define NPCX_HIKMST_ST1                  5
+#define NPCX_HIKMST_ST2                  6
+#define NPCX_HIKMST_ST3                  7
+
+/*
+ * Power Management Channel (PMCH) device registers
+ */
+struct pmch_reg {
+	/* 0x000: Host Interface PM Status */
+	volatile uint8_t HIPMST;
+	volatile uint8_t reserved1;
+	/* 0x002: Host Interface PM Data Out Buffer */
+	volatile uint8_t HIPMDO;
+	volatile uint8_t reserved2;
+	/* 0x004: Host Interface PM Data In Buffer */
+	volatile uint8_t HIPMDI;
+	/* 0x005: Host Interface PM Shadow Data In Buffer */
+	volatile uint8_t SHIPMDI;
+	/* 0x006: Host Interface PM Data Out Buffer with SCI */
+	volatile uint8_t HIPMDOC;
+	volatile uint8_t reserved3;
+	/* 0x008: Host Interface PM Data Out Buffer with SMI */
+	volatile uint8_t HIPMDOM;
+	volatile uint8_t reserved4;
+	/* 0x00A: Host Interface PM Data In Buffer with SCI */
+	volatile uint8_t HIPMDIC;
+	volatile uint8_t reserved5;
+	/* 0x00C: Host Interface PM Control */
+	volatile uint8_t HIPMCTL;
+	/* 0x00D: Host Interface PM Control 2 */
+	volatile uint8_t HIPMCTL2;
+	/* 0x00E: Host Interface PM Interrupt Control */
+	volatile uint8_t HIPMIC;
+	volatile uint8_t reserved6;
+	/* 0x010: Host Interface PM Interrupt Enable */
+	volatile uint8_t HIPMIE;
+	volatile uint8_t reserved7;
+};
+
+/* PMCH register field */
+#define NPCX_HIPMIE_SCIE                 1
+#define NPCX_HIPMIE_SMIE                 2
+#define NPCX_HIPMCTL_IBFIE               0
+#define NPCX_HIPMCTL_SCIPOL              6
+#define NPCX_HIPMST_OBF                  0
+#define NPCX_HIPMST_IBF                  1
+#define NPCX_HIPMST_F0                   2
+#define NPCX_HIPMST_CMD                  3
+#define NPCX_HIPMST_ST0                  4
+#define NPCX_HIPMST_ST1                  5
+#define NPCX_HIPMST_ST2                  6
+#define NPCX_HIPMIC_SMIB                 1
+#define NPCX_HIPMIC_SCIB                 2
+#define NPCX_HIPMIC_SMIPOL               6
+
+/*
+ * Core Access to Host (C2H) device registers
+ */
+struct c2h_reg {
+	/* 0x000: Indirect Host I/O Address */
+	volatile uint16_t IHIOA;
+	/* 0x002: Indirect Host Data */
+	volatile uint8_t IHD;
+	volatile uint8_t reserved1;
+	/* 0x004: Lock Host Access */
+	volatile uint16_t LKSIOHA;
+	/* 0x006: Access Lock Violation */
+	volatile uint16_t SIOLV;
+	/* 0x008: Core-to-Host Modules Access Enable */
+	volatile uint16_t CRSMAE;
+	/* 0x00A: Module Control */
+	volatile uint8_t SIBCTRL;
+	volatile uint8_t reserved3;
+};
+
+/* C2H register fields */
+#define NPCX_LKSIOHA_LKCFG               0
+#define NPCX_LKSIOHA_LKSPHA              2
+#define NPCX_LKSIOHA_LKHIKBD             11
+#define NPCX_CRSMAE_CFGAE                0
+#define NPCX_CRSMAE_HIKBDAE              11
+#define NPCX_SIOLV_SPLV                  2
+#define NPCX_SIBCTRL_CSAE                0
+#define NPCX_SIBCTRL_CSRD                1
+#define NPCX_SIBCTRL_CSWR                2
+
 #endif /* _NUVOTON_NPCX_REG_DEF_H */

@@ -309,6 +309,45 @@
 			#vw-cells = <3>;
 			status = "disabled";
 		};
+
+		host_sub: lpc@400c1000 {
+			compatible = "nuvoton,npcx-host-sub";
+			/* host sub-module register address & size */
+			reg = <0x400c1000 0x2000
+			       0x40010000 0x2000
+			       0x4000e000 0x2000
+			       0x400c7000 0x2000
+			       0x400c9000 0x2000
+			       0x400cb000 0x2000>;
+			reg-names = "mswc", "shm", "c2h", "kbc", "pm_acpi",
+				    "pm_hcmd";
+
+			/* host sub-module IRQ and priority */
+			interrupts = <25 3>, /* KBC Input-Buf-Full (IBF) */
+				     <56 3>, /* KBC Output-Buf-Empty (OBE) */
+				     <26 3>, /* PMCH Input-Buf-Full (IBF) */
+				     <3 3>,  /* PMCH Output-Buf-Empty (OBE) */
+				     <6 3>;  /* Port80 FIFO Not Empty */
+			interrupt-names = "kbc_ibf", "kbc_obe", "pmch_ibf",
+					  "pmch_obe", "p80_fifo";
+
+			/* Host serial port pinmux PIN75 86 36 33 42 C7 B3 B2 */
+			pinctrl = <&altb_rxd_sl &altb_txd_sl
+						&altb_rts_sl &altb_cts_sl
+						&altb_ri_sl &altb_dtr_bout_sl
+						&altb_dcd_sl &altb_dsr_sl>;
+
+			/* WUI map for accessing host sub-modules */
+			host_acc_wui = <&wui_host_acc>;
+
+			/* clocks for host sub-modules */
+			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 3>,
+				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 4>,
+				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 5>,
+				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 6>,
+				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 7>;
+			label = "HOST_SUBS";
+		};
 	};
 };
 
