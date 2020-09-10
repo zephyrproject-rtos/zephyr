@@ -244,7 +244,7 @@ static int peci_xec_transfer(const struct device *dev, struct peci_msg *msg)
 	ARG_UNUSED(dev);
 	int ret;
 	PECI_Type *base = peci_xec_config.base;
-	uint8_t err_val = base->ERROR;
+	uint8_t err_val;
 
 	ret = peci_xec_write(dev, msg);
 	if (ret) {
@@ -267,6 +267,7 @@ static int peci_xec_transfer(const struct device *dev, struct peci_msg *msg)
 	}
 
 	/* Check for error conditions and perform bus recovery if necessary */
+	err_val = base->ERROR;
 	if (err_val) {
 		if (base->ERROR & MCHP_PECI_ERR_RDOV) {
 			LOG_WRN("Read buffer is not empty\n");
@@ -280,14 +281,14 @@ static int peci_xec_transfer(const struct device *dev, struct peci_msg *msg)
 			LOG_WRN("Write buffer is not empty\n");
 		}
 
+		/* ERROR is a clear-on-write register, need to clear errors
+		 * occurring at the end of a transaction. A temp variable is
+		 * used to overcome complaints by the static code analyzer
+		 */
+		base->ERROR = err_val;
 		LOG_WRN("Transaction error %x\n", base->ERROR);
 		return -EIO;
 	}
-
-	/* ERROR is a clear-on-write register, need to clear errors occurred
-	 * at the end of a transaction.
-	 */
-	base->ERROR = err_val;
 
 	return 0;
 }
