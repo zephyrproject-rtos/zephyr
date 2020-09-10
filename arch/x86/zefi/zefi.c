@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdint.h>
+#include <stddef.h>
+#include <string.h>
 #include "efi.h"
 #include "printf.h"
 #include <zefi-segments.h>
@@ -40,6 +42,33 @@ static void efi_putchar(int c)
 		efi->ConOut->OutputString(efi->ConOut, efibuf);
 		n = 0;
 	}
+}
+
+static inline bool efi_guid_compare(efi_guid_t *s1, efi_guid_t *s2)
+{
+	return ((s1->Part1 == s2->Part1) && (s1->Part2 == s2->Part2));
+}
+
+static void *efi_config_get_vendor_table_by_guid(efi_guid_t *guid)
+{
+	struct efi_configuration_table *ect_tmp;
+	int n_ct;
+
+	if (efi == NULL) {
+		return NULL;
+	}
+
+	ect_tmp = efi->ConfigurationTable;
+
+	for (n_ct = 0; n_ct < efi->NumberOfTableEntries; n_ct++) {
+		if (efi_guid_compare(&ect_tmp->VendorGuid, guid)) {
+			return ect_tmp->VendorTable;
+		}
+
+		ect_tmp++;
+	}
+
+	return NULL;
 }
 
 /* Existing x86_64 EFI environments have a bad habit of leaving the
