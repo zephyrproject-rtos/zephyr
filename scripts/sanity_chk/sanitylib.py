@@ -920,9 +920,10 @@ class QEMUHandler(Handler):
 
         # We pass this to QEMU which looks for fifos with .in and .out
         # suffixes.
-        self.fifo_fn = os.path.join(self.instance.build_dir, "qemu-fifo")
 
+        self.fifo_fn = os.path.join(self.instance.build_dir, "qemu-fifo")
         self.pid_fn = os.path.join(self.instance.build_dir, "qemu.pid")
+
         if os.path.exists(self.pid_fn):
             os.unlink(self.pid_fn)
 
@@ -956,7 +957,7 @@ class QEMUHandler(Handler):
             except subprocess.TimeoutExpired:
                 # sometimes QEMU can't handle SIGTERM signal correctly
                 # in that case kill -9 QEMU process directly and leave
-                # sanitycheck judge testing result by console output
+                # sanitycheck to judge testing result by console output
 
                 is_timeout = True
                 if os.path.exists(self.pid_fn):
