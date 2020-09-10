@@ -7,6 +7,7 @@
 #include <arm/armv7-m.dtsi>
 /* Macros for device tree declarations */
 #include <dt-bindings/clock/npcx_clock.h>
+#include <dt-bindings/espi/npcx_espi.h>
 #include <dt-bindings/gpio/gpio.h>
 
 /* NPCX7 series pinmux mapping table */
@@ -15,6 +16,8 @@
 #include "npcx/npcx7-miwus-wui-map.dtsi"
 /* NPCX7 series mapping table between MIWU groups and interrupts */
 #include "npcx/npcx7-miwus-int-map.dtsi"
+/* NPCX7 series eSPI VW mapping table */
+#include "npcx/npcx7-espi-vws-map.dtsi"
 
 / {
 	cpus {
@@ -286,6 +289,25 @@
 				    &wui_iof4 &wui_iof5 &wui_none &wui_none>;
 			#gpio-cells=<2>;
 			label="GPIO_F";
+		};
+
+		espi0: espi@4000a000 {
+			compatible = "nuvoton,npcx-espi";
+			reg = <0x4000a000 0x2000>;
+			interrupts = <18 3>; /* Interrupt for eSPI Bus */
+
+			/* clocks for eSPI modules */
+			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL6 7>;
+			/* PIN46.47.51.52.53.54.55.57 */
+			pinctrl = <&alt1_no_lpc_espi>;
+			/* WUI maps for eSPI signals */
+			espi_rst_wui = <&wui_espi_rst>;
+			label = "ESPI_0";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#vw-cells = <3>;
+			status = "disabled";
 		};
 	};
 };

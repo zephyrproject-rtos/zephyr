@@ -1,0 +1,31 @@
+# NPCX eSPI driver configuration options
+
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config ESPI_NPCX
+	bool "Nuvoton NPCX embedd controller (EC) ESPI driver"
+	depends on SOC_FAMILY_NPCX
+	help
+	  This option enables the Intel Enhanced Serial Peripheral Interface
+	  (eSPI) for NPCX family of processors.
+
+# The default value 'y' for the existing options if ESPI_NPCX is selected.
+if ESPI_NPCX
+
+config ESPI_OOB_CHANNEL
+	default  y
+
+config ESPI_PERIPHERAL_8042_KBC
+	default y
+
+config ESPI_PERIPHERAL_HOST_IO
+	default y
+
+config ESPI_PERIPHERAL_DEBUG_PORT_80
+	default y
+
+config ESPI_PERIPHERAL_UART
+	default y
+
+endif #ESPI_NPCX

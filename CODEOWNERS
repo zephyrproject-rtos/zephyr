@@ -181,6 +181,7 @@
 /drivers/entropy/*gecko*                  @chrta
 /drivers/entropy/*litex*                  @mateusz-holenko @kgugala @pgielda
 /drivers/espi/                            @albertofloyd @franciscomunoz @scottwcpg
+/drivers/espi/*npcx*                      @MulinChao
 /drivers/ethernet/                        @jukkar @tbursztyka @pfalcon
 /drivers/ethernet/*stm32*                 @Nukersson @lochej
 /drivers/flash/                           @nashif @nvlsianpu

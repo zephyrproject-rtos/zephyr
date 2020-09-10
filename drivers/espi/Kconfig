@@ -12,6 +12,8 @@ if ESPI
 
 source "drivers/espi/Kconfig.xec"
 
+source "drivers/espi/Kconfig.npcx"
+
 module = ESPI
 module-str = espi
 source "subsys/logging/Kconfig.template.log_config"
