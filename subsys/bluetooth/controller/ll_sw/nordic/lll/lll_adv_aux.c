@@ -144,9 +144,16 @@ static int prepare_cb(struct lll_prepare_param *p)
 	aux_ptr = (void *)pri_dptr;
 
 	/* Abort if no aux_ptr filled */
-	if (!pri_hdr->aux_ptr || !aux_ptr->offs) {
-		radio_isr_set(lll_isr_abort, lll);
-		radio_disable();
+	if (unlikely(!pri_hdr->aux_ptr || !aux_ptr->offs)) {
+		int err;
+
+		err = lll_hfclock_off();
+		LL_ASSERT(err >= 0);
+
+		lll_done(NULL);
+
+		DEBUG_RADIO_START_A(0);
+		return 0;
 	}
 
 
