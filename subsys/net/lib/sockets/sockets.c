@@ -575,15 +575,21 @@ static inline int z_vrfy_zsock_accept(int sock, struct sockaddr *addr,
 #include <syscalls/zsock_accept_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
+#define WAIT_BUFS K_MSEC(100)
+#define MAX_WAIT_BUFS K_SECONDS(10)
+
 ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 			 int flags,
 			 const struct sockaddr *dest_addr, socklen_t addrlen)
 {
 	k_timeout_t timeout = K_FOREVER;
+	uint64_t buf_timeout = 0;
 	int status;
 
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
 		timeout = K_NO_WAIT;
+	} else {
+		buf_timeout = z_timeout_end_calc(MAX_WAIT_BUFS);
 	}
 
 	/* Register the callback before sending in order to receive the response
@@ -596,18 +602,39 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 		return -1;
 	}
 
-	if (dest_addr) {
-		status = net_context_sendto(ctx, buf, len, dest_addr,
-					    addrlen, NULL, timeout,
-					    ctx->user_data);
-	} else {
-		status = net_context_send(ctx, buf, len, NULL, timeout,
-					  ctx->user_data);
-	}
+	while (1) {
+		if (dest_addr) {
+			status = net_context_sendto(ctx, buf, len, dest_addr,
+						    addrlen, NULL, timeout,
+						    ctx->user_data);
+		} else {
+			status = net_context_send(ctx, buf, len, NULL, timeout,
+						  ctx->user_data);
+		}
 
-	if (status < 0) {
-		errno = -status;
-		return -1;
+		if (status < 0) {
+			if (status == -ENOBUFS &&
+			    K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+				/* If we cannot get any buffers in reasonable
+				 * amount of time, then do not wait forever as
+				 * there might be some bigger issue.
+				 */
+				int64_t remaining = buf_timeout - z_tick_get();
+
+				if (remaining <= 0) {
+					errno = ENOMEM;
+					return -1;
+				}
+
+				k_sleep(WAIT_BUFS);
+				continue;
+			} else {
+				errno = -status;
+				return -1;
+			}
+		}
+
+		break;
 	}
 
 	return status;
