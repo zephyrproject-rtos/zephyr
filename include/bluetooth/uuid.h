@@ -441,7 +441,7 @@ struct bt_uuid_128 {
  *  @brief Environmental Sensing Trigger Setting Descriptor
  */
 #define BT_UUID_ES_TRIGGER_SETTING \
-	BT_UUID_DECLARE_16(BT_UUID_ES_MEASUREMENT_VAL)
+	BT_UUID_DECLARE_16(BT_UUID_ES_TRIGGER_SETTING_VAL)
 /** @def BT_UUID_GAP_DEVICE_NAME_VAL
  *  @brief GAP Characteristic Device Name UUID value
  */
