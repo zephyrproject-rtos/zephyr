@@ -101,8 +101,23 @@ static void set_pte_block_desc(uint64_t *pte, uint64_t addr_pa,
 	/* NS bit for security memory access from secure state */
 	desc |= (attrs & MT_NS) ? PTE_BLOCK_DESC_NS : 0;
 
+	/*
+	 * AP bits for EL0 / ELh Data access permission
+	 *
+	 *   AP[2:1]   ELh  EL0
+	 * +--------------------+
+	 *     00      RW   NA
+	 *     01      RW   RW
+	 *     10      RO   NA
+	 *     11      RO   RO
+	 */
+
 	/* AP bits for Data access permission */
 	desc |= (attrs & MT_RW) ? PTE_BLOCK_DESC_AP_RW : PTE_BLOCK_DESC_AP_RO;
+
+	/* Mirror permissions to EL0 */
+	desc |= (attrs & MT_RW_AP_ELx) ?
+		 PTE_BLOCK_DESC_AP_ELx : PTE_BLOCK_DESC_AP_EL_HIGHER;
 
 	/* the access flag */
 	desc |= PTE_BLOCK_DESC_AF;
@@ -128,8 +143,13 @@ static void set_pte_block_desc(uint64_t *pte, uint64_t addr_pa,
 	case MT_NORMAL_NC:
 	case MT_NORMAL:
 		/* Make Normal RW memory as execute never */
-		if ((attrs & MT_RW) || (attrs & MT_EXECUTE_NEVER))
+		if ((attrs & MT_RW) || (attrs & MT_P_EXECUTE_NEVER))
 			desc |= PTE_BLOCK_DESC_PXN;
+
+		if (((attrs & MT_RW) && (attrs & MT_RW_AP_ELx)) ||
+		     (attrs & MT_U_EXECUTE_NEVER))
+			desc |= PTE_BLOCK_DESC_UXN;
+
 		if (mem_type == MT_NORMAL)
 			desc |= PTE_BLOCK_DESC_INNER_SHARE;
 		else
@@ -143,7 +163,9 @@ static void set_pte_block_desc(uint64_t *pte, uint64_t addr_pa,
 		  ((mem_type == MT_NORMAL_NC) ? "NC" : "DEV"));
 	MMU_DEBUG((attrs & MT_RW) ? "-RW" : "-RO");
 	MMU_DEBUG((attrs & MT_NS) ? "-NS" : "-S");
-	MMU_DEBUG((attrs & MT_EXECUTE_NEVER) ? "-XN" : "-EXEC");
+	MMU_DEBUG((attrs & MT_RW_AP_ELx) ? "-ELx" : "-ELh");
+	MMU_DEBUG((attrs & MT_P_EXECUTE_NEVER) ? "-PXN" : "-PX");
+	MMU_DEBUG((attrs & MT_U_EXECUTE_NEVER) ? "-UXN" : "-UX");
 	MMU_DEBUG("\n");
 #endif
 
@@ -243,13 +265,13 @@ static const struct arm_mmu_region mmu_zephyr_regions[] = {
 	MMU_REGION_FLAT_ENTRY("zephyr_code",
 			      (uintptr_t)_image_text_start,
 			      (uintptr_t)_image_text_size,
-			      MT_CODE | MT_SECURE),
+			      MT_NORMAL | MT_P_RX_U_NA | MT_SECURE),
 
 	/* Mark rodata segment cacheable, read only and execute-never */
 	MMU_REGION_FLAT_ENTRY("zephyr_rodata",
 			      (uintptr_t)_image_rodata_start,
 			      (uintptr_t)_image_rodata_size,
-			      MT_RODATA | MT_SECURE),
+			      MT_NORMAL | MT_P_RO_U_NA | MT_SECURE),
 
 	/* Mark rest of the zephyr execution regions (data, bss, noinit, etc.)
 	 * cacheable, read-write
@@ -258,7 +280,7 @@ static const struct arm_mmu_region mmu_zephyr_regions[] = {
 	MMU_REGION_FLAT_ENTRY("zephyr_data",
 			      (uintptr_t)__kernel_ram_start,
 			      (uintptr_t)__kernel_ram_size,
-			      MT_NORMAL | MT_RW | MT_SECURE),
+			      MT_NORMAL | MT_P_RW_U_NA | MT_SECURE),
 };
 
 static void setup_page_tables(void)

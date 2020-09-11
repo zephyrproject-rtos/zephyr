@@ -18,15 +18,15 @@ static const struct arm_mmu_region mmu_regions[] = {
 
 	MMU_REGION_FLAT_ENTRY("DEVICE_REGION",
 			      0x40000000, MB(512),
-			      MT_DEVICE_nGnRnE | MT_RW | MT_SECURE),
+			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_SECURE),
 
 	MMU_REGION_FLAT_ENTRY("PCIE_HIGH_OBMEM",
 			      PCIE_OB_HIGHMEM_ADDR, PCIE_OB_HIGHMEM_SIZE,
-			      MT_DEVICE_nGnRnE | MT_RW | MT_SECURE),
+			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_SECURE),
 
 	MMU_REGION_FLAT_ENTRY("DRAM0_S0",
 			      0x60000000, MB(512),
-			      MT_NORMAL | MT_RW | MT_SECURE),
+			      MT_NORMAL | MT_P_RW_U_NA | MT_SECURE),
 };
 
 const struct arm_mmu_config mmu_config = {
