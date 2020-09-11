@@ -31,6 +31,22 @@ config OSDP_PD_ADDRESS
 	  Address 0x7F is reserved as a broadcast address to which all PDs would
 	  respond.
 
+if OSDP_SC_ENABLED
+
+config OSDP_PD_SCBK
+	string "Secure Channel Base Key (SCBK)"
+	default "NONE"
+	help
+	  Hexadecimal string representation of the the 16 byte OSDP PD Secure
+	  Channel Base Key. When this field is sent to "NONE", the PD is set to
+	  "Install Mode". In this mode, the PD would allow a CP to setup a secure
+	  channel with default SCBK. Once as secure channel is active with the
+	  default key, the CP can send a KEYSET command to set new keys to the PD.
+	  It is up to the user to make sure that the PD enters the "Install Mode"
+	  only during provisioning time (controlled environment).
+
+endif # OSDP_SC_ENABLED
+
 menu "Peripheral Device ID Information"
 
 config OSDP_PD_ID_VENDOR_CODE
