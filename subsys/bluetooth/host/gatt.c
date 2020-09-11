@@ -1699,6 +1699,8 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
 }
 
 struct notify_data {
+	const struct bt_gatt_attr *attr;
+	uint16_t handle;
 	int err;
 	uint16_t type;
 	union {
@@ -2012,10 +2014,16 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 			continue;
 		}
 
+		/* Use the Characteristic Value handle discovered since the
+		 * Client Characteristic Configuration descriptor may occur
+		 * in any position within the characteristic definition after
+		 * the Characteristic Value.
+		 */
 		if (data->type == BT_GATT_CCC_INDICATE) {
-			err = gatt_indicate(conn, handle - 1, data->ind_params);
+			err = gatt_indicate(conn, data->handle,
+					    data->ind_params);
 		} else {
-			err = gatt_notify(conn, handle - 1, data->nfy_params);
+			err = gatt_notify(conn, data->handle, data->nfy_params);
 		}
 
 		bt_conn_unref(conn);
@@ -2030,23 +2038,18 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-struct find_data {
-	const struct bt_gatt_attr *attr;
-	uint16_t handle;
-};
-
 static uint8_t match_uuid(const struct bt_gatt_attr *attr, uint16_t handle,
 			  void *user_data)
 {
-	struct find_data *found = user_data;
+	struct notify_data *data = user_data;
 
-	found->attr = attr;
-	found->handle = handle;
+	data->attr = attr;
+	data->handle = handle;
 
 	return BT_GATT_ITER_STOP;
 }
 
-static bool gatt_find_by_uuid(struct find_data *found,
+static bool gatt_find_by_uuid(struct notify_data *found,
 			      const struct bt_uuid *uuid)
 {
 	found->attr = NULL;
@@ -2061,7 +2064,6 @@ int bt_gatt_notify_cb(struct bt_conn *conn,
 		      struct bt_gatt_notify_params *params)
 {
 	struct notify_data data;
-	struct find_data found;
 
 	__ASSERT(params, "invalid parameters\n");
 	__ASSERT(params->attr, "invalid parameters\n");
@@ -2070,44 +2072,44 @@ int bt_gatt_notify_cb(struct bt_conn *conn,
 		return -EAGAIN;
 	}
 
-	found.attr = params->attr;
+	data.attr = params->attr;
 
 	if (conn && conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
 	}
 
-	found.handle = bt_gatt_attr_get_handle(found.attr);
-	if (!found.handle) {
+	data.handle = bt_gatt_attr_get_handle(data.attr);
+	if (!data.handle) {
 		return -ENOENT;
 	}
 
 	/* Lookup UUID if it was given */
 	if (params->uuid) {
-		if (!gatt_find_by_uuid(&found, params->uuid)) {
+		if (!gatt_find_by_uuid(&data, params->uuid)) {
 			return -ENOENT;
 		}
 	}
 
 	/* Check if attribute is a characteristic then adjust the handle */
-	if (!bt_uuid_cmp(found.attr->uuid, BT_UUID_GATT_CHRC)) {
-		struct bt_gatt_chrc *chrc = found.attr->user_data;
+	if (!bt_uuid_cmp(data.attr->uuid, BT_UUID_GATT_CHRC)) {
+		struct bt_gatt_chrc *chrc = data.attr->user_data;
 
 		if (!(chrc->properties & BT_GATT_CHRC_NOTIFY)) {
 			return -EINVAL;
 		}
 
-		found.handle = bt_gatt_attr_value_handle(found.attr);
+		data.handle = bt_gatt_attr_value_handle(data.attr);
 	}
 
 	if (conn) {
-		return gatt_notify(conn, found.handle, params);
+		return gatt_notify(conn, data.handle, params);
 	}
 
 	data.err = -ENOTCONN;
 	data.type = BT_GATT_CCC_NOTIFY;
 	data.nfy_params = params;
 
-	bt_gatt_foreach_attr_type(found.handle, 0xffff, BT_UUID_GATT_CCC, NULL,
+	bt_gatt_foreach_attr_type(data.handle, 0xffff, BT_UUID_GATT_CCC, NULL,
 				  1, notify_cb, &data);
 
 	return data.err;
@@ -2138,7 +2140,6 @@ int bt_gatt_indicate(struct bt_conn *conn,
 		     struct bt_gatt_indicate_params *params)
 {
 	struct notify_data data;
-	struct find_data found;
 
 	__ASSERT(params, "invalid parameters\n");
 	__ASSERT(params->attr, "invalid parameters\n");
@@ -2147,44 +2148,44 @@ int bt_gatt_indicate(struct bt_conn *conn,
 		return -EAGAIN;
 	}
 
-	found.attr = params->attr;
+	data.attr = params->attr;
 
 	if (conn && conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
 	}
 
-	found.handle = bt_gatt_attr_get_handle(found.attr);
-	if (!found.handle) {
+	data.handle = bt_gatt_attr_get_handle(data.attr);
+	if (!data.handle) {
 		return -ENOENT;
 	}
 
 	/* Lookup UUID if it was given */
 	if (params->uuid) {
-		if (!gatt_find_by_uuid(&found, params->uuid)) {
+		if (!gatt_find_by_uuid(&data, params->uuid)) {
 			return -ENOENT;
 		}
 	}
 
 	/* Check if attribute is a characteristic then adjust the handle */
-	if (!bt_uuid_cmp(found.attr->uuid, BT_UUID_GATT_CHRC)) {
-		struct bt_gatt_chrc *chrc = found.attr->user_data;
+	if (!bt_uuid_cmp(data.attr->uuid, BT_UUID_GATT_CHRC)) {
+		struct bt_gatt_chrc *chrc = data.attr->user_data;
 
 		if (!(chrc->properties & BT_GATT_CHRC_INDICATE)) {
 			return -EINVAL;
 		}
 
-		found.handle = bt_gatt_attr_value_handle(found.attr);
+		data.handle = bt_gatt_attr_value_handle(data.attr);
 	}
 
 	if (conn) {
-		return gatt_indicate(conn, found.handle, params);
+		return gatt_indicate(conn, data.handle, params);
 	}
 
 	data.err = -ENOTCONN;
 	data.type = BT_GATT_CCC_INDICATE;
 	data.ind_params = params;
 
-	bt_gatt_foreach_attr_type(found.handle, 0xffff, BT_UUID_GATT_CCC, NULL,
+	bt_gatt_foreach_attr_type(data.handle, 0xffff, BT_UUID_GATT_CCC, NULL,
 				  1, notify_cb, &data);
 
 	return data.err;
