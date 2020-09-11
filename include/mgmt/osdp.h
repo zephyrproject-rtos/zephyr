@@ -235,6 +235,12 @@ int osdp_cp_send_cmd_comset(int pd, struct osdp_cmd_comset *p);
 
 #endif /* CONFIG_OSDP_MODE_PD */
 
+#ifdef CONFIG_OSDP_SC_ENABLED
+
+uint32_t osdp_get_sc_status_mask(void);
+
+#endif
+
 #ifdef __cplusplus
 }
 #endif

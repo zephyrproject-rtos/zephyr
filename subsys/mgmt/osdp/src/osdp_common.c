@@ -10,6 +10,11 @@
 #include <sys/crc.h>
 #include <logging/log.h>
 
+#ifdef CONFIG_OSDP_SC_ENABLED
+#include <crypto/cipher.h>
+#include <random/rand32.h>
+#endif
+
 #include "osdp_common.h"
 
 LOG_MODULE_DECLARE(osdp, CONFIG_OSDP_LOG_LEVEL);
@@ -74,3 +79,122 @@ struct osdp_cmd *osdp_cmd_get_last(struct osdp_pd *pd)
 {
 	return (struct osdp_cmd *)sys_slist_peek_tail(&pd->cmd.queue);
 }
+
+#ifdef CONFIG_OSDP_SC_ENABLED
+
+void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
+{
+	const struct device *dev;
+	struct cipher_ctx ctx = {
+		.keylen = 16,
+		.key.bit_stream = key,
+		.flags = CAP_NO_IV_PREFIX
+	};
+	struct cipher_pkt encrypt = {
+		.in_buf = data,
+		.in_len = len,
+		.out_buf = data,
+		.out_len = len
+	};
+
+	dev = device_get_binding(CONFIG_OSDP_CRYPTO_DRV_NAME);
+	if (dev == NULL) {
+		LOG_ERR("Failed to get crypto dev binding!");
+		return;
+	}
+
+	if (iv != NULL) {
+		if (cipher_begin_session(dev, &ctx,
+					 CRYPTO_CIPHER_ALGO_AES,
+					 CRYPTO_CIPHER_MODE_CBC,
+					 CRYPTO_CIPHER_OP_ENCRYPT)) {
+			LOG_ERR("Failed at cipher_begin_session");
+			return;
+		}
+		if (cipher_cbc_op(&ctx, &encrypt, iv)) {
+			LOG_ERR("CBC ENCRYPT - Failed");
+		}
+	} else {
+		if (cipher_begin_session(dev, &ctx,
+					 CRYPTO_CIPHER_ALGO_AES,
+					 CRYPTO_CIPHER_MODE_ECB,
+					 CRYPTO_CIPHER_OP_ENCRYPT)) {
+			LOG_ERR("Failed at cipher_begin_session");
+			return;
+		}
+		if (cipher_block_op(&ctx, &encrypt)) {
+			LOG_ERR("ECB ENCRYPT - Failed");
+		}
+	}
+	cipher_free_session(dev, &ctx);
+}
+
+void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
+{
+	const struct device *dev;
+	struct cipher_ctx ctx = {
+		.keylen = 16,
+		.key.bit_stream = key,
+		.flags = CAP_NO_IV_PREFIX
+	};
+	struct cipher_pkt decrypt = {
+		.in_buf = data,
+		.in_len = len,
+		.out_buf = data,
+		.out_len = len
+	};
+
+	dev = device_get_binding(CONFIG_OSDP_CRYPTO_DRV_NAME);
+	if (dev == NULL) {
+		LOG_ERR("Failed to get crypto dev binding!");
+		return;
+	}
+
+	if (iv != NULL) {
+		if (cipher_begin_session(dev, &ctx,
+					 CRYPTO_CIPHER_ALGO_AES,
+					 CRYPTO_CIPHER_MODE_CBC,
+					 CRYPTO_CIPHER_OP_DECRYPT)) {
+			LOG_ERR("Failed at cipher_begin_session");
+			return;
+		}
+		if (cipher_cbc_op(&ctx, &decrypt, iv)) {
+			LOG_ERR("CBC DECRYPT - Failed");
+		}
+	} else {
+		if (cipher_begin_session(dev, &ctx,
+					 CRYPTO_CIPHER_ALGO_AES,
+					 CRYPTO_CIPHER_MODE_ECB,
+					 CRYPTO_CIPHER_OP_DECRYPT)) {
+			LOG_ERR("Failed at cipher_begin_session");
+			return;
+		}
+		if (cipher_block_op(&ctx, &decrypt)) {
+			LOG_ERR("ECB DECRYPT - Failed");
+		}
+	}
+	cipher_free_session(dev, &ctx);
+}
+
+void osdp_fill_random(uint8_t *buf, int len)
+{
+	sys_csrand_get(buf, len);
+}
+
+uint32_t osdp_get_sc_status_mask(void)
+{
+	int i;
+	uint32_t mask = 0;
+	struct osdp_pd *pd;
+	struct osdp *ctx = osdp_get_ctx();
+
+	for (i = 0; i < NUM_PD(ctx); i++) {
+		pd = TO_PD(ctx, i);
+		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
+			mask |= 1 << i;
+		}
+	}
+	return mask;
+}
+
+#endif /* CONFIG_OSDP_SC_ENABLED */

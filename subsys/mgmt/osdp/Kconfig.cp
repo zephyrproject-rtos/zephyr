@@ -41,3 +41,14 @@ config OSDP_PD_POLL_RATE
 	  The Control Panel must query the Peripheral Device periodically to
 	  maintain connection sequence and to get status and events. This option
 	  defined the number of times such a POLL command is sent per second.
+
+if OSDP_SC_ENABLED
+
+config OSDP_MASTER_KEY
+	string "Secure Channel Master Key"
+	default "NONE"
+	help
+	  Hexadecimal string representation of the the 16 byte OSDP Secure Channel
+	  master Key. This is a mandatory key when secure channel is enabled.
+
+endif # OSDP_SC_ENABLED
