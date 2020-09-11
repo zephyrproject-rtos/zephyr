@@ -62,8 +62,6 @@ config SHELL_ARGC_MAX
 	default 12
 	help
 	  Maximum number of arguments that can build a command.
-	  If command is composed of more than defined, argument SHELL_ARGC_MAX
-	  and following are passed as one argument in the string.
 
 config SHELL_WILDCARD
 	bool "Enable wildcard support in shell"

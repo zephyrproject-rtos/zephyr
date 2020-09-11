@@ -194,8 +194,6 @@ char shell_make_argv(size_t *argc, const char **argv, char *cmd, uint8_t max_arg
 		quote = make_argv(&cmd, c);
 	} while (true);
 
-	argv[*argc] = 0;
-
 	return quote;
 }
 
