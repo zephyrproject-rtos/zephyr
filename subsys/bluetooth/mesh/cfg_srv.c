@@ -1040,6 +1040,11 @@ static void mod_pub_set(struct bt_mesh_model *model,
 		goto send_status;
 	}
 
+	if (!IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) && cred_flag) {
+		status = STATUS_FEAT_NOT_SUPP;
+		goto send_status;
+	}
+
 	status = _mod_pub_set(mod, pub_addr, pub_app_idx, cred_flag, pub_ttl,
 			      pub_period, retransmit, true);
 
@@ -1226,6 +1231,11 @@ static void mod_pub_va_set(struct bt_mesh_model *model,
 	if (!mod) {
 		pub_addr = 0U;
 		status = STATUS_INVALID_MODEL;
+		goto send_status;
+	}
+
+	if (!IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) && cred_flag) {
+		status = STATUS_FEAT_NOT_SUPP;
 		goto send_status;
 	}
 
