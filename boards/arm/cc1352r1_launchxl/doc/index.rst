@@ -128,6 +128,31 @@ Before flashing or debugging ensure the RESET, TMS, TCK, TDO, and TDI jumpers
 are in place. Also place jumpers on the the TXD and RXD signals for a serial
 console using the XDS110 application serial port.
 
+Prerequisites:
+==============
+
+#. Ensure the XDS-110 emulation firmware on the board is updated.
+
+   Download and install the latest `XDS-110 emulation package`_.
+
+   Follow these `xds110 firmware update directions
+   <http://software-dl.ti.com/ccs/esd/documents/xdsdebugprobes/emu_xds110.html#updating-the-xds110-firmware>`_
+
+   Note that the emulation package install may place the xdsdfu utility
+   in ``<install_dir>/ccs_base/common/uscif/xds110/``.
+
+#. Install OpenOCD
+
+   You can obtain OpenOCD by following these
+   :ref:`installing the latest Zephyr SDK instructions <zephyr_sdk>`.
+
+   After the installation, add the directory containing the OpenOCD executable
+   to your environment's PATH variable. For example, use this command in Linux:
+
+   .. code-block:: console
+
+      export PATH=$ZEPHYR_SDK_INSTALL_DIR/sysroots/x86_64-pokysdk-linux/usr/bin/openocd:$PATH
+
 Flashing
 ========
 
@@ -212,3 +237,6 @@ CC1352R1 LaunchPad Quick Start Guide:
 
 .. _TI CC13x2 / CC26x2 Technical Reference Manual:
    http://www.ti.com/lit/pdf/swcu185
+
+..  _XDS-110 emulation package:
+   http://processors.wiki.ti.com/index.php/XDS_Emulation_Software_Package#XDS_Emulation_Software_.28emupack.29_Download
