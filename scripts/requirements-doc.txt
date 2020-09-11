@@ -1,6 +1,6 @@
 # DOC: used to generate docs
 
-breathe>=4.20.0
+breathe>=4.21.0
 docutils>=0.16
 sphinx>=3.2.0,<4.0
 sphinx_rtd_theme
