@@ -28,6 +28,7 @@
 &uart6 {
 	status = "okay";
 	current-speed = <115200>;
+	map-nvic = <8>;
 
 	pinctrl-0 = <&p13_0_uart6_rx &p13_1_uart6_tx>;
 };

@@ -29,5 +29,7 @@
 	status = "okay";
 	current-speed = <115200>;
 
+	map-nvic = <8>;
+
 	pinctrl-0 = <&p5_0_uart5_rx &p5_1_uart5_tx>;
 };

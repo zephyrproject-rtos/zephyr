@@ -8,5 +8,6 @@ config UART_PSOC6
 	bool "PSoC6 MCU SBC serial driver"
 	depends on SOC_FAMILY_PSOC6
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  This option enables the SBC[UART] driver for PSoC6 SoC family.

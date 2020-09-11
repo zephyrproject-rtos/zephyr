@@ -1,0 +1,11 @@
+# Copyright (c) 2020 ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+    map-nvic:
+      type: int
+      required: false
+      description: |
+        Cortex-M0+ NVIC user defined interrupt line.  The PSoC-6 SoC needs that
+        user select which interrupts Cortex-M0+ will handle and this map the
+        peripheral interrupt to be bind at driver initialization.
