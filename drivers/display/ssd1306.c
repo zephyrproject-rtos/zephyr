@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(ssd1306, CONFIG_DISPLAY_LOG_LEVEL);
 #include <init.h>
 #include <drivers/gpio.h>
 #include <drivers/i2c.h>
+#include <drivers/spi.h>
 
 #include "ssd1306_regs.h"
 #include <display/cfb.h>
@@ -48,21 +49,53 @@ LOG_MODULE_REGISTER(ssd1306, CONFIG_DISPLAY_LOG_LEVEL);
 
 struct ssd1306_data {
 	const struct device *reset;
-	const struct device *i2c;
+	const struct device *bus;
+#if DT_INST_ON_BUS(0, spi)
+	struct spi_cs_control cs_ctrl;
+	struct spi_config spi_config;
+	const struct device *data_cmd;
+#endif
 	uint8_t contrast;
 	uint8_t scan_mode;
 };
 
-static inline int ssd1306_write_i2c(const struct device *dev,
+#if DT_INST_ON_BUS(0, i2c)
+static inline int ssd1306_write_bus(const struct device *dev,
 				    uint8_t *buf, size_t len, bool command)
 {
 	struct ssd1306_data *driver = dev->data;
 
-	return i2c_burst_write(driver->i2c, DT_INST_REG_ADDR(0),
+	return i2c_burst_write(driver->bus, DT_INST_REG_ADDR(0),
 			       command ? SSD1306_CONTROL_ALL_BYTES_CMD :
 					 SSD1306_CONTROL_ALL_BYTES_DATA,
 			       buf, len);
 }
+
+#elif DT_INST_ON_BUS(0, spi)
+
+static inline int ssd1306_write_bus(const struct device *dev,
+				    uint8_t *buf, size_t len, bool command)
+{
+	struct ssd1306_data *driver = dev->data;
+	int errno;
+
+	gpio_pin_set(driver->data_cmd, DT_INST_GPIO_PIN(0, data_cmd_gpios),
+		     command ? 0 : 1);
+	struct spi_buf tx_buf = {
+		.buf = buf,
+		.len = len
+	};
+
+	struct spi_buf_set tx_bufs = {
+		.buffers = &tx_buf,
+		.count = 1
+	};
+
+	errno = spi_write(driver->bus, &driver->spi_config, &tx_bufs);
+
+	return errno;
+}
+#endif
 
 static inline int ssd1306_set_panel_orientation(const struct device *dev)
 {
@@ -75,7 +108,7 @@ static inline int ssd1306_set_panel_orientation(const struct device *dev)
 		 SSD1306_SET_COM_OUTPUT_SCAN_NORMAL)
 	};
 
-	return ssd1306_write_i2c(dev, cmd_buf, sizeof(cmd_buf), true);
+	return ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
 }
 
 static inline int ssd1306_set_timing_setting(const struct device *dev)
@@ -89,7 +122,7 @@ static inline int ssd1306_set_timing_setting(const struct device *dev)
 		SSD1306_PANEL_VCOM_DESEL_LEVEL
 	};
 
-	return ssd1306_write_i2c(dev, cmd_buf, sizeof(cmd_buf), true);
+	return ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
 }
 
 static inline int ssd1306_set_hardware_config(const struct device *dev)
@@ -104,7 +137,7 @@ static inline int ssd1306_set_hardware_config(const struct device *dev)
 		DT_INST_PROP(0, multiplex_ratio)
 	};
 
-	return ssd1306_write_i2c(dev, cmd_buf, sizeof(cmd_buf), true);
+	return ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
 }
 
 static inline int ssd1306_set_charge_pump(const struct device *dev)
@@ -121,7 +154,7 @@ static inline int ssd1306_set_charge_pump(const struct device *dev)
 		SSD1306_PANEL_PUMP_VOLTAGE,
 	};
 
-	return ssd1306_write_i2c(dev, cmd_buf, sizeof(cmd_buf), true);
+	return ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
 }
 
 static int ssd1306_resume(const struct device *dev)
@@ -130,7 +163,7 @@ static int ssd1306_resume(const struct device *dev)
 		SSD1306_DISPLAY_ON,
 	};
 
-	return ssd1306_write_i2c(dev, cmd_buf, sizeof(cmd_buf), true);
+	return ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
 }
 
 static int ssd1306_suspend(const struct device *dev)
@@ -139,7 +172,7 @@ static int ssd1306_suspend(const struct device *dev)
 		SSD1306_DISPLAY_OFF,
 	};
 
-	return ssd1306_write_i2c(dev, cmd_buf, sizeof(cmd_buf), true);
+	return ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
 }
 
 static int ssd1306_write(const struct device *dev, const uint16_t x, const uint16_t y,
@@ -184,12 +217,12 @@ static int ssd1306_write(const struct device *dev, const uint16_t x, const uint1
 		((y + desc->height)/8 - 1)
 	};
 
-	if (ssd1306_write_i2c(dev, cmd_buf, sizeof(cmd_buf), true)) {
+	if (ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true)) {
 		LOG_ERR("Failed to write command");
 		return -1;
 	}
 
-	return ssd1306_write_i2c(dev, (uint8_t *)buf, buf_len, false);
+	return ssd1306_write_bus(dev, (uint8_t *)buf, buf_len, false);
 
 #elif defined(CONFIG_SSD1306_SH1106_COMPATIBLE)
 	uint8_t x_offset = x + DT_INST_PROP(0, segment_offset);
@@ -207,11 +240,11 @@ static int ssd1306_write(const struct device *dev, const uint16_t x, const uint1
 			SSD1306_SET_PAGE_START_ADDRESS | (n + (y / 8));
 		LOG_HEXDUMP_DBG(cmd_buf, sizeof(cmd_buf), "cmd_buf");
 
-		if (ssd1306_write_i2c(dev, cmd_buf, sizeof(cmd_buf), true)) {
+		if (ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true)) {
 			return -1;
 		}
 
-		if (ssd1306_write_i2c(dev, buf_ptr, desc->width, false)) {
+		if (ssd1306_write_bus(dev, buf_ptr, desc->width, false)) {
 			return -1;
 		}
 
@@ -255,7 +288,7 @@ static int ssd1306_set_contrast(const struct device *dev, const uint8_t contrast
 		contrast,
 	};
 
-	return ssd1306_write_i2c(dev, cmd_buf, sizeof(cmd_buf), true);
+	return ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
 }
 
 static void ssd1306_get_capabilities(const struct device *dev,
@@ -330,7 +363,7 @@ static int ssd1306_init_device(const struct device *dev)
 		return -EIO;
 	}
 
-	if (ssd1306_write_i2c(dev, cmd_buf, sizeof(cmd_buf), true)) {
+	if (ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true)) {
 		return -EIO;
 	}
 
@@ -349,8 +382,8 @@ static int ssd1306_init(const struct device *dev)
 
 	LOG_DBG("");
 
-	driver->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (driver->i2c == NULL) {
+	driver->bus = device_get_binding(DT_INST_BUS_LABEL(0));
+	if (driver->bus == NULL) {
 		LOG_ERR("Failed to get pointer to %s device!",
 			    DT_INST_BUS_LABEL(0));
 		return -EINVAL;
@@ -370,6 +403,34 @@ static int ssd1306_init(const struct device *dev)
 			   GPIO_OUTPUT_INACTIVE |
 			   DT_INST_GPIO_FLAGS(0, reset_gpios));
 #endif
+
+#if DT_INST_ON_BUS(0, spi)
+	driver->spi_config.frequency = DT_INST_PROP(0, spi_max_frequency);
+	driver->spi_config.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |
+				       SPI_WORD_SET(8) | SPI_LINES_SINGLE |
+				       SPI_HOLD_ON_CS | SPI_LOCK_ON;
+	driver->spi_config.slave = DT_INST_REG_ADDR(0);
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+	driver->cs_ctrl.gpio_dev = device_get_binding(
+				   DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
+	driver->cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
+	driver->cs_ctrl.delay = 0U;
+	driver->spi_config.cs = &driver->cs_ctrl;
+#endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
+
+	driver->data_cmd = device_get_binding(
+			   DT_INST_GPIO_LABEL(0, data_cmd_gpios));
+	if (driver->data_cmd == NULL) {
+		LOG_ERR("Failed to get pointer to %s device!",
+				DT_INST_GPIO_LABEL(0, data_cmd_gpios));
+		return -EINVAL;
+	}
+
+	gpio_pin_configure(driver->data_cmd,
+			   DT_INST_GPIO_PIN(0, data_cmd_gpios),
+			   GPIO_OUTPUT_INACTIVE |
+			   DT_INST_GPIO_FLAGS(0, data_cmd_gpios));
+#endif /* DT_INST_ON_BUS(0, spi) */
 
 	if (ssd1306_init_device(dev)) {
 		LOG_ERR("Failed to initialize device!");
