@@ -20,11 +20,6 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      DT_REG_ADDR(DT_INST(0, arm_pl011)),
 			      DT_REG_SIZE(DT_INST(0, arm_pl011)),
 			      MT_DEVICE_nGnRnE | MT_RW | MT_SECURE),
-
-	MMU_REGION_FLAT_ENTRY("SRAM",
-			      CONFIG_SRAM_BASE_ADDRESS,
-			      CONFIG_SRAM_SIZE * SZ_1K,
-			      MT_NORMAL | MT_RW | MT_SECURE),
 };
 
 const struct arm_mmu_config mmu_config = {
