@@ -9,6 +9,15 @@
 
 struct efi_boot_arg *efi;
 
+void *efi_get_acpi_rsdp(void)
+{
+	if (efi == NULL) {
+		return NULL;
+	}
+
+	return efi->acpi_rsdp;
+}
+
 void efi_init(struct efi_boot_arg *efi_arg)
 {
 	if (efi_arg == NULL) {
