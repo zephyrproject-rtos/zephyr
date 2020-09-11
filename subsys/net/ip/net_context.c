@@ -1530,7 +1530,7 @@ static int context_sendto(struct net_context *context,
 
 	pkt = context_alloc_pkt(context, len, PKT_WAIT_TIME);
 	if (!pkt) {
-		return -ENOMEM;
+		return -ENOBUFS;
 	}
 
 	tmp_len = net_pkt_available_payload_buffer(
