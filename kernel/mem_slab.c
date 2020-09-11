@@ -88,6 +88,11 @@ int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 	slab->block_size = block_size;
 	slab->buffer = buffer;
 	slab->num_used = 0U;
+
+#ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
+	slab->max_used = 0U;
+#endif
+
 	rc = create_free_list(slab);
 	if (rc < 0) {
 		goto out;
@@ -111,6 +116,11 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 		*mem = slab->free_list;
 		slab->free_list = *(char **)(slab->free_list);
 		slab->num_used++;
+
+#ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
+		slab->max_used = MAX(slab->num_used, slab->max_used);
+#endif
+
 		result = 0;
 	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		/* don't wait for a free block to become available */

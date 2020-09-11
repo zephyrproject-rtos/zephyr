@@ -4260,6 +4260,9 @@ struct k_mem_slab {
 	char *buffer;
 	char *free_list;
 	uint32_t num_used;
+#ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
+	uint32_t max_used;
+#endif
 
 	_OBJECT_TRACING_NEXT_PTR(k_mem_slab)
 	_OBJECT_TRACING_LINKED_FLAG
@@ -4386,6 +4389,26 @@ extern void k_mem_slab_free(struct k_mem_slab *slab, void **mem);
 static inline uint32_t k_mem_slab_num_used_get(struct k_mem_slab *slab)
 {
 	return slab->num_used;
+}
+
+/**
+ * @brief Get the number of maximum used blocks so far in a memory slab.
+ *
+ * This routine gets the maximum number of memory blocks that were
+ * allocated in @a slab.
+ *
+ * @param slab Address of the memory slab.
+ *
+ * @return Maximum number of allocated memory blocks.
+ */
+static inline uint32_t k_mem_slab_max_used_get(struct k_mem_slab *slab)
+{
+#ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
+	return slab->max_used;
+#else
+	ARG_UNUSED(slab);
+	return 0;
+#endif
 }
 
 /**

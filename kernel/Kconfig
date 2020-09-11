@@ -464,6 +464,12 @@ endmenu
 
 menu "Other Kernel Object Options"
 
+config MEM_SLAB_TRACE_MAX_UTILIZATION
+	bool "Enable getting maximum slab utilization"
+	help
+	  This adds variable to the k_mem_slab structure to hold
+	  maximum utilization of the slab.
+
 config NUM_MBOX_ASYNC_MSGS
 	int "Maximum number of in-flight asynchronous mailbox messages"
 	default 10
