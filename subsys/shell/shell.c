@@ -27,7 +27,7 @@
 #define SHELL_MSG_CMD_NOT_FOUND		": command not found"
 #define SHELL_MSG_BACKEND_NOT_ACTIVE	\
 	"WARNING: A print request was detected on not active shell backend.\n"
-
+#define SHELL_MSG_TOO_MANY_ARGS		"Too many arguments in the command.\n"
 #define SHELL_INIT_OPTION_PRINTER	(NULL)
 
 static inline void receive_state_change(const struct shell *shell,
@@ -614,7 +614,7 @@ static int execute(const struct shell *shell)
 	}
 
 	/* Below loop is analyzing subcommands of found root command. */
-	while ((argc != 1) && (cmd_lvl <= CONFIG_SHELL_ARGC_MAX)
+	while ((argc != 1) && (cmd_lvl < CONFIG_SHELL_ARGC_MAX)
 		&& args_left > 0) {
 		quote = shell_make_argv(&argc, argvp, cmd_buf, 2);
 		cmd_buf = (char *)argvp[1];
@@ -704,6 +704,16 @@ static int execute(const struct shell *shell)
 
 	}
 
+	if ((cmd_lvl == CONFIG_SHELL_ARGC_MAX) && (argc == 2)) {
+		/* argc == 2 indicates that when command string was parsed
+		 * there was more characters remaining. It means that number of
+		 * arguments exceeds the limit.
+		 */
+		shell_internal_fprintf(shell, SHELL_ERROR,
+				       "%s\n", SHELL_MSG_TOO_MANY_ARGS);
+		return -ENOEXEC;
+	}
+
 	if (IS_ENABLED(CONFIG_SHELL_WILDCARD) && wildcard_found) {
 		shell_wildcard_finalize(shell);
 		/* cmd_buffer has been overwritten by function finalize function
@@ -723,6 +733,8 @@ static int execute(const struct shell *shell)
 		}
 	}
 
+	/* terminate arguments with NULL */
+	argv[cmd_lvl] = NULL;
 	/* Executing the deepest found handler. */
 	return exec_cmd(shell, cmd_lvl - cmd_with_handler_lvl,
 			&argv[cmd_with_handler_lvl], &help_entry);
@@ -730,8 +742,7 @@ static int execute(const struct shell *shell)
 
 static void tab_handle(const struct shell *shell)
 {
-	/* +1 reserved for NULL in function shell_make_argv */
-	const char *__argv[CONFIG_SHELL_ARGC_MAX + 1];
+	const char *__argv[CONFIG_SHELL_ARGC_MAX];
 	/* d_entry - placeholder for dynamic command */
 	struct shell_static_entry d_entry;
 	const struct shell_static_entry *cmd;
