@@ -9,6 +9,7 @@ if(CONFIG_FILE_SYSTEM)
   zephyr_library_sources_ifdef(CONFIG_FAT_FILESYSTEM_ELM   fat_fs.c)
   zephyr_library_sources_ifdef(CONFIG_FILE_SYSTEM_LITTLEFS littlefs_fs.c)
   zephyr_library_sources_ifdef(CONFIG_FILE_SYSTEM_SHELL    shell.c)
+  zephyr_library_sources_ifdef(CONFIG_FILE_SYSTEM_AUTOMOUNT fs_automount.c)
 
   zephyr_library_link_libraries(FS)
 

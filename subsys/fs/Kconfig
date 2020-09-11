@@ -166,6 +166,16 @@ config FILE_SYSTEM_DEFAULT_FSSTORAGE_ALLOCATOR
 	  Enables internal API extension that allows file system driver to
 	  handle allocation of file system data storage allocation.
 
+config FILE_SYSTEM_AUTOMOUNT
+	bool "Enable auto-mount of selected fixed-partitions"
+	select FILE_SYSTEM_DEFAULT_FSSTORAGE_ALLOCATOR
+	help
+	  Enables auto-mount, durint boot, prior to application execution,
+	  of partitions that have been configured with FS type and mount point.
+	  Note that this feature requires enabling default file system data
+	  storage allocators within file system backends, if file system
+	  requires such storage (fs_mount_t->fs_data pointer).
+
 endif # FILE_SYSTEM
 
 source "subsys/fs/fcb/Kconfig"
