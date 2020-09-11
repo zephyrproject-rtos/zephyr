@@ -178,7 +178,8 @@ from itertools import islice
 import csv
 from colorama import Fore
 from pathlib import Path
-
+from multiprocessing.managers import BaseManager
+import queue
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
@@ -205,7 +206,7 @@ except ImportError:
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/sanity_chk"))
 
-from sanitylib import HardwareMap, TestSuite, SizeCalculator, CoverageTool
+from sanitylib import HardwareMap, TestSuite, SizeCalculator, CoverageTool, ExecutionCounter
 
 logger = logging.getLogger('sanitycheck')
 logger.setLevel(logging.DEBUG)
@@ -795,7 +796,7 @@ def main():
 
         logger.info("Available devices:")
         table = []
-        hwm.dump(hwmap=hwm.connected_hardware, connected_only=True)
+        hwm.dump(connected_only=True)
         return
 
     if options.west_runner and options.west_flash is None:
@@ -893,9 +894,9 @@ def main():
             suite.connected_hardware = hwm.connected_hardware
             if not options.platform:
                 options.platform = []
-                for platform in hwm.connected_hardware:
-                    if platform['connected']:
-                        options.platform.append(platform['platform'])
+                for d in hwm.connected_hardware:
+                    if d.connected:
+                        options.platform.append(d.platform)
 
         elif options.device_serial or options.device_serial_pty:
             if options.platform and len(options.platform) == 1:
@@ -994,7 +995,6 @@ def main():
                             subarea = find(area, lambda node: node.name == sec[1] and node.parent == area)
                             if not subarea:
                                 subarea = Node(sec[1], parent=area)
-
                             t = Node(test, parent=subarea)
 
             if options.list_tests:
@@ -1137,7 +1137,7 @@ def main():
 
     if options.device_testing and not options.build_only:
         print("\nDevice testing on:")
-        hwm.dump(suite.connected_hardware, suite.selected_platforms)
+        hwm.dump(filtered=suite.selected_platforms)
         print("")
 
     if options.dry_run:
@@ -1148,7 +1148,15 @@ def main():
     retries = options.retry_failed + 1
     completed = 0
 
-    suite.update_counting()
+    BaseManager.register('LifoQueue', queue.LifoQueue)
+    manager = BaseManager()
+    manager.start()
+
+    results = ExecutionCounter(total=len(suite.instances))
+    pipeline = manager.LifoQueue()
+    done_queue = manager.LifoQueue()
+
+    suite.update_counting(results, initial=True)
     suite.start_time = start_time
 
     while True:
@@ -1157,16 +1165,24 @@ def main():
         if completed > 1:
             logger.info("%d Iteration:" % (completed))
             time.sleep(options.retry_interval)  # waiting for the system to settle down
-            suite.total_done = suite.total_tests - suite.total_failed
-            suite.total_failed = suite.total_errors
 
-        suite.execute()
+        results = suite.execute(pipeline, done_queue, results)
+
+        while True:
+            try:
+                inst = done_queue.get_nowait()
+            except queue.Empty:
+                break
+            else:
+                inst.metrics["handler_time"] = inst.handler.duration if inst.handler else 0
+                inst.metrics["unrecognized"] = []
+                suite.instances[inst.name] = inst
+
         print("")
 
         retries = retries - 1
-        if retries == 0 or suite.total_failed == suite.total_errors:
+        if retries == 0 or results.failed == results.error:
             break
-
 
     # figure out which report to use for size comparison
     if options.compare_report:
@@ -1183,8 +1199,9 @@ def main():
                             options.last_metrics)
 
     suite.duration = time.time() - start_time
-    suite.update_counting()
-    suite.summary(options.disable_unrecognized_section_test)
+    suite.update_counting(results)
+
+    suite.summary(results, options.disable_unrecognized_section_test)
 
     if options.coverage:
         if not options.gcov_tool:
@@ -1214,9 +1231,9 @@ def main():
         print("\nHardware distribution summary:\n")
         table = []
         header = ['Board', 'ID', 'Counter']
-        for p in hwm.connected_hardware:
-            if p['connected'] and p['platform'] in suite.selected_platforms:
-                row = [p['platform'], p.get('id', None), p['counter']]
+        for d in hwm.connected_hardware:
+            if d.connected and d.platform in suite.selected_platforms:
+                row = [d.platform, d.id, d.counter]
                 table.append(row)
         print(tabulate(table, headers=header, tablefmt="github"))
 
@@ -1227,7 +1244,7 @@ def main():
                        options.release,
                        options.only_failed)
 
-    if suite.total_failed or (suite.warnings and options.warnings_as_errors):
+    if results.failed or (suite.warnings and options.warnings_as_errors):
         sys.exit(1)
 
 
