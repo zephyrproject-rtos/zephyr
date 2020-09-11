@@ -53,139 +53,99 @@ struct ssd1306_data {
 	uint8_t scan_mode;
 };
 
-static inline int ssd1306_reg_read(struct ssd1306_data *driver,
-				   uint8_t reg, uint8_t * const val)
+static inline int ssd1306_write_i2c(const struct device *dev,
+				    uint8_t *buf, size_t len, bool command)
 {
-	return i2c_reg_read_byte(driver->i2c,
-				 DT_INST_REG_ADDR(0),
-				 reg, val);
-}
+	struct ssd1306_data *driver = dev->data;
 
-static inline int ssd1306_reg_write(struct ssd1306_data *driver,
-				    uint8_t reg, uint8_t val)
-{
-	return i2c_reg_write_byte(driver->i2c,
-				  DT_INST_REG_ADDR(0),
-				  reg, val);
-}
-
-static inline int ssd1306_reg_update(struct ssd1306_data *driver, uint8_t reg,
-				     uint8_t mask, uint8_t val)
-{
-	return i2c_reg_update_byte(driver->i2c,
-				   DT_INST_REG_ADDR(0),
-				   reg, mask, val);
+	return i2c_burst_write(driver->i2c, DT_INST_REG_ADDR(0),
+			       command ? SSD1306_CONTROL_ALL_BYTES_CMD :
+					 SSD1306_CONTROL_ALL_BYTES_DATA,
+			       buf, len);
 }
 
 static inline int ssd1306_set_panel_orientation(const struct device *dev)
 {
-	struct ssd1306_data *driver = dev->data;
 	uint8_t cmd_buf[] = {
-		SSD1306_CONTROL_BYTE_CMD,
 		(SSD1306_PANEL_SEGMENT_REMAP ?
 		 SSD1306_SET_SEGMENT_MAP_REMAPED :
 		 SSD1306_SET_SEGMENT_MAP_NORMAL),
-		SSD1306_CONTROL_LAST_BYTE_CMD,
 		(SSD1306_PANEL_COM_INVDIR ?
 		 SSD1306_SET_COM_OUTPUT_SCAN_FLIPPED :
 		 SSD1306_SET_COM_OUTPUT_SCAN_NORMAL)
 	};
 
-	return i2c_write(driver->i2c, cmd_buf, sizeof(cmd_buf),
-			 DT_INST_REG_ADDR(0));
+	return ssd1306_write_i2c(dev, cmd_buf, sizeof(cmd_buf), true);
 }
 
 static inline int ssd1306_set_timing_setting(const struct device *dev)
 {
-	struct ssd1306_data *driver = dev->data;
 	uint8_t cmd_buf[] = {
-		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_CLOCK_DIV_RATIO,
-		SSD1306_CONTROL_BYTE_CMD,
 		(SSD1306_CLOCK_FREQUENCY << 4) | SSD1306_CLOCK_DIV_RATIO,
-		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_CHARGE_PERIOD,
-		SSD1306_CONTROL_BYTE_CMD,
 		DT_INST_PROP(0, prechargep),
-		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_VCOM_DESELECT_LEVEL,
-		SSD1306_CONTROL_LAST_BYTE_CMD,
 		SSD1306_PANEL_VCOM_DESEL_LEVEL
 	};
 
-	return i2c_write(driver->i2c, cmd_buf, sizeof(cmd_buf),
-			 DT_INST_REG_ADDR(0));
+	return ssd1306_write_i2c(dev, cmd_buf, sizeof(cmd_buf), true);
 }
 
 static inline int ssd1306_set_hardware_config(const struct device *dev)
 {
-	struct ssd1306_data *driver = dev->data;
 	uint8_t cmd_buf[] = {
-		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_START_LINE,
-		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_DISPLAY_OFFSET,
-		SSD1306_CONTROL_BYTE_CMD,
 		DT_INST_PROP(0, display_offset),
-		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_PADS_HW_CONFIG,
-		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_COM_PINS_HW_CONFIG,
-		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_MULTIPLEX_RATIO,
-		SSD1306_CONTROL_LAST_BYTE_CMD,
 		DT_INST_PROP(0, multiplex_ratio)
 	};
 
-	return i2c_write(driver->i2c, cmd_buf, sizeof(cmd_buf),
-			 DT_INST_REG_ADDR(0));
+	return ssd1306_write_i2c(dev, cmd_buf, sizeof(cmd_buf), true);
 }
 
 static inline int ssd1306_set_charge_pump(const struct device *dev)
 {
-	struct ssd1306_data *driver = dev->data;
 	uint8_t cmd_buf[] = {
 #if defined(CONFIG_SSD1306_DEFAULT)
-		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_CHARGE_PUMP_ON,
-		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_CHARGE_PUMP_ON_ENABLED,
 #endif
 #if defined(CONFIG_SSD1306_SH1106_COMPATIBLE)
-		SSD1306_CONTROL_BYTE_CMD,
 		SH1106_SET_DCDC_MODE,
-		SSD1306_CONTROL_BYTE_CMD,
 		SH1106_SET_DCDC_ENABLED,
 #endif
-		SSD1306_CONTROL_LAST_BYTE_CMD,
 		SSD1306_PANEL_PUMP_VOLTAGE,
 	};
 
-	return i2c_write(driver->i2c, cmd_buf, sizeof(cmd_buf),
-			 DT_INST_REG_ADDR(0));
+	return ssd1306_write_i2c(dev, cmd_buf, sizeof(cmd_buf), true);
 }
 
 static int ssd1306_resume(const struct device *dev)
 {
-	struct ssd1306_data *driver = dev->data;
-	/* set display on */
-	return ssd1306_reg_write(driver, SSD1306_CONTROL_LAST_BYTE_CMD,
-				 SSD1306_DISPLAY_ON);
+	uint8_t cmd_buf[] = {
+		SSD1306_DISPLAY_ON,
+	};
+
+	return ssd1306_write_i2c(dev, cmd_buf, sizeof(cmd_buf), true);
 }
 
 static int ssd1306_suspend(const struct device *dev)
 {
-	struct ssd1306_data *driver = dev->data;
-	/* set display on */
-	return ssd1306_reg_write(driver, SSD1306_CONTROL_LAST_BYTE_CMD,
-				 SSD1306_DISPLAY_OFF);
+	uint8_t cmd_buf[] = {
+		SSD1306_DISPLAY_OFF,
+	};
+
+	return ssd1306_write_i2c(dev, cmd_buf, sizeof(cmd_buf), true);
 }
 
 static int ssd1306_write(const struct device *dev, const uint16_t x, const uint16_t y,
 			 const struct display_buffer_descriptor *desc,
 			 const void *buf)
 {
-	struct ssd1306_data *driver = dev->data;
 	size_t buf_len;
 
 	if (desc->pitch < desc->width) {
@@ -214,45 +174,30 @@ static int ssd1306_write(const struct device *dev, const uint16_t x, const uint1
 
 #if defined(CONFIG_SSD1306_DEFAULT)
 	uint8_t cmd_buf[] = {
-		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_MEM_ADDRESSING_MODE,
-		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_ADDRESSING_MODE,
-		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_COLUMN_ADDRESS,
-		SSD1306_CONTROL_BYTE_CMD,
 		x,
-		SSD1306_CONTROL_BYTE_CMD,
 		(x + desc->width - 1),
-		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_PAGE_ADDRESS,
-		SSD1306_CONTROL_BYTE_CMD,
 		y/8,
-		SSD1306_CONTROL_LAST_BYTE_CMD,
 		((y + desc->height)/8 - 1)
 	};
 
-	if (i2c_write(driver->i2c, cmd_buf, sizeof(cmd_buf),
-		      DT_INST_REG_ADDR(0))) {
+	if (ssd1306_write_i2c(dev, cmd_buf, sizeof(cmd_buf), true)) {
 		LOG_ERR("Failed to write command");
 		return -1;
 	}
 
-	return i2c_burst_write(driver->i2c,
-			       DT_INST_REG_ADDR(0),
-			       SSD1306_CONTROL_LAST_BYTE_DATA,
-			       (uint8_t *)buf, buf_len);
+	return ssd1306_write_i2c(dev, (uint8_t *)buf, buf_len, false);
 
 #elif defined(CONFIG_SSD1306_SH1106_COMPATIBLE)
 	uint8_t x_offset = x + DT_INST_PROP(0, segment_offset);
 	uint8_t cmd_buf[] = {
-		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_LOWER_COL_ADDRESS |
 			(x_offset & SSD1306_SET_LOWER_COL_ADDRESS_MASK),
-		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_HIGHER_COL_ADDRESS |
 			((x_offset >> 4) & SSD1306_SET_LOWER_COL_ADDRESS_MASK),
-		SSD1306_CONTROL_LAST_BYTE_CMD,
 		SSD1306_SET_PAGE_START_ADDRESS | (y / 8)
 	};
 	uint8_t *buf_ptr = (uint8_t *)buf;
@@ -262,15 +207,11 @@ static int ssd1306_write(const struct device *dev, const uint16_t x, const uint1
 			SSD1306_SET_PAGE_START_ADDRESS | (n + (y / 8));
 		LOG_HEXDUMP_DBG(cmd_buf, sizeof(cmd_buf), "cmd_buf");
 
-		if (i2c_write(driver->i2c, cmd_buf, sizeof(cmd_buf),
-			      DT_INST_REG_ADDR(0))) {
+		if (ssd1306_write_i2c(dev, cmd_buf, sizeof(cmd_buf), true)) {
 			return -1;
 		}
 
-		if (i2c_burst_write(driver->i2c,
-				    DT_INST_REG_ADDR(0),
-				    SSD1306_CONTROL_LAST_BYTE_DATA,
-				    buf_ptr, desc->width)) {
+		if (ssd1306_write_i2c(dev, buf_ptr, desc->width, false)) {
 			return -1;
 		}
 
@@ -309,16 +250,12 @@ static int ssd1306_set_brightness(const struct device *dev,
 
 static int ssd1306_set_contrast(const struct device *dev, const uint8_t contrast)
 {
-	struct ssd1306_data *driver = dev->data;
 	uint8_t cmd_buf[] = {
-		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_CONTRAST_CTRL,
-		SSD1306_CONTROL_LAST_BYTE_CMD,
 		contrast,
 	};
 
-	return i2c_write(driver->i2c, cmd_buf, sizeof(cmd_buf),
-			 DT_INST_REG_ADDR(0));
+	return ssd1306_write_i2c(dev, cmd_buf, sizeof(cmd_buf), true);
 }
 
 static void ssd1306_get_capabilities(const struct device *dev,
@@ -352,12 +289,8 @@ static int ssd1306_set_pixel_format(const struct device *dev,
 
 static int ssd1306_init_device(const struct device *dev)
 {
-	struct ssd1306_data *driver = dev->data;
-
 	uint8_t cmd_buf[] = {
-		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_ENTIRE_DISPLAY_OFF,
-		SSD1306_CONTROL_LAST_BYTE_CMD,
 #ifdef CONFIG_SSD1306_REVERSE_MODE
 		SSD1306_SET_REVERSE_DISPLAY,
 #else
@@ -366,17 +299,18 @@ static int ssd1306_init_device(const struct device *dev)
 	};
 
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	k_sleep(SSD1306_RESET_DELAY);
+	struct ssd1306_data *driver = dev->data;
+
+	k_sleep(K_MSEC(SSD1306_RESET_DELAY));
 	gpio_pin_set(driver->reset,
 		     DT_INST_GPIO_PIN(0, reset_gpios), 1);
-	k_sleep(SSD1306_RESET_DELAY);
+	k_sleep(K_MSEC(SSD1306_RESET_DELAY));
 	gpio_pin_set(driver->reset,
 		     DT_INST_GPIO_PIN(0, reset_gpios), 0);
 #endif
 
 	/* Turn display off */
-	if (ssd1306_reg_write(driver, SSD1306_CONTROL_LAST_BYTE_CMD,
-			      SSD1306_DISPLAY_OFF)) {
+	if (ssd1306_suspend(dev)) {
 		return -EIO;
 	}
 
@@ -396,8 +330,7 @@ static int ssd1306_init_device(const struct device *dev)
 		return -EIO;
 	}
 
-	if (i2c_write(driver->i2c, cmd_buf, sizeof(cmd_buf),
-		      DT_INST_REG_ADDR(0))) {
+	if (ssd1306_write_i2c(dev, cmd_buf, sizeof(cmd_buf), true)) {
 		return -EIO;
 	}
 
