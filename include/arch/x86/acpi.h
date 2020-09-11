@@ -10,6 +10,25 @@
 
 #define ACPI_RSDP_SIGNATURE 0x2052545020445352 /* == "RSD PTR " */
 
+/* EFI GUID for RSDP
+ * See "Finding the RSDP on UEFI Enabled Systems" in ACPI specs.
+ */
+#define ACPI_1_0_RSDP_EFI_GUID						\
+	{								\
+		.Data1 = 0xeb9d2d30,					\
+		.Data2 = 0x2d88,					\
+		.Data3 = 0x11d3,					\
+		.Data4 = { 0x9a, 0x16, 0x00, 0x90, 0x27, 0x3f, 0xc1, 0x4d }, \
+	}
+
+#define ACPI_2_0_RSDP_EFI_GUID						\
+	{								\
+		.Data1 = 0x8868e871,					\
+		.Data2 = 0xe4f1,					\
+		.Data3 = 0x11d3,					\
+		.Data4 = { 0xbc, 0x22, 0x00, 0x80, 0xc7, 0x3c, 0x88, 0x81 }, \
+	}
+
 /* Root System Description Pointer */
 struct acpi_rsdp {
 	char     signature[8];
