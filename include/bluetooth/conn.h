@@ -343,7 +343,7 @@ struct bt_conn_br_remote_info {
 /** @brief Connection Remote Info Structure
  *
  *  @note The version, manufacturer and subversion fields will only contain
- *        valid data if :option:`CONFIG_BT_REMOTE_VERSION` is enabled.
+ *        valid data if @option{CONFIG_BT_REMOTE_VERSION} is enabled.
  */
 struct bt_conn_remote_info {
 	/** Connection Type */
@@ -382,7 +382,7 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info);
  *  @param remote_info Connection remote info object.
  *
  *  @note In order to retrieve the remote version (version, manufacturer
- *  and subversion) :option:`CONFIG_BT_REMOTE_VERSION` must be enabled
+ *  and subversion) @option{CONFIG_BT_REMOTE_VERSION} must be enabled
  *
  *  @note The remote information is exchanged directly after the connection has
  *  been established. The application can be notified about when the remote
@@ -483,7 +483,7 @@ struct bt_conn_le_create_param {
 
 	/** @brief Connection initiation timeout (N * 10 MS)
 	 *
-	 *  Set zero to use the default :option:`CONFIG_BT_CREATE_CONN_TIMEOUT`
+	 *  Set zero to use the default @option{CONFIG_BT_CREATE_CONN_TIMEOUT}
 	 *  timeout.
 	 *
 	 *  @note Unused in @ref bt_conn_create_auto_le
@@ -708,10 +708,10 @@ typedef enum __packed {
  *  This function may return error if the pairing procedure has already been
  *  initiated by the local device or the peer device.
  *
- *  @note When :option:`CONFIG_BT_SMP_SC_ONLY` is enabled then the security
+ *  @note When @option{CONFIG_BT_SMP_SC_ONLY} is enabled then the security
  *        level will always be level 4.
  *
- *  @note When :option:`CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY` is enabled then the
+ *  @note When @option{CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY} is enabled then the
  *        security level will always be level 3.
  *
  *  @param conn Connection object.
@@ -798,7 +798,7 @@ struct bt_conn_cb {
 	 *    @ref bt_conn_create_le was canceled either by the user through
 	 *    @ref bt_conn_disconnect or by the timeout in the host through
 	 *    @ref bt_conn_le_create_param timeout parameter, which defaults to
-	 *    :option:`CONFIG_BT_CREATE_CONN_TIMEOUT` seconds.
+	 *    @option{CONFIG_BT_CREATE_CONN_TIMEOUT} seconds.
 	 *  - @p BT_HCI_ERR_ADV_TIMEOUT High duty cycle directed connectable
 	 *    advertiser started by @ref bt_le_adv_start failed to be connected
 	 *    within the timeout.
@@ -817,7 +817,7 @@ struct bt_conn_cb {
 	 *  available.
 	 *  To avoid this issue it is recommended to either start connectable
 	 *  advertise or create a new connection using @ref k_work_submit or
-	 *  increase :option:`CONFIG_BT_MAX_CONN`.
+	 *  increase @option{CONFIG_BT_MAX_CONN}.
 	 *
 	 *  @param conn Connection object.
 	 *  @param reason HCI reason for the disconnection.
