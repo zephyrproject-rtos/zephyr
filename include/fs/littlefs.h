@@ -49,7 +49,7 @@ struct fs_littlefs {
  * object.
  *
  * To define an instance for the Kconfig defaults, use
- * :cpp:func:`FS_LITTLEFS_DECLARE_DEFAULT_CONFIG`.
+ * :c:macro:`FS_LITTLEFS_DECLARE_DEFAULT_CONFIG`.
  *
  * To completely control file system configuration the application can
  * directly define and initialize a :c:type:`struct fs_littlefs`
