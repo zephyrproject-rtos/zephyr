@@ -1,4 +1,10 @@
 tests:
   subsys.power.device_pm:
-    platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832 qemu_cortex_m0
+    # arch_irq_unlock(0) can't work correctly on these arch
+    arch_exclude: arc xtensa
+    # When CONFIG_TICKLESS_IDLE enable, these platforms don't provide timer driver
+    platform_exclude: rv32m1_vega_ri5cy rv32m1_vega_zero_riscy litex_vexriscv
+    integration_platforms:
+      - qemu_x86
+      - mps2_an385
     tags: power
