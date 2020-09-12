@@ -221,17 +221,20 @@ Boards & SoC Support
 
 * Added support for these SoC series:
 
+  * ARM Cortex-M1/M3 DesignStart FPGA
 
 * Added support for these ARM boards:
 
   * nRF21540 Devkit (nrf21540dk_nrf52840).
-
+  * ARM Cortex-M1/M3 DesignStart FPGA reference designs running on the Digilent
+    Arty A7 development board
 
 * Made these changes in other boards
 
 
 * Added support for these following shields:
 
+  * ARM Ltd. V2C-DAPLink
 
 Drivers and Sensors
 *******************
@@ -313,6 +316,7 @@ Drivers and Sensors
 
 * GPIO
 
+  * Added driver for the Xilinx AXI GPIO IP
 
 * Hardware Info
 
@@ -382,6 +386,7 @@ Drivers and Sensors
 
 * Serial
 
+  * Added driver for the Xilinx UART Lite IP
 
 * SPI
 
@@ -392,6 +397,7 @@ Drivers and Sensors
     GPIO_ACTIVE_LOW.  SPI_CS_ACTIVE_LOW/HIGH are still used for chip
     selects that are not specified by a cs-gpios property.
 
+  * Added driver for the Xilinx AXI Quad SPI IP
 
 * Timer
 
