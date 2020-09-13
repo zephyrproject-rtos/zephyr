@@ -14,6 +14,16 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 40
 
+if PINMUX
+
+# The pinmux device must be initialized before all the other devices, including
+# the clock control device which uses it.
+
+config PINMUX_INIT_PRIORITY
+	default 1
+
+endif # PINMUX
+
 if CLOCK_CONTROL
 
 config CLOCK_CONTROL_LPC11U6X
