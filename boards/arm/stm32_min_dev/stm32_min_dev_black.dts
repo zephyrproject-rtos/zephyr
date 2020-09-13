@@ -13,7 +13,7 @@
 
 	leds {
 		led: led {
-			gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiob 12 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
