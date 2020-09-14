@@ -24,6 +24,24 @@ config LVGL_POINTER_KSCAN_MSGQ_COUNT
 	help
 	  Maximum number of items in the keyboard scan message queue.
 
+config LVGL_POINTER_KSCAN_SWAP_XY
+	bool "Swap keyboard scan X,Y axes"
+	help
+	  Swap keyboard scan X,Y axes. This option can be used to align keyboard
+	  scan coordinates with the display.
+
+config LVGL_POINTER_KSCAN_INVERT_X
+	bool "Invert keyboard scan X axis"
+	help
+	  Invert keyboard scan X axis. This option can be used to align keyboard
+	  scan coordinates with the display.
+
+config LVGL_POINTER_KSCAN_INVERT_Y
+	bool "Invert keyboard scan Y axis"
+	help
+	  Invert keyboard scan Y axis. This option can be used to align keyboard
+	  scan coordinates with the display.
+
 endif # LVGL_POINTER_KSCAN
 
 config LVGL_INDEV_DEF_READ_PERIOD
