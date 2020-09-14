@@ -52,6 +52,7 @@ void test_posix_realtime(void)
 	 */
 
 	int ret;
+	uint32_t uptime;
 	struct timespec rts, mts;
 	struct timeval tv;
 
@@ -64,11 +65,15 @@ void test_posix_realtime(void)
 	k_usleep(1);
 
 	printk("POSIX clock set APIs\n");
-	ret = clock_gettime(CLOCK_MONOTONIC, &mts);
-	zassert_equal(ret, 0, "Fail to get monotonic clock");
+	do {
+		uptime = k_uptime_get_32();
 
-	ret = clock_gettime(CLOCK_REALTIME, &rts);
-	zassert_equal(ret, 0, "Fail to get realtime clock");
+		ret = clock_gettime(CLOCK_MONOTONIC, &mts);
+		zassert_equal(ret, 0, "Fail to get monotonic clock");
+
+		ret = clock_gettime(CLOCK_REALTIME, &rts);
+		zassert_equal(ret, 0, "Fail to get realtime clock");
+	} while (uptime != k_uptime_get_32());
 
 	zassert_equal(rts.tv_sec, mts.tv_sec, "Seconds not equal");
 	zassert_equal(rts.tv_nsec, mts.tv_nsec, "Nanoseconds not equal");
