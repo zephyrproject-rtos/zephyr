@@ -64,9 +64,9 @@ void z_sys_init_run_level(int32_t level)
 			z_object_init(dev);
 		}
 
-		if ((entry->init(dev) == 0) && (dev != NULL)) {
-			/* Initialization was successful.
-			 * Set the init status bit so device is declared ready.
+		if ((entry->init(dev) != 0) && (dev != NULL)) {
+			/* Initialization failed.
+			 * Set the init status bit so device is not declared ready.
 			 */
 			sys_bitfield_set_bit(
 				(mem_addr_t) __device_init_status_start,
@@ -122,7 +122,8 @@ size_t z_device_get_all_static(struct device const **devices)
 
 bool z_device_ready(const struct device *dev)
 {
-	return !!(sys_bitfield_test_bit((mem_addr_t)__device_init_status_start,
+	/* Set bit indicates device failed initialization */
+	return !(sys_bitfield_test_bit((mem_addr_t)__device_init_status_start,
 					(dev - __device_start)));
 }
 
