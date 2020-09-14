@@ -25,7 +25,9 @@
 
 extern void __start(void);
 
-#if CONFIG_BOOT_LOADER
+#define NEED_BOOT_LOADER (!defined(CONFIG_SOF) || defined(CONFIG_BOOT_LOADER))
+
+#if NEED_BOOT_LOADER
 #define MANIFEST_SEGMENT_COUNT 3
 
 static inline void idelay(int n)
@@ -340,7 +342,7 @@ void boot_master_core(void)
 	}
 #endif
 
-#if CONFIG_BOOT_LOADER
+#if NEED_BOOT_LOADER
 	/* parse manifest and copy modules */
 	parse_manifest();
 
