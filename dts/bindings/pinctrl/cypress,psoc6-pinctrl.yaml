@@ -1,0 +1,61 @@
+# Copyright (c) 2020, Linaro Limited
+# Copyright (c) 2020, ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cypress PSoC-6 Pinctrl container node
+
+compatible: "cypress,psoc6-pinctrl"
+
+include: [base.yaml]
+
+properties:
+    "#address-cells":
+      required: true
+      const: 1
+    "#size-cells":
+      required: true
+      const: 1
+
+child-binding:
+    description: |
+      Cypress PSoC-6 pins. This should be used only when user wants define a
+      pin. This flags are already present on the device tree for the pins
+      that a particular peripheral uses. A pin that doesn't define flags is
+      selected for analog functions.
+    properties:
+      "cypress,pins":
+        type: phandle-array
+
+      bias-pull-up:
+        required: false
+        type: boolean
+        description: |
+          pull up the pin when not open drain and strong. Can be used
+          together with bias-pull-down.
+
+      bias-pull-down:
+        required: false
+        type: boolean
+        description: |
+          pull down the pin when not open drain and strong. Can be used
+          together with bias-pull-up.
+
+      drive-open-drain:
+        required: false
+        type: boolean
+        description: |
+          drive with open drain. Can be used together with drive-strong. In
+          this case, when drive-strong is present the level is high. otherwise
+          the level is low.
+
+      drive-strong:
+        required: false
+        type: boolean
+        description: |
+          drive signal strong. Only valid when drive-open-drain was not
+          defined.
+
+      input-buffer-on:
+        required: false
+        type: boolean
+        description: enable input buffer

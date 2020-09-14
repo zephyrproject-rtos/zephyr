@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, Cypress
+ * Copyright (c) 2020, ATL Electronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,4 +28,6 @@
 &uart5 {
 	status = "okay";
 	current-speed = <115200>;
+
+	pinctrl-0 = <&p5_0_uart5_rx &p5_1_uart5_tx>;
 };
