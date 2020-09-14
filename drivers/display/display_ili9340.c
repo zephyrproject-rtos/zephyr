@@ -80,71 +80,6 @@ static void ili9340_hw_reset(const struct device *dev)
 	k_sleep(K_MSEC(ILI9340_RESET_WAIT_TIME));
 }
 
-static int ili9340_init(const struct device *dev)
-{
-	const struct ili9340_config *config = (struct ili9340_config *)dev->config;
-	struct ili9340_data *data = (struct ili9340_data *)dev->data;
-
-	int r;
-
-	data->spi_dev = device_get_binding(config->spi_name);
-	if (data->spi_dev == NULL) {
-		LOG_ERR("Could not get SPI device %s", config->spi_name);
-		return -ENODEV;
-	}
-
-	data->spi_config.frequency = config->spi_max_freq;
-	data->spi_config.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8U);
-	data->spi_config.slave = config->spi_addr;
-
-	data->cs_ctrl.gpio_dev = device_get_binding(config->spi_cs_label);
-	if (data->cs_ctrl.gpio_dev != NULL) {
-		data->cs_ctrl.gpio_pin = config->spi_cs_pin;
-		data->cs_ctrl.gpio_dt_flags = config->spi_cs_flags;
-		data->cs_ctrl.delay = 0U;
-		data->spi_config.cs = &data->cs_ctrl;
-	}
-
-	data->command_data_gpio = device_get_binding(config->cmd_data_label);
-	if (data->command_data_gpio == NULL) {
-		LOG_ERR("Could not get command/data GPIO port %s", config->cmd_data_label);
-		return -ENODEV;
-	}
-
-	r = gpio_pin_configure(data->command_data_gpio, config->cmd_data_pin,
-			       GPIO_OUTPUT | config->cmd_data_flags);
-	if (r < 0) {
-		LOG_ERR("Could not configure command/data GPIO (%d)", r);
-		return r;
-	}
-
-	data->reset_gpio = device_get_binding(config->reset_label);
-	if (data->reset_gpio != NULL) {
-		r = gpio_pin_configure(data->reset_gpio, config->reset_pin,
-				       GPIO_OUTPUT_INACTIVE | config->reset_flags);
-		if (r < 0) {
-			LOG_ERR("Could not configure reset GPIO (%d)", r);
-			return r;
-		}
-	}
-
-	ili9340_hw_reset(dev);
-
-	r = ili9340_lcd_init(dev);
-	if (r < 0) {
-		LOG_ERR("Could not initialize LCD (%d)", r);
-		return r;
-	}
-
-	r = ili9340_exit_sleep(dev);
-	if (r < 0) {
-		LOG_ERR("Could not exit sleep mode (%d)", r);
-		return r;
-	}
-
-	return 0;
-}
-
 static int ili9340_set_mem_area(const struct device *dev, const uint16_t x,
 				const uint16_t y, const uint16_t w, const uint16_t h)
 {
@@ -339,6 +274,71 @@ int ili9340_transmit(const struct device *dev, uint8_t cmd, const void *tx_data,
 		if (r < 0) {
 			return r;
 		}
+	}
+
+	return 0;
+}
+
+static int ili9340_init(const struct device *dev)
+{
+	const struct ili9340_config *config = (struct ili9340_config *)dev->config;
+	struct ili9340_data *data = (struct ili9340_data *)dev->data;
+
+	int r;
+
+	data->spi_dev = device_get_binding(config->spi_name);
+	if (data->spi_dev == NULL) {
+		LOG_ERR("Could not get SPI device %s", config->spi_name);
+		return -ENODEV;
+	}
+
+	data->spi_config.frequency = config->spi_max_freq;
+	data->spi_config.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8U);
+	data->spi_config.slave = config->spi_addr;
+
+	data->cs_ctrl.gpio_dev = device_get_binding(config->spi_cs_label);
+	if (data->cs_ctrl.gpio_dev != NULL) {
+		data->cs_ctrl.gpio_pin = config->spi_cs_pin;
+		data->cs_ctrl.gpio_dt_flags = config->spi_cs_flags;
+		data->cs_ctrl.delay = 0U;
+		data->spi_config.cs = &data->cs_ctrl;
+	}
+
+	data->command_data_gpio = device_get_binding(config->cmd_data_label);
+	if (data->command_data_gpio == NULL) {
+		LOG_ERR("Could not get command/data GPIO port %s", config->cmd_data_label);
+		return -ENODEV;
+	}
+
+	r = gpio_pin_configure(data->command_data_gpio, config->cmd_data_pin,
+			       GPIO_OUTPUT | config->cmd_data_flags);
+	if (r < 0) {
+		LOG_ERR("Could not configure command/data GPIO (%d)", r);
+		return r;
+	}
+
+	data->reset_gpio = device_get_binding(config->reset_label);
+	if (data->reset_gpio != NULL) {
+		r = gpio_pin_configure(data->reset_gpio, config->reset_pin,
+				       GPIO_OUTPUT_INACTIVE | config->reset_flags);
+		if (r < 0) {
+			LOG_ERR("Could not configure reset GPIO (%d)", r);
+			return r;
+		}
+	}
+
+	ili9340_hw_reset(dev);
+
+	r = ili9340_lcd_init(dev);
+	if (r < 0) {
+		LOG_ERR("Could not initialize LCD (%d)", r);
+		return r;
+	}
+
+	r = ili9340_exit_sleep(dev);
+	if (r < 0) {
+		LOG_ERR("Could not exit sleep mode (%d)", r);
+		return r;
 	}
 
 	return 0;
