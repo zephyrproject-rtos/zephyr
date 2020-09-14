@@ -137,12 +137,6 @@ config OPENTHREAD_PKT_LIST_SIZE
 	int "List size for IPv6 packet buffering"
 	default 10
 
-config OT_PLAT_FLASH_PAGES_COUNT
-	int "Flash pages count used by OpenThread platform"
-	default 4
-	help
-	  This option sets flash pages count used by OpenThread to store its settings. They are located at the end of flash.
-
 endmenu # "Zephyr optimizations"
 
 config OPENTHREAD_SHELL
