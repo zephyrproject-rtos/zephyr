@@ -421,7 +421,7 @@ static inline uint32_t sys_get_be32(const uint8_t src[4])
  */
 static inline uint64_t sys_get_be48(const uint8_t src[6])
 {
-	return ((uint64_t)sys_get_be32(&src[0]) << 32) | sys_get_be16(&src[4]);
+	return ((uint64_t)sys_get_be32(&src[0]) << 16) | sys_get_be16(&src[4]);
 }
 
 /**
@@ -496,7 +496,7 @@ static inline uint32_t sys_get_le32(const uint8_t src[4])
  */
 static inline uint64_t sys_get_le48(const uint8_t src[6])
 {
-	return ((uint64_t)sys_get_le32(&src[2]) << 32) | sys_get_le16(&src[0]);
+	return ((uint64_t)sys_get_le32(&src[2]) << 16) | sys_get_le16(&src[0]);
 }
 
 /**
