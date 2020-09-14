@@ -107,6 +107,44 @@ void test_sys_put_be64(void)
 }
 
 /**
+ * @brief Test sys_get_be48() functionality
+ *
+ * @details Test if sys_get_be48() correctly handles endianness.
+ *
+ * @see sys_get_be48()
+ */
+void test_sys_get_be48(void)
+{
+	uint64_t val = 0xf0e1d2c3b4a5, tmp;
+	uint8_t buf[] = {
+		0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5
+	};
+
+	tmp = sys_get_be48(buf);
+
+	zassert_equal(tmp, val, "sys_get_be64() failed");
+}
+
+/**
+ * @brief Test sys_put_be48() functionality
+ *
+ * @details Test if sys_put_be48() correctly handles endianness.
+ *
+ * @see sys_put_be48()
+ */
+void test_sys_put_be48(void)
+{
+	uint64_t val = 0xf0e1d2c3b4a5;
+	uint8_t buf[] = {
+		0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5
+	};
+	uint8_t tmp[sizeof(buf)];
+
+	sys_put_be48(val, tmp);
+	zassert_mem_equal(tmp, buf, sizeof(buf), "sys_put_be48() failed");
+}
+
+/**
  * @brief Test sys_get_be32() functionality
  *
  * @details Test if sys_get_be32() correctly handles endianness.
@@ -260,6 +298,45 @@ void test_sys_put_le32(void)
 	sys_put_le32(val, tmp);
 
 	zassert_mem_equal(tmp, buf, sizeof(uint32_t), "sys_put_le32() failed");
+}
+
+/**
+ * @brief Test sys_get_le48() functionality
+ *
+ * @details Test if sys_get_le48() correctly handles endianness.
+ *
+ * @see sys_get_le48()
+ */
+void test_sys_get_le48(void)
+{
+	uint64_t val = 0xf0e1d2c3b4a5, tmp;
+	uint8_t buf[] = {
+		0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0
+	};
+
+	tmp = sys_get_le48(buf);
+
+	zassert_equal(tmp, val, "sys_get_le48() failed");
+}
+
+/**
+ * @brief Test sys_put_le48() functionality
+ *
+ * @details Test if sys_put_le48() correctly handles endianness.
+ *
+ * @see sys_put_le48()
+ */
+void test_sys_put_le48(void)
+{
+	uint64_t val = 0xf0e1d2c3b4a5;
+	uint8_t buf[] = {
+		0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0
+	};
+	uint8_t tmp[sizeof(uint64_t)];
+
+	sys_put_le48(val, tmp);
+
+	zassert_mem_equal(tmp, buf, sizeof(buf), "sys_put_le48() failed");
 }
 
 /**
