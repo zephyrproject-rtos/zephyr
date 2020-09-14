@@ -232,6 +232,24 @@ static bool lvgl_pointer_kscan_read(lv_indev_drv_t *drv, lv_indev_data_t *data)
 		prev.point.y = cap.y_resolution - prev.point.y;
 	}
 
+	/* rotate touch point to match display rotation */
+	if (cap.current_orientation == DISPLAY_ORIENTATION_ROTATED_90) {
+		lv_coord_t x;
+
+		x = prev.point.x;
+		prev.point.x = cap.y_resolution - prev.point.y;
+		prev.point.y = x;
+	} else if (cap.current_orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+		prev.point.x = cap.x_resolution - prev.point.x;
+		prev.point.y = cap.y_resolution - prev.point.y;
+	} else if (cap.current_orientation == DISPLAY_ORIENTATION_ROTATED_270) {
+		lv_coord_t x;
+
+		x = prev.point.x;
+		prev.point.x = prev.point.y;
+		prev.point.y = cap.x_resolution - x;
+	}
+
 	*data = prev;
 
 	return k_msgq_num_used_get(&kscan_msgq) > 0;
