@@ -133,6 +133,7 @@
 /boards/xtensa/odroid_go/                 @ydamigos
 # All cmake related files
 /cmake/                                   @tejlmand @nashif
+/cmake/*/arcmwdt/                         @abrodkin @evgeniy-paltsev @tejlmand
 /CMakeLists.txt                           @tejlmand @nashif
 /doc/                                     @dbkinder
 /doc/guides/coccinelle.rst                @himanshujha199640 @JuliaLawall
