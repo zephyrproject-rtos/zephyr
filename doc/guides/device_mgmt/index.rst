@@ -11,7 +11,6 @@ The following management operations are available:
 
 * Image management
 * File System management
-* Log management (currently disabled)
 * OS management
 
 over the following transports:
