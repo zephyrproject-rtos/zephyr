@@ -54,6 +54,9 @@ config LVGL_POINTER_KSCAN
 config LVGL_POINTER_KSCAN_DEV_NAME
 	default "FT5336"
 
+config LVGL_POINTER_KSCAN_INVERT_X
+	default y
+
 endif # LVGL
 
 endif # DISPLAY
