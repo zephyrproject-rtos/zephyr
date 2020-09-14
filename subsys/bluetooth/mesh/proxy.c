@@ -22,6 +22,7 @@
 #include "mesh.h"
 #include "adv.h"
 #include "net.h"
+#include "transport.h"
 #include "prov.h"
 #include "beacon.h"
 #include "foundation.h"
@@ -278,6 +279,14 @@ static void proxy_cfg(struct bt_mesh_proxy_client *client)
 				 &rx, &buf);
 	if (err) {
 		BT_ERR("Failed to decode Proxy Configuration (err %d)", err);
+		return;
+	}
+
+	rx.local_match = 1U;
+
+	if (bt_mesh_rpl_check(&rx, NULL)) {
+		BT_WARN("Replay: src 0x%04x dst 0x%04x seq 0x%06x",
+			rx.ctx.addr, rx.ctx.recv_dst, rx.seq);
 		return;
 	}
 
