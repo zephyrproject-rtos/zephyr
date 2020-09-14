@@ -10,7 +10,13 @@
 
 #include "civetweb.h"
 
-#define CIVETWEB_MAIN_THREAD_STACK_SIZE 4096
+#define HTTP_PORT	8080
+#define HTTPS_PORT	4443
+
+#define CIVETWEB_MAIN_THREAD_STACK_SIZE		CONFIG_MAIN_STACK_SIZE
+
+/* Use samllest possible value of 1024 (see the line 18619 of civetweb.c) */
+#define MAX_REQUEST_SIZE_BYTES			1024
 
 K_THREAD_STACK_DEFINE(civetweb_stack, CIVETWEB_MAIN_THREAD_STACK_SIZE);
 
@@ -139,12 +145,12 @@ void *main_pthread(void *arg)
 {
 	static const char * const options[] = {
 		"listening_ports",
-		"8080",
+		STRINGIFY(HTTP_PORT),
 		"num_threads",
 		"1",
 		"max_request_size",
-		"2048",
-		0
+		STRINGIFY(MAX_REQUEST_SIZE_BYTES),
+		NULL
 	};
 
 	struct mg_callbacks callbacks;
