@@ -211,6 +211,12 @@ config OPENTHREAD_NCP_VENDOR_HOOK_SOURCE
 	help
 	  Provides path to compile ncp vendor hook file inside NCP component.
 
+config OPENTHREAD_NCP_BUFFER_SIZE
+	int "The size of the NCP buffers"
+	default 2048
+	help
+	  The size of the NCP buffers.
+
 endif # OPENTHREAD_NCP
 
 config OPENTHREAD_PLATFORM_INFO
@@ -228,5 +234,24 @@ config OPENTHREAD_CUSTOM_PARAMETERS
 	  options to the OpenThread build system. Separate multiple values with
 	  space " ", for example:
 	  "OPENTHREAD_CONFIG_JOINER_ENABLE=1 OPENTHREAD_CONFIG_JOINER_MAX_CANDIDATES=3"
+
+config OPENTHREAD_NUM_MESSAGE_BUFFERS
+	int "The number of message buffers in the buffer pool"
+	default 128
+	help
+	  "The number of message buffers in the buffer pool."
+
+config OPENTHREAD_MAX_STATECHANGE_HANDLERS
+	int "The maximum number of state-changed callback handlers"
+	default 2
+	help
+	  The maximum number of state-changed callback handlers
+	  set using otSetStateChangedCallback.
+
+config OPENTHREAD_TMF_ADDRESS_CACHE_ENTRIES
+	int "The number of EID-to-RLOC cache entries"
+	default 20
+	help
+	  The number of EID-to-RLOC cache entries.
 
 endif # NET_L2_OPENTHREAD
