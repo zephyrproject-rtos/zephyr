@@ -35,7 +35,7 @@ static const struct npcx_pinctrl_config npcx_pinctrl_cfg = {
 /* Pin-control local functions */
 static void npcx_pinctrl_alt_sel(const struct npcx_alt *alt, int alt_func)
 {
-	uint32_t scfg_base = npcx_pinctrl_cfg.base;
+	const uint32_t scfg_base = npcx_pinctrl_cfg.base;
 	uint8_t alt_mask = BIT(alt->bit);
 
 	/*
@@ -65,7 +65,7 @@ void soc_pinctrl_mux_configure(const struct npcx_alt *alts_list,
 /* Pin-control driver registration */
 static int npcx_pinctrl_init(const struct device *dev)
 {
-	struct scfg_reg *inst = HAL_INSTANCE(dev);
+	struct scfg_reg *const inst = HAL_INSTANCE(dev);
 
 #if defined(CONFIG_SOC_SERIES_NPCX7)
 	/*
