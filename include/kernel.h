@@ -4186,6 +4186,7 @@ struct k_mem_slab {
 	char *free_list;
 	uint32_t num_used;
 
+	bool is_out_of_mem;
 	_OBJECT_TRACING_NEXT_PTR(k_mem_slab)
 	_OBJECT_TRACING_LINKED_FLAG
 };
