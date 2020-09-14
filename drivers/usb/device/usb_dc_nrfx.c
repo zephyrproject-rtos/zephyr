@@ -1565,6 +1565,11 @@ int usb_dc_ep_clear_stall(const uint8_t ep)
 		return -EINVAL;
 	}
 
+	if (NRF_USBD_EPISO_CHECK(ep)) {
+		/* ISO transactions do not support a handshake phase. */
+		return -EINVAL;
+	}
+
 	nrfx_usbd_ep_dtoggle_clear(ep_addr_to_nrfx(ep));
 	nrfx_usbd_ep_stall_clear(ep_addr_to_nrfx(ep));
 	LOG_DBG("Unstall on EP 0x%02x", ep);
@@ -1612,7 +1617,12 @@ int usb_dc_ep_enable(const uint8_t ep)
 		return -EINVAL;
 	}
 
-	nrfx_usbd_ep_dtoggle_clear(ep_addr_to_nrfx(ep));
+	if (!NRF_USBD_EPISO_CHECK(ep)) {
+		/* ISO transactions for full-speed device do not support
+		 * toggle sequencing and should only send DATA0 PID.
+		 */
+		nrfx_usbd_ep_dtoggle_clear(ep_addr_to_nrfx(ep));
+	}
 	if (ep_ctx->cfg.en) {
 		return -EALREADY;
 	}
