@@ -343,6 +343,11 @@ bool spi_context_rx_buf_on(struct spi_context *ctx)
 	return !!(ctx->rx_buf && ctx->rx_len);
 }
 
+/*
+ * Returns the maximum length of a transfer for which all currently active
+ * directions have a continuous buffer, i.e. the maximum SPI transfer that
+ * can be done with DMA that handles only non-scattered buffers.
+ */
 static inline size_t spi_context_longest_current_buf(struct spi_context *ctx)
 {
 	if (!ctx->tx_len) {
