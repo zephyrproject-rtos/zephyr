@@ -403,8 +403,6 @@ static void cdc_acm_reset_port(struct cdc_acm_dev_data_t *dev_data)
 	dev_data->suspended = false;
 	dev_data->rx_ready = false;
 	dev_data->tx_ready = false;
-	dev_data->tx_irq_ena = false;
-	dev_data->rx_irq_ena = false;
 	dev_data->line_coding = (struct cdc_acm_line_coding)
 				CDC_ACM_DEFAULT_BAUDRATE;
 	dev_data->serial_state = 0;
@@ -439,8 +437,6 @@ static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 		}
 		dev_data->configured = true;
 		dev_data->tx_ready = true;
-		dev_data->tx_irq_ena = true;
-		dev_data->rx_irq_ena = true;
 		break;
 	case USB_DC_DISCONNECTED:
 		LOG_INF("Device disconnected");
