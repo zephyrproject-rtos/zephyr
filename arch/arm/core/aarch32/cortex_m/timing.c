@@ -22,7 +22,7 @@
  *
  * @return 0
  */
-static inline int z_arm_dwt_init(struct device *arg)
+static inline int z_arm_dwt_init(const struct device *arg)
 {
 	/* Enable tracing */
 	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;

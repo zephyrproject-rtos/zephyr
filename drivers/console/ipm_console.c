@@ -12,7 +12,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(ipm_console, CONFIG_IPM_LOG_LEVEL);
 
-struct device *ipm_dev;
+const struct device *ipm_dev;
 
 static int console_out(int c)
 {
@@ -64,7 +64,7 @@ static void ipm_console_hook_install(void)
 	__printk_hook_install(console_out);
 }
 
-static int ipm_console_init(struct device *dev)
+static int ipm_console_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
