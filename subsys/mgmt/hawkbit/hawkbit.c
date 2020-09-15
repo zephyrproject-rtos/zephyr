@@ -256,7 +256,7 @@ static bool start_http_client(void)
 	hb_context.sock = socket(addr->ai_family, SOCK_STREAM, protocol);
 	if (hb_context.sock < 0) {
 		LOG_ERR("Failed to create TCP socket");
-		return false;
+		goto err;
 	}
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
@@ -267,22 +267,29 @@ static bool start_http_client(void)
 	if (setsockopt(hb_context.sock, SOL_TLS, TLS_SEC_TAG_LIST, sec_tag_opt,
 		       sizeof(sec_tag_opt)) < 0) {
 		LOG_ERR("Failed to set TLS_TAG option");
-		return false;
+		goto err_sock;
 	}
 
 	if (setsockopt(hb_context.sock, SOL_TLS, TLS_HOSTNAME,
 		       CONFIG_HAWKBIT_SERVER,
 		       sizeof(CONFIG_HAWKBIT_SERVER)) < 0) {
-		return false;
+		goto err_sock;
 	}
 #endif
 
 	if (connect(hb_context.sock, addr->ai_addr, addr->ai_addrlen) < 0) {
 		LOG_ERR("Failed to connect to Server");
-		return false;
+		goto err_sock;
 	}
 
+	freeaddrinfo(addr);
 	return true;
+
+err_sock:
+	close(hb_context.sock);
+err:
+	freeaddrinfo(addr);
+	return false;
 }
 
 static void cleanup_connection(void)
