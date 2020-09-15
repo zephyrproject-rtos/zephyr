@@ -139,6 +139,7 @@ config CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 
 config CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP
 	bool
+	depends on ARMV6_M_ARMV8_M_BASELINE
 	help
 	  This option signifies the Cortex-M0 has some mechanisms that can map
 	  the vector table to SRAM
@@ -280,8 +281,8 @@ config SW_VECTOR_RELAY
 
 config SW_VECTOR_RELAY_CLIENT
 	bool "Enable Software Vector Relay (client)"
-	default y if BOOTLOADER_MCUBOOT
-	depends on ARMV6_M_ARMV8_M_BASELINE && !(CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP || CPU_CORTEX_M_HAS_VTOR)
+	default y if BOOTLOADER_MCUBOOT && !CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP
+	depends on !CPU_CORTEX_M_HAS_VTOR
 	help
 	  Another image has enabled SW_VECTOR_RELAY, and will be forwarding
 	  exceptions and HW interrupts to this image. Enable this option to make
