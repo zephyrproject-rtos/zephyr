@@ -38,6 +38,7 @@ struct ili9340_config {
 	uint16_t rotation;
 	uint8_t gamset[ILI9340_GAMSET_LEN];
 	uint8_t frmctr1[ILI9340_FRMCTR1_LEN];
+	uint8_t disctrl[ILI9340_DISCTRL_LEN];
 	uint8_t pwctrl1[ILI9340_PWCTRL1_LEN];
 	uint8_t pwctrl2[ILI9340_PWCTRL2_LEN];
 	uint8_t vmctrl1[ILI9340_VMCTRL1_LEN];
@@ -385,6 +386,14 @@ static int ili9340_configure(const struct device *dev)
 		return r;
 	}
 
+	LOG_HEXDUMP_DBG(config->disctrl, ILI9340_DISCTRL_LEN, "DISCTRL");
+	memcpy(tx_data, config->disctrl, ILI9340_DISCTRL_LEN);
+	r = ili9340_transmit(dev, ILI9340_CMD_DISPLAY_FUNCTION_CTRL, tx_data,
+			     ILI9340_DISCTRL_LEN);
+	if (r < 0) {
+		return r;
+	}
+
 	LOG_HEXDUMP_DBG(config->pwctrl1, ILI9340_PWCTRL1_LEN, "PWCTRL1");
 	memcpy(tx_data, config->pwctrl1, ILI9340_PWCTRL1_LEN);
 	r = ili9340_transmit(dev, ILI9340_CMD_POWER_CTRL_1, tx_data,
@@ -553,6 +562,7 @@ static const struct display_driver_api ili9340_api = {
 		.rotation = DT_INST_PROP(index, rotation),                     \
 		.gamset = DT_INST_PROP(index, gamset),                         \
 		.frmctr1 = DT_INST_PROP(index, frmctr1),                       \
+		.disctrl = DT_INST_PROP(index, disctrl),                       \
 		.pwctrl1 = DT_INST_PROP(index, pwctrl1),                       \
 		.pwctrl2 = DT_INST_PROP(index, pwctrl2),                       \
 		.vmctrl1 = DT_INST_PROP(index, vmctrl1),                       \
