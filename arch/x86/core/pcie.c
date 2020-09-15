@@ -17,6 +17,7 @@
 #endif
 
 /* PCI Express Extended Configuration Mechanism (MMIO) */
+#ifdef CONFIG_PCIE_MMIO_CFG
 
 #define MAX_PCI_BUS_SEGMENTS 4
 
@@ -25,6 +26,8 @@ static struct {
 	uint32_t n_buses;
 	uint8_t *mmio;
 } bus_segs[MAX_PCI_BUS_SEGMENTS];
+
+static bool do_pcie_mmio_cfg;
 
 static void pcie_mm_init(void)
 {
@@ -49,6 +52,8 @@ static void pcie_mm_init(void)
 			device_map((mm_reg_t *)&bus_segs[i].mmio, phys_addr,
 				   size, K_MEM_CACHE_NONE);
 		}
+
+		do_pcie_mmio_cfg = true;
 	}
 #endif
 }
@@ -58,6 +63,10 @@ static inline void pcie_mm_conf(pcie_bdf_t bdf, unsigned int reg,
 {
 	if (bus_segs[0].mmio == NULL) {
 		pcie_mm_init();
+	}
+
+	if (do_pcie_mmio_cfg == false) {
+		return;
 	}
 
 	for (int i = 0; i < ARRAY_SIZE(bus_segs); i++) {
@@ -79,6 +88,8 @@ static inline void pcie_mm_conf(pcie_bdf_t bdf, unsigned int reg,
 		}
 	}
 }
+
+#endif /* CONFIG_PCIE_MMIO_CFG */
 
 /* Traditional Configuration Mechanism */
 
@@ -122,10 +133,13 @@ static inline void pcie_conf(pcie_bdf_t bdf, unsigned int reg,
 
 {
 #ifdef CONFIG_PCIE_MMIO_CFG
-	pcie_mm_conf(bdf, reg, write, data);
-#else
-	pcie_io_conf(bdf, reg, write, data);
+	if (do_pcie_mmio_cfg) {
+		pcie_mm_conf(bdf, reg, write, data);
+	} else
 #endif
+	{
+		pcie_io_conf(bdf, reg, write, data);
+	}
 }
 
 /* these functions are explained in include/drivers/pcie/pcie.h */
