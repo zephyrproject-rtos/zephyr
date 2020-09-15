@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2020 Linaro Limited.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* LittleFS expects at least 2 flash sectors with a constant erase size. */
+/* For STM32F2/F4/F7 series, it means that at least 2 sectors of the same */
+/* size should be made available for storage partition. */
+
+/* Applied to stm32f429zi used without bootloader, the only solution is */
+/* to allocate the 2 consecutive 256Kb sectors. */
+/* To make it working on nucleo_f429zi, it means that default partitions */
+/* should be arranged as follows: */
+
+/* Delete existing partitions that needs to be modified */
+/delete-node/ &storage_partition;
+/delete-node/ &slot0_partition;
+/delete-node/ &slot1_partition;
+
+&flash0 {
+	partitions {
+
+		/* This partition is only needed to satisfy main file */
+		/* chosen { zephyr,code-partition = &slot0_partition; } */
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 0x00010000>;
+		};
+
+		/* storage image slot: 2 x 256KB sectors */
+		storage_partition: partition@20000 {
+			label = "storage";
+			reg = <0x00020000 0x00080000>;
+		};
+	};
+};
