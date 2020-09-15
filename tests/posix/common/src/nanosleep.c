@@ -216,17 +216,6 @@ static void common(const uint32_t s, uint32_t ns)
 	/* TODO: Upper bounds check when hr timers are available */
 }
 
-/** sleep for 1ns */
-void test_nanosleep_0_1(void)
-{
-	if (IS_ENABLED(CONFIG_QEMU_TARGET)) {
-		/* QEMU target tick adjustment fails for 1 ns durations */
-		ztest_test_skip();
-	} else {
-		common(0, 1);
-	}
-}
-
 /** sleep for 500000000ns */
 void test_nanosleep_0_500000000(void)
 {

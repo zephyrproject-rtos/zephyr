@@ -56,7 +56,6 @@ void test_main(void)
 			ztest_unit_test(test_nanosleep_0_n1),
 			ztest_unit_test(test_nanosleep_n1_n1),
 			ztest_unit_test(test_nanosleep_0_1000000000),
-			ztest_unit_test(test_nanosleep_0_1),
 			ztest_unit_test(test_nanosleep_0_500000000),
 			ztest_unit_test(test_nanosleep_1_0)
 			);
