@@ -33,31 +33,6 @@
 #define _DATA_IN_ROM
 #endif
 
-#if USE_PARTITION_MANAGER
-#include <pm_config.h>
-
-#ifdef LINK_INTO_s1
-/* We are linking against S1, create symbol containing the flash ID of S0.
- * This is used when writing code operating on the "other" slot.
- */
-_image_1_primary_slot_id = PM_S0_ID;
-
-#define ROM_ADDR PM_ADDRESS + PM_S1_ADDRESS - PM_S0_ADDRESS
-
-#else /* ! LINK_INTO_s1 */
-
-#ifdef PM_S1_ID
-/* We are linking against S0, create symbol containing the flash ID of S1.
- * This is used when writing code operating on the "other" slot.
- */
-_image_1_primary_slot_id = PM_S1_ID;
-#endif /* PM_S1_ID */
-
-#define ROM_ADDR PM_ADDRESS
-#endif /* LINK_MCUBOOT_INTO_s1 */
-#define ROM_SIZE PM_SIZE
-#else
-
 #if !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0)
 #define ROM_ADDR RAM_ADDR
 #else
@@ -74,9 +49,8 @@ _image_1_primary_slot_id = PM_S1_ID;
 #define ROM_SIZE CONFIG_FLASH_LOAD_SIZE
 #else
 #define ROM_SIZE (CONFIG_FLASH_SIZE*1K - CONFIG_FLASH_LOAD_OFFSET)
-#endif /* CONFIG_FLASH_LOAD_SIZE > 0 */
-#endif /* CONFIG_HAS_TI_CCFG */
-#endif /* USE_PARTITION_MANAGER */
+#endif
+#endif
 
 #if defined(CONFIG_XIP)
 #if defined(CONFIG_IS_BOOTLOADER)
