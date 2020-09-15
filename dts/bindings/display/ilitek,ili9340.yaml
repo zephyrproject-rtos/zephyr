@@ -66,6 +66,18 @@ properties:
       description:
         Power control 2 (PWCTRL2) register values.
 
+    vmctrl1:
+      type: uint8-array
+      default: [0x31, 0x3c]
+      description:
+        VCOM control 1 (VMCTRL1) register values.
+
+    vmctrl2:
+      type: uint8-array
+      default: [0xc0]
+      description:
+        VCOM control 2 (VMCTRL2) register values.
+
     pgamctrl:
       type: uint8-array
       default: [
