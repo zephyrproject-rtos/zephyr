@@ -58,6 +58,41 @@ struct ili9340_data {
 	enum display_orientation orientation;
 };
 
+static int ili9340_transmit(const struct device *dev, uint8_t cmd,
+			    const void *tx_data, size_t tx_len)
+{
+	const struct ili9340_config *config = (struct ili9340_config *)dev->config;
+	struct ili9340_data *data = (struct ili9340_data *)dev->data;
+
+	int r;
+	struct spi_buf tx_buf;
+	struct spi_buf_set tx_bufs = { .buffers = &tx_buf, .count = 1U };
+
+	/* send command */
+	tx_buf.buf = &cmd;
+	tx_buf.len = 1U;
+
+	gpio_pin_set(data->command_data_gpio, config->cmd_data_pin, ILI9340_CMD);
+	r = spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
+	if (r < 0) {
+		return r;
+	}
+
+	/* send data (if any) */
+	if (tx_data != NULL) {
+		tx_buf.buf = (void *)tx_data;
+		tx_buf.len = tx_len;
+
+		gpio_pin_set(data->command_data_gpio, config->cmd_data_pin, ILI9340_DATA);
+		r = spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
+		if (r < 0) {
+			return r;
+		}
+	}
+
+	return 0;
+}
+
 static int ili9340_exit_sleep(const struct device *dev)
 {
 	int r;
@@ -298,41 +333,6 @@ static void ili9340_get_capabilities(const struct device *dev,
 	capabilities->current_orientation = data->orientation;
 }
 
-int ili9340_transmit(const struct device *dev, uint8_t cmd, const void *tx_data,
-		     size_t tx_len)
-{
-	const struct ili9340_config *config = (struct ili9340_config *)dev->config;
-	struct ili9340_data *data = (struct ili9340_data *)dev->data;
-
-	int r;
-	struct spi_buf tx_buf;
-	struct spi_buf_set tx_bufs = { .buffers = &tx_buf, .count = 1U };
-
-	/* send command */
-	tx_buf.buf = &cmd;
-	tx_buf.len = 1U;
-
-	gpio_pin_set(data->command_data_gpio, config->cmd_data_pin, ILI9340_CMD);
-	r = spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
-	if (r < 0) {
-		return r;
-	}
-
-	/* send data (if any) */
-	if (tx_data != NULL) {
-		tx_buf.buf = (void *)tx_data;
-		tx_buf.len = tx_len;
-
-		gpio_pin_set(data->command_data_gpio, config->cmd_data_pin, ILI9340_DATA);
-		r = spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
-		if (r < 0) {
-			return r;
-		}
-	}
-
-	return 0;
-}
-
 static int ili9340_configure(const struct device *dev)
 {
 	const struct ili9340_config *config = (struct ili9340_config *)dev->config;
@@ -498,12 +498,6 @@ static int ili9340_init(const struct device *dev)
 	r = ili9340_configure(dev);
 	if (r < 0) {
 		LOG_ERR("Could not configure display (%d)", r);
-		return r;
-	}
-
-	r = ili9340_lcd_init(dev);
-	if (r < 0) {
-		LOG_ERR("Could not initialize LCD (%d)", r);
 		return r;
 	}
 
