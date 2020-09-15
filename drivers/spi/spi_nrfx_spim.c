@@ -160,7 +160,7 @@ static void transfer_next_chunk(const struct device *dev)
 	struct spi_context *ctx = &dev_data->ctx;
 	int error = 0;
 
-	size_t chunk_len = spi_context_longest_current_buf(ctx);
+	size_t chunk_len = spi_context_max_continuous_chunk(ctx);
 
 	if (chunk_len > 0) {
 		nrfx_spim_xfer_desc_t xfer;

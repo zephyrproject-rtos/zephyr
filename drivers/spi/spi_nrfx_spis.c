@@ -112,7 +112,7 @@ static void prepare_for_transfer(const struct device *dev)
 	struct spi_context *ctx = &dev_data->ctx;
 	int status;
 
-	size_t buf_len = spi_context_longest_current_buf(ctx);
+	size_t buf_len = spi_context_max_continuous_chunk(ctx);
 
 	if (buf_len > 0) {
 		nrfx_err_t result;
