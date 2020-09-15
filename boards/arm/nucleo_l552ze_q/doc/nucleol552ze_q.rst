@@ -169,16 +169,16 @@ input/output, pull-up, etc.
 
 Available pins:
 ---------------
-.. image:: img/nucleo_l552ze_q_arduino.png
+.. image:: img/nucleo_l552ze_q_zio_left_2020_2_11.png
    :width: 720px
    :align: center
    :height: 540px
-   :alt: Nucleo L552ZE Q Arduino connectors
-.. image:: img/nucleo_l552ze_q_morpho.png
+   :alt: Nucleo L552ZE Q Zio left connector
+.. image:: img/nucleo_l552ze_q_zio_right_2020_2_11.png
    :width: 720px
    :align: center
    :height: 540px
-   :alt: Nucleo L552ZE Q Morpho connectors
+   :alt: Nucleo L552ZE Q Zio right connector
 
 For mode details please refer to `STM32 Nucleo-144 board User Manual`_.
 
