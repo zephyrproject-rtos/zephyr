@@ -8,8 +8,6 @@
 #ifndef ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9340_H_
 #define ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9340_H_
 
-#include <device.h>
-
 #define ILI9340_CMD_SOFTWARE_RESET 0x01
 #define ILI9340_CMD_ENTER_SLEEP 0x10
 #define ILI9340_CMD_EXIT_SLEEP 0x11
@@ -29,15 +27,6 @@
 #define ILI9340_CMD_VCOM_CTRL_2 0xC7
 #define ILI9340_CMD_POSITIVE_GAMMA_CORRECTION 0xE0
 #define ILI9340_CMD_NEGATIVE_GAMMA_CORRECTION 0xE1
-
-#define ILI9341_CMD_POWER_CTRL_A 0xCB
-#define ILI9341_CMD_POWER_CTRL_B 0xCF
-#define ILI9341_CMD_DRVR_TIMING_CTRL_A_I 0xE8
-#define ILI9341_CMD_DRVR_TIMING_CTRL_A_E 0xE9
-#define ILI9341_CMD_DRVR_TIMING_CTRL_B 0xEA
-#define ILI9341_CMD_POWER_ON_SEQ_CTRL 0xED
-#define ILI9341_CMD_ENABLE_3G 0xF2
-#define ILI9341_CMD_PUMP_RATIO_CTRL 0xF7
 
 #define ILI9340_GAMSET_LEN 1U
 #define ILI9340_FRMCTR1_LEN 2U
@@ -80,28 +69,5 @@
 
 /** Y resolution (pixels). */
 #define ILI9340_Y_RES 320U
-
-/**
- * Send data to ILI9340 display controller
- *
- * @param data Device data structure
- * @param cmd Command to send to display controller
- * @param tx_data Data to transmit to the display controller
- * In case no data should be transmitted pass a NULL pointer
- * @param tx_len Number of bytes in tx_data buffer
- *
- * @return 0 on success, errno otherwise.
- */
-int ili9340_transmit(const struct device *dev, uint8_t cmd, const void *tx_data,
-		     size_t tx_len);
-
-/**
- * Perform LCD specific initialization
- *
- * @param data Device data structure
- *
- * @return 0 on success, errno otherwise.
- */
-int ili9340_lcd_init(const struct device *dev);
 
 #endif /* ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9340_H_ */
