@@ -8,6 +8,7 @@ config SOC_NRF52805
 	bool
 	select HAS_HW_NRF_BPROT
 	select HAS_HW_NRF_CCM
+	select HAS_HW_NRF_CCM_LFLEN_8BIT
 	select HAS_HW_NRF_CLOCK
 	select HAS_HW_NRF_ECB
 	select HAS_HW_NRF_EGU0
@@ -18,6 +19,7 @@ config SOC_NRF52805
 	select HAS_HW_NRF_POWER
 	select HAS_HW_NRF_PPI
 	select HAS_HW_NRF_QDEC
+	select HAS_HW_NRF_RADIO_BLE_2M
 	select HAS_HW_NRF_RNG
 	select HAS_HW_NRF_RTC0
 	select HAS_HW_NRF_RTC1
@@ -47,6 +49,7 @@ config SOC_NRF52810
 	bool
 	select HAS_HW_NRF_BPROT
 	select HAS_HW_NRF_CCM
+	select HAS_HW_NRF_CCM_LFLEN_8BIT
 	select HAS_HW_NRF_CLOCK
 	select HAS_HW_NRF_COMP
 	select HAS_HW_NRF_ECB
@@ -60,6 +63,7 @@ config SOC_NRF52810
 	select HAS_HW_NRF_PPI
 	select HAS_HW_NRF_PWM0
 	select HAS_HW_NRF_QDEC
+	select HAS_HW_NRF_RADIO_BLE_2M
 	select HAS_HW_NRF_RNG
 	select HAS_HW_NRF_RTC0
 	select HAS_HW_NRF_RTC1
@@ -89,6 +93,7 @@ config SOC_NRF52811
 	bool
 	select HAS_HW_NRF_BPROT
 	select HAS_HW_NRF_CCM
+	select HAS_HW_NRF_CCM_LFLEN_8BIT
 	select HAS_HW_NRF_CLOCK
 	select HAS_HW_NRF_COMP
 	select HAS_HW_NRF_ECB
@@ -102,6 +107,7 @@ config SOC_NRF52811
 	select HAS_HW_NRF_PPI
 	select HAS_HW_NRF_PWM0
 	select HAS_HW_NRF_QDEC
+	select HAS_HW_NRF_RADIO_BLE_2M
 	select HAS_HW_NRF_RADIO_BLE_CODED
 	select HAS_HW_NRF_RADIO_IEEE802154
 	select HAS_HW_NRF_RNG
@@ -136,6 +142,7 @@ config SOC_NRF52820
 	bool
 	select HAS_HW_NRF_ACL
 	select HAS_HW_NRF_CCM
+	select HAS_HW_NRF_CCM_LFLEN_8BIT
 	select HAS_HW_NRF_CLOCK
 	select HAS_HW_NRF_COMP
 	select HAS_HW_NRF_ECB
@@ -150,6 +157,7 @@ config SOC_NRF52820
 	select HAS_HW_NRF_POWER
 	select HAS_HW_NRF_PPI
 	select HAS_HW_NRF_QDEC
+	select HAS_HW_NRF_RADIO_BLE_2M
 	select HAS_HW_NRF_RADIO_BLE_CODED
 	select HAS_HW_NRF_RNG
 	select HAS_HW_NRF_RTC0
@@ -189,6 +197,7 @@ config SOC_NRF52832
 	select CPU_HAS_FPU
 	select HAS_HW_NRF_BPROT
 	select HAS_HW_NRF_CCM
+	select HAS_HW_NRF_CCM_LFLEN_8BIT
 	select HAS_HW_NRF_CLOCK
 	select HAS_HW_NRF_COMP
 	select HAS_HW_NRF_ECB
@@ -211,6 +220,7 @@ config SOC_NRF52832
 	select HAS_HW_NRF_PWM1
 	select HAS_HW_NRF_PWM2
 	select HAS_HW_NRF_QDEC
+	select HAS_HW_NRF_RADIO_BLE_2M
 	select HAS_HW_NRF_RNG
 	select HAS_HW_NRF_RTC0
 	select HAS_HW_NRF_RTC1
@@ -254,6 +264,7 @@ config SOC_NRF52833
 	select CPU_HAS_FPU
 	select HAS_HW_NRF_ACL
 	select HAS_HW_NRF_CCM
+	select HAS_HW_NRF_CCM_LFLEN_8BIT
 	select HAS_HW_NRF_CLOCK
 	select HAS_HW_NRF_COMP
 	select HAS_HW_NRF_ECB
@@ -279,6 +290,7 @@ config SOC_NRF52833
 	select HAS_HW_NRF_PWM2
 	select HAS_HW_NRF_PWM3
 	select HAS_HW_NRF_QDEC
+	select HAS_HW_NRF_RADIO_BLE_2M
 	select HAS_HW_NRF_RADIO_BLE_CODED
 	select HAS_HW_NRF_RADIO_IEEE802154
 	select HAS_HW_NRF_RNG
@@ -328,6 +340,7 @@ config SOC_NRF52840
 	select HAS_HW_NRF_ACL
 	select HAS_HW_NRF_CC310
 	select HAS_HW_NRF_CCM
+	select HAS_HW_NRF_CCM_LFLEN_8BIT
 	select HAS_HW_NRF_CLOCK
 	select HAS_HW_NRF_COMP
 	select HAS_HW_NRF_ECB
@@ -354,6 +367,7 @@ config SOC_NRF52840
 	select HAS_HW_NRF_PWM3
 	select HAS_HW_NRF_QDEC
 	select HAS_HW_NRF_QSPI
+	select HAS_HW_NRF_RADIO_BLE_2M
 	select HAS_HW_NRF_RADIO_BLE_CODED
 	select HAS_HW_NRF_RADIO_IEEE802154
 	select HAS_HW_NRF_RNG

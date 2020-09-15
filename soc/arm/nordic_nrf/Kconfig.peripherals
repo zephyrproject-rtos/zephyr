@@ -21,6 +21,9 @@ config HAS_HW_NRF_CC312
 config HAS_HW_NRF_CCM
 	bool
 
+config HAS_HW_NRF_CCM_LFLEN_8BIT
+	bool
+
 config HAS_HW_NRF_CLOCK
 	bool
 
@@ -107,6 +110,9 @@ config HAS_HW_NRF_QDEC
 	bool
 
 config HAS_HW_NRF_QSPI
+	bool
+
+config HAS_HW_NRF_RADIO_BLE_2M
 	bool
 
 config HAS_HW_NRF_RADIO_BLE_CODED
