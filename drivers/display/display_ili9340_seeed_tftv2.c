@@ -117,17 +117,6 @@ int ili9340_lcd_init(const struct device *dev)
 		return r;
 	}
 
-	/* Memory Access Control */
-	cmd = ILI9340_CMD_MEM_ACCESS_CTRL;
-	data[0] = ILI9340_DATA_MEM_ACCESS_CTRL_MY |
-		  ILI9340_DATA_MEM_ACCESS_CTRL_MV |
-		  ILI9340_DATA_MEM_ACCESS_CTRL_ML |
-		  ILI9340_DATA_MEM_ACCESS_CTRL_BGR;
-	r = ili9340_transmit(dev, cmd, data, 1);
-	if (r < 0) {
-		return r;
-	}
-
 	/* Frame Rate */
 	cmd = ILI9340_CMD_FRAME_CTRL_NORMAL_MODE;
 	data[0] = 0x00U;

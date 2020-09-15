@@ -36,3 +36,14 @@ properties:
         Display pixel format. Note that when RGB888 pixel format is selected
         only 6 color bits are actually used being in practice equivalent to
         RGB666.
+
+    rotation:
+      type: int
+      default: 0
+      enum:
+        - 0
+        - 90
+        - 180
+        - 270
+      description:
+        Display rotation (CW) in degrees.

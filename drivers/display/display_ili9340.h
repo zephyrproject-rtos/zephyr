@@ -66,10 +66,10 @@
 #define ILI9340_RESET_WAIT_TIME 5
 
 /** X resolution (pixels). */
-#define ILI9340_X_RES 320U
+#define ILI9340_X_RES 240U
 
 /** Y resolution (pixels). */
-#define ILI9340_Y_RES 240U
+#define ILI9340_Y_RES 320U
 
 /**
  * Send data to ILI9340 display controller
