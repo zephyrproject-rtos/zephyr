@@ -18,6 +18,7 @@
 		cmd-data-gpios = <&arduino_header 13 GPIO_ACTIVE_LOW>; /* D7 */
 		reset-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
 		pixel-format = <ILI9340_PIXEL_FORMAT_RGB565>;
+		rotation = <0>;
 	};
 };
 

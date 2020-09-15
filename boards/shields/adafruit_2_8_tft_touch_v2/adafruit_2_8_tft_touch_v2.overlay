@@ -18,6 +18,7 @@
 		reg = <0>;
 		cmd-data-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
 		pixel-format = <ILI9340_PIXEL_FORMAT_RGB888>;
+		rotation = <90>;
 	};
 };
 

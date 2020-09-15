@@ -35,6 +35,7 @@ struct ili9340_config {
 	gpio_pin_t reset_pin;
 	gpio_dt_flags_t reset_flags;
 	uint8_t pixel_format;
+	uint16_t rotation;
 };
 
 struct ili9340_data {
@@ -45,6 +46,7 @@ struct ili9340_data {
 	struct spi_cs_control cs_ctrl;
 	uint8_t bytes_per_pixel;
 	enum display_pixel_format pixel_format;
+	enum display_orientation orientation;
 };
 
 static int ili9340_exit_sleep(const struct device *dev)
@@ -237,11 +239,31 @@ static int ili9340_set_pixel_format(const struct device *dev,
 static int ili9340_set_orientation(const struct device *dev,
 				   const enum display_orientation orientation)
 {
+	struct ili9340_data *data = (struct ili9340_data *)dev->data;
+
+	int r;
+	uint8_t tx_data = ILI9340_DATA_MEM_ACCESS_CTRL_BGR;
+
 	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
-		return 0;
+		tx_data |= ILI9340_DATA_MEM_ACCESS_CTRL_MX;
+	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_90) {
+		tx_data |= ILI9340_DATA_MEM_ACCESS_CTRL_MV;
+	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+		tx_data |= ILI9340_DATA_MEM_ACCESS_CTRL_MY;
+	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_270) {
+		tx_data |= ILI9340_DATA_MEM_ACCESS_CTRL_MV |
+			   ILI9340_DATA_MEM_ACCESS_CTRL_MX |
+			   ILI9340_DATA_MEM_ACCESS_CTRL_MY;
 	}
-	LOG_ERR("Changing display orientation not implemented");
-	return -ENOTSUP;
+
+	r = ili9340_transmit(dev, ILI9340_CMD_MEM_ACCESS_CTRL, &tx_data, 1U);
+	if (r < 0) {
+		return r;
+	}
+
+	data->orientation = orientation;
+
+	return 0;
 }
 
 static void ili9340_get_capabilities(const struct device *dev,
@@ -255,9 +277,16 @@ static void ili9340_get_capabilities(const struct device *dev,
 						PIXEL_FORMAT_RGB_888;
 	capabilities->current_pixel_format = data->pixel_format;
 
-	capabilities->x_resolution = ILI9340_X_RES;
-	capabilities->y_resolution = ILI9340_Y_RES;
-	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
+	if (data->orientation == DISPLAY_ORIENTATION_NORMAL ||
+	    data->orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+		capabilities->x_resolution = ILI9340_X_RES;
+		capabilities->y_resolution = ILI9340_Y_RES;
+	} else {
+		capabilities->x_resolution = ILI9340_Y_RES;
+		capabilities->y_resolution = ILI9340_X_RES;
+	}
+
+	capabilities->current_orientation = data->orientation;
 }
 
 int ili9340_transmit(const struct device *dev, uint8_t cmd, const void *tx_data,
@@ -301,6 +330,7 @@ static int ili9340_configure(const struct device *dev)
 
 	int r;
 	enum display_pixel_format pixel_format;
+	enum display_orientation orientation;
 
 	/* pixel format */
 	if (config->pixel_format == ILI9340_PIXEL_FORMAT_RGB565) {
@@ -310,6 +340,22 @@ static int ili9340_configure(const struct device *dev)
 	}
 
 	r = ili9340_set_pixel_format(dev, pixel_format);
+	if (r < 0) {
+		return r;
+	}
+
+	/* orientation */
+	if (config->rotation == 0U) {
+		orientation = DISPLAY_ORIENTATION_NORMAL;
+	} else if (config->rotation == 90U) {
+		orientation = DISPLAY_ORIENTATION_ROTATED_90;
+	} else if (config->rotation == 180U) {
+		orientation = DISPLAY_ORIENTATION_ROTATED_180;
+	} else {
+		orientation = DISPLAY_ORIENTATION_ROTATED_270;
+	}
+
+	r = ili9340_set_orientation(dev, orientation);
 	if (r < 0) {
 		return r;
 	}
@@ -431,6 +477,7 @@ static const struct display_driver_api ili9340_api = {
 			DT_INST_NODE_HAS_PROP(index, reset_gpios),             \
 			DT_INST_GPIO_FLAGS(index, reset_gpios)),               \
 		.pixel_format = DT_INST_PROP(index, pixel_format),             \
+		.rotation = DT_INST_PROP(index, rotation),                     \
 	};                                                                     \
 									       \
 	static struct ili9340_data ili9340_data_##index;                       \

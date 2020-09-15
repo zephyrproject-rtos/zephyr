@@ -36,13 +36,6 @@ int ili9340_lcd_init(const struct device *dev)
 		return r;
 	}
 
-	tx_data[0] =
-	    ILI9340_DATA_MEM_ACCESS_CTRL_MV | ILI9340_DATA_MEM_ACCESS_CTRL_BGR;
-	r = ili9340_transmit(dev, ILI9340_CMD_MEM_ACCESS_CTRL, tx_data, 1);
-	if (r < 0) {
-		return r;
-	}
-
 	tx_data[0] = 0x00;
 	tx_data[1] = 0x18;
 	r = ili9340_transmit(dev, ILI9340_CMD_FRAME_CTRL_NORMAL_MODE, tx_data, 2);
