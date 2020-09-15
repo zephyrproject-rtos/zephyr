@@ -16,6 +16,9 @@
 #include <linker/linker-defs.h>
 #include <string.h>
 
+#if defined(CONFIG_SW_VECTOR_RELAY) || defined(CONFIG_SW_VECTOR_RELAY_CLIENT)
+extern void *_vector_table_pointer;
+#endif
 
 /**
  * @brief Relocate vector table to SRAM.
@@ -29,6 +32,11 @@
  * A zephyr image that is a bootloader does not have to relocate the
  * vector table.
  *
+ * Alternatively both switches SW_VECTOR_RELAY (for Bootloader image) and
+ * SW_VECTOR_RELAY_CLIENT (for image loaded by a bootloader) can be used to
+ * adds a vector table relay handler and a vector relay table, to relay
+ * interrupts based on a vector table pointer.
+ *
  * Replaces the default function from prep_c.c.
  *
  * @note Zephyr applications that will not be loaded by a bootloader should
@@ -36,7 +44,9 @@
  */
 void relocate_vector_table(void)
 {
-#ifndef CONFIG_IS_BOOTLOADER
+#if defined(CONFIG_SW_VECTOR_RELAY) || defined(CONFIG_SW_VECTOR_RELAY_CLIENT)
+	_vector_table_pointer = _vector_start;
+#elif !defined(CONFIG_IS_BOOTLOADER)
 	extern char _ram_vector_start[];
 
 	size_t vector_size = (size_t)_vector_end - (size_t)_vector_start;
