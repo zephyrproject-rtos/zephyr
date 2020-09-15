@@ -54,6 +54,12 @@ properties:
       description:
         Gamma set (GAMSET) register value.
 
+    frmctr1:
+      type: uint8-array
+      default: [0x00, 0x1b]
+      description:
+        Frame rate control (in normal mode / full colors) (FRMCTR1) register value.
+
     pwctrl1:
       type: uint8-array
       default: [0x26, 0x00]
