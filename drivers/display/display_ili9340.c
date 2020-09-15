@@ -36,8 +36,11 @@ struct ili9340_config {
 	gpio_dt_flags_t reset_flags;
 	uint8_t pixel_format;
 	uint16_t rotation;
+	uint8_t gamset[ILI9340_GAMSET_LEN];
 	uint8_t pwctrl1[ILI9340_PWCTRL1_LEN];
 	uint8_t pwctrl2[ILI9340_PWCTRL2_LEN];
+	uint8_t pgamctrl[ILI9340_PGAMCTRL_LEN];
+	uint8_t ngamctrl[ILI9340_NGAMCTRL_LEN];
 };
 
 struct ili9340_data {
@@ -363,6 +366,14 @@ static int ili9340_configure(const struct device *dev)
 		return r;
 	}
 
+	LOG_HEXDUMP_DBG(config->gamset, ILI9340_GAMSET_LEN, "GAMSET");
+	memcpy(tx_data, config->gamset, ILI9340_GAMSET_LEN);
+	r = ili9340_transmit(dev, ILI9340_CMD_GAMMA_SET, tx_data,
+			     ILI9340_GAMSET_LEN);
+	if (r < 0) {
+		return r;
+	}
+
 	LOG_HEXDUMP_DBG(config->pwctrl1, ILI9340_PWCTRL1_LEN, "PWCTRL1");
 	memcpy(tx_data, config->pwctrl1, ILI9340_PWCTRL1_LEN);
 	r = ili9340_transmit(dev, ILI9340_CMD_POWER_CTRL_1, tx_data,
@@ -375,6 +386,22 @@ static int ili9340_configure(const struct device *dev)
 	memcpy(tx_data, config->pwctrl2, ILI9340_PWCTRL2_LEN);
 	r = ili9340_transmit(dev, ILI9340_CMD_POWER_CTRL_2, tx_data,
 			     ILI9340_PWCTRL2_LEN);
+	if (r < 0) {
+		return r;
+	}
+
+	LOG_HEXDUMP_DBG(config->pgamctrl, ILI9340_PGAMCTRL_LEN, "PGAMCTRL");
+	memcpy(tx_data, config->pgamctrl, ILI9340_PGAMCTRL_LEN);
+	r = ili9340_transmit(dev, ILI9340_CMD_POSITIVE_GAMMA_CORRECTION,
+			     tx_data, ILI9340_PGAMCTRL_LEN);
+	if (r < 0) {
+		return r;
+	}
+
+	LOG_HEXDUMP_DBG(config->ngamctrl, ILI9340_NGAMCTRL_LEN, "NGAMCTRL");
+	memcpy(tx_data, config->ngamctrl, ILI9340_NGAMCTRL_LEN);
+	r = ili9340_transmit(dev, ILI9340_CMD_NEGATIVE_GAMMA_CORRECTION,
+			     tx_data, ILI9340_NGAMCTRL_LEN);
 	if (r < 0) {
 		return r;
 	}
@@ -497,8 +524,11 @@ static const struct display_driver_api ili9340_api = {
 			DT_INST_GPIO_FLAGS(index, reset_gpios)),               \
 		.pixel_format = DT_INST_PROP(index, pixel_format),             \
 		.rotation = DT_INST_PROP(index, rotation),                     \
+		.gamset = DT_INST_PROP(index, gamset),                         \
 		.pwctrl1 = DT_INST_PROP(index, pwctrl1),                       \
 		.pwctrl2 = DT_INST_PROP(index, pwctrl2),                       \
+		.pgamctrl = DT_INST_PROP(index, pgamctrl),                     \
+		.ngamctrl = DT_INST_PROP(index, ngamctrl),                     \
 	};                                                                     \
 									       \
 	static struct ili9340_data ili9340_data_##index;                       \

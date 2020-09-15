@@ -125,57 +125,5 @@ int ili9340_lcd_init(const struct device *dev)
 		return r;
 	}
 
-	/* Gamma curve selected */
-	cmd = ILI9340_CMD_GAMMA_SET;
-	data[0] = 0x01U;
-	r = ili9340_transmit(dev, cmd, data, 1);
-	if (r < 0) {
-		return r;
-	}
-
-	/* Positive Gamma Correction */
-	cmd = ILI9340_CMD_POSITIVE_GAMMA_CORRECTION;
-	data[0] = 0x0FU;
-	data[1] = 0x2AU;
-	data[2] = 0x28U;
-	data[3] = 0x08U;
-	data[4] = 0x0EU;
-	data[5] = 0x08U;
-	data[6] = 0x54U;
-	data[7] = 0xA9U;
-	data[8] = 0x43U;
-	data[9] = 0x0AU;
-	data[10] = 0x0FU;
-	data[11] = 0x00U;
-	data[12] = 0x00U;
-	data[13] = 0x00U;
-	data[14] = 0x00U;
-	r = ili9340_transmit(dev, cmd, data, 15);
-	if (r < 0) {
-		return r;
-	}
-
-	/* Negative Gamma Correction */
-	cmd = ILI9340_CMD_NEGATIVE_GAMMA_CORRECTION;
-	data[0] = 0x00U;
-	data[1] = 0x15U;
-	data[2] = 0x17U;
-	data[3] = 0x07U;
-	data[4] = 0x11U;
-	data[5] = 0x06U;
-	data[6] = 0x2BU;
-	data[7] = 0x56U;
-	data[8] = 0x3CU;
-	data[9] = 0x05U;
-	data[10] = 0x10U;
-	data[11] = 0x0FU;
-	data[12] = 0x3FU;
-	data[13] = 0x3FU;
-	data[14] = 0x0FU;
-	r = ili9340_transmit(dev, cmd, data, 15);
-	if (r < 0) {
-		return r;
-	}
-
 	return 0;
 }
