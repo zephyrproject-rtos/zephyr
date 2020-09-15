@@ -5,6 +5,7 @@
 
 #include <toolchain.h>
 #include <arch/x86/multiboot.h>
+#include <arch/x86/efi.h>
 #include <sys/util.h>
 #include <arch/x86/msr.h>
 #include <kernel_arch_data.h>
@@ -289,8 +290,14 @@ __start64:
 	outb %al, $0x21
 	outb %al, $0xA1
 
-	/* Far call into the Zephyr code segment */
-	movq $x86_cpuboot, %rbp
+	movq $x86_cpu_boot_arg, %rbp
+	/* Inserting boot type */
+	movq $EFI_BOOT_TYPE, __x86_boot_arg_t_boot_type_OFFSET(%rbp)
+	/* and EFI boot arg (if any) */
+	movq %rbx, __x86_boot_arg_t_arg_OFFSET(%rbp)
+
+	movq $x86_cpuboot, %rbp		/* BSP is always logical CPU id 0 */
+
 	mov jmpdesc, %rax
 	jmp *%rax
 jmpdesc:
