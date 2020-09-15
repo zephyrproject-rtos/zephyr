@@ -11,18 +11,6 @@ int ili9340_lcd_init(const struct device *dev)
 	int r;
 	uint8_t tx_data[15];
 
-	tx_data[0] = 0x23;
-	r = ili9340_transmit(dev, ILI9340_CMD_POWER_CTRL_1, tx_data, 1);
-	if (r < 0) {
-		return r;
-	}
-
-	tx_data[0] = 0x10;
-	r = ili9340_transmit(dev, ILI9340_CMD_POWER_CTRL_2, tx_data, 1);
-	if (r < 0) {
-		return r;
-	}
-
 	tx_data[0] = 0x3e;
 	tx_data[1] = 0x28;
 	r = ili9340_transmit(dev, ILI9340_CMD_VCOM_CTRL_1, tx_data, 2);

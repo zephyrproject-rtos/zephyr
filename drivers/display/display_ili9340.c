@@ -36,6 +36,8 @@ struct ili9340_config {
 	gpio_dt_flags_t reset_flags;
 	uint8_t pixel_format;
 	uint16_t rotation;
+	uint8_t pwctrl1[ILI9340_PWCTRL1_LEN];
+	uint8_t pwctrl2[ILI9340_PWCTRL2_LEN];
 };
 
 struct ili9340_data {
@@ -331,6 +333,7 @@ static int ili9340_configure(const struct device *dev)
 	int r;
 	enum display_pixel_format pixel_format;
 	enum display_orientation orientation;
+	uint8_t tx_data[15];
 
 	/* pixel format */
 	if (config->pixel_format == ILI9340_PIXEL_FORMAT_RGB565) {
@@ -356,6 +359,22 @@ static int ili9340_configure(const struct device *dev)
 	}
 
 	r = ili9340_set_orientation(dev, orientation);
+	if (r < 0) {
+		return r;
+	}
+
+	LOG_HEXDUMP_DBG(config->pwctrl1, ILI9340_PWCTRL1_LEN, "PWCTRL1");
+	memcpy(tx_data, config->pwctrl1, ILI9340_PWCTRL1_LEN);
+	r = ili9340_transmit(dev, ILI9340_CMD_POWER_CTRL_1, tx_data,
+			     ILI9340_PWCTRL1_LEN);
+	if (r < 0) {
+		return r;
+	}
+
+	LOG_HEXDUMP_DBG(config->pwctrl2, ILI9340_PWCTRL2_LEN, "PWCTRL2");
+	memcpy(tx_data, config->pwctrl2, ILI9340_PWCTRL2_LEN);
+	r = ili9340_transmit(dev, ILI9340_CMD_POWER_CTRL_2, tx_data,
+			     ILI9340_PWCTRL2_LEN);
 	if (r < 0) {
 		return r;
 	}
@@ -478,6 +497,8 @@ static const struct display_driver_api ili9340_api = {
 			DT_INST_GPIO_FLAGS(index, reset_gpios)),               \
 		.pixel_format = DT_INST_PROP(index, pixel_format),             \
 		.rotation = DT_INST_PROP(index, rotation),                     \
+		.pwctrl1 = DT_INST_PROP(index, pwctrl1),                       \
+		.pwctrl2 = DT_INST_PROP(index, pwctrl2),                       \
 	};                                                                     \
 									       \
 	static struct ili9340_data ili9340_data_##index;                       \

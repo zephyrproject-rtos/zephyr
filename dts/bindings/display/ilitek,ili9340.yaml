@@ -47,3 +47,15 @@ properties:
         - 270
       description:
         Display rotation (CW) in degrees.
+
+    pwctrl1:
+      type: uint8-array
+      default: [0x26, 0x00]
+      description:
+        Power control 1 (PWCTRL1) register values.
+
+    pwctrl2:
+      type: uint8-array
+      default: [0x00]
+      description:
+        Power control 2 (PWCTRL2) register values.

@@ -82,24 +82,6 @@ int ili9340_lcd_init(const struct device *dev)
 		return r;
 	}
 
-	/* Power control */
-	/* VRH[5:0] */
-	cmd = ILI9340_CMD_POWER_CTRL_1;
-	data[0] = 0x1BU;
-	r = ili9340_transmit(dev, cmd, data, 1);
-	if (r < 0) {
-		return r;
-	}
-
-	/* Power control */
-	/* SAP[2:0];BT[3:0] */
-	cmd = ILI9340_CMD_POWER_CTRL_2;
-	data[0] = 0x10U;
-	r = ili9340_transmit(dev, cmd, data, 1);
-	if (r < 0) {
-		return r;
-	}
-
 	/* VCM control */
 	cmd = ILI9340_CMD_VCOM_CTRL_1;
 	data[0] = 0x3FU;
