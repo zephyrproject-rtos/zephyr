@@ -7,6 +7,14 @@ tests:
     tags: bluetooth
     harness: keyboard
     min_flash: 145
+  bluetooth.shell.cdc_acm:
+    extra_args: OVERLAY_CONFIG=cdc_acm.overlay
+    depends_on: usb_device
+    platform_allow: qemu_cortex_m3 qemu_x86 native_posix native_posix_64 nrf52840dk_nrf52840
+    platform_exclude: nrf52dk_nrf52810
+    tags: bluetooth
+    harness: keyboard
+    min_flash: 350
   bluetooth.shell.shell_br:
     extra_configs:
       - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
