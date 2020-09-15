@@ -52,5 +52,6 @@
 		reg = <0>;
 		spi-max-frequency = <12000000>;
 		label = "DISPLAY";
+		pwctrl1 = [1b 00];
 	};
 };
