@@ -8,6 +8,7 @@
 #include <kernel_internal.h>
 #include <arch/x86/acpi.h>
 #include <arch/x86/multiboot.h>
+#include <arch/x86/efi.h>
 #include <x86_mmu.h>
 
 extern FUNC_NORETURN void z_cstart(void);
@@ -41,6 +42,9 @@ FUNC_NORETURN void z_x86_prep_c(void *arg)
 	if (IS_ENABLED(CONFIG_MULTIBOOT_INFO) &&
 	    cpu_arg->boot_type == MULTIBOOT_BOOT_TYPE) {
 		z_multiboot_init((struct multiboot_info *)cpu_arg->arg);
+	} else if (IS_ENABLED(CONFIG_X86_EFI) &&
+		   cpu_arg->boot_type == EFI_BOOT_TYPE) {
+		efi_init();
 	} else {
 		ARG_UNUSED(cpu_arg);
 	}
