@@ -905,6 +905,12 @@ static void prov_random(const uint8_t *data)
 
 	BT_DBG("Remote Random: %s", bt_hex(data, 16));
 
+	if (!memcmp(data, link.rand, 16)) {
+		BT_ERR("Random value is identical to ours, rejecting.");
+		prov_fail(PROV_ERR_CFM_FAILED);
+		return;
+	}
+
 	if (bt_mesh_prov_conf(link.conf_key, data, link.auth, conf_verify)) {
 		BT_ERR("Unable to calculate confirmation verification");
 		prov_fail(PROV_ERR_UNEXP_ERR);
