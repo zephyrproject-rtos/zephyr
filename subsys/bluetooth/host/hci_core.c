@@ -4124,7 +4124,13 @@ static int le_scan_set_random_addr(bool active_scan, uint8_t *own_addr_type)
 		    !is_adv_using_rand_addr()) {
 			err = le_set_private_addr(BT_ID_DEFAULT);
 			if (err) {
-				return err;
+				if (active_scan || !is_adv_using_rand_addr()) {
+					return err;
+				} else {
+					BT_WARN("Ignoring failure to set "
+						"address for passive scan (%d)",
+						err);
+				}
 			}
 
 			*own_addr_type = BT_ADDR_LE_RANDOM;
