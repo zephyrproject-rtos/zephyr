@@ -808,7 +808,7 @@ static const struct npcx_alt espi_alts[] = DT_NPCX_ALT_ITEMS_LIST(0);
 
 static const struct espi_npcx_config espi_npcx_config = {
 	.base = DT_INST_REG_ADDR(0),
-	.espi_rst_wui = DT_NPCX_ESPI_WUI_ITEM(espi_rst_wui),
+	.espi_rst_wui = DT_NPCX_WUI_ITEM_BY_NAME(0, espi_rst_wui),
 	.clk_cfg = DT_NPCX_CLK_CFG_ITEM(0),
 	.alts_size = ARRAY_SIZE(espi_alts),
 	.alts_list = espi_alts,

@@ -23,7 +23,7 @@ struct uart_npcx_config {
 	/* clock configuration */
 	struct npcx_clk_cfg clk_cfg;
 	/* int-mux configuration */
-	const struct npcx_wui wui_map;
+	const struct npcx_wui uart_rx_wui;
 	/* pinmux configuration */
 	const uint8_t   alts_size;
 	const struct npcx_alt *alts_list;
@@ -343,11 +343,11 @@ static int uart_npcx_init(const struct device *dev)
 	 * Configure the UART wake-up event triggered from a falling edge
 	 * on CR_SIN pin. No need for callback function.
 	 */
-	soc_miwu_interrupt_configure(&config->wui_map,
+	soc_miwu_interrupt_configure(&config->uart_rx_wui,
 			NPCX_MIWU_MODE_EDGE, NPCX_MIWU_TRIG_LOW);
 
 	/* Enable irq of interrupt-input module */
-	soc_miwu_irq_enable(&config->wui_map);
+	soc_miwu_irq_enable(&config->uart_rx_wui);
 #endif
 
 
@@ -390,6 +390,7 @@ static int uart_npcx_init(const struct device *dev)
 			NPCX_UART_IRQ_CONFIG_FUNC_INIT(inst)                   \
 		},                                                             \
 		.clk_cfg = DT_NPCX_CLK_CFG_ITEM(inst),                         \
+		.uart_rx_wui = DT_NPCX_WUI_ITEM_BY_NAME(0, uart_rx),           \
 		.alts_size = ARRAY_SIZE(uart_alts##inst),                      \
 		.alts_list = uart_alts##inst,                                  \
 	};                                                                     \
