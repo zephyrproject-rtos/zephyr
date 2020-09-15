@@ -39,53 +39,5 @@ int ili9340_lcd_init(const struct device *dev)
 		return r;
 	}
 
-	tx_data[0] = 0x01;
-	r = ili9340_transmit(dev, ILI9340_CMD_GAMMA_SET, tx_data, 1);
-	if (r < 0) {
-		return r;
-	}
-
-	tx_data[0] = 0x0F;
-	tx_data[1] = 0x31;
-	tx_data[2] = 0x2B;
-	tx_data[3] = 0x0C;
-	tx_data[4] = 0x0E;
-	tx_data[5] = 0x08;
-	tx_data[6] = 0x4E;
-	tx_data[7] = 0xF1;
-	tx_data[8] = 0x37;
-	tx_data[9] = 0x07;
-	tx_data[10] = 0x10;
-	tx_data[11] = 0x03;
-	tx_data[12] = 0x0E;
-	tx_data[13] = 0x09;
-	tx_data[14] = 0x00;
-	r = ili9340_transmit(dev, ILI9340_CMD_POSITIVE_GAMMA_CORRECTION, tx_data,
-			     15);
-	if (r < 0) {
-		return r;
-	}
-
-	tx_data[0] = 0x00;
-	tx_data[1] = 0x0E;
-	tx_data[2] = 0x14;
-	tx_data[3] = 0x03;
-	tx_data[4] = 0x11;
-	tx_data[5] = 0x07;
-	tx_data[6] = 0x31;
-	tx_data[7] = 0xC1;
-	tx_data[8] = 0x48;
-	tx_data[9] = 0x08;
-	tx_data[10] = 0x0F;
-	tx_data[11] = 0x0C;
-	tx_data[12] = 0x31;
-	tx_data[13] = 0x36;
-	tx_data[14] = 0x0F;
-	r = ili9340_transmit(dev, ILI9340_CMD_NEGATIVE_GAMMA_CORRECTION, tx_data,
-			     15);
-	if (r < 0) {
-		return r;
-	}
-
 	return 0;
 }
