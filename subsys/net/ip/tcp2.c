@@ -366,6 +366,10 @@ static void tcp_send_process(struct k_work *work)
 	struct net_pkt *pkt = tcp_slist(&conn->send_queue, peek_head,
 					struct net_pkt, next);
 
+	if (!pkt) {
+		return;
+	}
+
 	NET_DBG("%s %s", log_strdup(tcp_th(pkt)), conn->in_retransmission ?
 		"in_retransmission" : "");
 
