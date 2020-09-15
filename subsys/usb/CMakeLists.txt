@@ -16,6 +16,8 @@ zephyr_sources_ifdef(CONFIG_USB_DEVICE_BOS bos.c)
 
 zephyr_sources_ifdef(CONFIG_USB_DEVICE_OS_DESC os_desc.c)
 
+zephyr_sources_ifdef(CONFIG_USB_WORKQUEUE usb_work_q.c)
+
 if(CONFIG_USB_DEVICE_VID EQUAL 0x2FE3)
   message(WARNING
     "CONFIG_USB_DEVICE_VID has default value 0x2FE3.
