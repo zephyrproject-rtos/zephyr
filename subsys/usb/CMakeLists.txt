@@ -12,17 +12,9 @@ if(CONFIG_USB_DEVICE_STACK)
   add_subdirectory(class)
 endif()
 
-if(CONFIG_USB_DEVICE_BOS)
-  zephyr_sources(
-    bos.c
-    )
-endif()
+zephyr_sources_ifdef(CONFIG_USB_DEVICE_BOS bos.c)
 
-if(CONFIG_USB_DEVICE_OS_DESC)
-  zephyr_sources(
-    os_desc.c
-    )
-endif()
+zephyr_sources_ifdef(CONFIG_USB_DEVICE_OS_DESC os_desc.c)
 
 if(CONFIG_USB_DEVICE_VID EQUAL 0x2FE3)
   message(WARNING
