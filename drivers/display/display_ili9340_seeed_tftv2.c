@@ -82,23 +82,6 @@ int ili9340_lcd_init(const struct device *dev)
 		return r;
 	}
 
-	/* VCM control */
-	cmd = ILI9340_CMD_VCOM_CTRL_1;
-	data[0] = 0x3FU;
-	data[1] = 0x3CU;
-	r = ili9340_transmit(dev, cmd, data, 2);
-	if (r < 0) {
-		return r;
-	}
-
-	/* VCM control2 */
-	cmd = ILI9340_CMD_VCOM_CTRL_2;
-	data[0] = 0xB7U;
-	r = ili9340_transmit(dev, cmd, data, 1);
-	if (r < 0) {
-		return r;
-	}
-
 	/* Frame Rate */
 	cmd = ILI9340_CMD_FRAME_CTRL_NORMAL_MODE;
 	data[0] = 0x00U;

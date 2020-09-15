@@ -39,6 +39,8 @@ struct ili9340_config {
 	uint8_t gamset[ILI9340_GAMSET_LEN];
 	uint8_t pwctrl1[ILI9340_PWCTRL1_LEN];
 	uint8_t pwctrl2[ILI9340_PWCTRL2_LEN];
+	uint8_t vmctrl1[ILI9340_VMCTRL1_LEN];
+	uint8_t vmctrl2[ILI9340_VMCTRL2_LEN];
 	uint8_t pgamctrl[ILI9340_PGAMCTRL_LEN];
 	uint8_t ngamctrl[ILI9340_NGAMCTRL_LEN];
 };
@@ -390,6 +392,22 @@ static int ili9340_configure(const struct device *dev)
 		return r;
 	}
 
+	LOG_HEXDUMP_DBG(config->vmctrl1, ILI9340_VMCTRL1_LEN, "VMCTRL1");
+	memcpy(tx_data, config->vmctrl1, ILI9340_VMCTRL1_LEN);
+	r = ili9340_transmit(dev, ILI9340_CMD_VCOM_CTRL_1, tx_data,
+			     ILI9340_VMCTRL1_LEN);
+	if (r < 0) {
+		return r;
+	}
+
+	LOG_HEXDUMP_DBG(config->vmctrl2, ILI9340_VMCTRL2_LEN, "VMCTRL2");
+	memcpy(tx_data, config->vmctrl2, ILI9340_VMCTRL2_LEN);
+	r = ili9340_transmit(dev, ILI9340_CMD_VCOM_CTRL_2, tx_data,
+			     ILI9340_VMCTRL2_LEN);
+	if (r < 0) {
+		return r;
+	}
+
 	LOG_HEXDUMP_DBG(config->pgamctrl, ILI9340_PGAMCTRL_LEN, "PGAMCTRL");
 	memcpy(tx_data, config->pgamctrl, ILI9340_PGAMCTRL_LEN);
 	r = ili9340_transmit(dev, ILI9340_CMD_POSITIVE_GAMMA_CORRECTION,
@@ -527,6 +545,8 @@ static const struct display_driver_api ili9340_api = {
 		.gamset = DT_INST_PROP(index, gamset),                         \
 		.pwctrl1 = DT_INST_PROP(index, pwctrl1),                       \
 		.pwctrl2 = DT_INST_PROP(index, pwctrl2),                       \
+		.vmctrl1 = DT_INST_PROP(index, vmctrl1),                       \
+		.vmctrl2 = DT_INST_PROP(index, vmctrl2),                       \
 		.pgamctrl = DT_INST_PROP(index, pgamctrl),                     \
 		.ngamctrl = DT_INST_PROP(index, ngamctrl),                     \
 	};                                                                     \
