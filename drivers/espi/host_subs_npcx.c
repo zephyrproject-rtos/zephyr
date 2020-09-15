@@ -157,7 +157,7 @@ struct host_sub_npcx_config host_sub_cfg = {
 	.inst_kbc = (struct kbc_reg *)DT_INST_REG_ADDR_BY_NAME(0, kbc),
 	.inst_pm_acpi = (struct pmch_reg *)DT_INST_REG_ADDR_BY_NAME(0, pm_acpi),
 	.inst_pm_hcmd = (struct pmch_reg *)DT_INST_REG_ADDR_BY_NAME(0, pm_hcmd),
-	.host_acc_wui = DT_NPCX_ESPI_WUI_ITEM(host_acc_wui),
+	.host_acc_wui = DT_NPCX_WUI_ITEM_BY_NAME(0, host_acc_wui),
 	.clks_size = ARRAY_SIZE(host_dev_clk_cfg),
 	.clks_list = host_dev_clk_cfg,
 };
