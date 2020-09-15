@@ -51,6 +51,7 @@
 #include <usb/usb_common.h>
 #include <usb/class/usb_dfu.h>
 #include <usb_descriptor.h>
+#include <usb_work_q.h>
 
 #define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
 #include <logging/log.h>
@@ -455,7 +456,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 			dfu_data_worker.worker_state = dfuIDLE;
 			dfu_data_worker.worker_len  = pSetup->wLength;
 			memcpy(dfu_data_worker.buf, *data, pSetup->wLength);
-			k_work_submit(&dfu_work);
+			k_work_submit_to_queue(&USB_WORK_Q, &dfu_work);
 			break;
 		case dfuDNLOAD_IDLE:
 			dfu_data.state = dfuDNBUSY;
@@ -467,7 +468,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 			}
 
 			memcpy(dfu_data_worker.buf, *data, pSetup->wLength);
-			k_work_submit(&dfu_work);
+			k_work_submit_to_queue(&USB_WORK_Q, &dfu_work);
 			break;
 		default:
 			LOG_ERR("DFU_DNLOAD wrong state %d", dfu_data.state);

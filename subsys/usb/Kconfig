@@ -114,6 +114,38 @@ config USB_MAX_POWER
 	  Set bMaxPower value in the Standard Configuration Descriptor,
 	  the result is 2mA times the value provided.
 
+config USB_WORKQUEUE
+	bool "Use a dedicate work queue in the USB subsystem"
+	default y if USB_CDC_ACM
+	help
+	  This option provides a dedicated work queue that is used for
+	  all offloaded operations initiated by the USB subsystem.
+	  This prevents deadlock situations where tasks on the system
+	  workqueue inadvertently initiate operations that block, such
+	  as UART transmission on CDC-ACM, preventing the system work
+	  queue from making progress on the USB tasks that would
+	  release the task.
+
+	  Without this the system work queue is used for all USB
+	  offloaded transfers.
+
+config USB_WORKQUEUE_STACK_SIZE
+	int "USB workqueue stack size"
+	depends on USB_WORKQUEUE
+	default 4096 if COVERAGE
+	default 1024
+
+config USB_WORKQUEUE_PRIORITY
+	int "USB workqueue priority"
+	depends on USB_WORKQUEUE
+	default -2 if COOP_ENABLED && !PREEMPT_ENABLED
+	default  0 if !COOP_ENABLED
+	default -1
+	help
+	  By default, USB work queue priority is the lowest cooperative
+	  priority. This means that any work handler, once started, won't
+	  be preempted by any other thread until finished.
+
 source "subsys/usb/class/Kconfig"
 
 endif # USB_DEVICE_STACK

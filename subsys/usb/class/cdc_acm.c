@@ -48,6 +48,7 @@
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
 #include <usb_descriptor.h>
+#include <usb_work_q.h>
 
 #ifndef CONFIG_UART_INTERRUPT_DRIVEN
 #error "CONFIG_UART_INTERRUPT_DRIVEN must be set for CDC ACM driver"
@@ -287,7 +288,7 @@ static void cdc_acm_write_cb(uint8_t ep, int size, void *priv)
 
 	/* Call callback only if tx irq ena */
 	if (dev_data->cb && dev_data->tx_irq_ena) {
-		k_work_submit(&dev_data->cb_work);
+		k_work_submit_to_queue(&USB_WORK_Q, &dev_data->cb_work);
 	}
 
 	if (ring_buf_is_empty(dev_data->tx_ringbuf)) {
@@ -295,7 +296,7 @@ static void cdc_acm_write_cb(uint8_t ep, int size, void *priv)
 		return;
 	}
 
-	k_work_submit(&dev_data->tx_work);
+	k_work_submit_to_queue(&USB_WORK_Q, &dev_data->tx_work);
 }
 
 static void tx_work_handler(struct k_work *work)
@@ -361,7 +362,7 @@ done:
 
 	/* Call callback only if rx irq ena */
 	if (dev_data->cb && dev_data->rx_irq_ena) {
-		k_work_submit(&dev_data->cb_work);
+		k_work_submit_to_queue(&USB_WORK_Q, &dev_data->cb_work);
 	}
 
 	usb_transfer(ep, dev_data->rx_buf, sizeof(dev_data->rx_buf),
@@ -583,7 +584,7 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 		LOG_WRN("Ring buffer full, drop %zd bytes", len - wrote);
 	}
 
-	k_work_submit(&dev_data->tx_work);
+	k_work_submit_to_queue(&USB_WORK_Q, &dev_data->tx_work);
 
 	/* Return written to ringbuf data len */
 	return wrote;
@@ -630,7 +631,7 @@ static void cdc_acm_irq_tx_enable(const struct device *dev)
 	dev_data->tx_irq_ena = true;
 
 	if (dev_data->cb && dev_data->tx_ready) {
-		k_work_submit(&dev_data->cb_work);
+		k_work_submit_to_queue(&USB_WORK_Q, &dev_data->cb_work);
 	}
 }
 
@@ -680,7 +681,7 @@ static void cdc_acm_irq_rx_enable(const struct device *dev)
 	dev_data->rx_irq_ena = true;
 
 	if (dev_data->cb && dev_data->rx_ready) {
-		k_work_submit(&dev_data->cb_work);
+		k_work_submit_to_queue(&USB_WORK_Q, &dev_data->cb_work);
 	}
 }
 
