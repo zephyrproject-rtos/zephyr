@@ -60,6 +60,13 @@ properties:
       description:
         Frame rate control (in normal mode / full colors) (FRMCTR1) register value.
 
+    disctrl:
+      type: uint8-array
+      default: [0x0a, 0x82, 0x27]
+      description:
+        Display function control (DISCTRL) register value. Note that changing
+        default SS bit value (0) may interfere with display rotation.
+
     pwctrl1:
       type: uint8-array
       default: [0x26, 0x00]

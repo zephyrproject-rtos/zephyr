@@ -82,15 +82,6 @@ int ili9340_lcd_init(const struct device *dev)
 		return r;
 	}
 
-	/* Display Function Control */
-	cmd = ILI9340_CMD_DISPLAY_FUNCTION_CTRL;
-	data[0] = 0x0AU;
-	data[1] = 0xA2U;
-	r = ili9340_transmit(dev, cmd, data, 2);
-	if (r < 0) {
-		return r;
-	}
-
 	/* 3Gamma Function Disable */
 	cmd = ILI9341_CMD_ENABLE_3G;
 	data[0] = 0x00U;
