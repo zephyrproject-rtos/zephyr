@@ -266,12 +266,17 @@ should know about.
   built-in boards, and :ref:`board_porting_guide` for information on
   adding board support.
 
-* :makevar:`CONF_FILE`: Indicates the name of one or more configuration
+* :makevar:`CONF_FILE`: Indicates the name of one or more Kconfig configuration
   fragment files. Multiple filenames can be separated with either spaces or
   semicolons. Each file includes Kconfig configuration values that override
   the default configuration values.
 
   See :ref:`initial-conf` for more information.
+
+* :makevar:`OVERLAY_CONFIG`: Additional Kconfig configuration fragment files.
+  Multiple filenames can be separated with either spaces or semicolons. This
+  can be useful in order to leave :makevar:`CONF_FILE` at its default value,
+  but "mix in" some additional configuration options.
 
 * :makevar:`DTC_OVERLAY_FILE`: One or more devicetree overlay files to use.
   Multiple files can be separated with semicolons.
