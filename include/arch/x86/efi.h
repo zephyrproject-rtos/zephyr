@@ -544,6 +544,9 @@ struct efi_configuration_table {
 	void *VendorTable;
 };
 
+/**
+ * @brief EFI System Table structure
+ */
 struct efi_system_table {
 	struct efi_table_header Hdr;
 	uint16_t *FirmwareVendor;
@@ -560,6 +563,28 @@ struct efi_system_table {
 	struct efi_configuration_table *ConfigurationTable;
 };
 
+#if defined(CONFIG_X86_EFI_SYSTEM_TABLE)
+
+/** @brief Initialize the internal storage for the EFI system table
+ *
+ * This will let Zephyr keeping access to the EFI system table at all time
+ * after booting up.
+ *
+ * @param efi_sys_table The actual EFI system table pointer provided by the
+ *        UEFI subsystem at boot time.
+ */
+void efi_init(struct efi_system_table *efi_sys_table);
+
+
+#else /* CONFIG_X86_EFI_SYSTEM_TABLE */
+
+#define efi_init(...)
+
+#endif /* CONFIG_X86_EFI_SYSTEM_TABLE */
+
 #endif /* _ASMLANGUAGE */
+
+/* Boot type value (see prep_c.c) */
+#define EFI_BOOT_TYPE 2
 
 #endif /* ZEPHYR_INCLUDE_ARCH_X86_EFI_H */
