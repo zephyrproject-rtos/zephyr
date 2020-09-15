@@ -432,9 +432,7 @@ static int openthread_init(struct net_if *iface)
 		otNcpInit(ot_context->instance);
 	}
 
-	if (!IS_ENABLED(CONFIG_OPENTHREAD_RAW)) {
-		otIp6SetEnabled(ot_context->instance, true);
-	}
+	otIp6SetEnabled(ot_context->instance, true);
 
 	if (!IS_ENABLED(CONFIG_OPENTHREAD_NCP)) {
 		otIp6SetReceiveFilterEnabled(ot_context->instance, true);
