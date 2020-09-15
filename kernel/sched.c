@@ -572,10 +572,9 @@ void z_thread_single_abort(struct k_thread *thread)
 			arch_thread_return_value_set(waiter, 0);
 			ready_thread(waiter);
 		}
+		sys_trace_thread_abort(thread);
+		z_thread_monitor_exit(thread);
 	}
-
-	sys_trace_thread_abort(thread);
-	z_thread_monitor_exit(thread);
 }
 
 static void unready_thread(struct k_thread *thread)
