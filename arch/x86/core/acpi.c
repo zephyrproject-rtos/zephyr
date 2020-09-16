@@ -37,19 +37,36 @@ static bool check_sum(struct acpi_sdt *t)
 	return sum == 0;
 }
 
+/* We never identity map the NULL page, but may need to read some BIOS data */
+static uint8_t *zero_page_base;
+
 static struct acpi_rsdp *find_rsdp(void)
 {
 	uint64_t magic = 0x2052545020445352; /* == "RSD PTR " */
+	uint8_t *bda_seg;
+
+	if (zero_page_base == NULL) {
+		z_mem_map(&zero_page_base, 0, 4096, K_MEM_PERM_RW);
+	}
 
 	/* Physical (real mode!) address 0000:040e stores a (real
 	 * mode!!) segment descriptor pointing to the 1kb Extended
 	 * BIOS Data Area.  Look there first.
+	 *
+	 * We had to memory map this segment descriptor since it is in
+	 * the NULL page. The remaining structures (EBDA etc) are identity
+	 * mapped somewhere within the minefield of reserved regions in the
+	 * first megabyte and are directly accessible.
 	 */
-	uint64_t *search = (void *)(long)(((int)*(uint16_t *)0x040eL) << 4);
+	bda_seg = 0x040e + zero_page_base;
+	uint64_t *search = (void *)(long)(((int)*(uint16_t *)bda_seg) << 4);
 
-	for (int i = 0; i < 1024/8; i++) {
-		if (search[i] == magic) {
-			return (void *)&search[i];
+	/* Might be nothing there, check before we inspect */
+	if (search != NULL) {
+		for (int i = 0; i < 1024/8; i++) {
+			if (search[i] == magic) {
+				return (void *)&search[i];
+			}
 		}
 	}
 
