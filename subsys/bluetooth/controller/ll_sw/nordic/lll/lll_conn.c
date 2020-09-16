@@ -53,6 +53,12 @@ static uint8_t mic_state;
 
 #if defined(CONFIG_BT_CTLR_FORCE_MD_COUNT) && \
 	(CONFIG_BT_CTLR_FORCE_MD_COUNT > 0)
+#if defined(CONFIG_BT_CTLR_FORCE_MD_AUTO)
+static uint8_t force_md_cnt_reload;
+#define BT_CTLR_FORCE_MD_COUNT force_md_cnt_reload
+#else
+#define BT_CTLR_FORCE_MD_COUNT CONFIG_BT_CTLR_FORCE_MD_COUNT
+#endif
 static uint8_t force_md_cnt;
 
 #define FORCE_MD_CNT_INIT() \
@@ -73,7 +79,7 @@ static uint8_t force_md_cnt;
 		do { \
 			if (force_md_cnt || \
 			    (trx_cnt >= ((CONFIG_BT_CTLR_TX_BUFFERS) - 1))) { \
-				force_md_cnt = CONFIG_BT_CTLR_FORCE_MD_COUNT; \
+				force_md_cnt = BT_CTLR_FORCE_MD_COUNT; \
 			} \
 		} while (0)
 
@@ -592,6 +598,18 @@ void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx)
 
 	*pdu_data_tx = p;
 }
+
+#if defined(CONFIG_BT_CTLR_FORCE_MD_AUTO)
+uint8_t lll_conn_force_md_cnt_set(uint8_t force_md_cnt)
+{
+	uint8_t previous;
+
+	previous = force_md_cnt_reload;
+	force_md_cnt_reload = force_md_cnt;
+
+	return previous;
+}
+#endif /* CONFIG_BT_CTLR_FORCE_MD_AUTO */
 
 static int init_reset(void)
 {
