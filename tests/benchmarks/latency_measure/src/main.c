@@ -32,14 +32,14 @@ void test_thread(void *arg1, void *arg2, void *arg3)
 {
 	uint32_t freq;
 
+	timing_init();
+
 	bench_test_init();
 
 	freq = timing_freq_get_mhz();
 
 	TC_START("Time Measurement");
 	TC_PRINT("Timing results: Clock frequency: %u MHz\n", freq);
-
-	timing_init();
 
 	thread_switch_yield();
 
