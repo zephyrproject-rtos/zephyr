@@ -248,7 +248,11 @@ Boards & SoC Support
 
 * Added support for these following shields:
 
-  * ARM Ltd. V2C-DAPLink
+  * Adafruit WINC1500 Wifi
+  * ARM Ltd. V2C-DAPLink for DesignStart FPGA
+  * Atmel AT86RF2XX Transceivers
+  * Buydisplay 2.8" TFT Touch Shield with Arduino adapter
+  * DAC80508 Evaluation Module
 
 Drivers and Sensors
 *******************
