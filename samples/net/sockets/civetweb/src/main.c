@@ -4,11 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <logging/log.h>
+LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
+
 #include <zephyr.h>
 #include <posix/pthread.h>
 #include <data/json.h>
 
 #include "civetweb.h"
+
+#define HTTP_TEXT_JS		"text/javascript"
+#define HTTP_EOFL		"\r\n"  /* http end of line */
+
+#define HTTP_CONTEND_ENCODING	"Content-Encoding: "
+#define HTTP_ENCODING_GZ	"gzip"
+
+#define JQUERY_URI	"/jquery-3.5.1.slim.min.js"
+
+#define TX_CHUNK_SIZE_BYTES	CONFIG_NET_TX_STACK_SIZE
 
 #define CIVETWEB_MAIN_THREAD_STACK_SIZE 4096
 
@@ -29,6 +42,61 @@ struct civetweb_info {
 	.field_name_len = sizeof(#member_) - 1, \
 	.offset = offsetof(struct_, member_), \
 	.type = type_ \
+}
+
+int this_send_buffer_chunked(struct mg_connection *conn, const char *mime_type,
+			     const char *buff, const size_t buff_len)
+{
+	/* TODO: Add ret after each function call! */
+	int ret = 0;
+
+	ret = mg_send_http_ok(conn, mime_type, -1);
+	if (ret < 0) {
+		goto error_this_send_buffer_chunked;
+	}
+
+	long long left_bytes = buff_len;
+	char *itr = (char *)buff;  /* buffer iterator */
+
+	LOG_DBG("Transferring:");
+	LOG_DBG("itr: 0x%08X ret: %d left_bytes: %lld chunk_size: %zd B",
+		(unsigned int)itr, ret, left_bytes, TX_CHUNK_SIZE_BYTES);
+
+	while (left_bytes > TX_CHUNK_SIZE_BYTES) {
+		ret = mg_send_chunk(conn, itr, TX_CHUNK_SIZE_BYTES);
+		itr += TX_CHUNK_SIZE_BYTES;
+		left_bytes -= TX_CHUNK_SIZE_BYTES;
+
+		LOG_DBG("itr: 0x%08X ret: %d left_bytes: %lld",
+			(unsigned int)itr, ret, left_bytes);
+
+		if (ret < 0) {
+			goto error_this_send_buffer_chunked;
+		}
+	}
+
+	if (left_bytes > 0) {
+		ret = mg_send_chunk(conn, itr, left_bytes);
+		itr += left_bytes;
+		left_bytes = 0;
+
+		LOG_DBG("itr: 0x%08X ret: %d left_bytes: %lld",
+			(unsigned int)itr, ret, left_bytes);
+
+		if (ret < 0) {
+			goto error_this_send_buffer_chunked;
+		}
+	}
+
+	/* Must be sent at the end of the chuked sequence */
+	ret = mg_send_chunk(conn, "", 0);
+
+error_this_send_buffer_chunked:
+	if (ret < 0) {
+		LOG_ERR("aborted! ret: %d", ret);
+	}
+
+	return ret;
 }
 
 void send_ok(struct mg_connection *conn)
@@ -135,6 +203,32 @@ int history_handler(struct mg_connection *conn, void *cbdata)
 	return 200;
 }
 
+void this_set_return_value(int *ret_val)
+{
+	if (*ret_val < 0) {
+		*ret_val = 404;  /* 404 - HTTP FAIL or 0 - handler fail */
+	} else {
+		*ret_val = 200;  /* 200 - HTTP OK*/
+	}
+}
+
+int jquery_handler(struct mg_connection *conn, void *cbdata)
+{
+	static const char jquery_js[] = {
+#include "web_page/jquery-3.5.1.slim.min.js.gz.inc"
+	};
+
+	int ret = 0;
+
+	ret = this_send_buffer_chunked(conn, HTTP_TEXT_JS
+					     HTTP_EOFL
+					     HTTP_CONTEND_ENCODING
+					     HTTP_ENCODING_GZ,
+					     jquery_js, sizeof(jquery_js));
+	this_set_return_value(&ret);
+	return ret;
+}
+
 void *main_pthread(void *arg)
 {
 	static const char * const options[] = {
@@ -163,6 +257,7 @@ void *main_pthread(void *arg)
 	mg_set_request_handler(ctx, "/$", hello_world_handler, 0);
 	mg_set_request_handler(ctx, "/info$", system_info_handler, 0);
 	mg_set_request_handler(ctx, "/history", history_handler, 0);
+	mg_set_request_handler(ctx, JQUERY_URI, jquery_handler, 0);
 
 	return 0;
 }
