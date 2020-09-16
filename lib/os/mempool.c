@@ -9,6 +9,7 @@
 #include <sys/__assert.h>
 #include <sys/mempool_base.h>
 #include <sys/mempool.h>
+#include <sys/check.h>
 
 #ifdef CONFIG_MISRA_SANE
 #define LVL_ARRAY_SZ(n) (8 * sizeof(void *) / 2)
@@ -328,8 +329,12 @@ void *sys_mem_pool_alloc(struct sys_mem_pool *p, size_t size)
 	struct sys_mem_pool_block *blk;
 	uint32_t level, block;
 	char *ret;
+	int lock_ret;
 
-	sys_mutex_lock(&p->mutex, K_FOREVER);
+	lock_ret = sys_mutex_lock(&p->mutex, K_FOREVER);
+	CHECKIF(lock_ret != 0) {
+		return NULL;
+	}
 
 	size += WB_UP(sizeof(struct sys_mem_pool_block));
 	if (z_sys_mem_pool_block_alloc(&p->base, size, &level, &block,
@@ -352,6 +357,7 @@ void sys_mem_pool_free(void *ptr)
 {
 	struct sys_mem_pool_block *blk;
 	struct sys_mem_pool *p;
+	int lock_ret;
 
 	if (ptr == NULL) {
 		return;
@@ -361,7 +367,10 @@ void sys_mem_pool_free(void *ptr)
 	blk = (struct sys_mem_pool_block *)ptr;
 	p = blk->pool;
 
-	sys_mutex_lock(&p->mutex, K_FOREVER);
+	lock_ret = sys_mutex_lock(&p->mutex, K_FOREVER);
+	CHECKIF(lock_ret != 0) {
+		return;
+	}
 	z_sys_mem_pool_block_free(&p->base, blk->level, blk->block);
 	sys_mutex_unlock(&p->mutex);
 }
