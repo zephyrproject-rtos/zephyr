@@ -18,20 +18,20 @@
 LOG_MODULE_DECLARE(LSM6DSL, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline void setup_irq(struct lsm6dsl_data *drv_data,
-			     bool enable)
+			     uint32_t irq_pin, bool enable)
 {
 	unsigned int flags = enable
 		? GPIO_INT_EDGE_TO_ACTIVE
 		: GPIO_INT_DISABLE;
 
 	gpio_pin_interrupt_configure(drv_data->gpio,
-				     DT_INST_GPIO_PIN(0, irq_gpios),
-				     flags);
+				     irq_pin, flags);
 }
 
-static inline void handle_irq(struct lsm6dsl_data *drv_data)
+static inline void handle_irq(struct lsm6dsl_data *drv_data,
+			      uint32_t irq_pin)
 {
-	setup_irq(drv_data, false);
+	setup_irq(drv_data, irq_pin, false);
 
 #if defined(CONFIG_LSM6DSL_TRIGGER_OWN_THREAD)
 	k_sem_give(&drv_data->gpio_sem);
@@ -44,11 +44,12 @@ int lsm6dsl_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
+	const struct lsm6dsl_config *config = dev->config;
 	struct lsm6dsl_data *drv_data = dev->data;
 
 	__ASSERT_NO_MSG(trig->type == SENSOR_TRIG_DATA_READY);
 
-	setup_irq(drv_data, false);
+	setup_irq(drv_data, config->irq_pin, false);
 
 	drv_data->data_ready_handler = handler;
 	if (handler == NULL) {
@@ -57,9 +58,9 @@ int lsm6dsl_trigger_set(const struct device *dev,
 
 	drv_data->data_ready_trigger = *trig;
 
-	setup_irq(drv_data, true);
-	if (gpio_pin_get(drv_data->gpio, DT_INST_GPIO_PIN(0, irq_gpios)) > 0) {
-		handle_irq(drv_data);
+	setup_irq(drv_data, config->irq_pin, true);
+	if (gpio_pin_get(drv_data->gpio, config->irq_pin) > 0) {
+		handle_irq(drv_data, config->irq_pin);
 	}
 
 	return 0;
@@ -68,16 +69,18 @@ int lsm6dsl_trigger_set(const struct device *dev,
 static void lsm6dsl_gpio_callback(const struct device *dev,
 				  struct gpio_callback *cb, uint32_t pins)
 {
+	const struct lsm6dsl_config *config = dev->config;
 	struct lsm6dsl_data *drv_data =
 		CONTAINER_OF(cb, struct lsm6dsl_data, gpio_cb);
 
 	ARG_UNUSED(pins);
 
-	handle_irq(drv_data);
+	handle_irq(drv_data, config->irq_pin);
 }
 
 static void lsm6dsl_thread_cb(const struct device *dev)
 {
+	const struct lsm6dsl_config *config = dev->config;
 	struct lsm6dsl_data *drv_data = dev->data;
 
 	if (drv_data->data_ready_handler != NULL) {
@@ -85,7 +88,7 @@ static void lsm6dsl_thread_cb(const struct device *dev)
 					     &drv_data->data_ready_trigger);
 	}
 
-	setup_irq(drv_data, true);
+	setup_irq(drv_data, config->irq_pin, true);
 }
 
 #ifdef CONFIG_LSM6DSL_TRIGGER_OWN_THREAD
@@ -110,22 +113,21 @@ static void lsm6dsl_work_cb(struct k_work *work)
 
 int lsm6dsl_init_interrupt(const struct device *dev)
 {
+	const struct lsm6dsl_config *config = dev->config;
 	struct lsm6dsl_data *drv_data = dev->data;
 
 	/* setup data ready gpio interrupt */
-	drv_data->gpio = device_get_binding(DT_INST_GPIO_LABEL(0, irq_gpios));
+	drv_data->gpio = device_get_binding(config->irq_dev_name);
 	if (drv_data->gpio == NULL) {
-		LOG_ERR("Cannot get pointer to %s device.",
-			    DT_INST_GPIO_LABEL(0, irq_gpios));
+		LOG_ERR("Cannot get pointer to %s.", config->irq_dev_name);
 		return -EINVAL;
 	}
 
-	gpio_pin_configure(drv_data->gpio, DT_INST_GPIO_PIN(0, irq_gpios),
-			   GPIO_INPUT | DT_INST_GPIO_FLAGS(0, irq_gpios));
+	gpio_pin_configure(drv_data->gpio, config->irq_pin,
+			   GPIO_INPUT | config->irq_flags);
 
 	gpio_init_callback(&drv_data->gpio_cb,
-			   lsm6dsl_gpio_callback,
-			   BIT(DT_INST_GPIO_PIN(0, irq_gpios)));
+			   lsm6dsl_gpio_callback, BIT(config->irq_pin));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
 		LOG_ERR("Could not set gpio callback.");
@@ -133,7 +135,7 @@ int lsm6dsl_init_interrupt(const struct device *dev)
 	}
 
 	/* enable data-ready interrupt */
-	if (drv_data->hw_tf->update_reg(drv_data,
+	if (drv_data->hw_tf->update_reg(dev,
 			       LSM6DSL_REG_INT1_CTRL,
 			       LSM6DSL_MASK_INT1_CTRL_DRDY_XL |
 			       LSM6DSL_MASK_INT1_CTRL_DRDY_G,
@@ -157,7 +159,7 @@ int lsm6dsl_init_interrupt(const struct device *dev)
 	drv_data->work.handler = lsm6dsl_work_cb;
 #endif
 
-	setup_irq(drv_data, true);
+	setup_irq(drv_data, config->irq_pin, true);
 
 	return 0;
 }
