@@ -799,19 +799,19 @@ static void response_cb(struct http_response *rsp,
 			hb_context.dl.http_content_size = rsp->content_length;
 		}
 
-		if (rsp->body_found == 1) {
-			if (body_data == NULL) {
-				body_data = rsp->recv_buf;
-				body_len = rsp->data_len;
-			}
+		if ((rsp->body_found == 1) && (body_data == NULL)) {
+			body_data = rsp->recv_buf;
+			body_len = rsp->data_len;
 		}
 
-		ret = flash_img_buffered_write(&hb_context.flash_ctx, body_data,
-					       body_len,
-					       final_data == HTTP_DATA_FINAL);
-		if (ret < 0) {
-			LOG_ERR("flash write error");
-			hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
+		if (body_data != NULL) {
+			ret = flash_img_buffered_write(&hb_context.flash_ctx,
+				body_data, body_len,
+				final_data == HTTP_DATA_FINAL);
+			if (ret < 0) {
+				LOG_ERR("flash write error");
+				hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
+			}
 		}
 
 		hb_context.dl.downloaded_size =
