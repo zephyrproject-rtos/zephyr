@@ -615,6 +615,17 @@ Libraries / Subsystems
   In 2.3 extra arguments caused a fault.  Now the shell will report that the
   command cannot be processed.
 
+* Debug:
+
+  * Core Dump:
+
+    * Added the ability to do core dump when fatal error is encountered.
+      This allows dumping the CPU registers and memory content for offline
+      debugging.
+    * Cortex-M, x86, and x86-64 are supported in this release.
+    * A data output backend utilizing the logging subsystem is introduced
+      in this release.
+
 HALs
 ****
 
