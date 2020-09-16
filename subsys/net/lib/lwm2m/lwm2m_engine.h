@@ -102,7 +102,9 @@ int lwm2m_engine_get_resource(char *pathstr,
 void lwm2m_engine_get_binding(char *binding);
 
 size_t lwm2m_engine_get_opaque_more(struct lwm2m_input_context *in,
-				    uint8_t *buf, size_t buflen, bool *last_block);
+				    uint8_t *buf, size_t buflen,
+				    struct lwm2m_opaque_context *opaque,
+				    bool *last_block);
 
 int lwm2m_security_inst_id_to_index(uint16_t obj_inst_id);
 int lwm2m_security_index_to_inst_id(int index);
