@@ -207,7 +207,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 
 	if (net_pkt_read(pkt, dma_buffer, total_len)) {
-		res = -EIO;
+		res = -ENOBUFS;
 		goto error;
 	}
 
