@@ -123,6 +123,8 @@ int open(const char *name, int flags, ...)
 	return fd;
 }
 
+FUNC_ALIAS(open, _open, int);
+
 static int fs_close_vmeth(void *obj)
 {
 	struct posix_fs_desc *ptr = obj;
