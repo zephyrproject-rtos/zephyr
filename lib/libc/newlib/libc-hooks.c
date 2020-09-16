@@ -201,7 +201,7 @@ extern ssize_t write(int file, const char *buffer, size_t count);
 
 int _isatty(int file)
 {
-	return 1;
+	return file <= 2;
 }
 __weak FUNC_ALIAS(_isatty, isatty, int);
 
