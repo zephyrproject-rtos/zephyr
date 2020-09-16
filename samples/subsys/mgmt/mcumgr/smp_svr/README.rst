@@ -119,6 +119,18 @@ Zephyr. The ``smp_svr`` sample comes in different flavours.
             -- \
             -DOVERLAY_CONFIG='overlay-serial.conf;overlay-fs.conf'
 
+   .. group-tab:: USB CDC_ACM
+
+      To build the serial sample with USB CDC_ACM backend:
+
+      .. code-block:: console
+
+         west build \
+            -b nrf52840dk_nrf52840 \
+            samples/subsys/mgmt/mcumgr/smp_svr \
+            -- \
+            -DOVERLAY_CONFIG=overlay-cdc.conf
+
    .. group-tab:: Shell
 
       To build the shell sample:
