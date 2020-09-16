@@ -28,7 +28,16 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH_PB_ADV pb_adv.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_PB_GATT pb_gatt.c)
 
-zephyr_library_sources_ifdef(CONFIG_BT_MESH_PROXY proxy.c)
+if(CONFIG_BT_MESH_GATT_PROXY OR CONFIG_BT_MESH_PB_GATT)
+    zephyr_library_sources(
+      gatt_services.c
+      proxy_server.c
+    )
+endif()
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_PROXY proxy_common.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_PROXY_CLIENT proxy_client.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_CFG_CLI cfg_cli.c)
 

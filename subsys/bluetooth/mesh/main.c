@@ -31,7 +31,8 @@
 #include "transport.h"
 #include "access.h"
 #include "foundation.h"
-#include "proxy.h"
+#include "proxy_server.h"
+#include "proxy_client.h"
 #include "settings.h"
 #include "mesh.h"
 
@@ -317,6 +318,10 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PROXY)) {
 		bt_mesh_proxy_init();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_PROXY_CLIENT)) {
+		bt_mesh_proxy_client_init();
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PROV)) {

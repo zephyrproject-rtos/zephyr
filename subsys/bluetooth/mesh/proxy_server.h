@@ -2,14 +2,10 @@
 
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2020 Lingao Meng
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define BT_MESH_PROXY_NET_PDU   0x00
-#define BT_MESH_PROXY_BEACON    0x01
-#define BT_MESH_PROXY_CONFIG    0x02
-#define BT_MESH_PROXY_PROV      0x03
 
 
 struct bt_mesh_proxy_idle_cb {
@@ -19,6 +15,12 @@ struct bt_mesh_proxy_idle_cb {
 
 int bt_mesh_proxy_send(struct bt_conn *conn, uint8_t type,
 		       struct net_buf_simple *msg);
+
+ssize_t bt_mesh_proxy_recv(struct bt_conn *conn,
+			  const void *buf, uint16_t len);
+
+void bt_mesh_proxy_connected(struct bt_conn *conn, uint8_t err);
+void bt_mesh_proxy_disconnected(struct bt_conn *conn, uint8_t reason);
 
 int bt_mesh_proxy_prov_enable(void);
 int bt_mesh_proxy_prov_disable(bool disconnect);
@@ -31,8 +33,8 @@ void bt_mesh_proxy_beacon_send(struct bt_mesh_subnet *sub);
 
 struct net_buf_simple *bt_mesh_proxy_get_buf(void);
 
-k_timeout_t bt_mesh_proxy_adv_start(void);
-void bt_mesh_proxy_adv_stop(void);
+k_timeout_t bt_mesh_gatt_adv_start(void);
+void bt_mesh_gatt_adv_stop(void);
 
 void bt_mesh_proxy_identity_start(struct bt_mesh_subnet *sub);
 void bt_mesh_proxy_identity_stop(struct bt_mesh_subnet *sub);

@@ -78,9 +78,14 @@ endif # BT_MESH_CDB
 if BT_CONN
 
 # Virtual option enabled whenever any Proxy protocol is needed
+
 config BT_MESH_PROXY
 	bool
 	select BT_GATT_DYNAMIC_DB
+
+config BT_MESH_PROXY_CLIENT
+	bool "Proxy Client support"
+	select BT_MESH_PROXY
 
 config BT_MESH_PB_GATT
 	bool "Provisioning support using GATT (PB-GATT)"
@@ -649,11 +654,22 @@ config BT_MESH_DEBUG_FRIEND
 	  Use this option to enable Friend debug logs for the
 	  Bluetooth Mesh functionality.
 
+config BT_MESH_DEBUG_PROXY_COMMON
+	bool "Proxy common debug"
+	help
+	  Use this option to enable Proxy common protocol debug logs.
+
 config BT_MESH_DEBUG_PROXY
-	bool "Proxy debug"
+	bool "Proxy server debug"
 	depends on BT_MESH_PROXY
 	help
-	  Use this option to enable Proxy protocol debug logs.
+	  Use this option to enable Proxy server protocol debug logs.
+
+config BT_MESH_DEBUG_PROXY_CLIENT
+	bool "Proxy client debug"
+	depends on BT_MESH_PROXY_CLIENT
+	help
+	  Use this option to enable Proxy client protocol debug logs.
 
 config BT_MESH_DEBUG_SETTINGS
 	bool "Persistent settings debug"

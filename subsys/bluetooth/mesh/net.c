@@ -30,7 +30,7 @@
 #include "rpl.h"
 #include "lpn.h"
 #include "friend.h"
-#include "proxy.h"
+#include "proxy_server.h"
 #include "transport.h"
 #include "access.h"
 #include "foundation.h"

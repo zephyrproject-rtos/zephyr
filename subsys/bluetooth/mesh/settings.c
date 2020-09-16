@@ -18,6 +18,7 @@
 
 #include <bluetooth/hci.h>
 #include <bluetooth/conn.h>
+#include <bluetooth/gatt.h>
 #include <bluetooth/mesh.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_SETTINGS)
@@ -31,7 +32,7 @@
 #include "transport.h"
 #include "access.h"
 #include "foundation.h"
-#include "proxy.h"
+#include "proxy_server.h"
 #include "settings.h"
 #include "lpn.h"
 

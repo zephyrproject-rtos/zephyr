@@ -7,6 +7,7 @@
 #include <zephyr.h>
 #include <stddef.h>
 
+#include <bluetooth/bluetooth.h>
 #include <bluetooth/testing.h>
 
 #if defined(CONFIG_BT_MESH)

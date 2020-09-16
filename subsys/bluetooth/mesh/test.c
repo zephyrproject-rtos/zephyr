@@ -9,6 +9,7 @@
 #include <string.h>
 #include <errno.h>
 
+#include <bluetooth/bluetooth.h>
 #include <bluetooth/mesh.h>
 
 #define LOG_MODULE_NAME bt_mesh_test

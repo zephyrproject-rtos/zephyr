@@ -20,6 +20,7 @@
 #include <tinycrypt/cmac_mode.h>
 #include <tinycrypt/ccm_mode.h>
 
+#include <bluetooth/bluetooth.h>
 #include <bluetooth/mesh.h>
 #include <bluetooth/crypto.h>
 

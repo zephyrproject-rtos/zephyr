@@ -28,7 +28,8 @@
 #include "foundation.h"
 #include "beacon.h"
 #include "prov.h"
-#include "proxy.h"
+#include "proxy_server.h"
+#include "proxy_client.h"
 
 /* Convert from ms to 0.625ms units */
 #define ADV_SCAN_UNIT(_ms) ((_ms) * 8 / 5)
@@ -153,11 +154,11 @@ static void adv_thread(void *p1, void *p2, void *p3)
 			while (!buf) {
 				k_timeout_t timeout;
 
-				timeout = bt_mesh_proxy_adv_start();
+				timeout = bt_mesh_gatt_adv_start();
 				BT_DBG("Proxy Advertising");
 
 				buf = net_buf_get(&adv_queue, timeout);
-				bt_mesh_proxy_adv_stop();
+				bt_mesh_gatt_adv_stop();
 			}
 		} else {
 			buf = net_buf_get(&adv_queue, K_FOREVER);
@@ -240,6 +241,11 @@ static void bt_mesh_scan_cb(const bt_addr_le_t *addr, int8_t rssi,
 			    uint8_t adv_type, struct net_buf_simple *buf)
 {
 	if (adv_type != BT_GAP_ADV_TYPE_ADV_NONCONN_IND) {
+		if (IS_ENABLED(CONFIG_BT_MESH_PROXY_CLIENT) &&
+		    adv_type == BT_GAP_ADV_TYPE_ADV_IND) {
+			bt_mesh_proxy_client_process(addr, rssi, buf);
+		}
+
 		return;
 	}
 

@@ -6,11 +6,19 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <bluetooth/mesh.h>
+#include <zephyr.h>
+#include <sys/byteorder.h>
+
+#include <net/buf.h>
+#include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
+#include <bluetooth/gatt.h>
+#include <bluetooth/mesh.h>
+
 #include "prov.h"
 #include "net.h"
-#include "proxy.h"
+#include "proxy_common.h"
+#include "proxy_server.h"
 #include "adv.h"
 #include "prov_bearer.h"
 

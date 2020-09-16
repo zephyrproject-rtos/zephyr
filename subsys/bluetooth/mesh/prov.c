@@ -33,11 +33,10 @@
 #include "beacon.h"
 #include "access.h"
 #include "foundation.h"
-#include "proxy.h"
+#include "proxy_server.h"
 #include "prov.h"
 #include "settings.h"
 #include "prov_bearer.h"
-
 
 #define AUTH_METHOD_NO_OOB     0x00
 #define AUTH_METHOD_STATIC     0x01

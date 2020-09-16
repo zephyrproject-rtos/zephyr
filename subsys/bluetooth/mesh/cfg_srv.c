@@ -33,7 +33,7 @@
 #include "crypto.h"
 #include "access.h"
 #include "beacon.h"
-#include "proxy.h"
+#include "proxy_server.h"
 #include "foundation.h"
 #include "friend.h"
 #include "settings.h"
