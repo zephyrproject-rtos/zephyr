@@ -116,6 +116,10 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			  struct pdu_data *pdu_rx, struct ll_conn *conn);
 
+#if defined(CONFIG_BT_CTLR_FORCE_MD_AUTO)
+static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate);
+#endif /* CONFIG_BT_CTLR_FORCE_MD_AUTO */
+
 #if !defined(BT_CTLR_USER_TX_BUFFER_OVERHEAD)
 #define BT_CTLR_USER_TX_BUFFER_OVERHEAD 0
 #endif /* BT_CTLR_USER_TX_BUFFER_OVERHEAD */
@@ -246,10 +250,28 @@ int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 		static memq_link_t link;
 		static struct mayfly mfy = {0, 0, &link, NULL, tx_demux};
 
+#if defined(CONFIG_BT_CTLR_FORCE_MD_AUTO)
+		if (tx_cnt >= CONFIG_BT_CTLR_TX_BUFFERS) {
+			uint8_t previous, force_md_cnt;
+
+			force_md_cnt = force_md_cnt_calc(&conn->lll, tx_rate);
+			previous = lll_conn_force_md_cnt_set(force_md_cnt);
+			if (previous != force_md_cnt) {
+				BT_INFO("force_md_cnt: old= %u, new= %u.",
+					previous, force_md_cnt);
+			}
+		}
+#endif /* CONFIG_BT_CTLR_FORCE_MD_AUTO */
+
 		mfy.param = conn;
 
 		mayfly_enqueue(TICKER_USER_ID_THREAD, TICKER_USER_ID_ULL_HIGH,
 			       0, &mfy);
+
+#if defined(CONFIG_BT_CTLR_FORCE_MD_AUTO)
+	} else {
+		lll_conn_force_md_cnt_set(0U);
+#endif /* CONFIG_BT_CTLR_FORCE_MD_AUTO */
 	}
 
 #if defined(CONFIG_BT_PERIPHERAL)
@@ -6291,3 +6313,42 @@ ull_conn_rx_unknown_rsp_send:
 
 	return nack;
 }
+
+#if defined(CONFIG_BT_CTLR_FORCE_MD_AUTO)
+static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate)
+{
+	uint32_t time_incoming, time_outgoing;
+	uint8_t force_md_cnt;
+	uint8_t phy;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	phy = lll_conn->phy_tx;
+#else /* !CONFIG_BT_CTLR_PHY */
+	phy = PHY_1M;
+#endif /* !CONFIG_BT_CTLR_PHY */
+
+	time_incoming = (CONFIG_BT_CTLR_DATA_LENGTH_MAX << 3) *
+			1000000UL / tx_rate;
+	time_outgoing = PKT_DC_US(CONFIG_BT_CTLR_DATA_LENGTH_MAX,
+				  (PDU_MIC_SIZE * lll_conn->enc_tx), phy) +
+			PKT_DC_US(0U, 0U, phy) +
+			(EVENT_IFS_US << 1);
+
+	force_md_cnt = 0U;
+	if (time_incoming > time_outgoing) {
+		uint32_t delta;
+		uint32_t time_keep_alive;
+
+		delta = (time_incoming << 1) - time_outgoing;
+		time_keep_alive = (PKT_DC_US(0U, 0U, phy) + EVENT_IFS_US) << 1;
+		force_md_cnt = (delta + (time_keep_alive - 1)) /
+			       time_keep_alive;
+		BT_DBG("Time: incoming= %u, expected outgoing= %u, delta= %u, "
+		       "keepalive= %u, force_md_cnt = %u.",
+		       time_incoming, time_outgoing, delta, time_keep_alive,
+		       force_md_cnt);
+	}
+
+	return force_md_cnt;
+}
+#endif /* CONFIG_BT_CTLR_FORCE_MD_AUTO */
