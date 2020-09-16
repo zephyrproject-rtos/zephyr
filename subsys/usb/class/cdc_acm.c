@@ -331,7 +331,7 @@ static void tx_work_handler(struct k_work *work)
 		len -= 1;
 	}
 
-	LOG_DBG("Got %d bytes from ringbuffer send to ep %x", len, ep);
+	LOG_DBG("Got %zd bytes from ringbuffer send to ep %x", len, ep);
 
 	usb_transfer(ep, data, len, USB_TRANS_WRITE,
 		     cdc_acm_write_cb, dev_data);
@@ -353,7 +353,7 @@ static void cdc_acm_read_cb(uint8_t ep, int size, void *priv)
 
 	wrote = ring_buf_put(dev_data->rx_ringbuf, dev_data->rx_buf, size);
 	if (wrote < size) {
-		LOG_ERR("Ring buffer full, drop %d bytes", size - wrote);
+		LOG_ERR("Ring buffer full, drop %zd bytes", size - wrote);
 	}
 
 done:
@@ -580,7 +580,7 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 
 	wrote = ring_buf_put(dev_data->tx_ringbuf, tx_data, len);
 	if (wrote < len) {
-		LOG_WRN("Ring buffer full, drop %d bytes", len - wrote);
+		LOG_WRN("Ring buffer full, drop %zd bytes", len - wrote);
 	}
 
 	k_work_submit(&dev_data->tx_work);
