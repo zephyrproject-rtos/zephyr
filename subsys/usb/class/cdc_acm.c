@@ -166,13 +166,12 @@ struct usb_cdc_acm_config {
 		.bInterval = interval,					\
 	}
 
-static struct k_sem poll_wait_sem;
-
 /* Device data structure */
 struct cdc_acm_dev_data_t {
 	/* Callback function pointer/arg */
 	uart_irq_callback_user_data_t cb;
 	void *cb_data;
+	struct k_sem poll_wait_sem;
 	struct k_work cb_work;
 #if defined(CONFIG_CDC_ACM_DTE_RATE_CALLBACK_SUPPORT)
 	cdc_dte_rate_callback_t rate_cb;
@@ -284,7 +283,7 @@ static void cdc_acm_write_cb(uint8_t ep, int size, void *priv)
 
 	dev_data->tx_ready = true;
 
-	k_sem_give(&poll_wait_sem);
+	k_sem_give(&dev_data->poll_wait_sem);
 
 	/* Call callback only if tx irq ena */
 	if (dev_data->cb && dev_data->tx_irq_ena) {
@@ -399,7 +398,7 @@ static void cdc_acm_int_in(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 
 static void cdc_acm_reset_port(struct cdc_acm_dev_data_t *dev_data)
 {
-	k_sem_give(&poll_wait_sem);
+	k_sem_give(&dev_data->poll_wait_sem);
 	dev_data->configured = false;
 	dev_data->suspended = false;
 	dev_data->rx_ready = false;
@@ -550,7 +549,7 @@ static int cdc_acm_init(const struct device *dev)
 	LOG_DBG("Device dev %p dev_data %p cfg %p added to devlist %p",
 		dev, dev_data, dev->config, &cdc_acm_data_devlist);
 
-	k_sem_init(&poll_wait_sem, 0, UINT_MAX);
+	k_sem_init(&dev_data->poll_wait_sem, 0, UINT_MAX);
 	k_work_init(&dev_data->cb_work, cdc_acm_irq_callback_work_handler);
 	k_work_init(&dev_data->tx_work, tx_work_handler);
 
@@ -991,8 +990,10 @@ static int cdc_acm_poll_in(const struct device *dev, unsigned char *c)
 static void cdc_acm_poll_out(const struct device *dev,
 				      unsigned char c)
 {
+	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
+
 	cdc_acm_fifo_fill(dev, &c, 1);
-	k_sem_take(&poll_wait_sem, K_MSEC(100));
+	k_sem_take(&dev_data->poll_wait_sem, K_MSEC(100));
 }
 
 static const struct uart_driver_api cdc_acm_driver_api = {
