@@ -1430,6 +1430,11 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
+	if (tcp_window_full(conn)) {
+		ret = -EAGAIN;
+		goto out;
+	}
+
 	len = net_pkt_get_len(pkt);
 
 	if (conn->send_data->buffer) {
