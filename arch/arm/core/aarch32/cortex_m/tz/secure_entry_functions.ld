@@ -7,9 +7,11 @@
 /* nRF-specific defines. */
 #if defined(CONFIG_CPU_HAS_NRF_IDAU) && CONFIG_ARM_NSC_REGION_BASE_ADDRESS == 0
 	/* This SOC needs the NSC region to be at the end of an SPU region. */
+	#define __NSC_ALIGN (ALIGN(CONFIG_NRF_SPU_FLASH_REGION_SIZE) \
+			- MAX(32, (1 << LOG2CEIL(__sg_size))))
 	#define NSC_ALIGN \
-		. = ALIGN(CONFIG_NRF_SPU_FLASH_REGION_SIZE) \
-			- (1 << LOG2CEIL(__sg_size))
+		. =  (__NSC_ALIGN + ((ABSOLUTE(.) > __NSC_ALIGN) \
+				? CONFIG_NRF_SPU_FLASH_REGION_SIZE : 0))
 	#define NSC_ALIGN_END . = ALIGN(CONFIG_NRF_SPU_FLASH_REGION_SIZE)
 #endif /* CONFIG_CPU_HAS_NRF_IDAU && CONFIG_ARM_NSC_REGION_BASE_ADDRESS != 0 */
 
