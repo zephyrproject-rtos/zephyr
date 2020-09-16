@@ -613,16 +613,24 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 		}
 
 		if (status < 0) {
-			if (status == -ENOBUFS &&
+			if (((status == -ENOBUFS) || (status == -EAGAIN)) &&
 			    K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 				/* If we cannot get any buffers in reasonable
 				 * amount of time, then do not wait forever as
 				 * there might be some bigger issue.
+				 * If we get -EAGAIN and cannot recover, then
+				 * it means that the sending window is blocked
+				 * and we just cannot send anything.
 				 */
 				int64_t remaining = buf_timeout - z_tick_get();
 
 				if (remaining <= 0) {
-					errno = ENOMEM;
+					if (status == -ENOBUFS) {
+						errno = ENOMEM;
+					} else {
+						errno = ENOBUFS;
+					}
+
 					return -1;
 				}
 
