@@ -1152,7 +1152,30 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 	}
 
 	if (th) {
+		size_t max_win;
+
 		conn->send_win = ntohs(th->th_win);
+
+#if IS_ENABLED(CONFIG_NET_TCP_MAX_SEND_WINDOW_SIZE)
+		if (CONFIG_NET_TCP_MAX_SEND_WINDOW_SIZE) {
+			max_win = CONFIG_NET_TCP_MAX_SEND_WINDOW_SIZE;
+		} else
+#endif
+		{
+			/* Adjust the window so that we do not run out of bufs
+			 * while waiting acks.
+			 */
+			max_win = (CONFIG_NET_BUF_TX_COUNT *
+				   CONFIG_NET_BUF_DATA_SIZE) / 3;
+		}
+
+		max_win = MAX(max_win, NET_IPV6_MTU);
+		if ((size_t)conn->send_win > max_win) {
+			NET_DBG("Lowering send window from %zd to %zd",
+				(size_t)conn->send_win, max_win);
+
+			conn->send_win = max_win;
+		}
 	}
 
 	if (FL(&fl, &, RST)) {
