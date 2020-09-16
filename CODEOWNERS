@@ -394,7 +394,7 @@
 /include/net/                             @jukkar @tbursztyka @pfalcon
 /include/net/buf.h                        @jukkar @jhedberg @tbursztyka @pfalcon
 /include/posix/                           @pfalcon
-/include/power/power.h                    @wentongwu @nashif
+/include/power/power.h                    @wentongwu @nashif @ceolin
 /include/ptp_clock.h                      @jukkar
 /include/shared_irq.h                     @andrewboie @andyross
 /include/shell/                           @jakub-uC @nordic-krch
@@ -441,7 +441,7 @@
 /samples/subsys/mgmt/updatehub/           @nandojve @otavio
 /samples/subsys/mgmt/osdp/                @cbsiddharth
 /samples/subsys/usb/                      @jfischer-phytec-iot @finikorg
-/samples/subsys/power/                    @wentongwu @pabigot
+/samples/subsys/power/                    @wentongwu @pabigot @ceolin
 /samples/userspace/                       @andrewboie
 /scripts/coccicheck                       @himanshujha199640 @JuliaLawall
 /scripts/coccinelle/                      @himanshujha199640 @JuliaLawall
@@ -519,7 +519,7 @@
 /subsys/net/l2/                           @jukkar @tbursztyka
 /subsys/net/l2/canbus/                    @alexanderwachter @jukkar
 /subsys/net/*/openthread/                 @rlubos
-/subsys/power/                            @wentongwu @pabigot
+/subsys/power/                            @wentongwu @pabigot @ceolin
 /subsys/random/                           @dleach02
 /subsys/settings/                         @nvlsianpu
 /subsys/shell/                            @jakub-uC @nordic-krch
