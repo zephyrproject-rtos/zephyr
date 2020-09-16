@@ -385,6 +385,11 @@ config BT_CTLR_TX_RETRY_DISABLE
 	  would happen in the next connection event instead of repeated retries
 	  in the current connection event.
 
+config BT_CTLR_THROUGHPUT
+	bool "Measure incoming Tx throughput"
+	help
+	  Measure incoming Tx throughput and log the results.
+
 config BT_CTLR_FORCE_MD_COUNT
 	int "Forced MD bit count"
 	range 0 255

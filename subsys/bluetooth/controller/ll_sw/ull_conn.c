@@ -218,6 +218,11 @@ void ll_tx_mem_release(void *tx)
 
 int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 {
+#if defined(CONFIG_BT_CTLR_THROUGHPUT)
+#define BT_CTLR_THROUGHPUT_PERIOD 1000000000UL
+	static uint32_t tx_rate;
+	static uint32_t tx_cnt;
+#endif /* CONFIG_BT_CTLR_THROUGHPUT */
 	struct lll_tx *lll_tx;
 	struct ll_conn *conn;
 	uint8_t idx;
@@ -266,6 +271,30 @@ int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 			  (ticker_status == TICKER_STATUS_BUSY));
 	}
 #endif /* CONFIG_BT_PERIPHERAL */
+
+#if defined(CONFIG_BT_CTLR_THROUGHPUT)
+	static uint32_t last_cycle_stamp;
+	static uint32_t tx_len;
+	struct pdu_data *pdu;
+	uint32_t cycle_stamp;
+	uint64_t delta;
+
+	cycle_stamp = k_cycle_get_32();
+	delta = k_cyc_to_ns_floor64(cycle_stamp - last_cycle_stamp);
+	if (delta > BT_CTLR_THROUGHPUT_PERIOD) {
+		BT_INFO("incoming Tx: count= %u, len= %u, rate= %u bps.",
+			tx_cnt, tx_len, tx_rate);
+
+		last_cycle_stamp = cycle_stamp;
+		tx_cnt = 0U;
+		tx_len = 0U;
+	}
+
+	pdu = (void *)((struct node_tx *)tx)->pdu;
+	tx_len += pdu->len;
+	tx_rate = ((uint64_t)tx_len << 3) * BT_CTLR_THROUGHPUT_PERIOD / delta;
+	tx_cnt++;
+#endif /* CONFIG_BT_CTLR_THROUGHPUT */
 
 	return 0;
 }
