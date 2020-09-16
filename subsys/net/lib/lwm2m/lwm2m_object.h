@@ -363,6 +363,21 @@ static inline void init_res_instance(struct lwm2m_engine_res_inst *ri,
 	}
 }
 
+struct lwm2m_opaque_context {
+	size_t len;
+	size_t remaining;
+};
+
+struct lwm2m_block_context {
+	struct coap_block_context ctx;
+	struct lwm2m_opaque_context opaque;
+	int64_t timestamp;
+	uint32_t expected;
+	uint8_t token[8];
+	uint8_t tkl;
+	bool last_block : 1;
+};
+
 struct lwm2m_output_context {
 	const struct lwm2m_writer *writer;
 	struct coap_packet *out_cpkt;
@@ -378,8 +393,8 @@ struct lwm2m_input_context {
 	/* current position in buffer */
 	uint16_t offset;
 
-	/* length of incoming opaque */
-	size_t opaque_len;
+	/* Corresponding block context. NULL if block transfer is not used. */
+	struct lwm2m_block_context *block_ctx;
 
 	/* private output data */
 	void *user_data;
@@ -490,7 +505,9 @@ struct lwm2m_reader {
 	size_t (*get_bool)(struct lwm2m_input_context *in,
 			   bool *value);
 	size_t (*get_opaque)(struct lwm2m_input_context *in,
-			     uint8_t *buf, size_t buflen, bool *last_block);
+			     uint8_t *buf, size_t buflen,
+			     struct lwm2m_opaque_context *opaque,
+			     bool *last_block);
 	size_t (*get_objlnk)(struct lwm2m_input_context *in,
 			     struct lwm2m_objlnk *value);
 };
@@ -725,10 +742,12 @@ static inline size_t engine_get_bool(struct lwm2m_input_context *in,
 
 static inline size_t engine_get_opaque(struct lwm2m_input_context *in,
 				       uint8_t *buf, size_t buflen,
+				       struct lwm2m_opaque_context *opaque,
 				       bool *last_block)
 {
 	if (in->reader->get_opaque) {
-		return in->reader->get_opaque(in, buf, buflen, last_block);
+		return in->reader->get_opaque(in, buf, buflen,
+					      opaque, last_block);
 	}
 
 	return 0;

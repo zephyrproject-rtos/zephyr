@@ -202,11 +202,6 @@ static size_t put_objlnk(struct lwm2m_output_context *out,
 				     value->obj_inst);
 }
 
-static int get_length_left(struct lwm2m_input_context *in)
-{
-	return in->in_cpkt->offset - in->offset;
-}
-
 static size_t plain_text_read_number(struct lwm2m_input_context *in,
 				     int64_t *value1,
 				     int64_t *value2,
@@ -275,7 +270,9 @@ static size_t get_s64(struct lwm2m_input_context *in, int64_t *value)
 static size_t get_string(struct lwm2m_input_context *in,
 			 uint8_t *value, size_t buflen)
 {
-	uint16_t in_len = get_length_left(in);
+	uint16_t in_len;
+
+	coap_packet_get_payload(in->in_cpkt, &in_len);
 
 	if (in_len > buflen) {
 		/* TODO: generate warning? */
@@ -332,10 +329,43 @@ static size_t get_bool(struct lwm2m_input_context *in,
 }
 
 static size_t get_opaque(struct lwm2m_input_context *in,
-			 uint8_t *value, size_t buflen, bool *last_block)
+			 uint8_t *value, size_t buflen,
+			 struct lwm2m_opaque_context *opaque,
+			 bool *last_block)
 {
-	in->opaque_len = get_length_left(in);
-	return lwm2m_engine_get_opaque_more(in, value, buflen, last_block);
+	uint16_t in_len;
+
+	if (opaque->remaining == 0) {
+		coap_packet_get_payload(in->in_cpkt, &in_len);
+
+		if (in->block_ctx != NULL) {
+			uint32_t block_num =
+				in->block_ctx->ctx.current /
+				coap_block_size_to_bytes(
+					in->block_ctx->ctx.block_size);
+
+			if (block_num == 0) {
+				opaque->len = in->block_ctx->ctx.total_size;
+			}
+
+			if (opaque->len == 0) {
+				/* No size1 option provided, use current
+				 * payload size. This will reset on next packet
+				 * received.
+				 */
+				opaque->remaining = in_len;
+			} else {
+				opaque->remaining = opaque->len;
+			}
+
+		} else {
+			opaque->len = in_len;
+			opaque->remaining = in_len;
+		}
+	}
+
+	return lwm2m_engine_get_opaque_more(in, value, buflen,
+					    opaque, last_block);
 }
 
 

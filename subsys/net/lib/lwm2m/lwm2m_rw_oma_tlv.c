@@ -758,13 +758,23 @@ static size_t get_bool(struct lwm2m_input_context *in, bool *value)
 }
 
 static size_t get_opaque(struct lwm2m_input_context *in,
-			 uint8_t *value, size_t buflen, bool *last_block)
+			 uint8_t *value, size_t buflen,
+			 struct lwm2m_opaque_context *opaque,
+			 bool *last_block)
 {
 	struct oma_tlv tlv;
+	size_t size;
 
-	oma_tlv_get(&tlv, in, false);
-	in->opaque_len = tlv.length;
-	return lwm2m_engine_get_opaque_more(in, value, buflen, last_block);
+	/* Get the TLV header only on first read. */
+	if (opaque->remaining == 0) {
+		size = oma_tlv_get(&tlv, in, false);
+
+		opaque->len = tlv.length;
+		opaque->remaining = tlv.length;
+	}
+
+	return lwm2m_engine_get_opaque_more(in, value, buflen,
+					    opaque, last_block);
 }
 
 static size_t get_objlnk(struct lwm2m_input_context *in,
