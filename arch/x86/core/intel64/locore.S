@@ -696,7 +696,7 @@ irq_dispatch:
 	wrmsr
 #else /* xAPIC */
 	movq z_loapic_regs, %rdx
-	movq %rax, LOAPIC_EOI(%rdx)
+	movl %eax, LOAPIC_EOI(%rdx)
 #endif /* CONFIG_X2APIC */
 
 	movq %gs:__x86_tss64_t_cpu_OFFSET, %rsi
