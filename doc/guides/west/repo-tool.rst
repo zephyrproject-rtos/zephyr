@@ -389,6 +389,114 @@ discussed here. Run ``west <command> -h`` for detailed help.
 
 - ``west topdir``: Prints the top directory of the west workspace.
 
+Private repositories
+********************
+
+You can use west to fetch from private repositories. There is nothing
+west-specific about this.
+
+The ``west update`` command essentially runs ``git fetch YOUR_PROJECT_URL``
+when a project's ``manifest-rev`` branch must be updated to a newly fetched
+commit. It's up to your environment to make sure the fetch succeeds.
+
+You can either enter the password manually or use any of the `credential
+helpers built in to Git`_. Since Git has credential storage built in, there is
+no need for a west-specific feature.
+
+The following sections cover common cases for running ``west update`` without
+having to enter your password, as well as how to troubleshoot issues.
+
+.. _credential helpers built in to Git:
+   https://git-scm.com/docs/gitcredentials
+
+Fetching via HTTPS
+==================
+
+On Windows when fetching from GitHub, recent versions of Git prompt you for
+your GitHub password in a graphical window once, then store it for future use
+(in a default installation). Passwordless fetching from GitHub should therefore
+work "out of the box" on Windows after you have done it once.
+
+In general, you can store your credentials on disk using the "store" git
+credential helper. See the `git-credential-store`_ manual page for details.
+
+To use this helper for all the repositories in your workspace, run:
+
+.. code-block:: shell
+
+   west forall -c "git config credential.helper store"
+
+To use this helper on just the projects ``foo`` and ``bar``, run:
+
+.. code-block:: shell
+
+   west forall -c "git config credential.helper store" foo bar
+
+To use this helper by default on your computer, run:
+
+.. code-block:: shell
+
+   git config --global credential.helper store
+
+On GitHub, you can set up a `personal access token`_ to use in place of your
+account password. (This may be required if your account has two-factor
+authentication enabled, and may be preferable to storing your account password
+in plain text even if two-factor authentication is disabed.)
+
+If you don't want to store any credentials on the file system, you can store
+them in memory temporarily using `git-credential-cache`_ instead.
+
+.. _git-credential-store:
+   https://git-scm.com/docs/git-credential-store#_examples
+.. _git-credential-cache:
+   https://git-scm.com/docs/git-credential-cache
+.. _personal access token:
+   https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token
+
+Fetching via SSH
+================
+
+If your SSH key has no password, fetching should just work. If it does have a
+password, you can avoid entering it manually every time using `ssh-agent`_.
+
+On GitHub, see `Connecting to GitHub with SSH`_ for details on configuration
+and key creation.
+
+.. _ssh-agent:
+   https://www.ssh.com/ssh/agent
+.. _Connecting to GitHub with SSH:
+   https://docs.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh
+
+Troubleshooting
+===============
+
+One good way to troubleshoot fetching issues is to run ``west update`` in
+verbose mode, like this:
+
+.. code-block:: shell
+
+   west -v update
+
+The output includes Git commands run by west and their outputs. Look for
+something like this:
+
+.. code-block:: none
+
+   === updating your_project (path/to/your/project):
+   west.manifest: your_project: checking if cloned
+   [...other west.manifest logs...]
+   --- your_project: fetching, need revision SOME_SHA
+   west.manifest: running 'git fetch ... https://github.com/your-username/your_project ...' in /some/directory
+
+The ``git fetch`` command example in the last line above is what needs to
+succeed. Go to ``/some/directory``, copy/paste and run the entire ``git fetch``
+command, then debug from there using the documentation for your credential
+storage helper.
+
+If you can get the ``git fetch`` command to run successfully without prompting
+for a password when you run it directly, you will be able to run ``west
+update`` without entering your password in that same shell.
+
 .. _PyPI:
    https://pypi.org/project/west/
 
