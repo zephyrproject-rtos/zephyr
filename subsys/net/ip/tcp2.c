@@ -457,7 +457,7 @@ out:
 
 static const char *tcp_conn_state(struct tcp *conn, struct net_pkt *pkt)
 {
-#define BUF_SIZE 80
+#define BUF_SIZE 160
 	static char buf[BUF_SIZE];
 
 	snprintk(buf, BUF_SIZE, "%s [%s Seq=%u Ack=%u]", pkt ? tcp_th(pkt) : "",
