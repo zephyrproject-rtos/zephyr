@@ -1,0 +1,37 @@
+# Copyright (c) 2020 TDK Invensense
+# SPDX-License-Identifier: Apache-2.0
+
+description: ICM-42605 motion tracking device
+
+# ICM-42605 is SPI.
+compatible: "invensense,icm42605"
+
+include: spi-device.yaml
+
+properties:
+    spi-max-frequency:
+      type: int
+      required: true
+      description: Maximum clock frequency of device's SPI interface in Hz
+
+    int-gpios:
+      type: phandle-array
+      required: true
+      description: |
+        The INT signal default configuration is active-high.  The
+        property value should ensure the flags properly describe the
+        signal that is presented to the driver.
+
+    cpha:
+      type: boolean
+      required: true
+      description: |
+        Set to indicate phase starts with asserted half-phase (CPHA=1).
+        For this driver using this property requires also using cpol.
+
+    cpol:
+      type: boolean
+      required: true
+      description: |
+        Set to indicate clock leading edge is falling (CPOL=1).
+        For this driver using this property requires also using cpha.
