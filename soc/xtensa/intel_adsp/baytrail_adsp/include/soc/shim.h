@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: BSD-3-Clause
+/* SPDX-License-Identifier: Apache-2.0
  *
  * Copyright(c) 2016 Intel Corporation. All rights reserved.
  *
@@ -137,4 +137,3 @@
 #define SHIM_SSP_DIV_UPD	(1 << 29)
 
 #endif /* __INC_SOC_SHIM_H */
-

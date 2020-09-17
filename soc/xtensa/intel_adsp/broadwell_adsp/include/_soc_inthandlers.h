@@ -1,4 +1,8 @@
 /*
+ * Copyright (c) 2020 Intel Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/*
  * THIS FILE WAS AUTOMATICALLY GENERATED.  DO NOT EDIT.
  *
  * Functions here are designed to produce efficient code to

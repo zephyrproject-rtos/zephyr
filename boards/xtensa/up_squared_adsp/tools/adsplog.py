@@ -1,4 +1,7 @@
 #!/usr/bin/python3
+#
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
 import sys
 import time
 import struct

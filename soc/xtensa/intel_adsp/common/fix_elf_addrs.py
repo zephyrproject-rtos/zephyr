@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+#
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
 
 # ADSP devices have their RAM regions mapped twice, once in the 512MB
 # region from 0x80000000-0x9fffffff and again from

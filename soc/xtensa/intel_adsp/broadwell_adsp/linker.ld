@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 2020 Intel Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * Linker Script for Baytrail.
  *
  * This script is run through the GNU C preprocessor to align the memory
