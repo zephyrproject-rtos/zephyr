@@ -3997,6 +3997,9 @@ int k_msgq_cleanup(struct k_msgq *msgq);
  * This routine sends a message to message queue @a q.
  *
  * @note Can be called by ISRs.
+ * @note The message content is copied from @a data into @a msgq and the @a data
+ * pointer is not retained, so the message content will not be modified
+ * by this function.
  *
  * @param msgq Address of the message queue.
  * @param data Pointer to the message.
@@ -4008,7 +4011,7 @@ int k_msgq_cleanup(struct k_msgq *msgq);
  * @retval -ENOMSG Returned without waiting or queue purged.
  * @retval -EAGAIN Waiting period timed out.
  */
-__syscall int k_msgq_put(struct k_msgq *msgq, void *data, k_timeout_t timeout);
+__syscall int k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout);
 
 /**
  * @brief Receive a message from a message queue.
