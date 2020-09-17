@@ -31,4 +31,9 @@ if(CONFIG_COMPRESSED_ISA)
 endif()
 
 list(APPEND TOOLCHAIN_C_FLAGS -mabi=${riscv_mabi} -march=${riscv_march})
-list(APPEND TOOLCHAIN_LD_FLAGS -mabi=${riscv_mabi} -march=${riscv_march})
+
+# Since TOOLCHAIN_LD_FLAGS eventually gets passed to zephyr_check_compiler_flag
+# we need to treat -mabi/-march as a single option.  Otherwise
+# zephyr_check_compiler_flag will fail on RISC-V since they options are
+# expected to be set together.
+list(APPEND TOOLCHAIN_LD_FLAGS "-mabi=${riscv_mabi} -march=${riscv_march}")
