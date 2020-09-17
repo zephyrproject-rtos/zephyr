@@ -50,6 +50,7 @@ int bt_mesh_prov_reset_state(void (*func)(const uint8_t key[64]))
 {
 	int err;
 	static struct bt_pub_key_cb pub_key_cb;
+	const size_t offset = offsetof(struct bt_mesh_prov_link, dhkey);
 
 	pub_key_cb.func = func ? func : pub_key_ready;
 
@@ -58,8 +59,8 @@ int bt_mesh_prov_reset_state(void (*func)(const uint8_t key[64]))
 		bt_mesh_attention(NULL, 0);
 	}
 
-	memset(&bt_mesh_prov_link.dhkey, 0,
-	       sizeof(bt_mesh_prov_link) - offsetof(struct bt_mesh_prov_link, dhkey));
+	(void)memset((uint8_t *)&bt_mesh_prov_link + offset, 0,
+		     sizeof(bt_mesh_prov_link) - offset);
 
 	err = bt_pub_key_gen(&pub_key_cb);
 	if (err) {
