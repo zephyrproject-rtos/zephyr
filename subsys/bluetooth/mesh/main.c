@@ -23,6 +23,7 @@
 #include "test.h"
 #include "adv.h"
 #include "prov.h"
+#include "provisioner.h"
 #include "net.h"
 #include "rpl.h"
 #include "beacon.h"
