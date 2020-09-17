@@ -204,8 +204,9 @@ enter_code64:
 #ifdef CONFIG_INIT_STACKS
 	movq $0xAAAAAAAAAAAAAAAA, %rax
 	movq %rsp, %rdi
-	subq $CONFIG_ISR_STACK_SIZE, %rdi
-	movq $(CONFIG_ISR_STACK_SIZE >> 3), %rcx
+	subq __x86_cpuboot_t_stack_size_OFFSET(%rbp), %rdi
+	movq __x86_cpuboot_t_stack_size_OFFSET(%rbp), %rcx
+	shr $3, %rcx /* moving 8 bytes a time, so fewer repeats */
 	rep stosq
 #endif
 

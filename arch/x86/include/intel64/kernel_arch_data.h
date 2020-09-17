@@ -23,6 +23,7 @@ struct x86_cpuboot {
 	uint16_t tr;		/* selector for task register */
 	struct x86_tss64 *gs_base; /* Base address for GS segment */
 	uint64_t sp;		/* initial stack pointer */
+	size_t stack_size;	/* size of stack */
 	arch_cpustart_t fn;	/* kernel entry function */
 	void *arg;		/* argument for above function */
 };
