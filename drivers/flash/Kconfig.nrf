@@ -20,7 +20,7 @@ menuconfig SOC_FLASH_NRF
 
 if SOC_FLASH_NRF
 
-choice
+choice SOC_FLASH_NRF_RADIO_SYNC_CHOICE
 	prompt "Nordic nRFx flash driver synchronization"
 	default SOC_FLASH_NRF_RADIO_SYNC if BT_CTLR
 	default SOC_FLASH_NRF_RADIO_SYNC_NONE
