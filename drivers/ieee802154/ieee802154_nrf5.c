@@ -414,14 +414,25 @@ static int nrf5_tx(const struct device *dev,
 
 	LOG_DBG("Result: %d", nrf5_data.tx_result);
 
-	if (nrf5_radio->tx_result == NRF_802154_TX_ERROR_NONE) {
+	switch (nrf5_radio->tx_result) {
+	case NRF_802154_TX_ERROR_NONE:
 		if (nrf5_radio->ack_frame.psdu == NULL) {
 			/* No ACK was requested. */
 			return 0;
 		}
-
 		/* Handle ACK packet. */
 		return handle_ack(nrf5_radio);
+	case NRF_802154_TX_ERROR_NO_MEM:
+		return -ENOBUFS;
+	case NRF_802154_TX_ERROR_BUSY_CHANNEL:
+		return -EBUSY;
+	case NRF_802154_TX_ERROR_INVALID_ACK:
+	case NRF_802154_TX_ERROR_NO_ACK:
+		return -ENOMSG;
+	case NRF_802154_TX_ERROR_ABORTED:
+	case NRF_802154_TX_ERROR_TIMESLOT_DENIED:
+	case NRF_802154_TX_ERROR_TIMESLOT_ENDED:
+		return -EIO;
 	}
 
 	return -EIO;
