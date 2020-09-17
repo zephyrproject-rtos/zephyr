@@ -2212,6 +2212,22 @@ void net_context_foreach(net_context_cb_t cb, void *user_data)
 	k_sem_give(&contexts_lock);
 }
 
+const char *net_context_state(struct net_context *context)
+{
+	switch (net_context_get_state(context)) {
+	case NET_CONTEXT_IDLE:
+		return "IDLE";
+	case NET_CONTEXT_CONNECTING:
+		return "CONNECTING";
+	case NET_CONTEXT_CONNECTED:
+		return "CONNECTED";
+	case NET_CONTEXT_LISTENING:
+		return "LISTENING";
+	}
+
+	return NULL;
+}
+
 void net_context_init(void)
 {
 	k_sem_init(&contexts_lock, 1, UINT_MAX);

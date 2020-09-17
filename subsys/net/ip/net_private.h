@@ -46,6 +46,7 @@ extern void net_if_stats_reset_all(void);
 
 #if defined(CONFIG_NET_NATIVE) || defined(CONFIG_NET_OFFLOAD)
 extern void net_context_init(void);
+extern const char *net_context_state(struct net_context *context);
 extern void net_pkt_init(void);
 extern void net_tc_tx_init(void);
 extern void net_tc_rx_init(void);
@@ -54,6 +55,11 @@ static inline void net_context_init(void) { }
 static inline void net_pkt_init(void) { }
 static inline void net_tc_tx_init(void) { }
 static inline void net_tc_rx_init(void) { }
+static inline const char *net_context_state(context)
+{
+	ARG_UNUSED(context);
+	return NULL;
+}
 #endif
 
 #if defined(CONFIG_NET_NATIVE)
