@@ -21,6 +21,13 @@ if BT_MESH
 config BT_MESH_PROV
 	bool
 
+config BT_MESH_PROV_DEVICE
+	bool "Provisioning device role support"
+	depends on BT_MESH_PROV
+	default y
+	help
+	  Enable this option to allow the device to be provisioned into a mesh network.
+
 config BT_MESH_PB_ADV
 	bool "Provisioning support using the advertising bearer (PB-ADV)"
 	select BT_MESH_PROV
@@ -47,12 +54,14 @@ config BT_MESH_PB_ADV_RETRANS_TIMEOUT
 
 config BT_MESH_PROVISIONER
 	bool "Provisioner support"
-	select BT_MESH_PROV
+	depends on BT_MESH_PROV
+	depends on BT_MESH_PB_ADV
 	help
 	  Enable this option to have support for provisioning remote devices.
 
 config BT_MESH_CDB
 	bool "Mesh Configuration Database [EXPERIMENTAL]"
+	default y if BT_MESH_PROVISIONER
 
 if BT_MESH_CDB
 
@@ -652,6 +661,12 @@ config BT_MESH_DEBUG_PROV
 	bool "Provisioning debug"
 	help
 	  Use this option to enable Provisioning debug logs for the
+	  Bluetooth Mesh functionality.
+
+config BT_MESH_DEBUG_PROVISIONER
+	bool "Provisioner debug"
+	help
+	  Use this option to enable Provisioner debug logs for the
 	  Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_ACCESS

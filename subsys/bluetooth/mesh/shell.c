@@ -1868,7 +1868,7 @@ static int cmd_hb_pub(const struct shell *shell, size_t argc, char *argv[])
 	}
 }
 
-#if defined(CONFIG_BT_MESH_PROV)
+#if defined(CONFIG_BT_MESH_PROV_DEVICE)
 static int cmd_pb(bt_mesh_prov_bearer_t bearer, const struct shell *shell,
 		  size_t argc, char *argv[])
 {
