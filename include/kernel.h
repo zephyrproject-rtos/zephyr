@@ -4607,6 +4607,8 @@ extern int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
  *
  * This routine allocates a memory block from a memory slab.
  *
+ * @note Can be called by ISRs, but @a timeout must be set to K_NO_WAIT.
+ *
  * @param slab Address of the memory slab.
  * @param mem Pointer to block address area.
  * @param timeout Non-negative waiting period to wait for operation to complete.
@@ -4697,6 +4699,8 @@ void k_heap_init(struct k_heap *h, void *mem, size_t bytes);
  * freed.  If the allocation cannot be performed by the expiration of
  * the timeout, NULL will be returned.
  *
+ * @note Can be called by ISRs, but @a timeout must be set to K_NO_WAIT.
+ *
  * @param h Heap from which to allocate
  * @param bytes Desired size of block to allocate
  * @param timeout How long to wait, or K_NO_WAIT
@@ -4769,6 +4773,8 @@ void k_heap_free(struct k_heap *h, void *mem);
  * @brief Allocate memory from a memory pool.
  *
  * This routine allocates a memory block from a memory pool.
+ *
+ * @note Can be called by ISRs, but @a timeout must be set to K_NO_WAIT.
  *
  * @param pool Address of the memory pool.
  * @param block Pointer to block descriptor for the allocated memory.
