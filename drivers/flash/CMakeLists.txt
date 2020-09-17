@@ -7,7 +7,7 @@ zephyr_library_sources_ifdef(CONFIG_NORDIC_QSPI_NOR nrf_qspi_nor.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_SIMULATOR flash_simulator.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_FLASH_AT45 spi_flash_at45.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_NRF soc_flash_nrf.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_NRF_RADIO_SYNC soc_flash_nrf_ticker.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_NRF_RADIO_SYNC_TICKER soc_flash_nrf_ticker.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_MCUX soc_flash_mcux.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_PAGE_LAYOUT flash_page_layout.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE flash_handlers.c)
@@ -30,7 +30,7 @@ if(CONFIG_SOC_FLASH_STM32)
 endif()
 
 zephyr_include_directories_ifdef(
-	CONFIG_SOC_FLASH_NRF_RADIO_SYNC
+	CONFIG_SOC_FLASH_NRF_RADIO_SYNC_TICKER
 	${ZEPHYR_BASE}/subsys/bluetooth
 	${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/nordic
 	)

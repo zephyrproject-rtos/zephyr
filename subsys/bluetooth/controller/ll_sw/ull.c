@@ -110,7 +110,7 @@
 #define BT_CONN_TICKER_NODES 0
 #endif
 
-#if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
+#if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC_TICKER)
 #define FLASH_TICKER_NODES        2 /* No. of tickers reserved for flashing */
 #define FLASH_TICKER_USER_APP_OPS 1 /* No. of additional ticker operations */
 #else
