@@ -6592,14 +6592,17 @@ static int set_data_add(uint8_t *set_data, uint8_t set_data_len_max,
 
 			/* Check if ad fit in the remaining buffer */
 			if ((set_data_len + len + 2) > set_data_len_max) {
-				len = set_data_len_max - (set_data_len + 2);
+				ssize_t shortened_len = set_data_len_max -
+							(set_data_len + 2);
 
-				if (type != BT_DATA_NAME_COMPLETE || !len) {
+				if (!(type == BT_DATA_NAME_COMPLETE &&
+				      shortened_len > 0)) {
 					BT_ERR("Too big advertising data");
 					return -EINVAL;
 				}
 
 				type = BT_DATA_NAME_SHORTENED;
+				len = shortened_len;
 			}
 
 			set_data[set_data_len++] = len + 1;
