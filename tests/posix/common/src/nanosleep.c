@@ -199,7 +199,7 @@ static void common(const uint32_t s, uint32_t ns)
 	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d",
 		rem.tv_nsec, 0);
 
-	uint64_t exp_ns = s * NSEC_PER_SEC + ns;
+	uint64_t exp_ns = (uint64_t)s * NSEC_PER_SEC + ns;
 	uint64_t tolerance_ns = MAX(NSEC_PER_CYCLE,
 				    (TOLERANCE_PPC * exp_ns) / 100U);
 	uint64_t tck_ns = k_cyc_to_ns_ceil64((now == then)
