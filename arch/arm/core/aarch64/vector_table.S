@@ -78,7 +78,7 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 
 	/* Current EL with SPx / Synchronous */
 	.align 7
-	b	z_arm64_svc
+	b	z_arm64_sync_exc
 
 	/* Current EL with SPx / IRQ */
 	.align 7
