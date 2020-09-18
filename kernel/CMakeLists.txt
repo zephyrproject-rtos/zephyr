@@ -11,7 +11,6 @@ add_library(kernel
   kheap.c
   mailbox.c
   mem_slab.c
-  mempool.c
   msg_q.c
   mutex.c
   pipes.c
@@ -42,9 +41,13 @@ target_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_C   kernel PRIVATE atomic_c.c)
 target_sources_ifdef(CONFIG_MMU                   kernel PRIVATE mmu.c)
 target_sources_ifdef(CONFIG_POLL                  kernel PRIVATE poll.c)
 
-if(${CONFIG_MEM_POOL_HEAP_BACKEND})
-else()
-  target_sources(kernel PRIVATE mempool_sys.c)
+if(${CONFIG_KERNEL_MEM_POOL})
+  target_sources(kernel PRIVATE mempool.c)
+
+  if(${CONFIG_MEM_POOL_HEAP_BACKEND})
+  else()
+    target_sources(kernel PRIVATE mempool_sys.c)
+  endif()
 endif()
 
 # The last 2 files inside the target_sources_ifdef should be
