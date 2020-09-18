@@ -10,11 +10,23 @@
 #include <arch/cpu.h>
 
 /* exports */
+GTEXT(z_riscv_switch)
 GTEXT(arch_swap)
 GTEXT(z_thread_entry_wrapper)
 
 /* Use ABI name of registers for the sake of simplicity */
 
+#ifdef CONFIG_USE_SWITCH
+/*
+ * void z_riscv_switch(void *switch_to, void **switched_from)
+ */
+SECTION_FUNC(exception.other, z_riscv_switch)
+
+	/* Make a system call to perform context switch */
+	ecall
+
+	jalr x0, ra
+#else /* CONFIG_USE_SWITCH */
 /*
  * unsigned int arch_swap(unsigned int key)
  *
@@ -55,6 +67,7 @@ SECTION_FUNC(exception.other, arch_swap)
 
 	/* Return */
 	jalr x0, ra
+#endif /* CONFIG_USE_SWITCH */
 
 
 /*

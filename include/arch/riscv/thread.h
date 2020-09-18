@@ -134,7 +134,9 @@ struct _callee_saved {
 typedef struct _callee_saved _callee_saved_t;
 
 struct _thread_arch {
+#ifndef CONFIG_USE_SWITCH
 	uint32_t swap_return_value; /* Return value of z_swap() */
+#endif /* !CONFIG_USE_SWITCH */
 
 #ifdef CONFIG_PMP_STACK_GUARD
 	ulong_t s_pmpcfg[PMP_CFG_CSR_NUM_FOR_STACK_GUARD];

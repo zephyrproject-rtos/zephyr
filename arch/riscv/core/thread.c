@@ -117,7 +117,20 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif
 
 	thread->callee_saved.sp = (ulong_t)stack_init;
+
+#ifdef CONFIG_USE_SWITCH
+	thread->switch_handle = thread;
+#endif
 }
+
+#ifdef CONFIG_USE_SWITCH
+void *z_arch_get_next_switch_handle(struct k_thread **old_thread)
+{
+	*old_thread =  _current;
+
+	return z_get_next_switch_handle(*old_thread);
+}
+#endif
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 int arch_float_disable(struct k_thread *thread)
