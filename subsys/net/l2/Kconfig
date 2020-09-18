@@ -76,6 +76,11 @@ source "subsys/net/l2/openthread/Kconfig"
 
 source "subsys/net/l2/canbus/Kconfig"
 
+config NET_L2_ZIGBEE
+	bool "Zigbee L2"
+	depends on NETWORKING
+	select NET_PKT_TIMESTAMP
+
 config NET_L2_WIFI_MGMT
 	bool "Enable Wi-Fi Management support"
 	select NET_MGMT

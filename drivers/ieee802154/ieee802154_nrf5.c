@@ -108,7 +108,8 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		 * automatic CRC handling is enabled or not, respectively.
 		 */
 		if (IS_ENABLED(CONFIG_IEEE802154_RAW_MODE) ||
-		    IS_ENABLED(CONFIG_NET_L2_OPENTHREAD)) {
+		    IS_ENABLED(CONFIG_NET_L2_OPENTHREAD) ||
+		    IS_ENABLED(CONFIG_NET_L2_ZIGBEE)) {
 			pkt_len = rx_frame->psdu[0];
 		} else {
 			pkt_len = rx_frame->psdu[0] -  NRF5_FCS_LENGTH;
@@ -728,9 +729,14 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 #define L2 OPENTHREAD_L2
 #define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(OPENTHREAD_L2)
 #define MTU 1280
+#elif defined(CONFIG_NET_L2_ZIGBEE)
+#define L2 ZIGBEE_L2
+#define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ZIGBEE_L2)
+#define MTU 127
 #endif
 
-#if defined(CONFIG_NET_L2_IEEE802154) || defined(CONFIG_NET_L2_OPENTHREAD)
+#if defined(CONFIG_NET_L2_IEEE802154) || defined(CONFIG_NET_L2_OPENTHREAD) \
+	|| defined(CONFIG_NET_L2_ZIGBEE)
 NET_DEVICE_INIT(nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
 		nrf5_init, device_pm_control_nop, &nrf5_data, &nrf5_radio_cfg,
 		CONFIG_IEEE802154_NRF5_INIT_PRIO,
