@@ -1058,8 +1058,8 @@ __syscall void k_thread_abort(k_tid_t thread);
  */
 __syscall void k_thread_start(k_tid_t thread);
 
-extern k_ticks_t z_timeout_expires(struct _timeout *timeout);
-extern k_ticks_t z_timeout_remaining(struct _timeout *timeout);
+extern k_ticks_t z_timeout_expires(const struct _timeout *timeout);
+extern k_ticks_t z_timeout_remaining(const struct _timeout *timeout);
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 

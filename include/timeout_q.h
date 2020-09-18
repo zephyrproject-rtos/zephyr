@@ -32,7 +32,7 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 
 int z_abort_timeout(struct _timeout *to);
 
-static inline bool z_is_inactive_timeout(struct _timeout *t)
+static inline bool z_is_inactive_timeout(const struct _timeout *t)
 {
 	return !sys_dnode_is_linked(&t->node);
 }
@@ -58,7 +58,7 @@ int32_t z_get_next_timeout_expiry(void);
 
 void z_set_timeout_expiry(int32_t ticks, bool idle);
 
-k_ticks_t z_timeout_remaining(struct _timeout *timeout);
+k_ticks_t z_timeout_remaining(const struct _timeout *timeout);
 
 #else
 
