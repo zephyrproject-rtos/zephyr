@@ -77,7 +77,9 @@ struct mcuboot_v1_raw_header {
 #define FLASH_AREA_IMAGE_SECONDARY FLASH_AREA_ID(image_1_nonsecure)
 #else
 #define FLASH_AREA_IMAGE_PRIMARY FLASH_AREA_ID(image_0)
+#if FLASH_AREA_LABEL_EXISTS(image_1)
 #define FLASH_AREA_IMAGE_SECONDARY FLASH_AREA_ID(image_1)
+#endif
 #endif /* CONFIG_TRUSTED_EXECUTION_NONSECURE */
 
 #if FLASH_AREA_LABEL_EXISTS(image_scratch)
@@ -576,7 +578,9 @@ boot_read_swap_state_by_id(int flash_area_id, struct boot_swap_state *state)
 	case FLASH_AREA_IMAGE_SCRATCH:
 #endif
 	case FLASH_AREA_IMAGE_PRIMARY:
+#ifdef FLASH_AREA_IMAGE_SECONDARY
 	case FLASH_AREA_IMAGE_SECONDARY:
+#endif
 		rc = flash_area_open(flash_area_id, &fap);
 		if (rc != 0) {
 			return -EIO;
@@ -594,6 +598,7 @@ boot_read_swap_state_by_id(int flash_area_id, struct boot_swap_state *state)
 /* equivalent of boot_swap_type() in mcuboot bootutil_misc.c */
 int mcuboot_swap_type(void)
 {
+#ifdef FLASH_AREA_IMAGE_SECONDARY
 	const struct boot_swap_table *table;
 	struct boot_swap_state primary_slot;
 	struct boot_swap_state secondary_slot;
@@ -636,12 +641,13 @@ int mcuboot_swap_type(void)
 			return table->swap_type;
 		}
 	}
-
+#endif
 	return BOOT_SWAP_TYPE_NONE;
 }
 
 int boot_request_upgrade(int permanent)
 {
+#ifdef FLASH_AREA_IMAGE_SECONDARY
 #ifdef CONFIG_MCUBOOT_TRAILER_SWAP_TYPE
 	uint8_t swap_type;
 #endif
@@ -671,6 +677,10 @@ int boot_request_upgrade(int permanent)
 #endif
 op_end:
 	return rc;
+#else
+	return 0;
+#endif /* FLASH_AREA_IMAGE_SECONDARY */
+
 }
 
 bool boot_is_img_confirmed(void)
