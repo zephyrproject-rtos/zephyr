@@ -537,24 +537,18 @@ config SYS_CLOCK_TICKS_PER_SEC
 	help
 	  This option specifies the nominal frequency of the system clock in Hz.
 
-	  Depending on the choice made, an amount of possibly expensive math must
-	  occur when converting ticks to milliseconds and vice-versa. Some values
-	  are optimized, and yield significantly less math.
+	  For asynchronous timekeeping, the kernel defines a "ticks" concept. A
+	  "tick" is the internal count in which the kernel does all its internal
+	  uptime and timeout bookeeping. Interrupts are expected to be delivered
+	  on tick boundaries to the extent practical, and no fractional ticks
+	  are tracked.
 
-	  The optimal values from a computational point-of-view are 1000, 500,
-	  250 and 125, since in these cases there is either no computation
-	  required, or it is all done via bit-shifting. These also give a
-	  granularity from 1ms to 8ms.
-
-	  Other good values are 100, 50, 25, 20 and 10. In this case, some math
-	  is required but is minimized. These are also values that necessitate a
-	  reduced number of clock interrupts per second, at the cost of
-	  granularity (10ms to 100ms).
-
-	  All other values require some extensive 64-bit math, and in some
-	  configurations even require calls to compiler built-in functions, and
-	  can require a non-trivial extra amount of stack space (e.g. around 80
-	  bytes on x86).
+	  The choice of tick rate is configurable by this option. Also the number
+	  of cycles per tick should be chosen so that 1 millisecond is exactly
+	  represented by an integral number of ticks. Defaults on most hardware
+	  platforms (ones that support setting arbitrary interrupt timeouts) are
+	  expected to be in the range of 10 kHz, with software emulation
+	  platforms and legacy drivers using a more traditional 100 Hz value.
 
 	  Note that when available and enabled, in "tickless" mode
 	  this config variable specifies the minimum available timing
