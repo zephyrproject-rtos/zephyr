@@ -351,6 +351,20 @@ static void init_cycfg_platform(void)
 #endif
 }
 
+#if defined(CONFIG_SOC_PSOC6_M0_ENABLES_M4)
+
+static void Cy_SystemInitM4(void)
+{
+	printk("M4 Address: 0x%08x\n", DT_REG_ADDR(DT_NODELABEL(flash1)));
+	Cy_SysEnableCM4(DT_REG_ADDR(DT_NODELABEL(flash1)));
+}
+
+#else
+
+#define Cy_SystemInitM4()
+
+#endif /* CONFIG_SOC_PSOC6_M0 */
+
 /**
  * Function Name: Cy_SystemInit
  *
@@ -368,6 +382,10 @@ void Cy_SystemInit(void)
 	/* Configure peripheral clocks */
 	Cy_SysClk_PeriphSetDivider(CY_SYSCLK_DIV_8_BIT, 0u, 0u);
 	Cy_SysClk_PeriphEnableDivider(CY_SYSCLK_DIV_8_BIT, 0u);
+
+#if defined(CONFIG_SOC_PSOC6_M0_ENABLES_M4)
+	Cy_SystemInitM4();
+#endif
 }
 
 static int init_cycfg_platform_wraper(const struct device *arg)
