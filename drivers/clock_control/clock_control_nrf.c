@@ -441,6 +441,21 @@ static void onoff_start(struct onoff_manager *mgr,
 	}
 }
 
+/** @brief Wait for LF clock availability or stability.
+ *
+ * If LF clock source is SYNTH or RC then there is no distinction between
+ * availability and stability. In case of XTAL source clock, system is initially
+ * starting RC and then seamlessly switches to XTAL. Running RC means clock
+ * availability and running target source means stability, That is because
+ * significant difference in startup time (<1ms vs >200ms).
+ *
+ * In order to get event/interrupt when RC is ready (allowing CPU sleeping) two
+ * stage startup sequence is used. Initially, LF source is set to RC and when
+ * LFSTARTED event is handled it is reconfigured to the target source clock.
+ * This approach is implemented in nrfx_clock driver and utilized here.
+ *
+ * @param mode Start mode.
+ */
 static void lfclk_spinwait(enum nrf_lfclk_start_mode mode)
 {
 	static const nrf_clock_domain_t d = NRF_CLOCK_DOMAIN_LFCLK;
@@ -454,6 +469,19 @@ static void lfclk_spinwait(enum nrf_lfclk_start_mode mode)
 		? NRF_CLOCK_LFCLK_Xtal
 		: CLOCK_CONTROL_NRF_K32SRC;
 	nrf_clock_lfclk_t type;
+
+	if ((mode == CLOCK_CONTROL_NRF_LF_START_AVAILABLE) &&
+	    (target_type == NRF_CLOCK_LFCLK_Xtal) &&
+	    (nrf_clock_lf_srccopy_get(NRF_CLOCK) == CLOCK_CONTROL_NRF_K32SRC)) {
+		/* If target clock source is using XTAL then due to two-stage
+		 * clock startup sequence, RC might already be running.
+		 * It can be determined by checking current LFCLK source. If it
+		 * is set to the target clock source then it means that RC was
+		 * started.
+		 */
+		return;
+	}
+
 	bool isr_mode = k_is_in_isr() || k_is_pre_kernel();
 	int key = isr_mode ? irq_lock() : 0;
 
