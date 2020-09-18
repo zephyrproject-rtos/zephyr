@@ -38,6 +38,8 @@
 	GDATA(_sse_mxcsr_default_value)
 #endif
 
+	GDATA(x86_cpu_boot_arg)
+
 SECTION_FUNC(TEXT_START, __start)
 
 #include "../common.S"
@@ -231,7 +233,13 @@ __csSet:
 	call	z_loapic_enable
 #endif
 
-	pushl	%ebx		/* pointer to multiboot info, or NULL */
+	movl	$x86_cpu_boot_arg, %ebp
+	/* Boot type to multiboot, ebx content will help to mitigate */
+	movl	$MULTIBOOT_BOOT_TYPE, \
+			__x86_boot_arg_t_boot_type_OFFSET(%ebp)
+	/* pointer to multiboot info, or NULL */
+	movl	%ebx, __x86_boot_arg_t_arg_OFFSET(%ebp)
+	pushl	$x86_cpu_boot_arg
 	call	z_x86_prep_c	/* enter kernel; never returns */
 
 _x86_bss_zero:
