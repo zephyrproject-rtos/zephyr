@@ -206,15 +206,6 @@ static int boot_flag_decode(uint8_t flag)
 }
 
 /* TODO: this function should be moved to flash_area api in future */
-uint8_t flash_area_erased_val(const struct flash_area *fa)
-{
-	#define ERASED_VAL 0xff
-
-	(void)fa;
-	return ERASED_VAL;
-}
-
-/* TODO: this function should be moved to flash_area api in future */
 int flash_area_read_is_empty(const struct flash_area *fa, uint32_t off,
 	void *dst, uint32_t len)
 {
