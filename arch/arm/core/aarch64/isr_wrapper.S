@@ -41,12 +41,12 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 
 	/* Get active IRQ number from the interrupt controller */
 #if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
-	bl arm_gic_get_active
+	bl	arm_gic_get_active
 #else
-	bl z_soc_irq_get_active
+	bl	z_soc_irq_get_active
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
-	stp x0, x1, [sp, #-16]!
-	lsl x0, x0, #4 /* table is 16-byte wide */
+	stp	x0, x1, [sp, #-16]!
+	lsl	x0, x0, #4 /* table is 16-byte wide */
 
 	/* Retrieve the interrupt service routine */
 	ldr	x1, =_sw_isr_table
@@ -62,11 +62,11 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	msr	daifset, #(DAIFSET_IRQ)
 
 	/* Signal end-of-interrupt */
-	ldp x0, x1, [sp], #16
+	ldp	x0, x1, [sp], #16
 #if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
-	bl arm_gic_eoi
+	bl	arm_gic_eoi
 #else
-	bl z_soc_irq_eoi
+	bl	z_soc_irq_eoi
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
 #ifdef CONFIG_TRACING
