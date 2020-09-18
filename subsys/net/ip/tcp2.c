@@ -1023,6 +1023,10 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 		struct tcp *conn_old = ((struct net_context *)user_data)->tcp;
 
 		conn = tcp_conn_new(pkt);
+		if (!conn) {
+			NET_ERR("Cannot allocate a new TCP connection");
+			goto in;
+		}
 
 		net_ipaddr_copy(&conn_old->context->remote, &conn->dst.sa);
 
