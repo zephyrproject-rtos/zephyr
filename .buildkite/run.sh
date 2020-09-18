@@ -37,9 +37,15 @@ git log -n 5 --oneline --decorate --abbrev=12
 
 # Setup module cache
 cd /workdir
-ln -s /var/lib/buildkite-agent/zephyr-module-cache/modules
-ln -s /var/lib/buildkite-agent/zephyr-module-cache/tools
-ln -s /var/lib/buildkite-agent/zephyr-module-cache/bootloader
+for dir in modules tools bootloader
+do
+   for repo in `cd /var/lib/buildkite-agent/zephyr-module-cache/$dir; find . -name .git -type d -prune|sed 's|/\.git||g'`
+   do
+      folder=`dirname $repo`
+      mkdir -p $dir/$folder
+      ln -s /var/lib/buildkite-agent/zephyr-module-cache/$dir/$repo $dir/$repo
+   done
+done
 cd /workdir/zephyr
 
 export JOB_NUM=$((${BUILDKITE_PARALLEL_JOB}+1))
