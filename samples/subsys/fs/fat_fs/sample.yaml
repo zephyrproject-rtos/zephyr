@@ -5,5 +5,8 @@ common:
 tests:
   sample.filesystem.fat_fs:
     depends_on: sdhc
+    harness: console
+    harness_config:
+      fixture: fixture_sdhc
   sample.filesystem.fat_fs.overlay:
     platform_allow: nrf52840_blip
