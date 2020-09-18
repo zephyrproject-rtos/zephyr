@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- * @brief ARM64 Cortex-A ISRs wrapper
+/*
+ * ARM64 Cortex-A ISRs wrapper
  */
 
 #include <toolchain.h>
@@ -20,15 +19,13 @@ _ASM_FILE_PROLOGUE
 
 GDATA(_sw_isr_table)
 
-/**
- * @brief Wrapper around ISRs when inserted in software ISR table
+/*
+ * Wrapper around ISRs when inserted in software ISR table
  *
  * When inserted in the vector table, _isr_wrapper() demuxes the ISR table
  * using the running interrupt number as the index, and invokes the registered
  * ISR with its corresponding argument. When returning from the ISR, it
  * determines if a context switch needs to happen.
- *
- * @return N/A
  */
 
 GTEXT(_isr_wrapper)

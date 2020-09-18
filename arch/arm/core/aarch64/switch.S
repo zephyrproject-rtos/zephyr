@@ -4,12 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- * @brief Thread context switching for ARM64 Cortex-A
+/*
+ * Thread context switching for ARM64 Cortex-A (AArch64)
  *
  * This module implements the routines necessary for thread context switching
- * on ARM64 Cortex-A.
+ * on ARM64 Cortex-A (AArch64)
  */
 
 #include <toolchain.h>
@@ -23,8 +22,8 @@ _ASM_FILE_PROLOGUE
 
 GDATA(_kernel)
 
-/**
- * @brief Routine to handle context switches
+/*
+ * Routine to handle context switches
  *
  * This function is directly called either by _isr_wrapper() in case of
  * preemption, or z_arm64_svc() in case of cooperative switching.
@@ -36,7 +35,7 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	ldr	x2, =_thread_offset_to_callee_saved
 	add	x2, x2, x1
 
-	/* Store rest of process context including x30 */
+	/* Store callee-saved registers */
 	stp	x19, x20, [x2], #16
 	stp	x21, x22, [x2], #16
 	stp	x23, x24, [x2], #16
@@ -85,14 +84,12 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	/* Return to z_arm64_svc() or _isr_wrapper() */
 	ret
 
-/**
- * @brief Service call handler
+/*
+ * Synchronous exceptions handler
  *
  * The service call (SVC) is used in the following occasions:
  * - Cooperative context switching
  * - IRQ offloading
- *
- * @return N/A
  */
 
 GTEXT(z_arm64_svc)
@@ -129,8 +126,9 @@ offload:
 context_switch:
 	/*
 	 * Retrieve x0 and x1 from the stack:
+	 *
 	 *  - x0 = new_thread->switch_handle = switch_to thread
-	 *  - x1 = x1 = &old_thread->switch_handle = current thread
+	 *  - x1 = &old_thread->switch_handle = current thread
 	 */
 	ldp	x0, x1, [sp, #(16 * 10)]
 
