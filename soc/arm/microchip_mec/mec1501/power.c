@@ -107,16 +107,16 @@ static void z_power_soc_sleep(void)
  * For deep sleep _sys_suspend has executed all the driver
  * power management call backs.
  */
-void sys_set_power_state(enum power_states state)
+void sys_set_power_state(pm_state_t state)
 {
 	switch (state) {
 #if (defined(CONFIG_SYS_POWER_SLEEP_STATES))
-	case SYS_POWER_STATE_SLEEP_1:
+	case PM_STATE_RUNTIME_IDLE:
 		z_power_soc_sleep();
 		break;
 #endif
 #if (defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES))
-	case SYS_POWER_STATE_DEEP_SLEEP_1:
+	case PM_STATE_SUSPEND_TO_IDLE:
 		z_power_soc_deep_sleep();
 		break;
 #endif
@@ -125,16 +125,16 @@ void sys_set_power_state(enum power_states state)
 	}
 }
 
-void _sys_pm_power_state_exit_post_ops(enum power_states state)
+void _sys_pm_power_state_exit_post_ops(pm_state_t state)
 {
 	switch (state) {
 #if (defined(CONFIG_SYS_POWER_SLEEP_STATES))
-	case SYS_POWER_STATE_SLEEP_1:
+	case PM_STATE_RUNTIME_IDLE:
 		__enable_irq();
 		break;
 #endif
 #if (defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES))
-	case SYS_POWER_STATE_DEEP_SLEEP_1:
+	case PM_STATE_SUSPEND_TO_IDLE:
 		__enable_irq();
 		break;
 #endif

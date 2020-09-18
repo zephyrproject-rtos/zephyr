@@ -7,8 +7,9 @@
 #ifndef ZEPHYR_INCLUDE_POWER_POWER_H_
 #define ZEPHYR_INCLUDE_POWER_POWER_H_
 
-#include <zephyr/types.h>
 #include <stdbool.h>
+#include <zephyr/types.h>
+#include <power/power_state.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,38 +20,6 @@ extern "C" {
  * @{
  * @}
  */
-
-/**
- * @brief System power states.
- */
-enum power_states {
-	SYS_POWER_STATE_AUTO	= (-2),
-	SYS_POWER_STATE_ACTIVE	= (-1),
-#ifdef CONFIG_SYS_POWER_SLEEP_STATES
-# ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_1
-	SYS_POWER_STATE_SLEEP_1,
-# endif
-# ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_2
-	SYS_POWER_STATE_SLEEP_2,
-# endif
-# ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_3
-	SYS_POWER_STATE_SLEEP_3,
-# endif
-#endif /* CONFIG_SYS_POWER_SLEEP_STATES */
-
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
-# ifdef CONFIG_HAS_SYS_POWER_STATE_DEEP_SLEEP_1
-	SYS_POWER_STATE_DEEP_SLEEP_1,
-# endif
-# ifdef CONFIG_HAS_SYS_POWER_STATE_DEEP_SLEEP_2
-	SYS_POWER_STATE_DEEP_SLEEP_2,
-# endif
-# ifdef CONFIG_HAS_SYS_POWER_STATE_DEEP_SLEEP_3
-	SYS_POWER_STATE_DEEP_SLEEP_3,
-# endif
-#endif /* CONFIG_SYS_POWER_DEEP_SLEEP_STATES */
-	SYS_POWER_STATE_MAX
-};
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 
@@ -63,71 +32,6 @@ extern unsigned char sys_pm_idle_exit_notify;
  * @ingroup power_management_api
  * @{
  */
-
-/**
- * @brief Check if particular power state is a sleep state.
- *
- * This function returns true if given power state is a sleep state.
- */
-static inline bool sys_pm_is_sleep_state(enum power_states state)
-{
-	bool ret = true;
-
-	switch (state) {
-#ifdef CONFIG_SYS_POWER_SLEEP_STATES
-# ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_1
-	case SYS_POWER_STATE_SLEEP_1:
-		break;
-# endif
-# ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_2
-	case SYS_POWER_STATE_SLEEP_2:
-		break;
-# endif
-# ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_3
-	case SYS_POWER_STATE_SLEEP_3:
-		break;
-# endif
-#endif /* CONFIG_SYS_POWER_SLEEP_STATES */
-	default:
-		ret = false;
-		break;
-	}
-
-	return ret;
-}
-
-/**
- * @brief Check if particular power state is a deep sleep state.
- *
- * This function returns true if given power state is a deep sleep state.
- */
-static inline bool sys_pm_is_deep_sleep_state(enum power_states state)
-{
-	bool ret = true;
-
-	switch (state) {
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
-# ifdef CONFIG_HAS_SYS_POWER_STATE_DEEP_SLEEP_1
-	case SYS_POWER_STATE_DEEP_SLEEP_1:
-		break;
-# endif
-# ifdef CONFIG_HAS_SYS_POWER_STATE_DEEP_SLEEP_2
-	case SYS_POWER_STATE_DEEP_SLEEP_2:
-		break;
-# endif
-# ifdef CONFIG_HAS_SYS_POWER_STATE_DEEP_SLEEP_3
-	case SYS_POWER_STATE_DEEP_SLEEP_3:
-		break;
-# endif
-#endif /* CONFIG_SYS_POWER_DEEP_SLEEP_STATES */
-
-	default:
-		ret = false;
-		break;
-	}
-
-	return ret;
-}
 
 /**
  * @brief Function to disable power management idle exit notification
@@ -157,7 +61,7 @@ static inline void _sys_pm_idle_exit_notification_disable(void)
  * @param state Power state which should be used in the ongoing
  *		suspend operation or SYS_POWER_STATE_AUTO.
  */
-void sys_pm_force_power_state(enum power_states state);
+void sys_pm_force_power_state(pm_state_t state);
 
 /**
  * @brief Put processor into a power state.
@@ -165,7 +69,7 @@ void sys_pm_force_power_state(enum power_states state);
  * This function implements the SoC specific details necessary
  * to put the processor into available power states.
  */
-void sys_set_power_state(enum power_states state);
+void sys_set_power_state(pm_state_t state);
 
 #ifdef CONFIG_SYS_PM_DEBUG
 /**
@@ -188,7 +92,7 @@ void sys_pm_dump_debug_info(void);
  *
  * @param [in] state Power state to be disabled.
  */
-void sys_pm_ctrl_disable_state(enum power_states state);
+void sys_pm_ctrl_disable_state(pm_state_t state);
 
 /**
  * @brief Enable particular power state
@@ -201,7 +105,7 @@ void sys_pm_ctrl_disable_state(enum power_states state);
  *
  * @param [in] state Power state to be enabled.
  */
-void sys_pm_ctrl_enable_state(enum power_states state);
+void sys_pm_ctrl_enable_state(pm_state_t state);
 
 /**
  * @brief Check if particular power state is enabled
@@ -210,7 +114,7 @@ void sys_pm_ctrl_enable_state(enum power_states state);
  *
  * @param [in] state Power state.
  */
-bool sys_pm_ctrl_is_state_enabled(enum power_states state);
+bool sys_pm_ctrl_is_state_enabled(pm_state_t state);
 
 #endif /* CONFIG_SYS_PM_STATE_LOCK */
 
@@ -285,7 +189,7 @@ void _sys_resume(void);
  * @return Power state which was entered or SYS_POWER_STATE_ACTIVE if SoC was
  *         kept in the active state.
  */
-enum power_states _sys_suspend(int32_t ticks);
+pm_state_t _sys_suspend(int32_t ticks);
 
 /**
  * @brief Do any SoC or architecture specific post ops after sleep state exits.
@@ -295,7 +199,7 @@ enum power_states _sys_suspend(int32_t ticks);
  * interrupts after resuming from sleep state. In future, the enabling
  * of interrupts may be moved into the kernel.
  */
-void _sys_pm_power_state_exit_post_ops(enum power_states state);
+void _sys_pm_power_state_exit_post_ops(pm_state_t state);
 
 /**
  * @brief Application defined function for power state entry
@@ -303,7 +207,7 @@ void _sys_pm_power_state_exit_post_ops(enum power_states state);
  * Application defined function for doing any target specific operations
  * for power state entry.
  */
-void sys_pm_notify_power_state_entry(enum power_states state);
+void sys_pm_notify_power_state_entry(pm_state_t state);
 
 /**
  * @brief Application defined function for sleep state exit
@@ -311,7 +215,7 @@ void sys_pm_notify_power_state_entry(enum power_states state);
  * Application defined function for doing any target specific operations
  * for sleep state exit.
  */
-void sys_pm_notify_power_state_exit(enum power_states state);
+void sys_pm_notify_power_state_exit(pm_state_t state);
 
 /**
  * @}

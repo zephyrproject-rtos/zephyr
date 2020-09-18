@@ -103,7 +103,7 @@ static void sys_power_save_idle(void)
 	 * idle processing re-enables interrupts which is essential for
 	 * the kernel's scheduling logic.
 	 */
-	if (_sys_suspend(ticks) == SYS_POWER_STATE_ACTIVE) {
+	if (_sys_suspend(ticks) == PM_STATE_RUNTIME_ACTIVE) {
 		sys_pm_idle_exit_notify = 0U;
 		k_cpu_idle();
 	}
