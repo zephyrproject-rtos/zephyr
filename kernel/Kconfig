@@ -444,6 +444,16 @@ config NUM_PIPE_ASYNC_MSGS
 	  Setting this option to 0 disables support for asynchronous
 	  pipe messages.
 
+config KERNEL_MEM_POOL
+	bool "Use Kernel Memory Pool"
+	default y
+	help
+	  Enable the use of kernel memory pool.
+
+	  Say y if unsure.
+
+if KERNEL_MEM_POOL
+
 config MEM_POOL_HEAP_BACKEND
 	bool "Use k_heap as the backend for k_mem_pool"
 	default y
@@ -472,6 +482,9 @@ config HEAP_MEM_POOL_MIN_SIZE
 	  This option specifies the size of the smallest block in the pool.
 	  Option must be a power of 2 and lower than or equal to the size
 	  of the entire pool.
+
+endif # KERNEL_MEM_POOL
+
 endmenu
 
 config ARCH_HAS_CUSTOM_SWAP_TO_MAIN
