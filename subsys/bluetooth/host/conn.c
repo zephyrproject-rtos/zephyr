@@ -956,7 +956,7 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 		return;
 	}
 
-	acl_total_len = sys_get_le16(buf->data) + sizeof(struct bt_l2cap_hdr);
+	acl_total_len = sys_get_le16(conn->rx->data) + sizeof(struct bt_l2cap_hdr);
 
 	if (conn->rx->len < acl_total_len) {
 		/* L2CAP frame not complete. */
