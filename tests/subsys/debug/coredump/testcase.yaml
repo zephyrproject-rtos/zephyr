@@ -2,6 +2,7 @@ tests:
   coredump.logging_backend:
     tags: ignore_faults ignore_qemu_crash
     filter: CONFIG_ARCH_SUPPORTS_COREDUMP
+    platform_exclude: mimxrt685_evk_cm33
     harness: console
     harness_config:
       type: multi_line
