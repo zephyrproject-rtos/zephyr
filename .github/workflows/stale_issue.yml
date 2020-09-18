@@ -18,3 +18,4 @@ jobs:
         stale-pr-label: 'Stale'
         exempt-pr-labels: 'DNM,In progress'
         exempt-issue-labels: 'In progress,Enhancement,Feature,Feature Request,RFC,Meta'
+        operations-per-run: 100
