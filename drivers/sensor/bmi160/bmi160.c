@@ -348,7 +348,7 @@ static int bmi160_acc_ofs_set(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	for (i = 0; i < 3; i++, ofs++) {
+	for (i = 0; i < BMI160_AXES; i++, ofs++) {
 		/* convert ofset to micro m/s^2 */
 		ofs_u = ofs->val1 * 1000000ULL + ofs->val2;
 		reg_val = ofs_u / BMI160_ACC_OFS_LSB;
@@ -389,7 +389,7 @@ static int  bmi160_acc_calibrate(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	for (i = 0; i < 3; i++, xyz_calib_value++) {
+	for (i = 0; i < BMI160_AXES; i++, xyz_calib_value++) {
 		int32_t accel_g;
 		uint8_t accel_val;
 
@@ -518,7 +518,7 @@ static int bmi160_gyr_ofs_set(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	for (i = 0; i < 3; i++, ofs++) {
+	for (i = 0; i < BMI160_AXES; i++, ofs++) {
 		/* convert offset to micro rad/s */
 		ofs_u = ofs->val1 * 1000000ULL + ofs->val2;
 

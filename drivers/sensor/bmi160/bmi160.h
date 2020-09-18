@@ -401,11 +401,13 @@ union bmi160_pmu_status {
 	};
 };
 
+#define BMI160_AXES			3
+
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND) && \
 		!defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
-#	define BMI160_SAMPLE_SIZE		(6 * sizeof(uint16_t))
+#	define BMI160_SAMPLE_SIZE	(2 * BMI160_AXES * sizeof(uint16_t))
 #else
-#	define BMI160_SAMPLE_SIZE		(3 * sizeof(uint16_t))
+#	define BMI160_SAMPLE_SIZE	(BMI160_AXES * sizeof(uint16_t))
 #endif
 
 #if defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
@@ -417,15 +419,17 @@ union bmi160_pmu_status {
 #endif
 
 #define BMI160_BUF_SIZE			(BMI160_SAMPLE_SIZE)
+
+/* Each sample has X, Y and Z */
 union bmi160_sample {
 	uint8_t raw[BMI160_BUF_SIZE];
 	struct {
 		uint8_t dummy_byte;
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
-		uint16_t gyr[3];
+		uint16_t gyr[BMI160_AXES];
 #endif
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
-		uint16_t acc[3];
+		uint16_t acc[BMI160_AXES];
 #endif
 	} __packed;
 };
