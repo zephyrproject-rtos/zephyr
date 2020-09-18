@@ -14,6 +14,14 @@ extern "C" {
 #endif
 
 /**
+ * @brief Runtime active state
+ *
+ * During runtime active state, the system is awake and running.
+ * In simple terms, the system is in a full running state.
+ */
+#define PM_STATE_RUNTIME_ACTIVE        BIT(0)
+
+/**
  * @brief Runtime idle state
  *
  * Runtime idle is a system sleep state in which all of the cores
@@ -21,53 +29,53 @@ extern "C" {
  * requirements for the devices, leaving them at the states where
  * they are.
  */
-#define PM_STATE_RUNTIME_IDLE          BIT(0)
+#define PM_STATE_RUNTIME_IDLE          BIT(1)
 
 /**
  * @brief Suspend to idle state
  *
  * The system goes through a normal platform suspend where it puts
- * all of the cores in deepest possible idle state and puts peripherals
- * into low-power states. No operating state is lost (ie. the cpu core
- * does not lose execution context), so the system can go back to where
+ * all of the cores in idle state and may put peripherals into low
+ * power states. No operating state is lost (ie. the cpu core does
+ * not lose execution context), so the system can go back to where
  * it left off easily enough.
  */
-#define PM_STATE_SUSPEND_TO_IDLE       BIT(1)
+#define PM_STATE_SUSPEND_TO_IDLE       BIT(2)
 
 /**
  * @brief Standby state
  *
- * In addition to putting peripherals into low-power states, which is
+ * In addition to putting peripherals into low power state, which is
  * done for suspend to idle too, all non-boot CPUs are powered off.
  * It should allow more energy to be saved relative to suspend to
- * idle, but the resume latency will generally be greater than for that
- * state. But it should be the same state with suspend to idle state on
- * uniprocesser system.
+ * idle, but the resume latency will generally be greater than suspned
+ * to idle state. But it should be the same state with suspend to idle
+ * state on uniprocesser system.
  */
-#define PM_STATE_STANDBY               BIT(2)
+#define PM_STATE_STANDBY               BIT(3)
 
 /**
  * @brief Suspend to ram state
  *
- * This state offers significant energy savings by powering off as much
- * of the system as possible, where memory should be placed into the
- * self-refresh mode to retain its contents. The state of devices and
- * CPUs is saved and held in memory, and it may require some boot-
+ * This state offers significant energy savings by powering off as
+ * much of the system as possible, where memory should be placed into
+ * the self-refresh mode to retain its contents. The state of devices
+ * and CPUs is saved and held in memory, and it may require some boot
  * strapping code in ROM to resume the system from it.
  */
-#define PM_STATE_SUSPEND_TO_RAM        BIT(3)
+#define PM_STATE_SUSPEND_TO_RAM        BIT(4)
 
 /**
  * @brief Suspend to disk state
  *
- * This state offers significant energy savings by powering off as much
- * of the system as possible, including the memory. The contents of
- * memory are written to disk or other non-volatile storage, and on resume
- * it's read back into memory with the help of boot-strapping code,
- * restores the system to the same point of execution where it went to
- * suspend to disk.
+ * This state offers significant energy savings by powering off as
+ * much of the system as possible, including the memory. The contents
+ * of memory are written to disk or other non-volatile storage, and
+ * on resume it's read back into memory with the help of boot strapping
+ * code, restores the system to the same point of execution where it
+ * went to suspend to disk.
  */
-#define PM_STATE_SUSPEND_TO_DISK       BIT(4)
+#define PM_STATE_SUSPEND_TO_DISK       BIT(5)
 
 /**
  * @brief Soft off state
@@ -75,14 +83,19 @@ extern "C" {
  * This state consumes a minimal amount of power and requires a large
  * latency in order to return to runtime active state. The contents of
  * system(CPU and memory) will not be preserved, so the system will be
- * restarted as if from initial power-up and kernel boot. 
+ * restarted as if from initial power up and kernel boot.
  */
-#define PM_STATE_SOFT_OFF              BIT(5)
+#define PM_STATE_SOFT_OFF              BIT(6)
+
+/**
+ * @brief PM state max
+ */
+#define PM_STATE_MAX                   (7)
 
 /**
  * @brief PM state bit mask
  */
-#define PM_STATE_BIT_MASK              BIT_MASK(6)
+#define PM_STATE_BIT_MASK              BIT_MASK(PM_STATE_MAX)
 
 /**
  * @brief Device active state
@@ -120,7 +133,7 @@ typedef uint8_t pm_state_t;
 /**
  * @brief Device power state type definition
  */
-typedef uint8_t device_pm_t;
+typedef uint8_t dev_pm_state_t;
 
 /**
  * @brief Mapping from system power state to device power state
@@ -131,7 +144,7 @@ typedef uint8_t device_pm_t;
  *
  * @return Device power state given system power state.
  */
-static inline device_pm_t pm_state_sys2dev(pm_state_t pm_state)
+static inline dev_pm_state_t pm_state_sys2dev(pm_state_t pm_state)
 {
 	switch (pm_state & PM_STATE_BIT_MASK) {
 		case PM_STATE_RUNTIME_IDLE:

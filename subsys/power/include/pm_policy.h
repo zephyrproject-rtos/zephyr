@@ -22,6 +22,7 @@ extern "C" {
  * @{
  * @}
  */
+
 struct pm_policy;
 
 /**
@@ -35,7 +36,13 @@ struct pm_policy_api {
 	 * status and the power management policy where this
 	 * api resides.
 	 */
-	pm_state_t (*next_state)(struct pm_policy *policy);
+	pm_state_t (*next_state)(struct pm_policy *policy, int ticks);
+
+	/* clear the force state set by set_force_state */
+	int (*clear_force_state)(struct pm_policy *policy);
+
+	/* set the state forcing used by the policy */
+	int (*set_force_state)(struct pm_policy *policy, pm_state_t state);
 
 	/* set constraints for the supported power states so
 	 * that others can impact the pm_policy when make decision.
@@ -53,6 +60,7 @@ struct pm_policy_api {
  * @brief Power management policy structure.
  */
 struct pm_policy {
+	const char *name;
 	pm_state_t supported_states;
 	struct pm_policy_api *policy_api;
 };
@@ -60,11 +68,11 @@ struct pm_policy {
 /**
  * @brief Create pm_policy instance.
  *
- * @param _name Instance name.
  * @param _supported_states Supported states.
+ * @param _name Instance name.
  * @param _api Power management policy API.
  */
-#define PM_POLICY_DEFINE(_name, _supported_states, _api) \
+#define PM_POLICY_DEFINE(_supported_states, _name, _api) \
 	static const Z_STRUCT_SECTION_ITERABLE(pm_policy, _name) = \
 	{ \
 		.name = STRINGIFY(_name), \
@@ -88,17 +96,54 @@ static inline void pm_policy_init(struct pm_policy *policy)
  * @brief Generate system power state based on the given policy.
  *
  * @param policy Pointer to pm_policy instance.
+ * @param ticks The number of ticks system going to idle.
  *
  * @return Power state of system decided by the policy or
  * 	   PM_STATE_RUNTIME_IDLE if not completed structure.
  */
-static inline pm_state_t pm_policy_next_state(struct pm_policy *policy)
+static inline pm_state_t pm_policy_next_state(struct pm_policy *policy,
+					      int ticks)
 {
 	if (policy && policy->policy_api) {
-		return policy->policy_api->next_state(policy);
+		return policy->policy_api->next_state(policy, ticks);
 	}
 
 	return PM_STATE_RUNTIME_IDLE;
+}
+
+/**
+ * @brief Clear the force state for the given policy.
+ *
+ * @param policy Pointer to pm_policy instance.
+ *
+ * @return 0 if successful, -1 if failure.
+ */
+static inline int pm_policy_clear_force_state(struct pm_policy *policy)
+{
+	if (policy && policy->policy_api) {
+		return policy->policy_api->clear_force_state(policy);
+	}
+
+	return -1;
+}
+
+/**
+ * @brief Set the state forcing used by the given policy.
+ *
+ * @param policy Pointer to pm_policy instance.
+ * @param state  Power state forcing used by the given policy.
+ *
+ * @return 0 if successful, -1 if failure.
+ */
+static inline int pm_policy_set_force_state(struct pm_policy *policy,
+					    pm_state_t state)
+{
+	if (policy && policy->policy_api) {
+		return policy->policy_api->set_force_state(policy,
+					state & PM_STATE_BIT_MASK);
+	}
+
+	return -1;
 }
 
 /**
