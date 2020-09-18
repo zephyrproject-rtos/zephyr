@@ -37,7 +37,7 @@ config EEPROM_AT2X
 
 config EEPROM_AT24
 	bool "Atmel AT24 (and compatible) I2C EEPROM support"
-	depends on (I2C && HAS_DTS_I2C)
+	depends on I2C
 	select EEPROM_AT2X
 	help
 	  Enable support for Atmel AT24 (and compatible) I2C EEPROMs.

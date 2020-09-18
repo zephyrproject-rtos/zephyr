@@ -4,7 +4,7 @@
 
 menuconfig KSCAN_FT5336
 	bool "FT5XX6/FT6XX6 capacitive touch panel driver"
-	depends on I2C && HAS_DTS_I2C
+	depends on I2C
 	help
 	  Enable driver for multiple Focaltech capacitive touch panel
 	  controllers. This driver should support FT5x06, FT5606, FT5x16,

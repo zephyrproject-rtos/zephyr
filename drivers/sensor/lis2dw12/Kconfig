@@ -5,7 +5,7 @@
 
 menuconfig LIS2DW12
 	bool "LIS2DW12 I2C/SPI accelerometer sensor driver"
-	depends on (I2C && HAS_DTS_I2C) || SPI
+	depends on I2C || SPI
 	select HAS_STMEMSC
 	select USE_STDC_LIS2DW12
 	help
