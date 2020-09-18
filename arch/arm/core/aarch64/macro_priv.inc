@@ -9,24 +9,22 @@
 
 #ifdef _ASMLANGUAGE
 
-/**
- * @brief Save volatile registers
+/*
+ * Save volatile registers, x30, SPSR_EL1 and ELR_EL1
  *
  * Save the volatile registers and x30 on the process stack. This is
  * needed if the thread is switched out because they can be clobbered by the
  * ISR and/or context switch.
- *
- * @return N/A
  */
 
 .macro z_arm64_enter_exc xreg0, xreg1
 	/*
-	 * Two things can happen:
+	 * Two things can happen to the remaining registers:
 	 *
 	 * - No context-switch: in this case x19-x28 are callee-saved register
 	 *   so we can be sure they are not going to be clobbered by ISR.
 	 * - Context-switch: the callee-saved registers are saved by
-	 *   z_arm64_pendsv() in the kernel structure.
+	 *   z_arm64_context_switch() in the kernel structure.
 	 */
 	stp	x0, x1, [sp, #-16]!
 	stp	x2, x3, [sp, #-16]!
@@ -39,45 +37,22 @@
 	stp     x16, x17, [sp, #-16]!
 	stp     x18, x30, [sp, #-16]!
 
-	/*
-	 * Store SPSR_ELn and ELR_ELn. This is needed to support nested
-	 * exception handlers
-	 */
 	mrs	\xreg0, spsr_el1
 	mrs	\xreg1, elr_el1
 	stp	\xreg0, \xreg1, [sp, #-16]!
 .endm
 
-/**
- * @brief Restore volatile registers and x30
+/*
+ * Restore volatile registers, x30, SPSR_EL1 and ELR_EL1
  *
- * This is the common exit point for z_arm64_pendsv() and _isr_wrapper(). We
- * restore the registers saved on the process stack including X30. The return
- * address used by eret (in ELR_ELn) is either restored by z_arm64_pendsv() if
- * a context-switch happened or not touched at all by the ISR if there was no
- * context-switch.
- *
- * @return N/A
+ * This is the common exit point for z_arm64_svc() and _isr_wrapper().
  */
 
 .macro z_arm64_exit_exc xreg0, xreg1
-	/*
-	 * Restore SPSR_ELn and ELR_ELn. This is needed to support nested
-	 * exception handlers
-	 */
 	ldp	\xreg0, \xreg1, [sp], #16
 	msr	spsr_el1, \xreg0
 	msr	elr_el1, \xreg1
 
-	/*
-	 * In x30 we can have:
-	 *
-	 * - The address of irq_unlock() in swap.c when swapping in a thread
-	 *   that was cooperatively swapped out (used by ret in
-	 *   z_arm64_call_svc())
-	 * - A previos generic value if the thread that we are swapping in was
-	 *   swapped out preemptively by the ISR.
-	 */
 	ldp	x18, x30, [sp], #16
 	ldp	x16, x17, [sp], #16
 	ldp	x14, x15, [sp], #16
@@ -90,10 +65,9 @@
 	ldp	x0, x1, [sp], #16
 
 	/*
-	 * In general in the  ELR_ELn register we can find:
+	 * In general in the ELR_EL1 register we can find:
 	 *
-	 * - The address of ret in z_arm64_call_svc() in case of arch_swap()
-	 *   (see swap.c)
+	 * - The address of ret in z_arm64_call_svc()
 	 * - The address of the next instruction at the time of the IRQ when the
 	 *   thread was switched out.
 	 * - The address of z_thread_entry() for new threads (see thread.c).
@@ -101,10 +75,8 @@
 	eret
 .endm
 
-/**
- * @brief Increment nested counter
- *
- * @return N/A
+/*
+ * Increment nested counter
  */
 
 .macro inc_nest_counter xreg0, xreg1
@@ -114,10 +86,8 @@
 	str	\xreg1, [\xreg0, #_kernel_offset_to_nested]
 .endm
 
-/**
- * @brief Decrement nested counter
- *
- * @return N/A
+/*
+ * Decrement nested counter
  */
 
 .macro dec_nest_counter xreg0, xreg1
