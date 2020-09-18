@@ -22,6 +22,9 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #include "net_private.h"
 #include "tcp2_priv.h"
 
+#define FIN_TIMEOUT_MS MSEC_PER_SEC
+#define FIN_TIMEOUT K_MSEC(FIN_TIMEOUT_MS)
+
 static int tcp_rto = CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT;
 static int tcp_retries = CONFIG_NET_TCP_RETRY_COUNT;
 static int tcp_window = NET_IPV6_MTU;
@@ -335,6 +338,7 @@ static int tcp_conn_unref(struct tcp *conn)
 	tcp_pkt_unref(conn->send_data);
 
 	k_delayed_work_cancel(&conn->timewait_timer);
+	k_delayed_work_cancel(&conn->fin_timer);
 
 	sys_slist_find_and_remove(&tcp_conns, &conn->next);
 
@@ -420,8 +424,10 @@ static void tcp_send_timer_cancel(struct tcp *conn)
 	{
 		struct net_pkt *pkt = tcp_slist(&conn->send_queue, get,
 						struct net_pkt, next);
-		NET_DBG("%s", log_strdup(tcp_th(pkt)));
-		tcp_pkt_unref(pkt);
+		if (pkt) {
+			NET_DBG("%s", log_strdup(tcp_th(pkt)));
+			tcp_pkt_unref(pkt);
+		}
 	}
 
 	if (sys_slist_is_empty(&conn->send_queue)) {
@@ -875,6 +881,23 @@ static void tcp_resend_data(struct k_work *work)
 	ret = tcp_send_data(conn);
 	if (ret == 0) {
 		conn->send_data_retries++;
+
+		if (conn->in_close && conn->send_data_total == 0) {
+			NET_DBG("TCP connection in active close, "
+				"not disposing yet (waiting %dms)",
+				FIN_TIMEOUT_MS);
+			k_delayed_work_submit(&conn->fin_timer, FIN_TIMEOUT);
+
+			conn_state(conn, TCP_FIN_WAIT_1);
+
+			ret = tcp_out_ext(conn, FIN | ACK, NULL,
+				    conn->seq + conn->unacked_len);
+			if (ret == 0) {
+				conn_seq(conn, + 1);
+			}
+
+			goto out;
+		}
 	}
 
 	k_delayed_work_submit(&conn->send_data_timer, K_MSEC(tcp_rto));
@@ -891,7 +914,19 @@ static void tcp_timewait_timeout(struct k_work *work)
 
 	NET_DBG("conn: %p %s", conn, log_strdup(tcp_conn_state(conn, NULL)));
 
-	tcp_conn_unref(conn);
+	/* Extra unref from net_tcp_put() */
+	net_context_unref(conn->context);
+}
+
+static void tcp_fin_timeout(struct k_work *work)
+{
+	struct tcp *conn = CONTAINER_OF(work, struct tcp, fin_timer);
+
+	NET_DBG("Did not receive FIN in %dms", FIN_TIMEOUT_MS);
+	NET_DBG("conn: %p %s", conn, log_strdup(tcp_conn_state(conn, NULL)));
+
+	/* Extra unref from net_tcp_put() */
+	net_context_unref(conn->context);
 }
 
 static void tcp_conn_ref(struct tcp *conn)
@@ -927,6 +962,7 @@ static struct tcp *tcp_conn_alloc(void)
 	k_delayed_work_init(&conn->send_timer, tcp_send_process);
 
 	k_delayed_work_init(&conn->timewait_timer, tcp_timewait_timeout);
+	k_delayed_work_init(&conn->fin_timer, tcp_fin_timeout);
 
 	conn->send_data = tcp_pkt_alloc(conn, 0);
 	k_delayed_work_init(&conn->send_data_timer, tcp_resend_data);
@@ -1299,6 +1335,16 @@ next_state:
 			}
 			conn->data_mode = TCP_DATA_MODE_SEND;
 
+			/* We are closing the connection, send a FIN to peer */
+			if (conn->in_close && conn->send_data_total == 0) {
+				tcp_send_timer_cancel(conn);
+				next = TCP_FIN_WAIT_1;
+
+				tcp_out(conn, FIN | ACK);
+				conn_seq(conn, + 1);
+				break;
+			}
+
 			ret = tcp_send_queued_data(conn);
 			if (ret < 0 && ret != -ENOBUFS) {
 				tcp_out(conn, RST);
@@ -1349,7 +1395,11 @@ next_state:
 		}
 		break;
 	case TCP_FIN_WAIT_2:
-		if (th && FL(&fl, ==, FIN, th_seq(th) == conn->ack)) {
+		if (th && (FL(&fl, ==, FIN, th_seq(th) == conn->ack) ||
+			   FL(&fl, ==, FIN | ACK, th_seq(th) == conn->ack))) {
+			/* Received FIN on FIN_WAIT_2, so cancel the timer */
+			k_delayed_work_cancel(&conn->fin_timer);
+
 			conn_ack(conn, + 1);
 			tcp_out(conn, ACK);
 			next = TCP_TIME_WAIT;
@@ -1386,21 +1436,47 @@ int net_tcp_put(struct net_context *context)
 {
 	struct tcp *conn = context->tcp;
 
+	k_mutex_lock(&conn->lock, K_FOREVER);
+
 	NET_DBG("%s", conn ? log_strdup(tcp_conn_state(conn, NULL)) : "");
 	NET_DBG("context %p %s", context,
 		log_strdup(({ const char *state = net_context_state(context);
 					state ? state : "<unknown>"; })));
 
 	if (conn && conn->state == TCP_ESTABLISHED) {
-		k_mutex_lock(&conn->lock, K_FOREVER);
+		/* Send all remaining data if possible. */
+		if (conn->send_data_total > 0) {
+			NET_DBG("conn %p pending %u bytes", conn,
+				conn->send_data_total);
+			conn->in_close = true;
 
-		tcp_out_ext(conn, FIN | ACK, NULL,
-			    conn->seq + conn->unacked_len);
-		conn_seq(conn, + 1);
-		conn_state(conn, TCP_FIN_WAIT_1);
+			/* How long to wait until all the data has been sent?
+			 */
+			k_delayed_work_submit(&conn->send_data_timer,
+					      K_MSEC(tcp_rto));
+		} else {
+			int ret;
 
-		k_mutex_unlock(&conn->lock);
+			NET_DBG("TCP connection in active close, not "
+				"disposing yet (waiting %dms)", FIN_TIMEOUT_MS);
+			k_delayed_work_submit(&conn->fin_timer, FIN_TIMEOUT);
+
+			ret = tcp_out_ext(conn, FIN | ACK, NULL,
+				    conn->seq + conn->unacked_len);
+			if (ret == 0) {
+				conn_seq(conn, + 1);
+			}
+
+			conn_state(conn, TCP_FIN_WAIT_1);
+		}
+
+		/* Make sure we do not delete the connection yet until we have
+		 * sent the final ACK.
+		 */
+		net_context_ref(context);
 	}
+
+	k_mutex_unlock(&conn->lock);
 
 	net_context_unref(context);
 

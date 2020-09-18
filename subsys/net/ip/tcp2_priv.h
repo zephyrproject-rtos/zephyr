@@ -190,6 +190,7 @@ struct tcp { /* TCP connection */
 	struct k_delayed_work send_timer;
 	struct k_delayed_work send_data_timer;
 	struct k_delayed_work timewait_timer;
+	struct k_delayed_work fin_timer;
 	union tcp_endpoint src;
 	union tcp_endpoint dst;
 	size_t send_data_total;
@@ -205,6 +206,7 @@ struct tcp { /* TCP connection */
 	uint8_t send_data_retries;
 	bool in_retransmission : 1;
 	bool in_connect : 1;
+	bool in_close : 1;
 };
 
 #define _flags(_fl, _op, _mask, _cond)					\
