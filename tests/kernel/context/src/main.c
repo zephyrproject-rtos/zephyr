@@ -247,6 +247,12 @@ static void _test_kernel_cpu_idle(int atomic)
 	int tms, tms2;
 	int i;
 
+	/* Align to ticks so the first iteration sleeps long enough
+	 * (k_timer_start() rounds its duration argument down, not up,
+	 * to a tick boundary)
+	 */
+	 k_usleep(1);
+
 	/* Set up a time to trigger events to exit idle mode */
 	k_timer_init(&idle_timer, idle_timer_expiry_function, NULL);
 
