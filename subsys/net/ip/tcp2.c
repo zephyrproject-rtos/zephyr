@@ -1436,6 +1436,10 @@ int net_tcp_put(struct net_context *context)
 {
 	struct tcp *conn = context->tcp;
 
+	if (!conn) {
+		return -ENOENT;
+	}
+
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
 	NET_DBG("%s", conn ? log_strdup(tcp_conn_state(conn, NULL)) : "");
