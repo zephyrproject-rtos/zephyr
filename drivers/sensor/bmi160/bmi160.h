@@ -408,6 +408,14 @@ union bmi160_pmu_status {
 #	define BMI160_SAMPLE_SIZE		(3 * sizeof(uint16_t))
 #endif
 
+#if defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
+#	define BMI160_SAMPLE_BURST_READ_ADDR	BMI160_REG_DATA_ACC_X
+#	define BMI160_DATA_READY_BIT_MASK	(1 << 7)
+#else
+#	define BMI160_SAMPLE_BURST_READ_ADDR	BMI160_REG_DATA_GYR_X
+#	define BMI160_DATA_READY_BIT_MASK	(1 << 6)
+#endif
+
 #define BMI160_BUF_SIZE			(BMI160_SAMPLE_SIZE)
 union bmi160_sample {
 	uint8_t raw[BMI160_BUF_SIZE];

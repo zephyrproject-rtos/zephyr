@@ -631,13 +631,6 @@ static int bmi160_attr_set(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-#if defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
-#	define BMI160_SAMPLE_BURST_READ_ADDR	BMI160_REG_DATA_ACC_X
-#	define BMI160_DATA_READY_BIT_MASK	(1 << 7)
-#else
-#	define BMI160_SAMPLE_BURST_READ_ADDR	BMI160_REG_DATA_GYR_X
-#	define BMI160_DATA_READY_BIT_MASK	(1 << 6)
-#endif
 static int bmi160_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan)
 {
