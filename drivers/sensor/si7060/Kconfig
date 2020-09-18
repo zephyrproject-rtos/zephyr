@@ -5,6 +5,6 @@
 
 config SI7060
 	bool "SI7060 Temperature Sensor"
-	depends on (I2C && HAS_DTS_I2C)
+	depends on I2C
 	help
 	  Enable driver for SI7060 temperature sensors.

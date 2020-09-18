@@ -3,6 +3,6 @@
 
 config SI7006
 	bool "Si7006 Temperature and Humidity Sensor"
-	depends on (I2C && HAS_DTS_I2C)
+	depends on I2C
 	help
 	  Enable I2C-based driver for Si7006 Temperature and Humidity Sensor.

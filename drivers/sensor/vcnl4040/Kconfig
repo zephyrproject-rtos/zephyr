@@ -5,7 +5,7 @@
 
 menuconfig VCNL4040
 	bool "VCNL4040 Proximity and Ambient Light Sensor"
-	depends on I2C && HAS_DTS_I2C && HAS_DTS_GPIO
+	depends on I2C && HAS_DTS_GPIO
 	help
 	  Enable driver for VCNL4040 sensors.
 

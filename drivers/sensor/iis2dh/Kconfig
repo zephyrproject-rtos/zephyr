@@ -5,7 +5,7 @@
 
 menuconfig IIS2DH
 	bool "IIS2DH I2C/SPI accelerometer sensor driver"
-	depends on (I2C && HAS_DTS_I2C) || SPI
+	depends on I2C || SPI
 	select HAS_STMEMSC
 	select USE_STDC_IIS2DH
 	help
