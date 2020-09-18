@@ -26,7 +26,7 @@ GDATA(_kernel)
  * Routine to handle context switches
  *
  * This function is directly called either by _isr_wrapper() in case of
- * preemption, or z_arm64_svc() in case of cooperative switching.
+ * preemption, or z_arm64_sync_exc() in case of cooperative switching.
  */
 
 GTEXT(z_arm64_context_switch)
@@ -81,7 +81,7 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	ldp	xzr, x30, [sp], #16
 #endif
 
-	/* Return to z_arm64_svc() or _isr_wrapper() */
+	/* Return to z_arm64_sync_exc() or _isr_wrapper() */
 	ret
 
 /*
@@ -92,8 +92,8 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
  * - IRQ offloading
  */
 
-GTEXT(z_arm64_svc)
-SECTION_FUNC(TEXT, z_arm64_svc)
+GTEXT(z_arm64_sync_exc)
+SECTION_FUNC(TEXT, z_arm64_sync_exc)
 	z_arm64_enter_exc x2, x3
 
 	mrs	x0, esr_el1

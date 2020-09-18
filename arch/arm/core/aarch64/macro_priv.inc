@@ -45,7 +45,7 @@
 /*
  * Restore volatile registers, x30, SPSR_EL1 and ELR_EL1
  *
- * This is the common exit point for z_arm64_svc() and _isr_wrapper().
+ * This is the common exit point for z_arm64_sync_exc() and _isr_wrapper().
  */
 
 .macro z_arm64_exit_exc xreg0, xreg1
