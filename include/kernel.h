@@ -2024,9 +2024,9 @@ static inline void z_impl_k_timer_user_data_set(struct k_timer *timer,
  *
  * @return The user data.
  */
-__syscall void *k_timer_user_data_get(struct k_timer *timer);
+__syscall void *k_timer_user_data_get(const struct k_timer *timer);
 
-static inline void *z_impl_k_timer_user_data_get(struct k_timer *timer)
+static inline void *z_impl_k_timer_user_data_get(const struct k_timer *timer)
 {
 	return timer->user_data;
 }
