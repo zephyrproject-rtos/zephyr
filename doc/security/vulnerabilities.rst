@@ -445,6 +445,35 @@ This has been fixed in master for v2.3.
 
 - `NCC-ZEP report`_ (NCC-ZEP-032)
 
+CVE-2020-10064
+--------------
+
+Improper Input Frame Validation in ieee802154 Processing
+
+- `CVE-2020-10064 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10064>`_
+
+- `Zephyr project bug tracker ZEPSEC-65
+  <https://zephyrprojectsec.atlasssian.net/browse/ZEPSEC-65>`_
+
+- `PR24971 fix for v2.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/24971>`_
+
+CVE-2020-10066
+--------------
+
+Incorrect Error Handling in Bluetooth HCI core
+
+In hci_cmd_done, the buf argument being passed as null causes
+nullpointer dereference.
+
+- `CVE-2020-10066 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10066>`_
+
+- `Zephyr project bug tracker ZEPSEC-67
+  <https://zephyrprojectsec.atlasssian.net/browse/ZEPSEC-67>`_
+
+- `PR24902 fix for v2.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/24902>`_
+
 CVE-2020-10067
 --------------
 
@@ -575,3 +604,77 @@ This has been fixed in master for v2.3.
   <https://github.com/zephyrproject-rtos/zephyr/pull/23821/commits/989c4713ba429aa5105fe476b4d629718f3e6082>`_
 
 - `NCC-ZEP report`_ (NCC-ZEP-031)
+
+CVE-2020-10072
+--------------
+
+All threads can access all socket file descriptors
+
+There is no management of permissions to network socket API file
+descriptors. Any thread running on the system may read/write a socket
+file descriptor knowing only the numerical value of the file
+descriptor.
+
+- `CVE-2020-10072 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10072>`_
+
+- `Zephyr project bug tracker ZEPSEC-87
+  <https://zephyrprojectsec.atlasssian.net/browse/ZEPSEC-87>`_
+
+- `PR25804 fix for v2.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/25804>`_
+
+
+CVE-2020-13598
+--------------
+
+FS: Buffer Overflow when enabling Long File Names in FAT_FS and calling fs_stat
+
+Performing fs_stat on a file with a filename longer than 12
+characters long will cause a buffer overflow.
+
+- `CVE-2020-13598 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-13598>`_
+
+- `Zephyr project bug tracker ZEPSEC-88
+  <https://zephyrprojectsec.atlasssian.net/browse/ZEPSEC-88>`_
+
+- `PR25852 fix for v2.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/25852>`_
+
+CVE-2020-13599
+--------------
+
+Security problem with settings and littlefs
+
+When settings is used in combination with littlefs all security
+related information can be extracted from the device using MCUmgr and
+this could be used e.g in bt-mesh to get the device key, network key,
+app keys from the device.
+
+- `CVE-2020-13599 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-13599>`_
+
+- `Zephyr project bug tracker ZEPSEC-57
+  <https://zephyrprojectsec.atlasssian.net/browse/ZEPSEC-57>`_
+
+- `PR26083 fix for v2.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/26083>`_
+
+CVE-2020-13601
+--------------
+
+Under embargo until 2020/11/18
+
+CVE-2020-13602
+--------------
+
+Remote Denial of Service in LwM2M do_write_op_tlv
+
+In the Zephyr LwM2M implementation, malformed input can result in an
+infinite loop, resulting in a denial of service attack.
+
+- `CVE-2020-13602 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-13602>`_
+
+- `Zephyr project bug tracker ZEPSEC-56
+  <https://zephyrprojectsec.atlasssian.net/browse/ZEPSEC-56>`_
+
+- `PR26571 fix for v2.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/26571>`_
