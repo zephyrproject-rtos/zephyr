@@ -30,14 +30,6 @@ config CLOCK_STM32_PLL_P_DIVISOR
 	help
 	  PLL P VCO divisor, allowed values: 2-32.
 
-config CLOCK_STM32_PLL_Q_DIVISOR
-	int "PLL Q Divisor"
-	depends on CLOCK_STM32_SYSCLK_SRC_PLL
-	default 2
-	range 2 8
-	help
-	  PLL Q VCO divisor, allowed values: 2-8.
-
 config CLOCK_STM32_PLL_R_DIVISOR
 	int "PLL R Divisor"
 	depends on CLOCK_STM32_SYSCLK_SRC_PLL
