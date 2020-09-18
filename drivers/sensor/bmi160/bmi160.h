@@ -96,6 +96,15 @@
 #define BMI160_REG_STEP_CONF1		0x7B
 #define BMI160_REG_CMD			0x7E
 
+/* This is not a real register; reading it activates SPI on the BMI160 */
+#define BMI160_SPI_START		0x7F
+
+#define BMI160_REG_COUNT		0x80
+
+/* Indicates a read operation; bit 7 is clear on write s*/
+#define BMI160_REG_READ			BIT(7)
+#define BMI160_REG_MASK			0x7f
+
 /* bitfields */
 
 /* BMI160_REG_ERR */
