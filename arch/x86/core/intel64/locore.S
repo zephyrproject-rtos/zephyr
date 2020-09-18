@@ -190,9 +190,14 @@ __start32:
 	 * has left a pointer to it in EBX.
 	 */
 
-	movl $x86_cpuboot, %ebp		/* BSP is always logical CPU id 0 */
-	movl %ebx, __x86_cpuboot_t_arg_OFFSET(%ebp)	/* multiboot info */
+	movl $x86_cpu_boot_arg, %ebp
 
+	/* Inserting boot type */
+	movl $MULTIBOOT_BOOT_TYPE, __x86_boot_arg_t_boot_type_OFFSET(%ebp)
+	/* and multiboot info */
+	movl %ebx, __x86_boot_arg_t_arg_OFFSET(%ebp)
+
+	movl $x86_cpuboot, %ebp         /* BSP is always logical CPU id 0 */
 
 go64:	/* Install page tables and transition to long mode */
 	install_pagetables_32

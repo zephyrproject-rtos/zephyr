@@ -62,6 +62,9 @@ struct multiboot_mmap {
 
 #endif /* _ASMLANGUAGE */
 
+/* Boot type value (see prep_c.c) */
+#define MULTIBOOT_BOOT_TYPE 1
+
 /*
  * Possible values for multiboot_mmap.type field.
  * Other values should be assumed to be unusable ranges.

@@ -60,6 +60,7 @@ SECTIONS
 	z_shared_kernel_page_start = .;
 #endif /* CONFIG_X86_KPTI */
 
+        *(.boot_arg)
 	*(.tss)
 	*(.gdt)
 

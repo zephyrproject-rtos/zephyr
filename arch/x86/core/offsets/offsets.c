@@ -14,6 +14,9 @@
 #include "ia32_offsets.c"
 #endif
 
+GEN_OFFSET_SYM(x86_boot_arg_t, boot_type);
+GEN_OFFSET_SYM(x86_boot_arg_t, arg);
+
 GEN_OFFSET_SYM(_thread_arch_t, flags);
 
 GEN_ABS_SYM_END
