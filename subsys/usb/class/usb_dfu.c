@@ -123,7 +123,9 @@ struct dev_dfu_mode_descriptor {
 	struct usb_cfg_descriptor cfg_descr;
 	struct usb_sec_dfu_config {
 		struct usb_if_descriptor if0;
+#if FLASH_AREA_LABEL_EXISTS(image_1)
 		struct usb_if_descriptor if1;
+#endif
 		struct dfu_runtime_descriptor dfu_descr;
 	} __packed sec_dfu_cfg;
 } __packed;
@@ -172,6 +174,7 @@ struct dev_dfu_mode_descriptor dfu_mode_desc = {
 			.bInterfaceProtocol = DFU_MODE_PROTOCOL,
 			.iInterface = 4,
 		},
+#if FLASH_AREA_LABEL_EXISTS(image_1)
 		.if1 = {
 			.bLength = sizeof(struct usb_if_descriptor),
 			.bDescriptorType = USB_INTERFACE_DESC,
@@ -183,6 +186,7 @@ struct dev_dfu_mode_descriptor dfu_mode_desc = {
 			.bInterfaceProtocol = DFU_MODE_PROTOCOL,
 			.iInterface = 5,
 		},
+#endif
 		.dfu_descr = {
 			.bLength = sizeof(struct dfu_runtime_descriptor),
 			.bDescriptorType = DFU_FUNC_DESC,
@@ -226,11 +230,13 @@ struct usb_string_desription {
 		uint8_t bString[USB_BSTRING_LENGTH(FIRMWARE_IMAGE_0_LABEL)];
 	} __packed utf16le_image0;
 
+#if FLASH_AREA_LABEL_EXISTS(image_1)
 	struct image_1_descriptor {
 		uint8_t bLength;
 		uint8_t bDescriptorType;
 		uint8_t bString[USB_BSTRING_LENGTH(FIRMWARE_IMAGE_1_LABEL)];
 	} __packed utf16le_image1;
+#endif
 } __packed;
 
 USBD_STRING_DESCR_DEFINE(secondary)
@@ -267,6 +273,7 @@ struct usb_string_desription string_descr = {
 		.bDescriptorType = USB_STRING_DESC,
 		.bString = FIRMWARE_IMAGE_0_LABEL,
 	},
+#if FLASH_AREA_LABEL_EXISTS(image_1)
 	/* Image 1 String Descriptor */
 	.utf16le_image1 = {
 		.bLength = USB_STRING_DESCRIPTOR_LENGTH(
@@ -274,6 +281,7 @@ struct usb_string_desription string_descr = {
 		.bDescriptorType = USB_STRING_DESC,
 		.bString = FIRMWARE_IMAGE_1_LABEL,
 	},
+#endif
 };
 
 /* This element marks the end of the entire descriptor. */
@@ -298,10 +306,17 @@ struct dfu_data_t {
 	uint16_t bwPollTimeout;
 };
 
+#if FLASH_AREA_LABEL_EXISTS(image_1)
+	#define UPLOAD_FLASH_AREA_ID FLASH_AREA_ID(image_1)
+#else
+	#define UPLOAD_FLASH_AREA_ID FLASH_AREA_ID(image_0)
+#endif
+
+
 static struct dfu_data_t dfu_data = {
 	.state = appIDLE,
 	.status = statusOK,
-	.flash_area_id = FLASH_AREA_ID(image_1),
+	.flash_area_id = UPLOAD_FLASH_AREA_ID,
 	.alt_setting = 0,
 	.bwPollTimeout = CONFIG_USB_DFU_DEFAULT_POLLTIMEOUT,
 };
@@ -447,7 +462,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 			k_poll_signal_reset(&dfu_signal);
 
 			if (dfu_data.flash_area_id !=
-			    FLASH_AREA_ID(image_1)) {
+			    UPLOAD_FLASH_AREA_ID) {
 				dfu_data.status = errWRITE;
 				dfu_data.state = dfuERROR;
 				LOG_ERR("This area can not be overwritten");
@@ -670,10 +685,12 @@ static int dfu_custom_handle_req(struct usb_setup_packet *pSetup,
 				dfu_data.flash_area_id =
 				    FLASH_AREA_ID(image_0);
 				break;
+#if FLASH_AREA_LABEL_EXISTS(image_1)
 			case 1:
 				dfu_data.flash_area_id =
-				    FLASH_AREA_ID(image_1);
+				    UPLOAD_FLASH_AREA_ID;
 				break;
+#endif
 			default:
 				LOG_WRN("Invalid DFU alternate setting");
 				return -ENOTSUP;
@@ -744,7 +761,7 @@ static void dfu_work_handler(struct k_work *item)
  * image collection, so not erase whole bank at DFU beginning
  */
 #ifndef CONFIG_IMG_ERASE_PROGRESSIVELY
-		if (boot_erase_img_bank(FLASH_AREA_ID(image_1))) {
+		if (boot_erase_img_bank(UPLOAD_FLASH_AREA_ID)) {
 			dfu_data.state = dfuERROR;
 			dfu_data.status = errERASE;
 			break;
