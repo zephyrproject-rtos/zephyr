@@ -1434,6 +1434,13 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
 	if (tcp_window_full(conn)) {
+		/* Trigger resend if the timer is not active */
+		if (!k_delayed_work_remaining_get(&conn->send_data_timer)) {
+			NET_DBG("Window full, trigger resend");
+			tcp_resend_data(
+				   (struct k_work *)&conn->send_data_timer);
+		}
+
 		ret = -EAGAIN;
 		goto out;
 	}
