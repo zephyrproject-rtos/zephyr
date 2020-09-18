@@ -245,6 +245,17 @@ int flash_area_has_driver(const struct flash_area *fa);
  */
 const struct device *flash_area_get_device(const struct flash_area *fa);
 
+/**
+ * Get the value expected to be read when accessing any erased
+ * flash byte.
+ * This API is compatible with the MCUBoot's porting layer.
+ *
+ * @param fa Flash area.
+ *
+ * @return Byte value of erase memory.
+ */
+uint8_t flash_area_erased_val(const struct flash_area *fa);
+
 #define FLASH_AREA_LABEL_EXISTS(label) \
 	DT_HAS_FIXED_PARTITION_LABEL(label)
 

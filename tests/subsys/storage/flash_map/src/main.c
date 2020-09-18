@@ -158,9 +158,28 @@ void test_flash_area_check_int_sha256(void)
 	flash_area_close(fa);
 }
 
+void test_flash_area_erased_val(void)
+{
+	const struct flash_parameters *param;
+	const struct flash_area *fa;
+	uint8_t val;
+	int rc;
+
+	rc = flash_area_open(FLASH_AREA_ID(image_1), &fa);
+	zassert_true(rc == 0, "flash_area_open() fail");
+
+	val = flash_area_erased_val(fa);
+
+	param = flash_get_parameters(device_get_binding(fa->fa_dev_name));
+
+	zassert_equal(param->erase_value, val,
+		      "value different than the flash erase value");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_flash_map,
+			 ztest_unit_test(test_flash_area_erased_val),
 			 ztest_unit_test(test_flash_area_get_sectors),
 			 ztest_unit_test(test_flash_area_check_int_sha256)
 			);

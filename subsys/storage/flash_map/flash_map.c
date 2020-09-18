@@ -270,6 +270,15 @@ const struct device *flash_area_get_device(const struct flash_area *fa)
 	return device_get_binding(fa->fa_dev_name);
 }
 
+uint8_t flash_area_erased_val(const struct flash_area *fa)
+{
+	const struct flash_parameters *param;
+
+	param = flash_get_parameters(device_get_binding(fa->fa_dev_name));
+
+	return param->erase_value;
+}
+
 #if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY)
 int flash_area_check_int_sha256(const struct flash_area *fa,
 				const struct flash_area_check *fac)
