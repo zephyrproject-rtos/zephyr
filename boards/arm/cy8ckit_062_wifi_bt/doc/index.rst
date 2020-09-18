@@ -1,7 +1,7 @@
 .. _cy8ckit_062_wifi_bt:
 
-PSoC6 WiFi-BT Pioneer Kit (CM0+ Core)
-#####################################
+PSoC6 WiFi-BT Pioneer Kit
+#########################
 
 Overview
 ********
@@ -125,6 +125,13 @@ communication over USB. There are also PSoC 6 program and debug headers J11
 and J12 that can be used with Segger J-Link.
 A watchdog timer is enabled by default. To disable it call Cy_WDT_Unlock() and
 Cy_WDT_Disable().
+
+Only the CM0+ core starts by default after the MCU reset.  In order to have
+CM4 core working FW for both cores should be written into Flash.  CM0+ FW
+should starts the CM4 core at one point using
+Cy_SysEnableCM4(CM4_START_ADDRESS); call.  CM4_START_ADDRESS is 0x10060000 in
+the current configuration. The CM0+/CM4 Flash/SRAM areas are defined in
+:zephyr_file:`dts/arm/cypress/psoc6.dtsi`.
 
 Build the project for CM0+
 
