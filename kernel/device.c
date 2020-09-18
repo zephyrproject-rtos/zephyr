@@ -9,6 +9,9 @@
 #include <sys/atomic.h>
 #include <syscall_handler.h>
 
+#include <logging/log.h>
+LOG_MODULE_REGISTER(device, CONFIG_KERNEL_LOG_LEVEL);
+
 extern const struct init_entry __init_start[];
 extern const struct init_entry __init_PRE_KERNEL_1_start[];
 extern const struct init_entry __init_PRE_KERNEL_2_start[];
@@ -86,15 +89,19 @@ const struct device *z_impl_device_get_binding(const char *name)
 	 */
 	for (dev = __device_start; dev != __device_end; dev++) {
 		if (z_device_ready(dev) && (dev->name == name)) {
+			LOG_DBG("%s found", name);
 			return dev;
 		}
 	}
 
 	for (dev = __device_start; dev != __device_end; dev++) {
+		LOG_DBG("   - %s, ready=%d", dev->name, z_device_ready(dev));
 		if (z_device_ready(dev) && (strcmp(name, dev->name) == 0)) {
+			LOG_DBG("%s found", name);
 			return dev;
 		}
 	}
+	LOG_DBG("%s not found", name);
 
 	return NULL;
 }
