@@ -11,6 +11,9 @@ choice
 config SOC_STM32G031XX
 	bool "STM32G031XX"
 
+config SOC_STM32G070XX
+	bool "STM32G070XX"
+
 config SOC_STM32G071XX
 	bool "STM32G071XX"
 
