@@ -145,6 +145,7 @@
 /doc/reference/devicetree/                @galak @mbolivar-nordic
 /doc/reference/resource_management/       @pabigot
 /doc/reference/networking/can*            @alexanderwachter
+/doc/security/                            @ceolin @d3zd3z
 /drivers/debug/                           @nashif
 /drivers/*/*cc13xx_cc26xx*                @bwitherspoon
 /drivers/*/*mcux*                         @MaureenHelm
