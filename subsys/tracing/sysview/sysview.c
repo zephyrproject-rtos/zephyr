@@ -12,6 +12,12 @@
 #include <Global.h>
 #include "SEGGER_SYSVIEW_Zephyr.h"
 
+#if CONFIG_THREAD_MAX_NAME_LEN
+#define THREAD_NAME_LEN CONFIG_THREAD_MAX_NAME_LEN
+#else
+#define THREAD_NAME_LEN 20
+#endif
+
 static uint32_t interrupt;
 
 uint32_t sysview_get_timestamp(void)
@@ -100,22 +106,29 @@ void sys_trace_mutex_unlock(struct k_mutex *mutex)
 }
 
 
+
 static void send_task_list_cb(void)
 {
 	struct k_thread *thread;
 
 	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
-		char name[20];
+		char name[THREAD_NAME_LEN];
 		const char *tname = k_thread_name_get(thread);
 
 		if (z_is_idle_thread_object(thread)) {
 			continue;
 		}
 
-		snprintk(name, sizeof(name), "T%pE%p", thread, &thread->entry);
+		if (tname != NULL && tname[0] != '\0') {
+			memcpy(name, tname, THREAD_NAME_LEN);
+			name[THREAD_NAME_LEN - 1] = '\0';
+		} else {
+			snprintk(name, sizeof(name), "T%pE%p",
+				 thread, &thread->entry);
+		}
 		SEGGER_SYSVIEW_SendTaskInfo(&(SEGGER_SYSVIEW_TASKINFO) {
 			.TaskID = (uint32_t)(uintptr_t)thread,
-		      .sName = tname?tname:name,
+			.sName = name,
 			.StackSize = thread->stack_info.size,
 			.StackBase = thread->stack_info.start,
 			.Prio = thread->base.prio,
