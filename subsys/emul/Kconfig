@@ -35,5 +35,6 @@ module-str = emul
 source "subsys/logging/Kconfig.template.log_config"
 
 source "subsys/emul/i2c/Kconfig"
+source "subsys/emul/spi/Kconfig"
 
 endif

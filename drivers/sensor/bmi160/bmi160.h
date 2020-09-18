@@ -9,6 +9,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_BMI160_BMI160_H_
 
 #include <drivers/gpio.h>
+#include <drivers/sensor.h>
 #include <drivers/spi.h>
 #include <sys/util.h>
 
@@ -203,6 +204,11 @@
 #define BMI160_CMD_PMU_GYR		0x14
 #define BMI160_CMD_PMU_MAG		0x18
 #define BMI160_CMD_SOFT_RESET		0xB6
+
+#define BMI160_CMD_PMU_BIT		0x10
+#define BMI160_CMD_PMU_MASK		0x0c
+#define BMI160_CMD_PMU_SHIFT		2
+#define BMI160_CMD_PMU_VAL_MASK		0x3
 
 /* BMI160_REG_FOC_CONF */
 #define BMI160_FOC_ACC_Z_POS		0
