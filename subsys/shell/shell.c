@@ -248,6 +248,13 @@ static bool tab_prepare(const struct shell *shell,
 	(void)shell_make_argv(argc, *argv, shell->ctx->temp_buff,
 			      CONFIG_SHELL_ARGC_MAX);
 
+	if (*argc > CONFIG_SHELL_ARGC_MAX) {
+		return false;
+	}
+
+	/* terminate arguments with NULL */
+	(*argv)[*argc] = NULL;
+
 	if (IS_ENABLED(CONFIG_SHELL_CMDS_SELECT) && (*argc > 0) &&
 	    (strcmp("select", (*argv)[0]) == 0) &&
 	    !shell_in_select_mode(shell)) {
@@ -704,7 +711,7 @@ static int execute(const struct shell *shell)
 
 	}
 
-	if ((cmd_lvl == CONFIG_SHELL_ARGC_MAX) && (argc == 2)) {
+	if ((cmd_lvl >= CONFIG_SHELL_ARGC_MAX) && (argc == 2)) {
 		/* argc == 2 indicates that when command string was parsed
 		 * there was more characters remaining. It means that number of
 		 * arguments exceeds the limit.
@@ -742,7 +749,7 @@ static int execute(const struct shell *shell)
 
 static void tab_handle(const struct shell *shell)
 {
-	const char *__argv[CONFIG_SHELL_ARGC_MAX];
+	const char *__argv[CONFIG_SHELL_ARGC_MAX + 1];
 	/* d_entry - placeholder for dynamic command */
 	struct shell_static_entry d_entry;
 	const struct shell_static_entry *cmd;
@@ -762,6 +769,7 @@ static void tab_handle(const struct shell *shell)
 
 	find_completion_candidates(shell, cmd, argv[arg_idx], &first, &cnt,
 				   &longest);
+
 	if (cnt == 1) {
 		/* Autocompletion.*/
 		autocomplete(shell, cmd, argv[arg_idx], first);
