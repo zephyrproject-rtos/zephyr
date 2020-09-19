@@ -30,8 +30,8 @@ while limiting memory fragmentation concerns.
 Concepts
 ********
 
-Any number of memory pools can be defined. Each memory pool is referenced
-by its memory address.
+Any number of memory pools can be defined (limited only by available RAM). Each
+memory pool is referenced by its memory address.
 
 A memory pool has the following key properties:
 

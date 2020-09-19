@@ -15,8 +15,8 @@ access to the resource.
 Concepts
 ********
 
-Any number of mutexes can be defined. Each mutex is referenced by its memory
-address.
+Any number of mutexes can be defined (limited only by available RAM). Each mutex
+is referenced by its memory address.
 
 A mutex has the following key properties:
 

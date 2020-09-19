@@ -14,8 +14,8 @@ to add and remove data items of any size.
 Concepts
 ********
 
-Any number of LIFOs can be defined. Each LIFO is referenced
-by its memory address.
+Any number of LIFOs can be defined (limited only by available RAM). Each LIFO is
+referenced by its memory address.
 
 A LIFO has the following key properties:
 

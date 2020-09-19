@@ -14,8 +14,8 @@ to add and remove data items of any size.
 Concepts
 ********
 
-Any number of FIFOs can be defined. Each FIFO is referenced
-by its memory address.
+Any number of FIFOs can be defined (limited only by available RAM). Each FIFO is
+referenced by its memory address.
 
 A FIFO has the following key properties:
 

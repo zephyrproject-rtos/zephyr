@@ -13,8 +13,8 @@ calling the function specified by the work item. A workqueue is typically
 used by an ISR or a high-priority thread to offload non-urgent processing
 to a lower-priority thread so it does not impact time-sensitive processing.
 
-Any number of workqueues can be defined. Each workqueue is referenced by its
-memory address.
+Any number of workqueues can be defined (limited only by available RAM). Each
+workqueue is referenced by its memory address.
 
 A workqueue has the following key properties:
 

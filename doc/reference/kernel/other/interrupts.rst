@@ -16,8 +16,8 @@ Thread execution resumes only once all ISR work has been completed.
 Concepts
 ********
 
-Any number of ISRs can be defined, subject to the constraints imposed
-by underlying hardware.
+Any number of ISRs can be defined (limited only by available RAM), subject to
+the constraints imposed by underlying hardware.
 
 An ISR has the following key properties:
 

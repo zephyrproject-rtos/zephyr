@@ -21,8 +21,8 @@ first-in-first-out order. Two content data modes are supported:
 Concepts
 ********
 
-Any number of ring buffers can be defined. Each ring buffer is referenced
-by its memory address.
+Any number of ring buffers can be defined (limited only by available RAM). Each
+ring buffer is referenced by its memory address.
 
 A ring buffer has the following key properties:
 
