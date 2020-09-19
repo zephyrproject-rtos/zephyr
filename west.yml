@@ -155,6 +155,9 @@ manifest:
       repo-path: tensorflow
       path: modules/lib/tensorflow
       revision: dc70a45a7cc12c25726a32cd91b28be59e7bc596
+    - name: lz4
+      path: modules/lib/lz4
+      revision: 8e303c264fc21c2116dc612658003a22e933124d
 
   self:
     path: zephyr

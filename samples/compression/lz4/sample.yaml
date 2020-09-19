@@ -1,0 +1,14 @@
+sample:
+  name: lz4 sample
+  description: lz4 data compression library
+common:
+  tags: compression lz4
+  min_ram: 32
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Validation done. (.*)"
+tests:
+  sample.compression.lz4:
+    tags: compression lz4

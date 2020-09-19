@@ -59,6 +59,9 @@ comment "Trusted-firmware-m module not available."
 comment "Nanopb module not available."
 	depends on !ZEPHYR_NANOPB_MODULE
 
+comment "Lz4 module not available."
+	depends on !ZEPHYR_LZ4_MODULE
+
 # This ensures that symbols are available in Kconfig for dependency checking
 # and referencing, while keeping the settings themselves unavailable when the
 # modules are not present in the workspace
