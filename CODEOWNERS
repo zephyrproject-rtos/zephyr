@@ -514,6 +514,7 @@
 /samples/bluetooth/                       @jhedberg @Vudentz @joerchan
 /samples/boards/intel_s1000_crb/          @sathishkuttan @dcpleung @nashif
 /samples/subsys/display/                  @vanwinkeljan
+/samples/compression/                     @Navin-Sankar
 /samples/drivers/can/                     @alexanderwachter
 /samples/drivers/clock_control_litex/     @mateusz-holenko @kgugala @pgielda
 /samples/drivers/display/                 @vanwinkeljan
