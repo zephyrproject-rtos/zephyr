@@ -13,8 +13,8 @@ counting semaphore.
 Concepts
 ********
 
-Any number of semaphores can be defined. Each semaphore is referenced
-by its memory address.
+Any number of semaphores can be defined (limited only by available RAM). Each
+semaphore is referenced by its memory address.
 
 A semaphore has the following key properties:
 

@@ -13,7 +13,7 @@ by threads and ISRs in an uninterruptible manner.
 Concepts
 ********
 
-Any number of atomic variables can be defined.
+Any number of atomic variables can be defined (limited only by available RAM).
 
 Using the kernel's atomic APIs to manipulate an atomic variable
 guarantees that the desired operation occurs correctly,

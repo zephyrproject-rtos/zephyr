@@ -17,8 +17,8 @@ Concepts
 The pipe can be configured with a ring buffer which holds data that has been
 sent but not yet received; alternatively, the pipe may have no ring buffer.
 
-Any number of pipes can be defined. Each pipe is referenced by its memory
-address.
+Any number of pipes can be defined (limited only by available RAM). Each pipe is
+referenced by its memory address.
 
 A pipe has the following key property:
 

@@ -13,8 +13,9 @@ independently executable threads of instructions.
 A :dfn:`thread` is a kernel object that is used for application processing
 that is too lengthy or too complex to be performed by an ISR.
 
-Any number of threads can be defined by an application. Each thread is
-referenced by a :dfn:`thread id` that is assigned when the thread is spawned.
+Any number of threads can be defined by an application (limited only by
+available RAM). Each thread is referenced by a :dfn:`thread id` that is assigned
+when the thread is spawned.
 
 A thread has the following key properties:
 

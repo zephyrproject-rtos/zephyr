@@ -16,8 +16,8 @@ and avoiding memory fragmentation concerns.
 Concepts
 ********
 
-Any number of memory slabs can be defined. Each memory slab is referenced
-by its memory address.
+Any number of memory slabs can be defined (limited only by available RAM). Each
+memory slab is referenced by its memory address.
 
 A memory slab has the following key properties:
 

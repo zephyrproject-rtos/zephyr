@@ -14,8 +14,8 @@ to add and remove a limited number of integer data values.
 Concepts
 ********
 
-Any number of stacks can be defined. Each stack is referenced
-by its memory address.
+Any number of stacks can be defined (limited only by available RAM). Each stack
+is referenced by its memory address.
 
 A stack has the following key properties:
 
