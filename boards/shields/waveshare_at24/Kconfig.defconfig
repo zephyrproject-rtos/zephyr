@@ -1,0 +1,12 @@
+# Copyright (c) 2020 Stefano Manni
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_WAVESHARE_AT24
+
+config I2C
+	default y
+
+config EEPROM_AT24
+	default y
+
+endif # SHIELD_WAVESHARE_AT24

@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2020 Stefano Manni
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c1 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	eeprom0: eeprom@57 {
+		 compatible = "atmel,at24";
+		 reg = <0x57>;
+		 label = "EEPROM_0";
+		 size = <512>;
+		 pagesize = <8>;
+		 address-width = <8>;
+		 timeout = <5>;
+	 };
+};
+
+/ {
+	aliases {
+		eeprom-0 = &eeprom0;
+	};
+};
