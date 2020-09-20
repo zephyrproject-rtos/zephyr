@@ -10,6 +10,7 @@
 #include <errno.h>
 /* required for struct timespec */
 #include <posix/time.h>
+#include <sys/util.h>
 #include <sys_clock.h>
 
 /**
@@ -20,6 +21,7 @@
 int nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
 {
 	uint64_t ns;
+	uint64_t us;
 	const bool update_rmtp = rmtp != NULL;
 
 	if (rqtp == NULL) {
@@ -41,14 +43,17 @@ int nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
 		/* If a user passes this in, we could be here a while, but
 		 * at least it's technically correct-ish
 		 */
-		ns = rqtp->tv_nsec + NSEC_PER_SEC;
-		k_sleep(K_SECONDS(rqtp->tv_sec - 1));
+		ns = rqtp->tv_nsec + NSEC_PER_SEC
+			+ k_sleep(K_SECONDS(rqtp->tv_sec - 1)) * NSEC_PER_MSEC;
 	} else {
 		ns = rqtp->tv_sec * NSEC_PER_SEC + rqtp->tv_nsec;
 	}
 
-	/* currently we have no mechanism to achieve greater resolution */
-	k_busy_wait(ns / NSEC_PER_USEC);
+	/* TODO: improve upper bound when hr timers are available */
+	us = ceiling_fraction(ns, NSEC_PER_USEC);
+	do {
+		us = k_usleep(us);
+	} while (us != 0);
 
 do_rmtp_update:
 	if (update_rmtp) {
