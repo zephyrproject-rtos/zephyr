@@ -26,7 +26,7 @@
 			DT_ATMEL_GPIO(spi, npcs0, a, 30, a);
 			DT_ATMEL_GPIO(spi, npcs0, c, 3, a);
 			DT_ATMEL_GPIO(spi, npcs0, c, 31, b);
-			DT_ATMEL_GPIO(spi, npcs1, c, 13, c);
+			DT_ATMEL_GPIO(spi, npcs1, a, 13, c);
 			DT_ATMEL_GPIO(spi, npcs1, a, 31, a);
 			DT_ATMEL_GPIO(spi, npcs1, b, 13, b);
 			DT_ATMEL_GPIO(spi, npcs1, c, 2, a);
@@ -94,7 +94,7 @@
 			DT_ATMEL_GPIO(usart3, rts3, c, 30, a);
 			DT_ATMEL_GPIO(usart3, rxd3, a, 30, a);
 			DT_ATMEL_GPIO(usart3, rxd3, b, 9, a);
-			DT_ATMEL_GPIO(usart3, rxd3, c, 9, a);
+			DT_ATMEL_GPIO(usart3, rxd3, c, 9, b);
 			DT_ATMEL_GPIO(usart3, rxd3, c, 28, a);
 			DT_ATMEL_GPIO(usart3, clk3, a, 29, e);
 			DT_ATMEL_GPIO(usart3, clk3, b, 8, a);
