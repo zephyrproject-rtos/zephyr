@@ -293,11 +293,45 @@ uint32_t radio_rx_chain_delay_get(uint8_t phy, uint8_t flags)
 
 void radio_rx_enable(void)
 {
+#if !defined(CONFIG_BT_CTLR_TIFS_HW)
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+	/* NOTE: Timer clear DPPI configuration is needed only for nRF53
+	 *       because of calls to radio_disable() and
+	 *       radio_switch_complete_and_disable() inside a radio event call
+	 *       hal_radio_sw_switch_disable(), which in the case of nRF53
+	 *       cancels the task subscription.
+	 */
+	/* FIXME: hal_sw_switch_timer_clear_ppi_config() sets both task and
+	 *        event. Consider a new interface to only set the task, or
+	 *        change the design to not clear task subscription inside a
+	 *        radio event but when the radio event is done.
+	 */
+	hal_sw_switch_timer_clear_ppi_config();
+#endif /* CONFIG_SOC_SERIES_NRF53X */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
+
 	nrf_radio_task_trigger(NRF_RADIO, NRF_RADIO_TASK_RXEN);
 }
 
 void radio_tx_enable(void)
 {
+#if !defined(CONFIG_BT_CTLR_TIFS_HW)
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+	/* NOTE: Timer clear DPPI configuration is needed only for nRF53
+	 *       because of calls to radio_disable() and
+	 *       radio_switch_complete_and_disable() inside a radio event call
+	 *       hal_radio_sw_switch_disable(), which in the case of nRF53
+	 *       cancels the task subscription.
+	 */
+	/* FIXME: hal_sw_switch_timer_clear_ppi_config() sets both task and
+	 *        event. Consider a new interface to only set the task, or
+	 *        change the design to not clear task subscription inside a
+	 *        radio event but when the radio event is done.
+	 */
+	hal_sw_switch_timer_clear_ppi_config();
+#endif /* CONFIG_SOC_SERIES_NRF53X */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
+
 	nrf_radio_task_trigger(NRF_RADIO, NRF_RADIO_TASK_TXEN);
 }
 
@@ -739,6 +773,20 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t tick)
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	last_pdu_end_us = 0U;
 #endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+	/* NOTE: Timer clear DPPI configuration is needed only for nRF53
+	 *       because of calls to radio_disable() and
+	 *       radio_switch_complete_and_disable() inside a radio event call
+	 *       hal_radio_sw_switch_disable(), which in the case of nRF53
+	 *       cancels the task subscription.
+	 */
+	/* FIXME: hal_sw_switch_timer_clear_ppi_config() sets both task and
+	 *        event. Consider a new interface to only set the task, or
+	 *        change the design to not clear task subscription inside a
+	 *        radio event but when the radio event is done.
+	 */
+	hal_sw_switch_timer_clear_ppi_config();
+#endif /* CONFIG_SOC_SERIES_NRF53X */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 	return remainder_us;
@@ -756,6 +804,23 @@ uint32_t radio_tmr_start_now(uint8_t trx)
 	uint32_t now, start;
 
 	hal_radio_enable_on_tick_ppi_config_and_enable(trx);
+
+#if !defined(CONFIG_BT_CTLR_TIFS_HW)
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+	/* NOTE: Timer clear DPPI configuration is needed only for nRF53
+	 *       because of calls to radio_disable() and
+	 *       radio_switch_complete_and_disable() inside a radio event call
+	 *       hal_radio_sw_switch_disable(), which in the case of nRF53
+	 *       cancels the task subscription.
+	 */
+	/* FIXME: hal_sw_switch_timer_clear_ppi_config() sets both task and
+	 *        event. Consider a new interface to only set the task, or
+	 *        change the design to not clear task subscription inside a
+	 *        radio event but when the radio event is done.
+	 */
+	hal_sw_switch_timer_clear_ppi_config();
+#endif /* CONFIG_SOC_SERIES_NRF53X */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 	/* Capture the current time */
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CAPTURE1);
