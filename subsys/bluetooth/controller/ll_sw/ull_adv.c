@@ -1839,7 +1839,7 @@ static inline uint8_t disable(uint8_t handle)
 				  ull_ticker_status_give, (void *)&ret_cb);
 		ret = ull_ticker_status_take(ret, &ret_cb);
 		if (ret) {
-			mark = ull_disable_mark(adv);
+			mark = ull_disable_unmark(adv);
 			LL_ASSERT(mark == adv);
 
 			return BT_HCI_ERR_CMD_DISALLOWED;
@@ -1853,7 +1853,7 @@ static inline uint8_t disable(uint8_t handle)
 			  ull_ticker_status_give, (void *)&ret_cb);
 	ret = ull_ticker_status_take(ret, &ret_cb);
 	if (ret) {
-		mark = ull_disable_mark(adv);
+		mark = ull_disable_unmark(adv);
 		LL_ASSERT(mark == adv);
 
 		return BT_HCI_ERR_CMD_DISALLOWED;
