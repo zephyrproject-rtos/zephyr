@@ -418,6 +418,8 @@ Drivers and Sensors
 
 * Sensor
 
+  * Added API function ``sensor_attr_get()`` for getting a sensor's
+    attribute.
   * Added support for wsen-itds Accel Sensor.
 
 
