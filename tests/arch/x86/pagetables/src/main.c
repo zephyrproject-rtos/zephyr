@@ -139,7 +139,15 @@ void test_null_map(void)
  */
 void test_dump_ptables(void)
 {
+#if CONFIG_SRAM_SIZE > (32 << 10)
+	/*
+	 * Takes too long to dump page table, so skip dumping
+	 * if memory size is larger than 32MB.
+	 */
+	ztest_test_skip();
+#else
 	z_x86_dump_page_tables(z_x86_page_tables_get());
+#endif
 }
 
 void test_main(void)
