@@ -395,7 +395,7 @@ static void slip_iface_init(struct net_if *iface)
 	struct slip_context *slip = net_if_get_device(iface)->data;
 	struct net_linkaddr *ll_addr;
 
-#if defined(CONFIG_NET_L2_ETHERNET)
+#if defined(CONFIG_SLIP_TAP) && defined(CONFIG_NET_L2_ETHERNET)
 	ethernet_init(iface);
 #endif
 
