@@ -41,9 +41,11 @@ static void work_timeout(struct _timeout *t)
 {
 	struct k_delayed_work *w = CONTAINER_OF(t, struct k_delayed_work,
 						   timeout);
+	struct k_work_q *wq = w->work_q;
 
 	/* submit work to workqueue */
-	k_work_submit_to_queue(w->work_q, &w->work);
+	w->work_q = NULL;
+	k_work_submit_to_queue(wq, &w->work);
 }
 
 void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)

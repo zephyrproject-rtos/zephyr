@@ -3074,7 +3074,7 @@ struct k_work {
 struct k_delayed_work {
 	struct k_work work;
 	struct _timeout timeout;
-	struct k_work_q *work_q;
+	struct k_work_q *work_q; /* null if not scheduled */
 };
 
 struct k_work_poll {
