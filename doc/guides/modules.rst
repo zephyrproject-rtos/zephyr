@@ -32,6 +32,23 @@ Zephyr depends on several categories of modules, including but not limited to:
 - File Systems
 - Inter-Process Communication (IPC) libraries
 
+The Zephyr module mechanism also supports building extended functionality
+in supplementary repositories, such as proprietary applications and drivers.
+The Zephyr repository is independent of these modules.  These modules are
+downstream of the Zephyr repository and may be managed outside of the
+Zephyr Project.  Downstream modules may also be their own manifest repository
+to support stand-alone module development and verification.
+See :ref:`west-manifests` for more details on what this means.
+
+An downstream module may be used to optionally provide:
+
+- boards
+- dts
+- drivers
+- subsystems
+- samples/projects
+- tests
+
 This page summarizes a list of policies and best practices which aim at
 better organizing the workflow in Zephyr modules.
 
@@ -423,6 +440,15 @@ The ``cmake: <cmake-directory>`` part specifies that
 Neither is required: ``cmake`` defaults to ``zephyr``, and ``kconfig``
 defaults to ``zephyr/Kconfig``.
 
+Here is an example :file:`module.yml` file reflecting the default settings:
+
+.. code-block:: yaml
+
+   build:
+     cmake: zephyr
+     kconfig: zephyr/Kconfig
+
+
 Here is an example :file:`module.yml` file referring to
 :file:`CMakeLists.txt` and :file:`Kconfig` files in the root directory of the
 module:
@@ -511,12 +537,44 @@ Build settings supported in the :file:`module.yml` file are:
   build system. Additional architectures must be located in a
   :file:`<arch_root>/arch` folder.
 
-Example of a :file:`module.yaml` file containing additional roots, and the
-corresponding file system layout.
+Example of a :file:`module.yml` file containing additional roots
+corresponding to the directory structure of the Zephyr repository
+put beneath the :file:`zephyrous` subdirectory.
 
 .. code-block:: yaml
 
    build:
+     cmake: zephyrous
+     kconfig: zephyrous/Kconfig
+     settings:
+       board_root: zephyrous
+       dts_root: zephyrous
+       soc_root: zephyrous
+       arch_root: zephyrous
+
+requires the following folder structure:
+
+.. code-block:: none
+
+   <module-root>
+   ├── zephyr/module.yml
+   └── zephyrous
+       ├── arch
+       ├── boards
+       ├── dts
+       ├── soc
+       ├── ...
+       ├── CMakeLists.txt
+       └── Kconfig
+
+Example of a :file:`module.yml` file containing additional roots located
+at the top of the module repository, and the corresponding file system layout.
+
+.. code-block:: yaml
+
+   build:
+     cmake: .
+     kconfig: Kconfig
      settings:
        board_root: .
        dts_root: .
@@ -529,10 +587,14 @@ requires the following folder structure:
 .. code-block:: none
 
    <module-root>
+   ├── zephyr/module.yml
    ├── arch
    ├── boards
    ├── dts
-   └── soc
+   ├── soc
+   ├── ...
+   ├── CMakeLists.txt
+   └── Kconfig
 
 
 
@@ -542,22 +604,81 @@ Twister (Test Runner)
 To execute both tests and samples available in modules, the Zephyr test runner
 (twister) should be pointed to the directories containing those samples and
 tests. This can be done by specifying the path to both samples and tests in the
-:file:`zephyr/module.yml` file.  Additionally, if a module defines out of tree
-boards, the module file can point twister to the path where those files
-are maintained in the module. For example:
+:file:`zephyr/module.yml` file.  Additionally, if a module defines
+supplementary boards, the module file can point twister to the path where
+those files are maintained in the module.
+
+Example of a :file:`module.yml` file containing samples and tests in
+locations corresponding to the directory structure of the Zephyr repository
+put beneath the :file:`zephyrous` subdirectory.
+
+.. code-block:: yaml
+
+   build:
+     cmake: zephyrous
+     kconfig: zephyrous/Kconfig
+   samples:
+     - zephyrous/samples
+   tests:
+     - zephyrous/tests
+   boards:
+     - zephyrous/boards
+
+Example of a :file:`module.yml` file containing samples, tests, and board
+roots located at the top of the module repository,
+and the corresponding file system layout.
+
+.. code-block:: yaml
+
+   build:
+     cmake: .
+     kconfig: ./Kconfig
+   samples:
+     - samples
+   tests:
+     - tests
+   boards:
+     - boards
+
+
+Complete Example
+================
+
+Example of a :file:`module.yml` file containing all the necessary tags and values
+for the Zephyr build system to connect to the directory structure of the Zephyr
+respository put beneath the :file:`zephyr` subdirectory.
 
 
 .. code-block:: yaml
 
-    build:
-      cmake: .
-    samples:
-      - samples
-    tests:
-      - tests
-    boards:
-      - boards
+   build:
+     cmake: zephyr
+     kconfig: zephyr/Kconfig
+     settings:
+       board_root: zephyr
+       dts_root: zephyr
+       soc_root: zephyr
+       arch_root: zephyr
+   samples:
+     - zephyr/samples
+   tests:
+     - zephyr/tests
 
+requires the following folder and file structure:
+
+.. code-block:: none
+
+   <module-root>
+   └── zephyr
+       ├── module.yml
+       ├── CMakeLists.txt
+       ├── Kconfig
+       ├── arch
+       ├── boards
+       ├── dts
+       ├── samples
+       ├── soc
+       └── tests
 
 Module Inclusion
 ================

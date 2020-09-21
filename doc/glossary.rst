@@ -96,4 +96,35 @@ Glossary of Terms
       term storage rather than copying it into RAM, saving writable memory for
       dynamic data and not the static program code.
 
+   Zephyr downstream module
+      A Zephyr module that the :file:`zephyr` repository default configuration
+      and default manifest file are **not** aware of.
+
+   Zephyr manifest module
+      A Zephyr module which also contains one or more west manifest files.
+
+   Zephyr module
+      A YAML file named :file:`zephyr/module.yml` and all the content it
+      references, which define the extensions to be hooked into the Zephyr
+      infrastructure.
+
+   Zephyr Project module
+      A Zephyr module managed by the Zephyr Project.  These modules will
+      be hosted at the Zephyr project organization on Github.
+
+   Zephyr upstream module
+      A Zephyr module that the :file:`zephyr` repository default configuration
+      and default manifest file are aware of.
+
+   :makevar:`ZEPHYR_MODULES`
+      The Zephyr build system CMake variable through which a list paths to
+      all Zephyr modules may be provided.
+
+   :makevar:`ZEPHYR_EXTRA_MODULES`
+      The Zephyr build system CMake variable through which paths to
+      Zephyr modules may be provided.  This is provided to support module
+      development tangential to how :makevar:`ZEPHYR_MODULES` is being used.
+      (See :ref:`Integrate modules in Zephyr build system <modules>`
+      for a detailed description of the intended use case.)
+
 .. _System on a chip: https://en.wikipedia.org/wiki/System_on_a_chip
