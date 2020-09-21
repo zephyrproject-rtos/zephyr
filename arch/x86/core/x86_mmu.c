@@ -398,7 +398,7 @@ void z_x86_dump_page_tables(pentry_t *ptables)
 #if DUMP_PAGE_TABLES
 static int dump_kernel_tables(const struct device *unused)
 {
-	z_x86_dump_page_tables(&z_x86_kernel_ptables);
+	z_x86_dump_page_tables(z_x86_kernel_ptables);
 
 	return 0;
 }
@@ -626,7 +626,7 @@ int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 	 * this for driver mappings. User mode mappings
 	 * (and interactions with KPTI) not implemented yet.
 	 */
-	ptables = (pentry_t *)&z_x86_kernel_ptables;
+	ptables = z_x86_kernel_ptables;
 
 	/* Translate flags argument into HW-recognized entry flags.
 	 *
@@ -697,7 +697,7 @@ static void stack_guard_set(void *guard_page)
 	/* Always modify the kernel's page tables since this is for
 	 * supervisor threads or handling syscalls
 	 */
-	ret = page_map_set(&z_x86_kernel_ptables, guard_page, pte,
+	ret = page_map_set(z_x86_kernel_ptables, guard_page, pte,
 			   page_pool_get, NULL);
 	/* Literally should never happen */
 	__ASSERT(ret == 0, "stack guard mapping failed for %p", guard_page);
@@ -858,7 +858,7 @@ static void thread_map(struct k_thread *thread, void *ptr, size_t size,
 /* Get the kernel's PTE value for a particular virtual address */
 static pentry_t kernel_page_map_get(void *virt)
 {
-	pentry_t *table = &z_x86_kernel_ptables;
+	pentry_t *table = z_x86_kernel_ptables;
 
 	for (int level = 0; level < NUM_LEVELS; level++) {
 		pentry_t entry = get_entry(table, virt, level);
@@ -961,7 +961,7 @@ static void setup_thread_tables(struct k_thread *thread,
 				pentry_t *thread_ptables)
 {
 	/* Copy top-level structure verbatim */
-	(void)memcpy(thread_ptables, &z_x86_kernel_ptables, table_size(0));
+	(void)memcpy(thread_ptables, &z_x86_kernel_ptables[0], table_size(0));
 
 	/* Proceed through linked structure levels, and for all system RAM
 	 * virtual addresses, create copies of all relevant tables.
@@ -985,7 +985,7 @@ static void setup_thread_tables(struct k_thread *thread,
 						  level - 1);
 
 			/* Master table contents, which we make a copy of */
-			master_table = page_table_get(&z_x86_kernel_ptables,
+			master_table = page_table_get(z_x86_kernel_ptables,
 						      virt, level);
 
 			/* Pulled out of reserved memory in the stack object */
