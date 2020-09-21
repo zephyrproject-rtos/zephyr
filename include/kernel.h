@@ -1832,7 +1832,10 @@ typedef void (*k_timer_expiry_t)(struct k_timer *timer);
  * @brief Timer stop function type.
  *
  * A timer's stop function is executed if the timer is stopped prematurely.
- * The function runs in the context of the thread that stops the timer.
+ * The function runs in the context of call that stops the timer.  As
+ * k_timer_stop() can be invoked from an ISR, the stop function must be
+ * callable from interrupt context (isr-ok).
+ *
  * The stop function is optional, and is only invoked if the timer has been
  * initialized with one.
  *
