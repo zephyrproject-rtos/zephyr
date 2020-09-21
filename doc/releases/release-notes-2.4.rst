@@ -241,6 +241,7 @@ Boards & SoC Support
 * Added support for these SoC series:
 
   * ARM Cortex-M1/M3 DesignStart FPGA
+  * NXP i.MX RT685, i.MX8M Mini, and LPC11U6x
 
 * Made these changes in other SoC series:
 
@@ -253,6 +254,7 @@ Boards & SoC Support
   * ARM Cortex-M1/M3 DesignStart FPGA reference designs running on the Digilent
     Arty A7 development board
   * nRF21540 Devkit (nrf21540dk_nrf52840).
+  * NXP i.MX RT685 EVK, i.MX8M Mini EVK, LPCXpresso LPC11U68
   * OLIMEX-STM32-H103
   * ST B_L4S5I_IOT01A Discovery kit
   * ST NUCLEO-H745ZI-Q
@@ -264,6 +266,7 @@ Boards & SoC Support
   * b_l072z_lrwan1: Added flash, LoRa, USB, EEPROM, RNG
   * nucleo_l552ze_q: Added non secure target and TFM support
   * STM32 boards: Enabled MPU on all boards with at least 64K flash
+  * lpcxpresso55s69: Added TFM support
 
 * Added support for these following shields:
 
@@ -297,6 +300,7 @@ Drivers and Sensors
   * STM32: Various changes including Flash latency wait states computation,
     configuration option additions for H7 series, and fixes on F0/F3 PREDIV1
     support
+  * Added LPC11U6X driver.
 
 * Console
 
@@ -304,6 +308,7 @@ Drivers and Sensors
 * Counter
 
   * STM32: Added support on F0/F2 series
+  * Added MCUX PIT counter driver for Kinetis K6x and K8x SoCs.
 
 * Crypto
 
@@ -322,6 +327,8 @@ Drivers and Sensors
 
   * STM32: Number of changes including k_malloc removal, driver piority init
     increase, get_status API addition and various cleanups.
+  * Added MCUX EDMA driver for i.MX RT and Kinetis K6x SoCs.
+  * Added MCUX LPC driver for LPC and i.MX RT6xx SoCs.
 
 * EEPROM
 
@@ -362,6 +369,7 @@ Drivers and Sensors
 * GPIO
 
   * Added driver for the Xilinx AXI GPIO IP
+  * Added LPC11U6X driver.
 
 * Hardware Info
 
@@ -379,6 +387,7 @@ Drivers and Sensors
 
   * STM32: V1: Reset i2c device on read/write error
   * STM32: V2: Added dts configurable Timing option
+  * Fixed MCUX LPI2C driver transfer status after NACK.
 
 * I2S
 
@@ -419,6 +428,7 @@ Drivers and Sensors
 
 * Pinmux
 
+  * Added LPC11U6X driver.
 
 * PS/2
 
@@ -437,6 +447,9 @@ Drivers and Sensors
 * Serial
 
   * Added driver for the Xilinx UART Lite IP
+  * Added NXP IUART driver for i.MX8M Mini.
+  * Implemented uart_config_get API in MCUX UART driver
+  * Added LPC11U6X driver.
 
 * SPI
 
@@ -448,6 +461,8 @@ Drivers and Sensors
     selects that are not specified by a cs-gpios property.
   * Added driver for the Xilinx AXI Quad SPI IP
   * STM32: Various fixes around DMA mode.
+  * Extended MCUX Flexcomm driver to support slave mode.
+  * Added optional delays to MCUX DSPI and LPSPI drivers.
 
 * Timer
 
@@ -471,6 +486,8 @@ Drivers and Sensors
 
 
 * Watchdog
+
+  * Added MCUX WWDT driver for LPC SoCs.
 
 
 * WiFi
