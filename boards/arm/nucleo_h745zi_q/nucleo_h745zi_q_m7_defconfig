@@ -10,6 +10,9 @@ CONFIG_BOARD_NUCLEO_H745ZI_Q_M7=y
 # Enable MPU
 CONFIG_ARM_MPU=y
 
+# Enable HW stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
 # Enable UART ( disable to assign to M4 core)
 CONFIG_SERIAL=y
 
