@@ -29,4 +29,10 @@ Sample output
    Wake from Deep Sleep
    ResumeBBBAA
 
-note:: The values shown above might differ.
+note:: The values shown above might differ. And
+regarding the sample (ignoring the latency and cycle counts),
+this is expected behavior. It runs 4 sets of scenarios,
+each repeating 5 times. So you will see repeating messages. After all these,
+it simply idles with nothing to do. But it's not suitable for sanitycheck tool,
+because a timeout error will be met when running this testcase.
+So necessary to skip sample if using sanitycheck testing.
