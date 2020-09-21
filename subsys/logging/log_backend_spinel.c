@@ -5,11 +5,11 @@
  */
 
 #include <logging/log_backend.h>
+#include <logging/log_backend_std.h>
 #include <logging/log_output.h>
 #include <openthread/platform/logging.h>
 #include <openthread/platform/uart.h>
 #include <platform-zephyr.h>
-#include "log_backend_std.h"
 
 #ifndef CONFIG_LOG_BACKEND_SPINEL_BUFFER_SIZE
 #define CONFIG_LOG_BACKEND_SPINEL_BUFFER_SIZE 0
