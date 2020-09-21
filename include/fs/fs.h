@@ -60,6 +60,8 @@ enum fs_dir_entry_type {
  * used by the application.
  */
 enum {
+	/** Unknown/Undefined file system. */
+	FS_UNKNOWN = -1,
 	/** Identifier for in-tree FatFS file system. */
 	FS_FATFS = 0,
 
@@ -177,6 +179,7 @@ struct fs_file_system_t {
 					struct fs_dirent *entry);
 	int (*statvfs)(struct fs_mount_t *mountp, const char *path,
 					struct fs_statvfs *stat);
+	bool (*compatible)(const char *id);
 };
 
 #define FS_O_READ       0x01

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018 Intel Corporation.
  * Copyright (c) 2020 Peter Bigot Consulting, LLC
+ * Copyright (c) 2020 Nordid Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -752,6 +753,53 @@ int fs_unregister(int type, const struct fs_file_system_t *fs)
 
 	LOG_DBG("fs unregister %d: %d", type, rc);
 	return rc;
+}
+
+int fs_get_compatible(const char *type_sz)
+{
+	int t = FS_UNKNOWN;
+
+	k_mutex_lock(&mutex, K_FOREVER);
+
+	for (int i = 0; i < ARRAY_SIZE(registry); ++i) {
+		const struct fs_file_system_t *api = registry[i].fstp;
+
+		if (api != NULL && api->compatible != NULL &&
+		    api->compatible(type_sz) == true) {
+			t = registry[i].type;
+			break;
+		}
+	}
+
+	k_mutex_unlock(&mutex);
+
+	return t;
+}
+
+const struct fs_file_system_t *fs_get_compatible_api(const char *type_sz)
+{
+	const struct fs_file_system_t *api = NULL;
+
+	k_mutex_lock(&mutex, K_FOREVER);
+
+	for (int i = 0; i < ARRAY_SIZE(registry); ++i) {
+		const struct fs_file_system_t *cur = registry[i].fstp;
+
+		if (cur != NULL && cur->compatible != NULL &&
+		    cur->compatible(type_sz) == true) {
+			api = cur;
+			break;
+		}
+	}
+
+	k_mutex_unlock(&mutex);
+
+	return api;
+}
+
+const struct fs_file_system_t *fs_get_api(int t)
+{
+	return fs_type_get(t);
 }
 
 static int fs_init(const struct device *dev)
