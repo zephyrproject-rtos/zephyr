@@ -778,6 +778,19 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 		chan->rx.mtu = L2CAP_MAX_LE_MTU;
 	}
 
+	/* MPS shall not be bigger than MTU + 2 as the remaining bytes cannot
+	 * be used.
+	 */
+	chan->rx.mps = MIN(chan->rx.mtu + 2, L2CAP_MAX_LE_MPS);
+
+	/* Truncate MTU if channel have disabled segmentation but still have
+	 * set an MTU which requires it.
+	 */
+	if (!chan->chan.ops->alloc_buf && (chan->rx.mps < chan->rx.mtu + 2)) {
+		BT_WARN("Segmentation disabled but MTU > MPS, truncating MTU");
+		chan->rx.mtu = chan->rx.mps - 2;
+	}
+
 	/* Use existing credits if defined */
 	if (!chan->rx.init_credits) {
 		if (chan->chan.ops->alloc_buf) {
@@ -790,10 +803,6 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 		}
 	}
 
-	/* MPS shall not be bigger than MTU + 2 as the remaining bytes cannot
-	 * be used.
-	 */
-	chan->rx.mps = MIN(chan->rx.mtu + 2, L2CAP_MAX_LE_MPS);
 	atomic_set(&chan->rx.credits,  0);
 
 	if (BT_DBG_ENABLED &&
