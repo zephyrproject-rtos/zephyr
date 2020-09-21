@@ -14,6 +14,13 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Logger backend interface for forwarding to standard backend
+ * @defgroup log_backend_std Logger backend standard interface
+ * @ingroup logger
+ * @{
+ */
+
 /** @brief Put log message to a standard logger backend.
  *
  * @param log_output	Log output instance.
@@ -146,6 +153,10 @@ log_backend_std_sync_hexdump(const struct log_output *const log_output,
 		irq_unlock(key);
 	}
 }
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
