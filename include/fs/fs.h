@@ -78,6 +78,8 @@ enum {
  *
  * @param node Entry for the fs_mount_list list
  * @param type File system type
+ * @param type_sz String representation of file system type, this should not
+ *        be used by non-automount code.
  * @param mnt_point Mount point directory name (ex: "/fatfs")
  * @param fs_data Pointer to file system specific data
  * @param storage_dev Pointer to backend storage device
@@ -86,7 +88,10 @@ enum {
  */
 struct fs_mount_t {
 	sys_dnode_t node;
-	int type;
+	union {
+		int type;
+		const char *type_sz;
+	};
 	const char *mnt_point;
 	void *fs_data;
 	void *storage_dev;
