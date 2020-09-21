@@ -9,6 +9,17 @@ We are pleased to announce the release of Zephyr RTOS version 2.4.0.
 
 Major enhancements with this release include:
 
+* Introduced initial support for virtual memory management.
+
+* Added Bluetooth host support for periodic advertisement and isochronous
+  channels.
+
+* Enabled the new TCP stack, TCP2, by default. This stack was introduced in
+  Zephyr v2.1.0 to improve network protocol testability with open source tools.
+
+* Introduced a new toolchain abstraction with initial implementations for GCC
+  and LLVM/Clang, and groundwork for future support of commercial toolchains.
+
 * Moved to using C99 integer types and deprecate Zephyr integer types.  The
   Zephyr types can be enabled by Kconfig DEPRECATED_ZEPHYR_INT_TYPES option.
 
