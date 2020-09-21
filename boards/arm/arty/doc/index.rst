@@ -133,6 +133,12 @@ or:
         pld load 0 m3_for_arty_a7_reference.bit;\
         shutdown"
 
+.. note::
+
+   The pre-built FPGA bitstream only works for Arty boards equipped with an
+   Artix-35T FPGA. For other Arty variants (e.g. the Arty A7-100) the bitstream
+   must be rebuilt.
+
 Next, build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
