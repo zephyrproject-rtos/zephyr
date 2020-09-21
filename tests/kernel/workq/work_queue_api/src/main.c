@@ -377,7 +377,7 @@ static void tdelayed_work_cancel(const void *data)
 			     NULL);
 		/**TESTPOINT: delayed work cancel when pending*/
 		ret = k_delayed_work_cancel(&delayed_work[1]);
-		zassert_equal(ret, 0, NULL);
+		zassert_equal(ret, -EINPROGRESS, NULL);
 		k_sem_give(&sync_sema);
 		/*wait for completed work_sleepy and delayed_work[1]*/
 		k_sleep(TIMEOUT);
@@ -387,7 +387,7 @@ static void tdelayed_work_cancel(const void *data)
 					NULL);
 		/**TESTPOINT: delayed work cancel when completed*/
 		ret = k_delayed_work_cancel(&delayed_work_sleepy);
-		zassert_not_equal(ret, 0, NULL);
+		zassert_equal(ret, -EINVAL, NULL);
 	}
 	/*work items not cancelled: delayed_work[1], delayed_work_sleepy*/
 }
@@ -1077,7 +1077,7 @@ void test_cancel_processed_work_item(void)
 	/**TESTPOINT: try to delay already processed work item*/
 	ret = k_delayed_work_cancel(&work_item_delayed);
 
-	zassert_true(ret == -EALREADY, NULL);
+	zassert_true(ret == -EINVAL, NULL);
 	k_sleep(TIMEOUT);
 }
 

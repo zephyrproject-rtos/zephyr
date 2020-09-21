@@ -132,12 +132,12 @@ done:
 
 int k_delayed_work_cancel(struct k_delayed_work *work)
 {
-	if (!work->work_q) {
-		return -EINVAL;
-	}
-
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	int ret = work_cancel(work);
+	int ret = z_abort_timeout(&work->timeout);
+
+	if (ret != 0) {
+		ret = k_work_pending(&work->work) ? -EINPROGRESS : -EINVAL;
+	}
 
 	k_spin_unlock(&lock, key);
 	return ret;

@@ -3339,15 +3339,12 @@ extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
  *
  * @note Can be called by ISRs.
  *
- * @note The result of calling this on a k_delayed_work item that has
- * not been submitted (i.e. before the return of the
- * k_delayed_work_submit_to_queue() call) is undefined.
- *
  * @param work Address of delayed work item.
  *
  * @retval 0 Work item countdown canceled.
- * @retval -EINVAL Work item is being processed.
- * @retval -EALREADY Work item has already been completed.
+ * @retval -EINPROGRESS Work item is pending but has not been started.
+ * @retval -EINVAL Work item was never submitted, or has been started and
+ * may or may not have completed.
  */
 extern int k_delayed_work_cancel(struct k_delayed_work *work);
 
