@@ -147,7 +147,7 @@ static inline pentry_t *z_x86_page_tables_get(void)
 /* Kernel's page table. This is in CR3 for all supervisor threads.
  * if KPTI is enabled, we switch to this when handling exceptions or syscalls
  */
-extern pentry_t z_x86_kernel_ptables;
+extern pentry_t z_x86_kernel_ptables[];
 
 /* Get the page tables used by this thread during normal execution */
 static inline pentry_t *z_x86_thread_page_tables_get(struct k_thread *thread)
@@ -155,7 +155,7 @@ static inline pentry_t *z_x86_thread_page_tables_get(struct k_thread *thread)
 #ifdef CONFIG_USERSPACE
 	return (pentry_t *)(thread->arch.ptables);
 #else
-	return &z_x86_kernel_ptables;
+	return z_x86_kernel_ptables;
 #endif
 }
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_X86_MMU_H */
