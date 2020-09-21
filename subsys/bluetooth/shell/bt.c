@@ -1399,6 +1399,13 @@ static void per_adv_sync_terminated_cb(
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
+	for (int i = 0; i < ARRAY_SIZE(per_adv_syncs); i++) {
+		if (per_adv_syncs[i] == sync) {
+			per_adv_syncs[i] = NULL;
+			break;
+		}
+	}
+
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	shell_print(ctx_shell, "PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated",
 		    bt_le_per_adv_sync_get_index(sync), le_addr);
