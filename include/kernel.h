@@ -3299,22 +3299,24 @@ extern void k_delayed_work_init(struct k_delayed_work *work,
 /**
  * @brief Submit a delayed work item.
  *
- * This routine schedules work item @a work to be processed by workqueue
- * @a work_q after a delay of @a delay milliseconds. The routine initiates
- * an asynchronous countdown for the work item and then returns to the caller.
- * Only when the countdown completes is the work item actually submitted to
- * the workqueue and becomes pending.
+ * This routine schedules work item @p work to be processed by workqueue @p
+ * work_q after @p delay. The routine schedules a timeout then returns to
+ * the caller.  Only when the timeout completes is the work item actually
+ * submitted to the workqueue and becomes pending.
  *
- * Submitting a previously submitted delayed work item that is still
- * counting down cancels the existing submission and restarts the
- * countdown using the new delay.  Note that this behavior is
- * inherently subject to race conditions with the pre-existing
- * timeouts and work queue, so care must be taken to synchronize such
- * resubmissions externally.
+ * If @p delay is @c K_NO_WAIT then the effect is the same as invoking
+ * k_work_submit_to_queue() after cancelling any incomplete timeout.
+ *
+ * If @p delay is not @c K_NO_WAIT then any incomplete timeout is cancelled
+ * and the work item will instead be submitted after @p delay.
+ *
+ * @note If a previous delay timeout had completed or was cancelled and the
+ * work item is still pending the work item may be processed twice: once from
+ * the previous submit, and once from the new delay (even if @c K_NO_WAIT).
  *
  * @warning
  * A delayed work item must not be modified until it has been processed
- * by the workqueue.
+ * by the workqueue or cancelled via k_delayed_work_cancel().
  *
  * @note Can be called by ISRs.
  *
@@ -3322,8 +3324,7 @@ extern void k_delayed_work_init(struct k_delayed_work *work,
  * @param work Address of delayed work item.
  * @param delay Delay before submitting the work item
  *
- * @retval 0 Work item countdown started.
- * @retval -EINVAL Work item is being processed or has completed its work.
+ * @retval 0 Work item countdown started or item submitted to queue.
  * @retval -EADDRINUSE Work item is pending on a different workqueue.
  */
 extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,

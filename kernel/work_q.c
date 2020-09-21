@@ -55,33 +55,6 @@ void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
 	work->work_q = NULL;
 }
 
-static int work_cancel(struct k_delayed_work *work)
-{
-	CHECKIF(work->work_q == NULL) {
-		return -EALREADY;
-	}
-
-	if (k_work_pending(&work->work)) {
-		/* Remove from the queue if already submitted */
-		if (!k_queue_remove(&work->work_q->queue, &work->work)) {
-			return -EINVAL;
-		}
-	} else {
-		int err = z_abort_timeout(&work->timeout);
-
-		if (err) {
-			return -EALREADY;
-		}
-	}
-
-	/* Detach from workqueue */
-	work->work_q = NULL;
-
-	atomic_clear_bit(work->work.flags, K_WORK_STATE_PENDING);
-
-	return 0;
-}
-
 int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 				   struct k_delayed_work *work,
 				   k_timeout_t delay)
@@ -92,33 +65,26 @@ int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 	/* Work cannot be active in multiple queues */
 	if (work->work_q != NULL && work->work_q != work_q) {
 		err = -EADDRINUSE;
-		goto done;
+		goto unlock;
 	}
 
-	/* Cancel if work has been submitted */
+	/* Cancel any incomplete timeout */
 	if (work->work_q == work_q) {
-		err = work_cancel(work);
-		/* -EALREADY indicates the work has already completed so this
-		 * is likely a recurring work.
-		 */
-		if (err == -EALREADY) {
-			err = 0;
-		} else if (err < 0) {
-			goto done;
-		}
+		z_abort_timeout(&work->timeout);
+		work->work_q = NULL;
 	}
 
-	/* Attach workqueue so the timeout callback can submit it */
-	work->work_q = work_q;
-
-	/* Submit work directly if no delay.  Note that this is a
-	 * blocking operation, so release the lock first.
+	/* If the timeout is no-wait, just submit it.  If it's already
+	 * pending its position will be unchanged.
 	 */
 	if (K_TIMEOUT_EQ(delay, K_NO_WAIT)) {
 		k_spin_unlock(&lock, key);
 		k_work_submit_to_queue(work_q, &work->work);
-		return 0;
+		goto out;
 	}
+
+	/* Attach workqueue so the timeout callback can submit it */
+	work->work_q = work_q;
 
 #ifdef CONFIG_LEGACY_TIMEOUT_API
 	delay = _TICK_ALIGN + k_ms_to_ticks_ceil32(delay);
@@ -127,8 +93,9 @@ int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 	/* Add timeout */
 	z_add_timeout(&work->timeout, work_timeout, delay);
 
-done:
+unlock:
 	k_spin_unlock(&lock, key);
+out:
 	return err;
 }
 
