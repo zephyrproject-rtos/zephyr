@@ -230,6 +230,8 @@ static void bluetooth_status_cb(struct usb_cfg_data *cfg,
 		break;
 	case USB_DC_RESUME:
 		LOG_DBG("USB device resumed");
+		/* Resume reading */
+		acl_read_cb(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr, 0, NULL);
 		break;
 	case USB_DC_SOF:
 		break;
