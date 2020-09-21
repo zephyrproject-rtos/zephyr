@@ -56,4 +56,16 @@ config TFM_BL2_FALSE
 
 endchoice
 
+if !TFM_BL2_FALSE
+
+config ROM_START_OFFSET
+	hex "ROM Start Offset accounting for BL2 Header in the NS image"
+	default 0x400
+	help
+	  By default BL2 header size in TF-M is 0x400. ROM_START_OFFSET
+	  needs to be updated if TF-M switches to use a different header
+	  size for BL2.
+
+endif # !TFM_BL2_FALSE
+
 endif # BUILD_WITH_TFM
