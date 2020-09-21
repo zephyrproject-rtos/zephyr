@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2019 Bolt Innovation Management, LLC
  * Copyright (c) 2019 Peter Bigot Consulting, LLC
+ * Copyright (c) 2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -721,6 +722,11 @@ static int littlefs_unmount(struct fs_mount_t *mountp)
 	return 0;
 }
 
+static bool littlefs_compatible(const char *type_sz)
+{
+	return (strcmp(type_sz, "LittleFS") == 0);
+}
+
 /* File system interface */
 static const struct fs_file_system_t littlefs_fs = {
 	.open = littlefs_open,
@@ -741,6 +747,7 @@ static const struct fs_file_system_t littlefs_fs = {
 	.mkdir = littlefs_mkdir,
 	.stat = littlefs_stat,
 	.statvfs = littlefs_statvfs,
+	.compatible = littlefs_compatible,
 };
 
 static int littlefs_init(const struct device *dev)
