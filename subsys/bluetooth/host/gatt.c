@@ -551,7 +551,30 @@ static ssize_t cf_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 }
 
 static uint8_t db_hash[16];
-struct k_delayed_work db_hash_work;
+static struct k_delayed_work db_hash_work;
+static atomic_t db_hash_pending;
+static void db_hash_gen(bool store);
+
+/* Mark that we need a hash calculation, and schedule it to be done later. */
+static inline void db_hash_schedule(void)
+{
+	atomic_set(&db_hash_pending, 1);
+	k_delayed_work_submit(&db_hash_work, DB_HASH_TIMEOUT);
+}
+
+/* Perform a hash calculation if necessary, cancelling a previously
+ * scheduled calculation if there's reason to believe one might be
+ * scheduled.
+ */
+static inline void db_hash_process_pending(bool cancel, bool store)
+{
+	if (cancel) {
+		k_delayed_work_cancel(&db_hash_work);
+	}
+	if (atomic_cas(&db_hash_pending, 1, 0) != 0) {
+		db_hash_gen(store);
+	}
+}
 
 struct gen_hash_state {
 	struct tc_cmac_struct state;
@@ -686,24 +709,19 @@ static void db_hash_gen(bool store)
 	}
 }
 
-static void db_hash_process(struct k_work *work)
+static void db_hash_worker(struct k_work *work)
 {
-	db_hash_gen(true);
+	db_hash_process_pending(false, true);
 }
 
 static ssize_t db_hash_read(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr,
 			    void *buf, uint16_t len, uint16_t offset)
 {
-	int err;
-
 	/* Check if db_hash is already pending in which case it shall be
 	 * generated immediately instead of waiting for the work to complete.
 	 */
-	err = k_delayed_work_cancel(&db_hash_work);
-	if (!err) {
-		db_hash_gen(true);
-	}
+	db_hash_process_pending(true, true);
 
 	/* BLUETOOTH CORE SPECIFICATION Version 5.1 | Vol 3, Part G page 2347:
 	 * 2.5.2.1 Robust Caching
@@ -1034,12 +1052,12 @@ void bt_gatt_init(void)
 	}
 
 #if defined(CONFIG_BT_GATT_CACHING)
-	k_delayed_work_init(&db_hash_work, db_hash_process);
+	k_delayed_work_init(&db_hash_work, db_hash_worker);
 
 	/* Submit work to Generate initial hash as there could be static
 	 * services already in the database.
 	 */
-	k_delayed_work_submit(&db_hash_work, DB_HASH_TIMEOUT);
+	db_hash_schedule();
 #endif /* CONFIG_BT_GATT_CACHING */
 
 	if (IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)) {
@@ -1090,7 +1108,7 @@ static void db_changed(void)
 #if defined(CONFIG_BT_GATT_CACHING)
 	int i;
 
-	k_delayed_work_submit(&db_hash_work, DB_HASH_TIMEOUT);
+	db_hash_schedule();
 
 	for (i = 0; i < ARRAY_SIZE(cf_cfg); i++) {
 		struct gatt_cf_cfg *cfg = &cf_cfg[i];
@@ -4844,13 +4862,8 @@ static int db_hash_set(const char *name, size_t len_rd,
 
 static int db_hash_commit(void)
 {
-	int err;
-
 	/* Stop work and generate the hash */
-	err = k_delayed_work_cancel(&db_hash_work);
-	if (!err) {
-		db_hash_gen(false);
-	}
+	db_hash_process_pending(true, false);
 
 	/* Check if hash matches then skip SC update */
 	if (!memcmp(stored_hash, db_hash, sizeof(stored_hash))) {
