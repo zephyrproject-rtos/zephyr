@@ -217,7 +217,7 @@ function(zephyr_get_system_include_directories_for_lang lang i)
 
   process_flags(${lang} flags output_list)
   string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
-  set(result_output_list "-isystem$<JOIN:${genexp_output_list}, -isystem>")
+  set(result_output_list "$<$<BOOL:${genexp_output_list}>:-isystem$<JOIN:${genexp_output_list}, -isystem>>")
 
   set(${i} ${result_output_list} PARENT_SCOPE)
 endfunction()
