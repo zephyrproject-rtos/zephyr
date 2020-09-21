@@ -4374,13 +4374,8 @@ static inline int reject_ind_phy_upd_recv(struct ll_conn *conn,
 #endif /* CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
-static inline int reject_ind_enc_recv(struct ll_conn *conn,
-				      struct pdu_data *pdu_rx)
+static inline int reject_ind_enc_recv(struct ll_conn *conn)
 {
-	struct pdu_data_llctrl_reject_ext_ind *rej_ext_ind;
-
-	rej_ext_ind = (void *)&pdu_rx->llctrl.reject_ext_ind;
-
 	/* resume data packet rx and tx */
 	conn->llcp_enc.pause_rx = 0U;
 	conn->llcp_enc.pause_tx = 0U;
@@ -4389,13 +4384,82 @@ static inline int reject_ind_enc_recv(struct ll_conn *conn,
 	conn->llcp_ack = conn->llcp_req;
 	conn->procedure_expire = 0U;
 
+	return 0;
+}
+
+static inline int reject_ext_ind_enc_recv(struct ll_conn *conn,
+					  struct pdu_data *pdu_rx)
+{
+	struct pdu_data_llctrl_reject_ext_ind *rej_ext_ind;
+
+	reject_ind_enc_recv(conn);
+
 	/* enqueue as if it were a reject ind */
+	rej_ext_ind = (void *)&pdu_rx->llctrl.reject_ext_ind;
 	pdu_rx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_IND;
 	pdu_rx->llctrl.reject_ind.error_code = rej_ext_ind->error_code;
 
 	return 0;
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+
+static inline void reject_ind_recv(struct ll_conn *conn, struct node_rx_pdu *rx,
+				   struct pdu_data *pdu_rx)
+{
+	int err = -EINVAL;
+
+
+	if (0) {
+
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+	} else if ((conn->llcp_ack != conn->llcp_req) &&
+		   (conn->llcp_type == LLCP_ENCRYPTION)) {
+		err = reject_ind_enc_recv(conn);
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	} else if (conn->llcp_phy.ack != conn->llcp_phy.req) {
+		struct pdu_data_llctrl_reject_ext_ind *rej_ext_ind;
+		struct pdu_data_llctrl_reject_ind *rej_ind;
+
+		rej_ext_ind = (void *)&pdu_rx->llctrl.reject_ext_ind;
+		rej_ind = (void *)&pdu_rx->llctrl.reject_ind;
+		/* NOTE: Do not modify reject_opcode field which overlap with
+		 *       error_code field in reject ind PDU structure. Only copy
+		 *       error_code from reject ind to reject ext ind PDU
+		 *       structure.
+		 */
+		rej_ext_ind->error_code = rej_ind->error_code;
+		err = reject_ind_phy_upd_recv(conn, rx, pdu_rx);
+#endif /* CONFIG_BT_CTLR_PHY */
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	} else if (conn->llcp_conn_param.ack != conn->llcp_conn_param.req) {
+		struct pdu_data_llctrl_reject_ext_ind *rej_ext_ind;
+		struct pdu_data_llctrl_reject_ind *rej_ind;
+
+		rej_ext_ind = (void *)&pdu_rx->llctrl.reject_ext_ind;
+		rej_ind = (void *)&pdu_rx->llctrl.reject_ind;
+		/* NOTE: Do not modify reject_opcode field which overlap with
+		 *       error_code field in reject ind PDU structure. Only copy
+		 *       error_code from reject ind to reject ext ind PDU
+		 *       structure.
+		 */
+		rej_ext_ind->error_code = rej_ind->error_code;
+		err = reject_ind_conn_upd_recv(conn, rx, pdu_rx);
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+	} else if (conn->llcp_length.ack != conn->llcp_length.req) {
+		err = reject_ind_dle_recv(conn, pdu_rx);
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+	}
+
+	if (err) {
+		/* Mark for buffer for release */
+		rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+	}
+}
 
 static inline void reject_ext_ind_recv(struct ll_conn *conn,
 				       struct node_rx_pdu *rx,
@@ -4411,7 +4475,7 @@ static inline void reject_ext_ind_recv(struct ll_conn *conn,
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
 		if ((conn->llcp_ack != conn->llcp_req) &&
 		    (conn->llcp_type == LLCP_ENCRYPTION)) {
-			err = reject_ind_enc_recv(conn, pdu_rx);
+			err = reject_ext_ind_enc_recv(conn, pdu_rx);
 		}
 		break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
@@ -5473,13 +5537,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			goto ull_conn_rx_unknown_rsp_send;
 		}
 
-		/* resume data packet rx and tx */
-		conn->llcp_enc.pause_rx = 0U;
-		conn->llcp_enc.pause_tx = 0U;
-
-		/* Procedure complete */
-		conn->llcp_ack = conn->llcp_req;
-		conn->procedure_expire = 0U;
+		reject_ind_recv(conn, *rx, pdu_rx);
 		break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
