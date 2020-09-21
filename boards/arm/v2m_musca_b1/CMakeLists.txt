@@ -51,6 +51,7 @@ if (CONFIG_BUILD_WITH_TFM)
 			-v ${TFM_IMAGE_VERSION_S}
 			${ADD_SECURITY_COUNTER}
 			-H 0x400
+			--included-header
 			${CMAKE_BINARY_DIR}/tfm_full.bin
 			${CMAKE_BINARY_DIR}/tfm_sign.bin
 
