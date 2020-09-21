@@ -100,7 +100,7 @@ void test_z_mem_map_exec(void)
 	z_mem_map(&mapped_rw, (uintptr_t)test_page,
 		  sizeof(test_page), BASE_FLAGS | K_MEM_PERM_RW);
 
-	memcpy(mapped_rw, &transplanted_function, CONFIG_MMU_PAGE_SIZE);
+	memcpy(mapped_rw, (void *)&transplanted_function, CONFIG_MMU_PAGE_SIZE);
 
 	/* Now map with execution enabled and try to run the copied fn */
 	z_mem_map(&mapped_exec, (uintptr_t)test_page,
