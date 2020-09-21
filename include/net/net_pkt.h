@@ -900,6 +900,11 @@ static inline uint8_t *net_pkt_ip_data(struct net_pkt *pkt)
 	return pkt->frags->data;
 }
 
+static inline bool net_pkt_is_empty(struct net_pkt *pkt)
+{
+	return !pkt->buffer || !net_pkt_data(pkt) || pkt->buffer->len == 0;
+}
+
 static inline struct net_linkaddr *net_pkt_lladdr_src(struct net_pkt *pkt)
 {
 	return &pkt->lladdr_src;
