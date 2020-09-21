@@ -7395,7 +7395,7 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 	 * the advertiser address in the sync params.
 	 */
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
-		err = bt_le_scan_update(false);
+		err = bt_le_scan_update(true);
 
 		if (err) {
 			bt_le_per_adv_sync_delete(per_adv_sync);
