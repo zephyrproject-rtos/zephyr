@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Intel Corporation.
+ * Copyright (c) 2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -151,6 +152,8 @@ struct fs_statvfs {
  * @param mkdir Creates a new directory using specified path
  * @param stat Checks the status of a file or directory specified by the path
  * @param statvfs Returns the total and available space in the filesystem volume
+ * @param get_fs_data_storage Returns pointer to buffer for file system specific
+ *        data structures
  */
 struct fs_file_system_t {
 	/* File operations */
@@ -180,6 +183,9 @@ struct fs_file_system_t {
 	int (*statvfs)(struct fs_mount_t *mountp, const char *path,
 					struct fs_statvfs *stat);
 	bool (*compatible)(const char *id);
+#ifdef CONFIG_FILE_SYSTEM_DEFAULT_FSSTORAGE_ALLOCATOR
+	void *(*get_fs_data_storage)();
+#endif
 };
 
 #define FS_O_READ       0x01

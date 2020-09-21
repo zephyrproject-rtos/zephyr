@@ -160,6 +160,12 @@ config FUSE_FS_ACCESS
 
 source "subsys/fs/Kconfig.littlefs"
 
+config FILE_SYSTEM_DEFAULT_FSSTORAGE_ALLOCATOR
+	bool
+	help
+	  Enables internal API extension that allows file system driver to
+	  handle allocation of file system data storage allocation.
+
 endif # FILE_SYSTEM
 
 source "subsys/fs/fcb/Kconfig"
