@@ -22,6 +22,7 @@
 #include <storage/flash_map.h>
 
 #include "fs_impl.h"
+#include "fs_def_storage.h"
 
 struct lfs_file_data {
 	struct lfs_file file;
@@ -555,6 +556,8 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 		LFS_VERSION_MAJOR, LFS_VERSION_MINOR,
 		LFS_DISK_VERSION_MAJOR, LFS_DISK_VERSION_MINOR);
 
+	__ASSERT(fs != NULL, "File system data sotrage not provided");
+
 	if (fs->area) {
 		return -EBUSY;
 	}
@@ -727,6 +730,35 @@ static bool littlefs_compatible(const char *type_sz)
 	return (strcmp(type_sz, "LittleFS") == 0);
 }
 
+#ifdef CONFIG_FS_LITTLEFS_DEFAULT_FSDATA_ALLOCATOR
+
+/* Auto-mount dedicated section */
+struct fs_data_storage_t {
+	struct fs_littlefs lfs_data;
+	__aligned(4) uint8_t _read_buffer[CONFIG_FS_LITTLEFS_CACHE_SIZE];
+	__aligned(4) uint8_t _prog_buffer[CONFIG_FS_LITTLEFS_CACHE_SIZE];
+	uint32_t _lookahead_buffer[(CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE) /
+				   sizeof(uint32_t)];
+};
+
+static int fs_data_storage_init(struct fs_data_storage_t *res)
+{
+	res->lfs_data.cfg.read_size = CONFIG_FS_LITTLEFS_READ_SIZE;
+	res->lfs_data.cfg.prog_size = CONFIG_FS_LITTLEFS_PROG_SIZE;
+	res->lfs_data.cfg.lookahead_size = CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE;
+	res->lfs_data.cfg.read_buffer = res->_read_buffer;
+	res->lfs_data.cfg.prog_buffer = res->_prog_buffer;
+	res->lfs_data.cfg.lookahead_buffer = res->_lookahead_buffer;
+
+	return 0;
+}
+
+DEFINE_DEFAULT_FSDATA_STORAGE(fs_data_storage_t,
+			      CONFIG_FS_LITTLEFS_DEFAULT_FSDATA_N,
+			      fs_data_storage_init);
+
+#endif /* CONFIG_FS_LITTLEFS_DEFAULT_FSDATA_ALLOCATOR */
+
 /* File system interface */
 static const struct fs_file_system_t littlefs_fs = {
 	.open = littlefs_open,
@@ -748,6 +780,9 @@ static const struct fs_file_system_t littlefs_fs = {
 	.stat = littlefs_stat,
 	.statvfs = littlefs_statvfs,
 	.compatible = littlefs_compatible,
+#ifdef CONFIG_FS_LITTLEFS_DEFAULT_FSDATA_ALLOCATOR
+	.get_fs_data_storage = DEFAULT_FSDATA_STORAGE_ALLOCATOR,
+#endif
 };
 
 static int littlefs_init(const struct device *dev)

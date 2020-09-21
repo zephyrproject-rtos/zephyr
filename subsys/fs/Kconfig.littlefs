@@ -57,6 +57,28 @@ config FS_LITTLEFS_BLOCK_CYCLES
 	  is moved to another block.  Set to a non-positive value to
 	  disable leveling.
 
+config FS_LITTLEFS_DEFAULT_FSDATA_ALLOCATOR
+	bool "Enables default file system allocator"
+	default n
+	select FILE_SYSTEM_DEFAULT_FSSTORAGE_ALLOCATOR
+	help
+	  LittleFS back-end will provide file system data structures with
+	  default configuration.
+	  This is required by auto-mount of DTS defined LittleFS partitions.
+
+if FS_LITTLEFS_DEFAULT_FSDATA_ALLOCATOR
+
+config FS_LITTLEFS_DEFAULT_FSDATA_N
+	int "Number of file system data structures available for allocation"
+	default 1
+	help
+	  The number of data structures the default allocator will have
+	  available. The number should be equal to the number of DTS defined
+	  fixed-partitions with mount point set and type specified to be
+	  "LittleFS".
+
+endif
+
 menuconfig FS_LITTLEFS_FC_MEM_POOL
 	bool "Enable flexible file cache sizes for littlefs"
 	help
