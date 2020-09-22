@@ -53,7 +53,7 @@ static void mp_entry2(void)
 	 * later.
 	 */
 	__asm__ volatile("rsr.PS %0" : "=r"(ps));
-	ps &= ~(PS_EXCM_MASK | PS_INTLEVEL_MASK);
+	ps &= ~PS_EXCM_MASK;
 	__asm__ volatile("wsr.PS %0" : : "r"(ps));
 
 	ie = 0;
