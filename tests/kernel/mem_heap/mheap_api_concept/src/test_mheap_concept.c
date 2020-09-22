@@ -46,57 +46,6 @@ void test_mheap_malloc_align4(void)
 }
 
 /**
- * @brief The test case to ensure heap minimum block size is 64 bytes.
- *
- * @ingroup kernel_heap_tests
- *
- * @see k_malloc(), k_free()
- *
- * @details Heap pool's minimum block size is 64 bytes. The test case tries
- * to ensure it by allocating blocks lesser than minimum block size.
- * The test allocates 8 blocks of size 0. The algorithm has to allocate 64
- * bytes of blocks, this is ensured by allocating one more block of max size
- * which results in failure. Finally all the blocks are freed and added back
- * to heap memory pool.
- */
-void test_mheap_min_block_size(void)
-{
-	void *block[BLK_NUM_MAX], *block_fail;
-
-	/* The k_heap backend doesn't have the splitting behavior
-	 * expected here, this test is too specific, and a more
-	 * general version of the same test is available in
-	 * test_mheap_malloc_free()
-	 */
-	if (IS_ENABLED(CONFIG_MEM_POOL_HEAP_BACKEND)) {
-		ztest_test_skip();
-	}
-
-	/**
-	 * TESTPOINT: The heap memory pool also defines a minimum block
-	 * size of 64 bytes.
-	 * Test steps:
-	 * initial memory heap status (F for free, U for used):
-	 *    64F, 64F, 64F, 64F
-	 * 1. request 4 blocks: each 0-byte plus 16-byte block desc,
-	 *    indeed 64-byte allocated
-	 * 2. verify no more free blocks, any further allocation failed
-	 */
-	for (int i = 0; i < BLK_NUM_MAX; i++) {
-		block[i] = k_malloc(TEST_SIZE_0);
-		zassert_not_null(block[i], NULL);
-	}
-	/* verify no more free blocks available*/
-	block_fail = k_malloc(BLK_SIZE_MIN);
-	zassert_is_null(block_fail, NULL);
-
-	/* test case tear down*/
-	for (int i = 0; i < BLK_NUM_MAX; i++) {
-		k_free(block[i]);
-	}
-}
-
-/**
  * @brief Verify if the block descriptor is included
  * in every block which is allocated
  *

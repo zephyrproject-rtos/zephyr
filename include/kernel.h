@@ -4546,7 +4546,7 @@ void k_heap_free(struct k_heap *h, void *mem);
  * If the pool is to be accessed outside the module where it is defined, it
  * can be declared via
  *
- * @note When @option{CONFIG_MEM_POOL_HEAP_BACKEND} is enabled, the k_mem_pool
+ * @note The k_mem_pool
  * API is implemented on top of a k_heap, which is a more general
  * purpose allocator which does not make the same promises about
  * splitting or alignment detailed above.  Blocks will be aligned only
