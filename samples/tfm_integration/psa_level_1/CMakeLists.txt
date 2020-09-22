@@ -16,6 +16,10 @@ endif()
 list(APPEND EXTRA_ARGUMENTS EXTRA_ARGS)
 #only build tfm_s binary
 list(APPEND EXTRA_ARGUMENTS -DBUILD_S_ONLY=True)
+if(${TFM_TARGET_PLATFORM} STREQUAL "LPC55S69")
+    #create a smaller release binary
+    list(APPEND EXTRA_ARGUMENTS -DCMAKE_BUILD_TYPE=Minsizerel)
+endif()
 
 # Add "tfm" as an external project via the TF-M module's cmake file
 trusted_firmware_build(BINARY_DIR ${CMAKE_BINARY_DIR}/tfm
