@@ -84,7 +84,9 @@ SECTIONS
 
 	. = ALIGN(8);
 
+#ifdef CONFIG_XIP
 	_image_rom_start = PHYS_LOAD_ADDR;
+#endif
 	_image_text_start = PHYS_LOAD_ADDR;
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
@@ -162,9 +164,11 @@ SECTIONS
 
 	MMU_PAGE_ALIGN
 	/* ROM ends here, position counter will now be in RAM areas */
+#ifdef CONFIG_XIP
 	_image_rom_end = .;
 	_image_rom_size = _image_rom_end - _image_rom_start;
-	_image_rodata_end = _image_rom_end;
+#endif
+	_image_rodata_end = .;
 	_image_rodata_size = _image_rodata_end - _image_rodata_start;
 	GROUP_END(ROMABLE_REGION)
 	/*
