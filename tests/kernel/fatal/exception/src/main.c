@@ -139,7 +139,7 @@ void alt_thread5(void)
 
 #ifndef CONFIG_ARCH_POSIX
 #ifdef CONFIG_STACK_SENTINEL
-void blow_up_stack(void)
+__no_optimization void blow_up_stack(void)
 {
 	char buf[OVERFLOW_STACKSIZE];
 
@@ -150,7 +150,7 @@ void blow_up_stack(void)
 #else
 /* stack sentinel doesn't catch it in time before it trashes the entire kernel
  */
-int stack_smasher(int val)
+__no_optimization int stack_smasher(int val)
 {
 	return stack_smasher(val * 2) + stack_smasher(val * 3);
 }
