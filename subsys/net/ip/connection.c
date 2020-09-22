@@ -524,6 +524,10 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 		src_port = proto_hdr->udp->src_port;
 		dst_port = proto_hdr->udp->dst_port;
 	} else if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
+		if (proto_hdr->tcp == NULL) {
+			return NET_DROP;
+		}
+
 		src_port = proto_hdr->tcp->src_port;
 		dst_port = proto_hdr->tcp->dst_port;
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET)) {
