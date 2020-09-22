@@ -444,7 +444,7 @@ static void log_msg_hexdump_data_op(struct log_msg *msg,
 		}
 	}
 
-	while (req_len > 0) {
+	while ((req_len > 0) && (cont != NULL)) {
 		chunk_len = HEXDUMP_BYTES_CONT_MSG - offset;
 		cpy_len = req_len > chunk_len ? chunk_len : req_len;
 
