@@ -85,12 +85,12 @@ struct app_evt_t {
 #define FIFO_ELEM_COUNT         255
 #define FIFO_ELEM_ALIGN         sizeof(unsigned int)
 
-K_MEM_POOL_DEFINE(event_elem_pool, FIFO_ELEM_MIN_SZ, FIFO_ELEM_MAX_SZ,
+Z_MEM_POOL_DEFINE(event_elem_pool, FIFO_ELEM_MIN_SZ, FIFO_ELEM_MAX_SZ,
 		  FIFO_ELEM_COUNT, FIFO_ELEM_ALIGN);
 
 static inline void app_evt_free(struct app_evt_t *ev)
 {
-	k_mem_pool_free(&ev->block);
+	z_mem_pool_free(&ev->block);
 }
 
 static inline void app_evt_put(struct app_evt_t *ev)
@@ -121,14 +121,14 @@ static inline struct app_evt_t *app_evt_alloc(void)
 	struct app_evt_t *ev;
 	struct k_mem_block block;
 
-	ret = k_mem_pool_alloc(&event_elem_pool, &block,
+	ret = z_mem_pool_alloc(&event_elem_pool, &block,
 			       sizeof(struct app_evt_t),
 			       K_NO_WAIT);
 	if (ret < 0) {
 		LOG_ERR("APP event allocation failed!");
 		app_evt_flush();
 
-		ret = k_mem_pool_alloc(&event_elem_pool, &block,
+		ret = z_mem_pool_alloc(&event_elem_pool, &block,
 				       sizeof(struct app_evt_t),
 				       K_NO_WAIT);
 		if (ret < 0) {

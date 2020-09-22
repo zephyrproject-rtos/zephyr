@@ -50,7 +50,7 @@ dummy_test(test_msgq_user_purge_when_put);
 #else
 #define MAX_SZ	128
 #endif
-K_MEM_POOL_DEFINE(test_pool, 128, MAX_SZ, 2, 4);
+Z_MEM_POOL_DEFINE(test_pool, 128, MAX_SZ, 2, 4);
 
 extern struct k_msgq kmsgq;
 extern struct k_msgq msgq;

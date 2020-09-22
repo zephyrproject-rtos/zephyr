@@ -183,7 +183,7 @@ static void mbox_message_dispose(struct k_mbox_msg *rx_msg)
 
 	/* release sender's memory pool block */
 	if (rx_msg->tx_block.data != NULL) {
-		k_mem_pool_free(&rx_msg->tx_block);
+		z_mem_pool_free(&rx_msg->tx_block);
 		rx_msg->tx_block.data = NULL;
 	}
 
@@ -351,7 +351,7 @@ void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer)
 	mbox_message_dispose(rx_msg);
 }
 
-int k_mbox_data_block_get(struct k_mbox_msg *rx_msg, struct k_mem_pool *pool,
+int z_mbox_data_block_get(struct k_mbox_msg *rx_msg, struct k_mem_pool *pool,
 			  struct k_mem_block *block, k_timeout_t timeout)
 {
 	int result;
@@ -375,7 +375,7 @@ int k_mbox_data_block_get(struct k_mbox_msg *rx_msg, struct k_mem_pool *pool,
 	}
 
 	/* allocate memory pool block (even when message size is 0!) */
-	result = k_mem_pool_alloc(pool, block, rx_msg->size, timeout);
+	result = z_mem_pool_alloc(pool, block, rx_msg->size, timeout);
 	if (result != 0) {
 		return result;
 	}

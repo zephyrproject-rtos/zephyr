@@ -20,7 +20,7 @@
 #endif
 
 
-K_MEM_POOL_DEFINE(gcov_heap_mem_pool,
+Z_MEM_POOL_DEFINE(gcov_heap_mem_pool,
 		  MALLOC_MIN_BLOCK_SIZE,
 		  MALLOC_MAX_HEAP_SIZE, 1, 4);
 
@@ -233,7 +233,7 @@ void gcov_coverage_dump(void)
 
 		size = calculate_buff_size(gcov_list);
 
-		buffer = (uint8_t *) k_mem_pool_malloc(&gcov_heap_mem_pool, size);
+		buffer = (uint8_t *) z_mem_pool_malloc(&gcov_heap_mem_pool, size);
 		if (!buffer) {
 			printk("No Mem available to continue dump\n");
 			goto coverage_dump_end;

@@ -7,10 +7,10 @@
 #include <ztest.h>
 
 #define STACK_SIZE	(1024 + CONFIG_TEST_EXTRA_STACKSIZE)
-#define PIPE_LEN	(4 * _MPOOL_MINBLK)
-#define BYTES_TO_WRITE	_MPOOL_MINBLK
+#define PIPE_LEN	(4 * 16)
+#define BYTES_TO_WRITE	16
 #define BYTES_TO_READ BYTES_TO_WRITE
-K_MEM_POOL_DEFINE(mpool, BYTES_TO_WRITE, PIPE_LEN, 1, 4);
+Z_MEM_POOL_DEFINE(mpool, BYTES_TO_WRITE, PIPE_LEN, 1, 4);
 
 static ZTEST_DMEM unsigned char __aligned(4) data[] =
 "abcd1234$%^&PIPEefgh5678!/?*EPIPijkl9012[]<>PEPImnop3456{}()IPEP";
@@ -40,7 +40,7 @@ K_SEM_DEFINE(end_sema, 0, 1);
 #else
 #define SZ	128
 #endif
-K_MEM_POOL_DEFINE(test_pool, SZ, SZ, 4, 4);
+Z_MEM_POOL_DEFINE(test_pool, SZ, SZ, 4, 4);
 
 static void tpipe_put(struct k_pipe *ppipe, k_timeout_t timeout)
 {
@@ -63,7 +63,7 @@ static void tpipe_block_put(struct k_pipe *ppipe, struct k_sem *sema,
 
 	for (int i = 0; i < PIPE_LEN; i += BYTES_TO_WRITE) {
 		/**TESTPOINT: pipe block put*/
-		zassert_equal(k_mem_pool_alloc(&mpool, &block, BYTES_TO_WRITE,
+		zassert_equal(z_mem_pool_alloc(&mpool, &block, BYTES_TO_WRITE,
 					       timeout), 0, NULL);
 		memcpy(block.data, &data[i], BYTES_TO_WRITE);
 		k_pipe_block_put(ppipe, &block, BYTES_TO_WRITE, sema);
@@ -344,7 +344,7 @@ void test_pipe_get_put(void)
 }
 /**
  * @brief Test resource pool free
- * @see k_mem_pool_malloc()
+ * @see z_mem_pool_malloc()
  */
 #ifdef CONFIG_USERSPACE
 void test_resource_pool_auto_free(void)
@@ -352,8 +352,8 @@ void test_resource_pool_auto_free(void)
 	/* Pool has 2 blocks, both should succeed if kernel object and pipe
 	 * buffer are auto-freed when the allocating threads exit
 	 */
-	zassert_true(k_mem_pool_malloc(&test_pool, 64) != NULL, NULL);
-	zassert_true(k_mem_pool_malloc(&test_pool, 64) != NULL, NULL);
+	zassert_true(z_mem_pool_malloc(&test_pool, 64) != NULL, NULL);
+	zassert_true(z_mem_pool_malloc(&test_pool, 64) != NULL, NULL);
 }
 #endif
 
@@ -404,7 +404,7 @@ void test_half_pipe_saturating_block_put(void)
 
 	/* Ensure half the mempool is still queued in the pipe */
 	for (nb = 0; nb < ARRAY_SIZE(blocks); nb++) {
-		if (k_mem_pool_alloc(&mpool, &blocks[nb],
+		if (z_mem_pool_alloc(&mpool, &blocks[nb],
 				     BYTES_TO_WRITE, K_NO_WAIT) != 0) {
 			break;
 		}
@@ -414,7 +414,7 @@ void test_half_pipe_saturating_block_put(void)
 	zassert_true(nb >= 2 && nb < ARRAY_SIZE(blocks), NULL);
 
 	for (int i = 0; i < nb; i++) {
-		k_mem_pool_free(&blocks[i]);
+		z_mem_pool_free(&blocks[i]);
 	}
 
 	tpipe_get(&khalfpipe, K_FOREVER);

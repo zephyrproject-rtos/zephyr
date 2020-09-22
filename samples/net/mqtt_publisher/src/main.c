@@ -511,7 +511,7 @@ K_THREAD_DEFINE(app_thread, STACK_SIZE,
 		start_app, NULL, NULL, NULL,
 		THREAD_PRIORITY, K_USER, -1);
 
-static K_MEM_POOL_DEFINE(app_mem_pool, sizeof(uintptr_t), 1024,
+static Z_MEM_POOL_DEFINE(app_mem_pool, sizeof(uintptr_t), 1024,
 			 2, sizeof(uintptr_t));
 #endif
 

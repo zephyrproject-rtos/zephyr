@@ -25,7 +25,7 @@ dummy_test(test_auto_free);
 #else
 #define MAX_SZ	96
 #endif
-K_MEM_POOL_DEFINE(test_pool, 16, MAX_SZ, 4, 4);
+Z_MEM_POOL_DEFINE(test_pool, 16, MAX_SZ, 4, 4);
 
 /*test case main entry*/
 void test_main(void)
