@@ -194,6 +194,10 @@ do {                                                                    \
 
 #define popcount(x) __builtin_popcount(x)
 
+#ifndef __no_optimization
+#define __no_optimization __attribute__((optimize("-O0")))
+#endif
+
 #ifndef __weak
 #define __weak __attribute__((__weak__))
 #endif
