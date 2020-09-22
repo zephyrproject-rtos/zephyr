@@ -7,7 +7,6 @@
 #include "lvgl_mem.h"
 #include <zephyr.h>
 #include <init.h>
-#include <sys/mempool.h>
 
 Z_MEM_POOL_DEFINE(lvgl_mem_pool,
 		CONFIG_LVGL_MEM_POOL_MIN_SIZE,
