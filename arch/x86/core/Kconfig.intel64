@@ -22,7 +22,7 @@ config SYSTEM_WORKQUEUE_STACK_SIZE
 
 config X86_EXCEPTION_STACK_SIZE
 	int "Size of the exception stack(s)"
-	default 2048
+	default 4096
 	help
 	  The exception stack(s) (one per CPU) are used both for exception
 	  processing and early kernel/CPU initialization. They need only
