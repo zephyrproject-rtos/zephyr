@@ -9,7 +9,7 @@
 #include <sys/byteorder.h>
 #include <soc.h>
 #include <sys/util.h>
-#include <assert.h>
+#include <sys/__assert.h>
 #include "i2s_litex.h"
 #include <logging/log.h>
 
@@ -125,7 +125,7 @@ static uint32_t i2s_get_audio_freq(uintptr_t reg)
  */
 static void i2s_irq_enable(uintptr_t reg, int irq_type)
 {
-	assert(irq_type == I2S_EV_READY || irq_type == I2S_EV_ERROR);
+	__ASSERT_NO_MSG(irq_type == I2S_EV_READY || irq_type == I2S_EV_ERROR);
 
 	uint8_t reg_data = litex_read8(reg + I2S_EV_ENABLE_REG_OFFSET);
 
@@ -142,7 +142,7 @@ static void i2s_irq_enable(uintptr_t reg, int irq_type)
  */
 static void i2s_irq_disable(uintptr_t reg, int irq_type)
 {
-	assert(irq_type == I2S_EV_READY || irq_type == I2S_EV_ERROR);
+	__ASSERT_NO_MSG(irq_type == I2S_EV_READY || irq_type == I2S_EV_ERROR);
 
 	uint8_t reg_data = litex_read8(reg + I2S_EV_ENABLE_REG_OFFSET);
 

@@ -15,7 +15,6 @@ LOG_MODULE_REGISTER(wdt_mchp_xec);
 #include <drivers/watchdog.h>
 #include <soc.h>
 #include <errno.h>
-#include <assert.h>
 
 #define WDT_XEC_REG_BASE						\
 	((WDT_Type *)(DT_INST_REG_ADDR(0)))

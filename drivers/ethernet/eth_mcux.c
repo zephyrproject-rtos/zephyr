@@ -24,6 +24,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <device.h>
 #include <sys/util.h>
 #include <kernel.h>
+#include <sys/__assert.h>
 #include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/ethernet.h>
@@ -882,7 +883,7 @@ flush:
 	 * which cannot happen in this context.
 	 */
 	status = ENET_ReadFrame(context->base, &context->enet_handle, NULL, 0);
-	assert(status == kStatus_Success);
+	__ASSERT_NO_MSG(status == kStatus_Success);
 error:
 	eth_stats_update_errors_rx(get_iface(context, vlan_tag));
 }

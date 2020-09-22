@@ -15,7 +15,6 @@
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <errno.h>
-#include <assert.h>
 #include <stdio.h>
 
 #include <kernel.h>

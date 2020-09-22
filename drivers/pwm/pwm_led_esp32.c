@@ -258,7 +258,7 @@ static int pwm_led_esp32_timer_set(int speed_mode, int timer,
 	int tick_sel = PWM_LED_ESP32_APB_CLK_FREQ;
 	uint32_t precision = (0x1 << bit_num);
 
-	assert(frequency > 0);
+	__ASSERT_NO_MSG(frequency > 0);
 
 	/* This expression comes from ESP32 Espressif's Technical Reference
 	 * Manual chapter 13.2.2 Timers.

@@ -13,7 +13,6 @@
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <errno.h>
-#include <assert.h>
 
 #include <device.h>
 #include <drivers/spi.h>

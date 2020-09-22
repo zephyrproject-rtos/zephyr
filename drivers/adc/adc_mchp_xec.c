@@ -13,7 +13,6 @@ LOG_MODULE_REGISTER(adc_mchp_xec);
 #include <drivers/adc.h>
 #include <soc.h>
 #include <errno.h>
-#include <assert.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"

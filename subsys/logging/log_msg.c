@@ -8,8 +8,8 @@
 #include <logging/log_msg.h>
 #include <logging/log_ctrl.h>
 #include <logging/log_core.h>
+#include <sys/__assert.h>
 #include <string.h>
-#include <assert.h>
 
 BUILD_ASSERT((sizeof(struct log_msg_ids) == sizeof(uint16_t)),
 	     "Structure must fit in 2 bytes");

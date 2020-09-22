@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <assert.h>
+#include <sys/__assert.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/gatt.h>
@@ -44,7 +44,7 @@ void smp_svr_init(void)
 	int rc;
 
 	rc = STATS_INIT_AND_REG(smp_svr_stats, STATS_SIZE_32, "smp_svr_stats");
-	assert(rc == 0);
+	__ASSERT_NO_MSG(rc == 0);
 
 	/* Register the built-in mcumgr command handlers. */
 #ifdef CONFIG_MCUMGR_CMD_FS_MGMT
