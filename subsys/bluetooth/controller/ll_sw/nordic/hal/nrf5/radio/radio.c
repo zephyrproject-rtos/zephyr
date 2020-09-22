@@ -229,6 +229,11 @@ void radio_reset(void)
 #endif
 }
 
+void radio_stop(void)
+{
+	hal_radio_stop();
+}
+
 void radio_phy_set(uint8_t phy, uint8_t flags)
 {
 	uint32_t mode;

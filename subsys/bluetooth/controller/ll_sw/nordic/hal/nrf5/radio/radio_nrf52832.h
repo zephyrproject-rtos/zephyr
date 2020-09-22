@@ -199,6 +199,12 @@ static inline void hal_radio_reset(void)
 					 0xfffffffe) | 0x01000000;
 }
 
+static inline void hal_radio_stop(void)
+{
+	/* TODO: Add any required cleanup of actions taken in hal_radio_reset()
+	 */
+}
+
 static inline void hal_radio_ram_prio_setup(void)
 {
 	struct {
