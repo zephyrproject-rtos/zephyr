@@ -474,6 +474,7 @@ void test_timer_k_define(void)
 {
 	init_timer_data();
 	/** TESTPOINT: init timer via k_timer_init */
+	k_usleep(1); /* align to tick */
 	k_timer_start(&ktimer, K_MSEC(DURATION), K_MSEC(PERIOD));
 	tdata.timestamp = k_uptime_get();
 	busy_wait_ms(DURATION + PERIOD * EXPIRE_TIMES + PERIOD / 2);
