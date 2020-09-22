@@ -850,6 +850,15 @@ enum lwm2m_rd_client_event {
 	LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF,
 };
 
+/*
+ * LwM2M RD client flags, used to configure LwM2M session.
+ */
+
+/**
+ * @brief Run bootstrap procedure in current session.
+ */
+#define LWM2M_RD_CLIENT_FLAG_BOOTSTRAP BIT(0)
+
 /**
  * @brief Asynchronous RD client event callback
  *
@@ -871,12 +880,13 @@ typedef void (*lwm2m_ctx_event_cb_t)(struct lwm2m_ctx *ctx,
  *
  * @param[in] client_ctx LwM2M context
  * @param[in] ep_name Registered endpoint name
+ * @param[in] flags Flags used to configure current LwM2M session.
  * @param[in] event_cb Client event callback function
  *
  * @return 0 for success or negative in case of error.
  */
 void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
-			   lwm2m_ctx_event_cb_t event_cb);
+			   uint32_t flags, lwm2m_ctx_event_cb_t event_cb);
 
 /**
  * @brief Stop the LwM2M RD (De-register) Client

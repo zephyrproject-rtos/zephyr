@@ -32,6 +32,10 @@ API Changes
 * Removed SETTINGS_USE_BASE64 support as its been deprecated for more than
   two releases.
 
+* The :c:func:`lwm2m_rd_client_start` function now accepts an additional
+  ``flags`` parameter, which allows to configure current LwM2M client session,
+  for instance enable bootstrap procedure in the curent session.
+
 Deprecated in this release
 ==========================
 

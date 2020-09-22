@@ -503,7 +503,11 @@ static int sm_do_init(void)
 
 	/* Do bootstrap or registration */
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
-	set_sm_state(ENGINE_DO_BOOTSTRAP_REG);
+	if (client.use_bootstrap) {
+		set_sm_state(ENGINE_DO_BOOTSTRAP_REG);
+	} else {
+		set_sm_state(ENGINE_DO_REGISTRATION);
+	}
 #else
 	set_sm_state(ENGINE_DO_REGISTRATION);
 #endif
@@ -926,11 +930,19 @@ static void lwm2m_rd_client_service(struct k_work *work)
 }
 
 void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
-			   lwm2m_ctx_event_cb_t event_cb)
+			   uint32_t flags, lwm2m_ctx_event_cb_t event_cb)
 {
+	if (!IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP) &&
+	    (flags & LWM2M_RD_CLIENT_FLAG_BOOTSTRAP)) {
+		LOG_ERR("Bootstrap support is disabled. Please enable "
+			"CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP.");
+		return;
+	}
+
 	client.ctx = client_ctx;
 	client.ctx->sock_fd = -1;
 	client.event_cb = event_cb;
+	client.use_bootstrap = flags & LWM2M_RD_CLIENT_FLAG_BOOTSTRAP;
 
 	set_sm_state(ENGINE_INIT);
 	strncpy(client.ep_name, ep_name, CLIENT_EP_LEN - 1);

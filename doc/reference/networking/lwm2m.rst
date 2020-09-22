@@ -361,7 +361,7 @@ endpoint name.  This is important as it needs to be unique per LwM2M server:
 .. code-block:: c
 
 	(void)memset(&client, 0x0, sizeof(client));
-	lwm2m_rd_client_start(&client, "unique-endpoint-name", rd_client_event);
+	lwm2m_rd_client_start(&client, "unique-endpoint-name", 0, rd_client_event);
 
 Using LwM2M library with DTLS
 *****************************
@@ -406,7 +406,7 @@ value of 1 is ok here).
 
 	(void)memset(&client, 0x0, sizeof(client));
 	client.tls_tag = 1; /* <---- */
-	lwm2m_rd_client_start(&client, "endpoint-name", rd_client_event);
+	lwm2m_rd_client_start(&client, "endpoint-name", 0, rd_client_event);
 
 For a more detailed LwM2M client sample see: :ref:`lwm2m-client-sample`.
 
