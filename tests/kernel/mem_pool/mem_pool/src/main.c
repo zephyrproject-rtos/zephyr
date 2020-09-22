@@ -34,12 +34,10 @@
  * depends on words size.  So we keep separate tables for different
  * configs.
  */
-#ifdef CONFIG_MEM_POOL_HEAP_BACKEND
-# ifdef CONFIG_64BIT
-#  define HEAP64
-# else
-#  define HEAP32
-# endif
+#ifdef CONFIG_64BIT
+# define HEAP64
+#else
+# define HEAP32
 #endif
 
 /* size of stack area used by each thread */
@@ -317,12 +315,6 @@ void alternate_task(void)
  * amount of usable space, due to the hidden block descriptor info the
  * kernel adds at the start of any block allocated from this memory pool.)
  *
- * NOTE: when CONFIG_MEM_POOL_HEAP_BACKEND is in use, the splitting
- * algorithm being exercised by this test is not used.  In fact the
- * k_heap backend is significantly more fragmentation resistant, so
- * calls expected to fail here actually succeed.  These are disabled
- * here.
- *
  * @see k_malloc(), k_free()
  */
 static void test_pool_malloc(void)
@@ -334,12 +326,6 @@ static void test_pool_malloc(void)
 	block[0] = k_malloc(150);
 	zassert_not_null(block[0], "150 byte allocation failed");
 
-#ifndef CONFIG_MEM_POOL_HEAP_BACKEND
-	/* ensure a small block can no longer be allocated */
-	block[1] = k_malloc(16);
-	zassert_is_null(block[1], "16 byte allocation did not fail");
-#endif
-
 	/* return the large block */
 	k_free(block[0]);
 
@@ -347,22 +333,11 @@ static void test_pool_malloc(void)
 	block[0] = k_malloc(16);
 	zassert_not_null(block[0], "16 byte allocation 0 failed");
 
-#ifndef CONFIG_MEM_POOL_HEAP_BACKEND
-	/* ensure a large block can no longer be allocated */
-	block[1] = k_malloc(80);
-	zassert_is_null(block[1], "80 byte allocation did not fail");
-#endif
-
 	/* ensure all remaining small blocks can be allocated */
 	for (j = 1; j < 4; j++) {
 		block[j] = k_malloc(16);
 		zassert_not_null(block[j], "16 byte allocation %d failed\n", j);
 	}
-
-#ifndef CONFIG_MEM_POOL_HEAP_BACKEND
-	/* ensure a small block can no longer be allocated */
-	zassert_is_null(k_malloc(8), "8 byte allocation did not fail");
-#endif
 
 	/* return the small blocks to pool in a "random" order */
 	k_free(block[2]);
@@ -373,12 +348,6 @@ static void test_pool_malloc(void)
 	/* allocate large block (triggers autodefragmentation) */
 	block[0] = k_malloc(100);
 	zassert_not_null(block[0], "100 byte allocation failed");
-
-
-#ifndef CONFIG_MEM_POOL_HEAP_BACKEND
-	/* ensure a small block can no longer be allocated */
-	zassert_is_null(k_malloc(32), "32 byte allocation did not fail");
-#endif
 
 	/* ensure overflow detection is working */
 	zassert_is_null(k_malloc(0xffffffff), "overflow check failed");

@@ -64,7 +64,6 @@ void k_heap_free(struct k_heap *h, void *mem)
 	}
 }
 
-#ifdef CONFIG_MEM_POOL_HEAP_BACKEND
 /* Compatibility layer for legacy k_mem_pool code on top of a k_heap
  * backend.
  */
@@ -89,5 +88,3 @@ void k_mem_pool_free_id(struct k_mem_block_id *id)
 {
 	k_heap_free(id->heap, id->data);
 }
-
-#endif /* CONFIG_MEM_POOL_HEAP_BACKEND */

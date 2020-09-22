@@ -27,11 +27,7 @@
 #include <sys/util.h>
 #include <sys/mempool_base.h>
 #include <kernel_structs.h>
-#ifdef CONFIG_MEM_POOL_HEAP_BACKEND
 #include <mempool_heap.h>
-#else
-#include <mempool_sys.h>
-#endif
 #include <kernel_version.h>
 #include <syscall.h>
 #include <sys/printk.h>

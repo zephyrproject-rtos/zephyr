@@ -63,17 +63,7 @@ void test_mpool_alloc_wait_prio(void)
 		}
 	}
 
-	/* The original mem_pool would always be able to allocate
-	 * exactly "min blocks" before running out of space, the
-	 * heuristics used to size the sys_heap backend are more
-	 * flexible.
-	 */
-#ifdef CONFIG_MEM_POOL_HEAP_BACKEND
 	zassert_true(nb >= BLK_NUM_MIN, "nb %d want %d", nb, BLK_NUM_MIN);
-#else
-	zassert_true(nb == BLK_NUM_MIN, NULL);
-#endif
-
 
 	/**
 	 * TESTPOINT: when a suitable memory block becomes available, it is
