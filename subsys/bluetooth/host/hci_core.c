@@ -9164,10 +9164,9 @@ int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob)
 		bt_addr_le_copy(&oob->addr, &bt_dev.id_addr[id]);
 	}
 
-	if (IS_ENABLED(CONFIG_BT_SMP) &&
-	    !IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
+	if (IS_ENABLED(CONFIG_BT_SMP)) {
 		err = bt_smp_le_oob_generate_sc_data(&oob->le_sc_data);
-		if (err) {
+		if (err && err != -ENOTSUP) {
 			return err;
 		}
 	}
@@ -9220,10 +9219,9 @@ int bt_le_ext_adv_oob_get_local(struct bt_le_ext_adv *adv,
 		bt_addr_le_copy(&oob->addr, &bt_dev.id_addr[adv->id]);
 	}
 
-	if (IS_ENABLED(CONFIG_BT_SMP) &&
-	    !IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
+	if (IS_ENABLED(CONFIG_BT_SMP)) {
 		err = bt_smp_le_oob_generate_sc_data(&oob->le_sc_data);
-		if (err) {
+		if (err && err != -ENOTSUP) {
 			return err;
 		}
 	}
