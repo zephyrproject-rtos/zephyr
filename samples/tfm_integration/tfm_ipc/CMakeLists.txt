@@ -13,6 +13,11 @@ elseif (CONFIG_TFM_BL2_FALSE)
    set(TFM_BL2_ARGUMENT BL2 False)
 endif()
 
+list(APPEND EXTRA_ARGUMENTS EXTRA_ARGS)
+#only build tfm_s binary
+list(APPEND EXTRA_ARGUMENTS -DBUILD_S_ONLY=True)
+
+
 # Add "tfm" as an external project via the TF-M module's cmake file
 if(${TFM_TARGET_PLATFORM} STREQUAL "STM_NUCLEO_L552ZE_Q")
    trusted_firmware_build(BINARY_DIR ${CMAKE_BINARY_DIR}/tfm
@@ -21,6 +26,7 @@ if(${TFM_TARGET_PLATFORM} STREQUAL "STM_NUCLEO_L552ZE_Q")
                           CFGFILE "ConfigRegressionIPCTfmLevel2"
                           OUT_VENEERS_FILE VENEERS_FILE
                           ${TFM_BL2_ARGUMENT}
+                          ${EXTRA_ARGUMENTS}
    )
 else()
    trusted_firmware_build(BINARY_DIR ${CMAKE_BINARY_DIR}/tfm
@@ -29,6 +35,7 @@ else()
                           CFGFILE "ConfigRegressionIPC"
                           OUT_VENEERS_FILE VENEERS_FILE
                           ${TFM_BL2_ARGUMENT}
+                          ${EXTRA_ARGUMENTS}
   )
 endif()
 

@@ -13,6 +13,10 @@ elseif (CONFIG_TFM_BL2_FALSE)
     set(TFM_BL2_ARGUMENT BL2 False)
 endif()
 
+list(APPEND EXTRA_ARGUMENTS EXTRA_ARGS)
+#only build tfm_s binary
+list(APPEND EXTRA_ARGUMENTS -DBUILD_S_ONLY=True)
+
 # Add "tfm" as an external project via the TF-M module's cmake file
 trusted_firmware_build(BINARY_DIR ${CMAKE_BINARY_DIR}/tfm
                        BOARD ${TFM_TARGET_PLATFORM}
@@ -20,6 +24,7 @@ trusted_firmware_build(BINARY_DIR ${CMAKE_BINARY_DIR}/tfm
                        CFGFILE "ConfigRegressionIPC"
                        OUT_VENEERS_FILE VENEERS_FILE
                        ${TFM_BL2_ARGUMENT}
+                       ${EXTRA_ARGUMENTS}
 )
 
 project(tfm_psa_level_1)
