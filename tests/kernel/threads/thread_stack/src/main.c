@@ -414,10 +414,76 @@ void test_stack_buffer(void)
 		       STEST_STACKSIZE, false);
 }
 
+void no_op_entry(void *p1, void *p2, void *p3)
+{
+
+	printk("hi! bye!\n");
+
+#ifdef CONFIG_DYNAMIC_OBJECTS
+	/* Allocate a dynamic kernel object, which gets freed on thread
+	 * cleanup since this thread has the only reference.
+	 */
+	struct k_sem *dyn_sem = k_object_alloc(K_OBJ_SEM);
+	k_sem_init(dyn_sem, 1, 1);
+	printk("allocated semaphore %p\n", dyn_sem);
+#endif
+	/* thread self-aborts, triggering idle thread cleanup */
+}
+
+/**
+ * @brief Show that the idle thread stack size is correct
+ *
+ * The idle thread has to occasionally clean up self-exiting threads.
+ * Exercise this and show that we didn't overflow, reporting out stack
+ * usage.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_idle_stack(void)
+{
+	int ret;
+#ifdef CONFIG_SMP
+	/* 1cpu test case, so all other CPUs are spinning with co-op
+	 * threads blocking them. _current_cpu triggers an assertion.
+	 */
+	struct k_thread *idle = arch_curr_cpu()->idle_thread;
+#else
+	struct k_thread *idle = _current_cpu->idle_thread;
+#endif
+	size_t unused_bytes;
+
+	/* Spwawn a child thread which self-exits */
+	k_thread_create(&test_thread, kern_stack, STEST_STACKSIZE,
+			no_op_entry,
+			NULL, NULL, NULL,
+			-1, 0, K_NO_WAIT);
+
+	k_thread_join(&test_thread, K_FOREVER);
+
+	/* Also sleep for a bit, which also exercises the idle thread
+	 * in case some PM hooks will run
+	 */
+	k_sleep(K_MSEC(1));
+
+	/* Now measure idle thread stack usage */
+	ret = k_thread_stack_space_get(idle, &unused_bytes);
+	zassert_true(ret == 0, "failed to obtain stack space");
+	zassert_true(unused_bytes > 0, "idle thread stack size %d too low",
+		     CONFIG_IDLE_STACK_SIZE);
+	printk("unused idle thread stack size: %zu/%d (%zu used)\n",
+	       unused_bytes, CONFIG_IDLE_STACK_SIZE,
+	       CONFIG_IDLE_STACK_SIZE - unused_bytes);
+
+}
+
 void test_main(void)
 {
+	k_thread_system_pool_assign(k_current_get());
+
+	/* Run a thread that self-exits, triggering idle cleanup */
 	ztest_test_suite(userspace,
-			 ztest_1cpu_unit_test(test_stack_buffer)
+			 ztest_1cpu_unit_test(test_stack_buffer),
+			 ztest_1cpu_unit_test(test_idle_stack)
 			 );
 	ztest_run_test_suite(userspace);
 }
