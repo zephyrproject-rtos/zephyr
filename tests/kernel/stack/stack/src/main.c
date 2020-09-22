@@ -66,7 +66,7 @@ static struct k_sem end_sema;
 
 
 
-K_MEM_POOL_DEFINE(test_pool, 128, 128, 2, 4);
+Z_MEM_POOL_DEFINE(test_pool, 128, 128, 2, 4);
 
 extern struct k_stack kstack;
 extern struct k_stack stack;

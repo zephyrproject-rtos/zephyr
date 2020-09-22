@@ -979,7 +979,7 @@ extern const struct net_buf_data_cb net_buf_var_cb;
  */
 #define NET_BUF_POOL_VAR_DEFINE(_name, _count, _data_size, _destroy)          \
 	static struct net_buf _net_buf_##_name[_count] __noinit;              \
-	K_MEM_POOL_DEFINE(net_buf_mem_pool_##_name, 16, _data_size, 1, 4);    \
+	Z_MEM_POOL_DEFINE(net_buf_mem_pool_##_name, 16, _data_size, 1, 4);    \
 	static const struct net_buf_data_alloc net_buf_data_alloc_##_name = { \
 		.cb = &net_buf_var_cb,                                        \
 		.alloc_data = &net_buf_mem_pool_##_name,                      \

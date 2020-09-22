@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(app_a);
 /* Resource pool for allocations made by the kernel on behalf of system
  * calls. Needed for k_queue_alloc_append()
  */
-K_MEM_POOL_DEFINE(app_a_resource_pool, 32, 256, 5, 4);
+Z_MEM_POOL_DEFINE(app_a_resource_pool, 32, 256, 5, 4);
 
 /* Define app_a_partition, where all globals for this app will be routed.
  * The partition starting address and size are populated by build system

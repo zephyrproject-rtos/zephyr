@@ -8,12 +8,12 @@
 #include <string.h>
 #include <sys/math_extras.h>
 
-void k_mem_pool_free(struct k_mem_block *block)
+void z_mem_pool_free(struct k_mem_block *block)
 {
-	k_mem_pool_free_id(&block->id);
+	z_mem_pool_free_id(&block->id);
 }
 
-void *k_mem_pool_malloc(struct k_mem_pool *pool, size_t size)
+void *z_mem_pool_malloc(struct k_mem_pool *pool, size_t size)
 {
 	struct k_mem_block block;
 
@@ -25,7 +25,7 @@ void *k_mem_pool_malloc(struct k_mem_pool *pool, size_t size)
 			      &size)) {
 		return NULL;
 	}
-	if (k_mem_pool_alloc(pool, &block, size, K_NO_WAIT) != 0) {
+	if (z_mem_pool_alloc(pool, &block, size, K_NO_WAIT) != 0) {
 		return NULL;
 	}
 
@@ -43,7 +43,7 @@ void k_free(void *ptr)
 		ptr = (char *)ptr - WB_UP(sizeof(struct k_mem_block_id));
 
 		/* return block to the heap memory pool */
-		k_mem_pool_free_id(ptr);
+		z_mem_pool_free_id(ptr);
 	}
 }
 
@@ -56,13 +56,13 @@ void k_free(void *ptr)
  * that has the address of the associated memory pool struct.
  */
 
-K_MEM_POOL_DEFINE(_heap_mem_pool, CONFIG_HEAP_MEM_POOL_MIN_SIZE,
+Z_MEM_POOL_DEFINE(_heap_mem_pool, CONFIG_HEAP_MEM_POOL_MIN_SIZE,
 		  CONFIG_HEAP_MEM_POOL_SIZE, 1, 4);
 #define _HEAP_MEM_POOL (&_heap_mem_pool)
 
 void *k_malloc(size_t size)
 {
-	return k_mem_pool_malloc(_HEAP_MEM_POOL, size);
+	return z_mem_pool_malloc(_HEAP_MEM_POOL, size);
 }
 
 void *k_calloc(size_t nmemb, size_t size)
@@ -101,7 +101,7 @@ void *z_thread_malloc(size_t size)
 	}
 
 	if (pool) {
-		ret = k_mem_pool_malloc(pool, size);
+		ret = z_mem_pool_malloc(pool, size);
 	} else {
 		ret = NULL;
 	}

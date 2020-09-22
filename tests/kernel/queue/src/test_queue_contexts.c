@@ -11,8 +11,8 @@
 /**TESTPOINT: init via K_QUEUE_DEFINE*/
 K_QUEUE_DEFINE(kqueue);
 
-K_MEM_POOL_DEFINE(mem_pool_fail, 4, _MPOOL_MINBLK, 1, 4);
-K_MEM_POOL_DEFINE(mem_pool_pass, 4, 64, 4, 4);
+Z_MEM_POOL_DEFINE(mem_pool_fail, 4, _MPOOL_MINBLK, 1, 4);
+Z_MEM_POOL_DEFINE(mem_pool_pass, 4, 64, 4, 4);
 
 struct k_queue queue;
 static qdata_t data[LIST_LEN];
@@ -313,7 +313,7 @@ void test_queue_alloc(void)
 	 * there's some base minimal memory in there that can be used.
 	 * Make sure it's really truly full.
 	 */
-	while (k_mem_pool_alloc(&mem_pool_fail, &block, 1, K_NO_WAIT) == 0) {
+	while (z_mem_pool_alloc(&mem_pool_fail, &block, 1, K_NO_WAIT) == 0) {
 	}
 
 	k_queue_init(&queue);

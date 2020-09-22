@@ -65,7 +65,7 @@ static void pipe_async_finish(struct k_pipe_async *async_desc)
 	 * to prevent the called routines from scheduling a new thread.
 	 */
 
-	k_mem_pool_free(async_desc->desc.block);
+	z_mem_pool_free(async_desc->desc.block);
 
 	if (async_desc->desc.sem != NULL) {
 		k_sem_give(async_desc->desc.sem);

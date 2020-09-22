@@ -15,8 +15,8 @@
 #define MAIL_LEN 64
 /**TESTPOINT: init via K_MBOX_DEFINE*/
 K_MBOX_DEFINE(kmbox);
-K_MEM_POOL_DEFINE(mpooltx, 8, MAIL_LEN, 1, 4);
-K_MEM_POOL_DEFINE(mpoolrx, 8, MAIL_LEN, 1, 4);
+Z_MEM_POOL_DEFINE(mpooltx, 8, MAIL_LEN, 1, 4);
+Z_MEM_POOL_DEFINE(mpoolrx, 8, MAIL_LEN, 1, 4);
 
 static struct k_mbox mbox;
 
@@ -151,7 +151,7 @@ static void tmbox_put(struct k_mbox *pmbox)
 		mmsg.info = ASYNC_PUT_GET_BLOCK;
 		mmsg.size = MAIL_LEN;
 		mmsg.tx_data = NULL;
-		zassert_equal(k_mem_pool_alloc(&mpooltx, &mmsg.tx_block,
+		zassert_equal(z_mem_pool_alloc(&mpooltx, &mmsg.tx_block,
 					       MAIL_LEN, K_NO_WAIT), 0, NULL);
 		memcpy(mmsg.tx_block.data, data[info_type], MAIL_LEN);
 		if (info_type == TARGET_SOURCE_THREAD_BLOCK) {
@@ -221,7 +221,7 @@ static void tmbox_put(struct k_mbox *pmbox)
 		/* Dispose of tx mem pool once we receive it */
 		mmsg.size = MAIL_LEN;
 		mmsg.tx_data = NULL;
-		zassert_equal(k_mem_pool_alloc(&mpooltx, &mmsg.tx_block,
+		zassert_equal(z_mem_pool_alloc(&mpooltx, &mmsg.tx_block,
 					       MAIL_LEN, K_NO_WAIT), 0, NULL);
 		memcpy(mmsg.tx_block.data, data[0], MAIL_LEN);
 		mmsg.tx_target_thread = K_ANY;
@@ -357,7 +357,7 @@ static void tmbox_get(struct k_mbox *pmbox)
 		}
 		zassert_true(k_mbox_get(pmbox, &mmsg, NULL, K_FOREVER) == 0,
 			     NULL);
-		zassert_true(k_mbox_data_block_get
+		zassert_true(z_mbox_data_block_get
 				     (&mmsg, &mpoolrx, &rxblock, K_FOREVER) == 0
 			     , NULL);
 		zassert_equal(mmsg.info, ASYNC_PUT_GET_BLOCK, NULL);
@@ -365,7 +365,7 @@ static void tmbox_get(struct k_mbox *pmbox)
 		/*verify rxblock*/
 		zassert_true(memcmp(rxblock.data, data[info_type], MAIL_LEN)
 			     == 0, NULL);
-		k_mem_pool_free(&rxblock);
+		z_mem_pool_free(&rxblock);
 		break;
 	case INCORRECT_RECEIVER_TID:
 		mmsg.rx_source_thread = random_tid;
@@ -383,7 +383,7 @@ static void tmbox_get(struct k_mbox *pmbox)
 		mmsg.rx_source_thread = K_ANY;
 		zassert_true(k_mbox_get(pmbox, &mmsg, NULL, K_FOREVER) == 0,
 			     NULL);
-		zassert_true(k_mbox_data_block_get
+		zassert_true(z_mbox_data_block_get
 			     (&mmsg, NULL, NULL, K_FOREVER) == 0,
 			     NULL);
 		break;
@@ -401,14 +401,14 @@ static void tmbox_get(struct k_mbox *pmbox)
 		mmsg.size = MAIL_LEN;
 		zassert_true(k_mbox_get(pmbox, &mmsg, NULL, K_FOREVER) == 0,
 			     NULL);
-		zassert_true(k_mbox_data_block_get
+		zassert_true(z_mbox_data_block_get
 			     (&mmsg, &mpoolrx, &rxblock, K_FOREVER) == 0, NULL);
 
 		/* verfiy */
 		zassert_true(memcmp(rxblock.data, data[1], MAIL_LEN)
 			     == 0, NULL);
 		/* free the block */
-		k_mem_pool_free(&rxblock);
+		z_mem_pool_free(&rxblock);
 
 		break;
 	case BLOCK_GET_BUFF_TO_SMALLER_POOL:
@@ -420,7 +420,7 @@ static void tmbox_get(struct k_mbox *pmbox)
 		zassert_true(k_mbox_get(pmbox, &mmsg, NULL, K_FOREVER) == 0,
 			     NULL);
 
-		zassert_true(k_mbox_data_block_get
+		zassert_true(z_mbox_data_block_get
 			     (&mmsg, &mpoolrx, &rxblock, K_MSEC(1)) == -EAGAIN,
 			     NULL);
 

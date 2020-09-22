@@ -47,7 +47,7 @@ BUILD_ASSERT(CONFIG_FS_LITTLEFS_CACHE_SIZE >= 4);
 #define CONFIG_FS_LITTLEFS_FC_MEM_POOL_NUM_BLOCKS CONFIG_FS_LITTLEFS_NUM_FILES
 #endif
 
-K_MEM_POOL_DEFINE(file_cache_pool,
+Z_MEM_POOL_DEFINE(file_cache_pool,
 		  CONFIG_FS_LITTLEFS_FC_MEM_POOL_MIN_SIZE,
 		  CONFIG_FS_LITTLEFS_FC_MEM_POOL_MAX_SIZE,
 		  CONFIG_FS_LITTLEFS_FC_MEM_POOL_NUM_BLOCKS, 4);
@@ -175,7 +175,7 @@ static void release_file_data(struct fs_file_t *fp)
 	struct lfs_file_data *fdp = fp->filep;
 
 	if (fdp->config.buffer) {
-		k_mem_pool_free(&fdp->cache_block);
+		z_mem_pool_free(&fdp->cache_block);
 	}
 
 	k_mem_slab_free(&file_data_pool, &fp->filep);
@@ -213,7 +213,7 @@ static int littlefs_open(struct fs_file_t *fp, const char *path,
 
 	memset(fdp, 0, sizeof(*fdp));
 
-	ret = k_mem_pool_alloc(&file_cache_pool, &fdp->cache_block,
+	ret = z_mem_pool_alloc(&file_cache_pool, &fdp->cache_block,
 			       lfs->cfg->cache_size, K_NO_WAIT);
 	LOG_DBG("alloc %u file cache: %d", lfs->cfg->cache_size, ret);
 	if (ret != 0) {

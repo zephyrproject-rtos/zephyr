@@ -178,7 +178,7 @@ struct usbd_event {
 #error Invalid USBD event queue size (CONFIG_USB_NRFX_EVT_QUEUE_SIZE).
 #endif
 
-K_MEM_POOL_DEFINE(fifo_elem_pool, FIFO_ELEM_MIN_SZ, FIFO_ELEM_MAX_SZ,
+Z_MEM_POOL_DEFINE(fifo_elem_pool, FIFO_ELEM_MIN_SZ, FIFO_ELEM_MAX_SZ,
 		  CONFIG_USB_NRFX_EVT_QUEUE_SIZE, FIFO_ELEM_ALIGN);
 
 /**
@@ -233,7 +233,7 @@ K_MEM_POOL_DEFINE(fifo_elem_pool, FIFO_ELEM_MIN_SZ, FIFO_ELEM_MAX_SZ,
 /** 4 Byte Buffer alignment required by hardware */
 #define EP_BUF_POOL_ALIGNMENT sizeof(unsigned int)
 
-K_MEM_POOL_DEFINE(ep_buf_pool, EP_BUF_POOL_BLOCK_MIN_SZ,
+Z_MEM_POOL_DEFINE(ep_buf_pool, EP_BUF_POOL_BLOCK_MIN_SZ,
 		  EP_BUF_POOL_BLOCK_MAX_SZ, EP_BUF_POOL_BLOCK_COUNT,
 		  EP_BUF_POOL_ALIGNMENT);
 
@@ -406,7 +406,7 @@ static inline void usbd_work_schedule(void)
  */
 static inline void usbd_evt_free(struct usbd_event *ev)
 {
-	k_mem_pool_free(&ev->block);
+	z_mem_pool_free(&ev->block);
 }
 
 /**
@@ -455,7 +455,7 @@ static inline struct usbd_event *usbd_evt_alloc(void)
 	struct usbd_event *ev;
 	struct k_mem_block block;
 
-	ret = k_mem_pool_alloc(&fifo_elem_pool, &block,
+	ret = z_mem_pool_alloc(&fifo_elem_pool, &block,
 			       sizeof(struct usbd_event),
 			       K_NO_WAIT);
 
@@ -470,7 +470,7 @@ static inline struct usbd_event *usbd_evt_alloc(void)
 		 */
 		usbd_evt_flush();
 
-		ret = k_mem_pool_alloc(&fifo_elem_pool, &block,
+		ret = z_mem_pool_alloc(&fifo_elem_pool, &block,
 					       sizeof(struct usbd_event),
 					       K_NO_WAIT);
 		if (ret < 0) {
@@ -635,7 +635,6 @@ static int eps_ctx_init(void)
 	for (i = 0U; i < CFG_EPIN_CNT; i++) {
 		ep_ctx = in_endpoint_ctx(i);
 		__ASSERT_NO_MSG(ep_ctx);
-
 		ep_ctx_reset(ep_ctx);
 	}
 
@@ -644,7 +643,7 @@ static int eps_ctx_init(void)
 		__ASSERT_NO_MSG(ep_ctx);
 
 		if (!ep_ctx->buf.block.data) {
-			err = k_mem_pool_alloc(&ep_buf_pool, &ep_ctx->buf.block,
+			err = z_mem_pool_alloc(&ep_buf_pool, &ep_ctx->buf.block,
 					       EP_BUF_MAX_SZ, K_NO_WAIT);
 			if (err < 0) {
 				LOG_ERR("Buffer alloc failed for EP 0x%02x", i);
@@ -658,7 +657,6 @@ static int eps_ctx_init(void)
 	if (CFG_EP_ISOIN_CNT) {
 		ep_ctx = in_endpoint_ctx(NRF_USBD_EPIN(8));
 		__ASSERT_NO_MSG(ep_ctx);
-
 		ep_ctx_reset(ep_ctx);
 	}
 
@@ -667,7 +665,7 @@ static int eps_ctx_init(void)
 		__ASSERT_NO_MSG(ep_ctx);
 
 		if (!ep_ctx->buf.block.data) {
-			err = k_mem_pool_alloc(&ep_buf_pool, &ep_ctx->buf.block,
+			err = z_mem_pool_alloc(&ep_buf_pool, &ep_ctx->buf.block,
 					       ISO_EP_BUF_MAX_SZ,
 					       K_NO_WAIT);
 			if (err < 0) {
@@ -696,7 +694,7 @@ static void eps_ctx_uninit(void)
 	for (i = 0U; i < CFG_EPOUT_CNT; i++) {
 		ep_ctx = out_endpoint_ctx(i);
 		__ASSERT_NO_MSG(ep_ctx);
-		k_mem_pool_free(&ep_ctx->buf.block);
+		z_mem_pool_free(&ep_ctx->buf.block);
 		memset(ep_ctx, 0, sizeof(*ep_ctx));
 	}
 
@@ -709,7 +707,7 @@ static void eps_ctx_uninit(void)
 	if (CFG_EP_ISOOUT_CNT) {
 		ep_ctx = out_endpoint_ctx(NRF_USBD_EPOUT(8));
 		__ASSERT_NO_MSG(ep_ctx);
-		k_mem_pool_free(&ep_ctx->buf.block);
+		z_mem_pool_free(&ep_ctx->buf.block);
 		memset(ep_ctx, 0, sizeof(*ep_ctx));
 	}
 }

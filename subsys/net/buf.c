@@ -101,7 +101,7 @@ static uint8_t *mem_pool_data_alloc(struct net_buf *buf, size_t *size,
 	uint8_t *ref_count;
 
 	/* Reserve extra space for k_mem_block_id and ref-count (uint8_t) */
-	if (k_mem_pool_alloc(pool, &block,
+	if (z_mem_pool_alloc(pool, &block,
 			     sizeof(struct k_mem_block_id) + 1 + *size,
 			     timeout)) {
 		return NULL;
@@ -129,7 +129,7 @@ static void mem_pool_data_unref(struct net_buf *buf, uint8_t *data)
 
 	/* Need to copy to local variable due to alignment */
 	memcpy(&id, ref_count - sizeof(id), sizeof(id));
-	k_mem_pool_free_id(&id);
+	z_mem_pool_free_id(&id);
 }
 
 const struct net_buf_data_cb net_buf_var_cb = {
