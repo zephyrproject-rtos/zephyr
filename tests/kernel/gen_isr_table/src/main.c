@@ -160,7 +160,7 @@ void isr6(const void *param)
  * doesn't support this; we need to tell the compiler not to reorder memory
  * accesses to trigger_check around calls to trigger_irq.
  */
-__attribute__((optimize("-O0")))
+__no_optimization
 #endif
 int test_irq(int offset)
 {

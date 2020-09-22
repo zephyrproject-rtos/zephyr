@@ -61,6 +61,8 @@
 
 #else /* defined(_ASMLANGUAGE) */
 
+#define __no_optimization __attribute__((optnone))
+
 #include <toolchain/gcc.h>
 
 /* Metaware toolchain has _Static_assert. However it not able to calculate
