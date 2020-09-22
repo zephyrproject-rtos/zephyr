@@ -1450,7 +1450,7 @@ int net_tcp_put(struct net_context *context)
 	if (conn && conn->state == TCP_ESTABLISHED) {
 		/* Send all remaining data if possible. */
 		if (conn->send_data_total > 0) {
-			NET_DBG("conn %p pending %u bytes", conn,
+			NET_DBG("conn %p pending %zu bytes", conn,
 				conn->send_data_total);
 			conn->in_close = true;
 
