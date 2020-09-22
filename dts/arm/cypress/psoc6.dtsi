@@ -5,6 +5,7 @@
  */
 
 #include <mem.h>
+#include <dt-bindings/gpio/gpio.h>
 
 #include "psoc6-pinctrl.dtsi"
 
@@ -84,6 +85,7 @@
 				interrupts = <0 1>;
 				label = "P0";
 				gpio-controller;
+				ngpios = <6>;
 				#gpio-cells = <2>;
 				#cypress,pin-cells = <4>;
 			};
@@ -93,6 +95,7 @@
 				interrupts = <1 1>;
 				label = "P1";
 				gpio-controller;
+				ngpios = <8>;
 				#gpio-cells = <2>;
 				#cypress,pin-cells = <4>;
 			};
@@ -102,6 +105,7 @@
 				interrupts = <2 1>;
 				label = "P2";
 				gpio-controller;
+				ngpios = <8>;
 				#gpio-cells = <2>;
 				#cypress,pin-cells = <4>;
 			};
@@ -120,6 +124,7 @@
 				interrupts = <4 1>;
 				label = "P4";
 				gpio-controller;
+				ngpios = <4>;
 				#gpio-cells = <2>;
 				#cypress,pin-cells = <4>;
 			};
@@ -129,6 +134,7 @@
 				interrupts = <5 1>;
 				label = "P5";
 				gpio-controller;
+				ngpios = <8>;
 				#gpio-cells = <2>;
 				#cypress,pin-cells = <4>;
 			};
@@ -138,6 +144,7 @@
 				interrupts = <6 1>;
 				label = "P6";
 				gpio-controller;
+				ngpios = <8>;
 				#gpio-cells = <2>;
 				#cypress,pin-cells = <4>;
 			};
@@ -147,6 +154,7 @@
 				interrupts = <7 1>;
 				label = "P7";
 				gpio-controller;
+				ngpios = <8>;
 				#gpio-cells = <2>;
 				#cypress,pin-cells = <4>;
 			};
@@ -156,6 +164,7 @@
 				interrupts = <8 1>;
 				label = "P8";
 				gpio-controller;
+				ngpios = <8>;
 				#gpio-cells = <2>;
 				#cypress,pin-cells = <4>;
 			};
@@ -165,6 +174,7 @@
 				interrupts = <9 1>;
 				label = "P9";
 				gpio-controller;
+				ngpios = <8>;
 				#gpio-cells = <2>;
 				#cypress,pin-cells = <4>;
 			};
@@ -174,6 +184,7 @@
 				interrupts = <10 1>;
 				label = "P10";
 				gpio-controller;
+				ngpios = <8>;
 				#gpio-cells = <2>;
 				#cypress,pin-cells = <4>;
 			};
@@ -183,6 +194,7 @@
 				interrupts = <11 1>;
 				label = "P11";
 				gpio-controller;
+				ngpios = <8>;
 				#gpio-cells = <2>;
 				#cypress,pin-cells = <4>;
 			};
@@ -192,6 +204,7 @@
 				interrupts = <12 1>;
 				label = "P12";
 				gpio-controller;
+				ngpios = <8>;
 				#gpio-cells = <2>;
 				#cypress,pin-cells = <4>;
 			};
@@ -201,6 +214,7 @@
 				interrupts = <13 1>;
 				label = "P13";
 				gpio-controller;
+				ngpios = <8>;
 				#gpio-cells = <2>;
 				#cypress,pin-cells = <4>;
 			};
@@ -210,6 +224,7 @@
 				interrupts = <14 1>;
 				label = "P14";
 				gpio-controller;
+				ngpios = <2>;
 				#gpio-cells = <2>;
 				#cypress,pin-cells = <4>;
 			};

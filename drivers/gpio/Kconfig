@@ -78,4 +78,6 @@ source "drivers/gpio/Kconfig.xlnx"
 
 source "drivers/gpio/Kconfig.npcx"
 
+source "drivers/gpio/Kconfig.psoc6"
+
 endif # GPIO

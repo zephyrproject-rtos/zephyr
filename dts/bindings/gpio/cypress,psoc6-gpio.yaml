@@ -5,7 +5,7 @@ description: Cypress GPIO PORT node
 
 compatible: "cypress,psoc6-gpio"
 
-include: [gpio-controller.yaml, base.yaml]
+include: ["gpio-controller.yaml", "base.yaml", "cypress,psoc6-int-mux.yaml"]
 
 properties:
     reg:

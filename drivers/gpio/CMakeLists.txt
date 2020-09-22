@@ -31,6 +31,7 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_LITEX      gpio_litex.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_LPC11U6X   gpio_lpc11u6x.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_XLNX_AXI   gpio_xlnx_axi.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_NPCX       gpio_npcx.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_PSOC6      gpio_psoc6.c)
 
 zephyr_library_sources_ifdef(CONFIG_GPIO_SHELL      gpio_shell.c)
 
