@@ -36,6 +36,9 @@ PROVIDE ( gpio_output_set = 0x40009b24 );
 PROVIDE ( gpio_output_set_high = 0x40009b5c );
 PROVIDE ( roundup2 = 0x4000ab7c );
 PROVIDE ( crc32_le = 0x4005cfec );
+PROVIDE ( Cache_Read_Disable_rom = 0x40009ab8 );
+PROVIDE ( Cache_Read_Enable_rom = 0x40009a84 );
+PROVIDE ( Cache_Read_Init_rom = 0x40009950 );
 
 PROVIDE ( esp32_rom_uart_tx_one_char = 0x40009200 );
 PROVIDE ( esp32_rom_uart_rx_one_char = 0x400092d0 );

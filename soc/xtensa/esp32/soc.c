@@ -16,6 +16,12 @@
 #include <toolchain/gcc.h>
 #include <zephyr/types.h>
 
+#include "esp_private/system_internal.h"
+#include "esp32/rom/cache.h"
+#include "hal/soc_ll.h"
+#include "soc/cpu.h"
+#include "soc/gpio_periph.h"
+
 extern void z_cstart(void);
 
 /*
@@ -103,4 +109,77 @@ int arch_printk_char_out(int c)
 	}
 	esp32_rom_uart_tx_one_char(c);
 	return 0;
+}
+
+void sys_arch_reboot(int type)
+{
+	esp_restart_noos();
+}
+
+void IRAM_ATTR esp_restart_noos(void)
+{
+	/* Disable interrupts */
+	z_xt_ints_off(0xFFFFFFFF);
+
+	const uint32_t core_id = cpu_hal_get_core_id();
+	const uint32_t other_core_id = (core_id == 0) ? 1 : 0;
+
+	soc_ll_reset_core(other_core_id);
+	soc_ll_stall_core(other_core_id);
+
+	/* Flush any data left in UART FIFOs */
+	esp32_rom_uart_tx_wait_idle(0);
+	esp32_rom_uart_tx_wait_idle(1);
+	esp32_rom_uart_tx_wait_idle(2);
+
+	/* Disable cache */
+	Cache_Read_Disable(0);
+	Cache_Read_Disable(1);
+
+	/* 2nd stage bootloader reconfigures SPI flash signals. */
+	/* Reset them to the defaults expected by ROM */
+	WRITE_PERI_REG(GPIO_FUNC0_IN_SEL_CFG_REG, 0x30);
+	WRITE_PERI_REG(GPIO_FUNC1_IN_SEL_CFG_REG, 0x30);
+	WRITE_PERI_REG(GPIO_FUNC2_IN_SEL_CFG_REG, 0x30);
+	WRITE_PERI_REG(GPIO_FUNC3_IN_SEL_CFG_REG, 0x30);
+	WRITE_PERI_REG(GPIO_FUNC4_IN_SEL_CFG_REG, 0x30);
+	WRITE_PERI_REG(GPIO_FUNC5_IN_SEL_CFG_REG, 0x30);
+
+	/* Reset wifi/bluetooth/ethernet/sdio (bb/mac) */
+	DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG,
+				DPORT_BB_RST | DPORT_FE_RST | DPORT_MAC_RST |
+				DPORT_BT_RST | DPORT_BTMAC_RST |
+				DPORT_SDIO_RST | DPORT_SDIO_HOST_RST |
+				DPORT_EMAC_RST | DPORT_MACPWR_RST |
+				DPORT_RW_BTMAC_RST | DPORT_RW_BTLP_RST);
+	DPORT_REG_WRITE(DPORT_CORE_RST_EN_REG, 0);
+
+	/* Reset timer/spi/uart */
+	DPORT_SET_PERI_REG_MASK(
+		DPORT_PERIP_RST_EN_REG,
+		/* UART TX FIFO cannot be reset correctly on ESP32, */
+		/* so reset the UART memory by DPORT here. */
+		DPORT_TIMERS_RST | DPORT_SPI01_RST | DPORT_UART_RST |
+		DPORT_UART1_RST | DPORT_UART2_RST | DPORT_UART_MEM_RST);
+	DPORT_REG_WRITE(DPORT_PERIP_RST_EN_REG, 0);
+
+	/* Clear entry point for APP CPU */
+	DPORT_REG_WRITE(DPORT_APPCPU_CTRL_D_REG, 0);
+
+	/* Reset CPUs */
+	if (core_id == 0) {
+		/* Running on PRO CPU: APP CPU is stalled. Can reset both CPUs. */
+		soc_ll_reset_core(1);
+		soc_ll_reset_core(0);
+	} else {
+		/* Running on APP CPU: need to reset PRO CPU and unstall it, */
+		/* then reset APP CPU */
+		soc_ll_reset_core(0);
+		soc_ll_stall_core(0);
+		soc_ll_reset_core(1);
+	}
+
+	while (true) {
+		;
+	}
 }
