@@ -174,9 +174,15 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
 	uint8_t hdr_len = sizeof(struct net_eth_hdr);
-	uint16_t type = ntohs(hdr->type);
+	uint16_t type;
 	struct net_linkaddr *lladdr;
 	sa_family_t family;
+
+	if (hdr == NULL) {
+		goto drop;
+	}
+
+	type = ntohs(hdr->type);
 
 	if (net_eth_is_vlan_enabled(ctx, iface) &&
 	    type == NET_ETH_PTYPE_VLAN &&
