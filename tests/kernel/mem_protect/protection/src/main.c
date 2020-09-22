@@ -83,7 +83,7 @@ static void execute_from_buffer(uint8_t *dst)
  */
 static void test_write_ro(void)
 {
-	uint32_t *ptr = (uint32_t *)&rodata_var;
+	volatile uint32_t *ptr = (volatile uint32_t *)&rodata_var;
 
 	/*
 	 * Try writing to rodata.  Optimally, this triggers a fault.
