@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT nuvoton_npcx_uart
 
-#include <assert.h>
+#include <sys/__assert.h>
 #include <drivers/gpio.h>
 #include <drivers/uart.h>
 #include <drivers/clock_control.h>

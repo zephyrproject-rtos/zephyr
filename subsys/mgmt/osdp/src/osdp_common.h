@@ -8,7 +8,7 @@
 #define _OSDP_COMMON_H_
 
 #include <mgmt/osdp.h>
-#include <assert.h>
+#include <sys/__assert.h>
 
 #define OSDP_RESP_TOUT_MS              (200)
 

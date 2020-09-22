@@ -7,7 +7,7 @@
 #include <logging/log_output.h>
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
-#include <assert.h>
+#include <sys/__assert.h>
 #include <ctype.h>
 #include <time.h>
 #include <stdio.h>

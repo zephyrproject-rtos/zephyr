@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <assert.h>
+#include <sys/__assert.h>
 #include <sw_isr_table.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <drivers/interrupt_controller/gic.h>
@@ -131,7 +131,7 @@ void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
 	uint32_t aff3, aff2, aff1;
 	uint64_t sgi_val;
 
-	assert(GIC_IS_SGI(sgi_id));
+	__ASSERT_NO_MSG(GIC_IS_SGI(sgi_id));
 
 	/* Extract affinity fields from target */
 	aff1 = MPIDR_AFFLVL(target_aff, 1);
@@ -213,7 +213,7 @@ static void gicv3_cpuif_init(void)
 		write_sysreg(icc_sre, ICC_SRE_EL1);
 		icc_sre = read_sysreg(ICC_SRE_EL1);
 
-		assert(icc_sre & ICC_SRE_ELx_SRE);
+		__ASSERT_NO_MSG(icc_sre & ICC_SRE_ELx_SRE);
 	}
 
 	write_sysreg(GIC_IDLE_PRIO, ICC_PMR_EL1);

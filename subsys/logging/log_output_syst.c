@@ -7,9 +7,9 @@
 #include <init.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <assert.h>
 #include <kernel.h>
 #include <mipi_syst.h>
+#include <sys/__assert.h>
 #include <logging/log.h>
 #include <logging/log_ctrl.h>
 #include <logging/log_output.h>

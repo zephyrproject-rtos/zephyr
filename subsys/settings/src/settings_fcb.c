@@ -9,7 +9,6 @@
 #include <stdbool.h>
 #include <fs/fcb.h>
 #include <string.h>
-#include <assert.h>
 
 #include "settings/settings.h"
 #include "settings/settings_fcb.h"

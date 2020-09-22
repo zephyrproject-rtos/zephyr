@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <assert.h>
 #include <stddef.h>
 #include <errno.h>
 #include <string.h>
@@ -298,7 +297,7 @@ static int boot_write_trailer_byte(const struct flash_area *fa, uint32_t off,
 	int rc;
 
 	align = flash_area_align(fa);
-	assert(align <= BOOT_MAX_ALIGN);
+	__ASSERT_NO_MSG(align <= BOOT_MAX_ALIGN);
 	erased_val = flash_area_erased_val(fa);
 	memset(buf, erased_val, BOOT_MAX_ALIGN);
 	buf[0] = val;
@@ -640,9 +639,9 @@ int mcuboot_swap_type(void)
 		    (table->copy_done_primary_slot == BOOT_FLAG_ANY  ||
 		     table->copy_done_primary_slot == primary_slot.copy_done)) {
 
-			assert(table->swap_type == BOOT_SWAP_TYPE_TEST ||
-			       table->swap_type == BOOT_SWAP_TYPE_PERM ||
-			       table->swap_type == BOOT_SWAP_TYPE_REVERT);
+			__ASSERT_NO_MSG(table->swap_type == BOOT_SWAP_TYPE_TEST ||
+					table->swap_type == BOOT_SWAP_TYPE_PERM ||
+					table->swap_type == BOOT_SWAP_TYPE_REVERT);
 			return table->swap_type;
 		}
 	}

@@ -46,10 +46,10 @@
  *
  */
 
-#include <assert.h>
 #include <device.h>
 #include <kernel.h>
 #include <soc.h>
+#include <sys/__assert.h>
 #include <irq_nextlevel.h>
 #include <drivers/gpio.h>
 
