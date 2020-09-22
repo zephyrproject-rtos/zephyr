@@ -55,6 +55,7 @@ void radio_isr_set(radio_isr_cb_t cb, void *param);
 
 void radio_setup(void);
 void radio_reset(void);
+void radio_stop(void);
 void radio_phy_set(uint8_t phy, uint8_t flags);
 void radio_tx_power_set(int8_t power);
 void radio_tx_power_max_set(void);
