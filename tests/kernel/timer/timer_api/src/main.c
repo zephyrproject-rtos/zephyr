@@ -610,14 +610,14 @@ void test_timer_remaining(void)
 	uint32_t slew_ticks;
 	uint64_t now;
 
-	k_usleep(1); /* align to tick */
 
 	init_timer_data();
+	k_usleep(1); /* align to tick */
 	k_timer_start(&remain_timer, K_MSEC(DURATION), K_NO_WAIT);
 	busy_wait_ms(DURATION / 2);
+	rem_ticks = k_timer_remaining_ticks(&remain_timer);
 	now = k_uptime_ticks();
 	rem_ms = k_timer_remaining_get(&remain_timer);
-	rem_ticks = k_timer_remaining_ticks(&remain_timer);
 	exp_ticks = k_timer_expires_ticks(&remain_timer);
 	k_timer_stop(&remain_timer);
 	TIMER_ASSERT(tdata.expire_cnt == 0, &remain_timer);
