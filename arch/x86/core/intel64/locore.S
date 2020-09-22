@@ -1022,27 +1022,27 @@ gdt80:  /* LGDT descriptor for long mode */
 .global _exception_stack
 .align 16
 _exception_stack:
-	.fill CONFIG_EXCEPTION_STACK_SIZE, 1, 0xAA
+	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
 
 #if CONFIG_MP_NUM_CPUS > 1
 .global _exception_stack1
 .align 16
 _exception_stack1:
-	.fill CONFIG_EXCEPTION_STACK_SIZE, 1, 0xAA
+	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
 #endif
 
 #if CONFIG_MP_NUM_CPUS > 2
 .global _exception_stack2
 .align 16
 _exception_stack2:
-	.fill CONFIG_EXCEPTION_STACK_SIZE, 1, 0xAA
+	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
 #endif
 
 #if CONFIG_MP_NUM_CPUS > 3
 .global _exception_stack3
 .align 16
 _exception_stack3:
-	.fill CONFIG_EXCEPTION_STACK_SIZE, 1, 0xAA
+	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
 #endif
 
 #ifdef CONFIG_X86_KPTI

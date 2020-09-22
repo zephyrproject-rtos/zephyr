@@ -39,7 +39,7 @@ struct x86_tss64 tss0 = {
 #ifdef CONFIG_X86_KPTI
 	.ist2 = (uint64_t) z_x86_trampoline_stack + Z_X86_TRAMPOLINE_STACK_SIZE,
 #endif
-	.ist7 = (uint64_t) _exception_stack + CONFIG_EXCEPTION_STACK_SIZE,
+	.ist7 = (uint64_t) _exception_stack + CONFIG_X86_EXCEPTION_STACK_SIZE,
 	.iomapb = 0xFFFF,
 	.cpu = &(_kernel.cpus[0])
 };
@@ -50,7 +50,7 @@ struct x86_tss64 tss1 = {
 #ifdef CONFIG_X86_KPTI
 	.ist2 = (uint64_t) z_x86_trampoline_stack1 + Z_X86_TRAMPOLINE_STACK_SIZE,
 #endif
-	.ist7 = (uint64_t) _exception_stack1 + CONFIG_EXCEPTION_STACK_SIZE,
+	.ist7 = (uint64_t) _exception_stack1 + CONFIG_X86_EXCEPTION_STACK_SIZE,
 	.iomapb = 0xFFFF,
 	.cpu = &(_kernel.cpus[1])
 };
@@ -62,7 +62,7 @@ struct x86_tss64 tss2 = {
 #ifdef CONFIG_X86_KPTI
 	.ist2 = (uint64_t) z_x86_trampoline_stack2 + Z_X86_TRAMPOLINE_STACK_SIZE,
 #endif
-	.ist7 = (uint64_t) _exception_stack2 + CONFIG_EXCEPTION_STACK_SIZE,
+	.ist7 = (uint64_t) _exception_stack2 + CONFIG_X86_EXCEPTION_STACK_SIZE,
 	.iomapb = 0xFFFF,
 	.cpu = &(_kernel.cpus[2])
 };
@@ -74,7 +74,7 @@ struct x86_tss64 tss3 = {
 #ifdef CONFIG_X86_KPTI
 	.ist2 = (uint64_t) z_x86_trampoline_stack3 + Z_X86_TRAMPOLINE_STACK_SIZE,
 #endif
-	.ist7 = (uint64_t) _exception_stack3 + CONFIG_EXCEPTION_STACK_SIZE,
+	.ist7 = (uint64_t) _exception_stack3 + CONFIG_X86_EXCEPTION_STACK_SIZE,
 	.iomapb = 0xFFFF,
 	.cpu = &(_kernel.cpus[3])
 };
