@@ -61,14 +61,6 @@ static void pcie_mm_init(void)
 static inline void pcie_mm_conf(pcie_bdf_t bdf, unsigned int reg,
 				bool write, uint32_t *data)
 {
-	if (bus_segs[0].mmio == NULL) {
-		pcie_mm_init();
-	}
-
-	if (do_pcie_mmio_cfg == false) {
-		return;
-	}
-
 	for (int i = 0; i < ARRAY_SIZE(bus_segs); i++) {
 		int off = PCIE_BDF_TO_BUS(bdf) - bus_segs[i].start_bus;
 
@@ -133,6 +125,10 @@ static inline void pcie_conf(pcie_bdf_t bdf, unsigned int reg,
 
 {
 #ifdef CONFIG_PCIE_MMIO_CFG
+	if (bus_segs[0].mmio == NULL) {
+		pcie_mm_init();
+	}
+
 	if (do_pcie_mmio_cfg) {
 		pcie_mm_conf(bdf, reg, write, data);
 	} else
