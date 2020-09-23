@@ -1,7 +1,7 @@
-.. _x-nucleo-iks01a2-sample:
+.. _x-nucleo-iks01a2-std-sample:
 
-X-NUCLEO-IKS01A2: MEMS inertial and environmental multi-sensor shield
-#####################################################################
+X-NUCLEO-IKS01A2: shield Standard (Mode 1) sample
+#################################################
 
 Overview
 ********
@@ -41,7 +41,7 @@ This sample runs with X-NUCLEO-IKS01A2 stacked on any board with a matching
 Arduino connector. For this example, we use a :ref:`nucleo_f401re_board` board.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/shields/x_nucleo_iks01a2
+   :zephyr-app: samples/shields/x_nucleo_iks01a2/standard
    :board: nucleo_f401re
    :goals: build
    :compact:
