@@ -106,7 +106,7 @@ static int hts221_read_conversion_data(const struct device *dev)
 }
 
 static const struct sensor_driver_api hts221_driver_api = {
-#if CONFIG_HTS221_TRIGGER
+#if HTS221_TRIGGER_ENABLED
 	.trigger_set = hts221_trigger_set,
 #endif
 	.sample_fetch = hts221_sample_fetch,
@@ -168,11 +168,13 @@ int hts221_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_HTS221_TRIGGER
+#if HTS221_TRIGGER_ENABLED
 	if (hts221_init_interrupt(dev) < 0) {
 		LOG_ERR("Failed to initialize interrupt.");
 		return -EIO;
 	}
+#else
+	LOG_INF("Cannot enable trigger without drdy-gpios");
 #endif
 
 	return 0;
@@ -182,11 +184,11 @@ static struct hts221_data hts221_driver;
 static const struct hts221_config hts221_cfg = {
 	.i2c_bus = DT_INST_BUS_LABEL(0),
 	.i2c_addr = DT_INST_REG_ADDR(0),
-#ifdef CONFIG_HTS221_TRIGGER
+#if HTS221_TRIGGER_ENABLED
 	.drdy_pin = DT_INST_GPIO_PIN(0, drdy_gpios),
 	.drdy_flags = DT_INST_GPIO_FLAGS(0, drdy_gpios),
 	.drdy_controller = DT_INST_GPIO_LABEL(0, drdy_gpios),
-#endif /* CONFIG_HTS221_TRIGGER */
+#endif /* HTS221_TRIGGER_ENABLED */
 };
 
 DEVICE_AND_API_INIT(hts221, DT_INST_LABEL(0), hts221_init,
