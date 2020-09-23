@@ -981,6 +981,21 @@ struct bt_le_per_adv_sync_synced_info {
 
 	/** True if receiving periodic advertisements, false otherwise. */
 	bool recv_enabled;
+
+	/**
+	 * @brief Service Data provided by the peer when sync is transferred
+	 *
+	 * Will always be 0 when the sync is locally created.
+	 */
+	uint16_t service_data;
+
+	/**
+	 * @brief Peer that transferred the periodic advertising sync
+	 *
+	 * Will always be 0 when the sync is locally created.
+	 *
+	 */
+	struct bt_conn *conn;
 };
 
 struct bt_le_per_adv_sync_term_info {
@@ -1219,6 +1234,124 @@ int bt_le_per_adv_sync_recv_enable(struct bt_le_per_adv_sync *per_adv_sync);
  * @return Zero on success or (negative) error code otherwise.
  */
 int bt_le_per_adv_sync_recv_disable(struct bt_le_per_adv_sync *per_adv_sync);
+
+/** Periodic Advertising Sync Transfer options */
+enum {
+	/** Convenience value when no options are specified. */
+	BT_LE_PER_ADV_SYNC_TRANSFER_OPT_NONE = 0,
+
+	/**
+	 * @brief No Angle of Arrival (AoA)
+	 *
+	 * Do not sync with Angle of Arrival (AoA) constant tone extension
+	 **/
+	BT_LE_PER_ADV_SYNC_TRANSFER_OPT_SYNC_NO_AOA = BIT(0),
+
+	/**
+	 * @brief No Angle of Departure (AoD) 1 us
+	 *
+	 * Do not sync with Angle of Departure (AoD) 1 us
+	 * constant tone extension
+	 */
+	BT_LE_PER_ADV_SYNC_TRANSFER_OPT_SYNC_NO_AOD_1US = BIT(1),
+
+	/**
+	 * @brief No Angle of Departure (AoD) 2
+	 *
+	 * Do not sync with Angle of Departure (AoD) 2 us
+	 * constant tone extension
+	 */
+	BT_LE_PER_ADV_SYNC_TRANSFER_OPT_SYNC_NO_AOD_2US = BIT(2),
+
+	/** Only sync to packets with constant tone extension */
+	BT_LE_PER_ADV_SYNC_TRANSFER_OPT_SYNC_ONLY_CTE = BIT(3),
+};
+
+struct bt_le_per_adv_sync_transfer_param {
+	/**
+	 * @brief Maximum event skip
+	 *
+	 * The number of periodic advertising packets that can be skipped
+	 * after a successful receive.
+	 */
+	uint16_t skip;
+
+	/**
+	 * @brief Synchronization timeout (N * 10 ms)
+	 *
+	 * Synchronization timeout for the periodic advertising sync.
+	 * Range 0x000A to 0x4000 (100 ms to 163840 ms)
+	 */
+	uint16_t timeout;
+
+	/** Periodic Advertising Sync Transfer options */
+	uint32_t options;
+};
+
+/**
+ * @brief Transfer the periodic advertising sync information to a peer device.
+ *
+ * This will allow another device to quickly synchronize to the same periodic
+ * advertising train that this device is currently synced to.
+ *
+ * @param per_adv_sync  The periodic advertising sync to transfer.
+ * @param conn          The peer device that will receive the sync information.
+ * @param service_data  Application service data provided to the remote host.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_le_per_adv_sync_transfer(const struct bt_le_per_adv_sync *per_adv_sync,
+				const struct bt_conn *conn,
+				uint16_t service_data);
+
+
+/**
+ * @brief Transfer the information about a periodic advertising set.
+ *
+ * This will allow another device to quickly synchronize to periodic
+ * advertising set from this device.
+ *
+ * @param adv           The periodic advertising set to transfer info of.
+ * @param conn          The peer device that will receive the information.
+ * @param service_data  Application service data provided to the remote host.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_le_per_adv_set_info_transfer(const struct bt_le_ext_adv *adv,
+				    const struct bt_conn *conn,
+				    uint16_t service_data);
+
+/**
+ * @brief Subscribe to periodic advertising sync transfers (PASTs).
+ *
+ * Sets the parameters and allow other devices to transfer periodic advertising
+ * syncs.
+ *
+ * @param conn    The connection to set the parameters for. If NULL default
+ *                parameters for all connections will be set. Parameters set
+ *                for specific connection will always have precedence.
+ * @param param   The periodic advertising sync transfer parameters.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_le_per_adv_sync_transfer_subscribe(
+	const struct bt_conn *conn,
+	const struct bt_le_per_adv_sync_transfer_param *param);
+
+/**
+ * @brief Unsubscribe from periodic advertising sync transfers (PASTs).
+ *
+ * Remove the parameters that allow other devices to transfer periodic
+ * advertising syncs.
+ *
+ * @param conn    The connection to remove the parameters for. If NULL default
+ *                parameters for all connections will be removed. Unsubscribing
+ *                for a specific device, will still allow other devices to
+ *                transfer periodic advertising syncs.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_le_per_adv_sync_transfer_unsubscribe(const struct bt_conn *conn);
 
 enum {
 	/** Convenience value when no options are specified. */

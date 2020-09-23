@@ -4544,6 +4544,28 @@ static void per_adv_sync_delete(struct bt_le_per_adv_sync *per_adv_sync)
 	atomic_clear(per_adv_sync->flags);
 }
 
+static struct bt_le_per_adv_sync *per_adv_sync_new(void)
+{
+	struct bt_le_per_adv_sync *per_adv_sync = NULL;
+
+	for (int i = 0; i < ARRAY_SIZE(per_adv_sync_pool); i++) {
+		if (!atomic_test_bit(per_adv_sync_pool[i].flags,
+				     BT_PER_ADV_SYNC_CREATED)) {
+			per_adv_sync = &per_adv_sync_pool[i];
+			break;
+		}
+	}
+
+	if (!per_adv_sync) {
+		return NULL;
+	}
+
+	(void)memset(per_adv_sync, 0, sizeof(*per_adv_sync));
+	atomic_set_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_CREATED);
+
+	return per_adv_sync;
+}
+
 static struct bt_le_per_adv_sync *get_pending_per_adv_sync(void)
 {
 	for (int i = 0; i < ARRAY_SIZE(per_adv_sync_pool); i++) {
@@ -4706,6 +4728,7 @@ static void le_per_adv_sync_established(struct net_buf *buf)
 		sys_le16_to_cpu(evt->clock_accuracy);
 	pending_per_adv_sync->phy = evt->phy;
 
+	memset(&sync_info, 0, sizeof(sync_info));
 	sync_info.interval = pending_per_adv_sync->interval;
 	sync_info.phy = get_phy(pending_per_adv_sync->phy);
 	sync_info.addr = &pending_per_adv_sync->addr;
@@ -4750,6 +4773,58 @@ static void le_per_adv_sync_lost(struct net_buf *buf)
 	SYS_SLIST_FOR_EACH_CONTAINER(&pa_sync_cbs, listener, node) {
 		if (listener->term) {
 			listener->term(per_adv_sync, &term_info);
+		}
+	}
+}
+
+static void le_past_received(struct net_buf *buf)
+{
+	struct bt_hci_evt_le_past_received *evt =
+		(struct bt_hci_evt_le_past_received *)buf->data;
+	struct bt_le_per_adv_sync_synced_info sync_info;
+	struct bt_le_per_adv_sync_cb *listener;
+	struct bt_le_per_adv_sync *per_adv_sync;
+
+	if (evt->status) {
+		/* No sync created, don't notify app */
+		BT_DBG("PAST receive failed with status 0x%02X", evt->status);
+		return;
+	}
+
+	sync_info.conn = bt_conn_lookup_handle(
+				sys_le16_to_cpu(evt->conn_handle));
+
+	if (!sync_info.conn) {
+		BT_ERR("Could not lookup connection handle from PAST");
+		per_adv_sync_terminate(sys_le16_to_cpu(evt->sync_handle));
+		return;
+	}
+
+	per_adv_sync = per_adv_sync_new();
+	if (!per_adv_sync) {
+		BT_WARN("Could not allocate new PA sync from PAST");
+		per_adv_sync_terminate(sys_le16_to_cpu(evt->sync_handle));
+		return;
+	}
+
+	atomic_set_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCED);
+
+	per_adv_sync->handle = sys_le16_to_cpu(evt->sync_handle);
+	per_adv_sync->interval = sys_le16_to_cpu(evt->interval);
+	per_adv_sync->clock_accuracy = sys_le16_to_cpu(evt->clock_accuracy);
+	per_adv_sync->phy = evt->phy;
+	bt_addr_le_copy(&per_adv_sync->addr, &evt->addr);
+	per_adv_sync->sid = evt->adv_sid;
+
+	sync_info.interval = per_adv_sync->interval;
+	sync_info.phy = get_phy(per_adv_sync->phy);
+	sync_info.addr = &per_adv_sync->addr;
+	sync_info.sid = per_adv_sync->sid;
+	sync_info.service_data = sys_le16_to_cpu(evt->service_data);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&pa_sync_cbs, listener, node) {
+		if (listener->synced) {
+			listener->synced(per_adv_sync, &sync_info);
 		}
 	}
 }
@@ -5027,6 +5102,8 @@ static const struct event_handler meta_events[] = {
 		      sizeof(struct bt_hci_evt_le_per_advertising_report)),
 	EVENT_HANDLER(BT_HCI_EVT_LE_PER_ADV_SYNC_LOST, le_per_adv_sync_lost,
 		      sizeof(struct bt_hci_evt_le_per_adv_sync_lost)),
+	EVENT_HANDLER(BT_HCI_EVT_LE_PAST_RECEIVED, le_past_received,
+		      sizeof(struct bt_hci_evt_le_past_received)),
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 #if defined(CONFIG_BT_ISO)
@@ -5523,6 +5600,7 @@ static int le_set_event_mask(void)
 			mask |= BT_EVT_MASK_LE_PER_ADV_SYNC_ESTABLISHED;
 			mask |= BT_EVT_MASK_LE_PER_ADVERTISING_REPORT;
 			mask |= BT_EVT_MASK_LE_PER_ADV_SYNC_LOST;
+			mask |= BT_EVT_MASK_LE_PAST_RECEIVED;
 		}
 	}
 
@@ -7310,28 +7388,6 @@ uint8_t bt_le_per_adv_sync_get_index(struct bt_le_per_adv_sync *per_adv_sync)
 	return index;
 }
 
-static struct bt_le_per_adv_sync *per_adv_sync_new(void)
-{
-	struct bt_le_per_adv_sync *per_adv_sync = NULL;
-
-	for (int i = 0; i < ARRAY_SIZE(per_adv_sync_pool); i++) {
-		if (!atomic_test_bit(per_adv_sync_pool[i].flags,
-				     BT_PER_ADV_SYNC_CREATED)) {
-			per_adv_sync = &per_adv_sync_pool[i];
-			break;
-		}
-	}
-
-	if (!per_adv_sync) {
-		return NULL;
-	}
-
-	(void)memset(per_adv_sync, 0, sizeof(*per_adv_sync));
-	atomic_set_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_CREATED);
-
-	return per_adv_sync;
-}
-
 int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 			      struct bt_le_per_adv_sync **out_sync)
 {
@@ -7573,6 +7629,174 @@ int bt_le_per_adv_sync_recv_enable(struct bt_le_per_adv_sync *per_adv_sync)
 int bt_le_per_adv_sync_recv_disable(struct bt_le_per_adv_sync *per_adv_sync)
 {
 	return bt_le_set_per_adv_recv_enable(per_adv_sync, false);
+}
+
+int bt_le_per_adv_sync_transfer(const struct bt_le_per_adv_sync *per_adv_sync,
+				const struct bt_conn *conn,
+				uint16_t service_data)
+{
+	struct bt_hci_cp_le_per_adv_sync_transfer *cp;
+	struct net_buf *buf;
+
+	if (!BT_FEAT_LE_PAST_SEND(bt_dev.le.features)) {
+		return -EOPNOTSUPP;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_PER_ADV_SYNC_TRANSFER,
+				sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	(void)memset(cp, 0, sizeof(*cp));
+
+	cp->conn_handle = sys_cpu_to_le16(conn->handle);
+	cp->sync_handle = sys_cpu_to_le16(per_adv_sync->handle);
+	cp->service_data = sys_cpu_to_le16(service_data);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_SYNC_TRANSFER, buf,
+				    NULL);
+}
+
+int bt_le_per_adv_set_info_transfer(const struct bt_le_ext_adv *adv,
+				    const struct bt_conn *conn,
+				    uint16_t service_data)
+{
+	struct bt_hci_cp_le_per_adv_set_info_transfer *cp;
+	struct net_buf *buf;
+
+	if (!BT_FEAT_LE_PAST_SEND(bt_dev.le.features)) {
+		return -EOPNOTSUPP;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_PER_ADV_SET_INFO_TRANSFER,
+				sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	(void)memset(cp, 0, sizeof(*cp));
+
+	cp->conn_handle = sys_cpu_to_le16(conn->handle);
+	cp->adv_handle = adv->handle;
+	cp->service_data = sys_cpu_to_le16(service_data);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_SET_INFO_TRANSFER, buf,
+				    NULL);
+}
+
+static bool valid_past_param(
+	const struct bt_le_per_adv_sync_transfer_param *param)
+{
+	if (param->skip > 0x01f3 ||
+	    param->timeout < 0x000A ||
+	    param->timeout > 0x4000) {
+		return false;
+	}
+
+	return true;
+}
+
+static int past_param_set(const struct bt_conn *conn, uint8_t mode,
+			  uint16_t skip, uint16_t timeout, uint8_t cte_type)
+{
+	struct bt_hci_cp_le_past_param *cp;
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_PAST_PARAM, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	(void)memset(cp, 0, sizeof(*cp));
+
+	cp->conn_handle = sys_cpu_to_le16(conn->handle);
+	cp->mode = mode;
+	cp->skip = sys_cpu_to_le16(skip);
+	cp->timeout = sys_cpu_to_le16(timeout);
+	cp->cte_type = cte_type;
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_PAST_PARAM, buf, NULL);
+}
+
+static int default_past_param_set(uint8_t mode, uint16_t skip, uint16_t timeout,
+				  uint8_t cte_type)
+{
+	struct bt_hci_cp_le_default_past_param *cp;
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_DEFAULT_PAST_PARAM, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	(void)memset(cp, 0, sizeof(*cp));
+
+	cp->mode = mode;
+	cp->skip = sys_cpu_to_le16(skip);
+	cp->timeout = sys_cpu_to_le16(timeout);
+	cp->cte_type = cte_type;
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_DEFAULT_PAST_PARAM, buf, NULL);
+}
+
+int bt_le_per_adv_sync_transfer_subscribe(
+	const struct bt_conn *conn,
+	const struct bt_le_per_adv_sync_transfer_param *param)
+{
+	uint8_t cte_type = 0;
+
+	if (!BT_FEAT_LE_PAST_RECV(bt_dev.le.features)) {
+		return -EOPNOTSUPP;
+	}
+
+	if (!valid_past_param(param)) {
+		return -EINVAL;
+	}
+
+	if (param->options & BT_LE_PER_ADV_SYNC_TRANSFER_OPT_SYNC_NO_AOA) {
+		cte_type |= BT_HCI_LE_PAST_CTE_TYPE_NO_AOA;
+	}
+
+	if (param->options & BT_LE_PER_ADV_SYNC_TRANSFER_OPT_SYNC_NO_AOD_1US) {
+		cte_type |= BT_HCI_LE_PAST_CTE_TYPE_NO_AOD_1US;
+	}
+
+	if (param->options & BT_LE_PER_ADV_SYNC_TRANSFER_OPT_SYNC_NO_AOD_2US) {
+		cte_type |= BT_HCI_LE_PAST_CTE_TYPE_NO_AOD_2US;
+	}
+
+	if (param->options & BT_LE_PER_ADV_SYNC_TRANSFER_OPT_SYNC_ONLY_CTE) {
+		cte_type |= BT_HCI_LE_PAST_CTE_TYPE_ONLY_CTE;
+	}
+
+	if (conn) {
+		return past_param_set(conn, BT_HCI_LE_PAST_MODE_SYNC,
+				      param->skip, param->timeout, cte_type);
+	} else {
+		return default_past_param_set(BT_HCI_LE_PAST_MODE_SYNC,
+					      param->skip, param->timeout,
+					      cte_type);
+	}
+}
+
+int bt_le_per_adv_sync_transfer_unsubscribe(const struct bt_conn *conn)
+{
+	if (!BT_FEAT_LE_PAST_RECV(bt_dev.le.features)) {
+		return -EOPNOTSUPP;
+	}
+
+	if (conn) {
+		return past_param_set(conn, BT_HCI_LE_PAST_MODE_NO_SYNC, 0,
+				      0x0a, 0);
+	} else {
+		return default_past_param_set(BT_HCI_LE_PAST_MODE_NO_SYNC, 0,
+					      0x0a, 0);
+	}
 }
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
 
