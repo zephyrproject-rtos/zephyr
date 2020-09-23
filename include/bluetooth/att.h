@@ -17,6 +17,7 @@ extern "C" {
 #endif
 
 /* Error codes for Error response PDU */
+#define BT_ATT_ERR_SUCCESS			0x00
 #define BT_ATT_ERR_INVALID_HANDLE		0x01
 #define BT_ATT_ERR_READ_NOT_PERMITTED		0x02
 #define BT_ATT_ERR_WRITE_NOT_PERMITTED		0x03
