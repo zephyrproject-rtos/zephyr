@@ -133,23 +133,24 @@ struct fs_statvfs {
  * @brief File System interface structure
  *
  * @param open Opens or creates a file, depending on flags given
- * @param read Reads items of data of size bytes long
- * @param write Writes items of data of size bytes long
+ * @param read Reads nbytes number of bytes
+ * @param write Writes nbytes number of bytes
  * @param lseek Moves the file position to a new location in the file
  * @param tell Retrieves the current position in the file
- * @param truncate Truncates the file to the new length
- * @param sync Flush the cache of an open file
+ * @param truncate Truncates/expands the file to the new length
+ * @param sync Flushes the cache of an open file
  * @param close Flushes the associated stream and closes the file
  * @param opendir Opens an existing directory specified by the path
- * @param readdir Reads directory entries of a open directory
+ * @param readdir Reads directory entries of an open directory
  * @param closedir Closes an open directory
- * @param mount Mount a file system
- * @param unmount Unmount a file system
+ * @param mount Mounts a file system
+ * @param unmount Unmounts a file system
  * @param unlink Deletes the specified file or directory
  * @param rename Renames a file or directory
  * @param mkdir Creates a new directory using specified path
  * @param stat Checks the status of a file or directory specified by the path
- * @param statvfs Returns the total and available space in the filesystem volume
+ * @param statvfs Returns the total and available space on the file system
+ *        volume
  */
 struct fs_file_system_t {
 	/* File operations */
@@ -202,56 +203,59 @@ struct fs_file_system_t {
 #endif
 
 /**
- * @brief File open
+ * @brief Open or create file
  *
- * Opens or creates, if does not exist, file depending on flags provided
- * and associates a stream with it.
+ * Opens or possibly creates a file and associates a stream with it.
  *
- * @param zfp Pointer to file object
- * @param file_name The name of file to open
+ * @details
+ * @p flags can be 0 or a binary combination of one or more of the following
+ * identifiers:
+ *   - @c FS_O_READ open for read
+ *   - @c FS_O_WRITE open for write
+ *   - @c FS_O_RDWR open for read/write (<tt>FS_O_READ | FS_O_WRITE</tt>)
+ *   - @c FS_O_CREATE create file if it does not exist
+ *   - @c FS_O_APPEND move to end of file before each write
+ *
+ * If @p flags are set to 0 the function will attempt to open an existing file
+ * with no read/write access; this may be used to e.g. check if the file exists.
+ *
+ * @param zfp Pointer to a file object
+ * @param file_name The name of a file to open
  * @param flags The mode flags
  *
- * @p flags can be empty, or combination of one or more of following flags:
- *   FS_O_READ    open for read
- *   FS_O_WRITE   open for write
- *   FS_O_RDWR    open for read/write (<tt>FS_O_READ | FS_O_WRITE</tt>)
- *   FS_O_CREATE  create file if it does not exist
- *   FS_O_APPEND  move to end of file before each write
- *
- * @retval 0 Success
- * @retval -EINVAL when bad file name is given
- * @retval -NOENT when file path is not possible (bad mount point)
- * @retval other negative error code, depending on file system back-end.
+ * @retval 0 on success;
+ * @retval -EINVAL when a bad file name is given;
+ * @retval -ENOENT when the file path is not possible (bad mount point);
+ * @retval <0 an other negative errno code, depending on a file system back-end.
  */
 int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags);
 
 /**
- * @brief File close
+ * @brief Close file
  *
- * Flushes the associated stream and closes
- * the file.
+ * Flushes the associated stream and closes the file.
  *
  * @param zfp Pointer to the file object
  *
- * @retval 0 Success
- * @retval -ERRNO errno code if error
+ * @retval 0 on success;
+ * @retval <0 a negative errno code on error.
  */
 int fs_close(struct fs_file_t *zfp);
 
 /**
- * @brief File unlink
+ * @brief Unlink file
  *
  * Deletes the specified file or directory
  *
  * @param path Path to the file or directory to delete
  *
- * @retval 0 Success
- * @retval -ERRNO errno code if error
+ * @retval 0 on success;
+ * @retval <0 a negative errno code on error.
  */
 int fs_unlink(const char *path);
 
 /**
- * @brief File o directory rename
+ * @brief Rename file or directory
  *
  * Performs a rename and / or move of the specified source path to the
  * specified destination.  The source path can refer to either a file or a
@@ -261,87 +265,88 @@ int fs_unlink(const char *path);
  * directory.  If an object already exists at the specified destination path,
  * this function causes it to be unlinked prior to the rename (i.e., the
  * destination gets clobbered).
+ * @note Current implementation does not allow moving files between mount
+ * points.
  *
- * @param from The source path.
- * @param to The destination path.
+ * @param from The source path
+ * @param to The destination path
  *
- * @retval 0 Success;
- * @retval -ERRNO errno code if error
+ * @retval 0 on success;
+ * @retval <0 a negative errno code on error.
  */
 int fs_rename(const char *from, const char *to);
 
 /**
- * @brief File read
+ * @brief Read file
  *
- * Reads items of data of size bytes long.
+ * Reads up to @p size bytes of data to @p ptr pointed buffer, returns number
+ * of bytes read.  A returned value may be lower than @p size if there were
+ * fewer bytes available than requested.
  *
  * @param zfp Pointer to the file object
  * @param ptr Pointer to the data buffer
  * @param size Number of bytes to be read
  *
- * @return Number of bytes read. On success, it will be equal to number of
- * items requested to be read. Returns less than number of bytes
- * requested if there are not enough bytes available in file. Will return
- * -ERRNO code on error.
+ * @retval >=0 a number of bytes read, on success;
+ * @retval <0 a negative errno code on error.
  */
 ssize_t fs_read(struct fs_file_t *zfp, void *ptr, size_t size);
 
 /**
- * @brief File write
+ * @brief Write file
  *
- * Writes items of data of size bytes long.
+ * Attempts to write @p size number of bytes to the specified file.
+ * If a negative value is returned from the function, the file pointer has not
+ * been advanced.
+ * If the function returns a non-negative number that is lower than @p size,
+ * the global @c errno variable should be checked for an error code,
+ * as the device may have no free space for data.
  *
  * @param zfp Pointer to the file object
  * @param ptr Pointer to the data buffer
- * @param size Number of bytes to be write
+ * @param size Number of bytes to be written
  *
- * @return Number of bytes written. On success, it will be equal to the number
- * of bytes requested to be written. Any other value, indicates an error. Will
- * return -ERRNO code on error.
- * In the case where -ERRNO is returned, the file pointer will not be
- * advanced because it couldn't start the operation.
- * In the case where it is able to write, but is not able to complete writing
- * all of the requested number of bytes, then it is because the disk got full.
- * In that case, it returns less number of bytes written than requested, but
- * not a negative -ERRNO value as in regular error case.
+ * @retval >=0 a number of bytes written, on success;
+ * @retval <0 a negative errno code on error.
  */
 ssize_t fs_write(struct fs_file_t *zfp, const void *ptr, size_t size);
 
 /**
- * @brief File seek
+ * @brief Seek file
  *
- * Moves the file position to a new location in the file. The offset is added
- * to file position based on the 'whence' parameter.
+ * Moves the file position to a new location in the file. The @p offset is added
+ * to file position based on the @p whence parameter.
  *
  * @param zfp Pointer to the file object
  * @param offset Relative location to move the file pointer to
  * @param whence Relative location from where offset is to be calculated.
- * - FS_SEEK_SET = from beginning of file
- * - FS_SEEK_CUR = from current position,
- * - FS_SEEK_END = from end of file.
+ * - @c FS_SEEK_SET for the beginning of the file;
+ * - @c FS_SEEK_CUR for the current position;
+ * - @c FS_SEEK_END for the end of the file.
  *
- * @retval 0 Success
- * @retval -ENOTSUP if underlying file system does not support seeking
- * @retval < 0 negative errno code
+ * @retval 0 on success;
+ * @retval -ENOTSUP if not supported by underlying file system driver;
+ * @retval <0 an other negative errno code on error.
  */
 int fs_seek(struct fs_file_t *zfp, off_t offset, int whence);
 
 /**
  * @brief Get current file position.
  *
- * Retrieves the current position in the file.
+ * Retrieves and returns the current position in the file stream.
  *
  * @param zfp Pointer to the file object
  *
- * @retval >= 0 position Current position in file
- * @retval -ENOTSUP if underlying file system does not support seeking
- * @retval < 0 negative errno code
- * Current revision does not validate the file object.
+ * @retval >= 0 a current position in file;
+ * @retval -ENOTSUP if not supported by underlying file system driver;
+ * @retval <0 an other negative errno code on error.
+ *
+ * The current revision does not validate the file object.
  */
 off_t fs_tell(struct fs_file_t *zfp);
 
 /**
- * @brief Change the size of an open file
+ * @brief Truncate or extend an open file to a given size
  *
  * Truncates the file to the new length if it is shorter than the current
  * size of the file. Expands the file if the new length is greater than the
@@ -349,30 +354,30 @@ off_t fs_tell(struct fs_file_t *zfp);
  *
  * @note In the case of expansion, if the volume got full during the
  * expansion process, the function will expand to the maximum possible length
- * and returns success. Caller should check if the expanded size matches the
+ * and return success.  Caller should check if the expanded size matches the
  * requested length.
  *
  * @param zfp Pointer to the file object
  * @param length New size of the file in bytes
  *
- * @retval 0 Success
- * @retval -ERRNO errno code if error
+ * @retval 0 on success;
+ * @retval <0 a negative errno code on error.
  */
 int fs_truncate(struct fs_file_t *zfp, off_t length);
 
 /**
- * @brief Flushes any cached write of an open file
+ * @brief Flush cached write data buffers of an open file
  *
- * This function can be used to flush the cache of an open file. This can
- * be called to ensure data gets written to the storage media immediately.
- * This may be done to avoid data loss if power is removed unexpectedly.
- * Note that closing a file will cause caches to be flushed correctly so it
- * need not be called if the file is being closed.
+ * The function flushes the cache of an open file; it can be invoked to ensure
+ * data gets written to the storage media immediately, e.g. to avoid data loss
+ * in case if power is removed unexpectedly.
+ * @note Closing a file will cause caches to be flushed correctly so the
+ * function need not be called when the file is being closed.
  *
  * @param zfp Pointer to the file object
  *
- * @retval 0 Success
- * @retval -ERRNO errno code if error
+ * @retval 0 on success;
+ * @retval <0 a negative errno code on error.
  */
 int fs_sync(struct fs_file_t *zfp);
 
@@ -383,8 +388,8 @@ int fs_sync(struct fs_file_t *zfp);
  *
  * @param path Path to the directory to create
  *
- * @retval 0 Success
- * @retval -ERRNO errno code if error
+ * @retval 0 on success;
+ * @retval <0 a negative errno code on error
  */
 int fs_mkdir(const char *path);
 
@@ -396,15 +401,16 @@ int fs_mkdir(const char *path);
  * @param zdp Pointer to the directory object
  * @param path Path to the directory to open
  *
- * @retval 0 Success
- * @retval -ERRNO errno code if error
+ * @retval 0 on success;
+ * @retval <0 a negative errno code on error.
  */
 int fs_opendir(struct fs_dir_t *zdp, const char *path);
 
 /**
  * @brief Directory read entry
  *
- * Reads directory entries of a open directory.
+ * Reads directory entries of an open directory. In end-of-dir condition,
+ * the function will return 0 and set the <tt>entry->name[0]</tt> to 0.
  *
  * @note: Most existing underlying file systems do not generate POSIX
  * special directory entries "." or "..".  For consistency the
@@ -414,10 +420,8 @@ int fs_opendir(struct fs_dir_t *zdp, const char *path);
  * @param zdp Pointer to the directory object
  * @param entry Pointer to zfs_dirent structure to read the entry into
  *
- * @retval 0 Success
- * @retval -ERRNO errno code if error
- * @return In end-of-dir condition, this will return 0 and set
- * entry->name[0] = 0
+ * @retval 0 on success or end-of-dir;;
+ * @retval <0 a negative errno code on error.
  */
 int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry);
 
@@ -428,8 +432,8 @@ int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry);
  *
  * @param zdp Pointer to the directory object
  *
- * @retval 0 Success
- * @retval -ERRNO errno code if error
+ * @retval 0 on success;
+ * @retval <0 a negative errno code on error.
  */
 int fs_closedir(struct fs_dir_t *zdp);
 
@@ -442,53 +446,54 @@ int fs_closedir(struct fs_dir_t *zdp);
  *
  * @param mp Pointer to the fs_mount_t structure
  *
- * @retval 0 Success
- * @retval -ERRNO errno code if error
+ * @retval 0 on success;
+ * @retval <0 a negative errno code on error.
  */
 int fs_mount(struct fs_mount_t *mp);
 
 /**
  * @brief Unmount filesystem
  *
- * Perform steps needed for unmounting a file system like
+ * Perform steps needed to unmount a file system like
  * calling the file system specific unmount function and removing
  * the mount point from mounted file system list.
  *
- *
  * @param mp Pointer to the fs_mount_t structure
  *
- * @retval 0 Success
- * @retval -ERRNO errno code if error
+ * @retval 0 on success;
+ * @retval <0 negative errno code on error.
  */
 int fs_unmount(struct fs_mount_t *mp);
 
 /**
- * @brief Mount point read entry
+ * @brief Get path of mount point at index
  *
- * Read mount point entry
+ * This function iterates through the list of mount points and returns
+ * the directory name of the mount point at the given @p index.
+ * On success @p index is incremented and @p name is set to the mount directory
+ * name.  If a mount point with the given @p index does not exist, @p name will
+ * be set to @c NULL.
  *
- * @param number Pointer to mount point number
- * @param name Pointer to mount point name
+ * @param index Pointer to mount point index
+ * @param name Pointer to pointer to path name
  *
- * @retval 0 Success
- * @retval -ERRNO errno code if error
- * @return On success \p number is incremented and \p name is set to mount
- * point name. In case no mount point exists for the given \p number
- * -ENOENT is returned and \p name is set to NULL.
+ * @retval 0 on success;
+ * @retval -ENOENT if there is no mount point with given index.
  */
-int fs_readmount(int *number, const char **name);
+int fs_readmount(int *index, const char **name);
 
 /**
  * @brief File or directory status
  *
- * Checks the status of a file or directory specified by the path
+ * Checks the status of a file or directory specified by the @p path.
+ * @note The file on a storage device may not be updated until it is closed.
  *
  * @param path Path to the file or directory
- * @param entry Pointer to zfs_dirent structure to fill if file or directory
- * exists.
+ * @param entry Pointer to the zfs_dirent structure to fill if the file or
+ * directory exists.
  *
- * @retval 0 Success
- * @retval -ERRNO errno code if error
+ * @retval 0 on success;
+ * @retval <0 negative errno code on error.
  */
 int fs_stat(const char *path, struct fs_dirent *entry);
 
@@ -498,10 +503,11 @@ int fs_stat(const char *path, struct fs_dirent *entry);
  * Returns the total and available space in the file system volume.
  *
  * @param path Path to the mounted directory
- * @param stat Pointer to zfs_statvfs structure to receive the fs statistics
+ * @param stat Pointer to the zfs_statvfs structure to receive the fs
+ * statistics
  *
- * @retval 0 Success
- * @retval -ERRNO errno code if error
+ * @retval 0 on success;
+ * @retval <0 negative errno code on error.
  */
 int fs_statvfs(const char *path, struct fs_statvfs *stat);
 
@@ -510,11 +516,11 @@ int fs_statvfs(const char *path, struct fs_statvfs *stat);
  *
  * Register file system with virtual file system.
  *
- * @param type Type of file system (ex: FS_FATFS)
+ * @param type Type of file system (ex: @c FS_FATFS)
  * @param fs Pointer to File system
  *
- * @retval 0 Success
- * @retval -ERRNO errno code if error
+ * @retval 0 on success;
+ * @retval <0 negative errno code on error.
  */
 int fs_register(int type, const struct fs_file_system_t *fs);
 
@@ -523,11 +529,11 @@ int fs_register(int type, const struct fs_file_system_t *fs);
  *
  * Unregister file system from virtual file system.
  *
- * @param type Type of file system (ex: FS_FATFS)
+ * @param type Type of file system (ex: @c FS_FATFS)
  * @param fs Pointer to File system
  *
- * @retval 0 Success
- * @retval -ERRNO errno code if error
+ * @retval 0 on success;
+ * @retval <0 negative errno code on error.
  */
 int fs_unregister(int type, const struct fs_file_system_t *fs);
 
