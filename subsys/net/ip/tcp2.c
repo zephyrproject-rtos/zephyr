@@ -282,9 +282,7 @@ static void tcp_send_queue_flush(struct tcp *conn)
 {
 	struct net_pkt *pkt;
 
-	if (k_delayed_work_remaining_get(&conn->send_timer)) {
-		k_delayed_work_cancel(&conn->send_timer);
-	}
+	k_delayed_work_cancel(&conn->send_timer);
 
 	while ((pkt = tcp_slist(&conn->send_queue, get,
 				struct net_pkt, next))) {
@@ -332,9 +330,7 @@ static int tcp_conn_unref(struct tcp *conn)
 
 	tcp_send_queue_flush(conn);
 
-	if (k_delayed_work_remaining_get(&conn->send_data_timer)) {
-		k_delayed_work_cancel(&conn->send_data_timer);
-	}
+	k_delayed_work_cancel(&conn->send_data_timer);
 	tcp_pkt_unref(conn->send_data);
 
 	k_delayed_work_cancel(&conn->timewait_timer);
