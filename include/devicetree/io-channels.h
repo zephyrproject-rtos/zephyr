@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief ADC Devicetree macro public API header file.
+ * @brief IO channels devicetree macro public API header file.
  */
 
 /*
@@ -9,15 +9,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DEVICETREE_ADC_H_
-#define ZEPHYR_INCLUDE_DEVICETREE_ADC_H_
+#ifndef ZEPHYR_INCLUDE_DEVICETREE_IO_CHANNELS_H_
+#define ZEPHYR_INCLUDE_DEVICETREE_IO_CHANNELS_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * @defgroup devicetree-adc Devicetree ADC API
+ * @defgroup devicetree-io-channels Devicetree IO Channels API
  * @ingroup devicetree
  * @{
  */
@@ -255,4 +255,4 @@ extern "C" {
 }
 #endif
 
-#endif  /* ZEPHYR_INCLUDE_DEVICETREE_ADC_H_ */
+#endif  /* ZEPHYR_INCLUDE_DEVICETREE_IO_CHANNELS_H_ */
