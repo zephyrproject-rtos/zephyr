@@ -34,6 +34,8 @@ from colorama import Fore
 import pickle
 import platform
 import yaml
+import json
+
 try:
     # Use the C LibYAML parser if available, rather than the Python parser.
     # It's much faster.
@@ -2655,6 +2657,7 @@ class TestSuite(DisablePyTestCollectionMixin):
             self.xunit_report(filename + "_report.xml", full_report=True,
                               append=only_failed, version=self.version)
             self.csv_report(filename + ".csv")
+            self.json_report(filename + ".json", append=only_failed, version=self.version)
 
             self.target_report(outdir, suffix, append=only_failed)
             if self.discards:
@@ -3147,7 +3150,6 @@ class TestSuite(DisablePyTestCollectionMixin):
         except Exception as e:
             logger.error(str(e))
             sys.exit(2)
-
         with open(filename, "wt") as csvfile:
             fieldnames = ["test", "arch", "platform", "reason"]
             cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
@@ -3273,8 +3275,6 @@ class TestSuite(DisablePyTestCollectionMixin):
                     tname = os.path.basename(instance.testcase.name)
                 else:
                     tname = instance.testcase.id
-
-
                 handler_time = instance.metrics.get('handler_time', 0)
 
                 if full_report:
@@ -3288,7 +3288,6 @@ class TestSuite(DisablePyTestCollectionMixin):
                             eleTestsuite, 'testcase',
                             classname=classname,
                             name="%s" % (k), time="%f" % handler_time)
-
                         if instance.results[k] in ['FAIL', 'BLOCK'] or \
                             (not instance.run and instance.status in ["error", "failed", "timeout"]):
                             if instance.results[k] == 'FAIL':
@@ -3385,6 +3384,98 @@ class TestSuite(DisablePyTestCollectionMixin):
                     rowdict["rom_size"] = rom_size
                 cw.writerow(rowdict)
 
+    def json_report(self, filename, platform=None, append=False, version="NA"):
+        rowdict = {}
+        results_dict = {}
+        rowdict["test_suite"] = []
+        results_dict["test_details"] = []
+        new_dict = {}
+
+        if platform:
+            selected = [platform]
+        else:
+            selected = self.selected_platforms
+
+        rowdict["test_environment"] = {"os": os.name,
+                                        "zephyr_version": version,
+                                        "toolchain": self.get_toolchain()
+                                        }
+        for p in selected:
+            json_dict = {}
+            inst = self.get_platform_instances(p)
+
+            if os.path.exists(filename) and append:
+                with open(filename, 'r') as report:
+                    data = json.load(report)
+
+                for i in data["test_suite"]:
+                    test_details = i["test_details"]
+                    for test_data in test_details:
+                        if not (test_data["status"]) == "failed":
+                            new_dict = test_data
+                            results_dict["test_details"].append(new_dict)
+
+            for _, instance in inst.items():
+                handler_log = os.path.join(instance.build_dir, "handler.log")
+                build_log = os.path.join(instance.build_dir, "build.log")
+                device_log = os.path.join(instance.build_dir, "device.log")
+
+                handler_time = instance.metrics.get('handler_time', 0)
+                ram_size = instance.metrics.get ("ram_size", 0)
+                rom_size  = instance.metrics.get("rom_size",0)
+                if os.path.exists(filename) and append:
+                    json_dict = {"testcase": instance.testcase.name,
+                                    "arch": instance.platform.arch,
+                                    "type": instance.testcase.type,
+                                    "platform": p,
+                                    }
+                    if instance.status in ["error", "failed", "timeout"]:
+                        json_dict["status"] = "failed"
+                        json_dict["reason"] = instance.reason
+                        json_dict["execution_time"] =  handler_time
+                        if os.path.exists(handler_log):
+                            json_dict["test_output"] = self.process_log(handler_log)
+                        elif os.path.exists(device_log):
+                            json_dict["device_log"] = self.process_log(device_log)
+                        else:
+                            json_dict["build_log"] = self.process_log(build_log)
+                    results_dict["test_details"].append(json_dict)
+                else:
+                    for k in instance.results.keys():
+                        json_dict = {"testcase": k,
+                                    "arch": instance.platform.arch,
+                                    "type": instance.testcase.type,
+                                    "platform": p,
+                                    }
+                        if instance.results[k] in ["PASS"]:
+                            json_dict["status"] = "passed"
+                            if instance.handler:
+                                json_dict["execution_time"] =  handler_time
+                            if ram_size:
+                                json_dict["ram_size"] = ram_size
+                            if rom_size:
+                                json_dict["rom_size"] = rom_size
+
+                        elif instance.results[k] in ['FAIL', 'BLOCK'] or instance.status in ["error", "failed", "timeout"]:
+                            json_dict["status"] = "failed"
+                            json_dict["reason"] = instance.reason
+                            json_dict["execution_time"] =  handler_time
+                            if os.path.exists(handler_log):
+                                json_dict["test_output"] = self.process_log(handler_log)
+                            elif os.path.exists(device_log):
+                                json_dict["device_log"] = self.process_log(device_log)
+                            else:
+                                json_dict["build_log"] = self.process_log(build_log)
+                        else:
+                            json_dict["status"] = "skipped"
+                            json_dict["reason"] = instance.reason
+                        results_dict["test_details"].append(json_dict)
+
+        rowdict["test_suite"].append(results_dict)
+
+        with open(filename, "wt") as json_file:
+            json.dump(rowdict, json_file, indent=4, separators=(',',':'))
+
     def get_testcase(self, identifier):
         results = []
         for _, tc in self.testcases.items():
@@ -3392,7 +3483,6 @@ class TestSuite(DisablePyTestCollectionMixin):
                 if case == identifier:
                     results.append(tc)
         return results
-
 
 class CoverageTool:
     """ Base class for every supported coverage tool
