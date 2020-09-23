@@ -328,7 +328,7 @@ void do_join_from_isr(const void *arg)
 
 #define JOIN_TIMEOUT_MS	100
 
-int join_scenario(enum control_method m)
+int join_scenario_interval(enum control_method m, int64_t *interval)
 {
 	k_timeout_t timeout = K_FOREVER;
 	int ret;
@@ -368,7 +368,17 @@ int join_scenario(enum control_method m)
 		irq_offload(do_join_from_isr, (const void *)&ret);
 	} else {
 		printk("ztest_thread: joining join_thread\n");
+
+		if (interval != NULL) {
+			*interval = k_uptime_get();
+		}
+
 		ret = k_thread_join(&join_thread, timeout);
+
+		if (interval != NULL) {
+			*interval = k_uptime_get() - *interval;
+		}
+
 		printk("ztest_thread: k_thread_join() returned with %d\n", ret);
 	}
 
@@ -380,6 +390,11 @@ int join_scenario(enum control_method m)
 	}
 
 	return ret;
+}
+
+static inline int join_scenario(enum control_method m)
+{
+	return join_scenario_interval(m, NULL);
 }
 
 void test_thread_join(void)
@@ -396,10 +411,8 @@ void test_thread_join(void)
 	zassert_equal(join_scenario(SELF_ABORT), 0, "failed self-abort case");
 	zassert_equal(join_scenario(OTHER_ABORT), 0, "failed other-abort case");
 
-	interval = k_uptime_get();
-	zassert_equal(join_scenario(OTHER_ABORT_TIMEOUT), 0,
-		      "failed other-abort case with timeout");
-	interval = k_uptime_get() - interval;
+	zassert_equal(join_scenario_interval(OTHER_ABORT_TIMEOUT, &interval),
+		      0, "failed other-abort case with timeout");
 	zassert_true(interval < JOIN_TIMEOUT_MS, "join took too long (%lld ms)",
 		     interval);
 	zassert_equal(join_scenario(ALREADY_EXIT), 0,
