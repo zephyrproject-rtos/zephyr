@@ -44,13 +44,55 @@ X-NUCLEO-IKS01A2 provides the following key features:
 More information about X-NUCLEO-IKS01A2 can be found here:
        - `X-NUCLEO-IKS01A2 databrief`_
 
+Hardware Configuration
+**********************
+
+X-NUCLEO-IKS01A2 board connects the various devices on two separate I2C bus:
+
+- LSM6DL is on I2C2
+- LSM303AGR, LPS22HB, HTS221 are on I2C1
+
+X-NUCLEO-IKS01A2 board can be configured in two different ways: Mode 1 and Mode 2
+
+
+Mode 1: Standard Mode
+=====================
+
+In standard I2C mode the two buses are connected together. As a consequence, all devices on the shield
+reside on the same I2C bus and are accessible from the main board thru I2C bus.
+
+The jumper configuration to activate this mode is:
+
+- JP7 => 1-2, 3-4 (I2C1 = I2C2, I2Cx=GND)
+- JP8 => 1-2, 3-4 (I2C1 = I2C2, I2Cx=GND)
+
+
+Mode 2: SensorHub Mode
+======================
+
+In SensorHub mode LSM6DSL is connected to I2C2 and is accessible from the main board.
+All the other devices are connected to LSM6DSL master thru I2C1.
+
+The jumper configuration to activate this mode is:
+
+- JP7 => 2-3 (I2C1 = I2Cx)
+- JP8 => 2-3 (I2C1 = I2Cx)
+
+More information about X-NUCLEO-IKS01A2 configuration modes can be found in the
+`X-NUCLEO-IKS01A2 databrief`_
+
 
 Programming
 ***********
 
-Using the ``x-nucleo-iks01a2`` shield is quite similar to use the shield
-``x-nucleo-iks01a1`` for which the :ref:`x-nucleo-iks01a1-sample` application
-is provided (see :ref:`shields` for more details).
+Two samples are provided as examples for ``x-nucleo-iks01a2`` shield:
+
+- :ref:`x-nucleo-iks01a2-std-sample` application, to be used when the shield is configured
+  in Standard Mode
+- :ref:`x-nucleo-iks01a2-shub-sample` application, to be used when the shield is configured
+  in SensorHub Mode
+
+See also :ref:`shields` for more details.
 
 References
 **********
