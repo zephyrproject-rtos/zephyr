@@ -241,6 +241,7 @@ Boards & SoC Support
 
   * ARM Cortex-M1/M3 DesignStart FPGA reference designs running on the Digilent
     Arty A7 development board
+  * Laird Connectivity Pinnacle 100 Modem Development board (pinnacle_100_dvk)
   * nRF21540 Devkit (nrf21540dk_nrf52840).
   * OLIMEX-STM32-H103
   * ST B_L4S5I_IOT01A Discovery kit
