@@ -10,6 +10,7 @@
 #include <kernel_structs.h>
 #include <irq_offload.h>
 #include <kswap.h>
+#include <assert.h>
 
 #if defined(CONFIG_USERSPACE)
 #include <syscall_handler.h>
@@ -67,7 +68,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 	expected_reason = -1;
 }
 
-void alt_thread1(void)
+void entry_cpu_exception(void *p1, void *p2, void *p3)
 {
 	expected_reason = K_ERR_CPU_EXCEPTION;
 
@@ -90,7 +91,7 @@ void alt_thread1(void)
 }
 
 
-void alt_thread2(void)
+void entry_oops(void *p1, void *p2, void *p3)
 {
 	unsigned int key;
 
@@ -103,7 +104,7 @@ void alt_thread2(void)
 	irq_unlock(key);
 }
 
-void alt_thread3(void)
+void entry_panic(void *p1, void *p2, void *p3)
 {
 	unsigned int key;
 
@@ -116,7 +117,7 @@ void alt_thread3(void)
 	irq_unlock(key);
 }
 
-void alt_thread4(void)
+void entry_zephyr_assert(void *p1, void *p2, void *p3)
 {
 	expected_reason = K_ERR_KERNEL_PANIC;
 
@@ -124,7 +125,7 @@ void alt_thread4(void)
 	rv = TC_FAIL;
 }
 
-void alt_thread5(void)
+void entry_arbitrary_reason(void *p1, void *p2, void *p3)
 {
 	unsigned int key;
 
@@ -178,7 +179,7 @@ static inline void z_vrfy_blow_up_priv_stack(void)
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_STACK_SENTINEL */
 
-void stack_sentinel_timer(void)
+void stack_sentinel_timer(void *p1, void *p2, void *p3)
 {
 	/* We need to guarantee that we receive an interrupt, so set a
 	 * k_timer and spin until we die.  Spinning alone won't work
@@ -193,7 +194,7 @@ void stack_sentinel_timer(void)
 	}
 }
 
-void stack_sentinel_swap(void)
+void stack_sentinel_swap(void *p1, void *p2, void *p3)
 {
 	unsigned int key = irq_lock();
 
@@ -206,7 +207,7 @@ void stack_sentinel_swap(void)
 	irq_unlock(key);
 }
 
-void stack_hw_overflow(void)
+void stack_hw_overflow(void *p1, void *p2, void *p3)
 {
 	/* Test that HW stack overflow check works */
 	blow_up_stack();
@@ -215,7 +216,7 @@ void stack_hw_overflow(void)
 }
 
 #if defined(CONFIG_USERSPACE)
-void user_priv_stack_hw_overflow(void)
+void user_priv_stack_hw_overflow(void *p1, void *p2, void *p3)
 {
 	/* Test that HW stack overflow check works
 	 * on a user thread's privilege stack.
@@ -226,7 +227,7 @@ void user_priv_stack_hw_overflow(void)
 }
 #endif /* CONFIG_USERSPACE */
 
-void check_stack_overflow(void *handler, uint32_t flags)
+void check_stack_overflow(k_thread_entry_t handler, uint32_t flags)
 {
 #ifdef CONFIG_STACK_SENTINEL
 	/* When testing stack sentinel feature, the overflow stack is a
@@ -239,7 +240,7 @@ void check_stack_overflow(void *handler, uint32_t flags)
 	k_thread_create(&alt_thread, alt_stack,
 			K_THREAD_STACK_SIZEOF(alt_stack),
 #endif /* CONFIG_STACK_SENTINEL */
-			(k_thread_entry_t)handler,
+			handler,
 			NULL, NULL, NULL, K_PRIO_PREEMPT(PRIORITY), flags,
 			K_NO_WAIT);
 
@@ -271,7 +272,7 @@ void test_fatal(void)
 	TC_PRINT("test alt thread 1: generic CPU exception\n");
 	k_thread_create(&alt_thread, alt_stack,
 			K_THREAD_STACK_SIZEOF(alt_stack),
-			(k_thread_entry_t)alt_thread1,
+			entry_cpu_exception,
 			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
 			K_NO_WAIT);
 	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
@@ -286,7 +287,7 @@ void test_fatal(void)
 	TC_PRINT("test alt thread 2: initiate kernel oops\n");
 	k_thread_create(&alt_thread, alt_stack,
 			K_THREAD_STACK_SIZEOF(alt_stack),
-			(k_thread_entry_t)alt_thread2,
+			entry_oops,
 			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
 			K_NO_WAIT);
 	k_thread_abort(&alt_thread);
@@ -295,7 +296,7 @@ void test_fatal(void)
 	TC_PRINT("test alt thread 3: initiate kernel panic\n");
 	k_thread_create(&alt_thread, alt_stack,
 			K_THREAD_STACK_SIZEOF(alt_stack),
-			(k_thread_entry_t)alt_thread3,
+			entry_panic,
 			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
 			K_NO_WAIT);
 	k_thread_abort(&alt_thread);
@@ -304,7 +305,7 @@ void test_fatal(void)
 	TC_PRINT("test alt thread 4: fail assertion\n");
 	k_thread_create(&alt_thread, alt_stack,
 			K_THREAD_STACK_SIZEOF(alt_stack),
-			(k_thread_entry_t)alt_thread4,
+			entry_zephyr_assert,
 			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
 			K_NO_WAIT);
 	k_thread_abort(&alt_thread);
@@ -313,7 +314,7 @@ void test_fatal(void)
 	TC_PRINT("test alt thread 5: initiate arbitrary SW exception\n");
 	k_thread_create(&alt_thread, alt_stack,
 			K_THREAD_STACK_SIZEOF(alt_stack),
-			(k_thread_entry_t)alt_thread5,
+			entry_arbitrary_reason,
 			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
 			K_NO_WAIT);
 	k_thread_abort(&alt_thread);
