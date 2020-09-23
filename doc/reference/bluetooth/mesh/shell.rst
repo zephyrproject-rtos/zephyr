@@ -128,10 +128,11 @@ General configuration
 	Initialize the mesh. This command must be run before any other mesh command.
 
 
-``mesh reset``
---------------
+``mesh reset <addr>``
+---------------------
 
-	Reset the mesh node to its initial unprovisioned state.
+	reset the local mesh node to its initial unprovisioned state or reset a remote node and remove it from the network.
+	* ``addr``: address of the node to reset.
 
 
 ``mesh lpn <value: off, on>``

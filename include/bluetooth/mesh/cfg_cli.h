@@ -42,6 +42,16 @@ struct bt_mesh_cfg_cli {
 	BT_MESH_MODEL_CB(BT_MESH_MODEL_ID_CFG_CLI, bt_mesh_cfg_cli_op, NULL,   \
 			 cli_data, &bt_mesh_cfg_cli_cb)
 
+/** @brief Reset the target node and remove it from the network.
+ *
+ *  @param net_idx Network index to encrypt with.
+ *  @param addr    Target node address.
+ *  @param status  Status response parameter
+ *
+ *  @return 0 on success, or (negative) error code on failure.
+ */
+int bt_mesh_cfg_node_reset(uint16_t net_idx, uint16_t addr, bool *status);
+
 /** @brief Get the target node's composition data.
  *
  *  @param net_idx Network index to encrypt with.
