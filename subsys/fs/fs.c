@@ -682,7 +682,7 @@ unmount_err:
 	return rc;
 }
 
-int fs_readmount(int *number, const char **name)
+int fs_readmount(int *index, const char **name)
 {
 	sys_dnode_t *node;
 	int rc = -ENOENT;
@@ -694,7 +694,7 @@ int fs_readmount(int *number, const char **name)
 	k_mutex_lock(&mutex, K_FOREVER);
 
 	SYS_DLIST_FOR_EACH_NODE(&fs_mnt_list, node) {
-		if (*number == cnt) {
+		if (*index == cnt) {
 			itr = CONTAINER_OF(node, struct fs_mount_t, node);
 			break;
 		}
@@ -707,7 +707,7 @@ int fs_readmount(int *number, const char **name)
 	if (itr != NULL) {
 		rc = 0;
 		*name = itr->mnt_point;
-		++(*number);
+		++(*index);
 	}
 
 	return rc;
