@@ -19,12 +19,13 @@
 #if CONFIG_ARM_NSC_REGION_BASE_ADDRESS != 0
 	#define NSC_ALIGN . = ABSOLUTE(CONFIG_ARM_NSC_REGION_BASE_ADDRESS)
 #else
-	#define NSC_ALIGN . = ALIGN(4)
+	/* The ARM SAU requires regions to be 32-byte-aligned. */
+	#define NSC_ALIGN . = ALIGN(32)
 #endif /* CONFIG_ARM_NSC_REGION_BASE_ADDRESS */
 #endif /* !NSC_ALIGN */
 
 #ifndef NSC_ALIGN_END
-	#define NSC_ALIGN_END . = ALIGN(4)
+	#define NSC_ALIGN_END . = ALIGN(32)
 #endif
 
 SECTION_PROLOGUE(.gnu.sgstubs,,)
