@@ -206,6 +206,13 @@ Architectures
 
 * ARC:
 
+  * Added ARC MetaWare toolchain support
+  * General arch improvements for stacks & memory domains
+  * API improvements for cache flush and cache invalidate
+  * Debugging help: show all registers on exception
+  * Fix for fast irq (one register bank configuration)
+  * Fix for undefined shift behavior (CID 211523)
+
 
 * ARM:
 
@@ -260,12 +267,25 @@ Boards & SoC Support
 
   * ARM Cortex-M1/M3 DesignStart FPGA
   * NXP i.MX RT685, i.MX8M Mini, and LPC11U6x
+  * ARC QEMU support for EM and HS family
 
 * Made these changes in other SoC series:
 
   * STM32L4/STM32WB: Added support for Low Power Mode
   * STM32H7/STM32WB/STM32MP1: Added Dual Core concurrent register access
     protection using HSEM
+  * Increase cpu frequency for ARC nsim_hs_smp
+
+
+* Changes for ARC boards:
+
+  * ARC QEMU boards for ARC EM and HS
+  * ARC MetaWare toolchain support, including mdb runner for various ARC boards
+  * gcov coverage support for ARC QEMU
+  * New nSIM configuration, corresponding to em7d_v22 EMSK board
+  * Enable SMP on HSDK board, including dual core and quad core configurations
+  * Switch from legacy ARC-nSIM UART to ns16550 UART model and driver
+  * Fix EMSDP secure config for emsdp_em7d_esp
 
 * Added support for these ARM boards:
 
@@ -599,6 +619,12 @@ Bluetooth
 Build and Infrastructure
 ************************
 
+* Improved support for additional toolchains
+
+  * Better toolchain abstractions
+  * Support for the ARC MetaWare toolchain
+
+
 * Devicetree:
 
   * Added new devicetree macros that provide a default value if the property
@@ -607,6 +633,7 @@ Build and Infrastructure
   * Added support for inferring bindings for ``/zephyr,user`` devicetree node
     to allow applications an easy way to specify application specific
     devicetree properties without having a binding.
+
 
 * Support for multiple SOC and ARCH roots.
   The :ref:`SOC_ROOT <application>` and ``ARCH_ROOT`` variables used to specify
