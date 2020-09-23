@@ -48,6 +48,7 @@ config NET_IPV4_ACCEPT_ZERO_BROADCAST
 
 config NET_DHCPV4
 	bool "Enable DHCPv4 client"
+	depends on NET_UDP
 
 config NET_DHCPV4_INITIAL_DELAY_MAX
 	int "Maximum time out for initial discover request"
