@@ -372,6 +372,15 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 	* ``interval``: Sets the new relay retransmit interval in milliseconds if ``val`` is ``on``. Ignored if ``val`` is ``off``. Defaults to ``20`` if omitted.
 
 
+``mesh net-transmit-param [<count: 0-7> <interval: 10-320>]``
+-------------------------------------------------------------
+
+	Get or set the network transmit parameters.
+
+	* ``count``: Sets the number of additional network transmits for every sent message.
+	* ``interval``: Sets the new network retransmit interval in milliseconds.
+
+
 ``mesh net-key-add <NetKeyIndex> [val]``
 ----------------------------------------
 
