@@ -403,16 +403,16 @@ static inline void qspi_fill_init_struct(nrfx_qspi_config_t *initstruct)
 #endif
 
 	/* Configure Protocol interface */
-#if DT_INST_NODE_HAS_PROP(0, readoc_enum)
+#if DT_INST_NODE_HAS_PROP(0, readoc)
 	initstruct->prot_if.readoc =
-		(nrf_qspi_writeoc_t)qspi_get_lines_read(DT_INST_PROP(0, readoc_enum));
+		(nrf_qspi_writeoc_t)qspi_get_lines_read(DT_ENUM_IDX(DT_DRV_INST(0), readoc));
 #else
 	initstruct->prot_if.readoc = NRF_QSPI_READOC_FASTREAD;
 #endif
 
-#if DT_INST_NODE_HAS_PROP(0, writeoc_enum)
+#if DT_INST_NODE_HAS_PROP(0, writeoc)
 	initstruct->prot_if.writeoc =
-		(nrf_qspi_writeoc_t)qspi_get_lines_write(DT_INST_PROP(0, writeoc_enum));
+		(nrf_qspi_writeoc_t)qspi_get_lines_write(DT_ENUM_IDX(DT_DRV_INST(0), writeoc));
 #else
 	initstruct->prot_if.writeoc = NRF_QSPI_WRITEOC_PP;
 #endif
