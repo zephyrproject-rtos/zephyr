@@ -75,7 +75,6 @@ endmenu
 
 config HAS_NRFX
 	bool
-	select HAS_CMSIS_CORE
 
 menu "nrfx drivers"
 	depends on HAS_NRFX
