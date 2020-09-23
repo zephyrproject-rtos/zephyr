@@ -215,15 +215,6 @@ Hardware specific APIs
 The following APIs can also be used by including ``<devicetree.h>``;
 no additional include is needed.
 
-ADC
-===
-
-These are commonly used by sensor device drivers which need to use an ADC
-channel for conversion.
-
-.. doxygengroup:: devicetree-adc
-   :project: Zephyr
-
 Clocks
 ======
 
@@ -264,6 +255,15 @@ These conveniences may be used for nodes which describe GPIO controllers/pins,
 and properties related to them.
 
 .. doxygengroup:: devicetree-gpio
+   :project: Zephyr
+
+IO channels
+===========
+
+These are commonly used by device drivers which need to use IO
+channels (e.g. ADC or DAC channels) for conversion.
+
+.. doxygengroup:: devicetree-io-channels
    :project: Zephyr
 
 PWM
