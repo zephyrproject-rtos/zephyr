@@ -54,6 +54,11 @@ if IEEE802154
 config IEEE802154_CC13XX_CC26XX
 	default y
 
+# This is a dummy kconfig entry so that we can merge required changes
+# into hal/ti. It should be removed when Issue #26315 is fixed.
+config IEEE802154_CC13XX_CC26XX_SUB_GHZ
+	bool
+
 config NET_CONFIG_IEEE802154_DEV_NAME
 	default IEEE802154_CC13XX_CC26XX_DRV_NAME
 
