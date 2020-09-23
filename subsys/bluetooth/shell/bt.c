@@ -434,12 +434,30 @@ static void per_adv_sync_sync_cb(struct bt_le_per_adv_sync *sync,
 				 struct bt_le_per_adv_sync_synced_info *info)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
+	char past_peer[BT_ADDR_LE_STR_LEN];
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+
+	if (info->conn) {
+		conn_addr_str(info->conn, past_peer, sizeof(past_peer));
+	} else {
+		memset(past_peer, 0, sizeof(past_peer));
+	}
+
 	shell_print(ctx_shell, "PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
-		    "Interval 0x%04x (%u ms), PHY %s",
+		    "Interval 0x%04x (%u ms), PHY %s, SD 0x%04X, PAST peer %s",
 		    bt_le_per_adv_sync_get_index(sync), le_addr,
-		    info->interval, info->interval * 5 / 4, phy2str(info->phy));
+		    info->interval, info->interval * 5 / 4, phy2str(info->phy),
+		    info->service_data, past_peer);
+
+	if (info->conn) { /* if from PAST */
+		for (int i = 0; i < ARRAY_SIZE(per_adv_syncs); i++) {
+			if (!per_adv_syncs[i]) {
+				per_adv_syncs[i] = sync;
+				break;
+			}
+		}
+	}
 }
 
 static void per_adv_sync_terminated_cb(
@@ -1563,6 +1581,107 @@ static int cmd_per_adv_sync_delete(const struct shell *shell, size_t argc,
 	}
 
 	return 0;
+}
+
+static int cmd_past_subscribe(const struct shell *shell, size_t argc,
+			      char *argv[])
+{
+	struct bt_le_per_adv_sync_transfer_param param;
+	int err;
+	int i = 0;
+	bool global = true;
+
+	if (i == ARRAY_SIZE(per_adv_syncs)) {
+		shell_error(shell, "Cannot create more per adv syncs");
+		return -ENOEXEC;
+	}
+
+	/* Default values */
+	param.options = 0;
+	param.timeout = 1000; /* 10 seconds */
+	param.skip = 10;
+
+	for (int i = 1; i < argc; i++) {
+		if (!strcmp(argv[i], "aoa")) {
+			param.options |=
+				BT_LE_PER_ADV_SYNC_TRANSFER_OPT_SYNC_NO_AOA;
+		} else if (!strcmp(argv[i], "aod_1us")) {
+			param.options |=
+				BT_LE_PER_ADV_SYNC_TRANSFER_OPT_SYNC_NO_AOD_1US;
+		} else if (!strcmp(argv[i], "aod_2us")) {
+			param.options |=
+				BT_LE_PER_ADV_SYNC_TRANSFER_OPT_SYNC_NO_AOD_2US;
+		} else if (!strcmp(argv[i], "only_cte")) {
+			param.options |=
+				BT_LE_PER_ADV_SYNC_TRANSFER_OPT_SYNC_ONLY_CTE;
+		} else if (!strcmp(argv[i], "timeout")) {
+			if (++i == argc) {
+				shell_help(shell);
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			param.timeout = strtoul(argv[i], NULL, 16);
+		} else if (!strcmp(argv[i], "skip")) {
+			if (++i == argc) {
+				shell_help(shell);
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			param.skip = strtoul(argv[i], NULL, 16);
+		} else if (!strcmp(argv[i], "conn")) {
+			if (!default_conn) {
+				shell_print(shell, "Not connected");
+				return -EINVAL;
+			}
+			global = false;
+		} else {
+			shell_help(shell);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
+
+	bt_le_per_adv_sync_cb_register(&per_adv_sync_cb);
+
+	err = bt_le_per_adv_sync_transfer_subscribe(
+		global ? NULL : default_conn, &param);
+
+	if (err) {
+		shell_error(shell, "PAST subscribe failed (%d)", err);
+	} else {
+		shell_print(shell, "Subscribed to PAST");
+	}
+
+	return 0;
+}
+
+static int cmd_past_unsubscribe(const struct shell *shell, size_t argc,
+				char *argv[])
+{
+	int err;
+
+	if (argc > 1) {
+		if (!strcmp(argv[1], "conn")) {
+			if (default_conn) {
+				err =
+					bt_le_per_adv_sync_transfer_unsubscribe(
+						default_conn);
+			} else {
+				shell_print(shell, "Not connected");
+				return -EINVAL;
+			}
+		} else {
+			shell_help(shell);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	} else {
+		err = bt_le_per_adv_sync_transfer_unsubscribe(NULL);
+	}
+
+	if (err) {
+		shell_error(shell, "PAST unsubscribe failed (%d)", err);
+	}
+
+	return err;
 }
 #endif /* CONFIG_BT_PER_ADV_SYNC */
 
@@ -2817,6 +2936,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      cmd_per_adv_sync_create, 4, 6),
 	SHELL_CMD_ARG(per-adv-sync-delete, NULL, "[<index>]",
 		      cmd_per_adv_sync_delete, 1, 1),
+	SHELL_CMD_ARG(past-subscribe, NULL, "[conn] [skip <count>] "
+		      "[timeout <ms>] [aoa] [aod_1us] [aod_2us] [cte_only]",
+		      cmd_past_subscribe, 1, 7),
+	SHELL_CMD_ARG(past-unsubscribe, NULL, "[conn]",
+		      cmd_past_unsubscribe, 1, 1),
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
 #if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_CENTRAL)
