@@ -771,7 +771,7 @@ static void test_triggered_wait_expired(void)
 	check_results(0);
 
 	/* Items should be executed when we will be sleeping here. */
-	k_msleep(SUBMIT_WAIT);
+	k_msleep(SUBMIT_WAIT * 2);
 	TC_PRINT(" - Checking results (after timeout)\n");
 	check_results(NUM_TEST_ITEMS);
 
