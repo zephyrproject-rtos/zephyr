@@ -53,6 +53,10 @@ ccache -s
 # lpcxpresso11u68 boards
 pip3 install lpc_checksum
 
+echo "--- TESTING WEST 0.8.0a2"
+pip3 install west==0.8.0a2
+west --version
+
 if [ -n "${DAILY_BUILD}" ]; then
    SANITYCHECK_OPTIONS=" --inline-logs -N --build-only --all --retry-failed 3 -v "
    echo "--- DAILY BUILD"
