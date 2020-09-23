@@ -126,7 +126,7 @@ static inline int z_swap_irqlock(unsigned int key)
 #endif
 #endif
 	ret = __swap(key);
-#ifndef CONFIG_ARM
+#if !defined(CONFIG_ARM) && !defined(CONFIG_ARC)
 #ifdef CONFIG_TRACING
 	sys_trace_thread_switched_in();
 #endif
