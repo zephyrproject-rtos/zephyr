@@ -178,7 +178,12 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	struct net_linkaddr *lladdr;
 	sa_family_t family;
 
-	if (hdr == NULL) {
+	/* This expects that the Ethernet header is in the first net_buf
+	 * fragment. This is a safe expectation here as it would not make
+	 * any sense to split the Ethernet header to two net_buf's by the
+	 * Ethernet driver.
+	 */
+	if (hdr == NULL || pkt->buffer->len < hdr_len) {
 		goto drop;
 	}
 
