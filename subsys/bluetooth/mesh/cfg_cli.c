@@ -903,6 +903,21 @@ int bt_mesh_cfg_gatt_proxy_set(uint16_t net_idx, uint16_t addr, uint8_t val,
 			    OP_GATT_PROXY_STATUS, val, status);
 }
 
+int bt_mesh_cfg_net_transmit_set(uint16_t net_idx, uint16_t addr,
+		uint8_t val, uint8_t *transmit)
+{
+	return set_state_u8(net_idx, addr, OP_NET_TRANSMIT_SET,
+				OP_NET_TRANSMIT_STATUS, val, transmit);
+}
+
+int bt_mesh_cfg_net_transmit_get(uint16_t net_idx, uint16_t addr,
+		uint8_t *transmit)
+{
+	return get_state_u8(net_idx, addr, OP_NET_TRANSMIT_GET,
+			OP_NET_TRANSMIT_STATUS, transmit);
+}
+
+
 int bt_mesh_cfg_relay_get(uint16_t net_idx, uint16_t addr, uint8_t *status,
 			  uint8_t *transmit)
 {

@@ -160,6 +160,33 @@ int bt_mesh_cfg_gatt_proxy_get(uint16_t net_idx, uint16_t addr, uint8_t *status)
 int bt_mesh_cfg_gatt_proxy_set(uint16_t net_idx, uint16_t addr, uint8_t val,
 			       uint8_t *status);
 
+/** @brief Get the target node's network_transmit state.
+ *
+ *  @param net_idx  Network index to encrypt with.
+ *  @param addr     Target node address.
+ *  @param transmit Network transmit response parameter. Returns the encoded
+ *                  network transmission parameters on success. Decoded with
+ *                  @ref BT_MESH_TRANSMIT_COUNT and @ref BT_MESH_TRANSMIT_INT.
+ *
+ *  @return 0 on success, or (negative) error code on failure.
+ */
+int bt_mesh_cfg_net_transmit_get(uint16_t net_idx, uint16_t addr,
+			  uint8_t *transmit);
+
+/** @brief Set the target node's network transmit parameters.
+ *
+ *  @param net_idx    Network index to encrypt with.
+ *  @param addr       Target node address.
+ *  @param val        New encoded network transmit parameters.
+ *                    @see BT_MESH_TRANSMIT.
+ *  @param transmit   Network transmit response parameter. Returns the encoded
+ *                    network transmission parameters on success. Decoded with
+ *                    @ref BT_MESH_TRANSMIT_COUNT and @ref BT_MESH_TRANSMIT_INT.
+ *  @return 0 on success, or (negative) error code on failure.
+ */
+int bt_mesh_cfg_net_transmit_set(uint16_t net_idx, uint16_t addr,
+		uint8_t val, uint8_t *transmit);
+
 /** @brief Get the target node's Relay feature state.
  *
  *  @param net_idx  Network index to encrypt with.
