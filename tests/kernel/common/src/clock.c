@@ -172,9 +172,12 @@ void test_ms_time_duration(void)
 	k_timer_start(&ktimer, K_MSEC(100), K_MSEC(50));
 
 	/** TESTPOINT: waiting time more than duration and check the count */
+	k_usleep(1);		/* align to tick */
 	k_busy_wait((DURATION + 1) * 1000);
-	zassert_true(tdata.duration_count == 1, NULL);
-	zassert_true(tdata.stop_count == 0, NULL);
+	zassert_true(tdata.duration_count == 1, "duration %u not 1",
+		     tdata.duration_count);
+	zassert_true(tdata.stop_count == 0,
+		     "stop %u not 0", tdata.stop_count);
 
 	/** cleanup environemtn */
 	k_timer_stop(&ktimer);
