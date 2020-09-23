@@ -1,0 +1,5 @@
+tests:
+  filesystem.automount:
+    platform_allow: nrf52840dk_nrf52840 native_posix native_posix_64
+    tags: filesystem automount
+    timeout: 180

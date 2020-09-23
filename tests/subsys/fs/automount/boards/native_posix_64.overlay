@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2020 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flashcontroller0 {
+	reg = <0x00000000 DT_SIZE_K(4096)>;
+};
+
+&flash0 {
+	reg = <0x00000000 DT_SIZE_K(4096)>;
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition0: partition@0 {
+			mount-point = "/lfs0";
+			mount-type = "LittleFS";
+			label = "storage0";
+			reg = <0x00000000 0x00010000>;
+		};
+		storage_partition1: partition@10000 {
+			mount-point = "/lfs1";
+			mount-type = "LittleFS";
+			label = "storage1";
+			reg = <0x00010000 0x00010000>;
+		};
+	};
+};
