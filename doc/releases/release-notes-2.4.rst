@@ -114,6 +114,24 @@ API Changes
 Deprecated in this release
 ==========================
 
+* The full set of ``k_mem_pool`` and ``sys_mem_pool`` APIs
+  are considered deprecated as of this release. The replacements are
+  the ``k_heap`` and ``sys_heap`` APIs. These APIs are not tagged with
+  ``__deprecated`` in the 2.4 release, but will be in 2.5. They will be
+  removed completely in Zephyr 2.6 LTS. The set of APIs now deprecated is as
+  follows:
+
+  * ``k_mbox_data_block_get()``
+  * ``k_pipe_block_put()``
+  * ``K_MEM_POOL_DEFINE()``
+  * ``k_mem_pool_alloc()``
+  * ``k_mem_pool_free()``
+  * ``k_mem_pool_free_id()``
+  * ``SYS_MEM_POOL_DEFINE()``
+  * ``sys_mem_pool_init()``
+  * ``sys_mem_pool_alloc()``
+  * ``sys_mem_pool_free()``
+  * ``sys_mem_pool_try_expand_inplace()``
 
 Removed APIs in this release
 ============================
