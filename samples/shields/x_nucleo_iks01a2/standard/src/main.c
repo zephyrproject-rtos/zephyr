@@ -10,17 +10,37 @@
 #include <stdio.h>
 #include <sys/util.h>
 
+#ifdef CONFIG_LSM6DSL_TRIGGER
+static int lsm6dsl_trig_cnt;
+
+static void lsm6dsl_trigger_handler(const struct device *dev,
+				     struct sensor_trigger *trig)
+{
+	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ALL);
+	lsm6dsl_trig_cnt++;
+}
+#endif
+
+#define LSM6DSL_DEVNAME		DT_LABEL(DT_INST(0, st_lsm6dsl))
+#define HTS221_DEVNAME		DT_LABEL(DT_INST(0, st_hts221))
+#define LPS22HB_DEVNAME		DT_LABEL(DT_INST(0, st_lps22hb_press))
+#define LIS2DH_DEVNAME		DT_LABEL(DT_INST(0, st_lis2dh))
+#define LIS2MDL_DEVNAME		DT_LABEL(DT_INST(0, st_lis2mdl))
+
 void main(void)
 {
 	struct sensor_value temp1, temp2, hum, press;
 	struct sensor_value accel1[3], accel2[3];
 	struct sensor_value gyro[3];
 	struct sensor_value magn[3];
-	const struct device *hts221 = device_get_binding(DT_LABEL(DT_INST(0, st_hts221)));
-	const struct device *lps22hb = device_get_binding(DT_LABEL(DT_INST(0, st_lps22hb_press)));
-	const struct device *lsm6dsl = device_get_binding(DT_LABEL(DT_INST(0, st_lsm6dsl)));
-	const struct device *lsm303agr_a = device_get_binding(DT_LABEL(DT_INST(0, st_lis2dh)));
-	const struct device *lsm303agr_m = device_get_binding(DT_LABEL(DT_INST(0, st_lis2mdl)));
+	const struct device *hts221 = device_get_binding(HTS221_DEVNAME);
+	const struct device *lps22hb = device_get_binding(LPS22HB_DEVNAME);
+	const struct device *lsm6dsl = device_get_binding(LSM6DSL_DEVNAME);
+	const struct device *lsm303agr_a = device_get_binding(LIS2DH_DEVNAME);
+	const struct device *lsm303agr_m = device_get_binding(LIS2MDL_DEVNAME);
+#ifdef CONFIG_LSM6DSL_TRIGGER
+	int cnt = 1;
+#endif
 
 	if (hts221 == NULL) {
 		printf("Could not get HTS221 device\n");
@@ -46,7 +66,7 @@ void main(void)
 	/* set LSM6DSL accel/gyro sampling frequency to 104 Hz */
 	struct sensor_value odr_attr;
 
-	odr_attr.val1 = 104;
+	odr_attr.val1 = 208;
 	odr_attr.val2 = 0;
 
 	if (sensor_attr_set(lsm6dsl, SENSOR_CHAN_ACCEL_XYZ,
@@ -61,6 +81,14 @@ void main(void)
 		return;
 	}
 
+#ifdef CONFIG_LSM6DSL_TRIGGER
+	struct sensor_trigger trig;
+
+	trig.type = SENSOR_TRIG_DATA_READY;
+	trig.chan = SENSOR_CHAN_ACCEL_XYZ;
+	sensor_trigger_set(lsm6dsl, &trig, lsm6dsl_trigger_handler);
+#endif
+
 	while (1) {
 		int ret;
 
@@ -74,10 +102,12 @@ void main(void)
 			printf("LPS22HB Sensor sample update error\n");
 			return;
 		}
+#ifndef CONFIG_LSM6DSL_TRIGGER
 		if (sensor_sample_fetch(lsm6dsl) < 0) {
 			printf("LSM6DSL Sensor sample update error\n");
 			return;
 		}
+#endif
 		ret = sensor_sample_fetch(lsm303agr_a);
 		if (ret < 0 && ret != -EBADMSG) {
 			printf("LSM303AGR Accel Sensor sample update error\n");
@@ -133,6 +163,10 @@ void main(void)
 		       sensor_value_to_double(&gyro[0]),
 		       sensor_value_to_double(&gyro[1]),
 		       sensor_value_to_double(&gyro[2]));
+
+#if defined(CONFIG_LSM6DSL_TRIGGER)
+		printf("%d:: lsm6dsl trig %d\n", cnt++, lsm6dsl_trig_cnt);
+#endif
 
 		/* lsm303agr accel */
 		printf("LSM303AGR: Accel (m.s-2): x: %.1f, y: %.1f, z: %.1f\n",
