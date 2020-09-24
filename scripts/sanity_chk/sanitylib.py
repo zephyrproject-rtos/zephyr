@@ -2139,9 +2139,12 @@ class ProjectBuilder(FilterBuilder):
                 })
 
         elif op == "cleanup":
-            self.cleanup_artifacts()
+            if self.device_testing:
+                self.cleanup_device_testing_artifacts()
+            else:
+                self.cleanup_artifacts()
 
-    def cleanup_artifacts(self):
+    def cleanup_artifacts(self, additional_keep=None):
         logger.debug("Cleaning up {}".format(self.instance.build_dir))
         allow = [
             'zephyr/.config',
@@ -2150,6 +2153,9 @@ class ProjectBuilder(FilterBuilder):
             'device.log',
             'recording.csv',
             ]
+
+        allow += additional_keep
+
         allow = [os.path.join(self.instance.build_dir, file) for file in allow]
 
         for dirpath, dirnames, filenames in os.walk(self.instance.build_dir, topdown=False):
@@ -2164,6 +2170,19 @@ class ProjectBuilder(FilterBuilder):
                     os.remove(path)
                 elif not os.listdir(path):
                     os.rmdir(path)
+
+    def cleanup_device_testing_artifacts(self):
+        logger.debug("Cleaning up for Device Testing {}".format(self.instance.build_dir))
+
+        keep = [
+            'CMakeCache.txt',
+            'zephyr/runners.yaml',
+            'zephyr/zephyr.hex',
+            'zephyr/zephyr.bin',
+            'zephyr/zephyr.elf',
+            ]
+
+        self.cleanup_artifacts(keep)
 
     def report_out(self):
         total_tests_width = len(str(self.suite.total_to_do))
