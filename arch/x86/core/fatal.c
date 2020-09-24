@@ -92,7 +92,7 @@ bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, uint16_t cs)
 					_current->stack_info.size);
 	}
 
-	return (addr <= start) || (addr + size > end);
+	return (addr < start) || (addr + size > end);
 }
 #endif
 
