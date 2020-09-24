@@ -578,6 +578,18 @@ Drivers and Sensors
     * :option:`CONFIG_TRACING_BACKEND_USB`
     * :option:`CONFIG_USB_UART_CONSOLE`
 
+  * USB device support has got its own work queue
+    which is used by CDC ACM class by default.
+
+  * CDC ACM Class was slightly reworked.
+
+  * Suspend and resume support in CDC ACM and HID classes
+    has been corrected.
+
+  * Atmel SAM0 USB device driver (usb_dc_sam0) was revised.
+    All drivers now use common macros for getting indexes and direction
+    from an endpoint.
+
 * Video
 
   * N/A
