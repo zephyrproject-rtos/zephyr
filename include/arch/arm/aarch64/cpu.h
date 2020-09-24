@@ -28,11 +28,11 @@
 
 #define SCTLR_EL1_RES1		(BIT(29) | BIT(28) | BIT(23) | \
 				BIT(22) | BIT(20) | BIT(11))
-#define SCTLR_M_BIT		BIT(0)
-#define SCTLR_A_BIT		BIT(1)
-#define SCTLR_C_BIT		BIT(2)
-#define SCTLR_SA_BIT		BIT(3)
-#define SCTLR_I_BIT		BIT(12)
+#define SCTLR_M			BIT(0)
+#define SCTLR_A			BIT(1)
+#define SCTLR_C			BIT(2)
+#define SCTLR_SA		BIT(3)
+#define SCTLR_I			BIT(12)
 
 #define CPACR_EL1_FPEN_NOTRAP	(0x3 << 20)
 

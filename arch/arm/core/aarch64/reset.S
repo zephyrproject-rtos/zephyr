@@ -131,7 +131,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	msr	cpacr_el1, x0
 
 	/* Enable the instruction cache and EL1 stack alignment check. */
-	mov_imm	x1, (SCTLR_I_BIT | SCTLR_SA_BIT)
+	mov_imm	x1, (SCTLR_I | SCTLR_SA)
 	mrs	x0, sctlr_el1
 	orr	x0, x0, x1
 	msr	sctlr_el1, x0
