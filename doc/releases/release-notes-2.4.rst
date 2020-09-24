@@ -599,7 +599,14 @@ Bluetooth
 Build and Infrastructure
 ************************
 
-* Devicetree
+* Devicetree:
+
+  * Added new devicetree macros that provide a default value if the property
+    or cell accessor doesn't contain the requested data
+
+  * Added support for inferring bindings for ``/zephyr,user`` devicetree node
+    to allow applications an easy way to specify application specific
+    devicetree properties without having a binding.
 
 * Support for multiple SOC and ARCH roots.
   The :ref:`SOC_ROOT <application>` and ``ARCH_ROOT`` variables used to specify
