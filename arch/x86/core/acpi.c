@@ -132,23 +132,29 @@ struct acpi_cpu *z_acpi_get_cpu(int n)
 	uintptr_t base = POINTER_TO_UINT(madt);
 	uintptr_t offset;
 
-	if (madt) {
-		offset = POINTER_TO_UINT(madt->entries) - base;
+	if (!madt) {
+		return NULL;
+	}
 
-		while (offset < madt->sdt.length) {
-			struct acpi_madt_entry *entry;
+	offset = POINTER_TO_UINT(madt->entries) - base;
 
-			entry = (struct acpi_madt_entry *)(offset + base);
-			if (entry->type == ACPI_MADT_ENTRY_CPU) {
+	while (offset < madt->sdt.length) {
+		struct acpi_madt_entry *entry;
+
+		entry = (struct acpi_madt_entry *)(offset + base);
+		if (entry->type == ACPI_MADT_ENTRY_CPU) {
+			struct acpi_cpu *cpu = (struct acpi_cpu *)entry;
+
+			if (cpu->flags & ACPI_CPU_FLAGS_ENABLED) {
 				if (n == 0) {
-					return (struct acpi_cpu *) entry;
+					return cpu;
 				}
 
 				--n;
 			}
-
-			offset += entry->length;
 		}
+
+		offset += entry->length;
 	}
 
 	return NULL;
