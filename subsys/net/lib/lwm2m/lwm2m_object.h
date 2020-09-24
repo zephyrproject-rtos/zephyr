@@ -214,6 +214,8 @@ struct lwm2m_engine_obj {
 			for (int _i = 0; _i < _ri_count; _i++) { \
 				_ri_ptr[_ri_idx + _i].data_ptr = \
 						(_data_ptr + _i); \
+				_ri_ptr[_ri_idx + _i].max_data_len = \
+						_data_len; \
 				_ri_ptr[_ri_idx + _i].data_len = \
 						_data_len; \
 				if (_ri_create) { \
@@ -233,6 +235,7 @@ struct lwm2m_engine_obj {
 		if (_ri_count > 0) { \
 			for (int _i = 0; _i < _ri_count; _i++) { \
 				_ri_ptr[_ri_idx + _i].data_ptr = NULL; \
+				_ri_ptr[_ri_idx + _i].max_data_len = 0; \
 				_ri_ptr[_ri_idx + _i].data_len = 0; \
 				if (_ri_create) { \
 					_ri_ptr[_ri_idx + _i].res_inst_id = \
@@ -323,6 +326,7 @@ struct lwm2m_attr {
 
 struct lwm2m_engine_res_inst {
 	void  *data_ptr;
+	uint16_t max_data_len;
 	uint16_t data_len;
 	uint16_t res_inst_id; /* 65535 == not "created" */
 	uint8_t  data_flags;
