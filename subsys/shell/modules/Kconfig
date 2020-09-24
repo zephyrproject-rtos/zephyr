@@ -26,3 +26,9 @@ config DATE_SHELL
 	default y
 	help
 	  This shell provides access to date and time based on Unix time.
+
+config REBOOT_SHELL
+	bool "Enable reboot shell"
+	select REBOOT
+	help
+	  This shell provides support for rebooting the device.
