@@ -26,22 +26,24 @@ static void bq274xx_show_values(const char *type, struct sensor_value value)
 
 static void do_main(const struct device *dev)
 {
+	int status = 0;
 	struct sensor_value voltage, current, state_of_charge,
 		full_charge_capacity, remaining_charge_capacity, avg_power,
 		int_temp, current_standby, current_max_load, state_of_health;
 
-	int status = 0;
-
 	while (1) {
-		status = sensor_sample_fetch(dev);
+		status = sensor_sample_fetch_chan(dev,
+						  SENSOR_CHAN_GAUGE_VOLTAGE);
 		if (status < 0) {
-			printk("Unable to fetch the samples\n");
+			printk("Unable to fetch the voltage\n");
+			return;
 		}
 
 		status = sensor_channel_get(dev, SENSOR_CHAN_GAUGE_VOLTAGE,
 					    &voltage);
 		if (status < 0) {
 			printk("Unable to get the voltage value\n");
+			return;
 		}
 
 		printk("Voltage: %d.%06dV\n", voltage.val1, voltage.val2);
