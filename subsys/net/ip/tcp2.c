@@ -698,7 +698,7 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 
 	sys_slist_append(&conn->send_queue, &pkt->next);
 
-	tcp_send_process((struct k_work *)&conn->send_timer);
+	tcp_send_process(&conn->send_timer.work);
 out:
 	return ret;
 }
@@ -1517,8 +1517,7 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 		/* Trigger resend if the timer is not active */
 		if (!k_delayed_work_remaining_get(&conn->send_data_timer)) {
 			NET_DBG("Window full, trigger resend");
-			tcp_resend_data(
-				   (struct k_work *)&conn->send_data_timer);
+			tcp_resend_data(&conn->send_data_timer.work);
 		}
 
 		ret = -EAGAIN;
