@@ -477,6 +477,14 @@ FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(
 	"msr  PSPLIM, %[_psplim]\n\t"
 #endif
 	"msr  PSP, %[_psp]\n\t"       /* __set_PSP(psp) */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	"cpsie i\n\t"         /* enable_irq() */
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	"cpsie if\n\t"		/* __enable_irq(); __enable_fault_irq() */
+	"mov r3, #0\n\t"
+	"msr   BASEPRI, r3\n\t"	/* __set_BASEPRI(0) */
+#endif
+	"isb\n\t"
 	"blx  %[_main_entry]\n\t"     /* main_entry(p1, p2, p3) */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	"cpsid i\n\t"         /* disable_irq() */

@@ -9,7 +9,7 @@ ARM Cortex-M targets. In detail the test verifies that
 - PSP points to the main stack
 - PSPLIM is set to the main stack base (if applicable)
 - FPU state is reset (if applicable)
-- Interrupts are disabled when switching to main()
+- Interrupts are enabled when switching to main()
 - Interrupts may be registerd and serviced
 
 ---------------------------------------------------------------------------
