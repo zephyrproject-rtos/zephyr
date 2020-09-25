@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(wifi_esp);
 #include <stdlib.h>
 
 #include <drivers/gpio.h>
+#include <drivers/uart.h>
 
 #include <net/net_if.h>
 #include <net/net_offload.h>
@@ -705,6 +706,11 @@ static void esp_init_work(struct k_work *work)
 		/* turn off echo */
 		SETUP_CMD_NOHANDLE("ATE0"),
 		SETUP_CMD_NOHANDLE("AT+UART_CUR="_UART_CUR),
+#if DT_INST_NODE_HAS_PROP(0, target_speed)
+	};
+	static struct setup_cmd setup_cmds_target_baudrate[] = {
+		SETUP_CMD_NOHANDLE("AT"),
+#endif
 		SETUP_CMD_NOHANDLE("AT+"_CWMODE"=1"),
 		/* enable multiple socket support */
 		SETUP_CMD_NOHANDLE("AT+CIPMUX=1"),
@@ -731,6 +737,38 @@ static void esp_init_work(struct k_work *work)
 		LOG_ERR("Init failed %d", ret);
 		return;
 	}
+
+#if DT_INST_NODE_HAS_PROP(0, target_speed)
+	static const struct uart_config uart_config = {
+		.baudrate = DT_INST_PROP(0, target_speed),
+		.parity = UART_CFG_PARITY_NONE,
+		.stop_bits = UART_CFG_STOP_BITS_1,
+		.data_bits = UART_CFG_DATA_BITS_8,
+		.flow_ctrl = DT_PROP(ESP_BUS, hw_flow_control) ?
+			UART_CFG_FLOW_CTRL_RTS_CTS : UART_CFG_FLOW_CTRL_NONE,
+	};
+
+	ret = uart_configure(device_get_binding(DT_INST_BUS_LABEL(0)),
+			     &uart_config);
+	if (ret < 0) {
+		LOG_ERR("Baudrate change failed %d", ret);
+		return;
+	}
+
+	/* arbitrary sleep period to give ESP enough time to reconfigure */
+	k_sleep(K_MSEC(100));
+
+	ret = modem_cmd_handler_setup_cmds(&dev->mctx.iface,
+				&dev->mctx.cmd_handler,
+				setup_cmds_target_baudrate,
+				ARRAY_SIZE(setup_cmds_target_baudrate),
+				&dev->sem_response,
+				ESP_INIT_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("Init failed %d", ret);
+		return;
+	}
+#endif
 
 	net_if_set_link_addr(dev->net_iface, dev->mac_addr,
 			     sizeof(dev->mac_addr), NET_LINK_ETHERNET);

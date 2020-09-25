@@ -66,8 +66,14 @@ extern "C" {
 #define _FLOW_CONTROL "0"
 #endif
 
+#if DT_INST_NODE_HAS_PROP(0, target_speed)
+#define _UART_BAUD	DT_INST_PROP(0, target_speed)
+#else
+#define _UART_BAUD	DT_PROP(ESP_BUS, current_speed)
+#endif
+
 #define _UART_CUR \
-	STRINGIFY(DT_PROP(ESP_BUS, current_speed))",8,1,0,"_FLOW_CONTROL
+	STRINGIFY(_UART_BAUD)",8,1,0,"_FLOW_CONTROL
 
 #define CONN_CMD_MAX_LEN (sizeof("AT+"_CWJAP"=\"\",\"\"") + \
 			  WIFI_SSID_MAX_LEN + WIFI_PSK_MAX_LEN)
