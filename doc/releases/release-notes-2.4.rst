@@ -744,6 +744,9 @@ Libraries / Subsystems
     the command cannot be processed.
 
 
+* Storage:
+  * Added flash SHA-256 integrity check.
+
 * Tracing:
   * Tracing backed API now checks if init function exists prio to calling it.
 
