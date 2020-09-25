@@ -30,6 +30,7 @@ Security Vulnerability Related
 
 The following CVEs are addressed by this release:
 
+* CVE-2020-10060: UpdateHub Might Dereference An Uninitialized Pointer
 * CVE-2020-10064: Improper Input Frame Validation in ieee802154 Processing
 * CVE-2020-10066: Incorrect Error Handling in Bluetooth HCI core
 * CVE-2020-10072: all threads can access all socket file descriptors
@@ -671,6 +672,8 @@ Libraries / Subsystems
 
   * updatehub:
 
+    * Added download block check.
+    * Added support to flash integrity check using SHA-256 algorithm.
     * Moved updatehub from lib to subsys/mgmt directory.
     * Fixed out-of-bounds access and add flash_img_init return value check.
     * Fixed getaddrinfo resource leak.
