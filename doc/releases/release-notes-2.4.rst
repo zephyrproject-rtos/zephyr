@@ -266,6 +266,7 @@ Boards & SoC Support
 * Added support for these SoC series:
 
   * ARM Cortex-M1/M3 DesignStart FPGA
+  * Nordic nRF52805
   * NXP i.MX RT685, i.MX8M Mini, and LPC11U6x
   * ARC QEMU support for EM and HS family
 
@@ -292,7 +293,9 @@ Boards & SoC Support
   * ARM Cortex-M1/M3 DesignStart FPGA reference designs running on the Digilent
     Arty A7 development board
   * Laird Connectivity Pinnacle 100 Modem Development board (pinnacle_100_dvk)
-  * nRF21540 Devkit (nrf21540dk_nrf52840).
+  * nRF21540 DK (nrf21540dk_nrf52840)
+  * nRF52805 emulation on nRF52 DK (nrf52dk_nrf52805)
+  * nRF5340 DK
   * NXP i.MX RT685 EVK, i.MX8M Mini EVK, LPCXpresso LPC11U68
   * OLIMEX-STM32-H103
   * ST B_L4S5I_IOT01A Discovery kit
@@ -303,6 +306,7 @@ Boards & SoC Support
 * Made these changes in other boards:
 
   * b_l072z_lrwan1: Added flash, LoRa, USB, EEPROM, RNG
+  * nRF boards: enabled HW Stack Protection by default on boards maintained by Nordic
   * nucleo_l552ze_q: Added non secure target and TFM support
   * STM32 boards: Enabled MPU on all boards with at least 64K flash
   * lpcxpresso55s69: Added TFM support
