@@ -156,6 +156,16 @@ Stable API changes in this release
   * HID class callbacks now takes a parameter ``const struct device*`` which
     is the HID device for which callback was called.
 
+* Bluetooth:
+
+  * The ``_gatt_`` infix has been removed from all GATT service APIs.
+
+* Bluetooth HCI Driver:
+
+  * bt_hci_evt_is_prio() removed, use bt_hci_evt_get_flags() instead when
+    CONFIG_BT_RECV_IS_RX_THREAD is defined and call bt_recv and bt_recv_prio
+    when their flag is set, otherwise always call bt_recv().
+
 Kernel
 ******
 
@@ -614,14 +624,62 @@ Bluetooth
 
 * Host:
 
+  * Added basic support for Isochronous Channels (also known as LE Audio).
+  * Added support for Periodic Advertising (both Advertising and Scanning
+    procedures).
+  * The application can now specify preferences for the PHY update procedure PHY
+    choices.
+  * A new "bond_deleted" callback has been introduced.
+  * Added a new callback for GATT (un)subscription.
+  * Added support for the application to provide subscription information to the
+    stack prior to reconnection (``bt_gatt_resubscribe``).
+  * The application can now request for the CCC descriptor to be discovered
+    automatically by the stack when subscribing to a characteristic.
+  * Fixed a regression introduced in 2.3 along the EATT feature, where the ATT
+    throughput could not reach the expected values.
+  * Fixed a deadlock in the RX thread that was observed multiple times in
+    scenarios involving high throughput and a sudden disconnection.
+  * Fixed a race condition upon advertising resume.
+  * The GATT notify multiple feature is now disabled by default.
+  * The advertiser can now be requested to restart even when a connection
+    object is not available.
+  * The L2CAP security level will now be elevated automatically when a
+    connection is rejected for security reasons.
+  * When LE Secure Connections are the only option enabled, the security level
+    will now be elevated to Level 4 automatically.
+  * Fixed CCC restoring when using settings lazy loading.
+  * Fixed recombination of ACL L2CAP PDUs when the header itself is split across
+    multiple HCI ACL packets.
+  * GATT no longer assumes the position of the CCC descriptor and instead
+    discovers it.
+  * Multiple additional fixes.
+
+* Mesh:
+
+  * Added support for storage of model data in a key-value fashion.
+  * Added support for a network loopback.
+  * Multiple qualification-related fixes.
 
 * BLE split software Controller:
 
+  * The advanced scheduling algorithms that were supported in the legacy
+    Controller have been ported to the split one.
+  * Preliminary support for Advertising Extensions, restricted to
+    non-connectable advertising for now.
+  * Very early support for Periodic Advertising. This should be considered an
+    early experimental draft at this stage.
+  * Added full support for the Nordic nRF5340 IC, not just the engineering
+    sample.
+  * Added support for the Nordic nRF52805 IC.
+  * Several fixes to scheduling and window calculation, some of which had an
+    impact in the cooperation between the flash driver and the Controller.
+  * Fixed an null pointer dereference in the ticker code.
+
 * HCI Driver:
 
-  * bt_hci_evt_is_prio() removed, use bt_hci_evt_get_flags() instead when
-    CONFIG_BT_RECV_IS_RX_THREAD is defined and call bt_recv and bt_recv_prio
-    when their flag is set, otherwise always call bt_recv().
+  * A new BT_QUIRK_NO_AUTO_DLE has been added for Controllers that do not follow
+    the recommendation of auto-initating the data length update procedure. This
+    is in fact the case of the split software Controller.
 
 Build and Infrastructure
 ************************
