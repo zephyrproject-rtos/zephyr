@@ -291,6 +291,18 @@ extern char z_user_stacks_start[];
 extern char z_user_stacks_end[];
 #endif /* CONFIG_USERSPACE */
 
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+extern char __tdata_start[];
+extern char __tdata_end[];
+extern char __tdata_size[];
+extern char __tbss_start[];
+extern char __tbss_end[];
+extern char __tbss_size[];
+extern char __tls_start[];
+extern char __tls_end[];
+extern char __tls_size[];
+#endif /* CONFIG_THREAD_LOCAL_STORAGE */
+
 #endif /* ! _ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_LINKER_LINKER_DEFS_H_ */
