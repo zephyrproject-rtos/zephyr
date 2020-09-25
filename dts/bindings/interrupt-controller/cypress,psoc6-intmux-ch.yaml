@@ -1,0 +1,26 @@
+# Copyright (c) 2019, Linaro Limited
+# Copyright (c) 2020, ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Cypress Interrupt Multiplex Channel
+
+  see cypress,psoc6-intmux
+
+compatible: "cypress,psoc6-intmux-ch"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+      required: true
+
+  label:
+      required: true
+
+  interrupts:
+      required: true
+
+interrupt-cells:
+  - irq
+  - priority
