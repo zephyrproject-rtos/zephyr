@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT cypress_psoc6_uart
+
 /** @file
  * @brief UART driver for Cypress PSoC6 MCU family.
  *
@@ -19,7 +21,6 @@
 
 #include "cy_syslib.h"
 #include "cy_sysclk.h"
-#include "cy_gpio.h"
 #include "cy_scb_uart.h"
 
 /* UART desired baud rate is 115200 bps (Standard mode).
@@ -44,12 +45,9 @@
 
 struct cypress_psoc6_config {
 	CySCB_Type *base;
-	GPIO_PRT_Type *port;
-	uint32_t rx_num;
-	uint32_t tx_num;
-	en_hsiom_sel_t rx_val;
-	en_hsiom_sel_t tx_val;
-	en_clk_dst_t scb_clock;
+	uint32_t periph_id;
+	uint32_t num_pins;
+	struct soc_gpio_pin pins[];
 };
 
 /* Populate configuration structure */
@@ -96,17 +94,10 @@ static int uart_psoc6_init(const struct device *dev)
 {
 	const struct cypress_psoc6_config *config = dev->config;
 
-	/* Connect SCB5 UART function to pins */
-	Cy_GPIO_SetHSIOM(config->port, config->rx_num, config->rx_val);
-	Cy_GPIO_SetHSIOM(config->port, config->tx_num, config->tx_val);
-
-	/* Configure pins for UART operation */
-	Cy_GPIO_SetDrivemode(config->port, config->rx_num, CY_GPIO_DM_HIGHZ);
-	Cy_GPIO_SetDrivemode(config->port, config->tx_num,
-		CY_GPIO_DM_STRONG_IN_OFF);
+	soc_gpio_list_configure(config->pins, config->num_pins);
 
 	/* Connect assigned divider to be a clock source for UART */
-	Cy_SysClk_PeriphAssignDivider(config->scb_clock,
+	Cy_SysClk_PeriphAssignDivider(config->periph_id,
 		UART_PSOC6_UART_CLK_DIV_TYPE,
 		UART_PSOC6_UART_CLK_DIV_NUMBER);
 
@@ -147,38 +138,18 @@ static const struct uart_driver_api uart_psoc6_driver_api = {
 	.poll_out = uart_psoc6_poll_out,
 };
 
-#ifdef CONFIG_UART_PSOC6_UART_5
-static const struct cypress_psoc6_config cypress_psoc6_uart5_config = {
-	.base = (CySCB_Type *)DT_REG_ADDR(DT_NODELABEL(uart5)),
-	.port = P5_0_PORT,
-	.rx_num = P5_0_NUM,
-	.tx_num = P5_1_NUM,
-	.rx_val = P5_0_SCB5_UART_RX,
-	.tx_val = P5_1_SCB5_UART_TX,
-	.scb_clock = PCLK_SCB5_CLOCK,
-};
+#define CY_PSOC6_UART_INIT(n)							\
+	static const struct cypress_psoc6_config cy_psoc6_uart##n##_config = {	\
+		.base = (CySCB_Type *)DT_INST_REG_ADDR(n),			\
+		.periph_id = DT_INST_PROP(n, peripheral_id),			\
+										\
+		.num_pins = CY_PSOC6_DT_INST_NUM_PINS(n),			\
+		.pins = CY_PSOC6_DT_INST_PINS(n),				\
+	};									\
+	DEVICE_DT_INST_DEFINE(n, &uart_psoc6_init, device_pm_control_nop,	\
+			      NULL,						\
+			      &cy_psoc6_uart##n##_config, PRE_KERNEL_1,		\
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			      &uart_psoc6_driver_api);
 
-DEVICE_DT_DEFINE(DT_NODELABEL(uart5),
-			uart_psoc6_init, device_pm_control_nop, NULL,
-			&cypress_psoc6_uart5_config,
-			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-			(void *)&uart_psoc6_driver_api);
-#endif /* CONFIG_UART_PSOC6_UART_5 */
-
-#ifdef CONFIG_UART_PSOC6_UART_6
-static const struct cypress_psoc6_config cypress_psoc6_uart6_config = {
-	.base = (CySCB_Type *)DT_REG_ADDR(DT_NODELABEL(uart6)),
-	.port = P12_0_PORT,
-	.rx_num = P12_0_NUM,
-	.tx_num = P12_1_NUM,
-	.rx_val = P12_0_SCB6_UART_RX,
-	.tx_val = P12_1_SCB6_UART_TX,
-	.scb_clock = PCLK_SCB6_CLOCK,
-};
-
-DEVICE_DT_DEFINE(DT_NODELABEL(uart6),
-			uart_psoc6_init, device_pm_control_nop, NULL,
-			&cypress_psoc6_uart6_config,
-			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-			(void *)&uart_psoc6_driver_api);
-#endif /* CONFIG_UART_PSOC6_UART_6 */
+DT_INST_FOREACH_STATUS_OKAY(CY_PSOC6_UART_INIT)
