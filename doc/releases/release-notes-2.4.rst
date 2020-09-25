@@ -342,8 +342,11 @@ Drivers and Sensors
 
 * ADC
 
+  * Added chip select flags to SPI ADC drivers.
+
 * Audio
 
+  * N/A
 
 * Bluetooth
 
@@ -355,6 +358,8 @@ Drivers and Sensors
 
 * CAN
 
+  * Added chip select flags to SPI CAN drivers.
+  * Fixed MCP2515 driver to wait to reset.
 
 * Clock Control
 
@@ -365,6 +370,7 @@ Drivers and Sensors
 
 * Console
 
+  * Added IPM driver.
 
 * Counter
 
@@ -373,6 +379,7 @@ Drivers and Sensors
 
 * Crypto
 
+  * N/A
 
 * DAC
 
@@ -380,9 +387,12 @@ Drivers and Sensors
 
 * Debug
 
+  * N/A
 
 * Display
 
+  * Enhanced SSD16XX driver to support loading WS from OTP
+  * Added chip select flags to SPI display drivers.
 
 * DMA
 
@@ -402,6 +412,9 @@ Drivers and Sensors
 
 * ESPI
 
+  * Enhanced XEC driver to support KBC status operations, ACPI_EC1 interface,
+    and slaves with long initializations.
+  * Fixed XEC driver frequency override during IO selection.
 
 * Ethernet
 
@@ -452,6 +465,7 @@ Drivers and Sensors
 
 * I2S
 
+  * Added LiteX controller driver.
 
 * IEEE 802.15.4
 
@@ -463,21 +477,30 @@ Drivers and Sensors
 
 * Interrupt Controller
 
+  * Enhanced GICV3 driver to support SGI API.
+  * Added NPCX MIWU driver.
 
 * IPM
 
+  * Added Intel ADSP driver.
 
 * Keyboard Scan
 
+  * Enhanced FT5336 driver to support additional part number variants.
 
 * LED
 
+  * Added TI LP503X controller driver
+  * Introduced led_set_color, let_get_info, and channel-dedicated syscalls
+  * Added shell support.
 
 * LED Strip
 
+  * Enhanced APA102 driver to support SPI chip select.
 
 * LoRa
 
+  * Made various enhancements and fixes in SX1276 driver.
 
 * Modem
 
@@ -486,24 +509,35 @@ Drivers and Sensors
 
 * PECI
 
+  * N/A
 
 * Pinmux
 
   * Added LPC11U6X driver.
+  * Added NPCX driver.
 
 * PS/2
 
+  * N/A
 
 * PWM
 
   * STM32: Refactored using Cube LL API
+  * Added SAM9 TCC based driver.
 
 * Sensor
 
   * Added API function ``sensor_attr_get()`` for getting a sensor's
     attribute.
-  * Added support for wsen-itds Accel Sensor.
-
+  * Added support for wsen-itds accelerometer sensor.
+  * Added chip select flags to SPI sensor drivers.
+  * Added IIS2DH accelerometer driver.
+  * Added MAX17055 fuel-gauge sensor driver.
+  * Added SI7055 temperature sensor driver.
+  * Enhanced FXOS8700 driver to support magnetic vector magnitude function.
+  * Added SM351LT magnetoresistive sensor driver.
+  * Added VCNL4040 proximity and light sensor driver.
+  * Refactored LIS2DH and LSM6DSL drivers to support multiple instances.
 
 * Serial
 
@@ -527,6 +561,7 @@ Drivers and Sensors
 
 * Timer
 
+  * N/A
 
 * USB
 
@@ -545,11 +580,12 @@ Drivers and Sensors
 
 * Video
 
+  * N/A
 
 * Watchdog
 
   * Added MCUX WWDT driver for LPC SoCs.
-
+  * Enhanced Gecko driver to support Gecko Series 2 SoC
 
 * WiFi
 
