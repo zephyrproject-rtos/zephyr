@@ -76,6 +76,7 @@ add_subdirectory_ifdef(CONFIG_VL53L0X		vl53l0x)
 add_subdirectory_ifdef(CONFIG_TEMP_KINETIS	nxp_kinetis_temp)
 add_subdirectory_ifdef(CONFIG_TACH_XEC		mchp_tach_xec)
 add_subdirectory_ifdef(CONFIG_ITDS		wsen_itds)
+add_subdirectory_ifdef(CONFIG_MCUX_ACMP		mcux_acmp)
 
 zephyr_sources_ifdef(CONFIG_USERSPACE sensor_handlers.c)
 zephyr_sources_ifdef(CONFIG_SENSOR_SHELL sensor_shell.c)
