@@ -9,7 +9,7 @@
 
 / {
 	model = "Dragino LSN50 LoRA Sensor Node";
-	compatible = "vendor,dragino", "st,stm32l072";
+	compatible = "vendor,dragino";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -23,4 +23,3 @@
 	current-speed = <115200>;
 	status = "okay";
 };
-

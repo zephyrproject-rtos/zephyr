@@ -13,7 +13,7 @@
 
 / {
 	model = "STMicroelectronics STM32L476G-DISCO board";
-	compatible = "st,stm32l476g-disco", "st,stm32l476";
+	compatible = "st,stm32l476g-disco";
 
 	chosen {
 		zephyr,console = &usart2;

@@ -9,7 +9,7 @@
 
 / {
 	model = "STMicroelectronics STM32L1DISCOVERY board";
-	compatible = "st,stm32l1discovery", "st,stm32l151";
+	compatible = "st,stm32l1discovery";
 
 	chosen {
 		zephyr,console = &usart1;

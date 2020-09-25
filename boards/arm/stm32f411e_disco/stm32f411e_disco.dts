@@ -9,7 +9,7 @@
 
 / {
 	model = "STMicroelectronics STM32F411E-DISCO board";
-	compatible = "st,stm32f411e-disco", "st,stm32f411";
+	compatible = "st,stm32f411e-disco";
 
 	chosen {
 		zephyr,console = &usart2;

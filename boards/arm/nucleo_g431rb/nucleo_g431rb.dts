@@ -10,7 +10,7 @@
 
 / {
 	model = "STMicroelectronics STM32G431RB-NUCLEO board";
-	compatible = "st,stm32g431rb-nucleo", "st,stm32g431";
+	compatible = "st,stm32g431rb-nucleo";
 
 	chosen {
 		zephyr,console = &lpuart1;

@@ -9,7 +9,7 @@
 
 / {
 	model = "Tocoding Argonkey 96boards";
-	compatible = "tocoding,argonkey", "st,stm32f412";
+	compatible = "tocoding,argonkey";
 
 	chosen {
 		zephyr,console = &usart1;

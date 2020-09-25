@@ -9,7 +9,7 @@
 
 / {
 	model = "Tocoding Neonkey 96boards";
-	compatible = "tocoding,neonkey", "st,stm32f411";
+	compatible = "tocoding,neonkey";
 
 	chosen {
 		zephyr,console = &usart1;

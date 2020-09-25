@@ -9,7 +9,7 @@
 
 / {
 	model = "STMicroelectronics B-L072Z-LRWAN1 Discovery kit";
-	compatible = "st,stm32l072z-lrwan1", "st,stm32l072";
+	compatible = "st,stm32l072z-lrwan1";
 
 	chosen {
 		zephyr,console = &usart2;

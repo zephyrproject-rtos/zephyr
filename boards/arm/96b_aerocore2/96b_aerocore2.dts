@@ -10,7 +10,7 @@
 
 / {
 	model = "96Boards Gumstix AeroCore 2";
-	compatible = "gumstix,aerocore2", "st,stm32f427";
+	compatible = "gumstix,aerocore2";
 
 	chosen {
 		zephyr,console = &uart7;

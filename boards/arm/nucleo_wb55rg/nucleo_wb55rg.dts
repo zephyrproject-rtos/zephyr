@@ -10,7 +10,7 @@
 
 / {
 	model = "STMicroelectronics STM32WB55RG-NUCLEO board";
-	compatible = "st,stm32wb55rg-nucleo", "st,stm32wb55rg";
+	compatible = "st,stm32wb55rg-nucleo";
 
 	chosen {
 		zephyr,console = &usart1;

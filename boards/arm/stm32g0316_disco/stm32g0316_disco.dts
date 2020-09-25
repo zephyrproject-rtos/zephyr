@@ -9,7 +9,7 @@
 
 / {
 	model = "STMicroelectronics STM32G0316 Discovery board";
-	compatible = "st,stm32g0316-disco", "st,stm32g031";
+	compatible = "st,stm32g0316-disco";
 
 	aliases {
 		led0 = &green_led_1;
