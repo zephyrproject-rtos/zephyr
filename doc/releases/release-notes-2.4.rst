@@ -733,22 +733,19 @@ Libraries / Subsystems
     library footprint when some options are not enabled, so you should wait for
     future releases if higher ROM usage is a concern for your application.
 
-
 * Shell:
 
   * Switched to use kernel stacks.
   * Fixed select command.
   * Fixed prompting dynamic commands.
+  * Change behavior when more than ``CONFIG_SHELL_ARGC_MAX`` arguments are
+    passed.  Before 2.3 extra arguments were joined to the last argument.
+    In 2.3 extra arguments caused a fault.  Now the shell will report that
+    the command cannot be processed.
 
 
 * Tracing:
   * Tracing backed API now checks if init function exists prio to calling it.
-
-* Shell:
-  * Change behavior when more than ``CONFIG_SHELL_ARGC_MAX`` arguments
-  are passed.  Before 2.3 extra arguments were joined to the last  argument.
-  In 2.3 extra arguments caused a fault.  Now the shell will report that the
-  command cannot be processed.
 
 * Debug:
 
