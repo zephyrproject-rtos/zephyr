@@ -9,7 +9,7 @@
 
 / {
 	model = "Arrow Electronics STM32MP157A Avenger96 board";
-	compatible = "arrow,stm32mp157a-avenger96", "st,stm32mp15";
+	compatible = "arrow,stm32mp157a-avenger96";
 
 	chosen {
 		/*

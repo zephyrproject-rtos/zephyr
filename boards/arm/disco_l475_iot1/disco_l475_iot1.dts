@@ -10,7 +10,7 @@
 
 / {
 	model = "STMicroelectronics B-L475E-IOT01Ax board";
-	compatible = "st,stm32l475-disco-iot", "st,stm32l475";
+	compatible = "st,stm32l475-disco-iot";
 
 	chosen {
 		zephyr,console = &usart1;

@@ -9,7 +9,7 @@
 
 / {
 	model = "STMicroelectronics STM32F4DISCOVERY board";
-	compatible = "st,stm32f4discovery", "st,stm32f407";
+	compatible = "st,stm32f4discovery";
 
 	chosen {
 		zephyr,console = &usart2;

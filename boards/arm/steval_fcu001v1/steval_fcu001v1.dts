@@ -9,7 +9,7 @@
 
 / {
 	model = "STMicroelectronics Flight Controller Board";
-	compatible = "st,flight-controller-board", "st,stm32f401";
+	compatible = "st,flight-controller-board";
 
 	chosen {
 		zephyr,console = &usart1;

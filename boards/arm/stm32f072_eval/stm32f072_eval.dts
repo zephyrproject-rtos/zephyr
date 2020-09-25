@@ -9,7 +9,7 @@
 
 / {
 	model = "STMicroelectronics STM32F072-EVAL board";
-	compatible = "st,stm32f072-eval", "st,stm32f072";
+	compatible = "st,stm32f072-eval";
 
 	chosen {
 		zephyr,console = &usart2;

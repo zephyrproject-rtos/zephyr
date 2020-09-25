@@ -9,7 +9,7 @@
 
 / {
 	model = "Mikroe MINI-M4 for STM32 board";
-	compatible = "mikroe,mini-m4-for-stm32", "st,stm32f415rg";
+	compatible = "mikroe,mini-m4-for-stm32";
 
 	chosen {
 		zephyr,console = &usart2;

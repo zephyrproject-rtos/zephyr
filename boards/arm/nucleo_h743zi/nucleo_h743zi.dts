@@ -10,7 +10,7 @@
 
 / {
 	model = "STMicroelectronics STM32H743ZI-NUCLEO board";
-	compatible = "st,stm32h743zi-nucleo", "st,stm32h743";
+	compatible = "st,stm32h743zi-nucleo";
 
 	chosen {
 		zephyr,console = &usart3;

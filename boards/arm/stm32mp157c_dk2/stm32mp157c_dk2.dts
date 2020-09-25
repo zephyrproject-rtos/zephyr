@@ -10,7 +10,7 @@
 
 / {
 	model = "STMicroelectronics STM32MP157-DK2 board";
-	compatible = "st,stm32mp157c-dk2", "st,stm32mp15";
+	compatible = "st,stm32mp157c-dk2";
 	chosen {
 		/*
 		 * By default, Zephyr console and shell are assigned to

@@ -10,7 +10,7 @@
 
 / {
 	model = "STMicroelectronics STM32L4R5ZI-NUCLEO board";
-	compatible = "st,stm32l4r5zi-nucleo", "st,stm32l4r5";
+	compatible = "st,stm32l4r5zi-nucleo";
 
 	chosen {
 		zephyr,console = &lpuart1;

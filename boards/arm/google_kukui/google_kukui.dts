@@ -9,7 +9,7 @@
 
 / {
 	model = "Google Kukui EC";
-	compatible = "st,stm32f098rc", "st,stm32f098";
+	compatible = "google,kukui-ec", "st,stm32f098";
 
 	chosen {
 		zephyr,console = &usart1;

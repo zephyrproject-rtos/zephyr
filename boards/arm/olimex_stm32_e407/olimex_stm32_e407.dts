@@ -9,7 +9,7 @@
 
 / {
 	model = "Olimex STM32-E407 board";
-	compatible = "olimex,stm32-e407", "st,stm32f407";
+	compatible = "olimex,stm32-e407";
 
 	chosen {
 		zephyr,console = &usart1;

@@ -8,7 +8,7 @@
 
 / {
 	model = "Olimex STM32-H103 board";
-	compatible = "olimex,stm32-h103", "st,stm32f103rb";
+	compatible = "olimex,stm32-h103";
 
 	chosen {
 		zephyr,console = &usart2;

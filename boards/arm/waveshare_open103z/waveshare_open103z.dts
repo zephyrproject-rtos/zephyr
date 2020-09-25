@@ -9,7 +9,7 @@
 
 / {
 	model = "Waveshare Open103Z";
-	compatible = "waveshare,open103z", "st,stm32f103ze";
+	compatible = "waveshare,open103z";
 
 	chosen {
 		zephyr,console = &usart1;

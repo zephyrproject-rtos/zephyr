@@ -9,7 +9,7 @@
 
 / {
 	model = "STMicroelectronics STM32L552ZE-NUCLEO-Q board";
-	compatible = "st,stm32l552ze-nucleo-q", "st,stm32l552";
+	compatible = "st,stm32l552ze-nucleo-q";
 
 	#address-cells = <1>;
 	#size-cells = <1>;

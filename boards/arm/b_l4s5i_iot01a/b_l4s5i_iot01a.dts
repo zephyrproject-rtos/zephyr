@@ -10,7 +10,7 @@
 
 / {
 	model = "STMicroelectronics B-L4S5I-IOT01A discovery kit";
-	compatible = "st,b-l4s5i-iot01a", "st,stm32l4s5";
+	compatible = "st,b-l4s5i-iot01a";
 
 	chosen {
 		zephyr,console = &usart1;

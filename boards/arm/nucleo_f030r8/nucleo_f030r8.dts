@@ -10,7 +10,7 @@
 
 / {
 	model = "STMicroelectronics STM32F030R8-NUCLEO board";
-	compatible = "st,stm32f030r8-nucleo", "st,stm32f030";
+	compatible = "st,stm32f030r8-nucleo";
 
 	chosen {
 		zephyr,console = &usart2;

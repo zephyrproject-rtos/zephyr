@@ -10,7 +10,7 @@
 
 / {
 	model = "RAKWireless 96boards WisTrio board";
-	compatible = "rak,wistrio", "st,stm32l151";
+	compatible = "rak,wistrio";
 
 	chosen {
 		zephyr,console = &usart1;

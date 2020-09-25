@@ -9,7 +9,7 @@
 
 / {
 	model = "STMicroelectronics 96Boards STM32 Sensor Mezzanine board";
-	compatible = "st,stm32f446-b96b-f446ve", "st,stm32f446";
+	compatible = "st,stm32f446-b96b-f446ve";
 
 	chosen {
 		zephyr,console = &uart4;

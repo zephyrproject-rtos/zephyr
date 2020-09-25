@@ -9,7 +9,7 @@
 
 / {
 	model = "STMicroelectronics SensorTile.box board";
-	compatible = "st,sensortile-box", "st,stm32l4r9";
+	compatible = "st,sensortile-box";
 
 	chosen {
 		zephyr,console = &usart1;

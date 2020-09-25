@@ -10,7 +10,7 @@
 
 / {
 	model = "Seeed Studio Carbon 96boards";
-	compatible = "seeed,carbon", "st,stm32f401";
+	compatible = "seeed,carbon";
 
 	chosen {
 		zephyr,console = &usart1;
