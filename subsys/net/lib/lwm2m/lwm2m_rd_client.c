@@ -128,7 +128,8 @@ static void set_sm_state(uint8_t sm_state)
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
 	if (sm_state == ENGINE_BOOTSTRAP_REG_DONE) {
 		event = LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_REG_COMPLETE;
-	} else if (sm_state == ENGINE_BOOTSTRAP_TRANS_DONE) {
+	} else if (client.engine_state == ENGINE_BOOTSTRAP_TRANS_DONE &&
+		   sm_state == ENGINE_DO_REGISTRATION) {
 		event = LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_TRANSFER_COMPLETE;
 	} else
 #endif
