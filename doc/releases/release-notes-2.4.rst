@@ -134,6 +134,11 @@ Deprecated in this release
   * ``sys_mem_pool_free()``
   * ``sys_mem_pool_try_expand_inplace()``
 
+* The Kconfig option ``CONFIG_MULTITHREADING`` to disable multi-threading was
+  deprecated due to lack of maintainership. This means that single-threaded
+  mode with the scheduler disabled is deprecated; normal multi-threaded mode is
+  still fully supported.
+
 Removed APIs in this release
 ============================
 
