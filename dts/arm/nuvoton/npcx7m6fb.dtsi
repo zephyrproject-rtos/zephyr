@@ -42,10 +42,51 @@
 
 	def_io_conf: def_io_conf_list {
 		compatible = "nuvoton,npcx-pinctrl-def";
+		/* Change default functional pads to GPIOs
+		 * no_spip - PIN95.97.A1.A3
+		 * no_fpip - PIN96.A0.A2.A4 - Internal flash only
+		 * no_pwrgd - PIN72
+		 * no_lpc_espi - PIN46.47.51.52.53.54.55.57
+		 * no_peci_en - PIN81
+		 * npsl_in1_sl - PIND2
+		 * npsl_in2_sl - PIN00
+		 * no_ksi0-7 - PIN31.30.27.26.25.24.23.22
+		 * no_ks000-17 - PIN21.20.17.16.15.14.13.12.11.10.07.06.05.04.
+		 *                  82.83.03.B1
+		 */
 		pinctrl = <&alt0_gpio_no_spip
+			   &alt0_gpio_no_fpip
 			   &alt1_no_pwrgd
 			   &alt1_no_lpc_espi
-			   &alta_no_peci_en>;
+			   &alta_no_peci_en
+			   &altd_npsl_in1_sl
+			   &altd_npsl_in2_sl
+			   &alt7_no_ksi0_sl
+			   &alt7_no_ksi1_sl
+			   &alt7_no_ksi2_sl
+			   &alt7_no_ksi3_sl
+			   &alt7_no_ksi4_sl
+			   &alt7_no_ksi5_sl
+			   &alt7_no_ksi6_sl
+			   &alt7_no_ksi7_sl
+			   &alt8_no_kso00_sl
+			   &alt8_no_kso01_sl
+			   &alt8_no_kso02_sl
+			   &alt8_no_kso03_sl
+			   &alt8_no_kso04_sl
+			   &alt8_no_kso05_sl
+			   &alt8_no_kso06_sl
+			   &alt8_no_kso07_sl
+			   &alt9_no_kso08_sl
+			   &alt9_no_kso09_sl
+			   &alt9_no_kso10_sl
+			   &alt9_no_kso11_sl
+			   &alt9_no_kso12_sl
+			   &alt9_no_kso13_sl
+			   &alt9_no_kso14_sl
+			   &alt9_no_kso15_sl
+			   &alta_no_kso16_sl
+			   &alta_no_kso17_sl>;
 	};
 
 	soc {
