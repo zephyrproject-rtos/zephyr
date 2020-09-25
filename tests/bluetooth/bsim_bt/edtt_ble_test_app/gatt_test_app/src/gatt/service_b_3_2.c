@@ -147,7 +147,8 @@ void service_b_3_2_value_v6_notify(void)
  *             BT_GATT_ERR() with a specific ATT error code.
  */
 static void value_v6_indicate_cb(struct bt_conn *conn,
-				 const struct bt_gatt_attr *attr, uint8_t err)
+				 struct bt_gatt_indicate_params *params,
+				 uint8_t err)
 {
 	printk("Indication for attribute 'Value V6' %s\n",
 	       (err) ? "failed" : "succeded");

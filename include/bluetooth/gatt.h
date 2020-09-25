@@ -996,15 +996,18 @@ static inline int bt_gatt_notify_uuid(struct bt_conn *conn,
 	return bt_gatt_notify_cb(conn, &params);
 }
 
+/* Forward declaration of the bt_gatt_indicate_params structure */
+struct bt_gatt_indicate_params;
+
 /** @typedef bt_gatt_indicate_func_t
  *  @brief Indication complete result callback.
  *
  *  @param conn Connection object.
- *  @param attr Attribute object.
+ *  @param params Indication params object.
  *  @param err ATT error code
  */
 typedef void (*bt_gatt_indicate_func_t)(struct bt_conn *conn,
-					const struct bt_gatt_attr *attr,
+					struct bt_gatt_indicate_params *params,
 					uint8_t err);
 
 /** @brief GATT Indicate Value parameters */

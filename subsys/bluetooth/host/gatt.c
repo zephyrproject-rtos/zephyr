@@ -889,7 +889,7 @@ static struct gatt_sc {
 } gatt_sc;
 
 static void sc_indicate_rsp(struct bt_conn *conn,
-			    const struct bt_gatt_attr *attr, uint8_t err)
+			    struct bt_gatt_indicate_params *params, uint8_t err)
 {
 #if defined(CONFIG_BT_GATT_CACHING)
 	struct gatt_cf_cfg *cfg;
@@ -1866,7 +1866,7 @@ static void gatt_indicate_rsp(struct bt_conn *conn, uint8_t err,
 {
 	struct bt_gatt_indicate_params *params = user_data;
 
-	params->func(conn, params->attr, err);
+	params->func(conn, params, err);
 }
 
 static int gatt_send(struct bt_conn *conn, struct net_buf *buf,
@@ -2234,7 +2234,7 @@ uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr
 }
 
 static void sc_restore_rsp(struct bt_conn *conn,
-			   const struct bt_gatt_attr *attr, uint8_t err)
+			   struct bt_gatt_indicate_params *params, uint8_t err)
 {
 #if defined(CONFIG_BT_GATT_CACHING)
 	struct gatt_cf_cfg *cfg;
