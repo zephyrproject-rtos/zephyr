@@ -9,6 +9,12 @@ tests:
         cc26x2r1_launchxl olimex_stm32_h103
     filter: CONFIG_GEN_ISR_TABLES and CONFIG_ARMV7_M_ARMV8_M_MAINLINE
     tags: interrupt isr_table
+  arch.interrupt.gen_isr_table.disabled:
+    arch_allow: arm
+    extra_configs:
+      - CONFIG_GEN_ISR_TABLES=n
+    tags: interrupt isr_table
+    build_only: true
   arch.interrupt.gen_isr_table.arc:
     arch_allow: arc
     filter: CONFIG_RGF_NUM_BANKS > 1

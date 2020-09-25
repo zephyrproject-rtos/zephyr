@@ -326,6 +326,9 @@ void main(void)
 #endif
 #endif /* CONFIG_GEN_SW_ISR_TABLE */
 	rv = TC_PASS;
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-label"
 done:
 	TC_END_RESULT(rv);
 	TC_END_REPORT(rv);
