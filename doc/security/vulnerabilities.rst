@@ -353,12 +353,24 @@ available.
 
 See NCC-ZEP-030
 
-This issue has not been fixed.
+This has been fixed in a PR against Zephyr master.
 
 - `CVE-2020-10060 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10060>`_
 
 - `Zephyr project bug tracker ZEPSEC-37
   <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-37>`_
+
+- `PR27865 fix on master (to be fixed in v2.4.0)
+  <https://github.com/zephyrproject-rtos/zephyr/pull/27865>`_
+
+- `PR27865 fix for v2.3.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/27889>`_
+
+- `PR27865 fix for v2.2.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/27891>`_
+
+- `PR27865 fix for v2.1.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/27893>`_
 
 CVE-2020-10061
 --------------
