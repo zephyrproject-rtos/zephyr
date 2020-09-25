@@ -1,0 +1,19 @@
+sample:
+  description: Demonstration of the NXP MCUX ACMP sensor driver
+  name: NXP MCUX ACMP sample
+common:
+  platform_allow: twr_ke18f
+  tags: drivers
+tests:
+  sample.sensor.mcux_acmp:
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Adjust ACMP input voltage by turning the potentiometer"
+        - "ACMP input [a-z]* threshold"
+  sample.sensor.mcux_acmp.no_trigger:
+    build_only: true
+    extra_configs:
+      - CONFIG_MCUX_ACMP_TRIGGER=n
