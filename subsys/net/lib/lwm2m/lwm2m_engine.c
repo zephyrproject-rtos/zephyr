@@ -4255,11 +4255,6 @@ static int load_tls_credential(struct lwm2m_ctx *client_ctx, uint16_t res_id,
 		return ret;
 	}
 
-	/* Set correct PSK_ID length */
-	if (type == TLS_CREDENTIAL_PSK_ID) {
-		cred_len = strlen(cred);
-	}
-
 	ret = tls_credential_add(client_ctx->tls_tag, type, cred, cred_len);
 	if (ret < 0) {
 		LOG_ERR("Error setting cred tag %d type %d: Error %d",
