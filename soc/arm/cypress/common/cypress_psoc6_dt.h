@@ -76,4 +76,31 @@
 		       CY_PSOC6_DT_PIN_ELEM, inst)	\
 	}
 
+/* Devicetree macros related to interrupt */
+#ifdef CONFIG_CPU_CORTEX_M0PLUS
+#define DO_NOTHING()
+#define CY_PSOC6_DT_NVIC_MUX_INSTALL(n, isr, label)	    \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, map_nvic),	    \
+		(CY_PSOC6_NVIC_MUX_INSTALL(n, isr, label)), \
+		(DO_NOTHING()))
+#define CY_PSOC6_DT_NVIC_MUX_IRQN(n) DT_INST_PROP(n, map_nvic)
+#define CY_PSOC6_DT_NVIC_MUX_MAP(n) Cy_SysInt_SetInterruptSource( \
+					DT_INST_PROP(n, map_nvic), \
+					DT_INST_IRQN(n))
+#else
+#define CY_PSOC6_DT_NVIC_MUX_INSTALL(n, isr, label) \
+	CY_PSOC6_NVIC_MUX_INSTALL(n, isr, label)
+#define CY_PSOC6_DT_NVIC_MUX_IRQN(n) DT_INST_IRQN(n)
+#define CY_PSOC6_DT_NVIC_MUX_MAP(n)
+#endif
+
+#define CY_PSOC6_NVIC_MUX_INSTALL(n, isr, label)	  \
+		do {					  \
+		IRQ_CONNECT(CY_PSOC6_DT_NVIC_MUX_IRQN(n), \
+			DT_INST_IRQ(n, priority),	  \
+			isr, DEVICE_GET(label), 0);	  \
+		CY_PSOC6_DT_NVIC_MUX_MAP(n);		  \
+		irq_enable(CY_PSOC6_DT_NVIC_MUX_IRQN(n)); \
+		} while (0)
+
 #endif /* _CYPRESS_PSOC6_SOC_DT_H_ */
