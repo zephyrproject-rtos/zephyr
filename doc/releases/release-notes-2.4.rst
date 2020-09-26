@@ -39,7 +39,6 @@ The following CVEs are addressed by this release:
 * CVE-2020-13601: Under embargo until 2020/11/18
 * CVE-2020-13602: Remote Denial of Service in LwM2M do_write_op_tlv
 
-
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 
@@ -49,7 +48,6 @@ Known issues
 You can check all currently known issues by listing them using the GitHub
 interface and listing all issues with the `bug label
 <https://github.com/zephyrproject-rtos/zephyr/issues?q=is%3Aissue+is%3Aopen+label%3Abug>`_.
-
 
 API Changes
 ***********
@@ -161,11 +159,11 @@ Stable API changes in this release
   * HID class callbacks now takes a parameter ``const struct device*`` which
     is the HID device for which callback was called.
 
-* Bluetooth:
+* Bluetooth
 
   * The ``_gatt_`` infix has been removed from all GATT service APIs.
 
-* Bluetooth HCI Driver:
+* Bluetooth HCI Driver
 
   * bt_hci_evt_is_prio() removed, use bt_hci_evt_get_flags() instead when
     CONFIG_BT_RECV_IS_RX_THREAD is defined and call bt_recv and bt_recv_prio
@@ -220,7 +218,7 @@ Kernel
 Architectures
 *************
 
-* ARC:
+* ARC
 
   * Added ARC MetaWare toolchain support
   * General arch improvements for stacks & memory domains
@@ -229,8 +227,7 @@ Architectures
   * Fix for fast irq (one register bank configuration)
   * Fix for undefined shift behavior (CID 211523)
 
-
-* ARM:
+* ARM
 
   * AARCH32
 
@@ -255,13 +252,11 @@ Architectures
 
     * Re-implemented thread context-switch to use the _arch_switch() API
 
-* POSIX:
+* POSIX
 
+* RISC-V
 
-* RISC-V:
-
-
-* x86:
+* x86
 
   * x86 MMU paging support has been overhauled to meet CONFIG_MMU requirements.
 
@@ -289,11 +284,10 @@ Boards & SoC Support
 
 * Made these changes in other SoC series:
 
-  * STM32L4/STM32WB: Added support for Low Power Mode
+  * STM32L4/STM32WB: Added support for Low Power Mode.
   * STM32H7/STM32WB/STM32MP1: Added Dual Core concurrent register access
-    protection using HSEM
-  * Increase cpu frequency for ARC nsim_hs_smp
-
+    protection using HSEM.
+  * Increased cpu frequency for ARC nsim_hs_smp.
 
 * Changes for ARC boards:
 
@@ -301,9 +295,9 @@ Boards & SoC Support
   * ARC MetaWare toolchain support, including mdb runner for various ARC boards
   * gcov coverage support for ARC QEMU
   * New nSIM configuration, corresponding to em7d_v22 EMSK board
-  * Enable SMP on HSDK board, including dual core and quad core configurations
-  * Switch from legacy ARC-nSIM UART to ns16550 UART model and driver
-  * Fix EMSDP secure config for emsdp_em7d_esp
+  * Enabled SMP on HSDK board, including dual core and quad core configurations.
+  * Switched from legacy ARC-nSIM UART to ns16550 UART model and driver.
+  * Fixed EMSDP secure config for emsdp_em7d_esp.
 
 * Added support for these ARM boards:
 
@@ -384,7 +378,7 @@ Drivers and Sensors
 
 * Counter
 
-  * STM32: Added support on F0/F2 series
+  * STM32: Added support on F0/F2 series.
   * Added MCUX PIT counter driver for Kinetis K6x and K8x SoCs.
 
 * Crypto
@@ -393,7 +387,7 @@ Drivers and Sensors
 
 * DAC
 
-  * STM32: Added support for F0/F2/G4/L1 series
+  * STM32: Added support for F0/F2/G4/L1 series.
 
 * Debug
 
@@ -401,7 +395,7 @@ Drivers and Sensors
 
 * Display
 
-  * Enhanced SSD16XX driver to support loading WS from OTP
+  * Enhanced SSD16XX driver to support loading WS from OTP.
   * Added chip select flags to SPI display drivers.
 
 * DMA
@@ -418,7 +412,7 @@ Drivers and Sensors
 
 * Entropy
 
-  * STM32: Added support for ISR mode. Added support on F7/H7/L0 series
+  * STM32: Added support for ISR mode. Added support on F7/H7/L0 series.
 
 * ESPI
 
@@ -429,8 +423,8 @@ Drivers and Sensors
 * Ethernet
 
   * Added VLAN support to Intel e1000 driver.
-  * Added Ethernet support to stm32h7 based boards (with IT based TX)
-  * Moved stm32 driver to device tree configuration
+  * Added Ethernet support to stm32h7 based boards (with IT based TX).
+  * Moved stm32 driver to device tree configuration.
   * Added support for setting fixed configuration and read from device tree
     for ENET ETH interface and PHY in mcux driver.
   * Added support for device that do not use SMI for PHY setup in mcux driver.
@@ -452,11 +446,12 @@ Drivers and Sensors
 
 * GPIO
 
-  * Added driver for the Xilinx AXI GPIO IP
+  * Added driver for the Xilinx AXI GPIO IP.
   * Added LPC11U6X driver.
 
 * Hardware Info
-  * Added Atmel SAM4L driver
+
+  * Added Atmel SAM4L driver.
 
 * I2C
 
@@ -469,8 +464,8 @@ Drivers and Sensors
     to be synthesized to test driver behavior.  See
     :option:`CONFIG_I2C_EMUL`.
 
-  * STM32: V1: Reset i2c device on read/write error
-  * STM32: V2: Added dts configurable Timing option
+  * STM32: V1: Reset i2c device on read/write error.
+  * STM32: V2: Added dts configurable Timing option.
   * Fixed MCUX LPI2C driver transfer status after NACK.
 
 * I2S
@@ -500,7 +495,7 @@ Drivers and Sensors
 
 * LED
 
-  * Added TI LP503X controller driver
+  * Added TI LP503X controller driver.
   * Introduced led_set_color, let_get_info, and channel-dedicated syscalls
   * Added shell support.
 
@@ -532,7 +527,7 @@ Drivers and Sensors
 
 * PWM
 
-  * STM32: Refactored using Cube LL API
+  * STM32: Refactored using Cube LL API.
   * Added SAM9 TCC based driver.
 
 * Sensor
@@ -551,9 +546,9 @@ Drivers and Sensors
 
 * Serial
 
-  * Added driver for the Xilinx UART Lite IP
+  * Added driver for the Xilinx UART Lite IP.
   * Added NXP IUART driver for i.MX8M Mini.
-  * Implemented uart_config_get API in MCUX UART driver
+  * Implemented uart_config_get API in MCUX UART driver.
   * Added LPC11U6X driver.
 
 * SPI
@@ -564,7 +559,7 @@ Drivers and Sensors
     specify 0 for this field will probably need to be updated to specify
     GPIO_ACTIVE_LOW.  SPI_CS_ACTIVE_LOW/HIGH are still used for chip
     selects that are not specified by a cs-gpios property.
-  * Added driver for the Xilinx AXI Quad SPI IP
+  * Added driver for the Xilinx AXI Quad SPI IP.
   * STM32: Various fixes around DMA mode.
   * Extended MCUX Flexcomm driver to support slave mode.
   * Added optional delays to MCUX DSPI and LPSPI drivers.
@@ -607,7 +602,7 @@ Drivers and Sensors
 * Watchdog
 
   * Added MCUX WWDT driver for LPC SoCs.
-  * Enhanced Gecko driver to support Gecko Series 2 SoC
+  * Enhanced Gecko driver to support Gecko Series 2 SoC.
 
 * WiFi
 
@@ -616,7 +611,6 @@ Drivers and Sensors
   * Fixed esp driver offload protocol parsing.
   * Fixed esp driver GPIO reset control logic.
   * Fixed eswifi driver offloading packet parsing.
-
 
 Networking
 **********
@@ -681,11 +675,10 @@ Networking
 * Fixed LWM2M updating lifetime on Register Update event.
 * Fixed MQTT double CONNACK event notification on server reject.
 
-
 Bluetooth
 *********
 
-* Host:
+* Host
 
   * Added basic support for Isochronous Channels (also known as LE Audio).
   * Added support for Periodic Advertising (both Advertising and Scanning
@@ -717,13 +710,13 @@ Bluetooth
     discovers it.
   * Multiple additional fixes.
 
-* Mesh:
+* Mesh
 
   * Added support for storage of model data in a key-value fashion.
   * Added support for a network loopback.
   * Multiple qualification-related fixes.
 
-* BLE split software Controller:
+* BLE split software Controller
 
   * The advanced scheduling algorithms that were supported in the legacy
     Controller have been ported to the split one.
@@ -738,7 +731,7 @@ Bluetooth
     impact in the cooperation between the flash driver and the Controller.
   * Fixed an null pointer dereference in the ticker code.
 
-* HCI Driver:
+* HCI Driver
 
   * A new BT_QUIRK_NO_AUTO_DLE has been added for Controllers that do not follow
     the recommendation of auto-initating the data length update procedure. This
@@ -747,21 +740,19 @@ Bluetooth
 Build and Infrastructure
 ************************
 
-* Improved support for additional toolchains
+* Improved support for additional toolchains:
 
-  * Better toolchain abstractions
-  * Support for the ARC MetaWare toolchain
+  * Better toolchain abstractions.
+  * Support for the ARC MetaWare toolchain.
 
-
-* Devicetree:
+* Devicetree
 
   * Added new devicetree macros that provide a default value if the property
-    or cell accessor doesn't contain the requested data
+    or cell accessor doesn't contain the requested data.
 
   * Added support for inferring bindings for ``/zephyr,user`` devicetree node
     to allow applications an easy way to specify application specific
     devicetree properties without having a binding.
-
 
 * Support for multiple SOC and ARCH roots.
   The :ref:`SOC_ROOT <application>` and ``ARCH_ROOT`` variables used to specify
@@ -780,10 +771,9 @@ Libraries / Subsystems
 
 * Disk
 
-
 * Management
 
-  * MCUmgr:
+  * MCUmgr
 
     * Moved mcumgr into its own directory.
     * UDP port switched to using kernel stack.
@@ -791,7 +781,7 @@ Libraries / Subsystems
 
   * Added support for Open Supervised Device Protocol (OSDP), see :option:`CONFIG_OSDP`.
 
-  * updatehub:
+  * updatehub
 
     * Added download block check.
     * Added support to flash integrity check using SHA-256 algorithm.
@@ -799,28 +789,24 @@ Libraries / Subsystems
     * Fixed out-of-bounds access and add flash_img_init return value check.
     * Fixed getaddrinfo resource leak.
 
-
-* Settings:
+* Settings
 
   * If a setting read is attempted from a channel that doesn't support reading return an error rather than faulting.
-  * disallow modifying the content of a static subtree name.
-
+  * Disallow modifying the content of a static subtree name.
 
 * Random
 
+* POSIX subsystem
 
-* POSIX subsystem:
+* Power management
 
-
-* Power management:
-
-* Logging:
+* Logging
 
   * Fixed immediate logging with multiple backends.
   * Switched logging thread to use kernel stack.
   * Allow users to disable all shell backends at one using :option:`CONFIG_SHELL_LOG_BACKEND`.
   * Added Spinel protocol logging backend.
-  * Fixed timestamp calculation when using NEWLIB
+  * Fixed timestamp calculation when using NEWLIB.
 
 * LVGL
 
@@ -854,7 +840,7 @@ Libraries / Subsystems
     library footprint when some options are not enabled, so you should wait for
     future releases if higher ROM usage is a concern for your application.
 
-* Shell:
+* Shell
 
   * Switched to use kernel stacks.
   * Fixed select command.
@@ -864,16 +850,17 @@ Libraries / Subsystems
     In 2.3 extra arguments caused a fault.  Now the shell will report that
     the command cannot be processed.
 
+* Storage
 
-* Storage:
   * Added flash SHA-256 integrity check.
 
-* Tracing:
+* Tracing
+
   * Tracing backed API now checks if init function exists prio to calling it.
 
-* Debug:
+* Debug
 
-  * Core Dump:
+  * Core Dump
 
     * Added the ability to do core dump when fatal error is encountered.
       This allows dumping the CPU registers and memory content for offline
@@ -891,9 +878,9 @@ HALs
 Documentation
 *************
 
-
 Tests and Samples
 *****************
+
   * nvs: Do full chip erase when flashing.
   * nrf: onoff_level_lighting_vnd_app: Fixed build with mcumgr.
   * drivers: flash_shell: new commands write_unaligned and write_pattern.
