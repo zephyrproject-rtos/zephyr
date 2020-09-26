@@ -307,15 +307,25 @@ Boards & SoC Support
 
 * Added support for these ARM boards:
 
+  * Adafruit ItsyBitsy M4 Express
+  * Arduino Nano 33 IOT
   * ARM Cortex-M1/M3 DesignStart FPGA reference designs running on the Digilent
     Arty A7 development board
   * Atmel SAM4L-EK board
+  * Circuit Dojo nRF9160 Feather
+  * EOS S3 Quick Feather
   * Laird Connectivity Pinnacle 100 Modem Development board (pinnacle_100_dvk)
   * nRF21540 DK (nrf21540dk_nrf52840)
   * nRF52805 emulation on nRF52 DK (nrf52dk_nrf52805)
   * nRF5340 DK
+  * Nuvoton npcx7m6fb and pfm m487 boards
   * NXP i.MX RT685 EVK, i.MX8M Mini EVK, LPCXpresso LPC11U68
   * OLIMEX-STM32-H103
+  * Ruuvitag board
+  * Seagate FaZe board
+  * Seeeduino XIAO
+  * Serpente board
+  * Silicon Labs BRD4180A (a.k.a. SLWRB4180A) Mighty Gecko Radio Board
   * ST B_L4S5I_IOT01A Discovery kit
   * ST NUCLEO-H745ZI-Q
   * Waveshare Open103Z
