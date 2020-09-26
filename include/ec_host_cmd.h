@@ -7,6 +7,13 @@
 #ifndef ZEPHYR_INCLUDE_EC_HOST_CMD_H_
 #define ZEPHYR_INCLUDE_EC_HOST_CMD_H_
 
+/**
+ * @brief EC Host Command Interface
+ * @defgroup ec_host_cmd_periph_interface EC Host Command Interface
+ * @ingroup io_interfaces
+ * @{
+ */
+
 #include <stdint.h>
 
 /**
@@ -193,5 +200,9 @@ enum ec_host_cmd_status {
 	EC_HOST_CMD_MAX = UINT16_MAX /* Force enum to be 16 bits */
 } __packed;
 BUILD_ASSERT(sizeof(enum ec_host_cmd_status) == sizeof(uint16_t));
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_EC_HOST_CMD_H_ */

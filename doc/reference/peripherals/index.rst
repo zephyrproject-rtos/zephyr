@@ -11,6 +11,7 @@ Peripherals
    clock_control.rst
    dac.rst
    dma.rst
+   ec_host_cmd_periph.rst
    eeprom.rst
    entropy.rst
    flash.rst
