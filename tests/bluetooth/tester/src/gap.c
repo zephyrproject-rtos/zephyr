@@ -295,8 +295,14 @@ static void start_advertising(const uint8_t *data, uint16_t len)
 
 	adv_conn = atomic_test_bit(&current_settings, GAP_SETTINGS_CONNECTABLE);
 
+	/* Use identity address for non connectable advertising */
+	const struct bt_le_adv_param non_conn_params =
+		BT_LE_ADV_PARAM_INIT(BT_LE_ADV_OPT_USE_IDENTITY,
+				     BT_GAP_ADV_FAST_INT_MIN_2,
+				     BT_GAP_ADV_FAST_INT_MAX_2, NULL);
+
 	/* BTP API don't allow to set empty scan response data. */
-	if (bt_le_adv_start(adv_conn ? BT_LE_ADV_CONN : BT_LE_ADV_NCONN,
+	if (bt_le_adv_start(adv_conn ? BT_LE_ADV_CONN : &non_conn_params,
 			    ad, adv_len, sd_len ? sd : NULL, sd_len) < 0) {
 		LOG_ERR("Failed to start advertising");
 		goto fail;
