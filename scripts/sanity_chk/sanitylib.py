@@ -2214,12 +2214,16 @@ class ProjectBuilder(FilterBuilder):
             if instance.status in ["error", "failed", "timeout"]:
                 self.log_info_file(self.inline_logs)
         else:
+            completed_perc = 0
+            if self.suite.total_to_do > 0:
+                completed_perc = int((float(self.suite.total_done) / self.suite.total_to_do) * 100)
+
             sys.stdout.write("\rINFO    - Total complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s" % (
                 Fore.GREEN,
                 self.suite.total_done,
                 self.suite.total_to_do,
                 Fore.RESET,
-                int((float(self.suite.total_done) / self.suite.total_to_do) * 100),
+                completed_perc,
                 Fore.YELLOW if self.suite.build_filtered_tests > 0 else Fore.RESET,
                 self.suite.build_filtered_tests,
                 Fore.RESET,
