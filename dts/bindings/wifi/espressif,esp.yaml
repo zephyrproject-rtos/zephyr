@@ -11,6 +11,6 @@ properties:
     label:
       required: true
 
-    wifi-reset-gpios:
+    reset-gpios:
       type: phandle-array
       required: false
