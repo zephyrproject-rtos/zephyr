@@ -7,9 +7,10 @@ description: |
 
 compatible: "voltage-divider"
 
+include: base.yaml
+
 properties:
     io-channels:
-      type: phandle-array
       required: true
       description: |
         Channels available with this divider configuration.
