@@ -63,6 +63,7 @@ static struct modem_pin modem_pins[] = {
 };
 
 #define MDM_UART_DEV_NAME		DT_INST_BUS_LABEL(0)
+#define MDM_UART_NODE			DT_BUS(DT_DRV_INST(0))
 
 #define MDM_POWER_ENABLE		1
 #define MDM_POWER_DISABLE		0
@@ -1754,6 +1755,8 @@ static int modem_init(const struct device *dev)
 	}
 
 	/* modem interface */
+	mdata.iface_data.hw_flow_control = DT_PROP(MDM_UART_NODE,
+						   hw_flow_control);
 	mdata.iface_data.rx_rb_buf = &mdata.iface_rb_buf[0];
 	mdata.iface_data.rx_rb_buf_len = sizeof(mdata.iface_rb_buf);
 	ret = modem_iface_uart_init(&mctx.iface, &mdata.iface_data,
