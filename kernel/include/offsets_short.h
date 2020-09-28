@@ -44,6 +44,11 @@
 #define _thread_offset_to_callee_saved \
 	(___thread_t_callee_saved_OFFSET)
 
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+#define _thread_offset_to_tls \
+	(___thread_t_tls_OFFSET)
+#endif /* CONFIG_THREAD_LOCAL_STORAGE */
+
 /* base */
 
 #define _thread_offset_to_thread_state \

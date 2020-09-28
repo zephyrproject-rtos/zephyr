@@ -349,6 +349,26 @@ uint16_t arch_coredump_tgt_code_get(void);
 
 /** @} */
 
+/**
+ * @defgroup arch-tls Architecture-specific Thread Local Storage APIs
+ * @ingroup arch-interface
+ * @{
+ */
+
+/**
+ * @brief Setup Architecture-specific TLS area in stack
+ *
+ * This sets up the stack area for thread local storage.
+ * The structure inside in area is architecture specific.
+ *
+ * @param new_thread New thread object
+ * @param stack_ptr Stack pointer
+ * @return Number of bytes taken by the TLS area
+ */
+size_t arch_tls_stack_setup(struct k_thread *new_thread, char *stack_ptr);
+
+/** @} */
+
 /* Include arch-specific inline function implementation */
 #include <kernel_arch_func.h>
 

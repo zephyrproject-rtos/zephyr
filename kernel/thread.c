@@ -492,6 +492,9 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 	 */
 	*((uint32_t *)stack_buf_start) = STACK_SENTINEL;
 #endif /* CONFIG_STACK_SENTINEL */
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	delta += arch_tls_stack_setup(new_thread, (stack_ptr - delta));
+#endif /* CONFIG_THREAD_LOCAL_STORAGE */
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 	size_t tls_size = sizeof(struct _thread_userspace_local_data);
 

@@ -365,6 +365,11 @@ struct k_thread {
 	/** resource pool */
 	struct k_mem_pool *resource_pool;
 
+#if defined(CONFIG_THREAD_LOCAL_STORAGE)
+	/* Pointer to arch-specific TLS area */
+	uintptr_t tls;
+#endif /* CONFIG_THREAD_LOCAL_STORAGE */
+
 	/** arch-specifics: must always be at the end */
 	struct _thread_arch arch;
 };
