@@ -185,7 +185,7 @@
 		interrupts = <1 0>;
 		label = "DMA_0";
 		status = "disabled";
-		#dma-cells = <0>;
+		#dma-cells = <1>;
 	};
 
 	dma1: dma-controller@105000 {
@@ -194,7 +194,7 @@
 		interrupts = <54 0>;
 		label = "DMA_1";
 		status = "disabled";
-		#dma-cells = <0>;
+		#dma-cells = <1>;
 	};
 };
 
