@@ -65,9 +65,9 @@ static bool isr_rx_sr_adva_check(uint8_t tx_addr, uint8_t *addr,
 
 
 static inline bool isr_rx_ci_tgta_check(struct lll_adv *lll,
-					struct pdu_adv *adv, struct pdu_adv *ci,
-					uint8_t rl_idx);
-static inline bool isr_rx_ci_adva_check(struct pdu_adv *adv,
+					uint8_t rx_addr, uint8_t *tgt_addr,
+					struct pdu_adv *ci, uint8_t rl_idx);
+static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
 					struct pdu_adv *ci);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
@@ -354,12 +354,13 @@ int lll_adv_scan_req_report(struct lll_adv *lll, struct pdu_adv *pdu_adv_rx,
 }
 #endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
 
-bool lll_adv_connect_ind_check(struct lll_adv *lll, struct pdu_adv *adv,
-			       struct pdu_adv *ci, uint8_t devmatch_ok,
-			       uint8_t *rl_idx)
+bool lll_adv_connect_ind_check(struct lll_adv *lll, struct pdu_adv *ci,
+			       uint8_t tx_addr, uint8_t *addr,
+			       uint8_t rx_addr, uint8_t *tgt_addr,
+			       uint8_t devmatch_ok, uint8_t *rl_idx)
 {
 	/* LL 4.3.2: filter policy shall be ignored for directed adv */
-	if (adv->type == PDU_ADV_TYPE_DIRECT_IND) {
+	if (tgt_addr) {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		return ull_filter_lll_rl_addr_allowed(ci->tx_addr,
 						      ci->connect_ind.init_addr,
@@ -367,8 +368,9 @@ bool lll_adv_connect_ind_check(struct lll_adv *lll, struct pdu_adv *adv,
 #else
 		return (1) &&
 #endif
-		       isr_rx_ci_adva_check(adv, ci) &&
-		       isr_rx_ci_tgta_check(lll, adv, ci, *rl_idx);
+		       isr_rx_ci_adva_check(tx_addr, addr, ci) &&
+		       isr_rx_ci_tgta_check(lll, rx_addr, tgt_addr, ci,
+					    *rl_idx);
 	}
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
@@ -378,11 +380,11 @@ bool lll_adv_connect_ind_check(struct lll_adv *lll, struct pdu_adv *adv,
 						rl_idx)) ||
 		(((lll->filter_policy & 0x02) != 0) &&
 		 (devmatch_ok || ull_filter_lll_irk_whitelisted(*rl_idx)))) &&
-	       isr_rx_ci_adva_check(adv, ci);
+	       isr_rx_ci_adva_check(tx_addr, addr, ci);
 #else
 	return (((lll->filter_policy & 0x02) == 0) ||
 		(devmatch_ok)) &&
-	       isr_rx_ci_adva_check(adv, ci);
+	       isr_rx_ci_adva_check(tx_addr, addr, ci);
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 }
 
@@ -931,6 +933,8 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 	struct pdu_adv *pdu_rx;
 	uint8_t tx_addr;
 	uint8_t *addr;
+	uint8_t rx_addr;
+	uint8_t *tgt_addr;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	/* An IRK match implies address resolution enabled */
@@ -946,9 +950,16 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 	addr = pdu_adv->adv_ind.addr;
 	tx_addr = pdu_adv->tx_addr;
 
+	if (pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND) {
+		tgt_addr = pdu_adv->direct_ind.tgt_addr;
+	} else {
+		tgt_addr = NULL;
+	}
+	rx_addr = pdu_adv->rx_addr;
+
 	if ((pdu_rx->type == PDU_ADV_TYPE_SCAN_REQ) &&
 	    (pdu_rx->len == sizeof(struct pdu_adv_scan_req)) &&
-	    (pdu_adv->type != PDU_ADV_TYPE_DIRECT_IND) &&
+	    (tgt_addr == NULL) &&
 	    lll_adv_scan_req_check(lll, pdu_rx, tx_addr, addr, devmatch_ok,
 				    &rl_idx)) {
 		radio_isr_set(isr_done, lll);
@@ -996,8 +1007,9 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 #if defined(CONFIG_BT_PERIPHERAL)
 	} else if ((pdu_rx->type == PDU_ADV_TYPE_CONNECT_IND) &&
 		   (pdu_rx->len == sizeof(struct pdu_adv_connect_ind)) &&
-		   lll_adv_connect_ind_check(lll, pdu_adv, pdu_rx, devmatch_ok,
-					     &rl_idx) &&
+		   lll_adv_connect_ind_check(lll, pdu_rx, tx_addr, addr,
+					     rx_addr, tgt_addr,
+					     devmatch_ok, &rl_idx) &&
 		   lll->conn) {
 		struct node_rx_ftr *ftr;
 		struct node_rx_pdu *rx;
@@ -1073,26 +1085,21 @@ static bool isr_rx_sr_adva_check(uint8_t tx_addr, uint8_t *addr,
 }
 
 static inline bool isr_rx_ci_tgta_check(struct lll_adv *lll,
-					struct pdu_adv *adv, struct pdu_adv *ci,
-					uint8_t rl_idx)
+					uint8_t rx_addr, uint8_t *tgt_addr,
+					struct pdu_adv *ci, uint8_t rl_idx)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (rl_idx != FILTER_IDX_NONE && lll->rl_idx != FILTER_IDX_NONE) {
 		return rl_idx == lll->rl_idx;
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
-	return (adv->rx_addr == ci->tx_addr) &&
-	       !memcmp(adv->direct_ind.tgt_addr, ci->connect_ind.init_addr,
-		       BDADDR_SIZE);
+	return (rx_addr == ci->tx_addr) &&
+	       !memcmp(tgt_addr, ci->connect_ind.init_addr, BDADDR_SIZE);
 }
 
-static inline bool isr_rx_ci_adva_check(struct pdu_adv *adv,
+static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
 					struct pdu_adv *ci)
 {
-	return (adv->tx_addr == ci->rx_addr) &&
-		(((adv->type == PDU_ADV_TYPE_DIRECT_IND) &&
-		 !memcmp(adv->direct_ind.adv_addr, ci->connect_ind.adv_addr,
-			 BDADDR_SIZE)) ||
-		 (!memcmp(adv->adv_ind.addr, ci->connect_ind.adv_addr,
-			  BDADDR_SIZE)));
+	return (tx_addr == ci->rx_addr) &&
+		!memcmp(addr, ci->connect_ind.adv_addr, BDADDR_SIZE);
 }
