@@ -23,6 +23,8 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.c)
 
 zephyr_library_sources_ifdef(CONFIG_X86_VERY_EARLY_CONSOLE early_serial.c)
 
+zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE tls.c)
+
 if(CONFIG_X86_64)
   include(intel64.cmake)
 else()
