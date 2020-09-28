@@ -286,6 +286,62 @@ config LOG_BACKEND_UART
 	help
 	  When enabled backend is using UART to output logs.
 
+config LOG_BACKEND_FCB
+	bool "Enable flash backend"
+	depends on FCB
+	help
+	  When enabled backend is storing logs to flash.
+
+if LOG_BACKEND_FCB
+
+config LOG_BACKEND_FCB_FLASH_AREA_ID
+       int "The flash area used for logging"
+
+config LOG_BACKEND_FCB_SECTOR_COUNT
+       int "Number of flash sectors used for log"
+       help
+         Set number of flash sectors to be used by the log. Use more than one
+         to ensure latest log lines are always kept.
+
+config LOG_BACKEND_FCB_SECTOR1_OFFSET
+       int "Offset from start of flash area to sector 1"
+       default 0
+
+config LOG_BACKEND_FCB_SECTOR1_SIZE
+       int "Size of sector 1"
+       default 0
+
+config LOG_BACKEND_FCB_SECTOR2_OFFSET
+       int "Offset from start of flash area to sector 2"
+       default 0
+
+config LOG_BACKEND_FCB_SECTOR2_SIZE
+       int "Size of sector 2"
+       default 0
+
+config LOG_BACKEND_FCB_SECTOR3_OFFSET
+       int "Offset from start of flash area to sector 3"
+       default 0
+
+config LOG_BACKEND_FCB_SECTOR3_SIZE
+       int "Size of sector 3"
+       default 0
+
+config LOG_BACKEND_FCB_SECTOR4_OFFSET
+       int "Offset from start of flash area to sector 4"
+       default 0
+
+config LOG_BACKEND_FCB_SECTOR4_SIZE
+       int "Size of sector 4"
+       default 0
+
+config LOG_BACKEND_FCB_LINE_LEN
+       int "Max log line length. Longer lines are truncated in log."
+       default 128
+
+endif # LOG_BACKEND_FCB
+
+
 config LOG_BACKEND_UART_SYST_ENABLE
 	bool "Enable UART syst backend"
 	depends on LOG_BACKEND_UART
