@@ -421,14 +421,9 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 	pdu_adv = lll_adv_data_curr_get(lll);
 	pdu_aux = lll_adv_aux_data_latest_get(lll_aux, &upd);
 
-	if (pdu_adv->type == PDU_ADV_TYPE_EXT_IND) {
-		/* AdvA is placed at 2nd byte of ext hdr data */
-		addr = &pdu_aux->adv_ext_ind.ext_hdr_adi_adv_data[1];
-		tx_addr = pdu_aux->tx_addr;
-	} else {
-		addr = pdu_adv->adv_ind.addr;
-		tx_addr = pdu_adv->tx_addr;
-	}
+	/* AdvA is placed at 2nd byte of ext hdr data */
+	addr = &pdu_aux->adv_ext_ind.ext_hdr_adi_adv_data[1];
+	tx_addr = pdu_aux->tx_addr;
 
 	if ((pdu_rx->type == PDU_ADV_TYPE_AUX_SCAN_REQ) &&
 	    (pdu_rx->len == sizeof(struct pdu_adv_scan_req)) &&
