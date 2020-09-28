@@ -149,7 +149,14 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	peer_addr_type = pdu_adv->tx_addr;
 	memcpy(peer_addr, pdu_adv->connect_ind.init_addr, BDADDR_SIZE);
 
-	chan_sel = pdu_adv->chan_sel;
+	if (0) {
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	} else if (adv->lll.aux) {
+		chan_sel = 1U;
+#endif
+	} else {
+		chan_sel = pdu_adv->chan_sel;
+	}
 
 	cc = (void *)pdu_adv;
 	cc->status = 0U;
