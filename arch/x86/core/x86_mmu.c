@@ -21,6 +21,10 @@
 
 LOG_MODULE_DECLARE(os);
 
+#define ENTRY_RW	(MMU_RW | MMU_IGNORED0)
+#define ENTRY_US	(MMU_US | MMU_IGNORED1)
+#define ENTRY_XD	(MMU_XD | MMU_IGNORED2)
+
 /* "dummy" pagetables for the first-phase build. The real page tables
  * are produced by gen-mmu.py based on data read in zephyr-prebuilt.elf,
  * and this dummy array is discarded.
@@ -640,10 +644,44 @@ static int page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
 	return 0;
 }
 
+static pentry_t flags_to_entry(uint32_t flags)
+{
+	pentry_t entry_flags = MMU_P;
+
+	/* Translate flags argument into HW-recognized entry flags.
+	 *
+	 * Support for PAT is not implemented yet. Many systems may have
+	 * BIOS-populated MTRR values such that these cache settings are
+	 * redundant.
+	 */
+	switch (flags & K_MEM_CACHE_MASK) {
+	case K_MEM_CACHE_NONE:
+		entry_flags |= MMU_PCD;
+		break;
+	case K_MEM_CACHE_WT:
+		entry_flags |= MMU_PWT;
+		break;
+	case K_MEM_CACHE_WB:
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	if ((flags & K_MEM_PERM_RW) != 0U) {
+		entry_flags |= ENTRY_RW;
+	}
+
+	if ((flags & K_MEM_PERM_EXEC) == 0U) {
+		entry_flags |= ENTRY_XD;
+	}
+
+	return entry_flags;
+}
+
 /* map region virt..virt+size to phys with provided arch-neutral flags */
 int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
-	pentry_t entry_flags = MMU_P;
+	pentry_t entry_flags;
 	pentry_t *ptables;
 
 	LOG_DBG("%s: %p -> %p (%zu) flags 0x%x",
@@ -665,36 +703,14 @@ int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 	 */
 	ptables = z_x86_kernel_ptables;
 
-	/* Translate flags argument into HW-recognized entry flags.
-	 *
-	 * Support for PAT is not implemented yet. Many systems may have
-	 * BIOS-populated MTRR values such that these cache settings are
-	 * redundant.
-	 */
-	switch (flags & K_MEM_CACHE_MASK) {
-	case K_MEM_CACHE_NONE:
-		entry_flags |= MMU_PCD;
-		break;
-	case K_MEM_CACHE_WT:
-		entry_flags |= MMU_PWT;
-		break;
-	case K_MEM_CACHE_WB:
-		break;
-	default:
-		return -ENOTSUP;
-	}
-	if ((flags & K_MEM_PERM_RW) != 0U) {
-		entry_flags |= MMU_RW;
-	}
 	if ((flags & K_MEM_PERM_USER) != 0U) {
 		/* TODO: user mode support
 		 * entry_flags |= MMU_US;
 		 */
 		return -ENOTSUP;
 	}
-	if ((flags & K_MEM_PERM_EXEC) == 0U) {
-		entry_flags |= MMU_XD;
-	}
+
+	entry_flags = flags_to_entry(flags);
 
 	for (size_t offset = 0; offset < size; offset += CONFIG_MMU_PAGE_SIZE) {
 		int ret;
@@ -726,7 +742,7 @@ int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
  */
 static void stack_guard_set(void *guard_page)
 {
-	pentry_t pte = ((uintptr_t)guard_page) | MMU_P | MMU_XD;
+	pentry_t pte = ((uintptr_t)guard_page) | MMU_P | ENTRY_XD;
 	int ret;
 
 	assert_virt_addr_aligned(guard_page);
