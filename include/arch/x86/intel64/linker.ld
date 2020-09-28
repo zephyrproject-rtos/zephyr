@@ -100,6 +100,7 @@ SECTIONS
 	_image_rodata_start = .;
 
 	#include <linker/common-rom.ld>
+	#include <linker/thread-local-storage.ld>
 
 	SECTION_PROLOGUE(_RODATA_SECTION_NAME,,ALIGN(16))
 	{
