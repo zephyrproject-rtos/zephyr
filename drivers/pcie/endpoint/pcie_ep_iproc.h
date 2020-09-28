@@ -78,4 +78,10 @@ struct iproc_pcie_ep_ctx {
 	void *reset_data[PCIE_RESET_MAX];
 };
 
+void iproc_pcie_msix_config(const struct device *dev);
+void iproc_pcie_msi_config(const struct device *dev);
+
+int iproc_pcie_generate_msi(const struct device *dev, const uint32_t msi_num);
+int iproc_pcie_generate_msix(const struct device *dev, const uint32_t msix_num);
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_PCIE_EP_IPROC_H_ */
