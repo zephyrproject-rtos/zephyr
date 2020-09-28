@@ -11,7 +11,7 @@
 #include <stdbool.h>
 #include <arch/cpu.h>
 
-struct k_spinlock_key {
+struct z_spinlock_key {
 	int key;
 };
 
@@ -75,7 +75,7 @@ BUILD_ASSERT(CONFIG_MP_NUM_CPUS < 4, "Too many CPUs for mask");
  * This type is opaque and should not be inspected by application
  * code.
  */
-typedef struct k_spinlock_key k_spinlock_key_t;
+typedef struct z_spinlock_key k_spinlock_key_t;
 
 /**
  * @brief Lock a spinlock
