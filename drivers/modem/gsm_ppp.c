@@ -50,7 +50,6 @@ static struct gsm_modem {
 
 	struct modem_iface_uart_data gsm_data;
 	struct k_delayed_work gsm_configure_work;
-	char gsm_isr_buf[PPP_MRU];
 	char gsm_rx_rb_buf[PPP_MRU * 3];
 
 	uint8_t *ppp_recv_buf;
@@ -647,8 +646,6 @@ static int gsm_init(const struct device *device)
 #endif	/* CONFIG_MODEM_SIM_NUMBERS */
 #endif	/* CONFIG_MODEM_SHELL */
 
-	gsm->gsm_data.isr_buf = &gsm->gsm_isr_buf[0];
-	gsm->gsm_data.isr_buf_len = sizeof(gsm->gsm_isr_buf);
 	gsm->gsm_data.rx_rb_buf = &gsm->gsm_rx_rb_buf[0];
 	gsm->gsm_data.rx_rb_buf_len = sizeof(gsm->gsm_rx_rb_buf);
 

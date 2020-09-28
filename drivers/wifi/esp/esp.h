@@ -169,7 +169,6 @@ struct esp_data {
 
 	/* modem interface */
 	struct modem_iface_uart_data iface_data;
-	uint8_t iface_isr_buf[MDM_RECV_BUF_SIZE];
 	uint8_t iface_rb_buf[MDM_RING_BUF_SIZE];
 
 	/* modem cmds */

@@ -131,7 +131,6 @@ struct modem_data {
 
 	/* modem interface */
 	struct modem_iface_uart_data iface_data;
-	uint8_t iface_isr_buf[MDM_RECV_BUF_SIZE];
 	uint8_t iface_rb_buf[MDM_MAX_DATA_LENGTH];
 
 	/* modem cmds */
@@ -1755,8 +1754,6 @@ static int modem_init(const struct device *dev)
 	}
 
 	/* modem interface */
-	mdata.iface_data.isr_buf = &mdata.iface_isr_buf[0];
-	mdata.iface_data.isr_buf_len = sizeof(mdata.iface_isr_buf);
 	mdata.iface_data.rx_rb_buf = &mdata.iface_rb_buf[0];
 	mdata.iface_data.rx_rb_buf_len = sizeof(mdata.iface_rb_buf);
 	ret = modem_iface_uart_init(&mctx.iface, &mdata.iface_data,
