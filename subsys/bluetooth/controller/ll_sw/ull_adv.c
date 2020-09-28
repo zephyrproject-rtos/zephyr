@@ -752,7 +752,14 @@ uint8_t ll_adv_enable(uint8_t enable)
 #if defined(CONFIG_BT_PERIPHERAL)
 	/* prepare connectable advertising */
 	if ((pdu_adv->type == PDU_ADV_TYPE_ADV_IND) ||
-	    (pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND)) {
+	    (pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND) ||
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	    ((pdu_adv->type == PDU_ADV_TYPE_EXT_IND) &&
+	     (pdu_adv->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_CONN))
+#else
+	    0
+#endif
+	     ) {
 		struct node_rx_pdu *node_rx;
 		struct ll_conn *conn;
 		struct lll_conn *conn_lll;
