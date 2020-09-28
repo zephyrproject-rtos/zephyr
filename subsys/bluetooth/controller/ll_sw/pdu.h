@@ -90,6 +90,11 @@
 #define OFFS_UNIT_30_US         30
 #define OFFS_UNIT_300_US        300
 
+/* transmitWindowDelay times (us) */
+#define WIN_DELAY_LEGACY     1250
+#define WIN_DELAY_UNCODED    2500
+#define WIN_DELAY_CODED      3750
+
 /*
  * Macros to return correct Data Channel PDU time
  * Note: formula is valid for 1M, 2M and Coded S8
