@@ -4453,12 +4453,14 @@ static void le_adv_recv(bt_addr_le_t *addr, struct bt_le_scan_recv_info *info,
 
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&scan_cbs, listener, node) {
-		net_buf_simple_save(&buf->b, &state);
+		if (listener->recv) {
+			net_buf_simple_save(&buf->b, &state);
 
-		buf->len = len;
-		listener->recv(info, &buf->b);
+			buf->len = len;
+			listener->recv(info, &buf->b);
 
-		net_buf_simple_restore(&buf->b, &state);
+			net_buf_simple_restore(&buf->b, &state);
+		}
 	}
 
 #if defined(CONFIG_BT_CENTRAL)
@@ -4482,7 +4484,9 @@ static void le_scan_timeout(struct net_buf *buf)
 #endif
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&scan_cbs, listener, node) {
-		listener->timeout();
+		if (listener->timeout) {
+			listener->timeout();
+		}
 	}
 }
 
