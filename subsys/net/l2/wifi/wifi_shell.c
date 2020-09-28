@@ -15,7 +15,6 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 #include <stdio.h>
 #include <stdlib.h>
 #include <shell/shell.h>
-#include <shell/shell_uart.h>
 #include <sys/printk.h>
 #include <init.h>
 
