@@ -12,12 +12,10 @@ properties:
       required: true
 
     io-channels:
-      type: phandle-array
       required: true
       description: ADC channels for temperature sensor and bandgap voltage
 
     io-channel-names:
-      type: string-array
       required: true
       description: name of each ADC channel (SENSOR or BANDGAP)
 
