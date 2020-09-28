@@ -16,3 +16,14 @@ properties:
 
     dma-channels:
       required: true
+
+    "#dma-cells":
+      type: int
+      required: true
+      description: Number of items to expect in a DMA specifier
+
+#- #dma-cells : Must be <1>.
+# channel: the dma channel, each channel supports one DMA request line
+
+dma-cells:
+  - channel
