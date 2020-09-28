@@ -74,6 +74,8 @@ The sam4l_ek board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | TRNG      | on-chip    | 32-bit True Random Number Generator |
 +-----------+------------+-------------------------------------+
+| TWIM      | on-chip    | i2c master port-interrupt           |
++-----------+------------+-------------------------------------+
 | USART     | on-chip    | serial port                         |
 +-----------+------------+-------------------------------------+
 
