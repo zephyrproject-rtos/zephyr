@@ -76,6 +76,10 @@ FLAG_IGNORED0 = bit(9)
 FLAG_IGNORED1 = bit(10)
 FLAG_IGNORED2 = bit(11)
 
+ENTRY_RW = FLAG_RW | FLAG_IGNORED0
+ENTRY_US = FLAG_US | FLAG_IGNORED1
+ENTRY_XD = FLAG_XD | FLAG_IGNORED2
+
 def debug(text):
     if not args.verbose:
         return
@@ -249,14 +253,16 @@ class Pt(MMUTable):
     addr_mask = 0xFFFFF000
     type_code = 'I'
     num_entries = 1024
-    supported_flags = FLAG_P | FLAG_RW | FLAG_US | FLAG_G
+    supported_flags = (FLAG_P | FLAG_RW | FLAG_US | FLAG_G |
+                       FLAG_IGNORED0 | FLAG_IGNORED1)
 
 class PtXd(Pt):
     """Page table for either PAE or IA-32e"""
     addr_mask = 0x07FFFFFFFFFFF000
     type_code = 'Q'
     num_entries = 512
-    supported_flags = FLAG_P | FLAG_RW | FLAG_US | FLAG_G | FLAG_XD
+    supported_flags = (FLAG_P | FLAG_RW | FLAG_US | FLAG_G | FLAG_XD |
+                       FLAG_IGNORED0 | FLAG_IGNORED1 | FLAG_IGNORED2)
 
 
 class PtableSet(object):
@@ -441,12 +447,12 @@ def main():
     if is_perm_regions:
         # Don't allow execution by default for any pages. We'll adjust this
         # in later calls to pt.set_region_perms()
-        map_flags = FLAG_P |  FLAG_XD
+        map_flags = FLAG_P |  ENTRY_XD
     else:
         map_flags = FLAG_P
 
     pt = pclass(ptables_phys)
-    pt.map(ram_base, ram_size, map_flags | FLAG_RW)
+    pt.map(ram_base, ram_size, map_flags | ENTRY_RW)
 
     if isdef("CONFIG_XIP"):
         # Additionally identity-map all ROM as read-only
@@ -462,16 +468,16 @@ def main():
         # - User mode needs access as we currently do not separate application
         #   text/rodata from kernel text/rodata
         if isdef("CONFIG_GDBSTUB"):
-            pt.set_region_perms("_image_text", FLAG_P | FLAG_US | FLAG_RW)
+            pt.set_region_perms("_image_text", FLAG_P | ENTRY_US | ENTRY_RW)
         else:
-            pt.set_region_perms("_image_text", FLAG_P | FLAG_US)
-        pt.set_region_perms("_image_rodata", FLAG_P | FLAG_US | FLAG_XD)
+            pt.set_region_perms("_image_text", FLAG_P | ENTRY_US)
+        pt.set_region_perms("_image_rodata", FLAG_P | ENTRY_US | ENTRY_XD)
 
         if isdef("CONFIG_COVERAGE_GCOV") and isdef("CONFIG_USERSPACE"):
             # If GCOV is enabled, user mode must be able to write to its
             # common data area
             pt.set_region_perms("__gcov_bss",
-                                FLAG_P | FLAG_RW | FLAG_US | FLAG_XD)
+                                FLAG_P | ENTRY_RW | ENTRY_US | ENTRY_XD)
 
         if isdef("CONFIG_X86_64"):
             # Set appropriate permissions for locore areas much like we did
@@ -483,12 +489,12 @@ def main():
                 # KPTI is turned on. There is no sensitive data in them, and
                 # they contain text/data needed to take an exception or
                 # interrupt.
-                flag_user = FLAG_US
+                flag_user = ENTRY_US
             else:
                 flag_user = 0
 
             pt.set_region_perms("_locore", FLAG_P | flag_user)
-            pt.set_region_perms("_lorodata", FLAG_P | FLAG_XD | flag_user)
+            pt.set_region_perms("_lorodata", FLAG_P | ENTRY_XD | flag_user)
 
     pt.write_output(args.output)
 
