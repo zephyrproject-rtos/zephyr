@@ -74,8 +74,12 @@ static void modem_iface_uart_isr(const struct device *uart_dev,
 							  UINT32_MAX);
 		}
 		if (!partial_size) {
-			LOG_ERR("Rx buffer doesn't have enough space");
-			modem_iface_uart_flush(&ctx->iface);
+			if (data->hw_flow_control) {
+				uart_irq_rx_disable(ctx->iface.dev);
+			} else {
+				LOG_ERR("Rx buffer doesn't have enough space");
+				modem_iface_uart_flush(&ctx->iface);
+			}
 			break;
 		}
 
@@ -113,6 +117,10 @@ static int modem_iface_uart_read(struct modem_iface *iface,
 
 	data = (struct modem_iface_uart_data *)(iface->iface_data);
 	*bytes_read = ring_buf_get(&data->rx_rb, buf, size);
+
+	if (data->hw_flow_control && *bytes_read == 0) {
+		uart_irq_rx_enable(iface->dev);
+	}
 
 	return 0;
 }
