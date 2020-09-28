@@ -39,6 +39,11 @@
 #include <soc.h>
 #include "hal/debug.h"
 
+static uint8_t lll_adv_connect_rsp_pdu[PDU_AC_LL_HEADER_SIZE +
+				       offsetof(struct pdu_adv_com_ext_adv,
+						ext_hdr_adv_data) +
+				       ADVA_SIZE + TARGETA_SIZE];
+
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
 static void isr_tx(void *param);
@@ -47,10 +52,83 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 			     uint8_t devmatch_ok, uint8_t devmatch_id,
 			     uint8_t irkmatch_ok, uint8_t irkmatch_id,
 			     uint8_t rssi_ready);
+static void isr_tx_connect_rsp(void *param);
+
+static struct pdu_adv *init_connect_rsp_pdu(void)
+{
+	struct pdu_adv_com_ext_adv *com_hdr;
+	struct pdu_adv_ext_hdr *hdr;
+	struct pdu_adv *pdu;
+	uint8_t ext_hdr_len;
+	uint8_t *dptr;
+
+	pdu = (void *)lll_adv_connect_rsp_pdu;
+	pdu->type = PDU_ADV_TYPE_AUX_CONNECT_RSP;
+	pdu->rfu = 0;
+	pdu->chan_sel = 0;
+	pdu->tx_addr = 0;
+	pdu->rx_addr = 0;
+	pdu->len = 0;
+
+	com_hdr = &pdu->adv_ext_ind;
+	hdr = &com_hdr->ext_hdr;
+	dptr = (void *)hdr;
+
+	/* Flags */
+	*dptr = 0;
+	hdr->adv_addr = 1;
+	hdr->tgt_addr = 1;
+	dptr++;
+
+	/* Note: AdvA and InitA are updated before transmitting PDU */
+
+	/* AdvA */
+	dptr += BDADDR_SIZE;
+	/* InitA */
+	dptr += BDADDR_SIZE;
+
+	ext_hdr_len = dptr - (uint8_t *)&com_hdr->ext_hdr;
+
+	/* Finish Common ExtAdv Payload header */
+	com_hdr->adv_mode = 0;
+	com_hdr->ext_hdr_len = ext_hdr_len;
+
+	/* Finish PDU */
+	pdu->len = dptr - &pdu->payload[0];
+
+	return pdu;
+}
+
+static struct pdu_adv *update_connect_rsp_pdu(struct pdu_adv *pdu_ci)
+{
+	struct pdu_adv_com_ext_adv *cr_com_hdr;
+	struct pdu_adv_ext_hdr *cr_hdr;
+	struct pdu_adv *pdu_cr;
+	uint8_t *cr_dptr;
+
+	pdu_cr = (void *)lll_adv_connect_rsp_pdu;
+	pdu_cr->tx_addr = pdu_ci->rx_addr;
+	pdu_cr->rx_addr = pdu_ci->tx_addr;
+
+	cr_com_hdr = &pdu_cr->adv_ext_ind;
+	cr_hdr = &cr_com_hdr->ext_hdr;
+	/* Skip flags */
+	cr_dptr = cr_hdr->data;
+
+	/* AdvA */
+	memcpy(cr_dptr, &pdu_ci->connect_ind.adv_addr, BDADDR_SIZE);
+	cr_dptr += BDADDR_SIZE;
+	/* InitA */
+	memcpy(cr_dptr, &pdu_ci->connect_ind.init_addr, BDADDR_SIZE);
+
+	return pdu_cr;
+}
 
 int lll_adv_aux_init(void)
 {
 	int err;
+
+	init_connect_rsp_pdu();
 
 	err = init_reset();
 	if (err) {
@@ -399,11 +477,15 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 			     uint8_t irkmatch_ok, uint8_t irkmatch_id,
 			     uint8_t rssi_ready)
 {
+	struct pdu_adv_ext_hdr *hdr;
 	struct pdu_adv *pdu_adv;
 	struct pdu_adv *pdu_aux;
 	struct pdu_adv *pdu_rx;
+	struct pdu_adv *pdu_tx;
 	struct lll_adv *lll;
+	uint8_t *tgt_addr;
 	uint8_t tx_addr;
+	uint8_t rx_addr;
 	uint8_t *addr;
 	uint8_t upd;
 
@@ -421,8 +503,17 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 	pdu_adv = lll_adv_data_curr_get(lll);
 	pdu_aux = lll_adv_aux_data_latest_get(lll_aux, &upd);
 
+	hdr = &pdu_aux->adv_ext_ind.ext_hdr;
+
 	addr = &pdu_aux->adv_ext_ind.ext_hdr.data[ADVA_OFFSET];
 	tx_addr = pdu_aux->tx_addr;
+
+	if (hdr->tgt_addr) {
+		tgt_addr = &pdu_aux->adv_ext_ind.ext_hdr.data[TGTA_OFFSET];
+	} else {
+		tgt_addr = NULL;
+	}
+	rx_addr = pdu_aux->rx_addr;
 
 	if ((pdu_rx->type == PDU_ADV_TYPE_AUX_SCAN_REQ) &&
 	    (pdu_rx->len == sizeof(struct pdu_adv_scan_req)) &&
@@ -468,9 +559,106 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 					 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
 		return 0;
+	} else if ((pdu_rx->type == PDU_ADV_TYPE_AUX_CONNECT_REQ) &&
+		   (pdu_rx->len == sizeof(struct pdu_adv_connect_ind)) &&
+		   lll_adv_connect_ind_check(lll, pdu_rx, tx_addr, addr,
+					     rx_addr, tgt_addr,
+					     devmatch_ok, &rl_idx)) {
+		struct node_rx_ftr *ftr;
+		struct node_rx_pdu *rx;
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
+			rx = ull_pdu_rx_alloc_peek(4);
+		} else {
+			rx = ull_pdu_rx_alloc_peek(3);
+		}
+
+		if (!rx) {
+			return -ENOBUFS;
+		}
+
+		/* rx is effectively allocated later, after critical isr steps
+		 * are done */
+		radio_isr_set(isr_tx_connect_rsp, rx);
+		radio_switch_complete_and_disable();
+		pdu_tx = update_connect_rsp_pdu(pdu_rx);
+		radio_pkt_tx_set(pdu_tx);
+
+		/* assert if radio packet ptr is not set and radio started tx */
+		LL_ASSERT(!radio_is_ready());
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			lll_prof_cputime_capture();
+		}
+
+#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			/* PA/LNA enable is overwriting packet end used in ISR
+			 * profiling, hence back it up for later use.
+			 */
+			lll_prof_radio_end_backup();
+		}
+
+		radio_gpio_pa_setup();
+		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
+					 EVENT_IFS_US -
+					 radio_rx_chain_delay_get(lll->phy_s,
+								  0) -
+					 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
+
+		/* Note: this is the same as previous result from alloc_peek */
+		rx = ull_pdu_rx_alloc();
+
+		rx->hdr.type = NODE_RX_TYPE_CONNECTION;
+		rx->hdr.handle = 0xffff;
+
+		memcpy(rx->pdu, pdu_rx, (offsetof(struct pdu_adv, connect_ind) +
+					 sizeof(struct pdu_adv_connect_ind)));
+		ftr = &(rx->hdr.rx_ftr);
+		ftr->param = lll;
+		ftr->ticks_anchor = radio_tmr_start_get();
+		ftr->radio_end_us = radio_tmr_end_get() -
+				    radio_tx_chain_delay_get(lll->phy_s, 0);
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+		ftr->rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
+			ftr->extra = ull_pdu_rx_alloc();
+		}
+
+		return 0;
 	}
 
-	/* TODO: add handling for AUX_CONNECT_REQ */
-
 	return -EINVAL;
+}
+
+static void isr_tx_connect_rsp(void *param)
+{
+	struct node_rx_ftr *ftr;
+	struct node_rx_pdu *rx;
+	struct lll_adv *lll;
+	int ret;
+
+	rx = param;
+	ftr = &(rx->hdr.rx_ftr);
+	lll = ftr->param;
+
+	if (!radio_is_done()) {
+		/* TODO: release node_rx somehow */
+		return;
+	}
+
+	/* Clear radio status and events */
+	lll_isr_status_reset();
+	lll_isr_cleanup(lll);
+
+	/* Stop further LLL radio events */
+	ret = lll_stop(lll);
+	LL_ASSERT(!ret);
+
+	ull_rx_put(rx->hdr.link, rx);
+	ull_rx_sched();
 }
