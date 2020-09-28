@@ -137,6 +137,84 @@ static struct k_thread thread_data3;
 static ISR_INFO isr_info;
 
 /**
+ * @brief Test cpu idle function
+ *
+ * @details
+ * Test Objectve:
+ * - The kernel architecture provide an idle function to be run when the system
+ *   has no work for the current CPU
+ * - This routine tests the k_cpu_idle() routine
+ *
+ * Testing techniques
+ * - Functional and black box testing
+ * - Interface testing
+ *
+ * Prerequisite Condition:
+ * - HAS_POWERSAVE_INSTRUCTION is set
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Record system time before cpu enters idle state
+ * -# Enter cpu idle state by k_cpu_idle()
+ * -# Record system time after cpu idle state is interrupted
+ * -# Compare the two system time values.
+ *
+ * Expected Test Result:
+ * - cpu enters idle state for a given time
+ *
+ * Pass/Fail criteria:
+ * - Success if the cpu enters idle state, failure otherwise.
+ *
+ * Assumptions and Constraints
+ * - N/A
+ *
+ * @see k_cpu_idle()
+ * @ingroup kernel_context_tests
+ */
+static void test_kernel_cpu_idle(void);
+
+/**
+ * @brief Test cpu idle function
+ *
+ * @details
+ * Test Objectve:
+ * - The kernel architecture provide an idle function to be run when the system
+ *   has no work for the current CPU
+ * - This routine tests the k_cpu_atomic_idle() routine
+ *
+ * Testing techniques
+ * - Functional and black box testing
+ * - Interface testing
+ *
+ * Prerequisite Condition:
+ * - HAS_POWERSAVE_INSTRUCTION is set
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Record system time befor cpu enters idle state
+ * -# Enter cpu idle state by k_cpu_atomic_idle()
+ * -# Record system time after cpu idle state is interrupted
+ * -# Compare the two system time values.
+ *
+ * Expected Test Result:
+ * - cpu enters idle state for a given time
+ *
+ * Pass/Fail criteria:
+ * - Success if the cpu enters idle state, failure otherwise.
+ *
+ * Assumptions and Constraints
+ * - N/A
+ *
+ * @see k_cpu_atomic_idle()
+ * @ingroup kernel_context_tests
+ */
+static void test_kernel_cpu_idle_atomic(void);
+
+/**
  * @brief Handler to perform various actions from within an ISR context
  *
  * This routine is the ISR handler for isr_handler_trigger(). It performs
@@ -546,16 +624,43 @@ static void test_kernel_timer_interrupts(void)
 }
 
 /**
+ * @brief Test some context routines
  *
- * @brief Test some context routines from a preemptible thread
+ * @details
+ * Test Objectve:
+ * - Thread context handles derived from context switches must be able to be
+ *   restored upon interrupt exit
+ *
+ * Testing techniques
+ * - Functional and black box testing
+ * - Interface testing
+ *
+ * Prerequisite Condition:
+ * - N/A
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Set priority of current thread to 0 as a preemptible thread
+ * -# Trap to interrupt context, get thread id of the interrupted thread and
+ *  pass back to that thread.
+ * -# Return to thread context and make sure this context is interrupted by
+ *  comparing its thread ID and the thread ID passed by isr.
+ * -# Pass command to isr to check whether the isr is executed in interrupt
+ *  context
+ * -# When return to thread context, check the return value of command.
+ *
+ * Expected Test Result:
+ * - Thread context restored upon interrupt exit
+ *
+ * Pass/Fail criteria:
+ * - Success if context of thread restored correctly, failure otherwise.
+ *
+ * Assumptions and Constraints
+ * - N/A
  *
  * @ingroup kernel_context_tests
- *
- * This routines tests the k_current_get() and
- * k_is_in_isr() routines from both a preemptible thread  and an ISR (that
- * interrupted a preemptible thread). Checking those routines with cooperative
- * threads are done elsewhere.
- *
  * @see k_current_get(), k_is_in_isr()
  */
 static void test_kernel_ctx_thread(void)
@@ -1039,6 +1144,7 @@ void test_k_yield(void)
  *
  * @see k_thread_create
  */
+
 void test_kernel_thread(void)
 {
 
