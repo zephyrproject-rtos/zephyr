@@ -86,7 +86,7 @@
 	nina_prog {
 		compatible = "espressif,esp";
 		label = "NINA_PROG";
-		wifi-reset-gpios = <&porta 8 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&porta 8 GPIO_ACTIVE_LOW>;
 	};
 };
 

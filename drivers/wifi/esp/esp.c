@@ -29,17 +29,17 @@ LOG_MODULE_REGISTER(wifi_esp);
 
 /* pin settings */
 enum modem_control_pins {
-#if DT_INST_NODE_HAS_PROP(0, wifi_reset_gpios)
-	WIFI_RESET,
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	ESP_RESET,
 #endif
 	NUM_PINS,
 };
 
 static struct modem_pin modem_pins[] = {
-#if DT_INST_NODE_HAS_PROP(0, wifi_reset_gpios)
-	MODEM_PIN(DT_INST_GPIO_LABEL(0, wifi_reset_gpios),
-		  DT_INST_GPIO_PIN(0, wifi_reset_gpios),
-		  DT_INST_GPIO_FLAGS(0, wifi_reset_gpios) | GPIO_OUTPUT),
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	MODEM_PIN(DT_INST_GPIO_LABEL(0, reset_gpios),
+		  DT_INST_GPIO_PIN(0, reset_gpios),
+		  DT_INST_GPIO_FLAGS(0, reset_gpios) | GPIO_OUTPUT),
 #endif
 };
 
@@ -788,10 +788,10 @@ static void esp_reset(struct esp_data *dev)
 		net_if_down(dev->net_iface);
 	}
 
-#if DT_INST_NODE_HAS_PROP(0, wifi_reset_gpios)
-	modem_pin_write(&dev->mctx, WIFI_RESET, 1);
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	modem_pin_write(&dev->mctx, ESP_RESET, 1);
 	k_sleep(K_MSEC(100));
-	modem_pin_write(&dev->mctx, WIFI_RESET, 0);
+	modem_pin_write(&dev->mctx, ESP_RESET, 0);
 #else
 	int retries = 3;
 
