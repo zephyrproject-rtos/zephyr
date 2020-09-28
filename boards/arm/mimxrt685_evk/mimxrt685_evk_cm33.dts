@@ -89,6 +89,8 @@ arduino_spi: &flexcomm5 {
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	dmas = <&dma0 10>, <&dma0 11>;
+	dma-names = "rx", "tx";
 };
 
 &gpio0 {
