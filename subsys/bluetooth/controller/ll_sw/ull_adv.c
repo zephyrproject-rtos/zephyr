@@ -806,19 +806,32 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn_lll->max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
 
 #if defined(CONFIG_BT_CTLR_PHY)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		conn_lll->max_tx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN,
+					       lll->phy_s);
+		conn_lll->max_rx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN,
+					       lll->phy_s);
+#else
 		/* Use the default 1M packet max time. Value of 0 is
 		 * equivalent to using BIT(0).
 		 */
 		conn_lll->max_tx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
 		conn_lll->max_rx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
-		conn_lll->phy_tx = BIT(0);
 		conn_lll->phy_flags = 0;
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		conn_lll->phy_tx = lll->phy_s;
+		conn_lll->phy_tx_time = lll->phy_s;
+		conn_lll->phy_rx = lll->phy_s;
+#else
+		conn_lll->phy_tx = BIT(0);
 		conn_lll->phy_tx_time = BIT(0);
 		conn_lll->phy_rx = BIT(0);
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
