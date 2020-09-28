@@ -35,7 +35,7 @@
 		compatible = "gpio-keys";
 		wake_up: button {
 			label = "Wakeup";
-			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
 			status = "disabled";
 		};
 		joy_center: joystick_center {
