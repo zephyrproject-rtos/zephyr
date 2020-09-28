@@ -291,6 +291,11 @@ zephyr_cc_option(-fno-pie)
 zephyr_cc_option(-fno-pic)
 zephyr_cc_option(-fno-strict-overflow)
 
+if(CONFIG_THREAD_LOCAL_STORAGE)
+# Only support local exec TLS model at this point.
+zephyr_cc_option(-ftls-model=local-exec)
+endif()
+
 if(CONFIG_OVERRIDE_FRAME_POINTER_DEFAULT)
   if(CONFIG_OMIT_FRAME_POINTER)
     zephyr_cc_option(-fomit-frame-pointer)
