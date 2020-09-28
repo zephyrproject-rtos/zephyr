@@ -275,6 +275,12 @@
 
 					fpga_bitstream_partition: partition@0 {
 						label = "fpga_bitstream";
+						/* From Xilinx 7 Series FPGA User Guide (UG470)
+						 * Table 1-1: Bitstream Length
+						 *           Bits    Bytes (sector multiple)
+						 * A35T:  17,536,096     0x218000
+						 * A100T: 30,606,304     0x3a8000
+						 */
 						reg = <0x00000000 0x218000>;
 					};
 				};
