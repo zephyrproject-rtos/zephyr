@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_PCIE_EP_BCM_IPROC_H_
-#define ZEPHYR_INCLUDE_DRIVERS_PCIE_EP_BCM_IPROC_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_PCIE_EP_IPROC_H_
+#define ZEPHYR_INCLUDE_DRIVERS_PCIE_EP_IPROC_H_
 
 #include <sys/util.h>
 
@@ -78,4 +78,4 @@ struct iproc_pcie_ep_ctx {
 	void *reset_data[PCIE_RESET_MAX];
 };
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_PCIE_EP_BCM_IPROC_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_PCIE_EP_IPROC_H_ */

@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_PCIE_EP_BCM_IPROC_REGS_H_
-#define ZEPHYR_INCLUDE_DRIVERS_PCIE_EP_BCM_IPROC_REGS_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_PCIE_EP_IPROC_REGS_H_
+#define ZEPHYR_INCLUDE_DRIVERS_PCIE_EP_IPROC_REGS_H_
 
 struct paxb_64 {
 	uint32_t lower;
 	uint32_t upper;
 };
 
-#ifdef CONFIG_PCIE_EP_BCM_IPROC_V2
+#ifdef CONFIG_PCIE_EP_IPROC_V2
 struct paxb_imap {
 	uint32_t lower;
 	uint32_t upper;
@@ -362,4 +362,4 @@ static inline uint32_t pcie_read32(uint32_t *addr)
 {
 	return sys_read32((mem_addr_t)addr);
 }
-#endif /* ZEPHYR_INCLUDE_DRIVERS_PCIE_EP_BCM_IPROC_REGS_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_PCIE_EP_IPROC_REGS_H_ */

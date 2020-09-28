@@ -12,8 +12,8 @@ LOG_MODULE_REGISTER(iproc_pcie);
 
 #include <soc.h>
 
-#include "pcie_ep_bcm_iproc.h"
-#include "pcie_ep_bcm_iproc_regs.h"
+#include "pcie_ep_iproc.h"
+#include "pcie_ep_iproc_regs.h"
 
 #define DT_DRV_COMPAT brcm_iproc_pcie_ep
 
@@ -150,7 +150,7 @@ static int iproc_pcie_generate_msi(const struct device *dev,
 				   const uint32_t msi_num)
 {
 	int ret = 0;
-#ifdef CONFIG_PCIE_EP_BCM_IPROC_V2
+#ifdef CONFIG_PCIE_EP_IPROC_V2
 	uint64_t addr;
 	uint32_t data;
 
@@ -402,7 +402,7 @@ static void iproc_pcie_reset_config(const struct device *dev)
 #endif
 }
 
-#ifdef CONFIG_PCIE_EP_BCM_IPROC_INIT_CFG
+#ifdef PCIE_EP_IPROC_INIT_CFG
 static void iproc_pcie_msix_config(const struct device *dev)
 {
 	/*
@@ -459,7 +459,7 @@ static int iproc_pcie_ep_init(const struct device *dev)
 	LOG_INF("PCIe linkup width 0x%x\n", ((data >>
 				PCIE_LINKWIDTH_SHIFT) & PCIE_LINKWIDTH_MASK));
 
-#ifdef CONFIG_PCIE_EP_BCM_IPROC_INIT_CFG
+#ifdef PCIE_EP_IPROC_INIT_CFG
 	iproc_pcie_msi_config(dev);
 	iproc_pcie_msix_config(dev);
 #endif
