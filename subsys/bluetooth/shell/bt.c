@@ -1500,8 +1500,9 @@ static int cmd_per_adv_sync_create(const struct shell *shell, size_t argc,
 
 	create_params.options = options;
 
-	err = bt_le_per_adv_sync_create(&create_params, &per_adv_sync_cb,
-					free_per_adv_sync);
+	bt_le_per_adv_sync_cb_register(&per_adv_sync_cb);
+
+	err = bt_le_per_adv_sync_create(&create_params, free_per_adv_sync);
 	if (err) {
 		shell_error(shell, "Per adv sync failed (%d)", err);
 	} else {
