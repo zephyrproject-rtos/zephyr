@@ -48,6 +48,13 @@
 #define MMU_XD		0
 #endif
 
+/* Unused PTE bits ignored by the CPU, which we use for our own OS purposes.
+ * These bits ignored for all paging modes.
+ */
+#define MMU_IGNORED0	BITL(9)
+#define MMU_IGNORED1	BITL(10)
+#define MMU_IGNORED2	BITL(11)
+
 #ifdef CONFIG_EXCEPTION_DEBUG
 /**
  * Dump out page table entries for a particular virtual memory address
