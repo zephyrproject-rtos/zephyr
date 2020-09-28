@@ -82,14 +82,22 @@ struct qspi_cmd {
 
 /**
  * @brief Structure for defining the QSPI NOR access
- * @param sem The semaphore to access to the flash
- * @param sync The semaphore to ensure that transfer has finished
- * @param write_protection Indicates if write protection for flash
- *  device is enabled
  */
 struct qspi_nor_data {
+#ifdef CONFIG_MULTITHREADING
+	/* The semaphore to control exclusive access to the device. */
 	struct k_sem sem;
+	/* The semaphore to indicate that transfer has completed. */
 	struct k_sem sync;
+#else /* CONFIG_MULTITHREADING */
+	/* A flag that signals completed transfer when threads are
+	 * not enabled.
+	 */
+	volatile bool ready;
+#endif /* CONFIG_MULTITHREADING */
+	/* Indicates if write protection for flash device is
+	 * enabled.
+	 */
 	bool write_protection;
 };
 
@@ -194,8 +202,10 @@ static inline nrf_qspi_addrmode_t qspi_get_address_size(bool addr_size)
  * @brief Main configuration structure
  */
 static struct qspi_nor_data qspi_nor_memory_data = {
+#ifdef CONFIG_MULTITHREADING
 	.sem = Z_SEM_INITIALIZER(qspi_nor_memory_data.sem, 1, 1),
 	.sync = Z_SEM_INITIALIZER(qspi_nor_memory_data.sync, 0, 1),
+#endif /* CONFIG_MULTITHREADING */
 };
 
 /**
@@ -225,16 +235,24 @@ static inline struct qspi_nor_data *get_dev_data(const struct device *dev)
 
 static inline void qspi_lock(const struct device *dev)
 {
+#ifdef CONFIG_MULTITHREADING
 	struct qspi_nor_data *dev_data = get_dev_data(dev);
 
 	k_sem_take(&dev_data->sem, K_FOREVER);
+#else /* CONFIG_MULTITHREADING */
+	ARG_UNUSED(dev);
+#endif /* CONFIG_MULTITHREADING */
 }
 
 static inline void qspi_unlock(const struct device *dev)
 {
+#ifdef CONFIG_MULTITHREADING
 	struct qspi_nor_data *dev_data = get_dev_data(dev);
 
 	k_sem_give(&dev_data->sem);
+#else /* CONFIG_MULTITHREADING */
+	ARG_UNUSED(dev);
+#endif /* CONFIG_MULTITHREADING */
 }
 
 static inline void qspi_wait_for_completion(const struct device *dev,
@@ -243,13 +261,28 @@ static inline void qspi_wait_for_completion(const struct device *dev,
 	struct qspi_nor_data *dev_data = get_dev_data(dev);
 
 	if (res == NRFX_SUCCESS) {
+#ifdef CONFIG_MULTITHREADING
 		k_sem_take(&dev_data->sync, K_FOREVER);
+#else /* CONFIG_MULTITHREADING */
+		unsigned int key = irq_lock();
+
+		while (!dev_data->ready) {
+			k_cpu_atomic_idle(key);
+			key = irq_lock();
+		}
+		dev_data->ready = false;
+		irq_unlock(key);
+#endif /* CONFIG_MULTITHREADING */
 	}
 }
 
 static inline void qspi_complete(struct qspi_nor_data *dev_data)
 {
+#ifdef CONFIG_MULTITHREADING
 	k_sem_give(&dev_data->sync);
+#else /* CONFIG_MULTITHREADING */
+	dev_data->ready = true;
+#endif /* CONFIG_MULTITHREADING */
 }
 
 /**
