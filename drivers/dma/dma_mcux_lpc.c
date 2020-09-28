@@ -26,7 +26,7 @@ struct dma_mcux_lpc_config {
 };
 
 struct call_back {
-	dma_transfer_config_t *transferConfig;
+	dma_descriptor_t *dma_descriptor_table;
 	dma_handle_t dma_handle;
 	const struct device *dev;
 	void *user_data;
@@ -91,12 +91,14 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 				  struct dma_config *config)
 {
 	dma_handle_t *p_handle;
+	dma_transfer_config_t xferConfig = {0};
 	struct call_back *data;
 	struct dma_mcux_lpc_dma_data *dma_data = DEV_DATA(dev);
 	struct dma_block_config *block_config = config->head_block;
 	dma_transfer_type_t transfer_type;
 	uint32_t virtual_channel;
 	uint32_t total_dma_channels;
+	uint8_t src_inc, dst_inc;
 
 	if (NULL == dev || NULL == config) {
 		return -EINVAL;
@@ -137,12 +139,18 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	switch (config->channel_direction) {
 	case MEMORY_TO_MEMORY:
 		transfer_type = kDMA_MemoryToMemory;
+		src_inc = 1;
+		dst_inc = 1;
 		break;
 	case MEMORY_TO_PERIPHERAL:
 		transfer_type = kDMA_MemoryToPeripheral;
+		src_inc = 1;
+		dst_inc = 0;
 		break;
 	case PERIPHERAL_TO_MEMORY:
 		transfer_type = kDMA_PeripheralToMemory;
+		src_inc = 0;
+		dst_inc = 1;
 		break;
 	default:
 		LOG_ERR("not support transfer direction");
@@ -177,14 +185,13 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 		INPUTMUX_AttachSignal(INPUTMUX, 0, config->linked_channel);
 	}
 
-	/* Allocate the transfer config structures if needed */
-	if (data->transferConfig == NULL) {
-		data->transferConfig = k_malloc(CONFIG_DMA_LINK_QUEUE_SIZE *
-						sizeof(dma_transfer_config_t));
-		if (!data->transferConfig) {
-			LOG_ERR("HEAP_MEM_POOL_SIZE is too small");
-			return -ENOMEM;
-		}
+	/* In case of SPI Transmit where no data is transmitted, we queue
+	 * dummy data to the buffer that does not require the source or
+	 * destination address to change
+	 */
+	if ((block_config->source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) &&
+		(block_config->dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE)) {
+		transfer_type = kDMA_StaticToStatic;
 	}
 
 	if (block_config->source_gather_en || block_config->dest_scatter_en) {
@@ -193,39 +200,110 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 				config->block_count);
 			return -EINVAL;
 		}
-		int i = 0;
-		dma_transfer_config_t *next_transfer;
+
+		/* Allocate the descriptor table structures if needed */
+		if (data->dma_descriptor_table == NULL) {
+			data->dma_descriptor_table = k_malloc(CONFIG_DMA_LINK_QUEUE_SIZE *
+							(sizeof(dma_descriptor_t) +
+							 FSL_FEATURE_DMA_LINK_DESCRIPTOR_ALIGN_SIZE));
+
+			if (!data->dma_descriptor_table) {
+				LOG_ERR("HEAP_MEM_POOL_SIZE is too small");
+				return -ENOMEM;
+			}
+		}
+
+		dma_descriptor_t *next_transfer;
+		dma_descriptor_t *curr_transfer = data->dma_descriptor_table;
+		dma_xfercfg_t tmp_xfercfg;
+		uint32_t dest_width = config->dest_data_size;
+
+		/* Ensure descriptor is aligned */
+		curr_transfer = (dma_descriptor_t *)ROUND_UP(
+							curr_transfer,
+							FSL_FEATURE_DMA_LINK_DESCRIPTOR_ALIGN_SIZE);
+
+		/* Prepare the transfer using the first block */
+		DMA_PrepareTransfer(
+			&xferConfig,
+			(void *)block_config->source_address,
+			(void *)block_config->dest_address,
+			config->dest_data_size,
+			block_config->block_size, transfer_type,
+			(void *)curr_transfer);
+
+		/* Disable interrupts for first descriptors to avoid calling
+		 * callback multiple times.
+		 */
+		xferConfig.xfercfg.intA = false;
+		xferConfig.xfercfg.intB = false;
+
+		/* Get the next block and start queuing descriptors */
+		block_config = block_config->next_block;
 
 		while (block_config != NULL) {
 			/* Check if this last element in the chain */
 			if (block_config->next_block == NULL) {
 				next_transfer = NULL;
 			} else {
-				next_transfer = &(data->transferConfig[i + 1]);
+				next_transfer = curr_transfer + sizeof(dma_descriptor_t);
+				/* Ensure descriptor is aligned */
+				next_transfer = (dma_descriptor_t *)ROUND_UP(
+						next_transfer,
+						FSL_FEATURE_DMA_LINK_DESCRIPTOR_ALIGN_SIZE);
 			}
 
-			DMA_PrepareTransfer(
-				&(data->transferConfig[i]),
-				(void *)block_config->source_address,
-				(void *)block_config->dest_address,
-				config->dest_data_size,
-				block_config->block_size, transfer_type,
-				(void *)next_transfer);
-			block_config = block_config->next_block;
-			i++;
-		}
+			/* SPI TX transfers need to queue a DMA descriptor to
+			 * indicate an end of transfer. Source or destination
+			 * address does not need to be change for these
+			 * transactions and the transfer width is 4 bytes
+			 */
+			if ((block_config->source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) &&
+				(block_config->dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE)) {
+				src_inc = 0;
+				dst_inc = 0;
+				dest_width = sizeof(uint32_t);
+			}
 
+			tmp_xfercfg.srcInc = src_inc;
+			tmp_xfercfg.dstInc = dst_inc;
+			tmp_xfercfg.transferCount = dest_width / block_config->block_size;
+			tmp_xfercfg.valid = true;
+			tmp_xfercfg.byteWidth = dest_width;
+			tmp_xfercfg.clrtrig = false;
+			tmp_xfercfg.intB = false;
+
+			if (next_transfer == NULL) {
+				/* Set interrupt to be true for the last descriptor */
+				tmp_xfercfg.intA = true;
+				tmp_xfercfg.reload = false;
+			} else {
+				tmp_xfercfg.reload = true;
+			}
+
+			/* Create chained descriptor */
+			DMA_CreateDescriptor(curr_transfer, &tmp_xfercfg,
+								 (void *)block_config->source_address,
+								 (void *)block_config->dest_address,
+								 next_transfer);
+
+			block_config = block_config->next_block;
+
+			if (next_transfer != NULL) {
+				curr_transfer = next_transfer;
+			}
+		}
 	} else {
 		/* block_count shall be 1 */
 		DMA_PrepareTransfer(
-			&(data->transferConfig[0]),
+			&xferConfig,
 			(void *)block_config->source_address,
 			(void *)block_config->dest_address,
 			config->dest_data_size,
 			block_config->block_size, transfer_type,
 			NULL);
 	}
-	DMA_SubmitTransfer(p_handle, &(data->transferConfig[0]));
+	DMA_SubmitTransfer(p_handle, &xferConfig);
 
 	data->busy = false;
 	if (config->dma_callback) {
@@ -259,6 +337,11 @@ static int dma_mcux_lpc_stop(const struct device *dev, uint32_t channel)
 		return 0;
 	}
 	DMA_AbortTransfer(DEV_DMA_HANDLE(dev, virtual_channel));
+	/* Free any memory allocated for DMA descriptors */
+	if (data->dma_descriptor_table != NULL) {
+		k_free(data->dma_descriptor_table);
+		data->dma_descriptor_table = NULL;
+	}
 	data->busy = false;
 	return 0;
 }
@@ -311,7 +394,7 @@ static int dma_mcux_lpc_init(const struct device *dev)
 	}
 
 	for (int i = 0; i < DEV_CFG(dev)->num_of_channels; i++) {
-		data->data_cb[i].transferConfig = NULL;
+		data->data_cb[i].dma_descriptor_table = NULL;
 	}
 
 #if defined FSL_FEATURE_DMA_NUMBER_OF_CHANNELS
