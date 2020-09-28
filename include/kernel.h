@@ -4610,6 +4610,14 @@ static inline uint32_t k_mem_slab_num_free_get(struct k_mem_slab *slab)
  * @{
  */
 
+/* kernel synchronized heap struct */
+
+struct k_heap {
+	struct sys_heap heap;
+	_wait_q_t wait_q;
+	struct k_spinlock lock;
+};
+
 /**
  * @brief Initialize a k_heap
  *

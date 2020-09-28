@@ -229,14 +229,6 @@ struct _timeout {
 #endif
 };
 
-/* kernel synchronized heap struct */
-
-struct k_heap {
-	struct sys_heap heap;
-	_wait_q_t wait_q;
-	struct k_spinlock lock;
-};
-
 #endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_KERNEL_INCLUDE_KERNEL_STRUCTS_H_ */
