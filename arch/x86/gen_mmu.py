@@ -72,6 +72,9 @@ FLAG_US = bit(2)
 FLAG_G = bit(8)
 FLAG_XD = bit(63)
 
+FLAG_IGNORED0 = bit(9)
+FLAG_IGNORED1 = bit(10)
+FLAG_IGNORED2 = bit(11)
 
 def debug(text):
     if not args.verbose:
