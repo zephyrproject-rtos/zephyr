@@ -1026,6 +1026,8 @@ struct bt_le_per_adv_sync_cb {
 	void (*recv)(struct bt_le_per_adv_sync *sync,
 		     const struct bt_le_per_adv_sync_recv_info *info,
 		     struct net_buf_simple *buf);
+
+	sys_snode_t node;
 };
 
 /** Periodic advertising sync options */
@@ -1116,14 +1118,12 @@ uint8_t bt_le_per_adv_sync_get_index(struct bt_le_per_adv_sync *per_adv_sync);
  * to periodic advertising reports from an advertiser. Scan shall either be
  * disabled or extended scan shall be enabled.
  *
- * @param[in] param     Periodic advertising sync parameters.
- * @param[in] cb        Periodic advertising callbacks.
- * @param[out] out_sync Periodic advertising sync object on.
+ * @param[in]  param     Periodic advertising sync parameters.
+ * @param[out] out_sync  Periodic advertising sync object on.
  *
  * @return Zero on success or (negative) error code otherwise.
  */
 int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
-			      const struct bt_le_per_adv_sync_cb *cb,
 			      struct bt_le_per_adv_sync **out_sync);
 
 /**
@@ -1139,6 +1139,19 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
  * @return Zero on success or (negative) error code otherwise.
  */
 int bt_le_per_adv_sync_delete(struct bt_le_per_adv_sync *per_adv_sync);
+
+/**
+ * @brief Register periodic advertising sync callbacks.
+ *
+ * Adds the callback structure to the list of callback structures for periodic
+ * adverising syncs.
+ *
+ * This callback will be called for all periodic advertising sync activity,
+ * such as synced, terminated and when data is received.
+ *
+ * @param cb Callback struct. Must point to memory that remains valid.
+ */
+void bt_le_per_adv_sync_cb_register(struct bt_le_per_adv_sync_cb *cb);
 
 enum {
 	/** Convenience value when no options are specified. */
@@ -1365,7 +1378,7 @@ int bt_le_scan_stop(void);
  * This callback will be called for all scanner activity, regardless of what
  * API was used to start the scanner.
  *
- * @param cb Callback struct. Must point to static memory.
+ * @param cb Callback struct. Must point to memory that remains valid.
  */
 void bt_le_scan_cb_register(struct bt_le_scan_cb *cb);
 
