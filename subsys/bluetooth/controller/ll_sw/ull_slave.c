@@ -67,6 +67,7 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	uint32_t ticker_status;
 	uint8_t peer_addr_type;
 	uint16_t win_offset;
+	uint16_t win_delay_us;
 	uint16_t timeout;
 	uint16_t interval;
 	uint8_t chan_sel;
@@ -98,6 +99,19 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 
 	win_offset = sys_le16_to_cpu(pdu_adv->connect_ind.win_offset);
 	conn_interval_us = interval * 1250U;
+
+	if (0) {
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	} else if (adv->lll.aux) {
+		if (adv->lll.phy_s & BIT(2)) {
+			win_delay_us = WIN_DELAY_CODED;
+		} else {
+			win_delay_us = WIN_DELAY_UNCODED;
+		}
+#endif
+	} else {
+		win_delay_us = WIN_DELAY_LEGACY;
+	}
 
 	/* calculate the window widening */
 	conn->slave.sca = pdu_adv->connect_ind.sca;
@@ -275,7 +289,8 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	conn_interval_us -= lll->slave.window_widening_periodic_us;
 
 	conn_offset_us = ftr->radio_end_us;
-	conn_offset_us += ((uint64_t)win_offset + 1) * 1250U;
+	conn_offset_us += win_offset * 1250U;
+	conn_offset_us += win_delay_us;
 	conn_offset_us -= EVENT_OVERHEAD_START_US;
 	conn_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	conn_offset_us -= EVENT_JITTER_US;
