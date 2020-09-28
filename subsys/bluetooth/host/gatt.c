@@ -207,7 +207,11 @@ struct gatt_sc_cfg {
 	} data;
 };
 
+#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
 #define SC_CFG_MAX (CONFIG_BT_MAX_PAIRED + CONFIG_BT_MAX_CONN)
+#else
+#define SC_CFG_MAX 0
+#endif
 static struct gatt_sc_cfg sc_cfg[SC_CFG_MAX];
 BUILD_ASSERT(sizeof(struct sc_data) == sizeof(sc_cfg[0].data));
 
@@ -880,6 +884,7 @@ enum {
 	SC_NUM_FLAGS,
 };
 
+#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
 static struct gatt_sc {
 	struct bt_gatt_indicate_params params;
 	uint16_t start;
@@ -887,7 +892,16 @@ static struct gatt_sc {
 	struct k_delayed_work work;
 	ATOMIC_DEFINE(flags, SC_NUM_FLAGS);
 } gatt_sc;
+#endif /* defined(CONFIG_BT_GATT_SERVICE_CHANGED) */
 
+static inline void sc_work_submit(k_timeout_t timeout)
+{
+#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
+	k_delayed_work_submit(&gatt_sc.work, timeout);
+#endif
+}
+
+#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
 static void sc_indicate_rsp(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr, uint8_t err)
 {
@@ -902,7 +916,7 @@ static void sc_indicate_rsp(struct bt_conn *conn,
 	/* Check if there is new change in the meantime */
 	if (atomic_test_bit(gatt_sc.flags, SC_RANGE_CHANGED)) {
 		/* Reschedule without any delay since it is waiting already */
-		k_delayed_work_submit(&gatt_sc.work, K_NO_WAIT);
+		sc_work_submit(K_NO_WAIT);
 	}
 
 #if defined(CONFIG_BT_GATT_CACHING)
@@ -948,6 +962,7 @@ static void sc_process(struct k_work *work)
 
 	atomic_set_bit(sc->flags, SC_INDICATE_PENDING);
 }
+#endif /* defined(CONFIG_BT_GATT_SERVICE_CHANGED) */
 
 static void clear_ccc_cfg(struct bt_gatt_ccc_cfg *cfg)
 {
@@ -1042,15 +1057,15 @@ void bt_gatt_init(void)
 	k_delayed_work_submit(&db_hash_work, DB_HASH_TIMEOUT);
 #endif /* CONFIG_BT_GATT_CACHING */
 
-	if (IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)) {
-		k_delayed_work_init(&gatt_sc.work, sc_process);
-		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-			/* Make sure to not send SC indications until SC
-			 * settings are loaded
-			 */
-			atomic_set_bit(gatt_sc.flags, SC_INDICATE_PENDING);
-		}
+#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
+	k_delayed_work_init(&gatt_sc.work, sc_process);
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		/* Make sure to not send SC indications until SC
+		 * settings are loaded
+		 */
+		atomic_set_bit(gatt_sc.flags, SC_INDICATE_PENDING);
 	}
+#endif /* defined(CONFIG_BT_GATT_SERVICE_CHANGED) */
 
 #if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
 	k_delayed_work_init(&gatt_ccc_store.work, ccc_delayed_store);
@@ -1080,7 +1095,7 @@ submit:
 	}
 
 	/* Reschedule since the range has changed */
-	k_delayed_work_submit(&gatt_sc.work, SC_TIMEOUT);
+	sc_work_submit(SC_TIMEOUT);
 }
 #endif /* BT_GATT_DYNAMIC_DB || (BT_GATT_CACHING && BT_SETTINGS) */
 
@@ -4750,7 +4765,7 @@ static int sc_commit(void)
 
 	if (atomic_test_bit(gatt_sc.flags, SC_RANGE_CHANGED)) {
 		/* Schedule SC indication since the range has changed */
-		k_delayed_work_submit(&gatt_sc.work, SC_TIMEOUT);
+		sc_work_submit(SC_TIMEOUT);
 	}
 
 	return 0;
