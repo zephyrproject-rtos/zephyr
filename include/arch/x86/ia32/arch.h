@@ -37,6 +37,19 @@
 #define MAIN_TSS	0x18
 #define DF_TSS		0x20
 
+/*
+ * Use for thread local storage.
+ * Match these to gen_gdt.py.
+ * The 0x03 is added to limit privilege.
+ */
+#if defined(CONFIG_USERSPACE)
+#define GS_TLS_SEG	(0x38 | 0x03)
+#elif defined(CONFIG_HW_STACK_PROTECTION)
+#define GS_TLS_SEG	(0x28 | 0x03)
+#else
+#define GS_TLS_SEG	(0x18 | 0x03)
+#endif
+
 /**
  * Macro used internally by NANO_CPU_INT_REGISTER and NANO_CPU_INT_REGISTER_ASM.
  * Not meant to be used explicitly by platform, driver or application code.
