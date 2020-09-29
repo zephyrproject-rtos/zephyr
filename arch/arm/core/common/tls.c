@@ -8,7 +8,18 @@
 #include <kernel_structs.h>
 #include <kernel_internal.h>
 #include <kernel_tls.h>
+#include <app_memory/app_memdomain.h>
 #include <sys/util.h>
+
+#ifdef CONFIG_CPU_CORTEX_M
+/*
+ * Since Cortex-M does not have the thread ID or process ID
+ * register needed to store TLS pointer at runtime for
+ * toolchain to access thread data. Use a global variable
+ * instead.
+ */
+K_APP_DMEM(z_libc_partition) uintptr_t z_arm_tls_ptr;
+#endif
 
 size_t arch_tls_stack_setup(struct k_thread *new_thread, char *stack_ptr)
 {

@@ -30,6 +30,10 @@ GDATA(_k_neg_eagain)
 
 GDATA(_kernel)
 
+#if defined(CONFIG_THREAD_LOCAL_STORAGE) && defined(CONFIG_CPU_CORTEX_M)
+GDATA(z_arm_tls_ptr)
+#endif
+
 /**
  *
  * @brief PendSV exception handler, handling context switches
@@ -180,6 +184,16 @@ out_fp_endif:
      */
     mcr 15, 0, r0, cr13, cr0, 3
 #endif
+
+#if defined(CONFIG_CPU_CORTEX_M)
+    /* For Cortex-M, store TLS pointer in a global variable,
+     * as it lacks the process ID or thread ID register
+     * to be used by toolchain to access thread data.
+     */
+    ldr r4, =z_arm_tls_ptr
+    str r0, [r4]
+#endif
+
 #endif
 
     /* Restore previous interrupt disable state (irq_lock key)
