@@ -391,6 +391,7 @@ void ull_slave_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		/* Handle any LL Control Procedures */
 		ret = ull_conn_llcp(conn, ticks_at_expire, lazy);
 		if (ret) {
+			DEBUG_RADIO_PREPARE_S(0);
 			return;
 		}
 	}
