@@ -56,6 +56,9 @@ static void client_disconnect(struct mqtt_client *client, int result,
 		MQTT_ERR("Failed to disconnect transport!");
 	}
 
+	/* Reset internal state. */
+	client_reset(client);
+
 	if (notify) {
 		struct mqtt_evt evt = {
 			.type = MQTT_EVT_DISCONNECT,
@@ -65,9 +68,6 @@ static void client_disconnect(struct mqtt_client *client, int result,
 		/* Notify application. */
 		event_notify(client, &evt);
 	}
-
-	/* Reset internal state. */
-	client_reset(client);
 }
 
 static int client_connect(struct mqtt_client *client)
