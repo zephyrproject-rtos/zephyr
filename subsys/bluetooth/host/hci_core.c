@@ -7523,6 +7523,12 @@ static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 		}
 	}
 
+	if ((param->options & BT_LE_ADV_OPT_DISABLE_CHAN_37) &&
+	    (param->options & BT_LE_ADV_OPT_DISABLE_CHAN_38) &&
+	    (param->options & BT_LE_ADV_OPT_DISABLE_CHAN_39)) {
+		return false;
+	}
+
 	return true;
 }
 
@@ -7650,6 +7656,25 @@ static uint8_t get_filter_policy(uint32_t options)
 	} else {
 		return BT_LE_ADV_FP_NO_WHITELIST;
 	}
+}
+
+static uint8_t get_adv_channel_map(uint32_t options)
+{
+	uint8_t channel_map = 0x07;
+
+	if (options & BT_LE_ADV_OPT_DISABLE_CHAN_37) {
+		channel_map &= ~0x01;
+	}
+
+	if (options & BT_LE_ADV_OPT_DISABLE_CHAN_38) {
+		channel_map &= ~0x02;
+	}
+
+	if (options & BT_LE_ADV_OPT_DISABLE_CHAN_39) {
+		channel_map &= ~0x04;
+	}
+
+	return channel_map;
 }
 
 static int le_adv_set_random_addr(struct bt_le_ext_adv *adv, uint32_t options,
@@ -7821,7 +7846,7 @@ int bt_le_adv_start_legacy(struct bt_le_ext_adv *adv,
 
 	set_param.min_interval = sys_cpu_to_le16(param->interval_min);
 	set_param.max_interval = sys_cpu_to_le16(param->interval_max);
-	set_param.channel_map  = 0x07;
+	set_param.channel_map  = get_adv_channel_map(param->options);
 	set_param.filter_policy = get_filter_policy(param->options);
 
 	if (adv->id != param->id) {
@@ -7968,7 +7993,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	cp->handle = adv->handle;
 	sys_put_le24(param->interval_min, cp->prim_min_interval);
 	sys_put_le24(param->interval_max, cp->prim_max_interval);
-	cp->prim_channel_map  = 0x07;
+	cp->prim_channel_map = get_adv_channel_map(param->options);
 	cp->filter_policy = get_filter_policy(param->options);
 	cp->tx_power = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
 
