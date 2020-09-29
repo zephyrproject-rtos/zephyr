@@ -61,18 +61,6 @@ int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr,
 	      socklen_t addr_len);
 
 /**
- * @brief SNTP query with seconds precision (deprecated)
- *
- * @param ctx Address of sntp context.
- * @param timeout Timeout of waiting for sntp response (in milliseconds).
- * @param epoch_time Seconds since 1 January 1970 (output).
- *
- * @return 0 if ok, <0 if error (-ETIMEDOUT if timeout).
- */
-__deprecated int sntp_request(struct sntp_ctx *ctx, uint32_t timeout,
-			      uint64_t *epoch_time);
-
-/**
  * @brief Perform SNTP query
  *
  * @param ctx Address of sntp context.
