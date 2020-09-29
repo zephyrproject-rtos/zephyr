@@ -7636,7 +7636,7 @@ int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len,
 			     use_name);
 }
 
-static uint8_t get_filter_policy(uint8_t options)
+static uint8_t get_filter_policy(uint32_t options)
 {
 	if (!IS_ENABLED(CONFIG_BT_WHITELIST)) {
 		return BT_LE_ADV_FP_NO_WHITELIST;
