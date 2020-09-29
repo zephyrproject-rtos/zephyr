@@ -835,6 +835,12 @@ static int cmd_advertise(const struct shell *shell, size_t argc, char *argv[])
 			param.options &= ~BT_LE_ADV_OPT_USE_NAME;
 		} else if (!strcmp(arg, "one-time")) {
 			param.options |= BT_LE_ADV_OPT_ONE_TIME;
+		} else if (!strcmp(arg, "disable-37")) {
+			param.options |= BT_LE_ADV_OPT_DISABLE_CHAN_37;
+		} else if (!strcmp(arg, "disable-38")) {
+			param.options |= BT_LE_ADV_OPT_DISABLE_CHAN_38;
+		} else if (!strcmp(arg, "disable-39")) {
+			param.options |= BT_LE_ADV_OPT_DISABLE_CHAN_39;
 		} else {
 			goto fail;
 		}
@@ -882,6 +888,12 @@ static int cmd_directed_adv(const struct shell *shell,
 			param.options |= BT_LE_ADV_OPT_USE_IDENTITY;
 		} else if (!strcmp(arg, "dir-rpa")) {
 			param.options |= BT_LE_ADV_OPT_DIR_ADDR_RPA;
+		} else if (!strcmp(arg, "disable-37")) {
+			param.options |= BT_LE_ADV_OPT_DISABLE_CHAN_37;
+		} else if (!strcmp(arg, "disable-38")) {
+			param.options |= BT_LE_ADV_OPT_DISABLE_CHAN_38;
+		} else if (!strcmp(arg, "disable-39")) {
+			param.options |= BT_LE_ADV_OPT_DISABLE_CHAN_39;
 		} else {
 			shell_help(shell);
 			return -ENOEXEC;
@@ -948,6 +960,12 @@ static bool adv_param_parse(size_t argc, char *argv[],
 			param->options |= BT_LE_ADV_OPT_USE_NAME;
 		} else if (!strcmp(arg, "low")) {
 			param->options |= BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY;
+		} else if (!strcmp(arg, "disable-37")) {
+			param->options |= BT_LE_ADV_OPT_DISABLE_CHAN_37;
+		} else if (!strcmp(arg, "disable-38")) {
+			param->options |= BT_LE_ADV_OPT_DISABLE_CHAN_38;
+		} else if (!strcmp(arg, "disable-39")) {
+			param->options |= BT_LE_ADV_OPT_DISABLE_CHAN_39;
 		} else if (!strcmp(arg, "directed")) {
 			static bt_addr_le_t addr;
 
@@ -2727,7 +2745,8 @@ static int cmd_auth_oob_tk(const struct shell *shell, size_t argc, char *argv[])
 #define EXT_ADV_PARAM "<type: conn-scan conn-nscan, nconn-scan nconn-nscan> " \
 		      "[ext-adv] [no-2m] [coded] "                            \
 		      "[whitelist: wl, wl-scan, wl-conn] [identity] [name] "  \
-		      "[directed "HELP_ADDR_LE"] [mode: low]"
+		      "[directed "HELP_ADDR_LE"] [mode: low]"                 \
+		      "[disable-37] [disable-38] [disable-39]"
 #else
 #define EXT_ADV_SCAN_OPT ""
 #endif /* defined(CONFIG_BT_EXT_ADV) */
@@ -2753,16 +2772,16 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(advertise, NULL,
 		      "<type: off, on, scan, nconn> [mode: discov, non_discov] "
 		      "[whitelist: wl, wl-scan, wl-conn] [identity] [no-name] "
-		      "[one-time]",
-		      cmd_advertise, 2, 5),
+		      "[one-time] [disable-37] [disable-38] [disable-39]",
+		      cmd_advertise, 2, 8),
 #if defined(CONFIG_BT_PERIPHERAL)
 	SHELL_CMD_ARG(directed-adv, NULL, HELP_ADDR_LE " [mode: low] "
 		      "[identity] [dir-rpa]",
-		      cmd_directed_adv, 3, 3),
+		      cmd_directed_adv, 3, 6),
 #endif /* CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_EXT_ADV)
-	SHELL_CMD_ARG(adv-create, NULL, EXT_ADV_PARAM, cmd_adv_create, 2, 8),
-	SHELL_CMD_ARG(adv-param, NULL, EXT_ADV_PARAM, cmd_adv_param, 2, 8),
+	SHELL_CMD_ARG(adv-create, NULL, EXT_ADV_PARAM, cmd_adv_create, 2, 11),
+	SHELL_CMD_ARG(adv-param, NULL, EXT_ADV_PARAM, cmd_adv_param, 2, 11),
 	SHELL_CMD_ARG(adv-data, NULL, "<data> [scan-response <data>] "
 				      "<type: discov, name, hex>", cmd_adv_data,
 		      1, 16),
