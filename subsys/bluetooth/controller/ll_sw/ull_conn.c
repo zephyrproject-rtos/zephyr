@@ -6327,9 +6327,9 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate)
 	phy = PHY_1M;
 #endif /* !CONFIG_BT_CTLR_PHY */
 
-	time_incoming = (CONFIG_BT_CTLR_DATA_LENGTH_MAX << 3) *
+	time_incoming = (LL_LENGTH_OCTETS_RX_MAX << 3) *
 			1000000UL / tx_rate;
-	time_outgoing = PKT_DC_US(CONFIG_BT_CTLR_DATA_LENGTH_MAX,
+	time_outgoing = PKT_DC_US(LL_LENGTH_OCTETS_RX_MAX,
 				  (PDU_MIC_SIZE * lll_conn->enc_tx), phy) +
 			PKT_DC_US(0U, 0U, phy) +
 			(EVENT_IFS_US << 1);
