@@ -74,7 +74,7 @@ static int cmd_erase(const struct shell *shell, size_t argc, char *argv[])
 		size = info.size;
 	}
 
-	flash_write_protection_set(flash_dev, 0);
+	flash_write_protection_set(flash_dev, false);
 
 	result = flash_erase(flash_dev, page_addr, size);
 
@@ -112,7 +112,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 		j++;
 	}
 
-	flash_write_protection_set(flash_dev, 0);
+	flash_write_protection_set(flash_dev, false);
 
 	if (flash_write(flash_dev, w_addr, buf_array,
 			sizeof(buf_array[0]) * j) != 0) {
@@ -193,7 +193,7 @@ static int cmd_test(const struct shell *shell, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	flash_write_protection_set(flash_dev, 0);
+	flash_write_protection_set(flash_dev, false);
 
 	for (uint32_t i = 0; i < size; i++) {
 		test_arr[i] = (uint8_t)i;
