@@ -147,7 +147,6 @@ int z_reserve_fd(void)
 	fd = _find_fd_entry();
 	if (fd >= 0) {
 		/* Mark entry as used, z_finalize_fd() will fill it in. */
-		(void)z_fd_ref(fd);
 		fdtable[fd].obj = NULL;
 		fdtable[fd].vtable = NULL;
 	}
@@ -172,6 +171,7 @@ void z_finalize_fd(int fd, void *obj, const struct fd_op_vtable *vtable)
 #endif
 	fdtable[fd].obj = obj;
 	fdtable[fd].vtable = vtable;
+	(void)z_fd_ref(fd);
 }
 
 void z_free_fd(int fd)
