@@ -133,7 +133,7 @@ static void print_EC_cause(uint64_t esr)
 
 static void esf_dump(const z_arch_esf_t *esf)
 {
-	LOG_ERR("x1:  %-8llx  x0:  %llx",
+	LOG_ERR("x0:  %-8llx  x1:  %llx",
 		esf->basic.regs[18], esf->basic.regs[19]);
 	LOG_ERR("x2:  %-8llx  x3:  %llx",
 		esf->basic.regs[16], esf->basic.regs[17]);
