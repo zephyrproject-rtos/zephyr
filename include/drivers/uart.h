@@ -161,16 +161,6 @@ enum uart_rx_stop_reason {
 	UART_BREAK = (1 << 3),
 };
 
-
-/** @brief Backward compatibility defines, deprecated */
-#define UART_ERROR_BREAK __DEPRECATED_MACRO UART_BREAK
-#define LINE_CTRL_BAUD_RATE __DEPRECATED_MACRO UART_LINE_CTRL_BAUD_RATE
-#define LINE_CTRL_RTS __DEPRECATED_MACRO UART_LINE_CTRL_RTS
-#define LINE_CTRL_DTR __DEPRECATED_MACRO UART_LINE_CTRL_DTR
-#define LINE_CTRL_DCD __DEPRECATED_MACRO UART_LINE_CTRL_DCD
-#define LINE_CTRL_DSR __DEPRECATED_MACRO UART_LINE_CTRL_DSR
-
-
 /** @brief UART TX event data. */
 struct uart_event_tx {
 	/** @brief Pointer to current buffer. */
