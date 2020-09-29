@@ -248,6 +248,97 @@
 			};
 		};
 
+		spi0: spi@40610000 {
+			compatible = "cypress,psoc6-spi";
+			reg = <0x40610000 0x10000>;
+			interrupts = <41 7>;
+			peripheral-id = <0>;
+			status = "disabled";
+			label = "spi_0";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		spi1: spi@40620000 {
+			compatible = "cypress,psoc6-spi";
+			reg = <0x40620000 0x10000>;
+			interrupts = <42 7>;
+			peripheral-id = <1>;
+			status = "disabled";
+			label = "spi_1";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		spi2: spi@40630000 {
+			compatible = "cypress,psoc6-spi";
+			reg = <0x40630000 0x10000>;
+			interrupts = <43 7>;
+			peripheral-id = <2>;
+			status = "disabled";
+			label = "spi_2";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		spi3: spi@40640000 {
+			compatible = "cypress,psoc6-spi";
+			reg = <0x40640000 0x10000>;
+			interrupts = <44 7>;
+			peripheral-id = <3>;
+			status = "disabled";
+			label = "spi_3";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		spi4: spi@40650000 {
+			compatible = "cypress,psoc6-spi";
+			reg = <0x40650000 0x10000>;
+			interrupts = <45 7>;
+			peripheral-id = <4>;
+			status = "disabled";
+			label = "spi_4";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		spi5: spi@40660000 {
+			compatible = "cypress,psoc6-spi";
+			reg = <0x40660000 0x10000>;
+			interrupts = <46 7>;
+			peripheral-id = <5>;
+			status = "disabled";
+			label = "spi_5";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		spi6: spi@40670000 {
+			compatible = "cypress,psoc6-spi";
+			reg = <0x40670000 0x10000>;
+			interrupts = <47 7>;
+			peripheral-id = <6>;
+			status = "disabled";
+			label = "spi_6";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		spi7: spi@40680000 {
+			compatible = "cypress,psoc6-spi";
+			reg = <0x40680000 0x10000>;
+			interrupts = <48 7>;
+			peripheral-id = <7>;
+			status = "disabled";
+			label = "spi_7";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		spi8: spi@40690000 {
+			compatible = "cypress,psoc6-spi";
+			reg = <0x40690000 0x10000>;
+			interrupts = <18 7>;
+			peripheral-id = <8>;
+			status = "disabled";
+			label = "spi_8";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
 		uart0: uart@40610000 {
 			compatible = "cypress,psoc6-uart";
 			reg = <0x40610000 0x10000>;
