@@ -78,10 +78,6 @@ struct ring_buf {
 		.buf = { .buf32 = _ring_buffer_data_##name } \
 	}
 
-/** @deprecated Renamed to RING_BUF_ITEM_DECLARE_POW2. */
-#define SYS_RING_BUF_DECLARE_POW2(name, pow) \
-	__DEPRECATED_MACRO RING_BUF_ITEM_DECLARE_POW2(name, pow)
-
 /**
  * @brief Statically define and initialize a standard ring buffer.
  *
@@ -102,10 +98,6 @@ struct ring_buf {
 		.size = size32, \
 		.buf = { .buf32 = _ring_buffer_data_##name} \
 	}
-
-/** @deprecated Renamed to RING_BUF_ITEM_DECLARE_SIZE. */
-#define SYS_RING_BUF_DECLARE_SIZE(name, size32) \
-	__DEPRECATED_MACRO RING_BUF_ITEM_DECLARE_SIZE(name, size32)
 
 /**
  * @brief Statically define and initialize a ring buffer for byte data.
