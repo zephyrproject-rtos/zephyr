@@ -424,7 +424,9 @@ out:
 
 static void tcp_send_timer_cancel(struct tcp *conn)
 {
-	NET_ASSERT(conn->in_retransmission == true, "Not in retransmission");
+	if (conn->in_retransmission == false) {
+		return;
+	}
 
 	k_delayed_work_cancel(&conn->send_timer);
 
