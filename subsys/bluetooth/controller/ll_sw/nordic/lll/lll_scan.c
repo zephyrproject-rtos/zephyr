@@ -132,7 +132,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	/* Check if stopped (on connection establishment race between LLL and
 	 * ULL.
 	 */
-	if (lll_is_stop(lll)) {
+	if (unlikely(lll_is_stop(lll))) {
 		int err;
 
 		err = lll_hfclock_off();
