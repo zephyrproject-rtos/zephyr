@@ -193,13 +193,13 @@ static int cmd_test(const struct shell *shell, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	flash_write_protection_set(flash_dev, false);
-
 	for (uint32_t i = 0; i < size; i++) {
 		test_arr[i] = (uint8_t)i;
 	}
 
 	while (repeat--) {
+		flash_write_protection_set(flash_dev, false);
+
 		result = flash_erase(flash_dev, addr, size);
 		if (result) {
 			shell_error(shell, "Erase Failed, code %d.", result);
@@ -207,6 +207,8 @@ static int cmd_test(const struct shell *shell, size_t argc, char *argv[])
 		}
 
 		shell_print(shell, "Erase OK.");
+
+		flash_write_protection_set(flash_dev, false);
 
 		if (flash_write(flash_dev, addr, test_arr, size) != 0) {
 			shell_error(shell, "Write internal ERROR!");
