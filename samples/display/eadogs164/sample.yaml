@@ -1,0 +1,13 @@
+#
+# Copyright (c) 2020
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+sample:
+  name: EADOGS164 Display Sample
+tests:
+  sample.display.eadogs164:
+    build_only: true
+    platform_allow: disco_l475_iot1
+    tags: display

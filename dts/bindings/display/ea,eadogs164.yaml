@@ -1,0 +1,8 @@
+# Copyright (c) 2020
+# SPDX-License-Identifier: Apache-2.0
+
+description: Electronics Assembly Display
+
+compatible: "ea,eadogs164"
+
+include: i2c-device.yaml

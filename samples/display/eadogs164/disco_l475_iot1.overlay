@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2020
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c1 {
+	eadogs164@3c {
+		compatible = "ea,eadogs164";
+		reg = <0x3C>;
+		label = "EADOGS164";
+	};
+};

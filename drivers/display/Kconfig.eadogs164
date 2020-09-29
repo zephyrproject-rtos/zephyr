@@ -1,0 +1,22 @@
+# EADOGS164 display driver configuration options
+
+# Copyright (c) 2020
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig EADOGS164_DISPLAY
+	bool "EADOGS164 display driver"
+	depends on I2C
+	help
+	  Enable driver for EADOGS164 display driver.
+
+if EADOGS164_DISPLAY
+
+config EADOGS164_DISPLAY_ROM
+	int "Select one of out possible ROM, 0-ROMA, 1-ROMB, 3-ROMC"
+	default 1
+
+config EADOGS164_DISPLAY_RAB2_0
+	int "resistor values for internal feedback amp for LCD voltage (0-7)"
+	default 3
+
+endif # EADOGS164_DISPLAY
