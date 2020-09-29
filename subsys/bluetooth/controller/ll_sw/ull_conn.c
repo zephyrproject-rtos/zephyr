@@ -815,8 +815,6 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 
 int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 {
-	LL_ASSERT(conn->lll.handle != 0xFFFF);
-
 	/* Check if no other procedure with instant is requested and not in
 	 * Encryption setup.
 	 */
