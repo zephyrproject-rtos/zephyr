@@ -5220,8 +5220,14 @@ static inline void k_cpu_idle(void)
 /**
  * @brief Make the CPU idle in an atomic fashion.
  *
- * Similar to k_cpu_idle(), but called with interrupts locked if operations
- * must be done atomically before making the CPU idle.
+ * Similar to k_cpu_idle(), but must be called with interrupts locked.
+ *
+ * Enabling interrupts and entering a low-power mode will be atomic,
+ * i.e. there will be no period of time where interrupts are enabled before
+ * the processor enters a low-power mode.
+ *
+ * After waking up from the low-power mode, the interrupt lockout state will
+ * be restored as if by irq_unlock(key).
  *
  * @param key Interrupt locking key obtained from irq_lock().
  *
