@@ -10,6 +10,21 @@
 #include <zephyr.h>
 #include <ztest.h>
 
+/* ADC measurement of floating input is not guaranteed to provide non zero value
+ * Nevertheless, it works. But for some boards, a delay may be required
+ * between 2 consecutive measurements of a floating input.
+ * Interval in microseconds.
+ */
+#if defined(CONFIG_SOC_SERIES_STM32L0X)
+/* Delay is required for STM32 L0 series.
+ * Empiric interval measurement done with nucelo_l073rz with extra margin.
+ */
+#define REPEATED_SAMPLING_INTERVAL 50000
+#else
+#define REPEATED_SAMPLING_INTERVAL 0
+#endif
+
+
 #if defined(CONFIG_SHIELD_MIKROE_ADC_CLICK)
 #define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, microchip_mcp3204))
 #define ADC_RESOLUTION		12
@@ -377,7 +392,7 @@ static int test_task_asynchronous_call(void)
 	const struct adc_sequence_options options = {
 		.extra_samplings = 4,
 		/* Start consecutive samplings as fast as possible. */
-		.interval_us     = 0,
+		.interval_us     = REPEATED_SAMPLING_INTERVAL,
 	};
 	const struct adc_sequence sequence = {
 		.options     = &options,
@@ -516,7 +531,7 @@ static int test_task_repeated_samplings(void)
 		 */
 		.extra_samplings = 2,
 		/* Start consecutive samplings as fast as possible. */
-		.interval_us     = 0,
+		.interval_us     = REPEATED_SAMPLING_INTERVAL,
 	};
 	const struct adc_sequence sequence = {
 		.options     = &options,
