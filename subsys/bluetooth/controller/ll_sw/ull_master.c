@@ -744,6 +744,7 @@ void ull_master_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t
 		/* Handle any LL Control Procedures */
 		ret = ull_conn_llcp(conn, ticks_at_expire, lazy);
 		if (ret) {
+			DEBUG_RADIO_PREPARE_M(0);
 			return;
 		}
 	}
