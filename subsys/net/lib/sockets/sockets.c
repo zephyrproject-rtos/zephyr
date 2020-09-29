@@ -1224,9 +1224,6 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 	const struct fd_op_vtable *vtable;
 	k_timeout_t timeout;
 	uint64_t end;
-	bool offload = false;
-	const struct fd_op_vtable *offl_vtable = NULL;
-	void *offl_ctx = NULL;
 
 	if (poll_timeout < 0) {
 		timeout = K_FOREVER;
@@ -1268,28 +1265,17 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 		} else if (result == -EXDEV) {
 			/* If POLL_PREPARE returned EXDEV, it means
 			 * it detected an offloaded socket.
-			 * If offloaded socket is used with native TLS, the TLS
-			 * wrapper for the offloaded poll will be used.
 			 * In case the fds array contains a mixup of offloaded
 			 * and non-offloaded sockets, the offloaded poll handler
 			 * shall return an error.
 			 */
-			offload = true;
-			if (offl_vtable == NULL || net_socket_is_tls(ctx)) {
-				offl_vtable = vtable;
-				offl_ctx = ctx;
-			}
-			continue;
+			return z_fdtable_call_ioctl(vtable, ctx,
+						    ZFD_IOCTL_POLL_OFFLOAD,
+						    fds, nfds, poll_timeout);
 		} else if (result != 0) {
 			errno = -result;
 			return -1;
 		}
-	}
-
-	if (offload) {
-		return z_fdtable_call_ioctl(offl_vtable, offl_ctx,
-					    ZFD_IOCTL_POLL_OFFLOAD,
-					    fds, nfds, poll_timeout);
 	}
 
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
