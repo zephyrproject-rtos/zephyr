@@ -1801,8 +1801,6 @@ struct k_timer {
 	_OBJECT_TRACING_INIT \
 	}
 
-#define K_TIMER_INITIALIZER __DEPRECATED_MACRO Z_TIMER_INITIALIZER
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -2071,40 +2069,6 @@ static inline int64_t k_uptime_get(void)
 }
 
 /**
- * @brief Enable clock always on in tickless kernel
- *
- * Deprecated.  This does nothing (it was always just a hint).  This
- * functionality has been migrated to the
- * @option{CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE} config option.
- *
- * @retval prev_status Previous status of always on flag
- */
-/* LCOV_EXCL_START */
-__deprecated static inline int k_enable_sys_clock_always_on(void)
-{
-	__ASSERT(IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE),
-		 "Please use CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE instead");
-
-	return !IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE);
-}
-/* LCOV_EXCL_STOP */
-
-/**
- * @brief Disable clock always on in tickless kernel
- *
- * Deprecated.  This does nothing (it was always just a hint).  This
- * functionality has been migrated to the
- * @option{CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE} config option.
- */
-/* LCOV_EXCL_START */
-__deprecated static inline void k_disable_sys_clock_always_on(void)
-{
-	__ASSERT(!IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE),
-		 "Please use CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE instead");
-}
-/* LCOV_EXCL_STOP */
-
-/**
  * @brief Get system uptime (32-bit version).
  *
  * This routine returns the lower 32 bits of the system uptime in
@@ -2151,26 +2115,6 @@ static inline int64_t k_uptime_delta(int64_t *reftime)
 }
 
 /**
- * @brief Get elapsed time (32-bit version).
- *
- * This routine computes the elapsed time between the current system uptime
- * and an earlier reference time, in milliseconds.
- *
- * This is a wrapper around k_uptime_delta().
- *
- * @param reftime Pointer to a reference time, which is updated to the current
- *                uptime upon return.
- *
- * @return Elapsed time.
- *
- * @deprecated in 2.3 release, replace with k_uptime_delta()
- */
-__deprecated static inline uint32_t k_uptime_delta_32(int64_t *reftime)
-{
-	return (uint32_t)k_uptime_delta(reftime);
-}
-
-/**
  * @brief Read the hardware clock.
  *
  * This routine returns the current time, as measured by the system's hardware
@@ -2209,8 +2153,6 @@ struct k_queue {
 	_POLL_EVENT_OBJ_INIT(obj)		\
 	_OBJECT_TRACING_INIT \
 	}
-
-#define K_QUEUE_INITIALIZER __DEPRECATED_MACRO Z_QUEUE_INITIALIZER
 
 extern void *z_queue_node_peek(sys_sfnode_t *node, bool needs_free);
 
@@ -2596,8 +2538,6 @@ struct k_fifo {
 	._queue = Z_QUEUE_INITIALIZER(obj._queue) \
 	}
 
-#define K_FIFO_INITIALIZER __DEPRECATED_MACRO Z_FIFO_INITIALIZER
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -2801,8 +2741,6 @@ struct k_lifo {
 	._queue = Z_QUEUE_INITIALIZER(obj._queue) \
 	}
 
-#define K_LIFO_INITIALIZER __DEPRECATED_MACRO Z_LIFO_INITIALIZER
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -2919,8 +2857,6 @@ struct k_stack {
 	.top = stack_buffer + stack_num_entries, \
 	_OBJECT_TRACING_INIT \
 	}
-
-#define K_STACK_INITIALIZER __DEPRECATED_MACRO Z_STACK_INITIALIZER
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -3108,8 +3044,6 @@ extern struct k_work_q k_sys_work_q;
 	.handler = work_handler, \
 	.flags = { 0 } \
 	}
-
-#define K_WORK_INITIALIZER __DEPRECATED_MACRO Z_WORK_INITIALIZER
 
 /**
  * @brief Initialize a statically-defined work item.
@@ -3623,8 +3557,6 @@ struct k_mutex {
 	_OBJECT_TRACING_INIT \
 	}
 
-#define K_MUTEX_INITIALIZER __DEPRECATED_MACRO Z_MUTEX_INITIALIZER
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -3728,8 +3660,6 @@ struct k_sem {
 	_POLL_EVENT_OBJ_INIT(obj) \
 	_OBJECT_TRACING_INIT \
 	}
-
-#define K_SEM_INITIALIZER __DEPRECATED_MACRO Z_SEM_INITIALIZER
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -3897,7 +3827,7 @@ struct k_msgq {
 	.used_msgs = 0, \
 	_OBJECT_TRACING_INIT \
 	}
-#define K_MSGQ_INITIALIZER __DEPRECATED_MACRO Z_MSGQ_INITIALIZER
+
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -4179,8 +4109,6 @@ struct k_mbox {
 	_OBJECT_TRACING_INIT \
 	}
 
-#define K_MBOX_INITIALIZER __DEPRECATED_MACRO Z_MBOX_INITIALIZER
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -4369,8 +4297,6 @@ struct k_pipe {
 	.flags = 0                                                  \
 	}
 
-#define K_PIPE_INITIALIZER __DEPRECATED_MACRO Z_PIPE_INITIALIZER
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -4550,8 +4476,6 @@ struct k_mem_slab {
 	.num_used = 0, \
 	_OBJECT_TRACING_INIT \
 	}
-
-#define K_MEM_SLAB_INITIALIZER __DEPRECATED_MACRO Z_MEM_SLAB_INITIALIZER
 
 
 /**
