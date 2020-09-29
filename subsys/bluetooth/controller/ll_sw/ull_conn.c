@@ -1009,7 +1009,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 	uint8_t force;
 
 	/* Skip if connection terminated by local host */
-	if (lll->handle == 0xFFFF) {
+	if (unlikely(lll->handle == 0xFFFF)) {
 		return;
 	}
 
