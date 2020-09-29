@@ -73,4 +73,6 @@ source "drivers/spi/Kconfig.esp32"
 
 source "drivers/spi/Kconfig.test"
 
+source "drivers/spi/Kconfig.psoc6"
+
 endif # SPI
