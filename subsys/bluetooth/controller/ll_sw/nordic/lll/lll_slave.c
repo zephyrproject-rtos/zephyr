@@ -109,6 +109,20 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 
 	DEBUG_RADIO_START_S(1);
 
+	/* Check if stopped (on disconnection between prepare and pre-empt)
+	 */
+	if (unlikely(lll->handle == 0xFFFF)) {
+		int err;
+
+		err = lll_hfclock_off();
+		LL_ASSERT(err >= 0);
+
+		lll_done(NULL);
+
+		DEBUG_RADIO_START_S(0);
+		return 0;
+	}
+
 	/* Reset connection event global variables */
 	lll_conn_prepare_reset();
 

@@ -728,11 +728,20 @@ void ull_master_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_master_prepare};
 	static struct lll_prepare_param p;
-	struct ll_conn *conn = param;
+	struct ll_conn *conn;
 	uint32_t err;
 	uint8_t ref;
 
 	DEBUG_RADIO_PREPARE_M(1);
+
+	conn = param;
+
+	/* Check if stopping ticker (on disconnection, race with ticker expiry)
+	 */
+	if (unlikely(conn->lll.handle == 0xFFFF)) {
+		DEBUG_RADIO_PREPARE_M(0);
+		return;
+	}
 
 	/* If this is a must-expire callback, LLCP state machine does not need
 	 * to know. Will be called with lazy > 0 when scheduled in air.
