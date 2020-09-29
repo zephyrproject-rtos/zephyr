@@ -474,6 +474,15 @@ enum {
 	 * @note Requires @ref BT_LE_ADV_OPT_EXT_ADV
 	 */
 	BT_LE_ADV_OPT_USE_TX_POWER = BIT(14),
+
+	/** Disable advertising on channel index 37. */
+	BT_LE_ADV_OPT_DISABLE_CHAN_37 = BIT(15),
+
+	/** Disable advertising on channel index 38. */
+	BT_LE_ADV_OPT_DISABLE_CHAN_38 = BIT(16),
+
+	/** Disable advertising on channel index 39. */
+	BT_LE_ADV_OPT_DISABLE_CHAN_39 = BIT(17),
 };
 
 /** LE Advertising Parameters. */
