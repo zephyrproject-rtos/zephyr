@@ -64,8 +64,7 @@ extern int z_clock_device_ctrl(const struct device *device,
  * indicating that no future timer interrupts are expected or required
  * and that the system is permitted to enter an indefinite sleep even
  * if this could cause rollover of the internal counter (i.e. the
- * system uptime counter is allowed to be wrong, see
- * k_enable_sys_clock_always_on()).
+ * system uptime counter is allowed to be wrong
  *
  * Note also that it is conventional for the kernel to pass INT_MAX
  * for ticks if it wants to preserve the uptime tick count but doesn't
