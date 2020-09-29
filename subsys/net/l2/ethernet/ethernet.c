@@ -145,7 +145,7 @@ static void ethernet_update_rx_stats(struct net_if *iface,
 
 static inline bool eth_is_vlan_tag_stripped(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
+	const struct device *dev = net_if_get_device(iface);
 	const struct ethernet_api *api = dev->api;
 
 	return (api->get_capabilities(dev) & ETHERNET_HW_VLAN_TAG_STRIP);
@@ -594,7 +594,28 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 		ptype = htons(NET_ETH_PTYPE_IPV6);
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
 		   net_pkt_family(pkt) == AF_PACKET) {
-		goto send;
+		struct net_context *context = net_pkt_context(pkt);
+
+		if (context && net_context_get_type(context) == SOCK_DGRAM) {
+			struct sockaddr_ll *dst_addr;
+			struct sockaddr_ll_ptr *src_addr;
+
+			/* The destination address is set in remote for this
+			 * socket type.
+			 */
+			dst_addr = (struct sockaddr_ll *)&context->remote;
+			src_addr = (struct sockaddr_ll_ptr *)&context->local;
+
+			net_pkt_lladdr_dst(pkt)->addr = dst_addr->sll_addr;
+			net_pkt_lladdr_dst(pkt)->len =
+						sizeof(struct net_eth_addr);
+			net_pkt_lladdr_src(pkt)->addr = src_addr->sll_addr;
+			net_pkt_lladdr_src(pkt)->len =
+						sizeof(struct net_eth_addr);
+			ptype = dst_addr->sll_protocol;
+		} else {
+			goto send;
+		}
 	} else if (IS_ENABLED(CONFIG_NET_GPTP) && net_pkt_is_gptp(pkt)) {
 		ptype = htons(NET_ETH_PTYPE_PTP);
 	} else if (IS_ENABLED(CONFIG_NET_LLDP) && net_pkt_is_lldp(pkt)) {
@@ -1022,9 +1043,9 @@ void net_eth_carrier_off(struct net_if *iface)
 }
 
 #if defined(CONFIG_PTP_CLOCK)
-struct device *net_eth_get_ptp_clock(struct net_if *iface)
+const struct device *net_eth_get_ptp_clock(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
+	const struct device *dev = net_if_get_device(iface);
 	const struct ethernet_api *api = dev->api;
 
 	if (!api) {
@@ -1048,7 +1069,7 @@ struct device *net_eth_get_ptp_clock(struct net_if *iface)
 #endif /* CONFIG_PTP_CLOCK */
 
 #if defined(CONFIG_PTP_CLOCK)
-struct device *z_impl_net_eth_get_ptp_clock_by_index(int index)
+const struct device *z_impl_net_eth_get_ptp_clock_by_index(int index)
 {
 	struct net_if *iface;
 
@@ -1061,14 +1082,14 @@ struct device *z_impl_net_eth_get_ptp_clock_by_index(int index)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline struct device *z_vrfy_net_eth_get_ptp_clock_by_index(int index)
+static inline const struct device *z_vrfy_net_eth_get_ptp_clock_by_index(int index)
 {
 	return z_impl_net_eth_get_ptp_clock_by_index(index);
 }
 #include <syscalls/net_eth_get_ptp_clock_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 #else /* CONFIG_PTP_CLOCK */
-struct device *z_impl_net_eth_get_ptp_clock_by_index(int index)
+const struct device *z_impl_net_eth_get_ptp_clock_by_index(int index)
 {
 	ARG_UNUSED(index);
 

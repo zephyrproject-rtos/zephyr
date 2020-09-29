@@ -9,17 +9,17 @@
 #include <fsl_iocon.h>
 #include <soc.h>
 
-static int lpcxpresso_55s16_pinmux_init(struct device *dev)
+static int lpcxpresso_55s16_pinmux_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 #ifdef CONFIG_PINMUX_MCUX_LPC_PORT0
-	__unused struct device *port0 =
+	__unused const struct device *port0 =
 		device_get_binding(CONFIG_PINMUX_MCUX_LPC_PORT0_NAME);
 #endif
 
 #ifdef CONFIG_PINMUX_MCUX_LPC_PORT1
-	__unused struct device *port1 =
+	__unused const struct device *port1 =
 		device_get_binding(CONFIG_PINMUX_MCUX_LPC_PORT1_NAME);
 #endif
 

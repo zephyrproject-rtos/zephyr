@@ -11,7 +11,7 @@
 
 static inline void external_antenna(bool on)
 {
-	struct device *gpio_dev;
+	const struct device *gpio_dev;
 
 	/*
 	 * On power-up the SKY13351 is left uncontrolled, so neither
@@ -30,14 +30,14 @@ static inline void external_antenna(bool on)
 			      : GPIO_OUTPUT_INACTIVE));
 }
 
-static int board_particle_boron_init(struct device *dev)
+static int board_particle_boron_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	external_antenna(false);
 
 #if defined(CONFIG_MODEM_UBLOX_SARA)
-	struct device *gpio_dev;
+	const struct device *gpio_dev;
 
 	/* Enable the serial buffer for SARA-R4 modem */
 	gpio_dev = device_get_binding(SERIAL_BUFFER_ENABLE_GPIO_NAME);

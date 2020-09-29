@@ -31,7 +31,7 @@ static void k_mem_pool_init(struct k_mem_pool *p)
 	z_sys_mem_pool_base_init(&p->base);
 }
 
-int init_static_pools(struct device *unused)
+int init_static_pools(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 

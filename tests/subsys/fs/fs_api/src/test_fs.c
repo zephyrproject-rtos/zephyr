@@ -19,7 +19,7 @@ static char buffer[BUF_LEN];
 static char *read_pos = buffer;
 static char *cur = buffer;
 static int file_length;
-static struct fs_mount_t *mp[FS_TYPE_END];
+static struct fs_mount_t *mp[FS_TYPE_EXTERNAL_BASE];
 static bool nospace;
 
 static

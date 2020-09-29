@@ -192,7 +192,7 @@ void _sys_resume(void)
 }
 
 #if CONFIG_DEVICE_POWER_MANAGEMENT
-static int sys_pm_init(struct device *dev)
+static int sys_pm_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

@@ -5,7 +5,6 @@
 import argparse
 from pathlib import Path
 from shutil import rmtree
-from subprocess import CalledProcessError
 
 from west.commands import WestCommand
 from west import log
@@ -45,35 +44,20 @@ class ZephyrExport(WestCommand):
         # The 'share' subdirectory of the top level zephyr repository.
         share = Path(__file__).parents[2] / 'share'
 
-        run_cmake_and_clean_up(share / 'zephyr-package' / 'cmake')
-        run_cmake_and_clean_up(share / 'zephyrunittest-package' / 'cmake')
+        run_cmake_export(share / 'zephyr-package' / 'cmake')
+        run_cmake_export(share / 'zephyrunittest-package' / 'cmake')
 
-def run_cmake_and_clean_up(path):
-    # Run a package installation script, cleaning up afterwards.
+def run_cmake_export(path):
+    # Run a package installation script.
     #
     # Filtering out lines that start with -- ignores the normal
     # CMake status messages and instead only prints the important
     # information.
 
-    try:
-        lines = run_cmake(['-S', str(path), '-B', str(path)],
-                          capture_output=True)
-    finally:
-        msg = [line for line in lines if not line.startswith('-- ')]
-        log.inf('\n'.join(msg))
-        clean_up(path)
-
-def clean_up(path):
-    try:
-        run_cmake(['-P', str(path / 'pristine.cmake')],
-                  capture_output=True)
-    except CalledProcessError:
-        # Do our best to clean up even though CMake failed.
-        log.wrn(f'Failed to make {path} pristine; '
-                'removing known generated files...')
-        for subpath in ['CMakeCache.txt', 'CMakeFiles', 'build.ninja',
-                        'cmake_install.cmake', 'rules.ninja']:
-            remove_if_exists(Path(path) / subpath)
+    lines = run_cmake(['-P', str(path / 'zephyr_export.cmake')],
+                      capture_output=True)
+    msg = [line for line in lines if not line.startswith('-- ')]
+    log.inf('\n'.join(msg))
 
 def remove_if_exists(pathobj):
     if pathobj.is_file():

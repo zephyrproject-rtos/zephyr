@@ -8,7 +8,9 @@
 #include <sys/printk.h>
 #include <drivers/dac.h>
 
-#if defined(CONFIG_BOARD_NUCLEO_L073RZ) || \
+#if defined(CONFIG_BOARD_NUCLEO_F091RC) || \
+	defined(CONFIG_BOARD_NUCLEO_G431RB) || \
+	defined(CONFIG_BOARD_NUCLEO_L073RZ) || \
 	defined(CONFIG_BOARD_NUCLEO_L152RE)
 #define DAC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(dac1))
 #define DAC_CHANNEL_ID		1
@@ -36,7 +38,7 @@ static const struct dac_channel_cfg dac_ch_cfg = {
 
 void main(void)
 {
-	struct device *dac_dev = device_get_binding(DAC_DEVICE_NAME);
+	const struct device *dac_dev = device_get_binding(DAC_DEVICE_NAME);
 
 	if (!dac_dev) {
 		printk("Cannot get DAC device\n");

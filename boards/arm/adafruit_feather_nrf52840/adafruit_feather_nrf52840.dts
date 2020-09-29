@@ -82,10 +82,31 @@
 };
 
 &spi1 {
+	compatible = "nordic,nrf-spi";
 	status = "okay";
 	sck-pin = <14>;
 	mosi-pin = <13>;
 	miso-pin = <15>;
+};
+
+&qspi {
+	status = "okay";
+	sck-pin = <19>;
+	io-pins = <17>, <22>, <23>, <21>;
+	csn-pins = <20>;
+	gd25q16: gd25q16@0 {
+		compatible = "nordic,qspi-nor";
+		reg = <0>;
+		writeoc = "pp4io";
+		readoc = "read4io";
+		sck-frequency = <16000000>;
+		label = "GD25Q16";
+		jedec-id = [c8 40 15];
+		size = <16777216>;
+		has-dpd;
+		t-enter-dpd = <20000>;
+		t-exit-dpd = <20000>;
+	};
 };
 
 &flash0 {

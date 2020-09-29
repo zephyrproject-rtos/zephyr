@@ -1,6 +1,6 @@
 tests:
   bluetooth.mesh.mesh_shell:
-    platform_whitelist: qemu_cortex_m3 qemu_x86 nrf51dk_nrf51422
+    platform_allow: qemu_cortex_m3 qemu_x86 nrf51dk_nrf51422
     platform_exclude: nrf52dk_nrf52810
     tags: bluetooth
     harness: keyboard

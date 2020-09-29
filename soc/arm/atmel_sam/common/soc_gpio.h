@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016-2017 Piotr Mienkowski
+ * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -24,12 +25,17 @@
 
 #define SOC_GPIO_DEFAULT                (0)
 
-#define SOC_GPIO_PULLUP                 (1 << 0)
-#define SOC_GPIO_PULLDOWN               (1 << 1)
-#define SOC_GPIO_OPENDRAIN              (1 << 2)
+#define SOC_GPIO_FLAGS_POS              (0)
+#define SOC_GPIO_FLAGS_MASK             (7 << SOC_GPIO_FLAGS_POS)
+#define SOC_GPIO_PULLUP_POS             (0)
+#define SOC_GPIO_PULLUP                 (1 << SOC_GPIO_PULLUP_POS)
+#define SOC_GPIO_PULLDOWN_POS           (1)
+#define SOC_GPIO_PULLDOWN               (1 << SOC_GPIO_PULLDOWN_POS)
+#define SOC_GPIO_OPENDRAIN_POS          (2)
+#define SOC_GPIO_OPENDRAIN              (1 << SOC_GPIO_OPENDRAIN_POS)
 
 /* Bit field: SOC_GPIO_IN_FILTER */
-#define SOC_GPIO_IN_FILTER_POS          3
+#define SOC_GPIO_IN_FILTER_POS          (3)
 #define SOC_GPIO_IN_FILTER_MASK         (3 << SOC_GPIO_IN_FILTER_POS)
 #define SOC_GPIO_IN_FILTER_NONE         (0 << SOC_GPIO_IN_FILTER_POS)
 #define SOC_GPIO_IN_FILTER_DEBOUNCE     (1 << SOC_GPIO_IN_FILTER_POS)
@@ -38,7 +44,7 @@
 #define SOC_GPIO_INT_ENABLE             (1 << 5)
 
 /* Bit field: SOC_GPIO_INT_TRIG */
-#define SOC_GPIO_INT_TRIG_POS           6
+#define SOC_GPIO_INT_TRIG_POS           (6)
 #define SOC_GPIO_INT_TRIG_MASK          (3 << SOC_GPIO_INT_TRIG_POS)
 /** Interrupt is triggered by a level detection event. */
 #define SOC_GPIO_INT_TRIG_LEVEL         (0 << SOC_GPIO_INT_TRIG_POS)
@@ -51,8 +57,8 @@
 #define SOC_GPIO_INT_ACTIVE_HIGH        (1 << 8)
 
 /* Bit field: SOC_GPIO_FUNC */
-#define SOC_GPIO_FUNC_POS	        16
-#define SOC_GPIO_FUNC_MASK	        (7 << SOC_GPIO_FUNC_POS)
+#define SOC_GPIO_FUNC_POS               (16)
+#define SOC_GPIO_FUNC_MASK              (15 << SOC_GPIO_FUNC_POS)
 /** Connect pin to peripheral A. */
 #define SOC_GPIO_FUNC_A                 (0 << SOC_GPIO_FUNC_POS)
 /** Connect pin to peripheral B. */
@@ -61,16 +67,28 @@
 #define SOC_GPIO_FUNC_C                 (2 << SOC_GPIO_FUNC_POS)
 /** Connect pin to peripheral D. */
 #define SOC_GPIO_FUNC_D                 (3 << SOC_GPIO_FUNC_POS)
+/** Connect pin to peripheral E. */
+#define SOC_GPIO_FUNC_E                 (4 << SOC_GPIO_FUNC_POS)
+/** Connect pin to peripheral F. */
+#define SOC_GPIO_FUNC_F                 (5 << SOC_GPIO_FUNC_POS)
+/** Connect pin to peripheral G. */
+#define SOC_GPIO_FUNC_G                 (6 << SOC_GPIO_FUNC_POS)
+/** Connect pin to peripheral H. */
+#define SOC_GPIO_FUNC_H                 (7 << SOC_GPIO_FUNC_POS)
 /** Configure pin as input. */
-#define SOC_GPIO_FUNC_IN                (4 << SOC_GPIO_FUNC_POS)
+#define SOC_GPIO_FUNC_IN                (8 << SOC_GPIO_FUNC_POS)
 /** Configure pin as output and set it initial value to 0. */
-#define SOC_GPIO_FUNC_OUT_0             (5 << SOC_GPIO_FUNC_POS)
+#define SOC_GPIO_FUNC_OUT_0             (9 << SOC_GPIO_FUNC_POS)
 /** Configure pin as output and set it initial value to 1. */
-#define SOC_GPIO_FUNC_OUT_1             (6 << SOC_GPIO_FUNC_POS)
+#define SOC_GPIO_FUNC_OUT_1             (10 << SOC_GPIO_FUNC_POS)
 
 struct soc_gpio_pin {
 	uint32_t mask;     /** pin(s) bit mask */
+#ifdef ID_GPIO
+	Gpio *regs;        /** pointer to registers of the GPIO controller */
+#else
 	Pio *regs;         /** pointer to registers of the PIO controller */
+#endif
 	uint8_t periph_id; /** peripheral ID of the PIO controller */
 	uint32_t flags;    /** pin flags/attributes */
 };
@@ -121,7 +139,11 @@ void soc_gpio_list_configure(const struct soc_gpio_pin pins[],
  */
 static inline void soc_gpio_set(const struct soc_gpio_pin *pin)
 {
+#ifdef ID_GPIO
+	pin->regs->OVRS = pin->mask;
+#else
 	pin->regs->PIO_SODR = pin->mask;
+#endif
 }
 
 /**
@@ -135,7 +157,11 @@ static inline void soc_gpio_set(const struct soc_gpio_pin *pin)
  */
 static inline void soc_gpio_clear(const struct soc_gpio_pin *pin)
 {
+#ifdef ID_GPIO
+	pin->regs->OVRC = pin->mask;
+#else
 	pin->regs->PIO_CODR = pin->mask;
+#endif
 }
 
 /**
@@ -149,7 +175,11 @@ static inline void soc_gpio_clear(const struct soc_gpio_pin *pin)
  */
 static inline uint32_t soc_gpio_get(const struct soc_gpio_pin *pin)
 {
+#ifdef ID_GPIO
+	return pin->regs->PVR & pin->mask;
+#else
 	return pin->regs->PIO_PDSR & pin->mask;
+#endif
 }
 
 /**
@@ -174,7 +204,15 @@ static inline uint32_t soc_gpio_get(const struct soc_gpio_pin *pin)
 static inline void soc_gpio_debounce_length_set(const struct soc_gpio_pin *pin,
 						uint32_t div)
 {
+#ifdef ID_GPIO
+	if (div) {
+		pin->regs->STERS = pin->mask;
+	} else {
+		pin->regs->STERC = pin->mask;
+	}
+#else
 	pin->regs->PIO_SCDR = PIO_SCDR_DIV(div);
+#endif
 }
 
 #endif /* _ATMEL_SAM_SOC_GPIO_H_ */

@@ -5,8 +5,8 @@
  */
 
 struct lll_adv_pdu {
-	uint8_t           first;
-	uint8_t           last;
+	uint8_t volatile first;
+	uint8_t          last;
 	/* TODO: use,
 	 * struct pdu_adv *pdu[DOUBLE_BUFFER_SIZE];
 	 */
@@ -68,6 +68,10 @@ struct lll_adv {
 	uint8_t phy_s:3;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
+#if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
+	uint8_t scan_req_notify:1;
+#endif
+
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	uint8_t is_mesh:1;
 #endif /* CONFIG_BT_HCI_MESH_EXT */
@@ -104,15 +108,27 @@ void lll_adv_prepare(void *param);
 static inline struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu,
 						uint8_t *idx)
 {
-	uint8_t last;
+	uint8_t first, last;
 
-	if (pdu->first == pdu->last) {
-		last = pdu->last + 1;
+	first = pdu->first;
+	last = pdu->last;
+	if (first == last) {
+		last++;
 		if (last == DOUBLE_BUFFER_SIZE) {
 			last = 0U;
 		}
 	} else {
-		last = pdu->last;
+		uint8_t first_latest;
+
+		pdu->last = first;
+		cpu_dsb();
+		first_latest = pdu->first;
+		if (first_latest != first) {
+			last++;
+			if (last == DOUBLE_BUFFER_SIZE) {
+				last = 0U;
+			}
+		}
 	}
 
 	*idx = last;

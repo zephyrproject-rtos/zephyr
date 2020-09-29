@@ -11,7 +11,7 @@
 
 int gcounter;
 
-void ping_ipm_callback(struct device *dev, void *context,
+void ping_ipm_callback(const struct device *dev, void *context,
 		       uint32_t id, volatile void *data)
 {
 	gcounter = *(int *)data;
@@ -30,7 +30,7 @@ void main(void)
 	int first_message = 1; /* do not start from 0,
 				* zero value can't be sent via mailbox register
 				*/
-	struct device *ipm;
+	const struct device *ipm;
 
 	printk("Hello World from MASTER! %s\n", CONFIG_ARCH);
 

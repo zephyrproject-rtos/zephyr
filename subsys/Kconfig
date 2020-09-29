@@ -3,7 +3,11 @@
 # Copyright (c) 2016-2017 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+menu "Sub Systems and OS Services"
+
 source "subsys/bluetooth/Kconfig"
+
+source "subsys/canbus/Kconfig"
 
 source "subsys/console/Kconfig"
 
@@ -13,7 +17,13 @@ source "subsys/debug/Kconfig"
 
 source "subsys/disk/Kconfig"
 
+source "subsys/emul/Kconfig"
+
+source "subsys/fb/Kconfig"
+
 source "subsys/fs/Kconfig"
+
+source "subsys/jwt/Kconfig"
 
 source "subsys/logging/Kconfig"
 
@@ -21,7 +31,11 @@ source "subsys/mgmt/Kconfig"
 
 source "subsys/net/Kconfig"
 
+source "subsys/power/Kconfig"
+
 source "subsys/shell/Kconfig"
+
+source "subsys/stats/Kconfig"
 
 source "subsys/usb/Kconfig"
 
@@ -35,10 +49,8 @@ source "subsys/settings/Kconfig"
 
 source "subsys/testsuite/Kconfig"
 
+source "subsys/timing/Kconfig"
+
 source "subsys/tracing/Kconfig"
 
-source "subsys/fb/Kconfig"
-
-source "subsys/jwt/Kconfig"
-
-source "subsys/canbus/Kconfig"
+endmenu

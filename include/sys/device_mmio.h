@@ -88,7 +88,7 @@ static inline void device_map(mm_reg_t *virt_addr, uintptr_t phys_addr,
 	/* Pass along flags and add that we want supervisor mode
 	 * read-write access.
 	 */
-	k_mem_map((uint8_t **)virt_addr, phys_addr, size,
+	z_mem_map((uint8_t **)virt_addr, phys_addr, size,
 		  flags | K_MEM_PERM_RW);
 #else
 	ARG_UNUSED(size);
@@ -204,18 +204,18 @@ struct z_device_mmio_rom {
 #define DEVICE_MMIO_ROM		struct z_device_mmio_rom _mmio
 
 /**
- * @def DEVICE_MMIO_ROM_PTR(device)
+ * @def DEVICE_MMIO_ROM_PTR(dev)
  *
  * Return a pointer to the ROM-based storage area for a device's MMIO
  * information. This macro will not work properly if the ROM storage
  * was omitted from the config struct declaration, and should not
  * be used in this case.
  *
- * @param device device instance object
+ * @param dev device instance object
  * @retval struct device_mmio_rom * pointer to storage location
  */
-#define DEVICE_MMIO_ROM_PTR(device) \
-	((struct z_device_mmio_rom *)((device)->config))
+#define DEVICE_MMIO_ROM_PTR(dev) \
+	((struct z_device_mmio_rom *)((dev)->config))
 
 /**
  * @def DEVICE_MMIO_ROM_INIT(node_id)
@@ -253,21 +253,21 @@ struct z_device_mmio_rom {
  * one of the DEVICE_CACHE_* macros. Unused bits are reserved for future
  * expansion.
  *
- * @param device Device object instance
+ * @param dev Device object instance
  * @param flags cache mode flags
  */
 #ifdef DEVICE_MMIO_IS_IN_RAM
-#define DEVICE_MMIO_MAP(device, flags) \
-	device_map(DEVICE_MMIO_RAM_PTR(device), \
-		   DEVICE_MMIO_ROM_PTR(device)->phys_addr, \
-		   DEVICE_MMIO_ROM_PTR(device)->size, \
+#define DEVICE_MMIO_MAP(dev, flags) \
+	device_map(DEVICE_MMIO_RAM_PTR(dev), \
+		   DEVICE_MMIO_ROM_PTR(dev)->phys_addr, \
+		   DEVICE_MMIO_ROM_PTR(dev)->size, \
 		   (flags))
 #else
-#define DEVICE_MMIO_MAP(device, flags) do { } while (0)
+#define DEVICE_MMIO_MAP(dev, flags) do { } while (0)
 #endif
 
 /**
- * @def DEVICE_MMIO_GET(device)
+ * @def DEVICE_MMIO_GET(dev)
  *
  * @brief Obtain the MMIO address for a device
  *
@@ -282,13 +282,13 @@ struct z_device_mmio_rom {
  * This is for drivers which have exactly one MMIO region.
  * A call must have been made to device_map() in the driver init function.
  *
- * @param device Device object
+ * @param dev Device object
  * @return mm_reg_t  linear address of the MMIO region
  */
 #ifdef DEVICE_MMIO_IS_IN_RAM
-#define DEVICE_MMIO_GET(device)	(*DEVICE_MMIO_RAM_PTR(device))
+#define DEVICE_MMIO_GET(dev)	(*DEVICE_MMIO_RAM_PTR(dev))
 #else
-#define DEVICE_MMIO_GET(device)	(DEVICE_MMIO_ROM_PTR(device)->addr)
+#define DEVICE_MMIO_GET(dev)	(DEVICE_MMIO_ROM_PTR(dev)->addr)
 #endif
 /** @} */
 
@@ -340,19 +340,19 @@ struct z_device_mmio_rom {
 
 #ifdef DEVICE_MMIO_IS_IN_RAM
 /**
- * @def DEVICE_MMIO_NAMED_RAM_PTR(device, name)
+ * @def DEVICE_MMIO_NAMED_RAM_PTR(dev, name)
  *
  * @brief Return a pointer to the RAM storage for a device's named MMIO address
  *
  * This macro requires that the macro DEV_DATA is locally defined and returns
  * a properly typed pointer to the particular dev_data struct for this driver.
  *
- * @param device device instance object
+ * @param dev device instance object
  * @param name Member name within dev_data
  * @retval mm_reg_t  pointer to storage location
  */
-#define DEVICE_MMIO_NAMED_RAM_PTR(device, name) \
-		(&(DEV_DATA(device)->name))
+#define DEVICE_MMIO_NAMED_RAM_PTR(dev, name) \
+		(&(DEV_DATA(dev)->name))
 #endif /* DEVICE_MMIO_IS_IN_RAM */
 
 /**
@@ -391,7 +391,7 @@ struct z_device_mmio_rom {
 #define DEVICE_MMIO_NAMED_ROM(name) struct z_device_mmio_rom name
 
 /**
- * @def DEVICE_MMIO_NAMED_ROM_PTR(device, name)
+ * @def DEVICE_MMIO_NAMED_ROM_PTR(dev, name)
  *
  * Return a pointer to the ROM-based storage area for a device's MMIO
  * information.
@@ -400,11 +400,11 @@ struct z_device_mmio_rom {
  * a properly typed pointer to the particular config struct for this
  * driver.
  *
- * @param device device instance object
+ * @param dev device instance object
  * @param name Member name within config
  * @retval struct device_mmio_rom * pointer to storage location
  */
-#define DEVICE_MMIO_NAMED_ROM_PTR(device, name) (&(DEV_CFG(device)->name))
+#define DEVICE_MMIO_NAMED_ROM_PTR(dev, name) (&(DEV_CFG(dev)->name))
 
 /**
  * @def DEVICE_MMIO_NAMED_ROM_INIT(name, node_id)
@@ -434,7 +434,7 @@ struct z_device_mmio_rom {
 	.name = Z_DEVICE_MMIO_ROM_INITIALIZER(node_id)
 
 /**
- * @def DEVICE_MMIO_NAMED_MAP(device, name, flags)
+ * @def DEVICE_MMIO_NAMED_MAP(dev, name, flags)
  *
  * @brief Set up memory for a named MMIO region
  *
@@ -456,23 +456,23 @@ struct z_device_mmio_rom {
  * one of the DEVICE_CACHE_* macros. Unused bits are reserved for future
  * expansion.
  *
- * @param device Device object
+ * @param dev Device object
  * @param name Member name for MMIO information, as declared with
  *             DEVICE_MMIO_NAMED_RAM/DEVICE_MMIO_NAMED_ROM
  * @param flags One of the DEVICE_CACHE_* caching modes
  */
 #ifdef DEVICE_MMIO_IS_IN_RAM
-#define DEVICE_MMIO_NAMED_MAP(device, name, flags) \
-	device_map(DEVICE_MMIO_NAMED_RAM_PTR((device), name), \
-		   (DEVICE_MMIO_NAMED_ROM_PTR((device), name)->phys_addr), \
-		   (DEVICE_MMIO_NAMED_ROM_PTR((device), name)->size), \
+#define DEVICE_MMIO_NAMED_MAP(dev, name, flags) \
+	device_map(DEVICE_MMIO_NAMED_RAM_PTR((dev), name), \
+		   (DEVICE_MMIO_NAMED_ROM_PTR((dev), name)->phys_addr), \
+		   (DEVICE_MMIO_NAMED_ROM_PTR((dev), name)->size), \
 		   (flags))
 #else
-#define DEVICE_MMIO_NAMED_MAP(device, name, flags) do { } while (0)
+#define DEVICE_MMIO_NAMED_MAP(dev, name, flags) do { } while (0)
 #endif
 
 /**
- * @def DEVICE_MMIO_NAMED_GET(device, name)
+ * @def DEVICE_MMIO_NAMED_GET(dev, name)
  *
  * @brief Obtain a named MMIO address for a device
  *
@@ -487,17 +487,17 @@ struct z_device_mmio_rom {
  *
  * @see DEVICE_MMIO_GET
  *
- * @param device Device object
+ * @param dev Device object
  * @param name Member name for MMIO information, as declared with
  *             DEVICE_MMIO_NAMED_RAM/DEVICE_MMIO_NAMED_ROM
  * @return mm_reg_t  linear address of the MMIO region
  */
 #ifdef DEVICE_MMIO_IS_IN_RAM
-#define DEVICE_MMIO_NAMED_GET(device, name) \
-		(*DEVICE_MMIO_NAMED_RAM_PTR((device), name))
+#define DEVICE_MMIO_NAMED_GET(dev, name) \
+		(*DEVICE_MMIO_NAMED_RAM_PTR((dev), name))
 #else
-#define DEVICE_MMIO_NAMED_GET(device, name) \
-		((DEVICE_MMIO_NAMED_ROM_PTR((device), name))->addr)
+#define DEVICE_MMIO_NAMED_GET(dev, name) \
+		((DEVICE_MMIO_NAMED_ROM_PTR((dev), name))->addr)
 #endif /* DEVICE_MMIO_IS_IN_RAM */
 
 /** @} */

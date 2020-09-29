@@ -23,12 +23,15 @@ void __weak z_clock_isr(void *arg)
 	__ASSERT_NO_MSG(false);
 }
 
-int __weak z_clock_driver_init(struct device *device)
+int __weak z_clock_driver_init(const struct device *device)
 {
+	ARG_UNUSED(device);
+
 	return 0;
 }
 
-int __weak z_clock_device_ctrl(struct device *device, uint32_t ctrl_command,
+int __weak z_clock_device_ctrl(const struct device *device,
+			       uint32_t ctrl_command,
 			       void *context, device_pm_cb cb, void *arg)
 {
 	return -ENOTSUP;

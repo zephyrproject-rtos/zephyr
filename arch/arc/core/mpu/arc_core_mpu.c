@@ -33,64 +33,6 @@ int arch_mem_domain_max_partitions_get(void)
 }
 
 /*
- * Reset MPU region for a single memory partition
- */
-void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
-				      uint32_t partition_id)
-{
-	if (_current->mem_domain_info.mem_domain != domain) {
-		return;
-	}
-
-	arc_core_mpu_disable();
-	arc_core_mpu_remove_mem_partition(domain, partition_id);
-	arc_core_mpu_enable();
-}
-
-/*
- * Configure MPU memory domain
- */
-void arch_mem_domain_thread_add(struct k_thread *thread)
-{
-	if (_current != thread) {
-		return;
-	}
-
-	arc_core_mpu_disable();
-	arc_core_mpu_configure_mem_domain(thread);
-	arc_core_mpu_enable();
-}
-
-/*
- * Destroy MPU regions for the mem domain
- */
-void arch_mem_domain_destroy(struct k_mem_domain *domain)
-{
-	if (_current->mem_domain_info.mem_domain != domain) {
-		return;
-	}
-
-	arc_core_mpu_disable();
-	arc_core_mpu_remove_mem_domain(domain);
-	arc_core_mpu_enable();
-}
-
-void arch_mem_domain_partition_add(struct k_mem_domain *domain,
-				   uint32_t partition_id)
-{
-	/* No-op on this architecture */
-}
-
-void arch_mem_domain_thread_remove(struct k_thread *thread)
-{
-	if (_current != thread) {
-		return;
-	}
-
-	arch_mem_domain_destroy(thread->mem_domain_info.mem_domain);
-}
-
-/*
  * Validate the given buffer is user accessible or not
  */
 int arch_buffer_validate(void *addr, size_t size, int write)

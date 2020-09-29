@@ -354,13 +354,9 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(index) \
 	(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE + index)
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_0_INCLUDE \
-	((PPI_CHG_CH8_Included << PPI_CHG_CH8_Pos) & PPI_CHG_CH8_Msk)
-#define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_0_EXCLUDE \
-	((PPI_CHG_CH8_Excluded << PPI_CHG_CH8_Pos) & PPI_CHG_CH8_Msk)
+	BIT(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(0))
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_1_INCLUDE \
-	((PPI_CHG_CH9_Included << PPI_CHG_CH9_Pos) & PPI_CHG_CH9_Msk)
-#define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_1_EXCLUDE \
-	((PPI_CHG_CH9_Excluded << PPI_CHG_CH9_Pos) & PPI_CHG_CH9_Msk)
+	BIT(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(1))
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_EVT(chan) \
 	NRF_PPI->CH[chan].EEP
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_EVT(cc_offset) \
@@ -373,7 +369,19 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 /* Wire the RADIO EVENTS_END event to one of the PPI GROUP TASK ENABLE task.
  * 2 adjacent PPI groups are used for this wiring. 'index' must be 0 or 1.
  */
+#if defined(CONFIG_SOC_NRF52805)
+/* Because nRF52805 has limited number of programmable PPI channels,
+ * tIFS Trx SW switching on this SoC can be used only when pre-programmed
+ * PPI channels are also in use, i.e. when TIMER0 is the event timer.
+ */
+#if (EVENT_TIMER_ID == 0)
+#define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI 2
+#else
+#error "tIFS Trx SW switch can be used on this SoC only with TIMER0 as the event timer"
+#endif
+#else /* -> !defined(CONFIG_SOC_NRF52805) */
 #define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI 10
+#endif
 #define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_EVT \
 	((uint32_t)&(NRF_RADIO->EVENTS_END))
 #define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_TASK(index) \
@@ -385,17 +393,21 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
  * 2 adjacent PPIs (11 & 12) are used for this wiring; <index> must be 0 or 1.
  * <offset> must be a valid TIMER CC register offset.
  */
+#if defined(CONFIG_SOC_NRF52805)
+#if (EVENT_TIMER_ID == 0)
+#define HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE 3
+#else
+#error "tIFS Trx SW switch can be used on this SoC only with TIMER0 as the event timer"
+#endif
+#else /* -> !defined(CONFIG_SOC_NRF52805) */
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE 11
+#endif
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI(index) \
 	(HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE + index)
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_0_INCLUDE \
-	((PPI_CHG_CH11_Included << PPI_CHG_CH11_Pos) & PPI_CHG_CH11_Msk)
-#define HAL_SW_SWITCH_RADIO_ENABLE_PPI_0_EXCLUDE \
-	((PPI_CHG_CH11_Excluded << PPI_CHG_CH11_Pos) & PPI_CHG_CH11_Msk)
+	BIT(HAL_SW_SWITCH_RADIO_ENABLE_PPI(0))
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_1_INCLUDE \
-	((PPI_CHG_CH12_Included << PPI_CHG_CH12_Pos) & PPI_CHG_CH12_Msk)
-#define HAL_SW_SWITCH_RADIO_ENABLE_PPI_1_EXCLUDE \
-	((PPI_CHG_CH12_Excluded << PPI_CHG_CH12_Pos) & PPI_CHG_CH12_Msk)
+	BIT(HAL_SW_SWITCH_RADIO_ENABLE_PPI(1))
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(chan) \
 	NRF_PPI->CH[chan].EEP
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_EVT(cc_offset) \
@@ -486,13 +498,9 @@ static inline void hal_radio_sw_switch_cleanup(void)
 #define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(index) \
 	(HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE + index)
 #define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_0_INCLUDE \
-	((PPI_CHG_CH16_Included << PPI_CHG_CH16_Pos) & PPI_CHG_CH16_Msk)
-#define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_0_EXCLUDE \
-	((PPI_CHG_CH16_Excluded << PPI_CHG_CH16_Pos) & PPI_CHG_CH16_Msk)
+	BIT(HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(0))
 #define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_1_INCLUDE \
-	((PPI_CHG_CH17_Included << PPI_CHG_CH17_Pos) & PPI_CHG_CH17_Msk)
-#define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_1_EXCLUDE \
-	((PPI_CHG_CH17_Excluded << PPI_CHG_CH17_Pos) & PPI_CHG_CH17_Msk)
+	BIT(HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(1))
 
 /* Cancel the SW switch timer running considering S8 timing:
  * wire the RADIO EVENTS_RATEBOOST event to SW_SWITCH_TIMER TASKS_CAPTURE task.
@@ -1079,13 +1087,9 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 	(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE + index)
 
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_0_INCLUDE \
-	((DPPIC_CHG_CH8_Included << DPPIC_CHG_CH8_Pos) & DPPIC_CHG_CH8_Msk)
-#define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_0_EXCLUDE \
-	((DPPIC_CHG_CH8_Excluded << DPPIC_CHG_CH8_Pos) & DPPIC_CHG_CH8_Msk)
+	BIT(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(0))
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_1_INCLUDE \
-	((DPPIC_CHG_CH9_Included << DPPIC_CHG_CH9_Pos) & DPPIC_CHG_CH9_Msk)
-#define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_1_EXCLUDE \
-	((DPPIC_CHG_CH9_Excluded << DPPIC_CHG_CH9_Pos) & DPPIC_CHG_CH9_Msk)
+	BIT(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(1))
 
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_EVT(cc_offset) \
 	SW_SWITCH_TIMER->PUBLISH_COMPARE[cc_offset]
@@ -1146,13 +1150,9 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 	(HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE + index)
 
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_0_INCLUDE \
-	((DPPIC_CHG_CH8_Included << DPPIC_CHG_CH8_Pos) & DPPIC_CHG_CH8_Msk)
-#define HAL_SW_SWITCH_RADIO_ENABLE_PPI_0_EXCLUDE \
-	((DPPIC_CHG_CH8_Excluded << DPPIC_CHG_CH8_Pos) & DPPIC_CHG_CH8_Msk)
+	BIT(HAL_SW_SWITCH_RADIO_ENABLE_PPI(0))
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_1_INCLUDE \
-	((DPPIC_CHG_CH9_Included << DPPIC_CHG_CH9_Pos) & DPPIC_CHG_CH9_Msk)
-#define HAL_SW_SWITCH_RADIO_ENABLE_PPI_1_EXCLUDE \
-	((DPPIC_CHG_CH9_Excluded << DPPIC_CHG_CH9_Pos) & DPPIC_CHG_CH9_Msk)
+	BIT(HAL_SW_SWITCH_RADIO_ENABLE_PPI(1))
 
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(cc_offset) \
 	SW_SWITCH_TIMER->PUBLISH_COMPARE[cc_offset]

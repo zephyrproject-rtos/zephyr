@@ -26,6 +26,7 @@
 #define H4_ACL 0x02
 #define H4_SCO 0x03
 #define H4_EVT 0x04
+#define H4_ISO 0x05
 
 static struct k_fifo *raw_rx;
 
@@ -41,6 +42,10 @@ NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, CONFIG_BT_HCI_CMD_COUNT,
 			  BT_BUF_RX_SIZE, NULL);
 NET_BUF_POOL_FIXED_DEFINE(hci_acl_pool, BT_HCI_ACL_COUNT,
 			  BT_BUF_ACL_SIZE, NULL);
+#if defined(CONFIG_BT_ISO)
+NET_BUF_POOL_FIXED_DEFINE(hci_iso_pool, BT_ISO_TX_BUF_COUNT,
+			  BT_ISO_TX_MTU, NULL);
+#endif
 
 struct bt_dev_raw bt_dev;
 struct bt_hci_raw_cmd_ext *cmd_ext;
@@ -103,6 +108,11 @@ struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
 	case BT_BUF_ACL_OUT:
 		pool = &hci_acl_pool;
 		break;
+#if defined(CONFIG_BT_ISO)
+	case BT_BUF_ISO_OUT:
+		pool = &hci_iso_pool;
+		break;
+#endif
 	case BT_BUF_H4:
 		if (IS_ENABLED(CONFIG_BT_HCI_RAW_H4) &&
 		    raw_mode == BT_HCI_RAW_MODE_H4) {
@@ -115,6 +125,11 @@ struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
 				type = BT_BUF_ACL_OUT;
 				pool = &hci_acl_pool;
 				break;
+#if defined(CONFIG_BT_ISO)
+			case H4_ISO:
+				type = BT_BUF_ISO_OUT;
+				pool = &hci_iso_pool;
+#endif
 			default:
 				LOG_ERR("Unknown H4 type %u", type);
 				return NULL;
@@ -125,7 +140,7 @@ struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
 			size--;
 			break;
 		}
-	/* Fallthrough */
+		__fallthrough;
 	default:
 		BT_ERR("Invalid type: %u", type);
 		return NULL;
@@ -171,6 +186,12 @@ int bt_recv(struct net_buf *buf)
 		case BT_BUF_ACL_IN:
 			net_buf_push_u8(buf, H4_ACL);
 			break;
+		case BT_BUF_ISO_IN:
+			if (IS_ENABLED(CONFIG_BT_ISO)) {
+				net_buf_push_u8(buf, H4_ISO);
+				break;
+			}
+			__fallthrough;
 		default:
 			BT_ERR("Unknown type %u", bt_buf_get_type(buf));
 			return -EINVAL;

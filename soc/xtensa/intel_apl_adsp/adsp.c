@@ -78,6 +78,14 @@ static void prepare_host_windows(void)
 	SOC_DCACHE_FLUSH((void *)(HP_SRAM_WIN0_BASE + SRAM_REG_FW_END),
 			 HP_SRAM_WIN0_SIZE - SRAM_REG_FW_END);
 
+	if (IS_ENABLED(CONFIG_IPM_INTEL_ADSP)) {
+		/* window1, for inbox/downlink mbox */
+		sys_write32((HP_SRAM_WIN1_SIZE | 0x7), DMWLO(1));
+		sys_write32((HP_SRAM_WIN1_BASE | DMWBA_ENABLE), DMWBA(1));
+		memset((void *)HP_SRAM_WIN1_BASE, 0, HP_SRAM_WIN1_SIZE);
+		SOC_DCACHE_FLUSH((void *)HP_SRAM_WIN1_BASE, HP_SRAM_WIN1_SIZE);
+	}
+
 	/* window3, for trace
 	 * zeroed by trace initialization
 	 */
@@ -106,7 +114,7 @@ static void send_fw_ready(void)
 	ipc_write(IPC_DIPCI, (0x80000000 | ADSP_IPC_FW_READY));
 }
 
-static int adsp_init(struct device *dev)
+static int adsp_init(const struct device *dev)
 {
 	prepare_host_windows();
 
@@ -115,4 +123,5 @@ static int adsp_init(struct device *dev)
 	return 0;
 }
 
-SYS_INIT(adsp_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+/* Init after IPM initialization and before logging (uses memory windows) */
+SYS_INIT(adsp_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

@@ -520,7 +520,7 @@ struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr)
 	return NULL;
 }
 
-struct net_if *net_if_lookup_by_dev(struct device *dev)
+struct net_if *net_if_lookup_by_dev(const struct device *dev)
 {
 	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
 		if (net_if_get_device(iface) == dev) {

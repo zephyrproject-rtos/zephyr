@@ -7,6 +7,7 @@
 
 #include <zephyr.h>
 #include <stats/stats.h>
+#include <usb/usb_device.h>
 
 #ifdef CONFIG_MCUMGR_CMD_FS_MGMT
 #include <device.h>
@@ -87,6 +88,13 @@ void main(void)
 	start_smp_udp();
 #endif
 
+	if (IS_ENABLED(CONFIG_USB)) {
+		rc = usb_enable(NULL);
+		if (rc) {
+			LOG_ERR("Failed to enable USB");
+			return;
+		}
+	}
 	/* using __TIME__ ensure that a new binary will be built on every
 	 * compile which is convient when testing firmware upgrade.
 	 */

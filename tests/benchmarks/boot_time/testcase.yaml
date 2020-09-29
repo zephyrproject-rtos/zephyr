@@ -1,6 +1,6 @@
 tests:
   benchmark.kernel.boot_time:
-    arch_whitelist: x86 arm posix
+    arch_allow: x86 arm posix
     platform_exclude: qemu_x86 qemu_x86_coverage qemu_x86_64 qemu_x86_nommu
       minnowboard acrn
     tags: benchmark

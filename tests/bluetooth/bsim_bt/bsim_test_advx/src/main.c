@@ -23,6 +23,7 @@
 #include "bstests.h"
 
 #define HANDLE          0x0000
+#define EVT_PROP_SCAN   BIT(1)
 #define EVT_PROP_ANON   BIT(5)
 #define EVT_PROP_TXP    BIT(6)
 #define ADV_INTERVAL    0x20
@@ -78,6 +79,10 @@ static uint8_t adv_data1[] = {
 
 static uint8_t adv_data2[] = {
 		2, BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR),
+	};
+
+static uint8_t sr_data[] = {
+		7, BT_DATA_NAME_COMPLETE, 'Z', 'e', 'p', 'h', 'y', 'r',
 	};
 
 static struct bt_conn *default_conn;
@@ -202,7 +207,6 @@ static void test_advx_main(void)
 	}
 	printk("success.\n");
 
-
 	k_sleep(K_MSEC(400));
 
 	printk("Stopping advertising...");
@@ -301,7 +305,7 @@ static void test_advx_main(void)
 
 	printk("Starting non-conn non-scan without aux 1M advertising...");
 	evt_prop = EVT_PROP_TXP;
-	adv_type = 0x05; /* Adv. Ext. */
+	adv_type = 0x07; /* Adv. Ext. */
 	phy_p = ADV_PHY_1M;
 	phy_s = ADV_PHY_2M;
 	err = ll_adv_params_set(handle, evt_prop, ADV_INTERVAL, adv_type,
@@ -331,15 +335,18 @@ static void test_advx_main(void)
 
 	k_sleep(K_MSEC(1000));
 
-	printk("Starting non-conn non-scan with aux 1M advertising...");
-	err = ll_adv_aux_ad_data_set(handle, AD_OP, AD_FRAG_PREF,
-				     sizeof(adv_data), (void *)adv_data);
+	printk("Enabling non-conn non-scan without aux 1M advertising...");
+	err = ll_adv_enable(handle, 1, 0, 0);
 	if (err) {
 		goto exit;
 	}
+	printk("success.\n");
 
-	printk("enabling...");
-	err = ll_adv_enable(handle, 1, 0, 0);
+	k_sleep(K_MSEC(400));
+
+	printk("Adding data, so non-conn non-scan with aux 1M advertising...");
+	err = ll_adv_aux_ad_data_set(handle, AD_OP, AD_FRAG_PREF,
+				     sizeof(adv_data), (void *)adv_data);
 	if (err) {
 		goto exit;
 	}
@@ -376,6 +383,15 @@ static void test_advx_main(void)
 
 	k_sleep(K_MSEC(1000));
 
+	printk("Enabling extended...");
+	err = ll_adv_enable(handle, 1, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(400));
+
 	printk("Starting periodic 1M advertising...");
 	err = ll_adv_sync_param_set(handle, ADV_INTERVAL_PERIODIC, 0);
 	if (err) {
@@ -384,12 +400,6 @@ static void test_advx_main(void)
 
 	printk("enabling periodic...");
 	err = ll_adv_sync_enable(handle, 1);
-	if (err) {
-		goto exit;
-	}
-
-	printk("enabling extended...");
-	err = ll_adv_enable(handle, 1, 0, 0);
 	if (err) {
 		goto exit;
 	}
@@ -435,6 +445,92 @@ static void test_advx_main(void)
 		goto exit;
 	}
 	printk("success.\n");
+
+	k_sleep(K_MSEC(1000));
+
+	printk("enabling periodic...");
+	err = ll_adv_sync_enable(handle, 1);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Enabling extended...");
+	err = ll_adv_enable(handle, 1, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(400));
+
+	printk("Disabling periodic...");
+	err = ll_adv_sync_enable(handle, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(400));
+
+	printk("Disabling...");
+	err = ll_adv_enable(handle, 0, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Adding scan response data on non-scannable set...");
+	err = ll_adv_aux_sr_data_set(handle, AD_OP, AD_FRAG_PREF,
+				     sizeof(sr_data), (void *)sr_data);
+	if (err != BT_HCI_ERR_INVALID_PARAM) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Removing adv aux set that's created and disabled ...");
+	err = ll_adv_aux_set_remove(handle);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Creating new adv set (scannable)...");
+	err = ll_adv_params_set(handle, EVT_PROP_SCAN, ADV_INTERVAL, adv_type,
+				OWN_ADDR_TYPE, PEER_ADDR_TYPE, PEER_ADDR,
+				ADV_CHAN_MAP, FILTER_POLICY, ADV_TX_PWR,
+				phy_p, ADV_SEC_SKIP, phy_s, ADV_SID,
+				SCAN_REQ_NOT);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Adding scan response data...");
+	err = ll_adv_aux_sr_data_set(handle, AD_OP, AD_FRAG_PREF,
+				     sizeof(sr_data), (void *)sr_data);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Enabling non-conn scan with scan response data...");
+	err = ll_adv_enable(handle, 1, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(400));
+
+	printk("Disabling...");
+	err = ll_adv_enable(handle, 0, 0, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(400));
 
 	printk("Removing adv aux set that's created and disabled ...");
 	err = ll_adv_aux_set_remove(handle);

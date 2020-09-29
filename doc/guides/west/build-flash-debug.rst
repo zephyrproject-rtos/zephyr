@@ -531,35 +531,20 @@ For example, to print usage information about the ``jlink`` runner::
 
 .. _west-runner:
 
-runners package API
-*******************
+Flash and debug runners
+***********************
 
-The flash and debug commands are implemented as west *extension
-commands*: that is, they are west commands whose source code lives
-outside the west repository. Some reasons this choice was made are:
+The flash and debug commands use Python wrappers around various
+:ref:`debug-host-tools`. These wrappers are all defined in a Python library at
+:zephyr_file:`scripts/west_commands/runners`. Each wrapper is called a
+*runner*. Runners can flash and/or debug Zephyr programs.
 
-- Their implementations are tightly coupled to the Zephyr build
-  system, e.g. due to their reliance on CMake cache variables.
-
-- Pull requests adding features to them are almost always motivated by
-  a corresponding change to an upstream board, so it makes sense to
-  put them in Zephyr to avoid needing pull requests in multiple
-  repositories.
-
-- Many users find it natural to search for their implementations in
-  the Zephyr source tree.
-
-The extension commands are a thin wrapper around a package called
-``runners`` (this package is also in the Zephyr tree, in
-:zephyr_file:`scripts/west_commands/runners`).
-
-The central abstraction within this library is ``ZephyrBinaryRunner``,
-an abstract class which represents *runner* objects, which can flash
-and/or debug Zephyr programs. The set of available runners is
+The central abstraction within this library is ``ZephyrBinaryRunner``, an
+abstract class which represents runners. The set of available runners is
 determined by the imported subclasses of ``ZephyrBinaryRunner``.
-``ZephyrBinaryRunner`` is available in the ``runners.core`` module;
-individual runner implementations are in other submodules, such as
-``runners.nrfjprog``, ``runners.openocd``, etc.
+``ZephyrBinaryRunner`` is available in the ``runners.core`` module; individual
+runner implementations are in other submodules, such as ``runners.nrfjprog``,
+``runners.openocd``, etc.
 
 Hacking
 *******

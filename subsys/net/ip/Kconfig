@@ -377,6 +377,16 @@ config NET_TCP_RETRY_COUNT
 	  Should a retransmission timeout occur, the receive callback is
 	  called with -ECONNRESET error code and the context is dereferenced.
 
+config NET_TCP_MAX_SEND_WINDOW_SIZE
+	int "Maximum sending window size to use"
+	depends on NET_TCP2
+	default 0
+	range 0 65535
+	help
+	  This value affects how the TCP selects the maximum sending window
+	  size. The default value 0 lets the TCP stack select the value
+	  according to amount of network buffers configured in the system.
+
 choice
 	prompt "Select TCP stack"
 	depends on NET_TCP

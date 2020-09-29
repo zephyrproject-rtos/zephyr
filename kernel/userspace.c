@@ -118,7 +118,7 @@ struct dyn_obj {
 	uint8_t data[]; /* The object itself */
 };
 
-extern struct z_object *z_object_gperf_find(void *obj);
+extern struct z_object *z_object_gperf_find(const void *obj);
 extern void z_object_gperf_wordlist_foreach(_wordlist_cb_func_t func,
 					     void *context);
 
@@ -150,7 +150,7 @@ static size_t obj_size_get(enum k_objects otype)
 	switch (otype) {
 #include <otype-to-size.h>
 	default:
-		ret = sizeof(struct device);
+		ret = sizeof(const struct device);
 		break;
 	}
 
@@ -255,26 +255,26 @@ static void thread_idx_free(uintptr_t tidx)
 
 struct z_object *z_dynamic_object_create(size_t size)
 {
-	struct dyn_obj *dyn_obj;
+	struct dyn_obj *dyn;
 
-	dyn_obj = z_thread_malloc(sizeof(*dyn_obj) + size);
-	if (dyn_obj == NULL) {
+	dyn = z_thread_malloc(sizeof(*dyn) + size);
+	if (dyn == NULL) {
 		LOG_ERR("could not allocate kernel object, out of memory");
 		return NULL;
 	}
 
-	dyn_obj->kobj.name = &dyn_obj->data;
-	dyn_obj->kobj.type = K_OBJ_ANY;
-	dyn_obj->kobj.flags = 0;
-	(void)memset(dyn_obj->kobj.perms, 0, CONFIG_MAX_THREAD_BYTES);
+	dyn->kobj.name = &dyn->data;
+	dyn->kobj.type = K_OBJ_ANY;
+	dyn->kobj.flags = 0;
+	(void)memset(dyn->kobj.perms, 0, CONFIG_MAX_THREAD_BYTES);
 
 	k_spinlock_key_t key = k_spin_lock(&lists_lock);
 
-	rb_insert(&obj_rb_tree, &dyn_obj->node);
-	sys_dlist_append(&obj_list, &dyn_obj->obj_list);
+	rb_insert(&obj_rb_tree, &dyn->node);
+	sys_dlist_append(&obj_list, &dyn->obj_list);
 	k_spin_unlock(&lists_lock, key);
 
-	return &dyn_obj->kobj;
+	return &dyn->kobj;
 }
 
 void *z_impl_k_object_alloc(enum k_objects otype)
@@ -332,7 +332,7 @@ void *z_impl_k_object_alloc(enum k_objects otype)
 
 void k_object_free(void *obj)
 {
-	struct dyn_obj *dyn_obj;
+	struct dyn_obj *dyn;
 
 	/* This function is intentionally not exposed to user mode.
 	 * There's currently no robust way to track that an object isn't
@@ -341,23 +341,23 @@ void k_object_free(void *obj)
 
 	k_spinlock_key_t key = k_spin_lock(&objfree_lock);
 
-	dyn_obj = dyn_object_find(obj);
-	if (dyn_obj != NULL) {
-		rb_remove(&obj_rb_tree, &dyn_obj->node);
-		sys_dlist_remove(&dyn_obj->obj_list);
+	dyn = dyn_object_find(obj);
+	if (dyn != NULL) {
+		rb_remove(&obj_rb_tree, &dyn->node);
+		sys_dlist_remove(&dyn->obj_list);
 
-		if (dyn_obj->kobj.type == K_OBJ_THREAD) {
-			thread_idx_free(dyn_obj->kobj.data.thread_id);
+		if (dyn->kobj.type == K_OBJ_THREAD) {
+			thread_idx_free(dyn->kobj.data.thread_id);
 		}
 	}
 	k_spin_unlock(&objfree_lock, key);
 
-	if (dyn_obj != NULL) {
-		k_free(dyn_obj);
+	if (dyn != NULL) {
+		k_free(dyn);
 	}
 }
 
-struct z_object *z_object_find(void *obj)
+struct z_object *z_object_find(const void *obj)
 {
 	struct z_object *ret;
 
@@ -366,7 +366,11 @@ struct z_object *z_object_find(void *obj)
 	if (ret == NULL) {
 		struct dyn_obj *dynamic_obj;
 
-		dynamic_obj = dyn_object_find(obj);
+		/* The cast to pointer-to-non-const violates MISRA
+		 * 11.8 but is justified since we know dynamic objects
+		 * were not declared with a const qualifier.
+		 */
+		dynamic_obj = dyn_object_find((void *)obj);
 		if (dynamic_obj != NULL) {
 			ret = &dynamic_obj->kobj;
 		}
@@ -410,7 +414,7 @@ static void unref_check(struct z_object *ko, uintptr_t index)
 	sys_bitfield_clear_bit((mem_addr_t)&ko->perms, index);
 
 #ifdef CONFIG_DYNAMIC_OBJECTS
-	struct dyn_obj *dyn_obj =
+	struct dyn_obj *dyn =
 			CONTAINER_OF(ko, struct dyn_obj, kobj);
 
 	if ((ko->flags & K_OBJ_FLAG_ALLOC) == 0U) {
@@ -443,9 +447,9 @@ static void unref_check(struct z_object *ko, uintptr_t index)
 		break;
 	}
 
-	rb_remove(&obj_rb_tree, &dyn_obj->node);
-	sys_dlist_remove(&dyn_obj->obj_list);
-	k_free(dyn_obj);
+	rb_remove(&obj_rb_tree, &dyn->node);
+	sys_dlist_remove(&dyn->obj_list);
+	k_free(dyn);
 out:
 #endif
 	k_spin_unlock(&obj_lock, key);
@@ -533,7 +537,7 @@ static void dump_permission_error(struct z_object *ko)
 	LOG_HEXDUMP_ERR(ko->perms, sizeof(ko->perms), "permission bitmap");
 }
 
-void z_dump_object_error(int retval, void *obj, struct z_object *ko,
+void z_dump_object_error(int retval, const void *obj, struct z_object *ko,
 			enum k_objects otype)
 {
 	switch (retval) {
@@ -561,7 +565,7 @@ void z_dump_object_error(int retval, void *obj, struct z_object *ko,
 	}
 }
 
-void z_impl_k_object_access_grant(void *object, struct k_thread *thread)
+void z_impl_k_object_access_grant(const void *object, struct k_thread *thread)
 {
 	struct z_object *ko = z_object_find(object);
 
@@ -570,7 +574,7 @@ void z_impl_k_object_access_grant(void *object, struct k_thread *thread)
 	}
 }
 
-void k_object_access_revoke(void *object, struct k_thread *thread)
+void k_object_access_revoke(const void *object, struct k_thread *thread)
 {
 	struct z_object *ko = z_object_find(object);
 
@@ -579,12 +583,12 @@ void k_object_access_revoke(void *object, struct k_thread *thread)
 	}
 }
 
-void z_impl_k_object_release(void *object)
+void z_impl_k_object_release(const void *object)
 {
 	k_object_access_revoke(object, _current);
 }
 
-void k_object_access_all_grant(void *object)
+void k_object_access_all_grant(const void *object)
 {
 	struct z_object *ko = z_object_find(object);
 
@@ -626,7 +630,7 @@ int z_object_validate(struct z_object *ko, enum k_objects otype,
 	return 0;
 }
 
-void z_object_init(void *obj)
+void z_object_init(const void *obj)
 {
 	struct z_object *ko;
 
@@ -651,7 +655,7 @@ void z_object_init(void *obj)
 	ko->flags |= K_OBJ_FLAG_INITIALIZED;
 }
 
-void z_object_recycle(void *obj)
+void z_object_recycle(const void *obj)
 {
 	struct z_object *ko = z_object_find(obj);
 
@@ -662,7 +666,7 @@ void z_object_recycle(void *obj)
 	}
 }
 
-void z_object_uninit(void *obj)
+void z_object_uninit(const void *obj)
 {
 	struct z_object *ko;
 
@@ -794,7 +798,7 @@ out:
 extern char __app_shmem_regions_start[];
 extern char __app_shmem_regions_end[];
 
-static int app_shmem_bss_zero(struct device *unused)
+static int app_shmem_bss_zero(const struct device *unused)
 {
 	struct z_app_region *region, *end;
 

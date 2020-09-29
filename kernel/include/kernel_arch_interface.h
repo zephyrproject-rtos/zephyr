@@ -244,7 +244,7 @@ static inline bool arch_is_in_isr(void);
  * This API is part of infrastructure still under development and may
  * change.
  *
- * @see k_mem_map()
+ * @see z_mem_map()
  *
  * @param dest Page-aligned Destination virtual address to map
  * @param addr Page-aligned Source physical address to map
@@ -296,6 +296,28 @@ static inline void arch_kernel_init(void);
 
 /** Do nothing and return. Yawn. */
 static inline void arch_nop(void);
+
+/** @} */
+
+/**
+ * @defgroup arch-coredump Architecture-specific core dump APIs
+ * @ingroup arch-interface
+ * @{
+ */
+
+/**
+ * @brief Architecture-specific handling during coredump
+ *
+ * This dumps architecture-specific information during coredump.
+ *
+ * @param esf Exception Stack Frame (arch-specific)
+ */
+void arch_coredump_info_dump(const z_arch_esf_t *esf);
+
+/**
+ * @brief Get the target code specified by the architecture.
+ */
+uint16_t arch_coredump_tgt_code_get(void);
 
 /** @} */
 

@@ -14,7 +14,6 @@ zephyr_library_sources(
   source/string/strstr.c
   source/string/string.c
   source/string/strspn.c
-  source/stdout/prf.c
   source/stdout/stdout_console.c
   source/stdout/sprintf.c
   source/stdout/fprintf.c

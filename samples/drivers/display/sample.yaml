@@ -3,37 +3,58 @@ sample:
   name: display_sample
 tests:
   sample.display.shield.adafruit_2_8_tft_touch_v2:
-    platform_whitelist: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk_nrf52840
     extra_args: SHIELD=adafruit_2_8_tft_touch_v2
     tags: display shield
+    harness: console
+    harness_config:
+      fixture: fixture_display
   sample.display.shield.ssd1306_128x32:
-    platform_whitelist: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk_nrf52840
     extra_args: SHIELD=ssd1306_128x32
     tags: display shield
+    harness: console
+    harness_config:
+      fixture: fixture_display
   sample.display.shield.ssd1306_128x64:
-    platform_whitelist: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk_nrf52840
     extra_args: SHIELD=ssd1306_128x64
     tags: display shield
+    harness: console
+    harness_config:
+      fixture: fixture_display
   sample.display.shield.waveshare_epaper_gdeh0213b1:
-    platform_whitelist: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk_nrf52840
     extra_args: SHIELD=waveshare_epaper_gdeh0213b1
+    harness: console
+    harness_config:
+      fixture: fixture_display
   sample.display.st7789v_tl019fqv01:
-    platform_whitelist: nrf52dk_nrf52832
+    platform_allow: nrf52dk_nrf52832
     extra_args: SHIELD=st7789v_tl019fqv01
     tags: display shield
+    harness: console
+    harness_config:
+      fixture: fixture_display
   sample.display.st7789v_waveshare_240x240:
-    platform_whitelist: nrf52dk_nrf52832
+    platform_allow: nrf52dk_nrf52832
     extra_args: SHIELD=st7789v_waveshare_240x240
     tags: display shield
+    harness: console
+    harness_config:
+      fixture: fixture_display
   sample.display.mcux_elcdif:
-    platform_whitelist: mimxrt1050_evk
+    platform_allow: mimxrt1050_evk
     tags: display
+    harness: console
+    harness_config:
+      fixture: fixture_display
   sample.display.sdl:
     build_only: true
-    platform_whitelist: native_posix_64
+    platform_allow: native_posix_64
     tags: display
   sample.display.dummy:
-    platform_whitelist: native_posix
+    platform_allow: native_posix
     extra_configs:
         - CONFIG_DUMMY_DISPLAY=y
         - CONFIG_SDL_DISPLAY=n

@@ -29,6 +29,15 @@ config BT_MESH_PB_ADV
 	  Enable this option to allow the device to be provisioned over
 	  the advertising bearer.
 
+config BT_MESH_UNPROV_BEACON_INT
+	int
+	prompt "The interval (in seconds) to send the unprovisioned beacon" if BT_MESH_PB_ADV
+	default 5
+	range 1 10
+	help
+	  This option specifies the interval (in seconds) at which the
+	  device sends unprovisioned beacon.
+
 config BT_MESH_PROVISIONER
 	bool "Provisioner support"
 	select BT_MESH_PROV
@@ -186,7 +195,7 @@ config BT_MESH_MSG_CACHE_SIZE
 config BT_MESH_ADV_BUF_COUNT
 	int "Number of advertising buffers"
 	default 6
-	range 3 256
+	range 1 256
 	help
 	  Number of advertising buffers available. This should be chosen
 	  based on what kind of features the local node should have. E.g.
@@ -299,6 +308,13 @@ config BT_MESH_TX_SEG_MAX
 	  example, 5 segments means the maximum SDU size is 60 bytes,
 	  which leaves 56 bytes for application layer data using a
 	  4-byte MIC and 52 bytes using an 8-byte MIC.
+
+config BT_MESH_LOOPBACK_BUFS
+	int "Number of loopback buffers"
+	default 3
+	help
+	  The number of buffers allocated for the network loopback mechanism.
+	  Loopback is used when the device sends messages to itself.
 
 config BT_MESH_RELAY
 	bool "Relay support"
@@ -421,6 +437,13 @@ config BT_MESH_LPN_GROUPS
 	default 8
 	help
 	  Maximum number of groups that the LPN can subscribe to.
+
+config BT_MESH_LPN_SUB_ALL_NODES_ADDR
+	bool "Automatically subscribe all nodes address"
+	help
+	  Automatically subscribe all nodes address when friendship
+	  established.
+
 endif # BT_MESH_LOW_POWER
 
 config BT_MESH_FRIEND
@@ -452,12 +475,6 @@ config BT_MESH_FRIEND_SUB_LIST_SIZE
 	help
 	  Size of the Subscription List that can be supported by a
 	  Friend node for a Low Power node.
-
-config BT_MESH_LPN_SUB_ALL_NODES_ADDR
-	bool "Automatically subscribe all nodes address"
-	help
-	  Automatically subscribe all nodes address when friendship
-	  established.
 
 config BT_MESH_FRIEND_LPN_COUNT
 	int "Number of supported LPN nodes"

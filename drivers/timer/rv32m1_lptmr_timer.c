@@ -44,7 +44,7 @@ struct device;	       /* forward declaration; type is not used. */
 
 static volatile uint32_t cycle_count;
 
-static void lptmr_irq_handler(struct device *unused)
+static void lptmr_irq_handler(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 
@@ -53,7 +53,7 @@ static void lptmr_irq_handler(struct device *unused)
 	z_clock_announce(1);                     /* Poke the scheduler. */
 }
 
-int z_clock_driver_init(struct device *unused)
+int z_clock_driver_init(const struct device *unused)
 {
 	uint32_t csr, psr, sircdiv; /* LPTMR registers */
 

@@ -19,3 +19,5 @@ board_runner_args(pyocd "--target=lpc55s69")
 
 include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
+
+set(TFM_TARGET_PLATFORM "LPC55S69")

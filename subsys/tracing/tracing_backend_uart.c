@@ -14,10 +14,10 @@
 #include <tracing_buffer.h>
 #include <tracing_backend.h>
 
-static struct device *tracing_uart_dev;
+static const struct device *tracing_uart_dev;
 
 #ifdef CONFIG_TRACING_HANDLE_HOST_CMD
-static void uart_isr(struct device *dev, void *user_data)
+static void uart_isr(const struct device *dev, void *user_data)
 {
 	int rx;
 	uint8_t byte;

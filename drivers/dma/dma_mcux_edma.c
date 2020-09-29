@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(dma_mcux_edma, CONFIG_DMA_LOG_LEVEL);
 struct dma_mcux_edma_config {
 	DMA_Type *base;
 	DMAMUX_Type *dmamux_base;
-	void (*irq_config_func)(struct device *dev);
+	void (*irq_config_func)(const struct device *dev);
 };
 
 static __aligned(32) edma_tcd_t
@@ -37,7 +37,7 @@ static __aligned(32) edma_tcd_t
 struct call_back {
 	edma_transfer_config_t transferConfig;
 	edma_handle_t edma_handle;
-	struct device *dev;
+	const struct device *dev;
 	void *user_data;
 	dma_callback_t dma_callback;
 	enum dma_channel_direction dir;
@@ -135,9 +135,8 @@ static void channel_irq(edma_handle_t *handle)
 	}
 }
 
-static void dma_mcux_edma_irq_handler(void *arg)
+static void dma_mcux_edma_irq_handler(const struct device *dev)
 {
-	struct device *dev = (struct device *)arg;
 	int i = 0;
 
 	LOG_DBG("IRQ CALLED");
@@ -165,11 +164,10 @@ static void dma_mcux_edma_irq_handler(void *arg)
 	}
 }
 
-static void dma_mcux_edma_error_irq_handler(void *arg)
+static void dma_mcux_edma_error_irq_handler(const struct device *dev)
 {
 	int i = 0;
 	uint32_t flag = 0;
-	struct device *dev = (struct device *)arg;
 
 	for (i = 0; i < DT_INST_PROP(0, dma_channels); i++) {
 		if (DEV_CHANNEL_DATA(dev, i)->busy) {
@@ -188,7 +186,7 @@ static void dma_mcux_edma_error_irq_handler(void *arg)
 }
 
 /* Configure a channel */
-static int dma_mcux_edma_configure(struct device *dev, uint32_t channel,
+static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 				   struct dma_config *config)
 {
 	edma_handle_t *p_handle = DEV_EDMA_HANDLE(dev, channel);
@@ -338,7 +336,7 @@ static int dma_mcux_edma_configure(struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static int dma_mcux_edma_start(struct device *dev, uint32_t channel)
+static int dma_mcux_edma_start(const struct device *dev, uint32_t channel)
 {
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
 
@@ -350,7 +348,7 @@ static int dma_mcux_edma_start(struct device *dev, uint32_t channel)
 	return 0;
 }
 
-static int dma_mcux_edma_stop(struct device *dev, uint32_t channel)
+static int dma_mcux_edma_stop(const struct device *dev, uint32_t channel)
 {
 	struct dma_mcux_edma_data *data = DEV_DATA(dev);
 
@@ -366,7 +364,7 @@ static int dma_mcux_edma_stop(struct device *dev, uint32_t channel)
 	return 0;
 }
 
-static int dma_mcux_edma_reload(struct device *dev, uint32_t channel,
+static int dma_mcux_edma_reload(const struct device *dev, uint32_t channel,
 				uint32_t src, uint32_t dst, size_t size)
 {
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
@@ -377,7 +375,8 @@ static int dma_mcux_edma_reload(struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static int dma_mcux_edma_get_status(struct device *dev, uint32_t channel,
+static int dma_mcux_edma_get_status(const struct device *dev,
+				    uint32_t channel,
 				    struct dma_status *status)
 {
 	edma_tcd_t *tcdRegs;
@@ -411,7 +410,7 @@ static const struct dma_driver_api dma_mcux_edma_api = {
 	.get_status = dma_mcux_edma_get_status,
 };
 
-static int dma_mcux_edma_init(struct device *dev)
+static int dma_mcux_edma_init(const struct device *dev)
 {
 	edma_config_t userConfig = { 0 };
 
@@ -425,7 +424,7 @@ static int dma_mcux_edma_init(struct device *dev)
 	return 0;
 }
 
-static void dma_imx_config_func_0(struct device *dev);
+static void dma_imx_config_func_0(const struct device *dev);
 
 static const struct dma_mcux_edma_config dma_config_0 = {
 	.base = (DMA_Type *)DT_INST_REG_ADDR(0),
@@ -441,7 +440,7 @@ DEVICE_AND_API_INIT(dma_mcux_edma_0, CONFIG_DMA_0_NAME, &dma_mcux_edma_init,
 		    &dma_data, &dma_config_0, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dma_mcux_edma_api);
 
-void dma_imx_config_func_0(struct device *dev)
+void dma_imx_config_func_0(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

@@ -189,7 +189,8 @@ int net_lldp_config(struct net_if *iface, const struct net_lldpdu *lldpdu);
  *
  * @return 0 if ok, <0 if error
  */
-int net_lldp_config_optional(struct net_if *iface, const uint8_t *tlv, size_t len);
+int net_lldp_config_optional(struct net_if *iface, const uint8_t *tlv,
+			     size_t len);
 
 /**
  * @brief Initialize LLDP engine.

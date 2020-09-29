@@ -40,14 +40,14 @@
 struct xlnx_uartlite_config {
 	mm_reg_t base;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	void (*irq_config_func)(struct device *dev);
+	void (*irq_config_func)(const struct device *dev);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
 struct xlnx_uartlite_data {
 	uint32_t errors;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	struct device *dev;
+	const struct device *dev;
 	struct k_timer timer;
 	uart_irq_callback_user_data_t callback;
 	void *callback_data;
@@ -57,7 +57,7 @@ struct xlnx_uartlite_data {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-static inline uint32_t xlnx_uartlite_read_status(struct device *dev)
+static inline uint32_t xlnx_uartlite_read_status(const struct device *dev)
 {
 	const struct xlnx_uartlite_config *config = dev->config;
 	struct xlnx_uartlite_data *data = dev->data;
@@ -71,7 +71,7 @@ static inline uint32_t xlnx_uartlite_read_status(struct device *dev)
 	return status | data->errors;
 }
 
-static inline void xlnx_uartlite_clear_status(struct device *dev)
+static inline void xlnx_uartlite_clear_status(const struct device *dev)
 {
 	struct xlnx_uartlite_data *data = dev->data;
 
@@ -79,14 +79,14 @@ static inline void xlnx_uartlite_clear_status(struct device *dev)
 	data->errors = 0;
 }
 
-static inline unsigned char xlnx_uartlite_read_rx_fifo(struct device *dev)
+static inline unsigned char xlnx_uartlite_read_rx_fifo(const struct device *dev)
 {
 	const struct xlnx_uartlite_config *config = dev->config;
 
 	return (sys_read32(config->base + RX_FIFO_OFFSET) & BIT_MASK(8));
 }
 
-static inline void xlnx_uartlite_write_tx_fifo(struct device *dev,
+static inline void xlnx_uartlite_write_tx_fifo(const struct device *dev,
 					       unsigned char c)
 {
 	const struct xlnx_uartlite_config *config = dev->config;
@@ -94,7 +94,7 @@ static inline void xlnx_uartlite_write_tx_fifo(struct device *dev,
 	sys_write32((uint32_t)c, config->base + TX_FIFO_OFFSET);
 }
 
-static int xlnx_uartlite_poll_in(struct device *dev, unsigned char *c)
+static int xlnx_uartlite_poll_in(const struct device *dev, unsigned char *c)
 {
 	if (xlnx_uartlite_read_status(dev) & STAT_REG_RX_FIFO_VALID_DATA) {
 		*c = xlnx_uartlite_read_rx_fifo(dev);
@@ -104,7 +104,7 @@ static int xlnx_uartlite_poll_in(struct device *dev, unsigned char *c)
 	return -1;
 }
 
-static void xlnx_uartlite_poll_out(struct device *dev, unsigned char c)
+static void xlnx_uartlite_poll_out(const struct device *dev, unsigned char c)
 {
 	while (xlnx_uartlite_read_status(dev) & STAT_REG_TX_FIFO_FULL) {
 	}
@@ -112,7 +112,7 @@ static void xlnx_uartlite_poll_out(struct device *dev, unsigned char c)
 	xlnx_uartlite_write_tx_fifo(dev, c);
 }
 
-static int xlnx_uartlite_err_check(struct device *dev)
+static int xlnx_uartlite_err_check(const struct device *dev)
 {
 	uint32_t status = xlnx_uartlite_read_status(dev);
 	int err = 0;
@@ -135,14 +135,14 @@ static int xlnx_uartlite_err_check(struct device *dev)
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static inline void xlnx_uartlite_irq_enable(struct device *dev)
+static inline void xlnx_uartlite_irq_enable(const struct device *dev)
 {
 	const struct xlnx_uartlite_config *config = dev->config;
 
 	sys_write32(CTRL_REG_ENABLE_INTR, config->base + CTRL_REG_OFFSET);
 }
 
-static inline void xlnx_uartlite_irq_cond_disable(struct device *dev)
+static inline void xlnx_uartlite_irq_cond_disable(const struct device *dev)
 {
 	const struct xlnx_uartlite_config *config = dev->config;
 	struct xlnx_uartlite_data *data = dev->data;
@@ -153,7 +153,8 @@ static inline void xlnx_uartlite_irq_cond_disable(struct device *dev)
 	}
 }
 
-static int xlnx_uartlite_fifo_fill(struct device *dev, const uint8_t *tx_data,
+static int xlnx_uartlite_fifo_fill(const struct device *dev,
+				   const uint8_t *tx_data,
 				   int len)
 {
 	uint32_t status = xlnx_uartlite_read_status(dev);
@@ -167,7 +168,7 @@ static int xlnx_uartlite_fifo_fill(struct device *dev, const uint8_t *tx_data,
 	return count;
 }
 
-static int xlnx_uartlite_fifo_read(struct device *dev, uint8_t *rx_data,
+static int xlnx_uartlite_fifo_read(const struct device *dev, uint8_t *rx_data,
 				   const int len)
 {
 	uint32_t status = xlnx_uartlite_read_status(dev);
@@ -191,7 +192,7 @@ static void xlnx_uartlite_tx_soft_isr(struct k_timer *timer)
 	}
 }
 
-static void xlnx_uartlite_irq_tx_enable(struct device *dev)
+static void xlnx_uartlite_irq_tx_enable(const struct device *dev)
 {
 	struct xlnx_uartlite_data *data = dev->data;
 	uint32_t status;
@@ -210,7 +211,7 @@ static void xlnx_uartlite_irq_tx_enable(struct device *dev)
 	}
 }
 
-static void xlnx_uartlite_irq_tx_disable(struct device *dev)
+static void xlnx_uartlite_irq_tx_disable(const struct device *dev)
 {
 	struct xlnx_uartlite_data *data = dev->data;
 
@@ -218,7 +219,7 @@ static void xlnx_uartlite_irq_tx_disable(struct device *dev)
 	xlnx_uartlite_irq_cond_disable(dev);
 }
 
-static int xlnx_uartlite_irq_tx_ready(struct device *dev)
+static int xlnx_uartlite_irq_tx_ready(const struct device *dev)
 {
 	struct xlnx_uartlite_data *data = dev->data;
 	uint32_t status = xlnx_uartlite_read_status(dev);
@@ -227,14 +228,14 @@ static int xlnx_uartlite_irq_tx_ready(struct device *dev)
 		data->tx_irq_enabled);
 }
 
-static int xlnx_uartlite_irq_tx_complete(struct device *dev)
+static int xlnx_uartlite_irq_tx_complete(const struct device *dev)
 {
 	uint32_t status = xlnx_uartlite_read_status(dev);
 
 	return (status & STAT_REG_TX_FIFO_EMPTY);
 }
 
-static void xlnx_uartlite_irq_rx_enable(struct device *dev)
+static void xlnx_uartlite_irq_rx_enable(const struct device *dev)
 {
 	struct xlnx_uartlite_data *data = dev->data;
 
@@ -243,7 +244,7 @@ static void xlnx_uartlite_irq_rx_enable(struct device *dev)
 	xlnx_uartlite_irq_enable(dev);
 }
 
-static void xlnx_uartlite_irq_rx_disable(struct device *dev)
+static void xlnx_uartlite_irq_rx_disable(const struct device *dev)
 {
 	struct xlnx_uartlite_data *data = dev->data;
 
@@ -251,7 +252,7 @@ static void xlnx_uartlite_irq_rx_disable(struct device *dev)
 	xlnx_uartlite_irq_cond_disable(dev);
 }
 
-static int xlnx_uartlite_irq_rx_ready(struct device *dev)
+static int xlnx_uartlite_irq_rx_ready(const struct device *dev)
 {
 	struct xlnx_uartlite_data *data = dev->data;
 	uint32_t status = xlnx_uartlite_read_status(dev);
@@ -260,18 +261,18 @@ static int xlnx_uartlite_irq_rx_ready(struct device *dev)
 		data->rx_irq_enabled);
 }
 
-static int xlnx_uartlite_irq_is_pending(struct device *dev)
+static int xlnx_uartlite_irq_is_pending(const struct device *dev)
 {
 	return (xlnx_uartlite_irq_tx_ready(dev) ||
 		xlnx_uartlite_irq_rx_ready(dev));
 }
 
-static int xlnx_uartlite_irq_update(struct device *dev)
+static int xlnx_uartlite_irq_update(const struct device *dev)
 {
 	return 1;
 }
 
-static void xlnx_uartlite_irq_callback_set(struct device *dev,
+static void xlnx_uartlite_irq_callback_set(const struct device *dev,
 					   uart_irq_callback_user_data_t cb,
 					   void *user_data)
 {
@@ -281,9 +282,8 @@ static void xlnx_uartlite_irq_callback_set(struct device *dev,
 	data->callback_data = user_data;
 }
 
-static __unused void xlnx_uartlite_isr(void *arg)
+static __unused void xlnx_uartlite_isr(const struct device *dev)
 {
-	struct device *dev = arg;
 	struct xlnx_uartlite_data *data = dev->data;
 
 	if (data->callback) {
@@ -293,7 +293,7 @@ static __unused void xlnx_uartlite_isr(void *arg)
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static int xlnx_uartlite_init(struct device *dev)
+static int xlnx_uartlite_init(const struct device *dev)
 {
 	const struct xlnx_uartlite_config *config = dev->config;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -345,7 +345,7 @@ static const struct uart_driver_api xlnx_uartlite_driver_api = {
 		irq_enable(DT_INST_IRQ_BY_IDX(n, i, irq));		\
 	} while (0)
 #define XLNX_UARTLITE_CONFIG_FUNC(n)					\
-	static void xlnx_uartlite_config_func_##n(struct device *dev)	\
+	static void xlnx_uartlite_config_func_##n(const struct device *dev) \
 	{								\
 		/* IRQ line not always present on all instances */	\
 		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0),			\

@@ -442,32 +442,6 @@ config LOG_BACKEND_SPINEL_BUFFER_SIZE
 	help
 	  Specify reserved size of up-buffer used for logger output.
 
-choice
-	prompt "Spinel backend log level"
-	help
-	  This option selects log level for Spinel backend stack.
-
-config LOG_BACKEND_SPINEL_LEVEL_CRITICAL
-	bool "Critical"
-config LOG_BACKEND_SPINEL_LEVEL_WARNING
-	bool "Warning"
-config LOG_BACKEND_SPINEL_LEVEL_NOTE
-	bool "Note"
-config LOG_BACKEND_SPINEL_LEVEL_INFO
-	bool "Info"
-config LOG_BACKEND_SPINEL_LEVEL_DEBUG
-	bool "Debug"
-endchoice
-
-config LOG_BACKEND_SPINEL_LEVEL
-	int
-	default 1 if LOG_BACKEND_SPINEL_LEVEL_CRITICAL
-	default 2 if LOG_BACKEND_SPINEL_LEVEL_WARNING
-	default 3 if LOG_BACKEND_SPINEL_LEVEL_NOTE
-	default 4 if LOG_BACKEND_SPINEL_LEVEL_INFO
-	default 5 if LOG_BACKEND_SPINEL_LEVEL_DEBUG
-	default 0
-
 endif # LOG_BACKEND_SPINEL
 
 config LOG_BACKEND_NATIVE_POSIX
@@ -540,6 +514,16 @@ config LOG_BACKEND_NET_SYST_ENABLE
 	depends on LOG_MIPI_SYST_ENABLE
 	help
 	  When enabled backend is using networking to output syst format logs.
+
+config LOG_BACKEND_NET_AUTOSTART
+	bool "Automatically start networking backend"
+	default y if NET_CONFIG_NEED_IPV4 || NET_CONFIG_NEED_IPV6
+	help
+	  When enabled automatically start the networking backend on
+	  application start. If no routes to the logging server are available
+	  on application startup, this must be set to n and the backend must be
+	  started by the application later on. Otherwise the logging
+	  thread might block.
 
 endif # LOG_BACKEND_NET
 

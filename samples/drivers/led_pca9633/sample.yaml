@@ -3,5 +3,5 @@ sample:
   name: PCA9633 sample
 tests:
   sample.drivers.led.pca9633:
-    platform_whitelist: stm32373c_eval
+    platform_allow: stm32373c_eval
     tags: LED

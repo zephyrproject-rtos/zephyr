@@ -67,13 +67,13 @@ pairs:
     Length of time to run test in emulator before automatically killing it.
     Default to 60 seconds.
 
-  arch_whitelist: <list of arches, such as x86, arm, arc>
+  arch_allow: <list of arches, such as x86, arm, arc>
     Set of architectures that this test case should only be run for.
 
   arch_exclude: <list of arches, such as x86, arm, arc>
     Set of architectures that this test case should not run on.
 
-  platform_whitelist: <list of platforms>
+  platform_allow: <list of platforms>
     Set of platforms that this test case should only be run for.
 
   platform_exclude: <list of platforms>
@@ -131,7 +131,7 @@ pairs:
         not (right associative)
         all comparison operators (non-associative)
 
-    arch_whitelist, arch_exclude, platform_whitelist, platform_exclude
+    arch_allow, arch_exclude, platform_allow, platform_exclude
     are all syntactic sugar for these expressions. For instance
 
         arch_exclude = x86 arc
@@ -575,6 +575,10 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     )
 
     parser.add_argument(
+        "--emulation-only", action="store_true",
+        help="Only build and run emulation platforms")
+
+    parser.add_argument(
         "--device-testing", action="store_true",
         help="Test on device directly. Specify the serial device to "
              "use with the --device-serial option.")
@@ -613,6 +617,11 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     parser.add_argument("--hardware-map",
                         help="""Load hardware map from a file. This will be used
                         for testing on hardware that is listed in the file.
+                        """)
+
+    parser.add_argument("--pre-script",
+                        help="""specify a pre script. This will be executed
+                        before device handler open serial port and invoke runner.
                         """)
 
     parser.add_argument(
@@ -700,11 +709,18 @@ def main():
     start_time = time.time()
 
     options = parse_arguments()
-
+    previous_results = None
     # Cleanup
     if options.no_clean or options.only_failed or options.test_only:
         if os.path.exists(options.outdir):
             print("Keeping artifacts untouched")
+    elif options.last_metrics:
+        ls = os.path.join(options.outdir, "sanitycheck.csv")
+        if os.path.exists(ls):
+            with open(ls, "r") as fp:
+                previous_results = fp.read()
+        else:
+            sys.exit(f"Can't compare metrics with non existing file {ls}")
     elif os.path.exists(options.outdir):
         if options.clobber_output:
             print("Deleting output directory {}".format(options.outdir))
@@ -717,7 +733,12 @@ def main():
                     shutil.move(options.outdir, new_out)
                     break
 
+    previous_results_file = None
     os.makedirs(options.outdir, exist_ok=True)
+    if options.last_metrics and previous_results:
+        previous_results_file = os.path.join(options.outdir, "baseline.csv")
+        with open(previous_results_file, "w") as fp:
+            fp.write(previous_results)
 
     # create file handler which logs even debug messages
     if options.log_file:
@@ -862,10 +883,12 @@ def main():
                 if options.device_serial:
                     hwm.load_device_from_cmdline(options.device_serial,
                                                  options.platform[0],
+                                                 options.pre_script,
                                                  False)
                 else:
                     hwm.load_device_from_cmdline(options.device_serial_pty,
                                                  options.platform[0],
+                                                 options.pre_script,
                                                  True)
 
                 suite.connected_hardware = hwm.connected_hardware
@@ -990,6 +1013,7 @@ def main():
             exclude_tag=options.exclude_tag,
             force_toolchain=options.force_toolchain,
             all=options.all,
+            emulation_only=options.emulation_only,
             run_individual_tests=run_individual_tests,
             device_testing=options.device_testing,
             force_platform=options.force_platform
@@ -1050,8 +1074,7 @@ def main():
         return
 
     if options.subset:
-        suite.instances = OrderedDict(sorted(suite.instances.items(),
-                            key=lambda x: x[0][x[0].find("/") + 1:]))
+        suite.instances = OrderedDict(sorted(suite.instances.items()))
 
         subset, sets = options.subset.split("/")
         subset = int(subset)
@@ -1079,7 +1102,7 @@ def main():
         return
 
     logger.info("%d test configurations selected, %d configurations discarded due to filters." %
-                (len(suite.instances), len(discards) - suite.total_skipped))
+                (len(suite.instances), len(discards)))
 
     if options.device_testing:
         print("\nDevice testing on:")
@@ -1094,7 +1117,7 @@ def main():
     retries = options.retry_failed + 1
     completed = 0
 
-    suite.update()
+    suite.update_counting()
     suite.start_time = start_time
 
     while True:
@@ -1113,10 +1136,23 @@ def main():
         if retries == 0 or suite.total_failed == suite.total_errors:
             break
 
-    suite.misc_reports(options.compare_report, options.show_footprint,
-                       options.all_deltas, options.footprint_threshold, options.last_metrics)
+
+    # figure out which report to use for size comparison
+    if options.compare_report:
+        report_to_use = options.compare_report
+    elif options.last_metrics:
+        report_to_use = previous_results_file
+    else:
+        report_to_use = suite.RELEASE_DATA
+
+    suite.footprint_reports(report_to_use,
+                            options.show_footprint,
+                            options.all_deltas,
+                            options.footprint_threshold,
+                            options.last_metrics)
 
     suite.duration = time.time() - start_time
+    suite.update_counting()
     suite.summary(options.disable_unrecognized_section_test)
 
     if options.coverage:

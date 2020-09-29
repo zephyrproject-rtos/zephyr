@@ -171,10 +171,6 @@ skip_store_fp_caller_saved:
 	jal ra, __soc_save_context
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	call read_timer_start_of_isr
-#endif
-
 	/*
 	 * Check if exception is the result of an interrupt or not.
 	 * (SOC dependent). Following the RISC-V architecture spec, the MSB
@@ -321,15 +317,6 @@ call_irq:
 	/* Load ISR function address in register t1 */
 	RV_OP_LOADREG t1, RV_REGSIZE(t0)
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	addi sp, sp, -16
-	RV_OP_STOREREG a0, 0x00(sp)
-	RV_OP_STOREREG t1, RV_REGSIZE(sp)
-	call read_timer_end_of_isr
-	RV_OP_LOADREG t1, RV_REGSIZE(sp)
-	RV_OP_LOADREG a0, 0x00(sp)
-	addi sp, sp, 16
-#endif
 	/* Call ISR function */
 	jalr ra, t1
 
@@ -371,7 +358,7 @@ on_thread_stack:
 
 reschedule:
 #if CONFIG_TRACING
-	call sys_trace_thread_switched_in
+	call sys_trace_thread_switched_out
 #endif
 	/* Get reference to _kernel */
 	la t0, _kernel
@@ -460,71 +447,8 @@ skip_store_fp_callee_saved:
 skip_load_fp_callee_saved:
 #endif
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	addi sp, sp, -__z_arch_esf_t_SIZEOF
-
-	RV_OP_STOREREG ra, __z_arch_esf_t_ra_OFFSET(sp)
-	RV_OP_STOREREG gp, __z_arch_esf_t_gp_OFFSET(sp)
-	RV_OP_STOREREG tp, __z_arch_esf_t_tp_OFFSET(sp)
-	RV_OP_STOREREG t0, __z_arch_esf_t_t0_OFFSET(sp)
-	RV_OP_STOREREG t1, __z_arch_esf_t_t1_OFFSET(sp)
-	RV_OP_STOREREG t2, __z_arch_esf_t_t2_OFFSET(sp)
-	RV_OP_STOREREG t3, __z_arch_esf_t_t3_OFFSET(sp)
-	RV_OP_STOREREG t4, __z_arch_esf_t_t4_OFFSET(sp)
-	RV_OP_STOREREG t5, __z_arch_esf_t_t5_OFFSET(sp)
-	RV_OP_STOREREG t6, __z_arch_esf_t_t6_OFFSET(sp)
-	RV_OP_STOREREG a0, __z_arch_esf_t_a0_OFFSET(sp)
-	RV_OP_STOREREG a1, __z_arch_esf_t_a1_OFFSET(sp)
-	RV_OP_STOREREG a2, __z_arch_esf_t_a2_OFFSET(sp)
-	RV_OP_STOREREG a3, __z_arch_esf_t_a3_OFFSET(sp)
-	RV_OP_STOREREG a4, __z_arch_esf_t_a4_OFFSET(sp)
-	RV_OP_STOREREG a5, __z_arch_esf_t_a5_OFFSET(sp)
-	RV_OP_STOREREG a6, __z_arch_esf_t_a6_OFFSET(sp)
-	RV_OP_STOREREG a7, __z_arch_esf_t_a7_OFFSET(sp)
-
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	/* Assess whether floating-point registers need to be saved. */
-	RV_OP_LOADREG t2, _thread_offset_to_user_options(sp)
-	andi t2, t2, K_FP_REGS
-	RV_OP_STOREREG t2, __z_arch_esf_t_fp_state_OFFSET(sp)
-	beqz t2, skip_store_fp_caller_saved_benchmark
-	STORE_FP_CALLER_SAVED(sp)
-
-skip_store_fp_caller_saved_benchmark:
-#endif
-
-	call read_timer_end_of_swap
-
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	/* Determine if we need to restore floating-point registers. */
-	RV_OP_LOADREG t2, __z_arch_esf_t_fp_state_OFFSET(sp)
-	beqz t2, skip_load_fp_caller_saved_benchmark
-	LOAD_FP_CALLER_SAVED(sp)
-
-skip_load_fp_caller_saved_benchmark:
-#endif
-
-	RV_OP_LOADREG ra, __z_arch_esf_t_ra_OFFSET(sp)
-	RV_OP_LOADREG gp, __z_arch_esf_t_gp_OFFSET(sp)
-	RV_OP_LOADREG tp, __z_arch_esf_t_tp_OFFSET(sp)
-	RV_OP_LOADREG t0, __z_arch_esf_t_t0_OFFSET(sp)
-	RV_OP_LOADREG t1, __z_arch_esf_t_t1_OFFSET(sp)
-	RV_OP_LOADREG t2, __z_arch_esf_t_t2_OFFSET(sp)
-	RV_OP_LOADREG t3, __z_arch_esf_t_t3_OFFSET(sp)
-	RV_OP_LOADREG t4, __z_arch_esf_t_t4_OFFSET(sp)
-	RV_OP_LOADREG t5, __z_arch_esf_t_t5_OFFSET(sp)
-	RV_OP_LOADREG t6, __z_arch_esf_t_t6_OFFSET(sp)
-	RV_OP_LOADREG a0, __z_arch_esf_t_a0_OFFSET(sp)
-	RV_OP_LOADREG a1, __z_arch_esf_t_a1_OFFSET(sp)
-	RV_OP_LOADREG a2, __z_arch_esf_t_a2_OFFSET(sp)
-	RV_OP_LOADREG a3, __z_arch_esf_t_a3_OFFSET(sp)
-	RV_OP_LOADREG a4, __z_arch_esf_t_a4_OFFSET(sp)
-	RV_OP_LOADREG a5, __z_arch_esf_t_a5_OFFSET(sp)
-	RV_OP_LOADREG a6, __z_arch_esf_t_a6_OFFSET(sp)
-	RV_OP_LOADREG a7, __z_arch_esf_t_a7_OFFSET(sp)
-
-	/* Release stack space */
-	addi sp, sp, __z_arch_esf_t_SIZEOF
+#if CONFIG_TRACING
+	call sys_trace_thread_switched_in
 #endif
 
 no_reschedule:

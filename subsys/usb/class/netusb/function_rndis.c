@@ -1075,7 +1075,7 @@ static struct usb_os_descriptor os_desc = {
 };
 #endif /* CONFIG_USB_DEVICE_OS_DESC */
 
-static int rndis_init(struct device *arg)
+static int rndis_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

@@ -23,7 +23,7 @@
 #ifdef CONFIG_LPS22HH_TRIGGER
 static int lps22hh_trig_cnt;
 
-static void lps22hh_trigger_handler(struct device *dev,
+static void lps22hh_trigger_handler(const struct device *dev,
 				    struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_PRESS);
@@ -34,8 +34,8 @@ static void lps22hh_trigger_handler(struct device *dev,
 #ifdef CONFIG_LIS2DW12_TRIGGER
 static int lis2dw12_trig_cnt;
 
-static void lis2dw12_trigger_handler(struct device *dev,
-				    struct sensor_trigger *trig)
+static void lis2dw12_trigger_handler(const struct device *dev,
+				     struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ);
 	lis2dw12_trig_cnt++;
@@ -47,22 +47,22 @@ static int lsm6dso_acc_trig_cnt;
 static int lsm6dso_gyr_trig_cnt;
 static int lsm6dso_temp_trig_cnt;
 
-static void lsm6dso_acc_trig_handler(struct device *dev,
-				    struct sensor_trigger *trig)
+static void lsm6dso_acc_trig_handler(const struct device *dev,
+				     struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ);
 	lsm6dso_acc_trig_cnt++;
 }
 
-static void lsm6dso_gyr_trig_handler(struct device *dev,
-				    struct sensor_trigger *trig)
+static void lsm6dso_gyr_trig_handler(const struct device *dev,
+				     struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_GYRO_XYZ);
 	lsm6dso_gyr_trig_cnt++;
 }
 
-static void lsm6dso_temp_trig_handler(struct device *dev,
-				    struct sensor_trigger *trig)
+static void lsm6dso_temp_trig_handler(const struct device *dev,
+				      struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_DIE_TEMP);
 	lsm6dso_temp_trig_cnt++;
@@ -72,7 +72,7 @@ static void lsm6dso_temp_trig_handler(struct device *dev,
 #ifdef CONFIG_STTS751_TRIGGER
 static int stts751_trig_cnt;
 
-static void stts751_trigger_handler(struct device *dev,
+static void stts751_trigger_handler(const struct device *dev,
 				       struct sensor_trigger *trig)
 {
 	stts751_trig_cnt++;
@@ -82,7 +82,7 @@ static void stts751_trigger_handler(struct device *dev,
 #ifdef CONFIG_IIS3DHHC_TRIGGER
 static int iis3dhhc_trig_cnt;
 
-static void iis3dhhc_trigger_handler(struct device *dev,
+static void iis3dhhc_trigger_handler(const struct device *dev,
 				     struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ);
@@ -90,7 +90,7 @@ static void iis3dhhc_trigger_handler(struct device *dev,
 }
 #endif
 
-static void lps22hh_config(struct device *lps22hh)
+static void lps22hh_config(const struct device *lps22hh)
 {
 	struct sensor_value odr_attr;
 
@@ -113,7 +113,7 @@ static void lps22hh_config(struct device *lps22hh)
 #endif
 }
 
-static void lis2dw12_config(struct device *lis2dw12)
+static void lis2dw12_config(const struct device *lis2dw12)
 {
 	struct sensor_value odr_attr, fs_attr;
 
@@ -144,7 +144,7 @@ static void lis2dw12_config(struct device *lis2dw12)
 #endif
 }
 
-static void lsm6dso_config(struct device *lsm6dso)
+static void lsm6dso_config(const struct device *lsm6dso)
 {
 	struct sensor_value odr_attr, fs_attr;
 
@@ -201,7 +201,7 @@ static void lsm6dso_config(struct device *lsm6dso)
 #endif
 }
 
-static void stts751_config(struct device *stts751)
+static void stts751_config(const struct device *stts751)
 {
 	struct sensor_value odr_attr;
 
@@ -224,7 +224,7 @@ static void stts751_config(struct device *stts751)
 #endif
 }
 
-static void iis3dhhc_config(struct device *iis3dhhc)
+static void iis3dhhc_config(const struct device *iis3dhhc)
 {
 	struct sensor_value odr_attr;
 
@@ -249,8 +249,8 @@ static void iis3dhhc_config(struct device *iis3dhhc)
 
 void main(void)
 {
-	static struct device *led0, *led1;
-	struct device *dev = device_get_binding(
+	static const struct device *led0, *led1;
+	const struct device *dev = device_get_binding(
 			CONFIG_UART_CONSOLE_ON_DEV_NAME);
 	int i, on = 1;
 	int cnt = 1;
@@ -288,13 +288,13 @@ void main(void)
 
 	printk("SensorTile.box test!!\n");
 
-	struct device *hts221 = device_get_binding(DT_LABEL(DT_INST(0, st_hts221)));
-	struct device *lis2dw12 = device_get_binding(DT_LABEL(DT_INST(0, st_lis2dw12)));
-	struct device *lps22hh = device_get_binding(DT_LABEL(DT_INST(0, st_lps22hh)));
-	struct device *lsm6dso = device_get_binding(DT_LABEL(DT_INST(0, st_lsm6dso)));
-	struct device *stts751 = device_get_binding(DT_LABEL(DT_INST(0, st_stts751)));
-	struct device *iis3dhhc = device_get_binding(DT_LABEL(DT_INST(0, st_iis3dhhc)));
-	struct device *lis2mdl = device_get_binding(DT_LABEL(DT_INST(0, st_lis2mdl)));
+	const struct device *hts221 = device_get_binding(DT_LABEL(DT_INST(0, st_hts221)));
+	const struct device *lis2dw12 = device_get_binding(DT_LABEL(DT_INST(0, st_lis2dw12)));
+	const struct device *lps22hh = device_get_binding(DT_LABEL(DT_INST(0, st_lps22hh)));
+	const struct device *lsm6dso = device_get_binding(DT_LABEL(DT_INST(0, st_lsm6dso)));
+	const struct device *stts751 = device_get_binding(DT_LABEL(DT_INST(0, st_stts751)));
+	const struct device *iis3dhhc = device_get_binding(DT_LABEL(DT_INST(0, st_iis3dhhc)));
+	const struct device *lis2mdl = device_get_binding(DT_LABEL(DT_INST(0, st_lis2mdl)));
 
 	if (!hts221) {
 		printk("Could not get pointer to %s sensor\n",

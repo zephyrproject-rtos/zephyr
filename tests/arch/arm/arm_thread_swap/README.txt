@@ -18,6 +18,7 @@ behaves as expected. In particular, the test verifies that:
   at thread swap-in
 - the mode variable (when building with support for either user
   space or FP shared registers) is saved and restored properly.
+- the CPU registers are scrubbed after system call
 
 Notes:
   The test verifies the correct behavior of the thread context-switch,

@@ -17,6 +17,7 @@
 		label = "DATAFLASH_0";
 		jedec-id = [1f 24 00];
 		size = <4194304>;
+		sector-size = <65536>;
 		block-size = <2048>;
 		page-size = <256>;
 		enter-dpd-delay = <2000>;
@@ -30,6 +31,7 @@
 		label = "DATAFLASH_1";
 		jedec-id = [1f 27 01];
 		size = <33554432>;
+		sector-size = <65536>;
 		block-size = <4096>;
 		page-size = <512>;
 		use-udpd;

@@ -8,7 +8,8 @@
 #include <syscall_handler.h>
 
 
-static inline int z_vrfy_peci_config(struct device *dev, uint32_t bitrate)
+static inline int z_vrfy_peci_config(const struct device *dev,
+				     uint32_t bitrate)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_PECI(dev, config));
 
@@ -16,7 +17,7 @@ static inline int z_vrfy_peci_config(struct device *dev, uint32_t bitrate)
 }
 #include <syscalls/peci_config_mrsh.c>
 
-static inline int z_vrfy_peci_enable(struct device *dev)
+static inline int z_vrfy_peci_enable(const struct device *dev)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_PECI(dev, enable));
 
@@ -24,7 +25,7 @@ static inline int z_vrfy_peci_enable(struct device *dev)
 }
 #include <syscalls/peci_enable_mrsh.c>
 
-static inline int z_vrfy_peci_disable(struct device *dev)
+static inline int z_vrfy_peci_disable(const struct device *dev)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_PECI(dev, disable));
 
@@ -32,7 +33,7 @@ static inline int z_vrfy_peci_disable(struct device *dev)
 }
 #include <syscalls/peci_disable_mrsh.c>
 
-static inline int z_vrfy_peci_transfer(struct device *dev,
+static inline int z_vrfy_peci_transfer(const struct device *dev,
 				       struct peci_msg *msg)
 {
 	struct peci_msg msg_copy;

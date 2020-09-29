@@ -134,15 +134,15 @@ A subsystem API definition typically looks like this:
 
 .. code-block:: C
 
-  typedef int (*subsystem_do_this_t)(struct device *device, int foo, int bar);
-  typedef void (*subsystem_do_that_t)(struct device *device, void *baz);
+  typedef int (*subsystem_do_this_t)(const struct device *device, int foo, int bar);
+  typedef void (*subsystem_do_that_t)(const struct device *device, void *baz);
 
   struct subsystem_api {
         subsystem_do_this_t do_this;
         subsystem_do_that_t do_that;
   };
 
-  static inline int subsystem_do_this(struct device *device, int foo, int bar)
+  static inline int subsystem_do_this(const struct device *device, int foo, int bar)
   {
         struct subsystem_api *api;
 
@@ -150,7 +150,7 @@ A subsystem API definition typically looks like this:
         return api->do_this(device, foo, bar);
   }
 
-  static inline void subsystem_do_that(struct device *device, void *baz)
+  static inline void subsystem_do_that(const struct device *device, void *baz)
   {
         struct subsystem_api *api;
 
@@ -163,12 +163,12 @@ of these APIs, and populate an instance of subsystem_api structure:
 
 .. code-block:: C
 
-  static int my_driver_do_this(struct device *device, int foo, int bar)
+  static int my_driver_do_this(const struct device *device, int foo, int bar)
   {
         ...
   }
 
-  static void my_driver_do_that(struct device *device, void *baz)
+  static void my_driver_do_that(const struct device *device, void *baz)
   {
         ...
   }
@@ -205,10 +205,10 @@ A device-specific API definition typically looks like this:
    #include <drivers/subsystem.h>
 
    /* When extensions need not be invoked from user mode threads */
-   int specific_do_that(struct device *device, int foo);
+   int specific_do_that(const struct device *device, int foo);
 
    /* When extensions must be invokable from user mode threads */
-   __syscall int specific_from_user(struct device *device, int bar);
+   __syscall int specific_from_user(const struct device *device, int bar);
 
    /* Only needed when extensions include syscalls */
    #include <syscalls/specific.h>
@@ -218,7 +218,7 @@ implementation of both the subsystem API and the specific APIs:
 
 .. code-block:: C
 
-   static int generic_do_this(struct device *device, void *arg)
+   static int generic_do_this(const struct device *device, void *arg)
    {
       ...
    }
@@ -230,13 +230,13 @@ implementation of both the subsystem API and the specific APIs:
    };
 
    /* supervisor-only API is globally visible */
-   int specific_do_that(struct device *device, int foo)
+   int specific_do_that(const struct device *device, int foo)
    {
       ...
    }
 
    /* syscall API passes through a translation */
-   int z_impl_specific_from_user(struct device *device, int bar)
+   int z_impl_specific_from_user(const struct device *device, int bar)
    {
       ...
    }
@@ -245,7 +245,7 @@ implementation of both the subsystem API and the specific APIs:
 
    #include <syscall_handler.h>
 
-   int z_vrfy_specific_from_user(struct device *device, int bar)
+   int z_vrfy_specific_from_user(const struct device *device, int bar)
    {
        Z_OOPS(Z_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_GENERIC, &api));
        return z_impl_specific_do_that(device, bar)
@@ -281,7 +281,7 @@ with a different interrupt line. In ``drivers/subsystem/subsystem_my_driver.h``:
 
 .. code-block:: C
 
-  typedef void (*my_driver_config_irq_t)(struct device *device);
+  typedef void (*my_driver_config_irq_t)(const struct device *device);
 
   struct my_driver_config {
         DEVICE_MMIO_ROM;
@@ -292,13 +292,13 @@ In the implementation of the common init function:
 
 .. code-block:: C
 
-  void my_driver_isr(struct device *device)
+  void my_driver_isr(const struct device *device)
   {
         /* Handle interrupt */
         ...
   }
 
-  int my_driver_init(struct device *device)
+  int my_driver_init(const struct device *device)
   {
         const struct my_driver_config *config = device->config;
 
@@ -384,7 +384,7 @@ leading zeroes or sign (e.g. 32), or an equivalent symbolic name (e.g.
 ``CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5``).
 
 Drivers and other system utilities can determine whether startup is
-still in pre-kernel states by using the :cpp:func:`k_is_pre_kernel()`
+still in pre-kernel states by using the :c:func:`k_is_pre_kernel`
 function.
 
 System Drivers
@@ -442,7 +442,7 @@ DTS and do not need any RAM-based storage for it.
 
 For drivers that may need to deal with this situation, a set of
 APIs under the DEVICE_MMIO scope are defined, along with a mapping function
-:cpp:func:`device_map()`.
+:c:func:`device_map`.
 
 Device Model Drivers with one MMIO region
 =========================================
@@ -471,14 +471,14 @@ is made within the init function:
       ...
    }
 
-   int my_driver_init(struct device *device)
+   int my_driver_init(const struct device *device)
    {
       ...
       DEVICE_MMIO_MAP(device, K_MEM_CACHE_NONE);
       ...
    }
 
-   int my_driver_some_function(struct device *device)
+   int my_driver_some_function(const struct device *device)
    {
       ...
       /* Write some data to the MMIO region */
@@ -532,7 +532,7 @@ For example:
       ...
    }
 
-   int my_driver_init(struct device *device)
+   int my_driver_init(const struct device *device)
    {
       ...
       DEVICE_MMIO_NAMED_MAP(device, courge, K_MEM_CACHE_NONE);
@@ -540,7 +540,7 @@ For example:
       ...
    }
 
-   int my_driver_some_function(struct device *device)
+   int my_driver_some_function(const struct device *device)
    {
       ...
       /* Write some data to the MMIO regions */
@@ -580,7 +580,7 @@ Drivers that do not use DTS
 ===========================
 
 Some drivers may not obtain the MMIO physical address from DTS, such as
-is the case with PCI-E. In this case the :cpp:func:`device_map()` function
+is the case with PCI-E. In this case the :c:func:`device_map` function
 may be used directly:
 
 .. code-block:: C

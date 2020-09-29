@@ -1,0 +1,4 @@
+tests:
+  subsys.power.device_pm:
+    platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832 qemu_cortex_m0
+    tags: power

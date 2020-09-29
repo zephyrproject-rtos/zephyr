@@ -48,9 +48,8 @@ static ALWAYS_INLINE void cavs_ictl_dispatch_child_isrs(uint32_t intr_status,
 	}
 }
 
-static void cavs_ictl_isr(void *arg)
+static void cavs_ictl_isr(const struct device *port)
 {
-	struct device *port = (struct device *)arg;
 	struct cavs_ictl_runtime *context = port->data;
 
 	const struct cavs_ictl_config *config = port->config;
@@ -62,7 +61,8 @@ static void cavs_ictl_isr(void *arg)
 				      config->isr_table_offset);
 }
 
-static inline void cavs_ictl_irq_enable(struct device *dev, unsigned int irq)
+static inline void cavs_ictl_irq_enable(const struct device *dev,
+					unsigned int irq)
 {
 	struct cavs_ictl_runtime *context = dev->data;
 
@@ -72,7 +72,8 @@ static inline void cavs_ictl_irq_enable(struct device *dev, unsigned int irq)
 	regs->enable_il = (1 << irq);
 }
 
-static inline void cavs_ictl_irq_disable(struct device *dev, unsigned int irq)
+static inline void cavs_ictl_irq_disable(const struct device *dev,
+					 unsigned int irq)
 {
 	struct cavs_ictl_runtime *context = dev->data;
 
@@ -82,7 +83,7 @@ static inline void cavs_ictl_irq_disable(struct device *dev, unsigned int irq)
 	regs->disable_il = (1 << irq);
 }
 
-static inline unsigned int cavs_ictl_irq_get_state(struct device *dev)
+static inline unsigned int cavs_ictl_irq_get_state(const struct device *dev)
 {
 	struct cavs_ictl_runtime *context = dev->data;
 
@@ -100,7 +101,8 @@ static inline unsigned int cavs_ictl_irq_get_state(struct device *dev)
 	return 1;
 }
 
-static int cavs_ictl_irq_get_line_state(struct device *dev, unsigned int irq)
+static int cavs_ictl_irq_get_line_state(const struct device *dev,
+					unsigned int irq)
 {
 	struct cavs_ictl_runtime *context = dev->data;
 
@@ -122,12 +124,12 @@ static const struct irq_next_level_api cavs_apis = {
 };
 
 #define CAVS_ICTL_INIT(n)						\
-	static int cavs_ictl_##n##_initialize(struct device *port)	\
+	static int cavs_ictl_##n##_initialize(const struct device *port) \
 	{								\
 		return 0;						\
 	}								\
 									\
-	static void cavs_config_##n##_irq(struct device *port);		\
+	static void cavs_config_##n##_irq(const struct device *port);	\
 									\
 	static const struct cavs_ictl_config cavs_config_##n = {	\
 		.irq_num = DT_INST_IRQN(n),				\
@@ -145,7 +147,7 @@ static const struct irq_next_level_api cavs_apis = {
 			    PRE_KERNEL_1,				\
 			    CONFIG_CAVS_ICTL_INIT_PRIORITY, &cavs_apis);\
 									\
-	static void cavs_config_##n##_irq(struct device *port)		\
+	static void cavs_config_##n##_irq(const struct device *port)	\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
 			    cavs_ictl_isr, DEVICE_GET(cavs_ictl_##n),	\

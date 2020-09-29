@@ -49,7 +49,7 @@ static struct {
 } event;
 
 /* Entropy device */
-static struct device *dev_entropy;
+static const struct device *dev_entropy;
 
 static int init_reset(void);
 static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
@@ -84,7 +84,7 @@ ISR_DIRECT_DECLARE(radio_nrf5_isr)
 	return 1;
 }
 
-static void rtc0_nrf5_isr(void *arg)
+static void rtc0_nrf5_isr(const void *arg)
 {
 	DEBUG_TICKER_ISR(1);
 
@@ -105,7 +105,7 @@ static void rtc0_nrf5_isr(void *arg)
 	DEBUG_TICKER_ISR(0);
 }
 
-static void swi_lll_nrf5_isr(void *arg)
+static void swi_lll_nrf5_isr(const void *arg)
 {
 	DEBUG_RADIO_ISR(1);
 
@@ -116,7 +116,7 @@ static void swi_lll_nrf5_isr(void *arg)
 
 #if defined(CONFIG_BT_CTLR_LOW_LAT) || \
 	(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
-static void swi_ull_low_nrf5_isr(void *arg)
+static void swi_ull_low_nrf5_isr(const void *arg)
 {
 	DEBUG_TICKER_JOB(1);
 

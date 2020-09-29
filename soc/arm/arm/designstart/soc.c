@@ -6,7 +6,7 @@
 
 #include <device.h>
 
-static int arm_designstart_init(struct device *arg)
+static int arm_designstart_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

@@ -31,10 +31,10 @@ one network interface without VLAN support, and two with VLAN support, the
 
 Even if VLAN is enabled in a :file:`prj.conf` file, the VLAN needs to be
 activated at runtime by the application. The VLAN API provides a
-:cpp:func:`net_eth_vlan_enable()` function to do that. The application needs
+:c:func:`net_eth_vlan_enable` function to do that. The application needs
 to give the network interface and desired VLAN tag as a parameter to that
 function. The VLAN tagging for a given network interface can be disabled by a
-:cpp:func:`net_eth_vlan_disable()` function. The application needs to configure
+:c:func:`net_eth_vlan_disable` function. The application needs to configure
 the VLAN network interface itself, such as setting the IP address, etc.
 
 See also the :ref:`VLAN sample application <vlan-sample>` for API usage

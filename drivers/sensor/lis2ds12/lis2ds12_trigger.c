@@ -19,8 +19,8 @@
 
 LOG_MODULE_DECLARE(LIS2DS12, CONFIG_SENSOR_LOG_LEVEL);
 
-static void lis2ds12_gpio_callback(struct device *dev,
-				  struct gpio_callback *cb, uint32_t pins)
+static void lis2ds12_gpio_callback(const struct device *dev,
+				   struct gpio_callback *cb, uint32_t pins)
 {
 	struct lis2ds12_data *data =
 		CONTAINER_OF(cb, struct lis2ds12_data, gpio_cb);
@@ -38,7 +38,7 @@ static void lis2ds12_gpio_callback(struct device *dev,
 #endif
 }
 
-static void lis2ds12_handle_drdy_int(struct device *dev)
+static void lis2ds12_handle_drdy_int(const struct device *dev)
 {
 	struct lis2ds12_data *data = dev->data;
 
@@ -47,9 +47,8 @@ static void lis2ds12_handle_drdy_int(struct device *dev)
 	}
 }
 
-static void lis2ds12_handle_int(void *arg)
+static void lis2ds12_handle_int(const struct device *dev)
 {
-	struct device *dev = arg;
 	struct lis2ds12_data *data = dev->data;
 	const struct lis2ds12_config *cfg = dev->config;
 	uint8_t status;
@@ -68,16 +67,11 @@ static void lis2ds12_handle_int(void *arg)
 }
 
 #ifdef CONFIG_LIS2DS12_TRIGGER_OWN_THREAD
-static void lis2ds12_thread(int dev_ptr, int unused)
+static void lis2ds12_thread(struct lis2ds12_data *data)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct lis2ds12_data *data = dev->data;
-
-	ARG_UNUSED(unused);
-
 	while (1) {
 		k_sem_take(&data->trig_sem, K_FOREVER);
-		lis2ds12_handle_int(dev);
+		lis2ds12_handle_int(data->dev);
 	}
 }
 #endif
@@ -92,7 +86,7 @@ static void lis2ds12_work_cb(struct k_work *work)
 }
 #endif
 
-static int lis2ds12_init_interrupt(struct device *dev)
+static int lis2ds12_init_interrupt(const struct device *dev)
 {
 	struct lis2ds12_data *data = dev->data;
 
@@ -117,7 +111,7 @@ static int lis2ds12_init_interrupt(struct device *dev)
 	return 0;
 }
 
-int lis2ds12_trigger_init(struct device *dev)
+int lis2ds12_trigger_init(const struct device *dev)
 {
 	struct lis2ds12_data *data = dev->data;
 	const struct lis2ds12_config *cfg = dev->config;
@@ -147,8 +141,9 @@ int lis2ds12_trigger_init(struct device *dev)
 
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_LIS2DS12_THREAD_STACK_SIZE,
-			(k_thread_entry_t)lis2ds12_thread, dev,
-			0, NULL, K_PRIO_COOP(CONFIG_LIS2DS12_THREAD_PRIORITY),
+			(k_thread_entry_t)lis2ds12_thread,
+			data, NULL, NULL,
+			K_PRIO_COOP(CONFIG_LIS2DS12_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_LIS2DS12_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = lis2ds12_work_cb;
@@ -160,9 +155,9 @@ int lis2ds12_trigger_init(struct device *dev)
 	return 0;
 }
 
-int lis2ds12_trigger_set(struct device *dev,
-			const struct sensor_trigger *trig,
-			sensor_trigger_handler_t handler)
+int lis2ds12_trigger_set(const struct device *dev,
+			 const struct sensor_trigger *trig,
+			 sensor_trigger_handler_t handler)
 {
 	struct lis2ds12_data *data = dev->data;
 	const struct lis2ds12_config *cfg = dev->config;

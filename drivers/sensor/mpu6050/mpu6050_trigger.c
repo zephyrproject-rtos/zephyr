@@ -14,7 +14,7 @@
 
 LOG_MODULE_DECLARE(MPU6050, CONFIG_SENSOR_LOG_LEVEL);
 
-int mpu6050_trigger_set(struct device *dev,
+int mpu6050_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
@@ -41,7 +41,7 @@ int mpu6050_trigger_set(struct device *dev,
 	return 0;
 }
 
-static void mpu6050_gpio_callback(struct device *dev,
+static void mpu6050_gpio_callback(const struct device *dev,
 				  struct gpio_callback *cb, uint32_t pins)
 {
 	struct mpu6050_data *drv_data =
@@ -60,9 +60,8 @@ static void mpu6050_gpio_callback(struct device *dev,
 #endif
 }
 
-static void mpu6050_thread_cb(void *arg)
+static void mpu6050_thread_cb(const struct device *dev)
 {
-	struct device *dev = arg;
 	struct mpu6050_data *drv_data = dev->data;
 	const struct mpu6050_config *cfg = dev->config;
 
@@ -77,16 +76,11 @@ static void mpu6050_thread_cb(void *arg)
 }
 
 #ifdef CONFIG_MPU6050_TRIGGER_OWN_THREAD
-static void mpu6050_thread(int dev_ptr, int unused)
+static void mpu6050_thread(struct mpu6050_data *drv_data)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct mpu6050_data *drv_data = dev->data;
-
-	ARG_UNUSED(unused);
-
 	while (1) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
-		mpu6050_thread_cb(dev);
+		mpu6050_thread_cb(drv_data->dev);
 	}
 }
 #endif
@@ -101,7 +95,7 @@ static void mpu6050_work_cb(struct k_work *work)
 }
 #endif
 
-int mpu6050_init_interrupt(struct device *dev)
+int mpu6050_init_interrupt(const struct device *dev)
 {
 	struct mpu6050_data *drv_data = dev->data;
 	const struct mpu6050_config *cfg = dev->config;
@@ -140,8 +134,8 @@ int mpu6050_init_interrupt(struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_MPU6050_THREAD_STACK_SIZE,
-			(k_thread_entry_t)mpu6050_thread, dev,
-			0, NULL, K_PRIO_COOP(CONFIG_MPU6050_THREAD_PRIORITY),
+			(k_thread_entry_t)mpu6050_thread, drv_data,
+			NULL, NULL, K_PRIO_COOP(CONFIG_MPU6050_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_MPU6050_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = mpu6050_work_cb;

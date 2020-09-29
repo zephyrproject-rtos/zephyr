@@ -215,11 +215,16 @@ struct _thread_arch {
 	uint8_t flags;
 
 #ifdef CONFIG_USERSPACE
-	/* Pointer to page tables used by this thread. Supervisor threads
-	 * always use the kernel's page table, user thread use per-thread
-	 * tables stored in the stack object
+	/* Physical address of the page tables used by this thread. Supervisor
+	 * threads always use the kernel's page table, user thread use
+	 * per-thread tables stored in the stack object.
 	 */
-	struct x86_page_tables *ptables;
+	uintptr_t ptables;
+
+	/* Track available unused space in the stack object used for building
+	 * thread-specific page tables.
+	 */
+	uint8_t *mmu_pos;
 
 	/* Initial privilege mode stack pointer when doing a system call.
 	 * Un-set for supervisor threads.

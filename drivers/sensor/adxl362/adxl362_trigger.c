@@ -17,9 +17,8 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(ADXL362, CONFIG_SENSOR_LOG_LEVEL);
 
-static void adxl362_thread_cb(void *arg)
+static void adxl362_thread_cb(const struct device *dev)
 {
-	struct device *dev = arg;
 	struct adxl362_data *drv_data = dev->data;
 	uint8_t status_buf;
 
@@ -44,7 +43,7 @@ static void adxl362_thread_cb(void *arg)
 	k_mutex_unlock(&drv_data->trigger_mutex);
 }
 
-static void adxl362_gpio_callback(struct device *dev,
+static void adxl362_gpio_callback(const struct device *dev,
 				  struct gpio_callback *cb, uint32_t pins)
 {
 	struct adxl362_data *drv_data =
@@ -58,16 +57,11 @@ static void adxl362_gpio_callback(struct device *dev,
 }
 
 #if defined(CONFIG_ADXL362_TRIGGER_OWN_THREAD)
-static void adxl362_thread(int dev_ptr, int unused)
+static void adxl362_thread(struct adxl362_data *drv_data)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct adxl362_data *drv_data = dev->data;
-
-	ARG_UNUSED(unused);
-
 	while (true) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
-		adxl362_thread_cb(dev);
+		adxl362_thread_cb(drv_data->dev);
 	}
 }
 #elif defined(CONFIG_ADXL362_TRIGGER_GLOBAL_THREAD)
@@ -80,7 +74,7 @@ static void adxl362_work_cb(struct k_work *work)
 }
 #endif
 
-int adxl362_trigger_set(struct device *dev,
+int adxl362_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
@@ -120,7 +114,7 @@ int adxl362_trigger_set(struct device *dev,
 	return adxl362_reg_write_mask(dev, ADXL362_REG_INTMAP1, int_mask, int_en);
 }
 
-int adxl362_init_interrupt(struct device *dev)
+int adxl362_init_interrupt(const struct device *dev)
 {
 	struct adxl362_data *drv_data = dev->data;
 	const struct adxl362_config *cfg = dev->config;
@@ -153,17 +147,18 @@ int adxl362_init_interrupt(struct device *dev)
 		return -EIO;
 	}
 
+	drv_data->dev = dev;
+
 #if defined(CONFIG_ADXL362_TRIGGER_OWN_THREAD)
 	k_sem_init(&drv_data->gpio_sem, 0, UINT_MAX);
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_ADXL362_THREAD_STACK_SIZE,
-			(k_thread_entry_t)adxl362_thread, dev,
-			0, NULL, K_PRIO_COOP(CONFIG_ADXL362_THREAD_PRIORITY),
+			(k_thread_entry_t)adxl362_thread, drv_data,
+			NULL, NULL, K_PRIO_COOP(CONFIG_ADXL362_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_ADXL362_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = adxl362_work_cb;
-	drv_data->dev = dev;
 #endif
 
 	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_gpio,

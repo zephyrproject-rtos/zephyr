@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <toolchain.h>
 
 #ifndef ULLONG_MAX
 # define ULLONG_MAX ((uint64_t) -1) /* 2^64-1 */
@@ -1569,7 +1570,7 @@ reexecute:
 				break;
 			}
 
-		/* FALLTHROUGH */
+			__fallthrough;
 
 		case s_header_value_start: {
 			MARK(header_value);
@@ -1858,6 +1859,7 @@ reexecute:
 
 				case 2:
 					parser->upgrade = 1U;
+					__fallthrough;
 
 				case 1:
 					parser->flags |= F_SKIPBODY;

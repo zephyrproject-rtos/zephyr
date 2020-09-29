@@ -30,7 +30,7 @@ typedef struct {
 	uint8_t   I2cDevAddr;      /* i2c device address user specific field */
 	uint8_t   comms_type;      /* VL53L0X_COMMS_I2C or VL53L0X_COMMS_SPI */
 	uint16_t  comms_speed_khz; /* Comms speed [kHz] */
-	struct device *i2c;
+	const struct device *i2c;
 } VL53L0X_Dev_t;
 
 

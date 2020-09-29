@@ -214,7 +214,7 @@ To see program output from UART0, connect a separate terminal window:
 
 Then press the reset button (SW1) on the board to run the program.
 
-When using OpenOCD from Zephyr SDK 0.10.3 to flash the device, you may notice
+When using OpenOCD from Zephyr SDK to flash the device, you may notice
 the program hangs when starting the network processor on the device, if the
 program uses it. There is a known issue with how that version of OpenOCD
 resets the network processor. You would need to manually hit the reset button
@@ -290,11 +290,6 @@ example.
 
 See the document `Simplelink Wi-Fi Certificates Handling`_ for details on
 using the TI UniFlash tool for certificate programming.
-
-Limitations
-***********
-- While the hardware supports it, IPv6 has yet to be fully implemented
-  in the SimpleLink Wi-Fi device driver in Zephyr.
 
 References
 **********

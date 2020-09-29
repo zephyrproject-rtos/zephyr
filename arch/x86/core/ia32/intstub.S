@@ -35,7 +35,6 @@
 	GTEXT(z_sys_power_save_idle_exit)
 #endif
 
-
 /**
  *
  * @brief Inform the kernel of an interrupt
@@ -79,15 +78,6 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 	 *  0  isr   <-- stack pointer
 	 */
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	pushl %eax
-	pushl %edx
-	rdtsc
-	mov %eax, arch_timing_irq_start
-	mov %edx, arch_timing_irq_start+4
-	pop %edx
-	pop %eax
-#endif
 	/*
 	 * The gen_idt tool creates an interrupt-gate descriptor for
 	 * all connections.  The processor will automatically clear the IF
@@ -129,19 +119,6 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 	 */
 	pushl	%edi
 
-
-#if defined(CONFIG_TRACING_ISR)
-
-	/* Save these as we are using to keep track of isr and isr_param */
-	pushl	%eax
-	pushl	%edx
-
-	call	sys_trace_isr_enter
-
-	popl	%edx
-	popl	%eax
-#endif
-
 	/* load %ecx with &_kernel */
 
 	movl	$_kernel, %ecx
@@ -179,17 +156,13 @@ alreadyOnIntStack:
 
 	push	%eax	/* interrupt handler argument */
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	/* Save the eax and edx registers before reading the time stamp
-	* once done pop the values
-	*/
-	pushl %eax
-	pushl %edx
-	rdtsc
-	mov %eax,arch_timing_irq_end
-	mov %edx,arch_timing_irq_end+4
-	pop %edx
-	pop %eax
+#if defined(CONFIG_TRACING_ISR)
+	/* Save these as we are using to keep track of isr and isr_param */
+	pushl	%eax
+	pushl	%edx
+	call	sys_trace_isr_enter
+	popl	%edx
+	popl	%eax
 #endif
 
 #ifdef CONFIG_NESTED_INTERRUPTS
@@ -201,6 +174,12 @@ alreadyOnIntStack:
 	addl	$0x4, %esp
 #ifdef CONFIG_NESTED_INTERRUPTS
 	cli			/* disable interrupts again */
+#endif
+
+#if defined(CONFIG_TRACING_ISR)
+	pushl	%eax
+	call	sys_trace_isr_exit
+	popl	%eax
 #endif
 
 	xorl	%eax, %eax
@@ -221,7 +200,6 @@ alreadyOnIntStack:
 	movl	$_kernel, %ecx
 	decl	_kernel_offset_to_nested(%ecx)	/* dec interrupt nest count */
 	jne	nestedInterrupt                 /* 'iret' if nested case */
-
 
 #ifdef CONFIG_PREEMPT_ENABLED
 	movl	_kernel_offset_to_current(%ecx), %edx

@@ -26,7 +26,7 @@ static uint16_t default_conn_handle;
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0x0d, 0x18),
+	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_HRS_VAL)),
 };
 
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
@@ -225,7 +225,7 @@ static void hrs_notify(void)
 		heartrate = 90U;
 	}
 
-	bt_gatt_hrs_notify(heartrate);
+	bt_hrs_notify(heartrate);
 }
 
 void modulate_tx_power(void *p1, void *p2, void *p3)

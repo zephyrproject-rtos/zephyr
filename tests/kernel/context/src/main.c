@@ -91,9 +91,13 @@
 #endif
 
 /* Cortex-M1, Nios II, and RISCV without CONFIG_RISCV_HAS_CPU_IDLE
- * do have a power saving instruction, so k_cpu_idle() returns immediately
+ * do have a power saving instruction, so k_cpu_idle() returns immediately.
+ *
+ * Includes workaround on QEMU aarch64, see
+ * https://github.com/zephyrproject-rtos/sdk-ng/issues/255
  */
 #if !defined(CONFIG_CPU_CORTEX_M1) && !defined(CONFIG_NIOS2) && \
+    !defined(CONFIG_SOC_QEMU_CORTEX_A53) && \
 	(!defined(CONFIG_RISCV) || defined(CONFIG_RISCV_HAS_CPU_IDLE))
 #define HAS_POWERSAVE_INSTRUCTION
 #endif
@@ -137,7 +141,7 @@ static ISR_INFO isr_info;
  *
  * @return N/A
  */
-static void isr_handler(void *data)
+static void isr_handler(const void *data)
 {
 	ARG_UNUSED(data);
 
@@ -242,6 +246,12 @@ static void _test_kernel_cpu_idle(int atomic)
 {
 	int tms, tms2;
 	int i;
+
+	/* Align to ticks so the first iteration sleeps long enough
+	 * (k_timer_start() rounds its duration argument down, not up,
+	 * to a tick boundary)
+	 */
+	 k_usleep(1);
 
 	/* Set up a time to trigger events to exit idle mode */
 	k_timer_init(&idle_timer, idle_timer_expiry_function, NULL);

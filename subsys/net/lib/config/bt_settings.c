@@ -33,7 +33,7 @@ BT_GATT_SERVICE_DEFINE(ipss_svc,
 int z_net_config_bt_setup(void)
 {
 	struct net_if *iface;
-	struct device *dev;
+	const struct device *dev;
 	int err;
 
 	err = bt_enable(NULL);

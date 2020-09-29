@@ -91,7 +91,7 @@ static int wdt_gecko_convert_window(uint32_t window, uint32_t period)
 	return idx;
 }
 
-static int wdt_gecko_setup(struct device *dev, uint8_t options)
+static int wdt_gecko_setup(const struct device *dev, uint8_t options)
 {
 	const struct wdt_gecko_cfg *config = DEV_CFG(dev);
 	struct wdt_gecko_data *data = DEV_DATA(dev);
@@ -128,7 +128,7 @@ static int wdt_gecko_setup(struct device *dev, uint8_t options)
 	return 0;
 }
 
-static int wdt_gecko_disable(struct device *dev)
+static int wdt_gecko_disable(const struct device *dev)
 {
 	const struct wdt_gecko_cfg *config = DEV_CFG(dev);
 	struct wdt_gecko_data *data = DEV_DATA(dev);
@@ -141,7 +141,7 @@ static int wdt_gecko_disable(struct device *dev)
 	return 0;
 }
 
-static int wdt_gecko_install_timeout(struct device *dev,
+static int wdt_gecko_install_timeout(const struct device *dev,
 				     const struct wdt_timeout_cfg *cfg)
 {
 	struct wdt_gecko_data *data = DEV_DATA(dev);
@@ -214,7 +214,7 @@ static int wdt_gecko_install_timeout(struct device *dev,
 	return 0;
 }
 
-static int wdt_gecko_feed(struct device *dev, int channel_id)
+static int wdt_gecko_feed(const struct device *dev, int channel_id)
 {
 	const struct wdt_gecko_cfg *config = DEV_CFG(dev);
 	WDOG_TypeDef *wdog = config->base;
@@ -230,9 +230,8 @@ static int wdt_gecko_feed(struct device *dev, int channel_id)
 	return 0;
 }
 
-static void wdt_gecko_isr(void *arg)
+static void wdt_gecko_isr(const struct device *dev)
 {
-	struct device *dev = (struct device *)arg;
 	const struct wdt_gecko_cfg *config = DEV_CFG(dev);
 	struct wdt_gecko_data *data = DEV_DATA(dev);
 	WDOG_TypeDef *wdog = config->base;
@@ -247,7 +246,7 @@ static void wdt_gecko_isr(void *arg)
 	}
 }
 
-static int wdt_gecko_init(struct device *dev)
+static int wdt_gecko_init(const struct device *dev)
 {
 	const struct wdt_gecko_cfg *config = DEV_CFG(dev);
 

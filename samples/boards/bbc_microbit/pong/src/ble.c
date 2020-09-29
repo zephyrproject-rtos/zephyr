@@ -312,7 +312,7 @@ void ble_cancel_connect(void)
 		break;
 	case BLE_CONNECT_CREATE:
 		ble_state = BLE_CONNECT_CANCEL;
-		/* Intentional fall-through */
+		__fallthrough;
 	case BLE_CONNECTED:
 		connect_canceled = true;
 		k_delayed_work_submit(&ble_work, K_NO_WAIT);

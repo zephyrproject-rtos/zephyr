@@ -1,0 +1,21 @@
+#
+# Seagate FireCuda Gaming SSD (FaZe) board
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: faze
+name: Seagate FireCuda Gaming SSD (FaZe)
+type: mcu
+arch: arm
+ram: 16
+flash: 128
+toolchain:
+  - zephyr
+supported:
+  - clock_controller
+  - eeprom
+  - gpio
+  - i2c
+  - pinmux
+  - serial

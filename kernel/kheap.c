@@ -15,7 +15,7 @@ void k_heap_init(struct k_heap *h, void *mem, size_t bytes)
 	sys_heap_init(&h->heap, mem, bytes);
 }
 
-static int statics_init(struct device *unused)
+static int statics_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 	Z_STRUCT_SECTION_FOREACH(k_heap, h) {

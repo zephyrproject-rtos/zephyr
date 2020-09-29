@@ -20,7 +20,7 @@
 LOG_MODULE_REGISTER(TI_HDC, CONFIG_SENSOR_LOG_LEVEL);
 
 #if DT_INST_NODE_HAS_PROP(0, drdy_gpios)
-static void ti_hdc_gpio_callback(struct device *dev,
+static void ti_hdc_gpio_callback(const struct device *dev,
 				  struct gpio_callback *cb, uint32_t pins)
 {
 	struct ti_hdc_data *drv_data =
@@ -35,7 +35,8 @@ static void ti_hdc_gpio_callback(struct device *dev,
 }
 #endif
 
-static int ti_hdc_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int ti_hdc_sample_fetch(const struct device *dev,
+			       enum sensor_channel chan)
 {
 	struct ti_hdc_data *drv_data = dev->data;
 	uint8_t buf[4];
@@ -74,7 +75,7 @@ static int ti_hdc_sample_fetch(struct device *dev, enum sensor_channel chan)
 }
 
 
-static int ti_hdc_channel_get(struct device *dev,
+static int ti_hdc_channel_get(const struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
@@ -109,7 +110,7 @@ static const struct sensor_driver_api ti_hdc_driver_api = {
 	.channel_get = ti_hdc_channel_get,
 };
 
-static uint16_t read16(struct device *dev, uint8_t a, uint8_t d)
+static uint16_t read16(const struct device *dev, uint8_t a, uint8_t d)
 {
 	uint8_t buf[2];
 	if (i2c_burst_read(dev, a, d, (uint8_t *)buf, 2) < 0) {
@@ -118,7 +119,7 @@ static uint16_t read16(struct device *dev, uint8_t a, uint8_t d)
 	return (buf[0] << 8 | buf[1]);
 }
 
-static int ti_hdc_init(struct device *dev)
+static int ti_hdc_init(const struct device *dev)
 {
 	struct ti_hdc_data *drv_data = dev->data;
 	uint16_t tmp;

@@ -7,7 +7,7 @@
 #include <init.h>
 #include "device_imx.h"
 
-static int meerakt96_pinmux_init(struct device *dev)
+static int meerakt96_pinmux_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

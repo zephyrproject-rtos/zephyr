@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <net/ethernet.h>
 
 #if defined(CONFIG_NET_SOCKETS_LOG_LEVEL_DBG)
-#define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
+#define DBG(fmt, ...) NET_DBG(fmt, ##__VA_ARGS__)
 #else
 #define DBG(fmt, ...)
 #endif
@@ -36,7 +36,7 @@ static struct eth_fake_context eth_fake_data2 = {
 	.mac_address = lladdr2
 };
 
-static int eth_fake_send(struct device *dev, struct net_pkt *pkt)
+static int eth_fake_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct net_pkt *recv_pkt;
 	int ret;
@@ -49,6 +49,8 @@ static int eth_fake_send(struct device *dev, struct net_pkt *pkt)
 
 	recv_pkt = net_pkt_clone(pkt, K_NO_WAIT);
 
+	k_sleep(K_MSEC(10)); /* Let the receiver run */
+
 	ret = net_recv_data(net_pkt_iface(recv_pkt), recv_pkt);
 	zassert_equal(ret, 0, "Cannot receive data (%d)", ret);
 
@@ -57,7 +59,7 @@ static int eth_fake_send(struct device *dev, struct net_pkt *pkt)
 
 static void eth_fake_iface_init(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
+	const struct device *dev = net_if_get_device(iface);
 	struct eth_fake_context *ctx = dev->data;
 
 	ctx->iface = iface;
@@ -72,7 +74,7 @@ static struct ethernet_api eth_fake_api_funcs = {
 	.send = eth_fake_send,
 };
 
-static int eth_fake_init(struct device *dev)
+static int eth_fake_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -89,12 +91,12 @@ ETH_NET_DEVICE_INIT(eth_fake2, "eth_fake2", eth_fake_init,
 		    CONFIG_ETH_INIT_PRIORITY, &eth_fake_api_funcs,
 		    NET_ETH_MTU);
 
-static int setup_socket(struct net_if *iface)
+static int setup_socket(struct net_if *iface, int type, int proto)
 {
 	int sock;
 
-	sock = socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
-	zassert_true(sock >= 0, "Cannot create packet socket (%d)", sock);
+	sock = socket(AF_PACKET, type, htons(proto));
+	zassert_true(sock >= 0, "Cannot create packet socket (%d)", -errno);
 
 	return sock;
 }
@@ -159,10 +161,6 @@ static void setblocking(int fd, bool val)
 static void test_packet_sockets(void)
 {
 	struct user_data ud = { 0 };
-	uint8_t data_to_send[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-	uint8_t data_to_receive[sizeof(data_to_send)];
-	struct sockaddr_ll dst, src;
-	socklen_t addrlen = sizeof(struct sockaddr_ll);
 	int ret, sock1, sock2;
 
 	net_if_foreach(iface_cb, &ud);
@@ -170,10 +168,37 @@ static void test_packet_sockets(void)
 	zassert_not_null(ud.first, "1st Ethernet interface not found");
 	zassert_not_null(ud.second, "2nd Ethernet interface not found");
 
-	sock1 = setup_socket(ud.first);
+	sock1 = setup_socket(ud.first, SOCK_RAW, ETH_P_ALL);
 	zassert_true(sock1 >= 0, "Cannot create 1st socket (%d)", sock1);
 
-	sock2 = setup_socket(ud.second);
+	sock2 = setup_socket(ud.second, SOCK_RAW, ETH_P_ALL);
+	zassert_true(sock2 >= 0, "Cannot create 2nd socket (%d)", sock2);
+
+	ret = bind_socket(sock1, ud.first);
+	zassert_equal(ret, 0, "Cannot bind 1st socket (%d)", -errno);
+
+	ret = bind_socket(sock2, ud.second);
+	zassert_equal(ret, 0, "Cannot bind 2nd socket (%d)", -errno);
+}
+
+static void test_packet_sockets_dgram(void)
+{
+	uint8_t data_to_send[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+	uint8_t data_to_receive[sizeof(data_to_send)];
+	socklen_t addrlen = sizeof(struct sockaddr_ll);
+	struct user_data ud = { 0 };
+	struct sockaddr_ll dst, src;
+	int ret, sock1, sock2;
+
+	net_if_foreach(iface_cb, &ud);
+
+	zassert_not_null(ud.first, "1st Ethernet interface not found");
+	zassert_not_null(ud.second, "2nd Ethernet interface not found");
+
+	sock1 = setup_socket(ud.first, SOCK_DGRAM, ETH_P_TSN);
+	zassert_true(sock1 >= 0, "Cannot create 1st socket (%d)", sock1);
+
+	sock2 = setup_socket(ud.second, SOCK_DGRAM, ETH_P_TSN);
 	zassert_true(sock2 >= 0, "Cannot create 2nd socket (%d)", sock2);
 
 	ret = bind_socket(sock1, ud.first);
@@ -191,11 +216,21 @@ static void test_packet_sockets(void)
 	zassert_equal(ret, sizeof(data_to_send), "Cannot send all data (%d)",
 		      -errno);
 
+	k_msleep(10); /* Let the packet enter the system */
+	setblocking(sock2, false);
 	memset(&src, 0, sizeof(src));
-	ret = recvfrom(sock2, data_to_receive, sizeof(data_to_receive), 0,
-		       (struct sockaddr *)&src, &addrlen);
-	zassert_equal(ret, sizeof(data_to_send), "Cannot receive all data (%d)",
-		      -errno);
+
+	errno = 0;
+
+	do {
+		ret = recvfrom(sock2, data_to_receive, sizeof(data_to_receive),
+			       0, (struct sockaddr *)&src, &addrlen);
+		k_msleep(10);
+	} while (ret < 0 && errno == EAGAIN);
+
+	zassert_equal(ret, sizeof(data_to_send),
+		      "Cannot receive all data (%d vs %zd) (%d)",
+		      ret, sizeof(data_to_send), -errno);
 
 	/* Send to socket 2 but read from socket 1. There should not be any
 	 * data in socket 1
@@ -206,9 +241,8 @@ static void test_packet_sockets(void)
 		      -errno);
 
 	k_msleep(10);
-
-	memset(&src, 0, sizeof(src));
 	setblocking(sock1, false);
+	memset(&src, 0, sizeof(src));
 
 	ret = recvfrom(sock1, data_to_receive, sizeof(data_to_receive), 0,
 		       (struct sockaddr *)&src, &addrlen);
@@ -216,8 +250,15 @@ static void test_packet_sockets(void)
 	zassert_equal(errno, EAGAIN, "Wrong errno (%d)", errno);
 
 	memset(&src, 0, sizeof(src));
-	ret = recvfrom(sock2, data_to_receive, sizeof(data_to_receive), 0,
-		       (struct sockaddr *)&src, &addrlen);
+
+	errno = 0;
+
+	do {
+		ret = recvfrom(sock2, data_to_receive, sizeof(data_to_receive),
+			       0, (struct sockaddr *)&src, &addrlen);
+		k_msleep(10);
+	} while (ret < 0 && errno == EAGAIN);
+
 	zassert_equal(ret, sizeof(data_to_send), "Cannot receive all data (%d)",
 		      -errno);
 }
@@ -225,6 +266,7 @@ static void test_packet_sockets(void)
 void test_main(void)
 {
 	ztest_test_suite(socket_packet,
-			 ztest_unit_test(test_packet_sockets));
+			 ztest_unit_test(test_packet_sockets),
+			 ztest_unit_test(test_packet_sockets_dgram));
 	ztest_run_test_suite(socket_packet);
 }

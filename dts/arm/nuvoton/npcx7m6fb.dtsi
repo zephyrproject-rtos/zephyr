@@ -7,9 +7,14 @@
 #include <arm/armv7-m.dtsi>
 /* Macros for device tree declarations */
 #include <dt-bindings/clock/npcx_clock.h>
+#include <dt-bindings/gpio/gpio.h>
 
 /* NPCX7 series pinmux mapping table */
 #include "npcx/npcx7-alts-map.dtsi"
+/* NPCX7 series mapping table between MIWU wui bits and source device */
+#include "npcx/npcx7-miwus-wui-map.dtsi"
+/* NPCX7 series mapping table between MIWU groups and interrupts */
+#include "npcx/npcx7-miwus-int-map.dtsi"
 
 / {
 	cpus {
@@ -67,6 +72,7 @@
 			interrupts = <33 0>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL1 4>;
 			pinctrl = <&alta_uart1_sl1>; /* PIN10.11 */
+			wui_map = <&wui_cr_sin1>;
 			status = "disabled";
 			label = "UART_1";
 		};
@@ -77,8 +83,209 @@
 			interrupts = <32 0>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL7 6>;
 			pinctrl = <&alta_uart2_sl>; /* PIN75.86 */
+			wui_map = <&wui_cr_sin2>;
 			status = "disabled";
 			label = "UART_2";
+		};
+
+		miwu0: miwu@400bb000 {
+			compatible = "nuvoton,npcx-miwu";
+			reg = <0x400bb000 0x2000>;
+			index = <0>;
+			#miwu-cells = <2>;
+			label="MIWU_0";
+		};
+
+		miwu1: miwu@400bd000 {
+			compatible = "nuvoton,npcx-miwu";
+			reg = <0x400bd000 0x2000>;
+			index = <1>;
+			#miwu-cells = <2>;
+			label="MIWU_1";
+		};
+
+		miwu2: miwu@400bf000 {
+			compatible = "nuvoton,npcx-miwu";
+			reg = <0x400bf000 0x2000>;
+			index = <2>;
+			#miwu-cells = <2>;
+			label="MIWU_2";
+		};
+
+		gpio0: gpio@40081000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x40081000 0x2000>;
+			gpio-controller;
+			index = <0x0>;
+			wui_maps = <&wui_io00 &wui_io01 &wui_io02 &wui_io03
+				    &wui_io04 &wui_io05 &wui_io06 &wui_io07>;
+			#gpio-cells=<2>;
+			label="GPIO_0";
+		};
+
+		gpio1: gpio@40083000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x40083000 0x2000>;
+			gpio-controller;
+			index = <0x1>;
+			wui_maps = <&wui_io10 &wui_io11 &wui_none &wui_none
+				    &wui_io14 &wui_io15 &wui_io16 &wui_io17>;
+			#gpio-cells=<2>;
+			label="GPIO_1";
+		};
+
+		gpio2: gpio@40085000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x40085000 0x2000>;
+			gpio-controller;
+			index = <0x2>;
+			wui_maps = <&wui_io20 &wui_io21 &wui_io22 &wui_io23
+				    &wui_io24 &wui_io25 &wui_io26 &wui_io27>;
+			#gpio-cells=<2>;
+			label="GPIO_2";
+		};
+
+		gpio3: gpio@40087000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x40087000 0x2000>;
+			gpio-controller;
+			index = <0x3>;
+			wui_maps = <&wui_io30 &wui_io31 &wui_none &wui_io33
+				    &wui_io34 &wui_none &wui_io36 &wui_io37>;
+			#gpio-cells=<2>;
+			label="GPIO_3";
+		};
+
+		gpio4: gpio@40089000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x40089000 0x2000>;
+			gpio-controller;
+			index = <0x4>;
+			wui_maps = <&wui_io40 &wui_io41 &wui_io42 &wui_io43
+				    &wui_io44 &wui_io45 &wui_io46 &wui_io47>;
+			#gpio-cells=<2>;
+			label="GPIO_4";
+		};
+
+		gpio5: gpio@4008b000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x4008b000 0x2000>;
+			gpio-controller;
+			index = <0x5>;
+			wui_maps = <&wui_io50 &wui_io51 &wui_io52 &wui_io53
+				    &wui_io54 &wui_io55 &wui_io56 &wui_io57>;
+			#gpio-cells=<2>;
+			label="GPIO_5";
+		};
+
+		gpio6: gpio@4008d000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x4008d000 0x2000>;
+			gpio-controller;
+			index = <0x6>;
+			wui_maps = <&wui_io60 &wui_io61 &wui_io62 &wui_io63
+				    &wui_io64 &wui_none &wui_none &wui_io67>;
+			#gpio-cells=<2>;
+			label="GPIO_6";
+		};
+
+		gpio7: gpio@4008f000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x4008f000 0x2000>;
+			gpio-controller;
+			index = <0x7>;
+			wui_maps = <&wui_io70 &wui_none &wui_io72 &wui_io73
+				    &wui_io74 &wui_io75 &wui_io76 &wui_none>;
+			#gpio-cells=<2>;
+			label="GPIO_7";
+		};
+
+		gpio8: gpio@40091000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x40091000 0x2000>;
+			gpio-controller;
+			index = <0x8>;
+			wui_maps = <&wui_io80 &wui_io81 &wui_io82 &wui_io83
+				    &wui_none &wui_none &wui_io86 &wui_io87>;
+			#gpio-cells=<2>;
+			label="GPIO_8";
+		};
+
+		gpio9: gpio@40093000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x40093000 0x2000>;
+			gpio-controller;
+			index = <0x9>;
+			wui_maps = <&wui_io90 &wui_io91 &wui_io92 &wui_io93
+				    &wui_io94 &wui_io95 &wui_io96 &wui_io97>;
+			#gpio-cells=<2>;
+			label="GPIO_9";
+		};
+
+		gpioa: gpio@40095000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x40095000 0x2000>;
+			gpio-controller;
+			index = <0xA>;
+			wui_maps = <&wui_ioa0 &wui_ioa1 &wui_ioa2 &wui_ioa3
+				    &wui_ioa4 &wui_ioa5 &wui_ioa6 &wui_ioa7>;
+			#gpio-cells=<2>;
+			label="GPIO_A";
+		};
+
+		gpiob: gpio@40097000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x40097000 0x2000>;
+			gpio-controller;
+			index = <0xB>;
+			wui_maps = <&wui_iob0 &wui_iob1 &wui_iob2 &wui_iob3
+				    &wui_iob4 &wui_iob5 &wui_none &wui_iob7>;
+			#gpio-cells=<2>;
+			label="GPIO_B";
+		};
+
+		gpioc: gpio@40099000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x40099000 0x2000>;
+			gpio-controller;
+			index = <0xC>;
+			wui_maps = <&wui_ioc0 &wui_ioc1 &wui_ioc2 &wui_ioc3
+				    &wui_ioc4 &wui_ioc5 &wui_ioc6 &wui_ioc7>;
+			#gpio-cells=<2>;
+			label="GPIO_C";
+		};
+
+		gpiod: gpio@4009b000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x4009b000 0x2000>;
+			gpio-controller;
+			index = <0xD>;
+			wui_maps = <&wui_iod0 &wui_iod1 &wui_iod2 &wui_iod3
+				    &wui_iod4 &wui_iod5 &wui_none &wui_iod7>;
+			#gpio-cells=<2>;
+			label="GPIO_D";
+		};
+
+		gpioe: gpio@4009d000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x4009d000 0x2000>;
+			gpio-controller;
+			index = <0xE>;
+			wui_maps = <&wui_ioe0 &wui_ioe1 &wui_ioe2 &wui_ioe3
+				    &wui_ioe4 &wui_ioe5 &wui_none &wui_none>;
+			#gpio-cells=<2>;
+			label="GPIO_E";
+		};
+
+		gpiof: gpio@4009f000 {
+			compatible = "nuvoton,npcx-gpio";
+			reg = <0x4009f000 0x2000>;
+			gpio-controller;
+			index = <0xF>;
+			wui_maps = <&wui_iof0 &wui_iof1 &wui_iof2 &wui_iof3
+				    &wui_iof4 &wui_iof5 &wui_none &wui_none>;
+			#gpio-cells=<2>;
+			label="GPIO_F";
 		};
 	};
 };

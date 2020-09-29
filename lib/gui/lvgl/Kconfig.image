@@ -1,0 +1,29 @@
+# Copyright (c) 2018-2019 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+# Copyright (c) 2020 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Image decoder and cache"
+
+config LVGL_IMG_CF_INDEXED
+	bool "Enable indexed image support"
+	default y
+	help
+	  Enable support for indexed images
+
+config LVGL_IMG_CF_ALPHA
+	bool "Enable alpha indexed image support"
+	default y
+	help
+	  Enable support for alpha indexed images
+
+config LVGL_IMG_CACHE_DEF_SIZE
+	int "Default image cache size"
+	default 1
+	help
+	  Default image cache size, image caching keeps the images open.
+	  If only the built-in image formats are used there is no real
+	  advantage of caching. With complex image decoders (e.g. PNG or JPG)
+	  caching can save the continuous decoding of images. However the
+	  opened images might consume additional RAM.
+
+endmenu

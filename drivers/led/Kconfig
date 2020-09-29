@@ -20,8 +20,15 @@ config LED_INIT_PRIORITY
 	help
 	  System initialization priority for LED drivers.
 
+config LED_SHELL
+	bool "LED shell"
+	depends on SHELL
+	help
+	  Enable LED shell for testing.
+
 source "drivers/led/Kconfig.ht16k33"
 source "drivers/led/Kconfig.lp3943"
+source "drivers/led/Kconfig.lp503x"
 source "drivers/led/Kconfig.lp5562"
 source "drivers/led/Kconfig.pca9633"
 

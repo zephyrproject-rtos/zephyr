@@ -5,6 +5,7 @@
  */
 
 #include <zephyr.h>
+#include <soc.h>
 #include <bluetooth/hci.h>
 #include <sys/byteorder.h>
 
@@ -12,6 +13,7 @@
 #include "util/memq.h"
 #include "util/mayfly.h"
 
+#include "hal/cpu.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
@@ -41,7 +43,6 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_slave
 #include "common/log.h"
-#include <soc.h>
 #include "hal/debug.h"
 
 static void ticker_op_stop_adv_cb(uint32_t status, void *param);

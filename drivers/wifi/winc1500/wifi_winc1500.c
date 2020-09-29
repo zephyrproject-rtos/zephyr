@@ -298,19 +298,21 @@ static int winc1500_get(sa_family_t family,
 			struct net_context **context)
 {
 	struct socket_data *sd;
+	SOCKET sock;
 
 	if (family != AF_INET) {
 		LOG_ERR("Only AF_INET is supported!");
 		return -1;
 	}
 
-	(*context)->offload_context = (void *)(sint32)socket(family, type, 0);
-	if ((*context)->offload_context < 0) {
+	sock = socket(family, type, 0);
+	if (sock < 0) {
 		LOG_ERR("socket error!");
 		return -1;
 	}
 
-	sd = &w1500_data.socket_data[(int)(*context)->offload_context];
+	(*context)->offload_context = (void *)(intptr_t)sock;
+	sd = &w1500_data.socket_data[sock];
 
 	k_sem_init(&sd->wait_sem, 0, 1);
 
@@ -957,7 +959,7 @@ static void winc1500_thread(void)
 	}
 }
 
-static int winc1500_mgmt_scan(struct device *dev, scan_result_cb_t cb)
+static int winc1500_mgmt_scan(const struct device *dev, scan_result_cb_t cb)
 {
 	if (w1500_data.scan_cb) {
 		return -EALREADY;
@@ -974,7 +976,7 @@ static int winc1500_mgmt_scan(struct device *dev, scan_result_cb_t cb)
 	return 0;
 }
 
-static int winc1500_mgmt_connect(struct device *dev,
+static int winc1500_mgmt_connect(const struct device *dev,
 				 struct wifi_connect_req_params *params)
 {
 	uint8_t ssid[M2M_MAX_SSID_LEN];
@@ -1020,7 +1022,7 @@ static int winc1500_mgmt_connect(struct device *dev,
 	return 0;
 }
 
-static int winc1500_mgmt_disconnect(struct device *device)
+static int winc1500_mgmt_disconnect(const struct device *device)
 {
 	if (!w1500_data.connected) {
 		return -EALREADY;
@@ -1055,7 +1057,7 @@ static const struct net_wifi_mgmt_offload winc1500_api = {
 	.disconnect	= winc1500_mgmt_disconnect,
 };
 
-static int winc1500_init(struct device *dev)
+static int winc1500_init(const struct device *dev)
 {
 	tstrWifiInitParam param = {
 		.pfAppWifiCb = winc1500_wifi_cb,

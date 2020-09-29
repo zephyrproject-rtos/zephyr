@@ -13,6 +13,7 @@
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
 #include <fatal.h>
+#include <debug/coredump.h>
 
 LOG_MODULE_DECLARE(os);
 
@@ -119,6 +120,8 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 
 	LOG_ERR("Current thread: %p (%s)", thread,
 		log_strdup(thread_name_get(thread)));
+
+	z_coredump(reason, esf, thread);
 
 	k_sys_fatal_error_handler(reason, esf);
 

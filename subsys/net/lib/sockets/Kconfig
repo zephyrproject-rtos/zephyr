@@ -113,6 +113,15 @@ config NET_SOCKETS_OFFLOAD
 	  See NET_OFFLOAD for a more deeply integrated approach which offloads
 	  from the net_context() API within the Zephyr IP stack.
 
+config NET_SOCKETS_OFFLOAD_TLS
+	bool "Offload TLS socket calls to the offloaded sockets"
+	depends on NET_SOCKETS_OFFLOAD
+	default y
+	help
+	  If enabled, the offloading engine is expected to handle TLS/DTLS
+	  socket calls. Othwerwise, Zephyrs native TLS socket implementation
+	  will be used, and only TCP/UDP socket calls will be offloaded.
+
 config NET_SOCKETS_PACKET
 	bool "Enable packet socket support"
 	depends on NET_L2_ETHERNET
@@ -123,6 +132,17 @@ config NET_SOCKETS_PACKET
 	  responsibility to provide all the headers (e.g L2, L3 and so on)
 	  while sending. While receiving, packets (including all the headers)
 	  will be feed to sockets as it as from the driver.
+
+config NET_SOCKETS_PACKET_DGRAM
+	bool "Enable packet socket SOCK_DGRAM support"
+	depends on NET_SOCKETS_PACKET
+	default y
+	help
+	  For AF_PACKET sockets with SOCK_DGRAM type, the L2 header
+	  is removed before the packet is passed to the user.  Packets sent
+	  through a SOCK_DGRAM packet socket get a suitable L2 header based
+	  on the information in the sockaddr_ll destination address before
+	  they are queued.
 
 config NET_SOCKETS_CAN
 	bool "Enable socket CAN support [EXPERIMENTAL]"

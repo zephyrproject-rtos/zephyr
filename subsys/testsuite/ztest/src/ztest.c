@@ -130,7 +130,9 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 void z_impl_z_test_1cpu_start(void)
 {
 	cpuhold_active = 1;
-
+#ifdef CONFIG_THREAD_NAME
+	char tname[CONFIG_THREAD_MAX_NAME_LEN];
+#endif
 	k_sem_init(&cpuhold_sem, 0, 999);
 
 	/* Spawn N-1 threads to "hold" the other CPUs, waiting for
@@ -145,6 +147,10 @@ void z_impl_z_test_1cpu_start(void)
 				cpuhold_stacks[i], CPUHOLD_STACK_SZ,
 				(k_thread_entry_t) cpu_hold, NULL, NULL, NULL,
 				K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
+#ifdef CONFIG_THREAD_NAME
+		snprintk(tname, CONFIG_THREAD_MAX_NAME_LEN, "cpuhold%02d", i);
+		k_thread_name_set(&cpuhold_threads[i], tname);
+#endif
 		k_sem_take(&cpuhold_sem, K_FOREVER);
 	}
 }
@@ -328,6 +334,7 @@ static int run_test(struct unit_test *test)
 			test->thread_options | K_INHERIT_PERMS,
 				K_NO_WAIT);
 
+	k_thread_name_set(&ztest_thread, "ztest_thread");
 	k_thread_join(&ztest_thread, K_FOREVER);
 
 	phase = TEST_PHASE_TEARDOWN;
@@ -392,7 +399,6 @@ void end_report(void)
 }
 
 #ifdef CONFIG_USERSPACE
-struct k_mem_domain ztest_mem_domain;
 K_APPMEM_PARTITION_DEFINE(ztest_mem_partition);
 #endif
 
@@ -409,24 +415,18 @@ int main(void)
 void main(void)
 {
 #ifdef CONFIG_USERSPACE
-	struct k_mem_partition *parts[] = {
-#ifdef Z_LIBC_PARTITION_EXISTS
-		/* C library globals, stack canary storage, etc */
-		&z_libc_partition,
-#endif
-#ifdef Z_MALLOC_PARTITION_EXISTS
-		/* Required for access to malloc arena */
-		&z_malloc_partition,
-#endif
-		&ztest_mem_partition
-	};
-
-	/* Ztests just have one memory domain with one partition.
-	 * Any variables that user code may reference need to go in them,
-	 * using the ZTEST_DMEM and ZTEST_BMEM macros.
+	/* Partition containing globals tagged with ZTEST_DMEM and ZTEST_BMEM
+	 * macros. Any variables that user code may reference need to be
+	 * placed in this partition if no other memory domain configuration
+	 * is made.
 	 */
-	k_mem_domain_init(&ztest_mem_domain, ARRAY_SIZE(parts), parts);
-	k_mem_domain_add_thread(&ztest_mem_domain, k_current_get());
+	k_mem_domain_add_partition(&k_mem_domain_default,
+				   &ztest_mem_partition);
+#ifdef Z_MALLOC_PARTITION_EXISTS
+	/* Allow access to malloc() memory */
+	k_mem_domain_add_partition(&k_mem_domain_default,
+				   &z_malloc_partition);
+#endif
 #endif /* CONFIG_USERSPACE */
 
 	z_init_mock();

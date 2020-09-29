@@ -16,9 +16,8 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(ADXL372, CONFIG_SENSOR_LOG_LEVEL);
 
-static void adxl372_thread_cb(void *arg)
+static void adxl372_thread_cb(const struct device *dev)
 {
-	struct device *dev = arg;
 	struct adxl372_data *drv_data = dev->data;
 	const struct adxl372_dev_config *cfg = dev->config;
 	uint8_t status1, status2;
@@ -51,7 +50,7 @@ static void adxl372_thread_cb(void *arg)
 				     GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-static void adxl372_gpio_callback(struct device *dev,
+static void adxl372_gpio_callback(const struct device *dev,
 				  struct gpio_callback *cb, uint32_t pins)
 {
 	struct adxl372_data *drv_data =
@@ -69,16 +68,11 @@ static void adxl372_gpio_callback(struct device *dev,
 }
 
 #if defined(CONFIG_ADXL372_TRIGGER_OWN_THREAD)
-static void adxl372_thread(int dev_ptr, int unused)
+static void adxl372_thread(struct adxl372_data *drv_data)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct adxl372_data *drv_data = dev->data;
-
-	ARG_UNUSED(unused);
-
 	while (true) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
-		adxl372_thread_cb(dev);
+		adxl372_thread_cb(drv_data->dev);
 	}
 }
 
@@ -92,7 +86,7 @@ static void adxl372_work_cb(struct k_work *work)
 }
 #endif
 
-int adxl372_trigger_set(struct device *dev,
+int adxl372_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
@@ -138,7 +132,7 @@ out:
 	return ret;
 }
 
-int adxl372_init_interrupt(struct device *dev)
+int adxl372_init_interrupt(const struct device *dev)
 {
 	struct adxl372_data *drv_data = dev->data;
 	const struct adxl372_dev_config *cfg = dev->config;
@@ -168,8 +162,8 @@ int adxl372_init_interrupt(struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_ADXL372_THREAD_STACK_SIZE,
-			(k_thread_entry_t)adxl372_thread, dev,
-			0, NULL, K_PRIO_COOP(CONFIG_ADXL372_THREAD_PRIORITY),
+			(k_thread_entry_t)adxl372_thread, drv_data,
+			NULL, NULL, K_PRIO_COOP(CONFIG_ADXL372_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_ADXL372_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = adxl372_work_cb;

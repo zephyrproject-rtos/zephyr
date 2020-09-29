@@ -575,7 +575,7 @@ class DeviceHandler(Handler):
             master, slave = pty.openpty()
 
             try:
-                ser_pty_process = subprocess.Popen(serial_pty, stdout=master, stdin=master, stderr=master)
+                ser_pty_process = subprocess.Popen(re.split(',| ', serial_pty), stdout=master, stdin=master, stderr=master)
             except subprocess.CalledProcessError as error:
                 logger.error("Failed to run subprocess {}, error {}".format(serial_pty, error.output))
                 return
@@ -631,6 +631,13 @@ class DeviceHandler(Handler):
         else:
             command = [self.generator_cmd, "-C", self.build_dir, "flash"]
 
+        pre_script = hardware.get('pre_script')
+        post_flash_script = hardware.get('post_flash_script')
+        post_script = hardware.get('post_script')
+
+        if pre_script:
+            self.run_custom_script(pre_script, 30)
+
         try:
             ser = serial.Serial(
                 serial_device,
@@ -661,13 +668,6 @@ class DeviceHandler(Handler):
         harness.configure(self.instance)
         read_pipe, write_pipe = os.pipe()
         start_time = time.time()
-
-        pre_script = hardware.get('pre_script')
-        post_flash_script = hardware.get('post_flash_script')
-        post_script = hardware.get('post_script')
-
-        if pre_script:
-            self.run_custom_script(pre_script, 30)
 
         t = threading.Thread(target=self.monitor_serial, daemon=True,
                              args=(ser, read_pipe, harness))
@@ -762,6 +762,13 @@ class QEMUHandler(Handler):
 
         self.pid_fn = os.path.join(instance.build_dir, "qemu.pid")
 
+        if "ignore_qemu_crash" in instance.testcase.tags:
+            self.ignore_qemu_crash = True
+            self.ignore_unexpected_eof = True
+        else:
+            self.ignore_qemu_crash = False
+            self.ignore_unexpected_eof = False
+
     @staticmethod
     def _get_cpu_time(pid):
         """get process CPU time.
@@ -775,7 +782,8 @@ class QEMUHandler(Handler):
         return cpu_time.user + cpu_time.system
 
     @staticmethod
-    def _thread(handler, timeout, outdir, logfile, fifo_fn, pid_fn, results, harness):
+    def _thread(handler, timeout, outdir, logfile, fifo_fn, pid_fn, results, harness,
+                ignore_unexpected_eof=False):
         fifo_in = fifo_fn + ".in"
         fifo_out = fifo_fn + ".out"
 
@@ -840,7 +848,8 @@ class QEMUHandler(Handler):
 
             if c == "":
                 # EOF, this shouldn't happen unless QEMU crashes
-                out_state = "unexpected eof"
+                if not ignore_unexpected_eof:
+                    out_state = "unexpected eof"
                 break
             line = line + c
             if c != "\n":
@@ -911,9 +920,10 @@ class QEMUHandler(Handler):
 
         # We pass this to QEMU which looks for fifos with .in and .out
         # suffixes.
-        self.fifo_fn = os.path.join(self.instance.build_dir, "qemu-fifo")
 
+        self.fifo_fn = os.path.join(self.instance.build_dir, "qemu-fifo")
         self.pid_fn = os.path.join(self.instance.build_dir, "qemu.pid")
+
         if os.path.exists(self.pid_fn):
             os.unlink(self.pid_fn)
 
@@ -925,7 +935,8 @@ class QEMUHandler(Handler):
         self.thread = threading.Thread(name=self.name, target=QEMUHandler._thread,
                                        args=(self, self.timeout, self.build_dir,
                                              self.log_fn, self.fifo_fn,
-                                             self.pid_fn, self.results, harness))
+                                             self.pid_fn, self.results, harness,
+                                             self.ignore_unexpected_eof))
 
         self.instance.results = harness.tests
         self.thread.daemon = True
@@ -937,14 +948,18 @@ class QEMUHandler(Handler):
         command = [self.generator_cmd]
         command += ["-C", self.build_dir, "run"]
 
+        is_timeout = False
+
         with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.build_dir) as proc:
             logger.debug("Spawning QEMUHandler Thread for %s" % self.name)
             try:
                 proc.wait(self.timeout)
             except subprocess.TimeoutExpired:
-                #sometimes QEMU can't handle SIGTERM signal correctly
-                #in that case kill -9 QEMU process directly and leave
-                #sanitycheck judge testing result by console output
+                # sometimes QEMU can't handle SIGTERM signal correctly
+                # in that case kill -9 QEMU process directly and leave
+                # sanitycheck to judge testing result by console output
+
+                is_timeout = True
                 if os.path.exists(self.pid_fn):
                     qemu_pid = int(open(self.pid_fn).read())
                     try:
@@ -961,17 +976,25 @@ class QEMUHandler(Handler):
                     proc.kill()
                     self.returncode = proc.returncode
             else:
-                logger.debug(f"No timeout, return code from qemu: {self.returncode}")
+                logger.debug(f"No timeout, return code from qemu: {proc.returncode}")
                 self.returncode = proc.returncode
+
+            # Need to wait for harness to finish processing
+            # output from QEMU. Otherwise it might miss some
+            # error messages.
+            self.thread.join()
 
             if os.path.exists(self.pid_fn):
                 os.unlink(self.pid_fn)
 
         logger.debug(f"return code from qemu: {self.returncode}")
 
-        if self.returncode != 0 or not harness.state:
+        if (self.returncode != 0 and not self.ignore_qemu_crash) or not harness.state:
             self.set_state("failed", 0)
-            self.instance.reason = "Exited with {}".format(self.returncode)
+            if is_timeout:
+                self.instance.reason = "Timeout"
+            else:
+                self.instance.reason = "Exited with {}".format(self.returncode)
 
     def get_fifo(self):
         return self.fifo_fn
@@ -1006,8 +1029,9 @@ class SizeCalculator:
         "k_msgq_area",
         "k_mbox_area",
         "k_pipe_area",
-        "net_if",
-        "net_if_dev",
+        "net_if_area",
+        "net_if_dev_area",
+        "net_l2_area",
         "net_l2_data",
         "k_queue_area",
         "_net_buf_pool_area",
@@ -1030,7 +1054,9 @@ class SizeCalculator:
         "priv_stacks_noinit",
         "_GCOV_BSS_SECTION_NAME",
         "gcov",
-        "nocache"
+        "nocache",
+        "devices",
+        "k_heap_area",
     ]
 
     # These get copied into RAM only on non-XIP
@@ -1042,19 +1068,19 @@ class SizeCalculator:
         "reset",
         "z_object_assignment_area",
         "rodata",
-        "devconfig",
         "net_l2",
         "vector",
         "sw_isr_table",
         "settings_handler_static_area",
-        "bt_l2cap_fixed_chan",
-        "bt_l2cap_br_fixec_chan",
-        "bt_gatt_service_static",
+        "bt_l2cap_fixed_chan_area",
+        "bt_l2cap_br_fixed_chan_area",
+        "bt_gatt_service_static_area",
         "vectors",
         "net_socket_register_area",
         "net_ppp_proto",
         "shell_area",
         "tracing_backend_area",
+        "ppp_protocol_handler_area",
     ]
 
     def __init__(self, filename, extra_sections):
@@ -1419,13 +1445,13 @@ class TestCase(DisablePyTestCollectionMixin):
         self.tags = set()
         self.extra_args = None
         self.extra_configs = None
-        self.arch_whitelist = None
+        self.arch_allow = None
         self.arch_exclude = None
         self.skip = False
         self.platform_exclude = None
-        self.platform_whitelist = None
+        self.platform_allow = None
         self.toolchain_exclude = None
-        self.toolchain_whitelist = None
+        self.toolchain_allow = None
         self.tc_filter = None
         self.timeout = 60
         self.harness = ""
@@ -1621,11 +1647,15 @@ class TestInstance(DisablePyTestCollectionMixin):
 
         runnable = bool(self.testcase.type == "unit" or \
                         self.platform.type == "native" or \
-                        self.platform.simulation in ["nsim", "renode", "qemu"] or \
+                        self.platform.simulation in ["mdb", "nsim", "renode", "qemu"] or \
                         device_testing)
 
         if self.platform.simulation == "nsim":
             if not find_executable("nsimdrv"):
+                runnable = False
+
+        if self.platform.simulation == "mdb":
+            if not find_executable("mdb"):
                 runnable = False
 
         if self.platform.simulation == "renode":
@@ -1951,6 +1981,7 @@ class ProjectBuilder(FilterBuilder):
         self.log = "build.log"
         self.instance = instance
         self.suite = suite
+        self.filtered_tests = 0
 
         self.lsan = kwargs.get('lsan', False)
         self.asan = kwargs.get('asan', False)
@@ -2062,9 +2093,9 @@ class ProjectBuilder(FilterBuilder):
                     logger.debug("filtering %s" % self.instance.name)
                     self.instance.status = "skipped"
                     self.instance.reason = "filter"
+                    self.suite.build_filtered_tests += 1
                     for case in self.instance.testcase.cases:
                         self.instance.results.update({case: 'SKIP'})
-                        self.suite.total_skipped_cases += 1
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
                     pipeline.put({"op": "build", "test": self.instance})
@@ -2115,19 +2146,19 @@ class ProjectBuilder(FilterBuilder):
 
     def cleanup_artifacts(self):
         logger.debug("Cleaning up {}".format(self.instance.build_dir))
-        whitelist = [
+        allow = [
             'zephyr/.config',
             'handler.log',
             'build.log',
             'device.log',
             'recording.csv',
             ]
-        whitelist = [os.path.join(self.instance.build_dir, file) for file in whitelist]
+        allow = [os.path.join(self.instance.build_dir, file) for file in allow]
 
         for dirpath, dirnames, filenames in os.walk(self.instance.build_dir, topdown=False):
             for name in filenames:
                 path = os.path.join(dirpath, name)
-                if path not in whitelist:
+                if path not in allow:
                     os.remove(path)
             # Remove empty directories and symbolic links to directories
             for dir in dirnames:
@@ -2160,10 +2191,8 @@ class ProjectBuilder(FilterBuilder):
             if not self.verbose:
                 self.log_info_file(self.inline_logs)
         elif instance.status == "skipped":
-            self.suite.total_skipped += 1
             status = Fore.YELLOW + "SKIPPED" + Fore.RESET
         elif instance.status == "passed":
-            self.suite.total_passed += 1
             status = Fore.GREEN + "PASSED" + Fore.RESET
         else:
             logger.debug(f"Unknown status = {instance.status}")
@@ -2196,8 +2225,8 @@ class ProjectBuilder(FilterBuilder):
                 self.suite.total_to_do,
                 Fore.RESET,
                 int((float(self.suite.total_done) / self.suite.total_to_do) * 100),
-                Fore.YELLOW if self.suite.total_skipped > 0 else Fore.RESET,
-                self.suite.total_skipped,
+                Fore.YELLOW if self.suite.build_filtered_tests > 0 else Fore.RESET,
+                self.suite.build_filtered_tests,
                 Fore.RESET,
                 Fore.RED if self.suite.total_failed > 0 else Fore.RESET,
                 self.suite.total_failed,
@@ -2304,14 +2333,14 @@ class TestSuite(DisablePyTestCollectionMixin):
                        "min_ram": {"type": "int", "default": 8},
                        "depends_on": {"type": "set"},
                        "min_flash": {"type": "int", "default": 32},
-                       "arch_whitelist": {"type": "set"},
+                       "arch_allow": {"type": "set"},
                        "arch_exclude": {"type": "set"},
                        "extra_sections": {"type": "list", "default": []},
                        "integration_platforms": {"type": "list", "default": []},
                        "platform_exclude": {"type": "set"},
-                       "platform_whitelist": {"type": "set"},
+                       "platform_allow": {"type": "set"},
                        "toolchain_exclude": {"type": "set"},
-                       "toolchain_whitelist": {"type": "set"},
+                       "toolchain_allow": {"type": "set"},
                        "filter": {"type": "str"},
                        "harness": {"type": "str"},
                        "harness_config": {"type": "map", "default": {}}
@@ -2366,9 +2395,11 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.total_tests = 0  # number of test instances
         self.total_cases = 0  # number of test cases
         self.total_skipped_cases = 0  # number of skipped test cases
+        self.total_to_do = 0 # number of test instances to be run
         self.total_done = 0  # tests completed
         self.total_failed = 0
         self.total_skipped = 0
+        self.build_filtered_tests = 0
         self.total_passed = 0
         self.total_errors = 0
 
@@ -2397,12 +2428,23 @@ class TestSuite(DisablePyTestCollectionMixin):
         sys.stdout.write(what + "\n")
         sys.stdout.flush()
 
-    def update(self):
+    def update_counting(self):
         self.total_tests = len(self.instances)
-        self.total_to_do = self.total_tests - self.total_skipped
         self.total_cases = 0
-        for instance in self.instances:
-            self.total_cases += len(self.instances[instance].testcase.cases)
+        self.total_skipped = 0
+        self.total_skipped_cases = 0
+        self.total_passed = 0
+        for instance in self.instances.values():
+            self.total_cases += len(instance.testcase.cases)
+            if instance.status == 'skipped':
+                self.total_skipped += 1
+                self.total_skipped_cases += len(instance.testcase.cases)
+            elif instance.status == "passed":
+                self.total_passed += 1
+                for res in instance.results.values():
+                    if res == 'SKIP':
+                        self.total_skipped_cases += 1
+        self.total_to_do = self.total_tests - self.total_skipped
 
 
     def compare_metrics(self, filename):
@@ -2411,7 +2453,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                                ("rom_size", int, True)]
 
         if not os.path.exists(filename):
-            logger.info("Cannot compare metrics, %s not found" % filename)
+            logger.error("Cannot compare metrics, %s not found" % filename)
             return []
 
         results = []
@@ -2441,12 +2483,12 @@ class TestSuite(DisablePyTestCollectionMixin):
                                 lower_better))
         return results
 
-    def misc_reports(self, report, show_footprint, all_deltas,
-                     footprint_threshold, last_metrics):
-
+    def footprint_reports(self, report, show_footprint, all_deltas,
+                          footprint_threshold, last_metrics):
         if not report:
             return
 
+        logger.debug("running footprint_reports")
         deltas = self.compare_metrics(report)
         warnings = 0
         if deltas and show_footprint:
@@ -2455,9 +2497,11 @@ class TestSuite(DisablePyTestCollectionMixin):
                                        (delta > 0 and not lower_better)):
                     continue
 
-                percentage = (float(delta) / float(value - delta))
-                if not all_deltas and (percentage <
-                                       (footprint_threshold / 100.0)):
+                percentage = 0
+                if value > delta:
+                    percentage = (float(delta) / float(value - delta))
+
+                if not all_deltas and (percentage < (footprint_threshold / 100.0)):
                     continue
 
                 logger.info("{:<25} {:<60} {}{}{}: {} {:<+4}, is now {:6} {:+.2%}".format(
@@ -2482,7 +2526,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                               str(instance.metrics.get("unrecognized", []))))
                 failed += 1
 
-            if instance.metrics['handler_time']:
+            if instance.metrics.get('handler_time', None):
                 run += 1
 
         if self.total_tests and self.total_tests != self.total_skipped:
@@ -2564,6 +2608,9 @@ class TestSuite(DisablePyTestCollectionMixin):
                 try:
                     platform = Platform()
                     platform.load(file)
+                    if platform.name in [p.name for p in self.platforms]:
+                        logger.error(f"Duplicate platform {platform.name} in {file}")
+                        raise Exception(f"Duplicate platform identifier {platform.name} found")
                     if platform.sanitycheck:
                         self.platforms.append(platform)
                         if platform.default:
@@ -2638,13 +2685,13 @@ class TestSuite(DisablePyTestCollectionMixin):
                         tc.tags = tc_dict["tags"]
                         tc.extra_args = tc_dict["extra_args"]
                         tc.extra_configs = tc_dict["extra_configs"]
-                        tc.arch_whitelist = tc_dict["arch_whitelist"]
+                        tc.arch_allow = tc_dict["arch_allow"]
                         tc.arch_exclude = tc_dict["arch_exclude"]
                         tc.skip = tc_dict["skip"]
                         tc.platform_exclude = tc_dict["platform_exclude"]
-                        tc.platform_whitelist = tc_dict["platform_whitelist"]
+                        tc.platform_allow = tc_dict["platform_allow"]
                         tc.toolchain_exclude = tc_dict["toolchain_exclude"]
-                        tc.toolchain_whitelist = tc_dict["toolchain_whitelist"]
+                        tc.toolchain_allow = tc_dict["toolchain_allow"]
                         tc.tc_filter = tc_dict["filter"]
                         tc.timeout = tc_dict["timeout"]
                         tc.harness = tc_dict["harness"]
@@ -2726,6 +2773,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         device_testing_filter = kwargs.get('device_testing')
         force_toolchain = kwargs.get('force_toolchain')
         force_platform = kwargs.get('force_platform')
+        emu_filter = kwargs.get('emulation_only')
 
         logger.debug("platform filter: " + str(platform_filter))
         logger.debug("    arch_filter: " + str(arch_filter))
@@ -2733,9 +2781,12 @@ class TestSuite(DisablePyTestCollectionMixin):
         logger.debug("    exclude_tag: " + str(exclude_tag))
 
         default_platforms = False
+        emulation_platforms = False
 
         if platform_filter:
             platforms = list(filter(lambda p: p.name in platform_filter, self.platforms))
+        elif emu_filter:
+            platforms = list(filter(lambda p: p.simulation != 'na', self.platforms))
         else:
             platforms = self.platforms
 
@@ -2743,9 +2794,12 @@ class TestSuite(DisablePyTestCollectionMixin):
             logger.info("Selecting all possible platforms per test case")
             # When --all used, any --platform arguments ignored
             platform_filter = []
-        elif not platform_filter:
+        elif not platform_filter and not emu_filter:
             logger.info("Selecting default platforms per test case")
             default_platforms = True
+        elif emu_filter:
+            logger.info("Selecting emulation platforms per test case")
+            emulation_platforms = True
 
         logger.info("Building initial testcase list...")
 
@@ -2803,8 +2857,8 @@ class TestSuite(DisablePyTestCollectionMixin):
 
                 if not force_platform:
 
-                    if tc.arch_whitelist and plat.arch not in tc.arch_whitelist:
-                        discards[instance] = discards.get(instance, "Not in test case arch whitelist")
+                    if tc.arch_allow and plat.arch not in tc.arch_allow:
+                        discards[instance] = discards.get(instance, "Not in test case arch allow list")
 
                     if tc.arch_exclude and plat.arch in tc.arch_exclude:
                         discards[instance] = discards.get(instance, "In test case arch exclude")
@@ -2818,11 +2872,11 @@ class TestSuite(DisablePyTestCollectionMixin):
                 if platform_filter and plat.name not in platform_filter:
                     discards[instance] = discards.get(instance, "Command line platform filter")
 
-                if tc.platform_whitelist and plat.name not in tc.platform_whitelist:
-                    discards[instance] = discards.get(instance, "Not in testcase platform whitelist")
+                if tc.platform_allow and plat.name not in tc.platform_allow:
+                    discards[instance] = discards.get(instance, "Not in testcase platform allow list")
 
-                if tc.toolchain_whitelist and toolchain not in tc.toolchain_whitelist:
-                    discards[instance] = discards.get(instance, "Not in testcase toolchain whitelist")
+                if tc.toolchain_allow and toolchain not in tc.toolchain_allow:
+                    discards[instance] = discards.get(instance, "Not in testcase toolchain allow list")
 
                 if not plat.env_satisfied:
                     discards[instance] = discards.get(instance, "Environment ({}) not satisfied".format(", ".join(plat.env)))
@@ -2860,9 +2914,9 @@ class TestSuite(DisablePyTestCollectionMixin):
             # if sanitycheck was launched with no platform options at all, we
             # take all default platforms
             if default_platforms and not tc.build_on_all:
-                if tc.platform_whitelist:
+                if tc.platform_allow:
                     a = set(self.default_platforms)
-                    b = set(tc.platform_whitelist)
+                    b = set(tc.platform_allow)
                     c = a.intersection(b)
                     if c:
                         aa = list(filter(lambda tc: tc.platform.name in c, instance_list))
@@ -2875,6 +2929,10 @@ class TestSuite(DisablePyTestCollectionMixin):
 
                 for instance in list(filter(lambda inst: not inst.platform.default, instance_list)):
                     discards[instance] = discards.get(instance, "Not a default test platform")
+            elif emulation_platforms:
+                self.add_instances(instance_list)
+                for instance in list(filter(lambda inst: not inst.platform.simulation != 'na', instance_list)):
+                    discards[instance] = discards.get(instance, "Not an emulated platform")
 
             else:
                 self.add_instances(instance_list)
@@ -2889,10 +2947,6 @@ class TestSuite(DisablePyTestCollectionMixin):
             instance.reason = self.discards[instance]
             instance.status = "skipped"
             instance.fill_results_by_status()
-            # We only count skipped tests for instances in self.instances
-            if self.instances.get(instance.name, False):
-                self.total_skipped += 1
-                self.total_skipped_cases += len(instance.testcase.cases)
 
         return discards
 
@@ -3481,14 +3535,15 @@ class HardwareMap:
         self.detected = []
         self.connected_hardware = []
 
-    def load_device_from_cmdline(self, serial, platform, is_pty):
+    def load_device_from_cmdline(self, serial, platform, pre_script, is_pty):
         device = {
             "serial": None,
             "platform": platform,
             "serial_pty": None,
             "counter": 0,
             "available": True,
-            "connected": True
+            "connected": True,
+            "pre_script": pre_script
         }
 
         if is_pty:

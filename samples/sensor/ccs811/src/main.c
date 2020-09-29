@@ -35,7 +35,7 @@ static const char *now_str(void)
 	return buf;
 }
 
-static int do_fetch(struct device *dev)
+static int do_fetch(const struct device *dev)
 {
 	struct sensor_value co2, tvoc, voltage, current;
 	int rc = 0;
@@ -78,7 +78,8 @@ static int do_fetch(struct device *dev)
 
 #ifndef CONFIG_CCS811_TRIGGER_NONE
 
-static void trigger_handler(struct device *dev, struct sensor_trigger *trig)
+static void trigger_handler(const struct device *dev,
+			    struct sensor_trigger *trig)
 {
 	int rc = do_fetch(dev);
 
@@ -93,7 +94,7 @@ static void trigger_handler(struct device *dev, struct sensor_trigger *trig)
 
 #endif /* !CONFIG_CCS811_TRIGGER_NONE */
 
-static void do_main(struct device *dev)
+static void do_main(const struct device *dev)
 {
 	while (true) {
 		int rc = do_fetch(dev);
@@ -112,7 +113,7 @@ static void do_main(struct device *dev)
 
 void main(void)
 {
-	struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, ams_ccs811)));
+	const struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, ams_ccs811)));
 	struct ccs811_configver_type cfgver;
 	int rc;
 

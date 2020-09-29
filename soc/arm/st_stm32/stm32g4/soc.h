@@ -60,6 +60,10 @@
 #include <stm32g4xx_ll_adc.h>
 #endif
 
+#ifdef CONFIG_DAC_STM32
+#include <stm32g4xx_ll_dac.h>
+#endif
+
 #ifdef CONFIG_IWDG_STM32
 #include <stm32g4xx_ll_iwdg.h>
 #endif

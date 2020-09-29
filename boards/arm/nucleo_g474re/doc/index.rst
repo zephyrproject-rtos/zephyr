@@ -113,6 +113,8 @@ The Zephyr nucleo_g474re board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | independent watchdog                |
++-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
 
@@ -195,6 +197,7 @@ the following pyocd command:
 
 .. code-block:: console
 
+   $ pyocd pack --update
    $ pyocd pack --install stm32g474re
 
 Note:

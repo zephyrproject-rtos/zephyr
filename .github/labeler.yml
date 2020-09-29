@@ -26,7 +26,6 @@
   - "lib/libc/**/*"
 "area: Devicetree":
   - "dts/**/*"
-  - "!dts/bindings/**/*"
   - "**/*.dts"
   - "**/*.dtsi"
   - "include/devicetree.h"

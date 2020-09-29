@@ -16,3 +16,14 @@ properties:
         type: phandles
         required: true
         description: configurations of pinmux controllers
+    wui_map:
+        type: phandle
+        required: true
+        description: mapping item between wui and source device
+        description: |
+            Mapping table between Wake-Up Input (WUI) and its source device.
+
+            For example the WUI mapping on NPCX7 UART1 would be
+               wui_map = <&wui_cr_sin1>;
+
+        required: true

@@ -17,11 +17,11 @@ opportunity to change the identity of the current thread.  These points
 are called **reschedule points**. Some potential reschedule points are:
 
 - transition of a thread to the :ref:`ready state <thread_states>`, for
-  example by :cpp:func:`k_sem_give` or :cpp:func:`k_thread_start`
+  example by :c:func:`k_sem_give` or :c:func:`k_thread_start`
 - transition of a thread from running state to a suspended or waiting
-  state, for example by :cpp:func:`k_sem_take` or :cpp:func:`k_sleep`
+  state, for example by :c:func:`k_sem_take` or :c:func:`k_sleep`
 - return to thread context after processing an interrupt
-- when a running thread invokes :cpp:func:`k_yield()`
+- when a running thread invokes :c:func:`k_yield`
 
 Whenever the scheduler changes the identity of the current thread,
 or when execution of the current thread is replaced by an ISR,
@@ -123,14 +123,14 @@ To overcome such problems, a cooperative thread can voluntarily relinquish
 the CPU from time to time to permit other threads to execute.
 A thread can relinquish the CPU in two ways:
 
-* Calling :cpp:func:`k_yield()` puts the thread at the back of the scheduler's
+* Calling :c:func:`k_yield` puts the thread at the back of the scheduler's
   prioritized list of ready threads, and then invokes the scheduler.
   All ready threads whose priority is higher or equal to that of the
   yielding thread are then allowed to execute before the yielding thread is
   rescheduled. If no such ready threads exist, the scheduler immediately
   reschedules the yielding thread without context switching.
 
-* Calling :cpp:func:`k_sleep()` makes the thread unready for a specified
+* Calling :c:func:`k_sleep` makes the thread unready for a specified
   time period. Ready threads of *all* priorities are then allowed to execute;
   however, there is no guarantee that threads whose priority is lower
   than that of the sleeping thread will actually be scheduled before
@@ -162,7 +162,7 @@ are measured in system clock ticks. The time slice size is configurable,
 but this size can be changed while the application is running.
 
 At the end of every time slice, the scheduler checks to see if the current
-thread is preemptible and, if so, implicitly invokes :cpp:func:`k_yield()`
+thread is preemptible and, if so, implicitly invokes :c:func:`k_yield`
 on behalf of the thread. This gives other ready threads of the same priority
 the opportunity to execute before the current thread is scheduled again.
 If no threads of equal priority are ready, the current thread remains
@@ -187,13 +187,13 @@ Scheduler Locking
 
 A preemptible thread that does not wish to be preempted while performing
 a critical operation can instruct the scheduler to temporarily treat it
-as a cooperative thread by calling :cpp:func:`k_sched_lock()`. This prevents
+as a cooperative thread by calling :c:func:`k_sched_lock`. This prevents
 other threads from interfering while the critical operation is being performed.
 
 Once the critical operation is complete the preemptible thread must call
-:cpp:func:`k_sched_unlock()` to restore its normal, preemptible status.
+:c:func:`k_sched_unlock` to restore its normal, preemptible status.
 
-If a thread calls :cpp:func:`k_sched_lock()` and subsequently performs an
+If a thread calls :c:func:`k_sched_lock` and subsequently performs an
 action that makes it unready, the scheduler will switch the locking thread out
 and allow other threads to execute. When the locking thread again
 becomes the current thread, its non-preemptible status is maintained.
@@ -240,14 +240,14 @@ very high priority threads and should not be used as such.
 Thread Sleeping
 ===============
 
-A thread can call :cpp:func:`k_sleep()` to delay its processing
+A thread can call :c:func:`k_sleep` to delay its processing
 for a specified time period. During the time the thread is sleeping
 the CPU is relinquished to allow other ready threads to execute.
 Once the specified delay has elapsed the thread becomes ready
 and is eligible to be scheduled once again.
 
 A sleeping thread can be woken up prematurely by another thread using
-:cpp:func:`k_wakeup()`. This technique can sometimes be used
+:c:func:`k_wakeup`. This technique can sometimes be used
 to permit the secondary thread to signal the sleeping thread
 that something has occurred *without* requiring the threads
 to define a kernel synchronization object, such as a semaphore.
@@ -258,7 +258,7 @@ Waking up a thread that is not sleeping is allowed, but has no effect.
 Busy Waiting
 ============
 
-A thread can call :cpp:func:`k_busy_wait()` to perform a ``busy wait``
+A thread can call :c:func:`k_busy_wait` to perform a ``busy wait``
 that delays its processing for a specified time period
 *without* relinquishing the CPU to another ready thread.
 

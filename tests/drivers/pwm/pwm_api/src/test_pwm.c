@@ -38,6 +38,10 @@
 #define PWM_DEV_NAME DT_LABEL(DT_ALIAS(pwm_2))
 #elif DT_NODE_HAS_STATUS(DT_ALIAS(pwm_3), okay)
 #define PWM_DEV_NAME DT_LABEL(DT_ALIAS(pwm_3))
+
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_pwm)
+#define PWM_DEV_NAME DT_LABEL(DT_INST(0, st_stm32_pwm))
+
 #else
 #error "Define a PWM device"
 #endif
@@ -65,6 +69,8 @@
 #define DEFAULT_PWM_PORT DT_PROP(DT_ALIAS(pwm_0), ch0_pin)
 #elif defined CONFIG_BOARD_ADAFRUIT_ITSYBITSY_M4_EXPRESS
 #define DEFAULT_PWM_PORT 2 /* TCC1/WO[2] on PA18 (D7) */
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_pwm)
+#define DEFAULT_PWM_PORT 1
 #else
 #define DEFAULT_PWM_PORT 0
 #endif
@@ -78,7 +84,7 @@ static int test_task(uint32_t port, uint32_t period, uint32_t pulse, uint8_t uni
 	TC_PRINT("[PWM]: %" PRIu8 ", [period]: %" PRIu32 ", [pulse]: %" PRIu32 "\n",
 		port, period, pulse);
 
-	struct device *pwm_dev = device_get_binding(PWM_DEV_NAME);
+	const struct device *pwm_dev = device_get_binding(PWM_DEV_NAME);
 
 	if (!pwm_dev) {
 		TC_PRINT("Cannot get PWM device\n");

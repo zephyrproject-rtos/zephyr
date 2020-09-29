@@ -27,6 +27,7 @@ config ARC
 config ARM
 	bool
 	select ARCH_IS_SET
+	select ARCH_SUPPORTS_COREDUMP if CPU_CORTEX_M
 	select HAS_DTS
 	# FIXME: current state of the code for all ARM requires this, but
 	# is really only necessary for Cortex-M with ARM MPU!
@@ -40,7 +41,11 @@ config X86
 	select ATOMIC_OPERATIONS_BUILTIN
 	select HAS_DTS
 	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN if !X86_64
+	select ARCH_SUPPORTS_COREDUMP
 	select CPU_HAS_MMU
+	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
+	select ARCH_HAS_GDBSTUB if !X86_64
+	select ARCH_HAS_TIMING_FUNCTIONS
 	help
 	  x86 architecture
 
@@ -50,6 +55,7 @@ config NIOS2
 	select ATOMIC_OPERATIONS_C
 	select HAS_DTS
 	imply XIP
+	select ARCH_HAS_TIMING_FUNCTIONS
 	help
 	  Nios II Gen 2 architecture
 
@@ -206,6 +212,7 @@ config USERSPACE
 	bool "User mode threads"
 	depends on ARCH_HAS_USERSPACE
 	depends on RUNTIME_ERROR_CHECKS
+	select SRAM_REGION_PERMISSIONS if MMU
 	help
 	  When enabled, threads may be created or dropped down to user mode,
 	  which has significantly restricted permissions and must interact
@@ -363,6 +370,15 @@ config IRQ_OFFLOAD
 	  run in interrupt context. Only useful for test cases that need
 	  to validate the correctness of kernel objects in IRQ context.
 
+
+config EXTRA_EXCEPTION_INFO
+	bool "Collect extra exception info"
+	depends on ARCH_HAS_EXTRA_EXCEPTION_INFO
+	help
+	  This option enables the collection of extra information, such as
+	  register state, when a fault occurs. This information can be useful
+	  to collect for post-mortem analysis and debug of issues.
+
 endmenu # Interrupt configuration
 
 endmenu
@@ -370,6 +386,9 @@ endmenu
 #
 # Architecture Capabilities
 #
+
+config ARCH_HAS_TIMING_FUNCTIONS
+	bool
 
 config ARCH_HAS_TRUSTED_EXECUTION
 	bool
@@ -390,6 +409,15 @@ config ARCH_HAS_RAMFUNC_SUPPORT
 	bool
 
 config ARCH_HAS_NESTED_EXCEPTION_DETECTION
+	bool
+
+config ARCH_SUPPORTS_COREDUMP
+	bool
+
+config ARCH_HAS_EXTRA_EXCEPTION_INFO
+	bool
+
+config ARCH_HAS_GDBSTUB
 	bool
 
 #
@@ -486,21 +514,44 @@ config CPU_HAS_MMU
 	help
 	  This hidden option is selected when the CPU has a Memory Management Unit
 	  (MMU).
-
-config MMU
-	bool
+menuconfig MMU
+	bool "Enable MMU features"
 	depends on CPU_HAS_MMU
 	help
 	  This option is enabled when the CPU's memory management unit is active
 	  and the arch_mem_map() API is available.
 
+if MMU
 config MMU_PAGE_SIZE
 	hex "Size of smallest granularity MMU page"
-	depends on MMU
 	default 0x1000
 	help
 	  Size of memory pages. Varies per MMU but 4K is common. For MMUs that
 	  support multiple page sizes, put the smallest one here.
+
+config SRAM_REGION_PERMISSIONS
+	bool "Assign appropriate permissions to kernel areas in SRAM"
+	default y
+	help
+	  If enabled, the program text, rodata, and data parts of the kernel in
+	  the permanent mappings created at build time will have appropriate
+	  permissions set. Uses extra memory due to page-alignment constraints.
+	  If not enabled, all SRAM mappings will allow supervisor mode to
+	  read, write, and execute. User mode support requires this.
+
+config KERNEL_VM_SIZE
+	hex "Size of kernel address space in bytes"
+	default 0xC0000000
+	help
+	  Size of the kernel's address space. Constraining this helps control
+	  how much total memory can be used for page tables.
+
+	  The area defined by SRAM_BASE_ADDRESS to SRAM_BASE_ADDRESS +
+	  KERNEL_VM_SIZE must have enough room to map system RAM, plus any driver
+	  mappings. Further mappings may be made at runtime depending on
+	  configuration options (such as memory-mapping stacks, VDSO pages, etc).
+
+endif   # MMU
 
 config MEMORY_PROTECTION
 	bool

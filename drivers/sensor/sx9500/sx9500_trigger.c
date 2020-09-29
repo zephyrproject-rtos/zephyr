@@ -24,7 +24,7 @@ static K_KERNEL_STACK_DEFINE(sx9500_thread_stack, CONFIG_SX9500_THREAD_STACK_SIZ
 static struct k_thread sx9500_thread;
 #endif
 
-int sx9500_trigger_set(struct device *dev,
+int sx9500_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
@@ -62,62 +62,8 @@ int sx9500_trigger_set(struct device *dev,
 	return 0;
 }
 
-#ifdef CONFIG_SX9500_TRIGGER_OWN_THREAD
-
-static void sx9500_gpio_cb(struct device *port,
-			   struct gpio_callback *cb, uint32_t pins)
+static void sx9500_gpio_thread_cb(const struct device *dev)
 {
-	struct sx9500_data *data =
-		CONTAINER_OF(cb, struct sx9500_data, gpio_cb);
-
-	ARG_UNUSED(pins);
-
-	k_sem_give(&data->sem);
-}
-
-static void sx9500_thread_main(int arg1, int unused)
-{
-	struct device *dev = INT_TO_POINTER(arg1);
-	struct sx9500_data *data = dev->data;
-	uint8_t reg_val;
-
-	ARG_UNUSED(unused);
-
-	while (1) {
-		k_sem_take(&data->sem, K_FOREVER);
-
-		if (i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
-					SX9500_REG_IRQ_SRC, &reg_val) < 0) {
-			LOG_DBG("sx9500: error reading IRQ source register");
-			continue;
-		}
-
-		if ((reg_val & SX9500_CONV_DONE_IRQ) && data->handler_drdy) {
-			data->handler_drdy(dev, &data->trigger_drdy);
-		}
-
-		if ((reg_val & SX9500_NEAR_FAR_IRQ) && data->handler_near_far) {
-			data->handler_near_far(dev, &data->trigger_near_far);
-		}
-	}
-}
-
-#else /* CONFIG_SX9500_TRIGGER_GLOBAL_THREAD */
-
-static void sx9500_gpio_cb(struct device *port,
-			   struct gpio_callback *cb, uint32_t pins)
-{
-	struct sx9500_data *data =
-		CONTAINER_OF(cb, struct sx9500_data, gpio_cb);
-
-	ARG_UNUSED(pins);
-
-	k_work_submit(&data->work);
-}
-
-static void sx9500_gpio_thread_cb(void *arg)
-{
-	struct device *dev = arg;
 	struct sx9500_data *data = dev->data;
 	uint8_t reg_val;
 
@@ -135,6 +81,40 @@ static void sx9500_gpio_thread_cb(void *arg)
 		data->handler_near_far(dev, &data->trigger_near_far);
 	}
 }
+
+#ifdef CONFIG_SX9500_TRIGGER_OWN_THREAD
+
+static void sx9500_gpio_cb(const struct device *port,
+			   struct gpio_callback *cb, uint32_t pins)
+{
+	struct sx9500_data *data =
+		CONTAINER_OF(cb, struct sx9500_data, gpio_cb);
+
+	ARG_UNUSED(pins);
+
+	k_sem_give(&data->sem);
+}
+
+static void sx9500_thread_main(struct sx9500_data *data)
+{
+	while (1) {
+		k_sem_take(&data->sem, K_FOREVER);
+		sx9500_gpio_thread_cb(data->dev);
+	}
+}
+
+#else /* CONFIG_SX9500_TRIGGER_GLOBAL_THREAD */
+
+static void sx9500_gpio_cb(const struct device *port,
+			   struct gpio_callback *cb, uint32_t pins)
+{
+	struct sx9500_data *data =
+		CONTAINER_OF(cb, struct sx9500_data, gpio_cb);
+
+	ARG_UNUSED(pins);
+
+	k_work_submit(&data->work);
+}
 #endif /* CONFIG_SX9500_TRIGGER_GLOBAL_THREAD */
 
 #ifdef CONFIG_SX9500_TRIGGER_GLOBAL_THREAD
@@ -147,17 +127,18 @@ static void sx9500_work_cb(struct k_work *work)
 }
 #endif
 
-int sx9500_setup_interrupt(struct device *dev)
+int sx9500_setup_interrupt(const struct device *dev)
 {
 	struct sx9500_data *data = dev->data;
-	struct device *gpio;
+	const struct device *gpio;
 
 #ifdef CONFIG_SX9500_TRIGGER_OWN_THREAD
 	k_sem_init(&data->sem, 0, UINT_MAX);
 #else
 	data->work.handler = sx9500_work_cb;
-	data->dev = dev;
 #endif
+
+	data->dev = dev;
 
 	gpio = device_get_binding(DT_INST_GPIO_LABEL(0, int_gpios));
 	if (!gpio) {
@@ -180,8 +161,9 @@ int sx9500_setup_interrupt(struct device *dev)
 #ifdef CONFIG_SX9500_TRIGGER_OWN_THREAD
 	k_thread_create(&sx9500_thread, sx9500_thread_stack,
 			CONFIG_SX9500_THREAD_STACK_SIZE,
-			(k_thread_entry_t)sx9500_thread_main, dev, 0, NULL,
-			K_PRIO_COOP(CONFIG_SX9500_THREAD_PRIORITY), 0, K_NO_WAIT);
+			(k_thread_entry_t)sx9500_thread_main, data, 0, NULL,
+			K_PRIO_COOP(CONFIG_SX9500_THREAD_PRIORITY),
+			0, K_NO_WAIT);
 #endif
 
 	return 0;

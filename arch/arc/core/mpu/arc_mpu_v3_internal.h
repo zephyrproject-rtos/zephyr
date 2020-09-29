@@ -824,7 +824,7 @@ int arc_core_mpu_buffer_validate(void *addr, size_t size, int write)
  * This function provides the default configuration mechanism for the Memory
  * Protection Unit (MPU).
  */
-static int arc_mpu_init(struct device *arg)
+static int arc_mpu_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 	uint32_t num_regions;

@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(main);
 
 #define KSCAN_LABEL DT_LABEL(DT_ALIAS(kscan0))
 
-struct device *kscan_dev;
+const struct device *kscan_dev;
 static struct k_timer typematic_timer;
 static struct k_timer block_matrix_timer;
 
@@ -122,7 +122,8 @@ static void typematic_callback(struct k_timer *timer)
 	LOG_INF("Typematic : %u\n", last_key);
 }
 
-static void kb_callback(struct device *dev, uint32_t row, uint32_t col, bool pressed)
+static void kb_callback(const struct device *dev, uint32_t row, uint32_t col,
+			bool pressed)
 {
 	ARG_UNUSED(dev);
 	last_key = keymap[col][row];

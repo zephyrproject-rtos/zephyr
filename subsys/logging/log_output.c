@@ -658,14 +658,15 @@ void log_output_dropped_process(const struct log_output *log_output, uint32_t cn
 	static const char postfix[] =
 			" messages dropped ---\r\n" DROPPED_COLOR_POSTFIX;
 	log_output_func_t outf = log_output->func;
-	struct device *dev = (struct device *)log_output->control_block->ctx;
 
 	cnt = MIN(cnt, 9999);
 	len = snprintk(buf, sizeof(buf), "%d", cnt);
 
-	buffer_write(outf, (uint8_t *)prefix, sizeof(prefix) - 1, dev);
-	buffer_write(outf, buf, len, dev);
-	buffer_write(outf, (uint8_t *)postfix, sizeof(postfix) - 1, dev);
+	buffer_write(outf, (uint8_t *)prefix, sizeof(prefix) - 1,
+		     log_output->control_block->ctx);
+	buffer_write(outf, buf, len, log_output->control_block->ctx);
+	buffer_write(outf, (uint8_t *)postfix, sizeof(postfix) - 1,
+		     log_output->control_block->ctx);
 }
 
 void log_output_timestamp_freq_set(uint32_t frequency)

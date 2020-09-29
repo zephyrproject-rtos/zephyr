@@ -90,7 +90,7 @@ struct uart_esp32_config {
 /* driver data */
 struct uart_esp32_data {
 	struct uart_config uart_config;
-	struct device *clock_dev;
+	const struct device *clock_dev;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t irq_cb;
 	void *irq_cb_data;
@@ -130,7 +130,7 @@ struct uart_esp32_data {
 #define DPORT_UART0_CLK_EN DPORT_UART_CLK_EN
 #define DPORT_UART0_RST DPORT_UART_RST
 
-static int uart_esp32_poll_in(struct device *dev, unsigned char *p_char)
+static int uart_esp32_poll_in(const struct device *dev, unsigned char *p_char)
 {
 
 	if (UART_RXFIFO_COUNT(DEV_BASE(dev)->status) == 0) {
@@ -141,7 +141,7 @@ static int uart_esp32_poll_in(struct device *dev, unsigned char *p_char)
 	return 0;
 }
 
-static void uart_esp32_poll_out(struct device *dev,
+static void uart_esp32_poll_out(const struct device *dev,
 				unsigned char c)
 {
 	/* Wait for space in FIFO */
@@ -153,7 +153,7 @@ static void uart_esp32_poll_out(struct device *dev,
 	DEV_BASE(dev)->fifo = (uint32_t)c;
 }
 
-static int uart_esp32_err_check(struct device *dev)
+static int uart_esp32_err_check(const struct device *dev)
 {
 	uint32_t err = UART_GET_PARITY_ERR(DEV_BASE(dev)->int_st)
 		    | UART_GET_FRAME_ERR(DEV_BASE(dev)->int_st);
@@ -161,7 +161,8 @@ static int uart_esp32_err_check(struct device *dev)
 	return err;
 }
 
-static int uart_esp32_config_get(struct device *dev, struct uart_config *cfg)
+static int uart_esp32_config_get(const struct device *dev,
+				 struct uart_config *cfg)
 {
 	struct uart_esp32_data *data = DEV_DATA(dev);
 
@@ -186,7 +187,7 @@ static int uart_esp32_config_get(struct device *dev, struct uart_config *cfg)
 	return 0;
 }
 
-static int uart_esp32_set_baudrate(struct device *dev, int baudrate)
+static int uart_esp32_set_baudrate(const struct device *dev, int baudrate)
 {
 	uint32_t sys_clk_freq = 0;
 
@@ -210,7 +211,7 @@ static int uart_esp32_set_baudrate(struct device *dev, int baudrate)
 	return 1;
 }
 
-static int uart_esp32_configure_pins(struct device *dev)
+static int uart_esp32_configure_pins(const struct device *dev)
 {
 	const struct uart_esp32_config *const cfg = DEV_CFG(dev);
 
@@ -239,7 +240,7 @@ static int uart_esp32_configure_pins(struct device *dev)
 	return 0;
 }
 
-static int uart_esp32_configure(struct device *dev,
+static int uart_esp32_configure(const struct device *dev,
 				const struct uart_config *cfg)
 {
 	uint32_t conf0 = UART_TICK_REF_ALWAYS_ON;
@@ -313,7 +314,7 @@ static int uart_esp32_configure(struct device *dev,
 	return 0;
 }
 
-static int uart_esp32_init(struct device *dev)
+static int uart_esp32_init(const struct device *dev)
 {
 	struct uart_esp32_data *data = DEV_DATA(dev);
 
@@ -332,7 +333,7 @@ static int uart_esp32_init(struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-static int uart_esp32_fifo_fill(struct device *dev,
+static int uart_esp32_fifo_fill(const struct device *dev,
 				const uint8_t *tx_data, int len)
 {
 	uint8_t num_tx = 0U;
@@ -345,7 +346,7 @@ static int uart_esp32_fifo_fill(struct device *dev,
 	return num_tx;
 }
 
-static int uart_esp32_fifo_read(struct device *dev,
+static int uart_esp32_fifo_read(const struct device *dev,
 				uint8_t *rx_data, const int len)
 {
 	uint8_t num_rx = 0U;
@@ -358,63 +359,63 @@ static int uart_esp32_fifo_read(struct device *dev,
 	return num_rx;
 }
 
-static void uart_esp32_irq_tx_enable(struct device *dev)
+static void uart_esp32_irq_tx_enable(const struct device *dev)
 {
 	DEV_BASE(dev)->int_clr |= UART_TXFIFO_EMPTY_INT_ENA;
 	DEV_BASE(dev)->int_ena |= UART_TXFIFO_EMPTY_INT_ENA;
 }
 
-static void uart_esp32_irq_tx_disable(struct device *dev)
+static void uart_esp32_irq_tx_disable(const struct device *dev)
 {
 	DEV_BASE(dev)->int_ena &= ~(UART_TXFIFO_EMPTY_INT_ENA);
 }
 
-static int uart_esp32_irq_tx_ready(struct device *dev)
+static int uart_esp32_irq_tx_ready(const struct device *dev)
 {
 	return (UART_TXFIFO_COUNT(DEV_BASE(dev)->status) < UART_FIFO_LIMIT);
 }
 
-static void uart_esp32_irq_rx_enable(struct device *dev)
+static void uart_esp32_irq_rx_enable(const struct device *dev)
 {
 	DEV_BASE(dev)->int_clr |= UART_RXFIFO_FULL_INT_ENA;
 	DEV_BASE(dev)->int_ena |= UART_RXFIFO_FULL_INT_ENA;
 }
 
-static void uart_esp32_irq_rx_disable(struct device *dev)
+static void uart_esp32_irq_rx_disable(const struct device *dev)
 {
 	DEV_BASE(dev)->int_ena &= ~(UART_RXFIFO_FULL_INT_ENA);
 }
 
-static int uart_esp32_irq_tx_complete(struct device *dev)
+static int uart_esp32_irq_tx_complete(const struct device *dev)
 {
 	/* check if TX FIFO is empty */
 	return (UART_TXFIFO_COUNT(DEV_BASE(dev)->status) == 0 ? 1 : 0);
 }
 
-static int uart_esp32_irq_rx_ready(struct device *dev)
+static int uart_esp32_irq_rx_ready(const struct device *dev)
 {
 	return (UART_RXFIFO_COUNT(DEV_BASE(dev)->status) > 0);
 }
 
-static void uart_esp32_irq_err_enable(struct device *dev)
+static void uart_esp32_irq_err_enable(const struct device *dev)
 {
 	/* enable framing, parity */
 	DEV_BASE(dev)->int_ena |= UART_FRM_ERR_INT_ENA
 				  | UART_PARITY_ERR_INT_ENA;
 }
 
-static void uart_esp32_irq_err_disable(struct device *dev)
+static void uart_esp32_irq_err_disable(const struct device *dev)
 {
 	DEV_BASE(dev)->int_ena &= ~(UART_FRM_ERR_INT_ENA);
 	DEV_BASE(dev)->int_ena &= ~(UART_PARITY_ERR_INT_ENA);
 }
 
-static int uart_esp32_irq_is_pending(struct device *dev)
+static int uart_esp32_irq_is_pending(const struct device *dev)
 {
 	return uart_esp32_irq_rx_ready(dev) || uart_esp32_irq_tx_ready(dev);
 }
 
-static int uart_esp32_irq_update(struct device *dev)
+static int uart_esp32_irq_update(const struct device *dev)
 {
 	DEV_BASE(dev)->int_clr |= UART_RXFIFO_FULL_INT_ENA;
 	DEV_BASE(dev)->int_clr |= UART_TXFIFO_EMPTY_INT_ENA;
@@ -422,7 +423,7 @@ static int uart_esp32_irq_update(struct device *dev)
 	return 1;
 }
 
-static void uart_esp32_irq_callback_set(struct device *dev,
+static void uart_esp32_irq_callback_set(const struct device *dev,
 					uart_irq_callback_user_data_t cb,
 					void *cb_data)
 {
@@ -430,9 +431,8 @@ static void uart_esp32_irq_callback_set(struct device *dev,
 	DEV_DATA(dev)->irq_cb_data = cb_data;
 }
 
-void uart_esp32_isr(void *arg)
+void uart_esp32_isr(const struct device *dev)
 {
-	struct device *dev = arg;
 	struct uart_esp32_data *data = DEV_DATA(dev);
 
 	/* Verify if the callback has been registered */
@@ -470,13 +470,13 @@ static const struct uart_driver_api uart_esp32_api = {
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 #define ESP32_UART_IRQ_HANDLER_DECL(idx) \
-	static void uart_esp32_irq_config_func_##idx(struct device *dev)
+	static void uart_esp32_irq_config_func_##idx(const struct device *dev)
 
 #define ESP32_UART_IRQ_HANDLER_FUNC(idx) \
 	.irq_config_func = uart_esp32_irq_config_func_##idx,
 
 #define ESP32_UART_IRQ_HANDLER(idx)					     \
-	static void uart_esp32_irq_config_func_##idx(struct device *dev)     \
+	static void uart_esp32_irq_config_func_##idx(const struct device *dev) \
 	{								     \
 		esp32_rom_intr_matrix_set(0, ETS_UART##idx##_INTR_SOURCE,    \
 					  INST_##idx##_ESPRESSIF_ESP32_UART_IRQ_0); \

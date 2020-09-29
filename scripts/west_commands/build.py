@@ -150,7 +150,7 @@ class Build(Forceable):
             pristine = args.pristine
         else:
             # Load the pristine={auto, always, never} configuration value
-            pristine = config_get('pristine', 'never')
+            pristine = config_get('pristine', 'auto')
             if pristine not in ['auto', 'always', 'never']:
                 log.wrn(
                     'treating unknown build.pristine value "{}" as "never"'.

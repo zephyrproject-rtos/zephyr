@@ -121,9 +121,15 @@ Devicetree node:
   {node.path}
 """
     if node.matching_compat:
-        s += f"""
+        if node.binding_path:
+            s += f"""
 Binding (compatible = {node.matching_compat}):
   {relativize(node.binding_path)}
+"""
+        else:
+            s += f"""
+Binding (compatible = {node.matching_compat}):
+  No yaml (bindings inferred from properties)
 """
     else:
         s += "\nNo matching binding.\n"

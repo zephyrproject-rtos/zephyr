@@ -19,7 +19,7 @@
 #define CONFIG_NET_L2_OPENTHREAD 1
 
 /* needed for stubbing device driver */
-struct device *device_get_binding_stub(const char *name);
+const struct device *device_get_binding_stub(const char *name);
 #define device_get_binding device_get_binding_stub
 
 /* file itself */

@@ -7,16 +7,24 @@
 menuconfig OSDP
 	bool "Open Supervised Device Protocol (OSDP) driver"
 	select RING_BUFFER
-	select SERIAL
-	select SERIAL_HAS_DRIVER
-	select SERIAL_SUPPORT_INTERRUPT
-	select UART_INTERRUPT_DRIVEN
-	select ENTROPY_GENERATOR
-	select TEST_RANDOM_GENERATOR
+	imply SERIAL_SUPPORT_INTERRUPT
+	imply UART_INTERRUPT_DRIVEN
 	help
 	  Add support for Open Supervised Device Protocol (OSDP)
 
 if OSDP
+
+choice
+	prompt "OSDP Mode of Operation"
+	config OSDP_MODE_PD
+		bool "Configure OSDP in Peripheral Device mode"
+		help
+		  Configure this device to operate as a PD (Peripheral Device)
+	config OSDP_MODE_CP
+		bool "Configure OSDP in Control Panel mode"
+		help
+		  Configure this device to operate as a CP (Control Panel)
+endchoice
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_OSDP_UART := zephyr,osdp-uart
@@ -60,21 +68,12 @@ config OSDP_PACKET_TRACE
 	  Prints bytes sent/received over OSDP to console for debugging.
 	  LOG_HEXDUMP_DBG() is used to achieve this and can be very verbose.
 
-choice
-	prompt "OSDP Mode of Operation"
-	default OSDP_MODE_PD
-	config OSDP_MODE_CP
-		bool "Configure OSDP in Control Panel mode"
-		help
-		  Configure this device to operate as a CP (Control Panel)
-	config OSDP_MODE_PD
-		bool "Configure OSDP in Peripheral Device mode"
-		help
-		  Configure this device to operate as a PD (Peripheral Device)
-endchoice
-
 if OSDP_MODE_PD
 source "subsys/mgmt/osdp/Kconfig.pd"
+endif
+
+if OSDP_MODE_CP
+source "subsys/mgmt/osdp/Kconfig.cp"
 endif
 
 endif # OSDP

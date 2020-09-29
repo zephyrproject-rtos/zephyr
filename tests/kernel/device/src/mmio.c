@@ -28,7 +28,7 @@ const struct foo_single_config_info foo0_config = {
 	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(0)),
 };
 
-int foo_single_init(struct device *device)
+int foo_single_init(const struct device *device)
 {
 	DEVICE_MMIO_MAP(device, K_MEM_CACHE_NONE);
 
@@ -60,7 +60,7 @@ DEVICE_AND_API_INIT(foo0, "foo0", foo_single_init, &foo0_data, &foo0_config,
 void test_mmio_single(void)
 {
 	struct z_device_mmio_rom *rom;
-	struct device *dev = device_get_binding("foo0");
+	const struct device *dev = device_get_binding("foo0");
 	mm_reg_t regs;
 
 	zassert_not_null(dev, "null foo0");
@@ -121,7 +121,7 @@ const struct foo_mult_config_info foo12_config = {
 #define DEV_DATA(dev)	((struct foo_mult_dev_data *)((dev)->data))
 #define DEV_CFG(dev)	((struct foo_mult_config_info *)((dev)->config))
 
-int foo_mult_init(struct device *device)
+int foo_mult_init(const struct device *device)
 {
 	DEVICE_MMIO_NAMED_MAP(device, courge, K_MEM_CACHE_NONE);
 	DEVICE_MMIO_NAMED_MAP(device, grault, K_MEM_CACHE_NONE);
@@ -156,7 +156,7 @@ DEVICE_AND_API_INIT(foo12, "foo12", foo_mult_init, &foo12_data, &foo12_config,
 void test_mmio_multiple(void)
 {
 	/* See comments for test_mmio_single */
-	struct device *dev = device_get_binding("foo12");
+	const struct device *dev = device_get_binding("foo12");
 	mm_reg_t regs_courge, regs_grault;
 	const struct z_device_mmio_rom *rom_courge, *rom_grault;
 

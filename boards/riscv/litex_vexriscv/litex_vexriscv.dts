@@ -64,3 +64,11 @@
 &gpio_in {
 	status = "okay";
 };
+
+&i2s_rx {
+	status = "okay";
+};
+
+&i2s_tx {
+	status = "okay";
+};

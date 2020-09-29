@@ -144,10 +144,10 @@ parameter.
 
 Each architecture also has to implement primitives for interrupt control:
 
-* locking interrupts: :c:func:`irq_lock`, :c:func:`irq_unlock`.
-* registering interrupts: :c:func:`IRQ_CONNECT`.
+* locking interrupts: :c:macro:`irq_lock()`, :c:macro:`irq_unlock()`.
+* registering interrupts: :c:macro:`IRQ_CONNECT()`.
 * programming the priority if possible :c:func:`irq_priority_set`.
-* enabling/disabling interrupts: :c:func:`irq_enable`, :c:func:`irq_disable`.
+* enabling/disabling interrupts: :c:macro:`irq_enable()`, :c:macro:`irq_disable()`.
 
 .. note::
 
@@ -297,7 +297,7 @@ mode if the thread triggered a fatal exception, but not if the thread
 gracefully exits its entry point function.
 
 This means implementing an architecture-specific version of
-:cpp:func:`k_thread_abort`, and setting the Kconfig option
+:c:func:`k_thread_abort`, and setting the Kconfig option
 :option:`CONFIG_ARCH_HAS_THREAD_ABORT` as needed for the architecture (e.g. see
 :zephyr_file:`arch/arm/core/aarch32/cortex_m/Kconfig`).
 
@@ -465,7 +465,7 @@ Memory Management
 
 If the target platform enables paging and requires drivers to memory-map
 their I/O regions, :option:`CONFIG_MMU` needs to be enabled and the
-:cpp:func:`arch_mem_map()` API implemented.
+:c:func:`arch_mem_map` API implemented.
 
 Stack Objects
 *************
@@ -502,7 +502,7 @@ some defaults are assumed:
   :c:macro:`ARCH_STACK_PTR_ALIGN`
 - :c:macro:`ARCH_THREAD_STACK_OBJ_ALIGN`: default align to
   :c:macro:`ARCH_STACK_PTR_ALIGN`
-- :c:macro:`ARCH_THREAD_STACK_SIZE_ALIGN(size)`: default round up to
+- :c:macro:`ARCH_THREAD_STACK_SIZE_ALIGN`: default round up to
   :c:macro:`ARCH_STACK_PTR_ALIGN`
 
 All stack creation macros are defined in terms of these.
@@ -720,9 +720,9 @@ without any reserved memory to allow efficient packing in memory. Thus,
 any guards in the thread stack must be completely carved out, and the
 privilege elevation stack must be allocated elsewhere.
 
-:c:macro:`ARCH_THREAD_STACK_SIZE_ADJUST(size)` and
-:c:macro:`ARCH_THREAD_STACK_OBJ_ALIGN(size)` should both be defined to
-:c:macro:`Z_POW2_CEIL(size)`. :c:macro:`K_THREAD_STACK_RESERVED` must be 0.
+:c:macro:`ARCH_THREAD_STACK_SIZE_ADJUST()` and
+:c:macro:`ARCH_THREAD_STACK_OBJ_ALIGN()` should both be defined to
+:c:macro:`Z_POW2_CEIL()`. :c:macro:`K_THREAD_STACK_RESERVED` must be 0.
 
 For the privilege stacks, the :option:`CONFIG_GEN_PRIV_STACKS` must be,
 enabled. For every thread stack found in the system, a corresponding fixed-
@@ -764,37 +764,49 @@ implemented, and the system must enable the :option:`CONFIG_ARCH_HAS_USERSPACE`
 option. Please see the documentation for each of these functions for more
 details:
 
-* :cpp:func:`arch_buffer_validate()` to test whether the current thread has
+* :c:func:`arch_buffer_validate` to test whether the current thread has
   access permissions to a particular memory region
 
-* :cpp:func:`arch_user_mode_enter()` which will irreversibly drop a supervisor
+* :c:func:`arch_user_mode_enter` which will irreversibly drop a supervisor
   thread to user mode privileges. The stack must be wiped.
 
-* :cpp:func:`arch_syscall_oops()` which generates a kernel oops when system
+* :c:func:`arch_syscall_oops` which generates a kernel oops when system
   call parameters can't be validated, in such a way that the oops appears to be
   generated from where the system call was invoked in the user thread
 
-* :cpp:func:`arch_syscall_invoke0()` through
-  :cpp:func:`arch_syscall_invoke6()` invoke a system call with the
+* :c:func:`arch_syscall_invoke0` through
+  :c:func:`arch_syscall_invoke6` invoke a system call with the
   appropriate number of arguments which must all be passed in during the
   privilege elevation via registers.
 
-* :cpp:func:`arch_is_user_context()` return nonzero if the CPU is currently
+* :c:func:`arch_is_user_context` return nonzero if the CPU is currently
   running in user mode
 
-* :cpp:func:`arch_mem_domain_max_partitions_get()` which indicates the max
+* :c:func:`arch_mem_domain_max_partitions_get` which indicates the max
   number of regions for a memory domain. MMU systems have an unlimited amount,
   MPU systems have constraints on this.
 
-* :cpp:func:`arch_mem_domain_partition_remove()` Remove a partition from
-  a memory domain if the currently executing thread was part of that domain.
+Some architectures may need to update software memory management structures
+or modify hardware registers on another CPU when memory domain APIs are invoked.
+If so, CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API must be selected by the
+architecture and some additional APIs must be implemented. This is common
+on MMU systems and uncommon on MPU systems:
 
-* :cpp:func:`arch_mem_domain_destroy()` Reset the thread's memory domain
-  configuration
+* :c:func:`arch_mem_domain_thread_add`
+
+* :c:func:`arch_mem_domain_thread_remove`
+
+* :c:func:`arch_mem_domain_partition_add`
+
+* :c:func:`arch_mem_domain_partition_remove`
+
+* :c:func:`arch_mem_domain_destroy`
+
+Please see the doxygen documentation of these APIs for details.
 
 In addition to implementing these APIs, there are some other tasks as well:
 
-* :cpp:func:`_new_thread()` needs to spawn threads with :c:macro:`K_USER` in
+* :c:func:`_new_thread` needs to spawn threads with :c:macro:`K_USER` in
   user mode
 
 * On context switch, the outgoing thread's stack memory should be marked
@@ -815,7 +827,7 @@ In addition to implementing these APIs, there are some other tasks as well:
   be established. This is closely tied to how the _arch_syscall_invoke macros
   are implemented. On system call, the appropriate handler function needs to
   be looked up in _k_syscall_table. Bad system call IDs should jump to the
-  :cpp:enum:`K_SYSCALL_BAD` handler. Upon completion of the system call, care
+  :c:enum:`K_SYSCALL_BAD` handler. Upon completion of the system call, care
   must be taken not to leak any register state back to user mode.
 
 API Reference
@@ -855,12 +867,6 @@ Userspace
 =========
 
 .. doxygengroup:: arch-userspace
-   :project: Zephyr
-
-Benchmarking
-============
-
-.. doxygengroup:: arch-benchmarking
    :project: Zephyr
 
 Memory Management

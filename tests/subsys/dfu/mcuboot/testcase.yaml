@@ -1,4 +1,4 @@
 tests:
   dfu.mcuboot:
-    platform_whitelist: nrf52840dk_nrf52840 native_posix native_posix_64
+    platform_allow: nrf52840dk_nrf52840 native_posix native_posix_64
     tags: dfu_mcuboot

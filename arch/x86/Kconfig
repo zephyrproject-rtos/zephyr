@@ -46,6 +46,7 @@ config X86_64
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	select SCHED_IPI_SUPPORTED
+	select X86_MMU
 
 config X86_KERNEL_OFFSET
 	int "Kernel offset from beginning of RAM"

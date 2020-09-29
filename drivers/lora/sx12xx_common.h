@@ -13,7 +13,7 @@
 #include <drivers/lora.h>
 #include <device.h>
 
-int __sx12xx_configure_pin(struct device **dev, const char *controller,
+int __sx12xx_configure_pin(const struct device * *dev, const char *controller,
 			   gpio_pin_t pin, gpio_flags_t flags);
 
 #define sx12xx_configure_pin(_name, _flags)				\
@@ -25,16 +25,19 @@ int __sx12xx_configure_pin(struct device **dev, const char *controller,
 						      _flags)),		\
 		    (0))
 
-int sx12xx_lora_send(struct device *dev, uint8_t *data, uint32_t data_len);
+int sx12xx_lora_send(const struct device *dev, uint8_t *data,
+		     uint32_t data_len);
 
-int sx12xx_lora_recv(struct device *dev, uint8_t *data, uint8_t size,
+int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 		     k_timeout_t timeout, int16_t *rssi, int8_t *snr);
 
-int sx12xx_lora_config(struct device *dev, struct lora_modem_config *config);
+int sx12xx_lora_config(const struct device *dev,
+		       struct lora_modem_config *config);
 
-int sx12xx_lora_test_cw(struct device *dev, uint32_t frequency, int8_t tx_power,
+int sx12xx_lora_test_cw(const struct device *dev, uint32_t frequency,
+			int8_t tx_power,
 			uint16_t duration);
 
-int sx12xx_init(struct device *dev);
+int sx12xx_init(const struct device *dev);
 
 #endif /* ZEPHYR_DRIVERS_SX12XX_COMMON_H_ */

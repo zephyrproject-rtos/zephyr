@@ -9,9 +9,10 @@ if(NOT TOOLCHAIN_ROOT)
     set(TOOLCHAIN_ROOT ${ZEPHYR_BASE})
   endif()
 endif()
+zephyr_file(APPLICATION_ROOT TOOLCHAIN_ROOT)
 
 # Don't inherit compiler flags from the environment
-foreach(var CFLAGS CXXFLAGS)
+foreach(var AFLAGS CFLAGS CXXFLAGS CPPFLAGS LDFLAGS)
   if(DEFINED ENV{${var}})
     message(WARNING "The environment variable '${var}' was set to $ENV{${var}},
 but Zephyr ignores flags from the environment. Use 'cmake -DEXTRA_${var}=$ENV{${var}}' instead.")
@@ -47,7 +48,7 @@ if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "zephyr")
   set(TOOLCHAIN_HOME ${HOST_TOOLS_HOME})
 endif()
 
-set(TOOLCHAIN_ROOT ${TOOLCHAIN_ROOT} CACHE STRING "Zephyr toolchain root")
+set(TOOLCHAIN_ROOT ${TOOLCHAIN_ROOT} CACHE STRING "Zephyr toolchain root" FORCE)
 assert(TOOLCHAIN_ROOT "Zephyr toolchain root path invalid: please set the TOOLCHAIN_ROOT-variable")
 
 # Set cached ZEPHYR_TOOLCHAIN_VARIANT.

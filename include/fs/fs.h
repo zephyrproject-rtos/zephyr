@@ -45,12 +45,30 @@ enum fs_dir_entry_type {
 	FS_DIR_ENTRY_DIR
 };
 
-enum fs_type {
+/** @brief Enumeration to uniquely identify file system types.
+ *
+ * Zephyr supports in-tree file systems and external ones.  Each
+ * requires a unique identifier used to register the file system
+ * implementation and to associate a mount point with the file system
+ * type.  This anonymous enum defines global identifiers for the
+ * in-tree file systems.
+ *
+ * External file systems should be registered using unique identifiers
+ * starting at @c FS_TYPE_EXTERNAL_BASE.  It is the responsibility of
+ * applications that use external file systems to ensure that these
+ * identifiers are unique if multiple file system implementations are
+ * used by the application.
+ */
+enum {
+	/** Identifier for in-tree FatFS file system. */
 	FS_FATFS = 0,
-	FS_LITTLEFS,
-	FS_TYPE_END,
-};
 
+	/** Identifier for in-tree LittleFS file system. */
+	FS_LITTLEFS,
+
+	/** Base identifier for external file systems. */
+	FS_TYPE_EXTERNAL_BASE,
+};
 
 /**
  * @brief File system mount info structure
@@ -65,7 +83,7 @@ enum fs_type {
  */
 struct fs_mount_t {
 	sys_dnode_t node;
-	enum fs_type type;
+	int type;
 	const char *mnt_point;
 	void *fs_data;
 	void *storage_dev;
@@ -494,7 +512,7 @@ int fs_statvfs(const char *path, struct fs_statvfs *stat);
  * @retval 0 Success
  * @retval -ERRNO errno code if error
  */
-int fs_register(enum fs_type type, struct fs_file_system_t *fs);
+int fs_register(int type, const struct fs_file_system_t *fs);
 
 /**
  * @brief Unregister a file system
@@ -507,7 +525,7 @@ int fs_register(enum fs_type type, struct fs_file_system_t *fs);
  * @retval 0 Success
  * @retval -ERRNO errno code if error
  */
-int fs_unregister(enum fs_type type, struct fs_file_system_t *fs);
+int fs_unregister(int type, const struct fs_file_system_t *fs);
 
 /**
  * @}

@@ -1663,7 +1663,7 @@ static uint32_t hash32(char *str, int len)
 	return h;
 }
 
-static inline uint8_t *modem_get_mac(struct device *dev)
+static inline uint8_t *modem_get_mac(const struct device *dev)
 {
 	struct modem_data *data = dev->data;
 	uint32_t hash_value;
@@ -1681,7 +1681,7 @@ static inline uint8_t *modem_get_mac(struct device *dev)
 
 static void modem_net_iface_init(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
+	const struct device *dev = net_if_get_device(iface);
 	struct modem_data *data = dev->data;
 
 	/* Direct socket offload used instead of net offload: */
@@ -1712,7 +1712,7 @@ static struct modem_cmd unsol_cmds[] = {
 	MODEM_CMD("+CREG: ", on_cmd_socknotifycreg, 1U, ""),
 };
 
-static int modem_init(struct device *dev)
+static int modem_init(const struct device *dev)
 {
 	int ret = 0;
 

@@ -42,6 +42,7 @@ armadeus	ARMadeus Systems SARL
 arrow	Arrow Electronics
 artesyn	Artesyn Embedded Technologies Inc.
 asahi-kasei	Asahi Kasei Corp.
+asmedia	ASMedia Technology Inc.
 aspeed	ASPEED Technology Inc.
 asus	AsusTek Computer Inc.
 atlas	Atlas Scientific LLC
@@ -217,6 +218,7 @@ kosagi	Sutajio Ko-Usagi PTE Ltd.
 kyo	Kyocera Corporation
 lacie	LaCie
 laird	Laird PLC
+lairdconnect	Laird Connectivity
 lantiq	Lantiq Semiconductor
 lattice	Lattice Semiconductor
 lego	LEGO Systems A/S
@@ -335,6 +337,7 @@ qemu	QEMU, a generic and open source machine emulator and virtualizer
 qi	Qi Hardware
 qiaodian	QiaoDian XianShi Corporation
 qnap	QNAP Systems, Inc.
+quicklogic	QuickLogic Corp.
 radxa	Radxa
 raidsonic	RaidSonic Technology GmbH
 ralink	Mediatek/Ralink Technology Corp.

@@ -93,6 +93,7 @@ void _sys_pm_power_state_exit_post_ops(enum power_states state)
 	case SYS_POWER_STATE_SLEEP_3:
 #endif /* CONFIG_HAS_SYS_POWER_STATE_SLEEP_3 */
 		LL_LPM_DisableSleepOnExit();
+		LL_LPM_EnableSleep();
 		break;
 #endif /* CONFIG_SYS_POWER_SLEEP_STATES */
 	default:
@@ -109,7 +110,7 @@ void _sys_pm_power_state_exit_post_ops(enum power_states state)
 }
 
 /* Initialize STM32 Power */
-static int stm32_power_init(struct device *dev)
+static int stm32_power_init(const struct device *dev)
 {
 	unsigned int ret;
 

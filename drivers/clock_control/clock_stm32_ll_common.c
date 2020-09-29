@@ -77,7 +77,7 @@ static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 	return clock / prescaler;
 }
 
-static inline int stm32_clock_control_on(struct device *dev,
+static inline int stm32_clock_control_on(const struct device *dev,
 					 clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
@@ -129,7 +129,7 @@ static inline int stm32_clock_control_on(struct device *dev,
 }
 
 
-static inline int stm32_clock_control_off(struct device *dev,
+static inline int stm32_clock_control_off(const struct device *dev,
 					  clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
@@ -180,7 +180,7 @@ static inline int stm32_clock_control_off(struct device *dev,
 }
 
 
-static int stm32_clock_control_get_subsys_rate(struct device *clock,
+static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 						clock_control_subsys_t sub_system,
 						uint32_t *rate)
 {
@@ -283,7 +283,7 @@ static inline void stm32_clock_control_mco_init(void)
 #endif /* CONFIG_CLOCK_STM32_MCO2_SRC_NOCLOCK */
 }
 
-static int stm32_clock_control_init(struct device *dev)
+static int stm32_clock_control_init(const struct device *dev)
 {
 	LL_UTILS_ClkInitTypeDef s_ClkInitStruct;
 	uint32_t hclk_prescaler;
@@ -326,6 +326,20 @@ static int stm32_clock_control_init(struct device *dev)
 	 */
 	stm32_clock_switch_to_hsi(LL_RCC_SYSCLK_DIV_1);
 	LL_RCC_PLL_Disable();
+
+#ifdef CONFIG_SOC_SERIES_STM32F7X
+	 /* Assuming we stay on Power Scale default value: Power Scale 1 */
+	 if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > 180000000) {
+		 LL_PWR_EnableOverDriveMode();
+		 while (LL_PWR_IsActiveFlag_OD() != 1) {
+		 /* Wait for OverDrive mode ready */
+		 }
+		 LL_PWR_EnableOverDriveSwitching();
+		 while (LL_PWR_IsActiveFlag_ODSW() != 1) {
+		 /* Wait for OverDrive switch ready */
+		 }
+	 }
+#endif
 
 #ifdef CONFIG_CLOCK_STM32_PLL_Q_DIVISOR
 	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLQ,

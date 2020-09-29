@@ -9,39 +9,39 @@ sample:
   name: Socket Echo Server
 tests:
   sample.net.sockets.echo_server:
-    platform_whitelist: qemu_x86 sam_e70_xplained frdm_k64f
+    platform_allow: qemu_x86 sam_e70_xplained frdm_k64f
       qemu_cortex_m3 frdm_kw41z
   sample.net.sockets.echo_server.802154:
     extra_args: OVERLAY_CONFIG="overlay-qemu_802154.conf"
-    platform_whitelist: qemu_x86
+    platform_allow: qemu_x86
   sample.net.sockets.echo_server.802154.rf2xx:
     extra_args: OVERLAY_CONFIG="overlay-802154.conf"
-    platform_whitelist: atsamr21_xpro
+    platform_allow: atsamr21_xpro
   sample.net.sockets.echo_server.802154.rf2xx.xplained:
     extra_args: SHIELD=atmel_rf2xx_xplained OVERLAY_CONFIG="overlay-802154.conf"
-    platform_whitelist: sam4s_xplained
+    platform_allow: sam4s_xplained
   sample.net.sockets.echo_server.802154.rf2xx.xpro:
     extra_args: SHIELD=atmel_rf2xx_xpro OVERLAY_CONFIG="overlay-802154.conf"
-    platform_whitelist: sam4e_xpro sam_v71_xult
+    platform_allow: sam4e_xpro sam_v71_xult
   sample.net.sockets.echo_server.802154.rf2xx.legacy:
     extra_args: SHIELD=atmel_rf2xx_legacy OVERLAY_CONFIG="overlay-802154.conf"
-    platform_whitelist: sam4e_xpro sam_v71_xult
+    platform_allow: sam4e_xpro sam_v71_xult
   sample.net.sockets.echo_server.802154.rf2xx.arduino:
     extra_args: SHIELD=atmel_rf2xx_arduino OVERLAY_CONFIG="overlay-802154.conf"
-    platform_whitelist: sam_v71_xult frdm_k64f nucleo_f767zi
+    platform_allow: sam_v71_xult frdm_k64f nucleo_f767zi
   sample.net.sockets.echo_server.802154.rf2xx.mikrobus:
     extra_args: SHIELD=atmel_rf2xx_mikrobus OVERLAY_CONFIG="overlay-802154.conf"
-    platform_whitelist: lpcxpresso55s69_ns
+    platform_allow: lpcxpresso55s69_ns
   sample.net.sockets.echo_server.bt:
     extra_args: OVERLAY_CONFIG="overlay-bt.conf"
-    platform_whitelist: qemu_x86
+    platform_allow: qemu_x86
     tags: bluetooth
   sample.net.sockets.echo_server.mcr20a:
     extra_args: SHIELD=frdm_cr20a OVERLAY_CONFIG=overlay-802154.conf
-    platform_whitelist: frdm_k64f
+    platform_allow: frdm_k64f
   sample.net.sockets.echo_server.nrf_802154:
     extra_args: OVERLAY_CONFIG="overlay-802154.conf"
-    platform_whitelist: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk_nrf52840
   sample.net.sockets.echo_server.usbnet:
     depends_on: usb_device
     harness: net
@@ -58,24 +58,24 @@ tests:
     extra_args: OVERLAY_CONFIG="overlay-ot.conf"
     slow: true
     tags: net openthread
-    platform_whitelist: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk_nrf52840
   sample.net.sockets.echo_server.kw41z_openthread:
     extra_args: OVERLAY_CONFIG="overlay-ot.conf"
     slow: true
     tags: net openthread
-    platform_whitelist: frdm_kw41z
+    platform_allow: frdm_kw41z
   sample.net.sockets.echo_server.e1000:
     extra_args: OVERLAY_CONFIG="overlay-e1000.conf"
     tags: net
-    platform_whitelist: qemu_x86
+    platform_allow: qemu_x86
   sample.net.sockets.echo_server.stellaris:
     extra_args: OVERLAY_CONFIG="overlay-qemu_cortex_m3_eth.conf"
     tags: net
-    platform_whitelist: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3
   sample.net.sockets.echo_server.smsc911x:
     extra_args: OVERLAY_CONFIG="overlay-smsc911x.conf"
     tags: net
-    platform_whitelist: mps2_an385
+    platform_allow: mps2_an385
   sample.net.sockets.echo_server.userspace:
     extra_args: CONFIG_USERSPACE=y OVERLAY_CONFIG="overlay-e1000.conf"
-    platform_whitelist: qemu_x86
+    platform_allow: qemu_x86

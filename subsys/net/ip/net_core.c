@@ -382,7 +382,7 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 		return -EINVAL;
 	}
 
-	if (!pkt->frags) {
+	if (net_pkt_is_empty(pkt)) {
 		return -ENODATA;
 	}
 
@@ -448,7 +448,7 @@ static inline int services_init(void)
 	return status;
 }
 
-static int net_init(struct device *unused)
+static int net_init(const struct device *unused)
 {
 	net_hostname_init();
 

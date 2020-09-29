@@ -13,7 +13,6 @@ GTEXT(arch_swap)
 GTEXT(z_thread_entry_wrapper)
 
 /* imports */
-GTEXT(sys_trace_thread_switched_in)
 GTEXT(_k_neg_eagain)
 
 /* unsigned int arch_swap(unsigned int key)
@@ -22,7 +21,7 @@ GTEXT(_k_neg_eagain)
  */
 SECTION_FUNC(exception.other, arch_swap)
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
+#if defined(CONFIG_TRACING)
 	/* Get a reference to _kernel in r10 */
 	movhi r10, %hi(_kernel)
 	ori   r10, r10, %lo(_kernel)
@@ -35,7 +34,7 @@ SECTION_FUNC(exception.other, arch_swap)
 	stw ra,  _thread_offset_to_ra(r11)
 	stw sp,  _thread_offset_to_sp(r11)
 
-	call read_timer_start_of_swap
+	call sys_trace_thread_switched_out
 	/* Get a reference to _kernel in r10 */
 	movhi r10, %hi(_kernel)
 	ori   r10, r10, %lo(_kernel)
@@ -49,6 +48,7 @@ SECTION_FUNC(exception.other, arch_swap)
 	ldw sp,  _thread_offset_to_sp(r11)
 
 #endif
+
 	/* Get a reference to _kernel in r10 */
 	movhi r10, %hi(_kernel)
 	ori   r10, r10, %lo(_kernel)
@@ -83,13 +83,6 @@ SECTION_FUNC(exception.other, arch_swap)
 	ori   r5, r5, %lo(_k_neg_eagain)
 	ldw   r4, (r5)
 	stw   r4, _thread_offset_to_retval(r11)
-
-#if CONFIG_TRACING
-	call sys_trace_thread_switched_in
-	/* restore caller-saved r10 */
-	movhi r10, %hi(_kernel)
-	ori   r10, r10, %lo(_kernel)
-#endif
 
 	/* get cached thread to run */
 	ldw   r2, _kernel_offset_to_ready_q_cache(r10)
@@ -142,7 +135,7 @@ no_unlock:
 	wrctl status, r3
 #endif
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
+#if defined(CONFIG_TRACING)
 	/* Get a reference to _kernel in r10 */
 	movhi r10, %hi(_kernel)
 	ori   r10, r10, %lo(_kernel)
@@ -154,7 +147,7 @@ no_unlock:
 	stw ra,  _thread_offset_to_ra(r11)
 	stw sp,  _thread_offset_to_sp(r11)
 
-	call read_timer_end_of_swap
+	call sys_trace_thread_switched_in
 
 	/* Get a reference to _kernel in r10 */
 	movhi r10, %hi(_kernel)

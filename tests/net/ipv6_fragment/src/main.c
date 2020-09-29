@@ -926,12 +926,12 @@ enum net_test_type {
 
 static enum net_test_type test_type = NO_TEST_TYPE;
 
-static int net_iface_dev_init(struct device *dev)
+static int net_iface_dev_init(const struct device *dev)
 {
 	return 0;
 }
 
-static uint8_t *net_iface_get_mac(struct device *dev)
+static uint8_t *net_iface_get_mac(const struct device *dev)
 {
 	struct net_if_test *data = dev->data;
 
@@ -1328,7 +1328,7 @@ without:
 	return 0;
 }
 
-static int sender_iface(struct device *dev, struct net_pkt *pkt)
+static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 {
 	if (!pkt->buffer) {
 		NET_DBG("No data to send!");

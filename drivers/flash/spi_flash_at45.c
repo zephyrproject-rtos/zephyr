@@ -39,8 +39,6 @@ LOG_MODULE_REGISTER(spi_flash_at45, CONFIG_FLASH_LOG_LEVEL);
 /* - Buffer and Page Size Configuration, "Power of 2" binary page size */
 #define CMD_BINARY_PAGE_SIZE	{ 0x3D, 0x2A, 0x80, 0xA6 }
 
-#define AT45_SECTOR_SIZE	0x10000UL
-
 #define STATUS_REG_LSB_RDY_BUSY_BIT	0x80
 #define STATUS_REG_LSB_PAGE_SIZE_BIT	0x01
 
@@ -52,7 +50,7 @@ LOG_MODULE_REGISTER(spi_flash_at45, CONFIG_FLASH_LOG_LEVEL);
 	}
 
 struct spi_flash_at45_data {
-	struct device *spi;
+	const struct device *spi;
 	struct spi_cs_control spi_cs;
 	struct k_sem lock;
 #if IS_ENABLED(CONFIG_DEVICE_POWER_MANAGEMENT)
@@ -70,6 +68,7 @@ struct spi_flash_at45_config {
 	struct flash_pages_layout pages_layout;
 #endif
 	uint32_t chip_size;
+	uint32_t sector_size;
 	uint16_t block_size;
 	uint16_t page_size;
 	uint16_t t_enter_dpd; /* in microseconds */
@@ -83,27 +82,27 @@ static const struct flash_parameters flash_at45_parameters = {
 	.erase_value = 0xff,
 };
 
-static struct spi_flash_at45_data *get_dev_data(struct device *dev)
+static struct spi_flash_at45_data *get_dev_data(const struct device *dev)
 {
 	return dev->data;
 }
 
-static const struct spi_flash_at45_config *get_dev_config(struct device *dev)
+static const struct spi_flash_at45_config *get_dev_config(const struct device *dev)
 {
 	return dev->config;
 }
 
-static void acquire(struct device *dev)
+static void acquire(const struct device *dev)
 {
 	k_sem_take(&get_dev_data(dev)->lock, K_FOREVER);
 }
 
-static void release(struct device *dev)
+static void release(const struct device *dev)
 {
 	k_sem_give(&get_dev_data(dev)->lock);
 }
 
-static int check_jedec_id(struct device *dev)
+static int check_jedec_id(const struct device *dev)
 {
 	const struct spi_flash_at45_config *cfg = get_dev_config(dev);
 	int err;
@@ -154,7 +153,7 @@ static int check_jedec_id(struct device *dev)
  * - Byte 1 to MSB
  * of the pointed parameter.
  */
-static int read_status_register(struct device *dev, uint16_t *status)
+static int read_status_register(const struct device *dev, uint16_t *status)
 {
 	int err;
 	const uint8_t opcode = CMD_READ_STATUS;
@@ -189,7 +188,7 @@ static int read_status_register(struct device *dev, uint16_t *status)
 	return 0;
 }
 
-static int wait_until_ready(struct device *dev)
+static int wait_until_ready(const struct device *dev)
 {
 	int err;
 	uint16_t status;
@@ -201,7 +200,7 @@ static int wait_until_ready(struct device *dev)
 	return err;
 }
 
-static int configure_page_size(struct device *dev)
+static int configure_page_size(const struct device *dev)
 {
 	int err;
 	uint16_t status;
@@ -244,7 +243,7 @@ static bool is_valid_request(off_t addr, size_t size, size_t chip_size)
 	return (addr >= 0 && (addr + size) <= chip_size);
 }
 
-static int spi_flash_at45_read(struct device *dev, off_t offset,
+static int spi_flash_at45_read(const struct device *dev, off_t offset,
 			       void *data, size_t len)
 {
 	const struct spi_flash_at45_config *cfg = get_dev_config(dev);
@@ -292,7 +291,7 @@ static int spi_flash_at45_read(struct device *dev, off_t offset,
 	return (err != 0) ? -EIO : 0;
 }
 
-static int perform_write(struct device *dev, off_t offset,
+static int perform_write(const struct device *dev, off_t offset,
 			 const void *data, size_t len)
 {
 	int err;
@@ -329,7 +328,7 @@ static int perform_write(struct device *dev, off_t offset,
 	return (err != 0) ? -EIO : 0;
 }
 
-static int spi_flash_at45_write(struct device *dev, off_t offset,
+static int spi_flash_at45_write(const struct device *dev, off_t offset,
 				const void *data, size_t len)
 {
 	const struct spi_flash_at45_config *cfg = get_dev_config(dev);
@@ -366,7 +365,7 @@ static int spi_flash_at45_write(struct device *dev, off_t offset,
 	return err;
 }
 
-static int perform_chip_erase(struct device *dev)
+static int perform_chip_erase(const struct device *dev)
 {
 	int err;
 	uint8_t const chip_erase_cmd[] = CMD_CHIP_ERASE;
@@ -398,7 +397,8 @@ static bool is_erase_possible(size_t entity_size,
 		(offset & (entity_size - 1)) == 0);
 }
 
-static int perform_erase_op(struct device *dev, uint8_t opcode, off_t offset)
+static int perform_erase_op(const struct device *dev, uint8_t opcode,
+			    off_t offset)
 {
 	int err;
 	uint8_t const op_and_addr[] = {
@@ -428,7 +428,8 @@ static int perform_erase_op(struct device *dev, uint8_t opcode, off_t offset)
 	return (err != 0) ? -EIO : 0;
 }
 
-static int spi_flash_at45_erase(struct device *dev, off_t offset, size_t size)
+static int spi_flash_at45_erase(const struct device *dev, off_t offset,
+				size_t size)
 {
 	const struct spi_flash_at45_config *cfg = get_dev_config(dev);
 	int err = 0;
@@ -449,12 +450,12 @@ static int spi_flash_at45_erase(struct device *dev, off_t offset, size_t size)
 		err = perform_chip_erase(dev);
 	} else {
 		while (size) {
-			if (is_erase_possible(AT45_SECTOR_SIZE,
+			if (is_erase_possible(cfg->sector_size,
 					      offset, size)) {
 				err = perform_erase_op(dev, CMD_SECTOR_ERASE,
 						       offset);
-				offset += AT45_SECTOR_SIZE;
-				size   -= AT45_SECTOR_SIZE;
+				offset += cfg->sector_size;
+				size   -= cfg->sector_size;
 			} else if (is_erase_possible(cfg->block_size,
 						     offset, size)) {
 				err = perform_erase_op(dev, CMD_BLOCK_ERASE,
@@ -485,7 +486,8 @@ static int spi_flash_at45_erase(struct device *dev, off_t offset, size_t size)
 	return err;
 }
 
-static int spi_flash_at45_write_protection(struct device *dev, bool enable)
+static int spi_flash_at45_write_protection(const struct device *dev,
+					   bool enable)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(enable);
@@ -503,17 +505,17 @@ static int spi_flash_at45_write_protection(struct device *dev, bool enable)
 }
 
 #if IS_ENABLED(CONFIG_FLASH_PAGE_LAYOUT)
-static void spi_flash_at45_pages_layout(
-				struct device *dev,
-				const struct flash_pages_layout **layout,
-				size_t *layout_size)
+static void spi_flash_at45_pages_layout(const struct device *dev,
+					const struct flash_pages_layout **layout,
+					size_t *layout_size)
 {
 	*layout = &get_dev_config(dev)->pages_layout;
 	*layout_size = 1;
 }
 #endif /* IS_ENABLED(CONFIG_FLASH_PAGE_LAYOUT) */
 
-static int power_down_op(struct device *dev, uint8_t opcode, uint32_t delay)
+static int power_down_op(const struct device *dev, uint8_t opcode,
+			 uint32_t delay)
 {
 	int err = 0;
 	const struct spi_buf tx_buf[] = {
@@ -538,7 +540,7 @@ static int power_down_op(struct device *dev, uint8_t opcode, uint32_t delay)
 	return 0;
 }
 
-static int spi_flash_at45_init(struct device *dev)
+static int spi_flash_at45_init(const struct device *dev)
 {
 	struct spi_flash_at45_data *dev_data = get_dev_data(dev);
 	const struct spi_flash_at45_config *dev_config = get_dev_config(dev);
@@ -584,7 +586,8 @@ static int spi_flash_at45_init(struct device *dev)
 }
 
 #if IS_ENABLED(CONFIG_DEVICE_POWER_MANAGEMENT)
-static int spi_flash_at45_pm_control(struct device *dev, uint32_t ctrl_command,
+static int spi_flash_at45_pm_control(const struct device *dev,
+				     uint32_t ctrl_command,
 				     void *context, device_pm_cb cb, void *arg)
 {
 	struct spi_flash_at45_data *dev_data = get_dev_data(dev);
@@ -684,6 +687,7 @@ static const struct flash_driver_api spi_flash_at45_api = {
 				.pages_size  = DT_INST_PROP(idx, page_size), \
 			},))						     \
 		.chip_size   = INST_##idx##_BYTES,			     \
+		.sector_size = DT_INST_PROP(idx, sector_size),		     \
 		.block_size  = DT_INST_PROP(idx, block_size),		     \
 		.page_size   = DT_INST_PROP(idx, page_size),		     \
 		.t_enter_dpd = ceiling_fraction(			     \

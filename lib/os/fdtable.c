@@ -63,7 +63,19 @@ static int z_fd_ref(int fd)
 
 static int z_fd_unref(int fd)
 {
-	int old_rc = atomic_dec(&fdtable[fd].refcount);
+	atomic_val_t old_rc;
+
+	/* Reference counter must be checked to avoid decrement refcount below
+	 * zero causing file descriptor leak. Loop statement below executes
+	 * atomic decrement if refcount value is grater than zero. Otherwise,
+	 * refcount is not going to be written.
+	 */
+	do {
+		old_rc = atomic_get(&fdtable[fd].refcount);
+		if (!old_rc) {
+			return 0;
+		}
+	} while (!atomic_cas(&fdtable[fd].refcount, old_rc, old_rc - 1));
 
 	if (old_rc != 1) {
 		return old_rc - 1;
@@ -147,6 +159,7 @@ int z_reserve_fd(void)
 	fd = _find_fd_entry();
 	if (fd >= 0) {
 		/* Mark entry as used, z_finalize_fd() will fill it in. */
+		(void)z_fd_ref(fd);
 		fdtable[fd].obj = NULL;
 		fdtable[fd].vtable = NULL;
 	}
@@ -171,7 +184,6 @@ void z_finalize_fd(int fd, void *obj, const struct fd_op_vtable *vtable)
 #endif
 	fdtable[fd].obj = obj;
 	fdtable[fd].vtable = vtable;
-	(void)z_fd_ref(fd);
 }
 
 void z_free_fd(int fd)

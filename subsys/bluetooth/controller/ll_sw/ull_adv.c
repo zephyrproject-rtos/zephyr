@@ -8,8 +8,10 @@
 #include <string.h>
 
 #include <zephyr.h>
+#include <soc.h>
 #include <bluetooth/hci.h>
 
+#include "hal/cpu.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
@@ -47,7 +49,6 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_adv
 #include "common/log.h"
-#include <soc.h>
 #include "hal/debug.h"
 
 inline struct ll_adv_set *ull_adv_set_get(uint8_t handle);
@@ -232,6 +233,14 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 				return BT_HCI_ERR_INVALID_PARAM;
 			}
 
+#if (CONFIG_BT_CTLR_ADV_AUX_SET == 0)
+			/* Connectable or scannable requires aux */
+			if (evt_prop & (BT_HCI_LE_ADV_PROP_CONN |
+					BT_HCI_LE_ADV_PROP_SCAN)) {
+				return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+			}
+#endif
+
 			adv_type = 0x05; /* PDU_ADV_TYPE_EXT_IND in */
 					 /* pdu_adv_type array. */
 
@@ -256,6 +265,10 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 	}
 	adv->lll.chan_map = chan_map;
 	adv->lll.filter_policy = filter_policy;
+
+#if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
+	adv->lll.scan_req_notify = sreq;
+#endif
 
 	/* update the "current" primary adv data */
 	pdu = lll_adv_data_peek(&adv->lll);
@@ -383,7 +396,10 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 		/* AuxPtr flag */
-		if (pri_hdr_prev.aux_ptr) {
+		/* Need aux for connectable or scannable extended advertising */
+		if (pri_hdr_prev.aux_ptr ||
+		    ((evt_prop & (BT_HCI_LE_ADV_PROP_CONN |
+				  BT_HCI_LE_ADV_PROP_SCAN)))) {
 			pri_hdr->aux_ptr = 1;
 			pri_dptr += sizeof(struct pdu_adv_aux_ptr);
 		}
@@ -402,18 +418,11 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		}
 
 		/* Calc primary PDU len */
-		len = pri_dptr - (uint8_t *)pri_com_hdr;
-		if (len > (offsetof(struct pdu_adv_com_ext_adv,
-				    ext_hdr_adi_adv_data) + sizeof(*pri_hdr))) {
-			pri_com_hdr->ext_hdr_len = len -
-				offsetof(struct pdu_adv_com_ext_adv,
-					 ext_hdr_adi_adv_data);
-			pdu->len = len;
-		} else {
-			pri_com_hdr->ext_hdr_len = 0;
-			pdu->len = offsetof(struct pdu_adv_com_ext_adv,
-					    ext_hdr_adi_adv_data);
-		}
+		len = ull_adv_aux_hdr_len_get(pri_com_hdr, pri_dptr);
+		ull_adv_aux_hdr_len_fill(pri_com_hdr, len);
+
+		/* Set PDU length */
+		pdu->len = len;
 
 		/* Start filling primary PDU payload based on flags */
 
@@ -442,20 +451,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 		/* AuxPtr */
 		if (pri_hdr->aux_ptr) {
-			struct pdu_adv_aux_ptr *aux_ptr;
-
-			pri_dptr -= sizeof(struct pdu_adv_aux_ptr);
-
-			/* NOTE: Aux Offset will be set in advertiser LLL event
-			 */
-			aux_ptr = (void *)pri_dptr;
-
-			/* FIXME: implementation defined */
-			aux_ptr->chan_idx = 0;
-			aux_ptr->ca = 0;
-			aux_ptr->offs_units = 0;
-
-			aux_ptr->phy = find_lsb_set(phy_s) - 1;
+			ull_adv_aux_ptr_fill(&pri_dptr, phy_s);
 		}
 		adv->lll.phy_s = phy_s;
 #endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
@@ -480,6 +476,23 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		/* NOTE: TargetA, filled at enable and RPA timeout */
 
 		/* NOTE: AdvA, filled at enable and RPA timeout */
+
+#if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
+		/* Make sure aux is created if we have AuxPtr */
+		if (pri_hdr->aux_ptr) {
+			uint8_t err;
+
+			err = ull_adv_aux_hdr_set_clear(adv,
+							ULL_ADV_PDU_HDR_FIELD_ADVA,
+							0, &own_addr_type,
+							NULL);
+			if (err) {
+				/* TODO: cleanup? */
+				return err;
+			}
+		}
+#endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
+
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	} else if (pdu->len == 0) {
@@ -585,9 +598,6 @@ uint8_t ll_adv_enable(uint8_t enable)
 	}
 
 	lll = &adv->lll;
-#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
-	lll->tx_pwr_lvl = RADIO_TXP_DEFAULT;
-#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 
 	pdu_adv = lll_adv_data_peek(lll);
 	pdu_scan = lll_adv_scan_rsp_peek(lll);
@@ -886,6 +896,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 			return BT_HCI_ERR_HW_FAILURE;
 		}
 	}
+#endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	if (ll_adv_cmds_is_ext()) {
@@ -922,10 +933,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 		node_rx_adv_term->hdr.link = (void *)link_adv_term;
 		adv->lll.node_rx_adv_term = (void *)node_rx_adv_term;
 	}
-#endif  /* CONFIG_BT_CTLR_ADV_EXT */
-#endif /* CONFIG_BT_PERIPHERAL */
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
 	const uint8_t phy = lll->phy_p;
 
 	adv->event_counter = 0;
@@ -1125,6 +1133,14 @@ uint8_t ll_adv_enable(uint8_t enable)
 						ticks_anchor_aux +
 						ticks_slot_aux +
 						HAL_TICKER_US_TO_TICKS(EVENT_MAFS_US);
+
+					/* Add sync_info into auxiliary PDU */
+					ret = ull_adv_aux_hdr_set_clear(adv,
+						ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
+						0, NULL, NULL);
+					if (ret) {
+						return ret;
+					}
 
 					ull_hdr_init(&sync->ull);
 
@@ -1410,6 +1426,15 @@ uint8_t ull_adv_data_set(struct ll_adv_set *adv, uint8_t len,
 
 	/* update adv pdu fields. */
 	pdu = lll_adv_data_alloc(&adv->lll, &idx);
+
+	/* check for race condition with LLL ISR */
+	if (IS_ENABLED(CONFIG_ASSERT)) {
+		uint8_t idx_test;
+
+		lll_adv_data_alloc(&adv->lll, &idx_test);
+		__ASSERT((idx == idx_test), "Probable AD Data Corruption.\n");
+	}
+
 	pdu->type = prev->type;
 	pdu->rfu = 0U;
 
@@ -1497,6 +1522,11 @@ void ull_adv_done(struct node_rx_event_done *done)
 
 static int init_reset(void)
 {
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL) && \
+	!defined(CONFIG_BT_CTLR_ADV_EXT)
+	ll_adv[0].lll.tx_pwr_lvl = RADIO_TXP_DEFAULT;
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL && !CONFIG_BT_CTLR_ADV_EXT */
+
 	return 0;
 }
 
@@ -1809,7 +1839,7 @@ static inline uint8_t disable(uint8_t handle)
 				  ull_ticker_status_give, (void *)&ret_cb);
 		ret = ull_ticker_status_take(ret, &ret_cb);
 		if (ret) {
-			mark = ull_disable_mark(adv);
+			mark = ull_disable_unmark(adv);
 			LL_ASSERT(mark == adv);
 
 			return BT_HCI_ERR_CMD_DISALLOWED;
@@ -1823,7 +1853,7 @@ static inline uint8_t disable(uint8_t handle)
 			  ull_ticker_status_give, (void *)&ret_cb);
 	ret = ull_ticker_status_take(ret, &ret_cb);
 	if (ret) {
-		mark = ull_disable_mark(adv);
+		mark = ull_disable_unmark(adv);
 		LL_ASSERT(mark == adv);
 
 		return BT_HCI_ERR_CMD_DISALLOWED;

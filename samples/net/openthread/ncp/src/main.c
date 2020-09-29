@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(ot_br, LOG_LEVEL_DBG);
 void main(void)
 {
 #if defined(CONFIG_OPENTHREAD_NCP_SPINEL_ON_UART_ACM)
-	struct device *dev;
+	const struct device *dev;
 	uint32_t baudrate = 0U;
 	int ret;
 

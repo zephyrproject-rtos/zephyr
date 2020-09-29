@@ -45,7 +45,7 @@ struct k_sem *_trace_list_k_sem;
 /*
  * Complete initialization of statically defined semaphores.
  */
-static int init_sem_module(struct device *dev)
+static int init_sem_module(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -69,9 +69,9 @@ int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 		return -EINVAL;
 	}
 
-	sys_trace_void(SYS_TRACE_ID_SEMA_INIT);
 	sem->count = initial_count;
 	sem->limit = limit;
+	sys_trace_semaphore_init(sem);
 	z_waitq_init(&sem->wait_q);
 #if defined(CONFIG_POLL)
 	sys_dlist_init(&sem->poll_events);
@@ -107,9 +107,10 @@ static inline void handle_poll_events(struct k_sem *sem)
 void z_impl_k_sem_give(struct k_sem *sem)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	struct k_thread *thread = z_unpend_first_thread(&sem->wait_q);
+	struct k_thread *thread;
 
-	sys_trace_void(SYS_TRACE_ID_SEMA_GIVE);
+	sys_trace_semaphore_give(sem);
+	thread = z_unpend_first_thread(&sem->wait_q);
 
 	if (thread != NULL) {
 		arch_thread_return_value_set(thread, 0);
@@ -119,8 +120,8 @@ void z_impl_k_sem_give(struct k_sem *sem)
 		handle_poll_events(sem);
 	}
 
-	sys_trace_end_call(SYS_TRACE_ID_SEMA_GIVE);
 	z_reschedule(&lock, key);
+	sys_trace_end_call(SYS_TRACE_ID_SEMA_GIVE);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -139,8 +140,8 @@ int z_impl_k_sem_take(struct k_sem *sem, k_timeout_t timeout)
 	__ASSERT(((arch_is_in_isr() == false) ||
 		  K_TIMEOUT_EQ(timeout, K_NO_WAIT)), "");
 
-	sys_trace_void(SYS_TRACE_ID_SEMA_TAKE);
 	k_spinlock_key_t key = k_spin_lock(&lock);
+	sys_trace_semaphore_take(sem);
 
 	if (likely(sem->count > 0U)) {
 		sem->count--;

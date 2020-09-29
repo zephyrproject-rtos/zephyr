@@ -80,7 +80,7 @@ sleep.
 
 This attribute does not imply the function will sleep unconditionally,
 but that the operation may require an invoking thread that would have to
-suspend, wait, or invoke :cpp:func:`k_yield()` before it can complete
+suspend, wait, or invoke :c:func:`k_yield` before it can complete
 its operation.  This behavior may be mediated by **no-wait**.
 
 Functions that are **sleep** are implicitly **reschedule**.
@@ -109,7 +109,7 @@ long as it can be completed immediately, and to return an error code
 rather than sleep if it cannot.
 
 It is use of the no-wait feature that allows functions like
-:cpp:func:`k_sem_take` to be invoked from ISRs, since it is not
+:c:func:`k_sem_take` to be invoked from ISRs, since it is not
 permitted to sleep in interrupt context.
 
 A function with a no-wait path does not imply that taking that path
@@ -154,14 +154,14 @@ Explanation
 -----------
 
 This attribute is similar to **isr-ok** in function, but is intended for
-use by any API that is expected to be called in :c:func:`DEVICE_INIT()`
-or :c:func:`SYS_INIT()` calls that may be invoked with ``PRE_KERNEL_1``
+use by any API that is expected to be called in :c:macro:`DEVICE_INIT()`
+or :c:macro:`SYS_INIT()` calls that may be invoked with ``PRE_KERNEL_1``
 or ``PRE_KERNEL_2`` initialization levels.
 
 Generally a function that is **pre-kernel-ok** checks
-:cpp:func:`k_is_pre_kernel` when determining whether it can fulfill its
+:c:func:`k_is_pre_kernel` when determining whether it can fulfill its
 required behavior.  In many cases it would also check
-:cpp:func:`k_is_in_isr` so it can be **isr-ok** as well.
+:c:func:`k_is_in_isr` so it can be **isr-ok** as well.
 
 .. _api_term_async:
 
@@ -184,7 +184,7 @@ Explanation
 Be aware that **async** is orthogonal to context-switching.  Some APIs
 may provide completion information through a callback, but may suspend
 while waiting for the resource necessary to initiate the operation; an
-example is :cpp:func:`spi_transceive_async`.
+example is :c:func:`spi_transceive_async`.
 
 If a function is both **no-wait** and **async** then selecting the
 no-wait path only guarantees that the function will not sleep.  It does

@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 struct openthread_uart {
 	struct ring_buf *rx_ringbuf;
-	struct device *dev;
+	const struct device *dev;
 	atomic_t tx_busy;
 	atomic_t tx_finished;
 };
@@ -49,7 +49,7 @@ static bool is_panic_mode;
 static const uint8_t *write_buffer;
 static uint16_t write_length;
 
-static void uart_rx_handle(struct device *dev)
+static void uart_rx_handle(const struct device *dev)
 {
 	uint8_t *data;
 	uint32_t len;
@@ -85,7 +85,7 @@ static void uart_rx_handle(struct device *dev)
 	}
 }
 
-static void uart_tx_handle(struct device *dev)
+static void uart_tx_handle(const struct device *dev)
 {
 	uint32_t len;
 
@@ -101,7 +101,7 @@ static void uart_tx_handle(struct device *dev)
 	}
 }
 
-static void uart_callback(struct device *dev, void *user_data)
+static void uart_callback(const struct device *dev, void *user_data)
 {
 	ARG_UNUSED(user_data);
 

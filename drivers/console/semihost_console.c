@@ -26,7 +26,7 @@ static int semihost_console_out(int ch)
 	return ch;
 }
 
-static int semihost_console_init(struct device *dev)
+static int semihost_console_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

@@ -29,14 +29,14 @@ manifest:
       revision: 542b2296e6d515b265e25c6b7208e8fea3014f90
       path: modules/hal/cmsis
     - name: hal_atmel
-      revision: 1fe96f0a5e1a11d8101b258a3b84d35dc7178401
+      revision: 9f0a699a2f0253dc9688211ef696daa7b8fadb75
       path: modules/hal/atmel
     - name: hal_altera
       revision: 23c1c1dd7a0c1cc9a399509d1819375847c95b97
       path: modules/hal/altera
     - name: canopennode
       path: modules/lib/canopennode
-      revision: 5c6b0566d56264efd4bf23ed58bc7cb8b32fe063
+      revision: 468d350028a975b96563e58344de48281a0ab371
     - name: ci-tools
       revision: da9a2df574094f52d87a03f6393928bdc7dce17c
       path: tools/ci-tools
@@ -56,7 +56,7 @@ manifest:
       revision: f1fa8241f8786198ba41155413243de36ed878a5
       path: modules/hal/infineon
     - name: hal_nordic
-      revision: b69c5a7c25007fbc111a0cbda6e2a6a945a6ae9a
+      revision: d8a6ea9695ddf792bb18bb6035c13b1daac5d79c
       path: modules/hal/nordic
     - name: hal_openisa
       revision: 40d049f69c50b58ea20473bee14cf93f518bf262
@@ -77,40 +77,44 @@ manifest:
       revision: cea57f86d3ade46c0b99dab32b2ac63435ed0693
       path: modules/hal/stm32
     - name: hal_ti
-      revision: aabc6a04a8e871cbb01e02c22bb409f68001dc64
+      revision: 405dfc8faba13e01c1cb9e29e70b31b50f71d117
       path: modules/hal/ti
     - name: libmetal
-      revision: 87e9e7f2c5b4e238236fe703db61ba23e48dc2ef
+      revision: 0b23894a041bd00a0d3a2288bb34751bbbef790d
       path: modules/hal/libmetal
+    - name: hal_quicklogic
+      repo-path: hal_quicklogic
+      revision: 7deb3aab1cc430a7650143f9833cfc8ddad76eb5
+      path: modules/hal/quicklogic
     - name: lvgl
       revision: 928b61c7c8ef5f770f10e6fd36d4fea0cf375b5e
       path: modules/lib/gui/lvgl
     - name: mbedtls
+      revision: aef137b1af8aa7a0f43345c82459254b8832262e
       path: modules/crypto/mbedtls
-      revision: 4bf099f1254332d16dcd931ccea0a88d24a7d3c7
     - name: mcuboot
-      revision: 0f2c585552a888b990abd2d5b699b57fe946d5fc
+      revision: a5d79cf8ccb2c71e68ef32a71d6a2716e831d12e
       path: bootloader/mcuboot
     - name: mcumgr
-      revision: cfe5eb98a9493017448846fd1a44a9340bd0a22f
+      revision: 5051f9d900bbb194a23d4ce80f3c6dc6d6780cc2
       path: modules/lib/mcumgr
     - name: net-tools
       revision: 1c4fdba512b268033a4cf926bddd323866c3261a
       path: tools/net-tools
     - name: hal_nxp
-      revision: 727b36cfe9e2f2aa5eb88d608e6334c8d548cee9
+      revision: 68bbdbdec1153355b14386d8f095058a496f66f4
       path: modules/hal/nxp
     - name: open-amp
       revision: 724f7e2a4519d7e1d40ef330042682dea950c991
       path: modules/lib/open-amp
     - name: loramac-node
-      revision: 170a2579dd890f78f5056f0959cdb9c9bea259a1
+      revision: 3f545d76a2e6d1db83a470ccdb5bebd1f484e137
       path: modules/lib/loramac-node
     - name: openthread
-      revision: 656802a76acd2920b74ee4d49363f70aeb3b9621
+      revision: 07f430dac6c400abdd358ba1173c0f94b94a5a80
       path: modules/lib/openthread
     - name: segger
-      revision: 6fcf61606d6012d2c44129edc033f59331e268bc
+      revision: 874d9e9696b00c09f9eeefe839028dc25fe44983
       path: modules/debug/segger
     - name: tinycbor
       path: modules/lib/tinycbor
@@ -126,7 +130,7 @@ manifest:
       revision: 957d46bc3ce0d5f628f0d525196bb4db207672ee
     - name: nrf_hw_models
       path: modules/bsim_hw_models/nrf_hw_models
-      revision: 9e594dace1af29252903938064b8ecb1b8b77678
+      revision: f86079a7333968f0ba71fe1266e241295a4e9943
     - name: hal_xtensa
       revision: e7a57d0c252f9c5f3cab9d5ceadda8753cacee5b
       path: modules/hal/xtensa
@@ -135,7 +139,7 @@ manifest:
       revision: c39888ff74acf421eeff9a7514fa9b172c3373f7
     - name: trusted-firmware-m
       path: modules/tee/tfm
-      revision: 7e51033f7bf4ad54a008e5c3cdf244d1d6954af0
+      revision: 143df675557305b61f7930a50459a53a8d2bb097
 
   self:
     path: zephyr

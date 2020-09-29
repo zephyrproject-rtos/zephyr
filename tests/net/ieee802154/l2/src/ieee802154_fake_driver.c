@@ -20,24 +20,24 @@ LOG_MODULE_REGISTER(net_ieee802154_fake_driver, LOG_LEVEL_DBG);
 extern struct net_pkt *current_pkt;
 extern struct k_sem driver_lock;
 
-static enum ieee802154_hw_caps fake_get_capabilities(struct device *dev)
+static enum ieee802154_hw_caps fake_get_capabilities(const struct device *dev)
 {
 	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ;
 }
 
-static int fake_cca(struct device *dev)
+static int fake_cca(const struct device *dev)
 {
 	return 0;
 }
 
-static int fake_set_channel(struct device *dev, uint16_t channel)
+static int fake_set_channel(const struct device *dev, uint16_t channel)
 {
 	NET_INFO("Channel %u\n", channel);
 
 	return 0;
 }
 
-static int fake_set_txpower(struct device *dev, int16_t dbm)
+static int fake_set_txpower(const struct device *dev, int16_t dbm)
 {
 	NET_INFO("TX power %d dbm\n", dbm);
 
@@ -59,7 +59,7 @@ static inline void insert_frag(struct net_pkt *pkt, struct net_buf *frag)
 	net_pkt_frag_add(current_pkt, new_frag);
 }
 
-static int fake_tx(struct device *dev,
+static int fake_tx(const struct device *dev,
 		   enum ieee802154_tx_mode mode,
 		   struct net_pkt *pkt,
 		   struct net_buf *frag)
@@ -78,14 +78,14 @@ static int fake_tx(struct device *dev,
 	return 0;
 }
 
-static int fake_start(struct device *dev)
+static int fake_start(const struct device *dev)
 {
 	NET_INFO("FAKE ieee802154 driver started\n");
 
 	return 0;
 }
 
-static int fake_stop(struct device *dev)
+static int fake_stop(const struct device *dev)
 {
 	NET_INFO("FAKE ieee802154 driver stopped\n");
 
@@ -107,7 +107,7 @@ static void fake_iface_init(struct net_if *iface)
 	NET_INFO("FAKE ieee802154 iface initialized\n");
 }
 
-static int fake_init(struct device *dev)
+static int fake_init(const struct device *dev)
 {
 	fake_stop(dev);
 

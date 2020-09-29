@@ -179,32 +179,34 @@ struct tcp_options {
 struct tcp { /* TCP connection */
 	sys_snode_t next;
 	struct net_context *context;
-	struct k_mutex lock;
+	struct net_pkt *send_data;
+	struct net_if *iface;
 	void *recv_user_data;
-	enum tcp_state state;
-	uint32_t seq;
-	uint32_t ack;
-	union tcp_endpoint src;
-	union tcp_endpoint dst;
-	uint16_t recv_win;
-	uint16_t send_win;
+	sys_slist_t send_queue;
+	net_tcp_accept_cb_t accept_cb;
+	struct k_mutex lock;
+	struct k_sem connect_sem; /* semaphore for blocking connect */
 	struct tcp_options recv_options;
 	struct k_delayed_work send_timer;
-	sys_slist_t send_queue;
 	struct k_delayed_work send_data_timer;
-	struct net_pkt *send_data;
-	size_t send_data_total;
-	uint8_t send_data_retries;
-	int unacked_len;
-	enum tcp_data_mode data_mode;
-	bool in_retransmission;
-	size_t send_retries;
 	struct k_delayed_work timewait_timer;
-	struct net_if *iface;
-	struct k_sem connect_sem; /* semaphore for blocking connect */
-	bool in_connect;
-	net_tcp_accept_cb_t accept_cb;
+	struct k_delayed_work fin_timer;
+	union tcp_endpoint src;
+	union tcp_endpoint dst;
+	size_t send_data_total;
+	size_t send_retries;
+	int unacked_len;
 	atomic_t ref_count;
+	enum tcp_state state;
+	enum tcp_data_mode data_mode;
+	uint32_t seq;
+	uint32_t ack;
+	uint16_t recv_win;
+	uint16_t send_win;
+	uint8_t send_data_retries;
+	bool in_retransmission : 1;
+	bool in_connect : 1;
+	bool in_close : 1;
 };
 
 #define _flags(_fl, _op, _mask, _cond)					\

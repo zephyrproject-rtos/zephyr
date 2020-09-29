@@ -12,7 +12,7 @@
 static struct k_thread tdata;
 static struct k_sem end_sema;
 
-static void tIsr(void *data)
+static void tIsr(const void *data)
 {
 	/** TESTPOINT: The code is running at ISR.*/
 	zassert_false(k_is_preempt_thread(), NULL);

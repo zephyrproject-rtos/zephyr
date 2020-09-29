@@ -378,7 +378,7 @@ static int try_to_connect(struct mqtt_client *client)
 
 		prepare_fds(client);
 
-		if (wait(APP_SLEEP_MSECS)) {
+		if (wait(APP_CONNECT_TIMEOUT_MS)) {
 			mqtt_input(client);
 		}
 

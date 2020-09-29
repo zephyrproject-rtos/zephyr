@@ -102,7 +102,7 @@ static void mm_swiftio_usdhc_pinmux(
 }
 #endif
 
-static int mm_swiftio_init(struct device *dev)
+static int mm_swiftio_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

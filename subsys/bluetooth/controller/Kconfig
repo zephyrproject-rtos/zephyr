@@ -32,6 +32,12 @@ config BT_CTLR_EXT_SCAN_FP_SUPPORT
 config BT_CTLR_PHY_UPDATE_SUPPORT
 	bool
 
+config BT_CTLR_PHY_2M_SUPPORT
+	bool
+
+config BT_CTLR_PHY_CODED_SUPPORT
+	bool
+
 config BT_CTLR_ADV_EXT_SUPPORT
 	bool
 
@@ -51,9 +57,11 @@ config BT_CTLR_DTM_HCI_SUPPORT
 config BT_CTLR_SMI_SUPPORT
 	bool
 
+config BT_CTLR_CONN_RSSI_SUPPORT
+	bool
+
 config BT_CTLR
 	bool "Bluetooth Controller"
-	select BT_CTLR_CONN_RSSI if BT_CONN && BT_HCI_RAW
 	help
 	  Enables support for SoC native controller implementations.
 
@@ -165,7 +173,7 @@ config BT_CTLR_TX_BUFFER_SIZE
 	  Maximum is set to 251 due to implementation limitations (use of
 	  uint8_t for length field in PDU buffer structure).
 
-choice
+choice BT_CTLR_TX_PWR
 	prompt "Tx Power"
 	default BT_CTLR_TX_PWR_0
 	help
@@ -331,20 +339,6 @@ config BT_CTLR_PHY
 	select BT_CTLR_EXT_REJ_IND
 	default y
 
-config BT_CTLR_PHY_2M
-	bool "2Mbps PHY Support"
-	depends on BT_CTLR_PHY && (!SOC_SERIES_NRF51X || BT_CTLR_PHY_2M_NRF)
-	default y
-	help
-	  Enable support for Bluetooth 5.0 2Mbps PHY in the Controller.
-
-config BT_CTLR_PHY_CODED
-	bool "Coded PHY Support"
-	depends on BT_CTLR_PHY && HAS_HW_NRF_RADIO_BLE_CODED
-	default y
-	help
-	  Enable support for Bluetooth 5.0 Coded PHY in the Controller.
-
 config BT_CTLR_MIN_USED_CHAN
 	bool "Minimum Number of Used Channels"
 	depends on BT_CTLR_MIN_USED_CHAN_SUPPORT
@@ -353,7 +347,28 @@ config BT_CTLR_MIN_USED_CHAN
 	  Enable support for Bluetooth 5.0 Minimum Number of Used Channels
 	  Procedure in the Controller.
 
+config BT_CTLR_CONN_RSSI
+	bool "Connection RSSI"
+	depends on BT_CTLR_CONN_RSSI_SUPPORT
+	default y if BT_HCI_RAW
+	help
+	  Enable connection RSSI measurement.
+
 endif # BT_CONN
+
+config BT_CTLR_PHY_2M
+	bool "2Mbps PHY Support"
+	depends on (BT_CTLR_PHY || BT_CTLR_ADV_EXT) && BT_CTLR_PHY_2M_SUPPORT
+	default y
+	help
+	  Enable support for Bluetooth 5.0 2Mbps PHY in the Controller.
+
+config BT_CTLR_PHY_CODED
+	bool "Coded PHY Support"
+	depends on (BT_CTLR_PHY || BT_CTLR_ADV_EXT) && BT_CTLR_PHY_CODED_SUPPORT
+	default y
+	help
+	  Enable support for Bluetooth 5.0 Coded PHY in the Controller.
 
 config BT_CTLR_CHAN_SEL_2
 	bool "Channel Selection Algorithm #2"
@@ -366,7 +381,7 @@ config BT_CTLR_CHAN_SEL_2
 config BT_CTLR_ADV_EXT
 	bool "LE Advertising Extensions" if !BT_LL_SW_SPLIT
 	depends on BT_CTLR_ADV_EXT_SUPPORT
-	select BT_CTLR_SCAN_REQ_NOTIFY if BT_LL_SW_SPLIT
+	select BT_CTLR_SCAN_REQ_NOTIFY if BT_LL_SW_SPLIT && BT_BROADCASTER
 	# Enable by default for BT_LL_SW_SPLIT when "LE Advertising Set Terminated event" is implemented
 	default y if BT_EXT_ADV && !BT_LL_SW_SPLIT
 	help
@@ -447,7 +462,7 @@ endif # BT_CTLR
 
 config BT_CTLR_DEBUG_PINS_CPUAPP
 	bool "Bluetooth Controller Debug Pins"
-	depends on BOARD_NRF5340PDK_NRF5340_CPUAPP && BT_LL_SW_SPLIT
+	depends on BOARD_NRF5340PDK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPP
 	help
 	  Route debug GPIO toggling for the BLE Controller. Enable this when
 	  using Bluetooth Controller Debug Pins in co-processor and the main

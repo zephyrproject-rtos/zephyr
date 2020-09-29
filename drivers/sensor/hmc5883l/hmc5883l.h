@@ -41,14 +41,15 @@ static const uint16_t hmc5883l_gain[] = {
 };
 
 struct hmc5883l_data {
-	struct device *i2c;
+	const struct device *i2c;
 	int16_t x_sample;
 	int16_t y_sample;
 	int16_t z_sample;
 	uint8_t gain_idx;
 
 #ifdef CONFIG_HMC5883L_TRIGGER
-	struct device *gpio;
+	const struct device *dev;
+	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	struct sensor_trigger data_ready_trigger;
@@ -60,18 +61,17 @@ struct hmc5883l_data {
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_HMC5883L_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
 #endif
 
 #endif /* CONFIG_HMC5883L_TRIGGER */
 };
 
 #ifdef CONFIG_HMC5883L_TRIGGER
-int hmc5883l_trigger_set(struct device *dev,
+int hmc5883l_trigger_set(const struct device *dev,
 			 const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler);
 
-int hmc5883l_init_interrupt(struct device *dev);
+int hmc5883l_init_interrupt(const struct device *dev);
 #endif
 
 #endif /* __SENSOR_HMC5883L__ */

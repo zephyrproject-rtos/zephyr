@@ -32,13 +32,13 @@ static char tx_data[] =
 static __aligned(16) char rx_data[TRANSFER_LOOPS][RX_BUFF_SIZE] = { { 0 } };
 #endif
 
-#define DMA_DEVICE_NAME "DMA_0"
+#define DMA_DEVICE_NAME CONFIG_DMA_LOOP_TRANSFER_DRV_NAME
 
 volatile uint8_t transfer_count;
 static struct dma_config dma_cfg = {0};
 static struct dma_block_config dma_block_cfg = {0};
 
-static void test_transfer(struct device *dev, uint32_t id)
+static void test_transfer(const struct device *dev, uint32_t id)
 {
 	int ret;
 	transfer_count++;
@@ -59,7 +59,7 @@ static void test_error(void)
 	printk("DMA could not proceed, an error occurred\n");
 }
 
-static void dma_user_callback(struct device *dma_dev, void *arg,
+static void dma_user_callback(const struct device *dma_dev, void *arg,
 			      uint32_t id, int error_code)
 {
 	if (error_code == 0) {
@@ -71,7 +71,7 @@ static void dma_user_callback(struct device *dma_dev, void *arg,
 
 void main(void)
 {
-	struct device *dma;
+	const struct device *dma;
 	static uint32_t chan_id;
 
 	printk("DMA memory to memory transfer started on %s\n",
@@ -104,7 +104,7 @@ void main(void)
 	dma_cfg.dma_slot = CONFIG_DMA_MCUX_TEST_SLOT_START;
 #endif
 
-	chan_id = 0U;
+	chan_id = CONFIG_DMA_LOOP_TRANSFER_CHANNEL_NR;
 	transfer_count = 0;
 	printk("Starting the transfer and waiting for 1 second\n");
 	printk("TX data: %s\n", tx_data);

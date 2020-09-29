@@ -8,9 +8,17 @@ resource-constrained and embedded systems: from simple embedded environmental
 sensors and LED wearables to sophisticated embedded controllers, smart
 watches, and IoT wireless applications.
 
-The Zephyr kernel supports multiple architectures, including ARM Cortex-M, Intel
-x86, ARC, NIOS II, Tensilica Xtensa and RISC-V 32. The full list of supported
-boards can be found :ref:`here <boards>`.
+The Zephyr kernel supports multiple architectures, including:
+ - ARC EM and HS
+ - ARMv6-M, ARMv7-M, and ARMv8-M (Cortex-M)
+ - ARMv7-A and ARMv8-A (Cortex-A, 32- and 64-bit)
+ - ARMv7-R (Cortex-R)
+ - Intel x86 (32- and 64-bit)
+ - NIOS II Gen 2
+ - RISC-V (32- and 64-bit)
+ - Tensilica Xtensa
+
+The full list of supported boards based on these architectures can be found :ref:`here <boards>`.
 
 Licensing
 *********

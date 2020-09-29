@@ -263,7 +263,7 @@ static bool test_ack_reply(struct ieee802154_pkt_test *t)
 
 static bool initialize_test_environment(void)
 {
-	struct device *dev;
+	const struct device *dev;
 
 	k_sem_reset(&driver_lock);
 

@@ -226,6 +226,18 @@ int bt_mesh_cfg_net_key_add(uint16_t net_idx, uint16_t addr, uint16_t key_net_id
 int bt_mesh_cfg_net_key_get(uint16_t net_idx, uint16_t addr, uint16_t *keys,
 			    size_t *key_cnt);
 
+/** @brief Delete a network key from the target node.
+ *
+ *  @param net_idx     Network index to encrypt with.
+ *  @param addr        Target node address.
+ *  @param key_net_idx Network key index.
+ *  @param status      Status response parameter.
+ *
+ *  @return 0 on success, or (negative) error code on failure.
+ */
+int bt_mesh_cfg_net_key_del(uint16_t net_idx, uint16_t addr,
+			    uint16_t key_net_idx, uint8_t *status);
+
 /** @brief Add an application key to the target node.
  *
  *  @param net_idx     Network index to encrypt with.
@@ -261,6 +273,20 @@ int bt_mesh_cfg_app_key_add(uint16_t net_idx, uint16_t addr, uint16_t key_net_id
 int bt_mesh_cfg_app_key_get(uint16_t net_idx, uint16_t addr, uint16_t key_net_idx,
 			    uint8_t *status, uint16_t *keys, size_t *key_cnt);
 
+
+/** @brief Delete an application key from the target node.
+ *
+ *  @param net_idx     Network index to encrypt with.
+ *  @param addr        Target node address.
+ *  @param key_net_idx Network key index the application key belongs to.
+ *  @param key_app_idx Application key index.
+ *  @param status      Status response parameter.
+ *
+ *  @return 0 on success, or (negative) error code on failure.
+ */
+int bt_mesh_cfg_app_key_del(uint16_t net_idx, uint16_t addr,
+		uint16_t key_net_idx, uint16_t key_app_idx, uint8_t *status);
+
 /** @brief Bind an application to a SIG model on the target node.
  *
  *  @param net_idx     Network index to encrypt with.
@@ -274,6 +300,21 @@ int bt_mesh_cfg_app_key_get(uint16_t net_idx, uint16_t addr, uint16_t key_net_id
  */
 int bt_mesh_cfg_mod_app_bind(uint16_t net_idx, uint16_t addr, uint16_t elem_addr,
 			     uint16_t mod_app_idx, uint16_t mod_id, uint8_t *status);
+
+/** @brief Unbind an application from a SIG model on the target node.
+ *
+ *  @param net_idx     Network index to encrypt with.
+ *  @param addr        Target node address.
+ *  @param elem_addr   Element address the model is in.
+ *  @param mod_app_idx Application index to unbind.
+ *  @param mod_id      Model ID.
+ *  @param status      Status response parameter.
+ *
+ *  @return 0 on success, or (negative) error code on failure.
+ */
+int bt_mesh_cfg_mod_app_unbind(uint16_t net_idx, uint16_t addr,
+	uint16_t elem_addr, uint16_t mod_app_idx,
+	uint16_t mod_id, uint8_t *status);
 
 /** @brief Bind an application to a vendor model on the target node.
  *
@@ -290,6 +331,22 @@ int bt_mesh_cfg_mod_app_bind(uint16_t net_idx, uint16_t addr, uint16_t elem_addr
 int bt_mesh_cfg_mod_app_bind_vnd(uint16_t net_idx, uint16_t addr, uint16_t elem_addr,
 				 uint16_t mod_app_idx, uint16_t mod_id, uint16_t cid,
 				 uint8_t *status);
+
+/** @brief Unbind an application from a vendor model on the target node.
+ *
+ *  @param net_idx     Network index to encrypt with.
+ *  @param addr        Target node address.
+ *  @param elem_addr   Element address the model is in.
+ *  @param mod_app_idx Application index to unbind.
+ *  @param mod_id      Model ID.
+ *  @param cid         Company ID of the model.
+ *  @param status      Status response parameter.
+ *
+ *  @return 0 on success, or (negative) error code on failure.
+ */
+int bt_mesh_cfg_mod_app_unbind_vnd(uint16_t net_idx, uint16_t addr,
+	uint16_t elem_addr, uint16_t mod_app_idx, uint16_t mod_id,
+	uint16_t cid, uint8_t *status);
 
 /** @brief Get a list of all applications bound to a SIG model on the target
  *         node.

@@ -24,10 +24,10 @@ unsigned char _irq_to_interrupt_vector[CONFIG_MAX_IRQ_LINES];
 
 #define NR_IRQ_VECTORS (IV_NR_VECTORS - IV_IRQS)  /* # vectors free for IRQs */
 
-void (*x86_irq_funcs[NR_IRQ_VECTORS])(void *);
-void *x86_irq_args[NR_IRQ_VECTORS];
+void (*x86_irq_funcs[NR_IRQ_VECTORS])(const void *);
+const void *x86_irq_args[NR_IRQ_VECTORS];
 
-static void irq_spurious(void *arg)
+static void irq_spurious(const void *arg)
 {
 	LOG_ERR("Spurious interrupt, vector %d\n", (uint32_t)(uint64_t)arg);
 	z_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
@@ -37,7 +37,7 @@ void x86_64_irq_init(void)
 {
 	for (int i = 0; i < NR_IRQ_VECTORS; i++) {
 		x86_irq_funcs[i] = irq_spurious;
-		x86_irq_args[i] = (void *)(long)(i + IV_IRQS);
+		x86_irq_args[i] = (const void *)(long)(i + IV_IRQS);
 	}
 }
 
@@ -83,7 +83,8 @@ static int allocate_vector(unsigned int priority)
  */
 
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-		void (*func)(void *arg), void *arg, uint32_t flags)
+			     void (*func)(const void *arg),
+			     const void *arg, uint32_t flags)
 {
 	uint32_t key;
 	int vector;
@@ -107,7 +108,7 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 #ifdef CONFIG_IRQ_OFFLOAD
 #include <irq_offload.h>
 
-void arch_irq_offload(irq_offload_routine_t routine, void *parameter)
+void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 {
 	x86_irq_funcs[CONFIG_IRQ_OFFLOAD_VECTOR - IV_IRQS] = routine;
 	x86_irq_args[CONFIG_IRQ_OFFLOAD_VECTOR - IV_IRQS] = parameter;

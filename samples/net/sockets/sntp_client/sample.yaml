@@ -3,7 +3,7 @@ sample:
   name: sntp_client
 common:
   harness: net
-  platform_whitelist: qemu_x86
+  platform_allow: qemu_x86
   tags: net
 tests:
   sample.net.sockets.sntp_client:

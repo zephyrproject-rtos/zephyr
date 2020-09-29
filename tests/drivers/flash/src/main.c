@@ -33,7 +33,7 @@
 #define EXPECTED_SIZE	256
 #define CANARY		0xff
 
-static struct device *flash_dev;
+static const struct device *flash_dev;
 static struct flash_pages_info page_info;
 static uint8_t __aligned(4) expected[EXPECTED_SIZE];
 

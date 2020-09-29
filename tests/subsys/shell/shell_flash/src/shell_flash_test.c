@@ -35,7 +35,7 @@ static void test_flash_read(void)
 		"00000020: 61 62 63                                         |abc              |",
 	};
 	const struct shell *shell = shell_backend_dummy_get_ptr();
-	static struct device *flash_dev;
+	static const struct device *flash_dev;
 	const char *buf;
 	const int test_base = FLASH_SIMULATOR_BASE_OFFSET;
 	const int test_size = 0x24;  /* 32-alignment required */

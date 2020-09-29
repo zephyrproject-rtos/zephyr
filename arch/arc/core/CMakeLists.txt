@@ -2,6 +2,10 @@
 
 zephyr_library()
 
+if(CONFIG_COVERAGE)
+  toolchain_cc_coverage()
+endif()
+
 zephyr_library_sources(
   thread.c
   thread_entry_wrapper.S

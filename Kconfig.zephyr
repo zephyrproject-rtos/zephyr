@@ -171,6 +171,12 @@ endmenu
 
 menu "Compiler Options"
 
+config CODING_GUIDELINE_CHECK
+	bool "Enforce coding guideline rules"
+	help
+	  Use available compiler flags to check coding guideline rules during
+	  the build.
+
 config NATIVE_APPLICATION
 	bool "Build as a native host application"
 	help
@@ -391,6 +397,55 @@ config BOOTLOADER_MCUBOOT
 	    * Activating SW_VECTOR_RELAY_CLIENT on Cortex-M0
 	      (or Armv8-M baseline) targets with no built-in vector relocation
 	      mechanisms
+
+if BOOTLOADER_MCUBOOT
+
+config MCUBOOT_SIGNATURE_KEY_FILE
+	string "Path to the mcuboot signing key file"
+	default ""
+	help
+	  The file contains a key pair whose public half is verified
+	  by your target's MCUboot image. The file is in PEM format.
+
+	  If set to a non-empty value, the build system tries to
+	  sign the final binaries using a 'west sign -t imgtool' command.
+	  The signed binaries are placed in the build directory
+	  at zephyr/zephyr.signed.bin and zephyr/zephyr.signed.hex.
+
+	  The file names can be customized with CONFIG_KERNEL_BIN_NAME.
+	  The existence of bin and hex files depends on CONFIG_BUILD_OUTPUT_BIN
+	  and CONFIG_BUILD_OUTPUT_HEX.
+
+	  This option should contain an absolute path to the same file
+	  as the BOOT_SIGNATURE_KEY_FILE option in your MCUboot
+	  .config. (The MCUboot config option is used for the MCUboot
+	  bootloader image; this option is for your application which
+	  is to be loaded by MCUboot. The MCUboot config option can be
+	  a relative path from the MCUboot repository root; this option's
+	  behavior is undefined for relative paths.)
+
+	  If left empty, you must sign the Zephyr binaries manually.
+
+config MCUBOOT_EXTRA_IMGTOOL_ARGS
+	string "Extra arguments to pass to imgtool"
+	default ""
+	help
+	  If CONFIG_MCUBOOT_SIGNATURE_KEY_FILE is a non-empty string,
+	  you can use this option to pass extra options to imgtool.
+	  For example, you could set this to "--version 1.2".
+
+config MCUBOOT_GENERATE_CONFIRMED_IMAGE
+	bool "Also generate a padded, confirmed image"
+	help
+	  The signed, padded, and confirmed binaries are placed in the build
+	  directory at zephyr/zephyr.signed.confirmed.bin and
+	  zephyr/zephyr.signed.confirmed.hex.
+
+	  The file names can be customized with CONFIG_KERNEL_BIN_NAME.
+	  The existence of bin and hex files depends on CONFIG_BUILD_OUTPUT_BIN
+	  and CONFIG_BUILD_OUTPUT_HEX.
+
+endif # BOOTLOADER_MCUBOOT
 
 config BOOTLOADER_ESP_IDF
 	bool "ESP-IDF bootloader support"

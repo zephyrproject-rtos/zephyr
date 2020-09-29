@@ -10,12 +10,12 @@
 #define GPIO0 DT_LABEL(DT_NODELABEL(gpio0))
 #define POWER_LATCH_PIN 31
 
-static int board_circuitdojo_feather_nrf9160_init(struct device *dev)
+static int board_circuitdojo_feather_nrf9160_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	/* Get the device binding */
-	struct device *gpio = device_get_binding(GPIO0);
+	const struct device *gpio = device_get_binding(GPIO0);
 	if (gpio == NULL) {
 		return -ENODEV;
 	}

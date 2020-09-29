@@ -61,9 +61,12 @@ static const struct pin_config pinconf[] = {
 	{STM32_PIN_PA11, STM32G4X_PINMUX_FUNC_PA11_USB_DM},
 	{STM32_PIN_PA12, STM32G4X_PINMUX_FUNC_PA12_USB_DP},
 #endif	/* CONFIG_USB_DC_STM32 */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(dac1), okay) && CONFIG_DAC
+	{STM32_PIN_PA4, STM32G4X_PINMUX_FUNC_PA4_DAC1_OUT1},
+#endif
 };
 
-static int pinmux_stm32_init(struct device *port)
+static int pinmux_stm32_init(const struct device *port)
 {
 	ARG_UNUSED(port);
 

@@ -205,7 +205,7 @@ handler) are passed as arguments. Characters within parentheses are treated
 as one argument. If shell wont find a handler it will display an error message.
 
 Commands can be also executed from a user application using any active backend
-and a function :cpp:func:`shell_execute_cmd`, as shown in this example:
+and a function :c:func:`shell_execute_cmd`, as shown in this example:
 
 .. code-block:: c
 
@@ -249,7 +249,7 @@ Simple command handler implementation:
 		return 0;
 	}
 
-Function :cpp:func:`shell_fprintf` or the shell print macros:
+Function :c:func:`shell_fprintf` or the shell print macros:
 :c:macro:`shell_print`, :c:macro:`shell_info`, :c:macro:`shell_warn` and
 :c:macro:`shell_error` can be used from the command handler or from threads,
 but not from an interrupt context. Instead, interrupt handlers should use

@@ -21,27 +21,24 @@
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 LOG_MODULE_DECLARE(IIS2MDC);
 
-static int iis2mdc_i2c_read(struct device *dev, uint8_t reg_addr,
-				 uint8_t *value, uint16_t len)
-{
-	struct iis2mdc_data *data = dev->data;
-	const struct iis2mdc_config *cfg = dev->config;
+static int iis2mdc_i2c_read(struct iis2mdc_data *data, uint8_t reg_addr,
+			    uint8_t *value, uint16_t len)
+{	const struct iis2mdc_config *cfg = data->dev->config;
 
 	return i2c_burst_read(data->bus, cfg->i2c_slv_addr,
 			      reg_addr, value, len);
 }
 
-static int iis2mdc_i2c_write(struct device *dev, uint8_t reg_addr,
-				  uint8_t *value, uint16_t len)
+static int iis2mdc_i2c_write(struct iis2mdc_data *data, uint8_t reg_addr,
+			     uint8_t *value, uint16_t len)
 {
-	struct iis2mdc_data *data = dev->data;
-	const struct iis2mdc_config *cfg = dev->config;
+	const struct iis2mdc_config *cfg = data->dev->config     ;
 
 	return i2c_burst_write(data->bus, cfg->i2c_slv_addr,
 			       reg_addr, value, len);
 }
 
-int iis2mdc_i2c_init(struct device *dev)
+int iis2mdc_i2c_init(const struct device *dev)
 {
 	struct iis2mdc_data *data = dev->data;
 
@@ -49,7 +46,7 @@ int iis2mdc_i2c_init(struct device *dev)
 	data->ctx_i2c.write_reg = (stmdev_write_ptr) iis2mdc_i2c_write;
 
 	data->ctx = &data->ctx_i2c;
-	data->ctx->handle = dev;
+	data->ctx->handle = data;
 
 	return 0;
 }

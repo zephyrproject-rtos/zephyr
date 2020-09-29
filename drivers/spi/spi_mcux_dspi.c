@@ -22,19 +22,20 @@ struct spi_mcux_config {
 	SPI_Type *base;
 	char *clock_name;
 	clock_control_subsys_t clock_subsys;
-	void (*irq_config_func)(struct device *dev);
+	void (*irq_config_func)(const struct device *dev);
 	uint32_t pcs_sck_delay;
 	uint32_t sck_pcs_delay;
 	uint32_t transfer_delay;
 };
 
 struct spi_mcux_data {
+	const struct device *dev;
 	dspi_master_handle_t handle;
 	struct spi_context ctx;
 	size_t transfer_len;
 };
 
-static int spi_mcux_transfer_next_packet(struct device *dev)
+static int spi_mcux_transfer_next_packet(const struct device *dev)
 {
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
@@ -103,9 +104,8 @@ static int spi_mcux_transfer_next_packet(struct device *dev)
 	       status == kDSPI_Busy ? -EBUSY : -EINVAL;
 }
 
-static void spi_mcux_isr(void *arg)
+static void spi_mcux_isr(const struct device *dev)
 {
-	struct device *dev = (struct device *)arg;
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
 	SPI_Type *base = config->base;
@@ -116,23 +116,22 @@ static void spi_mcux_isr(void *arg)
 static void spi_mcux_master_transfer_callback(SPI_Type *base,
 		dspi_master_handle_t *handle, status_t status, void *userData)
 {
-	struct device *dev = userData;
-	struct spi_mcux_data *data = dev->data;
+	struct spi_mcux_data *data = userData;
 
 	spi_context_update_tx(&data->ctx, 1, data->transfer_len);
 	spi_context_update_rx(&data->ctx, 1, data->transfer_len);
 
-	spi_mcux_transfer_next_packet(dev);
+	spi_mcux_transfer_next_packet(data->dev);
 }
 
-static int spi_mcux_configure(struct device *dev,
+static int spi_mcux_configure(const struct device *dev,
 			      const struct spi_config *spi_cfg)
 {
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
 	SPI_Type *base = config->base;
 	dspi_master_config_t master_config;
-	struct device *clock_dev;
+	const struct device *clock_dev;
 	uint32_t clock_freq;
 	uint32_t word_size;
 
@@ -194,7 +193,8 @@ static int spi_mcux_configure(struct device *dev,
 	DSPI_MasterInit(base, &master_config, clock_freq);
 
 	DSPI_MasterTransferCreateHandle(base, &data->handle,
-					spi_mcux_master_transfer_callback, dev);
+					spi_mcux_master_transfer_callback,
+					data);
 
 	DSPI_SetDummyData(base, 0);
 
@@ -204,7 +204,7 @@ static int spi_mcux_configure(struct device *dev,
 	return 0;
 }
 
-static int transceive(struct device *dev,
+static int transceive(const struct device *dev,
 		      const struct spi_config *spi_cfg,
 		      const struct spi_buf_set *tx_bufs,
 		      const struct spi_buf_set *rx_bufs,
@@ -237,7 +237,7 @@ out:
 	return ret;
 }
 
-static int spi_mcux_transceive(struct device *dev,
+static int spi_mcux_transceive(const struct device *dev,
 			       const struct spi_config *spi_cfg,
 			       const struct spi_buf_set *tx_bufs,
 			       const struct spi_buf_set *rx_bufs)
@@ -246,7 +246,7 @@ static int spi_mcux_transceive(struct device *dev,
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_mcux_transceive_async(struct device *dev,
+static int spi_mcux_transceive_async(const struct device *dev,
 				     const struct spi_config *spi_cfg,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs,
@@ -256,8 +256,8 @@ static int spi_mcux_transceive_async(struct device *dev,
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static int spi_mcux_release(struct device *dev,
-		      const struct spi_config *spi_cfg)
+static int spi_mcux_release(const struct device *dev,
+			    const struct spi_config *spi_cfg)
 {
 	struct spi_mcux_data *data = dev->data;
 
@@ -266,10 +266,12 @@ static int spi_mcux_release(struct device *dev,
 	return 0;
 }
 
-static int spi_mcux_init(struct device *dev)
+static int spi_mcux_init(const struct device *dev)
 {
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
+
+	data->dev = dev;
 
 	config->irq_config_func(dev);
 
@@ -287,7 +289,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 };
 
 #define SPI_MCUX_DSPI_DEVICE(id)					\
-	static void spi_mcux_config_func_##id(struct device *dev);	\
+	static void spi_mcux_config_func_##id(const struct device *dev); \
 	static const struct spi_mcux_config spi_mcux_config_##id = {	\
 		.base = (SPI_Type *)DT_INST_REG_ADDR(id),		\
 		.clock_name = DT_INST_CLOCKS_LABEL(id),			\
@@ -316,7 +318,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 			    POST_KERNEL,				\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &spi_mcux_driver_api);			\
-	static void spi_mcux_config_func_##id(struct device *dev)	\
+	static void spi_mcux_config_func_##id(const struct device *dev)	\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(id),				\
 			    DT_INST_IRQ(id, priority),			\

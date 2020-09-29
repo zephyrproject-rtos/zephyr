@@ -9,9 +9,9 @@
 
 #define VDD_5V0_PWR_CTRL_GPIO_PIN  21   /* ENABLE_5V0_BOOST  --> speed sensor */
 
-static int pwr_ctrl_init(struct device *dev)
+static int pwr_ctrl_init(const struct device *dev)
 {
-	struct device *gpio;
+	const struct device *gpio;
 	int    err = -ENODEV;
 
 	/* Get handle of the GPIO device. */

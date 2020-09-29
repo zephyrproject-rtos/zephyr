@@ -43,12 +43,12 @@ void helloLoop(const char *my_name,
 
 		/* say "hello" */
 		tname = k_thread_name_get(k_current_get());
-		if (tname == NULL) {
-			printk("%s: Hello World from %s!\n",
-				my_name, CONFIG_BOARD);
-		} else {
+		if (tname != NULL && tname[0] != '\0') {
 			printk("%s: Hello World from %s!\n",
 				tname, CONFIG_BOARD);
+		} else {
+			printk("%s: Hello World from %s!\n",
+				my_name, CONFIG_BOARD);
 		}
 
 		/* wait a while, then let other thread have a turn */

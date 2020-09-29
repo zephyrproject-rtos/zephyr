@@ -24,7 +24,7 @@
 /*
  * Core Domain Clock Generator (CDCG) device registers
  */
-struct cdcg_reg_t {
+struct cdcg_reg {
 	/* High Frequency Clock Generator (HFCG) registers */
 	/* 0x000: HFCG Control */
 	volatile uint8_t HFCGCTRL;
@@ -79,7 +79,7 @@ struct cdcg_reg_t {
 /*
  * Power Management Controller (PMC) device registers
  */
-struct pmc_reg_t {
+struct pmc_reg {
 	/* 0x000: Power Management Controller */
 	volatile uint8_t PMCSR;
 	volatile uint8_t reserved1[2];
@@ -121,7 +121,7 @@ struct pmc_reg_t {
 /*
  * System Configuration (SCFG) device registers
  */
-struct scfg_reg_t {
+struct scfg_reg {
 	/* 0x000: Device Control */
 	volatile uint8_t DEVCNT;
 	/* 0x001: Straps Status */
@@ -185,7 +185,7 @@ struct scfg_reg_t {
 /*
  * Universal Asynchronous Receiver-Transmitter (UART) device registers
  */
-struct uart_reg_t {
+struct uart_reg {
 	/* 0x000: Transmit Data Buffer */
 	volatile uint8_t UTBUF;
 	volatile uint8_t reserved1;
@@ -257,5 +257,55 @@ struct uart_reg_t {
 #define NPCX_UFRCTL_RFULL_LVL_EN              5
 #define NPCX_UFRCTL_RNEMPTY_EN                6
 #define NPCX_UFRCTL_ERR_EN                    7
+
+/*
+ * Multi-Input Wake-Up Unit (MIWU) device registers
+ */
+
+/* MIWU multi-registers */
+#define NPCX_WKEDG_OFFSET(n)    (0x000 + ((n) * 2L) + ((n) < 5 ? 0 : 0x1E))
+#define NPCX_WKAEDG_OFFSET(n)   (0x001 + ((n) * 2L) + ((n) < 5 ? 0 : 0x1E))
+#define NPCX_WKPND_OFFSET(n)    (0x00A + ((n) * 4L) + ((n) < 5 ? 0 : 0x10))
+#define NPCX_WKPCL_OFFSET(n)    (0x00C + ((n) * 4L) + ((n) < 5 ? 0 : 0x10))
+#define NPCX_WKEN_OFFSET(n)     (0x01E + ((n) * 2L) + ((n) < 5 ? 0 : 0x12))
+#define NPCX_WKINEN_OFFSET(n)   (0x01F + ((n) * 2L) + ((n) < 5 ? 0 : 0x12))
+#define NPCX_WKMOD_OFFSET(n)    (0x070 + (n))
+
+#define NPCX_WKEDG(base, n) (*(volatile uint8_t *)(base + \
+						NPCX_WKEDG_OFFSET(n)))
+#define NPCX_WKAEDG(base, n) (*(volatile uint8_t *)(base + \
+						NPCX_WKAEDG_OFFSET(n)))
+#define NPCX_WKPND(base, n) (*(volatile uint8_t *)(base + \
+						NPCX_WKPND_OFFSET(n)))
+#define NPCX_WKPCL(base, n) (*(volatile uint8_t *)(base + \
+						NPCX_WKPCL_OFFSET(n)))
+#define NPCX_WKEN(base, n) (*(volatile uint8_t *)(base + \
+						NPCX_WKEN_OFFSET(n)))
+#define NPCX_WKINEN(base, n) (*(volatile uint8_t *)(base + \
+						NPCX_WKINEN_OFFSET(n)))
+#define NPCX_WKMOD(base, n) (*(volatile uint8_t *)(base + \
+						NPCX_WKMOD_OFFSET(n)))
+
+/*
+ * General-Purpose I/O (GPIO) device registers
+ */
+struct gpio_reg {
+	/* 0x000: Port GPIOx Data Out */
+	volatile uint8_t PDOUT;
+	/* 0x001: Port GPIOx Data In */
+	volatile uint8_t PDIN;
+	/* 0x002: Port GPIOx Direction */
+	volatile uint8_t PDIR;
+	/* 0x003: Port GPIOx Pull-Up or Pull-Down Enable */
+	volatile uint8_t PPULL;
+	/* 0x004: Port GPIOx Pull-Up/Down Selection */
+	volatile uint8_t PPUD;
+	/* 0x005: Port GPIOx Drive Enable by VDD Present */
+	volatile uint8_t PENVDD;
+	/* 0x006: Port GPIOx Output Type */
+	volatile uint8_t PTYPE;
+	/* 0x007: Port GPIOx Lock Control */
+	volatile uint8_t PLOCK_CTL;
+};
 
 #endif /* _NUVOTON_NPCX_REG_DEF_H */

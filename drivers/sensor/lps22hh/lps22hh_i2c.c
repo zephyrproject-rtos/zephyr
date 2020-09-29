@@ -20,27 +20,25 @@
 
 LOG_MODULE_DECLARE(LPS22HH, CONFIG_SENSOR_LOG_LEVEL);
 
-static int lps22hh_i2c_read(struct device *dev, uint8_t reg_addr,
-				 uint8_t *value, uint16_t len)
+static int lps22hh_i2c_read(struct lps22hh_data *data, uint8_t reg_addr,
+			    uint8_t *value, uint16_t len)
 {
-	struct lps22hh_data *data = dev->data;
-	const struct lps22hh_config *cfg = dev->config;
+	const struct lps22hh_config *cfg = data->dev->config;
 
 	return i2c_burst_read(data->bus, cfg->i2c_slv_addr,
 			      reg_addr, value, len);
 }
 
-static int lps22hh_i2c_write(struct device *dev, uint8_t reg_addr,
-				  uint8_t *value, uint16_t len)
+static int lps22hh_i2c_write(struct lps22hh_data *data, uint8_t reg_addr,
+			     uint8_t *value, uint16_t len)
 {
-	struct lps22hh_data *data = dev->data;
-	const struct lps22hh_config *cfg = dev->config;
+	const struct lps22hh_config *cfg = data->dev->config;
 
 	return i2c_burst_write(data->bus, cfg->i2c_slv_addr,
 			       reg_addr, value, len);
 }
 
-int lps22hh_i2c_init(struct device *dev)
+int lps22hh_i2c_init(const struct device *dev)
 {
 	struct lps22hh_data *data = dev->data;
 
@@ -48,7 +46,7 @@ int lps22hh_i2c_init(struct device *dev)
 	data->ctx_i2c.write_reg = (stmdev_write_ptr) lps22hh_i2c_write;
 
 	data->ctx = &data->ctx_i2c;
-	data->ctx->handle = dev;
+	data->ctx->handle = data;
 
 	return 0;
 }

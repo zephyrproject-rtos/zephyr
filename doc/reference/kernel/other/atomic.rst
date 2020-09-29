@@ -70,7 +70,7 @@ However, you can also define an N-bit array of atomic variables using
 :c:macro:`ATOMIC_DEFINE`.
 
 A single bit in array of atomic variables can be manipulated using
-the APIs listed at the end of this section that end with :cpp:func:`_bit`.
+the APIs listed at the end of this section that end with :c:func:`_bit`.
 
 The following code shows how a set of 200 flag bits can be implemented
 using an array of atomic variables.

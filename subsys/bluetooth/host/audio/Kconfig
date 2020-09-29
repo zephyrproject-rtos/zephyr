@@ -1,0 +1,107 @@
+# Bluetooth Audio configuration options
+
+#
+# Copyright (c) 2020 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig BT_AUDIO
+	bool "Bluetooth Audio support [Experimental]"
+	help
+	  This option enables Bluetooth Audio support. The specific
+	  features that are available may depend on other features
+	  that have been enabled in the stack, such as Periodic
+	  Advertisement for Broadcast and L2CAP Dynamic Channel
+	  for Unicast.
+
+if BT_AUDIO
+
+config BT_ISO
+	bool
+
+if BT_CONN
+
+config BT_AUDIO_UNICAST
+	bool "Bluetooth Unicast Audio Support"
+	select BT_SMP
+	select BT_L2CAP_DYNAMIC_CHANNEL
+	select BT_ISO
+	select BT_GATT_DYNAMIC_DB
+	select BT_GATT_CACHING
+	select BT_EATT
+	help
+	  This option enables support for Bluetooth Unicast Audio using
+	  Isochronous channels.
+
+if BT_AUDIO_UNICAST
+
+config BT_MAX_ISO_CONN
+	int "Maximum number of simultaneous ISO connections"
+	depends on BT_ISO
+	default BT_MAX_CONN
+	range 1 64
+	help
+	  Maximum number of simultaneous Bluetooth isochronous connections
+	  supported.
+
+config BT_ISO_TX_BUF_COUNT
+	int "Numer of Isochronous TX buffers"
+	default 1
+	range 1 255
+	help
+	  Number of buffers available for outgoing Isochronous channel packets.
+
+config BT_ISO_TX_FRAG_COUNT
+	int "Number of ISO TX fragment buffers"
+	default 2
+	range 0 255
+	help
+	  Number of buffers available for fragments of TX buffers. Warning:
+	  setting this to 0 means that the application must ensure that
+	  queued TX buffers never need to be fragmented, i.e. that the
+	  controller's buffer size is large enough. If this is not ensured,
+	  and there are no dedicated fragment buffers, a deadlock may occur.
+	  In most cases the default value of 2 is a safe bet.
+
+config BT_ISO_TX_MTU
+	int "Maximum supported MTU for Isochronous TX buffers"
+	default 251
+	range 23 2000
+	help
+	  Maximum MTU for Isochronous channels TX buffers.
+
+config BT_ISO_RX_BUF_COUNT
+	int "Numer of Isochronous RX buffers"
+	default 1
+	range 1 255
+	help
+	  Number of buffers available for incoming Isochronous channel packets.
+
+config BT_ISO_RX_MTU
+	int "Maximum supported MTU for Isochronous RX buffers"
+	default 251
+	range 23 2000
+	help
+	  Maximum MTU for Isochronous channels RX buffers.
+
+endif # BT_AUDIO_UNICAST
+endif # BT_CONN
+
+config BT_AUDIO_DEBUG
+	bool "Enable debug logs"
+	depends on BT_DEBUG
+	help
+	  Use this option to enable debug logs for the Bluetooth
+	  Audio functionality.
+
+if BT_AUDIO_DEBUG
+
+config BT_AUDIO_DEBUG_ISO
+	bool "ISO channel debug"
+	help
+	  Use this option to enable ISO channels debug logs for the
+	  Bluetooth Audio functionality.
+
+endif # BT_AUDIO_DEBUG
+endif # BT_AUDIO

@@ -17,7 +17,7 @@ typedef struct {
 	char info[100];
 } versionInfo;
 
-void get_version_check(void *param)
+void get_version_check(const void *param)
 {
 	char infobuf[100];
 	osVersion_t osv;
@@ -32,7 +32,7 @@ void get_version_check(void *param)
 	}
 }
 
-void lock_unlock_check(void *arg)
+void lock_unlock_check(const void *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -66,7 +66,7 @@ void test_kernel_apis(void)
 	versionInfo version, version_irq;
 
 	get_version_check(&version);
-	irq_offload(get_version_check, &version_irq);
+	irq_offload(get_version_check, (const void *)&version_irq);
 
 	/* Check if the version value retrieved in ISR and thread is same */
 	zassert_equal(strcmp(version.info, version_irq.info), 0, NULL);
@@ -78,8 +78,9 @@ void test_kernel_apis(void)
 	irq_offload(lock_unlock_check, NULL);
 }
 
-void delay_until(void *param)
+void delay_until(const void *param)
 {
+	ARG_UNUSED(param);
 
 	tick = osKernelGetTickCount();
 	tick += 50U;

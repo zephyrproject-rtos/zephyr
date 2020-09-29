@@ -85,48 +85,48 @@ A small subset of kernel APIs, invoked as system calls, require heap memory
 allocations. This memory is used only by the kernel and is not accessible
 directly by user mode. In order to use these system calls, invoking threads
 must assign themselves to a resource pool, which is a k_mem_pool object.
-Memory is drawn from a thread's resource pool using :c:func:`z_thread_malloc()`
-and freed with :c:func:`k_free()`.
+Memory is drawn from a thread's resource pool using :c:func:`z_thread_malloc`
+and freed with :c:func:`k_free`.
 
 The APIs which use resource pools are as follows, with any alternatives
 noted for users who do not want heap allocations within their application:
 
- - :c:func:`k_stack_alloc_init()` sets up a k_stack with its storage
+ - :c:func:`k_stack_alloc_init` sets up a k_stack with its storage
    buffer allocated out of a resource pool instead of a buffer provided by the
    user. An alternative is to declare k_stacks that are automatically
    initialized at boot with :c:macro:`K_STACK_DEFINE()`, or to initialize the
-   k_stack in supervisor mode with :c:func:`k_stack_init()`.
+   k_stack in supervisor mode with :c:func:`k_stack_init`.
 
- - :c:func:`k_pipe_alloc_init()` sets up a k_pipe object with its
+ - :c:func:`k_pipe_alloc_init` sets up a k_pipe object with its
    storage buffer allocated out of a resource pool instead of a buffer provided
    by the user. An alternative is to declare k_pipes that are automatically
    initialized at boot with :c:macro:`K_PIPE_DEFINE()`, or to initialize the
-   k_pipe in supervisor mode with :c:func:`k_pipe_init()`.
+   k_pipe in supervisor mode with :c:func:`k_pipe_init`.
 
- - :c:func:`k_msgq_alloc_init()` sets up a k_msgq object with its
+ - :c:func:`k_msgq_alloc_init` sets up a k_msgq object with its
    storage buffer allocated out of a resource pool instead of a buffer provided
    by the user. An alternative is to declare a k_msgq that is automatically
    initialized at boot with :c:macro:`K_MSGQ_DEFINE()`, or to initialize the
-   k_msgq in supervisor mode with :c:func:`k_msgq_init()`.
+   k_msgq in supervisor mode with :c:func:`k_msgq_init`.
 
- - :c:func:`k_poll()` when invoked from user mode, needs to make a kernel-side
+ - :c:func:`k_poll` when invoked from user mode, needs to make a kernel-side
    copy of the provided events array while waiting for an event. This copy is
-   freed when :c:func:`k_poll()` returns for any reason.
+   freed when :c:func:`k_poll` returns for any reason.
 
- - :c:func:`k_queue_alloc_prepend()` and :c:func:`k_queue_alloc_append()`
+ - :c:func:`k_queue_alloc_prepend` and :c:func:`k_queue_alloc_append`
    allocate a container structure to place the data in, since the internal
    bookkeeping information that defines the queue cannot be placed in the
    memory provided by the user.
 
- - :c:func:`k_object_alloc()` allows for entire kernel objects to be
+ - :c:func:`k_object_alloc` allows for entire kernel objects to be
    dynamically allocated at runtime and a usable pointer to them returned to
    the caller.
 
-The relevant API is :c:func:`k_thread_resource_pool_assign()` which assigns
+The relevant API is :c:func:`k_thread_resource_pool_assign` which assigns
 a k_mem_pool to draw these allocations from for the target thread.
 
 If the system heap is enabled, then the system heap may be used with
-:c:func:`k_thread_system_pool_assign()`, but it is preferable for different
+:c:func:`k_thread_system_pool_assign`, but it is preferable for different
 logical applications running on the system to have their own pools.
 
 Memory Domains
@@ -146,11 +146,20 @@ mode. In some cases this may be unavoidable; for example some architectures do
 not allow for the definition of regions which are read-only to user mode but
 read-write to supervisor mode. A great deal of care must be taken when working
 with such regions to not unintentionally cause the kernel to crash when
-accessing such a region.
+accessing such a region. Any attempt to use memory domain APIs to control
+supervisor mode access is at best undefined behavior; supervisor mode access
+policy is only intended to be controlled by boot-time memory regions.
 
 Memory domain APIs are only available to supervisor mode. The only control
 user mode has over memory domains is that any user thread's child threads
 will automatically become members of the parent's domain.
+
+All threads are members of a memory domain, including supervisor threads
+(even though this has no implications on their memory access). There is a
+default domain ``k_mem_domain_default`` which will be assigned to threads if
+they have not been specifically assigned to a domain, or inherited a memory
+domain membership from their parent thread. The main thread starts as a
+member of the default domain.
 
 Memory Partitions
 =================
@@ -324,8 +333,8 @@ Create a Memory Domain
 ----------------------
 
 A memory domain is defined using a variable of type
-:c:type:`k_mem_domain`. It must then be initialized by calling
-:cpp:func:`k_mem_domain_init()`.
+:c:struct:`k_mem_domain`. It must then be initialized by calling
+:c:func:`k_mem_domain_init`.
 
 The following code defines and initializes an empty memory domain.
 
@@ -395,6 +404,9 @@ call:
 
     k_mem_domain_add_thread(&app0_domain, app_thread_id);
 
+If the thread was already a member of some other domain (including the
+default domain), it will be removed from it in favor of the new one.
+
 In addition, if a thread is a member of a memory domain, and it creates a
 child thread, that thread will belong to the domain as well.
 
@@ -411,24 +423,6 @@ domain.
 The k_mem_domain_remove_partition() API finds the memory partition
 that matches the given parameter and removes that partition from the
 memory domain.
-
-Remove a Thread from the Memory Domain
---------------------------------------
-
-The following code shows how to remove a thread from the memory domain.
-
-.. code-block:: c
-
-    k_mem_domain_remove_thread(app_thread_id);
-
-Destroy a Memory Domain
------------------------
-
-The following code shows how to destroy a memory domain.
-
-.. code-block:: c
-
-    k_mem_domain_destroy(&app0_domain);
 
 Available Partition Attributes
 ------------------------------
@@ -449,6 +443,8 @@ Some examples of partition attributes are:
     K_MEM_PARTITION_P_RW_U_RW
     /* Denote partition is privileged read/write, unprivileged read-only */
     K_MEM_PARTITION_P_RW_U_RO
+
+In almost all cases ``K_MEM_PARTITION_P_RW_U_RW`` is the right choice.
 
 Configuration Options
 *********************

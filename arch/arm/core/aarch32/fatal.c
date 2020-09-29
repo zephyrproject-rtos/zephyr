@@ -34,6 +34,18 @@ static void esf_dump(const z_arch_esf_t *esf)
 	}
 	LOG_ERR("fpscr:  0x%08x", esf->fpscr);
 #endif
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+	const struct _callee_saved *callee = esf->extra_info.callee;
+
+	if (callee != NULL) {
+		LOG_ERR("r4/v1:  0x%08x  r5/v2:  0x%08x  r6/v3:  0x%08x",
+			callee->v1, callee->v2, callee->v3);
+		LOG_ERR("r7/v4:  0x%08x  r8/v5:  0x%08x  r9/v6:  0x%08x",
+			callee->v4, callee->v5, callee->v6);
+		LOG_ERR("r10/v7: 0x%08x  r11/v8: 0x%08x    psp:  0x%08x",
+			callee->v7, callee->v8, callee->psp);
+	}
+#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
 	LOG_ERR("Faulting instruction address (r15/pc): 0x%08x",
 		esf->basic.pc);
 }
@@ -83,7 +95,20 @@ void z_do_kernel_oops(const z_arch_esf_t *esf)
 	}
 
 #endif /* CONFIG_USERSPACE */
+
+#if !defined(CONFIG_EXTRA_EXCEPTION_INFO)
 	z_arm_fatal_error(reason, esf);
+#else
+	/* extra exception info is not collected for kernel oops
+	 * path today so we make a copy of the ESF and zero out
+	 * that information
+	 */
+	z_arch_esf_t esf_copy;
+
+	memcpy(&esf_copy, esf, offsetof(z_arch_esf_t, extra_info));
+	esf_copy.extra_info = (struct __extra_esf_info) { 0 };
+	z_arm_fatal_error(reason, &esf_copy);
+#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
 }
 
 FUNC_NORETURN void arch_syscall_oops(void *ssf_ptr)

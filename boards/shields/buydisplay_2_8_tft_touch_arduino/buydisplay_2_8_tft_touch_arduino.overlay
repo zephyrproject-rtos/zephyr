@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2020 Teslabs Engineering S.L.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_spi {
+	status = "okay";
+	cs-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>; /* D9 */
+
+	ili9340@0 {
+		compatible = "ilitek,ili9340";
+		label = "DISPLAY";
+		spi-max-frequency = <25000000>;
+		reg = <0>;
+		cmd-data-gpios = <&arduino_header 13 GPIO_ACTIVE_LOW>; /* D7 */
+		reset-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
+	};
+};
+
+&arduino_i2c {
+	ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		label = "TOUCH";
+		/* Uncomment if IRQ line is available (requires to solder jumper) */
+		/* int-gpios = <&arduino_header 11 GPIO_ACTIVE_LOW>; */ /* D5 */
+	};
+};

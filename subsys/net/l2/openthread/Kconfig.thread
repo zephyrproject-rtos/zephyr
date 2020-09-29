@@ -27,7 +27,6 @@ config OPENTHREAD_XPANID
 config OPENTHREAD_JOINER_AUTOSTART
 	bool "Enable automatic joiner start"
 	depends on OPENTHREAD_JOINER
-	depends on !OPENTHREAD_MANUAL_START
 
 config OPENTHREAD_JOINER_PSKD
 	string "Default pre shared key for the Joiner"

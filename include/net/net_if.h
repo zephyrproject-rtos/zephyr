@@ -412,7 +412,7 @@ struct net_traffic_class {
  */
 struct net_if_dev {
 	/** The actually device driver instance the net_if is related to */
-	struct device *dev;
+	const struct device *dev;
 
 	/** Interface's L2 layer */
 	const struct net_l2 * const l2;
@@ -587,7 +587,7 @@ static inline void *net_if_l2_data(struct net_if *iface)
  *
  * @return a pointer to the device driver instance
  */
-static inline struct device *net_if_get_device(struct net_if *iface)
+static inline const struct device *net_if_get_device(struct net_if *iface)
 {
 	return iface->if_dev->dev;
 }
@@ -716,8 +716,8 @@ static inline void net_if_stop_rs(struct net_if *iface)
  * @brief Set a network interface's link address
  *
  * @param iface Pointer to a network interface structure
- * @param addr A pointer to a uint8_t buffer representing the address. The buffer
- *             must remain valid throughout interface lifetime.
+ * @param addr A pointer to a uint8_t buffer representing the address.
+ *             The buffer must remain valid throughout interface lifetime.
  * @param len length of the address buffer
  * @param type network bearer type of this link address
  *
@@ -792,7 +792,7 @@ struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr);
  *
  * @return a valid struct net_if pointer on success, NULL otherwise
  */
-struct net_if *net_if_lookup_by_dev(struct device *dev);
+struct net_if *net_if_lookup_by_dev(const struct device *dev);
 
 /**
  * @brief Get network interface IP config

@@ -13,6 +13,8 @@ project(updatehub)
 target_sources(app PRIVATE src/main.c)
 
 if(CONFIG_UPDATEHUB_DTLS)
+    set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
+
     foreach(inc_file
             servercert.der
             privkey.der

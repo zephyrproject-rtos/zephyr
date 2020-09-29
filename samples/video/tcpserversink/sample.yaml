@@ -4,5 +4,5 @@ tests:
   sample.video.tcpserversink:
     build_only: true
     tags: video net socket
-    platform_whitelist: mimxrt1064_evk
+    platform_allow: mimxrt1064_evk
     depends_on: video netif

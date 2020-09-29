@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 struct tty_serial {
-	struct device *uart_dev;
+	const struct device *uart_dev;
 
 	struct k_sem rx_sem;
 	uint8_t *rx_ringbuf;
@@ -49,7 +49,7 @@ struct tty_serial {
  *
  * @return 0 on success, error code (<0) otherwise
  */
-int tty_init(struct tty_serial *tty, struct device *uart_dev);
+int tty_init(struct tty_serial *tty, const struct device *uart_dev);
 
 /**
  * @brief Set receive timeout for tty device.

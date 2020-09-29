@@ -70,7 +70,8 @@ struct pwm_dw_config {
  *
  * @return The base address of that particular timer
  */
-static inline int pwm_dw_timer_base_addr(struct device *dev, uint32_t timer)
+static inline int pwm_dw_timer_base_addr(const struct device *dev,
+					 uint32_t timer)
 {
 	const struct pwm_dw_config * const cfg =
 	    (const struct pwm_dw_config *)dev->config;
@@ -86,7 +87,8 @@ static inline int pwm_dw_timer_base_addr(struct device *dev, uint32_t timer)
  *
  * @return The load count 2 address of that particular timer
  */
-static inline int pwm_dw_timer_ldcnt2_addr(struct device *dev, uint32_t timer)
+static inline int pwm_dw_timer_ldcnt2_addr(const struct device *dev,
+					   uint32_t timer)
 {
 	const struct pwm_dw_config * const cfg =
 	    (const struct pwm_dw_config *)dev->config;
@@ -95,7 +97,7 @@ static inline int pwm_dw_timer_ldcnt2_addr(struct device *dev, uint32_t timer)
 }
 
 
-static int __set_one_port(struct device *dev, uint32_t pwm,
+static int __set_one_port(const struct device *dev, uint32_t pwm,
 			  uint32_t on, uint32_t off)
 {
 	uint32_t reg_addr;
@@ -139,7 +141,7 @@ static int __set_one_port(struct device *dev, uint32_t pwm,
  *
  * @return 0
  */
-static int pwm_dw_pin_set_cycles(struct device *dev,
+static int pwm_dw_pin_set_cycles(const struct device *dev,
 				 uint32_t pwm, uint32_t period_cycles,
 				 uint32_t pulse_cycles, pwm_flags_t flags)
 {
@@ -183,7 +185,7 @@ static struct pwm_driver_api pwm_dw_drv_api_funcs = {
  * @param dev Device struct
  * @return 0 if successful, failed otherwise.
  */
-int pwm_dw_init(struct device *dev)
+int pwm_dw_init(const struct device *dev)
 {
 	return 0;
 }

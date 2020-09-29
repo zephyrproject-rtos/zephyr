@@ -17,7 +17,7 @@
 #define DEV_DATA(dev) ((dev)->data)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)
-static int lpc11u6x_uart0_poll_in(struct device *dev, unsigned char *c)
+static int lpc11u6x_uart0_poll_in(const struct device *dev, unsigned char *c)
 {
 	const struct lpc11u6x_uart0_config *cfg = DEV_CFG(dev);
 
@@ -29,7 +29,7 @@ static int lpc11u6x_uart0_poll_in(struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static void lpc11u6x_uart0_poll_out(struct device *dev, unsigned char c)
+static void lpc11u6x_uart0_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct lpc11u6x_uart0_config *cfg = DEV_CFG(dev);
 
@@ -38,7 +38,7 @@ static void lpc11u6x_uart0_poll_out(struct device *dev, unsigned char c)
 	cfg->uart0->thr = c;
 }
 
-static int lpc11u6x_uart0_err_check(struct device *dev)
+static int lpc11u6x_uart0_err_check(const struct device *dev)
 {
 	const struct lpc11u6x_uart0_config *cfg = DEV_CFG(dev);
 	uint32_t lsr;
@@ -77,9 +77,9 @@ static void lpc11u6x_uart0_write_fdr(struct lpc11u6x_uart0_regs *uart0,
 	uart0->fdr = (div & 0xF) | ((mul & 0xF) << 4);
 }
 
-static void lpc11u6x_uart0_config_baudrate(struct device *clk_drv,
-					const struct lpc11u6x_uart0_config *cfg,
-					uint32_t baudrate)
+static void lpc11u6x_uart0_config_baudrate(const struct device *clk_drv,
+					   const struct lpc11u6x_uart0_config *cfg,
+					   uint32_t baudrate)
 {
 	uint32_t div = 1, mul, dl;
 	uint32_t pclk;
@@ -100,12 +100,12 @@ static void lpc11u6x_uart0_config_baudrate(struct device *clk_drv,
 	lpc11u6x_uart0_write_fdr(cfg->uart0, div, mul);
 }
 
-static int lpc11u6x_uart0_configure(struct device *dev,
+static int lpc11u6x_uart0_configure(const struct device *dev,
 				    const struct uart_config *cfg)
 {
 	const struct  lpc11u6x_uart0_config *dev_cfg = DEV_CFG(dev);
 	struct lpc11u6x_uart0_data *data = DEV_DATA(dev);
-	struct device *clk_dev;
+	const struct device *clk_dev;
 	uint32_t flags = 0;
 
 	/* Check that the baudrate is a multiple of 9600 */
@@ -124,7 +124,8 @@ static int lpc11u6x_uart0_configure(struct device *dev,
 		flags |= LPC11U6X_UART0_LCR_PARTIY_ENABLE |
 			LPC11U6X_UART0_LCR_PARTIY_EVEN;
 		break;
-	case UART_CFG_PARITY_MARK: /* fallthrough */
+	case UART_CFG_PARITY_MARK:
+		__fallthrough;
 	case UART_CFG_PARITY_SPACE:
 		return -ENOTSUP;
 	default:
@@ -185,7 +186,7 @@ static int lpc11u6x_uart0_configure(struct device *dev,
 	return 0;
 }
 
-static int lpc11u6x_uart0_config_get(struct device *dev,
+static int lpc11u6x_uart0_config_get(const struct device *dev,
 				     struct uart_config *cfg)
 {
 	struct lpc11u6x_uart0_data *data = DEV_DATA(dev);
@@ -200,7 +201,8 @@ static int lpc11u6x_uart0_config_get(struct device *dev,
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static int lpc11u6x_uart0_fifo_fill(struct device *dev, const uint8_t *data,
+static int lpc11u6x_uart0_fifo_fill(const struct device *dev,
+				    const uint8_t *data,
 				    const int size)
 {
 	const struct lpc11u6x_uart0_config *cfg = DEV_CFG(dev);
@@ -213,7 +215,7 @@ static int lpc11u6x_uart0_fifo_fill(struct device *dev, const uint8_t *data,
 	return nr_sent;
 }
 
-static int lpc11u6x_uart0_fifo_read(struct device *dev, uint8_t *data,
+static int lpc11u6x_uart0_fifo_read(const struct device *dev, uint8_t *data,
 				    const int size)
 {
 	const struct lpc11u6x_uart0_config *cfg = DEV_CFG(dev);
@@ -226,7 +228,7 @@ static int lpc11u6x_uart0_fifo_read(struct device *dev, uint8_t *data,
 	return nr_rx;
 }
 
-static void lpc11u6x_uart0_irq_tx_enable(struct device *dev)
+static void lpc11u6x_uart0_irq_tx_enable(const struct device *dev)
 {
 	const struct lpc11u6x_uart0_config *cfg = DEV_CFG(dev);
 
@@ -239,7 +241,7 @@ static void lpc11u6x_uart0_irq_tx_enable(struct device *dev)
 	NVIC_SetPendingIRQ(DT_INST_IRQN(0));
 }
 
-static void lpc11u6x_uart0_irq_tx_disable(struct device *dev)
+static void lpc11u6x_uart0_irq_tx_disable(const struct device *dev)
 {
 	const struct lpc11u6x_uart0_config *cfg = DEV_CFG(dev);
 
@@ -247,14 +249,14 @@ static void lpc11u6x_uart0_irq_tx_disable(struct device *dev)
 		~LPC11U6X_UART0_IER_THREINTEN;
 }
 
-static int lpc11u6x_uart0_irq_tx_complete(struct device *dev)
+static int lpc11u6x_uart0_irq_tx_complete(const struct device *dev)
 {
 	const struct lpc11u6x_uart0_config *cfg = DEV_CFG(dev);
 
 	return (cfg->uart0->lsr & LPC11U6X_UART0_LSR_TEMT) != 0;
 }
 
-static int lpc11u6x_uart0_irq_tx_ready(struct device *dev)
+static int lpc11u6x_uart0_irq_tx_ready(const struct device *dev)
 {
 	const struct lpc11u6x_uart0_config *cfg = DEV_CFG(dev);
 
@@ -262,7 +264,7 @@ static int lpc11u6x_uart0_irq_tx_ready(struct device *dev)
 		(cfg->uart0->ier & LPC11U6X_UART0_IER_THREINTEN);
 }
 
-static void lpc11u6x_uart0_irq_rx_enable(struct device *dev)
+static void lpc11u6x_uart0_irq_rx_enable(const struct device *dev)
 {
 	const struct lpc11u6x_uart0_config *cfg = DEV_CFG(dev);
 
@@ -270,7 +272,7 @@ static void lpc11u6x_uart0_irq_rx_enable(struct device *dev)
 		LPC11U6X_UART0_IER_RBRINTEN;
 }
 
-static void lpc11u6x_uart0_irq_rx_disable(struct device *dev)
+static void lpc11u6x_uart0_irq_rx_disable(const struct device *dev)
 {
 	const struct lpc11u6x_uart0_config *cfg = DEV_CFG(dev);
 
@@ -278,7 +280,7 @@ static void lpc11u6x_uart0_irq_rx_disable(struct device *dev)
 		~LPC11U6X_UART0_IER_RBRINTEN;
 }
 
-static int lpc11u6x_uart0_irq_rx_ready(struct device *dev)
+static int lpc11u6x_uart0_irq_rx_ready(const struct device *dev)
 {
 	struct lpc11u6x_uart0_data *data = DEV_DATA(dev);
 
@@ -288,7 +290,7 @@ static int lpc11u6x_uart0_irq_rx_ready(struct device *dev)
 		LPC11U6X_UART0_IIR_INTID_CTI);
 }
 
-static void lpc11u6x_uart0_irq_err_enable(struct device *dev)
+static void lpc11u6x_uart0_irq_err_enable(const struct device *dev)
 {
 	const struct lpc11u6x_uart0_config *cfg = DEV_CFG(dev);
 
@@ -296,7 +298,7 @@ static void lpc11u6x_uart0_irq_err_enable(struct device *dev)
 		LPC11U6X_UART0_IER_RLSINTEN;
 }
 
-static void lpc11u6x_uart0_irq_err_disable(struct device *dev)
+static void lpc11u6x_uart0_irq_err_disable(const struct device *dev)
 {
 	const struct lpc11u6x_uart0_config *cfg = DEV_CFG(dev);
 
@@ -304,14 +306,14 @@ static void lpc11u6x_uart0_irq_err_disable(struct device *dev)
 		~LPC11U6X_UART0_IER_RLSINTEN;
 }
 
-static int lpc11u6x_uart0_irq_is_pending(struct device *dev)
+static int lpc11u6x_uart0_irq_is_pending(const struct device *dev)
 {
 	struct lpc11u6x_uart0_data *data = DEV_DATA(dev);
 
 	return !(data->cached_iir & LPC11U6X_UART0_IIR_STATUS);
 }
 
-static int lpc11u6x_uart0_irq_update(struct device *dev)
+static int lpc11u6x_uart0_irq_update(const struct device *dev)
 {
 	const struct lpc11u6x_uart0_config *cfg = DEV_CFG(dev);
 	struct lpc11u6x_uart0_data *data = DEV_DATA(dev);
@@ -320,7 +322,7 @@ static int lpc11u6x_uart0_irq_update(struct device *dev)
 	return 1;
 }
 
-static void lpc11u6x_uart0_irq_callback_set(struct device *dev,
+static void lpc11u6x_uart0_irq_callback_set(const struct device *dev,
 					    uart_irq_callback_user_data_t cb,
 					    void *user_data)
 {
@@ -330,9 +332,8 @@ static void lpc11u6x_uart0_irq_callback_set(struct device *dev,
 	data->cb_data = user_data;
 }
 
-static void lpc11u6x_uart0_isr(void *arg)
+static void lpc11u6x_uart0_isr(const struct device *dev)
 {
-	struct device *dev = arg;
 	struct lpc11u6x_uart0_data *data = DEV_DATA(dev);
 
 	if (data->cb) {
@@ -341,11 +342,11 @@ static void lpc11u6x_uart0_isr(void *arg)
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static int lpc11u6x_uart0_init(struct device *dev)
+static int lpc11u6x_uart0_init(const struct device *dev)
 {
 	const struct lpc11u6x_uart0_config *cfg = DEV_CFG(dev);
 	struct lpc11u6x_uart0_data *data = DEV_DATA(dev);
-	struct device *clk_drv, *rx_pinmux_drv, *tx_pinmux_drv;
+	const struct device *clk_drv, *rx_pinmux_drv, *tx_pinmux_drv;
 
 	/* Configure RX and TX pin via the pinmux driver */
 	rx_pinmux_drv = device_get_binding(cfg->rx_pinmux_drv_name);
@@ -389,7 +390,7 @@ static int lpc11u6x_uart0_init(struct device *dev)
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void lpc11u6x_uart0_isr_config(struct device *dev);
+static void lpc11u6x_uart0_isr_config(const struct device *dev);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 static const struct lpc11u6x_uart0_config uart0_config = {
@@ -444,7 +445,7 @@ DEVICE_AND_API_INIT(lpc11u6x_uart0, DT_LABEL(DT_NODELABEL(uart0)),
 		    &uart0_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void lpc11u6x_uart0_isr_config(struct device *dev)
+static void lpc11u6x_uart0_isr_config(const struct device *dev)
 {
 	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(uart0)),
 		    DT_IRQ(DT_NODELABEL(uart0), priority),
@@ -461,7 +462,7 @@ static void lpc11u6x_uart0_isr_config(struct device *dev)
 	DT_NODE_HAS_STATUS(DT_NODELABEL(uart3), okay) ||	\
 	DT_NODE_HAS_STATUS(DT_NODELABEL(uart4), okay)
 
-static int lpc11u6x_uartx_poll_in(struct device *dev, unsigned char *c)
+static int lpc11u6x_uartx_poll_in(const struct device *dev, unsigned char *c)
 {
 	const struct lpc11u6x_uartx_config *cfg = DEV_CFG(dev);
 
@@ -472,7 +473,7 @@ static int lpc11u6x_uartx_poll_in(struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static void lpc11u6x_uartx_poll_out(struct device *dev, unsigned char c)
+static void lpc11u6x_uartx_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct lpc11u6x_uartx_config *cfg = DEV_CFG(dev);
 
@@ -481,7 +482,7 @@ static void lpc11u6x_uartx_poll_out(struct device *dev, unsigned char c)
 	cfg->base->tx_dat = c;
 }
 
-static int lpc11u6x_uartx_err_check(struct device *dev)
+static int lpc11u6x_uartx_err_check(const struct device *dev)
 {
 	const struct lpc11u6x_uartx_config *cfg = DEV_CFG(dev);
 	int ret = 0;
@@ -500,7 +501,7 @@ static int lpc11u6x_uartx_err_check(struct device *dev)
 }
 
 static void lpc11u6x_uartx_config_baud(const struct lpc11u6x_uartx_config *cfg,
-				       struct device *clk_drv,
+				       const struct device *clk_drv,
 				       uint32_t baudrate)
 {
 	uint32_t clk_rate;
@@ -516,12 +517,12 @@ static void lpc11u6x_uartx_config_baud(const struct lpc11u6x_uartx_config *cfg,
 	cfg->base->brg = div & LPC11U6X_UARTX_BRG_MASK;
 }
 
-static int lpc11u6x_uartx_configure(struct device *dev,
+static int lpc11u6x_uartx_configure(const struct device *dev,
 				    const struct uart_config *cfg)
 {
 	const struct  lpc11u6x_uartx_config *dev_cfg = DEV_CFG(dev);
 	struct lpc11u6x_uartx_data *data = DEV_DATA(dev);
-	struct device *clk_dev;
+	const struct device *clk_dev;
 	uint32_t flags = 0;
 
 	/* We only support baudrates that are multiple of 9600 */
@@ -539,7 +540,8 @@ static int lpc11u6x_uartx_configure(struct device *dev,
 	case UART_CFG_PARITY_EVEN:
 		flags |= LPC11U6X_UARTX_CFG_PARITY_EVEN;
 		break;
-	case UART_CFG_PARITY_MARK: /* fallthrough */
+	case UART_CFG_PARITY_MARK:
+		__fallthrough;
 	case UART_CFG_PARITY_SPACE:
 		return -ENOTSUP;
 	default:
@@ -562,7 +564,8 @@ static int lpc11u6x_uartx_configure(struct device *dev,
 	}
 
 	switch (cfg->data_bits) {
-	case UART_CFG_DATA_BITS_5: /* fallthrough */
+	case UART_CFG_DATA_BITS_5:
+		__fallthrough;
 	case UART_CFG_DATA_BITS_6:
 		return -ENOTSUP;
 	case UART_CFG_DATA_BITS_7:
@@ -605,7 +608,7 @@ static int lpc11u6x_uartx_configure(struct device *dev,
 	return 0;
 }
 
-static int lpc11u6x_uartx_config_get(struct device *dev,
+static int lpc11u6x_uartx_config_get(const struct device *dev,
 				     struct uart_config *cfg)
 {
 	const struct lpc11u6x_uartx_data *data = DEV_DATA(dev);
@@ -620,7 +623,8 @@ static int lpc11u6x_uartx_config_get(struct device *dev,
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static int lpc11u6x_uartx_fifo_fill(struct device *dev, const uint8_t *data,
+static int lpc11u6x_uartx_fifo_fill(const struct device *dev,
+				    const uint8_t *data,
 				    int size)
 {
 	const struct lpc11u6x_uartx_config *cfg = DEV_CFG(dev);
@@ -633,7 +637,8 @@ static int lpc11u6x_uartx_fifo_fill(struct device *dev, const uint8_t *data,
 	return tx_size;
 }
 
-static int lpc11u6x_uartx_fifo_read(struct device *dev, uint8_t *data, int size)
+static int lpc11u6x_uartx_fifo_read(const struct device *dev, uint8_t *data,
+				    int size)
 {
 	const struct lpc11u6x_uartx_config *cfg = DEV_CFG(dev);
 	int rx_size = 0;
@@ -645,7 +650,7 @@ static int lpc11u6x_uartx_fifo_read(struct device *dev, uint8_t *data, int size)
 	return rx_size;
 }
 
-static void lpc11u6x_uartx_irq_tx_enable(struct device *dev)
+static void lpc11u6x_uartx_irq_tx_enable(const struct device *dev)
 {
 	const struct lpc11u6x_uartx_config *cfg = DEV_CFG(dev);
 
@@ -654,14 +659,14 @@ static void lpc11u6x_uartx_irq_tx_enable(struct device *dev)
 		LPC11U6X_UARTX_INT_EN_SET_TXRDYEN;
 }
 
-static void lpc11u6x_uartx_irq_tx_disable(struct device *dev)
+static void lpc11u6x_uartx_irq_tx_disable(const struct device *dev)
 {
 	const struct lpc11u6x_uartx_config *cfg = DEV_CFG(dev);
 
 	cfg->base->int_en_clr = LPC11U6X_UARTX_INT_EN_CLR_TXRDYCLR;
 }
 
-static int lpc11u6x_uartx_irq_tx_ready(struct device *dev)
+static int lpc11u6x_uartx_irq_tx_ready(const struct device *dev)
 {
 	const struct lpc11u6x_uartx_config *cfg = DEV_CFG(dev);
 
@@ -669,14 +674,14 @@ static int lpc11u6x_uartx_irq_tx_ready(struct device *dev)
 		(cfg->base->int_en_set & LPC11U6X_UARTX_INT_EN_SET_TXRDYEN);
 }
 
-static int lpc11u6x_uartx_irq_tx_complete(struct device *dev)
+static int lpc11u6x_uartx_irq_tx_complete(const struct device *dev)
 {
 	const struct lpc11u6x_uartx_config *cfg = DEV_CFG(dev);
 
 	return (cfg->base->stat & LPC11U6X_UARTX_STAT_TXIDLE) != 0;
 }
 
-static void lpc11u6x_uartx_irq_rx_enable(struct device *dev)
+static void lpc11u6x_uartx_irq_rx_enable(const struct device *dev)
 {
 	const struct lpc11u6x_uartx_config *cfg = DEV_CFG(dev);
 
@@ -685,14 +690,14 @@ static void lpc11u6x_uartx_irq_rx_enable(struct device *dev)
 		LPC11U6X_UARTX_INT_EN_SET_RXRDYEN;
 }
 
-static void lpc11u6x_uartx_irq_rx_disable(struct device *dev)
+static void lpc11u6x_uartx_irq_rx_disable(const struct device *dev)
 {
 	const struct lpc11u6x_uartx_config *cfg = DEV_CFG(dev);
 
 	cfg->base->int_en_clr = LPC11U6X_UARTX_INT_EN_CLR_RXRDYCLR;
 }
 
-static int lpc11u6x_uartx_irq_rx_ready(struct device *dev)
+static int lpc11u6x_uartx_irq_rx_ready(const struct device *dev)
 {
 	const struct lpc11u6x_uartx_config *cfg = DEV_CFG(dev);
 
@@ -700,7 +705,7 @@ static int lpc11u6x_uartx_irq_rx_ready(struct device *dev)
 		(cfg->base->int_en_set & LPC11U6X_UARTX_INT_EN_SET_RXRDYEN);
 }
 
-static void lpc11u6x_uartx_irq_err_enable(struct device *dev)
+static void lpc11u6x_uartx_irq_err_enable(const struct device *dev)
 {
 	const struct lpc11u6x_uartx_config *cfg = DEV_CFG(dev);
 
@@ -711,7 +716,7 @@ static void lpc11u6x_uartx_irq_err_enable(struct device *dev)
 		 LPC11U6X_UARTX_INT_EN_SET_PARITYERREN);
 }
 
-static void lpc11u6x_uartx_irq_err_disable(struct device *dev)
+static void lpc11u6x_uartx_irq_err_disable(const struct device *dev)
 {
 	const struct lpc11u6x_uartx_config *cfg = DEV_CFG(dev);
 
@@ -720,7 +725,7 @@ static void lpc11u6x_uartx_irq_err_disable(struct device *dev)
 		LPC11U6X_UARTX_INT_EN_CLR_PARITYERRCLR;
 }
 
-static int lpc11u6x_uartx_irq_is_pending(struct device *dev)
+static int lpc11u6x_uartx_irq_is_pending(const struct device *dev)
 {
 	const struct lpc11u6x_uartx_config *cfg = DEV_CFG(dev);
 
@@ -740,12 +745,12 @@ static int lpc11u6x_uartx_irq_is_pending(struct device *dev)
 	return 0;
 }
 
-static int lpc11u6x_uartx_irq_update(struct device *dev)
+static int lpc11u6x_uartx_irq_update(const struct device *dev)
 {
 	return 1;
 }
 
-static void lpc11u6x_uartx_irq_callback_set(struct device *dev,
+static void lpc11u6x_uartx_irq_callback_set(const struct device *dev,
 					    uart_irq_callback_user_data_t cb,
 					    void *user_data)
 {
@@ -755,7 +760,7 @@ static void lpc11u6x_uartx_irq_callback_set(struct device *dev,
 	data->cb_data = user_data;
 }
 
-static void lpc11u6x_uartx_isr(struct device *dev)
+static void lpc11u6x_uartx_isr(const struct device *dev)
 {
 	struct lpc11u6x_uartx_data *data = DEV_DATA(dev);
 
@@ -764,9 +769,10 @@ static void lpc11u6x_uartx_isr(struct device *dev)
 	}
 }
 
-static void lpc11u6x_uartx_shared_isr(void *arg)
+static void lpc11u6x_uartx_shared_isr(const void *arg)
 {
-	struct lpc11u6x_uartx_shared_irq *shared_irq = arg;
+	struct lpc11u6x_uartx_shared_irq *shared_irq =
+		(struct lpc11u6x_uartx_shared_irq *)arg;
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(shared_irq->devices); i++) {
@@ -777,11 +783,11 @@ static void lpc11u6x_uartx_shared_isr(void *arg)
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static int lpc11u6x_uartx_init(struct device *dev)
+static int lpc11u6x_uartx_init(const struct device *dev)
 {
 	const struct lpc11u6x_uartx_config *cfg = DEV_CFG(dev);
 	struct lpc11u6x_uartx_data *data = DEV_DATA(dev);
-	struct device *clk_drv, *rx_pinmux_drv, *tx_pinmux_drv;
+	const struct device *clk_drv, *rx_pinmux_drv, *tx_pinmux_drv;
 
 	/* Configure RX and TX pin via the pinmux driver */
 	rx_pinmux_drv = device_get_binding(cfg->rx_pinmux_drv_name);
@@ -927,7 +933,7 @@ struct lpc11u6x_uartx_shared_irq lpc11u6x_uartx_shared_irq_info_1 = {
 	},
 };
 
-static void lpc11u6x_uartx_isr_config_1(struct device *dev)
+static void lpc11u6x_uartx_isr_config_1(const struct device *dev)
 {
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay)
 	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(uart1)),
@@ -968,7 +974,7 @@ struct lpc11u6x_uartx_shared_irq lpc11u6x_uartx_shared_irq_info_2 = {
 	},
 };
 
-static void lpc11u6x_uartx_isr_config_2(struct device *dev)
+static void lpc11u6x_uartx_isr_config_2(const struct device *dev)
 {
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay)
 	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(uart2)),

@@ -33,6 +33,7 @@
 #define H4_ACL  0x02
 #define H4_SCO  0x03
 #define H4_EVT  0x04
+#define H4_ISO  0x05
 
 static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 static struct k_thread rx_thread_data;
@@ -53,6 +54,7 @@ static struct {
 	union {
 		struct bt_hci_evt_hdr evt;
 		struct bt_hci_acl_hdr acl;
+		struct bt_hci_iso_hdr iso;
 		uint8_t hdr[4];
 	};
 } rx = {
@@ -67,7 +69,7 @@ static struct {
 	.fifo = Z_FIFO_INITIALIZER(tx.fifo),
 };
 
-static struct device *h4_dev;
+static const struct device *h4_dev;
 
 static inline void h4_get_type(void)
 {
@@ -87,6 +89,13 @@ static inline void h4_get_type(void)
 		rx.remaining = sizeof(rx.acl);
 		rx.hdr_len = rx.remaining;
 		break;
+	case H4_ISO:
+		if (IS_ENABLED(CONFIG_BT_ISO)) {
+			rx.remaining = sizeof(rx.iso);
+			rx.hdr_len = rx.remaining;
+			break;
+		}
+		__fallthrough;
 	default:
 		BT_ERR("Unknown H:4 type 0x%02x", rx.type);
 		rx.type = H4_NONE;
@@ -103,6 +112,20 @@ static inline void get_acl_hdr(void)
 	if (!rx.remaining) {
 		rx.remaining = sys_le16_to_cpu(hdr->len);
 		BT_DBG("Got ACL header. Payload %u bytes", rx.remaining);
+		rx.have_hdr = true;
+	}
+}
+
+static inline void get_iso_hdr(void)
+{
+	struct bt_hci_iso_hdr *hdr = &rx.iso;
+	unsigned int to_read = sizeof(*hdr) - rx.remaining;
+
+	rx.remaining -= uart_fifo_read(h4_dev, (uint8_t *)hdr + to_read,
+				       rx.remaining);
+	if (!rx.remaining) {
+		rx.remaining = sys_le16_to_cpu(hdr->len);
+		BT_DBG("Got ISO header. Payload %u bytes", rx.remaining);
 		rx.have_hdr = true;
 	}
 }
@@ -161,11 +184,18 @@ static struct net_buf *get_rx(k_timeout_t timeout)
 {
 	BT_DBG("type 0x%02x, evt 0x%02x", rx.type, rx.evt.evt);
 
-	if (rx.type == H4_EVT) {
+	switch (rx.type) {
+	case H4_EVT:
 		return bt_buf_get_evt(rx.evt.evt, rx.discardable, timeout);
+	case H4_ACL:
+		return bt_buf_get_rx(BT_BUF_ACL_IN, timeout);
+	case H4_ISO:
+		if (IS_ENABLED(CONFIG_BT_ISO)) {
+			return bt_buf_get_rx(BT_BUF_ISO_IN, timeout);
+		}
 	}
 
-	return bt_buf_get_rx(BT_BUF_ACL_IN, timeout);
+	return NULL;
 }
 
 static void rx_thread(void *p1, void *p2, void *p3)
@@ -219,7 +249,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static size_t h4_discard(struct device *uart, size_t len)
+static size_t h4_discard(const struct device *uart, size_t len)
 {
 	uint8_t buf[33];
 
@@ -307,6 +337,12 @@ static inline void read_header(void)
 	case H4_ACL:
 		get_acl_hdr();
 		break;
+	case H4_ISO:
+		if (IS_ENABLED(CONFIG_BT_ISO)) {
+			get_iso_hdr();
+			break;
+		}
+		__fallthrough;
 	default:
 		CODE_UNREACHABLE;
 		return;
@@ -344,6 +380,12 @@ static inline void process_tx(void)
 		case BT_BUF_CMD:
 			tx.type = H4_CMD;
 			break;
+		case BT_BUF_ISO_OUT:
+			if (IS_ENABLED(CONFIG_BT_ISO)) {
+				tx.type = H4_ISO;
+				break;
+			}
+			__fallthrough;
 		default:
 			BT_ERR("Unknown buffer type");
 			goto done;
@@ -391,7 +433,7 @@ static inline void process_rx(void)
 	}
 }
 
-static void bt_uart_isr(struct device *unused, void *user_data)
+static void bt_uart_isr(const struct device *unused, void *user_data)
 {
 	ARG_UNUSED(unused);
 	ARG_UNUSED(user_data);
@@ -423,7 +465,7 @@ static int h4_send(struct net_buf *buf)
   *
   * @return 0 on success, negative error value on failure
   */
-int __weak bt_hci_transport_setup(struct device *dev)
+int __weak bt_hci_transport_setup(const struct device *dev)
 {
 	h4_discard(h4_dev, 32);
 	return 0;
@@ -461,7 +503,7 @@ static const struct bt_hci_driver drv = {
 	.send		= h4_send,
 };
 
-static int bt_uart_init(struct device *unused)
+static int bt_uart_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 

@@ -252,7 +252,8 @@ const struct log_backend_api log_backend_net_api = {
 /* Note that the backend can be activated only after we have networking
  * subsystem ready so we must not start it immediately.
  */
-LOG_BACKEND_DEFINE(log_backend_net, log_backend_net_api, true);
+LOG_BACKEND_DEFINE(log_backend_net, log_backend_net_api,
+		   IS_ENABLED(CONFIG_LOG_BACKEND_NET_AUTOSTART));
 
 const struct log_backend *log_backend_net_get(void)
 {

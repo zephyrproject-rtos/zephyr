@@ -1,4 +1,45 @@
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
+
+menu "Power Management"
+
+menuconfig SYS_POWER_MANAGEMENT
+	bool "System Power management"
+	select TICKLESS_IDLE
+	help
+	  This option enables the board to implement extra power management
+	  policies whenever the kernel becomes idle. The kernel informs the
+	  power management subsystem of the number of ticks until the next kernel
+	  timer is due to expire.
+
+if SYS_POWER_MANAGEMENT
+config SYS_POWER_SLEEP_STATES
+	bool "Low Power states"
+	depends on HAS_SYS_POWER_STATE_SLEEP_1 || \
+	           HAS_SYS_POWER_STATE_SLEEP_2 || \
+	           HAS_SYS_POWER_STATE_SLEEP_3
+	help
+	  This option enables the kernel to interface with a power manager
+	  application.  This permits the system to enter a custom CPU low power
+	  state when the kernel becomes idle. The low power state could be any of
+	  the CPU low power states supported by the processor.  Generally the one
+	  saving most power.
+
+config SYS_POWER_DEEP_SLEEP_STATES
+	bool "Deep Sleep states"
+	depends on HAS_SYS_POWER_STATE_DEEP_SLEEP_1 || \
+	           HAS_SYS_POWER_STATE_DEEP_SLEEP_2 || \
+	           HAS_SYS_POWER_STATE_DEEP_SLEEP_3
+	help
+	  This option enables the kernel to interface with a power manager
+	  application. This permits the system to enter a Deep sleep state
+	  supported by the SOC where the system clock is turned off while RAM is
+	  retained. This state would be entered when the kernel becomes idle for
+	  extended periods and would have a high wake latency.  Resume would be
+	  from the reset vector same as cold boot. The interface allows
+	  restoration of states that were saved at the time of suspend.
+
 
 config SYS_PM_STATE_LOCK
 	bool "Enable Power State locking capability"
@@ -36,3 +77,24 @@ source "subsys/power/policy/Kconfig"
 module = SYS_PM
 module-str = System Power Management
 source "subsys/logging/Kconfig.template.log_config"
+
+
+endif # SYS_POWER_MANAGEMENT
+
+config DEVICE_POWER_MANAGEMENT
+	bool "Device power management"
+	help
+	  This option enables the device power management interface.  The
+	  interface consists of hook functions implemented by device drivers
+	  that get called by the power manager application when the system
+	  is going to suspend state or resuming from suspend state. This allows
+	  device drivers to do any necessary power management operations
+	  like turning off device clocks and peripherals. The device drivers
+	  may also save and restore states in these hook functions.
+
+config PM_MAX_DEVICES
+	int "Max number of devices support power management"
+	depends on DEVICE_POWER_MANAGEMENT
+	default 15
+
+endmenu

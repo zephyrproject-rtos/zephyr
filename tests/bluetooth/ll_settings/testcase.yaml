@@ -1,4 +1,4 @@
 tests:
   bluetooth.ll_settings:
-    platform_whitelist: nrf52_bsim
+    platform_allow: nrf52_bsim
     tags: bluetooth

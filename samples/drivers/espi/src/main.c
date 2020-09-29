@@ -31,8 +31,9 @@ LOG_MODULE_DECLARE(espi, CONFIG_ESPI_LOG_LEVEL);
 #define MAX_FLASH_REQUEST     64u
 #define TARGET_FLASH_REGION   0x72000ul
 
-/* 20 MHz */
-#define MIN_ESPI_FREQ         20u
+#define ESPI_FREQ_20MHZ       20u
+#define ESPI_FREQ_25MHZ       25u
+#define ESPI_FREQ_66MHZ       66u
 
 #define K_WAIT_DELAY          100u
 
@@ -61,13 +62,13 @@ struct oob_header {
 #define BRD_PWR_RSMRST_PIN      DT_GPIO_PIN(BRD_PWR_NODE, rsm_gpios)
 #define BRD_PWR_PWRGD_PIN       DT_GPIO_PIN(BRD_PWR_NODE, pwrg_gpios)
 
-static struct device *pwrgd_dev;
-static struct device *rsm_dev;
+static const struct device *pwrgd_dev;
+static const struct device *rsm_dev;
 #endif
 
 #define ESPI_DEV      DT_LABEL(DT_NODELABEL(espi0))
 
-static struct device *espi_dev;
+static const struct device *espi_dev;
 static struct espi_callback espi_bus_cb;
 static struct espi_callback vw_rdy_cb;
 static struct espi_callback vw_cb;
@@ -106,7 +107,7 @@ static void host_warn_handler(uint32_t signal, uint32_t status)
 }
 
 /* eSPI bus event handler */
-static void espi_reset_handler(struct device *dev,
+static void espi_reset_handler(const struct device *dev,
 			       struct espi_callback *cb,
 			       struct espi_event event)
 {
@@ -117,7 +118,8 @@ static void espi_reset_handler(struct device *dev,
 }
 
 /* eSPI logical channels enable/disable event handler */
-static void espi_ch_handler(struct device *dev, struct espi_callback *cb,
+static void espi_ch_handler(const struct device *dev,
+			    struct espi_callback *cb,
 			    struct espi_event event)
 {
 	if (event.evt_type == ESPI_BUS_EVENT_CHANNEL_READY) {
@@ -138,7 +140,7 @@ static void espi_ch_handler(struct device *dev, struct espi_callback *cb,
 }
 
 /* eSPI vwire received event handler */
-static void vwire_handler(struct device *dev, struct espi_callback *cb,
+static void vwire_handler(const struct device *dev, struct espi_callback *cb,
 			  struct espi_event event)
 {
 	if (event.evt_type == ESPI_BUS_EVENT_VWIRE_RECEIVED) {
@@ -161,7 +163,7 @@ static void vwire_handler(struct device *dev, struct espi_callback *cb,
 }
 
 /* eSPI peripheral channel notifications handler */
-static void periph_handler(struct device *dev, struct espi_callback *cb,
+static void periph_handler(const struct device *dev, struct espi_callback *cb,
 			   struct espi_event event)
 {
 	uint8_t periph_type;
@@ -191,9 +193,9 @@ int espi_init(void)
 	 * 20MHz frequency and only logical channel 0 and 1 are supported
 	 */
 	struct espi_cfg cfg = {
-		ESPI_IO_MODE_SINGLE_LINE,
-		ESPI_CHANNEL_VWIRE | ESPI_CHANNEL_PERIPHERAL,
-		MIN_ESPI_FREQ,
+		.io_caps = ESPI_IO_MODE_SINGLE_LINE,
+		.channel_caps = ESPI_CHANNEL_VWIRE | ESPI_CHANNEL_PERIPHERAL,
+		.max_freq = ESPI_FREQ_20MHZ,
 	};
 
 	/* If eSPI driver supports additional capabilities use them */
@@ -202,6 +204,8 @@ int espi_init(void)
 #endif
 #ifdef CONFIG_ESPI_FLASH_CHANNEL
 	cfg.channel_caps |= ESPI_CHANNEL_FLASH;
+	cfg.io_caps |= ESPI_IO_MODE_QUAD_LINES;
+	cfg.max_freq = ESPI_FREQ_25MHZ;
 #endif
 
 	ret = espi_config(espi_dev, &cfg);
@@ -234,7 +238,8 @@ int espi_init(void)
 }
 
 #if DT_NODE_HAS_STATUS(BRD_PWR_NODE, okay)
-static int wait_for_pin(struct device *dev, uint8_t pin, uint16_t timeout,
+static int wait_for_pin(const struct device *dev, uint8_t pin,
+			uint16_t timeout,
 			int exp_level)
 {
 	uint16_t loop_cnt = timeout;
@@ -265,7 +270,7 @@ static int wait_for_pin(struct device *dev, uint8_t pin, uint16_t timeout,
 }
 #endif
 
-static int wait_for_vwire(struct device *espi_dev,
+static int wait_for_vwire(const struct device *espi_dev,
 			  enum espi_vwire_signal signal,
 			  uint16_t timeout, uint8_t exp_level)
 {
@@ -473,7 +478,7 @@ static int espi_flash_test(uint32_t start_flash_addr, uint8_t blocks)
 }
 #endif /* CONFIG_ESPI_FLASH_CHANNEL */
 
-int get_pch_temp(struct device *dev, int *temp)
+int get_pch_temp(const struct device *dev, int *temp)
 {
 	struct espi_oob_packet req_pckt;
 	struct espi_oob_packet resp_pckt;
@@ -519,6 +524,25 @@ int get_pch_temp(struct device *dev, int *temp)
 
 	return 0;
 }
+
+#ifndef CONFIG_ESPI_AUTOMATIC_BOOT_DONE_ACKNOWLEDGE
+static void send_slave_bootdone(void)
+{
+	int ret;
+	uint8_t boot_done;
+
+	ret = espi_receive_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE,
+				 &boot_done);
+	LOG_INF("%s boot_done: %d", __func__, boot_done);
+	if (ret) {
+		LOG_WRN("Fail to retrieve slave boot done");
+	} else if (!boot_done) {
+		/* SLAVE_BOOT_DONE & SLAVE_LOAD_STS have to be sent together */
+		espi_send_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_STS, 1);
+		espi_send_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE, 1);
+	}
+}
+#endif
 
 int espi_test(void)
 {
@@ -597,6 +621,26 @@ int espi_test(void)
 		LOG_INF("ESPI_RESET timeout");
 		return ret;
 	}
+
+#ifndef CONFIG_ESPI_AUTOMATIC_BOOT_DONE_ACKNOWLEDGE
+	/* When automatic acknowledge is disabled to perform lenghty operations
+	 * in the eSPI slave, need to explicitly send slave boot
+	 */
+	bool vw_ch_sts;
+
+	/* Simulate lenghty operation during boot */
+	k_sleep(K_SECONDS(2));
+
+	do {
+		vw_ch_sts = espi_get_channel_status(espi_dev,
+						    ESPI_CHANNEL_VWIRE);
+		k_busy_wait(100);
+	} while (!vw_ch_sts);
+
+
+	send_slave_bootdone();
+#endif
+
 
 #ifdef CONFIG_ESPI_FLASH_CHANNEL
 	/* Flash operation need to be perform before VW handshake or

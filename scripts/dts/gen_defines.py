@@ -39,7 +39,8 @@ def main():
                          # Suppress this warning if it's suppressed in dtc
                          warn_reg_unit_address_mismatch=
                              "-Wno-simple_bus_reg" not in args.dtc_flags,
-                         default_prop_types=True)
+                         default_prop_types=True,
+                         infer_binding_for_paths=["/zephyr,user"])
     except edtlib.EDTError as e:
         sys.exit(f"devicetree error: {e}")
 
@@ -178,9 +179,15 @@ Node's generated path identifier: DT_{node.z_path_id}
 """
 
     if node.matching_compat:
-        s += f"""
+        if node.binding_path:
+            s += f"""
 Binding (compatible = {node.matching_compat}):
   {relativize(node.binding_path)}
+"""
+        else:
+            s += f"""
+Binding (compatible = {node.matching_compat}):
+  No yaml (bindings inferred from properties)
 """
 
     s += f"\nDependency Ordinal: {node.dep_ordinal}\n"

@@ -121,7 +121,7 @@ struct shell_static_args {
  * devices.  Indexing is done relative to devices with names that
  * start with this text.  Pass null if no prefix match is required.
  */
-struct device *shell_device_lookup(size_t idx,
+const struct device *shell_device_lookup(size_t idx,
 				   const char *prefix);
 
 /**
@@ -904,11 +904,8 @@ void shell_help(const struct shell *shell);
 
  *
  * @param[in] shell	Pointer to the shell instance.
- *			@rst
- *			It can be NULL when
- *			the :option:`CONFIG_SHELL_BACKEND_DUMMY` option is
- *			enabled.
- *			@endrst
+ *			It can be NULL when the
+ *			@option{CONFIG_SHELL_BACKEND_DUMMY} option is enabled.
  * @param[in] cmd	Command to be executed.
  *
  * @returns		Result of the execution

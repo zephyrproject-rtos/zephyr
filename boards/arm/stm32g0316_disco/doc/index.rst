@@ -95,6 +95,7 @@ the following pyocd command:
 
 .. code-block:: console
 
+   $ pyocd pack --update
    $ pyocd pack --install stm32g031j6
 
 Flashing an application to the STM32G0316-DISCO

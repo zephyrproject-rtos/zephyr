@@ -20,7 +20,7 @@
 LOG_MODULE_REGISTER(si7055, CONFIG_SENSOR_LOG_LEVEL);
 
 struct si7055_data {
-	struct device *i2c_dev;
+	const struct device *i2c_dev;
 	uint16_t temperature;
 };
 
@@ -30,8 +30,8 @@ struct si7055_data {
  * @return int 0 on success
  *         -EIO for I/O and checksum errors
  */
-static int si7055_get_temperature(struct device *i2c_dev,
-				struct si7055_data *si_data)
+static int si7055_get_temperature(const struct device *i2c_dev,
+				  struct si7055_data *si_data)
 {
 	int retval;
 	#if CONFIG_SI7055_ENABLE_CHECKSUM
@@ -71,7 +71,8 @@ static int si7055_get_temperature(struct device *i2c_dev,
  *
  * @return 0
  */
-static int si7055_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int si7055_sample_fetch(const struct device *dev,
+			       enum sensor_channel chan)
 {
 	int retval;
 	struct si7055_data *si_data = dev->data;
@@ -86,7 +87,8 @@ static int si7055_sample_fetch(struct device *dev, enum sensor_channel chan)
  *
  * @return -ENOTSUP for unsupported channels
  */
-static int si7055_channel_get(struct device *dev, enum sensor_channel chan,
+static int si7055_channel_get(const struct device *dev,
+			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct si7055_data *si_data = dev->data;
@@ -126,7 +128,7 @@ static const struct sensor_driver_api si7055_api = {
  * @return 0 for success
  */
 
-static int si7055_init(struct device *dev)
+static int si7055_init(const struct device *dev)
 {
 	struct si7055_data *drv_data = dev->data;
 

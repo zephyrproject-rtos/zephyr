@@ -68,12 +68,12 @@ struct net_test_mld {
 	struct net_linkaddr ll_addr;
 };
 
-int net_test_dev_init(struct device *dev)
+int net_test_dev_init(const struct device *dev)
 {
 	return 0;
 }
 
-static uint8_t *net_test_get_mac(struct device *dev)
+static uint8_t *net_test_get_mac(const struct device *dev)
 {
 	struct net_test_mld *context = dev->data;
 
@@ -108,7 +108,7 @@ static struct net_icmp_hdr *get_icmp_hdr(struct net_pkt *pkt)
 	return (struct net_icmp_hdr *)net_pkt_cursor_get_pos(pkt);
 }
 
-static int tester_send(struct device *dev, struct net_pkt *pkt)
+static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct net_icmp_hdr *icmp;
 
@@ -387,6 +387,37 @@ static void send_query(struct net_if *iface)
 	zassert_false(ret, "Failed to receive data");
 }
 
+/* interface needs to join the MLDv2-capable routers multicast group before it
+ * can receive MLD queries
+ */
+static void join_mldv2_capable_routers_group(void)
+{
+	struct net_if *iface = net_if_get_default();
+	int ret;
+
+	net_ipv6_addr_create(&mcast_addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x0016);
+	ret = net_ipv6_mld_join(iface, &mcast_addr);
+
+	zassert_true(ret == 0 || ret == -EALREADY,
+		     "Cannot join MLDv2-capable routers multicast group");
+
+	k_yield();
+}
+
+static void leave_mldv2_capable_routers_group(void)
+{
+	struct net_if *iface = net_if_get_default();
+	int ret;
+
+	net_ipv6_addr_create(&mcast_addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x0016);
+	ret = net_ipv6_mld_leave(iface, &mcast_addr);
+
+	zassert_equal(ret, 0,
+		      "Cannot leave MLDv2-capable routers multicast group");
+
+	k_yield();
+}
+
 /* We are not really interested to parse the query at this point */
 static enum net_verdict handle_mld_query(struct net_pkt *pkt,
 					 struct net_ipv6_hdr *ip_hdr,
@@ -407,6 +438,8 @@ static struct net_icmpv6_handler mld_query_input_handler = {
 
 static void test_catch_query(void)
 {
+	join_mldv2_capable_routers_group();
+
 	is_query_received = false;
 
 	net_icmpv6_register_handler(&mld_query_input_handler);
@@ -426,6 +459,8 @@ static void test_catch_query(void)
 	is_query_received = false;
 
 	net_icmpv6_unregister_handler(&mld_query_input_handler);
+
+	leave_mldv2_capable_routers_group();
 }
 
 static void test_verify_send_report(void)

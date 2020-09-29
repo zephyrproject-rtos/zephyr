@@ -12,53 +12,55 @@
 #include <timestamp.h>
 #include "utils.h"
 #include <tc_util.h>
-#include "timing_info.h"
 
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
 
-uint32_t tm_off;        /* time necessary to read the time */
-int error_count;        /* track number of errors */
-
+uint32_t tm_off; /* time necessary to read the time */
+int error_count; /* track number of errors */
 
 extern void thread_switch_yield(void);
 extern void int_to_thread(void);
 extern void int_to_thread_evt(void);
-extern void sema_lock_unlock(void);
+extern void sema_test_signal(void);
 extern void mutex_lock_unlock(void);
 extern int coop_ctx_switch(void);
+extern int sema_test(void);
+extern int sema_context_switch(void);
+extern int suspend_resume(void);
+
 void test_thread(void *arg1, void *arg2, void *arg3)
 {
-	PRINT_BANNER();
-	PRINT_TIME_BANNER();
+	uint32_t freq;
+
+	timing_init();
 
 	bench_test_init();
-	benchmark_timer_init();
 
-	int_to_thread();
-	print_dash_line();
+	freq = timing_freq_get_mhz();
 
-	int_to_thread_evt();
-	print_dash_line();
-
-	sema_lock_unlock();
-	print_dash_line();
-
-	mutex_lock_unlock();
-	print_dash_line();
+	TC_START("Time Measurement");
+	TC_PRINT("Timing results: Clock frequency: %u MHz\n", freq);
 
 	thread_switch_yield();
-	print_dash_line();
 
 	coop_ctx_switch();
-	print_dash_line();
+
+	int_to_thread();
+
+	int_to_thread_evt();
+
+	suspend_resume();
+
+	sema_test_signal();
+
+	sema_context_switch();
+
+	mutex_lock_unlock();
 
 	TC_END_REPORT(error_count);
 }
 
-K_THREAD_DEFINE(tt_id, STACK_SIZE,
-		test_thread, NULL, NULL, NULL,
-		10, 0, 0);
-
+K_THREAD_DEFINE(test_thread_id, STACK_SIZE, test_thread, NULL, NULL, NULL, K_PRIO_PREEMPT(10), 0, 0);
 
 void main(void)
 {

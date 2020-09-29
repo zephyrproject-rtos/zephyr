@@ -75,24 +75,3 @@ macro(toolchain_cc_nostdinc)
     zephyr_compile_options( -nostdinc)
   endif()
 endmacro()
-
-# Clang and GCC are almost feature+flag compatible, so reuse freestanding gcc
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_security_canaries.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_optimizations.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_cpp.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_asm.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_baremetal.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_warnings.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_imacros.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_base.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_coverage.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_sanitizers.cmake)
-
-macro(toolchain_cc_security_fortify)
-  # No op, clang doesn't understand fortify at all
-endmacro()
-
-macro(toolchain_cc_no_freestanding_options)
-  # No op, this is used by the native_posix, clang has problems
-  # compiling the native_posix with -fno-freestanding.
-endmacro()

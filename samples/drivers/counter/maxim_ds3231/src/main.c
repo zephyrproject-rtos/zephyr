@@ -30,7 +30,7 @@ static const char *format_time(time_t time,
 	return buf;
 }
 
-static void sec_counter_callback(struct device *dev,
+static void sec_counter_callback(const struct device *dev,
 				 uint8_t id,
 				 uint32_t ticks,
 				 void *ud)
@@ -39,7 +39,7 @@ static void sec_counter_callback(struct device *dev,
 	       k_uptime_get_32(), id, ticks, ud);
 }
 
-static void sec_alarm_handler(struct device *dev,
+static void sec_alarm_handler(const struct device *dev,
 			      uint8_t id,
 			      uint32_t syncclock,
 			      void *ud)
@@ -94,7 +94,7 @@ void timespec_add(struct timespec *apb,
 	}
 }
 
-static void min_alarm_handler(struct device *dev,
+static void min_alarm_handler(const struct device *dev,
 			      uint8_t id,
 			      uint32_t syncclock,
 			      void *ud)
@@ -149,7 +149,7 @@ static void min_alarm_handler(struct device *dev,
 struct maxim_ds3231_alarm sec_alarm;
 struct maxim_ds3231_alarm min_alarm;
 
-static void show_counter(struct device *ds3231)
+static void show_counter(const struct device *ds3231)
 {
 	uint32_t now = 0;
 
@@ -176,7 +176,7 @@ static void show_counter(struct device *ds3231)
  * Subsequent reads of the RTC time adjusted based on a syncpoint
  * should match the uptime relative to the programmed hour.
  */
-static void set_aligned_clock(struct device *ds3231)
+static void set_aligned_clock(const struct device *ds3231)
 {
 	if (!IS_ENABLED(CONFIG_APP_SET_ALIGNED_CLOCK)) {
 		return;
@@ -229,7 +229,7 @@ static void set_aligned_clock(struct device *ds3231)
 
 void main(void)
 {
-	struct device *ds3231;
+	const struct device *ds3231;
 	const char *const dev_id = DT_LABEL(DT_INST(0, maxim_ds3231));
 
 	ds3231 = device_get_binding(dev_id);

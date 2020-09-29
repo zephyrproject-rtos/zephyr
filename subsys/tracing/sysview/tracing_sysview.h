@@ -18,6 +18,12 @@ void sys_trace_isr_enter(void);
 void sys_trace_isr_exit(void);
 void sys_trace_isr_exit_to_scheduler(void);
 void sys_trace_idle(void);
+void sys_trace_semaphore_init(struct k_sem *sem);
+void sys_trace_semaphore_take(struct k_sem *sem);
+void sys_trace_semaphore_give(struct k_sem *sem);
+void sys_trace_mutex_init(struct k_mutex *mutex);
+void sys_trace_mutex_lock(struct k_mutex *mutex);
+void sys_trace_mutex_unlock(struct k_mutex *mutex);
 
 #define sys_trace_thread_priority_set(thread)
 

@@ -56,9 +56,9 @@ extern unsigned int z_interrupt_vectors_allocated[];
 
 struct dyn_irq_info {
 	/** IRQ handler */
-	void (*handler)(void *param);
+	void (*handler)(const void *param);
 	/** Parameter to pass to the handler */
-	void *param;
+	const void *param;
 };
 
 /*
@@ -197,8 +197,8 @@ static void idt_vector_install(int vector, void *irq_handler)
 }
 
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-		void (*routine)(void *parameter), void *parameter,
-		uint32_t flags)
+			     void (*routine)(const void *parameter),
+			     const void *parameter, uint32_t flags)
 {
 	int vector, stub_idx, key;
 

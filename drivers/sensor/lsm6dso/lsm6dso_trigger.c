@@ -23,7 +23,7 @@ LOG_MODULE_DECLARE(LSM6DSO, CONFIG_SENSOR_LOG_LEVEL);
 /**
  * lsm6dso_enable_t_int - TEMP enable selected int pin to generate interrupt
  */
-static int lsm6dso_enable_t_int(struct device *dev, int enable)
+static int lsm6dso_enable_t_int(const struct device *dev, int enable)
 {
 	const struct lsm6dso_config *cfg = dev->config;
 	struct lsm6dso_data *lsm6dso = dev->data;
@@ -51,7 +51,7 @@ static int lsm6dso_enable_t_int(struct device *dev, int enable)
 /**
  * lsm6dso_enable_xl_int - XL enable selected int pin to generate interrupt
  */
-static int lsm6dso_enable_xl_int(struct device *dev, int enable)
+static int lsm6dso_enable_xl_int(const struct device *dev, int enable)
 {
 	const struct lsm6dso_config *cfg = dev->config;
 	struct lsm6dso_data *lsm6dso = dev->data;
@@ -87,7 +87,7 @@ static int lsm6dso_enable_xl_int(struct device *dev, int enable)
 /**
  * lsm6dso_enable_g_int - Gyro enable selected int pin to generate interrupt
  */
-static int lsm6dso_enable_g_int(struct device *dev, int enable)
+static int lsm6dso_enable_g_int(const struct device *dev, int enable)
 {
 	const struct lsm6dso_config *cfg = dev->config;
 	struct lsm6dso_data *lsm6dso = dev->data;
@@ -122,7 +122,7 @@ static int lsm6dso_enable_g_int(struct device *dev, int enable)
 /**
  * lsm6dso_trigger_set - link external trigger to event data ready
  */
-int lsm6dso_trigger_set(struct device *dev,
+int lsm6dso_trigger_set(const struct device *dev,
 			  const struct sensor_trigger *trig,
 			  sensor_trigger_handler_t handler)
 {
@@ -161,9 +161,8 @@ int lsm6dso_trigger_set(struct device *dev,
  * lsm6dso_handle_interrupt - handle the drdy event
  * read data and call handler if registered any
  */
-static void lsm6dso_handle_interrupt(void *arg)
+static void lsm6dso_handle_interrupt(const struct device *dev)
 {
-	struct device *dev = arg;
 	struct lsm6dso_data *lsm6dso = dev->data;
 	struct sensor_trigger drdy_trigger = {
 		.type = SENSOR_TRIG_DATA_READY,
@@ -204,7 +203,7 @@ static void lsm6dso_handle_interrupt(void *arg)
 				     GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-static void lsm6dso_gpio_callback(struct device *dev,
+static void lsm6dso_gpio_callback(const struct device *dev,
 				    struct gpio_callback *cb, uint32_t pins)
 {
 	struct lsm6dso_data *lsm6dso =
@@ -224,16 +223,11 @@ static void lsm6dso_gpio_callback(struct device *dev,
 }
 
 #ifdef CONFIG_LSM6DSO_TRIGGER_OWN_THREAD
-static void lsm6dso_thread(int dev_ptr, int unused)
+static void lsm6dso_thread(struct lsm6dso_data *lsm6dso)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct lsm6dso_data *lsm6dso = dev->data;
-
-	ARG_UNUSED(unused);
-
 	while (1) {
 		k_sem_take(&lsm6dso->gpio_sem, K_FOREVER);
-		lsm6dso_handle_interrupt(dev);
+		lsm6dso_handle_interrupt(lsm6dso->dev);
 	}
 }
 #endif /* CONFIG_LSM6DSO_TRIGGER_OWN_THREAD */
@@ -248,7 +242,7 @@ static void lsm6dso_work_cb(struct k_work *work)
 }
 #endif /* CONFIG_LSM6DSO_TRIGGER_GLOBAL_THREAD */
 
-int lsm6dso_init_interrupt(struct device *dev)
+int lsm6dso_init_interrupt(const struct device *dev)
 {
 	struct lsm6dso_data *lsm6dso = dev->data;
 	const struct lsm6dso_config *cfg = dev->config;
@@ -261,15 +255,14 @@ int lsm6dso_init_interrupt(struct device *dev)
 			    cfg->int_gpio_port);
 		return -EINVAL;
 	}
-	lsm6dso->dev = dev;
 
 #if defined(CONFIG_LSM6DSO_TRIGGER_OWN_THREAD)
 	k_sem_init(&lsm6dso->gpio_sem, 0, UINT_MAX);
 
 	k_thread_create(&lsm6dso->thread, lsm6dso->thread_stack,
 			CONFIG_LSM6DSO_THREAD_STACK_SIZE,
-			(k_thread_entry_t)lsm6dso_thread, dev,
-			0, NULL, K_PRIO_COOP(CONFIG_LSM6DSO_THREAD_PRIORITY),
+			(k_thread_entry_t)lsm6dso_thread, lsm6dso,
+			NULL, NULL, K_PRIO_COOP(CONFIG_LSM6DSO_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_LSM6DSO_TRIGGER_GLOBAL_THREAD)
 	lsm6dso->work.handler = lsm6dso_work_cb;

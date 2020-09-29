@@ -75,6 +75,60 @@ module:
      cmake: .
      kconfig: Kconfig
 
+
+Build system integration
+========================
+
+When a module has a :file:`module.yml` file, it will automatically be included into
+the Zephyr build system. The path to the module is then accessible through Kconfig
+and CMake variables.
+
+In both Kconfig and CMake, the variable ``ZEPHYR_<module-name>_MODULE_DIR``
+contains the absolute path to the module.
+
+In CMake, ``ZEPHYR_<module-name>_CMAKE_DIR`` contains the
+absolute path to the directory containing the :file:`CMakeLists.txt` file that
+is included into CMake build system. This variable's value is empty if the
+module.yml file does not specify a CMakeLists.txt.
+
+To read these variables for a Zephyr module named ``foo``:
+
+- In CMake: use ``${ZEPHYR_FOO_MODULE_DIR}`` for the module's top level directory, and ``${ZEPHYR_FOO_CMAKE_DIR}`` for the directory containing its :file:`CMakeLists.txt`
+- In Kconfig: use ``$(ZEPHYR_FOO_MODULE_DIR)`` for the module's top level directory
+
+Notice how a lowercase module name ``foo`` is capitalized to ``FOO``
+in both CMake and Kconfig.
+
+These variables can also be used to test whether a given module exists.
+For example, to verify that ``foo`` is the name of a Zephyr module:
+
+.. code-block:: cmake
+
+  if(ZEPHYR_FOO_MODULE_DIR)
+    # Do something if FOO exists.
+  endif()
+
+In Kconfig, the variable may be used to find additional files to include.
+For example, to include the file :file:`some/Kconfig` in module ``foo``:
+
+.. code-block:: kconfig
+
+  source "$(ZEPHYR_FOO_MODULE_DIR)/some/Kconfig"
+
+During CMake processing of each Zephyr module, the following two variables are
+also available:
+
+- the current module's top level directory: ``${ZEPHYR_CURRENT_MODULE_DIR}``
+- the current module's :file:`CMakeLists.txt` directory: ``${ZEPHYR_CURRENT_CMAKE_DIR}``
+
+This removes the need for a Zephyr module to know its own name during CMake
+processing. The module can source additional CMake files using these ``CURRENT``
+variables. For example:
+
+.. code-block:: cmake
+
+  include(${ZEPHYR_CURRENT_MODULE_DIR}/cmake/code.cmake)
+
 .. _modules_build_settings:
 
 Build settings

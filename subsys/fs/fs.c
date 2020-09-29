@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Intel Corporation.
+ * Copyright (c) 2020 Peter Bigot Consulting, LLC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,8 +24,57 @@ static sys_dlist_t fs_mnt_list;
 /* lock to protect mount list operations */
 static struct k_mutex mutex;
 
-/* file system map table */
-static struct fs_file_system_t *fs_map[FS_TYPE_END];
+/* Maps an identifier used in mount points to the file system
+ * implementation.
+ */
+struct registry_entry {
+	int type;
+	const struct fs_file_system_t *fstp;
+};
+static struct registry_entry registry[CONFIG_FILE_SYSTEM_MAX_TYPES];
+
+static inline void registry_clear_entry(struct registry_entry *ep)
+{
+	ep->fstp = NULL;
+}
+
+static int registry_add(int type,
+			const struct fs_file_system_t *fstp)
+{
+	int rv = -ENOSPC;
+
+	for (size_t i = 0; i < ARRAY_SIZE(registry); ++i) {
+		struct registry_entry *ep = &registry[i];
+
+		if (ep->fstp == NULL) {
+			ep->type = type;
+			ep->fstp = fstp;
+			rv = 0;
+			break;
+		}
+	}
+
+	return rv;
+}
+
+static struct registry_entry *registry_find(int type)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(registry); ++i) {
+		struct registry_entry *ep = &registry[i];
+
+		if ((ep->fstp != NULL) && (ep->type == type)) {
+			return ep;
+		}
+	}
+	return NULL;
+}
+
+static const struct fs_file_system_t *fs_type_get(int type)
+{
+	struct registry_entry *ep = registry_find(type);
+
+	return (ep != NULL) ? ep->fstp : NULL;
+}
 
 static int fs_get_mnt_point(struct fs_mount_t **mnt_pntp,
 			    const char *name, size_t *match_len)
@@ -526,7 +576,7 @@ int fs_statvfs(const char *abs_path, struct fs_statvfs *stat)
 int fs_mount(struct fs_mount_t *mp)
 {
 	struct fs_mount_t *itr;
-	struct fs_file_system_t *fs;
+	const struct fs_file_system_t *fs;
 	sys_dnode_t *node;
 	int rc = -EINVAL;
 
@@ -536,15 +586,15 @@ int fs_mount(struct fs_mount_t *mp)
 	}
 
 	k_mutex_lock(&mutex, K_FOREVER);
-	/* Check if requested file system is registered */
-	if (mp->type >= FS_TYPE_END ||  fs_map[mp->type] == NULL) {
-		LOG_ERR("requested file system not registered!!");
+
+	/* Get file system information */
+	fs = fs_type_get(mp->type);
+	if (fs == NULL) {
+		LOG_ERR("requested file system type not registered!!");
 		rc = -ENOENT;
 		goto mount_err;
 	}
 
-	/* Get fs interface from file system map */
-	fs = fs_map[mp->type];
 	mp->mountp_len = strlen(mp->mnt_point);
 
 	if ((mp->mnt_point[0] != '/') ||
@@ -664,43 +714,47 @@ int fs_readmount(int *number, const char **name)
 }
 
 /* Register File system */
-int fs_register(enum fs_type type, struct fs_file_system_t *fs)
+int fs_register(int type, const struct fs_file_system_t *fs)
 {
 	int rc = 0;
 
 	k_mutex_lock(&mutex, K_FOREVER);
-	if (type >= FS_TYPE_END) {
-		LOG_ERR("failed to register File system!!");
-		rc = -EINVAL;
-		goto reg_err;
+
+	if (fs_type_get(type) != NULL) {
+		rc = -EALREADY;
+	} else {
+		rc = registry_add(type, fs);
 	}
-	fs_map[type] = fs;
-	LOG_DBG("fs registered of type(%u)", type);
-reg_err:
+
 	k_mutex_unlock(&mutex);
+
+	LOG_DBG("fs register %d: %d", type, rc);
+
 	return rc;
 }
 
 /* Unregister File system */
-int fs_unregister(enum fs_type type, struct fs_file_system_t *fs)
+int fs_unregister(int type, const struct fs_file_system_t *fs)
 {
 	int rc = 0;
+	struct registry_entry *ep;
 
 	k_mutex_lock(&mutex, K_FOREVER);
-	if ((type >= FS_TYPE_END) ||
-			(fs_map[type] != fs)) {
-		LOG_ERR("failed to unregister File system!!");
+
+	ep = registry_find(type);
+	if ((ep == NULL) || (ep->fstp != fs)) {
 		rc = -EINVAL;
-		goto unreg_err;
+	} else {
+		registry_clear_entry(ep);
 	}
-	fs_map[type] = NULL;
-	LOG_DBG("fs unregistered of type(%u)", type);
-unreg_err:
+
 	k_mutex_unlock(&mutex);
+
+	LOG_DBG("fs unregister %d: %d", type, rc);
 	return rc;
 }
 
-static int fs_init(struct device *dev)
+static int fs_init(const struct device *dev)
 {
 	k_mutex_init(&mutex);
 	sys_dlist_init(&fs_mnt_list);

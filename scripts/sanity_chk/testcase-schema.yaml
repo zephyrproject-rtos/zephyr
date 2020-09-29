@@ -17,7 +17,7 @@ mapping:
       "arch_exclude":
         type: str
         required: no
-      "arch_whitelist":
+      "arch_allow":
         type: str
         required: no
       "build_only":
@@ -83,7 +83,7 @@ mapping:
       "platform_exclude":
         type: str
         required: no
-      "platform_whitelist":
+      "platform_allow":
         type: str
         required: no
       "tags":
@@ -95,7 +95,7 @@ mapping:
       "toolchain_exclude":
         type: str
         required: no
-      "toolchain_whitelist":
+      "toolchain_allow":
         type: str
         required: no
       "type":
@@ -137,7 +137,7 @@ mapping:
           "arch_exclude":
             type: str
             required: no
-          "arch_whitelist":
+          "arch_allow":
             type: str
             required: no
           "build_only":
@@ -208,7 +208,7 @@ mapping:
           "platform_exclude":
             type: str
             required: no
-          "platform_whitelist":
+          "platform_allow":
             type: str
             required: no
           "tags":
@@ -220,7 +220,7 @@ mapping:
           "toolchain_exclude":
             type: str
             required: no
-          "toolchain_whitelist":
+          "toolchain_allow":
             type: str
             required: no
           "type":

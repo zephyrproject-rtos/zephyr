@@ -939,7 +939,7 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 	 * msg->tkl == 0 is for a new TOKEN
 	 * msg->tkl == LWM2M_MSG_TOKEN_LEN_SKIP means dont set
 	 */
-	if (msg->tkl == 0U) {
+	if (msg->tkl == LWM2M_MSG_TOKEN_GENERATE_NEW) {
 		tokenlen = 0U;
 		token = coap_next_token();
 	} else if (msg->token && msg->tkl != LWM2M_MSG_TOKEN_LEN_SKIP) {
@@ -948,8 +948,7 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 	}
 
 	r = coap_packet_init(&msg->cpkt, msg->msg_data, sizeof(msg->msg_data),
-			     1, msg->type, tokenlen, token, msg->code,
-			     (msg->mid > 0 ? msg->mid : coap_next_id()));
+			     1, msg->type, tokenlen, token, msg->code, msg->mid);
 	if (r < 0) {
 		LOG_ERR("coap packet init error (err:%d)", r);
 		goto cleanup;
@@ -3973,7 +3972,7 @@ static int generate_notify_message(struct observe_node *obs,
 
 	msg->type = COAP_TYPE_CON;
 	msg->code = COAP_RESPONSE_CODE_CONTENT;
-	msg->mid = 0U;
+	msg->mid = coap_next_id();
 	msg->token = obs->token;
 	msg->tkl = obs->tkl;
 	msg->reply_cb = notify_message_reply_cb;
@@ -4515,7 +4514,7 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx)
 	return lwm2m_socket_start(client_ctx);
 }
 
-static int lwm2m_engine_init(struct device *dev)
+static int lwm2m_engine_init(const struct device *dev)
 {
 	int ret = 0;
 

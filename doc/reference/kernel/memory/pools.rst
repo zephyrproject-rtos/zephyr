@@ -9,7 +9,7 @@ Memory Pools
     in current Zephyr code.  It still exists for applications which
     require the specific memory allocation and alignment patterns
     detailed below, but the default heap implementation (including the
-    default backend to the k_mem_pool APIs) is now a :c:type:` k_heap`
+    default backend to the k_mem_pool APIs) is now a :c:struct:`k_heap`
     allocator, which is a better choice for general purpose
     code.
 
@@ -119,7 +119,7 @@ Implementation
 Defining a Memory Pool
 ======================
 
-A memory pool is defined using a variable of type :c:type:`k_mem_pool`.
+A memory pool is defined using a variable of type :c:struct:`k_mem_pool`.
 However, since a memory pool also requires a number of variable-size data
 structures to represent its block sets and the status of its quad-blocks,
 the kernel does not support the runtime definition of a memory pool.
@@ -141,7 +141,7 @@ as well as its buffer.
 Allocating a Memory Block
 =========================
 
-A memory block is allocated by calling :cpp:func:`k_mem_pool_alloc()`.
+A memory block is allocated by calling :c:func:`k_mem_pool_alloc`.
 
 The following code builds on the example above, and waits up to 100 milliseconds
 for a 200 byte memory block to become available, then fills it with zeroes.
@@ -161,15 +161,15 @@ since that is the closest matching size supported by the memory pool.
         printf("Memory allocation time-out");
     }
 
-Memory blocks may also be allocated with :cpp:func:`malloc()`-like semantics
-using :cpp:func:`k_mem_pool_malloc()`. Such allocations must be freed with
-:cpp:func:`k_free()`.
+Memory blocks may also be allocated with :c:func:`malloc`-like semantics
+using :c:func:`k_mem_pool_malloc`. Such allocations must be freed with
+:c:func:`k_free`.
 
 Releasing a Memory Block
 ========================
 
-A memory block is released by calling either :cpp:func:`k_mem_pool_free()`
-or :cpp:func:`k_free()`, depending on how it was allocated.
+A memory block is released by calling either :c:func:`k_mem_pool_free`
+or :c:func:`k_free`, depending on how it was allocated.
 
 The following code builds on the example above, and allocates a 75 byte
 memory block, then releases it once it is no longer needed. (A 256 byte
@@ -195,12 +195,12 @@ as items are placed in the queue.
 Such memory allocations are drawn from memory pools that are assigned to
 a thread. By default, a thread in the system has no resource pool and
 any allocations made on its behalf will fail. The supervisor-mode only
-:cpp:func:`k_thread_resource_pool_assign()` will associate any implicit
+:c:func:`k_thread_resource_pool_assign` will associate any implicit
 kernel-side allocations to the target thread with the provided memory pool,
 and any children of that thread will inherit this assignment.
 
 If a system heap exists, threads may alternatively have their resources
-drawn from it using the :cpp:func:`k_thread_system_pool_assign()` API.
+drawn from it using the :c:func:`k_thread_system_pool_assign` API.
 
 Suggested Uses
 **************

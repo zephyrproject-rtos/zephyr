@@ -6,7 +6,7 @@
 DT_CHOSEN_Z_CONSOLE := zephyr,console
 
 config TRACING
-	bool "Enabling Tracing"
+	bool "Tracing Support"
 	imply THREAD_NAME
 	imply THREAD_STACK_INFO
 	imply THREAD_MONITOR
@@ -145,7 +145,7 @@ choice
 config TRACING_BACKEND_UART
 	bool "Enable UART backend"
 	depends on UART_CONSOLE
-	depends on TRACING_ASYNC
+
 	help
 	  Use UART to output tracing data.
 

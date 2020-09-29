@@ -15,7 +15,7 @@
 
 #define CPU_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
 
-static int arc_iot_init(struct device *dev)
+static int arc_iot_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

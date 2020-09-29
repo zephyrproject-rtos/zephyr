@@ -9,7 +9,7 @@
 
 #include "platform-zephyr.h"
 
-static struct device *flash_dev;
+static const struct device *flash_dev;
 static size_t ot_flash_size;
 static size_t ot_flash_offset;
 

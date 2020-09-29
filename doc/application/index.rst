@@ -266,12 +266,17 @@ should know about.
   built-in boards, and :ref:`board_porting_guide` for information on
   adding board support.
 
-* :makevar:`CONF_FILE`: Indicates the name of one or more configuration
+* :makevar:`CONF_FILE`: Indicates the name of one or more Kconfig configuration
   fragment files. Multiple filenames can be separated with either spaces or
   semicolons. Each file includes Kconfig configuration values that override
   the default configuration values.
 
   See :ref:`initial-conf` for more information.
+
+* :makevar:`OVERLAY_CONFIG`: Additional Kconfig configuration fragment files.
+  Multiple filenames can be separated with either spaces or semicolons. This
+  can be useful in order to leave :makevar:`CONF_FILE` at its default value,
+  but "mix in" some additional configuration options.
 
 * :makevar:`DTC_OVERLAY_FILE`: One or more devicetree overlay files to use.
   Multiple files can be separated with semicolons.
@@ -587,11 +592,11 @@ again.
 .. _application_debugging:
 .. _custom_board_definition:
 
-Custom Board, DeviceTree and SOC Definitions
+Custom Board, Devicetree and SOC Definitions
 ********************************************
 
 In cases where the board or platform you are developing for is not yet
-supported by Zephyr, you can add board, DeviceTree and SOC definitions
+supported by Zephyr, you can add board, Devicetree and SOC definitions
 to your application without having to add them to the Zephyr tree.
 
 The structure needed to support out-of-tree board and SOC development
@@ -673,6 +678,12 @@ You can also define the ``BOARD_ROOT`` variable in the application
 :file:`CMakeLists.txt` file. Make sure to do so **before** pulling in the Zephyr
 boilerplate with ``find_package(Zephyr ...)``.
 
+.. note::
+
+   When specifying ``BOARD_ROOT`` in a CMakeLists.txt, then an absolute path must
+   be provided, for example ``list(APPEND BOARD_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/<extra-board-root>``.
+   When using ``-DBOARD_ROOT=<board-root>`` both absolute and relative paths can
+   be used. Relative paths are treated relatively to the application directory.
 
 SOC Definitions
 ===============
@@ -750,12 +761,19 @@ Or you can define the ``SOC_ROOT`` variable in the application
 :file:`CMakeLists.txt` file. Make sure to do so **before** pulling in the
 Zephyr boilerplate with ``find_package(Zephyr ...)``.
 
+.. note::
+
+   When specifying ``SOC_ROOT`` in a CMakeLists.txt, then an absolute path must
+   be provided, for example ``list(APPEND SOC_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/<extra-soc-root>``.
+   When using ``-DSOC_ROOT=<soc-root>`` both absolute and relative paths can be
+   used. Relative paths are treated relatively to the application directory.
+
 .. _dts_root:
 
-DeviceTree Definitions
+Devicetree Definitions
 ======================
 
-DeviceTree directory trees are found in ``APPLICATION_SOURCE_DIR``,
+Devicetree directory trees are found in ``APPLICATION_SOURCE_DIR``,
 ``BOARD_DIR``, and ``ZEPHYR_BASE``, but additional trees, or DTS_ROOTs,
 can be added by creating this directory tree::
 
@@ -783,6 +801,27 @@ You can also define the variable in the application :file:`CMakeLists.txt`
 file. Make sure to do so **before** pulling in the Zephyr boilerplate with
 ``find_package(Zephyr ...)``.
 
+.. note::
+
+   When specifying ``DTS_ROOT`` in a CMakeLists.txt, then an absolute path must
+   be provided, for example ``list(APPEND DTS_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/<extra-dts-root>``.
+   When using ``-DDTS_ROOT=<dts-root>`` both absolute and relative paths can be
+   used. Relative paths are treated relatively to the application directory.
+
+Devicetree source are passed through the C preprocessor, so you can
+include files that can be located in a ``DTS_ROOT`` directory.  By
+convention devicetree include files have a ``.dtsi`` extension.
+
+You can also use the preprocessor to control the content of a devicetree
+file, by specifying directives through the ``DTS_EXTRA_CPPFLAGS`` CMake
+Cache variable:
+
+.. zephyr-app-commands::
+   :tool: all
+   :board: <board name>
+   :gen-args: -DDTS_EXTRA_CPPFLAGS=-DTEST_ENABLE_FEATURE
+   :goals: build
+   :compact:
 
 Application Debugging
 *********************

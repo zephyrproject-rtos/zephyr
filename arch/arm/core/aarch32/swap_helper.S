@@ -337,18 +337,6 @@ _thread_irq_disabled:
     pop {r2, lr}
 #endif /* CONFIG_BUILTIN_STACK_GUARD */
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-    push {r0, lr}
-    bl read_timer_end_of_swap
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-    pop {r0, r1}
-    mov lr,r1
-#else
-    pop {r0, lr}
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-
-#endif /* CONFIG_EXECUTION_BENCHMARKING */
-
 #ifdef CONFIG_TRACING
     /* Register the context switch */
     push {r0, lr}

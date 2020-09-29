@@ -24,7 +24,7 @@
 #define AT_RSP_DELIMITER_LEN 2
 
 struct eswifi_gpio {
-	struct device *dev;
+	const struct device *dev;
 	unsigned int pin;
 };
 

@@ -453,14 +453,14 @@ struct usdhc_priv {
 	bool host_ready;
 	uint8_t status;
 
-	struct device *pwr_gpio;
-	struct device *detect_gpio;
+	const struct device *pwr_gpio;
+	const struct device *detect_gpio;
 	struct gpio_callback detect_cb;
 
 	enum host_detect_type detect_type;
 	bool inserted;
 
-	struct device *clock_dev;
+	const struct device *clock_dev;
 	uint32_t src_clk_hz;
 
 	const struct usdhc_config *config;
@@ -2223,7 +2223,7 @@ static void usdhc_host_hw_init(USDHC_Type *base,
 
 }
 
-static void usdhc_cd_gpio_cb(struct device *dev,
+static void usdhc_cd_gpio_cb(const struct device *dev,
 				  struct gpio_callback *cb, uint32_t pins)
 {
 	struct usdhc_priv *priv =
@@ -2233,9 +2233,9 @@ static void usdhc_cd_gpio_cb(struct device *dev,
 	gpio_pin_interrupt_configure(dev, config->detect_pin, GPIO_INT_DISABLE);
 }
 
-static int usdhc_cd_gpio_init(struct device *detect_gpio,
-	uint32_t pin, gpio_dt_flags_t flags,
-	struct gpio_callback *callback)
+static int usdhc_cd_gpio_init(const struct device *detect_gpio,
+			      uint32_t pin, gpio_dt_flags_t flags,
+			      struct gpio_callback *callback)
 {
 	int ret;
 
@@ -2708,7 +2708,7 @@ static int usdhc_access_init(const struct device *dev)
 
 static int disk_usdhc_access_status(struct disk_info *disk)
 {
-	struct device *dev = disk->dev;
+	const struct device *dev = disk->dev;
 	struct usdhc_priv *priv = dev->data;
 
 	return priv->status;
@@ -2717,7 +2717,7 @@ static int disk_usdhc_access_status(struct disk_info *disk)
 static int disk_usdhc_access_read(struct disk_info *disk, uint8_t *buf,
 				 uint32_t sector, uint32_t count)
 {
-	struct device *dev = disk->dev;
+	const struct device *dev = disk->dev;
 	struct usdhc_priv *priv = dev->data;
 
 	LOG_DBG("sector=%u count=%u", sector, count);
@@ -2728,7 +2728,7 @@ static int disk_usdhc_access_read(struct disk_info *disk, uint8_t *buf,
 static int disk_usdhc_access_write(struct disk_info *disk, const uint8_t *buf,
 				  uint32_t sector, uint32_t count)
 {
-	struct device *dev = disk->dev;
+	const struct device *dev = disk->dev;
 	struct usdhc_priv *priv = dev->data;
 
 	LOG_DBG("sector=%u count=%u", sector, count);
@@ -2738,7 +2738,7 @@ static int disk_usdhc_access_write(struct disk_info *disk, const uint8_t *buf,
 
 static int disk_usdhc_access_ioctl(struct disk_info *disk, uint8_t cmd, void *buf)
 {
-	struct device *dev = disk->dev;
+	const struct device *dev = disk->dev;
 	struct usdhc_priv *priv = dev->data;
 	int err;
 
@@ -2768,7 +2768,7 @@ static int disk_usdhc_access_ioctl(struct disk_info *disk, uint8_t cmd, void *bu
 
 static int disk_usdhc_access_init(struct disk_info *disk)
 {
-	struct device *dev = disk->dev;
+	const struct device *dev = disk->dev;
 	struct usdhc_priv *priv = dev->data;
 
 	if (priv->status == DISK_STATUS_OK) {
@@ -2792,7 +2792,7 @@ static struct disk_info usdhc_disk = {
 	.ops = &usdhc_disk_ops,
 };
 
-static int disk_usdhc_init(struct device *dev)
+static int disk_usdhc_init(const struct device *dev)
 {
 	struct usdhc_priv *priv = dev->data;
 

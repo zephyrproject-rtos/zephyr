@@ -75,6 +75,34 @@ struct flash_sector {
 	size_t fs_size; /** flash sector size */
 };
 
+#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY)
+/**
+ * @brief Structure for verify flash region integrity
+ *
+ * This is used to pass data to be used to check flash integrity using SHA-256
+ * algorithm.
+ */
+struct flash_area_check {
+	const uint8_t *match;		/** 256 bits match vector */
+	size_t clen;			/** Content len to be compared */
+	size_t off;			/** Start Offset */
+	uint8_t *rbuf;			/** Temporary read buffer  */
+	size_t rblen;			/** Size of read buffer */
+};
+
+/**
+ * Verify flash memory length bytes integrity from a flash area. The start
+ * point is indicated by an offset value.
+ *
+ * @param[in] fa	Flash area
+ * @param[in] fic	Flash area check integrity data
+ *
+ * @return  0 on success, negative errno code on fail
+ */
+int flash_area_check_int_sha256(const struct flash_area *fa,
+				const struct flash_area_check *fac);
+#endif
+
 /**
  * @brief Retrieve partitions flash area from the flash_map.
  *
@@ -83,6 +111,9 @@ struct flash_sector {
  * @param[in]  id ID of the flash partition.
  * @param[out] fa Pointer which has to reference flash_area. If
  * @p ID is unknown, it will be NULL on output.
+ *
+ * @return  0 on success, -EACCES if the flash_map is not available ,
+ * -ENOENT if @p ID is unknown.
  */
 int flash_area_open(uint8_t id, const struct flash_area **fa);
 
@@ -207,7 +238,7 @@ int flash_area_has_driver(const struct flash_area *fa);
  *
  * @return device driver.
  */
-struct device *flash_area_get_device(const struct flash_area *fa);
+const struct device *flash_area_get_device(const struct flash_area *fa);
 
 #define FLASH_AREA_LABEL_EXISTS(label) \
 	DT_HAS_FIXED_PARTITION_LABEL(label)

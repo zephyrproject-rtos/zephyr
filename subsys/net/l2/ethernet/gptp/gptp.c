@@ -382,7 +382,15 @@ static void gptp_init_clock_ds(void)
 		GPTP_OFFSET_SCALED_LOG_VAR_UNKNOWN;
 
 	if (default_ds->gm_capable) {
-		default_ds->priority1 = GPTP_PRIORITY1_GM_CAPABLE;
+		/* The priority1 value cannot be 255 for GM capable
+		 * system.
+		 */
+		if (CONFIG_NET_GPTP_BMCA_PRIORITY1 ==
+		    GPTP_PRIORITY1_NON_GM_CAPABLE) {
+			default_ds->priority1 = GPTP_PRIORITY1_GM_CAPABLE;
+		} else {
+			default_ds->priority1 = CONFIG_NET_GPTP_BMCA_PRIORITY1;
+		}
 	} else {
 		default_ds->priority1 = GPTP_PRIORITY1_NON_GM_CAPABLE;
 	}
@@ -564,7 +572,7 @@ static void gptp_thread(void)
 static void gptp_add_port(struct net_if *iface, void *user_data)
 {
 	int *num_ports = user_data;
-	struct device *clk;
+	const struct device *clk;
 
 	if (*num_ports >= CONFIG_NET_GPTP_NUM_PORTS) {
 		return;
@@ -828,7 +836,7 @@ struct port_user_data {
 static void gptp_get_port(struct net_if *iface, void *user_data)
 {
 	struct port_user_data *ud = user_data;
-	struct device *clk;
+	const struct device *clk;
 
 	/* Check if interface has a PTP clock. */
 	clk = net_eth_get_ptp_clock(iface);

@@ -14,7 +14,7 @@ The kernel spawns the following system threads:
 
 **Main thread**
     This thread performs kernel initialization, then calls the application's
-    :cpp:func:`main()` function (if one is defined).
+    :c:func:`main` function (if one is defined).
 
     By default, the main thread uses the highest configured preemptible thread
     priority (i.e. 0). If the kernel is not configured to support preemptible
@@ -22,9 +22,9 @@ The kernel spawns the following system threads:
     priority (i.e. -1).
 
     The main thread is an essential thread while it is performing kernel
-    initialization or executing the application's :cpp:func:`main()` function;
+    initialization or executing the application's :c:func:`main` function;
     this means a fatal system error is raised if the thread aborts. If
-    :cpp:func:`main()` is not defined, or if it executes and then does a normal
+    :c:func:`main` is not defined, or if it executes and then does a normal
     return, the main thread terminates normally and no error is raised.
 
 **Idle thread**
@@ -53,11 +53,11 @@ Implementation
 Writing a main() function
 =========================
 
-An application-supplied :cpp:func:`main()` function begins executing once
+An application-supplied :c:func:`main` function begins executing once
 kernel initialization is complete. The kernel does not pass any arguments
 to the function.
 
-The following code outlines a trivial :cpp:func:`main()` function.
+The following code outlines a trivial :c:func:`main` function.
 The function used by a real application can be as complex as needed.
 
 .. code-block:: c

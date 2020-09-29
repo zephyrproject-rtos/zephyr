@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-typedef void (*cavs_ictl_config_irq_t)(struct device *port);
+typedef void (*cavs_ictl_config_irq_t)(const struct device *port);
 
 struct cavs_ictl_config {
 	uint32_t irq_num;

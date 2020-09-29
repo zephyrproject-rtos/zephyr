@@ -77,7 +77,7 @@ static struct trigger_sequence trigger_elements[] = {
  */
 void test_sensor_get_channels(void)
 {
-	struct device *dev;
+	const struct device *dev;
 	struct sensor_value data;
 
 	dev = device_get_binding(DUMMY_SENSOR_NAME);
@@ -98,7 +98,7 @@ void test_sensor_get_channels(void)
 	}
 }
 
-static void trigger_handler(struct device *dev,
+static void trigger_handler(const struct device *dev,
 				struct sensor_trigger *trigger)
 {
 	ARG_UNUSED(dev);
@@ -123,7 +123,7 @@ static void trigger_handler(struct device *dev,
  */
 void test_sensor_handle_triggers(void)
 {
-	struct device *dev;
+	const struct device *dev;
 	struct sensor_value data;
 
 	dev = device_get_binding(DUMMY_SENSOR_NAME);

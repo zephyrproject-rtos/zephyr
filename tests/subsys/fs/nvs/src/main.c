@@ -607,7 +607,7 @@ void test_delete(void)
 void test_nvs_gc_corrupt_close_ate(void)
 {
 	struct nvs_ate ate, close_ate;
-	struct device *flash_dev;
+	const struct device *flash_dev;
 	uint32_t data;
 	ssize_t len;
 	int err;
@@ -670,7 +670,7 @@ void test_nvs_gc_corrupt_close_ate(void)
 void test_nvs_gc_corrupt_ate(void)
 {
 	struct nvs_ate corrupt_ate, close_ate;
-	struct device *flash_dev;
+	const struct device *flash_dev;
 	int err;
 
 	flash_dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);

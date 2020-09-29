@@ -79,7 +79,7 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 }
 
-static int kwx_init(struct device *arg)
+static int kwx_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

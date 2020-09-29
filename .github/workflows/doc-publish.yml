@@ -61,9 +61,8 @@ jobs:
     - name: install-pip
       run: |
         pip3 install setuptools
-        pip3 install 'breathe>=4.9.1,<4.15.0' 'docutils>=0.14' \
-                     'sphinx>=1.7.5,<3.0' sphinx_rtd_theme sphinx-tabs \
-                     sphinxcontrib-svg2pdfconverter 'west>=0.6.2'
+        pip3 install -r scripts/requirements-doc.txt
+        pip3 install west>=0.6.2
         pip3 install pyelftools
 
     - name: west setup

@@ -44,7 +44,7 @@ void begin_test(void)
 {
 	/*
 	 * Invoke bench_test_start in order to be able to use
-	 * tCheck static variable.
+	 * timestamp_check static variable.
 	 */
 	bench_test_start();
 }
@@ -61,7 +61,7 @@ void begin_test(void)
 int check_result(int i, uint32_t t)
 {
 	/*
-	 * bench_test_end checks tCheck static variable.
+	 * bench_test_end checks timestamp_check static variable.
 	 * bench_test_start modifies it
 	 */
 	if (bench_test_end() != 0) {
@@ -87,19 +87,6 @@ int check_result(int i, uint32_t t)
 	fprintf(output_file, sz_case_end_fmt);
 	return 1;
 }
-
-
-/**
- *
- * @brief Check for a key press
- *
- * @return 1 when a keyboard key is pressed, or 0 if no keyboard support
- */
-int kbhit(void)
-{
-	return 0;
-}
-
 
 /**
  *
@@ -193,7 +180,7 @@ void main(void)
 		}
 		TC_PRINT_RUNID;
 
-	} while (continuously && !kbhit());
+	} while (continuously);
 
 	output_close();
 }

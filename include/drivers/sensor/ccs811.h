@@ -80,7 +80,7 @@ struct ccs811_result_type {
  *
  * @return a pointer to the result information.
  */
-const struct ccs811_result_type *ccs811_result(struct device *dev);
+const struct ccs811_result_type *ccs811_result(const struct device *dev);
 
 /**
  * @brief Get information about static CCS811 state.
@@ -104,7 +104,7 @@ struct ccs811_configver_type {
  *
  * @return 0 on success, or a negative errno code on failure.
  */
-int ccs811_configver_fetch(struct device *dev,
+int ccs811_configver_fetch(const struct device *dev,
 			   struct ccs811_configver_type *ptr);
 
 /**
@@ -121,7 +121,7 @@ int ccs811_configver_fetch(struct device *dev,
  * @return a non-negative 16-bit register value, or a negative errno
  * code on failure.
  */
-int ccs811_baseline_fetch(struct device *dev);
+int ccs811_baseline_fetch(const struct device *dev);
 
 /**
  * @brief Update the BASELINE register.
@@ -135,7 +135,7 @@ int ccs811_baseline_fetch(struct device *dev);
  *
  * @return 0 if successful, negative errno code if failure.
  */
-int ccs811_baseline_update(struct device *dev, uint16_t baseline);
+int ccs811_baseline_update(const struct device *dev, uint16_t baseline);
 
 /**
  * @brief Update the ENV_DATA register.
@@ -151,7 +151,7 @@ int ccs811_baseline_update(struct device *dev, uint16_t baseline);
  *
  * @return 0 if successful, negative errno code if failure.
  */
-int ccs811_envdata_update(struct device *dev,
+int ccs811_envdata_update(const struct device *dev,
 			  const struct sensor_value *temperature,
 			  const struct sensor_value *humidity);
 

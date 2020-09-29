@@ -115,6 +115,8 @@ The Zephyr nucleo_g431rb board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
+| DAC       | on-chip    | dac                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -158,6 +160,7 @@ Default Zephyr Peripheral Mapping:
 - LD2 : PA5
 - USB DM : PA11
 - USB DP : PA12
+- DAC1_OUT1 : PA4
 
 System Clock
 ------------
@@ -195,6 +198,7 @@ the following pyocd command:
 
 .. code-block:: console
 
+   $ pyocd pack --update
    $ pyocd pack --install stm32g431rb
 
 Note:

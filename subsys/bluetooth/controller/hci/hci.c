@@ -2371,9 +2371,11 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_CENTRAL)
 	case BT_OCF(BT_HCI_OP_LE_EXT_CREATE_CONN):
 		le_ext_create_connection(cmd, evt);
 		break;
+#endif /* CONFIG_BT_CENTRAL */
 #endif /* CONFIG_BT_CONN */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -3716,7 +3718,11 @@ static void le_adv_ext_coded_report(struct pdu_data *pdu_data,
 {
 	le_adv_ext_report(pdu_data, node_rx, buf, BIT(2));
 }
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+#endif /* CONFIG_BT_OBSERVER */
 
+#if defined(CONFIG_BT_BROADCASTER)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
 static void le_adv_ext_terminate(struct pdu_data *pdu_data,
 				    struct node_rx_pdu *node_rx,
 				    struct net_buf *buf)
@@ -3737,7 +3743,7 @@ static void le_adv_ext_terminate(struct pdu_data *pdu_data,
 		node_rx->hdr.rx_ftr.param_adv_term.num_events;
 }
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
-#endif /* CONFIG_BT_OBSERVER */
+#endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
 static void le_scan_req_received(struct pdu_data *pdu_data,
@@ -3747,7 +3753,9 @@ static void le_scan_req_received(struct pdu_data *pdu_data,
 	struct pdu_adv *adv = (void *)pdu_data;
 	struct bt_hci_evt_le_scan_req_received *sep;
 
-	/* TODO: fill handle when Adv Ext. feature is implemented. */
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	uint8_t rl_idx;
+#endif
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    !(le_event_mask & BT_EVT_MASK_LE_SCAN_REQ_RECEIVED)) {
@@ -3755,7 +3763,7 @@ static void le_scan_req_received(struct pdu_data *pdu_data,
 		uint8_t handle;
 		int8_t rssi;
 
-		handle = 0U;
+		handle = node_rx->hdr.handle & 0xff;
 		addr.type = adv->tx_addr;
 		memcpy(&addr.a.val[0], &adv->scan_req.scan_addr[0],
 		       sizeof(bt_addr_t));
@@ -3770,10 +3778,27 @@ static void le_scan_req_received(struct pdu_data *pdu_data,
 	}
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_SCAN_REQ_RECEIVED, sizeof(*sep));
-	sep->handle = 0U;
+	sep->handle = node_rx->hdr.handle & 0xff;
 	sep->addr.type = adv->tx_addr;
 	memcpy(&sep->addr.a.val[0], &adv->scan_req.scan_addr[0],
 	       sizeof(bt_addr_t));
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	rl_idx = node_rx->hdr.rx_ftr.rl_idx;
+	if (rl_idx < ll_rl_size_get()) {
+		/* Store identity address */
+		ll_rl_id_addr_get(rl_idx, &sep->addr.type,
+				  &sep->addr.a.val[0]);
+		/* Mark it as identity address from RPA (0x02, 0x03) */
+		sep->addr.type += 2U;
+	} else {
+#else
+	if (1) {
+#endif
+		sep->addr.type = adv->tx_addr;
+		memcpy(&sep->addr.a.val[0], &adv->adv_ind.addr[0],
+		       sizeof(bt_addr_t));
+	}
 }
 #endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
 
@@ -4047,12 +4072,16 @@ static void encode_control(struct node_rx_pdu *node_rx,
 	case NODE_RX_TYPE_EXT_CODED_REPORT:
 		le_adv_ext_coded_report(pdu_data, node_rx, buf);
 		break;
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+#endif /* CONFIG_BT_OBSERVER */
 
+#if defined(CONFIG_BT_BROADCASTER)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
 	case NODE_RX_TYPE_EXT_ADV_TERMINATE:
 		le_adv_ext_terminate(pdu_data, node_rx, buf);
 		break;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
-#endif /* CONFIG_BT_OBSERVER */
+#endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
 	case NODE_RX_TYPE_SCAN_REQ:
@@ -4447,7 +4476,7 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 		case NODE_RX_TYPE_REPORT:
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-			/* fallthrough */
+			__fallthrough;
 		case NODE_RX_TYPE_EXT_1M_REPORT:
 		case NODE_RX_TYPE_EXT_2M_REPORT:
 		case NODE_RX_TYPE_EXT_CODED_REPORT:
@@ -4479,7 +4508,7 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-			/* fallthrough */
+			__fallthrough;
 		case NODE_RX_TYPE_EXT_ADV_TERMINATE:
 			return HCI_CLASS_EVT_REQUIRED;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */

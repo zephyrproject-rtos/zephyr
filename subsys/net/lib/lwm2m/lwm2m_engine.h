@@ -35,6 +35,9 @@
 #define NOTIFY_OBSERVER(o, i, r)	lwm2m_notify_observer(o, i, r)
 #define NOTIFY_OBSERVER_PATH(path)	lwm2m_notify_observer_path(path)
 
+/* Use this value to generate new token */
+#define LWM2M_MSG_TOKEN_GENERATE_NEW 0U
+
 /* Use this value to skip token generation */
 #define LWM2M_MSG_TOKEN_LEN_SKIP	0xFF
 

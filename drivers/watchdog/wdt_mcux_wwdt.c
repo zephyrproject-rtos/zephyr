@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(wdt_mcux_wwdt);
 struct mcux_wwdt_config {
 	WWDT_Type *base;
 	uint8_t clk_divider;
-	void (*irq_config_func)(struct device *dev);
+	void (*irq_config_func)(const struct device *dev);
 };
 
 struct mcux_wwdt_data {
@@ -32,7 +32,7 @@ struct mcux_wwdt_data {
 	bool timeout_valid;
 };
 
-static int mcux_wwdt_setup(struct device *dev, uint8_t options)
+static int mcux_wwdt_setup(const struct device *dev, uint8_t options)
 {
 	const struct mcux_wwdt_config *config = dev->config;
 	struct mcux_wwdt_data *data = dev->data;
@@ -49,7 +49,7 @@ static int mcux_wwdt_setup(struct device *dev, uint8_t options)
 	return 0;
 }
 
-static int mcux_wwdt_disable(struct device *dev)
+static int mcux_wwdt_disable(const struct device *dev)
 {
 	const struct mcux_wwdt_config *config = dev->config;
 	struct mcux_wwdt_data *data = dev->data;
@@ -69,7 +69,7 @@ static int mcux_wwdt_disable(struct device *dev)
 #define MSEC_TO_WWDT_TICKS(clock_freq, msec) \
 	((uint32_t)(clock_freq * msec / MSEC_PER_SEC / 4))
 
-static int mcux_wwdt_install_timeout(struct device *dev,
+static int mcux_wwdt_install_timeout(const struct device *dev,
 				     const struct wdt_timeout_cfg *cfg)
 {
 	const struct mcux_wwdt_config *config = dev->config;
@@ -115,7 +115,7 @@ static int mcux_wwdt_install_timeout(struct device *dev,
 	return 0;
 }
 
-static int mcux_wwdt_feed(struct device *dev, int channel_id)
+static int mcux_wwdt_feed(const struct device *dev, int channel_id)
 {
 	const struct mcux_wwdt_config *config = dev->config;
 	WWDT_Type *base = config->base;
@@ -131,9 +131,8 @@ static int mcux_wwdt_feed(struct device *dev, int channel_id)
 	return 0;
 }
 
-static void mcux_wwdt_isr(void *arg)
+static void mcux_wwdt_isr(const struct device *dev)
 {
-	struct device *dev = (struct device *)arg;
 	const struct mcux_wwdt_config *config = dev->config;
 	struct mcux_wwdt_data *data = dev->data;
 	WWDT_Type *base = config->base;
@@ -147,7 +146,7 @@ static void mcux_wwdt_isr(void *arg)
 	}
 }
 
-static int mcux_wwdt_init(struct device *dev)
+static int mcux_wwdt_init(const struct device *dev)
 {
 	const struct mcux_wwdt_config *config = dev->config;
 
@@ -163,7 +162,7 @@ static const struct wdt_driver_api mcux_wwdt_api = {
 	.feed = mcux_wwdt_feed,
 };
 
-static void mcux_wwdt_config_func_0(struct device *dev);
+static void mcux_wwdt_config_func_0(const struct device *dev);
 
 static const struct mcux_wwdt_config mcux_wwdt_config_0 = {
 	.base = (WWDT_Type *) DT_INST_REG_ADDR(0),
@@ -180,7 +179,7 @@ DEVICE_AND_API_INIT(mcux_wwdt_0, DT_INST_LABEL(0),
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_wwdt_api);
 
-static void mcux_wwdt_config_func_0(struct device *dev)
+static void mcux_wwdt_config_func_0(const struct device *dev)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),

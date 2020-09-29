@@ -88,10 +88,24 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	cmp	x1, #0
 	bne	exit
 
-	/* Check if we need to context switch */
-	ldr	x1, [x0, #_kernel_offset_to_current]
-	ldr	x2, [x0, #_kernel_offset_to_ready_q_cache]
-	cmp	x1, x2
+	/*
+	 * z_arch_get_next_switch_handle() is returning:
+	 *
+	 * - The next thread to schedule in x0
+	 * - The current thread in x1. This value is returned using the
+	 *   **old_thread parameter, so we need to make space on the stack for
+	 *   that.
+	 */
+	stp	x1, xzr, [sp, #-16]!
+	mov	x0, sp
+	bl	z_arch_get_next_switch_handle
+	ldp	x1, xzr, [sp], #16
+
+	/*
+	 * x0: 1st thread in the ready queue
+	 * x1: _current thread
+	 */
+	cmp	x0, x1
 	beq	exit
 
 	/* Switch thread */

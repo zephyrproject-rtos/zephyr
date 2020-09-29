@@ -257,10 +257,10 @@ if [ -n "$main_ci" ]; then
 	fi
 
 	if [ "$SC" == "full" ]; then
-	# Save list of tests to be run
-	${sanitycheck} ${sanitycheck_options} --save-tests test_file_3.txt || exit 1
+		# Save list of tests to be run
+		${sanitycheck} ${sanitycheck_options} --save-tests test_file_3.txt || exit 1
 	else
-	echo "test,arch,platform,status,extra_args,handler,handler_time,ram_size,rom_size" > test_file_3.txt
+		echo "test,arch,platform,status,extra_args,handler,handler_time,ram_size,rom_size" > test_file_3.txt
 	fi
 
 	# Remove headers from all files but the first one to generate one
@@ -269,8 +269,6 @@ if [ -n "$main_ci" ]; then
 	tail -n +2 test_file_1.txt > test_file_1_in.txt
 	cat test_file_3.txt test_file_2_in.txt test_file_1_in.txt > test_file.txt
 
-	buildkite-agent artifact upload test_file.txt
-
 	echo "+++ run sanitycheck"
 
 	# Run a subset of tests based on matrix size
@@ -278,7 +276,7 @@ if [ -n "$main_ci" ]; then
 		--subset ${matrix}/${matrix_builds} --retry-failed 3
 
 	# Run module tests on matrix #1
-	if [ "$matrix" = "1" ]; then
+	if [ "$matrix" = "1" -a  "$SC" == "full" ]; then
 		if [ -s module_tests.args ]; then
 			${sanitycheck} ${sanitycheck_options} \
 				+module_tests.args --outdir module_tests

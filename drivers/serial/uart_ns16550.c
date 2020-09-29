@@ -296,7 +296,7 @@ struct uart_ns16550_dev_data_t {
 
 static const struct uart_driver_api uart_ns16550_driver_api;
 
-static inline uintptr_t get_port(struct device *dev)
+static inline uintptr_t get_port(const struct device *dev)
 {
 #ifndef UART_NS16550_ACCESS_IOPORT
 	return DEVICE_MMIO_GET(dev);
@@ -305,7 +305,7 @@ static inline uintptr_t get_port(struct device *dev)
 #endif
 }
 
-static void set_baud_rate(struct device *dev, uint32_t baud_rate)
+static void set_baud_rate(const struct device *dev, uint32_t baud_rate)
 {
 	const struct uart_ns16550_device_config * const dev_cfg = DEV_CFG(dev);
 	struct uart_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
@@ -333,8 +333,8 @@ static void set_baud_rate(struct device *dev, uint32_t baud_rate)
 	}
 }
 
-static int uart_ns16550_configure(struct device *dev,
-				const struct uart_config *cfg)
+static int uart_ns16550_configure(const struct device *dev,
+				  const struct uart_config *cfg)
 {
 	struct uart_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
 	const struct uart_ns16550_device_config * const dev_cfg = DEV_CFG(dev);
@@ -475,7 +475,8 @@ out:
 	return ret;
 };
 
-static int uart_ns16550_config_get(struct device *dev, struct uart_config *cfg)
+static int uart_ns16550_config_get(const struct device *dev,
+				   struct uart_config *cfg)
 {
 	struct uart_ns16550_dev_data_t *data = DEV_DATA(dev);
 
@@ -497,7 +498,7 @@ static int uart_ns16550_config_get(struct device *dev, struct uart_config *cfg)
  *
  * @return 0 if successful, failed otherwise
  */
-static int uart_ns16550_init(struct device *dev)
+static int uart_ns16550_init(const struct device *dev)
 {
 	int ret;
 
@@ -521,7 +522,7 @@ static int uart_ns16550_init(struct device *dev)
  *
  * @return 0 if a character arrived, -1 if the input buffer if empty.
  */
-static int uart_ns16550_poll_in(struct device *dev, unsigned char *c)
+static int uart_ns16550_poll_in(const struct device *dev, unsigned char *c)
 {
 	int ret = -1;
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
@@ -549,7 +550,7 @@ static int uart_ns16550_poll_in(struct device *dev, unsigned char *c)
  * @param dev UART device struct
  * @param c Character to send
  */
-static void uart_ns16550_poll_out(struct device *dev,
+static void uart_ns16550_poll_out(const struct device *dev,
 					   unsigned char c)
 {
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
@@ -570,7 +571,7 @@ static void uart_ns16550_poll_out(struct device *dev,
  * @return one of UART_ERROR_OVERRUN, UART_ERROR_PARITY, UART_ERROR_FRAMING,
  * UART_BREAK if an error was detected, 0 otherwise.
  */
-static int uart_ns16550_err_check(struct device *dev)
+static int uart_ns16550_err_check(const struct device *dev)
 {
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
 	int check = (INBYTE(LSR(dev)) & LSR_EOB_MASK);
@@ -591,7 +592,8 @@ static int uart_ns16550_err_check(struct device *dev)
  *
  * @return Number of bytes sent
  */
-static int uart_ns16550_fifo_fill(struct device *dev, const uint8_t *tx_data,
+static int uart_ns16550_fifo_fill(const struct device *dev,
+				  const uint8_t *tx_data,
 				  int size)
 {
 	int i;
@@ -615,7 +617,7 @@ static int uart_ns16550_fifo_fill(struct device *dev, const uint8_t *tx_data,
  *
  * @return Number of bytes read
  */
-static int uart_ns16550_fifo_read(struct device *dev, uint8_t *rx_data,
+static int uart_ns16550_fifo_read(const struct device *dev, uint8_t *rx_data,
 				  const int size)
 {
 	int i;
@@ -637,7 +639,7 @@ static int uart_ns16550_fifo_read(struct device *dev, uint8_t *rx_data,
  *
  * @return N/A
  */
-static void uart_ns16550_irq_tx_enable(struct device *dev)
+static void uart_ns16550_irq_tx_enable(const struct device *dev)
 {
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
 
@@ -653,7 +655,7 @@ static void uart_ns16550_irq_tx_enable(struct device *dev)
  *
  * @return N/A
  */
-static void uart_ns16550_irq_tx_disable(struct device *dev)
+static void uart_ns16550_irq_tx_disable(const struct device *dev)
 {
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
 
@@ -669,7 +671,7 @@ static void uart_ns16550_irq_tx_disable(struct device *dev)
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
-static int uart_ns16550_irq_tx_ready(struct device *dev)
+static int uart_ns16550_irq_tx_ready(const struct device *dev)
 {
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
 
@@ -687,7 +689,7 @@ static int uart_ns16550_irq_tx_ready(struct device *dev)
  *
  * @return 1 if nothing remains to be transmitted, 0 otherwise
  */
-static int uart_ns16550_irq_tx_complete(struct device *dev)
+static int uart_ns16550_irq_tx_complete(const struct device *dev)
 {
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
 
@@ -706,7 +708,7 @@ static int uart_ns16550_irq_tx_complete(struct device *dev)
  *
  * @return N/A
  */
-static void uart_ns16550_irq_rx_enable(struct device *dev)
+static void uart_ns16550_irq_rx_enable(const struct device *dev)
 {
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
 
@@ -722,7 +724,7 @@ static void uart_ns16550_irq_rx_enable(struct device *dev)
  *
  * @return N/A
  */
-static void uart_ns16550_irq_rx_disable(struct device *dev)
+static void uart_ns16550_irq_rx_disable(const struct device *dev)
 {
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
 
@@ -738,7 +740,7 @@ static void uart_ns16550_irq_rx_disable(struct device *dev)
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
-static int uart_ns16550_irq_rx_ready(struct device *dev)
+static int uart_ns16550_irq_rx_ready(const struct device *dev)
 {
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
 
@@ -756,7 +758,7 @@ static int uart_ns16550_irq_rx_ready(struct device *dev)
  *
  * @return N/A
  */
-static void uart_ns16550_irq_err_enable(struct device *dev)
+static void uart_ns16550_irq_err_enable(const struct device *dev)
 {
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
 
@@ -772,7 +774,7 @@ static void uart_ns16550_irq_err_enable(struct device *dev)
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
-static void uart_ns16550_irq_err_disable(struct device *dev)
+static void uart_ns16550_irq_err_disable(const struct device *dev)
 {
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
 
@@ -788,7 +790,7 @@ static void uart_ns16550_irq_err_disable(struct device *dev)
  *
  * @return 1 if an IRQ is pending, 0 otherwise
  */
-static int uart_ns16550_irq_is_pending(struct device *dev)
+static int uart_ns16550_irq_is_pending(const struct device *dev)
 {
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
 
@@ -806,7 +808,7 @@ static int uart_ns16550_irq_is_pending(struct device *dev)
  *
  * @return Always 1
  */
-static int uart_ns16550_irq_update(struct device *dev)
+static int uart_ns16550_irq_update(const struct device *dev)
 {
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
 
@@ -825,7 +827,7 @@ static int uart_ns16550_irq_update(struct device *dev)
  *
  * @return N/A
  */
-static void uart_ns16550_irq_callback_set(struct device *dev,
+static void uart_ns16550_irq_callback_set(const struct device *dev,
 					  uart_irq_callback_user_data_t cb,
 					  void *cb_data)
 {
@@ -847,9 +849,8 @@ static void uart_ns16550_irq_callback_set(struct device *dev,
  *
  * @return N/A
  */
-static void uart_ns16550_isr(void *arg)
+static void uart_ns16550_isr(const struct device *dev)
 {
-	struct device *dev = arg;
 	struct uart_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	if (dev_data->cb) {
@@ -871,7 +872,7 @@ static void uart_ns16550_isr(void *arg)
  *
  * @return 0 if successful, failed otherwise
  */
-static int uart_ns16550_line_ctrl_set(struct device *dev,
+static int uart_ns16550_line_ctrl_set(const struct device *dev,
 				      uint32_t ctrl, uint32_t val)
 {
 	uint32_t mdc, chg;
@@ -919,7 +920,8 @@ static int uart_ns16550_line_ctrl_set(struct device *dev,
  *
  * @return 0 if successful, failed otherwise
  */
-static int uart_ns16550_drv_cmd(struct device *dev, uint32_t cmd, uint32_t p)
+static int uart_ns16550_drv_cmd(const struct device *dev, uint32_t cmd,
+				uint32_t p)
 {
 #ifdef UART_NS16550_DLF_ENABLED
 	if (cmd == CMD_SET_DLF) {

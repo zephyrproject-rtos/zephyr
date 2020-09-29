@@ -98,13 +98,12 @@ static void test_thread_1_for_SU(void *p1, void *p2, void *p3)
  * @see k_mem_domain_init(), k_mem_domain_add_thread(),
  * k_thread_access_grant()
  */
-void test_permission_inheritance(void *p1, void *p2, void *p3)
+void test_permission_inheritance(void)
 {
 	k_mem_domain_init(&inherit_mem_domain,
 			  ARRAY_SIZE(inherit_memory_partition_array),
 			  inherit_memory_partition_array);
 
-	k_mem_domain_remove_thread(k_current_get());
 	parent_tid = k_current_get();
 	k_mem_domain_add_thread(&inherit_mem_domain, parent_tid);
 
@@ -156,7 +155,8 @@ void parent_handler(void *p1, void *p2, void *p3)
 /**
  * @brief Test child thread inherits parent's thread resource pool
  *
- * @details - Create a resource pool res_pool for the parent thread.
+ * @details
+ * - Create a resource pool res_pool for the parent thread.
  * - Then special system call ret_resource_pool_ptr() returns pointer
  *   to the resource pool of the current thread.
  * - Call it in the parent_handler() and in the child_handler()
@@ -169,7 +169,7 @@ void parent_handler(void *p1, void *p2, void *p3)
  *
  * @see k_thread_resource_pool_assign()
  */
-void test_inherit_resource_pool(void *p1, void *p2, void *p3)
+void test_inherit_resource_pool(void)
 {
 	k_sem_reset(&sync_sem);
 	k_thread_create(&parent_thr, parent_thr_stack,

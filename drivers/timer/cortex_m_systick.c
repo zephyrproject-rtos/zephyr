@@ -149,8 +149,10 @@ void z_clock_isr(void *arg)
 	z_arm_int_exit();
 }
 
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
+	ARG_UNUSED(device);
+
 	NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
 	last_load = CYC_PER_TICK - 1;
 	overflow_cyc = 0U;

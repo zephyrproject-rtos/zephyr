@@ -32,7 +32,7 @@ static const struct args_index args_indx = {
 static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 {
 	uint8_t buf[CONFIG_EEPROM_SHELL_BUFFER_SIZE];
-	struct device *eeprom;
+	const struct device *eeprom;
 	off_t offset;
 	size_t len;
 	int err;
@@ -70,7 +70,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 {
 	uint8_t wr_buf[CONFIG_EEPROM_SHELL_BUFFER_SIZE];
 	uint8_t rd_buf[CONFIG_EEPROM_SHELL_BUFFER_SIZE];
-	struct device *eeprom;
+	const struct device *eeprom;
 	unsigned long byte;
 	off_t offset;
 	size_t len;
@@ -129,7 +129,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_size(const struct shell *shell, size_t argc, char **argv)
 {
-	struct device *eeprom;
+	const struct device *eeprom;
 
 	eeprom = device_get_binding(argv[args_indx.device]);
 	if (!eeprom) {
@@ -145,7 +145,7 @@ static int cmd_fill(const struct shell *shell, size_t argc, char **argv)
 {
 	uint8_t wr_buf[CONFIG_EEPROM_SHELL_BUFFER_SIZE];
 	uint8_t rd_buf[CONFIG_EEPROM_SHELL_BUFFER_SIZE];
-	struct device *eeprom;
+	const struct device *eeprom;
 	unsigned long pattern;
 	off_t offset;
 	size_t len;

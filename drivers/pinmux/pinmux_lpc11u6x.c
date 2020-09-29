@@ -32,7 +32,8 @@ struct pinmux_lpc11u6x_config {
 	uint8_t npins;
 };
 
-static int pinmux_lpc11u6x_set(struct device *dev, uint32_t pin, uint32_t func)
+static int pinmux_lpc11u6x_set(const struct device *dev, uint32_t pin,
+			       uint32_t func)
 {
 	const struct pinmux_lpc11u6x_config *config = DEV_CFG(dev);
 	volatile uint32_t *base;
@@ -54,7 +55,7 @@ static int pinmux_lpc11u6x_set(struct device *dev, uint32_t pin, uint32_t func)
 }
 
 static int
-pinmux_lpc11u6x_get(struct device *dev, uint32_t pin, uint32_t *func)
+pinmux_lpc11u6x_get(const struct device *dev, uint32_t pin, uint32_t *func)
 {
 	const struct pinmux_lpc11u6x_config *config = DEV_CFG(dev);
 	volatile uint32_t *base;
@@ -76,18 +77,18 @@ pinmux_lpc11u6x_get(struct device *dev, uint32_t pin, uint32_t *func)
 }
 
 static int
-pinmux_lpc11u6x_pullup(struct device *dev, uint32_t pin, uint8_t func)
+pinmux_lpc11u6x_pullup(const struct device *dev, uint32_t pin, uint8_t func)
 {
 	return -ENOTSUP;
 }
 
 static int
-pinmux_lpc11u6x_input(struct device *dev, uint32_t pin, uint8_t func)
+pinmux_lpc11u6x_input(const struct device *dev, uint32_t pin, uint8_t func)
 {
 	return -ENOTSUP;
 }
 
-static int pinmux_lpc11u6x_init(struct device *dev)
+static int pinmux_lpc11u6x_init(const struct device *dev)
 {
 	return 0;
 }

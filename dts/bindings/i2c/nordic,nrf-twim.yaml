@@ -8,10 +8,15 @@ compatible: "nordic,nrf-twim"
 include: nordic,nrf-twi-common.yaml
 
 properties:
-    concat-buf-size:
+    zephyr,concat-buf-size:
         type: int
         required: false
         description:
             If concatenation buffer size is set, then multiple messages in the
-            same direction, will be concatenated into single transfers as long
+            same direction will be concatenated into single transfers as long
             as there is space in buffer and no restart or stop flag is set.
+
+            This property must be provided when interacting with devices like
+            the SSD1306 display that cannot tolerate a repeated start and
+            address appearing on the bus between message fragments.  For many
+            devices a concatenation buffer is not necessary.

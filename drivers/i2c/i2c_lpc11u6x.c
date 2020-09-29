@@ -18,7 +18,7 @@
 #define DEV_DATA(dev) ((dev)->data)
 
 static void lpc11u6x_i2c_set_bus_speed(const struct lpc11u6x_i2c_config *cfg,
-				       struct device *clk_dev,
+				       const struct device *clk_dev,
 				       uint32_t speed)
 {
 	uint32_t clk, div;
@@ -31,11 +31,12 @@ static void lpc11u6x_i2c_set_bus_speed(const struct lpc11u6x_i2c_config *cfg,
 	cfg->base->scll = div - (div / 2);
 }
 
-static int lpc11u6x_i2c_configure(struct device *dev, uint32_t dev_config)
+static int lpc11u6x_i2c_configure(const struct device *dev,
+				  uint32_t dev_config)
 {
 	const struct lpc11u6x_i2c_config *cfg = DEV_CFG(dev);
 	struct lpc11u6x_i2c_data *data = DEV_DATA(dev);
-	struct device *clk_dev, *pinmux_dev;
+	const struct device *clk_dev, *pinmux_dev;
 	uint32_t speed, flags = 0;
 
 	switch (I2C_SPEED_GET(dev_config)) {
@@ -92,7 +93,8 @@ err:
 	return -EINVAL;
 }
 
-static int lpc11u6x_i2c_transfer(struct device *dev, struct i2c_msg *msgs,
+static int lpc11u6x_i2c_transfer(const struct device *dev,
+				 struct i2c_msg *msgs,
 				 uint8_t num_msgs, uint16_t addr)
 {
 	const struct lpc11u6x_i2c_config *cfg = DEV_CFG(dev);
@@ -135,7 +137,7 @@ static int lpc11u6x_i2c_transfer(struct device *dev, struct i2c_msg *msgs,
 	return ret;
 }
 
-static int lpc11u6x_i2c_slave_register(struct device *dev,
+static int lpc11u6x_i2c_slave_register(const struct device *dev,
 				       struct i2c_slave_config *cfg)
 {
 	const struct lpc11u6x_i2c_config *dev_cfg = DEV_CFG(dev);
@@ -169,7 +171,7 @@ exit:
 }
 
 
-static int lpc11u6x_i2c_slave_unregister(struct device *dev,
+static int lpc11u6x_i2c_slave_unregister(const struct device *dev,
 					 struct i2c_slave_config *cfg)
 {
 	const struct lpc11u6x_i2c_config *dev_cfg = DEV_CFG(dev);
@@ -190,10 +192,10 @@ static int lpc11u6x_i2c_slave_unregister(struct device *dev,
 	return 0;
 }
 
-static void lpc11u6x_i2c_isr(void *arg)
+static void lpc11u6x_i2c_isr(const void *arg)
 {
-	struct lpc11u6x_i2c_data *data = DEV_DATA((struct device *)arg);
-	struct lpc11u6x_i2c_regs *i2c = DEV_BASE((struct device *) arg);
+	struct lpc11u6x_i2c_data *data = DEV_DATA((const struct device *)arg);
+	struct lpc11u6x_i2c_regs *i2c = DEV_BASE((const struct device *) arg);
 	struct lpc11u6x_i2c_current_transfer *transfer = &data->transfer;
 	uint32_t clear = LPC11U6X_I2C_CONTROL_SI;
 	uint32_t set = 0;
@@ -237,12 +239,12 @@ static void lpc11u6x_i2c_isr(void *arg)
 		if (!transfer->nr_msgs) {
 			transfer->status = LPC11U6X_I2C_STATUS_OK;
 		}
-		/* fallthrough */
+		__fallthrough;
 	case LPC11U6X_I2C_MASTER_RX_DAT_ACK:
 		transfer->curr_buf[0] = i2c->dat;
 		transfer->curr_buf++;
 		transfer->curr_len--;
-		/* fallthrough */
+		__fallthrough;
 	case LPC11U6X_I2C_MASTER_RX_ADR_ACK:
 		if (transfer->curr_len <= 1) {
 			clear |= LPC11U6X_I2C_CONTROL_AA;
@@ -324,11 +326,11 @@ static void lpc11u6x_i2c_isr(void *arg)
 }
 
 
-static int lpc11u6x_i2c_init(struct device *dev)
+static int lpc11u6x_i2c_init(const struct device *dev)
 {
 	const struct lpc11u6x_i2c_config *cfg = DEV_CFG(dev);
 	struct lpc11u6x_i2c_data *data = DEV_DATA(dev);
-	struct device *pinmux_dev, *clk_dev;
+	const struct device *pinmux_dev, *clk_dev;
 
 	/* Configure SCL and SDA pins */
 	pinmux_dev = device_get_binding(cfg->scl_pinmux_drv);
@@ -377,7 +379,7 @@ static const struct i2c_driver_api i2c_api = {
 
 #define LPC11U6X_I2C_INIT(idx)						      \
 									      \
-static void lpc11u6x_i2c_isr_config_##idx(struct device *dev);	              \
+static void lpc11u6x_i2c_isr_config_##idx(const struct device *dev);	              \
 									      \
 static const struct lpc11u6x_i2c_config i2c_cfg_##idx = {		      \
 	.base =								      \
@@ -405,7 +407,7 @@ DEVICE_AND_API_INIT(lpc11u6x_i2c_##idx, DT_INST_LABEL(idx),		      \
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,	      \
 		    &i2c_api);						      \
 									      \
-static void lpc11u6x_i2c_isr_config_##idx(struct device *dev)		      \
+static void lpc11u6x_i2c_isr_config_##idx(const struct device *dev)		      \
 {									      \
 	IRQ_CONNECT(DT_INST_IRQN(idx),					      \
 		    DT_INST_IRQ(idx, priority),				      \

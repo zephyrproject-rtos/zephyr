@@ -14,7 +14,6 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 	if (valid_fault) {
 		printk("fatal error expected as part of test case\n");
 		valid_fault = false; /* reset back to normal */
-		ztest_test_pass();
 	} else {
 		printk("fatal error was unexpected, aborting\n");
 		k_fatal_halt(reason);

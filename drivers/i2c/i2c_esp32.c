@@ -62,7 +62,7 @@ struct i2c_esp32_data {
 
 	struct k_sem fifo_sem;
 	struct k_sem transfer_sem;
-	struct device *clock_dev;
+	const struct device *clock_dev;
 };
 
 typedef void (*irq_connect_cb)(void);
@@ -107,7 +107,7 @@ static int i2c_esp32_configure_pins(int pin, int matrix_out, int matrix_in)
 			     GPIO_OPEN_DRAIN  |
 			     GPIO_PULL_UP;
 	const char *device_name = gpio_esp32_get_gpio_for_pin(pin);
-	struct device *gpio;
+	const struct device *gpio;
 	int ret;
 
 	if (!device_name) {
@@ -129,7 +129,7 @@ static int i2c_esp32_configure_pins(int pin, int matrix_out, int matrix_in)
 	return 0;
 }
 
-static int i2c_esp32_configure_speed(struct device *dev,
+static int i2c_esp32_configure_speed(const struct device *dev,
 				     uint32_t speed)
 {
 	static const uint32_t speed_to_freq_tbl[] = {
@@ -183,7 +183,7 @@ static int i2c_esp32_configure_speed(struct device *dev,
 	return 0;
 }
 
-static int i2c_esp32_configure(struct device *dev, uint32_t dev_config)
+static int i2c_esp32_configure(const struct device *dev, uint32_t dev_config)
 {
 	const struct i2c_esp32_config *config = dev->config;
 	struct i2c_esp32_data *data = dev->data;
@@ -291,7 +291,7 @@ static int i2c_esp32_spin_yield(int *counter)
 	return 0;
 }
 
-static int i2c_esp32_transmit(struct device *dev)
+static int i2c_esp32_transmit(const struct device *dev)
 {
 	const struct i2c_esp32_config *config = dev->config;
 	struct i2c_esp32_data *data = dev->data;
@@ -314,7 +314,7 @@ static int i2c_esp32_transmit(struct device *dev)
 	return 0;
 }
 
-static int i2c_esp32_wait(struct device *dev,
+static int i2c_esp32_wait(const struct device *dev,
 			  volatile struct i2c_esp32_cmd *wait_cmd)
 {
 	const struct i2c_esp32_config *config = dev->config;
@@ -341,7 +341,7 @@ static int i2c_esp32_wait(struct device *dev,
 	return 0;
 }
 
-static int i2c_esp32_transmit_wait(struct device *dev,
+static int i2c_esp32_transmit_wait(const struct device *dev,
 				   volatile struct i2c_esp32_cmd *wait_cmd)
 {
 	int ret;
@@ -355,7 +355,7 @@ static int i2c_esp32_transmit_wait(struct device *dev,
 }
 
 static volatile struct i2c_esp32_cmd *
-i2c_esp32_write_addr(struct device *dev,
+i2c_esp32_write_addr(const struct device *dev,
 		     volatile struct i2c_esp32_cmd *cmd,
 		     struct i2c_msg *msg,
 		     uint16_t addr)
@@ -386,7 +386,7 @@ i2c_esp32_write_addr(struct device *dev,
 	return cmd;
 }
 
-static int i2c_esp32_read_msg(struct device *dev, uint16_t addr,
+static int i2c_esp32_read_msg(const struct device *dev, uint16_t addr,
 			      struct i2c_msg msg)
 {
 	const struct i2c_esp32_config *config = dev->config;
@@ -468,7 +468,7 @@ static int i2c_esp32_read_msg(struct device *dev, uint16_t addr,
 	return 0;
 }
 
-static int i2c_esp32_write_msg(struct device *dev, uint16_t addr,
+static int i2c_esp32_write_msg(const struct device *dev, uint16_t addr,
 			       struct i2c_msg msg)
 {
 	const struct i2c_esp32_config *config = dev->config;
@@ -519,7 +519,7 @@ static int i2c_esp32_write_msg(struct device *dev, uint16_t addr,
 	return 0;
 }
 
-static int i2c_esp32_transfer(struct device *dev, struct i2c_msg *msgs,
+static int i2c_esp32_transfer(const struct device *dev, struct i2c_msg *msgs,
 			      uint8_t num_msgs, uint16_t addr)
 {
 	struct i2c_esp32_data *data = dev->data;
@@ -549,13 +549,12 @@ static int i2c_esp32_transfer(struct device *dev, struct i2c_msg *msgs,
 	return ret;
 }
 
-static void i2c_esp32_isr(void *arg)
+static void i2c_esp32_isr(const struct device *device)
 {
 	const int fifo_give_mask = I2C_ACK_ERR_INT_ST |
 				   I2C_TIME_OUT_INT_ST |
 				   I2C_TRANS_COMPLETE_INT_ST |
 				   I2C_ARBITRATION_LOST_INT_ST;
-	struct device *device = arg;
 	const struct i2c_esp32_config *config = device->config;
 
 	if (sys_read32(I2C_INT_STATUS_REG(config->index)) & fifo_give_mask) {
@@ -572,7 +571,7 @@ static void i2c_esp32_isr(void *arg)
 	sys_write32(~0, I2C_INT_CLR_REG(config->index));
 }
 
-static int i2c_esp32_init(struct device *dev);
+static int i2c_esp32_init(const struct device *dev);
 
 static const struct i2c_driver_api i2c_esp32_driver_api = {
 	.configure = i2c_esp32_configure,
@@ -671,7 +670,7 @@ DEVICE_AND_API_INIT(i2c_esp32_1, DT_INST_LABEL(1), &i2c_esp32_init,
 		    &i2c_esp32_driver_api);
 #endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) */
 
-static int i2c_esp32_init(struct device *dev)
+static int i2c_esp32_init(const struct device *dev)
 {
 	const struct i2c_esp32_config *config = dev->config;
 	struct i2c_esp32_data *data = dev->data;

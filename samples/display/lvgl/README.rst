@@ -19,6 +19,7 @@ Display shield and a board which provides a configuration
 for Arduino connectors, for example:
 
 - :ref:`adafruit_2_8_tft_touch_v2` and :ref:`nrf52840dk_nrf52840`
+- :ref:`buydisplay_2_8_tft_touch_arduino` and :ref:`nrf52840dk_nrf52840`
 - :ref:`ssd1306_128_shield` and :ref:`frdm_k64f`
 
 or a simulated display environment in a native Posix application:

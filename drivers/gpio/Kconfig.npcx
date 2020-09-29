@@ -1,0 +1,12 @@
+# NPCX GPIO driver configuration options
+
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_NPCX
+	bool "Nuvoton NPCX embedd controller (EC) gpio driver"
+	depends on SOC_FAMILY_NPCX
+	help
+	  This option enables the GPIO driver for NPCX family of
+	  processors.
+	  Say y if you wish to use serial port on NPCX MCU.

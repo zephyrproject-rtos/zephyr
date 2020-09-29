@@ -25,7 +25,8 @@
 K_THREAD_STACK_DEFINE(rx_thread_stack, RX_THREAD_STACK_SIZE);
 K_THREAD_STACK_DEFINE(poll_state_stack, STATE_POLL_THREAD_STACK_SIZE);
 
-struct device *can_dev;
+const struct device *can_dev;
+const struct device *led_gpio_dev;
 
 struct k_thread rx_thread_data;
 struct k_thread poll_state_thread_data;
@@ -77,24 +78,26 @@ void rx_thread(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-void change_led(struct zcan_frame *msg, void *led_dev_param)
+void change_led(struct zcan_frame *msg, void *unused)
 {
-	struct device *led_dev = (struct device *)led_dev_param;
+	ARG_UNUSED(unused);
 
 #if DT_PHA_HAS_CELL(DT_ALIAS(led0), gpios, pin) && \
     DT_NODE_HAS_PROP(DT_ALIAS(led0), gpios)
 
-	if (!led_dev_param) {
+	if (!led_gpio_dev) {
 		printk("No LED GPIO device\n");
 		return;
 	}
 
 	switch (msg->data[0]) {
 	case SET_LED:
-		gpio_pin_set(led_dev, DT_GPIO_PIN(DT_ALIAS(led0), gpios), 1);
+		gpio_pin_set(led_gpio_dev,
+			     DT_GPIO_PIN(DT_ALIAS(led0), gpios), 1);
 		break;
 	case RESET_LED:
-		gpio_pin_set(led_dev, DT_GPIO_PIN(DT_ALIAS(led0), gpios), 0);
+		gpio_pin_set(led_gpio_dev,
+			     DT_GPIO_PIN(DT_ALIAS(led0), gpios), 0);
 		break;
 	}
 #else
@@ -192,7 +195,6 @@ void main(void)
 	};
 	uint8_t toggle = 1;
 	uint16_t counter = 0;
-	struct device *led_gpio_dev = NULL;
 	k_tid_t rx_tid, get_state_tid;
 	int ret;
 
@@ -227,7 +229,7 @@ void main(void)
 	k_work_init(&state_change_work, state_change_work_handler);
 
 	ret = can_attach_workq(can_dev, &k_sys_work_q, &rx_work, change_led,
-			       led_gpio_dev, &change_led_filter);
+			       NULL, &change_led_filter);
 	if (ret == CAN_NO_FREE_FILTER) {
 		printk("Error, no filter available!\n");
 		return;

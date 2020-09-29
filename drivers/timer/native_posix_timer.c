@@ -36,7 +36,7 @@ uint32_t z_timer_cycle_get_32(void)
  * Interrupt handler for the timer interrupt
  * Announce to the kernel that a number of ticks have passed
  */
-static void np_timer_isr(void *arg)
+static void np_timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -52,7 +52,7 @@ static void np_timer_isr(void *arg)
  *
  * Enable the hw timer, setting its tick period, and setup its interrupt
  */
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 

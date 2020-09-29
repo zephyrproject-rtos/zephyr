@@ -136,7 +136,8 @@ void test_gatt_unregister(void)
 		     "Test service unregister failed");
 }
 
-static uint8_t count_attr(const struct bt_gatt_attr *attr, void *user_data)
+static uint8_t count_attr(const struct bt_gatt_attr *attr, uint16_t handle,
+			  void *user_data)
 {
 	uint16_t *count = user_data;
 
@@ -145,7 +146,8 @@ static uint8_t count_attr(const struct bt_gatt_attr *attr, void *user_data)
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static uint8_t find_attr(const struct bt_gatt_attr *attr, void *user_data)
+static uint8_t find_attr(const struct bt_gatt_attr *attr, uint16_t handle,
+			 void *user_data)
 {
 	const struct bt_gatt_attr **tmp = user_data;
 

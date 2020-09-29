@@ -132,7 +132,7 @@ uint32_t z_clock_elapsed(void)
 	return ticks;
 }
 
-static void isr(void *arg)
+static void isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -166,7 +166,7 @@ static void isr(void *arg)
 
 #else
 
-static void isr(void *arg)
+static void isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -213,9 +213,11 @@ uint32_t z_timer_cycle_get_32(void)
 
 #endif
 
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
 	uint32_t val;
+
+	ARG_UNUSED(device);
 
 	val = x86_read_loapic(LOAPIC_TIMER_CONFIG);	/* set divider */
 	val &= ~DCR_DIVIDER_MASK;

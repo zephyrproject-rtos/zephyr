@@ -5,7 +5,7 @@ Asynchronous Notification APIs
 
 Zephyr APIs often include :ref:`api_term_async` functions where an
 operation is initiated and the application needs to be informed when it
-completes, and whether it succeeded.  Using :cpp:func:`k_poll()` is
+completes, and whether it succeeded.  Using :c:func:`k_poll` is
 often a good method, but some application architectures may be more
 suited to a callback notification, and operations like enabling clocks
 and power rails may need to be invoked before kernel functions are
@@ -21,7 +21,7 @@ API.
 A limitation is that this API is not suitable for :ref:`syscalls`
 because:
 
-* :c:type:`sys_notify` is not a kernel object;
+* :c:struct:`sys_notify` is not a kernel object;
 * copying the notification content from userspace will break use of
   :c:macro:`CONTAINER_OF` in the implementing function;
 * neither the spin-wait nor callback notification methods can be
@@ -29,7 +29,7 @@ because:
 
 Where a notification is required for an asynchronous operation invoked
 from a user mode thread the subsystem or driver should provide a syscall
-API that uses :c:type:`k_poll_signal` for notification.
+API that uses :c:struct:`k_poll_signal` for notification.
 
 API Reference
 *************

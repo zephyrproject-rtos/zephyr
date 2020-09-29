@@ -34,6 +34,10 @@
 #define FXOS8700_REG_TEMP			0x51
 #define FXOS8700_REG_M_CTRLREG1			0x5b
 #define FXOS8700_REG_M_CTRLREG2			0x5c
+#define FXOS8700_REG_M_INT_SRC			0x5e
+#define FXOS8700_REG_M_VECM_CFG			0x69
+#define FXOS8700_REG_M_VECM_THS_MSB		0x6a
+#define FXOS8700_REG_M_VECM_THS_LSB		0x6b
 
 /* Devices that are compatible with this driver: */
 #define WHOAMI_ID_MMA8451			0x1A
@@ -42,6 +46,8 @@
 #define WHOAMI_ID_FXOS8700			0xC7
 
 #define FXOS8700_DRDY_MASK			(1 << 0)
+#define FXOS8700_MAG_VECM_INT1_MASK		(1 << 0)
+#define FXOS8700_VECM_MASK			(1 << 1)
 #define FXOS8700_MOTION_MASK			(1 << 2)
 #define FXOS8700_PULSE_MASK			(1 << 3)
 
@@ -119,6 +125,11 @@ enum fxos8700_channel {
 	FXOS8700_CHANNEL_MAGN_Z,
 };
 
+/* FXOS8700 specific triggers */
+enum fxos_trigger_type {
+	FXOS8700_TRIG_M_VECM,
+};
+
 struct fxos8700_config {
 	char *i2c_name;
 #ifdef CONFIG_FXOS8700_TRIGGER
@@ -143,13 +154,18 @@ struct fxos8700_config {
 	uint8_t pulse_ltcy;
 	uint8_t pulse_wind;
 #endif
+#ifdef CONFIG_FXOS8700_MAG_VECM
+	uint8_t mag_vecm_cfg;
+	uint8_t mag_vecm_ths[2];
+#endif
 };
 
 struct fxos8700_data {
-	struct device *i2c;
+	const struct device *i2c;
 	struct k_sem sem;
 #ifdef CONFIG_FXOS8700_TRIGGER
-	struct device *gpio;
+	const struct device *dev;
+	const struct device *gpio;
 	uint8_t gpio_pin;
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t drdy_handler;
@@ -161,6 +177,9 @@ struct fxos8700_data {
 #ifdef CONFIG_FXOS8700_MOTION
 	sensor_trigger_handler_t motion_handler;
 #endif
+#ifdef CONFIG_FXOS8700_MAG_VECM
+	sensor_trigger_handler_t m_vecm_handler;
+#endif
 #ifdef CONFIG_FXOS8700_TRIGGER_OWN_THREAD
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_FXOS8700_THREAD_STACK_SIZE);
 	struct k_thread thread;
@@ -168,7 +187,6 @@ struct fxos8700_data {
 #endif
 #ifdef CONFIG_FXOS8700_TRIGGER_GLOBAL_THREAD
 	struct k_work work;
-	struct device *dev;
 #endif
 	int16_t raw[FXOS8700_MAX_NUM_CHANNELS];
 #ifdef CONFIG_FXOS8700_TEMP
@@ -177,12 +195,12 @@ struct fxos8700_data {
 	uint8_t whoami;
 };
 
-int fxos8700_get_power(struct device *dev, enum fxos8700_power *power);
-int fxos8700_set_power(struct device *dev, enum fxos8700_power power);
+int fxos8700_get_power(const struct device *dev, enum fxos8700_power *power);
+int fxos8700_set_power(const struct device *dev, enum fxos8700_power power);
 
 #if CONFIG_FXOS8700_TRIGGER
-int fxos8700_trigger_init(struct device *dev);
-int fxos8700_trigger_set(struct device *dev,
+int fxos8700_trigger_init(const struct device *dev);
+int fxos8700_trigger_set(const struct device *dev,
 			 const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler);
 #endif

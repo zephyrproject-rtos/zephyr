@@ -380,7 +380,7 @@ void z_early_boot_rand_get(uint8_t *buf, size_t length)
 {
 	int n = sizeof(uint32_t);
 #ifdef CONFIG_ENTROPY_HAS_DRIVER
-	struct device *entropy = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
+	const struct device *entropy = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
 	int rc;
 
 	if (entropy == NULL) {

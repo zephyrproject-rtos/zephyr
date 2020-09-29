@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-static inline void bt_uart_drain(struct device *dev)
+static inline void bt_uart_drain(const struct device *dev)
 {
 	uint8_t c;
 

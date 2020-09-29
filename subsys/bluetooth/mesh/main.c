@@ -178,6 +178,8 @@ void bt_mesh_reset(void)
 	bt_mesh_rx_reset();
 	bt_mesh_tx_reset();
 
+	bt_mesh_net_loopback_clear(BT_MESH_KEY_ANY);
+
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
 		if (IS_ENABLED(CONFIG_BT_MESH_LPN_SUB_ALL_NODES_ADDR)) {
 			uint16_t group = BT_MESH_ADDR_ALL_NODES;

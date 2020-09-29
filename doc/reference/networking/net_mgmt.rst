@@ -22,7 +22,7 @@ by eliminating code at build time for management routines that are not
 used. Distinct and statically defined APIs for network management
 procedures are not used.  Instead, defined procedure handlers are
 registered by using a :c:macro:`NET_MGMT_REGISTER_REQUEST_HANDLER`
-macro. Procedure requests are done through a single :cpp:func:`net_mgmt()` API
+macro. Procedure requests are done through a single :c:func:`net_mgmt` API
 that invokes the registered handler for the corresponding request.
 
 The current implementation is experimental and may change and improve
@@ -38,7 +38,7 @@ implied, and the specific management procedure being requested. The
 available procedure requests depend on what has been implemented in
 the stack.
 
-To avoid extra cost, all :cpp:func:`net_mgmt()` calls are direct. Though this
+To avoid extra cost, all :c:func:`net_mgmt` calls are direct. Though this
 may change in a future release, it will not affect the users of this
 function.
 
@@ -51,11 +51,11 @@ your callback is invoked. The callback  will have to be unique for a
 pair of layer and code, whereas on the command part it will be a mask of
 events.
 
-Two functions are available, :cpp:func:`net_mgmt_add_event_callback()` for
+Two functions are available, :c:func:`net_mgmt_add_event_callback` for
 registering the callback function, and
-:cpp:func:`net_mgmt_del_event_callback()`
+:c:func:`net_mgmt_del_event_callback`
 for unregistering a callback. A helper function,
-:cpp:func:`net_mgmt_init_event_callback()`, can
+:c:func:`net_mgmt_init_event_callback`, can
 be used to ease the initialization of the callback structure.
 
 When an event occurs that matches a callback's event set, the
@@ -69,7 +69,7 @@ same callback function, if desired.
    layer and layer code.  A callback handler function **must** check
    the event code (passed as an argument) against the specific network
    events it will handle, **regardless** of how many events were in the
-   set passed to :cpp:func:`net_mgmt_init_event_callback()`.
+   set passed to :c:func:`net_mgmt_init_event_callback`.
 
    (False positives can occur for events which have the same layer and
    layer code.)
@@ -145,7 +145,7 @@ This new management procedure could then be called by using:
 Signaling a network event
 *************************
 
-You can signal a specific network event using the :cpp:func:`net_mgmt_notify()`
+You can signal a specific network event using the :c:func:`net_mgmt_notify`
 function and provide the network event code. See
 :zephyr_file:`include/net/net_mgmt.h` for details. As for the management request
 code, event code can be also found on specific L2 technology mgmt headers,

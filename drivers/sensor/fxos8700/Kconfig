@@ -5,7 +5,7 @@
 
 menuconfig FXOS8700
 	bool "FXOS8700 accelerometer/magnetometer driver"
-	depends on I2C && HAS_DTS_I2C && HAS_DTS_GPIO
+	depends on I2C && HAS_DTS_GPIO
 	help
 	  Enable driver for the FXOS8700 accelerometer/magnetometer.
 	  The driver also supports MMA8451Q, MMA8652FC and MMA8653FC
@@ -208,6 +208,42 @@ config FXOS8700_MOTION_INT1
 	depends on FXOS8700_MOTION
 	help
 	  Say Y to route motion interrupt to INT1 pin. Say N to route to INT2 pin.
+
+menuconfig FXOS8700_MAG_VECM
+	bool "Magnetic vector-magnitude detection"
+	help
+	  Enable magnetic vector-magnitude detection
+
+if FXOS8700_MAG_VECM
+
+config FXOS8700_MAG_VECM_INT1
+	bool "Magnetic vector-magnitude interrupt to INT1 pin"
+	help
+	  Say Y to route magnetic vector-magnitude interrupt to INT1 pin.
+	  Say N to route to INT2 pin.
+
+config FXOS8700_MAG_VECM_CFG
+	hex "Magnetic vector-magnitude configuration register"
+	range 0 0x7f
+	default 0x4e
+
+config FXOS8700_MAG_VECM_THS_MSB
+	hex "Magnetic vector-magnitude threshold configuration register"
+	range 0 0x7f
+	default 0x00
+	help
+	  Seven most significant bits of 15-bit unsigned magnetic
+	  vector-magnitude threshold. Resolution is 0.1 Î¼T/LSB.
+
+config FXOS8700_MAG_VECM_THS_LSB
+	hex "Magnetic vector-magnitude threshold configuration register"
+	range 0 0xff
+	default 0x5a
+	help
+	  Eight least significant bits of 15-bit unsigned magnetic
+	  vector-magnitude threshold. Resolution is 0.1 Î¼T/LSB.
+
+endif # FXOS8700_MAG_VECM
 
 endif # FXOS8700_TRIGGER
 

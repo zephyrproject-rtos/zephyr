@@ -29,7 +29,7 @@
 
 void main(void)
 {
-	struct device *flash_dev;
+	const struct device *flash_dev;
 	uint32_t buf_array_1[4] = { TEST_DATA_WORD_0, TEST_DATA_WORD_1,
 				    TEST_DATA_WORD_2, TEST_DATA_WORD_3 };
 	uint32_t buf_array_2[4] = { TEST_DATA_WORD_3, TEST_DATA_WORD_1,

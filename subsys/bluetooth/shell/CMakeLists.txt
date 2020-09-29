@@ -21,6 +21,10 @@ zephyr_library_sources_ifdef(
   CONFIG_BT_RFCOMM
   rfcomm.c
   )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_ISO
+  iso.c
+  )
 
 if(CONFIG_BT_CTLR AND CONFIG_BT_LL_SW_SPLIT)
   zephyr_library_sources(

@@ -19,8 +19,8 @@ static const struct dummy_sensor_config dummy_config = {
 	.i2c_address = 123
 };
 
-static int dummy_sensor_sample_fetch(struct device *dev,
-				enum sensor_channel chan)
+static int dummy_sensor_sample_fetch(const struct device *dev,
+				     enum sensor_channel chan)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(chan);
@@ -29,9 +29,9 @@ static int dummy_sensor_sample_fetch(struct device *dev,
 	return 0;
 }
 
-static int dummy_sensor_channel_get(struct device *dev,
-				enum sensor_channel chan,
-				struct sensor_value *val)
+static int dummy_sensor_channel_get(const struct device *dev,
+				    enum sensor_channel chan,
+				    struct sensor_value *val)
 {
 	struct dummy_sensor_data *data = dev->data;
 
@@ -64,19 +64,19 @@ static int dummy_sensor_channel_get(struct device *dev,
 }
 
 /* return 0 for dummy driver to imitate interrupt */
-static int dummy_init_interrupt(struct device *dev)
+static int dummy_init_interrupt(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	return 0;
 }
 
-static int dummy_sensor_init(struct device *dev)
+static int dummy_sensor_init(const struct device *dev)
 {
 	struct dummy_sensor_data *data = dev->data;
 	const struct dummy_sensor_config *config = dev->config;
 	/* i2c should be null for dummy driver */
-	struct device *i2c = device_get_binding(config->i2c_name);
+	const struct device *i2c = device_get_binding(config->i2c_name);
 
 	if (i2c != NULL) {
 		LOG_ERR("Should be Null for %s device!", config->i2c_name);
@@ -97,10 +97,10 @@ static int dummy_sensor_init(struct device *dev)
 	return 0;
 }
 
-int dummy_sensor_attr_set(struct device *dev,
-		      enum sensor_channel chan,
-		      enum sensor_attribute attr,
-		      const struct sensor_value *val)
+int dummy_sensor_attr_set(const struct device *dev,
+			  enum sensor_channel chan,
+			  enum sensor_attribute attr,
+			  const struct sensor_value *val)
 {
 	struct dummy_sensor_data *data = dev->data;
 
@@ -114,10 +114,10 @@ int dummy_sensor_attr_set(struct device *dev,
 	return -ENOTSUP;
 }
 
-int dummy_sensor_attr_get(struct device *dev,
-		      enum sensor_channel chan,
-		      enum sensor_attribute attr,
-		      struct sensor_value *val)
+int dummy_sensor_attr_get(const struct device *dev,
+			  enum sensor_channel chan,
+			  enum sensor_attribute attr,
+			  struct sensor_value *val)
 {
 	struct dummy_sensor_data *data = dev->data;
 
@@ -131,9 +131,9 @@ int dummy_sensor_attr_get(struct device *dev,
 	return -ENOTSUP;
 }
 
-int dummy_sensor_trigger_set(struct device *dev,
-			const struct sensor_trigger *trig,
-			sensor_trigger_handler_t handler)
+int dummy_sensor_trigger_set(const struct device *dev,
+			     const struct sensor_trigger *trig,
+			     sensor_trigger_handler_t handler)
 {
 	struct dummy_sensor_data *data = dev->data;
 

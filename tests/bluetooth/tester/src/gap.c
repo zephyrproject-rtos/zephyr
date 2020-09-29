@@ -275,21 +275,21 @@ static void start_advertising(const uint8_t *data, uint16_t len)
 			goto fail;
 		}
 
-		ad[adv_len].type = cmd->adv_data[i++];
-		ad[adv_len].data_len = cmd->adv_data[i++];
-		ad[adv_len].data = &cmd->adv_data[i];
+		ad[adv_len].type = cmd->adv_sr_data[i++];
+		ad[adv_len].data_len = cmd->adv_sr_data[i++];
+		ad[adv_len].data = &cmd->adv_sr_data[i];
 		i += ad[adv_len].data_len;
 	}
 
-	for (i = 0, sd_len = 0U; i < cmd->scan_rsp_len; sd_len++) {
+	for (sd_len = 0U; i < cmd->adv_data_len+cmd->scan_rsp_len; sd_len++) {
 		if (sd_len >= ARRAY_SIZE(sd)) {
 			LOG_ERR("sd[] Out of memory");
 			goto fail;
 		}
 
-		sd[sd_len].type = cmd->scan_rsp[i++];
-		sd[sd_len].data_len = cmd->scan_rsp[i++];
-		sd[sd_len].data = &cmd->scan_rsp[i];
+		sd[sd_len].type = cmd->adv_sr_data[i++];
+		sd[sd_len].data_len = cmd->adv_sr_data[i++];
+		sd[sd_len].data = &cmd->adv_sr_data[i];
 		i += sd[sd_len].data_len;
 	}
 

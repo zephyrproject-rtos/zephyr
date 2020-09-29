@@ -23,7 +23,8 @@ struct pinmux_xec_config {
 	uint32_t port_num;
 };
 
-static int pinmux_xec_set(struct device *dev, uint32_t pin, uint32_t func)
+static int pinmux_xec_set(const struct device *dev, uint32_t pin,
+			  uint32_t func)
 {
 	const struct pinmux_xec_config *config = dev->config;
 	__IO uint32_t *current_pcr1;
@@ -76,7 +77,8 @@ static int pinmux_xec_set(struct device *dev, uint32_t pin, uint32_t func)
 	return 0;
 }
 
-static int pinmux_xec_get(struct device *dev, uint32_t pin, uint32_t *func)
+static int pinmux_xec_get(const struct device *dev, uint32_t pin,
+			  uint32_t *func)
 {
 	const struct pinmux_xec_config *config = dev->config;
 	__IO uint32_t *current_pcr1;
@@ -94,17 +96,19 @@ static int pinmux_xec_get(struct device *dev, uint32_t pin, uint32_t *func)
 	return 0;
 }
 
-static int pinmux_xec_pullup(struct device *dev, uint32_t pin, uint8_t func)
+static int pinmux_xec_pullup(const struct device *dev, uint32_t pin,
+			     uint8_t func)
 {
 	return -ENOTSUP;
 }
 
-static int pinmux_xec_input(struct device *dev, uint32_t pin, uint8_t func)
+static int pinmux_xec_input(const struct device *dev, uint32_t pin,
+			    uint8_t func)
 {
 	return -ENOTSUP;
 }
 
-static int pinmux_xec_init(struct device *dev)
+static int pinmux_xec_init(const struct device *dev)
 {
 	/* Nothing to do. The PCR clock is enabled at reset. */
 	return 0;

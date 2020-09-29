@@ -30,7 +30,7 @@ static inline void amg88xx_setup_int(struct amg88xx_data *drv_data,
 				     flags);
 }
 
-int amg88xx_attr_set(struct device *dev,
+int amg88xx_attr_set(const struct device *dev,
 		     enum sensor_channel chan,
 		     enum sensor_attribute attr,
 		     const struct sensor_value *val)
@@ -73,7 +73,7 @@ int amg88xx_attr_set(struct device *dev,
 	return 0;
 }
 
-static void amg88xx_gpio_callback(struct device *dev,
+static void amg88xx_gpio_callback(const struct device *dev,
 				  struct gpio_callback *cb, uint32_t pins)
 {
 	struct amg88xx_data *drv_data =
@@ -88,9 +88,8 @@ static void amg88xx_gpio_callback(struct device *dev,
 #endif
 }
 
-static void amg88xx_thread_cb(void *arg)
+static void amg88xx_thread_cb(const struct device *dev)
 {
-	struct device *dev = arg;
 	struct amg88xx_data *drv_data = dev->data;
 	const struct amg88xx_config *config = dev->config;
 	uint8_t status;
@@ -112,16 +111,11 @@ static void amg88xx_thread_cb(void *arg)
 }
 
 #ifdef CONFIG_AMG88XX_TRIGGER_OWN_THREAD
-static void amg88xx_thread(int dev_ptr, int unused)
+static void amg88xx_thread(struct amg88xx_data *drv_data)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct amg88xx_data *drv_data = dev->data;
-
-	ARG_UNUSED(unused);
-
 	while (42) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
-		amg88xx_thread_cb(dev);
+		amg88xx_thread_cb(drv_data->dev);
 	}
 }
 #endif
@@ -135,7 +129,7 @@ static void amg88xx_work_cb(struct k_work *work)
 }
 #endif
 
-int amg88xx_trigger_set(struct device *dev,
+int amg88xx_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
@@ -167,7 +161,7 @@ int amg88xx_trigger_set(struct device *dev,
 	return 0;
 }
 
-int amg88xx_init_interrupt(struct device *dev)
+int amg88xx_init_interrupt(const struct device *dev)
 {
 	struct amg88xx_data *drv_data = dev->data;
 	const struct amg88xx_config *config = dev->config;
@@ -194,17 +188,18 @@ int amg88xx_init_interrupt(struct device *dev)
 		return -EIO;
 	}
 
+	drv_data->dev = dev;
+
 #if defined(CONFIG_AMG88XX_TRIGGER_OWN_THREAD)
 	k_sem_init(&drv_data->gpio_sem, 0, UINT_MAX);
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_AMG88XX_THREAD_STACK_SIZE,
-			(k_thread_entry_t)amg88xx_thread, dev,
-			0, NULL, K_PRIO_COOP(CONFIG_AMG88XX_THREAD_PRIORITY),
+			(k_thread_entry_t)amg88xx_thread, drv_data,
+			NULL, NULL, K_PRIO_COOP(CONFIG_AMG88XX_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_AMG88XX_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = amg88xx_work_cb;
-	drv_data->dev = dev;
 #endif
 	amg88xx_setup_int(drv_data, true);
 

@@ -225,8 +225,8 @@ xtensa_switch:
 	 */
 	l32i a1, a2, BSA_A2_OFF
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	call4 read_timer_end_of_swap
+#ifdef CONFIG_TRACING
+	call4 sys_trace_thread_switched_in
 #endif
 	j _restore_context
 _switch_restore_pc:

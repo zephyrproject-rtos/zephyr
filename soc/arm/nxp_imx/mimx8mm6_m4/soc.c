@@ -128,7 +128,7 @@ static void SOC_ClockInit(void)
 	CLOCK_EnableClock(kCLOCK_Uart4);
 }
 
-static int nxp_mimx8mm6_init(struct device *arg)
+static int nxp_mimx8mm6_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

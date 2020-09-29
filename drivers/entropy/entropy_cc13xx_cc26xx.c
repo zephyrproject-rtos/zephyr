@@ -43,7 +43,7 @@ struct entropy_cc13xx_cc26xx_data {
 DEVICE_DECLARE(entropy_cc13xx_cc26xx);
 
 static inline struct entropy_cc13xx_cc26xx_data *
-get_dev_data(struct device *dev)
+get_dev_data(const struct device *dev)
 {
 	return dev->data;
 }
@@ -100,7 +100,8 @@ static void handle_shutdown_ovf(void)
 	sys_write32(off, TRNG_BASE + TRNG_O_FROEN);
 }
 
-static int entropy_cc13xx_cc26xx_get_entropy(struct device *dev, uint8_t *buf,
+static int entropy_cc13xx_cc26xx_get_entropy(const struct device *dev,
+					     uint8_t *buf,
 					     uint16_t len)
 {
 	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(dev);
@@ -135,7 +136,7 @@ static int entropy_cc13xx_cc26xx_get_entropy(struct device *dev, uint8_t *buf,
 	return 0;
 }
 
-static void entropy_cc13xx_cc26xx_isr(void *arg)
+static void entropy_cc13xx_cc26xx_isr(const void *arg)
 {
 	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(arg);
 	uint32_t src = 0;
@@ -176,8 +177,9 @@ static void entropy_cc13xx_cc26xx_isr(void *arg)
 	}
 }
 
-static int entropy_cc13xx_cc26xx_get_entropy_isr(struct device *dev,
-	uint8_t *buf, uint16_t len, uint32_t flags)
+static int entropy_cc13xx_cc26xx_get_entropy_isr(const struct device *dev,
+						 uint8_t *buf, uint16_t len,
+						 uint32_t flags)
 {
 	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(dev);
 	uint16_t cnt;
@@ -249,7 +251,7 @@ static int entropy_cc13xx_cc26xx_get_entropy_isr(struct device *dev,
 static int post_notify_fxn(unsigned int eventType, uintptr_t eventArg,
 	uintptr_t clientArg)
 {
-	struct device *dev = (struct device *)clientArg;
+	const struct device *dev = (const struct device *)clientArg;
 	int ret = Power_NOTIFYDONE;
 	int16_t res_id;
 
@@ -268,8 +270,8 @@ static int post_notify_fxn(unsigned int eventType, uintptr_t eventArg,
 #endif
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static int entropy_cc13xx_cc26xx_set_power_state(struct device *dev,
-	uint32_t new_state)
+static int entropy_cc13xx_cc26xx_set_power_state(const struct device *dev,
+						 uint32_t new_state)
 {
 	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(dev);
 	int ret = 0;
@@ -293,8 +295,10 @@ static int entropy_cc13xx_cc26xx_set_power_state(struct device *dev,
 	return ret;
 }
 
-static int entropy_cc13xx_cc26xx_pm_control(struct device *dev,
-	uint32_t ctrl_command, void *context, device_pm_cb cb, void *arg)
+static int entropy_cc13xx_cc26xx_pm_control(const struct device *dev,
+					    uint32_t ctrl_command,
+					    void *context, device_pm_cb cb,
+					    void *arg)
 {
 	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(dev);
 	int ret = 0;
@@ -319,7 +323,7 @@ static int entropy_cc13xx_cc26xx_pm_control(struct device *dev,
 }
 #endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
-static int entropy_cc13xx_cc26xx_init(struct device *dev)
+static int entropy_cc13xx_cc26xx_init(const struct device *dev)
 {
 	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(dev);
 

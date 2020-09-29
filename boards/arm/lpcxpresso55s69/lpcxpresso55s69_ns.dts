@@ -24,8 +24,9 @@
 	};
 
 	chosen {
-		zephyr,sram = &sram0;
+		zephyr,sram = &non_secure_ram;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot1_partition;
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
 		zephyr,entropy = &rng;

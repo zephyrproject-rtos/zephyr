@@ -1,0 +1,4 @@
+tests:
+  kernel.memory_protection.mem_map:
+    tags: kernel mmu ignore_faults
+    filter: CONFIG_MMU

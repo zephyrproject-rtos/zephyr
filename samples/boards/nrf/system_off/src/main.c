@@ -23,7 +23,7 @@
  * before the threading system starts up between PRE_KERNEL_2 and
  * POST_KERNEL.  Do it at the start of PRE_KERNEL_2.
  */
-static int disable_ds_1(struct device *dev)
+static int disable_ds_1(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -36,7 +36,7 @@ SYS_INIT(disable_ds_1, PRE_KERNEL_2, 0);
 void main(void)
 {
 	int rc;
-	struct device *cons = device_get_binding(CONSOLE_LABEL);
+	const struct device *cons = device_get_binding(CONSOLE_LABEL);
 
 	printk("\n%s system off demo\n", CONFIG_BOARD);
 

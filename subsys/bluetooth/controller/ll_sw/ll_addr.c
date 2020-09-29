@@ -7,12 +7,15 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <zephyr/types.h>
+#include <zephyr.h>
+#include <soc.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/controller.h>
 
 #include "util/util.h"
 #include "util/memq.h"
+
+#include "hal/cpu.h"
 
 #include "pdu.h"
 #include "ll.h"

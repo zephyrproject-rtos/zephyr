@@ -1,8 +1,8 @@
 # DOC: used to generate docs
 
-breathe>=4.9.1,<4.15.0
-docutils>=0.14
-sphinx>=1.7.5,<3.0
+breathe>=4.21.0
+docutils>=0.16
+sphinx>=3.2.0,<4.0
 sphinx_rtd_theme
 sphinx-tabs
 sphinxcontrib-svg2pdfconverter

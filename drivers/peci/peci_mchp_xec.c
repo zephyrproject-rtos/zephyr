@@ -66,7 +66,7 @@ static int check_bus_idle(PECI_Type *base)
 	return 0;
 }
 
-static int peci_xec_configure(struct device *dev, uint32_t bitrate)
+static int peci_xec_configure(const struct device *dev, uint32_t bitrate)
 {
 	ARG_UNUSED(dev);
 
@@ -88,7 +88,7 @@ static int peci_xec_configure(struct device *dev, uint32_t bitrate)
 	return 0;
 }
 
-static int peci_xec_disable(struct device *dev)
+static int peci_xec_disable(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	int ret;
@@ -109,7 +109,7 @@ static int peci_xec_disable(struct device *dev)
 	return 0;
 }
 
-static int peci_xec_enable(struct device *dev)
+static int peci_xec_enable(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	PECI_Type *base = peci_xec_config.base;
@@ -122,7 +122,7 @@ static int peci_xec_enable(struct device *dev)
 	return 0;
 }
 
-static int peci_xec_write(struct device *dev, struct peci_msg *msg)
+static int peci_xec_write(const struct device *dev, struct peci_msg *msg)
 {
 	ARG_UNUSED(dev);
 	int i;
@@ -189,7 +189,7 @@ static int peci_xec_write(struct device *dev, struct peci_msg *msg)
 	return 0;
 }
 
-static int peci_xec_read(struct device *dev, struct peci_msg *msg)
+static int peci_xec_read(const struct device *dev, struct peci_msg *msg)
 {
 	ARG_UNUSED(dev);
 	int i;
@@ -239,12 +239,12 @@ static int peci_xec_read(struct device *dev, struct peci_msg *msg)
 	return 0;
 }
 
-static int peci_xec_transfer(struct device *dev, struct peci_msg *msg)
+static int peci_xec_transfer(const struct device *dev, struct peci_msg *msg)
 {
 	ARG_UNUSED(dev);
 	int ret;
 	PECI_Type *base = peci_xec_config.base;
-	uint8_t err_val = base->ERROR;
+	uint8_t err_val;
 
 	ret = peci_xec_write(dev, msg);
 	if (ret) {
@@ -267,6 +267,7 @@ static int peci_xec_transfer(struct device *dev, struct peci_msg *msg)
 	}
 
 	/* Check for error conditions and perform bus recovery if necessary */
+	err_val = base->ERROR;
 	if (err_val) {
 		if (base->ERROR & MCHP_PECI_ERR_RDOV) {
 			LOG_WRN("Read buffer is not empty\n");
@@ -280,20 +281,20 @@ static int peci_xec_transfer(struct device *dev, struct peci_msg *msg)
 			LOG_WRN("Write buffer is not empty\n");
 		}
 
+		/* ERROR is a clear-on-write register, need to clear errors
+		 * occurring at the end of a transaction. A temp variable is
+		 * used to overcome complaints by the static code analyzer
+		 */
+		base->ERROR = err_val;
 		LOG_WRN("Transaction error %x\n", base->ERROR);
 		return -EIO;
 	}
-
-	/* ERROR is a clear-on-write register, need to clear errors occurred
-	 * at the end of a transaction.
-	 */
-	base->ERROR = err_val;
 
 	return 0;
 }
 
 #ifdef CONFIG_PECI_INTERRUPT_DRIVEN
-static void peci_xec_isr(void *arg)
+static void peci_xec_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 	PECI_Type *base = peci_xec_config.base;
@@ -322,7 +323,7 @@ static const struct peci_driver_api peci_xec_driver_api = {
 	.transfer = peci_xec_transfer,
 };
 
-static int peci_xec_init(struct device *dev)
+static int peci_xec_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

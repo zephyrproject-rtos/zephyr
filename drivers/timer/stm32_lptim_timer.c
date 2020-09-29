@@ -40,7 +40,7 @@ static uint32_t accumulated_lptim_cnt;
 
 static struct k_spinlock lock;
 
-static void lptim_irq_handler(struct device *unused)
+static void lptim_irq_handler(const struct device *unused)
 {
 
 	ARG_UNUSED(unused);
@@ -73,7 +73,7 @@ static void lptim_irq_handler(struct device *unused)
 	}
 }
 
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 

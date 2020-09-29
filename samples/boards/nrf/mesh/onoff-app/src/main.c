@@ -170,7 +170,7 @@ struct onoff_state {
 	uint8_t current;
 	uint8_t previous;
 	uint8_t led_gpio_pin;
-	struct device *led_device;
+	const struct device *led_device;
 };
 
 /*
@@ -274,7 +274,7 @@ static const struct bt_mesh_comp comp = {
 	.elem_count = ARRAY_SIZE(elements),
 };
 
-struct device *sw_device;
+const struct device *sw_device;
 
 struct sw {
 	uint8_t sw_num;
@@ -426,7 +426,7 @@ static uint8_t pin_to_sw(uint32_t pin_pos)
 	return 0;
 }
 
-static void button_pressed(struct device *dev, struct gpio_callback *cb,
+static void button_pressed(const struct device *dev, struct gpio_callback *cb,
 			   uint32_t pin_pos)
 {
 	/*

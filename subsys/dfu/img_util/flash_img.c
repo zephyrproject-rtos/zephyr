@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017, 2020 Nordic Semiconductor ASA
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,7 +65,7 @@ size_t flash_img_bytes_written(struct flash_img_context *ctx)
 int flash_img_init_id(struct flash_img_context *ctx, uint8_t area_id)
 {
 	int rc;
-	struct device *flash_dev;
+	const struct device *flash_dev;
 
 	rc = flash_area_open(area_id,
 			       (const struct flash_area **)&(ctx->flash_area));
@@ -83,3 +84,36 @@ int flash_img_init(struct flash_img_context *ctx)
 {
 	return flash_img_init_id(ctx, FLASH_AREA_IMAGE_SECONDARY);
 }
+
+#if defined(CONFIG_IMG_ENABLE_IMAGE_CHECK)
+int flash_img_check(struct flash_img_context *ctx,
+		    const struct flash_img_check *fic,
+		    uint8_t area_id)
+{
+	struct flash_area_check fac;
+	int rc;
+
+	if (!ctx || !fic) {
+		return -EINVAL;
+	}
+
+	rc = flash_area_open(area_id,
+			     (const struct flash_area **)&(ctx->flash_area));
+	if (rc) {
+		return rc;
+	}
+
+	fac.match = fic->match;
+	fac.clen = fic->clen;
+	fac.off = 0;
+	fac.rbuf = ctx->buf;
+	fac.rblen = sizeof(ctx->buf);
+
+	rc = flash_area_check_int_sha256(ctx->flash_area, &fac);
+
+	flash_area_close(ctx->flash_area);
+	ctx->flash_area = NULL;
+
+	return rc;
+}
+#endif

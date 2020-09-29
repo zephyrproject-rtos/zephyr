@@ -1,8 +1,8 @@
 tests:
   filesystem.fat.api:
-    platform_whitelist: native_posix
+    platform_allow: native_posix
     tags: filesystem
   filesystem.fat.api.lfn:
     extra_args: CONF_FILE="prj_lfn.conf"
-    platform_whitelist: native_posix
+    platform_allow: native_posix
     tags: filesystem

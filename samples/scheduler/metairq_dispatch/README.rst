@@ -1,3 +1,5 @@
+.. _samples_scheduler_metairq_dispatch:
+
 MetaIRQ Thread Priority Demonstration
 #####################################
 

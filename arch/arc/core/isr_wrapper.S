@@ -275,11 +275,7 @@ SECTION_FUNC(TEXT, _isr_demux)
 	push r59
 #endif
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	bl read_timer_start_of_isr
-#endif
-
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_TRACING_ISR)
 	bl sys_trace_isr_enter
 #endif
 	/* cannot be done before this point because we must be able to run C */
@@ -299,17 +295,10 @@ irq_hint_handled:
 	add3 r0, r1, r0   /* table entries are 8-bytes wide */
 
 	ld_s r1, [r0, 4] /* ISR into r1 */
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	push_s r0
-	push_s r1
-	bl read_timer_end_of_isr
-	pop_s r1
-	pop_s r0
-#endif
 	jl_s.d [r1]
 	ld_s r0, [r0] /* delay slot: ISR parameter into r0  */
 
-#ifdef CONFIG_TRACING_ISR
+#if defined(CONFIG_TRACING_ISR)
 	bl sys_trace_isr_exit
 #endif
 

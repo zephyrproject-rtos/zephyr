@@ -35,7 +35,7 @@ struct led_rgb pixels[STRIP_NUM_PIXELS];
 
 void main(void)
 {
-	struct device *strip;
+	const struct device *strip;
 	size_t cursor = 0, color = 0;
 	int rc;
 

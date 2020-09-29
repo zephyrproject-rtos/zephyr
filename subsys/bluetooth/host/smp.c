@@ -279,6 +279,21 @@ static bool sc_supported;
 static const uint8_t *sc_public_key;
 static K_SEM_DEFINE(sc_local_pkey_ready, 0, 1);
 
+static bool le_sc_supported(void)
+{
+	/*
+	 * If controller based ECC is to be used it must support
+	 * "LE Read Local P-256 Public Key" and "LE Generate DH Key" commands.
+	 * Otherwise LE SC are not supported.
+	 */
+	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
+		return false;
+	}
+
+	return BT_CMD_TEST(bt_dev.supported_commands, 34, 1) &&
+	       BT_CMD_TEST(bt_dev.supported_commands, 34, 2);
+}
+
 static uint8_t get_io_capa(void)
 {
 	if (!bt_auth) {
@@ -5115,10 +5130,13 @@ int bt_smp_le_oob_set_tk(struct bt_conn *conn, const uint8_t *tk)
 }
 #endif /* !defined(CONFIG_BT_SMP_SC_PAIR_ONLY) */
 
-#if !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)
 int bt_smp_le_oob_generate_sc_data(struct bt_le_oob_sc_data *le_sc_oob)
 {
 	int err;
+
+	if (!le_sc_supported()) {
+		return -ENOTSUP;
+	}
 
 	if (!sc_public_key) {
 		err = k_sem_take(&sc_local_pkey_ready, K_FOREVER);
@@ -5149,7 +5167,6 @@ int bt_smp_le_oob_generate_sc_data(struct bt_le_oob_sc_data *le_sc_oob)
 
 	return 0;
 }
-#endif /* !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY) */
 
 #if !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)
 static bool le_sc_oob_data_check(struct bt_smp *smp, bool oobd_local_present,
@@ -5516,21 +5533,6 @@ static int bt_smp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	BT_ERR("No available SMP context for conn %p", conn);
 
 	return -ENOMEM;
-}
-
-static bool le_sc_supported(void)
-{
-	/*
-	 * If controller based ECC is to be used it must support
-	 * "LE Read Local P-256 Public Key" and "LE Generate DH Key" commands.
-	 * Otherwise LE SC are not supported.
-	 */
-	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
-		return false;
-	}
-
-	return BT_CMD_TEST(bt_dev.supported_commands, 34, 1) &&
-	       BT_CMD_TEST(bt_dev.supported_commands, 34, 2);
 }
 
 BT_L2CAP_CHANNEL_DEFINE(smp_fixed_chan, BT_L2CAP_CID_SMP, bt_smp_accept, NULL);

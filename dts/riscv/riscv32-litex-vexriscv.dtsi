@@ -137,5 +137,29 @@
 			status = "disabled";
 			#pwm-cells = <2>;
 		};
+		i2s_rx: i2s_rx@e000a800 {
+			compatible = "litex,i2s";
+			reg = <0xe000a800 0x20 0xb1000000 0x40000>;
+			interrupt-parent = <&intc0>;
+			interrupts = <6 2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg-names = "control", "fifo";
+			fifo_depth = <256>;
+			label = "i2s_rx";
+			status = "disabled";
+		};
+		i2s_tx: i2s_tx@e000b000 {
+			compatible = "litex,i2s";
+			reg = <0xe000b000 0x20 0xb2000000 0x40000>;
+			interrupt-parent = <&intc0>;
+			interrupts = <7 2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg-names = "control", "fifo";
+			fifo_depth = <256>;
+			label = "i2s_tx";
+			status = "disabled";
+		};
 	};
 };

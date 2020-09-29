@@ -1,4 +1,4 @@
 tests:
   dts.build.build:
     build_only: true
-    platform_whitelist:  frdm_k64f
+    platform_allow:  frdm_k64f

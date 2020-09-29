@@ -30,7 +30,7 @@ static const struct args_index args_indx = {
 static int cmd_setup(const struct shell *shell, size_t argc, char **argv)
 {
 	struct dac_channel_cfg cfg;
-	struct device *dac;
+	const struct device *dac;
 	int err;
 
 	dac = device_get_binding(argv[args_indx.device]);
@@ -53,7 +53,7 @@ static int cmd_setup(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_write_value(const struct shell *shell, size_t argc, char **argv)
 {
-	struct device *dac;
+	const struct device *dac;
 	uint8_t channel;
 	uint32_t value;
 	int err;

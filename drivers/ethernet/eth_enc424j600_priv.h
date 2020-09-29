@@ -288,14 +288,15 @@ struct enc424j600_config {
 
 struct enc424j600_runtime {
 	struct net_if *iface;
+	const struct device *dev;
 
 	K_KERNEL_STACK_MEMBER(thread_stack,
 			      CONFIG_ETH_ENC424J600_RX_THREAD_STACK_SIZE);
 
 	struct k_thread thread;
 	uint8_t mac_address[6];
-	struct device *gpio;
-	struct device *spi;
+	const struct device *gpio;
+	const struct device *spi;
 	struct spi_cs_control spi_cs;
 	struct spi_config spi_cfg;
 	struct gpio_callback gpio_cb;

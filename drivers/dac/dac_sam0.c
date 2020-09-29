@@ -31,7 +31,7 @@ struct dac_sam0_cfg {
 #define DEV_CFG(dev) ((const struct dac_sam0_cfg *const)(dev)->config)
 
 /* Write to the DAC. */
-static int dac_sam0_write_value(struct device *dev, uint8_t channel,
+static int dac_sam0_write_value(const struct device *dev, uint8_t channel,
 				uint32_t value)
 {
 	const struct dac_sam0_cfg *const cfg = DEV_CFG(dev);
@@ -46,7 +46,7 @@ static int dac_sam0_write_value(struct device *dev, uint8_t channel,
  * Setup the channel.  As the SAM0 has one fixed width channel, this validates
  * the input and does nothing else.
  */
-static int dac_sam0_channel_setup(struct device *dev,
+static int dac_sam0_channel_setup(const struct device *dev,
 				  const struct dac_channel_cfg *channel_cfg)
 {
 	if (channel_cfg->channel_id != 0) {
@@ -60,7 +60,7 @@ static int dac_sam0_channel_setup(struct device *dev,
 }
 
 /* Initialise and enable the DAC. */
-static int dac_sam0_init(struct device *dev)
+static int dac_sam0_init(const struct device *dev)
 {
 	const struct dac_sam0_cfg *const cfg = DEV_CFG(dev);
 	Dac *regs = cfg->regs;

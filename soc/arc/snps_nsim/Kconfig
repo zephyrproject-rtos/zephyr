@@ -9,6 +9,10 @@ choice
 config SOC_NSIM_EM
 	bool "Synopsys ARC EM in nSIM"
 	select CPU_HAS_MPU
+
+config SOC_NSIM_EM7D_V22
+	bool "Synopsys ARC EM7D_V22 in nSIM"
+	select CPU_HAS_MPU
 	select CPU_HAS_FPU
 
 config SOC_NSIM_SEM

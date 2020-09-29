@@ -15,7 +15,8 @@
 #ifdef CONFIG_SHT3XD_TRIGGER
 static volatile bool alerted;
 
-static void trigger_handler(struct device *dev, struct sensor_trigger *trig)
+static void trigger_handler(const struct device *dev,
+			    struct sensor_trigger *trig)
 {
 	alerted = !alerted;
 }
@@ -24,7 +25,7 @@ static void trigger_handler(struct device *dev, struct sensor_trigger *trig)
 
 void main(void)
 {
-	struct device *dev = device_get_binding("SHT3XD");
+	const struct device *dev = device_get_binding("SHT3XD");
 	int rc;
 
 	if (dev == NULL) {

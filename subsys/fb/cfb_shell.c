@@ -22,7 +22,7 @@
 #define DISPLAY_DRIVER	CONFIG_CHARACTER_FRAMEBUFFER_SHELL_DRIVER_NAME
 
 
-static struct device *dev;
+static const struct device *dev;
 static const char * const param_name[] = {
 	"height", "width", "ppt", "rows", "cols"};
 

@@ -2,7 +2,7 @@ sample:
   name: syst sample
 tests:
   sample.logger.syst:
-    platform_whitelist: mps2_an385 sam_e70_xplained
+    platform_allow: mps2_an385 sam_e70_xplained
     tags: logging
     harness: console
     harness_config:

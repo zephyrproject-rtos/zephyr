@@ -34,10 +34,32 @@ extern void USB_DeviceEhciIsrFunction(void *deviceHandle);
 #define SETUP_DATA_STAGE_IN	(1)
 #define SETUP_DATA_STAGE_OUT	(2)
 
-/* Then endpoint number/index calculation */
+/*
+ * Endpoint absolut index calculation:
+ *
+ * MCUX EHCI USB device controller supports a specific
+ * number of bidirectional endpoints. Bidirectional means
+ * that an endpoint object is represented to the outside
+ * as an OUT and an IN Eindpoint with its own buffers
+ * and control structures.
+ *
+ * EP_ABS_IDX refers to the corresponding control
+ * structure, for example:
+ *
+ *  EP addr | ep_idx | ep_abs_idx
+ * -------------------------------
+ *  0x00    | 0x00   | 0x00
+ *  0x80    | 0x00   | 0x01
+ *  0x01    | 0x01   | 0x02
+ *  0x81    | 0x01   | 0x03
+ *  ....    | ....   | ....
+ *
+ * The NUM_OF_EP_MAX (and number of s_ep_ctrl) should be double
+ * of num_bidir_endpoints.
+ */
 #define EP_ABS_IDX(ep)		(USB_EP_GET_IDX(ep) * 2 + \
 					(USB_EP_GET_DIR(ep) >> 7))
-#define NUM_OF_EP_MAX		DT_INST_PROP(0, num_bidir_endpoints)
+#define NUM_OF_EP_MAX		(DT_INST_PROP(0, num_bidir_endpoints) * 2)
 
 /* The minimum value is 1 */
 #define EP_BUF_NUMOF_BLOCKS	((NUM_OF_EP_MAX + 3) / 4)
@@ -143,6 +165,7 @@ int usb_dc_set_address(const uint8_t addr)
 
 int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data *const cfg)
 {
+	uint8_t ep_abs_idx =  EP_ABS_IDX(cfg->ep_addr);
 	uint8_t ep_idx = USB_EP_GET_IDX(cfg->ep_addr);
 
 	if ((cfg->ep_type == USB_DC_EP_CONTROL) && ep_idx) {
@@ -150,21 +173,9 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data *const cfg)
 		return -1;
 	}
 
-	if (ep_idx >= NUM_OF_EP_MAX) {
+	if (ep_abs_idx >= NUM_OF_EP_MAX) {
 		LOG_ERR("endpoint index/address out of range");
 		return -1;
-	}
-
-	if (ep_idx & BIT(0)) {
-		if (USB_EP_GET_DIR(cfg->ep_addr) != USB_EP_DIR_IN) {
-			LOG_INF("pre-selected as IN endpoint");
-			return -1;
-		}
-	} else {
-		if (USB_EP_GET_DIR(cfg->ep_addr) != USB_EP_DIR_OUT) {
-			LOG_INF("pre-selected as OUT endpoint");
-			return -1;
-		}
 	}
 
 	return 0;
@@ -388,14 +399,14 @@ int usb_dc_ep_disable(const uint8_t ep)
 
 int usb_dc_ep_flush(const uint8_t ep)
 {
-	uint8_t ep_idx = USB_EP_GET_IDX(ep);
+	uint8_t ep_abs_idx = EP_ABS_IDX(ep);
 
-	if (ep_idx >= NUM_OF_EP_MAX) {
+	if (ep_abs_idx >= NUM_OF_EP_MAX) {
 		LOG_ERR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
 
-	LOG_DBG("Not implemented, ep 0x%02x, idx %u", ep_idx, ep);
+	LOG_DBG("Not implemented, idx 0x%02x, ep %u", ep_abs_idx, ep);
 
 	return 0;
 }
@@ -469,7 +480,6 @@ static void update_control_stage(usb_device_callback_message_struct_t *cb_msg,
 int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 			uint32_t *read_bytes)
 {
-	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	uint8_t ep_abs_idx = EP_ABS_IDX(ep);
 	uint32_t data_len;
 	uint8_t *bufp = NULL;
@@ -479,7 +489,8 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 		return -EBUSY;
 	}
 
-	if ((ep_idx >= NUM_OF_EP_MAX) || (USB_EP_GET_DIR(ep) != USB_EP_DIR_OUT)) {
+	if ((ep_abs_idx >= NUM_OF_EP_MAX) ||
+	    (USB_EP_GET_DIR(ep) != USB_EP_DIR_OUT)) {
 		LOG_ERR("Wrong endpoint index/address/direction");
 		return -EINVAL;
 	}

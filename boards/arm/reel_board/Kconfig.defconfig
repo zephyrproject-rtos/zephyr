@@ -12,10 +12,6 @@ config BOARD
 config I2C
 	default y
 
-config SPI_NRFX_RAM_BUFFER_SIZE
-	default 8
-	depends on SPI
-
 if USB
 
 config USB_NRFX

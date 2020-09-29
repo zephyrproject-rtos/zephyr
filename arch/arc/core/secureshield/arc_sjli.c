@@ -48,7 +48,7 @@ static void sjli_table_init(void)
 /*
  * @brief initializaiton of secureshield related functions.
  */
-static int arc_secureshield_init(struct device *arg)
+static int arc_secureshield_init(const struct device *arg)
 {
 	sjli_table_init();
 

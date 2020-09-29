@@ -2,4 +2,4 @@ common:
   tags: bluetooth
 tests:
   bluetooth.privacy.test:
-    platform_whitelist: native_posix
+    platform_allow: native_posix

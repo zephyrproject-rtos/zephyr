@@ -1,4 +1,4 @@
-.. mec15xxevb-sample:
+.. _mec15xxevb-sample:
 
 MEC15xx sample board test application
 #####################################

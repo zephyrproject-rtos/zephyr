@@ -16,7 +16,7 @@ static gpio_pin_config_t enet_gpio_config = {
 };
 #endif
 
-static int mimxrt1020_evk_init(struct device *dev)
+static int mimxrt1020_evk_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -148,7 +148,7 @@ static int mimxrt1020_evk_init(struct device *dev)
 }
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && CONFIG_NET_L2_ETHERNET
-static int mimxrt1020_evk_phy_reset(struct device *dev)
+static int mimxrt1020_evk_phy_reset(const struct device *dev)
 {
 	/* RESET PHY chip. */
 	k_busy_wait(USEC_PER_MSEC * 10U);

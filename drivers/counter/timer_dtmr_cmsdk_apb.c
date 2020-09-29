@@ -15,7 +15,7 @@
 
 #include "dualtimer_cmsdk_apb.h"
 
-typedef void (*dtimer_config_func_t)(struct device *dev);
+typedef void (*dtimer_config_func_t)(const struct device *dev);
 
 struct dtmr_cmsdk_apb_cfg {
 	struct counter_config_info info;
@@ -35,7 +35,7 @@ struct dtmr_cmsdk_apb_dev_data {
 	uint32_t load;
 };
 
-static int dtmr_cmsdk_apb_start(struct device *dev)
+static int dtmr_cmsdk_apb_start(const struct device *dev)
 {
 	const struct dtmr_cmsdk_apb_cfg * const cfg = dev->config;
 	struct dtmr_cmsdk_apb_dev_data *data = dev->data;
@@ -49,7 +49,7 @@ static int dtmr_cmsdk_apb_start(struct device *dev)
 	return 0;
 }
 
-static int dtmr_cmsdk_apb_stop(struct device *dev)
+static int dtmr_cmsdk_apb_stop(const struct device *dev)
 {
 	const struct dtmr_cmsdk_apb_cfg * const cfg = dev->config;
 
@@ -59,7 +59,7 @@ static int dtmr_cmsdk_apb_stop(struct device *dev)
 	return 0;
 }
 
-static int dtmr_cmsdk_apb_get_value(struct device *dev, uint32_t *ticks)
+static int dtmr_cmsdk_apb_get_value(const struct device *dev, uint32_t *ticks)
 {
 	const struct dtmr_cmsdk_apb_cfg * const cfg = dev->config;
 	struct dtmr_cmsdk_apb_dev_data *data = dev->data;
@@ -68,7 +68,7 @@ static int dtmr_cmsdk_apb_get_value(struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
-static int dtmr_cmsdk_apb_set_top_value(struct device *dev,
+static int dtmr_cmsdk_apb_set_top_value(const struct device *dev,
 					const struct counter_top_cfg *top_cfg)
 {
 	const struct dtmr_cmsdk_apb_cfg * const cfg = dev->config;
@@ -102,7 +102,7 @@ static int dtmr_cmsdk_apb_set_top_value(struct device *dev,
 	return 0;
 }
 
-static uint32_t dtmr_cmsdk_apb_get_top_value(struct device *dev)
+static uint32_t dtmr_cmsdk_apb_get_top_value(const struct device *dev)
 {
 	struct dtmr_cmsdk_apb_dev_data *data = dev->data;
 
@@ -111,7 +111,7 @@ static uint32_t dtmr_cmsdk_apb_get_top_value(struct device *dev)
 	return ticks;
 }
 
-static uint32_t dtmr_cmsdk_apb_get_pending_int(struct device *dev)
+static uint32_t dtmr_cmsdk_apb_get_pending_int(const struct device *dev)
 {
 	const struct dtmr_cmsdk_apb_cfg * const cfg = dev->config;
 
@@ -127,9 +127,8 @@ static const struct counter_driver_api dtmr_cmsdk_apb_api = {
 	.get_top_value = dtmr_cmsdk_apb_get_top_value,
 };
 
-static void dtmr_cmsdk_apb_isr(void *arg)
+static void dtmr_cmsdk_apb_isr(const struct device *dev)
 {
-	struct device *dev = (struct device *)arg;
 	struct dtmr_cmsdk_apb_dev_data *data = dev->data;
 	const struct dtmr_cmsdk_apb_cfg * const cfg = dev->config;
 
@@ -139,13 +138,13 @@ static void dtmr_cmsdk_apb_isr(void *arg)
 	}
 }
 
-static int dtmr_cmsdk_apb_init(struct device *dev)
+static int dtmr_cmsdk_apb_init(const struct device *dev)
 {
 	const struct dtmr_cmsdk_apb_cfg * const cfg = dev->config;
 
 #ifdef CONFIG_CLOCK_CONTROL
 	/* Enable clock for subsystem */
-	struct device *clk =
+	const struct device *clk =
 		device_get_binding(CONFIG_ARM_CLOCK_CONTROL_DEV_NAME);
 
 #ifdef CONFIG_SOC_SERIES_BEETLE
@@ -164,7 +163,7 @@ static int dtmr_cmsdk_apb_init(struct device *dev)
 	((volatile struct dualtimer_cmsdk_apb *)DT_INST_REG_ADDR(inst))
 
 #define DTIMER_CMSDK_INIT(inst)						\
-	static void dtimer_cmsdk_apb_config_##inst(struct device *dev);	\
+	static void dtimer_cmsdk_apb_config_##inst(const struct device *dev); \
 									\
 	static const struct dtmr_cmsdk_apb_cfg				\
 	dtmr_cmsdk_apb_cfg_##inst = {					\
@@ -200,7 +199,7 @@ static int dtmr_cmsdk_apb_init(struct device *dev)
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &dtmr_cmsdk_apb_api);			\
 									\
-	static void dtimer_cmsdk_apb_config_##inst(struct device *dev)	\
+	static void dtimer_cmsdk_apb_config_##inst(const struct device *dev) \
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(inst),				\
 			    DT_INST_IRQ(inst, priority),		\

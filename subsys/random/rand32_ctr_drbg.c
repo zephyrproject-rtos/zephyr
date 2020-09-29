@@ -28,7 +28,7 @@
 
 static K_SEM_DEFINE(state_sem, 1, 1);
 
-static struct device *entropy_driver;
+static const struct device *entropy_driver;
 static const unsigned char drbg_seed[] = CONFIG_CS_CTR_DRBG_PERSONALIZATION;
 
 #if defined(CONFIG_MBEDTLS)
@@ -37,7 +37,7 @@ static mbedtls_ctr_drbg_context ctr_ctx;
 
 static int ctr_drbg_entropy_func(void *ctx, unsigned char *buf, size_t len)
 {
-	return entropy_get_entropy(ctx, (void *)buf, len);
+	return entropy_get_entropy(entropy_driver, (void *)buf, len);
 }
 
 #elif defined(CONFIG_TINYCRYPT)
@@ -69,7 +69,7 @@ static int ctr_drbg_initialize(void)
 
 	ret = mbedtls_ctr_drbg_seed(&ctr_ctx,
 				    ctr_drbg_entropy_func,
-				    entropy_driver,
+				    NULL,
 				    drbg_seed,
 				    sizeof(drbg_seed));
 

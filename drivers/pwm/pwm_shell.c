@@ -32,7 +32,7 @@ static const struct args_index args_indx = {
 static int cmd_cycles(const struct shell *shell, size_t argc, char **argv)
 {
 	pwm_flags_t flags = 0;
-	struct device *dev;
+	const struct device *dev;
 	uint32_t period;
 	uint32_t pulse;
 	uint32_t pwm;
@@ -65,7 +65,7 @@ static int cmd_cycles(const struct shell *shell, size_t argc, char **argv)
 static int cmd_usec(const struct shell *shell, size_t argc, char **argv)
 {
 	pwm_flags_t flags = 0;
-	struct device *dev;
+	const struct device *dev;
 	uint32_t period;
 	uint32_t pulse;
 	uint32_t pwm;
@@ -97,7 +97,7 @@ static int cmd_usec(const struct shell *shell, size_t argc, char **argv)
 static int cmd_nsec(const struct shell *shell, size_t argc, char **argv)
 {
 	pwm_flags_t flags = 0;
-	struct device *dev;
+	const struct device *dev;
 	uint32_t period;
 	uint32_t pulse;
 	uint32_t pwm;

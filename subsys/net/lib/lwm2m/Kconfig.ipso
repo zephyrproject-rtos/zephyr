@@ -39,6 +39,85 @@ config LWM2M_IPSO_TEMP_SENSOR_TIMESTAMP
 	help
 	  Add a non-standard timestamp resource to each temperature object.
 
+config LWM2M_IPSO_GENERIC_SENSOR
+	bool "IPSO Generic Sensor Support"
+	help
+	  This IPSO object can be used to prototype a sensor.
+
+if LWM2M_IPSO_GENERIC_SENSOR
+
+config LWM2M_IPSO_GENERIC_SENSOR_INSTANCE_COUNT
+	int "Maximum # of IPSO Generic Sensor object instances"
+	default 1
+	help
+	  This setting establishes the total count of IPSO Generic
+	  Sensor instances available to the LWM2M client.
+
+config LWM2M_IPSO_GENERIC_SENSOR_TIMESTAMP
+	bool "Add timestamp resources to IPSO objects"
+	default y
+	depends on LWM2M_IPSO_TIMESTAMP_EXTENSIONS
+	help
+	  Add a non-standard timestamp resource to each object.
+
+config LWM2M_IPSO_GENERIC_SENSOR_NAME
+	string "Name that will show up in debug output when object is created"
+	default "Generic"
+
+config LWM2M_IPSO_GENERIC_SENSOR_TYPE
+	string "Sensor type"
+	default "Generic sensor"
+	help
+	  The type of the sensor (for instance PIR type).
+
+endif # LWM2M_IPSO_GENERIC_SENSOR
+
+config LWM2M_IPSO_HUMIDITY_SENSOR
+	bool "IPSO Humidity Sensor Support"
+	help
+	  This IPSO object can be used to prototype a sensor.
+
+if LWM2M_IPSO_HUMIDITY_SENSOR
+
+config LWM2M_IPSO_HUMIDITY_SENSOR_INSTANCE_COUNT
+	int "Maximum # of IPSO Humidity Sensor object instances"
+	default 1
+	help
+	  This setting establishes the total count of IPSO Humidity
+	  Sensor instances available to the LWM2M client.
+
+config LWM2M_IPSO_HUMIDITY_SENSOR_TIMESTAMP
+	bool "Add timestamp resources to IPSO objects"
+	default y
+	depends on LWM2M_IPSO_TIMESTAMP_EXTENSIONS
+	help
+	  Add a non-standard timestamp resource to each object.
+
+endif # LWM2M_IPSO_HUMIDITY_SENSOR
+
+config LWM2M_IPSO_PRESSURE_SENSOR
+	bool "IPSO Pressure Sensor Support"
+	help
+	  This IPSO object can be used to prototype a sensor.
+
+if LWM2M_IPSO_PRESSURE_SENSOR
+
+config LWM2M_IPSO_PRESSURE_SENSOR_INSTANCE_COUNT
+	int "Maximum # of IPSO Pressure Sensor object instances"
+	default 1
+	help
+	  This setting establishes the total count of IPSO Pressure
+	  Sensor instances available to the LWM2M client.
+
+config LWM2M_IPSO_PRESSURE_SENSOR_TIMESTAMP
+	bool "Add timestamp resources to IPSO objects"
+	default y
+	depends on LWM2M_IPSO_TIMESTAMP_EXTENSIONS
+	help
+	  Add a non-standard timestamp resource to each object.
+
+endif # LWM2M_IPSO_PRESSURE_SENSOR
+
 config LWM2M_IPSO_LIGHT_CONTROL
 	bool "IPSO Light Control Support"
 	help

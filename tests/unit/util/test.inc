@@ -231,6 +231,39 @@ static void test_FOR_EACH(void)
 	zassert_equal(array[2], 3, "Unexpected value %d", array[2]);
 }
 
+static void test_FOR_EACH_NONEMPTY_TERM(void)
+{
+	#define SQUARE(arg) (arg * arg)
+	#define SWALLOW_VA_ARGS_1(...) EMPTY
+	#define SWALLOW_VA_ARGS_2(...)
+	#define REPEAT_VA_ARGS(...) __VA_ARGS__
+
+	uint8_t array[] = {
+		FOR_EACH_NONEMPTY_TERM(SQUARE, (,))
+		FOR_EACH_NONEMPTY_TERM(SQUARE, (,),)
+		FOR_EACH_NONEMPTY_TERM(SQUARE, (,), ,)
+		FOR_EACH_NONEMPTY_TERM(SQUARE, (,), EMPTY, EMPTY)
+		FOR_EACH_NONEMPTY_TERM(SQUARE, (,), SWALLOW_VA_ARGS_1(a, b))
+		FOR_EACH_NONEMPTY_TERM(SQUARE, (,), SWALLOW_VA_ARGS_2(c, d))
+		FOR_EACH_NONEMPTY_TERM(SQUARE, (,), 1)
+		FOR_EACH_NONEMPTY_TERM(SQUARE, (,), 2, 3)
+		FOR_EACH_NONEMPTY_TERM(SQUARE, (,), REPEAT_VA_ARGS(4))
+		FOR_EACH_NONEMPTY_TERM(SQUARE, (,), REPEAT_VA_ARGS(5, 6))
+		255
+	};
+
+	size_t size = ARRAY_SIZE(array);
+
+	zassert_equal(size, 7, "Unexpected size %d", size);
+	zassert_equal(array[0], 1, "Unexpected value %d", array[0]);
+	zassert_equal(array[1], 4, "Unexpected value %d", array[1]);
+	zassert_equal(array[2], 9, "Unexpected value %d", array[2]);
+	zassert_equal(array[3], 16, "Unexpected value %d", array[3]);
+	zassert_equal(array[4], 25, "Unexpected value %d", array[4]);
+	zassert_equal(array[5], 36, "Unexpected value %d", array[5]);
+	zassert_equal(array[6], 255, "Unexpected value %d", array[6]);
+}
+
 static void fsum(uint32_t incr, uint32_t *sum)
 {
 	*sum = *sum + incr;
@@ -402,6 +435,7 @@ void test_cc(void)
 			 ztest_unit_test(test_MACRO_MAP_CAT),
 			 ztest_unit_test(test_z_max_z_min),
 			 ztest_unit_test(test_FOR_EACH),
+			 ztest_unit_test(test_FOR_EACH_NONEMPTY_TERM),
 			 ztest_unit_test(test_FOR_EACH_FIXED_ARG),
 			 ztest_unit_test(test_FOR_EACH_IDX),
 			 ztest_unit_test(test_FOR_EACH_IDX_FIXED_ARG),

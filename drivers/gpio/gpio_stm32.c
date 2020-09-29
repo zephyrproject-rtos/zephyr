@@ -31,10 +31,9 @@
  */
 static void gpio_stm32_isr(int line, void *arg)
 {
-	struct device *dev = arg;
-	struct gpio_stm32_data *data = dev->data;
+	struct gpio_stm32_data *data = arg;
 
-	gpio_fire_callbacks(&data->cb, dev, BIT(line));
+	gpio_fire_callbacks(&data->cb, data->dev, BIT(line));
 }
 
 /**
@@ -294,7 +293,7 @@ static int gpio_stm32_enable_int(int port, int pin)
 	defined(CONFIG_SOC_SERIES_STM32L1X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X)
-	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
+	const struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	struct stm32_pclken pclken = {
 #ifdef CONFIG_SOC_SERIES_STM32H7X
 		.bus = STM32_CLOCK_BUS_APB4,
@@ -313,7 +312,7 @@ static int gpio_stm32_enable_int(int port, int pin)
 	return 0;
 }
 
-static int gpio_stm32_port_get_raw(struct device *dev, uint32_t *value)
+static int gpio_stm32_port_get_raw(const struct device *dev, uint32_t *value)
 {
 	const struct gpio_stm32_config *cfg = dev->config;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
@@ -323,7 +322,7 @@ static int gpio_stm32_port_get_raw(struct device *dev, uint32_t *value)
 	return 0;
 }
 
-static int gpio_stm32_port_set_masked_raw(struct device *dev,
+static int gpio_stm32_port_set_masked_raw(const struct device *dev,
 					  gpio_port_pins_t mask,
 					  gpio_port_value_t value)
 {
@@ -341,7 +340,7 @@ static int gpio_stm32_port_set_masked_raw(struct device *dev,
 	return 0;
 }
 
-static int gpio_stm32_port_set_bits_raw(struct device *dev,
+static int gpio_stm32_port_set_bits_raw(const struct device *dev,
 					gpio_port_pins_t pins)
 {
 	const struct gpio_stm32_config *cfg = dev->config;
@@ -356,7 +355,7 @@ static int gpio_stm32_port_set_bits_raw(struct device *dev,
 	return 0;
 }
 
-static int gpio_stm32_port_clear_bits_raw(struct device *dev,
+static int gpio_stm32_port_clear_bits_raw(const struct device *dev,
 					  gpio_port_pins_t pins)
 {
 	const struct gpio_stm32_config *cfg = dev->config;
@@ -376,7 +375,7 @@ static int gpio_stm32_port_clear_bits_raw(struct device *dev,
 	return 0;
 }
 
-static int gpio_stm32_port_toggle_bits(struct device *dev,
+static int gpio_stm32_port_toggle_bits(const struct device *dev,
 				       gpio_port_pins_t pins)
 {
 	const struct gpio_stm32_config *cfg = dev->config;
@@ -396,7 +395,7 @@ static int gpio_stm32_port_toggle_bits(struct device *dev,
 /**
  * @brief Configure pin or port
  */
-static int gpio_stm32_config(struct device *dev,
+static int gpio_stm32_config(const struct device *dev,
 			     gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_stm32_config *cfg = dev->config;
@@ -425,11 +424,13 @@ exit:
 	return err;
 }
 
-static int gpio_stm32_pin_interrupt_configure(struct device *dev,
-		gpio_pin_t pin, enum gpio_int_mode mode,
-		enum gpio_int_trig trig)
+static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
+					      gpio_pin_t pin,
+					      enum gpio_int_mode mode,
+					      enum gpio_int_trig trig)
 {
 	const struct gpio_stm32_config *cfg = dev->config;
+	struct gpio_stm32_data *data = dev->data;
 	int edge = 0;
 	int err = 0;
 
@@ -449,7 +450,7 @@ static int gpio_stm32_pin_interrupt_configure(struct device *dev,
 		goto exit;
 	}
 
-	if (stm32_exti_set_callback(pin, gpio_stm32_isr, dev) != 0) {
+	if (stm32_exti_set_callback(pin, gpio_stm32_isr, data) != 0) {
 		err = -EBUSY;
 		goto exit;
 	}
@@ -476,7 +477,7 @@ exit:
 	return err;
 }
 
-static int gpio_stm32_manage_callback(struct device *dev,
+static int gpio_stm32_manage_callback(const struct device *dev,
 				      struct gpio_callback *callback,
 				      bool set)
 {
@@ -506,12 +507,15 @@ static const struct gpio_driver_api gpio_stm32_driver = {
  *
  * @return 0
  */
-static int gpio_stm32_init(struct device *device)
+static int gpio_stm32_init(const struct device *device)
 {
 	const struct gpio_stm32_config *cfg = device->config;
+	struct gpio_stm32_data *data = device->data;
+
+	data->dev = device;
 
 	/* enable clock for subsystem */
-	struct device *clk =
+	const struct device *clk =
 		device_get_binding(STM32_CLOCK_CONTROL_NAME);
 
 	if (clock_control_on(clk,
@@ -612,7 +616,7 @@ GPIO_DEVICE_INIT_STM32(k, K);
 
 #if defined(CONFIG_SOC_SERIES_STM32F1X)
 
-static int gpio_stm32_afio_init(struct device *device)
+static int gpio_stm32_afio_init(const struct device *device)
 {
 	UNUSED(device);
 

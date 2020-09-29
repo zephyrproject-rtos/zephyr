@@ -10,9 +10,11 @@ module-str = kernel
 source "subsys/logging/Kconfig.template.log_config"
 
 config MULTITHREADING
-	bool "Multi-threading"
+	bool "Multi-threading (DEPRECATED)"
 	default y
 	help
+	  Disabling this option is DEPRECATED.
+
 	  If disabled, only the main thread is available, so a main() function
 	  must be provided. Interrupts are available. Kernel objects will most
 	  probably not behave as expected, especially with regards to pending,
@@ -22,6 +24,11 @@ config MULTITHREADING
 	  Many drivers and subsystems will not work with this option
 	  set to 'n'; disable only when you REALLY know what you are
 	  doing.
+
+if !MULTITHREADING
+comment "*** WARNING ***"
+comment "Single threaded mode (MULTITHREADING option disabled) is deprecated"
+endif
 
 config NUM_COOP_PRIORITIES
 	int "Number of coop priorities" if MULTITHREADING
@@ -314,14 +321,6 @@ config BOOT_DELAY
 	  achieved by waiting for DCD on the serial port--however, not
 	  all serial ports have DCD.
 
-config EXECUTION_BENCHMARKING
-	bool "Timing metrics"
-	help
-	  This option enables the tracking of various times inside the kernel
-	  the exact set of metrics being tracked is board-dependent.
-	  All timing measurements are enabled for X86 and ARM based architectures.
-	  In other architectures only a subset is enabled.
-
 config THREAD_MONITOR
 	bool "Thread monitoring [EXPERIMENTAL]"
 	help
@@ -452,6 +451,16 @@ config NUM_PIPE_ASYNC_MSGS
 	  Setting this option to 0 disables support for asynchronous
 	  pipe messages.
 
+config KERNEL_MEM_POOL
+	bool "Use Kernel Memory Pool"
+	default y
+	help
+	  Enable the use of kernel memory pool.
+
+	  Say y if unsure.
+
+if KERNEL_MEM_POOL
+
 config MEM_POOL_HEAP_BACKEND
 	bool "Use k_heap as the backend for k_mem_pool"
 	default y
@@ -480,6 +489,9 @@ config HEAP_MEM_POOL_MIN_SIZE
 	  This option specifies the size of the smallest block in the pool.
 	  Option must be a power of 2 and lower than or equal to the size
 	  of the entire pool.
+
+endif # KERNEL_MEM_POOL
+
 endmenu
 
 config ARCH_HAS_CUSTOM_SWAP_TO_MAIN
@@ -696,6 +708,48 @@ config MAX_DOMAIN_PARTITIONS
 	help
 	  Configure the maximum number of partitions per memory domain.
 
+config ARCH_MEM_DOMAIN_DATA
+	bool
+	depends on USERSPACE
+	help
+	  This hidden option is selected by the target architecture if
+	  architecture-specific data is needed on a per memory domain basis.
+	  If so, the architecture defines a 'struct arch_mem_domain' which is
+	  embedded within every struct k_mem_domain. The architecture
+	  must also define the arch_mem_domain_init() function to set this up
+	  when a memory domain is created.
+
+	  Typical uses might be a set of page tables for that memory domain.
+
+config ARCH_MEM_DOMAIN_SYNCHRONOUS_API
+	bool
+	depends on USERSPACE
+	help
+	  This hidden option is selected by the target architecture if
+	  modifying a memory domain's partitions at runtime, or changing
+	  a memory domain's thread membership requires synchronous calls
+	  into the architecture layer.
+
+	  If enabled, the architecture layer must implement the following
+	  APIs:
+
+	  arch_mem_domain_thread_add
+	  arch_mem_domain_thread_remove
+	  arch_mem_domain_partition_remove
+	  arch_mem_domain_partition_add
+	  arch_mem_domain_destroy
+
+	  It's important to note that although supervisor threads can be
+	  members of memory domains, they have no implications on supervisor
+	  thread access to memory. Memory domain APIs may only be invoked from
+	  supervisor mode.
+
+	  For these reasons, on uniprocessor systems unless memory access
+	  policy is managed in separate software constructions like page
+	  tables, these APIs don't need to be implemented as the underlying
+	  memory management hardware will be reprogrammed on context switch
+	  anyway.
+
 menu "SMP Options"
 
 config USE_SWITCH
@@ -780,7 +834,5 @@ config TICKLESS_KERNEL
 	help
 	  This option enables a fully event driven kernel. Periodic system
 	  clock interrupt generation would be stopped at all times.
-
-source "kernel/Kconfig.power_mgmt"
 
 endmenu

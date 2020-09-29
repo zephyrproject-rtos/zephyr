@@ -68,10 +68,10 @@ static inline uint8_t get_num_regions(void)
 	defined(CONFIG_CPU_CORTEX_M3) || \
 	defined(CONFIG_CPU_CORTEX_M4) || \
 	defined(CONFIG_CPU_CORTEX_M7)
-#include <arm_mpu_v7_internal.h>
+#include "arm_mpu_v7_internal.h"
 #elif defined(CONFIG_CPU_CORTEX_M23) || \
 	defined(CONFIG_CPU_CORTEX_M33)
-#include <arm_mpu_v8_internal.h>
+#include "arm_mpu_v8_internal.h"
 #else
 #error "Unsupported ARM CPU"
 #endif
@@ -217,7 +217,8 @@ void arm_core_mpu_mem_partition_config_update(
 		break;
 	}
 	__ASSERT(reg_index != get_num_regions(),
-		 "Memory domain partition not found\n");
+		 "Memory domain partition %p size %zu not found\n",
+		 (void *)partition->start, partition->size);
 
 	/* Modify the permissions */
 	partition->attr = *new_attr;
@@ -299,7 +300,7 @@ void arm_core_mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
  * This function provides the default configuration mechanism for the Memory
  * Protection Unit (MPU).
  */
-static int arm_mpu_init(struct device *arg)
+static int arm_mpu_init(const struct device *arg)
 {
 	uint32_t r_index;
 
@@ -321,6 +322,10 @@ static int arm_mpu_init(struct device *arg)
 	LOG_DBG("total region count: %d", get_num_regions());
 
 	arm_core_mpu_disable();
+
+#if defined(CONFIG_NOCACHE_MEMORY)
+	SCB_CleanInvalidateDCache();
+#endif
 
 	/* Architecture-specific configuration */
 	mpu_init();

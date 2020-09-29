@@ -1,0 +1,12 @@
+identifier: nsim_em7d_v22
+name: EM Nsim simulator
+type: mcu
+simulation: nsim
+arch: arc
+toolchain:
+  - zephyr
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth

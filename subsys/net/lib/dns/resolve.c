@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #include <net/net_mgmt.h>
 #include <net/dns_resolve.h>
 #include "dns_pack.h"
+#include "dns_internal.h"
 
 #define DNS_SERVER_COUNT CONFIG_DNS_RESOLVER_MAX_SERVERS
 #define SERVER_COUNT     (DNS_SERVER_COUNT + DNS_MAX_MCAST_SERVERS)
@@ -360,39 +361,29 @@ static inline int get_slot_by_id(struct dns_resolve_context *ctx,
 	return -ENOENT;
 }
 
-static int dns_read(struct dns_resolve_context *ctx,
-		    struct net_pkt *pkt,
-		    struct net_buf *dns_data,
-		    uint16_t *dns_id,
-		    struct net_buf *dns_cname,
-		    uint16_t *query_hash)
+int dns_validate_msg(struct dns_resolve_context *ctx,
+		     struct dns_msg_t *dns_msg,
+		     uint16_t *dns_id,
+		     int *query_idx,
+		     struct net_buf *dns_cname,
+		     uint16_t *query_hash)
 {
 	struct dns_addrinfo info = { 0 };
-	/* Helper struct to track the dns msg received from the server */
-	struct dns_msg_t dns_msg;
 	uint32_t ttl; /* RR ttl, so far it is not passed to caller */
 	uint8_t *src, *addr;
 	const char *query_name;
 	int address_size;
 	/* index that points to the current answer being analyzed */
 	int answer_ptr;
-	int data_len;
 	int items;
-	int ret;
-	int server_idx, query_idx = -1;
+	int server_idx;
+	int ret = 0;
 
-	data_len = MIN(net_pkt_remaining_data(pkt), DNS_RESOLVER_MAX_BUF_SIZE);
-
-	/* TODO: Instead of this temporary copy, just use the net_pkt directly.
-	 */
-	ret = net_pkt_read(pkt, dns_data->data, data_len);
-	if (ret < 0) {
-		ret = DNS_EAI_MEMORY;
+	/* Make sure that we can read DNS id, flags and rcode */
+	if (dns_msg->msg_size < (sizeof(*dns_id) + sizeof(uint16_t))) {
+		ret = DNS_EAI_FAIL;
 		goto quit;
 	}
-
-	dns_msg.msg = dns_data->data;
-	dns_msg.msg_size = data_len;
 
 	/* The dns_unpack_response_header() has design flaw as it expects
 	 * dns id to be given instead of returning the id to the caller.
@@ -400,9 +391,9 @@ static int dns_read(struct dns_resolve_context *ctx,
 	 * can match the DNS query that we sent. When dns_read() is called,
 	 * we do not know what the DNS id is yet.
 	 */
-	*dns_id = dns_unpack_header_id(dns_msg.msg);
+	*dns_id = dns_unpack_header_id(dns_msg->msg);
 
-	if (dns_header_rcode(dns_msg.msg) == DNS_HEADER_REFUSED) {
+	if (dns_header_rcode(dns_msg->msg) == DNS_HEADER_REFUSED) {
 		ret = DNS_EAI_FAIL;
 		goto quit;
 	}
@@ -410,18 +401,18 @@ static int dns_read(struct dns_resolve_context *ctx,
 	/* We might receive a query while we are waiting for a response, in that
 	 * case we just ignore the query instead of making the resolving fail.
 	 */
-	if (dns_header_qr(dns_msg.msg) == DNS_QUERY) {
+	if (dns_header_qr(dns_msg->msg) == DNS_QUERY) {
 		ret = 0;
 		goto quit;
 	}
 
-	ret = dns_unpack_response_header(&dns_msg, *dns_id);
+	ret = dns_unpack_response_header(dns_msg, *dns_id);
 	if (ret < 0) {
 		ret = DNS_EAI_FAIL;
 		goto quit;
 	}
 
-	if (dns_header_qdcount(dns_msg.msg) != 1) {
+	if (dns_header_qdcount(dns_msg->msg) != 1) {
 		/* For mDNS (when dns_id == 0) the query count is 0 */
 		if (*dns_id > 0) {
 			ret = DNS_EAI_FAIL;
@@ -429,7 +420,7 @@ static int dns_read(struct dns_resolve_context *ctx,
 		}
 	}
 
-	ret = dns_unpack_response_query(&dns_msg);
+	ret = dns_unpack_response_query(dns_msg);
 	if (ret < 0) {
 		/* Check mDNS like above */
 		if (*dns_id > 0) {
@@ -440,7 +431,7 @@ static int dns_read(struct dns_resolve_context *ctx,
 		/* mDNS responses to do not have the query part so the
 		 * answer starts immediately after the header.
 		 */
-		dns_msg.answer_offset = dns_msg.query_offset;
+		dns_msg->answer_offset = dns_msg->query_offset;
 	}
 
 	/* Because in mDNS the DNS id is set to 0 and must be ignored
@@ -452,32 +443,32 @@ static int dns_read(struct dns_resolve_context *ctx,
 	answer_ptr = DNS_QUERY_POS;
 	items = 0;
 	server_idx = 0;
-	while (server_idx < dns_header_ancount(dns_msg.msg)) {
-		ret = dns_unpack_answer(&dns_msg, answer_ptr, &ttl);
+	while (server_idx < dns_header_ancount(dns_msg->msg)) {
+		ret = dns_unpack_answer(dns_msg, answer_ptr, &ttl);
 		if (ret < 0) {
 			ret = DNS_EAI_FAIL;
 			goto quit;
 		}
 
-		switch (dns_msg.response_type) {
+		switch (dns_msg->response_type) {
 		case DNS_RESPONSE_IP:
-			if (query_idx >= 0) {
+			if (*query_idx >= 0) {
 				goto query_known;
 			}
 
-			query_name = dns_msg.msg + dns_msg.query_offset;
+			query_name = dns_msg->msg + dns_msg->query_offset;
 
 			/* Add \0 and query type (A or AAAA) to the hash */
 			*query_hash = crc16_ansi(query_name,
 						 strlen(query_name) + 1 + 2);
 
-			query_idx = get_slot_by_id(ctx, *dns_id, *query_hash);
-			if (query_idx < 0) {
+			*query_idx = get_slot_by_id(ctx, *dns_id, *query_hash);
+			if (*query_idx < 0) {
 				ret = DNS_EAI_SYSTEM;
 				goto quit;
 			}
 
-			if (ctx->queries[query_idx].query_type ==
+			if (ctx->queries[*query_idx].query_type ==
 							DNS_QUERY_TYPE_A) {
 				if (net_sin(&info.ai_addr)->sin_family ==
 							AF_INET6) {
@@ -492,7 +483,7 @@ static int dns_read(struct dns_resolve_context *ctx,
 				info.ai_addr.sa_family = AF_INET;
 				info.ai_addrlen = sizeof(struct sockaddr_in);
 
-			} else if (ctx->queries[query_idx].query_type ==
+			} else if (ctx->queries[*query_idx].query_type ==
 							DNS_QUERY_TYPE_AAAA) {
 				if (net_sin6(&info.ai_addr)->sin6_family ==
 							AF_INET) {
@@ -521,18 +512,25 @@ static int dns_read(struct dns_resolve_context *ctx,
 				goto quit;
 			}
 
-			if (dns_msg.response_length < address_size) {
+			if (dns_msg->response_length < address_size) {
 				/* it seems this is a malformed message */
 				ret = DNS_EAI_FAIL;
 				goto quit;
 			}
 
-			src = dns_msg.msg + dns_msg.response_position;
+			if ((dns_msg->response_position + address_size) >
+			    dns_msg->msg_size) {
+				/* Too short message */
+				ret = DNS_EAI_FAIL;
+				goto quit;
+			}
+
+			src = dns_msg->msg + dns_msg->response_position;
 			memcpy(addr, src, address_size);
 
 		query_known:
-			ctx->queries[query_idx].cb(DNS_EAI_INPROGRESS, &info,
-					ctx->queries[query_idx].user_data);
+			ctx->queries[*query_idx].cb(DNS_EAI_INPROGRESS, &info,
+					ctx->queries[*query_idx].user_data);
 			items++;
 			break;
 
@@ -540,7 +538,7 @@ static int dns_read(struct dns_resolve_context *ctx,
 			/* Instead of using the QNAME at DNS_QUERY_POS,
 			 * we will use this CNAME
 			 */
-			answer_ptr = dns_msg.response_position;
+			answer_ptr = dns_msg->response_position;
 			break;
 
 		default:
@@ -549,22 +547,23 @@ static int dns_read(struct dns_resolve_context *ctx,
 		}
 
 		/* Update the answer offset to point to the next RR (answer) */
-		dns_msg.answer_offset += DNS_ANSWER_PTR_LEN;
-		dns_msg.answer_offset += dns_msg.response_length;
+		dns_msg->answer_offset += dns_msg->response_position -
+							dns_msg->answer_offset;
+		dns_msg->answer_offset += dns_msg->response_length;
 
 		server_idx++;
 	}
 
-	if (query_idx < 0) {
+	if (*query_idx < 0) {
 		/* If the query_idx is still unknown, try to get it here
 		 * and hope it is found.
 		 */
-		query_name = dns_msg.msg + dns_msg.query_offset;
+		query_name = dns_msg->msg + dns_msg->query_offset;
 		*query_hash = crc16_ansi(query_name,
 					 strlen(query_name) + 1 + 2);
 
-		query_idx = get_slot_by_id(ctx, *dns_id, *query_hash);
-		if (query_idx < 0) {
+		*query_idx = get_slot_by_id(ctx, *dns_id, *query_hash);
+		if (*query_idx < 0) {
 			ret = DNS_EAI_SYSTEM;
 			goto quit;
 		}
@@ -574,18 +573,26 @@ static int dns_read(struct dns_resolve_context *ctx,
 	 * another query. Number of additional queries is controlled via Kconfig
 	 */
 	if (items == 0) {
-		if (dns_msg.response_type == DNS_RESPONSE_CNAME_NO_IP) {
-			uint16_t pos = dns_msg.response_position;
+		if (dns_msg->response_type == DNS_RESPONSE_CNAME_NO_IP) {
+			uint16_t pos = dns_msg->response_position;
 
-			ret = dns_copy_qname(dns_cname->data, &dns_cname->len,
-					     dns_cname->size, &dns_msg, pos);
-			if (ret < 0) {
-				ret = DNS_EAI_SYSTEM;
-				goto quit;
+			/* The dns_cname should always be set. As a special
+			 * case, it might not be set for unit tests that call
+			 * this function directly.
+			 */
+			if (dns_cname) {
+				ret = dns_copy_qname(dns_cname->data,
+						     &dns_cname->len,
+						     dns_cname->size,
+						     dns_msg, pos);
+				if (ret < 0) {
+					ret = DNS_EAI_SYSTEM;
+					goto quit;
+				}
 			}
 
 			ret = DNS_EAI_AGAIN;
-			goto finished;
+			goto quit;
 		}
 	}
 
@@ -593,6 +600,46 @@ static int dns_read(struct dns_resolve_context *ctx,
 		ret = DNS_EAI_NODATA;
 	} else {
 		ret = DNS_EAI_ALLDONE;
+	}
+
+quit:
+	return ret;
+}
+
+static int dns_read(struct dns_resolve_context *ctx,
+		    struct net_pkt *pkt,
+		    struct net_buf *dns_data,
+		    uint16_t *dns_id,
+		    struct net_buf *dns_cname,
+		    uint16_t *query_hash)
+{
+	/* Helper struct to track the dns msg received from the server */
+	struct dns_msg_t dns_msg;
+	int data_len;
+	int ret;
+	int query_idx = -1;
+
+	data_len = MIN(net_pkt_remaining_data(pkt), DNS_RESOLVER_MAX_BUF_SIZE);
+
+	/* TODO: Instead of this temporary copy, just use the net_pkt directly.
+	 */
+	ret = net_pkt_read(pkt, dns_data->data, data_len);
+	if (ret < 0) {
+		ret = DNS_EAI_MEMORY;
+		goto quit;
+	}
+
+	dns_msg.msg = dns_data->data;
+	dns_msg.msg_size = data_len;
+
+	ret = dns_validate_msg(ctx, &dns_msg, dns_id, &query_idx,
+			       dns_cname, query_hash);
+	if (ret == DNS_EAI_AGAIN) {
+		goto finished;
+	}
+
+	if (ret < 0) {
+		goto quit;
 	}
 
 	if (k_delayed_work_remaining_get(&ctx->queries[query_idx].timer) > 0) {
@@ -1155,27 +1202,27 @@ void dns_init_resolver(void)
 #if DNS_SERVER_COUNT > 4
 	case 5:
 		dns_servers[4] = CONFIG_DNS_SERVER5;
-		/* fallthrough */
+		__fallthrough;
 #endif
 #if DNS_SERVER_COUNT > 3
 	case 4:
 		dns_servers[3] = CONFIG_DNS_SERVER4;
-		/* fallthrough */
+		__fallthrough;
 #endif
 #if DNS_SERVER_COUNT > 2
 	case 3:
 		dns_servers[2] = CONFIG_DNS_SERVER3;
-		/* fallthrough */
+		__fallthrough;
 #endif
 #if DNS_SERVER_COUNT > 1
 	case 2:
 		dns_servers[1] = CONFIG_DNS_SERVER2;
-		/* fallthrough */
+		__fallthrough;
 #endif
 #if DNS_SERVER_COUNT > 0
 	case 1:
 		dns_servers[0] = CONFIG_DNS_SERVER1;
-		/* fallthrough */
+		__fallthrough;
 #endif
 	case 0:
 		break;

@@ -22,6 +22,8 @@
 			#gpio-cells = <0x2>;
 			label = "TEST_GPIO_1";
 			status = "okay";
+
+			#include "gpio.dtsi"
 		};
 
 		test_i2c: i2c@11112222 {
@@ -93,7 +95,12 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,	/* 0x30 */
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
 
 			#include "spi.dtsi"

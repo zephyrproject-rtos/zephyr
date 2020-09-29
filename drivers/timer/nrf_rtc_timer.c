@@ -166,7 +166,7 @@ static void set_protected_absolute_alarm(uint32_t cycles)
  * it by pointer at runtime, maybe?) so we don't have this leaky
  * symbol.
  */
-void rtc_nrf_isr(void *arg)
+void rtc_nrf_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 	event_clear();
@@ -186,9 +186,15 @@ void rtc_nrf_isr(void *arg)
 	z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : (dticks > 0));
 }
 
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
+	static const enum nrf_lfclk_start_mode mode =
+		IS_ENABLED(CONFIG_SYSTEM_CLOCK_NO_WAIT) ?
+			CLOCK_CONTROL_NRF_LF_START_NOWAIT :
+			(IS_ENABLED(CONFIG_SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY) ?
+			CLOCK_CONTROL_NRF_LF_START_AVAILABLE :
+			CLOCK_CONTROL_NRF_LF_START_STABLE);
 
 	/* TODO: replace with counter driver to access RTC */
 	nrf_rtc_prescaler_set(RTC, 0);
@@ -206,7 +212,7 @@ int z_clock_driver_init(struct device *device)
 		set_comparator(counter() + CYC_PER_TICK);
 	}
 
-	z_nrf_clock_control_lf_on(NRF_LFCLK_START_MODE_NOWAIT);
+	z_nrf_clock_control_lf_on(mode);
 
 	return 0;
 }

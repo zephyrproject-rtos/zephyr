@@ -9,7 +9,7 @@
 
 /**
  * @brief Heart Rate Service (HRS)
- * @defgroup bt_gatt_hrs Heart Rate Service (HRS)
+ * @defgroup bt_hrs Heart Rate Service (HRS)
  * @ingroup bluetooth
  * @{
  *
@@ -29,7 +29,7 @@ extern "C" {
  *
  *  @return Zero in case of success and error code in case of error.
  */
-int bt_gatt_hrs_notify(uint16_t heartrate);
+int bt_hrs_notify(uint16_t heartrate);
 
 #ifdef __cplusplus
 }

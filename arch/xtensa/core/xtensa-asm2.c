@@ -64,7 +64,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 						  p1, p2, p3);
 }
 
-void z_irq_spurious(void *arg)
+void z_irq_spurious(const void *arg)
 {
 	int irqs, ie;
 

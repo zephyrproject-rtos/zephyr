@@ -5,6 +5,6 @@ sample:
 tests:
   sample.bluetooth.hci_spi:
     harness: bluetooth
-    platform_whitelist: 96b_carbon_nrf51 nrf51dk_nrf51422
+    platform_allow: 96b_carbon_nrf51 nrf51dk_nrf51422
     tags: bluetooth spi
     depends_on: spi

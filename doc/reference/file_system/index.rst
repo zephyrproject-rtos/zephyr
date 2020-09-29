@@ -12,13 +12,15 @@ specific API or internal functions by introducing file system registration
 mechanisms.
 
 In Zephyr, any file system implementation or library can be plugged into or
-pulled out through a file system registration API.
+pulled out through a file system registration API.  Each file system
+implementation must have a globally unique integer identifier; use
+:c:macro:`FS_TYPE_EXTERNAL_BASE` to avoid clashes with in-tree identifiers.
 
 .. code-block:: c
 
-        int fs_register(enum fs_type type, struct fs_file_system_t *fs);
+        int fs_register(int type, const struct fs_file_system_t *fs);
 
-        int fs_unregister(enum fs_type type, struct fs_file_system_t *fs);
+        int fs_unregister(int type, const struct fs_file_system_t *fs);
 
 Zephyr RTOS supports multiple instances of a file system by making use of
 the mount point as the disk volume name, which is used by the file system library

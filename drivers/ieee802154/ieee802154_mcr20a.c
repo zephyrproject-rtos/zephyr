@@ -323,7 +323,7 @@ error:
 	return -EIO;
 }
 
-static int mcr20a_timer_init(struct device *dev, uint8_t tb)
+static int mcr20a_timer_init(const struct device *dev, uint8_t tb)
 {
 	struct mcr20a_context *mcr20a = dev->data;
 	uint8_t buf[3] = {0, 0, 0};
@@ -499,7 +499,7 @@ static inline uint32_t mcr20a_get_rssi(uint32_t lqi)
 	return (a - (b * lqi)) >> 16;
 }
 
-static inline uint8_t *get_mac(struct device *dev)
+static inline uint8_t *get_mac(const struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->data;
 	uint32_t *ptr = (uint32_t *)(mcr20a->mac_addr);
@@ -712,8 +712,7 @@ static inline bool irqsts3_event(struct mcr20a_context *mcr20a,
 
 static void mcr20a_thread_main(void *arg)
 {
-	struct device *dev = (struct device *)arg;
-	struct mcr20a_context *mcr20a = dev->data;
+	struct mcr20a_context *mcr20a = (struct mcr20a_context *)arg;
 	uint8_t dregs[MCR20A_PHY_CTRL4 + 1];
 	bool set_new_seq;
 	uint8_t ctrl1 = 0U;
@@ -785,7 +784,7 @@ unmask_irqb:
 	}
 }
 
-static inline void irqb_int_handler(struct device *port,
+static inline void irqb_int_handler(const struct device *port,
 				    struct gpio_callback *cb, uint32_t pins)
 {
 	struct mcr20a_context *mcr20a = CONTAINER_OF(cb,
@@ -814,7 +813,7 @@ static inline void setup_gpio_callbacks(struct mcr20a_context *mcr20a)
 	gpio_add_callback(mcr20a->irq_gpio, &mcr20a->irqb_cb);
 }
 
-static int mcr20a_set_cca_mode(struct device *dev, uint8_t mode)
+static int mcr20a_set_cca_mode(const struct device *dev, uint8_t mode)
 {
 	struct mcr20a_context *mcr20a = dev->data;
 	uint8_t ctrl4;
@@ -831,7 +830,7 @@ static int mcr20a_set_cca_mode(struct device *dev, uint8_t mode)
 	return 0;
 }
 
-static enum ieee802154_hw_caps mcr20a_get_capabilities(struct device *dev)
+static enum ieee802154_hw_caps mcr20a_get_capabilities(const struct device *dev)
 {
 	return IEEE802154_HW_FCS |
 		IEEE802154_HW_2_4_GHZ |
@@ -840,7 +839,7 @@ static enum ieee802154_hw_caps mcr20a_get_capabilities(struct device *dev)
 }
 
 /* Note: CCA before TX is enabled by default */
-static int mcr20a_cca(struct device *dev)
+static int mcr20a_cca(const struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->data;
 	int retval;
@@ -888,7 +887,7 @@ error:
 	return -EIO;
 }
 
-static int mcr20a_set_channel(struct device *dev, uint16_t channel)
+static int mcr20a_set_channel(const struct device *dev, uint16_t channel)
 {
 	struct mcr20a_context *mcr20a = dev->data;
 	uint8_t buf[3];
@@ -943,7 +942,7 @@ out:
 	return retval;
 }
 
-static int mcr20a_set_pan_id(struct device *dev, uint16_t pan_id)
+static int mcr20a_set_pan_id(const struct device *dev, uint16_t pan_id)
 {
 	struct mcr20a_context *mcr20a = dev->data;
 
@@ -962,7 +961,8 @@ static int mcr20a_set_pan_id(struct device *dev, uint16_t pan_id)
 	return 0;
 }
 
-static int mcr20a_set_short_addr(struct device *dev, uint16_t short_addr)
+static int mcr20a_set_short_addr(const struct device *dev,
+				 uint16_t short_addr)
 {
 	struct mcr20a_context *mcr20a = dev->data;
 
@@ -981,7 +981,8 @@ static int mcr20a_set_short_addr(struct device *dev, uint16_t short_addr)
 	return 0;
 }
 
-static int mcr20a_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
+static int mcr20a_set_ieee_addr(const struct device *dev,
+				const uint8_t *ieee_addr)
 {
 	struct mcr20a_context *mcr20a = dev->data;
 
@@ -1001,7 +1002,7 @@ static int mcr20a_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
 	return 0;
 }
 
-static int mcr20a_filter(struct device *dev,
+static int mcr20a_filter(const struct device *dev,
 			 bool set,
 			 enum ieee802154_filter_type type,
 			 const struct ieee802154_filter *filter)
@@ -1023,7 +1024,7 @@ static int mcr20a_filter(struct device *dev,
 	return -ENOTSUP;
 }
 
-static int mcr20a_set_txpower(struct device *dev, int16_t dbm)
+static int mcr20a_set_txpower(const struct device *dev, int16_t dbm)
 {
 	struct mcr20a_context *mcr20a = dev->data;
 	uint8_t pwr;
@@ -1082,7 +1083,7 @@ static inline bool write_txfifo_content(struct mcr20a_context *dev,
 	return (spi_write(dev->spi, &dev->spi_cfg, &tx) == 0);
 }
 
-static int mcr20a_tx(struct device *dev,
+static int mcr20a_tx(const struct device *dev,
 		     enum ieee802154_tx_mode mode,
 		     struct net_pkt *pkt,
 		     struct net_buf *frag)
@@ -1145,7 +1146,7 @@ error:
 	return -EIO;
 }
 
-static int mcr20a_start(struct device *dev)
+static int mcr20a_start(const struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->data;
 	uint8_t timeout = 6U;
@@ -1203,7 +1204,7 @@ error:
 	return -EIO;
 }
 
-static int mcr20a_stop(struct device *dev)
+static int mcr20a_stop(const struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->data;
 	uint8_t power_mode;
@@ -1267,7 +1268,7 @@ error:
 	return -EIO;
 }
 
-static int power_on_and_setup(struct device *dev)
+static int power_on_and_setup(const struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->data;
 	uint8_t timeout = 6U;
@@ -1333,7 +1334,7 @@ static int power_on_and_setup(struct device *dev)
 }
 
 
-static inline int configure_gpios(struct device *dev)
+static inline int configure_gpios(const struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->data;
 
@@ -1370,7 +1371,7 @@ static inline int configure_gpios(struct device *dev)
 	return 0;
 }
 
-static inline int configure_spi(struct device *dev)
+static inline int configure_spi(const struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->data;
 
@@ -1410,7 +1411,7 @@ static inline int configure_spi(struct device *dev)
 	return 0;
 }
 
-static int mcr20a_init(struct device *dev)
+static int mcr20a_init(const struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->data;
 
@@ -1439,7 +1440,7 @@ static int mcr20a_init(struct device *dev)
 	k_thread_create(&mcr20a->mcr20a_rx_thread, mcr20a->mcr20a_rx_stack,
 			CONFIG_IEEE802154_MCR20A_RX_STACK_SIZE,
 			(k_thread_entry_t)mcr20a_thread_main,
-			dev, NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
+			mcr20a, NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
 	k_thread_name_set(&mcr20a->mcr20a_rx_thread, "mcr20a_rx");
 
 	return 0;
@@ -1447,7 +1448,7 @@ static int mcr20a_init(struct device *dev)
 
 static void mcr20a_iface_init(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
+	const struct device *dev = net_if_get_device(iface);
 	struct mcr20a_context *mcr20a = dev->data;
 	uint8_t *mac = get_mac(dev);
 

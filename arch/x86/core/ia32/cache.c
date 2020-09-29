@@ -86,7 +86,7 @@ size_t arch_cache_line_size_get(void)
 #endif
 }
 
-static int init_cache(struct device *unused)
+static int init_cache(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 

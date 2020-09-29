@@ -37,7 +37,8 @@ static void hfclk_on_callback(struct onoff_manager *mgr,
 	nrf_temp_task_trigger(NRF_TEMP, NRF_TEMP_TASK_START);
 }
 
-static int temp_nrf5_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int temp_nrf5_sample_fetch(const struct device *dev,
+				  enum sensor_channel chan)
 {
 	struct temp_nrf5_data *data = dev->data;
 	struct onoff_client cli;
@@ -72,9 +73,9 @@ static int temp_nrf5_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return 0;
 }
 
-static int temp_nrf5_channel_get(struct device *dev,
-				enum sensor_channel chan,
-				struct sensor_value *val)
+static int temp_nrf5_channel_get(const struct device *dev,
+				 enum sensor_channel chan,
+				 struct sensor_value *val)
 {
 	struct temp_nrf5_data *data = dev->data;
 	int32_t uval;
@@ -95,7 +96,7 @@ static int temp_nrf5_channel_get(struct device *dev,
 
 static void temp_nrf5_isr(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	struct temp_nrf5_data *data = dev->data;
 
 	nrf_temp_event_clear(NRF_TEMP, NRF_TEMP_EVENT_DATARDY);
@@ -109,7 +110,7 @@ static const struct sensor_driver_api temp_nrf5_driver_api = {
 
 DEVICE_DECLARE(temp_nrf5);
 
-static int temp_nrf5_init(struct device *dev)
+static int temp_nrf5_init(const struct device *dev)
 {
 	struct temp_nrf5_data *data = dev->data;
 

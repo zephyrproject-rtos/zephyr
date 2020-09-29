@@ -87,13 +87,15 @@ static int test_fs_deinit(void)
 	return 0;
 }
 
-static int test_fs_unsupported(void)
+static int test_fs_external(void)
 {
-	if (fs_register(FS_TYPE_END, &temp_fs) == 0) {
+	/* There is no way to statically determine whether a file
+	 * system is unsupported, but  */
+	if (fs_register(FS_TYPE_EXTERNAL_BASE, &temp_fs) != -ENOSPC) {
 		return TC_FAIL;
 	}
 
-	if (fs_unregister(FS_TYPE_END, &temp_fs) == 0) {
+	if (fs_unregister(FS_TYPE_EXTERNAL_BASE, &temp_fs) != -EINVAL) {
 		return TC_FAIL;
 	}
 
@@ -115,8 +117,8 @@ void test_fs_register(void)
 {
 	zassert_true(test_fs_init() == 0, "Failed to register filesystems");
 	zassert_true(test_fs_readmount() == 0, "Failed to readmount");
+	zassert_true(test_fs_external() == 0, "Supported other file system");
 	zassert_true(test_fs_deinit() == 0, "Failed to unregister filesystems");
-	zassert_true(test_fs_unsupported() == 0, "Supported other file system");
 }
 
 /**

@@ -167,9 +167,9 @@ struct dmic_cfg {
  * Function pointers for the DMIC driver operations
  */
 struct _dmic_ops {
-	int (*configure)(struct device *dev, struct dmic_cfg *config);
-	int (*trigger)(struct device *dev, enum dmic_trigger cmd);
-	int (*read)(struct device *dev, uint8_t stream, void **buffer,
+	int (*configure)(const struct device *dev, struct dmic_cfg *config);
+	int (*trigger)(const struct device *dev, enum dmic_trigger cmd);
+	int (*read)(const struct device *dev, uint8_t stream, void **buffer,
 			size_t *size, int32_t timeout);
 };
 
@@ -245,7 +245,8 @@ static inline uint32_t dmic_build_clk_skew_map(uint8_t pdm, uint8_t skew)
  *
  * @return 0 on success, a negative error code on failure
  */
-static inline int dmic_configure(struct device *dev, struct dmic_cfg *cfg)
+static inline int dmic_configure(const struct device *dev,
+				 struct dmic_cfg *cfg)
 {
 	const struct _dmic_ops *api =
 		(const struct _dmic_ops *)dev->api;
@@ -263,7 +264,8 @@ static inline int dmic_configure(struct device *dev, struct dmic_cfg *cfg)
  *
  * @return 0 on success, a negative error code on failure
  */
-static inline int dmic_trigger(struct device *dev, enum dmic_trigger cmd)
+static inline int dmic_trigger(const struct device *dev,
+			       enum dmic_trigger cmd)
 {
 	const struct _dmic_ops *api =
 		(const struct _dmic_ops *)dev->api;
@@ -286,8 +288,9 @@ static inline int dmic_trigger(struct device *dev, enum dmic_trigger cmd)
  *
  * @return 0 on success, a negative error code on failure
  */
-static inline int dmic_read(struct device *dev, uint8_t stream, void **buffer,
-		size_t *size, int32_t timeout)
+static inline int dmic_read(const struct device *dev, uint8_t stream,
+			    void **buffer,
+			    size_t *size, int32_t timeout)
 {
 	const struct _dmic_ops *api =
 		(const struct _dmic_ops *)dev->api;

@@ -91,10 +91,10 @@ static int queue_put(struct ring_buf *rb, void *mem_block, size_t size)
 	return 0;
 }
 
-static int i2s_stm32_enable_clock(struct device *dev)
+static int i2s_stm32_enable_clock(const struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = DEV_CFG(dev);
-	struct device *clk;
+	const struct device *clk;
 	int ret;
 
 	clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
@@ -117,7 +117,8 @@ static uint16_t plli2s_ms_count;
 #define pllr(v) z_pllr(v)
 #endif
 
-static int i2s_stm32_set_clock(struct device *dev, uint32_t bit_clk_freq)
+static int i2s_stm32_set_clock(const struct device *dev,
+			       uint32_t bit_clk_freq)
 {
 	const struct i2s_stm32_cfg *cfg = DEV_CFG(dev);
 	uint32_t pll_src = LL_RCC_PLL_GetMainSource();
@@ -177,7 +178,7 @@ static int i2s_stm32_set_clock(struct device *dev, uint32_t bit_clk_freq)
 	return 0;
 }
 
-static int i2s_stm32_configure(struct device *dev, enum i2s_dir dir,
+static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 			       struct i2s_config *i2s_cfg)
 {
 	const struct i2s_stm32_cfg *const cfg = DEV_CFG(dev);
@@ -281,7 +282,7 @@ static int i2s_stm32_configure(struct device *dev, enum i2s_dir dir,
 	return 0;
 }
 
-static int i2s_stm32_trigger(struct device *dev, enum i2s_dir dir,
+static int i2s_stm32_trigger(const struct device *dev, enum i2s_dir dir,
 			     enum i2s_trigger_cmd cmd)
 {
 	struct i2s_stm32_data *const dev_data = DEV_DATA(dev);
@@ -372,7 +373,8 @@ static int i2s_stm32_trigger(struct device *dev, enum i2s_dir dir,
 	return 0;
 }
 
-static int i2s_stm32_read(struct device *dev, void **mem_block, size_t *size)
+static int i2s_stm32_read(const struct device *dev, void **mem_block,
+			  size_t *size)
 {
 	struct i2s_stm32_data *const dev_data = DEV_DATA(dev);
 	int ret;
@@ -399,7 +401,8 @@ static int i2s_stm32_read(struct device *dev, void **mem_block, size_t *size)
 	return 0;
 }
 
-static int i2s_stm32_write(struct device *dev, void *mem_block, size_t size)
+static int i2s_stm32_write(const struct device *dev, void *mem_block,
+			   size_t size)
 {
 	struct i2s_stm32_data *const dev_data = DEV_DATA(dev);
 	int ret;
@@ -430,10 +433,10 @@ static const struct i2s_driver_api i2s_stm32_driver_api = {
 };
 
 #define STM32_DMA_NUM_CHANNELS		8
-static struct device *active_dma_rx_channel[STM32_DMA_NUM_CHANNELS];
-static struct device *active_dma_tx_channel[STM32_DMA_NUM_CHANNELS];
+static const struct device *active_dma_rx_channel[STM32_DMA_NUM_CHANNELS];
+static const struct device *active_dma_tx_channel[STM32_DMA_NUM_CHANNELS];
 
-static int reload_dma(struct device *dev_dma, uint32_t channel,
+static int reload_dma(const struct device *dev_dma, uint32_t channel,
 		      struct dma_config *dcfg, void *src, void *dst,
 		      uint32_t blk_size)
 {
@@ -449,7 +452,7 @@ static int reload_dma(struct device *dev_dma, uint32_t channel,
 	return ret;
 }
 
-static int start_dma(struct device *dev_dma, uint32_t channel,
+static int start_dma(const struct device *dev_dma, uint32_t channel,
 		     struct dma_config *dcfg, void *src,
 		     bool src_addr_increment, void *dst,
 		     bool dst_addr_increment, uint8_t fifo_threshold,
@@ -486,16 +489,16 @@ static int start_dma(struct device *dev_dma, uint32_t channel,
 	return ret;
 }
 
-static struct device *get_dev_from_rx_dma_channel(uint32_t dma_channel);
-static struct device *get_dev_from_tx_dma_channel(uint32_t dma_channel);
-static void rx_stream_disable(struct stream *stream, struct device *dev);
-static void tx_stream_disable(struct stream *stream, struct device *dev);
+static const struct device *get_dev_from_rx_dma_channel(uint32_t dma_channel);
+static const struct device *get_dev_from_tx_dma_channel(uint32_t dma_channel);
+static void rx_stream_disable(struct stream *stream, const struct device *dev);
+static void tx_stream_disable(struct stream *stream, const struct device *dev);
 
 /* This function is executed in the interrupt context */
-static void dma_rx_callback(struct device *dma_dev, void *arg,
+static void dma_rx_callback(const struct device *dma_dev, void *arg,
 			    uint32_t channel, int status)
 {
-	struct device *dev = get_dev_from_rx_dma_channel(channel);
+	const struct device *dev = get_dev_from_rx_dma_channel(channel);
 	const struct i2s_stm32_cfg *cfg = DEV_CFG(dev);
 	struct i2s_stm32_data *const dev_data = DEV_DATA(dev);
 	struct stream *stream = &dev_data->rx;
@@ -559,10 +562,10 @@ rx_disable:
 	rx_stream_disable(stream, dev);
 }
 
-static void dma_tx_callback(struct device *dma_dev, void *arg,
+static void dma_tx_callback(const struct device *dma_dev, void *arg,
 			    uint32_t channel, int status)
 {
-	struct device *dev = get_dev_from_tx_dma_channel(channel);
+	const struct device *dev = get_dev_from_tx_dma_channel(channel);
 	const struct i2s_stm32_cfg *cfg = DEV_CFG(dev);
 	struct i2s_stm32_data *const dev_data = DEV_DATA(dev);
 	struct stream *stream = &dev_data->tx;
@@ -628,9 +631,8 @@ tx_disable:
 static uint32_t i2s_stm32_irq_count;
 static uint32_t i2s_stm32_irq_ovr_count;
 
-static void i2s_stm32_isr(void *arg)
+static void i2s_stm32_isr(const struct device *dev)
 {
-	struct device *const dev = (struct device *) arg;
 	const struct i2s_stm32_cfg *cfg = DEV_CFG(dev);
 	struct i2s_stm32_data *const dev_data = DEV_DATA(dev);
 	struct stream *stream = &dev_data->rx;
@@ -647,7 +649,7 @@ static void i2s_stm32_isr(void *arg)
 	i2s_stm32_irq_count++;
 }
 
-static int i2s_stm32_initialize(struct device *dev)
+static int i2s_stm32_initialize(const struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = DEV_CFG(dev);
 	struct i2s_stm32_data *const dev_data = DEV_DATA(dev);
@@ -688,7 +690,7 @@ static int i2s_stm32_initialize(struct device *dev)
 	return 0;
 }
 
-static int rx_stream_start(struct stream *stream, struct device *dev)
+static int rx_stream_start(struct stream *stream, const struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = DEV_CFG(dev);
 	struct i2s_stm32_data *const dev_data = DEV_DATA(dev);
@@ -728,7 +730,7 @@ static int rx_stream_start(struct stream *stream, struct device *dev)
 	return 0;
 }
 
-static int tx_stream_start(struct stream *stream, struct device *dev)
+static int tx_stream_start(struct stream *stream, const struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = DEV_CFG(dev);
 	struct i2s_stm32_data *const dev_data = DEV_DATA(dev);
@@ -773,11 +775,11 @@ static int tx_stream_start(struct stream *stream, struct device *dev)
 	return 0;
 }
 
-static void rx_stream_disable(struct stream *stream, struct device *dev)
+static void rx_stream_disable(struct stream *stream, const struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = DEV_CFG(dev);
 	struct i2s_stm32_data *const dev_data = DEV_DATA(dev);
-	struct device *dev_dma = dev_data->dev_dma_rx;
+	const struct device *dev_dma = dev_data->dev_dma_rx;
 
 	LL_I2S_DisableDMAReq_RX(cfg->i2s);
 	LL_I2S_DisableIT_ERR(cfg->i2s);
@@ -793,11 +795,11 @@ static void rx_stream_disable(struct stream *stream, struct device *dev)
 	active_dma_rx_channel[stream->dma_channel] = NULL;
 }
 
-static void tx_stream_disable(struct stream *stream, struct device *dev)
+static void tx_stream_disable(struct stream *stream, const struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = DEV_CFG(dev);
 	struct i2s_stm32_data *const dev_data = DEV_DATA(dev);
-	struct device *dev_dma = dev_data->dev_dma_tx;
+	const struct device *dev_dma = dev_data->dev_dma_tx;
 
 	LL_I2S_DisableDMAReq_TX(cfg->i2s);
 	LL_I2S_DisableIT_ERR(cfg->i2s);
@@ -841,12 +843,12 @@ static void tx_queue_drop(struct stream *stream)
 	}
 }
 
-static struct device *get_dev_from_rx_dma_channel(uint32_t dma_channel)
+static const struct device *get_dev_from_rx_dma_channel(uint32_t dma_channel)
 {
 	return active_dma_rx_channel[dma_channel];
 }
 
-static struct device *get_dev_from_tx_dma_channel(uint32_t dma_channel)
+static const struct device *get_dev_from_tx_dma_channel(uint32_t dma_channel)
 {
 	return active_dma_tx_channel[dma_channel];
 }
@@ -886,7 +888,7 @@ static struct device *get_dev_from_tx_dma_channel(uint32_t dma_channel)
 #define I2S_INIT(index, clk_sel)					\
 DEVICE_DECLARE(i2s_stm32_##index);		\
 									\
-static void i2s_stm32_irq_config_func_##index(struct device *dev);	\
+static void i2s_stm32_irq_config_func_##index(const struct device *dev);	\
 									\
 static const struct i2s_stm32_cfg i2s_stm32_config_##index = {		\
 	.i2s = (SPI_TypeDef *) DT_REG_ADDR(DT_NODELABEL(i2s##index)),	\
@@ -913,7 +915,7 @@ DEVICE_AND_API_INIT(i2s_stm32_##index,					\
 		    &i2s_stm32_config_##index, POST_KERNEL,		\
 		    CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_driver_api);	\
 									\
-static void i2s_stm32_irq_config_func_##index(struct device *dev)	\
+static void i2s_stm32_irq_config_func_##index(const struct device *dev)	\
 {									\
 	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(i2s##index)),			\
 		    DT_IRQ(DT_NODELABEL(i2s##index), priority),		\

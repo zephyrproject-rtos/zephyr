@@ -22,7 +22,7 @@ extern "C" {
 #endif
 
 struct mdm_receiver_context {
-	struct device *uart_dev;
+	const struct device *uart_dev;
 
 	/* rx data */
 	struct ring_buf rx_rb;

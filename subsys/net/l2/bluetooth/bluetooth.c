@@ -348,7 +348,7 @@ static struct bt_l2cap_server server = {
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0x20, 0x18),
+	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_IPSS_VAL)),
 };
 
 static const struct bt_data sd[] = {
@@ -602,7 +602,7 @@ static struct bt_conn_cb conn_callbacks = {
 };
 #endif /* CONFIG_NET_L2_BT_MGMT */
 
-static int net_bt_init(struct device *dev)
+static int net_bt_init(const struct device *dev)
 {
 	NET_DBG("dev %p driver_data %p", dev, dev->data);
 

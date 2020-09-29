@@ -485,7 +485,7 @@ const struct shell_transport_api shell_telnet_transport_api = {
 	.read = read
 };
 
-static int enable_shell_telnet(struct device *arg)
+static int enable_shell_telnet(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -107,11 +108,62 @@ void test_collecting(void)
 #endif
 }
 
+void test_check_flash(void)
+{
+	/* echo $'0123456789abcdef\nfedcba9876543201' > tst.sha
+	 * hexdump tst.sha
+	 */
+	uint8_t tst_vec[] = { 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+			      0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
+			      0x0a, 0x66, 0x65, 0x64, 0x63, 0x62, 0x61, 0x39,
+			      0x38, 0x37, 0x36, 0x35, 0x34, 0x33, 0x32, 0x31,
+			      0x30, 0x0a };
+	/* sha256sum tst.sha */
+	uint8_t tst_sha[] = { 0xc6, 0xb6, 0x7c, 0x46, 0xe7, 0x2e, 0x14, 0x17,
+			      0x49, 0xa4, 0xd2, 0xf1, 0x38, 0x58, 0xb2, 0xa7,
+			      0x54, 0xaf, 0x6d, 0x39, 0x50, 0x6b, 0xd5, 0x41,
+			      0x90, 0xf6, 0x18, 0x1a, 0xe0, 0xc2, 0x7f, 0x98 };
+
+	struct flash_img_check fic = { NULL, 0 };
+	struct flash_img_context ctx;
+	int ret;
+
+	ret = flash_img_init_id(&ctx, FLASH_AREA_ID(image_1));
+	zassert_true(ret == 0, "Flash img init 1");
+	ret = flash_area_erase(ctx.flash_area, 0, ctx.flash_area->fa_size);
+	zassert_true(ret == 0, "Flash erase failure (%d)\n", ret);
+	ret = flash_img_buffered_write(&ctx, tst_vec, sizeof(tst_vec), true);
+	zassert_true(ret == 0, "Flash img buffered write\n");
+
+	ret = flash_img_check(NULL, NULL, 0);
+	zassert_true(ret == -EINVAL, "Flash img check params 1, 2\n");
+	ret = flash_img_check(NULL, &fic, 0);
+	zassert_true(ret == -EINVAL, "Flash img check params 2\n");
+	ret = flash_img_check(&ctx, NULL, 0);
+	zassert_true(ret == -EINVAL, "Flash img check params 1\n");
+
+	ret = flash_img_check(&ctx, &fic, FLASH_AREA_ID(image_1));
+	zassert_true(ret == -EINVAL, "Flash img check fic match\n");
+	fic.match = tst_sha;
+	ret = flash_img_check(&ctx, &fic, FLASH_AREA_ID(image_1));
+	zassert_true(ret == -EINVAL, "Flash img check fic len\n");
+	fic.clen = sizeof(tst_vec);
+
+	ret = flash_img_check(&ctx, &fic, FLASH_AREA_ID(image_1));
+	zassert_true(ret == 0, "Flash img check\n");
+	tst_sha[0] = 0x00;
+	ret = flash_img_check(&ctx, &fic, FLASH_AREA_ID(image_1));
+	zassert_false(ret == 0, "Flash img check wrong sha\n");
+
+	flash_area_close(ctx.flash_area);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_util,
 			ztest_unit_test(test_collecting),
-			ztest_unit_test(test_init_id)
+			ztest_unit_test(test_init_id),
+			ztest_unit_test(test_check_flash)
 			);
 	ztest_run_test_suite(test_util);
 }

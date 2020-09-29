@@ -18,3 +18,8 @@
 		zephyr,code-partition = &slot0_ns_partition;
 	};
 };
+
+&usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};

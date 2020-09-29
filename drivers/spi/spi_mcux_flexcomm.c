@@ -21,16 +21,17 @@ LOG_MODULE_REGISTER(spi_mcux_flexcomm, CONFIG_SPI_LOG_LEVEL);
 
 struct spi_mcux_config {
 	SPI_Type *base;
-	void (*irq_config_func)(struct device *dev);
+	void (*irq_config_func)(const struct device *dev);
 };
 
 struct spi_mcux_data {
+	const struct device *dev;
 	spi_master_handle_t handle;
 	struct spi_context ctx;
 	size_t transfer_len;
 };
 
-static void spi_mcux_transfer_next_packet(struct device *dev)
+static void spi_mcux_transfer_next_packet(const struct device *dev)
 {
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
@@ -92,9 +93,8 @@ static void spi_mcux_transfer_next_packet(struct device *dev)
 	}
 }
 
-static void spi_mcux_isr(void *arg)
+static void spi_mcux_isr(const struct device *dev)
 {
-	struct device *dev = (struct device *)arg;
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
 	SPI_Type *base = config->base;
@@ -102,39 +102,29 @@ static void spi_mcux_isr(void *arg)
 	SPI_MasterTransferHandleIRQ(base, &data->handle);
 }
 
-static void spi_mcux_master_transfer_callback(SPI_Type *base,
+static void spi_mcux_transfer_callback(SPI_Type *base,
 		spi_master_handle_t *handle, status_t status, void *userData)
 {
-	struct device *dev = userData;
-	struct spi_mcux_data *data = dev->data;
+	struct spi_mcux_data *data = userData;
 
 	spi_context_update_tx(&data->ctx, 1, data->transfer_len);
 	spi_context_update_rx(&data->ctx, 1, data->transfer_len);
 
-	spi_mcux_transfer_next_packet(dev);
+	spi_mcux_transfer_next_packet(data->dev);
 }
 
-static int spi_mcux_configure(struct device *dev,
+static int spi_mcux_configure(const struct device *dev,
 			      const struct spi_config *spi_cfg)
 {
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
 	SPI_Type *base = config->base;
-	spi_master_config_t master_config;
 	uint32_t clock_freq;
 	uint32_t word_size;
 
 	if (spi_context_configured(&data->ctx, spi_cfg)) {
 		/* This configuration is already in use */
 		return 0;
-	}
-
-	SPI_MasterGetDefaultConfig(&master_config);
-
-	if (spi_cfg->slave > SPI_CHIP_SELECT_COUNT) {
-		LOG_ERR("Slave %d is greater than %d",
-			    spi_cfg->slave, SPI_CHIP_SELECT_COUNT);
-		return -EINVAL;
 	}
 
 	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
@@ -144,47 +134,92 @@ static int spi_mcux_configure(struct device *dev,
 		return -EINVAL;
 	}
 
-	master_config.sselNum = spi_cfg->slave;
-	master_config.sselPol = kSPI_SpolActiveAllLow;
-	master_config.dataWidth = word_size - 1;
-
-	master_config.polarity =
-		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
-		? kSPI_ClockPolarityActiveLow
-		: kSPI_ClockPolarityActiveHigh;
-
-	master_config.phase =
-		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA)
-		? kSPI_ClockPhaseSecondEdge
-		: kSPI_ClockPhaseFirstEdge;
-
-	master_config.direction =
-		(spi_cfg->operation & SPI_TRANSFER_LSB)
-		? kSPI_LsbFirst
-		: kSPI_MsbFirst;
-
-	master_config.baudRate_Bps = spi_cfg->frequency;
-
-	/* The clock frequency is hardcoded CPU's speed to allow SPI to
-	 * function at high speeds. The core clock and flexcomm should
-	 * use the same clock source.
+	/*
+	 * Do master or slave initializastion, depending on the
+	 * mode requested.
 	 */
-	clock_freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_MASTER) {
+		spi_master_config_t master_config;
 
-	SPI_MasterInit(base, &master_config, clock_freq);
+		SPI_MasterGetDefaultConfig(&master_config);
 
-	SPI_MasterTransferCreateHandle(base, &data->handle,
-				       spi_mcux_master_transfer_callback, dev);
+		if (spi_cfg->slave > SPI_CHIP_SELECT_COUNT) {
+			LOG_ERR("Slave %d is greater than %d",
+				    spi_cfg->slave, SPI_CHIP_SELECT_COUNT);
+			return -EINVAL;
+		}
 
-	SPI_SetDummyData(base, 0);
+		master_config.sselNum = spi_cfg->slave;
+		master_config.sselPol = kSPI_SpolActiveAllLow;
+		master_config.dataWidth = word_size - 1;
+
+		master_config.polarity =
+			(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
+			? kSPI_ClockPolarityActiveLow
+			: kSPI_ClockPolarityActiveHigh;
+
+		master_config.phase =
+			(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA)
+			? kSPI_ClockPhaseSecondEdge
+			: kSPI_ClockPhaseFirstEdge;
+
+		master_config.direction =
+			(spi_cfg->operation & SPI_TRANSFER_LSB)
+			? kSPI_LsbFirst
+			: kSPI_MsbFirst;
+
+		master_config.baudRate_Bps = spi_cfg->frequency;
+
+		/* The clock frequency is hardcoded CPU's speed to allow SPI to
+		 * function at high speeds. The core clock and flexcomm should
+		 * use the same clock source.
+		 */
+		clock_freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+
+		SPI_MasterInit(base, &master_config, clock_freq);
+
+		SPI_MasterTransferCreateHandle(base, &data->handle,
+					       spi_mcux_transfer_callback, data);
+
+		SPI_SetDummyData(base, 0);
+
+		spi_context_cs_configure(&data->ctx);
+	} else {
+		spi_slave_config_t slave_config;
+
+		SPI_SlaveGetDefaultConfig(&slave_config);
+
+		slave_config.polarity =
+			(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
+			? kSPI_ClockPolarityActiveLow
+			: kSPI_ClockPolarityActiveHigh;
+
+		slave_config.phase =
+			(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA)
+			? kSPI_ClockPhaseSecondEdge
+			: kSPI_ClockPhaseFirstEdge;
+
+		slave_config.direction =
+			(spi_cfg->operation & SPI_TRANSFER_LSB)
+			? kSPI_LsbFirst
+			: kSPI_MsbFirst;
+
+		/* SS pin active low */
+		slave_config.sselPol = kSPI_SpolActiveAllLow;
+		slave_config.dataWidth = word_size - 1;
+
+		SPI_SlaveInit(base, &slave_config);
+
+		SPI_SlaveTransferCreateHandle(base, &data->handle,
+					      spi_mcux_transfer_callback, data);
+	}
 
 	data->ctx.config = spi_cfg;
-	spi_context_cs_configure(&data->ctx);
 
 	return 0;
 }
 
-static int transceive(struct device *dev,
+static int transceive(const struct device *dev,
 		      const struct spi_config *spi_cfg,
 		      const struct spi_buf_set *tx_bufs,
 		      const struct spi_buf_set *rx_bufs,
@@ -214,7 +249,7 @@ out:
 	return ret;
 }
 
-static int spi_mcux_transceive(struct device *dev,
+static int spi_mcux_transceive(const struct device *dev,
 			       const struct spi_config *spi_cfg,
 			       const struct spi_buf_set *tx_bufs,
 			       const struct spi_buf_set *rx_bufs)
@@ -223,7 +258,7 @@ static int spi_mcux_transceive(struct device *dev,
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_mcux_transceive_async(struct device *dev,
+static int spi_mcux_transceive_async(const struct device *dev,
 				     const struct spi_config *spi_cfg,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs,
@@ -233,8 +268,8 @@ static int spi_mcux_transceive_async(struct device *dev,
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static int spi_mcux_release(struct device *dev,
-		      const struct spi_config *spi_cfg)
+static int spi_mcux_release(const struct device *dev,
+			    const struct spi_config *spi_cfg)
 {
 	struct spi_mcux_data *data = dev->data;
 
@@ -243,12 +278,14 @@ static int spi_mcux_release(struct device *dev,
 	return 0;
 }
 
-static int spi_mcux_init(struct device *dev)
+static int spi_mcux_init(const struct device *dev)
 {
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
 
 	config->irq_config_func(dev);
+
+	data->dev = dev;
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
@@ -264,7 +301,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 };
 
 #define SPI_MCUX_FLEXCOMM_DEVICE(id)					\
-	static void spi_mcux_config_func_##id(struct device *dev);	\
+	static void spi_mcux_config_func_##id(const struct device *dev); \
 	static const struct spi_mcux_config spi_mcux_config_##id = {	\
 		.base =							\
 		(SPI_Type *)DT_INST_REG_ADDR(id),			\
@@ -282,7 +319,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 			    POST_KERNEL,				\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &spi_mcux_driver_api);			\
-	static void spi_mcux_config_func_##id(struct device *dev)	\
+	static void spi_mcux_config_func_##id(const struct device *dev)	\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(id),				\
 			    DT_INST_IRQ(id, priority),			\

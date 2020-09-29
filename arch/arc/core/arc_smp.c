@@ -87,7 +87,7 @@ void z_arc_slave_start(int cpu_num)
 
 #ifdef CONFIG_SMP
 
-static void sched_ipi_handler(void *unused)
+static void sched_ipi_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
 
@@ -108,7 +108,7 @@ void arch_sched_ipi(void)
 	}
 }
 
-static int arc_smp_init(struct device *dev)
+static int arc_smp_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	struct arc_connect_bcr bcr;

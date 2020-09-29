@@ -122,6 +122,14 @@ SECTION_FUNC(TEXT, _exception_enter)
 #ifdef CONFIG_USERSPACE
 2:
 #endif
+
+#ifdef CONFIG_GDBSTUB
+	pushl %ds
+	pushl %es
+	pushl %fs
+	pushl %gs
+	pushl %ss
+#endif
 	/* ESP is pointing to the ESF at this point */
 
 #if defined(CONFIG_LAZY_FPU_SHARING)
@@ -196,6 +204,13 @@ allDone:
 nestedException:
 #endif /* CONFIG_LAZY_FPU_SHARING */
 
+#ifdef CONFIG_GDBSTUB
+	popl %ss
+	popl %gs
+	popl %fs
+	popl %es
+	popl %ds
+#endif
 	/*
 	 * Pop the non-volatile registers from the stack.
 	 * Note that debug tools may have altered the saved register values while

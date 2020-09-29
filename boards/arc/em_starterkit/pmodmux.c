@@ -124,7 +124,7 @@
 #define PM6_LR_CSS_STAT		((1 << BIT2) << PM6_OFFSET)
 
 
-static int pmod_mux_init(struct device *device)
+static int pmod_mux_init(const struct device *device)
 {
 	volatile uint32_t *mux_regs = (uint32_t *)(PMODMUX_BASE_ADDR);
 

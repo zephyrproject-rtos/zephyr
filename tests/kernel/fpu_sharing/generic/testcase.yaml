@@ -17,7 +17,7 @@ tests:
     extra_args: PI_NUM_ITERATIONS=500
     filter: CONFIG_CPU_HAS_FPU
     slow: true
-    arch_whitelist: riscv32
+    arch_allow: riscv32
     tags: kernel
     timeout: 600
     min_ram: 16
@@ -26,13 +26,13 @@ tests:
     extra_args: PI_NUM_ITERATIONS=500
     filter: CONFIG_CPU_HAS_FPU
     slow: true
-    arch_whitelist: riscv64
+    arch_allow: riscv64
     tags: kernel
     timeout: 600
     min_ram: 16
   kernel.fpu_sharing.generic.x86:
     extra_args: CONF_FILE=prj_x86.conf
-    platform_whitelist: qemu_x86
+    platform_allow: qemu_x86
     slow: true
     tags: kernel
     timeout: 600

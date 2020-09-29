@@ -69,8 +69,9 @@
 	mag {
 		compatible = "gpio-keys";
 		mag0: mag_0 {
+			compatible = "honeywell,sm351lt";
 			gpios = <&gpio1 14 0>;
-			label = "Magnetoresitive Sensor";
+			label = "SM351LT_0";
 		};
 	};
 

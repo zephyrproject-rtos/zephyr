@@ -169,7 +169,8 @@ int websocket_send_msg(int ws_sock, const uint8_t *payload, size_t payload_len,
  * @return <0 if error, >=0 amount of bytes received
  */
 int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
-		       uint32_t *message_type, uint64_t *remaining, int32_t timeout);
+		       uint32_t *message_type, uint64_t *remaining,
+		       int32_t timeout);
 
 /**
  * @brief Close websocket.

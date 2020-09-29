@@ -35,7 +35,7 @@ const struct isotp_msg_id tx_addr_0_5 = {
 	.use_ext_addr = 0
 };
 
-struct device *can_dev;
+const struct device *can_dev;
 struct isotp_recv_ctx recv_ctx_8_0;
 struct isotp_recv_ctx recv_ctx_0_5;
 

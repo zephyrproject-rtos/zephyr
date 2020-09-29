@@ -87,7 +87,7 @@ static enum test_state t_state;
 static struct k_delayed_work test_server;
 static void test_server_timeout(struct k_work *work);
 
-static int tester_send(struct device *dev, struct net_pkt *pkt);
+static int tester_send(const struct device *dev, struct net_pkt *pkt);
 
 static void handle_client_test(sa_family_t af, struct tcphdr *th);
 static void handle_server_test(sa_family_t af, struct tcphdr *th);
@@ -111,7 +111,7 @@ struct net_tcp_context {
 	struct net_linkaddr ll_addr;
 };
 
-static int net_tcp_dev_init(struct device *dev)
+static int net_tcp_dev_init(const struct device *dev)
 {
 	struct net_tcp_context *net_tcp_context = dev->data;
 
@@ -120,7 +120,7 @@ static int net_tcp_dev_init(struct device *dev)
 	return 0;
 }
 
-static uint8_t *net_tcp_get_mac(struct device *dev)
+static uint8_t *net_tcp_get_mac(const struct device *dev)
 {
 	struct net_tcp_context *context = dev->data;
 
@@ -346,7 +346,7 @@ fail:
 	return -EINVAL;
 }
 
-static int tester_send(struct device *dev, struct net_pkt *pkt)
+static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct tcphdr th;
 	int ret;
@@ -909,7 +909,7 @@ static void test_client_syn_resend(void)
 	ret = net_context_connect(ctx, (struct sockaddr *)&peer_addr_s,
 				  sizeof(struct sockaddr_in),
 				  NULL,
-				  K_MSEC(1000), NULL);
+				  K_MSEC(300), NULL);
 
 	zassert_true(ret < 0, "Connect on no response from peer");
 

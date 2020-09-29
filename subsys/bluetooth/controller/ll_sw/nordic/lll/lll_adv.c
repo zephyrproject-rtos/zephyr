@@ -7,12 +7,12 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include <zephyr/types.h>
+#include <zephyr.h>
+#include <soc.h>
+#include <bluetooth/hci.h>
 #include <sys/byteorder.h>
 
-#include <toolchain.h>
-#include <bluetooth/hci.h>
-
+#include "hal/cpu.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
@@ -41,7 +41,6 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_lll_adv
 #include "common/log.h"
-#include <soc.h>
 #include "hal/debug.h"
 
 static int init_reset(void);
@@ -62,10 +61,6 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 static bool isr_rx_sr_adva_check(uint8_t tx_addr, uint8_t *addr,
 				 struct pdu_adv *sr);
 
-#if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
-static inline int isr_rx_sr_report(struct pdu_adv *pdu_adv_rx,
-				   uint8_t rssi_ready);
-#endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
 
 static inline bool isr_rx_ci_check(struct lll_adv *lll, struct pdu_adv *adv,
 				   struct pdu_adv *ci, uint8_t devmatch_ok,
@@ -129,6 +124,44 @@ bool lll_adv_scan_req_check(struct lll_adv *lll, struct pdu_adv *sr,
 		isr_rx_sr_adva_check(tx_addr, addr, sr);
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 }
+
+#if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
+int lll_adv_scan_req_report(struct lll_adv *lll, struct pdu_adv *pdu_adv_rx,
+			    uint8_t rl_idx, uint8_t rssi_ready)
+{
+	struct node_rx_pdu *node_rx;
+	struct pdu_adv *pdu_adv;
+	uint8_t pdu_len;
+
+	node_rx = ull_pdu_rx_alloc_peek(3);
+	if (!node_rx) {
+		return -ENOBUFS;
+	}
+	ull_pdu_rx_alloc();
+
+	/* Prepare the report (scan req) */
+	node_rx->hdr.type = NODE_RX_TYPE_SCAN_REQ;
+	node_rx->hdr.handle = ull_adv_lll_handle_get(lll);
+
+	/* Make a copy of PDU into Rx node (as the received PDU is in the
+	 * scratch buffer), and save the RSSI value.
+	 */
+	pdu_adv = (void *)node_rx->pdu;
+	pdu_len = offsetof(struct pdu_adv, payload) + pdu_adv_rx->len;
+	memcpy(pdu_adv, pdu_adv_rx, pdu_len);
+
+	node_rx->hdr.rx_ftr.rssi = (rssi_ready) ? (radio_rssi_get() & 0x7f) :
+						  0x7f;
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	node_rx->hdr.rx_ftr.rl_idx = rl_idx;
+#endif
+
+	ull_rx_put(node_rx->hdr.link, node_rx);
+	ull_rx_sched();
+
+	return 0;
+}
+#endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
 
 static int init_reset(void)
 {
@@ -681,11 +714,12 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
 		if (!IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) ||
-		    0 /* TODO: extended adv. scan req notification enabled */) {
+		    lll->scan_req_notify) {
 			uint32_t err;
 
 			/* Generate the scan request event */
-			err = isr_rx_sr_report(pdu_rx, rssi_ready);
+			err = lll_adv_scan_req_report(lll, pdu_rx, rl_idx,
+						      rssi_ready);
 			if (err) {
 				/* Scan Response will not be transmitted */
 				return err;
@@ -787,41 +821,6 @@ static bool isr_rx_sr_adva_check(uint8_t tx_addr, uint8_t *addr,
 	return (tx_addr == sr->rx_addr) &&
 		!memcmp(addr, sr->scan_req.adv_addr, BDADDR_SIZE);
 }
-
-#if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
-static inline int isr_rx_sr_report(struct pdu_adv *pdu_adv_rx,
-				   uint8_t rssi_ready)
-{
-	struct node_rx_pdu *node_rx;
-	struct pdu_adv *pdu_adv;
-	uint8_t pdu_len;
-
-	node_rx = ull_pdu_rx_alloc_peek(3);
-	if (!node_rx) {
-		return -ENOBUFS;
-	}
-	ull_pdu_rx_alloc();
-
-	/* Prepare the report (scan req) */
-	node_rx->hdr.type = NODE_RX_TYPE_SCAN_REQ;
-	node_rx->hdr.handle = 0xffff;
-
-	/* Make a copy of PDU into Rx node (as the received PDU is in the
-	 * scratch buffer), and save the RSSI value.
-	 */
-	pdu_adv = (void *)node_rx->pdu;
-	pdu_len = offsetof(struct pdu_adv, payload) + pdu_adv_rx->len;
-	memcpy(pdu_adv, pdu_adv_rx, pdu_len);
-
-	node_rx->hdr.rx_ftr.rssi = (rssi_ready) ? (radio_rssi_get() & 0x7f) :
-						  0x7f;
-
-	ull_rx_put(node_rx->hdr.link, node_rx);
-	ull_rx_sched();
-
-	return 0;
-}
-#endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
 
 static inline bool isr_rx_ci_check(struct lll_adv *lll, struct pdu_adv *adv,
 				   struct pdu_adv *ci, uint8_t devmatch_ok,

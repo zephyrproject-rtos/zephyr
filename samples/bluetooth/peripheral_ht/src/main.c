@@ -28,9 +28,9 @@ struct bt_conn *default_conn;
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL,
-		      0x09, 0x18, /* Health Thermometer Service */
-		      0x0a, 0x18, /* Device Information Service */
-		      0x0f, 0x18), /* Battery Service */
+		      BT_UUID_16_ENCODE(BT_UUID_HTS_VAL),
+		      BT_UUID_16_ENCODE(BT_UUID_DIS_VAL),
+		      BT_UUID_16_ENCODE(BT_UUID_BAS_VAL)),
 };
 
 static void connected(struct bt_conn *conn, uint8_t err)
@@ -90,7 +90,7 @@ static struct bt_conn_auth_cb auth_cb_display = {
 
 static void bas_notify(void)
 {
-	uint8_t battery_level = bt_gatt_bas_get_battery_level();
+	uint8_t battery_level = bt_bas_get_battery_level();
 
 	battery_level--;
 
@@ -98,7 +98,7 @@ static void bas_notify(void)
 		battery_level = 100U;
 	}
 
-	bt_gatt_bas_set_battery_level(battery_level);
+	bt_bas_set_battery_level(battery_level);
 }
 
 void main(void)

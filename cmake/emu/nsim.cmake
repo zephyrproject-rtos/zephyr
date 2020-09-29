@@ -29,6 +29,8 @@ find_program(
 
 if(${CONFIG_SOC_NSIM_EM})
  set(NSIM_PROPS nsim_em.props)
+elseif(${CONFIG_SOC_NSIM_EM7D_V22})
+ set(NSIM_PROPS nsim_em7d_v22.props)
 elseif(${CONFIG_SOC_NSIM_SEM})
  set(NSIM_PROPS nsim_sem.props)
 elseif(${CONFIG_SOC_NSIM_HS})

@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 /* Common clock control device name for all NPCX series */
-#define NPCX_CLOCK_CONTROL_NAME "npcx-cc"
+#define NPCX_CLK_CTRL_NAME "npcx-cc"
 
 /**
  * @brief NPCX clock configuration structure

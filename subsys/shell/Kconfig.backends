@@ -1,4 +1,4 @@
-# Shell badckends configuration options
+# Shell backends configuration options
 
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
@@ -20,6 +20,14 @@ config SHELL_BACKEND_SERIAL
 	  Enable serial backend.
 
 if SHELL_BACKEND_SERIAL
+
+config SHELL_BACKEND_SERIAL_INIT_PRIORITY
+	int "Initialization priority"
+	default 0
+	range 0 99
+	help
+	  Initialization priority for UART backend. This must be bigger than
+	  the initialization priority of the used serial device.
 
 config SHELL_PROMPT_UART
 	string "Displayed prompt name"

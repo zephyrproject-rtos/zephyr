@@ -6,30 +6,30 @@ menu "Themes"
 
 choice
 	prompt "Theme"
-	default LVGL_THEME_EMPTY
+	default LVGL_USE_THEME_EMPTY
 
-	config LVGL_THEME_EMPTY
+	config LVGL_USE_THEME_EMPTY
 		bool "Empty theme"
 		help
 		  No theme, you can apply your styles as you need
 
-	config LVGL_THEME_MATERIAL
+	config LVGL_USE_THEME_MATERIAL
 		bool "Material theme"
 		help
 		  Material theme, flat theme with bold colors and light shadow, support
 
-	config LVGL_THEME_MONO
+	config LVGL_USE_THEME_MONO
 		bool "Mono theme"
 		help
 		  Mono theme, monochrome, support
 
-	config LVGL_THEME_CUSTOM
+	config LVGL_USE_THEME_CUSTOM
 		bool "Custom theme"
 		help
 		  Custom theme.
 endchoice
 
-if LVGL_THEME_MATERIAL
+if LVGL_USE_THEME_MATERIAL
 
 choice
 	prompt "Default material theme flags"
@@ -42,19 +42,19 @@ choice
 		bool "Dark"
 endchoice
 
-endif # LVGL_THEME_MATERIAL
+endif # LVGL_USE_THEME_MATERIAL
 
-if LVGL_THEME_CUSTOM
+if LVGL_USE_THEME_CUSTOM
 
 config LVGL_THEME_CUSTOM_INIT_FUNCTION
 	string "Custom theme initialization function"
 
-endif # LVGL_THEME_CUSTOM
+endif # LVGL_USE_THEME_CUSTOM
 
 choice
 	prompt "Default theme primary color"
 	default LVGL_THEME_DEFAULT_COLOR_PRIMARY_RED
-	default LVGL_THEME_DEFAULT_COLOR_PRIMARY_BLACK if LVGL_THEME_MONO
+	default LVGL_THEME_DEFAULT_COLOR_PRIMARY_BLACK if LVGL_USE_THEME_MONO
 
 	config LVGL_THEME_DEFAULT_COLOR_PRIMARY_WHITE
 		bool "White"
@@ -142,7 +142,7 @@ endif # LVGL_THEME_DEFAULT_COLOR_PRIMARY_CUSTOM
 choice
 	prompt "Default theme secondary color"
 	default LVGL_THEME_DEFAULT_COLOR_SECONDARY_RED
-	default LVGL_THEME_DEFAULT_COLOR_SECONDARY_BLACK if LVGL_THEME_MONO
+	default LVGL_THEME_DEFAULT_COLOR_SECONDARY_BLACK if LVGL_USE_THEME_MONO
 
 	config LVGL_THEME_DEFAULT_COLOR_SECONDARY_WHITE
 		bool "White"

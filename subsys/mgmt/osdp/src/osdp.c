@@ -19,11 +19,14 @@ LOG_MODULE_REGISTER(osdp, CONFIG_OSDP_LOG_LEVEL);
 struct osdp_device {
 	struct ring_buf rx_buf;
 	struct ring_buf tx_buf;
+#ifdef CONFIG_OSDP_MODE_PD
 	int rx_event_data;
 	struct k_fifo rx_event_fifo;
+#endif
 	uint8_t rx_fbuf[CONFIG_OSDP_UART_BUFFER_LENGTH];
 	uint8_t tx_fbuf[CONFIG_OSDP_UART_BUFFER_LENGTH];
-	struct device *dev;
+	struct uart_config dev_config;
+	const struct device *dev;
 };
 
 static struct osdp osdp_ctx;
@@ -33,7 +36,7 @@ static struct osdp_device osdp_device;
 static struct k_thread osdp_refresh_thread;
 static K_THREAD_STACK_DEFINE(osdp_thread_stack, CONFIG_OSDP_THREAD_STACK_SIZE);
 
-static void osdp_uart_isr(struct device *dev, void *user_data)
+static void osdp_uart_isr(const struct device *dev, void *user_data)
 {
 	uint8_t buf[64];
 	size_t read, wrote, len;
@@ -60,8 +63,10 @@ static void osdp_uart_isr(struct device *dev, void *user_data)
 			}
 		}
 	}
+#ifdef CONFIG_OSDP_MODE_PD
 	/* wake osdp_refresh thread */
 	k_fifo_put(&p->rx_event_fifo, &p->rx_event_data);
+#endif
 }
 
 static int osdp_uart_receive(void *data, uint8_t *buf, int len)
@@ -94,12 +99,20 @@ struct osdp *osdp_get_ctx()
 	return &osdp_ctx;
 }
 
-static struct osdp *osdp_build_ctx()
+static struct osdp *osdp_build_ctx(struct osdp_channel *channel)
 {
 	int i;
 	struct osdp *ctx;
 	struct osdp_pd *pd;
+	int pd_adddres[CONFIG_OSDP_NUM_CONNECTED_PD] = {0};
 
+#ifdef CONFIG_OSDP_MODE_PD
+	pd_adddres[0] = CONFIG_OSDP_PD_ADDRESS;
+#else
+	if (osdp_extract_address(pd_adddres)) {
+		return NULL;
+	}
+#endif
 	ctx = &osdp_ctx;
 	ctx->cp = &osdp_cp_ctx;
 	ctx->cp->__parent = ctx;
@@ -109,7 +122,12 @@ static struct osdp *osdp_build_ctx()
 
 	for (i = 0; i < CONFIG_OSDP_NUM_CONNECTED_PD; i++) {
 		pd = TO_PD(ctx, i);
+		pd->offset = i;
+		pd->seq_number = -1;
 		pd->__parent = ctx;
+		pd->address = pd_adddres[i];
+		pd->baud_rate = CONFIG_OSDP_UART_BAUD_RATE;
+		memcpy(&pd->channel, channel, sizeof(struct osdp_channel));
 		k_mem_slab_init(&pd->cmd.slab,
 				pd->cmd.slab_buf, sizeof(struct osdp_cmd),
 				CONFIG_OSDP_PD_COMMAND_QUEUE_SIZE);
@@ -122,12 +140,16 @@ void osdp_refresh(void *arg1, void *arg2, void *arg3)
 	struct osdp *ctx = osdp_get_ctx();
 
 	while (1) {
+#ifdef CONFIG_OSDP_MODE_PD
 		k_fifo_get(&osdp_device.rx_event_fifo, K_FOREVER);
+#else
+		k_msleep(50);
+#endif
 		osdp_update(ctx);
 	}
 }
 
-static int osdp_init(struct device *arg)
+static int osdp_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 	uint8_t c;
@@ -140,7 +162,9 @@ static int osdp_init(struct device *arg)
 		.data = &osdp_device,
 	};
 
+#ifdef CONFIG_OSDP_MODE_PD
 	k_fifo_init(&p->rx_event_fifo);
+#endif
 
 	ring_buf_init(&p->rx_buf, sizeof(p->rx_fbuf), p->rx_fbuf);
 	ring_buf_init(&p->tx_buf, sizeof(p->tx_fbuf), p->tx_fbuf);
@@ -149,8 +173,17 @@ static int osdp_init(struct device *arg)
 	p->dev = device_get_binding(CONFIG_OSDP_UART_DEV_NAME);
 	if (p->dev == NULL) {
 		LOG_ERR("Failed to get UART dev binding");
-		return -1;
+		k_panic();
 	}
+
+	/* configure uart device to 8N1 */
+	p->dev_config.baudrate = CONFIG_OSDP_UART_BAUD_RATE;
+	p->dev_config.data_bits = UART_CFG_DATA_BITS_8;
+	p->dev_config.parity = UART_CFG_PARITY_NONE;
+	p->dev_config.stop_bits = UART_CFG_STOP_BITS_1;
+	p->dev_config.flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
+	uart_configure(p->dev, &p->dev_config);
+
 	uart_irq_rx_disable(p->dev);
 	uart_irq_tx_disable(p->dev);
 	uart_irq_callback_user_data_set(p->dev, osdp_uart_isr, p);
@@ -164,10 +197,14 @@ static int osdp_init(struct device *arg)
 	uart_irq_rx_enable(p->dev);
 
 	/* setup OSDP */
-	ctx = osdp_build_ctx();
-	if (osdp_setup(ctx, &channel)) {
+	ctx = osdp_build_ctx(&channel);
+	if (ctx == NULL) {
+		LOG_ERR("OSDP build ctx failed!");
+		k_panic();
+	}
+	if (osdp_setup(ctx)) {
 		LOG_ERR("Failed to setup OSDP device!");
-		return -1;
+		k_panic();
 	}
 
 	LOG_INF("OSDP init okay!");

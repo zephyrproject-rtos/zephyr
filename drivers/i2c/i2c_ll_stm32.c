@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(i2c_ll_stm32);
 
 #include "i2c-priv.h"
 
-int i2c_stm32_runtime_configure(struct device *dev, uint32_t config)
+int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	struct i2c_stm32_data *data = DEV_DATA(dev);
@@ -60,7 +60,7 @@ int i2c_stm32_runtime_configure(struct device *dev, uint32_t config)
 
 #define OPERATION(msg) (((struct i2c_msg *) msg)->flags & I2C_MSG_RW_MASK)
 
-static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *msg,
+static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 			      uint8_t num_msgs, uint16_t slave)
 {
 	struct i2c_stm32_data *data = DEV_DATA(dev);
@@ -174,9 +174,9 @@ static const struct i2c_driver_api api_funcs = {
 #endif
 };
 
-static int i2c_stm32_init(struct device *dev)
+static int i2c_stm32_init(const struct device *dev)
 {
-	struct device *clock = device_get_binding(STM32_CLOCK_CONTROL_NAME);
+	const struct device *clock = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	uint32_t bitrate_cfg;
 	int ret;
@@ -273,11 +273,11 @@ static int i2c_stm32_init(struct device *dev)
 #endif /* CONFIG_I2C_STM32_COMBINED_INTERRUPT */
 
 #define STM32_I2C_IRQ_HANDLER_DECL(name)				\
-static void i2c_stm32_irq_config_func_##name(struct device *dev)
+static void i2c_stm32_irq_config_func_##name(const struct device *dev)
 #define STM32_I2C_IRQ_HANDLER_FUNCTION(name)				\
 	.irq_config_func = i2c_stm32_irq_config_func_##name,
 #define STM32_I2C_IRQ_HANDLER(name)					\
-static void i2c_stm32_irq_config_func_##name(struct device *dev)	\
+static void i2c_stm32_irq_config_func_##name(const struct device *dev)	\
 {									\
 	STM32_I2C_IRQ_CONNECT_AND_ENABLE(name);				\
 }
@@ -289,8 +289,22 @@ static void i2c_stm32_irq_config_func_##name(struct device *dev)	\
 
 #endif /* CONFIG_I2C_STM32_INTERRUPT */
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2)
+#define DEFINE_TIMINGS(name)						\
+	static const uint32_t i2c_timings_##name[] =			\
+		DT_PROP_OR(DT_NODELABEL(name), timings, {});
+#define USE_TIMINGS(name)						\
+	.timings = (const struct i2c_config_timing *) i2c_timings_##name, \
+	.n_timings = ARRAY_SIZE(i2c_timings_##name),
+#else /* V2 */
+#define DEFINE_TIMINGS(name)
+#define USE_TIMINGS(name)
+#endif /* V2 */
+
 #define STM32_I2C_INIT(name)						\
 STM32_I2C_IRQ_HANDLER_DECL(name);					\
+									\
+DEFINE_TIMINGS(name)							\
 									\
 static const struct i2c_stm32_config i2c_stm32_cfg_##name = {		\
 	.i2c = (I2C_TypeDef *)DT_REG_ADDR(DT_NODELABEL(name)),		\
@@ -300,6 +314,7 @@ static const struct i2c_stm32_config i2c_stm32_cfg_##name = {		\
 	},								\
 	STM32_I2C_IRQ_HANDLER_FUNCTION(name)				\
 	.bitrate = DT_PROP(DT_NODELABEL(name), clock_frequency),	\
+	USE_TIMINGS(name)						\
 };									\
 									\
 static struct i2c_stm32_data i2c_stm32_dev_data_##name;			\

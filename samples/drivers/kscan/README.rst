@@ -1,4 +1,4 @@
-.. kscan-sample:
+.. _kscan-sample:
 
 KSCAN Interface
 ####################################
@@ -14,9 +14,13 @@ Building and Running
 ********************
 
 The sample can be built and executed on boards supporting a Keyboard Matrix.
-Please connect a Keyboard Matrix to exercise the functionality. You need to
-obtain the right keymap from the vendor because they vary across different
-manufactures.
+It requires a correct fixture setup. Please connect a Keyboard Matrix to
+exercise the functionality (you need to obtain the right keymap from the vendor
+because they vary across different manufactures).
+For the correct execution of that sample in sanitycheck, add into boards's
+map-file next fixture settings::
+
+      - fixture: fixture_connect_keyboard
 
 Sample output
 =============

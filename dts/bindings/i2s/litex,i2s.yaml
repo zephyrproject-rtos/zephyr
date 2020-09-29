@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2020 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: LiteX I2S controller
+
+compatible: "litex,i2s"
+include: i2s-controller.yaml
+
+properties:
+    reg:
+        required: true
+
+    fifo_depth:
+        type: int
+        required: true

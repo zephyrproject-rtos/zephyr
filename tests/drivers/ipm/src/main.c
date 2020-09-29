@@ -76,7 +76,7 @@ static const char thestr[] = "everything is awesome\n";
 void main(void)
 {
 	int rv, i;
-	struct device *ipm;
+	const struct device *ipm;
 
 	TC_START("Test IPM");
 	ipm = device_get_binding("ipm_dummy0");

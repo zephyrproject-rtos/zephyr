@@ -161,8 +161,6 @@ static void lcp_close(struct ppp_context *ctx, const uint8_t *reason)
 		ppp_change_phase(ctx, PPP_TERMINATE);
 	}
 
-	ppp_change_state(&ctx->lcp.fsm, PPP_STOPPED);
-
 	ppp_fsm_close(&ctx->lcp.fsm, reason);
 }
 

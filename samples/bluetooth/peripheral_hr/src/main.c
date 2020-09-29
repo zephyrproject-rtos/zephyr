@@ -26,7 +26,10 @@ struct bt_conn *default_conn;
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0x0d, 0x18, 0x0f, 0x18, 0x0a, 0x18),
+	BT_DATA_BYTES(BT_DATA_UUID16_ALL,
+		      BT_UUID_16_ENCODE(BT_UUID_HRS_VAL),
+		      BT_UUID_16_ENCODE(BT_UUID_BAS_VAL),
+		      BT_UUID_16_ENCODE(BT_UUID_DIS_VAL))
 };
 
 static void connected(struct bt_conn *conn, uint8_t err)
@@ -84,7 +87,7 @@ static struct bt_conn_auth_cb auth_cb_display = {
 
 static void bas_notify(void)
 {
-	uint8_t battery_level = bt_gatt_bas_get_battery_level();
+	uint8_t battery_level = bt_bas_get_battery_level();
 
 	battery_level--;
 
@@ -92,7 +95,7 @@ static void bas_notify(void)
 		battery_level = 100U;
 	}
 
-	bt_gatt_bas_set_battery_level(battery_level);
+	bt_bas_set_battery_level(battery_level);
 }
 
 static void hrs_notify(void)
@@ -105,7 +108,7 @@ static void hrs_notify(void)
 		heartrate = 90U;
 	}
 
-	bt_gatt_hrs_notify(heartrate);
+	bt_hrs_notify(heartrate);
 }
 
 void main(void)

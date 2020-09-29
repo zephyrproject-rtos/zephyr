@@ -20,7 +20,7 @@
 volatile uint32_t sentinel;
 #define SENTINEL_VALUE 0xDEADBEEF
 
-static void offload_function(void *param)
+static void offload_function(const void *param)
 {
 	uint32_t x = POINTER_TO_INT(param);
 
@@ -55,8 +55,8 @@ void test_irq_offload(void)
 	arch_irq_unlock(key1);
 
 	/**TESTPOINT: Offload to IRQ context*/
-	irq_offload(offload_function, (void *)SENTINEL_VALUE);
+	irq_offload(offload_function, (const void *)SENTINEL_VALUE);
 
 	zassert_equal(sentinel, SENTINEL_VALUE,
-		"irq_offload() didn't work properly");
+		      "irq_offload() didn't work properly");
 }

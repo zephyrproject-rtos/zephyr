@@ -25,15 +25,18 @@ The Spartan-7 and Artix-7 based Arty board do not contain a CPU, but require a
 so-called soft processor to be instantiated within the FPGA in order to run
 Zephyr. The Zynq-7000 based Arty boards are not yet supported by Zephyr.
 
-ARM Cortex-M1 DesignStart FPGA
-******************************
+ARM Cortex-M1/M3 DesignStart FPGA
+*********************************
 
-One such soft processor design is the Cortex-M1 `ARM DesignStart FPGA`_ Xilinx
-edition reference design from ARM. This design targets the Spartan-7 or Artix-7
-based Arty boards. Zephyr only supports the Artix-7 based boards for now.
+One way of instantiating soft processors on the Arty is using the `ARM
+DesignStart FPGA`_ Xilinx edition reference designs from ARM. Zephyr supports
+both the Cortex-M1 and the Cortex-M3 reference designs. The Cortex-M1 design
+targets either the Spartan-7 or Artix-7 based Arty boards, whereas the Cortex-M3
+design only targets the Artix-7 based boards. Zephyr only supports the Artix-7
+targetted designs for now.
 
-For more information about the ARM Cortex-M1 DesignStart FPGA, see the following
-websites:
+For more information about the ARM Cortex-M1/M3 DesignStart FPGA, see the
+following websites:
 
 - `Technical Resources for DesignStart FPGA`_
 - `Technical Resources for DesignStart FPGA on Xilinx`_
@@ -43,7 +46,7 @@ Supported Features
 ==================
 
 The ``arty_a7_arm_designstart_m1`` board configuration supports the following
-hardware features:
+hardware features of the Cortex-M1 reference design:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -57,16 +60,32 @@ hardware features:
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
+| QSPI      | on-chip    | QSPI flash                          |
++-----------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
-:file:`boards/arm/arty/arty_a7_arm_designstart_m1_defconfig`. Other hardware
-features are not currently supported by the port.
+The default configuration for the Cortex-M1 can be found in the defconfig file:
+:file:`boards/arm/arty/arty_a7_arm_designstart_m1_defconfig`.
+
+In addition to the above, the ``arty_a7_arm_designstart_m3`` board configuration
+supports the following hardware features of the Cortex-M3 reference design:
+
++-----------+------------+-------------------------------------+
+| Interface | Controller | Driver/Component                    |
++===========+============+=====================================+
+| MPU       | on-chip    | Memory Protection Unit              |
++-----------+------------+-------------------------------------+
+
+The default configuration for the Cortex-M3 can be found in the defconfig file:
+:file:`boards/arm/arty/arty_a7_arm_designstart_m3_defconfig`.
+
+Other hardware features are not currently supported by the port.
 
 System Clock
 ============
 
-The reference design is configured to use the 100 MHz external oscillator on the
-board as CPU system clock.
+The Cortex-M1 reference design is configured to use the 100 MHz external
+oscillator on the board as CPU system clock whereas the Cortex-M3 reference
+design is configured for 50MHz CPU system clock.
 
 Serial Port
 ===========
@@ -86,15 +105,16 @@ The on-board JTAG is used for configuring and debugging the Xilinx FPGA
 itself. It is available on USB connector ``J10``.
 
 The external SWD debug probe can be connected to connector ``J4`` (``nSRST`` on
-``IO39``, ``SWDIO`` on ``IO40``, and ``SWCLK`` on ``IO41``).
+``IO39``, ``SWDIO`` on ``IO40``, and ``SWCLK`` on ``IO41``). Another option is
+to use the dedicated :ref:`v2c_daplink_shield`.
 
 Programming and Debugging
 *************************
 
-First, configure the FPGA with the reference design FPGA bitstream using Xilinx
-Vivado as described in the ARM Cortex-M1 DesignStart FPGA Xilinx edition user
-guide (available as part of the reference design download from `Technical
-Resources for DesignStart FPGA on Xilinx`_).
+First, configure the FPGA with the selected reference design FPGA bitstream
+using Xilinx Vivado as described in the ARM Cortex-M1/Cortex-M3 DesignStart FPGA
+Xilinx edition user guide (available as part of the reference design download
+from `Technical Resources for DesignStart FPGA on Xilinx`_).
 
 Another option for configuring the FPGA with the reference design bitstream is
 to use the :ref:`openocd-debug-host-tools`:
@@ -104,6 +124,20 @@ to use the :ref:`openocd-debug-host-tools`:
    openocd -f board/arty_s7.cfg -c "init;\
         pld load 0 m1_for_arty_a7_reference.bit;\
         shutdown"
+
+or:
+
+.. code-block:: console
+
+   openocd -f board/arty_s7.cfg -c "init;\
+        pld load 0 m3_for_arty_a7_reference.bit;\
+        shutdown"
+
+.. note::
+
+   The pre-built FPGA bitstream only works for Arty boards equipped with an
+   Artix-35T FPGA. For other Arty variants (e.g. the Arty A7-100) the bitstream
+   must be rebuilt.
 
 Next, build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -126,7 +160,8 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for building and flashing the :ref:`hello_world` application
+for the Cortex-M1 reference design:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -140,13 +175,15 @@ After flashing, you should see message similar to the following in the terminal:
    *** Booting Zephyr OS build zephyr-v2.3.99  ***
    Hello World! arty_a7_arm_designstart_m1
 
+The same procedure can be used for the Cortex-M3 reference design.
+
 Note, however, that the application was not persisted in flash memory by the
 above steps. It was merely written to internal block RAM in the FPGA. It will
 revert to the application stored in the block RAM within the FPGA bitstream
 the next time the FPGA is configured.
 
 The steps to persist the application within the FPGA bitstream are covered by
-the ARM Cortex-M1 DesignStart FPGA Xilinx edition user guide. If the
+the ARM Cortex-M1/M3 DesignStart FPGA Xilinx edition user guide. If the
 :option:`CONFIG_BUILD_OUTPUT_BIN` is enabled and the `SiFive elf2hex`_ package
 is available, the build system will automatically generate a Verilog memory hex
 dump :file:`zephyr.mem` file suitable for initialising the block RAM using

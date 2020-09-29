@@ -156,7 +156,7 @@ void test_k_float_disable_syscall(void)
 struct k_thread sup_fp_thread;
 K_THREAD_STACK_DEFINE(sup_fp_thread_stack, STACKSIZE);
 
-void arm_test_isr_handler(void *args)
+void arm_test_isr_handler(const void *args)
 {
 	ARG_UNUSED(args);
 

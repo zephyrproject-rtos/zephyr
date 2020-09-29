@@ -6,6 +6,7 @@ menuconfig UPDATEHUB
 	select FLASH
 	select REBOOT
 	select IMG_MANAGER
+	select IMG_ENABLE_IMAGE_CHECK
 	select BOOTLOADER_MCUBOOT
 	select MPU_ALLOW_FLASH_WRITE
 	select NETWORKING
@@ -119,6 +120,44 @@ config UPDATEHUB_COAP_BLOCK_SIZE_EXP
 	    6 - COAP_BLOCK_1024
 
 	  This value is mapped directly to enum coap_block_size.
+
+choice
+	prompt "Firmware verification"
+	depends on UPDATEHUB
+	default UPDATEHUB_DOWNLOAD_STORAGE_SHA256_VERIFICATION
+
+config UPDATEHUB_DOWNLOAD_SHA256_VERIFICATION
+	bool "SHA-256 on download"
+	help
+	  Enables SHA-256 verification of data stream while downloading.
+	  Notice that it does not check whether the image written to a
+	  storage is still valid, it only confirms that what has been
+	  downloaded matches the server side SHA.
+
+	  To check if the data written to permanent storage matches the SHA
+	  simultaneously, enable "Both download and flash verifications"
+	  option.
+
+config UPDATEHUB_STORAGE_SHA256_VERIFICATION
+	bool "SHA-256 from flash"
+	help
+	  Enables SHA-256 verification of stored data stream.  When this
+	  option is enabled, the data stream will be read back from the
+	  storage and verified with SHA to make sure that it has been
+	  correctly written.
+
+	  To check if the download data stream matches the SHA simultaneously,
+	  enable "Both download and flash verifications" option.
+
+config UPDATEHUB_DOWNLOAD_STORAGE_SHA256_VERIFICATION
+	bool "SHA-256 from both download and flash"
+	help
+	  Enables SHA-256 verification on both data stream while downloading
+	  and stored data stream on flash.
+
+	  It is advised to leave this option enabled.
+
+endchoice
 
 module = UPDATEHUB
 module-str = Log level for UpdateHub

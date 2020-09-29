@@ -29,19 +29,19 @@
 static inline void _region_init(uint32_t index, uint32_t region_addr, uint32_t size,
 				uint32_t region_attr)
 {
-	uint8_t bits = find_msb_set(size) - 1;
-
 	index = index * 2U;
 
-	if (bits < ARC_FEATURE_MPU_ALIGNMENT_BITS) {
-		bits = ARC_FEATURE_MPU_ALIGNMENT_BITS;
-	}
-
-	if ((1 << bits) < size) {
-		bits++;
-	}
-
 	if (size > 0) {
+		uint8_t bits = find_msb_set(size) - 1;
+
+		if (bits < ARC_FEATURE_MPU_ALIGNMENT_BITS) {
+			bits = ARC_FEATURE_MPU_ALIGNMENT_BITS;
+		}
+
+		if ((1 << bits) < size) {
+			bits++;
+		}
+
 		region_attr &= ~(AUX_MPU_RDP_SIZE_MASK);
 		region_attr |= AUX_MPU_RDP_REGION_SIZE(bits);
 		region_addr |= AUX_MPU_RDB_VALID_MASK;
@@ -374,7 +374,7 @@ int arc_core_mpu_buffer_validate(void *addr, size_t size, int write)
  * This function provides the default configuration mechanism for the Memory
  * Protection Unit (MPU).
  */
-static int arc_mpu_init(struct device *arg)
+static int arc_mpu_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

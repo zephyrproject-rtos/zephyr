@@ -9,4 +9,6 @@
 
 #include <devicetree.h>
 
+#define __MPU_PRESENT CONFIG_CPU_HAS_ARM_MPU
+
 #endif /* _SOC_H_ */

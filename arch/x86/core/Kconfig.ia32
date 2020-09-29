@@ -76,6 +76,15 @@ config X86_USERSPACE
 	  supporting user-level threads that are protected from each other and
 	  from crashing the kernel.
 
+config X86_PAE
+	bool "Use PAE page tables"
+	default y
+	depends on X86_MMU
+	help
+	  If enabled, use PAE-style page tables instead of 32-bit page tables.
+	  The advantage is support for the Execute Disable bit, at a cost of
+	  more memory for paging structures.
+
 menu "Architecture Floating Point Options"
 depends on CPU_HAS_FPU
 

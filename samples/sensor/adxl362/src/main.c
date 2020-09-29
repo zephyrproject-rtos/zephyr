@@ -11,7 +11,8 @@
 
 K_SEM_DEFINE(sem, 0, 1);
 
-static void trigger_handler(struct device *dev, struct sensor_trigger *trig)
+static void trigger_handler(const struct device *dev,
+			    struct sensor_trigger *trig)
 {
 	switch (trig->type) {
 	case SENSOR_TRIG_DATA_READY:
@@ -33,7 +34,7 @@ void main(void)
 {
 	struct sensor_value accel[3];
 
-	struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, adi_adxl362)));
+	const struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, adi_adxl362)));
 	if (dev == NULL) {
 		printf("Device get binding device\n");
 		return;

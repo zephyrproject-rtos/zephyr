@@ -549,7 +549,7 @@ static int sm_do_bootstrap_reg(void)
 
 	msg->type = COAP_TYPE_CON;
 	msg->code = COAP_METHOD_POST;
-	msg->mid = 0U;
+	msg->mid = coap_next_id();
 	msg->reply_cb = do_bootstrap_reply_cb;
 	msg->message_timeout_cb = do_bootstrap_reg_timeout_cb;
 
@@ -629,7 +629,7 @@ static int sm_send_registration(bool send_obj_support_data,
 
 	msg->type = COAP_TYPE_CON;
 	msg->code = COAP_METHOD_POST;
-	msg->mid = 0U;
+	msg->mid = coap_next_id();
 	msg->reply_cb = reply_cb;
 	msg->message_timeout_cb = timeout_cb;
 
@@ -821,7 +821,7 @@ static int sm_do_deregister(void)
 
 	msg->type = COAP_TYPE_CON;
 	msg->code = COAP_METHOD_DELETE;
-	msg->mid = 0U;
+	msg->mid = coap_next_id();
 	msg->reply_cb = do_deregister_reply_cb;
 	msg->message_timeout_cb = do_deregister_timeout_cb;
 
@@ -943,7 +943,7 @@ void lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
 	LOG_INF("Stop LWM2M Client: %s", log_strdup(client.ep_name));
 }
 
-static int lwm2m_rd_client_init(struct device *dev)
+static int lwm2m_rd_client_init(const struct device *dev)
 {
 	return lwm2m_engine_add_service(lwm2m_rd_client_service,
 					STATE_MACHINE_UPDATE_INTERVAL_MS);

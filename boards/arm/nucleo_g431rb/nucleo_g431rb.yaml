@@ -19,3 +19,4 @@ supported:
   - usb device
   - counter
   - spi
+  - dac

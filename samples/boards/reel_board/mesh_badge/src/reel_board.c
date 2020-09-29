@@ -48,16 +48,16 @@ struct font_info {
 
 #define STAT_COUNT 128
 
-static struct device *epd_dev;
+static const struct device *epd_dev;
 static bool pressed;
 static uint8_t screen_id = SCREEN_MAIN;
-static struct device *gpio;
+static const struct device *gpio;
 static struct k_delayed_work epd_work;
 static struct k_delayed_work long_press_work;
 static char str_buf[256];
 
 static struct {
-	struct device *dev;
+	const struct device *dev;
 	const char *name;
 	gpio_pin_t pin;
 	gpio_flags_t flags;
@@ -447,7 +447,8 @@ static bool button_is_pressed(void)
 	return gpio_pin_get(gpio, DT_GPIO_PIN(DT_ALIAS(sw0), gpios)) > 0;
 }
 
-static void button_interrupt(struct device *dev, struct gpio_callback *cb,
+static void button_interrupt(const struct device *dev,
+			     struct gpio_callback *cb,
 			     uint32_t pins)
 {
 	if (button_is_pressed() == pressed) {
@@ -576,7 +577,7 @@ static int configure_leds(void)
 
 static int erase_storage(void)
 {
-	struct device *dev;
+	const struct device *dev;
 
 	dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 

@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(dma_pl330);
 
 #define BYTE_WIDTH(burst_size) (1 << (burst_size))
 
-static int dma_pl330_submit(struct device *dev, uint64_t dst,
+static int dma_pl330_submit(const struct device *dev, uint64_t dst,
 			    uint64_t src, uint32_t channel, uint32_t size);
 
 static void dma_pl330_get_counter(struct dma_pl330_ch_internal *ch_handle,
@@ -162,7 +162,7 @@ static inline void dma_pl330_gen_op(uint8_t opcode, uint32_t addr, uint32_t val)
 	sys_write8(val, addr + 1);
 }
 
-static int dma_pl330_setup_ch(struct device *dev,
+static int dma_pl330_setup_ch(const struct device *dev,
 			      struct dma_pl330_ch_internal *ch_dat,
 			      int ch)
 {
@@ -267,7 +267,7 @@ static int dma_pl330_setup_ch(struct device *dev,
 	return 0;
 }
 
-static int dma_pl330_start_dma_ch(struct device *dev,
+static int dma_pl330_start_dma_ch(const struct device *dev,
 				  uint32_t reg_base, int ch, int secure)
 {
 	struct dma_pl330_dev_data *const dev_data = DEV_DATA(dev);
@@ -321,7 +321,7 @@ static int dma_pl330_wait(uint32_t reg_base, int ch)
 	return 0;
 }
 
-static int dma_pl330_xfer(struct device *dev, uint64_t dst,
+static int dma_pl330_xfer(const struct device *dev, uint64_t dst,
 			  uint64_t src, uint32_t size, uint32_t channel,
 			  uint32_t *xfer_size)
 {
@@ -383,7 +383,7 @@ err:
 }
 
 #if CONFIG_DMA_64BIT
-static int dma_pl330_handle_boundary(struct device *dev, uint64_t dst,
+static int dma_pl330_handle_boundary(const struct device *dev, uint64_t dst,
 				     uint64_t src, uint32_t channel,
 				     uint32_t size)
 {
@@ -431,7 +431,8 @@ static int dma_pl330_handle_boundary(struct device *dev, uint64_t dst,
 }
 #endif
 
-static int dma_pl330_submit(struct device *dev, uint64_t dst, uint64_t src,
+static int dma_pl330_submit(const struct device *dev, uint64_t dst,
+			    uint64_t src,
 			    uint32_t channel, uint32_t size)
 {
 	int ret;
@@ -469,7 +470,7 @@ static int dma_pl330_submit(struct device *dev, uint64_t dst, uint64_t src,
 	return 0;
 }
 
-static int dma_pl330_configure(struct device *dev, uint32_t channel,
+static int dma_pl330_configure(const struct device *dev, uint32_t channel,
 			       struct dma_config *cfg)
 {
 	struct dma_pl330_dev_data *const dev_data = DEV_DATA(dev);
@@ -519,7 +520,8 @@ static int dma_pl330_configure(struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static int dma_pl330_transfer_start(struct device *dev, uint32_t channel)
+static int dma_pl330_transfer_start(const struct device *dev,
+				    uint32_t channel)
 {
 	struct dma_pl330_dev_data *const dev_data = DEV_DATA(dev);
 	struct dma_pl330_ch_config *channel_cfg;
@@ -547,7 +549,7 @@ static int dma_pl330_transfer_start(struct device *dev, uint32_t channel)
 	return 0;
 }
 
-static int dma_pl330_transfer_stop(struct device *dev, uint32_t channel)
+static int dma_pl330_transfer_stop(const struct device *dev, uint32_t channel)
 {
 	if (channel >= MAX_DMA_CHANNELS) {
 		return -EINVAL;
@@ -557,7 +559,7 @@ static int dma_pl330_transfer_stop(struct device *dev, uint32_t channel)
 	return 0;
 }
 
-static int dma_pl330_initialize(struct device *dev)
+static int dma_pl330_initialize(const struct device *dev)
 {
 	const struct dma_pl330_config *const dev_cfg = DEV_CFG(dev);
 	struct dma_pl330_dev_data *const dev_data = DEV_DATA(dev);

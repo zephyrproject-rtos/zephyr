@@ -93,7 +93,7 @@ union axis1bit16_t {
 
 struct ism330dhcx_config {
 	char *bus_name;
-	int (*bus_init)(struct device *dev);
+	int (*bus_init)(const struct device *dev);
 #ifdef CONFIG_ISM330DHCX_TRIGGER
 	const char *int_gpio_port;
 	uint8_t int_gpio_pin;
@@ -138,7 +138,8 @@ struct ism330dhcx_tf {
 #define ISM330DHCX_SHUB_MAX_NUM_SLVS			2
 
 struct ism330dhcx_data {
-	struct device *bus;
+	const struct device *dev;
+	const struct device *bus;
 	int16_t acc[3];
 	uint32_t acc_gain;
 	int16_t gyro[3];
@@ -172,13 +173,11 @@ struct ism330dhcx_data {
 	uint8_t gyro_fs;
 
 #ifdef CONFIG_ISM330DHCX_TRIGGER
-	struct device *gpio;
+	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t handler_drdy_acc;
 	sensor_trigger_handler_t handler_drdy_gyr;
 	sensor_trigger_handler_t handler_drdy_temp;
-
-	struct device *dev;
 
 #if defined(CONFIG_ISM330DHCX_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ISM330DHCX_THREAD_STACK_SIZE);
@@ -194,23 +193,23 @@ struct ism330dhcx_data {
 #endif
 };
 
-int ism330dhcx_spi_init(struct device *dev);
-int ism330dhcx_i2c_init(struct device *dev);
+int ism330dhcx_spi_init(const struct device *dev);
+int ism330dhcx_i2c_init(const struct device *dev);
 #if defined(CONFIG_ISM330DHCX_SENSORHUB)
-int ism330dhcx_shub_init(struct device *dev);
-int ism330dhcx_shub_fetch_external_devs(struct device *dev);
+int ism330dhcx_shub_init(const struct device *dev);
+int ism330dhcx_shub_fetch_external_devs(const struct device *dev);
 int ism330dhcx_shub_get_idx(enum sensor_channel type);
-int ism330dhcx_shub_config(struct device *dev, enum sensor_channel chan,
-			enum sensor_attribute attr,
-			const struct sensor_value *val);
+int ism330dhcx_shub_config(const struct device *dev, enum sensor_channel chan,
+			   enum sensor_attribute attr,
+			   const struct sensor_value *val);
 #endif /* CONFIG_ISM330DHCX_SENSORHUB */
 
 #ifdef CONFIG_ISM330DHCX_TRIGGER
-int ism330dhcx_trigger_set(struct device *dev,
-			const struct sensor_trigger *trig,
-			sensor_trigger_handler_t handler);
+int ism330dhcx_trigger_set(const struct device *dev,
+			   const struct sensor_trigger *trig,
+			   sensor_trigger_handler_t handler);
 
-int ism330dhcx_init_interrupt(struct device *dev);
+int ism330dhcx_init_interrupt(const struct device *dev);
 #endif
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ISM330DHCX_ISM330DHCX_H_ */

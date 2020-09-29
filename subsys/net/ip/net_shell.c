@@ -1889,6 +1889,8 @@ static int cmd_net_dns(const struct shell *shell, size_t argc, char *argv[])
 }
 
 #if defined(CONFIG_NET_GPTP)
+static const char *selected_role_str(int port);
+
 static void gptp_port_cb(int port, struct net_if *iface, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
@@ -1896,12 +1898,13 @@ static void gptp_port_cb(int port, struct net_if *iface, void *user_data)
 	int *count = data->user_data;
 
 	if (*count == 0) {
-		PR("Port Interface\n");
+		PR("Port Interface  \tRole\n");
 	}
 
 	(*count)++;
 
-	PR("%2d   %p\n", port, iface);
+	PR("%2d   %p [%d]  \t%s\n", port, iface, net_if_get_by_iface(iface),
+	   selected_role_str(port));
 }
 
 static const char *pdelay_req2str(enum gptp_pdelay_req_states state)
@@ -2137,11 +2140,14 @@ static void gptp_print_port_info(const struct shell *shell, int port)
 	struct gptp_port_bmca_data *port_bmca_data;
 	struct gptp_port_param_ds *port_param_ds;
 	struct gptp_port_states *port_state;
+	struct gptp_domain *gptp_domain;
 	struct gptp_port_ds *port_ds;
 	struct net_if *iface;
 	int ret, i;
 
-	ret = gptp_get_port_data(gptp_get_domain(),
+	gptp_domain = gptp_get_domain();
+
+	ret = gptp_get_port_data(gptp_domain,
 				 port,
 				 &port_ds,
 				 &port_param_ds,
@@ -2154,7 +2160,12 @@ static void gptp_print_port_info(const struct shell *shell, int port)
 		return;
 	}
 
-	PR("Port id    : %d\n", port_ds->port_id.port_number);
+	NET_ASSERT(port == port_ds->port_id.port_number,
+		   "Port number mismatch! (%d vs %d)", port,
+		   port_ds->port_id.port_number);
+
+	PR("Port id    : %d (%s)\n", port_ds->port_id.port_number,
+	   selected_role_str(port_ds->port_id.port_number));
 	PR("Interface  : %p [%d]\n", iface, net_if_get_by_iface(iface));
 	PR("Clock id   : ");
 	for (i = 0; i < sizeof(port_ds->port_id.clk_id); i++) {
@@ -2233,6 +2244,12 @@ static void gptp_print_port_info(const struct shell *shell, int port)
 	   "transmission interval for the port",
 	   USCALED_NS_TO_NS(port_ds->pdelay_req_itv.low) /
 					(NSEC_PER_USEC * USEC_PER_MSEC));
+	PR("BMCA %s %s%d%s: %d\n", "default", "priority", 1,
+	   "                                        ",
+	   gptp_domain->default_ds.priority1);
+	PR("BMCA %s %s%d%s: %d\n", "default", "priority", 2,
+	   "                                        ",
+	   gptp_domain->default_ds.priority2);
 
 	PR("\nRuntime status:\n");
 	PR("Current global port state                          "
@@ -3727,7 +3744,7 @@ static int cmd_net_stats(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-#if defined(CONFIG_NET_TCP1) && defined(CONFIG_NET_NATIVE_TCP)
+#if defined(CONFIG_NET_TCP) && defined(CONFIG_NET_NATIVE_TCP)
 static struct net_context *tcp_ctx;
 static const struct shell *tcp_shell;
 
@@ -3958,7 +3975,7 @@ static void tcp_recv_cb(struct net_context *context, struct net_pkt *pkt,
 static int cmd_net_tcp_connect(const struct shell *shell, size_t argc,
 			       char *argv[])
 {
-#if defined(CONFIG_NET_TCP1) && defined(CONFIG_NET_NATIVE_TCP)
+#if defined(CONFIG_NET_TCP) && defined(CONFIG_NET_NATIVE_TCP)
 	int arg = 0;
 
 	/* tcp connect <ip> port */
@@ -4002,7 +4019,7 @@ static int cmd_net_tcp_connect(const struct shell *shell, size_t argc,
 static int cmd_net_tcp_send(const struct shell *shell, size_t argc,
 			    char *argv[])
 {
-#if defined(CONFIG_NET_TCP1) && defined(CONFIG_NET_NATIVE_TCP)
+#if defined(CONFIG_NET_TCP) && defined(CONFIG_NET_NATIVE_TCP)
 	int arg = 0;
 	int ret;
 	struct net_shell_user_data user_data;
@@ -4039,7 +4056,7 @@ static int cmd_net_tcp_send(const struct shell *shell, size_t argc,
 static int cmd_net_tcp_recv(const struct shell *shell, size_t argc,
 			    char *argv[])
 {
-#if defined(CONFIG_NET_TCP1) && defined(CONFIG_NET_NATIVE_TCP)
+#if defined(CONFIG_NET_TCP) && defined(CONFIG_NET_NATIVE_TCP)
 	int ret;
 	struct net_shell_user_data user_data;
 
@@ -4068,7 +4085,7 @@ static int cmd_net_tcp_recv(const struct shell *shell, size_t argc,
 static int cmd_net_tcp_close(const struct shell *shell, size_t argc,
 			     char *argv[])
 {
-#if defined(CONFIG_NET_TCP1) && defined(CONFIG_NET_NATIVE_TCP)
+#if defined(CONFIG_NET_TCP) && defined(CONFIG_NET_NATIVE_TCP)
 	int ret;
 
 	/* tcp close */
@@ -4304,7 +4321,7 @@ static int cmd_net_suspend(const struct shell *shell, size_t argc,
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
 	if (argv[1]) {
 		struct net_if *iface = NULL;
-		struct device *dev;
+		const struct device *dev;
 		int idx;
 		int ret;
 
@@ -4349,7 +4366,7 @@ static int cmd_net_resume(const struct shell *shell, size_t argc,
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
 	if (argv[1]) {
 		struct net_if *iface = NULL;
-		struct device *dev;
+		const struct device *dev;
 		int idx;
 		int ret;
 

@@ -50,7 +50,7 @@ static int cmd_gpio_conf(const struct shell *shell, size_t argc, char **argv)
 {
 	uint8_t index = 0U;
 	int type = GPIO_OUTPUT;
-	struct device *dev;
+	const struct device *dev;
 
 	if (argc == args_no.conf &&
 	    isdigit((unsigned char)argv[args_indx.index][0]) &&
@@ -83,7 +83,7 @@ static int cmd_gpio_conf(const struct shell *shell, size_t argc, char **argv)
 static int cmd_gpio_get(const struct shell *shell,
 			size_t argc, char **argv)
 {
-	struct device *dev;
+	const struct device *dev;
 	uint8_t index = 0U;
 	int rc;
 
@@ -115,7 +115,7 @@ static int cmd_gpio_get(const struct shell *shell,
 static int cmd_gpio_set(const struct shell *shell,
 			size_t argc, char **argv)
 {
-	struct device *dev;
+	const struct device *dev;
 	uint8_t index = 0U;
 	uint8_t value = 0U;
 

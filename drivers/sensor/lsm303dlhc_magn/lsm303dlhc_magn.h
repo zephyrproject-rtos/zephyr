@@ -65,7 +65,7 @@
 #define LSM303DLHC_SR_REG_M		0x09
 
 struct lsm303dlhc_magn_data {
-	struct device *i2c;
+	const struct device *i2c;
 
 	int16_t magn_x;
 	int16_t magn_y;

@@ -10,7 +10,7 @@
 #include <drivers/sensor.h>
 #include <stdio.h>
 
-void do_main(struct device *dev)
+void do_main(const struct device *dev)
 {
 	int ret;
 	struct sensor_value x, y, z;
@@ -35,10 +35,10 @@ void do_main(struct device *dev)
 	}
 }
 
-struct device *sensor_search()
+const struct device *sensor_search()
 {
 	static const char *const magn_sensor[] = { "bmm150", NULL };
-	struct device *dev;
+	const struct device *dev;
 	int i;
 
 	i = 0;
@@ -56,7 +56,7 @@ struct device *sensor_search()
 
 void main(void)
 {
-	struct device *dev;
+	const struct device *dev;
 
 	printk("BMM150 Geomagnetic sensor Application\n");
 

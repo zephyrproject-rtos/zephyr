@@ -17,7 +17,7 @@ extern K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 
 static volatile int test_flag;
 
-void arm_isr_handler(void *args)
+void arm_isr_handler(const void *args)
 {
 	ARG_UNUSED(args);
 

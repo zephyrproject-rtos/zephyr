@@ -6,4 +6,4 @@ sample:
   name: cfb custom font sample
 tests:
   sample.display.cfb_custom_font.ssd16xx:
-    platform_whitelist: reel_board
+    platform_allow: reel_board

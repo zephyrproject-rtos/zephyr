@@ -15,27 +15,16 @@
 #include <drivers/sensor.h>
 #include <string.h>
 
-#define LIS2DH_BUS_ADDRESS		DT_INST_REG_ADDR(0)
-#define LIS2DH_BUS_DEV_NAME		DT_INST_BUS_LABEL(0)
-
 #define LIS2DH_REG_WAI			0x0f
 #define LIS2DH_CHIP_ID			0x33
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #include <drivers/spi.h>
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 
-#define LIS2DH_SPI_READ_BIT		BIT(7)
-#define LIS2DH_SPI_AUTOINC		BIT(6)
-#define LIS2DH_SPI_ADDR_MASK		BIT_MASK(6)
-
-/* LIS2DH supports only SPI mode 0, word size 8 bits, MSB first */
-#define LIS2DH_SPI_CFG			SPI_WORD_SET(8)
-
-#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 #include <drivers/i2c.h>
-#else
-#error "define bus type (I2C/SPI)"
-#endif
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 
 #define LIS2DH_AUTOINCREMENT_ADDR	BIT(7)
 
@@ -197,37 +186,44 @@ union lis2dh_sample {
 	} __packed;
 };
 
-struct lis2dh_config {
-	char *bus_name;
-	int (*bus_init)(struct device *dev);
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	uint16_t i2c_slv_addr;
-#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+struct lis2dh_spi_cfg {
 	struct spi_config spi_conf;
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	const char *gpio_cs_port;
-	uint8_t cs_gpio;
-	uint8_t cs_gpio_flags;
-#endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
+	const char *cs_gpios_label;
+};
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 
+union lis2dh_bus_cfg {
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+	uint16_t i2c_slv_addr;
+#endif
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+	const struct lis2dh_spi_cfg *spi_cfg;
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
+};
+
+struct lis2dh_config {
+	const char *bus_name;
+	int (*bus_init)(const struct device *dev);
+	const union lis2dh_bus_cfg bus_cfg;
 };
 
 struct lis2dh_transfer_function {
-	int (*read_data)(struct device *dev, uint8_t reg_addr,
+	int (*read_data)(const struct device *dev, uint8_t reg_addr,
 			 uint8_t *value, uint8_t len);
-	int (*write_data)(struct device *dev, uint8_t reg_addr,
+	int (*write_data)(const struct device *dev, uint8_t reg_addr,
 			  uint8_t *value, uint8_t len);
-	int (*read_reg)(struct device *dev, uint8_t reg_addr,
+	int (*read_reg)(const struct device *dev, uint8_t reg_addr,
 			uint8_t *value);
-	int (*write_reg)(struct device *dev, uint8_t reg_addr,
-			uint8_t value);
-	int (*update_reg)(struct device *dev, uint8_t reg_addr,
+	int (*write_reg)(const struct device *dev, uint8_t reg_addr,
+			 uint8_t value);
+	int (*update_reg)(const struct device *dev, uint8_t reg_addr,
 			  uint8_t mask, uint8_t value);
 };
 
 struct lis2dh_data {
-	struct device *bus;
+	const struct device *bus;
 	const struct lis2dh_transfer_function *hw_tf;
 
 	union lis2dh_sample sample;
@@ -235,8 +231,9 @@ struct lis2dh_data {
 	uint32_t scale;
 
 #ifdef CONFIG_LIS2DH_TRIGGER
-	struct device *gpio_int1;
-	struct device *gpio_int2;
+	const struct device *dev;
+	const struct device *gpio_int1;
+	const struct device *gpio_int2;
 	struct gpio_callback gpio_int1_cb;
 	struct gpio_callback gpio_int2_cb;
 
@@ -251,13 +248,13 @@ struct lis2dh_data {
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_LIS2DH_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
 #endif
 
 #endif /* CONFIG_LIS2DH_TRIGGER */
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	struct spi_cs_control cs_ctrl;
-#endif /* DT_SPI_DEV_HAS_CS_GPIOS(DT_INST(0, st_lis2mdl)) */
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 };
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
@@ -266,18 +263,19 @@ int lis2dh_spi_access(struct lis2dh_data *ctx, uint8_t cmd,
 #endif
 
 #ifdef CONFIG_LIS2DH_TRIGGER
-int lis2dh_trigger_set(struct device *dev,
+int lis2dh_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);
 
-int lis2dh_init_interrupt(struct device *dev);
+int lis2dh_init_interrupt(const struct device *dev);
 
-int lis2dh_acc_slope_config(struct device *dev, enum sensor_attribute attr,
+int lis2dh_acc_slope_config(const struct device *dev,
+			    enum sensor_attribute attr,
 			    const struct sensor_value *val);
 #endif
 
-int lis2dh_spi_init(struct device *dev);
-int lis2dh_i2c_init(struct device *dev);
+int lis2dh_spi_init(const struct device *dev);
+int lis2dh_i2c_init(const struct device *dev);
 
 
 #endif /* __SENSOR_LIS2DH__ */

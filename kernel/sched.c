@@ -57,6 +57,8 @@ struct z_kernel _kernel;
 
 static struct k_spinlock sched_spinlock;
 
+static void update_cache(int);
+
 #define LOCKED(lck) for (k_spinlock_key_t __i = {},			\
 					  __key = k_spin_lock(lck);	\
 			!__i.key;					\
@@ -264,6 +266,16 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 #endif
 }
 
+static void move_thread_to_end_of_prio_q(struct k_thread *thread)
+{
+	if (z_is_thread_queued(thread)) {
+		_priq_run_remove(&_kernel.ready_q.runq, thread);
+	}
+	_priq_run_add(&_kernel.ready_q.runq, thread);
+	z_mark_thread_as_queued(thread);
+	update_cache(thread == _current);
+}
+
 #ifdef CONFIG_TIMESLICING
 
 static int slice_time;
@@ -303,17 +315,27 @@ void k_sched_time_slice_set(int32_t slice, int prio)
 static inline int sliceable(struct k_thread *thread)
 {
 	return is_preempt(thread)
+		&& !z_is_thread_prevented_from_running(thread)
 		&& !z_is_prio_higher(thread->base.prio, slice_max_prio)
-		&& !z_is_idle_thread_object(thread)
-		&& !z_is_thread_timeout_active(thread);
+		&& !z_is_idle_thread_object(thread);
 }
 
 /* Called out of each timer interrupt */
 void z_time_slice(int ticks)
 {
+	/* Hold sched_spinlock, so that activity on another CPU
+	 * (like a call to k_thread_abort() at just the wrong time)
+	 * won't affect the correctness of the decisions made here.
+	 * Also prevents any nested interrupts from changing
+	 * thread state to avoid similar issues, since this would
+	 * normally run with IRQs enabled.
+	 */
+	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
+
 #ifdef CONFIG_SWAP_NONATOMIC
 	if (pending_current == _current) {
 		z_reset_time_slice();
+		k_spin_unlock(&sched_spinlock, key);
 		return;
 	}
 	pending_current = NULL;
@@ -321,7 +343,7 @@ void z_time_slice(int ticks)
 
 	if (slice_time && sliceable(_current)) {
 		if (ticks >= _current_cpu->slice_ticks) {
-			z_move_thread_to_end_of_prio_q(_current);
+			move_thread_to_end_of_prio_q(_current);
 			z_reset_time_slice();
 		} else {
 			_current_cpu->slice_ticks -= ticks;
@@ -329,6 +351,7 @@ void z_time_slice(int ticks)
 	} else {
 		_current_cpu->slice_ticks = 0;
 	}
+	k_spin_unlock(&sched_spinlock, key);
 }
 #endif
 
@@ -401,12 +424,7 @@ void z_ready_thread(struct k_thread *thread)
 void z_move_thread_to_end_of_prio_q(struct k_thread *thread)
 {
 	LOCKED(&sched_spinlock) {
-		if (z_is_thread_queued(thread)) {
-			_priq_run_remove(&_kernel.ready_q.runq, thread);
-		}
-		_priq_run_add(&_kernel.ready_q.runq, thread);
-		z_mark_thread_as_queued(thread);
-		update_cache(thread == _current);
+		move_thread_to_end_of_prio_q(thread);
 	}
 }
 
@@ -479,6 +497,9 @@ static _wait_q_t *pended_on(struct k_thread *thread)
 
 void z_thread_single_abort(struct k_thread *thread)
 {
+	__ASSERT(!(thread->base.user_options & K_ESSENTIAL),
+		 "essential thread aborted");
+
 	if (thread->fn_abort != NULL) {
 		thread->fn_abort();
 	}
@@ -551,9 +572,9 @@ void z_thread_single_abort(struct k_thread *thread)
 			arch_thread_return_value_set(waiter, 0);
 			ready_thread(waiter);
 		}
+		sys_trace_thread_abort(thread);
+		z_thread_monitor_exit(thread);
 	}
-
-	sys_trace_thread_abort(thread);
 }
 
 static void unready_thread(struct k_thread *thread)
@@ -626,12 +647,17 @@ ALWAYS_INLINE struct k_thread *z_find_first_thread_to_unpend(_wait_q_t *wait_q,
 	return ret;
 }
 
+static inline void unpend_thread_no_timeout(struct k_thread *thread)
+{
+	_priq_wait_remove(&pended_on(thread)->waitq, thread);
+	z_mark_thread_as_not_pending(thread);
+	thread->base.pended_on = NULL;
+}
+
 ALWAYS_INLINE void z_unpend_thread_no_timeout(struct k_thread *thread)
 {
 	LOCKED(&sched_spinlock) {
-		_priq_wait_remove(&pended_on(thread)->waitq, thread);
-		z_mark_thread_as_not_pending(thread);
-		thread->base.pended_on = NULL;
+		unpend_thread_no_timeout(thread);
 	}
 }
 
@@ -639,15 +665,17 @@ ALWAYS_INLINE void z_unpend_thread_no_timeout(struct k_thread *thread)
 /* Timeout handler for *_thread_timeout() APIs */
 void z_thread_timeout(struct _timeout *timeout)
 {
-	struct k_thread *thread = CONTAINER_OF(timeout,
-					       struct k_thread, base.timeout);
+	LOCKED(&sched_spinlock) {
+		struct k_thread *thread = CONTAINER_OF(timeout,
+						struct k_thread, base.timeout);
 
-	if (thread->base.pended_on != NULL) {
-		z_unpend_thread_no_timeout(thread);
+		if (thread->base.pended_on != NULL) {
+			unpend_thread_no_timeout(thread);
+		}
+		z_mark_thread_as_started(thread);
+		z_mark_thread_as_not_suspended(thread);
+		ready_thread(thread);
 	}
-	z_mark_thread_as_started(thread);
-	z_mark_thread_as_not_suspended(thread);
-	z_ready_thread(thread);
 }
 #endif
 
@@ -825,6 +853,7 @@ struct k_thread *z_get_next_ready_thread(void)
 /* Just a wrapper around _current = xxx with tracing */
 static inline void set_current(struct k_thread *new_thread)
 {
+	sys_trace_thread_switched_out();
 	_current_cpu->current = new_thread;
 }
 
@@ -858,7 +887,10 @@ void *z_get_next_switch_handle(void *interrupted)
 		}
 	}
 #else
-	set_current(z_get_next_ready_thread());
+	struct k_thread *thread = z_get_next_ready_thread();
+	if (_current != thread) {
+		set_current(thread);
+	}
 #endif
 
 	wait_for_switch(_current);
@@ -1188,21 +1220,16 @@ static int32_t z_tick_sleep(int32_t ticks)
 
 	expected_wakeup_time = ticks + z_tick_get_32();
 
-	/* Spinlock purely for local interrupt locking to prevent us
-	 * from being interrupted while _current is in an intermediate
-	 * state.  Should unify this implementation with pend().
-	 */
-	struct k_spinlock local_lock = {};
-	k_spinlock_key_t key = k_spin_lock(&local_lock);
+	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
 
 #if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
 	pending_current = _current;
 #endif
-	z_remove_thread_from_ready_q(_current);
+	unready_thread(_current);
 	z_add_thread_timeout(_current, timeout);
 	z_mark_thread_as_suspended(_current);
 
-	(void)z_swap(&local_lock, key);
+	(void)z_swap(&sched_spinlock, key);
 
 	__ASSERT(!z_is_thread_state_set(_current, _THREAD_SUSPENDED), "");
 
@@ -1220,6 +1247,7 @@ int32_t z_impl_k_sleep(k_timeout_t timeout)
 	k_ticks_t ticks;
 
 	__ASSERT(!arch_is_in_isr(), "");
+	sys_trace_void(SYS_TRACE_ID_SLEEP);
 
 	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 		k_thread_suspend(_current);
@@ -1233,6 +1261,7 @@ int32_t z_impl_k_sleep(k_timeout_t timeout)
 #endif
 
 	ticks = z_tick_sleep(ticks);
+	sys_trace_end_call(SYS_TRACE_ID_SLEEP);
 	return k_ticks_to_ms_floor64(ticks);
 }
 

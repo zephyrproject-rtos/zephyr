@@ -64,10 +64,10 @@ config LVGL_POINTER_KSCAN
 config LVGL_POINTER_KSCAN_DEV_NAME
 	default "FT5336"
 
-config LVGL_HOR_RES
+config LVGL_HOR_RES_MAX
 	default 480
 
-config LVGL_VER_RES
+config LVGL_VER_RES_MAX
 	default 272
 
 config LVGL_VDB_SIZE

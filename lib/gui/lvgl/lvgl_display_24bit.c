@@ -11,7 +11,7 @@
 void lvgl_flush_cb_24bit(struct _disp_drv_t *disp_drv,
 		const lv_area_t *area, lv_color_t *color_p)
 {
-	struct device *display_dev = (struct device *)disp_drv->user_data;
+	const struct device *display_dev = (const struct device *)disp_drv->user_data;
 	uint16_t w = area->x2 - area->x1 + 1;
 	uint16_t h = area->y2 - area->y1 + 1;
 	struct display_buffer_descriptor desc;

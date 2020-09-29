@@ -60,17 +60,17 @@ struct sx1509b_debounce_state {
 struct sx1509b_drv_data {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
-	struct device *i2c_master;
+	const struct device *i2c_master;
 	struct sx1509b_pin_state pin_state;
 	struct sx1509b_debounce_state debounce_state;
 	struct k_sem lock;
 
 #ifdef CONFIG_GPIO_SX1509B_INTERRUPT
-	struct device *gpio_int;
+	const struct device *gpio_int;
 	struct gpio_callback gpio_cb;
 	struct k_work work;
 	struct sx1509b_irq_state irq_state;
-	struct device *dev;
+	const struct device *dev;
 	/* user ISR cb */
 	sys_slist_t cb;
 #endif /* CONFIG_GPIO_SX1509B_INTERRUPT */
@@ -146,7 +146,8 @@ enum {
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-static inline int i2c_reg_write_word_be(struct device *dev, uint16_t dev_addr,
+static inline int i2c_reg_write_word_be(const struct device *dev,
+					uint16_t dev_addr,
 					uint8_t reg_addr, uint16_t value)
 {
 	uint8_t tx_buf[3] = { reg_addr, value >> 8, value & 0xff };
@@ -165,7 +166,8 @@ static inline int i2c_reg_write_word_be(struct device *dev, uint16_t dev_addr,
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-static inline int i2c_reg_write_byte_be(struct device *dev, uint16_t dev_addr,
+static inline int i2c_reg_write_byte_be(const struct device *dev,
+					uint16_t dev_addr,
 					uint8_t reg_addr, uint8_t value)
 {
 	uint8_t tx_buf[3] = { reg_addr, value };
@@ -174,9 +176,8 @@ static inline int i2c_reg_write_byte_be(struct device *dev, uint16_t dev_addr,
 }
 
 #ifdef CONFIG_GPIO_SX1509B_INTERRUPT
-static int sx1509b_handle_interrupt(void *arg)
+static int sx1509b_handle_interrupt(const struct device *dev)
 {
-	struct device *dev = (struct device *) arg;
 	const struct sx1509b_config *cfg = dev->config;
 	struct sx1509b_drv_data *drv_data = dev->data;
 	int ret = 0;
@@ -216,7 +217,8 @@ static void sx1509b_work_handler(struct k_work *work)
 	sx1509b_handle_interrupt(drv_data->dev);
 }
 
-static void sx1509_int_cb(struct device *dev, struct gpio_callback *gpio_cb,
+static void sx1509_int_cb(const struct device *dev,
+			   struct gpio_callback *gpio_cb,
 			   uint32_t pins)
 {
 	struct sx1509b_drv_data *drv_data = CONTAINER_OF(gpio_cb,
@@ -228,7 +230,7 @@ static void sx1509_int_cb(struct device *dev, struct gpio_callback *gpio_cb,
 }
 #endif
 
-static int sx1509b_config(struct device *dev,
+static int sx1509b_config(const struct device *dev,
 			  gpio_pin_t pin,
 			  gpio_flags_t flags)
 {
@@ -367,7 +369,7 @@ out:
 	return rc;
 }
 
-static int port_get(struct device *dev,
+static int port_get(const struct device *dev,
 		    gpio_port_value_t *value)
 {
 	const struct sx1509b_config *cfg = dev->config;
@@ -399,7 +401,7 @@ out:
 	return rc;
 }
 
-static int port_write(struct device *dev,
+static int port_write(const struct device *dev,
 		      gpio_port_pins_t mask,
 		      gpio_port_value_t value,
 		      gpio_port_value_t toggle)
@@ -430,32 +432,32 @@ static int port_write(struct device *dev,
 	return rc;
 }
 
-static int port_set_masked(struct device *dev,
+static int port_set_masked(const struct device *dev,
 			   gpio_port_pins_t mask,
 			   gpio_port_value_t value)
 {
 	return port_write(dev, mask, value, 0);
 }
 
-static int port_set_bits(struct device *dev,
+static int port_set_bits(const struct device *dev,
 			 gpio_port_pins_t pins)
 {
 	return port_write(dev, pins, pins, 0);
 }
 
-static int port_clear_bits(struct device *dev,
+static int port_clear_bits(const struct device *dev,
 			   gpio_port_pins_t pins)
 {
 	return port_write(dev, pins, 0, 0);
 }
 
-static int port_toggle_bits(struct device *dev,
+static int port_toggle_bits(const struct device *dev,
 			    gpio_port_pins_t pins)
 {
 	return port_write(dev, 0, 0, pins);
 }
 
-static int pin_interrupt_configure(struct device *dev,
+static int pin_interrupt_configure(const struct device *dev,
 				   gpio_pin_t pin,
 				   enum gpio_int_mode mode,
 				   enum gpio_int_trig trig)
@@ -530,7 +532,7 @@ static int pin_interrupt_configure(struct device *dev,
  * @param dev Device struct
  * @return 0 if successful, failed otherwise.
  */
-static int sx1509b_init(struct device *dev)
+static int sx1509b_init(const struct device *dev)
 {
 	const struct sx1509b_config *cfg = dev->config;
 	struct sx1509b_drv_data *drv_data = dev->data;
@@ -624,7 +626,7 @@ out:
 }
 
 #ifdef CONFIG_GPIO_SX1509B_INTERRUPT
-static int gpio_sx1509b_manage_callback(struct device *dev,
+static int gpio_sx1509b_manage_callback(const struct device *dev,
 					  struct gpio_callback *callback,
 					  bool set)
 {

@@ -213,14 +213,9 @@ uint32_t z_clock_elapsed(void)
 	return ticks;
 }
 
-static void xec_rtos_timer_isr(void *arg)
+static void xec_rtos_timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
-
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	extern void read_timer_start_of_tick_handler(void);
-	read_timer_start_of_tick_handler();
-#endif
 
 	uint32_t cycles;
 	int32_t ticks;
@@ -248,18 +243,13 @@ static void xec_rtos_timer_isr(void *arg)
 
 	k_spin_unlock(&lock, key);
 	z_clock_announce(ticks);
-
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	extern void read_timer_end_of_tick_handler(void);
-	read_timer_end_of_tick_handler();
-#endif
 }
 
 #else
 
 /* Non-tickless kernel build. */
 
-static void xec_rtos_timer_isr(void *arg)
+static void xec_rtos_timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -324,7 +314,7 @@ void sys_clock_disable(void)
 	TIMER_REGS->CTRL = 0U;
 }
 
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 

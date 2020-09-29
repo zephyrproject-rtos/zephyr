@@ -29,9 +29,9 @@
 #define SEQ_PAGE     (NRF_FICR->CODEPAGESIZE * (NRF_FICR->CODESIZE - 1))
 #define SEQ_MAX      (NRF_FICR->CODEPAGESIZE * 8 * SEQ_PER_BIT)
 
-static struct device *gpio;
-static struct device *nvm;
-static struct device *pwm;
+static const struct device *gpio;
+static const struct device *nvm;
+static const struct device *pwm;
 
 static struct k_work button_work;
 
@@ -41,7 +41,7 @@ static void button_send_pressed(struct k_work *work)
 	board_button_1_pressed();
 }
 
-static void button_pressed(struct device *dev, struct gpio_callback *cb,
+static void button_pressed(const struct device *dev, struct gpio_callback *cb,
 			   uint32_t pins)
 {
 	struct mb_display *disp = mb_display_get();

@@ -9,5 +9,5 @@ sample:
 tests:
   sample.sensor.dht:
     build_only: true
-    platform_whitelist: nrf52dk_nrf52832
+    platform_allow: nrf52dk_nrf52832
     tags: sensors

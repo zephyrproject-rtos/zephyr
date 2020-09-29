@@ -5,4 +5,4 @@ sample:
    name: LoRa Send Sample
 tests:
    sample.driver.lora.send:
-     platform_whitelist: 96b_wistrio
+     platform_allow: 96b_wistrio

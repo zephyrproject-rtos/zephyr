@@ -255,12 +255,12 @@ static int hid_on_set_report(struct hid_device_info *dev_data,
 	return -ENOTSUP;
 }
 
-static int hid_on_set_protocol(struct hid_device_info *dev_data,
-			       struct usb_setup_packet *setup, int32_t *len,
-			       uint8_t **data)
+static int hid_on_set_protocol(const struct device *dev,
+			       struct hid_device_info *dev_data,
+			       struct usb_setup_packet *setup)
 {
 #ifdef CONFIG_USB_HID_BOOT_PROTOCOL
-	uint16_t protocol = (uint8_t)setup->wValue;
+	uint16_t protocol = setup->wValue;
 
 	if (protocol > HID_PROTOCOL_REPORT) {
 		LOG_ERR("Unsupported protocol: %u", protocol);
@@ -273,7 +273,7 @@ static int hid_on_set_protocol(struct hid_device_info *dev_data,
 		dev_data->protocol = protocol;
 
 		if (dev_data->ops && dev_data->ops->protocol_change) {
-			dev_data->ops->protocol_change(protocol);
+			dev_data->ops->protocol_change(dev, protocol);
 		}
 	}
 
@@ -308,6 +308,8 @@ void hid_clear_idle_ctx(struct hid_device_info *dev_data)
 
 void hid_sof_handler(struct hid_device_info *dev_data)
 {
+	const struct device *dev = dev_data->common.dev;
+
 	for (uint16_t i = 0; i <= CONFIG_USB_HID_REPORTS; i++) {
 		if (dev_data->idle_rate[i]) {
 			dev_data->sof_cnt[i]++;
@@ -319,7 +321,7 @@ void hid_sof_handler(struct hid_device_info *dev_data)
 		if (diff < (2 + (dev_data->idle_rate[i] / 10U))) {
 			dev_data->sof_cnt[i] = 0U;
 			if (dev_data->ops && dev_data->ops->on_idle) {
-				dev_data->ops->on_idle(i);
+				dev_data->ops->on_idle(dev, i);
 			}
 		}
 
@@ -417,6 +419,7 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 {
 	struct hid_device_info *dev_data;
 	struct usb_dev_data *common;
+	const struct device *dev;
 
 	LOG_DBG("Class request:"
 		"bRequest 0x%02x, bmRequestType 0x%02x len %d",
@@ -431,12 +434,13 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 	}
 
 	dev_data = CONTAINER_OF(common, struct hid_device_info, common);
+	dev = common->dev;
 
 	if (REQTYPE_GET_DIR(setup->bmRequestType) == REQTYPE_DIR_TO_HOST) {
 		switch (setup->bRequest) {
 		case HID_GET_IDLE:
 			if (dev_data->ops && dev_data->ops->get_idle) {
-				return dev_data->ops->get_idle(setup, len,
+				return dev_data->ops->get_idle(dev, setup, len,
 							       data);
 			} else {
 				return hid_on_get_idle(dev_data, setup, len,
@@ -445,8 +449,8 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 			break;
 		case HID_GET_REPORT:
 			if (dev_data->ops && dev_data->ops->get_report) {
-				return dev_data->ops->get_report(setup, len,
-								 data);
+				return dev_data->ops->get_report(dev, setup,
+								 len, data);
 			} else {
 				return hid_on_get_report(dev_data, setup, len,
 							 data);
@@ -454,8 +458,8 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 			break;
 		case HID_GET_PROTOCOL:
 			if (dev_data->ops && dev_data->ops->get_protocol) {
-				return dev_data->ops->get_protocol(setup, len,
-								   data);
+				return dev_data->ops->get_protocol(dev, setup,
+								   len, data);
 			} else {
 				return hid_on_get_protocol(dev_data, setup, len,
 							   data);
@@ -469,7 +473,7 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 		switch (setup->bRequest) {
 		case HID_SET_IDLE:
 			if (dev_data->ops && dev_data->ops->set_idle) {
-				return dev_data->ops->set_idle(setup, len,
+				return dev_data->ops->set_idle(dev, setup, len,
 							       data);
 			} else {
 				return hid_on_set_idle(dev_data, setup, len,
@@ -478,8 +482,8 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 			break;
 		case HID_SET_REPORT:
 			if (dev_data->ops && dev_data->ops->set_report) {
-				return dev_data->ops->set_report(setup, len,
-								 data);
+				return dev_data->ops->set_report(dev, setup,
+								 len, data);
 			} else {
 				return hid_on_set_report(dev_data, setup, len,
 							 data);
@@ -487,11 +491,11 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 			break;
 		case HID_SET_PROTOCOL:
 			if (dev_data->ops && dev_data->ops->set_protocol) {
-				return dev_data->ops->set_protocol(setup, len,
-								   data);
+				return dev_data->ops->set_protocol(dev, setup,
+								   len, data);
 			} else {
-				return hid_on_set_protocol(dev_data, setup, len,
-							   data);
+				return hid_on_set_protocol(dev, dev_data,
+							   setup);
 			}
 			break;
 		default:
@@ -582,7 +586,7 @@ static void hid_int_in(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 		return;
 	}
 
-	dev_data->ops->int_in_ready();
+	dev_data->ops->int_in_ready(common->dev);
 }
 
 #ifdef CONFIG_ENABLE_HID_INT_OUT_EP
@@ -604,7 +608,7 @@ static void hid_int_out(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 		return;
 	}
 
-	dev_data->ops->int_out_ready();
+	dev_data->ops->int_out_ready(common->dev);
 }
 #endif
 
@@ -673,7 +677,7 @@ int usb_hid_init(const struct device *dev)
 	return 0;
 }
 
-void usb_hid_register_device(struct device *dev, const uint8_t *desc,
+void usb_hid_register_device(const struct device *dev, const uint8_t *desc,
 			     size_t size, const struct hid_ops *ops)
 {
 	struct hid_device_info *dev_data = dev->data;
@@ -723,7 +727,7 @@ static const struct usb_hid_device_api {
 	void (*init)(void);
 } hid_api;
 
-static int usb_hid_device_init(struct device *dev)
+static int usb_hid_device_init(const struct device *dev)
 {
 	LOG_DBG("Init HID Device: dev %p (%s)", dev, dev->name);
 

@@ -7,12 +7,7 @@
 #include <shell/shell_fprintf.h>
 #include <shell/shell.h>
 
-#ifdef CONFIG_NEWLIB_LIBC
-typedef int (*out_func_t)(int c, void *ctx);
-extern void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap);
-#else
 extern int z_prf(int (*func)(), void *dest, char *format, va_list vargs);
-#endif
 
 static int out_func(int c, void *ctx)
 {
@@ -39,11 +34,7 @@ static int out_func(int c, void *ctx)
 void shell_fprintf_fmt(const struct shell_fprintf *sh_fprintf,
 		       const char *fmt, va_list args)
 {
-#if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_ARCH_POSIX)
 	(void)z_prf(out_func, (void *)sh_fprintf, (char *)fmt, args);
-#else
-	z_vprintk(out_func, (void *)sh_fprintf, fmt, args);
-#endif
 
 	if (sh_fprintf->ctrl_blk->autoflush) {
 		shell_fprintf_buffer_flush(sh_fprintf);

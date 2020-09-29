@@ -73,21 +73,17 @@
 #define PROV_ALG_P256          0x00
 
 enum {
-	WAIT_PUB_KEY,          /* Waiting for local PubKey to be generated */
-	LINK_ACTIVE,           /* Link has been opened */
-	WAIT_NUMBER,           /* Waiting for number input from user */
-	WAIT_STRING,           /* Waiting for string input from user */
-	NOTIFY_INPUT_COMPLETE, /* Notify that input has been completed. */
-	PROVISIONER,           /* The link was opened as provisioner */
+	WAIT_PUB_KEY,           /* Waiting for local PubKey to be generated */
+	LINK_ACTIVE,            /* Link has been opened */
+	WAIT_NUMBER,            /* Waiting for number input from user */
+	WAIT_STRING,            /* Waiting for string input from user */
+	NOTIFY_INPUT_COMPLETE,  /* Notify that input has been completed. */
+	PROVISIONER,            /* The link was opened as provisioner */
+	PUB_KEY_SENT,           /* Public key has been sent */
+	INPUT_COMPLETE,         /* Device input completed */
 
 	NUM_FLAGS,
 };
-
-#if defined(CONFIG_BT_MESH_PROVISIONER)
-#define PROVISIONER_LINK 1
-#else
-#define PROVISIONER_LINK 0
-#endif
 
 struct provisioner_link {
 	struct bt_mesh_cdb_node *node;
@@ -99,7 +95,9 @@ struct provisioner_link {
 
 struct prov_link {
 	ATOMIC_DEFINE(flags, NUM_FLAGS);
-	struct provisioner_link provisioner[PROVISIONER_LINK];
+#if defined(CONFIG_BT_MESH_PROVISIONER)
+	struct provisioner_link provisioner;
+#endif
 
 	uint8_t  dhkey[32];         /* Calculated DHKey */
 	uint8_t  expect;            /* Next expected PDU */
@@ -129,7 +127,6 @@ static const struct bt_mesh_prov *prov;
 
 static void send_pub_key(void);
 static void pub_key_ready(const uint8_t *pkey);
-static void start_sent(int err, void *cb_data);
 
 static int reset_state(void)
 {
@@ -143,10 +140,11 @@ static int reset_state(void)
 		bt_mesh_attention(NULL, 0);
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MESH_PROVISIONER) &&
-	    link.provisioner->node != NULL) {
-		bt_mesh_cdb_node_del(link.provisioner->node, false);
+#if defined(CONFIG_BT_MESH_PROVISIONER)
+	if (link.provisioner.node != NULL) {
+		bt_mesh_cdb_node_del(link.provisioner.node, false);
 	}
+#endif
 
 	memset(&link, 0, sizeof(link));
 
@@ -257,6 +255,9 @@ static void prov_invite(const uint8_t *data)
 	link.expect = PROV_START;
 }
 
+#if defined(CONFIG_BT_MESH_PROVISIONER)
+static void start_sent(int err, void *cb_data);
+
 static void send_invite(void)
 {
 	PROV_BUF(inv, 2);
@@ -264,9 +265,9 @@ static void send_invite(void)
 	BT_DBG("");
 
 	prov_buf_init(&inv, PROV_INVITE);
-	net_buf_simple_add_u8(&inv, link.provisioner->attention_duration);
+	net_buf_simple_add_u8(&inv, link.provisioner.attention_duration);
 
-	link.conf_inputs[0] = link.provisioner->attention_duration;
+	link.conf_inputs[0] = link.provisioner.attention_duration;
 
 	if (prov_send(&inv, NULL)) {
 		BT_ERR("Failed to send invite");
@@ -301,23 +302,19 @@ static void send_start(void)
 
 static void start_sent(int err, void *cb_data)
 {
-	if (IS_ENABLED(CONFIG_BT_MESH_PROVISIONER)) {
-		if (!bt_pub_key_get()) {
-			atomic_set_bit(link.flags, WAIT_PUB_KEY);
-			BT_WARN("Waiting for local public key");
-		} else {
-			send_pub_key();
-		}
+	if (!bt_pub_key_get()) {
+		atomic_set_bit(link.flags, WAIT_PUB_KEY);
+		BT_WARN("Waiting for local public key");
+	} else {
+		send_pub_key();
 	}
 }
+#endif
 
 static void prov_capabilities(const uint8_t *data)
 {
+#if defined(CONFIG_BT_MESH_PROVISIONER)
 	uint16_t algorithms, output_action, input_action;
-
-	if (!IS_ENABLED(CONFIG_BT_MESH_PROVISIONER)) {
-		return;
-	}
 
 	BT_DBG("Elements: %u", data[0]);
 
@@ -342,12 +339,12 @@ static void prov_capabilities(const uint8_t *data)
 		return;
 	}
 
-	link.provisioner->node =
-		bt_mesh_cdb_node_alloc(link.provisioner->uuid,
-				       link.provisioner->addr, data[0],
-				       link.provisioner->net_idx);
-	if (link.provisioner->node == NULL) {
-		BT_ERR("Failed allocating node 0x%04x", link.provisioner->addr);
+	link.provisioner.node =
+		bt_mesh_cdb_node_alloc(link.provisioner.uuid,
+				       link.provisioner.addr, data[0],
+				       link.provisioner.net_idx);
+	if (link.provisioner.node == NULL) {
+		BT_ERR("Failed allocating node 0x%04x", link.provisioner.addr);
 		prov_fail(PROV_ERR_RESOURCES);
 		return;
 	}
@@ -355,6 +352,7 @@ static void prov_capabilities(const uint8_t *data)
 	memcpy(&link.conf_inputs[1], data, 11);
 
 	send_start();
+#endif
 }
 
 static bt_mesh_output_action_t output_action(uint8_t action)
@@ -590,6 +588,15 @@ static void send_input_complete(void)
 	link.expect = PROV_CONFIRM;
 }
 
+static void input_complete(void)
+{
+	if (atomic_test_bit(link.flags, PUB_KEY_SENT)) {
+		send_input_complete();
+	} else {
+		atomic_set_bit(link.flags, INPUT_COMPLETE);
+	}
+}
+
 int bt_mesh_input_number(uint32_t num)
 {
 	BT_DBG("%u", num);
@@ -600,7 +607,7 @@ int bt_mesh_input_number(uint32_t num)
 
 	sys_put_be32(num, &link.auth[12]);
 
-	send_input_complete();
+	input_complete();
 
 	return 0;
 }
@@ -615,9 +622,19 @@ int bt_mesh_input_string(const char *str)
 
 	strncpy((char *)link.auth, str, prov->input_size);
 
-	send_input_complete();
+	input_complete();
 
 	return 0;
+}
+
+static void public_key_sent(int err, void *cb_data)
+{
+	atomic_set_bit(link.flags, PUB_KEY_SENT);
+
+	if (atomic_test_bit(link.flags, INPUT_COMPLETE)) {
+		send_input_complete();
+		return;
+	}
 }
 
 static void send_pub_key(void)
@@ -648,7 +665,7 @@ static void send_pub_key(void)
 		memcpy(&link.conf_inputs[81], &buf.data[1], 64);
 	}
 
-	if (prov_send(&buf, NULL)) {
+	if (prov_send(&buf, public_key_sent)) {
 		BT_ERR("Failed to send Public Key");
 		return;
 	}
@@ -765,6 +782,7 @@ static void prov_input_complete(const uint8_t *data)
 	notify_input_complete();
 }
 
+#if defined(CONFIG_BT_MESH_PROVISIONER)
 static void send_prov_data(void)
 {
 	PROV_BUF(pdu, 34);
@@ -792,34 +810,34 @@ static void send_prov_data(void)
 	BT_DBG("Nonce: %s", bt_hex(nonce, 13));
 
 	err = bt_mesh_dev_key(link.dhkey, link.prov_salt,
-			      link.provisioner->node->dev_key);
+			      link.provisioner.node->dev_key);
 	if (err) {
 		BT_ERR("Unable to generate device key");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
 
-	BT_DBG("DevKey: %s", bt_hex(link.provisioner->node->dev_key, 16));
+	BT_DBG("DevKey: %s", bt_hex(link.provisioner.node->dev_key, 16));
 
-	sub = bt_mesh_cdb_subnet_get(link.provisioner->node->net_idx);
+	sub = bt_mesh_cdb_subnet_get(link.provisioner.node->net_idx);
 	if (sub == NULL) {
 		BT_ERR("No subnet with net_idx %u",
-		       link.provisioner->node->net_idx);
+		       link.provisioner.node->net_idx);
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
 
 	prov_buf_init(&pdu, PROV_DATA);
 	net_buf_simple_add_mem(&pdu, sub->keys[sub->kr_flag].net_key, 16);
-	net_buf_simple_add_be16(&pdu, link.provisioner->node->net_idx);
+	net_buf_simple_add_be16(&pdu, link.provisioner.node->net_idx);
 	net_buf_simple_add_u8(&pdu, bt_mesh_cdb_subnet_flags(sub));
 	net_buf_simple_add_be32(&pdu, bt_mesh_cdb.iv_index);
-	net_buf_simple_add_be16(&pdu, link.provisioner->node->addr);
+	net_buf_simple_add_be16(&pdu, link.provisioner.node->addr);
 	net_buf_simple_add(&pdu, 8); /* For MIC */
 
 	BT_DBG("net_idx %u, iv_index 0x%08x, addr 0x%04x",
-	       link.provisioner->node->net_idx, bt_mesh.iv_index,
-	       link.provisioner->node->addr);
+	       link.provisioner.node->net_idx, bt_mesh.iv_index,
+	       link.provisioner.node->addr);
 
 	err = bt_mesh_prov_encrypt(session_key, nonce, &pdu.data[1],
 				   &pdu.data[1]);
@@ -836,14 +854,12 @@ static void send_prov_data(void)
 
 	link.expect = PROV_COMPLETE;
 }
+#endif
 
 static void prov_complete(const uint8_t *data)
 {
-	if (!IS_ENABLED(CONFIG_BT_MESH_PROVISIONER)) {
-		return;
-	}
-
-	struct bt_mesh_cdb_node *node = link.provisioner->node;
+#if defined(CONFIG_BT_MESH_PROVISIONER)
+	struct bt_mesh_cdb_node *node = link.provisioner.node;
 
 	BT_DBG("key %s, net_idx %u, num_elem %u, addr 0x%04x",
 	       bt_hex(node->dev_key, 16), node->net_idx, node->num_elem,
@@ -853,13 +869,14 @@ static void prov_complete(const uint8_t *data)
 		bt_mesh_store_cdb_node(node);
 	}
 
-	link.provisioner->node = NULL;
+	link.provisioner.node = NULL;
 	prov_link_close(PROV_BEARER_LINK_STATUS_SUCCESS);
 
 	if (prov->node_added) {
 		prov->node_added(node->net_idx, node->uuid, node->addr,
 				 node->num_elem);
 	}
+#endif
 }
 
 static void send_random(void)
@@ -887,6 +904,12 @@ static void prov_random(const uint8_t *data)
 	const uint8_t *prov_rand, *dev_rand;
 
 	BT_DBG("Remote Random: %s", bt_hex(data, 16));
+
+	if (!memcmp(data, link.rand, 16)) {
+		BT_ERR("Random value is identical to ours, rejecting.");
+		prov_fail(PROV_ERR_CFM_FAILED);
+		return;
+	}
 
 	if (bt_mesh_prov_conf(link.conf_key, data, link.auth, conf_verify)) {
 		BT_ERR("Unable to calculate confirmation verification");
@@ -919,12 +942,14 @@ static void prov_random(const uint8_t *data)
 
 	BT_DBG("ProvisioningSalt: %s", bt_hex(link.prov_salt, 16));
 
-	if (IS_ENABLED(CONFIG_BT_MESH_PROVISIONER) &&
-	    atomic_test_bit(link.flags, PROVISIONER)) {
+#if defined(CONFIG_BT_MESH_PROVISIONER)
+	if (atomic_test_bit(link.flags, PROVISIONER)) {
 		send_prov_data();
-	} else {
-		send_random();
+		return;
 	}
+#endif
+
+	send_random();
 }
 
 static void prov_confirm(const uint8_t *data)
@@ -1095,11 +1120,14 @@ static void prov_link_opened(const struct prov_bearer *bearer, void *cb_data)
 
 	link.bearer = bearer;
 
+#if defined(CONFIG_BT_MESH_PROVISIONER)
 	if (atomic_test_bit(link.flags, PROVISIONER)) {
 		send_invite();
-	} else {
-		link.expect = PROV_INVITE;
+		return;
 	}
+#endif
+
+	link.expect = PROV_INVITE;
 }
 
 static void prov_link_closed(const struct prov_bearer *bearer, void *cb_data,
@@ -1130,7 +1158,7 @@ static const struct prov_bearer_cb prov_bearer_cb = {
 	.recv = prov_recv,
 };
 
-#if defined(CONFIG_BT_MESH_PB_ADV)
+#if defined(CONFIG_BT_MESH_PB_ADV) && defined(CONFIG_BT_MESH_PROVISIONER)
 int bt_mesh_pb_adv_open(const uint8_t uuid[16], uint16_t net_idx, uint16_t addr,
 			uint8_t attention_duration)
 {
@@ -1146,13 +1174,13 @@ int bt_mesh_pb_adv_open(const uint8_t uuid[16], uint16_t net_idx, uint16_t addr,
 	BT_DBG("Provisioning %s", bt_uuid_str(&uuid_repr.uuid));
 
 	atomic_set_bit(link.flags, PROVISIONER);
-	memcpy(link.provisioner->uuid, uuid, 16);
-	link.provisioner->addr = addr;
-	link.provisioner->net_idx = net_idx;
-	link.provisioner->attention_duration = attention_duration;
+	memcpy(link.provisioner.uuid, uuid, 16);
+	link.provisioner.addr = addr;
+	link.provisioner.net_idx = net_idx;
+	link.provisioner.attention_duration = attention_duration;
 	link.bearer = &pb_adv;
 
-	err = link.bearer->link_open(link.provisioner->uuid, PROTOCOL_TIMEOUT,
+	err = link.bearer->link_open(link.provisioner.uuid, PROTOCOL_TIMEOUT,
 				     &prov_bearer_cb, NULL);
 	if (err) {
 		atomic_clear_bit(link.flags, LINK_ACTIVE);

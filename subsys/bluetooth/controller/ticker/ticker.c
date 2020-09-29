@@ -825,6 +825,11 @@ void ticker_worker(void *param)
 		ticker_id_head = ticker->next;
 		must_expire_skip = 0U;
 
+		/* Skip if not scheduled to execute */
+		if (((ticker->req - ticker->ack) & 0xff) != 1U) {
+			continue;
+		}
+
 #if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
 		/* Check if node has slot reservation and resolve any collision
 		 * with other ticker nodes
@@ -872,10 +877,6 @@ void ticker_worker(void *param)
 		}
 #endif /* CONFIG_BT_TICKER_EXT */
 #endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
-		/* Skip if not scheduled to execute */
-		if (((ticker->req - ticker->ack) & 0xff) != 1U) {
-			continue;
-		}
 
 		/* Scheduled timeout is acknowledged to be complete */
 		ticker->ack--;
@@ -2073,7 +2074,7 @@ static inline void ticker_job_op_inquire(struct ticker_instance *instance,
 					uop->params.slot_get.ticker_id,
 					uop->params.slot_get.ticks_current,
 					uop->params.slot_get.ticks_to_expire);
-		/* Fall-through */
+		__fallthrough;
 	case TICKER_USER_OP_TYPE_IDLE_GET:
 		uop->status = TICKER_STATUS_SUCCESS;
 		fp_op_func = uop->fp_op_func;

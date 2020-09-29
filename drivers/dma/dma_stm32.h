@@ -7,6 +7,10 @@
 #ifndef DMA_STM32_H_
 #define DMA_STM32_H_
 
+#include <soc.h>
+#include <drivers/dma.h>
+#include <drivers/clock_control/stm32_clock_control.h>
+
 /* Maximum data sent in single transfer (Bytes) */
 #define DMA_STM32_MAX_DATA_ITEMS	0xffff
 
@@ -16,7 +20,7 @@ struct dma_stm32_stream {
 	int mux_channel; /* stores the dmamux channel */
 #endif /* CONFIG_DMAMUX_STM32 */
 	bool source_periph;
-	bool busy;
+	volatile bool busy;
 	uint32_t src_size;
 	uint32_t dst_size;
 	void *user_data; /* holds the client data */
@@ -24,15 +28,15 @@ struct dma_stm32_stream {
 };
 
 struct dma_stm32_data {
-	int max_streams;
-	struct dma_stm32_stream *streams;
 };
 
 struct dma_stm32_config {
 	struct stm32_pclken pclken;
-	void (*config_irq)(struct device *dev);
+	void (*config_irq)(const struct device *dev);
 	bool support_m2m;
 	uint32_t base;
+	uint32_t max_streams;
+	struct dma_stm32_stream *streams;
 };
 
 #ifdef CONFIG_DMA_STM32_V1
@@ -44,18 +48,34 @@ struct dma_stm32_config {
 #define STREAM_OFFSET 1
 #endif /* CONFIG_DMA_STM32_V1 */
 
-extern uint32_t table_ll_stream[];
-extern uint32_t (*func_ll_is_active_tc[])(DMA_TypeDef *DMAx);
-extern void (*func_ll_clear_tc[])(DMA_TypeDef *DMAx);
-extern uint32_t (*func_ll_is_active_ht[])(DMA_TypeDef *DMAx);
-extern void (*func_ll_clear_ht[])(DMA_TypeDef *DMAx);
-#ifdef CONFIG_DMA_STM32_V2
-extern uint32_t (*func_ll_is_active_gi[])(DMA_TypeDef *DMAx);
-extern void (*func_ll_clear_gi[])(DMA_TypeDef *DMAx);
-#endif
+uint32_t dma_stm32_id_to_stream(uint32_t id);
 #ifdef CONFIG_DMA_STM32_V1
-extern uint32_t table_ll_channel[];
+uint32_t dma_stm32_slot_to_channel(uint32_t id);
 #endif
+
+typedef void (*dma_stm32_clear_flag_func)(DMA_TypeDef *DMAx);
+typedef uint32_t (*dma_stm32_check_flag_func)(DMA_TypeDef *DMAx);
+
+bool dma_stm32_is_tc_active(DMA_TypeDef *DMAx, uint32_t id);
+void dma_stm32_clear_tc(DMA_TypeDef *DMAx, uint32_t id);
+bool dma_stm32_is_ht_active(DMA_TypeDef *DMAx, uint32_t id);
+void dma_stm32_clear_ht(DMA_TypeDef *DMAx, uint32_t id);
+bool dma_stm32_is_te_active(DMA_TypeDef *DMAx, uint32_t id);
+void dma_stm32_clear_te(DMA_TypeDef *DMAx, uint32_t id);
+
+#ifdef CONFIG_DMA_STM32_V1
+bool dma_stm32_is_dme_active(DMA_TypeDef *DMAx, uint32_t id);
+void dma_stm32_clear_dme(DMA_TypeDef *DMAx, uint32_t id);
+bool dma_stm32_is_fe_active(DMA_TypeDef *DMAx, uint32_t id);
+void dma_stm32_clear_fe(DMA_TypeDef *DMAx, uint32_t id);
+#endif
+
+#ifdef CONFIG_DMA_STM32_V2
+bool dma_stm32_is_gi_active(DMA_TypeDef *DMAx, uint32_t id);
+void dma_stm32_clear_gi(DMA_TypeDef *DMAx, uint32_t id);
+#endif
+
+bool stm32_dma_is_irq_active(DMA_TypeDef *dma, uint32_t id);
 
 void stm32_dma_dump_stream_irq(DMA_TypeDef *dma, uint32_t id);
 void stm32_dma_clear_stream_irq(DMA_TypeDef *dma, uint32_t id);
@@ -75,12 +95,15 @@ uint32_t stm32_dma_get_pburst(struct dma_config *config, bool source_periph);
 
 #ifdef CONFIG_DMAMUX_STM32
 /* dma_stm32_ api functions are exported to the dmamux_stm32 */
-int dma_stm32_configure(struct device *dev, uint32_t id,
-			       struct dma_config *config);
-int dma_stm32_reload(struct device *dev, uint32_t id,
-			    uint32_t src, uint32_t dst, size_t size);
-int dma_stm32_start(struct device *dev, uint32_t id);
-int dma_stm32_stop(struct device *dev, uint32_t id);
+#define DMA_STM32_EXPORT_API
+int dma_stm32_configure(const struct device *dev, uint32_t id,
+				struct dma_config *config);
+int dma_stm32_reload(const struct device *dev, uint32_t id,
+			uint32_t src, uint32_t dst, size_t size);
+int dma_stm32_start(const struct device *dev, uint32_t id);
+int dma_stm32_stop(const struct device *dev, uint32_t id);
+#else
+#define DMA_STM32_EXPORT_API static
 #endif /* CONFIG_DMAMUX_STM32 */
 
 #endif /* DMA_STM32_H_*/

@@ -19,5 +19,6 @@ zephyr_library_sources_ifdef(CONFIG_SPI_LITESPI		spi_litespi.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_OC_SIMPLE	spi_oc_simple.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_XEC_QMSPI	spi_xec_qmspi.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_GECKO		spi_gecko.c)
+zephyr_library_sources_ifdef(CONFIG_SPI_XLNX_AXI_QUADSPI spi_xlnx_axi_quadspi.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE		spi_handlers.c)

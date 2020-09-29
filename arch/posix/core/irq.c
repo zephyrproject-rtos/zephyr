@@ -10,7 +10,7 @@
 #ifdef CONFIG_IRQ_OFFLOAD
 #include "irq_offload.h"
 
-void arch_irq_offload(irq_offload_routine_t routine, void *parameter)
+void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 {
 	posix_irq_offload(routine, parameter);
 }
@@ -46,8 +46,8 @@ int arch_irq_is_enabled(unsigned int irq)
  * @return The vector assigned to this interrupt
  */
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			     void (*routine)(void *parameter),
-			     void *parameter, uint32_t flags)
+			     void (*routine)(const void *parameter),
+			     const void *parameter, uint32_t flags)
 {
 	posix_isr_declare(irq, (int)flags, routine, parameter);
 	posix_irq_priority_set(irq, priority, flags);

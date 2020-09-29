@@ -41,7 +41,7 @@ static struct gpio_callback button_callback;
 #endif
 
 struct led_indicator {
-	struct device *dev;
+	const struct device *dev;
 	gpio_pin_t pin;
 };
 
@@ -145,7 +145,8 @@ static CO_SDO_abortCode_t odf_2102(CO_ODF_arg_t *odf_arg)
  * @param pins GPIO pin mask that triggered the interrupt.
  */
 #ifdef BUTTON_PORT
-static void button_isr_callback(struct device *port, struct gpio_callback *cb,
+static void button_isr_callback(const struct device *port,
+				struct gpio_callback *cb,
 				uint32_t pins)
 {
 	counter++;
@@ -160,7 +161,7 @@ static void button_isr_callback(struct device *port, struct gpio_callback *cb,
 static void config_button(void)
 {
 #ifdef BUTTON_PORT
-	struct device *dev;
+	const struct device *dev;
 	int err;
 
 	dev = device_get_binding(BUTTON_PORT);
@@ -201,14 +202,14 @@ void main(void)
 {
 	CO_NMT_reset_cmd_t reset = CO_RESET_NOT;
 	CO_ReturnError_t err;
-	struct device *can;
+	struct canopen_context can;
 	uint16_t timeout;
 	uint32_t elapsed;
 	int64_t timestamp;
 	int ret;
 
-	can = device_get_binding(CAN_INTERFACE);
-	if (!can) {
+	can.dev = device_get_binding(CAN_INTERFACE);
+	if (!can.dev) {
 		LOG_ERR("CAN interface not found");
 		return;
 	}
@@ -233,7 +234,7 @@ void main(void)
 	while (reset != CO_RESET_APP) {
 		elapsed =  0U; /* milliseconds */
 
-		err = CO_init(can, CONFIG_CANOPEN_NODE_ID, CAN_BITRATE);
+		err = CO_init(&can, CONFIG_CANOPEN_NODE_ID, CAN_BITRATE);
 		if (err != CO_ERROR_NO) {
 			LOG_ERR("CO_init failed (err = %d)", err);
 			return;
@@ -295,6 +296,6 @@ void main(void)
 
 	LOG_INF("Resetting device");
 
-	CO_delete(CAN_INTERFACE);
+	CO_delete(&can);
 	sys_reboot(SYS_REBOOT_COLD);
 }

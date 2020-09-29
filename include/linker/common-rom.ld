@@ -82,7 +82,7 @@
 	SECTION_PROLOGUE(app_shmem_regions,,)
 	{
 		__app_shmem_regions_start = .;
-		KEEP(*(SORT(".app_regions.*")));
+		KEEP(*(SORT(.app_regions.*)));
 		__app_shmem_regions_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
@@ -102,9 +102,22 @@
 
 	Z_ITERABLE_SECTION_ROM(bt_gatt_service_static, 4)
 
+#if defined(CONFIG_EC_HOST_CMD)
+	Z_ITERABLE_SECTION_ROM(ec_host_cmd_handler, 4)
+#endif
+
 #if defined(CONFIG_SETTINGS)
 	Z_ITERABLE_SECTION_ROM(settings_handler_static, 4)
 #endif
+
+#if defined(CONFIG_EMUL)
+	SECTION_DATA_PROLOGUE(log_const_sections,,)
+	{
+		__emul_list_start = .;
+		KEEP(*(SORT_BY_NAME(".emulators")));
+		__emul_list_end = .;
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif /* CONFIG_EMUL */
 
 	SECTION_DATA_PROLOGUE(log_const_sections,,)
 	{

@@ -17,7 +17,7 @@ static struct onoff_manager *get_mgr(void)
 
 static bool clock_is_off(void)
 {
-	struct device *clk =
+	const struct device *clk =
 		device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_clock)));
 
 	return clock_control_get_status(clk, CLOCK_CONTROL_NRF_SUBSYS_HF) ==

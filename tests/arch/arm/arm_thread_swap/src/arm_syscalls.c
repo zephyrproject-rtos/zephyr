@@ -23,6 +23,7 @@
 #if defined(CONFIG_USERSPACE)
 
 #define PRIORITY 0
+#define DB_VAL 0xDEADBEEF
 
 static struct k_thread user_thread;
 static K_THREAD_STACK_DEFINE(user_thread_stack, 1024);
@@ -67,8 +68,10 @@ static inline void z_vrfy_test_arm_user_syscall(void)
 #include <syscalls/test_arm_user_syscall_mrsh.c>
 
 
-void arm_isr_handler(void *args)
+void arm_isr_handler(const void *args)
 {
+	ARG_UNUSED(args);
+
 	/* Interrupt triggered while running a user thread
 	 *
 	 * Verify the following
@@ -234,6 +237,64 @@ void test_arm_syscalls(void)
 		(uint32_t *)i, NULL, NULL,
 		K_PRIO_COOP(PRIORITY), K_USER,
 		K_NO_WAIT);
+}
+
+void z_impl_test_arm_cpu_write_reg(void)
+{
+	/* User thread CPU write registers system call for testing
+	 *
+	 * Verify the following
+	 * - Write 0xDEADBEEF values during system call into registers
+	 * - In main test we will read that registers to verify
+	 * that all of them were scrubbed and do not contain any sensitive data
+	 */
+
+	/* Part below is made to test that kernel scrubs CPU registers
+	 * after returning from the system call
+	 */
+	TC_PRINT("Writing 0xDEADBEEF values into registers\n");
+	__asm__ volatile (
+		"ldr r0, =0xDEADBEEF;\n\t"
+		"ldr r1, =0xDEADBEEF;\n\t"
+		"ldr r2, =0xDEADBEEF;\n\t"
+		"ldr r3, =0xDEADBEEF;\n\t"
+		);
+	TC_PRINT("Exit from system call\n");
+}
+
+static inline void z_vrfy_test_arm_cpu_write_reg(void)
+{
+	z_impl_test_arm_cpu_write_reg();
+}
+#include <syscalls/test_arm_cpu_write_reg_mrsh.c>
+
+/**
+ * @brief Test CPU scrubs registers after system call
+ *
+ * @details - Call from user mode a syscall test_arm_cpu_write_reg(),
+ * the system call function writes into registers 0xDEADBEEF value
+ * - Then in main test function below check registers values,
+ * if no 0xDEADBEEF value detected, that means CPU scrubbed registers
+ * before exit from the system call.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_syscall_cpu_scrubs_regs(void)
+{
+	uint32_t arm_reg_val[4];
+
+	test_arm_cpu_write_reg();
+
+	__asm__ volatile ("mov %0, r0" : "=r"(arm_reg_val[0]));
+	__asm__ volatile ("mov %0, r1" : "=r"(arm_reg_val[1]));
+	__asm__ volatile ("mov %0, r2" : "=r"(arm_reg_val[2]));
+	__asm__ volatile ("mov %0, r3" : "=r"(arm_reg_val[3]));
+
+	for (int i = 0; i < 4; i++) {
+		zassert_not_equal(arm_reg_val[i], DB_VAL,
+				"register value is 0xDEADBEEF, "
+				"not scrubbed after system call.");
+	}
 }
 #endif /* CONFIG_USERSPACE */
 /**

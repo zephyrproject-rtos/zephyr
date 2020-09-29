@@ -537,7 +537,6 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	z_object_init(new_thread);
 	z_object_init(stack);
 	new_thread->stack_obj = stack;
-	new_thread->mem_domain_info.mem_domain = NULL;
 	new_thread->syscall_frame = NULL;
 
 	/* Any given thread has access to itself */
@@ -601,10 +600,9 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 #endif
 #ifdef CONFIG_USERSPACE
 	/* New threads inherit any memory domain membership by the parent */
-	if (_current->mem_domain_info.mem_domain != NULL) {
-		k_mem_domain_add_thread(_current->mem_domain_info.mem_domain,
-					new_thread);
-	}
+	new_thread->mem_domain_info.mem_domain = NULL;
+	k_mem_domain_add_thread(_current->mem_domain_info.mem_domain,
+				new_thread);
 
 	if ((options & K_INHERIT_PERMS) != 0U) {
 		z_thread_perms_inherit(_current, new_thread);
@@ -873,7 +871,7 @@ static inline int z_vrfy_k_float_disable(struct k_thread *thread)
 #ifdef CONFIG_IRQ_OFFLOAD
 static K_SEM_DEFINE(offload_sem, 1, 1);
 
-void irq_offload(irq_offload_routine_t routine, void *parameter)
+void irq_offload(irq_offload_routine_t routine, const void *parameter)
 {
 	k_sem_take(&offload_sem, K_FOREVER);
 	arch_irq_offload(routine, parameter);

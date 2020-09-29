@@ -15,7 +15,7 @@ LOG_MODULE_DECLARE(CCS811);
 
 #define IRQ_PIN DT_INST_GPIO_PIN(0, irq_gpios)
 
-int ccs811_attr_set(struct device *dev,
+int ccs811_attr_set(const struct device *dev,
 		    enum sensor_channel chan,
 		    enum sensor_attribute attr,
 		    const struct sensor_value *thr)
@@ -45,7 +45,7 @@ int ccs811_attr_set(struct device *dev,
 	return rc;
 }
 
-static inline void setup_irq(struct device *dev,
+static inline void setup_irq(const struct device *dev,
 			     bool enable)
 {
 	struct ccs811_data *data = dev->data;
@@ -56,7 +56,7 @@ static inline void setup_irq(struct device *dev,
 	gpio_pin_interrupt_configure(data->irq_gpio, IRQ_PIN, flags);
 }
 
-static inline void handle_irq(struct device *dev)
+static inline void handle_irq(const struct device *dev)
 {
 	struct ccs811_data *data = dev->data;
 
@@ -69,7 +69,7 @@ static inline void handle_irq(struct device *dev)
 #endif
 }
 
-static void process_irq(struct device *dev)
+static void process_irq(const struct device *dev)
 {
 	struct ccs811_data *data = dev->data;
 
@@ -82,7 +82,7 @@ static void process_irq(struct device *dev)
 	}
 }
 
-static void gpio_callback(struct device *dev,
+static void gpio_callback(const struct device *dev,
 			  struct gpio_callback *cb,
 			  uint32_t pins)
 {
@@ -95,16 +95,11 @@ static void gpio_callback(struct device *dev,
 }
 
 #ifdef CONFIG_CCS811_TRIGGER_OWN_THREAD
-static void irq_thread(int dev_ptr, int unused)
+static void irq_thread(struct ccs811_data *drv_data)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct ccs811_data *drv_data = dev->data;
-
-	ARG_UNUSED(unused);
-
 	while (1) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
-		process_irq(dev);
+		process_irq(drv_data->dev);
 	}
 }
 #elif defined(CONFIG_CCS811_TRIGGER_GLOBAL_THREAD)
@@ -118,7 +113,7 @@ static void work_cb(struct k_work *work)
 #error Unhandled trigger configuration
 #endif
 
-int ccs811_trigger_set(struct device *dev,
+int ccs811_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
@@ -168,7 +163,7 @@ int ccs811_trigger_set(struct device *dev,
 	return rc;
 }
 
-int ccs811_init_interrupt(struct device *dev)
+int ccs811_init_interrupt(const struct device *dev)
 {
 	struct ccs811_data *drv_data = dev->data;
 
@@ -189,8 +184,8 @@ int ccs811_init_interrupt(struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_CCS811_THREAD_STACK_SIZE,
-			(k_thread_entry_t)irq_thread, dev,
-			0, NULL, K_PRIO_COOP(CONFIG_CCS811_THREAD_PRIORITY),
+			(k_thread_entry_t)irq_thread, drv_data,
+			NULL, NULL, K_PRIO_COOP(CONFIG_CCS811_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_CCS811_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = work_cb;

@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(net_otPlat_entropy, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 otError otPlatEntropyGet(uint8_t *aOutput, uint16_t aOutputLength)
 {
 	/* static to obtain it once in a first call */
-	static struct device *dev;
+	static const struct device *dev;
 	int err;
 
 	if ((aOutput == NULL) || (aOutputLength == 0)) {

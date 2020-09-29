@@ -3,5 +3,5 @@ sample:
 tests:
   sample.net.mdns_responder:
     harness: net
-    platform_whitelist: qemu_x86 qemu_cortex_m3
+    platform_allow: qemu_x86 qemu_cortex_m3
     tags: net mdns

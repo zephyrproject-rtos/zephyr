@@ -24,7 +24,7 @@ static void bq274xx_show_values(const char *type, struct sensor_value value)
 	}
 }
 
-static void do_main(struct device *dev)
+static void do_main(const struct device *dev)
 {
 	struct sensor_value voltage, current, state_of_charge,
 		full_charge_capacity, remaining_charge_capacity, avg_power,
@@ -130,7 +130,7 @@ static void do_main(struct device *dev)
 
 void main(void)
 {
-	struct device *dev;
+	const struct device *dev;
 
 	dev = device_get_binding(DT_LABEL(DT_INST(0, ti_bq274xx)));
 	if (!dev) {

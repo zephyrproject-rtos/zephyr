@@ -71,7 +71,7 @@ struct ipm_console_receiver_runtime_data {
 	struct k_sem sem;
 
 	/** pointer to the bound low-level IPM device */
-	struct device *ipm_device;
+	const struct device *ipm_device;
 
 	/** Indicator that the channel is temporarily disabled due to
 	 * full buffer
@@ -94,11 +94,11 @@ struct ipm_console_sender_config_info {
 };
 
 #if CONFIG_IPM_CONSOLE_RECEIVER
-int ipm_console_receiver_init(struct device *d);
+int ipm_console_receiver_init(const struct device *d);
 #endif
 
 #if CONFIG_IPM_CONSOLE_SENDER
-int ipm_console_sender_init(struct device *d);
+int ipm_console_sender_init(const struct device *d);
 #endif
 
 #ifdef __cplusplus

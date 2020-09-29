@@ -125,9 +125,6 @@ struct bt_gatt_attr {
 
 	/** @brief Attribute write callback
 	 *
-	 *  The callback can also be used locally to read the contents of the
-	 *  attribute in which case no connection will be set.
-	 *
 	 *  @param conn   The connection that is requesting to write
 	 *  @param attr   The attribute that's being written
 	 *  @param buf    Buffer with the data to write
@@ -309,11 +306,11 @@ struct bt_gatt_cpf {
  *  macros such as BT_GATT_PRIMARY_SERVICE, BT_GATT_CHARACTERISTIC,
  *  BT_GATT_DESCRIPTOR, etc.
  *
- *  When using :option:`CONFIG_BT_SETTINGS` then all services that should have
+ *  When using @option{CONFIG_BT_SETTINGS} then all services that should have
  *  bond configuration loaded, i.e. CCC values, must be registered before
  *  calling @ref settings_load.
  *
- *  When using :option:`CONFIG_BT_GATT_CACHING` and :option:`CONFIG_BT_SETTINGS`
+ *  When using @option{CONFIG_BT_GATT_CACHING} and @option{CONFIG_BT_SETTINGS}
  *  then all services that should be included in the GATT Database Hash
  *  calculation should be added before calling @ref settings_load.
  *  All services registered after settings_load will trigger a new database hash
@@ -342,12 +339,14 @@ enum {
  *  @brief Attribute iterator callback.
  *
  *  @param attr Attribute found.
+ *  @param handle Attribute handle found.
  *  @param user_data Data given.
  *
  *  @return BT_GATT_ITER_CONTINUE if should continue to the next attribute.
  *  @return BT_GATT_ITER_STOP to stop.
  */
 typedef uint8_t (*bt_gatt_attr_func_t)(const struct bt_gatt_attr *attr,
+				       uint16_t handle,
 				       void *user_data);
 
 /** @brief Attribute iterator by type.
@@ -394,6 +393,15 @@ static inline void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_hand
  *  @return The next attribute or NULL if it cannot be found.
  */
 struct bt_gatt_attr *bt_gatt_attr_next(const struct bt_gatt_attr *attr);
+
+/** @brief Get Attribute handle.
+ *
+ *  @param attr Attribute object.
+ *
+ *  @return Handle of the corresponding attribute or zero if the attribute
+ *          could not be found.
+ */
+uint16_t bt_gatt_attr_get_handle(const struct bt_gatt_attr *attr);
 
 /** @brief Get the handle of the characteristic value descriptor.
  *
@@ -454,6 +462,37 @@ ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
 	const struct bt_gatt_attr attr_##_name[] = { __VA_ARGS__ };	\
 	const Z_STRUCT_SECTION_ITERABLE(bt_gatt_service_static, _name) =\
 						BT_GATT_SERVICE(attr_##_name)
+
+#define _BT_GATT_ATTRS_ARRAY_DEFINE(n, _instances, _attrs_def)	\
+	static struct bt_gatt_attr attrs_##n[] = _attrs_def(_instances[n]);
+
+#define _BT_GATT_SERVICE_ARRAY_ITEM(_n, _) BT_GATT_SERVICE(attrs_##_n),
+
+/** @def BT_GATT_SERVICE_INSTANCE_DEFINE
+ *  @brief Statically define service structure array.
+ *
+ *  Helper macro to statically define service structure array. Each element
+ *  of the array is linked to the service attribute array which is also
+ *  defined in this scope using _attrs_def macro.
+ *
+ *  @param _name         Name of service structure array.
+ *  @param _instances    Array of instances to pass as user context to the
+ *                       attribute callbacks.
+ *  @param _instance_num Number of elements in instance array.
+ *  @param _attrs_def    Macro provided by the user that defines attribute
+ *                       array for the serivce. This macro should accept single
+ *                       parameter which is the instance context.
+ */
+#define BT_GATT_SERVICE_INSTANCE_DEFINE(				 \
+	_name, _instances, _instance_num, _attrs_def)			 \
+	BUILD_ASSERT(ARRAY_SIZE(_instances) == _instance_num,		 \
+		"The number of array elements does not match its size"); \
+	UTIL_EVAL(UTIL_REPEAT(						 \
+		_instance_num, _BT_GATT_ATTRS_ARRAY_DEFINE, _instances,  \
+		_attrs_def))						 \
+	static struct bt_gatt_service _name[] = {			 \
+		UTIL_LISTIFY(_instance_num, _BT_GATT_SERVICE_ARRAY_ITEM) \
+	}
 
 /** @def BT_GATT_SERVICE
  *  @brief Service Structure Declaration Macro.
@@ -1404,6 +1443,8 @@ enum {
 struct bt_gatt_subscribe_params {
 	/** Notification value callback */
 	bt_gatt_notify_func_t notify;
+	/** Subscribe CCC write request response callback */
+	bt_gatt_write_func_t write;
 	/** Subscribe value handle */
 	uint16_t value_handle;
 	/** Subscribe CCC handle */
@@ -1431,8 +1472,8 @@ struct bt_gatt_subscribe_params {
  *  this callback. Notification callback with NULL data will not be called if
  *  subscription was removed by this method.
  *
- *  @note This procedure is asynchronous therefore the parameters need to
- *  remains valid while it is active.
+ *  @note Notifications are asynchronous therefore the parameters need to
+ *        remain valid while subscribed.
  *
  *  @param conn Connection object.
  *  @param params Subscribe parameters.
@@ -1441,6 +1482,25 @@ struct bt_gatt_subscribe_params {
  */
 int bt_gatt_subscribe(struct bt_conn *conn,
 		      struct bt_gatt_subscribe_params *params);
+
+/** @brief Resubscribe Attribute Value Notification subscription
+ *
+ *  Resubscribe to Attribute Value Notification when already subscribed from a
+ *  previous connection. The GATT server will remember subscription from
+ *  previous connections when bonded, so resubscribing can be done without
+ *  performing a new subscribe procedure after a power cycle.
+ *
+ *  @note Notifications are asynchronous therefore the parameters need to
+ *        remain valid while subscribed.
+ *
+ *  @param id     Local identity (in most cases BT_ID_DEFAULT).
+ *  @param peer   Remote address.
+ *  @param params Subscribe parameters.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_gatt_resubscribe(uint8_t id, const bt_addr_le_t *peer,
+			     struct bt_gatt_subscribe_params *params);
 
 /** @brief Unsubscribe Attribute Value Notification
  *

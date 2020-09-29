@@ -148,7 +148,7 @@ int fcb_init(int f_area_id, struct fcb *fcb);
  * Appends an entry to circular buffer.
  *
  * When writing the
- * contents for the entry, use loc->fl_sector and loc->fl_data_off with
+ * contents for the entry, use loc->fe_sector and loc->fe_data_off with
  * flash_area_write() to fcb flash_area.
  * When you're finished, call fcb_append_finish() with loc as argument.
  *

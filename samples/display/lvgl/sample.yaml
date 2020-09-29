@@ -4,21 +4,29 @@ sample:
 tests:
   sample.gui.lvgl:
     harness: display
-    platform_whitelist: reel_board mimxrt1050_evk mimxrt1060_evk mimxrt1064_evk
+    platform_allow: reel_board mimxrt1050_evk mimxrt1060_evk mimxrt1064_evk
     tags: samples display gui
   sample.display.adafruit_2_8_tft_touch_v2:
-    platform_whitelist: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk_nrf52840
     extra_args: SHIELD=adafruit_2_8_tft_touch_v2
     tags: shield
   sample.display.waveshare_epaper_gdeh0213b1:
-    platform_whitelist: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk_nrf52840
     extra_args: SHIELD=waveshare_epaper_gdeh0213b1
     tags: shield
   sample.display.waveshare_epaper_gdeh0213b72:
-    platform_whitelist: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk_nrf52840
     extra_args: SHIELD=waveshare_epaper_gdeh0213b72
     tags: shield
   sample.display.waveshare_epaper_gdeh029a1:
-    platform_whitelist: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk_nrf52840
     extra_args: SHIELD=waveshare_epaper_gdeh029a1
+    tags: shield
+  sample.display.lvgl.sdl:
+    build_only: true
+    platform_allow: native_posix_64
+    tags: samples display gui
+  sample.display.buydisplay_2_8_tft_touch_arduino:
+    platform_allow: nrf52840dk_nrf52840
+    extra_args: SHIELD=buydisplay_2_8_tft_touch_arduino
     tags: shield

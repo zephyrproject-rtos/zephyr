@@ -195,44 +195,51 @@ function(zephyr_get_compile_options_for_lang_as_string lang i)
 endfunction()
 
 function(zephyr_get_include_directories_for_lang lang i)
-  get_property_and_add_prefix(flags zephyr_interface INTERFACE_INCLUDE_DIRECTORIES
-    "-I"
-    ${ARGN}
-    )
+  zephyr_get_parse_args(args ${ARGN})
+  get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
 
   process_flags(${lang} flags output_list)
+  string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
 
-  set(${i} ${output_list} PARENT_SCOPE)
+  if(NOT ARGN)
+    set(result_output_list "-I$<JOIN:${genexp_output_list}, -I>")
+  elseif(args_STRIP_PREFIX)
+    # The list has no prefix, so don't add it.
+    set(result_output_list ${output_list})
+  else()
+    set(result_output_list "-I$<JOIN:${genexp_output_list},${ARGN}-I>")
+  endif()
+  set(${i} ${result_output_list} PARENT_SCOPE)
 endfunction()
 
 function(zephyr_get_system_include_directories_for_lang lang i)
-  get_property_and_add_prefix(flags zephyr_interface INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
-    "-isystem"
-    ${ARGN}
-    )
+  get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
 
   process_flags(${lang} flags output_list)
+  string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
+  set(result_output_list "$<$<BOOL:${genexp_output_list}>:-isystem$<JOIN:${genexp_output_list}, -isystem>>")
 
-  set(${i} ${output_list} PARENT_SCOPE)
+  set(${i} ${result_output_list} PARENT_SCOPE)
 endfunction()
 
 function(zephyr_get_compile_definitions_for_lang lang i)
-  get_property_and_add_prefix(flags zephyr_interface INTERFACE_COMPILE_DEFINITIONS
-    "-D"
-    ${ARGN}
-    )
+  get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_COMPILE_DEFINITIONS)
 
   process_flags(${lang} flags output_list)
+  string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
+  set(result_output_list "-D$<JOIN:${genexp_output_list}, -D>")
 
-  set(${i} ${output_list} PARENT_SCOPE)
+  set(${i} ${result_output_list} PARENT_SCOPE)
 endfunction()
 
 function(zephyr_get_compile_options_for_lang lang i)
   get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_COMPILE_OPTIONS)
 
   process_flags(${lang} flags output_list)
+  string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
+  set(result_output_list " $<JOIN:${genexp_output_list}, >")
 
-  set(${i} ${output_list} PARENT_SCOPE)
+  set(${i} ${result_output_list} PARENT_SCOPE)
 endfunction()
 
 # This function writes a dict to it's output parameter
@@ -253,6 +260,7 @@ function(process_flags lang input output)
   # The flags might contains compile language generator expressions that
   # look like this:
   # $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>
+  # $<$<COMPILE_LANGUAGE:CXX>:$<OTHER_EXPRESSION>>
   #
   # Flags that don't specify a language like this apply to all
   # languages.
@@ -274,15 +282,34 @@ function(process_flags lang input output)
     set(is_compile_lang_generator_expression 0)
     foreach(l ${languages})
       if(flag MATCHES "<COMPILE_LANGUAGE:${l}>:([^>]+)>")
+        set(updated_flag ${CMAKE_MATCH_1})
         set(is_compile_lang_generator_expression 1)
         if(${l} STREQUAL ${lang})
-          list(APPEND tmp_list ${CMAKE_MATCH_1})
+          # This test will match in case there are more generator expressions in the flag.
+          # As example: $<$<COMPILE_LANGUAGE:C>:$<OTHER_EXPRESSION>>
+          #             $<$<OTHER_EXPRESSION:$<COMPILE_LANGUAGE:C>:something>>
+          string(REGEX MATCH "(\\\$<)[^\\\$]*(\\\$<)[^\\\$]*(\\\$<)" IGNORE_RESULT ${flag})
+          if(CMAKE_MATCH_2)
+            # Nested generator expressions are used, just substitue `$<COMPILE_LANGUAGE:${l}>` to `1`
+            string(REGEX REPLACE "\\\$<COMPILE_LANGUAGE:${l}>" "1" updated_flag ${flag})
+          endif()
+          list(APPEND tmp_list ${updated_flag})
           break()
         endif()
       endif()
     endforeach()
 
     if(NOT is_compile_lang_generator_expression)
+      # SHELL is used to avoid de-deplucation, but when process flags
+      # then this tag must be removed to return real compile/linker flags.
+      if(flag MATCHES "SHELL:[ ]*(.*)")
+        separate_arguments(flag UNIX_COMMAND ${CMAKE_MATCH_1})
+      endif()
+      # Flags may be placed inside generator expression, therefore any flag
+      # which is not already a generator expression must have commas converted.
+      if(NOT flag MATCHES "\\\$<.*>")
+        string(REPLACE "," "$<COMMA>" flag "${flag}")
+      endif()
       list(APPEND tmp_list ${flag})
     endif()
   endforeach()
@@ -985,9 +1012,12 @@ endfunction(zephyr_linker_sources)
 # Helper function for CONFIG_CODE_DATA_RELOCATION
 # Call this function with 2 arguments file and then memory location
 function(zephyr_code_relocate file location)
+  if(NOT IS_ABSOLUTE ${file})
+    set(file ${CMAKE_CURRENT_SOURCE_DIR}/${file})
+  endif()
   set_property(TARGET code_data_relocation_target
     APPEND PROPERTY COMPILE_DEFINITIONS
-    "${location}:${CMAKE_CURRENT_SOURCE_DIR}/${file}")
+    "${location}:${file}")
 endfunction()
 
 # Usage:
@@ -1402,6 +1432,111 @@ function(toolchain_parse_make_rule input_file include_files)
   set(${include_files} ${result} PARENT_SCOPE)
 endfunction()
 
+# 'check_set_linker_property' is a function that check the provided linker
+# flag and only set the linker property if the check succeeds
+#
+# This function is similar in nature to the CMake set_property function, but
+# with the extension that it will check that the linker supports the flag before
+# setting the property.
+#
+# APPEND: Flag indicated that the property should be appended to the existing
+#         value list for the property.
+# TARGET: Name of target on which to add the property (commonly: linker)
+# PROPERTY: Name of property with the value(s) following immediately after
+#           property name
+function(check_set_linker_property)
+  set(options APPEND)
+  set(single_args TARGET)
+  set(multi_args  PROPERTY)
+  cmake_parse_arguments(LINKER_PROPERTY "${options}" "${single_args}" "${multi_args}" ${ARGN})
+
+  if(LINKER_PROPERTY_APPEND)
+   set(APPEND "APPEND")
+  endif()
+
+  list(GET LINKER_PROPERTY_PROPERTY 0 property)
+  list(REMOVE_AT LINKER_PROPERTY_PROPERTY 0)
+  set(option ${LINKER_PROPERTY_PROPERTY})
+
+  string(MAKE_C_IDENTIFIER check${option} check)
+
+  set(SAVED_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
+  set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${option}")
+  zephyr_check_compiler_flag(C "" ${check})
+  set(CMAKE_REQUIRED_FLAGS ${SAVED_CMAKE_REQUIRED_FLAGS})
+
+  if(${check})
+    set_property(TARGET ${LINKER_PROPERTY_TARGET} ${APPEND} PROPERTY ${property} ${option})
+  endif()
+endfunction()
+
+# 'set_compiler_property' is a function that sets the property for the C and
+# C++ property targets used for toolchain abstraction.
+#
+# This function is similar in nature to the CMake set_property function, but
+# with the extension that it will set the property on both the compile and
+# compiler-cpp targets.
+#
+# APPEND: Flag indicated that the property should be appended to the existing
+#         value list for the property.
+# PROPERTY: Name of property with the value(s) following immediately after
+#           property name
+function(set_compiler_property)
+  set(options APPEND)
+  set(multi_args  PROPERTY)
+  cmake_parse_arguments(COMPILER_PROPERTY "${options}" "${single_args}" "${multi_args}" ${ARGN})
+  if(COMPILER_PROPERTY_APPEND)
+   set(APPEND "APPEND")
+   set(APPEND-CPP "APPEND")
+  endif()
+
+  set_property(TARGET compiler ${APPEND} PROPERTY ${COMPILER_PROPERTY_PROPERTY})
+  set_property(TARGET compiler-cpp ${APPEND} PROPERTY ${COMPILER_PROPERTY_PROPERTY})
+endfunction()
+
+# 'check_set_compiler_property' is a function that check the provided compiler
+# flag and only set the compiler or compiler-cpp property if the check succeeds
+#
+# This function is similar in nature to the CMake set_property function, but
+# with the extension that it will check that the compiler supports the flag
+# before setting the property on compiler or compiler-cpp targets.
+#
+# APPEND: Flag indicated that the property should be appended to the existing
+#         value list for the property.
+# PROPERTY: Name of property with the value(s) following immediately after
+#           property name
+function(check_set_compiler_property)
+  set(options APPEND)
+  set(multi_args  PROPERTY)
+  cmake_parse_arguments(COMPILER_PROPERTY "${options}" "${single_args}" "${multi_args}" ${ARGN})
+  if(COMPILER_PROPERTY_APPEND)
+   set(APPEND "APPEND")
+   set(APPEND-CPP "APPEND")
+  endif()
+
+  list(GET COMPILER_PROPERTY_PROPERTY 0 property)
+  list(REMOVE_AT COMPILER_PROPERTY_PROPERTY 0)
+
+  foreach(option ${COMPILER_PROPERTY_PROPERTY})
+    if(CONFIG_CPLUSPLUS)
+      zephyr_check_compiler_flag(CXX ${option} check)
+
+      if(${check})
+        set_property(TARGET compiler-cpp ${APPEND-CPP} PROPERTY ${property} ${option})
+        set(APPEND-CPP "APPEND")
+      endif()
+    endif()
+
+    zephyr_check_compiler_flag(C ${option} check)
+
+    if(${check})
+      set_property(TARGET compiler ${APPEND} PROPERTY ${property} ${option})
+      set(APPEND "APPEND")
+    endif()
+  endforeach()
+endfunction()
+
+
 # 3.4. Debugging CMake
 
 # Usage:
@@ -1548,4 +1683,93 @@ function(generate_unique_target_name_from_filename filename target_name)
   string(MD5 unique_chars ${filename})
 
   set(${target_name} gen_${x}_${unique_chars} PARENT_SCOPE)
+endfunction()
+
+# Usage:
+#   zephyr_file(<mode> <arg> ...)
+#
+# Zephyr file function extension.
+# This function currently support the following <modes>
+#
+# APPLICATION_ROOT <path>: Check all paths in provided variable, and convert
+#                          those paths that are defined with `-D<path>=<val>`
+#                          to absolute path, relative from `APPLICATION_SOURCE_DIR`
+#                          Issue an error for any relative path not specified
+#                          by user with `-D<path>`
+#
+# returns an updated list of absolute paths
+function(zephyr_file)
+  set(options APPLICATION_ROOT)
+  cmake_parse_arguments(FILE "${options}" "" "" ${ARGN})
+  if(NOT FILE_APPLICATION_ROOT)
+    message(FATAL_ERROR "No <mode> given to `zephyr_file(<mode> <args>...)` function,\n \
+Please provide one of following: APPLICATION_ROOT")
+  endif()
+
+  if(FILE_APPLICATION_ROOT)
+    if(NOT (${ARGC} EQUAL 2))
+      math(EXPR ARGC "${ARGC} - 1")
+      message(FATAL_ERROR "zephyr_file(APPLICATION_ROOT <path-variable>) takes exactly 1 argument, ${ARGC} were given")
+    endif()
+
+    # Note: user can do: `-D<var>=<relative-path>` and app can at same
+    # time specify `list(APPEND <var> <abs-path>)`
+    # Thus need to check and update only CACHED variables (-D<var>).
+    set(CACHED_PATH $CACHE{${ARGV1}})
+    foreach(path ${CACHED_PATH})
+      # The cached variable is relative path, i.e. provided by `-D<var>` or
+      # `set(<var> CACHE)`, so let's update current scope variable to absolute
+      # path from  `APPLICATION_SOURCE_DIR`.
+      if(NOT IS_ABSOLUTE ${path})
+        set(abs_path ${APPLICATION_SOURCE_DIR}/${path})
+        list(FIND ${ARGV1} ${path} index)
+        if(NOT ${index} LESS 0)
+          list(REMOVE_AT ${ARGV1} ${index})
+          list(INSERT ${ARGV1} ${index} ${abs_path})
+        endif()
+      endif()
+    endforeach()
+
+    # Now all cached relative paths has been updated.
+    # Let's check if anyone uses relative path as scoped variable, and fail
+    foreach(path ${${ARGV1}})
+      if(NOT IS_ABSOLUTE ${path})
+        message(FATAL_ERROR
+"Relative path encountered in scoped variable: ${ARGV1}, value=${path}\n \
+Please adjust any `set(${ARGV1} ${path})` or `list(APPEND ${ARGV1} ${path})`\n \
+to absolute path using `\${CMAKE_CURRENT_SOURCE_DIR}/${path}` or similar. \n \
+Relative paths are only allowed with `-D${ARGV1}=<path>`")
+      endif()
+    endforeach()
+
+    # This updates the provided argument in parent scope (callers scope)
+    set(${ARGV1} ${${ARGV1}} PARENT_SCOPE)
+  endif()
+endfunction()
+
+# Usage:
+#   zephyr_get_targets(<directory> <types> <targets>)
+#
+# Get build targets for a given directory and sub-directories.
+#
+# This functions will traverse the build tree, starting from <directory>.
+# It will read the `BUILDSYSTEM_TARGETS` for each directory in the build tree
+# and return the build types matching the <types> list.
+# Example of types: OBJECT_LIBRARY, STATIC_LIBRARY, INTERFACE_LIBRARY, UTILITY.
+#
+# returns a list of targets in <targets> matching the required <types>.
+function(zephyr_get_targets directory types targets)
+    get_property(sub_directories DIRECTORY ${directory} PROPERTY SUBDIRECTORIES)
+    get_property(dir_targets DIRECTORY ${directory} PROPERTY BUILDSYSTEM_TARGETS)
+    foreach(dir_target ${dir_targets})
+      get_property(target_type TARGET ${dir_target} PROPERTY TYPE)
+      if(${target_type} IN_LIST types)
+        list(APPEND ${targets} ${dir_target})
+      endif()
+    endforeach()
+
+    foreach(directory ${sub_directories})
+        zephyr_get_targets(${directory} "${types}" ${targets})
+    endforeach()
+    set(${targets} ${${targets}} PARENT_SCOPE)
 endfunction()

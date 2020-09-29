@@ -90,6 +90,68 @@
 	current-speed = <115200>;
 };
 
+&flash0 {
+	/*
+	 * For more information, see:
+	 * https://docs.zephyrproject.org/latest/guides/dts/legacy-macros.html#legacy-flash-partitions
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		/* Please enable mcuboot's swap move, no scratch */
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00020000>;
+			read-only;
+		};
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 0x00020000>;
+		};
+		slot1_partition: partition@40000 {
+			label = "image-1";
+			reg = <0x00040000 0x00018000>;
+		};
+		slot2_partition: partition@58000 {
+			label = "image-2";
+			reg = <0x00058000 0x00020000>;
+		};
+		slot3_partition: partition@78000 {
+			label = "image-3";
+			reg = <0x00078000 0x00018000>;
+		};
+		/*
+		 * The flash starting at 0x90000 and ending at
+		 * 0x9D7FF is reserved for the application.
+		 */
+		storage_partition: partition@90000 {
+			label = "storage";
+			reg = <0x00090000 0x0000d800>;
+		};
+	};
+};
+
+&sram {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* RAM split used by TFM */
+		secure_ram: partition@20000000 {
+			label = "secure-memory";
+			reg = <0x20000000 DT_SIZE_K(136)>;
+		};
+
+		non_secure_ram: partition@20022000 {
+			label = "non-secure-memory";
+			reg = <0x20022000 DT_SIZE_K(136)>;
+		};
+	};
+};
+
 arduino_i2c: &flexcomm4 {
 	compatible = "nxp,lpc-i2c";
 	clock-frequency = <I2C_BITRATE_STANDARD>;

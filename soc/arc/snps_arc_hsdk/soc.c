@@ -12,7 +12,7 @@
 #include <init.h>
 #include "soc.h"
 
-static int arc_hsdk_init(struct device *dev)
+static int arc_hsdk_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

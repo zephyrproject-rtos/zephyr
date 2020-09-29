@@ -40,18 +40,18 @@
 
 /* The API a crypto driver should implement */
 __subsystem struct crypto_driver_api {
-	int (*query_hw_caps)(struct device *dev);
+	int (*query_hw_caps)(const struct device *dev);
 
 	/* Setup a crypto session */
-	int (*begin_session)(struct device *dev, struct cipher_ctx *ctx,
-			enum cipher_algo algo, enum cipher_mode mode,
-			enum cipher_op op_type);
+	int (*begin_session)(const struct device *dev, struct cipher_ctx *ctx,
+			     enum cipher_algo algo, enum cipher_mode mode,
+			     enum cipher_op op_type);
 
 	/* Tear down an established session */
-	int (*free_session)(struct device *dev, struct cipher_ctx *ctx);
+	int (*free_session)(const struct device *dev, struct cipher_ctx *ctx);
 
 	/* Register async crypto op completion callback with the driver */
-	int (*crypto_async_callback_set)(struct device *dev,
+	int (*crypto_async_callback_set)(const struct device *dev,
 					 crypto_completion_cb cb);
 };
 
@@ -73,7 +73,7 @@ __subsystem struct crypto_driver_api {
  *
  * @return bitmask of supported options.
  */
-static inline int cipher_query_hwcaps(struct device *dev)
+static inline int cipher_query_hwcaps(const struct device *dev)
 {
 	struct crypto_driver_api *api;
 	int tmp;
@@ -113,7 +113,7 @@ static inline int cipher_query_hwcaps(struct device *dev)
  *
  * @return 0 on success, negative errno code on fail.
  */
-static inline int cipher_begin_session(struct device *dev,
+static inline int cipher_begin_session(const struct device *dev,
 				       struct cipher_ctx *ctx,
 				       enum cipher_algo algo,
 				       enum cipher_mode  mode,
@@ -155,7 +155,7 @@ static inline int cipher_begin_session(struct device *dev,
  *
  * @return 0 on success, negative errno code on fail.
  */
-static inline int cipher_free_session(struct device *dev,
+static inline int cipher_free_session(const struct device *dev,
 				      struct cipher_ctx *ctx)
 {
 	struct crypto_driver_api *api;
@@ -179,7 +179,7 @@ static inline int cipher_free_session(struct device *dev,
  * @return 0 on success, -ENOTSUP if the driver does not support async op,
  *			  negative errno code on other error.
  */
-static inline int cipher_callback_set(struct device *dev,
+static inline int cipher_callback_set(const struct device *dev,
 				      crypto_completion_cb cb)
 {
 	struct crypto_driver_api *api;

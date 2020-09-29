@@ -809,7 +809,7 @@ static int rfcomm_dlc_close(struct bt_rfcomm_dlc *dlc)
 		if (dlc->role == BT_RFCOMM_ROLE_ACCEPTOR) {
 			rfcomm_send_dm(dlc->session, dlc->dlci);
 		}
-		/* Fall Through */
+		__fallthrough;
 	case BT_RFCOMM_STATE_INIT:
 		rfcomm_dlc_drop(dlc);
 		break;

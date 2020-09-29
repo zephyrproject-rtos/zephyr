@@ -332,7 +332,7 @@ void gptp_mi_init_state_machine(void)
 
 uint64_t gptp_get_current_time_nanosecond(int port)
 {
-	struct device *clk;
+	const struct device *clk;
 
 	clk = net_eth_get_ptp_clock(GPTP_PORT_IFACE(port));
 	if (clk) {
@@ -435,7 +435,7 @@ static void gptp_mi_pss_rcv_state_machine(int port)
 		k_timer_stop(&state->rcv_sync_receipt_timeout_timer);
 		state->rcv_sync_receipt_timeout_timer_expired = false;
 
-		/* Fallthrough. */
+		__fallthrough;
 	case GPTP_PSS_RCV_RECEIVED_SYNC:
 		if (state->rcvd_md_sync) {
 			state->rcvd_md_sync = false;
@@ -541,7 +541,7 @@ static void gptp_mi_pss_send_state_machine(int port)
 			break;
 		}
 
-		/* Fallthrough. */
+		__fallthrough;
 	case GPTP_PSS_SEND_SEND_MD_SYNC:
 		if (state->rcvd_pss_sync) {
 			gptp_mi_pss_store_last_pss(port);
@@ -566,7 +566,7 @@ static void gptp_mi_pss_send_state_machine(int port)
 
 		gptp_mi_pss_send_md_sync_send(port);
 
-		/* Fallthrough. */
+		__fallthrough;
 	case GPTP_PSS_SEND_SET_SYNC_RECEIPT_TIMEOUT:
 		/* Test conditions have been slightly rearranged compared to
 		 * their definitions in the standard in order not to test
@@ -742,7 +742,7 @@ static void gptp_update_local_port_clock(void)
 	int port;
 	int64_t nanosecond_diff;
 	int64_t second_diff;
-	struct device *clk;
+	const struct device *clk;
 	struct net_ptp_time tm;
 	int key;
 
@@ -1446,7 +1446,7 @@ static void gptp_mi_port_announce_information_state_machine(int port)
 					  GPTP_PA_INFO_POST_DISABLED);
 		k_timer_stop(&state->ann_rcpt_expiry_timer);
 		state->ann_expired = true;
-		/* Fallthrough. */
+		__fallthrough;
 
 	case GPTP_PA_INFO_POST_DISABLED:
 		if (port_ds->ptt_port_enabled && port_ds->as_capable) {
@@ -1515,7 +1515,7 @@ static void gptp_mi_port_announce_information_state_machine(int port)
 				GPTP_PA_INFO_REPEATED_MASTER_PORT);
 			break;
 		case GPTP_RCVD_INFO_INFERIOR_MASTER_INFO:
-			/* Fallthrough. */
+			__fallthrough;
 		case GPTP_RCVD_INFO_OTHER_INFO:
 			gptp_change_pa_info_state(port, state,
 				GPTP_PA_INFO_INFERIOR_MASTER_OR_OTHER_PORT);
@@ -1551,7 +1551,7 @@ static void gptp_mi_port_announce_information_state_machine(int port)
 		bmca_data->info_is = GPTP_INFO_IS_RECEIVED;
 		CLEAR_SELECTED(global_ds, port);
 		SET_RESELECT(global_ds, port);
-		/* Fallthrough. */
+		__fallthrough;
 
 	case GPTP_PA_INFO_REPEATED_MASTER_PORT:
 		k_timer_stop(&state->ann_rcpt_expiry_timer);
@@ -1560,7 +1560,7 @@ static void gptp_mi_port_announce_information_state_machine(int port)
 			      K_MSEC(gptp_uscaled_ns_to_timer_ms(
 				  &bmca_data->ann_rcpt_timeout_time_interval)),
 			      K_NO_WAIT);
-		/* Fallthrough. */
+		__fallthrough;
 
 	case GPTP_PA_INFO_INFERIOR_MASTER_OR_OTHER_PORT:
 		if (bmca_data->rcvd_announce_ptr != NULL) {
@@ -1904,7 +1904,7 @@ static void gptp_mi_port_role_selection_state_machine(void)
 
 		/* Be sure to enter the "if" statement immediately after. */
 		GPTP_GLOBAL_DS()->reselect_array = ~0;
-		/* Fallthrough. */
+		__fallthrough;
 
 	case GPTP_PR_SELECTION_ROLE_SELECTION:
 		if (GPTP_GLOBAL_DS()->reselect_array != 0) {
@@ -1949,7 +1949,7 @@ static void gptp_mi_port_announce_transmit_state_machine(int port)
 	switch (state->state) {
 	case GPTP_PA_TRANSMIT_INIT:
 		bmca_data->new_info = true;
-		/* Fallthrough. */
+		__fallthrough;
 
 	case GPTP_PA_TRANSMIT_IDLE:
 		k_timer_stop(&state->ann_send_periodic_timer);
@@ -1960,7 +1960,7 @@ static void gptp_mi_port_announce_transmit_state_machine(int port)
 			      K_NO_WAIT);
 
 		state->state = GPTP_PA_TRANSMIT_POST_IDLE;
-		/* Fallthrough. */
+		__fallthrough;
 
 	case GPTP_PA_TRANSMIT_POST_IDLE:
 		if (IS_SELECTED(global_ds, port) &&

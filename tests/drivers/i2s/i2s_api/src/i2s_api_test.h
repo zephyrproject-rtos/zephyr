@@ -43,9 +43,9 @@ extern int16_t data_r[SAMPLE_NO];
 #define I2S_DEV_NAME "I2S_0"
 #define BLOCK_SIZE (2 * sizeof(data_l))
 
-int rx_block_read_slab(struct device *dev_i2s, int att,
+int rx_block_read_slab(const struct device *dev_i2s, int att,
 		       struct k_mem_slab *slab);
-int tx_block_write_slab(struct device *dev_i2s, int att, int err,
+int tx_block_write_slab(const struct device *dev_i2s, int att, int err,
 			struct k_mem_slab *slab);
 
 void fill_buf_const(int16_t *tx_block, int16_t val_l, int16_t val_r);

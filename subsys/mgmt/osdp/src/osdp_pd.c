@@ -91,16 +91,6 @@ static struct osdp_pd_cap osdp_pd_cap[] = {
 	{ -1, 0, 0 } /* Sentinel */
 };
 
-static void pd_enqueue_command(struct osdp_pd *pd, struct osdp_cmd *cmd)
-{
-	sys_slist_append(&pd->cmd.queue, &cmd->node);
-}
-
-static struct osdp_cmd *pd_get_last_command(struct osdp_pd *pd)
-{
-	return (struct osdp_cmd *)sys_slist_peek_tail(&pd->cmd.queue);
-}
-
 static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	int i, ret = -1, pos = 0;
@@ -174,9 +164,9 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd->id = OSDP_CMD_OUTPUT;
 		cmd->output.output_no    = buf[pos++];
 		cmd->output.control_code = buf[pos++];
-		cmd->output.tmr_count    = buf[pos++];
-		cmd->output.tmr_count   |= buf[pos++] << 8;
-		pd_enqueue_command(pd, cmd);
+		cmd->output.timer_count  = buf[pos++];
+		cmd->output.timer_count |= buf[pos++] << 8;
+		osdp_cmd_enqueue(pd, cmd);
 		pd->reply_id = REPLY_ACK;
 		ret = 0;
 		break;
@@ -198,15 +188,15 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd->led.temporary.off_count    = buf[pos++];
 		cmd->led.temporary.on_color     = buf[pos++];
 		cmd->led.temporary.off_color    = buf[pos++];
-		cmd->led.temporary.timer        = buf[pos++];
-		cmd->led.temporary.timer       |= buf[pos++] << 8;
+		cmd->led.temporary.timer_count  = buf[pos++];
+		cmd->led.temporary.timer_count |= buf[pos++] << 8;
 
 		cmd->led.permanent.control_code = buf[pos++];
 		cmd->led.permanent.on_count     = buf[pos++];
 		cmd->led.permanent.off_count    = buf[pos++];
 		cmd->led.permanent.on_color     = buf[pos++];
 		cmd->led.permanent.off_color    = buf[pos++];
-		pd_enqueue_command(pd, cmd);
+		osdp_cmd_enqueue(pd, cmd);
 		pd->reply_id = REPLY_ACK;
 		ret = 0;
 		break;
@@ -220,12 +210,12 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		cmd->id = OSDP_CMD_BUZZER;
-		cmd->buzzer.reader    = buf[pos++];
-		cmd->buzzer.tone_code = buf[pos++];
-		cmd->buzzer.on_count  = buf[pos++];
-		cmd->buzzer.off_count = buf[pos++];
-		cmd->buzzer.rep_count = buf[pos++];
-		pd_enqueue_command(pd, cmd);
+		cmd->buzzer.reader       = buf[pos++];
+		cmd->buzzer.control_code = buf[pos++];
+		cmd->buzzer.on_count     = buf[pos++];
+		cmd->buzzer.off_count    = buf[pos++];
+		cmd->buzzer.rep_count    = buf[pos++];
+		osdp_cmd_enqueue(pd, cmd);
 		pd->reply_id = REPLY_ACK;
 		ret = 0;
 		break;
@@ -239,12 +229,12 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		cmd->id = OSDP_CMD_TEXT;
-		cmd->text.reader     = buf[pos++];
-		cmd->text.cmd        = buf[pos++];
-		cmd->text.temp_time  = buf[pos++];
-		cmd->text.offset_row = buf[pos++];
-		cmd->text.offset_col = buf[pos++];
-		cmd->text.length     = buf[pos++];
+		cmd->text.reader       = buf[pos++];
+		cmd->text.control_code = buf[pos++];
+		cmd->text.temp_time    = buf[pos++];
+		cmd->text.offset_row   = buf[pos++];
+		cmd->text.offset_col   = buf[pos++];
+		cmd->text.length       = buf[pos++];
 		if (cmd->text.length > OSDP_CMD_TEXT_MAX_LEN ||
 		    ((len - CMD_TEXT_DATA_LEN) < cmd->text.length) ||
 		    cmd->text.length > OSDP_CMD_TEXT_MAX_LEN) {
@@ -254,7 +244,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < cmd->text.length; i++) {
 			cmd->text.data[i] = buf[pos++];
 		}
-		pd_enqueue_command(pd, cmd);
+		osdp_cmd_enqueue(pd, cmd);
 		pd->reply_id = REPLY_ACK;
 		ret = 0;
 		break;
@@ -268,18 +258,20 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		cmd->id = OSDP_CMD_COMSET;
-		cmd->comset.addr  = buf[pos++];
-		cmd->comset.baud  = buf[pos++];
-		cmd->comset.baud |= buf[pos++] << 8;
-		cmd->comset.baud |= buf[pos++] << 16;
-		cmd->comset.baud |= buf[pos++] << 24;
-		if (cmd->comset.addr >= 0x7F || (cmd->comset.baud != 9600 &&
-		    cmd->comset.baud != 38400 && cmd->comset.baud != 115200)) {
-			LOG_ERR("COMSET Failed! command discarded.");
-			cmd->comset.addr = pd->address;
-			cmd->comset.baud = pd->baud_rate;
+		cmd->comset.address    = buf[pos++];
+		cmd->comset.baud_rate  = buf[pos++];
+		cmd->comset.baud_rate |= buf[pos++] << 8;
+		cmd->comset.baud_rate |= buf[pos++] << 16;
+		cmd->comset.baud_rate |= buf[pos++] << 24;
+		if (cmd->comset.address >= 0x7F ||
+		    (cmd->comset.baud_rate != 9600 &&
+		     cmd->comset.baud_rate != 38400 &&
+		     cmd->comset.baud_rate != 115200)) {
+			LOG_ERR(TAG "COMSET Failed! command discarded");
+			cmd->comset.address = pd->address;
+			cmd->comset.baud_rate = pd->baud_rate;
 		}
-		pd_enqueue_command(pd, cmd);
+		osdp_cmd_enqueue(pd, cmd);
 		pd->reply_id = REPLY_COM;
 		ret = 0;
 		break;
@@ -408,21 +400,21 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		 * TODO: Persist pd->address and pd->baud_rate via
 		 * subsys/settings
 		 */
-		cmd = pd_get_last_command(pd);
+		cmd = osdp_cmd_get_last(pd);
 		if (cmd == NULL || cmd->id != OSDP_CMD_COMSET) {
 			LOG_ERR(TAG "Failed to fetch queue tail for COMSET");
 			break;
 		}
 
 		buf[len++] = pd->reply_id;
-		buf[len++] = cmd->comset.addr;
-		buf[len++] = BYTE_0(cmd->comset.baud);
-		buf[len++] = BYTE_1(cmd->comset.baud);
-		buf[len++] = BYTE_2(cmd->comset.baud);
-		buf[len++] = BYTE_3(cmd->comset.baud);
+		buf[len++] = cmd->comset.address;
+		buf[len++] = BYTE_0(cmd->comset.baud_rate);
+		buf[len++] = BYTE_1(cmd->comset.baud_rate);
+		buf[len++] = BYTE_2(cmd->comset.baud_rate);
+		buf[len++] = BYTE_3(cmd->comset.baud_rate);
 
-		pd->address = (int)cmd->comset.addr;
-		pd->baud_rate = (int)cmd->comset.baud;
+		pd->address = (int)cmd->comset.address;
+		pd->baud_rate = (int)cmd->comset.baud_rate;
 		LOG_INF("COMSET Succeeded! New PD-Addr: %d; Baud: %d",
 			pd->address, pd->baud_rate);
 		ret = 0;
@@ -561,7 +553,7 @@ void osdp_update(struct osdp *ctx)
 	int ret;
 	struct osdp_pd *pd = TO_PD(ctx, 0);
 
-	switch (pd->pd_state) {
+	switch (pd->state) {
 	case OSDP_PD_STATE_IDLE:
 		ret = pd_receve_packet(pd);
 		if (ret == 1) {
@@ -574,21 +566,21 @@ void osdp_update(struct osdp *ctx)
 			 * any established secure channel must be discarded.
 			 */
 			LOG_ERR(TAG "receive errors/timeout");
-			pd->pd_state = OSDP_PD_STATE_ERR;
+			pd->state = OSDP_PD_STATE_ERR;
 			break;
 		}
 		if (ret == 0) {
 			pd_decode_command(pd, pd->rx_buf, pd->rx_buf_len);
 		}
-		pd->pd_state = OSDP_PD_STATE_SEND_REPLY;
-		/* FALLTHRU */
+		pd->state = OSDP_PD_STATE_SEND_REPLY;
+		__fallthrough;
 	case OSDP_PD_STATE_SEND_REPLY:
 		if (pd_send_reply(pd) == -1) {
-			pd->pd_state = OSDP_PD_STATE_ERR;
+			pd->state = OSDP_PD_STATE_ERR;
 			break;
 		}
 		pd->rx_buf_len = 0;
-		pd->pd_state = OSDP_PD_STATE_IDLE;
+		pd->state = OSDP_PD_STATE_IDLE;
 		break;
 	case OSDP_PD_STATE_ERR:
 		/**
@@ -601,7 +593,7 @@ void osdp_update(struct osdp *ctx)
 		if (pd->channel.flush) {
 			pd->channel.flush(pd->channel.data);
 		}
-		pd->pd_state = OSDP_PD_STATE_IDLE;
+		pd->state = OSDP_PD_STATE_IDLE;
 		break;
 	}
 }
@@ -625,20 +617,14 @@ static void osdp_pd_set_attributes(struct osdp_pd *pd, struct osdp_pd_cap *cap,
 	}
 }
 
-int osdp_setup(struct osdp *ctx, struct osdp_channel *channel)
+int osdp_setup(struct osdp *ctx)
 {
 	struct osdp_pd *pd;
 
 	if (ctx->cp->num_pd != 1) {
 		return -1;
 	}
-
 	pd = TO_PD(ctx, 0);
-	pd->seq_number = -1;
-	pd->address = CONFIG_OSDP_PD_ADDRESS;
-	pd->baud_rate = CONFIG_OSDP_UART_BAUD_RATE;
-
-	memcpy(&pd->channel, channel, sizeof(struct osdp_channel));
 	osdp_pd_set_attributes(pd, osdp_pd_cap, &osdp_pd_id);
 	SET_FLAG(pd, PD_FLAG_PD_MODE);
 	return 0;
@@ -646,16 +632,12 @@ int osdp_setup(struct osdp *ctx, struct osdp_channel *channel)
 
 int osdp_pd_get_cmd(struct osdp_cmd *cmd)
 {
-	sys_snode_t *node;
 	struct osdp_cmd *c;
 	struct osdp_pd *pd = TO_PD(osdp_get_ctx(), 0);
 
-	node = sys_slist_peek_head(&pd->cmd.queue);
-	if (node == NULL) {
+	if (osdp_cmd_dequeue(pd, &c)) {
 		return -1;
 	}
-	sys_slist_remove(&pd->cmd.queue, NULL, node);
-	c = CONTAINER_OF(node, struct osdp_cmd, node);
 	memcpy(cmd, c, sizeof(struct osdp_cmd));
 	osdp_cmd_free(pd, c);
 	return 0;

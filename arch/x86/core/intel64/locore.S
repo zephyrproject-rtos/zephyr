@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <toolchain.h>
 #include <arch/x86/multiboot.h>
 #include <sys/util.h>
 #include <arch/x86/msr.h>
@@ -10,19 +11,71 @@
 #include <offsets_short.h>
 #include <drivers/interrupt_controller/loapic.h>
 #include <arch/cpu.h>
+#include <sys/mem_manage.h>
 
-.macro read_tsc var_name
-	push %rax
-	push %rdx
-	rdtsc
-	mov %eax,\var_name
-	mov %edx,\var_name+4
-	pop %rdx
-	pop %rax
+/*
+ * Definitions/macros for enabling paging
+ */
+
+/* Long mode, no-execute, syscall */
+#define EFER_BITS (X86_EFER_MSR_LME | X86_EFER_MSR_NXE | X86_EFER_MSR_SCE)
+
+/* Paging, write-protect */
+#define CR0_BITS (CR0_PG | CR0_WP)
+
+/* PAE, SSE */
+#define CR4_BITS (CR4_PAE | CR4_OSFXSR)
+
+.macro set_efer
+	movl $X86_EFER_MSR, %ecx
+	rdmsr
+	orl $EFER_BITS, %eax
+	wrmsr
+.endm
+
+.macro install_pagetables_32
+	movl %cr4, %eax
+	orl $CR4_BITS, %eax
+	movl %eax, %cr4
+	clts
+
+	/* Page tables created at build time by gen_mmu.py */
+	movl $z_x86_kernel_ptables, %eax
+	movl %eax, %cr3
+
+	set_efer
+
+	movl %cr0, %eax
+	orl $CR0_BITS, %eax
+	movl %eax, %cr0
+.endm
+
+.macro install_pagetables_64
+	/* Here, we are already in long mode with paging enabled and
+	 * just need to switch to our own page tables, but let's be
+	 * paranoid and ensure CR4, CR0, and EFER_MSR are set up
+	 * exactly how we expect. Logic is the same as install_pagetables_32
+	 */
+	movq %cr4, %rax
+	orq $CR4_BITS, %rax
+	movq %rax, %cr4
+	clts
+
+	movq $z_x86_kernel_ptables, %rax
+	movq %rax, %cr3
+
+	set_efer
+
+	movq %cr0, %rax
+	/* Use 32-bit instructions due to assembler fussiness with large
+	 * immediate values with `orq`, CR0_PG is bit 31. We don't ever set any
+	 * high bits in cr0 anyway.
+	 */
+	orl $CR0_BITS, %eax
+	movq %rax, %cr0
 .endm
 
 .section .locore,"ax"
-.code32
 
 #if CONFIG_MP_NUM_CPUS > 1
 
@@ -79,7 +132,6 @@ unknown_loapic_id:
 .code32
 .globl __start
 __start:
-
 	/*
 	 * kernel execution begins here in 32-bit mode, with flat-mode
 	 * descriptors in all segment registers, interrupts disabled.
@@ -98,7 +150,6 @@ __start:
 	 * next, clear the BSS. note we're still in 32-bit mode,
 	 * so the BSS must fit entirely in the first 4GB of RAM.
 	 */
-
 	cld
 	xorl %eax, %eax
 	movl $__bss_start, %edi
@@ -108,37 +159,17 @@ __start:
 	movl $x86_cpuboot, %ebp		/* BSP is always logical CPU id 0 */
 	movl %ebx, __x86_cpuboot_t_arg_OFFSET(%ebp)	/* multiboot info */
 
-	/*
-	 * transition to long mode, reload the segment registers,
-	 * and configure per-CPU stuff: GS, task register, stack.
-	 */
 
-go64:	movl %cr4, %eax			/* enable PAE and SSE */
-	orl $(CR4_PAE | CR4_OSFXSR), %eax
-	movl %eax, %cr4
-	clts
-
-#ifdef CONFIG_X86_MMU
-	movl __x86_cpuboot_t_ptables_OFFSET(%ebp), %eax
-#else
-	movl $z_x86_flat_ptables, %eax
-#endif
-	movl %eax, %cr3
-
-	movl $X86_EFER_MSR, %ecx  /* enable long mode, no-execute, syscall */
-	rdmsr
-	orl $(X86_EFER_MSR_LME | X86_EFER_MSR_NXE | X86_EFER_MSR_SCE), %eax
-	wrmsr
-
-	movl %cr0, %eax			/* enable paging */
-	orl $(CR0_PG | CR0_WP), %eax
-	movl %eax, %cr0
-
+go64:	/* Install page tables and transition to long mode */
+	install_pagetables_32
 	jmpl $X86_KERNEL_CS, $enter_code64
 
 	/* Long mode entry point.  Arrive here from the code
 	 * immediately above (shared between main CPU startup and AP
-	 * startup), or from EFI entry in __start64
+	 * startup), or from EFI entry in __start64.
+	 *
+	 * Here we reload the segment registers,
+	 * and configure per-CPU stuff: GS, task register, stack.
 	 */
 	.code64
 enter_code64:
@@ -173,8 +204,9 @@ enter_code64:
 #ifdef CONFIG_INIT_STACKS
 	movq $0xAAAAAAAAAAAAAAAA, %rax
 	movq %rsp, %rdi
-	subq $CONFIG_ISR_STACK_SIZE, %rdi
-	movq $(CONFIG_ISR_STACK_SIZE >> 3), %rcx
+	subq __x86_cpuboot_t_stack_size_OFFSET(%rbp), %rdi
+	movq __x86_cpuboot_t_stack_size_OFFSET(%rbp), %rcx
+	shr $3, %rcx /* moving 8 bytes a time, so fewer repeats */
 	rep stosq
 #endif
 
@@ -200,20 +232,7 @@ __start64:
 	lidt idt80
 	lgdt gdt80
 
-	/* These state and flag settings really should be done later,
-	 * in the shared startup path, they aren't required for mode
-	 * transition and having them in the 32 bit stub means they
-	 * have to be duplicated here.
-	 */
-	movq %cr4, %rax
-	orq $(CR4_PAE | CR4_OSFXSR), %rax
-	movq %rax, %cr4
-	clts
-	movq $X86_EFER_MSR, %rcx
-	rdmsr
-	orq $(X86_EFER_MSR_NXE | X86_EFER_MSR_SCE), %rax
-	wrmsr
-	cld
+	install_pagetables_64
 
 	/* Disable 8259 PIT.  Almost certainly not needed on modern
 	 * UEFI platforms taking this code path, but...
@@ -260,10 +279,6 @@ mxcsr:	.long X86_MXCSR_SANE
 
 .globl z_x86_switch
 z_x86_switch:
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	read_tsc arch_timing_swap_start
-#endif
-
 	/* RSI contains the switch_handle field to which we are
 	 * notionally supposed to store.  Offset it to get back to the
 	 * thread handle instead.
@@ -309,17 +324,23 @@ z_x86_switch:
  */
 
 __resume:
-#ifdef CONFIG_USERSPACE
-#ifndef CONFIG_X86_KPTI
+#if (!defined(CONFIG_X86_KPTI) && defined(CONFIG_USERSPACE)) \
+		|| defined(CONFIG_TRACING)
+	pushq %rdi	/* Caller-saved, stash it */
+#if !defined(CONFIG_X86_KPTI) && defined(CONFIG_USERSPACE)
 	/* If KPTI is enabled we're always on the kernel's page tables in
 	 * this context and the appropriate page table switch takes place
 	 * when trampolining back to user mode
 	 */
-	pushq %rdi	/* Caller-saved, stash it */
 	call z_x86_swap_update_page_tables
+#endif
+#ifdef CONFIG_TRACING
+	call sys_trace_thread_switched_in
+#endif
 	popq %rdi
-#endif /* CONFIG_X86_KPTI */
+#endif /* (!CONFIG_X86_KPTI && CONFIG_USERSPACE) || CONFIG_TRACING */
 
+#ifdef CONFIG_USERSPACE
 	/* Set up exception return stack frame */
 	pushq _thread_offset_to_ss(%rdi)	/* SS */
 #else
@@ -387,17 +408,6 @@ __resume:
 	/* swapgs variant of Spectre V1. Disable speculation past this point */
 	lfence
 #endif /* CONFIG_X86_BOUNDS_CHECK_BYPASS_MITIGATION */
-
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	cmp $0x1,arch_timing_value_swap_end
-	jne time_read_not_needed
-	movw $0x2,arch_timing_value_swap_end
-	read_tsc arch_timing_value_swap_common
-	pushq arch_timing_swap_start
-	popq arch_timing_value_swap_temp
-time_read_not_needed:
-#endif
-
 	iretq
 
 
@@ -480,13 +490,13 @@ except: /*
 	pushq %rdx
 	pushq %rcx
 	pushq %rax
+	pushq %rbp
 #ifdef CONFIG_EXCEPTION_DEBUG
 	/* Callee saved regs */
 	pushq %r15
 	pushq %r14
 	pushq %r13
 	pushq %r12
-	pushq %rbp
 	pushq %rbx
 #endif /* CONFIG_EXCEPTION_DEBUG */
 	movq %rsp, %rdi
@@ -498,12 +508,12 @@ except: /*
 	 */
 #ifdef CONFIG_EXCEPTION_DEBUG
 	popq %rbx
-	popq %rbp
 	popq %r12
 	popq %r13
 	popq %r14
 	popq %r15
 #endif /* CONFIG_EXCEPTION_DEBUG */
+	popq %rbp
 	popq %rax
 	popq %rcx
 	popq %rdx
@@ -565,10 +575,6 @@ EXCEPT(Z_X86_OOPS_VECTOR);
 .globl x86_irq_args	/* .. for these definitions */
 
 irq:
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	read_tsc arch_timing_irq_start
-#endif
-
 	pushq %rsi
 
 #ifdef CONFIG_USERSPACE
@@ -684,26 +690,18 @@ irq_enter_unnested: /* Not nested: dump state to thread struct for __resume */
 #endif
 
 irq_dispatch:
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	read_tsc arch_timing_irq_end
-#endif
-
 	movq x86_irq_funcs(,%rcx,8), %rbx
 	movq x86_irq_args(,%rcx,8), %rdi
 	call *%rbx
 
-	xorl %eax, %eax
+	xorq %rax, %rax
 #ifdef CONFIG_X2APIC
 	xorl %edx, %edx
 	movl $(X86_X2APIC_BASE_MSR + (LOAPIC_EOI >> 4)), %ecx
 	wrmsr
 #else /* xAPIC */
-#ifdef DEVICE_MMIO_IS_IN_RAM
-	movl z_loapic_regs, %edx
-	movl %eax, LOAPIC_EOI(%edx)
-#else
-	movl %eax, (CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI)
-#endif /* DEVICE_MMIO_IS_IN_RAM */
+	movq z_loapic_regs, %rdx
+	movl %eax, LOAPIC_EOI(%rdx)
 #endif /* CONFIG_X2APIC */
 
 	movq %gs:__x86_tss64_t_cpu_OFFSET, %rsi
@@ -952,44 +950,6 @@ idt48:  /* LIDT descriptor for 32 bit mode */
 idt80:  /* LIDT descriptor for 64 bit mode */
 	.word (idt_end - idt - 1)
 	.quad idt
-
-/* Initial page tables for long mode entry.  This generates a second
- * level page full of 512 1G PTE entries of the form:
- *
- * 0x000000nnn0000083
- *
- * Where nnn is an identity-mapped 1G page index in the range
- * 0x000-0x1ff, and 0x83 marks a present, 1G, read/write page
- * entry. It's split up somewhat awkwardly to get around gas's
- * recursion limits in macro expansion.
- *
- * This maps the first 512GB of memory space by default, which will
- * hopefully be enough to reach everything we need before we can
- * bootstrap the real page tables later.
- */
-.macro populate_ptable base, count=64
-	.long 0x00000083
-	.long 64 - \count + \base
-	.long 0x40000083
-	.long 64 - \count + \base
-	.long 0x80000083
-	.long 64 - \count + \base
-	.long 0xC0000083
-	.long 64 - \count + \base
-.if \count > 1
-	populate_ptable \base, (\count - 1)
-.endif
-.endm
-
-.align 4096
-.globl z_x86_flat_ptables
-z_x86_flat_ptables:
-	.long pdp + 0x03		/* 0x03 = R/W, P */
-	.long 0
-	.fill 4088, 1, 0
-pdp:
-	populate_ptable 0
-	populate_ptable 64
 
 .section .gdt,"ad"
 

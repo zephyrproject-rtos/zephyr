@@ -33,6 +33,11 @@ config SYS_POWER_MANAGEMENT
 config BUILD_OUTPUT_HEX
 	default y
 
+if !CORTEX_M_DWT
+config SOC_HAS_TIMING_FUNCTIONS
+	default y
+endif
+
 config GPIO
 	default y
 	depends on SPI

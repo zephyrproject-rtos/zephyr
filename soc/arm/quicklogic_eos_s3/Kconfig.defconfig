@@ -1,0 +1,31 @@
+# Copyright (c) 2020 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_EOS_S3
+
+config SOC
+	default "quicklogic_eos_s3"
+
+config NUM_IRQS
+	default 52
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 61440000
+
+if SERIAL
+
+config UART_PL011
+	default y
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+config UART_PL011_PORT0
+	default y
+
+config UART_PL011_PORT1
+	default n
+
+endif # SERIAL
+
+endif # SOC_EOS_S3

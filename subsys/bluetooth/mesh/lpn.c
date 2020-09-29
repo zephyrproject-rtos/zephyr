@@ -749,7 +749,7 @@ static void lpn_timeout(struct k_work *work)
 		if (IS_ENABLED(CONFIG_BT_MESH_LPN_ESTABLISHMENT)) {
 			bt_mesh_scan_disable();
 		}
-		/* fall through */
+		__fallthrough;
 	case BT_MESH_LPN_ENABLED:
 		send_friend_req(lpn);
 		break;

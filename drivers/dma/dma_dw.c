@@ -53,9 +53,8 @@ static ALWAYS_INLINE uint32_t dw_read(uint32_t dma_base, uint32_t reg)
 	return *((volatile uint32_t*)(dma_base + reg));
 }
 
-static void dw_dma_isr(void *arg)
+static void dw_dma_isr(const struct device *dev)
 {
-	struct device *dev = (struct device *)arg;
 	const struct dw_dma_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	struct dw_dma_dev_data *const dev_data = DEV_DATA(dev);
 	struct dma_chan_data *chan_data;
@@ -116,7 +115,7 @@ static void dw_dma_isr(void *arg)
 	}
 }
 
-static int dw_dma_config(struct device *dev, uint32_t channel,
+static int dw_dma_config(const struct device *dev, uint32_t channel,
 			 struct dma_config *cfg)
 {
 	struct dw_dma_dev_data *const dev_data = DEV_DATA(dev);
@@ -250,8 +249,8 @@ static int dw_dma_config(struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static int dw_dma_reload(struct device *dev, uint32_t channel,
-		uint32_t src, uint32_t dst, size_t size)
+static int dw_dma_reload(const struct device *dev, uint32_t channel,
+			 uint32_t src, uint32_t dst, size_t size)
 {
 	struct dw_dma_dev_data *const dev_data = DEV_DATA(dev);
 	const struct dw_dma_dev_cfg *const dev_cfg = DEV_CFG(dev);
@@ -269,7 +268,7 @@ static int dw_dma_reload(struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static int dw_dma_transfer_start(struct device *dev, uint32_t channel)
+static int dw_dma_transfer_start(const struct device *dev, uint32_t channel)
 {
 	const struct dw_dma_dev_cfg *const dev_cfg = DEV_CFG(dev);
 
@@ -283,7 +282,7 @@ static int dw_dma_transfer_start(struct device *dev, uint32_t channel)
 	return 0;
 }
 
-static int dw_dma_transfer_stop(struct device *dev, uint32_t channel)
+static int dw_dma_transfer_stop(const struct device *dev, uint32_t channel)
 {
 	const struct dw_dma_dev_cfg *const dev_cfg = DEV_CFG(dev);
 
@@ -296,7 +295,7 @@ static int dw_dma_transfer_stop(struct device *dev, uint32_t channel)
 	return 0;
 }
 
-static void dw_dma_setup(struct device *dev)
+static void dw_dma_setup(const struct device *dev)
 {
 	const struct dw_dma_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	struct dw_dma_dev_data *const dev_data = DEV_DATA(dev);
@@ -339,7 +338,7 @@ found:
 	}
 }
 
-static int dw_dma_init(struct device *dev)
+static int dw_dma_init(const struct device *dev)
 {
 	const struct dw_dma_dev_cfg *const dev_cfg = DEV_CFG(dev);
 

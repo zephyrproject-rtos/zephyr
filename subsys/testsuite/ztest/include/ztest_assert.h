@@ -117,6 +117,14 @@ static inline void z_zassert(bool cond,
 					      msg, ##__VA_ARGS__)
 
 /**
+ * @brief Assert that @a cond is 0 (success)
+ * @param cond Condition to check
+ * @param msg Optional message to print if the assertion fails
+ */
+#define zassert_ok(cond, msg, ...) zassert(!(cond), #cond " is non-zero", \
+					      msg, ##__VA_ARGS__)
+
+/**
  * @brief Assert that @a ptr is NULL
  * @param ptr Pointer to compare
  * @param msg Optional message to print if the assertion fails

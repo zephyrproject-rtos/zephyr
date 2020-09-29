@@ -22,7 +22,7 @@ LOG_MODULE_DECLARE(IIS2DLPC, CONFIG_SENSOR_LOG_LEVEL);
 /**
  * iis2dlpc_enable_int - enable selected int pin to generate interrupt
  */
-static int iis2dlpc_enable_int(struct device *dev,
+static int iis2dlpc_enable_int(const struct device *dev,
 			       enum sensor_trigger_type type, int enable)
 {
 	const struct iis2dlpc_device_config *cfg = dev->config;
@@ -75,7 +75,7 @@ static int iis2dlpc_enable_int(struct device *dev,
 /**
  * iis2dlpc_trigger_set - link external trigger to event data ready
  */
-int iis2dlpc_trigger_set(struct device *dev,
+int iis2dlpc_trigger_set(const struct device *dev,
 			  const struct sensor_trigger *trig,
 			  sensor_trigger_handler_t handler)
 {
@@ -105,7 +105,7 @@ int iis2dlpc_trigger_set(struct device *dev,
 	}
 }
 
-static int iis2dlpc_handle_drdy_int(struct device *dev)
+static int iis2dlpc_handle_drdy_int(const struct device *dev)
 {
 	struct iis2dlpc_data *data = dev->data;
 
@@ -122,7 +122,7 @@ static int iis2dlpc_handle_drdy_int(struct device *dev)
 }
 
 #ifdef CONFIG_IIS2DLPC_PULSE
-static int iis2dlpc_handle_single_tap_int(struct device *dev)
+static int iis2dlpc_handle_single_tap_int(const struct device *dev)
 {
 	struct iis2dlpc_data *data = dev->data;
 	sensor_trigger_handler_t handler = data->tap_handler;
@@ -139,7 +139,7 @@ static int iis2dlpc_handle_single_tap_int(struct device *dev)
 	return 0;
 }
 
-static int iis2dlpc_handle_double_tap_int(struct device *dev)
+static int iis2dlpc_handle_double_tap_int(const struct device *dev)
 {
 	struct iis2dlpc_data *data = dev->data;
 	sensor_trigger_handler_t handler = data->double_tap_handler;
@@ -161,9 +161,8 @@ static int iis2dlpc_handle_double_tap_int(struct device *dev)
  * iis2dlpc_handle_interrupt - handle the drdy event
  * read data and call handler if registered any
  */
-static void iis2dlpc_handle_interrupt(void *arg)
+static void iis2dlpc_handle_interrupt(const struct device *dev)
 {
-	struct device *dev = (struct device *)arg;
 	struct iis2dlpc_data *iis2dlpc = dev->data;
 	const struct iis2dlpc_device_config *cfg = dev->config;
 	iis2dlpc_all_sources_t sources;
@@ -186,7 +185,7 @@ static void iis2dlpc_handle_interrupt(void *arg)
 				     GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-static void iis2dlpc_gpio_callback(struct device *dev,
+static void iis2dlpc_gpio_callback(const struct device *dev,
 				    struct gpio_callback *cb, uint32_t pins)
 {
 	struct iis2dlpc_data *iis2dlpc =
@@ -207,16 +206,11 @@ static void iis2dlpc_gpio_callback(struct device *dev,
 }
 
 #ifdef CONFIG_IIS2DLPC_TRIGGER_OWN_THREAD
-static void iis2dlpc_thread(int dev_ptr, int unused)
+static void iis2dlpc_thread(struct iis2dlpc_data *iis2dlpc)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct iis2dlpc_data *iis2dlpc = dev->data;
-
-	ARG_UNUSED(unused);
-
 	while (1) {
 		k_sem_take(&iis2dlpc->gpio_sem, K_FOREVER);
-		iis2dlpc_handle_interrupt(dev);
+		iis2dlpc_handle_interrupt(iis2dlpc->dev);
 	}
 }
 #endif /* CONFIG_IIS2DLPC_TRIGGER_OWN_THREAD */
@@ -231,7 +225,7 @@ static void iis2dlpc_work_cb(struct k_work *work)
 }
 #endif /* CONFIG_IIS2DLPC_TRIGGER_GLOBAL_THREAD */
 
-int iis2dlpc_init_interrupt(struct device *dev)
+int iis2dlpc_init_interrupt(const struct device *dev)
 {
 	struct iis2dlpc_data *iis2dlpc = dev->data;
 	const struct iis2dlpc_device_config *cfg = dev->config;
@@ -245,17 +239,18 @@ int iis2dlpc_init_interrupt(struct device *dev)
 		return -EINVAL;
 	}
 
+	iis2dlpc->dev = dev;
+
 #if defined(CONFIG_IIS2DLPC_TRIGGER_OWN_THREAD)
 	k_sem_init(&iis2dlpc->gpio_sem, 0, UINT_MAX);
 
 	k_thread_create(&iis2dlpc->thread, iis2dlpc->thread_stack,
 		       CONFIG_IIS2DLPC_THREAD_STACK_SIZE,
-		       (k_thread_entry_t)iis2dlpc_thread, dev,
-		       0, NULL, K_PRIO_COOP(CONFIG_IIS2DLPC_THREAD_PRIORITY),
+		       (k_thread_entry_t)iis2dlpc_thread, iis2dlpc,
+		       NULL, NULL, K_PRIO_COOP(CONFIG_IIS2DLPC_THREAD_PRIORITY),
 		       0, K_NO_WAIT);
 #elif defined(CONFIG_IIS2DLPC_TRIGGER_GLOBAL_THREAD)
 	iis2dlpc->work.handler = iis2dlpc_work_cb;
-	iis2dlpc->dev = dev;
 #endif /* CONFIG_IIS2DLPC_TRIGGER_OWN_THREAD */
 
 	iis2dlpc->gpio_pin = cfg->int_gpio_pin;

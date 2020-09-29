@@ -51,18 +51,3 @@ foreach(file_name include/stddef.h)
 
   list(APPEND NOSTDINC ${_OUTPUT})
 endforeach()
-
-# Load toolchain_cc-family macros
-# Significant overlap with freestanding gcc compiler so reuse it
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_freestanding.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_security_fortify.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_security_canaries.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_optimizations.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_cpp.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_asm.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_baremetal.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_warnings.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_imacros.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_base.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_coverage.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_sanitizers.cmake)

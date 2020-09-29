@@ -34,12 +34,12 @@ LOG_MODULE_REGISTER(i2c_dw);
 
 #include "i2c-priv.h"
 
-static inline volatile struct i2c_dw_registers *get_regs(struct device *dev)
+static inline volatile struct i2c_dw_registers *get_regs(const struct device *dev)
 {
 	return (volatile struct i2c_dw_registers *)DEVICE_MMIO_GET(dev);
 }
 
-static inline void i2c_dw_data_ask(struct device *dev)
+static inline void i2c_dw_data_ask(const struct device *dev)
 {
 	struct i2c_dw_dev_config * const dw = dev->data;
 	uint32_t data;
@@ -96,7 +96,7 @@ static inline void i2c_dw_data_ask(struct device *dev)
 	}
 }
 
-static void i2c_dw_data_read(struct device *dev)
+static void i2c_dw_data_read(const struct device *dev)
 {
 	struct i2c_dw_dev_config * const dw = dev->data;
 
@@ -122,7 +122,7 @@ static void i2c_dw_data_read(struct device *dev)
 }
 
 
-static int i2c_dw_data_send(struct device *dev)
+static int i2c_dw_data_send(const struct device *dev)
 {
 	struct i2c_dw_dev_config * const dw = dev->data;
 	uint32_t data = 0U;
@@ -166,7 +166,7 @@ static int i2c_dw_data_send(struct device *dev)
 	return 0;
 }
 
-static inline void i2c_dw_transfer_complete(struct device *dev)
+static inline void i2c_dw_transfer_complete(const struct device *dev)
 {
 	struct i2c_dw_dev_config * const dw = dev->data;
 	uint32_t value;
@@ -181,7 +181,7 @@ static inline void i2c_dw_transfer_complete(struct device *dev)
 
 static void i2c_dw_isr(void *arg)
 {
-	struct device *port = (struct device *)arg;
+	const struct device *port = (const struct device *)arg;
 	struct i2c_dw_dev_config * const dw = port->data;
 	union ic_interrupt_register intr_stat;
 	uint32_t value;
@@ -260,7 +260,7 @@ done:
 }
 
 
-static int i2c_dw_setup(struct device *dev, uint16_t slave_address)
+static int i2c_dw_setup(const struct device *dev, uint16_t slave_address)
 {
 	struct i2c_dw_dev_config * const dw = dev->data;
 	uint32_t value;
@@ -310,7 +310,7 @@ static int i2c_dw_setup(struct device *dev, uint16_t slave_address)
 
 		break;
 	case I2C_SPEED_FAST:
-		/* fall through */
+		__fallthrough;
 	case I2C_SPEED_FAST_PLUS:
 		LOG_DBG("I2C: speed set to FAST or FAST_PLUS");
 		regs->ic_fs_scl_lcnt = dw->lcnt;
@@ -382,7 +382,7 @@ static int i2c_dw_setup(struct device *dev, uint16_t slave_address)
 	return 0;
 }
 
-static int i2c_dw_transfer(struct device *dev,
+static int i2c_dw_transfer(const struct device *dev,
 			   struct i2c_msg *msgs, uint8_t num_msgs,
 			   uint16_t slave_address)
 {
@@ -494,7 +494,7 @@ static int i2c_dw_transfer(struct device *dev,
 	return ret;
 }
 
-static int i2c_dw_runtime_configure(struct device *dev, uint32_t config)
+static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
 {
 	struct i2c_dw_dev_config * const dw = dev->data;
 	uint32_t	value = 0U;
@@ -531,7 +531,7 @@ static int i2c_dw_runtime_configure(struct device *dev, uint32_t config)
 		dw->hcnt = value;
 		break;
 	case I2C_SPEED_FAST:
-		/* fall through */
+		__fallthrough;
 	case I2C_SPEED_FAST_PLUS:
 		/*
 		 * Following the directions on DW spec page 59, IC_FS_SCL_LCNT
@@ -603,7 +603,7 @@ static const struct i2c_driver_api funcs = {
 	.transfer = i2c_dw_transfer,
 };
 
-static int i2c_dw_initialize(struct device *dev)
+static int i2c_dw_initialize(const struct device *dev)
 {
 	const struct i2c_dw_rom_config * const rom = dev->config;
 	struct i2c_dw_dev_config * const dw = dev->data;

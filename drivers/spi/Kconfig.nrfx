@@ -191,7 +191,7 @@ config SPI_4_NRF_RX_DELAY
 
 config SPI_NRFX_RAM_BUFFER_SIZE
 	int "Size of RAM buffers for SPIM peripherals"
-	default 0
+	default 8
 	depends on NRFX_SPIM
 	help
 	  SPIM peripherals cannot transmit data directly from flash. Therefore,

@@ -138,12 +138,12 @@ struct net_route_mcast_scenario_cfg {
 
 static struct net_route_mcast_scenario_cfg active_scenario;
 
-int net_route_mcast_dev_init(struct device *dev)
+int net_route_mcast_dev_init(const struct device *dev)
 {
 	return 0;
 }
 
-static uint8_t *net_route_mcast_get_mac(struct device *dev)
+static uint8_t *net_route_mcast_get_mac(const struct device *dev)
 {
 	struct net_route_mcast_iface_cfg *cfg = dev->data;
 
@@ -222,7 +222,7 @@ static bool check_packet_addresses(struct net_pkt *pkt)
 	return true;
 }
 
-static int iface_send(struct device *dev, struct net_pkt *pkt)
+static int iface_send(const struct device *dev, struct net_pkt *pkt)
 {
 	if (!active_scenario.is_active) {
 		return 0;

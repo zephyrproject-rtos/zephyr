@@ -79,7 +79,7 @@ static void purge_msgq(struct k_msgq *pmsgq)
 	zassert_equal(k_msgq_peek(pmsgq, &read_data), -ENOMSG, NULL);
 }
 
-static void tisr_entry(void *p)
+static void tisr_entry(const void *p)
 {
 	put_msgq((struct k_msgq *)p);
 }
@@ -150,7 +150,7 @@ static void msgq_thread_overflow(struct k_msgq *pmsgq)
 static void msgq_isr(struct k_msgq *pmsgq)
 {
 	/**TESTPOINT: thread-isr data passing via message queue*/
-	irq_offload(tisr_entry, pmsgq);
+	irq_offload(tisr_entry, (const void *)pmsgq);
 	get_msgq(pmsgq);
 
 	/**TESTPOINT: msgq purge*/
@@ -216,7 +216,8 @@ static void get_empty_entry(void *p1, void *p2, void *p3)
 
 	k_sem_give(&end_sema);
 	/* blocked forever */
-	k_msgq_get(p1, rx_buf, K_FOREVER);
+	ret = k_msgq_get(p1, rx_buf, K_FOREVER);
+	zassert_equal(ret, 0, NULL);
 }
 
 static void put_full_entry(void *p1, void *p2, void *p3)
@@ -236,7 +237,8 @@ static void put_full_entry(void *p1, void *p2, void *p3)
 
 	k_sem_give(&end_sema);
 	/* blocked forever */
-	k_msgq_put(p1, &data[1], K_FOREVER);
+	ret = k_msgq_put(p1, &data[1], K_FOREVER);
+	zassert_equal(ret, 0, NULL);
 }
 
 /**
@@ -250,9 +252,12 @@ static void put_full_entry(void *p1, void *p2, void *p3)
  */
 void test_msgq_thread(void)
 {
+	int ret;
+
 	/**TESTPOINT: init via k_msgq_init*/
 	k_msgq_init(&msgq, tbuffer, MSG_SIZE, MSGQ_LEN);
-	k_sem_init(&end_sema, 0, 1);
+	ret = k_sem_init(&end_sema, 0, 1);
+	zassert_equal(ret, 0, NULL);
 
 	msgq_thread(&msgq);
 	msgq_thread(&kmsgq);
@@ -264,9 +269,12 @@ void test_msgq_thread(void)
  */
 void test_msgq_thread_overflow(void)
 {
+	int ret;
+
 	/**TESTPOINT: init via k_msgq_init*/
 	k_msgq_init(&msgq, tbuffer, MSG_SIZE, 1);
-	k_sem_init(&end_sema, 0, 1);
+	ret = k_sem_init(&end_sema, 0, 1);
+	zassert_equal(ret, 0, NULL);
 
 	msgq_thread_overflow(&msgq);
 	msgq_thread_overflow(&kmsgq);
@@ -280,11 +288,13 @@ void test_msgq_thread_overflow(void)
 void test_msgq_user_thread(void)
 {
 	struct k_msgq *q;
+	int ret;
 
 	q = k_object_alloc(K_OBJ_MSGQ);
 	zassert_not_null(q, "couldn't alloc message queue");
 	zassert_false(k_msgq_alloc_init(q, MSG_SIZE, MSGQ_LEN), NULL);
-	k_sem_init(&end_sema, 0, 1);
+	ret = k_sem_init(&end_sema, 0, 1);
+	zassert_equal(ret, 0, NULL);
 
 	msgq_thread(q);
 }
@@ -296,11 +306,13 @@ void test_msgq_user_thread(void)
 void test_msgq_user_thread_overflow(void)
 {
 	struct k_msgq *q;
+	int ret;
 
 	q = k_object_alloc(K_OBJ_MSGQ);
 	zassert_not_null(q, "couldn't alloc message queue");
 	zassert_false(k_msgq_alloc_init(q, MSG_SIZE, 1), NULL);
-	k_sem_init(&end_sema, 0, 1);
+	ret = k_sem_init(&end_sema, 0, 1);
+	zassert_equal(ret, 0, NULL);
 
 	msgq_thread_overflow(q);
 }
@@ -327,8 +339,11 @@ void test_msgq_isr(void)
  */
 void test_msgq_pend_thread(void)
 {
+	int ret;
+
 	k_msgq_init(&msgq1, tbuffer1, MSG_SIZE, 1);
-	k_sem_init(&end_sema, 0, 1);
+	ret = k_sem_init(&end_sema, 0, 1);
+	zassert_equal(ret, 0, NULL);
 
 	msgq_thread_data_passing(&msgq1);
 }
@@ -371,9 +386,11 @@ void test_msgq_alloc(void)
 void test_msgq_empty(void)
 {
 	int pri = k_thread_priority_get(k_current_get()) - 1;
+	int ret;
 
 	k_msgq_init(&msgq1, tbuffer1, MSG_SIZE, 1);
-	k_sem_init(&end_sema, 0, 1);
+	ret = k_sem_init(&end_sema, 0, 1);
+	zassert_equal(ret, 0, NULL);
 
 	k_tid_t tid = k_thread_create(&tdata2, tstack2, STACK_SIZE,
 				      get_empty_entry, &msgq1, NULL,
@@ -399,9 +416,12 @@ void test_msgq_empty(void)
 void test_msgq_full(void)
 {
 	int pri = k_thread_priority_get(k_current_get()) - 1;
+	int ret;
 
 	k_msgq_init(&msgq1, tbuffer1, MSG_SIZE, 1);
-	k_sem_init(&end_sema, 0, 1);
+	ret = k_sem_init(&end_sema, 0, 1);
+	zassert_equal(ret, 0, NULL);
+
 
 	k_msgq_put(&msgq1, &data[0], K_NO_WAIT);
 	k_tid_t tid = k_thread_create(&tdata2, tstack2, STACK_SIZE,

@@ -75,7 +75,6 @@ endmenu
 
 config HAS_NRFX
 	bool
-	select HAS_CMSIS_CORE
 
 menu "nrfx drivers"
 	depends on HAS_NRFX
@@ -87,6 +86,10 @@ config NRFX_ADC
 config NRFX_CLOCK
 	bool "Enable CLOCK driver"
 	depends on HAS_HW_NRF_CLOCK
+
+config NRFX_CLOCK_LFXO_TWO_STAGE_ENABLED
+	bool "Enable two stage start sequence of the low frequency clock"
+	depends on NRFX_CLOCK
 
 config NRFX_COMP
 	bool "Enable COMP driver"
@@ -163,6 +166,9 @@ config NRFX_PDM
 config NRFX_POWER
 	bool "Enable POWER driver"
 	depends on HAS_HW_NRF_POWER
+	# On SoCs featuring the USBREG peripheral, the POWER driver uses
+	# internally the USBREG driver.
+	select NRFX_USBREG if HAS_HW_NRF_USBREG
 
 config NRFX_PPI
 	bool "Enable PPI allocator"

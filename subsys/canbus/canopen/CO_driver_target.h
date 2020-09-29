@@ -80,7 +80,7 @@ typedef struct canopen_tx {
 } CO_CANtx_t;
 
 typedef struct canopen_module {
-	struct device *dev;
+	const struct device *dev;
 	CO_CANrx_t *rx_array;
 	CO_CANtx_t *tx_array;
 	uint16_t rx_size;

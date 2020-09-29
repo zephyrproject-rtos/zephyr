@@ -5,6 +5,7 @@
 '''Runner for openocd.'''
 
 from os import path
+from pathlib import Path
 
 try:
     from elftools.elf.elffile import ELFFile
@@ -43,8 +44,10 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         if cfg.openocd_search is not None:
             search_args.extend(['-s', cfg.openocd_search])
         self.openocd_cmd = [cfg.openocd] + search_args
-        self.hex_name = cfg.hex_file
-        self.elf_name = cfg.elf_file
+        # openocd doesn't cope with Windows path names, so convert
+        # them to POSIX style just to be sure.
+        self.hex_name = Path(cfg.hex_file).as_posix()
+        self.elf_name = Path(cfg.elf_file).as_posix()
         self.pre_init = pre_init or []
         self.pre_load = pre_load or []
         self.load_cmd = load_cmd

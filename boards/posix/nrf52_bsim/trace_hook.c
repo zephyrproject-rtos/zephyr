@@ -59,7 +59,7 @@ void posix_flush_stdout(void)
  *
  * @return 0 if successful, otherwise failed.
  */
-static int printk_init(struct device *arg)
+static int printk_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

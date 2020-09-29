@@ -60,7 +60,7 @@ static uint32_t count32(void)
 	return shim_regs->walclk32_lo;
 }
 
-static void compare_isr(void *arg)
+static void compare_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 	uint64_t curr;
@@ -104,7 +104,7 @@ static void compare_isr(void *arg)
 	z_clock_announce(dticks);
 }
 
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
 	uint64_t curr = count();
 

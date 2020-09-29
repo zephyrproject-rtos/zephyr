@@ -203,14 +203,14 @@ explained in this document.
         tests:
           bluetooth.gatt:
             build_only: true
-            platform_whitelist: qemu_cortex_m3 qemu_x86
+            platform_allow: qemu_cortex_m3 qemu_x86
             tags: bluetooth
           bluetooth.gatt.br:
             build_only: true
             extra_args: CONF_FILE="prj_br.conf"
             filter: not CONFIG_DEBUG
             platform_exclude: up_squared
-            platform_whitelist: qemu_cortex_m3 qemu_x86
+            platform_allow: qemu_cortex_m3 qemu_x86
             tags: bluetooth
 
 
@@ -298,22 +298,22 @@ timeout: <number of seconds>
     Length of time to run test in QEMU before automatically killing it.
     Default to 60 seconds.
 
-arch_whitelist: <list of arches, such as x86, arm, arc>
+arch_allow: <list of arches, such as x86, arm, arc>
     Set of architectures that this test case should only be run for.
 
 arch_exclude: <list of arches, such as x86, arm, arc>
     Set of architectures that this test case should not run on.
 
-platform_whitelist: <list of platforms>
+platform_allow: <list of platforms>
     Set of platforms that this test case should only be run for. Do not use
     this option to limit testing or building in CI due to time or resource
     constraints, this option should only be used if the test or sample can
-    only be run on the whitelisted platform and nothing else.
+    only be run on the allowed platform and nothing else.
 
 integration_platforms: <YML list of platforms/boards>
     This option limits the scope to the listed platforms when sanitycheck is
     invoked with the --integration option. Use this instead of
-    platform_whitelist if the goal is to limit scope due to timing or
+    platform_allow if the goal is to limit scope due to timing or
     resource constraints.
 
 platform_exclude: <list of platforms>
@@ -437,7 +437,7 @@ filter: <expression>
         not (right associative)
         all comparison operators (non-associative)
 
-    arch_whitelist, arch_exclude, platform_whitelist, platform_exclude
+    arch_allow, arch_exclude, platform_allow, platform_exclude
     are all syntactic sugar for these expressions. For instance
 
         arch_exclude = x86 arc

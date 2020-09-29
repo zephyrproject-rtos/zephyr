@@ -59,6 +59,13 @@ config COAP_INIT_ACK_TIMEOUT_MS
 	help
 	  This value is used as a base value to retry pending CoAP packets.
 
+config COAP_URI_WILDCARD
+	bool "Enable wildcards in CoAP resource path"
+	default y
+	help
+	  This option enables MQTT-style wildcards in path. Disable it if
+	  resource path may contain plus or hash symbol.
+
 module = COAP
 module-dep = NET_LOG
 module-str = Log level for CoAP

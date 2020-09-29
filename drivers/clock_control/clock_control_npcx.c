@@ -16,9 +16,9 @@ LOG_MODULE_REGISTER(clock_control_npcx, LOG_LEVEL_ERR);
 /* Driver config */
 struct npcx_pcc_config {
 	/* cdcg device base address */
-	uint32_t base_cdcg;
+	uintptr_t base_cdcg;
 	/* pmc device base address */
-	uint32_t base_pmc;
+	uintptr_t base_pmc;
 };
 
 /* Driver convenience defines */
@@ -26,13 +26,13 @@ struct npcx_pcc_config {
 	((const struct npcx_pcc_config *)(dev)->config)
 
 #define HAL_CDCG_INST(dev) \
-	(struct cdcg_reg_t *)(DRV_CONFIG(dev)->base_cdcg)
+	(struct cdcg_reg *)(DRV_CONFIG(dev)->base_cdcg)
 
 #define HAL_PMC_INST(dev) \
-	(struct pmc_reg_t *)(DRV_CONFIG(dev)->base_pmc)
+	(struct pmc_reg *)(DRV_CONFIG(dev)->base_pmc)
 
 /* Clock controller local functions */
-static inline int npcx_clock_control_on(struct device *dev,
+static inline int npcx_clock_control_on(const struct device *dev,
 					 clock_control_subsys_t sub_system)
 {
 	ARG_UNUSED(dev);
@@ -44,7 +44,7 @@ static inline int npcx_clock_control_on(struct device *dev,
 	return 0;
 }
 
-static inline int npcx_clock_control_off(struct device *dev,
+static inline int npcx_clock_control_off(const struct device *dev,
 					  clock_control_subsys_t sub_system)
 {
 	ARG_UNUSED(dev);
@@ -56,9 +56,9 @@ static inline int npcx_clock_control_off(struct device *dev,
 	return 0;
 }
 
-static int npcx_clock_control_get_subsys_rate(struct device *dev,
-					 clock_control_subsys_t sub_system,
-					 uint32_t *rate)
+static int npcx_clock_control_get_subsys_rate(const struct device *dev,
+					      clock_control_subsys_t sub_system,
+					      uint32_t *rate)
 {
 	ARG_UNUSED(dev);
 	struct npcx_clk_cfg *clk_cfg = (struct npcx_clk_cfg *)(sub_system);
@@ -101,9 +101,9 @@ static struct clock_control_driver_api npcx_clock_control_api = {
 	.get_rate = npcx_clock_control_get_subsys_rate,
 };
 
-static int npcx_clock_control_init(struct device *dev)
+static int npcx_clock_control_init(const struct device *dev)
 {
-	struct cdcg_reg_t *inst_cdcg = HAL_CDCG_INST(dev);
+	struct cdcg_reg *inst_cdcg = HAL_CDCG_INST(dev);
 	uint32_t pmc_base = DRV_CONFIG(dev)->base_pmc;
 
 	/*
@@ -154,7 +154,7 @@ const struct npcx_pcc_config pcc_config = {
 	.base_pmc  = DT_INST_REG_ADDR_BY_NAME(0, pmc),
 };
 
-DEVICE_AND_API_INIT(npcx_cdcg, NPCX_CLOCK_CONTROL_NAME,
+DEVICE_AND_API_INIT(npcx_cdcg, NPCX_CLK_CTRL_NAME,
 		    &npcx_clock_control_init,
 		    NULL, &pcc_config,
 		    PRE_KERNEL_1,

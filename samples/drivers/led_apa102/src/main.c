@@ -53,7 +53,7 @@ const struct led_rgb *color_at(size_t time, size_t i)
 #define DELAY_TIME K_MSEC(40)
 void main(void)
 {
-	struct device *strip;
+	const struct device *strip;
 	size_t i, time;
 
 	strip = device_get_binding(DT_LABEL(DT_INST(0, apa_apa102)));

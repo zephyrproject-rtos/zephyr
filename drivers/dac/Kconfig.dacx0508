@@ -1,0 +1,21 @@
+# DAC configuration options
+
+# Copyright (c) 2020 M2I Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_DACX0508
+	bool "TI DACx0508 DAC driver"
+	depends on SPI
+	help
+	  Enable the driver for the TI DACx0508.
+
+if DAC_DACX0508
+
+config DAC_DACX0508_INIT_PRIORITY
+	int "Init priority"
+	default 80
+	help
+	  DACx0508 DAC device driver initialization priority.
+
+endif # DAC_DACX0508

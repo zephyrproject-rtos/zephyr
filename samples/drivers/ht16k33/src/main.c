@@ -20,11 +20,11 @@ LOG_MODULE_REGISTER(main);
 
 #define KEYSCAN_DEVICES 3
 
-struct device *led_dev;
-struct device *ks_dev[KEYSCAN_DEVICES];
+const struct device *led_dev;
+const struct device *ks_dev[KEYSCAN_DEVICES];
 static struct gpio_callback ks_cb[KEYSCAN_DEVICES];
 
-static void keyscan_callback(struct device *gpiob,
+static void keyscan_callback(const struct device *gpiob,
 			     struct gpio_callback *cb, uint32_t pins)
 {
 	LOG_INF("%s: 0x%08x", gpiob->name, pins);

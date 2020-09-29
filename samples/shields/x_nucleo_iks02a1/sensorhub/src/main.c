@@ -13,8 +13,8 @@
 #ifdef CONFIG_IIS2DLPC_TRIGGER
 static int iis2dlpc_trig_cnt;
 
-static void iis2dlpc_trigger_handler(struct device *dev,
-				    struct sensor_trigger *trig)
+static void iis2dlpc_trigger_handler(const struct device *dev,
+				     struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ);
 	iis2dlpc_trig_cnt++;
@@ -26,29 +26,29 @@ static int ism330dhcx_acc_trig_cnt;
 static int ism330dhcx_gyr_trig_cnt;
 static int ism330dhcx_temp_trig_cnt;
 
-static void ism330dhcx_acc_trig_handler(struct device *dev,
-				    struct sensor_trigger *trig)
+static void ism330dhcx_acc_trig_handler(const struct device *dev,
+					struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ);
 	ism330dhcx_acc_trig_cnt++;
 }
 
-static void ism330dhcx_gyr_trig_handler(struct device *dev,
-				    struct sensor_trigger *trig)
+static void ism330dhcx_gyr_trig_handler(const struct device *dev,
+					struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_GYRO_XYZ);
 	ism330dhcx_gyr_trig_cnt++;
 }
 
-static void ism330dhcx_temp_trig_handler(struct device *dev,
-				    struct sensor_trigger *trig)
+static void ism330dhcx_temp_trig_handler(const struct device *dev,
+					 struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_DIE_TEMP);
 	ism330dhcx_temp_trig_cnt++;
 }
 #endif
 
-static void iis2dlpc_config(struct device *iis2dlpc)
+static void iis2dlpc_config(const struct device *iis2dlpc)
 {
 	struct sensor_value odr_attr, fs_attr;
 
@@ -79,7 +79,7 @@ static void iis2dlpc_config(struct device *iis2dlpc)
 #endif
 }
 
-static void ism330dhcx_config(struct device *ism330dhcx)
+static void ism330dhcx_config(const struct device *ism330dhcx)
 {
 	struct sensor_value odr_attr, fs_attr;
 
@@ -156,8 +156,8 @@ void main(void)
 	struct sensor_value accel1[3], accel2[3];
 	struct sensor_value gyro[3];
 	struct sensor_value magn[3];
-	struct device *iis2dlpc = device_get_binding(DT_LABEL(DT_INST(0, st_iis2dlpc)));
-	struct device *ism330dhcx = device_get_binding(DT_LABEL(DT_INST(0, st_ism330dhcx)));
+	const struct device *iis2dlpc = device_get_binding(DT_LABEL(DT_INST(0, st_iis2dlpc)));
+	const struct device *ism330dhcx = device_get_binding(DT_LABEL(DT_INST(0, st_ism330dhcx)));
 	int cnt = 1;
 
 	if (iis2dlpc == NULL) {

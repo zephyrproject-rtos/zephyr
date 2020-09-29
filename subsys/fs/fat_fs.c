@@ -407,7 +407,7 @@ static int fatfs_unmount(struct fs_mount_t *mountp)
 }
 
 /* File system interface */
-static struct fs_file_system_t fatfs_fs = {
+static const struct fs_file_system_t fatfs_fs = {
 	.open = fatfs_open,
 	.close = fatfs_close,
 	.read = fatfs_read,
@@ -428,7 +428,7 @@ static struct fs_file_system_t fatfs_fs = {
 	.statvfs = fatfs_statvfs,
 };
 
-static int fatfs_init(struct device *dev)
+static int fatfs_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

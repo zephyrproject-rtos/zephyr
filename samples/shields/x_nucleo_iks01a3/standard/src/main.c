@@ -13,7 +13,7 @@
 #ifdef CONFIG_LIS2MDL_TRIGGER
 static int lis2mdl_trig_cnt;
 
-static void lis2mdl_trigger_handler(struct device *dev,
+static void lis2mdl_trigger_handler(const struct device *dev,
 				    struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ALL);
@@ -24,7 +24,7 @@ static void lis2mdl_trigger_handler(struct device *dev,
 #ifdef CONFIG_LPS22HH_TRIGGER
 static int lps22hh_trig_cnt;
 
-static void lps22hh_trigger_handler(struct device *dev,
+static void lps22hh_trigger_handler(const struct device *dev,
 				    struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_PRESS);
@@ -35,7 +35,7 @@ static void lps22hh_trigger_handler(struct device *dev,
 #ifdef CONFIG_STTS751_TRIGGER
 static int stts751_trig_cnt;
 
-static void stts751_trigger_handler(struct device *dev,
+static void stts751_trigger_handler(const struct device *dev,
 				       struct sensor_trigger *trig)
 {
 	stts751_trig_cnt++;
@@ -45,8 +45,8 @@ static void stts751_trigger_handler(struct device *dev,
 #ifdef CONFIG_LIS2DW12_TRIGGER
 static int lis2dw12_trig_cnt;
 
-static void lis2dw12_trigger_handler(struct device *dev,
-				    struct sensor_trigger *trig)
+static void lis2dw12_trigger_handler(const struct device *dev,
+				     struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ);
 	lis2dw12_trig_cnt++;
@@ -58,29 +58,29 @@ static int lsm6dso_acc_trig_cnt;
 static int lsm6dso_gyr_trig_cnt;
 static int lsm6dso_temp_trig_cnt;
 
-static void lsm6dso_acc_trig_handler(struct device *dev,
-				    struct sensor_trigger *trig)
+static void lsm6dso_acc_trig_handler(const struct device *dev,
+				     struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ);
 	lsm6dso_acc_trig_cnt++;
 }
 
-static void lsm6dso_gyr_trig_handler(struct device *dev,
-				    struct sensor_trigger *trig)
+static void lsm6dso_gyr_trig_handler(const struct device *dev,
+				     struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_GYRO_XYZ);
 	lsm6dso_gyr_trig_cnt++;
 }
 
-static void lsm6dso_temp_trig_handler(struct device *dev,
-				    struct sensor_trigger *trig)
+static void lsm6dso_temp_trig_handler(const struct device *dev,
+				      struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_DIE_TEMP);
 	lsm6dso_temp_trig_cnt++;
 }
 #endif
 
-static void lis2mdl_config(struct device *lis2mdl)
+static void lis2mdl_config(const struct device *lis2mdl)
 {
 	struct sensor_value odr_attr;
 
@@ -103,7 +103,7 @@ static void lis2mdl_config(struct device *lis2mdl)
 #endif
 }
 
-static void lps22hh_config(struct device *lps22hh)
+static void lps22hh_config(const struct device *lps22hh)
 {
 	struct sensor_value odr_attr;
 
@@ -126,7 +126,7 @@ static void lps22hh_config(struct device *lps22hh)
 #endif
 }
 
-static void stts751_config(struct device *stts751)
+static void stts751_config(const struct device *stts751)
 {
 	struct sensor_value odr_attr;
 
@@ -149,7 +149,7 @@ static void stts751_config(struct device *stts751)
 #endif
 }
 
-static void lis2dw12_config(struct device *lis2dw12)
+static void lis2dw12_config(const struct device *lis2dw12)
 {
 	struct sensor_value odr_attr, fs_attr;
 
@@ -180,7 +180,7 @@ static void lis2dw12_config(struct device *lis2dw12)
 #endif
 }
 
-static void lsm6dso_config(struct device *lsm6dso)
+static void lsm6dso_config(const struct device *lsm6dso)
 {
 	struct sensor_value odr_attr, fs_attr;
 
@@ -247,12 +247,12 @@ void main(void)
 	struct sensor_value accel1[3], accel2[3];
 	struct sensor_value gyro[3];
 	struct sensor_value magn[3];
-	struct device *hts221 = device_get_binding(DT_LABEL(DT_INST(0, st_hts221)));
-	struct device *lps22hh = device_get_binding(DT_LABEL(DT_INST(0, st_lps22hh)));
-	struct device *stts751 = device_get_binding(DT_LABEL(DT_INST(0, st_stts751)));
-	struct device *lis2mdl = device_get_binding(DT_LABEL(DT_INST(0, st_lis2mdl)));
-	struct device *lis2dw12 = device_get_binding(DT_LABEL(DT_INST(0, st_lis2dw12)));
-	struct device *lsm6dso = device_get_binding(DT_LABEL(DT_INST(0, st_lsm6dso)));
+	const struct device *hts221 = device_get_binding(DT_LABEL(DT_INST(0, st_hts221)));
+	const struct device *lps22hh = device_get_binding(DT_LABEL(DT_INST(0, st_lps22hh)));
+	const struct device *stts751 = device_get_binding(DT_LABEL(DT_INST(0, st_stts751)));
+	const struct device *lis2mdl = device_get_binding(DT_LABEL(DT_INST(0, st_lis2mdl)));
+	const struct device *lis2dw12 = device_get_binding(DT_LABEL(DT_INST(0, st_lis2dw12)));
+	const struct device *lsm6dso = device_get_binding(DT_LABEL(DT_INST(0, st_lsm6dso)));
 	int cnt = 1;
 
 	if (hts221 == NULL) {

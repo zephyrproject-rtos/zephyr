@@ -163,7 +163,7 @@ void test_event_flags_signalled(void)
 }
 
 /* IRQ offload function handler to set event flag */
-static void offload_function(void *param)
+static void offload_function(const void *param)
 {
 	int flags;
 
@@ -178,7 +178,7 @@ static void offload_function(void *param)
 void test_event_from_isr(void *event_id)
 {
 	/**TESTPOINT: Offload to IRQ context*/
-	irq_offload(offload_function, (void *)event_id);
+	irq_offload(offload_function, (const void *)event_id);
 }
 
 static K_THREAD_STACK_DEFINE(test_stack3, STACKSZ);

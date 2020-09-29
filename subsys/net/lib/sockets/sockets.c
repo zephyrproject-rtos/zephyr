@@ -575,15 +575,21 @@ static inline int z_vrfy_zsock_accept(int sock, struct sockaddr *addr,
 #include <syscalls/zsock_accept_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
+#define WAIT_BUFS K_MSEC(100)
+#define MAX_WAIT_BUFS K_SECONDS(10)
+
 ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 			 int flags,
 			 const struct sockaddr *dest_addr, socklen_t addrlen)
 {
 	k_timeout_t timeout = K_FOREVER;
+	uint64_t buf_timeout = 0;
 	int status;
 
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
 		timeout = K_NO_WAIT;
+	} else {
+		buf_timeout = z_timeout_end_calc(MAX_WAIT_BUFS);
 	}
 
 	/* Register the callback before sending in order to receive the response
@@ -596,18 +602,47 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 		return -1;
 	}
 
-	if (dest_addr) {
-		status = net_context_sendto(ctx, buf, len, dest_addr,
-					    addrlen, NULL, timeout,
-					    ctx->user_data);
-	} else {
-		status = net_context_send(ctx, buf, len, NULL, timeout,
-					  ctx->user_data);
-	}
+	while (1) {
+		if (dest_addr) {
+			status = net_context_sendto(ctx, buf, len, dest_addr,
+						    addrlen, NULL, timeout,
+						    ctx->user_data);
+		} else {
+			status = net_context_send(ctx, buf, len, NULL, timeout,
+						  ctx->user_data);
+		}
 
-	if (status < 0) {
-		errno = -status;
-		return -1;
+		if (status < 0) {
+			if (((status == -ENOBUFS) || (status == -EAGAIN)) &&
+			    K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+				/* If we cannot get any buffers in reasonable
+				 * amount of time, then do not wait forever as
+				 * there might be some bigger issue.
+				 * If we get -EAGAIN and cannot recover, then
+				 * it means that the sending window is blocked
+				 * and we just cannot send anything.
+				 */
+				int64_t remaining = buf_timeout - z_tick_get();
+
+				if (remaining <= 0) {
+					if (status == -ENOBUFS) {
+						errno = ENOMEM;
+					} else {
+						errno = ENOBUFS;
+					}
+
+					return -1;
+				}
+
+				k_sleep(WAIT_BUFS);
+				continue;
+			} else {
+				errno = -status;
+				return -1;
+			}
+		}
+
+		break;
 	}
 
 	return status;
@@ -1224,6 +1259,9 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 	const struct fd_op_vtable *vtable;
 	k_timeout_t timeout;
 	uint64_t end;
+	bool offload = false;
+	const struct fd_op_vtable *offl_vtable = NULL;
+	void *offl_ctx = NULL;
 
 	if (poll_timeout < 0) {
 		timeout = K_FOREVER;
@@ -1265,17 +1303,28 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 		} else if (result == -EXDEV) {
 			/* If POLL_PREPARE returned EXDEV, it means
 			 * it detected an offloaded socket.
+			 * If offloaded socket is used with native TLS, the TLS
+			 * wrapper for the offloaded poll will be used.
 			 * In case the fds array contains a mixup of offloaded
 			 * and non-offloaded sockets, the offloaded poll handler
 			 * shall return an error.
 			 */
-			return z_fdtable_call_ioctl(vtable, ctx,
-						    ZFD_IOCTL_POLL_OFFLOAD,
-						    fds, nfds, poll_timeout);
+			offload = true;
+			if (offl_vtable == NULL || net_socket_is_tls(ctx)) {
+				offl_vtable = vtable;
+				offl_ctx = ctx;
+			}
+			continue;
 		} else if (result != 0) {
 			errno = -result;
 			return -1;
 		}
+	}
+
+	if (offload) {
+		return z_fdtable_call_ioctl(offl_vtable, offl_ctx,
+					    ZFD_IOCTL_POLL_OFFLOAD,
+					    fds, nfds, poll_timeout);
 	}
 
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&

@@ -10,7 +10,7 @@
 #include <sys/printk.h>
 #include <stdio.h>
 
-static void do_main(struct device *dev)
+static void do_main(const struct device *dev)
 {
 	int ret;
 	struct sensor_value value_x, value_y, value_z;
@@ -34,10 +34,10 @@ static void do_main(struct device *dev)
 	}
 }
 
-struct device *sensor_search_for_magnetometer()
+const struct device *sensor_search_for_magnetometer()
 {
 	static char *magn_sensors[] = {"bmc150_magn", NULL};
-	struct device *dev;
+	const struct device *dev;
 	int i;
 
 	i = 0;
@@ -54,7 +54,7 @@ struct device *sensor_search_for_magnetometer()
 
 void main(void)
 {
-	struct device *dev;
+	const struct device *dev;
 
 	dev = sensor_search_for_magnetometer();
 	if (dev) {

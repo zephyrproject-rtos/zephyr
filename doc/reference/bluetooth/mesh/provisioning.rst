@@ -29,10 +29,10 @@ Beaconing
 To start the provisioning process, the unprovisioned device must first start
 broadcasting the Unprovisioned Beacon. This makes it visible to nearby
 provisioners, which can initiate the provisioning. To indicate that the device
-needs to be provisioned, call :cpp:func:`bt_mesh_prov_enable()`. The device
+needs to be provisioned, call :c:func:`bt_mesh_prov_enable`. The device
 starts broadcasting the Unprovisioned Beacon with the device UUID and the
 ``OOB information`` field, as specified in the ``prov`` parameter passed to
-:cpp:func:`bt_mesh_init`. Additionally, a Uniform Resource Identifier (URI)
+:c:func:`bt_mesh_init`. Additionally, a Uniform Resource Identifier (URI)
 may be specified, which can point the provisioner to the location of some Out
 Of Band information, such as the device's public key or an authentication
 value database. The URI is advertised in a separate beacon, with a URI hash
@@ -88,25 +88,25 @@ provisionee:
   production, which the provisioner can query in some application specific
   way.
 * **Input OOB:** The user inputs the authentication value. The available input
-  actions are listed in :cpp:enum:`bt_mesh_input_action_t`.
+  actions are listed in :c:enum:`bt_mesh_input_action_t`.
 * **Output OOB:** Show the user the authentication value. The available output
-  actions are listed in :cpp:enum:`bt_mesh_output_action_t`.
+  actions are listed in :c:enum:`bt_mesh_output_action_t`.
 
 The application must provide callbacks for the supported authentication
-methods in :cpp:type:`bt_mesh_prov`, as well as enabling the supported actions
-in :cpp:var:`bt_mesh_prov::output_actions` and
-:cpp:var:`bt_mesh_prov::input_actions`.
+methods in :c:struct:`bt_mesh_prov`, as well as enabling the supported actions
+in :c:member:`bt_mesh_prov.output_actions` and
+:c:member:`bt_mesh_prov.input_actions`.
 
 When an Output OOB action is selected, the authentication value should be
 presented to the user when the output callback is called, and remain until the
-:cpp:var:`bt_mesh_prov::input_complete` or :cpp:var:`bt_mesh_prov::complete`
+:c:member:`bt_mesh_prov.input_complete` or :c:member:`bt_mesh_prov.complete`
 callback is called. If the action is ``blink``, ``beep`` or ``vibrate``, the
 sequence should be repeated after a delay of three seconds or more.
 
 When an Input OOB action is selected, the user should be prompted when the
-application receives the :cpp:var:`bt_mesh_prov::input` callback. The user
+application receives the :c:member:`bt_mesh_prov.input` callback. The user
 response should be fed back to the Provisioning API through
-:cpp:func:`bt_mesh_input_string()` or :cpp:func:`bt_mesh_input_number()`. If
+:c:func:`bt_mesh_input_string` or :c:func:`bt_mesh_input_number`. If
 no user response is recorded within 60 seconds, the Provisioning process is
 aborted.
 
@@ -125,7 +125,7 @@ transfers the Provisioning data:
   * IV update
 
 Additionally, a device key is generated for the node. All this data is stored
-by the mesh stack, and the provisioning :cpp:var:`bt_mesh_prov::complete`
+by the mesh stack, and the provisioning :c:member:`bt_mesh_prov.complete`
 callback gets called.
 
 API reference

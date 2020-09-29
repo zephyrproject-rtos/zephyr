@@ -22,6 +22,11 @@ and from a string type.
 For an example of the settings subsystem refer to
 :ref:`the sample <settings_subsys_sample>`.
 
+.. note::
+
+   As of Zephyr release 2.1 the recommended backend for non-filesystem
+   storage is :ref:`NVS <nvs_api>`.
+
 Handlers
 ********
 

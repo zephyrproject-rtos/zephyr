@@ -167,7 +167,7 @@ static void test_thread(int arg1, int arg2)
 	test_failure = false;
 }
 
-static void irq_offload_isr(void *arg)
+static void irq_offload_isr(const void *arg)
 {
 
 	k_wakeup((k_tid_t) arg);
@@ -181,7 +181,7 @@ static void helper_thread(int arg1, int arg2)
 	k_wakeup(test_thread_id);
 	k_sem_take(&helper_thread_sem, K_FOREVER);
 	/* Wake the test thread from an ISR */
-	irq_offload(irq_offload_isr, (void *)test_thread_id);
+	irq_offload(irq_offload_isr, (const void *)test_thread_id);
 }
 
 /**

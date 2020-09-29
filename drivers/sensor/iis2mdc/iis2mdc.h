@@ -29,7 +29,7 @@ union axis1bit16_t {
 
 struct iis2mdc_config {
 	char *master_dev_name;
-	int (*bus_init)(struct device *dev);
+	int (*bus_init)(const struct device *dev);
 #ifdef CONFIG_IIS2MDC_TRIGGER
 	const char *drdy_port;
 	gpio_pin_t drdy_pin;
@@ -49,7 +49,8 @@ struct iis2mdc_config {
 
 /* Sensor data */
 struct iis2mdc_data {
-	struct device *bus;
+	const struct device *dev;
+	const struct device *bus;
 	uint16_t i2c_addr;
 	int16_t mag[3];
 	int32_t temp_sample;
@@ -63,11 +64,10 @@ struct iis2mdc_data {
 #endif
 
 #ifdef CONFIG_IIS2MDC_TRIGGER
-	struct device *gpio;
+	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	sensor_trigger_handler_t handler_drdy;
-	struct device *dev;
 
 #if defined(CONFIG_IIS2MDC_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_IIS2MDC_THREAD_STACK_SIZE);
@@ -82,12 +82,12 @@ struct iis2mdc_data {
 #endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 };
 
-int iis2mdc_spi_init(struct device *dev);
-int iis2mdc_i2c_init(struct device *dev);
+int iis2mdc_spi_init(const struct device *dev);
+int iis2mdc_i2c_init(const struct device *dev);
 
 #ifdef CONFIG_IIS2MDC_TRIGGER
-int iis2mdc_init_interrupt(struct device *dev);
-int iis2mdc_trigger_set(struct device *dev,
+int iis2mdc_init_interrupt(const struct device *dev);
+int iis2mdc_trigger_set(const struct device *dev,
 			  const struct sensor_trigger *trig,
 			  sensor_trigger_handler_t handler);
 #endif /* CONFIG_IIS2MDC_TRIGGER */
