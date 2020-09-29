@@ -1151,6 +1151,14 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 		}
 	}
 
+	ret = net_context_bind(context, &local_addr, sizeof(local_addr));
+	if (ret < 0) {
+		NET_DBG("Cannot bind accepted context, connection reset");
+		net_context_unref(context);
+		conn = NULL;
+		goto err;
+	}
+
 	NET_DBG("context: local: %s, remote: %s",
 		log_strdup(net_sprint_addr(
 		      local_addr.sa_family,
