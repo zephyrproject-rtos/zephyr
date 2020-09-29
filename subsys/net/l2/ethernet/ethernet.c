@@ -321,7 +321,7 @@ static inline bool ethernet_ipv4_dst_is_broadcast_or_mcast(struct net_pkt *pkt)
 {
 	if (net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
 				   &NET_IPV4_HDR(pkt)->dst) ||
-	    NET_IPV4_HDR(pkt)->dst.s4_addr[0] == 224U) {
+	    net_ipv4_is_addr_mcast(&NET_IPV4_HDR(pkt)->dst)) {
 		return true;
 	}
 
@@ -332,7 +332,7 @@ static bool ethernet_fill_in_dst_on_ipv4_mcast(struct net_pkt *pkt,
 					       struct net_eth_addr *dst)
 {
 	if (net_pkt_family(pkt) == AF_INET &&
-	    NET_IPV4_HDR(pkt)->dst.s4_addr[0] == 224U) {
+	    net_ipv4_is_addr_mcast(&NET_IPV4_HDR(pkt)->dst)) {
 		/* Multicast address */
 		dst->addr[0] = 0x01;
 		dst->addr[1] = 0x00;
