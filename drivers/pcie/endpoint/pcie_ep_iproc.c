@@ -10,10 +10,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(iproc_pcie);
 
-#include <soc.h>
-
 #include "pcie_ep_iproc.h"
-#include "pcie_ep_iproc_regs.h"
 
 #define DT_DRV_COMPAT brcm_iproc_pcie_ep
 
@@ -330,6 +327,56 @@ static void iproc_pcie_reset_config(const struct device *dev)
 #endif
 }
 
+#ifdef CONFIG_PCIE_EP_IPROC_V2
+static void iproc_pcie_msix_pvm_config(const struct device *dev)
+{
+	__unused const struct iproc_pcie_ep_config *cfg = dev->config;
+	__unused struct iproc_pcie_reg *base = cfg->base;
+	__unused uint32_t data;
+
+	/* configure snoop irq 1 for monitoring MSIX_CAP register */
+#if DT_INST_IRQ_HAS_NAME(0, snoop_irq1)
+	data = pcie_read32(&cfg->base->paxb_snoop_addr_cfg[1]);
+	data &= ~SNOOP_ADDR1_MASK;
+	data |= (SNOOP_ADDR1 | SNOOP_ADDR1_EN);
+	pcie_write32(data, &cfg->base->paxb_snoop_addr_cfg[1]);
+
+	data = pcie_read32(&base->paxb_pcie_cfg_intr_mask);
+	data &= ~SNOOP_VALID_INTR;
+	pcie_write32(data, &base->paxb_pcie_cfg_intr_mask);
+
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, snoop_irq1, irq),
+		    DT_INST_IRQ_BY_NAME(0, snoop_irq1, priority),
+		    iproc_pcie_func_mask_isr, DEVICE_GET(iproc_pcie_ep_0), 0);
+	irq_enable(DT_INST_IRQ_BY_NAME(0, snoop_irq1, irq));
+
+	LOG_DBG("snoop interrupt configured\n");
+#endif
+
+	/* configure pmon lite interrupt for monitoring MSIX table */
+#if DT_INST_IRQ_HAS_NAME(0, pcie_pmon_lite)
+	data = sys_read32(PMON_LITE_PCIE_AXI_FILTER_0_CONTROL);
+	data |= AXI_FILTER_0_ENABLE;
+	sys_write32(data, PMON_LITE_PCIE_AXI_FILTER_0_CONTROL);
+
+	sys_write32(MSIX_TABLE_BASE, AXI_FILTER_0_ADDR_START_LOW);
+	/* Start of PBA is end of MSI-X table in our case */
+	sys_write32(PBA_TABLE_BASE, AXI_FILTER_0_ADDR_END_LOW);
+
+	sys_set_bit(PMON_LITE_PCIE_INTERRUPT_ENABLE, WR_ADDR_CHK_INTR_EN);
+
+	memset((void *)PBA_TABLE_BASE, 0, PBA_TABLE_SIZE);
+
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, pcie_pmon_lite, irq),
+		    DT_INST_IRQ_BY_NAME(0, pcie_pmon_lite, priority),
+		    iproc_pcie_vector_mask_isr, DEVICE_GET(iproc_pcie_ep_0), 0);
+	irq_enable(DT_INST_IRQ_BY_NAME(0, pcie_pmon_lite, irq));
+
+	LOG_DBG("pcie pmon lite interrupt configured\n");
+#endif
+}
+#endif
+
 static int iproc_pcie_mode_check(const struct iproc_pcie_ep_config *cfg)
 {
 	uint32_t data;
@@ -366,6 +413,11 @@ static int iproc_pcie_ep_init(const struct device *dev)
 #ifdef PCIE_EP_IPROC_INIT_CFG
 	iproc_pcie_msi_config(dev);
 	iproc_pcie_msix_config(dev);
+#endif
+
+	/* configure interrupts for MSI-X Per-Vector Masking feature */
+#ifdef CONFIG_PCIE_EP_IPROC_V2
+	iproc_pcie_msix_pvm_config(dev);
 #endif
 
 	iproc_pcie_reset_config(dev);
