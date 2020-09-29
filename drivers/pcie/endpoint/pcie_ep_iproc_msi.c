@@ -76,15 +76,13 @@ int iproc_pcie_generate_msi(const struct device *dev, const uint32_t msi_num)
 	return ret;
 }
 
-int iproc_pcie_generate_msix(const struct device *dev, const uint32_t msix_num)
+static int generate_msix(const struct device *dev, const uint32_t msix_num)
 {
-	uint64_t addr;
-	uint32_t data, msix_offset;
 	int ret;
+	uint64_t addr;
+	uint32_t data;
 
-	msix_offset = MSIX_TABLE_BASE + (msix_num * MSIX_TABLE_ENTRY_SIZE);
-
-	addr = sys_read64(msix_offset);
+	addr = sys_read64(MSIX_VECTOR_OFF(msix_num) + MSIX_TBL_ADDR_OFF);
 
 	if (addr == 0) {
 		/*
@@ -93,14 +91,150 @@ int iproc_pcie_generate_msix(const struct device *dev, const uint32_t msix_num)
 		 * Returning zero instead of error because of this.
 		 */
 		LOG_WRN("MSIX table is not setup, skipping MSIX\n");
-		return 0;
+		ret = 0;
+		goto out;
 	}
 
-	data = sys_read32(msix_offset + MSIX_TBL_DATA_OFF);
+	data = sys_read32(MSIX_VECTOR_OFF(msix_num) + MSIX_TBL_DATA_OFF);
 
 	ret = pcie_ep_xfer_data_memcpy(dev, addr,
 				       (uintptr_t *)&data, sizeof(data),
 				       PCIE_OB_LOWMEM, DEVICE_TO_HOST);
 
+	if (ret < 0) {
+		goto out;
+	}
+
+	LOG_DBG("msix %d generated\n", msix_num);
+out:
 	return ret;
+}
+
+#ifdef CONFIG_PCIE_EP_IPROC_V2
+static bool is_pcie_function_mask(const struct device *dev)
+{
+	uint32_t data;
+
+	pcie_ep_conf_read(dev, MSIX_CAP, &data);
+
+	return ((data & MSIX_FUNC_MASK) ? true : false);
+}
+
+static bool is_msix_vector_mask(const int msix_num)
+{
+	uint32_t data;
+
+	data = sys_read32(MSIX_VECTOR_OFF(msix_num) + MSIX_TBL_VECTOR_CTRL_OFF);
+
+	return ((data & MSIX_VECTOR_MASK) ? true : false);
+}
+
+/* Below function will be called from interrupt context */
+static int generate_pending_msix(const struct device *dev, const int msix_num)
+{
+	int is_msix_pending;
+	struct iproc_pcie_ep_ctx *ctx = dev->data;
+	k_spinlock_key_t key;
+
+	/* check if function mask bit got set by Host */
+	if (is_pcie_function_mask(dev)) {
+		LOG_DBG("function mask set! %d\n", msix_num);
+		return 0;
+	}
+
+	key = k_spin_lock(&ctx->pba_lock);
+
+	is_msix_pending = sys_test_bit(PBA_OFFSET(msix_num),
+				       PENDING_BIT(msix_num));
+
+	/* check if vector mask bit is cleared for pending msix */
+	if (is_msix_pending && !(is_msix_vector_mask(msix_num))) {
+		LOG_DBG("msix %d unmasked\n", msix_num);
+		/* generate msix and clear pending bit */
+		generate_msix(dev, msix_num);
+		sys_clear_bit(PBA_OFFSET(msix_num), PENDING_BIT(msix_num));
+	}
+
+	k_spin_unlock(&ctx->pba_lock, key);
+	return 0;
+}
+
+/* Below function will be called from interrupt context */
+static int generate_all_pending_msix(const struct device *dev)
+{
+	int i;
+
+	for (i = 0; i < MSIX_TABLE_SIZE; i++) {
+		generate_pending_msix(dev, i);
+	}
+
+	return 0;
+}
+
+void iproc_pcie_func_mask_isr(void *arg)
+{
+	struct device *dev = arg;
+	const struct iproc_pcie_ep_config *cfg = dev->config;
+	uint32_t data;
+
+	data = pcie_read32(&cfg->base->paxb_pcie_cfg_intr_status);
+
+	LOG_DBG("%s: %x\n", __func__, data);
+
+	if ((data & SNOOP_VALID_INTR) && !is_pcie_function_mask(dev)) {
+		generate_all_pending_msix(dev);
+	}
+
+	pcie_write32(SNOOP_VALID_INTR, &cfg->base->paxb_pcie_cfg_intr_clear);
+}
+
+void iproc_pcie_vector_mask_isr(void *arg)
+{
+	struct device *dev = arg;
+	int msix_table_update = sys_test_bit(PMON_LITE_PCIE_INTERRUPT_STATUS,
+					     WR_ADDR_CHK_INTR_EN);
+
+	LOG_DBG("%s: %x\n", __func__,
+		sys_read32(PMON_LITE_PCIE_INTERRUPT_STATUS));
+
+	if (msix_table_update) {
+		generate_all_pending_msix(dev);
+		sys_write32(BIT(WR_ADDR_CHK_INTR_EN),
+			    PMON_LITE_PCIE_INTERRUPT_CLEAR);
+	}
+}
+#endif
+
+int iproc_pcie_generate_msix(const struct device *dev, const uint32_t msix_num)
+{
+	if (msix_num >= MSIX_TABLE_SIZE) {
+		LOG_WRN("Exceeded max supported MSI-X (%d)", MSIX_TABLE_SIZE);
+		return -ENOTSUP;
+	}
+
+#ifdef CONFIG_PCIE_EP_IPROC_V2
+	struct iproc_pcie_ep_ctx *ctx = dev->data;
+	k_spinlock_key_t key;
+
+	/*
+	 * Read function mask bit/vector mask bit and update pending bit
+	 * with spin_lock - aim is not to allow interrupt context
+	 * to update PBA during this section
+	 * This will make sure of no races between mask bit read
+	 * and pending bit update.
+	 */
+
+	key = k_spin_lock(&ctx->pba_lock);
+
+	if (is_pcie_function_mask(dev) || is_msix_vector_mask(msix_num)) {
+		LOG_DBG("msix %d masked\n", msix_num);
+		/* set pending bit and return */
+		sys_set_bit(PBA_OFFSET(msix_num), PENDING_BIT(msix_num));
+		k_spin_unlock(&ctx->pba_lock, key);
+		return -EBUSY;
+	}
+
+	k_spin_unlock(&ctx->pba_lock, key);
+#endif
+	return generate_msix(dev, msix_num);
 }

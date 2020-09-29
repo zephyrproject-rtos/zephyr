@@ -210,6 +210,12 @@ struct iproc_pcie_reg {
 	uint32_t paxb_userif_overflow_status;
 	uint32_t paxb_userif_ecc_err_corrected_status;
 	uint32_t paxb_userif_ecc_err_uncor_status;
+	uint32_t paxb_msg_status;
+	uint32_t paxb_msg_header[4];
+	uint32_t paxb_msg_data[8];
+	uint32_t paxb_msg_control;
+	uint32_t paxb_msg_drop_control;
+	uint32_t paxb_snoop_addr_cfg[4];
 };
 #else
 struct iproc_pcie_reg {
