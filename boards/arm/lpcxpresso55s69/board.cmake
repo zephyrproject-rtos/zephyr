@@ -21,3 +21,4 @@ include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
 
 set(TFM_TARGET_PLATFORM "LPC55S69")
+set(TFM_PUBLIC_KEY_FORMAT "full")

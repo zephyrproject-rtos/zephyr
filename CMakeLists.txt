@@ -1248,6 +1248,14 @@ if(CONFIG_BOOTLOADER_MCUBOOT)
   include(${CMAKE_CURRENT_LIST_DIR}/cmake/mcuboot.cmake)
 endif()
 
+if(CONFIG_BUILD_WITH_TFM)
+  trusted_firmware_get_post_build_commands(TFM_POST_BUILD_COMMANDS)
+  list(APPEND
+    post_build_commands
+    ${TFM_POST_BUILD_COMMANDS}
+    )
+endif()
+
 get_property(extra_post_build_commands
   GLOBAL PROPERTY
   extra_post_build_commands

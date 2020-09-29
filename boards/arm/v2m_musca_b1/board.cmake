@@ -1,6 +1,7 @@
 #SPDX-License-Identifier: Apache-2.0
 
 set(TFM_TARGET_PLATFORM "MUSCA_B1")
+set(TFM_PUBLIC_KEY_FORMAT "full")
 
 board_set_debugger_ifnset(pyocd)
 board_set_flasher_ifnset(pyocd)

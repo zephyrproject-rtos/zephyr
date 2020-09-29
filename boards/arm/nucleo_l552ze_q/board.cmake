@@ -7,3 +7,4 @@ include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
 
 set(TFM_TARGET_PLATFORM "STM_NUCLEO_L552ZE_Q")
+set(TFM_PUBLIC_KEY_FORMAT "hash")
