@@ -167,6 +167,21 @@ out_fp_endif:
     str v3, [v4, #0]
 #endif
 
+#if defined(CONFIG_THREAD_LOCAL_STORAGE)
+    /* Grab the TLS pointer */
+    ldr r4, =_thread_offset_to_tls
+    adds r4, r2, r4
+    ldr r0, [r4]
+
+#if defined(CONFIG_CPU_CORTEX_R)
+    /* Store TLS pointer in the "Process ID" register.
+     * This register is used as a base pointer to all
+     * thread variables with offsets added by toolchain.
+     */
+    mcr 15, 0, r0, cr13, cr0, 3
+#endif
+#endif
+
     /* Restore previous interrupt disable state (irq_lock key)
      * (We clear the arch.basepri field after restoring state)
      */
