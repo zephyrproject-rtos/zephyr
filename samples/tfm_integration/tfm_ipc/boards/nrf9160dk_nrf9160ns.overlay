@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2019-2020 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&uart1 {
+	status = "disabled";
+};
+
+&sram0_s {
+	reg = <0x20000000 DT_SIZE_K(88)>;
+};
+
+/delete-node/ &sram0_bsd;
+/delete-node/ &sram0_ns;
+/ {
+	reserved-memory {
+		sram0_ns: image_ns@20016000 {
+			reg = <0x20016000 DT_SIZE_K(168)>;
+		};
+	};
+};
