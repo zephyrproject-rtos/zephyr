@@ -30,6 +30,24 @@ config MCP9808_TRIGGER_OWN_THREAD
 
 endchoice
 
+choice
+	prompt "MCP9808 temperature sensor relolution"
+	default MCP9808_MEAS_RES_0_0625C
+
+config MCP9808_MEAS_RES_0_5C
+       bool "0.5C temperature resolution"
+
+config MCP9808_MEAS_RES_0_25C
+       bool "0.25C temperature resolution"
+
+config MCP9808_MEAS_RES_0_125C
+       bool "0.125C temperature resolution"
+
+config MCP9808_MEAS_RES_0_0625C
+       bool "0.0625C temperature resolution"
+
+endchoice
+
 config MCP9808_TRIGGER
 	bool
 

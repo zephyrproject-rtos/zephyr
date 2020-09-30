@@ -14,20 +14,6 @@
 
 LOG_MODULE_DECLARE(MCP9808, CONFIG_SENSOR_LOG_LEVEL);
 
-static int mcp9808_reg_write(const struct device *dev, uint8_t reg,
-			     uint16_t val)
-{
-	const struct mcp9808_data *data = dev->data;
-	const struct mcp9808_config *cfg = dev->config;
-	uint8_t buf[3] = {
-		reg,
-		val >> 8,	/* big-endian register storage */
-		val & 0xFF,
-	};
-
-	return i2c_write(data->i2c_master, buf, sizeof(buf), cfg->i2c_addr);
-}
-
 int mcp9808_attr_set(const struct device *dev, enum sensor_channel chan,
 		     enum sensor_attribute attr,
 		     const struct sensor_value *val)
@@ -54,8 +40,8 @@ int mcp9808_attr_set(const struct device *dev, enum sensor_channel chan,
 	temp = val->val1 * MCP9808_TEMP_SCALE_CEL;
 	temp += (MCP9808_TEMP_SCALE_CEL * val->val2) / 1000000;
 
-	return mcp9808_reg_write(dev, reg_addr,
-				 mcp9808_temp_reg_from_signed(temp));
+	return mcp9808_reg_write_16bit(dev, reg_addr,
+				       mcp9808_temp_reg_from_signed(temp));
 }
 
 static inline void setup_int(const struct device *dev,
@@ -162,11 +148,12 @@ int mcp9808_setup_interrupt(const struct device *dev)
 	struct mcp9808_data *data = dev->data;
 	const struct mcp9808_config *cfg = dev->config;
 	const struct device *gpio;
-	int rc = mcp9808_reg_write(dev, MCP9808_REG_CRITICAL,
-				   MCP9808_TEMP_ABS_MASK);
+	int rc = mcp9808_reg_write_16bit(dev, MCP9808_REG_CRITICAL,
+					 MCP9808_TEMP_ABS_MASK);
+
 	if (rc == 0) {
-		rc = mcp9808_reg_write(dev, MCP9808_REG_CONFIG,
-				       MCP9808_CFG_ALERT_ENA);
+		rc = mcp9808_reg_write_16bit(dev, MCP9808_REG_CONFIG,
+					     MCP9808_CFG_ALERT_ENA);
 	}
 
 	data->dev = dev;
