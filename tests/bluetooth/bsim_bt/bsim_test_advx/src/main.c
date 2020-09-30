@@ -784,17 +784,16 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	printk("[DEVICE]: %s, AD evt type %u, Tx Pwr: %i, RSSI %i %s "
-	       "C:%u S:%u D:%u SR:%u E:%u I: 0x%x Prim: %s, Secn: %s "
-	       "SID: %u\n",
+	       "C:%u S:%u D:%u SR:%u E:%u Prim: %s, Secn: %s, "
+	       "Interval: 0x%04x (%u ms), SID: %u\n",
 	       le_addr, info->adv_type, info->tx_power, info->rssi, name,
 	       (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0,
 	       (info->adv_props & BT_GAP_ADV_PROP_SCANNABLE) != 0,
 	       (info->adv_props & BT_GAP_ADV_PROP_DIRECTED) != 0,
 	       (info->adv_props & BT_GAP_ADV_PROP_SCAN_RESPONSE) != 0,
 	       (info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0,
-	       info->interval,
 	       phy2str(info->primary_phy), phy2str(info->secondary_phy),
-	       info->sid);
+	       info->interval, info->interval * 5 / 4, info->sid);
 
 	if (info->interval) {
 		if (!is_periodic) {
