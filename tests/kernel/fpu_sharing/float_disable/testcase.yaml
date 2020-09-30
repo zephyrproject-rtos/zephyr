@@ -16,5 +16,5 @@ tests:
     tags: kernel userspace
   kernel.fpu_sharing.float_disable.x86:
     extra_args: CONF_FILE=prj_x86.conf
-    platform_allow: qemu_x86
+    arch_allow: x86
     tags: kernel userspace
