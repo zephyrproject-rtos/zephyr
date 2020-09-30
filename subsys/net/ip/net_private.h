@@ -55,7 +55,7 @@ static inline void net_context_init(void) { }
 static inline void net_pkt_init(void) { }
 static inline void net_tc_tx_init(void) { }
 static inline void net_tc_rx_init(void) { }
-static inline const char *net_context_state(context)
+static inline const char *net_context_state(struct net_context *context)
 {
 	ARG_UNUSED(context);
 	return NULL;
