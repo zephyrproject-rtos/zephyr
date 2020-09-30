@@ -122,7 +122,6 @@
 			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
-			base = <2>;
 			ngpios = <22>;
 
 			clocks = <&syscon LPC11U6X_CLOCK_GPIO>;

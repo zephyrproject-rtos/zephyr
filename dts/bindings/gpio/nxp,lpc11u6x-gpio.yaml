@@ -20,12 +20,6 @@ properties:
     "#gpio-cells":
       const: 2
 
-    base:
-      type: int
-      required: false
-      default: 0
-      description: index of the first GPIO for this port.
-
     clocks:
       required: true
 
