@@ -990,12 +990,12 @@ static void setup_thread_tables(struct k_thread *thread,
 
 			/* Pulled out of reserved memory in the stack object */
 			user_table = thread_page_pool_get(thread);
-			__ASSERT(user_table != NULL, "out of memory")
+			__ASSERT(user_table != NULL, "out of memory");
 
 			(void)memcpy(user_table, master_table,
 				     table_size(level));
 
-			*link = ((pentry_t)user_table) | INT_FLAGS;
+			*link = ((pentry_t)(uintptr_t)user_table) | INT_FLAGS;
 		}
 	}
 }
