@@ -1159,6 +1159,17 @@ uint32_t ull_ticker_status_take(uint32_t ret, uint32_t volatile *ret_cb)
 {
 	if (ret == TICKER_STATUS_BUSY) {
 		/* TODO: Enable ticker job in case of CONFIG_BT_CTLR_LOW_LAT */
+	} else {
+		/* Check for ticker operation enqueue failed, in which case
+		 * function return value (ret) will be TICKER_STATUS_FAILURE
+		 * and callback return value (ret_cb) will remain as
+		 * TICKER_STATUS_BUSY.
+		 * This assert check will avoid waiting forever to take the
+		 * semaphore that will never be given when the ticker operation
+		 * callback does not get called due to enqueue failure.
+		 */
+		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+			  (*ret_cb != TICKER_STATUS_BUSY));
 	}
 
 	k_sem_take(&sem_ticker_api_cb, K_FOREVER);
