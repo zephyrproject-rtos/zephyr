@@ -3248,16 +3248,15 @@ extern void k_delayed_work_init(struct k_delayed_work *work,
  * Only when the countdown completes is the work item actually submitted to
  * the workqueue and becomes pending.
  *
- * Submitting a previously submitted delayed work item that is still
- * counting down cancels the existing submission and restarts the
- * countdown using the new delay.  Note that this behavior is
- * inherently subject to race conditions with the pre-existing
- * timeouts and work queue, so care must be taken to synchronize such
- * resubmissions externally.
+ * Submitting a previously submitted delayed work item that is still counting
+ * down or is pending cancels the existing submission and restarts the
+ * countdown using the new delay.  Note that this behavior is inherently
+ * subject to race conditions with the pre-existing timeouts and work queue,
+ * so care must be taken to synchronize such resubmissions externally.
  *
  * Attempts to submit a work item to a queue after it has been submitted to a
  * different queue will fail with @c -EALREADY until k_delayed_work_cancel()
- * is invoked on the work item to clear its internal state.
+ * is successfully invoked on the work item to clear its internal state.
  *
  * @warning
  * A delayed work item must not be modified until it has been processed
@@ -3270,7 +3269,10 @@ extern void k_delayed_work_init(struct k_delayed_work *work,
  * @param delay Delay before submitting the work item
  *
  * @retval 0 Work item countdown started.
- * @retval -EINVAL Work item is being processed or has completed its work.
+ * @retval -EINVAL
+ *    @li if a previously submitted work item had to be cancelled,
+ *        and the cancellation failed; or
+ *    @li Work item is being processed or has completed its work.
  * @retval -EADDRINUSE Work item was submitted to a different workqueue.
  */
 extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
@@ -3280,21 +3282,33 @@ extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 /**
  * @brief Cancel a delayed work item.
  *
- * This routine cancels the submission of delayed work item @a work.
- * A delayed work item can only be canceled while its countdown is still
- * underway.
+ * This routine cancels the submission of delayed work item @a work.  Whether
+ * the work item can be successfully cancelled depends on its state.
  *
  * @note Can be called by ISRs.
  *
- * @note The result of calling this on a k_delayed_work item that has
- * not been submitted (i.e. before the return of the
- * k_delayed_work_submit_to_queue() call) is undefined.
+ * @note When @c -EALREADY is returned the caller cannot distinguish whether
+ * the work item handler is still being invoked by the work queue thread or
+ * has completed.
  *
  * @param work Address of delayed work item.
  *
- * @retval 0 Work item countdown canceled.
- * @retval -EINVAL Work item is being processed.
- * @retval -EALREADY Work item has already been completed.
+ * @retval 0
+ *   @li Work item countdown cancelled before the item was submitted to its
+ *       queue; or
+ *   @li Work item was removed from its queue before it was processed.
+ * @retval -EINVAL
+ *   @li Work item has never been submitted; or
+ *   @li Work item has been successfully cancelled; or
+ *   @li Timeout handler is in the process of submitting the work item to its
+ *       queue; or
+ *   @li Work queue thread has removed the work item from the queue but has
+ *       not called its handler.
+ * @retval -EALREADY
+ *   @li Work queue thread has removed the work item from the queue and
+ *       cleared its pending flag; or
+ *   @li Work queue thread is invoking the item handler; or
+ *   @li Work item handler has completed.
  */
 extern int k_delayed_work_cancel(struct k_delayed_work *work);
 

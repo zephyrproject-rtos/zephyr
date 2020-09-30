@@ -92,8 +92,10 @@ int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 	/* Cancel if work has been submitted */
 	if (work->work_q == work_q) {
 		err = work_cancel(work);
-		/* -EALREADY indicates the work has already completed so this
-		 * is likely a recurring work.
+		/* -EALREADY may indicate the work has already completed so
+		 * this is likely a recurring work.  It may also indicate that
+		 * the work handler is still executing.  But it's neither
+		 * delayed nor pending, so it can be rescheduled.
 		 */
 		if (err == -EALREADY) {
 			err = 0;
