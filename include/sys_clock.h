@@ -43,7 +43,7 @@ extern "C" {
  * is always a 64 bit count of ticks.
  */
 #ifdef CONFIG_TIMEOUT_64BIT
-typedef int64_t k_ticks_t;
+typedef uint64_t k_ticks_t;
 #else
 typedef uint32_t k_ticks_t;
 #endif
