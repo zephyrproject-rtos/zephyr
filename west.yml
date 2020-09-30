@@ -139,7 +139,8 @@ manifest:
       revision: c39888ff74acf421eeff9a7514fa9b172c3373f7
     - name: trusted-firmware-m
       path: modules/tee/tfm
-      revision: pull/14/head
+      url: https://github.com/anangl/tfm
+      revision: a5ff750325f4f93d828749ce24f0bb99bcfa7b2a
 
   self:
     path: zephyr
