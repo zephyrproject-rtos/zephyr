@@ -54,14 +54,14 @@
 /soc/arm/ti_simplelink/msp432p4xx/        @Mani-Sadhasivam
 /soc/arm/xilinx_zynqmp/                   @stephanosio
 /soc/xtensa/intel_s1000/                  @sathishkuttan @dcpleung
-/arch/x86/                                @andrewboie
+/arch/x86/                                @andrewboie @jenmwms @aasthagr
 /arch/nios2/                              @andrewboie @wentongwu
 /arch/posix/                              @aescolar @daor-oti
 /arch/riscv/                              @kgugala @pgielda @nategraff-sifive
 /soc/posix/                               @aescolar @daor-oti
 /soc/riscv/                               @kgugala @pgielda @nategraff-sifive
 /soc/riscv/openisa*/                      @MaureenHelm
-/soc/x86/                                 @andrewboie
+/soc/x86/                                 @andrewboie @jenmwms @aasthagr
 /arch/xtensa/                             @andrewboie @dcpleung @andyross
 /soc/xtensa/                              @andrewboie @dcpleung @andyross
 /boards/arc/                              @abrodkin @ruuddw
@@ -127,7 +127,7 @@
 /boards/shields/                          @erwango
 /boards/shields/atmel_rf2xx/              @nandojve
 /boards/shields/esp_8266/                 @nandojve
-/boards/x86/                              @andrewboie @nashif
+/boards/x86/                              @andrewboie @nashif @jenmwms @aasthagr
 /boards/xtensa/                           @nashif @dcpleung
 /boards/xtensa/intel_s1000_crb/           @sathishkuttan @dcpleung
 /boards/xtensa/odroid_go/                 @ydamigos
@@ -236,7 +236,7 @@
 /drivers/sensor/mpr/                      @sven-hm
 /drivers/sensor/st*/                      @avisconti
 /drivers/serial/uart_altera_jtag_hal.c    @wentongwu
-/drivers/serial/*ns16550*                 @andrewboie
+/drivers/serial/*ns16550*                 @andrewboie @jenmwms @aasthagr
 /drivers/serial/*nrfx*                    @Mierunski @anangl
 /drivers/serial/Kconfig.litex             @mateusz-holenko @kgugala @pgielda
 /drivers/serial/uart_liteuart.c           @mateusz-holenko @kgugala @pgielda
