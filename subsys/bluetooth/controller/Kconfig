@@ -359,6 +359,12 @@ config BT_CTLR_CONN_RSSI
 
 endif # BT_CONN
 
+config BT_CTLR_FILTER
+	bool "Device Whitelist Support"
+	default y
+	help
+	  Enable support for controller device whitelist feature
+
 config BT_CTLR_PHY_2M
 	bool "2Mbps PHY Support"
 	depends on (BT_CTLR_PHY || BT_CTLR_ADV_EXT) && BT_CTLR_PHY_2M_SUPPORT
