@@ -424,7 +424,7 @@ static inline void qspi_fill_init_struct(nrfx_qspi_config_t *initstruct)
 	/* Configure physical interface */
 	initstruct->phy_if.sck_freq =
 		get_nrf_qspi_prescaler(DT_INST_PROP(0, sck_frequency));
-	initstruct->phy_if.sck_delay = DT_INST_PROP(0, sck_delay);
+	initstruct->phy_if.sck_delay = DT_INST_PROP_OR(0, sck_delay, 0);
 	initstruct->phy_if.spi_mode = qspi_get_mode(DT_INST_PROP(0, cpol),
 						    DT_INST_PROP(0, cpha));
 
