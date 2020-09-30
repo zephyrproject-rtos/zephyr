@@ -55,10 +55,6 @@ void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
 
 static int work_cancel(struct k_delayed_work *work)
 {
-	CHECKIF(work->work_q == NULL) {
-		return -EALREADY;
-	}
-
 	if (k_work_pending(&work->work)) {
 		/* Remove from the queue if already submitted */
 		if (!k_queue_remove(&work->work_q->queue, &work->work)) {
@@ -132,12 +128,12 @@ done:
 
 int k_delayed_work_cancel(struct k_delayed_work *work)
 {
-	if (!work->work_q) {
-		return -EINVAL;
-	}
-
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	int ret = work_cancel(work);
+	int ret = -EINVAL;
+
+	if (work->work_q != NULL) {
+		ret = work_cancel(work);
+	}
 
 	k_spin_unlock(&lock, key);
 	return ret;
