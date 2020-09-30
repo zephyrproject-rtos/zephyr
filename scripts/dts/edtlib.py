@@ -22,10 +22,7 @@ The top-level entry point of the library is the EDT class. EDT.__init__() takes
 a .dts file to parse and a list of paths to directories containing bindings.
 """
 
-# NOTE: testedtlib.py is the test suite for this library. It can be run
-# directly as a script:
-#
-#   ./testedtlib.py
+# NOTE: testedtlib.py is the test suite for this library.
 
 # Implementation notes
 # --------------------
