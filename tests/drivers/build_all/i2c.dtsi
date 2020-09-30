@@ -548,6 +548,8 @@ test_i2c_itds: itds@18 {
 	label = "WSEN-ITDS";
 	reg = <0x18>;
 	int-gpios = <&test_gpio 0 0>;
+	odr = "800";
+	op-mode = "high-perf";
 };
 
 test_i2c_max17055: max17055@49 {
