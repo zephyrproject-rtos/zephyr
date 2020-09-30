@@ -970,7 +970,7 @@ static inline void sync_info_fill(struct lll_adv_sync *lll_sync,
 	memcpy(si->sca_chm, lll_sync->data_chan_map,
 	       sizeof(si->sca_chm));
 	si->sca_chm[4] &= 0x1f;
-	si->sca_chm[4] = lll_clock_sca_local_get() << 5;
+	si->sca_chm[4] |= lll_clock_sca_local_get() << 5;
 	memcpy(&si->aa, lll_sync->access_addr, sizeof(si->aa));
 	memcpy(si->crc_init, lll_sync->crc_init, sizeof(si->crc_init));
 
