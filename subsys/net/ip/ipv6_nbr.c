@@ -499,7 +499,7 @@ static void ipv6_nd_remove_old_stale_nbr(void)
 	struct net_nbr *nbr = NULL;
 	struct net_ipv6_nbr_data *data = NULL;
 	int nbr_idx = -1;
-	u32_t oldest;
+	u32_t oldest = UINT32_MAX;
 	int i;
 
 	k_sem_take(&nbr_lock, K_FOREVER);

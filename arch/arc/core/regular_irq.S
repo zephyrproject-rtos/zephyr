@@ -255,6 +255,13 @@ _rirq_return_from_coop:
 .balign 4
 _rirq_return_from_firq:
 _rirq_return_from_rirq:
+#ifdef CONFIG_TRACING
+	push_s blink
+
+	bl sys_trace_thread_switched_in
+
+	pop_s blink
+#endif
 _rirq_no_reschedule:
 
 	rtie

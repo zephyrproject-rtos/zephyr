@@ -465,10 +465,11 @@ static inline int uart_callback_set(struct device *dev,
  * @retval -EBUSY There is already an ongoing transfer.
  * @retval 0	  If successful, negative errno code otherwise.
  */
-static inline int uart_tx(struct device *dev,
-			  const u8_t *buf,
-			  size_t len,
-			  u32_t timeout)
+__syscall int uart_tx(struct device *dev, const u8_t *buf, size_t len,
+		      u32_t timeout);
+
+static inline int z_impl_uart_tx(struct device *dev, const u8_t *buf,
+				 size_t len, u32_t timeout)
 
 {
 	const struct uart_driver_api *api =
@@ -487,7 +488,9 @@ static inline int uart_tx(struct device *dev,
  * @retval -EFAULT There is no active transmission.
  * @retval 0	   If successful, negative errno code otherwise.
  */
-static inline int uart_tx_abort(struct device *dev)
+__syscall int uart_tx_abort(struct device *dev);
+
+static inline int z_impl_uart_tx_abort(struct device *dev)
 {
 	const struct uart_driver_api *api =
 			(const struct uart_driver_api *)dev->driver_api;
@@ -511,8 +514,11 @@ static inline int uart_tx_abort(struct device *dev)
  * @retval 0	  If successful, negative errno code otherwise.
  *
  */
-static inline int uart_rx_enable(struct device *dev, u8_t *buf, size_t len,
-				 u32_t timeout)
+__syscall int uart_rx_enable(struct device *dev, u8_t *buf, size_t len,
+			     u32_t timeout);
+
+static inline int z_impl_uart_rx_enable(struct device *dev, u8_t *buf,
+					size_t len, u32_t timeout)
 {
 	const struct uart_driver_api *api =
 				(const struct uart_driver_api *)dev->driver_api;
@@ -557,7 +563,9 @@ static inline int uart_rx_buf_rsp(struct device *dev, u8_t *buf, size_t len)
  * @retval -EFAULT There is no active reception.
  * @retval 0	   If successful, negative errno code otherwise.
  */
-static inline int uart_rx_disable(struct device *dev)
+__syscall int uart_rx_disable(struct device *dev);
+
+static inline int z_impl_uart_rx_disable(struct device *dev)
 {
 	const struct uart_driver_api *api =
 			(const struct uart_driver_api *)dev->driver_api;

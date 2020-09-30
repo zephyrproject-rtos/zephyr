@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <net/socket.h>
 #include <syscall_handler.h>
 #include <misc/fdtable.h>
+#include <random/rand32.h>
 
 #if defined(CONFIG_MBEDTLS)
 #if !defined(CONFIG_MBEDTLS_CFG_FILE)

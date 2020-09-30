@@ -1,6 +1,6 @@
 wheel==0.30.0
-breathe==4.9.1
-sphinx==1.7.5
+breathe==4.9.1,<4.15.0
+sphinx==1.7.5,<3.0
 docutils==0.14
 sphinx_rtd_theme
 sphinxcontrib-svg2pdfconverter

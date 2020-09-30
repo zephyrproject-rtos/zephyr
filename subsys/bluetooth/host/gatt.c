@@ -1210,6 +1210,20 @@ struct notify_data {
 	struct bt_gatt_indicate_params *params;
 };
 
+static int gatt_send_cb(struct bt_conn *conn, struct net_buf *buf,
+			bt_conn_tx_cb_t cb)
+{
+	int err;
+
+	err = bt_att_send(conn, buf, cb);
+	if (err) {
+		net_buf_unref(buf);
+		return err;
+	}
+
+	return 0;
+}
+
 static int gatt_notify(struct bt_conn *conn, u16_t handle, const void *data,
 		       size_t len, bt_gatt_complete_func_t cb)
 {
@@ -1241,7 +1255,7 @@ static int gatt_notify(struct bt_conn *conn, u16_t handle, const void *data,
 	net_buf_add(buf, len);
 	memcpy(nfy->value, data, len);
 
-	return bt_att_send(conn, buf, cb);
+	return gatt_send_cb(conn, buf, cb);
 }
 
 static void gatt_indicate_rsp(struct bt_conn *conn, u8_t err,
@@ -1397,6 +1411,7 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 		/* Confirm match if cfg is managed by application */
 		if (ccc->cfg_match && !ccc->cfg_match(conn, attr)) {
+			bt_conn_unref(conn);
 			continue;
 		}
 
@@ -2719,7 +2734,7 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, u16_t handle,
 
 	BT_DBG("handle 0x%04x length %u", handle, length);
 
-	return bt_att_send(conn, buf, func);
+	return gatt_send_cb(conn, buf, func);
 }
 
 static int gatt_exec_write(struct bt_conn *conn,
@@ -3340,6 +3355,23 @@ static int bt_gatt_clear_cf(u8_t id, const bt_addr_le_t *addr)
 	return 0;
 }
 
+static void bt_gatt_clear_subscriptions(const bt_addr_le_t *addr)
+{
+#if defined(CONFIG_BT_GATT_CLIENT)
+	struct bt_gatt_subscribe_params *params, *tmp;
+	sys_snode_t *prev = NULL;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&subscriptions, params, tmp, node) {
+		if (bt_addr_le_cmp(addr, &params->_peer)) {
+			prev = &params->node;
+			continue;
+		}
+		params->value = 0U;
+		gatt_subscription_remove(NULL, prev, params);
+	}
+#endif /* CONFIG_BT_GATT_CLIENT */
+}
+
 int bt_gatt_clear(u8_t id, const bt_addr_le_t *addr)
 {
 	int err;
@@ -3348,6 +3380,8 @@ int bt_gatt_clear(u8_t id, const bt_addr_le_t *addr)
 	if (err < 0) {
 		return err;
 	}
+
+	bt_gatt_clear_subscriptions(addr);
 
 	return bt_gatt_clear_cf(id, addr);
 }

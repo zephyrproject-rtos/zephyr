@@ -20,7 +20,7 @@
 
 set -xe
 
-SANITYCHECK_OPTIONS=" --inline-logs --enable-coverage -N"
+SANITYCHECK_OPTIONS=" --inline-logs --enable-coverage -N -v"
 SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd-pass"
 SANITYCHECK_OPTIONS_RETRY_2="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-3nd-pass"
 export BSIM_OUT_PATH="${BSIM_OUT_PATH:-/opt/bsim/}"
@@ -88,7 +88,8 @@ if [ -n "$MAIN_CI" ]; then
         pushd ..
 	if [ ! -d .west ]; then
 		west init -l zephyr
-		west update
+		west update 1> west.update.log
+		west forall -c 'git reset --hard HEAD'
 	fi
         popd
 
@@ -271,8 +272,7 @@ if [ -n "$MAIN_CI" ]; then
 		# run pytest could go here too.
 		PYTEST=$(type -p pytest-3 || echo "pytest")
 		mkdir -p $(dirname ${WEST_COMMANDS_RESULTS_FILE})
-		WEST_SRC=$(west list --format='{abspath}' west)/src
-		PYTHONPATH=./scripts/west_commands:$WEST_SRC "${PYTEST}" \
+		PYTHONPATH=./scripts/west_commands "${PYTEST}" \
 			  --junitxml=${WEST_COMMANDS_RESULTS_FILE} \
 			  ./scripts/west_commands/tests
 	else
@@ -286,6 +286,8 @@ if [ -n "$MAIN_CI" ]; then
 
 	# Save list of tests to be run
 	${SANITYCHECK} ${SANITYCHECK_OPTIONS} --save-tests test_file.txt || exit 1
+
+	echo "+++ run sanitycheck"
 
 	# Run a subset of tests based on matrix size
 	${SANITYCHECK} ${SANITYCHECK_OPTIONS} --load-tests test_file.txt \

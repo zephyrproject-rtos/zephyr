@@ -37,6 +37,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_TRICKLE_LOG_LEVEL);
 static int token1 = 1, token2 = 2;
 
 static struct k_sem wait;
+static struct k_sem wait2;
 static bool cb_1_called;
 static bool cb_2_called;
 
@@ -76,7 +77,7 @@ static void cb_2(struct net_trickle *trickle, bool do_suppress,
 {
 	TC_PRINT("Trickle 2 %p callback called\n", trickle);
 
-	k_sem_give(&wait);
+	k_sem_give(&wait2);
 
 	cb_2_called = true;
 }
@@ -166,7 +167,7 @@ static void test_trickle_1_wait_long(void)
 
 static void test_trickle_2_wait(void)
 {
-	k_sem_take(&wait, WAIT_TIME);
+	k_sem_take(&wait2, WAIT_TIME);
 
 	zassert_true(cb_2_called, "Trickle 2 no timeout");
 
@@ -194,6 +195,7 @@ static void test_trickle_1_update(void)
 static void test_init(void)
 {
 	k_sem_init(&wait, 0, UINT_MAX);
+	k_sem_init(&wait2, 0, UINT_MAX);
 }
 
 /*test case main entry*/

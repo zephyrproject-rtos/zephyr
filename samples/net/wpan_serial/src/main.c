@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(net_wpan_serial_sample, LOG_LEVEL_DBG);
 #include <uart.h>
 #include <zephyr.h>
 #include <stdio.h>
+#include <random/rand32.h>
 
 #include <misc/printk.h>
 

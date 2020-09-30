@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/ethernet.h>
 #include <ethernet/eth_stats.h>
 #include <soc.h>
+#include <random/rand32.h>
 #include <misc/printk.h>
 #include <clock_control.h>
 #include <clock_control/stm32_clock_control.h>

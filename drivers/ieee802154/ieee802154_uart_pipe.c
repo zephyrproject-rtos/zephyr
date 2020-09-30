@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <kernel.h>
 #include <arch/cpu.h>
 
+#include <random/rand32.h>
 #include <device.h>
 #include <init.h>
 #include <net/net_if.h>

@@ -34,7 +34,7 @@ manifest:
   # repositories.
   projects:
     - name: ci-tools
-      revision: cfb83fd6f1f498fa05d788a5d2cbeff9c92742f5
+      revision: 1c95da887b6fdbd6b8bbe30f483720f6e2a08576
       path: tools/ci-tools
     - name: net-tools
       revision: 30b7efa827b04d2e47840716b0372737fe7d6c92

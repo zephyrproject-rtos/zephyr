@@ -137,6 +137,8 @@ extern void z_arch_mem_domain_destroy(struct k_mem_domain *domain);
  * if the supplied memory buffer spans multiple enabled memory management
  * regions (even if all such regions permit user access).
  *
+ * @warning 0 size buffer has undefined behavior.
+ *
  * @param addr start address of the buffer
  * @param size the size of the buffer
  * @param write If nonzero, additionally check if the area is writable.
@@ -214,9 +216,11 @@ extern void z_app_shmem_bss_zero(void);
  * memory on behalf of certain kernel and driver APIs. Memory reserved
  * in this way should be freed with k_free().
  *
+ * If called from an ISR, the k_malloc() system heap will be used if it exists.
+ *
  * @param size Memory allocation size
  * @return A pointer to the allocated memory, or NULL if there is insufficient
- * RAM in the pool or the thread has no resource pool assigned
+ * RAM in the pool or there is no pool to draw memory from
  */
 void *z_thread_malloc(size_t size);
 

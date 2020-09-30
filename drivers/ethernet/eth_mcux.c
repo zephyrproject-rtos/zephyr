@@ -26,6 +26,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/net_if.h>
 #include <net/ethernet.h>
 #include <ethernet/eth_stats.h>
+#include <random/rand32.h>
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 #include <ptp_clock.h>
@@ -326,8 +327,12 @@ static void eth_mcux_phy_event(struct eth_context *context)
 					  kENET_MiiReadValidFrame);
 			context->link_up = link_up;
 			context->phy_state = eth_mcux_phy_state_read_duplex;
-			net_eth_carrier_on(context->iface);
-			k_sleep(USEC_PER_MSEC);
+
+			/* Network interface might be NULL at this point */
+			if (context->iface) {
+				net_eth_carrier_on(context->iface);
+				k_sleep(USEC_PER_MSEC);
+			}
 		} else if (!link_up && context->link_up) {
 			LOG_INF("Link down");
 			context->link_up = link_up;

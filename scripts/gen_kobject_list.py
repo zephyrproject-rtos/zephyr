@@ -108,6 +108,7 @@ subsystems = [
     "spi_driver_api",
     "uart_driver_api",
     "can_driver_api",
+    "wdt_driver_api",
 ]
 
 
@@ -204,6 +205,7 @@ def write_gperf_table(fp, eh, objs, static_begin, static_end):
 
     # Generate the array of already mapped thread indexes
     fp.write('\n')
+    fp.write('Z_GENERIC_SECTION(.kobject_data.data) ')
     fp.write('u8_t _thread_idx_map[%d] = {' % (thread_max_bytes))
 
     for i in range(0, thread_max_bytes):

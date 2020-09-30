@@ -12,6 +12,7 @@
 #include <net/net_if.h>
 #include <net/net_ip.h>
 #include <net/ethernet.h>
+#include <random/rand32.h>
 
 #include <ztest.h>
 

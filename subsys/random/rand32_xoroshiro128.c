@@ -90,7 +90,7 @@ static u32_t xoroshiro128_next(void)
 	return (u32_t)result;
 }
 
-u32_t sys_rand32_get(void)
+u32_t z_impl_sys_rand32_get(void)
 {
 	u32_t ret;
 

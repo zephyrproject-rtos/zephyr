@@ -27,7 +27,6 @@
 #include <misc/util.h>
 #include <misc/mempool_base.h>
 #include <kernel_version.h>
-#include <random/rand32.h>
 #include <kernel_arch_thread.h>
 #include <syscall.h>
 #include <misc/printk.h>

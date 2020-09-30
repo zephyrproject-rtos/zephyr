@@ -260,12 +260,16 @@ static int settings_fcb_save(struct settings_store *cs, const char *name,
 	wbs = cf->cf_fcb.f_align;
 	len = settings_line_len_calc(name, val_len);
 
-	for (i = 0; i < cf->cf_fcb.f_sector_cnt - 1; i++) {
+	for (i = 0; i < cf->cf_fcb.f_sector_cnt; i++) {
 		rc = fcb_append(&cf->cf_fcb, len, &loc.loc);
 		if (rc != FCB_ERR_NOSPACE) {
 			break;
 		}
-		settings_fcb_compress(cf);
+
+		/* FCB can compress up to cf->cf_fcb.f_sector_cnt - 1 times. */
+		if (i < (cf->cf_fcb.f_sector_cnt - 1)) {
+			settings_fcb_compress(cf);
+		}
 	}
 	if (rc) {
 		return -EINVAL;

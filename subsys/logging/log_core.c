@@ -48,6 +48,8 @@ struct log_strdup_buf {
 #define LOG_STRDUP_POOL_BUFFER_SIZE \
 	(sizeof(struct log_strdup_buf) * CONFIG_LOG_STRDUP_BUF_COUNT)
 
+K_SEM_DEFINE(log_process_thread_sem, 0, 1);
+
 static const char *log_strdup_fail_msg = "<log_strdup alloc failed>";
 struct k_mem_slab log_strdup_pool;
 static u8_t __noinit __aligned(sizeof(u32_t))
@@ -60,6 +62,8 @@ static bool backend_attached;
 static atomic_t buffered_cnt;
 static atomic_t dropped_cnt;
 static k_tid_t proc_tid;
+
+static struct k_timer log_process_thread_timer;
 
 static u32_t dummy_timestamp(void);
 static timestamp_get_t timestamp_func = dummy_timestamp;
@@ -89,10 +93,14 @@ static inline void msg_finalize(struct log_msg *msg,
 		key = irq_lock();
 		(void)log_process(false);
 		irq_unlock(key);
+	} else if (proc_tid != NULL && buffered_cnt == 1) {
+		k_timer_start(&log_process_thread_timer,
+			CONFIG_LOG_PROCESS_THREAD_SLEEP_MS, 0);
 	} else if (CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) {
 		if ((buffered_cnt == CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) &&
 		    (proc_tid != NULL)) {
-			k_wakeup(proc_tid);
+			k_timer_stop(&log_process_thread_timer);
+			k_sem_give(&log_process_thread_sem);
 		}
 	}
 }
@@ -379,7 +387,7 @@ static void thread_set(k_tid_t process_tid)
 	if (CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD &&
 	    process_tid &&
 	    buffered_cnt >= CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) {
-		k_wakeup(proc_tid);
+		k_sem_give(&log_process_thread_sem);
 	}
 }
 
@@ -648,6 +656,14 @@ void log_backend_enable(struct log_backend const *const backend,
 	log_backend_id_set(backend, id);
 	backend_filter_set(backend, level);
 	log_backend_activate(backend, ctx);
+
+	/* Wakeup logger thread after attaching first backend. It might be
+	 * blocked with log messages pending.
+	 */
+	if (!backend_attached) {
+		k_sem_give(&log_process_thread_sem);
+	}
+
 	backend_attached = true;
 }
 
@@ -953,6 +969,11 @@ void log_hexdump_from_user(struct log_msg_ids src_level, const char *metadata,
 }
 #endif /* defined(CONFIG_NO_OPTIMIZATIONS) */
 
+static void log_process_thread_timer_expiry_fn(struct k_timer *timer)
+{
+	k_sem_give(&log_process_thread_sem);
+}
+
 static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 {
 	__ASSERT_NO_MSG(log_backend_count_get() > 0);
@@ -962,7 +983,7 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 
 	while (true) {
 		if (log_process(false) == false) {
-			k_sleep(CONFIG_LOG_PROCESS_THREAD_SLEEP_MS);
+			k_sem_take(&log_process_thread_sem, K_FOREVER);
 		}
 	}
 }
@@ -975,6 +996,8 @@ static int enable_logger(struct device *arg)
 	ARG_UNUSED(arg);
 
 	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
+		k_timer_init(&log_process_thread_timer,
+				log_process_thread_timer_expiry_fn, NULL);
 		/* start logging thread */
 		k_thread_create(&logging_thread, logging_stack,
 				K_THREAD_STACK_SIZEOF(logging_stack),

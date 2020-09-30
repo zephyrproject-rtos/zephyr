@@ -153,30 +153,35 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_trap)
 #ifdef CONFIG_USERSPACE
 	cmp ilink, _TRAP_S_CALL_SYSTEM_CALL
 	bne _do_non_syscall_trap
-/* do sys_call */
+	/* do sys_call */
 	mov ilink, K_SYSCALL_LIMIT
 	cmp r6, ilink
-	blt valid_syscall_id
+	blo valid_syscall_id
 
 	mov r0, r6
 	mov r6, K_SYSCALL_BAD
 
 valid_syscall_id:
+	/* create a sys call frame
+	 * caller regs (r0 - 12) are saved in _create_irq_stack_frame
+	 * ok to use them later
+	 */
+	_create_irq_stack_frame
 #ifdef CONFIG_ARC_HAS_SECURE
-	lr ilink, [_ARC_V2_ERSEC_STAT]
-	push ilink
+	lr r0, [_ARC_V2_ERSEC_STAT]
+	st_s r0, [sp, ___isf_t_sec_stat_OFFSET]
 #endif
-	lr ilink, [_ARC_V2_ERET]
-	push ilink
-	lr ilink, [_ARC_V2_ERSTATUS]
-	push ilink
+	lr r0, [_ARC_V2_ERET]
+	st_s r0, [sp, ___isf_t_pc_OFFSET] /* eret into pc */
+	lr r0, [_ARC_V2_ERSTATUS]
+	st_s r0, [sp, ___isf_t_status32_OFFSET]
 
 
-	bclr ilink, ilink, _ARC_V2_STATUS32_U_BIT
-	sr ilink, [_ARC_V2_ERSTATUS]
+	bclr r0, r0, _ARC_V2_STATUS32_U_BIT
+	sr r0, [_ARC_V2_ERSTATUS]
 
-	mov ilink, _arc_do_syscall
-	sr ilink, [_ARC_V2_ERET]
+	mov r0, _arc_do_syscall
+	sr r0, [_ARC_V2_ERET]
 
 	rtie
 

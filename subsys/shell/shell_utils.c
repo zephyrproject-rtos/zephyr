@@ -324,7 +324,7 @@ void shell_spaces_trim(char *str)
 					/* +1 for EOS */
 					memmove(&str[i + 1],
 						&str[j],
-						len - shift + 1);
+						len - j + 1);
 					len -= shift;
 					shift = 0U;
 				}

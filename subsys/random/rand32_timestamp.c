@@ -29,7 +29,7 @@
  * @return a 32-bit number
  */
 
-u32_t sys_rand32_get(void)
+u32_t z_impl_sys_rand32_get(void)
 {
 	return z_do_read_cpu_timestamp32();
 }

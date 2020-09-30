@@ -1086,6 +1086,14 @@ static int instance_init(const struct shell *shell, const void *p_config,
 
 	k_mutex_init(&shell->ctx->wr_mtx);
 
+	for (int i = 0; i < SHELL_SIGNALS; i++) {
+		k_poll_signal_init(&shell->ctx->signals[i]);
+		k_poll_event_init(&shell->ctx->events[i],
+				  K_POLL_TYPE_SIGNAL,
+				  K_POLL_MODE_NOTIFY_ONLY,
+				  &shell->ctx->signals[i]);
+	}
+
 	if (IS_ENABLED(CONFIG_SHELL_STATS)) {
 		shell->stats->log_lost_cnt = 0;
 	}
@@ -1162,14 +1170,6 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 	bool log_backend = (bool)arg_log_backend;
 	u32_t log_level = (u32_t)arg_log_level;
 	int err;
-
-	for (int i = 0; i < SHELL_SIGNALS; i++) {
-		k_poll_signal_init(&shell->ctx->signals[i]);
-		k_poll_event_init(&shell->ctx->events[i],
-				  K_POLL_TYPE_SIGNAL,
-				  K_POLL_MODE_NOTIFY_ONLY,
-				  &shell->ctx->signals[i]);
-	}
 
 	err = shell->iface->api->enable(shell->iface, false);
 	if (err != 0) {

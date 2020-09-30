@@ -20,6 +20,8 @@
 #include <net/net_pkt.h>
 #include <net/net_context.h>
 
+#include <random/rand32.h>
+
 #include "connection.h"
 
 #ifdef __cplusplus

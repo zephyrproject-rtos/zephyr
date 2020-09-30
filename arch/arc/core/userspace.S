@@ -202,40 +202,47 @@ return_loc_userspace_enter:
  *
  */
 SECTION_FUNC(TEXT, _arc_do_syscall)
-	/* r0-r5: arg1-arg6, r6 is call id */
-	/* the call id is already checked in trap_s handler */
-	push_s blink
+	/*
+	 * r0-r5: arg1-arg6, r6 is call id which is already checked in
+	 * trap_s handler, r7 is the system call stack frame pointer
+	 * need to recover r0, r1, r2 because they will be modified in
+	 * _create_irq_stack_frame. If a specific syscall frame (different
+	 * with irq stack frame) is defined, the cover of r0, r1, r2 can be
+	 * optimized.
+	 */
+	ld_s r0, [sp, ___isf_t_r0_OFFSET]
+	ld_s r1, [sp, ___isf_t_r1_OFFSET]
+	ld_s r2, [sp, ___isf_t_r2_OFFSET]
+
+	mov r7, sp
 
 	mov blink, _k_syscall_table
 	ld.as r6, [blink, r6]
 
 	jl [r6]
 
-	/*
-	 * no need to clear callee regs, as they will be saved and restored
-	 * automatically
-	 */
-	clear_scratch_regs
+	/* save return value */
+	st_s r0, [sp, ___isf_t_r0_OFFSET]
 
 	mov r29, 0
 	mov r30, 0
 
-	pop_s blink
-
 	/* through fake exception return, go back to the caller */
-	kflag _ARC_V2_STATUS32_AE
+	lr r0, [_ARC_V2_STATUS32]
+	bset r0, r0, _ARC_V2_STATUS32_AE_BIT
+	kflag r0
 
-	/* the status and return address are saved in trap_s handler */
-	pop r6
-	sr r6, [_ARC_V2_ERSTATUS]
-	pop r6
-	sr r6, [_ARC_V2_ERET]
 #ifdef CONFIG_ARC_HAS_SECURE
-	pop r6
-	sr r6, [_ARC_V2_ERSEC_STAT]
+	ld_s r0, [sp, ___isf_t_sec_stat_OFFSET]
+	sr r0, [_ARC_V2_ERSEC_STAT]
 #endif
+	ld_s r0, [sp, ___isf_t_status32_OFFSET]
+	sr r0, [_ARC_V2_ERSTATUS]
 
-	mov r6, 0
+	ld_s r0, [sp, ___isf_t_pc_OFFSET] /* eret into pc */
+	sr r0, [_ARC_V2_ERET]
+
+	_pop_irq_stack_frame
 
 	rtie
 
