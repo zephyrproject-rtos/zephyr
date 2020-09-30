@@ -3255,6 +3255,10 @@ extern void k_delayed_work_init(struct k_delayed_work *work,
  * timeouts and work queue, so care must be taken to synchronize such
  * resubmissions externally.
  *
+ * Attempts to submit a work item to a queue after it has been submitted to a
+ * different queue will fail with @c -EALREADY until k_delayed_work_cancel()
+ * is invoked on the work item to clear its internal state.
+ *
  * @warning
  * A delayed work item must not be modified until it has been processed
  * by the workqueue.
@@ -3267,7 +3271,7 @@ extern void k_delayed_work_init(struct k_delayed_work *work,
  *
  * @retval 0 Work item countdown started.
  * @retval -EINVAL Work item is being processed or has completed its work.
- * @retval -EADDRINUSE Work item is pending on a different workqueue.
+ * @retval -EADDRINUSE Work item was submitted to a different workqueue.
  */
 extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 					  struct k_delayed_work *work,
@@ -3337,6 +3341,10 @@ static inline void k_work_submit(struct k_work *work)
  * If the work item has already been processed, or is currently being processed,
  * its work is considered complete and the work item can be resubmitted.
  *
+ * Attempts to submit a work item to a queue after it has been submitted to a
+ * different queue will fail with @c -EALREADY until k_delayed_work_cancel()
+ * is invoked on the work item to clear its internal state.
+ *
  * @warning
  * Work items submitted to the system workqueue should avoid using handlers
  * that block or yield since this may prevent the system workqueue from
@@ -3349,7 +3357,7 @@ static inline void k_work_submit(struct k_work *work)
  *
  * @retval 0 Work item countdown started.
  * @retval -EINVAL Work item is being processed or has completed its work.
- * @retval -EADDRINUSE Work item is pending on a different workqueue.
+ * @retval -EADDRINUSE Work item was submitted to a different workqueue.
  */
 static inline int k_delayed_work_submit(struct k_delayed_work *work,
 					k_timeout_t delay)
