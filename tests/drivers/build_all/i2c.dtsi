@@ -565,4 +565,9 @@ test_i2c_vcnl4040: vcnl4040@60 {
 	label = "VCNL4040";
 	reg = <0x60>;
 	int-gpios = <&test_gpio 0 0>;
+	led-current = <50>;
+	led-duty-cycle = <40>;
+	proximity-it = "1";
+	proximity-trigger = "close-away";
+	als-it = <80>;
 };
