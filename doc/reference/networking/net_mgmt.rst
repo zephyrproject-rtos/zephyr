@@ -13,7 +13,7 @@ Overview
 The Network Management APIs allow applications, as well as network
 layer code itself, to call defined network routines at any level in
 the IP stack, or receive notifications on relevant network events. For
-example, by using these APIs, code can request a scan be done on a
+example, by using these APIs, application code can request a scan be done on a
 Wi-Fi- or Bluetooth-based network interface, or request notification if
 a network interface IP address changes.
 
@@ -71,6 +71,10 @@ same callback function, if desired.
    events it will handle, **regardless** of how many events were in the
    set passed to :c:func:`net_mgmt_init_event_callback`.
 
+   Note that in order to receive events from multiple layers, one must have
+   multiple listeners registered, one for each layer being listened.
+   The callback handler function can be shared between different layer events.
+
    (False positives can occur for events which have the same layer and
    layer code.)
 
@@ -82,17 +86,24 @@ An example follows.
 	 * Set of events to handle.
 	 * See e.g. include/net/net_event.h for some NET_EVENT_xxx values.
 	 */
-	#define EVENT_SET (NET_EVENT_xxx | NET_EVENT_yyy)
+	#define EVENT_IFACE_SET (NET_EVENT_IF_xxx | NET_EVENT_IF_yyy)
+	#define EVENT_IPV4_SET (NET_EVENT_IPV4_xxx | NET_EVENT_IPV4_yyy)
 
-	struct net_mgmt_event_callback callback;
+	struct net_mgmt_event_callback iface_callback;
+	struct net_mgmt_event_callback ipv4_callback;
 
-	void callback_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+	void callback_handler(struct net_mgmt_event_callback *cb,
+			      uint32_t mgmt_event,
 			      struct net_if *iface)
 	{
-		if (mgmt_event == NET_EVENT_xxx) {
-			/* Handle NET_EVENT_xxx */
-		} else if (mgmt_event == NET_EVENT_yyy) {
-			/* Handle NET_EVENT_yyy */
+		if (mgmt_event == NET_EVENT_IF_xxx) {
+			/* Handle NET_EVENT_IF_xxx */
+		} else if (mgmt_event == NET_EVENT_IF_yyy) {
+			/* Handle NET_EVENT_IF_yyy */
+		} else if (mgmt_event == NET_EVENT_IPV4_xxx) {
+			/* Handle NET_EVENT_IPV4_xxx */
+		} else if (mgmt_event == NET_EVENT_IPV4_yyy) {
+			/* Handle NET_EVENT_IPV4_yyy */
 		} else {
 			/* Spurious (false positive) invocation. */
 		}
@@ -100,8 +111,12 @@ An example follows.
 
 	void register_cb(void)
 	{
-		net_mgmt_init_event_callback(&callback, callback_handler, EVENT_SET);
-		net_mgmt_add_event_callback(&callback);
+		net_mgmt_init_event_callback(&iface_callback, callback_handler,
+					     EVENT_IFACE_SET);
+		net_mgmt_init_event_callback(&ipv4_callback, callback_handler,
+					     EVENT_IPV4_SET);
+		net_mgmt_add_event_callback(&iface_callback);
+		net_mgmt_add_event_callback(&ipv4_callback);
 	}
 
 See :zephyr_file:`include/net/net_event.h` for available generic core events that
