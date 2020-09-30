@@ -264,8 +264,8 @@ static inline char z_log_minimal_level_to_char(int level)
 									       \
 			if (IS_ENABLED(CONFIG_LOG_MINIMAL)) {		       \
 				Z_LOG_TO_PRINTK(_level, __VA_ARGS__);	       \
-			} else if (is_user_context ||			       \
-				   (_level <= LOG_RUNTIME_FILTER(_filter))) {  \
+			} else if (LOG_CHECK_CTX_LVL_FILTER(is_user_context, \
+					_level, _filter)) {  \
 				struct log_msg_ids src_level = {	       \
 					.level = _level,		       \
 					.domain_id = CONFIG_LOG_DOMAIN_ID,     \
@@ -320,8 +320,8 @@ static inline char z_log_minimal_level_to_char(int level)
 				log_minimal_hexdump_print(_level,	       \
 							  (const char *)_data, \
 							  _length);	       \
-			} else if (is_user_context ||			       \
-				   (_level <= LOG_RUNTIME_FILTER(_filter))) {  \
+			} else if (LOG_CHECK_CTX_LVL_FILTER(is_user_context,\
+					_level, _filter)) {  \
 				struct log_msg_ids src_level = {	       \
 					.level = _level,		       \
 					.domain_id = CONFIG_LOG_DOMAIN_ID,     \
@@ -402,9 +402,12 @@ static inline char z_log_minimal_level_to_char(int level)
 #define LOG_FILTER_FIRST_BACKEND_SLOT_IDX 1
 
 #ifdef CONFIG_LOG_RUNTIME_FILTERING
+#define LOG_CHECK_CTX_LVL_FILTER(ctx, _level, _filter) \
+	(ctx || (_level <= LOG_RUNTIME_FILTER(_filter)))
 #define LOG_RUNTIME_FILTER(_filter) \
 	LOG_FILTER_SLOT_GET(&(_filter)->filters, LOG_FILTER_AGGR_SLOT_IDX)
 #else
+#define LOG_CHECK_CTX_LVL_FILTER(ctx, _level, _filter) (true)
 #define LOG_RUNTIME_FILTER(_filter) LOG_LEVEL_DBG
 #endif
 
@@ -724,8 +727,8 @@ __syscall void z_log_hexdump_from_user(uint32_t src_level_val,
 				} else {				       \
 					vprintk(_str, _valist);		       \
 				}					       \
-			} else if (is_user_context ||			       \
-				   (_level <= LOG_RUNTIME_FILTER(_filter))) {  \
+			} else if (LOG_CHECK_CTX_LVL_FILTER(is_user_context, \
+					_level, _filter)) {  \
 				struct log_msg_ids src_level = {	       \
 					.level = _level,		       \
 					.domain_id = CONFIG_LOG_DOMAIN_ID,     \
