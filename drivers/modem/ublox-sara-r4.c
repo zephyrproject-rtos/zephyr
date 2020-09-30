@@ -1216,15 +1216,13 @@ static int offload_close(void *obj)
 		return 0;
 	}
 
-	if (sock->is_connected || sock->ip_proto == IPPROTO_UDP) {
-		snprintk(buf, sizeof(buf), "AT+USOCL=%d", sock->id);
+	snprintk(buf, sizeof(buf), "AT+USOCL=%d", sock->id);
 
-		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
-				     NULL, 0U, buf,
-				     &mdata.sem_response, MDM_CMD_TIMEOUT);
-		if (ret < 0) {
-			LOG_ERR("%s ret:%d", log_strdup(buf), ret);
-		}
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
+			     NULL, 0U, buf,
+			     &mdata.sem_response, MDM_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_WRN("%s ret:%d", log_strdup(buf), ret);
 	}
 
 	modem_socket_put(&mdata.socket_config, sock->sock_fd);
