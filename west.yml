@@ -84,7 +84,7 @@ manifest:
       path: modules/hal/libmetal
     - name: hal_quicklogic
       repo-path: hal_quicklogic
-      revision: 7deb3aab1cc430a7650143f9833cfc8ddad76eb5
+      revision: b3a66fe6d04d87fd1533a5c8de51d0599fcd08d0
       path: modules/hal/quicklogic
     - name: lvgl
       revision: 31acbaa36e9e74ab88ac81e3d21e7f1d00a71136
