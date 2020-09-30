@@ -48,7 +48,6 @@ properties:
   enter-dpd-delay:
     type: int
     required: false
-    default: 0
     description: |
       Time, in nanoseconds, needed by the chip to enter the Deep Power-Down
       mode (or Ultra-Deep Power-Down mode when the "use-udpd" property is set)
@@ -57,7 +56,6 @@ properties:
   exit-dpd-delay:
     type: int
     required: false
-    default: 0
     description: |
       Time, in nanoseconds, needed by the chip to exit from the Deep Power-Down
       mode (or Ultra-Deep Power-Down mode when the "use-udpd" property is set)
