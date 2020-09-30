@@ -485,6 +485,11 @@ static int stm32_clock_control_init(const struct device *dev)
 	LL_RCC_MSI_EnableRangeSelection();
 	LL_RCC_MSI_SetRange(CONFIG_CLOCK_STM32_MSI_RANGE << RCC_CR_MSIRANGE_Pos);
 
+#if defined(CONFIG_CLOCK_STM32_MSI_PLL_MODE)
+	/* Enable MSI hardware auto calibration */
+	LL_RCC_MSI_EnablePLLMode();
+#endif
+
 	/* Enable MSI if not enabled */
 	if (LL_RCC_MSI_IsReady() != 1) {
 		/* Enable MSI */
@@ -492,10 +497,6 @@ static int stm32_clock_control_init(const struct device *dev)
 		while (LL_RCC_MSI_IsReady() != 1) {
 		/* Wait for HSI ready */
 		}
-#ifdef CONFIG_CLOCK_STM32_MSI_PLL_MODE
-		/* Enable MSI hardware auto calibration */
-		LL_RCC_MSI_EnablePLLMode();
-#endif
 	}
 
 	/* Set MSI as SYSCLCK source */

@@ -333,6 +333,11 @@ static int rtc_stm32_init(const struct device *dev)
 	while (LL_RCC_LSE_IsReady() != 1) {
 	}
 
+#if defined(CONFIG_CLOCK_STM32_MSI_PLL_MODE)
+	/* Enable MSI hardware auto calibration */
+	LL_RCC_MSI_EnablePLLMode();
+#endif
+
 	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSE);
 
 #endif /* CONFIG_COUNTER_RTC_STM32_CLOCK_SRC */
