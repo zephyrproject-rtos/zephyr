@@ -194,7 +194,8 @@ enum queue_idx {
 	GMAC_QUE_5,  /** Priority queue 5 */
 };
 
-#if (DT_INST_PROP(0, max_frame_size) == 1518)
+#if (!DT_INST_HAS_PROP(0, max_frame_size)) || \
+    (DT_INST_PROP(0, max_frame_size) == 1518)
 	/* Maximum frame length is 1518 bytes */
 #define GMAC_MAX_FRAME_SIZE 0
 #elif (DT_INST_PROP(0, max_frame_size) == 1536)

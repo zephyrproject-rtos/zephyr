@@ -24,13 +24,11 @@ properties:
           maximum frame size (there\'s contradiction in the Devicetree
           Specification). The current supported values are 1518, 1536
           and 10240 (jumbo frames).
-        default: 1518
 
     max-speed:
         type: int
         description:
           Specifies maximum speed in Mbit/s supported by the device.
-        default: 100
 
     phy-connection-type:
         type: string
@@ -39,7 +37,6 @@ properties:
         enum:
           - "rmii"
           - "mii"
-        default: "rmii"
 
     pinctrl-0:
       type: phandles
