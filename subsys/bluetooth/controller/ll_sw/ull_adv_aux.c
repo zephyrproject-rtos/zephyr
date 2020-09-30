@@ -754,15 +754,16 @@ void ull_adv_aux_ptr_fill(uint8_t **dptr, uint8_t phy_s)
 	struct pdu_adv_aux_ptr *aux_ptr;
 
 	*dptr -= sizeof(struct pdu_adv_aux_ptr);
-
-	/* NOTE: Aux Offset will be set in advertiser LLL event
-	 */
 	aux_ptr = (void *)*dptr;
 
 	/* FIXME: implementation defined */
 	aux_ptr->chan_idx = 0U;
 	aux_ptr->ca = 0U;
+
+	/* NOTE: Aux Offset will be set in advertiser LLL event
+	 */
 	aux_ptr->offs_units = 0U;
+	aux_ptr->offs = 0U;
 
 	aux_ptr->phy = find_lsb_set(phy_s) - 1;
 }
@@ -903,6 +904,7 @@ struct pdu_adv_aux_ptr *ull_adv_aux_lll_offset_fill(uint32_t ticks_offset,
 	struct pdu_adv_com_ext_adv *pri_com_hdr;
 	struct pdu_adv_aux_ptr *aux;
 	struct pdu_adv_hdr *h;
+	uint32_t offs;
 	uint8_t *ptr;
 
 	pri_com_hdr = (void *)&pdu->adv_ext_ind;
@@ -918,9 +920,14 @@ struct pdu_adv_aux_ptr *ull_adv_aux_lll_offset_fill(uint32_t ticks_offset,
 	}
 
 	aux = (void *)ptr;
-	aux->offs = (HAL_TICKER_TICKS_TO_US(ticks_offset) - start_us) / 30;
-	if (aux->offs_units) {
-		aux->offs /= 10;
+	offs = HAL_TICKER_TICKS_TO_US(ticks_offset) - start_us;
+	offs = offs / OFFS_UNIT_30_US;
+	if (!!(offs >> 13)) {
+		aux->offs = offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US);
+		aux->offs_units = 1U;
+	} else {
+		aux->offs = offs;
+		aux->offs_units = 0U;
 	}
 
 	return aux;
@@ -960,12 +967,13 @@ static inline void sync_info_fill(struct lll_adv_sync *lll_sync,
 	struct pdu_adv_sync_info *si;
 
 	*dptr -= sizeof(*si);
+	si = (void *)*dptr;
+
+	/* NOTE: sync offset and offset unit filled by secondary prepare */
+	si->offs_units = 0U;
+	si->offs = 0U;
 
 	sync = (void *)HDR_LLL2EVT(lll_sync);
-
-	si = (void *)*dptr;
-	si->offs = 0U; /* NOTE: Filled by secondary prepare */
-	si->offs_units = 0U; /* TODO: implementation defined */
 	si->interval = sys_cpu_to_le16(sync->interval);
 	memcpy(si->sca_chm, lll_sync->data_chan_map,
 	       sizeof(si->sca_chm));

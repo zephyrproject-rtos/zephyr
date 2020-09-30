@@ -492,10 +492,13 @@ static inline void sync_info_offset_fill(struct pdu_adv_sync_info *si,
 	uint32_t offs;
 
 	offs = HAL_TICKER_TICKS_TO_US(ticks_offset) - start_us;
-	if (si->offs_units) {
-		si->offs = offs / SYNC_PKT_OFFS_UNIT_300_US;
+	offs = offs / OFFS_UNIT_30_US;
+	if (!!(offs >> 13)) {
+		si->offs = offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US);
+		si->offs_units = 1U;
 	} else {
-		si->offs = offs / SYNC_PKT_OFFS_UNIT_30_US;
+		si->offs = offs;
+		si->offs_units = 0U;
 	}
 }
 
