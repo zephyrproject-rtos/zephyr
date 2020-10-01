@@ -18,7 +18,7 @@ jobs:
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8]
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
     - name: checkout
       uses: actions/checkout@v2
@@ -43,6 +43,14 @@ jobs:
         key: ${{ runner.os }}-pip-${{ matrix.python-version }}-
         restore-keys: |
           ${{ runner.os }}-pip-${{ matrix.python-version }}-
+    - name: cache-pip-win
+      if: startsWith(runner.os, 'Windows')
+      uses: actions/cache@v1
+      with:
+        path: ~\AppData\Local\pip\Cache
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}
     - name: install python dependencies
       run: |
         pip3 install wheel
