@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Intel Corporation.
+ * Copyright (c) 2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -320,7 +321,8 @@ ssize_t fs_write(struct fs_file_t *zfp, const void *ptr, size_t size);
  * - FS_SEEK_END = from end of file.
  *
  * @retval 0 Success
- * @retval -ERRNO errno code if error.
+ * @retval -ENOTSUP if underlying file system does not support seeking
+ * @retval < 0 negative errno code
  */
 int fs_seek(struct fs_file_t *zfp, off_t offset, int whence);
 
@@ -331,7 +333,9 @@ int fs_seek(struct fs_file_t *zfp, off_t offset, int whence);
  *
  * @param zfp Pointer to the file object
  *
- * @retval position Current position in file
+ * @retval >= 0 position Current position in file
+ * @retval -ENOTSUP if underlying file system does not support seeking
+ * @retval < 0 negative errno code
  * Current revision does not validate the file object.
  */
 off_t fs_tell(struct fs_file_t *zfp);

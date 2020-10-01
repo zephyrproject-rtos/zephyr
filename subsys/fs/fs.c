@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018 Intel Corporation.
  * Copyright (c) 2020 Peter Bigot Consulting, LLC
+ * Copyright (c) 2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -218,7 +219,7 @@ ssize_t fs_write(struct fs_file_t *zfp, const void *ptr, size_t size)
 
 int fs_seek(struct fs_file_t *zfp, off_t offset, int whence)
 {
-	int rc = -EINVAL;
+	int rc = -ENOTSUP;
 
 	if (zfp->mp == NULL) {
 		return -EBADF;
@@ -236,7 +237,7 @@ int fs_seek(struct fs_file_t *zfp, off_t offset, int whence)
 
 off_t fs_tell(struct fs_file_t *zfp)
 {
-	int rc = -EINVAL;
+	int rc = -ENOTSUP;
 
 	if (zfp->mp == NULL) {
 		return -EBADF;
