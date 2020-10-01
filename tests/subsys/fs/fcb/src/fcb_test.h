@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2020 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -25,6 +25,8 @@ extern "C" {
 extern struct fcb test_fcb;
 
 extern struct flash_sector test_fcb_sector[];
+
+extern uint8_t fcb_test_erase_value;
 
 struct append_arg {
 	int *elem_cnts;
