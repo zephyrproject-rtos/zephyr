@@ -49,8 +49,9 @@ static void shell_internal_help_print(const struct shell *shell)
 		return;
 	}
 
-	shell_help_cmd_print(shell);
-	shell_help_subcmd_print(shell);
+	shell_help_cmd_print(shell, &shell->ctx->active_cmd);
+	shell_help_subcmd_print(shell, &shell->ctx->active_cmd,
+				"Subcommands:\n");
 }
 
 /**
