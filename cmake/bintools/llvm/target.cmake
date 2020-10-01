@@ -14,9 +14,5 @@ find_program(CMAKE_RANLIB  llvm-ranlib  ${find_program_clang_args}   )
 find_program(CMAKE_OBJCOPY objcopy      ${find_program_binutils_args})
 find_program(CMAKE_READELF readelf      ${find_program_binutils_args})
 
-# Use the gnu binutil abstraction macros
-include(${ZEPHYR_BASE}/cmake/bintools/gnu/target_memusage.cmake)
-include(${ZEPHYR_BASE}/cmake/bintools/gnu/target_objcopy.cmake)
-include(${ZEPHYR_BASE}/cmake/bintools/gnu/target_objdump.cmake)
-include(${ZEPHYR_BASE}/cmake/bintools/gnu/target_readelf.cmake)
-include(${ZEPHYR_BASE}/cmake/bintools/gnu/target_strip.cmake)
+# Use the gnu binutil abstraction
+include(${ZEPHYR_BASE}/cmake/bintools/gnu/target_bintools.cmake)
