@@ -183,6 +183,7 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 	sync = (void *)HDR_LLL2EVT(lll_sync);
 
 	if (!enable) {
+		uint8_t pri_idx;
 		uint8_t err;
 
 		if (!sync->is_enabled) {
@@ -198,10 +199,15 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 		/* Remove sync_info from auxiliary PDU */
 		err = ull_adv_aux_hdr_set_clear(adv, 0,
 						ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
-						NULL, NULL);
+						NULL, NULL, &pri_idx);
 		if (err) {
 			return err;
 		}
+
+		/* TODO: we remove sync info, but if sync_stop() fails, what do
+		 * we do?
+		 */
+		lll_adv_data_enqueue(&adv->lll, pri_idx);
 
 		err = sync_stop(sync);
 		if (err) {
@@ -229,9 +235,10 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 	if (adv->is_enabled && !sync->is_started) {
 		volatile uint32_t ret_cb = TICKER_STATUS_BUSY;
 		uint32_t ticks_anc_sync;
+		uint8_t pri_idx;
 		uint8_t err;
 
-		/* FIXME: Find absolute ticks until after auxliary PDU on air
+		/* FIXME: Find absolute ticks until after auxiliary PDU on air
 		 *        to place the periodic advertising PDU.
 		 */
 		ticks_anc_sync = ticker_ticks_now_get();
@@ -239,7 +246,7 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 		/* Add sync_info into auxiliary PDU */
 		err = ull_adv_aux_hdr_set_clear(adv,
 						ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
-						0, NULL, NULL);
+						0, NULL, NULL, &pri_idx);
 		if (err) {
 			return err;
 		}
@@ -252,6 +259,8 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 		}
 
 		sync->is_started = 1U;
+
+		lll_adv_data_enqueue(&adv->lll, pri_idx);
 	}
 
 	return 0;

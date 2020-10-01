@@ -87,7 +87,9 @@ void ull_adv_aux_offset_get(struct ll_adv_set *adv);
 uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 				  uint16_t sec_hdr_add_fields,
 				  uint16_t sec_hdr_rem_fields,
-				  void *value, struct pdu_adv_adi *adi);
+				  void *value,
+				  struct pdu_adv_adi *adi,
+				  uint8_t *pri_idx);
 
 /* helper function to calculate common ext adv payload header length */
 static inline uint8_t

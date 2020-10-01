@@ -92,6 +92,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	struct ll_adv_set *adv;
 	uint8_t value[5];
 	uint8_t *val_ptr;
+	uint8_t pri_idx;
 	uint8_t err;
 
 	/* op param definitions:
@@ -120,12 +121,16 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	*val_ptr++ = len;
 	sys_put_le32((uint32_t)data, val_ptr);
 	err = ull_adv_aux_hdr_set_clear(adv, ULL_ADV_PDU_HDR_FIELD_AD_DATA,
-					0, value, NULL);
+					0, value, NULL, &pri_idx);
 	if (err) {
 		return err;
 	}
 
-	if (adv->is_enabled && adv->lll.aux) {
+	if (!adv->lll.aux) {
+		return 0;
+	}
+
+	if (adv->is_enabled) {
 		struct ll_adv_aux_set *aux;
 
 		aux = (void *)HDR_LLL2EVT(adv->lll.aux);
@@ -142,6 +147,9 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 						ULL_ADV_RANDOM_DELAY
 					) / 625U);
 
+			/* FIXME: Find absolute ticks until after primary PDU
+			 *        on air to place the auxiliary advertising PDU.
+			 */
 			ticks_anchor = ticker_ticks_now_get();
 
 			ticks_slot_overhead = ull_adv_aux_evt_init(aux);
@@ -161,6 +169,8 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 		}
 	}
 
+	lll_adv_data_enqueue(&adv->lll, pri_idx);
+
 	return 0;
 }
 
@@ -178,6 +188,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	struct lll_adv *lll;
 	uint8_t ext_hdr_len;
 	uint8_t *sr_dptr;
+	uint8_t pri_idx;
 	uint8_t idx;
 	uint8_t err;
 
@@ -275,11 +286,12 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	sr_pdu->len = sr_dptr - &sr_pdu->payload[0];
 
 	/* Trigger DID update */
-	err = ull_adv_aux_hdr_set_clear(adv, 0, 0, NULL, sr_adi);
+	err = ull_adv_aux_hdr_set_clear(adv, 0, 0, NULL, sr_adi, &pri_idx);
 	if (err) {
 		return err;
 	}
 
+	lll_adv_data_enqueue(&adv->lll, pri_idx);
 	lll_adv_scan_rsp_enqueue(&adv->lll, idx);
 
 	return 0;
@@ -381,7 +393,9 @@ int ull_adv_aux_reset(void)
 uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 				  uint16_t sec_hdr_add_fields,
 				  uint16_t sec_hdr_rem_fields,
-				  void *value, struct pdu_adv_adi *adi)
+				  void *value,
+				  struct pdu_adv_adi *adi,
+				  uint8_t *pri_idx)
 {
 	struct pdu_adv_com_ext_adv *pri_com_hdr, *pri_com_hdr_prev;
 	struct pdu_adv_com_ext_adv *sec_com_hdr, *sec_com_hdr_prev;
@@ -392,11 +406,12 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	uint8_t pri_len, sec_len, sec_len_prev;
 	uint8_t *pri_dptr, *pri_dptr_prev;
 	uint8_t *sec_dptr, *sec_dptr_prev;
-	uint8_t pri_idx, sec_idx, ad_len;
 	struct lll_adv_aux *lll_aux;
 	struct lll_adv *lll;
 	uint8_t is_aux_new;
 	uint8_t *ad_data;
+	uint8_t sec_idx;
+	uint8_t ad_len;
 
 	lll = &adv->lll;
 
@@ -433,7 +448,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	}
 
 	/* Get reference to new primary PDU data buffer */
-	pri_pdu = lll_adv_data_alloc(lll, &pri_idx);
+	pri_pdu = lll_adv_data_alloc(lll, pri_idx);
 	pri_pdu->type = pri_pdu_prev->type;
 	pri_pdu->rfu = 0U;
 	pri_pdu->chan_sel = 0U;
@@ -744,7 +759,6 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	}
 
 	lll_adv_aux_data_enqueue(lll_aux, sec_idx);
-	lll_adv_data_enqueue(lll, pri_idx);
 
 	return 0;
 }
