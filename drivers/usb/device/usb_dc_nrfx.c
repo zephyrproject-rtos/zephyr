@@ -1750,8 +1750,20 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 	 */
 	if ((ep_ctx->cfg.type == USB_DC_EP_CONTROL)
 	    && (nrfx_usbd_last_setup_dir_get() != ep)) {
-		nrfx_usbd_setup_clear();
+		struct usbd_event *ev = usbd_evt_alloc();
+
+		if (!ev) {
+			LOG_ERR("ENOMEM");
+			return -ENOMEM;
+		}
+
+		ev->evt_type = USBD_EVT_EP;
+		ev->evt.ep_evt.evt_type = EP_EVT_WRITE_COMPLETE;
+		ev->evt.ep_evt.ep = ep_ctx;
+		usbd_evt_put(ev);
+		usbd_work_schedule();
 		k_mutex_unlock(&ctx->drv_lock);
+
 		return 0;
 	}
 
