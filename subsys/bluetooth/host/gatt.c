@@ -79,6 +79,7 @@ static sys_slist_t db;
 #endif /* CONFIG_BT_GATT_DYNAMIC_DB */
 
 static atomic_t init;
+static atomic_t service_init;
 
 static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
@@ -1038,15 +1039,24 @@ static void ccc_delayed_store(struct k_work *work)
 }
 #endif
 
-void bt_gatt_init(void)
+static void bt_gatt_service_init(void)
 {
-	if (!atomic_cas(&init, 0, 1)) {
+	if (!atomic_cas(&service_init, 0, 1)) {
 		return;
 	}
 
 	Z_STRUCT_SECTION_FOREACH(bt_gatt_service_static, svc) {
 		last_static_handle += svc->attr_count;
 	}
+}
+
+void bt_gatt_init(void)
+{
+	if (!atomic_cas(&init, 0, 1)) {
+		return;
+	}
+
+	bt_gatt_service_init();
 
 #if defined(CONFIG_BT_GATT_CACHING)
 	k_delayed_work_init(&db_hash_work, db_hash_process);
@@ -1190,7 +1200,7 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 	__ASSERT(svc->attr_count, "invalid parameters\n");
 
 	/* Init GATT core services */
-	bt_gatt_init();
+	bt_gatt_service_init();
 
 	/* Do no allow to register mandatory services twice */
 	if (!bt_uuid_cmp(svc->attrs[0].uuid, BT_UUID_GAP) ||
@@ -1201,6 +1211,11 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 	err = gatt_register(svc);
 	if (err < 0) {
 		return err;
+	}
+
+	/* Don't submit any work until the stack is initialized */
+	if (!atomic_get(&init)) {
+		return 0;
 	}
 
 	sc_indicate(svc->attrs[0].handle,
@@ -1220,6 +1235,11 @@ int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 	err = gatt_unregister(svc);
 	if (err) {
 		return err;
+	}
+
+	/* Don't submit any work until the stack is initialized */
+	if (!atomic_get(&init)) {
+		return 0;
 	}
 
 	sc_indicate(svc->attrs[0].handle,
