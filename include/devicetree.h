@@ -531,6 +531,24 @@
  */
 #define DT_ENUM_IDX(node_id, prop) DT_PROP(node_id, prop##_ENUM_IDX)
 
+/**
+ * @brief Like DT_ENUM_IDX(), but with a fallback to a default enum index
+ *
+ * If the value exists, this expands to its zero based index value thanks to
+ * DT_ENUM_IDX(node_id, prop).
+ *
+ * Otherwise, this expands to provided default index enum value.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param default_idx_value a fallback index value to expand to
+ * @return zero-based index of the property's value in its enum if present,
+ *         default_idx_value ohterwise
+ */
+#define DT_ENUM_IDX_OR(node_id, prop, default_idx_value) \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
+		    (DT_ENUM_IDX(node_id, prop)), (default_idx_value))
+
 /*
  * phandle properties
  *

@@ -54,6 +54,24 @@
 			val = "two";
 		};
 
+		test_enum_default_0: enum-2 {
+			compatible = "vnd,enum-required-false-holder";
+			val = "one";
+		};
+
+		test_enum_default_1: enum-3 {
+			compatible = "vnd,enum-required-false-holder";
+		};
+
+		test_enum_int_default_0: enum-4 {
+			compatible = "vnd,enum-int-required-false-holder";
+			val = < 5 >;
+		};
+
+		test_enum_int_default_1: enum-5 {
+			compatible = "vnd,enum-int-required-false-holder";
+		};
+
 		/*
 		 * This should be the only node with this
 		 * compatible in the tree.
