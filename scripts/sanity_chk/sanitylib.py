@@ -2174,15 +2174,30 @@ class ProjectBuilder(FilterBuilder):
     def cleanup_device_testing_artifacts(self):
         logger.debug("Cleaning up for Device Testing {}".format(self.instance.build_dir))
 
-        keep = [
+        sanitizelist = [
             'CMakeCache.txt',
             'zephyr/runners.yaml',
+        ]
+        keep = [
             'zephyr/zephyr.hex',
             'zephyr/zephyr.bin',
             'zephyr/zephyr.elf',
             ]
 
+        keep += sanitizelist
+
         self.cleanup_artifacts(keep)
+
+        # sanitize paths so files are relocatable
+        for file in sanitizelist:
+            file = os.path.join(self.instance.build_dir, file)
+
+            with open(file, "rt") as fin:
+                data = fin.read()
+                data = data.replace(canonical_zephyr_base+"/", "")
+
+            with open(file, "wt") as fin:
+                fin.write(data)
 
     def report_out(self):
         total_tests_width = len(str(self.suite.total_to_do))
