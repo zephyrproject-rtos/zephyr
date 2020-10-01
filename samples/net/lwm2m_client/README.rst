@@ -37,6 +37,9 @@ samples/net/lwm2m_client directory:
 - :file:`prj.conf`
   This is the standard default config.
 
+- :file:`overlay-ot.conf`
+  This overlay config can be added for OpenThread support.
+
 - :file:`overlay-dtls.conf`
   This overlay config can be added for DTLS support via MBEDTLS.
 
@@ -137,6 +140,44 @@ commands (requires Bluetooth for networking):
    :conf: "prj.conf overlay-bt.conf overlay-dtls.conf"
    :goals: build
    :compact:
+
+OpenThread Support
+==================
+
+To build the lwm2m-client sample for hardware requiring OpenThread for
+networking do the following:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/lwm2m_client
+   :host-os: unix
+   :board: <board to use>
+   :conf: "prj.conf overlay-ot.conf"
+   :goals: build
+   :compact:
+
+Note: If not provisioned (fully erased before flash), device will form
+new OpenThread network and promote himself as leader (Current role: 4).
+To join into already existing OT network, either enable CONFIG_OPENTHREAD_JOINER=y
+and CONFIG_OPENTHREAD_JOINER_AUTOSTART=y and send join request from other
+already joined device with joiner capabilities, or provision it manually
+from console:
+
+.. code-block:: console
+
+   ot thread stop
+   ot channel <channel>
+   ot networkname <network name>
+   ot masterkey <key>
+   ot panid <panid>
+   ot extpanid <extpanid>
+   ot thread start
+
+You could get all parameters for existng OT network from your OTBR with
+the following command:
+
+.. code-block:: console
+
+    wpanctl get Thread:ActiveDataset
 
 Queue Mode Support
 ==================
