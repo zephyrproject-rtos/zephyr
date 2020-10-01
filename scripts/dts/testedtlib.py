@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import io
+import os
+from pathlib import Path
 
 import pytest
 
@@ -19,6 +21,10 @@ import edtlib
 # bindings. The tests mostly use string comparisons via the various __repr__()
 # methods.
 
+def hpath(filename):
+    '''Convert 'filename' to the host path syntax.'''
+    return os.fspath(Path(filename))
+
 def test_warnings():
     '''Tests for situations that should cause warnings.'''
     warnings = io.StringIO()
@@ -33,21 +39,23 @@ warning: unit address and first address in 'reg' (0x30000000200000001) don't mat
 def test_interrupts():
     '''Tests for the interrupts property.'''
     edt = edtlib.EDT("test.dts", ["test-bindings"])
+    filenames = {i: hpath(f'test-bindings/interrupt-{i}-cell.yaml')
+                 for i in range(1, 4)}
 
     assert str(edt.get_node("/interrupt-parent-test/node").interrupts) == \
-        "[<ControllerAndData, name: foo, controller: <Node /interrupt-parent-test/controller in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, data: OrderedDict([('one', 1), ('two', 2), ('three', 3)])>, <ControllerAndData, name: bar, controller: <Node /interrupt-parent-test/controller in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, data: OrderedDict([('one', 4), ('two', 5), ('three', 6)])>]"
+        f"[<ControllerAndData, name: foo, controller: <Node /interrupt-parent-test/controller in 'test.dts', binding {filenames[3]}>, data: OrderedDict([('one', 1), ('two', 2), ('three', 3)])>, <ControllerAndData, name: bar, controller: <Node /interrupt-parent-test/controller in 'test.dts', binding {filenames[3]}>, data: OrderedDict([('one', 4), ('two', 5), ('three', 6)])>]"
 
     assert str(edt.get_node("/interrupts-extended-test/node").interrupts) == \
-        "[<ControllerAndData, controller: <Node /interrupts-extended-test/controller-0 in 'test.dts', binding test-bindings/interrupt-1-cell.yaml>, data: OrderedDict([('one', 1)])>, <ControllerAndData, controller: <Node /interrupts-extended-test/controller-1 in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, data: OrderedDict([('one', 2), ('two', 3)])>, <ControllerAndData, controller: <Node /interrupts-extended-test/controller-2 in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, data: OrderedDict([('one', 4), ('two', 5), ('three', 6)])>]"
+        f"[<ControllerAndData, controller: <Node /interrupts-extended-test/controller-0 in 'test.dts', binding {filenames[1]}>, data: OrderedDict([('one', 1)])>, <ControllerAndData, controller: <Node /interrupts-extended-test/controller-1 in 'test.dts', binding {filenames[2]}>, data: OrderedDict([('one', 2), ('two', 3)])>, <ControllerAndData, controller: <Node /interrupts-extended-test/controller-2 in 'test.dts', binding {filenames[3]}>, data: OrderedDict([('one', 4), ('two', 5), ('three', 6)])>]"
 
     assert str(edt.get_node("/interrupt-map-test/node@0").interrupts) == \
-        "[<ControllerAndData, controller: <Node /interrupt-map-test/controller-0 in 'test.dts', binding test-bindings/interrupt-1-cell.yaml>, data: OrderedDict([('one', 0)])>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-1 in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, data: OrderedDict([('one', 0), ('two', 1)])>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-2 in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, data: OrderedDict([('one', 0), ('two', 0), ('three', 2)])>]"
+        f"[<ControllerAndData, controller: <Node /interrupt-map-test/controller-0 in 'test.dts', binding {filenames[1]}>, data: OrderedDict([('one', 0)])>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-1 in 'test.dts', binding {filenames[2]}>, data: OrderedDict([('one', 0), ('two', 1)])>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-2 in 'test.dts', binding {filenames[3]}>, data: OrderedDict([('one', 0), ('two', 0), ('three', 2)])>]"
 
     assert str(edt.get_node("/interrupt-map-test/node@1").interrupts) == \
-        "[<ControllerAndData, controller: <Node /interrupt-map-test/controller-0 in 'test.dts', binding test-bindings/interrupt-1-cell.yaml>, data: OrderedDict([('one', 3)])>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-1 in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, data: OrderedDict([('one', 0), ('two', 4)])>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-2 in 'test.dts', binding test-bindings/interrupt-3-cell.yaml>, data: OrderedDict([('one', 0), ('two', 0), ('three', 5)])>]"
+        f"[<ControllerAndData, controller: <Node /interrupt-map-test/controller-0 in 'test.dts', binding {filenames[1]}>, data: OrderedDict([('one', 3)])>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-1 in 'test.dts', binding {filenames[2]}>, data: OrderedDict([('one', 0), ('two', 4)])>, <ControllerAndData, controller: <Node /interrupt-map-test/controller-2 in 'test.dts', binding {filenames[3]}>, data: OrderedDict([('one', 0), ('two', 0), ('three', 5)])>]"
 
     assert str(edt.get_node("/interrupt-map-bitops-test/node@70000000E").interrupts) == \
-        "[<ControllerAndData, controller: <Node /interrupt-map-bitops-test/controller in 'test.dts', binding test-bindings/interrupt-2-cell.yaml>, data: OrderedDict([('one', 3), ('two', 2)])>]"
+        f"[<ControllerAndData, controller: <Node /interrupt-map-bitops-test/controller in 'test.dts', binding {filenames[2]}>, data: OrderedDict([('one', 3), ('two', 2)])>]"
 
 def test_reg():
     '''Tests for the regs property'''
@@ -119,14 +127,14 @@ def test_bus():
     # Same compatible string, but different bindings from being on different
     # buses
     assert str(edt.get_node("/buses/foo-bus/node").binding_path) == \
-        "test-bindings/device-on-foo-bus.yaml"
+        hpath("test-bindings/device-on-foo-bus.yaml")
     assert str(edt.get_node("/buses/bar-bus/node").binding_path) == \
-        "test-bindings/device-on-bar-bus.yaml"
+        hpath("test-bindings/device-on-bar-bus.yaml")
 
     # foo-bus/node/nested also appears on the foo-bus bus
     assert edt.get_node("/buses/foo-bus/node/nested").on_bus == "foo"
     assert str(edt.get_node("/buses/foo-bus/node/nested").binding_path) == \
-        "test-bindings/device-on-foo-bus.yaml"
+        hpath("test-bindings/device-on-foo-bus.yaml")
 
 def test_child_binding():
     '''Test 'child-binding:' in bindings'''
@@ -135,15 +143,15 @@ def test_child_binding():
     child2 = edt.get_node("/child-binding/child-2")
     grandchild = edt.get_node("/child-binding/child-1/grandchild")
 
-    assert str(child1.binding_path) == "test-bindings/child-binding.yaml"
+    assert str(child1.binding_path) == hpath("test-bindings/child-binding.yaml")
     assert str(child1.description) == "child node"
     assert str(child1.props) == "OrderedDict([('child-prop', <Property, name: child-prop, type: int, value: 1>)])"
 
-    assert str(child2.binding_path) == "test-bindings/child-binding.yaml"
+    assert str(child2.binding_path) == hpath("test-bindings/child-binding.yaml")
     assert str(child2.description) == "child node"
     assert str(child2.props) == "OrderedDict([('child-prop', <Property, name: child-prop, type: int, value: 3>)])"
 
-    assert str(grandchild.binding_path) == "test-bindings/child-binding.yaml"
+    assert str(grandchild.binding_path) == hpath("test-bindings/child-binding.yaml")
     assert str(grandchild.description) == "grandchild node"
     assert str(grandchild.props) == "OrderedDict([('grandchild-prop', <Property, name: grandchild-prop, type: int, value: 2>)])"
 
@@ -159,6 +167,8 @@ def test_compat2enabled():
 def test_props():
     '''Test Node.props (derived from DT and 'properties:' in the binding)'''
     edt = edtlib.EDT("test.dts", ["test-bindings"])
+    filenames = {i: hpath(f'test-bindings/phandle-array-controller-{i}.yaml')
+                 for i in range(1, 4)}
 
     assert str(edt.get_node("/props").props["int"]) == \
         "<Property, name: int, type: int, value: 1>"
@@ -182,26 +192,27 @@ def test_props():
         "<Property, name: string-array, type: string-array, value: ['foo', 'bar', 'baz']>"
 
     assert str(edt.get_node("/props").props["phandle-ref"]) == \
-        "<Property, name: phandle-ref, type: phandle, value: <Node /props/ctrl-1 in 'test.dts', binding test-bindings/phandle-array-controller-1.yaml>>"
+        f"<Property, name: phandle-ref, type: phandle, value: <Node /props/ctrl-1 in 'test.dts', binding {filenames[1]}>>"
 
     assert str(edt.get_node("/props").props["phandle-refs"]) == \
-        "<Property, name: phandle-refs, type: phandles, value: [<Node /props/ctrl-1 in 'test.dts', binding test-bindings/phandle-array-controller-1.yaml>, <Node /props/ctrl-2 in 'test.dts', binding test-bindings/phandle-array-controller-2.yaml>]>"
+        f"<Property, name: phandle-refs, type: phandles, value: [<Node /props/ctrl-1 in 'test.dts', binding {filenames[1]}>, <Node /props/ctrl-2 in 'test.dts', binding {filenames[2]}>]>"
 
     assert str(edt.get_node("/props").props["phandle-array-foos"]) == \
-        "<Property, name: phandle-array-foos, type: phandle-array, value: [<ControllerAndData, controller: <Node /props/ctrl-1 in 'test.dts', binding test-bindings/phandle-array-controller-1.yaml>, data: OrderedDict([('one', 1)])>, <ControllerAndData, controller: <Node /props/ctrl-2 in 'test.dts', binding test-bindings/phandle-array-controller-2.yaml>, data: OrderedDict([('one', 2), ('two', 3)])>]>"
+        f"<Property, name: phandle-array-foos, type: phandle-array, value: [<ControllerAndData, controller: <Node /props/ctrl-1 in 'test.dts', binding {filenames[1]}>, data: OrderedDict([('one', 1)])>, <ControllerAndData, controller: <Node /props/ctrl-2 in 'test.dts', binding {filenames[2]}>, data: OrderedDict([('one', 2), ('two', 3)])>]>"
 
     assert str(edt.get_node("/props").props["foo-gpios"]) == \
-        "<Property, name: foo-gpios, type: phandle-array, value: [<ControllerAndData, controller: <Node /props/ctrl-1 in 'test.dts', binding test-bindings/phandle-array-controller-1.yaml>, data: OrderedDict([('gpio-one', 1)])>]>"
+        f"<Property, name: foo-gpios, type: phandle-array, value: [<ControllerAndData, controller: <Node /props/ctrl-1 in 'test.dts', binding {filenames[1]}>, data: OrderedDict([('gpio-one', 1)])>]>"
 
     assert str(edt.get_node("/props").props["path"]) == \
-        "<Property, name: path, type: path, value: <Node /props/ctrl-1 in 'test.dts', binding test-bindings/phandle-array-controller-1.yaml>>"
+        f"<Property, name: path, type: path, value: <Node /props/ctrl-1 in 'test.dts', binding {filenames[1]}>>"
 
 def test_nexus():
     '''Test <prefix>-map via gpio-map (the most common case).'''
     edt = edtlib.EDT("test.dts", ["test-bindings"])
+    filename = hpath('test-bindings/gpio-dst.yaml')
 
     assert str(edt.get_node("/gpio-map/source").props["foo-gpios"]) == \
-        "<Property, name: foo-gpios, type: phandle-array, value: [<ControllerAndData, controller: <Node /gpio-map/destination in 'test.dts', binding test-bindings/gpio-dst.yaml>, data: OrderedDict([('val', 6)])>, <ControllerAndData, controller: <Node /gpio-map/destination in 'test.dts', binding test-bindings/gpio-dst.yaml>, data: OrderedDict([('val', 5)])>]>"
+        f"<Property, name: foo-gpios, type: phandle-array, value: [<ControllerAndData, controller: <Node /gpio-map/destination in 'test.dts', binding {filename}>, data: OrderedDict([('val', 6)])>, <ControllerAndData, controller: <Node /gpio-map/destination in 'test.dts', binding {filename}>, data: OrderedDict([('val', 5)])>]>"
 
 def test_prop_defaults():
     '''Test property default values given in bindings'''
@@ -219,19 +230,21 @@ def test_binding_inference():
 
     edt = edtlib.EDT("test.dts", ["test-bindings"], warnings,
                      infer_binding_for_paths=["/zephyr,user"])
+    filenames = {i: hpath(f'test-bindings/phandle-array-controller-{i}.yaml')
+                 for i in range(1, 3)}
 
     assert str(edt.get_node("/zephyr,user").props) == \
-        r"OrderedDict([('boolean', <Property, name: boolean, type: boolean, value: True>), ('bytes', <Property, name: bytes, type: uint8-array, value: b'\x81\x82\x83'>), ('number', <Property, name: number, type: int, value: 23>), ('numbers', <Property, name: numbers, type: array, value: [1, 2, 3]>), ('string', <Property, name: string, type: string, value: 'text'>), ('strings', <Property, name: strings, type: string-array, value: ['a', 'b', 'c']>), ('handle', <Property, name: handle, type: phandle, value: <Node /props/ctrl-1 in 'test.dts', binding test-bindings/phandle-array-controller-1.yaml>>), ('phandles', <Property, name: phandles, type: phandles, value: [<Node /props/ctrl-1 in 'test.dts', binding test-bindings/phandle-array-controller-1.yaml>, <Node /props/ctrl-2 in 'test.dts', binding test-bindings/phandle-array-controller-2.yaml>]>), ('phandle-array-foos', <Property, name: phandle-array-foos, type: phandle-array, value: [<ControllerAndData, controller: <Node /props/ctrl-2 in 'test.dts', binding test-bindings/phandle-array-controller-2.yaml>, data: OrderedDict([('one', 1), ('two', 2)])>]>)])"
+        rf"OrderedDict([('boolean', <Property, name: boolean, type: boolean, value: True>), ('bytes', <Property, name: bytes, type: uint8-array, value: b'\x81\x82\x83'>), ('number', <Property, name: number, type: int, value: 23>), ('numbers', <Property, name: numbers, type: array, value: [1, 2, 3]>), ('string', <Property, name: string, type: string, value: 'text'>), ('strings', <Property, name: strings, type: string-array, value: ['a', 'b', 'c']>), ('handle', <Property, name: handle, type: phandle, value: <Node /props/ctrl-1 in 'test.dts', binding {filenames[1]}>>), ('phandles', <Property, name: phandles, type: phandles, value: [<Node /props/ctrl-1 in 'test.dts', binding {filenames[1]}>, <Node /props/ctrl-2 in 'test.dts', binding {filenames[2]}>]>), ('phandle-array-foos', <Property, name: phandle-array-foos, type: phandle-array, value: [<ControllerAndData, controller: <Node /props/ctrl-2 in 'test.dts', binding {filenames[2]}>, data: OrderedDict([('one', 1), ('two', 2)])>]>)])"
 
 def test_multi_bindings():
     '''Test having multiple directories with bindings'''
     edt = edtlib.EDT("test-multidir.dts", ["test-bindings", "test-bindings-2"])
 
     assert str(edt.get_node("/in-dir-1").binding_path) == \
-        "test-bindings/multidir.yaml"
+        hpath("test-bindings/multidir.yaml")
 
     assert str(edt.get_node("/in-dir-2").binding_path) == \
-        "test-bindings-2/multidir.yaml"
+        hpath("test-bindings-2/multidir.yaml")
 
 def test_dependencies():
     ''''Test dependency relations'''
