@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/h7/stm32h743Xi.dtsi>
+#include <st/h7/stm32h743zitx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
@@ -57,6 +58,7 @@
 };
 
 &usart3 {
+	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
 	current-speed = <115200>;
 	status = "okay";
 };
