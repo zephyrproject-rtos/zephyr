@@ -88,7 +88,6 @@ uint8_t const *ll_adv_aux_random_addr_get(struct ll_adv_set const *const adv,
 uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, uint8_t len,
 			    uint8_t const *const data)
 {
-	struct ll_adv_aux_set *aux;
 	struct ll_adv_set *adv;
 	uint8_t value[5];
 	uint8_t *val_ptr;
@@ -125,35 +124,40 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 		return err;
 	}
 
-	aux = (void *)HDR_LLL2EVT(adv->lll.aux);
-	if (adv->is_enabled && !aux->is_started) {
-		uint32_t ticks_slot_overhead;
-		uint32_t volatile ret_cb;
-		uint32_t ticks_anchor;
-		uint32_t ret;
+	if (adv->is_enabled && adv->lll.aux) {
+		struct ll_adv_aux_set *aux;
 
-		ull_hdr_init(&aux->ull);
+		aux = (void *)HDR_LLL2EVT(adv->lll.aux);
+		if (!aux->is_started) {
+			uint32_t ticks_slot_overhead;
+			uint32_t volatile ret_cb;
+			uint32_t ticks_anchor;
+			uint32_t ret;
 
-		aux->interval =	adv->interval +
-				(HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY) /
-				 625U);
+			ull_hdr_init(&aux->ull);
 
-		ticks_anchor = ticker_ticks_now_get();
+			aux->interval =	adv->interval +
+					(HAL_TICKER_TICKS_TO_US(
+						ULL_ADV_RANDOM_DELAY
+					) / 625U);
 
-		ticks_slot_overhead = ull_adv_aux_evt_init(aux);
+			ticks_anchor = ticker_ticks_now_get();
 
-		ret = ull_adv_aux_start(aux, ticks_anchor, ticks_slot_overhead,
-					&ret_cb);
-		ret = ull_ticker_status_take(ret, &ret_cb);
-		if (ret != TICKER_STATUS_SUCCESS) {
-			/* NOTE: This failure, to start an auxiliary channel
-			 * radio event shall not occur unless a defect in the
-			 * controller design.
-			 */
-			return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+			ticks_slot_overhead = ull_adv_aux_evt_init(aux);
+
+			ret = ull_adv_aux_start(aux, ticks_anchor,
+						ticks_slot_overhead, &ret_cb);
+			ret = ull_ticker_status_take(ret, &ret_cb);
+			if (ret != TICKER_STATUS_SUCCESS) {
+				/* NOTE: This failure, to start an auxiliary
+				 * channel radio event shall not occur unless
+				 * a defect in the controller design.
+				 */
+				return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+			}
+
+			aux->is_started = 1;
 		}
-
-		aux->is_started = 1;
 	}
 
 	return 0;
