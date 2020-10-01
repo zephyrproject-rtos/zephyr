@@ -5,6 +5,7 @@
  */
 #include <shell/shell.h>
 #include "shell_utils.h"
+#include "shell_help.h"
 #include "shell_ops.h"
 #include "shell_vt100.h"
 
@@ -290,11 +291,14 @@ static int cmd_help(const struct shell *shell, size_t argc, char **argv)
 		" for more information.");
 #if defined(CONFIG_SHELL_METAKEYS)
 	shell_print(shell,
-		"Shell supports following meta-keys:\n"
+		"\nShell supports following meta-keys:\n"
 		"Ctrl+a, Ctrl+b, Ctrl+c, Ctrl+d, Ctrl+e, Ctrl+f, Ctrl+k,"
 		" Ctrl+l, Ctrl+n, Ctrl+p, Ctrl+u, Ctrl+w\nAlt+b, Alt+f.\n"
 		"Please refer to shell documentation for more details.");
 #endif
+
+	/* For NULL argument function will print all root commands */
+	shell_help_subcmd_print(shell, NULL, "\nAvailable commands:\n");
 
 	return 0;
 }
