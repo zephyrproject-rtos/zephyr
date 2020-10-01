@@ -1396,6 +1396,22 @@ static void test_enums(void)
 	zassert_equal(DT_ENUM_IDX(DT_NODELABEL(test_enum_0), val), 0, "0");
 }
 
+static void test_enums_required_false(void)
+{
+	/* DT_ENUM_IDX_OR on string value */
+	zassert_equal(DT_ENUM_IDX_OR(DT_NODELABEL(test_enum_default_0), val, 2),
+		      1, "1");
+	zassert_equal(DT_ENUM_IDX_OR(DT_NODELABEL(test_enum_default_1), val, 2),
+		      2, "2");
+	/* DT_ENUM_IDX_OR on int value */
+	zassert_equal(DT_ENUM_IDX_OR(DT_NODELABEL(test_enum_int_default_0),
+				     val, 4),
+		      0, "0");
+	zassert_equal(DT_ENUM_IDX_OR(DT_NODELABEL(test_enum_int_default_1),
+				     val, 4),
+		      4, "4");
+}
+
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_adc_temp_sensor
 static void test_clocks(void)
@@ -1561,6 +1577,7 @@ void test_main(void)
 			 ztest_unit_test(test_cs_gpios),
 			 ztest_unit_test(test_chosen),
 			 ztest_unit_test(test_enums),
+			 ztest_unit_test(test_enums_required_false),
 			 ztest_unit_test(test_clocks),
 			 ztest_unit_test(test_parent),
 			 ztest_unit_test(test_child_nodes_list),
