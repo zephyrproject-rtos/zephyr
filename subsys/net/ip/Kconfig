@@ -400,9 +400,11 @@ config NET_TCP2
 	  Enable new TCP stack for Zephyr 2.4
 
 config NET_TCP1
-	bool "Legacy TCP stack"
+	bool "Legacy TCP stack (DEPRECATED)"
 	help
 	  The legacy TCP stack that has been in use since Zephyr 1.0.
+	  The legacy TCP stack is deprecated and you should use the new TCP
+	  stack instead. The legacy TCP stack will be removed in 2.6 release.
 
 endchoice
 
