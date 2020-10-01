@@ -58,15 +58,13 @@ void test_mheap_block_desc(void)
 	void *block[BLK_NUM_MAX], *block_fail;
 
 	/**
-	 * TESTPOINT: The kernel uses the first 16 bytes of any memory block
-	 * allocated from the heap memory pool to save the block descriptor
-	 * information it needs to later free the block. Consequently, an
-	 * application's request for an N byte chunk of heap memory requires a
-	 * block that is at least (N+16) bytes long.
+	 * TESTPOINT: The kernel uses the first bytes of any memory
+	 * block allocated from the heap memory pool to save the heap
+	 * pointer it needs to later free the block.
 	 * Test steps:
 	 * initial memory heap status (F for free, U for used):
 	 *    64F, 64F, 64F, 64F
-	 * 1. request 4 blocks: each (64-16) bytes, indeed 64-byte allocated
+	 * 1. request 4 blocks: each (64-N) bytes, indeed 64-byte allocated
 	 * 2. verify no more free blocks, any further allocation failed
 	 */
 	for (int i = 0; i < BLK_NUM_MAX; i++) {

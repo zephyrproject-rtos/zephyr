@@ -13,37 +13,42 @@ void z_mem_pool_free(struct k_mem_block *block)
 	z_mem_pool_free_id(&block->id);
 }
 
-void *z_mem_pool_malloc(struct k_mem_pool *pool, size_t size)
+void *z_heap_malloc(struct k_heap *heap, size_t size)
 {
-	struct k_mem_block block;
-
 	/*
-	 * get a block large enough to hold an initial (hidden) block
-	 * descriptor, as well as the space the caller requested
+	 * get a block large enough to hold an initial (hidden) heap
+	 * pointer, as well as the space the caller requested
 	 */
-	if (size_add_overflow(size, WB_UP(sizeof(struct k_mem_block_id)),
+	if (size_add_overflow(size, sizeof(struct k_heap *),
 			      &size)) {
 		return NULL;
 	}
-	if (z_mem_pool_alloc(pool, &block, size, K_NO_WAIT) != 0) {
+
+	struct k_heap **blk = k_heap_alloc(heap, size, K_NO_WAIT);
+
+	if (blk == NULL) {
 		return NULL;
 	}
 
-	/* save the block descriptor info at the start of the actual block */
-	(void)memcpy(block.data, &block.id, sizeof(struct k_mem_block_id));
+	blk[0] = heap;
 
 	/* return address of the user area part of the block to the caller */
-	return (char *)block.data + WB_UP(sizeof(struct k_mem_block_id));
+	return (char *)&blk[1];
+
+}
+
+void *z_mem_pool_malloc(struct k_mem_pool *pool, size_t size)
+{
+	return z_heap_malloc(pool->heap, size);
 }
 
 void k_free(void *ptr)
 {
 	if (ptr != NULL) {
-		/* point to hidden block descriptor at start of block */
-		ptr = (char *)ptr - WB_UP(sizeof(struct k_mem_block_id));
+		struct k_heap **blk = &((struct k_heap **)ptr)[-1];
+		struct k_heap *heap = *blk;
 
-		/* return block to the heap memory pool */
-		z_mem_pool_free_id(ptr);
+		k_heap_free(heap, blk);
 	}
 }
 
