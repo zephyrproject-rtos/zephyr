@@ -237,7 +237,7 @@ function(zephyr_get_compile_options_for_lang lang i)
 
   process_flags(${lang} flags output_list)
   string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
-  set(result_output_list " $<JOIN:${genexp_output_list}, >")
+  set(result_output_list "$<JOIN:${genexp_output_list}, >")
 
   set(${i} ${result_output_list} PARENT_SCOPE)
 endfunction()
