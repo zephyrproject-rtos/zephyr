@@ -37,11 +37,11 @@ child-binding:
             This macro is available here:
               -include/dt-bindings/pinctrl/stm32-pinctrl-common.h
             Some examples of macro usage:
-            /* GPIO A9 set as alernate function 2 */
+               GPIO A9 set as alernate function 2
             ... {
                      pinmux = <STM32_PINMUX('A', 9, AF2)>;
             };
-            /* GPIO A9 set as analog */
+               GPIO A9 set as analog
             ... {
                      pinmux = <STM32_PINMUX('A', 9, ANALOG)>;
             };

@@ -41,15 +41,15 @@ child-binding:
             This macro is available here:
               -include/dt-bindings/pinctrl/stm32f1-pinctrl.h
             Some examples of macro usage:
-            /* GPIO A9 set as alernate with no remap */
+               GPIO A9 set as alernate with no remap
             ... {
                      pinmux = <STM32F1_PINMUX('A', 9, ALTERNATE, REMAP_NO)>;
             };
-            /* GPIO A9 set as alernate with full remap */
+               GPIO A9 set as alernate with full remap
             ... {
                      pinmux = <STM32F1_PINMUX('A', 9, ALTERNATE, REMAP_FULL)>;
             };
-            /* GPIO A9 set as input */
+               GPIO A9 set as input
             ... {
                      pinmux = <STM32F1_PINMUX('A', 9, GPIO_IN, REMAP_NO)>;
             };
