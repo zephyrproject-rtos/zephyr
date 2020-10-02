@@ -21,9 +21,6 @@ if NETWORKING
 config NET_L2_ETHERNET
 	default y
 
-config ETH_MCUX_0
-	default y if NET_L2_ETHERNET
-
 endif # NETWORKING
 
 endif # BOARD_MIMXRT1020_EVK

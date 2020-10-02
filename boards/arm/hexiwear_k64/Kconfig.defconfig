@@ -59,8 +59,4 @@ config SPI_2
 
 endif # SPI
 
-config ETH_MCUX_0
-	default y
-	depends on NET_L2_ETHERNET
-
 endif # BOARD_HEXIWEAR_K64
