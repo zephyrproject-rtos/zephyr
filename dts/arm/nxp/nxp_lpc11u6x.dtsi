@@ -87,6 +87,7 @@
 			label = "GPIO_0";
 			gpio-controller;
 			#gpio-cells = <2>;
+			base = <0>;
 			ngpios = <24>;
 
 			clocks = <&syscon LPC11U6X_CLOCK_GPIO>;
@@ -105,6 +106,7 @@
 			label = "GPIO_1";
 			gpio-controller;
 			#gpio-cells = <2>;
+			base = <0>;
 
 			clocks = <&syscon LPC11U6X_CLOCK_GPIO>;
 			pinmux-port = <&pinmux1>;
