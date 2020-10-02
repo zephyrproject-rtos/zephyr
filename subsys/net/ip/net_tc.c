@@ -234,7 +234,6 @@ void net_tc_tx_init(void)
 		uint8_t thread_priority;
 
 		thread_priority = tx_tc2thread(i);
-		tx_classes[i].tc = thread_priority;
 
 		NET_DBG("[%d] Starting TX queue %p stack size %zd "
 			"prio %d (%d)", i,
@@ -264,7 +263,6 @@ void net_tc_rx_init(void)
 		uint8_t thread_priority;
 
 		thread_priority = rx_tc2thread(i);
-		rx_classes[i].tc = thread_priority;
 
 		NET_DBG("[%d] Starting RX queue %p stack size %zd "
 			"prio %d (%d)", i,
