@@ -27,6 +27,7 @@ char *expected = "22 113 10000 32768 40000 22\n"
 		 "42 42 0042 00000042\n"
 		 "255     42    abcdef        42\n"
 		 "ERR -1 ERR ffffffffffffffff\n"
+		 "98.764321 43.21 4.321 0x43.21\n"
 ;
 #else
 
@@ -40,6 +41,7 @@ char *expected = "22 113 10000 32768 40000 22\n"
 		 "42 42 0042 00000042\n"
 		 "255     42    abcdef        42\n"
 		 "68719476735 -1 18446744073709551615 ffffffffffffffff\n"
+		 "98.764321 43.21 4.321 0x43.21\n"
 ;
 #endif
 
@@ -110,6 +112,7 @@ void test_printk(void)
 	printk("%u %02u %04u %08u\n", 42, 42, 42, 42);
 	printk("%-8u%-6d%-4x  %8d\n", 0xFF, 42, 0xABCDEF, 42);
 	printk("%lld %lld %llu %llx\n", 0xFFFFFFFFFULL, -1LL, -1ULL, -1ULL);
+	printk("%.6lld %.2d %.*d 0x%.2x\n", 98764321ULL, 4321, 3, 4321, 0x4321);
 
 	pk_console[pos] = '\0';
 	zassert_true((strcmp(pk_console, expected) == 0), "printk failed");
@@ -149,6 +152,9 @@ void test_printk(void)
 	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "%lld %lld %llu %llx\n",
 			  0xFFFFFFFFFULL, -1LL, -1ULL, -1ULL);
+	count += snprintk(pk_console + count, sizeof(pk_console) - count,
+			  "%.6lld %.2d %.*d 0x%.2x\n", 98764321ULL, 4321, 3,
+			  4321, 0x4321);
 	pk_console[count] = '\0';
 	zassert_true((strcmp(pk_console, expected) == 0), "snprintk failed");
 }

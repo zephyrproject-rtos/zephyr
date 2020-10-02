@@ -37,10 +37,12 @@ typedef uint32_t printk_val_t;
 #endif
 
 /* Maximum number of digits in a printed decimal value (hex is always
- * less, obviously).  Funny formula produces 10 max digits for 32 bit,
- * 21 for 64.
+ * less, obviously).  Funny formula produces 11 max digits for 32 bit,
+ * 22 for 64. This reserves one character for the radix (.) if needed.
  */
-#define DIGITS_BUFLEN (11U * (sizeof(printk_val_t) / 4U) - 1U)
+#define DIGITS_BUFLEN (11U * (sizeof(printk_val_t) / 4U))
+
+#define FIXED_POINT_DISABLED -1
 
 #ifdef CONFIG_PRINTK_SYNC
 static struct k_spinlock lock;
@@ -96,14 +98,21 @@ void *__printk_get_hook(void)
 }
 #endif /* CONFIG_PRINTK */
 
-static void print_digits(out_func_t out, void *ctx, printk_val_t num, unsigned int base,
-			 bool pad_before, char pad_char, int min_width)
+static void print_digits(const out_func_t out, void *const ctx,
+			 printk_val_t num, const unsigned int base,
+			 const bool pad_before, const char pad_char,
+			 const int min_width, int fixed_p)
 {
 	char buf[DIGITS_BUFLEN];
 	unsigned int i;
 
 	/* Print it backwards into the end of the buffer, low digits first */
 	for (i = DIGITS_BUFLEN - 1U; num != 0U; i--) {
+		/* If fixed_p was -1, then we will never add the radix char */
+		if (fixed_p-- == 0) {
+			buf[i] = '.';
+			continue;
+		}
 		buf[i] = "0123456789abcdef"[num % base];
 		num /= base;
 	}
@@ -128,17 +137,19 @@ static void print_digits(out_func_t out, void *ctx, printk_val_t num, unsigned i
 }
 
 static void print_hex(out_func_t out, void *ctx, printk_val_t num,
-		      enum pad_type padding, int min_width)
+		      enum pad_type padding, int min_width, int fixed_p)
 {
 	print_digits(out, ctx, num, 16U, padding != PAD_SPACE_AFTER,
-		     padding == PAD_ZERO_BEFORE ? '0' : ' ', min_width);
+		     padding == PAD_ZERO_BEFORE ? '0' : ' ', min_width,
+		     fixed_p);
 }
 
 static void print_dec(out_func_t out, void *ctx, printk_val_t num,
-		      enum pad_type padding, int min_width)
+		      enum pad_type padding, int min_width, int fixed_p)
 {
 	print_digits(out, ctx, num, 10U, padding != PAD_SPACE_AFTER,
-		     padding == PAD_ZERO_BEFORE ? '0' : ' ', min_width);
+		     padding == PAD_ZERO_BEFORE ? '0' : ' ', min_width,
+		     fixed_p);
 }
 
 static bool ok64(out_func_t out, void *ctx, long long val)
@@ -174,6 +185,7 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 	enum pad_type padding = PAD_NONE;
 	int min_width = -1;
 	char length_mod = 0;
+	int fixed_p = FIXED_POINT_DISABLED;
 
 	/* fmt has already been adjusted if needed */
 
@@ -186,13 +198,23 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 				min_width = -1;
 				padding = PAD_NONE;
 				length_mod = 0;
+				fixed_p = FIXED_POINT_DISABLED;
 			}
 		} else {
 			switch (*fmt) {
+			case '.':
+				/* Enabled fixed point radix */
+				fixed_p = 0;
+				goto still_might_format;
 			case '-':
 				padding = PAD_SPACE_AFTER;
 				goto still_might_format;
 			case '0':
+				/* Fixed point precision comes after width */
+				if (fixed_p >= 0) {
+					fixed_p = 10 * fixed_p + *fmt - '0';
+					goto still_might_format;
+				}
 				if (min_width < 0 && padding == PAD_NONE) {
 					padding = PAD_ZERO_BEFORE;
 					goto still_might_format;
@@ -207,6 +229,12 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 			case '7':
 			case '8':
 			case '9':
+				/* Fixed point precision comes after width */
+				if (fixed_p >= 0) {
+					fixed_p = 10 * fixed_p + *fmt - '0';
+					goto still_might_format;
+				}
+				/* If not fixed point, then must be width */
 				if (min_width < 0) {
 					min_width = *fmt - '0';
 				} else {
@@ -258,7 +286,8 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 					d = -d;
 					min_width--;
 				}
-				print_dec(out, ctx, d, padding, min_width);
+				print_dec(out, ctx, d, padding, min_width,
+					  fixed_p);
 				break;
 			}
 			case 'p':
@@ -282,7 +311,8 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 					x = va_arg(ap, unsigned int);
 				}
 
-				print_hex(out, ctx, x, padding, min_width);
+				print_hex(out, ctx, x, padding, min_width,
+					  fixed_p);
 				break;
 			}
 			case 's': {
@@ -311,6 +341,14 @@ void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 				out((int)'%', ctx);
 				break;
 			}
+			case '*':
+				/* Fixed point radix specified by var_arg */
+				if (fixed_p == 0) {
+					fixed_p = va_arg(ap, ssize_t);
+					goto still_might_format;
+				}
+				/* Invalid character placement */
+				__fallthrough;
 			default:
 				out((int)'%', ctx);
 				out((int)*fmt, ctx);
