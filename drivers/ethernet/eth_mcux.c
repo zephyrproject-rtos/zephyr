@@ -71,6 +71,11 @@ enum eth_mcux_phy_state {
 	eth_mcux_phy_state_closing
 };
 
+#ifdef CONFIG_NET_POWER_MANAGEMENT
+extern uint32_t ENET_GetInstance(ENET_Type * base);
+static const clock_ip_name_t enet_clocks[] = ENET_CLOCKS;
+#endif
+
 static void eth_mcux_init(const struct device *dev);
 
 static const char *
@@ -1102,6 +1107,9 @@ static int eth_init(const struct device *dev)
 #endif
 
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
+	const uint32_t inst = ENET_GetInstance(context->base);
+
+	context->clock = enet_clocks[inst];
 	context->clock_dev = device_get_binding(context->clock_name);
 #endif
 
@@ -1313,7 +1321,6 @@ static struct eth_context eth_0_context = {
 	.base = (ENET_Type *)DT_INST_REG_ADDR(0),
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
 	.clock_name = DT_INST_CLOCKS_LABEL(0),
-	.clock = kCLOCK_Enet0, // FIXME can be either kCLOCK_Enet0 or kCLOCK_Enet2
 #endif
 	.config_func = eth_0_config_func,
 	.phy_addr = 0U,
@@ -1390,7 +1397,6 @@ static struct eth_context eth_1_context = {
 	.base = (ENET_Type *)DT_INST_REG_ADDR(1),
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
 	.clock_name = DT_INST_CLOCKS_LABEL(1),
-	.clock = kCLOCK_Enet2, // FIXME can be either kCLOCK_Enet0 or kCLOCK_Enet2
 #endif
 	.config_func = eth_1_config_func,
 	.phy_addr = 0U,
