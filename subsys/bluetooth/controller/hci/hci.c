@@ -1066,6 +1066,60 @@ static void le_set_adv_enable(struct net_buf *buf, struct net_buf **evt)
 
 	*evt = cmd_complete_status(status);
 }
+
+static void le_create_big(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_create_big *cmd = (void *)buf->data;
+	uint8_t status;
+	uint32_t sdu_interval;
+	uint16_t max_sdu;
+	uint16_t max_latency;
+
+	sdu_interval = sys_get_le24(cmd->sdu_interval);
+	max_sdu = sys_le16_to_cpu(cmd->max_sdu);
+	max_latency = sys_le16_to_cpu(cmd->max_latency);
+
+	status = ll_big_create(cmd->big_handle, cmd->adv_handle, cmd->num_bis,
+			       sdu_interval, max_sdu, max_latency, cmd->rtn,
+			       cmd->phy, cmd->packing, cmd->framing,
+			       cmd->encryption, cmd->bcode);
+
+	*evt = cmd_status(status);
+}
+
+static void le_create_big_test(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_create_big_test *cmd = (void *)buf->data;
+	uint8_t status;
+	uint32_t sdu_interval;
+	uint16_t iso_interval;
+	uint16_t max_sdu;
+	uint16_t max_pdu;
+
+	sdu_interval = sys_get_le24(cmd->sdu_interval);
+	iso_interval = sys_le16_to_cpu(cmd->iso_interval);
+	max_sdu = sys_le16_to_cpu(cmd->max_sdu);
+	max_pdu = sys_le16_to_cpu(cmd->max_pdu);
+
+	status = ll_big_test_create(cmd->big_handle, cmd->adv_handle,
+				    cmd->num_bis, sdu_interval, iso_interval,
+				    cmd->nse, max_sdu, max_pdu, cmd->phy,
+				    cmd->packing, cmd->framing, cmd->bn,
+				    cmd->irc, cmd->pto, cmd->encryption,
+				    cmd->bcode);
+
+	*evt = cmd_status(status);
+}
+
+static void le_terminate_big(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_terminate_big *cmd = (void *)buf->data;
+	uint8_t status;
+
+	status = ll_big_terminate(cmd->big_handle, cmd->reason);
+
+	*evt = cmd_status(status);
+}
 #endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_OBSERVER)
@@ -1109,6 +1163,34 @@ static void le_set_scan_enable(struct net_buf *buf, struct net_buf **evt)
 #endif
 
 	status = ll_scan_enable(cmd->enable);
+
+	*evt = cmd_complete_status(status);
+}
+
+static void le_big_create_sync(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_big_create_sync *cmd = (void *)buf->data;
+	uint8_t status;
+	uint16_t sync_handle;
+	uint16_t sync_timeout;
+
+	sync_handle = sys_le16_to_cpu(cmd->sync_handle);
+	sync_timeout = sys_le16_to_cpu(cmd->sync_timeout);
+
+	status = ll_big_sync_create(cmd->big_handle, sync_handle,
+				    cmd->encryption, cmd->bcode, cmd->mse,
+				    sync_timeout, cmd->num_bis, cmd->bis);
+
+	*evt = cmd_status(status);
+}
+
+
+static void le_big_terminate_sync(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_big_terminate_sync *cmd = (void *)buf->data;
+	uint8_t status;
+
+	status = ll_big_sync_terminate(cmd->big_handle);
 
 	*evt = cmd_complete_status(status);
 }
@@ -2272,6 +2354,18 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_LE_SET_ADV_ENABLE):
 		le_set_adv_enable(cmd, evt);
 		break;
+
+	case BT_OCF(BT_HCI_OP_LE_CREATE_BIG):
+		le_create_big(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_CREATE_BIG_TEST):
+		le_create_big_test(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_TERMINATE_BIG):
+		le_terminate_big(cmd, evt);
+		break;
 #endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_OBSERVER)
@@ -2281,6 +2375,14 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 
 	case BT_OCF(BT_HCI_OP_LE_SET_SCAN_ENABLE):
 		le_set_scan_enable(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_BIG_CREATE_SYNC):
+		le_big_create_sync(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_BIG_TERMINATE_SYNC):
+		le_big_terminate_sync(cmd, evt);
 		break;
 #endif /* CONFIG_BT_OBSERVER */
 
