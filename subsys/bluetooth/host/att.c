@@ -449,6 +449,7 @@ static int bt_att_chan_send(struct bt_att_chan *chan, struct net_buf *buf,
 			    bt_att_chan_sent_t cb)
 {
 	struct bt_att_hdr *hdr;
+	int err;
 
 	hdr = (void *)buf->data;
 
@@ -462,7 +463,12 @@ static int bt_att_chan_send(struct bt_att_chan *chan, struct net_buf *buf,
 		}
 	}
 
-	return chan_send(chan, buf, cb);
+	err = chan_send(chan, buf, cb);
+	if (err && !cb) {
+		k_sem_give(&chan->tx_sem);
+	}
+
+	return err;
 }
 
 static void bt_att_chan_send_rsp(struct bt_att_chan *chan, struct net_buf *buf,
