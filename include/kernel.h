@@ -3270,9 +3270,9 @@ extern void k_delayed_work_init(struct k_delayed_work *work,
  *
  * @retval 0 Work item countdown started.
  * @retval -EINVAL
- *    @li if a previously submitted work item had to be cancelled,
- *        and the cancellation failed; or
- *    @li Work item is being processed or has completed its work.
+ *    * if a previously submitted work item had to be cancelled and the
+ *      cancellation failed; or
+ *    * Work item is being processed or has completed its work.
  * @retval -EADDRINUSE Work item was submitted to a different workqueue.
  */
 extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
@@ -3294,21 +3294,21 @@ extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
  * @param work Address of delayed work item.
  *
  * @retval 0
- *   @li Work item countdown cancelled before the item was submitted to its
- *       queue; or
- *   @li Work item was removed from its queue before it was processed.
+ *   * Work item countdown cancelled before the item was submitted to its
+ *     queue; or
+ *   * Work item was removed from its queue before it was processed.
  * @retval -EINVAL
- *   @li Work item has never been submitted; or
- *   @li Work item has been successfully cancelled; or
- *   @li Timeout handler is in the process of submitting the work item to its
- *       queue; or
- *   @li Work queue thread has removed the work item from the queue but has
- *       not called its handler.
+ *   * Work item has never been submitted; or
+ *   * Work item has been successfully cancelled; or
+ *   * Timeout handler is in the process of submitting the work item to its
+ *     queue; or
+ *   * Work queue thread has removed the work item from the queue but has not
+ *     called its handler.
  * @retval -EALREADY
- *   @li Work queue thread has removed the work item from the queue and
- *       cleared its pending flag; or
- *   @li Work queue thread is invoking the item handler; or
- *   @li Work item handler has completed.
+ *   * Work queue thread has removed the work item from the queue and cleared
+ *     its pending flag; or
+ *   * Work queue thread is invoking the item handler; or
+ *   * Work item handler has completed.
  */
 extern int k_delayed_work_cancel(struct k_delayed_work *work);
 
