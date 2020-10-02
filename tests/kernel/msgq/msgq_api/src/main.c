@@ -64,7 +64,7 @@ void test_main(void)
 	k_thread_access_grant(k_current_get(), &kmsgq, &msgq, &end_sema,
 			      &tdata, &tstack);
 
-	k_thread_resource_pool_assign(k_current_get(), &test_pool);
+	z_thread_resource_pool_assign(k_current_get(), &test_pool);
 
 	ztest_test_suite(msgq_api,
 			 ztest_1cpu_unit_test(test_msgq_thread),

@@ -167,7 +167,7 @@ void parent_handler(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see k_thread_resource_pool_assign()
+ * @see z_thread_resource_pool_assign()
  */
 void test_inherit_resource_pool(void)
 {
@@ -177,7 +177,7 @@ void test_inherit_resource_pool(void)
 			parent_handler,
 			NULL, NULL, NULL,
 			PRIORITY, 0, K_NO_WAIT);
-	k_thread_resource_pool_assign(&parent_thr, &res_pool);
+	z_thread_resource_pool_assign(&parent_thr, &res_pool);
 	k_sem_take(&sync_sem, K_FOREVER);
 	zassert_true(parent_res_pool_ptr == child_res_pool_ptr,
 		     "Resource pool of the parent thread not inherited,"
