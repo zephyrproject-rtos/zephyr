@@ -22,6 +22,8 @@ The following net-shell commands are implemented:
    "net conn", "Print information about network connections."
    "net dns", "Show how DNS is configured. The command can also be used to
    resolve a DNS name. Only available if :option:`CONFIG_DNS_RESOLVER` is set."
+   "net events", "Enable network event monitoring. Only available if
+   :option:`CONFIG_NET_MGMT_EVENT_MONITOR` is set."
    "net gptp", "Print information about gPTP support. Only available if
    :option:`CONFIG_NET_GPTP` is set."
    "net iface", "Print information about network interfaces."
