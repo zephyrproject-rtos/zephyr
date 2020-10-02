@@ -75,16 +75,6 @@ static void (*const set_timer_compare[TIMER_MAX_CH])(TIM_TypeDef *,
 #endif
 };
 
-static inline struct pwm_stm32_data *to_data(const struct device *dev)
-{
-	return dev->data;
-}
-
-static inline const struct pwm_stm32_config *to_config(const struct device *dev)
-{
-	return dev->config;
-}
-
 /**
  * Obtain LL polarity from PWM flags.
  *
@@ -187,7 +177,7 @@ static int pwm_stm32_pin_set(const struct device *dev, uint32_t pwm,
 			     uint32_t period_cycles, uint32_t pulse_cycles,
 			     pwm_flags_t flags)
 {
-	const struct pwm_stm32_config *cfg = to_config(dev);
+	const struct pwm_stm32_config *cfg = dev->config;
 
 	uint32_t channel;
 
@@ -248,8 +238,8 @@ static int pwm_stm32_get_cycles_per_sec(const struct device *dev,
 					uint32_t pwm,
 					uint64_t *cycles)
 {
-	struct pwm_stm32_data *data = to_data(dev);
-	const struct pwm_stm32_config *cfg = to_config(dev);
+	struct pwm_stm32_data *data = dev->data;
+	const struct pwm_stm32_config *cfg = dev->config;
 
 	*cycles = (uint64_t)(data->tim_clk / (cfg->prescaler + 1));
 
@@ -263,8 +253,8 @@ static const struct pwm_driver_api pwm_stm32_driver_api = {
 
 static int pwm_stm32_init(const struct device *dev)
 {
-	struct pwm_stm32_data *data = to_data(dev);
-	const struct pwm_stm32_config *cfg = to_config(dev);
+	struct pwm_stm32_data *data = dev->data;
+	const struct pwm_stm32_config *cfg = dev->config;
 
 	int r;
 	const struct device *clk;
