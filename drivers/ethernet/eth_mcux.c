@@ -2,7 +2,7 @@
  *
  *  Copyright (c) 2016-2017 ARM Ltd
  *  Copyright (c) 2016 Linaro Ltd
- *  Copyright (c) 2018 Intel Coporation
+ *  Copyright (c) 2018 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1304,14 +1304,14 @@ static void generate_eth0_mac(uint8_t *mac_addr)
 }
 #endif
 
-static void eth_0_config_func(void);
+static void eth0_config_func(void);
 
-static struct eth_context eth_0_context = {
+static struct eth_context eth0_context = {
 	.base = (ENET_Type *)DT_INST_REG_ADDR(0),
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
 	.clock_name = DT_INST_CLOCKS_LABEL(0),
 #endif
-	.config_func = eth_0_config_func,
+	.config_func = eth0_config_func,
 	.phy_addr = 0U,
 	.phy_duplex = kPHY_FullDuplex,
 	.phy_speed = kPHY_Speed100M,
@@ -1324,10 +1324,10 @@ static struct eth_context eth_0_context = {
 };
 
 ETH_NET_DEVICE_INIT(eth_mcux_0, DT_INST_LABEL(0), eth_init,
-		    ETH_MCUX_PM_FUNC, &eth_0_context, NULL,
+		    ETH_MCUX_PM_FUNC, &eth0_context, NULL,
 		    CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU);
 
-static void eth_0_config_func(void)
+static void eth0_config_func(void)
 {
 #if DT_INST_IRQ_HAS_NAME(0, rx)
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, rx, irq),
@@ -1415,14 +1415,14 @@ static void generate_eth1_mac(uint8_t *mac_addr)
 }
 #endif
 
-static void eth_1_config_func(void);
+static void eth1_config_func(void);
 
-static struct eth_context eth_1_context = {
+static struct eth_context eth1_context = {
 	.base = (ENET_Type *)DT_INST_REG_ADDR(1),
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
 	.clock_name = DT_INST_CLOCKS_LABEL(1),
 #endif
-	.config_func = eth_1_config_func,
+	.config_func = eth1_config_func,
 	.phy_addr = 0U,
 	.phy_duplex = kPHY_FullDuplex,
 	.phy_speed = kPHY_Speed100M,
@@ -1435,10 +1435,10 @@ static struct eth_context eth_1_context = {
 };
 
 ETH_NET_DEVICE_INIT(eth_mcux_1, DT_INST_LABEL(1), eth_init,
-		    ETH_MCUX_PM_FUNC, &eth_1_context, NULL,
+		    ETH_MCUX_PM_FUNC, &eth1_context, NULL,
 		    CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU);
 
-static void eth_1_config_func(void)
+static void eth1_config_func(void)
 {
 #if DT_INST_IRQ_HAS_NAME(1, rx)
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, rx, irq),
