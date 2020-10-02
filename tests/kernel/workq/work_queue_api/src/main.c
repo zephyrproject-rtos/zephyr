@@ -248,15 +248,57 @@ static void twork_submit_multipleq(void *data)
 {
 	struct k_work_q *work_q = (struct k_work_q *)data;
 
+	if (IS_ENABLED(CONFIG_SOC_QEMU_ARC_HS)) {
+		/* On this platform the wait for first submission to
+		 * timeout returns after the pending work has been
+		 * taken off the work queue.
+		 */
+		ztest_test_skip();
+		return;
+	}
+
 	/**TESTPOINT: init via k_work_init*/
 	k_delayed_work_init(&new_work, new_work_handler);
+	zassert_equal(k_delayed_work_cancel(&new_work),
+		      -EINVAL, NULL);
 
 	k_delayed_work_submit_to_queue(work_q, &new_work, TIMEOUT);
+	zassert_true(k_delayed_work_pending(&new_work), NULL);
 
 	zassert_equal(k_delayed_work_submit(&new_work, TIMEOUT),
 		      -EADDRINUSE, NULL);
 
-	k_sem_give(&sync_sema);
+	/* wait for first submission to complete timeout */
+	k_sleep(TIMEOUT);
+	zassert_true(k_delayed_work_pending(&new_work), NULL);
+	zassert_true(k_work_pending(&new_work.work), NULL);
+	k_usleep(1);
+	zassert_false(k_delayed_work_pending(&new_work), NULL);
+
+	/* confirm legacy behavior that completed work item can't be
+	 * submitted on a new queue.
+	 */
+	zassert_equal(k_delayed_work_submit(&new_work, TIMEOUT),
+		      -EADDRINUSE, NULL);
+
+	/* still can't if the (completed) work item is unsuccessfully
+	 * cancelled
+	 */
+	zassert_equal(k_delayed_work_cancel(&new_work),
+		      -EALREADY, NULL);
+	zassert_equal(k_delayed_work_submit(&new_work, TIMEOUT),
+		      -EADDRINUSE, NULL);
+
+	/* but can if the work item is successfully cancelled */
+	zassert_equal(k_delayed_work_submit_to_queue(work_q, &new_work,
+						     TIMEOUT),
+		      0, NULL);
+	zassert_equal(k_delayed_work_cancel(&new_work),
+		      0, NULL);
+	zassert_equal(k_delayed_work_cancel(&new_work),
+		      -EINVAL, NULL);
+	zassert_equal(k_delayed_work_submit(&new_work, TIMEOUT),
+		      0, NULL);
 }
 
 static void twork_resubmit(void *data)
@@ -393,9 +435,9 @@ static void tdelayed_work_cancel(const void *data)
 		/**TESTPOINT: check pending when work completed*/
 		zassert_false(k_work_pending(&delayed_work_sleepy.work),
 					NULL);
-		/**TESTPOINT: delayed work cancel when completed*/
+		/**TESTPOINT: delayed work cancel when completed */
 		ret = k_delayed_work_cancel(&delayed_work_sleepy);
-		zassert_not_equal(ret, 0, NULL);
+		zassert_equal(ret, -EALREADY, NULL);
 	}
 	/*work items not cancelled: delayed_work[1], delayed_work_sleepy*/
 }
