@@ -966,44 +966,6 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 	}
 }
 
-#if DT_INST_PROP(0, zephyr_random_mac_address) || \
-    DT_INST_PROP(1, zephyr_random_mac_address)
-static void generate_random_mac(uint8_t *mac_addr)
-{
-	gen_random_mac(mac_addr, FREESCALE_OUI_B0,
-		       FREESCALE_OUI_B1, FREESCALE_OUI_B2);
-}
-#endif
-
-#if !DT_INST_NODE_HAS_PROP(0, local_mac_address) || \
-	DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) && \
-	!DT_INST_NODE_HAS_PROP(1, local_mac_address)
-static void generate_eth0_unique_mac(uint8_t *mac_addr)
-{
-	/* Trivially "hash" up to 128 bits of MCU unique identifier */
-#ifdef CONFIG_SOC_SERIES_IMX_RT
-	uint32_t id = OCOTP->CFG1 ^ OCOTP->CFG2;
-#endif
-#ifdef CONFIG_SOC_SERIES_KINETIS_K6X
-	uint32_t id = SIM->UIDH ^ SIM->UIDMH ^ SIM->UIDML ^ SIM->UIDL;
-#endif
-	mac_addr[0] |= 0x02; /* force LAA bit */
-
-	mac_addr[3] = id >> 8;
-	mac_addr[4] = id >> 16;
-	mac_addr[5] = id >> 0;
-}
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) && \
-    !DT_INST_NODE_HAS_PROP(1, local_mac_address)
-static void generate_eth1_unique_mac(uint8_t *mac_addr)
-{
-	generate_eth0_unique_mac(mac_addr);
-	mac_addr[5]++;
-}
-#endif
-
 static void eth_mcux_init(const struct device *dev)
 {
 	struct eth_context *context = dev->data;
@@ -1118,13 +1080,6 @@ static int eth_init(const struct device *dev)
 	k_delayed_work_init(&context->delayed_phy_work,
 			    eth_mcux_delayed_phy_work);
 
-
-	/* Initialize/override OUI which may not be correct in
-	 * devicetree.
-	 */
-	context->mac_addr[0] = FREESCALE_OUI_B0;
-	context->mac_addr[1] = FREESCALE_OUI_B1;
-	context->mac_addr[2] = FREESCALE_OUI_B2;
 	if (context->generate_mac) {
 		context->generate_mac(context->mac_addr);
 	}
@@ -1314,6 +1269,42 @@ static void eth_mcux_error_isr(const struct device *dev)
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
+
+#if DT_INST_PROP(0, zephyr_random_mac_address) && \
+	NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
+#error Conflict between 'local-mac-address' and 'zephyr,random-mac-address'
+#endif
+
+#if !NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
+static void generate_eth0_mac(uint8_t *mac_addr)
+{
+#if DT_INST_PROP(0, zephyr_random_mac_address)
+	gen_random_mac(mac_addr,
+		       FREESCALE_OUI_B0, FREESCALE_OUI_B1, FREESCALE_OUI_B2);
+#else
+	/* Generate_unique_mac */
+	mac_addr[0] = FREESCALE_OUI_B0;
+	mac_addr[1] = FREESCALE_OUI_B1;
+	mac_addr[2] = FREESCALE_OUI_B2;
+	/* Trivially "hash" up to 128 bits of MCU unique identifier */
+#if defined(CONFIG_SOC_SERIES_IMX_RT)
+	uint32_t id = OCOTP->CFG1 ^ OCOTP->CFG2;
+#elif defined(CONFIG_SOC_SERIES_KINETIS_K6X)
+	uint32_t id = SIM->UIDH ^ SIM->UIDMH ^ SIM->UIDML ^ SIM->UIDL;
+#else
+#error "Unsupported SOC"
+#endif
+	mac_addr[0] |= 0x02; /* force LAA bit */
+
+	mac_addr[3] = id >> 8;
+	mac_addr[4] = id >> 16;
+	mac_addr[5] = id >> 0;
+
+	mac_addr[5] += 0;
+#endif /* zephyr_random_mac_address */
+}
+#endif
+
 static void eth_0_config_func(void);
 
 static struct eth_context eth_0_context = {
@@ -1325,14 +1316,11 @@ static struct eth_context eth_0_context = {
 	.phy_addr = 0U,
 	.phy_duplex = kPHY_FullDuplex,
 	.phy_speed = kPHY_Speed100M,
-#if DT_INST_PROP(0, zephyr_random_mac_address)
-	.generate_mac = generate_random_mac,
-#endif
 #if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
 	.mac_addr = DT_INST_PROP(0, local_mac_address),
 	.generate_mac = NULL,
 #else
-	.generate_mac = generate_eth0_unique_mac,
+	.generate_mac = generate_eth0_mac,
 #endif
 };
 
@@ -1390,6 +1378,42 @@ static void eth_0_config_func(void)
 #endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
 
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
+
+#if DT_INST_PROP(1, zephyr_random_mac_address) && \
+	NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(1))
+#error Conflict between 'local-mac-address' and 'zephyr,random-mac-address'
+#endif
+
+#if !NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(1))
+static void generate_eth1_mac(uint8_t *mac_addr)
+{
+#if DT_INST_PROP(1, zephyr_random_mac_address)
+	gen_random_mac(mac_addr,
+		       FREESCALE_OUI_B0, FREESCALE_OUI_B1, FREESCALE_OUI_B2);
+#else
+	/* Generate_unique_mac */
+	mac_addr[0] = FREESCALE_OUI_B0;
+	mac_addr[1] = FREESCALE_OUI_B1;
+	mac_addr[2] = FREESCALE_OUI_B2;
+	/* Trivially "hash" up to 128 bits of MCU unique identifier */
+#if defined(CONFIG_SOC_SERIES_IMX_RT)
+	uint32_t id = OCOTP->CFG1 ^ OCOTP->CFG2;
+#elif defined(CONFIG_SOC_SERIES_KINETIS_K6X)
+	uint32_t id = SIM->UIDH ^ SIM->UIDMH ^ SIM->UIDML ^ SIM->UIDL;
+#else
+#error "Unsupported SOC"
+#endif
+	mac_addr[0] |= 0x02; /* force LAA bit */
+
+	mac_addr[3] = id >> 8;
+	mac_addr[4] = id >> 16;
+	mac_addr[5] = id >> 0;
+
+	mac_addr[5] += 1;
+#endif /* zephyr_random_mac_address */
+}
+#endif
+
 static void eth_1_config_func(void);
 
 static struct eth_context eth_1_context = {
@@ -1401,14 +1425,11 @@ static struct eth_context eth_1_context = {
 	.phy_addr = 0U,
 	.phy_duplex = kPHY_FullDuplex,
 	.phy_speed = kPHY_Speed100M,
-#if DT_INST_PROP(1, zephyr_random_mac_address)
-	.generate_mac = generate_random_mac,
-#endif
 #if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(1))
 	.mac_addr = DT_INST_PROP(1, local_mac_address),
 	.generate_mac = NULL,
 #else
-	.generate_mac = generate_eth1_unique_mac,
+	.generate_mac = generate_eth1_mac,
 #endif
 };
 
