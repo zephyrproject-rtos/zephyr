@@ -4549,7 +4549,6 @@ static int offload_put(struct net_context *context)
 	struct hl7800_socket *sock;
 	char cmd1[sizeof("AT+KTCPCLOSE=##")];
 	char cmd2[sizeof("AT+KTCPDEL=##")];
-	int ret;
 
 	if (!context) {
 		return -EINVAL;
@@ -4566,15 +4565,6 @@ static int offload_put(struct net_context *context)
 
 	hl7800_lock();
 
-	/* if IP connection needs to be reconfigured,
-	 * we dont need to issue the close command,
-	 * just need to cleanup
-	 */
-	if (ictx.reconfig_IP_connection || !net_if_is_up(ictx.iface)) {
-		LOG_DBG("Skip issuing close socket cmd");
-		goto cleanup;
-	}
-
 	/* close connection */
 	if (sock->type == SOCK_STREAM) {
 		snprintk(cmd1, sizeof(cmd1), "AT+KTCPCLOSE=%d",
@@ -4588,21 +4578,15 @@ static int offload_put(struct net_context *context)
 	wakeup_hl7800();
 
 	if (sock->state != SOCK_SERVER_CLOSED) {
-		ret = send_at_cmd(sock, cmd1, MDM_CMD_SEND_TIMEOUT, 0, false);
-		if (ret < 0) {
-			LOG_ERR("AT+K**PCLOSE ret:%d", ret);
-		}
+		send_at_cmd(sock, cmd1, MDM_CMD_SEND_TIMEOUT, 0, false);
 	}
 
 	if (sock->type == SOCK_STREAM) {
 		/* delete session */
-		ret = send_at_cmd(sock, cmd2, MDM_CMD_SEND_TIMEOUT, 0, false);
-		if (ret < 0) {
-			LOG_ERR("AT+K**PDEL ret:%d", ret);
-		}
+		send_at_cmd(sock, cmd2, MDM_CMD_SEND_TIMEOUT, 0, false);
 	}
 	allow_sleep(true);
-cleanup:
+
 	sock->context->connect_cb = NULL;
 	sock->context->recv_cb = NULL;
 	sock->context->send_cb = NULL;
