@@ -17,11 +17,7 @@ LOG_MODULE_REGISTER(sof);
 #include <soc/shim.h>
 #include <adsp/io.h>
 
-#if defined(CONFIG_SOC_SERIES_INTEL_ADSP_BAYTRAIL)
-#include <soc/mailbox.h>
-#else
 #include <cavs/mailbox.h>
-#endif
 
 /* TODO: Cleanup further */
 
@@ -226,9 +222,6 @@ static void send_fw_ready(void)
 		    IPC_HOST_BASE + IPC_DIPCIE);
 	sys_write32(0x80000000 | ADSP_IPC_FW_READY,
 		    IPC_HOST_BASE + IPC_DIPCI);
-#elif defined(CONFIG_SOC_SERIES_INTEL_ADSP_BAYTRAIL)
-	shim_write(SHIM_IPCDL, SOF_IPC_FW_READY | MAILBOX_HOST_OFFSET >> 3);
-	shim_write(SHIM_IPCDH, SHIM_IPCDH_BUSY);
 #else
 	sys_write32(SRAM_WINDOW_HOST_OFFSET(0) >> 12,
 		    IPC_HOST_BASE + IPC_DIPCIDD);
