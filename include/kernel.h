@@ -405,7 +405,7 @@ struct k_thread {
 	void *switch_handle;
 #endif
 	/** resource pool */
-	struct k_mem_pool *resource_pool;
+	struct k_heap *resource_pool;
 
 #if defined(CONFIG_THREAD_LOCAL_STORAGE)
 	/* Pointer to arch-specific TLS area */
@@ -652,13 +652,19 @@ extern FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
  * previous pool.
  *
  * @param thread Target thread to assign a memory pool for resource requests.
- * @param pool Memory pool to use for resources,
+ * @param heap Heap object to use for resources,
  *             or NULL if the thread should no longer have a memory pool.
  */
-static inline void k_thread_resource_pool_assign(struct k_thread *thread,
+static inline void k_thread_heap_assign(struct k_thread *thread,
+					struct k_heap *heap)
+{
+	thread->resource_pool = heap;
+}
+
+static inline void z_thread_resource_pool_assign(struct k_thread *thread,
 						 struct k_mem_pool *pool)
 {
-	thread->resource_pool = pool;
+	k_thread_heap_assign(thread, pool ? pool->heap : NULL);
 }
 
 #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
@@ -690,7 +696,7 @@ __syscall int k_thread_stack_space_get(const struct k_thread *thread,
 /**
  * @brief Assign the system heap as a thread's resource pool
  *
- * Similar to k_thread_resource_pool_assign(), but the thread will use
+ * Similar to z_thread_resource_pool_assign(), but the thread will use
  * the kernel heap to draw memory.
  *
  * Use with caution, as a malicious thread could perform DoS attacks on the

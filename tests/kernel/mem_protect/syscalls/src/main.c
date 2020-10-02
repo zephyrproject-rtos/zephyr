@@ -420,7 +420,7 @@ void test_main(void)
 {
 	sprintf(kernel_string, "this is a kernel string");
 	sprintf(user_string, "this is a user string");
-	k_thread_resource_pool_assign(k_current_get(), &test_pool);
+	z_thread_resource_pool_assign(k_current_get(), &test_pool);
 
 	ztest_test_suite(syscalls,
 			 ztest_unit_test(test_string_nlen),

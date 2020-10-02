@@ -534,7 +534,7 @@ void main(void)
 
 	k_mem_domain_init(&app_domain, ARRAY_SIZE(parts), parts);
 	k_mem_domain_add_thread(&app_domain, app_thread);
-	k_thread_resource_pool_assign(app_thread, &app_mem_pool);
+	z_thread_resource_pool_assign(app_thread, &app_mem_pool);
 
 	k_thread_start(app_thread);
 	k_thread_join(app_thread, K_FOREVER);

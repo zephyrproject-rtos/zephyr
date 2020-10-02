@@ -86,7 +86,7 @@ void app_b_entry(void *p1, void *p2, void *p3)
 	/* Assign a resource pool to serve for kernel-side allocations on
 	 * behalf of application A. Needed for k_queue_alloc_append().
 	 */
-	k_thread_resource_pool_assign(k_current_get(), &app_b_resource_pool);
+	z_thread_resource_pool_assign(k_current_get(), &app_b_resource_pool);
 
 	/* We are about to drop to user mode and become the monitor thread.
 	 * Grant ourselves access to the kernel objects we need for

@@ -65,7 +65,7 @@ void test_main(void)
 			      &kpipe, &end_sema, &tdata, &tstack,
 			      &khalfpipe, &put_get_pipe);
 
-	k_thread_resource_pool_assign(k_current_get(), &test_pool);
+	z_thread_resource_pool_assign(k_current_get(), &test_pool);
 
 	ztest_test_suite(pipe_api,
 			 ztest_1cpu_unit_test(test_pipe_thread2thread),

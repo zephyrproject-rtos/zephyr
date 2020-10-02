@@ -213,7 +213,7 @@ void app_a_entry(void *p1, void *p2, void *p3)
 	/* Assign a resource pool to serve for kernel-side allocations on
 	 * behalf of application A. Needed for k_queue_alloc_append().
 	 */
-	k_thread_resource_pool_assign(k_current_get(), &app_a_resource_pool);
+	z_thread_resource_pool_assign(k_current_get(), &app_a_resource_pool);
 
 	/* Set the callback function for the sample driver. This has to be
 	 * done from supervisor mode, as this code will run in supervisor

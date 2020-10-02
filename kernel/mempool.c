@@ -54,20 +54,12 @@ void k_free(void *ptr)
 
 #if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
 
-/*
- * Heap is defined using HEAP_MEM_POOL_SIZE configuration option.
- *
- * This module defines the heap memory pool and the _HEAP_MEM_POOL symbol
- * that has the address of the associated memory pool struct.
- */
-
-Z_MEM_POOL_DEFINE(_heap_mem_pool, CONFIG_HEAP_MEM_POOL_MIN_SIZE,
-		  CONFIG_HEAP_MEM_POOL_SIZE, 1, 4);
-#define _HEAP_MEM_POOL (&_heap_mem_pool)
+K_HEAP_DEFINE(_system_heap, CONFIG_HEAP_MEM_POOL_SIZE);
+#define _SYSTEM_HEAP (&_system_heap)
 
 void *k_malloc(size_t size)
 {
-	return z_mem_pool_malloc(_HEAP_MEM_POOL, size);
+	return z_heap_malloc(_SYSTEM_HEAP, size);
 }
 
 void *k_calloc(size_t nmemb, size_t size)
@@ -88,25 +80,25 @@ void *k_calloc(size_t nmemb, size_t size)
 
 void k_thread_system_pool_assign(struct k_thread *thread)
 {
-	thread->resource_pool = _HEAP_MEM_POOL;
+	thread->resource_pool = _SYSTEM_HEAP;
 }
 #else
-#define _HEAP_MEM_POOL	NULL
+#define _SYSTEM_HEAP	NULL
 #endif
 
 void *z_thread_malloc(size_t size)
 {
 	void *ret;
-	struct k_mem_pool *pool;
+	struct k_heap *heap;
 
 	if (k_is_in_isr()) {
-		pool = _HEAP_MEM_POOL;
+		heap = _SYSTEM_HEAP;
 	} else {
-		pool = _current->resource_pool;
+		heap = _current->resource_pool;
 	}
 
-	if (pool) {
-		ret = z_mem_pool_malloc(pool, size);
+	if (heap) {
+		ret = z_heap_malloc(heap, size);
 	} else {
 		ret = NULL;
 	}

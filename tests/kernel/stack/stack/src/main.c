@@ -335,7 +335,7 @@ void test_main(void)
 			      &end_sema, &threadstack, &kstack, &stack, &thread_data1,
 			      &end_sema1, &threadstack1);
 
-	k_thread_resource_pool_assign(k_current_get(), &test_pool);
+	z_thread_resource_pool_assign(k_current_get(), &test_pool);
 
 	ztest_test_suite(test_stack_usage,
 			 ztest_unit_test(test_stack_thread2thread),

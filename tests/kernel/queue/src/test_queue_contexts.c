@@ -260,7 +260,7 @@ void test_queue_get_2threads(void)
 
 static void tqueue_alloc(struct k_queue *pqueue)
 {
-	k_thread_resource_pool_assign(k_current_get(), NULL);
+	z_thread_resource_pool_assign(k_current_get(), NULL);
 
 	/* Alloc append without resource pool */
 	k_queue_alloc_append(pqueue, (void *)&data_append);
@@ -269,7 +269,7 @@ static void tqueue_alloc(struct k_queue *pqueue)
 	zassert_false(k_queue_remove(pqueue, &data_append), NULL);
 
 	/* Assign resource pool of lower size */
-	k_thread_resource_pool_assign(k_current_get(), &mem_pool_fail);
+	z_thread_resource_pool_assign(k_current_get(), &mem_pool_fail);
 
 	/* Prepend to the queue, but fails because of
 	 * insufficient memory
@@ -284,7 +284,7 @@ static void tqueue_alloc(struct k_queue *pqueue)
 	zassert_true(k_queue_is_empty(pqueue), NULL);
 
 	/* Assign resource pool of sufficient size */
-	k_thread_resource_pool_assign(k_current_get(),
+	z_thread_resource_pool_assign(k_current_get(),
 				      &mem_pool_pass);
 
 	zassert_false(k_queue_alloc_prepend(pqueue, (void *)&data_prepend),
@@ -301,7 +301,7 @@ static void tqueue_alloc(struct k_queue *pqueue)
  * @brief Test queue alloc append and prepend
  * @ingroup kernel_queue_tests
  * @see k_queue_alloc_append(), k_queue_alloc_prepend(),
- * k_thread_resource_pool_assign(), k_queue_is_empty(),
+ * z_thread_resource_pool_assign(), k_queue_is_empty(),
  * k_queue_get(), k_queue_remove()
  */
 void test_queue_alloc(void)
