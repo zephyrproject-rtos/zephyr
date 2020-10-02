@@ -13,6 +13,15 @@ properties:
       required: true
       description: Clock prescaler at the input of the timer
 
+    pinctrl-0:
+      type: phandles
+      required: false
+      description: |
+        GPIO pin configuration for PWM signal/s. We expect that the phandles
+        will reference pinctrl nodes, e.g.
+
+           pinctrl-0 = <&tim1_ch1_pwm_pa8 &tim1_ch2_pwm_pa9>;
+
     "#pwm-cells":
       const: 3
 
