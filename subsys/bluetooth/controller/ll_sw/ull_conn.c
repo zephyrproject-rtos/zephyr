@@ -995,6 +995,32 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 		}
 	}
 
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+	/* Run any pending procedure stored while encryption was started */
+	if (conn->llcp.encryption.pend_llcp_type != LLCP_NONE) {
+		switch (conn->llcp.encryption.pend_llcp_type) {
+#if defined(CONFIG_BT_CTLR_PHY)
+		case LLCP_PHY_UPD:
+		{
+			struct lll_conn *lll = &conn->lll;
+			uint16_t event_counter;
+
+			/* Calculate current event counter */
+			event_counter = lll->event_counter +
+					lll->latency_prepare + lazy;
+
+			event_phy_upd_ind_prep(conn, event_counter);
+		}
+		break;
+#endif /* CONFIG_BT_CTLR_PHY */
+
+		default:
+			LL_ASSERT(0);
+			break;
+		}
+	}
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
 	/* Terminate Procedure Request */
 	if (conn->llcp_terminate.ack != conn->llcp_terminate.req) {
 		struct node_tx *tx;
@@ -2776,6 +2802,19 @@ static inline void event_enc_prep(struct ll_conn *conn)
 		/* resume data packet rx and tx */
 		conn->llcp_enc.pause_rx = 0U;
 		conn->llcp_enc.pause_tx = 0U;
+
+		/* If the encryption procedure interrupted another procedcure,
+		 * continue that procedure
+		 */
+		if (conn->llcp.encryption.pend_llcp_type != LLCP_NONE) {
+			conn->llcp_type = conn->llcp.encryption.pend_llcp_type;
+			conn->llcp.encryption.pend_llcp_type = LLCP_NONE;
+			/* return now to prevent the 'procedure request acked',
+			 * below, otherwise the ack/req flow prevents the
+			 * interrupted procedure to run.
+			 */
+			return;
+		}
 #endif /* !CONFIG_BT_CTLR_FAST_ENC */
 	}
 
@@ -3682,8 +3721,15 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 		struct node_rx_pdu *rx;
 		uint8_t old_tx, old_rx;
 
-		/* procedure request acked */
-		conn->llcp_ack = conn->llcp_req;
+		if (conn->llcp.encryption.pend_llcp_type == LLCP_NONE) {
+			/* procedure request acked */
+			conn->llcp_ack = conn->llcp_req;
+		} else {
+			/* PHY Update completed, so clear the
+			 * pending procedure
+			 */
+			conn->llcp.encryption.pend_llcp_type = LLCP_NONE;
+		}
 
 		/* apply new phy */
 		old_tx = lll->phy_tx;
@@ -5462,6 +5508,21 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		    !pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_ENC_REQ, pdu_rx->len)) {
 			goto ull_conn_rx_unknown_rsp_send;
 		}
+
+#if defined(CONFIG_BT_CTLR_PHY)
+		/* LL_ENC_REQ was received while LLCP_PHY_UPD was running */
+		if (conn->llcp_type == LLCP_PHY_UPD &&
+		    conn->llcp_ack != conn->llcp_req) {
+			 /* Adjust ack due to decrement below, to prevent
+			  * failures
+			  */
+			conn->llcp_ack += 2U;
+			/* Remember that LLCP_PHY_UPD was interrupted */
+			conn->llcp.encryption.pend_llcp_type = LLCP_PHY_UPD;
+		} else {
+			conn->llcp.encryption.pend_llcp_type = LLCP_NONE;
+		}
+#endif /* CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_FAST_ENC)
 		/* TODO: BT Spec. text: may finalize the sending of additional

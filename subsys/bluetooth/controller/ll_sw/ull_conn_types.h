@@ -96,28 +96,30 @@ struct ll_conn {
 	uint8_t llcp_ack;
 	uint8_t llcp_type;
 
-	union {
-		struct {
-			uint16_t instant;
-			uint16_t *pdu_win_offset;
-			uint32_t ticks_anchor;
-		} conn_upd;
+	struct {
+		union {
+			struct {
+				uint16_t instant;
+				uint16_t *pdu_win_offset;
+				uint32_t ticks_anchor;
+			} conn_upd;
 
-		struct {
-			uint8_t  initiate:1;
-			uint8_t  chm[5];
-			uint16_t instant;
-		} chan_map;
+			struct {
+				uint8_t  initiate:1;
+				uint8_t  chm[5];
+				uint16_t instant;
+			} chan_map;
 
 #if defined(CONFIG_BT_CTLR_PHY)
-		struct {
-			uint8_t initiate:1;
-			uint8_t cmd:1;
-			uint8_t tx:3;
-			uint8_t rx:3;
-			uint16_t instant;
-		} phy_upd_ind;
+			struct {
+				uint8_t initiate:1;
+				uint8_t cmd:1;
+				uint8_t tx:3;
+				uint8_t rx:3;
+				uint16_t instant;
+			} phy_upd_ind;
 #endif /* CONFIG_BT_CTLR_PHY */
+		};
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 		struct {
@@ -126,6 +128,7 @@ struct ll_conn {
 				LLCP_ENC_STATE_INIT,
 				LLCP_ENC_STATE_LTK_WAIT,
 			} state:2 __packed;
+			uint8_t  pend_llcp_type;
 			uint8_t  error_code;
 			uint8_t  skd[16];
 		} encryption;
