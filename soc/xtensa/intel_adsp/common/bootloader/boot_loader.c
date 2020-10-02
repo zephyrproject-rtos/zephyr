@@ -17,7 +17,7 @@
 #include <soc.h>
 #include "manifest.h"
 
-#if CONFIG_SUECREEK
+#if CONFIG_SOC_INTEL_S1000
 #define MANIFEST_BASE	BOOT_LDR_MANIFEST_BASE
 #else
 #define MANIFEST_BASE	IMR_BOOT_LDR_MANIFEST_BASE
@@ -25,9 +25,7 @@
 
 extern void __start(void);
 
-#define NEED_BOOT_LOADER (!defined(CONFIG_SOF) || defined(CONFIG_BOOT_LOADER))
-
-#if NEED_BOOT_LOADER
+#if !defined(CONFIG_SOC_INTEL_S1000)
 #define MANIFEST_SEGMENT_COUNT 3
 
 static inline void idelay(int n)
@@ -121,7 +119,7 @@ static void parse_module(struct sof_man_fw_header *hdr,
 }
 
 /* On Sue Creek the boot loader is attached separately, no need to skip it */
-#if CONFIG_SUECREEK
+#if CONFIG_SOC_INTEL_S1000
 #define MAN_SKIP_ENTRIES 0
 #else
 #define MAN_SKIP_ENTRIES 1
@@ -283,7 +281,6 @@ static uint32_t hp_sram_init(void)
 
 #endif
 
-#if CONFIG_LP_SRAM
 static int32_t lp_sram_init(void)
 {
 	uint32_t status;
@@ -319,7 +316,6 @@ static int32_t lp_sram_init(void)
 
 	return status;
 }
-#endif
 
 /* boot master core */
 void boot_master_core(void)
@@ -333,16 +329,14 @@ void boot_master_core(void)
 		return;
 	}
 
-#if CONFIG_LP_SRAM
 	/* init the LPSRAM */
 
 	result = lp_sram_init();
 	if (result < 0) {
 		return;
 	}
-#endif
 
-#if NEED_BOOT_LOADER
+#if !defined(CONFIG_SOC_INTEL_S1000)
 	/* parse manifest and copy modules */
 	parse_manifest();
 

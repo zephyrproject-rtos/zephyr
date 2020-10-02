@@ -191,7 +191,6 @@ irq_connect_out:
 }
 #endif
 
-#ifndef CONFIG_SOF
 static inline void soc_set_power_and_clock(void)
 {
 	volatile struct soc_dsp_shim_regs *dsp_shim_regs =
@@ -226,13 +225,10 @@ static inline void soc_set_power_and_clock(void)
 	/* Rewrite the low power sequencing control bits */
 	dsp_shim_regs->lpsctl = dsp_shim_regs->lpsctl;
 }
-#endif
 
 static int soc_init(const struct device *dev)
 {
-#ifndef CONFIG_SOF
 	soc_set_power_and_clock();
-#endif
 	return 0;
 }
 

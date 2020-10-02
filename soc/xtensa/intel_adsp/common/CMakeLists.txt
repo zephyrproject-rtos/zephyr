@@ -9,11 +9,6 @@ zephyr_library_named(intel_adsp_common)
 zephyr_library_include_directories(include)
 zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
 
-if(CONFIG_SOF)
-	zephyr_library_include_directories(INTEL_ADSP_COMMON INTERFACE  ${PROJECT_SOURCE_DIR}/../modules/audio/sof/src/include)
-	zephyr_library_include_directories(INTEL_ADSP_COMMON INTERFACE  ${PROJECT_SOURCE_DIR}/../modules/audio/sof/src/arch/xtensa/include)
-endif()
-
 set_source_files_properties(adsp.c PROPERTIES COMPILE_FLAGS -std=gnu99)
 zephyr_library_sources(adsp.c)
 

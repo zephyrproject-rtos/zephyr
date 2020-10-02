@@ -14,7 +14,7 @@
 #define __CAVS_CPU_H__
 
 /** \brief Number of available DSP cores (conf. by kconfig) */
-#define PLATFORM_CORE_COUNT	CONFIG_CORE_COUNT
+#define PLATFORM_CORE_COUNT (defined(CONFIG_SMP) ? CONFIG_MP_NUM_CPUS : 1)
 
 /** \brief Id of master DSP core */
 #define PLATFORM_MASTER_CORE_ID	0
