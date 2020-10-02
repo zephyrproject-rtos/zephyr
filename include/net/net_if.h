@@ -392,9 +392,6 @@ struct net_traffic_class {
 
 	/** Stack for this work queue */
 	k_thread_stack_t *stack;
-
-	/** Traffic class value */
-	int tc;
 };
 
 /**
