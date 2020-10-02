@@ -717,3 +717,50 @@ void test_file_unlink(void)
 
 	TC_PRINT("File (%s) deleted successfully!\n", TEST_FILE_RN);
 }
+
+/**
+ * @brief Check if fs_seek behaves as expected
+ *
+ * @ingroup filesystem_api
+ */
+void test_file_seek(void)
+{
+	off_t ret_s;
+	off_t ret_t;
+	off_t end;
+
+	TC_PRINT("\nSeek tests:\n");
+
+	ret_s = fs_seek(&filep, 0, FS_SEEK_SET | FS_SEEK_RET_POS);
+	zassert_true(ret_s == 0, "Failed to seek");
+	ret_t = fs_tell(&filep);
+	zassert_true(ret_t == ret_s, "Tell does not config seek");
+
+	ret_s = fs_seek(&filep, 0, FS_SEEK_END | FS_SEEK_RET_POS);
+	zassert_true(ret_s > 0, "Failed to seek");
+	ret_t = fs_tell(&filep);
+	zassert_true(ret_t == ret_s, "Tell does not config seek");
+	end = ret_t;
+
+	ret_s = fs_seek(&filep, -ret_t / 2, FS_SEEK_END | FS_SEEK_RET_POS);
+	zassert_true(ret_s > 0, "Failed to seek");
+	ret_t = fs_tell(&filep);
+	zassert_true(ret_t == ret_s, "Tell does not config seek");
+
+	ret_s = fs_seek(&filep, -ret_t / 2, FS_SEEK_END | FS_SEEK_RET_POS);
+	zassert_true(ret_s > 0, "Failed to seek");
+	ret_t = fs_tell(&filep);
+	zassert_true(ret_t == ret_s, "Tell does not config seek");
+
+	ret_s = fs_seek(&filep, end, FS_SEEK_SET | FS_SEEK_RET_POS);
+	zassert_true(ret_s == end, "Failed to seek");
+	ret_t = fs_tell(&filep);
+	zassert_true(ret_t == ret_s, "Tell does not config seek");
+
+	ret_s = fs_seek(&filep, 0, FS_SEEK_SET | FS_SEEK_RET_POS);
+	zassert_true(ret_s == 0, "Failed to seek");
+	ret_s = fs_seek(&filep, end / 2, FS_SEEK_CUR | FS_SEEK_RET_POS);
+	zassert_true(ret_s == end / 2, "Failed to seek");
+	ret_t = fs_tell(&filep);
+	zassert_true(ret_t == ret_s, "Tell does not config seek");
+}

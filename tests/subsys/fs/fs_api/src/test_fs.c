@@ -129,14 +129,14 @@ static ssize_t temp_write(struct fs_file_t *zfp, const void *ptr, size_t size)
 	return bw;
 }
 
-static int temp_seek(struct fs_file_t *zfp, off_t offset, int whence)
+static off_t temp_seek(struct fs_file_t *zfp, off_t offset, int whence)
 {
 
 	if (!zfp) {
 		return -EINVAL;
 	}
 
-	switch (whence) {
+	switch (whence & ~FS_SEEK_RET_POS) {
 	case FS_SEEK_SET:
 		cur = buffer + offset;
 		break;
@@ -152,6 +152,10 @@ static int temp_seek(struct fs_file_t *zfp, off_t offset, int whence)
 
 	if ((cur < buffer) || (cur > buffer + file_length)) {
 		return -EINVAL;
+	}
+
+	if (whence & FS_SEEK_RET_POS) {
+		return cur - buffer;
 	}
 
 	return 0;
