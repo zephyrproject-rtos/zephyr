@@ -31,7 +31,11 @@
 
 #else
 
+#if defined(CONFIG_NET_DHCPV4)
+#define NET_EVENT_INFO_MAX_SIZE sizeof(struct net_if_dhcpv4)
+#else
 #define NET_EVENT_INFO_MAX_SIZE sizeof(struct net_event_ipv6_route)
+#endif
 
 #endif /* CONFIG_NET_L2_WIFI_MGMT */
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */
