@@ -227,9 +227,9 @@ ssize_t fs_write(struct fs_file_t *zfp, const void *ptr, size_t size)
 	return rc;
 }
 
-int fs_seek(struct fs_file_t *zfp, off_t offset, int whence)
+off_t fs_seek(struct fs_file_t *zfp, off_t offset, int whence)
 {
-	int rc = -ENOTSUP;
+	off_t rc = -ENOTSUP;
 
 	if (zfp->mp == NULL) {
 		return -EBADF;
@@ -241,7 +241,11 @@ int fs_seek(struct fs_file_t *zfp, off_t offset, int whence)
 
 	rc = zfp->mp->fs->lseek(zfp, offset, whence);
 	if (rc < 0) {
-		LOG_ERR("file seek error (%d)", rc);
+		LOG_ERR("file seek error (%ld)", (long)rc);
+	}
+
+	if (!(whence & FS_SEEK_RET_POS) && (rc > 0)) {
+		return 0;
 	}
 
 	return rc;

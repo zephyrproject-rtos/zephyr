@@ -131,7 +131,6 @@ struct fs_statvfs {
 	unsigned long f_bfree;
 };
 
-
 /**
  * @name fs_open open and creation mode flags
  * @{
@@ -173,6 +172,10 @@ struct fs_statvfs {
 #ifndef FS_SEEK_END
 /** Seek from the end of file */
 #define FS_SEEK_END	2
+#endif
+#ifndef FS_SEEK_RET_POS
+/** Return new file positoin on success; should be combined with other flags */
+#define FS_SEEK_RET_POS	8
 #endif
 /**
  * @}
@@ -295,16 +298,19 @@ ssize_t fs_write(struct fs_file_t *zfp, const void *ptr, size_t size);
  *
  * @param zfp Pointer to the file object
  * @param offset Relative location to move the file pointer to
- * @param whence Relative location from where offset is to be calculated.
+ * @param whence Relative location from where offset is to be calculated:
  * - @c FS_SEEK_SET for the beginning of the file;
  * - @c FS_SEEK_CUR for the current position;
- * - @c FS_SEEK_END for the end of the file.
+ * - @c FS_SEEK_END for the end of the file;
  *
- * @retval 0 on success;
+ * When @p whence is combined with @c FS_SEEK_RET_POS flag, the function returns
+ * new position within file on success.
+ *
+ * @retval >=0 on success;
  * @retval -ENOTSUP if not supported by underlying file system driver;
  * @retval <0 an other negative errno code on error.
  */
-int fs_seek(struct fs_file_t *zfp, off_t offset, int whence);
+off_t fs_seek(struct fs_file_t *zfp, off_t offset, int whence);
 
 /**
  * @brief Get current file position.

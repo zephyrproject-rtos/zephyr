@@ -46,7 +46,7 @@ struct fs_file_system_t {
 	ssize_t (*read)(struct fs_file_t *filp, void *dest, size_t nbytes);
 	ssize_t (*write)(struct fs_file_t *filp,
 					const void *src, size_t nbytes);
-	int (*lseek)(struct fs_file_t *filp, off_t off, int whence);
+	off_t (*lseek)(struct fs_file_t *filp, off_t off, int whence);
 	off_t (*tell)(struct fs_file_t *filp);
 	int (*truncate)(struct fs_file_t *filp, off_t length);
 	int (*sync)(struct fs_file_t *filp);

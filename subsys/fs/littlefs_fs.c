@@ -310,19 +310,19 @@ BUILD_ASSERT((FS_SEEK_SET == LFS_SEEK_SET)
 	     && (FS_SEEK_CUR == LFS_SEEK_CUR)
 	     && (FS_SEEK_END == LFS_SEEK_END));
 
-static int littlefs_seek(struct fs_file_t *fp, off_t off, int whence)
+static off_t littlefs_seek(struct fs_file_t *fp, off_t off, int whence)
 {
 	struct fs_littlefs *fs = fp->mp->fs_data;
+
+	/* Remove FS_SEEK_RET_POS flag as it measn nothing for the LittleFS */
+	whence &= ~FS_SEEK_RET_POS;
 
 	fs_lock(fs);
 
 	off_t ret = lfs_file_seek(&fs->lfs, LFS_FILEP(fp), off, whence);
 
 	fs_unlock(fs);
-
-	if (ret >= 0) {
-		ret = 0;
-	}
+	printk("%lx %lx\n", off, ret);
 
 	return lfs_to_errno(ret);
 }
