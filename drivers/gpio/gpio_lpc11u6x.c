@@ -97,6 +97,7 @@ struct gpio_lpc11u6x_config {
 	const struct gpio_lpc11u6x_shared *shared;
 	char *pinmux_name;
 	uint8_t port_num;
+	uint8_t base;
 	uint8_t ngpios;
 };
 
@@ -118,7 +119,7 @@ static int gpio_lpc11u6x_pin_configure(const struct device *port,
 	uint32_t func;
 	int ret;
 
-	if (pin >= config->ngpios) {
+	if (pin < config->base || pin >= config->ngpios) {
 		return -EINVAL;
 	}
 
@@ -329,7 +330,7 @@ static int gpio_lpc11u6x_pin_interrupt_configure(const struct device *port,
 	uint8_t intpin;
 	int irq;
 
-	if (pin >= config->ngpios) {
+	if (pin < config->base || pin >= config->ngpios) {
 		return -EINVAL;
 	}
 
@@ -593,6 +594,7 @@ static const struct gpio_lpc11u6x_config				\
 	.port_num = id,							\
 	.pinmux_name = DT_LABEL(DT_PHANDLE(DT_NODELABEL(gpio##id),	\
 				pinmux_port)),				\
+	.base = DT_PROP(DT_NODELABEL(gpio##id), base),			\
 	.ngpios = DT_PROP(DT_NODELABEL(gpio##id), ngpios),		\
 };									\
 									\
