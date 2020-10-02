@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/h7/stm32h743Xi.dtsi>
+#include <st/h7/stm32h743zitx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
@@ -75,6 +76,7 @@
 
 	pwm12: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim12_ch1_pwm_pb14>;
 	};
 };
 
