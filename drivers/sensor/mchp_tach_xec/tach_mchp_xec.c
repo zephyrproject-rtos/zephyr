@@ -39,7 +39,7 @@ struct tach_xec_data {
 	  _dev->config))
 
 #define TACH_XEC_DATA(_dev)				\
-	((struct tach_xec_data *)dev->data)
+	((struct tach_xec_data *)_dev->data)
 
 
 int tach_xec_sample_fetch(const struct device *dev, enum sensor_channel chan)
