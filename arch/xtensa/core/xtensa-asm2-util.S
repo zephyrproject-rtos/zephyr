@@ -168,6 +168,10 @@ _restore_context:
 	l32i a0, a1, BSA_SCOMPARE1_OFF
 	wsr.SCOMPARE1 a0
 #endif
+#if XCHAL_HAVE_THREADPTR && defined(CONFIG_THREAD_LOCAL_STORAGE)
+	l32i a0, a1, BSA_THREADPTR_OFF
+	wur.THREADPTR a0
+#endif
 	rsync
 
 	l32i a0, a1, BSA_A0_OFF
