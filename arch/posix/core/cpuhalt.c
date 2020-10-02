@@ -21,6 +21,7 @@
  */
 
 #include "posix_core.h"
+#include "posix_board_if.h"
 #include <arch/posix/posix_soc_if.h>
 #include <tracing/tracing.h>
 
