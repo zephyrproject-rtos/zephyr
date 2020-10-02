@@ -293,7 +293,7 @@ static void tdelayed_work_submit_1(struct k_work_q *work_q,
 	/**TESTPOINT: init via k_delayed_work_init*/
 	k_delayed_work_init(w, handler);
 	/**TESTPOINT: check pending after delayed work init*/
-	zassert_false(k_work_pending((struct k_work *)w), NULL);
+	zassert_false(k_work_pending(&w->work), NULL);
 	/**TESTPOINT: check remaining timeout before submit*/
 	zassert_equal(k_delayed_work_remaining_get(w), 0, NULL);
 
@@ -319,7 +319,7 @@ static void tdelayed_work_submit_1(struct k_work_q *work_q,
 	zassert_true(time_remaining >= tick_to_ms, NULL);
 
 	/**TESTPOINT: check pending after delayed work submit*/
-	zassert_true(k_work_pending((struct k_work *)w) == 0, NULL);
+	zassert_false(k_work_pending(&w->work), NULL);
 }
 
 static void tdelayed_work_submit(const void *data)
@@ -368,12 +368,12 @@ static void tdelayed_work_cancel(const void *data)
 	ret = k_delayed_work_cancel(&delayed_work[0]);
 	zassert_true(ret == 0, NULL);
 	/**TESTPOINT: check pending after delayed work cancel*/
-	zassert_false(k_work_pending((struct k_work *)&delayed_work[0]), NULL);
+	zassert_false(k_work_pending(&delayed_work[0].work), NULL);
 	if (!k_is_in_isr()) {
 		/*wait for handling work_sleepy*/
 		k_sleep(TIMEOUT);
 		/**TESTPOINT: check pending when work pending*/
-		zassert_true(k_work_pending((struct k_work *)&delayed_work[1]),
+		zassert_true(k_work_pending(&delayed_work[1].work),
 			     NULL);
 		/**TESTPOINT: delayed work cancel when pending*/
 		ret = k_delayed_work_cancel(&delayed_work[1]);
@@ -382,8 +382,7 @@ static void tdelayed_work_cancel(const void *data)
 		/*wait for completed work_sleepy and delayed_work[1]*/
 		k_sleep(TIMEOUT);
 		/**TESTPOINT: check pending when work completed*/
-		zassert_false(k_work_pending(
-					(struct k_work *)&delayed_work_sleepy),
+		zassert_false(k_work_pending(&delayed_work_sleepy.work),
 					NULL);
 		/**TESTPOINT: delayed work cancel when completed*/
 		ret = k_delayed_work_cancel(&delayed_work_sleepy);
@@ -406,8 +405,7 @@ static void ttriggered_work_submit(const void *data)
 		/**TESTPOINT: init via k_work_poll_init*/
 		k_work_poll_init(&triggered_work[i], work_handler);
 		/**TESTPOINT: check pending after triggered work init*/
-		zassert_false(k_work_pending(
-					(struct k_work *)&triggered_work[i]),
+		zassert_false(k_work_pending(&triggered_work[i].work),
 					NULL);
 		if (work_q) {
 			/**TESTPOINT: triggered work submit to queue*/
@@ -425,8 +423,7 @@ static void ttriggered_work_submit(const void *data)
 		}
 
 		/**TESTPOINT: check pending after triggered work submit*/
-		zassert_true(k_work_pending(
-				(struct k_work *)&triggered_work[i]) == 0,
+		zassert_false(k_work_pending(&triggered_work[i].work),
 				NULL);
 	}
 
@@ -436,8 +433,7 @@ static void ttriggered_work_submit(const void *data)
 				&triggered_work_signal[i], 1) == 0,
 				NULL);
 		/**TESTPOINT: check pending after sending signal */
-		zassert_true(k_work_pending(
-				(struct k_work *)&triggered_work[i]) != 0,
+		zassert_true(k_work_pending(&triggered_work[i].work) != 0,
 				NULL);
 	}
 }
@@ -497,7 +493,7 @@ static void ttriggered_work_cancel(const void *data)
 	zassert_true(ret == 0, NULL);
 
 	/**TESTPOINT: check pending after triggerd work cancel*/
-	ret = k_work_pending((struct k_work *)&triggered_work[0]);
+	ret = k_work_pending(&triggered_work[0].work);
 	zassert_true(ret == 0, NULL);
 
 	/* Trigger work #1 */
@@ -505,7 +501,7 @@ static void ttriggered_work_cancel(const void *data)
 	zassert_true(ret == 0, NULL);
 
 	/**TESTPOINT: check pending after sending signal */
-	ret = k_work_pending((struct k_work *)&triggered_work[1]);
+	ret = k_work_pending(&triggered_work[1].work);
 	zassert_true(ret != 0, NULL);
 
 	/**TESTPOINT: triggered work cancel when pending for event*/
@@ -521,7 +517,7 @@ static void ttriggered_work_cancel(const void *data)
 		k_msleep(2 * TIMEOUT_MS);
 
 		/**TESTPOINT: check pending when work completed*/
-		ret = k_work_pending((struct k_work *)&triggered_work_sleepy);
+		ret = k_work_pending(&triggered_work_sleepy.work);
 		zassert_true(ret == 0, NULL);
 
 		/**TESTPOINT: delayed work cancel when completed*/
