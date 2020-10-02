@@ -19,112 +19,6 @@ LOG_MODULE_REGISTER(sof);
 
 #include <cavs/mailbox.h>
 
-/* TODO: Cleanup further */
-
-#if CONFIG_DW_GPIO
-
-#include <sof/drivers/gpio.h>
-
-const struct gpio_pin_config gpio_data[] = {
-	{	/* GPIO0 */
-		.mux_id = 1,
-		.mux_config = {.bit = 0, .mask = 3, .fn = 1},
-	}, {	/* GPIO1 */
-		.mux_id = 1,
-		.mux_config = {.bit = 2, .mask = 3, .fn = 1},
-	}, {	/* GPIO2 */
-		.mux_id = 1,
-		.mux_config = {.bit = 4, .mask = 3, .fn = 1},
-	}, {	/* GPIO3 */
-		.mux_id = 1,
-		.mux_config = {.bit = 6, .mask = 3, .fn = 1},
-	}, {	/* GPIO4 */
-		.mux_id = 1,
-		.mux_config = {.bit = 8, .mask = 3, .fn = 1},
-	}, {	/* GPIO5 */
-		.mux_id = 1,
-		.mux_config = {.bit = 10, .mask = 3, .fn = 1},
-	}, {	/* GPIO6 */
-		.mux_id = 1,
-		.mux_config = {.bit = 12, .mask = 3, .fn = 1},
-	}, {	/* GPIO7 */
-		.mux_id = 1,
-		.mux_config = {.bit = 14, .mask = 3, .fn = 1},
-	}, {	/* GPIO8 */
-		.mux_id = 1,
-		.mux_config = {.bit = 16, .mask = 1, .fn = 1},
-	}, {	/* GPIO9 */
-		.mux_id = 0,
-		.mux_config = {.bit = 11, .mask = 1, .fn = 1},
-	}, {	/* GPIO10 */
-		.mux_id = 0,
-		.mux_config = {.bit = 11, .mask = 1, .fn = 1},
-	}, {	/* GPIO11 */
-		.mux_id = 0,
-		.mux_config = {.bit = 11, .mask = 1, .fn = 1},
-	}, {	/* GPIO12 */
-		.mux_id = 0,
-		.mux_config = {.bit = 11, .mask = 1, .fn = 1},
-	}, {	/* GPIO13 */
-		.mux_id = 0,
-		.mux_config = {.bit = 0, .mask = 1, .fn = 1},
-	}, {	/* GPIO14 */
-		.mux_id = 0,
-		.mux_config = {.bit = 1, .mask = 1, .fn = 1},
-	}, {	/* GPIO15 */
-		.mux_id = 0,
-		.mux_config = {.bit = 9, .mask = 1, .fn = 1},
-	}, {	/* GPIO16 */
-		.mux_id = 0,
-		.mux_config = {.bit = 9, .mask = 1, .fn = 1},
-	}, {	/* GPIO17 */
-		.mux_id = 0,
-		.mux_config = {.bit = 9, .mask = 1, .fn = 1},
-	}, {	/* GPIO18 */
-		.mux_id = 0,
-		.mux_config = {.bit = 9, .mask = 1, .fn = 1},
-	}, {	/* GPIO19 */
-		.mux_id = 0,
-		.mux_config = {.bit = 10, .mask = 1, .fn = 1},
-	}, {	/* GPIO20 */
-		.mux_id = 0,
-		.mux_config = {.bit = 10, .mask = 1, .fn = 1},
-	}, {	/* GPIO21 */
-		.mux_id = 0,
-		.mux_config = {.bit = 10, .mask = 1, .fn = 1},
-	}, {	/* GPIO22 */
-		.mux_id = 0,
-		.mux_config = {.bit = 10, .mask = 1, .fn = 1},
-	}, {	/* GPIO23 */
-		.mux_id = 0,
-		.mux_config = {.bit = 16, .mask = 1, .fn = 1},
-	}, {	/* GPIO24 */
-		.mux_id = 0,
-		.mux_config = {.bit = 16, .mask = 1, .fn = 1},
-	}, {	/* GPIO25 */
-		.mux_id = 0,
-		.mux_config = {.bit = 26, .mask = 1, .fn = 1},
-	},
-};
-
-const int n_gpios = ARRAY_SIZE(gpio_data);
-
-#if CONFIG_INTEL_IOMUX
-
-#include <sof/drivers/iomux.h>
-
-struct iomux iomux_data[] = {
-	{.base = EXT_CTRL_BASE + 0x30,},
-	{.base = EXT_CTRL_BASE + 0x34,},
-	{.base = EXT_CTRL_BASE + 0x38,},
-};
-
-const int n_iomux = ARRAY_SIZE(iomux_data);
-
-#endif
-
-#endif
-
 #define SRAM_WINDOW_HOST_OFFSET(x) (0x80000 + x * 0x20000)
 
 static const struct adsp_ipc_fw_ready fw_ready_apl
@@ -149,7 +43,6 @@ static const struct adsp_ipc_fw_ready fw_ready_apl
 	.flags = 0,
 };
 
-#if !defined(CONFIG_SOF)
 #define NUM_WINDOWS			2
 
 static const struct adsp_ipc_window sram_window = {
@@ -241,4 +134,3 @@ static int adsp_init(const struct device *dev)
 
 /* Init after IPM initialization and before logging (uses memory windows) */
 SYS_INIT(adsp_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-#endif /* ! CONFIG_SOF */
