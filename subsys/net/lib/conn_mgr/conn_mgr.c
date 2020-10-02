@@ -155,7 +155,7 @@ static void conn_mgr_init_cb(struct net_if *iface, void *user_data)
 	conn_mgr_initial_state(iface);
 }
 
-static void conn_mgr(void)
+static void conn_mgr_handler(void)
 {
 	conn_mgr_init_events_handler();
 
@@ -170,8 +170,8 @@ static void conn_mgr(void)
 	}
 }
 
-K_THREAD_DEFINE(conn_mgr_thread, CONFIG_NET_CONNECTION_MANAGER_STACK_SIZE,
-		(k_thread_entry_t)conn_mgr, NULL, NULL, NULL,
+K_THREAD_DEFINE(conn_mgr, CONFIG_NET_CONNECTION_MANAGER_STACK_SIZE,
+		(k_thread_entry_t)conn_mgr_handler, NULL, NULL, NULL,
 		K_PRIO_COOP(2), 0, 0);
 
 void net_conn_mgr_resend_status(void)
@@ -187,7 +187,7 @@ static int conn_mgr_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	k_thread_start(conn_mgr_thread);
+	k_thread_start(conn_mgr);
 
 	return 0;
 }
