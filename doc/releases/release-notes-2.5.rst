@@ -36,6 +36,9 @@ API Changes
   ``flags`` parameter, which allows to configure current LwM2M client session,
   for instance enable bootstrap procedure in the curent session.
 
+* Changed vcnl4040 dts binding default for property 'proximity-trigger'.
+  Changed the default to match the HW POR state for this property.
+
 Deprecated in this release
 ==========================
 
