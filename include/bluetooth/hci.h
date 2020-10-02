@@ -1450,6 +1450,24 @@ struct bt_hci_cp_le_create_big {
 } __packed;
 
 #define BT_HCI_OP_LE_CREATE_BIG_TEST            BT_OP(BT_OGF_LE, 0x0069)
+struct bt_hci_cp_le_create_big_test {
+	uint8_t  big_handle;
+	uint8_t  adv_handle;
+	uint8_t  num_bis;
+	uint8_t  sdu_interval[3];
+	uint16_t iso_interval;
+	uint8_t  nse;
+	uint16_t max_sdu;
+	uint16_t max_pdu;
+	uint8_t  phy;
+	uint8_t  packing;
+	uint8_t  framing;
+	uint8_t  bn;
+	uint8_t  irc;
+	uint8_t  pto;
+	uint8_t  encryption;
+	uint8_t  bcode[16];
+} __packed;
 
 #define BT_HCI_OP_LE_TERMINATE_BIG              BT_OP(BT_OGF_LE, 0x006a)
 struct bt_hci_cp_le_terminate_big {
@@ -2059,6 +2077,23 @@ struct bt_hci_evt_le_req_peer_sca_complete {
 	uint8_t  sca;
 } __packed;
 
+#define BT_HCI_EVT_LE_BIGINFO_ADV_REPORT        0x22
+struct bt_hci_evt_le_biginfo_adv_report {
+	uint16_t sync_handle;
+	uint8_t  num_bis;
+	uint8_t  nse;
+	uint16_t iso_interval;
+	uint8_t  bn;
+	uint8_t  pto;
+	uint8_t  irc;
+	uint16_t max_pdu;
+	uint8_t  sdu_interval[3];
+	uint16_t max_sdu;
+	uint8_t  phy;
+	uint8_t  framing;
+	uint8_t  encryption;
+} __packed;
+
 /* Event mask bits */
 
 #define BT_EVT_BIT(n) (1ULL << (n))
@@ -2141,8 +2176,13 @@ struct bt_hci_evt_le_req_peer_sca_complete {
 #define BT_EVT_MASK_LE_CIS_ESTABLISHED           BT_EVT_BIT(24)
 #define BT_EVT_MASK_LE_CIS_REQ                   BT_EVT_BIT(25)
 #define BT_EVT_MASK_LE_BIG_COMPLETE              BT_EVT_BIT(26)
-#define BT_EVT_MASK_LE_BIG_SYNC_LOST             BT_EVT_BIT(27)
-#define BT_EVT_MASK_LE_REQ_PEER_SCA_COMPLETE     BT_EVT_BIT(28)
+#define BT_EVT_MASK_LE_BIG_TERMINATED            BT_EVT_BIT(27)
+#define BT_EVT_MASK_LE_BIG_SYNC_ESTABLISHED      BT_EVT_BIT(28)
+#define BT_EVT_MASK_LE_BIG_SYNC_LOST             BT_EVT_BIT(29)
+#define BT_EVT_MASK_LE_REQ_PEER_SCA_COMPLETE     BT_EVT_BIT(30)
+#define BT_EVT_MASK_LE_PATH_LOSS_THRESHOLD       BT_EVT_BIT(31)
+#define BT_EVT_MASK_LE_TRANSMIT_POWER_REPORTING  BT_EVT_BIT(32)
+#define BT_EVT_MASK_LE_BIGINFO_ADV_REPORT        BT_EVT_BIT(33)
 
 /** Allocate a HCI command buffer.
   *
