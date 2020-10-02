@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/f4/stm32f411Xe.dtsi>
+#include <st/f4/stm32f411v(c-e)tx-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F411E-DISCO board";
@@ -68,6 +69,7 @@
 
 	pwm4: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim4_ch1_pwm_pd12>;
 	};
 };
 
