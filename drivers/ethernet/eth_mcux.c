@@ -78,9 +78,7 @@ static const clock_ip_name_t enet_clocks[] = ENET_CLOCKS;
 
 static void eth_mcux_init(const struct device *dev);
 
-static const char *
-phy_state_name(enum eth_mcux_phy_state state)  __attribute__((unused));
-
+#ifdef CONFIG_ETH_MCUX_PHY_EXTRA_DEBUG
 static const char *phy_state_name(enum eth_mcux_phy_state state)
 {
 	static const char * const name[] = {
@@ -96,6 +94,7 @@ static const char *phy_state_name(enum eth_mcux_phy_state state)
 
 	return name[state];
 }
+#endif
 
 static const char *eth_name(ENET_Type *base)
 {
