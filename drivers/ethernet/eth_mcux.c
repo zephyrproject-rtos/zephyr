@@ -95,10 +95,10 @@ static const char *phy_state_name(enum eth_mcux_phy_state state)
 static const char *eth_name(ENET_Type *base)
 {
 	switch ((int)base) {
-	case (int)ENET:
+	case DT_INST_REG_ADDR(0):
 		return DT_INST_LABEL(0);
-#if defined(CONFIG_ETH_MCUX_1)
-	case (int)ENET2:
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
+	case DT_INST_REG_ADDR(1):
 		return DT_INST_LABEL(1);
 #endif
 	default:
@@ -175,7 +175,7 @@ static int ts_tx_rd, ts_tx_wr;
 #endif
 
 /* Use ENET_FRAME_MAX_VALNFRAMELEN for VLAN frame size
- * Use ENET_FRAME_MAX_FRAMELEN for ethernet frame size
+ * Use ENET_FRAME_MAX_FRAMELEN for Ethernet frame size
  */
 #if defined(CONFIG_NET_VLAN)
 #if !defined(ENET_FRAME_MAX_VALNFRAMELEN)
@@ -983,7 +983,6 @@ static void generate_eth0_unique_mac(uint8_t *mac_addr)
 #ifdef CONFIG_SOC_SERIES_KINETIS_K6X
 	uint32_t id = SIM->UIDH ^ SIM->UIDMH ^ SIM->UIDML ^ SIM->UIDL;
 #endif
-
 	mac_addr[0] |= 0x02; /* force LAA bit */
 
 	mac_addr[3] = id >> 8;
@@ -992,7 +991,8 @@ static void generate_eth0_unique_mac(uint8_t *mac_addr)
 }
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) && !DT_INST_NODE_HAS_PROP(1, local_mac_address)
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) && \
+    !DT_INST_NODE_HAS_PROP(1, local_mac_address)
 static void generate_eth1_unique_mac(uint8_t *mac_addr)
 {
 	generate_eth0_unique_mac(mac_addr);
@@ -1253,7 +1253,7 @@ static void eth_mcux_ptp_isr(const struct device *dev)
 }
 #endif
 
-#if DT_INST_IRQ_HAS_NAME(0, common)
+#if DT_INST_IRQ_HAS_NAME(0, common) || DT_INST_IRQ_HAS_NAME(1, common)
 static void eth_mcux_dispacher_isr(const struct device *dev)
 {
 	struct eth_context *context = dev->data;
@@ -1275,7 +1275,7 @@ static void eth_mcux_dispacher_isr(const struct device *dev)
 }
 #endif
 
-#if DT_INST_IRQ_HAS_NAME(0, rx)
+#if DT_INST_IRQ_HAS_NAME(0, rx) || DT_INST_IRQ_HAS_NAME(1, rx)
 static void eth_mcux_rx_isr(const struct device *dev)
 {
 	struct eth_context *context = dev->data;
@@ -1284,7 +1284,7 @@ static void eth_mcux_rx_isr(const struct device *dev)
 }
 #endif
 
-#if DT_INST_IRQ_HAS_NAME(0, tx)
+#if DT_INST_IRQ_HAS_NAME(0, tx) || DT_INST_IRQ_HAS_NAME(1, tx)
 static void eth_mcux_tx_isr(const struct device *dev)
 {
 	struct eth_context *context = dev->data;
@@ -1293,7 +1293,7 @@ static void eth_mcux_tx_isr(const struct device *dev)
 }
 #endif
 
-#if DT_INST_IRQ_HAS_NAME(0, err_misc)
+#if DT_INST_IRQ_HAS_NAME(0, err_misc) || DT_INST_IRQ_HAS_NAME(1, err_misc)
 static void eth_mcux_error_isr(const struct device *dev)
 {
 	struct eth_context *context = dev->data;
@@ -1306,13 +1306,14 @@ static void eth_mcux_error_isr(const struct device *dev)
 }
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
 static void eth_0_config_func(void);
 
 static struct eth_context eth_0_context = {
-	.base = ENET,
+	.base = (ENET_Type *)DT_INST_REG_ADDR(0),
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
 	.clock_name = DT_INST_CLOCKS_LABEL(0),
-	.clock = kCLOCK_Enet0,
+	.clock = kCLOCK_Enet0, // FIXME can be either kCLOCK_Enet0 or kCLOCK_Enet2
 #endif
 	.config_func = eth_0_config_func,
 	.phy_addr = 0U,
@@ -1338,47 +1339,58 @@ static void eth_0_config_func(void)
 #if DT_INST_IRQ_HAS_NAME(0, rx)
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, rx, irq),
 		    DT_INST_IRQ_BY_NAME(0, rx, priority),
-		    eth_mcux_rx_isr, DEVICE_GET(eth_mcux_0), 0);
+		    eth_mcux_rx_isr,
+		    DEVICE_GET(eth_mcux_0),
+		    0);
 	irq_enable(DT_INST_IRQ_BY_NAME(0, rx, irq));
 #endif
 
 #if DT_INST_IRQ_HAS_NAME(0, tx)
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, tx, irq),
 		    DT_INST_IRQ_BY_NAME(0, tx, priority),
-		    eth_mcux_tx_isr, DEVICE_GET(eth_mcux_0), 0);
+		    eth_mcux_tx_isr,
+		    DEVICE_GET(eth_mcux_0),
+		    0);
 	irq_enable(DT_INST_IRQ_BY_NAME(0, tx, irq));
 #endif
 
 #if DT_INST_IRQ_HAS_NAME(0, err_misc)
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, err_misc, irq),
 		    DT_INST_IRQ_BY_NAME(0, err_misc, priority),
-		    eth_mcux_error_isr, DEVICE_GET(eth_mcux_0), 0);
+		    eth_mcux_error_isr,
+		    DEVICE_GET(eth_mcux_0),
+		    0);
 	irq_enable(DT_INST_IRQ_BY_NAME(0, err_misc, irq));
 #endif
 
 #if DT_INST_IRQ_HAS_NAME(0, common)
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, common, irq),
 		    DT_INST_IRQ_BY_NAME(0, common, priority),
-		    eth_mcux_dispacher_isr, DEVICE_GET(eth_mcux_0), 0);
+		    eth_mcux_dispacher_isr,
+		    DEVICE_GET(eth_mcux_0),
+		    0);
 	irq_enable(DT_INST_IRQ_BY_NAME(0, common, irq));
 #endif
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 	IRQ_CONNECT(DT_IRQ_BY_NAME(PTP_INST_NODEID(0), ieee1588_tmr, irq),
 		    DT_IRQ_BY_NAME(PTP_INST_NODEID(0), ieee1588_tmr, priority),
-		    eth_mcux_ptp_isr, DEVICE_GET(eth_mcux_0), 0);
+		    eth_mcux_ptp_isr,
+		    DEVICE_GET(eth_mcux_0),
+		    0);
 	irq_enable(DT_IRQ_BY_NAME(PTP_INST_NODEID(0), ieee1588_tmr, irq));
 #endif
 }
+#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
 
-#if defined(CONFIG_ETH_MCUX_1)
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
 static void eth_1_config_func(void);
 
 static struct eth_context eth_1_context = {
-	.base = ENET2,
+	.base = (ENET_Type *)DT_INST_REG_ADDR(1),
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
 	.clock_name = DT_INST_CLOCKS_LABEL(1),
-	.clock = kCLOCK_Enet2,
+	.clock = kCLOCK_Enet2, // FIXME can be either kCLOCK_Enet0 or kCLOCK_Enet2
 #endif
 	.config_func = eth_1_config_func,
 	.phy_addr = 0U,
@@ -1401,21 +1413,52 @@ ETH_NET_DEVICE_INIT(eth_mcux_1, DT_INST_LABEL(1), eth_init,
 
 static void eth_1_config_func(void)
 {
+#if DT_INST_IRQ_HAS_NAME(1, rx)
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, rx, irq),
+		    DT_INST_IRQ_BY_NAME(1, rx, priority),
+		    eth_mcux_rx_isr,
+		    DEVICE_GET(eth_mcux_1),
+		    0);
+	irq_enable(DT_INST_IRQ_BY_NAME(1, rx, irq));
+#endif
+
+#if DT_INST_IRQ_HAS_NAME(1, tx)
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, tx, irq),
+		    DT_INST_IRQ_BY_NAME(1, tx, priority),
+		    eth_mcux_tx_isr,
+		    DEVICE_GET(eth_mcux_1),
+		    0);
+	irq_enable(DT_INST_IRQ_BY_NAME(1, tx, irq));
+#endif
+
+#if DT_INST_IRQ_HAS_NAME(1, err_misc)
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, err_misc, irq),
+		    DT_INST_IRQ_BY_NAME(1, err_misc, priority),
+		    eth_mcux_error_isr,
+		    DEVICE_GET(eth_mcux_1),
+		    0);
+	irq_enable(DT_INST_IRQ_BY_NAME(1, err_misc, irq));
+#endif
+
 #if DT_INST_IRQ_HAS_NAME(1, common)
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, common, irq),
 		    DT_INST_IRQ_BY_NAME(1, common, priority),
-		    eth_mcux_dispacher_isr, DEVICE_GET(eth_mcux_1), 0);
-	irq_enable(DT_INST_IRQ_BY_NAME(1, common, irq))
+		    eth_mcux_dispacher_isr,
+		    DEVICE_GET(eth_mcux_1),
+		    0);
+	irq_enable(DT_INST_IRQ_BY_NAME(1, common, irq));
 #endif
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 	IRQ_CONNECT(DT_IRQ_BY_NAME(PTP_INST_NODEID(1), ieee1588_tmr, irq),
 		    DT_IRQ_BY_NAME(PTP_INST_NODEID(1), ieee1588_tmr, priority),
-		    eth_mcux_ptp_isr, DEVICE_GET(eth_mcux_1), 0);
+		    eth_mcux_ptp_isr,
+		    DEVICE_GET(eth_mcux_1),
+		    0);
 	irq_enable(DT_IRQ_BY_NAME(PTP_INST_NODEID(1), ieee1588_tmr, irq));
 #endif
 }
-#endif /* CONFIG_ETH_MCUX_1 */
+#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) */
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 struct ptp_context {
@@ -1523,7 +1566,6 @@ static int ptp_clock_mcux_rate_adjust(const struct device *dev, float ratio)
 	} else {
 		mul = val;
 	}
-
 
 	ENET_Ptp1588AdjustTimer(context->base, corr, mul);
 
