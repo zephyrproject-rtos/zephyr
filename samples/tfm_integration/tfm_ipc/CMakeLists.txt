@@ -14,7 +14,7 @@ elseif (CONFIG_TFM_BL2_FALSE)
 endif()
 
 # Add "tfm" as an external project via the TF-M module's cmake file
-if(${TFM_TARGET_PLATFORM} STREQUAL "STM_NUCLEO_L552ZE_Q")
+if(${TFM_TARGET_PLATFORM} STREQUAL "stm/nucleo_l552ze_q")
    trusted_firmware_build(BINARY_DIR ${CMAKE_BINARY_DIR}/tfm
                           BOARD ${TFM_TARGET_PLATFORM}
                           IPC
