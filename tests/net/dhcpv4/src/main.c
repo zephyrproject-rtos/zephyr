@@ -388,6 +388,7 @@ NET_DEVICE_INIT(net_dhcpv4_test, "net_dhcpv4_test",
 
 static struct net_mgmt_event_callback rx_cb;
 static struct net_mgmt_event_callback dns_cb;
+static struct net_mgmt_event_callback dhcp_cb;
 static int event_count;
 
 static void receiver_cb(struct net_mgmt_event_callback *cb,
@@ -395,7 +396,9 @@ static void receiver_cb(struct net_mgmt_event_callback *cb,
 {
 	if (nm_event != NET_EVENT_IPV4_ADDR_ADD &&
 	    nm_event != NET_EVENT_DNS_SERVER_ADD &&
-	    nm_event != NET_EVENT_DNS_SERVER_DEL) {
+	    nm_event != NET_EVENT_DNS_SERVER_DEL &&
+	    nm_event != NET_EVENT_IPV4_DHCP_START &&
+	    nm_event != NET_EVENT_IPV4_DHCP_BOUND) {
 		/* Spurious callback. */
 		return;
 	}
@@ -422,6 +425,12 @@ void test_dhcp(void)
 
 	net_mgmt_add_event_callback(&dns_cb);
 
+	net_mgmt_init_event_callback(&dhcp_cb, receiver_cb,
+				     NET_EVENT_IPV4_DHCP_START |
+				     NET_EVENT_IPV4_DHCP_BOUND);
+
+	net_mgmt_add_event_callback(&dhcp_cb);
+
 	iface = net_if_get_default();
 	if (!iface) {
 		zassert_true(false, "Interface not available");
@@ -429,7 +438,7 @@ void test_dhcp(void)
 
 	net_dhcpv4_start(iface);
 
-	while (event_count < 3) {
+	while (event_count < 5) {
 		if (k_sem_take(&test_lock, WAIT_TIME)) {
 			zassert_true(false, "Timeout while waiting");
 		}
