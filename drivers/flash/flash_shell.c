@@ -78,6 +78,8 @@ static int cmd_erase(const struct shell *shell, size_t argc, char *argv[])
 
 	result = flash_erase(flash_dev, page_addr, size);
 
+	flash_write_protection_set(flash_dev, true);
+
 	if (result) {
 		shell_error(shell, "Erase Failed, code %d.", result);
 	} else {
@@ -197,30 +199,39 @@ static int cmd_test(const struct shell *shell, size_t argc, char *argv[])
 		test_arr[i] = (uint8_t)i;
 	}
 
+	result = 0;
+
 	while (repeat--) {
 		flash_write_protection_set(flash_dev, false);
 
 		result = flash_erase(flash_dev, addr, size);
+
 		if (result) {
 			shell_error(shell, "Erase Failed, code %d.", result);
-			return -EIO;
+			break;
 		}
 
 		shell_print(shell, "Erase OK.");
 
 		flash_write_protection_set(flash_dev, false);
 
-		if (flash_write(flash_dev, addr, test_arr, size) != 0) {
+		result = flash_write(flash_dev, addr, test_arr, size);
+
+		if (result) {
 			shell_error(shell, "Write internal ERROR!");
-			return -EIO;
+			break;
 		}
 
 		shell_print(shell, "Write OK.");
 	}
 
-	shell_print(shell, "Erase-Write test done.");
+	flash_write_protection_set(flash_dev, true);
 
-	return 0;
+	if (result == 0) {
+		shell_print(shell, "Erase-Write test done.");
+	}
+
+	return result;
 }
 
 static void device_name_get(size_t idx, struct shell_static_entry *entry);
