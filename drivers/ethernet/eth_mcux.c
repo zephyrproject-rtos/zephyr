@@ -1366,12 +1366,14 @@ static void eth_0_config_func(void)
 #endif
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
+#if DT_NODE_HAS_STATUS(PTP_INST_NODEID(0), okay)
 	IRQ_CONNECT(DT_IRQ_BY_NAME(PTP_INST_NODEID(0), ieee1588_tmr, irq),
 		    DT_IRQ_BY_NAME(PTP_INST_NODEID(0), ieee1588_tmr, priority),
 		    eth_mcux_ptp_isr,
 		    DEVICE_GET(eth_mcux_0),
 		    0);
 	irq_enable(DT_IRQ_BY_NAME(PTP_INST_NODEID(0), ieee1588_tmr, irq));
+#endif
 #endif
 }
 #endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
@@ -1475,12 +1477,14 @@ static void eth_1_config_func(void)
 #endif
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
+#if DT_NODE_HAS_STATUS(PTP_INST_NODEID(1), okay)
 	IRQ_CONNECT(DT_IRQ_BY_NAME(PTP_INST_NODEID(1), ieee1588_tmr, irq),
 		    DT_IRQ_BY_NAME(PTP_INST_NODEID(1), ieee1588_tmr, priority),
 		    eth_mcux_ptp_isr,
 		    DEVICE_GET(eth_mcux_1),
 		    0);
 	irq_enable(DT_IRQ_BY_NAME(PTP_INST_NODEID(1), ieee1588_tmr, irq));
+#endif
 #endif
 }
 #endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) */
