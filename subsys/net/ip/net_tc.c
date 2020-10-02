@@ -18,6 +18,12 @@ LOG_MODULE_REGISTER(net_tc, CONFIG_NET_TC_LOG_LEVEL);
 #include "net_stats.h"
 #include "net_tc_mapping.h"
 
+/* Template for thread name. The "xx" is either "TX" denoting transmit thread,
+ * or "RX" denoting receive thread. The "q[y]" denotes the traffic class queue
+ * where y indicates the traffic class id. The value of y can be from 0 to 7.
+ */
+#define MAX_NAME_LEN sizeof("xx_q[y]")
+
 /* Stacks for TX work queue */
 K_KERNEL_STACK_ARRAY_DEFINE(tx_stack, NET_TC_TX_COUNT,
 			    CONFIG_NET_TX_STACK_SIZE);
@@ -245,7 +251,13 @@ void net_tc_tx_init(void)
 			       tx_stack[i],
 			       K_KERNEL_STACK_SIZEOF(tx_stack[i]),
 			       K_PRIO_COOP(thread_priority));
-		k_thread_name_set(&tx_classes[i].work_q.thread, "tx_workq");
+
+		if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+			char name[MAX_NAME_LEN];
+
+			snprintk(name, sizeof(name), "tx_q[%d]", i);
+			k_thread_name_set(&tx_classes[i].work_q.thread, name);
+		}
 	}
 }
 
@@ -274,6 +286,12 @@ void net_tc_rx_init(void)
 			       rx_stack[i],
 			       K_KERNEL_STACK_SIZEOF(rx_stack[i]),
 			       K_PRIO_COOP(thread_priority));
-		k_thread_name_set(&rx_classes[i].work_q.thread, "rx_workq");
+
+		if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+			char name[MAX_NAME_LEN];
+
+			snprintk(name, sizeof(name), "rx_q[%d]", i);
+			k_thread_name_set(&rx_classes[i].work_q.thread, name);
+		}
 	}
 }
