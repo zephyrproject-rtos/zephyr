@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/f1/stm32f100Xb.dtsi>
+#include <st/f1/stm32f100r(8-b)tx-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics STM32VLDISCOVERY board";
@@ -76,4 +77,13 @@
 
 &spi2 {
 	status = "okay";
+};
+
+&timers1 {
+	status = "okay";
+
+	pwm1: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim1_ch1_pwm_pa8>;
+	};
 };
