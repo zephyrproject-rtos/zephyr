@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/f1/stm32f103Xe.dtsi>
+#include <st/f1/stm32f103z(c-d-e)tx-pinctrl.dtsi>
 
 / {
 	model = "Waveshare Open103Z";
@@ -133,6 +134,7 @@
 
 	pwm1: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim1_ch1_pwm_pa8>;
 	};
 };
 
