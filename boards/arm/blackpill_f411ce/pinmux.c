@@ -38,10 +38,6 @@ static const struct pin_config pinconf[] = {
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay) && CONFIG_ADC
 	{STM32_PIN_PA1, STM32F4_PINMUX_FUNC_PA1_ADC123_IN1},
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm4), okay) && CONFIG_PWM
-	{STM32_PIN_PB6, STM32F4_PINMUX_FUNC_PB6_PWM4_CH1},
-	{STM32_PIN_PB7, STM32F4_PINMUX_FUNC_PB7_PWM4_CH2},
-#endif
 };
 
 static int pinmux_stm32_init(const struct device *port)
