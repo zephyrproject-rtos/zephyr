@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) 2020, Erwin Rol <erwin@erwinrol.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f4/stm32f407Xe.dtsi>
+
+/ {
+	model = "SEGGER STM32F407 Trace Reference Board";
+	compatible = "segger,trb-stm32f407";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,ccm = &ccm0;
+	};
+
+	aliases {
+		led0 = &led_0_green;
+		led1 = &led_1_green;
+		led2 = &led_2_green;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_0_green: led_0_green {
+			gpios = <&gpioa 8 GPIO_ACTIVE_HIGH>;
+			label = "LED0";
+		};
+		led_1_green: led_1_green {
+			gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+		led_2_green: led_2_green {
+			gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+		};
+	};
+};
+
+&rtc {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
