@@ -28,6 +28,9 @@
 #include <drivers/clock_control/stm32_clock_control.h>
 #include "uart_stm32.h"
 
+#include <stm32_ll_usart.h>
+#include <stm32_ll_lpuart.h>
+
 #include <logging/log.h>
 LOG_MODULE_REGISTER(uart_stm32);
 

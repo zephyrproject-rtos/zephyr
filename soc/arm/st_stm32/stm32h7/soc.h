@@ -50,10 +50,6 @@
 #include <stm32h7xx_ll_wwdg.h>
 #endif
 
-#ifdef CONFIG_SERIAL_HAS_DRIVER
-#include <stm32h7xx_ll_usart.h>
-#endif /* CONFIG_SERIAL_HAS_DRIVER */
-
 #if defined(CONFIG_HWINFO_STM32) || defined(CONFIG_CLOCK_CONTROL_STM32_CUBE)
 #include <stm32h7xx_ll_utils.h>
 #endif

@@ -32,11 +32,6 @@
 #include <stm32wbxx_ll_gpio.h>
 #endif
 
-#ifdef CONFIG_SERIAL_HAS_DRIVER
-#include <stm32wbxx_ll_usart.h>
-#include <stm32wbxx_ll_lpuart.h>
-#endif
-
 #if defined(CONFIG_COUNTER_RTC_STM32)
 #include <stm32wbxx_ll_rtc.h>
 #include <stm32wbxx_ll_exti.h>
