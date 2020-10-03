@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/f1/stm32f103Xb.dtsi>
+#include <st/f1/stm32f103r(8-b)tx-pinctrl.dtsi>
 
 / {
 	model = "Olimex OLIMEXINO-STM32 board";
@@ -100,6 +101,7 @@ uext_serial: &usart1 {};
 
 	pwm1: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim1_ch1_pwm_pa8>;
 	};
 };
 
