@@ -55,6 +55,19 @@
 #define MCP9808_TEMP_UPR_BIT		BIT(14)
 #define MCP9808_TEMP_CRT_BIT		BIT(15)
 
+/* Defining the temperature resolution that will be used during init */
+#if defined(CONFIG_MCP9808_MEAS_RES_0_5C)
+#define MCP9808_MEAS_RES                0x00
+#elif defined(CONFIG_MCP9808_MEAS_RES_0_25C)
+#define MCP9808_MEAS_RES                0x01
+#elif defined(CONFIG_MCP9808_MEAS_RES_0_125C)
+#define MCP9808_MEAS_RES                0x02
+#elif defined(CONFIG_MCP9808_MEAS_RES_0_0625C)
+#define MCP9808_MEAS_RES                0x03
+#endif
+
+#define MCP9808_REG_RESOLUTION          0x08
+
 struct mcp9808_data {
 	const struct device *i2c_master;
 
@@ -93,7 +106,7 @@ int mcp9808_reg_read(const struct device *dev, uint8_t reg, uint16_t *val);
 int mcp9808_reg_write_16bit(const struct device *dev, uint8_t reg,
 			    uint16_t val);
 int mcp9808_reg_write_8bit(const struct device *dev, uint8_t reg,
-			     uint8_t val)
+			   uint8_t val);
 
 #ifdef CONFIG_MCP9808_TRIGGER
 int mcp9808_attr_set(const struct device *dev, enum sensor_channel chan,

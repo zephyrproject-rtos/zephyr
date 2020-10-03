@@ -62,6 +62,12 @@ int mcp9808_reg_write_8bit(const struct device *dev, uint8_t reg,
 	return i2c_write(data->i2c_master, buf, sizeof(buf), cfg->i2c_addr);
 }
 
+static int mcp9808_set_temperature_resolution(const struct device *dev,
+					      uint8_t resolution)
+{
+  return mcp9808_reg_write_8bit(dev, MCP9808_REG_RESOLUTION, resolution);
+}
+
 static int mcp9808_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
@@ -107,6 +113,12 @@ int mcp9808_init(const struct device *dev)
 	if (!data->i2c_master) {
 		LOG_DBG("mcp9808: i2c master not found: %s", cfg->i2c_bus);
 		return -EINVAL;
+	}
+
+	rc = mcp9808_set_temperature_resolution(dev, MCP9808_MEAS_RES);
+	if (!rc){
+	  LOG_DBG("Could not set the resolution of mcp9808 module");
+	  return rc;
 	}
 
 #ifdef CONFIG_MCP9808_TRIGGER
