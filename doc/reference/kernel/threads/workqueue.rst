@@ -94,8 +94,12 @@ the processing of other work items in the workqueue's queue.
 
 .. _k_delayed_work:
 
-Delayed Work
-************
+Delayed Work (Legacy)
+*********************
+
+.. note::
+   Because of the race conditions inherent in this implementation use of
+   this API will be deprecated.  Use :ref:`k_delayable_work` instead.
 
 An ISR or a thread may need to schedule a work item that is to be processed
 only after a specified period of time, rather than immediately. This can be
@@ -146,6 +150,51 @@ may or may not be invoked.
    Because of these race conditions all code that invokes the delayed work API
    must check return values and be prepared to react when either submission or
    cancellation fails.
+
+.. _k_delayable_work:
+
+Delayable Work
+**************
+
+An ISR or a thread may need to schedule a work item to be processed only after
+a specified delay, for example to allow more data to be accumulated before
+processing it. This can be done by scheduling a **delayable work item** to be
+submitted to a workqueue in the future.
+
+A delayable work item is a standard work item that has the following added
+properties:
+
+* A **delay** specifying the time to wait before the work item is submitted to
+  a workqueue.
+
+* A **workqueue indicator** that identifies the workqueue the work item
+  is to be submitted to.
+
+A delayable work item is initialized in a similar manner to a standard work
+item. It can then be scheduled for submission to a queue after its delay.
+When the schedule request is made the kernel initiates a timeout mechanism
+that is triggered after the delay has elapsed. When the delay completes the
+kernel submits the work item to the specified workqueue, where it remains
+pending until it is processed.
+
+Cancelling a delayable work item is supported, but only if the delay has not
+completed.  If the work item had already been submitted to a queue
+cancellation will have no effect.
+
+Once the delay completes and the item has been scheduled, it can be
+re-scheduled for submission again on the same or another work queue without
+affecting any current submission already present in the work queue.
+
+If the delay expires while the item is still pending in a work queue the
+attempt to resubmit it will have no effect, just as with undelayed work items.
+
+If a delayable work item is re-scheduled before its delay has expired the
+timeout from the previous submission is cancelled and the scheduling and
+submission proceeds as usual.
+
+In the case where no delay is requested (:c:macro:`K_NO_WAIT`) this API
+behaves exactly as the non-delayed work infrastructure except that any
+incomplete scheduled timeout is first cancelled.
 
 Triggered Work
 **************
@@ -287,6 +336,20 @@ by calling :c:func:`k_delayed_work_cancel`.
 
 .. warning::
    All of these operations can fail as described in :ref:`k_delayed_work`.
+   The replacement API in :ref:`k_delayable_work` should be used instead.
+
+Submitting a Delayable Work Item
+================================
+
+A delayable work item is defined using a variable of type
+:c:struct:`k_work_delayable`. It must then be initialized by calling
+:c:func:`k_work_delayable_init`.
+
+An initialized delayable work item can be scheduled for submission to the
+system workqueue by calling :c:func:`k_work_schedule`, or to a specified
+workqueue by calling :c:func:`k_work_schedule_for_queue`.  A delayable work
+item that has been scheduled but has not yet been submitted can be cancelled
+by calling :c:func:`k_work_cancel`.
 
 Suggested Uses
 **************
@@ -359,6 +422,98 @@ progress:
      if (k_msgq_num_used_get(&wd->q) > 0) {
        k_work_submit(work);
      }
+   }
+
+Delayed Offloading
+==================
+
+Other use cases wait to receive additional data before processing, for example
+when batch processing is more efficient.  In one model a timer is started as
+soon as data arrives, and after the delay expires whatever has been received
+is processed in a batch.  This requires tracking whether the work item has
+been scheduled, and only scheduling it once for each time it gets handled.  A
+reliable way to do this is an atomic value that is set when something is
+added, and cleared when it is processed:
+
+.. code-block:: c
+
+   struct delayable_work_data {
+     struct k_work_delayable work;
+     struct k_msgq q;
+     k_timeout_t delay;
+     atomic_t scheduled;
+   };
+
+   static void add_work_delay_first(struct delayable_work_data *wd,
+                                    struct data_item_type *dp)
+   {
+     int rc = k_msgq_put(&wd->q, dp, K_NO_WAIT);
+
+     if ((rc >= 0) && atomic_cas(&wd->scheduled, 0, 1)) {
+       /* Schedule to be worked delay after first received. */
+       k_work_schedule(&wd->work, wd->delay);
+     }
+   }
+
+The companion work handler is much the same as the one used for non-delayed
+work item submission:
+
+.. code-block:: c
+
+   static void process_work_delay(struct k_work *work)
+   {
+     struct k_work_delayable *dwp = k_work_delayable_from_work(work);
+     struct delayable_work_data *wd
+       = CONTAINER_OF(dwp, struct delayable_work_data, work);
+     struct data_item_type data = {0};
+
+     /* Only process if there's new/uncancelled work. */
+     if (atomic_cas(&wd->scheduled, 1, 0)) {
+       int rc = k_msgq_get(&wd->q, &data, K_NO_WAIT);
+
+       while (rc >= 0) {
+         do_something_with(&data);
+
+         rc = k_msgq_get(&wd->q, &data, K_NO_WAIT);
+       }
+     }
+   }
+
+In other cases data should be collected until it has stopped arriving, so the
+delay is restarted on each new item.  (This can have a significant performance
+impact as any previously scheduled submission must be cancelled and then
+rescheduled with a new deadline.)  The scheduling code changes slightly, but
+the processing code remains unchanged:
+
+.. code-block:: c
+
+   static void add_work_delay_always(struct delayable_work_data *wd,
+                                     struct data_item_type *dp)
+   {
+     int rc = k_msgq_put(&wd->q, dp, K_NO_WAIT);
+
+     if (rc >= 0) {
+       /* Schedule to be worked delay after last received. */
+       atomic_set(&wd->scheduled, 1);
+       k_work_schedule(&wd->work, wd->delay);
+     }
+   }
+
+In either of these cases it may be that something changes the system state so
+that the unprocessed data should be discarded.  It's not possible to determine
+from a submitted work item alone whether it's scheduled, pending, or complete,
+so the flag used to indicate that work needs to be done should be cleared
+after cancelling any scheduled work submission:
+
+.. code-block:: c
+
+   static void cancel_work_delay(struct delayable_work_data *wd)
+   {
+     /* Stop it from being submitted in the future. */
+     k_work_cancel(&wd->work);
+
+     /* Stop it from doing anything if it's already pending */
+     atomic_set(&wd->scheduled, 0);
    }
 
 Configuration Options

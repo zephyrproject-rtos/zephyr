@@ -40,6 +40,7 @@ static struct k_work_q user_workq;
 static ZTEST_BMEM struct k_work work[NUM_OF_WORK];
 static struct k_delayed_work new_work;
 static struct k_delayed_work delayed_work[NUM_OF_WORK], delayed_work_sleepy;
+static struct k_work_delayable work_delayable[NUM_OF_WORK], work_sleepy_delayable;
 static struct k_work_poll triggered_work[NUM_OF_WORK];
 static struct k_poll_event triggered_work_event[NUM_OF_WORK];
 static struct k_poll_signal triggered_work_signal[NUM_OF_WORK];
@@ -272,10 +273,12 @@ static void twork_submit_multipleq(void *data)
 	zassert_equal(k_delayed_work_submit(&new_work, TIMEOUT),
 		      -EADDRINUSE, NULL);
 
-	/* wait for first submission to complete timeout */
+	/* wait for first submission to complete timeout, then sleep
+	 * once to ensure the work thread gets to run (depending on
+	 * timing it may or may not be submitted right after the
+	 * timeout sleep returns.
+	 */
 	k_sleep(TIMEOUT);
-	zassert_true(k_delayed_work_pending(&new_work), NULL);
-	zassert_true(k_work_pending(&new_work.work), NULL);
 	k_usleep(1);
 	zassert_false(k_delayed_work_pending(&new_work), NULL);
 
@@ -353,8 +356,9 @@ static void twork_resubmit_nowait(void *data)
 	zassert_true(k_work_pending(&delayed_work[1].work), NULL);
 
 	/* Release sleeper, check other two still pending */
-	k_usleep(1);
-	zassert_false(k_work_pending(&delayed_work_sleepy.work), NULL);
+	do {
+		k_usleep(1);
+	} while (k_work_pending(&delayed_work_sleepy.work));
 	zassert_true(k_work_pending(&delayed_work[0].work), NULL);
 	zassert_true(k_work_pending(&delayed_work[1].work), NULL);
 
@@ -500,6 +504,216 @@ static void tdelayed_work_cancel(const void *data)
 		zassert_equal(ret, -EALREADY, NULL);
 	}
 	/*work items not cancelled: delayed_work[1], delayed_work_sleepy*/
+}
+
+static void tdelayable_work_submit_1(struct k_work_q *work_q,
+				     struct k_work_delayable *w,
+				     k_work_handler_t handler)
+{
+	int32_t time_remaining;
+	int32_t timeout_ticks;
+	uint64_t tick_to_ms;
+
+	/**TESTPOINT: init via k_work_delayable_init*/
+	k_work_delayable_init(w, handler);
+	/**TESTPOINT: check pending after delayable work init*/
+	zassert_false(k_work_pending(&w->work), NULL);
+	/**TESTPOINT: check remaining timeout before submit*/
+	zassert_equal(k_work_delayable_remaining_get(w), 0, NULL);
+
+	/* align to tick before schedule */
+	if (!k_is_in_isr()) {
+		k_usleep(1);
+	}
+	if (work_q) {
+		/**TESTPOINT: delayable work submit to queue*/
+		zassert_true(k_work_schedule_for_queue(work_q, w, TIMEOUT)
+			     == 0, NULL);
+	} else {
+		/**TESTPOINT: delayable work submit to system queue*/
+		zassert_true(k_work_schedule(w, TIMEOUT) == 0, NULL);
+	}
+
+	zassert_false(k_work_pending(&w->work), NULL);
+
+	time_remaining = k_work_delayable_remaining_get(w);
+	timeout_ticks = z_ms_to_ticks(TIMEOUT_MS);
+	tick_to_ms = k_ticks_to_ms_floor64(timeout_ticks +  _TICK_ALIGN);
+
+	/**TESTPOINT: check remaining timeout after submit */
+	zassert_true(time_remaining <= tick_to_ms, NULL);
+
+	timeout_ticks -= z_ms_to_ticks(15);
+	tick_to_ms = k_ticks_to_ms_floor64(timeout_ticks);
+
+	zassert_true(time_remaining >= tick_to_ms, NULL);
+
+	/**TESTPOINT: check pending after delayable work submit*/
+	zassert_false(k_work_pending(&w->work), NULL);
+}
+
+static void tdelayable_work_submit(const void *data)
+{
+	struct k_work_q *work_q = (struct k_work_q *)data;
+
+	for (int i = 0; i < NUM_OF_WORK; i++) {
+		tdelayable_work_submit_1(work_q, &work_delayable[i], work_handler);
+	}
+}
+
+static void tdelayable_work_cancel(const void *data)
+{
+	struct k_work_q *work_q = (struct k_work_q *)data;
+	int ret;
+
+	k_work_delayable_init(&work_sleepy_delayable, work_sleepy);
+	k_work_delayable_init(&work_delayable[0], work_handler);
+	k_work_delayable_init(&work_delayable[1], work_handler);
+
+	/* align to tick before schedule */
+	if (!k_is_in_isr()) {
+		k_usleep(1);
+	}
+	if (work_q) {
+		ret = k_work_schedule_for_queue(work_q,
+						&work_sleepy_delayable,
+						K_NO_WAIT);
+		ret |= k_work_schedule_for_queue(work_q, &work_delayable[0],
+						 TIMEOUT);
+		ret |= k_work_schedule_for_queue(work_q, &work_delayable[1],
+						 TIMEOUT);
+	} else {
+		ret = k_work_schedule(&work_sleepy_delayable, K_NO_WAIT);
+		ret |= k_work_schedule(&work_delayable[0], TIMEOUT);
+		ret |= k_work_schedule(&work_delayable[1], TIMEOUT);
+	}
+	/* sleepy is blocking the work thread, two items to be scheduled. */
+	zassert_true(k_work_pending(&work_sleepy_delayable.work), NULL);
+	zassert_false(k_work_pending(&work_delayable[0].work), NULL);
+	zassert_true(k_work_delayable_remaining_ticks(&work_delayable[0])
+		     > 0, NULL);
+	zassert_false(k_work_pending(&work_delayable[1].work), NULL);
+	zassert_true(k_work_delayable_remaining_ticks(&work_delayable[1])
+		     > 0, NULL);
+
+	/* Basic cancel works */
+	zassert_equal(k_work_cancel(&work_delayable[0]), 0, NULL);
+	zassert_equal(k_work_delayable_remaining_ticks(&work_delayable[0]),
+		      0, NULL);
+
+	/* Repeated cancel provides correct error result */
+	zassert_equal(k_work_cancel(&work_delayable[0]), -EINVAL, NULL);
+
+	if (!k_is_in_isr()) {
+		/* Release sleepy, one should run */
+		k_sleep(TIMEOUT);
+		zassert_true(k_work_pending(&work_delayable[1].work), NULL);
+		zassert_equal(k_sem_take(&sync_sema, K_FOREVER),
+			      0, NULL); /* wait sleepy */
+		/* work queue didn't get to pull this off yet */
+		zassert_true(k_work_pending(&work_delayable[1].work), NULL);
+		/* and cancel can't affect that */
+		zassert_equal(k_work_cancel(&work_delayable[1]),
+			      -EINPROGRESS, NULL);
+		/* release the work queue and check again */
+		k_usleep(1);
+		/* confirm delayable actually ran */
+		zassert_equal(k_sem_take(&sync_sema, K_NO_WAIT),
+			      0, NULL); /* wait deployable[1] */
+		zassert_false(k_work_pending(&work_delayable[1].work), NULL);
+		/* confirm delayable[0] which was first did not run */
+		zassert_equal(k_sem_take(&sync_sema, K_NO_WAIT),
+			      -EBUSY, NULL); /* delayable[0] didn't fire */
+	}
+	/*work items not cancelled: delayable[1], sleepy*/
+}
+
+static void tdelayable_work_reschedule(const void *data)
+{
+	struct k_work_q *work_q = (struct k_work_q *)data;
+
+	k_work_delayable_init(&work_sleepy_delayable, work_sleepy);
+	k_work_delayable_init(&work_delayable[0], work_handler);
+
+	/* align to tick before schedule */
+	k_usleep(1);
+	zassert_equal(k_work_schedule_for_queue(work_q,
+						&work_sleepy_delayable,
+						K_NO_WAIT),
+		      0, NULL);
+	zassert_equal(k_work_schedule_for_queue(work_q,
+						&work_delayable[0],
+						TIMEOUT),
+		      0, NULL);
+
+	/* No-wait submissions are pended immediately. */
+	zassert_true(k_work_pending(&work_sleepy_delayable.work), NULL);
+	/* Delayed submission is not submitted */
+	zassert_false(k_work_pending(&work_delayable[0].work), NULL);
+	zassert_true(k_work_delayable_remaining_ticks(&work_delayable[0])
+		     > 0, NULL);
+
+	/* can't resubmit to a different queue */
+	zassert_equal(k_work_schedule(&work_delayable[0], K_NO_WAIT),
+		      -EBUSY, NULL);
+	/* can resubmit to same queue */
+	zassert_equal(k_work_schedule_for_queue(work_q, &work_delayable[0],
+						K_NO_WAIT),
+		      0, NULL);
+	zassert_true(k_work_pending(&work_delayable[0].work), NULL);
+}
+
+static void tdelayable_work_reschedule_nowait(const void *data)
+{
+	struct k_work_q *work_q = (struct k_work_q *)data;
+
+	k_work_delayable_init(&work_sleepy_delayable, work_sleepy);
+	k_work_delayable_init(&work_delayable[0], work_handler);
+	k_work_delayable_init(&work_delayable[1], work_handler);
+
+	zassert_equal(k_work_schedule_for_queue(work_q,
+						&work_sleepy_delayable,
+						K_NO_WAIT),
+		      0, NULL);
+	zassert_equal(k_work_schedule_for_queue(work_q,
+						&work_delayable[0],
+						K_NO_WAIT),
+		      0, NULL);
+	zassert_equal(k_work_schedule_for_queue(work_q,
+						&work_delayable[1],
+						K_NO_WAIT),
+		      0, NULL);
+
+	/* No-wait submissions are pended immediately. */
+	zassert_true(k_work_pending(&work_sleepy_delayable.work), NULL);
+	zassert_true(k_work_pending(&work_delayable[0].work), NULL);
+	zassert_true(k_work_pending(&work_delayable[1].work), NULL);
+
+	/* Release sleeper, check other two still pending */
+	k_usleep(100);
+	zassert_false(k_work_pending(&work_sleepy_delayable.work), NULL);
+	zassert_true(k_work_pending(&work_delayable[0].work), NULL);
+	zassert_true(k_work_pending(&work_delayable[1].work), NULL);
+
+	/* Verify order of pending */
+	zassert_equal(k_queue_peek_head(&workq.queue),
+		      &work_delayable[0].work, NULL);
+	zassert_equal(k_queue_peek_tail(&workq.queue),
+		      &work_delayable[1].work, NULL);
+
+	/* Verify that resubmitting does not afffect position. */
+	zassert_equal(k_work_schedule_for_queue(work_q, &work_delayable[0],
+						K_NO_WAIT),
+		      0, NULL);
+	zassert_equal(k_queue_peek_head(&workq.queue),
+		      &work_delayable[0].work, NULL);
+	zassert_equal(k_queue_peek_tail(&workq.queue),
+		      &work_delayable[1].work, NULL);
+
+	/* release sleep, delayable[0], and delayable[1] */
+	k_sem_take(&sync_sema, K_FOREVER);
+	k_sem_take(&sync_sema, K_FOREVER);
+	k_sem_take(&sync_sema, K_FOREVER);
 }
 
 static void ttriggered_work_submit(const void *data)
@@ -1029,6 +1243,98 @@ void test_delayed_work_cancel_isr(void)
 }
 
 /**
+ * @brief Test delayable work scheduling to queue from thread
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @see k_work_delayable_init(), k_work_pending(),
+ * k_work_delayable_remaining_get(), k_work_schedule_for_queue(),
+ * k_work_schedule()
+ */
+void test_work_schedule_for_queue_thread(void)
+{
+	k_sem_reset(&sync_sema);
+	tdelayable_work_submit(&workq);
+	for (int i = 0; i < NUM_OF_WORK; i++) {
+		k_sem_take(&sync_sema, K_FOREVER);
+	}
+}
+
+/**
+ * @brief Test delayable work scheduling from ISR context
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @see k_work_delayable_init(), k_work_pending(),
+ * k_work_delayable_remaining_get(), k_work_schedule_for_queue(),
+ * k_work_schedule()
+ */
+void test_work_schedule_for_queue_isr(void)
+{
+	k_sem_reset(&sync_sema);
+	irq_offload(tdelayable_work_submit, NULL);
+	for (int i = 0; i < NUM_OF_WORK; i++) {
+		k_sem_take(&sync_sema, K_FOREVER);
+	}
+}
+
+/**
+ * @brief Test delayable work cancel from work queue
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @see k_work_cancel(), k_work_pending()
+ */
+void test_work_cancel_thread(void)
+{
+	k_sem_reset(&sync_sema);
+	tdelayable_work_cancel(&workq);
+}
+
+/**
+ * @brief Test delayable work cancel from work queue
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @see k_work_cancel(), k_work_pending()
+ */
+void test_work_cancel_isr(void)
+{
+	k_sem_reset(&sync_sema);
+	irq_offload(tdelayable_work_cancel, NULL);
+	k_sem_take(&sync_sema, K_FOREVER); /* delayable[1] */
+	k_sem_take(&sync_sema, K_FOREVER); /* sleepy */
+}
+
+/**
+ * @brief Test delayable work resubmit validation and behavior.
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @see k_work_schedule(), k_work_schedulefor_thread()
+ */
+void test_work_reschedule(void)
+{
+	k_sem_reset(&sync_sema);
+	tdelayable_work_reschedule(&workq);
+	k_sem_take(&sync_sema, K_FOREVER); /* delayable[1] */
+	k_sem_take(&sync_sema, K_FOREVER); /* sleepy */
+}
+
+/**
+ * @brief Test delayable work resubmit no-wait behavior.
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @see k_work_schedule(), k_work_schedulefor_thread()
+ */
+void test_work_reschedule_nowait(void)
+{
+	k_sem_reset(&sync_sema);
+	tdelayable_work_reschedule_nowait(&workq);
+}
+
+/**
  * @brief Test triggered work submission to queue
  *
  * @ingroup kernel_workqueue_tests
@@ -1239,6 +1545,12 @@ void test_main(void)
 			 ztest_1cpu_unit_test(test_delayed_work_cancel_from_queue_isr),
 			 ztest_1cpu_unit_test(test_delayed_work_cancel_thread),
 			 ztest_1cpu_unit_test(test_delayed_work_cancel_isr),
+			 ztest_1cpu_unit_test(test_work_schedule_for_queue_thread),
+			 ztest_1cpu_unit_test(test_work_schedule_for_queue_isr),
+			 ztest_1cpu_unit_test(test_work_cancel_thread),
+			 ztest_1cpu_unit_test(test_work_cancel_isr),
+			 ztest_1cpu_unit_test(test_work_reschedule),
+			 ztest_1cpu_unit_test(test_work_reschedule_nowait),
 			 ztest_1cpu_unit_test(test_triggered_work_submit_to_queue_thread),
 			 ztest_1cpu_unit_test(test_triggered_work_submit_to_queue_isr),
 			 ztest_1cpu_unit_test(test_triggered_work_submit_thread),

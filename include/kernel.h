@@ -2723,6 +2723,25 @@ struct k_delayed_work {
 	struct k_work_q *work_q;
 };
 
+/**
+ * @brief Structure that pairs a work item with a timeout.
+ *
+ * Used with k_work_schedule_for_queue() to allow a work item to be
+ * automatically submitted after a delay.
+ *
+ * No fields in this structure are to be accessed directly.
+ */
+struct k_work_delayable {
+	/* Internal work item that is submitted. */
+	struct k_work work;
+
+	/* Timeout used for delayed submission. */
+	struct _timeout timeout;
+
+	/* Pointer to the work queue to which the item will be submitted. */
+	struct k_work_q *work_q; /* null if not on queue */
+};
+
 struct k_work_poll {
 	struct k_work work;
 	struct _poller poller;
@@ -2849,9 +2868,14 @@ static inline int k_work_submit_to_user_queue(struct k_work_q *work_q,
  * This routine indicates if work item @a work is pending in a workqueue's
  * queue.
  *
- * @note Checking if the work is pending gives no guarantee that the
- *       work will still be pending when this information is used. It is up to
- *       the caller to make sure that this information is used in a safe manner.
+ * @note There is no guarantee that the return value of this function will
+ * accurately reflect the work item state when the caller examines the result.
+ * It is up to the caller to make sure that this information is used in a safe
+ * manner:
+ * * an indication that the item is pending may be received after the item has
+ *   completed (e.g. on SMP or if the caller was interrupted); or
+ * * an indication that the item is not pending may be received after it has
+ *   been submitted (e.g. via an ISR or a higher priority thread).
  *
  * @note Can be called by ISRs.
  *
@@ -3014,6 +3038,167 @@ extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 extern int k_delayed_work_cancel(struct k_delayed_work *work);
 
 /**
+ * @brief Initialize a delayable work item.
+ *
+ * This routine initializes a delayable work item prior to its first
+ * use.
+ *
+ * @warning This function must not be invoked on a delayable work item that
+ * has been passed to k_work_schedule_for_queue() unless it is known that the
+ * work is no longer delayed, pending on the work queue, or being processed by
+ * the work queue.  This state cannot be inferred from k_work API return
+ * values.
+ *
+ * @param work Address of delayable work item.
+ * @param handler Function to invoke each time work item is processed.
+ *
+ * @return N/A
+ */
+extern void k_work_delayable_init(struct k_work_delayable *work,
+				  k_work_handler_t handler);
+
+/**
+ * @brief Get the parent delayable work structure from a work pointer.
+ *
+ * This function is necessary when a @c k_work_handler_t function is passed to
+ * k_work_schedule_for_queue() and the handler needs to access data associated
+ * with the work item.
+ *
+ * @param work Address passed to the work handler
+ *
+ * @return Address of the containing @c k_work_delayable structure.
+ */
+static inline struct k_work_delayable *
+k_work_delayable_from_work(struct k_work *work)
+{
+	return CONTAINER_OF(work, struct k_work_delayable, work);
+}
+
+/**
+ * @brief Schedule a delayable work item to be submitted to a queue.
+ *
+ * This routine schedules work item @p work to be processed by workqueue @p
+ * work_q after @p delay.  Only when the timeout completes is the work item
+ * actually submitted to the workqueue and becomes pending.
+ *
+ * If @p delay is not @c K_NO_WAIT then the work item will be scheduled to be
+ * submitted after @p delay.
+ *
+ * If @p delay is @c K_NO_WAIT then the effect is the same as invoking
+ * k_work_submit_to_queue().
+ *
+ * In either case any previously scheduled incomplete delay is cancelled.
+ *
+ * @note If a work item is still pending from a previous submission
+ * then it may be processed twice: once from the pending submission,
+ * and once when submitted after the delay.
+ *
+ * @note If a delay timeout completes and the work item is still pending in
+ * its queue the resubmission will have no effect, and the work item will be
+ * processed only once.
+ *
+ * @warning
+ * A delayable work item that has been scheduled must not be modified until it
+ * has been processed by the workqueue or successfully cancelled via
+ * k_work_cancel().
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param work_q Address of workqueue.
+ * @param work Address of delayable work item.
+ * @param delay Delay before submitting the work item
+ *
+ * @retval 0 Work item countdown started or item submitted to queue.
+ * @retval -EBUSY Work item is already scheduled for submission to a different
+ * workqueue.
+ */
+extern int k_work_schedule_for_queue(struct k_work_q *work_q,
+				     struct k_work_delayable *work,
+				     k_timeout_t delay);
+
+/**
+ * @brief Get time when delayable work will be submitted.
+ *
+ * This routine computes the system uptime when a delayable work is expected
+ * to be scheduled. If the delayable work is not waiting to be scheduled, it
+ * returns current system time.
+ *
+ * @param work Delayable work item.
+ *
+ * @return Uptime of execution (in ticks).
+ */
+static inline k_ticks_t k_work_delayable_expires_ticks(
+	const struct k_work_delayable *work)
+{
+	return z_timeout_expires(&work->timeout);
+}
+
+/**
+ * @brief Get time remaining before delayable work will be scheduled, in
+ * system ticks
+ *
+ * This routine computes the time remaining before a delayable work is
+ * expected to be scheduled. If the delayable work is not waiting to be
+ * scheduled, it returns zero.
+ *
+ * @param work Delayable work item.
+ *
+ * @return Remaining time (in ticks).
+ */
+static inline k_ticks_t k_work_delayable_remaining_ticks(
+	const struct k_work_delayable *work)
+{
+	return z_timeout_remaining(&work->timeout);
+}
+
+/**
+ * @brief Get time remaining before delayable work will be scheduled, in
+ * milliseconds.
+ *
+ * This routine computes the (approximate) minimum time remaining before
+ * delayable work is expected to be scheduled. If the delayable work is not
+ * waiting to be scheduled, it returns zero.
+ *
+ * @param work Delayable work item.
+ *
+ * @return Remaining time (in milliseconds).
+ */
+static inline int32_t k_work_delayable_remaining_get(
+	const struct k_work_delayable *work)
+{
+	return k_ticks_to_ms_floor32(z_timeout_remaining(&work->timeout));
+}
+
+/**
+ * @brief Cancel a delayable work item.
+ *
+ * This function attempts to cancel a previous submission of @a work.  A
+ * delayable work item can only be canceled if its timeout has not been
+ * completed.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @warning As with k_work_pending() there is no guarantee that the return
+ * value of this function accurately reflects the work item state when the
+ * caller examines the result:
+ * * @c 0 may be received after a subsequent k_work_schedule() (from an ISR or
+ *   SMP) causes the item to be scheduled again;
+ * * @c -EINPROGRESS may be received after the item is no longer pending (has
+ *   been started, perhaps completed; e.g. on SMP or if the caller was
+ *   interrupted); or
+ * * @c -EINVAL may be received after the item has been re-submitted (e.g. via
+ *   an ISR or a higher priority thread).
+ *
+ * @param work Address of delayable work item.
+ *
+ * @retval 0 Work item countdown was successfully canceled.
+ * @retval -EINPROGRESS Work item appears to be pending but not started.
+ * @retval -EINVAL Work item was never submitted, or has been started and
+ * may or may not have completed.
+ */
+extern int k_work_cancel(struct k_work_delayable *work);
+
+/**
  * @brief Submit a work item to the system workqueue.
  *
  * This routine submits work item @a work to be processed by the system
@@ -3037,6 +3222,31 @@ extern int k_delayed_work_cancel(struct k_delayed_work *work);
 static inline void k_work_submit(struct k_work *work)
 {
 	k_work_submit_to_queue(&k_sys_work_q, work);
+}
+
+/**
+ * @brief Schedule a delayable work item for the system workqueue.
+ *
+ * As with k_work_schedule_for_queue() but using the system work queue.
+ *
+ * @warning
+ * Work items submitted to the system workqueue should avoid using handlers
+ * that block or yield since this may prevent the system workqueue from
+ * processing other work items in a timely manner.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param work Address of delayed work item.
+ * @param delay Delay before submitting the work item
+ *
+ * @retval 0 Work item countdown started.
+ * @retval -EINVAL Work item is being processed or has completed its work.
+ * @retval -EADDRINUSE Work item was submitted to a different workqueue.
+ */
+static inline int k_work_schedule(struct k_work_delayable *work,
+				  k_timeout_t delay)
+{
+	return k_work_schedule_for_queue(&k_sys_work_q, work, delay);
 }
 
 /**
