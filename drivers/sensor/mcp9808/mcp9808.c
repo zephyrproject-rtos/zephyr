@@ -36,13 +36,13 @@ int mcp9808_reg_read(const struct device *dev, uint8_t reg, uint16_t *val)
 }
 
 int mcp9808_reg_write_16bit(const struct device *dev, uint8_t reg,
-			     uint16_t val)
+			    uint16_t val)
 {
 	const struct mcp9808_data *data = dev->data;
 	const struct mcp9808_config *cfg = dev->config;
 	uint8_t buf[3] = {
 		reg,
-		val >> 8,	/* big-endian register storage */
+		val >> 8,       /* big-endian register storage */
 		val & 0xFF,
 	};
 
@@ -50,7 +50,7 @@ int mcp9808_reg_write_16bit(const struct device *dev, uint8_t reg,
 }
 
 int mcp9808_reg_write_8bit(const struct device *dev, uint8_t reg,
-			     uint8_t val)
+			   uint8_t val)
 {
 	const struct mcp9808_data *data = dev->data;
 	const struct mcp9808_config *cfg = dev->config;
@@ -65,7 +65,7 @@ int mcp9808_reg_write_8bit(const struct device *dev, uint8_t reg,
 static int mcp9808_set_temperature_resolution(const struct device *dev,
 					      uint8_t resolution)
 {
-  return mcp9808_reg_write_8bit(dev, MCP9808_REG_RESOLUTION, resolution);
+	return mcp9808_reg_write_8bit(dev, MCP9808_REG_RESOLUTION, resolution);
 }
 
 static int mcp9808_sample_fetch(const struct device *dev,
@@ -116,9 +116,9 @@ int mcp9808_init(const struct device *dev)
 	}
 
 	rc = mcp9808_set_temperature_resolution(dev, MCP9808_MEAS_RES);
-	if (!rc){
-	  LOG_DBG("Could not set the resolution of mcp9808 module");
-	  return rc;
+	if (!rc) {
+		LOG_DBG("Could not set the resolution of mcp9808 module");
+		return rc;
 	}
 
 #ifdef CONFIG_MCP9808_TRIGGER

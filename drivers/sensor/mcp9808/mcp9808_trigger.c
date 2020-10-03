@@ -41,7 +41,7 @@ int mcp9808_attr_set(const struct device *dev, enum sensor_channel chan,
 	temp += (MCP9808_TEMP_SCALE_CEL * val->val2) / 1000000;
 
 	return mcp9808_reg_write_16bit(dev, reg_addr,
-				 mcp9808_temp_reg_from_signed(temp));
+				       mcp9808_temp_reg_from_signed(temp));
 }
 
 static inline void setup_int(const struct device *dev,
@@ -149,10 +149,11 @@ int mcp9808_setup_interrupt(const struct device *dev)
 	const struct mcp9808_config *cfg = dev->config;
 	const struct device *gpio;
 	int rc = mcp9808_reg_write_16bit(dev, MCP9808_REG_CRITICAL,
-				   MCP9808_TEMP_ABS_MASK);
+					 MCP9808_TEMP_ABS_MASK);
+
 	if (rc == 0) {
 		rc = mcp9808_reg_write_16bit(dev, MCP9808_REG_CONFIG,
-				       MCP9808_CFG_ALERT_ENA);
+					     MCP9808_CFG_ALERT_ENA);
 	}
 
 	data->dev = dev;

@@ -16,11 +16,11 @@
 #include <sys/util.h>
 #include <drivers/gpio.h>
 
-#define MCP9808_REG_CONFIG		0x01
-#define MCP9808_REG_UPPER_LIMIT		0x02
-#define MCP9808_REG_LOWER_LIMIT		0x03
-#define MCP9808_REG_CRITICAL		0x04
-#define MCP9808_REG_TEMP_AMB		0x05
+#define MCP9808_REG_CONFIG              0x01
+#define MCP9808_REG_UPPER_LIMIT         0x02
+#define MCP9808_REG_LOWER_LIMIT         0x03
+#define MCP9808_REG_CRITICAL            0x04
+#define MCP9808_REG_TEMP_AMB            0x05
 
 /* 16 bits control configuration and state.
  *
@@ -35,10 +35,10 @@
  * * Bit 8 enters shutdown mode
  * * Bits 9-10 control threshold hysteresis
  */
-#define MCP9808_CFG_ALERT_MODE_INT	BIT(0)
-#define MCP9808_CFG_ALERT_ENA		BIT(3)
-#define MCP9808_CFG_ALERT_STATE		BIT(4)
-#define MCP9808_CFG_INT_CLEAR		BIT(5)
+#define MCP9808_CFG_ALERT_MODE_INT      BIT(0)
+#define MCP9808_CFG_ALERT_ENA           BIT(3)
+#define MCP9808_CFG_ALERT_STATE         BIT(4)
+#define MCP9808_CFG_INT_CLEAR           BIT(5)
 
 /* 16 bits are used for temperature and state encoding:
  * * Bits 0..11 encode the temperature in a 2s complement signed value
@@ -48,12 +48,12 @@
  * * Bit 14 is set to indicate a temperature above the upper threshold
  * * Bit 15 is set to indicate a temperature above the critical threshold
  */
-#define MCP9808_TEMP_SCALE_CEL		16 /* signed */
-#define MCP9808_TEMP_SIGN_BIT		BIT(12)
-#define MCP9808_TEMP_ABS_MASK		((uint16_t)(MCP9808_TEMP_SIGN_BIT - 1U))
-#define MCP9808_TEMP_LWR_BIT		BIT(13)
-#define MCP9808_TEMP_UPR_BIT		BIT(14)
-#define MCP9808_TEMP_CRT_BIT		BIT(15)
+#define MCP9808_TEMP_SCALE_CEL          16 /* signed */
+#define MCP9808_TEMP_SIGN_BIT           BIT(12)
+#define MCP9808_TEMP_ABS_MASK           ((uint16_t)(MCP9808_TEMP_SIGN_BIT - 1U))
+#define MCP9808_TEMP_LWR_BIT            BIT(13)
+#define MCP9808_TEMP_UPR_BIT            BIT(14)
+#define MCP9808_TEMP_CRT_BIT            BIT(15)
 
 /* Defining the temperature resolution that will be used during init */
 #if defined(CONFIG_MCP9808_MEAS_RES_0_5C)
