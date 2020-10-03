@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/l4/stm32l496Xg.dtsi>
+#include <st/l4/stm32l496a(e-g)ix-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics STM32L496G-DISCO board";
@@ -80,6 +81,7 @@ arduino_serial: &lpuart1 {};
 
 	pwm2: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim2_ch1_pwm_pa0>;
 	};
 };
 
