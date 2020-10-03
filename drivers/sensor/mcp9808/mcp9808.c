@@ -49,6 +49,19 @@ int mcp9808_reg_write_16bit(const struct device *dev, uint8_t reg,
 	return i2c_write(data->i2c_master, buf, sizeof(buf), cfg->i2c_addr);
 }
 
+int mcp9808_reg_write_8bit(const struct device *dev, uint8_t reg,
+			     uint8_t val)
+{
+	const struct mcp9808_data *data = dev->data;
+	const struct mcp9808_config *cfg = dev->config;
+	uint8_t buf[3] = {
+		reg,
+		val,
+	};
+
+	return i2c_write(data->i2c_master, buf, sizeof(buf), cfg->i2c_addr);
+}
+
 static int mcp9808_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {

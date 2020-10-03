@@ -92,6 +92,8 @@ struct mcp9808_config {
 int mcp9808_reg_read(const struct device *dev, uint8_t reg, uint16_t *val);
 int mcp9808_reg_write_16bit(const struct device *dev, uint8_t reg,
 			    uint16_t val);
+int mcp9808_reg_write_8bit(const struct device *dev, uint8_t reg,
+			     uint8_t val)
 
 #ifdef CONFIG_MCP9808_TRIGGER
 int mcp9808_attr_set(const struct device *dev, enum sensor_channel chan,
