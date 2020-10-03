@@ -51,8 +51,8 @@ static int process_mpu6050(const struct device *dev)
 	}
 	if (rc == 0) {
 		printf("[%s]:%g Cel\n"
-		       "  accel % f % f % f m/s/s\n"
-		       "  gyro  % f % f % f rad/s\n",
+		       "  accel %f %f %f m/s/s\n"
+		       "  gyro  %f %f %f rad/s\n",
 		       now_str(),
 		       sensor_value_to_double(&temperature),
 		       sensor_value_to_double(&accel[0]),
