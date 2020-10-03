@@ -40,10 +40,6 @@
 #include <stm32mp1xx_ll_system.h>
 #endif
 
-#ifdef CONFIG_SERIAL_HAS_DRIVER
-#include <stm32mp1xx_ll_usart.h>
-#endif
-
 #ifdef CONFIG_SPI_STM32
 #include <stm32mp1xx_ll_spi.h>
 #endif
