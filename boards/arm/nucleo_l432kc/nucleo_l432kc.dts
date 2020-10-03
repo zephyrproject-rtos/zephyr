@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/l4/stm32l432Xc.dtsi>
+#include <st/l4/stm32l432k(b-c)ux-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics STM32L432KC-NUCLEO board";
@@ -50,6 +51,7 @@
 
 	pwm2: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim2_ch1_pwm_pa0>;
 	};
 };
 
