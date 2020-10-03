@@ -49,6 +49,7 @@ static int store_line(uint8_t *data, size_t length, void *ctx)
 	/* store only <wrn> and <err> lines. */
 	/* search for < to manage with and without colours */
 	char *p = memchr(data, '<', length);
+
 	if (!p || (p[1] != 'e' && p[1] != 'w'))
 		return length;
 
@@ -56,15 +57,13 @@ static int store_line(uint8_t *data, size_t length, void *ctx)
 		rc = fcb_append(&fcb, length, &loc);
 		if (!rc) {
 			break;
-		}
-		else if (rc == -ENOSPC) {
+		} else if (rc == -ENOSPC) {
 			rc = fcb_rotate(&fcb);
 			if (rc) {
 				printk("fcb_rotate() returned %d\n", rc);
 				return length;
 			}
-		}
-		else {
+		} else {
 			printk("fcb_append() returned %d\n", rc);
 			return length;
 		}
@@ -99,17 +98,21 @@ static void print_old_lines(void)
 {
 	int corrupted = 0;
 	struct fcb_entry loc = {.fe_sector = NULL};
+
 	while (1) {
 		int rc;
+
 		rc = fcb_getnext(&fcb, &loc);
 		if (rc < 0) {
-			if (rc == -ENOTSUP)
+			if (rc == -ENOTSUP) {
 				break;
+			}
 			printk("fcb_getnext() failed with rc %d\n", rc);
 			break;
 		}
 
 		int len = MIN(sizeof(buf), loc.fe_data_len);
+
 		rc = flash_area_read(fcb.fap, loc.fe_data_off, buf, len);
 		if (rc < 0) {
 			printk("flash_read_area(%d, %d) failed with rc %d\n",
@@ -117,19 +120,21 @@ static void print_old_lines(void)
 			break;
 		}
 		buf[len] = 0;
-		if (buf[0] == '[' && buf[3] == ':' && buf[17] == ']')
+		if (buf[0] == '[' && buf[3] == ':' && buf[17] == ']') {
 			printk("flog: %s", buf);
-		else
+		} else {
 			corrupted++;
+		}
 	}
-	if (corrupted)
+	if (corrupted) {
 		printk("flog: discarded %d corrupt log lines\n", corrupted);
+	}
 }
 
 static void log_backend_fcb_init(void)
 {
 	int rc;
-	struct fcb* fcbp = &fcb;
+	struct fcb *fcbp = &fcb;
 
 	rc = fcb_init(CONFIG_LOG_BACKEND_FCB_FLASH_AREA_ID, fcbp);
 	if (rc && rc != -ENOMSG) {
@@ -153,7 +158,8 @@ static void dropped(const struct log_backend *const backend, uint32_t cnt)
 }
 
 static void sync_string(const struct log_backend *const backend,
-			struct log_msg_ids src_level, uint32_t timestamp,
+			struct log_msg_ids src_level,
+			uint32_t timestamp,
 			const char *fmt, va_list ap)
 {
 	uint32_t flag = LOG_OUTPUT_FLAG_FORMAT_SYST;
@@ -163,8 +169,11 @@ static void sync_string(const struct log_backend *const backend,
 }
 
 static void sync_hexdump(const struct log_backend *const backend,
-			 struct log_msg_ids src_level, uint32_t timestamp,
-			 const char *metadata, const uint8_t *data, uint32_t length)
+			 struct log_msg_ids src_level,
+			 uint32_t timestamp,
+			 const char *metadata,
+			 const uint8_t *data,
+			 uint32_t length)
 {
 	uint32_t flag = LOG_OUTPUT_FLAG_FORMAT_SYST;
 
