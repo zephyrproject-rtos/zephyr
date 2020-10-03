@@ -324,6 +324,54 @@ static void twork_resubmit(void *data)
 	k_sem_give(&sync_sema);
 }
 
+static void twork_resubmit_nowait(void *data)
+{
+	struct k_work_q *work_q = (struct k_work_q *)data;
+
+	k_delayed_work_init(&delayed_work_sleepy, work_sleepy);
+	k_delayed_work_init(&delayed_work[0], work_handler);
+	k_delayed_work_init(&delayed_work[1], work_handler);
+
+	zassert_equal(k_delayed_work_submit_to_queue(work_q,
+						     &delayed_work_sleepy,
+						     K_NO_WAIT),
+		      0, NULL);
+	zassert_equal(k_delayed_work_submit_to_queue(work_q, &delayed_work[0],
+						     K_NO_WAIT),
+		      0, NULL);
+	zassert_equal(k_delayed_work_submit_to_queue(work_q, &delayed_work[1],
+						     K_NO_WAIT),
+		      0, NULL);
+
+	/* No-wait submissions are pended immediately. */
+	zassert_true(k_work_pending(&delayed_work_sleepy.work), NULL);
+	zassert_true(k_work_pending(&delayed_work[0].work), NULL);
+	zassert_true(k_work_pending(&delayed_work[1].work), NULL);
+
+	/* Release sleeper, check other two still pending */
+	k_usleep(1);
+	zassert_false(k_work_pending(&delayed_work_sleepy.work), NULL);
+	zassert_true(k_work_pending(&delayed_work[0].work), NULL);
+	zassert_true(k_work_pending(&delayed_work[1].work), NULL);
+
+	/* Verify order of pending */
+	zassert_equal(k_queue_peek_head(&workq.queue),
+		      &delayed_work[0].work, NULL);
+	zassert_equal(k_queue_peek_tail(&workq.queue),
+		      &delayed_work[1].work, NULL);
+
+	/* Verify that resubmitting moves to end. */
+	zassert_equal(k_delayed_work_submit_to_queue(work_q, &delayed_work[0],
+						     K_NO_WAIT),
+		      0, NULL);
+	zassert_equal(k_queue_peek_head(&workq.queue),
+		      &delayed_work[1].work, NULL);
+	zassert_equal(k_queue_peek_tail(&workq.queue),
+		      &delayed_work[0].work, NULL);
+
+	k_sem_give(&sync_sema);
+}
+
 static void tdelayed_work_submit_1(struct k_work_q *work_q,
 				   struct k_delayed_work *w,
 				   k_work_handler_t handler)
@@ -693,6 +741,21 @@ void test_work_resubmit_to_queue(void)
 {
 	k_sem_reset(&sync_sema);
 	twork_resubmit(&workq);
+	k_sem_take(&sync_sema, K_FOREVER);
+}
+
+/**
+ * @brief Test work queue resubmission behavior without wait
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @see k_queue_remove(), k_delayed_work_init(),
+ * k_delayed_work_submit_to_queue()
+ */
+void test_work_resubmit_nowait_to_queue(void)
+{
+	k_sem_reset(&sync_sema);
+	twork_resubmit_nowait(&workq);
 	k_sem_take(&sync_sema, K_FOREVER);
 }
 
@@ -1148,6 +1211,7 @@ void test_main(void)
 			/* End order-important tests */
 			 ztest_1cpu_unit_test(test_work_submit_to_multipleq),
 			 ztest_unit_test(test_work_resubmit_to_queue),
+			 ztest_unit_test(test_work_resubmit_nowait_to_queue),
 			 ztest_1cpu_unit_test(test_work_submit_to_queue_thread),
 			 ztest_1cpu_unit_test(test_work_submit_to_queue_isr),
 			 ztest_1cpu_unit_test(test_work_submit_thread),
