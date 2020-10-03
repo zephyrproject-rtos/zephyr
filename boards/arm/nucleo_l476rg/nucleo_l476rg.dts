@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/l4/stm32l476Xg.dtsi>
+#include <st/l4/stm32l476r(c-e-g)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
@@ -70,6 +71,7 @@
 
 	pwm2: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim2_ch1_pwm_pa0>;
 	};
 };
 
