@@ -34,9 +34,6 @@ static const struct pin_config pinconf[] = {
 	{STM32_PIN_PB6, STM32L4X_PINMUX_FUNC_PB6_I2C1_SCL},
 	{STM32_PIN_PB7, STM32L4X_PINMUX_FUNC_PB7_I2C1_SDA},
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm2), okay) && CONFIG_PWM
-	{STM32_PIN_PA0, STM32L4X_PINMUX_FUNC_PA0_PWM2_CH1},
-#endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(spi1), okay) && CONFIG_SPI
 	/* SPI1 on the Arduino connectors pins A2, D3, D12, D11 */
 #ifdef CONFIG_SPI_STM32_USE_HW_SS
