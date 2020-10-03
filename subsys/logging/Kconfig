@@ -300,8 +300,8 @@ config LOG_BACKEND_FCB_FLASH_AREA_ID
 config LOG_BACKEND_FCB_SECTOR_COUNT
        int "Number of flash sectors used for log"
        help
-         Set number of flash sectors to be used by the log. Use more than one
-         to ensure latest log lines are always kept.
+	 Set number of flash sectors to be used by the log. Use more than one
+	 to ensure latest log lines are always kept.
 
 config LOG_BACKEND_FCB_SECTOR1_OFFSET
        int "Offset from start of flash area to sector 1"
