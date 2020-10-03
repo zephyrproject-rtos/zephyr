@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/f7/stm32f746Xg.dtsi>
+#include <st/f7/stm32f746nghx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
@@ -78,11 +79,12 @@
 	status = "okay";
 };
 
-&timers1 {
+&timers3 {
 	status = "okay";
 
-	pwm1: pwm {
+	pwm3: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim3_ch1_pwm_pb4>;
 	};
 };
 
