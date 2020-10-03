@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/f4/stm32f446Xe.dtsi>
+#include <st/f4/stm32f446v(c-e)tx-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics 96Boards STM32 Sensor Mezzanine board";
@@ -109,6 +110,7 @@
 
 	pwm3: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim3_ch1_pwm_pb4 &tim3_ch3_pwm_pc8>;
 	};
 };
 
@@ -117,6 +119,7 @@
 
 	pwm4: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim4_ch3_pwm_pd14 &tim4_ch4_pwm_pd15>;
 	};
 };
 
@@ -125,6 +128,7 @@
 
 	pwm9: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim9_ch1_pwm_pe5 &tim9_ch2_pwm_pe6>;
 	};
 };
 
