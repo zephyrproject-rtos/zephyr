@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/f4/stm32f407Xg.dtsi>
+#include <st/f4/stm32f407v(e-g)tx-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F4DISCOVERY board";
@@ -72,6 +73,7 @@
 
 	pwm2: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim2_ch1_pwm_pa0>;
 	};
 };
 
