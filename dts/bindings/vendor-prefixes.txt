@@ -362,6 +362,7 @@ sandisk	Sandisk Corporation
 sbs	Smart Battery System
 schindler	Schindler
 seagate	Seagate Technology PLC
+segger	SEGGER Microcontroller GmbH
 semtech	Semtech Corporation
 sensirion	Sensirion AG
 sff	Small Form Factor Committee
