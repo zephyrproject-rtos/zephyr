@@ -22,6 +22,7 @@ extern "C" {
 typedef int atomic_t;
 typedef atomic_t atomic_val_t;
 typedef void *atomic_ptr_t;
+typedef atomic_ptr_t atomic_ptr_val_t;
 
 /**
  * @defgroup atomic_apis Atomic Services APIs
@@ -73,19 +74,20 @@ extern bool atomic_cas(atomic_t *target, atomic_val_t old_value,
  * @return true if @a new_value is written, false otherwise.
  */
 #ifdef CONFIG_ATOMIC_OPERATIONS_BUILTIN
-static inline bool atomic_ptr_cas(atomic_ptr_t *target, void *old_value,
-				  void *new_value)
+static inline bool atomic_ptr_cas(atomic_ptr_t *target,
+				  atomic_ptr_val_t old_value,
+				  atomic_ptr_val_t new_value)
 {
 	return __atomic_compare_exchange_n(target, &old_value, new_value,
 					   0, __ATOMIC_SEQ_CST,
 					   __ATOMIC_SEQ_CST);
 }
 #elif defined(CONFIG_ATOMIC_OPERATIONS_C)
-__syscall bool atomic_ptr_cas(atomic_ptr_t *target, void *old_value,
-			      void *new_value);
+__syscall bool atomic_ptr_cas(atomic_ptr_t *target, atomic_ptr_val_t old_value,
+			      atomic_ptr_val_t new_value);
 #else
-extern bool atomic_ptr_cas(atomic_ptr_t *target, void *old_value,
-			   void *new_value);
+extern bool atomic_ptr_cas(atomic_ptr_t *target, atomic_ptr_val_t old_value,
+			   atomic_ptr_val_t new_value);
 #endif
 
 /**
@@ -200,12 +202,12 @@ extern atomic_val_t atomic_get(const atomic_t *target);
  * @return Value of @a target.
  */
 #ifdef CONFIG_ATOMIC_OPERATIONS_BUILTIN
-static inline void *atomic_ptr_get(const atomic_ptr_t *target)
+static inline atomic_ptr_val_t atomic_ptr_get(const atomic_ptr_t *target)
 {
 	return __atomic_load_n(target, __ATOMIC_SEQ_CST);
 }
 #else
-extern void *atomic_ptr_get(const atomic_ptr_t *target);
+extern atomic_ptr_val_t atomic_ptr_get(const atomic_ptr_t *target);
 #endif
 
 /**
@@ -248,14 +250,17 @@ extern atomic_val_t atomic_set(atomic_t *target, atomic_val_t value);
  * @return Previous value of @a target.
  */
 #ifdef CONFIG_ATOMIC_OPERATIONS_BUILTIN
-static inline void *atomic_ptr_set(atomic_ptr_t *target, void *value)
+static inline atomic_ptr_val_t atomic_ptr_set(atomic_ptr_t *target,
+					      atomic_ptr_val_t value)
 {
 	return __atomic_exchange_n(target, value, __ATOMIC_SEQ_CST);
 }
 #elif defined(CONFIG_ATOMIC_OPERATIONS_C)
-__syscall void *atomic_ptr_set(atomic_ptr_t *target, void *value);
+__syscall atomic_ptr_val_t atomic_ptr_set(atomic_ptr_t *target,
+					  atomic_ptr_val_t value);
 #else
-extern void *atomic_ptr_set(atomic_ptr_t *target, void *value);
+extern atomic_ptr_val_t atomic_ptr_set(atomic_ptr_t *target,
+				       atomic_ptr_val_t value);
 #endif
 
 /**
@@ -291,12 +296,12 @@ extern atomic_val_t atomic_clear(atomic_t *target);
  */
 #if defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN) || \
 	defined (CONFIG_ATOMIC_OPERATIONS_C)
-static inline void *atomic_ptr_clear(atomic_ptr_t *target)
+static inline atomic_ptr_val_t atomic_ptr_clear(atomic_ptr_t *target)
 {
 	return atomic_ptr_set(target, NULL);
 }
 #else
-extern void *atomic_ptr_clear(atomic_ptr_t *target);
+extern atomic_ptr_val_t atomic_ptr_clear(atomic_ptr_t *target);
 #endif
 
 /**
@@ -402,6 +407,17 @@ extern atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value);
  * @param i Value to assign to atomic variable.
  */
 #define ATOMIC_INIT(i) (i)
+
+/**
+ * @brief Initialize an atomic pointer variable.
+ *
+ * This macro can be used to initialize an atomic pointer variable. For
+ * example,
+ * @code atomic_ptr_t my_ptr = ATOMIC_PTR_INIT(&data); @endcode
+ *
+ * @param p Pointer value to assign to atomic pointer variable.
+ */
+#define ATOMIC_PTR_INIT(p) (p)
 
 /**
  * @cond INTERNAL_HIDDEN
