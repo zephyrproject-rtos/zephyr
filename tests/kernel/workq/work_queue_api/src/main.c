@@ -161,6 +161,8 @@ void test_sched_delayed_work_item(void)
 	 * only after specific period of time
 	 */
 	k_delayed_work_init(&work_item_delayed, common_work_handler);
+	/* align to tick before schedule */
+	k_usleep(1);
 	start_time = k_cycle_get_32();
 	k_delayed_work_submit_to_queue(&workq, &work_item_delayed, TIMEOUT);
 	ms_remain = k_delayed_work_remaining_get(&work_item_delayed);
@@ -262,6 +264,8 @@ static void twork_submit_multipleq(void *data)
 	zassert_equal(k_delayed_work_cancel(&new_work),
 		      -EINVAL, NULL);
 
+	/* align to tick before schedule */
+	k_usleep(1);
 	k_delayed_work_submit_to_queue(work_q, &new_work, TIMEOUT);
 	zassert_true(k_delayed_work_pending(&new_work), NULL);
 
@@ -388,6 +392,10 @@ static void tdelayed_work_submit_1(struct k_work_q *work_q,
 	/**TESTPOINT: check remaining timeout before submit*/
 	zassert_equal(k_delayed_work_remaining_get(w), 0, NULL);
 
+	/* align to tick before schedule */
+	if (!k_is_in_isr()) {
+		k_usleep(1);
+	}
 	if (work_q) {
 		/**TESTPOINT: delayed work submit to queue*/
 		zassert_true(k_delayed_work_submit_to_queue(work_q, w, TIMEOUT)
@@ -434,6 +442,10 @@ static void tdelayed_work_cancel(const void *data)
 	k_delayed_work_init(&delayed_work[0], work_handler);
 	k_delayed_work_init(&delayed_work[1], work_handler);
 
+	/* align to tick before schedule */
+	if (!k_is_in_isr()) {
+		k_usleep(1);
+	}
 	if (work_q) {
 		ret = k_delayed_work_submit_to_queue(work_q,
 						     &delayed_work_sleepy,
