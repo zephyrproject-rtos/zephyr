@@ -16,11 +16,17 @@ Concepts
 Any number of atomic variables can be defined.
 
 Using the kernel's atomic APIs to manipulate an atomic variable
-guarantees that the desired operation occurs correctly,
-even if higher priority contexts also manipulate the same variable.
+guarantees that the desired operation will have `sequentially-consistent
+ordering`_ with respect to all other atomic operations.  This means that
+even if atomic variables are accessed from different priority threads,
+interrupts, or (for SMP) other cores, the observable values and
+behaviors will be consistently ordered.
+
+.. _sequentially-consistent ordering:
+   https://en.cppreference.com/w/c/atomic/memory_order#Sequentially-consistent_ordering
 
 The kernel also supports the atomic manipulation of a single bit
-in an array of atomic variables.
+in an array of atomic variables with the same order guarantee.
 
 Implementation
 **************
@@ -28,7 +34,9 @@ Implementation
 Defining an Atomic Variable
 ===========================
 
-An atomic variable is defined using a variable of type :c:type:`atomic_t`.
+An atomic variable is defined using a variable of type
+:c:type:`atomic_t`.  The corresponding non-atomic value type is
+:c:type:`atomic_val_t`.
 
 By default an atomic variable is initialized to zero. However, it can be given
 a different value using :c:macro:`ATOMIC_INIT`:
@@ -36,6 +44,16 @@ a different value using :c:macro:`ATOMIC_INIT`:
 .. code-block:: c
 
     atomic_t flags = ATOMIC_INIT(0xFF);
+
+
+Zephyr also supports atomic values that store pointers, with atomic
+variable type :c:type:`atomic_ptr_t` and value type
+:c:type:`atomic_ptr_val_t` and initialization with
+:c:macro:`ATOMIC_PTR_INIT`:
+
+.. code-block:: c
+
+    atomic_ptr_t data = ATOMIC_PTR_INIT(&val1);
 
 Manipulating an Atomic Variable
 ===============================
