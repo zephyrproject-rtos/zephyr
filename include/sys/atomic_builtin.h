@@ -55,8 +55,8 @@ static inline bool atomic_cas(atomic_t *target, atomic_val_t old_value,
  * @param new_value New value to store.
  * @return true if @a new_value is written, false otherwise.
  */
-static inline bool atomic_ptr_cas(atomic_ptr_t *target, void *old_value,
-				  void *new_value)
+static inline bool atomic_ptr_cas(atomic_ptr_t *target, atomic_ptr_val_t old_value,
+				  atomic_ptr_val_t new_value)
 {
 	return __atomic_compare_exchange_n(target, &old_value, new_value,
 					   0, __ATOMIC_SEQ_CST,
@@ -150,7 +150,7 @@ static inline atomic_val_t atomic_get(const atomic_t *target)
  *
  * @return Value of @a target.
  */
-static inline void *atomic_ptr_get(const atomic_ptr_t *target)
+static inline atomic_ptr_val_t atomic_ptr_get(const atomic_ptr_t *target)
 {
 	return __atomic_load_n(target, __ATOMIC_SEQ_CST);
 }
@@ -188,7 +188,7 @@ static inline atomic_val_t atomic_set(atomic_t *target, atomic_val_t value)
  *
  * @return Previous value of @a target.
  */
-static inline void *atomic_ptr_set(atomic_ptr_t *target, void *value)
+static inline atomic_ptr_val_t atomic_ptr_set(atomic_ptr_t *target, atomic_ptr_val_t value)
 {
 	return __atomic_exchange_n(target, value, __ATOMIC_SEQ_CST);
 }
@@ -220,7 +220,7 @@ static inline atomic_val_t atomic_clear(atomic_t *target)
  *
  * @return Previous value of @a target.
  */
-static inline void *atomic_ptr_clear(atomic_ptr_t *target)
+static inline atomic_ptr_val_t atomic_ptr_clear(atomic_ptr_t *target)
 {
 	return atomic_ptr_set(target, NULL);
 }
