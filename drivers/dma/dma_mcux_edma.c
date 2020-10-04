@@ -141,25 +141,15 @@ static void dma_mcux_edma_irq_handler(const struct device *dev)
 
 	LOG_DBG("IRQ CALLED");
 	for (i = 0; i < DT_INST_PROP(0, dma_channels); i++) {
-		if (DEV_CHANNEL_DATA(dev, i)->busy) {
-			uint32_t flag =
-				EDMA_GetChannelStatusFlags(DEV_BASE(dev), i);
-			if ((flag & (uint32_t)kEDMA_InterruptFlag) != 0U) {
-				LOG_DBG("IRQ OCCURRED");
-				channel_irq(DEV_EDMA_HANDLE(dev, i));
-				LOG_DBG("IRQ DONE");
+		uint32_t flag = EDMA_GetChannelStatusFlags(DEV_BASE(dev), i);
+
+		if ((flag & (uint32_t)kEDMA_InterruptFlag) != 0U) {
+			LOG_DBG("IRQ OCCURRED");
+			channel_irq(DEV_EDMA_HANDLE(dev, i));
+			LOG_DBG("IRQ DONE");
 #if defined __CORTEX_M && (__CORTEX_M == 4U)
-				__DSB();
+			__DSB();
 #endif
-			} else {
-				LOG_DBG("flag is 0x%x", flag);
-				LOG_DBG("DMA ES 0x%x", DEV_BASE(dev)->ES);
-				LOG_DBG("channel id %d", i);
-				EDMA_ClearChannelStatusFlags(
-					DEV_BASE(dev), i,
-					kEDMA_ErrorFlag | kEDMA_DoneFlag);
-				EDMA_AbortTransfer(DEV_EDMA_HANDLE(dev, i));
-			}
 		}
 	}
 }
@@ -275,13 +265,6 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 	EDMA_EnableChannelInterrupts(DEV_BASE(dev), channel,
 				     kEDMA_ErrorInterruptEnable);
 
-	if (config->source_chaining_en && config->dest_chaining_en) {
-		/*chaining mode only support major link*/
-		LOG_DBG("link major channel %d", config->linked_channel);
-		EDMA_SetChannelLink(DEV_BASE(dev), channel, kEDMA_MajorLink,
-				    config->linked_channel);
-	}
-
 	if (block_config->source_gather_en || block_config->dest_scatter_en) {
 		if (config->block_count > CONFIG_DMA_TCD_QUEUE_SIZE) {
 			LOG_ERR("please config DMA_TCD_QUEUE_SIZE as %d",
@@ -305,7 +288,7 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 	} else {
 		/* block_count shall be 1 */
 		status_t ret;
-
+		LOG_DBG("block size is: %d", block_config->block_size);
 		EDMA_PrepareTransfer(&(data->transferConfig),
 				     (void *)block_config->source_address,
 				     config->source_data_size,
@@ -321,6 +304,17 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 			LOG_ERR("submit error 0x%x", ret);
 		}
 		LOG_DBG("data csr is 0x%x", tcdRegs->CSR);
+	}
+
+	if (config->dest_chaining_en) {
+		LOG_DBG("link major channel %d", config->linked_channel);
+		EDMA_SetChannelLink(DEV_BASE(dev), channel, kEDMA_MajorLink,
+				    config->linked_channel);
+	}
+	if (config->source_chaining_en) {
+		LOG_DBG("link minor channel %d", config->linked_channel);
+		EDMA_SetChannelLink(DEV_BASE(dev), channel, kEDMA_MinorLink,
+				    config->linked_channel);
 	}
 
 	data->busy = false;
