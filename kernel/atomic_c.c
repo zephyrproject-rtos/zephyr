@@ -107,8 +107,8 @@ bool z_vrfy_atomic_cas(atomic_t *target, atomic_val_t old_value,
 #include <syscalls/atomic_cas_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-bool z_impl_atomic_ptr_cas(atomic_ptr_t *target, void *old_value,
-			   void *new_value)
+bool z_impl_atomic_ptr_cas(atomic_ptr_t *target, atomic_ptr_val_t old_value,
+			   atomic_ptr_val_t new_value)
 {
 	k_spinlock_key_t key;
 	int ret = false;
@@ -126,8 +126,9 @@ bool z_impl_atomic_ptr_cas(atomic_ptr_t *target, void *old_value,
 }
 
 #ifdef CONFIG_USERSPACE
-static inline bool z_vrfy_atomic_ptr_cas(atomic_ptr_t *target, void *old_value,
-					 void *new_value)
+static inline bool z_vrfy_atomic_ptr_cas(atomic_ptr_t *target,
+					 atomic_ptr_val_t old_value,
+					 atomic_ptr_val_t new_value)
 {
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(target, sizeof(atomic_ptr_t)));
 
@@ -213,7 +214,7 @@ atomic_val_t atomic_get(const atomic_t *target)
 	return *target;
 }
 
-void *atomic_ptr_get(const atomic_ptr_t *target)
+atomic_ptr_val_t atomic_ptr_get(const atomic_ptr_t *target)
 {
 	return *target;
 }
@@ -247,10 +248,11 @@ atomic_val_t z_impl_atomic_set(atomic_t *target, atomic_val_t value)
 
 ATOMIC_SYSCALL_HANDLER_TARGET_VALUE(atomic_set);
 
-void *z_impl_atomic_ptr_set(atomic_ptr_t *target, void *value)
+atomic_ptr_val_t z_impl_atomic_ptr_set(atomic_ptr_t *target,
+				       atomic_ptr_val_t value)
 {
 	k_spinlock_key_t key;
-	void *ret;
+	atomic_ptr_val_t ret;
 
 	key = k_spin_lock(&lock);
 
@@ -263,7 +265,8 @@ void *z_impl_atomic_ptr_set(atomic_ptr_t *target, void *value)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline void *z_vrfy_atomic_ptr_set(atomic_ptr_t *target, void *value)
+static inline atomic_ptr_val_t z_vrfy_atomic_ptr_set(atomic_ptr_t *target,
+						     atomic_ptr_val_t value)
 {
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(target, sizeof(atomic_ptr_t)));
 

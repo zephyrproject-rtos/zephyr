@@ -100,12 +100,12 @@ void test_atomic(void)
 	zassert_true((target == value), "atomic_cas");
 
 	/* atomic_ptr_cas() */
-	ptr_target = (atomic_ptr_t)4;
-	ptr_value = (void *)5;
-	old_ptr_value = (void *)6;
+	ptr_target = ATOMIC_PTR_INIT((void *)4);
+	ptr_value = (atomic_ptr_val_t)5;
+	old_ptr_value = (atomic_ptr_val_t)6;
 	zassert_false(atomic_ptr_cas(&ptr_target, old_ptr_value, ptr_value),
 		      "atomic_ptr_cas");
-	ptr_target = (void *)6;
+	ptr_target = (atomic_ptr_val_t)6;
 	zassert_true(atomic_ptr_cas(&ptr_target, old_ptr_value, ptr_value),
 		     "atomic_ptr_cas");
 	zassert_true((ptr_target == ptr_value), "atomic_ptr_cas");
@@ -147,8 +147,8 @@ void test_atomic(void)
 	zassert_true((atomic_get(&target) == 50), "atomic_get");
 
 	/* atomic_ptr_get() */
-	ptr_target = (atomic_ptr_t)50;
-	zassert_true((atomic_ptr_get(&ptr_target) == (void *)50),
+	ptr_target = ATOMIC_PTR_INIT((void *)50);
+	zassert_true((atomic_ptr_get(&ptr_target) == (atomic_ptr_val_t)50),
 		     "atomic_ptr_get");
 
 	/* atomic_set() */
@@ -158,9 +158,9 @@ void test_atomic(void)
 	zassert_true((target == value), "atomic_set");
 
 	/* atomic_ptr_set() */
-	ptr_target = (atomic_ptr_t)42;
-	ptr_value = (void *)77;
-	zassert_true((atomic_ptr_set(&ptr_target, ptr_value) == (void *)42),
+	ptr_target = ATOMIC_PTR_INIT((void *)42);
+	ptr_value = (atomic_ptr_val_t)77;
+	zassert_true((atomic_ptr_set(&ptr_target, ptr_value) == (atomic_ptr_val_t)42),
 		     "atomic_ptr_set");
 	zassert_true((ptr_target == ptr_value), "atomic_ptr_set");
 
@@ -170,8 +170,8 @@ void test_atomic(void)
 	zassert_true((target == 0), "atomic_clear");
 
 	/* atomic_ptr_clear() */
-	ptr_target = (atomic_ptr_t)100;
-	zassert_true((atomic_ptr_clear(&ptr_target) == (void *)100),
+	ptr_target = ATOMIC_PTR_INIT((void *)100);
+	zassert_true((atomic_ptr_clear(&ptr_target) == (atomic_ptr_val_t)100),
 		     "atomic_ptr_clear");
 	zassert_true((ptr_target == NULL), "atomic_ptr_clear");
 

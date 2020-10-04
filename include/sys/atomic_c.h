@@ -20,8 +20,8 @@ extern "C" {
 __syscall bool atomic_cas(atomic_t *target, atomic_val_t old_value,
 			 atomic_val_t new_value);
 
-__syscall bool atomic_ptr_cas(atomic_ptr_t *target, void *old_value,
-			      void *new_value);
+__syscall bool atomic_ptr_cas(atomic_ptr_t *target, atomic_ptr_val_t old_value,
+			      atomic_ptr_val_t new_value);
 
 __syscall atomic_val_t atomic_add(atomic_t *target, atomic_val_t value);
 
@@ -41,11 +41,11 @@ static inline atomic_val_t atomic_dec(atomic_t *target)
 
 extern atomic_val_t atomic_get(const atomic_t *target);
 
-extern void *atomic_ptr_get(const atomic_ptr_t *target);
+extern atomic_ptr_val_t atomic_ptr_get(const atomic_ptr_t *target);
 
 __syscall atomic_val_t atomic_set(atomic_t *target, atomic_val_t value);
 
-__syscall void *atomic_ptr_set(atomic_ptr_t *target, void *value);
+__syscall atomic_ptr_val_t atomic_ptr_set(atomic_ptr_t *target, atomic_ptr_val_t value);
 
 static inline atomic_val_t atomic_clear(atomic_t *target)
 {
@@ -53,7 +53,7 @@ static inline atomic_val_t atomic_clear(atomic_t *target)
 
 }
 
-static inline void *atomic_ptr_clear(atomic_ptr_t *target)
+static inline atomic_ptr_val_t atomic_ptr_clear(atomic_ptr_t *target)
 {
 	return atomic_ptr_set(target, NULL);
 
