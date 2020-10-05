@@ -275,9 +275,11 @@ int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 #endif /* CONFIG_BT_CTLR_FORCE_MD_AUTO */
 	}
 
-	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->lll.role) {
+#if defined(CONFIG_BT_PERIPHERAL)
+	if (conn->lll.role) {
 		peripheral_latency_cancel(conn, handle);
 	}
+#endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_THROUGHPUT)
 	static uint32_t last_cycle_stamp;
@@ -377,10 +379,11 @@ uint8_t ll_conn_update(uint16_t handle, uint8_t cmd, uint8_t status, uint16_t in
 			conn->llcp_conn_param.cmd = 1U;
 			conn->llcp_conn_param.req++;
 
-			if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
-			    conn->lll.role) {
+#if defined(CONFIG_BT_PERIPHERAL)
+			if (conn->lll.role) {
 				peripheral_latency_cancel(conn, handle);
 			}
+#endif /* CONFIG_BT_PERIPHERAL */
 		}
 
 #else /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
@@ -426,9 +429,11 @@ uint8_t ll_terminate_ind_send(uint16_t handle, uint8_t reason)
 
 	conn->llcp_terminate.req++;
 
-	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->lll.role) {
+#if defined(CONFIG_BT_PERIPHERAL)
+	if (conn->lll.role) {
 		peripheral_latency_cancel(conn, handle);
 	}
+#endif /* CONFIG_BT_PERIPHERAL */
 
 	return 0;
 }
@@ -448,11 +453,12 @@ uint8_t ll_feature_req_send(uint16_t handle)
 
 	conn->llcp_feature.req++;
 
-	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
-	    IS_ENABLED(CONFIG_BT_CTLR_SLAVE_FEAT_REQ) &&
+#if defined(CONFIG_BT_PERIPHERAL)
+	if (IS_ENABLED(CONFIG_BT_CTLR_SLAVE_FEAT_REQ) &&
 	    conn->lll.role) {
 		peripheral_latency_cancel(conn, handle);
 	}
+#endif /* CONFIG_BT_PERIPHERAL */
 
 	return 0;
 }
@@ -472,9 +478,11 @@ uint8_t ll_version_ind_send(uint16_t handle)
 
 	conn->llcp_version.req++;
 
-	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->lll.role) {
+#if defined(CONFIG_BT_PERIPHERAL)
+	if (conn->lll.role) {
 		peripheral_latency_cancel(conn, handle);
 	}
+#endif /* CONFIG_BT_PERIPHERAL */
 
 	return 0;
 }
@@ -525,9 +533,11 @@ uint32_t ll_length_req_send(uint16_t handle, uint16_t tx_octets, uint16_t tx_tim
 
 	conn->llcp_length.req++;
 
-	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->lll.role) {
+#if defined(CONFIG_BT_PERIPHERAL)
+	if (conn->lll.role) {
 		peripheral_latency_cancel(conn, handle);
 	}
+#endif /* CONFIG_BT_PERIPHERAL */
 
 	return 0;
 }
@@ -620,9 +630,11 @@ uint8_t ll_phy_req_send(uint16_t handle, uint8_t tx, uint8_t flags, uint8_t rx)
 	conn->llcp_phy.rx = rx;
 	conn->llcp_phy.req++;
 
-	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->lll.role) {
+#if defined(CONFIG_BT_PERIPHERAL)
+	if (conn->lll.role) {
 		peripheral_latency_cancel(conn, handle);
 	}
+#endif /* CONFIG_BT_PERIPHERAL */
 
 	return 0;
 }
