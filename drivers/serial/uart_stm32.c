@@ -698,6 +698,8 @@ static int uart_stm32_init(const struct device *dev)
 		case DT_REG_ADDR(DT_NODELABEL(usart1)):
 			if (remap == REMAP_FULL) {
 				LL_GPIO_AF_EnableRemap_USART1();
+			} else {
+				LL_GPIO_AF_DisableRemap_USART1();
 			}
 			break;
 #endif
@@ -705,6 +707,8 @@ static int uart_stm32_init(const struct device *dev)
 		case DT_REG_ADDR(DT_NODELABEL(usart2)):
 			if (remap == REMAP_FULL) {
 				LL_GPIO_AF_EnableRemap_USART2();
+			} else {
+				LL_GPIO_AF_DisableRemap_USART2();
 			}
 			break;
 #endif
@@ -714,6 +718,8 @@ static int uart_stm32_init(const struct device *dev)
 				LL_GPIO_AF_EnableRemap_USART3();
 			} else if (remap == REMAP_1) {
 				LL_GPIO_AF_RemapPartial_USART3();
+			} else {
+				LL_GPIO_AF_DisableRemap_USART3();
 			}
 			break;
 #endif
