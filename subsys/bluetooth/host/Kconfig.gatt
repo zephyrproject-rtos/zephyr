@@ -34,6 +34,14 @@ config BT_ATT_TX_MAX
 	  amount the calls will block until an existing queued PDU gets
 	  sent.
 
+config BT_ATT_RESPONSE_COUNT
+	int "Number of ATT response buffers"
+	default 1
+	range 0 16
+	help
+	  Number of buffers available for ATT responses/confirmations, settings
+	  this to 0 disables use of dedicated pool for responses/confirmations.
+
 config BT_EATT
 	bool "Enhanced ATT Bearers support [EXPERIMENTAL]"
 	depends on BT_L2CAP_ECRED
