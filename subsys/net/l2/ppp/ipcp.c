@@ -366,6 +366,10 @@ static void ipcp_down(struct ppp_fsm *fsm)
 
 	ctx->is_ipcp_up = false;
 
+	if (!net_if_ipv4_addr_rm(ctx->iface, &ctx->ipcp.my_options.address)) {
+		NET_ERR("Failed removing address");
+	}
+
 	ppp_network_down(ctx, PPP_IP);
 }
 
