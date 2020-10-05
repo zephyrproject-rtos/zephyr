@@ -100,7 +100,7 @@
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #define BT_SCAN_AUX_TICKER_NODES ((TICKER_ID_SCAN_AUX_LAST) - \
 				  (TICKER_ID_SCAN_AUX_BASE) + 1)
-#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 #define BT_SCAN_SYNC_TICKER_NODES ((TICKER_ID_SCAN_SYNC_LAST) - \
 				   (TICKER_ID_SCAN_SYNC_BASE) + 1)
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
@@ -365,7 +365,7 @@ int ll_init(struct k_sem *sem_rx)
 	}
 #endif /* CONFIG_BT_OBSERVER */
 
-#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	err = lll_sync_init();
 	if (err) {
 		return err;
@@ -375,7 +375,7 @@ int ll_init(struct k_sem *sem_rx)
 	if (err) {
 		return err;
 	}
-#endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 #if defined(CONFIG_BT_CONN)
 	err = lll_conn_init();
@@ -420,11 +420,11 @@ void ll_reset(void)
 	LL_ASSERT(!err);
 #endif /* CONFIG_BT_OBSERVER */
 
-#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	/* Reset periodic sync sets */
 	err = ull_sync_reset();
 	LL_ASSERT(!err);
-#endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 #if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_CENTRAL)
@@ -749,11 +749,11 @@ void ll_rx_dequeue(void)
 #if defined(CONFIG_BT_OBSERVER)
 	case NODE_RX_TYPE_REPORT:
 
-#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 		/* fall through */
 	case NODE_RX_TYPE_SYNC:
 	case NODE_RX_TYPE_SYNC_LOST:
-#endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
@@ -975,7 +975,7 @@ void ll_rx_mem_release(void **node_rx)
 			mem_release(rx_free, &mem_pdu_rx.free);
 			break;
 
-#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 		case NODE_RX_TYPE_SYNC:
 		{
 			struct node_rx_sync *se =
@@ -999,7 +999,7 @@ void ll_rx_mem_release(void **node_rx)
 			ull_sync_release(sync);
 		}
 		break;
-#endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 #if defined(CONFIG_BT_CONN)
 		case NODE_RX_TYPE_TERMINATE:
@@ -1345,7 +1345,7 @@ void *ull_event_done(void *param)
 	return evdone;
 }
 
-#if defined(CONFIG_BT_PERIPHERAL) || defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
+#if defined(CONFIG_BT_PERIPHERAL) || defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 /**
  * @brief Extract timing from completed event
  *
@@ -1389,7 +1389,7 @@ void ull_drift_ticks_get(struct node_rx_event_done *done,
 					       preamble_to_addr_us);
 	}
 }
-#endif /* CONFIG_BT_PERIPHERAL || CONFIG_BT_CTLR_SCAN_PERIODIC */
+#endif /* CONFIG_BT_PERIPHERAL || CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 static inline int init_reset(void)
 {
@@ -1910,11 +1910,11 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	case EVENT_DONE_EXTRA_TYPE_SCAN_AUX:
 		ull_scan_aux_done(done);
 		break;
-#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	case EVENT_DONE_EXTRA_TYPE_SYNC:
 		ull_sync_done(done);
 		break;
-#endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_OBSERVER */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 

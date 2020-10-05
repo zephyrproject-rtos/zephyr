@@ -2058,7 +2058,7 @@ static void le_set_ext_scan_enable(struct net_buf *buf, struct net_buf **evt)
 	*evt = cmd_complete_status(status);
 }
 
-#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 static void le_per_adv_create_sync(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_per_adv_create_sync *cmd = (void *)buf->data;
@@ -2117,7 +2117,7 @@ static void le_per_adv_recv_enable(struct net_buf *buf, struct net_buf **evt)
 	ccst = hci_cmd_complete(evt, sizeof(*ccst));
 	ccst->status = status;
 }
-#endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CENTRAL)
@@ -2434,7 +2434,7 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		le_set_ext_scan_enable(cmd, evt);
 		break;
 
-#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	case BT_OCF(BT_HCI_OP_LE_PER_ADV_CREATE_SYNC):
 		le_per_adv_create_sync(cmd, evt);
 		break;
@@ -2450,7 +2450,7 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_LE_SET_PER_ADV_RECV_ENABLE):
 		le_per_adv_recv_enable(cmd, evt);
 		break;
-#endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CONN)
@@ -3802,7 +3802,7 @@ static void le_adv_ext_coded_report(struct pdu_data *pdu_data,
 	le_adv_ext_report(pdu_data, node_rx, buf, BIT(2));
 }
 
-#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 static void le_per_adv_sync_established(struct pdu_data *pdu_data,
 					struct node_rx_pdu *node_rx,
 					struct net_buf *buf)
@@ -3852,7 +3852,7 @@ static void le_per_adv_sync_lost(struct pdu_data *pdu_data,
 	sep = meta_evt(buf, BT_HCI_EVT_LE_PER_ADV_SYNC_LOST, sizeof(*sep));
 	sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
 }
-#endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
 
@@ -4208,14 +4208,14 @@ static void encode_control(struct node_rx_pdu *node_rx,
 		le_adv_ext_coded_report(pdu_data, node_rx, buf);
 		break;
 
-#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	case NODE_RX_TYPE_SYNC:
 		le_per_adv_sync_established(pdu_data, node_rx, buf);
 		break;
 	case NODE_RX_TYPE_SYNC_LOST:
 		le_per_adv_sync_lost(pdu_data, node_rx, buf);
 		break;
-#endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
 
@@ -4652,11 +4652,11 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 			__fallthrough;
 		case NODE_RX_TYPE_SYNC:
 		case NODE_RX_TYPE_SYNC_LOST:
-#endif /* CONFIG_BT_CTLR_SCAN_PERIODIC */
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 #if defined(CONFIG_BT_BROADCASTER)
 		case NODE_RX_TYPE_EXT_ADV_TERMINATE:
