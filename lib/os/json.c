@@ -425,6 +425,9 @@ static bool equivalent_types(enum json_tokens type1, enum json_tokens type2)
 	return type1 == type2;
 }
 
+static int obj_ignore(struct json_obj *obj);
+static int arr_ignore(struct json_obj *obj);
+
 static int obj_parse(struct json_obj *obj,
 		     const struct json_obj_descr *descr, size_t descr_len,
 		     void *val);
@@ -504,6 +507,64 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 	}
 }
 
+static int arr_ignore(struct json_obj *obj)
+{
+	struct token value;
+	int ret = 0;
+
+	while (!arr_next(obj, &value)) {
+		if (value.type == JSON_TOK_LIST_END) {
+			return 0;
+		}
+
+		switch (value.type) {
+		case JSON_TOK_OBJECT_START:
+			ret = obj_ignore(obj);
+			break;
+		case JSON_TOK_LIST_START:
+			ret = arr_ignore(obj);
+			break;
+		default:
+			break;
+		}
+
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return -EINVAL;
+}
+
+static int obj_ignore(struct json_obj *obj)
+{
+	struct json_obj_key_value kv;
+	int ret = 0;
+
+	while (!obj_next(obj, &kv)) {
+		if (kv.value.type == JSON_TOK_OBJECT_END) {
+			return 0;
+		}
+
+		switch (kv.value.type) {
+		case JSON_TOK_OBJECT_START:
+			ret = obj_ignore(obj);
+			break;
+		case JSON_TOK_LIST_START:
+			ret = arr_ignore(obj);
+			break;
+		default:
+			break;
+		}
+
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return -EINVAL;
+}
+
 static int arr_parse(struct json_obj *obj,
 		     const struct json_obj_descr *elem_descr,
 		     size_t max_elements, void *field, void *val)
@@ -527,7 +588,8 @@ static int arr_parse(struct json_obj *obj,
 		}
 
 		/* ignore null value */
-		if (value.type != JSON_TOK_NULL && decode_value(obj, elem_descr, &value, field, val) < 0) {
+		if (value.type != JSON_TOK_NULL &&
+		    decode_value(obj, elem_descr, &value, field, val) < 0) {
 			return -EINVAL;
 		}
 
@@ -544,9 +606,12 @@ static int obj_parse(struct json_obj *obj, const struct json_obj_descr *descr,
 	struct json_obj_key_value kv;
 	int32_t decoded_fields = 0;
 	size_t i;
-	int ret;
+	bool decoded;
+	int ret = 0;
 
 	while (!obj_next(obj, &kv)) {
+		decoded = false;
+
 		if (kv.value.type == JSON_TOK_OBJECT_END) {
 			return decoded_fields;
 		}
@@ -581,8 +646,22 @@ static int obj_parse(struct json_obj *obj, const struct json_obj_descr *descr,
 				return ret;
 			}
 
+			decoded = true;
 			decoded_fields |= 1<<i;
 			break;
+		}
+
+		if (!decoded) {
+			/* ignore no mapping field */
+			if (kv.value.type == JSON_TOK_LIST_START) {
+				ret = arr_ignore(obj);
+			} else if (kv.value.type == JSON_TOK_OBJECT_START) {
+				ret = obj_ignore(obj);
+			}
+
+			if (ret < 0) {
+				return ret;
+			}
 		}
 	}
 

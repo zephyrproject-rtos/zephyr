@@ -271,10 +271,43 @@ static void test_json_decoding_null_value(void)
 		     "Nested boolean value be initialized value");
 	zassert_is_null(ts.xnother_nexx.nested_string,
 		    "Nested string be initialized value");
-	zassert_equal(ts.another_array_len, 4, "Array has correct number of items");
+	zassert_equal(ts.another_array_len, 4,
+		    "Array has correct number of items");
 	zassert_true(!memcmp(ts.another_array, expected_other_array,
 		    sizeof(expected_other_array)),
 		    "Array decoded with expected values");
+}
+
+static void test_json_decoding_no_mapping_fields(void)
+{
+	struct test_struct ts;
+	char encoded[] = "{\"some_string2\":\"zephyr\","
+		"\"some_int2\":5566,"
+		"\"some_bool2\":true,"
+		"\"some_nested_struct\":{"
+			"\"nested_array\":[1, 2, 3],"
+			"\"nested_int\": -1234,"
+			"\"nested_array2\":[{\"nested_int\": 1}, {\"nested_int\": 2}]},"
+		"\"some_nested_struct2\":{"
+			"\"nested_int\":-1234,"
+			"\"nested_bool\":true,"
+			"\"nested_string\":\"ABC123\"},"
+		"\"some_nested_struct3\":{},"
+		"\"some_array2\":[1,2,3,4]"
+		"\"some_array3\":[]"
+		"}\n";
+	const int FIELDS_SOME_NESTED_STRUCT = 1 << 3;
+	int ret;
+
+	memset(&ts, 0, sizeof(ts));
+	ret = json_obj_parse(encoded, sizeof(encoded) - 1, test_descr,
+			     ARRAY_SIZE(test_descr), &ts);
+
+	zassert_equal(ret, FIELDS_SOME_NESTED_STRUCT,
+		     "'some_nested_struct' field decoded correctly");
+
+	zassert_equal(ts.some_nested_struct.nested_int, -1234,
+		     "Nested negative integer decoded correctly");
 }
 
 static void test_json_obj_arr_encoding(void)
@@ -583,6 +616,7 @@ void test_main(void)
 			 ztest_unit_test(test_json_decoding),
 			 ztest_unit_test(test_json_decoding_array_array),
 			 ztest_unit_test(test_json_decoding_null_value),
+			 ztest_unit_test(test_json_decoding_no_mapping_fields),
 			 ztest_unit_test(test_json_obj_arr_encoding),
 			 ztest_unit_test(test_json_obj_arr_decoding),
 			 ztest_unit_test(test_json_invalid_string),
