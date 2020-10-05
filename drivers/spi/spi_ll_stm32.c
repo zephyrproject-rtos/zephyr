@@ -730,7 +730,6 @@ static int transceive_dma(const struct device *dev,
 		while (LL_SPI_IsActiveFlag_BSY(spi) == 1) {
 		}
 
-		LL_SPI_Disable(spi);
 		LL_SPI_DisableDMAReq_TX(spi);
 		LL_SPI_DisableDMAReq_RX(spi);
 
