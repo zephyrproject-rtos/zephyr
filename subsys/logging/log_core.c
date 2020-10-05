@@ -99,6 +99,7 @@ uint32_t z_log_get_s_mask(const char *str, uint32_t nargs)
 			}
 			arm = false;
 			arg++;
+		} else {
 		}
 	}
 
@@ -210,6 +211,7 @@ static inline void msg_finalize(struct log_msg *msg,
 			k_timer_stop(&log_process_thread_timer);
 			k_sem_give(&log_process_thread_sem);
 		}
+	} else {
 	}
 }
 
@@ -370,6 +372,7 @@ uint32_t log_count_args(const char *fmt)
 		} else if (prev) {
 			args++;
 			prev = false;
+		} else {
 		}
 		fmt++;
 	}

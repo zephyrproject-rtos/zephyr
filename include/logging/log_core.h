@@ -282,7 +282,8 @@ static inline char z_log_minimal_level_to_char(int level)
 						       src_level,	       \
 						       __VA_ARGS__);	       \
 				}					       \
-			}						       \
+			} else {						       \
+			}					       \
 		}							       \
 		if (false) {						       \
 			/* Arguments checker present but never evaluated.*/    \
@@ -341,6 +342,7 @@ static inline char z_log_minimal_level_to_char(int level)
 						    _length,		       \
 						    src_level);		       \
 				}					       \
+			} else {				       \
 			}						       \
 		}							       \
 	} while (false)
@@ -738,6 +740,7 @@ __syscall void z_log_hexdump_from_user(uint32_t src_level_val,
 						src_level,		       \
 						_str, _valist, _argnum,        \
 						_strdup_action);	       \
+			} else {				       \
 			}						       \
 		}							       \
 	} while (false)
