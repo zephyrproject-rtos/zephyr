@@ -168,7 +168,7 @@ def test_props():
     '''Test Node.props (derived from DT and 'properties:' in the binding)'''
     edt = edtlib.EDT("test.dts", ["test-bindings"])
     filenames = {i: hpath(f'test-bindings/phandle-array-controller-{i}.yaml')
-                 for i in range(1, 4)}
+                 for i in range(0, 4)}
 
     assert str(edt.get_node("/props").props["int"]) == \
         "<Property, name: int, type: int, value: 1>"
@@ -199,6 +199,9 @@ def test_props():
 
     assert str(edt.get_node("/props").props["phandle-array-foos"]) == \
         f"<Property, name: phandle-array-foos, type: phandle-array, value: [<ControllerAndData, controller: <Node /ctrl-1 in 'test.dts', binding {filenames[1]}>, data: OrderedDict([('one', 1)])>, <ControllerAndData, controller: <Node /ctrl-2 in 'test.dts', binding {filenames[2]}>, data: OrderedDict([('one', 2), ('two', 3)])>]>"
+
+    assert str(edt.get_node("/props-2").props["phandle-array-foos"]) == \
+        f"<Property, name: phandle-array-foos, type: phandle-array, value: [<ControllerAndData, controller: <Node /ctrl-0-1 in 'test.dts', binding {filenames[0]}>, data: OrderedDict()>, <ControllerAndData, controller: <Node /ctrl-0-2 in 'test.dts', binding {filenames[0]}>, data: OrderedDict()>]>"
 
     assert str(edt.get_node("/props").props["foo-gpios"]) == \
         f"<Property, name: foo-gpios, type: phandle-array, value: [<ControllerAndData, controller: <Node /ctrl-1 in 'test.dts', binding {filenames[1]}>, data: OrderedDict([('gpio-one', 1)])>]>"

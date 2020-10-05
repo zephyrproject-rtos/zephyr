@@ -261,6 +261,22 @@
 		#phandle-array-foo-cells = <2>;
 	};
 
+	props-2 {
+		compatible = "props";
+		phandle-array-foos = < &{/ctrl-0-1} &{/ctrl-0-2} >;
+	};
+
+
+	ctrl-0-1 {
+		compatible = "phandle-array-controller-0";
+		#phandle-array-foo-cells = <0>;
+	};
+
+	ctrl-0-2 {
+		compatible = "phandle-array-controller-0";
+		#phandle-array-foo-cells = <0>;
+	};
+
 	//
 	// Test <prefix>-map, via gpio-map
 	//

@@ -1230,11 +1230,11 @@ class Node:
             # This type is a bit high-level for dtlib as it involves
             # information from bindings and *-names properties, so there's no
             # to_phandle_array() in dtlib. Do the type check ourselves.
-            if prop.type not in (TYPE_PHANDLE, TYPE_PHANDLES_AND_NUMS):
-                _err("expected property '{0}' in {1} in {2} to be assigned "
-                     "with '{0} = < &foo 1 2 ... &bar 3 4 ... >' (a mix of "
-                     "phandles and numbers), not '{3}'"
-                     .format(name, node.path, node.dt.filename, prop))
+            if prop.type not in (TYPE_PHANDLE, TYPE_PHANDLES, TYPE_PHANDLES_AND_NUMS):
+                _err(f"expected property '{name}' in {node.path} in "
+                     f"{node.dt.filename} to be assigned "
+                     f"with '{name} = < &foo ... &bar 1 ... &baz 2 3 >' "
+                     f"(a mix of phandles and numbers), not '{prop}'")
 
             return self._standard_phandle_val_list(prop)
 
