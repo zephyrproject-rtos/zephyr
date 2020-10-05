@@ -27,7 +27,7 @@ if(CONFIG_BT_LL_SW_SPLIT)
       ll_sw/nordic/lll/lll_scan_aux.c
       )
     zephyr_library_sources_ifdef(
-      CONFIG_BT_CTLR_SCAN_PERIODIC
+      CONFIG_BT_CTLR_SYNC_PERIODIC
       ll_sw/nordic/lll/lll_sync.c
       )
   endif()

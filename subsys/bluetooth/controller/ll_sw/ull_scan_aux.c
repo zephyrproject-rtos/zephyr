@@ -107,7 +107,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 
 	scan = NULL;
 	sync = NULL;
-	if (IS_ENABLED(CONFIG_BT_CTLR_SCAN_PERIODIC)) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC)) {
 		if (aux) {
 			struct lll_scan *lll_scan;
 
@@ -137,7 +137,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 	ptr = (uint8_t *)h + sizeof(*h);
 
 	if (h->adv_addr) {
-		if (IS_ENABLED(CONFIG_BT_CTLR_SCAN_PERIODIC) && sync &&
+		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && sync &&
 		    (pdu->tx_addr == scan->per_scan.adv_addr_type) &&
 		    !memcmp(ptr, scan->per_scan.adv_addr, BDADDR_SIZE)) {
 			scan->per_scan.state = LL_SYNC_STATE_ADDR_MATCH;
@@ -168,7 +168,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 		si = (void *)ptr;
 		ptr += sizeof(*si);
 
-		if (IS_ENABLED(CONFIG_BT_CTLR_SCAN_PERIODIC) && sync &&
+		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && sync &&
 		    adi && (adi->sid == scan->per_scan.sid) &&
 		    (scan->per_scan.state == LL_SYNC_STATE_ADDR_MATCH)) {
 			ull_sync_setup(scan, aux, rx, si);
@@ -271,7 +271,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 	return;
 
 ull_scan_aux_rx_flush:
-	if (IS_ENABLED(CONFIG_BT_CTLR_SCAN_PERIODIC) && sync) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && sync) {
 		scan->per_scan.state = LL_SYNC_STATE_IDLE;
 	}
 

@@ -12,7 +12,7 @@ struct ll_scan_set {
 	uint8_t is_enabled:1;
 	uint8_t own_addr_type:2;
 
-#if defined(CONFIG_BT_CTLR_SCAN_PERIODIC)
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	struct {
 		uint8_t sid;
 
