@@ -271,7 +271,8 @@ static void isr_rx(void *param)
 	/* Check CRC and generate Periodic Advertising Report */
 	if (crc_ok) {
 		/* TODO: */
-		BT_WARN("CRC OK");
+		BT_INFO("CRC OK, Periodic event sync-ed, report generation"
+			" is unsupported, work in progress.");
 	}
 
 isr_rx_done:
