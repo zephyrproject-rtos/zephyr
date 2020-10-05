@@ -9,15 +9,24 @@ import os
 import shlex
 import sys
 from re import fullmatch, escape
-from intelhex import IntelHex
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps
+
+try:
+    from intelhex import IntelHex
+except ImportError:
+    IntelHex = None
 
 # Helper function for inspecting hex files.
 # has_region returns True if hex file has any contents in a specific region
 # region_filter is a callable that takes an address as argument and
 # returns True if that address is in the region in question
 def has_region(regions, hex_file):
+    if IntelHex is None:
+        raise RuntimeError('one or more Python dependencies were missing; '
+                           "see the getting started guide for details on "
+                           "how to fix")
+
     try:
         ih = IntelHex(hex_file)
         return any((len(ih[rs:re]) > 0) for (rs, re) in regions)
