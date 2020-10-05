@@ -32,13 +32,13 @@ int lis2mdl_trigger_set(const struct device *dev,
 			  sensor_trigger_handler_t handler)
 {
 	struct lis2mdl_data *lis2mdl = dev->data;
-	union axis3bit16_t raw;
+	int16_t raw[3];
 
 	if (trig->chan == SENSOR_CHAN_MAGN_XYZ) {
 		lis2mdl->handler_drdy = handler;
 		if (handler) {
 			/* fetch raw data sample: re-trigger lost interrupt */
-			lis2mdl_magnetic_raw_get(lis2mdl->ctx, raw.u8bit);
+			lis2mdl_magnetic_raw_get(lis2mdl->ctx, raw);
 
 			return lis2mdl_enable_int(dev, 1);
 		} else {

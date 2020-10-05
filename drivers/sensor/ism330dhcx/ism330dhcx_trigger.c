@@ -30,10 +30,10 @@ static int ism330dhcx_enable_t_int(const struct device *dev, int enable)
 	ism330dhcx_pin_int2_route_t int2_route;
 
 	if (enable) {
-		union axis1bit16_t buf;
+		int16_t buf;
 
 		/* dummy read: re-trigger interrupt */
-		ism330dhcx_temperature_raw_get(ism330dhcx->ctx, buf.u8bit);
+		ism330dhcx_temperature_raw_get(ism330dhcx->ctx, &buf);
 	}
 
 	/* set interrupt (TEMP DRDY interrupt is only on INT2) */
@@ -57,10 +57,10 @@ static int ism330dhcx_enable_xl_int(const struct device *dev, int enable)
 	struct ism330dhcx_data *ism330dhcx = dev->data;
 
 	if (enable) {
-		union axis3bit16_t buf;
+		int16_t buf[3];
 
 		/* dummy read: re-trigger interrupt */
-		ism330dhcx_acceleration_raw_get(ism330dhcx->ctx, buf.u8bit);
+		ism330dhcx_acceleration_raw_get(ism330dhcx->ctx, buf);
 	}
 
 	/* set interrupt */
@@ -93,10 +93,10 @@ static int ism330dhcx_enable_g_int(const struct device *dev, int enable)
 	struct ism330dhcx_data *ism330dhcx = dev->data;
 
 	if (enable) {
-		union axis3bit16_t buf;
+		int16_t buf[3];
 
 		/* dummy read: re-trigger interrupt */
-		ism330dhcx_angular_rate_raw_get(ism330dhcx->ctx, buf.u8bit);
+		ism330dhcx_angular_rate_raw_get(ism330dhcx->ctx, buf);
 	}
 
 	/* set interrupt */

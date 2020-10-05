@@ -182,10 +182,10 @@ static int lis2dw12_sample_fetch(const struct device *dev,
 	struct lis2dw12_data *lis2dw12 = dev->data;
 	const struct lis2dw12_device_config *cfg = dev->config;
 	uint8_t shift;
-	union axis3bit16_t buf;
+	int16_t buf[3];
 
 	/* fetch raw data sample */
-	if (lis2dw12_acceleration_raw_get(lis2dw12->ctx, buf.u8bit) < 0) {
+	if (lis2dw12_acceleration_raw_get(lis2dw12->ctx, buf) < 0) {
 		LOG_DBG("Failed to fetch raw data sample");
 		return -EIO;
 	}
@@ -197,9 +197,9 @@ static int lis2dw12_sample_fetch(const struct device *dev,
 		shift = LIS2DW12_SHIFT_PMOTHER;
 	}
 
-	lis2dw12->acc[0] = sys_le16_to_cpu(buf.i16bit[0]) >> shift;
-	lis2dw12->acc[1] = sys_le16_to_cpu(buf.i16bit[1]) >> shift;
-	lis2dw12->acc[2] = sys_le16_to_cpu(buf.i16bit[2]) >> shift;
+	lis2dw12->acc[0] = sys_le16_to_cpu(buf[0]) >> shift;
+	lis2dw12->acc[1] = sys_le16_to_cpu(buf[1]) >> shift;
+	lis2dw12->acc[2] = sys_le16_to_cpu(buf[2]) >> shift;
 
 	return 0;
 }
