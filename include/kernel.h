@@ -266,7 +266,9 @@ struct _mem_domain_info {
 
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 struct _thread_userspace_local_data {
+#if defined(CONFIG_ERRNO) && !defined(CONFIG_ERRNO_IN_TLS)
 	int errno_var;
+#endif
 };
 #endif
 
@@ -329,7 +331,7 @@ struct k_thread {
 	struct _thread_userspace_local_data *userspace_local_data;
 #endif
 
-#ifdef CONFIG_ERRNO
+#if defined(CONFIG_ERRNO) && !defined(CONFIG_ERRNO_IN_TLS)
 #ifndef CONFIG_USERSPACE
 	/** per-thread errno variable */
 	int errno_var;
