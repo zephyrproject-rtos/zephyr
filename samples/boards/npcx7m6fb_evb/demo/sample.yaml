@@ -1,0 +1,6 @@
+sample:
+  name: Console example on NPCX7M5FB EVB
+tests:
+  sample.board.npcx7m6fb_evb_demo.console:
+    platform_whitelist: npcx7m6fb_evb_demo
+    tags: board
