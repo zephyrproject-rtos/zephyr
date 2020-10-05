@@ -72,7 +72,7 @@ NET_BUF_POOL_DEFINE(prep_pool, CONFIG_BT_ATT_PREPARE_COUNT, BT_ATT_MTU,
 #endif /* CONFIG_BT_ATT_PREPARE_COUNT */
 
 K_MEM_SLAB_DEFINE(req_slab, sizeof(struct bt_att_req),
-		  CONFIG_BT_ATT_TX_MAX, 16);
+		  CONFIG_BT_L2CAP_TX_BUF_COUNT, 16);
 
 enum {
 	ATT_PENDING_RSP,
@@ -94,7 +94,6 @@ struct bt_att_chan {
 	struct bt_att_req	*req;
 	struct k_fifo		tx_queue;
 	struct k_delayed_work	timeout_work;
-	struct k_sem            tx_sem;
 	void (*sent)(struct bt_att_chan *chan);
 	sys_snode_t		node;
 };
@@ -312,12 +311,7 @@ static void bt_att_sent(struct bt_l2cap_chan *ch)
 	}
 
 	/* Process global queue */
-	err = process_queue(chan, &att->tx_queue);
-	if (!err) {
-		return;
-	}
-
-	k_sem_give(&chan->tx_sem);
+	(void)process_queue(chan, &att->tx_queue);
 }
 
 static void chan_cfm_sent(struct bt_att_chan *chan)
@@ -469,13 +463,6 @@ static int bt_att_chan_send(struct bt_att_chan *chan, struct net_buf *buf,
 	BT_DBG("chan %p flags %u code 0x%02x", chan, atomic_get(chan->flags),
 	       hdr->code);
 
-	/* Don't use tx_sem if caller has set it own callback */
-	if (!cb) {
-		if (k_sem_take(&chan->tx_sem, K_NO_WAIT) < 0) {
-			return -EAGAIN;
-		}
-	}
-
 	return chan_send(chan, buf, cb);
 }
 
@@ -570,8 +557,6 @@ static uint8_t att_mtu_req(struct bt_att_chan *chan, struct net_buf *buf)
 static int bt_att_chan_req_send(struct bt_att_chan *chan,
 				struct bt_att_req *req)
 {
-	int err;
-
 	__ASSERT_NO_MSG(chan);
 	__ASSERT_NO_MSG(req);
 	__ASSERT_NO_MSG(req->func);
@@ -579,16 +564,7 @@ static int bt_att_chan_req_send(struct bt_att_chan *chan,
 
 	BT_DBG("req %p", req);
 
-	if (k_sem_take(&chan->tx_sem, K_NO_WAIT) < 0) {
-		return -EAGAIN;
-	}
-
-	err = chan_req_send(chan, req);
-	if (err < 0) {
-		k_sem_give(&chan->tx_sem);
-	}
-
-	return err;
+	return chan_req_send(chan, req);
 }
 
 static void att_process(struct bt_att *att)
@@ -2572,16 +2548,10 @@ static void att_reset(struct bt_att *att)
 static void att_chan_detach(struct bt_att_chan *chan)
 {
 	struct net_buf *buf;
-	int i;
 
 	BT_DBG("chan %p", chan);
 
 	sys_slist_find_and_remove(&chan->att->chans, &chan->node);
-
-	/* Ensure that any waiters are woken up */
-	for (i = 0; i < CONFIG_BT_ATT_TX_MAX; i++) {
-		k_sem_give(&chan->tx_sem);
-	}
 
 	/* Release pending buffers */
 	while ((buf = net_buf_get(&chan->tx_queue, K_NO_WAIT))) {
@@ -2810,7 +2780,6 @@ static struct bt_att_chan *att_chan_new(struct bt_att *att, atomic_val_t flags)
 	(void)memset(chan, 0, sizeof(*chan));
 	chan->chan.chan.ops = &ops;
 	k_fifo_init(&chan->tx_queue);
-	k_sem_init(&chan->tx_sem, CONFIG_BT_ATT_TX_MAX, CONFIG_BT_ATT_TX_MAX);
 	atomic_set(chan->flags, flags);
 	chan->att = att;
 
