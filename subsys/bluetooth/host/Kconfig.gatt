@@ -24,16 +24,6 @@ config BT_ATT_PREPARE_COUNT
 	  Number of buffers available for ATT prepare write, setting
 	  this to 0 disables GATT long/reliable writes.
 
-config BT_ATT_TX_MAX
-	int "Maximum number of queued outgoing ATT PDUs"
-	default BT_L2CAP_TX_BUF_COUNT
-	range 1 BT_L2CAP_TX_BUF_COUNT
-	help
-	  Number of ATT PDUs that can be at a single moment queued for
-	  transmission. If the application tries to send more than this
-	  amount the calls will block until an existing queued PDU gets
-	  sent.
-
 config BT_EATT
 	bool "Enhanced ATT Bearers support [EXPERIMENTAL]"
 	depends on BT_L2CAP_ECRED
