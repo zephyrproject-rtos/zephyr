@@ -18,6 +18,10 @@
 
 #include "soc_flash_nrf.h"
 
+#define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(flash_nrf);
+
 #if DT_NODE_HAS_STATUS(DT_INST(0, nordic_nrf51_flash_controller), okay)
 #define DT_DRV_COMPAT nordic_nrf51_flash_controller
 #elif DT_NODE_HAS_STATUS(DT_INST(0, nordic_nrf52_flash_controller), okay)
@@ -121,6 +125,8 @@ static int flash_nrf_read(const struct device *dev, off_t addr,
 	if (is_regular_addr_valid(addr, len)) {
 		addr += DT_REG_ADDR(SOC_NV_FLASH_NODE);
 	} else if (!is_uicr_addr_valid(addr, len)) {
+		LOG_ERR("invalid address: 0x%08lx:%zu",
+				(unsigned long)addr, len);
 		return -EINVAL;
 	}
 
@@ -141,11 +147,15 @@ static int flash_nrf_write(const struct device *dev, off_t addr,
 	if (is_regular_addr_valid(addr, len)) {
 		addr += DT_REG_ADDR(SOC_NV_FLASH_NODE);
 	} else if (!is_uicr_addr_valid(addr, len)) {
+		LOG_ERR("invalid address: 0x%08lx:%zu",
+				(unsigned long)addr, len);
 		return -EINVAL;
 	}
 
 #if !IS_ENABLED(CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS)
 	if (!is_aligned_32(addr) || (len % sizeof(uint32_t))) {
+		LOG_ERR("not word-aligned: 0x%08lx:%zu",
+				(unsigned long)addr, len);
 		return -EINVAL;
 	}
 #endif
@@ -179,6 +189,8 @@ static int flash_nrf_erase(const struct device *dev, off_t addr, size_t size)
 	if (is_regular_addr_valid(addr, size)) {
 		/* Erase can only be done per page */
 		if (((addr % pg_size) != 0) || ((size % pg_size) != 0)) {
+			LOG_ERR("unaligned address: 0x%08lx:%zu",
+					(unsigned long)addr, size);
 			return -EINVAL;
 		}
 
@@ -189,10 +201,14 @@ static int flash_nrf_erase(const struct device *dev, off_t addr, size_t size)
 		addr += DT_REG_ADDR(SOC_NV_FLASH_NODE);
 #ifdef CONFIG_SOC_FLASH_NRF_UICR
 	} else if (addr != (off_t)NRF_UICR || size != sizeof(*NRF_UICR)) {
+		LOG_ERR("invalid address: 0x%08lx:%zu",
+				(unsigned long)addr, size);
 		return -EINVAL;
 	}
 #else
 	} else {
+		LOG_ERR("invalid address: 0x%08lx:%zu",
+				(unsigned long)addr, size);
 		return -EINVAL;
 	}
 #endif /* CONFIG_SOC_FLASH_NRF_UICR */
