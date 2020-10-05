@@ -148,7 +148,7 @@ static void uart_mux_cb_work(struct k_work *work)
 	struct uart_mux_dev_data *dev_data =
 		CONTAINER_OF(work, struct uart_mux_dev_data, cb_work);
 
-	dev_data->cb(dev_data->cb_user_data);
+	dev_data->cb(dev_data->dev, dev_data->cb_user_data);
 }
 
 static int uart_mux_consume_ringbuf(struct uart_mux *uart_mux)
@@ -286,6 +286,35 @@ static void uart_mux_flush_isr(const struct device *dev)
 	while (uart_fifo_read(dev, &c, 1) > 0) {
 		continue;
 	}
+}
+
+void uart_mux_disable(const struct device *dev)
+{
+	struct uart_mux_dev_data *dev_data = DEV_DATA(dev);
+	const struct device *uart = dev_data->real_uart->uart;
+
+	uart_irq_rx_disable(uart);
+	uart_irq_tx_disable(uart);
+	uart_mux_flush_isr(uart);
+
+	gsm_mux_detach(dev_data->real_uart->mux);
+}
+
+void uart_mux_enable(const struct device *dev)
+{
+	struct uart_mux_dev_data *dev_data = DEV_DATA(dev);
+	struct uart_mux *real_uart = dev_data->real_uart;
+
+	LOG_DBG("Claiming uart for uart_mux");
+
+	uart_irq_rx_disable(real_uart->uart);
+	uart_irq_tx_disable(real_uart->uart);
+	uart_mux_flush_isr(real_uart->uart);
+	uart_irq_callback_user_data_set(
+		real_uart->uart, uart_mux_isr,
+		real_uart);
+
+	uart_irq_rx_enable(real_uart->uart);
 }
 
 static void dlci_created_cb(struct gsm_dlci *dlci, bool connected,

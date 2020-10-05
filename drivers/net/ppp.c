@@ -847,7 +847,7 @@ static int ppp_start(const struct device *dev)
 			return -EINVAL;
 		}
 
-		LOG_DBG("Initializing PPP to use %s", dev_name);
+		LOG_INF("Initializing PPP to use %s", dev_name);
 
 		context->dev = device_get_binding(dev_name);
 		if (!context->dev) {
@@ -874,7 +874,7 @@ static int ppp_stop(const struct device *dev)
 	struct ppp_driver_context *context = dev->data;
 
 	net_ppp_carrier_off(context->iface);
-
+	context->modem_init_done = false;
 	return 0;
 }
 

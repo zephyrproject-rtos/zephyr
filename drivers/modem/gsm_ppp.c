@@ -61,6 +61,8 @@ static struct gsm_modem {
 	const struct device *at_dev;
 	const struct device *control_dev;
 
+	struct net_if *iface;
+
 	bool mux_enabled : 1;
 	bool mux_setup_done : 1;
 	bool setup_done : 1;
@@ -310,18 +312,39 @@ static int gsm_setup_mccmno(struct gsm_modem *gsm)
 	return ret;
 }
 
+static struct net_if *ppp_net_if(void)
+{
+	return net_if_get_first_by_type(&NET_L2_GET_NAME(PPP));
+}
+
 static void set_ppp_carrier_on(struct gsm_modem *gsm)
 {
-	const struct device *ppp_dev = device_get_binding(CONFIG_NET_PPP_DRV_NAME);
-	const struct ppp_api *api;
+	static const struct ppp_api *api;
+	const struct device *ppp_dev =
+		device_get_binding(CONFIG_NET_PPP_DRV_NAME);
+	struct net_if *iface = gsm->iface;
+	int ret;
 
 	if (!ppp_dev) {
-		LOG_ERR("Cannot find PPP %s!", "device");
+		LOG_ERR("Cannot find PPP %s!", CONFIG_NET_PPP_DRV_NAME);
 		return;
 	}
 
-	api = (const struct ppp_api *)ppp_dev->api;
-	api->start(ppp_dev);
+	if (!api) {
+		api = (const struct ppp_api *)ppp_dev->api;
+
+		/* For the first call, we want to call ppp_start()... */
+		ret = api->start(ppp_dev);
+		if (ret) {
+			LOG_ERR("ppp start returned %d", ret);
+		}
+	} else {
+		/* ...but subsequent calls should be to ppp_enable() */
+		ret = net_if_l2(iface)->enable(iface, true);
+		if (ret) {
+			LOG_ERR("ppp l2 enable returned %d", ret);
+		}
+	}
 }
 
 static void gsm_finalize_connection(struct gsm_modem *gsm)
@@ -336,7 +359,7 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 				     "AT", &gsm->sem_response,
 				     GSM_CMD_AT_TIMEOUT);
 		if (ret < 0) {
-			LOG_DBG("modem setup returned %d, %s",
+			LOG_ERR("modem setup returned %d, %s",
 				ret, "retrying...");
 			(void)k_delayed_work_submit(&gsm->gsm_configure_work,
 						    K_SECONDS(1));
@@ -392,13 +415,6 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 	}
 
 	gsm->setup_done = true;
-
-	/* If we are not muxing, the modem interface and gsm_rx() thread is not
-	 * needed as PPP will handle the incoming traffic internally.
-	 */
-	if (!IS_ENABLED(CONFIG_GSM_MUX)) {
-		k_thread_abort(&gsm_rx_thread);
-	}
 
 	set_ppp_carrier_on(gsm);
 
@@ -511,14 +527,24 @@ static void mux_setup(struct k_work *work)
 	const struct device *uart = device_get_binding(CONFIG_MODEM_GSM_UART_NAME);
 	int ret;
 
+	/* We need to call this to reactivate mux ISR. Note: This is only called
+	 * after re-initing gsm_ppp.
+	 */
+	if (IS_ENABLED(CONFIG_GSM_MUX) &&
+	    gsm->ppp_dev && gsm->state == STATE_CONTROL_CHANNEL) {
+		uart_mux_enable(gsm->ppp_dev);
+	}
+
 	switch (gsm->state) {
 	case STATE_CONTROL_CHANNEL:
 		/* Get UART device. There is one dev / DLCI */
-		gsm->control_dev = uart_mux_alloc();
 		if (gsm->control_dev == NULL) {
-			LOG_DBG("Cannot get UART mux for %s channel",
-				"control");
-			goto fail;
+			gsm->control_dev = uart_mux_alloc();
+			if (gsm->control_dev == NULL) {
+				LOG_DBG("Cannot get UART mux for %s channel",
+					"control");
+				goto fail;
+			}
 		}
 
 		gsm->state = STATE_PPP_CHANNEL;
@@ -531,10 +557,13 @@ static void mux_setup(struct k_work *work)
 		break;
 
 	case STATE_PPP_CHANNEL:
-		gsm->ppp_dev = uart_mux_alloc();
 		if (gsm->ppp_dev == NULL) {
-			LOG_DBG("Cannot get UART mux for %s channel", "PPP");
-			goto fail;
+			gsm->ppp_dev = uart_mux_alloc();
+			if (gsm->ppp_dev == NULL) {
+				LOG_DBG("Cannot get UART mux for %s channel",
+					"PPP");
+				goto fail;
+			}
 		}
 
 		gsm->state = STATE_AT_CHANNEL;
@@ -547,10 +576,13 @@ static void mux_setup(struct k_work *work)
 		break;
 
 	case STATE_AT_CHANNEL:
-		gsm->at_dev = uart_mux_alloc();
 		if (gsm->at_dev == NULL) {
-			LOG_DBG("Cannot get UART mux for %s channel", "AT");
-			goto fail;
+			gsm->at_dev = uart_mux_alloc();
+			if (gsm->at_dev == NULL) {
+				LOG_DBG("Cannot get UART mux for %s channel",
+					"AT");
+				goto fail;
+			}
 		}
 
 		gsm->state = STATE_DONE;
@@ -623,6 +655,9 @@ static void gsm_configure(struct k_work *work)
 			gsm->mux_enabled = true;
 		} else {
 			gsm->mux_enabled = false;
+			(void)k_delayed_work_submit(&gsm->gsm_configure_work,
+						    K_NO_WAIT);
+			return;
 		}
 
 		LOG_DBG("GSM muxing %s", gsm->mux_enabled ? "enabled" :
@@ -641,6 +676,39 @@ static void gsm_configure(struct k_work *work)
 	}
 
 	gsm_finalize_connection(gsm);
+}
+
+void gsm_ppp_start(const struct device *device)
+{
+	struct gsm_modem *gsm = device->data;
+
+	/* Re-init underlying UART comms */
+	int r = modem_iface_uart_init_dev(&gsm->context.iface,
+					  CONFIG_MODEM_GSM_UART_NAME);
+	if (r) {
+		LOG_ERR("modem_iface_uart_init returned %d", r);
+		return;
+	}
+
+	k_delayed_work_init(&gsm->gsm_configure_work, gsm_configure);
+	(void)k_delayed_work_submit(&gsm->gsm_configure_work, K_NO_WAIT);
+}
+
+void gsm_ppp_stop(const struct device *device)
+{
+	struct gsm_modem *gsm = device->data;
+	struct net_if *iface = gsm->iface;
+
+	net_if_l2(iface)->enable(iface, false);
+
+	if (IS_ENABLED(CONFIG_GSM_MUX)) {
+		/* Lower mux_enabled flag to trigger re-sending AT+CMUX etc */
+		gsm->mux_enabled = false;
+
+		if (gsm->ppp_dev) {
+			uart_mux_disable(gsm->ppp_dev);
+		}
+	}
 }
 
 static int gsm_init(const struct device *device)
@@ -706,9 +774,13 @@ static int gsm_init(const struct device *device)
 			gsm, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 	k_thread_name_set(&gsm_rx_thread, "gsm_rx");
 
-	k_delayed_work_init(&gsm->gsm_configure_work, gsm_configure);
+	gsm->iface = ppp_net_if();
+	if (!gsm->iface) {
+		LOG_ERR("Couldn't find ppp net_if!");
+		return -ENODEV;
+	}
 
-	(void)k_delayed_work_submit(&gsm->gsm_configure_work, K_NO_WAIT);
+	gsm_ppp_start(device);
 
 	return 0;
 }

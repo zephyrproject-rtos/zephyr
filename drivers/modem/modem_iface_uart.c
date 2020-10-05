@@ -147,16 +147,33 @@ int modem_iface_uart_init_dev(struct modem_iface *iface,
 			      const char *dev_name)
 {
 	/* get UART device */
-	iface->dev = device_get_binding(dev_name);
-	if (!iface->dev) {
+	const struct device *dev = device_get_binding(dev_name);
+	const struct device *prev = iface->dev;
+
+	if (!dev) {
 		return -ENODEV;
 	}
 
-	uart_irq_rx_disable(iface->dev);
-	uart_irq_tx_disable(iface->dev);
+	/* Check if there's already a device inited to this iface. If so,
+	 * interrupts needs to be disabled on that too before switching to avoid
+	 * race conditions with modem_iface_uart_isr.
+	 */
+	if (prev) {
+		uart_irq_tx_disable(prev);
+		uart_irq_rx_disable(prev);
+	}
+
+	uart_irq_rx_disable(dev);
+	uart_irq_tx_disable(dev);
+	iface->dev = dev;
+
 	modem_iface_uart_flush(iface);
 	uart_irq_callback_set(iface->dev, modem_iface_uart_isr);
 	uart_irq_rx_enable(iface->dev);
+
+	if (prev) {
+		uart_irq_rx_enable(prev);
+	}
 
 	return 0;
 }
