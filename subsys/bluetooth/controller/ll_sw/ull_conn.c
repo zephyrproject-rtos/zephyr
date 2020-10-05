@@ -5432,6 +5432,15 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			goto ull_conn_rx_unknown_rsp_send;
 		}
 
+		/* Workaround to delay encryption procedure initiated by peer
+		 * while a procedure with instant is in progress which was
+		 * initiated by the local device.
+		 */
+		nack = (((conn->llcp_req - conn->llcp_ack) & 0x03) == 0x02);
+		if (nack) {
+			break;
+		}
+
 #if defined(CONFIG_BT_CTLR_FAST_ENC)
 		/* TODO: BT Spec. text: may finalize the sending of additional
 		 * data channel PDUs queued in the controller.
