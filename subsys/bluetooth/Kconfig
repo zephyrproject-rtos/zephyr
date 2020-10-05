@@ -5,6 +5,9 @@
 
 menuconfig BT
 	bool "Bluetooth"
+	# Some BT threads use co-op priorities to implement critical sections,
+	# will need some refactoring to work on SMP systems.
+	depends on !SMP
 	select NET_BUF
 	help
 	  This option enables Bluetooth support.
