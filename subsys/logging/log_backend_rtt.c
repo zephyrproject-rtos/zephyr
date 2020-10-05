@@ -222,6 +222,7 @@ static int data_out_block_mode(uint8_t *data, size_t length, void *ctx)
 		} else if (host_present) {
 			retry_cnt--;
 			on_failed_write(retry_cnt);
+		} else {
 		}
 	} while ((ret == 0) && host_present);
 

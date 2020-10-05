@@ -149,6 +149,7 @@ static void msg_free(struct log_msg *msg)
 		if (log_is_strdup(str)) {
 			log_free((void *)(str));
 		}
+	} else {
 	}
 
 	if (msg->hdr.params.generic.ext == 1) {
