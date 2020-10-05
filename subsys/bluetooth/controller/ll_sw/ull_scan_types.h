@@ -24,7 +24,11 @@ struct ll_scan_set {
 
 		struct node_rx_hdr *node_rx_estab;
 
-		struct ll_sync_set *sync;
+		/* Non-Null when creating sync, reset in ISR context on
+		 * synchronisation state and checked in Thread context when
+		 * cancelling sync create, hence the volatile keyword.
+		 */
+		struct ll_sync_set *volatile sync;
 	} per_scan;
 #endif
 };

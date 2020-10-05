@@ -185,7 +185,7 @@ uint8_t ll_sync_create_cancel(void **rx)
 	/* Check for race condition where in sync is established when sync
 	 * context was set to NULL.
 	 */
-	if (sync->timeout_reload) {
+	if (!sync || sync->timeout_reload) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
