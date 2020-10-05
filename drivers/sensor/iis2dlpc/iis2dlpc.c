@@ -182,10 +182,10 @@ static int iis2dlpc_sample_fetch(const struct device *dev,
 	struct iis2dlpc_data *iis2dlpc = dev->data;
 	const struct iis2dlpc_device_config *cfg = dev->config;
 	uint8_t shift;
-	union axis3bit16_t buf;
+	int16_t buf[3];
 
 	/* fetch raw data sample */
-	if (iis2dlpc_acceleration_raw_get(iis2dlpc->ctx, buf.u8bit) < 0) {
+	if (iis2dlpc_acceleration_raw_get(iis2dlpc->ctx, buf) < 0) {
 		LOG_DBG("Failed to fetch raw data sample");
 		return -EIO;
 	}
@@ -197,9 +197,9 @@ static int iis2dlpc_sample_fetch(const struct device *dev,
 		shift = IIS2DLPC_SHIFT_PMOTHER;
 	}
 
-	iis2dlpc->acc[0] = sys_le16_to_cpu(buf.i16bit[0]) >> shift;
-	iis2dlpc->acc[1] = sys_le16_to_cpu(buf.i16bit[1]) >> shift;
-	iis2dlpc->acc[2] = sys_le16_to_cpu(buf.i16bit[2]) >> shift;
+	iis2dlpc->acc[0] = sys_le16_to_cpu(buf[0]) >> shift;
+	iis2dlpc->acc[1] = sys_le16_to_cpu(buf[1]) >> shift;
+	iis2dlpc->acc[2] = sys_le16_to_cpu(buf[2]) >> shift;
 
 	return 0;
 }

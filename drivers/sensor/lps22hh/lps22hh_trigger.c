@@ -43,14 +43,14 @@ int lps22hh_trigger_set(const struct device *dev,
 			  sensor_trigger_handler_t handler)
 {
 	struct lps22hh_data *lps22hh = dev->data;
-	union axis1bit32_t raw_press;
+	uint32_t raw_press;
 
 	if (trig->chan == SENSOR_CHAN_ALL) {
 		lps22hh->handler_drdy = handler;
 		if (handler) {
 			/* dummy read: re-trigger interrupt */
 			if (lps22hh_pressure_raw_get(lps22hh->ctx,
-			    raw_press.u8bit) < 0) {
+			    &raw_press) < 0) {
 				LOG_DBG("Failed to read sample");
 				return -EIO;
 			}

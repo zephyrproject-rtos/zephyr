@@ -27,7 +27,7 @@ static int lsm6dso_enable_t_int(const struct device *dev, int enable)
 {
 	const struct lsm6dso_config *cfg = dev->config;
 	struct lsm6dso_data *lsm6dso = dev->data;
-	lsm6dso_pin_int2_route_t int2_route;
+	lsm6dso_int2_ctrl_t int2_ctrl;
 
 	if (enable) {
 		union axis1bit16_t buf;
@@ -41,10 +41,10 @@ static int lsm6dso_enable_t_int(const struct device *dev, int enable)
 		return -EIO;
 
 	lsm6dso_read_reg(lsm6dso->ctx, LSM6DSO_INT2_CTRL,
-			 (uint8_t *)&int2_route.int2_ctrl, 1);
+			 (uint8_t *)&int2_ctrl, 1);
 	int2_route.int2_ctrl.int2_drdy_temp = enable;
 	return lsm6dso_write_reg(lsm6dso->ctx, LSM6DSO_INT2_CTRL,
-				 (uint8_t *)&int2_route.int2_ctrl, 1);
+				 (uint8_t *)&int2_ctrl, 1);
 }
 #endif
 
@@ -65,22 +65,22 @@ static int lsm6dso_enable_xl_int(const struct device *dev, int enable)
 
 	/* set interrupt */
 	if (cfg->int_pin == 1) {
-		lsm6dso_pin_int1_route_t int1_route;
+		lsm6dso_int1_ctrl_t int1_ctrl;
 
 		lsm6dso_read_reg(lsm6dso->ctx, LSM6DSO_INT1_CTRL,
-				 (uint8_t *)&int1_route.int1_ctrl, 1);
+				 (uint8_t *)&int1_ctrl, 1);
 
-		int1_route.int1_ctrl.int1_drdy_xl = enable;
+		int1_ctrl.int1_drdy_xl = enable;
 		return lsm6dso_write_reg(lsm6dso->ctx, LSM6DSO_INT1_CTRL,
-					 (uint8_t *)&int1_route.int1_ctrl, 1);
+					 (uint8_t *)&int1_ctrl, 1);
 	} else {
-		lsm6dso_pin_int2_route_t int2_route;
+		lsm6dso_int2_ctrl_t int2_ctrl;
 
 		lsm6dso_read_reg(lsm6dso->ctx, LSM6DSO_INT2_CTRL,
-				 (uint8_t *)&int2_route.int2_ctrl, 1);
-		int2_route.int2_ctrl.int2_drdy_xl = enable;
+				 (uint8_t *)&int2_ctrl, 1);
+		int2_ctrl.int2_drdy_xl = enable;
 		return lsm6dso_write_reg(lsm6dso->ctx, LSM6DSO_INT2_CTRL,
-					 (uint8_t *)&int2_route.int2_ctrl, 1);
+					 (uint8_t *)&int2_ctrl, 1);
 	}
 }
 
@@ -101,21 +101,21 @@ static int lsm6dso_enable_g_int(const struct device *dev, int enable)
 
 	/* set interrupt */
 	if (cfg->int_pin == 1) {
-		lsm6dso_pin_int1_route_t int1_route;
+		lsm6dso_int1_ctrl_t int1_ctrl;
 
 		lsm6dso_read_reg(lsm6dso->ctx, LSM6DSO_INT1_CTRL,
-				 (uint8_t *)&int1_route.int1_ctrl, 1);
-		int1_route.int1_ctrl.int1_drdy_g = enable;
+				 (uint8_t *)&int1_ctrl, 1);
+		int1_ctrl.int1_drdy_g = enable;
 		return lsm6dso_write_reg(lsm6dso->ctx, LSM6DSO_INT1_CTRL,
-					 (uint8_t *)&int1_route.int1_ctrl, 1);
+					 (uint8_t *)&int1_ctrl, 1);
 	} else {
-		lsm6dso_pin_int2_route_t int2_route;
+		lsm6dso_int2_ctrl_t int2_ctrl;
 
 		lsm6dso_read_reg(lsm6dso->ctx, LSM6DSO_INT2_CTRL,
-				 (uint8_t *)&int2_route.int2_ctrl, 1);
-		int2_route.int2_ctrl.int2_drdy_g = enable;
+				 (uint8_t *)&int2_ctrl, 1);
+		int2_ctrl.int2_drdy_g = enable;
 		return lsm6dso_write_reg(lsm6dso->ctx, LSM6DSO_INT2_CTRL,
-					 (uint8_t *)&int2_route.int2_ctrl, 1);
+					 (uint8_t *)&int2_ctrl, 1);
 	}
 }
 

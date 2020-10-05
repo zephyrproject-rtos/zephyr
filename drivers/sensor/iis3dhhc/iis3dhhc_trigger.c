@@ -42,13 +42,13 @@ int iis3dhhc_trigger_set(const struct device *dev,
 			 sensor_trigger_handler_t handler)
 {
 	struct iis3dhhc_data *iis3dhhc = dev->data;
-	union axis3bit16_t raw;
+	int16_t raw[3];
 
 	if (trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
 		iis3dhhc->handler_drdy = handler;
 		if (handler) {
 			/* dummy read: re-trigger interrupt */
-			iis3dhhc_acceleration_raw_get(iis3dhhc->ctx, raw.u8bit);
+			iis3dhhc_acceleration_raw_get(iis3dhhc->ctx, raw);
 			return iis3dhhc_enable_int(dev, PROPERTY_ENABLE);
 		} else {
 			return iis3dhhc_enable_int(dev, PROPERTY_DISABLE);

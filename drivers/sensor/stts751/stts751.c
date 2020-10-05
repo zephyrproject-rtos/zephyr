@@ -33,16 +33,16 @@ static int stts751_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
 	struct stts751_data *data = dev->data;
-	union axis1bit16_t raw_temp;
+	int16_t raw_temp;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	if (stts751_temperature_raw_get(data->ctx, &raw_temp.i16bit) < 0) {
+	if (stts751_temperature_raw_get(data->ctx, &raw_temp) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
 
-	data->sample_temp = raw_temp.i16bit;
+	data->sample_temp = raw_temp;
 
 	return 0;
 }

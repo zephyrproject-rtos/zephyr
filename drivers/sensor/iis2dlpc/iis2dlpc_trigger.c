@@ -80,7 +80,7 @@ int iis2dlpc_trigger_set(const struct device *dev,
 			  sensor_trigger_handler_t handler)
 {
 	struct iis2dlpc_data *iis2dlpc = dev->data;
-	union axis3bit16_t raw;
+	int16_t raw[3];
 	int state = (handler != NULL) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
 
 	switch (trig->type) {
@@ -88,7 +88,7 @@ int iis2dlpc_trigger_set(const struct device *dev,
 		iis2dlpc->drdy_handler = handler;
 		if (state) {
 			/* dummy read: re-trigger interrupt */
-			iis2dlpc_acceleration_raw_get(iis2dlpc->ctx, raw.u8bit);
+			iis2dlpc_acceleration_raw_get(iis2dlpc->ctx, raw);
 		}
 		return iis2dlpc_enable_int(dev, SENSOR_TRIG_DATA_READY, state);
 #ifdef CONFIG_IIS2DLPC_PULSE
