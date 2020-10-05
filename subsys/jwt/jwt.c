@@ -127,15 +127,20 @@ static int base64_append_bytes(const char *bytes, size_t len,
 	return 0;
 }
 
-struct jwt_header {
-	char *typ;
-	char *alg;
-};
-
-static struct json_obj_descr jwt_header_desc[] = {
-	JSON_OBJ_DESCR_PRIM(struct jwt_header, alg, JSON_TOK_STRING),
-	JSON_OBJ_DESCR_PRIM(struct jwt_header, typ, JSON_TOK_STRING),
-};
+/*
+ * Pre-computed JWT header
+ * Use https://www.base64encode.org/ for update
+ */
+static const char jwt_header[] =
+#ifdef CONFIG_JWT_SIGN_RSA
+	/* {"alg":"RS256","typ":"JWT"} */
+	"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9"
+#endif
+#ifdef CONFIG_JWT_SIGN_ECDSA
+	/* {"alg":"ES256","typ":"JWT"} */
+	"eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9"
+#endif
+;
 
 struct jwt_payload {
 	int32_t exp;
@@ -154,23 +159,11 @@ static struct json_obj_descr jwt_payload_desc[] = {
  */
 static void jwt_add_header(struct jwt_builder *builder)
 {
-	static const struct jwt_header head = {
-		.typ = "JWT",
-#ifdef CONFIG_JWT_SIGN_RSA
-		.alg = "RS256",
-#endif
-#ifdef CONFIG_JWT_SIGN_ECDSA
-		.alg = "ES256",
-#endif
-	};
+	int jwt_header_len = ARRAY_SIZE(jwt_header) - 1;
 
-	int res = json_obj_encode(jwt_header_desc, ARRAY_SIZE(jwt_header_desc),
-				  &head, base64_append_bytes, builder);
-	if (res != 0) {
-		/* Log an error here. */
-		return;
-	}
-	base64_flush(builder);
+	strncpy(builder->buf, jwt_header, builder->len - 1);
+	builder->buf += jwt_header_len;
+	builder->len -= jwt_header_len;
 }
 
 int jwt_add_payload(struct jwt_builder *builder,
