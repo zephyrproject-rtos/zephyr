@@ -20,7 +20,7 @@
  */
 
 /* Port A */
-#define STM32L4X_PINMUX_FUNC_PA0_PWM2_CH1                                      \
+#define STM32L4X_PINMUX_FUNC_PA0_PWM2_CH1 __DEPRECATED_MACRO                                      \
 	(STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL)
 #define STM32L4X_PINMUX_FUNC_PA0_USART2_CTS                                    \
 	(STM32_PINMUX_ALT_FUNC_7 | STM32_OPENDRAIN_PULLUP)
@@ -51,7 +51,7 @@
 	(STM32_PINMUX_ALT_FUNC_6 | STM32_PUSHPULL_PULLUP)
 #define STM32L4X_PINMUX_FUNC_PA4_ADC12_IN9 STM32_MODER_ANALOG_MODE
 
-#define STM32L4X_PINMUX_FUNC_PA5_PWM2_CH1                                      \
+#define STM32L4X_PINMUX_FUNC_PA5_PWM2_CH1 __DEPRECATED_MACRO                                      \
 	(STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL)
 #define STM32L4X_PINMUX_FUNC_PA5_SPI1_SCK                                      \
 	(STM32_PINMUX_ALT_FUNC_5 | STM32_PUPDR_PULL_DOWN | \
@@ -111,7 +111,7 @@
 #define STM32L4X_PINMUX_FUNC_PA12_OTG_FS_DP                                    \
 	(STM32_PINMUX_ALT_FUNC_10 | STM32_PUSHPULL_NOPULL)
 
-#define STM32L4X_PINMUX_FUNC_PA15_PWM2_CH1                                     \
+#define STM32L4X_PINMUX_FUNC_PA15_PWM2_CH1 __DEPRECATED_MACRO                                     \
 	(STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL)
 #define STM32L4X_PINMUX_FUNC_PA15_USART2_RX                                    \
 	(STM32_PINMUX_ALT_FUNC_3 | STM32_PUPDR_NO_PULL)
@@ -153,7 +153,7 @@
 #define STM32L4X_PINMUX_FUNC_PB4_USART1_CTS                                    \
 	(STM32_PINMUX_ALT_FUNC_7 | STM32_OPENDRAIN_PULLUP)
 
-#define STM32L4X_PINMUX_FUNC_PB5_PWM3_CH2                                      \
+#define STM32L4X_PINMUX_FUNC_PB5_PWM3_CH2 __DEPRECATED_MACRO                                      \
 	(STM32_PINMUX_ALT_FUNC_2 | STM32_PUSHPULL_NOPULL)
 #define STM32L4X_PINMUX_FUNC_PB5_SPI1_MOSI                                     \
 	(STM32_PINMUX_ALT_FUNC_5 | STM32_PUPDR_PULL_DOWN | \
@@ -222,7 +222,7 @@
 	(STM32_PINMUX_ALT_FUNC_4 | STM32_OPENDRAIN_PULLUP)
 #define STM32L4X_PINMUX_FUNC_PB14_USART3_RTS                                   \
 	(STM32_PINMUX_ALT_FUNC_7 | STM32_OPENDRAIN_PULLUP)
-#define STM32L4X_PINMUX_FUNC_PB14_PWM15_CH1                                    \
+#define STM32L4X_PINMUX_FUNC_PB14_PWM15_CH1 __DEPRECATED_MACRO                                    \
 	(STM32_PINMUX_ALT_FUNC_14 | STM32_PUSHPULL_NOPULL)
 #define STM32L4X_PINMUX_FUNC_PB14_SPI2_MISO                                    \
 	(STM32_PINMUX_ALT_FUNC_5 | STM32_PUPDR_PULL_DOWN)
@@ -346,16 +346,16 @@
 	(STM32_PINMUX_ALT_FUNC_4 | STM32_OPENDRAIN_PULLUP)
 
 /* Port E */
-#define STM32L4X_PINMUX_FUNC_PE9_PWM1_CH1                                      \
+#define STM32L4X_PINMUX_FUNC_PE9_PWM1_CH1 __DEPRECATED_MACRO                                      \
 	(STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL)
 
-#define STM32L4X_PINMUX_FUNC_PE11_PWM1_CH2                                     \
+#define STM32L4X_PINMUX_FUNC_PE11_PWM1_CH2 __DEPRECATED_MACRO                                     \
 	(STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL)
 
 #define STM32L4X_PINMUX_FUNC_PE12_SPI1_NSS                                     \
 	(STM32_PINMUX_ALT_FUNC_5 | STM32_PUSHPULL_PULLUP)
 
-#define STM32L4X_PINMUX_FUNC_PE13_PWM1_CH3                                     \
+#define STM32L4X_PINMUX_FUNC_PE13_PWM1_CH3 __DEPRECATED_MACRO                                     \
 	(STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL)
 #define STM32L4X_PINMUX_FUNC_PE13_SPI1_SCK                                     \
 	(STM32_PINMUX_ALT_FUNC_5 | STM32_PUPDR_PULL_DOWN | \
