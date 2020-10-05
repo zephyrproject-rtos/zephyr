@@ -1,0 +1,18 @@
+# PCA95XX GPIO configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# Copyright (C) 2020, Riedo Networks Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_PCA9536
+	bool "PCA9536 I2C-based GPIO chip (4bits)"
+	depends on I2C
+	help
+	  Enable driver for PCA95XX I2C-based GPIO chip.
+
+config GPIO_PCA9536_INIT_PRIORITY
+	int "Init priority"
+	default 70
+	depends on GPIO_PCA9536
+	help
+	  Device driver initialization priority.
