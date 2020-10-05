@@ -238,6 +238,45 @@ static void test_json_decoding_array_array(void)
 		      "Usain Bolt height decoded correctly");
 }
 
+static void test_json_decoding_null_value(void)
+{
+	struct test_struct ts;
+	char encoded[] = "{\"some_string\":null,"
+		"\"some_int\":null,"
+		"\"some_bool\":null,"
+		"\"some_nested_struct\":null,"
+		"\"some_array\":null"
+		"\"another_b!@l\":null,"
+		"\"if\":null,"
+		"\"another-array\":[2,null,null,7],"
+		"\"4nother_ne$+\":{\"nested_int\":null,"
+		"\"nested_bool\":null,"
+		"\"nested_string\":null}"
+		"}\n";
+	const int FIELDS_ANOTHER_ARRAY = 1 << 7;
+	const int FIELDS_ANOTHER_NESTED_STRUCT = 1 << 8;
+	const int expected_other_array[] = { 2, 0, 0, 7 };
+	int ret;
+
+	memset(&ts, 0, sizeof(ts));
+	ret = json_obj_parse(encoded, sizeof(encoded) - 1, test_descr,
+			     ARRAY_SIZE(test_descr), &ts);
+
+	zassert_equal(ret, FIELDS_ANOTHER_ARRAY | FIELDS_ANOTHER_NESTED_STRUCT,
+		     "decode non-null fileds");
+
+	zassert_equal(ts.xnother_nexx.nested_int, 0,
+		     "Nested negative integer be initialized value");
+	zassert_equal(ts.xnother_nexx.nested_bool, false,
+		     "Nested boolean value be initialized value");
+	zassert_is_null(ts.xnother_nexx.nested_string,
+		    "Nested string be initialized value");
+	zassert_equal(ts.another_array_len, 4, "Array has correct number of items");
+	zassert_true(!memcmp(ts.another_array, expected_other_array,
+		    sizeof(expected_other_array)),
+		    "Array decoded with expected values");
+}
+
 static void test_json_obj_arr_encoding(void)
 {
 	struct obj_array oa = {
@@ -372,8 +411,6 @@ static void test_json_invalid_bool(void)
 static void test_json_invalid_null(void)
 {
 	struct encoding_test encoded[] = {
-		/* Parser will recognize 'null', but refuse to decode it */
-		{ "{\"some_string\":null }", -EINVAL},
 		/* Null spelled wrong */
 		{ "{\"some_string\":nutella }", -EINVAL},
 	};
@@ -545,6 +582,7 @@ void test_main(void)
 			 ztest_unit_test(test_json_encoding),
 			 ztest_unit_test(test_json_decoding),
 			 ztest_unit_test(test_json_decoding_array_array),
+			 ztest_unit_test(test_json_decoding_null_value),
 			 ztest_unit_test(test_json_obj_arr_encoding),
 			 ztest_unit_test(test_json_obj_arr_decoding),
 			 ztest_unit_test(test_json_invalid_string),

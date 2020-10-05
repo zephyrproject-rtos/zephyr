@@ -311,6 +311,7 @@ static int element_token(enum json_tokens token)
 	case JSON_TOK_NUMBER:
 	case JSON_TOK_TRUE:
 	case JSON_TOK_FALSE:
+	case JSON_TOK_NULL:
 		return 0;
 	default:
 		return -EINVAL;
@@ -525,7 +526,8 @@ static int arr_parse(struct json_obj *obj,
 			return -ENOSPC;
 		}
 
-		if (decode_value(obj, elem_descr, &value, field, val) < 0) {
+		/* ignore null value */
+		if (value.type != JSON_TOK_NULL && decode_value(obj, elem_descr, &value, field, val) < 0) {
 			return -EINVAL;
 		}
 
@@ -547,6 +549,11 @@ static int obj_parse(struct json_obj *obj, const struct json_obj_descr *descr,
 	while (!obj_next(obj, &kv)) {
 		if (kv.value.type == JSON_TOK_OBJECT_END) {
 			return decoded_fields;
+		}
+
+		/* ignore null value */
+		if (kv.value.type == JSON_TOK_NULL) {
+			continue;
 		}
 
 		for (i = 0; i < descr_len; i++) {
