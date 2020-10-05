@@ -900,6 +900,10 @@ static void test_scanx_main(void)
 	bt_conn_cb_register(&conn_callbacks);
 	printk("success.\n");
 
+	printk("Periodic Advertising callbacks register...");
+	bt_le_per_adv_sync_cb_register(&sync_cb);
+	printk("Success.\n");
+
 	printk("Start scanning...");
 	err = bt_le_scan_start(&scan_param, scan_cb);
 	if (err) {
@@ -947,7 +951,7 @@ static void test_scanx_main(void)
 	sync_create_param.sid = 0xf;
 	sync_create_param.skip = 0;
 	sync_create_param.timeout = 0xa;
-	err = bt_le_per_adv_sync_create(&sync_create_param, &sync_cb, &sync);
+	err = bt_le_per_adv_sync_create(&sync_create_param, &sync);
 	if (err) {
 		goto exit;
 	}
@@ -982,7 +986,7 @@ static void test_scanx_main(void)
 	sync_create_param.sid = 0xf;
 	sync_create_param.skip = 0;
 	sync_create_param.timeout = 0xa;
-	err = bt_le_per_adv_sync_create(&sync_create_param, &sync_cb, &sync);
+	err = bt_le_per_adv_sync_create(&sync_create_param, &sync);
 	if (err) {
 		goto exit;
 	}
@@ -1002,7 +1006,7 @@ static void test_scanx_main(void)
 	sync_create_param.sid = per_sid;
 	sync_create_param.skip = 0;
 	sync_create_param.timeout = 0xa;
-	err = bt_le_per_adv_sync_create(&sync_create_param, &sync_cb, &sync);
+	err = bt_le_per_adv_sync_create(&sync_create_param, &sync);
 	if (err) {
 		goto exit;
 	}
@@ -1043,7 +1047,7 @@ static void test_scanx_main(void)
 	sync_create_param.sid = per_sid;
 	sync_create_param.skip = 0;
 	sync_create_param.timeout = 0xa;
-	err = bt_le_per_adv_sync_create(&sync_create_param, &sync_cb, &sync);
+	err = bt_le_per_adv_sync_create(&sync_create_param, &sync);
 	if (err) {
 		goto exit;
 	}
@@ -1082,7 +1086,7 @@ static void test_scanx_main(void)
 	sync_create_param.sid = per_sid;
 	sync_create_param.skip = 0;
 	sync_create_param.timeout = 0xa;
-	err = bt_le_per_adv_sync_create(&sync_create_param, &sync_cb, &sync);
+	err = bt_le_per_adv_sync_create(&sync_create_param, &sync);
 	if (err) {
 		goto exit;
 	}
