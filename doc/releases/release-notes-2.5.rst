@@ -186,6 +186,8 @@ Build and Infrastructure
 
 * Devicetree
 
+  * :c:macro:`DT_ENUM_IDX_OR`: new macro
+
 Libraries / Subsystems
 **********************
 
