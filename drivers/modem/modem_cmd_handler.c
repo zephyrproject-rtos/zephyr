@@ -554,7 +554,8 @@ int modem_cmd_handler_setup_cmds(struct modem_iface *iface,
 		}
 
 		if (ret < 0) {
-			LOG_ERR("command %s ret:%d", log_strdup(cmds[i].send_cmd), ret);
+			LOG_ERR("command %s ret:%d",
+				log_strdup(cmds[i].send_cmd), ret);
 			break;
 		}
 	}
