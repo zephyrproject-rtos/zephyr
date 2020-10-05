@@ -2147,7 +2147,7 @@ struct k_queue {
 
 #define Z_QUEUE_INITIALIZER(obj) \
 	{ \
-	.data_q = SYS_SLIST_STATIC_INIT(&obj.data_q), \
+	.data_q = SYS_SFLIST_STATIC_INIT(&obj.data_q), \
 	.lock = { }, \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q),	\
 	_POLL_EVENT_OBJ_INIT(obj)		\
