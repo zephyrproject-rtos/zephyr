@@ -84,9 +84,7 @@ struct _thread_arch {
 	 * fixed offset to read the 'flags' field.
 	 */
 	uint32_t flags;
-#ifdef CONFIG_ERRNO
-	int errno_var;
-#endif
+
 	/*
 	 * The location of all floating point related structures/fields MUST be
 	 * located at the end of struct k_thread.  This way only the threads
