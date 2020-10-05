@@ -79,6 +79,21 @@ current :ref:`stability level <api_lifecycle>`.
      - 1.0
      - 2.4
 
+   * - :ref:`coap_sock_interface`
+     - Unstable
+     - 1.10
+     - 2.4
+
+   * - :ref:`lwm2m_interface`
+     - Unstable
+     - 1.9
+     - 2.5
+
+   * - :ref:`mqtt_socket_interface`
+     - Unstable
+     - 1.14
+     - 2.4
+
    * - :ref:`adc_api`
      - Stable
      - 1.0
