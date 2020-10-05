@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <st/h7/stm32h745zitx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
