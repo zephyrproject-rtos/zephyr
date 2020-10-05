@@ -3077,12 +3077,12 @@ static inline void k_work_init(struct k_work *work, k_work_handler_t handler)
 /**
  * @brief Submit a work item.
  *
- * This routine submits work item @a work to be processed by workqueue
- * @a work_q. If the work item is already pending in the workqueue's queue
- * as a result of an earlier submission, this routine has no effect on the
- * work item. If the work item has already been processed, or is currently
- * being processed, its work is considered complete and the work item can be
- * resubmitted.
+ * This routine submits work item @p work to be processed by workqueue @p
+ * work_q. If the work item is already pending in @p work_q or any other
+ * workqueue as a result of an earlier submission, this routine has no
+ * effect on the work item. If the work item has already been processed, or
+ * is currently being processed, its work is considered complete and the
+ * work item can be resubmitted.
  *
  * @warning
  * A submitted work item must not be modified until it has been processed
@@ -3298,11 +3298,11 @@ extern int k_delayed_work_cancel(struct k_delayed_work *work);
  * @brief Submit a work item to the system workqueue.
  *
  * This routine submits work item @a work to be processed by the system
- * workqueue. If the work item is already pending in the workqueue's queue
- * as a result of an earlier submission, this routine has no effect on the
- * work item. If the work item has already been processed, or is currently
- * being processed, its work is considered complete and the work item can be
- * resubmitted.
+ * workqueue. If the work item is already pending in the system workqueue or
+ * any other workqueue as a result of an earlier submission, this routine
+ * has no effect on the work item. If the work item has already been
+ * processed, or is currently being processed, its work is considered
+ * complete and the work item can be resubmitted.
  *
  * @warning
  * Work items submitted to the system workqueue should avoid using handlers
