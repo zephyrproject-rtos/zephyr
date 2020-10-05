@@ -250,6 +250,14 @@ static struct {
 	uint8_t pool[PDU_RX_POOL_SIZE];
 } mem_pdu_rx;
 
+/* NOTE: Two memq_link structures are reserved in the case of periodic sync,
+ * one each for sync established and sync lost respectively. Where as in
+ * comparison to a connection, the connection established uses incoming Rx-ed
+ * CONNECT_IND PDU to piggy back generation of connection complete, and hence
+ * only one is reserved for the generation of disconnection event (which can
+ * happen due to supervision timeout and other reasons that dont have an
+ * incoming Rx-ed PDU).
+ */
 #define LINK_RX_POOL_SIZE (sizeof(memq_link_t) * (RX_CNT + 2 + \
 						  BT_CTLR_MAX_CONN + \
 						  BT_CTLR_ADV_SET + \
