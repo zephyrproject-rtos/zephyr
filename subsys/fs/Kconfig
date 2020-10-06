@@ -1,4 +1,5 @@
 # Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2020 Nordic Semiconductor (ASA)
 # SPDX-License-Identifier: Apache-2.0
 
 menu "File Systems"
@@ -135,13 +136,6 @@ config FS_FATFS_CODEPAGE
 	  950 - Traditional Chinese (DBCS)
 
 endmenu
-
-config FILE_SYSTEM_LITTLEFS
-	bool "LittleFS file system support"
-	depends on FLASH_MAP
-	depends on FLASH_PAGE_LAYOUT
-	help
-	  Enables LittleFS file system support.
 
 config FILE_SYSTEM_SHELL
 	bool "Enable file system shell"
