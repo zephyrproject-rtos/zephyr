@@ -616,10 +616,7 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	}
 #endif
 #ifdef CONFIG_USERSPACE
-	/* New threads inherit any memory domain membership by the parent */
-	new_thread->mem_domain_info.mem_domain = NULL;
-	k_mem_domain_add_thread(_current->mem_domain_info.mem_domain,
-				new_thread);
+	z_mem_domain_init_thread(new_thread);
 
 	if ((options & K_INHERIT_PERMS) != 0U) {
 		z_thread_perms_inherit(_current, new_thread);
