@@ -301,6 +301,30 @@ This means implementing an architecture-specific version of
 :option:`CONFIG_ARCH_HAS_THREAD_ABORT` as needed for the architecture (e.g. see
 :zephyr_file:`arch/arm/core/aarch32/cortex_m/Kconfig`).
 
+Thread Local Storage
+********************
+
+To enable thread local storage on a new architecture:
+
+#. Implement :c:func:`arch_tls_stack_setup` to setup the TLS storage area in
+   stack. Refer to the toolchain documentation on how the storage area needs
+   to be structured. Some helper functions can be used:
+
+   * Function :c:func:`z_tls_data_size` returns the size
+     needed for thread local variables (excluding any extra data required by
+     toolchain and architecture).
+   * Function :c:func:`z_tls_copy` prepares the TLS storage area for
+     thread local variables. This only copies the variable themselves and
+     does not do architecture and/or toolchain specific data.
+
+#. In the context switching, grab the ``tls`` field inside the new thread's
+   ``struct k_thread`` and put it into an appropriate register (or some
+   other variable) for access to the TLS storage area. Refer to toolchain
+   and architecture documentation on which registers to use.
+#. In kconfig, add ``select CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE`` to
+   kconfig related to the new architecture.
+#. Run the ``tests/kernel/threads/tls`` to make sure the new code works.
+
 Device Drivers
 **************
 
@@ -843,6 +867,9 @@ Threads
 =======
 
 .. doxygengroup:: arch-threads
+   :project: Zephyr
+
+.. doxygengroup:: arch-tls
    :project: Zephyr
 
 Power Management
