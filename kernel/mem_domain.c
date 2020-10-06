@@ -234,22 +234,11 @@ void k_mem_domain_remove_partition(struct k_mem_domain *domain,
 	k_spin_unlock(&lock, key);
 }
 
-void k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
+static void add_thread_locked(struct k_mem_domain *domain,
+			      k_tid_t thread)
 {
-	k_spinlock_key_t key;
-
 	__ASSERT_NO_MSG(domain != NULL);
 	__ASSERT_NO_MSG(thread != NULL);
-
-	key = k_spin_lock(&lock);
-	if (thread->mem_domain_info.mem_domain != NULL) {
-		LOG_DBG("remove thread %p from memory domain %p\n",
-			thread, thread->mem_domain_info.mem_domain);
-		sys_dlist_remove(&thread->mem_domain_info.mem_domain_q_node);
-#ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
-		arch_mem_domain_thread_remove(thread);
-#endif
-	}
 
 	LOG_DBG("add thread %p to domain %p\n", thread, domain);
 	sys_dlist_append(&domain->mem_domain_q,
@@ -259,7 +248,45 @@ void k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 	arch_mem_domain_thread_add(thread);
 #endif
+}
 
+static void remove_thread_locked(struct k_thread *thread)
+{
+	__ASSERT_NO_MSG(thread != NULL);
+	LOG_DBG("remove thread %p from memory domain %p\n",
+		thread, thread->mem_domain_info.mem_domain);
+	sys_dlist_remove(&thread->mem_domain_info.mem_domain_q_node);
+
+#ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
+	arch_mem_domain_thread_remove(thread);
+#endif
+}
+
+/* Called from thread object initialization */
+void z_mem_domain_init_thread(struct k_thread *thread)
+{
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	/* New threads inherit memory domain configuration from parent */
+	add_thread_locked(_current->mem_domain_info.mem_domain, thread);
+	k_spin_unlock(&lock, key);
+}
+
+/* Called when thread aborts during teardown tasks. sched_spinlock is held */
+void z_mem_domain_exit_thread(struct k_thread *thread)
+{
+	k_spinlock_key_t key = k_spin_lock(&lock);
+	remove_thread_locked(thread);
+	k_spin_unlock(&lock, key);
+}
+
+void k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
+{
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&lock);
+	remove_thread_locked(thread);
+	add_thread_locked(domain, thread);
 	k_spin_unlock(&lock, key);
 }
 

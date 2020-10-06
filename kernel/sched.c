@@ -585,6 +585,12 @@ void z_thread_single_abort(struct k_thread *thread)
 		z_thread_monitor_exit(thread);
 
 #ifdef CONFIG_USERSPACE
+		/* Remove this thread from its memory domain, which takes
+		 * it off the domain's thread list and possibly also arch-
+		 * specific tasks.
+		 */
+		z_mem_domain_exit_thread(thread);
+
 		/* Revoke permissions on thread's ID so that it may be
 		 * recycled
 		 */
