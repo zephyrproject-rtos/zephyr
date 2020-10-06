@@ -155,15 +155,6 @@ def test_child_binding():
     assert str(grandchild.description) == "grandchild node"
     assert str(grandchild.props) == "OrderedDict([('grandchild-prop', <Property, name: grandchild-prop, type: int, value: 2>)])"
 
-def test_compat2enabled():
-    '''Test EDT.compat2enabled'''
-    edt = edtlib.EDT("test.dts", ["test-bindings"])
-
-    assert str(edt.compat2enabled["compat2enabled"]) == \
-        "[<Node /compat2enabled/foo-1 in 'test.dts', no binding>, <Node /compat2enabled/foo-2 in 'test.dts', no binding>]"
-
-    assert "compat2enabled-disabled" not in edt.compat2enabled
-
 def test_props():
     '''Test Node.props (derived from DT and 'properties:' in the binding)'''
     edt = edtlib.EDT("test.dts", ["test-bindings"])

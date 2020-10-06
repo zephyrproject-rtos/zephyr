@@ -190,6 +190,11 @@ Build and Infrastructure
 * Devicetree
 
   * :c:macro:`DT_ENUM_IDX_OR`: new macro
+  * Support for legacy devicetree macros via
+    ``CONFIG_LEGACY_DEVICETREE_MACROS`` was removed. All devicetree-based code
+    should be using the new devicetree API introduced in Zephyr 2.3 and
+    documented in :ref:`dt-from-c`. Information on flash partitions has moved
+    to :ref:`flash_map_api`.
 
 Libraries / Subsystems
 **********************

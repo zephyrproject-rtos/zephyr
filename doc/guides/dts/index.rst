@@ -15,6 +15,5 @@ development. See :ref:`devicetree_api` for an API reference.
    design.rst
    bindings.rst
    api-usage.rst
-   legacy-macros.rst
    howtos.rst
    dt-vs-kconfig.rst

@@ -224,20 +224,20 @@ def ast_expr(ast, env, edt):
     elif ast[0] == "dt_compat_enabled":
         compat = ast[1][0]
         for node in edt.nodes:
-            if compat in node.compats and node.enabled:
+            if compat in node.compats and node.status == "okay":
                 return True
         return False
     elif ast[0] == "dt_alias_exists":
         alias = ast[1][0]
         for node in edt.nodes:
-            if alias in node.aliases and node.enabled:
+            if alias in node.aliases and node.status == "okay":
                 return True
         return False
     elif ast[0] == "dt_compat_enabled_with_alias":
         compat = ast[1][0]
         alias = ast[1][1]
         for node in edt.nodes:
-            if node.enabled and alias in node.aliases and node.matching_compat == compat:
+            if node.status == "okay" and alias in node.aliases and node.matching_compat == compat:
                 return True
         return False
 
