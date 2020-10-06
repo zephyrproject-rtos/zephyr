@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/f4/stm32f401Xe.dtsi>
+#include <st/f4/stm32f401r(d-e)tx-pinctrl.dtsi>
 #include "96b_lscon.dtsi"
 
 / {
@@ -53,16 +54,19 @@
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart6 {
+	pinctrl-0 = <&usart6_tx_pc6 &usart6_rx_pc7>;
 	current-speed = <115200>;
 	status = "okay";
 };
