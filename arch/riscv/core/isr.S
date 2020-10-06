@@ -261,6 +261,22 @@ GTEXT(z_riscv_configure_stack_guard)
 GTEXT(__irq_wrapper)
 
 /*
+ * xreg0: result &_kernel.cpu[mhartid]
+ * xreg1: work area
+ */
+.macro z_riscv_get_cpu xreg0, xreg1
+#ifdef CONFIG_SMP
+	csrr \xreg0, mhartid
+	addi \xreg1, x0, __cpu_t_SIZEOF
+	mul  \xreg1, \xreg0, \xreg1
+	la   \xreg0, _kernel
+	add  \xreg0, \xreg0, \xreg1
+#else
+	la   \xreg0, _kernel
+#endif
+.endm
+
+/*
  * xcpu: pointer of _kernel.cpus[n]
  * xold: (result) old thread
  * xnew: (result) next thread to schedule
@@ -278,8 +294,8 @@ GTEXT(__irq_wrapper)
 	RV_OP_LOADREG ra, RV_REGSIZE(sp)
 	addi sp, sp, RV_REGSIZE*2
 #else
-	/* Get pointer to _kernel.current */
-	RV_OP_LOADREG \xold, _kernel_offset_to_current(\xcpu)
+	/* Get pointer to _kernel.cpus[n].current */
+	RV_OP_LOADREG \xold, ___cpu_t_current_OFFSET(\xcpu)
 
 	RV_OP_LOADREG \xnew, _kernel_offset_to_ready_q_cache(\xcpu)
 #endif
@@ -330,8 +346,8 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/* Assess whether floating-point registers need to be saved. */
-	la t0, _kernel
-	RV_OP_LOADREG t0, _kernel_offset_to_current(t0)
+	z_riscv_get_cpu t0, t1
+	RV_OP_LOADREG t0, ___cpu_t_current_OFFSET(t0)
 	RV_OP_LOADREG t0, _thread_offset_to_user_options(t0)
 	andi t0, t0, K_FP_REGS
 	RV_OP_STOREREG t0, __z_arch_esf_t_fp_state_OFFSET(sp)
@@ -554,8 +570,8 @@ skip_fp_move_kernel_syscall:
 	 *   - a1 = &old_thread->switch_handle -> t1
 	 */
 
-	/* Get reference to _kernel */
-	la t2, _kernel
+	/* Get reference to _kernel.cpus[n] */
+	z_riscv_get_cpu t2, t1
 
 	/* Get new_thread from stack */
 	RV_OP_LOADREG t1, __z_arch_esf_t_a0_OFFSET(sp)
@@ -568,6 +584,10 @@ skip_fp_move_kernel_syscall:
 	addi t1, t1, -___thread_t_switch_handle_OFFSET
 #endif
 
+#ifdef CONFIG_SMP
+	/* Set non-NULL value to old_thread->switch_handle */
+	RV_OP_STOREREG t1, ___thread_t_switch_handle_OFFSET(t1)
+#endif
 	/*
 	 * Go to reschedule to handle context-switch
 	 */
@@ -708,8 +728,8 @@ is_interrupt:
 	addi t0, sp, 0
 
 	/* Switch to interrupt stack */
-	la t2, _kernel
-	RV_OP_LOADREG sp, _kernel_offset_to_irq_stack(t2)
+	z_riscv_get_cpu t2, t3
+	RV_OP_LOADREG sp, ___cpu_t_irq_stack_OFFSET(t2)
 
 	/*
 	 * Save thread stack pointer on interrupt stack
@@ -722,10 +742,10 @@ is_interrupt:
 #endif /* !CONFIG_USERSPACE && !CONFIG_PMP_STACK_GUARD */
 
 on_irq_stack:
-	/* Increment _kernel.cpus[0].nested variable */
-	lw t3, _kernel_offset_to_nested(t2)
+	/* Increment _kernel.cpus[n].nested variable */
+	lw t3, ___cpu_t_nested_OFFSET(t2)
 	addi t3, t3, 1
-	sw t3, _kernel_offset_to_nested(t2)
+	sw t3, ___cpu_t_nested_OFFSET(t2)
 
 #ifdef CONFIG_IRQ_OFFLOAD
 	/*
@@ -777,13 +797,13 @@ call_irq:
 	jalr ra, t1
 
 on_thread_stack:
-	/* Get reference to _kernel */
-	la t1, _kernel
+	/* Get reference to _kernel.cpus[n] */
+	z_riscv_get_cpu t1, t2
 
-	/* Decrement _kernel.cpus[0].nested variable */
-	lw t2, _kernel_offset_to_nested(t1)
+	/* Decrement _kernel.cpus[n].nested variable */
+	lw t2, ___cpu_t_nested_OFFSET(t1)
 	addi t2, t2, -1
-	sw t2, _kernel_offset_to_nested(t1)
+	sw t2, ___cpu_t_nested_OFFSET(t1)
 
 #if !defined(CONFIG_USERSPACE) && !defined(CONFIG_PMP_STACK_GUARD)
 	/* Restore thread stack pointer */
@@ -793,7 +813,7 @@ on_thread_stack:
 
 #ifdef CONFIG_STACK_SENTINEL
 	call z_check_stack_sentinel
-	la t1, _kernel
+	z_riscv_get_cpu t1, t2
 #endif
 
 #ifdef CONFIG_PREEMPT_ENABLED
@@ -865,8 +885,8 @@ reschedule:
 	call z_thread_mark_switched_out
 #endif
 
-	/* Get reference to _kernel */
-	la t0, _kernel
+	/* Get reference to _kernel.cpus[n] */
+	z_riscv_get_cpu t0, t2
 
 #ifdef CONFIG_USE_SWITCH
 	/*
@@ -929,6 +949,10 @@ skip_callee_saved_reg:
 	sw t3, _thread_offset_to_swap_return_value(t1)
 #endif /* !CONFIG_USE_SWITCH */
 
+#ifdef CONFIG_SMP
+	/* Get next thread to schedule. */
+	RV_OP_LOADREG t1, ___cpu_t_current_OFFSET(t0)
+#else /* CONFIG_SMP */
 	/* Get next thread to schedule. */
 	RV_OP_LOADREG t1, _kernel_offset_to_ready_q_cache(t0)
 
@@ -936,6 +960,7 @@ skip_callee_saved_reg:
 	 * Set _kernel.current to new thread loaded in t1
 	 */
 	RV_OP_STOREREG t1, _kernel_offset_to_current(t0)
+#endif /* !CONFIG_SMP */
 
 	/* Switch to new thread stack */
 	RV_OP_LOADREG sp, _thread_offset_to_sp(t1)

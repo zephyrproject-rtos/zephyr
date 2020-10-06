@@ -6,6 +6,7 @@ zephyr_library()
 
 zephyr_library_sources(
   cpu_idle.c
+  cpu_smp.c
   fatal.c
   irq_manage.c
   isr.S

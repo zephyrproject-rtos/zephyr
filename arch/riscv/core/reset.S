@@ -40,9 +40,27 @@ SECTION_FUNC(TEXT, __initialize)
 	csrr a0, mhartid
 	beqz a0, boot_master_core
 
+	li a1, CONFIG_MP_NUM_CPUS
+	blt a0, a1, boot_slave_core
+
 loop_slave_core:
 	wfi
 	j loop_slave_core
+
+boot_slave_core:
+	/* Wait for signal from master core */
+	la t0, riscv_init_flag
+	RV_OP_LOADREG t1, (t0)
+	bne a0, t1, boot_slave_core
+
+	/* Setup stack */
+	la t1, riscv_init_sp
+	RV_OP_LOADREG sp, (t1)
+
+	/* Notify to master core */
+	RV_OP_STOREREG x0, (t0)
+
+	j z_riscv_slave_start
 
 boot_master_core:
 

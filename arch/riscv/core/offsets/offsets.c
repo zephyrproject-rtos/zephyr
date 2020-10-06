@@ -134,4 +134,8 @@ GEN_ABSOLUTE_SYM(__z_arch_esf_t_SIZEOF, STACK_ROUND_UP(sizeof(z_arch_esf_t)));
 GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF,
 		 STACK_ROUND_UP(sizeof(struct k_thread)));
 
+#ifdef CONFIG_SMP
+GEN_ABSOLUTE_SYM(__cpu_t_SIZEOF, sizeof(_cpu_t));
+#endif
+
 GEN_ABS_SYM_END
