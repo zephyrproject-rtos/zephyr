@@ -95,8 +95,8 @@
 #define IDT_SIZE				0x2000
 
 /* low power ram where DMA buffers are typically placed */
-#define LPRAM_BASE				(DT_REG_ADDR(DT_NODELABEL(sram1)))
-#define LPRAM_SIZE				(DT_REG_SIZE(DT_NODELABEL(sram1)))
+#define LPRAM_BASE (DT_REG_ADDR(DT_NODELABEL(sram1)))
+#define LPRAM_SIZE (DT_REG_SIZE(DT_NODELABEL(sram1)))
 
 /* bootloader */
 

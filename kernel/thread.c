@@ -561,8 +561,9 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	stack_ptr = setup_thread_stack(new_thread, stack, stack_size);
 
 #ifdef KERNEL_COHERENCE
-        /* Check that the thread object is safe, but that the stack is
-         * still cached! */
+	/* Check that the thread object is safe, but that the stack is
+	 * still cached!
+	 */
 	__ASSERT_NO_MSG(arch_mem_coherent(new_thread));
 	__ASSERT_NO_MSG(!arch_mem_coherent(stack));
 #endif

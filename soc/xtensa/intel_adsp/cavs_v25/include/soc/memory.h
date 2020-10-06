@@ -1,4 +1,4 @@
-s/*
+/*
  * Copyright (c) 2019 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -95,8 +95,8 @@ s/*
 #define IDT_SIZE				0x2000
 
 /* low power ram where DMA buffers are typically placed */
-#define LPRAM_BASE				(DT_REG_ADDR(DT_NODELABEL(sram1)))
-#define LPRAM_SIZE				(DT_REG_SIZE(DT_NODELABEL(sram1)))
+#define LPRAM_BASE (DT_REG_ADDR(DT_NODELABEL(sram1)))
+#define LPRAM_SIZE (DT_REG_SIZE(DT_NODELABEL(sram1)))
 
 /* bootloader */
 
@@ -213,7 +213,8 @@ s/*
 /* SRAM window 0 FW "registers" */
 #define SRAM_REG_FW_TRACEP_SLAVE_CORE_BASE      0x14
 #define SRAM_REG_FW_END \
-        (SRAM_REG_FW_TRACEP_SLAVE_CORE_BASE + (PLATFORM_CORE_COUNT - 1) * 0x4)
+	(SRAM_REG_FW_TRACEP_SLAVE_CORE_BASE + \
+	 (PLATFORM_CORE_COUNT - 1) * 0x4)
 
 /* Host page size */
 #define HOST_PAGE_SIZE		4096

@@ -69,9 +69,9 @@ static inline void arch_switch(void *switch_to, void **switched_from)
 #ifdef CONFIG_SOC_FAMILY_INTEL_ADSP
 static inline bool arch_mem_coherent(void *ptr)
 {
-    size_t addr = (size_t) ptr;
+	size_t addr = (size_t) ptr;
 
-    return addr >= 0x80000000 && addr < 0xa0000000;
+	return addr >= 0x80000000 && addr < 0xa0000000;
 }
 #endif
 
