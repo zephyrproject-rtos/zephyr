@@ -823,17 +823,17 @@ static int ism330dhcx_init(const struct device *dev)
 
 	config->bus_init(dev);
 
+	if (ism330dhcx_init_chip(dev) < 0) {
+		LOG_DBG("failed to initialize chip");
+		return -EIO;
+	}
+
 #ifdef CONFIG_ISM330DHCX_TRIGGER
 	if (ism330dhcx_init_interrupt(dev) < 0) {
 		LOG_ERR("Failed to initialize interrupt.");
 		return -EIO;
 	}
 #endif
-
-	if (ism330dhcx_init_chip(dev) < 0) {
-		LOG_DBG("failed to initialize chip");
-		return -EIO;
-	}
 
 #ifdef CONFIG_ISM330DHCX_SENSORHUB
 	if (ism330dhcx_shub_init(dev) < 0) {
