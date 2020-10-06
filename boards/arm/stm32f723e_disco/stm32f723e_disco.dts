@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/f7/stm32f723Xe.dtsi>
+#include <st/f7/stm32f723i(c-e)kx-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F723E DISCOVERY board";
@@ -55,11 +56,13 @@ arduino_spi: &spi1 {};
 arduino_serial: &usart2 {};
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart6 {
+	pinctrl-0 = <&usart6_tx_pc6 &usart6_rx_pc7>;
 	current-speed = <115200>;
 	status = "okay";
 };
