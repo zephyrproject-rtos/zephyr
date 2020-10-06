@@ -233,7 +233,6 @@ void modem_socket_put(struct modem_socket_config *cfg, int sock_fd)
 
 	k_sem_take(&cfg->sem_lock, K_FOREVER);
 
-	z_free_fd(sock->sock_fd);
 	sock->id = cfg->base_socket_num - 1;
 	sock->sock_fd = -1;
 	sock->is_waiting = false;
