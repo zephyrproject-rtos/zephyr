@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/f4/stm32f469Xi.dtsi>
+#include <st/f4/stm32f469nihx-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F469I-DISCO board";
@@ -61,11 +62,13 @@ arduino_spi: &spi2 {};
 arduino_serial: &usart6 {};
 
 &usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart6 {
+	pinctrl-0 = <&usart6_tx_pg14 &usart6_rx_pg9>;
 	current-speed = <115200>;
 	status = "okay";
 };
