@@ -167,6 +167,26 @@ config NET_TC_RX_COUNT
 	  handled equally. In this implementation, the higher traffic class
 	  value corresponds to lower thread priority.
 
+choice NET_TC_THREAD_TYPE
+	prompt "How the network RX/TX threads should work"
+	help
+	  Please select the RX/TX threads to be either pre-emptive or
+	  co-operative.
+
+config NET_TC_THREAD_COOPERATIVE
+	bool "Use co-operative TX/RX threads"
+	depends on COOP_ENABLED
+	help
+	  With co-operative threads, the thread cannot be pre-empted.
+
+config NET_TC_THREAD_PREEMPTIVE
+	bool "Use pre-emptive TX/RX threads [EXPERIMENTAL]"
+	depends on PREEMPT_ENABLED
+	help
+	  With pre-emptive threads, the thread can be pre-empted.
+
+endchoice
+
 choice
 	prompt "Priority to traffic class mapping"
 	help
