@@ -91,12 +91,8 @@ static bool z_check_thread_stack_fail(const uint32_t fault_addr, uint32_t sp)
 	  * overflow if the stack pointer is at or below the end of the guard
 	  * region.
 	  */
-	if (sp <= guard_end && fault_addr < guard_end &&
-	    fault_addr >= guard_start) {
-		return true;
-	}
-
-	return false;
+	return sp <= guard_end && fault_addr < guard_end &&
+	       fault_addr >= guard_start;
 }
 #endif
 

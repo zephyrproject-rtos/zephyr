@@ -291,11 +291,8 @@ void stm32_dma_clear_stream_irq(DMA_TypeDef *dma, uint32_t id)
 
 bool stm32_dma_is_irq_happened(DMA_TypeDef *dma, uint32_t id)
 {
-	if (dma_stm32_is_fe_active(dma, id) && LL_DMA_IsEnabledIT_FE(dma, id)) {
-		return true;
-	}
-
-	return false;
+	return dma_stm32_is_fe_active(dma, id) &&
+	       LL_DMA_IsEnabledIT_FE(dma, id);
 }
 
 bool stm32_dma_is_unexpected_irq_happened(DMA_TypeDef *dma, uint32_t id)

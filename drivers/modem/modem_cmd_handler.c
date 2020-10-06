@@ -83,11 +83,7 @@ static bool starts_with(struct net_buf *buf, const char *str)
 		}
 	}
 
-	if (*str == 0) {
-		return true;
-	}
-
-	return false;
+	return *str == 0;
 }
 
 /*

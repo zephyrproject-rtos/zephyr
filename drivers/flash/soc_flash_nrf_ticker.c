@@ -215,10 +215,6 @@ bool nrf_flash_sync_check_time_limit(uint32_t iteration)
 
 	ticks_diff = ticker_ticks_diff_get(ticker_ticks_now_get(),
 					   _ticker_sync_context.ticks_begin);
-	if (ticks_diff + ticks_diff/iteration >
-	    HAL_TICKER_US_TO_TICKS(_ticker_sync_context.slot)) {
-		return true;
-	}
-
-	return false;
+	return ticks_diff + ticks_diff / iteration >
+	       HAL_TICKER_US_TO_TICKS(_ticker_sync_context.slot);
 }

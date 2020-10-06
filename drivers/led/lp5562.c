@@ -378,11 +378,7 @@ static bool lp5562_is_engine_executing(const struct device *dev,
 
 	enabled = (enabled >> shift) & LP5562_MASK;
 
-	if (enabled == LP5562_ENGINE_MODE_RUN) {
-		return true;
-	}
-
-	return false;
+	return enabled == LP5562_ENGINE_MODE_RUN;
 }
 
 /*

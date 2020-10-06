@@ -156,12 +156,7 @@ static ALWAYS_INLINE bool should_preempt(struct k_thread *thread,
 	 * preemptible priorities (this is sort of an API glitch).
 	 * They must always be preemptible.
 	 */
-	if (!IS_ENABLED(CONFIG_PREEMPT_ENABLED) &&
-	    z_is_idle_thread_object(_current)) {
-		return true;
-	}
-
-	return false;
+	return !IS_ENABLED(CONFIG_PREEMPT_ENABLED) && z_is_idle_thread_object(_current);
 }
 
 #ifdef CONFIG_SCHED_CPU_MASK

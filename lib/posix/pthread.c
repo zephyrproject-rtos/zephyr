@@ -39,12 +39,8 @@ PTHREAD_MUTEX_DEFINE(pthread_pool_lock);
 
 static bool is_posix_prio_valid(uint32_t priority, int policy)
 {
-	if (priority >= sched_get_priority_min(policy) &&
-	    priority <= sched_get_priority_max(policy)) {
-		return true;
-	}
-
-	return false;
+	return priority >= sched_get_priority_min(policy) &&
+	       priority <= sched_get_priority_max(policy);
 }
 
 static uint32_t zephyr_to_posix_priority(int32_t z_prio, int *policy)

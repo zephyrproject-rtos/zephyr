@@ -2151,11 +2151,7 @@ static const struct socket_op_vtable tls_sock_fd_op_vtable = {
 
 static bool tls_is_supported(int family, int type, int proto)
 {
-	if (protocol_check(family, type, &proto) == 0) {
-		return true;
-	}
-
-	return false;
+	return protocol_check(family, type, &proto) == 0;
 }
 
 NET_SOCKET_REGISTER(tls, AF_UNSPEC, tls_is_supported, ztls_socket);

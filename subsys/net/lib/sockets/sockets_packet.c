@@ -372,12 +372,8 @@ static const struct socket_op_vtable packet_sock_fd_op_vtable = {
 
 static bool packet_is_supported(int family, int type, int proto)
 {
-	if (((type == SOCK_RAW) && (proto == ETH_P_ALL)) ||
-	    ((type == SOCK_DGRAM) && (proto > 0))) {
-		return true;
-	}
-
-	return false;
+	return ((type == SOCK_RAW) && (proto == ETH_P_ALL)) ||
+	       ((type == SOCK_DGRAM) && (proto > 0));
 }
 
 NET_SOCKET_REGISTER(af_packet, AF_PACKET, packet_is_supported, zpacket_socket);

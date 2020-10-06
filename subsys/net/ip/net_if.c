@@ -2395,13 +2395,9 @@ static uint8_t get_diff_ipv6(const struct in6_addr *src,
 
 static inline bool is_proper_ipv6_address(struct net_if_addr *addr)
 {
-	if (addr->is_used && addr->addr_state == NET_ADDR_PREFERRED &&
-	    addr->address.family == AF_INET6 &&
-	    !net_ipv6_is_ll_addr(&addr->address.in6_addr)) {
-		return true;
-	}
-
-	return false;
+	return addr->is_used && addr->addr_state == NET_ADDR_PREFERRED &&
+	       addr->address.family == AF_INET6 &&
+	       !net_ipv6_is_ll_addr(&addr->address.in6_addr);
 }
 
 static struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
@@ -2717,12 +2713,8 @@ static bool ipv4_is_broadcast_address(struct net_if *iface,
 		return false;
 	}
 
-	if ((UNALIGNED_GET(&addr->s_addr) & ~ipv4->netmask.s_addr) ==
-	    ~ipv4->netmask.s_addr) {
-		return true;
-	}
-
-	return false;
+	return (UNALIGNED_GET(&addr->s_addr) & ~ipv4->netmask.s_addr) ==
+	       ~ipv4->netmask.s_addr;
 }
 
 bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
@@ -2766,13 +2758,9 @@ static uint8_t get_diff_ipv4(const struct in_addr *src,
 
 static inline bool is_proper_ipv4_address(struct net_if_addr *addr)
 {
-	if (addr->is_used && addr->addr_state == NET_ADDR_PREFERRED &&
-	    addr->address.family == AF_INET &&
-	    !net_ipv4_is_ll_addr(&addr->address.in_addr)) {
-		return true;
-	}
-
-	return false;
+	return addr->is_used && addr->addr_state == NET_ADDR_PREFERRED &&
+	       addr->address.family == AF_INET &&
+	       !net_ipv4_is_ll_addr(&addr->address.in_addr);
 }
 
 static struct in_addr *net_if_ipv4_get_best_match(struct net_if *iface,

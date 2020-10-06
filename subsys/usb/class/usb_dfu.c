@@ -788,12 +788,7 @@ static int usb_dfu_init(const struct device *dev)
  */
 static bool is_dfu_started(void)
 {
-	if ((dfu_data.state == dfuDNBUSY) ||
-	    (dfu_data.state == dfuDNLOAD_IDLE)) {
-		return true;
-	}
-
-	return false;
+	return (dfu_data.state == dfuDNBUSY) || (dfu_data.state == dfuDNLOAD_IDLE);
 }
 
 /**

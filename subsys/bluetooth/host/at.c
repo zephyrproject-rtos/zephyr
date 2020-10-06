@@ -202,11 +202,7 @@ static int at_state_get_cmd_string(struct at_client *at, struct net_buf *buf)
 
 static bool is_cmer(struct at_client *at)
 {
-	if (strncmp(at->buf, "CME ERROR", 9) == 0) {
-		return true;
-	}
-
-	return false;
+	return strncmp(at->buf, "CME ERROR", 9) == 0;
 }
 
 static int at_state_process_cmd(struct at_client *at, struct net_buf *buf)
@@ -232,11 +228,7 @@ static int at_state_get_result_string(struct at_client *at, struct net_buf *buf)
 
 static bool is_ring(struct at_client *at)
 {
-	if (strncmp(at->buf, "RING", 4) == 0) {
-		return true;
-	}
-
-	return false;
+	return strncmp(at->buf, "RING", 4) == 0;
 }
 
 static int at_state_process_result(struct at_client *at, struct net_buf *buf)

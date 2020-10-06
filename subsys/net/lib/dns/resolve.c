@@ -86,21 +86,13 @@ static int dns_write(struct dns_resolve_context *ctx,
 static bool server_is_mdns(sa_family_t family, struct sockaddr *addr)
 {
 	if (family == AF_INET) {
-		if (net_ipv4_is_addr_mcast(&net_sin(addr)->sin_addr) &&
-		    net_sin(addr)->sin_addr.s4_addr[3] == 251U) {
-			return true;
-		}
-
-		return false;
+		return net_ipv4_is_addr_mcast(&net_sin(addr)->sin_addr) &&
+		       net_sin(addr)->sin_addr.s4_addr[3] == 251U;
 	}
 
 	if (family == AF_INET6) {
-		if (net_ipv6_is_addr_mcast(&net_sin6(addr)->sin6_addr) &&
-		    net_sin6(addr)->sin6_addr.s6_addr[15] == 0xfb) {
-			return true;
-		}
-
-		return false;
+		return net_ipv6_is_addr_mcast(&net_sin6(addr)->sin6_addr) &&
+		       net_sin6(addr)->sin6_addr.s6_addr[15] == 0xfb;
 	}
 
 	return false;
@@ -109,21 +101,13 @@ static bool server_is_mdns(sa_family_t family, struct sockaddr *addr)
 static bool server_is_llmnr(sa_family_t family, struct sockaddr *addr)
 {
 	if (family == AF_INET) {
-		if (net_ipv4_is_addr_mcast(&net_sin(addr)->sin_addr) &&
-		    net_sin(addr)->sin_addr.s4_addr[3] == 252U) {
-			return true;
-		}
-
-		return false;
+		return net_ipv4_is_addr_mcast(&net_sin(addr)->sin_addr) &&
+		       net_sin(addr)->sin_addr.s4_addr[3] == 252U;
 	}
 
 	if (family == AF_INET6) {
-		if (net_ipv6_is_addr_mcast(&net_sin6(addr)->sin6_addr) &&
-		    net_sin6(addr)->sin6_addr.s6_addr[15] == 0x03) {
-			return true;
-		}
-
-		return false;
+		return net_ipv6_is_addr_mcast(&net_sin6(addr)->sin6_addr) &&
+		       net_sin6(addr)->sin6_addr.s6_addr[15] == 0x03;
 	}
 
 	return false;

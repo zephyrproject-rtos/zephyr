@@ -466,9 +466,5 @@ bool usbip_send_common(uint8_t ep, uint32_t data_len)
 
 	rsp.setup = htonl(0);
 
-	if (usbip_send(ep, (uint8_t *)&rsp, sizeof(rsp)) == sizeof(rsp)) {
-		return true;
-	}
-
-	return false;
+	return usbip_send(ep, (uint8_t *)&rsp, sizeof(rsp)) == sizeof(rsp);
 }

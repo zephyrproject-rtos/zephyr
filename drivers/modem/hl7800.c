@@ -957,10 +957,7 @@ int32_t mdm_hl7800_update_apn(char *access_point_name)
 
 bool mdm_hl7800_valid_rat(uint8_t value)
 {
-	if ((value == MDM_RAT_CAT_M1) || (value == MDM_RAT_CAT_NB1)) {
-		return true;
-	}
-	return false;
+	return (value == MDM_RAT_CAT_M1) || (value == MDM_RAT_CAT_NB1);
 }
 
 int32_t mdm_hl7800_update_rat(enum mdm_hl7800_radio_mode value)
@@ -2371,11 +2368,8 @@ static bool valid_time_string(const char *time_string)
 	/* The last character is the offset from UTC and can be either
 	 * positive or negative.  The last " is also handled here.
 	 */
-	if ((time_string[i] == '+' || time_string[i] == '-') &&
-	    (time_string[i + offset] == '"')) {
-		return true;
-	}
-	return false;
+	return (time_string[i] == '+' || time_string[i] == '-') &&
+	       (time_string[i + offset] == '"');
 }
 
 int get_next_time_string_digit(int *failure_cnt, char **pp, int min, int max)

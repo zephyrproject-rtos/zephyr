@@ -176,13 +176,9 @@ static int socket_test_ok(int family, int type, int proto)
 
 static bool is_tls(int family, int type, int proto)
 {
-	if ((family == AF_INET || family == AF_INET6) &&
-	    (((proto >= IPPROTO_TLS_1_0) && (proto <= IPPROTO_TLS_1_2)) ||
-	     (proto >= IPPROTO_DTLS_1_0 && proto <= IPPROTO_DTLS_1_2))) {
-		return true;
-	}
-
-	return false;
+	return (family == AF_INET || family == AF_INET6) &&
+	       (((proto >= IPPROTO_TLS_1_0) && (proto <= IPPROTO_TLS_1_2)) ||
+		(proto >= IPPROTO_DTLS_1_0 && proto <= IPPROTO_DTLS_1_2));
 }
 
 static bool is_packet(int family, int type, int proto)

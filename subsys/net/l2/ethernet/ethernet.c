@@ -319,13 +319,9 @@ drop:
 #ifdef CONFIG_NET_IPV4
 static inline bool ethernet_ipv4_dst_is_broadcast_or_mcast(struct net_pkt *pkt)
 {
-	if (net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
-				   &NET_IPV4_HDR(pkt)->dst) ||
-	    net_ipv4_is_addr_mcast(&NET_IPV4_HDR(pkt)->dst)) {
-		return true;
-	}
-
-	return false;
+	return net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
+				      &NET_IPV4_HDR(pkt)->dst) ||
+	       net_ipv4_is_addr_mcast(&NET_IPV4_HDR(pkt)->dst);
 }
 
 static bool ethernet_fill_in_dst_on_ipv4_mcast(struct net_pkt *pkt,

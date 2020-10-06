@@ -278,21 +278,13 @@ static int test_core_event(uint32_t event, bool (*func)(void))
 
 static bool _iface_ip6_add(void)
 {
-	if (net_if_ipv6_addr_add(net_if_get_default(),
-				 &addr6, NET_ADDR_MANUAL, 0)) {
-		return true;
-	}
-
-	return false;
+	return net_if_ipv6_addr_add(net_if_get_default(), &addr6,
+				    NET_ADDR_MANUAL, 0);
 }
 
 static bool _iface_ip6_del(void)
 {
-	if (net_if_ipv6_addr_rm(net_if_get_default(), &addr6)) {
-		return true;
-	}
-
-	return false;
+	return net_if_ipv6_addr_rm(net_if_get_default(), &addr6);
 }
 
 void test_mgmt(void)
