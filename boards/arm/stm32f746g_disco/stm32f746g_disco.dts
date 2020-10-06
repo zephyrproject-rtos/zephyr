@@ -66,11 +66,13 @@
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pb7>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart6 {
+	pinctrl-0 = <&usart6_tx_pc6 &usart6_rx_pc7>;
 	current-speed = <115200>;
 	status = "okay";
 };
