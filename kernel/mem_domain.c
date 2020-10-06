@@ -137,30 +137,6 @@ void k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 	k_spin_unlock(&lock, key);
 }
 
-void k_mem_domain_destroy(struct k_mem_domain *domain)
-{
-	k_spinlock_key_t key;
-	sys_dnode_t *node, *next_node;
-
-	__ASSERT_NO_MSG(domain != NULL);
-
-	key = k_spin_lock(&lock);
-
-#ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
-	arch_mem_domain_destroy(domain);
-#endif
-
-	SYS_DLIST_FOR_EACH_NODE_SAFE(&domain->mem_domain_q, node, next_node) {
-		struct k_thread *thread =
-			CONTAINER_OF(node, struct k_thread, mem_domain_info);
-
-		sys_dlist_remove(&thread->mem_domain_info.mem_domain_q_node);
-		thread->mem_domain_info.mem_domain = NULL;
-	}
-
-	k_spin_unlock(&lock, key);
-}
-
 void k_mem_domain_add_partition(struct k_mem_domain *domain,
 				struct k_mem_partition *part)
 {
@@ -293,6 +269,32 @@ void k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
 void k_mem_domain_remove_thread(k_tid_t thread)
 {
 	k_mem_domain_add_thread(&k_mem_domain_default, thread);
+}
+
+void k_mem_domain_destroy(struct k_mem_domain *domain)
+{
+	k_spinlock_key_t key;
+	sys_dnode_t *node, *next_node;
+
+	__ASSERT_NO_MSG(domain != NULL);
+	__ASSERT(domain != &k_mem_domain_default,
+		 "cannot destroy default domain");
+
+	key = k_spin_lock(&lock);
+
+#ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
+	arch_mem_domain_destroy(domain);
+#endif
+
+	SYS_DLIST_FOR_EACH_NODE_SAFE(&domain->mem_domain_q, node, next_node) {
+		struct k_thread *thread =
+			CONTAINER_OF(node, struct k_thread, mem_domain_info);
+
+		remove_thread_locked(thread);
+		add_thread_locked(&k_mem_domain_default, thread);
+	}
+
+	k_spin_unlock(&lock, key);
 }
 
 static int init_mem_domain_module(const struct device *arg)

@@ -127,7 +127,12 @@ extern void k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 /**
  * @brief Destroy a memory domain.
  *
- * Destroy a memory domain.
+ * Destroy a memory domain. All member threads will be re-assigned to the
+ * default memory domain.
+ *
+ * The default memory domain may not be destroyed.
+ *
+ * This API is deprecated and will be removed in Zephyr 2.5.
  *
  * @param domain The memory domain to be destroyed.
  */
