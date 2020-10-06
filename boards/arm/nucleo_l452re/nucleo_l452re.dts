@@ -7,6 +7,7 @@
 
 /dts-v1/;
 #include "nucleo_l452re_common.dtsi"
+#include <st/l4/stm32l452r(c-e)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
