@@ -15,6 +15,7 @@
 
 #define RTC NRF_RTC1
 #define RTC_IRQn NRFX_IRQ_NUMBER_GET(RTC)
+#define RTC_LABEL rtc1
 
 #define COUNTER_SPAN BIT(24)
 #define COUNTER_MAX (COUNTER_SPAN - 1U)
@@ -202,7 +203,8 @@ int z_clock_driver_init(const struct device *device)
 	NVIC_ClearPendingIRQ(RTC_IRQn);
 	int_enable();
 
-	IRQ_CONNECT(RTC_IRQn, 1, rtc_nrf_isr, 0, 0);
+	IRQ_CONNECT(RTC_IRQn, DT_IRQ(DT_NODELABEL(RTC_LABEL), priority),
+		    rtc_nrf_isr, 0, 0);
 	irq_enable(RTC_IRQn);
 
 	nrf_rtc_task_trigger(RTC, NRF_RTC_TASK_CLEAR);
