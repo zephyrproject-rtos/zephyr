@@ -30,7 +30,7 @@
 /* Translates a SRAM pointer into an address of the same memory in the
  * uncached region from 0x80000000-0x9fffffff
  */
-#define UNCACHED_PTR(p) ((void*)(((int)p) & ~0x20000000))
+#define UNCACHED_PTR(p) ((void *)(((int)p) & ~0x20000000))
 
 struct slot_hdr {
 	uint16_t magic;

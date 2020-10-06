@@ -154,7 +154,7 @@ PHDRS
 
   static_uuid_entries_phdr PT_NOTE;
   static_log_entries_phdr PT_NOTE;
-  
+
   lpsram_mem_phdr PT_LOAD;
   sram_alt_fw_reset_vec_phdr PT_LOAD;
   sram_alt_fw_reset_vec_int_phdr PT_LOAD;

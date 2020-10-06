@@ -2,6 +2,7 @@
 #
 # Copyright (c) 2020 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
+
 import sys
 import time
 import struct
@@ -73,8 +74,8 @@ while True:
                 break
             msgbytes.append(b)
         msg = bytearray(len(msgbytes))
-        for i in range(len(msgbytes)):
-            msg[i] = msgbytes[i]
+        for i, elem in enumerate(msgbytes):
+            msg[i] = elem
 
         sys.stdout.write(msg.decode(encoding="utf-8", errors="ignore"))
         next_slot = int((next_slot + 1) % (MAP_SIZE / SLOT_SIZE))
