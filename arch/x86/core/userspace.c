@@ -118,10 +118,7 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	/* Apply memory domain configuration, if assigned. Threads that
 	 * started in user mode already had this done via z_setup_new_thread()
 	 */
-	if (_current->mem_domain_info.mem_domain != NULL) {
-		z_x86_apply_mem_domain(_current,
-				       _current->mem_domain_info.mem_domain);
-	}
+	z_x86_apply_mem_domain(_current, _current->mem_domain_info.mem_domain);
 	k_spin_unlock(&z_mem_domain_lock, key);
 
 #ifndef CONFIG_X86_KPTI
