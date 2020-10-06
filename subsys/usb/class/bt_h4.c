@@ -148,12 +148,12 @@ static void bt_h4_status_cb(struct usb_cfg_data *cfg,
 	/* Check the USB status and do needed action if required */
 	switch (status) {
 	case USB_DC_CONFIGURED:
-		LOG_DBG("USB device configured");
+		LOG_DBG("Device configured");
 		/* Start reading */
 		bt_h4_read(bt_h4_ep_data[BT_H4_OUT_EP_IDX].ep_addr, 0, NULL);
 		break;
 	case USB_DC_DISCONNECTED:
-		LOG_DBG("USB device disconnected");
+		LOG_DBG("Device disconnected");
 		/* Cancel any transfer */
 		usb_cancel_transfer(bt_h4_ep_data[BT_H4_IN_EP_IDX].ep_addr);
 		usb_cancel_transfer(bt_h4_ep_data[BT_H4_OUT_EP_IDX].ep_addr);
@@ -166,7 +166,7 @@ static void bt_h4_status_cb(struct usb_cfg_data *cfg,
 	case USB_DC_SOF:
 	case USB_DC_UNKNOWN:
 	default:
-		LOG_DBG("USB unhandled status: %u", status);
+		LOG_DBG("Unhandled status: %u", status);
 		break;
 	}
 }

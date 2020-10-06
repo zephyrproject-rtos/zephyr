@@ -200,37 +200,37 @@ static void bluetooth_status_cb(struct usb_cfg_data *cfg,
 	/* Check the USB status and do needed action if required */
 	switch (status) {
 	case USB_DC_ERROR:
-		LOG_DBG("USB device error");
+		LOG_DBG("Device error");
 		break;
 	case USB_DC_RESET:
-		LOG_DBG("USB device reset detected");
+		LOG_DBG("Device reset detected");
 		break;
 	case USB_DC_CONNECTED:
-		LOG_DBG("USB device connected");
+		LOG_DBG("Device connected");
 		break;
 	case USB_DC_CONFIGURED:
-		LOG_DBG("USB device configured");
+		LOG_DBG("Device configured");
 		/* Start reading */
 		acl_read_cb(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr, 0, NULL);
 		break;
 	case USB_DC_DISCONNECTED:
-		LOG_DBG("USB device disconnected");
+		LOG_DBG("Device disconnected");
 		/* Cancel any transfer */
 		usb_cancel_transfer(bluetooth_ep_data[HCI_INT_EP_IDX].ep_addr);
 		usb_cancel_transfer(bluetooth_ep_data[HCI_IN_EP_IDX].ep_addr);
 		usb_cancel_transfer(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr);
 		break;
 	case USB_DC_SUSPEND:
-		LOG_DBG("USB device suspended");
+		LOG_DBG("Device suspended");
 		break;
 	case USB_DC_RESUME:
-		LOG_DBG("USB device resumed");
+		LOG_DBG("Device resumed");
 		break;
 	case USB_DC_SOF:
 		break;
 	case USB_DC_UNKNOWN:
 	default:
-		LOG_DBG("USB unknown state");
+		LOG_DBG("Unknown state");
 		break;
 	}
 }
