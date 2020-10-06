@@ -152,11 +152,7 @@ static bool read_accel(const struct device *dev)
 		status[MOUSE_Y_REPORT_POS] = val[1].val1 * 4;
 	}
 
-	if (val[0].val1 != 0 || val[1].val1 != 0) {
-		return true;
-	} else {
-		return false;
-	}
+	return val[0].val1 != 0 || val[1].val1 != 0;
 }
 
 static void trigger_handler(const struct device *dev,

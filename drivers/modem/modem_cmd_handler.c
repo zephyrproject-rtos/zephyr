@@ -27,11 +27,7 @@ LOG_MODULE_REGISTER(modem_cmd_handler, CONFIG_MODEM_LOG_LEVEL);
 
 static bool is_crlf(uint8_t c)
 {
-	if (c == '\n' || c == '\r') {
-		return true;
-	} else {
-		return false;
-	}
+	return c == '\n' || c == '\r';
 }
 
 static void skipcrlf(struct modem_cmd_handler_data *data)

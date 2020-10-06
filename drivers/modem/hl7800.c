@@ -629,11 +629,7 @@ static void hl7800_RX_unlock(void)
 
 static bool hl7800_RX_locked(void)
 {
-	if (k_sem_count_get(&hl7800_RX_lock_sem) == 0) {
-		return true;
-	} else {
-		return false;
-	}
+	return k_sem_count_get(&hl7800_RX_lock_sem) == 0;
 }
 
 static int hl7800_TX_lock(void)
@@ -659,11 +655,7 @@ static void hl7800_TX_unlock(void)
 
 static bool hl7800_TX_locked(void)
 {
-	if (k_sem_count_get(&hl7800_TX_lock_sem) == 0) {
-		return true;
-	} else {
-		return false;
-	}
+	return k_sem_count_get(&hl7800_TX_lock_sem) == 0;
 }
 
 static void hl7800_lock(void)
@@ -1140,11 +1132,7 @@ done:
 
 static bool is_crlf(uint8_t c)
 {
-	if (c == '\n' || c == '\r') {
-		return true;
-	} else {
-		return false;
-	}
+	return c == '\n' || c == '\r';
 }
 
 static void net_buf_skipcrlf(struct net_buf **buf)

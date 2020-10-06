@@ -417,11 +417,7 @@ static int send_data(struct wncm14a2a_socket *sock, struct net_pkt *pkt)
 
 static bool is_crlf(uint8_t c)
 {
-	if (c == '\n' || c == '\r') {
-		return true;
-	} else {
-		return false;
-	}
+	return c == '\n' || c == '\r';
 }
 
 static void net_buf_skipcrlf(struct net_buf **buf)

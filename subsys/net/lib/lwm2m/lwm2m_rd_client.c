@@ -417,11 +417,7 @@ static bool sm_bootstrap_verify(bool bootstrap_server, int sec_obj_inst)
 		return false;
 	}
 
-	if (bootstrap == bootstrap_server) {
-		return true;
-	} else {
-		return false;
-	}
+	return bootstrap == bootstrap_server;
 }
 
 static void sm_update_lifetime(int srv_obj_inst, uint32_t *lifetime)

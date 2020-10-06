@@ -410,44 +410,21 @@ bool stm32_dma_check_fifo_mburst(LL_DMA_InitTypeDef *DMAx)
 		case LL_DMA_MBURST_INC4:
 			return true;
 		case LL_DMA_MBURST_INC8:
-			if (fifo_level == LL_DMA_FIFOTHRESHOLD_1_2 ||
-			    fifo_level == LL_DMA_FIFOTHRESHOLD_FULL) {
-				return true;
-			} else {
-				return false;
-			}
+			return fifo_level == LL_DMA_FIFOTHRESHOLD_1_2 || fifo_level == LL_DMA_FIFOTHRESHOLD_FULL;
 		case LL_DMA_MBURST_INC16:
-			if (fifo_level == LL_DMA_FIFOTHRESHOLD_FULL) {
-				return true;
-			} else {
-				return false;
-			}
+			return fifo_level == LL_DMA_FIFOTHRESHOLD_FULL;
 		}
 	case LL_DMA_MDATAALIGN_HALFWORD:
 		switch (mburst) {
 		case LL_DMA_MBURST_INC4:
-			if (fifo_level == LL_DMA_FIFOTHRESHOLD_1_2 ||
-			    fifo_level == LL_DMA_FIFOTHRESHOLD_FULL) {
-				return true;
-			} else {
-				return false;
-			}
+			return fifo_level == LL_DMA_FIFOTHRESHOLD_1_2 || fifo_level == LL_DMA_FIFOTHRESHOLD_FULL;
 		case LL_DMA_MBURST_INC8:
-			if (fifo_level == LL_DMA_FIFOTHRESHOLD_FULL) {
-				return true;
-			} else {
-				return false;
-			}
+			return fifo_level == LL_DMA_FIFOTHRESHOLD_FULL;
 		case LL_DMA_MBURST_INC16:
 			return false;
 		}
 	case LL_DMA_MDATAALIGN_WORD:
-		if (mburst == LL_DMA_MBURST_INC4 &&
-		    fifo_level == LL_DMA_FIFOTHRESHOLD_FULL) {
-			return true;
-		} else {
-			return false;
-		}
+		return mburst == LL_DMA_MBURST_INC4 && fifo_level == LL_DMA_FIFOTHRESHOLD_FULL;
 	default:
 		return false;
 	}
