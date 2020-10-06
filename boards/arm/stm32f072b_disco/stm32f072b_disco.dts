@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/f0/stm32f072Xb.dtsi>
+#include <st/f0/stm32f072r(8-b)tx-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F072B-DISCO board";
@@ -57,6 +58,7 @@
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
 	current-speed = <115200>;
 	status = "okay";
 };
