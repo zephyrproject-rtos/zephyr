@@ -10,6 +10,7 @@
 
 /dts-v1/;
 #include <st/l4/stm32l476Xg.dtsi>
+#include <st/l4/stm32l476v(c-e-g)tx-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics STM32L476G-DISCO board";
@@ -65,6 +66,7 @@
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6>;
 	current-speed = <115200>;
 	status = "okay";
 };
