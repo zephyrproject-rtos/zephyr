@@ -100,27 +100,6 @@ class EDT:
     nodes:
       A list of Node objects for the nodes that appear in the devicetree
 
-    compat2enabled:
-      A collections.defaultdict that maps each 'compatible' string that appears
-      on some enabled Node to a list of enabled Nodes.
-
-      For example, edt.compat2enabled["bar"] would include the 'foo' and 'bar'
-      nodes below.
-
-        foo {
-                compatible = "bar";
-                status = "okay";
-                ...
-        };
-        bar {
-                compatible = "foo", "bar", "baz";
-                status = "okay";
-                ...
-        };
-
-      This exists only for the sake of gen_legacy_defines.py. It will probably
-      be removed following the Zephyr 2.3 release.
-
     compat2nodes:
       A collections.defaultdict that maps each 'compatible' string that appears
       on some Node to a list of Nodes with that compatible.
@@ -524,7 +503,6 @@ class EDT:
 
         self.label2node = OrderedDict()
         self.dep_ord2node = OrderedDict()
-        self.compat2enabled = defaultdict(list)
         self.compat2nodes = defaultdict(list)
         self.compat2okay = defaultdict(list)
 
@@ -534,9 +512,6 @@ class EDT:
 
             for compat in node.compats:
                 self.compat2nodes[compat].append(node)
-
-                if node.enabled:
-                    self.compat2enabled[compat].append(node)
 
                 if node.status == "okay":
                     self.compat2okay[compat].append(node)
@@ -703,8 +678,8 @@ class Node:
       A non-negative integer value such that the value for a Node is
       less than the value for all Nodes that depend on it.
 
-      The ordinal is defined for all Nodes including those that are not
-      'enabled', and is unique among nodes in its EDT 'nodes' list.
+      The ordinal is defined for all Nodes, and is unique among nodes in its
+      EDT 'nodes' list.
 
     required_by:
       A list with the nodes that directly depend on the node
@@ -716,12 +691,6 @@ class Node:
       The node's status property value, as a string, or "okay" if the node
       has no status property set. If the node's status property is "ok",
       it is converted to "okay" for consistency.
-
-    enabled:
-      True unless the node has 'status = "disabled"'
-
-      This exists only for the sake of gen_legacy_defines.py. It will probably
-      be removed following the Zephyr 2.3 release.
 
     read_only:
       True if the node has a 'read-only' property, and False otherwise
@@ -865,11 +834,6 @@ class Node:
             as_string = "okay"
 
         return as_string
-
-    @property
-    def enabled(self):
-        "See the class docstring"
-        return "status" not in self._node.props or self.status != "disabled"
 
     @property
     def read_only(self):
@@ -1182,7 +1146,7 @@ class Node:
         prop = node.props.get(name)
 
         if not prop:
-            if required and self.enabled:
+            if required and self.status == "okay":
                 _err("'{}' is marked as required in 'properties:' in {}, but "
                      "does not appear in {!r}".format(
                          name, self.binding_path, node))

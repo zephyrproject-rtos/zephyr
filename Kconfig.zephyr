@@ -342,13 +342,6 @@ config MAKEFILE_EXPORTS
 	  Generates a file with build information that can be read by
 	  third party Makefile-based build systems.
 
-config LEGACY_DEVICETREE_MACROS
-	bool "Allow use of legacy devicetree macros"
-	help
-	  Allows use of legacy devicetree macros which were used in
-	  Zephyr 2.2 and previous versions, rather than the devicetree.h
-	  API introduced during the Zephyr 2.3 development cycle.
-
 config DEPRECATED_ZEPHYR_INT_TYPES
 	bool "Allow the use of the deprecated zephyr integer types"
 	help

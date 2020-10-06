@@ -150,8 +150,8 @@ Step 6: Flash the first image
 =============================
 
 Upload the :file:`signed.bin` file from Step 4 to image slot-0 of your
-board.  The location of image slot-0 varies by board, as described in
-:ref:`mcuboot_partitions`.  For the frdm_k64f, slot-0 is located at address
+board.  The location of the slot 0 image varies by board; see
+:ref:`flash_map_api` for details.  For the frdm_k64f, slot-0 is located at address
 ``0xc000``.
 
 Using :file:`pyocd` you don't need to specify the slot-0 starting address.

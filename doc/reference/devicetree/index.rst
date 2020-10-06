@@ -211,7 +211,8 @@ Fixed flash partitions
 
 These conveniences may be used for the special-purpose ``fixed-partitions``
 compatible used to encode information about flash memory partitions in the
-device tree.
+device tree. See :zephyr_file:`dts/bindings/mtd/partition.yaml` for this
+compatible's binding.
 
 .. doxygengroup:: devicetree-fixed-partition
    :project: Zephyr
