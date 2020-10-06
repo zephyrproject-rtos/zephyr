@@ -15,6 +15,8 @@ menuconfig COUNTER_RTC_STM32
 	  Build RTC driver for STM32 SoCs.
 	  Tested on STM32 F0, F2, F3, F4, L1, L4, F7, G4, H7 series
 
+if COUNTER_RTC_STM32
+
 choice COUNTER_RTC_STM32_CLOCK_SRC
 	bool "RTC clock source"
 	depends on COUNTER_RTC_STM32
@@ -66,7 +68,7 @@ config COUNTER_RTC_STM32_LSE_DRIVE_STRENGTH
 	default 0x00000010 if COUNTER_RTC_STM32_LSE_DRIVE_MEDIUMHIGH
 	default 0x00000018 if COUNTER_RTC_STM32_LSE_DRIVE_HIGH
 
-endif
+endif # !SOC_SERIES_STM32F4X
 
 config COUNTER_RTC_STM32_LSE_BYPASS
 	bool "LSE oscillator bypass"
@@ -79,3 +81,5 @@ config COUNTER_RTC_STM32_BACKUP_DOMAIN_RESET
 	default y
 	help
 	  Force a backup domain reset on startup
+
+endif # COUNTER_RTC_STM32
