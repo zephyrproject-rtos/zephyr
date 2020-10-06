@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/mp1/stm32mp157.dtsi>
+#include <st/mp1/stm32mp157cacx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
@@ -57,11 +58,13 @@
 };
 
 &usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb12>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &uart7 {
+	pinctrl-0 = <&uart7_tx_pe8 &uart7_rx_pe7>;
 	current-speed = <115200>;
 	status = "okay";
 };
