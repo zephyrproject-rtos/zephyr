@@ -17,7 +17,7 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os);
 
-static struct k_spinlock lock;
+struct k_spinlock z_mem_domain_lock;
 static uint8_t max_partitions;
 
 struct k_mem_domain k_mem_domain_default;
@@ -100,7 +100,7 @@ void k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 		 "num_parts of %d exceeds maximum allowable partitions (%d)",
 		 num_parts, max_partitions);
 
-	key = k_spin_lock(&lock);
+	key = k_spin_lock(&z_mem_domain_lock);
 
 	domain->num_partitions = 0U;
 	(void)memset(domain->partitions, 0, sizeof(domain->partitions));
@@ -134,7 +134,7 @@ void k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 	}
 #endif
 
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&z_mem_domain_lock, key);
 }
 
 void k_mem_domain_add_partition(struct k_mem_domain *domain,
@@ -147,7 +147,7 @@ void k_mem_domain_add_partition(struct k_mem_domain *domain,
 	__ASSERT(check_add_partition(domain, part),
 		 "invalid partition %p", part);
 
-	key = k_spin_lock(&lock);
+	key = k_spin_lock(&z_mem_domain_lock);
 
 	for (p_idx = 0; p_idx < max_partitions; p_idx++) {
 		/* A zero-sized partition denotes it's a free partition */
@@ -171,7 +171,7 @@ void k_mem_domain_add_partition(struct k_mem_domain *domain,
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 	arch_mem_domain_partition_add(domain, p_idx);
 #endif
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&z_mem_domain_lock, key);
 }
 
 void k_mem_domain_remove_partition(struct k_mem_domain *domain,
@@ -183,7 +183,7 @@ void k_mem_domain_remove_partition(struct k_mem_domain *domain,
 	__ASSERT_NO_MSG(domain != NULL);
 	__ASSERT_NO_MSG(part != NULL);
 
-	key = k_spin_lock(&lock);
+	key = k_spin_lock(&z_mem_domain_lock);
 
 	/* find a partition that matches the given start and size */
 	for (p_idx = 0; p_idx < max_partitions; p_idx++) {
@@ -207,7 +207,7 @@ void k_mem_domain_remove_partition(struct k_mem_domain *domain,
 
 	domain->num_partitions--;
 
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&z_mem_domain_lock, key);
 }
 
 static void add_thread_locked(struct k_mem_domain *domain,
@@ -241,29 +241,29 @@ static void remove_thread_locked(struct k_thread *thread)
 /* Called from thread object initialization */
 void z_mem_domain_init_thread(struct k_thread *thread)
 {
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = k_spin_lock(&z_mem_domain_lock);
 
 	/* New threads inherit memory domain configuration from parent */
 	add_thread_locked(_current->mem_domain_info.mem_domain, thread);
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&z_mem_domain_lock, key);
 }
 
 /* Called when thread aborts during teardown tasks. sched_spinlock is held */
 void z_mem_domain_exit_thread(struct k_thread *thread)
 {
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = k_spin_lock(&z_mem_domain_lock);
 	remove_thread_locked(thread);
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&z_mem_domain_lock, key);
 }
 
 void k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
 {
 	k_spinlock_key_t key;
 
-	key = k_spin_lock(&lock);
+	key = k_spin_lock(&z_mem_domain_lock);
 	remove_thread_locked(thread);
 	add_thread_locked(domain, thread);
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&z_mem_domain_lock, key);
 }
 
 void k_mem_domain_remove_thread(k_tid_t thread)
@@ -280,7 +280,7 @@ void k_mem_domain_destroy(struct k_mem_domain *domain)
 	__ASSERT(domain != &k_mem_domain_default,
 		 "cannot destroy default domain");
 
-	key = k_spin_lock(&lock);
+	key = k_spin_lock(&z_mem_domain_lock);
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 	arch_mem_domain_destroy(domain);
@@ -294,7 +294,7 @@ void k_mem_domain_destroy(struct k_mem_domain *domain)
 		add_thread_locked(&k_mem_domain_default, thread);
 	}
 
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&z_mem_domain_lock, key);
 }
 
 static int init_mem_domain_module(const struct device *arg)
