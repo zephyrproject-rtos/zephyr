@@ -192,19 +192,19 @@ def test_props():
         "<Property, name: string-array, type: string-array, value: ['foo', 'bar', 'baz']>"
 
     assert str(edt.get_node("/props").props["phandle-ref"]) == \
-        f"<Property, name: phandle-ref, type: phandle, value: <Node /props/ctrl-1 in 'test.dts', binding {filenames[1]}>>"
+        f"<Property, name: phandle-ref, type: phandle, value: <Node /ctrl-1 in 'test.dts', binding {filenames[1]}>>"
 
     assert str(edt.get_node("/props").props["phandle-refs"]) == \
-        f"<Property, name: phandle-refs, type: phandles, value: [<Node /props/ctrl-1 in 'test.dts', binding {filenames[1]}>, <Node /props/ctrl-2 in 'test.dts', binding {filenames[2]}>]>"
+        f"<Property, name: phandle-refs, type: phandles, value: [<Node /ctrl-1 in 'test.dts', binding {filenames[1]}>, <Node /ctrl-2 in 'test.dts', binding {filenames[2]}>]>"
 
     assert str(edt.get_node("/props").props["phandle-array-foos"]) == \
-        f"<Property, name: phandle-array-foos, type: phandle-array, value: [<ControllerAndData, controller: <Node /props/ctrl-1 in 'test.dts', binding {filenames[1]}>, data: OrderedDict([('one', 1)])>, <ControllerAndData, controller: <Node /props/ctrl-2 in 'test.dts', binding {filenames[2]}>, data: OrderedDict([('one', 2), ('two', 3)])>]>"
+        f"<Property, name: phandle-array-foos, type: phandle-array, value: [<ControllerAndData, controller: <Node /ctrl-1 in 'test.dts', binding {filenames[1]}>, data: OrderedDict([('one', 1)])>, <ControllerAndData, controller: <Node /ctrl-2 in 'test.dts', binding {filenames[2]}>, data: OrderedDict([('one', 2), ('two', 3)])>]>"
 
     assert str(edt.get_node("/props").props["foo-gpios"]) == \
-        f"<Property, name: foo-gpios, type: phandle-array, value: [<ControllerAndData, controller: <Node /props/ctrl-1 in 'test.dts', binding {filenames[1]}>, data: OrderedDict([('gpio-one', 1)])>]>"
+        f"<Property, name: foo-gpios, type: phandle-array, value: [<ControllerAndData, controller: <Node /ctrl-1 in 'test.dts', binding {filenames[1]}>, data: OrderedDict([('gpio-one', 1)])>]>"
 
     assert str(edt.get_node("/props").props["path"]) == \
-        f"<Property, name: path, type: path, value: <Node /props/ctrl-1 in 'test.dts', binding {filenames[1]}>>"
+        f"<Property, name: path, type: path, value: <Node /ctrl-1 in 'test.dts', binding {filenames[1]}>>"
 
 def test_nexus():
     '''Test <prefix>-map via gpio-map (the most common case).'''
@@ -234,7 +234,7 @@ def test_binding_inference():
                  for i in range(1, 3)}
 
     assert str(edt.get_node("/zephyr,user").props) == \
-        rf"OrderedDict([('boolean', <Property, name: boolean, type: boolean, value: True>), ('bytes', <Property, name: bytes, type: uint8-array, value: b'\x81\x82\x83'>), ('number', <Property, name: number, type: int, value: 23>), ('numbers', <Property, name: numbers, type: array, value: [1, 2, 3]>), ('string', <Property, name: string, type: string, value: 'text'>), ('strings', <Property, name: strings, type: string-array, value: ['a', 'b', 'c']>), ('handle', <Property, name: handle, type: phandle, value: <Node /props/ctrl-1 in 'test.dts', binding {filenames[1]}>>), ('phandles', <Property, name: phandles, type: phandles, value: [<Node /props/ctrl-1 in 'test.dts', binding {filenames[1]}>, <Node /props/ctrl-2 in 'test.dts', binding {filenames[2]}>]>), ('phandle-array-foos', <Property, name: phandle-array-foos, type: phandle-array, value: [<ControllerAndData, controller: <Node /props/ctrl-2 in 'test.dts', binding {filenames[2]}>, data: OrderedDict([('one', 1), ('two', 2)])>]>)])"
+        rf"OrderedDict([('boolean', <Property, name: boolean, type: boolean, value: True>), ('bytes', <Property, name: bytes, type: uint8-array, value: b'\x81\x82\x83'>), ('number', <Property, name: number, type: int, value: 23>), ('numbers', <Property, name: numbers, type: array, value: [1, 2, 3]>), ('string', <Property, name: string, type: string, value: 'text'>), ('strings', <Property, name: strings, type: string-array, value: ['a', 'b', 'c']>), ('handle', <Property, name: handle, type: phandle, value: <Node /ctrl-1 in 'test.dts', binding {filenames[1]}>>), ('phandles', <Property, name: phandles, type: phandles, value: [<Node /ctrl-1 in 'test.dts', binding {filenames[1]}>, <Node /ctrl-2 in 'test.dts', binding {filenames[2]}>]>), ('phandle-array-foos', <Property, name: phandle-array-foos, type: phandle-array, value: [<ControllerAndData, controller: <Node /ctrl-2 in 'test.dts', binding {filenames[2]}>, data: OrderedDict([('one', 1), ('two', 2)])>]>)])"
 
 def test_multi_bindings():
     '''Test having multiple directories with bindings'''
