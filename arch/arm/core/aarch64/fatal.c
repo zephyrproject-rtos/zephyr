@@ -157,16 +157,28 @@ static void esf_dump(const z_arch_esf_t *esf)
 
 void z_arm64_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 {
-	uint64_t el, esr, elr, far;
+	uint64_t esr = 0;
+	uint64_t elr = 0;
+	uint64_t far = 0;
+	uint64_t el;
 
 	if (reason != K_ERR_SPURIOUS_IRQ) {
 		__asm__ volatile("mrs %0, CurrentEL" : "=r" (el));
 
-		if (GET_EL(el) != MODE_EL0) {
+		switch (GET_EL(el)) {
+		case MODE_EL1:
 			__asm__ volatile("mrs %0, esr_el1" : "=r" (esr));
 			__asm__ volatile("mrs %0, far_el1" : "=r" (far));
 			__asm__ volatile("mrs %0, elr_el1" : "=r" (elr));
+			break;
+		case MODE_EL3:
+			__asm__ volatile("mrs %0, esr_el3" : "=r" (esr));
+			__asm__ volatile("mrs %0, far_el3" : "=r" (far));
+			__asm__ volatile("mrs %0, elr_el3" : "=r" (elr));
+			break;
+		}
 
+		if (GET_EL(el) != MODE_EL0) {
 			LOG_ERR("ESR_ELn: 0x%016llx", esr);
 			LOG_ERR("FAR_ELn: 0x%016llx", far);
 			LOG_ERR("ELR_ELn: 0x%016llx", elr);
