@@ -203,16 +203,10 @@ static void bluetooth_status_cb(struct usb_cfg_data *cfg,
 
 	/* Check the USB status and do needed action if required */
 	switch (status) {
-	case USB_DC_ERROR:
-		LOG_DBG("Device error");
-		break;
 	case USB_DC_RESET:
 		LOG_DBG("Device reset detected");
 		configured = false;
 		suspended = false;
-		break;
-	case USB_DC_CONNECTED:
-		LOG_DBG("Device connected");
 		break;
 	case USB_DC_CONFIGURED:
 		LOG_DBG("Device configured");
@@ -249,8 +243,6 @@ static void bluetooth_status_cb(struct usb_cfg_data *cfg,
 		} else {
 			LOG_DBG("Spurious resume event");
 		}
-		break;
-	case USB_DC_SOF:
 		break;
 	case USB_DC_UNKNOWN:
 	default:

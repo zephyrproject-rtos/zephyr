@@ -190,9 +190,6 @@ static void bt_h4_status_cb(struct usb_cfg_data *cfg,
 			LOG_DBG("Spurious resume event");
 		}
 		break;
-	case USB_DC_CONNECTED:
-	case USB_DC_ERROR:
-	case USB_DC_SOF:
 	case USB_DC_UNKNOWN:
 	default:
 		LOG_DBG("Unhandled status: %u", status);
