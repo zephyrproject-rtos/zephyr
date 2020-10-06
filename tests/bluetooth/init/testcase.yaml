@@ -89,6 +89,38 @@ tests:
     extra_args: CONF_FILE=prj_controller_dbg_ll_sw_split.conf
     platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
       nrf51dk_nrf51422
+  bluetooth.init.test_ctlr_broadcaster:
+    extra_args: CONF_FILE=prj_ctlr_broadcaster.conf
+    platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
+      nrf51dk_nrf51422
+  bluetooth.init.test_ctlr_peripheral:
+    extra_args: CONF_FILE=prj_ctlr_peripheral.conf
+    platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
+      nrf51dk_nrf51422
+  bluetooth.init.test_ctlr_observer:
+    extra_args: CONF_FILE=prj_ctlr_observer.conf
+    platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
+      nrf51dk_nrf51422
+  bluetooth.init.test_ctlr_central:
+    extra_args: CONF_FILE=prj_ctlr_central.conf
+    platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
+      nrf51dk_nrf51422
+  bluetooth.init.test_ctlr_broadcaster_ext:
+    extra_args: CONF_FILE=prj_ctlr_broadcaster_ext.conf
+    platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
+      nrf51dk_nrf51422
+  bluetooth.init.test_ctlr_peripheral_ext:
+    extra_args: CONF_FILE=prj_ctlr_peripheral_ext.conf
+    platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
+      nrf51dk_nrf51422
+  bluetooth.init.test_ctlr_oberver_ext:
+    extra_args: CONF_FILE=prj_ctlr_observer_ext.conf
+    platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
+      nrf51dk_nrf51422
+  bluetooth.init.test_ctlr_central_ext:
+    extra_args: CONF_FILE=prj_ctlr_central_ext.conf
+    platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
+      nrf51dk_nrf51422
   bluetooth.init.test_h5:
     extra_args: CONF_FILE=prj_h5.conf
     platform_allow: qemu_cortex_m3
