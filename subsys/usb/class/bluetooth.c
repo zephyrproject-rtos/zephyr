@@ -38,6 +38,10 @@ static struct k_thread rx_thread_data;
 static K_KERNEL_STACK_DEFINE(tx_thread_stack, 512);
 static struct k_thread tx_thread_data;
 
+/* HCI USB state flags */
+static bool configured;
+static bool suspended;
+
 struct usb_bluetooth_config {
 	struct usb_if_descriptor if0;
 	struct usb_ep_descriptor if0_int_ep;
@@ -204,14 +208,20 @@ static void bluetooth_status_cb(struct usb_cfg_data *cfg,
 		break;
 	case USB_DC_RESET:
 		LOG_DBG("Device reset detected");
+		configured = false;
+		suspended = false;
 		break;
 	case USB_DC_CONNECTED:
 		LOG_DBG("Device connected");
 		break;
 	case USB_DC_CONFIGURED:
 		LOG_DBG("Device configured");
-		/* Start reading */
-		acl_read_cb(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr, 0, NULL);
+		if (!configured) {
+			configured = true;
+			/* Start reading */
+			acl_read_cb(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr,
+				    0, NULL);
+		}
 		break;
 	case USB_DC_DISCONNECTED:
 		LOG_DBG("Device disconnected");
@@ -219,12 +229,26 @@ static void bluetooth_status_cb(struct usb_cfg_data *cfg,
 		usb_cancel_transfer(bluetooth_ep_data[HCI_INT_EP_IDX].ep_addr);
 		usb_cancel_transfer(bluetooth_ep_data[HCI_IN_EP_IDX].ep_addr);
 		usb_cancel_transfer(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr);
+		configured = false;
+		suspended = false;
 		break;
 	case USB_DC_SUSPEND:
 		LOG_DBG("Device suspended");
+		suspended = true;
 		break;
 	case USB_DC_RESUME:
 		LOG_DBG("Device resumed");
+		if (suspended) {
+			LOG_DBG("from suspend");
+			suspended = false;
+			if (configured) {
+				/* Start reading */
+				acl_read_cb(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr,
+					    0, NULL);
+			}
+		} else {
+			LOG_DBG("Spurious resume event");
+		}
 		break;
 	case USB_DC_SOF:
 		break;

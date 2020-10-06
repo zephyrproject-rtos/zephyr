@@ -38,6 +38,10 @@ static struct k_thread rx_thread_data;
 static K_KERNEL_STACK_DEFINE(tx_thread_stack, 512);
 static struct k_thread tx_thread_data;
 
+/* HCI USB state flags */
+static bool configured;
+static bool suspended;
+
 struct usb_bt_h4_config {
 	struct usb_if_descriptor if0;
 	struct usb_ep_descriptor if0_out_ep;
@@ -147,22 +151,47 @@ static void bt_h4_status_cb(struct usb_cfg_data *cfg,
 
 	/* Check the USB status and do needed action if required */
 	switch (status) {
+	case USB_DC_RESET:
+		LOG_DBG("Device reset detected");
+		suspended = false;
+		configured = false;
+		break;
 	case USB_DC_CONFIGURED:
 		LOG_DBG("Device configured");
-		/* Start reading */
-		bt_h4_read(bt_h4_ep_data[BT_H4_OUT_EP_IDX].ep_addr, 0, NULL);
+		if (!configured) {
+			configured = true;
+			/* Start reading */
+			bt_h4_read(bt_h4_ep_data[BT_H4_OUT_EP_IDX].ep_addr,
+				   0, NULL);
+		}
 		break;
 	case USB_DC_DISCONNECTED:
 		LOG_DBG("Device disconnected");
 		/* Cancel any transfer */
 		usb_cancel_transfer(bt_h4_ep_data[BT_H4_IN_EP_IDX].ep_addr);
 		usb_cancel_transfer(bt_h4_ep_data[BT_H4_OUT_EP_IDX].ep_addr);
+		suspended = false;
+		configured = false;
+		break;
+	case USB_DC_SUSPEND:
+		suspended = true;
+		break;
+	case USB_DC_RESUME:
+		LOG_DBG("Device resumed");
+		if (suspended) {
+			LOG_DBG("from suspend");
+			suspended = false;
+			if (configured) {
+				/* Start reading */
+				bt_h4_read(bt_h4_ep_data[BT_H4_OUT_EP_IDX].ep_addr,
+					   0, NULL);
+			}
+		} else {
+			LOG_DBG("Spurious resume event");
+		}
 		break;
 	case USB_DC_CONNECTED:
 	case USB_DC_ERROR:
-	case USB_DC_RESET:
-	case USB_DC_SUSPEND:
-	case USB_DC_RESUME:
 	case USB_DC_SOF:
 	case USB_DC_UNKNOWN:
 	default:
