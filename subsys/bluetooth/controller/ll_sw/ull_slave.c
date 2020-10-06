@@ -47,6 +47,8 @@
 
 static void ticker_op_stop_adv_cb(uint32_t status, void *param);
 static void ticker_op_cb(uint32_t status, void *param);
+static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
+					       void *params);
 
 void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		     struct node_rx_ftr *ftr, struct lll_conn *lll)
@@ -369,6 +371,26 @@ void ull_slave_done(struct node_rx_event_done *done, uint32_t *ticks_drift_plus,
 	}
 }
 
+void ull_slave_latency_cancel(struct ll_conn *conn, uint16_t handle)
+{
+	/* break peripheral latency */
+	if (conn->lll.latency_event && !conn->slave.latency_cancel) {
+		uint32_t ticker_status;
+
+		conn->slave.latency_cancel = 1U;
+
+		ticker_status =
+			ticker_update(TICKER_INSTANCE_ID_CTLR,
+				      TICKER_USER_ID_THREAD,
+				      (TICKER_ID_CONN_BASE + handle),
+				      0, 0, 0, 0, 1, 0,
+				      ticker_update_latency_cancel_op_cb,
+				      (void *)conn);
+		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
+			  (ticker_status == TICKER_STATUS_BUSY));
+	}
+}
+
 void ull_slave_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 			 uint16_t lazy, void *param)
 {
@@ -488,4 +510,14 @@ static void ticker_op_cb(uint32_t status, void *param)
 	ARG_UNUSED(param);
 
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+}
+
+static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
+					       void *params)
+{
+	struct ll_conn *conn = params;
+
+	LL_ASSERT(ticker_status == TICKER_STATUS_SUCCESS);
+
+	conn->slave.latency_cancel = 0U;
 }

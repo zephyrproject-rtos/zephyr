@@ -52,12 +52,6 @@ inline void ull_conn_upd_curr_reset(void);
 
 static int init_reset(void);
 
-#if defined(CONFIG_BT_PERIPHERAL)
-static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
-					       void *params);
-static void peripheral_latency_cancel(struct ll_conn *conn, uint16_t handle);
-#endif /* CONFIG_BT_PERIPHERAL */
-
 static void ticker_update_conn_op_cb(uint32_t status, void *param);
 static void ticker_stop_conn_op_cb(uint32_t status, void *param);
 static void ticker_start_conn_op_cb(uint32_t status, void *param);
@@ -276,7 +270,7 @@ int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->lll.role) {
-		peripheral_latency_cancel(conn, handle);
+		ull_slave_latency_cancel(conn, handle);
 	}
 
 #if defined(CONFIG_BT_CTLR_THROUGHPUT)
@@ -379,7 +373,7 @@ uint8_t ll_conn_update(uint16_t handle, uint8_t cmd, uint8_t status, uint16_t in
 
 			if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
 			    conn->lll.role) {
-				peripheral_latency_cancel(conn, handle);
+				ull_slave_latency_cancel(conn, handle);
 			}
 		}
 
@@ -427,7 +421,7 @@ uint8_t ll_terminate_ind_send(uint16_t handle, uint8_t reason)
 	conn->llcp_terminate.req++;
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->lll.role) {
-		peripheral_latency_cancel(conn, handle);
+		ull_slave_latency_cancel(conn, handle);
 	}
 
 	return 0;
@@ -451,7 +445,7 @@ uint8_t ll_feature_req_send(uint16_t handle)
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
 	    IS_ENABLED(CONFIG_BT_CTLR_SLAVE_FEAT_REQ) &&
 	    conn->lll.role) {
-		peripheral_latency_cancel(conn, handle);
+		ull_slave_latency_cancel(conn, handle);
 	}
 
 	return 0;
@@ -473,7 +467,7 @@ uint8_t ll_version_ind_send(uint16_t handle)
 	conn->llcp_version.req++;
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->lll.role) {
-		peripheral_latency_cancel(conn, handle);
+		ull_slave_latency_cancel(conn, handle);
 	}
 
 	return 0;
@@ -526,7 +520,7 @@ uint32_t ll_length_req_send(uint16_t handle, uint16_t tx_octets, uint16_t tx_tim
 	conn->llcp_length.req++;
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->lll.role) {
-		peripheral_latency_cancel(conn, handle);
+		ull_slave_latency_cancel(conn, handle);
 	}
 
 	return 0;
@@ -621,7 +615,7 @@ uint8_t ll_phy_req_send(uint16_t handle, uint8_t tx, uint8_t flags, uint8_t rx)
 	conn->llcp_phy.req++;
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->lll.role) {
-		peripheral_latency_cancel(conn, handle);
+		ull_slave_latency_cancel(conn, handle);
 	}
 
 	return 0;
@@ -1629,38 +1623,6 @@ static int init_reset(void)
 
 	return 0;
 }
-
-#if defined(CONFIG_BT_PERIPHERAL)
-static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
-					       void *params)
-{
-	struct ll_conn *conn = params;
-
-	LL_ASSERT(ticker_status == TICKER_STATUS_SUCCESS);
-
-	conn->slave.latency_cancel = 0U;
-}
-
-static void peripheral_latency_cancel(struct ll_conn *conn, uint16_t handle)
-{
-	/* break peripheral latency */
-	if (conn->lll.latency_event && !conn->slave.latency_cancel) {
-		uint32_t ticker_status;
-
-		conn->slave.latency_cancel = 1U;
-
-		ticker_status =
-			ticker_update(TICKER_INSTANCE_ID_CTLR,
-				      TICKER_USER_ID_THREAD,
-				      (TICKER_ID_CONN_BASE + handle),
-				      0, 0, 0, 0, 1, 0,
-				      ticker_update_latency_cancel_op_cb,
-				      (void *)conn);
-		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-			  (ticker_status == TICKER_STATUS_BUSY));
-	}
-}
-#endif /* CONFIG_BT_PERIPHERAL */
 
 static void ticker_update_conn_op_cb(uint32_t status, void *param)
 {
