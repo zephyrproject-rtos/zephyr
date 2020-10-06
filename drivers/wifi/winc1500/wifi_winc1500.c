@@ -436,9 +436,6 @@ static int winc1500_accept(struct net_context *context,
 			       K_MSEC(timeout))) {
 			return -ETIMEDOUT;
 		}
-	} else {
-		k_sem_take(&w1500_data.socket_data[socket].wait_sem,
-			   K_FOREVER);
 	}
 
 	return w1500_data.socket_data[socket].ret_code;
@@ -941,7 +938,6 @@ static void winc1500_socket_cb(SOCKET sock, uint8 message, void *pvMsg)
 		break;
 	case SOCKET_MSG_ACCEPT:
 		handle_socket_msg_accept(sd, pvMsg);
-		k_sem_give(&sd->wait_sem);
 
 		break;
 	}
