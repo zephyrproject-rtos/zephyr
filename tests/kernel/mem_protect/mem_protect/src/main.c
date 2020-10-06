@@ -69,7 +69,8 @@ void test_main(void)
 			 ztest_unit_test(test_create_new_essential_thread_from_user),
 			 ztest_unit_test(test_create_new_higher_prio_thread_from_user),
 			 ztest_unit_test(test_inherit_resource_pool),
-			 ztest_unit_test(test_create_new_invalid_prio_thread_from_user)
+			 ztest_unit_test(test_create_new_invalid_prio_thread_from_user),
+			 ztest_unit_test(test_mem_domain_boot_threads)
 			 );
 	ztest_run_test_suite(memory_protection_test_suite);
 }
