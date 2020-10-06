@@ -205,7 +205,7 @@ static int iis2mdc_sample_fetch_temp(const struct device *dev)
 	}
 
 	/* formula is temp = 25 + (temp / 8) C */
-	temp = (sys_le16_to_cpu(raw_temp.i16bit) & 0x8FFF);
+	temp = sys_le16_to_cpu(raw_temp.i16bit);
 	iis2mdc->temp_sample = 2500 + (temp * 100) / 8;
 
 	return 0;
