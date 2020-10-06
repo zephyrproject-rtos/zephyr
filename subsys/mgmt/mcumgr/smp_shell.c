@@ -22,6 +22,9 @@
 #include "shell/shell.h"
 #include "shell/shell_uart.h"
 
+#include <logging/log.h>
+LOG_MODULE_REGISTER(smp_shell);
+
 static struct zephyr_smp_transport smp_shell_transport;
 
 static struct mcumgr_serial_rx_ctxt smp_shell_rx_ctxt;
@@ -101,6 +104,9 @@ size_t smp_shell_rx_bytes(struct smp_shell_data *data, const uint8_t *bytes,
 		} else if (mcumgr_state == SMP_SHELL_MCUMGR_STATE_HEADER &&
 			   !data->buf) {
 			data->buf = net_buf_alloc(data->buf_pool, K_NO_WAIT);
+			if (!data->buf) {
+				LOG_WRN("Failed to alloc SMP buf");
+			}
 		}
 
 		if (data->buf && net_buf_tailroom(data->buf) > 0) {
