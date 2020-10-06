@@ -8,7 +8,7 @@ This is a feature release which changes the manifest schema by adding support
 for a ``path-prefix:`` key in an ``import:`` mapping, along with some other
 features and fixes.
 
-- Manifest import mappings now support a ``path-prefix:`` key, which foo places
+- Manifest import mappings now support a ``path-prefix:`` key, which places
   the project and its imported repositories in a subdirectory of the workspace.
   See :ref:`west-manifest-ex3.4` for an example.
 - The west command line application can now also be run using ``python3 -m
