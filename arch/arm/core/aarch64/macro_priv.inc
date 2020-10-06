@@ -19,7 +19,7 @@
  * @return N/A
  */
 
-.macro z_arm64_enter_exc xreg0, xreg1, xreg2
+.macro z_arm64_enter_exc xreg0, xreg1
 	/*
 	 * Two things can happen:
 	 *
@@ -43,9 +43,9 @@
 	 * Store SPSR_ELn and ELR_ELn. This is needed to support nested
 	 * exception handlers
 	 */
-	mrs	\xreg1, spsr_el1
-	mrs	\xreg2, elr_el1
-	stp	\xreg1, \xreg2, [sp, #-16]!
+	mrs	\xreg0, spsr_el1
+	mrs	\xreg1, elr_el1
+	stp	\xreg0, \xreg1, [sp, #-16]!
 .endm
 
 /**
@@ -60,7 +60,7 @@
  * @return N/A
  */
 
-.macro z_arm64_exit_exc xreg0, xreg1, xreg2
+.macro z_arm64_exit_exc xreg0, xreg1
 	/*
 	 * Restore SPSR_ELn and ELR_ELn. This is needed to support nested
 	 * exception handlers
