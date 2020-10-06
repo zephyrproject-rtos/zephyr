@@ -32,8 +32,7 @@ And Secondary element has following models
 
 Prior to provisioning, an unprovisioned beacon is broadcast that contains
 a unique UUID. It is obtained from the device address set by Nordic in the
-Factory information configuration register (FICR). Each button controls the state of its
-corresponding LED and does not initiate any mesh activity
+Factory information configuration register (FICR).
 
 Associations of Models with hardware
 ************************************
