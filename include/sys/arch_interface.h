@@ -755,8 +755,8 @@ static inline bool arch_mem_coherent(void *ptr)
  */
 #ifndef CONFIG_KERNEL_COHERENCE
 static inline void arch_cohere_stacks(struct k_thread *old_thread,
-                                      void *old_switch_handle,
-                                      struct k_thread *new_thread)
+				      void *old_switch_handle,
+				      struct k_thread *new_thread)
 {
 	ARG_UNUSED(old_thread);
 	ARG_UNUSED(old_switch_handle);

@@ -14,8 +14,8 @@
 					 SRAM_DEBUG_SIZE + \
 					 SRAM_TRACE_SIZE)
 
-#define L2_SRAM_BASE				(DT_REG_ADDR(DT_NODELABEL(sram0)))
-#define L2_SRAM_SIZE				(DT_REG_SIZE(DT_NODELABEL(sram0)))
+#define L2_SRAM_BASE (DT_REG_ADDR(DT_NODELABEL(sram0)))
+#define L2_SRAM_SIZE (DT_REG_SIZE(DT_NODELABEL(sram0)))
 
 #ifdef CONFIG_BOOTLOADER_MCUBOOT
 #define SRAM_BASE (L2_SRAM_BASE + CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
@@ -98,8 +98,8 @@
 #define IDT_SIZE				0x2000
 
 /* low power ram where DMA buffers are typically placed */
-#define LPRAM_BASE				(DT_REG_ADDR(DT_NODELABEL(sram1)))
-#define LPRAM_SIZE				(DT_REG_SIZE(DT_NODELABEL(sram1)))
+#define LPRAM_BASE (DT_REG_ADDR(DT_NODELABEL(sram1)))
+#define LPRAM_SIZE (DT_REG_SIZE(DT_NODELABEL(sram1)))
 
 /* bootloader */
 

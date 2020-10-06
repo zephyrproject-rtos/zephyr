@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: Apache-2.0
-
  *
  * Copyright(c) 2017 Intel Corporation. All rights reserved.
  *

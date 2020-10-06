@@ -195,7 +195,7 @@ static int32_t hp_sram_pm_banks(uint32_t banks)
 		ebb_avail_mask0 = (uint32_t)GENMASK(EBB_SEGMENT_SIZE - 1, 0);
 		ebb_avail_mask1 = (uint32_t)GENMASK(total_banks_count -
 		EBB_SEGMENT_SIZE - 1, 0);
-	} else{
+	} else {
 		ebb_avail_mask0 = (uint32_t)GENMASK(total_banks_count - 1,
 		0);
 		ebb_avail_mask1 = 0;
@@ -206,7 +206,7 @@ static int32_t hp_sram_pm_banks(uint32_t banks)
 		ebb_mask0 = (uint32_t)GENMASK(EBB_SEGMENT_SIZE - 1, 0);
 		ebb_mask1 = (uint32_t)GENMASK(banks - EBB_SEGMENT_SIZE - 1,
 		0);
-	} else{
+	} else {
 		/* assumption that ebb_in_use is > 0 */
 		ebb_mask0 = (uint32_t)GENMASK(banks - 1, 0);
 		ebb_mask1 = 0;

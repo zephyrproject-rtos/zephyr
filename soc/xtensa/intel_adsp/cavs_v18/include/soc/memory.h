@@ -213,7 +213,8 @@
 /* SRAM window 0 FW "registers" */
 #define SRAM_REG_FW_TRACEP_SLAVE_CORE_BASE      0x14
 #define SRAM_REG_FW_END \
-        (SRAM_REG_FW_TRACEP_SLAVE_CORE_BASE + (PLATFORM_CORE_COUNT - 1) * 0x4)
+	(SRAM_REG_FW_TRACEP_SLAVE_CORE_BASE + \
+	 (PLATFORM_CORE_COUNT - 1) * 0x4)
 
 /* Host page size */
 #define HOST_PAGE_SIZE		4096

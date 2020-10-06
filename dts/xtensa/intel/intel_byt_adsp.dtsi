@@ -33,14 +33,13 @@
 	};
 
 	soc {
-	
 		core_intc: core_intc@0 {
 			compatible = "xtensa,core-intc";
 			reg = <0x00 0x400>;
 			interrupt-controller;
 			#interrupt-cells = <3>;
 		};
-	
+
 		mailbox: mailbox@ff340018 {
 			compatible = "intel,intel-adsp-mailbox";
 			reg = <0xFF340018 0x30>;
