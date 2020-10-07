@@ -127,7 +127,7 @@
 #define BOOT_LDR_STACK_SIZE		(4 * 0x1000)
 
 /* Manifest base address in IMR - used by boot loader copy procedure. */
-#define IMR_BOOT_LDR_MANIFEST_BASE	0xB0004000
+#define IMR_BOOT_LDR_MANIFEST_BASE	0xB0032000
 
 /* Manifest size (seems unused). */
 #define IMR_BOOT_LDR_MANIFEST_SIZE	0x6000
