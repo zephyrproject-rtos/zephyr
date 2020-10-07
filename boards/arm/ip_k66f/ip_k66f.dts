@@ -99,6 +99,7 @@
 &enet {
 	status = "okay";
 
+	no-phy-smi;
 	fixed-link {
 		speed = <100>;
 		full-duplex;

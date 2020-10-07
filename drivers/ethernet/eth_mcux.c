@@ -130,7 +130,7 @@ struct eth_context {
 	bool enabled;
 	bool link_up;
 	uint32_t phy_addr;
-	const bool fixed_link;
+	const bool use_phy_smi;
 	phy_duplex_t phy_duplex;
 	phy_speed_t phy_speed;
 	uint8_t mac_addr[6];
@@ -279,17 +279,20 @@ static inline struct net_if *get_iface(struct eth_context *ctx, uint16_t vlan_ta
 
 static void eth_mcux_phy_enter_reset(struct eth_context *context)
 {
-	/* Reset the PHY. */
-#if !defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
-	ENET_StartSMIWrite(context->base, context->phy_addr,
-			   PHY_BASICCONTROL_REG,
-			   kENET_MiiWriteValidFrame,
-			   PHY_BCTL_RESET_MASK);
-#endif
+	if (context->use_phy_smi) {
+		/* Reset the PHY. */
+		ENET_StartSMIWrite(context->base, context->phy_addr,
+				   PHY_BASICCONTROL_REG,
+				   kENET_MiiWriteValidFrame,
+				   PHY_BCTL_RESET_MASK);
+	}
+
 	context->phy_state = eth_mcux_phy_state_reset;
-#if defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
-	k_work_submit(&context->phy_work);
-#endif
+
+	if (!context->use_phy_smi) {
+
+		k_work_submit(&context->phy_work);
+	}
 }
 
 static void eth_mcux_phy_start(struct eth_context *context)
@@ -304,25 +307,24 @@ static void eth_mcux_phy_start(struct eth_context *context)
 	switch (context->phy_state) {
 	case eth_mcux_phy_state_initial:
 		ENET_ActiveRead(context->base);
-		/* Reset the PHY. */
-#if !defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
-		ENET_StartSMIWrite(context->base, context->phy_addr,
-				   PHY_BASICCONTROL_REG,
-				   kENET_MiiWriteValidFrame,
-				   PHY_BCTL_RESET_MASK);
-#else
-		/*
-		 * With no SMI communication one needs to wait for
-		 * iface being up by the network core.
-		 */
-		k_work_submit(&context->phy_work);
-		break;
-#endif
+		if (context->use_phy_smi) {
+			/* Reset the PHY. */
+			ENET_StartSMIWrite(context->base, context->phy_addr,
+					   PHY_BASICCONTROL_REG,
+					   kENET_MiiWriteValidFrame,
+					   PHY_BCTL_RESET_MASK);
 #if defined(CONFIG_SOC_SERIES_IMX_RT)
-		context->phy_state = eth_mcux_phy_state_initial;
+			context->phy_state = eth_mcux_phy_state_initial;
 #else
-		context->phy_state = eth_mcux_phy_state_reset;
+			context->phy_state = eth_mcux_phy_state_reset;
 #endif
+		} else {
+			/*
+			 * With no SMI communication one needs to wait for
+			 * iface being up by the network core.
+			 */
+			k_work_submit(&context->phy_work);
+		}
 		break;
 	case eth_mcux_phy_state_reset:
 		eth_mcux_phy_enter_reset(context);
@@ -360,7 +362,7 @@ void eth_mcux_phy_stop(struct eth_context *context)
 		break;
 	case eth_mcux_phy_state_wait:
 		k_delayed_work_cancel(&context->delayed_phy_work);
-		/* @todo, actually power downt he PHY ? */
+		/* @todo, actually power down the PHY ? */
 		context->phy_state = eth_mcux_phy_state_initial;
 		break;
 	case eth_mcux_phy_state_closing:
@@ -372,48 +374,53 @@ void eth_mcux_phy_stop(struct eth_context *context)
 static void eth_mcux_phy_event(struct eth_context *context)
 {
 	bool link_up;
-#if defined(CONFIG_SOC_SERIES_IMX_RT)
-	status_t res;
-	uint32_t ctrl2;
-#endif
 	phy_duplex_t phy_duplex = kPHY_FullDuplex;
 	phy_speed_t phy_speed = kPHY_Speed100M;
 
 #if defined(CONFIG_ETH_MCUX_PHY_EXTRA_DEBUG)
-	LOG_DBG("%s phy_state=%s", eth_name(context->base),
-		phy_state_name(context->phy_state));
+	LOG_DBG("%s phy_state=%s, link=%d", eth_name(context->base),
+		phy_state_name(context->phy_state), context->link_up);
 #endif
+
 	switch (context->phy_state) {
 	case eth_mcux_phy_state_initial:
 #if defined(CONFIG_SOC_SERIES_IMX_RT)
-		ENET_DisableInterrupts(context->base, ENET_EIR_MII_MASK);
-		res = PHY_Read(context->base, context->phy_addr,
-			       PHY_CONTROL2_REG, &ctrl2);
-		ENET_EnableInterrupts(context->base, ENET_EIR_MII_MASK);
-		if (res != kStatus_Success) {
-			LOG_WRN("Reading PHY reg failed (status 0x%x)", res);
-			k_work_submit(&context->phy_work);
-		} else {
-			ctrl2 |= PHY_CTL2_REFCLK_SELECT_MASK;
-			ENET_StartSMIWrite(context->base, context->phy_addr,
-					   PHY_CONTROL2_REG,
-					   kENET_MiiWriteValidFrame,
-					   ctrl2);
-		}
-		context->phy_state = eth_mcux_phy_state_reset;
-#endif
-#if defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
-		/*
-		 * When the iface is available proceed with the eth link setup,
-		 * otherwise reschedule the eth_mcux_phy_event and check after
-		 * 1ms
-		 */
-		if (context->iface) {
-		       context->phy_state = eth_mcux_phy_state_reset;
-		}
+		if (context->use_phy_smi) {
+			uint32_t ctrl2;
+			status_t res;
 
-		k_delayed_work_submit(&context->delayed_phy_work, K_MSEC(1));
-#endif
+			ENET_DisableInterrupts(context->base,
+					       ENET_EIR_MII_MASK);
+			res = PHY_Read(context->base, context->phy_addr,
+				       PHY_CONTROL2_REG, &ctrl2);
+			ENET_EnableInterrupts(context->base,
+					      ENET_EIR_MII_MASK);
+			if (res != kStatus_Success) {
+				LOG_WRN("Reading PHY reg failed (status 0x%x)",
+					res);
+				k_work_submit(&context->phy_work);
+			} else {
+				ctrl2 |= PHY_CTL2_REFCLK_SELECT_MASK;
+				ENET_StartSMIWrite(context->base,
+						   context->phy_addr,
+						   PHY_CONTROL2_REG,
+						   kENET_MiiWriteValidFrame,
+						   ctrl2);
+			}
+			context->phy_state = eth_mcux_phy_state_reset;
+		} else {
+			/*
+			 * When the iface is available proceed with
+			 * the eth link setup, otherwise reschedule the
+			 * eth_mcux_phy_event and check after 1ms
+			 */
+			if (context->iface) {
+				context->phy_state = eth_mcux_phy_state_reset;
+			}
+			k_delayed_work_submit(&context->delayed_phy_work,
+					      K_MSEC(1));
+		}
+#endif /* CONFIG_SOC_SERIES_IMX_RT */
 		break;
 	case eth_mcux_phy_state_closing:
 		if (context->enabled) {
@@ -424,75 +431,79 @@ static void eth_mcux_phy_event(struct eth_context *context)
 		}
 		break;
 	case eth_mcux_phy_state_reset:
-		/* Setup PHY autonegotiation. */
-#if !defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
-		ENET_StartSMIWrite(context->base, context->phy_addr,
-				   PHY_AUTONEG_ADVERTISE_REG,
-				   kENET_MiiWriteValidFrame,
-				   (PHY_100BASETX_FULLDUPLEX_MASK |
-				    PHY_100BASETX_HALFDUPLEX_MASK |
-				    PHY_10BASETX_FULLDUPLEX_MASK |
-				    PHY_10BASETX_HALFDUPLEX_MASK | 0x1U));
-#endif
+		if (context->use_phy_smi) {
+			/* Setup PHY auto-negotiation. */
+			ENET_StartSMIWrite(context->base, context->phy_addr,
+					   PHY_AUTONEG_ADVERTISE_REG,
+					   kENET_MiiWriteValidFrame,
+					   (PHY_100BASETX_FULLDUPLEX_MASK |
+					    PHY_100BASETX_HALFDUPLEX_MASK |
+					    PHY_10BASETX_FULLDUPLEX_MASK |
+					    PHY_10BASETX_HALFDUPLEX_MASK |
+					    0x1U));
+		} else {
+			k_work_submit(&context->phy_work);
+		}
 		context->phy_state = eth_mcux_phy_state_autoneg;
-#if defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
-		k_work_submit(&context->phy_work);
-#endif
 		break;
 	case eth_mcux_phy_state_autoneg:
-#if !defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
-		/* Setup PHY autonegotiation. */
-		ENET_StartSMIWrite(context->base, context->phy_addr,
-				   PHY_BASICCONTROL_REG,
-				   kENET_MiiWriteValidFrame,
-				   (PHY_BCTL_AUTONEG_MASK |
-				    PHY_BCTL_RESTART_AUTONEG_MASK));
-#endif
+		if (context->use_phy_smi) {
+			/* Setup PHY auto-negotiation. */
+			ENET_StartSMIWrite(context->base, context->phy_addr,
+					   PHY_BASICCONTROL_REG,
+					   kENET_MiiWriteValidFrame,
+					   (PHY_BCTL_AUTONEG_MASK |
+					    PHY_BCTL_RESTART_AUTONEG_MASK));
+		} else {
+			k_work_submit(&context->phy_work);
+		}
 		context->phy_state = eth_mcux_phy_state_restart;
-#if defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
-		k_work_submit(&context->phy_work);
-#endif
 		break;
 	case eth_mcux_phy_state_wait:
 	case eth_mcux_phy_state_restart:
-		/* Start reading the PHY basic status. */
-#if !defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
-		ENET_StartSMIRead(context->base, context->phy_addr,
-				  PHY_BASICSTATUS_REG,
-				  kENET_MiiReadValidFrame);
-#endif
+		if (context->use_phy_smi) {
+			/* Start reading the PHY basic status. */
+			ENET_StartSMIRead(context->base, context->phy_addr,
+					PHY_BASICSTATUS_REG,
+					kENET_MiiReadValidFrame);
+		} else {
+			k_work_submit(&context->phy_work);
+		}
 		context->phy_state = eth_mcux_phy_state_read_status;
-#if defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
-		k_work_submit(&context->phy_work);
-#endif
 		break;
 	case eth_mcux_phy_state_read_status:
-		if (context->fixed_link) {
-			link_up = true;
-		} else {
+		if (context->use_phy_smi) {
 			/* PHY Basic status is available. */
 			uint32_t status = ENET_ReadSMIData(context->base);
 
 			link_up = status & PHY_BSTATUS_LINKSTATUS_MASK;
+		} else {
+			link_up = true;
 		}
 		if (link_up && !context->link_up) {
-			/* Start reading the PHY control register. */
-#if !defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
-			ENET_StartSMIRead(context->base, context->phy_addr,
-					  PHY_CONTROL1_REG,
-					  kENET_MiiReadValidFrame);
-#endif
+			LOG_DBG("%s link-up event", eth_name(context->base));
+			if (context->use_phy_smi) {
+				/* Start reading the PHY control register. */
+				ENET_StartSMIRead(context->base,
+						  context->phy_addr,
+						  PHY_CONTROL1_REG,
+						  kENET_MiiReadValidFrame);
+			}
 			context->link_up = link_up;
 			context->phy_state = eth_mcux_phy_state_read_duplex;
 
 			/* Network interface might be NULL at this point */
 			if (context->iface) {
+				LOG_DBG("%s carrier on", eth_name(context->base));
 				net_eth_carrier_on(context->iface);
 				k_msleep(USEC_PER_MSEC);
+			} else {
+				LOG_DBG("%s no iface", eth_name(context->base));
 			}
-#if defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
-			k_work_submit(&context->phy_work);
-#endif
+
+			if (!context->use_phy_smi) {
+				k_work_submit(&context->phy_work);
+			}
 		} else if (!link_up && context->link_up) {
 			LOG_INF("%s link down", eth_name(context->base));
 			context->link_up = link_up;
@@ -501,14 +512,14 @@ static void eth_mcux_phy_event(struct eth_context *context)
 			context->phy_state = eth_mcux_phy_state_wait;
 			net_eth_carrier_off(context->iface);
 		} else {
+			LOG_DBG("%s waiting", eth_name(context->base));
 			k_delayed_work_submit(&context->delayed_phy_work,
 					K_MSEC(CONFIG_ETH_MCUX_PHY_TICK_MS));
 			context->phy_state = eth_mcux_phy_state_wait;
 		}
-
 		break;
 	case eth_mcux_phy_state_read_duplex:
-		if (!context->fixed_link) {
+		if (context->use_phy_smi) {
 			/* PHY control register is available. */
 			uint32_t status = ENET_ReadSMIData(context->base);
 
@@ -525,7 +536,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 				    (enet_mii_duplex_t) phy_duplex);
 		}
 
-		LOG_INF("%s enabled %sM %s-duplex mode.",
+		LOG_INF("%s enabled %sM %s-duplex mode",
 			eth_name(context->base),
 			(phy_speed ? "100" : "10"),
 			(phy_duplex ? "full" : "half"));
@@ -555,35 +566,38 @@ static void eth_mcux_delayed_phy_work(struct k_work *item)
 static void eth_mcux_phy_setup(struct eth_context *context)
 {
 #if defined(CONFIG_SOC_SERIES_IMX_RT)
-	status_t res;
-	uint32_t oms_override;
+	if (context->use_phy_smi) {
+		status_t res;
+		uint32_t oms_override;
 
-	/* Disable MII interrupts to prevent triggering PHY events. */
-	ENET_DisableInterrupts(context->base, ENET_EIR_MII_MASK);
+		/* Disable MII interrupts to prevent triggering PHY events. */
+		ENET_DisableInterrupts(context->base, ENET_EIR_MII_MASK);
 
-	res = PHY_Read(context->base, context->phy_addr,
-		       PHY_OMS_OVERRIDE_REG, &oms_override);
-	if (res != kStatus_Success) {
-		LOG_WRN("Reading PHY reg failed (status 0x%x)", res);
-	} else {
-		/* Based on strap-in pins the PHY can be in factory test mode.
-		 * Force normal operation.
-		 */
-		oms_override &= ~PHY_OMS_FACTORY_MODE_MASK;
-
-		/* Prevent PHY entering NAND Tree mode override. */
-		if (oms_override & PHY_OMS_NANDTREE_MASK) {
-			oms_override &= ~PHY_OMS_NANDTREE_MASK;
-		}
-
-		res = PHY_Write(context->base, context->phy_addr,
-				PHY_OMS_OVERRIDE_REG, oms_override);
+		res = PHY_Read(context->base, context->phy_addr,
+			       PHY_OMS_OVERRIDE_REG, &oms_override);
 		if (res != kStatus_Success) {
-			LOG_WRN("Writing PHY reg failed (status 0x%x)", res);
-		}
-	}
+			LOG_WRN("Reading PHY reg failed (status 0x%x)", res);
+		} else {
+			/* Based on strap-in pins the PHY can be in factory
+			 * test mode. Force normal operation.
+			 */
+			oms_override &= ~PHY_OMS_FACTORY_MODE_MASK;
 
-	ENET_EnableInterrupts(context->base, ENET_EIR_MII_MASK);
+			/* Prevent PHY entering NAND Tree mode override. */
+			if (oms_override & PHY_OMS_NANDTREE_MASK) {
+				oms_override &= ~PHY_OMS_NANDTREE_MASK;
+			}
+
+			res = PHY_Write(context->base, context->phy_addr,
+					PHY_OMS_OVERRIDE_REG, oms_override);
+			if (res != kStatus_Success) {
+				LOG_WRN("Writing PHY reg failed (status 0x%x)",
+					res);
+			}
+		}
+
+		ENET_EnableInterrupts(context->base, ENET_EIR_MII_MASK);
+	}
 #endif
 }
 
@@ -943,9 +957,9 @@ static void eth_mcux_init(const struct device *dev)
 	ENET_GetDefaultConfig(&enet_config);
 	enet_config.interrupt |= kENET_RxFrameInterrupt;
 	enet_config.interrupt |= kENET_TxFrameInterrupt;
-#if !defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
-	enet_config.interrupt |= kENET_MiiInterrupt;
-#endif
+	if (context->use_phy_smi) {
+		enet_config.interrupt |= kENET_MiiInterrupt;
+	}
 
 	if (IS_ENABLED(CONFIG_ETH_MCUX_PROMISCUOUS_MODE)) {
 		enet_config.macSpecialConfig |= kENET_ControlPromiscuousEnable;
@@ -991,9 +1005,9 @@ static void eth_mcux_init(const struct device *dev)
 	ENET_AddMulticastGroup(context->base, mdns_multicast);
 #endif
 
-#if !defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
-	ENET_SetSMI(context->base, sys_clock, false);
-#endif
+	if (context->use_phy_smi) {
+		ENET_SetSMI(context->base, sys_clock, false);
+	}
 
 	/* handle PHY setup after SMI initialization */
 	eth_mcux_phy_setup(context);
@@ -1217,12 +1231,12 @@ static void eth_mcux_error_isr(const struct device *dev)
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
 
 #if DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(0), fixed_link)) && \
-	!defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
-#error "fixed-link can only but used with CONFIG_ETH_MCUX_NO_PHY_SMI"
+	!DT_PROP(DT_DRV_INST(0), no_phy_smi)
+#error fixed-link can only but used when no-phy-smi is set
 #endif
-#if defined(CONFIG_ETH_MCUX_NO_PHY_SMI) && \
+#if DT_PROP(DT_DRV_INST(0), no_phy_smi) && \
 	!DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(0), fixed_link))
-#error "fixed-link must be used when CONFIG_ETH_MCUX_NO_PHY_SMI is set"
+#error fixed-link must be used when no-phy-smi is set
 #endif
 
 #if DT_INST_PROP(0, zephyr_random_mac_address) && \
@@ -1268,9 +1282,10 @@ static struct eth_context eth0_context = {
 	.clock_name = DT_INST_CLOCKS_LABEL(0),
 #endif
 	.config_func = eth0_config_func,
+	.link_up = false,
 	.phy_addr = 0U,
+	.use_phy_smi = !DT_PROP(DT_DRV_INST(0), no_phy_smi),
 #if DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(0), fixed_link))
-	.fixed_link = true,
 #if DT_PROP(DT_CHILD(DT_DRV_INST(0), fixed_link), full_duplex)
 	.phy_duplex = kPHY_FullDuplex,
 #else
@@ -1282,7 +1297,6 @@ static struct eth_context eth0_context = {
 	.phy_speed = kPHY_Speed10M,
 #endif
 #else
-	.fixed_link = false,
 	.phy_duplex = kPHY_FullDuplex,
 	.phy_speed = kPHY_Speed100M,
 #endif /* fixed-link */
@@ -1388,12 +1402,12 @@ static void eth0_config_func(void)
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
 
 #if DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(1), fixed_link)) && \
-	!defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
-#error "fixed-link can only but used with CONFIG_ETH_MCUX_NO_PHY_SMI"
+	!DT_PROP(DT_DRV_INST(1), no_phy_smi)
+#error fixed-link can only but used when no-phy-smi is set
 #endif
-#if defined(CONFIG_ETH_MCUX_NO_PHY_SMI) && \
+#if DT_PROP(DT_DRV_INST(1), no_phy_smi) && \
 	!DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(1), fixed_link))
-#error "fixed-link must be used when CONFIG_ETH_MCUX_NO_PHY_SMI is set"
+#error fixed-link must be used when no-phy-smi is set
 #endif
 
 #if DT_INST_PROP(1, zephyr_random_mac_address) && \
@@ -1439,9 +1453,10 @@ static struct eth_context eth1_context = {
 	.clock_name = DT_INST_CLOCKS_LABEL(1),
 #endif
 	.config_func = eth1_config_func,
+	.link_up = false,
 	.phy_addr = 0U,
+	.use_phy_smi = !DT_PROP(DT_DRV_INST(1), no_phy_smi),
 #if DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(1), fixed_link))
-	.fixed_link = true,
 #if DT_PROP(DT_CHILD(DT_DRV_INST(1), fixed_link), full_duplex)
 	.phy_duplex = kPHY_FullDuplex,
 #else
@@ -1453,7 +1468,6 @@ static struct eth_context eth1_context = {
 	.phy_speed = kPHY_Speed10M,
 #endif
 #else
-	.fixed_link = false,
 	.phy_duplex = kPHY_FullDuplex,
 	.phy_speed = kPHY_Speed100M,
 #endif /* fixed-link */

@@ -12,3 +12,12 @@ properties:
       required: true
     interrupts:
       required: true
+
+    no-phy-smi:
+      type: boolean
+      required: false
+      description:
+        Disable the SMI PHY management interface.
+        Some PHY devices, with DSA capabilities do not use SMI for
+        communication with MAC ENET controller. Other busses - like SPI
+        or I2C are used instead.
