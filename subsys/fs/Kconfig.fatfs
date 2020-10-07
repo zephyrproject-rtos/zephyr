@@ -14,6 +14,18 @@ if FAT_FILESYSTEM_ELM
 menu "ELM FAT file system settings"
 	visible if FAT_FILESYSTEM_ELM
 
+config FS_FATFS_READ_ONLY
+	bool "Read-only support for all volumes"
+	help
+	  The option excludes write code from ELM FAT file system driver;
+	  when selected, it no longer will be possible to write data on
+	  the FAT FS.
+	  If write support is not needed, enabling this flag will slightly
+	  reduce application size.
+	  This option translates to _FS_READONLY within ELM FAT file system
+	  driver; it enables exclusion, from compilation, of write supporting
+	  code.
+
 config FS_FATFS_MKFS
 	bool
 	help
