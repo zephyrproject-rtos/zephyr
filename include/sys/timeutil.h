@@ -30,6 +30,13 @@ extern "C" {
 #endif
 
 /**
+ * @defgroup timeutil_apis Time Utility APIs
+ * @defgroup timeutil_repr_apis Time Representation APIs
+ * @ingroup timeutil_apis
+ * @{
+ */
+
+/**
  * @brief Convert broken-down time to a POSIX epoch offset in seconds.
  *
  * @param tm pointer to broken down time.
@@ -52,6 +59,13 @@ int64_t timeutil_timegm64(const struct tm *tm);
  * @see http://man7.org/linux/man-pages/man3/timegm.3.html
  */
 time_t timeutil_timegm(const struct tm *tm);
+
+/**
+ * @}
+ * @defgroup timeutil_sync_apis Time Synchronization APIs
+ * @ingroup timeutil_apis
+ * @{
+ */
 
 /**
  * @brief Immutable state for synchronizing two clocks.
@@ -286,5 +300,9 @@ int32_t timeutil_sync_skew_to_ppb(float skew);
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_SYS_TIMEUTIL_H_ */
