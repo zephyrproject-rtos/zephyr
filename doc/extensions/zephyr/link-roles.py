@@ -34,7 +34,7 @@ def setup(app):
         baseurl = None
 
     # or fallback to default
-    if baseurl is None:
+    if baseurl is None or baseurl == '':
         baseurl = 'https://github.com/zephyrproject-rtos/zephyr'
 
     app.add_role('zephyr_file', autolink('{}/blob/{}/%s'.format(baseurl, rev)))
