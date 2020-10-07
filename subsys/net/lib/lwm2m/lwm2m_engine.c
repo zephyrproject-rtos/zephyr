@@ -49,6 +49,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_rd_client.h"
 #endif
 
+#if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
+/* Lowest priority cooperative thread */
+#define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
+#else
+#define THREAD_PRIORITY K_PRIO_PREEMPT(CONFIG_NUM_PREEMPT_PRIORITIES - 1)
+#endif
+
 #define ENGINE_UPDATE_INTERVAL_MS 500
 #define OBSERVE_COUNTER_START 0U
 
@@ -4516,8 +4523,7 @@ static int lwm2m_engine_init(const struct device *dev)
 			K_KERNEL_STACK_SIZEOF(engine_thread_stack),
 			(k_thread_entry_t) socket_receive_loop,
 			NULL, NULL, NULL,
-			/* Lowest priority cooperative thread */
-			K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1),
+			THREAD_PRIORITY,
 			0, K_NO_WAIT);
 	k_thread_name_set(&engine_thread_data, "lwm2m-sock-recv");
 	LOG_DBG("LWM2M engine socket receive thread started");
