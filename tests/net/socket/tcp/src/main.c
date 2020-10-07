@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #define MAX_CONNS 5
 
 #define TCP_TEARDOWN_TIMEOUT K_SECONDS(1)
+#define THREAD_SLEEP 50 /* ms */
 
 static void test_bind(int sock, struct sockaddr *addr, socklen_t addrlen)
 {
@@ -41,6 +42,11 @@ static void test_connect(int sock, struct sockaddr *addr, socklen_t addrlen)
 	zassert_equal(connect(sock, addr, addrlen),
 		      0,
 		      "connect failed");
+
+	if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
+		/* Let the connection proceed */
+		k_msleep(THREAD_SLEEP);
+	}
 }
 
 static void test_send(int sock, const void *buf, size_t len, int flags)
@@ -573,6 +579,13 @@ void test_main(void)
 	/* ztest thread inherit permissions from main */
 	k_thread_access_grant(k_current_get(), &child_thread, child_stack);
 #endif
+
+	if (IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)) {
+		k_thread_priority_set(k_current_get(),
+				K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1));
+	} else {
+		k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(8));
+	}
 
 	ztest_test_suite(
 		socket_tcp,

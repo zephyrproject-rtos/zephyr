@@ -1,7 +1,12 @@
 common:
   depends_on: netif
+  min_ram: 16
+  tags: net mqtt
+  harness: net
 tests:
   net.mqtt.pubsub:
-    min_ram: 16
-    tags: net mqtt
-    harness: net
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+  net.mqtt.pubsub.preempt:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
