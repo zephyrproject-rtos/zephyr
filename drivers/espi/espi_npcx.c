@@ -415,21 +415,23 @@ static void espi_vw_send_bootload_done(const struct device *dev)
 
 static void espi_vw_generic_isr(const struct device *dev, struct npcx_wui *wui)
 {
-	int signal;
+	int idx;
+	enum espi_vwire_signal signal;
 
 	LOG_DBG("%s: WUI %d %d %d", __func__, wui->table, wui->group, wui->bit);
-	for (signal = 0; signal < ARRAY_SIZE(vw_in_tbl); signal++) {
-		if (wui->table == vw_in_tbl[signal].vw_wui.table &&
-			wui->group == vw_in_tbl[signal].vw_wui.group &&
-			wui->bit == vw_in_tbl[signal].vw_wui.bit) {
+	for (idx = 0; idx < ARRAY_SIZE(vw_in_tbl); idx++) {
+		if (wui->table == vw_in_tbl[idx].vw_wui.table &&
+			wui->group == vw_in_tbl[idx].vw_wui.group &&
+			wui->bit == vw_in_tbl[idx].vw_wui.bit) {
 			break;
 		}
 	}
 
-	if (signal == ARRAY_SIZE(vw_in_tbl))
+	if (idx == ARRAY_SIZE(vw_in_tbl))
 		LOG_ERR("Unknown VW event! %d %d %d", wui->table,
 				wui->group, wui->bit);
 
+	signal = vw_in_tbl[idx].sig;
 	if (signal == ESPI_VWIRE_SIGNAL_SLP_S3
 		|| signal == ESPI_VWIRE_SIGNAL_SLP_S4
 		|| signal == ESPI_VWIRE_SIGNAL_SLP_S5
