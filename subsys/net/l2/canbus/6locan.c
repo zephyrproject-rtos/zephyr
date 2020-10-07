@@ -1708,7 +1708,7 @@ dad_err:
 void net_6locan_init(struct net_if *iface)
 {
 	struct canbus_net_ctx *ctx = net_if_l2_data(iface);
-	uint8_t thread_priority;
+	int thread_priority;
 	int i;
 
 	NET_DBG("Init CAN net interface");
@@ -1732,11 +1732,15 @@ void net_6locan_init(struct net_if *iface)
 	/* This work queue should have precedence over the tx stream
 	 * TODO thread_priority = tx_tc2thread(NET_TC_TX_COUNT -1) - 1;
 	 */
-	thread_priority = 6;
+	if (IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)) {
+		thread_priority = K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1);
+	} else {
+		thread_priority = K_PRIO_PREEMPT(6);
+	}
 
 	k_work_q_start(&net_canbus_workq, net_canbus_stack,
 		       K_KERNEL_STACK_SIZEOF(net_canbus_stack),
-		       K_PRIO_COOP(thread_priority));
+		       thread_priority);
 	k_thread_name_set(&net_canbus_workq.thread, "isotp_work");
 	NET_DBG("Workq started. Thread ID: %p", &net_canbus_workq.thread);
 }
