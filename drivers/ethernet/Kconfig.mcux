@@ -77,20 +77,6 @@ config PTP_CLOCK_MCUX
 
 if PTP_CLOCK_MCUX
 
-config ETH_MCUX_PTP_RX_BUFFERS
-	int "Size of the RX timestamp ring buffer"
-	default 10
-	help
-	  Set the number of RX buffers provided to the MCUX driver
-	  to store timestamps.
-
-config ETH_MCUX_PTP_TX_BUFFERS
-	int "Size of the TX timestamp ring buffer"
-	default 10
-	help
-	  Set the number of TX buffers provided to the MCUX driver
-	  to store timestamps.
-
 config ETH_MCUX_PTP_CLOCK_SRC_HZ
 	int "Frequency of the clock source for the PTP timer"
 	default 50000000

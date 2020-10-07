@@ -17,6 +17,7 @@
 
 #define LOG_MODULE_NAME eth_mcux
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
+#define RING_ID 0
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -612,11 +613,8 @@ static void eth_mcux_phy_setup(struct eth_context *context)
 }
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
-static enet_ptp_time_data_t ptp_rx_buffer[CONFIG_ETH_MCUX_PTP_RX_BUFFERS];
-static enet_ptp_time_data_t ptp_tx_buffer[CONFIG_ETH_MCUX_PTP_TX_BUFFERS];
 
-static bool eth_get_ptp_data(struct net_if *iface, struct net_pkt *pkt,
-			     enet_ptp_time_data_t *ptpTsData, bool is_tx)
+static bool eth_get_ptp_data(struct net_if *iface, struct net_pkt *pkt)
 {
 	int eth_hlen;
 
@@ -647,51 +645,6 @@ static bool eth_get_ptp_data(struct net_if *iface, struct net_pkt *pkt,
 
 	net_pkt_set_priority(pkt, NET_PRIORITY_CA);
 
-	if (ptpTsData) {
-		/* Cannot use GPTP_HDR as net_pkt fields are not all filled */
-		struct gptp_hdr *hdr;
-
-		/* In TX, the first net_buf contains the Ethernet header
-		 * and the actual gPTP header is in the second net_buf.
-		 * In RX, the Ethernet header + other headers are in the
-		 * first net_buf.
-		 */
-		if (is_tx) {
-			if (pkt->frags->frags == NULL) {
-				return false;
-			}
-
-			hdr = (struct gptp_hdr *)pkt->frags->frags->data;
-		} else {
-			hdr = (struct gptp_hdr *)(pkt->frags->data +
-							   eth_hlen);
-		}
-
-		ptpTsData->version = hdr->ptp_version;
-		memcpy(ptpTsData->sourcePortId, &hdr->port_id,
-		       kENET_PtpSrcPortIdLen);
-		ptpTsData->messageType = hdr->message_type;
-		ptpTsData->sequenceId = ntohs(hdr->sequence_id);
-
-#if defined(CONFIG_ETH_MCUX_PHY_EXTRA_DEBUG)
-		LOG_DBG("PTP packet: ver %d type %d len %d seq %d",
-			ptpTsData->version,
-			ptpTsData->messageType,
-			ntohs(hdr->message_length),
-			ptpTsData->sequenceId);
-		LOG_DBG("  clk %02x%02x%02x%02x%02x%02x%02x%02x port %d",
-			hdr->port_id.clk_id[0],
-			hdr->port_id.clk_id[1],
-			hdr->port_id.clk_id[2],
-			hdr->port_id.clk_id[3],
-			hdr->port_id.clk_id[4],
-			hdr->port_id.clk_id[5],
-			hdr->port_id.clk_id[6],
-			hdr->port_id.clk_id[7],
-			ntohs(hdr->port_id.port_number));
-#endif
-	}
-
 	return true;
 }
 #endif /* CONFIG_PTP_CLOCK_MCUX */
@@ -716,23 +669,12 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 		return -EIO;
 	}
 
-	/* FIXME: Dirty workaround.
-	 * With current implementation of ENET_StoreTxFrameTime in the MCUX
-	 * library, a frame may not be timestamped when a non-timestamped frame
-	 * is sent.
-	 */
-#ifdef ENET_ENHANCEDBUFFERDESCRIPTOR_MODE
-	context->enet_handle.txBdDirtyTime[0] =
-				context->enet_handle.txBdCurrent[0];
-#endif
-
-	status = ENET_SendFrame(context->base, &context->enet_handle,
-				context->frame_buf, total_len);
-
 #if defined(CONFIG_PTP_CLOCK_MCUX)
-	timestamped_frame = eth_get_ptp_data(net_pkt_iface(pkt), pkt, NULL,
-					     true);
+	timestamped_frame = eth_get_ptp_data(net_pkt_iface(pkt), pkt);
 	if (timestamped_frame) {
+		status = ENET_SendFrame(context->base, &context->enet_handle,
+					  context->frame_buf, total_len, RING_ID, true, NULL);
+
 		if (!status) {
 			ts_tx_pkt[ts_tx_wr] = net_pkt_ref(pkt);
 		} else {
@@ -743,8 +685,12 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 		if (ts_tx_wr >= CONFIG_ETH_MCUX_TX_BUFFERS) {
 			ts_tx_wr = 0;
 		}
-	}
+	} else
 #endif
+	{
+		status = ENET_SendFrame(context->base, &context->enet_handle,
+					context->frame_buf, total_len, RING_ID, false, NULL);
+	}
 
 	irq_unlock(imask);
 
@@ -765,20 +711,21 @@ static void eth_rx(struct eth_context *context)
 	struct net_pkt *pkt;
 	status_t status;
 	unsigned int imask;
+	uint32_t ts;
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
-	enet_ptp_time_data_t ptpTimeData;
+	enet_ptp_time_t ptpTimeData;
 #endif
 
 	status = ENET_GetRxFrameSize(&context->enet_handle,
-				     (uint32_t *)&frame_length);
+				     (uint32_t *)&frame_length, RING_ID);
 	if (status) {
 		enet_data_error_stats_t error_stats;
 
 		LOG_ERR("ENET_GetRxFrameSize return: %d", (int)status);
 
 		ENET_GetRxErrBeforeReadFrame(&context->enet_handle,
-					     &error_stats);
+					     &error_stats, RING_ID);
 		goto flush;
 	}
 
@@ -800,7 +747,7 @@ static void eth_rx(struct eth_context *context)
 	imask = irq_lock();
 
 	status = ENET_ReadFrame(context->base, &context->enet_handle,
-				context->frame_buf, frame_length);
+				context->frame_buf, frame_length, RING_ID, &ts);
 	if (status) {
 		irq_unlock(imask);
 		LOG_ERR("ENET_ReadFrame failed: %d", (int)status);
@@ -840,12 +787,19 @@ static void eth_rx(struct eth_context *context)
 #endif /* CONFIG_NET_VLAN */
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
-	if (eth_get_ptp_data(get_iface(context, vlan_tag), pkt,
-			     &ptpTimeData, false) &&
-	    (ENET_GetRxFrameTime(&context->enet_handle,
-				 &ptpTimeData) == kStatus_Success)) {
-		pkt->timestamp.nanosecond = ptpTimeData.timeStamp.nanosecond;
-		pkt->timestamp.second = ptpTimeData.timeStamp.second;
+	if (eth_get_ptp_data(get_iface(context, vlan_tag), pkt)) {
+		ENET_Ptp1588GetTimer(context->base, &context->enet_handle,
+					&ptpTimeData);
+		/* If latest timestamp reloads after getting from Rx BD,
+		 * then second - 1 to make sure the actual Rx timestamp is
+		 * accurate
+		 */
+		if (ptpTimeData.nanosecond < ts) {
+			ptpTimeData.second--;
+		}
+
+		pkt->timestamp.nanosecond = ptpTimeData.nanosecond;
+		pkt->timestamp.second = ptpTimeData.second;
 	} else {
 		/* Invalid value. */
 		pkt->timestamp.nanosecond = UINT32_MAX;
@@ -866,31 +820,27 @@ flush:
 	 * only report failure if there is no frame to flush,
 	 * which cannot happen in this context.
 	 */
-	status = ENET_ReadFrame(context->base, &context->enet_handle, NULL, 0);
+	status = ENET_ReadFrame(context->base, &context->enet_handle, NULL,
+					0, RING_ID, NULL);
 	__ASSERT_NO_MSG(status == kStatus_Success);
 error:
 	eth_stats_update_errors_rx(get_iface(context, vlan_tag));
 }
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
-static inline void ts_register_tx_event(struct eth_context *context)
+static inline void ts_register_tx_event(struct eth_context *context,
+					 enet_frame_info_t *frameinfo)
 {
 	struct net_pkt *pkt;
-	enet_ptp_time_data_t timeData;
 
 	pkt = ts_tx_pkt[ts_tx_rd];
 	if (pkt && atomic_get(&pkt->atomic_ref) > 0) {
-		if (eth_get_ptp_data(net_pkt_iface(pkt), pkt, &timeData,
-				     true)) {
-			int status;
-
-			status = ENET_GetTxFrameTime(&context->enet_handle,
-						     &timeData);
-			if (status == kStatus_Success) {
+		if (eth_get_ptp_data(net_pkt_iface(pkt), pkt)) {
+			if (frameinfo->isTsAvail) {
 				pkt->timestamp.nanosecond =
-					timeData.timeStamp.nanosecond;
+					frameinfo->timeStamp.nanosecond;
 				pkt->timestamp.second =
-					timeData.timeStamp.second;
+					frameinfo->timeStamp.second;
 
 				net_if_add_tx_timestamp(pkt);
 			}
@@ -912,7 +862,10 @@ static inline void ts_register_tx_event(struct eth_context *context)
 #endif /* CONFIG_PTP_CLOCK_MCUX */
 
 static void eth_callback(ENET_Type *base, enet_handle_t *handle,
-			 enet_event_t event, void *param)
+#if FSL_FEATURE_ENET_QUEUE > 1
+			 uint32_t ringId,
+#endif /* FSL_FEATURE_ENET_QUEUE > 1 */
+			 enet_event_t event, enet_frame_info_t *frameinfo, void *param)
 {
 	struct eth_context *context = param;
 
@@ -923,7 +876,7 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 	case kENET_TxEvent:
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 		/* Register event */
-		ts_register_tx_event(context);
+		ts_register_tx_event(context, frameinfo);
 #endif /* CONFIG_PTP_CLOCK_MCUX */
 
 		/* Free the TX buffer. */
@@ -998,10 +951,6 @@ static void eth_mcux_init(const struct device *dev)
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 	ENET_AddMulticastGroup(context->base, ptp_multicast);
 
-	context->ptp_config.ptpTsRxBuffNum = CONFIG_ETH_MCUX_PTP_RX_BUFFERS;
-	context->ptp_config.ptpTsTxBuffNum = CONFIG_ETH_MCUX_PTP_TX_BUFFERS;
-	context->ptp_config.rxPtpTsData = ptp_rx_buffer;
-	context->ptp_config.txPtpTsData = ptp_tx_buffer;
 	context->ptp_config.channel = kENET_PtpTimerChannel1;
 	context->ptp_config.ptp1588ClockSrc_Hz =
 					CONFIG_ETH_MCUX_PTP_CLOCK_SRC_HZ;
@@ -1022,6 +971,10 @@ static void eth_mcux_init(const struct device *dev)
 	/* handle PHY setup after SMI initialization */
 	eth_mcux_phy_setup(context);
 
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+	/* Enable reclaim of tx descriptors that will have the tx timestamp */
+	ENET_SetTxReclaim(&context->enet_handle, true, 0);
+#endif
 	ENET_SetCallback(&context->enet_handle, eth_callback, context);
 
 	eth_mcux_phy_start(context);
@@ -1181,7 +1134,7 @@ static void eth_mcux_ptp_isr(const struct device *dev)
 {
 	struct eth_context *context = dev->data;
 
-	ENET_Ptp1588TimerIRQHandler(context->base, &context->enet_handle);
+	ENET_TimeStampIRQHandler(context->base, &context->enet_handle);
 }
 #endif
 
@@ -1313,6 +1266,14 @@ static uint8_t __aligned(ENET_BUFF_ALIGNMENT)
 static uint8_t __aligned(ENET_BUFF_ALIGNMENT)
 	eth0_tx_buffer[CONFIG_ETH_MCUX_TX_BUFFERS][ETH_MCUX_BUFFER_SIZE];
 
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+/*
+ * Array to get transmit frame information on completion of frame transmit.
+ * This will hold the transmit timestamp.
+ */
+static enet_frame_info_t eth0_tx_frameinfo_array[CONFIG_ETH_MCUX_TX_BUFFERS];
+#endif
+
 static const enet_buffer_config_t eth0_buffer_config = {
 	.rxBdNumber = CONFIG_ETH_MCUX_RX_BUFFERS,
 	.txBdNumber = CONFIG_ETH_MCUX_TX_BUFFERS,
@@ -1322,6 +1283,13 @@ static const enet_buffer_config_t eth0_buffer_config = {
 	.txBdStartAddrAlign = eth0_tx_buffer_desc,
 	.rxBufferAlign = eth0_rx_buffer[0],
 	.txBufferAlign = eth0_tx_buffer[0],
+	.rxMaintainEnable = true,
+	.txMaintainEnable = true,
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+	.txFrameInfo = eth0_tx_frameinfo_array,
+#else
+	.txFrameInfo = NULL,
+#endif
 };
 
 ETH_NET_DEVICE_INIT(eth_mcux_0,
@@ -1460,6 +1428,14 @@ static uint8_t __aligned(ENET_BUFF_ALIGNMENT)
 static uint8_t __aligned(ENET_BUFF_ALIGNMENT)
 	eth1_tx_buffer[CONFIG_ETH_MCUX_TX_BUFFERS][ETH_MCUX_BUFFER_SIZE];
 
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+/*
+ * Array to get transmit frame information on completion of frame transmit.
+ * This will hold the transmit timestamp.
+ */
+static enet_frame_info_t eth1_tx_frameinfo_array[CONFIG_ETH_MCUX_TX_BUFFERS];
+#endif
+
 static const enet_buffer_config_t eth1_buffer_config = {
 	.rxBdNumber = CONFIG_ETH_MCUX_RX_BUFFERS,
 	.txBdNumber = CONFIG_ETH_MCUX_TX_BUFFERS,
@@ -1469,6 +1445,13 @@ static const enet_buffer_config_t eth1_buffer_config = {
 	.txBdStartAddrAlign = eth1_tx_buffer_desc,
 	.rxBufferAlign = eth1_rx_buffer[0],
 	.txBufferAlign = eth1_tx_buffer[0],
+	.rxMaintainEnable = true,
+	.txMaintainEnable = true,
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+	.txFrameInfo = eth1_tx_frameinfo_array,
+#else
+	.txFrameInfo = NULL,
+#endif
 };
 
 ETH_NET_DEVICE_INIT(eth_mcux_1,
