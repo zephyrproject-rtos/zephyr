@@ -1,6 +1,11 @@
 common:
   depends_on: netif
+  min_ram: 20
+  tags: net
 tests:
   net.udp:
-    min_ram: 20
-    tags: net
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+  net.udp.preempt:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_PREEMPTIVE=y

@@ -1,4 +1,10 @@
+common:
+  tags: net mld
+  depends_on: netif
 tests:
   net.mld:
-    tags: net mld
-    depends_on: netif
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+  net.mld.preempt:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
