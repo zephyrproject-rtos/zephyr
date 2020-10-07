@@ -66,6 +66,8 @@ multiples of each other and where the output fits within a single
 word, these conversions expand to a 2-4 operation sequence, requiring
 full precision only where actually required and requested.
 
+.. _kernel_timing_uptime:
+
 Uptime
 ======
 
