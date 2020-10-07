@@ -7,6 +7,8 @@
 #include <string.h>
 #include <errno.h>
 
+#include <cavs/version.h>
+
 #include <sys/sys_io.h>
 
 #include <adsp/cache.h>
@@ -61,10 +63,14 @@
 #define SSP_MN_DIV_BASE(x)			\
 	(0x00078D00 + ((x) * SSP_MN_DIV_SIZE))
 
-#define PDM_BASE				0x00010000
+#define PDM_BASE				DMIC_BASE
 
 /* SOC DSP SHIM Registers */
+#if CAVS_VERSION == CAVS_VERSION_1_5
 #define SOC_DSP_SHIM_REG_BASE			0x00001000
+#else
+#define SOC_DSP_SHIM_REG_BASE			0x00071f00
+#endif
 
 /* SOC DSP SHIM Register - Clock Control */
 #define SOC_CLKCTL_REQ_AUDIO_PLL_CLK		BIT(31)
