@@ -32,8 +32,6 @@ static K_FIFO_DEFINE(tx_queue);
 #define BT_H4_OUT_EP_IDX                0
 #define BT_H4_IN_EP_IDX                 1
 
-#define BT_H4_BULK_EP_MPS               MIN(BT_BUF_TX_SIZE, USB_MAX_FS_BULK_MPS)
-
 /* HCI RX/TX threads */
 static K_KERNEL_STACK_DEFINE(rx_thread_stack, 512);
 static struct k_thread rx_thread_data;
@@ -66,7 +64,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_bt_h4_config bt_h4_cfg = {
 		.bDescriptorType = USB_ENDPOINT_DESC,
 		.bEndpointAddress = BT_H4_OUT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
-		.wMaxPacketSize = sys_cpu_to_le16(BT_H4_BULK_EP_MPS),
+		.wMaxPacketSize = sys_cpu_to_le16(USB_MAX_FS_BULK_MPS),
 		.bInterval = 0x01,
 	},
 
@@ -76,7 +74,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_bt_h4_config bt_h4_cfg = {
 		.bDescriptorType = USB_ENDPOINT_DESC,
 		.bEndpointAddress = BT_H4_IN_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
-		.wMaxPacketSize = sys_cpu_to_le16(BT_H4_BULK_EP_MPS),
+		.wMaxPacketSize = sys_cpu_to_le16(USB_MAX_FS_BULK_MPS),
 		.bInterval = 0x01,
 	},
 };
@@ -94,7 +92,7 @@ static struct usb_ep_cfg_data bt_h4_ep_data[] = {
 
 static void bt_h4_read(uint8_t ep, int size, void *priv)
 {
-	static uint8_t data[BT_H4_BULK_EP_MPS];
+	static uint8_t data[USB_MAX_FS_BULK_MPS];
 
 	if (size > 0) {
 		struct net_buf *buf;
@@ -110,7 +108,7 @@ static void bt_h4_read(uint8_t ep, int size, void *priv)
 
 	/* Start a new read transfer */
 	usb_transfer(bt_h4_ep_data[BT_H4_OUT_EP_IDX].ep_addr, data,
-		     BT_H4_BULK_EP_MPS, USB_TRANS_READ, bt_h4_read, NULL);
+		     USB_MAX_FS_BULK_MPS, USB_TRANS_READ, bt_h4_read, NULL);
 }
 
 static void hci_tx_thread(void)

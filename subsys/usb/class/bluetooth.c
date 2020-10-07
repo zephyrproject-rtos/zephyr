@@ -32,11 +32,6 @@ static K_FIFO_DEFINE(tx_queue);
 #define BLUETOOTH_OUT_EP_ADDR		0x02
 #define BLUETOOTH_IN_EP_ADDR		0x82
 
-/* TODO: Replace use of USB_MAX_FS_INT_MPS if higher speeds are supported */
-#define BLUETOOTH_BULK_EP_MPS           MIN(BT_BUF_ACL_SIZE, \
-					    USB_MAX_FS_BULK_MPS)
-#define BLUETOOTH_INT_EP_MPS            MIN(BT_BUF_RX_SIZE, USB_MAX_FS_INT_MPS)
-
 /* HCI RX/TX threads */
 static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 static struct k_thread rx_thread_data;
@@ -71,7 +66,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0)
 		.bDescriptorType = USB_ENDPOINT_DESC,
 		.bEndpointAddress = BLUETOOTH_INT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_INTERRUPT,
-		.wMaxPacketSize = sys_cpu_to_le16(BLUETOOTH_INT_EP_MPS),
+		.wMaxPacketSize = sys_cpu_to_le16(USB_MAX_FS_INT_MPS),
 		.bInterval = 0x01,
 	},
 
@@ -81,7 +76,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0)
 		.bDescriptorType = USB_ENDPOINT_DESC,
 		.bEndpointAddress = BLUETOOTH_OUT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
-		.wMaxPacketSize = sys_cpu_to_le16(BLUETOOTH_BULK_EP_MPS),
+		.wMaxPacketSize = sys_cpu_to_le16(USB_MAX_FS_BULK_MPS),
 		.bInterval = 0x01,
 	},
 
@@ -91,7 +86,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0)
 		.bDescriptorType = USB_ENDPOINT_DESC,
 		.bEndpointAddress = BLUETOOTH_IN_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
-		.wMaxPacketSize = sys_cpu_to_le16(BLUETOOTH_BULK_EP_MPS),
+		.wMaxPacketSize = sys_cpu_to_le16(USB_MAX_FS_BULK_MPS),
 		.bInterval = 0x01,
 	},
 };
@@ -170,7 +165,7 @@ static void hci_rx_thread(void)
 
 static void acl_read_cb(uint8_t ep, int size, void *priv)
 {
-	static uint8_t data[BLUETOOTH_BULK_EP_MPS];
+	static uint8_t data[USB_MAX_FS_BULK_MPS];
 
 	if (size > 0) {
 		struct net_buf *buf;
