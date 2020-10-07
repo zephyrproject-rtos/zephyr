@@ -67,6 +67,48 @@
 	current-speed = <115200>;
 };
 
+&lpuart2 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&lpuart4 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&lpuart6 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&lpuart8 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&lpi2c1 {
+	status = "okay";
+};
+
+&lpi2c3 {
+	status = "okay";
+};
+
+&lpspi3 {
+	status = "okay";
+	pcs-sck-delay = <50>;
+	sck-pcs-delay = <50>;
+	transfer-delay = <50>;
+};
+
+&lpspi4 {
+	status = "okay";
+	pcs-sck-delay = <50>;
+	sck-pcs-delay = <50>;
+	transfer-delay = <50>;
+};
+
 &usb1 {
 	status = "okay";
 };
