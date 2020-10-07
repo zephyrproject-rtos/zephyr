@@ -228,6 +228,35 @@ HALs
 * HALs are now moved out of the main tree as external modules and reside in
   their own standalone repositories.
 
+MCUBoot
+*******
+
+* bootloader
+
+  * Added hardening against hardware level fault injection and timing attacks,
+    see ``CONFIG_BOOT_FIH_PROFILE_HIGH`` and similar kconfig options.
+  * Introduced Abstract crypto primitives to simplify porting.
+  * Added ram-load upgrade mode (not enabled for zephy-rtos yet).
+  * Renamed single-image mode to single-slot mode,
+    see ``CONFIG_SINGLE_APPLICATION_SLOT``.
+  * Added patch for turning off cache for Cortex M7 before chain-loading.
+  * Fixed boostrapping in swap-move mode.
+  * Fixed issue causing that interrupted swap-move operation might brick device
+    if the primary image was padded.
+  * Fixed issue causing that HW stack protection catches the chain-loaded
+    application during its early ini, by disableing HW stack protection
+    (temporary hack).
+  * Added reset of Cortex SPLIM registers before boot.
+  * Fixesd build issue that occurs if CONF_FILE contains multiple file paths
+    instead of single file path.
+
+* imgtool
+
+  * Print image digest during verify.
+  * Add possibility to set confirm flag for hex files as well.
+  * Usage of --confirm implies --pad.
+  * Fixed 'custom_tlvs' argument handling.
+
 Documentation
 *************
 
