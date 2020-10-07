@@ -314,6 +314,8 @@ void main(void)
 		k_sem_give(&run_app);
 	}
 
+	k_thread_priority_set(k_current_get(), THREAD_PRIORITY);
+
 #if defined(CONFIG_USERSPACE)
 	k_thread_access_grant(k_current_get(), &run_app);
 	k_mem_domain_add_thread(&app_domain, k_current_get());

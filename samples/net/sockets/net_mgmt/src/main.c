@@ -16,7 +16,11 @@ LOG_MODULE_REGISTER(net_mgmt_sock_sample, LOG_LEVEL_DBG);
 
 #define MAX_BUF_LEN 64
 #define STACK_SIZE 1024
-#define THREAD_PRIORITY K_PRIO_COOP(8)
+#if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
+#define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
+#else
+#define THREAD_PRIORITY K_PRIO_PREEMPT(8)
+#endif
 
 /* A test thread that spits out events that we can catch and show to user */
 static void trigger_events(void)

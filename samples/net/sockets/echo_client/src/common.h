@@ -21,6 +21,12 @@ extern struct k_mem_domain app_domain;
 #define APP_DMEM
 #endif
 
+#if IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)
+#define THREAD_PRIORITY K_PRIO_PREEMPT(8)
+#else
+#define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
+#endif
+
 struct data {
 	const char *proto;
 
