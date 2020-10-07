@@ -84,7 +84,7 @@ static ssize_t eventfd_read_op(void *obj, void *buf, size_t sz)
 	struct eventfd *efd = obj;
 	int result = 0;
 	eventfd_t count = 0;
-	struct k_spinlock_key key;
+	k_spinlock_key_t key;
 
 	if (sz < sizeof(eventfd_t)) {
 		errno = EINVAL;
@@ -130,7 +130,7 @@ static ssize_t eventfd_write_op(void *obj, const void *buf, size_t sz)
 	int result = 0;
 	eventfd_t count;
 	bool overflow;
-	struct k_spinlock_key key;
+	k_spinlock_key_t key;
 
 	if (sz < sizeof(eventfd_t)) {
 		errno = EINVAL;
