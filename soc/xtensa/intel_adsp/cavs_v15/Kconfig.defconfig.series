@@ -14,9 +14,6 @@ config SOC
 config SMP
 	default y
 
-config MP_NUM_CPUS
-	default 2
-
 config XTENSA_TIMER
 	default n
 
@@ -55,12 +52,6 @@ config TEST_LOGGING_DEFAULTS
 	default n
 	depends on TEST
 
-config IPM_CAVS_IDC
-	default y
-
-config IPM
-	default y
-
 if LOG
 
 config LOG_PRINTK
@@ -78,6 +69,15 @@ config LOG_BACKEND_RB_MEM_SIZE
 endif # LOG
 
 if SMP
+
+config MP_NUM_CPUS
+	default 2
+
+config IPM
+       default y
+
+config IPM_CAVS_IDC
+	default y
 
 config SCHED_IPI_SUPPORTED
 	default y if IPM_CAVS_IDC
