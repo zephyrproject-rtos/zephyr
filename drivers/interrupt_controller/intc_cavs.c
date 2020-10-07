@@ -132,6 +132,11 @@ static const struct irq_next_level_api cavs_apis = {
 #define CAVS_ICTL_INIT(n)						\
 	static int cavs_ictl_##n##_initialize(const struct device *port) \
 	{								\
+		struct cavs_ictl_runtime *context = port->data;		\
+		volatile struct cavs_registers * const regs =		\
+			(struct cavs_registers *)context->base_addr;	\
+		regs->disable_il = ~0;					\
+									\
 		return 0;						\
 	}								\
 									\
