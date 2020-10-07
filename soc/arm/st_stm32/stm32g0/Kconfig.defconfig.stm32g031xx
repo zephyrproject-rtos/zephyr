@@ -13,12 +13,4 @@ config NUM_IRQS
 	int
 	default 30
 
-config CLOCK_STM32_PLL_Q_DIVISOR
-	int "PLL Q Divisor"
-	depends on CLOCK_STM32_SYSCLK_SRC_PLL
-	default 2
-	range 2 8
-	help
-	  PLL Q VCO divisor, allowed values: 2-8.
-
 endif # SOC_STM32G031XX
