@@ -204,6 +204,33 @@ struct scfg_reg {
 #define NPCX_DEVPU0_I2C3_0_PUE                6
 #define NPCX_DEVPU1_F_SPI_PUD_EN              7
 
+
+/*
+ * System Glue (GLUE) device registers
+ */
+struct glue_reg {
+	volatile uint8_t reserved1[2];
+	/* 0x002: SMBus Start Bit Detection */
+	volatile uint8_t SMB_SBD;
+	/* 0x003: SMBus Event Enable */
+	volatile uint8_t SMB_EEN;
+	volatile uint8_t reserved2[12];
+	/* 0x010: Simple Debug Port Data 0 */
+	volatile uint8_t SDPD0;
+	volatile uint8_t reserved3;
+	/* 0x012: Simple Debug Port Data 1 */
+	volatile uint8_t SDPD1;
+	volatile uint8_t reserved4;
+	/* 0x014: Simple Debug Port Control and Status */
+	volatile uint8_t SDP_CTS;
+	volatile uint8_t reserved5[12];
+	/* 0x021: SMBus Bus Select */
+	volatile uint8_t SMB_SEL;
+	volatile uint8_t reserved6[5];
+	/* 0x027: PSL Control and Status */
+	volatile uint8_t PSL_CTS;
+};
+
 /*
  * Universal Asynchronous Receiver-Transmitter (UART) device registers
  */

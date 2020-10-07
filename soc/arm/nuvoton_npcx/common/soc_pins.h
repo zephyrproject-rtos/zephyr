@@ -59,6 +59,14 @@ struct npcx_alt {
 void npcx_pinctrl_mux_configure(const struct npcx_alt *alts_list,
 			uint8_t alts_size, int altfunc);
 
+/**
+ * @brief Select i2c port pads of i2c controller
+ *
+ * @param controller i2c controller device
+ * @param port index for i2c port pads
+ */
+void npcx_pinctrl_i2c_port_sel(int controller, int port);
+
 #ifdef __cplusplus
 }
 #endif

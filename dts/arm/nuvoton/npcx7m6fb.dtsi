@@ -105,7 +105,11 @@
 
 		scfg: pin-controller@400c3000 {
 			compatible = "nuvoton,npcx-pinctrl";
-			reg = <0x400c3000 0x2000>;
+			/* First reg region is System Configuration Device */
+			/* Second reg region is System Glue Device */
+			reg = <0x400c3000 0x2000
+			       0x400a5000 0x2000>;
+			reg-names = "scfg", "glue";
 			#alt-cells = <3>;
 			#lvol-cells = <2>;
 			label = "SCFG";
