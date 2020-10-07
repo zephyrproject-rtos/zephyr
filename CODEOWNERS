@@ -406,6 +406,7 @@
 /include/sw_isr_table.h                   @andrewboie @andyross
 /include/sys_clock.h                      @andrewboie @andyross
 /include/sys/sys_io.h                     @andrewboie @andyross
+/include/sys/kobject.h                    @andrewboie
 /include/toolchain.h                      @andrewboie @andyross @nashif
 /include/toolchain/                       @andrewboie @andyross
 /include/zephyr.h                         @andrewboie @andyross
