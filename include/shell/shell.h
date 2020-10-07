@@ -429,22 +429,28 @@ static int UTIL_CAT(cmd_dict_, GET_ARG_N(1, __DEBRACKET _data))(	\
 /**
  * @brief Initializes shell dictionary commands.
  *
+ * This is a special kind of static commands. Dictionary commands can be used
+ * every time you want to use a pair: (string <-> corresponding data) in
+ * a command handler. The string is usually a verbal description of a given
+ * data. The idea is to use the string as a command syntax that can be prompted
+ * by the shell and corresponding data can be used to process the command.
+ *
  * @param[in] _name	Name of the dictionary subcommand set
  * @param[in] _handler	Command handler common for all dictionary commands.
- * 			@see shell_dict_cmd_handler
+ *			@see shell_dict_cmd_handler
  * @param[in] ...	Dictionary pairs: (command_syntax, value). Value will be
- * 			passed to the _handler as user data.
+ *			passed to the _handler as user data.
  *
  * Example usage:
  *	static int my_handler(const struct shell *shell,
  *			      size_t argc, char **argv, void *data)
  *	{
  *		int val = (int)data;
-
+ *
  *		shell_print(shell, "(syntax, value) : (%s, %d)", argv[0], val);
  *		return 0;
  *	}
-
+ *
  *	SHELL_SUBCMD_DICT_SET_CREATE(sub_dict_cmds, my_handler,
  *		(value_0, 0), (value_1, 1), (value_2, 2), (value_3, 3)
  *	);
