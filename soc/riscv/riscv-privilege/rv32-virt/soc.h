@@ -14,6 +14,7 @@
 #include <devicetree.h>
 
 /* Timer configuration */
+#define RISCV_MSIP_BASE              0x02000000
 #define RISCV_MTIMECMP_BASE          0x02004000
 #define RISCV_MTIME_BASE             0x0200bff8
 

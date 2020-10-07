@@ -4,3 +4,5 @@
 config BOARD_QEMU_RV32_VIRT
 	bool "QEMU RV32 virt target"
 	depends on SOC_QEMU_RV32_VIRT
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED

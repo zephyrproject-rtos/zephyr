@@ -9,6 +9,7 @@ choice
 
 config SOC_QEMU_RV32_VIRT
 	bool "QEMU RV32 virt SOC implementation"
-	select ATOMIC_OPERATIONS_C
+	select ATOMIC_OPERATIONS_C if !SMP
+	select ATOMIC_OPERATIONS_BUILTIN if SMP
 
 endchoice
