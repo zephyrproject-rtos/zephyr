@@ -204,6 +204,36 @@ void ull_cp_priv_pdu_decode_min_used_chans_ind(struct ull_cp_conn *conn, struct 
 }
 
 /*
+ * Termination Procedure Helper
+ */
+void ull_cp_priv_pdu_encode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_terminate_ind *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, terminate_ind) + sizeof(struct pdu_data_llctrl_terminate_ind);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_TERMINATE_IND;
+	p = &pdu->llctrl.terminate_ind;
+	p->error_code = ctx->data.term.error_code;
+}
+
+void ull_cp_priv_ntf_encode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_terminate_ind *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, terminate_ind) + sizeof(struct pdu_data_llctrl_terminate_ind);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_TERMINATE_IND;
+	p = &pdu->llctrl.terminate_ind;
+	p->error_code = ctx->data.term.error_code;
+}
+
+void ull_cp_priv_pdu_decode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	ctx->data.term.error_code = pdu->llctrl.terminate_ind.error_code;
+}
+
+/*
  * Version Exchange Procedure Helper
  */
 void ull_cp_priv_pdu_encode_version_ind(struct pdu_data *pdu)
@@ -230,7 +260,6 @@ void ull_cp_priv_ntf_encode_version_ind(struct ull_cp_conn *conn,
 					struct pdu_data *pdu)
 {
 	struct pdu_data_llctrl_version_ind *p;
-
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, version_ind) +
