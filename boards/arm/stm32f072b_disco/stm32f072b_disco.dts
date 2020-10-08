@@ -78,6 +78,7 @@
 };
 
 &can1 {
+	pinctrl-0 = <&can_rx_pb8 &can_tx_pb9>;
 	bus-speed = <125000>;
 	status = "okay";
 };

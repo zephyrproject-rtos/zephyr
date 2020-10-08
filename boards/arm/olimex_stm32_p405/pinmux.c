@@ -14,10 +14,6 @@
 
 /* pin assignments for OLIMEX-STM32-P405 board */
 static const struct pin_config pinconf[] = {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(can1), okay) && CONFIG_CAN
-	{STM32_PIN_PB8, STM32F4_PINMUX_FUNC_PB8_CAN1_RX},
-	{STM32_PIN_PB9, STM32F4_PINMUX_FUNC_PB9_CAN1_TX},
-#endif
 };
 
 static int pinmux_stm32_init(const struct device *port)
