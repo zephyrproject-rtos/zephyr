@@ -32,16 +32,16 @@ like this:
 
 .. code-block:: none
 
-   zephyrproject
-   ├── .west
+   zephyrproject/                 # west topdir
+   ├── .west/
    │   └── config
-   ├── zephyr
-   │   ├── west.yml
-   │   └── [... other files ...]
-   ├── modules
-   │   └── lib
-   │       └── tinycbor
-   ├── net-tools
+   ├── zephyr/                    # .git/     │
+   │   ├── west.yml               # manifest  │ never modified by west
+   │   └── [... other files ...]              │
+   ├── modules/
+   │   └── lib/
+   │       └── tinycbor/          # .git/ project
+   ├── net-tools/                 # .git/ project
    └── [ ... other projects ...]
 
 Above, :file:`zephyrproject` is the name of the west workspace's root
@@ -111,17 +111,23 @@ A workspace using this topology looks like this:
 
 .. code-block:: none
 
-   west-workspace
-   ├── application
-   │   ├── CMakeLists.txt
-   │   ├── prj.conf
-   │   ├── src
-   │   │   └── main.c
-   │   └── west.yml
-   ├── modules
-   │   └── lib
-   │       └── tinycbor
-   └── zephyr
+   west-workspace/
+   │
+   ├── application/         # .git/     │
+   │   ├── CMakeLists.txt               │
+   │   ├── prj.conf                     │  never modified by west
+   │   ├── src/                         │
+   │   │   └── main.c                   │
+   │   └── west.yml         # main manifest with optional import(s) and override(s)
+   │                                    │
+   ├── modules/
+   │   └── lib/
+   │       └── tinycbor/    # .git/ project from either the main manifest or some import.
+   │
+   └── zephyr/              # .git/ project
+       └── west.yml         # This can be partially imported with lower precedence or ignored.
+                            # Only the 'manifest-rev' version can be imported.
+
 
 Here is an example :file:`application/west.yml` which uses
 :ref:`west-manifest-import`, available since west 0.7, to import Zephyr v2.2.0
@@ -192,23 +198,28 @@ A workspace using this topology looks like this:
 
 .. code-block:: none
 
-   west-workspace
-   ├── app1
+   west-workspace/
+   ├── app1/               # .git/ project
    │   ├── CMakeLists.txt
    │   ├── prj.conf
-   │   └── src
+   │   └── src/
    │       └── main.c
-   ├── app2
+   ├── app2/               # .git/ project
    │   ├── CMakeLists.txt
    │   ├── prj.conf
-   │   └── src
+   │   └── src/
    │       └── main.c
-   ├── manifest-repo
-   │   └── west.yml
-   ├── modules
-   │   └── lib
-   │       └── tinycbor
-   └── zephyr
+   ├── manifest-repo/      # .git/ never modified by west
+   │   └── west.yml        # main manifest with optional import(s) and override(s)
+   ├── modules/
+   │   └── lib/
+   │       └── tinycbor/   # .git/ project from either the main manifest or
+   │                       #       frome some import
+   │
+   └── zephyr/             # .git/ project
+       └── west.yml        # This can be partially imported with lower precedence or ignored.
+                           # Only the 'manifest-rev' version can be imported.
+
 
 Here is an example T3 :file:`manifest-repo/west.yml` which uses
 :ref:`west-manifest-import`, available since west 0.7, to import Zephyr
