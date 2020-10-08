@@ -410,7 +410,8 @@ static int fatfs_mount(struct fs_mount_t *mountp)
 
 #if defined(CONFIG_FS_FATFS_MOUNT_MKFS)
 	/* If no file system found then create one */
-	if (res == FR_NO_FILESYSTEM) {
+	if (res == FR_NO_FILESYSTEM &&
+	    !(mountp->flags & FS_MOUNT_FLAG_NO_FORMAT)) {
 		uint8_t work[_MAX_SS];
 
 		res = f_mkfs(&mountp->mnt_point[1],
