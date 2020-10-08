@@ -53,7 +53,6 @@ struct ull_cp_conn {
 			uint8_t phys;
 			uint8_t min_used_chans;
 		} muc;
-
 	} llcp;
 
 	struct mocked_lll_conn {
@@ -152,3 +151,8 @@ void ull_cp_ltk_req_neq_reply(struct ull_cp_conn *conn);
  * @brief Initiate a PHY Update Procedure.
  */
 uint8_t ull_cp_phy_update(struct ull_cp_conn *conn);
+
+/**
+ * @brief Initiate a Termination Procedure.
+ */
+uint8_t ull_cp_terminate(struct ull_cp_conn *conn, uint8_t error_code);

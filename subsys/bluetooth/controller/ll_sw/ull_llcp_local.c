@@ -107,6 +107,9 @@ void ull_cp_priv_lr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct no
 	case PROC_PHY_UPDATE:
 		lp_pu_rx(conn, ctx, rx);
 		break;
+	case PROC_TERMINATE:
+		lp_comm_rx(conn, ctx, rx);
+		break;
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -117,6 +120,9 @@ void ull_cp_priv_lr_tx_ack(struct ull_cp_conn *conn, struct proc_ctx *ctx, struc
 {
 	switch (ctx->proc) {
 	case PROC_MIN_USED_CHANS:
+		lp_comm_tx_ack(conn, ctx, tx);
+		break;
+	case PROC_TERMINATE:
 		lp_comm_tx_ack(conn, ctx, tx);
 		break;
 	default:
@@ -149,6 +155,9 @@ static void lr_act_run(struct ull_cp_conn *conn)
 		break;
 	case PROC_PHY_UPDATE:
 		lp_pu_run(conn, ctx, NULL);
+		break;
+	case PROC_TERMINATE:
+		lp_comm_run(conn, ctx, NULL);
 		break;
 	default:
 		/* Unknown procedure */
