@@ -192,6 +192,7 @@ static int lfs_flags_from_zephyr(unsigned int zflags)
 	flags |= (zflags & FS_O_WRITE) ? LFS_O_WRONLY : 0;
 
 	flags |= (zflags & FS_O_APPEND) ? LFS_O_APPEND : 0;
+	flags |= (zflags & FS_O_TRUNC) ? LFS_O_TRUNC : 0;
 
 	return flags;
 }
