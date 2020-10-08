@@ -815,7 +815,7 @@ static void uart_stm32_irq_config_func_##index(const struct device *dev)	\
 STM32_UART_IRQ_HANDLER_DECL(index);					\
 									\
 static const struct soc_gpio_pinctrl uart_pins_##index[] =		\
-					ST_STM32_DT_PINCTRL(0, index);	\
+				ST_STM32_DT_INST_PINCTRL(0, index);	\
 									\
 static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.uconf = {							\
