@@ -64,6 +64,7 @@ helper_pdu_encode_func_t * const helper_pdu_encode[] = {
 	helper_pdu_encode_phy_rsp,
 	helper_pdu_encode_phy_update_ind,
 	helper_pdu_encode_unknown_rsp,
+	helper_pdu_encode_terminate_ind,
 };
 
 helper_pdu_verify_func_t *const helper_pdu_verify[] = {
@@ -84,6 +85,7 @@ helper_pdu_verify_func_t *const helper_pdu_verify[] = {
 	helper_pdu_verify_phy_rsp,
 	helper_pdu_verify_phy_update_ind,
 	helper_pdu_verify_unknown_rsp,
+	helper_pdu_verify_terminate_ind,
 };
 
 
@@ -225,7 +227,6 @@ void lt_tx_real(const char *file, uint32_t line, helper_pdu_opcode_t opcode, str
 
 	sys_slist_append(&lt_tx_q, (sys_snode_t *) rx);
 }
-
 
 void lt_rx_real(const char *file, uint32_t line, helper_pdu_opcode_t opcode, struct ull_cp_conn *conn, struct node_tx **tx_ref, void *param)
 {
