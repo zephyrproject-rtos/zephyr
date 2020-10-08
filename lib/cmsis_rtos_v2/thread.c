@@ -26,7 +26,7 @@ static const osThreadAttr_t init_thread_attrs = {
 
 static sys_dlist_t thread_list;
 static struct cv2_thread cv2_thread_pool[CONFIG_CMSIS_V2_THREAD_MAX_COUNT];
-static uint32_t thread_num;
+uint32_t cv2_thread_num;
 static uint32_t thread_num_dynamic;
 
 #if CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT != 0
@@ -115,7 +115,7 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg,
 		return NULL;
 	}
 
-	if (thread_num >= CONFIG_CMSIS_V2_THREAD_MAX_COUNT) {
+	if (cv2_thread_num >= CONFIG_CMSIS_V2_THREAD_MAX_COUNT) {
 		return NULL;
 	}
 
@@ -159,7 +159,7 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg,
 
 	prio = cmsis_to_zephyr_priority(cv2_prio);
 
-	this_thread_num = atomic_inc((atomic_t *)&thread_num);
+	this_thread_num = atomic_inc((atomic_t *)&cv2_thread_num);
 
 	tid = &cv2_thread_pool[this_thread_num];
 	tid->attr_bits = attr->attr_bits;
