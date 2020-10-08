@@ -739,7 +739,7 @@ void ull_master_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t
 	/* Check if stopping ticker (on disconnection, race with ticker expiry)
 	 */
 	if (unlikely(conn->lll.handle == 0xFFFF)) {
-		DEBUG_RADIO_PREPARE_M(0);
+		DEBUG_RADIO_CLOSE_M(0);
 		return;
 	}
 
@@ -753,7 +753,7 @@ void ull_master_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t
 		/* Handle any LL Control Procedures */
 		ret = ull_conn_llcp(conn, ticks_at_expire, lazy);
 		if (ret) {
-			DEBUG_RADIO_PREPARE_M(0);
+			DEBUG_RADIO_CLOSE_M(0);
 			return;
 		}
 	}
