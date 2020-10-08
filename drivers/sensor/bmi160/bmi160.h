@@ -398,7 +398,7 @@ struct bmi160_range {
 	uint8_t reg_val;
 };
 
-struct bmi160_device_config {
+struct bmi160_cfg {
 #if defined(CONFIG_BMI160_TRIGGER)
 	const char *gpio_port;
 	gpio_pin_t int_pin;
@@ -454,7 +454,7 @@ struct bmi160_scale {
 	uint16_t gyr; /* micro radians/s/lsb */
 };
 
-struct bmi160_device_data {
+struct bmi160_data {
 	const struct device *spi;
 	struct spi_config spi_cfg;
 #if defined(CONFIG_BMI160_TRIGGER)
