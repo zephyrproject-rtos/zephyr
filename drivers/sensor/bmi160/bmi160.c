@@ -21,6 +21,11 @@
 
 LOG_MODULE_REGISTER(BMI160, CONFIG_SENSOR_LOG_LEVEL);
 
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
+#warning "BMI160 driver enabled without any devices"
+#endif
+
+#if BMI160_BUS_SPI
 static int bmi160_transceive(const struct device *dev, uint8_t reg,
 			     bool write, void *buf, size_t length)
 {
@@ -47,17 +52,41 @@ static int bmi160_transceive(const struct device *dev, uint8_t reg,
 			.count = 2
 		};
 
-		return spi_transceive(data->bus, &cfg->spi_cfg, &tx, &rx);
+		return spi_transceive(data->bus, cfg->bus_cfg.spi_cfg, &tx,
+				      &rx);
 	}
 
-	return spi_write(data->bus, &cfg->spi_cfg, &tx);
+	return spi_write(data->bus, cfg->bus_cfg.spi_cfg, &tx);
 }
 
-int bmi160_read(const struct device *dev, uint8_t reg_addr, void *data,
+int bmi160_read_spi(const struct device *dev,
+		    const struct bmi160_bus_cfg *bus_config, uint8_t reg_addr,
+		    void *buf, uint8_t len)
+{
+	return bmi160_transceive(dev, reg_addr | BMI160_REG_READ, false,
+				 buf, len);
+}
+
+int bmi160_write_spi(const struct device *dev,
+		     const struct bmi160_bus_cfg *bus_config,
+		     uint8_t reg_addr, void *buf, uint8_t len)
+{
+	return bmi160_transceive(dev, reg_addr & BMI160_REG_MASK, true,
+				 buf, len);
+}
+
+static const struct bmi160_reg_io bmi160_reg_io_spi = {
+	.read = bmi160_read_spi,
+	.write = bmi160_write_spi,
+};
+#endif /* BMI160_BUS_SPI */
+
+int bmi160_read(const struct device *dev, uint8_t reg_addr, void *buf,
 		uint8_t len)
 {
-	return bmi160_transceive(dev, reg_addr | BMI160_REG_READ, false, data,
-				 len);
+	const struct bmi160_cfg *cfg = to_config(dev);
+
+	return cfg->reg_io->read(dev, &cfg->bus_cfg, reg_addr, buf, len);
 }
 
 int bmi160_byte_read(const struct device *dev, uint8_t reg_addr, uint8_t *byte)
@@ -80,11 +109,12 @@ static int bmi160_word_read(const struct device *dev, uint8_t reg_addr,
 	return 0;
 }
 
-int bmi160_write(const struct device *dev, uint8_t reg_addr, void *data,
+int bmi160_write(const struct device *dev, uint8_t reg_addr, void *buf,
 		 uint8_t len)
 {
-	return bmi160_transceive(dev, reg_addr & BMI160_REG_MASK, true, data,
-				 len);
+	const struct bmi160_cfg *cfg = to_config(dev);
+
+	return cfg->reg_io->write(dev, &cfg->bus_cfg, reg_addr, buf, len);
 }
 
 int bmi160_byte_write(const struct device *dev, uint8_t reg_addr,
@@ -923,20 +953,25 @@ int bmi160_init(const struct device *dev)
 #endif
 
 #define BMI160_DEVICE_INIT(inst)					\
-	DEVICE_AND_API_INIT(bmi160, DT_INST_LABEL(inst), bmi160_init,	\
-		&bmi160_data_##inst, &bmi160_cfg_##inst,		\
+	DEVICE_AND_API_INIT(bmi160_##inst, DT_INST_LABEL(inst),		\
+		bmi160_init, &bmi160_data_##inst, &bmi160_cfg_##inst,	\
 		POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,		\
 		&bmi160_api);
 
+/* Instantiation macros used when a device is on a SPI bus */
 #define BMI160_DEFINE_SPI(inst)						\
 	static struct bmi160_data bmi160_data_##inst;			\
 	static const struct bmi160_cfg bmi160_cfg_##inst = {		\
 		BMI160_TRIGGER_CFG(inst)				\
+		.reg_io = &bmi160_reg_io_spi,				\
 		.bus_label = DT_INST_BUS_LABEL(inst),			\
-		.spi_cfg = {						\
-			.operation = SPI_WORD_SET(8),			\
-			.frequency = DT_INST_PROP(inst, spi_max_frequency), \
-			.slave = DT_INST_REG_ADDR(inst),		\
+		.bus_cfg = {						\
+			.spi_cfg = (&(struct spi_config) {		\
+				.operation = SPI_WORD_SET(8),		\
+				.frequency = DT_INST_PROP(inst,		\
+					spi_max_frequency),		\
+				.slave = DT_INST_REG_ADDR(inst),	\
+			}),						\
 		},							\
 	};								\
 	BMI160_DEVICE_INIT(inst)
