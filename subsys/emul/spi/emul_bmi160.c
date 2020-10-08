@@ -47,6 +47,7 @@ static void sample_read(struct bmi160_emul_data *data, union bmi160_sample *buf)
 {
 	int i;
 
+	LOG_INF("Sample read");
 	buf->dummy_byte = 0;
 	for (i = 0; i < BMI160_AXES; i++) {
 		/*
@@ -62,6 +63,7 @@ static void reg_write(const struct bmi160_emul_cfg *cfg, int regn, int val)
 {
 	struct bmi160_emul_data *data = cfg->data;
 
+	LOG_INF("write %x = %x", regn, val);
 	cfg->reg[regn] = val;
 	switch (regn) {
 	case BMI160_REG_ACC_CONF:
@@ -121,6 +123,7 @@ static int reg_read(const struct bmi160_emul_cfg *cfg, int regn)
 	struct bmi160_emul_data *data = cfg->data;
 	int val;
 
+	LOG_INF("read %x =", regn);
 	val = cfg->reg[regn];
 	switch (regn) {
 	case BMI160_REG_CHIPID:
@@ -146,6 +149,7 @@ static int reg_read(const struct bmi160_emul_cfg *cfg, int regn)
 	default:
 		LOG_INF("Unknown read %x", regn);
 	}
+	LOG_INF("       = %x", val);
 
 	return val;
 }
@@ -181,19 +185,15 @@ static int bmi160_emul_io(struct spi_emul *emul,
 			case 1:
 				if (regn & BMI160_REG_READ) {
 					regn &= BMI160_REG_MASK;
-					LOG_INF("read %x =", regn);
 					val = reg_read(cfg, regn);
 					*(uint8_t *)rxd->buf = val;
-					LOG_INF("       = %x", val);
 				} else {
 					val = *(uint8_t *)txd->buf;
-					LOG_INF("write %x = %x", regn, val);
 					reg_write(cfg, regn, val);
 				}
 				break;
 			case BMI160_SAMPLE_SIZE:
 				if (regn & BMI160_REG_READ) {
-					LOG_INF("Sample read");
 					sample_read(data, rxd->buf);
 				} else {
 					LOG_INF("Unknown sample write");
