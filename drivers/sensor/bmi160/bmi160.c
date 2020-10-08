@@ -21,11 +21,10 @@
 
 LOG_MODULE_REGISTER(BMI160, CONFIG_SENSOR_LOG_LEVEL);
 
-struct bmi160_data bmi160_data;
-
 static int bmi160_transceive(const struct device *dev, uint8_t reg,
 			     bool write, void *buf, size_t length)
 {
+	const struct bmi160_cfg *cfg = to_config(dev);
 	struct bmi160_data *data = to_data(dev);
 	const struct spi_buf tx_buf[2] = {
 		{
@@ -48,10 +47,10 @@ static int bmi160_transceive(const struct device *dev, uint8_t reg,
 			.count = 2
 		};
 
-		return spi_transceive(data->spi, &data->spi_cfg, &tx, &rx);
+		return spi_transceive(data->spi, &cfg->spi_cfg, &tx, &rx);
 	}
 
-	return spi_write(data->spi, &data->spi_cfg, &tx);
+	return spi_write(data->spi, &cfg->spi_cfg, &tx);
 }
 int bmi160_read(const struct device *dev, uint8_t reg_addr, uint8_t *data,
 		uint8_t len)
@@ -806,20 +805,16 @@ static const struct sensor_driver_api bmi160_api = {
 
 int bmi160_init(const struct device *dev)
 {
+	const struct bmi160_cfg *cfg = to_config(dev);
 	struct bmi160_data *data = to_data(dev);
 	uint8_t val = 0U;
 	int32_t acc_range, gyr_range;
 
-	data->spi = device_get_binding(DT_INST_BUS_LABEL(0));
+	data->spi = device_get_binding(cfg->bus_label);
 	if (!data->spi) {
-		LOG_DBG("SPI master controller not found: %s.",
-			    DT_INST_BUS_LABEL(0));
+		LOG_DBG("SPI master controller not found: %s.", cfg->bus_label);
 		return -EINVAL;
 	}
-
-	data->spi_cfg.operation = SPI_WORD_SET(8);
-	data->spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
-	data->spi_cfg.slave = DT_INST_REG_ADDR(0);
 
 	/* reboot the chip */
 	if (bmi160_byte_write(dev, BMI160_REG_CMD, BMI160_CMD_SOFT_RESET) < 0) {
@@ -912,16 +907,32 @@ int bmi160_init(const struct device *dev)
 	return 0;
 }
 
-const struct bmi160_cfg bmi160_config = {
 #if defined(CONFIG_BMI160_TRIGGER)
-	.gpio_port = DT_INST_GPIO_LABEL(0, int_gpios),
-	.int_pin = DT_INST_GPIO_PIN(0, int_gpios),
-	.int_flags = DT_INST_GPIO_FLAGS(0, int_gpios),
+#define BMI160_TRIGGER_CFG(inst)					\
+	.gpio_port = DT_INST_GPIO_LABEL(inst, int_gpios),		\
+	.int_pin = DT_INST_GPIO_PIN(inst, int_gpios),			\
+	.int_flags = DT_INST_GPIO_FLAGS(inst, int_gpios),
+#else
+#define BMI160_TRIGGER_CFG(inst)
 #endif
-};
 
-
-
-DEVICE_AND_API_INIT(bmi160, DT_INST_LABEL(0), bmi160_init, &bmi160_data,
-		&bmi160_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+#define BMI160_DEVICE_INIT(inst)					\
+	DEVICE_AND_API_INIT(bmi160, DT_INST_LABEL(inst), bmi160_init,	\
+		&bmi160_data_##inst, &bmi160_cfg_##inst,		\
+		POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,		\
 		&bmi160_api);
+
+#define BMI160_DEFINE_SPI(inst)						\
+	static struct bmi160_data bmi160_data_##inst;			\
+	static const struct bmi160_cfg bmi160_cfg_##inst = {		\
+		BMI160_TRIGGER_CFG(inst)				\
+		.bus_label = DT_INST_BUS_LABEL(inst),			\
+		.spi_cfg = {						\
+			.operation = SPI_WORD_SET(8),			\
+			.frequency = DT_INST_PROP(inst, spi_max_frequency), \
+			.slave = DT_INST_REG_ADDR(inst),		\
+		},							\
+	};								\
+	BMI160_DEVICE_INIT(inst)
+
+DT_INST_FOREACH_STATUS_OKAY(BMI160_DEFINE_SPI)
