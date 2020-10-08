@@ -51,15 +51,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define FREESCALE_OUI_B1 0x04
 #define FREESCALE_OUI_B2 0x9f
 
-#define ETH_MCUX_FIXED_LINK_NODE \
-	DT_CHILD(DT_ALIAS(eth), fixed_link)
-#define ETH_MCUX_FIXED_LINK \
-	DT_NODE_EXISTS(ETH_MCUX_FIXED_LINK_NODE)
-#define ETH_MCUX_FIXED_LINK_SPEED \
-	DT_PROP(ETH_MCUX_FIXED_LINK_NODE, speed)
-#define ETH_MCUX_FIXED_LINK_FULL_DUPLEX \
-	DT_PROP(ETH_MCUX_FIXED_LINK_NODE, full_duplex)
-
 enum eth_mcux_phy_state {
 	eth_mcux_phy_state_initial,
 	eth_mcux_phy_state_reset,
@@ -134,6 +125,7 @@ struct eth_context {
 	bool enabled;
 	bool link_up;
 	uint32_t phy_addr;
+	const bool fixed_link;
 	phy_duplex_t phy_duplex;
 	phy_speed_t phy_speed;
 	uint8_t mac_addr[6];
@@ -238,22 +230,6 @@ out:
 #define ETH_MCUX_PM_FUNC device_pm_control_nop
 #endif /* CONFIG_NET_POWER_MANAGEMENT */
 
-#if ETH_MCUX_FIXED_LINK
-static void eth_mcux_get_phy_params(phy_duplex_t *p_phy_duplex,
-				    phy_speed_t *p_phy_speed)
-{
-	*p_phy_duplex = kPHY_HalfDuplex;
-#if ETH_MCUX_FIXED_LINK_FULL_DUPLEX
-	*p_phy_duplex = kPHY_FullDuplex;
-#endif
-
-	*p_phy_speed = kPHY_Speed10M;
-#if ETH_MCUX_FIXED_LINK_SPEED == 100
-	*p_phy_speed = kPHY_Speed100M;
-#endif
-}
-#else
-
 static void eth_mcux_decode_duplex_and_speed(uint32_t status,
 					     phy_duplex_t *p_phy_duplex,
 					     phy_speed_t *p_phy_speed)
@@ -277,7 +253,6 @@ static void eth_mcux_decode_duplex_and_speed(uint32_t status,
 		break;
 	}
 }
-#endif /* ETH_MCUX_FIXED_LINK */
 
 static inline struct net_if *get_iface(struct eth_context *ctx, uint16_t vlan_tag)
 {
@@ -391,9 +366,6 @@ void eth_mcux_phy_stop(struct eth_context *context)
 
 static void eth_mcux_phy_event(struct eth_context *context)
 {
-#if !(defined(CONFIG_ETH_MCUX_NO_PHY_SMI) && ETH_MCUX_FIXED_LINK)
-	uint32_t status;
-#endif
 	bool link_up;
 #if defined(CONFIG_SOC_SERIES_IMX_RT)
 	status_t res;
@@ -490,13 +462,14 @@ static void eth_mcux_phy_event(struct eth_context *context)
 #endif
 		break;
 	case eth_mcux_phy_state_read_status:
-		/* PHY Basic status is available. */
-#if defined(CONFIG_ETH_MCUX_NO_PHY_SMI) && ETH_MCUX_FIXED_LINK
-		link_up = true;
-#else
-		status = ENET_ReadSMIData(context->base);
-		link_up =  status & PHY_BSTATUS_LINKSTATUS_MASK;
-#endif
+		if (context->fixed_link) {
+			link_up = true;
+		} else {
+			/* PHY Basic status is available. */
+			uint32_t status = ENET_ReadSMIData(context->base);
+
+			link_up = status & PHY_BSTATUS_LINKSTATUS_MASK;
+		}
 		if (link_up && !context->link_up) {
 			/* Start reading the PHY control register. */
 #if !defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
@@ -530,16 +503,14 @@ static void eth_mcux_phy_event(struct eth_context *context)
 
 		break;
 	case eth_mcux_phy_state_read_duplex:
-		/* PHY control register is available. */
-#if defined(CONFIG_ETH_MCUX_NO_PHY_SMI) && ETH_MCUX_FIXED_LINK
-		eth_mcux_get_phy_params(&phy_duplex, &phy_speed);
-		LOG_INF("%s - Fixed Link", eth_name(context->base));
-#else
-		status = ENET_ReadSMIData(context->base);
-		eth_mcux_decode_duplex_and_speed(status,
-						 &phy_duplex,
-						 &phy_speed);
-#endif
+		if (!context->fixed_link) {
+			/* PHY control register is available. */
+			uint32_t status = ENET_ReadSMIData(context->base);
+
+			eth_mcux_decode_duplex_and_speed(status,
+							 &phy_duplex,
+							 &phy_speed);
+		}
 		if (phy_speed != context->phy_speed ||
 		    phy_duplex != context->phy_duplex) {
 			context->phy_speed = phy_speed;
@@ -1284,8 +1255,23 @@ static struct eth_context eth0_context = {
 #endif
 	.config_func = eth0_config_func,
 	.phy_addr = 0U,
+#if DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(0), fixed_link))
+	.fixed_link = true,
+#if DT_PROP(DT_CHILD(DT_DRV_INST(0), fixed_link), full_duplex)
+	.phy_duplex = kPHY_FullDuplex,
+#else
+	.phy_duplex = kPHY_HalfDuplex,
+#endif
+#if DT_PROP(DT_CHILD(DT_DRV_INST(0), fixed_link), speed) == 100
+	.phy_speed = kPHY_Speed100M,
+#else
+	.phy_speed = kPHY_Speed10M,
+#endif
+#else
+	.fixed_link = false,
 	.phy_duplex = kPHY_FullDuplex,
 	.phy_speed = kPHY_Speed100M,
+#endif /* fixed-link */
 #if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
 	.mac_addr = DT_INST_PROP(0, local_mac_address),
 	.generate_mac = NULL,
@@ -1431,8 +1417,23 @@ static struct eth_context eth1_context = {
 #endif
 	.config_func = eth1_config_func,
 	.phy_addr = 0U,
+#if DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(1), fixed_link))
+	.fixed_link = true,
+#if DT_PROP(DT_CHILD(DT_DRV_INST(1), fixed_link), full_duplex)
+	.phy_duplex = kPHY_FullDuplex,
+#else
+	.phy_duplex = kPHY_HalfDuplex,
+#endif
+#if DT_PROP(DT_CHILD(DT_DRV_INST(1), fixed_link), speed) == 100
+	.phy_speed = kPHY_Speed100M,
+#else
+	.phy_speed = kPHY_Speed10M,
+#endif
+#else
+	.fixed_link = false,
 	.phy_duplex = kPHY_FullDuplex,
 	.phy_speed = kPHY_Speed100M,
+#endif /* fixed-link */
 #if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(1))
 	.mac_addr = DT_INST_PROP(1, local_mac_address),
 	.generate_mac = NULL,
