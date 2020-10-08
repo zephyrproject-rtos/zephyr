@@ -188,7 +188,8 @@ struct fs_file_system_t {
 
 #define FS_O_CREATE     0x10
 #define FS_O_APPEND     0x20
-#define FS_O_FLAGS_MASK 0x30
+#define FS_O_TRUNC      0x40
+#define FS_O_FLAGS_MASK 0x70
 
 #define FS_O_MASK       (FS_O_MODE_MASK | FS_O_FLAGS_MASK)
 
@@ -214,6 +215,7 @@ struct fs_file_system_t {
  *   - @c FS_O_WRITE open for write
  *   - @c FS_O_RDWR open for read/write (<tt>FS_O_READ | FS_O_WRITE</tt>)
  *   - @c FS_O_CREATE create file if it does not exist
+ *   - @c FS_O_TRUNC file is truncated to length zero
  *   - @c FS_O_APPEND move to end of file before each write
  *
  * If @p flags are set to 0 the function will attempt to open an existing file
