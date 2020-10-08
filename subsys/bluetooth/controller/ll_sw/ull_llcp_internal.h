@@ -13,6 +13,7 @@ enum llcp_proc {
 	PROC_VERSION_EXCHANGE,
 	PROC_ENCRYPTION_START,
 	PROC_PHY_UPDATE,
+	PROC_TERMINATE,
 };
 
 /* LLCP Procedure Context */
@@ -61,6 +62,11 @@ struct proc_ctx {
 			uint8_t error;
 			uint16_t instant;
 		} pu;
+
+		/* Use by ACL Termination Procedure */
+		struct {
+			uint8_t error_code;
+		} term;
 
 	} data;
 	struct {
@@ -321,6 +327,29 @@ static inline void rp_pu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, voi
 	return ull_cp_priv_rp_pu_run(conn, ctx, param);
 }
 
+/*
+ * Terminate Helper
+ */
+void ull_cp_priv_pdu_encode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+
+static inline void pdu_encode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_encode_terminate_ind(ctx, pdu);
+}
+
+void ull_cp_priv_ntf_encode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+
+static inline void ntf_encode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	return ull_cp_priv_ntf_encode_terminate_ind(ctx, pdu);
+}
+
+void ull_cp_priv_pdu_decode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+
+static inline void pdu_decode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_decode_terminate_ind(ctx, pdu);
+}
 
 /*
  * LLCP Local Request
