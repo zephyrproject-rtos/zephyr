@@ -411,13 +411,13 @@ static void eth_mcux_phy_event(struct eth_context *context)
 			/*
 			 * When the iface is available proceed with
 			 * the eth link setup, otherwise reschedule the
-			 * eth_mcux_phy_event and check after 1ms
+			 * eth_mcux_phy_event and check after 50ms
 			 */
 			if (context->iface) {
 				context->phy_state = eth_mcux_phy_state_reset;
 			}
 			k_delayed_work_submit(&context->delayed_phy_work,
-					      K_MSEC(1));
+					      K_MSEC(50));
 		}
 #endif /* CONFIG_SOC_SERIES_IMX_RT */
 		break;
