@@ -42,6 +42,16 @@ choice
 		bool "Dark"
 endchoice
 
+config LVGL_THEME_MATERIAL_FLAG_NO_TRANSITION
+	bool "Disable transitions"
+	help
+	  Disable transitions in material theme
+
+config LVGL_THEME_MATERIAL_FLAG_NO_FOCUS
+	bool "Disable focus"
+	help
+	  Disable indication of focused state in material theme
+
 endif # LVGL_USE_THEME_MATERIAL
 
 if LVGL_USE_THEME_CUSTOM
@@ -231,6 +241,14 @@ choice
 	prompt "Default theme small font"
 	default LVGL_THEME_DEFAULT_FONT_SMALL_UNSCII_8
 
+	config LVGL_THEME_DEFAULT_FONT_SMALL_MONTSERRAT_8
+		bool "Build-in font size 8"
+		depends on LVGL_FONT_MONTSERRAT_8
+
+	config LVGL_THEME_DEFAULT_FONT_SMALL_MONTSERRAT_10
+		bool "Build-in font size 10"
+		depends on LVGL_FONT_MONTSERRAT_10
+
 	config LVGL_THEME_DEFAULT_FONT_SMALL_MONTSERRAT_12
 		bool "Build-in font size 12"
 		depends on LVGL_FONT_MONTSERRAT_12
@@ -339,6 +357,14 @@ endchoice
 choice
 	prompt "Default theme normal font"
 	default LVGL_THEME_DEFAULT_FONT_NORMAL_UNSCII_8
+
+	config LVGL_THEME_DEFAULT_FONT_NORMAL_MONTSERRAT_8
+		bool "Build-in font size 8"
+		depends on LVGL_FONT_MONTSERRAT_8
+
+	config LVGL_THEME_DEFAULT_FONT_NORMAL_MONTSERRAT_10
+		bool "Build-in font size 10"
+		depends on LVGL_FONT_MONTSERRAT_10
 
 	config LVGL_THEME_DEFAULT_FONT_NORMAL_MONTSERRAT_12
 		bool "Build-in font size 12"
@@ -449,6 +475,14 @@ choice
 	prompt "Default theme subtitle font"
 	default LVGL_THEME_DEFAULT_FONT_SUBTITLE_UNSCII_8
 
+	config LVGL_THEME_DEFAULT_FONT_SUBTITLE_MONTSERRAT_8
+		bool "Build-in font size 8"
+		depends on LVGL_FONT_MONTSERRAT_8
+
+	config LVGL_THEME_DEFAULT_FONT_SUBTITLE_MONTSERRAT_10
+		bool "Build-in font size 10"
+		depends on LVGL_FONT_MONTSERRAT_10
+
 	config LVGL_THEME_DEFAULT_FONT_SUBTITLE_MONTSERRAT_12
 		bool "Build-in font size 12"
 		depends on LVGL_FONT_MONTSERRAT_12
@@ -557,6 +591,14 @@ endchoice
 choice
 	prompt "Default theme title font"
 	default LVGL_THEME_DEFAULT_FONT_TITLE_UNSCII_8
+
+	config LVGL_THEME_DEFAULT_FONT_TITLE_MONTSERRAT_8
+		bool "Build-in font size 8"
+		depends on LVGL_FONT_MONTSERRAT_8
+
+	config LVGL_THEME_DEFAULT_FONT_TITLE_MONTSERRAT_10
+		bool "Build-in font size 10"
+		depends on LVGL_FONT_MONTSERRAT_10
 
 	config LVGL_THEME_DEFAULT_FONT_TITLE_MONTSERRAT_12
 		bool "Build-in font size 12"
