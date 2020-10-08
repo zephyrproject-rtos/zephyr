@@ -198,6 +198,16 @@ void helper_pdu_encode_unknown_rsp(struct pdu_data *pdu, void *param)
 	pdu->llctrl.unknown_rsp.type = p->type;
 }
 
+void helper_pdu_encode_terminate_ind(struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_terminate_ind *p = param;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, terminate_ind) + sizeof(struct pdu_data_llctrl_terminate_ind);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_TERMINATE_IND;
+	pdu->llctrl.terminate_ind.error_code = p->error_code;
+}
+
 void helper_pdu_verify_version_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_version_ind *p = param;
@@ -372,4 +382,14 @@ void helper_pdu_verify_unknown_rsp(const char *file, uint32_t line, struct pdu_d
 	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, unknown_rsp) + sizeof(struct pdu_data_llctrl_unknown_rsp), "Wrong length.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP, "Not a LL_UNKNOWN_RSP.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.unknown_rsp.type, p->type, "Type mismatch.\nCalled at %s:%d\n", file, line);
+}
+
+void helper_pdu_verify_terminate_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_terminate_ind *p = param;
+
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, terminate_ind) + sizeof(struct pdu_data_llctrl_terminate_ind), "Wrong length.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_TERMINATE_IND, "Not a LL_TERMINATE_IND.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.terminate_ind.error_code, p->error_code, "Error code mismatch.\nCalled at %s:%d\n", file, line);
 }

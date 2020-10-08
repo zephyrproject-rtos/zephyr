@@ -81,6 +81,8 @@ static bool proc_with_instant(struct proc_ctx *ctx)
 	case PROC_PHY_UPDATE:
 		return 1U;
 		break;
+	case PROC_TERMINATE:
+		return 0U;
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -160,6 +162,9 @@ void ull_cp_priv_rr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct no
 	case PROC_PHY_UPDATE:
 		rp_pu_rx(conn, ctx, rx);
 		break;
+	case PROC_TERMINATE:
+		rp_comm_rx(conn, ctx, rx);
+		break;
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -199,6 +204,9 @@ static void rr_act_run(struct ull_cp_conn *conn)
 		break;
 	case PROC_PHY_UPDATE:
 		rp_pu_run(conn, ctx, NULL);
+		break;
+	case PROC_TERMINATE:
+		rp_comm_run(conn, ctx, NULL);
 		break;
 	default:
 		/* Unknown procedure */
@@ -457,6 +465,9 @@ void ull_cp_priv_rr_new(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
 		break;
 	case PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND:
 		proc = PROC_MIN_USED_CHANS;
+		break;
+	case PDU_DATA_LLCTRL_TYPE_TERMINATE_IND:
+		proc = PROC_TERMINATE;
 		break;
 	default:
 		/* Unknown opcode */

@@ -196,6 +196,9 @@ struct proc_ctx *ull_cp_priv_create_local_procedure(enum llcp_proc proc)
 	case PROC_PHY_UPDATE:
 		lp_pu_init_proc(ctx);
 		break;
+	case PROC_TERMINATE:
+		lp_comm_init_proc(ctx);
+		break;
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -231,6 +234,9 @@ struct proc_ctx *ull_cp_priv_create_remote_procedure(enum llcp_proc proc)
 		break;
 	case PROC_PHY_UPDATE:
 		rp_pu_init_proc(ctx);
+		break;
+	case PROC_TERMINATE:
+		rp_comm_init_proc(ctx);
 		break;
 	default:
 		/* Unknown procedure */
@@ -408,6 +414,26 @@ uint8_t ull_cp_phy_update(struct ull_cp_conn *conn)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
+	lr_enqueue(conn, ctx);
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
+uint8_t ull_cp_terminate(struct ull_cp_conn *conn, uint8_t error_code)
+{
+	struct proc_ctx *ctx;
+
+	ctx = create_local_procedure(PROC_TERMINATE);
+	if (!ctx) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	ctx->data.term.error_code = error_code;
+
+	/* TODO
+	 * Termination procedure may be initiated at any time, even if other
+	 * LLCP is active.
+	 */
 	lr_enqueue(conn, ctx);
 
 	return BT_HCI_ERR_SUCCESS;
