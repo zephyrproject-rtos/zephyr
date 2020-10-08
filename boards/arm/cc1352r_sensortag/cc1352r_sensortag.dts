@@ -1,0 +1,126 @@
+/*
+ * Copyright (c) 2019 Brett Witherspoon
+ * Copyright (c) 2020 Friedt Professional Engineering Services, Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/cc1352r.dtsi>
+#include "../cc1352r1_launchxl/boosterpack_connector.dtsi"
+
+/*
+ * Define some constants from driverlib/ioc.h in TI HAL,
+ * since we don't have a way to include the file directly.
+ */
+#define IOC_PORT_MCU_UART0_TX 0x00000010
+#define IOC_PORT_MCU_UART0_RX 0x0000000F
+
+#define BTN_GPIO_FLAGS (GPIO_ACTIVE_LOW | GPIO_PULL_UP)
+
+/ {
+	model = "TI CC1352R1 SensorTag";
+	compatible = "ti,sensortag-cc1352r";
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		sw0 = &btn0;
+		sw1 = &btn1;
+		sensor0 = &sensor0;
+		sensor1 = &sensor1;
+		/* TODO: add support for hdc2080 */
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+		led1: led_1 {
+			gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
+		};
+		led2: led_2 {
+			gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+			label = "Blue LED";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		btn0: btn_0 {
+			gpios = <&gpio0 15 BTN_GPIO_FLAGS>;
+			label = "Push button 1";
+		};
+		btn1: btn_1 {
+			gpios = <&gpio0 14 BTN_GPIO_FLAGS>;
+			label = "Push button 2";
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
+&trng {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	tx-pin = <13 IOC_PORT_MCU_UART0_TX>;
+	rx-pin = <12 IOC_PORT_MCU_UART0_RX>;
+};
+
+&i2c0 {
+	status = "okay";
+	scl-pin = <4>;
+	sda-pin = <5>;
+
+	sensor0: sensor@44 {
+		compatible = "ti,opt3001";
+		reg = <0x44>;
+		label = "OPT3001";
+	};
+
+	/* TODO: add hdc2080 at 0x41 */
+};
+
+&spi0 {
+	status = "okay";
+	sck-pin = <10>;
+	mosi-pin = <9>;
+	miso-pin = <8>;
+	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+
+	sensor1: sensor@0 {
+		compatible = "adi,adxl362";
+		reg = <0>;
+		label = "ADXL362";
+		int1-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+		spi-max-frequency = <8000000>;
+	};
+
+	/* TODO: "jedec,spi-nor" for the mx25r8035 */
+};
+
+&rtc {
+	status = "okay";
+};
