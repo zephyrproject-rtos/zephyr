@@ -399,11 +399,15 @@ struct bmi160_range {
 };
 
 #define BMI160_BUS_SPI		DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#define BMI160_BUS_I2C		DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 
 struct bmi160_bus_cfg {
 	union {
 #if BMI160_BUS_SPI
 		const struct spi_config *spi_cfg;
+#endif
+#if BMI160_BUS_I2C
+		uint16_t i2c_addr;
 #endif
 	};
 };

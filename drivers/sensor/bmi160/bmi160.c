@@ -11,6 +11,7 @@
 #define DT_DRV_COMPAT bosch_bmi160
 
 #include <init.h>
+#include <drivers/i2c.h>
 #include <drivers/sensor.h>
 #include <sys/byteorder.h>
 #include <kernel.h>
@@ -80,6 +81,33 @@ static const struct bmi160_reg_io bmi160_reg_io_spi = {
 	.write = bmi160_write_spi,
 };
 #endif /* BMI160_BUS_SPI */
+
+#if BMI160_BUS_I2C
+int bmi160_read_i2c(const struct device *dev,
+		    const struct bmi160_bus_cfg *bus_config, uint8_t reg_addr,
+		    void *buf, uint8_t len)
+{
+	struct bmi160_data *data = to_data(dev);
+
+	return i2c_burst_read(data->bus, bus_config->i2c_addr, reg_addr, buf,
+			      len);
+}
+
+int bmi160_write_i2c(const struct device *dev,
+		     const struct bmi160_bus_cfg *bus_config,
+		     uint8_t reg_addr, void *buf, uint8_t len)
+{
+	struct bmi160_data *data = to_data(dev);
+
+	return i2c_burst_write(data->bus, bus_config->i2c_addr, reg_addr, buf,
+			       len);
+}
+
+static const struct bmi160_reg_io bmi160_reg_io_i2c = {
+	.read = bmi160_read_i2c,
+	.write = bmi160_write_i2c,
+};
+#endif
 
 int bmi160_read(const struct device *dev, uint8_t reg_addr, void *buf,
 		uint8_t len)
@@ -976,4 +1004,27 @@ int bmi160_init(const struct device *dev)
 	};								\
 	BMI160_DEVICE_INIT(inst)
 
-DT_INST_FOREACH_STATUS_OKAY(BMI160_DEFINE_SPI)
+/* Instantiation macros used when a device is on an I2C bus */
+#define BMI160_CONFIG_I2C(inst)						\
+	{								\
+		.bus_label = DT_INST_BUS_LABEL(inst),			\
+		.reg_io = &bmi160_reg_io_i2c,				\
+		.bus_cfg =  { .i2c_addr = DT_INST_REG_ADDR(inst), }	\
+	}
+
+#define BMI160_DEFINE_I2C(inst)						\
+	static struct bmi160_data bmi160_data_##inst;			\
+	static const struct bmi160_cfg bmi160_cfg_##inst =	\
+		BMI160_CONFIG_I2C(inst);				\
+	BMI160_DEVICE_INIT(inst)
+
+/*
+ * Main instantiation macro. Use of COND_CODE_1() selects the right
+ * bus-specific macro at preprocessor time.
+ */
+#define BMI160_DEFINE(inst)						\
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
+		    (BMI160_DEFINE_SPI(inst)),				\
+		    (BMI160_DEFINE_I2C(inst)))
+
+DT_INST_FOREACH_STATUS_OKAY(BMI160_DEFINE)
