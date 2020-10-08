@@ -52,26 +52,27 @@ static int bmi160_transceive(const struct device *dev, uint8_t reg,
 
 	return spi_write(data->spi, &cfg->spi_cfg, &tx);
 }
-int bmi160_read(const struct device *dev, uint8_t reg_addr, uint8_t *data,
+
+int bmi160_read(const struct device *dev, uint8_t reg_addr, void *data,
 		uint8_t len)
 {
 	return bmi160_transceive(dev, reg_addr | BMI160_REG_READ, false, data,
 				 len);
 }
 
-int bmi160_byte_read(const struct device *dev, uint8_t reg_addr,
-		     uint8_t *byte)
+int bmi160_byte_read(const struct device *dev, uint8_t reg_addr, uint8_t *byte)
 {
-	return bmi160_transceive(dev, reg_addr | BMI160_REG_READ, false, byte,
-				 1);
+	return bmi160_read(dev, reg_addr, byte, 1);
 }
 
 static int bmi160_word_read(const struct device *dev, uint8_t reg_addr,
 			    uint16_t *word)
 {
-	if (bmi160_transceive(dev, reg_addr | BMI160_REG_READ, false, word, 2)
-	    != 0) {
-		return -EIO;
+	int rc;
+
+	rc = bmi160_read(dev, reg_addr, word, 2);
+	if (rc != 0) {
+		return rc;
 	}
 
 	*word = sys_le16_to_cpu(*word);
@@ -79,11 +80,17 @@ static int bmi160_word_read(const struct device *dev, uint8_t reg_addr,
 	return 0;
 }
 
+int bmi160_write(const struct device *dev, uint8_t reg_addr, void *data,
+		 uint8_t len)
+{
+	return bmi160_transceive(dev, reg_addr & BMI160_REG_MASK, true, data,
+				 len);
+}
+
 int bmi160_byte_write(const struct device *dev, uint8_t reg_addr,
 		      uint8_t byte)
 {
-	return bmi160_transceive(dev, reg_addr & BMI160_REG_MASK, true, &byte,
-				 1);
+	return bmi160_write(dev, reg_addr & BMI160_REG_MASK, &byte, 1);
 }
 
 int bmi160_word_write(const struct device *dev, uint8_t reg_addr,
@@ -94,8 +101,7 @@ int bmi160_word_write(const struct device *dev, uint8_t reg_addr,
 		(uint8_t)(word >> 8)
 	};
 
-	return bmi160_transceive(dev, reg_addr & BMI160_REG_MASK, true, tx_word,
-				 2);
+	return bmi160_write(dev, reg_addr & BMI160_REG_MASK, tx_word, 2);
 }
 
 int bmi160_reg_field_update(const struct device *dev, uint8_t reg_addr,
@@ -639,21 +645,21 @@ static int bmi160_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan)
 {
 	struct bmi160_data *data = to_data(dev);
+	uint8_t status;
 	size_t i;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	data->sample.raw[0] = 0U;
+	status = 0;
+	while ((status & BMI160_DATA_READY_BIT_MASK) == 0) {
 
-	while ((data->sample.raw[0] & BMI160_DATA_READY_BIT_MASK) == 0U) {
-		if (bmi160_transceive(dev, BMI160_REG_STATUS | (1 << 7), false,
-				      data->sample.raw, 1) < 0) {
+		if (bmi160_byte_read(dev, BMI160_REG_STATUS, &status) < 0) {
 			return -EIO;
 		}
 	}
 
-	if (bmi160_transceive(dev, BMI160_SAMPLE_BURST_READ_ADDR | (1 << 7),
-			      false, data->sample.raw, BMI160_BUF_SIZE) < 0) {
+	if (bmi160_read(dev, BMI160_SAMPLE_BURST_READ_ADDR, data->sample.raw,
+			BMI160_BUF_SIZE) < 0) {
 		return -EIO;
 	}
 

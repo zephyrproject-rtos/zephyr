@@ -497,7 +497,7 @@ static inline const struct bmi160_cfg *to_config(const struct device *dev)
 }
 
 int bmi160_read(const struct device *dev, uint8_t reg_addr,
-		uint8_t *data, uint8_t len);
+		void *data, uint8_t len);
 int bmi160_byte_read(const struct device *dev, uint8_t reg_addr,
 		     uint8_t *byte);
 int bmi160_byte_write(const struct device *dev, uint8_t reg_addr,
