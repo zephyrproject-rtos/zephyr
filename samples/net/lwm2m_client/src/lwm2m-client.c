@@ -367,6 +367,20 @@ static int lwm2m_setup(void)
 	lwm2m_engine_set_res_data("3340/0/5750", TIMER_NAME, sizeof(TIMER_NAME),
 				  LWM2M_RES_DATA_FLAG_RO);
 
+	/* IPSO: Push button object */
+#if DT_NODE_HAS_STATUS(DT_ALIAS(sw0), okay)
+	lwm2m_engine_create_obj_inst("3347/0");
+#endif
+#if DT_NODE_HAS_STATUS(DT_ALIAS(sw1), okay)
+	lwm2m_engine_create_obj_inst("3347/1");
+#endif
+#if DT_NODE_HAS_STATUS(DT_ALIAS(sw2), okay)
+	lwm2m_engine_create_obj_inst("3347/2");
+#endif
+#if DT_NODE_HAS_STATUS(DT_ALIAS(sw3), okay)
+	lwm2m_engine_create_obj_inst("3347/3");
+#endif
+
 	return 0;
 }
 
