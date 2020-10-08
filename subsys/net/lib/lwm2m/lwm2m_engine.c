@@ -3354,6 +3354,8 @@ static int handle_request(struct coap_packet *request,
 		   strncmp(options[0].value, "bs", options[0].len) == 0) {
 		engine_bootstrap_finish();
 
+		msg->code = COAP_RESPONSE_CODE_CHANGED;
+
 		r = lwm2m_init_message(msg);
 		if (r < 0) {
 			goto error;
