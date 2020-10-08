@@ -457,7 +457,7 @@ struct bmi160_scale {
 };
 
 struct bmi160_data {
-	const struct device *spi;
+	const struct device *bus;
 #if defined(CONFIG_BMI160_TRIGGER)
 	const struct device *dev;
 	const struct device *gpio;
