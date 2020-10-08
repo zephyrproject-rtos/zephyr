@@ -7,6 +7,7 @@
 #ifndef GSM_PPP_H_
 #define GSM_PPP_H_
 
+#define GSM_MODEM_DEVICE_NAME "modem_gsm"
 
 /** @cond INTERNAL_HIDDEN */
 struct device;
