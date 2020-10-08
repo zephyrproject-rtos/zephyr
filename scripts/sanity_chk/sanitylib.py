@@ -2055,10 +2055,6 @@ class ProjectBuilder(FilterBuilder):
 
             handler.binary = os.path.join(instance.build_dir, "zephyr", "zephyr.exe")
             instance.handler = handler
-        elif instance.platform.simulation == "nsim":
-            if find_executable("nsimdrv"):
-                instance.handler = BinaryHandler(instance, "nsim")
-                instance.handler.call_make_run = True
         elif instance.platform.simulation == "renode":
             if find_executable("renode"):
                 instance.handler = BinaryHandler(instance, "renode")
@@ -2066,6 +2062,10 @@ class ProjectBuilder(FilterBuilder):
                 instance.handler.call_make_run = True
         elif self.device_testing:
             instance.handler = DeviceHandler(instance, "device")
+        elif instance.platform.simulation == "nsim":
+            if find_executable("nsimdrv"):
+                instance.handler = BinaryHandler(instance, "nsim")
+                instance.handler.call_make_run = True
 
         if instance.handler:
             instance.handler.args = args
