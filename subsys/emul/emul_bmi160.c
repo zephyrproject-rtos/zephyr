@@ -19,8 +19,10 @@ LOG_MODULE_REGISTER(bosch_bmi160);
 
 /** Run-time data used by the emulator */
 struct bmi160_emul_data {
-	/** SPI emulator detail */
-	struct spi_emul emul;
+	union {
+		/** SPI emulator detail */
+		struct spi_emul emul_spi;
+	};
 	/** BMI160 device being emulated */
 	const struct device *dev;
 	/** Configuration information */
@@ -36,8 +38,10 @@ struct bmi160_emul_cfg {
 	struct bmi160_emul_data *data;
 	/** Chip registers */
 	uint8_t *reg;
-	/** Unit address (chip select ordinal) of emulator */
-	uint16_t chipsel;
+	union {
+		/** Unit address (chip select ordinal) of emulator */
+		uint16_t chipsel;
+	};
 };
 
 /* Names for the PMU components */
@@ -154,10 +158,11 @@ static int reg_read(const struct bmi160_emul_cfg *cfg, int regn)
 	return val;
 }
 
-static int bmi160_emul_io(struct spi_emul *emul,
-			  const struct spi_config *config,
-			  const struct spi_buf_set *tx_bufs,
-			  const struct spi_buf_set *rx_bufs)
+#if BMI160_BUS_SPI
+static int bmi160_emul_io_spi(struct spi_emul *emul,
+			      const struct spi_config *config,
+			      const struct spi_buf_set *tx_bufs,
+			      const struct spi_buf_set *rx_bufs)
 {
 	struct bmi160_emul_data *data;
 	const struct bmi160_emul_cfg *cfg;
@@ -165,7 +170,7 @@ static int bmi160_emul_io(struct spi_emul *emul,
 	unsigned int regn, val;
 	int count;
 
-	data = CONTAINER_OF(emul, struct bmi160_emul_data, emul);
+	data = CONTAINER_OF(emul, struct bmi160_emul_data, emul_spi);
 	cfg = data->cfg;
 
 	__ASSERT_NO_MSG(tx_bufs || rx_bufs);
@@ -216,15 +221,33 @@ static int bmi160_emul_io(struct spi_emul *emul,
 
 	return 0;
 }
+#endif
 
 /* Device instantiation */
 
-static struct spi_emul_api bmi160_emul_api = {
-	.io = bmi160_emul_io,
+#if BMI160_BUS_SPI
+static struct spi_emul_api bmi160_emul_api_spi = {
+	.io = bmi160_emul_io_spi,
 };
+#endif
 
+static void emul_bosch_bmi160_init(const struct emul *emul,
+				   const struct device *parent)
+{
+	const struct bmi160_emul_cfg *cfg = emul->cfg;
+	struct bmi160_emul_data *data = cfg->data;
+	uint8_t *reg = cfg->reg;
+
+	data->dev = parent;
+	data->cfg = cfg;
+	data->pmu_status = 0;
+
+	reg[BMI160_REG_CHIPID] = BMI160_CHIP_ID;
+}
+
+#if BMI160_BUS_SPI
 /**
- * Set up a new BMI160 emulator
+ * Set up a new BMI160 emulator (SPI)
  *
  * This should be called for each BMI160 device that needs to be emulated. It
  * registers it with the SPI emulation controller.
@@ -233,36 +256,39 @@ static struct spi_emul_api bmi160_emul_api = {
  * @param parent Device to emulate (must use BMI160 driver)
  * @return 0 indicating success (always)
  */
-static int emul_bosch_bmi160_init(const struct emul *emul,
-				  const struct device *parent)
+static int emul_bosch_bmi160_init_spi(const struct emul *emul,
+				      const struct device *parent)
 {
 	const struct bmi160_emul_cfg *cfg = emul->cfg;
 	struct bmi160_emul_data *data = cfg->data;
-	uint8_t *reg = cfg->reg;
 
-	data->emul.api = &bmi160_emul_api;
-	data->emul.chipsel = cfg->chipsel;
-	data->dev = parent;
-	data->cfg = cfg;
-	data->pmu_status = 0;
+	emul_bosch_bmi160_init(emul, parent);
+	data->emul_spi.api = &bmi160_emul_api_spi;
+	data->emul_spi.chipsel = cfg->chipsel;
 
-	reg[BMI160_REG_CHIPID] = BMI160_CHIP_ID;
-
-	int rc = spi_emul_register(parent, emul->dev_label, &data->emul);
+	int rc = spi_emul_register(parent, emul->dev_label, &data->emul_spi);
 
 	return rc;
 }
+#endif
 
-#define BMI160_EMUL(n) \
+#define BMI160_EMUL_DATA(n) \
 	static uint8_t bmi160_emul_reg_##n[BMI160_REG_COUNT]; \
-	static struct bmi160_emul_data bmi160_emul_data_##n; \
+	static struct bmi160_emul_data bmi160_emul_data_##n;
+
+#define BMI160_EMUL_DEFINE(n, type) \
+	EMUL_DEFINE(emul_bosch_bmi160_init_##type, DT_DRV_INST(n), \
+		&bmi160_emul_cfg_##n)
+
+/* Instantiation macros used when a device is on a SPI bus */
+#define BMI160_EMUL_SPI(n) \
+	BMI160_EMUL_DATA(n) \
 	static const struct bmi160_emul_cfg bmi160_emul_cfg_##n = { \
 		.bus_label = DT_INST_BUS_LABEL(n), \
 		.data = &bmi160_emul_data_##n, \
 		.reg = bmi160_emul_reg_##n, \
 		.chipsel = DT_INST_REG_ADDR(n) \
 	}; \
-	EMUL_DEFINE(emul_bosch_bmi160_init, DT_DRV_INST(n), \
-		&bmi160_emul_cfg_##n)
+	BMI160_EMUL_DEFINE(n, spi)
 
-DT_INST_FOREACH_STATUS_OKAY(BMI160_EMUL)
+DT_INST_FOREACH_STATUS_OKAY(BMI160_EMUL_SPI)
