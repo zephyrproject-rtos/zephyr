@@ -14,7 +14,8 @@
 #include <ztest.h>
 #include <drivers/sensor.h>
 
-#define ACCEL_LABEL	DT_LABEL(DT_ALIAS(accel_0))
+/* There is no obvious way to pass this to tests, so use a global */
+ZTEST_BMEM static const char *accel_label;
 
 static enum sensor_channel channel[] = {
 	SENSOR_CHAN_ACCEL_X,
@@ -29,8 +30,8 @@ void test_sensor_accel_basic(void)
 {
 	const struct device *dev;
 
-	dev = device_get_binding(ACCEL_LABEL);
-	zassert_not_null(dev, "failed: dev '%s' is null", ACCEL_LABEL);
+	dev = device_get_binding(accel_label);
+	zassert_not_null(dev, "failed: dev '%s' is null", accel_label);
 
 	zassert_equal(sensor_sample_fetch(dev), 0, "fail to fetch sample");
 
@@ -45,11 +46,26 @@ void test_sensor_accel_basic(void)
 	}
 }
 
+/* Run all of our tests on an accelerometer device with the given label */
+static void run_tests_on_accel(const char *label)
+{
+	const struct device *accel = device_get_binding(label);
+
+	PRINT("Running tests on '%s'\n", label);
+	zassert_not_null(accel, "Unable to get Accelerometer device");
+	k_object_access_grant(accel, k_current_get());
+	accel_label = label;
+	ztest_test_suite(test_sensor_accel,
+			 ztest_user_unit_test(test_sensor_accel_basic));
+	ztest_run_test_suite(test_sensor_accel);
+}
+
 /* test case main entry */
 void test_main(void)
 {
-	ztest_test_suite(test_sensor_accel,
-			 ztest_user_unit_test(test_sensor_accel_basic));
+	run_tests_on_accel(DT_LABEL(DT_ALIAS(accel_0)));
 
-	ztest_run_test_suite(test_sensor_accel);
+#ifdef DT_N_ALIAS_accel_1
+	run_tests_on_accel(DT_LABEL(DT_ALIAS(accel_1)));
+#endif
 }
