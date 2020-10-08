@@ -32,6 +32,8 @@ struct i2c_stm32_config {
 	struct stm32_pclken pclken;
 	I2C_TypeDef *i2c;
 	uint32_t bitrate;
+	const struct soc_gpio_pinctrl *pinctrl_list;
+	size_t pinctrl_list_size;
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2)
 	const struct i2c_config_timing *timings;
 	size_t n_timings;

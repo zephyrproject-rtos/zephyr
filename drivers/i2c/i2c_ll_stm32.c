@@ -12,6 +12,8 @@
 #include <soc.h>
 #include <errno.h>
 #include <drivers/i2c.h>
+#include <drivers/pinmux.h>
+#include <pinmux/stm32/pinmux_stm32.h>
 #include "i2c_ll_stm32.h"
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
@@ -186,6 +188,37 @@ static int i2c_stm32_init(const struct device *dev)
 	cfg->irq_config_func(dev);
 #endif
 
+	if (cfg->pinctrl_list_size != 0) {
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
+		int remap;
+		/* Check that remap configuration is coherent across pins */
+		remap = stm32_dt_pinctrl_remap_check(cfg->pinctrl_list,
+						     cfg->pinctrl_list_size);
+		if (remap < 0) {
+			return remap;
+		}
+
+		/* A valid remapping configuration is provided */
+		/* Apply remapping before proceeding with pin configuration */
+		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
+
+		switch ((uint32_t)cfg->i2c) {
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
+		case DT_REG_ADDR(DT_NODELABEL(i2c1)):
+			if (remap == REMAP_1) {
+				LL_GPIO_AF_EnableRemap_I2C1();
+			} else {
+				LL_GPIO_AF_DisableRemap_I2C1();
+			}
+			break;
+#endif
+		}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
+
+		stm32_dt_pinctrl_configure(cfg->pinctrl_list,
+					   cfg->pinctrl_list_size);
+	}
+
 	/*
 	 * initialize mutex used when multiple transfers
 	 * are taking place to guarantee that each one is
@@ -318,6 +351,9 @@ STM32_I2C_IRQ_HANDLER_DECL(name);					\
 									\
 DEFINE_TIMINGS(name)							\
 									\
+static const struct soc_gpio_pinctrl i2c_pins_##name[] =		\
+					ST_STM32_DT_PINCTRL(0, name);	\
+									\
 static const struct i2c_stm32_config i2c_stm32_cfg_##name = {		\
 	.i2c = (I2C_TypeDef *)DT_REG_ADDR(DT_NODELABEL(name)),		\
 	.pclken = {							\
@@ -326,6 +362,8 @@ static const struct i2c_stm32_config i2c_stm32_cfg_##name = {		\
 	},								\
 	STM32_I2C_IRQ_HANDLER_FUNCTION(name)				\
 	.bitrate = DT_PROP(DT_NODELABEL(name), clock_frequency),	\
+	.pinctrl_list = i2c_pins_##name,				\
+	.pinctrl_list_size = ARRAY_SIZE(i2c_pins_##name),		\
 	USE_TIMINGS(name)						\
 };									\
 									\
