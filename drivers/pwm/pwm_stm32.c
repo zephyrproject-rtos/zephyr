@@ -461,7 +461,7 @@ static int pwm_stm32_init(const struct device *dev)
 	static struct pwm_stm32_data pwm_stm32_data_##index;                   \
 									       \
 	static const struct soc_gpio_pinctrl pwm_pins_##index[] =	       \
-		ST_STM32_DT_INST_PINCTRL(0, index);			       \
+		ST_STM32_DT_INST_PINCTRL(index, 0);			       \
 									       \
 	static const struct pwm_stm32_config pwm_stm32_config_##index = {      \
 		.timer = (TIM_TypeDef *)DT_REG_ADDR(                           \

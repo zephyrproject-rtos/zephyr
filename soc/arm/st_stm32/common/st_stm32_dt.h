@@ -261,11 +261,11 @@
  * This macro returns an array of soc_gpio_pinctrl, each line matching a pinctrl
  * configuration provived in property pcintrl-<x> of device instance <inst>
  *
- * @param x index of targeted pinctrl- property (eg: pinctrl-<x>)
  * @param inst device instance number
+ * @param x index of targeted pinctrl- property (eg: pinctrl-<x>)
  * @return array of soc_gpio_pinctrl
  */
-#define ST_STM32_DT_INST_PINCTRL(x, inst)				\
+#define ST_STM32_DT_INST_PINCTRL(inst, x)				\
 	{ COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, pinctrl_##x),		\
 		      (UTIL_LISTIFY(ST_STM32_DT_INST_NUM_PINS(inst, x),	\
 				   ST_STM32_DT_INST_PIN_ELEM,		\
@@ -282,11 +282,11 @@
  * configuration provived in property pcintrl-<x> of a device referenced by
  * its node label identifier.
  *
- * @param x index of targeted pinctrl- property (eg: pinctrl-<x>)
  * @param name device node label identifier
+ * @param x index of targeted pinctrl- property (eg: pinctrl-<x>)
  * @return array of soc_gpio_pinctrl
  */
-#define ST_STM32_DT_PINCTRL(x, name)					\
+#define ST_STM32_DT_PINCTRL(name, x)					\
 	{ COND_CODE_1(DT_NODE_HAS_PROP(DT_NODELABEL(name), pinctrl_##x),\
 		      (UTIL_LISTIFY(ST_STM32_DT_NUM_PINS(name, x),	\
 				   ST_STM32_DT_PIN_ELEM,		\

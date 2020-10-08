@@ -352,7 +352,7 @@ STM32_I2C_IRQ_HANDLER_DECL(name);					\
 DEFINE_TIMINGS(name)							\
 									\
 static const struct soc_gpio_pinctrl i2c_pins_##name[] =		\
-					ST_STM32_DT_PINCTRL(0, name);	\
+					ST_STM32_DT_PINCTRL(name, 0);	\
 									\
 static const struct i2c_stm32_config i2c_stm32_cfg_##name = {		\
 	.i2c = (I2C_TypeDef *)DT_REG_ADDR(DT_NODELABEL(name)),		\
