@@ -6,8 +6,6 @@
 #ifndef __INC_MEMORY_H
 #define __INC_MEMORY_H
 
-#include <cavs/cpu.h>
-
 /* L2 HP SRAM */
 #define HP_RAM_RESERVE_HEADER_SPACE		0x00010000
 

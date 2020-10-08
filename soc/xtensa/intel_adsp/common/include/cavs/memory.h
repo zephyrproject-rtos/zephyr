@@ -90,7 +90,6 @@
 /**
  * FIXME check that correct core count is used
  */
-#include <cavs/cpu.h>
 /* SOF Core S configuration */
 #define SRAM_BANK_SIZE		(64 * 1024)
 
