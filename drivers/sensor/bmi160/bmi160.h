@@ -398,8 +398,31 @@ struct bmi160_range {
 	uint8_t reg_val;
 };
 
+#define BMI160_BUS_SPI		DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+
+struct bmi160_bus_cfg {
+	union {
+#if BMI160_BUS_SPI
+		const struct spi_config *spi_cfg;
+#endif
+	};
+};
+
+typedef int (*bmi160_reg_read_fn)(const struct device *bus,
+				  const struct bmi160_bus_cfg *bus_cfg,
+				  uint8_t reg_addr, void *data, uint8_t len);
+typedef int (*bmi160_reg_write_fn)(const struct device *bus,
+				   const struct bmi160_bus_cfg *bus_cfg,
+				   uint8_t reg_addr, void *data, uint8_t len);
+
+struct bmi160_reg_io {
+	bmi160_reg_read_fn read;
+	bmi160_reg_write_fn write;
+};
+
 struct bmi160_cfg {
-	struct spi_config spi_cfg;
+	struct bmi160_bus_cfg bus_cfg;
+	const struct bmi160_reg_io *reg_io;
 	const char *bus_label;
 #if defined(CONFIG_BMI160_TRIGGER)
 	const char *gpio_port;
