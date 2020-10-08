@@ -1,0 +1,14 @@
+identifier: cc1352r_sensortag
+name: TI SimpleLink CC1352R SensorTag
+type: mcu
+arch: arm
+ram: 80
+flash: 352
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - i2c
+  - spi
