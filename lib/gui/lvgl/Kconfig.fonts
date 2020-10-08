@@ -3,10 +3,32 @@
 
 menu "Fonts"
 
+config LVGL_USE_FONT_COMPRESSED
+	bool "Enable compressed font support"
+	help
+	  Enable support for compressed fonts. If it's disabled, compressed
+	  glyphs cannot be processed by the library and won't be rendered.
+
+config LVGL_USE_FONT_SUBPX
+	bool "Enable sub-pixel rendering"
+	help
+	  Enable sub-pixel rendering
+
 config LVGL_FONT_SUBPX_BGR
 	bool "Use BGR instead RGB for sub-pixel rendering"
+	depends on LVGL_USE_FONT_SUBPX
 	help
 	  User BGR pixel format instead of RGB for sub-pixel rendering
+
+config LVGL_FONT_MONTSERRAT_8
+	bool "Enable Montserrat 8px font"
+	help
+	  Enable Montserrat font support, size 8 pixels
+
+config LVGL_FONT_MONTSERRAT_10
+	bool "Enable Montserrat 10px font"
+	help
+	  Enable Montserrat font support, size 10 pixels
 
 config LVGL_FONT_MONTSERRAT_12
 	bool "Enable Montserrat 12px font"

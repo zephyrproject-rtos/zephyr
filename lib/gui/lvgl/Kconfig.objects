@@ -48,6 +48,12 @@ config LVGL_USE_CALENDAR
 	help
 	  Enable calendar object support
 
+config LVGL_CALENDAR_WEEK_STARTS_MONDAY
+	bool "Calendar week starts on Monday"
+	depends on LVGL_USE_CALENDAR
+	help
+	  Start a calendar week on Monday
+
 config LVGL_USE_CANVAS
 	bool "Canvas object"
 	depends on LVGL_USE_IMG

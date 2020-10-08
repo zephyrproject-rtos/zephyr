@@ -22,6 +22,21 @@ config LVGL_SHADOW_CACHE_SIZE
 	  Allow buffering some shadow calculation. This parameter is the maximum
 	  shadow size to buffer.
 
+config LVGL_USE_OUTLINE
+	bool "Enable outline drawing on rectangles"
+	help
+	  Enable outline drawing on rectangles
+
+config LVGL_USE_PATTERN
+	bool "Enable pattern drawing on rectangles"
+	help
+	  Enable pattern drawing on rectangles
+
+config LVGL_USE_VALUE_STR
+	bool "Enable value string drawing on rectangles"
+	help
+	  Enable value string drawing on rectangles
+
 config LVGL_USE_BLEND_MODES
 	bool "Enable other blend modes"
 	help
@@ -63,6 +78,11 @@ config LVGL_USE_PERF_MONITOR
 
 config LVGL_USE_API_EXTENSION_V6
 	bool "Enable V6 API extensions"
+	help
+	  Use the functions and types from the older API if possible
+
+config LVGL_USE_API_EXTENSION_V7
+	bool "Enable V7 API extensions"
 	help
 	  Use the functions and types from the older API if possible
 
