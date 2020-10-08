@@ -19,6 +19,7 @@
 LOG_MODULE_REGISTER(dac_stm32);
 
 #include <drivers/clock_control/stm32_clock_control.h>
+#include <pinmux/stm32/pinmux_stm32.h>
 
 /* some low-end MCUs have DAC with only one channel */
 #ifdef LL_DAC_CHANNEL_2
@@ -40,8 +41,14 @@ static const uint32_t table_channels[] = {
 
 /* Read-only driver configuration */
 struct dac_stm32_cfg {
+	/* DAC instance. */
 	DAC_TypeDef *base;
+	/* Clock configuration. */
 	struct stm32_pclken pclken;
+	/* pinctrl configurations. */
+	const struct soc_gpio_pinctrl *pinctrl;
+	/* Number of pinctrl configurations. */
+	size_t pinctrl_len;
 };
 
 /* Runtime driver data */
@@ -120,6 +127,11 @@ static int dac_stm32_init(const struct device *dev)
 		return -EIO;
 	}
 
+	/* configure pinmux */
+	if (cfg->pinctrl_len != 0U) {
+		stm32_dt_pinctrl_configure(cfg->pinctrl, cfg->pinctrl_len);
+	}
+
 	return 0;
 }
 
@@ -131,13 +143,19 @@ static const struct dac_driver_api api_stm32_driver_api = {
 
 #define STM32_DAC_INIT(index)						\
 									\
+static const struct soc_gpio_pinctrl dac_pins_##index[] =		\
+	ST_STM32_DT_INST_PINCTRL(index, 0);				\
+									\
 static const struct dac_stm32_cfg dac_stm32_cfg_##index = {		\
-	.base = (DAC_TypeDef *)DT_INST_REG_ADDR(index),		\
+	.base = (DAC_TypeDef *)DT_INST_REG_ADDR(index),			\
 	.pclken = {							\
 		.enr = DT_INST_CLOCKS_CELL(index, bits),		\
 		.bus = DT_INST_CLOCKS_CELL(index, bus),			\
 	},								\
+	.pinctrl = dac_pins_##index,					\
+	.pinctrl_len = ARRAY_SIZE(dac_pins_##index),			\
 };									\
+									\
 static struct dac_stm32_data dac_stm32_data_##index = {			\
 	.channel_count = STM32_CHANNEL_COUNT				\
 };									\
