@@ -122,6 +122,11 @@ static void lp_comm_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 		pdu_encode_version_ind(pdu);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
 		break;
+	case PROC_TERMINATE:
+		pdu_encode_terminate_ind(ctx, pdu);
+		ctx->tx_ack = tx;
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
+		break;
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -167,6 +172,11 @@ static void lp_comm_ntf_version_ind(struct ull_cp_conn *conn,  struct proc_ctx *
 	}
 }
 
+static void lp_comm_ntf_terminate_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	ntf_encode_terminate_ind(ctx, pdu);
+}
+
 static void lp_comm_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 {
 	struct node_rx_pdu *ntf;
@@ -184,6 +194,9 @@ static void lp_comm_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 		break;
 	case PROC_VERSION_EXCHANGE:
 		lp_comm_ntf_version_ind(conn, ctx, pdu);
+		break;
+	case PROC_TERMINATE:
+		lp_comm_ntf_terminate_ind(conn, ctx, pdu);
 		break;
 	default:
 		LL_ASSERT(0);
@@ -222,6 +235,15 @@ static void lp_comm_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, uin
 		ctx->state = LP_COMMON_STATE_IDLE;
 		break;
 	case PROC_VERSION_EXCHANGE:
+		if (!ntf_alloc_is_available()) {
+			ctx->state = LP_COMMON_STATE_WAIT_NTF;
+		} else {
+			lp_comm_ntf(conn, ctx);
+			lr_complete(conn);
+			ctx->state = LP_COMMON_STATE_IDLE;
+		}
+		break;
+	case PROC_TERMINATE:
 		if (!ntf_alloc_is_available()) {
 			ctx->state = LP_COMMON_STATE_WAIT_NTF;
 		} else {
@@ -279,6 +301,14 @@ static void lp_comm_send_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, uin
 			lp_comm_complete(conn, ctx, evt, param);
 		}
 		break;
+	case PROC_TERMINATE:
+		if (!tx_alloc_is_available() || ctx->pause) {
+			ctx->state = LP_COMMON_STATE_WAIT_TX;
+		} else {
+			lp_comm_tx(conn, ctx);
+			ctx->state = LP_COMMON_STATE_WAIT_TX_ACK;
+		}
+		break;
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -315,10 +345,15 @@ static void lp_comm_st_wait_tx_ack(struct ull_cp_conn *conn, struct proc_ctx *ct
 			ctx->tx_ack = NULL;
 			lp_comm_complete(conn, ctx, evt, param);
 			break;
+		case PROC_TERMINATE:
+			ctx->tx_ack = NULL;
+			lp_comm_complete(conn, ctx, evt, param);
+			break;
 		default:
 			/* Ignore for other procedures */
 			break;
 		}
+		break;
 	default:
 		/* Ignore other evts */
 		break;
@@ -350,6 +385,9 @@ static void lp_comm_rx_decode(struct ull_cp_conn *conn, struct proc_ctx *ctx, st
 	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
 		pdu_decode_unknown_rsp(ctx, pdu);
 		break;
+	case PDU_DATA_LLCTRL_TYPE_TERMINATE_IND:
+		/* No response expected */
+		break;
 	default:
 
 		/* Unknown opcode */
@@ -363,6 +401,7 @@ static void lp_comm_st_wait_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u
 	case LP_COMMON_EVT_RESPONSE:
 		lp_comm_rx_decode(conn, ctx, (struct pdu_data *) param);
 		lp_comm_complete(conn, ctx, evt, param);
+		break;
 	default:
 		/* Ignore other evts */
 		break;
@@ -439,6 +478,9 @@ static void rp_comm_rx_decode(struct ull_cp_conn *conn, struct proc_ctx *ctx, st
 	case PDU_DATA_LLCTRL_TYPE_VERSION_IND:
 		pdu_decode_version_ind(conn, pdu);
 		break;
+	case PDU_DATA_LLCTRL_TYPE_TERMINATE_IND:
+		pdu_decode_terminate_ind(ctx, pdu);
+		break;
 	default:
 		/* Unknown opcode */
 		LL_ASSERT(0);
@@ -493,6 +535,35 @@ static void rp_comm_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint
 	}
 }
 
+static void rp_comm_ntf_terminate_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	ntf_encode_terminate_ind(ctx, pdu);
+}
+
+static void rp_comm_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx)
+{
+	struct node_rx_pdu *ntf;
+	struct pdu_data *pdu;
+
+	/* Allocate ntf node */
+	ntf = ntf_alloc();
+	LL_ASSERT(ntf);
+
+	ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
+	pdu = (struct pdu_data *) ntf->pdu;
+	switch (ctx->proc) {
+	case PROC_TERMINATE:
+		rp_comm_ntf_terminate_ind(conn, ctx, pdu);
+		break;
+	default:
+		LL_ASSERT(0);
+		break;
+	}
+
+	/* Enqueue notification towards LL */
+	ll_rx_enqueue(ntf);
+}
+
 static void rp_comm_send_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (ctx->proc) {
@@ -540,6 +611,16 @@ static void rp_comm_send_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, uin
 	case PROC_MIN_USED_CHANS:
 		/* No response */
 		ctx->state = RP_COMMON_STATE_IDLE;
+		break;
+	case PROC_TERMINATE:
+		if (!ntf_alloc_is_available()) {
+			ctx->state = RP_COMMON_STATE_WAIT_NTF;
+		} else {
+			rp_comm_ntf(conn, ctx);
+			rr_complete(conn);
+			ctx->state = RP_COMMON_STATE_IDLE;
+		}
+
 		break;
 	default:
 		/* Unknown procedure */

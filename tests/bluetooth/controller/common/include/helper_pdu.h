@@ -31,9 +31,10 @@ void helper_pdu_encode_phy_rsp(struct pdu_data *pdu, void *param);
 void helper_pdu_encode_phy_update_ind(struct pdu_data *pdu, void *param);
 void helper_pdu_encode_unknown_rsp(struct pdu_data *pdu, void *param);
 
+void helper_pdu_encode_terminate_ind(struct pdu_data *pdu, void *param);
+
 void helper_pdu_verify_ping_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 void helper_pdu_verify_ping_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
-
 
 void helper_pdu_verify_feature_req(const char *file, uint32_t line,
 				   struct pdu_data *pdu, void *param);
@@ -63,10 +64,10 @@ void helper_pdu_verify_phy_rsp(const char *file, uint32_t line, struct pdu_data 
 void helper_pdu_verify_phy_update_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 void helper_pdu_verify_unknown_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 
+void helper_pdu_verify_terminate_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
+
 void helper_node_verify_phy_update(const char *file, uint32_t line,
 				   struct node_rx_pdu *rx, void *param);
-
-
 
 typedef enum {
 	LL_VERSION_IND,
@@ -86,6 +87,7 @@ typedef enum {
 	LL_PHY_RSP,
 	LL_PHY_UPDATE_IND,
 	LL_UNKNOWN_RSP,
+	LL_TERMINATE_IND,
 } helper_pdu_opcode_t;
 
 typedef enum {
