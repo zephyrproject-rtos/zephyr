@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 #include <sys/ring_buffer.h>
 #include <sys/util.h>
 #include <net/ppp.h>
+#include <drivers/gsm_ppp.h>
 #include <drivers/uart.h>
 #include <drivers/console/uart_mux.h>
 
@@ -785,5 +786,5 @@ static int gsm_init(const struct device *device)
 	return 0;
 }
 
-DEVICE_INIT(gsm_ppp, "modem_gsm", gsm_init, &gsm, NULL, POST_KERNEL,
+DEVICE_INIT(gsm_ppp, GSM_MODEM_DEVICE_NAME, gsm_init, &gsm, NULL, POST_KERNEL,
 	    CONFIG_MODEM_GSM_INIT_PRIORITY);
