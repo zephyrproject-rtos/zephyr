@@ -195,6 +195,11 @@
 };
 
 /* disable device to conflict with i2c version */
+&test_spi_iis2iclx {
+	status = "disabled";
+};
+
+/* disable device to conflict with i2c version */
 &test_spi_iis2mdc {
 	status = "disabled";
 };
