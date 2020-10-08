@@ -728,6 +728,7 @@ Documentation:
         - tbursztyka
     collaborators:
         - jukkar
+        - kludentwo
     files:
         - drivers/wifi/
     labels:
