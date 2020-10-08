@@ -352,13 +352,13 @@ expire.  So such a loop might look like:
         /* Compute the end time from the timeout */
         uint64_t end = z_timeout_end_calc(timeout_in_ms);
 
-        while (end < k_uptime_ticks()) {
-                if (is_event_complete(obj)) {
-                    return;
-                }
+        while (end > k_uptime_ticks()) {
+            if (is_event_complete(obj)) {
+                return;
+            }
 
-                /* Wait for notification of state change */
-                k_sem_take(obj->sem, timeout_in_ms);
+            /* Wait for notification of state change */
+            k_sem_take(obj->sem, timeout_in_ms);
         }
     }
 
