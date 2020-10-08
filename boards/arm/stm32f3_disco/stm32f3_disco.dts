@@ -124,6 +124,7 @@
 };
 
 &can1 {
+	pinctrl-0 = <&can_rx_pd0 &can_tx_pd1>;
 	status = "okay";
 };
 
