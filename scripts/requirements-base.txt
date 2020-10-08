@@ -14,6 +14,7 @@ PyYAML>=5.1
 canopen
 packaging
 progress
+psutil
 
 # for ram/rom reports
 anytree

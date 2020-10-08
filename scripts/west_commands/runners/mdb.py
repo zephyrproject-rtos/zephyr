@@ -5,7 +5,9 @@
 '''Runners for Synopsys Metaware Debugger(mdb).'''
 
 
+import time
 import shutil
+import psutil
 import os
 from os import path
 from runners.core import ZephyrBinaryRunner, RunnerCaps
@@ -17,6 +19,33 @@ from runners.core import ZephyrBinaryRunner, RunnerCaps
 # So, we move all common functionality to helper functions instead.
 def simulation_run(mdb_runner):
     return mdb_runner.nsim_args != ''
+
+def get_cld_pid(mdb_process):
+    try:
+        parent = psutil.Process(mdb_process.pid)
+        children = parent.children(recursive=True)
+        for process in children:
+            if process.name().startswith("cld"):
+                return (True, process.pid)
+    except psutil.Error:
+        pass
+
+    return (False, -1)
+
+# MDB creates child process (cld) which won't be terminated if we simply
+# terminate parents process (mdb). 'record_cld_pid' is provided to record 'cld'
+# process pid to file (mdb.pid) so this process can be terminated correctly by
+# sanitycheck infrastructure
+def record_cld_pid(mdb_runner, mdb_process):
+    for _i in range(20):
+        time.sleep(0.5)
+        found, pid = get_cld_pid(mdb_process)
+        if found:
+            mdb_pid_file = path.join(mdb_runner.build_dir, 'mdb.pid')
+            mdb_runner.logger.debug("MDB CLD pid: " + str(pid) + " " + mdb_pid_file)
+            with open(mdb_pid_file, 'w') as f:
+                f.write(str(pid))
+            return
 
 def mdb_do_run(mdb_runner, command):
     commander = "mdb"
@@ -81,7 +110,8 @@ def mdb_do_run(mdb_runner, command):
     else:
         raise ValueError('unsupported cores {}'.format(mdb_runner.cores))
 
-    mdb_runner.check_call(mdb_cmd)
+    process = mdb_runner.popen_ignore_int(mdb_cmd)
+    record_cld_pid(mdb_runner, process)
 
 
 class MdbNsimBinaryRunner(ZephyrBinaryRunner):

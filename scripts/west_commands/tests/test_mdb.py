@@ -149,53 +149,69 @@ def require_patch(program):
 
 # mdb-nsim test cases
 @pytest.mark.parametrize('test_case', TEST_NSIM_FLASH_CASES)
-@patch('runners.mdb.MdbNsimBinaryRunner.check_call')
+@patch('runners.mdb.get_cld_pid', return_value=(False, -1))
+@patch('time.sleep', return_value=None)
+@patch('runners.mdb.MdbNsimBinaryRunner.popen_ignore_int')
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
-def test_flash_nsim(require, cc, test_case, mdb_nsim):
+def test_flash_nsim(require, cc, t, gcp, test_case, mdb_nsim):
     mdb_nsim(test_case['i']).run('flash')
     assert require.called
     cc.assert_called_once_with(test_case['o'])
 
 @pytest.mark.parametrize('test_case', TEST_NSIM_DEBUG_CASES)
-@patch('runners.mdb.MdbNsimBinaryRunner.check_call')
+@patch('runners.mdb.get_cld_pid', return_value=(False, -1))
+@patch('time.sleep', return_value=None)
+@patch('runners.mdb.MdbNsimBinaryRunner.popen_ignore_int')
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
-def test_debug_nsim(require, cc, test_case, mdb_nsim):
+def test_debug_nsim(require, pii, t, gcp, test_case, mdb_nsim):
     mdb_nsim(test_case['i']).run('debug')
     assert require.called
-    cc.assert_called_once_with(test_case['o'])
+    pii.assert_called_once_with(test_case['o'])
 
 @pytest.mark.parametrize('test_case', TEST_NSIM_MULTICORE_CASES)
+@patch('runners.mdb.get_cld_pid', return_value=(False, -1))
+@patch('time.sleep', return_value=None)
 @patch('runners.mdb.MdbNsimBinaryRunner.check_call')
+@patch('runners.mdb.MdbNsimBinaryRunner.popen_ignore_int')
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
-def test_multicores_nsim(require, cc, test_case, mdb_nsim):
+def test_multicores_nsim(require, pii, cc, t, gcp, test_case, mdb_nsim):
     mdb_nsim(test_case).run('flash')
     assert require.called
-    cc_calls = [call(TEST_NSIM_CORE1), call(TEST_NSIM_CORE2), call(TEST_NSIM_CORES_LAUNCH)]
+    cc_calls = [call(TEST_NSIM_CORE1), call(TEST_NSIM_CORE2)]
     cc.assert_has_calls(cc_calls)
+    pii.assert_called_once_with(TEST_NSIM_CORES_LAUNCH)
 
 
 # mdb-hw test cases
 @pytest.mark.parametrize('test_case', TEST_HW_FLASH_CASES)
-@patch('runners.mdb.MdbHwBinaryRunner.check_call')
+@patch('runners.mdb.get_cld_pid', return_value=(False, -1))
+@patch('time.sleep', return_value=None)
+@patch('runners.mdb.MdbHwBinaryRunner.popen_ignore_int')
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
-def test_flash_hw(require, cc, test_case, mdb_hw):
+def test_flash_hw(require, cc, t, gcp, test_case, mdb_hw):
     mdb_hw(test_case['i']).run('flash')
     assert require.called
     cc.assert_called_once_with(test_case['o'])
 
 @pytest.mark.parametrize('test_case', TEST_HW_DEBUG_CASES)
-@patch('runners.mdb.MdbHwBinaryRunner.check_call')
+@patch('runners.mdb.get_cld_pid', return_value=(False, -1))
+@patch('time.sleep', return_value=None)
+@patch('runners.mdb.MdbHwBinaryRunner.popen_ignore_int')
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
-def test_debug_hw(require, cc, test_case, mdb_hw):
+def test_debug_hw(require, pii, t, gcp, test_case, mdb_hw):
     mdb_hw(test_case['i']).run('debug')
     assert require.called
-    cc.assert_called_once_with(test_case['o'])
+    pii.assert_called_once_with(test_case['o'])
 
 @pytest.mark.parametrize('test_case', TEST_HW_MULTICORE_CASES)
+@patch('runners.mdb.get_cld_pid', return_value=(False, -1))
+@patch('time.sleep', return_value=None)
 @patch('runners.mdb.MdbHwBinaryRunner.check_call')
+@patch('runners.mdb.MdbHwBinaryRunner.popen_ignore_int')
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
-def test_multicores_hw(require, cc, test_case, mdb_hw):
+def test_multicores_hw(require, pii, cc, t, gcp, test_case, mdb_hw):
     mdb_hw(test_case).run('flash')
     assert require.called
-    cc_calls = [call(TEST_HW_CORE1), call(TEST_HW_CORE2), call(TEST_HW_CORES_LAUNCH)]
+    cc_calls = [call(TEST_HW_CORE1), call(TEST_HW_CORE2)]
     cc.assert_has_calls(cc_calls)
+    pii.assert_called_once_with(TEST_HW_CORES_LAUNCH)
