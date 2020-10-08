@@ -47,10 +47,10 @@ static int bmi160_transceive(const struct device *dev, uint8_t reg,
 			.count = 2
 		};
 
-		return spi_transceive(data->spi, &cfg->spi_cfg, &tx, &rx);
+		return spi_transceive(data->bus, &cfg->spi_cfg, &tx, &rx);
 	}
 
-	return spi_write(data->spi, &cfg->spi_cfg, &tx);
+	return spi_write(data->bus, &cfg->spi_cfg, &tx);
 }
 
 int bmi160_read(const struct device *dev, uint8_t reg_addr, void *data,
@@ -816,8 +816,8 @@ int bmi160_init(const struct device *dev)
 	uint8_t val = 0U;
 	int32_t acc_range, gyr_range;
 
-	data->spi = device_get_binding(cfg->bus_label);
-	if (!data->spi) {
+	data->bus = device_get_binding(cfg->bus_label);
+	if (!data->bus) {
 		LOG_DBG("SPI master controller not found: %s.", cfg->bus_label);
 		return -EINVAL;
 	}
