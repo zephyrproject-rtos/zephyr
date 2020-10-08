@@ -47,6 +47,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "eth.h"
 
+#if !DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) && \
+	!DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
+#warning "ETH_MCUX driver enabled but neither enet nor enet2 is enabled"
+#endif
+
 #define FREESCALE_OUI_B0 0x00
 #define FREESCALE_OUI_B1 0x04
 #define FREESCALE_OUI_B2 0x9f
@@ -1211,6 +1216,15 @@ static void eth_mcux_error_isr(const struct device *dev)
 
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
 
+#if DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(0), fixed_link)) && \
+	!defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
+#error "fixed-link can only but used with CONFIG_ETH_MCUX_NO_PHY_SMI"
+#endif
+#if defined(CONFIG_ETH_MCUX_NO_PHY_SMI) && \
+	!DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(0), fixed_link))
+#error "fixed-link must be used when CONFIG_ETH_MCUX_NO_PHY_SMI is set"
+#endif
+
 #if DT_INST_PROP(0, zephyr_random_mac_address) && \
 	NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
 #error Conflict between 'local-mac-address' and 'zephyr,random-mac-address'
@@ -1372,6 +1386,15 @@ static void eth0_config_func(void)
 #endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
 
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
+
+#if DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(1), fixed_link)) && \
+	!defined(CONFIG_ETH_MCUX_NO_PHY_SMI)
+#error "fixed-link can only but used with CONFIG_ETH_MCUX_NO_PHY_SMI"
+#endif
+#if defined(CONFIG_ETH_MCUX_NO_PHY_SMI) && \
+	!DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(1), fixed_link))
+#error "fixed-link must be used when CONFIG_ETH_MCUX_NO_PHY_SMI is set"
+#endif
 
 #if DT_INST_PROP(1, zephyr_random_mac_address) && \
 	NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(1))
