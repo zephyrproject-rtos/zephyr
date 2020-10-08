@@ -336,6 +336,7 @@ class BinaryHandler(Handler):
         super().__init__(instance, type_str)
 
         self.terminated = False
+        self.call_west_flash = False
 
         # Tool options
         self.valgrind = False
@@ -394,6 +395,8 @@ class BinaryHandler(Handler):
 
         if self.call_make_run:
             command = [self.generator_cmd, "run"]
+        elif self.call_west_flash:
+            command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
         else:
             command = [self.binary]
 
@@ -2066,6 +2069,11 @@ class ProjectBuilder(FilterBuilder):
             if find_executable("nsimdrv"):
                 instance.handler = BinaryHandler(instance, "nsim")
                 instance.handler.call_make_run = True
+        elif instance.platform.simulation == "mdb-nsim":
+            if find_executable("mdb"):
+                instance.handler = BinaryHandler(instance, "nsim")
+                instance.handler.pid_fn = os.path.join(instance.build_dir, "mdb.pid")
+                instance.handler.call_west_flash = True
 
         if instance.handler:
             instance.handler.args = args
