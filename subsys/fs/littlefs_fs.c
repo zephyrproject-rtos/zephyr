@@ -677,7 +677,7 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 
 	/* Mount it, formatting if needed. */
 	ret = lfs_mount(&fs->lfs, &fs->cfg);
-	if (ret < 0) {
+	if (ret < 0 && !(mountp->flags & FS_MOUNT_FLAG_NO_FORMAT)) {
 		LOG_WRN("can't mount (LFS %d); formatting", ret);
 		ret = lfs_format(&fs->lfs, &fs->cfg);
 		if (ret < 0) {

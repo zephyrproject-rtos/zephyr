@@ -150,6 +150,10 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 	}
 
 	zfp->mp = mp;
+	if (((mp->flags & FS_MOUNT_FLAG_READ_ONLY) != 0) &&
+	    (flags & FS_O_CREATE || flags & FS_O_WRITE)) {
+		return -EROFS;
+	}
 
 	CHECKIF(zfp->mp->fs->open == NULL) {
 		return -ENOTSUP;
@@ -473,6 +477,10 @@ int fs_mkdir(const char *abs_path)
 		return rc;
 	}
 
+	if (mp->flags & FS_MOUNT_FLAG_READ_ONLY) {
+		return -EROFS;
+	}
+
 	CHECKIF(mp->fs->mkdir == NULL) {
 		return -ENOTSUP;
 	}
@@ -500,6 +508,10 @@ int fs_unlink(const char *abs_path)
 	if (rc < 0) {
 		LOG_ERR("%s:mount point not found!!", __func__);
 		return rc;
+	}
+
+	if (mp->flags & FS_MOUNT_FLAG_READ_ONLY) {
+		return -EROFS;
 	}
 
 	CHECKIF(mp->fs->unlink == NULL) {
@@ -530,6 +542,10 @@ int fs_rename(const char *from, const char *to)
 	if (rc < 0) {
 		LOG_ERR("%s:mount point not found!!", __func__);
 		return rc;
+	}
+
+	if (mp->flags & FS_MOUNT_FLAG_READ_ONLY) {
+		return -EROFS;
 	}
 
 	/* Make sure both files are mounted on the same path */
