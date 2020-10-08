@@ -225,6 +225,8 @@ Libraries / Subsystems
 
 * LVGL
 
+  * Library has been updated to minor release v7.6.1
+
 * Shell
 
 * Storage
