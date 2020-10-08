@@ -13,6 +13,7 @@
 #include <offsets_short.h>
 #include <arch/cpu.h>
 #include <sw_isr_table.h>
+#include <drivers/interrupt_controller/gic.h>
 #include "macro_priv.inc"
 
 _ASM_FILE_PROLOGUE
@@ -45,6 +46,11 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 #else
 	bl	z_soc_irq_get_active
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+
+	/* Spurious */
+	cmp	x0, #(GIC_INTID_SPURIOUS)
+	beq	spurious_continue
+
 	stp	x0, x1, [sp, #-16]!
 	lsl	x0, x0, #4 /* table is 16-byte wide */
 
@@ -63,6 +69,8 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 
 	/* Signal end-of-interrupt */
 	ldp	x0, x1, [sp], #16
+
+spurious_continue:
 #if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	bl	arm_gic_eoi
 #else
