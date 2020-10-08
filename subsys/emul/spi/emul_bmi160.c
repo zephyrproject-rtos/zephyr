@@ -31,7 +31,7 @@ struct bmi160_emul_data {
 /** Static configuration for the emulator */
 struct bmi160_emul_cfg {
 	/** Label of the SPI bus this emulator connects to */
-	const char *spi_label;
+	const char *bus_label;
 	/** Pointer to run-time data */
 	struct bmi160_emul_data *data;
 	/** Chip registers */
@@ -141,7 +141,7 @@ static int reg_read(const struct bmi160_emul_cfg *cfg, int regn)
 		LOG_INF("   * gyr conf");
 		break;
 	case BMI160_SPI_START:
-		LOG_INF("   * SPI start");
+		LOG_INF("   * Bus start");
 		break;
 	default:
 		LOG_INF("Unknown read %x", regn);
@@ -257,7 +257,7 @@ static int emul_bosch_bmi160_init(const struct emul *emul,
 	static uint8_t bmi160_emul_reg_##n[BMI160_REG_COUNT]; \
 	static struct bmi160_emul_data bmi160_emul_data_##n; \
 	static const struct bmi160_emul_cfg bmi160_emul_cfg_##n = { \
-		.spi_label = DT_INST_BUS_LABEL(n), \
+		.bus_label = DT_INST_BUS_LABEL(n), \
 		.data = &bmi160_emul_data_##n, \
 		.reg = bmi160_emul_reg_##n, \
 		.chipsel = DT_INST_REG_ADDR(n) \
