@@ -483,6 +483,8 @@ static void test_ipv4_addresses(void)
 
 	zassert_false(net_ipv4_is_addr_mcast(&addr4), "IPv4 address");
 
+	zassert_false(net_ipv4_is_addr_mcast(&bcast_addr1), "IPv4 broadcast address");
+
 	ifmaddr1 = net_if_ipv4_maddr_add(net_if_get_default(), &maddr4a);
 	zassert_not_null(ifmaddr1, "IPv4 multicast address add failed");
 

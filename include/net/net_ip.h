@@ -695,7 +695,7 @@ static inline bool net_ipv4_is_addr_unspecified(const struct in_addr *addr)
  */
 static inline bool net_ipv4_is_addr_mcast(const struct in_addr *addr)
 {
-	return (ntohl(UNALIGNED_GET(&addr->s_addr)) & 0xE0000000) == 0xE0000000;
+	return (ntohl(UNALIGNED_GET(&addr->s_addr)) & 0xF0000000) == 0xE0000000;
 }
 
 /**
