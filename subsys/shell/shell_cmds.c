@@ -297,8 +297,18 @@ static int cmd_help(const struct shell *shell, size_t argc, char **argv)
 		"Please refer to shell documentation for more details.");
 #endif
 
-	/* For NULL argument function will print all root commands */
-	shell_help_subcmd_print(shell, NULL, "\nAvailable commands:\n");
+	if (IS_ENABLED(CONFIG_SHELL_HELP)) {
+		/* For NULL argument function will print all root commands */
+		shell_help_subcmd_print(shell, NULL, "\nAvailable commands:\n");
+	} else {
+		const struct shell_static_entry *entry;
+		size_t idx = 0;
+
+		shell_print(shell, "\nAvailable commands:");
+		while ((entry = shell_cmd_get(NULL, idx++, NULL)) != NULL) {
+			shell_print(shell, "  %s", entry->syntax);
+		}
+	}
 
 	return 0;
 }
