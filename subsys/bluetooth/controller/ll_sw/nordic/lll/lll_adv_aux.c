@@ -152,7 +152,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 		lll_done(NULL);
 
-		DEBUG_RADIO_START_A(0);
+		DEBUG_RADIO_CLOSE_A(0);
 		return 0;
 	}
 
