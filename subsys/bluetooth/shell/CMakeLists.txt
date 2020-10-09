@@ -48,7 +48,7 @@ zephyr_library_sources_ifdef(
 zephyr_library_sources_ifdef(
   CONFIG_BT_CSIP
   csip.c
-)
+  )
 zephyr_library_sources_ifdef(
   CONFIG_BT_BASS
   bass.c
@@ -56,6 +56,14 @@ zephyr_library_sources_ifdef(
 zephyr_library_sources_ifdef(
   CONFIG_BT_BASS_CLIENT
   bass_client.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_TBS
+  tbs.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_CCP
+  ccp.c
   )
 
 if(CONFIG_BT_CTLR AND CONFIG_BT_LL_SW_SPLIT)
