@@ -563,6 +563,57 @@ int modem_cmd_handler_setup_cmds(struct modem_iface *iface,
 	return ret;
 }
 
+/* run a set of AT commands, without lock */
+int modem_cmd_handler_setup_cmds_nolock(struct modem_iface *iface,
+					struct modem_cmd_handler *handler,
+					struct setup_cmd *cmds, size_t cmds_len,
+					struct k_sem *sem, k_timeout_t timeout)
+{
+	int ret = 0, i;
+
+	for (i = 0; i < cmds_len; i++) {
+		if (i) {
+			k_sleep(K_MSEC(50));
+		}
+
+		if (cmds[i].handle_cmd.cmd && cmds[i].handle_cmd.func) {
+			ret = modem_cmd_send_nolock(iface, handler,
+						    &cmds[i].handle_cmd, 1U,
+						    cmds[i].send_cmd,
+						    sem, timeout);
+		} else {
+			ret = modem_cmd_send_nolock(iface, handler,
+						    NULL, 0, cmds[i].send_cmd,
+						    sem, timeout);
+		}
+
+		if (ret < 0) {
+			LOG_ERR("command %s ret:%d",
+				log_strdup(cmds[i].send_cmd), ret);
+			break;
+		}
+	}
+
+	return ret;
+}
+
+int modem_cmd_handler_tx_lock(struct modem_cmd_handler *handler,
+			      k_timeout_t timeout)
+{
+	struct modem_cmd_handler_data *data;
+	data = (struct modem_cmd_handler_data *)(handler->cmd_handler_data);
+
+	return k_sem_take(&data->sem_tx_lock, timeout);
+}
+
+void modem_cmd_handler_tx_unlock(struct modem_cmd_handler *handler)
+{
+	struct modem_cmd_handler_data *data;
+	data = (struct modem_cmd_handler_data *)(handler->cmd_handler_data);
+
+	k_sem_give(&data->sem_tx_lock);
+}
+
 int modem_cmd_handler_init(struct modem_cmd_handler *handler,
 			   struct modem_cmd_handler_data *data)
 {
