@@ -1172,10 +1172,9 @@ uint8_t ll_adv_enable(uint8_t enable)
 			/* Keep aux interval equal or higher than primary PDU
 			 * interval.
 			 */
-			aux->interval =
-				adv->interval +
-				(HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY) /
-				 625U);
+			aux->interval = adv->interval +
+					(HAL_TICKER_TICKS_TO_US(
+						ULL_ADV_RANDOM_DELAY) / 625U);
 
 			ret = ull_adv_aux_start(aux, ticks_anchor_aux,
 						ticks_slot_overhead_aux,

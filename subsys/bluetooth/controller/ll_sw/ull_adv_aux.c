@@ -142,8 +142,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 
 			aux->interval =	adv->interval +
 					(HAL_TICKER_TICKS_TO_US(
-						ULL_ADV_RANDOM_DELAY
-					) / 625U);
+						ULL_ADV_RANDOM_DELAY) / 625U);
 
 			/* FIXME: Find absolute ticks until after primary PDU
 			 *        on air to place the auxiliary advertising PDU.
