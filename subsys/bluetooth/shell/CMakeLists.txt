@@ -41,6 +41,14 @@ zephyr_library_sources_ifdef(
   CONFIG_BT_MICS_CLIENT
   mics_client.c
   )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_CSIS
+  csis.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_CSIP
+  csip.c
+  )
 
 if(CONFIG_BT_CTLR AND CONFIG_BT_LL_SW_SPLIT)
   zephyr_library_sources(
