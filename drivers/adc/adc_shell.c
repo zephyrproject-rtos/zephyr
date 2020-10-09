@@ -34,6 +34,27 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(adc_shell);
 
+#define CMD_HELP_ACQ_TIME 			\
+	"Configure acquisition time."		\
+	"\nUsage: acq_time <time> <unit>"	\
+	"\nunits: us, ns, ticks\n"
+
+#define CMD_HELP_CHANNEL			\
+	"Configure ADC channel\n"		\
+	"Usage: channel <channel_id>\n"
+
+#define CMD_HELP_READ				\
+	"Read adc value\n"			\
+	"Usage: read <channel>\n"
+
+#define CMD_HELP_RES				\
+	"Configure resolution\n"		\
+	"Usage: resolution <resolution>\n"
+
+#define CMD_HELP_REF	"Configure reference\n"
+#define CMD_HELP_GAIN	"Configure gain.\n"
+#define CMD_HELP_PRINT	"Print current configuration"
+
 struct adc_hdl {
 	char *device_name;
 	struct adc_channel_cfg channel_config;
@@ -76,14 +97,6 @@ struct args_index {
 	uint8_t acq_unit;
 };
 
-struct args_number {
-	uint8_t help;
-	uint8_t channel;
-	uint8_t acq_time;
-	uint8_t resolution;
-	uint8_t read;
-};
-
 static const struct args_index args_indx = {
 	.adc = -1,
 	.parent_adc = -2,
@@ -92,13 +105,6 @@ static const struct args_index args_indx = {
 	.acq_unit = 2,
 };
 
-static const struct args_number args_no = {
-	.help = 1,
-	.channel = 2,
-	.acq_time = 3,
-	.resolution = 2,
-	.read = 2,
-};
 
 #define CHOSEN_STR_LEN 20
 static char chosen_reference[CHOSEN_STR_LEN + 1] = "INTERNAL";
@@ -124,12 +130,6 @@ static int cmd_adc_channel(const struct shell *shell, size_t argc, char **argv)
 	int retval = 0;
 	const struct device *adc_dev;
 	int chosen_adc;
-
-	if (argc != args_no.channel) {
-		shell_fprintf(shell, SHELL_NORMAL,
-				"Usage: channel <channel_id>\n");
-		return 0;
-	}
 
 	chosen_adc = get_adc_from_list(argv[args_indx.adc]);
 	if (chosen_adc < 0) {
@@ -195,12 +195,6 @@ static int cmd_adc_acq(const struct shell *shell, size_t argc, char **argv)
 	int chosen_adc;
 	uint16_t acq_time;
 
-	if (argc != args_no.acq_time) {
-		shell_fprintf(shell, SHELL_NORMAL,
-				"Usage: acq_time <time> <unit>\nunits: us, ns, ticks\n");
-		return 0;
-	}
-
 	chosen_adc = get_adc_from_list(argv[args_indx.adc]);
 	if (chosen_adc < 0) {
 		shell_error(shell, "Device not in device list");
@@ -243,11 +237,10 @@ static int cmd_adc_reso(const struct shell *shell, size_t argc, char **argv)
 	const struct device *adc_dev;
 	int chosen_adc;
 
-	if (argc != args_no.resolution ||
-			!isdigit((unsigned char)argv[args_indx.conf][0])) {
+	if (!isdigit((unsigned char)argv[args_indx.conf][0])) {
 		shell_fprintf(shell, SHELL_NORMAL,
 				"Usage: resolution <resolution>\n");
-		return 0;
+		return -EINVAL;
 	}
 
 	chosen_adc = get_adc_from_list(argv[args_indx.adc]);
@@ -260,10 +253,6 @@ static int cmd_adc_reso(const struct shell *shell, size_t argc, char **argv)
 	if (adc_dev == NULL) {
 		shell_error(shell, "ADC device not found");
 		return -ENODEV;
-	}
-	if (!isdigit((unsigned char)argv[args_indx.conf][0])) {
-		shell_error(shell, "<resolution> must be digits");
-		return -EINVAL;
 	}
 	adc_list[chosen_adc].resolution =
 		(uint8_t)strtol(argv[args_indx.conf], NULL, 10);
@@ -311,11 +300,6 @@ static int cmd_adc_read(const struct shell *shell, size_t argc, char **argv)
 	const struct device *adc_dev;
 	uint16_t m_sample_buffer[BUFFER_SIZE];
 
-	if (argc != args_no.read) {
-		shell_fprintf(shell, SHELL_NORMAL,
-				"Usage: read <channel>\n");
-		return 0;
-	}
 	chosen_adc = get_adc_from_list(argv[args_indx.adc]);
 	if (chosen_adc < 0) {
 		shell_error(shell, "Device not in device list");
@@ -404,15 +388,17 @@ SHELL_SUBCMD_DICT_SET_CREATE(sub_gain_cmds, cmd_adc_gain,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_adc_cmds,
 	/* Alphabetically sorted. */
-	SHELL_CMD(acq_time, NULL, "Configure acquisition time", cmd_adc_acq),
-	SHELL_CMD(channel_id, NULL, "Configure channel id", cmd_adc_channel),
-	SHELL_CMD(gain, &sub_gain_cmds, "Configure gain", NULL),
-	SHELL_CMD(print, NULL, "Print current configuration", cmd_adc_print),
-	SHELL_CMD(read, NULL, "Read adc value", cmd_adc_read),
-	SHELL_CMD(reference, &sub_ref_cmds, "Configure reference", NULL),
-	SHELL_CMD(resolution, NULL, "Configure resolution", cmd_adc_reso),
+	SHELL_CMD_ARG(acq_time, NULL, CMD_HELP_ACQ_TIME, cmd_adc_acq, 3, 0),
+	SHELL_CMD_ARG(channel_id, NULL, CMD_HELP_CHANNEL,
+							cmd_adc_channel, 3, 0),
+	SHELL_CMD(gain, &sub_gain_cmds, CMD_HELP_GAIN, NULL),
+	SHELL_CMD_ARG(print, NULL, CMD_HELP_PRINT, cmd_adc_print, 1, 0),
+	SHELL_CMD_ARG(read, NULL, CMD_HELP_READ, cmd_adc_read, 2, 0),
+	SHELL_CMD(reference, &sub_ref_cmds, CMD_HELP_REF, NULL),
+	SHELL_CMD_ARG(resolution, NULL, CMD_HELP_RES, cmd_adc_reso, 2, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
+
 
 #define ADC_SHELL_COMMAND(inst) \
 	SHELL_CMD(ADC_##inst, &sub_adc_cmds, "ADC_" #inst, NULL)
