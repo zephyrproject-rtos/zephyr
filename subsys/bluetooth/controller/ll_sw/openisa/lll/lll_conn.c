@@ -597,11 +597,11 @@ static void isr_done(void *param)
 				addr_us_get(0);
 #endif /* !CONFIG_BT_CTLR_PHY */
 
-			e->slave.start_to_address_actual_us =
+			e->drift.start_to_address_actual_us =
 				radio_tmr_aa_restore() - radio_tmr_ready_get();
-			e->slave.window_widening_event_us =
+			e->drift.window_widening_event_us =
 				lll->slave.window_widening_event_us;
-			e->slave.preamble_to_addr_us = preamble_to_addr_us;
+			e->drift.preamble_to_addr_us = preamble_to_addr_us;
 
 			/* Reset window widening, as anchor point sync-ed */
 			lll->slave.window_widening_event_us = 0;
