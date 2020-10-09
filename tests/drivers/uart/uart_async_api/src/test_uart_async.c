@@ -13,7 +13,7 @@ K_SEM_DEFINE(rx_buf_released, 0, 1);
 K_SEM_DEFINE(rx_disabled, 0, 1);
 
 ZTEST_BMEM volatile bool failed_in_isr;
-static const struct device *uart_dev;
+ZTEST_BMEM static const struct device *uart_dev;
 
 void init_test(void)
 {
