@@ -1114,11 +1114,13 @@ uint8_t ll_adv_enable(uint8_t enable)
 		if (lll->sync) {
 			sync = (void *)HDR_LLL2EVT(lll->sync);
 			if (sync->is_enabled && !sync->is_started) {
-				ret = ull_adv_aux_hdr_set_clear(adv,
+				uint8_t err;
+
+				err = ull_adv_aux_hdr_set_clear(adv,
 					ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
 					0, NULL, NULL, &pri_idx);
-				if (ret) {
-					return ret;
+				if (err) {
+					return err;
 				}
 			} else {
 				/* Do not start periodic advertising */
