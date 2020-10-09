@@ -6,6 +6,7 @@
 
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
+#include <pinmux/stm32/pinmux_stm32.h>
 #include <sys/util.h>
 #include <string.h>
 #include <kernel.h>
@@ -407,6 +408,53 @@ static int can_stm32_init(const struct device *dev)
 	if (ret != 0) {
 		LOG_ERR("HAL_CAN_Init clock control on failed: %d", ret);
 		return -EIO;
+	}
+
+	/* configure pinmux */
+	if (cfg->pinctrl_len != 0U) {
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
+		int remap;
+		/* Check that remap configuration is coherent across pins */
+		remap = stm32_dt_pinctrl_remap_check(cfg->pinctrl,
+						     cfg->pinctrl_len);
+		if (remap < 0) {
+			return remap;
+		}
+
+		/* A valid remapping configuration is provided */
+		/* Apply remapping before proceeding with pin configuration */
+		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
+
+		switch ((uint32_t)cfg->can) {
+#if defined(AFIO_MAPR_CAN_REMAP_REMAP1)
+		case DT_REG_ADDR(DT_NODELABEL(can1)):
+			if (remap == REMAP_1) {
+				/* PB8/PB9 */
+				LL_GPIO_AF_RemapPartial2_CAN1();
+			} else if (remap == REMAP_2) {
+				/* PD0/PD1 */
+				LL_GPIO_AF_RemapPartial3_CAN1();
+			} else {
+				/* NO_REMAP: PA11/PA12 */
+				LL_GPIO_AF_RemapPartial1_CAN1();
+			}
+			break;
+#endif
+#if defined(AFIO_MAPR_CAN2_REMAP)
+		case DT_REG_ADDR(DT_NODELABEL(can2)):
+			if (remap == REMAP_1) {
+				/* PB5/PB6 */
+				LL_GPIO_AF_EnableRemap_CAN2();
+			} else {
+				/* PB12/PB13 */
+				LL_GPIO_AF_DisableRemap_CAN2();
+			}
+			break;
+#endif
+		}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
+
+		stm32_dt_pinctrl_configure(cfg->pinctrl, cfg->pinctrl_len);
 	}
 
 	ret = can_leave_sleep_mode(can);
@@ -1042,6 +1090,9 @@ static const struct can_driver_api can_api_funcs = {
 
 static void config_can_1_irq(CAN_TypeDef *can);
 
+static const struct soc_gpio_pinctrl pins_can_1[] =
+	ST_STM32_DT_PINCTRL(can1, 0);
+
 static const struct can_stm32_config can_stm32_cfg_1 = {
 	.can = (CAN_TypeDef *)DT_REG_ADDR(DT_NODELABEL(can1)),
 	.master_can = (CAN_TypeDef *)DT_REG_ADDR(DT_NODELABEL(can1)),
@@ -1054,7 +1105,9 @@ static const struct can_stm32_config can_stm32_cfg_1 = {
 		.enr = DT_CLOCKS_CELL(DT_NODELABEL(can1), bits),
 		.bus = DT_CLOCKS_CELL(DT_NODELABEL(can1), bus),
 	},
-	.config_irq = config_can_1_irq
+	.config_irq = config_can_1_irq,
+	.pinctrl = pins_can_1,
+	.pinctrl_len = ARRAY_SIZE(pins_can_1)
 };
 
 static struct can_stm32_data can_stm32_dev_data_1;
@@ -1131,6 +1184,9 @@ NET_DEVICE_INIT(socket_can_stm32_1, SOCKET_CAN_NAME_1, socket_can_init_1,
 
 static void config_can_2_irq(CAN_TypeDef *can);
 
+static const struct soc_gpio_pinctrl pins_can_2[] =
+	ST_STM32_DT_PINCTRL(can2, 0);
+
 static const struct can_stm32_config can_stm32_cfg_2 = {
 	.can = (CAN_TypeDef *)DT_REG_ADDR(DT_NODELABEL(can2)),
 	.master_can = (CAN_TypeDef *)DT_PROP(DT_NODELABEL(can2),
@@ -1144,7 +1200,9 @@ static const struct can_stm32_config can_stm32_cfg_2 = {
 		.enr = DT_CLOCKS_CELL(DT_NODELABEL(can2), bits),
 		.bus = DT_CLOCKS_CELL(DT_NODELABEL(can2), bus),
 	},
-	.config_irq = config_can_2_irq
+	.config_irq = config_can_2_irq,
+	.pinctrl = pins_can_2,
+	.pinctrl_len = ARRAY_SIZE(pins_can_2)
 };
 
 static struct can_stm32_data can_stm32_dev_data_2;
