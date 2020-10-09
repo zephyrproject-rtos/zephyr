@@ -48,6 +48,24 @@
 #define LOCORE_SIZE         (0x10000 - LOCORE_BASE)
 #endif
 
+#ifdef CONFIG_QEMU_TARGET
+/*
+ * QEMU reserves the last 128K for ACPI tables so we need to avoid
+ * them.
+ * With XIP, QEMU memory is split in 4MB SRAM + 4MB Flash.
+ * Without XIP, QEMU memory is simply 4MB SRAM.
+ */
+#ifdef CONFIG_XIP
+  #undef FLASH_ROM_SIZE
+  #define FLASH_ROM_SIZE \
+	  (DT_REG_SIZE(DT_CHOSEN(zephyr_flash)) - 131072)
+#else
+  #undef KERNEL_RAM_SIZE
+  #define KERNEL_RAM_SIZE \
+	  (PHYS_RAM_SIZE - CONFIG_X86_KERNEL_OFFSET - 131072)
+#endif
+#endif
+
 MEMORY
     {
 #if defined(CONFIG_XIP)
