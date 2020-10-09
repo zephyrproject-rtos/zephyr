@@ -109,6 +109,42 @@
 	transfer-delay = <50>;
 };
 
+&flexpwm1_pwm3 {
+	status = "okay";
+};
+
+&flexpwm2_pwm0 {
+	status = "okay";
+};
+
+&flexpwm2_pwm1 {
+	status = "okay";
+};
+
+&flexpwm2_pwm2 {
+	status = "okay";
+};
+
+&flexpwm2_pwm3 {
+	status = "okay";
+};
+
+&flexpwm4_pwm0 {
+	status = "okay";
+};
+
+&flexpwm4_pwm1 {
+	status = "okay";
+};
+
+&flexpwm4_pwm2 {
+	status = "okay";
+};
+
+&flexpwm4_pwm3 {
+	status = "okay";
+};
+
 &usb1 {
 	status = "okay";
 };
