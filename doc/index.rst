@@ -118,6 +118,7 @@ licensing, as described in :ref:`Zephyr_Licensing`.
    security/index.rst
    samples/index.rst
    boards/index.rst
+   test_specification/index.rst
    releases/index.rst
 
 .. only:: html
