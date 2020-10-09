@@ -959,17 +959,6 @@ Networking:
         - tests/net/lib/mqtt_packet/
         - samples/net/mqtt_publisher/
 
-"Networking: CivetWeb":
-    status: maintained
-    maintainers:
-        - Nukersson
-    collaborators:
-        - jukkar
-    files:
-        - samples/net/sockets/*civetweb*
-    labels:
-        - "area: CivetWeb"
-
 NIOS-2 arch:
     status: maintained
     maintainers:
