@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT nordic_nrf_sw_pwm
 
 #include <soc.h>
+#include <hal/nrf_gpio.h>
 
 #include <drivers/pwm.h>
 #include <nrf_peripherals.h>
@@ -137,20 +138,20 @@ static int pwm_nrf5_sw_pin_set(const struct device *dev, uint32_t pwm,
 	NRF_PPI->CHENCLR = BIT(ppi_index) | BIT(ppi_index + 1);
 
 	/* configure GPIO pin as output */
-	NRF_GPIO->DIRSET = BIT(pwm);
+	nrf_gpio_cfg_output(pwm);
 	if (pulse_cycles == 0U) {
 		/* 0% duty cycle, keep pin low */
-		NRF_GPIO->OUTCLR = BIT(pwm);
+		nrf_gpio_pin_clear(pwm);
 
 		goto pin_set_pwm_off;
 	} else if (pulse_cycles == period_cycles) {
 		/* 100% duty cycle, keep pin high */
-		NRF_GPIO->OUTSET = BIT(pwm);
+		nrf_gpio_pin_set(pwm);
 
 		goto pin_set_pwm_off;
 	} else {
 		/* x% duty cycle, start PWM with pin low */
-		NRF_GPIO->OUTCLR = BIT(pwm);
+		nrf_gpio_pin_clear(pwm);
 	}
 
 	/* TODO: if the assigned NRF_TIMER supports higher bit resolution,
