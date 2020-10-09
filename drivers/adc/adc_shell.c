@@ -41,7 +41,18 @@ LOG_MODULE_REGISTER(adc_shell);
 
 #define CMD_HELP_CHANNEL			\
 	"Configure ADC channel\n"		\
-	"Usage: channel <channel_id>\n"
+
+#define CMD_HELP_CH_ID				\
+	"Configure channel id\n"		\
+	"Usage: id <channel_id>\n"
+
+#define CMD_HELP_CH_NEG				\
+	"Configure channel negative input\n"	\
+	"Usage: negative <negative_input_id>\n"
+
+#define CMD_HELP_CH_POS				\
+	"Configure channel positive input\n"	\
+	"Usage: positive <positive_input_id>\n"
 
 #define CMD_HELP_READ				\
 	"Read adc value\n"			\
@@ -89,23 +100,6 @@ struct adc_hdl adc_list[] = {
 #endif
 };
 
-struct args_index {
-	int8_t adc;
-	int8_t parent_adc;
-	uint8_t channel;
-	uint8_t conf;
-	uint8_t acq_unit;
-};
-
-static const struct args_index args_indx = {
-	.adc = -1,
-	.parent_adc = -2,
-	.channel = 1,
-	.conf = 1,
-	.acq_unit = 2,
-};
-
-
 #define CHOSEN_STR_LEN 20
 static char chosen_reference[CHOSEN_STR_LEN + 1] = "INTERNAL";
 static char chosen_gain[CHOSEN_STR_LEN + 1] = "1";
@@ -125,13 +119,13 @@ static int get_adc_from_list(char *name)
 	return -ENODEV;
 }
 
-static int cmd_adc_channel(const struct shell *shell, size_t argc, char **argv)
+static int cmd_adc_ch_id(const struct shell *shell, size_t argc, char **argv)
 {
 	int retval = 0;
 	const struct device *adc_dev;
 	int chosen_adc;
 
-	chosen_adc = get_adc_from_list(argv[args_indx.adc]);
+	chosen_adc = get_adc_from_list(argv[-2]);
 	if (chosen_adc < 0) {
 		shell_error(shell, "Device not in device list");
 		return -EINVAL;
@@ -142,16 +136,82 @@ static int cmd_adc_channel(const struct shell *shell, size_t argc, char **argv)
 		shell_error(shell, "ADC device not found");
 		return -ENODEV;
 	}
-	if (!isdigit((unsigned char)argv[args_indx.conf][0])) {
+	if (!isdigit((unsigned char)argv[1][0])) {
 		shell_error(shell, "<channel> must be digits");
 		return -EINVAL;
 	}
 	adc_list[chosen_adc].channel_config.channel_id =
-		(uint8_t)strtol(argv[args_indx.conf], NULL, 10);
+		(uint8_t)strtol(argv[1], NULL, 10);
 	retval = adc_channel_setup(adc_dev,
 			&adc_list[chosen_adc].channel_config);
 	LOG_DBG("Channel setup returned %i\n", retval);
 	return retval;
+}
+
+static int cmd_adc_ch_neg(const struct shell *shell, size_t argc, char **argv)
+{
+#if CONFIG_ADC_CONFIGURABLE_INPUTS
+	int retval = 0;
+	const struct device *adc_dev;
+	int chosen_adc;
+
+	chosen_adc = get_adc_from_list(argv[-2]);
+	if (chosen_adc < 0) {
+		shell_error(shell, "Device not in device list");
+		return -EINVAL;
+	}
+
+	adc_dev = device_get_binding(adc_list[chosen_adc].device_name);
+	if (adc_dev == NULL) {
+		shell_error(shell, "ADC device not found");
+		return -ENODEV;
+	}
+	if (!isdigit((unsigned char)argv[1][0])) {
+		shell_error(shell, "<negative input> must be digits");
+		return -EINVAL;
+	}
+	adc_list[chosen_adc].channel_config.input_negative =
+		(uint8_t)strtol(argv[1], NULL, 10);
+	retval = adc_channel_setup(adc_dev,
+			&adc_list[chosen_adc].channel_config);
+	LOG_DBG("Channel setup returned %i\n", retval);
+	return retval;
+#else
+	return -EINVAL;
+#endif
+}
+
+static int cmd_adc_ch_pos(const struct shell *shell, size_t argc, char **argv)
+{
+#if CONFIG_ADC_CONFIGURABLE_INPUTS
+	int retval = 0;
+	const struct device *adc_dev;
+	int chosen_adc;
+
+	chosen_adc = get_adc_from_list(argv[-2]);
+	if (chosen_adc < 0) {
+		shell_error(shell, "Device not in device list");
+		return -EINVAL;
+	}
+
+	adc_dev = device_get_binding(adc_list[chosen_adc].device_name);
+	if (adc_dev == NULL) {
+		shell_error(shell, "ADC device not found");
+		return -ENODEV;
+	}
+	if (!isdigit((unsigned char)argv[1][0])) {
+		shell_error(shell, "<negative input> must be digits");
+		return -EINVAL;
+	}
+	adc_list[chosen_adc].channel_config.input_positive =
+		(uint8_t)strtol(argv[1], NULL, 10);
+	retval = adc_channel_setup(adc_dev,
+			&adc_list[chosen_adc].channel_config);
+	LOG_DBG("Channel setup returned %i\n", retval);
+	return retval;
+#else
+	return -EINVAL;
+#endif
 }
 
 static int cmd_adc_gain(const struct shell *shell, size_t argc, char **argv,
@@ -162,7 +222,7 @@ static int cmd_adc_gain(const struct shell *shell, size_t argc, char **argv,
 	int chosen_adc;
 	enum adc_gain gain = (enum adc_gain)data;
 
-	chosen_adc = get_adc_from_list(argv[args_indx.parent_adc]);
+	chosen_adc = get_adc_from_list(argv[-2]);
 	if (chosen_adc < 0) {
 		shell_error(shell, "Device not in device list");
 		return -EINVAL;
@@ -195,7 +255,7 @@ static int cmd_adc_acq(const struct shell *shell, size_t argc, char **argv)
 	int chosen_adc;
 	uint16_t acq_time;
 
-	chosen_adc = get_adc_from_list(argv[args_indx.adc]);
+	chosen_adc = get_adc_from_list(argv[-1]);
 	if (chosen_adc < 0) {
 		shell_error(shell, "Device not in device list");
 		return -EINVAL;
@@ -207,18 +267,18 @@ static int cmd_adc_acq(const struct shell *shell, size_t argc, char **argv)
 		return -ENODEV;
 	}
 
-	if (!isdigit((unsigned char)argv[args_indx.conf][0])) {
+	if (!isdigit((unsigned char)argv[1][0])) {
 		shell_error(shell, "<time> must be digits");
 		return -EINVAL;
 	}
-	acq_time = (uint16_t)strtol(argv[args_indx.conf], NULL, 10);
-	if (!strcmp(argv[args_indx.acq_unit], "us")) {
+	acq_time = (uint16_t)strtol(argv[1], NULL, 10);
+	if (!strcmp(argv[2], "us")) {
 		adc_list[chosen_adc].channel_config.acquisition_time =
 			ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, acq_time);
-	} else if (!strcmp(argv[args_indx.acq_unit], "ns")) {
+	} else if (!strcmp(argv[2], "ns")) {
 		adc_list[chosen_adc].channel_config.acquisition_time =
 			ADC_ACQ_TIME(ADC_ACQ_TIME_NANOSECONDS, acq_time);
-	} else if (!strcmp(argv[args_indx.acq_unit], "ticks")) {
+	} else if (!strcmp(argv[2], "ticks")) {
 		adc_list[chosen_adc].channel_config.acquisition_time =
 			ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, acq_time);
 	} else {
@@ -237,13 +297,13 @@ static int cmd_adc_reso(const struct shell *shell, size_t argc, char **argv)
 	const struct device *adc_dev;
 	int chosen_adc;
 
-	if (!isdigit((unsigned char)argv[args_indx.conf][0])) {
+	if (!isdigit((unsigned char)argv[1][0])) {
 		shell_fprintf(shell, SHELL_NORMAL,
 				"Usage: resolution <resolution>\n");
 		return -EINVAL;
 	}
 
-	chosen_adc = get_adc_from_list(argv[args_indx.adc]);
+	chosen_adc = get_adc_from_list(argv[-1]);
 	if (chosen_adc < 0) {
 		shell_error(shell, "Device not in device list");
 		return -EINVAL;
@@ -255,7 +315,7 @@ static int cmd_adc_reso(const struct shell *shell, size_t argc, char **argv)
 		return -ENODEV;
 	}
 	adc_list[chosen_adc].resolution =
-		(uint8_t)strtol(argv[args_indx.conf], NULL, 10);
+		(uint8_t)strtol(argv[1], NULL, 10);
 	retval = adc_channel_setup(adc_dev,
 			&adc_list[chosen_adc].channel_config);
 	return retval;
@@ -269,7 +329,7 @@ static int cmd_adc_ref(const struct shell *shell, size_t argc, char **argv,
 	int chosen_adc;
 	enum adc_reference reference = (enum adc_reference)data;
 
-	chosen_adc = get_adc_from_list(argv[args_indx.parent_adc]);
+	chosen_adc = get_adc_from_list(argv[-2]);
 	if (chosen_adc < 0) {
 		shell_error(shell, "Device not in device list");
 		return -EINVAL;
@@ -300,12 +360,12 @@ static int cmd_adc_read(const struct shell *shell, size_t argc, char **argv)
 	const struct device *adc_dev;
 	uint16_t m_sample_buffer[BUFFER_SIZE];
 
-	chosen_adc = get_adc_from_list(argv[args_indx.adc]);
+	chosen_adc = get_adc_from_list(argv[-1]);
 	if (chosen_adc < 0) {
 		shell_error(shell, "Device not in device list");
 		return 0;
 	}
-	uint8_t adc_channel_id = strtol(argv[args_indx.channel], NULL, 10);
+	uint8_t adc_channel_id = strtol(argv[1], NULL, 10);
 
 	adc_dev = device_get_binding(adc_list[chosen_adc].device_name);
 	if (adc_dev == NULL) {
@@ -335,7 +395,7 @@ static int cmd_adc_print(const struct shell *shell, size_t argc, char **argv)
 	uint8_t channel_id;
 	uint8_t resolution;
 
-	chosen_adc = get_adc_from_list(argv[args_indx.adc]);
+	chosen_adc = get_adc_from_list(argv[-1]);
 	if (chosen_adc < 0) {
 		shell_error(shell, "Device not in device list");
 		return 0;
@@ -350,7 +410,7 @@ static int cmd_adc_print(const struct shell *shell, size_t argc, char **argv)
 			"Acquisition Time: %u\n"
 			"Channel ID: %u\n"
 			"Resolution: %u\n",
-			argv[args_indx.adc],
+			argv[-1],
 			chosen_gain,
 			chosen_reference,
 			acq_time,
@@ -386,11 +446,19 @@ SHELL_SUBCMD_DICT_SET_CREATE(sub_gain_cmds, cmd_adc_gain,
 	(GAIN_64, ADC_GAIN_64)
 );
 
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_channel_cmds,
+	SHELL_CMD_ARG(id, NULL, CMD_HELP_CH_ID, cmd_adc_ch_id, 2, 0),
+	SHELL_COND_CMD_ARG(CONFIG_ADC_CONFIGURABLE_INPUTS,
+		negative, NULL, CMD_HELP_CH_NEG, cmd_adc_ch_neg, 2, 0),
+	SHELL_COND_CMD_ARG(CONFIG_ADC_CONFIGURABLE_INPUTS,
+		positive, NULL, CMD_HELP_CH_POS, cmd_adc_ch_pos, 2, 0),
+	SHELL_SUBCMD_SET_END
+);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_adc_cmds,
 	/* Alphabetically sorted. */
 	SHELL_CMD_ARG(acq_time, NULL, CMD_HELP_ACQ_TIME, cmd_adc_acq, 3, 0),
-	SHELL_CMD_ARG(channel_id, NULL, CMD_HELP_CHANNEL,
-							cmd_adc_channel, 3, 0),
+	SHELL_CMD_ARG(channel, &sub_channel_cmds, CMD_HELP_CHANNEL, NULL, 3, 0),
 	SHELL_CMD(gain, &sub_gain_cmds, CMD_HELP_GAIN, NULL),
 	SHELL_CMD_ARG(print, NULL, CMD_HELP_PRINT, cmd_adc_print, 1, 0),
 	SHELL_CMD_ARG(read, NULL, CMD_HELP_READ, cmd_adc_read, 2, 0),
