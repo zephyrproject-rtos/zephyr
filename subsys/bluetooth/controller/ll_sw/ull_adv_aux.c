@@ -136,7 +136,6 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 		aux = (void *)HDR_LLL2EVT(adv->lll.aux);
 		if (!aux->is_started) {
 			uint32_t ticks_slot_overhead;
-			uint32_t volatile ret_cb;
 			uint32_t ticks_anchor;
 			uint32_t ret;
 
@@ -152,9 +151,8 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 			ticks_slot_overhead = ull_adv_aux_evt_init(aux);
 
 			ret = ull_adv_aux_start(aux, ticks_anchor,
-						ticks_slot_overhead, &ret_cb);
-			ret = ull_ticker_status_take(ret, &ret_cb);
-			if (ret != TICKER_STATUS_SUCCESS) {
+						ticks_slot_overhead);
+			if (ret) {
 				/* NOTE: This failure, to start an auxiliary
 				 * channel radio event shall not occur unless
 				 * a defect in the controller design.
@@ -812,9 +810,9 @@ uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux)
 }
 
 uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
-			   uint32_t ticks_slot_overhead,
-			   uint32_t volatile *ret_cb)
+			   uint32_t ticks_slot_overhead)
 {
+	uint32_t volatile ret_cb;
 	uint8_t aux_handle;
 	uint32_t ret;
 
@@ -822,7 +820,7 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 
 	aux_handle = aux_handle_get(aux);
 
-	*ret_cb = TICKER_STATUS_BUSY;
+	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			   (TICKER_ID_ADV_AUX_BASE + aux_handle),
 			   ticks_anchor, 0,
@@ -831,7 +829,8 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 			   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
 			   (aux->evt.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, aux,
-			   ull_ticker_status_give, (void *)ret_cb);
+			   ull_ticker_status_give, (void *)&ret_cb);
+	ret = ull_ticker_status_take(ret, &ret_cb);
 
 	return ret;
 }

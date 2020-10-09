@@ -68,8 +68,7 @@ uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux);
 
 /* helper function to start auxiliary advertising */
 uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
-			   uint32_t ticks_slot_overhead,
-			   uint32_t volatile *ret_cb);
+			   uint32_t ticks_slot_overhead);
 
 /* helper function to stop auxiliary advertising */
 uint8_t ull_adv_aux_stop(struct ll_adv_aux_set *aux);
@@ -124,8 +123,8 @@ int ull_adv_sync_init(void);
 int ull_adv_sync_reset(void);
 
 /* helper function to start periodic advertising */
-uint32_t ull_adv_sync_start(struct ll_adv_sync_set *sync, uint32_t ticks_anchor,
-			 uint32_t volatile *ret_cb);
+uint32_t ull_adv_sync_start(struct ll_adv_sync_set *sync,
+			    uint32_t ticks_anchor);
 
 /* helper function to schedule a mayfly to get sync offset */
 void ull_adv_sync_offset_get(struct ll_adv_set *adv);

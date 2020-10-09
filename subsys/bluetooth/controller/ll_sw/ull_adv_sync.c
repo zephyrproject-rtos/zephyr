@@ -233,7 +233,6 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 	}
 
 	if (adv->is_enabled && !sync->is_started) {
-		volatile uint32_t ret_cb = TICKER_STATUS_BUSY;
 		uint32_t ticks_anc_sync;
 		uint8_t pri_idx;
 		uint8_t err;
@@ -252,7 +251,7 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 		}
 
 
-		err = ull_adv_sync_start(sync, ticks_anc_sync, &ret_cb);
+		err = ull_adv_sync_start(sync, ticks_anc_sync);
 		if (err) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
@@ -294,18 +293,20 @@ uint16_t ull_adv_sync_lll_handle_get(struct lll_adv_sync *lll)
 	return sync_handle_get((void *)lll->hdr.parent);
 }
 
-uint32_t ull_adv_sync_start(struct ll_adv_sync_set *sync, uint32_t ticks_anchor,
-			 uint32_t volatile *ret_cb)
+uint32_t ull_adv_sync_start(struct ll_adv_sync_set *sync,
+			    uint32_t ticks_anchor)
 {
-	uint32_t slot_us = EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 	uint32_t ticks_slot_overhead;
+	uint32_t volatile ret_cb;
 	uint32_t interval_us;
 	uint8_t sync_handle;
+	uint32_t slot_us;
 	uint32_t ret;
 
 	ull_hdr_init(&sync->ull);
 
 	/* TODO: Calc AUX_SYNC_IND slot_us */
+	slot_us = EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 	slot_us += 1000;
 
 	/* TODO: active_to_start feature port */
@@ -327,7 +328,7 @@ uint32_t ull_adv_sync_start(struct ll_adv_sync_set *sync, uint32_t ticks_anchor,
 
 	sync_handle = sync_handle_get(sync);
 
-	*ret_cb = TICKER_STATUS_BUSY;
+	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			   (TICKER_ID_ADV_SYNC_BASE + sync_handle),
 			   ticks_anchor, 0,
@@ -335,7 +336,8 @@ uint32_t ull_adv_sync_start(struct ll_adv_sync_set *sync, uint32_t ticks_anchor,
 			   HAL_TICKER_REMAINDER(interval_us), TICKER_NULL_LAZY,
 			   (sync->evt.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, sync,
-			   ull_ticker_status_give, (void *)ret_cb);
+			   ull_ticker_status_give, (void *)&ret_cb);
+	ret = ull_ticker_status_take(ret, &ret_cb);
 
 	return ret;
 }
