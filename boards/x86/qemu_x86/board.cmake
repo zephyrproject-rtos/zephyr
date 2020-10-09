@@ -19,8 +19,16 @@ else()
   set(QEMU_CPU_TYPE_${ARCH} qemu32,+nx,+pae)
 endif()
 
+if(CONFIG_XIP)
+  # 4MB RAM + 4MB Flash
+  set(QEMU_MEMORY_SIZE 8)
+else()
+  # 4MB RAM
+  set(QEMU_MEMORY_SIZE 4)
+endif()
+
 set(QEMU_FLAGS_${ARCH}
-  -m 9
+  -m ${QEMU_MEMORY_SIZE}
   -cpu ${QEMU_CPU_TYPE_${ARCH}}
   -device isa-debug-exit,iobase=0xf4,iosize=0x04
   ${REBOOT_FLAG}
