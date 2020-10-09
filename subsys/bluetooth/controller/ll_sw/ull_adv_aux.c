@@ -413,7 +413,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 			ad_len = *val_ptr;
 			val_ptr++;
 
-			ad_data = (void *)*((uint32_t *)val_ptr);
+			ad_data = (void *)sys_get_le32(val_ptr);
 
 			return ull_adv_data_set(adv, ad_len, ad_data);
 		}
