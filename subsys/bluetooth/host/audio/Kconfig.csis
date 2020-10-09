@@ -1,0 +1,100 @@
+# Bluetooth Audio - Broadcast Assistant configuration options
+#
+# Copyright (c) 2020 Bose Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BT_AUDIO
+
+#################### Coordinated Set Identification Service ####################
+
+config BT_CSIS
+	bool "Coordinated Set Identification Service Support"
+	default n
+	imply BT_EXT_ADV if BT_PRIVACY
+	help
+	  This option enables support for Coordinated Set Identification
+	  Service.
+
+if BT_CSIS
+
+config BT_CSIS_TEST_SIRK
+	bool "Coordinated Set Identification Service Test SIRK"
+	default n
+	help
+	  Enabled the use of the test SIRK and prand. Should not be used for
+	  production builds.
+
+config BT_CSIS_SET_SIZE
+	int "Coordinated Set Identification Service Size"
+	default 2
+	range 2 255
+	help
+	  The size of the set (number of devices).
+
+config BT_CSIS_SET_RANK
+	int "Coordinated Set Identification Service Rank"
+	default 1
+	range 1 BT_CSIS_SET_SIZE
+	help
+	  The rank of the device in the set.
+
+config BT_CSIS_SET_SIRK_SEED
+	int "Coordinated Set Identification Service seed to generate SIRK"
+	default 123456
+	range 1 4294967295
+	help
+	  Seed used to generate a unique SIRK for the set.
+
+############### DEBUG ###############
+
+config BT_DEBUG_CSIS
+	bool "Coordinated Set Identification Service debug"
+	depends on BT_AUDIO_DEBUG
+	help
+	  Use this option to enable Coordinated Set Identification Service debug
+	  logs for the Bluetooth Audio functionality.
+
+endif # BT_CSIS
+
+#################### Coordinated Set Identification Client ####################
+
+config BT_CSIP
+	bool "Coordinated Set Identification Profile Support"
+	default n
+	help
+	  This option enables support for Coordinated Set Identification
+	  Profile.
+
+if BT_CSIP
+
+config BT_CSIP_MAX_CSIS_INSTANCES
+	int "Coordinated Set Identification Service Count"
+	default 1
+	range 1 3
+	help
+	  Sets the number of service instances, which corresponds to the number
+	  of different sets the peer device may be in.
+
+############### DEBUG ###############
+
+config BT_DEBUG_CSIP
+	bool "Coordinated Set Identification Profile debug"
+	depends on BT_AUDIO_DEBUG
+	help
+	  Use this option to enable Coordinated Set Identification Profile debug
+	  logs for the Bluetooth Audio functionality.
+
+endif # BT_CSIP
+
+config BT_DEBUG_SIH
+	bool "Private Set Unique identifier hash function sih debug"
+	depends on BT_AUDIO_DEBUG
+	depends on BT_CSIP || BT_CSIS
+	help
+	  Use this option to enable Private Set Unique identifier hash function
+	  sih debug
+	  logs for the Bluetooth Audio functionality.
+
+endif # BT_AUDIO
