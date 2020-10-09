@@ -2082,6 +2082,8 @@ class ProjectBuilder(FilterBuilder):
             if self.instance.status in ["failed", "error"]:
                 pipeline.put({"op": "report", "test": self.instance})
             elif self.cmake_only:
+                if self.instance.status is None:
+                    self.instance.status = "passed"
                 pipeline.put({"op": "report", "test": self.instance})
             else:
                 if self.instance.name in results['filter'] and results['filter'][self.instance.name]:
