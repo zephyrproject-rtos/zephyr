@@ -9,5 +9,9 @@ config PWM_NRF5_SW
 	depends on SOC_FAMILY_NRF
 	help
 	  Enable driver to utilize PWM on the Nordic Semiconductor nRF5x series.
-	  This implementation provides up to 3 pins using one HF timer, two PPI
+
+	  When used with HF timer it provides up to 3 pins, utilizing two PPI
+	  channels per pin and one GPIOTE config per pin.
+
+	  When used with RTC it provides up to 3 pins, utilizing three PPI
 	  channels per pin and one GPIOTE config per pin.
