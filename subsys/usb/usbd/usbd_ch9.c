@@ -594,6 +594,10 @@ static int usbd_get_spkt_from_buf(struct net_buf *buf,
 	return 0;
 }
 
+/*
+ * Validate and trace control transers.
+ * Please refer to Chapter 8.5.3 Control Transfers USB 2.0 spec.
+ */
 static void usbd_control_transfer(struct usbd_class_ctx *cctx,
 				  struct net_buf *buf, int err)
 {
@@ -777,6 +781,10 @@ stall_in:
 	return;
 }
 
+/*
+ * We use class context struct here to pass the results
+ * of control endpoint transfers to the right function.
+ */
 static struct usbd_class_ctx ctrl_pipe = {
 	.class_desc = NULL,
 	.ops = {

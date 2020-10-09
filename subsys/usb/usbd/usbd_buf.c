@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 Linaro
- * Copyright (c) 2019 PHYTEC Messtechnik GmbH
+ * Copyright (c) 2020 PHYTEC Messtechnik GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,13 @@ static sys_slist_t usbd_buf_slist;
 NET_BUF_POOL_DEFINE(usbd_pool, USBD_POOL_COUNT, USBD_POOL_BUF_SIZE,
 		    sizeof(struct usbd_buf_ud), NULL);
 
+/*
+ * The function is the interface to the legacy USB driver API.
+ * It was derived from the usb_transfer but can also serve
+ * control endpoints.
+ *
+ * Note: Must be revised during the change of USB driver API.
+ */
 static void usbd_tbuf_handler(struct net_buf *buf)
 {
 	struct usbd_buf_ud *ud = NULL;
@@ -123,7 +130,8 @@ uint8_t usbd_get_ep_from_buf(struct net_buf *buf)
 	return ud->ep;
 }
 
-struct net_buf *usbd_tbuf_get_buf(uint8_t ep)
+/* Get buffer corresponding to the endpoint */
+static struct net_buf *usbd_tbuf_get_buf(uint8_t ep)
 {
 	struct net_buf *buf = NULL;
 	struct usbd_buf_ud *ud = NULL;
@@ -139,6 +147,7 @@ struct net_buf *usbd_tbuf_get_buf(uint8_t ep)
 	return NULL;
 }
 
+/* This is the common callback for all endpoints */
 void usbd_tbuf_ep_cb(uint8_t ep, enum usb_dc_ep_cb_status_code status)
 {
 	struct net_buf *buf = NULL;
@@ -159,9 +168,24 @@ void usbd_tbuf_ep_cb(uint8_t ep, enum usb_dc_ep_cb_status_code status)
 
 	ud->status = status;
 	net_buf_put(&usbd_buf_queue, buf);
+	/*
+	 * We have to yield here, otherwise the nRF driver will
+	 * continue to run, release "setup stage" and at least one
+	 * packet will be lost.
+	 */
 	k_yield();
 }
 
+/**
+ * @brief Allocate a new buffer for the transfer
+ *
+ * @note Must be revised after the change of USB driver API.
+ *
+ * @param[in] ep Endpoint address
+ * @param[in] size Buffer size
+ *
+ * @return Buffer pointer on success, NULL pointer on fail.
+ */
 struct net_buf *usbd_tbuf_alloc(uint8_t ep, size_t size)
 {
 	struct net_buf *buf;
@@ -190,7 +214,24 @@ struct net_buf *usbd_tbuf_alloc(uint8_t ep, size_t size)
 	return buf;
 }
 
-/* TODO: add usbd_tbuf_submit_simple or usbd_tubf_submit_flags */
+/**
+ * @brief Submit a new transfer
+ *
+ * The function uses information about the endpoint stored in
+ * the net_buf's user data and determines the direction of the
+ * transfer. There is also additional slist node entry to find
+ * the buffer back based on endpoint address.
+ *
+ * If one transfer already exists for the endpoint,
+ * another cannot be started.
+ *
+ * @note Must be revised/removed after the change of USB driver API.
+ *
+ * @param[in] buf Pointer to net_buf structure
+ * @param[in] handle_zlp Enable IN endpoint transfer ZLP handling
+ *
+ * @return 0 on success, other values on fail.
+ */
 int usbd_tbuf_submit(struct net_buf *buf, bool handle_zlp)
 {
 	struct usbd_buf_ud *ud = NULL;
@@ -235,7 +276,19 @@ int usbd_tbuf_submit(struct net_buf *buf, bool handle_zlp)
 	return 0;
 }
 
-/* May only be applied to disabled endpoint. */
+/**
+ * @brief Cancel transfer
+ *
+ * This function cancels transfer on specific endpoint.
+ *
+ * May only be applied to disabled endpoint.
+ *
+ * @note Must be revised after the change of USB driver API.
+ *
+ * @param[in] ep Endpoint descriptor
+ *
+ * @return 0 on success, other values on fail.
+ */
 int usbd_tbuf_cancel(uint8_t ep)
 {
 	struct net_buf *buf = NULL;
@@ -266,6 +319,11 @@ int usbd_tbuf_cancel(uint8_t ep)
 	return 0;
 }
 
+/**
+ * @brief Initiate net_buf based transfer handling
+ *
+ * @return 0 on success, other values on fail.
+ */
 int usbd_tbuf_init(void)
 {
 	k_fifo_init(&usbd_buf_queue);

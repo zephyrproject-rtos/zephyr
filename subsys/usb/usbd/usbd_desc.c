@@ -141,6 +141,20 @@ static int validate_ep_cfg_data(struct usb_ep_descriptor *const ep_desc,
 	return -1;
 }
 
+/**
+ * @brief Assign bInterfaceNumber to class instance
+ *
+ * The total number of interfaces is stored in the
+ * configuration descriptor's value bNumInterfaces.
+ * This value is reset at the beginning and
+ * is increased according to the number of interfaces.
+ * The respective bInterfaceNumber must be assigned to
+ * all interfaces in registered instances.
+ *
+ * @param[in] cctx Class context struct of the class instance
+ *
+ * @return 0 on success, other values on fail.
+ */
 static int usbd_cctx_assign_iface_num(struct usbd_class_ctx *const cctx)
 {
 	struct usb_if_descriptor *if_desc = NULL;
@@ -177,6 +191,21 @@ static int usbd_cctx_assign_iface_num(struct usbd_class_ctx *const cctx)
 	return 0;
 }
 
+/**
+ * @brief Assign address to all endpoints of a class instance
+ *
+ * Like bInterfaceNumber the endpoint addresses must be assigned
+ * for all registered instances.
+ * The occupied endpoint addresses are saved in a bitmap.
+ * The IN endpoints are mapped in the upper nibble.
+ * Bitmap is available globally in the device context for all
+ * existing endpoints and locally in the respective class context
+ * for the endpoints of an instance.
+ *
+ * @param[in] cctx Class context struct of the class instance
+ *
+ * @return 0 on success, other values on fail.
+ */
 static int usbd_cctx_assign_ep_addr(struct usbd_class_ctx *const cctx)
 {
 	struct usb_desc_header *head = cctx->class_desc;
@@ -231,6 +260,14 @@ static int usbd_cctx_assign_ep_addr(struct usbd_class_ctx *const cctx)
 const static uint8_t mfr_str[] = {CONFIG_USBD_DEVICE_MANUFACTURER};
 const static uint8_t product_str[] = {CONFIG_USBD_DEVICE_PRODUCT};
 
+/**
+ * @brief Initialize descriptors
+ *
+ * Initialize device, configuration, string,
+ * and all class descriptors.
+ *
+ * @return 0 on success, other values on fail.
+ */
 int usbd_init_desc(void)
 {
 	struct usbd_class_ctx *cctx;

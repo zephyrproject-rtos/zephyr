@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(usbd, CONFIG_USBD_LOG_LEVEL);
 
 K_MUTEX_DEFINE(usbd_enable_lock);
 
+/* USB device support context definition */
 struct usbd_contex usbd_ctx = {
 	.ep_bm = BIT(16) | BIT(0),
 	.alternate = {0},
@@ -70,6 +71,17 @@ struct usbd_contex usbd_ctx = {
 	},
 };
 
+/**
+ * @brief Calculate the length of the class descriptor
+ *
+ * Calculate the length of the class descriptor.
+ * The descriptor must be terminated by a termination descriptor
+ * (bLength = 0 and bDescriptorType = 0).
+ *
+ * @param[in] cctx Class context struct of the class instance
+ *
+ * @return Length of the class descriptor
+ */
 size_t usbd_cctx_desc_len(struct usbd_class_ctx *cctx)
 {
 	struct usb_desc_header *head;
@@ -90,6 +102,15 @@ size_t usbd_cctx_desc_len(struct usbd_class_ctx *cctx)
 	return len;
 }
 
+/**
+ * @brief Get class context by bInterfaceNumber value
+ *
+ * The function searches the class instance list for the interface number.
+ *
+ * @param[in] i_n Interface number
+ *
+ * @return Class context pointer or NULL
+ */
 struct usbd_class_ctx *usbd_cctx_get_by_iface(uint8_t i_n)
 {
 	struct usbd_class_ctx *cctx;
@@ -125,6 +146,15 @@ struct usbd_class_ctx *usbd_cctx_get_by_iface(uint8_t i_n)
 	return NULL;
 }
 
+/**
+ * @brief Get class context by endpoint address
+ *
+ * The function searches the class instance list for the endpoint address.
+ *
+ * @param[in] ep Endpoint address
+ *
+ * @return Class context pointer or NULL
+ */
 struct usbd_class_ctx *usbd_cctx_get_by_ep(uint8_t ep)
 {
 	struct usbd_class_ctx *cctx;
@@ -146,6 +176,19 @@ struct usbd_class_ctx *usbd_cctx_get_by_ep(uint8_t ep)
 	return NULL;
 }
 
+/**
+ * @brief Get class context by request
+ *
+ * The function searches the class instance list and
+ * compares the vendor request table with request value.
+ * The function is only used if the request type is Vendor and
+ * request recipient is Device.
+ * Accordingly only the first class instance can be found.
+ *
+ * @param[in] ep Endpoint address
+ *
+ * @return Class context pointer or NULL
+ */
 struct usbd_class_ctx *usbd_cctx_get_by_req(uint8_t request)
 {
 	struct usbd_class_ctx *cctx;
@@ -169,6 +212,19 @@ struct usbd_class_ctx *usbd_cctx_get_by_req(uint8_t request)
 	return NULL;
 }
 
+/**
+ * @brief Configure and enable endpoint
+ *
+ * This function configures and enables an endpoint.
+ * The endpoint callback is a common callback from
+ * the transfer buffer subsystem.
+ *
+ * @note Must be revised after the change of USB driver API.
+ *
+ * @param[in] ep Endpoint descriptor
+ *
+ * @return 0 on success, other values on fail.
+ */
 static int set_endpoint(const struct usb_ep_descriptor *ep_desc)
 {
 	struct usb_dc_ep_cfg_data ep_cfg;
@@ -206,6 +262,18 @@ static int set_endpoint(const struct usb_ep_descriptor *ep_desc)
 	return ret;
 }
 
+/**
+ * @brief Disable an endpoint
+ *
+ * This function discard endpoint buffer, disables an endpoint, and
+ * cancels ongoing transfers.
+ *
+ * @note Must be revised after the change of USB driver API.
+ *
+ * @param[in] ep Endpoint descriptor
+ *
+ * @return 0 on success, other values on fail.
+ */
 static int reset_endpoint(const struct usb_ep_descriptor *ep_desc)
 {
 	struct usb_dc_ep_cfg_data ep_cfg;
@@ -231,6 +299,19 @@ static int reset_endpoint(const struct usb_ep_descriptor *ep_desc)
 	return ret;
 }
 
+/**
+ * @brief Setup all endpoints for an interface of class instance
+ *
+ * This function enables or disables all endpoints
+ * that belong to an isntance of a class. The function also
+ * respects the alternate setting for an interface.
+ *
+ * @param[in] cctx Class context struct of the class instance
+ * @param[in] i_n Interface number
+ * @param[in] bool Should be true to enable and false to disable endpoints
+ *
+ * @return 0 on success, other values on fail.
+ */
 static int setup_iface_eps(struct usbd_class_ctx *cctx,
 			   uint8_t i_n, bool enable)
 {
@@ -275,7 +356,24 @@ static int setup_iface_eps(struct usbd_class_ctx *cctx,
 	return ret;
 }
 
-/* Should be removed after USB device driver API rework */
+/**
+ * @brief Restart OUT transfers for specific interface
+ *
+ * This function restarts transfers for all OUT endpoints
+ * that belong to an interface of a class instance.
+ *
+ * The reason for this function is the intermediate layer
+ * that handles transfers through the USB driver API,
+ * which actually uses a kind of static buffers.
+ *
+ * @note Must be removed after USB device driver API rework.
+ *
+ * @param[in] cctx Class context struct of the class instance
+ * @param[in] i_n Interface number
+ * @param[in] bool Should be true to force restart on all interfaces
+ *
+ * @return 0 on success, other values on fail.
+ */
 int cctx_restart_out_eps(struct usbd_class_ctx *cctx, uint8_t i_n,
 			 bool force_all)
 {
@@ -332,6 +430,18 @@ int cctx_restart_out_eps(struct usbd_class_ctx *cctx, uint8_t i_n,
 	return 0;
 }
 
+/**
+ * @brief Setup all endpoints for a specific interface
+ *
+ * This function enables or disables all endpoints
+ * that belong to a specific interface. The function
+ * respects alternate setting.
+ *
+ * @param[in] i_n Interface number
+ * @param[in] bool Should be true to enable and false to disable endpoints
+ *
+ * @return 0 on success, other values on fail.
+ */
 int usbd_cctx_cfg_eps(uint8_t i_n, bool enable)
 {
 	struct usbd_class_ctx *cctx;
@@ -346,6 +456,11 @@ int usbd_cctx_cfg_eps(uint8_t i_n, bool enable)
 	return setup_iface_eps(cctx, i_n, enable);
 }
 
+/**
+ * @brief Handle Disconnect event
+ *
+ * Disable all endpoints and cancel all transfers.
+ */
 static void usbd_handle_event_discon(void)
 {
 	int ret;
@@ -421,6 +536,13 @@ int usbd_cctx_unregister(const struct device *dev)
 	return 0;
 }
 
+/**
+ * @brief Broadcast power event to all instances.
+ *
+ * WIP
+ *
+ * @param[in] status Event
+ */
 static void usbd_event_bcast(enum usb_dc_status_code status)
 {
 	struct usbd_class_ctx *cctx;
@@ -447,6 +569,14 @@ static void usbd_event_bcast(enum usb_dc_status_code status)
 	}
 }
 
+/**
+ * @brief Event handler
+ *
+ * WIP
+ *
+ * @param[in] status Event
+ * @param[in] param Event parameter
+ */
 static void usbd_event_handler(enum usb_dc_status_code status,
 			       const uint8_t *param)
 {
@@ -475,13 +605,6 @@ static int usbd_init_notification(usb_dc_status_callback usr_cb)
 	usbd_ctx.user_status_cb = usr_cb;
 	usbd_ctx.status_cb = usbd_event_handler;
 	usb_dc_set_status_callback(usbd_event_handler);
-
-	return 0;
-}
-
-int usb_deconfig(void)
-{
-	LOG_WRN("Not implemented");
 
 	return 0;
 }

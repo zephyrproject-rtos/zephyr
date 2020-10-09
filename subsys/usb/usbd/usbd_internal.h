@@ -120,8 +120,7 @@ struct usbd_class_ctx *usbd_cctx_get_by_req(uint8_t request);
 int cctx_restart_out_eps(struct usbd_class_ctx *cctx, uint8_t i_n,
 			 bool force_all);
 
-/*** USBD buffer management ***/
-
+/** USBD buffer management */
 struct usbd_buf_ud {
 	/** Endpoint associated to the transfer */
 	uint8_t ep;
@@ -154,7 +153,6 @@ void usbd_tbuf_ep_cb(uint8_t ep, enum usb_dc_ep_cb_status_code status);
 
 struct net_buf *usbd_tbuf_alloc(uint8_t ep, size_t size);
 
-//int usbd_tbuf_submit(struct net_buf *buf);
 int usbd_tbuf_submit(struct net_buf *buf, bool handle_zlp);
 
 int usbd_tbuf_cancel(uint8_t ep);

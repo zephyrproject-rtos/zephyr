@@ -39,13 +39,38 @@ enum usbd_pme_code {
 
 struct usbd_class_ctx;
 
+/**
+ * @brief Endpoint event handler
+ *
+ * This is the event handler for all endpoint accommodated
+ * by a class instance. The information about endpoint
+ * is stored in the user date of the net_buf structure.
+ *
+ * @note The behavior within the implementation must be adapted after
+ * the change of USB driver API.
+ *
+ * @param[in] cctx Class context struct of the class instance
+ * @param[in] buf Control Request Data buffer
+ * @param[in] err Result of the transfer. 0 if the transfer was successful.
+ */
 typedef void (*usbd_ep_event_cb)(struct usbd_class_ctx *cctx,
 				 struct net_buf *buf, int err);
 
 /**
- * @brief Request handler
+ * @brief USB control request handler
  *
- * Request handler
+ * Common handler for all control request.
+ * Regardless requests recipient, interface or endpoint,
+ * the USB device core will identify proper class context
+ * and call this handler.
+ * For the vendor type request USBD_VENDOR_REQ macro must be used
+ * to identify the context, if more than one class instance is
+ * present, only the first one will be called.
+ *
+ * The execution of the handler must not block.
+ *
+ * @note The behavior within the implementation must be adapted after
+ * the change of USB driver API.
  *
  * @param[in] cctx Class context struct of the class instance
  * @param[in] setup Pointer to USB Setup Packet
@@ -60,12 +85,18 @@ typedef int (*usbd_req_handler)(struct usbd_class_ctx *cctx,
 /**
  * @brief Configuration update handler
  *
- * Configuration update handler
+ * Called when the configuration of the interface belonging
+ * to the instance has been changed, either because of
+ * Set Configuration or Set Interface request.
+ * The information about this can be obtained from the setup packet.
+ *
+ * The execution of the handler must not block.
+ *
+ * @note The behavior within the implementation must be adapted after
+ * the change of USB driver API.
  *
  * @param[in] cctx Class context struct of the class instance
- * @param[in] setup Pointer to USB Setup Packet
- *
- * @return 0 on success, other values on fail.
+ * @param[in] setup Pointer to USB setup packet
  */
 typedef void (*usbd_cfg_update)(struct usbd_class_ctx *cctx,
 				struct usb_setup_packet *setup);
@@ -73,7 +104,7 @@ typedef void (*usbd_cfg_update)(struct usbd_class_ctx *cctx,
 /**
  * @brief USB power management handler
  *
- * USB power management handler
+ * This has not yet been specified exactly. (WIP)
  *
  * @param[in] cctx Class context struct of the class instance
  * @param[in] event Power management event
@@ -86,23 +117,39 @@ typedef void (*usbd_pm_event)(struct usbd_class_ctx *cctx,
 /**
  * @brief Initialization of the class implementation
  *
- * Initialization of the class implementation
+ * This is called for each instance during the initialization phase
+ * after the interface number and endpoint addresses are assigned
+ * to the corresponding instance.
+ * It can be used to initialize class specific descriptors or
+ * underlying systems.
+ *
+ * @note If this call fails the core will terminate stack initialization.
  *
  * @param[in] cctx Class context struct of the class instance
- * @param[in] setup Pointer to USB Setup Packet
- * @param[in] buf Control Request Data buffer
  *
  * @return 0 on success, other values on fail.
  */
 typedef int (*usbd_cctx_init)(struct usbd_class_ctx *cctx);
 
 /**
+ * @brief Termination of the class implementation
+ *
+ * This is called for each instance during the termination phase.
+ * WIP.
+ *
+ * @param[in] cctx Class context struct of the class instance
+ *
+ * @return 0 on success, other values on fail.
+ */
+typedef int (*usbd_cctx_terminate)(struct usbd_class_ctx *cctx);
+
+/**
  * @brief Vendor Requests Table
  */
 struct usbd_cctx_vendor_req {
-	/** */
+	/** Array of vendor requests supportd by the class */
 	const uint8_t *reqs;
-	/** */
+	/** Length of the array */
 	uint8_t len;
 };
 
@@ -126,24 +173,25 @@ struct usbd_cctx_vendor_req {
 			  sizeof((uint8_t []) { _reqs }))
 
 
+/** USB Class instance registered flag */
 #define USBD_CCTX_REGISTERED		0
 
 /**
  * @brief Common USB Class instance operations
  */
 struct usbd_class_ops {
-	/** */
+	/** USB control request handler */
 	usbd_req_handler req_handler;
-	/** */
+	/** Configuration update handler */
 	usbd_cfg_update cfg_update;
-	/** */
+	/** Endpoint event handler */
 	usbd_ep_event_cb ep_cb;
-	/** */
+	/** USB power management event handler */
 	usbd_pm_event pm_event;
-	/** */
+	/** Initialization handler */
 	usbd_cctx_init init;
-	/** */
-	usbd_cctx_init terminate;
+	/** Termination handler */
+	usbd_cctx_terminate terminate;
 };
 
 /**
