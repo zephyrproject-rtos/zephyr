@@ -1156,8 +1156,6 @@ uint8_t ll_adv_enable(uint8_t enable)
 					ticks_slot_aux +
 					HAL_TICKER_US_TO_TICKS(EVENT_MAFS_US);
 
-				ull_hdr_init(&sync->ull);
-
 				ret = ull_adv_sync_start(sync,
 							 ticks_anchor_sync,
 							 &ret_cb);
@@ -1170,9 +1168,6 @@ uint8_t ll_adv_enable(uint8_t enable)
 				lll_adv_data_enqueue(lll, pri_idx);
 			}
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
-
-			/* Initialise ULL header */
-			ull_hdr_init(&aux->ull);
 
 			/* Keep aux interval equal or higher than primary PDU
 			 * interval.
