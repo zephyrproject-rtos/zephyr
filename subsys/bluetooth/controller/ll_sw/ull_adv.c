@@ -1157,8 +1157,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 					HAL_TICKER_US_TO_TICKS(EVENT_MAFS_US);
 
 				ret = ull_adv_sync_start(sync,
-							 ticks_anchor_sync,
-							 &ret_cb);
+							 ticks_anchor_sync);
 				if (ret) {
 					goto failure_cleanup;
 				}
@@ -1177,8 +1176,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 						ULL_ADV_RANDOM_DELAY) / 625U);
 
 			ret = ull_adv_aux_start(aux, ticks_anchor_aux,
-						ticks_slot_overhead_aux,
-						&ret_cb);
+						ticks_slot_overhead_aux);
 			if (ret) {
 				goto failure_cleanup;
 			}
