@@ -168,7 +168,11 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 {
 	struct lll_adv_sync *lll_sync;
 	struct ll_adv_sync_set *sync;
+	uint8_t sync_got_enabled;
 	struct ll_adv_set *adv;
+	uint8_t pri_idx;
+	uint8_t err_val;
+	uint8_t err;
 
 	adv = ull_adv_is_created_get(handle);
 	if (!adv) {
@@ -183,9 +187,6 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 	sync = (void *)HDR_LLL2EVT(lll_sync);
 
 	if (!enable) {
-		uint8_t pri_idx;
-		uint8_t err;
-
 		if (!sync->is_enabled) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
@@ -196,51 +197,32 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 			return 0;
 		}
 
-		/* Remove sync_info from auxiliary PDU */
-		err = ull_adv_aux_hdr_set_clear(adv, 0,
-						ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
-						NULL, NULL, &pri_idx);
-		if (err) {
-			return err;
-		}
-
-		/* TODO: we remove sync info, but if sync_stop() fails, what do
-		 * we do?
-		 */
-		lll_adv_data_enqueue(&adv->lll, pri_idx);
-
-		err = sync_stop(sync);
-		if (err) {
-			return err;
-		}
-
-		sync->is_started = 0U;
-		sync->is_enabled = 0U;
-
-		return 0;
+		err_val = 0U;
+		goto sync_cleanup;
 	}
 
 	/* TODO: Check for periodic data being complete */
 
 	/* TODO: Check packet too long */
 
+	sync_got_enabled = 0U;
 	if (sync->is_enabled) {
 		/* TODO: Enabling an already enabled advertising changes its
 		 * random address.
 		 */
 	} else {
-		sync->is_enabled = 1U;
+		sync_got_enabled = 1U;
 	}
 
 	if (adv->is_enabled && !sync->is_started) {
-		uint32_t ticks_anc_sync;
-		uint8_t pri_idx;
-		uint8_t err;
+		uint32_t ticks_slot_overhead_aux;
+		struct lll_adv_aux *lll_aux;
+		struct ll_adv_aux_set *aux;
+		uint32_t ticks_anchor_sync;
+		uint32_t ticks_anchor_aux;
+		uint32_t ret;
 
-		/* FIXME: Find absolute ticks until after auxiliary PDU on air
-		 *        to place the periodic advertising PDU.
-		 */
-		ticks_anc_sync = ticker_ticks_now_get();
+		lll_aux = adv->lll.aux;
 
 		/* Add sync_info into auxiliary PDU */
 		err = ull_adv_aux_hdr_set_clear(adv,
@@ -250,18 +232,96 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 			return err;
 		}
 
+		if (lll_aux) {
+			/* FIXME: Find absolute ticks until after auxiliary PDU
+			 *        on air to place the periodic advertising PDU.
+			 */
+			ticks_anchor_aux = 0U; /* unused in this path */
+			ticks_slot_overhead_aux = 0U; /* unused in this path */
+			ticks_anchor_sync = ticker_ticks_now_get();
+			aux = NULL;
+		} else {
+			lll_aux = adv->lll.aux;
+			aux = (void *)HDR_LLL2EVT(lll_aux);
+			ticks_anchor_aux = ticker_ticks_now_get();
+			ticks_slot_overhead_aux = ull_adv_aux_evt_init(aux);
+			ticks_anchor_sync =
+				ticks_anchor_aux + ticks_slot_overhead_aux +
+				aux->evt.ticks_slot +
+				HAL_TICKER_US_TO_TICKS(EVENT_MAFS_US);
+		}
 
-		err = ull_adv_sync_start(sync, ticks_anc_sync);
-		if (err) {
-			return BT_HCI_ERR_CMD_DISALLOWED;
+		ret = ull_adv_sync_start(sync, ticks_anchor_sync);
+		if (ret) {
+			err_val = BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+			goto sync_cleanup;
 		}
 
 		sync->is_started = 1U;
 
 		lll_adv_data_enqueue(&adv->lll, pri_idx);
+
+		if (aux) {
+			/* Keep aux interval equal or higher than primary PDU
+			 * interval.
+			 */
+			aux->interval = adv->interval +
+					(HAL_TICKER_TICKS_TO_US(
+						ULL_ADV_RANDOM_DELAY) /	625U);
+
+			ret = ull_adv_aux_start(aux, ticks_anchor_aux,
+						ticks_slot_overhead_aux);
+			if (ret) {
+				err_val = BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+				goto sync_cleanup;
+			}
+
+			aux->is_started = 1U;
+		}
+	}
+
+	if (sync_got_enabled) {
+		sync->is_enabled = sync_got_enabled;
 	}
 
 	return 0;
+
+sync_cleanup:
+	/* Remove sync_info from auxiliary PDU */
+	err = ull_adv_aux_hdr_set_clear(adv, 0,
+					ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
+					NULL, NULL, &pri_idx);
+	if (err) {
+		if (err_val) {
+			return err_val;
+		}
+
+		return err;
+	}
+
+	lll_adv_data_enqueue(&adv->lll, pri_idx);
+
+	if (sync->is_started) {
+		/* TODO: we removed sync info, but if sync_stop() fails, what do
+		 * we do?
+		 */
+		err = sync_stop(sync);
+		if (err) {
+			if (err_val) {
+				return err_val;
+			}
+
+			return err;
+		}
+
+		sync->is_started = 0U;
+	}
+
+	if (!enable) {
+		sync->is_enabled = 0U;
+	}
+
+	return err_val;
 }
 
 int ull_adv_sync_init(void)
