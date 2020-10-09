@@ -140,8 +140,6 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 			uint32_t ticks_anchor;
 			uint32_t ret;
 
-			ull_hdr_init(&aux->ull);
-
 			aux->interval =	adv->interval +
 					(HAL_TICKER_TICKS_TO_US(
 						ULL_ADV_RANDOM_DELAY
@@ -820,6 +818,8 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 {
 	uint8_t aux_handle;
 	uint32_t ret;
+
+	ull_hdr_init(&aux->ull);
 
 	aux_handle = aux_handle_get(aux);
 

@@ -251,7 +251,6 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 			return err;
 		}
 
-		ull_hdr_init(&sync->ull);
 
 		err = ull_adv_sync_start(sync, ticks_anc_sync, &ret_cb);
 		if (err) {
@@ -303,6 +302,8 @@ uint32_t ull_adv_sync_start(struct ll_adv_sync_set *sync, uint32_t ticks_anchor,
 	uint32_t interval_us;
 	uint8_t sync_handle;
 	uint32_t ret;
+
+	ull_hdr_init(&sync->ull);
 
 	/* TODO: Calc AUX_SYNC_IND slot_us */
 	slot_us += 1000;
