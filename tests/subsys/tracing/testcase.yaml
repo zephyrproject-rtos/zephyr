@@ -1,0 +1,11 @@
+tests:
+  tracing.transport:
+    tags: tracing_disabled
+  tracing.transport.uart:
+    extra_args: CONF_FILE="prj_uart.conf"
+    filter: CONFIG_UART_CONSOLE
+    tags: tracing_uart
+  tracing.transport.usb:
+    extra_args: CONF_FILE="prj_usb.conf"
+    filter: CONFIG_UART_CONSOLE
+    tags: tracing_usb
