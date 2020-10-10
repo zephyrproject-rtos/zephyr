@@ -660,6 +660,10 @@ struct bt_le_per_adv_param {
  * response data parameters are ignored. If the mode is high duty cycle
  * the timeout will be @ref BT_GAP_ADV_HIGH_DUTY_CYCLE_MAX_TIMEOUT.
  *
+ * @note This function copies parameters and data from the objects
+ * passed by pointer into internal storage: the objects pointed to by
+ * arguments need not persist past the function return.
+ *
  * @param param Advertising parameters.
  * @param ad Data to be used in advertisement packets.
  * @param ad_len Number of elements in ad
@@ -684,6 +688,10 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
  * @brief Update advertising
  *
  * Update advertisement and scan response data.
+ *
+ * @note This function copies data from the objects passed by pointer
+ * into internal storage: the objects pointed to by arguments need not
+ * persist past the function return.
  *
  * @param ad Data to be used in advertisement packets.
  * @param ad_len Number of elements in ad
