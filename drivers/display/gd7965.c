@@ -283,30 +283,50 @@ static int gd7965_set_pixel_format(const struct device *dev,
 static int gd7965_clear_and_write_buffer(const struct device *dev,
 					 uint8_t pattern, bool update)
 {
-	struct display_buffer_descriptor desc = {
-		.buf_size = GD7965_NUMOF_PAGES,
-		.width = EPD_PANEL_WIDTH,
-		.height = 1,
-		.pitch = EPD_PANEL_WIDTH,
-	};
-	uint8_t *line;
+	struct gd7965_data *driver = dev->data;
 
-	line = k_malloc(GD7965_NUMOF_PAGES);
+	gd7965_busy_wait(driver);
+
+	uint8_t *line = k_malloc(GD7965_NUMOF_PAGES);
 	if (line == NULL) {
 		return -ENOMEM;
 	}
 
-	memset(line, pattern, GD7965_NUMOF_PAGES);
-	for (int i = 0; i < EPD_PANEL_HEIGHT; i++) {
-		gd7965_write(dev, 0, i, &desc, line);
+	/* Disable boarder output */
+	bdd_polarity |= GD7965_CDI_BDZ;
+	if (gd7965_write_cmd(driver, GD7965_CMD_CDI,
+			     &bdd_polarity, sizeof(bdd_polarity))) {
+		k_free(line);
+		return -EIO;
 	}
 
+	memset(line, pattern, GD7965_NUMOF_PAGES);
+	if (gd7965_write_cmd(driver, GD7965_CMD_DTM2, (uint8_t *)line, GD7965_NUMOF_PAGES)) {
+		k_free(line);
+		return -EIO;
+	}
+
+	struct spi_buf buf = { .buf = line, .len = GD7965_NUMOF_PAGES };
+	struct spi_buf_set buf_set = { .buffers = &buf, .count = 1 };
+	for (int i = 1; i < EPD_PANEL_HEIGHT; i++) {
+		if (spi_write(driver->spi_dev, &driver->spi_config, &buf_set)) {
+			k_free(line);
+			return -EIO;
+		}
+	}
 	k_free(line);
 
 	if (update == true) {
 		if (gd7965_update_display(dev)) {
 			return -EIO;
 		}
+	}
+
+	/* Enable boarder output */
+	bdd_polarity &= ~GD7965_CDI_BDZ;
+	if (gd7965_write_cmd(driver, GD7965_CMD_CDI,
+			     &bdd_polarity, sizeof(bdd_polarity))) {
+		return -EIO;
 	}
 
 	return 0;
