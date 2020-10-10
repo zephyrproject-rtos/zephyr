@@ -31,6 +31,7 @@ def test_runner_imports():
                     'openocd',
                     'pyocd',
                     'qemu',
+                    'stm32cubeprogrammer',
                     'stm32flash',
                     'xtensa'))
     assert runner_names == expected
