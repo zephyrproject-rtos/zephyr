@@ -7,7 +7,6 @@
 
 /dts-v1/;
 #include <st/h7/stm32h745Xi_m7.dtsi>
-#include <st/h7/stm32h745zitx-pinctrl.dtsi>
 #include "nucleo_h745zi_q.dtsi"
 
 / {
