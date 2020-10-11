@@ -113,6 +113,10 @@ GEN_OFFSET_SYM(z_arch_esf_t, soc_context);
 GEN_SOC_OFFSET_SYMS();
 #endif
 
+#ifdef CONFIG_USE_SWITCH
+GEN_OFFSET_SYM(_thread_t, switch_handle);
+#endif /* CONFIG_USE_SWITCH */
+
 /*
  * RISC-V requires the stack to be 16-bytes aligned, hence SP needs to grow or
  * shrink by a size, which follows the RISC-V stack alignment requirements

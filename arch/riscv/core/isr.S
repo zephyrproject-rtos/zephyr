@@ -245,10 +245,33 @@ is_syscall:
 	bnez t1, is_interrupt
 #endif
 
+#ifdef CONFIG_USE_SWITCH
+	/*
+	 * arguments are from z_arch_switch(switch_to, switched_from)
+	 *
+	 * Save sp register to switched_from
+	 * Set switch_to to a0 register
+	 */
+	RV_OP_LOADREG t1, __z_arch_esf_t_a1_OFFSET(sp)
+	RV_OP_STOREREG sp, 0x00(t1)
+	RV_OP_LOADREG a0, __z_arch_esf_t_a0_OFFSET(sp)
+
+	/*
+	 * Get old thread's k_thread pointer from it's switch_handle member pointer.
+	 * (use container_of() technique)
+	 *
+	 * Set k_thread *old to a1 register
+	 */
+	addi a1, t1, -___thread_t_switch_handle_OFFSET
+
+	/* Go to reschedule to handle context-switch */
+	j reschedule
+#else
 	/*
 	 * Go to reschedule to handle context-switch
 	 */
 	j reschedule
+#endif /* CONFIG_USE_SWITCH */
 
 is_interrupt:
 	/*
@@ -348,6 +371,34 @@ on_thread_stack:
 	 * Check if we need to perform a reschedule
 	 */
 
+#ifdef CONFIG_USE_SWITCH
+	/*
+	 * Get old thread's k_thread pointer (from _kernel.current) and
+	 * save to stack
+	 */
+	RV_OP_LOADREG t0, ___cpu_t_current_OFFSET(t1)
+	addi sp, sp, -16
+	RV_OP_STOREREG t0, 0x00(sp)
+
+	/*
+	 * Set thread stack address (exclude saving old thread) as 1st arg (a0)
+	 * of z_get_next_switch_handle(interrupted)
+	 *
+	 * z_get_next_switch_handle() return switch_to to a0 register
+	 */
+	addi a0, sp, 16
+	call z_get_next_switch_handle
+
+	/* Restore k_thread *old and save to a1 register */
+	RV_OP_LOADREG a1, 0x00(sp)
+	addi sp, sp, 16
+
+	/*
+	 * Check if next thread to schedule is current thread.
+	 * If yes do not perform a reschedule
+	 */
+	beq a0, sp, no_reschedule
+#else /* CONFIG_USE_SWITCH */
 	/* Get pointer to _current_cpu->current */
 	RV_OP_LOADREG t2, ___cpu_t_current_OFFSET(t1)
 
@@ -358,19 +409,35 @@ on_thread_stack:
 	 */
 	RV_OP_LOADREG t3, _kernel_offset_to_ready_q_cache(t1)
 	beq t3, t2, no_reschedule
+#endif /* CONFIG_USE_SWITCH */
+
 #else
 	j no_reschedule
 #endif /* CONFIG_PREEMPT_ENABLED */
 
+/*
+ * Only in CONFIG_USE_SWITCH
+ *
+ * reschedule(void *switch_to, k_thread *old)
+ *
+ * switch_to is stored in a0 register.
+ * old is stored in a1 register.
+ */
 reschedule:
 #if CONFIG_TRACING
 	call sys_trace_thread_switched_out
 #endif
+
+#ifdef CONFIG_USE_SWITCH
+	/* Get k_thread *old from a1 */
+	mv t1, a1
+#else /* CONFIG_USE_SWITCH */
 	/* Get reference to _current_cpu */
 	_asm_current_cpu(t0)
 
 	/* Get pointer to _current_cpu->current */
 	RV_OP_LOADREG t1, ___cpu_t_current_OFFSET(t0)
+#endif /* CONFIG_USE_SWITCH */
 
 	/*
 	 * Save callee-saved registers of current thread
@@ -399,6 +466,17 @@ reschedule:
 skip_store_fp_callee_saved:
 #endif
 
+#ifdef CONFIG_USE_SWITCH
+	/* Get reference to _current_cpu */
+	_asm_current_cpu(t0)
+
+	/* Get new thread from _current_cpu->current and save to t1 */
+	RV_OP_LOADREG t1, ___cpu_t_current_OFFSET(t0)
+
+	/* Switch to new thread stack */
+	mv sp, a0
+#else /* CONFIG_USE_SWITCH */
+
 	/*
 	 * Save stack pointer of current thread and set the default return value
 	 * of z_swap to _k_neg_eagain for the thread.
@@ -421,6 +499,7 @@ skip_store_fp_callee_saved:
 
 	/* Switch to new thread stack */
 	RV_OP_LOADREG sp, _thread_offset_to_sp(t1)
+#endif /* CONFIG_USE_SWITCH */
 
 	/* Restore callee-saved registers of new thread */
 	RV_OP_LOADREG s0, _thread_offset_to_s0(t1)

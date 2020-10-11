@@ -28,11 +28,18 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 	__asm__ volatile("csrw mscratch, %0" :: "r" (cpu0));
 }
 
+#ifdef CONFIG_USE_SWITCH
+void arch_switch(void *switch_to, void **switched_from);
+#else
+/* This is a arch function traditionally, but when the switch-based
+ * z_swap() is in use it's a simple inline provided by the kernel.
+ */
 static ALWAYS_INLINE void
 arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 {
 	thread->arch.swap_return_value = value;
 }
+#endif
 
 FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 				       const z_arch_esf_t *esf);

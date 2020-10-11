@@ -10,11 +10,32 @@
 #include <arch/cpu.h>
 
 /* exports */
+#ifdef CONFIG_USE_SWITCH
+GTEXT(arch_switch)
+#else
 GTEXT(arch_swap)
+#endif
 GTEXT(z_thread_entry_wrapper)
 
 /* Use ABI name of registers for the sake of simplicity */
 
+#ifdef CONFIG_USE_SWITCH
+/*
+ * void arch_switch(void *switch_to, void **switched_from)
+ *
+ * Always called with interrupts locked
+ * switch_to is stored in a0 register
+ * switched_from is stored in a1 register
+ */
+SECTION_FUNC(exception.other, arch_switch)
+
+	/* Make a system call to perform context switch */
+	ecall
+
+	/* Return */
+	ret
+
+#else /* CONFIG_USE_SWITCH */
 /*
  * unsigned int arch_swap(unsigned int key)
  *
@@ -55,7 +76,7 @@ SECTION_FUNC(exception.other, arch_swap)
 
 	/* Return */
 	jalr x0, ra
-
+#endif /* CONFIG_USE_SWITCH */
 
 /*
  * void z_thread_entry_wrapper(k_thread_entry_t, void *, void *, void *)

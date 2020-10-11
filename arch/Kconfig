@@ -63,6 +63,7 @@ config RISCV
 	bool
 	select ARCH_IS_SET
 	select HAS_DTS
+	select USE_SWITCH_SUPPORTED
 	imply XIP
 	help
 	  RISCV architecture

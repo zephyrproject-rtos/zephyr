@@ -66,7 +66,11 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	stack_init->soc_context = soc_esf_init;
 #endif
 
+#ifdef CONFIG_USE_SWITCH
+	thread->switch_handle = (void *)stack_init;
+#else
 	thread->callee_saved.sp = (ulong_t)stack_init;
+#endif
 }
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
