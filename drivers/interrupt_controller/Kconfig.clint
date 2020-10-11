@@ -1,0 +1,12 @@
+# RISC-V CLINT IPI driver configuration
+
+# SPDX-License-Identifier: Apache-2.0
+
+config CLINT_IPI
+	bool "Use CLINT to support Inter-Processor Interrupt in RISC-V SMP"
+	depends on RISCV
+	depends on SMP
+	select SCHED_IPI_SUPPORTED
+	help
+	  Use CLINT(Core-Local Interruptor) to provide support
+	  for Inter-Processor Interrupt in RISC-V SMP SoC;
