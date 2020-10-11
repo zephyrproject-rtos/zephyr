@@ -1542,6 +1542,52 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_MICS_MUTE \
 	BT_UUID_DECLARE_16(BT_UUID_MICS_MUTE_VAL)
+/** @def BT_UUID_BASS_VAL
+ *  @brief Broadcast Audio Scan Service value
+ */
+#define BT_UUID_BASS_VAL 0x8FDB
+/** @def BT_UUID_BASS
+ *  @brief Broadcast Audio Scan Service
+ */
+#define BT_UUID_BASS \
+	BT_UUID_DECLARE_16(BT_UUID_BASS_VAL)
+/** @def BT_UUID_BASS_CONTROL_POINT_VAL
+ *  @brief Broadcast Audio Scan Service Scan State value
+ */
+#define BT_UUID_BASS_CONTROL_POINT_VAL 0x8F9E
+/** @def BT_UUID_BASS_CONTROL_POINT
+ *  @brief Broadcast Audio Scan Service Scan State
+ */
+#define BT_UUID_BASS_CONTROL_POINT \
+	BT_UUID_DECLARE_16(BT_UUID_BASS_CONTROL_POINT_VAL)
+/** @def BT_UUID_BASS_RECV_STATE_VAL
+ *  @brief Broadcast Audio Scan Service Receive State value
+ */
+#define BT_UUID_BASS_RECV_STATE_VAL 0x8F9F
+/** @def BT_UUID_BASS_RECV_STATE
+ *  @brief Broadcast Audio Scan Service Receive State
+ */
+#define BT_UUID_BASS_RECV_STATE \
+	BT_UUID_DECLARE_16(BT_UUID_BASS_RECV_STATE_VAL)
+/** @def BT_UUID_BASIC_AUDIO_VAL
+ *  @brief Basic Audio Announcement Service value
+ */
+#define BT_UUID_BASIC_AUDIO_VAL 0x8fdc
+/** @def BT_UUID_BASIC_AUDIO
+ *  @brief Basic Audio Announcement Service
+ */
+#define BT_UUID_BASIC_AUDIO \
+	BT_UUID_DECLARE_16(BT_UUID_BASIC_AUDIO_VAL)
+/** @def BT_UUID_BROADCAST_AUDIO_VAL
+ *  @brief Broadcast Audio Announcement Service value
+ */
+#define BT_UUID_BROADCAST_AUDIO_VAL 0x8fdd
+/** @def BT_UUID_BROADCAST_AUDIO
+ *  @brief Broadcast Audio Announcement Service
+ */
+#define BT_UUID_BROADCAST_AUDIO \
+	BT_UUID_DECLARE_16(BT_UUID_BROADCAST_AUDIO_VAL)
+
 /*
  * Protocol UUIDs
  */
