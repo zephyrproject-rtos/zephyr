@@ -1,0 +1,11 @@
+# STM32L562E-DK Discovery board configuration
+
+# Copyright (c) 2020 Yestin Sun
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32L562E_DK
+
+config BOARD
+	default "stm32l562e_dk"
+
+endif # BOARD_STM32L562E_DK
