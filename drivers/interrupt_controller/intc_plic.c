@@ -64,7 +64,7 @@ struct plic_regs_t {
 	uint32_t claim_complete;
 };
 
-static int save_irq;
+static int save_irq[CORES_NUM];
 
 /**
  *
@@ -187,7 +187,13 @@ void riscv_plic_set_priority(uint32_t irq, uint32_t priority)
  */
 int riscv_plic_get_irq(void)
 {
-	return save_irq;
+	int irq;
+
+	unsigned int key = arch_irq_lock();
+	irq = save_irq[_current_cpu->id];
+	arch_irq_unlock(key);
+
+	return irq;
 }
 
 static void plic_irq_handler(const void *arg)
@@ -207,7 +213,7 @@ static void plic_irq_handler(const void *arg)
 	 * as IRQ number held by the claim_complete register is
 	 * cleared upon read.
 	 */
-	save_irq = irq;
+	save_irq[_current_cpu->id] = irq;
 
 #ifdef CONFIG_SMP
 	/*
@@ -237,7 +243,7 @@ static void plic_irq_handler(const void *arg)
 	 * Write to claim_complete register to indicate to
 	 * PLIC controller that the IRQ has been handled.
 	 */
-	regs->claim_complete = save_irq;
+	regs->claim_complete = save_irq[_current_cpu->id];
 }
 
 /**
