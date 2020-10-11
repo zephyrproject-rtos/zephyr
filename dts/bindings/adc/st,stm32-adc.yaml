@@ -15,6 +15,14 @@ properties:
     clocks:
       required: true
 
+    pinctrl-0:
+      type: phandles
+      required: false
+      description: |
+        GPIO pin configuration for ADC input. The phandles are
+        expected to reference pinctrl nodes, e.g.
+           pinctrl-0 = <&adc_in0_pa0 &adc_in1_pa1>;
+
     interrupts:
       required: true
 
