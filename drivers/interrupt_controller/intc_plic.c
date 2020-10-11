@@ -27,6 +27,8 @@
 #define PLIC_IRQS        (CONFIG_NUM_IRQS - CONFIG_2ND_LVL_ISR_TBL_OFFSET)
 #define PLIC_EN_SIZE     ((PLIC_IRQS >> 5) + 1)
 
+static struct k_spinlock lock;
+
 struct plic_regs_t {
 	uint32_t threshold_prio;
 	uint32_t claim_complete;
@@ -48,13 +50,12 @@ static int save_irq;
  */
 void riscv_plic_irq_enable(uint32_t irq)
 {
-	uint32_t key;
 	volatile uint32_t *en = (volatile uint32_t *)PLIC_IRQ_EN;
 
-	key = irq_lock();
+	k_spinlock_key_t key = k_spin_lock(&lock);
 	en += (irq >> 5);
 	*en |= (1 << (irq & 31));
-	irq_unlock(key);
+	k_spin_unlock(&lock, key);
 }
 
 /**
@@ -71,13 +72,12 @@ void riscv_plic_irq_enable(uint32_t irq)
  */
 void riscv_plic_irq_disable(uint32_t irq)
 {
-	uint32_t key;
 	volatile uint32_t *en = (volatile uint32_t *)PLIC_IRQ_EN;
 
-	key = irq_lock();
+	k_spinlock_key_t key = k_spin_lock(&lock);
 	en += (irq >> 5);
 	*en &= ~(1 << (irq & 31));
-	irq_unlock(key);
+	k_spin_unlock(&lock, key);
 }
 
 /**
