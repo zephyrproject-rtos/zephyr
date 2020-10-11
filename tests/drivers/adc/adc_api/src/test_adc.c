@@ -47,7 +47,8 @@
 	defined(CONFIG_BOARD_ADAFRUIT_FEATHER_NRF52840)	|| \
 	defined(CONFIG_BOARD_RUUVI_RUUVITAG) || \
 	defined(CONFIG_BOARD_BT510) || \
-	defined(CONFIG_BOARD_PINNACLE_100_DVK)
+	defined(CONFIG_BOARD_PINNACLE_100_DVK) || \
+	defined(CONFIG_BOARD_ARDUINO_NANO_33_BLE)
 
 #include <hal/nrf_saadc.h>
 #define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, nordic_nrf_saadc))
