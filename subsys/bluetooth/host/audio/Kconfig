@@ -115,4 +115,6 @@ endif # BT_AUDIO_DEBUG
 
 # Include Kconfig files for the various parts of the host audio stack
 source "subsys/bluetooth/host/audio/Kconfig.csis"
+source "subsys/bluetooth/host/audio/Kconfig.bass"
+
 endif # BT_AUDIO
