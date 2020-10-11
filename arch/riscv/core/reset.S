@@ -33,18 +33,16 @@ SECTION_FUNC(reset, __reset)
  * the C domain
  */
 SECTION_FUNC(TEXT, __initialize)
+#if defined(CONFIG_SMP) || (CONFIG_MP_NUM_CPUS > 1)
+	csrr t0, mhartid
+	bnez t0, boot_slave_core
+#else
 	/*
-	 * This will boot master core, just halt other cores.
-	 * Note: need to be updated for complete SMP support
+	 * Zephyr UP kernel will boot master core, just halt other cores.
 	 */
-	csrr a0, mhartid
-	beqz a0, boot_master_core
-
-loop_slave_core:
-	wfi
-	j loop_slave_core
-
-boot_master_core:
+	csrr t0, mhartid
+	bnez t0, loop_slave_core
+#endif /* defined(CONFIG_SMP) || (CONFIG_MP_NUM_CPUS > 1) */
 
 #ifdef CONFIG_FPU
 	/*
@@ -91,3 +89,48 @@ aa_loop:
 	 * and then enters kernel z_cstart
 	 */
 	call _PrepC
+
+#if defined(CONFIG_SMP) || (CONFIG_MP_NUM_CPUS > 1)
+boot_slave_core:
+	/*
+	 * If the platform has more cores than configured, these cores should goto
+	 * infinite loop. (mhartid >= CONFIG_MP_NUM_CPUS)
+	 */
+	addi t2, t0, (-1 * CONFIG_MP_NUM_CPUS)
+	bgez t2, loop_slave_core
+
+	/*
+	 * Disable interrupt before this core starts to use stack pointer (set
+	 * stack pointer), because kernel will reuse interrupt stack as
+	 * system stack during kernel initialization.
+	 */
+	csrc mstatus, MSTATUS_IEN
+
+	/* t1 = cpu_init_boot_flag[mhartid] */
+	la t1, cpu_init_boot_flag
+	slli t2, t0, 2
+	add t1, t1, t2
+
+slave_core_wait:
+	/* Wait until CPU0 set cpu_init_boot_flag[mhartid] by arch_start_cpu() */
+	lw t2, 0(t1)
+	beqz t2, slave_core_wait
+
+	/* t1 = cpu_init_stack[mhartid] */
+	la t1, cpu_init_stack
+	slli t2, t0, RV_REGSHIFT
+	add t1, t1, t2
+
+	/* Initialize stack by cpu_init_stack[mhartid] */
+	RV_OP_LOADREG sp, 0(t1)
+
+	/* Set 1st argument of slave_core_cstart(): mhartid */
+	mv a0, t0
+
+	j slave_core_cstart
+#endif /* defined(CONFIG_SMP) || (CONFIG_MP_NUM_CPUS > 1) */
+
+loop_slave_core:
+	wfi
+	j loop_slave_core
+

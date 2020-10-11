@@ -11,6 +11,7 @@ zephyr_library_sources(
   reset.S
   swap.S
   thread.c
+  riscv_smp.c
 )
 
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
