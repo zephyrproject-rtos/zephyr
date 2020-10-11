@@ -7,6 +7,8 @@
 #include <sys_clock.h>
 #include <spinlock.h>
 #include <soc.h>
+#include <kernel_structs.h>
+#include <sys/util.h>
 
 #define CYC_PER_TICK ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec()	\
 			      / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
@@ -19,12 +21,22 @@
 static struct k_spinlock lock;
 static uint64_t last_count;
 
+#ifdef CONFIG_SMP
+static uint64_t init_count = 0;
+#endif
+
 static void set_mtimecmp(uint64_t time)
 {
+	uint64_t* hart_mtimecmp = INT_TO_POINTER(RISCV_MTIMECMP_BASE);
+#ifdef CONFIG_SMP
+	/* In SMP, this function should be called when irq is locked */
+	hart_mtimecmp += _current_cpu->id;
+#endif
+
 #ifdef CONFIG_64BIT
-	*(volatile uint64_t *)RISCV_MTIMECMP_BASE = time;
+	*(volatile uint64_t *)hart_mtimecmp = time;
 #else
-	volatile uint32_t *r = (uint32_t *)RISCV_MTIMECMP_BASE;
+	volatile uint32_t *r = (uint32_t *)hart_mtimecmp;
 
 	/* Per spec, the RISC-V MTIME/MTIMECMP registers are 64 bit,
 	 * but are NOT internally latched for multiword transfers.  So
@@ -85,10 +97,23 @@ int z_clock_driver_init(const struct device *device)
 
 	IRQ_CONNECT(RISCV_MACHINE_TIMER_IRQ, 0, timer_isr, NULL, 0);
 	last_count = mtime();
+#ifdef CONFIG_SMP
+	init_count = last_count + CYC_PER_TICK;
+	set_mtimecmp(init_count);
+#else
 	set_mtimecmp(last_count + CYC_PER_TICK);
+#endif
 	irq_enable(RISCV_MACHINE_TIMER_IRQ);
 	return 0;
 }
+
+#ifdef CONFIG_SMP
+void smp_timer_init(void)
+{
+	set_mtimecmp(init_count);
+	irq_enable(RISCV_MACHINE_TIMER_IRQ);
+}
+#endif
 
 void z_clock_set_timeout(int32_t ticks, bool idle)
 {
