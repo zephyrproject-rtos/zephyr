@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "QEMU Virt Machine implementation"
+	depends on SOC_SERIES_RISCV_QEMU_VIRT
+
+config SOC_RISCV_QEMU_VIRT
+	bool "QEMU Virt Machine implementation"
+	select ATOMIC_OPERATIONS_BUILTIN if SMP
+	select ATOMIC_OPERATIONS_C if !SMP
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+
+endchoice

@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QEMU_RISCV32_VIRT_SMP
+	bool "QEMU RISCV32 Virt Machine target"
+	depends on SOC_RISCV_QEMU_VIRT
+	select QEMU_TARGET
+	select USE_SWITCH
+
+config BOARD_QEMU_RISCV64_VIRT_SMP
+	bool "QEMU RISCV64 Virt Machine target"
+	depends on SOC_RISCV_QEMU_VIRT
+	select QEMU_TARGET
+	select 64BIT
+	select USE_SWITCH

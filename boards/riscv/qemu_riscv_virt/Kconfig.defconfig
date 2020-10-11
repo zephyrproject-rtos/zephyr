@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BUILD_OUTPUT_BIN
+	default n if BOARD_QEMU_RISCV32_VIRT_SMP || BOARD_QEMU_RISCV64_VIRT_SMP
+
+config BOARD
+	default "qemu_riscv32_virt_smp" if BOARD_QEMU_RISCV32_VIRT_SMP
+	default "qemu_riscv64_virt_smp" if BOARD_QEMU_RISCV64_VIRT_SMP

@@ -1,0 +1,1 @@
+#define DT_N_S_soc_S_serial_10000000_IRQ_IDX_0_VAL_priority		1

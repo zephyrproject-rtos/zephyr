@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RISCV_QEMU_VIRT
+	bool "QEMU Virt Machine implementation"
+	select RISCV
+	select SOC_FAMILY_RISCV_PRIVILEGE
+	help
+	  Enable support for QEMU RISCV VIRT SoC

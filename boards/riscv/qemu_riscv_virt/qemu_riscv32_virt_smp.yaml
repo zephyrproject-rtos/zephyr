@@ -1,0 +1,13 @@
+identifier: qemu_riscv32_virt_smp
+name: QEMU Emulation for RISC V 32-bit SMP Virt machine
+type: qemu
+simulation: qemu
+arch: riscv32
+ram: 4096
+toolchain:
+  - zephyr
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
