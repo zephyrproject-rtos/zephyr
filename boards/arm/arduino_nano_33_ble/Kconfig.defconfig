@@ -1,0 +1,42 @@
+# Copyright (c) 2020 Jefferson Lee.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ARDUINO_NANO_33_BLE
+config BOARD
+	default "arduino_nano_33_ble"
+
+if USB
+config USB_NRFX
+	default y
+config USB_DEVICE_STACK
+	default y
+endif # USB
+
+config BT_CTLR
+	default BT
+
+if I2C
+config I2C_NRFX
+	default y
+config NRFX_TWIM
+	default y
+config I2C_0
+	default y
+config I2C_1
+	default y
+config BOARD_ARDUINO_NANO_33_BLE_INIT_SENSORS
+	default y
+endif #I2C
+
+if SPI
+config SPI_NRFX
+	default y
+config NRFX_SPIM
+	default y
+config SPI_2
+	default y
+config SPI_2_NRF_SPIM
+	default y
+endif #SPI
+
+endif #board
