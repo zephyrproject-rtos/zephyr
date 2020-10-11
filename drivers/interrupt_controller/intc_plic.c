@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
  * Contributors: 2018 Antmicro <www.antmicro.com>
+ *               2020 Jim Shu <cwshu@andestech.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +28,35 @@
 #define PLIC_IRQS        (CONFIG_NUM_IRQS - CONFIG_2ND_LVL_ISR_TBL_OFFSET)
 #define PLIC_EN_SIZE     ((PLIC_IRQS >> 5) + 1)
 
+/*
+ * In PLIC, interrupt target (or hart context) is a given privilege mode
+ * on a given hart. How PLIC organizes interrupt target is based on
+ * vendor implementation.
+ *
+ * For example, in QEMU virt machine:
+ *   - target 0, 2, 4, ... are M-mode hart 0, 1, 2, 3 ...
+ *   - target 1, 3, 5, ... are S-mode hart 0, 1, 2, 3 ...
+ *
+ * Currently, we assume next hart in M-mode is the multiple of next
+ * interrupt target.
+ */
+#ifdef CONFIG_SMP
+# define PLIC_EN_PER_TARGET      0x80
+# define PLIC_REG_PER_TARGET     0x1000
+# define PLIC_EN_PER_HART        (PLIC_EN_PER_TARGET * CONFIG_PLIC_TARGET_INCR_OF_NEXT_HART)
+# define PLIC_REG_PER_HART       (PLIC_REG_PER_TARGET * CONFIG_PLIC_TARGET_INCR_OF_NEXT_HART)
+#else
+/* In UP mode, these macro are used but meaningless */
+# define PLIC_EN_PER_HART        0
+# define PLIC_REG_PER_HART       0
+#endif
+
+#ifdef CONFIG_SMP
+# define CORES_NUM   CONFIG_MP_NUM_CPUS
+#else
+# define CORES_NUM   1
+#endif
+
 static struct k_spinlock lock;
 
 struct plic_regs_t {
@@ -51,10 +81,17 @@ static int save_irq;
 void riscv_plic_irq_enable(uint32_t irq)
 {
 	volatile uint32_t *en = (volatile uint32_t *)PLIC_IRQ_EN;
+	en += (irq >> 5);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	en += (irq >> 5);
-	*en |= (1 << (irq & 31));
+
+	/* enable irq on each core in SMP */
+	for(int i = 0; i < CORES_NUM; i++)
+	{
+		*en |= (1 << (irq & 31));
+		en += (PLIC_EN_PER_HART >> 2);
+	}
+
 	k_spin_unlock(&lock, key);
 }
 
@@ -73,10 +110,17 @@ void riscv_plic_irq_enable(uint32_t irq)
 void riscv_plic_irq_disable(uint32_t irq)
 {
 	volatile uint32_t *en = (volatile uint32_t *)PLIC_IRQ_EN;
+	en += (irq >> 5);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	en += (irq >> 5);
-	*en &= ~(1 << (irq & 31));
+
+	/* disable irq on each core in SMP */
+	for(int i = 0; i < CORES_NUM; i++)
+	{
+		*en &= ~(1 << (irq & 31));
+		en += (PLIC_EN_PER_HART >> 2);
+	}
+
 	k_spin_unlock(&lock, key);
 }
 
@@ -92,9 +136,21 @@ void riscv_plic_irq_disable(uint32_t irq)
 int riscv_plic_irq_is_enabled(uint32_t irq)
 {
 	volatile uint32_t *en = (volatile uint32_t *)PLIC_IRQ_EN;
-
+	int is_enabled = 1;
 	en += (irq >> 5);
-	return !!(*en & (1 << (irq & 31)));
+
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	/* Note: In SMP, irq is enabled if irq of each core is all enabled */
+	for(int i = 0; i < CORES_NUM; i++)
+	{
+		is_enabled &= !!(*en & (1 << (irq & 31)));
+		en += (PLIC_EN_PER_HART >> 2);
+	}
+
+	k_spin_unlock(&lock, key);
+
+	return is_enabled;
 }
 
 /**
@@ -136,8 +192,8 @@ int riscv_plic_get_irq(void)
 
 static void plic_irq_handler(const void *arg)
 {
-	volatile struct plic_regs_t *regs =
-	    (volatile struct plic_regs_t *) PLIC_REG;
+	volatile struct plic_regs_t *regs = (volatile struct plic_regs_t *)
+		INT_TO_POINTER(PLIC_REG + (_current_cpu->id * PLIC_REG_PER_HART));
 
 	uint32_t irq;
 	struct _isr_table_entry *ite;
@@ -152,6 +208,17 @@ static void plic_irq_handler(const void *arg)
 	 * cleared upon read.
 	 */
 	save_irq = irq;
+
+#ifdef CONFIG_SMP
+	/*
+	 * FIXME: In SMP, sometimes CPUs may claim the IRQ with ID == 0.
+	 * Claim ID 0 in PLIC means that there isn't any pending IRQ now.
+	 * It isn't clear that it's a SW bug or just a common behavior
+	 * in SMP, but in the testing we don't lose handling any IRQ.
+	 */
+	if (irq == 0U)
+		return;
+#endif
 
 	/*
 	 * If the IRQ is out of range, call z_irq_spurious.
@@ -186,12 +253,17 @@ static int plic_init(const struct device *dev)
 	volatile uint32_t *prio = (volatile uint32_t *)PLIC_PRIO;
 	volatile struct plic_regs_t *regs =
 	    (volatile struct plic_regs_t *)PLIC_REG;
-	int i;
+	int i, j;
 
 	/* Ensure that all interrupts are disabled initially */
-	for (i = 0; i < PLIC_EN_SIZE; i++) {
-		*en = 0U;
-		en++;
+	for (i = 0; i < CORES_NUM; i++) {
+		volatile uint32_t *en_cpu = en;
+		for (j = 0; j < PLIC_EN_SIZE; j++) {
+			*en_cpu = 0U;
+			en_cpu++;
+		}
+
+		en += (PLIC_EN_PER_HART >> 2);
 	}
 
 	/* Set priority of each interrupt line to 0 initially */
@@ -202,6 +274,12 @@ static int plic_init(const struct device *dev)
 
 	/* Set threshold priority to 0 */
 	regs->threshold_prio = 0U;
+
+	for (i = 0; i < CORES_NUM ; i++) {
+		regs->threshold_prio = 0U;
+		regs = (volatile struct plic_regs_t *)
+			((uint8_t *)regs + PLIC_REG_PER_HART);
+	}
 
 	/* Setup IRQ handler for PLIC driver */
 	IRQ_CONNECT(RISCV_MACHINE_EXT_IRQ,
