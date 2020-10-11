@@ -95,6 +95,11 @@ GTEXT(__irq_wrapper)
 /* use ABI name of registers for the sake of simplicity */
 
 /*
+ * Set _current_cpu to register reg. _current_cpu is _kernel.cpus[mhartid];
+ */
+#define _asm_current_cpu(reg) csrr reg, mscratch
+
+/*
  * Generic architecture-level IRQ handling, along with callouts to
  * SoC-specific routines.
  *
@@ -255,8 +260,8 @@ is_interrupt:
 	addi t0, sp, 0
 
 	/* Switch to interrupt stack */
-	la t2, _kernel
-	RV_OP_LOADREG sp, _kernel_offset_to_irq_stack(t2)
+	_asm_current_cpu(t2)
+	RV_OP_LOADREG sp, ___cpu_t_irq_stack_OFFSET(t2)
 
 	/*
 	 * Save thread stack pointer on interrupt stack
@@ -266,10 +271,10 @@ is_interrupt:
 	RV_OP_STOREREG t0, 0x00(sp)
 
 on_irq_stack:
-	/* Increment _kernel.cpus[0].nested variable */
-	lw t3, _kernel_offset_to_nested(t2)
+	/* Increment _current_cpu->nested variable */
+	lw t3, ___cpu_t_nested_OFFSET(t2)
 	addi t3, t3, 1
-	sw t3, _kernel_offset_to_nested(t2)
+	sw t3, ___cpu_t_nested_OFFSET(t2)
 
 #ifdef CONFIG_IRQ_OFFLOAD
 	/*
@@ -321,13 +326,13 @@ call_irq:
 	jalr ra, t1
 
 on_thread_stack:
-	/* Get reference to _kernel */
-	la t1, _kernel
+	/* Get reference to _current_cpu */
+	_asm_current_cpu(t1)
 
-	/* Decrement _kernel.cpus[0].nested variable */
-	lw t2, _kernel_offset_to_nested(t1)
+	/* Decrement _current_cpu->nested variable */
+	lw t2, ___cpu_t_nested_OFFSET(t1)
 	addi t2, t2, -1
-	sw t2, _kernel_offset_to_nested(t1)
+	sw t2, ___cpu_t_nested_OFFSET(t1)
 
 	/* Restore thread stack pointer */
 	RV_OP_LOADREG t0, 0x00(sp)
@@ -335,7 +340,7 @@ on_thread_stack:
 
 #ifdef CONFIG_STACK_SENTINEL
 	call z_check_stack_sentinel
-	la t1, _kernel
+	_asm_current_cpu(t1)
 #endif
 
 #ifdef CONFIG_PREEMPT_ENABLED
@@ -343,12 +348,13 @@ on_thread_stack:
 	 * Check if we need to perform a reschedule
 	 */
 
-	/* Get pointer to _kernel.current */
-	RV_OP_LOADREG t2, _kernel_offset_to_current(t1)
+	/* Get pointer to _current_cpu->current */
+	RV_OP_LOADREG t2, ___cpu_t_current_OFFSET(t1)
 
 	/*
 	 * Check if next thread to schedule is current thread.
 	 * If yes do not perform a reschedule
+	 * Note: kernel offset still works in UP, because &_kernel.cpus[0] == &_kernel
 	 */
 	RV_OP_LOADREG t3, _kernel_offset_to_ready_q_cache(t1)
 	beq t3, t2, no_reschedule
@@ -360,11 +366,11 @@ reschedule:
 #if CONFIG_TRACING
 	call sys_trace_thread_switched_out
 #endif
-	/* Get reference to _kernel */
-	la t0, _kernel
+	/* Get reference to _current_cpu */
+	_asm_current_cpu(t0)
 
-	/* Get pointer to _kernel.current */
-	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
+	/* Get pointer to _current_cpu->current */
+	RV_OP_LOADREG t1, ___cpu_t_current_OFFSET(t0)
 
 	/*
 	 * Save callee-saved registers of current thread
@@ -402,13 +408,16 @@ skip_store_fp_callee_saved:
 	lw t3, 0x00(t2)
 	sw t3, _thread_offset_to_swap_return_value(t1)
 
-	/* Get next thread to schedule. */
+	/*
+	 * Get next thread to schedule.
+	 * Note: kernel offset still works in UP, because &_kernel.cpus[0] == &_kernel
+	 */
 	RV_OP_LOADREG t1, _kernel_offset_to_ready_q_cache(t0)
 
 	/*
 	 * Set _kernel.current to new thread loaded in t1
 	 */
-	RV_OP_STOREREG t1, _kernel_offset_to_current(t0)
+	RV_OP_STOREREG t1, ___cpu_t_current_OFFSET(t0)
 
 	/* Switch to new thread stack */
 	RV_OP_LOADREG sp, _thread_offset_to_sp(t1)

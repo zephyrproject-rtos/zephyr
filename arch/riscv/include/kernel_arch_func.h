@@ -24,6 +24,8 @@ extern "C" {
 #ifndef _ASMLANGUAGE
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
+	_cpu_t* cpu0 = &_kernel.cpus[0];
+	__asm__ volatile("csrw mscratch, %0" :: "r" (cpu0));
 }
 
 static ALWAYS_INLINE void
@@ -37,7 +39,19 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 
 static inline bool arch_is_in_isr(void)
 {
+#ifdef CONFIG_SMP
+	/* Refer x86 implementation. we should disable irq to prevent race condition
+	 * of current CPU changing.
+	 */
+	bool ret;
+
+	unsigned int key = arch_irq_lock();
+	ret = (arch_curr_cpu()->nested != 0U);
+	arch_irq_unlock(key);
+	return ret;
+#else
 	return _kernel.cpus[0].nested != 0U;
+#endif
 }
 
 #ifdef CONFIG_IRQ_OFFLOAD

@@ -34,6 +34,9 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 /* the C entry of slave cores */
 void slave_core_cstart(int cpu_num)
 {
+	_cpu_t* cpu = &_kernel.cpus[cpu_num];
+	__asm__ volatile("csrw mscratch, %0" :: "r" (cpu));
+
 #if defined(CONFIG_RISCV_SOC_INTERRUPT_INIT)
 	/* Init mie/mip CSRs (per-CPU) */
 	soc_interrupt_init();
