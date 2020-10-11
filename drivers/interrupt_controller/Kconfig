@@ -27,6 +27,18 @@ config PLIC
 	  Platform Level Interrupt Controller provides support
 	  for external interrupt lines defined by the RISC-V SoC;
 
+config PLIC_TARGET_INCR_OF_NEXT_HART
+	int "The increased number of PLIC interrupt target of next hart"
+	default 2
+	depends on PLIC
+	depends on SMP
+	help
+	  PLIC register is based on interrupt target (hart context), but
+	  interrupt target doesn't directly map to RISCV hart. It refers
+	  specific priv mode of specific hart. We suppose the increment
+	  of PLIC target number of next RISCV hart is same, and we use
+	  this option to map RISCV hart to PLIC target.
+
 config SWERV_PIC
 	bool "SweRV EH1 Programmable Interrupt Controller (PIC)"
 	default n
