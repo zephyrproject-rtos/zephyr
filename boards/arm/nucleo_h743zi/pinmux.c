@@ -14,10 +14,6 @@
 
 /* NUCLEO-H743ZI pin configurations */
 static const struct pin_config pinconf[] = {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay) && CONFIG_I2C
-	{ STM32_PIN_PB8, STM32H7_PINMUX_FUNC_PB8_I2C1_SCL },
-	{ STM32_PIN_PB9, STM32H7_PINMUX_FUNC_PB9_I2C1_SDA },
-#endif
 };
 
 static int pinmux_stm32_init(const struct device *port)
