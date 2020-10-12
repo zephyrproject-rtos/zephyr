@@ -45,6 +45,37 @@ static ZTEST_BMEM struct timer_data tdata;
 /**
  * @brief Test clock uptime APIs functionality
  *
+ * @details
+ * Test Objective:
+ * - This test verify uptime API
+ *
+ * Testing techniques:
+ * - Interface testing
+ *
+ * Prerequisite Conditions:
+ * - N/A
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Call the k_uptime_get()/k_uptime_get_32() to get elapsed time since the system booted.
+ * -# Check the time if currectly.
+ * -# Call k_uptime_delta() to get elapsed time between the current system uptime
+ *   and an earlier reference time, then check the time.
+ *
+ * Expected Test Result:
+ * - Call k_uptime_get()/k_uptime_get_32() can get right time
+ *
+ * Pass/Fail Criteria:
+ * - Success if the time is accurate
+ * - Failure if the time not accurate
+ *
+ * Assumptions and Constraints:
+ * - N/A
+ *
+ * @ingroup kernel_thread_tests
+ *
  * @see k_uptime_get(), k_uptime_get_32(), k_uptime_delta()
  */
 void test_clock_uptime(void)
@@ -59,6 +90,7 @@ void test_clock_uptime(void)
 		k_busy_wait(50);
 #endif
 	}
+	zassert_true(k_uptime_get() > t64, NULL);
 
 	/**TESTPOINT: uptime elapse lower 32-bit*/
 	t32 = k_uptime_get_32();
@@ -157,6 +189,42 @@ static void init_data_count(void)
  *
  */
 
+/**
+ * @brief Test millisecond time duration
+ *
+ * @details
+ * Test Objective:
+ * - This test verify kernel support be provided time duration in millisecond
+ *
+ * Testing techniques:
+ * - Interface testing
+ *
+ * Prerequisite Conditions:
+ * - N/A
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Initialize a timer.
+ * -# Provide time duration in millisecond.
+ * -# Start timer, and check the duration time whether correct.
+ * -# Stop the timer.
+ *
+ * Expected Test Result:
+ * - The actual time is the same as the expected time.
+ *
+ * Pass/Fail Criteria:
+ * - Success if actual time meet with that we set
+ * - Failure if actual time not meet with we set
+ *
+ * Assumptions and Constraints:
+ * - N/A
+ *
+ * @ingroup kernel_thread_tests
+ *
+ * @see k_timer_init(), k_timer_start(), k_timer_stop(), k_busy_wait()
+ */
 void test_ms_time_duration(void)
 {
 	init_data_count();

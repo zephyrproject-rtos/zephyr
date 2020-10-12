@@ -168,6 +168,58 @@ void test_conversion(struct test_rec *t, uint64_t val)
 		     result, result, diff, diff, mindiff, maxdiff);
 }
 
+/**
+ * @brief Test clock uptime APIs functionality
+ *
+ * @details
+ * Test Objective:
+ * - This test verify time covent API
+ *
+ * Testing techniques:
+ * - Interface testing
+ * - Equivalence classes and input parition testing
+ *   include boundary value analysis
+ *
+ * Prerequisite Conditions:
+ * - N/A
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * - Call the time convert API, and check the result of time convert.
+ *   The difference is allowed to be in the range [0:from_hz) if we are rounding down,
+ *   from (-from_hz:0] if we are rounding up, or [-from_hz/2:from_hz/2]
+ *   if we are rounding to the nearest.
+ *
+ * Expected Test Result:
+ * - Convert time difference in the range.
+ *
+ * Pass/Fail Criteria:
+ * - Success if the result of convert time in the range.
+ * - Failure if the result of convert time out of the range.
+ *
+ * Assumptions and Constraints:
+ * - N/A
+ *
+ * @ingroup kernel_thread_tests
+ *
+ * @see k_ms_to_cyc_floor32(), k_ms_to_cyc_floor64(), k_ms_to_cyc_near32(), k_ms_to_cyc_near64(), k_ms_to_cyc_ceil32(), k_ms_to_cyc_ceil64(),
+ * k_ms_to_ticks_floor32(), k_ms_to_ticks_floor64(), k_ms_to_ticks_near32(), k_ms_to_ticks_near64(), k_ms_to_ticks_ceil32(), k_ms_to_ticks_ceil64(),
+ * k_us_to_cyc_floor32(), k_us_to_cyc_floor64(), k_us_to_cyc_near32(), k_us_to_cyc_near64(), k_us_to_cyc_ceil32(), k_us_to_cyc_ceil64(),
+ * k_us_to_ticks_floor32(), k_us_to_ticks_floor64(), k_us_to_ticks_near32(), k_us_to_ticks_near64(), k_us_to_ticks_ceil32(), k_us_to_ticks_ceil64(),
+ * k_ns_to_cyc_floor32(), k_ns_to_cyc_floor64(), k_ns_to_cyc_near32(), k_ns_to_cyc_near64(), k_ns_to_cyc_ceil32(), k_ns_to_cyc_ceil64(),
+ * k_ns_to_ticks_floor32(), k_ns_to_ticks_floor64(), k_ns_to_ticks_near32(), k_ns_to_ticks_near64(), k_ns_to_ticks_ceil32(), k_ns_to_ticks_ceil64(),
+ * k_cyc_to_ms_floor32(), k_cyc_to_ms_floor64(), k_cyc_to_ms_near32(), k_cyc_to_ms_near64(), k_cyc_to_ms_ceil32(), k_cyc_to_ms_ceil64(),
+ * k_cyc_to_us_floor32(), k_cyc_to_us_floor64(), k_cyc_to_us_near32(), k_cyc_to_us_near64(), k_cyc_to_us_ceil32(), k_cyc_to_us_ceil64(),
+ * k_cyc_to_ns_floor32(), k_cyc_to_ns_floor64(), k_cyc_to_ns_near32(), k_cyc_to_ns_near64(), k_cyc_to_ns_ceil32(), k_cyc_to_ns_ceil64(),
+ * k_cyc_to_ticks_floor32(), k_cyc_to_ticks_floor64(), k_cyc_to_ticks_near32(), k_cyc_to_ticks_near64(), k_cyc_to_ticks_ceil32(), k_cyc_to_ticks_ceil64(),
+ * k_ticks_to_ms_floor32(), k_ticks_to_ms_floor64(), k_ticks_to_ms_near32(), k_ticks_to_ms_near64(), k_ticks_to_ms_ceil32(), k_ticks_to_ms_ceil64(),
+ * k_ticks_to_us_floor32(), k_ticks_to_us_floor64(), k_ticks_to_us_near32(), k_ticks_to_us_near64(), k_ticks_to_us_ceil32(), k_ticks_to_us_ceil64(),
+ * k_ticks_to_ns_floor32(), k_ticks_to_ns_floor64(), k_ticks_to_ns_near32(), k_ticks_to_ns_near64(), k_ticks_to_ns_ceil32(), k_ticks_to_ns_ceil64(),
+ * k_ticks_to_cyc_floor32(), k_ticks_to_cyc_floor64(), k_ticks_to_cyc_near32(), k_ticks_to_cyc_near64(), k_ticks_to_cyc_ceil32(), k_ticks_to_cyc_ceil64()
+ *
+ */
 void test_time_conversions(void)
 {
 	for (int i = 0; i < ARRAY_SIZE(tests); i++) {
