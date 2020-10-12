@@ -1493,7 +1493,7 @@ int bt_gatt_subscribe(struct bt_conn *conn,
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_gatt_resubscribe(uint8_t id, const bt_addr_le_t *peer,
-			     struct bt_gatt_subscribe_params *params);
+			struct bt_gatt_subscribe_params *params);
 
 /** @brief Unsubscribe Attribute Value Notification
  *
