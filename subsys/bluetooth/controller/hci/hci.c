@@ -613,6 +613,17 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	rp->commands[25] |= BIT(5) | BIT(6) | BIT(7);
 	/* LE Set Scan Response Data, LE Set Adv Enable */
 	rp->commands[26] |= BIT(0) | BIT(1);
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	/* LE Set Adv Set Random Addr, LE Set Ext Adv Params, LE Set Ext Adv
+	 * Data, LE Set Ext Adv Scan Rsp Data, LE Set Ext Adv Enable, LE Read
+	 * Max Adv Data Len, LE Read Num Supp Adv Sets
+	 */
+	rp->commands[36] |= BIT(1) | BIT(2) | BIT(3) | BIT(4) | BIT(5) |
+			    BIT(6) | BIT(7);
+	/* LE Remove Adv Set, LE Clear Adv Sets */
+	rp->commands[37] |= BIT(0) | BIT(1);
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_OBSERVER)
