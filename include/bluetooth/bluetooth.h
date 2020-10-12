@@ -1353,6 +1353,43 @@ int bt_le_per_adv_sync_transfer_subscribe(
  */
 int bt_le_per_adv_sync_transfer_unsubscribe(const struct bt_conn *conn);
 
+/**
+ * @brief Add a device to the periodic advertising list.
+ *
+ * Add peer device LE address to the periodic advertising list. This will make
+ * it possibly to automatically create a periodic advertising sync to this
+ * device.
+ *
+ * @param addr Bluetooth LE identity address.
+ * @param sid  The advertising set ID. This value is obtained from the
+ *             @ref bt_le_scan_recv_info in the scan callback.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_le_per_adv_list_add(const bt_addr_le_t *addr, uint8_t sid);
+
+/**
+ * @brief Remove a device from the periodic advertising list.
+ *
+ * Removes peer device LE address from the periodic advertising list.
+ *
+ * @param addr Bluetooth LE identity address.
+ * @param sid  The advertising set ID. This value is obtained from the
+ *             @ref bt_le_scan_recv_info in the scan callback.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_le_per_adv_list_remove(const bt_addr_le_t *addr, uint8_t sid);
+
+/**
+ * @brief Clear the periodic advertising list.
+ *
+ * Clears the entire periodic advertising list.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_le_per_adv_list_clear(void);
+
 enum {
 	/** Convenience value when no options are specified. */
 	BT_LE_SCAN_OPT_NONE = 0,
