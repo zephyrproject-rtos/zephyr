@@ -16,11 +16,15 @@
 
 LOG_MODULE_REGISTER(osdp, CONFIG_OSDP_LOG_LEVEL);
 
+#ifdef CONFIG_OSDP_SC_ENABLED
 #ifdef CONFIG_OSDP_MODE_PD
 #define OSDP_KEY_STRING CONFIG_OSDP_PD_SCBK
 #else
 #define OSDP_KEY_STRING CONFIG_OSDP_MASTER_KEY
 #endif
+#else
+#define OSDP_KEY_STRING ""
+#endif	/* CONFIG_OSDP_SC_ENABLED */
 
 struct osdp_device {
 	struct ring_buf rx_buf;
