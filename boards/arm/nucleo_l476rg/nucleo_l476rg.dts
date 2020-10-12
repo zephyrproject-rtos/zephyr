@@ -87,5 +87,6 @@
 };
 
 &adc1 {
+	pinctrl-0 = <&adc1_in1_pc0>;
 	status = "okay";
 };

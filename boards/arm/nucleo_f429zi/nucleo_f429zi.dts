@@ -55,6 +55,7 @@
 };
 
 &adc1 {
+	pinctrl-0 = <&adc1_in0_pa0>;
 	status = "okay";
 };
 
