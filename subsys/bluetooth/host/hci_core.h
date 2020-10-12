@@ -143,6 +143,9 @@ enum {
 	/** Periodic advertising is attempting sync sync */
 	BT_PER_ADV_SYNC_SYNCING,
 
+	/** Periodic advertising is attempting sync sync */
+	BT_PER_ADV_SYNC_RECV_DISABLED,
+
 	BT_PER_ADV_SYNC_NUM_FLAGS,
 };
 
