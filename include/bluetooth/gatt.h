@@ -604,14 +604,14 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 	#define BT_GATT_CCC_MAX (CONFIG_BT_MAX_PAIRED + CONFIG_BT_MAX_CONN)
 #endif
 
-/** @brief GATT CCC configuration entry.
- *
- *  @param id   Local identity, BT_ID_DEFAULT in most cases.
- *  @param peer Remote peer address
- *  @param value Configuration value.
- *  @param data Configuration pointer data.
- */
+/** @brief GATT CCC configuration entry. */
 struct bt_gatt_ccc_cfg {
+	/** Local identity, BT_ID_DEFAULT in most cases. */
+	uint8_t id;
+	/** Remote peer address. */
+	bt_addr_le_t peer;
+	/** Configuration value. */
+	uint16_t value;
 };
 
 /** Internal representation of CCC value */
@@ -1235,33 +1235,31 @@ typedef uint8_t (*bt_gatt_read_func_t)(struct bt_conn *conn, uint8_t err,
 				    struct bt_gatt_read_params *params,
 				    const void *data, uint16_t length);
 
-/** @brief GATT Read parameters
- *
- *  @param func Read attribute callback
- *  @param handle_count If equals to 1 single.handle and single.offset
- *                      are used.  If >1 Read Multiple Characteristic
- *                      Values is performed and handles are used.
- *                      If equals to 0 by_uuid is used for Read Using
- *                      Characteristic UUID.
- *  @param handle Attribute handle
- *  @param offset Attribute data offset
- *  @param handles Handles to read in Read Multiple Characteristic Values
- *  @param start_handle First requested handle number
- *  @param end_handle Last requested handle number
- *  @param uuid 2 or 16 octet UUID
- */
+/** @brief GATT Read parameters */
 struct bt_gatt_read_params {
+	/** Read attribute callback. */
 	bt_gatt_read_func_t func;
+	/** If equals to 1 single.handle and single.offset are used.
+	 *  If >1 Read Multiple Characteristic Values is performed and handles
+	 *  are used.
+	 *  If equals to 0 by_uuid is used for Read Using Characteristic UUID.
+	 */
 	size_t handle_count;
 	union {
 		struct {
+			/** Attribute handle. */
 			uint16_t handle;
+			/** Attribute data offset. */
 			uint16_t offset;
 		} single;
+		/** Handles to read in Read Multiple Characteristic Values. */
 		uint16_t *handles;
 		struct {
+			/** First requested handle number. */
 			uint16_t start_handle;
+			/** Last requested handle number. */
 			uint16_t end_handle;
+			/** 2 or 16 octet UUID. */
 			const struct bt_uuid *uuid;
 		} by_uuid;
 	};
