@@ -7798,6 +7798,85 @@ int bt_le_per_adv_sync_transfer_unsubscribe(const struct bt_conn *conn)
 					      0x0a, 0);
 	}
 }
+
+
+int bt_le_per_adv_list_add(const bt_addr_le_t *addr, uint8_t sid)
+{
+	struct bt_hci_cp_le_add_dev_to_per_adv_list *cp;
+	struct net_buf *buf;
+	int err;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_ADD_DEV_TO_PER_ADV_LIST,
+				sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_le_copy(&cp->addr, addr);
+	cp->sid = sid;
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_ADD_DEV_TO_PER_ADV_LIST, buf,
+				   NULL);
+	if (err) {
+		BT_ERR("Failed to add device to periodic advertiser list");
+
+		return err;
+	}
+
+	return 0;
+}
+
+int bt_le_per_adv_list_remove(const bt_addr_le_t *addr, uint8_t sid)
+{
+	struct bt_hci_cp_le_rem_dev_from_per_adv_list *cp;
+	struct net_buf *buf;
+	int err;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_REM_DEV_FROM_PER_ADV_LIST,
+				sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_le_copy(&cp->addr, addr);
+	cp->sid = sid;
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_REM_DEV_FROM_PER_ADV_LIST, buf,
+				   NULL);
+	if (err) {
+		BT_ERR("Failed to remove device from periodic advertiser list");
+		return err;
+	}
+
+	return 0;
+}
+
+int bt_le_per_adv_list_clear(void)
+{
+	int err;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_CLEAR_PER_ADV_LIST, NULL, NULL);
+	if (err) {
+		BT_ERR("Failed to clear periodic advertiser list");
+		return err;
+	}
+
+	return 0;
+}
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
 
 static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
