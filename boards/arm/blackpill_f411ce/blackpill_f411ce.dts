@@ -111,5 +111,6 @@
 };
 
 &adc1 {
+	pinctrl-0 = <&adc1_in1_pa1>;
 	status = "okay";
 };

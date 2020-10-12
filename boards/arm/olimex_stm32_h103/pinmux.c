@@ -42,11 +42,6 @@ static const struct pin_config pinconf[] = {
 	{STM32_PIN_PA11, STM32F1_PINMUX_FUNC_PA11_USB_DM},
 	{STM32_PIN_PA12, STM32F1_PINMUX_FUNC_PA12_USB_DP},
 #endif /* CONFIG_USB_DC_STM32 */
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay) && CONFIG_ADC
-	{STM32_PIN_PA1, STM32F1_PINMUX_FUNC_PA1_ADC123_IN1},
-#endif
-	/* This input is to sense the USB voltage */
-	{STM32_PIN_PC4, STM32F1_PINMUX_FUNC_PC4_ADC12_IN14},
 };
 
 static int pinmux_stm32_init(const struct device *port)

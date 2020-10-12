@@ -81,7 +81,8 @@
 	};
 };
 
-&adc1_2 {
+&adc1 {
+	pinctrl-0 = <&adc1_inp15_pa3>;
 	status = "okay";
 };
 
