@@ -70,12 +70,12 @@ config OSDP_PACKET_TRACE
 
 config OSDP_SC_ENABLED
 	bool "Enable OSDP Secure Channel"
+	depends on CSPRING_ENABLED
 	default y
 	select CRYPTO
 	select CRYPTO_MBEDTLS_SHIM
 	select MBEDTLS
 	select MBEDTLS_CIPHER_CCM_ENABLED
-	select ENTROPY_GENERATOR
 	help
 	  Secure the OSDP communication channel with encryption and mutual
 	  authentication.
