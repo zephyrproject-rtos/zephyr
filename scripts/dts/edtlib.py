@@ -8,12 +8,14 @@
 Library for working with devicetrees at a higher level compared to dtlib. Like
 dtlib, this library presents a tree of devicetree nodes, but the nodes are
 augmented with information from bindings and include some interpretation of
-properties.
+properties. Some of this interpretation is based on conventions established
+by the Linux kernel, so the Documentation/devicetree/bindings in the Linux
+source code is sometimes good reference material.
 
-Bindings are files that describe devicetree nodes. Devicetree nodes are usually
-mapped to bindings via their 'compatible = "..."' property, but a binding can
-also come from a 'child-binding:' key in the binding for the parent devicetree
-node.
+In Zephyr, bindings are YAML files that describe devicetree nodes. Devicetree
+nodes are usually mapped to bindings via their 'compatible = "..."' property,
+but a binding can also come from a 'child-binding:' key in the binding for the
+parent devicetree node. See binding-template.yaml for details.
 
 Each devicetree node (dtlib.Node) gets a corresponding edtlib.Node instance,
 which has all the information related to the node.
