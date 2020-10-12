@@ -78,10 +78,6 @@ struct ring_buf {
 		.buf = { .buf32 = _ring_buffer_data_##name } \
 	}
 
-/** @deprecated Renamed to RING_BUF_ITEM_DECLARE_POW2. */
-#define SYS_RING_BUF_DECLARE_POW2(name, pow) \
-	__DEPRECATED_MACRO RING_BUF_ITEM_DECLARE_POW2(name, pow)
-
 /**
  * @brief Statically define and initialize a standard ring buffer.
  *
@@ -102,10 +98,6 @@ struct ring_buf {
 		.size = size32, \
 		.buf = { .buf32 = _ring_buffer_data_##name} \
 	}
-
-/** @deprecated Renamed to RING_BUF_ITEM_DECLARE_SIZE. */
-#define SYS_RING_BUF_DECLARE_SIZE(name, size32) \
-	__DEPRECATED_MACRO RING_BUF_ITEM_DECLARE_SIZE(name, size32)
 
 /**
  * @brief Statically define and initialize a ring buffer for byte data.
@@ -150,7 +142,7 @@ static inline void ring_buf_init(struct ring_buf *buf, uint32_t size, void *data
 	buf->size = size;
 	buf->buf.buf32 = (uint32_t *)data;
 	if (is_power_of_two(size)) {
-		buf->mask = size - 1;
+		buf->mask = size - 1U;
 	} else {
 		buf->mask = 0U;
 	}
@@ -170,11 +162,11 @@ static inline uint32_t z_ring_buf_custom_space_get(uint32_t size, uint32_t head,
 					      uint32_t tail)
 {
 	if (tail < head) {
-		return head - tail - 1;
+		return head - tail - 1U;
 	}
 
 	/* buf->tail > buf->head */
-	return (size - tail) + head - 1;
+	return (size - tail) + head - 1U;
 }
 
 /**

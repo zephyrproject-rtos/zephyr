@@ -6,11 +6,12 @@
 
 /dts-v1/;
 #include <st/f4/stm32f429Xi.dtsi>
+#include <st/f4/stm32f429zitx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32F429ZI-NUCLEO board";
-	compatible = "st,stm32f429zi-nucleo", "st,stm32f429";
+	compatible = "st,stm32f429zi-nucleo";
 
 	chosen {
 		zephyr,console = &usart3;
@@ -53,6 +54,10 @@
 	};
 };
 
+&adc1 {
+	status = "okay";
+};
+
 &i2c1 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
@@ -63,10 +68,12 @@
 };
 
 &usart3 {
+	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
 	current-speed = <115200>;
 	status = "okay";
 };
 &usart6 {
+	pinctrl-0 = <&usart6_tx_pg14 &usart6_rx_pg9>;
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -80,6 +87,7 @@
 
 	pwm1: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim1_ch3_pwm_pe13>;
 	};
 };
 

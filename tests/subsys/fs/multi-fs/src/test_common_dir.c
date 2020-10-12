@@ -7,7 +7,7 @@
 #include <ztest.h>
 #include <stdio.h>
 #include <limits.h>
-#include <assert.h>
+#include <sys/__assert.h>
 #include <fs/fs.h>
 #include "test_common.h"
 
@@ -20,7 +20,7 @@ int test_mkdir(const char *dir_path, const char *file)
 	char file_path[PATH_MAX] = { 0 };
 
 	res = sprintf(file_path, "%s/%s", dir_path, file);
-	assert(res < sizeof(file_path));
+	__ASSERT_NO_MSG(res < sizeof(file_path));
 
 	if (check_file_dir_exists(dir_path)) {
 		TC_PRINT("[%s] exists, delete it\n", dir_path);
@@ -131,7 +131,7 @@ int test_rmdir(const char *dir_path)
 
 		/* Delete file or sub directory */
 		sprintf(file_path, "%s/%s", dir_path, entry.name);
-		assert(res < sizeof(file_path));
+		__ASSERT_NO_MSG(res < sizeof(file_path));
 		TC_PRINT("Removing %s\n", file_path);
 
 		res = fs_unlink(file_path);

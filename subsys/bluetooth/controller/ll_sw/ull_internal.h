@@ -4,6 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Macro to convert time in us to connection interval units */
+#define RADIO_CONN_EVENTS(x, y) ((uint16_t)(((x) + (y) - 1) / (y)))
+
+/* Macro to convert time in us to periodic advertising interval units */
+#define RADIO_SYNC_EVENTS(x, y) ((uint16_t)(((x) + (y) - 1) / (y)))
+
+static inline uint8_t ull_ref_get(struct ull_hdr *hdr)
+{
+	return hdr->ref;
+}
+
 static inline uint8_t ull_ref_inc(struct ull_hdr *hdr)
 {
 	return ++hdr->ref;
@@ -36,3 +47,6 @@ void *ull_update_mark(void *param);
 void *ull_update_unmark(void *param);
 void *ull_update_mark_get(void);
 int ull_disable(void *param);
+void ull_drift_ticks_get(struct node_rx_event_done *done,
+			 uint32_t *ticks_drift_plus,
+			 uint32_t *ticks_drift_minus);

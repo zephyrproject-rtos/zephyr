@@ -71,6 +71,11 @@ enum {
 	TICKER_ID_SCAN_AUX_BASE,
 	TICKER_ID_SCAN_AUX_LAST = ((TICKER_ID_SCAN_AUX_BASE) +
 				   (CONFIG_BT_CTLR_SCAN_AUX_SET) - 1),
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+	TICKER_ID_SCAN_SYNC_BASE,
+	TICKER_ID_SCAN_SYNC_LAST = ((TICKER_ID_SCAN_SYNC_BASE) +
+				    (CONFIG_BT_CTLR_SCAN_SYNC_SET) - 1),
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
 
@@ -111,7 +116,9 @@ struct evt_hdr {
 };
 
 struct ull_hdr {
-	uint8_t ref; /* Number of ongoing (between Prepare and Done) events */
+	uint8_t volatile ref;  /* Number of ongoing (between Prepare and Done)
+				* events
+				*/
 	void (*disabled_cb)(void *param);
 	void *disabled_param;
 };
@@ -160,57 +167,65 @@ enum node_rx_type {
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_OBSERVER)
 	NODE_RX_TYPE_EXT_1M_REPORT = 0x05,
 	NODE_RX_TYPE_EXT_2M_REPORT = 0x06,
 	NODE_RX_TYPE_EXT_CODED_REPORT = 0x07,
-	NODE_RX_TYPE_EXT_ADV_TERMINATE = 0x08,
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+	NODE_RX_TYPE_SYNC = 0x08,
+	NODE_RX_TYPE_SYNC_LOST = 0x09,
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+#endif /* CONFIG_BT_OBSERVER */
+#if defined(CONFIG_BT_BROADCASTER)
+	NODE_RX_TYPE_EXT_ADV_TERMINATE = 0x0a,
+#endif /* CONFIG_BT_BROADCASTER */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
-	NODE_RX_TYPE_SCAN_REQ = 0x09,
+	NODE_RX_TYPE_SCAN_REQ = 0x0b,
 #endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
 
 #if defined(CONFIG_BT_CONN)
-	NODE_RX_TYPE_CONNECTION = 0x0a,
-	NODE_RX_TYPE_TERMINATE = 0x0b,
-	NODE_RX_TYPE_CONN_UPDATE = 0x0c,
-	NODE_RX_TYPE_ENC_REFRESH = 0x0d,
+	NODE_RX_TYPE_CONNECTION = 0x0c,
+	NODE_RX_TYPE_TERMINATE = 0x0d,
+	NODE_RX_TYPE_CONN_UPDATE = 0x0e,
+	NODE_RX_TYPE_ENC_REFRESH = 0x0f,
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
-	NODE_RX_TYPE_APTO = 0x0e,
+	NODE_RX_TYPE_APTO = 0x10,
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
-	NODE_RX_TYPE_CHAN_SEL_ALGO = 0x0f,
+	NODE_RX_TYPE_CHAN_SEL_ALGO = 0x11,
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	NODE_RX_TYPE_PHY_UPDATE = 0x10,
+	NODE_RX_TYPE_PHY_UPDATE = 0x12,
 #endif /* CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
-	NODE_RX_TYPE_RSSI = 0x11,
+	NODE_RX_TYPE_RSSI = 0x13,
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
-	NODE_RX_TYPE_PROFILE = 0x12,
+	NODE_RX_TYPE_PROFILE = 0x14,
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
 #if defined(CONFIG_BT_CTLR_ADV_INDICATION)
-	NODE_RX_TYPE_ADV_INDICATION = 0x13,
+	NODE_RX_TYPE_ADV_INDICATION = 0x15,
 #endif /* CONFIG_BT_CTLR_ADV_INDICATION */
 
 #if defined(CONFIG_BT_CTLR_SCAN_INDICATION)
-	NODE_RX_TYPE_SCAN_INDICATION = 0x14,
+	NODE_RX_TYPE_SCAN_INDICATION = 0x16,
 #endif /* CONFIG_BT_CTLR_SCAN_INDICATION */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
-	NODE_RX_TYPE_MESH_ADV_CPLT = 0x15,
-	NODE_RX_TYPE_MESH_REPORT = 0x16,
+	NODE_RX_TYPE_MESH_ADV_CPLT = 0x17,
+	NODE_RX_TYPE_MESH_REPORT = 0x18,
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
 /* Following proprietary defines must be at end of enum range */
 #if defined(CONFIG_BT_CTLR_USER_EXT)
-	NODE_RX_TYPE_USER_START = 0x17,
+	NODE_RX_TYPE_USER_START = 0x18,
 	NODE_RX_TYPE_USER_END = NODE_RX_TYPE_USER_START +
 				CONFIG_BT_CTLR_USER_EVT_RANGE,
 #endif /* CONFIG_BT_CTLR_USER_EXT */
@@ -271,7 +286,10 @@ struct node_rx_pdu {
 
 enum {
 	EVENT_DONE_EXTRA_TYPE_NONE,
+
+#if defined(CONFIG_BT_CONN)
 	EVENT_DONE_EXTRA_TYPE_CONN,
+#endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	EVENT_DONE_EXTRA_TYPE_ADV,
@@ -280,6 +298,9 @@ enum {
 #if defined(CONFIG_BT_OBSERVER)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	EVENT_DONE_EXTRA_TYPE_SCAN_AUX,
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+	EVENT_DONE_EXTRA_TYPE_SYNC,
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
 
@@ -292,7 +313,7 @@ enum {
 
 };
 
-struct event_done_extra_slave {
+struct event_done_extra_drift {
 	uint32_t start_to_address_actual_us;
 	uint32_t window_widening_event_us;
 	uint32_t preamble_to_addr_us;
@@ -307,9 +328,11 @@ struct event_done_extra {
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 			uint8_t  mic_state;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+#if defined(CONFIG_BT_PERIPHERAL) || defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 			union {
-				struct event_done_extra_slave slave;
+				struct event_done_extra_drift drift;
 			};
+#endif /* CONFIG_BT_PERIPHERAL || CONFIG_BT_CTLR_SYNC_PERIODIC */
 		};
 	};
 };

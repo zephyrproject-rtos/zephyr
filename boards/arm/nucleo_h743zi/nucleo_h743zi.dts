@@ -6,11 +6,12 @@
 
 /dts-v1/;
 #include <st/h7/stm32h743Xi.dtsi>
+#include <st/h7/stm32h743zitx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32H743ZI-NUCLEO board";
-	compatible = "st,stm32h743zi-nucleo", "st,stm32h743";
+	compatible = "st,stm32h743zi-nucleo";
 
 	chosen {
 		zephyr,console = &usart3;
@@ -57,6 +58,7 @@
 };
 
 &usart3 {
+	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -75,6 +77,7 @@
 
 	pwm12: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim12_ch1_pwm_pb14>;
 	};
 };
 

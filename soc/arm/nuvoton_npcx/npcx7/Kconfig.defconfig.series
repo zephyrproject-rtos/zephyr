@@ -35,6 +35,24 @@ config GPIO_NPCX
 	help
 	  Enable support for NPCX GPIO driver.
 
+config PWM_NPCX
+	default y
+	depends on PWM
+	help
+	  Enable support for NPCX PWM driver.
+
+config ESPI_NPCX
+	default y
+	depends on ESPI
+	help
+	  Enable support for NPCX ESPI driver. The Intel Enhanced Serial
+	  Peripheral Interface (eSPI) provides a path for migrating host
+	  sub-devices via LPC to a lower pin count, higher bandwidth bus.
+	  So far, this driver supports all of functionalities beside flash
+	  channel support. It will be supported in the future. Please refer
+	  https://www.intel.com/content/www/us/en/support/articles/000020952/
+	  software/chipset-software.html for more detail.
+
 source "soc/arm/nuvoton_npcx/npcx7/Kconfig.defconfig.npcx7*"
 
 endif # SOC_SERIES_NPCX7

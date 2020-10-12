@@ -87,6 +87,13 @@ the processing of other work items in the workqueue's queue.
     handler function needs to perform its work must not be altered until
     the handler function has finished executing.
 
+    There *is no kernel API* that can be used to determine that the handler
+    function has finished executing.  Infrastructure that uses work items and
+    needs to know the work item status must manage state in the handler
+    function.
+
+.. _k_delayed_work:
+
 Delayed Work
 ************
 
@@ -111,15 +118,34 @@ that is triggered after the specified delay has elapsed. Once the timeout
 occurs the kernel submits the delayed work item to the specified workqueue,
 where it remains pending until it is processed in the standard manner.
 
-An ISR or a thread may **cancel** a delayed work item it has submitted,
-providing the work item's timeout is still counting down. The work item's
-timeout is aborted and the specified work is not performed.
+An ISR or a thread may attempt to **cancel** a delayed work item. If
+successful the specified work is not performed.  However, attempting to cancel
+a delayed work item succeeds in only two cases:
 
-Attempting to cancel a delayed work item once its timeout has expired has
-no effect on the work item; the work item remains pending in the workqueue's
-queue, unless the work item has already been removed and processed by the
-workqueue's thread. Consequently, once a work item's timeout has expired
-the work item is always processed by the workqueue and cannot be canceled.
+* its timeout has not yet expired and been processed; or
+* it is still pending and the cancellation successfully removes it from the
+  workqueue before the workqueue's thread gets to it.
+
+Because of the locking used to manage workqueues there are transient states
+that are sometimes not observable, but if observed will cause the cancellation
+will fail.  In those cases the work item may or may not be invoked.  The
+transient states can be observed and cause failure when:
+
+* the workqueue or application threads are preemptible;
+
+* the API is invoked from an ISR; or
+
+* when the code is run on a multiprocessor system.
+
+Note that both :c:func:`k_delayed_work_submit_to_queue()` and
+:c:func:`k_delayed_work_cancel()` attempt to cancel a previously submitted
+item and can fail.  When they fail the work handler of the previous submission
+may or may not be invoked.
+
+.. warning::
+   Because of these race conditions all code that invokes the delayed work API
+   must check return values and be prepared to react when either submission or
+   cancellation fails.
 
 Triggered Work
 **************
@@ -258,6 +284,9 @@ calling :c:func:`k_delayed_work_submit`, or to a specified workqueue by
 calling :c:func:`k_delayed_work_submit_to_queue`. A delayed work item
 that has been submitted but not yet consumed by its workqueue can be canceled
 by calling :c:func:`k_delayed_work_cancel`.
+
+.. warning::
+   All of these operations can fail as described in :ref:`k_delayed_work`.
 
 Suggested Uses
 **************

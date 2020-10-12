@@ -53,6 +53,9 @@ static void modem_iface_uart_isr(const struct device *uart_dev,
 	struct modem_context *ctx;
 	struct modem_iface_uart_data *data;
 	int rx = 0, ret;
+	uint8_t *dst;
+	uint32_t partial_size = 0;
+	uint32_t total_size = 0;
 
 	ARG_UNUSED(user_data);
 
@@ -66,22 +69,34 @@ static void modem_iface_uart_isr(const struct device *uart_dev,
 	/* get all of the data off UART as fast as we can */
 	while (uart_irq_update(ctx->iface.dev) &&
 	       uart_irq_rx_ready(ctx->iface.dev)) {
-		rx = uart_fifo_read(ctx->iface.dev,
-				    data->isr_buf, data->isr_buf_len);
+		if (!partial_size) {
+			partial_size = ring_buf_put_claim(&data->rx_rb, &dst,
+							  UINT32_MAX);
+		}
+		if (!partial_size) {
+			if (data->hw_flow_control) {
+				uart_irq_rx_disable(ctx->iface.dev);
+			} else {
+				LOG_ERR("Rx buffer doesn't have enough space");
+				modem_iface_uart_flush(&ctx->iface);
+			}
+			break;
+		}
+
+		rx = uart_fifo_read(ctx->iface.dev, dst, partial_size);
 		if (rx <= 0) {
 			continue;
 		}
 
-		ret = ring_buf_put(&data->rx_rb, data->isr_buf, rx);
-		if (ret != rx) {
-			LOG_ERR("Rx buffer doesn't have enough space. "
-				"Bytes pending: %d, written: %d",
-				rx, ret);
-			modem_iface_uart_flush(&ctx->iface);
-			k_sem_give(&data->rx_sem);
-			break;
-		}
+		dst += rx;
+		total_size += rx;
+		partial_size -= rx;
+	}
 
+	ret = ring_buf_put_finish(&data->rx_rb, total_size);
+	__ASSERT_NO_MSG(ret == 0);
+
+	if (total_size > 0) {
 		k_sem_give(&data->rx_sem);
 	}
 }
@@ -102,6 +117,10 @@ static int modem_iface_uart_read(struct modem_iface *iface,
 
 	data = (struct modem_iface_uart_data *)(iface->iface_data);
 	*bytes_read = ring_buf_get(&data->rx_rb, buf, size);
+
+	if (data->hw_flow_control && *bytes_read == 0) {
+		uart_irq_rx_enable(iface->dev);
+	}
 
 	return 0;
 }

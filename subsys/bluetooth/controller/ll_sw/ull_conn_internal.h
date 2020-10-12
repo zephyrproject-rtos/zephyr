@@ -4,9 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Macro to convert time in us to connection interval units */
-#define RADIO_CONN_EVENTS(x, y) ((uint16_t)(((x) + (y) - 1) / (y)))
-
 struct ll_conn *ll_conn_acquire(void);
 void ll_conn_release(struct ll_conn *conn);
 uint16_t ll_conn_handle_get(struct ll_conn *conn);
@@ -33,7 +30,6 @@ memq_link_t *ull_conn_ack_peek(uint8_t *ack_last, uint16_t *handle,
 memq_link_t *ull_conn_ack_by_last_peek(uint8_t last, uint16_t *handle,
 				       struct node_tx **tx);
 void *ull_conn_ack_dequeue(void);
-struct ll_conn *ull_conn_tx_ack(uint16_t handle, memq_link_t *link,
-				struct node_tx *tx);
+void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx);
 uint8_t ull_conn_llcp_req(void *conn);
 void ull_conn_upd_curr_reset(void);

@@ -33,15 +33,6 @@ config SETTINGS_ENCODE_LEN
 	depends on SETTINGS
 	bool
 
-config SETTINGS_USE_BASE64
-	bool "encoding value using base64 (deprecated)"
-	depends on SETTINGS
-	select BASE64
-	help
-	  This option has been deprecated and will not be supported
-	  in future releases.
-	  Enables values encoding using Base64.
-
 choice
 	prompt "Storage back-end"
 	default SETTINGS_NVS if NVS

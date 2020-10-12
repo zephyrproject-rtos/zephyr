@@ -29,6 +29,7 @@
 #include "mesh.h"
 #include "net.h"
 #include "lpn.h"
+#include "rpl.h"
 #include "friend.h"
 #include "access.h"
 #include "foundation.h"
@@ -674,75 +675,6 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 	}
 
 	return err;
-}
-
-static void update_rpl(struct bt_mesh_rpl *rpl, struct bt_mesh_net_rx *rx)
-{
-	rpl->src = rx->ctx.addr;
-	rpl->seq = rx->seq;
-	rpl->old_iv = rx->old_iv;
-
-	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		bt_mesh_store_rpl(rpl);
-	}
-}
-
-/* Check the Replay Protection List for a replay attempt. If non-NULL match
- * parameter is given the RPL slot is returned but it is not immediately
- * updated (needed for segmented messages), whereas if a NULL match is given
- * the RPL is immediately updated (used for unsegmented messages).
- */
-bool bt_mesh_rpl_check(struct bt_mesh_net_rx *rx, struct bt_mesh_rpl **match)
-{
-	int i;
-
-	/* Don't bother checking messages from ourselves */
-	if (rx->net_if == BT_MESH_NET_IF_LOCAL) {
-		return false;
-	}
-
-	/* The RPL is used only for the local node */
-	if (!rx->local_match) {
-		return false;
-	}
-
-	for (i = 0; i < ARRAY_SIZE(bt_mesh.rpl); i++) {
-		struct bt_mesh_rpl *rpl = &bt_mesh.rpl[i];
-
-		/* Empty slot */
-		if (!rpl->src) {
-			if (match) {
-				*match = rpl;
-			} else {
-				update_rpl(rpl, rx);
-			}
-
-			return false;
-		}
-
-		/* Existing slot for given address */
-		if (rpl->src == rx->ctx.addr) {
-			if (rx->old_iv && !rpl->old_iv) {
-				return true;
-			}
-
-			if ((!rx->old_iv && rpl->old_iv) ||
-			    rpl->seq < rx->seq) {
-				if (match) {
-					*match = rpl;
-				} else {
-					update_rpl(rpl, rx);
-				}
-
-				return false;
-			} else {
-				return true;
-			}
-		}
-	}
-
-	BT_ERR("RPL is full!");
-	return true;
 }
 
 static void seg_rx_assemble(struct seg_rx *rx, struct net_buf_simple *buf,
@@ -1587,7 +1519,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 				 seq_auth, rx->block, rx->obo);
 
 			if (rpl) {
-				update_rpl(rpl, net_rx);
+				bt_mesh_rpl_update(rpl, net_rx);
 			}
 
 			return -EALREADY;
@@ -1700,7 +1632,7 @@ found_rx:
 	BT_DBG("Complete SDU");
 
 	if (rpl) {
-		update_rpl(rpl, net_rx);
+		bt_mesh_rpl_update(rpl, net_rx);
 	}
 
 	*pdu_type = BT_MESH_FRIEND_PDU_COMPLETE;
@@ -1822,11 +1754,7 @@ void bt_mesh_rx_reset(void)
 		seg_rx_reset(&seg_rx[i], true);
 	}
 
-	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		bt_mesh_clear_rpl();
-	} else {
-		(void)memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
-	}
+	bt_mesh_rpl_clear();
 }
 
 void bt_mesh_tx_reset(void)
@@ -1851,12 +1779,6 @@ void bt_mesh_trans_init(void)
 	for (i = 0; i < ARRAY_SIZE(seg_rx); i++) {
 		k_delayed_work_init(&seg_rx[i].ack, seg_ack);
 	}
-}
-
-void bt_mesh_rpl_clear(void)
-{
-	BT_DBG("");
-	(void)memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
 }
 
 int bt_mesh_heartbeat_send(const struct bt_mesh_send_cb *cb, void *cb_data)

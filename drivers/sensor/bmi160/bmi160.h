@@ -9,6 +9,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_BMI160_BMI160_H_
 
 #include <drivers/gpio.h>
+#include <drivers/sensor.h>
 #include <drivers/spi.h>
 #include <sys/util.h>
 
@@ -95,6 +96,15 @@
 #define BMI160_REG_STEP_CONF0		0x7A
 #define BMI160_REG_STEP_CONF1		0x7B
 #define BMI160_REG_CMD			0x7E
+
+/* This is not a real register; reading it activates SPI on the BMI160 */
+#define BMI160_SPI_START		0x7F
+
+#define BMI160_REG_COUNT		0x80
+
+/* Indicates a read operation; bit 7 is clear on write s*/
+#define BMI160_REG_READ			BIT(7)
+#define BMI160_REG_MASK			0x7f
 
 /* bitfields */
 
@@ -194,6 +204,11 @@
 #define BMI160_CMD_PMU_GYR		0x14
 #define BMI160_CMD_PMU_MAG		0x18
 #define BMI160_CMD_SOFT_RESET		0xB6
+
+#define BMI160_CMD_PMU_BIT		0x10
+#define BMI160_CMD_PMU_MASK		0x0c
+#define BMI160_CMD_PMU_SHIFT		2
+#define BMI160_CMD_PMU_VAL_MASK		0x3
 
 /* BMI160_REG_FOC_CONF */
 #define BMI160_FOC_ACC_Z_POS		0
@@ -401,23 +416,35 @@ union bmi160_pmu_status {
 	};
 };
 
+#define BMI160_AXES			3
+
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND) && \
 		!defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
-#	define BMI160_SAMPLE_SIZE		(6 * sizeof(uint16_t))
+#	define BMI160_SAMPLE_SIZE	(2 * BMI160_AXES * sizeof(uint16_t))
 #else
-#	define BMI160_SAMPLE_SIZE		(3 * sizeof(uint16_t))
+#	define BMI160_SAMPLE_SIZE	(BMI160_AXES * sizeof(uint16_t))
+#endif
+
+#if defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
+#	define BMI160_SAMPLE_BURST_READ_ADDR	BMI160_REG_DATA_ACC_X
+#	define BMI160_DATA_READY_BIT_MASK	(1 << 7)
+#else
+#	define BMI160_SAMPLE_BURST_READ_ADDR	BMI160_REG_DATA_GYR_X
+#	define BMI160_DATA_READY_BIT_MASK	(1 << 6)
 #endif
 
 #define BMI160_BUF_SIZE			(BMI160_SAMPLE_SIZE)
+
+/* Each sample has X, Y and Z */
 union bmi160_sample {
 	uint8_t raw[BMI160_BUF_SIZE];
 	struct {
 		uint8_t dummy_byte;
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
-		uint16_t gyr[3];
+		uint16_t gyr[BMI160_AXES];
 #endif
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
-		uint16_t acc[3];
+		uint16_t acc[BMI160_AXES];
 #endif
 	} __packed;
 };

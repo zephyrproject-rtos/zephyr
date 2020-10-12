@@ -9,7 +9,7 @@
 #include <init.h>
 #include <kernel.h>
 #include <device.h>
-#include <assert.h>
+#include <sys/__assert.h>
 #include <crypto/cipher.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>

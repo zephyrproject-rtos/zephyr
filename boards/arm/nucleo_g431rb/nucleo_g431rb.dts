@@ -6,11 +6,12 @@
 
 /dts-v1/;
 #include <st/g4/stm32g431Xb.dtsi>
+#include <st/g4/stm32g431r(6-8-b)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32G431RB-NUCLEO board";
-	compatible = "st,stm32g431rb-nucleo", "st,stm32g431";
+	compatible = "st,stm32g431rb-nucleo";
 
 	chosen {
 		zephyr,console = &lpuart1;
@@ -51,11 +52,13 @@
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pc4 &usart1_rx_pc5>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &lpuart1 {
+	pinctrl-0 = <&lpuart1_tx_pa2 &lpuart1_rx_pa3>;
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -73,6 +76,7 @@
 
 	pwm2: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim2_ch1_pwm_pa5>;
 	};
 };
 

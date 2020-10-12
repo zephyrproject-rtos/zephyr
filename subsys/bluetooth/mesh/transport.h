@@ -99,10 +99,6 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx);
 
 void bt_mesh_trans_init(void);
 
-void bt_mesh_rpl_clear(void);
-
-bool bt_mesh_rpl_check(struct bt_mesh_net_rx *rx, struct bt_mesh_rpl **match);
-
 int bt_mesh_heartbeat_send(const struct bt_mesh_send_cb *cb, void *cb_data);
 
 int bt_mesh_app_key_get(const struct bt_mesh_subnet *subnet, uint16_t app_idx,

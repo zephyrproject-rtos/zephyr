@@ -52,11 +52,10 @@ void test_main(void)
 #endif
 
 	int key = arch_irq_lock();
-	__ASSERT(!arch_irq_unlocked(key),
-		"IRQs unlocked in main()");
+	__ASSERT(arch_irq_unlocked(key),
+		"IRQs locked in main()");
 
-	/* Enable interrupts unconditionally */
-	arch_irq_unlock(0);
+	arch_irq_unlock(key);
 
 	/* Determine an NVIC IRQ line that is not currently in use. */
 	int i, flag = test_flag;

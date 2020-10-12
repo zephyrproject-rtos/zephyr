@@ -146,7 +146,9 @@
 #elif defined(CONFIG_BOARD_NUCLEO_F091RC) || \
 	defined(CONFIG_BOARD_NUCLEO_F103RB) || \
 	defined(CONFIG_BOARD_NUCLEO_F207ZG) || \
+	defined(CONFIG_BOARD_STM32F3_DISCO) || \
 	defined(CONFIG_BOARD_NUCLEO_F401RE) || \
+	defined(CONFIG_BOARD_NUCLEO_F429ZI) || \
 	defined(CONFIG_BOARD_NUCLEO_F746ZG) || \
 	defined(CONFIG_BOARD_NUCLEO_L073RZ) || \
 	defined(CONFIG_BOARD_NUCLEO_WB55RG) || \
@@ -163,7 +165,7 @@
 #define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
 #define ADC_1ST_CHANNEL_ID	0
 
-#elif defined(CONFIG_BOARD_NUCLEO_F302R8)
+#elif defined(CONFIG_BOARD_NUCLEO_F302R8) || defined(CONFIG_BOARD_NUCLEO_G474RE)
 #define ADC_DEVICE_NAME         DT_LABEL(DT_INST(0, st_stm32_adc))
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
@@ -173,13 +175,22 @@
 #define ADC_1ST_CHANNEL_ID	1
 
 #elif defined(CONFIG_BOARD_NUCLEO_L476RG) || \
-	defined(CONFIG_BOARD_BLACKPILL_F411CE)
+	defined(CONFIG_BOARD_BLACKPILL_F411CE) || \
+	defined(CONFIG_BOARD_NUCLEO_L4R5ZI)
 #define ADC_DEVICE_NAME         DT_LABEL(DT_INST(0, st_stm32_adc))
 #define ADC_RESOLUTION		10
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
 #define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
 #define ADC_1ST_CHANNEL_ID	1
+
+#elif defined(CONFIG_BOARD_DISCO_L475_IOT1)
+#define ADC_DEVICE_NAME         DT_LABEL(DT_INST(0, st_stm32_adc))
+#define ADC_RESOLUTION		10
+#define ADC_GAIN		ADC_GAIN_1
+#define ADC_REFERENCE		ADC_REF_INTERNAL
+#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
+#define ADC_1ST_CHANNEL_ID	5
 
 #elif defined(CONFIG_BOARD_NUCLEO_H743ZI)
 #define ADC_DEVICE_NAME         DT_LABEL(DT_INST(0, st_stm32_adc))
@@ -210,6 +221,14 @@
 
 #else
 #error "Unsupported board."
+#endif
+
+/* Invalid value that is not supposed to be written by the driver. It is used
+ * to mark the sample buffer entries as empty. If needed, it can be overriden
+ * for a particular board by providing a specific definition above.
+ */
+#if !defined(INVALID_ADC_VALUE)
+#define INVALID_ADC_VALUE SHRT_MIN
 #endif
 
 #define BUFFER_SIZE  6
@@ -243,7 +262,7 @@ const struct device *get_adc_device(void)
 
 static const struct device *init_adc(void)
 {
-	int ret;
+	int i, ret;
 	const struct device *adc_dev = device_get_binding(ADC_DEVICE_NAME);
 
 	zassert_not_null(adc_dev, "Cannot get ADC device");
@@ -258,7 +277,9 @@ static const struct device *init_adc(void)
 		"Setting up of the second channel failed with code %d", ret);
 #endif /* defined(ADC_2ND_CHANNEL_ID) */
 
-	(void)memset(m_sample_buffer, 0, sizeof(m_sample_buffer));
+	for (i = 0; i < BUFFER_SIZE; ++i) {
+		m_sample_buffer[i] = INVALID_ADC_VALUE;
+	}
 
 	return adc_dev;
 }
@@ -273,11 +294,11 @@ static void check_samples(int expected_count)
 
 		TC_PRINT("0x%04x ", sample_value);
 		if (i < expected_count) {
-			zassert_not_equal(0, sample_value,
-				"[%u] should be non-zero", i);
+			zassert_not_equal(INVALID_ADC_VALUE, sample_value,
+				"[%u] should be filled", i);
 		} else {
-			zassert_equal(0, sample_value,
-				"[%u] should be zero", i);
+			zassert_equal(INVALID_ADC_VALUE, sample_value,
+				"[%u] should be empty", i);
 		}
 	}
 	TC_PRINT("\n");

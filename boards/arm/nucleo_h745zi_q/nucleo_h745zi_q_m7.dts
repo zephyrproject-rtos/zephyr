@@ -7,11 +7,12 @@
 
 /dts-v1/;
 #include <st/h7/stm32h745Xi_m7.dtsi>
+#include <st/h7/stm32h745zitx-pinctrl.dtsi>
 #include "nucleo_h745zi_q.dtsi"
 
 / {
 	model = "STMicroelectronics STM32H745ZI-Q-NUCLEO board";
-	compatible = "st,stm32h745zi-q-nucleo", "st,stm32h745";
+	compatible = "st,stm32h745zi-q-nucleo";
 
 	/* HW resources belonging to CM7 */
 	chosen {
@@ -39,6 +40,7 @@
 };
 
 &usart3 {
+	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -57,6 +59,7 @@
 
 	pwm12: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim12_ch1_pwm_pb14>;
 	};
 };
 

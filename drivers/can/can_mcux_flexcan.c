@@ -665,154 +665,85 @@ static const struct can_driver_api mcux_flexcan_driver_api = {
 	.register_state_change_isr = mcux_flexcan_register_state_change_isr
 };
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
-static void mcux_flexcan_config_func_0(const struct device *dev);
+#define FLEXCAN_IRQ_CODE(id, name) \
+	do {								\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(id, name, irq),		\
+		DT_INST_IRQ_BY_NAME(id, name, priority),		\
+		mcux_flexcan_isr,					\
+		DEVICE_GET(can_mcux_flexcan_##id), id);			\
+		irq_enable(DT_INST_IRQ_BY_NAME(id, name, irq));		\
+	} while (0)
 
-static const struct mcux_flexcan_config mcux_flexcan_config_0 = {
-	.base = (CAN_Type *) DT_INST_REG_ADDR(0),
-	.clock_name = DT_INST_CLOCKS_LABEL(0),
-	.clock_subsys = (clock_control_subsys_t)
-		DT_INST_CLOCKS_CELL(0, name),
-	.clk_source = DT_INST_PROP(0, clk_source),
-	.bitrate = DT_INST_PROP(0, bus_speed),
-	.sjw = DT_INST_PROP(0, sjw),
-	.prop_seg = DT_INST_PROP(0, prop_seg),
-	.phase_seg1 = DT_INST_PROP(0, phase_seg1),
-	.phase_seg2 = DT_INST_PROP(0, phase_seg2),
-	.irq_config_func = mcux_flexcan_config_func_0,
-};
+#define FLEXCAN_IRQ(id, name) \
+	COND_CODE_1(DT_INST_IRQ_HAS_NAME(id, name), \
+		(FLEXCAN_IRQ_CODE(id, name)), ())
 
-static struct mcux_flexcan_data mcux_flexcan_data_0 = {
-};
+#define FLEXCAN_DEVICE_INIT_MCUX(id)					\
+	static void mcux_flexcan_irq_config_##id(const struct device *dev); \
+									\
+	static const struct mcux_flexcan_config mcux_flexcan_config_##id = { \
+		.base = (CAN_Type *)DT_INST_REG_ADDR(id),		\
+		.clock_name = DT_INST_CLOCKS_LABEL(id),			\
+		.clock_subsys = (clock_control_subsys_t)		\
+			DT_INST_CLOCKS_CELL(id, name),			\
+		.clk_source = DT_INST_PROP(id, clk_source),		\
+		.bitrate = DT_INST_PROP(id, bus_speed),			\
+		.sjw = DT_INST_PROP(id, sjw),				\
+		.prop_seg = DT_INST_PROP(id, prop_seg),			\
+		.phase_seg1 = DT_INST_PROP(id, phase_seg1),		\
+		.phase_seg2 = DT_INST_PROP(id, phase_seg2),		\
+		.irq_config_func = mcux_flexcan_irq_config_##id,	\
+	};								\
+									\
+	static struct mcux_flexcan_data mcux_flexcan_data_##id;		\
+									\
+	DEVICE_AND_API_INIT(can_mcux_flexcan_##id,			\
+			DT_INST_LABEL(id),				\
+			&mcux_flexcan_init, &mcux_flexcan_data_##id,	\
+			&mcux_flexcan_config_##id, POST_KERNEL,		\
+			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			&mcux_flexcan_driver_api);			\
+									\
+	static void mcux_flexcan_irq_config_##id(const struct device *dev) \
+	{								\
+		FLEXCAN_IRQ(id, rx_warning);				\
+		FLEXCAN_IRQ(id, tx_warning);				\
+		FLEXCAN_IRQ(id, bus_off);				\
+		FLEXCAN_IRQ(id, warning);				\
+		FLEXCAN_IRQ(id, error);					\
+		FLEXCAN_IRQ(id, wake_up);				\
+		FLEXCAN_IRQ(id, mb_0_15);				\
+		FLEXCAN_IRQ(id, common);				\
+	}
 
-DEVICE_AND_API_INIT(can_mcux_flexcan_0, DT_INST_LABEL(0),
-		    &mcux_flexcan_init, &mcux_flexcan_data_0,
-		    &mcux_flexcan_config_0, POST_KERNEL,
-		    CONFIG_CAN_INIT_PRIORITY, &mcux_flexcan_driver_api);
-
-static void mcux_flexcan_config_func_0(const struct device *dev)
-{
-#if DT_INST_IRQ_HAS_NAME(0, rx_warning)
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, rx_warning, irq),
-		    DT_INST_IRQ_BY_NAME(0, rx_warning, priority),
-		    mcux_flexcan_isr, DEVICE_GET(can_mcux_flexcan_0), 0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, rx_warning, irq));
-#endif
-#if DT_INST_IRQ_HAS_NAME(0, tx_warning)
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, tx_warning, irq),
-		    DT_INST_IRQ_BY_NAME(0, tx_warning, priority),
-		    mcux_flexcan_isr, DEVICE_GET(can_mcux_flexcan_0), 0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, tx_warning, irq));
-#endif
-#if DT_INST_IRQ_HAS_NAME(0, bus_off)
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, bus_off, irq),
-		    DT_INST_IRQ_BY_NAME(0, bus_off, priority),
-		    mcux_flexcan_isr, DEVICE_GET(can_mcux_flexcan_0), 0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, bus_off, irq));
-#endif
-#if DT_INST_IRQ_HAS_NAME(0, warning)
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, warning, irq),
-		    DT_INST_IRQ_BY_NAME(0, warning, priority),
-		    mcux_flexcan_isr, DEVICE_GET(can_mcux_flexcan_0), 0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, warning, irq));
-#endif
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, error, irq),
-		    DT_INST_IRQ_BY_NAME(0, error, priority),
-		    mcux_flexcan_isr, DEVICE_GET(can_mcux_flexcan_0), 0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, error, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, wake_up, irq),
-		    DT_INST_IRQ_BY_NAME(0, wake_up, priority),
-		    mcux_flexcan_isr, DEVICE_GET(can_mcux_flexcan_0), 0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, wake_up, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, mb_0_15, irq),
-		    DT_INST_IRQ_BY_NAME(0, mb_0_15, priority),
-		    mcux_flexcan_isr, DEVICE_GET(can_mcux_flexcan_0), 0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, mb_0_15, irq));
-}
+DT_INST_FOREACH_STATUS_OKAY(FLEXCAN_DEVICE_INIT_MCUX)
 
 #if defined(CONFIG_NET_SOCKETS_CAN)
+#include "socket_can_generic.h"						\
+#define FLEXCAN_DEVICE_SOCKET_CAN(id)					\
+	static int socket_can_init_##id(const struct device *dev)	\
+	{								\
+		struct device *can_dev = DEVICE_GET(DT_INST_LABEL(id));	\
+		struct socket_can_context *socket_context = dev->data;	\
+		LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)", \
+			dev, dev->name, can_dev, can_dev->name);	\
+		socket_context->can_dev = can_dev;			\
+		socket_context->msgq = &socket_can_msgq;		\
+		socket_context->rx_tid =				\
+		k_thread_create(&socket_context->rx_thread_data,	\
+				rx_thread_stack,			\
+				K_KERNEL_STACK_SIZEOF(rx_thread_stack),	\
+				rx_thread, socket_context, NULL, NULL,	\
+				RX_THREAD_PRIORITY, 0, K_NO_WAIT);	\
+		return 0;						\
+	}								\
+									\
+	NET_DEVICE_INIT(socket_can_flexcan_##id, SOCKET_CAN_NAME_##id,	\
+		socket_can_init_##id, device_pm_control_nop,		\
+		&socket_can_context_##id, NULL,				\
+		CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &socket_can_api,	\
+		CANBUS_RAW_L2, NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2),	\
+		CAN_MTU);						\
 
-#include "socket_can_generic.h"
-
-static int socket_can_init_0(const struct device *dev)
-{
-	const struct device *can_dev = DEVICE_GET(can_mcux_flexcan_0);
-	struct socket_can_context *socket_context = dev->data;
-
-	LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",
-		dev, dev->name, can_dev, can_dev->name);
-
-	socket_context->can_dev = can_dev;
-	socket_context->msgq = &socket_can_msgq;
-
-	socket_context->rx_tid =
-		k_thread_create(&socket_context->rx_thread_data,
-				rx_thread_stack,
-				K_KERNEL_STACK_SIZEOF(rx_thread_stack),
-				rx_thread, socket_context, NULL, NULL,
-				RX_THREAD_PRIORITY, 0, K_NO_WAIT);
-
-	return 0;
-}
-
-NET_DEVICE_INIT(socket_can_flexcan_0, SOCKET_CAN_NAME_1, socket_can_init_0,
-		device_pm_control_nop, &socket_can_context_1, NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		&socket_can_api,
-		CANBUS_RAW_L2, NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2), CAN_MTU);
-
-#endif /* CONFIG_NET_SOCKETS_CAN */
-
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
-static void mcux_flexcan_config_func_1(const struct device *dev);
-
-static const struct mcux_flexcan_config mcux_flexcan_config_1 = {
-	.base = (CAN_Type *) DT_INST_REG_ADDR(1),
-	.clock_name = DT_INST_CLOCKS_LABEL(1),
-	.clock_subsys = (clock_control_subsys_t)
-		DT_INST_CLOCKS_CELL(1, name),
-	.clk_source = DT_INST_PROP(1, clk_source),
-	.bitrate = DT_INST_PROP(1, bus_speed),
-	.sjw = DT_INST_PROP(1, sjw),
-	.prop_seg = DT_INST_PROP(1, prop_seg),
-	.phase_seg1 = DT_INST_PROP(1, phase_seg1),
-	.phase_seg2 = DT_INST_PROP(1, phase_seg2),
-	.irq_config_func = mcux_flexcan_config_func_1,
-};
-
-static struct mcux_flexcan_data mcux_flexcan_data_1 = {
-};
-
-DEVICE_AND_API_INIT(can_mcux_flexcan_1, DT_INST_LABEL(1),
-		    &mcux_flexcan_init, &mcux_flexcan_data_1,
-		    &mcux_flexcan_config_1, POST_KERNEL,
-		    CONFIG_CAN_INIT_PRIORITY, &mcux_flexcan_driver_api);
-
-static void mcux_flexcan_config_func_1(const struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, warning, irq),
-		    DT_INST_IRQ_BY_NAME(1, warning, priority),
-		    mcux_flexcan_isr, DEVICE_GET(can_mcux_flexcan_1), 0);
-	irq_enable(DT_INST_IRQ_BY_NAME(1, warning, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, error, irq),
-		    DT_INST_IRQ_BY_NAME(1, error, priority),
-		    mcux_flexcan_isr, DEVICE_GET(can_mcux_flexcan_1), 0);
-	irq_enable(DT_INST_IRQ_BY_NAME(1, error, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, wake_up, irq),
-		    DT_INST_IRQ_BY_NAME(1, wake_up, priority),
-		    mcux_flexcan_isr, DEVICE_GET(can_mcux_flexcan_1), 0);
-	irq_enable(DT_INST_IRQ_BY_NAME(1, wake_up, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, mb_0_15, irq),
-		    DT_INST_IRQ_BY_NAME(1, mb_0_15, priority),
-		    mcux_flexcan_isr, DEVICE_GET(can_mcux_flexcan_1), 0);
-	irq_enable(DT_INST_IRQ_BY_NAME(1, mb_0_15, irq));
-}
-
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) */
+DT_INST_FOREACH_STATUS_OKAY(FLEXCAN_DEVICE_SOCKET_CAN)
+#endif

@@ -36,10 +36,7 @@
 #define NOTIFY_OBSERVER_PATH(path)	lwm2m_notify_observer_path(path)
 
 /* Use this value to generate new token */
-#define LWM2M_MSG_TOKEN_GENERATE_NEW 0U
-
-/* Use this value to skip token generation */
-#define LWM2M_MSG_TOKEN_LEN_SKIP	0xFF
+#define LWM2M_MSG_TOKEN_GENERATE_NEW 0xFFU
 
 /* length of time in milliseconds to wait for buffer allocations */
 #define BUF_ALLOC_TIMEOUT K_SECONDS(1)
@@ -102,7 +99,9 @@ int lwm2m_engine_get_resource(char *pathstr,
 void lwm2m_engine_get_binding(char *binding);
 
 size_t lwm2m_engine_get_opaque_more(struct lwm2m_input_context *in,
-				    uint8_t *buf, size_t buflen, bool *last_block);
+				    uint8_t *buf, size_t buflen,
+				    struct lwm2m_opaque_context *opaque,
+				    bool *last_block);
 
 int lwm2m_security_inst_id_to_index(uint16_t obj_inst_id);
 int lwm2m_security_index_to_inst_id(int index);

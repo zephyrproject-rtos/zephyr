@@ -11,6 +11,7 @@
 #include <arch/x86/multiboot.h>
 #include <x86_mmu.h>
 #include <drivers/interrupt_controller/loapic.h>
+#include <arch/x86/acpi.h>
 
 /*
  * Map of CPU logical IDs to CPU local APIC IDs. By default,
@@ -39,7 +40,7 @@ struct x86_tss64 tss0 = {
 #ifdef CONFIG_X86_KPTI
 	.ist2 = (uint64_t) z_x86_trampoline_stack + Z_X86_TRAMPOLINE_STACK_SIZE,
 #endif
-	.ist7 = (uint64_t) _exception_stack + CONFIG_EXCEPTION_STACK_SIZE,
+	.ist7 = (uint64_t) _exception_stack + CONFIG_X86_EXCEPTION_STACK_SIZE,
 	.iomapb = 0xFFFF,
 	.cpu = &(_kernel.cpus[0])
 };
@@ -50,7 +51,7 @@ struct x86_tss64 tss1 = {
 #ifdef CONFIG_X86_KPTI
 	.ist2 = (uint64_t) z_x86_trampoline_stack1 + Z_X86_TRAMPOLINE_STACK_SIZE,
 #endif
-	.ist7 = (uint64_t) _exception_stack1 + CONFIG_EXCEPTION_STACK_SIZE,
+	.ist7 = (uint64_t) _exception_stack1 + CONFIG_X86_EXCEPTION_STACK_SIZE,
 	.iomapb = 0xFFFF,
 	.cpu = &(_kernel.cpus[1])
 };
@@ -62,7 +63,7 @@ struct x86_tss64 tss2 = {
 #ifdef CONFIG_X86_KPTI
 	.ist2 = (uint64_t) z_x86_trampoline_stack2 + Z_X86_TRAMPOLINE_STACK_SIZE,
 #endif
-	.ist7 = (uint64_t) _exception_stack2 + CONFIG_EXCEPTION_STACK_SIZE,
+	.ist7 = (uint64_t) _exception_stack2 + CONFIG_X86_EXCEPTION_STACK_SIZE,
 	.iomapb = 0xFFFF,
 	.cpu = &(_kernel.cpus[2])
 };
@@ -74,7 +75,7 @@ struct x86_tss64 tss3 = {
 #ifdef CONFIG_X86_KPTI
 	.ist2 = (uint64_t) z_x86_trampoline_stack3 + Z_X86_TRAMPOLINE_STACK_SIZE,
 #endif
-	.ist7 = (uint64_t) _exception_stack3 + CONFIG_EXCEPTION_STACK_SIZE,
+	.ist7 = (uint64_t) _exception_stack3 + CONFIG_X86_EXCEPTION_STACK_SIZE,
 	.iomapb = 0xFFFF,
 	.cpu = &(_kernel.cpus[3])
 };
@@ -119,7 +120,19 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
 	uint8_t vector = ((unsigned long) x86_ap_start) >> 12;
-	uint8_t apic_id = x86_cpu_loapics[cpu_num];
+	uint8_t apic_id;
+
+	if (IS_ENABLED(CONFIG_ACPI)) {
+		struct acpi_cpu *cpu;
+
+		cpu = z_acpi_get_cpu(cpu_num);
+		if (cpu != NULL) {
+			/* We update the apic_id, x86_ap_start will need it. */
+			x86_cpu_loapics[cpu_num] = cpu->apic_id;
+		}
+	}
+
+	apic_id = x86_cpu_loapics[cpu_num];
 
 	x86_cpuboot[cpu_num].sp = (uint64_t) Z_KERNEL_STACK_BUFFER(stack) + sz;
 	x86_cpuboot[cpu_num].stack_size = sz;

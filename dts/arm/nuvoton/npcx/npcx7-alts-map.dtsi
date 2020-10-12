@@ -12,6 +12,8 @@
 		/* SCFG DEVALT 0 */
 		alt0_spip_sl:      alt00     { alts = <&scfg 0x00 0x0 0>; };
 		alt0_gpio_no_spip: alt03_inv { alts = <&scfg 0x00 0x3 1>; };
+		/* FPIP (FIU SPI Interface Peripheral) for external flash. */
+		alt0_gpio_no_fpip: alt07_inv { alts = <&scfg 0x00 0x7 1>; };
 
 		/* SCFG DEVALT 1 */
 		alt1_kbrst_sl:     alt10     { alts = <&scfg 0x01 0x0 0>; };
@@ -127,9 +129,9 @@
 
 		/* SCFG DEVALT D */
 		altd_psl_in1_ahi:  altd0     { alts = <&scfg 0x0D 0x0 0>; };
-		altd_npsl_in1_sl:  altd1     { alts = <&scfg 0x0D 0x1 0>; };
+		altd_npsl_in1_sl:  altd1_inv { alts = <&scfg 0x0D 0x1 1>; };
 		altd_psl_in2_ahi:  altd2     { alts = <&scfg 0x0D 0x2 0>; };
-		altd_npsl_in2_sl:  altd3     { alts = <&scfg 0x0D 0x3 0>; };
+		altd_npsl_in2_sl:  altd3_inv { alts = <&scfg 0x0D 0x3 1>; };
 		altd_psl_in3_ahi:  altd4     { alts = <&scfg 0x0D 0x4 0>; };
 		altd_psl_in3_sl:   altd5     { alts = <&scfg 0x0D 0x5 0>; };
 		altd_psl_in4_ahi:  altd6     { alts = <&scfg 0x0D 0x6 0>; };
@@ -146,6 +148,6 @@
 		altf_adc7_sl:      altf2     { alts = <&scfg 0x0F 0x2 0>; };
 		altf_adc8_sl:      altf3     { alts = <&scfg 0x0F 0x3 0>; };
 		altf_adc9_sl:      altf4     { alts = <&scfg 0x0F 0x4 0>; };
-		altf_f_shi_new:    altf7     { alts = <&scfg 0x0F 0x7 0>; };
+		altf_shi_new:      altf7     { alts = <&scfg 0x0F 0x7 0>; };
 	};
 };

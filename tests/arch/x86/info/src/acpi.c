@@ -21,7 +21,7 @@ void acpi(void)
 
 		for (int i = 0; i < nr_cpus; ++i) {
 			struct acpi_cpu *cpu = z_acpi_get_cpu(i);
-			printk("\tCPU #%d: APIC ID 0x%02x\n", i, cpu->id);
+			printk("\tCPU #%d: APIC ID 0x%02x\n", i, cpu->apic_id);
 		}
 	}
 

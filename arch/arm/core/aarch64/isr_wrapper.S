@@ -36,10 +36,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	z_arm64_enter_exc x0, x1, x2
 
 	/* ++(_kernel->nested) to be checked by arch_is_in_isr() */
-	ldr	x0, =_kernel
-	ldr	x1, [x0, #_kernel_offset_to_nested]
-	add	x1, x1, #1
-	str	x1, [x0, #_kernel_offset_to_nested]
+	inc_nest_counter x0, x1
 
 #ifdef CONFIG_TRACING
 	bl	sys_trace_isr_enter
@@ -80,10 +77,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 #endif
 
 	/* --(_kernel->nested) */
-	ldr	x0, =_kernel
-	ldr	x1, [x0, #_kernel_offset_to_nested]
-	sub	x1, x1, #1
-	str	x1, [x0, #_kernel_offset_to_nested]
+	dec_nest_counter x0, x1
 
 	cmp	x1, #0
 	bne	exit
@@ -111,13 +105,6 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	/* Switch thread */
 	bl	z_arm64_context_switch
 
-	/* We return here in two cases:
-	 *
-	 * - The ISR was taken and no context switch was performed.
-	 * - A context-switch was performed during the ISR in the past and now
-	 *   the thread has been switched in again and we return here from the
-	 *   ret in z_arm64_context_switch() because x30 was saved and restored.
-	 */
 exit:
 #ifdef CONFIG_STACK_SENTINEL
 	bl	z_check_stack_sentinel

@@ -516,6 +516,12 @@ struct _thread_base {
 #endif
 
 	_wait_q_t join_waiters;
+#if __ASSERT_ON
+	/* For detecting calls to k_thread_create() on threads that are
+	 * already active
+	 */
+	atomic_t cookie;
+#endif
 };
 
 typedef struct _thread_base _thread_base_t;
@@ -1052,8 +1058,8 @@ __syscall void k_thread_abort(k_tid_t thread);
  */
 __syscall void k_thread_start(k_tid_t thread);
 
-extern k_ticks_t z_timeout_expires(struct _timeout *timeout);
-extern k_ticks_t z_timeout_remaining(struct _timeout *timeout);
+extern k_ticks_t z_timeout_expires(const struct _timeout *timeout);
+extern k_ticks_t z_timeout_remaining(const struct _timeout *timeout);
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 
@@ -1795,8 +1801,6 @@ struct k_timer {
 	_OBJECT_TRACING_INIT \
 	}
 
-#define K_TIMER_INITIALIZER __DEPRECATED_MACRO Z_TIMER_INITIALIZER
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -1826,7 +1830,10 @@ typedef void (*k_timer_expiry_t)(struct k_timer *timer);
  * @brief Timer stop function type.
  *
  * A timer's stop function is executed if the timer is stopped prematurely.
- * The function runs in the context of the thread that stops the timer.
+ * The function runs in the context of call that stops the timer.  As
+ * k_timer_stop() can be invoked from an ISR, the stop function must be
+ * callable from interrupt context (isr-ok).
+ *
  * The stop function is optional, and is only invoked if the timer has been
  * initialized with one.
  *
@@ -2018,9 +2025,9 @@ static inline void z_impl_k_timer_user_data_set(struct k_timer *timer,
  *
  * @return The user data.
  */
-__syscall void *k_timer_user_data_get(struct k_timer *timer);
+__syscall void *k_timer_user_data_get(const struct k_timer *timer);
 
-static inline void *z_impl_k_timer_user_data_get(struct k_timer *timer)
+static inline void *z_impl_k_timer_user_data_get(const struct k_timer *timer)
 {
 	return timer->user_data;
 }
@@ -2060,40 +2067,6 @@ static inline int64_t k_uptime_get(void)
 {
 	return k_ticks_to_ms_floor64(k_uptime_ticks());
 }
-
-/**
- * @brief Enable clock always on in tickless kernel
- *
- * Deprecated.  This does nothing (it was always just a hint).  This
- * functionality has been migrated to the
- * @option{CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE} config option.
- *
- * @retval prev_status Previous status of always on flag
- */
-/* LCOV_EXCL_START */
-__deprecated static inline int k_enable_sys_clock_always_on(void)
-{
-	__ASSERT(IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE),
-		 "Please use CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE instead");
-
-	return !IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE);
-}
-/* LCOV_EXCL_STOP */
-
-/**
- * @brief Disable clock always on in tickless kernel
- *
- * Deprecated.  This does nothing (it was always just a hint).  This
- * functionality has been migrated to the
- * @option{CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE} config option.
- */
-/* LCOV_EXCL_START */
-__deprecated static inline void k_disable_sys_clock_always_on(void)
-{
-	__ASSERT(!IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE),
-		 "Please use CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE instead");
-}
-/* LCOV_EXCL_STOP */
 
 /**
  * @brief Get system uptime (32-bit version).
@@ -2142,26 +2115,6 @@ static inline int64_t k_uptime_delta(int64_t *reftime)
 }
 
 /**
- * @brief Get elapsed time (32-bit version).
- *
- * This routine computes the elapsed time between the current system uptime
- * and an earlier reference time, in milliseconds.
- *
- * This is a wrapper around k_uptime_delta().
- *
- * @param reftime Pointer to a reference time, which is updated to the current
- *                uptime upon return.
- *
- * @return Elapsed time.
- *
- * @deprecated in 2.3 release, replace with k_uptime_delta()
- */
-__deprecated static inline uint32_t k_uptime_delta_32(int64_t *reftime)
-{
-	return (uint32_t)k_uptime_delta(reftime);
-}
-
-/**
  * @brief Read the hardware clock.
  *
  * This routine returns the current time, as measured by the system's hardware
@@ -2194,14 +2147,12 @@ struct k_queue {
 
 #define Z_QUEUE_INITIALIZER(obj) \
 	{ \
-	.data_q = SYS_SLIST_STATIC_INIT(&obj.data_q), \
+	.data_q = SYS_SFLIST_STATIC_INIT(&obj.data_q), \
 	.lock = { }, \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q),	\
 	_POLL_EVENT_OBJ_INIT(obj)		\
 	_OBJECT_TRACING_INIT \
 	}
-
-#define K_QUEUE_INITIALIZER __DEPRECATED_MACRO Z_QUEUE_INITIALIZER
 
 extern void *z_queue_node_peek(sys_sfnode_t *node, bool needs_free);
 
@@ -2587,8 +2538,6 @@ struct k_fifo {
 	._queue = Z_QUEUE_INITIALIZER(obj._queue) \
 	}
 
-#define K_FIFO_INITIALIZER __DEPRECATED_MACRO Z_FIFO_INITIALIZER
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -2792,8 +2741,6 @@ struct k_lifo {
 	._queue = Z_QUEUE_INITIALIZER(obj._queue) \
 	}
 
-#define K_LIFO_INITIALIZER __DEPRECATED_MACRO Z_LIFO_INITIALIZER
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -2910,8 +2857,6 @@ struct k_stack {
 	.top = stack_buffer + stack_num_entries, \
 	_OBJECT_TRACING_INIT \
 	}
-
-#define K_STACK_INITIALIZER __DEPRECATED_MACRO Z_STACK_INITIALIZER
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -3100,8 +3045,6 @@ extern struct k_work_q k_sys_work_q;
 	.flags = { 0 } \
 	}
 
-#define K_WORK_INITIALIZER __DEPRECATED_MACRO Z_WORK_INITIALIZER
-
 /**
  * @brief Initialize a statically-defined work item.
  *
@@ -3134,12 +3077,12 @@ static inline void k_work_init(struct k_work *work, k_work_handler_t handler)
 /**
  * @brief Submit a work item.
  *
- * This routine submits work item @a work to be processed by workqueue
- * @a work_q. If the work item is already pending in the workqueue's queue
- * as a result of an earlier submission, this routine has no effect on the
- * work item. If the work item has already been processed, or is currently
- * being processed, its work is considered complete and the work item can be
- * resubmitted.
+ * This routine submits work item @p work to be processed by workqueue @p
+ * work_q. If the work item is already pending in @p work_q or any other
+ * workqueue as a result of an earlier submission, this routine has no
+ * effect on the work item. If the work item has already been processed, or
+ * is currently being processed, its work is considered complete and the
+ * work item can be resubmitted.
  *
  * @warning
  * A submitted work item must not be modified until it has been processed
@@ -3305,12 +3248,15 @@ extern void k_delayed_work_init(struct k_delayed_work *work,
  * Only when the countdown completes is the work item actually submitted to
  * the workqueue and becomes pending.
  *
- * Submitting a previously submitted delayed work item that is still
- * counting down cancels the existing submission and restarts the
- * countdown using the new delay.  Note that this behavior is
- * inherently subject to race conditions with the pre-existing
- * timeouts and work queue, so care must be taken to synchronize such
- * resubmissions externally.
+ * Submitting a previously submitted delayed work item that is still counting
+ * down or is pending cancels the existing submission and restarts the
+ * countdown using the new delay.  Note that this behavior is inherently
+ * subject to race conditions with the pre-existing timeouts and work queue,
+ * so care must be taken to synchronize such resubmissions externally.
+ *
+ * Attempts to submit a work item to a queue after it has been submitted to a
+ * different queue will fail with @c -EALREADY until k_delayed_work_cancel()
+ * is successfully invoked on the work item to clear its internal state.
  *
  * @warning
  * A delayed work item must not be modified until it has been processed
@@ -3323,8 +3269,11 @@ extern void k_delayed_work_init(struct k_delayed_work *work,
  * @param delay Delay before submitting the work item
  *
  * @retval 0 Work item countdown started.
- * @retval -EINVAL Work item is being processed or has completed its work.
- * @retval -EADDRINUSE Work item is pending on a different workqueue.
+ * @retval -EINVAL
+ *    * if a previously submitted work item had to be cancelled and the
+ *      cancellation failed; or
+ *    * Work item is being processed or has completed its work.
+ * @retval -EADDRINUSE Work item was submitted to a different workqueue.
  */
 extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 					  struct k_delayed_work *work,
@@ -3333,21 +3282,33 @@ extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 /**
  * @brief Cancel a delayed work item.
  *
- * This routine cancels the submission of delayed work item @a work.
- * A delayed work item can only be canceled while its countdown is still
- * underway.
+ * This routine cancels the submission of delayed work item @a work.  Whether
+ * the work item can be successfully cancelled depends on its state.
  *
  * @note Can be called by ISRs.
  *
- * @note The result of calling this on a k_delayed_work item that has
- * not been submitted (i.e. before the return of the
- * k_delayed_work_submit_to_queue() call) is undefined.
+ * @note When @c -EALREADY is returned the caller cannot distinguish whether
+ * the work item handler is still being invoked by the work queue thread or
+ * has completed.
  *
  * @param work Address of delayed work item.
  *
- * @retval 0 Work item countdown canceled.
- * @retval -EINVAL Work item is being processed.
- * @retval -EALREADY Work item has already been completed.
+ * @retval 0
+ *   * Work item countdown cancelled before the item was submitted to its
+ *     queue; or
+ *   * Work item was removed from its queue before it was processed.
+ * @retval -EINVAL
+ *   * Work item has never been submitted; or
+ *   * Work item has been successfully cancelled; or
+ *   * Timeout handler is in the process of submitting the work item to its
+ *     queue; or
+ *   * Work queue thread has removed the work item from the queue but has not
+ *     called its handler.
+ * @retval -EALREADY
+ *   * Work queue thread has removed the work item from the queue and cleared
+ *     its pending flag; or
+ *   * Work queue thread is invoking the item handler; or
+ *   * Work item handler has completed.
  */
 extern int k_delayed_work_cancel(struct k_delayed_work *work);
 
@@ -3355,11 +3316,11 @@ extern int k_delayed_work_cancel(struct k_delayed_work *work);
  * @brief Submit a work item to the system workqueue.
  *
  * This routine submits work item @a work to be processed by the system
- * workqueue. If the work item is already pending in the workqueue's queue
- * as a result of an earlier submission, this routine has no effect on the
- * work item. If the work item has already been processed, or is currently
- * being processed, its work is considered complete and the work item can be
- * resubmitted.
+ * workqueue. If the work item is already pending in the system workqueue or
+ * any other workqueue as a result of an earlier submission, this routine
+ * has no effect on the work item. If the work item has already been
+ * processed, or is currently being processed, its work is considered
+ * complete and the work item can be resubmitted.
  *
  * @warning
  * Work items submitted to the system workqueue should avoid using handlers
@@ -3394,6 +3355,10 @@ static inline void k_work_submit(struct k_work *work)
  * If the work item has already been processed, or is currently being processed,
  * its work is considered complete and the work item can be resubmitted.
  *
+ * Attempts to submit a work item to a queue after it has been submitted to a
+ * different queue will fail with @c -EALREADY until k_delayed_work_cancel()
+ * is invoked on the work item to clear its internal state.
+ *
  * @warning
  * Work items submitted to the system workqueue should avoid using handlers
  * that block or yield since this may prevent the system workqueue from
@@ -3406,7 +3371,7 @@ static inline void k_work_submit(struct k_work *work)
  *
  * @retval 0 Work item countdown started.
  * @retval -EINVAL Work item is being processed or has completed its work.
- * @retval -EADDRINUSE Work item is pending on a different workqueue.
+ * @retval -EADDRINUSE Work item was submitted to a different workqueue.
  */
 static inline int k_delayed_work_submit(struct k_delayed_work *work,
 					k_timeout_t delay)
@@ -3614,8 +3579,6 @@ struct k_mutex {
 	_OBJECT_TRACING_INIT \
 	}
 
-#define K_MUTEX_INITIALIZER __DEPRECATED_MACRO Z_MUTEX_INITIALIZER
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -3719,8 +3682,6 @@ struct k_sem {
 	_POLL_EVENT_OBJ_INIT(obj) \
 	_OBJECT_TRACING_INIT \
 	}
-
-#define K_SEM_INITIALIZER __DEPRECATED_MACRO Z_SEM_INITIALIZER
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -3888,7 +3849,7 @@ struct k_msgq {
 	.used_msgs = 0, \
 	_OBJECT_TRACING_INIT \
 	}
-#define K_MSGQ_INITIALIZER __DEPRECATED_MACRO Z_MSGQ_INITIALIZER
+
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -4170,8 +4131,6 @@ struct k_mbox {
 	_OBJECT_TRACING_INIT \
 	}
 
-#define K_MBOX_INITIALIZER __DEPRECATED_MACRO Z_MBOX_INITIALIZER
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -4360,8 +4319,6 @@ struct k_pipe {
 	.flags = 0                                                  \
 	}
 
-#define K_PIPE_INITIALIZER __DEPRECATED_MACRO Z_PIPE_INITIALIZER
-
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -4542,8 +4499,6 @@ struct k_mem_slab {
 	_OBJECT_TRACING_INIT \
 	}
 
-#define K_MEM_SLAB_INITIALIZER __DEPRECATED_MACRO Z_MEM_SLAB_INITIALIZER
-
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -4676,6 +4631,14 @@ static inline uint32_t k_mem_slab_num_free_get(struct k_mem_slab *slab)
  * @addtogroup mem_pool_apis
  * @{
  */
+
+/* kernel synchronized heap struct */
+
+struct k_heap {
+	struct sys_heap heap;
+	_wait_q_t wait_q;
+	struct k_spinlock lock;
+};
 
 /**
  * @brief Initialize a k_heap
@@ -4906,7 +4869,7 @@ enum _poll_types_bits {
 	_POLL_NUM_TYPES
 };
 
-#define Z_POLL_TYPE_BIT(type) (1 << ((type) - 1))
+#define Z_POLL_TYPE_BIT(type) (1U << ((type) - 1U))
 
 /* private - states bit positions */
 enum _poll_states_bits {
@@ -4928,7 +4891,7 @@ enum _poll_states_bits {
 	_POLL_NUM_STATES
 };
 
-#define Z_POLL_STATE_BIT(state) (1 << ((state) - 1))
+#define Z_POLL_STATE_BIT(state) (1U << ((state) - 1U))
 
 #define _POLL_EVENT_NUM_UNUSED_BITS \
 	(32 - (0 \
@@ -5214,8 +5177,14 @@ static inline void k_cpu_idle(void)
 /**
  * @brief Make the CPU idle in an atomic fashion.
  *
- * Similar to k_cpu_idle(), but called with interrupts locked if operations
- * must be done atomically before making the CPU idle.
+ * Similar to k_cpu_idle(), but must be called with interrupts locked.
+ *
+ * Enabling interrupts and entering a low-power mode will be atomic,
+ * i.e. there will be no period of time where interrupts are enabled before
+ * the processor enters a low-power mode.
+ *
+ * After waking up from the low-power mode, the interrupt lockout state will
+ * be restored as if by irq_unlock(key).
  *
  * @param key Interrupt locking key obtained from irq_lock().
  *

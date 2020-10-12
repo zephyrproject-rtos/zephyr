@@ -42,7 +42,7 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	stp	x23, x24, [x2], #16
 	stp	x25, x26, [x2], #16
 	stp	x27, x28, [x2], #16
-	stp	x29, x30, [x2], #16
+	stp	x29, xzr, [x2], #16
 
 	/* Save the current SP */
 	mov	x1, sp
@@ -52,13 +52,13 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	ldr	x2, =_thread_offset_to_callee_saved
 	add	x2, x2, x0
 
-	/* Restore x19-x29 plus x30 */
+	/* Restore x19-x29 */
 	ldp	x19, x20, [x2], #16
 	ldp	x21, x22, [x2], #16
 	ldp	x23, x24, [x2], #16
 	ldp	x25, x26, [x2], #16
 	ldp	x27, x28, [x2], #16
-	ldp	x29, x30, [x2], #16
+	ldp	x29, xzr, [x2], #16
 
 	ldr	x1, [x2]
 	mov	sp, x1
@@ -69,64 +69,10 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	ldp	xzr, x30, [sp], #16
 #endif
 
-	/* We restored x30 from the process stack. There are three possible
-	 * cases:
-	 *
-	 * - We return to z_arm64_svc() when swapping in a thread that was
-	 *   swapped out by z_arm64_svc() before jumping into
-	 *   z_arm64_exit_exc()
-	 * - We return to _isr_wrapper() when swapping in a thread that was
-	 *   swapped out by _isr_wrapper() before jumping into
-	 *   z_arm64_exit_exc()
-	 * - We return (jump) into z_thread_entry_wrapper() for new threads
-	 *   (see thread.c)
-	 */
+	/* Return to z_arm64_svc() or _isr_wrapper() */
 	ret
 
 /**
- *
- * @brief Entry wrapper for new threads
- *
- * @return N/A
- */
-
-GTEXT(z_thread_entry_wrapper)
-SECTION_FUNC(TEXT, z_thread_entry_wrapper)
-	/*
-	 * Restore SPSR_ELn and ELR_ELn saved in the temporary stack by
-	 * arch_new_thread()
-	 */
-	ldp	x0, x1, [sp], #16
-	switch_el x3, 3f, 2f, 1f
-3:
-	msr	spsr_el3, x0
-	msr	elr_el3, x1
-	b	0f
-2:
-	msr	spsr_el2, x0
-	msr	elr_el2, x1
-	b	0f
-1:
-	msr	spsr_el1, x0
-	msr	elr_el1, x1
-0:
-	/*
-	 * z_thread_entry_wrapper is called for every new thread upon the return
-	 * of arch_swap() or ISR. Its address, as well as its input function
-	 * arguments thread_entry_t, void *, void *, void * are restored from
-	 * the thread stack (see thread.c).
-	 * In this case, thread_entry_t, * void *, void * and void * are stored
-	 * in registers x0, x1, x2 and x3. These registers are used as arguments
-	 * to function z_thread_entry.
-	 */
-	ldp	x0, x1, [sp], #16
-	ldp	x2, x3, [sp], #16
-
-	/* ELR_ELn was set in thread.c to z_thread_entry() */
-	eret
-
-/**
- *
  * @brief Service call handler
  *
  * The service call (SVC) is used in the following occasions:
@@ -140,16 +86,7 @@ GTEXT(z_arm64_svc)
 SECTION_FUNC(TEXT, z_arm64_svc)
 	z_arm64_enter_exc x2, x3, x4
 
-	switch_el x1, 3f, 2f, 1f
-3:
-	mrs	x0, esr_el3
-	b	0f
-2:
-	mrs	x0, esr_el2
-	b	0f
-1:
 	mrs	x0, esr_el1
-0:
 	lsr	x1, x0, #26
 
 	cmp	x1, #0x15 /* 0x15 = SVC */
@@ -166,18 +103,12 @@ SECTION_FUNC(TEXT, z_arm64_svc)
 	b	inv
 offload:
 	/* ++(_kernel->nested) to be checked by arch_is_in_isr() */
-	ldr	x0, =_kernel
-	ldr	x1, [x0, #_kernel_offset_to_nested]
-	add	x1, x1, #1
-	str	x1, [x0, #_kernel_offset_to_nested]
+	inc_nest_counter x0, x1
 
 	bl	z_irq_do_offload
 
 	/* --(_kernel->nested) */
-	ldr	x0, =_kernel
-	ldr	x1, [x0, #_kernel_offset_to_nested]
-	sub	x1, x1, #1
-	str	x1, [x0, #_kernel_offset_to_nested]
+	dec_nest_counter x0, x1
 	b	exit
 #endif
 	b	inv

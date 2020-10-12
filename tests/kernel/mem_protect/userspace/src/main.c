@@ -29,7 +29,7 @@ extern void arm_core_mpu_disable(void);
 #define INFO(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #define PIPE_LEN 1
 #define BYTES_TO_READ_WRITE 1
-#define STACKSIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKSIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
 
 K_SEM_DEFINE(test_revoke_sem, 0, 1);
 
@@ -51,6 +51,9 @@ struct k_mem_domain dom1;
 K_APP_DMEM(part0) bool mem_access_check;
 K_APP_BMEM(part0) static volatile bool expect_fault;
 K_APP_BMEM(part0) static volatile unsigned int expected_reason;
+
+static struct k_thread test_thread;
+static K_THREAD_STACK_DEFINE(test_stack, STACKSIZE);
 
 static void clear_fault(void)
 {
@@ -375,9 +378,6 @@ static void test_pass_noperms_object(void)
 			    "syscall did not fault");
 }
 
-struct k_thread kthread_thread;
-
-K_THREAD_STACK_DEFINE(kthread_stack, STACKSIZE);
 
 void thread_body(void)
 {
@@ -392,15 +392,12 @@ static void test_start_kernel_thread(void)
 {
 	/* Try to start a kernel thread from a usermode thread */
 	set_fault(K_ERR_KERNEL_OOPS);
-	k_thread_create(&kthread_thread, kthread_stack, STACKSIZE,
+	k_thread_create(&test_thread, test_stack, STACKSIZE,
 			(k_thread_entry_t)thread_body, NULL, NULL, NULL,
 			K_PRIO_PREEMPT(1), K_INHERIT_PERMS,
 			K_NO_WAIT);
 	zassert_unreachable("Create a kernel thread did not fault");
 }
-
-struct k_thread uthread_thread;
-K_THREAD_STACK_DEFINE(uthread_stack, STACKSIZE);
 
 static void uthread_read_body(void *p1, void *p2, void *p3)
 {
@@ -421,12 +418,12 @@ static void test_read_other_stack(void)
 	/* Try to read from another thread's stack. */
 	unsigned int val;
 
-	k_thread_create(&uthread_thread, uthread_stack, STACKSIZE,
+	k_thread_create(&test_thread, test_stack, STACKSIZE,
 			uthread_read_body, &val, NULL, NULL,
 			-1, K_USER | K_INHERIT_PERMS,
 			K_NO_WAIT);
 
-	k_thread_join(&uthread_thread, K_FOREVER);
+	k_thread_join(&test_thread, K_FOREVER);
 }
 
 static void uthread_write_body(void *p1, void *p2, void *p3)
@@ -448,11 +445,11 @@ static void test_write_other_stack(void)
 	/* Try to write to another thread's stack. */
 	unsigned int val;
 
-	k_thread_create(&uthread_thread, uthread_stack, STACKSIZE,
+	k_thread_create(&test_thread, test_stack, STACKSIZE,
 			uthread_write_body, &val, NULL, NULL,
 			-1, K_USER | K_INHERIT_PERMS,
 			K_NO_WAIT);
-	k_thread_join(&uthread_thread, K_FOREVER);
+	k_thread_join(&test_thread, K_FOREVER);
 }
 
 /**
@@ -591,11 +588,11 @@ static void test_access_other_memdomain(void)
 	k_mem_domain_add_thread(&dom1, k_current_get());
 
 	/* Create user mode thread */
-	k_thread_create(&uthread_thread, uthread_stack, STACKSIZE,
+	k_thread_create(&test_thread, test_stack, STACKSIZE,
 			(k_thread_entry_t)shared_mem_thread, NULL,
 			NULL, NULL, -1, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
-	k_thread_join(&uthread_thread, K_FOREVER);
+	k_thread_join(&test_thread, K_FOREVER);
 }
 
 
@@ -694,12 +691,12 @@ static void user_ctx_switch_half(void *arg1, void *arg2, void *arg3)
 
 static void spawn_user(void)
 {
-	k_thread_create(&kthread_thread, kthread_stack, STACKSIZE,
+	k_thread_create(&test_thread, test_stack, STACKSIZE,
 			user_ctx_switch_half, NULL, NULL, NULL,
 			-1, K_INHERIT_PERMS | K_USER,
 			K_NO_WAIT);
 
-	k_thread_join(&kthread_thread, K_FOREVER);
+	k_thread_join(&test_thread, K_FOREVER);
 
 	if (expect_fault) {
 		printk("Expecting a fatal error %d but succeeded instead\n",
@@ -915,10 +912,6 @@ void test_tls_leakage(void)
 				 _current->userspace_local_data, NULL, NULL);
 }
 
-#define TLS_SIZE	4096
-struct k_thread tls_thread;
-K_THREAD_STACK_DEFINE(tls_stack, TLS_SIZE);
-
 void tls_entry(void *p1, void *p2, void *p3)
 {
 	printk("tls_entry\n");
@@ -926,26 +919,26 @@ void tls_entry(void *p1, void *p2, void *p3)
 
 void test_tls_pointer(void)
 {
-	k_thread_create(&tls_thread, tls_stack, TLS_SIZE, tls_entry,
+	k_thread_create(&test_thread, test_stack, STACKSIZE, tls_entry,
 			NULL, NULL, NULL, 1, K_USER, K_FOREVER);
 
 	printk("tls pointer for thread %p: %p\n",
-	       &tls_thread, (void *)tls_thread.userspace_local_data);
+	       &test_thread, (void *)test_thread.userspace_local_data);
 
 	printk("stack buffer reported bounds: [%p, %p)\n",
-	       (void *)tls_thread.stack_info.start,
-	       (void *)(tls_thread.stack_info.start +
-			tls_thread.stack_info.size));
+	       (void *)test_thread.stack_info.start,
+	       (void *)(test_thread.stack_info.start +
+			test_thread.stack_info.size));
 
 	printk("stack object bounds: [%p, %p)\n",
-	       tls_stack, tls_stack + sizeof(tls_stack));
+	       test_stack, test_stack + sizeof(test_stack));
 
-	uintptr_t tls_start = (uintptr_t)tls_thread.userspace_local_data;
+	uintptr_t tls_start = (uintptr_t)test_thread.userspace_local_data;
 	uintptr_t tls_end = tls_start +
 		sizeof(struct _thread_userspace_local_data);
 
-	if ((tls_start < (uintptr_t)tls_stack) ||
-	    (tls_end > (uintptr_t)tls_stack + sizeof(tls_stack))) {
+	if ((tls_start < (uintptr_t)test_stack) ||
+	    (tls_end > (uintptr_t)test_stack + sizeof(test_stack))) {
 		printk("tls area out of bounds\n");
 		ztest_test_fail();
 	}
@@ -970,8 +963,7 @@ void test_main(void)
 			  (sizeof(hdr->privilege_stack) - 1));
 #endif
 	k_thread_access_grant(k_current_get(),
-			      &kthread_thread, &kthread_stack,
-			      &uthread_thread, &uthread_stack,
+			      &test_thread, &test_stack,
 			      &test_revoke_sem, &kpipe);
 	ztest_test_suite(userspace,
 			 ztest_user_unit_test(test_is_usermode),

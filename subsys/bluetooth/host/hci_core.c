@@ -101,7 +101,8 @@ static struct bt_le_ext_adv adv_pool[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
 #if defined(CONFIG_BT_PER_ADV_SYNC)
 static struct bt_le_per_adv_sync *get_pending_per_adv_sync(void);
 static struct bt_le_per_adv_sync per_adv_sync_pool[CONFIG_BT_PER_ADV_SYNC_MAX];
-#endif /* defined(CONFIG_BT_PER_ADV) */
+static sys_slist_t pa_sync_cbs = SYS_SLIST_STATIC_INIT(&pa_sync_cbs);
+#endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
 #if defined(CONFIG_BT_HCI_VS_EVT_USER)
@@ -4453,12 +4454,14 @@ static void le_adv_recv(bt_addr_le_t *addr, struct bt_le_scan_recv_info *info,
 
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&scan_cbs, listener, node) {
-		net_buf_simple_save(&buf->b, &state);
+		if (listener->recv) {
+			net_buf_simple_save(&buf->b, &state);
 
-		buf->len = len;
-		listener->recv(info, &buf->b);
+			buf->len = len;
+			listener->recv(info, &buf->b);
 
-		net_buf_simple_restore(&buf->b, &state);
+			net_buf_simple_restore(&buf->b, &state);
+		}
 	}
 
 #if defined(CONFIG_BT_CENTRAL)
@@ -4482,7 +4485,9 @@ static void le_scan_timeout(struct net_buf *buf)
 #endif
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&scan_cbs, listener, node) {
-		listener->timeout();
+		if (listener->timeout) {
+			listener->timeout();
+		}
 	}
 }
 
@@ -4593,6 +4598,8 @@ static void le_per_adv_report(struct net_buf *buf)
 	struct bt_hci_evt_le_per_advertising_report *evt;
 	struct bt_le_per_adv_sync *per_adv_sync;
 	struct bt_le_per_adv_sync_recv_info info;
+	struct bt_le_per_adv_sync_cb *listener;
+	struct net_buf_simple_state state;
 
 	if (buf->len < sizeof(*evt)) {
 		BT_ERR("Unexpected end of buffer");
@@ -4614,8 +4621,15 @@ static void le_per_adv_report(struct net_buf *buf)
 	info.cte_type = evt->cte_type;
 	info.addr = &per_adv_sync->addr;
 
-	if (per_adv_sync->cb && per_adv_sync->cb->recv) {
-		per_adv_sync->cb->recv(per_adv_sync, &info, &buf->b);
+	SYS_SLIST_FOR_EACH_CONTAINER(&pa_sync_cbs, listener, node) {
+		if (listener->recv) {
+			net_buf_simple_save(&buf->b, &state);
+
+			buf->len = evt->length;
+			listener->recv(per_adv_sync, &info, &buf->b);
+
+			net_buf_simple_restore(&buf->b, &state);
+		}
 	}
 }
 
@@ -4645,6 +4659,7 @@ static void le_per_adv_sync_established(struct net_buf *buf)
 		(struct bt_hci_evt_le_per_adv_sync_established *)buf->data;
 	struct bt_le_per_adv_sync_synced_info sync_info;
 	struct bt_le_per_adv_sync *pending_per_adv_sync;
+	struct bt_le_per_adv_sync_cb *listener;
 	int err;
 
 	pending_per_adv_sync = get_pending_per_adv_sync();
@@ -4677,10 +4692,14 @@ static void le_per_adv_sync_established(struct net_buf *buf)
 			 */
 			per_adv_sync_delete(pending_per_adv_sync);
 
-			if (pending_per_adv_sync->cb &&
-			    pending_per_adv_sync->cb->term) {
-				pending_per_adv_sync->cb->term(
-					pending_per_adv_sync, &term_info);
+
+			SYS_SLIST_FOR_EACH_CONTAINER(&pa_sync_cbs,
+						     listener,
+						     node) {
+				if (listener->term) {
+					listener->term(pending_per_adv_sync,
+						       &term_info);
+				}
 			}
 		}
 		return;
@@ -4704,9 +4723,10 @@ static void le_per_adv_sync_established(struct net_buf *buf)
 	sync_info.addr = &pending_per_adv_sync->addr;
 	sync_info.sid = pending_per_adv_sync->sid;
 
-	if (pending_per_adv_sync->cb && pending_per_adv_sync->cb->synced) {
-		pending_per_adv_sync->cb->synced(pending_per_adv_sync,
-						 &sync_info);
+	SYS_SLIST_FOR_EACH_CONTAINER(&pa_sync_cbs, listener, node) {
+		if (listener->synced) {
+			listener->synced(pending_per_adv_sync, &sync_info);
+		}
 	}
 }
 
@@ -4716,6 +4736,7 @@ static void le_per_adv_sync_lost(struct net_buf *buf)
 		(struct bt_hci_evt_le_per_adv_sync_lost *)buf->data;
 	struct bt_le_per_adv_sync_term_info term_info;
 	struct bt_le_per_adv_sync *per_adv_sync;
+	struct bt_le_per_adv_sync_cb *listener;
 
 	per_adv_sync = get_per_adv_sync(sys_le16_to_cpu(evt->handle));
 
@@ -4733,8 +4754,11 @@ static void le_per_adv_sync_lost(struct net_buf *buf)
 	 */
 	per_adv_sync_delete(per_adv_sync);
 
-	if (per_adv_sync->cb && per_adv_sync->cb->term) {
-		per_adv_sync->cb->term(per_adv_sync, &term_info);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&pa_sync_cbs, listener, node) {
+		if (listener->term) {
+			listener->term(per_adv_sync, &term_info);
+		}
 	}
 }
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
@@ -7317,7 +7341,6 @@ static struct bt_le_per_adv_sync *per_adv_sync_new(void)
 }
 
 int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
-			      const struct bt_le_per_adv_sync_cb *cb,
 			      struct bt_le_per_adv_sync **out_sync)
 {
 	struct bt_hci_cp_le_per_adv_create_sync *cp;
@@ -7407,7 +7430,6 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 	*out_sync = per_adv_sync;
 	bt_addr_le_copy(&per_adv_sync->addr, &param->addr);
 	per_adv_sync->sid = param->sid;
-	per_adv_sync->cb = cb;
 
 	return 0;
 }
@@ -7469,6 +7491,11 @@ int bt_le_per_adv_sync_delete(struct bt_le_per_adv_sync *per_adv_sync)
 
 	per_adv_sync_delete(per_adv_sync);
 	return err;
+}
+
+void bt_le_per_adv_sync_cb_register(struct bt_le_per_adv_sync_cb *cb)
+{
+	sys_slist_append(&pa_sync_cbs, &cb->node);
 }
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
 

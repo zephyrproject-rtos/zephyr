@@ -34,16 +34,23 @@ config LVGL_DISPLAY_DEV_NAME
 	default "DISPLAY"
 
 config LVGL_HOR_RES_MAX
-	default 320
+	default 240
 
 config LVGL_VER_RES_MAX
-	default 240
+	default 320
 
 config LVGL_VDB_SIZE
 	default 64
 
 config LVGL_BITS_PER_PIXEL
-	default 24
+	default 16
+
+choice LVGL_COLOR_DEPTH
+	default LVGL_COLOR_DEPTH_16
+endchoice
+
+config LVGL_COLOR_16_SWAP
+	default y
 
 config KSCAN
 	default y
@@ -54,7 +61,13 @@ config LVGL_POINTER_KSCAN
 config LVGL_POINTER_KSCAN_DEV_NAME
 	default "TOUCH"
 
+config LVGL_POINTER_KSCAN_SWAP_XY
+	default y
+
 config LVGL_POINTER_KSCAN_INVERT_X
+	default y
+
+config LVGL_POINTER_KSCAN_INVERT_Y
 	default y
 
 endif # LVGL

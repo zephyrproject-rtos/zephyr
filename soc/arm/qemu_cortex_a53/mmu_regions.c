@@ -13,18 +13,18 @@ static const struct arm_mmu_region mmu_regions[] = {
 
 	MMU_REGION_FLAT_ENTRY("GIC",
 			      DT_REG_ADDR_BY_IDX(DT_INST(0, arm_gic), 0),
-			      DT_REG_SIZE_BY_IDX(DT_INST(0, arm_gic), 0) * 2,
+			      DT_REG_SIZE_BY_IDX(DT_INST(0, arm_gic), 0),
+			      MT_DEVICE_nGnRnE | MT_RW | MT_SECURE),
+
+	MMU_REGION_FLAT_ENTRY("GIC",
+			      DT_REG_ADDR_BY_IDX(DT_INST(0, arm_gic), 1),
+			      DT_REG_SIZE_BY_IDX(DT_INST(0, arm_gic), 1),
 			      MT_DEVICE_nGnRnE | MT_RW | MT_SECURE),
 
 	MMU_REGION_FLAT_ENTRY("UART",
 			      DT_REG_ADDR(DT_INST(0, arm_pl011)),
 			      DT_REG_SIZE(DT_INST(0, arm_pl011)),
 			      MT_DEVICE_nGnRnE | MT_RW | MT_SECURE),
-
-	MMU_REGION_FLAT_ENTRY("SRAM",
-			      CONFIG_SRAM_BASE_ADDRESS,
-			      CONFIG_SRAM_SIZE * SZ_1K,
-			      MT_NORMAL | MT_RW | MT_SECURE),
 };
 
 const struct arm_mmu_config mmu_config = {

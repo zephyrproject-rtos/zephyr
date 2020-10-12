@@ -8,7 +8,7 @@
 #define _OSDP_COMMON_H_
 
 #include <mgmt/osdp.h>
-#include <assert.h>
+#include <sys/__assert.h>
 
 #define OSDP_RESP_TOUT_MS              (200)
 
@@ -37,7 +37,7 @@
 		TO_CP(p)->pd_offset = i;                        \
 	} while (0)
 #define PD_MASK(ctx) \
-	(uint32_t)((1 << (TO_CP(ctx)->num_pd + 1)) - 1)
+	(uint32_t)((1 << (TO_CP(ctx)->num_pd)) - 1)
 #define AES_PAD_LEN(x)                 ((x + 16 - 1) & (~(16 - 1)))
 #define NUM_PD(ctx)                    (TO_CP(ctx)->num_pd)
 #define OSDP_COMMAND_DATA_MAX_LEN      sizeof(struct osdp_cmd)
@@ -124,6 +124,8 @@
 #define PD_FLAG_SKIP_SEQ_CHECK  0x00000040 /* disable seq checks (debug) */
 #define PD_FLAG_SC_USE_SCBKD    0x00000080 /* in this SC attempt, use SCBKD */
 #define PD_FLAG_SC_ACTIVE       0x00000100 /* secure channel is active */
+#define PD_FLAG_SC_SCBKD_DONE   0x00000200 /* SCBKD check is done */
+#define PD_FLAG_INSTALL_MODE    0x40000000 /* PD is in install mode */
 #define PD_FLAG_PD_MODE         0x80000000 /* device is setup as PD */
 
 enum osdp_pd_nak_code_e {
@@ -395,6 +397,22 @@ struct osdp_notifiers {
 	int (*cardread)(int address, int format, uint8_t *data, int len);
 };
 
+#ifdef CONFIG_OSDP_SC_ENABLED
+struct osdp_secure_channel {
+	uint8_t scbk[16];
+	uint8_t s_enc[16];
+	uint8_t s_mac1[16];
+	uint8_t s_mac2[16];
+	uint8_t r_mac[16];
+	uint8_t c_mac[16];
+	uint8_t cp_random[8];
+	uint8_t pd_random[8];
+	uint8_t pd_client_uid[8];
+	uint8_t cp_cryptogram[16];
+	uint8_t pd_cryptogram[16];
+};
+#endif
+
 struct osdp_pd {
 	void *__parent;
 	int offset;
@@ -425,6 +443,10 @@ struct osdp_pd {
 
 	struct osdp_channel channel;
 	struct osdp_cmd_queue cmd;
+#ifdef CONFIG_OSDP_SC_ENABLED
+	int64_t sc_tstamp;
+	struct osdp_secure_channel sc;
+#endif
 };
 
 struct osdp_cp {
@@ -439,9 +461,11 @@ struct osdp_cp {
 struct osdp {
 	int magic;
 	uint32_t flags;
-
 	struct osdp_cp *cp;
 	struct osdp_pd *pd;
+#ifdef CONFIG_OSDP_SC_ENABLED
+	uint8_t sc_master_key[16];
+#endif
 };
 
 /* from osdp_phy.c */
@@ -472,8 +496,28 @@ struct osdp *osdp_get_ctx();
 int osdp_extract_address(int *address);
 #endif
 
+#ifdef CONFIG_OSDP_SC_ENABLED
+void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
+void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
+#endif
+
+/* from osdp_sc.c */
+void osdp_compute_scbk(struct osdp_pd *pd, uint8_t *scbk);
+void osdp_compute_session_keys(struct osdp *ctx);
+void osdp_compute_cp_cryptogram(struct osdp_pd *pd);
+int osdp_verify_cp_cryptogram(struct osdp_pd *pd);
+void osdp_compute_pd_cryptogram(struct osdp_pd *pd);
+int osdp_verify_pd_cryptogram(struct osdp_pd *pd);
+void osdp_compute_rmac_i(struct osdp_pd *pd);
+int osdp_decrypt_data(struct osdp_pd *pd, int is_cmd, uint8_t *data, int len);
+int osdp_encrypt_data(struct osdp_pd *pd, int is_cmd, uint8_t *data, int len);
+int osdp_compute_mac(struct osdp_pd *pd, int is_cmd,
+		     const uint8_t *data, int len);
+void osdp_sc_init(struct osdp_pd *pd);
+void osdp_fill_random(uint8_t *buf, int len);
+
 /* must be implemented by CP or PD */
-int osdp_setup(struct osdp *ctx);
+int osdp_setup(struct osdp *ctx, uint8_t *key);
 void osdp_update(struct osdp *ctx);
 
 #endif	/* _OSDP_COMMON_H_ */

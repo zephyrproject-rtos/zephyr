@@ -490,8 +490,6 @@ void z_impl_k_thread_abort(k_tid_t thread)
 
 	key = irq_lock();
 
-	z_thread_single_abort(thread);
-
 	if (_current == thread) {
 		if (tstatus->aborted == 0) { /* LCOV_EXCL_BR_LINE */
 			tstatus->aborted = 1;
@@ -510,12 +508,15 @@ void z_impl_k_thread_abort(k_tid_t thread)
 			__func__);
 
 		if (arch_is_in_isr()) {
+			z_thread_single_abort(thread);
 			return;
 		}
 
-		(void)z_swap_irqlock(key);
+		z_self_abort();
 		CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 	}
+
+	z_thread_single_abort(thread);
 
 	if (tstatus->aborted == 0) {
 		PC_DEBUG("%s aborting now [%i] %i\n",

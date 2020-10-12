@@ -593,7 +593,7 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	cc->interval = lll->interval;
 	cc->latency = lll->latency;
 	cc->timeout = scan->lll.conn_timeout;
-	cc->sca = lll_conn_sca_local_get();
+	cc->sca = lll_clock_sca_local_get();
 
 	lll->handle = ll_conn_handle_get(conn);
 	rx->handle = lll->handle;
@@ -728,11 +728,20 @@ void ull_master_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_master_prepare};
 	static struct lll_prepare_param p;
-	struct ll_conn *conn = param;
+	struct ll_conn *conn;
 	uint32_t err;
 	uint8_t ref;
 
 	DEBUG_RADIO_PREPARE_M(1);
+
+	conn = param;
+
+	/* Check if stopping ticker (on disconnection, race with ticker expiry)
+	 */
+	if (unlikely(conn->lll.handle == 0xFFFF)) {
+		DEBUG_RADIO_PREPARE_M(0);
+		return;
+	}
 
 	/* If this is a must-expire callback, LLCP state machine does not need
 	 * to know. Will be called with lazy > 0 when scheduled in air.
@@ -744,6 +753,7 @@ void ull_master_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t
 		/* Handle any LL Control Procedures */
 		ret = ull_conn_llcp(conn, ticks_at_expire, lazy);
 		if (ret) {
+			DEBUG_RADIO_PREPARE_M(0);
 			return;
 		}
 	}
@@ -752,11 +762,11 @@ void ull_master_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t
 	ref = ull_ref_inc(&conn->ull);
 	LL_ASSERT(ref);
 
-	/* De-mux 1 tx node from FIFO */
-	ull_conn_tx_demux(1);
+	/* De-mux 2 tx node from FIFO, sufficient to be able to set MD bit */
+	ull_conn_tx_demux(2);
 
 	/* Enqueue towards LLL */
-	ull_conn_tx_lll_enqueue(conn, 1);
+	ull_conn_tx_lll_enqueue(conn, 2);
 
 	/* Append timing parameters */
 	p.ticks_at_expire = ticks_at_expire;

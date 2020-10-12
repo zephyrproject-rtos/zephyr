@@ -174,9 +174,20 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
 	uint8_t hdr_len = sizeof(struct net_eth_hdr);
-	uint16_t type = ntohs(hdr->type);
+	uint16_t type;
 	struct net_linkaddr *lladdr;
 	sa_family_t family;
+
+	/* This expects that the Ethernet header is in the first net_buf
+	 * fragment. This is a safe expectation here as it would not make
+	 * any sense to split the Ethernet header to two net_buf's by the
+	 * Ethernet driver.
+	 */
+	if (hdr == NULL || pkt->buffer->len < hdr_len) {
+		goto drop;
+	}
+
+	type = ntohs(hdr->type);
 
 	if (net_eth_is_vlan_enabled(ctx, iface) &&
 	    type == NET_ETH_PTYPE_VLAN &&
@@ -310,7 +321,7 @@ static inline bool ethernet_ipv4_dst_is_broadcast_or_mcast(struct net_pkt *pkt)
 {
 	if (net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
 				   &NET_IPV4_HDR(pkt)->dst) ||
-	    NET_IPV4_HDR(pkt)->dst.s4_addr[0] == 224U) {
+	    net_ipv4_is_addr_mcast(&NET_IPV4_HDR(pkt)->dst)) {
 		return true;
 	}
 
@@ -321,7 +332,7 @@ static bool ethernet_fill_in_dst_on_ipv4_mcast(struct net_pkt *pkt,
 					       struct net_eth_addr *dst)
 {
 	if (net_pkt_family(pkt) == AF_INET &&
-	    NET_IPV4_HDR(pkt)->dst.s4_addr[0] == 224U) {
+	    net_ipv4_is_addr_mcast(&NET_IPV4_HDR(pkt)->dst)) {
 		/* Multicast address */
 		dst->addr[0] = 0x01;
 		dst->addr[1] = 0x00;

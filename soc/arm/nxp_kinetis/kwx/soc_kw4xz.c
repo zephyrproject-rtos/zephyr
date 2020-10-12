@@ -13,10 +13,6 @@
 #include <fsl_clock.h>
 #include <arch/cpu.h>
 
-#define ER32KSEL_OSC32KCLK	(0)
-#define ER32KSEL_RTC		(2)
-#define ER32KSEL_LPO1KHZ	(3)
-
 #define LPUART0SRC_OSCERCLK	(1)
 #define TPMSRC_MCGPLLCLK	(1)
 
@@ -37,7 +33,7 @@ static const osc_config_t oscConfig = {
 };
 
 static const sim_clock_config_t simConfig = {
-	.er32kSrc = ER32KSEL_OSC32KCLK,
+	.er32kSrc = DT_PROP(DT_INST(0, nxp_kinetis_sim), er32k_select),
 	.clkdiv1 = SIM_CLKDIV1_OUTDIV4(CLKDIV1_DIVBY2),
 };
 

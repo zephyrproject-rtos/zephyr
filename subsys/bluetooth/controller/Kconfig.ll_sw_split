@@ -28,6 +28,7 @@ config BT_LLL_VENDOR_NORDIC
 					     BT_CTLR_PHY_CODED_SUPPORT
 	select BT_CTLR_ADV_EXT_SUPPORT
 	select BT_CTLR_ADV_PERIODIC_SUPPORT
+	select BT_CTLR_SYNC_PERIODIC_SUPPORT
 	select BT_CTLR_CHAN_SEL_2_SUPPORT
 	select BT_CTLR_MIN_USED_CHAN_SUPPORT
 	select BT_CTLR_DTM_HCI_SUPPORT
@@ -175,6 +176,14 @@ config BT_CTLR_SCAN_AUX_SET
 	default 1
 	help
 	  Maximum supported auxiliary channel scan sets.
+
+config BT_CTLR_SCAN_SYNC_SET
+	int "LE Periodic Sync Sets"
+	depends on BT_CTLR_SYNC_PERIODIC
+	range 1 64
+	default 1
+	help
+	  Maximum supported periodic sync sets.
 
 config BT_CTLR_ZLI
 	bool "Use Zero Latency IRQs"
@@ -384,6 +393,32 @@ config BT_CTLR_TX_RETRY_DISABLE
 	  latencies by one connection interval as the next attempt to send a PDU
 	  would happen in the next connection event instead of repeated retries
 	  in the current connection event.
+
+config BT_CTLR_THROUGHPUT
+	bool "Measure incoming Tx throughput"
+	help
+	  Measure incoming Tx throughput and log the results.
+
+config BT_CTLR_FORCE_MD_COUNT
+	int "Forced MD bit count" if !BT_CTLR_FORCE_MD_AUTO
+	range 0 255
+	default 1 if BT_CTLR_FORCE_MD_AUTO
+	default 0
+	help
+	  No. of times to force MD bit to be set in Tx PDU after a successful
+	  transmission of non-empty PDU.
+
+	  This will prolong the connection event to from being closed in cases
+	  where applications want to send data in same connection event but are
+	  slow in providing new Tx data.
+
+config BT_CTLR_FORCE_MD_AUTO
+	bool "Forced MD bit automatic calculation"
+	select BT_CTLR_THROUGHPUT
+	default y if BT_HCI_RAW
+	help
+	  Force MD bit in transmitted PDU based on runtime incoming transmit
+	  data throughput.
 
 config BT_CTLR_CONN_RSSI_EVENT
 	bool "Connection RSSI event"

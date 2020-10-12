@@ -13,6 +13,7 @@
 #ifndef OPENTHREAD_CORE_ZEPHYR_CONFIG_H_
 #define OPENTHREAD_CORE_ZEPHYR_CONFIG_H_
 
+#include <autoconf.h>
 #include <devicetree.h>
 #include <toolchain.h>
 
@@ -22,7 +23,7 @@
  * The number of message buffers in the buffer pool.
  *
  */
-#define OPENTHREAD_CONFIG_NUM_MESSAGE_BUFFERS                   128
+#define OPENTHREAD_CONFIG_NUM_MESSAGE_BUFFERS                   CONFIG_OPENTHREAD_NUM_MESSAGE_BUFFERS
 
 /**
  * @def OPENTHREAD_CONFIG_MAX_STATECHANGE_HANDLERS
@@ -31,7 +32,7 @@
  * (set using `otSetStateChangedCallback()`).
  *
  */
-#define OPENTHREAD_CONFIG_MAX_STATECHANGE_HANDLERS              2
+#define OPENTHREAD_CONFIG_MAX_STATECHANGE_HANDLERS              CONFIG_OPENTHREAD_MAX_STATECHANGE_HANDLERS
 
 /**
  * @def OPENTHREAD_CONFIG_TMF_ADDRESS_CACHE_ENTRIES
@@ -39,7 +40,7 @@
  * The number of EID-to-RLOC cache entries.
  *
  */
-#define OPENTHREAD_CONFIG_TMF_ADDRESS_CACHE_ENTRIES             20
+#define OPENTHREAD_CONFIG_TMF_ADDRESS_CACHE_ENTRIES             CONFIG_OPENTHREAD_TMF_ADDRESS_CACHE_ENTRIES
 
 /**
  * @def OPENTHREAD_CONFIG_LOG_PREPEND_LEVEL
@@ -144,7 +145,7 @@
  * The size of the NCP buffers.
  *
  */
-#define OPENTHREAD_CONFIG_NCP_BUFFER_SIZE 2048
+#define OPENTHREAD_CONFIG_NCP_BUFFER_SIZE CONFIG_OPENTHREAD_NCP_BUFFER_SIZE
 
 /**
  * @def OPENTHREAD_CONFIG_PLAT_LOG_FUNCTION

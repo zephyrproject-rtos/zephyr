@@ -8,6 +8,7 @@
 #include <drivers/uart.h>
 #include <init.h>
 #include <logging/log.h>
+#include <net/buf.h>
 
 #define LOG_MODULE_NAME shell_uart
 LOG_MODULE_REGISTER(shell_uart);
@@ -17,6 +18,11 @@ LOG_MODULE_REGISTER(shell_uart);
 #else
 #define RX_POLL_PERIOD K_NO_WAIT
 #endif
+
+#ifdef CONFIG_MCUMGR_SMP_SHELL
+NET_BUF_POOL_DEFINE(smp_shell_rx_pool, CONFIG_MCUMGR_SMP_SHELL_RX_BUF_COUNT,
+		    SMP_SHELL_RX_BUF_SIZE, 0, NULL);
+#endif /* CONFIG_MCUMGR_SMP_SHELL */
 
 SHELL_UART_DEFINE(shell_transport_uart,
 		  CONFIG_SHELL_BACKEND_SERIAL_TX_RING_BUFFER_SIZE,
@@ -168,6 +174,11 @@ static int init(const struct shell_transport *transport,
 	sh_uart->ctrl_blk->dev = (const struct device *)config;
 	sh_uart->ctrl_blk->handler = evt_handler;
 	sh_uart->ctrl_blk->context = context;
+
+#ifdef CONFIG_MCUMGR_SMP_SHELL
+	sh_uart->ctrl_blk->smp.buf_pool = &smp_shell_rx_pool;
+	k_fifo_init(&sh_uart->ctrl_blk->smp.buf_ready);
+#endif
 
 	if (IS_ENABLED(CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN)) {
 		uart_irq_init(sh_uart);

@@ -42,6 +42,24 @@ config WIFI_ESP_WORKQ_THREAD_PRIORITY
 	help
 	  Priority of thread used for processing driver work queue items.
 
+config WIFI_ESP_MDM_RING_BUF_SIZE
+	int "Modem ring buffer size"
+	default 1024
+	help
+	  Ring buffer size used by modem UART interface handler.
+
+config WIFI_ESP_MDM_RX_BUF_COUNT
+	int "Modem RX buffer count"
+	default 30
+	help
+	  Number of preallocated RX buffers used by modem command handler.
+
+config WIFI_ESP_MDM_RX_BUF_SIZE
+	int "Modem RX buffer size"
+	default 128
+	help
+	  Size of preallocated RX buffers used by modem command handler.
+
 config WIFI_ESP_PASSIVE_MODE
 	bool "Use passive mode"
 	help

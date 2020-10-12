@@ -128,6 +128,27 @@
 			};
 		};
 
+		adc2: adc@40012800 {
+			compatible = "st,stm32-adc";
+			reg = <0x40012800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000400>;
+			/* Shares vector with ADC1 */
+			interrupts = <18 0>;
+			status = "disabled";
+			label = "ADC_2";
+			#io-channel-cells = <1>;
+		};
+
+		adc3: adc@40013c00 {
+			compatible = "st,stm32-adc";
+			reg = <0x40013c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00008000>;
+			interrupts = <47 0>;
+			status = "disabled";
+			label = "ADC_3";
+			#io-channel-cells = <1>;
+		};
+
 		timers8: timers@40013400 {
 			compatible = "st,stm32-timers";
 			reg = <0x40013400 0x400>;

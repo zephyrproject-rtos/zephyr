@@ -22,10 +22,7 @@ The top-level entry point of the library is the EDT class. EDT.__init__() takes
 a .dts file to parse and a list of paths to directories containing bindings.
 """
 
-# NOTE: testedtlib.py is the test suite for this library. It can be run
-# directly as a script:
-#
-#   ./testedtlib.py
+# NOTE: testedtlib.py is the test suite for this library.
 
 # Implementation notes
 # --------------------
@@ -103,27 +100,6 @@ class EDT:
     nodes:
       A list of Node objects for the nodes that appear in the devicetree
 
-    compat2enabled:
-      A collections.defaultdict that maps each 'compatible' string that appears
-      on some enabled Node to a list of enabled Nodes.
-
-      For example, edt.compat2enabled["bar"] would include the 'foo' and 'bar'
-      nodes below.
-
-        foo {
-                compatible = "bar";
-                status = "okay";
-                ...
-        };
-        bar {
-                compatible = "foo", "bar", "baz";
-                status = "okay";
-                ...
-        };
-
-      This exists only for the sake of gen_legacy_defines.py. It will probably
-      be removed following the Zephyr 2.3 release.
-
     compat2nodes:
       A collections.defaultdict that maps each 'compatible' string that appears
       on some Node to a list of Nodes with that compatible.
@@ -134,6 +110,10 @@ class EDT:
     label2node:
       A collections.OrderedDict that maps a node label to the node with
       that label.
+
+    dep_ord2node:
+      A collections.OrderedDict that maps an ordinal to the node with
+      that dependency ordinal.
 
     chosen_nodes:
       A collections.OrderedDict that maps the properties defined on the
@@ -151,6 +131,16 @@ class EDT:
 
     bindings_dirs:
       The bindings directory paths passed to __init__()
+
+    scc_order:
+      A list of lists of Nodes. All elements of each list
+      depend on each other, and the Nodes in any list do not depend
+      on any Node in a subsequent list. Each list defines a Strongly
+      Connected Component (SCC) of the graph.
+
+      For an acyclic graph each list will be a singleton. Cycles
+      will be represented by lists with multiple nodes. Cycles are
+      not expected to be present in devicetree graphs.
 
     The standard library's pickle module can be used to marshal and
     unmarshal EDT objects.
@@ -210,9 +200,8 @@ class EDT:
 
         self._init_compat2binding(bindings_dirs)
         self._init_nodes()
+        self._init_graph()
         self._init_luts()
-
-        self._define_order()
 
         # Drop the reference to the open warn file. This is necessary
         # to make this object pickleable, but also allows it to get
@@ -264,26 +253,20 @@ class EDT:
         return "<EDT for '{}', binding directories '{}'>".format(
             self.dts_path, self.bindings_dirs)
 
+    @property
     def scc_order(self):
-        """
-        Returns a list of lists of Nodes where all elements of each list
-        depend on each other, and the Nodes in any list do not depend
-        on any Node in a subsequent list.  Each list defines a Strongly
-        Connected Component (SCC) of the graph.
-
-        For an acyclic graph each list will be a singleton.  Cycles
-        will be represented by lists with multiple nodes.  Cycles are
-        not expected to be present in devicetree graphs.
-        """
         try:
             return self._graph.scc_order()
         except Exception as e:
             raise EDTError(e)
 
-    def _define_order(self):
+    def _init_graph(self):
         # Constructs a graph of dependencies between Node instances,
-        # then calculates a partial order over the dependencies.  The
-        # algorithm supports detecting dependency loops.
+        # which is usable for computing a partial order over the dependencies.
+        # The algorithm supports detecting dependency loops.
+        #
+        # Actually computing the SCC order is lazily deferred to the
+        # first time the scc_order property is read.
 
         self._graph = Graph()
 
@@ -308,11 +291,6 @@ class EDT:
             # generates.
             for intr in node.interrupts:
                 self._graph.add_edge(node, intr.controller)
-
-        # Calculate an order that ensures no node is before any node
-        # it depends on.  This sets the dep_ordinal field in each
-        # Node.
-        self.scc_order()
 
     def _init_compat2binding(self, bindings_dirs):
         # Creates self._compat2binding. This is a dictionary that maps
@@ -524,7 +502,7 @@ class EDT:
         # Initialize node lookup tables (LUTs).
 
         self.label2node = OrderedDict()
-        self.compat2enabled = defaultdict(list)
+        self.dep_ord2node = OrderedDict()
         self.compat2nodes = defaultdict(list)
         self.compat2okay = defaultdict(list)
 
@@ -535,11 +513,12 @@ class EDT:
             for compat in node.compats:
                 self.compat2nodes[compat].append(node)
 
-                if node.enabled:
-                    self.compat2enabled[compat].append(node)
-
                 if node.status == "okay":
                     self.compat2okay[compat].append(node)
+
+        for nodeset in self.scc_order:
+            node = nodeset[0]
+            self.dep_ord2node[node.dep_ordinal] = node
 
     def _check_binding(self, binding, binding_path):
         # Does sanity checking on 'binding'. Only takes 'self' for the sake of
@@ -699,8 +678,8 @@ class Node:
       A non-negative integer value such that the value for a Node is
       less than the value for all Nodes that depend on it.
 
-      The ordinal is defined for all Nodes including those that are not
-      'enabled', and is unique among nodes in its EDT 'nodes' list.
+      The ordinal is defined for all Nodes, and is unique among nodes in its
+      EDT 'nodes' list.
 
     required_by:
       A list with the nodes that directly depend on the node
@@ -712,12 +691,6 @@ class Node:
       The node's status property value, as a string, or "okay" if the node
       has no status property set. If the node's status property is "ok",
       it is converted to "okay" for consistency.
-
-    enabled:
-      True unless the node has 'status = "disabled"'
-
-      This exists only for the sake of gen_legacy_defines.py. It will probably
-      be removed following the Zephyr 2.3 release.
 
     read_only:
       True if the node has a 'read-only' property, and False otherwise
@@ -861,11 +834,6 @@ class Node:
             as_string = "okay"
 
         return as_string
-
-    @property
-    def enabled(self):
-        "See the class docstring"
-        return "status" not in self._node.props or self.status != "disabled"
 
     @property
     def read_only(self):
@@ -1178,7 +1146,7 @@ class Node:
         prop = node.props.get(name)
 
         if not prop:
-            if required and self.enabled:
+            if required and self.status == "okay":
                 _err("'{}' is marked as required in 'properties:' in {}, but "
                      "does not appear in {!r}".format(
                          name, self.binding_path, node))
@@ -1226,11 +1194,11 @@ class Node:
             # This type is a bit high-level for dtlib as it involves
             # information from bindings and *-names properties, so there's no
             # to_phandle_array() in dtlib. Do the type check ourselves.
-            if prop.type not in (TYPE_PHANDLE, TYPE_PHANDLES_AND_NUMS):
-                _err("expected property '{0}' in {1} in {2} to be assigned "
-                     "with '{0} = < &foo 1 2 ... &bar 3 4 ... >' (a mix of "
-                     "phandles and numbers), not '{3}'"
-                     .format(name, node.path, node.dt.filename, prop))
+            if prop.type not in (TYPE_PHANDLE, TYPE_PHANDLES, TYPE_PHANDLES_AND_NUMS):
+                _err(f"expected property '{name}' in {node.path} in "
+                     f"{node.dt.filename} to be assigned "
+                     f"with '{name} = < &foo ... &bar 1 ... &baz 2 3 >' "
+                     f"(a mix of phandles and numbers), not '{prop}'")
 
             return self._standard_phandle_val_list(prop)
 

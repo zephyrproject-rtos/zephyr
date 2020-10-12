@@ -100,7 +100,8 @@ features:
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
-
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
@@ -152,6 +153,7 @@ Default Zephyr Peripheral Mapping:
 - LD9 : PE12
 - LD10 : PE13
 - PWM : PA8
+- ADC1 : PA0
 
 System Clock
 ============

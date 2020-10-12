@@ -43,14 +43,13 @@ def test_check_build_or_run(class_testsuite, monkeypatch, all_testcases_dict, pl
     testcase.slow = slow
 
     testinstance = TestInstance(testcase, platform, class_testsuite.outdir)
-    testinstance.check_build_or_run(build_only, slow, device_testing, fixture)
-    b, r = expected
-    assert testinstance.build_only == b
-    assert testinstance.run == r
+    run = testinstance.check_runnable(slow, device_testing, fixture)
+    _, r = expected
+    assert run == r
 
     monkeypatch.setattr("os.name", "nt")
-    testinstance.check_build_or_run()
-    assert testinstance.build_only and not testinstance.run
+    run = testinstance.check_runnable()
+    assert not run
 
 TESTDATA_2 = [
     (True, True, True, ["demo_board_2"], "native", '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y\nCONFIG_ASAN=y\nCONFIG_UBSAN=y'),

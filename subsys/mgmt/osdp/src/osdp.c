@@ -16,6 +16,12 @@
 
 LOG_MODULE_REGISTER(osdp, CONFIG_OSDP_LOG_LEVEL);
 
+#ifdef CONFIG_OSDP_MODE_PD
+#define OSDP_KEY_STRING CONFIG_OSDP_PD_SCBK
+#else
+#define OSDP_KEY_STRING CONFIG_OSDP_MASTER_KEY
+#endif
+
 struct osdp_device {
 	struct ring_buf rx_buf;
 	struct ring_buf tx_buf;
@@ -152,7 +158,8 @@ void osdp_refresh(void *arg1, void *arg2, void *arg3)
 static int osdp_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
-	uint8_t c;
+	int len;
+	uint8_t c, *key = NULL, key_buf[16];
 	struct osdp *ctx;
 	struct osdp_device *p = &osdp_device;
 	struct osdp_channel channel = {
@@ -202,7 +209,24 @@ static int osdp_init(const struct device *arg)
 		LOG_ERR("OSDP build ctx failed!");
 		k_panic();
 	}
-	if (osdp_setup(ctx)) {
+
+	if (IS_ENABLED(CONFIG_OSDP_SC_ENABLED)) {
+		if (strcmp(OSDP_KEY_STRING, "NONE") != 0) {
+			len = strlen(OSDP_KEY_STRING);
+			if (len != 32) {
+				LOG_ERR("Key string length must be 32");
+				k_panic();
+			}
+			len = hex2bin(OSDP_KEY_STRING, 32, key_buf, 16);
+			if (len != 16) {
+				LOG_ERR("Failed to parse key buffer");
+				k_panic();
+			}
+			key = key_buf;
+		}
+	}
+
+	if (osdp_setup(ctx, key)) {
 		LOG_ERR("Failed to setup OSDP device!");
 		k_panic();
 	}

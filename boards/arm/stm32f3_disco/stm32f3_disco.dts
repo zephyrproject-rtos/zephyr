@@ -6,10 +6,11 @@
 
 /dts-v1/;
 #include <st/f3/stm32f303Xc.dtsi>
+#include <st/f3/stm32f303v(b-c)tx-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F3DISCOVERY board";
-	compatible = "st,stm32f3discovery", "st,stm32f303";
+	compatible = "st,stm32f3discovery";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -71,11 +72,13 @@
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pc4 &usart1_rx_pc5>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -150,5 +153,10 @@
 	status = "okay";
 	pwm1: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim1_ch1_pwm_pa8>;
 	};
+};
+
+&adc1 {
+	status = "okay";
 };

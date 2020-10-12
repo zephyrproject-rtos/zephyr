@@ -1,0 +1,87 @@
+# Copyright (c) 2020 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 Pin controller Node
+
+compatible: "st,stm32-pinctrl"
+
+include: [base.yaml]
+
+properties:
+    reg:
+      required: true
+
+child-binding:
+    description: |
+        This binding gives a base representation of the STM32 pins configration
+
+    properties:
+        pinmux:
+          required: true
+          type: int
+          description: |
+            Reused from https://github.com/torvalds/linux/blob/master/Documentation/devicetree/bindings/pinctrl/st,stm32-pinctrl.yaml
+            Integer array, represents gpio pin number and mux setting.
+            These defines are calculated as: ((port * 16 + line) << 8) | function
+            With:
+            - port: The gpio port index (PA = 0, PB = 1, ..., PK = 11)
+            - line: The line offset within the port (PA0 = 0, PA1 = 1, ..., PA15 = 15)
+            - function: The function number, can be:
+            * 0 : Alternate Function 0
+            * 1 : Alternate Function 1
+            * 2 : Alternate Function 2
+            * ...
+            * 15 : Alternate Function 15
+            * 16 : Analog
+            To simplify the usage, macro is available to generate "pinmux" field.
+            This macro is available here:
+              -include/dt-bindings/pinctrl/stm32-pinctrl-common.h
+            Some examples of macro usage:
+               GPIO A9 set as alernate function 2
+            ... {
+                     pinmux = <STM32_PINMUX('A', 9, AF2)>;
+            };
+               GPIO A9 set as analog
+            ... {
+                     pinmux = <STM32_PINMUX('A', 9, ANALOG)>;
+            };
+
+        bias-disable:
+          required: false
+          type: boolean
+          description: Pin bias (push-pull) disabled. This is the default pin
+            configuration and will be applied if no bias- property is set.
+
+        bias-pull-down:
+          required: false
+          type: boolean
+          description: Pull down on pin.
+
+        bias-pull-up:
+          required: false
+          type: boolean
+          description: Pull up on pin.
+
+        drive-push-pull:
+          required: false
+          type: boolean
+          description: Pin driven actively high and low. This is the default pin
+            configuration and will be applied if no drive- property is set.
+
+        drive-open-drain:
+          required: false
+          type: boolean
+          description: Pin driven in open drain.
+
+        slew-rate:
+          required: false
+          type: string
+          default: "low-speed"
+          enum:
+          - "low-speed"           # Default value.
+          - "medium-speed"
+          - "high-speed"
+          - "very-high-speed"
+          description: Pin speed. Default to low-speed. For few pins (PA11 and
+            PB3 depending on SoCs)hardware reset value could differ
+            (very-high-speed). Carefully check reference manual for these pins.

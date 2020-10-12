@@ -152,7 +152,9 @@ struct net_mgmt_event_callback {
 		 * be called in case those events come.
 		 * Note that only the command part is treated as a mask,
 		 * matching one to several commands. Layer and layer code will
-		 * be made of an exact match.
+		 * be made of an exact match. This means that in order to
+		 * receive events from multiple layers, one must have multiple
+		 * listeners registered, one for each layer being listened.
 		 */
 		uint32_t event_mask;
 		/** Internal place holder when a synchronous event wait is
@@ -219,7 +221,7 @@ void net_mgmt_del_event_callback(struct net_mgmt_event_callback *cb);
  */
 #ifdef CONFIG_NET_MGMT_EVENT
 void net_mgmt_event_notify_with_info(uint32_t mgmt_event, struct net_if *iface,
-				     void *info, size_t length);
+				     const void *info, size_t length);
 
 static inline void net_mgmt_event_notify(uint32_t mgmt_event,
 					 struct net_if *iface)

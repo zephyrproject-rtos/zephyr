@@ -11,7 +11,7 @@
 #include <logging/log_output.h>
 #include <sys/printk.h>
 #include <init.h>
-#include <assert.h>
+#include <sys/__assert.h>
 #include <sys/atomic.h>
 #include <ctype.h>
 #include <logging/log_frontend.h>
@@ -99,6 +99,7 @@ uint32_t z_log_get_s_mask(const char *str, uint32_t nargs)
 			}
 			arm = false;
 			arg++;
+		} else {
 		}
 	}
 
@@ -210,6 +211,7 @@ static inline void msg_finalize(struct log_msg *msg,
 			k_timer_stop(&log_process_thread_timer);
 			k_sem_give(&log_process_thread_sem);
 		}
+	} else {
 	}
 }
 
@@ -370,6 +372,7 @@ uint32_t log_count_args(const char *fmt)
 		} else if (prev) {
 			args++;
 			prev = false;
+		} else {
 		}
 		fmt++;
 	}
@@ -520,7 +523,7 @@ void log_core_init(void)
 
 void log_init(void)
 {
-	assert(log_backend_count_get() < LOG_FILTERS_NUM_OF_SLOTS);
+	__ASSERT_NO_MSG(log_backend_count_get() < LOG_FILTERS_NUM_OF_SLOTS);
 	int i;
 
 	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
@@ -563,7 +566,7 @@ static void thread_set(k_tid_t process_tid)
 void log_thread_set(k_tid_t process_tid)
 {
 	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
-		assert(0);
+		__ASSERT_NO_MSG(0);
 	} else {
 		thread_set(process_tid);
 	}
@@ -756,7 +759,7 @@ uint32_t z_impl_log_filter_set(struct log_backend const *const backend,
 			    uint32_t src_id,
 			    uint32_t level)
 {
-	assert(src_id < log_sources_count());
+	__ASSERT_NO_MSG(src_id < log_sources_count());
 
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
 		uint32_t new_aggr_filter;
@@ -866,7 +869,7 @@ uint32_t log_filter_get(struct log_backend const *const backend,
 		     uint32_t src_id,
 		     bool runtime)
 {
-	assert(src_id < log_sources_count());
+	__ASSERT_NO_MSG(src_id < log_sources_count());
 
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && runtime) {
 		uint32_t *filters = log_dynamic_filters_get(src_id);

@@ -45,6 +45,10 @@ config BT_CTLR_ADV_PERIODIC_SUPPORT
 	depends on BT_CTLR_ADV_EXT_SUPPORT
 	bool
 
+config BT_CTLR_SYNC_PERIODIC_SUPPORT
+	depends on BT_CTLR_ADV_EXT_SUPPORT
+	bool
+
 config BT_CTLR_CHAN_SEL_2_SUPPORT
 	bool
 
@@ -371,7 +375,7 @@ config BT_CTLR_PHY_CODED
 
 config BT_CTLR_CHAN_SEL_2
 	bool "Channel Selection Algorithm #2"
-	depends on (BT_CONN || BT_CTLR_ADV_PERIODIC) && BT_CTLR_CHAN_SEL_2_SUPPORT
+	depends on (BT_CONN || BT_CTLR_ADV_PERIODIC || BT_CTLR_SYNC_PERIODIC) && BT_CTLR_CHAN_SEL_2_SUPPORT
 	default y
 	help
 	  Enable support for Bluetooth 5.0 LE Channel Selection Algorithm #2 in
@@ -401,12 +405,28 @@ config BT_CTLR_ADV_SET
 	  Maximum supported advertising sets.
 
 config BT_CTLR_ADV_PERIODIC
-	bool "LE Periodic Advertising"
+	bool "LE Periodic Advertising in Advertising State" if !BT_LL_SW_SPLIT
 	depends on BT_BROADCASTER && BT_CTLR_ADV_PERIODIC_SUPPORT
 	select BT_CTLR_CHAN_SEL_2
+	default y if BT_PER_ADV
 	help
 	  Enable support for Bluetooth 5.0 LE Periodic Advertising in the
 	  Controller.
+
+config BT_CTLR_ADV_PERIODIC
+	bool "LE Periodic Advertising in Advertising State [EXPERIMENTAL]" if BT_LL_SW_SPLIT
+
+config BT_CTLR_SYNC_PERIODIC
+	bool "LE Periodic Advertising in Synchronization State" if !BT_LL_SW_SPLIT
+	depends on BT_OBSERVER && BT_CTLR_SYNC_PERIODIC_SUPPORT
+	select BT_CTLR_CHAN_SEL_2
+	default y if BT_PER_ADV_SYNC
+	help
+	  Enable support for Bluetooth 5.0 LE Periodic Advertising in
+	  Synchronization state in the Controller.
+
+config BT_CTLR_SYNC_PERIODIC
+	bool "LE Periodic Advertising in Synchronization State [EXPERIMENTAL]" if BT_LL_SW_SPLIT
 
 config BT_CTLR_ADV_DATA_LEN_MAX
 	int "Maximum Advertising Data Length"

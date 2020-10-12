@@ -357,6 +357,10 @@ static int lis2mdl_init(const struct device *dev)
 		return -EIO;
 	}
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	lis2mdl->power_state = DEVICE_PM_ACTIVE_STATE;
+#endif
+
 #ifdef CONFIG_LIS2MDL_TRIGGER
 	if (lis2mdl_init_interrupt(dev) < 0) {
 		LOG_DBG("Failed to initialize interrupts");
@@ -367,6 +371,67 @@ static int lis2mdl_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(lis2mdl, DT_INST_LABEL(0), lis2mdl_init,
-		     &lis2mdl_data, &lis2mdl_dev_config, POST_KERNEL,
-		     CONFIG_SENSOR_INIT_PRIORITY, &lis2mdl_driver_api);
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static int lis2mdl_set_power_state(struct lis2mdl_data *lis2mdl,
+		uint32_t new_state)
+{
+	int status = 0;
+
+	if (new_state == DEVICE_PM_ACTIVE_STATE) {
+		status = lis2mdl_operating_mode_set(lis2mdl->ctx,
+				LIS2MDL_CONTINUOUS_MODE);
+		if (status) {
+			LOG_ERR("Power up failed");
+		}
+		lis2mdl->power_state = DEVICE_PM_ACTIVE_STATE;
+		LOG_DBG("State changed to active");
+	} else {
+		__ASSERT_NO_MSG(new_state == DEVICE_PM_LOW_POWER_STATE ||
+				new_state == DEVICE_PM_SUSPEND_STATE ||
+				new_state == DEVICE_PM_OFF_STATE);
+		status = lis2mdl_operating_mode_set(lis2mdl->ctx,
+				LIS2MDL_POWER_DOWN);
+		if (status) {
+			LOG_ERR("Power down failed");
+		}
+		lis2mdl->power_state = new_state;
+		LOG_DBG("State changed to inactive");
+	}
+
+	return status;
+}
+
+static int lis2mdl_pm_control(struct device *dev, uint32_t ctrl_command,
+				void *context, device_pm_cb cb, void *arg)
+{
+	struct lis2mdl_data *lis2mdl = dev->driver_data;
+	uint32_t current_state = lis2mdl->power_state;
+	int status = 0;
+	uint32_t new_state;
+
+	switch (ctrl_command) {
+	case DEVICE_PM_SET_POWER_STATE:
+		new_state = *((const uint32_t *)context);
+		if (new_state != current_state) {
+			status = lis2mdl_set_power_state(lis2mdl, new_state);
+		}
+		break;
+	case DEVICE_PM_GET_POWER_STATE:
+		*((uint32_t *)context) = current_state;
+		break;
+	default:
+		LOG_ERR("Got unknown power management control command");
+		status = -EINVAL;
+	}
+
+	if (cb) {
+		cb(dev, status, context, arg);
+	}
+
+	return status;
+}
+#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
+
+DEVICE_DEFINE(lis2mdl, DT_INST_LABEL(0), lis2mdl_init,
+		lis2mdl_pm_control, &lis2mdl_data, &lis2mdl_dev_config,
+		POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &lis2mdl_driver_api);

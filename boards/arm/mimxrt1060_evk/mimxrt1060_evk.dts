@@ -21,6 +21,7 @@
 	chosen {
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
+		zephyr,can-primary = &flexcan2;
 	};
 
 	sdram0: memory@80000000 {
@@ -144,4 +145,9 @@ arduino_serial: &lpuart3 {};
 
 &edma0 {
 	status = "okay";
+};
+
+&flexcan2 {
+	status = "okay";
+	bus-speed = <125000>;
 };

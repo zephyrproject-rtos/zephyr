@@ -14,13 +14,56 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <drivers/clock_control.h>
-#ifdef CONFIG_SOC_SERIES_STM32F1X
-#include <dt-bindings/pinctrl/stm32-pinctrlf1.h>
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
+#include <dt-bindings/pinctrl/stm32f1-pinctrl.h>
 #else
 #include <dt-bindings/pinctrl/stm32-pinctrl.h>
-#endif /* CONFIG_SOC_SERIES_STM32F1X */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
 #include "pinmux/pinmux.h"
 
+/**
+ * @brief structure to convey pinctrl information for stm32 soc
+ * value
+ */
+struct soc_gpio_pinctrl {
+	uint32_t pinmux;
+	uint32_t pincfg;
+};
+
+/**
+ * @brief helper to extract IO port number from STM32_PINMUX() encoded
+ * value
+ */
+#define STM32_DT_PINMUX_PORT(__pin) \
+	(((__pin) >> 12) & 0xf)
+
+/**
+ * @brief helper to extract IO pin number from STM32_PINMUX() encoded
+ * value
+ */
+#define STM32_DT_PINMUX_LINE(__pin) \
+	(((__pin) >> 8) & 0xf)
+
+/**
+ * @brief helper to extract IO pin func from STM32_PINMUX() encoded
+ * value
+ */
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
+#define STM32_DT_PINMUX_FUNC(__pin) \
+	(((__pin) >> 6) & 0x3)
+#else
+#define STM32_DT_PINMUX_FUNC(__pin) \
+	((__pin) & 0xff)
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
+/**
+ * @brief helper to extract IO pin remap from STM32_PINMUX() encoded
+ * value
+ */
+#define STM32_DT_PINMUX_REMAP(__pin) \
+	((__pin) & 0x1f)
+#endif
 
 /* pretend that array will cover pin functions */
 typedef int stm32_pin_func_t;
@@ -91,10 +134,32 @@ int z_pinmux_stm32_set(uint32_t pin, uint32_t func,
  * in the configuration array. Pin numbers in @pin_num field are
  * STM32PIN() encoded.
  *
- * @return array of pin assignments
  */
 void stm32_setup_pins(const struct pin_config *pinconf,
 		      size_t pins);
+
+/**
+ * @brief helper for converting dt stm32 pinctrl format to existing pin config
+ *        format
+ *
+ * @param *pinctrl pointer to soc_gpio_pinctrl list
+ * @param list_size provided list size
+ *
+ */
+void stm32_dt_pinctrl_configure(const struct soc_gpio_pinctrl *pinctrl,
+				size_t list_size);
+
+/**
+ * @brief Helper function to check provided pinctrl remap configuration (Pin
+ *        remapping configuration should be the same on all pins)
+ *
+ * @param *pinctrl pointer to soc_gpio_pinctrl list
+ * @param list_size provided list size
+ *
+ * @return remap value on success, -EINVAL otherwise
+ */
+int stm32_dt_pinctrl_remap_check(const struct soc_gpio_pinctrl *pinctrl,
+				size_t list_size);
 
 /* common pinmux device name for all STM32 chips */
 #define STM32_PINMUX_NAME "stm32-pinmux"

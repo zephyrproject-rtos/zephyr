@@ -95,10 +95,13 @@
 	io-pins = <17>, <22>, <23>, <21>;
 	csn-pins = <20>;
 	gd25q16: gd25q16@0 {
+		/* NOTE: Quad mode not supported as driver does not handle
+		 * QE bit setting in SR2. Ref. GD25Q16C, Rev 3.0, p. 12.
+		 */
 		compatible = "nordic,qspi-nor";
 		reg = <0>;
-		writeoc = "pp4io";
-		readoc = "read4io";
+		writeoc = "pp2o";
+		readoc = "read2io";
 		sck-frequency = <16000000>;
 		label = "GD25Q16";
 		jedec-id = [c8 40 15];

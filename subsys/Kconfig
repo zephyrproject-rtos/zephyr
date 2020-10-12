@@ -27,6 +27,8 @@ source "subsys/jwt/Kconfig"
 
 source "subsys/logging/Kconfig"
 
+source "subsys/lorawan/Kconfig"
+
 source "subsys/mgmt/Kconfig"
 
 source "subsys/net/Kconfig"

@@ -15,6 +15,7 @@
 #include <stdbool.h>
 #include <kernel_internal.h>
 #include <logging/log.h>
+#include <sys/atomic.h>
 LOG_MODULE_DECLARE(os);
 
 /* Maximum time between the time a self-aborting thread flags itself
@@ -182,7 +183,16 @@ static ALWAYS_INLINE struct k_thread *_priq_dumb_mask_best(sys_dlist_t *pq)
 
 static ALWAYS_INLINE struct k_thread *next_up(void)
 {
-	struct k_thread *thread = _priq_run_best(&_kernel.ready_q.runq);
+	struct k_thread *thread;
+
+	/* If a thread self-aborted we need the idle thread to clean it up
+	 * before any other thread can run on this CPU
+	 */
+	if (_current_cpu->pending_abort != NULL) {
+		return _current_cpu->idle_thread;
+	}
+
+	thread = _priq_run_best(&_kernel.ready_q.runq);
 
 #if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) && (CONFIG_NUM_COOP_PRIORITIES > 0)
 	/* MetaIRQs must always attempt to return back to a
@@ -366,7 +376,7 @@ static void update_metairq_preempt(struct k_thread *thread)
 	    !is_preempt(_current)) {
 		/* Record new preemption */
 		_current_cpu->metairq_preempted = _current;
-	} else if (!is_metairq(thread)) {
+	} else if (!is_metairq(thread) && !z_is_idle_thread_object(thread)) {
 		/* Returning from existing preemption */
 		_current_cpu->metairq_preempted = NULL;
 	}
@@ -497,12 +507,25 @@ static _wait_q_t *pended_on(struct k_thread *thread)
 
 void z_thread_single_abort(struct k_thread *thread)
 {
+	void (*fn_abort)(void) = NULL;
+
 	__ASSERT(!(thread->base.user_options & K_ESSENTIAL),
 		 "essential thread aborted");
+	__ASSERT(thread != _current || arch_is_in_isr(),
+		 "self-abort detected");
 
-	if (thread->fn_abort != NULL) {
-		thread->fn_abort();
+	/* Prevent any of the further logic in this function from running more
+	 * than once
+	 */
+	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
+	if ((thread->base.thread_state &
+	     (_THREAD_ABORTING | _THREAD_DEAD)) != 0) {
+		LOG_DBG("Thread %p already dead or on the way out", thread);
+		k_spin_unlock(&sched_spinlock, key);
+		return;
 	}
+	thread->base.thread_state |= _THREAD_ABORTING;
+	k_spin_unlock(&sched_spinlock, key);
 
 	(void)z_abort_thread_timeout(thread);
 
@@ -511,6 +534,7 @@ void z_thread_single_abort(struct k_thread *thread)
 	}
 
 	LOCKED(&sched_spinlock) {
+		LOG_DBG("Cleanup aborting thread %p", thread);
 		struct k_thread *waiter;
 
 		if (z_is_thread_ready(thread)) {
@@ -529,37 +553,6 @@ void z_thread_single_abort(struct k_thread *thread)
 			}
 		}
 
-		uint32_t mask = _THREAD_DEAD;
-
-		/* If the abort is happening in interrupt context,
-		 * that means that execution will never return to the
-		 * thread's stack and that the abort is known to be
-		 * complete.  Otherwise the thread still runs a bit
-		 * until it can swap, requiring a delay.
-		 */
-		if (IS_ENABLED(CONFIG_SMP) && arch_is_in_isr()) {
-			mask |= _THREAD_ABORTED_IN_ISR;
-		}
-
-		thread->base.thread_state |= mask;
-
-#ifdef CONFIG_USERSPACE
-		/* Clear initialized state so that this thread object may be
-		 * re-used and triggers errors if API calls are made on it from
-		 * user threads
-		 *
-		 * For a whole host of reasons this is not ideal and should be
-		 * iterated on.
-		 */
-		z_object_uninit(thread->stack_obj);
-		z_object_uninit(thread);
-
-		/* Revoke permissions on thread's ID so that it may be
-		 * recycled
-		 */
-		z_thread_perms_all_clear(thread);
-#endif
-
 		/* Wake everybody up who was trying to join with this thread.
 		 * A reschedule is invoked later by k_thread_abort().
 		 */
@@ -572,8 +565,52 @@ void z_thread_single_abort(struct k_thread *thread)
 			arch_thread_return_value_set(waiter, 0);
 			ready_thread(waiter);
 		}
+
+		if (z_is_idle_thread_object(_current)) {
+			update_cache(1);
+		}
+
+		thread->base.thread_state |= _THREAD_DEAD;
+
+		/* Read this here from the thread struct now instead of
+		 * after we unlock
+		 */
+		fn_abort = thread->fn_abort;
+
+		/* Keep inside the spinlock as these may use the contents
+		 * of the thread object. As soon as we release this spinlock,
+		 * the thread object could be destroyed at any time.
+		 */
 		sys_trace_thread_abort(thread);
 		z_thread_monitor_exit(thread);
+
+#ifdef CONFIG_USERSPACE
+		/* Revoke permissions on thread's ID so that it may be
+		 * recycled
+		 */
+		z_thread_perms_all_clear(thread);
+
+		/* Clear initialized state so that this thread object may be
+		 * re-used and triggers errors if API calls are made on it from
+		 * user threads
+		 */
+		z_object_uninit(thread->stack_obj);
+		z_object_uninit(thread);
+#endif
+		/* Kernel should never look at the thread object again past
+		 * this point unless another thread API is called. If the
+		 * object doesn't get corrupted, we'll catch other
+		 * k_thread_abort()s on this object, although this is
+		 * somewhat undefined behavoir. It must be safe to call
+		 * k_thread_create() or free the object at this point.
+		 */
+#if __ASSERT_ON
+		atomic_clear(&thread->base.cookie);
+#endif
+	}
+
+	if (fn_abort != NULL) {
+		fn_abort();
 	}
 }
 
@@ -1343,9 +1380,6 @@ void z_sched_abort(struct k_thread *thread)
 	 * it locally.  Not all architectures support that, alas.  If
 	 * we don't have it, we need to wait for some other interrupt.
 	 */
-	key = k_spin_lock(&sched_spinlock);
-	thread->base.thread_state |= _THREAD_ABORTING;
-	k_spin_unlock(&sched_spinlock, key);
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
 	arch_sched_ipi();
 #endif
@@ -1368,16 +1402,6 @@ void z_sched_abort(struct k_thread *thread)
 			k_spin_unlock(&sched_spinlock, key);
 			k_busy_wait(100);
 		}
-	}
-
-	/* If the thread self-aborted (e.g. its own exit raced with
-	 * this external abort) then even though it is flagged DEAD,
-	 * it's still running until its next swap and thus the thread
-	 * object is still in use.  We have to resort to a fallback
-	 * delay in that circumstance.
-	 */
-	if ((thread->base.thread_state & _THREAD_ABORTED_IN_ISR) == 0U) {
-		k_busy_wait(THREAD_ABORT_DELAY_US);
 	}
 }
 #endif

@@ -8,6 +8,7 @@
 
 #define DT_DRV_COMPAT nxp_imx_usdhc
 
+#include <sys/__assert.h>
 #include <disk/disk_access.h>
 #include <drivers/gpio.h>
 #include <sys/byteorder.h>
@@ -1783,8 +1784,8 @@ uint32_t usdhc_set_sd_clk(USDHC_Type *base, uint32_t src_clk_hz, uint32_t sd_clk
 	uint32_t sysctl = 0U;
 	uint32_t nearest_freq = 0U;
 
-	assert(src_clk_hz != 0U);
-	assert((sd_clk_hz != 0U) && (sd_clk_hz <= src_clk_hz));
+	__ASSERT_NO_MSG(src_clk_hz != 0U);
+	__ASSERT_NO_MSG((sd_clk_hz != 0U) && (sd_clk_hz <= src_clk_hz));
 
 	/* calculate total divisor first */
 	total_div = src_clk_hz / sd_clk_hz;
@@ -2175,12 +2176,12 @@ static void usdhc_host_hw_init(USDHC_Type *base,
 	uint32_t proctl, sysctl, wml;
 	uint32_t int_mask;
 
-	assert(config);
-	assert((config->write_watermark >= 1U) &&
-		(config->write_watermark <= 128U));
-	assert((config->read_watermark >= 1U) &&
-		(config->read_watermark <= 128U));
-	assert(config->write_burst_len <= 16U);
+	__ASSERT_NO_MSG(config);
+	__ASSERT_NO_MSG((config->write_watermark >= 1U) &&
+			(config->write_watermark <= 128U));
+	__ASSERT_NO_MSG((config->read_watermark >= 1U) &&
+			(config->read_watermark <= 128U));
+	__ASSERT_NO_MSG(config->write_burst_len <= 16U);
 
 	/* Reset USDHC. */
 	usdhc_hw_reset(base, USDHC_RESET_ALL, 100U);

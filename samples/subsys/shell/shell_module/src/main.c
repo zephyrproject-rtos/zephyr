@@ -7,7 +7,6 @@
 #include <zephyr.h>
 #include <sys/printk.h>
 #include <shell/shell.h>
-#include <shell/shell_uart.h>
 #include <version.h>
 #include <logging/log.h>
 #include <stdlib.h>
@@ -119,7 +118,22 @@ static int cmd_version(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_dict(const struct shell *shell, size_t argc, char **argv,
+		    void *data)
+{
+	int val = (intptr_t)data;
+
+	shell_print(shell, "(syntax, value) : (%s, %d)", argv[0], val);
+
+	return 0;
+}
+
+SHELL_SUBCMD_DICT_SET_CREATE(sub_dict_cmds, cmd_dict,
+	(value_0, 0), (value_1, 1), (value_2, 2), (value_3, 3)
+);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_demo,
+	SHELL_CMD(dictionary, &sub_dict_cmds, "Dictionary commands", NULL),
 	SHELL_CMD(hexdump, NULL, "Hexdump params command.", cmd_demo_hexdump),
 	SHELL_CMD(params, NULL, "Print params command.", cmd_demo_params),
 	SHELL_CMD(ping, NULL, "Ping command.", cmd_demo_ping),

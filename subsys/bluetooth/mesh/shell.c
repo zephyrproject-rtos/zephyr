@@ -24,6 +24,7 @@
 /* Private includes for raw Network & Transport layer access */
 #include "mesh.h"
 #include "net.h"
+#include "rpl.h"
 #include "transport.h"
 #include "foundation.h"
 #include "settings.h"
@@ -894,6 +895,46 @@ static int cmd_gatt_proxy(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	shell_print(shell, "GATT Proxy is set to 0x%02x", proxy);
+
+	return 0;
+}
+
+static int cmd_net_transmit(const struct shell *shell,
+		size_t argc, char *argv[])
+{
+	uint8_t transmit;
+	int err;
+
+	if (argc < 2) {
+		err = bt_mesh_cfg_net_transmit_get(net.net_idx,
+				net.dst, &transmit);
+	} else {
+		if (argc != 3) {
+			shell_error(shell, "Wrong number of input arguments"
+						"(2 arguments are required)");
+			return -EINVAL;
+		}
+
+		uint8_t count, interval, new_transmit;
+
+		count = strtoul(argv[1], NULL, 0);
+		interval = strtoul(argv[2], NULL, 0);
+
+		new_transmit = BT_MESH_TRANSMIT(count, interval);
+
+		err = bt_mesh_cfg_net_transmit_set(net.net_idx, net.dst,
+				new_transmit, &transmit);
+	}
+
+	if (err) {
+		shell_error(shell, "Unable to send network transmit"
+				" Get/Set (err %d)", err);
+		return 0;
+	}
+
+	shell_print(shell, "Transmit 0x%02x (count %u interval %ums)",
+			transmit, BT_MESH_TRANSMIT_COUNT(transmit),
+			BT_MESH_TRANSMIT_INT(transmit));
 
 	return 0;
 }
@@ -2680,6 +2721,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
 		      cmd_app_key_del, 3, 0),
 	SHELL_CMD_ARG(app-key-get, NULL, "<NetKeyIndex>", cmd_app_key_get, 2,
 		      0),
+	SHELL_CMD_ARG(net-transmit-param, NULL, "[<count: 0-7>"
+			" <interval: 10-320>]", cmd_net_transmit, 1, 2),
 	SHELL_CMD_ARG(mod-app-bind, NULL,
 		      "<addr> <AppIndex> <Model ID> [Company ID]",
 		      cmd_mod_app_bind, 4, 1),

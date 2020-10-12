@@ -52,5 +52,10 @@
 		reg = <0>;
 		spi-max-frequency = <12000000>;
 		label = "DISPLAY";
+		pwctrl1 = [1b 00];
+		vmctrl1 = [3f 3c];
+		vmctrl2 = [b7];
+		pgamctrl = [0f 2a 28 08 0e 08 54 a9 43 0a 0f 00 00 00 00];
+		ngamctrl = [00 15 17 07 11 06 2b 56 3c 05 10 0f 3f 3f 0f];
 	};
 };

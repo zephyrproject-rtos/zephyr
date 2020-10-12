@@ -103,7 +103,7 @@ static int enable_port(uint32_t port, const struct device *clk)
 	return clock_control_on(clk, (clock_control_subsys_t *) &pclken);
 }
 
-static int stm32_pin_configure(int pin, int func, int altf)
+static int stm32_pin_configure(uint32_t pin, uint32_t func, uint32_t altf)
 {
 	/* determine IO port registers location */
 	uint32_t offset = STM32_PORT(pin) * GPIO_REG_SIZE;
@@ -115,6 +115,103 @@ static int stm32_pin_configure(int pin, int func, int altf)
 	return gpio_stm32_configure((uint32_t *)port_base,
 				    STM32_PIN(pin), func, altf);
 }
+
+/**
+ * @brief helper for converting dt stm32 pinctrl format to existing pin config
+ *        format
+ *
+ * @param *pinctrl pointer to soc_gpio_pinctrl list
+ * @param list_size list size
+ */
+
+void stm32_dt_pinctrl_configure(const struct soc_gpio_pinctrl *pinctrl,
+				size_t list_size)
+{
+	const struct device *clk;
+	uint32_t pin, mux;
+	uint32_t func = 0;
+
+	/* make sure to enable port clock first */
+	clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
+
+	for (int i = 0; i < list_size; i++) {
+		mux = pinctrl[i].pinmux;
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
+		uint32_t pupd;
+
+		if (STM32_DT_PINMUX_FUNC(mux) == ALTERNATE) {
+			func = pinctrl[i].pincfg | STM32_MODE_OUTPUT |
+							STM32_CNF_ALT_FUNC;
+		} else if (STM32_DT_PINMUX_FUNC(mux) == ANALOG) {
+			func = pinctrl[i].pincfg | STM32_MODE_INPUT |
+							STM32_CNF_IN_ANALOG;
+		} else if (STM32_DT_PINMUX_FUNC(mux) == GPIO_IN) {
+			func = pinctrl[i].pincfg | STM32_MODE_INPUT;
+			pupd = func & (STM32_PUPD_MASK << STM32_PUPD_SHIFT);
+			if (pupd == STM32_PUPD_NO_PULL) {
+				func = func | STM32_CNF_IN_FLOAT;
+			} else {
+				func = func | STM32_CNF_IN_PUPD;
+			}
+		} else {
+			/* Not supported */
+			__ASSERT_NO_MSG(STM32_DT_PINMUX_FUNC(mux));
+		}
+#else
+		if (STM32_DT_PINMUX_FUNC(mux) < ANALOG) {
+			func = pinctrl[i].pincfg | STM32_MODER_ALT_MODE;
+		} else if (STM32_DT_PINMUX_FUNC(mux) == ANALOG) {
+			func = STM32_MODER_ANALOG_MODE;
+		} else {
+			/* Not supported */
+			__ASSERT_NO_MSG(STM32_DT_PINMUX_FUNC(mux));
+		}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
+
+		pin = STM32PIN(STM32_DT_PINMUX_PORT(mux),
+			       STM32_DT_PINMUX_LINE(mux));
+
+		enable_port(STM32_PORT(pin), clk);
+
+		stm32_pin_configure(pin, func, STM32_DT_PINMUX_FUNC(mux));
+	}
+
+
+}
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
+/**
+ * @brief Helper function to check provided pinctrl remap configuration (Pin
+ *        remapping configuration should be the same on all pins)
+ *
+ * @param *pinctrl pointer to soc_gpio_pinctrl list
+ * @param list_size list size
+ *
+ * @return remap value on success, -EINVAL otherwise
+ */
+
+int stm32_dt_pinctrl_remap_check(const struct soc_gpio_pinctrl *pinctrl,
+				size_t list_size)
+{
+	int remap;
+	uint32_t mux;
+
+	remap = STM32_DT_PINMUX_REMAP(pinctrl[0].pinmux);
+
+	for (int i = 1; i < list_size; i++) {
+		mux = pinctrl[i].pinmux;
+		remap = STM32_DT_PINMUX_REMAP(mux);
+
+		if (STM32_DT_PINMUX_REMAP(mux) != remap) {
+			remap = -EINVAL;
+			break;
+		}
+	}
+
+	return remap;
+}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
 
 /**
  * @brief pin setup

@@ -16,10 +16,6 @@
 #define AUX_MPU_RDP_ATTR_MASK (0x1FC)
 #define AUX_MPU_RDP_SIZE_MASK (0xE03)
 
-#define _ARC_V2_MPU_EN   (0x409)
-#define _ARC_V2_MPU_RDB0 (0x422)
-#define _ARC_V2_MPU_RDP0 (0x423)
-
 /* For MPU version 2, the minimum protection region size is 2048 bytes */
 #define ARC_FEATURE_MPU_ALIGNMENT_BITS 11
 

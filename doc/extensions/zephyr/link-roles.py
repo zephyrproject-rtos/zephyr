@@ -10,9 +10,13 @@ import re
 from docutils import nodes
 from local_util import run_cmd_get_output
 try:
-    from west.manifest import Manifest as WestManifest
+    import west.manifest
+    try:
+        west_manifest = west.manifest.Manifest.from_file()
+    except west.util.WestNotFound:
+        west_manifest = None
 except ImportError:
-    WestManifest = None
+    west_manifest = None
 
 
 def get_github_rev():
@@ -28,13 +32,13 @@ def setup(app):
 
     # try to get url from West; this adds compatibility with repos
     # located elsewhere
-    if WestManifest is not None:
-        baseurl = WestManifest.from_file().get_projects(['zephyr'])[0].url
+    if west_manifest is not None:
+        baseurl = west_manifest.get_projects(['zephyr'])[0].url
     else:
         baseurl = None
 
     # or fallback to default
-    if baseurl is None:
+    if baseurl is None or baseurl == '':
         baseurl = 'https://github.com/zephyrproject-rtos/zephyr'
 
     app.add_role('zephyr_file', autolink('{}/blob/{}/%s'.format(baseurl, rev)))

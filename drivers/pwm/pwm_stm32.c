@@ -16,6 +16,7 @@
 #include <init.h>
 
 #include <drivers/clock_control/stm32_clock_control.h>
+#include <pinmux/stm32/pinmux_stm32.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(pwm_stm32, CONFIG_PWM_LOG_LEVEL);
@@ -34,6 +35,10 @@ struct pwm_stm32_config {
 	uint32_t prescaler;
 	/** Clock configuration. */
 	struct stm32_pclken pclken;
+	/** pinctrl configurations. */
+	const struct soc_gpio_pinctrl *pinctrl;
+	/** Number of pinctrl configurations. */
+	size_t pinctrl_len;
 };
 
 /** Series F3, F7, G0, G4, H7, L4, MP1 and WB have up to 6 channels, others up
@@ -74,16 +79,6 @@ static void (*const set_timer_compare[TIMER_MAX_CH])(TIM_TypeDef *,
 	LL_TIM_OC_SetCompareCH5, LL_TIM_OC_SetCompareCH6
 #endif
 };
-
-static inline struct pwm_stm32_data *to_data(const struct device *dev)
-{
-	return dev->data;
-}
-
-static inline const struct pwm_stm32_config *to_config(const struct device *dev)
-{
-	return dev->config;
-}
 
 /**
  * Obtain LL polarity from PWM flags.
@@ -187,7 +182,7 @@ static int pwm_stm32_pin_set(const struct device *dev, uint32_t pwm,
 			     uint32_t period_cycles, uint32_t pulse_cycles,
 			     pwm_flags_t flags)
 {
-	const struct pwm_stm32_config *cfg = to_config(dev);
+	const struct pwm_stm32_config *cfg = dev->config;
 
 	uint32_t channel;
 
@@ -248,8 +243,8 @@ static int pwm_stm32_get_cycles_per_sec(const struct device *dev,
 					uint32_t pwm,
 					uint64_t *cycles)
 {
-	struct pwm_stm32_data *data = to_data(dev);
-	const struct pwm_stm32_config *cfg = to_config(dev);
+	struct pwm_stm32_data *data = dev->data;
+	const struct pwm_stm32_config *cfg = dev->config;
 
 	*cycles = (uint64_t)(data->tim_clk / (cfg->prescaler + 1));
 
@@ -263,8 +258,8 @@ static const struct pwm_driver_api pwm_stm32_driver_api = {
 
 static int pwm_stm32_init(const struct device *dev)
 {
-	struct pwm_stm32_data *data = to_data(dev);
-	const struct pwm_stm32_config *cfg = to_config(dev);
+	struct pwm_stm32_data *data = dev->data;
+	const struct pwm_stm32_config *cfg = dev->config;
 
 	int r;
 	const struct device *clk;
@@ -284,6 +279,153 @@ static int pwm_stm32_init(const struct device *dev)
 	if (r < 0) {
 		LOG_ERR("Could not obtain timer clock (%d)", r);
 		return r;
+	}
+
+	/* configure pinmux */
+	if (cfg->pinctrl_len != 0U) {
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
+		/* apply F1 series remaps */
+		int remap;
+
+		remap = stm32_dt_pinctrl_remap_check(cfg->pinctrl,
+						     cfg->pinctrl_len);
+		if (remap < 0) {
+			LOG_ERR("pinctrl remap check failed (%d)", remap);
+			return remap;
+		}
+
+		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
+
+		switch ((uint32_t)cfg->timer) {
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers1), okay)
+		case DT_REG_ADDR(DT_NODELABEL(timers1)):
+			if (remap == REMAP_1) {
+				LL_GPIO_AF_RemapPartial_TIM1();
+			} else if (remap == REMAP_FULL) {
+				LL_GPIO_AF_EnableRemap_TIM1();
+			} else {
+				LL_GPIO_AF_DisableRemap_TIM1();
+			}
+			break;
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers2), okay)
+		case DT_REG_ADDR(DT_NODELABEL(timers2)):
+			if (remap == REMAP_1) {
+				LL_GPIO_AF_RemapPartial1_TIM2();
+			} else if (remap == REMAP_2) {
+				LL_GPIO_AF_RemapPartial2_TIM2();
+			} else if (remap == REMAP_FULL) {
+				LL_GPIO_AF_EnableRemap_TIM2();
+			} else {
+				LL_GPIO_AF_DisableRemap_TIM2();
+			}
+			break;
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers3), okay)
+		case DT_REG_ADDR(DT_NODELABEL(timers3)):
+			if (remap == REMAP_1) {
+				LL_GPIO_AF_RemapPartial_TIM3();
+			} else if (remap == REMAP_FULL) {
+				LL_GPIO_AF_EnableRemap_TIM3();
+			} else {
+				LL_GPIO_AF_DisableRemap_TIM3();
+			}
+			break;
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers4), okay)
+		case DT_REG_ADDR(DT_NODELABEL(timers4)):
+			if (remap == REMAP_FULL) {
+				LL_GPIO_AF_EnableRemap_TIM4();
+			} else {
+				LL_GPIO_AF_DisableRemap_TIM4();
+			}
+			break;
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers9), okay)
+		case DT_REG_ADDR(DT_NODELABEL(timers9)):
+			if (remap == REMAP_FULL) {
+				LL_GPIO_AF_EnableRemap_TIM9();
+			} else {
+				LL_GPIO_AF_DisableRemap_TIM9();
+			}
+			break;
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers10), okay)
+		case DT_REG_ADDR(DT_NODELABEL(timers10)):
+			if (remap == REMAP_FULL) {
+				LL_GPIO_AF_EnableRemap_TIM10();
+			} else {
+				LL_GPIO_AF_DisableRemap_TIM10();
+			}
+			break;
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers11), okay)
+		case DT_REG_ADDR(DT_NODELABEL(timers11)):
+			if (remap == REMAP_FULL) {
+				LL_GPIO_AF_EnableRemap_TIM11();
+			} else {
+				LL_GPIO_AF_DisableRemap_TIM11();
+			}
+			break;
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers12), okay)
+		case DT_REG_ADDR(DT_NODELABEL(timers12)):
+			if (remap == REMAP_FULL) {
+				LL_GPIO_AF_EnableRemap_TIM12();
+			} else {
+				LL_GPIO_AF_DisableRemap_TIM12();
+			}
+			break;
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers13), okay)
+		case DT_REG_ADDR(DT_NODELABEL(timers13)):
+			if (remap == REMAP_FULL) {
+				LL_GPIO_AF_EnableRemap_TIM13();
+			} else {
+				LL_GPIO_AF_DisableRemap_TIM13();
+			}
+			break;
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers14), okay)
+		case DT_REG_ADDR(DT_NODELABEL(timers14)):
+			if (remap == REMAP_FULL) {
+				LL_GPIO_AF_EnableRemap_TIM14();
+			} else {
+				LL_GPIO_AF_DisableRemap_TIM14();
+			}
+			break;
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers15), okay)
+		case DT_REG_ADDR(DT_NODELABEL(timers15)):
+			if (remap == REMAP_FULL) {
+				LL_GPIO_AF_EnableRemap_TIM15();
+			} else {
+				LL_GPIO_AF_DisableRemap_TIM15();
+			}
+			break;
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers16), okay)
+		case DT_REG_ADDR(DT_NODELABEL(timers16)):
+			if (remap == REMAP_FULL) {
+				LL_GPIO_AF_EnableRemap_TIM16();
+			} else {
+				LL_GPIO_AF_DisableRemap_TIM16();
+			}
+			break;
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(timers17), okay)
+		case DT_REG_ADDR(DT_NODELABEL(timers17)):
+			if (remap == REMAP_FULL) {
+				LL_GPIO_AF_EnableRemap_TIM17();
+			} else {
+				LL_GPIO_AF_DisableRemap_TIM17();
+			}
+			break;
+#endif
+		}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
+
+		stm32_dt_pinctrl_configure(cfg->pinctrl, cfg->pinctrl_len);
 	}
 
 	/* initialize timer */
@@ -318,11 +460,16 @@ static int pwm_stm32_init(const struct device *dev)
 #define PWM_DEVICE_INIT(index)                                                 \
 	static struct pwm_stm32_data pwm_stm32_data_##index;                   \
 									       \
+	static const struct soc_gpio_pinctrl pwm_pins_##index[] =	       \
+		ST_STM32_DT_INST_PINCTRL(index, 0);			       \
+									       \
 	static const struct pwm_stm32_config pwm_stm32_config_##index = {      \
 		.timer = (TIM_TypeDef *)DT_REG_ADDR(                           \
 			DT_INST(index, st_stm32_timers)),                      \
 		.prescaler = DT_INST_PROP(index, st_prescaler),                \
-		.pclken = DT_INST_CLK(index, timer)                            \
+		.pclken = DT_INST_CLK(index, timer),                           \
+		.pinctrl = pwm_pins_##index,                                   \
+		.pinctrl_len = ARRAY_SIZE(pwm_pins_##index),                   \
 	};                                                                     \
 									       \
 	DEVICE_AND_API_INIT(pwm_stm32_##index, DT_INST_LABEL(index),           \

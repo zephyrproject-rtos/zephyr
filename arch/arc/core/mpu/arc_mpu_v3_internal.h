@@ -12,16 +12,6 @@
 
 #define AUX_MPU_RPER_ATTR_MASK (0x1FF)
 
-#define _ARC_V2_MPU_EN   (0x409)
-
-/* aux regs added in MPU version 3 */
-#define _ARC_V2_MPU_INDEX       (0x448) /* MPU index */
-#define _ARC_V2_MPU_RSTART      (0x449) /* MPU region start address */
-#define _ARC_V2_MPU_REND        (0x44A) /* MPU region end address */
-#define _ARC_V2_MPU_RPER        (0x44B) /* MPU region permission register */
-#define _ARC_V2_MPU_PROBE       (0x44C) /* MPU probe register */
-
-
 /* For MPU version 3, the minimum protection region size is 32 bytes */
 #define ARC_FEATURE_MPU_ALIGNMENT_BITS 5
 

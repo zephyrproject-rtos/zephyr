@@ -5,45 +5,32 @@
 #include <kernel.h>
 #include <arch/x86/acpi.h>
 
-struct acpi_rsdp {
-	char     sig[8];
-	uint8_t  csum;
-	char     oemid[6];
-	uint8_t  rev;
-	uint32_t rsdt_ptr;
-	uint32_t len;
-	uint64_t xsdt_ptr;
-	uint8_t  ext_csum;
-	uint8_t  _rsvd[3];
-} __packed;
-
-struct acpi_rsdt {
-	struct acpi_sdt sdt;
-	uint32_t table_ptrs[];
-} __packed;
-
-struct acpi_xsdt {
-	struct acpi_sdt sdt;
-	uint64_t table_ptrs[];
-} __packed;
+static struct acpi_rsdp *rsdp;
+bool is_rdsp_searched = false;
 
 static bool check_sum(struct acpi_sdt *t)
 {
 	uint8_t sum = 0, *p = (uint8_t *)t;
 
-	for (int i = 0; i < t->len; i++) {
+	for (int i = 0; i < t->length; i++) {
 		sum += p[i];
 	}
+
 	return sum == 0;
 }
+
 
 /* We never identity map the NULL page, but may need to read some BIOS data */
 static uint8_t *zero_page_base;
 
-static struct acpi_rsdp *find_rsdp(void)
+static void find_rsdp(void)
 {
-	uint64_t magic = 0x2052545020445352; /* == "RSD PTR " */
 	uint8_t *bda_seg;
+
+	if (is_rdsp_searched) {
+		/* Looking up for RSDP has already been done */
+		return;
+	}
 
 	if (zero_page_base == NULL) {
 		z_mem_map(&zero_page_base, 0, 4096, K_MEM_PERM_RW);
@@ -64,8 +51,9 @@ static struct acpi_rsdp *find_rsdp(void)
 	/* Might be nothing there, check before we inspect */
 	if (search != NULL) {
 		for (int i = 0; i < 1024/8; i++) {
-			if (search[i] == magic) {
-				return (void *)&search[i];
+			if (search[i] == ACPI_RSDP_SIGNATURE) {
+				rsdp = (void *)&search[i];
+				goto out;
 			}
 		}
 	}
@@ -74,9 +62,11 @@ static struct acpi_rsdp *find_rsdp(void)
 	 * real mode memory.
 	 */
 	search = (uint64_t *)0xe0000;
+
 	for (int i = 0; i < 128*1024/8; i++) {
-		if (search[i] == magic) {
-			return (void *)&search[i];
+		if (search[i] == ACPI_RSDP_SIGNATURE) {
+			rsdp = (void *)&search[i];
+			goto out;
 		}
 	}
 
@@ -84,12 +74,14 @@ static struct acpi_rsdp *find_rsdp(void)
 	 * is passed as a function argument to the bootloader and long
 	 * forgotten by now...
 	 */
-	return NULL;
+	rsdp = NULL;
+out:
+	is_rdsp_searched = true;
 }
 
 void *z_acpi_find_table(uint32_t signature)
 {
-	struct acpi_rsdp *rsdp = find_rsdp();
+	find_rsdp();
 
 	if (!rsdp) {
 		return NULL;
@@ -98,34 +90,35 @@ void *z_acpi_find_table(uint32_t signature)
 	struct acpi_rsdt *rsdt = (void *)(long)rsdp->rsdt_ptr;
 
 	if (rsdt && check_sum(&rsdt->sdt)) {
-		uint32_t *end = (uint32_t *)((char *)rsdt + rsdt->sdt.len);
+		uint32_t *end = (uint32_t *)((char *)rsdt + rsdt->sdt.length);
 
 		for (uint32_t *tp = &rsdt->table_ptrs[0]; tp < end; tp++) {
 			struct acpi_sdt *t = (void *)(long)*tp;
 
-			if (t->sig == signature && check_sum(t)) {
+			if (t->signature == signature && check_sum(t)) {
 				return t;
 			}
 		}
 	}
 
-	if (rsdp->rev < 2) {
+	if (rsdp->revision < 2) {
 		return NULL;
 	}
 
 	struct acpi_xsdt *xsdt = (void *)(long)rsdp->xsdt_ptr;
 
 	if (xsdt && check_sum(&xsdt->sdt)) {
-		uint64_t *end = (uint64_t *)((char *)xsdt + xsdt->sdt.len);
+		uint64_t *end = (uint64_t *)((char *)xsdt + xsdt->sdt.length);
 
 		for (uint64_t *tp = &xsdt->table_ptrs[0]; tp < end; tp++) {
 			struct acpi_sdt *t = (void *)(long)*tp;
 
-			if (t->sig == signature && check_sum(t)) {
+			if (t->signature == signature && check_sum(t)) {
 				return t;
 			}
 		}
 	}
+
 	return NULL;
 }
 
@@ -139,24 +132,29 @@ struct acpi_cpu *z_acpi_get_cpu(int n)
 	uintptr_t base = POINTER_TO_UINT(madt);
 	uintptr_t offset;
 
-	if (madt) {
-		offset = POINTER_TO_UINT(madt->entries) - base;
+	if (!madt) {
+		return NULL;
+	}
 
-		while (offset < madt->sdt.len) {
-			struct acpi_madt_entry *entry;
+	offset = POINTER_TO_UINT(madt->entries) - base;
 
-			entry = (struct acpi_madt_entry *) (offset + base);
+	while (offset < madt->sdt.length) {
+		struct acpi_madt_entry *entry;
 
-			if (entry->type == ACPI_MADT_ENTRY_CPU) {
-				if (n) {
-					--n;
-				} else {
-					return (struct acpi_cpu *) entry;
+		entry = (struct acpi_madt_entry *)(offset + base);
+		if (entry->type == ACPI_MADT_ENTRY_CPU) {
+			struct acpi_cpu *cpu = (struct acpi_cpu *)entry;
+
+			if (cpu->flags & ACPI_CPU_FLAGS_ENABLED) {
+				if (n == 0) {
+					return cpu;
 				}
-			}
 
-			offset += entry->length;
+				--n;
+			}
 		}
+
+		offset += entry->length;
 	}
 
 	return NULL;

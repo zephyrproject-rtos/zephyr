@@ -84,10 +84,12 @@ SECTIONS
 
 	. = ALIGN(8);
 
+#ifdef CONFIG_XIP
 	_image_rom_start = PHYS_LOAD_ADDR;
-	_image_text_start = PHYS_LOAD_ADDR;
+#endif
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
+	_image_text_start = .;
 
 /* Located in generated directory. This file is populated by calling
  * zephyr_linker_sources(ROM_START ...). This typically contains the vector
@@ -125,13 +127,6 @@ SECTIONS
 	*(".rodata.*")
 	*(.gnu.linkonce.r.*)
 
-#ifdef CONFIG_X86_MMU
-	. = ALIGN(4);
-	_mmu_region_list_start = .;
-	KEEP(*("._mmu_region.static.*"))
-	_mmu_region_list_end = .;
-#endif /* CONFIG_X86_MMU */
-
 #ifndef CONFIG_DYNAMIC_INTERRUPTS
 	. = ALIGN(8);
 	_idt_base_address = .;
@@ -162,9 +157,11 @@ SECTIONS
 
 	MMU_PAGE_ALIGN
 	/* ROM ends here, position counter will now be in RAM areas */
+#ifdef CONFIG_XIP
 	_image_rom_end = .;
 	_image_rom_size = _image_rom_end - _image_rom_start;
-	_image_rodata_end = _image_rom_end;
+#endif
+	_image_rodata_end = .;
 	_image_rodata_size = _image_rodata_end - _image_rodata_start;
 	GROUP_END(ROMABLE_REGION)
 	/*

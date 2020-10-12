@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/f4/stm32f411Xe.dtsi>
+#include <st/f4/stm32f411c(c-e)ux-pinctrl.dtsi>
 
 / {
 	model = "WeAct Studio Black Pill V2.0 Board";
@@ -82,10 +83,12 @@
 
 	pwm4: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim4_ch1_pwm_pb6 &tim4_ch2_pwm_pb7>;
 	};
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	status = "okay";
 	current-speed = <115200>;
 };

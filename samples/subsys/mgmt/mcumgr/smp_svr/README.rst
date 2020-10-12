@@ -183,8 +183,7 @@ Flashing the sample image
 *************************
 
 Upload the :file:`zephyr.signed.bin` file from the previous to image slot-0 of your
-board.  The location of image slot-0 varies by board, as described in
-:ref:`mcuboot_partitions`.
+board.  See :ref:`flash_map_api` for details on flash partitioning.
 
 To upload the initial image file to an empty slot-0, we simply use ``west flash``
 like normal. ``west flash`` will automatically detect slot-0 address and confirm

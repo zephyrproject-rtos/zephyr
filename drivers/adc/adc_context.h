@@ -92,10 +92,7 @@ static inline void adc_context_request_next_sampling(struct adc_context *ctx)
 #ifdef ADC_CONTEXT_USES_KERNEL_TIMER
 static inline void adc_context_enable_timer(struct adc_context *ctx)
 {
-	uint32_t interval_us = ctx->options.interval_us;
-	uint32_t interval_ms = ceiling_fraction(interval_us, 1000UL);
-
-	k_timer_start(&ctx->timer, K_NO_WAIT, K_MSEC(interval_ms));
+	k_timer_start(&ctx->timer, K_NO_WAIT, K_USEC(ctx->options.interval_us));
 }
 
 static inline void adc_context_disable_timer(struct adc_context *ctx)

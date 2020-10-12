@@ -207,6 +207,8 @@ source "drivers/spi/Kconfig.sam0"
 
 source "drivers/spi/Kconfig.sifive"
 
+source "drivers/spi/Kconfig.spi_emul"
+
 source "drivers/spi/Kconfig.nrfx"
 
 source "drivers/spi/Kconfig.cc13xx_cc26xx"

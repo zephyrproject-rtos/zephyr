@@ -141,22 +141,24 @@ Pristine Builds
 A *pristine* build directory is essentially a new build directory. All
 byproducts from previous builds have been removed.
 
-To have ``west build`` make the build directory pristine before re-running
-CMake to generate a build system, use the ``--pristine`` (or ``-p``)
-option. For example, to switch board and application (which requires a pristine
-build directory) in one command::
+To force ``west build`` make the build directory pristine before re-running
+CMake to generate a build system, use the ``--pristine=always`` (or
+``-p=always``) option.
 
-  west build -b qemu_x86 samples/philosophers
+Giving ``--pristine`` or ``-p`` without a value has the same effect as giving
+it the value ``always``. For example, these commands are equivalent::
+
   west build -p -b reel_board samples/hello_world
+  west build -p=always -b reel_board samples/hello_world
 
-To let west decide for you if a pristine build is needed, use ``-p auto``::
-
-  west build -p auto -b reel_board samples/hello_world
+By default, ``west build`` applies a heuristic to detect if the build directory
+needs to be made pristine. This is the same as using ``--pristine=auto``.
 
 .. tip::
 
-   You can run ``west config build.pristine auto`` to make this setting
-   permanent.
+   You can run ``west config build.pristine always`` to always do a pristine
+   build, or ``west config build.pristine never`` to disable the heuristic.
+   See the ``west build`` :ref:`west-building-config` for details.
 
 .. _west-building-verbose:
 

@@ -29,6 +29,7 @@
 #include "adv.h"
 #include "mesh.h"
 #include "net.h"
+#include "rpl.h"
 #include "beacon.h"
 #include "access.h"
 #include "foundation.h"

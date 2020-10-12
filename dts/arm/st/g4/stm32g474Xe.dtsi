@@ -13,24 +13,6 @@
 	};
 
 	soc {
-		dac2: dac@50000c00 {
-			compatible = "st,stm32-dac";
-			reg = <0x50000c00 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00020000>;
-			status = "disabled";
-			label = "DAC_2";
-			#io-channel-cells = <1>;
-		};
-
-		dac4: dac@50001400 {
-			compatible = "st,stm32-dac";
-			reg = <0x50001400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00080000>;
-			status = "disabled";
-			label = "DAC_4";
-			#io-channel-cells = <1>;
-		};
-
 		flash-controller@40022000 {
 			flash0: flash@8000000 {
 				reg = <0x08000000 DT_SIZE_K(512)>;

@@ -31,7 +31,11 @@
 
 #else
 
+#if defined(CONFIG_NET_DHCPV4)
+#define NET_EVENT_INFO_MAX_SIZE sizeof(struct net_if_dhcpv4)
+#else
 #define NET_EVENT_INFO_MAX_SIZE sizeof(struct net_event_ipv6_route)
+#endif
 
 #endif /* CONFIG_NET_L2_WIFI_MGMT */
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */
@@ -55,7 +59,7 @@ static inline void net_context_init(void) { }
 static inline void net_pkt_init(void) { }
 static inline void net_tc_tx_init(void) { }
 static inline void net_tc_rx_init(void) { }
-static inline const char *net_context_state(context)
+static inline const char *net_context_state(struct net_context *context)
 {
 	ARG_UNUSED(context);
 	return NULL;

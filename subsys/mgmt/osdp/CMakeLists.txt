@@ -12,6 +12,9 @@ zephyr_library_sources_ifdef(CONFIG_OSDP_MODE_PD src/osdp_pd.c)
 # CP mode specific sources
 zephyr_library_sources_ifdef(CONFIG_OSDP_MODE_CP src/osdp_cp.c)
 
+# Secure Channel sources
+zephyr_library_sources_ifdef(CONFIG_OSDP_SC_ENABLED src/osdp_sc.c)
+
 # Common sources
 zephyr_library_sources_ifdef(CONFIG_OSDP
 	src/osdp_phy.c

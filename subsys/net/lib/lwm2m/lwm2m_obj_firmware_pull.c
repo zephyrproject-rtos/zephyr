@@ -314,7 +314,7 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 
 		/* get buffer data */
 		write_buf = res->res_instances->data_ptr;
-		write_buflen = res->res_instances->data_len;
+		write_buflen = res->res_instances->max_data_len;
 
 		/* check for user override to buffer */
 		if (res->pre_write_cb) {

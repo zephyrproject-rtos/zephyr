@@ -85,3 +85,13 @@ properties:
       required: false
       type: string-array
       description: Provided names of DMA channel specifiers
+
+    io-channels:
+      required: false
+      type: phandle-array
+      description: IO channels specifiers
+
+    io-channel-names:
+      required: false
+      type: string-array
+      description: Provided names of IO channel specifiers

@@ -41,7 +41,7 @@ manifest:
       revision: da9a2df574094f52d87a03f6393928bdc7dce17c
       path: tools/ci-tools
     - name: civetweb
-      revision: 99129c5efc907ea613c4b73ccff07581feb58a7a
+      revision: e6903b80c09d17cd1a8bb32e40080005558aad29
       path: modules/lib/civetweb
     - name: esp-idf
       revision: 6835bfc741bf15e98fb7971293913f770df6081f
@@ -56,7 +56,7 @@ manifest:
       revision: f1fa8241f8786198ba41155413243de36ed878a5
       path: modules/hal/infineon
     - name: hal_nordic
-      revision: d8a6ea9695ddf792bb18bb6035c13b1daac5d79c
+      revision: 0f4ff90fbf8137086e2f9c1b78a6fc2aa5ef731f
       path: modules/hal/nordic
     - name: hal_openisa
       revision: 40d049f69c50b58ea20473bee14cf93f518bf262
@@ -74,7 +74,7 @@ manifest:
       revision: 5b3ec3e182d4310e8943cc34c6c70ae57d9711da
       path: modules/hal/st
     - name: hal_stm32
-      revision: cea57f86d3ade46c0b99dab32b2ac63435ed0693
+      revision: 8128bd26b2b94c6a0ebd9a2e3a8746d138e3de35
       path: modules/hal/stm32
     - name: hal_ti
       revision: 405dfc8faba13e01c1cb9e29e70b31b50f71d117
@@ -93,7 +93,7 @@ manifest:
       revision: aef137b1af8aa7a0f43345c82459254b8832262e
       path: modules/crypto/mbedtls
     - name: mcuboot
-      revision: a5d79cf8ccb2c71e68ef32a71d6a2716e831d12e
+      revision: e312fa2cec3e8440bf484d7da3443e149b7eb9d8
       path: bootloader/mcuboot
     - name: mcumgr
       revision: 5051f9d900bbb194a23d4ce80f3c6dc6d6780cc2

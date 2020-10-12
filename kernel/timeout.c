@@ -66,7 +66,7 @@ static void remove_timeout(struct _timeout *t)
 
 static int32_t elapsed(void)
 {
-	return announce_remaining == 0 ? z_clock_elapsed() : 0;
+	return announce_remaining == 0 ? z_clock_elapsed() : 0U;
 }
 
 static int32_t next_timeout(void)
@@ -143,7 +143,7 @@ int z_abort_timeout(struct _timeout *to)
 }
 
 /* must be locked */
-static k_ticks_t timeout_rem(struct _timeout *timeout)
+static k_ticks_t timeout_rem(const struct _timeout *timeout)
 {
 	k_ticks_t ticks = 0;
 
@@ -161,7 +161,7 @@ static k_ticks_t timeout_rem(struct _timeout *timeout)
 	return ticks - elapsed();
 }
 
-k_ticks_t z_timeout_remaining(struct _timeout *timeout)
+k_ticks_t z_timeout_remaining(const struct _timeout *timeout)
 {
 	k_ticks_t ticks = 0;
 
@@ -172,7 +172,7 @@ k_ticks_t z_timeout_remaining(struct _timeout *timeout)
 	return ticks;
 }
 
-k_ticks_t z_timeout_expires(struct _timeout *timeout)
+k_ticks_t z_timeout_expires(const struct _timeout *timeout)
 {
 	k_ticks_t ticks = 0;
 

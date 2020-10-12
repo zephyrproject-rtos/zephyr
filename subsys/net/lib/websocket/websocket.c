@@ -855,6 +855,7 @@ int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
 	if (ctx->message_len == ctx->total_read) {
 		ctx->header_received = false;
 		ctx->message_len = 0;
+		ctx->message_type = 0;
 		ctx->total_read = 0;
 	}
 

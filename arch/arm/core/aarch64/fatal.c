@@ -133,25 +133,25 @@ static void print_EC_cause(uint64_t esr)
 
 static void esf_dump(const z_arch_esf_t *esf)
 {
-	LOG_ERR("x1:  %-8llx  x0:  %llx",
+	LOG_ERR("x0:  0x%016llx  x1:  0x%016llx",
 		esf->basic.regs[18], esf->basic.regs[19]);
-	LOG_ERR("x2:  %-8llx  x3:  %llx",
+	LOG_ERR("x2:  0x%016llx  x3:  0x%016llx",
 		esf->basic.regs[16], esf->basic.regs[17]);
-	LOG_ERR("x4:  %-8llx  x5:  %llx",
+	LOG_ERR("x4:  0x%016llx  x5:  0x%016llx",
 		esf->basic.regs[14], esf->basic.regs[15]);
-	LOG_ERR("x6:  %-8llx  x7:  %llx",
+	LOG_ERR("x6:  0x%016llx  x7:  0x%016llx",
 		esf->basic.regs[12], esf->basic.regs[13]);
-	LOG_ERR("x8:  %-8llx  x9:  %llx",
+	LOG_ERR("x8:  0x%016llx  x9:  0x%016llx",
 		esf->basic.regs[10], esf->basic.regs[11]);
-	LOG_ERR("x10: %-8llx  x11: %llx",
+	LOG_ERR("x10: 0x%016llx  x11: 0x%016llx",
 		esf->basic.regs[8], esf->basic.regs[9]);
-	LOG_ERR("x12: %-8llx  x13: %llx",
+	LOG_ERR("x12: 0x%016llx  x13: 0x%016llx",
 		esf->basic.regs[6], esf->basic.regs[7]);
-	LOG_ERR("x14: %-8llx  x15: %llx",
+	LOG_ERR("x14: 0x%016llx  x15: 0x%016llx",
 		esf->basic.regs[4], esf->basic.regs[5]);
-	LOG_ERR("x16: %-8llx  x17: %llx",
+	LOG_ERR("x16: 0x%016llx  x17: 0x%016llx",
 		esf->basic.regs[2], esf->basic.regs[3]);
-	LOG_ERR("x18: %-8llx  x30: %llx",
+	LOG_ERR("x18: 0x%016llx  x30: 0x%016llx",
 		esf->basic.regs[0], esf->basic.regs[1]);
 }
 
@@ -162,36 +162,17 @@ void z_arm64_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	if (reason != K_ERR_SPURIOUS_IRQ) {
 		__asm__ volatile("mrs %0, CurrentEL" : "=r" (el));
 
-		switch (GET_EL(el)) {
-		case MODE_EL1:
+		if (GET_EL(el) != MODE_EL0) {
 			__asm__ volatile("mrs %0, esr_el1" : "=r" (esr));
 			__asm__ volatile("mrs %0, far_el1" : "=r" (far));
 			__asm__ volatile("mrs %0, elr_el1" : "=r" (elr));
-			break;
-		case MODE_EL2:
-			__asm__ volatile("mrs %0, esr_el2" : "=r" (esr));
-			__asm__ volatile("mrs %0, far_el2" : "=r" (far));
-			__asm__ volatile("mrs %0, elr_el2" : "=r" (elr));
-			break;
-		case MODE_EL3:
-			__asm__ volatile("mrs %0, esr_el3" : "=r" (esr));
-			__asm__ volatile("mrs %0, far_el3" : "=r" (far));
-			__asm__ volatile("mrs %0, elr_el3" : "=r" (elr));
-			break;
-		default:
-			/* Just to keep the compiler happy */
-			esr = elr = far = 0;
-			break;
-		}
 
-		if (GET_EL(el) != MODE_EL0) {
-			LOG_ERR("ESR_ELn: %llx", esr);
-			LOG_ERR("FAR_ELn: %llx", far);
-			LOG_ERR("ELR_ELn: %llx", elr);
+			LOG_ERR("ESR_ELn: 0x%016llx", esr);
+			LOG_ERR("FAR_ELn: 0x%016llx", far);
+			LOG_ERR("ELR_ELn: 0x%016llx", elr);
 
 			print_EC_cause(esr);
 		}
-
 	}
 
 	if (esf != NULL) {

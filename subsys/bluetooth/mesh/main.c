@@ -24,6 +24,7 @@
 #include "adv.h"
 #include "prov.h"
 #include "net.h"
+#include "rpl.h"
 #include "beacon.h"
 #include "lpn.h"
 #include "friend.h"

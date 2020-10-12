@@ -175,7 +175,7 @@ Bluetooth Mesh:
     # Provisional entry, subject to approval
     status: maintained
     maintainers:
-            - trond-snekvik
+        - trond-snekvik
     collaborators:
         - jhedberg
     files:

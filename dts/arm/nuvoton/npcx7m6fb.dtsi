@@ -7,7 +7,9 @@
 #include <arm/armv7-m.dtsi>
 /* Macros for device tree declarations */
 #include <dt-bindings/clock/npcx_clock.h>
+#include <dt-bindings/espi/npcx_espi.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pwm/pwm.h>
 
 /* NPCX7 series pinmux mapping table */
 #include "npcx/npcx7-alts-map.dtsi"
@@ -15,6 +17,8 @@
 #include "npcx/npcx7-miwus-wui-map.dtsi"
 /* NPCX7 series mapping table between MIWU groups and interrupts */
 #include "npcx/npcx7-miwus-int-map.dtsi"
+/* NPCX7 series eSPI VW mapping table */
+#include "npcx/npcx7-espi-vws-map.dtsi"
 
 / {
 	cpus {
@@ -39,10 +43,51 @@
 
 	def_io_conf: def_io_conf_list {
 		compatible = "nuvoton,npcx-pinctrl-def";
+		/* Change default functional pads to GPIOs
+		 * no_spip - PIN95.97.A1.A3
+		 * no_fpip - PIN96.A0.A2.A4 - Internal flash only
+		 * no_pwrgd - PIN72
+		 * no_lpc_espi - PIN46.47.51.52.53.54.55.57
+		 * no_peci_en - PIN81
+		 * npsl_in1_sl - PIND2
+		 * npsl_in2_sl - PIN00
+		 * no_ksi0-7 - PIN31.30.27.26.25.24.23.22
+		 * no_ks000-17 - PIN21.20.17.16.15.14.13.12.11.10.07.06.05.04.
+		 *                  82.83.03.B1
+		 */
 		pinctrl = <&alt0_gpio_no_spip
+			   &alt0_gpio_no_fpip
 			   &alt1_no_pwrgd
 			   &alt1_no_lpc_espi
-			   &alta_no_peci_en>;
+			   &alta_no_peci_en
+			   &altd_npsl_in1_sl
+			   &altd_npsl_in2_sl
+			   &alt7_no_ksi0_sl
+			   &alt7_no_ksi1_sl
+			   &alt7_no_ksi2_sl
+			   &alt7_no_ksi3_sl
+			   &alt7_no_ksi4_sl
+			   &alt7_no_ksi5_sl
+			   &alt7_no_ksi6_sl
+			   &alt7_no_ksi7_sl
+			   &alt8_no_kso00_sl
+			   &alt8_no_kso01_sl
+			   &alt8_no_kso02_sl
+			   &alt8_no_kso03_sl
+			   &alt8_no_kso04_sl
+			   &alt8_no_kso05_sl
+			   &alt8_no_kso06_sl
+			   &alt8_no_kso07_sl
+			   &alt9_no_kso08_sl
+			   &alt9_no_kso09_sl
+			   &alt9_no_kso10_sl
+			   &alt9_no_kso11_sl
+			   &alt9_no_kso12_sl
+			   &alt9_no_kso13_sl
+			   &alt9_no_kso14_sl
+			   &alt9_no_kso15_sl
+			   &alta_no_kso16_sl
+			   &alta_no_kso17_sl>;
 	};
 
 	soc {
@@ -72,7 +117,7 @@
 			interrupts = <33 0>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL1 4>;
 			pinctrl = <&alta_uart1_sl1>; /* PIN10.11 */
-			wui_map = <&wui_cr_sin1>;
+			uart_rx = <&wui_cr_sin1>;
 			status = "disabled";
 			label = "UART_1";
 		};
@@ -83,7 +128,7 @@
 			interrupts = <32 0>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL7 6>;
 			pinctrl = <&alta_uart2_sl>; /* PIN75.86 */
-			wui_map = <&wui_cr_sin2>;
+			uart_rx = <&wui_cr_sin2>;
 			status = "disabled";
 			label = "UART_2";
 		};
@@ -286,6 +331,144 @@
 				    &wui_iof4 &wui_iof5 &wui_none &wui_none>;
 			#gpio-cells=<2>;
 			label="GPIO_F";
+		};
+
+		pwm0: pwm@40080000 {
+			compatible = "nuvoton,npcx-pwm";
+			reg = <0x40080000 0x2000>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 0>;
+			pinctrl = <&alt4_pwm0_sl>; /* PINC3 */
+			#pwm-cells = <2>;
+			status = "disabled";
+			label = "PWM_0";
+		};
+
+		pwm1: pwm@40082000 {
+			compatible = "nuvoton,npcx-pwm";
+			reg = <0x40082000 0x2000>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 1>;
+			pinctrl = <&alt4_pwm1_sl>; /* PINC2 */
+			#pwm-cells = <2>;
+			status = "disabled";
+			label = "PWM_1";
+		};
+
+		pwm2: pwm@40084000 {
+			compatible = "nuvoton,npcx-pwm";
+			reg = <0x40084000 0x2000>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 2>;
+			pinctrl = <&alt4_pwm2_sl>; /* PINC4 */
+			#pwm-cells = <2>;
+			status = "disabled";
+			label = "PWM_2";
+		};
+
+		pwm3: pwm@40086000 {
+			compatible = "nuvoton,npcx-pwm";
+			reg = <0x40086000 0x2000>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 3>;
+			pinctrl = <&alt4_pwm3_sl>; /* PIN80 */
+			#pwm-cells = <2>;
+			status = "disabled";
+			label = "PWM_3";
+		};
+
+		pwm4: pwm@40088000 {
+			compatible = "nuvoton,npcx-pwm";
+			reg = <0x40088000 0x2000>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 4>;
+			pinctrl = <&alt4_pwm4_sl>; /* PINB6 */
+			#pwm-cells = <2>;
+			status = "disabled";
+			label = "PWM_4";
+		};
+
+		pwm5: pwm@4008a000 {
+			compatible = "nuvoton,npcx-pwm";
+			reg = <0x4008a000 0x2000>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 5>;
+			pinctrl = <&alt4_pwm5_sl>; /* PINB7 */
+			#pwm-cells = <2>;
+			status = "disabled";
+			label = "PWM_5";
+		};
+
+		pwm6: pwm@4008c000 {
+			compatible = "nuvoton,npcx-pwm";
+			reg = <0x4008c000 0x2000>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 6>;
+			pinctrl = <&alt4_pwm6_sl>; /* PINC0 */
+			#pwm-cells = <2>;
+			status = "disabled";
+			label = "PWM_6";
+		};
+
+		pwm7: pwm@4008e000 {
+			compatible = "nuvoton,npcx-pwm";
+			reg = <0x4008e000 0x2000>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 7>;
+			pinctrl = <&alt4_pwm7_sl>; /* PIN60 */
+			#pwm-cells = <2>;
+			status = "disabled";
+			label = "PWM_7";
+		};
+
+		espi0: espi@4000a000 {
+			compatible = "nuvoton,npcx-espi";
+			reg = <0x4000a000 0x2000>;
+			interrupts = <18 3>; /* Interrupt for eSPI Bus */
+
+			/* clocks for eSPI modules */
+			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL6 7>;
+			/* PIN46.47.51.52.53.54.55.57 */
+			pinctrl = <&alt1_no_lpc_espi>;
+			/* WUI maps for eSPI signals */
+			espi_rst_wui = <&wui_espi_rst>;
+			label = "ESPI_0";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#vw-cells = <3>;
+			status = "disabled";
+		};
+
+		host_sub: lpc@400c1000 {
+			compatible = "nuvoton,npcx-host-sub";
+			/* host sub-module register address & size */
+			reg = <0x400c1000 0x2000
+			       0x40010000 0x2000
+			       0x4000e000 0x2000
+			       0x400c7000 0x2000
+			       0x400c9000 0x2000
+			       0x400cb000 0x2000>;
+			reg-names = "mswc", "shm", "c2h", "kbc", "pm_acpi",
+				    "pm_hcmd";
+
+			/* host sub-module IRQ and priority */
+			interrupts = <25 3>, /* KBC Input-Buf-Full (IBF) */
+				     <56 3>, /* KBC Output-Buf-Empty (OBE) */
+				     <26 3>, /* PMCH Input-Buf-Full (IBF) */
+				     <3 3>,  /* PMCH Output-Buf-Empty (OBE) */
+				     <6 3>;  /* Port80 FIFO Not Empty */
+			interrupt-names = "kbc_ibf", "kbc_obe", "pmch_ibf",
+					  "pmch_obe", "p80_fifo";
+
+			/* Host serial port pinmux PIN75 86 36 33 42 C7 B3 B2 */
+			pinctrl = <&altb_rxd_sl &altb_txd_sl
+						&altb_rts_sl &altb_cts_sl
+						&altb_ri_sl &altb_dtr_bout_sl
+						&altb_dcd_sl &altb_dsr_sl>;
+
+			/* WUI map for accessing host sub-modules */
+			host_acc_wui = <&wui_host_acc>;
+
+			/* clocks for host sub-modules */
+			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 3>,
+				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 4>,
+				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 5>,
+				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 6>,
+				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 7>;
+			label = "HOST_SUBS";
 		};
 	};
 };

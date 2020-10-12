@@ -2747,26 +2747,27 @@ static void gatt_find_type_rsp(struct bt_conn *conn, uint8_t err,
 			       const void *pdu, uint16_t length,
 			       void *user_data)
 {
-	const struct bt_att_find_type_rsp *rsp = pdu;
+	const struct bt_att_handle_group *rsp = pdu;
 	struct bt_gatt_discover_params *params = user_data;
-	uint8_t i;
+	uint8_t count;
 	uint16_t end_handle = 0U, start_handle;
 
 	BT_DBG("err 0x%02x", err);
 
-	if (err) {
+	if (err || (length % sizeof(struct bt_att_handle_group) != 0)) {
 		goto done;
 	}
 
+	count = length / sizeof(struct bt_att_handle_group);
+
 	/* Parse attributes found */
-	for (i = 0U; length >= sizeof(rsp->list[i]);
-	     i++, length -=  sizeof(rsp->list[i])) {
+	for (uint8_t i = 0U; i < count; i++) {
 		struct bt_uuid_16 uuid_svc;
 		struct bt_gatt_attr attr = {};
 		struct bt_gatt_service_val value;
 
-		start_handle = sys_le16_to_cpu(rsp->list[i].start_handle);
-		end_handle = sys_le16_to_cpu(rsp->list[i].end_handle);
+		start_handle = sys_le16_to_cpu(rsp[i].start_handle);
+		end_handle = sys_le16_to_cpu(rsp[i].end_handle);
 
 		BT_DBG("start_handle 0x%04x end_handle 0x%04x", start_handle,
 		       end_handle);
@@ -2788,11 +2789,6 @@ static void gatt_find_type_rsp(struct bt_conn *conn, uint8_t err,
 		if (params->func(conn, &attr, params) == BT_GATT_ITER_STOP) {
 			return;
 		}
-	}
-
-	/* Stop if could not parse the whole PDU */
-	if (length > 0) {
-		goto done;
 	}
 
 	gatt_discover_next(conn, end_handle, params);

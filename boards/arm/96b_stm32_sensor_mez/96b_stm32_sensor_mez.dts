@@ -6,10 +6,11 @@
 
 /dts-v1/;
 #include <st/f4/stm32f446Xe.dtsi>
+#include <st/f4/stm32f446v(c-e)tx-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics 96Boards STM32 Sensor Mezzanine board";
-	compatible = "st,stm32f446-b96b-f446ve", "st,stm32f446";
+	compatible = "st,stm32f446-b96b-f446ve";
 
 	chosen {
 		zephyr,console = &uart4;
@@ -109,6 +110,7 @@
 
 	pwm3: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim3_ch1_pwm_pb4 &tim3_ch3_pwm_pc8>;
 	};
 };
 
@@ -117,6 +119,7 @@
 
 	pwm4: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim4_ch3_pwm_pd14 &tim4_ch4_pwm_pd15>;
 	};
 };
 
@@ -125,25 +128,30 @@
 
 	pwm9: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim9_ch1_pwm_pe5 &tim9_ch2_pwm_pe6>;
 	};
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart3 {
+	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &uart4 {
+	pinctrl-0 = <&uart4_tx_pc10 &uart4_rx_pc11>;
 	current-speed = <115200>;
 	status = "okay";
 };

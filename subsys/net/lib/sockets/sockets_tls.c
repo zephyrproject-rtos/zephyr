@@ -1790,7 +1790,7 @@ static int ztls_poll_update_ctx(struct tls_context *ctx,
 	return ret;
 }
 
-static inline int ztls_poll_offload(struct pollfd *fds, int nfds, int timeout)
+static inline int ztls_poll_offload(struct zsock_pollfd *fds, int nfds, int timeout)
 {
 	int fd_backup[CONFIG_NET_SOCKETS_POLL_MAX];
 	const struct fd_op_vtable *vtable;
@@ -2059,7 +2059,7 @@ static int tls_sock_bind_vmeth(void *obj, const struct sockaddr *addr,
 {
 	struct tls_context *ctx = obj;
 
-	return bind(ctx->sock, addr, addrlen);
+	return zsock_bind(ctx->sock, addr, addrlen);
 }
 
 static int tls_sock_connect_vmeth(void *obj, const struct sockaddr *addr,

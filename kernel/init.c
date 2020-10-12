@@ -294,8 +294,9 @@ static void init_idle_thread(int i)
 #endif /* CONFIG_THREAD_NAME */
 
 	z_setup_new_thread(thread, stack,
-			  CONFIG_IDLE_STACK_SIZE, idle, NULL, NULL, NULL,
-			  K_LOWEST_THREAD_PRIO, K_ESSENTIAL, tname);
+			  CONFIG_IDLE_STACK_SIZE, idle, &_kernel.cpus[i],
+			  NULL, NULL, K_LOWEST_THREAD_PRIO, K_ESSENTIAL,
+			  tname);
 	z_mark_thread_as_started(thread);
 
 #ifdef CONFIG_SMP

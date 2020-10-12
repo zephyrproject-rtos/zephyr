@@ -20,6 +20,8 @@
 #include <soc.h>
 #include <init.h>
 #include <drivers/uart.h>
+#include <drivers/pinmux.h>
+#include <pinmux/stm32/pinmux_stm32.h>
 #include <drivers/clock_control.h>
 
 #include <linker/sections.h>
@@ -676,6 +678,58 @@ static int uart_stm32_init(const struct device *dev)
 		return -EIO;
 	}
 
+	/* Configure dt provided device signals when available */
+	if (config->pinctrl_list_size != 0) {
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
+		int remap;
+		/* Check that remap configuration is coherent across pins */
+		remap = stm32_dt_pinctrl_remap_check(config->pinctrl_list,
+						     config->pinctrl_list_size);
+		if (remap < 0) {
+			return remap;
+		}
+
+		/* A valid remapping configuration is provided */
+		/* Apply remapping before proceeding with pin configuration */
+		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
+
+		switch ((uint32_t)UART_STRUCT(dev)) {
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usart1), okay)
+		case DT_REG_ADDR(DT_NODELABEL(usart1)):
+			if (remap == REMAP_FULL) {
+				LL_GPIO_AF_EnableRemap_USART1();
+			} else {
+				LL_GPIO_AF_DisableRemap_USART1();
+			}
+			break;
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usart2), okay)
+		case DT_REG_ADDR(DT_NODELABEL(usart2)):
+			if (remap == REMAP_FULL) {
+				LL_GPIO_AF_EnableRemap_USART2();
+			} else {
+				LL_GPIO_AF_DisableRemap_USART2();
+			}
+			break;
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usart3), okay)
+		case DT_REG_ADDR(DT_NODELABEL(usart3)):
+			if (remap == REMAP_FULL) {
+				LL_GPIO_AF_EnableRemap_USART3();
+			} else if (remap == REMAP_1) {
+				LL_GPIO_AF_RemapPartial_USART3();
+			} else {
+				LL_GPIO_AF_DisableRemap_USART3();
+			}
+			break;
+#endif
+		}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
+
+		stm32_dt_pinctrl_configure(config->pinctrl_list,
+					   config->pinctrl_list_size);
+	}
+
 	LL_USART_Disable(UartInstance);
 
 	/* TX/RX direction */
@@ -745,11 +799,11 @@ static int uart_stm32_init(const struct device *dev)
 #define STM32_UART_IRQ_HANDLER(index)					\
 static void uart_stm32_irq_config_func_##index(const struct device *dev)	\
 {									\
-	IRQ_CONNECT(DT_INST_IRQN(index),		\
-		DT_INST_IRQ(index, priority),		\
+	IRQ_CONNECT(DT_INST_IRQN(index),				\
+		DT_INST_IRQ(index, priority),				\
 		uart_stm32_isr, DEVICE_GET(uart_stm32_##index),		\
 		0);							\
-	irq_enable(DT_INST_IRQN(index));		\
+	irq_enable(DT_INST_IRQN(index));				\
 }
 #else
 #define STM32_UART_IRQ_HANDLER_DECL(index)
@@ -760,23 +814,28 @@ static void uart_stm32_irq_config_func_##index(const struct device *dev)	\
 #define STM32_UART_INIT(index)						\
 STM32_UART_IRQ_HANDLER_DECL(index);					\
 									\
+static const struct soc_gpio_pinctrl uart_pins_##index[] =		\
+				ST_STM32_DT_INST_PINCTRL(index, 0);	\
+									\
 static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.uconf = {							\
-		.base = (uint8_t *)DT_INST_REG_ADDR(index),\
+		.base = (uint8_t *)DT_INST_REG_ADDR(index),		\
 		STM32_UART_IRQ_HANDLER_FUNC(index)			\
 	},								\
-	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),	\
-		    .enr = DT_INST_CLOCKS_CELL(index, bits)	\
+	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),		\
+		    .enr = DT_INST_CLOCKS_CELL(index, bits)		\
 	},								\
-	.hw_flow_control = DT_INST_PROP(index, hw_flow_control),\
-	.parity = DT_INST_PROP(index, parity)\
+	.hw_flow_control = DT_INST_PROP(index, hw_flow_control),	\
+	.parity = DT_INST_PROP(index, parity),				\
+	.pinctrl_list = uart_pins_##index,				\
+	.pinctrl_list_size = ARRAY_SIZE(uart_pins_##index),		\
 };									\
 									\
 static struct uart_stm32_data uart_stm32_data_##index = {		\
-	.baud_rate = DT_INST_PROP(index, current_speed)	\
+	.baud_rate = DT_INST_PROP(index, current_speed),		\
 };									\
 									\
-DEVICE_AND_API_INIT(uart_stm32_##index, DT_INST_LABEL(index),\
+DEVICE_AND_API_INIT(uart_stm32_##index, DT_INST_LABEL(index),		\
 		    &uart_stm32_init,					\
 		    &uart_stm32_data_##index, &uart_stm32_cfg_##index,	\
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\

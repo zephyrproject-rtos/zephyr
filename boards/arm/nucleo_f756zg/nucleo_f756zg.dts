@@ -6,11 +6,12 @@
 
 /dts-v1/;
 #include <st/f7/stm32f756Xg.dtsi>
+#include <st/f7/stm32f756zgtx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32F756ZG-NUCLEO board";
-	compatible = "st,stm32f756zg-nucleo", "st,stm32f756";
+	compatible = "st,stm32f756zg-nucleo";
 
 	chosen {
 		zephyr,console = &usart3;
@@ -53,16 +54,20 @@
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6
+		     &usart2_rts_pd4 &usart2_cts_pd3>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart3 {
+	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart6 {
+	pinctrl-0 = <&usart6_tx_pg14 &usart6_rx_pg9>;
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -81,6 +86,7 @@
 
 	pwm1: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim1_ch3_pwm_pe13>;
 	};
 };
 

@@ -21,8 +21,7 @@
 
 #include <stm32l0xx.h>
 
-/* Add include for DTS generated information */
-#include <devicetree.h>
+#include <st_stm32_dt.h>
 
 #include <stm32l0xx_ll_system.h>
 

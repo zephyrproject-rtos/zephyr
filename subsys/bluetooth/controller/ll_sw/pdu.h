@@ -77,9 +77,9 @@
 /* Standard allows 2 us timing uncertainty inside the event */
 #define EVENT_MAFS_MAX_US       (EVENT_MAFS_US + 2)
 
-/* SyncInfo field Sync Packet Offset Units field encoding */
-#define SYNC_PKT_OFFS_UNIT_30_US  30
-#define SYNC_PKT_OFFS_UNIT_300_US 300
+/* Offset Units field encoding */
+#define OFFS_UNIT_30_US         30
+#define OFFS_UNIT_300_US        300
 
 /*
  * Macros to return correct Data Channel PDU time
@@ -206,7 +206,6 @@ struct pdu_adv_connect_ind {
 	} __packed;
 } __packed;
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
 struct pdu_adv_com_ext_adv {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	uint8_t ext_hdr_len:6;
@@ -314,7 +313,6 @@ struct pdu_adv_sync_info {
 	uint8_t  crc_init[3];
 	uint16_t evt_cntr;
 } __packed;
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 enum pdu_adv_type {
 	PDU_ADV_TYPE_ADV_IND = 0x00,

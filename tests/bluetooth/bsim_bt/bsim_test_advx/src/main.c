@@ -462,7 +462,7 @@ static void test_advx_main(void)
 	}
 	printk("success.\n");
 
-	k_sleep(K_MSEC(400));
+	k_sleep(K_MSEC(1000));
 
 	printk("Disabling periodic...");
 	err = ll_adv_sync_enable(handle, 0);
@@ -479,6 +479,8 @@ static void test_advx_main(void)
 		goto exit;
 	}
 	printk("success.\n");
+
+	k_sleep(K_MSEC(1000));
 
 	printk("Adding scan response data on non-scannable set...");
 	err = ll_adv_aux_sr_data_set(handle, AD_OP, AD_FRAG_PREF,
@@ -530,7 +532,7 @@ static void test_advx_main(void)
 	}
 	printk("success.\n");
 
-	k_sleep(K_MSEC(400));
+	k_sleep(K_MSEC(1000));
 
 	printk("Removing adv aux set that's created and disabled ...");
 	err = ll_adv_aux_set_remove(handle);
@@ -765,6 +767,11 @@ static bool data_cb(struct bt_data *data, void *user_data)
 	}
 }
 
+static bool is_periodic;
+static uint8_t per_sid;
+static bt_addr_le_t per_addr;
+static uint8_t per_adv_evt_cnt_actual;
+
 static void scan_recv(const struct bt_le_scan_recv_info *info,
 		      struct net_buf_simple *buf)
 {
@@ -777,8 +784,8 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	printk("[DEVICE]: %s, AD evt type %u, Tx Pwr: %i, RSSI %i %s "
-	       "C:%u S:%u D:%u SR:%u E:%u Prim: %s, Secn: %s "
-	       "SID: %u\n",
+	       "C:%u S:%u D:%u SR:%u E:%u Prim: %s, Secn: %s, "
+	       "Interval: 0x%04x (%u ms), SID: %u\n",
 	       le_addr, info->adv_type, info->tx_power, info->rssi, name,
 	       (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0,
 	       (info->adv_props & BT_GAP_ADV_PROP_SCANNABLE) != 0,
@@ -786,13 +793,81 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	       (info->adv_props & BT_GAP_ADV_PROP_SCAN_RESPONSE) != 0,
 	       (info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0,
 	       phy2str(info->primary_phy), phy2str(info->secondary_phy),
-	       info->sid);
+	       info->interval, info->interval * 5 / 4, info->sid);
 
-	/* TODO: Add verification of received reports */
+	if (info->interval) {
+		if (!is_periodic) {
+			is_periodic = true;
+			per_sid = info->sid;
+			bt_addr_le_copy(&per_addr, info->addr);
+		} else {
+			if ((per_sid == info->sid) &&
+			    !bt_addr_le_cmp(&per_addr, info->addr)) {
+				per_adv_evt_cnt_actual++;
+
+				printk("per_adv_evt_cnt_actual %u\n",
+				       per_adv_evt_cnt_actual);
+			}
+		}
+	}
 }
 
 static struct bt_le_scan_cb scan_callbacks = {
 	.recv = scan_recv,
+};
+
+static bool volatile is_sync;
+static bool volatile is_sync_lost;
+
+static void
+per_adv_sync_sync_cb(struct bt_le_per_adv_sync *sync,
+		     struct bt_le_per_adv_sync_synced_info *info)
+{
+	char le_addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+
+	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
+	       "Interval 0x%04x (%u ms), PHY %s\n",
+	       bt_le_per_adv_sync_get_index(sync), le_addr,
+	       info->interval, info->interval * 5 / 4, phy2str(info->phy));
+
+	is_sync = true;
+}
+
+static void
+per_adv_sync_terminated_cb(struct bt_le_per_adv_sync *sync,
+			   const struct bt_le_per_adv_sync_term_info *info)
+{
+	char le_addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+
+	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated\n",
+	       bt_le_per_adv_sync_get_index(sync), le_addr);
+
+	is_sync_lost = true;
+}
+
+static void
+per_adv_sync_recv_cb(struct bt_le_per_adv_sync *sync,
+		     const struct bt_le_per_adv_sync_recv_info *info,
+		     struct net_buf_simple *buf)
+{
+	char le_addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+
+	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s, tx_power %i, "
+	       "RSSI %i, CTE %u, data length %u\n",
+	       bt_le_per_adv_sync_get_index(sync), le_addr, info->tx_power,
+	       info->rssi, info->cte_type, buf->len);
+}
+
+static struct bt_le_per_adv_sync_cb sync_cb = {
+	.synced = per_adv_sync_sync_cb,
+	.term = per_adv_sync_terminated_cb,
+	.recv = per_adv_sync_recv_cb
 };
 
 static void test_scanx_main(void)
@@ -803,6 +878,9 @@ static void test_scanx_main(void)
 		.interval   = 0x0004,
 		.window     = 0x0004,
 	};
+	struct bt_le_per_adv_sync_param sync_create_param;
+	struct bt_le_per_adv_sync *sync = NULL;
+	uint8_t per_adv_evt_cnt_expected;
 	int err;
 
 	printk("\n*Extended Scanning test*\n");
@@ -822,6 +900,10 @@ static void test_scanx_main(void)
 	bt_conn_cb_register(&conn_callbacks);
 	printk("success.\n");
 
+	printk("Periodic Advertising callbacks register...");
+	bt_le_per_adv_sync_cb_register(&sync_cb);
+	printk("Success.\n");
+
 	printk("Start scanning...");
 	err = bt_le_scan_start(&scan_param, scan_cb);
 	if (err) {
@@ -840,44 +922,202 @@ static void test_scanx_main(void)
 	}
 
 	printk("Start scanning...");
+	is_periodic = false;
+	per_adv_evt_cnt_actual = 0;
+	per_adv_evt_cnt_expected = 3;
 	err = bt_le_scan_start(&scan_param, scan_cb);
 	if (err) {
 		goto exit;
 	}
 	printk("success.\n");
 
-	/* TODO: Replace sleep with verification of adv reports and number
-	 * of reports expected.
-	 */
-	k_sleep(K_SECONDS(10));
+	printk("Waiting...");
+	while (!is_periodic ||
+	       (per_adv_evt_cnt_actual != per_adv_evt_cnt_expected)) {
+		k_sleep(K_MSEC(30));
+	}
+	printk("done.\n");
 
-#if TEST_LOW_LEVEL
-	uint8_t type = (BIT(0) << 1) | 0x01; /* 1M PHY and active scanning */
-
-	printk("Setting scan parameters...");
-	err = ll_scan_params_set(type, SCAN_INTERVAL, SCAN_WINDOW,
-				 OWN_ADDR_TYPE, FILTER_POLICY);
+	printk("Stop scanning...");
+	err = bt_le_scan_stop();
 	if (err) {
 		goto exit;
 	}
 	printk("success.\n");
 
-	printk("enabling...");
-	err = ll_scan_enable(1);
+	printk("Creating Periodic Advertising Sync 0...");
+	bt_addr_le_copy(&sync_create_param.addr, &per_addr);
+	sync_create_param.options = 0;
+	sync_create_param.sid = 0xf;
+	sync_create_param.skip = 0;
+	sync_create_param.timeout = 0xa;
+	err = bt_le_per_adv_sync_create(&sync_create_param, &sync);
 	if (err) {
 		goto exit;
 	}
 	printk("success.\n");
 
-	k_sleep(K_SECONDS(5));
-
-	printk("Disabling...");
-	err = ll_scan_enable(0);
+	printk("Start scanning...");
+	err = bt_le_scan_start(&scan_param, scan_cb);
 	if (err) {
 		goto exit;
 	}
 	printk("success.\n");
-#endif
+
+	k_sleep(K_MSEC(400));
+
+	printk("Canceling Periodic Advertising Sync 0 while scanning...");
+	err = bt_le_per_adv_sync_delete(sync);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Stop scanning...");
+	err = bt_le_scan_stop();
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Creating Periodic Advertising Sync 1...");
+	bt_addr_le_copy(&sync_create_param.addr, &per_addr);
+	sync_create_param.options = 0;
+	sync_create_param.sid = 0xf;
+	sync_create_param.skip = 0;
+	sync_create_param.timeout = 0xa;
+	err = bt_le_per_adv_sync_create(&sync_create_param, &sync);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Canceling Periodic Advertising Sync 1 without scanning...");
+	err = bt_le_per_adv_sync_delete(sync);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Creating Periodic Advertising Sync 2...");
+	is_sync = false;
+	bt_addr_le_copy(&sync_create_param.addr, &per_addr);
+	sync_create_param.options = 0;
+	sync_create_param.sid = per_sid;
+	sync_create_param.skip = 0;
+	sync_create_param.timeout = 0xa;
+	err = bt_le_per_adv_sync_create(&sync_create_param, &sync);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Start scanning...");
+	err = bt_le_scan_start(&scan_param, scan_cb);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Waiting for sync...");
+	while (!is_sync) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("done.\n");
+
+	printk("Deleting Periodic Advertising Sync 2...");
+	err = bt_le_per_adv_sync_delete(sync);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Stop scanning...");
+	err = bt_le_scan_stop();
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Creating Periodic Advertising Sync 3, test sync lost...");
+	is_sync = false;
+	is_sync_lost = false;
+	bt_addr_le_copy(&sync_create_param.addr, &per_addr);
+	sync_create_param.options = 0;
+	sync_create_param.sid = per_sid;
+	sync_create_param.skip = 0;
+	sync_create_param.timeout = 0xa;
+	err = bt_le_per_adv_sync_create(&sync_create_param, &sync);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Start scanning...");
+	err = bt_le_scan_start(&scan_param, scan_cb);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Waiting for sync...");
+	while (!is_sync) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("done.\n");
+
+	printk("Stop scanning...");
+	err = bt_le_scan_stop();
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Waiting for sync loss...");
+	while (!is_sync_lost) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("done.\n");
+
+	printk("Creating Periodic Advertising Sync 4 after sync lost...");
+	is_sync = false;
+	bt_addr_le_copy(&sync_create_param.addr, &per_addr);
+	sync_create_param.options = 0;
+	sync_create_param.sid = per_sid;
+	sync_create_param.skip = 0;
+	sync_create_param.timeout = 0xa;
+	err = bt_le_per_adv_sync_create(&sync_create_param, &sync);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Start scanning...");
+	err = bt_le_scan_start(&scan_param, scan_cb);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Waiting for sync...");
+	while (!is_sync) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("done.\n");
+
+	printk("Stop scanning...");
+	err = bt_le_scan_stop();
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Deleting Periodic Advertising Sync 4...");
+	err = bt_le_per_adv_sync_delete(sync);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
 
 	PASS("ScanX tests Passed\n");
 

@@ -143,9 +143,9 @@ uint8_t ll_scan_enable(uint8_t enable)
 			BT_HCI_LE_EXT_SCAN_PHY_CODED);
 #endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_CTLR_PHY_CODED */
 
-	if ((IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) && is_coded_phy &&
-	     (own_addr_type & 0x1)) ||
-	    (scan->own_addr_type & 0x1)) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) && is_coded_phy &&
+	    ((own_addr_type & 0x1) ||
+	     (scan->own_addr_type & 0x1))) {
 		if (!mem_nz(ll_addr_get(1, NULL), BDADDR_SIZE)) {
 			return BT_HCI_ERR_INVALID_PARAM;
 		}

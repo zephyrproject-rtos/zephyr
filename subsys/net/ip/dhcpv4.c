@@ -517,6 +517,10 @@ static void dhcpv4_enter_bound(struct net_if *iface)
 	iface->config.dhcpv4.request_time = MIN(renewal_time, rebinding_time);
 
 	dhcpv4_update_timeout_work(iface->config.dhcpv4.request_time);
+
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_DHCP_BOUND, iface,
+					&iface->config.dhcpv4,
+					sizeof(iface->config.dhcpv4));
 }
 
 static uint32_t dhcph4_manage_timers(struct net_if *iface, int64_t timeout)
@@ -1074,6 +1078,8 @@ void net_dhcpv4_start(struct net_if *iface)
 	uint32_t timeout;
 	uint32_t entropy;
 
+	net_mgmt_event_notify(NET_EVENT_IPV4_DHCP_START, iface);
+
 	switch (iface->config.dhcpv4.state) {
 	case NET_DHCPV4_DISABLED:
 		iface->config.dhcpv4.state = NET_DHCPV4_INIT;
@@ -1166,6 +1172,8 @@ void net_dhcpv4_stop(struct net_if *iface)
 
 		break;
 	}
+
+	net_mgmt_event_notify(NET_EVENT_IPV4_DHCP_STOP, iface);
 }
 
 int net_dhcpv4_init(void)

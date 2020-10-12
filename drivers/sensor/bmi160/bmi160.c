@@ -56,19 +56,22 @@ static int bmi160_transceive(const struct device *dev, uint8_t reg,
 int bmi160_read(const struct device *dev, uint8_t reg_addr, uint8_t *data,
 		uint8_t len)
 {
-	return bmi160_transceive(dev, reg_addr | BIT(7), false, data, len);
+	return bmi160_transceive(dev, reg_addr | BMI160_REG_READ, false, data,
+				 len);
 }
 
 int bmi160_byte_read(const struct device *dev, uint8_t reg_addr,
 		     uint8_t *byte)
 {
-	return bmi160_transceive(dev, reg_addr | BIT(7), false, byte, 1);
+	return bmi160_transceive(dev, reg_addr | BMI160_REG_READ, false, byte,
+				 1);
 }
 
 static int bmi160_word_read(const struct device *dev, uint8_t reg_addr,
 			    uint16_t *word)
 {
-	if (bmi160_transceive(dev, reg_addr | BIT(7), false, word, 2) != 0) {
+	if (bmi160_transceive(dev, reg_addr | BMI160_REG_READ, false, word, 2)
+	    != 0) {
 		return -EIO;
 	}
 
@@ -80,7 +83,8 @@ static int bmi160_word_read(const struct device *dev, uint8_t reg_addr,
 int bmi160_byte_write(const struct device *dev, uint8_t reg_addr,
 		      uint8_t byte)
 {
-	return bmi160_transceive(dev, reg_addr & 0x7F, true, &byte, 1);
+	return bmi160_transceive(dev, reg_addr & BMI160_REG_MASK, true, &byte,
+				 1);
 }
 
 int bmi160_word_write(const struct device *dev, uint8_t reg_addr,
@@ -91,7 +95,8 @@ int bmi160_word_write(const struct device *dev, uint8_t reg_addr,
 		(uint8_t)(word >> 8)
 	};
 
-	return bmi160_transceive(dev, reg_addr & 0x7F, true, tx_word, 2);
+	return bmi160_transceive(dev, reg_addr & BMI160_REG_MASK, true, tx_word,
+				 2);
 }
 
 int bmi160_reg_field_update(const struct device *dev, uint8_t reg_addr,
@@ -348,7 +353,7 @@ static int bmi160_acc_ofs_set(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	for (i = 0; i < 3; i++, ofs++) {
+	for (i = 0; i < BMI160_AXES; i++, ofs++) {
 		/* convert ofset to micro m/s^2 */
 		ofs_u = ofs->val1 * 1000000ULL + ofs->val2;
 		reg_val = ofs_u / BMI160_ACC_OFS_LSB;
@@ -389,7 +394,7 @@ static int  bmi160_acc_calibrate(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	for (i = 0; i < 3; i++, xyz_calib_value++) {
+	for (i = 0; i < BMI160_AXES; i++, xyz_calib_value++) {
 		int32_t accel_g;
 		uint8_t accel_val;
 
@@ -518,7 +523,7 @@ static int bmi160_gyr_ofs_set(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	for (i = 0; i < 3; i++, ofs++) {
+	for (i = 0; i < BMI160_AXES; i++, ofs++) {
 		/* convert offset to micro rad/s */
 		ofs_u = ofs->val1 * 1000000ULL + ofs->val2;
 
@@ -631,13 +636,6 @@ static int bmi160_attr_set(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-#if defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
-#	define BMI160_SAMPLE_BURST_READ_ADDR	BMI160_REG_DATA_ACC_X
-#	define BMI160_DATA_READY_BIT_MASK	(1 << 7)
-#else
-#	define BMI160_SAMPLE_BURST_READ_ADDR	BMI160_REG_DATA_GYR_X
-#	define BMI160_DATA_READY_BIT_MASK	(1 << 6)
-#endif
 static int bmi160_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan)
 {
@@ -832,7 +830,7 @@ int bmi160_init(const struct device *dev)
 	k_busy_wait(1000);
 
 	/* do a dummy read from 0x7F to activate SPI */
-	if (bmi160_byte_read(dev, 0x7F, &val) < 0) {
+	if (bmi160_byte_read(dev, BMI160_SPI_START, &val) < 0) {
 		LOG_DBG("Cannot read from 0x7F..");
 		return -EIO;
 	}

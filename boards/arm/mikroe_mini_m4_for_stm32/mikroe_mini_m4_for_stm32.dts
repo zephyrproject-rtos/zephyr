@@ -6,10 +6,11 @@
 
 /dts-v1/;
 #include <st/f4/stm32f415Rg.dtsi>
+#include <st/f4/stm32f415rgtx-pinctrl.dtsi>
 
 / {
 	model = "Mikroe MINI-M4 for STM32 board";
-	compatible = "mikroe,mini-m4-for-stm32", "st,stm32f415rg";
+	compatible = "mikroe,mini-m4-for-stm32";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -38,6 +39,7 @@
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -55,6 +57,7 @@
 
 	pwm3: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim3_ch1_pwm_pb4>;
 	};
 };
 

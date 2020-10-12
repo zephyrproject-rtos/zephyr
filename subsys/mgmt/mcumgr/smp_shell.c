@@ -22,6 +22,9 @@
 #include "shell/shell.h"
 #include "shell/shell_uart.h"
 
+#include <logging/log.h>
+LOG_MODULE_REGISTER(smp_shell);
+
 static struct zephyr_smp_transport smp_shell_transport;
 
 static struct mcumgr_serial_rx_ctxt smp_shell_rx_ctxt;
@@ -98,23 +101,29 @@ size_t smp_shell_rx_bytes(struct smp_shell_data *data, const uint8_t *bytes,
 
 		if (mcumgr_state == SMP_SHELL_MCUMGR_STATE_NONE) {
 			break;
+		} else if (mcumgr_state == SMP_SHELL_MCUMGR_STATE_HEADER &&
+			   !data->buf) {
+			data->buf = net_buf_alloc(data->buf_pool, K_NO_WAIT);
+			if (!data->buf) {
+				LOG_WRN("Failed to alloc SMP buf");
+			}
 		}
 
-		if (data->cur < sizeof(data->mcumgr_buff) - 1) {
-			data->mcumgr_buff[data->cur] = byte;
-			++data->cur;
+		if (data->buf && net_buf_tailroom(data->buf) > 0) {
+			net_buf_add_u8(data->buf, byte);
 		}
 
 		/* Newline in payload means complete frame */
 		if (mcumgr_state == SMP_SHELL_MCUMGR_STATE_PAYLOAD &&
 		    byte == '\n') {
-			data->mcumgr_buff[data->cur] = '\0';
-			data->cmd_rdy = true;
+			if (data->buf) {
+				net_buf_put(&data->buf_ready, data->buf);
+				data->buf = NULL;
+			}
 			atomic_clear_bit(&data->esc_state, ESC_MCUMGR_PKT_1);
 			atomic_clear_bit(&data->esc_state, ESC_MCUMGR_PKT_2);
 			atomic_clear_bit(&data->esc_state, ESC_MCUMGR_FRAG_1);
 			atomic_clear_bit(&data->esc_state, ESC_MCUMGR_FRAG_2);
-			data->cur = 0U;
 		}
 
 		++consumed;
@@ -125,21 +134,22 @@ size_t smp_shell_rx_bytes(struct smp_shell_data *data, const uint8_t *bytes,
 
 void smp_shell_process(struct smp_shell_data *data)
 {
-	if (data->cmd_rdy) {
-		data->cmd_rdy = false;
-		struct net_buf *nb;
-		int line_len;
+	struct net_buf *buf;
+	struct net_buf *nb;
 
-		/* Strip the trailing newline. */
-		line_len = strlen(data->mcumgr_buff) - 1;
-
-		nb = mcumgr_serial_process_frag(&smp_shell_rx_ctxt,
-						data->mcumgr_buff,
-						line_len);
-		if (nb != NULL) {
-			zephyr_smp_rx_req(&smp_shell_transport, nb);
-		}
+	buf = net_buf_get(&data->buf_ready, K_NO_WAIT);
+	if (!buf) {
+		return;
 	}
+
+	nb = mcumgr_serial_process_frag(&smp_shell_rx_ctxt,
+					buf->data,
+					buf->len);
+	if (nb != NULL) {
+		zephyr_smp_rx_req(&smp_shell_transport, nb);
+	}
+
+	net_buf_unref(buf);
 }
 
 static uint16_t smp_shell_get_mtu(const struct net_buf *nb)

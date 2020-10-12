@@ -14,7 +14,7 @@ Requirements
 
 This project requires an USB device driver. Currently, the USB DFU
 class provided by the Zephyr project depends on DFU image manager and
-partition layout. Refer to :ref:`legacy_flash_partitions` for details about
+partition layout. Refer to :ref:`flash_map_api` for details about
 partition layout. You SoC must run MCUboot as the stage 1 bootloader.
 This sample is built as an application for the MCUboot bootloader.
 

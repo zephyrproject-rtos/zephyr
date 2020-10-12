@@ -96,7 +96,17 @@ uint8_t ll_adv_enable(uint8_t enable);
 
 uint8_t ll_scan_params_set(uint8_t type, uint16_t interval, uint16_t window,
 			uint8_t own_addr_type, uint8_t filter_policy);
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+uint8_t ll_scan_enable(uint8_t enable); /* TODO: add duration and period */
+uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
+		       uint8_t *adv_addr, uint16_t skip,
+		       uint16_t sync_timeout, uint8_t sync_cte_type);
+uint8_t ll_sync_create_cancel(void **rx);
+uint8_t ll_sync_terminate(uint16_t handle);
+uint8_t ll_sync_recv_enable(uint16_t handle, uint8_t enable);
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
 uint8_t ll_scan_enable(uint8_t enable);
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 uint8_t ll_wl_size_get(void);
 uint8_t ll_wl_clear(void);

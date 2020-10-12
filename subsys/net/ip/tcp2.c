@@ -363,11 +363,15 @@ int net_tcp_unref(struct net_context *context)
 static void tcp_send_process(struct k_work *work)
 {
 	struct tcp *conn = CONTAINER_OF(work, struct tcp, send_timer);
-	struct net_pkt *pkt = tcp_slist(&conn->send_queue, peek_head,
-					struct net_pkt, next);
+	bool unref = false;
+	struct net_pkt *pkt;
 
+	k_mutex_lock(&conn->lock, K_FOREVER);
+
+	pkt = tcp_slist(&conn->send_queue, peek_head,
+			struct net_pkt, next);
 	if (!pkt) {
-		return;
+		goto out;
 	}
 
 	NET_DBG("%s %s", log_strdup(tcp_th(pkt)), conn->in_retransmission ?
@@ -382,8 +386,8 @@ static void tcp_send_process(struct k_work *work)
 				conn->send_retries--;
 			}
 		} else {
-			tcp_conn_unref(conn);
-			conn = NULL;
+			unref = true;
+			goto out;
 		}
 	} else {
 		uint8_t fl = th_get(pkt)->th_flags;
@@ -394,7 +398,7 @@ static void tcp_send_process(struct k_work *work)
 						next) : tcp_pkt_clone(pkt);
 		if (!pkt) {
 			NET_ERR("net_pkt alloc failure");
-			return;
+			goto out;
 		}
 
 		tcp_send(pkt);
@@ -406,14 +410,23 @@ static void tcp_send_process(struct k_work *work)
 		}
 	}
 
-	if (conn && conn->in_retransmission) {
+	if (conn->in_retransmission) {
 		k_delayed_work_submit(&conn->send_timer, K_MSEC(tcp_rto));
+	}
+
+out:
+	k_mutex_unlock(&conn->lock);
+
+	if (unref) {
+		tcp_conn_unref(conn);
 	}
 }
 
 static void tcp_send_timer_cancel(struct tcp *conn)
 {
-	NET_ASSERT(conn->in_retransmission == true, "Not in retransmission");
+	if (conn->in_retransmission == false) {
+		return;
+	}
 
 	k_delayed_work_cancel(&conn->send_timer);
 
@@ -863,6 +876,8 @@ static void tcp_resend_data(struct k_work *work)
 	bool conn_unref = false;
 	int ret;
 
+	k_mutex_lock(&conn->lock, K_FOREVER);
+
 	NET_DBG("send_data_retries=%hu", conn->send_data_retries);
 
 	if (conn->send_data_retries >= tcp_retries) {
@@ -899,6 +914,8 @@ static void tcp_resend_data(struct k_work *work)
 	k_delayed_work_submit(&conn->send_data_timer, K_MSEC(tcp_rto));
 
  out:
+	k_mutex_unlock(&conn->lock);
+
 	if (conn_unref) {
 		tcp_conn_unref(conn);
 	}
@@ -1134,6 +1151,14 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 			net_ipaddr_copy(&net_sin(&local_addr)->sin_addr,
 				      net_sin_ptr(&context->local)->sin_addr);
 		}
+	}
+
+	ret = net_context_bind(context, &local_addr, sizeof(local_addr));
+	if (ret < 0) {
+		NET_DBG("Cannot bind accepted context, connection reset");
+		net_context_unref(context);
+		conn = NULL;
+		goto err;
 	}
 
 	NET_DBG("context: local: %s, remote: %s",

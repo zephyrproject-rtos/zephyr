@@ -160,7 +160,7 @@ void isr6(const void *param)
  * doesn't support this; we need to tell the compiler not to reorder memory
  * accesses to trigger_check around calls to trigger_irq.
  */
-__attribute__((optimize("-O0")))
+__no_optimization
 #endif
 int test_irq(int offset)
 {
@@ -326,6 +326,9 @@ void main(void)
 #endif
 #endif /* CONFIG_GEN_SW_ISR_TABLE */
 	rv = TC_PASS;
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-label"
 done:
 	TC_END_RESULT(rv);
 	TC_END_REPORT(rv);

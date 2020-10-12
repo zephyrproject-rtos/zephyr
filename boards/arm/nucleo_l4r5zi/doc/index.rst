@@ -141,6 +141,8 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | usb                                 |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -196,6 +198,7 @@ Default Zephyr Peripheral Mapping:
 - LD3 : PB14
 - USB DM : PA11
 - USB DP : PA12
+- ADC1 : PC0
 
 System Clock
 ------------

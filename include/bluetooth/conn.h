@@ -934,7 +934,7 @@ struct bt_conn_cb {
  *
  *  Register callbacks to monitor the state of connections.
  *
- *  @param cb Callback struct.
+ *  @param cb Callback struct. Must point to memory that remains valid.
  */
 void bt_conn_cb_register(struct bt_conn_cb *cb);
 

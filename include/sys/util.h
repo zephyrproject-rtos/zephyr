@@ -190,7 +190,7 @@ extern "C" {
  */
 static inline bool is_power_of_two(unsigned int x)
 {
-	return (x != 0U) && ((x & (x - 1)) == 0U);
+	return (x != 0U) && ((x & (x - 1U)) == 0U);
 }
 
 /**

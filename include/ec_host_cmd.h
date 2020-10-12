@@ -199,7 +199,6 @@ enum ec_host_cmd_status {
 
 	EC_HOST_CMD_MAX = UINT16_MAX /* Force enum to be 16 bits */
 } __packed;
-BUILD_ASSERT(sizeof(enum ec_host_cmd_status) == sizeof(uint16_t));
 
 /**
  * @}

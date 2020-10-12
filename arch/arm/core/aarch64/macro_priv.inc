@@ -43,19 +43,8 @@
 	 * Store SPSR_ELn and ELR_ELn. This is needed to support nested
 	 * exception handlers
 	 */
-	switch_el \xreg0, 3f, 2f, 1f
-3:
-	mrs	\xreg1, spsr_el3
-	mrs	\xreg2, elr_el3
-	b	0f
-2:
-	mrs	\xreg1, spsr_el2
-	mrs	\xreg2, elr_el2
-	b	0f
-1:
 	mrs	\xreg1, spsr_el1
 	mrs	\xreg2, elr_el1
-0:
 	stp	\xreg1, \xreg2, [sp, #-16]!
 .endm
 
@@ -77,19 +66,9 @@
 	 * exception handlers
 	 */
 	ldp	\xreg0, \xreg1, [sp], #16
-	switch_el \xreg2, 3f, 2f, 1f
-3:
-	msr	spsr_el3, \xreg0
-	msr	elr_el3, \xreg1
-	b	0f
-2:
-	msr	spsr_el2, \xreg0
-	msr	elr_el2, \xreg1
-	b	0f
-1:
 	msr	spsr_el1, \xreg0
 	msr	elr_el1, \xreg1
-0:
+
 	/*
 	 * In x30 we can have:
 	 *
@@ -120,6 +99,32 @@
 	 * - The address of z_thread_entry() for new threads (see thread.c).
 	 */
 	eret
+.endm
+
+/**
+ * @brief Increment nested counter
+ *
+ * @return N/A
+ */
+
+.macro inc_nest_counter xreg0, xreg1
+	ldr	\xreg0, =_kernel
+	ldr	\xreg1, [\xreg0, #_kernel_offset_to_nested]
+	add	\xreg1, \xreg1, #1
+	str	\xreg1, [\xreg0, #_kernel_offset_to_nested]
+.endm
+
+/**
+ * @brief Decrement nested counter
+ *
+ * @return N/A
+ */
+
+.macro dec_nest_counter xreg0, xreg1
+	ldr	\xreg0, =_kernel
+	ldr	\xreg1, [\xreg0, #_kernel_offset_to_nested]
+	sub	\xreg1, \xreg1, #1
+	str	\xreg1, [\xreg0, #_kernel_offset_to_nested]
 .endm
 
 #endif /* _ASMLANGUAGE */

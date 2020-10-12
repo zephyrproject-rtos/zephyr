@@ -27,6 +27,7 @@
 #include <irq_offload.h>
 #include <sys/check.h>
 #include <random/rand32.h>
+#include <sys/atomic.h>
 
 #define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
 #include <logging/log.h>
@@ -515,6 +516,8 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 	return stack_ptr;
 }
 
+#define THREAD_COOKIE	0x1337C0D3
+
 /*
  * The provided stack_size value is presumed to be either the result of
  * K_THREAD_STACK_SIZEOF(stack), or the size value passed to the instance
@@ -528,6 +531,15 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 {
 	char *stack_ptr;
 
+#if __ASSERT_ON
+	atomic_val_t old_val = atomic_set(&new_thread->base.cookie,
+					  THREAD_COOKIE);
+	/* Must be garbage or 0, never already set. Cleared at the end of
+	 * z_thread_single_abort()
+	 */
+	__ASSERT(old_val != THREAD_COOKIE,
+		 "re-use of active thread object %p detected", new_thread);
+#endif
 	Z_ASSERT_VALID_PRIO(prio, entry);
 
 #ifdef CONFIG_USERSPACE
@@ -828,7 +840,7 @@ bool z_spin_lock_valid(struct k_spinlock *l)
 	uintptr_t thread_cpu = l->thread_cpu;
 
 	if (thread_cpu) {
-		if ((thread_cpu & 3) == _current_cpu->id) {
+		if ((thread_cpu & 3U) == _current_cpu->id) {
 			return false;
 		}
 	}

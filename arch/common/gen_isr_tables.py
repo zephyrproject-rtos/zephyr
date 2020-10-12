@@ -139,6 +139,7 @@ source_header = """
 #define ISR_WRAPPER NULL
 #endif
 
+typedef void (* ISR)(const void *);
 """
 
 def write_source_file(fp, vt, swt, intlist, syms):
@@ -175,7 +176,7 @@ def write_source_file(fp, vt, swt, intlist, syms):
             fp.write("\t/* Level 3 interrupts start here (offset: {}) */\n".
                      format(level3_offset))
 
-        fp.write("\t{{(const void *){0:#x}, (void *){1}}},\n".format(param, func_as_string))
+        fp.write("\t{{(const void *){0:#x}, (ISR){1}}},\n".format(param, func_as_string))
     fp.write("};\n")
 
 def get_symbols(obj):

@@ -138,18 +138,7 @@ static int sock_nfds;
 /* TODO: figure out what's correct value */
 #define TIMEOUT_BLOCKWISE_TRANSFER_MS (MSEC_PER_SEC * 30)
 
-struct block_context {
-	struct coap_block_context ctx;
-	int64_t timestamp;
-	uint32_t remaining_len;
-	uint32_t expected;
-	uint8_t token[8];
-	uint8_t tkl;
-	uint8_t opaque_header_len;
-	bool last_block : 1;
-};
-
-static struct block_context block1_contexts[NUM_BLOCK1_CONTEXT];
+static struct lwm2m_block_context block1_contexts[NUM_BLOCK1_CONTEXT];
 
 /* write-attribute related definitons */
 static const char * const LWM2M_ATTR_STR[] = { "pmin", "pmax",
@@ -199,7 +188,7 @@ static char *sprint_token(const uint8_t *token, uint8_t tkl)
 	static char buf[32];
 	char *ptr = buf;
 
-	if (token && tkl != LWM2M_MSG_TOKEN_LEN_SKIP) {
+	if (token && tkl != 0) {
 		int i;
 
 		tkl = MIN(tkl, sizeof(buf) / 2 - 1);
@@ -210,8 +199,6 @@ static char *sprint_token(const uint8_t *token, uint8_t tkl)
 		}
 
 		*ptr = '\0';
-	} else if (tkl == LWM2M_MSG_TOKEN_LEN_SKIP) {
-		strcpy(buf, "[skip-token]");
 	} else {
 		strcpy(buf, "[no-token]");
 	}
@@ -243,8 +230,8 @@ enum coap_block_size lwm2m_default_block_size(void)
 	return COAP_BLOCK_256;
 }
 
-static int
-init_block_ctx(const uint8_t *token, uint8_t tkl, struct block_context **ctx)
+static int init_block_ctx(const uint8_t *token, uint8_t tkl,
+			  struct lwm2m_block_context **ctx)
 {
 	int i;
 	int64_t timestamp;
@@ -276,16 +263,15 @@ init_block_ctx(const uint8_t *token, uint8_t tkl, struct block_context **ctx)
 	memcpy((*ctx)->token, token, tkl);
 	coap_block_transfer_init(&(*ctx)->ctx, lwm2m_default_block_size(), 0);
 	(*ctx)->timestamp = timestamp;
-	(*ctx)->remaining_len = 0;
-	(*ctx)->opaque_header_len = 0;
 	(*ctx)->expected = 0;
 	(*ctx)->last_block = false;
+	memset(&(*ctx)->opaque, 0, sizeof((*ctx)->opaque));
 
 	return 0;
 }
 
-static int
-get_block_ctx(const uint8_t *token, uint8_t tkl, struct block_context **ctx)
+static int get_block_ctx(const uint8_t *token, uint8_t tkl,
+			 struct lwm2m_block_context **ctx)
 {
 	int i;
 
@@ -308,7 +294,7 @@ get_block_ctx(const uint8_t *token, uint8_t tkl, struct block_context **ctx)
 	return 0;
 }
 
-static void free_block_ctx(struct block_context *ctx)
+static void free_block_ctx(struct lwm2m_block_context *ctx)
 {
 	if (ctx == NULL) {
 		return;
@@ -935,14 +921,10 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 		return -EINVAL;
 	}
 
-	/*
-	 * msg->tkl == 0 is for a new TOKEN
-	 * msg->tkl == LWM2M_MSG_TOKEN_LEN_SKIP means dont set
-	 */
 	if (msg->tkl == LWM2M_MSG_TOKEN_GENERATE_NEW) {
-		tokenlen = 0U;
+		tokenlen = 8U;
 		token = coap_next_token();
-	} else if (msg->token && msg->tkl != LWM2M_MSG_TOKEN_LEN_SKIP) {
+	} else if (msg->token && msg->tkl != 0) {
 		tokenlen = msg->tkl;
 		token = msg->token;
 	}
@@ -1373,6 +1355,7 @@ int lwm2m_engine_set_res_data(char *pathstr, void *data_ptr, uint16_t data_len,
 	/* assign data elements */
 	res_inst->data_ptr = data_ptr;
 	res_inst->data_len = data_len;
+	res_inst->max_data_len = data_len;
 	res_inst->data_flags = data_flags;
 
 	return ret;
@@ -1386,7 +1369,7 @@ static int lwm2m_engine_set(char *pathstr, void *value, uint16_t len)
 	struct lwm2m_engine_res *res = NULL;
 	struct lwm2m_engine_res_inst *res_inst = NULL;
 	void *data_ptr = NULL;
-	size_t data_len = 0;
+	size_t max_data_len = 0;
 	int ret = 0;
 	bool changed = false;
 
@@ -1423,13 +1406,13 @@ static int lwm2m_engine_set(char *pathstr, void *value, uint16_t len)
 
 	/* setup initial data elements */
 	data_ptr = res_inst->data_ptr;
-	data_len = res_inst->data_len;
+	max_data_len = res_inst->max_data_len;
 
 	/* allow user to override data elements via callback */
 	if (res->pre_write_cb) {
 		data_ptr = res->pre_write_cb(obj_inst->obj_inst_id,
 					     res->res_id, res_inst->res_inst_id,
-					     &data_len);
+					     &max_data_len);
 	}
 
 	if (!data_ptr) {
@@ -1440,7 +1423,7 @@ static int lwm2m_engine_set(char *pathstr, void *value, uint16_t len)
 	}
 
 	/* check length (note: we add 1 to string length for NULL pad) */
-	if (len > res_inst->data_len -
+	if (len > res_inst->max_data_len -
 		(obj_field->data_type == LWM2M_RES_TYPE_STRING ? 1 : 0)) {
 		LOG_ERR("length %u is too long for res instance %d data",
 			len, path.res_id);
@@ -1523,6 +1506,8 @@ static int lwm2m_engine_set(char *pathstr, void *value, uint16_t len)
 		return -EINVAL;
 
 	}
+
+	res_inst->data_len = len;
 
 	if (res->post_write_cb) {
 		ret = res->post_write_cb(obj_inst->obj_inst_id,
@@ -1963,6 +1948,7 @@ int lwm2m_engine_delete_res_inst(char *pathstr)
 	}
 
 	res_inst->data_ptr = NULL;
+	res_inst->max_data_len = 0U;
 	res_inst->data_len = 0U;
 	res_inst->res_inst_id = RES_INSTANCE_NOT_CREATED;
 
@@ -2213,9 +2199,11 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 }
 
 size_t lwm2m_engine_get_opaque_more(struct lwm2m_input_context *in,
-				    uint8_t *buf, size_t buflen, bool *last_block)
+				    uint8_t *buf, size_t buflen,
+				    struct lwm2m_opaque_context *opaque,
+				    bool *last_block)
 {
-	uint32_t in_len = in->opaque_len;
+	uint32_t in_len = opaque->remaining;
 	uint16_t remaining = in->in_cpkt->max_len - in->offset;
 
 	if (in_len > buflen) {
@@ -2226,9 +2214,9 @@ size_t lwm2m_engine_get_opaque_more(struct lwm2m_input_context *in,
 		in_len = remaining;
 	}
 
-	in->opaque_len -= in_len;
+	opaque->remaining -= in_len;
 	remaining -= in_len;
-	if (in->opaque_len == 0U || remaining == 0) {
+	if (opaque->remaining == 0U || remaining == 0) {
 		*last_block = true;
 	}
 
@@ -2245,81 +2233,45 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 				      struct lwm2m_engine_res *res,
 				      struct lwm2m_engine_res_inst *res_inst,
 				      struct lwm2m_input_context *in,
-				      void *data_ptr, size_t data_len,
-				      struct block_context *block_ctx)
+				      void *data_ptr, size_t data_len)
 {
 	size_t len = 1;
-	bool last_pkt_block = false, first_read = true;
-	int block_num = 0;
+	bool last_pkt_block = false;
 	int ret = 0;
-	size_t total_size = 0;
 	bool last_block = true;
+	struct lwm2m_opaque_context opaque_ctx = { 0 };
 
-	if (block_ctx != NULL) {
-		block_num = block_ctx->ctx.current /
-			coap_block_size_to_bytes(block_ctx->ctx.block_size);
-		last_block = block_ctx->last_block;
+	if (in->block_ctx != NULL) {
+		last_block = in->block_ctx->last_block;
+
+		/* Restore the opaque context from the block context, if used.
+		*/
+		opaque_ctx = in->block_ctx->opaque;
 	}
 
 	while (!last_pkt_block && len > 0) {
-		if (first_read && block_num == 0) {
-			len = engine_get_opaque(in, (uint8_t *)data_ptr,
-						data_len, &last_pkt_block);
-			if (len == 0) {
-				/* ignore empty content and continue */
-				return 0;
-			}
-
-			if (block_ctx != NULL) {
-				block_ctx->remaining_len = in->opaque_len;
-				/* engine_get_opaque returns only the actual
-				 * data length, not the header length, so we
-				 * need to calculate it.
-				 */
-				block_ctx->opaque_header_len =
-					block_ctx->ctx.total_size -
-					(block_ctx->remaining_len + len);
-			}
-
-			first_read = false;
-		} else {
-			if (block_ctx != NULL) {
-				in->opaque_len = block_ctx->remaining_len;
-			}
-
-			len = lwm2m_engine_get_opaque_more(in, (uint8_t *)data_ptr,
-							   data_len,
-							   &last_pkt_block);
-
-			if (block_ctx != NULL) {
-				block_ctx->remaining_len = in->opaque_len;
-			}
-		}
-
+		len = engine_get_opaque(in, (uint8_t *)data_ptr,
+					data_len, &opaque_ctx, &last_pkt_block);
 		if (len == 0) {
-			return -EINVAL;
+			/* ignore empty content and continue */
+			return 0;
 		}
-
-		if (block_ctx != NULL) {
-			/* We shall only report the actual total data length,
-			 * excluding the header size (if any).
-			 */
-			total_size = block_ctx->ctx.total_size -
-				     block_ctx->opaque_header_len;
-		}
-
 		if (res->post_write_cb) {
 			ret = res->post_write_cb(
 				obj_inst->obj_inst_id, res->res_id,
 				res_inst->res_inst_id, data_ptr, len,
-				last_pkt_block && last_block, total_size);
+				last_pkt_block && last_block, opaque_ctx.len);
 			if (ret < 0) {
 				return ret;
 			}
 		}
 	}
 
-	return ret;
+	if (in->block_ctx != NULL) {
+		in->block_ctx->opaque = opaque_ctx;
+	}
+
+	return opaque_ctx.len;
 }
 
 /* This function is exposed for the content format writers */
@@ -2329,7 +2281,6 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			struct lwm2m_engine_obj_field *obj_field,
 			struct lwm2m_message *msg)
 {
-	struct block_context *block_ctx = NULL;
 	void *data_ptr = NULL;
 	size_t data_len = 0;
 	size_t len = 0;
@@ -2337,8 +2288,6 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 	int64_t temp64 = 0;
 	int32_t temp32 = 0;
 	int ret = 0;
-	uint8_t token[8];
-	uint8_t tkl = 0U;
 	bool last_block = true;
 
 	if (!obj_inst || !res || !res_inst || !obj_field || !msg) {
@@ -2351,7 +2300,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 
 	/* setup initial data elements */
 	data_ptr = res_inst->data_ptr;
-	data_len = res_inst->data_len;
+	data_len = res_inst->max_data_len;
 
 	/* allow user to override data elements via callback */
 	if (res->pre_write_cb) {
@@ -2361,19 +2310,14 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 	}
 
 	if (res->post_write_cb) {
-		/* Get block1 option for checking MORE block flag */
-		ret = coap_get_option_int(msg->in.in_cpkt, COAP_OPTION_BLOCK1);
-		if (ret >= 0) {
+		if (msg->in.block_ctx != NULL) {
 			/* Get block_ctx for total_size (might be zero) */
-			tkl = coap_header_get_token(msg->in.in_cpkt, token);
-			if (tkl && !get_block_ctx(token, tkl, &block_ctx)) {
-				total_size = block_ctx->ctx.total_size;
-				LOG_DBG("BLOCK1: total:%zu current:%zu"
-					" last:%u",
-					block_ctx->ctx.total_size,
-					block_ctx->ctx.current,
-					block_ctx->last_block);
-			}
+			total_size = msg->in.block_ctx->ctx.total_size;
+			LOG_DBG("BLOCK1: total:%zu current:%zu"
+				" last:%u",
+				msg->in.block_ctx->ctx.total_size,
+				msg->in.block_ctx->ctx.current,
+				msg->in.block_ctx->last_block);
 		}
 	}
 
@@ -2383,12 +2327,12 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 		case LWM2M_RES_TYPE_OPAQUE:
 			ret = lwm2m_write_handler_opaque(obj_inst, res,
 							 res_inst, &msg->in,
-							 data_ptr, data_len,
-							 block_ctx);
+							 data_ptr, data_len);
 			if (ret < 0) {
 				return ret;
 			}
 
+			len = ret;
 			break;
 
 		case LWM2M_RES_TYPE_STRING:
@@ -2475,6 +2419,8 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 	} else {
 		return -ENOENT;
 	}
+
+	res_inst->data_len = len;
 
 	if (res->post_write_cb &&
 	    obj_field->data_type != LWM2M_RES_TYPE_OPAQUE) {
@@ -3330,7 +3276,7 @@ static int handle_request(struct coap_packet *request,
 	int observe = -1; /* default to -1, 0 = ENABLE, 1 = DISABLE */
 	bool well_known = false;
 	int block_opt, block_num;
-	struct block_context *block_ctx = NULL;
+	struct lwm2m_block_context *block_ctx = NULL;
 	enum coap_block_size block_size;
 	uint16_t payload_len = 0U;
 	bool last_block = false;
@@ -3401,6 +3347,8 @@ static int handle_request(struct coap_packet *request,
 	} else if ((code & COAP_REQUEST_MASK) == COAP_METHOD_POST && r == 1 && \
 		   strncmp(options[0].value, "bs", options[0].len) == 0) {
 		engine_bootstrap_finish();
+
+		msg->code = COAP_RESPONSE_CODE_CHANGED;
 
 		r = lwm2m_init_message(msg);
 		if (r < 0) {
@@ -3542,6 +3490,8 @@ static int handle_request(struct coap_packet *request,
 			LOG_ERR("Cannot find block context");
 			goto error;
 		}
+
+		msg->in.block_ctx = block_ctx;
 
 		if (block_num < block_ctx->expected) {
 			LOG_WRN("Block already handled %d, expected %d",
@@ -3799,7 +3749,7 @@ static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
 		msg->code = coap_header_get_code(&response);
 		msg->mid = coap_header_get_id(&response);
 		/* skip token generation by default */
-		msg->tkl = LWM2M_MSG_TOKEN_LEN_SKIP;
+		msg->tkl = 0;
 
 		/* process the response to this request */
 		r = udp_request_handler(&response, msg);
@@ -4301,11 +4251,6 @@ static int load_tls_credential(struct lwm2m_ctx *client_ctx, uint16_t res_id,
 		return ret;
 	}
 
-	/* Set correct PSK_ID length */
-	if (type == TLS_CREDENTIAL_PSK_ID) {
-		cred_len = strlen(cred);
-	}
-
 	ret = tls_credential_add(client_ctx->tls_tag, type, cred, cred_len);
 	if (ret < 0) {
 		LOG_ERR("Error setting cred tag %d type %d: Error %d",
@@ -4518,8 +4463,7 @@ static int lwm2m_engine_init(const struct device *dev)
 {
 	int ret = 0;
 
-	(void)memset(block1_contexts, 0,
-		     sizeof(struct block_context) * NUM_BLOCK1_CONTEXT);
+	(void)memset(block1_contexts, 0, sizeof(block1_contexts));
 
 	/* start sock receive thread */
 	k_thread_create(&engine_thread_data,

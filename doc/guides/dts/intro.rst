@@ -336,6 +336,8 @@ interrupts
 .. _Devicetree Specification release v0.3:
    https://www.devicetree.org/specifications/
 
+.. _dt-alias-chosen:
+
 Aliases and chosen nodes
 ************************
 
@@ -512,10 +514,6 @@ These are created in your application's build directory.
 
 :file:`<build>/zephyr/include/generated/devicetree_unfixed.h`
    The generated macros and additional comments describing the devicetree.
-   Included by ``devicetree.h``.
-
-:file:`<build>/zephyr/include/generated/devicetree_legacy_unfixed.h`
-   The generated :ref:`dt-legacy-macros`.
    Included by ``devicetree.h``.
 
 :file:`<build>/zephyr/include/generated/devicetree_fixups.h`

@@ -19,7 +19,6 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 #include <stdlib.h>
 #include <stdio.h>
 #include <shell/shell.h>
-#include <shell/shell_uart.h>
 
 #include <net/net_if.h>
 #include <net/dns_resolve.h>

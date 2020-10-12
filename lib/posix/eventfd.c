@@ -5,14 +5,16 @@
  */
 
 #include <zephyr.h>
-
+#include <wait_q.h>
 #include <posix/sys/eventfd.h>
-
 #include <net/socket.h>
+#include <ksched.h>
 
 struct eventfd {
-	struct k_sem read_sem;
-	struct k_sem write_sem;
+	struct k_poll_signal read_sig;
+	struct k_poll_signal write_sig;
+	struct k_spinlock lock;
+	_wait_q_t wait_q;
 	eventfd_t cnt;
 	int flags;
 };
@@ -25,16 +27,27 @@ static int eventfd_poll_prepare(struct eventfd *efd,
 				struct k_poll_event **pev,
 				struct k_poll_event *pev_end)
 {
-	ARG_UNUSED(efd);
-
 	if (pfd->events & ZSOCK_POLLIN) {
 		if (*pev == pev_end) {
 			errno = ENOMEM;
 			return -1;
 		}
 
-		(*pev)->obj = &efd->read_sem;
-		(*pev)->type = K_POLL_TYPE_SEM_AVAILABLE;
+		(*pev)->obj = &efd->read_sig;
+		(*pev)->type = K_POLL_TYPE_SIGNAL;
+		(*pev)->mode = K_POLL_MODE_NOTIFY_ONLY;
+		(*pev)->state = K_POLL_STATE_NOT_READY;
+		(*pev)++;
+	}
+
+	if (pfd->events & ZSOCK_POLLOUT) {
+		if (*pev == pev_end) {
+			errno = ENOMEM;
+			return -1;
+		}
+
+		(*pev)->obj = &efd->write_sig;
+		(*pev)->type = K_POLL_TYPE_SIGNAL;
 		(*pev)->mode = K_POLL_MODE_NOTIFY_ONLY;
 		(*pev)->state = K_POLL_STATE_NOT_READY;
 		(*pev)++;
@@ -49,13 +62,16 @@ static int eventfd_poll_update(struct eventfd *efd,
 {
 	ARG_UNUSED(efd);
 
-	if (pfd->events & ZSOCK_POLLOUT) {
-		pfd->revents |= ZSOCK_POLLOUT;
-	}
-
 	if (pfd->events & ZSOCK_POLLIN) {
 		if ((*pev)->state != K_POLL_STATE_NOT_READY) {
 			pfd->revents |= ZSOCK_POLLIN;
+		}
+		(*pev)++;
+	}
+
+	if (pfd->events & ZSOCK_POLLOUT) {
+		if ((*pev)->state != K_POLL_STATE_NOT_READY) {
+			pfd->revents |= ZSOCK_POLLOUT;
 		}
 		(*pev)++;
 	}
@@ -66,36 +82,55 @@ static int eventfd_poll_update(struct eventfd *efd,
 static ssize_t eventfd_read_op(void *obj, void *buf, size_t sz)
 {
 	struct eventfd *efd = obj;
-	eventfd_t count;
-	int ret;
+	int result = 0;
+	eventfd_t count = 0;
+	k_spinlock_key_t key;
 
 	if (sz < sizeof(eventfd_t)) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	ret = k_sem_take(&efd->read_sem,
-			 (efd->flags & EFD_NONBLOCK) ? K_NO_WAIT : K_FOREVER);
+	for (;;) {
+		key = k_spin_lock(&efd->lock);
+		if ((efd->flags & EFD_NONBLOCK) && efd->cnt == 0) {
+			result = EAGAIN;
+			break;
+		} else if (efd->cnt == 0) {
+			z_pend_curr(&efd->lock, key, &efd->wait_q, K_FOREVER);
+		} else {
+			count = (efd->flags & EFD_SEMAPHORE) ? 1 : efd->cnt;
+			efd->cnt -= count;
+			if (efd->cnt == 0) {
+				k_poll_signal_reset(&efd->read_sig);
+			}
+			k_poll_signal_raise(&efd->write_sig, 0);
+			break;
+		}
+	}
+	if (z_unpend_all(&efd->wait_q) != 0) {
+		z_reschedule(&efd->lock, key);
+	} else {
+		k_spin_unlock(&efd->lock, key);
+	}
 
-	if (ret < 0) {
-		errno = EAGAIN;
+	if (result != 0) {
+		errno = result;
 		return -1;
 	}
 
-	count = (efd->flags & EFD_SEMAPHORE) ? 1 : efd->cnt;
-	efd->cnt -= count;
 	*(eventfd_t *)buf = count;
-	k_sem_give(&efd->write_sem);
 
 	return sizeof(eventfd_t);
 }
 
 static ssize_t eventfd_write_op(void *obj, const void *buf, size_t sz)
 {
-	eventfd_t count;
-	int ret = 0;
-
 	struct eventfd *efd = obj;
+	int result = 0;
+	eventfd_t count;
+	bool overflow;
+	k_spinlock_key_t key;
 
 	if (sz < sizeof(eventfd_t)) {
 		errno = EINVAL;
@@ -109,22 +144,36 @@ static ssize_t eventfd_write_op(void *obj, const void *buf, size_t sz)
 		return -1;
 	}
 
-	if (UINT64_MAX - count <= efd->cnt) {
-		if (efd->flags & EFD_NONBLOCK) {
-			ret = -EAGAIN;
+	if (count == 0) {
+		return sizeof(eventfd_t);
+	}
+
+	for (;;) {
+		key = k_spin_lock(&efd->lock);
+		overflow = UINT64_MAX - count <= efd->cnt;
+		if ((efd->flags & EFD_NONBLOCK) && overflow) {
+			result = EAGAIN;
+			break;
+		} else if (overflow) {
+			z_pend_curr(&efd->lock, key, &efd->wait_q, K_FOREVER);
 		} else {
-			ret = k_sem_take(&efd->write_sem, K_FOREVER);
+			efd->cnt += count;
+			if (efd->cnt == (UINT64_MAX - 1)) {
+				k_poll_signal_reset(&efd->write_sig);
+			}
+			k_poll_signal_raise(&efd->read_sig, 0);
+			break;
 		}
 	}
-
-	if (ret < 0) {
-		errno = -ret;
-		return -1;
+	if (z_unpend_all(&efd->wait_q) != 0) {
+		z_reschedule(&efd->lock, key);
+	} else {
+		k_spin_unlock(&efd->lock, key);
 	}
 
-	efd->cnt += count;
-	if (count) {
-		k_sem_give(&efd->read_sem);
+	if (result != 0) {
+		errno = result;
+		return -1;
 	}
 
 	return sizeof(eventfd_t);
@@ -200,7 +249,8 @@ static const struct fd_op_vtable eventfd_fd_vtable = {
 int eventfd(unsigned int initval, int flags)
 {
 	struct eventfd *efd = NULL;
-	int i, fd;
+	int fd = -1;
+	int i;
 
 	if (flags & ~EFD_FLAGS_SET) {
 		errno = EINVAL;
@@ -208,12 +258,6 @@ int eventfd(unsigned int initval, int flags)
 	}
 
 	k_mutex_lock(&eventfd_mtx, K_FOREVER);
-
-	fd = z_reserve_fd();
-	if (fd < 0) {
-		k_mutex_unlock(&eventfd_mtx);
-		return -1;
-	}
 
 	for (i = 0; i < ARRAY_SIZE(efds); ++i) {
 		if (!(efds[i].flags & EFD_IN_USE)) {
@@ -223,20 +267,30 @@ int eventfd(unsigned int initval, int flags)
 	}
 
 	if (efd == NULL) {
-		z_free_fd(fd);
 		errno = ENOMEM;
-		k_mutex_unlock(&eventfd_mtx);
-		return -1;
+		goto exit_mtx;
+	}
+
+	fd = z_reserve_fd();
+	if (fd < 0) {
+		goto exit_mtx;
 	}
 
 	efd->flags = EFD_IN_USE | flags;
-	efd->cnt = 0;
-	k_sem_init(&efd->read_sem, 0, 1);
-	k_sem_init(&efd->write_sem, 0, UINT32_MAX);
+	efd->cnt = initval;
+
+	k_poll_signal_init(&efd->write_sig);
+	k_poll_signal_init(&efd->read_sig);
+	z_waitq_init(&efd->wait_q);
+
+	if (initval != 0) {
+		k_poll_signal_raise(&efd->read_sig, 0);
+	}
+	k_poll_signal_raise(&efd->write_sig, 0);
 
 	z_finalize_fd(fd, efd, &eventfd_fd_vtable);
 
+exit_mtx:
 	k_mutex_unlock(&eventfd_mtx);
-
 	return fd;
 }
