@@ -13,7 +13,6 @@ defined. See the --modules flag.
 
 import argparse
 import collections
-import errno
 from operator import attrgetter
 import os
 import pathlib
@@ -22,6 +21,7 @@ import textwrap
 
 import kconfiglib
 
+import gen_helpers
 
 def rst_link(sc):
     # Returns an RST link (string) for the symbol/choice 'sc', or the normal
@@ -823,22 +823,9 @@ def strip_module_path(path):
 
 
 def write_if_updated(filename, s):
-    # Writes 's' as the contents of <out_dir>/<filename>, but only if it
-    # differs from the current contents of the file. This avoids unnecessary
-    # timestamp updates, which trigger documentation rebuilds.
+    # Wrapper around gen_helpers.write_if_updated() that uses 'out_dir'.
 
-    path = os.path.join(out_dir, filename)
-
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            if s == f.read():
-                return
-    except OSError as e:
-        if e.errno != errno.ENOENT:
-            raise
-
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(s)
+    gen_helpers.write_if_updated(os.path.join(out_dir, filename), s)
 
 
 if __name__ == "__main__":
