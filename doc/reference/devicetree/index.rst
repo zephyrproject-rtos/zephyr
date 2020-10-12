@@ -9,6 +9,8 @@ platform-independent specification, see the `Devicetree specification`_.
 
 .. _Devicetree specification: https://www.devicetree.org/
 
+.. We use ":glob:" with "*" here to add the generated bindings page.
+
 .. toctree::
    :glob:
 

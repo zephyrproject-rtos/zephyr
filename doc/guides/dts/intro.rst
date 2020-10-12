@@ -250,6 +250,9 @@ Fixed flash partitions
 Important properties
 ********************
 
+.. Documentation maintainers: If you add a property to this list,
+   make sure it gets linked to from gen_devicetree_rest.py too.
+
 Some important properties are:
 
 compatible
