@@ -576,7 +576,6 @@ Drivers and Sensors
     application relies on any of the following Kconfig options, then
     it shall also enable the USB subsystem:
 
-    * :option:`CONFIG_OPENTHREAD_NCP_SPINEL_ON_UART_ACM`
     * :option:`CONFIG_USB_DEVICE_NETWORK_ECM`
     * :option:`CONFIG_USB_DEVICE_NETWORK_EEM`
     * :option:`CONFIG_USB_DEVICE_NETWORK_RNDIS`
