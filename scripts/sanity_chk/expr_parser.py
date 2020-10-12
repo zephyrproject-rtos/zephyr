@@ -240,6 +240,12 @@ def ast_expr(ast, env, edt):
             if node.status == "okay" and alias in node.aliases and node.matching_compat == compat:
                 return True
         return False
+    elif ast[0] == "dt_chosen_enabled":
+        name = ast[1][0]
+        if edt.chosen_node(name):
+            return True
+        return False
+
 
 mutex = threading.Lock()
 
