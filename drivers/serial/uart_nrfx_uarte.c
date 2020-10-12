@@ -1452,6 +1452,9 @@ static void uarte_nrfx_set_power_state(const struct device *dev,
 #ifdef CONFIG_UART_ASYNC_API
 		if (hw_rx_counting_enabled(get_dev_data(dev))) {
 			nrfx_timer_disable(&get_dev_config(dev)->timer);
+			/* Timer/counter value is reset when disabled. */
+			data->async->rx_total_byte_cnt = 0;
+			data->async->rx_total_user_byte_cnt = 0;
 		}
 		if (get_dev_data(dev)->async) {
 			nrf_uarte_disable(uarte);

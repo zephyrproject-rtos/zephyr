@@ -1691,30 +1691,32 @@ class TestInstance(DisablePyTestCollectionMixin):
         # will silently give that second time precedence over any
         # --extra-args=CONFIG_*
         subdir = os.path.join(self.build_dir, "sanitycheck")
-        os.makedirs(subdir, exist_ok=True)
-        file = os.path.join(subdir, "testcase_extra.conf")
 
-        with open(file, "w") as f:
-            content = ""
+        content = ""
 
-            if self.testcase.extra_configs:
-                content = "\n".join(self.testcase.extra_configs)
+        if self.testcase.extra_configs:
+            content = "\n".join(self.testcase.extra_configs)
 
-            if enable_coverage:
-                if platform.name in coverage_platform:
-                    content = content + "\nCONFIG_COVERAGE=y"
-                    content = content + "\nCONFIG_COVERAGE_DUMP=y"
+        if enable_coverage:
+            if platform.name in coverage_platform:
+                content = content + "\nCONFIG_COVERAGE=y"
+                content = content + "\nCONFIG_COVERAGE_DUMP=y"
 
-            if enable_asan:
-                if platform.type == "native":
-                    content = content + "\nCONFIG_ASAN=y"
+        if enable_asan:
+            if platform.type == "native":
+                content = content + "\nCONFIG_ASAN=y"
 
-            if enable_ubsan:
-                if platform.type == "native":
-                    content = content + "\nCONFIG_UBSAN=y"
+        if enable_ubsan:
+            if platform.type == "native":
+                content = content + "\nCONFIG_UBSAN=y"
 
-            f.write(content)
-            return content
+        if content:
+            os.makedirs(subdir, exist_ok=True)
+            file = os.path.join(subdir, "testcase_extra.conf")
+            with open(file, "w") as f:
+                f.write(content)
+
+        return content
 
     def calculate_sizes(self):
         """Get the RAM/ROM sizes of a test case.
