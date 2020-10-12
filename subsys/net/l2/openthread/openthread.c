@@ -147,7 +147,7 @@ static void ot_state_changed_handler(uint32_t flags, void *context)
 	struct openthread_context *ot_context = context;
 
 	NET_INFO("State changed! Flags: 0x%08" PRIx32 " Current role: %d",
-		    flags, otThreadGetDeviceRole(ot_context->instance));
+		 flags, otThreadGetDeviceRole(ot_context->instance));
 
 	if (flags & OT_CHANGED_IP6_ADDRESS_REMOVED) {
 		NET_DBG("Ipv6 address removed");
@@ -194,9 +194,7 @@ static void ot_receive_handler(otMessage *aMessage, void *context)
 	pkt_buf = pkt->buffer;
 
 	while (1) {
-		read_len = otMessageRead(aMessage,
-					 offset,
-					 pkt_buf->data,
+		read_len = otMessageRead(aMessage, offset, pkt_buf->data,
 					 net_buf_tailroom(pkt_buf));
 		if (!read_len) {
 			break;
@@ -326,9 +324,16 @@ int openthread_send(struct net_if *iface, struct net_pkt *pkt)
 int openthread_start(struct openthread_context *ot_context)
 {
 	otInstance *ot_instance = ot_context->instance;
-	otError error;
+	otError error = OT_ERROR_NONE;
 
 	openthread_api_mutex_lock(ot_context);
+
+	NET_INFO("OpenThread version: %s", otGetVersionString());
+
+	if (IS_ENABLED(CONFIG_OPENTHREAD_COPROCESSOR)) {
+		NET_DBG("OpenThread co-processor.");
+		goto exit;
+	}
 
 	otIp6SetEnabled(ot_context->instance, true);
 
@@ -377,7 +382,6 @@ int openthread_start(struct openthread_context *ot_context)
 		otThreadSetExtendedPanId(ot_instance, &xpanid);
 	}
 
-	NET_INFO("OpenThread version: %s", otGetVersionString());
 	NET_INFO("Network name: %s",
 		 log_strdup(otThreadGetNetworkName(ot_instance)));
 
@@ -396,6 +400,10 @@ exit:
 int openthread_stop(struct openthread_context *ot_context)
 {
 	otError error;
+
+	if (IS_ENABLED(CONFIG_OPENTHREAD_COPROCESSOR)) {
+		return 0;
+	}
 
 	openthread_api_mutex_lock(ot_context);
 
@@ -430,29 +438,25 @@ static int openthread_init(struct net_if *iface)
 		platformShellInit(ot_context->instance);
 	}
 
-	if (IS_ENABLED(CONFIG_OPENTHREAD_NCP)) {
+	if (IS_ENABLED(CONFIG_OPENTHREAD_COPROCESSOR)) {
 		otNcpInit(ot_context->instance);
-	}
-
-	if (!IS_ENABLED(CONFIG_OPENTHREAD_NCP)) {
+	} else {
 		otIp6SetReceiveFilterEnabled(ot_context->instance, true);
 		otIp6SetReceiveCallback(ot_context->instance,
 					ot_receive_handler, ot_context);
-		otSetStateChangedCallback(
-					ot_context->instance,
-					&ot_state_changed_handler,
-					ot_context);
-	}
+		otSetStateChangedCallback(ot_context->instance,
+					  &ot_state_changed_handler,
+					  ot_context);
 
-	net_mgmt_init_event_callback(&ip6_addr_cb, ipv6_addr_event_handler,
-				     NET_EVENT_IPV6_ADDR_ADD |
-				     NET_EVENT_IPV6_MADDR_ADD);
-	net_mgmt_add_event_callback(&ip6_addr_cb);
+		net_mgmt_init_event_callback(
+			&ip6_addr_cb, ipv6_addr_event_handler,
+			NET_EVENT_IPV6_ADDR_ADD | NET_EVENT_IPV6_MADDR_ADD);
+		net_mgmt_add_event_callback(&ip6_addr_cb);
+	}
 
 	ot_tid = k_thread_create(&ot_thread_data, ot_stack_area,
 				 K_KERNEL_STACK_SIZEOF(ot_stack_area),
-				 openthread_process,
-				 ot_context, NULL, NULL,
+				 openthread_process, ot_context, NULL, NULL,
 				 OT_PRIORITY, 0, K_NO_WAIT);
 	k_thread_name_set(&ot_thread_data, "openthread");
 

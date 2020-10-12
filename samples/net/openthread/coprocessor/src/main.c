@@ -17,13 +17,13 @@ LOG_MODULE_REGISTER(ot_br, LOG_LEVEL_DBG);
 
 void main(void)
 {
-#if defined(CONFIG_OPENTHREAD_NCP_SPINEL_ON_UART_ACM)
+#if defined(CONFIG_OPENTHREAD_COPROCESSOR_SPINEL_ON_UART_ACM)
 	const struct device *dev;
 	uint32_t baudrate = 0U;
 	int ret;
 
 	dev = device_get_binding(
-		CONFIG_OPENTHREAD_NCP_SPINEL_ON_UART_DEV_NAME);
+		CONFIG_OPENTHREAD_COPROCESSOR_SPINEL_ON_UART_DEV_NAME);
 	if (!dev) {
 		LOG_ERR("UART device not found");
 		return;
@@ -44,7 +44,7 @@ void main(void)
 	} else {
 		LOG_INF("Baudrate detected: %d", baudrate);
 	}
-#endif /* CONFIG_OPENTHREAD_NCP_SPINEL_ON_UART_ACM */
+#endif /* CONFIG_OPENTHREAD_COPROCESSOR_SPINEL_ON_UART_ACM */
 
 	LOG_INF(APP_BANNER, CONFIG_NET_SAMPLE_APPLICATION_VERSION);
 }

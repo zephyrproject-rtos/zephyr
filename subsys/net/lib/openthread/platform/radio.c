@@ -409,7 +409,12 @@ void platformRadioProcess(otInstance *aInstance)
 		while ((tx_pkt = (struct net_pkt *)k_fifo_get(&tx_pkt_fifo,
 							      K_NO_WAIT))
 		      != NULL) {
-			openthread_handle_frame_to_send(aInstance, tx_pkt);
+			if (IS_ENABLED(CONFIG_OPENTHREAD_COPROCESSOR_RCP)) {
+				net_pkt_unref(tx_pkt);
+			} else {
+				openthread_handle_frame_to_send(aInstance,
+					tx_pkt);
+			}
 		}
 	}
 
