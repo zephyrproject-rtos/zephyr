@@ -86,6 +86,9 @@
 &spi1 {
 	status = "okay";
 
+	pinctrl-0 = <&spi1_miso_pa6 &spi1_mosi_pa7
+		     &spi1_sck_pa5 &spi1_nss_pa4>;
+
 	/* Nordic nRF51822-QFAC */
 	bt-hci@0 {
 		compatible = "zephyr,bt-hci-spi";
