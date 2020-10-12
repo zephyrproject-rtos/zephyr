@@ -1768,6 +1768,7 @@ int bt_le_set_data_len(struct bt_conn *conn, uint16_t tx_octets, uint16_t tx_tim
 {
 	struct bt_hci_cp_le_set_data_len *cp;
 	struct net_buf *buf;
+	int err;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_DATA_LEN, sizeof(*cp));
 	if (!buf) {
@@ -1779,7 +1780,14 @@ int bt_le_set_data_len(struct bt_conn *conn, uint16_t tx_octets, uint16_t tx_tim
 	cp->tx_octets = sys_cpu_to_le16(tx_octets);
 	cp->tx_time = sys_cpu_to_le16(tx_time);
 
-	return bt_hci_cmd_send(BT_HCI_OP_LE_SET_DATA_LEN, buf);
+	err = bt_hci_cmd_send(BT_HCI_OP_LE_SET_DATA_LEN, buf);
+	if (err) {
+		return err;
+	}
+
+	conn->le.data_len.tx_max_len = tx_octets;
+	conn->le.data_len.tx_max_time = tx_time;
+	return 0;
 }
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
