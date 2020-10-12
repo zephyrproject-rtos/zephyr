@@ -107,7 +107,7 @@ static struct osdp_pd_cap osdp_pd_cap[] = {
 
 static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 {
-	int i, ret = -1, pos = 0, tmp;
+	int i, ret = -1, pos = 0;
 	struct osdp_cmd *cmd;
 
 	pd->reply_id = 0;
@@ -328,7 +328,10 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = 0;
 		break;
 	case CMD_CHLNG:
-		tmp = OSDP_PD_CAP_COMMUNICATION_SECURITY;
+		/* Workaround for error: a label can only be part of a
+		 * statement and a declaration is not a statement */
+		;
+		int tmp = OSDP_PD_CAP_COMMUNICATION_SECURITY;
 		if (pd->cap[tmp].compliance_level == 0) {
 			pd->reply_id = REPLY_NAK;
 			pd->cmd_data[0] = OSDP_PD_NAK_SC_UNSUP;
