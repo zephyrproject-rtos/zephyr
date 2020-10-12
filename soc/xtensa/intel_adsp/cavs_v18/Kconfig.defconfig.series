@@ -65,7 +65,7 @@ config LOG_BACKEND_RB
 	default y
 
 config LOG_BACKEND_RB_MEM_BASE
-	default 0xBE000000
+	default 0xBE00A000
 
 config LOG_BACKEND_RB_MEM_SIZE
 	default 8192
