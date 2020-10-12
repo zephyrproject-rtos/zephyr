@@ -684,13 +684,43 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 }
 /******************************************************************************/
 /* Test case entry points */
+
 /**
- * @brief Verify pipe with 1 element insert
- * @details transfer sequences of bytes of data in whole.
- * - Using a sub thread to get pipe data in whole
- * - Using main thread to put data in whole
+ * @brief Verify pipe with 1 element insert.
+ *
  * @ingroup kernel_pipe_tests
- * @see k_pipe_put()
+ *
+ * @details
+ * Test Objective:
+ * - transfer sequences of bytes of data in whole.
+ *
+ * Testing techniques:
+ * - function and block box testing,Interface testing,
+ * Dynamic analysis and testing.
+ *
+ * Prerequisite Conditions:
+ * - CONFIG_TEST_USERSPACE.
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Define and initialize a pipe at compile time.
+ * -# Using a sub thread to get pipe data in whole,
+ * and check if the data is correct with expected.
+ * -# Using main thread to put data in whole,
+ * check if the return is correct with expected.
+ *
+ * Expected Test Result:
+ * - The pipe put/get whole data is correct.
+ *
+ * Pass/Fail Criteria:
+ * - Successful if check points in test procedure are all passed, otherwise failure.
+ *
+ * Assumptions and Constraints:
+ * - N/A
+ *
+ * @see k_pipe_put(), k_pipe_get()
  */
 void test_pipe_on_single_elements(void)
 {
@@ -751,11 +781,40 @@ void test_pipe_forever_wait(void)
 
 /**
  * @brief Test pipes with timeout
- * @details Check if the kernel support supplying a timeout parameter
- * indicating the maximum amount of time a process will wait.
- * - Using a sub thread to get pipe data within TIMEOUT_VAL
- * - Put the pipe data with a timeout TIMEOUT_VAL in main thread
+ *
  * @ingroup kernel_pipe_tests
+ *
+ * @details
+ * Test Objective:
+ *	- Check if the kernel support supplying a timeout parameter
+ * indicating the maximum amount of time a process will wait.
+ *
+ * Testing techniques:
+ * - function and block box testing,Interface testing,
+ * Dynamic analysis and testing.
+ *
+ * Prerequisite Conditions:
+ * - CONFIG_TEST_USERSPACE.
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Create a sub thread to get data from a pipe.
+ * -# In the sub thread, Set K_MSEC(10) as timeout for k_pipe_get().
+ * and check the data which get from pipe if correct.
+ * -# In main thread, use k_pipe_put to put data.
+ * and check the return of k_pipe_put.
+ *
+ * Expected Test Result:
+ * - The pipe can set timeout and works well.
+ *
+ * Pass/Fail Criteria:
+ * - Successful if check points in test procedure are all passed, otherwise failure.
+ *
+ * Assumptions and Constraints:
+ * - N/A
+ *
  * @see k_pipe_put()
  */
 void test_pipe_timeout(void)
@@ -886,11 +945,38 @@ void test_pipe_put_min_xfer(void)
 
 /**
  * @brief Test defining and initializing pipes at run time
- * @details Check if the kernel provided a mechanism for defining and
- * initializing pipes at run time.
- * - Define and initialize a pipe at run time
- * - Using this pipe to transfer data and verify it
+ *
  * @ingroup kernel_pipe_tests
+ *
+ * @details
+ * Test Objective:
+ * - Check if the kernel provided a mechanism for defining and
+ * initializing pipes at run time.
+ *
+ * Testing techniques:
+ * - function and block box testing,Interface testing,
+ * Dynamic analysis and testing.
+ *
+ * Prerequisite Conditions:
+ * - CONFIG_TEST_USERSPACE.
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Define and initialize a pipe at run time
+ * -# Using this pipe to transfer data.
+ * -# Check the pipe get/put operation.
+ *
+ * Expected Test Result:
+ * - Pipe can be defined and initialized at run time.
+ *
+ * Pass/Fail Criteria:
+ * - Successful if check points in test procedure are all passed, otherwise failure.
+ *
+ * Assumptions and Constraints:
+ * - N/A
+ *
  * @see k_pipe_init()
  */
 void test_pipe_define_at_runtime(void)
@@ -912,10 +998,29 @@ void test_pipe_define_at_runtime(void)
 			PIPE_SIZE, &written,
 			PIPE_SIZE, K_NO_WAIT), RETURN_SUCCESS, NULL);
 
+	/* Returned without waiting; zero data bytes were written. */
+	zassert_equal(k_pipe_put(&pipe, &tx_buffer,
+			PIPE_SIZE, &written,
+			PIPE_SIZE, K_NO_WAIT), -EIO, NULL);
+
+	/* Waiting period timed out. */
+	zassert_equal(k_pipe_put(&pipe, &tx_buffer,
+			PIPE_SIZE, &written,
+			PIPE_SIZE, TIMEOUT_VAL), -EAGAIN, NULL);
+
 	zassert_equal(k_pipe_get(&pipe, &rx_buffer,
 			PIPE_SIZE, &read,
 			PIPE_SIZE, K_NO_WAIT), RETURN_SUCCESS, NULL);
 
 	zassert_true(rx_buffer_check(rx_buffer, read) == read,
 			"Bytes read are not match.");
+
+	/* Returned without waiting; zero data bytes were read. */
+	zassert_equal(k_pipe_get(&pipe, &rx_buffer,
+			PIPE_SIZE, &read,
+			PIPE_SIZE, K_NO_WAIT), -EIO, NULL);
+	/* Waiting period timed out. */
+	zassert_equal(k_pipe_get(&pipe, &rx_buffer,
+			PIPE_SIZE, &read,
+			PIPE_SIZE, TIMEOUT_VAL), -EAGAIN, NULL);
 }
