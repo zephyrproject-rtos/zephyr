@@ -327,7 +327,15 @@ static int is_abort_cb(void *next, int prio, void *curr,
 		return -EAGAIN;
 	}
 
-	radio_isr_set(isr_window, lll);
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	if (unlikely(lll->duration_reload && !lll->duration_expire)) {
+		radio_isr_set(isr_done_cleanup, lll);
+	} else
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+	{
+		radio_isr_set(isr_window, lll);
+	}
+
 	radio_disable();
 
 	return 0;

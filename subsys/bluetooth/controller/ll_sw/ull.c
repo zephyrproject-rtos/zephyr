@@ -636,6 +636,14 @@ void ll_rx_dequeue(void)
 	break;
 
 	case NODE_RX_TYPE_EXT_SCAN_TERMINATE:
+	{
+		struct ll_scan_set *scan;
+
+		scan = ull_scan_set_get(rx->handle);
+
+		scan->is_enabled = 0U;
+	}
+	break;
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_BROADCASTER)
@@ -866,6 +874,16 @@ void ll_rx_mem_release(void **node_rx)
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_BROADCASTER */
 
+#if defined(CONFIG_BT_OBSERVER)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		case NODE_RX_TYPE_EXT_SCAN_TERMINATE:
+		{
+			mem_release(rx_free, &mem_pdu_rx.free);
+		}
+		break;
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+#endif /* CONFIG_BT_OBSERVER */
+
 #if defined(CONFIG_BT_CONN)
 		case NODE_RX_TYPE_CONNECTION:
 		{
@@ -933,7 +951,6 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_EXT_1M_REPORT:
 		case NODE_RX_TYPE_EXT_2M_REPORT:
 		case NODE_RX_TYPE_EXT_CODED_REPORT:
-		case NODE_RX_TYPE_EXT_SCAN_TERMINATE:
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
 
