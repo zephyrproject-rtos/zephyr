@@ -1164,7 +1164,11 @@ static void le_set_scan_enable(struct net_buf *buf, struct net_buf **evt)
 	}
 #endif
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
 	status = ll_scan_enable(cmd->enable, 0, 0);
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+	status = ll_scan_enable(cmd->enable);
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 	*evt = cmd_complete_status(status);
 }
@@ -3911,6 +3915,17 @@ static void le_adv_ext_coded_report(struct pdu_data *pdu_data,
 	le_adv_ext_report(pdu_data, node_rx, buf, BIT(2));
 }
 
+static void le_scan_timeout(struct pdu_data *pdu_data,
+			    struct node_rx_pdu *node_rx, struct net_buf *buf)
+{
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_SCAN_TIMEOUT)) {
+		return;
+	}
+
+	meta_evt(buf, BT_HCI_EVT_LE_SCAN_TIMEOUT, 0U);
+}
+
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 static void le_per_adv_sync_established(struct pdu_data *pdu_data,
 					struct node_rx_pdu *node_rx,
@@ -4318,7 +4333,7 @@ static void encode_control(struct node_rx_pdu *node_rx,
 		break;
 
 	case NODE_RX_TYPE_EXT_SCAN_TERMINATE:
-		/* TODO: Generate the scan timeout */
+		le_scan_timeout(pdu_data, node_rx, buf);
 		break;
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
