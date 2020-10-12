@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <dt-bindings/dma/stm32_dma.h>
 #include <drivers/dma.h>
 #endif
+#include <pinmux/stm32/pinmux_stm32.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
 
@@ -50,7 +51,6 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #define SPI_STM32_ERR_MSK (LL_SPI_SR_CRCERR | LL_SPI_SR_MODF | LL_SPI_SR_OVR)
 #endif
 #endif /* CONFIG_SOC_SERIES_STM32MP1X */
-
 
 #ifdef CONFIG_SPI_STM32_DMA
 /* dummy value used for transferring NOP when tx buf is null
@@ -802,6 +802,55 @@ static int spi_stm32_init(const struct device *dev)
 		return -EIO;
 	}
 
+	/* Configure dt provided device signals when available */
+	if (cfg->pinctrl_list_size != 0) {
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
+		int remap;
+		/* Check that remap configuration is coherent across pins */
+		remap = stm32_dt_pinctrl_remap_check(cfg->pinctrl_list,
+						     cfg->pinctrl_list_size);
+		if (remap < 0) {
+			return remap;
+		}
+
+		/* A valid remapping configuration is provided */
+		/* Apply remapping before proceeding with pin configuration */
+		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
+
+		switch ((uint32_t)cfg->spi) {
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi1), okay)
+		case DT_REG_ADDR(DT_NODELABEL(spi1)):
+			if (remap == REMAP_1) {
+				LL_GPIO_AF_EnableRemap_SPI1();
+			} else {
+				LL_GPIO_AF_DisableRemap_SPI1();
+			}
+			break;
+#endif
+		}
+
+		LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_AFIO);
+
+		if ((cfg->pinctrl_nss_size != 0) &&
+		    IS_ENABLED(CONFIG_SPI_STM32_USE_HW_SS)) {
+			int remap_nss;
+
+			__ASSERT_NO_MSG((cfg->pinctrl_nss_size == 1));
+
+			remap_nss = stm32_dt_pinctrl_remap_check(
+							   cfg->pinctrl_nss, 1);
+			if (remap != remap_nss) {
+				return -EIO;
+			}
+
+			stm32_dt_pinctrl_configure(cfg->pinctrl_nss, 1);
+		}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
+
+		stm32_dt_pinctrl_configure(cfg->pinctrl_list,
+					   cfg->pinctrl_list_size);
+	}
+
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	cfg->irq_config(dev);
 #endif
@@ -901,12 +950,21 @@ static void spi_stm32_irq_config_func_##id(const struct device *dev)		\
 #define STM32_SPI_INIT(id)						\
 STM32_SPI_IRQ_HANDLER_DECL(id);						\
 									\
+static const struct soc_gpio_pinctrl spi_pins_##id[] =			\
+				ST_STM32_DT_INST_PINCTRL(id, 0);	\
+static const struct soc_gpio_pinctrl spi_pin_nss_##id[] =		\
+				ST_STM32_DT_INST_PINCTRL(id, 1);	\
+									\
 static const struct spi_stm32_config spi_stm32_cfg_##id = {		\
 	.spi = (SPI_TypeDef *) DT_INST_REG_ADDR(id),			\
 	.pclken = {							\
 		.enr = DT_INST_CLOCKS_CELL(id, bits),			\
 		.bus = DT_INST_CLOCKS_CELL(id, bus)			\
 	},								\
+	.pinctrl_list = spi_pins_##id,					\
+	.pinctrl_list_size = ARRAY_SIZE(spi_pins_##id),			\
+	.pinctrl_nss = spi_pin_nss_##id,				\
+	.pinctrl_nss_size = ARRAY_SIZE(spi_pin_nss_##id),		\
 	STM32_SPI_IRQ_HANDLER_FUNC(id)					\
 };									\
 									\

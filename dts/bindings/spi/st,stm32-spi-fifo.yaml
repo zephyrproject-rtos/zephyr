@@ -13,3 +13,32 @@ properties:
 
     interrupts:
       required: true
+
+    pinctrl-0:
+      type: phandles
+      required: false
+      description: |
+        GPIO pin configuration for SPI signals (MIS, MOSI, SCK).  We expect
+        that the phandles will reference pinctrl nodes.
+
+        For example the SPI3 would be
+           <&spi3_sck_pc10 &spi3_miso_pc11 &spi3_mosi_pc12>;
+
+    pinctrl-1:
+      type: phandles
+      required: false
+      description: |
+        GPIO pin configuration for Slave select signal (NSS).  We expect
+        that the phandles will reference pinctrl nodes.
+
+        For example the SPI3 would be
+           <&spi3_nss_pa4>;
+
+    pinctrl-names:
+      type: string-array
+      required: false
+      description: |
+        Human readable reference for the "pcintrl-" configrations.
+
+        Expected values:
+           "default", "nss";
