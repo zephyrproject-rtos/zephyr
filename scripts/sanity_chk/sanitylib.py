@@ -3145,7 +3145,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         return filtered_string
 
 
-    def xunit_report(self, filename, platform=None, full_report=False, append=False):
+    def xunit_report(self, filename, platform=None, full_report=False, append=False, version="NA"):
         total = 0
         if platform:
             selected = [platform]
@@ -3216,6 +3216,12 @@ class TestSuite(DisablePyTestCollectionMixin):
                                 tests="%d" % (total),
                                 failures="%d" % fails,
                                 errors="%d" % (errors), skipped="%s" % (skips))
+                    eleTSPropetries = ET.SubElement(eleTestsuite, 'properties')
+                    # Multiple 'property' can be added to 'properties'
+                    # differing by name and value
+                    eleTSPVerstion = ET.SubElement(eleTSPropetries, 'property',
+                                                   name="version",
+                                                   value=version)
 
             else:
                 eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite',
@@ -3223,6 +3229,12 @@ class TestSuite(DisablePyTestCollectionMixin):
                                              tests="%d" % (total),
                                              failures="%d" % fails,
                                              errors="%d" % (errors), skipped="%s" % (skips))
+                eleTSPropetries = ET.SubElement(eleTestsuite, 'properties')
+                # Multiple 'property' can be added to 'properties'
+                # differing by name and value
+                eleTSPVerstion = ET.SubElement(eleTSPropetries, 'property',
+                                               name="version",
+                                               value=version)
 
             for _, instance in inst.items():
                 if full_report:
