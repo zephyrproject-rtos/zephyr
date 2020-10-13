@@ -527,9 +527,15 @@ config BT_CONN_PARAM_UPDATE_TIMEOUT
 
 	help
 	  The value is a timeout used by peripheral device to wait until it
-	  starts the connection parameters update procedure to change default
-	  connection parameters. The default value is set to 5s, to comply
-	  with BT protocol specification: Core 4.2 Vol 3, Part C, 9.3.12.2
+	  starts the first connection parameters update procedure after a
+	  connection has been established.
+	  The connection parameters requested will be the parameters set by the
+	  application, or the peripheral preferred connection parameters if
+	  configured.
+	  The default value is set to 5 seconds, to comply with the Bluetooth
+	  Core specification: Core 4.2 Vol 3, Part C, 9.3.12.2:
+	  "The Peripheral device should not perform a Connection Parameter
+	  Update procedure within 5 seconds after establishing a connection."
 
 endif # BT_CONN
 
