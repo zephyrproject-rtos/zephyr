@@ -523,7 +523,7 @@ config BT_CREATE_CONN_TIMEOUT
 config BT_CONN_PARAM_UPDATE_TIMEOUT
 	int "Peripheral connection parameter update timeout in milliseconds"
 	default 5000
-	range 1 65535
+	range 0 65535
 
 	help
 	  The value is a timeout used by peripheral device to wait until it
