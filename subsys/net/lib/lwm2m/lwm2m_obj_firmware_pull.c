@@ -393,7 +393,6 @@ static void firmware_transfer(struct k_work *work)
 	}
 
 	lwm2m_engine_context_init(&firmware_ctx);
-	firmware_ctx.handle_separate_response = true;
 	ret = lwm2m_socket_start(&firmware_ctx);
 	if (ret < 0) {
 		LOG_ERR("Cannot start a firmware-pull connection:%d", ret);
