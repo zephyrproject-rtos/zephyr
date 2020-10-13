@@ -121,14 +121,19 @@ bool z_is_thread_essential(void)
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 void z_impl_k_busy_wait(uint32_t usec_to_wait)
 {
+	if (usec_to_wait == 0) {
+		return;
+	}
+
 #if !defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)
+	uint32_t start_cycles = k_cycle_get_32();
+
 	/* use 64-bit math to prevent overflow when multiplying */
 	uint32_t cycles_to_wait = (uint32_t)(
 		(uint64_t)usec_to_wait *
 		(uint64_t)sys_clock_hw_cycles_per_sec() /
 		(uint64_t)USEC_PER_SEC
 	);
-	uint32_t start_cycles = k_cycle_get_32();
 
 	for (;;) {
 		uint32_t current_cycles = k_cycle_get_32();
