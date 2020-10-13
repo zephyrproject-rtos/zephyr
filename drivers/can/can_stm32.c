@@ -421,37 +421,7 @@ static int can_stm32_init(const struct device *dev)
 			return remap;
 		}
 
-		/* A valid remapping configuration is provided */
-		/* Apply remapping before proceeding with pin configuration */
-		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
-
-		switch ((uint32_t)cfg->can) {
-#if defined(AFIO_MAPR_CAN_REMAP_REMAP1)
-		case DT_REG_ADDR(DT_NODELABEL(can1)):
-			if (remap == REMAP_1) {
-				/* PB8/PB9 */
-				LL_GPIO_AF_RemapPartial2_CAN1();
-			} else if (remap == REMAP_2) {
-				/* PD0/PD1 */
-				LL_GPIO_AF_RemapPartial3_CAN1();
-			} else {
-				/* NO_REMAP: PA11/PA12 */
-				LL_GPIO_AF_RemapPartial1_CAN1();
-			}
-			break;
-#endif
-#if defined(AFIO_MAPR_CAN2_REMAP)
-		case DT_REG_ADDR(DT_NODELABEL(can2)):
-			if (remap == REMAP_1) {
-				/* PB5/PB6 */
-				LL_GPIO_AF_EnableRemap_CAN2();
-			} else {
-				/* PB12/PB13 */
-				LL_GPIO_AF_DisableRemap_CAN2();
-			}
-			break;
-#endif
-		}
+		stm32_dt_pinctrl_remap_set((uint32_t)cfg->can, remap);
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
 
 		stm32_dt_pinctrl_configure(cfg->pinctrl, cfg->pinctrl_len);

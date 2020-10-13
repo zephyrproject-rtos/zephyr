@@ -161,6 +161,14 @@ void stm32_dt_pinctrl_configure(const struct soc_gpio_pinctrl *pinctrl,
 int stm32_dt_pinctrl_remap_check(const struct soc_gpio_pinctrl *pinctrl,
 				size_t list_size);
 
+/**
+ * @brief
+ *
+ * @param
+ * @param
+ */
+void stm32_dt_pinctrl_remap_set(uint32_t base, int remap);
+
 /* common pinmux device name for all STM32 chips */
 #define STM32_PINMUX_NAME "stm32-pinmux"
 
