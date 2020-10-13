@@ -32,6 +32,10 @@ extern "C" {
 struct x86_msi_vector {
 	unsigned int irq;
 	uint8_t vector;
+#ifdef CONFIG_INTEL_VTD_ICTL
+	bool remap;
+	uint8_t irte;
+#endif
 };
 
 typedef struct x86_msi_vector arch_msi_vector_t;
