@@ -37,6 +37,9 @@
 #include "gatt_internal.h"
 #include "audio/iso_internal.h"
 
+/* Peripheral timeout to initialize Connection Parameter Update procedure */
+#define CONN_UPDATE_TIMEOUT  K_MSEC(CONFIG_BT_CONN_PARAM_UPDATE_TIMEOUT)
+
 struct tx_meta {
 	struct bt_conn_tx *tx;
 };
@@ -1549,6 +1552,13 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 
 		bt_l2cap_connected(conn);
 		notify_connected(conn);
+
+		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+		    conn->role == BT_CONN_ROLE_SLAVE) {
+			k_delayed_work_submit(&conn->update_work,
+					      CONN_UPDATE_TIMEOUT);
+		}
+
 		break;
 	case BT_CONN_DISCONNECTED:
 		if (conn->type == BT_CONN_TYPE_SCO) {
