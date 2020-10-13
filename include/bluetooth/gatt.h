@@ -576,6 +576,13 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
 			       uint16_t len, uint16_t offset);
 
+#define BT_GATT_CHRC_INIT(_uuid, _handle, _props) \
+{                                                 \
+	.uuid = _uuid,                            \
+	.value_handle = _handle,                  \
+	.properties = _props,                     \
+}
+
 /** @def BT_GATT_CHARACTERISTIC
  *  @brief Characteristic and Value Declaration Macro.
  *
@@ -592,10 +599,9 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 #define BT_GATT_CHARACTERISTIC(_uuid, _props, _perm, _read, _write, _value)  \
 	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CHRC, BT_GATT_PERM_READ,              \
 			  bt_gatt_attr_read_chrc, NULL,                      \
-			  ((struct bt_gatt_chrc[]) { { .uuid = _uuid,        \
-						       .value_handle = 0U,   \
-						       .properties = _props, \
-						   } })),                    \
+			  ((struct bt_gatt_chrc[]) {                         \
+				BT_GATT_CHRC_INIT(_uuid, 0U, _props),        \
+						   })),                      \
 	BT_GATT_ATTRIBUTE(_uuid, _perm, _read, _write, _value)
 
 #if IS_ENABLED(CONFIG_BT_SETTINGS_CCC_LAZY_LOADING)
