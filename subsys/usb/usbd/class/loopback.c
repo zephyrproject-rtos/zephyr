@@ -40,6 +40,8 @@ struct loopback_desc {
 	struct usb_if_descriptor if0;
 	struct usb_ep_descriptor if0_out_ep;
 	struct usb_ep_descriptor if0_in_ep;
+	struct usb_ep_descriptor if0_int_out_ep;
+	struct usb_ep_descriptor if0_int_in_ep;
 	struct usb_if_descriptor if1;
 	struct usb_ep_descriptor if1_out_ep;
 	struct usb_if_descriptor if2;
@@ -56,7 +58,7 @@ static struct loopback_desc lb_desc_##x = {			\
 		.bDescriptorType = USB_DESC_INTERFACE,		\
 		.bInterfaceNumber = 0,				\
 		.bAlternateSetting = 0,				\
-		.bNumEndpoints = 2,				\
+		.bNumEndpoints = 4,				\
 		.bInterfaceClass = USB_BCC_VENDOR,		\
 		.bInterfaceSubClass = 0,			\
 		.bInterfaceProtocol = 0,			\
@@ -81,6 +83,26 @@ static struct loopback_desc lb_desc_##x = {			\
 		.bmAttributes = USB_DC_EP_BULK,			\
 		.wMaxPacketSize = sys_cpu_to_le16(LOOPBACK_BULK_EP_MPS), \
 		.bInterval = 0x00,				\
+	},							\
+								\
+	/* Interface Endpoint OUT */				\
+	.if0_int_out_ep = {					\
+		.bLength = sizeof(struct usb_ep_descriptor),	\
+		.bDescriptorType = USB_DESC_ENDPOINT,		\
+		.bEndpointAddress = 0x03,	\
+		.bmAttributes = USB_DC_EP_INTERRUPT,		\
+		.wMaxPacketSize = sys_cpu_to_le16(LOOPBACK_BULK_EP_MPS), \
+		.bInterval = 0x01,				\
+	},							\
+								\
+	/* Interrupt Endpoint IN */				\
+	.if0_int_in_ep = {					\
+		.bLength = sizeof(struct usb_ep_descriptor),	\
+		.bDescriptorType = USB_DESC_ENDPOINT,		\
+		.bEndpointAddress = 0x83,			\
+		.bmAttributes = USB_DC_EP_INTERRUPT,		\
+		.wMaxPacketSize = sys_cpu_to_le16(LOOPBACK_BULK_EP_MPS), \
+		.bInterval = 0x01,				\
 	},							\
 								\
 	/* Interface descriptor 0 */				\
@@ -197,8 +219,21 @@ static void lb_cfg_update(struct usbd_class_ctx *cctx,
 			LOG_ERR("Failed to restart transfer");
 		}
 
+		/* Prepare bulk IN transfer */
 		ep = lb_desc->if0_in_ep.bEndpointAddress;
 		mps = lb_desc->if0_in_ep.wMaxPacketSize;
+		buf = usbd_tbuf_alloc(ep, mps);
+		if (buf == NULL) {
+			LOG_ERR("Failed to allocate buffer");
+			break;
+		}
+
+		net_buf_add_mem(buf, lb_buf, mps);
+		usbd_tbuf_submit(buf, false);
+
+		/* Prepare interrupt IN transfer */
+		ep = lb_desc->if0_int_in_ep.bEndpointAddress;
+		mps = lb_desc->if0_int_in_ep.wMaxPacketSize;
 		buf = usbd_tbuf_alloc(ep, mps);
 		if (buf == NULL) {
 			LOG_ERR("Failed to allocate buffer");
@@ -241,17 +276,18 @@ static void lb_ep_event_handler(struct usbd_class_ctx *cctx,
 		ep = lb_desc->if0_out_ep.bEndpointAddress;
 		mps = lb_desc->if0_out_ep.wMaxPacketSize;
 		memcpy(lb_buf, buf->data, buf->len);
-	} else if (ud->ep == lb_desc->if2_out_ep.bEndpointAddress) {
-		ep = lb_desc->if2_out_ep.bEndpointAddress;
-		mps = lb_desc->if2_out_ep.wMaxPacketSize;
+	} else if (ud->ep == lb_desc->if0_int_out_ep.bEndpointAddress) {
+		ep = lb_desc->if0_int_out_ep.bEndpointAddress;
+		mps = lb_desc->if0_int_out_ep.wMaxPacketSize;
+		memcpy(lb_buf, buf->data, buf->len);
+	} else if (ud->ep == lb_desc->if0_int_in_ep.bEndpointAddress) {
+		ep = lb_desc->if0_int_in_ep.bEndpointAddress;
+		mps = lb_desc->if0_int_in_ep.wMaxPacketSize;
 	} else if (ud->ep == lb_desc->if0_in_ep.bEndpointAddress) {
 		ep = lb_desc->if0_in_ep.bEndpointAddress;
 		mps = lb_desc->if0_in_ep.wMaxPacketSize;
-	} else if (ud->ep == lb_desc->if2_in_ep.bEndpointAddress) {
-		ep = lb_desc->if2_in_ep.bEndpointAddress;
-		mps = lb_desc->if2_in_ep.wMaxPacketSize;
 	} else {
-		LOG_ERR("Unknown endpoint, skip");
+		LOG_ERR("Unknown endpoint 0x%02x, skip", ud->ep);
 		net_buf_unref(buf);
 		return;
 	}
@@ -261,7 +297,6 @@ static void lb_ep_event_handler(struct usbd_class_ctx *cctx,
 	new_buf = usbd_tbuf_alloc(ep, mps);
 	if (new_buf == NULL) {
 		LOG_ERR("Failed to allocate buffer");
-		net_buf_unref(buf);
 		return;
 	}
 
