@@ -180,3 +180,7 @@
 &wdog0 {
 	status = "okay";
 };
+
+&trng0 {
+	status = "okay";
+};
