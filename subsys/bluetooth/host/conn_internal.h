@@ -160,8 +160,12 @@ struct bt_conn {
 
 	atomic_t		ref;
 
-	/* Delayed work for connection update and other deferred tasks */
-	struct k_delayed_work	update_work;
+	/* Delayed work deferred tasks:
+	 * - Peripheral delayed connection update.
+	 * - Initiator connect create cancel.
+	 * - Connection cleanup.
+	 */
+	struct k_delayed_work	deferred_work;
 
 	union {
 		struct bt_conn_le	le;
