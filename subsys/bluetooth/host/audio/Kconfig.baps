@@ -5,4 +5,15 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+config BT_AUDIO_CHAN
+	# Virtual/hidden option
+	bool
+	default y if BT_ASCS
+
+config BT_AUDIO_ENDPOINT
+	# Virtual/hidden option
+	bool
+	default y if BT_ASCS
+
 source "subsys/bluetooth/host/audio/Kconfig.pacs"
+source "subsys/bluetooth/host/audio/Kconfig.ascs"

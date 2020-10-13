@@ -1804,6 +1804,33 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_PACS_SUPPORTED_CONTEXT \
 	BT_UUID_DECLARE_16(BT_UUID_PACS_SUPPORTED_CONTEXT_VAL)
+/** @def BT_UUID_ASCS_VAL
+ *  @brief Audio Stream Control Service value
+ */
+#define BT_UUID_ASCS_VAL 0x8fda
+/** @def BT_UUID_ASCS
+ *  @brief Audio Stream Control Service
+ */
+#define BT_UUID_ASCS \
+	BT_UUID_DECLARE_16(BT_UUID_ASCS_VAL)
+/** @def BT_UUID_ASCS_ASE_VAL
+ *  @brief Audio Stream Endpoint Characteristic value
+ */
+#define BT_UUID_ASCS_ASE_VAL 0x8f9c
+/** @def BT_UUID_ASCS_ASE
+ *  @brief Audio Stream Endpoint Characteristic
+ */
+#define BT_UUID_ASCS_ASE \
+	BT_UUID_DECLARE_16(BT_UUID_ASCS_ASE_VAL)
+/** @def BT_UUID_ASCS_ASE_CP_VAL
+ *  @brief Audio Stream Endpoint Control Point Characteristic value
+ */
+#define BT_UUID_ASCS_ASE_CP_VAL 0x8f9d
+/** @def BT_UUID_ASCS_ASE_CP
+ *  @brief Audio Stream Endpoint Control Point Characteristic
+ */
+#define BT_UUID_ASCS_ASE_CP \
+	BT_UUID_DECLARE_16(BT_UUID_ASCS_ASE_CP_VAL)
 
 /*
  * Protocol UUIDs
