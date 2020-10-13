@@ -4577,9 +4577,7 @@ static int offload_put(struct net_context *context)
 
 	wakeup_hl7800();
 
-	if (sock->state != SOCK_SERVER_CLOSED) {
-		send_at_cmd(sock, cmd1, MDM_CMD_SEND_TIMEOUT, 0, false);
-	}
+	send_at_cmd(sock, cmd1, MDM_CMD_SEND_TIMEOUT, 0, false);
 
 	if (sock->type == SOCK_STREAM) {
 		/* delete session */
