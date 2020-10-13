@@ -1,0 +1,8 @@
+# Bluetooth Audio - Basic Audio configuration options
+#
+# Copyright (c) 2020 Intel Corporation
+
+# SPDX-License-Identifier: Apache-2.0
+#
+
+source "subsys/bluetooth/host/audio/Kconfig.pacs"
