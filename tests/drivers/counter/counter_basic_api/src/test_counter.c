@@ -77,6 +77,9 @@ static const char * const devices[] = {
 #ifdef CONFIG_COUNTER_MCUX_PIT
 	LABELS_FOR_DT_COMPAT(nxp_kinetis_pit)
 #endif
+#ifdef CONFIG_COUNTER_XLNX_AXI_TIMER
+	LABELS_FOR_DT_COMPAT(xlnx_xps_timer_1_00_a)
+#endif
 };
 
 typedef void (*counter_test_func_t)(const char *dev_name);
