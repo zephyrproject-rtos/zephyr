@@ -395,6 +395,7 @@ static void test_start_kernel_thread(void)
 	zassert_unreachable("Create a kernel thread did not fault");
 }
 
+#ifndef CONFIG_MMU
 static void uthread_read_body(void *p1, void *p2, void *p3)
 {
 	unsigned int *vptr = p1;
@@ -402,6 +403,15 @@ static void uthread_read_body(void *p1, void *p2, void *p3)
 	set_fault(K_ERR_CPU_EXCEPTION);
 	printk("%u\n", *vptr);
 	zassert_unreachable("Read from other thread stack did not fault");
+}
+
+static void uthread_write_body(void *p1, void *p2, void *p3)
+{
+	unsigned int *vptr = p1;
+
+	set_fault(K_ERR_CPU_EXCEPTION);
+	*vptr = 2U;
+	zassert_unreachable("Write to other thread stack did not fault");
 }
 
 /**
@@ -422,14 +432,6 @@ static void test_read_other_stack(void)
 	k_thread_join(&test_thread, K_FOREVER);
 }
 
-static void uthread_write_body(void *p1, void *p2, void *p3)
-{
-	unsigned int *vptr = p1;
-
-	set_fault(K_ERR_CPU_EXCEPTION);
-	*vptr = 2U;
-	zassert_unreachable("Write to other thread stack did not fault");
-}
 
 /**
  * @brief Test to write to other thread's stack
@@ -447,6 +449,17 @@ static void test_write_other_stack(void)
 			K_NO_WAIT);
 	k_thread_join(&test_thread, K_FOREVER);
 }
+#else
+static void test_read_other_stack(void)
+{
+	ztest_test_skip();
+}
+
+static void test_write_other_stack(void)
+{
+	ztest_test_skip();
+}
+#endif /* CONFIG_MMU */
 
 /**
  * @brief Test to revoke access to kobject without permission
