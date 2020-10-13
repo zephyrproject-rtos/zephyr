@@ -1036,6 +1036,39 @@ int lwm2m_send_message(struct lwm2m_message *msg)
 	return 0;
 }
 
+int lwm2m_send_empty_ack(struct lwm2m_ctx *client_ctx, uint16_t mid)
+{
+	struct lwm2m_message *msg;
+	int ret;
+
+	msg = lwm2m_get_message(client_ctx);
+	if (!msg) {
+		LOG_ERR("Unable to get a lwm2m message!");
+		return -ENOMEM;
+	}
+
+	msg->type = COAP_TYPE_ACK;
+	msg->code = COAP_CODE_EMPTY;
+	msg->mid = mid;
+
+	ret = lwm2m_init_message(msg);
+	if (ret) {
+		goto cleanup;
+	}
+
+	ret = lwm2m_send_message(msg);
+	if (ret < 0) {
+		LOG_ERR("Error sending LWM2M packet (err:%d).", ret);
+		goto cleanup;
+	}
+
+	return 0;
+
+cleanup:
+	lwm2m_reset_message(msg, true);
+	return ret;
+}
+
 uint16_t lwm2m_get_rd_data(uint8_t *client_data, uint16_t size)
 {
 	struct lwm2m_engine_obj *obj;
