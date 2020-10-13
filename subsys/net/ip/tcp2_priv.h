@@ -183,7 +183,10 @@ struct tcp { /* TCP connection */
 	struct net_if *iface;
 	void *recv_user_data;
 	sys_slist_t send_queue;
-	net_tcp_accept_cb_t accept_cb;
+	union {
+		net_tcp_accept_cb_t accept_cb;
+		struct tcp *accepted_conn;
+	};
 	struct k_mutex lock;
 	struct k_sem connect_sem; /* semaphore for blocking connect */
 	struct tcp_options recv_options;

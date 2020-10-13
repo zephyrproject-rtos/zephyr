@@ -1079,10 +1079,7 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 
 		net_ipaddr_copy(&conn_old->context->remote, &conn->dst.sa);
 
-		conn_old->accept_cb(conn->context,
-				    &conn_old->context->remote,
-				    sizeof(struct sockaddr), 0,
-				    conn_old->context);
+		conn->accepted_conn = conn_old;
 	}
  in:
 	if (conn) {
@@ -1265,6 +1262,18 @@ next_state:
 			next = TCP_ESTABLISHED;
 			net_context_set_state(conn->context,
 					      NET_CONTEXT_CONNECTED);
+
+			if (conn->accepted_conn) {
+				conn->accepted_conn->accept_cb(
+					conn->context,
+					&conn->accepted_conn->context->remote,
+					sizeof(struct sockaddr), 0,
+					conn->accepted_conn->context);
+
+				/* Make sure the accept_cb is only called once.
+				 */
+				conn->accepted_conn = NULL;
+			}
 
 			if (len) {
 				if (tcp_data_get(conn, pkt) < 0) {
