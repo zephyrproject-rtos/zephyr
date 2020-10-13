@@ -2451,6 +2451,20 @@ class TestSuite(DisablePyTestCollectionMixin):
         # run integration tests only
         self.integration = False
 
+        self.version = "NA"
+
+    def check_zephyr_version(self):
+        try:
+            subproc = subprocess.run(["git", "describe"],
+                                     stdout=subprocess.PIPE,
+                                     universal_newlines=True,
+                                     cwd=ZEPHYR_BASE)
+            if subproc.returncode == 0:
+                self.version = subproc.stdout.strip()
+                logger.info(f"Zephyr version: {self.version}")
+        except OSError:
+            logger.info("Cannot read zephyr version.")
+
     def get_platform_instances(self, platform):
         filtered_dict = {k:v for k,v in self.instances.items() if k.startswith(platform + "/")}
         return filtered_dict
@@ -2481,7 +2495,6 @@ class TestSuite(DisablePyTestCollectionMixin):
                     if res == 'SKIP':
                         self.total_skipped_cases += 1
         self.total_to_do = self.total_tests - self.total_skipped
-
 
     def compare_metrics(self, filename):
         # name, datatype, lower results better
@@ -2620,8 +2633,10 @@ class TestSuite(DisablePyTestCollectionMixin):
             filename = "{}_{}".format(filename, suffix)
 
         if not no_update:
-            self.xunit_report(filename + ".xml", full_report=False, append=only_failed)
-            self.xunit_report(filename + "_report.xml", full_report=True, append=only_failed)
+            self.xunit_report(filename + ".xml", full_report=False,
+                              append=only_failed, version=self.version)
+            self.xunit_report(filename + "_report.xml", full_report=True,
+                              append=only_failed, version=self.version)
             self.csv_report(filename + ".csv")
 
             self.target_report(outdir, suffix, append=only_failed)
@@ -3131,7 +3146,8 @@ class TestSuite(DisablePyTestCollectionMixin):
                 filename = os.path.join(outdir,"{}_{}.xml".format(platform, suffix))
             else:
                 filename = os.path.join(outdir,"{}.xml".format(platform))
-            self.xunit_report(filename, platform, full_report=True, append=append)
+            self.xunit_report(filename, platform, full_report=True,
+                              append=append, version=self.version)
 
 
     @staticmethod
@@ -3219,9 +3235,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                     eleTSPropetries = ET.SubElement(eleTestsuite, 'properties')
                     # Multiple 'property' can be added to 'properties'
                     # differing by name and value
-                    eleTSPVerstion = ET.SubElement(eleTSPropetries, 'property',
-                                                   name="version",
-                                                   value=version)
+                    ET.SubElement(eleTSPropetries, 'property', name="version", value=version)
 
             else:
                 eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite',
@@ -3232,9 +3246,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                 eleTSPropetries = ET.SubElement(eleTestsuite, 'properties')
                 # Multiple 'property' can be added to 'properties'
                 # differing by name and value
-                eleTSPVerstion = ET.SubElement(eleTSPropetries, 'property',
-                                               name="version",
-                                               value=version)
+                ET.SubElement(eleTSPropetries, 'property', name="version", value=version)
 
             for _, instance in inst.items():
                 if full_report:

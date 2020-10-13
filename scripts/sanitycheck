@@ -834,6 +834,9 @@ def main():
 
     suite = TestSuite(options.board_root, options.testcase_root, options.outdir)
 
+    # Check version of zephyr repo
+    suite.check_zephyr_version()
+
     # Set testsuite options from command line.
     suite.build_only = options.build_only
     suite.cmake_only = options.cmake_only
