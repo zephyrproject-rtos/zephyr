@@ -396,6 +396,10 @@ int bt_conn_get_remote_info(struct bt_conn *conn,
 
 /** @brief Update the connection parameters.
  *
+ *  If the local device is in the peripheral role then updating the connection
+ *  parameters will be delayed. This delay can be configured by through the
+ *  @option{CONFIG_BT_CONN_PARAM_UPDATE_TIMEOUT} option.
+ *
  *  @param conn Connection object.
  *  @param param Updated connection parameters.
  *
