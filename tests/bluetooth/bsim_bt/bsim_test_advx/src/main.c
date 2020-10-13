@@ -812,8 +812,16 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	}
 }
 
+static bool is_scan_timeout;
+
+static void scan_timeout(void)
+{
+	is_scan_timeout = true;
+}
+
 static struct bt_le_scan_cb scan_callbacks = {
 	.recv = scan_recv,
+	.timeout = scan_timeout,
 };
 
 static bool volatile is_sync;
@@ -920,6 +928,45 @@ static void test_scanx_main(void)
 	while (!is_disconnected) {
 		k_sleep(K_MSEC(100));
 	}
+
+	printk("Start scanning for a duration...");
+	is_scan_timeout = false;
+	scan_param.interval = 0x08;
+	scan_param.timeout = 100;
+	err = bt_le_scan_start(&scan_param, scan_cb);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(scan_param.timeout * 10 + 10));
+
+	printk("Checking for scan timeout...");
+	if (!is_scan_timeout) {
+		err = -EIO;
+		goto exit;
+	}
+	printk("done.\n");
+
+	printk("Start continuous scanning for a duration...");
+	is_scan_timeout = false;
+	scan_param.interval = 0x04;
+	err = bt_le_scan_start(&scan_param, scan_cb);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(scan_param.timeout * 10 + 10));
+
+	printk("Checking for scan timeout...");
+	if (!is_scan_timeout) {
+		err = -EIO;
+		goto exit;
+	}
+	printk("done.\n");
+
+	scan_param.timeout = 0;
 
 	printk("Start scanning...");
 	is_periodic = false;
