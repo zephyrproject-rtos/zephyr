@@ -1,3 +1,10 @@
+# Bluetooth Audio - Basic Audio Profile configuration options
+#
+# Copyright (c) 2020 Intel Corporation
+
+# SPDX-License-Identifier: Apache-2.0
+#
+
 config BT_BAP
 	bool "Basic Audio Profile Support [d09r07]"
 	default n

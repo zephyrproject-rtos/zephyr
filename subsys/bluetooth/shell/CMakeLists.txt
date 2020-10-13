@@ -65,6 +65,10 @@ zephyr_library_sources_ifdef(
   CONFIG_BT_CCP
   ccp.c
   )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_BAP
+  bap.c
+  )
 
 if(CONFIG_BT_CTLR AND CONFIG_BT_LL_SW_SPLIT)
   zephyr_library_sources(
