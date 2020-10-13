@@ -8,12 +8,13 @@
 config BT_AUDIO_CHAN
 	# Virtual/hidden option
 	bool
-	default y if BT_ASCS
+	default y if BT_ASCS || BT_BAP
 
 config BT_AUDIO_ENDPOINT
 	# Virtual/hidden option
 	bool
-	default y if BT_ASCS
+	default y if BT_ASCS || BT_BAP
 
 source "subsys/bluetooth/host/audio/Kconfig.pacs"
 source "subsys/bluetooth/host/audio/Kconfig.ascs"
+source "subsys/bluetooth/host/audio/Kconfig.bap"
