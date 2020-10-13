@@ -809,21 +809,7 @@ static int spi_stm32_init(const struct device *dev)
 			return remap;
 		}
 
-		/* A valid remapping configuration is provided */
-		/* Apply remapping before proceeding with pin configuration */
-		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
-
-		switch ((uint32_t)cfg->spi) {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi1), okay)
-		case DT_REG_ADDR(DT_NODELABEL(spi1)):
-			if (remap == REMAP_1) {
-				LL_GPIO_AF_EnableRemap_SPI1();
-			} else {
-				LL_GPIO_AF_DisableRemap_SPI1();
-			}
-			break;
-#endif
-		}
+		stm32_dt_pinctrl_remap_set((uint32_t)cfg->spi, remap);
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
 
 		stm32_dt_pinctrl_configure(cfg->pinctrl_list,
