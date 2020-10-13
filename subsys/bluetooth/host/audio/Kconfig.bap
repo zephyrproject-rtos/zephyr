@@ -1,0 +1,23 @@
+config BT_BAP
+	bool "Basic Audio Profile Support [d09r07]"
+	default n
+	help
+	  This option enables support for Basic Audio Profile.
+
+if BT_BAP
+config BT_BAP_PAC_COUNT
+	int "Basic Audio Profile PAC count"
+	default 2
+	range 1 4
+	help
+	  This option enables caching a number of Published Audio Capabilities
+	  for Basic Audio Profile on a per connection basis.
+
+config BT_BAP_ASE_COUNT
+	int "Basic Audio Profile ASE count"
+	default 2
+	range 1 3
+	help
+	  This option enables caching a number of Audio Stream Endpoint
+	  instances for Basic Audio Profile on a per connection basis.
+endif # BT_BAP
