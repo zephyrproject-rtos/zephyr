@@ -403,7 +403,9 @@ uint16_t bt_gatt_attr_get_handle(const struct bt_gatt_attr *attr);
 
 /** @brief Get the handle of the characteristic value descriptor.
  *
- * @param attr A Characteristic Attribute
+ * @param attr A Characteristic Attribute.
+ *
+ * @note The user_data of the attribute must of type @ref bt_gatt_chrc.
  *
  * @return the handle of the corresponding Characteristic Value. The value will
  *         be zero (the invalid handle) if @p attr was not a characteristic
