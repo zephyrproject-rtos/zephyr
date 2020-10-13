@@ -164,3 +164,7 @@
 &trng0 {
 	status = "okay";
 };
+
+&cpu0 {
+	clock-frequency = <72000000>;
+};

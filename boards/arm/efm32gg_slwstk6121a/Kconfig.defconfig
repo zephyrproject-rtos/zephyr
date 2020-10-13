@@ -26,6 +26,10 @@ config COUNTER_GECKO_RTCC
 config LEUART_GECKO
 	default n
 
+config LOG_BACKEND_SWO_FREQ_HZ
+	default 875000
+	depends on LOG_BACKEND_SWO
+
 if NETWORKING
 
 config NET_L2_ETHERNET
