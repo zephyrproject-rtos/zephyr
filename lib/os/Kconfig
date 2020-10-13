@@ -72,4 +72,12 @@ config PRINTK_SYNC
 	  interleaving with concurrent usage from another CPU or an
 	  preempting interrupt.
 
+config LIB_OS_PRF_LL_SUPPORT
+	bool "Enable z_prf long long printf" if !64BIT
+	default y if 64BIT
+	help
+	  Build the z_prf utility function with long long format support
+	  enabled.  This will increase code size on systems with 32-bit long
+	  integers.
+
 endmenu
