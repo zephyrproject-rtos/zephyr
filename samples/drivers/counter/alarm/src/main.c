@@ -23,6 +23,8 @@ struct counter_alarm_cfg alarm_cfg;
 #define TIMER DT_LABEL(DT_INST(0, st_stm32_rtc))
 #elif defined(CONFIG_COUNTER_NATIVE_POSIX)
 #define TIMER DT_LABEL(DT_NODELABEL(counter0))
+#elif defined(CONFIG_COUNTER_XLNX_AXI_TIMER)
+#define TIMER DT_LABEL(DT_INST(0, xlnx_xps_timer_1_00_a))
 #endif
 
 static void test_counter_interrupt_fn(const struct device *counter_dev,
