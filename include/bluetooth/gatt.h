@@ -1121,15 +1121,29 @@ struct bt_gatt_discover_params;
  *  @brief Discover attribute callback function.
  *
  *  @param conn Connection object.
- *  @param attr Attribute found.
+ *  @param attr Attribute found, or NULL if not found.
  *  @param params Discovery parameters given.
  *
  *  If discovery procedure has completed this callback will be called with
  *  attr set to NULL. This will not happen if procedure was stopped by returning
- *  BT_GATT_ITER_STOP. The attribute is read-only and cannot be cached without
- *  copying its contents.
+ *  BT_GATT_ITER_STOP.
  *
- *  @return BT_GATT_ITER_CONTINUE if should continue attribute discovery.
+ *  The attribute object as well as its UUID and value objects are temporary and
+ *  must be copied to in order to cache its information.
+ *  Only the following fields of the attribute contains valid information:
+ *   - uuid      UUID representing the type of attribute.
+ *   - handle    Handle in the remote database.
+ *   - user_data The value of the attribute.
+ *               Will be NULL when discovering descriptors
+ *
+ *  To be able to read the value of the discovered attribute the user_data
+ *  must be cast to an appropriate type.
+ *   - @ref bt_gatt_service_val when UUID is @ref BT_UUID_GATT_PRIMARY or
+ *     @ref BT_UUID_GATT_SECONDARY.
+ *   - @ref bt_gatt_include when UUID is @ref BT_UUID_GATT_INCLUDE.
+ *   - @ref bt_gatt_chrc when UUID is @ref BT_UUID_GATT_CHRC.
+ *
+ *  @return BT_GATT_ITER_CONTINUE to continue discovery procedure.
  *  @return BT_GATT_ITER_STOP to stop discovery procedure.
  */
 typedef uint8_t (*bt_gatt_discover_func_t)(struct bt_conn *conn,
