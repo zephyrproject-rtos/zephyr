@@ -78,6 +78,7 @@ struct lwm2m_message *lwm2m_get_message(struct lwm2m_ctx *client_ctx);
 void lwm2m_reset_message(struct lwm2m_message *msg, bool release);
 int lwm2m_init_message(struct lwm2m_message *msg);
 int lwm2m_send_message(struct lwm2m_message *msg);
+int lwm2m_send_empty_ack(struct lwm2m_ctx *client_ctx, uint16_t mid);
 
 uint16_t lwm2m_get_rd_data(uint8_t *client_data, uint16_t size);
 
