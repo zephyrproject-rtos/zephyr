@@ -52,8 +52,6 @@
 #define BT_FEAT_LE_EXT_ADV(feat)  1
 #endif
 
-/* Peripheral timeout to initialize Connection Parameter Update procedure */
-#define CONN_UPDATE_TIMEOUT  K_MSEC(CONFIG_BT_CONN_PARAM_UPDATE_TIMEOUT)
 #define RPA_TIMEOUT_MS       (CONFIG_BT_RPA_TIMEOUT * MSEC_PER_SEC)
 #define RPA_TIMEOUT          K_MSEC(RPA_TIMEOUT_MS)
 
@@ -1833,25 +1831,6 @@ int bt_le_set_phy(struct bt_conn *conn, uint8_t all_phys,
 	return bt_hci_cmd_send(BT_HCI_OP_LE_SET_PHY, buf);
 }
 
-static void slave_update_conn_param(struct bt_conn *conn)
-{
-	if (!IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
-		return;
-	}
-
-	/* don't start timer again on PHY update etc */
-	if (atomic_test_bit(conn->flags, BT_CONN_SLAVE_PARAM_UPDATE)) {
-		return;
-	}
-
-	/*
-	 * Core 4.2 Vol 3, Part C, 9.3.12.2
-	 * The Peripheral device should not perform a Connection Parameter
-	 * Update procedure within 5 s after establishing a connection.
-	 */
-	k_delayed_work_submit(&conn->update_work, CONN_UPDATE_TIMEOUT);
-}
-
 #if defined(CONFIG_BT_SMP)
 static void pending_id_update(struct bt_keys *keys, void *data)
 {
@@ -1983,11 +1962,6 @@ static void conn_auto_initiate(struct bt_conn *conn)
 			 * It is done by the controller.
 			 */
 		}
-	}
-
-	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
-	    conn->role == BT_CONN_ROLE_SLAVE) {
-		slave_update_conn_param(conn);
 	}
 }
 
