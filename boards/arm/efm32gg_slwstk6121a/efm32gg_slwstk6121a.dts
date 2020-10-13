@@ -114,8 +114,6 @@
 };
 
 &eth0 {
-	local-mac-address = [02 01 02 03 04 05];
-
 	/* PHY address = 0 */
 	phy-address = <0>;
 
