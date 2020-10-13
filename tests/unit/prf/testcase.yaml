@@ -1,0 +1,13 @@
+common:
+  tags: prf
+  type: unit
+
+tests:
+  utilities.prf-m32:
+    extra_args: M64_MODE=0
+
+  utilities.prf.m32ll:
+    extra_args: M64_MODE=0 EXTRA_CPPFLAGS=-DCONFIG_LIB_OS_PRF_LL_SUPPORT
+
+  utilities.prf.m64:
+    extra_args: M64_MODE=1 EXTRA_CPPFLAGS=-DCONFIG_LIB_OS_PRF_LL_SUPPORT
