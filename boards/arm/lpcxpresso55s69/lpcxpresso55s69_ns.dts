@@ -88,3 +88,7 @@
 &adc0 {
 	status = "okay";
 };
+
+&rtc0 {
+	status = "okay";
+};

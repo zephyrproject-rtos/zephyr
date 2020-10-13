@@ -32,4 +32,8 @@ config ADC_MCUX_LPADC
 	default y
 	depends on ADC
 
+config COUNTER_MCUX_LPC_RTC
+	default y
+	depends on COUNTER
+
 endif # SOC_LPC55S69_CPU0

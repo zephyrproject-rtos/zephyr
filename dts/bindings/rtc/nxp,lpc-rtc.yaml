@@ -1,0 +1,12 @@
+# Copyright (c) 2020, Toby Firth
+# SPDX-License-Identifier: Apache-2.0
+
+description: LPC RTC
+
+compatible: "nxp,lpc-rtc"
+
+include: rtc.yaml
+
+properties:
+    reg:
+      required: true

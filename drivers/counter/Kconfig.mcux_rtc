@@ -8,3 +8,9 @@ config COUNTER_MCUX_RTC
 	depends on HAS_MCUX_RTC
 	help
 	  Enable support for mcux rtc driver.
+
+config COUNTER_MCUX_LPC_RTC
+	bool "MCUX LPC RTC driver"
+	depends on HAS_MCUX_LPC_RTC
+	help
+	  Enable support for mcux lpc rtc driver.

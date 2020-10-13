@@ -17,7 +17,8 @@ static void top_handler(const struct device *dev, void *user_data);
 
 void *exp_user_data = (void *)199;
 
-#if defined(CONFIG_COUNTER_MCUX_RTC) || defined(CONFIG_COUNTER_RTC_STM32)
+#if defined(CONFIG_COUNTER_MCUX_RTC) || defined(CONFIG_COUNTER_RTC_STM32) \
+	|| defined(CONFIG_COUNTER_MCUX_LPC_RTC)
 #define COUNTER_PERIOD_US_VAL (USEC_PER_SEC * 2U)
 #else
 #define COUNTER_PERIOD_US_VAL 20000
@@ -72,6 +73,7 @@ static const char * const devices[] = {
 #ifdef CONFIG_COUNTER_MCUX_RTC
 	LABELS_FOR_DT_COMPAT(nxp_kinetis_rtc)
 #endif
+	LABELS_FOR_DT_COMPAT(nxp_lpc_rtc)
 	LABELS_FOR_DT_COMPAT(silabs_gecko_rtcc)
 	LABELS_FOR_DT_COMPAT(st_stm32_rtc)
 #ifdef CONFIG_COUNTER_MCUX_PIT

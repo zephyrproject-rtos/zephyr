@@ -74,6 +74,8 @@ features:
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
+| COUNTER   | on-chip    | rtc                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration file
 ``boards/arm/lpcxpresso55s69/lpcxpresso55s69_cpu0_defconfig``
