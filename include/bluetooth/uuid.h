@@ -1740,6 +1740,70 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_TBS_FRIENDLY_NAME \
 	BT_UUID_DECLARE_16(BT_UUID_TBS_FRIENDLY_NAME_VAL)
+/* TODO: Update BAPS UUIDs when permanent UUIDs are assigned */
+/** @def BT_UUID_PACS_VAL
+ *  @brief Published Audio Capabilities Service value
+ */
+#define BT_UUID_PACS_VAL 0x8fd9
+/** @def BT_UUID_PACS
+ *  @brief Published Audio Capabilities Service
+ */
+#define BT_UUID_PACS \
+	BT_UUID_DECLARE_16(BT_UUID_PACS_VAL)
+/** @def BT_UUID_PACS_SNK_VAL
+ *  @brief Sink PAC Characteristic value
+ */
+#define BT_UUID_PACS_SNK_VAL 0x8f96
+/** @def BT_UUID_PACS_SNK
+ *  @brief Sink PAC Characteristic
+ */
+#define BT_UUID_PACS_SNK \
+	BT_UUID_DECLARE_16(BT_UUID_PACS_SNK_VAL)
+/** @def BT_UUID_PACS_SNK_LOC_VAL
+ *  @brief Sink PAC Locations Characteristic value
+ */
+#define BT_UUID_PACS_SNK_LOC_VAL 0x8f97
+/** @def BT_UUID_PACS_SNK_LOC
+ *  @brief Sink PAC Locations Characteristic
+ */
+#define BT_UUID_PACS_SNK_LOC \
+	BT_UUID_DECLARE_16(BT_UUID_PACS_SNK_LOC_VAL)
+/** @def BT_UUID_PACS_SRC_VAL
+ *  @brief Source PAC Characteristic value
+ */
+#define BT_UUID_PACS_SRC_VAL 0x8f98
+/** @def BT_UUID_PACS_SRC
+ *  @brief Source PAC Characteristic
+ */
+#define BT_UUID_PACS_SRC \
+	BT_UUID_DECLARE_16(BT_UUID_PACS_SRC_VAL)
+/** @def BT_UUID_PACS_SRC_LOC_VAL
+ *  @brief Source PAC Locations Characteristic value
+ */
+#define BT_UUID_PACS_SRC_LOC_VAL 0x8f99
+/** @def BT_UUID_PACS_SRC_LOC
+ *  @brief Source PAC Locations Characteristic
+ */
+#define BT_UUID_PACS_SRC_LOC \
+	BT_UUID_DECLARE_16(BT_UUID_PACS_SRC_LOC_VAL)
+/** @def BT_UUID_PACS_CONTEXT_VAL
+ *  @brief Available Audio Contexts Characteristic value
+ */
+#define BT_UUID_PACS_CONTEXT_VAL 0x8f9a
+/** @def BT_UUID_PACS_CONTEXT
+ *  @brief Available Audio Contexts Characteristic
+ */
+#define BT_UUID_PACS_CONTEXT \
+	BT_UUID_DECLARE_16(BT_UUID_PACS_CONTEXT_VAL)
+/** @def BT_UUID_PACS_SUPPORTED_CONTEXT_VAL
+ *  @brief Supported Audio Context Characteristic value
+ */
+#define BT_UUID_PACS_SUPPORTED_CONTEXT_VAL 0x8f9b
+/** @def BT_UUID_PACS_SUPPORTED_CONTEXT
+ *  @brief Supported Audio Context Characteristic
+ */
+#define BT_UUID_PACS_SUPPORTED_CONTEXT \
+	BT_UUID_DECLARE_16(BT_UUID_PACS_SUPPORTED_CONTEXT_VAL)
 
 /*
  * Protocol UUIDs

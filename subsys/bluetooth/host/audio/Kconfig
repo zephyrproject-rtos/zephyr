@@ -93,6 +93,40 @@ config BT_ISO_RX_MTU
 	help
 	  Maximum MTU for Isochronous channels RX buffers.
 
+config BT_CODEC_MAX_DATA_COUNT
+	int "Codec Capabilities Data Count"
+	default 5
+	range 1 128
+	help
+	  This option defines the maximum number of LTV entries a codec can
+	  store.
+
+config BT_CODEC_MAX_DATA_LEN
+	int "Codec Capabilities Data Length"
+	default 4
+	range 1 128
+	help
+	  This option defines the maximum value length of an LTV entry a codec
+	  can store.
+
+config BT_CODEC_MAX_METADATA_COUNT
+	int "Codec Metadata Count"
+	default 2
+	range 1 128
+	help
+	  This option defines the maximum number of LTV entries a metadata can
+	  store.
+
+config BT_CODEC_MAX_METADATA_LEN
+	int "Codec Metadata Length"
+	default 4
+	range 1 128
+	help
+	  This option defines the maximum value length of an LTV entry a
+	  metadata can store.
+
+source "subsys/bluetooth/host/audio/Kconfig.baps"
+
 endif # BT_AUDIO_UNICAST
 endif # BT_CONN
 
@@ -110,6 +144,13 @@ config BT_AUDIO_DEBUG_ISO
 	help
 	  Use this option to enable ISO channels debug logs for the
 	  Bluetooth Audio functionality.
+
+config BT_DEBUG_PACS
+	bool "Published Audio Capabilities Service debug"
+	depends on BT_PACS
+	help
+	  Use this option to enable Published Audio Capabilities Service debug
+	  logs for the Bluetooth Audio functionality.
 
 endif # BT_AUDIO_DEBUG
 
