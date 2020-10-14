@@ -21,10 +21,10 @@
 
 BUILD_ASSERT(NUM_THREAD <= MAX_NUM_THREAD);
 
-/* Semaphore on which Ztest thread wait*/
+/* Semaphore on which Ztest thread wait */
 static K_SEM_DEFINE(sema2, 0, NUM_THREAD);
 
-/* Semaphore on which application threads wait*/
+/* Semaphore on which application threads wait */
 static K_SEM_DEFINE(sema3, 0, NUM_THREAD);
 
 static int thread_idx;
@@ -40,24 +40,23 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 			       (idx + 'A');
 
 	while (1) {
-		/* Prining alphabet corresponding to thread*/
+		/* Printing alphabet corresponding to thread */
 		TC_PRINT("%c", thread_parameter);
-		/* Testing if threads are execueted as per priority*/
+		/* Testing if threads are executed as per priority */
 		zassert_true((idx == thread_idx), NULL);
 		thread_idx = (thread_idx + 1) % (NUM_THREAD);
 
-		/* Realease CPU and give chance to Ztest thread to run*/
+		/* Release CPU and give chance to Ztest thread to run */
 		k_sem_give(&sema2);
-		/*Wait for relase of semaphore from Ztest thread*/
+		/* Wait for release of semaphore from Ztest thread */
 		k_sem_take(&sema3, K_FOREVER);
 	}
 
 }
 
-/*test cases*/
+/* test cases */
 
 /**
- *
  * @brief Check the behavior of preemptive threads with different priorities
  *
  * @details Create multiple threads of different priorities - all are preemptive,
@@ -72,11 +71,11 @@ void test_priority_scheduling(void)
 	int old_prio = k_thread_priority_get(k_current_get());
 	int count = 0;
 
-	/* update priority for current thread*/
+	/* update priority for current thread */
 	k_thread_priority_set(k_current_get(),
 			      K_PRIO_PREEMPT(BASE_PRIORITY - 1));
 
-	/* Create Threads with different Priority*/
+	/* Create Threads with different Priority */
 	for (int i = 0; i < NUM_THREAD; i++) {
 		tid[i] = k_thread_create(&t[i], tstacks[i], STACK_SIZE,
 					 thread_tslice, INT_TO_POINTER(i), NULL, NULL,
@@ -101,7 +100,7 @@ void test_priority_scheduling(void)
 	}
 
 
-	/* test case teardown*/
+	/* test case teardown */
 	for (int i = 0; i < NUM_THREAD; i++) {
 		k_thread_abort(tid[i]);
 	}

@@ -31,7 +31,7 @@ static void thread_entry_prio(void *p1, void *p2, void *p3)
 }
 
 
-/*test cases*/
+/* test cases */
 
 /**
  * @brief Validate that the cooperative thread will
