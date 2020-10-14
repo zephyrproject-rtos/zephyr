@@ -41,6 +41,7 @@ void test_lsdir(void);
 void test_file_open(void);
 void test_file_write(void);
 void test_file_read(void);
+void test_file_seek(void);
 void test_file_truncate(void);
 void test_file_close(void);
 void test_file_sync(void);

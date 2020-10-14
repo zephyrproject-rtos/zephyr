@@ -80,6 +80,7 @@ void test_main(void)
 			 ztest_unit_test(test_file_open),
 			 ztest_unit_test(test_file_write),
 			 ztest_unit_test(test_file_read),
+			 ztest_unit_test(test_file_seek),
 			 ztest_unit_test(test_file_truncate),
 			 ztest_unit_test(test_file_close),
 			 ztest_unit_test(test_file_sync),
