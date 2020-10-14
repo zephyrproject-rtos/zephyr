@@ -1351,6 +1351,28 @@ struct bt_hci_cp_le_set_privacy_mode {
 	uint8_t         mode;
 } __packed;
 
+#define BT_HCI_LE_1US_AOD_TX                    BIT(0)
+#define BT_HCI_LE_1US_AOD_RX                    BIT(1)
+#define BT_HCI_LE_1US_AOA_RX                    BIT(2)
+
+#define BT_HCI_LE_NUM_ANT_MIN                   0x1
+#define BT_HCI_LE_NUM_ANT_MAX                   0x4B
+
+#define BT_HCI_LE_MAX_SWITCH_PATTERN_LEN_MIN    0x2
+#define BT_HCI_LE_MAX_SWITCH_PATTERN_LEN_MAX    0x4B
+
+#define BT_HCI_LE_MAX_CTE_LEN_MIN               0x2
+#define BT_HCI_LE_MAX_CTE_LEN_MAX               0x14
+
+#define BT_HCI_OP_LE_READ_ANT_INFO              BT_OP(BT_OGF_LE, 0x0058)
+struct bt_hci_rp_le_read_ant_info {
+	uint8_t status;
+	uint8_t switch_sample_rates;
+	uint8_t num_ant;
+	uint8_t max_switch_pattern_len;
+	uint8_t max_cte_len;
+};
+
 #define BT_HCI_OP_LE_SET_PER_ADV_RECV_ENABLE     BT_OP(BT_OGF_LE, 0x0059)
 struct bt_hci_cp_le_set_per_adv_recv_enable {
 	uint16_t handle;
