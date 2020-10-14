@@ -558,4 +558,5 @@ test_spi_iis2iclx: iis2iclx@37 {
 	reg = <0x37>;
 	spi-max-frequency = <0>;
 	drdy-gpios = <&test_gpio 0 0>;
+	int-pin = <1>;
 };

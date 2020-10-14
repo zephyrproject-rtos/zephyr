@@ -548,6 +548,7 @@ test_i2c_iis2iclx: iis2iclx@6a {
 	label = "IIS2ICLX";
 	reg = <0x6a>;
 	drdy-gpios = <&test_gpio 0 0>;
+	int-pin = <1>;
 };
 
 test_i2c_itds: itds@18 {

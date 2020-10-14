@@ -177,6 +177,10 @@ static int iis2iclx_attr_set(const struct device *dev,
 			       enum sensor_attribute attr,
 			       const struct sensor_value *val)
 {
+#if defined(CONFIG_IIS2ICLX_SENSORHUB)
+	struct iis2iclx_data *data = dev->data;
+#endif /* CONFIG_IIS2ICLX_SENSORHUB */
+
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
 		return iis2iclx_accel_config(dev, chan, attr, val);
@@ -184,6 +188,11 @@ static int iis2iclx_attr_set(const struct device *dev,
 	case SENSOR_CHAN_MAGN_XYZ:
 	case SENSOR_CHAN_PRESS:
 	case SENSOR_CHAN_HUMIDITY:
+		if (!data->shub_inited) {
+			LOG_ERR("shub not inited.");
+			return -ENOTSUP;
+		}
+
 		return iis2iclx_shub_config(dev, chan, attr, val);
 #endif /* CONFIG_IIS2ICLX_SENSORHUB */
 	default:
@@ -230,6 +239,13 @@ static int iis2iclx_sample_fetch_temp(const struct device *dev)
 #if defined(CONFIG_IIS2ICLX_SENSORHUB)
 static int iis2iclx_sample_fetch_shub(const struct device *dev)
 {
+	struct iis2iclx_data *data = dev->data;
+
+	if (!data->shub_inited) {
+		LOG_WRN("attr_set() shub not inited.");
+		return 0;
+	}
+
 	if (iis2iclx_shub_fetch_external_devs(dev) < 0) {
 		LOG_ERR("failed to read ext shub devices");
 		return -EIO;
@@ -245,6 +261,7 @@ static int iis2iclx_sample_fetch(const struct device *dev,
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
 		iis2iclx_sample_fetch_accel(dev);
+
 #if defined(CONFIG_IIS2ICLX_SENSORHUB)
 		iis2iclx_sample_fetch_shub(dev);
 #endif
@@ -474,18 +491,38 @@ static int iis2iclx_channel_get(const struct device *dev,
 	case SENSOR_CHAN_MAGN_Y:
 	case SENSOR_CHAN_MAGN_Z:
 	case SENSOR_CHAN_MAGN_XYZ:
+		if (!data->shub_inited) {
+			LOG_ERR("shub not inited.");
+			return -ENOTSUP;
+		}
+
 		iis2iclx_magn_get_channel(chan, val, data);
 		break;
 
 	case SENSOR_CHAN_HUMIDITY:
+		if (!data->shub_inited) {
+			LOG_ERR("shub not inited.");
+			return -ENOTSUP;
+		}
+
 		iis2iclx_hum_convert(val, data);
 		break;
 
 	case SENSOR_CHAN_PRESS:
+		if (!data->shub_inited) {
+			LOG_ERR("shub not inited.");
+			return -ENOTSUP;
+		}
+
 		iis2iclx_press_convert(val, data);
 		break;
 
 	case SENSOR_CHAN_AMBIENT_TEMP:
+		if (!data->shub_inited) {
+			LOG_ERR("attr_set() shub not inited.");
+			return -ENOTSUP;
+		}
+
 		iis2iclx_temp_convert(val, data);
 		break;
 #endif
@@ -496,7 +533,7 @@ static int iis2iclx_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api iis2iclx_api_funcs = {
+static const struct sensor_driver_api iis2iclx_driver_api = {
 	.attr_set = iis2iclx_attr_set,
 #if CONFIG_IIS2ICLX_TRIGGER
 	.trigger_set = iis2iclx_trigger_set,
@@ -558,61 +595,6 @@ static int iis2iclx_init_chip(const struct device *dev)
 	return 0;
 }
 
-static struct iis2iclx_data iis2iclx_data;
-
-static const struct iis2iclx_config iis2iclx_config = {
-	.bus_name = DT_INST_BUS_LABEL(0),
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	.bus_init = iis2iclx_spi_init,
-	.spi_conf.frequency = DT_INST_PROP(0, spi_max_frequency),
-	.spi_conf.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
-			       SPI_MODE_CPHA | SPI_WORD_SET(8) |
-			       SPI_LINES_SINGLE),
-	.spi_conf.slave     = DT_INST_REG_ADDR(0),
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	.gpio_cs_port	    = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
-	.cs_gpio	    = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
-	.cs_gpio_flags	    = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0),
-
-	.spi_conf.cs        =  &iis2iclx_data.cs_ctrl,
-#else
-	.spi_conf.cs        = NULL,
-#endif
-#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	.bus_init = iis2iclx_i2c_init,
-	.i2c_slv_addr = DT_INST_REG_ADDR(0),
-#else
-#error "BUS MACRO NOT DEFINED IN DTS"
-#endif
-#ifdef CONFIG_IIS2ICLX_TRIGGER
-#if DT_INST_PROP_HAS_IDX(0, drdy_gpios, 1)
-	/* Two gpio pins declared in DTS */
-#if defined(CONFIG_IIS2ICLX_INT_PIN_1)
-	.int_gpio_port = DT_INST_GPIO_LABEL_BY_IDX(0, drdy_gpios, 0),
-	.int_gpio_pin = DT_INST_GPIO_PIN_BY_IDX(0, drdy_gpios, 0),
-	.int_gpio_flags = DT_INST_GPIO_FLAGS_BY_IDX(0, drdy_gpios, 0),
-	.int_pin = 1,
-#elif defined(CONFIG_IIS2ICLX_INT_PIN_2)
-	.int_gpio_port = DT_INST_GPIO_LABEL_BY_IDX(0, drdy_gpios, 1),
-	.int_gpio_pin = DT_INST_GPIO_PIN_BY_IDX(0, drdy_gpios, 1),
-	.int_gpio_flags = DT_INST_GPIO_FLAGS_BY_IDX(0, drdy_gpios, 1),
-	.int_pin = 2,
-#endif /* CONFIG_IIS2ICLX_INT_PIN_* */
-#else
-	/* One gpio pin declared in DTS */
-	.int_gpio_port = DT_INST_GPIO_LABEL(0, drdy_gpios),
-	.int_gpio_pin = DT_INST_GPIO_PIN(0, drdy_gpios),
-	.int_gpio_flags = DT_INST_GPIO_FLAGS(0, drdy_gpios),
-#if defined(CONFIG_IIS2ICLX_INT_PIN_1)
-	.int_pin = 1,
-#elif defined(CONFIG_IIS2ICLX_INT_PIN_2)
-	.int_pin = 2,
-#endif /* CONFIG_IIS2ICLX_INT_PIN_* */
-#endif /* DT_INST_PROP_HAS_IDX(0, drdy_gpios, 1) */
-
-#endif /* CONFIG_IIS2ICLX_TRIGGER */
-};
-
 static int iis2iclx_init(const struct device *dev)
 {
 	const struct iis2iclx_config * const config = dev->config;
@@ -641,17 +623,129 @@ static int iis2iclx_init(const struct device *dev)
 
 #ifdef CONFIG_IIS2ICLX_SENSORHUB
 	if (iis2iclx_shub_init(dev) < 0) {
-		LOG_ERR("failed to initialize external chip");
-		return -EIO;
+		LOG_INF("failed to initialize external chips");
+		data->shub_inited = false;
 	}
+	data->shub_inited = true;
 #endif
 
 	return 0;
 }
 
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
+#warning "IIS2ICLX driver enabled without any devices"
+#endif
 
-static struct iis2iclx_data iis2iclx_data;
+/*
+ * Device creation macro, shared by IIS2ICLX_DEFINE_SPI() and
+ * IIS2ICLX_DEFINE_I2C().
+ */
 
-DEVICE_AND_API_INIT(iis2iclx, DT_INST_LABEL(0), iis2iclx_init,
-		    &iis2iclx_data, &iis2iclx_config, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &iis2iclx_api_funcs);
+#define IIS2ICLX_DEVICE_INIT(inst)					\
+	DEVICE_AND_API_INIT(iis2iclx_##inst,				\
+			    DT_INST_LABEL(inst),			\
+			    iis2iclx_init,				\
+			    &iis2iclx_data_##inst,			\
+			    &iis2iclx_config_##inst,			\
+			    POST_KERNEL,				\
+			    CONFIG_SENSOR_INIT_PRIORITY,		\
+			    &iis2iclx_driver_api);
+
+/*
+ * Instantiation macros used when a device is on a SPI bus.
+ */
+
+#define IIS2ICLX_HAS_CS(inst) DT_INST_SPI_DEV_HAS_CS_GPIOS(inst)
+
+#define IIS2ICLX_DATA_SPI_CS(inst)					\
+	{ .cs_ctrl = {							\
+		.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(inst),		\
+		.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(inst),	\
+		},							\
+	}
+
+#define IIS2ICLX_DATA_SPI(inst)						\
+	COND_CODE_1(IIS2ICLX_HAS_CS(inst),				\
+		    (IIS2ICLX_DATA_SPI_CS(inst)),			\
+		    ({}))
+
+#define IIS2ICLX_SPI_CS_PTR(inst)					\
+	COND_CODE_1(IIS2ICLX_HAS_CS(inst),				\
+		    (&(iis2iclx_data_##inst.cs_ctrl)),			\
+		    (NULL))
+
+#define IIS2ICLX_SPI_CS_LABEL(inst)					\
+	COND_CODE_1(IIS2ICLX_HAS_CS(inst),				\
+		    (DT_INST_SPI_DEV_CS_GPIOS_LABEL(inst)), (NULL))
+
+#define IIS2ICLX_SPI_CFG(inst)						\
+	(&(struct iis2iclx_spi_cfg) {					\
+		.spi_conf = {						\
+			.frequency =					\
+				DT_INST_PROP(inst, spi_max_frequency),	\
+			.operation = (SPI_WORD_SET(8) |			\
+				      SPI_OP_MODE_MASTER |		\
+				      SPI_MODE_CPOL |			\
+				      SPI_MODE_CPHA),			\
+			.slave = DT_INST_REG_ADDR(inst),		\
+			.cs = IIS2ICLX_SPI_CS_PTR(inst),		\
+		},							\
+		.cs_gpios_label = IIS2ICLX_SPI_CS_LABEL(inst),		\
+	})
+
+
+#ifdef CONFIG_IIS2ICLX_TRIGGER
+#define IIS2ICLX_CFG_IRQ(inst) \
+		.irq_dev_name = DT_INST_GPIO_LABEL(inst, drdy_gpios),	\
+		.irq_pin = DT_INST_GPIO_PIN(inst, drdy_gpios),		\
+		.irq_flags = DT_INST_GPIO_FLAGS(inst, drdy_gpios),	\
+		.int_pin = DT_INST_PROP(inst, int_pin)
+#else
+#define IIS2ICLX_CFG_IRQ(inst)
+#endif /* CONFIG_IIS2ICLX_TRIGGER */
+
+#define IIS2ICLX_CONFIG_SPI(inst)					\
+	{								\
+		.bus_name = DT_INST_BUS_LABEL(inst),			\
+		.bus_init = iis2iclx_spi_init,				\
+		.bus_cfg = { .spi_cfg = IIS2ICLX_SPI_CFG(inst)	},	\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
+			(IIS2ICLX_CFG_IRQ(inst)), ())			\
+	}
+
+#define IIS2ICLX_DEFINE_SPI(inst)					\
+	static struct iis2iclx_data iis2iclx_data_##inst =		\
+		IIS2ICLX_DATA_SPI(inst);				\
+	static const struct iis2iclx_config iis2iclx_config_##inst =	\
+		IIS2ICLX_CONFIG_SPI(inst);				\
+	IIS2ICLX_DEVICE_INIT(inst)
+
+/*
+ * Instantiation macros used when a device is on an I2C bus.
+ */
+
+#define IIS2ICLX_CONFIG_I2C(inst)					\
+	{								\
+		.bus_name = DT_INST_BUS_LABEL(inst),			\
+		.bus_init = iis2iclx_i2c_init,				\
+		.bus_cfg = { .i2c_slv_addr = DT_INST_REG_ADDR(inst), },	\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
+			(IIS2ICLX_CFG_IRQ(inst)), ())			\
+	}
+
+#define IIS2ICLX_DEFINE_I2C(inst)					\
+	static struct iis2iclx_data iis2iclx_data_##inst;		\
+	static const struct iis2iclx_config iis2iclx_config_##inst =	\
+		IIS2ICLX_CONFIG_I2C(inst);				\
+	IIS2ICLX_DEVICE_INIT(inst)
+/*
+ * Main instantiation macro. Use of COND_CODE_1() selects the right
+ * bus-specific macro at preprocessor time.
+ */
+
+#define IIS2ICLX_DEFINE(inst)						\
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
+		    (IIS2ICLX_DEFINE_SPI(inst)),			\
+		    (IIS2ICLX_DEFINE_I2C(inst)))
+
+DT_INST_FOREACH_STATUS_OKAY(IIS2ICLX_DEFINE)
