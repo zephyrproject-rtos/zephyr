@@ -601,6 +601,13 @@ config BT_ID_MAX
 	  Maximum number of supported local identity addresses. For most
 	  products this is safe to leave as the default value (1).
 
+config BT_DF
+	bool "Enable Direction Finding support [EXPERIMENTAL]"
+	help
+	  Enable support for Bluetooth 5.1 Direction Finding.
+	  It will allow to: get information about antennae, configure
+	  Constant Tone Extension, transmit CTE and sample incoming CTE.
+
 endif # BT_HCI_HOST
 
 config BT_ECC

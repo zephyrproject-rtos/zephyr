@@ -57,6 +57,12 @@ if(CONFIG_BT_HCI_HOST)
         )
     endif()
   endif()
+
+  if(CONFIG_BT_DF)
+    zephyr_library_sources(
+      direction.c
+      )
+  endif()
 endif()
 
 if(CONFIG_BT_DEBUG_SMP OR CONFIG_BT_DEBUG_KEYS)
