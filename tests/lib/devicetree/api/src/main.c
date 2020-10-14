@@ -116,6 +116,14 @@ static void test_nodelabel_props(void)
 		     "compatible[0]");
 }
 
+static void test_rawstring(void)
+{
+	/* Ensure that non word characters are translated to '_' */
+	zassert_equal(TO_STRING(DT_PROP_RAWSTRING(DT_NODELABEL(test_no_status),
+						  label)),
+		      "Test_No_Status__________1", "test_no_status");
+}
+
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_gpio
 static void test_inst_props(void)
@@ -1722,6 +1730,7 @@ void test_main(void)
 			 ztest_unit_test(test_path_props),
 			 ztest_unit_test(test_alias_props),
 			 ztest_unit_test(test_nodelabel_props),
+			 ztest_unit_test(test_rawstring),
 			 ztest_unit_test(test_inst_props),
 			 ztest_unit_test(test_default_prop_access),
 			 ztest_unit_test(test_has_path),

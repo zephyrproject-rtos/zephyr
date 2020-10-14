@@ -380,6 +380,24 @@
 #define DT_PROP(node_id, prop) DT_CAT(node_id, _P_##prop)
 
 /**
+ * @brief Get a string property without quotes
+ *
+ * All non-C-token characters will be converted to '_'.
+ *
+ * For example if
+ *   DT_PROP(node, label) => "Label with space"
+ * Then
+ *   DT_PROP_RAWSTRING(node, label) => Label_with_space
+ *
+ * For non-string properties, this will be undefined.
+ *
+ * @param node_id node identifier
+ * @param prop a lowercase-and-underscores string property
+ * @return the string without quotes or invalid C token characters
+ */
+#define DT_PROP_RAWSTRING(node_id, prop) DT_PROP(node_id, prop##_RAWSTRING)
+
+/**
  * @brief Get a property's logical length
  *
  * Here, "length" is a number of elements, which may differ from the

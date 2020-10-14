@@ -420,6 +420,11 @@ def write_vanilla_props(node):
             # DT_N_<node-id>_P_<prop-id>
             macro2val[macro] = val
 
+            # All string types create an extra non-quoted string with the
+            # _RAWSTRING suffix
+            if prop.type == 'string':
+                macro2val[macro + f"_RAWSTRING"] = str2c_style(prop.val)
+
         if prop.enum_index is not None:
             # DT_N_<node-id>_P_<prop-id>_ENUM_IDX
             macro2val[macro + "_ENUM_IDX"] = prop.enum_index
@@ -739,6 +744,12 @@ def quote_str(s):
     # backslashes within it
 
     return f'"{escape(s)}"'
+
+
+def str2c_style(s):
+    # Converts all non-C-token characters to '_'. Leaves others unchanged
+
+    return re.sub(r'\W', '_', s)
 
 
 def write_pickled_edt(edt, out_file):
