@@ -4,4 +4,4 @@ tests:
   sample.sensor.bme680:
     harness: sensor
     tags: samples sensor
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk_nrf52840 adafruit_feather_nrf52840
