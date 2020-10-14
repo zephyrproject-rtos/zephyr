@@ -185,10 +185,19 @@ nRF5340 IDAU may configure bus accesses by the nRF5340 Network MCU
 to have Secure attribute set; the latter allows to build and run
 Secure only applications on the nRF5340 SoC.
 
-Building Secure/Non-Secure Zephyr applications
-==============================================
+Building Secure/Non-Secure Zephyr applications with Arm |reg| TrustZone |reg|
+=============================================================================
 
-The process requires the following steps:
+Applications on the nRF5340 may contain a Secure and a Non-Secure firmware
+image for the Application MCU. The Secure image can be built using either
+Zephyr or `Trusted Firmware M`_ (TF-M). Non-Secure firmware
+images are always built using Zephyr. The two alternatives are described below.
+
+Building the Secure firmware using Zephyr
+-----------------------------------------
+
+The process to build the Secure and the Non-Secure firmware images
+using Zephyr requires the following steps:
 
 1. Build the Secure Zephyr application for the Application MCU
    using ``-DBOARD=nrf5340pdk_nrf5340_cpuapp`` and
@@ -199,6 +208,33 @@ The process requires the following steps:
 3. Merge the two binaries together.
 4. Build the application firmware for the Network MCU using
    ``-DBOARD=nrf5340pdk_nrf5340_cpunet``.
+
+
+Building the Secure firmware with TF-M
+--------------------------------------
+
+The process to build the Secure firmware image using TF-M and the Non-Secure
+firmware image using Zephyr requires the following steps:
+
+1. Build the Non-Secure Zephyr application
+   for the Application MCU using ``-DBOARD=nrf5340pdk_nrf5340_cpuappns`` and
+   ``CONFIG_BUILD_WITH_TFM=y`` in the application project configuration file.
+   The Zephyr build system will perform the following steps automatically:
+
+      * Build the Non-Secure firmware image as a regular Zephyr application
+      * Build a TF-M (secure) firmware image
+      * Merge the output binaries together
+      * Optionally build a bootloader image (MCUboot)
+
+.. note::
+
+   Depending on the TF-M configuration, an application DTS overlay may be
+   required, to adjust the Non-Secure image Flash and SRAM starting address
+   and sizes.
+
+2. Build the application firmware for the Network MCU using
+   ``-DBOARD=nrf5340pdk_nrf5340_cpunet``.
+
 
 When building a Secure/Non-Secure application for the nRF5340 Application MCU,
 the Secure application will have to set the IDAU (SPU) configuration to allow
@@ -273,3 +309,4 @@ References
 .. _nRF5340 PDK website:
    https://www.nordicsemi.com/Software-and-tools/Development-Kits/nRF5340-PDK
 .. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
+.. _Trusted Firmware M: https://www.trustedfirmware.org/projects/tf-m/
