@@ -8635,6 +8635,7 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 		err = start_le_scan_ext(phy_1m, phy_coded, param->timeout);
 	} else {
 		if (param->timeout) {
+			atomic_clear_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN);
 			return -ENOTSUP;
 		}
 
