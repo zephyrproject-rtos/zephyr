@@ -388,6 +388,52 @@ int net_context_put(struct net_context *context)
 	context->recv_cb = NULL;
 	context->send_cb = NULL;
 
+	if (IS_ENABLED(CONFIG_NET_IPV4) && context->local.family == AF_INET) {
+		struct sockaddr_in addr;
+
+		memset(&addr, 0, sizeof(addr));
+
+		addr.sin_family = AF_INET;
+		addr.sin_port = net_sin_ptr(&context->local)->sin_port;
+
+		memcpy(&addr.sin_addr,
+		       net_sin_ptr(&context->local)->sin_addr,
+		       sizeof(addr.sin_addr));
+
+		ret = net_if_addr_release(net_context_get_iface(context),
+				  (struct sockaddr *)&addr,
+				  net_ipv4_is_addr_mcast(&addr.sin_addr));
+		if (ret < 0) {
+			NET_DBG("Cannot deallocate %s address (%d)",
+				"IPv4", ret);
+		}
+
+		ret = 0;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && context->local.family == AF_INET6) {
+		struct sockaddr_in6 addr;
+
+		memset(&addr, 0, sizeof(addr));
+
+		addr.sin6_family = AF_INET6;
+		addr.sin6_port = net_sin6_ptr(&context->local)->sin6_port;
+
+		memcpy(&addr.sin6_addr,
+		       net_sin6_ptr(&context->local)->sin6_addr,
+		       sizeof(addr.sin6_addr));
+
+		ret = net_if_addr_release(net_context_get_iface(context),
+				  (struct sockaddr *)&addr,
+				  net_ipv6_is_addr_mcast(&addr.sin6_addr));
+		if (ret < 0) {
+			NET_DBG("Cannot deallocate %s address (%d)",
+				"IPv6", ret);
+		}
+
+		ret = 0;
+	}
+
 	/* Decrement refcount on user app's behalf */
 	net_context_unref(context);
 
@@ -578,6 +624,13 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 				net_sin6_ptr(&context->local)->sin6_port;
 		}
 
+		ret = net_if_addr_reserve(iface, (struct sockaddr *)addr6,
+				net_ipv6_is_addr_mcast(&addr6->sin6_addr));
+		if (ret < 0) {
+			NET_DBG("Cannot allocate %s address (%d)", "IPv6",
+				ret);
+		}
+
 		NET_DBG("Context %p binding to %s [%s]:%d iface %p",
 			context,
 			net_proto2str(AF_INET6,
@@ -645,8 +698,6 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 		k_mutex_lock(&context->lock, K_FOREVER);
 
-		ret = 0;
-
 		net_context_set_iface(context, iface);
 
 		net_sin_ptr(&context->local)->sin_family = AF_INET;
@@ -666,6 +717,18 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			addr4->sin_port =
 				net_sin_ptr(&context->local)->sin_port;
 		}
+
+		ret = net_if_addr_reserve(iface, (struct sockaddr *)addr4,
+				net_ipv4_is_addr_mcast(&addr4->sin_addr));
+		if (ret < 0) {
+			NET_DBG("Cannot allocate %s address (%d)", "IPv4",
+				ret);
+		}
+
+		/* Ignore address reservation errors as the IP connectivity
+		 * will work just fine without it too.
+		 */
+		ret = 0;
 
 		NET_DBG("Context %p binding to %s %s:%d iface %p",
 			context,
