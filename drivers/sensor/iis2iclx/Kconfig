@@ -53,20 +53,6 @@ config IIS2ICLX_THREAD_STACK_SIZE
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
-choice IIS2ICLX_INT_PIN
-	prompt "Sensor INT pin number"
-	default IIS2ICLX_INT_PIN_1
-	help
-	  The number of IIS2ICLX int pin used to generate interrupt to cpu.
-	  Supported values are int1 or int2
-
-config IIS2ICLX_INT_PIN_1
-	bool "int1"
-
-config IIS2ICLX_INT_PIN_2
-	bool "int2"
-endchoice
-
 endif # IIS2ICLX_TRIGGER
 
 config IIS2ICLX_ENABLE_TEMP

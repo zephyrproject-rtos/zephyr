@@ -10,8 +10,9 @@
 #define DT_DRV_COMPAT st_lsm6dsl
 
 #include <string.h>
-#include "lsm6dsl.h"
 #include <logging/log.h>
+
+#include "lsm6dsl.h"
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 
