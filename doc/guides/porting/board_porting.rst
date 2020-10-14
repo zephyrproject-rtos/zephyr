@@ -432,7 +432,10 @@ while porting.
 
 - It is recommended to enable the MPU by default, if there is support for it
   in hardware. For boards with limited memory resources it is acceptable to
-  disable it.
+  disable it. When the MPU is enabled, it is recommended to also enable
+  hardware stack protection (CONFIG_HW_STACK_PROTECTION=y) and, thus, allow the
+  kernel to detect stack overflows when the system is running in privileged
+  mode.
 
 .. _flash-and-debug-support:
 

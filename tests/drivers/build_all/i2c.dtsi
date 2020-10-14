@@ -543,6 +543,13 @@ test_i2c_iis2dh: iis2dh@18 {
 	drdy-gpios = <&test_gpio 0 0>;
 };
 
+test_i2c_iis2iclx: iis2iclx@6a {
+	compatible = "st,iis2iclx";
+	label = "IIS2ICLX";
+	reg = <0x6a>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
+
 test_i2c_itds: itds@18 {
 	compatible = "we,wsen-itds";
 	label = "WSEN-ITDS";

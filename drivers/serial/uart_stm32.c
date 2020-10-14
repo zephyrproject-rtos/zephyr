@@ -826,7 +826,7 @@ static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 		    .enr = DT_INST_CLOCKS_CELL(index, bits)		\
 	},								\
 	.hw_flow_control = DT_INST_PROP(index, hw_flow_control),	\
-	.parity = DT_INST_PROP(index, parity),				\
+	.parity = DT_INST_PROP_OR(index, parity, UART_CFG_PARITY_NONE),	\
 	.pinctrl_list = uart_pins_##index,				\
 	.pinctrl_list_size = ARRAY_SIZE(uart_pins_##index),		\
 };									\

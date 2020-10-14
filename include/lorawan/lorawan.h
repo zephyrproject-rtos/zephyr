@@ -14,6 +14,10 @@
 
 #include <device.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief LoRaWAN class types.
  */
@@ -182,5 +186,9 @@ void lorawan_enable_adr(bool enable);
  * @return 0 if successful, negative errno code if failure
  */
 int lorawan_set_datarate(enum lorawan_datarate dr);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif	/* ZEPHYR_INCLUDE_LORAWAN_LORAWAN_H_ */

@@ -80,7 +80,7 @@ enum {
  *
  *  @return Appropriate error code for the attribute callbacks.
  */
-#define BT_GATT_ERR(_att_err)                  (-(_att_err))
+#define BT_GATT_ERR(_att_err) (-(_att_err))
 
 /** GATT attribute write flags */
 enum {
@@ -102,7 +102,7 @@ enum {
 /** @brief GATT Attribute structure. */
 struct bt_gatt_attr {
 	/** Attribute UUID */
-	const struct bt_uuid	*uuid;
+	const struct bt_uuid *uuid;
 
 	/** @brief Attribute read callback
 	 *
@@ -118,10 +118,8 @@ struct bt_gatt_attr {
 	 *  @return Number fo bytes read, or in case of an error
 	 *          BT_GATT_ERR() with a specific ATT error code.
 	 */
-	ssize_t			(*read)(struct bt_conn *conn,
-					const struct bt_gatt_attr *attr,
-					void *buf, uint16_t len,
-					uint16_t offset);
+	ssize_t (*read)(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			void *buf, uint16_t len, uint16_t offset);
 
 	/** @brief Attribute write callback
 	 *
@@ -135,17 +133,16 @@ struct bt_gatt_attr {
 	 *  @return Number of bytes written, or in case of an error
 	 *          BT_GATT_ERR() with a specific ATT error code.
 	 */
-	ssize_t			(*write)(struct bt_conn *conn,
-					 const struct bt_gatt_attr *attr,
-					 const void *buf, uint16_t len,
-					 uint16_t offset, uint8_t flags);
+	ssize_t	(*write)(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			 const void *buf, uint16_t len, uint16_t offset,
+			 uint8_t flags);
 
 	/** Attribute user data */
-	void			*user_data;
+	void *user_data;
 	/** Attribute handle */
-	uint16_t			handle;
+	uint16_t handle;
 	/** Attribute permissions */
-	uint8_t			perm;
+	uint8_t perm;
 };
 
 /** @brief GATT Service structure */
@@ -153,34 +150,35 @@ struct bt_gatt_service_static {
 	/** Service Attributes */
 	const struct bt_gatt_attr *attrs;
 	/** Service Attribute count */
-	size_t			attr_count;
+	size_t attr_count;
 };
 
 /** @brief GATT Service structure */
 struct bt_gatt_service {
 	/** Service Attributes */
-	struct bt_gatt_attr	*attrs;
+	struct bt_gatt_attr *attrs;
 	/** Service Attribute count */
-	size_t			attr_count;
-	sys_snode_t		node;
+	size_t attr_count;
+
+	sys_snode_t node;
 };
 
 /** @brief Service Attribute Value. */
 struct bt_gatt_service_val {
 	/** Service UUID. */
-	const struct bt_uuid	*uuid;
+	const struct bt_uuid *uuid;
 	/** Service end handle. */
-	uint16_t			end_handle;
+	uint16_t end_handle;
 };
 
 /** @brief Include Attribute Value. */
 struct bt_gatt_include {
 	/** Service UUID. */
-	const struct bt_uuid	*uuid;
+	const struct bt_uuid *uuid;
 	/** Service start handle. */
-	uint16_t			start_handle;
+	uint16_t start_handle;
 	/** Service end handle. */
-	uint16_t			end_handle;
+	uint16_t end_handle;
 };
 
 /** Characteristic Properties Bit field values */
@@ -240,11 +238,11 @@ struct bt_gatt_include {
 /** @brief Characteristic Attribute Value. */
 struct bt_gatt_chrc {
 	/** Characteristic UUID. */
-	const struct bt_uuid	*uuid;
+	const struct bt_uuid *uuid;
 	/** Characteristic Value handle. */
-	uint16_t			value_handle;
+	uint16_t value_handle;
 	/** Characteristic properties. */
-	uint8_t			properties;
+	uint8_t	properties;
 };
 
 /** Characteristic Extended Properties Bit field values */
@@ -254,7 +252,7 @@ struct bt_gatt_chrc {
 /** @brief Characteristic Extended Properties Attribute Value. */
 struct bt_gatt_cep {
 	/** Characteristic Extended properties */
-	uint16_t		properties;
+	uint16_t properties;
 };
 
 /** Client Characteristic Configuration Values */
@@ -275,7 +273,7 @@ struct bt_gatt_cep {
 /** Client Characteristic Configuration Attribute Value */
 struct bt_gatt_ccc {
 	/** Client Characteristic Configuration flags */
-	uint16_t		flags;
+	uint16_t flags;
 };
 
 /** @brief GATT Characteristic Presentation Format Attribute Value. */
@@ -405,7 +403,9 @@ uint16_t bt_gatt_attr_get_handle(const struct bt_gatt_attr *attr);
 
 /** @brief Get the handle of the characteristic value descriptor.
  *
- * @param attr A Characteristic Attribute
+ * @param attr A Characteristic Attribute.
+ *
+ * @note The user_data of the attribute must of type @ref bt_gatt_chrc.
  *
  * @return the handle of the corresponding Characteristic Value. The value will
  *         be zero (the invalid handle) if @p attr was not a characteristic
@@ -578,6 +578,13 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
 			       uint16_t len, uint16_t offset);
 
+#define BT_GATT_CHRC_INIT(_uuid, _handle, _props) \
+{                                                 \
+	.uuid = _uuid,                            \
+	.value_handle = _handle,                  \
+	.properties = _props,                     \
+}
+
 /** @def BT_GATT_CHARACTERISTIC
  *  @brief Characteristic and Value Declaration Macro.
  *
@@ -594,10 +601,9 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 #define BT_GATT_CHARACTERISTIC(_uuid, _props, _perm, _read, _write, _value)  \
 	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CHRC, BT_GATT_PERM_READ,              \
 			  bt_gatt_attr_read_chrc, NULL,                      \
-			  ((struct bt_gatt_chrc[]) { { .uuid = _uuid,        \
-						       .value_handle = 0U,   \
-						       .properties = _props, \
-						   } })),                    \
+			  ((struct bt_gatt_chrc[]) {                         \
+				BT_GATT_CHRC_INIT(_uuid, 0U, _props),        \
+						   })),                      \
 	BT_GATT_ATTRIBUTE(_uuid, _perm, _read, _write, _value)
 
 #if IS_ENABLED(CONFIG_BT_SETTINGS_CCC_LAZY_LOADING)
@@ -606,17 +612,14 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 	#define BT_GATT_CCC_MAX (CONFIG_BT_MAX_PAIRED + CONFIG_BT_MAX_CONN)
 #endif
 
-/** @brief GATT CCC configuration entry.
- *
- *  @param id   Local identity, BT_ID_DEFAULT in most cases.
- *  @param peer Remote peer address
- *  @param value Configuration value.
- *  @param data Configuration pointer data.
- */
+/** @brief GATT CCC configuration entry. */
 struct bt_gatt_ccc_cfg {
-	uint8_t                    id;
-	bt_addr_le_t		peer;
-	uint16_t			value;
+	/** Local identity, BT_ID_DEFAULT in most cases. */
+	uint8_t id;
+	/** Remote peer address. */
+	bt_addr_le_t peer;
+	/** Configuration value. */
+	uint16_t value;
 };
 
 /** Internal representation of CCC value */
@@ -1118,15 +1121,29 @@ struct bt_gatt_discover_params;
  *  @brief Discover attribute callback function.
  *
  *  @param conn Connection object.
- *  @param attr Attribute found.
+ *  @param attr Attribute found, or NULL if not found.
  *  @param params Discovery parameters given.
  *
  *  If discovery procedure has completed this callback will be called with
  *  attr set to NULL. This will not happen if procedure was stopped by returning
- *  BT_GATT_ITER_STOP. The attribute is read-only and cannot be cached without
- *  copying its contents.
+ *  BT_GATT_ITER_STOP.
  *
- *  @return BT_GATT_ITER_CONTINUE if should continue attribute discovery.
+ *  The attribute object as well as its UUID and value objects are temporary and
+ *  must be copied to in order to cache its information.
+ *  Only the following fields of the attribute contains valid information:
+ *   - uuid      UUID representing the type of attribute.
+ *   - handle    Handle in the remote database.
+ *   - user_data The value of the attribute.
+ *               Will be NULL when discovering descriptors
+ *
+ *  To be able to read the value of the discovered attribute the user_data
+ *  must be cast to an appropriate type.
+ *   - @ref bt_gatt_service_val when UUID is @ref BT_UUID_GATT_PRIMARY or
+ *     @ref BT_UUID_GATT_SECONDARY.
+ *   - @ref bt_gatt_include when UUID is @ref BT_UUID_GATT_INCLUDE.
+ *   - @ref bt_gatt_chrc when UUID is @ref BT_UUID_GATT_CHRC.
+ *
+ *  @return BT_GATT_ITER_CONTINUE to continue discovery procedure.
  *  @return BT_GATT_ITER_STOP to stop discovery procedure.
  */
 typedef uint8_t (*bt_gatt_discover_func_t)(struct bt_conn *conn,
@@ -1240,33 +1257,31 @@ typedef uint8_t (*bt_gatt_read_func_t)(struct bt_conn *conn, uint8_t err,
 				    struct bt_gatt_read_params *params,
 				    const void *data, uint16_t length);
 
-/** @brief GATT Read parameters
- *
- *  @param func Read attribute callback
- *  @param handle_count If equals to 1 single.handle and single.offset
- *                      are used.  If >1 Read Multiple Characteristic
- *                      Values is performed and handles are used.
- *                      If equals to 0 by_uuid is used for Read Using
- *                      Characteristic UUID.
- *  @param handle Attribute handle
- *  @param offset Attribute data offset
- *  @param handles Handles to read in Read Multiple Characteristic Values
- *  @param start_handle First requested handle number
- *  @param end_handle Last requested handle number
- *  @param uuid 2 or 16 octet UUID
- */
+/** @brief GATT Read parameters */
 struct bt_gatt_read_params {
+	/** Read attribute callback. */
 	bt_gatt_read_func_t func;
+	/** If equals to 1 single.handle and single.offset are used.
+	 *  If >1 Read Multiple Characteristic Values is performed and handles
+	 *  are used.
+	 *  If equals to 0 by_uuid is used for Read Using Characteristic UUID.
+	 */
 	size_t handle_count;
 	union {
 		struct {
+			/** Attribute handle. */
 			uint16_t handle;
+			/** Attribute data offset. */
 			uint16_t offset;
 		} single;
+		/** Handles to read in Read Multiple Characteristic Values. */
 		uint16_t *handles;
 		struct {
+			/** First requested handle number. */
 			uint16_t start_handle;
+			/** Last requested handle number. */
 			uint16_t end_handle;
+			/** 2 or 16 octet UUID. */
 			const struct bt_uuid *uuid;
 		} by_uuid;
 	};
@@ -1500,7 +1515,7 @@ int bt_gatt_subscribe(struct bt_conn *conn,
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_gatt_resubscribe(uint8_t id, const bt_addr_le_t *peer,
-			     struct bt_gatt_subscribe_params *params);
+			struct bt_gatt_subscribe_params *params);
 
 /** @brief Unsubscribe Attribute Value Notification
  *
