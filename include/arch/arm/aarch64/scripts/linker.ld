@@ -224,7 +224,7 @@ SECTIONS
 
 #if defined(CONFIG_USERSPACE)
 #define APP_SHARED_ALIGN . = ALIGN(_region_min_align);
-#define SMEM_PARTITION_ALIGN MMU_ALIGN
+#define SMEM_PARTITION_ALIGN(size) MMU_ALIGN
 
 #include <app_smem.ld>
 
