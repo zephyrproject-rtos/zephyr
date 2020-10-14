@@ -282,6 +282,11 @@ static uint32_t dhcpv4_update_message_timeout(struct net_if_dhcpv4 *dhcpv4)
 
 	timeout = DHCPV4_INITIAL_RETRY_TIMEOUT << dhcpv4->attempts;
 
+	/* Max 64 seconds, see RFC 2131 chapter 4.1 */
+	if (timeout < DHCPV4_INITIAL_RETRY_TIMEOUT || timeout > 64) {
+		timeout = 64;
+	}
+
 	dhcpv4->attempts++;
 	dhcpv4->timer_start = k_uptime_get();
 	dhcpv4->request_time = timeout;
