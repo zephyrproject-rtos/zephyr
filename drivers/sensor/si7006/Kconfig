@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SI7006
-	bool "Si7006 Temperature and Humidity Sensor"
+	bool "Si7006/Si7013/Si7020/Si7021 Temperature and Humidity Sensor"
 	depends on I2C
 	help
-	  Enable I2C-based driver for Si7006 Temperature and Humidity Sensor.
+	  Enable I2C-based driver for Si7006/Si7013/Si7020/Si7021 Temperature and Humidity Sensor.

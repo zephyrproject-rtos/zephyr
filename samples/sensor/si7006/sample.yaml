@@ -1,0 +1,7 @@
+sample:
+  name: Si7006 Sensor sample
+tests:
+  sample.sensor.si7006:
+    build_only: true
+    platform_allow: efm32gg11_wlstk6121a
+    tags: sensors
