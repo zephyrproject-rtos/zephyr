@@ -827,12 +827,14 @@ static int espi_npcx_init(const struct device *dev)
 	struct espi_npcx_data *const data = DRV_DATA(dev);
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
 	const struct device *clk_dev = device_get_binding(NPCX_CLK_CTRL_NAME);
-	int i;
+	int i, ret;
 
 	/* Turn on eSPI device clock first */
-	if (clock_control_on(clk_dev,
-		(clock_control_subsys_t *) &config->clk_cfg) != 0) {
-		return -EIO;
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)
+							&config->clk_cfg);
+	if (ret < 0) {
+		LOG_ERR("Turn on eSPI clock fail %d", ret);
+		return ret;
 	}
 
 	/* Enable events which share the same espi bus interrupt */
