@@ -307,7 +307,7 @@ static void test_double_start_on_instance(const char *dev_name,
 	zassert_equal(0, err, "%s: Unexpected err (%d)", dev_name, err);
 
 	err = clock_control_on(dev, subsys);
-	zassert_equal(-EBUSY, err, "%s: Unexpected err (%d)", dev_name, err);
+	zassert_true(err < 0, "%s: Unexpected return value:%d", dev_name, err);
 }
 
 static void test_double_start(void)
