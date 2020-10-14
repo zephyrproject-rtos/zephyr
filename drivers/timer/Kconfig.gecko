@@ -1,0 +1,71 @@
+# Timer driver configuration options for EFx32
+
+# Copyright (c) 2020 Thorvald Natvig
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GECKO_SLEEPTIMER
+	bool "Gecko Sleeptimer"
+	depends on SOC_FAMILY_EXX32
+	select SOC_GECKO_CORE
+	select TICKLESS_CAPABLE
+	help
+	  This module implements a kernel driver for the EFx32 sleeptimer
+	  library to support timer sleep in EM2 and EM3.
+
+if GECKO_SLEEPTIMER
+
+choice
+	prompt "Gecko Sleeptimer timer choice"
+	default GECKO_SLEEPTIMER_RTCC
+
+config GECKO_SLEEPTIMER_RTCC
+	bool "RTCC"
+	depends on (! COUNTER_GECKO_RTCC)
+	select SOC_GECKO_RTCC
+	help
+	  Use RTCC timer
+
+config GECKO_SLEEPTIMER_RTC
+	bool "RTC"
+	select SOC_GECKO_RTC
+	help
+	  Use RTC timer
+
+endchoice
+
+choice
+	prompt "Gecko Sleeptimer clock source"
+	default GECKO_SLEEPTIMER_LFXO
+
+config GECKO_SLEEPTIMER_LFRCO
+	bool "LFRCO"
+	select SYS_PM_STATE_LOCK if SYS_POWER_SLEEP_STATES
+	depends on (SYS_CLOCK_TICKS_PER_SEC <= 32768)
+	help
+	  Use Low-Frequency RC Oscillator (32kHz).
+	  This oscillator has variance with temperature and should not be
+	  used for time-keeping.
+	  This oscillator is not available in EM3, and EM3 will be disabled
+	  if a timer is running.
+
+config GECKO_SLEEPTIMER_LFXO
+	bool "LFXO"
+	select SYS_PM_STATE_LOCK if SYS_POWER_SLEEP_STATES
+	depends on (SYS_CLOCK_TICKS_PER_SEC <= CMU_LFXO_FREQ)
+	help
+	  Use Low-Frequency crystal oscillator (32kHz).
+	  This oscillator is not available in EM3, and EM3 will be disabled
+	  if a timer is running.
+
+config GECKO_SLEEPTIMER_ULFRCO
+	bool "ULFRCO"
+	depends on (SYS_CLOCK_TICKS_PER_SEC <= 1000)
+	help
+	  Use Ultra-Low-Frequency RC Oscillator (1khz).
+	  This oscillator has variance with temperature and should not be
+	  used for time-keeping.
+	  This oscillator is available in all energy modes.
+
+endchoice
+
+endif # GECKO_SLEEPTIMER

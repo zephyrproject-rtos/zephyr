@@ -192,6 +192,7 @@ endchoice
 endif # NRF_RTC_TIMER
 
 source "drivers/timer/Kconfig.stm32_lptim"
+source "drivers/timer/Kconfig.gecko"
 
 config RISCV_MACHINE_TIMER
 	bool "RISCV Machine Timer"
