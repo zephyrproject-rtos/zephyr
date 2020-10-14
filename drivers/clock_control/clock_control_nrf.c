@@ -155,7 +155,7 @@ static int set_starting_state(uint32_t *flags, uint32_t ctx)
 	} else if (current_ctx != ctx) {
 		err = -EPERM;
 	} else {
-		err = -EBUSY;
+		err = -EALREADY;
 	}
 
 	irq_unlock(key);
