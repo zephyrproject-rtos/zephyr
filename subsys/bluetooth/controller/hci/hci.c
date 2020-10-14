@@ -2063,6 +2063,28 @@ static void le_read_tx_power(struct net_buf *buf, struct net_buf **evt)
 	ll_tx_pwr_get(&rp->min_tx_power, &rp->max_tx_power);
 }
 
+#if IS_ENABLED(CONFIG_BT_CTLR_DF)
+static void le_df_read_ant_inf(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_rp_le_read_ant_info *rp;
+	uint8_t max_switch_pattern_len;
+	uint8_t switch_sample_rates;
+	uint8_t max_cte_len;
+	uint8_t num_ant;
+
+	ll_df_read_ant_inf(&switch_sample_rates, &num_ant,
+			   &max_switch_pattern_len, &max_cte_len);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+
+	rp->max_switch_pattern_len = max_switch_pattern_len;
+	rp->switch_sample_rates = switch_sample_rates;
+	rp->max_cte_len = max_cte_len;
+	rp->num_ant = num_ant;
+	rp->status = 0x00;
+}
+#endif /* CONFIG_BT_CTLR_DF */
+
 #if defined(CONFIG_BT_CTLR_DTM_HCI)
 static void le_rx_test(struct net_buf *buf, struct net_buf **evt)
 {
@@ -3058,6 +3080,12 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_LE_READ_TX_POWER):
 		le_read_tx_power(cmd, evt);
 		break;
+
+#if defined(CONFIG_BT_CTLR_DF)
+	case BT_OCF(BT_HCI_OP_LE_READ_ANT_INFO):
+		le_df_read_ant_inf(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_DF */
 
 #if defined(CONFIG_BT_CTLR_DTM_HCI)
 	case BT_OCF(BT_HCI_OP_LE_RX_TEST):

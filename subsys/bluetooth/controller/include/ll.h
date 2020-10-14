@@ -258,3 +258,11 @@ void ll_rx_mem_release(void **node_rx);
 void ll_timeslice_ticker_id_get(uint8_t * const instance_index, uint8_t * const user_id);
 void ll_radio_state_abort(void);
 uint32_t ll_radio_state_is_idle(void);
+
+/* Direction Finding */
+
+/* Provides information about antennae switching and sampling settings */
+void ll_df_read_ant_inf(uint8_t *switch_sample_rates,
+			uint8_t *num_ant,
+			uint8_t *max_switch_pattern_len,
+			uint8_t *max_cte_len);
