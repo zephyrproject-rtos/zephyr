@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Intel Corporation.
+ * Copyright (c) 2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -600,6 +601,30 @@ void test_file_read(void)
 		    "Error - Data read does not match data written");
 
 	TC_PRINT("Data read matches data written\n");
+}
+
+/**
+ * @brief fs_seek tests for expected ENOTSUP
+ *
+ * @ingroup filesystem_api
+ */
+void test_file_seek(void)
+{
+	struct fs_file_system_t backup = temp_fs;
+
+	/* Simulate tell and lseek not implemented */
+	temp_fs.lseek = NULL;
+	temp_fs.tell = NULL;
+
+	zassert_equal(fs_seek(&filep, 0, FS_SEEK_CUR),
+		      -ENOTSUP,
+		      "fs_seek not expected to be implemented");
+	zassert_equal(fs_tell(&filep),
+		      -ENOTSUP,
+		      "fs_tell not expected to be implemented");
+
+	/* Restore fs API interface */
+	temp_fs = backup;
 }
 
 static int _test_file_truncate(void)
