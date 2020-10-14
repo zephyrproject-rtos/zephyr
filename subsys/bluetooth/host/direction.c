@@ -20,7 +20,7 @@
  * @param[out] num_ant                  Antennae number.
  * @param[out] max_switch_pattern_len   Maximum supported antennae switching
  *                                      paterns length.
- * @param[out] max_CTE_len              Maximum length of CTE in 8[us] units.
+ * @param[out] max_cte_len              Maximum length of CTE in 8[us] units.
  *
  * @return Zero in case of success, other value in case of failure.
  */
