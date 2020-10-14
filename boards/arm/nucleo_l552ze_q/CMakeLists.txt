@@ -6,6 +6,12 @@ zephyr_library_sources(pinmux.c)
 zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
 endif()
 
+if(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "zephyr")
+	set(COMPILER_FULL_PATH ${ZEPHYR_SDK_INSTALL_DIR}/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc)
+elseif(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "gnuarmemb")
+	set(COMPILER_FULL_PATH ${GNUARMEMB_TOOLCHAIN_PATH}/bin/arm-none-eabi-gcc)
+endif()
+
 if (CONFIG_BUILD_WITH_TFM)
 	# Set default image versions if not defined elsewhere
 	if (NOT DEFINED TFM_IMAGE_VERSION_S)
@@ -59,6 +65,6 @@ if (CONFIG_BUILD_WITH_TFM)
 		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/tfm/bin/bl2.bin ${CMAKE_BINARY_DIR}/mcuboot.bin
 
 		#Execute post build script postbuild.sh
-		COMMAND ${CMAKE_BINARY_DIR}/tfm/postbuild.sh
+		COMMAND ${CMAKE_BINARY_DIR}/tfm/postbuild.sh ${COMPILER_FULL_PATH}
       )
 endif()
