@@ -355,7 +355,7 @@ config THREAD_MAX_NAME_LEN
 config INSTRUMENT_THREAD_SWITCHING
 	bool
 
-config THREAD_RUNTIME_STATS
+menuconfig THREAD_RUNTIME_STATS
 	bool "Thread runtime statistics"
 	select INSTRUMENT_THREAD_SWITCHING
 	help
@@ -363,6 +363,19 @@ config THREAD_RUNTIME_STATS
 
 	  For example:
 	    - Thread total execution cycles
+
+if THREAD_RUNTIME_STATS
+
+config THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
+	bool "Use timing functions to gather statistics"
+	select TIMING_FUNCTIONS
+	help
+	  Use timing functions to gather thread runtime statistics.
+
+	  Note that timing functions may use a different timer than
+	  the default timer for OS timekeeping.
+
+endif # THREAD_RUNTIME_STATS
 
 endmenu
 

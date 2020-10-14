@@ -480,6 +480,11 @@ FUNC_NORETURN void z_cstart(void)
 	__stack_chk_guard <<= 8;
 #endif	/* CONFIG_STACK_CANARIES */
 
+#ifdef CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
+	timing_init();
+	timing_start();
+#endif
+
 #ifdef CONFIG_MULTITHREADING
 	switch_to_main_thread(prepare_multithreading());
 #else

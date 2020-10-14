@@ -19,6 +19,10 @@
 #include <stdbool.h>
 #include <toolchain.h>
 
+#ifdef CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
+#include <timing/timing.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -283,14 +287,22 @@ struct z_poller {
 #ifdef CONFIG_THREAD_RUNTIME_STATS
 struct k_thread_runtime_stats {
 	/* Thread execution cycles */
+#ifdef CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
+	timing_t execution_cycles;
+#else
 	uint64_t execution_cycles;
+#endif
 };
 
 typedef struct k_thread_runtime_stats k_thread_runtime_stats_t;
 
 struct _thread_runtime_stats {
 	/* Timestamp when last switched in */
+#ifdef CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
+	timing_t last_switched_in;
+#else
 	uint32_t last_switched_in;
+#endif
 
 	k_thread_runtime_stats_t stats;
 };

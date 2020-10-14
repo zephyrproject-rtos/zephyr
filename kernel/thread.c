@@ -1036,14 +1036,24 @@ void z_thread_mark_switched_in(void)
 	struct k_thread *thread;
 
 	thread = k_current_get();
+#ifdef CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
+	thread->rt_stats.last_switched_in = timing_counter_get();
+#else
 	thread->rt_stats.last_switched_in = k_cycle_get_32();
+#endif /* CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS */
+
 #endif /* CONFIG_THREAD_RUNTIME_STATS */
 }
 
 void z_thread_mark_switched_out(void)
 {
 #ifdef CONFIG_THREAD_RUNTIME_STATS
+#ifdef CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
+	timing_t now;
+#else
 	uint32_t now;
+#endif /* CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS */
+
 	uint64_t diff;
 	struct k_thread *thread;
 
@@ -1059,10 +1069,16 @@ void z_thread_mark_switched_out(void)
 		return;
 	}
 
+#ifdef CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
+	now = timing_counter_get();
+	diff = timing_cycles_get(&thread->rt_stats.last_switched_in, &now);
+#else
 	now = k_cycle_get_32();
 	diff = (uint64_t)now - thread->rt_stats.last_switched_in;
-	thread->rt_stats.stats.execution_cycles += diff;
 	thread->rt_stats.last_switched_in = 0;
+#endif /* CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS */
+
+	thread->rt_stats.stats.execution_cycles += diff;
 
 	threads_runtime_stats.execution_cycles += diff;
 #endif /* CONFIG_THREAD_RUNTIME_STATS */
