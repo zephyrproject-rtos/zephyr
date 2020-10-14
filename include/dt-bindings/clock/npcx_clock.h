@@ -27,6 +27,6 @@
 #define NPCX_PWDWN_CTL6            5
 #define NPCX_PWDWN_CTL7            6
 #define NPCX_PWDWN_CTL8            7
-#define NPCX_PWDWN_CTL_NONE        8
+#define NPCX_PWDWN_CTL_COUNT       8
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_NPCX_CLOCK_H_ */

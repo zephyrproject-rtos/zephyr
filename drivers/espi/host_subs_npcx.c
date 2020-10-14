@@ -757,11 +757,14 @@ int npcx_host_init_subs_core_domain(const struct device *host_bus_dev,
 	host_sub_data.host_bus_dev = host_bus_dev;
 
 	/* Turn on all host necessary sub-module clocks first */
-	for (i = 0; i < host_sub_cfg.clks_size; i++)
-		if (clock_control_on(clk_dev, (clock_control_subsys_t *)
-				&host_sub_cfg.clks_list[i]) != 0) {
-			return -EIO;
-		}
+	for (i = 0; i < host_sub_cfg.clks_size; i++) {
+		int ret;
+
+		ret = clock_control_on(clk_dev, (clock_control_subsys_t *)
+				&host_sub_cfg.clks_list[i]);
+		if (ret < 0)
+			return ret;
+	}
 
 	/* Configure EC legacy configuration IO base address to 0x4E. */
 	if (!IS_BIT_SET(inst_mswc->MSWCTL1, NPCX_MSWCTL1_VHCFGA)) {

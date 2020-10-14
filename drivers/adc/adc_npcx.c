@@ -335,22 +335,24 @@ static int adc_npcx_init(const struct device *dev)
 	struct adc_reg *const inst = HAL_INSTANCE(dev);
 	const struct device *const clk_dev =
 					device_get_binding(NPCX_CLK_CTRL_NAME);
-	int prescaler = 0;
+	int prescaler = 0, ret;
 
 	/* Save ADC device in data */
 	data->adc_dev = dev;
 
 	/* Turn on device clock first and get source clock freq. */
-	if (clock_control_on(clk_dev,
-		(clock_control_subsys_t *)&config->clk_cfg) != 0) {
-		LOG_ERR("Turn on ADC clock fail.");
-		return -EIO;
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)
+							&config->clk_cfg);
+	if (ret < 0) {
+		LOG_ERR("Turn on ADC clock fail %d", ret);
+		return ret;
 	}
 
-	if (clock_control_get_rate(clk_dev, (clock_control_subsys_t *)
-			&config->clk_cfg, &data->input_clk) != 0) {
-		LOG_ERR("Get ADC clock rate error.");
-		return -EIO;
+	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t *)
+			&config->clk_cfg, &data->input_clk);
+	if (ret < 0) {
+		LOG_ERR("Get ADC clock rate error %d", ret);
+		return ret;
 	}
 
 	/* Configure the ADC clock */

@@ -161,6 +161,7 @@ static int pwm_npcx_init(const struct device *dev)
 	struct pwm_reg *const inst = HAL_INSTANCE(dev);
 	const struct device *const clk_dev =
 					device_get_binding(NPCX_CLK_CTRL_NAME);
+	int ret;
 
 	/*
 	 * NPCX PWM modulee mixes byte and word registers together. Make sure
@@ -169,17 +170,20 @@ static int pwm_npcx_init(const struct device *dev)
 	 */
 	NPCX_REG_WORD_ACCESS_CHECK(inst->PRSC, 0xA55A);
 
-	/* Turn on device clock first and get source clock freq of it. */
-	if (clock_control_on(clk_dev,
-		(clock_control_subsys_t *)&config->clk_cfg) != 0) {
-		LOG_ERR("Turn on PWM clock fail.");
-		return -EIO;
+
+	/* Turn on device clock first and get source clock freq. */
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t *)
+							&config->clk_cfg);
+	if (ret < 0) {
+		LOG_ERR("Turn on PWM clock fail %d", ret);
+		return ret;
 	}
 
-	if (clock_control_get_rate(clk_dev, (clock_control_subsys_t *)
-			&config->clk_cfg, &data->cycles_per_sec) != 0) {
-		LOG_ERR("Get PWM clock rate error.");
-		return -EIO;
+	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t *)
+			&config->clk_cfg, &data->cycles_per_sec);
+	if (ret < 0) {
+		LOG_ERR("Get PWM clock rate error %d", ret);
+		return ret;
 	}
 
 	/* Configure PWM device initially */
