@@ -276,6 +276,19 @@ fail:
 	return NULL;
 }
 
+static uint32_t dhcpv4_update_message_timeout(struct net_if_dhcpv4 *dhcpv4)
+{
+	uint32_t timeout;
+
+	timeout = DHCPV4_INITIAL_RETRY_TIMEOUT << dhcpv4->attempts;
+
+	dhcpv4->attempts++;
+	dhcpv4->timer_start = k_uptime_get();
+	dhcpv4->request_time = timeout;
+
+	return timeout;
+}
+
 /* Prepare DHCPv4 Message request and send it to peer */
 static uint32_t dhcpv4_send_request(struct net_if *iface)
 {
@@ -335,9 +348,7 @@ static uint32_t dhcpv4_send_request(struct net_if *iface)
 		goto fail;
 	}
 
-	timeout = DHCPV4_INITIAL_RETRY_TIMEOUT << iface->config.dhcpv4.attempts;
-
-	iface->config.dhcpv4.attempts++;
+	timeout = dhcpv4_update_message_timeout(&iface->config.dhcpv4);
 
 	NET_DBG("send request dst=%s xid=0x%x ciaddr=%s%s%s timeout=%us",
 		log_strdup(net_sprint_ipv4_addr(server_addr)),
@@ -347,9 +358,6 @@ static uint32_t dhcpv4_send_request(struct net_if *iface)
 		with_server_id ? " +server-id" : "",
 		with_requested_ip ? " +requested-ip" : "",
 		timeout);
-
-	iface->config.dhcpv4.timer_start = k_uptime_get();
-	iface->config.dhcpv4.request_time = timeout;
 
 	return timeout;
 
@@ -380,15 +388,10 @@ static uint32_t dhcpv4_send_discover(struct net_if *iface)
 		goto fail;
 	}
 
-	timeout = DHCPV4_INITIAL_RETRY_TIMEOUT << iface->config.dhcpv4.attempts;
-
-	iface->config.dhcpv4.attempts++;
+	timeout = dhcpv4_update_message_timeout(&iface->config.dhcpv4);
 
 	NET_DBG("send discover xid=0x%x timeout=%us",
 		iface->config.dhcpv4.xid, timeout);
-
-	iface->config.dhcpv4.timer_start = k_uptime_get();
-	iface->config.dhcpv4.request_time = timeout;
 
 	return timeout;
 
