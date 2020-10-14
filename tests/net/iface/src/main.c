@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <ztest.h>
 
 #include <net/ethernet.h>
+#include <net/socket.h>
 #include <net/dummy.h>
 #include <net/buf.h>
 #include <net/net_ip.h>
@@ -41,6 +42,10 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 static struct in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 static struct in_addr my_ipv4_addr1 = { { { 192, 0, 2, 1 } } };
+
+static struct in6_addr my_maddr1 = { { { 0xff, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+static struct in_addr my_ipv4_maddr1 = { { { 224, 0, 2, 1 } } };
 
 /* Interface 2 addresses */
 static struct in6_addr my_addr2 = { { { 0x20, 0x01, 0x0d, 0xb8, 2, 0, 0, 0,
@@ -836,6 +841,398 @@ static void test_get_by_index_from_userspace(void)
 				 NULL, NULL);
 }
 
+static void test_v4_addr_add_rm(void)
+{
+	struct net_if_addr *ifaddr;
+	bool ret;
+
+	ifaddr = net_if_ipv4_addr_add(iface1, &my_ipv4_addr1,
+				      NET_ADDR_MANUAL, 0);
+	if (!ifaddr) {
+		DBG("Cannot add IPv4 address %s\n",
+		    net_sprint_ipv4_addr(&my_ipv4_addr1));
+		zassert_not_null(ifaddr, "ipv4 addr1");
+	}
+
+	ret = net_if_ipv4_addr_rm(iface1, &my_ipv4_addr1);
+	zassert_true(ret, "Cannot remove IPv4 address");
+}
+
+static void test_v4_addr_add_rm_in_use(void)
+{
+	struct net_if_addr *ifaddr;
+	struct sockaddr_in addr4;
+	socklen_t addrlen = sizeof(addr4);
+	int sock1, sock2;
+	int ret;
+
+	ifaddr = net_if_ipv4_addr_add(iface1, &my_ipv4_addr1,
+				      NET_ADDR_MANUAL, 0);
+	if (!ifaddr) {
+		DBG("Cannot add IPv4 address %s\n",
+		    net_sprint_ipv4_addr(&my_ipv4_addr1));
+		zassert_not_null(ifaddr, "ipv4 addr1");
+	}
+
+	sock1 = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	zassert_true(sock1 >= 0, "socket open failed");
+
+	sock2 = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	zassert_true(sock2 >= 0, "socket open failed");
+
+	(void)memset(&addr4, 0, sizeof(addr4));
+	addr4.sin_family = AF_INET;
+	addr4.sin_port = htons(4242);
+	memcpy(&addr4.sin_addr, &my_ipv4_addr1, sizeof(addr4.sin_addr));
+
+	ret = zsock_bind(sock1, (struct sockaddr *)&addr4, addrlen);
+	zassert_equal(ret, 0, "bind failed (%d)", errno);
+
+	ret = zsock_listen(sock1, 2);
+	zassert_equal(ret, 0, "listen failed (%d)", errno);
+
+	addr4.sin_port = htons(4242 + 1);
+
+	ret = zsock_bind(sock2, (struct sockaddr *)&addr4, addrlen);
+	zassert_equal(ret, 0, "bind failed (%d)", errno);
+
+	ret = zsock_listen(sock2, 2);
+	zassert_equal(ret, 0, "listen failed (%d)", errno);
+
+	ret = net_if_ipv4_addr_rm(iface1, &my_ipv4_addr1);
+	zassert_false(ret, "Could remove IPv4 address");
+
+	ret = zsock_close(sock1);
+	zassert_equal(ret, 0, "close failed (%d)", errno);
+
+	/* At this point the address should still be there because one
+	 * socket is still open
+	 */
+	ifaddr = net_if_ipv4_addr_lookup_by_iface(iface1, &my_ipv4_addr1);
+	zassert_not_null(ifaddr, "ipv4 addr1");
+
+	ret = zsock_close(sock2);
+	zassert_equal(ret, 0, "close failed (%d)", errno);
+
+	ifaddr = net_if_ipv4_addr_lookup_by_iface(iface1, &my_ipv4_addr1);
+	zassert_is_null(ifaddr, "ipv4 addr1");
+
+	ret = net_if_ipv4_addr_rm(iface1, &my_ipv4_addr1);
+	zassert_false(ret, "Could remove IPv4 address");
+}
+
+static void test_v6_addr_add_rm(void)
+{
+	struct net_if_addr *ifaddr;
+	bool ret;
+
+	ifaddr = net_if_ipv6_addr_add(iface1, &my_addr1,
+				      NET_ADDR_MANUAL, 0);
+	if (!ifaddr) {
+		DBG("Cannot add IPv6 address %s\n",
+		    net_sprint_ipv6_addr(&my_addr1));
+		zassert_not_null(ifaddr, "addr1");
+	}
+
+	ret = net_if_ipv6_addr_rm(iface1, &my_addr1);
+	zassert_true(ret, "Cannot remove IPv6 address");
+}
+
+static void test_v6_addr_add_rm_in_use(void)
+{
+	struct net_if_addr *ifaddr;
+	struct sockaddr_in6 addr6;
+	socklen_t addrlen = sizeof(addr6);
+	int sock1, sock2;
+	int ret;
+
+	ifaddr = net_if_ipv6_addr_add(iface1, &my_addr1,
+				      NET_ADDR_MANUAL, 0);
+	if (!ifaddr) {
+		DBG("Cannot add IPv6 address %s\n",
+		    net_sprint_ipv6_addr(&my_addr1));
+		zassert_not_null(ifaddr, "addr1");
+	}
+
+	sock1 = zsock_socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+	zassert_true(sock1 >= 0, "socket open failed");
+
+	sock2 = zsock_socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+	zassert_true(sock2 >= 0, "socket open failed");
+
+	(void)memset(&addr6, 0, sizeof(addr6));
+	addr6.sin6_family = AF_INET6;
+	addr6.sin6_port = htons(4242);
+	memcpy(&addr6.sin6_addr, &my_addr1, sizeof(addr6.sin6_addr));
+
+	ret = zsock_bind(sock1, (struct sockaddr *)&addr6, addrlen);
+	zassert_equal(ret, 0, "bind failed (%d)", errno);
+
+	addr6.sin6_port = htons(4242 + 1);
+
+	ret = zsock_bind(sock2, (struct sockaddr *)&addr6, addrlen);
+	zassert_equal(ret, 0, "bind failed (%d)", errno);
+
+	ret = zsock_listen(sock1, 2);
+	zassert_equal(ret, 0, "listen failed (%d)", errno);
+
+	ret = net_if_ipv6_addr_rm(iface1, &my_addr1);
+	zassert_false(ret, "Could remove IPv6 address");
+
+	ret = zsock_close(sock1);
+	zassert_equal(ret, 0, "close failed (%d)", errno);
+
+	/* At this point the address should still be there because one
+	 * socket is still open
+	 */
+	ifaddr = net_if_ipv6_addr_lookup_by_iface(iface1, &my_addr1);
+	zassert_not_null(ifaddr, "ipv6 addr1");
+
+	ret = zsock_close(sock2);
+	zassert_equal(ret, 0, "close failed (%d)", errno);
+
+	ifaddr = net_if_ipv6_addr_lookup_by_iface(iface1, &my_addr1);
+	zassert_is_null(ifaddr, "ipv6 addr1");
+
+	ret = net_if_ipv6_addr_rm(iface1, &my_addr1);
+	zassert_false(ret, "Could remove IPv6 address");
+}
+
+static void test_v4_maddr_add_rm(void)
+{
+	struct net_if_mcast_addr *ifmaddr;
+	bool ret;
+
+	ifmaddr = net_if_ipv4_maddr_add(iface1, &my_ipv4_maddr1);
+	if (!ifmaddr) {
+		DBG("Cannot add IPv4 multicast address %s\n",
+		    net_sprint_ipv4_addr(&my_ipv4_maddr1));
+		zassert_not_null(ifmaddr, "ipv4 maddr1");
+	}
+
+	ret = net_if_ipv4_maddr_rm(iface1, &my_ipv4_maddr1);
+	zassert_true(ret, "Cannot remove IPv4 multicast address");
+}
+
+static void test_v4_maddr_add_rm_in_use(void)
+{
+	struct net_if_mcast_addr *ifmaddr;
+	struct sockaddr_in addr4;
+	socklen_t addrlen = sizeof(addr4);
+	int sock;
+	int ret;
+
+	ifmaddr = net_if_ipv4_maddr_add(iface1, &my_ipv4_maddr1);
+	if (!ifmaddr) {
+		DBG("Cannot add IPv4 multicast address %s\n",
+		    net_sprint_ipv4_addr(&my_ipv4_maddr1));
+		zassert_not_null(ifmaddr, "ipv4 maddr1");
+	}
+
+	sock = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	zassert_true(sock >= 0, "socket open failed");
+
+	(void)memset(&addr4, 0, sizeof(addr4));
+	addr4.sin_family = AF_INET;
+	addr4.sin_port = htons(4242);
+	memcpy(&addr4.sin_addr, &my_ipv4_maddr1, sizeof(addr4.sin_addr));
+
+	ret = zsock_bind(sock, (struct sockaddr *)&addr4, addrlen);
+	zassert_equal(ret, 0, "bind failed (%d)", errno);
+
+	ret = zsock_listen(sock, 2);
+	zassert_equal(ret, 0, "listen failed (%d)", errno);
+
+	ret = net_if_ipv4_maddr_rm(iface1, &my_ipv4_maddr1);
+	zassert_false(ret, "Could remove IPv4 address");
+
+	ret = zsock_close(sock);
+	zassert_equal(ret, 0, "close failed (%d)", errno);
+
+	ifmaddr = net_if_ipv4_maddr_lookup(&my_ipv4_maddr1, &iface1);
+	zassert_is_null(ifmaddr, "ipv4 maddr1");
+
+	ret = net_if_ipv4_maddr_rm(iface1, &my_ipv4_maddr1);
+	zassert_false(ret, "Could remove IPv4 multicast address");
+}
+
+static void test_v6_maddr_add_rm(void)
+{
+	struct net_if_mcast_addr *ifmaddr;
+	bool ret;
+
+	ifmaddr = net_if_ipv6_maddr_add(iface1, &my_maddr1);
+	if (!ifmaddr) {
+		DBG("Cannot add IPv6 multicast address %s\n",
+		    net_sprint_ipv6_addr(&my_maddr1));
+		zassert_not_null(ifmaddr, "maddr1");
+	}
+
+	ret = net_if_ipv6_maddr_rm(iface1, &my_maddr1);
+	zassert_true(ret, "Cannot remove IPv6 multicast address");
+}
+
+static void test_v6_maddr_add_rm_in_use(void)
+{
+	struct net_if_mcast_addr *ifmaddr;
+	struct sockaddr_in6 addr6;
+	socklen_t addrlen = sizeof(addr6);
+	int sock;
+	int ret;
+
+	ifmaddr = net_if_ipv6_maddr_add(iface1, &my_maddr1);
+	if (!ifmaddr) {
+		DBG("Cannot add IPv6 multicast address %s\n",
+		       net_sprint_ipv6_addr(&my_maddr1));
+		zassert_not_null(ifmaddr, "maddr1");
+	}
+
+	sock = zsock_socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+	zassert_true(sock >= 0, "socket open failed");
+
+	(void)memset(&addr6, 0, sizeof(addr6));
+	addr6.sin6_family = AF_INET6;
+	addr6.sin6_port = htons(4242);
+	memcpy(&addr6.sin6_addr, &my_maddr1, sizeof(addr6.sin6_addr));
+
+	ret = zsock_bind(sock, (struct sockaddr *)&addr6, addrlen);
+	zassert_equal(ret, 0, "bind failed (%d)", errno);
+
+	ret = zsock_listen(sock, 2);
+	zassert_equal(ret, 0, "listen failed (%d)", errno);
+
+	ret = net_if_ipv6_maddr_rm(iface1, &my_maddr1);
+	zassert_false(ret, "Could remove IPv6 address");
+
+	ret = zsock_close(sock);
+	zassert_equal(ret, 0, "close failed (%d)", errno);
+
+	ifmaddr = net_if_ipv6_maddr_lookup(&my_maddr1, &iface1);
+	zassert_is_null(ifmaddr, "ipv6 maddr1");
+
+	ret = net_if_ipv6_maddr_rm(iface1, &my_maddr1);
+	zassert_false(ret, "Could remove IPv6 multicast address");
+}
+
+static void test_v4_addr_add_in_use(void)
+{
+	struct net_if_addr *ifaddr;
+	struct sockaddr_in addr4;
+	socklen_t addrlen = sizeof(addr4);
+	int sock1, sock2;
+	int ret;
+
+	ifaddr = net_if_ipv4_addr_add(iface1, &my_ipv4_addr1,
+				      NET_ADDR_MANUAL, 0);
+	if (!ifaddr) {
+		DBG("Cannot add IPv4 address %s\n",
+		    net_sprint_ipv4_addr(&my_ipv4_addr1));
+		zassert_not_null(ifaddr, "ipv4 addr1");
+	}
+
+	sock1 = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	zassert_true(sock1 >= 0, "socket open failed");
+
+	sock2 = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	zassert_true(sock2 >= 0, "socket open failed");
+
+	(void)memset(&addr4, 0, sizeof(addr4));
+	addr4.sin_family = AF_INET;
+	addr4.sin_port = htons(4242);
+	memcpy(&addr4.sin_addr, &my_ipv4_addr1, sizeof(addr4.sin_addr));
+
+	ret = zsock_bind(sock1, (struct sockaddr *)&addr4, addrlen);
+	zassert_equal(ret, 0, "bind failed (%d)", errno);
+
+	ret = zsock_listen(sock1, 2);
+	zassert_equal(ret, 0, "listen failed (%d)", errno);
+
+	addr4.sin_port = htons(4242 + 1);
+
+	ret = zsock_bind(sock2, (struct sockaddr *)&addr4, addrlen);
+	zassert_equal(ret, 0, "bind failed (%d)", errno);
+
+	ret = zsock_listen(sock2, 2);
+	zassert_equal(ret, 0, "listen failed (%d)", errno);
+
+	/* In this test we do not remove the address in which case it
+	 * should exists after the sockets are closed.
+	 */
+
+	ret = zsock_close(sock1);
+	zassert_equal(ret, 0, "close failed (%d)", errno);
+
+	ifaddr = net_if_ipv4_addr_lookup_by_iface(iface1, &my_ipv4_addr1);
+	zassert_not_null(ifaddr, "ipv4 addr1");
+
+	ret = zsock_close(sock2);
+	zassert_equal(ret, 0, "close failed (%d)", errno);
+
+	ifaddr = net_if_ipv4_addr_lookup_by_iface(iface1, &my_ipv4_addr1);
+	zassert_not_null(ifaddr, "ipv4 addr1");
+
+	ret = net_if_ipv4_addr_rm(iface1, &my_ipv4_addr1);
+	zassert_true(ret, "Cannot remove IPv4 address");
+}
+
+static void test_v6_addr_add_in_use(void)
+{
+	struct net_if_addr *ifaddr;
+	struct sockaddr_in6 addr6;
+	socklen_t addrlen = sizeof(addr6);
+	int sock1, sock2;
+	int ret;
+
+	ifaddr = net_if_ipv6_addr_add(iface1, &my_addr1,
+				      NET_ADDR_MANUAL, 0);
+	if (!ifaddr) {
+		DBG("Cannot add IPv6 address %s\n",
+		    net_sprint_ipv6_addr(&my_addr1));
+		zassert_not_null(ifaddr, "addr1");
+	}
+
+	sock1 = zsock_socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+	zassert_true(sock1 >= 0, "socket open failed");
+
+	sock2 = zsock_socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+	zassert_true(sock2 >= 0, "socket open failed");
+
+	(void)memset(&addr6, 0, sizeof(addr6));
+	addr6.sin6_family = AF_INET6;
+	addr6.sin6_port = htons(4242);
+	memcpy(&addr6.sin6_addr, &my_addr1, sizeof(addr6.sin6_addr));
+
+	ret = zsock_bind(sock1, (struct sockaddr *)&addr6, addrlen);
+	zassert_equal(ret, 0, "bind failed (%d)", errno);
+
+	addr6.sin6_port = htons(4242 + 1);
+
+	ret = zsock_bind(sock2, (struct sockaddr *)&addr6, addrlen);
+	zassert_equal(ret, 0, "bind failed (%d)", errno);
+
+	ret = zsock_listen(sock1, 2);
+	zassert_equal(ret, 0, "listen failed (%d)", errno);
+
+	/* In this test we do not remove the address in which case it
+	 * should exists after the sockets are closed.
+	 */
+
+	ret = zsock_close(sock1);
+	zassert_equal(ret, 0, "close failed (%d)", errno);
+
+	ifaddr = net_if_ipv6_addr_lookup_by_iface(iface1, &my_addr1);
+	zassert_not_null(ifaddr, "ipv6 addr1");
+
+	ret = zsock_close(sock2);
+	zassert_equal(ret, 0, "close failed (%d)", errno);
+
+	ifaddr = net_if_ipv6_addr_lookup_by_iface(iface1, &my_addr1);
+	zassert_not_null(ifaddr, "ipv6 addr1");
+
+	ret = net_if_ipv6_addr_rm(iface1, &my_addr1);
+	zassert_true(ret, "Cannot remove IPv6 address");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(net_iface_test,
@@ -869,7 +1266,17 @@ void test_main(void)
 			 ztest_unit_test(test_gw_addr_add),
 			 ztest_unit_test(test_gw_addr_add_from_userspace),
 			 ztest_unit_test(test_get_by_index),
-			 ztest_unit_test(test_get_by_index_from_userspace)
+			 ztest_unit_test(test_get_by_index_from_userspace),
+			 ztest_unit_test(test_v4_addr_add_rm),
+			 ztest_unit_test(test_v4_addr_add_rm_in_use),
+			 ztest_unit_test(test_v6_addr_add_rm),
+			 ztest_unit_test(test_v6_addr_add_rm_in_use),
+			 ztest_unit_test(test_v4_maddr_add_rm),
+			 ztest_unit_test(test_v4_maddr_add_rm_in_use),
+			 ztest_unit_test(test_v6_maddr_add_rm),
+			 ztest_unit_test(test_v6_maddr_add_rm_in_use),
+			 ztest_unit_test(test_v4_addr_add_in_use),
+			 ztest_unit_test(test_v6_addr_add_in_use)
 		);
 
 	ztest_run_test_suite(net_iface_test);
