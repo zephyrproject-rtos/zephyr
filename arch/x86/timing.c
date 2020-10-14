@@ -11,7 +11,7 @@
 
 static uint64_t tsc_freq;
 
-void timing_x86_init(void)
+void arch_timing_x86_init(void)
 {
 	uint32_t cyc_start = k_cycle_get_32();
 	uint64_t tsc_start = z_tsc_read();
@@ -35,51 +35,52 @@ void timing_x86_init(void)
 	tsc_freq = (cyc_freq * dtsc) / dcyc;
 }
 
-uint64_t timing_x86_freq_get(void)
+uint64_t arch_timing_x86_freq_get(void)
 {
 	return tsc_freq;
 }
 
-void timing_init(void)
+void arch_timing_init(void)
 {
-	timing_x86_init();
+	arch_timing_x86_init();
 }
-void timing_start(void)
+
+void arch_timing_start(void)
 {
 }
 
-void timing_stop(void)
+void arch_timing_stop(void)
 {
 }
 
-timing_t timing_counter_get(void)
+timing_t arch_timing_counter_get(void)
 {
 	return k_cycle_get_32();
 }
 
-uint64_t timing_cycles_get(volatile timing_t *const start,
-				  volatile timing_t *const end)
+uint64_t arch_timing_cycles_get(volatile timing_t *const start,
+				volatile timing_t *const end)
 {
 	return (*end - *start);
 }
 
 
-uint64_t timing_freq_get(void)
+uint64_t arch_timing_freq_get(void)
 {
-	return timing_x86_freq_get();
+	return arch_timing_x86_freq_get();
 }
 
-uint64_t timing_cycles_to_ns(uint64_t cycles)
+uint64_t arch_timing_cycles_to_ns(uint64_t cycles)
 {
 	return k_cyc_to_ns_floor64(cycles);
 }
 
-uint64_t timing_cycles_to_ns_avg(uint64_t cycles, uint32_t count)
+uint64_t arch_timing_cycles_to_ns_avg(uint64_t cycles, uint32_t count)
 {
-	return timing_cycles_to_ns(cycles) / count;
+	return arch_timing_cycles_to_ns(cycles) / count;
 }
 
-uint32_t timing_freq_get_mhz(void)
+uint32_t arch_timing_freq_get_mhz(void)
 {
-	return (uint32_t)(timing_freq_get() / 1000000);
+	return (uint32_t)(arch_timing_freq_get() / 1000000);
 }

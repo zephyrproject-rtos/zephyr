@@ -10,7 +10,7 @@
 #include <timing/timing.h>
 #include <soc.h>
 
-void timing_init(void)
+void soc_timing_init(void)
 {
 	/* Setup counter */
 	B32TMR1_REGS->CTRL = MCHP_BTMR_CTRL_ENABLE |
@@ -24,43 +24,43 @@ void timing_init(void)
 	B32TMR1_REGS->STS = 1; /* Clear interrupt */
 }
 
-void timing_start(void)
+void soc_timing_start(void)
 {
 	B32TMR1_REGS->CTRL |= MCHP_BTMR_CTRL_START;
 }
 
-void timing_stop(void)
+void soc_timing_stop(void)
 {
 	B32TMR1_REGS->CTRL &= ~MCHP_BTMR_CTRL_START;
 }
 
-timing_t timing_counter_get(void)
+timing_t soc_timing_counter_get(void)
 {
 	return B32TMR1_REGS->CNT;
 }
 
-uint64_t timing_cycles_get(volatile timing_t *const start,
-			   volatile timing_t *const end)
+uint64_t soc_timing_cycles_get(volatile timing_t *const start,
+			       volatile timing_t *const end)
 {
 	return (*end - *start);
 }
 
-uint64_t timing_freq_get(void)
+uint64_t soc_timing_freq_get(void)
 {
 	return CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 }
 
-uint64_t timing_cycles_to_ns(uint64_t cycles)
+uint64_t soc_timing_cycles_to_ns(uint64_t cycles)
 {
 	return (cycles) * (NSEC_PER_SEC) / (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 }
 
-uint64_t timing_cycles_to_ns_avg(uint64_t cycles, uint32_t count)
+uint64_t soc_timing_cycles_to_ns_avg(uint64_t cycles, uint32_t count)
 {
-	return (uint32_t)timing_cycles_to_ns(cycles) / count;
+	return (uint32_t)soc_timing_cycles_to_ns(cycles) / count;
 }
 
-uint32_t timing_freq_get_mhz(void)
+uint32_t soc_timing_freq_get_mhz(void)
 {
-	return (uint32_t)(timing_freq_get() / 1000000);
+	return (uint32_t)(soc_timing_freq_get() / 1000000);
 }
