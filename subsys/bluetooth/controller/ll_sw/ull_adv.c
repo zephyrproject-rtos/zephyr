@@ -830,15 +830,18 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 #if defined(CONFIG_BT_CTLR_PHY)
 		conn_lll->phy_flags = 0;
+		if (0) {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-		conn_lll->phy_tx = lll->phy_s;
-		conn_lll->phy_tx_time = lll->phy_s;
-		conn_lll->phy_rx = lll->phy_s;
-#else
-		conn_lll->phy_tx = BIT(0);
-		conn_lll->phy_tx_time = BIT(0);
-		conn_lll->phy_rx = BIT(0);
+		} else if (pdu_adv->type == PDU_ADV_TYPE_EXT_IND) {
+			conn_lll->phy_tx = lll->phy_s;
+			conn_lll->phy_tx_time = lll->phy_s;
+			conn_lll->phy_rx = lll->phy_s;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
+		} else {
+			conn_lll->phy_tx = BIT(0);
+			conn_lll->phy_tx_time = BIT(0);
+			conn_lll->phy_rx = BIT(0);
+		}
 #endif /* CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
