@@ -40,4 +40,13 @@ config ETH_GECKO
 
 endif # NETWORKING
 
+config SYS_PM_MIN_RESIDENCY_SLEEP_1
+	default 0
+
+config SYS_PM_MIN_RESIDENCY_SLEEP_2
+	default 1
+
+config SYS_PM_MIN_RESIDENCY_SLEEP_3
+	default 1
+
 endif # BOARD_EFM32GG_SLWSTK6121A
