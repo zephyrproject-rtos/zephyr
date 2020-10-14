@@ -414,6 +414,7 @@ static int ssd1306_init(const struct device *dev)
 	driver->cs_ctrl.gpio_dev = device_get_binding(
 				   DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
 	driver->cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
+	driver->cs_ctrl.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
 	driver->cs_ctrl.delay = 0U;
 	driver->spi_config.cs = &driver->cs_ctrl;
 #endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
