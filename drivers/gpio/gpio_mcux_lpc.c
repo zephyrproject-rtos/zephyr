@@ -143,7 +143,7 @@ static int gpio_mcux_lpc_port_set_masked_raw(const struct device *dev,
 
 	/* Writing 0 allows R+W, 1 disables the pin */
 	gpio_base->MASK[port] = ~mask;
-	gpio_base->PIN[port] = value;
+	gpio_base->MPIN[port] = value;
 	/* Enable back the pins, user won't assume pins remain masked*/
 	gpio_base->MASK[port] = 0U;
 
