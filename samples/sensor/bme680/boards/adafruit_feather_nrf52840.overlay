@@ -2,7 +2,9 @@
  * Copyright (c) 2020, Patrick Moffitt <patrick@moffitt.com>
  *
  * SPDX-License-Identifier: Apache-2.0
- *
+ */
+
+/*
  * i2c interface for the Feather nRF52840 Express and the
  * Adafruit BME680.
  */
