@@ -130,7 +130,7 @@ static int fs_get_mnt_point(struct fs_mount_t **mnt_pntp,
 int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 {
 	struct fs_mount_t *mp;
-	int rc = -EINVAL;
+	int rc = -ENOTSUP;
 
 	/* COpy flags to zfp for use with other fs_ API calls */
 	zfp->flags = flags;
@@ -162,7 +162,7 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 
 int fs_close(struct fs_file_t *zfp)
 {
-	int rc = -EINVAL;
+	int rc = -ENOTSUP;
 
 	if (zfp->mp == NULL) {
 		return 0;
@@ -183,7 +183,7 @@ int fs_close(struct fs_file_t *zfp)
 
 ssize_t fs_read(struct fs_file_t *zfp, void *ptr, size_t size)
 {
-	int rc = -EINVAL;
+	int rc = -ENOTSUP;
 
 	if (zfp->mp == NULL) {
 		return -EBADF;
@@ -201,7 +201,7 @@ ssize_t fs_read(struct fs_file_t *zfp, void *ptr, size_t size)
 
 ssize_t fs_write(struct fs_file_t *zfp, const void *ptr, size_t size)
 {
-	int rc = -EINVAL;
+	int rc = -ENOTSUP;
 
 	if (zfp->mp == NULL) {
 		return -EBADF;
@@ -255,7 +255,7 @@ off_t fs_tell(struct fs_file_t *zfp)
 
 int fs_truncate(struct fs_file_t *zfp, off_t length)
 {
-	int rc = -EINVAL;
+	int rc = -ENOTSUP;
 
 	if (zfp->mp == NULL) {
 		return -EBADF;
@@ -273,7 +273,7 @@ int fs_truncate(struct fs_file_t *zfp, off_t length)
 
 int fs_sync(struct fs_file_t *zfp)
 {
-	int rc = -EINVAL;
+	int rc = -ENOTSUP;
 
 	if (zfp->mp == NULL) {
 		return -EBADF;
@@ -293,7 +293,7 @@ int fs_sync(struct fs_file_t *zfp)
 int fs_opendir(struct fs_dir_t *zdp, const char *abs_path)
 {
 	struct fs_mount_t *mp;
-	int rc = -EINVAL;
+	int rc = -ENOTSUP;
 
 	if ((abs_path == NULL) ||
 			(strlen(abs_path) < 1) || (abs_path[0] != '/')) {
@@ -335,7 +335,7 @@ int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry)
 {
 	if (zdp->mp) {
 		/* Delegate to mounted filesystem */
-		int rc = -EINVAL;
+		int rc = -ENOTSUP;
 
 		if (zdp->mp->fs->readdir != NULL) {
 			/* Loop until error or not special directory */
@@ -412,7 +412,7 @@ int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry)
 
 int fs_closedir(struct fs_dir_t *zdp)
 {
-	int rc = -EINVAL;
+	int rc = -ENOTSUP;
 
 	if (zdp->mp == NULL) {
 		/* VFS root dir */
@@ -436,7 +436,7 @@ int fs_closedir(struct fs_dir_t *zdp)
 int fs_mkdir(const char *abs_path)
 {
 	struct fs_mount_t *mp;
-	int rc = -EINVAL;
+	int rc = -ENOTSUP;
 
 	if ((abs_path == NULL) ||
 			(strlen(abs_path) <= 1) || (abs_path[0] != '/')) {
@@ -463,7 +463,7 @@ int fs_mkdir(const char *abs_path)
 int fs_unlink(const char *abs_path)
 {
 	struct fs_mount_t *mp;
-	int rc = -EINVAL;
+	int rc = -ENOTSUP;
 
 	if ((abs_path == NULL) ||
 			(strlen(abs_path) <= 1) || (abs_path[0] != '/')) {
@@ -491,7 +491,7 @@ int fs_rename(const char *from, const char *to)
 {
 	struct fs_mount_t *mp;
 	size_t match_len;
-	int rc = -EINVAL;
+	int rc = -ENOTSUP;
 
 	if ((from == NULL) || (strlen(from) <= 1) || (from[0] != '/') ||
 			(to == NULL) || (strlen(to) <= 1) || (to[0] != '/')) {
@@ -524,7 +524,7 @@ int fs_rename(const char *from, const char *to)
 int fs_stat(const char *abs_path, struct fs_dirent *entry)
 {
 	struct fs_mount_t *mp;
-	int rc = -EINVAL;
+	int rc = -ENOTSUP;
 
 	if ((abs_path == NULL) ||
 			(strlen(abs_path) <= 1) || (abs_path[0] != '/')) {
@@ -569,6 +569,8 @@ int fs_statvfs(const char *abs_path, struct fs_statvfs *stat)
 		if (rc < 0) {
 			LOG_ERR("failed get file or dir stat (%d)", rc);
 		}
+	} else {
+		return -ENOTSUP;
 	}
 
 	return rc;
@@ -607,7 +609,7 @@ int fs_mount(struct fs_mount_t *mp)
 
 	if (fs->mount == NULL) {
 		LOG_ERR("fs ops functions not set!!");
-		rc = -EINVAL;
+		rc = -ENOTSUP;
 		goto mount_err;
 	}
 
@@ -666,7 +668,7 @@ int fs_unmount(struct fs_mount_t *mp)
 
 	if (mp->fs->unmount == NULL) {
 		LOG_ERR("fs unmount not implemented");
-		rc = -EINVAL;
+		rc = -ENOTSUP;
 		goto unmount_err;
 	}
 

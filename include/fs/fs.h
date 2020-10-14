@@ -225,6 +225,7 @@ struct fs_file_system_t {
  *
  * @retval 0 on success;
  * @retval -EINVAL when a bad file name is given;
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval -ENOENT when the file path is not possible (bad mount point);
  * @retval <0 an other negative errno code, depending on a file system back-end.
  */
@@ -238,7 +239,8 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags);
  * @param zfp Pointer to the file object
  *
  * @retval 0 on success;
- * @retval <0 a negative errno code on error.
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
+ * @retval <0 an other negative errno code on error.
  */
 int fs_close(struct fs_file_t *zfp);
 
@@ -250,7 +252,8 @@ int fs_close(struct fs_file_t *zfp);
  * @param path Path to the file or directory to delete
  *
  * @retval 0 on success;
- * @retval <0 a negative errno code on error.
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
+ * @retval <0 an other negative errno code on error.
  */
 int fs_unlink(const char *path);
 
@@ -272,7 +275,8 @@ int fs_unlink(const char *path);
  * @param to The destination path
  *
  * @retval 0 on success;
- * @retval <0 a negative errno code on error.
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
+ * @retval <0 an other negative errno code on error.
  */
 int fs_rename(const char *from, const char *to);
 
@@ -288,7 +292,8 @@ int fs_rename(const char *from, const char *to);
  * @param size Number of bytes to be read
  *
  * @retval >=0 a number of bytes read, on success;
- * @retval <0 a negative errno code on error.
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
+ * @retval <0 an other negative errno code on error.
  */
 ssize_t fs_read(struct fs_file_t *zfp, void *ptr, size_t size);
 
@@ -307,7 +312,8 @@ ssize_t fs_read(struct fs_file_t *zfp, void *ptr, size_t size);
  * @param size Number of bytes to be written
  *
  * @retval >=0 a number of bytes written, on success;
- * @retval <0 a negative errno code on error.
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
+ * @retval <0 an other negative errno code on error.
  */
 ssize_t fs_write(struct fs_file_t *zfp, const void *ptr, size_t size);
 
@@ -325,7 +331,7 @@ ssize_t fs_write(struct fs_file_t *zfp, const void *ptr, size_t size);
  * - @c FS_SEEK_END for the end of the file.
  *
  * @retval 0 on success;
- * @retval -ENOTSUP if not supported by underlying file system driver;
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 an other negative errno code on error.
  */
 int fs_seek(struct fs_file_t *zfp, off_t offset, int whence);
@@ -338,7 +344,7 @@ int fs_seek(struct fs_file_t *zfp, off_t offset, int whence);
  * @param zfp Pointer to the file object
  *
  * @retval >= 0 a current position in file;
- * @retval -ENOTSUP if not supported by underlying file system driver;
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 an other negative errno code on error.
  *
  * The current revision does not validate the file object.
@@ -361,7 +367,8 @@ off_t fs_tell(struct fs_file_t *zfp);
  * @param length New size of the file in bytes
  *
  * @retval 0 on success;
- * @retval <0 a negative errno code on error.
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
+ * @retval <0 an other negative errno code on error.
  */
 int fs_truncate(struct fs_file_t *zfp, off_t length);
 
@@ -377,7 +384,8 @@ int fs_truncate(struct fs_file_t *zfp, off_t length);
  * @param zfp Pointer to the file object
  *
  * @retval 0 on success;
- * @retval <0 a negative errno code on error.
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
+ * @retval <0 an other negative errno code on error.
  */
 int fs_sync(struct fs_file_t *zfp);
 
@@ -389,7 +397,8 @@ int fs_sync(struct fs_file_t *zfp);
  * @param path Path to the directory to create
  *
  * @retval 0 on success;
- * @retval <0 a negative errno code on error
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
+ * @retval <0 an other negative errno code on error
  */
 int fs_mkdir(const char *path);
 
@@ -402,7 +411,8 @@ int fs_mkdir(const char *path);
  * @param path Path to the directory to open
  *
  * @retval 0 on success;
- * @retval <0 a negative errno code on error.
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
+ * @retval <0 an other negative errno code on error.
  */
 int fs_opendir(struct fs_dir_t *zdp, const char *path);
 
@@ -421,7 +431,8 @@ int fs_opendir(struct fs_dir_t *zdp, const char *path);
  * @param entry Pointer to zfs_dirent structure to read the entry into
  *
  * @retval 0 on success or end-of-dir;;
- * @retval <0 a negative errno code on error.
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
+ * @retval <0 an other negative errno code on error.
  */
 int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry);
 
@@ -433,7 +444,8 @@ int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry);
  * @param zdp Pointer to the directory object
  *
  * @retval 0 on success;
- * @retval <0 a negative errno code on error.
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
+ * @retval <0 an other negative errno code on error.
  */
 int fs_closedir(struct fs_dir_t *zdp);
 
@@ -447,7 +459,8 @@ int fs_closedir(struct fs_dir_t *zdp);
  * @param mp Pointer to the fs_mount_t structure
  *
  * @retval 0 on success;
- * @retval <0 a negative errno code on error.
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
+ * @retval <0 an other negative errno code on error.
  */
 int fs_mount(struct fs_mount_t *mp);
 
@@ -462,6 +475,7 @@ int fs_mount(struct fs_mount_t *mp);
  *
  * @retval 0 on success;
  * @retval -ENOENT if system is not mounted;
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 an other negative errno code on error.
  */
 int fs_unmount(struct fs_mount_t *mp);
@@ -494,7 +508,8 @@ int fs_readmount(int *index, const char **name);
  * directory exists.
  *
  * @retval 0 on success;
- * @retval <0 negative errno code on error.
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
+ * @retval <0 an other negative errno code on error.
  */
 int fs_stat(const char *path, struct fs_dirent *entry);
 
@@ -508,7 +523,8 @@ int fs_stat(const char *path, struct fs_dirent *entry);
  * statistics
  *
  * @retval 0 on success;
- * @retval <0 negative errno code on error.
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
+ * @retval <0 an other negative errno code on error.
  */
 int fs_statvfs(const char *path, struct fs_statvfs *stat);
 
