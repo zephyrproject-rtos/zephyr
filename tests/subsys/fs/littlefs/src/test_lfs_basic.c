@@ -516,7 +516,7 @@ void test_lfs_basic(void)
 
 	k_sleep(K_MSEC(100));   /* flush log messages */
 	TC_PRINT("checking double unmount diagnoses\n");
-	zassert_equal(fs_unmount(mp), -EINVAL,
+	zassert_equal(fs_unmount(mp), -ENOENT,
 		      "unmount unmounted failed");
 
 	zassert_equal(mount(mp), TC_PASS,

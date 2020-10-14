@@ -658,8 +658,14 @@ int fs_unmount(struct fs_mount_t *mp)
 	}
 
 	k_mutex_lock(&mutex, K_FOREVER);
-	if ((mp->fs == NULL) || mp->fs->unmount == NULL) {
-		LOG_ERR("fs ops functions not set!!");
+	if (mp->fs == NULL) {
+		LOG_ERR("fs API functions not set!");
+		rc = -ENOENT;
+		goto unmount_err;
+	}
+
+	if (mp->fs->unmount == NULL) {
+		LOG_ERR("fs unmount not implemented");
 		rc = -EINVAL;
 		goto unmount_err;
 	}

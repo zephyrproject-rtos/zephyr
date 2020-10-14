@@ -461,7 +461,8 @@ int fs_mount(struct fs_mount_t *mp);
  * @param mp Pointer to the fs_mount_t structure
  *
  * @retval 0 on success;
- * @retval <0 negative errno code on error.
+ * @retval -ENOENT if system is not mounted;
+ * @retval <0 an other negative errno code on error.
  */
 int fs_unmount(struct fs_mount_t *mp);
 
