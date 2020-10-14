@@ -21,9 +21,9 @@ LOG_MODULE_REGISTER(i2c_gecko);
 #include "i2c-priv.h"
 
 #define DEV_CFG(dev) \
-	((const struct i2c_gecko_config * const)(dev)->config)
+	((const struct i2c_gecko_config *const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct i2c_gecko_data * const)(dev)->data)
+	((struct i2c_gecko_data *const)(dev)->data)
 #define DEV_BASE(dev) \
 	((I2C_TypeDef *)(DEV_CFG(dev))->base)
 
@@ -62,7 +62,7 @@ void i2c_gecko_config_pins(const struct device *dev,
 			  (config->loc_scl << _I2C_ROUTELOC0_SCLLOC_SHIFT);
 #elif defined(GPIO_I2C_ROUTEEN_SCLPEN) && defined(GPIO_I2C_ROUTEEN_SDAPEN)
 	GPIO->I2CROUTE[I2C_NUM(base)].ROUTEEN = GPIO_I2C_ROUTEEN_SCLPEN |
-		GPIO_I2C_ROUTEEN_SDAPEN;
+						GPIO_I2C_ROUTEEN_SDAPEN;
 	GPIO->I2CROUTE[I2C_NUM(base)].SCLROUTE =
 		(config->pin_scl.pin << _GPIO_I2C_SCLROUTE_PIN_SHIFT) |
 		(config->pin_scl.port << _GPIO_I2C_SCLROUTE_PORT_SHIFT);
@@ -125,7 +125,7 @@ static int i2c_gecko_transfer(const struct device *dev, struct i2c_msg *msgs,
 
 	do {
 		seq.buf[0].data = msgs->buf;
-		seq.buf[0].len	= msgs->len;
+		seq.buf[0].len = msgs->len;
 
 		if ((msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
 			seq.flags = I2C_FLAG_READ;
@@ -142,7 +142,7 @@ static int i2c_gecko_transfer(const struct device *dev, struct i2c_msg *msgs,
 					seq.flags = I2C_FLAG_WRITE_WRITE;
 				}
 				seq.buf[1].data = msgs->buf;
-				seq.buf[1].len	= msgs->len;
+				seq.buf[1].len = msgs->len;
 			}
 		}
 
