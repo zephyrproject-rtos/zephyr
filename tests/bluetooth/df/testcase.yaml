@@ -1,0 +1,4 @@
+tests:
+  bluetooth.df.test:
+    platform_allow: qemu_cortex_m3 native_posix native_posix_64 unit_testing
+    tags: bluetooth hci direction_finding
