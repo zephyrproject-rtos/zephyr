@@ -23,9 +23,6 @@ zephyr_sources(
   heap-validate.c
   )
 
-zephyr_sources_ifdef(CONFIG_MINIMAL_LIBC prf.c)
-zephyr_sources_ifdef(CONFIG_SHELL prf.c)
-
 zephyr_sources_ifdef(CONFIG_JSON_LIBRARY json.c)
 
 zephyr_sources_ifdef(CONFIG_RING_BUFFER ring_buffer.c)
