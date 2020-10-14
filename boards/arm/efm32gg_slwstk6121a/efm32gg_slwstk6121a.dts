@@ -78,6 +78,12 @@
 	location-sda = <GECKO_LOCATION(1) GECKO_PORT_B GECKO_PIN(11)>;
 	location-scl = <GECKO_LOCATION(1) GECKO_PORT_B GECKO_PIN(12)>;
 	status = "okay";
+
+	si7021@40 {
+		compatible = "silabs,si7006";
+		reg = <0x40>;
+		label = "Si7021";
+	};
 };
 
 &rtcc0 {

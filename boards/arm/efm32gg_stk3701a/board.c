@@ -17,6 +17,7 @@ static int efm32gg_stk3701a_init(const struct device *dev)
 
 	ARG_UNUSED(dev);
 
+#ifdef CONFIG_UART_CONSOLE
 	/* Enable the board controller to be able to use the serial port */
 	cur_dev = device_get_binding(BC_ENABLE_GPIO_NAME);
 	if (!cur_dev) {
@@ -26,6 +27,19 @@ static int efm32gg_stk3701a_init(const struct device *dev)
 
 	gpio_pin_configure(cur_dev, BC_ENABLE_GPIO_PIN, GPIO_OUTPUT);
 	gpio_pin_set(cur_dev, BC_ENABLE_GPIO_PIN, 1);
+#endif
+
+#ifdef CONFIG_SI7006
+	/* Enable the on-board sensors */
+	cur_dev = device_get_binding(SENSOR_ENABLE_GPIO_NAME);
+	if (!cur_dev) {
+		printk("Sensor enable gpio port was not found!\n");
+		return -ENODEV;
+	}
+
+	gpio_pin_configure(cur_dev, SENSOR_ENABLE_GPIO_PIN, GPIO_OUTPUT);
+	gpio_pin_set(cur_dev, SENSOR_ENABLE_GPIO_PIN, 1);
+#endif
 
 #ifdef CONFIG_ETH_GECKO
 	/* Enable the ethernet PHY power */

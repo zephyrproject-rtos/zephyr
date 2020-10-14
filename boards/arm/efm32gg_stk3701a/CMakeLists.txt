@@ -2,7 +2,7 @@
 # Copyright (c) 2019 Oane Kingma
 # SPDX-License-Identifier: Apache-2.0
 
-if(CONFIG_UART_GECKO)
+if(CONFIG_UART_CONSOLE OR CONFIG_SI7006 OR CONFIG_ETH_GECKO)
   zephyr_library()
   zephyr_library_sources(board.c)
   zephyr_library_include_directories(${PROJECT_SOURCE_DIR}/drivers)

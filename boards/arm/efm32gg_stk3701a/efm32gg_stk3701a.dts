@@ -88,6 +88,18 @@
 	status = "okay";
 };
 
+&i2c2 {
+	location-sda = <GECKO_LOCATION(7) GECKO_PORT_I GECKO_PIN(4)>;
+	location-scl = <GECKO_LOCATION(7) GECKO_PORT_I GECKO_PIN(5)>;
+	status = "okay";
+
+	si7021@40 {
+		compatible = "silabs,si7006";
+		reg = <0x40>;
+		label = "Si7021";
+	};
+};
+
 &rtcc0 {
 	prescaler = <1>;
 	status = "okay";

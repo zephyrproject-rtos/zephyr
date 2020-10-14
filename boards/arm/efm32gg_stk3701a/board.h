@@ -12,6 +12,10 @@
 #define BC_ENABLE_GPIO_NAME		"GPIO_E"
 #define BC_ENABLE_GPIO_PIN		1
 
+/* This pin is used to enable the on-board sensors */
+#define SENSOR_ENABLE_GPIO_NAME		"GPIO_B"
+#define SENSOR_ENABLE_GPIO_PIN		3
+
 /* Ethernet specific pins */
 #ifdef CONFIG_ETH_GECKO
 #define ETH_PWR_ENABLE_GPIO_NAME	"GPIO_I"
