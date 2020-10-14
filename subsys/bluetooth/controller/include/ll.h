@@ -178,3 +178,22 @@ void ll_rx_mem_release(void **node_rx);
 void ll_timeslice_ticker_id_get(uint8_t * const instance_index, uint8_t * const user_id);
 void ll_radio_state_abort(void);
 uint32_t ll_radio_state_is_idle(void);
+
+/* Direction Finding */
+
+/* @brief Function provides information about Direction Finding
+ * antennae switching and sampling related settings.
+ *
+ * @param[out]switch_sampl_rate		Pointer to store available antennae
+ *					switch-sampling	configurations
+ * @param[out]num_ant			Pointer to store number of available
+ *					antennae
+ * @param[out]max_switch_pattern_len	Pointer to store maximum number of
+ *					antennae switch patterns
+ * @param[out]max_CTE_len		Pointer to store maximum length of CTE
+ *					in [8us] units
+ */
+void ll_df_read_ant_inf(uint8_t *switch_sampl_rate,
+			uint8_t *num_ant,
+			uint8_t *max_switch_pattern_len,
+			uint8_t *max_CTE_len);
