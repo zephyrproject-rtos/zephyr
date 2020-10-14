@@ -6,15 +6,18 @@
  */
 
 /**
- * \file cavs/lib/cpu.h
- * \brief DSP parameters, common for cAVS platforms.
+ * DSP parameters, common for cAVS platforms.
  */
 
 #ifndef __CAVS_CPU_H__
 #define __CAVS_CPU_H__
 
-/** \brief Number of available DSP cores (conf. by kconfig) */
-#define PLATFORM_CORE_COUNT (defined(CONFIG_SMP) ? CONFIG_MP_NUM_CPUS : 1)
+/** Number of available DSP cores (conf. by kconfig) */
+#if defined(CONFIG_SMP)
+#define PLATFORM_CORE_COUNT CONFIG_MP_NUM_CPUS
+#else
+#define PLATFORM_CORE_COUNT 1
+#endif
 
 /** Id of master DSP core */
 #define PLATFORM_PRIMARY_CORE_ID	0
