@@ -183,6 +183,12 @@ static int bits_physical(void)
 	zassert_equal(raw_in(), true,
 		      "set_masked_raw high mismatch");
 
+	rc = gpio_port_set_masked_raw(dev, BIT(PIN_IN), 0);
+	zassert_equal(rc, 0,
+		      "set_masked_raw low failed");
+	zassert_equal(raw_in(), true,
+		      "set_masked_raw low affected other pins");
+
 	rc = gpio_port_set_clr_bits_raw(dev, BIT(PIN_IN), BIT(PIN_OUT));
 	zassert_equal(rc, 0,
 		      "set in clear out failed");
