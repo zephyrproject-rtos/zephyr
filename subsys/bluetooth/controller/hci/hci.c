@@ -2142,7 +2142,7 @@ static void le_set_ext_scan_enable(struct net_buf *buf, struct net_buf **evt)
 	}
 #endif
 
-	status = ll_scan_enable(cmd->enable, cmd->period, cmd->duration);
+	status = ll_scan_enable(cmd->enable, cmd->duration, cmd->period);
 
 	*evt = cmd_complete_status(status);
 }

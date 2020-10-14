@@ -109,7 +109,7 @@ uint8_t ll_scan_params_set(uint8_t type, uint16_t interval, uint16_t window,
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-uint8_t ll_scan_enable(uint8_t enable, uint16_t period, uint16_t duration)
+uint8_t ll_scan_enable(uint8_t enable, uint16_t duration, uint16_t period)
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 uint8_t ll_scan_enable(uint8_t enable)
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
