@@ -72,6 +72,11 @@ if(CONFIG_BT_LL_SW_SPLIT)
       ll_sw/lll_chan.c
       )
   endif()
+  if(CONFIG_BT_CTLR_DIRECTION_FINDING)
+    zephyr_library_sources(
+      ll_sw/ull_df.c
+      )
+  endif()
   zephyr_library_sources_ifdef(
     CONFIG_BT_CTLR_FILTER
     ll_sw/ull_filter.c
