@@ -4424,7 +4424,7 @@ int bt_smp_auth_pairing_confirm(struct bt_conn *conn)
 int bt_passkey_set(unsigned int passkey)
 {
 	if (passkey == BT_PASSKEY_INVALID) {
-		passkey = BT_PASSKEY_INVALID;
+		fixed_passkey = BT_PASSKEY_INVALID;
 		return 0;
 	}
 
