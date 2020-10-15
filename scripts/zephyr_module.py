@@ -154,7 +154,7 @@ def process_settings(module, meta):
             setting = build_settings.get(root+'_root', None)
             if setting is not None:
                 root_path = PurePath(module) / setting
-                out_text += f'"{root.upper()}_ROOT":"{root_path}"\n'
+                out_text += f'"{root.upper()}_ROOT":"{root_path.as_posix()}"\n'
 
     return out_text
 
