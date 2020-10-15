@@ -19,59 +19,6 @@
 #define MMU_DEBUG(...)
 #endif
 
-/* We support only 4kB translation granule */
-#define PAGE_SIZE_SHIFT		12U
-#define PAGE_SIZE		(1U << PAGE_SIZE_SHIFT)
-#define XLAT_TABLE_SIZE_SHIFT   PAGE_SIZE_SHIFT /* Size of one complete table */
-#define XLAT_TABLE_SIZE		(1U << XLAT_TABLE_SIZE_SHIFT)
-
-#define XLAT_TABLE_ENTRY_SIZE_SHIFT	3U /* Each table entry is 8 bytes */
-#define XLAT_TABLE_LEVEL_MAX	3U
-
-#define XLAT_TABLE_ENTRIES_SHIFT \
-			(XLAT_TABLE_SIZE_SHIFT - XLAT_TABLE_ENTRY_SIZE_SHIFT)
-#define XLAT_TABLE_ENTRIES	(1U << XLAT_TABLE_ENTRIES_SHIFT)
-
-/* Address size covered by each entry at given translation table level */
-#define L3_XLAT_VA_SIZE_SHIFT	PAGE_SIZE_SHIFT
-#define L2_XLAT_VA_SIZE_SHIFT	\
-			(L3_XLAT_VA_SIZE_SHIFT + XLAT_TABLE_ENTRIES_SHIFT)
-#define L1_XLAT_VA_SIZE_SHIFT	\
-			(L2_XLAT_VA_SIZE_SHIFT + XLAT_TABLE_ENTRIES_SHIFT)
-#define L0_XLAT_VA_SIZE_SHIFT	\
-			(L1_XLAT_VA_SIZE_SHIFT + XLAT_TABLE_ENTRIES_SHIFT)
-
-#define LEVEL_TO_VA_SIZE_SHIFT(level) \
-				(PAGE_SIZE_SHIFT + (XLAT_TABLE_ENTRIES_SHIFT * \
-				(XLAT_TABLE_LEVEL_MAX - (level))))
-
-/* Virtual Address Index within given translation table level */
-#define XLAT_TABLE_VA_IDX(va_addr, level) \
-	((va_addr >> LEVEL_TO_VA_SIZE_SHIFT(level)) & (XLAT_TABLE_ENTRIES - 1))
-
-/*
- * Calculate the initial translation table level from CONFIG_ARM64_VA_BITS
- * For a 4 KB page size,
- * (va_bits <= 21)	 - base level 3
- * (22 <= va_bits <= 30) - base level 2
- * (31 <= va_bits <= 39) - base level 1
- * (40 <= va_bits <= 48) - base level 0
- */
-#define GET_XLAT_TABLE_BASE_LEVEL(va_bits)	\
-	((va_bits > L0_XLAT_VA_SIZE_SHIFT)	\
-	? 0U					\
-	: (va_bits > L1_XLAT_VA_SIZE_SHIFT)	\
-	? 1U					\
-	: (va_bits > L2_XLAT_VA_SIZE_SHIFT)	\
-	? 2U : 3U)
-
-#define XLAT_TABLE_BASE_LEVEL	GET_XLAT_TABLE_BASE_LEVEL(CONFIG_ARM64_VA_BITS)
-
-#define GET_NUM_BASE_LEVEL_ENTRIES(va_bits)	\
-	(1U << (va_bits - LEVEL_TO_VA_SIZE_SHIFT(XLAT_TABLE_BASE_LEVEL)))
-
-#define NUM_BASE_LEVEL_ENTRIES	GET_NUM_BASE_LEVEL_ENTRIES(CONFIG_ARM64_VA_BITS)
-
 #if DUMP_PTE
 #define L0_SPACE ""
 #define L1_SPACE "  "
@@ -82,6 +29,72 @@
 	((level) == 1) ? L1_SPACE :		\
 	((level) == 2) ? L2_SPACE : L3_SPACE)
 #endif
+
+/*
+ * 48-bit address with 4KB granule size:
+ *
+ * +------------+------------+------------+------------+-----------+
+ * | VA [47:39] | VA [38:30] | VA [29:21] | VA [20:12] | VA [11:0] |
+ * +---------------------------------------------------------------+
+ * |     L0     |     L1     |     L2     |     L3     | block off |
+ * +------------+------------+------------+------------+-----------+
+ */
+
+/* Only 4K granule is supported */
+#define PAGE_SIZE_SHIFT		12U
+#define PAGE_SIZE		(1U << PAGE_SIZE_SHIFT)
+
+/* 48-bit VA address */
+#define VA_SIZE_SHIFT_MAX	48U
+
+/* Maximum 4 XLAT table (L0 - L3) */
+#define XLAT_LEVEL_MAX		4U
+
+/* The VA shift of L3 depends on the granule size */
+#define L3_XLAT_VA_SIZE_SHIFT	PAGE_SIZE_SHIFT
+
+/* Number of VA bits to assign to each table (9 bits) */
+#define Ln_XLAT_VA_SIZE_SHIFT	((VA_SIZE_SHIFT_MAX - L3_XLAT_VA_SIZE_SHIFT) / \
+				 XLAT_LEVEL_MAX)
+
+/* Starting bit in the VA address for each level */
+#define L2_XLAT_VA_SIZE_SHIFT	(L3_XLAT_VA_SIZE_SHIFT + Ln_XLAT_VA_SIZE_SHIFT)
+#define L1_XLAT_VA_SIZE_SHIFT	(L2_XLAT_VA_SIZE_SHIFT + Ln_XLAT_VA_SIZE_SHIFT)
+#define L0_XLAT_VA_SIZE_SHIFT	(L1_XLAT_VA_SIZE_SHIFT + Ln_XLAT_VA_SIZE_SHIFT)
+
+#define LEVEL_TO_VA_SIZE_SHIFT(level)			\
+	(PAGE_SIZE_SHIFT + (Ln_XLAT_VA_SIZE_SHIFT *	\
+	((XLAT_LEVEL_MAX - 1) - (level))))
+
+/* Number of entries for each table (512) */
+#define Ln_XLAT_NUM_ENTRIES	(1U << Ln_XLAT_VA_SIZE_SHIFT)
+
+/* Virtual Address Index within a given translation table level */
+#define XLAT_TABLE_VA_IDX(va_addr, level) \
+	((va_addr >> LEVEL_TO_VA_SIZE_SHIFT(level)) & (Ln_XLAT_NUM_ENTRIES - 1))
+
+/*
+ * Calculate the initial translation table level from CONFIG_ARM64_VA_BITS
+ * For a 4 KB page size:
+ *
+ * (va_bits <= 20)	 - base level 3
+ * (21 <= va_bits <= 29) - base level 2
+ * (30 <= va_bits <= 38) - base level 1
+ * (39 <= va_bits <= 47) - base level 0
+ */
+#define GET_BASE_XLAT_LEVEL(va_bits)				\
+	 ((va_bits > L0_XLAT_VA_SIZE_SHIFT) ? 0U		\
+	: (va_bits > L1_XLAT_VA_SIZE_SHIFT) ? 1U		\
+	: (va_bits > L2_XLAT_VA_SIZE_SHIFT) ? 2U : 3U)
+
+/* Level for the base XLAT */
+#define BASE_XLAT_LEVEL	GET_BASE_XLAT_LEVEL(CONFIG_ARM64_VA_BITS)
+
+#define GET_BASE_XLAT_NUM_ENTRIES(va_bits)	\
+	(1U << (va_bits - LEVEL_TO_VA_SIZE_SHIFT(BASE_XLAT_LEVEL)))
+
+/* Table size for the first level XLAT */
+#define BASE_XLAT_NUM_ENTRIES	GET_BASE_XLAT_NUM_ENTRIES(CONFIG_ARM64_VA_BITS)
 
 #if (CONFIG_ARM64_PA_BITS == 48)
 #define TCR_PS_BITS TCR_PS_BITS_256TB
