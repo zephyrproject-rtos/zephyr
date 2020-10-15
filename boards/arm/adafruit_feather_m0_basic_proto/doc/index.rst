@@ -49,6 +49,8 @@ following hardware features:
 +-----------+------------+------------------------------------------+
 | USART     | on-chip    | Serial port                              |
 +-----------+------------+------------------------------------------+
+| I2C       | on-chip    | Inter-Integrated Circuit                 |
++-----------+------------+------------------------------------------+
 | SPI       | on-chip    | Serial Peripheral Interface port         |
 +-----------+------------+------------------------------------------+
 | USB       | on-chip    | USB device                               |
@@ -77,6 +79,12 @@ Serial Port
 The SAMD21 MCU has 6 SERCOM based USARTs.  On the Adafruit Feather M0
 Basic Proto, SERCOM0 is the Zephyr console and is available on pins 0
 (RX) and 1 (TX).
+
+I2C Port
+========
+
+The SAMD21 MCU has 6 SERCOM based USARTs.  On the Adafruit Feather M0
+Basic Proto, SERCOM3 is available on pin 20 (SDA) and pin 21 (SCL).
 
 SPI Port
 ========
