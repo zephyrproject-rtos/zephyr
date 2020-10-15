@@ -18,6 +18,8 @@ LOG_MODULE_REGISTER(power);
 static int post_ops_done = 1;
 static enum power_states forced_pm_state = POWER_STATE_AUTO;
 static enum power_states pm_state;
+static sys_slist_t pm_notifiers = SYS_SLIST_STATIC_INIT(&pm_notifiers);
+static struct k_spinlock pm_notifier_lock;
 
 #ifdef CONFIG_PM_DEBUG
 
@@ -64,16 +66,6 @@ static void pm_log_debug_info(enum power_states state) { }
 void pm_dump_debug_info(void) { }
 #endif
 
-__weak void pm_notify_power_state_entry(enum power_states state)
-{
-	/* This function can be overridden by the application. */
-}
-
-__weak void pm_notify_power_state_exit(enum power_states state)
-{
-	/* This function can be overridden by the application. */
-}
-
 void pm_power_state_force(enum power_states state)
 {
 	__ASSERT(state >= POWER_STATE_AUTO &&
@@ -89,12 +81,38 @@ void pm_power_state_force(enum power_states state)
 #endif
 }
 
+/*
+ * Function called to notify when the system is entering / exiting a
+ * power state
+ */
+static inline void pm_state_notify(bool entering_state)
+{
+	struct pm_notifier *notifier;
+	k_spinlock_key_t pm_notifier_key;
+	void (*callback)(enum power_states state);
+
+	pm_notifier_key = k_spin_lock(&pm_notifier_lock);
+	SYS_SLIST_FOR_EACH_CONTAINER(&pm_notifiers, notifier, _node) {
+		if (entering_state) {
+			callback = notifier->state_entry;
+		} else {
+			callback = notifier->state_exit;
+		}
+
+		if (callback) {
+			callback(pm_state);
+		}
+	}
+	k_spin_unlock(&pm_notifier_lock, pm_notifier_key);
+}
+
 
 static enum power_states _handle_device_abort(enum power_states state)
 {
 	LOG_DBG("Some devices didn't enter suspend state!");
 	pm_resume_devices();
-	pm_notify_power_state_exit(pm_state);
+	pm_state_notify(false);
+
 	pm_state = POWER_STATE_ACTIVE;
 	return pm_state;
 }
@@ -118,7 +136,7 @@ static enum power_states pm_policy_mgr(int32_t ticks)
 		     pm_is_deep_sleep_state(pm_state) : 0;
 
 	post_ops_done = 0;
-	pm_notify_power_state_entry(pm_state);
+	pm_state_notify(true);
 
 	if (deep_sleep) {
 		/* Suspend peripherals. */
@@ -161,7 +179,7 @@ static enum power_states pm_policy_mgr(int32_t ticks)
 		post_ops_done = 1;
 		/* clear forced_pm_state */
 		forced_pm_state = POWER_STATE_AUTO;
-		pm_notify_power_state_exit(pm_state);
+		pm_state_notify(false);
 		pm_power_state_exit_post_ops(pm_state);
 	}
 
@@ -193,9 +211,31 @@ void pm_system_resume(void)
 	 */
 	if (!post_ops_done) {
 		post_ops_done = 1;
-		pm_notify_power_state_exit(pm_state);
+		pm_state_notify(false);
 		pm_power_state_exit_post_ops(pm_state);
 	}
+}
+
+void pm_notifier_register(struct pm_notifier *notifier)
+{
+	k_spinlock_key_t pm_notifier_key = k_spin_lock(&pm_notifier_lock);
+
+	sys_slist_append(&pm_notifiers, &notifier->_node);
+	k_spin_unlock(&pm_notifier_lock, pm_notifier_key);
+}
+
+int pm_notifier_unregister(struct pm_notifier *notifier)
+{
+	int ret = -EINVAL;
+	k_spinlock_key_t pm_notifier_key;
+
+	pm_notifier_key = k_spin_lock(&pm_notifier_lock);
+	if (sys_slist_find_and_remove(&pm_notifiers, &(notifier->_node))) {
+		ret = 0;
+	}
+	k_spin_unlock(&pm_notifier_lock, pm_notifier_key);
+
+	return ret;
 }
 
 #if CONFIG_PM_DEVICE
@@ -206,6 +246,5 @@ static int pm_init(const struct device *dev)
 	pm_create_device_list();
 	return 0;
 }
-
 SYS_INIT(pm_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif /* CONFIG_PM_DEVICE */

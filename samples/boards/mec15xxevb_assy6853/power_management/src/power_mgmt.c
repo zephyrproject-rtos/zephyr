@@ -85,7 +85,7 @@ static void pm_latency_check(void)
 }
 
 /* Hooks to count entry/exit */
-void pm_notify_power_state_entry(enum power_states state)
+static void notify_pm_state_entry(enum power_states state)
 {
 	if (!checks_enabled) {
 		return;
@@ -106,7 +106,7 @@ void pm_notify_power_state_entry(enum power_states state)
 	}
 }
 
-void pm_notify_power_state_exit(enum power_states state)
+static void notify_pm_state_exit(enum power_states state)
 {
 	if (!checks_enabled) {
 		return;
@@ -251,6 +251,11 @@ static void resume_all_tasks(void)
 	k_thread_resume(&thread_b_id);
 }
 
+static struct pm_notifier notifier = {
+	.state_entry = notify_pm_state_entry,
+	.state_exit = notify_pm_state_exit,
+};
+
 int test_pwr_mgmt_multithread(bool use_logging, uint8_t cycles)
 {
 	uint8_t iterations = cycles;
@@ -260,6 +265,7 @@ int test_pwr_mgmt_multithread(bool use_logging, uint8_t cycles)
 	 * https://github.com/zephyrproject-rtos/zephyr/issues/20033
 	 */
 
+	pm_notifier_register(&notifier);
 	create_tasks();
 
 	LOG_WRN("PM multi-thread test started for cycles: %d, logging: %d",
@@ -312,6 +318,7 @@ int test_pwr_mgmt_multithread(bool use_logging, uint8_t cycles)
 	LOG_INF("PM multi-thread completed");
 	pm_check_counters(cycles);
 	pm_reset_counters();
+	pm_notifier_unregister(&notifier);
 
 	return 0;
 }
@@ -323,6 +330,7 @@ int test_pwr_mgmt_singlethread(bool use_logging, uint8_t cycles)
 	LOG_WRN("PM single-thread test started for cycles: %d, logging: %d",
 		cycles, use_logging);
 
+	pm_notifier_register(&notifier);
 	checks_enabled = true;
 	while (iterations-- > 0) {
 
@@ -359,6 +367,7 @@ int test_pwr_mgmt_singlethread(bool use_logging, uint8_t cycles)
 	LOG_INF("PM single-thread completed");
 	pm_check_counters(cycles);
 	pm_reset_counters();
+	pm_notifier_unregister(&notifier);
 
 	return 0;
 }

@@ -68,8 +68,7 @@ static void pm_latency_check(void)
 			"Sleep entry latency is higher than expected");
 }
 
-/* Hooks to count entry/exit */
-void pm_notify_power_state_entry(enum power_states state)
+static void notify_pm_state_entry(enum power_states state)
 {
 	if (!checks_enabled) {
 		return;
@@ -84,7 +83,7 @@ void pm_notify_power_state_entry(enum power_states state)
 	}
 }
 
-void pm_notify_power_state_exit(enum power_states state)
+static void notify_pm_state_exit(enum power_states state)
 {
 	if (!checks_enabled) {
 		return;
@@ -96,6 +95,11 @@ void pm_notify_power_state_exit(enum power_states state)
 		pm_counters[1].exit_cnt++;
 	}
 }
+
+static struct pm_notifier notifier = {
+	.state_entry = notify_pm_state_entry,
+	.state_exit = notify_pm_state_exit,
+};
 
 static void pm_check_counters(uint8_t cycles)
 {
@@ -218,6 +222,7 @@ int test_pwr_mgmt_multithread(uint8_t cycles)
 {
 	uint8_t iterations = cycles;
 
+	pm_notifier_register(&notifier);
 	create_tasks();
 
 	LOG_INF("PM multi-thread test started for cycles: %d", cycles);
@@ -257,6 +262,7 @@ int test_pwr_mgmt_multithread(uint8_t cycles)
 	}
 
 	destroy_tasks();
+	pm_notifier_unregister(&notifier);
 
 	LOG_INF("PM multi-thread completed");
 	pm_check_counters(cycles);
@@ -271,6 +277,7 @@ int test_pwr_mgmt_singlethread(uint8_t cycles)
 
 	LOG_INF("PM single-thread test started for cycles: %d", cycles);
 
+	pm_notifier_register(&notifier);
 	checks_enabled = true;
 	while (iterations-- > 0) {
 
@@ -296,6 +303,7 @@ int test_pwr_mgmt_singlethread(uint8_t cycles)
 		pm_exit_marker();
 	}
 
+	pm_notifier_unregister(&notifier);
 	LOG_INF("PM single-thread completed");
 	pm_check_counters(cycles);
 	pm_reset_counters();
