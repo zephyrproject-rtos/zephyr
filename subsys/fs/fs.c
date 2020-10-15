@@ -657,16 +657,21 @@ int fs_unmount(struct fs_mount_t *mp)
 {
 	int rc = -EINVAL;
 
-	if ((mp == NULL) || (mp->mnt_point == NULL) ||
-				(strlen(mp->mnt_point) <= 1)) {
-		LOG_ERR("invalid mount point!!");
-		return -EINVAL;
+	if (mp == NULL) {
+		return rc;
 	}
 
 	k_mutex_lock(&mutex, K_FOREVER);
-	if ((mp->fs == NULL) || mp->fs->unmount == NULL) {
-		LOG_ERR("fs ops functions not set!!");
-		rc = -EINVAL;
+
+	if (mp->fs == NULL) {
+		LOG_ERR("fs not mounted (mp == %p)", mp);
+		goto unmount_err;
+	}
+
+	if (mp->fs->unmount == NULL) {
+		LOG_ERR("mount path %s is not unmountable",
+			log_strdup(mp->mnt_point));
+		rc = -ENOTSUP;
 		goto unmount_err;
 	}
 
