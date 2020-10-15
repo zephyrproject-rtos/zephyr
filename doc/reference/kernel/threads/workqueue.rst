@@ -291,13 +291,75 @@ by calling :c:func:`k_delayed_work_cancel`.
 Suggested Uses
 **************
 
-Use the system workqueue to defer complex interrupt-related processing
-from an ISR to a cooperative thread. This allows the interrupt-related
-processing to be done promptly without compromising the system's ability
-to respond to subsequent interrupts, and does not require the application
-to define an additional thread to do the processing.
+Use the system workqueue to defer complex interrupt-related processing from an
+ISR to a cooperative thread. This allows the interrupt-related processing to
+be done promptly without compromising the system's ability to respond to
+subsequent interrupts, and does not require the application to define an
+additional thread to do the processing.
 
+Simple ISR Offloading
+=====================
 
+A common use case for workqueues is an ISR that receives data and stores it
+for later processing.  A basic example is:
+
+.. code-block:: c
+
+   struct work_data {
+     struct k_work work;
+     struct k_msgq q;  /* of struct data_item_type */
+   };
+
+   static void add_work(struct work_data *wd,
+                        struct data_item_type *dp)
+   {
+     int rc = k_msgq_put(&wd->q, dp, K_NO_WAIT);
+     if (rc >= 0) {
+       /* offload */
+       k_work_submit(&wd->work);
+     }
+   }
+
+``add_work`` is invoked from the ISR.  The following work handler will clear
+all pending work when it gets invoked, which due to thread delays may occur
+after multiple items have been added:
+
+.. code-block:: c
+
+   static void process_work_drain(struct k_work *work)
+   {
+     struct work_data *wd = CONTAINER_OF(work, struct work_data, work);
+     struct data_item_type data = {0};
+     int rc = k_msgq_get(&wd->q, &data, K_NO_WAIT);
+
+     while (rc >= 0) {
+       do_something_with(&data);
+       rc = k_msgq_get(&wd->q, &data, K_NO_WAIT);
+     }
+   }
+
+Depending on the rate of data arrival the "drain all items" approach can
+starve other work items.  A more cooperative approach would be to process one
+or a few items then, if more remain, resubmit the item from the work handler
+to handle the rest later, after other work items are given a chance to make
+progress:
+
+.. code-block:: c
+
+   static void process_work_coop(struct k_work *work)
+   {
+     struct work_data *wd = CONTAINER_OF(work, struct work_data, work);
+     struct data_item_type data = {0};
+     int rc = k_msgq_get(&wd->q, &data, K_NO_WAIT);
+
+     if (rc >= 0) {
+       do_something_with(&data);
+     }
+     /* Don't hog the work thread */
+     if (k_msgq_num_used_get(&wd->q) > 0) {
+       k_work_submit(work);
+     }
+   }
 
 Configuration Options
 **********************
