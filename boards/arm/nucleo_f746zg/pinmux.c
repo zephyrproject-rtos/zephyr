@@ -12,25 +12,8 @@
 
 #include <pinmux/stm32/pinmux_stm32.h>
 
-/* NUCLEO-F746ZG pin configurations
- *
- * WARNING: The pin PA7 will conflict on selection of SPI_1 and ETH_STM32_HAL.
- *          If you require both peripherals, and you do not need Arduino Uno v3
- *          comaptability, the pin PB5 (also on ST Zio connector) can be used
- *          for the SPI_1 MOSI signal.
- */
+/* NUCLEO-F746ZG pin configurations */
 static const struct pin_config pinconf[] = {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(mac), okay) && CONFIG_NET_L2_ETHERNET
-	{ STM32_PIN_PC1, STM32F7_PINMUX_FUNC_PC1_ETH },
-	{ STM32_PIN_PC4, STM32F7_PINMUX_FUNC_PC4_ETH },
-	{ STM32_PIN_PC5, STM32F7_PINMUX_FUNC_PC5_ETH },
-	{ STM32_PIN_PA1, STM32F7_PINMUX_FUNC_PA1_ETH },
-	{ STM32_PIN_PA2, STM32F7_PINMUX_FUNC_PA2_ETH },
-	{ STM32_PIN_PA7, STM32F7_PINMUX_FUNC_PA7_ETH },
-	{ STM32_PIN_PG11, STM32F7_PINMUX_FUNC_PG11_ETH },
-	{ STM32_PIN_PG13, STM32F7_PINMUX_FUNC_PG13_ETH },
-	{ STM32_PIN_PB13, STM32F7_PINMUX_FUNC_PB13_ETH },
-#endif
 #ifdef CONFIG_USB_DC_STM32
 	{ STM32_PIN_PA11, STM32F7_PINMUX_FUNC_PA11_OTG_FS_DM },
 	{ STM32_PIN_PA12, STM32F7_PINMUX_FUNC_PA12_OTG_FS_DP },
