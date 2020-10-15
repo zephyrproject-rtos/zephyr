@@ -32,7 +32,7 @@ static struct dummy_driver_api *api;
  */
 __weak void pm_power_state_set(enum power_states state)
 {
-	/* at this point, pm_notify_power_state_entry() implemented in
+	/* at this point, notify_pm_state_entry() implemented in
 	 * this file has been called and set_pm should have been set
 	 */
 	zassert_true(set_pm == true,
@@ -88,7 +88,7 @@ enum power_states pm_policy_next_state(int ticks)
 }
 
 /* implement in application, called by idle thread */
-void pm_notify_power_state_entry(enum power_states state)
+static void notify_pm_state_entry(enum power_states state)
 {
 	uint32_t device_power_state;
 
@@ -106,7 +106,7 @@ void pm_notify_power_state_entry(enum power_states state)
 }
 
 /* implement in application, called by idle thread */
-void pm_notify_power_state_exit(enum power_states state)
+static void notify_pm_state_exit(enum power_states state)
 {
 	uint32_t device_power_state;
 
@@ -152,9 +152,9 @@ void test_power_idle(void)
  *  - The system support control of power state ordering between
  *    subsystems and devices
  *  - The application can control system power state transitions in idle thread
- *    through pm_notify_power_state_entry and pm_notify_power_state_exit
+ *    through pm_notify_pm_state_entry and pm_notify_pm_state_exit
  *
- * @see pm_notify_power_state_entry(), pm_notify_power_state_exit()
+ * @see pm_notify_pm_state_entry(), pm_notify_pm_state_exit()
  *
  * @ingroup power_tests
  */
@@ -211,6 +211,13 @@ void test_teardown(void)
 
 void test_main(void)
 {
+	struct pm_notifier notifier = {
+		.state_entry = notify_pm_state_entry,
+		.state_exit = notify_pm_state_exit,
+	};
+
+	pm_notifier_register(&notifier);
+
 	ztest_test_suite(power_management_test,
 			 ztest_1cpu_unit_test(test_power_idle),
 			 ztest_unit_test_setup_teardown(test_power_state_trans,
@@ -221,4 +228,5 @@ void test_main(void)
 						test_setup,
 						test_teardown));
 	ztest_run_test_suite(power_management_test);
+	pm_notifier_unregister(&notifier);
 }

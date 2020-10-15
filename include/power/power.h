@@ -66,6 +66,34 @@ extern unsigned char pm_idle_exit_notify;
  */
 
 /**
+ * Power management notifier struct
+ *
+ * This struct contains callbacks that are called when the target enters and
+ * exits power states.
+ *
+ * As currently implemented the entry callback is invoked when
+ * transitioning from PM_STATE_ACTIVE to another state, and the exit
+ * callback is invoked when transitioning from a non-active state to
+ * PM_STATE_ACTIVE. This behavior may change in the future.
+ *
+ * @note These callbacks can be called from the ISR of the event
+ *       that caused the kernel exit from idling.
+ */
+struct pm_notifier {
+	sys_snode_t _node;
+	/**
+	 * Application defined function for doing any target specific operations
+	 * for power state entry.
+	 */
+	void (*state_entry)(enum power_states state);
+	/**
+	 * Application defined function for doing any target specific operations
+	 * for power state exit.
+	 */
+	void (*state_exit)(enum power_states state);
+};
+
+/**
  * @brief Check if particular power state is a sleep state.
  *
  * This function returns true if given power state is a sleep state.
@@ -299,20 +327,27 @@ enum power_states pm_system_suspend(int32_t ticks);
 void pm_power_state_exit_post_ops(enum power_states state);
 
 /**
- * @brief Application defined function for power state entry
+ * @brief Register a power management notifier
  *
- * Application defined function for doing any target specific operations
- * for power state entry.
+ * Register the given notifier from the power management notification
+ * list.
+ *
+ * @param notifier pm_notifier object to be registered.
  */
-void pm_notify_power_state_entry(enum power_states state);
+void pm_notifier_register(struct pm_notifier *notifier);
 
 /**
- * @brief Application defined function for sleep state exit
+ * @brief Unregister a power management notifier
  *
- * Application defined function for doing any target specific operations
- * for sleep state exit.
+ * Remove the given notifier from the power management notification
+ * list. After that this object callbacks will not be called.
+ *
+ * @param notifier pm_notifier object to be unregistered.
+ *
+ * @return 0 if the notifier was successfully removed, a negative value
+ * otherwise.
  */
-void pm_notify_power_state_exit(enum power_states state);
+int pm_notifier_unregister(struct pm_notifier *notifier);
 
 /**
  * @}
