@@ -52,3 +52,13 @@ config OPENTHREAD_POLL_PERIOD
 	int "Poll period for sleepy end devices [ms]"
 	default 236000
 	depends on OPENTHREAD_MTD_SED
+
+config OPENTHREAD_MAX_CHILDREN
+	int "The maximum number of children"
+	range 10 512
+	default 32
+
+config OPENTHREAD_MAX_IP_ADDR_PER_CHILD
+	int "The maximum number of IPv6 address registrations per child."
+	range 4 255
+	default 6

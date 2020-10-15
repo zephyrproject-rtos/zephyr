@@ -132,6 +132,27 @@
 #define RADIO_CONFIG_SRC_MATCH_SHORT_ENTRY_NUM 0
 
 /**
+ * @def OPENTHREAD_CONFIG_MLE_MAX_CHILDREN
+ *
+ * The maximum number of children.
+ *
+ */
+#ifdef CONFIG_OPENTHREAD_MAX_CHILDREN
+#define OPENTHREAD_CONFIG_MLE_MAX_CHILDREN CONFIG_OPENTHREAD_MAX_CHILDREN
+#endif /* CONFIG_OPENTHREAD_MAX_CHILDREN */
+
+/**
+ * @def OPENTHREAD_CONFIG_MLE_IP_ADDRS_PER_CHILD
+ *
+ * The maximum number of supported IPv6 address registrations per child.
+ *
+ */
+#ifdef CONFIG_OPENTHREAD_MAX_IP_ADDR_PER_CHILD
+#define OPENTHREAD_CONFIG_MLE_IP_ADDRS_PER_CHILD \
+	CONFIG_OPENTHREAD_MAX_IP_ADDR_PER_CHILD
+#endif /* CONFIG_OPENTHREAD_MAX_IP_ADDR_PER_CHILD */
+
+/**
  * @def RADIO_CONFIG_SRC_MATCH_EXT_ENTRY_NUM
  *
  * The number of extended source address table entries.
