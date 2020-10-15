@@ -48,7 +48,15 @@ enum ieee802154_filter_type {
 };
 
 enum ieee802154_event {
-	IEEE802154_EVENT_TX_STARTED /* Data transmission started */
+	IEEE802154_EVENT_TX_STARTED, /* Data transmission started */
+	IEEE802154_EVENT_RX_FAILED   /* Data reception failed */
+};
+
+enum ieee802154_rx_fail_reason {
+	IEEE802154_RX_FAIL_NOT_RECEIVED,  /* Nothing received */
+	IEEE802154_RX_FAIL_INVALID_FCS,   /* Frame had invalid checksum */
+	IEEE802154_RX_FAIL_ADDR_FILTERED, /* Address did not match */
+	IEEE802154_RX_FAIL_OTHER	  /* General reason */
 };
 
 typedef void (*energy_scan_done_cb_t)(const struct device *dev,
