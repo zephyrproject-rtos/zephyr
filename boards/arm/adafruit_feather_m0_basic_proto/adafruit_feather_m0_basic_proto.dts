@@ -7,6 +7,8 @@
 /dts-v1/;
 #include <atmel/samd21.dtsi>
 
+#include "feather_connector.dtsi"
+
 / {
 	model = "Adafruit Feather M0 Basic Proto";
 	compatible = "adafruit,feather-m0-basic-proto", "atmel,samd21g18a",
@@ -44,6 +46,14 @@
 	current-speed = <115200>;
 	rxpo = <3>;
 	txpo = <1>;
+};
+
+&sercom3 {
+	status = "okay";
+	compatible = "atmel,sam0-i2c";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
 };
 
 &sercom4 {
