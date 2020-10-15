@@ -79,6 +79,7 @@ arduino_serial: &usart6 {};
 };
 
 &spi2 {
+	pinctrl-0 = <&spi2_sck_pd3 &spi2_miso_pb14 &spi2_mosi_pb15>;
 	status = "okay";
 };
 

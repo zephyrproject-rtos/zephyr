@@ -98,5 +98,6 @@
 };
 
 &spi2 {
+	pinctrl-0 = <&spi2_sck_pb10 &spi2_miso_pc2 &spi2_mosi_pc3>;
 	status = "okay";
 };
