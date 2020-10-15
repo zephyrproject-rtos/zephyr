@@ -1,0 +1,5 @@
+sample:
+  description: Non Deep Sleep Well Power Sequencing
+  name: Non DSx
+common:
+    tags: introduction

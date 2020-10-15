@@ -72,6 +72,13 @@ config DEVICE_IDLE_PM
 	  resumed based on the device usage even while the CPU or
 	  system is running.
 
+config X86_NON_DSX_POWER_SEQ
+	bool "x86 Non Deep Sx power sequencing"
+	default n
+	help
+	  This option enables Non Deep Sleep Well power sequencing for
+	  Intel x86 chips.
+
 source "subsys/power/policy/Kconfig"
 
 module = SYS_PM
