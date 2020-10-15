@@ -95,9 +95,11 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
         if self.offset is not None:
             self.logger.warning(
                 'This version of BOSSA does not support the --offset flag.' +
+                'Offset information will not be delivered to BOSSAC.' +
                 ' Please see' +
                 ' https://github.com/zephyrproject-rtos/sdk-ng/issues/234' +
                 ' which tracks updating the Zephyr SDK.')
+            return None
 
         return self.offset
 
