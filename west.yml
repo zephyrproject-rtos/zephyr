@@ -132,7 +132,7 @@ manifest:
       path: modules/bsim_hw_models/nrf_hw_models
       revision: 71a8a9ef086d57ff5f3974138b0951f24c2017ad
     - name: hal_xtensa
-      revision: e7a57d0c252f9c5f3cab9d5ceadda8753cacee5b
+      revision: 2f04b615cd5ad3a1b8abef33f9bdd10cc1990ed6
       path: modules/hal/xtensa
     - name: edtt
       path: tools/edtt
