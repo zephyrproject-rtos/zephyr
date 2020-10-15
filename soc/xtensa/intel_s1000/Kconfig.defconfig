@@ -8,6 +8,10 @@ if SOC_INTEL_S1000
 config SOC
 	default "intel_s1000"
 
+config SOC_SERIES
+	string
+	default "intel_s1000"
+
 config IRQ_OFFLOAD_INTNUM
 	default 0
 
