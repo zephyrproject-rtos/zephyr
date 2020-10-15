@@ -85,7 +85,7 @@ static inline int is_metairq(struct k_thread *thread)
 #endif
 }
 
-#if CONFIG_ASSERT
+#if defined(CONFIG_ASSERT)
 static inline bool is_thread_dummy(struct k_thread *thread)
 {
 	return (thread->base.thread_state & _THREAD_DUMMY) != 0U;
