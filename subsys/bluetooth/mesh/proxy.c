@@ -1145,7 +1145,7 @@ static bool advertise_subnet(struct bt_mesh_subnet *sub)
 	}
 
 	return (sub->node_id == BT_MESH_NODE_IDENTITY_RUNNING ||
-		bt_mesh_gatt_proxy_get() != BT_MESH_GATT_PROXY_NOT_SUPPORTED);
+		bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED);
 }
 
 static struct bt_mesh_subnet *next_sub(void)
