@@ -164,16 +164,22 @@ uint8_t ll_scan_enable(uint8_t enable)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	lll = &scan->lll;
 	if (duration) {
-		lll->duration_reload = ((uint32_t)duration * 10000U / 625U) /
+		lll->duration_reload = ((uint32_t)duration *
+					EXT_SCAN_DURATION_UNIT_US /
+					SCAN_INTERVAL_UNIT_US) /
 					scan->lll.interval;
 		if (period) {
 			if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK) &&
-			    (duration >= ((uint32_t)period << 7))) {
+			    (duration >= ((uint32_t)period *
+					  EXT_SCAN_PERIOD_UNIT_US/
+					  EXT_SCAN_DURATION_UNIT_US))) {
 				return BT_HCI_ERR_INVALID_PARAM;
 			}
 
-			scan->duration_lazy = ((uint32_t)period * 1280000U /
-					       625U) / scan->lll.interval;
+			scan->duration_lazy = ((uint32_t)period *
+					       EXT_SCAN_PERIOD_UNIT_US /
+					       SCAN_INTERVAL_UNIT_US) /
+					      scan->lll.interval;
 			scan->duration_lazy -= lll->duration_reload;
 			scan->node_rx_scan_term = NULL;
 		} else {
@@ -316,7 +322,8 @@ void ull_scan_params_set(struct lll_scan *lll, uint8_t type, uint16_t interval,
 	lll->type = type;
 	lll->filter_policy = filter_policy;
 	lll->interval = interval;
-	lll->ticks_window = HAL_TICKER_US_TO_TICKS((uint64_t)window * 625U);
+	lll->ticks_window = HAL_TICKER_US_TO_TICKS((uint64_t)window *
+						   SCAN_INTERVAL_UNIT_US);
 }
 
 uint8_t ull_scan_enable(struct ll_scan_set *scan)
@@ -335,7 +342,8 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 	ull_hdr_init(&scan->ull);
 	lll_hdr_init(lll, scan);
 
-	ticks_interval = HAL_TICKER_US_TO_TICKS((uint64_t)lll->interval * 625U);
+	ticks_interval = HAL_TICKER_US_TO_TICKS((uint64_t)lll->interval *
+						SCAN_INTERVAL_UNIT_US);
 
 	/* TODO: active_to_start feature port */
 	scan->evt.ticks_active_to_start = 0U;
@@ -397,7 +405,8 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
 			   TICKER_USER_ID_THREAD, TICKER_ID_SCAN_BASE + handle,
 			   ticks_anchor, 0, ticks_interval,
-			   HAL_TICKER_REMAINDER((uint64_t)lll->interval * 625U),
+			   HAL_TICKER_REMAINDER((uint64_t)lll->interval *
+						SCAN_INTERVAL_UNIT_US),
 			   TICKER_NULL_LAZY,
 			   (scan->evt.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, scan,

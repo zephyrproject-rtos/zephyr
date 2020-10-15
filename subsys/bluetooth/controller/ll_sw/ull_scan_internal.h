@@ -9,6 +9,10 @@
 #define SCAN_HANDLE_1M        0
 #define SCAN_HANDLE_PHY_CODED 1
 
+#define SCAN_INTERVAL_UNIT_US     625U
+#define EXT_SCAN_DURATION_UNIT_US 10000U
+#define EXT_SCAN_PERIOD_UNIT_US   1280000U
+
 int ull_scan_init(void);
 int ull_scan_reset(void);
 
