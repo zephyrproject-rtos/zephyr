@@ -633,3 +633,73 @@ struct pdu_data {
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 	} __packed;
 } __packed;
+
+struct pdu_cis {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	uint8_t ll_id:2;
+	uint8_t nesn:1;
+	uint8_t sn:1;
+	uint8_t cie:1;
+	uint8_t rfu0:1;
+	uint8_t npi:1;
+	uint8_t rfu1:1;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	uint8_t rfu1:1;
+	uint8_t npi:1;
+	uint8_t rfu0:1;
+	uint8_t cie:1;
+	uint8_t sn:1;
+	uint8_t nesn:1;
+	uint8_t ll_id:2;
+#else
+#error "Unsupported endianness"
+#endif /* __BYTE_ORDER__ */
+	uint8_t length;
+	uint8_t payload[0];
+} __packed;
+
+enum pdu_big_ctrl_type {
+	PDU_BIG_CTRL_TYPE_CHAN_MAP_IND = 0x00,
+	PDU_BIG_CTRL_TYPE_TERM_IND = 0x01,
+};
+
+struct pdu_big_ctrl_chan_map_ind {
+	uint8_t  chm[5];
+	uint16_t instant;
+} __packed;
+
+struct pdu_big_ctrl_term_ind {
+	uint8_t  reason;
+	uint16_t instant;
+} __packed;
+
+
+struct pdu_big_ctrl {
+	uint8_t opcode;
+	union {
+		uint8_t ctrl_data[0];
+		struct pdu_big_ctrl_chan_map_ind chan_map_ind;
+		struct pdu_big_ctrl_term_ind term_ind;
+	} __packed;
+} __packed;
+
+struct pdu_bis {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	uint8_t ll_id:2;
+	uint8_t cssn:3;
+	uint8_t cstf:1;
+	uint8_t rfu:2;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	uint8_t rfu:2;
+	uint8_t cstf:1;
+	uint8_t cssn:3;
+	uint8_t ll_id:2;
+#else
+#error "Unsupported endianness"
+#endif /* __BYTE_ORDER__ */
+	uint8_t length;
+	union {
+		uint8_t payload[0];
+		struct pdu_big_ctrl ctrl;
+	} __packed;
+} __packed;
