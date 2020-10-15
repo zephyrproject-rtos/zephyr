@@ -4652,7 +4652,7 @@ int32_t mdm_hl7800_update_fw(char *file_path)
 		goto err;
 	}
 
-	ret = fs_open(&ictx.fw_update_file, file_path);
+	ret = fs_open(&ictx.fw_update_file, file_path, FS_O_READ);
 	if (ret < 0) {
 		LOG_ERR("%s open err: %d", log_strdup(file_path), ret);
 		goto err;

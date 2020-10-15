@@ -121,6 +121,7 @@ config SOC_MIMXRT1052
 	select HAS_MCUX_CSI
 	select HAS_MCUX_EDMA
 	select HAS_MCUX_FLEXCAN
+	select HAS_MCUX_PWM
 
 config SOC_MIMXRT1061
 	bool "SOC_MIMXRT1061"

@@ -136,12 +136,12 @@ TI's supported method of programming and debugging the ``CC1352R SensorTag`` is
 to use it in tandem with a ``CC1352R LaunchPad``, making use of the integrated
 (XDS110) debugger and serial console over USB.
 
-# Disconnect the debug isolation jumpers on your LaunchPad
-# Connect the ARM 10-pin JTAG cable to XDS110 OUT header on your LaunchPad
-# Connect the other end of the ARM10-pin cable to the JTAG header on your LaunchPad SensorTag
-# Connect the 2-pin jumper cable to the top pins of RXD and TXD (grey wire to RXD, white wire to TXD)
-# Connect the other end of the 2-pin jumper to pins 12/RX and 13/TX on the LaunchPad SensorTag (Grey to 12/RX, white to 13/TX)
-# Connect your XDS110 LaunchPad to your PC!
+#. Disconnect the debug isolation jumpers on your LaunchPad
+#. Connect the ARM 10-pin JTAG cable to XDS110 OUT header on your LaunchPad
+#. Connect the other end of the ARM10-pin cable to the JTAG header on your LaunchPad SensorTag
+#. Connect the 2-pin jumper cable to the top pins of RXD and TXD (grey wire to RXD, white wire to TXD)
+#. Connect the other end of the 2-pin jumper to pins 12/RX and 13/TX on the LaunchPad SensorTag (Grey to 12/RX, white to 13/TX)
+#. Connect your XDS110 LaunchPad to your PC!
 
 .. figure:: img/launchpad-lpstk-debug.jpg
    :width: 400px

@@ -95,6 +95,8 @@ source "drivers/sensor/iis2dh/Kconfig"
 
 source "drivers/sensor/iis2dlpc/Kconfig"
 
+source "drivers/sensor/iis2iclx/Kconfig"
+
 source "drivers/sensor/iis2mdc/Kconfig"
 
 source "drivers/sensor/iis3dhhc/Kconfig"
