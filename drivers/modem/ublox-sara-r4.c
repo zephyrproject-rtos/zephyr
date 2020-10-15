@@ -1798,9 +1798,28 @@ error:
 	return ret;
 }
 
-void restart_modem_offload(void)
+void modem_offload_start(const struct device *device)
 {
 	modem_reset();
+
+	struct modem_data *mdm = device->data;
+
+	struct net_if *iface = mdm->net_iface;
+
+	net_if_flag_set(iface, NET_IF_UP);
+
+	net_mgmt_event_notify(NET_EVENT_IF_UP, iface);
+}
+
+void modem_offload_stop(const struct device *device)
+{
+	struct modem_data *mdm = device->data;
+
+	struct net_if *iface = mdm->net_iface;
+
+	net_if_flag_clear(iface, NET_IF_UP);
+
+	net_mgmt_event_notify(NET_EVENT_IF_DOWN, iface);
 }
 
 NET_DEVICE_OFFLOAD_INIT(modem_sara, CONFIG_MODEM_UBLOX_SARA_R4_NAME,
