@@ -194,9 +194,19 @@ static void ppp_change_state(struct ppp_driver_context *ctx,
 
 static int ppp_send_flush(struct ppp_driver_context *ppp, int off)
 {
-	if (!IS_ENABLED(CONFIG_NET_TEST)) {
-		uint8_t *buf = ppp->send_buf;
+	if (IS_ENABLED(CONFIG_NET_TEST)) {
+		return 0;
+	}
+	uint8_t *buf = ppp->send_buf;
 
+	/* If we're using gsm_mux, We don't want to use poll_out because sending
+	 * one byte at a time causes each byte to get wrapped in muxing headers.
+	 * But we can safely call uart_fifo_fill outside of ISR context when
+	 * muxing because uart_mux implements it in software.
+	 */
+	if (IS_ENABLED(CONFIG_GSM_MUX)) {
+		(void)uart_fifo_fill(ppp->dev, buf, off);
+	} else {
 		while (off--) {
 			uart_poll_out(ppp->dev, *buf++);
 		}

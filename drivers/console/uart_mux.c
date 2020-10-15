@@ -516,6 +516,15 @@ static int uart_mux_fifo_fill(const struct device *dev,
 		return -ENOENT;
 	}
 
+	/* If we're not in ISR context, do the xfer synchronously. This
+	 * effectively let's applications use this implementation of fifo_fill
+	 * as a multi-byte poll_out which prevents each byte getting wrapped by
+	 * mux headers.
+	 */
+	if (!k_is_in_isr() && dev_data->dlci) {
+		return gsm_dlci_send(dev_data->dlci, tx_data, len);
+	}
+
 	LOG_DBG("dev_data %p len %d tx_ringbuf space %u",
 		dev_data, len, ring_buf_space_get(dev_data->tx_ringbuf));
 
