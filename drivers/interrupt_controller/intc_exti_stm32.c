@@ -571,7 +571,7 @@ static void __stm32_exti_connect_irqs(const struct device *dev)
 		__stm32_exti_isr_22, DEVICE_GET(exti_stm32),
 		0);
 #endif
-#if CONFIG_SOC_SERIES_STM32F7X
+#if defined(CONFIG_SOC_SERIES_STM32F7X)
 	IRQ_CONNECT(LPTIM1_IRQn,
 		CONFIG_EXTI_STM32_LPTIM1_IRQ_PRI,
 		__stm32_exti_isr_23, DEVICE_GET(exti_stm32),
