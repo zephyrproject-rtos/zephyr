@@ -465,9 +465,10 @@ SECTIONS
     *(.cached .cached.*)
   } >ram :ram_phdr
 
-  .bss SEGSTART_UNCACHED (NOLOAD) : ALIGN(4096)
+  . = ALIGN(4096);
+
+  .bss SEGSTART_UNCACHED (NOLOAD) :
   {
-    . = ALIGN(4096);
     _bss_start = ABSOLUTE(.);
     *(.dynsbss)
     *(.sbss)
