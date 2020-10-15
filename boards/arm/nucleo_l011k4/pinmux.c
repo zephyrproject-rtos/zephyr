@@ -13,11 +13,6 @@
 
 /* pin assignments for NUCLEO-L011K4 board */
 static const struct pin_config pinconf[] = {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi1), okay) && CONFIG_SPI
-	{STM32_PIN_PA5, STM32L0_PINMUX_FUNC_PA5_SPI1_SCK},
-	{STM32_PIN_PA6, STM32L0_PINMUX_FUNC_PA6_SPI1_MISO},
-	{STM32_PIN_PA7, STM32L0_PINMUX_FUNC_PA7_SPI1_MOSI},
-#endif
 };
 
 static int pinmux_stm32_init(const struct device *port)

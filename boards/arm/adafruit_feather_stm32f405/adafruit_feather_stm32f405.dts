@@ -46,7 +46,11 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
+&spi1_nss_pa15 { slew-rate = "very-high-speed"; };
+
 &spi1 {
+	pinctrl-0 = <&spi1_nss_pa15 &spi1_sck_pb3
+		     &spi1_miso_pb4 &spi1_mosi_pb5>;
 	status = "okay";
 	cs-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
 	gd25q16: gd25q16c@0 {
@@ -64,6 +68,7 @@
 };
 
 &spi2 {
+	pinctrl-0 = <&spi2_sck_pb13 &spi2_miso_pb14 &spi2_mosi_pb15>;
 	status = "okay";
 };
 

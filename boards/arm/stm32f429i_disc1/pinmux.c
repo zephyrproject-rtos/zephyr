@@ -14,14 +14,6 @@
 
 /* pin assignments for STM32F429I-DISC1 board */
 static const struct pin_config pinconf[] = {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi5), okay) && CONFIG_SPI
-#ifdef CONFIG_SPI_STM32_USE_HW_SS
-	{STM32_PIN_PF6, STM32F4_PINMUX_FUNC_PF6_SPI5_MASTER_NSS},
-#endif /* CONFIG_SPI_STM32_USE_HW_SS */
-	{STM32_PIN_PF7, STM32F4_PINMUX_FUNC_PF7_SPI5_MASTER_SCK},
-	{STM32_PIN_PF8, STM32F4_PINMUX_FUNC_PF8_SPI5_MASTER_MISO},
-	{STM32_PIN_PF9, STM32F4_PINMUX_FUNC_PF9_SPI5_MASTER_MOSI},
-#endif
 };
 
 static int pinmux_stm32_init(const struct device *port)

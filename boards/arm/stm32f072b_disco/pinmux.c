@@ -15,11 +15,6 @@
 
 /* pin assignments for STM32F072B-DISCO board */
 static const struct pin_config pinconf[] = {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi1), okay) && CONFIG_SPI
-	{STM32_PIN_PB3, STM32F0_PINMUX_FUNC_PB3_SPI1_SCK},
-	{STM32_PIN_PB4, STM32F0_PINMUX_FUNC_PB4_SPI1_MISO},
-	{STM32_PIN_PB5, STM32F0_PINMUX_FUNC_PB5_SPI1_MOSI},
-#endif
 };
 
 static int pinmux_stm32_init(const struct device *port)

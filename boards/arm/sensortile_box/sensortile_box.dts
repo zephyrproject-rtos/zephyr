@@ -93,6 +93,8 @@
 };
 
 &spi1 {
+	pinctrl-0 = <&spi1_nss_pe12 &spi1_sck_pe13
+		     &spi1_miso_pe14 &spi1_mosi_pe15>;
 	status = "okay";
 
 	cs-gpios = <&gpioe 11 GPIO_ACTIVE_LOW>, <&gpioe 12 GPIO_ACTIVE_LOW>, <&gpioe 10 GPIO_ACTIVE_LOW>;
@@ -123,6 +125,8 @@
 };
 
 &spi3 {
+	pinctrl-0 = <&spi3_nss_pa15 &spi3_sck_pb3
+		     &spi3_miso_pb4 &spi3_mosi_pb5>;
 	status = "okay";
 
 	cs-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
