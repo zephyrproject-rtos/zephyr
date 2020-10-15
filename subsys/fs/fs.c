@@ -581,13 +581,39 @@ int fs_mount(struct fs_mount_t *mp)
 	const struct fs_file_system_t *fs;
 	sys_dnode_t *node;
 	int rc = -EINVAL;
+	size_t len = 0;
 
+	/* Do all the mp checks prior to locking the mutex on the file
+	 * subsystem.
+	 */
 	if ((mp == NULL) || (mp->mnt_point == NULL)) {
 		LOG_ERR("mount point not initialized!!");
 		return -EINVAL;
 	}
 
+	len = strlen(mp->mnt_point);
+
+	if ((len <= 1) || (mp->mnt_point[0] != '/')) {
+		LOG_ERR("invalid mount point!!");
+		return -EINVAL;
+	}
+
 	k_mutex_lock(&mutex, K_FOREVER);
+
+	/* Check if mount point already exists */
+	SYS_DLIST_FOR_EACH_NODE(&fs_mnt_list, node) {
+		itr = CONTAINER_OF(node, struct fs_mount_t, node);
+		/* continue if length does not match */
+		if (len != itr->mountp_len) {
+			continue;
+		}
+
+		if (strncmp(mp->mnt_point, itr->mnt_point, len) == 0) {
+			LOG_ERR("mount point already exists!!");
+			rc = -EBUSY;
+			goto mount_err;
+		}
+	}
 
 	/* Get file system information */
 	fs = fs_type_get(mp->type);
@@ -597,37 +623,16 @@ int fs_mount(struct fs_mount_t *mp)
 		goto mount_err;
 	}
 
-	mp->mountp_len = strlen(mp->mnt_point);
-
-	if ((mp->mnt_point[0] != '/') ||
-			(strlen(mp->mnt_point) <= 1)) {
-		LOG_ERR("invalid mount point!!");
-		rc = -EINVAL;
-		goto mount_err;
-	}
-
 	if (fs->mount == NULL) {
-		LOG_ERR("fs ops functions not set!!");
-		rc = -EINVAL;
+		LOG_ERR("fs type %d does not support mounting", mp->type);
+		rc = -ENOTSUP;
 		goto mount_err;
 	}
 
-	/* Check if mount point already exists */
-	SYS_DLIST_FOR_EACH_NODE(&fs_mnt_list, node) {
-		itr = CONTAINER_OF(node, struct fs_mount_t, node);
-		/* continue if length does not match */
-		if (mp->mountp_len != itr->mountp_len) {
-			continue;
-		}
-
-		if (strncmp(mp->mnt_point, itr->mnt_point,
-					mp->mountp_len) == 0) {
-			LOG_ERR("mount Point already exists!!");
-			rc = -EBUSY;
-			goto mount_err;
-		}
+	if (fs->unmount == NULL) {
+		LOG_WRN("mount path %s is not unmountable",
+			log_strdup(mp->mnt_point));
 	}
-
 
 	rc = fs->mount(mp);
 	if (rc < 0) {
@@ -635,10 +640,10 @@ int fs_mount(struct fs_mount_t *mp)
 		goto mount_err;
 	}
 
-	/* set mount point fs interface */
+	/* Update mount point data and append it to the list */
+	mp->mountp_len = len;
 	mp->fs = fs;
 
-	/*  append to the mount list */
 	sys_dlist_append(&fs_mnt_list, &mp->node);
 	LOG_DBG("fs mounted at %s", log_strdup(mp->mnt_point));
 

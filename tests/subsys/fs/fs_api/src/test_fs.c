@@ -295,11 +295,13 @@ static int temp_statvfs(struct fs_mount_t *mountp,
 
 static int temp_mount(struct fs_mount_t *mountp)
 {
+	size_t len = strlen(mountp->mnt_point);
+
 	if (mountp == NULL) {
 		return -EINVAL;
 	}
 
-	if (mountp->mnt_point[mountp->mountp_len - 1] != ':') {
+	if (mountp->mnt_point[len - 1] != ':') {
 		return -EINVAL;
 	}
 	mp[mountp->type] = mountp;
