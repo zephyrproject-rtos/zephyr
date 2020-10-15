@@ -43,6 +43,12 @@ config SCHED_IPI_VECTOR
 	range 33 255
 	depends on SMP
 
+config TLB_IPI_VECTOR
+	int "IDT vector to use for TLB shootdown IPI"
+	default 35
+	range 33 255
+	depends on SMP
+
 # We should really only have to provide one of the following two values,
 # but a bug in the Zephyr SDK for x86 precludes the use of division in
 # the assembler. For now, we require that these values be specified manually,

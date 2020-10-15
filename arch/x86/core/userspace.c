@@ -12,20 +12,6 @@
 #include <x86_mmu.h>
 
 #ifndef CONFIG_X86_KPTI
-/* Set CR3 to a physical address. There must be a valid top-level paging
- * structure here or the CPU will triple fault. The incoming page tables must
- * have the same kernel mappings wrt supervisor mode. Don't use this function
- * unless you know exactly what you are doing.
- */
-static inline void cr3_set(uintptr_t phys)
-{
-#ifdef CONFIG_X86_64
-	__asm__ volatile("movq %0, %%cr3\n\t" : : "r" (phys) : "memory");
-#else
-	__asm__ volatile("movl %0, %%cr3\n\t" : : "r" (phys) : "memory");
-#endif
-}
-
 /* Update the to the incoming thread's page table, and update the location of
  * the privilege elevation stack.
  *
@@ -61,7 +47,7 @@ void z_x86_swap_update_page_tables(struct k_thread *incoming)
 	ptables_phys = incoming->arch.ptables;
 
 	if (ptables_phys != z_x86_cr3_get()) {
-		cr3_set(ptables_phys);
+		z_x86_cr3_set(ptables_phys);
 	}
 }
 #endif /* CONFIG_X86_KPTI */

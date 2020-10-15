@@ -17,6 +17,7 @@
 #include <x86_mmu.h>
 #include <init.h>
 #include <kernel_internal.h>
+#include <drivers/interrupt_controller/loapic.h>
 
 LOG_MODULE_DECLARE(os);
 
@@ -218,6 +219,42 @@ static inline void tlb_flush_page(void *addr)
 
 	/* TODO: Need to implement TLB shootdown for SMP */
 }
+
+#if defined(CONFIG_SMP)
+void z_x86_tlb_ipi(const void *arg)
+{
+	uintptr_t ptables;
+
+	ARG_UNUSED(arg);
+
+#ifdef CONFIG_X86_KPTI
+	/* We're always on the kernel's set of page tables in this context
+	 * if KPTI is turned on
+	 */
+	ptables = z_x86_cr3_get();
+	__ASSERT(ptables == (uintptr_t)&z_x86_kernel_ptables, "");
+#else
+	/* We might have been moved to another memory domain, so always invoke
+	 * z_x86_thread_page_tables_get() instead of using current CR3 value.
+	 */
+	ptables = (uintptr_t)z_x86_thread_page_tables_get(_current);
+#endif
+	/*
+	 * In the future, we can consider making this smarter, such as
+	 * propagating which page tables were modified (in case they are
+	 * not active on this CPU) or an address range to call
+	 * tlb_flush_page() on.
+	 */
+	LOG_DBG("%s on CPU %d\n", __func__, arch_curr_cpu()->id);
+
+	z_x86_cr3_set(ptables);
+}
+
+static inline void tlb_shootdown(void)
+{
+	z_loapic_ipi(0, LOAPIC_ICR_IPI_OTHERS, CONFIG_TLB_IPI_VECTOR);
+}
+#endif /* CONFIG_SMP */
 
 static inline void assert_addr_aligned(uintptr_t addr)
 {

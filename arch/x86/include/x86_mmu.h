@@ -127,6 +127,20 @@ void z_x86_apply_mem_domain(struct k_thread *thread,
 			    struct k_mem_domain *mem_domain);
 #endif /* CONFIG_USERSPACE */
 
+/* Set CR3 to a physical address. There must be a valid top-level paging
+ * structure here or the CPU will triple fault. The incoming page tables must
+ * have the same kernel mappings wrt supervisor mode. Don't use this function
+ * unless you know exactly what you are doing.
+ */
+static inline void z_x86_cr3_set(uintptr_t phys)
+{
+#ifdef CONFIG_X86_64
+	__asm__ volatile("movq %0, %%cr3\n\t" : : "r" (phys) : "memory");
+#else
+	__asm__ volatile("movl %0, %%cr3\n\t" : : "r" (phys) : "memory");
+#endif
+}
+
 /* Return cr3 value, which is the physical (not virtual) address of the
  * current set of page tables
  */
@@ -161,4 +175,9 @@ static inline pentry_t *z_x86_thread_page_tables_get(struct k_thread *thread)
 	return z_x86_kernel_ptables;
 #endif
 }
+
+#ifdef CONFIG_SMP
+/* Handling function for TLB shootdown inter-processor interrupts. */
+void z_x86_tlb_ipi(const void *arg);
+#endif
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_X86_MMU_H */
