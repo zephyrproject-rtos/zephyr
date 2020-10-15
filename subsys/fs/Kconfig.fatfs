@@ -126,6 +126,11 @@ config FS_FATFS_CODEPAGE
 	  949 - Korean (DBCS)
 	  950 - Traditional Chinese (DBCS)
 
+config FS_FATFS_MAX_SS
+	int "Maximum supported sector size"
+	range 512 4096
+	default 512
+
 endmenu
 
 endif # FAT_FILESYSTEM_ELM
