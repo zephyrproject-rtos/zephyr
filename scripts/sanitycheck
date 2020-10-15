@@ -798,7 +798,7 @@ def main():
         hwm.dump(hwmap=hwm.connected_hardware, connected_only=True)
         return
 
-    if options.west_runner and not options.west_flash:
+    if options.west_runner and options.west_flash is None:
         logger.error("west-runner requires west-flash to be enabled")
         sys.exit(1)
 
