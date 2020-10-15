@@ -7,6 +7,7 @@
 #include <device.h>
 #include <devicetree/gpio.h>
 #include <drivers/espi.h>
+#include <power/ndsx_espi.h>
 #include <power/x86_non_dsx.h>
 #include <zephyr.h>
 
@@ -102,12 +103,6 @@ static void gpio_set_level(const char *net_name, int val)
 		if (gpio_pin_set_raw(gpio->port, gpio->pin, val))
 			LOG_ERR("Failed to set GPIO %s", net_name);
 	}
-}
-
-/* TODO: Add code for eSPI init */
-static int vw_get_level(enum espi_vwire_signal signal)
-{
-	return 0;
 }
 
 static void enable_power_rails(bool enable)
@@ -244,11 +239,24 @@ static void power_pass_thru_handler(const char *in_signal,
 	}
 }
 
+void espi_bus_reset(void)
+{
+	/* If SOC is up toggle the PM_PWRBTN pin */
+	if (gpio_get_level(GPIO_NET_NAME(PCH_EC_SLP_SUS_L))) {
+		LOG_INF("Toggle PM PWRBTN");
+
+		gpio_set_level(GPIO_NET_NAME(EC_PCH_PWR_BTN_ODL), 0);
+		k_msleep(POWER_EC_PCH_PM_PWRBTN_DELAY_MS);
+		gpio_set_level(GPIO_NET_NAME(EC_PCH_PWR_BTN_ODL), 1);
+	}
+}
+
 void pwrseq_thread(void *p1, void *p2, void *p3)
 {
 	int32_t t_wait_ms = *(int32_t *) p1;
 
 	powseq_gpio_init();
+	ndsx_espi_configure();
 
 	while (true) {
 		LOG_INF("In power state %d", power_state);

@@ -104,6 +104,9 @@ enum power_states_ndsx {
 #define POWER_EC_PCH_RSMRST_DELAY_MS	10
 #define POWER_EC_PCH_SYS_PWROK_DELAY_MS	50
 #define POWER_EC_VR_EN_VCCIN_DELAY_MS	5
+#define POWER_EC_PCH_PM_PWRBTN_DELAY_MS	200
+
+void espi_bus_reset(void);
 
 /*
  * @brief Create power sequencing thread
