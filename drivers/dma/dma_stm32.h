@@ -36,6 +36,9 @@ struct dma_stm32_config {
 	bool support_m2m;
 	uint32_t base;
 	uint32_t max_streams;
+#ifdef CONFIG_DMAMUX_STM32
+	uint8_t offset; /* position in the list of dmamux channel list */
+#endif
 	struct dma_stm32_stream *streams;
 };
 

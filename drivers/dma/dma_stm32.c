@@ -593,16 +593,11 @@ static int dma_stm32_init(const struct device *dev)
 
 	config->config_irq(dev);
 
-#ifdef CONFIG_DMAMUX_STM32
-	int offset = (strncmp(dev->name, "DMA_1", 5)
-			? config->max_streams : 0);
-#endif /* CONFIG_DMAMUX_STM32 */
-
 	for (uint32_t i = 0; i < config->max_streams; i++) {
 		config->streams[i].busy = false;
 #ifdef CONFIG_DMAMUX_STM32
 		/* each further stream->mux_channel is fixed here */
-		config->streams[i].mux_channel = i + offset;
+		config->streams[i].mux_channel = i + config->offset;
 #endif /* CONFIG_DMAMUX_STM32 */
 	}
 
@@ -638,6 +633,13 @@ static const struct dma_driver_api dma_funcs = {
 	.get_status	 = dma_stm32_get_status,
 };
 
+#ifdef CONFIG_DMAMUX_STM32
+#define DMA_STM32_OFFSET_INIT(index)			\
+	.offset = DT_INST_PROP(index, dma_offset),
+#else
+#define DMA_STM32_OFFSET_INIT(index)
+#endif /* CONFIG_DMAMUX_STM32 */
+
 #define DMA_STM32_INIT_DEV(index)					\
 static struct dma_stm32_stream						\
 	dma_stm32_streams_##index[DMA_STM32_##index##_STREAM_COUNT];	\
@@ -650,6 +652,7 @@ const struct dma_stm32_config dma_stm32_config_##index = {		\
 	.support_m2m = DT_INST_PROP(index, st_mem2mem),			\
 	.max_streams = DMA_STM32_##index##_STREAM_COUNT,		\
 	.streams = dma_stm32_streams_##index,				\
+	DMA_STM32_OFFSET_INIT(index)					\
 };									\
 									\
 static struct dma_stm32_data dma_stm32_data_##index = {			\
