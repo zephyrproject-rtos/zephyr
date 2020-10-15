@@ -24,3 +24,4 @@ endif()
 
 board_finalize_runner_args(arc-nsim)
 include(${ZEPHYR_BASE}/boards/common/mdb-nsim.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/mdb-hw.board.cmake)
