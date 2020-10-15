@@ -29,6 +29,8 @@ struct eth_stm32_hal_dev_cfg {
 #if !defined(CONFIG_SOC_SERIES_STM32H7X)
 	struct stm32_pclken pclken_ptp;
 #endif /* !defined(CONFIG_SOC_SERIES_STM32H7X) */
+	const struct soc_gpio_pinctrl *pinctrl;
+	size_t pinctrl_len;
 };
 
 /* Device run time data */

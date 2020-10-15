@@ -26,6 +26,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <sys/printk.h>
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/stm32_clock_control.h>
+#include <pinmux/stm32/pinmux_stm32.h>
 
 #include "eth.h"
 #include "eth_stm32_hal_priv.h"
@@ -654,6 +655,14 @@ static int eth_initialize(const struct device *dev)
 		return -EIO;
 	}
 
+	/* configure pinmux */
+	ret = stm32_dt_pinctrl_configure(cfg->pinctrl, cfg->pinctrl_len,
+					 (uint32_t)dev_data->heth.Instance);
+	if (ret < 0) {
+		LOG_ERR("Could not configure ethernet pins");
+		return ret;
+	}
+
 	heth = &dev_data->heth;
 
 #if defined(CONFIG_ETH_STM32_HAL_RANDOM_MAC)
@@ -852,6 +861,8 @@ static void eth0_irq_config(void)
 	irq_enable(DT_INST_IRQN(0));
 }
 
+static const struct soc_gpio_pinctrl eth0_pins[] = ST_STM32_DT_INST_PINCTRL(0, 0);
+
 static const struct eth_stm32_hal_dev_cfg eth0_config = {
 	.config_func = eth0_irq_config,
 	.pclken = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, stmmaceth, bus),
@@ -864,6 +875,8 @@ static const struct eth_stm32_hal_dev_cfg eth0_config = {
 	.pclken_ptp = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_ptp, bus),
 		       .enr = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_ptp, bits)},
 #endif /* !CONFIG_SOC_SERIES_STM32H7X */
+	.pinctrl = eth0_pins,
+	.pinctrl_len = ARRAY_SIZE(eth0_pins),
 };
 
 static struct eth_stm32_hal_dev_data eth0_data = {
