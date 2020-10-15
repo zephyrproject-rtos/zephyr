@@ -17,8 +17,7 @@ endif()
 trusted_firmware_build(BINARY_DIR ${CMAKE_BINARY_DIR}/tfm
                        BOARD ${TFM_TARGET_PLATFORM}
                        IPC
-                       CFGFILE "ConfigRegressionIPC"
-                       OUT_VENEERS_FILE VENEERS_FILE
+                       REGRESSION
                        ${TFM_BL2_ARGUMENT}
 )
 
@@ -38,7 +37,7 @@ target_sources(app PRIVATE src/util_app_log.c)
 target_sources(app PRIVATE src/util_sformat.c)
 
 # Include TF-M secure service source files
-target_link_libraries(app PRIVATE tfm_ipc_psa_api)
+target_link_libraries(app PRIVATE tfm_api)
 
 # Link in veneer function locations
 target_link_libraries(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${VENEERS_FILE})
