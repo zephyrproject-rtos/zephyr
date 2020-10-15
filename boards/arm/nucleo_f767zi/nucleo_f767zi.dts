@@ -9,6 +9,13 @@
 #include <st/f7/stm32f767zitx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
+/*
+ * WARNING: The pin PA7 will conflict on selection of SPI_1 and ETH_STM32_HAL.
+ *          If you require both peripherals, and you do not need Arduino Uno v3
+ *          comaptability, the pin PB5 (also on ST Zio connector) can be used
+ *          for the SPI_1 MOSI signal.
+ */
+
 / {
 	model = "STMicroelectronics STM32F767ZI-NUCLEO board";
 	compatible = "st,stm32f767zi-nucleo";
@@ -133,6 +140,15 @@
 
 &mac {
 	status = "okay";
+	pinctrl-0 = <&eth_mdc_pc1
+		     &eth_rxd0_pc4
+		     &eth_rxd1_pc5
+		     &eth_ref_clk_pa1
+		     &eth_mdio_pa2
+		     &eth_crs_dv_pa7
+		     &eth_tx_en_pg11
+		     &eth_txd0_pg13
+		     &eth_txd1_pb13>;
 };
 
 &flash0 {
