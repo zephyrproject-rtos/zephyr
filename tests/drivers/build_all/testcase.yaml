@@ -87,5 +87,10 @@ tests:
   drivers.modem.build:
     build_only: true
     extra_args: CONF_FILE=modem.conf
-    platform_allow: pinnacle_100_dvk
+    platform_exclude: serpente particle_boron
+    tags: drivers
+  drivers.modem.ublox_sara.build:
+    build_only: true
+    extra_args: CONF_FILE=modem_ublox_sara.conf
+    platform_exclude: serpente pinnacle_100_dvk
     tags: drivers
