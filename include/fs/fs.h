@@ -392,10 +392,17 @@ int fs_closedir(struct fs_dir_t *zdp);
  * calling the file system specific mount function and adding
  * the mount point to mounted file system list.
  *
- * @param mp Pointer to the fs_mount_t structure
+ * @param mp Pointer to the fs_mount_t structure.  Referenced object
+ *	     is not changed if the mount operation failed.
+ *	     A reference is captured in the fs infrastructure if the
+ *	     mount operation succeeds, and the application must not
+ *	     mutate the structure contents until fs_unmount is
+ *	     successfully invoked on the same pointer.
  *
  * @retval 0 on success;
- * @retval <0 a negative errno code on error.
+ * @retval -ENOENT when file system type has not been registered;
+ * @retval -ENOTSUP when not supported by underlying file system driver;
+ * @retval <0 a other negative errno code on error.
  */
 int fs_mount(struct fs_mount_t *mp);
 
