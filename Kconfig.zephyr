@@ -483,13 +483,6 @@ config BOOTLOADER_BOSSA_ADAFRUIT_UF2
 
 endchoice
 
-config BOOTLOADER_KEXEC
-	bool "Boot using Linux kexec() system call"
-	depends on X86
-	help
-	  This option signifies that Linux boots the kernel using kexec system call
-	  and utility. This method is used to boot the kernel over the network.
-
 config BOOTLOADER_CONTEXT_RESTORE
 	bool "Boot loader has context restore support"
 	default y

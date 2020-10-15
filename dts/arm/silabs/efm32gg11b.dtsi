@@ -12,6 +12,7 @@
 
 / {
 	chosen {
+		zephyr,entropy = &trng0;
 		zephyr,flash-controller = &msc;
 	};
 
@@ -19,7 +20,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
 		};
@@ -288,6 +289,33 @@
 				#gpio-cells = <2>;
 				status = "disabled";
 			};
+
+
+			trng0: trng@4001d000 {
+				compatible = "silabs,gecko-trng";
+				reg = <0x4001d000 0x400>;
+				interrupts = <66 0>;
+				label = "TRNG0";
+				status = "disabled";
+			};
+		};
+
+		wdog0: wdog@40052000 {
+			compatible = "silabs,gecko-wdog";
+			reg = <0x40052000 0x2C>;
+			peripheral-id = <0>;
+			label = "WDOG0";
+			interrupts = <1 0>;
+			status = "disabled";
+		};
+
+		wdog1: wdog@40052400 {
+			compatible = "silabs,gecko-wdog";
+			reg = <0x40052400 0x2C>;
+			peripheral-id = <1>;
+			label = "WDOG1";
+			interrupts = <64 0>;
+			status = "disabled";
 		};
 	};
 };

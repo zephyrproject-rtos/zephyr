@@ -155,7 +155,7 @@ static int set_starting_state(uint32_t *flags, uint32_t ctx)
 	} else if (current_ctx != ctx) {
 		err = -EPERM;
 	} else {
-		err = -EBUSY;
+		err = -EALREADY;
 	}
 
 	irq_unlock(key);
@@ -339,9 +339,8 @@ static int api_stop(const struct device *dev, clock_control_subsys_t subsys)
 	return stop(dev, subsys, CTX_API);
 }
 
-static int async_start(const struct device *dev,
-			clock_control_subsys_t subsys,
-			struct clock_control_async_data *data, uint32_t ctx)
+static int async_start(const struct device *dev, clock_control_subsys_t subsys,
+			clock_control_cb_t cb, void *user_data, uint32_t ctx)
 {
 	enum clock_control_nrf_type type = (enum clock_control_nrf_type)subsys;
 	struct nrf_clock_control_sub_data *subdata = get_sub_data(dev, type);
@@ -352,8 +351,8 @@ static int async_start(const struct device *dev,
 		return err;
 	}
 
-	subdata->cb = data->cb;
-	subdata->user_data = data->user_data;
+	subdata->cb = cb;
+	subdata->user_data = user_data;
 
 	 get_sub_config(dev, type)->start();
 
@@ -361,9 +360,9 @@ static int async_start(const struct device *dev,
 }
 
 static int api_start(const struct device *dev, clock_control_subsys_t subsys,
-			     struct clock_control_async_data *data)
+		     clock_control_cb_t cb, void *user_data)
 {
-	return async_start(dev, subsys, data, CTX_API);
+	return async_start(dev, subsys, cb, user_data, CTX_API);
 }
 
 static void blocking_start_callback(const struct device *dev,
@@ -379,17 +378,13 @@ static int api_blocking_start(const struct device *dev,
 			      clock_control_subsys_t subsys)
 {
 	struct k_sem sem = Z_SEM_INITIALIZER(sem, 0, 1);
-	struct clock_control_async_data data = {
-		.cb = blocking_start_callback,
-		.user_data = &sem
-	};
 	int err;
 
 	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
 		return -ENOTSUP;
 	}
 
-	err = api_start(dev, subsys, &data);
+	err = api_start(dev, subsys, blocking_start_callback, &sem);
 	if (err < 0) {
 		return err;
 	}
@@ -428,14 +423,10 @@ static void onoff_started_callback(const struct device *dev,
 static void onoff_start(struct onoff_manager *mgr,
 			onoff_notify_fn notify)
 {
-	struct clock_control_async_data data = {
-		.cb = onoff_started_callback,
-		.user_data = notify
-	};
 	int err;
 
 	err = async_start(DEVICE_GET(clock_nrf), get_subsys(mgr),
-			  &data, CTX_ONOFF);
+			  onoff_started_callback, notify, CTX_ONOFF);
 	if (err < 0) {
 		notify(mgr, err);
 	}

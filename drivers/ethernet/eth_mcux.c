@@ -158,20 +158,6 @@ struct eth_context {
 	uint8_t frame_buf[NET_ETH_MAX_FRAME_SIZE]; /* Max MTU + ethernet header */
 };
 
-#if defined(CONFIG_HAS_MCUX_CACHE)
-static __nocache enet_rx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
-rx_buffer_desc[CONFIG_ETH_MCUX_RX_BUFFERS];
-
-static __nocache enet_tx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
-tx_buffer_desc[CONFIG_ETH_MCUX_TX_BUFFERS];
-#else
-static enet_rx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
-rx_buffer_desc[CONFIG_ETH_MCUX_RX_BUFFERS];
-
-static enet_tx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
-tx_buffer_desc[CONFIG_ETH_MCUX_TX_BUFFERS];
-#endif
-
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 /* Packets to be timestamped. */
 static struct net_pkt *ts_tx_pkt[CONFIG_ETH_MCUX_TX_BUFFERS];
@@ -191,12 +177,6 @@ static int ts_tx_rd, ts_tx_wr;
 #define ETH_MCUX_BUFFER_SIZE \
 	ROUND_UP(ENET_FRAME_MAX_FRAMELEN, ENET_BUFF_ALIGNMENT)
 #endif /* CONFIG_NET_VLAN */
-
-static uint8_t __aligned(ENET_BUFF_ALIGNMENT)
-rx_buffer[CONFIG_ETH_MCUX_RX_BUFFERS][ETH_MCUX_BUFFER_SIZE];
-
-static uint8_t __aligned(ENET_BUFF_ALIGNMENT)
-tx_buffer[CONFIG_ETH_MCUX_TX_BUFFERS][ETH_MCUX_BUFFER_SIZE];
 
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
 static void eth_mcux_phy_enter_reset(struct eth_context *context);
@@ -969,18 +949,9 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 static void eth_mcux_init(const struct device *dev)
 {
 	struct eth_context *context = dev->data;
+	const enet_buffer_config_t *buffer_config = dev->config;
 	enet_config_t enet_config;
 	uint32_t sys_clock;
-	enet_buffer_config_t buffer_config = {
-		.rxBdNumber = CONFIG_ETH_MCUX_RX_BUFFERS,
-		.txBdNumber = CONFIG_ETH_MCUX_TX_BUFFERS,
-		.rxBuffSizeAlign = ETH_MCUX_BUFFER_SIZE,
-		.txBuffSizeAlign = ETH_MCUX_BUFFER_SIZE,
-		.rxBdStartAddrAlign = rx_buffer_desc,
-		.txBdStartAddrAlign = tx_buffer_desc,
-		.rxBufferAlign = rx_buffer[0],
-		.txBufferAlign = tx_buffer[0],
-	};
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 	uint8_t ptp_multicast[6] = { 0x01, 0x80, 0xC2, 0x00, 0x00, 0x0E };
 #endif
@@ -1020,7 +991,7 @@ static void eth_mcux_init(const struct device *dev)
 	ENET_Init(context->base,
 		  &context->enet_handle,
 		  &enet_config,
-		  &buffer_config,
+		  buffer_config,
 		  context->mac_addr,
 		  sys_clock);
 
@@ -1323,9 +1294,45 @@ static struct eth_context eth0_context = {
 #endif
 };
 
-ETH_NET_DEVICE_INIT(eth_mcux_0, DT_INST_LABEL(0), eth_init,
-		    ETH_MCUX_PM_FUNC, &eth0_context, NULL,
-		    CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU);
+#if defined(CONFIG_HAS_MCUX_CACHE)
+static __nocache enet_rx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
+	eth0_rx_buffer_desc[CONFIG_ETH_MCUX_RX_BUFFERS];
+static __nocache enet_tx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
+	eth0_tx_buffer_desc[CONFIG_ETH_MCUX_TX_BUFFERS];
+#else
+static enet_rx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
+	eth0_rx_buffer_desc[CONFIG_ETH_MCUX_RX_BUFFERS];
+
+static enet_tx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
+	eth0_tx_buffer_desc[CONFIG_ETH_MCUX_TX_BUFFERS];
+#endif
+
+static uint8_t __aligned(ENET_BUFF_ALIGNMENT)
+	eth0_rx_buffer[CONFIG_ETH_MCUX_RX_BUFFERS][ETH_MCUX_BUFFER_SIZE];
+
+static uint8_t __aligned(ENET_BUFF_ALIGNMENT)
+	eth0_tx_buffer[CONFIG_ETH_MCUX_TX_BUFFERS][ETH_MCUX_BUFFER_SIZE];
+
+static const enet_buffer_config_t eth0_buffer_config = {
+	.rxBdNumber = CONFIG_ETH_MCUX_RX_BUFFERS,
+	.txBdNumber = CONFIG_ETH_MCUX_TX_BUFFERS,
+	.rxBuffSizeAlign = ETH_MCUX_BUFFER_SIZE,
+	.txBuffSizeAlign = ETH_MCUX_BUFFER_SIZE,
+	.rxBdStartAddrAlign = eth0_rx_buffer_desc,
+	.txBdStartAddrAlign = eth0_tx_buffer_desc,
+	.rxBufferAlign = eth0_rx_buffer[0],
+	.txBufferAlign = eth0_tx_buffer[0],
+};
+
+ETH_NET_DEVICE_INIT(eth_mcux_0,
+		    DT_INST_LABEL(0),
+		    eth_init,
+		    ETH_MCUX_PM_FUNC,
+		    &eth0_context,
+		    &eth0_buffer_config,
+		    CONFIG_ETH_INIT_PRIORITY,
+		    &api_funcs,
+		    NET_ETH_MTU);
 
 static void eth0_config_func(void)
 {
@@ -1434,9 +1441,45 @@ static struct eth_context eth1_context = {
 #endif
 };
 
-ETH_NET_DEVICE_INIT(eth_mcux_1, DT_INST_LABEL(1), eth_init,
-		    ETH_MCUX_PM_FUNC, &eth1_context, NULL,
-		    CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU);
+#if defined(CONFIG_HAS_MCUX_CACHE)
+static __nocache enet_rx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
+	eth1_rx_buffer_desc[CONFIG_ETH_MCUX_RX_BUFFERS];
+static __nocache enet_tx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
+	eth1_tx_buffer_desc[CONFIG_ETH_MCUX_TX_BUFFERS];
+#else
+static enet_rx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
+	eth1_rx_buffer_desc[CONFIG_ETH_MCUX_RX_BUFFERS];
+
+static enet_tx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
+	eth1_tx_buffer_desc[CONFIG_ETH_MCUX_TX_BUFFERS];
+#endif
+
+static uint8_t __aligned(ENET_BUFF_ALIGNMENT)
+	eth1_rx_buffer[CONFIG_ETH_MCUX_RX_BUFFERS][ETH_MCUX_BUFFER_SIZE];
+
+static uint8_t __aligned(ENET_BUFF_ALIGNMENT)
+	eth1_tx_buffer[CONFIG_ETH_MCUX_TX_BUFFERS][ETH_MCUX_BUFFER_SIZE];
+
+static const enet_buffer_config_t eth1_buffer_config = {
+	.rxBdNumber = CONFIG_ETH_MCUX_RX_BUFFERS,
+	.txBdNumber = CONFIG_ETH_MCUX_TX_BUFFERS,
+	.rxBuffSizeAlign = ETH_MCUX_BUFFER_SIZE,
+	.txBuffSizeAlign = ETH_MCUX_BUFFER_SIZE,
+	.rxBdStartAddrAlign = eth1_rx_buffer_desc,
+	.txBdStartAddrAlign = eth1_tx_buffer_desc,
+	.rxBufferAlign = eth1_rx_buffer[0],
+	.txBufferAlign = eth1_tx_buffer[0],
+};
+
+ETH_NET_DEVICE_INIT(eth_mcux_1,
+		    DT_INST_LABEL(1),
+		    eth_init,
+		    ETH_MCUX_PM_FUNC,
+		    &eth1_context,
+		    &eth1_buffer_config,
+		    CONFIG_ETH_INIT_PRIORITY,
+		    &api_funcs,
+		    NET_ETH_MTU);
 
 static void eth1_config_func(void)
 {

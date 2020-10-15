@@ -471,9 +471,9 @@
 			label = "USBD";
 		};
 
-		enet: ethernet@400c0004 {
+		enet: ethernet@400c0000 {
 			compatible = "nxp,kinetis-ethernet";
-			reg = <0x400c0004 0x620>;
+			reg = <0x400c0000 0x620>;
 			interrupts = <83 0>, <84 0>, <85 0>;
 			interrupt-names = "TX", "RX", "ERR_MISC";
 			status = "disabled";

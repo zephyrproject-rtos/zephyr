@@ -1,4 +1,5 @@
 # Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2020 Nordic Semiconductor (ASA)
 # SPDX-License-Identifier: Apache-2.0
 
 menu "File Systems"
@@ -22,12 +23,6 @@ config APP_LINK_WITH_FS
 	  disabled if the include paths for FS are causing aliasing
 	  issues for 'app'.
 
-config FAT_FILESYSTEM_ELM
-	bool "ELM FAT File System"
-	select DISK_ACCESS
-	help
-	  Use the ELM FAT File system implementation.
-
 config FILE_SYSTEM_MAX_TYPES
 	int "Maximum number of distinct file system types allowed"
 	default 2
@@ -48,101 +43,6 @@ config FILE_SYSTEM_MAX_FILE_NAME
          supported by a file system may result in memory access
          violations.
 
-menu "FatFs Settings"
-	visible if FAT_FILESYSTEM_ELM
-
-config FS_FATFS_EXFAT
-	bool "Enable exFAT support"
-	select FS_FATFS_LFN
-	help
-	  Enable the exFAT format support for FatFs.
-
-config FS_FATFS_NUM_FILES
-	int "Maximum number of opened files"
-	default 4
-
-config FS_FATFS_NUM_DIRS
-	int "Maximum number of opened directories"
-	default 4
-
-config FS_FATFS_LFN
-	bool "Enable long filenames (LFN)"
-	help
-	  Without long filenames enabled, file names are limited to 8.3 format.
-	  This option increases working buffer size.
-
-if FS_FATFS_LFN
-
-choice
-	prompt "LFN memory mode"
-	default FS_FATFS_LFN_MODE_BSS
-
-config FS_FATFS_LFN_MODE_BSS
-	bool "Static buffer"
-	help
-	  Enable LFN with static working buffer on the BSS. Always NOT thread-safe.
-
-config FS_FATFS_LFN_MODE_STACK
-	bool "Stack buffer"
-	help
-	  Enable LFN with dynamic working buffer on the STACK.
-
-config FS_FATFS_LFN_MODE_HEAP
-	bool "Heap buffer"
-	help
-	  Enable LFN with dynamic working buffer on the HEAP.
-
-endchoice
-
-config FS_FATFS_MAX_LFN
-	int "Max filename length"
-	range 12 255
-	default 255
-	help
-	  The working buffer occupies (FS_FATFS_MAX_LFN + 1) * 2 bytes and
-	  additional 608 bytes at exFAT enabled.
-	  It should be set 255 to support full featured LFN operations.
-
-endif # FS_FATFS_LFN
-
-config FS_FATFS_CODEPAGE
-	int "FatFS code page (character set)"
-	default 437 if FS_FATFS_LFN
-	default 1
-	help
-	  Valid code page values:
-	  1   - ASCII (No extended character. Non-LFN cfg. only)
-	  437 - U.S.
-	  720 - Arabic
-	  737 - Greek
-	  771 - KBL
-	  775 - Baltic
-	  850 - Latin 1
-	  852 - Latin 2
-	  855 - Cyrillic
-	  857 - Turkish
-	  860 - Portuguese
-	  861 - Icelandic
-	  862 - Hebrew
-	  863 - Canadian French
-	  864 - Arabic
-	  865 - Nordic
-	  866 - Russian
-	  869 - Greek 2
-	  932 - Japanese (DBCS)
-	  936 - Simplified Chinese (DBCS)
-	  949 - Korean (DBCS)
-	  950 - Traditional Chinese (DBCS)
-
-endmenu
-
-config FILE_SYSTEM_LITTLEFS
-	bool "LittleFS file system support"
-	depends on FLASH_MAP
-	depends on FLASH_PAGE_LAYOUT
-	help
-	  Enables LittleFS file system support.
-
 config FILE_SYSTEM_SHELL
 	bool "Enable file system shell"
 	depends on SHELL
@@ -157,7 +57,7 @@ config FUSE_FS_ACCESS
 	help
 	  Expose file system partitions to the host system through FUSE.
 
-
+source "subsys/fs/Kconfig.fatfs"
 source "subsys/fs/Kconfig.littlefs"
 
 endif # FILE_SYSTEM

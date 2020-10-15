@@ -60,6 +60,7 @@
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
@@ -79,6 +80,7 @@
 };
 
 &i2c3 {
+	pinctrl-0 = <&i2c3_scl_pg7 &i2c3_sda_pg8>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 

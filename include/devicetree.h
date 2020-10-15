@@ -1934,5 +1934,6 @@
 #include <devicetree/pwms.h>
 #include <devicetree/fixed-partitions.h>
 #include <devicetree/zephyr.h>
+#include <devicetree/ordinals.h>
 
 #endif /* DEVICETREE_H */

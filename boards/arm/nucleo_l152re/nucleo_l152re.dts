@@ -50,6 +50,7 @@
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	status = "okay";
 };
 
@@ -66,6 +67,7 @@
 };
 
 &adc1 {
+	pinctrl-0 = <&adc_in0_pa0>;
 	status = "okay";
 };
 
