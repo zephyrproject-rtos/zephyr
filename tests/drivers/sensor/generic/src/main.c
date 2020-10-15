@@ -62,18 +62,46 @@ static struct trigger_sequence trigger_elements[] = {
 		sizeof(struct channel_sequence))
 #define TOTAL_TRIG_ELEMENTS (sizeof(trigger_elements) / \
 		sizeof(struct trigger_sequence))
+
 /**
  * @brief Test get multiple channels values.
  *
+ * @ingroup driver_sensor_subsys_tests
+ *
  * @details
+ * Test Objective:
  * - get multiple channels values consistently in two operations:
  * fetch sample and get the values of each channel individually.
  * - check the results with sensor_value type avoids use of
  * floating point values
  *
- * @ingroup driver_sensor_subsys_tests
+ * Testing techniques:
+ * - function and block box testing,Interface testing,
+ * Dynamic analysis and testing, Equivalence classes.
  *
- * @see sensor_sample_fetch(). sensor_channel_get()
+ * Prerequisite Conditions:
+ * - N/A
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Define a device and bind to dummy sensor.
+ * -# Fetch the sample of dummy senor and check the result.
+ * -# Get SENSOR_CHAN_LIGHT/SENSOR_CHAN_RED/SENSOR_CHAN_GREEN/
+ * SENSOR_CHAN_BLUE/SENSOR_CHAN_BLUE channels from the sensor,
+ * and check the result.
+ *
+ * Expected Test Result:
+ * - Application can get multiple channels for dummy sensor.
+ *
+ * Pass/Fail Criteria:
+ * - Successful if check points in test procedure are all passed, otherwise failure.
+ *
+ * Assumptions and Constraints:
+ * - N/A
+ *
+ * @see sensor_sample_fetch(), sensor_channel_get()
  */
 void test_sensor_get_channels(void)
 {
@@ -96,6 +124,10 @@ void test_sensor_get_channels(void)
 		zassert_equal(data.val2, chan_elements[i].data.val2,
 				"the data is not match.");
 	}
+
+	/* Get data with invalid channel. */
+	zassert_not_equal(sensor_channel_get(dev, SENSOR_CHAN_DISTANCE,
+				&data), RETURN_SUCCESS, "should fail for invalid channel.");
 }
 
 static void trigger_handler(const struct device *dev,
@@ -108,25 +140,53 @@ static void trigger_handler(const struct device *dev,
 }
 
 /**
- * @brief Test sensor multiple triggers
- *
- * @details
- * - set multiple triggers for dummy sensor
- * - Handle different types of triggers, based on time, data,threshold,
- * based on a delta value, near/far events and single/double tap.
- * - Configuration of runtime parameters in a sensor,
- * for example threshold values for interrupts.
+ * @brief Test sensor multiple triggers.
  *
  * @ingroup driver_sensor_subsys_tests
  *
- * @see sensor_attr_set(). sensor_trigger_set()
+ * @details
+ * Test Objective:
+ * Check if sensor subsys can set multiple triggers and
+ * can set/get sensor attribute.
+ *
+ * Testing techniques:
+ * - function and block box testing,Interface testing,
+ * Dynamic analysis and testing.
+ *
+ * Prerequisite Conditions:
+ * - N/A
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Define a device and bind to dummy sensor and
+ * check the result.
+ * -# set multiple triggers for the dummy sensor and no trig sensor.
+ * then check the result.
+ * -# Handle different types of triggers, based on time, data,threshold,
+ * based on a delta value, near/far events and single/double tap and
+ * check the result.
+ *
+ * Expected Test Result:
+ * - Application can get multiple channels for dummy sensor.
+ *
+ * Pass/Fail Criteria:
+ * - Successful if check points in test procedure are all passed, otherwise failure.
+ *
+ * Assumptions and Constraints:
+ * - N/A
+ *
+ * @see sensor_attr_set(), sensor_trigger_set()
  */
 void test_sensor_handle_triggers(void)
 {
 	const struct device *dev;
+	const struct device *dev_no_trig;
 	struct sensor_value data;
 
 	dev = device_get_binding(DUMMY_SENSOR_NAME);
+	dev_no_trig = device_get_binding(DUMMY_SENSOR_NAME_NO_TRIG);
 	zassert_not_null(dev, "failed: dev is null.");
 
 	zassert_equal(sensor_sample_fetch(dev), RETURN_SUCCESS,
@@ -169,6 +229,26 @@ void test_sensor_handle_triggers(void)
 				"retrived data is not match.");
 		zassert_equal(data.val2, trigger_elements[i].data.val2,
 				"retrived data is not match.");
+
+		/* set attributes for no trig dev */
+		zassert_equal(sensor_attr_set(dev_no_trig,
+				trigger_elements[i].trig.chan,
+				trigger_elements[i].attr,
+				&trigger_elements[i].data),
+				-ENOTSUP, "fail to set attributes");
+
+		/* read-back attributes for no trig dev*/
+		zassert_equal(sensor_attr_get(dev_no_trig,
+				trigger_elements[i].trig.chan,
+				trigger_elements[i].attr,
+				&data),
+				-ENOTSUP, "fail to get attributes");
+
+		/* setting a sensor’s trigger and handler for no trig dev */
+		zassert_equal(sensor_trigger_set(dev_no_trig,
+				&trigger_elements[i].trig,
+				trigger_handler),
+				-ENOTSUP, "fail to set trigger");
 	}
 }
 

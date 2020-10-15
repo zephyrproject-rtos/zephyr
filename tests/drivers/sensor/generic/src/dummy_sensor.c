@@ -8,6 +8,7 @@
 #include <drivers/sensor.h>
 #include <device.h>
 #include <logging/log.h>
+#include <ztest.h>
 
 LOG_MODULE_REGISTER(dummy_sensor, LOG_LEVEL_DBG);
 static struct dummy_sensor_data dummy_data;
@@ -77,6 +78,10 @@ static int dummy_sensor_init(const struct device *dev)
 	const struct dummy_sensor_config *config = dev->config;
 	/* i2c should be null for dummy driver */
 	const struct device *i2c = device_get_binding(config->i2c_name);
+
+	/* Bus and address should be configured. */
+	zassert_equal(strcmp(config->i2c_name, "dummy I2C"), 0, NULL);
+	zassert_equal(config->i2c_address, 123, NULL);
 
 	if (i2c != NULL) {
 		LOG_ERR("Should be Null for %s device!", config->i2c_name);
@@ -164,6 +169,18 @@ static const struct sensor_driver_api dummy_sensor_api = {
 	.trigger_set = dummy_sensor_trigger_set,
 };
 
+static const struct sensor_driver_api dummy_sensor_no_trig_api = {
+	.sample_fetch = &dummy_sensor_sample_fetch,
+	.channel_get = &dummy_sensor_channel_get,
+	.attr_set = NULL,
+	.attr_get = NULL,
+	.trigger_set = NULL,
+};
+
 DEVICE_DEFINE(dummy_sensor, DUMMY_SENSOR_NAME, &dummy_sensor_init,
 		    NULL, &dummy_data, &dummy_config, APPLICATION,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &dummy_sensor_api);
+
+DEVICE_DEFINE(dummy_sensor_no_trig, DUMMY_SENSOR_NAME_NO_TRIG, &dummy_sensor_init,
+		    NULL, &dummy_data, &dummy_config, APPLICATION,
+		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &dummy_sensor_no_trig_api);

@@ -11,6 +11,7 @@
 #include <device.h>
 #include <drivers/sensor.h>
 #define DUMMY_SENSOR_NAME	"dummy_sensor"
+#define DUMMY_SENSOR_NAME_NO_TRIG	"dummy_sensor_no_trig"
 #define SENSOR_CHANNEL_NUM	5
 
 struct dummy_sensor_data {
