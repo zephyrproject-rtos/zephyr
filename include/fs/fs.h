@@ -437,6 +437,10 @@ int fs_closedir(struct fs_dir_t *zdp);
  * calling the file system specific mount function and adding
  * the mount point to mounted file system list.
  *
+ * @note Current implementation of ELM FAT driver allows only following mount
+ * points: "/RAM:","/NAND:","/CF:","/SD:","/SD2:","/USB:","/USB2:","/USB3:"
+ * or mount points that consist of single digit, e.g: "/0:", "/1:" and so forth.
+ *
  * @param mp Pointer to the fs_mount_t structure.  Referenced object
  *	     is not changed if the mount operation failed.
  *	     A reference is captured in the fs infrastructure if the
