@@ -7,6 +7,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 
+#include <stdlib.h>
 #include <kernel.h>
 #include <device.h>
 #include <sys/ring_buffer.h>
@@ -255,6 +256,25 @@ static struct setup_cmd setup_cmds[] = {
 	SETUP_CMD_NOHANDLE("AT+CGDCONT=1,\"IP\",\"" CONFIG_MODEM_GSM_APN "\""),
 };
 
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_attached)
+{
+	int error = -EAGAIN;
+
+	/* Expected response is "+CGATT: 0|1" so simply look for '1' */
+	if (argc && atoi(argv[0]) == 1) {
+		error = 0;
+		LOG_INF("Attached to packet service!");
+	}
+
+	modem_cmd_handler_set_error(data, error);
+	k_sem_give(&gsm.sem_response);
+
+	return 0;
+}
+
+static struct modem_cmd check_attached_cmd =
+	MODEM_CMD("+CGATT:", on_cmd_atcmdinfo_attached, 1U, ",");
+
 static struct setup_cmd connect_cmds[] = {
 	/* connect to network */
 	SETUP_CMD_NOHANDLE("ATD*99#"),
@@ -339,6 +359,21 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 					    K_SECONDS(1));
 		return;
 	}
+
+	/* Don't initialize PPP until we're attached to packet service */
+	ret = modem_cmd_send_nolock(&gsm->context.iface,
+				    &gsm->context.cmd_handler,
+				    &check_attached_cmd, 1,
+				    "AT+CGATT?",
+				    &gsm->sem_response,
+				    GSM_CMD_SETUP_TIMEOUT);
+	if (ret < 0) {
+		LOG_DBG("Not attached, %s", "retrying...");
+		(void)k_delayed_work_submit(&gsm->gsm_configure_work,
+					    K_SECONDS(1));
+		return;
+	}
+
 
 	LOG_DBG("modem setup returned %d, %s", ret, "enable PPP");
 
