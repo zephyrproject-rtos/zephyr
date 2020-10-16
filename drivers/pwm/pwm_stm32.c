@@ -283,19 +283,20 @@ static int pwm_stm32_init(const struct device *dev)
 
 	/* configure pinmux */
 	if (cfg->pinctrl_len != 0U) {
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
-		/* apply F1 series remaps */
-		int remap;
 
-		remap = stm32_dt_pinctrl_remap_check(cfg->pinctrl,
-						     cfg->pinctrl_len);
-		if (remap < 0) {
-			LOG_ERR("pinctrl remap check failed (%d)", remap);
-			return remap;
+		if (IS_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl))) {
+			int remap;
+
+			remap = stm32_dt_pinctrl_remap_check(cfg->pinctrl,
+							     cfg->pinctrl_len);
+			if (remap < 0) {
+				LOG_ERR("pinctrl remap check failed (%d)",
+					remap);
+				return remap;
+			}
+
+			stm32_dt_pinctrl_remap_set((uint32_t)cfg->timer, remap);
 		}
-
-		stm32_dt_pinctrl_remap_set((uint32_t)cfg->timer, remap);
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
 
 		stm32_dt_pinctrl_configure(cfg->pinctrl, cfg->pinctrl_len);
 	}

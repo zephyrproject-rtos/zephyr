@@ -800,17 +800,18 @@ static int spi_stm32_init(const struct device *dev)
 
 	/* Configure dt provided device signals when available */
 	if (cfg->pinctrl_list_size != 0) {
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
-		int remap;
-		/* Check that remap configuration is coherent across pins */
-		remap = stm32_dt_pinctrl_remap_check(cfg->pinctrl_list,
-						     cfg->pinctrl_list_size);
-		if (remap < 0) {
-			return remap;
-		}
 
-		stm32_dt_pinctrl_remap_set((uint32_t)cfg->spi, remap);
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
+		if (IS_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl))) {
+			int remap;
+			/* Check remap configuration is coherent across pins */
+			remap = stm32_dt_pinctrl_remap_check(cfg->pinctrl_list,
+							cfg->pinctrl_list_size);
+			if (remap < 0) {
+				return remap;
+			}
+
+			stm32_dt_pinctrl_remap_set((uint32_t)cfg->spi, remap);
+		}
 
 		stm32_dt_pinctrl_configure(cfg->pinctrl_list,
 					   cfg->pinctrl_list_size);
