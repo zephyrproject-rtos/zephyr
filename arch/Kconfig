@@ -37,6 +37,17 @@ config ARM
 	help
 	  ARM architecture
 
+config SPARC
+	bool
+	select ARCH_IS_SET
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	select BIG_ENDIAN
+	select ATOMIC_OPERATIONS_BUILTIN if SPARC_CASA
+	select ATOMIC_OPERATIONS_C if !SPARC_CASA
+	help
+	  SPARC architecture
+
 config X86
 	bool
 	select ARCH_IS_SET
