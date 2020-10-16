@@ -1186,10 +1186,15 @@ err:
 static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 {
 	struct tcphdr *th = pkt ? th_get(pkt) : NULL;
-	uint8_t next = 0, fl = th ? th->th_flags : 0;
+	uint8_t next = 0, fl = 0;
 	size_t tcp_options_len = th ? (th->th_off - 5) * 4 : 0;
 	size_t len;
 	int ret;
+
+	if (th) {
+		/* Currently we ignore ECN and CWR flags */
+		fl = th->th_flags & ~(ECN | CWR);
+	}
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
