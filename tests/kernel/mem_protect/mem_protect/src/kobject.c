@@ -994,33 +994,3 @@ void test_mark_thread_exit_uninitialized(void)
 	ret = z_object_validate(ko, K_OBJ_ANY, _OBJ_INIT_FALSE);
 	zassert_equal(ret, _OBJ_INIT_FALSE, NULL);
 }
-
-/**
- * @brief Test kernel objects statically allocated during the build time
- *
- * @details Take addresses of the kernel objects which are statically allocated
- * during the build time and verify that they are not null.
- * That kernel objects shouldn't require manual registration by the end user.
- *
- * @ingroup kernel_memprotect_tests
- */
-void test_krnl_obj_static_alloc_build_time(void)
-{
-	struct z_object *ret;
-
-	ret = z_object_find(&child_stack);
-	/* Assert that ptr is not NULL */
-	zassert_not_null(ret, "Pointer of the child_stack is not NULL");
-
-	ret = z_object_find(&extra_stack);
-	zassert_not_null(ret, "Pointer of the extra_stack is not NULL");
-
-	ret = z_object_find(&kobject_sem);
-	zassert_not_null(ret, "Pointer of the kobject_sem is not NULL");
-
-	ret = z_object_find(&kobject_public_sem);
-	zassert_not_null(ret, "Pointer of the kobject_public_sem is not NULL");
-
-	ret = z_object_find(&kobject_mutex);
-	zassert_not_null(ret, "Pointer of the kobject_mutex is not NULL");
-}

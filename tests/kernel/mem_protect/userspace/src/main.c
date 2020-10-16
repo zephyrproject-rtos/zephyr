@@ -48,6 +48,7 @@ FOR_EACH(K_APPMEM_PARTITION_DEFINE, (;), part0, part1);
 struct k_mem_domain dom0;
 struct k_mem_domain dom1;
 
+K_APP_DMEM(part0) bool mem_access_check;
 K_APP_BMEM(part0) static volatile bool expect_fault;
 K_APP_BMEM(part0) static volatile unsigned int expected_reason;
 
