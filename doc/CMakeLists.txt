@@ -140,6 +140,8 @@ add_custom_target(
 
 # For incremental builds not to miss any source change this MUST be kept
 # a superset of INPUT= and FILE_PATTERNS= in zephyr.doxyfile.in
+#
+# NOTE: any changes here should be reflected in .github/workflows/doc-build.yml
 file(GLOB_RECURSE  DOXY_SOURCES
   ${ZEPHYR_BASE}/include/*.[c,h,S]
   ${ZEPHYR_BASE}/kernel/include/kernel_arch_interface.h
