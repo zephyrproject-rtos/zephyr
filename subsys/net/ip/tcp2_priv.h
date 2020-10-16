@@ -142,6 +142,8 @@ enum th_flags {
 	PSH = 1 << 3,
 	ACK = 1 << 4,
 	URG = 1 << 5,
+	ECN = 1 << 6,
+	CWR = 1 << 7,
 };
 
 enum tcp_state {
