@@ -582,7 +582,7 @@ static const struct dma_driver_api pl330_driver_api = {
 	.stop = dma_pl330_transfer_stop,
 };
 
-static struct device DEVICE_NAME_GET(dma_pl330);
+static const struct device DEVICE_NAME_GET(dma_pl330);
 
 static const struct dma_pl330_config pl330_config = {
 	.reg_base = DT_INST_REG_ADDR(0),
