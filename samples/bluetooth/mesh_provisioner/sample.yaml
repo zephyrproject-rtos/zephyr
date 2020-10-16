@@ -1,2 +1,7 @@
 sample:
   name: Bluetooth Mesh Provisioner
+tests:
+  sample.bluetooth.mesh_provisioner:
+    harness: bluetooth
+    platform_allow: qemu_cortex_m3 qemu_x86 nrf51dk_nrf51422
+    tags: bluetooth
