@@ -134,6 +134,9 @@ void test_slice_reset(void)
 		/* update priority for current thread */
 		k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(j));
 
+		/* synchronize to tick boundary */
+		k_usleep(1);
+
 		/* create delayed threads with equal preemptive priority */
 		for (int i = 0; i < NUM_THREAD; i++) {
 			tid[i] = k_thread_create(&t[i], tstacks[i], STACK_SIZE,
@@ -141,18 +144,11 @@ void test_slice_reset(void)
 						 NULL, K_PRIO_PREEMPT(j), 0,
 						 K_NO_WAIT);
 		}
-		/* enable time slice */
+
+		/* enable time slice (and reset the counter!) */
 		k_sched_time_slice_set(SLICE_SIZE, K_PRIO_PREEMPT(0));
 
-		/* synchronize to tick boundary */
-		t32 = k_uptime_get_32();
-		while (k_uptime_get_32() == t32) {
-#if defined(CONFIG_ARCH_POSIX)
-			k_busy_wait(50);
-#endif
-		}
-
-		/* set reference time */
+		/* initialize reference timestamp */
 		cycles_delta(&elapsed_slice);
 
 		/* current thread (ztest native) consumed a half timeslice */
@@ -164,6 +160,7 @@ void test_slice_reset(void)
 		}
 
 		/* relinquish CPU and wait for each thread to complete */
+		k_msleep(SLICE_SIZE * (NUM_THREAD + 1));
 		for (int i = 0; i < NUM_THREAD; i++) {
 			k_sem_take(&sema, K_FOREVER);
 		}
