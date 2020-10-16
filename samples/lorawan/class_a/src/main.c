@@ -53,7 +53,7 @@ void main(void)
 		return;
 	}
 
-	join_cfg.mode = LORAWAN_CLASS_A;
+	join_cfg.mode = LORAWAN_ACT_OTAA;
 	join_cfg.dev_eui = dev_eui;
 	join_cfg.otaa.join_eui = join_eui;
 	join_cfg.otaa.app_key = app_key;
