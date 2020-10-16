@@ -51,7 +51,6 @@ extern void test_create_new_higher_prio_thread_from_user(void);
 extern void test_create_new_invalid_prio_thread_from_user(void);
 extern void test_inherit_resource_pool(void);
 extern void test_mark_thread_exit_uninitialized(void);
-extern void test_krnl_obj_static_alloc_build_time(void);
 
 /* Flag needed to figure out if the fault was expected or not. */
 extern volatile bool valid_fault;
