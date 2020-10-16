@@ -307,6 +307,14 @@ config CAVS_TIMER
 	  a common and synchronized counter for all CPU cores (which
 	  is useful for SMP).
 
+config LEON_GPTIMER
+	bool "LEON timer"
+	depends on SOC_SPARC_LEON
+	select DYNAMIC_INTERRUPTS
+	help
+	  This module implements a kernel device driver for the GRLIB
+	  GPTIMER which is common in LEON systems.
+
 config SYSTEM_CLOCK_DISABLE
 	bool "API to disable system clock"
 	help
