@@ -3,7 +3,12 @@
 
 name: Documentation GitHub Workflow
 
-on: [pull_request]
+on:
+  pull_request:
+    paths:
+    - 'include/**'
+    - 'doc/**'
+    - '**.rst'
 
 jobs:
   build:
