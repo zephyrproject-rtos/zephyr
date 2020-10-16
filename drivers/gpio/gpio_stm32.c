@@ -138,6 +138,14 @@ int gpio_stm32_configure(uint32_t *base_addr, int pin, int conf, int altf)
 		}
 
 	} else {
+		temp = conf & (STM32_CNF_OUT_1_MASK << STM32_CNF_OUT_1_SHIFT);
+
+		if (temp == STM32_CNF_GP_OUTPUT) {
+			LL_GPIO_SetPinMode(gpio, pin_ll, LL_GPIO_MODE_OUTPUT);
+		} else {
+			LL_GPIO_SetPinMode(gpio, pin_ll, LL_GPIO_MODE_ALTERNATE);
+		}
+
 		temp = conf & (STM32_CNF_OUT_0_MASK << STM32_CNF_OUT_0_SHIFT);
 
 		if (temp == STM32_CNF_PUSH_PULL) {
@@ -154,14 +162,6 @@ int gpio_stm32_configure(uint32_t *base_addr, int pin, int conf, int altf)
 			LL_GPIO_SetPinSpeed(gpio, pin_ll, LL_GPIO_SPEED_FREQ_MEDIUM);
 		} else {
 			LL_GPIO_SetPinSpeed(gpio, pin_ll, LL_GPIO_SPEED_FREQ_HIGH);
-		}
-
-		temp = conf & (STM32_CNF_OUT_1_MASK << STM32_CNF_OUT_1_SHIFT);
-
-		if (temp == STM32_CNF_GP_OUTPUT) {
-			LL_GPIO_SetPinMode(gpio, pin_ll, LL_GPIO_MODE_OUTPUT);
-		} else {
-			LL_GPIO_SetPinMode(gpio, pin_ll, LL_GPIO_MODE_ALTERNATE);
 		}
 	}
 #else
