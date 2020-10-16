@@ -6,7 +6,7 @@ NXP FRDM-K64F
 Overview
 ********
 
-The Freedom-K64F is an ultra-low-cost development platform for Kinetis K64,
+T he Freedom-K64F is an ultra-low-cost development platform for Kinetis K64,
 K63, and K24 MCUs.
 
 - Form-factor compatible with the Arduino R3 pin layout
