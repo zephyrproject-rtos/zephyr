@@ -104,20 +104,6 @@ void k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 
 	domain->num_partitions = 0U;
 	(void)memset(domain->partitions, 0, sizeof(domain->partitions));
-
-	if (num_parts != 0U) {
-		uint32_t i;
-
-		for (i = 0U; i < num_parts; i++) {
-			__ASSERT(check_add_partition(domain, parts[i]),
-				 "invalid partition index %d (%p)",
-				 i, parts[i]);
-
-			domain->partitions[i] = *parts[i];
-			domain->num_partitions++;
-		}
-	}
-
 	sys_dlist_init(&domain->mem_domain_q);
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_DATA
@@ -133,6 +119,21 @@ void k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 		k_panic();
 	}
 #endif
+	if (num_parts != 0U) {
+		uint32_t i;
+
+		for (i = 0U; i < num_parts; i++) {
+			__ASSERT(check_add_partition(domain, parts[i]),
+				 "invalid partition index %d (%p)",
+				 i, parts[i]);
+
+			domain->partitions[i] = *parts[i];
+			domain->num_partitions++;
+#ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
+			arch_mem_domain_partition_add(domain, i);
+#endif
+		}
+	}
 
 	k_spin_unlock(&z_mem_domain_lock, key);
 }
