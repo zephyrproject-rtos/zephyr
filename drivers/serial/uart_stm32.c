@@ -670,6 +670,7 @@ static int uart_stm32_init(const struct device *dev)
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 	uint32_t ll_parity;
 	uint32_t ll_datawidth;
+	int err;
 
 	__uart_stm32_get_clock(dev);
 	/* enable clock */
@@ -679,23 +680,11 @@ static int uart_stm32_init(const struct device *dev)
 	}
 
 	/* Configure dt provided device signals when available */
-	if (config->pinctrl_list_size != 0) {
-		if (IS_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl))) {
-			int remap;
-			/* Check remap configuration is coherent across pins */
-			remap = stm32_dt_pinctrl_remap_check(
-						     config->pinctrl_list,
-						     config->pinctrl_list_size);
-			if (remap < 0) {
-				return remap;
-			}
-
-			stm32_dt_pinctrl_remap_set((uint32_t)UART_STRUCT(dev),
-						   remap);
-		}
-
-		stm32_dt_pinctrl_configure(config->pinctrl_list,
-					   config->pinctrl_list_size);
+	err = stm32_dt_pinctrl_configure(config->pinctrl_list,
+					 config->pinctrl_list_size,
+					 (uint32_t)UART_STRUCT(dev));
+	if (err < 0) {
+		return err;
 	}
 
 	LL_USART_Disable(UartInstance);

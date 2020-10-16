@@ -188,22 +188,13 @@ static int i2c_stm32_init(const struct device *dev)
 	cfg->irq_config_func(dev);
 #endif
 
-	if (cfg->pinctrl_list_size != 0) {
-
-		if (IS_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl))) {
-			int remap;
-			/* Check remap configuration is coherent across pins */
-			remap = stm32_dt_pinctrl_remap_check(cfg->pinctrl_list,
-							cfg->pinctrl_list_size);
-			if (remap < 0) {
-				return remap;
-			}
-
-			stm32_dt_pinctrl_remap_set((uint32_t)cfg->i2c, remap);
-		}
-
-		stm32_dt_pinctrl_configure(cfg->pinctrl_list,
-					   cfg->pinctrl_list_size);
+	/* Configure dt provided device signals when available */
+	ret = stm32_dt_pinctrl_configure(cfg->pinctrl_list,
+					 cfg->pinctrl_list_size,
+					 (uint32_t)cfg->i2c);
+	if (ret < 0) {
+		LOG_ERR("I2C pinctrl setup failed (%d)", ret);
+		return ret;
 	}
 
 	/*

@@ -410,22 +410,13 @@ static int can_stm32_init(const struct device *dev)
 		return -EIO;
 	}
 
-	/* configure pinmux */
-	if (cfg->pinctrl_len != 0U) {
-
-		if (IS_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl))) {
-			int remap;
-			/* Check remap configuration is coherent across pins */
-			remap = stm32_dt_pinctrl_remap_check(cfg->pinctrl,
-						     cfg->pinctrl_len);
-			if (remap < 0) {
-				return remap;
-			}
-
-			stm32_dt_pinctrl_remap_set((uint32_t)cfg->can, remap);
-		}
-
-		stm32_dt_pinctrl_configure(cfg->pinctrl, cfg->pinctrl_len);
+	/* Configure dt provided device signals when available */
+	ret = stm32_dt_pinctrl_configure(cfg->pinctrl,
+					 cfg->pinctrl_len,
+					 (uint32_t)cfg->can);
+	if (ret < 0) {
+		LOG_ERR("CAN pinctrl setup failed (%d)", ret);
+		return ret;
 	}
 
 	ret = can_leave_sleep_mode(can);

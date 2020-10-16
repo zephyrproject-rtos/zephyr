@@ -122,14 +122,30 @@ static int stm32_pin_configure(uint32_t pin, uint32_t func, uint32_t altf)
  *
  * @param *pinctrl pointer to soc_gpio_pinctrl list
  * @param list_size list size
+ * @param base device base register value
+ *
+ * @return 0 on success, -EINVAL otherwise
  */
-
-void stm32_dt_pinctrl_configure(const struct soc_gpio_pinctrl *pinctrl,
-				size_t list_size)
+int stm32_dt_pinctrl_configure(const struct soc_gpio_pinctrl *pinctrl,
+			       size_t list_size, uint32_t base)
 {
 	const struct device *clk;
 	uint32_t pin, mux;
 	uint32_t func = 0;
+
+	if (!list_size) {
+		/* Empty pinctrl. Exit */
+		return 0;
+	}
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
+	if (!stm32_dt_pinctrl_remap(pinctrl, list_size, base)) {
+		/* Wrong remap config. Exit */
+		return -EINVAL;
+	}
+#else
+	ARG_UNUSED(base);
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
 
 	/* make sure to enable port clock first */
 	clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
@@ -177,23 +193,26 @@ void stm32_dt_pinctrl_configure(const struct soc_gpio_pinctrl *pinctrl,
 		stm32_pin_configure(pin, func, STM32_DT_PINMUX_FUNC(mux));
 	}
 
-
+	return 0;
 }
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
 /**
- * @brief Helper function to check provided pinctrl remap configuration (Pin
- *        remapping configuration should be the same on all pins)
+ * @brief Helper function to check and apply provided pinctrl remap
+ *        configuration
+ *
+ * Check operation verifies that pin remapping configuration is the same on all
+ * pins. If configuration is valid AFIO clock is enabled and remap is applied
  *
  * @param *pinctrl pointer to soc_gpio_pinctrl list
  * @param list_size list size
+ * @param base device base register value
  *
- * @return remap value on success, -EINVAL otherwise
+ * @return 0 on success, -EINVAL otherwise
  */
-
-int stm32_dt_pinctrl_remap_check(const struct soc_gpio_pinctrl *pinctrl,
-				size_t list_size)
+int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
+			   size_t list_size, uint32_t base)
 {
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
 	int remap;
 	uint32_t mux;
 
@@ -204,22 +223,11 @@ int stm32_dt_pinctrl_remap_check(const struct soc_gpio_pinctrl *pinctrl,
 		remap = STM32_DT_PINMUX_REMAP(mux);
 
 		if (STM32_DT_PINMUX_REMAP(mux) != remap) {
-			remap = -EINVAL;
-			break;
+			return -EINVAL;
 		}
 	}
 
-	return remap;
-#else
-	return 0;
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
-}
-
-void stm32_dt_pinctrl_remap_set(uint32_t base, int remap)
-{
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
-
-	/* A valid remapping configuration is provided */
+	/* A valid remapping configuration is available */
 	/* Apply remapping before proceeding with pin configuration */
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
 
@@ -423,8 +431,10 @@ void stm32_dt_pinctrl_remap_set(uint32_t base, int remap)
 #endif
 	}
 
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
+	return 0;
 }
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
+
 
 /**
  * @brief pin setup

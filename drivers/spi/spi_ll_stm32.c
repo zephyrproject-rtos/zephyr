@@ -789,6 +789,7 @@ static int spi_stm32_init(const struct device *dev)
 {
 	struct spi_stm32_data *data __attribute__((unused)) = dev->data;
 	const struct spi_stm32_config *cfg = dev->config;
+	int err;
 
 	__ASSERT_NO_MSG(device_get_binding(STM32_CLOCK_CONTROL_NAME));
 
@@ -799,22 +800,12 @@ static int spi_stm32_init(const struct device *dev)
 	}
 
 	/* Configure dt provided device signals when available */
-	if (cfg->pinctrl_list_size != 0) {
-
-		if (IS_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl))) {
-			int remap;
-			/* Check remap configuration is coherent across pins */
-			remap = stm32_dt_pinctrl_remap_check(cfg->pinctrl_list,
-							cfg->pinctrl_list_size);
-			if (remap < 0) {
-				return remap;
-			}
-
-			stm32_dt_pinctrl_remap_set((uint32_t)cfg->spi, remap);
-		}
-
-		stm32_dt_pinctrl_configure(cfg->pinctrl_list,
-					   cfg->pinctrl_list_size);
+	err = stm32_dt_pinctrl_configure(cfg->pinctrl_list,
+					 cfg->pinctrl_list_size,
+					 (uint32_t)cfg->spi);
+	if (err < 0) {
+		LOG_ERR("SPI pinctrl setup failed (%d)", err);
+		return err;
 	}
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
