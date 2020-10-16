@@ -1,0 +1,12 @@
+identifier: qemu_leon3
+name: QEMU Emulation for LEON3
+type: qemu
+simulation: qemu
+arch: sparc
+ram: 1048576
+flash: 524288
+toolchain:
+  - zephyr
+  - xtools
+testing:
+  default: true
