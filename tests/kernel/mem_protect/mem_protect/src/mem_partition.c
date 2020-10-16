@@ -5,41 +5,11 @@
  */
 
 #include <kernel.h>
-#include <sys/mempool.h>
 #include "mem_protect.h"
 
 static K_APP_DMEM(ztest_mem_partition) int var = 1356;
 static K_APP_BMEM(ztest_mem_partition) int zeroed_var = 20420;
 static K_APP_BMEM(ztest_mem_partition) int bss_var;
-
-SYS_MEM_POOL_DEFINE(data_pool, NULL, BLK_SIZE_MIN_MD, BLK_SIZE_MAX_MD,
-		    BLK_NUM_MAX_MD, BLK_ALIGN_MD,
-		    K_APP_DMEM_SECTION(ztest_mem_partition));
-
-/**
- * @brief Test system provide means to obtain names of the data and BSS sections
- *
- * @details
- * - Define memory partition and define system memory pool using macros
- *   SYS_MEM_POOL_DEFINE
- * - Section name of the destination binary section for pool data will be
- *   obtained at build time by macros K_APP_DMEM_SECTION() which obtaines
- *   a section name.
- * - Then to check that system memory pool initialized correctly by allocating
- *   a block from it and check that it is not NULL.
- *
- * @ingroup kernel_memprotect_tests
- *
- * @see K_APP_DMEM_SECTION()
- */
-void test_macros_obtain_names_data_bss(void)
-{
-	sys_mem_pool_init(&data_pool);
-	void *block;
-
-	block = sys_mem_pool_alloc(&data_pool, BLK_SIZE_MAX_MD - DESC_SIZE);
-	zassert_not_null(block, NULL);
-}
 
 /**
  * @brief Test assigning global data and BSS variables to memory partitions
