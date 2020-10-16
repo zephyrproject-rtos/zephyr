@@ -36,7 +36,6 @@ void test_main(void)
 		ztest_unit_test(test_mem_part_overlap),
 
 		/* mem_partition.c */
-		ztest_unit_test(test_macros_obtain_names_data_bss),
 		ztest_user_unit_test(test_mem_part_assign_bss_vars_zero),
 		ztest_unit_test(test_mem_part_auto_determ_size),
 
