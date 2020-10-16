@@ -438,6 +438,13 @@ do {                                                                    \
 	__asm__(".globl\t" #name "\n\t.equ\t" #name \
 		",%c0"                              \
 		"\n\t.type\t" #name ",@object" :  : "n"(value))
+
+
+#elif defined(CONFIG_SPARC)
+#define GEN_ABSOLUTE_SYM(name, value)			\
+	__asm__(".global\t" #name "\n\t.equ\t" #name	\
+		",%0"					\
+		"\n\t.type\t" #name ",#object" : : "n"(value))
 #else
 #error processor architecture not supported
 #endif
