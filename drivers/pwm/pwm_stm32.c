@@ -125,33 +125,6 @@ static int get_tim_clk(const struct stm32_pclken *pclken, uint32_t *tim_clk)
 	} else {
 		apb_psc = CONFIG_CLOCK_STM32_D2PPRE2;
 	}
-
-	/*
-	 * Depending on pre-scaler selection (TIMPRE), timer clock frequency
-	 * is defined as follows:
-	 *
-	 * - TIMPRE=0: If the APB prescaler (PPRE1, PPRE2) is configured to a
-	 *   division factor of 1 then the timer clock equals to APB bus clock.
-	 *   Otherwise the timer clock is set to twice the frequency of APB bus
-	 *   clock.
-	 * - TIMPRE=1: If the APB prescaler (PPRE1, PPRE2) is configured to a
-	 *   division factor of 1, 2 or 4, then the timer clock equals to HCLK.
-	 *   Otherwise, the timer clock frequencies are set to four times to
-	 *   the frequency of the APB domain.
-	 */
-	if (LL_RCC_GetTIMPrescaler() == LL_RCC_TIM_PRESCALER_TWICE) {
-		if (apb_psc == 1u) {
-			*tim_clk = bus_clk;
-		} else {
-			*tim_clk = bus_clk * 2u;
-		}
-	} else {
-		if (apb_psc == 1u || apb_psc == 2u || apb_psc == 4u) {
-			*tim_clk = SystemCoreClock;
-		} else {
-			*tim_clk = bus_clk * 4u;
-		}
-	}
 #else
 	if (pclken->bus == STM32_CLOCK_BUS_APB1) {
 		apb_psc = CONFIG_CLOCK_STM32_APB1_PRESCALER;
@@ -161,7 +134,44 @@ static int get_tim_clk(const struct stm32_pclken *pclken, uint32_t *tim_clk)
 		apb_psc = CONFIG_CLOCK_STM32_APB2_PRESCALER;
 	}
 #endif
+#endif
 
+#if defined(RCC_DCKCFGR_TIMPRE) || defined(RCC_DCKCFGR1_TIMPRE) || \
+	defined(RCC_CFGR_TIMPRE)
+	/*
+	 * There are certain series (some F4, F7 and H7) that have the TIMPRE
+	 * bit to control the clock frequency of all the timers connected to
+	 * APB1 and APB2 domains.
+	 *
+	 * Up to a certain threshold value of APB{1,2} prescaler, timer clock
+	 * equals to HCLK. This threshold value depends on TIMPRE setting
+	 * (2 if TIMPRE=0, 4 if TIMPRE=1). Above threshold, timer clock is set
+	 * to a multiple of the APB domain clock PCLK{1,2} (2 if TIMPRE=0, 4 if
+	 * TIMPRE=1).
+	 */
+
+	if (LL_RCC_GetTIMPrescaler() == LL_RCC_TIM_PRESCALER_TWICE) {
+		/* TIMPRE = 0 */
+		if (apb_psc <= 2u) {
+			LL_RCC_ClocksTypeDef clocks;
+
+			LL_RCC_GetSystemClocksFreq(&clocks);
+			*tim_clk = clocks.HCLK_Frequency;
+		} else {
+			*tim_clk = bus_clk * 2u;
+		}
+	} else {
+		/* TIMPRE = 1 */
+		if (apb_psc <= 4u) {
+			LL_RCC_ClocksTypeDef clocks;
+
+			LL_RCC_GetSystemClocksFreq(&clocks);
+			*tim_clk = clocks.HCLK_Frequency;
+		} else {
+			*tim_clk = bus_clk * 4u;
+		}
+	}
+#else
 	/*
 	 * If the APB prescaler equals 1, the timer clock frequencies
 	 * are set to the same frequency as that of the APB domain.
