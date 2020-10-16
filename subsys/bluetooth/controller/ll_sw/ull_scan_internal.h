@@ -26,6 +26,9 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan);
 /* Disable scanning/initiating role */
 uint8_t ull_scan_disable(uint8_t handle, struct ll_scan_set *scan);
 
+/* Helper function to dequeue scan timeout event */
+void ull_scan_term_dequeue(uint8_t handle);
+
 /* Return ll_scan_set context (unconditional) */
 struct ll_scan_set *ull_scan_set_get(uint8_t handle);
 
