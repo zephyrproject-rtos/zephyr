@@ -10,6 +10,7 @@
 
 static int frdm_k64f_pinmux_init(const struct device *dev)
 {
+	/* test - no dooc build */
 	ARG_UNUSED(dev);
 
 #ifdef CONFIG_PINMUX_MCUX_PORTA
