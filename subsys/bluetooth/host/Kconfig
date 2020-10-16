@@ -421,11 +421,11 @@ config BT_OOB_DATA_FIXED
 	  Use of this feature in production is strongly discouraged.
 
 config BT_KEYS_OVERWRITE_OLDEST
-	bool "Overwrite oldest keys with new ones if key storage is full"
+	bool "Overwrite the oldest key if key storage is full"
 	help
-	  With this option enabled, if a pairing attempt occurs and the key storage
-	  is full, then the oldest keys in storage will be removed to free space
-	  for the new pairing keys.
+	  If a pairing attempt occurs and the key storage is full then the
+	  oldest key from the set of not currently in use keys will be selected
+	  and overwritten by the pairing device.
 
 config BT_KEYS_SAVE_AGING_COUNTER_ON_PAIRING
 	bool "Store aging counter every time a successful paring occurs"
