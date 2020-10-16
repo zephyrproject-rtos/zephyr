@@ -282,23 +282,12 @@ static int pwm_stm32_init(const struct device *dev)
 	}
 
 	/* configure pinmux */
-	if (cfg->pinctrl_len != 0U) {
-
-		if (IS_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl))) {
-			int remap;
-
-			remap = stm32_dt_pinctrl_remap_check(cfg->pinctrl,
-							     cfg->pinctrl_len);
-			if (remap < 0) {
-				LOG_ERR("pinctrl remap check failed (%d)",
-					remap);
-				return remap;
-			}
-
-			stm32_dt_pinctrl_remap_set((uint32_t)cfg->timer, remap);
-		}
-
-		stm32_dt_pinctrl_configure(cfg->pinctrl, cfg->pinctrl_len);
+	r = stm32_dt_pinctrl_configure(cfg->pinctrl,
+				       cfg->pinctrl_len,
+				       (uint32_t)cfg->timer);
+	if (r < 0) {
+		LOG_ERR("PWM pinctrl setup failed (%d)", r);
+		return r;
 	}
 
 	/* initialize timer */

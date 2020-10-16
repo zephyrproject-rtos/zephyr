@@ -117,6 +117,7 @@ static int dac_stm32_channel_setup(const struct device *dev,
 static int dac_stm32_init(const struct device *dev)
 {
 	const struct dac_stm32_cfg *cfg = dev->config;
+	int err;
 
 	/* enable clock for subsystem */
 	const struct device *clk =
@@ -127,9 +128,13 @@ static int dac_stm32_init(const struct device *dev)
 		return -EIO;
 	}
 
-	/* configure pinmux */
-	if (cfg->pinctrl_len != 0U) {
-		stm32_dt_pinctrl_configure(cfg->pinctrl, cfg->pinctrl_len);
+	/* Configure dt provided device signals when available */
+	err = stm32_dt_pinctrl_configure(cfg->pinctrl,
+					 cfg->pinctrl_len,
+					 (uint32_t)cfg->base);
+	if (err < 0) {
+		LOG_ERR("DAC pinctrl setup failed (%d)", err);
+		return err;
 	}
 
 	return 0;

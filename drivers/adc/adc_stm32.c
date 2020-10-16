@@ -549,6 +549,7 @@ static int adc_stm32_init(const struct device *dev)
 	const struct device *clk =
 		device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	int err;
 
 	LOG_DBG("Initializing....");
 
@@ -568,10 +569,13 @@ static int adc_stm32_init(const struct device *dev)
 		return -EIO;
 	}
 
-	/* configure pinmux */
-	if (config->pinctrl_len != 0U) {
-		stm32_dt_pinctrl_configure(config->pinctrl,
-					   config->pinctrl_len);
+	/* Configure dt provided device signals when available */
+	err = stm32_dt_pinctrl_configure(config->pinctrl,
+					 config->pinctrl_len,
+					 (uint32_t)config->base);
+	if (err < 0) {
+		LOG_ERR("ADC pinctrl setup failed (%d)", err);
+		return err;
 	}
 
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
