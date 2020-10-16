@@ -314,17 +314,22 @@ static int is_abort_cb(void *next, int prio, void *curr,
 
 	/* TODO: check prio */
 	if (next != curr) {
-		int err;
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		if (unlikely(!lll->duration_reload || lll->duration_expire))
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+		{
+			int err;
 
-		/* wrap back after the pre-empter */
-		*resume_cb = resume_prepare_cb;
-		*resume_prio = 0; /* TODO: */
+			/* wrap back after the pre-empter */
+			*resume_cb = resume_prepare_cb;
+			*resume_prio = 0; /* TODO: */
 
-		/* Retain HF clock */
-		err = lll_hfclock_on();
-		LL_ASSERT(err >= 0);
+			/* Retain HF clock */
+			err = lll_hfclock_on();
+			LL_ASSERT(err >= 0);
 
-		return -EAGAIN;
+			return -EAGAIN;
+		}
 	}
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)

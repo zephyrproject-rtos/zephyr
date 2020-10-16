@@ -637,11 +637,7 @@ void ll_rx_dequeue(void)
 
 	case NODE_RX_TYPE_EXT_SCAN_TERMINATE:
 	{
-		struct ll_scan_set *scan;
-
-		scan = ull_scan_set_get(rx->handle);
-
-		scan->is_enabled = 0U;
+		ull_scan_term_dequeue(rx->handle);
 	}
 	break;
 #endif /* CONFIG_BT_OBSERVER */
