@@ -142,9 +142,6 @@ config BT_RX_STACK_SIZE
 	default 2048 if BT_MESH
 	default 2200 if BT_SETTINGS
 	default 1024
-	range 512 65536 if BT_HCI_RAW
-	range 1100 65536 if BT_MESH
-	range 1024 65536
 	help
 	  Size of the receiving thread stack. This is the context from
 	  which all event callbacks to the application occur. The
