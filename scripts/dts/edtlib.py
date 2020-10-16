@@ -1549,7 +1549,7 @@ class Binding:
         if isinstance(include, str):
             fnames.append(include)
         elif isinstance(include, list):
-            if not all(isinstance(elm, str) for elm in include):
+            if not all(isinstance(elem, str) for elem in include):
                 _err(f"all elements in 'include:' in {binding_path} "
                      "should be strings")
             fnames += include
@@ -1635,7 +1635,7 @@ class Binding:
         for key, val in raw.items():
             if key.endswith("-cells"):
                 if not isinstance(val, list) or \
-                   not all(isinstance(elm, str) for elm in val):
+                   not all(isinstance(elem, str) for elem in val):
                     _err(f"malformed '{key}:' in {self.path}, "
                          "expected a list of strings")
 
