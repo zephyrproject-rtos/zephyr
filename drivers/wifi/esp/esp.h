@@ -126,6 +126,7 @@ struct esp_socket {
 
 	/* sem */
 	struct k_sem sem_data_ready;
+	struct k_sem sem_tx_pkt;
 
 	/* work */
 	struct k_work connect_work;

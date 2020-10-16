@@ -315,10 +315,10 @@ static void esp_send_work(struct k_work *work)
 
 	net_pkt_unref(sock->tx_pkt);
 	sock->tx_pkt = NULL;
-
 	if (sock->send_cb) {
 		sock->send_cb(sock->context, ret, sock->send_user_data);
 	}
+	k_sem_give(&sock->sem_tx_pkt);
 }
 
 static int esp_sendto(struct net_pkt *pkt,
@@ -341,10 +341,6 @@ static int esp_sendto(struct net_pkt *pkt,
 
 	if (!esp_flag_is_set(dev, EDF_STA_CONNECTED)) {
 		return -ENETUNREACH;
-	}
-
-	if (sock->tx_pkt) {
-		return -EBUSY;
 	}
 
 	if (sock->type == SOCK_STREAM) {
@@ -372,6 +368,16 @@ static int esp_sendto(struct net_pkt *pkt,
 			 */
 			return -EISCONN;
 		}
+	}
+
+	ret = k_sem_take(&sock->sem_tx_pkt, K_MSEC(timeout));
+	if (ret == -EBUSY) {
+		/* Try again, wanted non-block but device was busy */
+		return -EAGAIN;
+	}
+	if (ret == -EAGAIN) {
+		/* Timed out while blocking for send resource */
+		return -ENOBUFS;
 	}
 
 	sock->tx_pkt = pkt;
@@ -404,10 +410,10 @@ static int esp_sendto(struct net_pkt *pkt,
 	}
 
 	sock->tx_pkt = NULL;
-
 	if (cb) {
 		cb(context, ret, user_data);
 	}
+	k_sem_give(&sock->sem_tx_pkt);
 
 	return ret;
 }

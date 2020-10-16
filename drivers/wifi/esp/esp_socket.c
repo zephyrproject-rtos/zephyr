@@ -65,6 +65,7 @@ void esp_socket_init(struct esp_data *data)
 		sock->link_id = INVALID_LINK_ID;
 		sock->flags = 0;
 		k_sem_init(&sock->sem_data_ready, 0, 1);
+		k_sem_init(&sock->sem_tx_pkt, 1, 1);
 		k_fifo_init(&sock->fifo_rx_pkt);
 	}
 }
