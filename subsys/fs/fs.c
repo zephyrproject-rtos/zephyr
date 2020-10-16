@@ -12,6 +12,7 @@
 #include <errno.h>
 #include <init.h>
 #include <fs/fs.h>
+#include <fs/fs_sys.h>
 #include <sys/stat.h>
 
 

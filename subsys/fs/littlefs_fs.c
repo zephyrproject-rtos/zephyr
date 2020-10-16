@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <init.h>
 #include <fs/fs.h>
+#include <fs/fs_sys.h>
 
 #define LFS_LOG_REGISTER
 #include <lfs_util.h>

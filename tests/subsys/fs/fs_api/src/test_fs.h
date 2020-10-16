@@ -10,6 +10,7 @@
 #include <zephyr.h>
 #include <ztest.h>
 #include <fs/fs.h>
+#include <fs/fs_sys.h>
 
 #define TEST_FS_MNTP	"/NAND:"
 #define TEST_FILE	TEST_FS_MNTP"/testfile.txt"
