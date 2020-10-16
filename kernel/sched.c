@@ -487,6 +487,12 @@ void z_impl_k_thread_resume(struct k_thread *thread)
 {
 	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
 
+	/* Do not try to resume a thread that was not suspended */
+	if (!z_is_thread_suspended(thread)) {
+		k_spin_unlock(&sched_spinlock, key);
+		return;
+	}
+
 	z_mark_thread_as_not_suspended(thread);
 	ready_thread(thread);
 
