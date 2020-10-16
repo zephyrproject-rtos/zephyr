@@ -220,6 +220,8 @@
 /drivers/led_strip/                       @mbolivar-nordic
 /drivers/lora/                            @Mani-Sadhasivam
 /drivers/modem/                           @mike-scott
+/drivers/modem/hl7800.c                   @rerickson1
+/drivers/modem/Kconfig.hl7800             @rerickson1
 /drivers/pcie/                            @andrewboie
 /drivers/peci/                            @albertofloyd @franciscomunoz @scottwcpg
 /drivers/pinmux/*hsdk*                    @iriszzw
@@ -320,6 +322,7 @@
 /dts/bindings/can/                        @alexanderwachter
 /dts/bindings/i2c/zephyr*i2c-emul.yaml    @sjg20
 /dts/bindings/adc/st*stm32-adc.yaml       @cybertale
+/dts/bindings/modem/*hl7800.yaml          @rerickson1
 /dts/bindings/serial/ns16550.yaml         @andrewboie
 /dts/bindings/*/nordic*                   @anangl
 /dts/bindings/*/nxp*                      @MaureenHelm
@@ -345,6 +348,7 @@
 /include/drivers/led/ht16k33.h            @henrikbrixandersen
 /include/drivers/interrupt_controller/    @andrewboie
 /include/drivers/interrupt_controller/gic.h @stephanosio
+/include/drivers/modem/hl7800.h           @rerickson1
 /include/drivers/pcie/                    @andrewboie
 /include/drivers/hwinfo.h                 @alexanderwachter
 /include/drivers/led.h                    @Mani-Sadhasivam
