@@ -180,7 +180,6 @@ void stm32_dt_pinctrl_configure(const struct soc_gpio_pinctrl *pinctrl,
 
 }
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
 /**
  * @brief Helper function to check provided pinctrl remap configuration (Pin
  *        remapping configuration should be the same on all pins)
@@ -194,6 +193,7 @@ void stm32_dt_pinctrl_configure(const struct soc_gpio_pinctrl *pinctrl,
 int stm32_dt_pinctrl_remap_check(const struct soc_gpio_pinctrl *pinctrl,
 				size_t list_size)
 {
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
 	int remap;
 	uint32_t mux;
 
@@ -210,10 +210,14 @@ int stm32_dt_pinctrl_remap_check(const struct soc_gpio_pinctrl *pinctrl,
 	}
 
 	return remap;
+#else
+	return 0;
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
 }
 
 void stm32_dt_pinctrl_remap_set(uint32_t base, int remap)
 {
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
 
 	/* A valid remapping configuration is provided */
 	/* Apply remapping before proceeding with pin configuration */
@@ -420,6 +424,7 @@ void stm32_dt_pinctrl_remap_set(uint32_t base, int remap)
 	}
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
+}
 
 /**
  * @brief pin setup

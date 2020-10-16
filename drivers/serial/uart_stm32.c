@@ -680,17 +680,19 @@ static int uart_stm32_init(const struct device *dev)
 
 	/* Configure dt provided device signals when available */
 	if (config->pinctrl_list_size != 0) {
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
-		int remap;
-		/* Check that remap configuration is coherent across pins */
-		remap = stm32_dt_pinctrl_remap_check(config->pinctrl_list,
+		if (IS_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl))) {
+			int remap;
+			/* Check remap configuration is coherent across pins */
+			remap = stm32_dt_pinctrl_remap_check(
+						     config->pinctrl_list,
 						     config->pinctrl_list_size);
-		if (remap < 0) {
-			return remap;
-		}
+			if (remap < 0) {
+				return remap;
+			}
 
-		stm32_dt_pinctrl_remap_set((uint32_t)UART_STRUCT(dev), remap);
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
+			stm32_dt_pinctrl_remap_set((uint32_t)UART_STRUCT(dev),
+						   remap);
+		}
 
 		stm32_dt_pinctrl_configure(config->pinctrl_list,
 					   config->pinctrl_list_size);
