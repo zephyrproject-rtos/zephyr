@@ -387,6 +387,16 @@
 	};
 
 	//
+	// For testing deprecated property
+	//
+	test-deprecated {
+		compatible = "test-deprecated";
+		oldprop = <4>;	/* deprecated property */
+		curprop = <5>;
+	};
+
+
+	//
 	// For testing deprecated features
 	//
 

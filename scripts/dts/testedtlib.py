@@ -30,7 +30,8 @@ def test_warnings():
     warnings = io.StringIO()
     edtlib.EDT("test.dts", ["test-bindings"], warnings)
 
-    assert warnings.getvalue() == """\
+    assert warnings.getvalue() == f"""\
+warning: 'oldprop' is marked as deprecated in 'properties:' in {hpath('test-bindings/deprecated.yaml')} for node /test-deprecated.
 warning: unit address and first address in 'reg' (0x1) don't match for /reg-zero-size-cells/node
 warning: unit address and first address in 'reg' (0x5) don't match for /reg-ranges/parent/node
 warning: unit address and first address in 'reg' (0x30000000200000001) don't match for /reg-nested-ranges/grandparent/parent/node

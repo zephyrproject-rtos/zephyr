@@ -87,6 +87,7 @@ on-bus: <string describing bus type, e.g. "i2c">
 # A typical property entry looks like this:
 #
 #   <property name>:
+#     deprecated: <true | false>
 #     required: <true | false>
 #     type: <string | int | boolean | array | uint8-array | string-array |
 #            phandle | phandles | phandle-array | path | compound>
@@ -212,6 +213,11 @@ on-bus: <string describing bus type, e.g. "i2c">
 #
 # Note that it only makes sense to combine 'default:' with 'required: false'.
 # Combining it with 'required: true' will raise an error.
+#
+# A property with 'deprecated: True' indicates to both the user and the tooling
+# that the property is meant to be phased out.  The tooling will report a
+# warning if the devicetree includes the property that is flagged as deprecated.
+# There will be no other impact to having 'deprecated: True' set on the property.
 #
 # See below for examples of 'default:'. Putting 'default:' on any property type
 # besides those used in the examples will raise an error.
