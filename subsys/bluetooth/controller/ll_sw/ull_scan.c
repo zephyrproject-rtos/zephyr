@@ -748,22 +748,18 @@ static uint8_t duration_period_setup(struct ll_scan_set *scan,
 
 	lll = &scan->lll;
 	if (duration) {
-		lll->duration_reload = ((uint32_t)duration *
-					EXT_SCAN_DURATION_UNIT_US /
-					SCAN_INTERVAL_UNIT_US) /
-					scan->lll.interval;
+		lll->duration_reload =
+			ULL_SCAN_DURATION_TO_EVENTS(duration,
+						    scan->lll.interval);
 		if (period) {
 			if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK) &&
-			    (duration >= ((uint32_t)period *
-					  EXT_SCAN_PERIOD_UNIT_US/
-					  EXT_SCAN_DURATION_UNIT_US))) {
+			    (duration >= ULL_SCAN_PERIOD_TO_DURATION(period))) {
 				return BT_HCI_ERR_INVALID_PARAM;
 			}
 
-			scan->duration_lazy = ((uint32_t)period *
-					       EXT_SCAN_PERIOD_UNIT_US /
-					       SCAN_INTERVAL_UNIT_US) /
-					      scan->lll.interval;
+			scan->duration_lazy =
+				ULL_SCAN_PERIOD_TO_EVENTS(period,
+							  scan->lll.interval);
 			scan->duration_lazy -= lll->duration_reload;
 			scan->node_rx_scan_term = NULL;
 		} else {
