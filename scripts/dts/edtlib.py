@@ -954,8 +954,8 @@ class Node:
         # prop_type:
         #   Property type from binding (a string like "int")
         #
-        # optional:
-        #   True if the property isn't required to exist
+        # required:
+        #   True if the property is required to exist
         #
         # default:
         #   Default value to use when the property doesn't exist, or None if
