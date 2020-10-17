@@ -886,7 +886,7 @@ class Node:
             for name in node.props:
                 if name in _DEFAULT_PROP_TYPES:
                     prop_type = _DEFAULT_PROP_TYPES[name]
-                    val = self._prop_val(name, prop_type, False, None)
+                    val = self._prop_val(name, prop_type, False, False, None)
                     prop = Property()
                     prop.node = self
                     prop.name = name
@@ -906,8 +906,8 @@ class Node:
         if not prop_type:
             _err("'{}' in {} lacks 'type'".format(name, self.binding_path))
 
-        val = self._prop_val(name, prop_type, prop_spec.required,
-                             prop_spec.default)
+        val = self._prop_val(name, prop_type, prop_spec.deprecated,
+                             prop_spec.required, prop_spec.default)
 
         if val is None:
             # 'required: false' property that wasn't there, or a property type
@@ -945,7 +945,7 @@ class Node:
 
         self.props[name] = prop
 
-    def _prop_val(self, name, prop_type, required, default):
+    def _prop_val(self, name, prop_type, deprecated, required, default):
         # _init_prop() helper for getting the property's value
         #
         # name:
@@ -953,6 +953,9 @@ class Node:
         #
         # prop_type:
         #   Property type from binding (a string like "int")
+        #
+        # deprecated:
+        #   True if the property is deprecated
         #
         # required:
         #   True if the property is required to exist
@@ -963,6 +966,10 @@ class Node:
 
         node = self._node
         prop = node.props.get(name)
+
+        if prop and deprecated:
+            self.edt._warn("'{}' is marked as deprecated in 'properties:' in {} "
+                 "for node {}.".format(name, self.binding_path, node.path))
 
         if not prop:
             if required and self.status == "okay":
@@ -1648,7 +1655,7 @@ class Binding:
             return
 
         ok_prop_keys = {"description", "type", "required",
-                        "enum", "const", "default"}
+                        "enum", "const", "default", "deprecated"}
 
         for prop_name, options in raw["properties"].items():
             for key in options:
@@ -1662,12 +1669,17 @@ class Binding:
                 options.get("default"),
                 self.path)
 
-            if "required" in options:
-                required = options["required"]
-                if not isinstance(required, bool):
-                    _err(f"malformed 'required:' setting '{required}' "
-                         f"for '{prop_name}' in 'properties' in {self.path}, "
-                         "expected true/false")
+            for true_false_opt in ["required", "deprecated"]:
+                if true_false_opt in options:
+                    option = options[true_false_opt]
+                    if not isinstance(option, bool):
+                        _err(f"malformed '{true_false_opt}:' setting '{option}' "
+                             f"for '{prop_name}' in 'properties' in {self.path}, "
+                             "expected true/false")
+
+            if options.get("deprecated") and options.get("required"):
+                _err(f"'{prop_name}' in 'properties' in {self.path} should not "
+                      "have both 'deprecated' and 'required' set")
 
             if "description" in options and \
                not isinstance(options["description"], str):
@@ -1722,6 +1734,9 @@ class PropertySpec:
     default:
       The property's default value as given in the binding, or None.
 
+    deprecated:
+      True if the property is deprecated; False otherwise.
+
     required:
       True if the property is marked required; False otherwise.
     """
@@ -1769,6 +1784,10 @@ class PropertySpec:
         "See the class docstring"
         return self._raw.get("required", False)
 
+    @property
+    def deprecated(self):
+        "See the class docstring"
+        return self._raw.get("deprecated", False)
 
 class EDTError(Exception):
     "Exception raised for devicetree- and binding-related errors"
