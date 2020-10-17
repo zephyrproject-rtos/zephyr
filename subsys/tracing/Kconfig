@@ -37,6 +37,7 @@ config SEGGER_SYSTEMVIEW
 	select CONSOLE
 	select RTT_CONSOLE
 	select USE_SEGGER_RTT
+	select THREAD_MONITOR
 
 config TRACING_CTF
 	bool "Tracing via Common Trace Format support"
