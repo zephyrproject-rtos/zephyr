@@ -1659,7 +1659,6 @@ class Binding:
 
             _check_prop_type_and_default(
                 prop_name, options.get("type"),
-                options.get("required"),
                 options.get("default"),
                 self.path)
 
@@ -1888,8 +1887,7 @@ def _binding_include(loader, node):
     _binding_inc_error("unrecognised node type in !include statement")
 
 
-def _check_prop_type_and_default(prop_name, prop_type, required, default,
-                                 binding_path):
+def _check_prop_type_and_default(prop_name, prop_type, default, binding_path):
     # Binding._check_properties() helper. Checks 'type:' and 'default:' for the
     # property named 'prop_name'
 
