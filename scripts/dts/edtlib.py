@@ -1647,20 +1647,11 @@ class Binding:
         if "properties" not in raw:
             return
 
-        ok_prop_keys = {"description", "type", "required", "category",
+        ok_prop_keys = {"description", "type", "required",
                         "enum", "const", "default"}
 
         for prop_name, options in raw["properties"].items():
             for key in options:
-                if key == "category":
-                    self._warn(
-                        "please put 'required: {}' instead of 'category: {}' "
-                        "in properties: {}: ...' in {} - 'category' will be "
-                        "removed".format(
-                            "true" if options["category"] == "required"
-                                else "false",
-                            options["category"], prop_name, self.path))
-
                 if key not in ok_prop_keys:
                     _err(f"unknown setting '{key}' in "
                          f"'properties: {prop_name}: ...' in {self.path}, "
@@ -1668,8 +1659,7 @@ class Binding:
 
             _check_prop_type_and_default(
                 prop_name, options.get("type"),
-                options.get("required") or
-                options.get("category") == "required",
+                options.get("required"),
                 options.get("default"),
                 self.path)
 
@@ -1862,10 +1852,6 @@ def _merge_props(to_dict, from_dict, parent, binding_path, check_required):
 
             # 'required: true' takes precedence
             to_dict["required"] = to_dict["required"] or from_dict["required"]
-        elif prop == "category":
-            # Legacy property key. 'category: required' takes precedence.
-            if "required" in (to_dict["category"], from_dict["category"]):
-                to_dict["category"] = "required"
 
 
 def _bad_overwrite(to_dict, from_dict, prop, check_required):
@@ -1883,12 +1869,6 @@ def _bad_overwrite(to_dict, from_dict, prop, check_required):
         if not check_required:
             return False
         return from_dict[prop] and not to_dict[prop]
-
-    # Legacy property key
-    if prop == "category":
-        if not check_required:
-            return False
-        return from_dict[prop] == "required" and to_dict[prop] == "optional"
 
     return True
 
