@@ -1310,6 +1310,7 @@ int32_t z_impl_k_sleep(k_timeout_t timeout)
 	__ASSERT(!arch_is_in_isr(), "");
 	sys_trace_void(SYS_TRACE_ID_SLEEP);
 
+	/* in case of K_FOREVER, we suspend */
 	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 		k_thread_suspend(_current);
 		return (int32_t) K_TICKS_FOREVER;
