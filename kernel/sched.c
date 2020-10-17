@@ -417,7 +417,10 @@ static void ready_thread(struct k_thread *thread)
 	__ASSERT_NO_MSG(arch_mem_coherent(thread));
 #endif
 
-	if (z_is_thread_ready(thread)) {
+	/* If thread is queued already, do not try and added it to the
+	 * run queue again
+	 */
+	if (!z_is_thread_queued(thread) && z_is_thread_ready(thread)) {
 		sys_trace_thread_ready(thread);
 		_priq_run_add(&_kernel.ready_q.runq, thread);
 		z_mark_thread_as_queued(thread);
