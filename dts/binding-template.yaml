@@ -87,6 +87,7 @@ on-bus: <string describing bus type, e.g. "i2c">
 # A typical property entry looks like this:
 #
 #   <property name>:
+#     not: <true | false>
 #     required: <true | false>
 #     type: <string | int | boolean | array | uint8-array | string-array |
 #            phandle | phandles | phandle-array | path | compound>

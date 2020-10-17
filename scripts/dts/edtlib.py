@@ -886,7 +886,7 @@ class Node:
             for name in node.props:
                 if name in _DEFAULT_PROP_TYPES:
                     prop_type = _DEFAULT_PROP_TYPES[name]
-                    val = self._prop_val(name, prop_type, False, None)
+                    val = self._prop_val(name, prop_type, False, False, None)
                     prop = Property()
                     prop.node = self
                     prop.name = name
@@ -906,8 +906,8 @@ class Node:
         if not prop_type:
             _err("'{}' in {} lacks 'type'".format(name, self.binding_path))
 
-        val = self._prop_val(name, prop_type, prop_spec.required,
-                             prop_spec.default)
+        val = self._prop_val(name, prop_type, prop_spec.not_exist,
+                             prop_spec.required, prop_spec.default)
 
         if val is None:
             # 'required: false' property that wasn't there, or a property type
@@ -945,7 +945,7 @@ class Node:
 
         self.props[name] = prop
 
-    def _prop_val(self, name, prop_type, required, default):
+    def _prop_val(self, name, prop_type, not_prop, required, default):
         # _init_prop() helper for getting the property's value
         #
         # name:
@@ -954,8 +954,12 @@ class Node:
         # prop_type:
         #   Property type from binding (a string like "int")
         #
+        # not_prop:
+        #   True if the property is required to not-exist
+        #
         # required:
         #   True if the property is required to exist
+        #   If not_prop is True, than required will be False.
         #
         # default:
         #   Default value to use when the property doesn't exist, or None if
@@ -963,6 +967,12 @@ class Node:
 
         node = self._node
         prop = node.props.get(name)
+
+        if prop:
+            if not_prop:
+                _err("'{}' is marked as not in 'properties:' in {}, but "
+                     "does appear in {!r}".format(
+                         name, self.binding_path, node))
 
         if not prop:
             if required and self.status == "okay":
@@ -1648,7 +1658,7 @@ class Binding:
             return
 
         ok_prop_keys = {"description", "type", "required",
-                        "enum", "const", "default"}
+                        "enum", "const", "default", "not"}
 
         for prop_name, options in raw["properties"].items():
             for key in options:
@@ -1666,6 +1676,13 @@ class Binding:
                 required = options["required"]
                 if not isinstance(required, bool):
                     _err(f"malformed 'required:' setting '{required}' "
+                         f"for '{prop_name}' in 'properties' in {self.path}, "
+                         "expected true/false")
+
+            if "not" in options:
+                not_opt = options["not"]
+                if not isinstance(not_opt, bool):
+                    _err(f"malformed 'not:' setting '{not_opt}' "
                          f"for '{prop_name}' in 'properties' in {self.path}, "
                          "expected true/false")
 
@@ -1722,8 +1739,12 @@ class PropertySpec:
     default:
       The property's default value as given in the binding, or None.
 
+    not_exist:
+      True if the property is marked not; False otherwise.
+
     required:
-      True if the property is marked required; False otherwise.
+      If the not property is True, than requires is considered False.
+      Otherwise True if the property is marked required and property is not marked;
     """
 
     def __init__(self, name, binding):
@@ -1767,8 +1788,15 @@ class PropertySpec:
     @property
     def required(self):
         "See the class docstring"
-        return self._raw.get("required", False)
+        if self.not_exist:
+            return False
+        else:
+            return self._raw.get("required", False)
 
+    @property
+    def not_exist(self):
+        "See the class docstring"
+        return self._raw.get("not", False)
 
 class EDTError(Exception):
     "Exception raised for devicetree- and binding-related errors"
