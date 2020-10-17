@@ -13,6 +13,15 @@ menuconfig SPI
 
 if SPI
 
+config SPI_SHELL
+	bool "Enable SPI Shell"
+	default y
+	depends on SHELL
+	help
+	  Enable SPI Shell.
+
+	  The SPI shell currently supports reading and writing.
+
 config SPI_ASYNC
 	bool "Enable Asynchronous call support"
 	select POLL
