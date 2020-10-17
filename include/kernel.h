@@ -644,6 +644,8 @@ __syscall int k_thread_join(struct k_thread *thread, k_timeout_t timeout);
  * This routine puts the current thread to sleep for @a duration,
  * specified as a k_timeout_t object.
  *
+ * @note if @a timeout is set to K_FOREVER then the thread is suspended.
+ *
  * @param timeout Desired duration of sleep.
  *
  * @return Zero if the requested time has elapsed or the number of milliseconds
