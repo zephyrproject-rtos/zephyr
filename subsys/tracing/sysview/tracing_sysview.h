@@ -5,6 +5,7 @@
  */
 #ifndef _TRACE_SYSVIEW_H
 #define _TRACE_SYSVIEW_H
+#include <string.h>
 #include <kernel.h>
 #include <init.h>
 
@@ -29,9 +30,21 @@ void sys_trace_mutex_unlock(struct k_mutex *mutex);
 
 static inline void sys_trace_thread_info(struct k_thread *thread)
 {
+#if IS_ENABLED(CONFIG_THREAD_NAME)
+	char name[CONFIG_THREAD_MAX_NAME_LEN];
+#else
 	char name[20];
+#endif
 
-	snprintk(name, sizeof(name), "T%pE%p", thread, &thread->entry);
+	const char *tname = k_thread_name_get(thread);
+
+	if (tname != NULL && tname[0] != '\0') {
+		memcpy(name, tname, sizeof(name));
+		name[sizeof(name) - 1] = '\0';
+	} else {
+		snprintk(name, sizeof(name), "T%pE%p",
+		thread, &thread->entry);
+	}
 
 	SEGGER_SYSVIEW_TASKINFO Info;
 
