@@ -1,0 +1,14 @@
+identifier: qemu_rv64_virt
+name: QEMU RISCV64 virt target
+type: qemu
+simulation: qemu
+arch: riscv64
+ram: 256
+toolchain:
+  - zephyr
+  - xtools
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
