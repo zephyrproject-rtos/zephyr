@@ -1,0 +1,73 @@
+/*
+ * Copyright (c) 2020 Katsuhiro Suzuki
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			clock-frequency = <10000000>;
+			compatible = "qemu,rv64", "riscv";
+			device_type = "cpu";
+			reg = <0>;
+			status = "okay";
+
+			hlic: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		clint: clint@2000000 {
+			#interrupt-cells = <1>;
+			compatible = "riscv,clint0";
+			interrupt-controller;
+			interrupts-extended = <&hlic 3 &hlic 7>;
+			reg = <0x02000000 0x10000>;
+			reg-names = "control";
+		};
+
+		plic: interrupt-controller@c000000 {
+			#interrupt-cells = <1>;
+			compatible = "sifive,plic-1.0.0";
+			interrupt-controller;
+			interrupts-extended = <&hlic 11>;
+			reg = <0x0c000000 0x00002000
+			       0x0c002000 0x001fe000
+			       0x0c200000 0x03e00000>;
+			reg-names = "prio", "irq_en", "reg";
+			riscv,max-priority = <7>;
+			riscv,ndev = <52>;
+		};
+
+		uart0: serial@10000000 {
+			compatible = "ns16550";
+			reg = <0x10000000 0x100>;
+			interrupt-parent = <&plic>;
+			interrupts = <10 11>;
+			clock-frequency = <3686400>;
+			label = "uart_0";
+			current-speed = <115200>;
+			reg-shift = <0>;
+		};
+
+		mem: mem@80000000 {
+			compatible = "memory";
+			reg = <0x80000000 0x40000>;
+			reg-names = "mem";
+		};
+	};
+};
