@@ -232,7 +232,7 @@ int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
 
 	switch (base) {
-#if defined(AFIO_MAPR_CAN_REMAP_REMAP1)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(can1), okay)
 	case DT_REG_ADDR(DT_NODELABEL(can1)):
 		if (remap == REMAP_1) {
 			/* PB8/PB9 */
@@ -246,7 +246,7 @@ int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
 		}
 		break;
 #endif
-#if defined(AFIO_MAPR_CAN2_REMAP)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(can2), okay)
 	case DT_REG_ADDR(DT_NODELABEL(can2)):
 		if (remap == REMAP_1) {
 			/* PB5/PB6 */
