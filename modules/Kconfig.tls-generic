@@ -37,6 +37,10 @@ config MBEDTLS_SSL_EXPORT_KEYS
 	bool "Enable support for exporting SSL key block and master secret"
 	depends on MBEDTLS_TLS_VERSION_1_0 || MBEDTLS_TLS_VERSION_1_1 || MBEDTLS_TLS_VERSION_1_2
 
+config MBEDTLS_SSL_ALPN
+	bool "Enable support for setting the supported Application Layer Protocols"
+	depends on MBEDTLS_TLS_VERSION_1_0 || MBEDTLS_TLS_VERSION_1_1 || MBEDTLS_TLS_VERSION_1_2
+
 endmenu
 
 menu "Ciphersuite configuration"
