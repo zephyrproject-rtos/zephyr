@@ -21,6 +21,14 @@ config MODEM_HL7800_FW_UPDATE
 	  Enable the ability to update the HL7800 via XMODEM
 	  by providing an update file to the update API.
 
+config MODEM_HL7800_RECV_BUF_CNT
+	int "The number of allocated network buffers"
+	default 30
+
+config MODEM_HL7800_RECV_BUF_SIZE
+	int "The size of the network buffers in bytes"
+	default 128
+
 config MODEM_HL7800_SET_APN_NAME_ON_STARTUP
 	bool "Set APN name during driver init"
 	help

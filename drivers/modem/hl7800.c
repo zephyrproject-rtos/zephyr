@@ -257,8 +257,6 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 #define MDM_MTU 1500
 #define MDM_MAX_RESP_SIZE 128
 
-#define MDM_RECV_MAX_BUF 30
-#define MDM_RECV_BUF_SIZE 128
 #define MDM_HANDLER_MATCH_MAX_LEN 100
 
 #define MDM_MAX_SOCKETS 6
@@ -379,8 +377,8 @@ static const char TIME_STRING_FORMAT[] = "\"yy/MM/dd,hh:mm:ss?zz\"";
 		}                                                              \
 	} while (0)
 
-NET_BUF_POOL_DEFINE(mdm_recv_pool, MDM_RECV_MAX_BUF, MDM_RECV_BUF_SIZE, 0,
-		    NULL);
+NET_BUF_POOL_DEFINE(mdm_recv_pool, CONFIG_MODEM_HL7800_RECV_BUF_CNT,
+		    CONFIG_MODEM_HL7800_RECV_BUF_SIZE, 0, NULL);
 
 static uint8_t mdm_recv_buf[MDM_MAX_DATA_LENGTH];
 
@@ -3117,7 +3115,7 @@ static inline struct net_buf *read_rx_allocator(k_timeout_t timeout,
 
 static size_t hl7800_read_rx(struct net_buf **buf)
 {
-	uint8_t uart_buffer[MDM_RECV_BUF_SIZE];
+	uint8_t uart_buffer[CONFIG_MODEM_HL7800_RECV_BUF_SIZE];
 	size_t bytes_read, total_read;
 	int ret;
 	uint16_t rx_len;
