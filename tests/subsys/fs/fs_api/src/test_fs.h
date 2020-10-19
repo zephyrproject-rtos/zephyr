@@ -49,4 +49,5 @@ void test_file_rename(void);
 void test_file_stat(void);
 void test_file_unlink(void);
 void test_unmount(void);
+void test_mount_flags(void);
 #endif
