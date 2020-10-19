@@ -401,7 +401,7 @@ static int lis2mdl_set_power_state(struct lis2mdl_data *lis2mdl,
 	return status;
 }
 
-static int lis2mdl_pm_control(struct device *dev, uint32_t ctrl_command,
+static int lis2mdl_pm_control(const struct device *dev, uint32_t ctrl_command,
 				void *context, device_pm_cb cb, void *arg)
 {
 	struct lis2mdl_data *lis2mdl = dev->driver_data;
