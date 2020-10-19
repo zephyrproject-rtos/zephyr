@@ -1,7 +1,5 @@
 /* USB device controller driver for STM32 devices */
 
-#define DT_DRV_COMPAT st_stm32_usb
-
 /*
  * Copyright (c) 2017 Christer Weinigel.
  * Copyright (c) 2017, I-SENSE group of ICCS
@@ -63,42 +61,32 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
-#define USB_BASE_ADDRESS	DT_REG_ADDR(DT_INST(0, st_stm32_otghs))
-#define USB_IRQ			DT_IRQ_BY_NAME(DT_INST(0, st_stm32_otghs), otghs, irq)
-#define USB_IRQ_PRI		DT_IRQ_BY_NAME(DT_INST(0, st_stm32_otghs), otghs, priority)
-#define USB_NUM_BIDIR_ENDPOINTS	DT_PROP(DT_INST(0, st_stm32_otghs), num_bidir_endpoints)
-#define USB_RAM_SIZE		DT_PROP(DT_INST(0, st_stm32_otghs), ram_size)
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_otghs), maximum_speed)
-#define USB_MAXIMUM_SPEED	DT_PROP(DT_INST(0, st_stm32_otghs), maximum_speed)
-#endif
-#define USB_CLOCK_BITS		DT_CLOCKS_CELL(DT_INST(0, st_stm32_otghs), bits)
-#define USB_CLOCK_BUS		DT_CLOCKS_CELL(DT_INST(0, st_stm32_otghs), bus)
+#define DT_DRV_COMPAT st_stm32_otghs
+#define USB_IRQ_NAME  otghs
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs)
-#define USB_BASE_ADDRESS	DT_REG_ADDR(DT_INST(0, st_stm32_otgfs))
-#define USB_IRQ			DT_IRQ_BY_NAME(DT_INST(0, st_stm32_otgfs), otgfs, irq)
-#define USB_IRQ_PRI		DT_IRQ_BY_NAME(DT_INST(0, st_stm32_otgfs), otgfs, priority)
-#define USB_NUM_BIDIR_ENDPOINTS	DT_PROP(DT_INST(0, st_stm32_otgfs), num_bidir_endpoints)
-#define USB_RAM_SIZE		DT_PROP(DT_INST(0, st_stm32_otgfs), ram_size)
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_otgfs), maximum_speed)
-#define USB_MAXIMUM_SPEED	DT_PROP(DT_INST(0, st_stm32_otgfs), maximum_speed)
-#endif
-#define USB_CLOCK_BITS		DT_CLOCKS_CELL(DT_INST(0, st_stm32_otgfs), bits)
-#define USB_CLOCK_BUS		DT_CLOCKS_CELL(DT_INST(0, st_stm32_otgfs), bus)
+#define DT_DRV_COMPAT st_stm32_otgfs
+#define USB_IRQ_NAME  otgfs
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
-#define USB_BASE_ADDRESS	DT_REG_ADDR(DT_INST(0, st_stm32_usb))
-#define USB_IRQ			DT_IRQ_BY_NAME(DT_INST(0, st_stm32_usb), usb, irq)
-#define USB_IRQ_PRI		DT_IRQ_BY_NAME(DT_INST(0, st_stm32_usb), usb, priority)
-#define USB_NUM_BIDIR_ENDPOINTS	DT_PROP(DT_INST(0, st_stm32_usb), num_bidir_endpoints)
-#define USB_RAM_SIZE		DT_PROP(DT_INST(0, st_stm32_usb), ram_size)
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_usb), maximum_speed)
-#define USB_MAXIMUM_SPEED	DT_PROP(DT_INST(0, st_stm32_usb), maximum_speed)
-#endif
-#define USB_CLOCK_BITS		DT_CLOCKS_CELL(DT_INST(0, st_stm32_usb), bits)
-#define USB_CLOCK_BUS		DT_CLOCKS_CELL(DT_INST(0, st_stm32_usb), bus)
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_usb), enable_pin_remap)
-#define USB_ENABLE_PIN_REMAP	DT_PROP(DT_INST(0, st_stm32_usb), enable_pin_remap)
+#define DT_DRV_COMPAT st_stm32_usb
+#define USB_IRQ_NAME  usb
+#if DT_INST_NODE_HAS_PROP(0, enable_pin_remap)
+#define USB_ENABLE_PIN_REMAP	DT_INST_PROP(0, enable_pin_remap)
 #endif
 #endif
+
+#define USB_BASE_ADDRESS	DT_INST_REG_ADDR(0)
+#define USB_IRQ			DT_INST_IRQ_BY_NAME(0, USB_IRQ_NAME, irq)
+#define USB_IRQ_PRI		DT_INST_IRQ_BY_NAME(0, USB_IRQ_NAME, priority)
+#define USB_NUM_BIDIR_ENDPOINTS	DT_INST_PROP(0, num_bidir_endpoints)
+#define USB_RAM_SIZE		DT_INST_PROP(0, ram_size)
+#define USB_CLOCK_BITS		DT_INST_CLOCKS_CELL(0, bits)
+#define USB_CLOCK_BUS		DT_INST_CLOCKS_CELL(0, bus)
+#if DT_INST_NODE_HAS_PROP(0, maximum_speed)
+#define USB_MAXIMUM_SPEED	DT_INST_PROP(0, maximum_speed)
+#endif
+
+#define USB_OTG_HS_EMB_PHY (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) && \
+			   DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
 
 /*
  * USB and USB_OTG_FS are defined in STM32Cube HAL and allows to distinguish
@@ -317,7 +305,7 @@ static uint32_t usb_dc_stm32_get_maximum_speed(void)
 	 * If max-speed is not passed via DT, set it to USB controller's
 	 * maximum hardware capability.
 	 */
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
+#if USB_OTG_HS_EMB_PHY
 	uint32_t speed = USB_OTG_SPEED_HIGH;
 #else
 	uint32_t speed = USB_OTG_SPEED_FULL;
@@ -328,7 +316,7 @@ static uint32_t usb_dc_stm32_get_maximum_speed(void)
 	if (!strncmp(USB_MAXIMUM_SPEED, "high-speed", 10)) {
 		speed = USB_OTG_SPEED_HIGH;
 	} else if (!strncmp(USB_MAXIMUM_SPEED, "full-speed", 10)) {
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
+#if USB_OTG_HS_EMB_PHY
 		speed = USB_OTG_SPEED_HIGH_IN_FULL;
 #else
 		speed = USB_OTG_SPEED_FULL;
@@ -364,7 +352,7 @@ static int usb_dc_stm32_init(void)
 #endif
 	usb_dc_stm32_state.pcd.Init.dev_endpoints = USB_NUM_BIDIR_ENDPOINTS;
 	usb_dc_stm32_state.pcd.Init.speed = usb_dc_stm32_get_maximum_speed();
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
+#if USB_OTG_HS_EMB_PHY
 	usb_dc_stm32_state.pcd.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
 #else
 	usb_dc_stm32_state.pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
