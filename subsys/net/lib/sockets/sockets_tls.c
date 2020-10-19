@@ -796,6 +796,7 @@ static int tls_mbedtls_handshake(struct tls_context *context, bool block)
 		if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
 		    ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
 			if (block) {
+				k_yield();
 				continue;
 			}
 
@@ -805,6 +806,7 @@ static int tls_mbedtls_handshake(struct tls_context *context, bool block)
 			ret = tls_mbedtls_reset(context);
 			if (ret == 0) {
 				if (block) {
+					k_yield();
 					continue;
 				}
 
