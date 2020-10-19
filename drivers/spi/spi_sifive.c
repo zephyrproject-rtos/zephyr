@@ -168,7 +168,7 @@ int spi_sifive_transceive(const struct device *dev,
 	bool hw_cs_control = false;
 
 	/* Lock the SPI Context */
-	spi_context_lock(&SPI_DATA(dev)->ctx, false, NULL);
+	spi_context_lock(&SPI_DATA(dev)->ctx, false, NULL, config);
 
 	/* Configure the SPI bus */
 	SPI_DATA(dev)->ctx.config = config;

@@ -146,7 +146,7 @@ static int spi_cc13xx_cc26xx_transceive(const struct device *dev,
 	uint32_t txd, rxd;
 	int err;
 
-	spi_context_lock(ctx, false, NULL);
+	spi_context_lock(ctx, false, NULL, config);
 
 #if defined(CONFIG_SYS_POWER_MANAGEMENT) && \
 	defined(CONFIG_SYS_POWER_SLEEP_STATES)

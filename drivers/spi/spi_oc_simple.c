@@ -100,7 +100,7 @@ int spi_oc_simple_transceive(const struct device *dev,
 	int rc;
 
 	/* Lock the SPI Context */
-	spi_context_lock(ctx, false, NULL);
+	spi_context_lock(ctx, false, NULL, config);
 
 	spi_oc_simple_configure(info, spi, config);
 
