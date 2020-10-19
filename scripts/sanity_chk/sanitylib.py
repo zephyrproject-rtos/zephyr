@@ -1662,7 +1662,7 @@ class TestInstance(DisablePyTestCollectionMixin):
 
         target_ready = bool(self.testcase.type == "unit" or \
                         self.platform.type == "native" or \
-                        self.platform.simulation in ["mdb-nsim", "nsim", "renode", "qemu"] or \
+                        self.platform.simulation in ["mdb-nsim", "nsim", "renode", "qemu", "tsim"] or \
                         filter == 'runnable')
 
         if self.platform.simulation == "nsim":
@@ -1675,6 +1675,10 @@ class TestInstance(DisablePyTestCollectionMixin):
 
         if self.platform.simulation == "renode":
             if not find_executable("renode"):
+                target_ready = False
+
+        if self.platform.simulation == "tsim":
+            if not find_executable("tsim-leon3"):
                 target_ready = False
 
         testcase_runnable = self.testcase_runnable(self.testcase, fixtures)
@@ -2063,6 +2067,9 @@ class ProjectBuilder(FilterBuilder):
                 instance.handler = BinaryHandler(instance, "renode")
                 instance.handler.pid_fn = os.path.join(instance.build_dir, "renode.pid")
                 instance.handler.call_make_run = True
+        elif instance.platform.simulation == "tsim":
+            instance.handler = BinaryHandler(instance, "tsim")
+            instance.handler.call_make_run = True
         elif self.device_testing:
             instance.handler = DeviceHandler(instance, "device")
         elif instance.platform.simulation == "nsim":
