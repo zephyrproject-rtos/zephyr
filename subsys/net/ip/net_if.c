@@ -1749,6 +1749,7 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 
 		ipv6->mcast[i].is_used = true;
 		ipv6->mcast[i].refcount = ATOMIC_INIT(0);
+		ipv6->mcast[i].addr_state = NET_ADDR_PREFERRED;
 		ipv6->mcast[i].address.family = AF_INET6;
 		memcpy(&ipv6->mcast[i].address.in6_addr, addr, 16);
 
@@ -1785,6 +1786,8 @@ bool net_if_ipv6_maddr_rm(struct net_if *iface, const struct in6_addr *addr)
 				       addr)) {
 			continue;
 		}
+
+		ipv6->mcast[i].addr_state = NET_ADDR_DEPRECATED;
 
 		ref = atomic_get(&ipv6->mcast[i].refcount);
 
@@ -3371,6 +3374,7 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_add(struct net_if *iface,
 	if (maddr) {
 		maddr->is_used = true;
 		maddr->refcount = ATOMIC_INIT(0);
+		maddr->addr_state = NET_ADDR_PREFERRED;
 		maddr->address.family = AF_INET;
 		maddr->address.in_addr.s4_addr32[0] = addr->s4_addr32[0];
 
@@ -3388,6 +3392,8 @@ bool net_if_ipv4_maddr_rm(struct net_if *iface, const struct in_addr *addr)
 	maddr = ipv4_maddr_find(iface, true, addr);
 	if (maddr) {
 		atomic_val_t ref;
+
+		maddr->addr_state = NET_ADDR_DEPRECATED;
 
 		ref = atomic_get(&maddr->refcount);
 
@@ -3768,7 +3774,7 @@ static int addr_manage(struct net_if *iface, struct sockaddr *addr,
 		} while (!atomic_cas(&ifmaddr->refcount, ref, ref + refcount));
 
 		/* If this was the last user, then remove the address */
-		if (ref == 1) {
+		if (ref == 1 && ifmaddr->addr_state == NET_ADDR_DEPRECATED) {
 			if (IS_ENABLED(CONFIG_NET_IPV6) &&
 			    addr->sa_family == AF_INET6) {
 				(void)net_if_ipv6_maddr_rm(

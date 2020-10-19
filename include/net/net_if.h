@@ -97,6 +97,9 @@ struct net_if_mcast_addr {
 	/** Reference counter */
 	atomic_t refcount;
 
+	/** What is the current state of the address */
+	enum net_addr_state addr_state;
+
 	/** Is this multicast IP address used or not */
 	uint8_t is_used : 1;
 
