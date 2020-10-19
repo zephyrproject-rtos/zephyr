@@ -404,7 +404,7 @@ static int lis2mdl_set_power_state(struct lis2mdl_data *lis2mdl,
 static int lis2mdl_pm_control(const struct device *dev, uint32_t ctrl_command,
 				void *context, device_pm_cb cb, void *arg)
 {
-	struct lis2mdl_data *lis2mdl = dev->driver_data;
+	struct lis2mdl_data *lis2mdl = dev->data;
 	uint32_t current_state = lis2mdl->power_state;
 	int status = 0;
 	uint32_t new_state;
