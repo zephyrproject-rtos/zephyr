@@ -272,10 +272,12 @@ static void twork_submit_multipleq(void *data)
 	zassert_equal(k_delayed_work_submit(&new_work, TIMEOUT),
 		      -EADDRINUSE, NULL);
 
-	/* wait for first submission to complete timeout */
+	/* wait for first submission to complete timeout, then sleep
+	 * once to ensure the work thread gets to run (depending on
+	 * timing it may or may not be submitted right after the
+	 * timeout sleep returns.
+	 */
 	k_sleep(TIMEOUT);
-	zassert_true(k_delayed_work_pending(&new_work), NULL);
-	zassert_true(k_work_pending(&new_work.work), NULL);
 	k_usleep(1);
 	zassert_false(k_delayed_work_pending(&new_work), NULL);
 
@@ -353,7 +355,9 @@ static void twork_resubmit_nowait(void *data)
 	zassert_true(k_work_pending(&delayed_work[1].work), NULL);
 
 	/* Release sleeper, check other two still pending */
-	k_usleep(1);
+	do {
+		k_usleep(1);
+	} while (k_work_pending(&delayed_work_sleepy.work));
 	zassert_false(k_work_pending(&delayed_work_sleepy.work), NULL);
 	zassert_true(k_work_pending(&delayed_work[0].work), NULL);
 	zassert_true(k_work_pending(&delayed_work[1].work), NULL);
