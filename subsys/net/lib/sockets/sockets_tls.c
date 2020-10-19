@@ -39,6 +39,12 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include "sockets_internal.h"
 #include "tls_internal.h"
 
+#if defined(CONFIG_NET_SOCKETS_TLS_MAX_APP_PROTOCOLS)
+#define ALPN_MAX_PROTOCOLS (CONFIG_NET_SOCKETS_TLS_MAX_APP_PROTOCOLS + 1)
+#else
+#define ALPN_MAX_PROTOCOLS 0
+#endif /* CONFIG_NET_SOCKETS_TLS_MAX_APP_PROTOCOLS */
+
 static const struct socket_op_vtable tls_sock_fd_op_vtable;
 
 /** A list of secure tags that TLS context should use. */
@@ -109,6 +115,11 @@ struct tls_context {
 
 		/** DTLS role, client by default. */
 		int8_t role;
+
+		/** NULL-terminated list of allowed application layer
+		 * protocols.
+		 */
+		const char *alpn_list[ALPN_MAX_PROTOCOLS];
 	} options;
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
@@ -920,6 +931,16 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 		return ret;
 	}
 
+#if defined(CONFIG_MBEDTLS_SSL_ALPN)
+	if (ALPN_MAX_PROTOCOLS && context->options.alpn_list[0] != NULL) {
+		ret = mbedtls_ssl_conf_alpn_protocols(&context->config,
+				context->options.alpn_list);
+		if (ret != 0) {
+			return -EINVAL;
+		}
+	}
+#endif /* CONFIG_MBEDTLS_SSL_ALPN */
+
 	ret = mbedtls_ssl_setup(&context->ssl,
 				&context->config);
 	if (ret != 0) {
@@ -1068,6 +1089,64 @@ static int tls_opt_ciphersuite_used_get(struct tls_context *context,
 	}
 
 	*(int *)optval = mbedtls_ssl_get_ciphersuite_id(ciph);
+
+	return 0;
+}
+
+static int tls_opt_alpn_list_set(struct tls_context *context,
+				 const void *optval, socklen_t optlen)
+{
+	int alpn_cnt;
+
+	if (!ALPN_MAX_PROTOCOLS) {
+		return -EINVAL;
+	}
+
+	if (!optval) {
+		return -EINVAL;
+	}
+
+	if (optlen % sizeof(const char *) != 0) {
+		return -EINVAL;
+	}
+
+	alpn_cnt = optlen / sizeof(const char *);
+	/* + 1 for NULL-termination. */
+	if (alpn_cnt + 1 > ARRAY_SIZE(context->options.alpn_list)) {
+		return -EINVAL;
+	}
+
+	memcpy(context->options.alpn_list, optval, optlen);
+	context->options.alpn_list[alpn_cnt] = NULL;
+
+	return 0;
+}
+
+static int tls_opt_alpn_list_get(struct tls_context *context,
+				 void *optval, socklen_t *optlen)
+{
+	const char **alpn_list = context->options.alpn_list;
+	int alpn_cnt, i = 0;
+	const char **ret_list = optval;
+
+	if (!ALPN_MAX_PROTOCOLS) {
+		return -EINVAL;
+	}
+
+	if (*optlen % sizeof(const char *) != 0 || *optlen == 0) {
+		return -EINVAL;
+	}
+
+	alpn_cnt = *optlen / sizeof(const char *);
+	while (alpn_list[i] != NULL) {
+		ret_list[i] = alpn_list[i];
+
+		if (++i == alpn_cnt) {
+			break;
+		}
+	}
+
+	*optlen = i * sizeof(const char *);
 
 	return 0;
 }
@@ -1922,6 +2001,10 @@ int ztls_getsockopt_ctx(struct tls_context *ctx, int level, int optname,
 		err = tls_opt_ciphersuite_used_get(ctx, optval, optlen);
 		break;
 
+	case TLS_ALPN_LIST:
+		err = tls_opt_alpn_list_get(ctx, optval, optlen);
+		break;
+
 	default:
 		/* Unknown or write-only option. */
 		err = -ENOPROTOOPT;
@@ -1965,6 +2048,10 @@ int ztls_setsockopt_ctx(struct tls_context *ctx, int level, int optname,
 
 	case TLS_DTLS_ROLE:
 		err = tls_opt_dtls_role_set(ctx, optval, optlen);
+		break;
+
+	case TLS_ALPN_LIST:
+		err = tls_opt_alpn_list_set(ctx, optval, optlen);
 		break;
 
 	default:
