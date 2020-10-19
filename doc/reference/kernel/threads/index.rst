@@ -3,6 +3,9 @@
 Threads
 #######
 
+.. note::
+   There is also limited support for using :ref:`nothread`.
+
 .. contents::
     :local:
     :depth: 2
