@@ -270,7 +270,7 @@ int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
 	case DT_REG_ADDR(DT_NODELABEL(timers1)):
 		if (remap == REMAP_1) {
 			LL_GPIO_AF_RemapPartial_TIM1();
-		} else if (remap == REMAP_FULL) {
+		} else if (remap == REMAP_2) {
 			LL_GPIO_AF_EnableRemap_TIM1();
 		} else {
 			LL_GPIO_AF_DisableRemap_TIM1();
@@ -294,7 +294,7 @@ int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
 	case DT_REG_ADDR(DT_NODELABEL(timers3)):
 		if (remap == REMAP_1) {
 			LL_GPIO_AF_RemapPartial_TIM3();
-		} else if (remap == REMAP_FULL) {
+		} else if (remap == REMAP_2) {
 			LL_GPIO_AF_EnableRemap_TIM3();
 		} else {
 			LL_GPIO_AF_DisableRemap_TIM3();
@@ -303,7 +303,7 @@ int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(timers4), okay)
 	case DT_REG_ADDR(DT_NODELABEL(timers4)):
-		if (remap == REMAP_FULL) {
+		if (remap == REMAP_1) {
 			LL_GPIO_AF_EnableRemap_TIM4();
 		} else {
 			LL_GPIO_AF_DisableRemap_TIM4();
@@ -312,7 +312,7 @@ int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(timers9), okay)
 	case DT_REG_ADDR(DT_NODELABEL(timers9)):
-		if (remap == REMAP_FULL) {
+		if (remap == REMAP_1) {
 			LL_GPIO_AF_EnableRemap_TIM9();
 		} else {
 			LL_GPIO_AF_DisableRemap_TIM9();
@@ -321,7 +321,7 @@ int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(timers10), okay)
 	case DT_REG_ADDR(DT_NODELABEL(timers10)):
-		if (remap == REMAP_FULL) {
+		if (remap == REMAP_1) {
 			LL_GPIO_AF_EnableRemap_TIM10();
 		} else {
 			LL_GPIO_AF_DisableRemap_TIM10();
@@ -330,7 +330,7 @@ int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(timers11), okay)
 	case DT_REG_ADDR(DT_NODELABEL(timers11)):
-		if (remap == REMAP_FULL) {
+		if (remap == REMAP_1) {
 			LL_GPIO_AF_EnableRemap_TIM11();
 		} else {
 			LL_GPIO_AF_DisableRemap_TIM11();
@@ -339,7 +339,7 @@ int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(timers12), okay)
 	case DT_REG_ADDR(DT_NODELABEL(timers12)):
-		if (remap == REMAP_FULL) {
+		if (remap == REMAP_1) {
 			LL_GPIO_AF_EnableRemap_TIM12();
 		} else {
 			LL_GPIO_AF_DisableRemap_TIM12();
@@ -348,7 +348,7 @@ int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(timers13), okay)
 	case DT_REG_ADDR(DT_NODELABEL(timers13)):
-		if (remap == REMAP_FULL) {
+		if (remap == REMAP_1) {
 			LL_GPIO_AF_EnableRemap_TIM13();
 		} else {
 			LL_GPIO_AF_DisableRemap_TIM13();
@@ -357,7 +357,7 @@ int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(timers14), okay)
 	case DT_REG_ADDR(DT_NODELABEL(timers14)):
-		if (remap == REMAP_FULL) {
+		if (remap == REMAP_1) {
 			LL_GPIO_AF_EnableRemap_TIM14();
 		} else {
 			LL_GPIO_AF_DisableRemap_TIM14();
@@ -366,7 +366,7 @@ int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(timers15), okay)
 	case DT_REG_ADDR(DT_NODELABEL(timers15)):
-		if (remap == REMAP_FULL) {
+		if (remap == REMAP_1) {
 			LL_GPIO_AF_EnableRemap_TIM15();
 		} else {
 			LL_GPIO_AF_DisableRemap_TIM15();
@@ -375,7 +375,7 @@ int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(timers16), okay)
 	case DT_REG_ADDR(DT_NODELABEL(timers16)):
-		if (remap == REMAP_FULL) {
+		if (remap == REMAP_1) {
 			LL_GPIO_AF_EnableRemap_TIM16();
 		} else {
 			LL_GPIO_AF_DisableRemap_TIM16();
@@ -384,7 +384,7 @@ int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(timers17), okay)
 	case DT_REG_ADDR(DT_NODELABEL(timers17)):
-		if (remap == REMAP_FULL) {
+		if (remap == REMAP_1) {
 			LL_GPIO_AF_EnableRemap_TIM17();
 		} else {
 			LL_GPIO_AF_DisableRemap_TIM17();
