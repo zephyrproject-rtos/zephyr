@@ -1655,6 +1655,11 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 		/* If someone is still using the address, then remove it later.
 		 */
 		if (ref > 0) {
+			net_mgmt_event_notify_with_info(
+				NET_EVENT_IPV6_ADDR_DEPRECATED, iface,
+				&ipv6->unicast[i].address.in6_addr,
+				sizeof(struct in6_addr));
+
 			return false;
 		}
 
@@ -1826,6 +1831,11 @@ bool net_if_ipv6_maddr_rm(struct net_if *iface, const struct in6_addr *addr)
 		/* If someone is still using the address, then remove it later.
 		 */
 		if (ref > 0) {
+			net_mgmt_event_notify_with_info(
+				NET_EVENT_IPV6_MADDR_DEPRECATED, iface,
+				&ipv6->mcast[i].address.in6_addr,
+				sizeof(struct in6_addr));
+
 			return false;
 		}
 
@@ -3296,6 +3306,11 @@ bool net_if_ipv4_addr_rm(struct net_if *iface, const struct in_addr *addr)
 		/* If someone is still using the address, then remove it later.
 		 */
 		if (ref > 0) {
+			net_mgmt_event_notify_with_info(
+				NET_EVENT_IPV4_ADDR_DEPRECATED, iface,
+				&ipv4->unicast[i].address.in_addr,
+				sizeof(struct in_addr));
+
 			return false;
 		}
 
@@ -3464,6 +3479,11 @@ bool net_if_ipv4_maddr_rm(struct net_if *iface, const struct in_addr *addr)
 		/* If someone is still using the address, then remove it later.
 		 */
 		if (ref > 0) {
+			net_mgmt_event_notify_with_info(
+				NET_EVENT_IPV4_MADDR_DEPRECATED, iface,
+				&maddr->address.in_addr,
+				sizeof(struct in_addr));
+
 			return false;
 		}
 

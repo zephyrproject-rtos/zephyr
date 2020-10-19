@@ -2060,6 +2060,18 @@ static char *get_l3_desc(struct event_msg *msg,
 		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
 				     extra_info_len);
 		break;
+	case NET_EVENT_IPV6_ADDR_DEPRECATED:
+		*desc = "IPv6 address";
+		*desc2 = "deprecated";
+		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+				     extra_info_len);
+		break;
+	case NET_EVENT_IPV6_MADDR_DEPRECATED:
+		*desc = "IPv6 mcast address";
+		*desc2 = "deprecated";
+		info = net_addr_ntop(AF_INET6, msg->data, extra_info,
+				     extra_info_len);
+		break;
 	case NET_EVENT_IPV4_ADDR_ADD:
 		*desc = "IPv4 address";
 		*desc2 = "add";
@@ -2101,6 +2113,18 @@ static char *get_l3_desc(struct event_msg *msg,
 	case NET_EVENT_IPV4_DHCP_STOP:
 		*desc = "DHCPv4";
 		*desc2 = "stop";
+		break;
+	case NET_EVENT_IPV4_ADDR_DEPRECATED:
+		*desc = "IPv4 address";
+		*desc2 = "deprecated";
+		info = net_addr_ntop(AF_INET, msg->data, extra_info,
+				     extra_info_len);
+		break;
+	case NET_EVENT_IPV4_MADDR_DEPRECATED:
+		*desc = "IPv4 mcast address";
+		*desc2 = "deprecated";
+		info = net_addr_ntop(AF_INET, msg->data, extra_info,
+				     extra_info_len);
 		break;
 	}
 
