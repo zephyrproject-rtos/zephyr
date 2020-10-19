@@ -17,6 +17,7 @@
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 #include <soc/nrfx_coredep.h>
 #include <logging/log.h>
+#include <nrf_erratas.h>
 
 #ifdef CONFIG_RUNTIME_NMI
 extern void z_arm_nmi_init(void);
@@ -90,22 +91,13 @@ void z_platform_init(void)
 }
 
 #if defined(CONFIG_SOC_NRF5340_CPUAPP) && \
-	!defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
-bool nrf53_has_erratum19(void)
-{
-	if (NRF_FICR->INFO.PART == 0x5340) {
-		if (NRF_FICR->INFO.VARIANT == 0x41414142) {
-			return true;
-		}
-	}
-	return false;
-}
+	!defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) && \
+	!defined(CONFIG_NRF5340_CPUAPP_ERRATUM19)
 
-#ifndef CONFIG_NRF5340_CPUAPP_ERRATUM19
 static int check_erratum19(const struct device *arg)
 {
 	ARG_UNUSED(arg);
-	if (nrf53_has_erratum19()) {
+	if (nrf53_errata_19()) {
 		LOG_ERR("This device is affected by nRF53 Erratum 19,");
 		LOG_ERR("but workarounds have not been enabled.");
 		LOG_ERR("See CONFIG_NRF5340_CPUAPP_ERRATUM19.");
@@ -116,7 +108,6 @@ static int check_erratum19(const struct device *arg)
 }
 
 SYS_INIT(check_erratum19, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
-#endif
 #endif
 
 SYS_INIT(nordicsemi_nrf53_init, PRE_KERNEL_1, 0);
