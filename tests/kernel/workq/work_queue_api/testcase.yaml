@@ -1,4 +1,5 @@
 tests:
   kernel.workqueue.api:
     min_flash: 34
+    min_ram: 34
     tags: kernel userspace
