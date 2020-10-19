@@ -5,6 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifdef CONFIG_BT_TBS
+#include "../../../../../subsys/bluetooth/host/audio/tbs.h"
+#include "../../../../../subsys/bluetooth/host/audio/ccp.h"
 #include "common.h"
 
 extern enum bst_result_t bst_result;
@@ -67,6 +70,10 @@ void disconnected(struct bt_conn *conn, uint8_t reason)
 	default_conn = NULL;
 }
 
+struct bt_conn_cb conn_callbacks = {
+	.disconnected = disconnected,
+};
+
 void test_tick(bs_time_t HW_device_time)
 {
 	if (bst_result != Passed) {
@@ -79,3 +86,5 @@ void test_init(void)
 	bst_ticker_set_next_tick_absolute(WAIT_TIME);
 	bst_result = In_progress;
 }
+
+#endif /* CONFIG_BT_TBS */
