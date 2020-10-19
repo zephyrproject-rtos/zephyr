@@ -27,13 +27,19 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define NETWORK_CONNECT_TIMEOUT	K_SECONDS(10)
 #define PACKET_TRANSFER_RETRY_MAX	3
 
-static struct k_work firmware_work;
-static char firmware_uri[URI_LEN];
-static struct lwm2m_ctx firmware_ctx = {
-	.sock_fd = -1
+struct firmware_pull_context {
+	char uri[URI_LEN];
+	int retry;
+	struct k_work firmware_work;
+	struct lwm2m_ctx firmware_ctx;
+	struct coap_block_context block_ctx;
 };
-static int firmware_retry;
-static struct coap_block_context firmware_block_ctx;
+
+static struct firmware_pull_context fota_context = {
+	.firmware_ctx = {
+		.sock_fd = -1
+	}
+};
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 #define COAP2COAP_PROXY_URI_PATH	"coap2coap"
@@ -81,7 +87,7 @@ static int transfer_request(struct coap_block_context *ctx,
 	char *next_slash;
 #endif
 
-	msg = lwm2m_get_message(&firmware_ctx);
+	msg = lwm2m_get_message(&fota_context.firmware_ctx);
 	if (!msg) {
 		LOG_ERR("Unable to get a lwm2m message!");
 		return -ENOMEM;
@@ -103,9 +109,9 @@ static int transfer_request(struct coap_block_context *ctx,
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 	/* TODO: shift to lower case */
-	if (strncmp(firmware_uri, "http", 4) == 0) {
+	if (strncmp(fota_context.uri, "http", 4) == 0) {
 		cursor = COAP2HTTP_PROXY_URI_PATH;
-	} else if (strncmp(firmware_uri, "coap", 4) == 0) {
+	} else if (strncmp(fota_context.uri, "coap", 4) == 0) {
 		cursor = COAP2COAP_PROXY_URI_PATH;
 	} else {
 		ret = -EPROTONOSUPPORT;
@@ -121,10 +127,10 @@ static int transfer_request(struct coap_block_context *ctx,
 	}
 #else
 	http_parser_url_init(&parser);
-	ret = http_parser_parse_url(firmware_uri, strlen(firmware_uri), 0,
+	ret = http_parser_parse_url(fota_context.uri, strlen(fota_context.uri), 0,
 				    &parser);
 	if (ret < 0) {
-		LOG_ERR("Invalid firmware url: %s", log_strdup(firmware_uri));
+		LOG_ERR("Invalid firmware url: %s", log_strdup(fota_context.uri));
 		ret = -ENOTSUP;
 		goto cleanup;
 	}
@@ -132,7 +138,7 @@ static int transfer_request(struct coap_block_context *ctx,
 	/* if path is not available, off/len will be zero */
 	off = parser.field_data[UF_PATH].off;
 	len = parser.field_data[UF_PATH].len;
-	cursor = firmware_uri + off;
+	cursor = fota_context.uri + off;
 
 	/* add path portions (separated by slashes) */
 	while (len > 0 && (next_slash = strchr(cursor, '/')) != NULL) {
@@ -172,10 +178,10 @@ static int transfer_request(struct coap_block_context *ctx,
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 	ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_PROXY_URI,
-					firmware_uri, strlen(firmware_uri));
+					fota_context.uri, strlen(fota_context.uri));
 	if (ret < 0) {
 		LOG_ERR("Error adding PROXY_URI '%s'",
-			log_strdup(firmware_uri));
+			log_strdup(fota_context.uri));
 		goto cleanup;
 	}
 #else
@@ -226,7 +232,7 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 		return 0;
 	} else if (coap_header_get_type(response) == COAP_TYPE_CON) {
 		/* Send back ACK so the server knows we received the pkt */
-		ret = lwm2m_send_empty_ack(&firmware_ctx,
+		ret = lwm2m_send_empty_ack(&fota_context.firmware_ctx,
 					   coap_header_get_id(check_response));
 		if (ret < 0) {
 			LOG_ERR("Error transmitting ACK");
@@ -245,10 +251,10 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 	}
 
 	/* save main firmware block context */
-	memcpy(&received_block_ctx, &firmware_block_ctx,
-	       sizeof(firmware_block_ctx));
+	memcpy(&received_block_ctx, &fota_context.block_ctx,
+	       sizeof(fota_context.block_ctx));
 
-	ret = coap_update_from_block(check_response, &firmware_block_ctx);
+	ret = coap_update_from_block(check_response, &fota_context.block_ctx);
 	if (ret < 0) {
 		LOG_ERR("Error from block update: %d", ret);
 		ret = -EFAULT;
@@ -256,12 +262,12 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 	}
 
 	/* test for duplicate transfer */
-	if (firmware_block_ctx.current < received_block_ctx.current) {
+	if (fota_context.block_ctx.current < received_block_ctx.current) {
 		LOG_WRN("Duplicate packet ignored");
 
 		/* restore main firmware block context */
-		memcpy(&firmware_block_ctx, &received_block_ctx,
-		       sizeof(firmware_block_ctx));
+		memcpy(&fota_context.block_ctx, &received_block_ctx,
+		       sizeof(fota_context.block_ctx));
 
 		/* set reply->user_data to error to avoid releasing */
 		reply->user_data = (void *)COAP_REPLY_STATUS_ERROR;
@@ -269,15 +275,15 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 	}
 
 	/* Reach last block if ret equals to 0 */
-	last_block = !coap_next_block(check_response, &firmware_block_ctx);
+	last_block = !coap_next_block(check_response, &fota_context.block_ctx);
 
 	/* Process incoming data */
 	payload_offset = response->hdr_len + response->opt_len;
 	coap_packet_get_payload(response, &payload_len);
 	if (payload_len > 0) {
 		LOG_DBG("total: %zd, current: %zd",
-			firmware_block_ctx.total_size,
-			firmware_block_ctx.current);
+			fota_context.block_ctx.total_size,
+			fota_context.block_ctx.current);
 
 		/* look up firmware package resource */
 		ret = lwm2m_engine_get_resource("5/0/0", &res);
@@ -314,7 +320,7 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 					       write_buf, len,
 					       last_block &&
 							(payload_len == 0U),
-					       firmware_block_ctx.total_size);
+					       fota_context.block_ctx.total_size);
 				if (ret < 0) {
 					goto error;
 				}
@@ -324,7 +330,7 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 
 	if (!last_block) {
 		/* More block(s) to come, setup next transfer */
-		ret = transfer_request(&firmware_block_ctx, token, tkl,
+		ret = transfer_request(&fota_context.block_ctx, token, tkl,
 				       do_firmware_transfer_reply_cb);
 		if (ret < 0) {
 			goto error;
@@ -332,14 +338,14 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 	} else {
 		/* Download finished */
 		set_update_result_from_error(0);
-		lwm2m_engine_context_close(&firmware_ctx);
+		lwm2m_engine_context_close(&fota_context.firmware_ctx);
 	}
 
 	return 0;
 
 error:
 	set_update_result_from_error(ret);
-	lwm2m_engine_context_close(&firmware_ctx);
+	lwm2m_engine_context_close(&fota_context.firmware_ctx);
 	return ret;
 }
 
@@ -347,27 +353,27 @@ static void do_transmit_timeout_cb(struct lwm2m_message *msg)
 {
 	int ret;
 
-	if (firmware_retry < PACKET_TRANSFER_RETRY_MAX) {
+	if (fota_context.retry < PACKET_TRANSFER_RETRY_MAX) {
 		/* retry block */
 		LOG_WRN("TIMEOUT - Sending a retry packet!");
 
-		ret = transfer_request(&firmware_block_ctx,
+		ret = transfer_request(&fota_context.block_ctx,
 				       msg->token, msg->tkl,
 				       do_firmware_transfer_reply_cb);
 		if (ret < 0) {
 			/* abort retries / transfer */
 			set_update_result_from_error(ret);
-			firmware_retry = PACKET_TRANSFER_RETRY_MAX;
-			lwm2m_engine_context_close(&firmware_ctx);
+			fota_context.retry = PACKET_TRANSFER_RETRY_MAX;
+			lwm2m_engine_context_close(&fota_context.firmware_ctx);
 			return;
 		}
 
-		firmware_retry++;
+		fota_context.retry++;
 	} else {
 		LOG_ERR("TIMEOUT - Too many retry packet attempts! "
 			"Aborting firmware download.");
 		set_update_result_from_error(-ENOMSG);
-		lwm2m_engine_context_close(&firmware_ctx);
+		lwm2m_engine_context_close(&fota_context.firmware_ctx);
 	}
 }
 
@@ -388,29 +394,29 @@ static void firmware_transfer(struct k_work *work)
 	strcpy(proxy_uri, server_addr);
 	server_addr = proxy_uri;
 #else
-	server_addr = firmware_uri;
+	server_addr = fota_context.uri;
 #endif
 
-	ret = lwm2m_parse_peerinfo(server_addr, &firmware_ctx.remote_addr,
-				   &firmware_ctx.use_dtls);
+	ret = lwm2m_parse_peerinfo(server_addr, &fota_context.firmware_ctx.remote_addr,
+				   &fota_context.firmware_ctx.use_dtls);
 	if (ret < 0) {
 		LOG_ERR("Failed to parse server URI.");
 		goto error;
 	}
 
-	lwm2m_engine_context_init(&firmware_ctx);
-	ret = lwm2m_socket_start(&firmware_ctx);
+	lwm2m_engine_context_init(&fota_context.firmware_ctx);
+	ret = lwm2m_socket_start(&fota_context.firmware_ctx);
 	if (ret < 0) {
 		LOG_ERR("Cannot start a firmware-pull connection:%d", ret);
 		goto error;
 	}
 
-	LOG_INF("Connecting to server %s", log_strdup(firmware_uri));
+	LOG_INF("Connecting to server %s", log_strdup(fota_context.uri));
 
 	/* reset block transfer context */
-	coap_block_transfer_init(&firmware_block_ctx,
+	coap_block_transfer_init(&fota_context.block_ctx,
 				 lwm2m_default_block_size(), 0);
-	ret = transfer_request(&firmware_block_ctx, coap_next_token(), 8,
+	ret = transfer_request(&fota_context.block_ctx, coap_next_token(), 8,
 			       do_firmware_transfer_reply_cb);
 	if (ret < 0) {
 		goto error;
@@ -420,7 +426,7 @@ static void firmware_transfer(struct k_work *work)
 
 error:
 	set_update_result_from_error(ret);
-	lwm2m_engine_context_close(&firmware_ctx);
+	lwm2m_engine_context_close(&fota_context.firmware_ctx);
 }
 
 /* TODO: */
@@ -432,19 +438,19 @@ int lwm2m_firmware_cancel_transfer(void)
 int lwm2m_firmware_start_transfer(char *package_uri)
 {
 	/* close old socket */
-	if (firmware_ctx.sock_fd > -1) {
-		lwm2m_engine_context_close(&firmware_ctx);
+	if (fota_context.firmware_ctx.sock_fd > -1) {
+		lwm2m_engine_context_close(&fota_context.firmware_ctx);
 	}
 
-	(void)memset(&firmware_ctx, 0, sizeof(struct lwm2m_ctx));
-	firmware_ctx.sock_fd = -1;
-	firmware_retry = 0;
-	k_work_init(&firmware_work, firmware_transfer);
+	(void)memset(&fota_context.firmware_ctx, 0, sizeof(struct lwm2m_ctx));
+	fota_context.firmware_ctx.sock_fd = -1;
+	fota_context.retry = 0;
+	k_work_init(&fota_context.firmware_work, firmware_transfer);
 	lwm2m_firmware_set_update_state(STATE_DOWNLOADING);
 
 	/* start file transfer work */
-	strncpy(firmware_uri, package_uri, URI_LEN - 1);
-	k_work_submit(&firmware_work);
+	strncpy(fota_context.uri, package_uri, URI_LEN - 1);
+	k_work_submit(&fota_context.firmware_work);
 
 	return 0;
 }
@@ -456,5 +462,5 @@ int lwm2m_firmware_start_transfer(char *package_uri)
  */
 struct coap_block_context *lwm2m_firmware_get_block_context()
 {
-	return &firmware_block_ctx;
+	return &fota_context.block_ctx;
 }
