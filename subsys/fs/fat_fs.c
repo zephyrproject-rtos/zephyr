@@ -70,6 +70,8 @@ static uint8_t translate_flags(fs_mode_t flags)
 	fat_mode |= (flags & FS_O_READ) ? FA_READ : 0;
 	fat_mode |= (flags & FS_O_WRITE) ? FA_WRITE : 0;
 	fat_mode |= (flags & FS_O_CREATE) ? FA_OPEN_ALWAYS : 0;
+	fat_mode |= ((flags & (FS_O_CREATE | FS_O_TRUNC)) ==
+		(FS_O_CREATE | FS_O_TRUNC)) ? FA_CREATE_ALWAYS : 0;
 	/* NOTE: FA_APPEND is not translated because FAT FS does not
 	 * support append semantics of the Zephyr, where file position
 	 * is forwarded to the end before each write, the fatfs_write
