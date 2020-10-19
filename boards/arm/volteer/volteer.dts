@@ -1,0 +1,84 @@
+/*
+ * Copyright (c) 2020 Intel Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nuvoton/npcx7m6fb.dtsi>
+
+/ {
+	model= "Volteer Google Chrome Reference Design";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart1;
+		zephyr,flash = &flash0;
+	};
+
+	pow_seq_gpio_keys {
+		compatible = "gpio-keys";
+
+		/* Interrupts */
+		slpsus: GPIOD7 {
+			label = "SLP_SUS_L";
+			gpios = <&gpiod 7 GPIO_INPUT>;
+		};
+		slps0: GPIOD5 {
+			label = "SLP_S0_L";
+			gpios = <&gpiod 5 GPIO_INPUT>;
+		};
+		rsmrstin: GPIOE2 {
+			label = "PG_EC_RSMRST_ODL";
+			gpios = <&gpioe 2 GPIO_INPUT>;
+		};
+		allsyspwrgd: GPIOF4 {
+			label = "PG_EC_ALL_SYS_PWRGD";
+			gpios = <&gpiof 4 GPIO_INPUT>;
+		};
+
+		/* Pass-through output signals */
+		rsmrstout: GPIOA6 {
+			label = "EC_PCH_RSMRST_ODL";
+			gpios = <&gpioa 6 GPIO_OUTPUT_LOW_ORD>;
+		};
+		dswpwrokout: GPIOC7 {
+			label = "DSW_PWROK";
+			gpios = <&gpioc 7 GPIO_OUTPUT_LOW>;
+		};
+		syspwrok: GPIO37 {
+			label = "EC_PCH_SYS_PWROK";
+			gpios = <&gpio3 7 GPIO_OUTPUT_LOW>;
+		};
+		vccin: GPIO43 {
+			label = "EN_PPVAR_VCCIN";
+			gpios = <&gpio4 3 GPIO_OUTPUT_LOW>;
+		};
+
+		/* Output signals */
+		pchpwrbtn: GPIOC1 {
+			label = "EC_PCH_PWR_BTN_ODL";
+			gpios = <&gpioc 1 GPIO_OUTPUT_HIGH_ORD>;
+		};
+		enpp5p0: GPIOA4 {
+			label = "EN_PP5000_A";
+			gpios = <&gpioa 4 GPIO_OUTPUT_LOW>;
+		};
+		enpp3p3: GPIOA3 {
+			label = "EN_PP3300_A";
+			gpios = <&gpioa 3 GPIO_OUTPUT_LOW>;
+		};
+	};
+};
+
+/* Overwirte default device properties with overlays in board dt file here. */
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl = <&altc_uart1_sl2>; /* Use UART1_SL2 ie. PIN64.65 */
+};
+
+&espi0 {
+	status = "okay";
+};

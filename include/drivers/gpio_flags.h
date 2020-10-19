@@ -55,6 +55,16 @@
 				 GPIO_OUTPUT_INIT_HIGH |	\
 				 GPIO_OUTPUT_INIT_LOGICAL)
 
+/**
+ * Configures GPIO pin as output and initializes it to a low Open Drain state.
+ */
+#define GPIO_OUTPUT_LOW_ORD	(GPIO_OUTPUT_LOW | GPIO_LINE_OPEN_DRAIN)
+
+/**
+ * Configures GPIO pin as output and initializes it to a high Open Drain state.
+ */
+#define GPIO_OUTPUT_HIGH_ORD	(GPIO_OUTPUT_LOW | GPIO_LINE_OPEN_DRAIN)
+
 /** @} */
 
 /**
