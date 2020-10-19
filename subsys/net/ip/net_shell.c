@@ -3011,6 +3011,207 @@ static int cmd_net_iface_down(const struct shell *shell, size_t argc,
 	return 0;
 }
 
+static int iface_addr_add_or_rm(const struct shell *shell, size_t argc,
+				char *argv[], bool do_add)
+{
+	struct in6_addr addr6;
+	struct in_addr addr4;
+	struct net_if *iface;
+	bool is_ipv6, is_mcast;
+	int idx, ret;
+
+#if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4)
+	struct net_if_mcast_addr *ifmaddr;
+	struct net_if_addr *ifaddr;
+	bool status;
+#endif
+
+	if (argc < 2) {
+		PR_WARNING("Network interface missing.\n");
+		return -ENOEXEC;
+	}
+
+	idx = get_iface_idx(shell, argv[1]);
+	if (idx < 0) {
+		return -ENOEXEC;
+	}
+
+	iface = net_if_get_by_index(idx);
+	if (!iface) {
+		PR_WARNING("No such interface in index %d\n", idx);
+		return -ENOEXEC;
+	}
+
+	if (argc < 3) {
+		PR_WARNING("IP address missing.\n");
+		return -ENOEXEC;
+	}
+
+	ret = net_addr_pton(AF_INET6, argv[2], &addr6);
+	if (ret < 0) {
+		ret = net_addr_pton(AF_INET, argv[2], &addr4);
+		if (ret < 0) {
+			PR_WARNING("Invalid IP address \"%s\"\n", idx,
+				   argv[2]);
+			return -ENOEXEC;
+		}
+
+		is_ipv6 = false;
+
+		if (net_ipv4_is_addr_mcast(&addr4)) {
+			is_mcast = true;
+		} else {
+			is_mcast = false;
+		}
+	} else {
+		is_ipv6 = true;
+
+		if (net_ipv6_is_addr_mcast(&addr6)) {
+			is_mcast = true;
+		} else {
+			is_mcast = false;
+		}
+	}
+
+	if (is_ipv6) {
+#if defined(CONFIG_NET_IPV6)
+		if (is_mcast) {
+			ifmaddr = net_if_ipv6_maddr_lookup(&addr6, &iface);
+			if ((do_add && ifmaddr) || (!do_add && !ifmaddr)) {
+				PR("%s address %s %s\n", "IPv6",
+				   net_sprint_addr(AF_INET6, &addr6),
+				   do_add ? "already added" : "not found");
+				return -ENOEXEC;
+			}
+
+			if (do_add) {
+				ifmaddr = net_if_ipv6_maddr_add(iface, &addr6);
+				if (!ifmaddr) {
+					status = false;
+				} else {
+					status = true;
+				}
+			} else {
+				status = net_if_ipv6_maddr_rm(iface, &addr6);
+			}
+		} else {
+			ifaddr = net_if_ipv6_addr_lookup_by_iface(iface,
+								  &addr6);
+			if ((do_add && ifaddr) || (!do_add && !ifaddr)) {
+				PR("%s address %s %s\n", "IPv6",
+				   net_sprint_addr(AF_INET6, &addr6),
+				   do_add ? "already added" : "not found");
+				return -ENOEXEC;
+			}
+
+			if (do_add) {
+				ifaddr = net_if_ipv6_addr_add(iface, &addr6,
+							      NET_ADDR_MANUAL,
+							      0);
+				if (!ifaddr) {
+					status = false;
+				} else {
+					status = true;
+				}
+			} else {
+				status = net_if_ipv6_addr_rm(iface, &addr6);
+			}
+		}
+
+		if (!status) {
+			PR_WARNING("Cannot %s %s %s interface %d\n",
+				   do_add ? "add to" : "remove from",
+				   "IPv6", net_sprint_addr(AF_INET6, &addr6),
+				   idx);
+			return -ENOEXEC;
+		}
+
+		PR("%s address %s %s interface %d\n", "IPv6",
+		   do_add ? "added to" : "removed from",
+		   net_sprint_addr(AF_INET6, &addr6), idx);
+#else
+		PR_WARNING("%s not enabled, cannot %s IP address.\n",
+			   "IPv6", do_add ? "add" : "remove");
+		return -ENOEXEC;
+#endif
+	} else {
+#if defined(CONFIG_NET_IPV4)
+		if (is_mcast) {
+			ifmaddr = net_if_ipv4_maddr_lookup(&addr4, &iface);
+			if ((do_add && ifmaddr) || (!do_add && !ifmaddr)) {
+				PR("%s address %s %s\n", "IPv4",
+				   net_sprint_addr(AF_INET, &addr4),
+				   do_add ? "already added" : "not found");
+				return -ENOEXEC;
+			}
+
+			if (do_add) {
+				ifmaddr = net_if_ipv4_maddr_add(iface, &addr4);
+				if (!ifmaddr) {
+					status = false;
+				} else {
+					status = true;
+				}
+			} else {
+				status = net_if_ipv4_maddr_rm(iface, &addr4);
+			}
+		} else {
+			ifaddr = net_if_ipv4_addr_lookup_by_iface(iface,
+								  &addr4);
+			if ((do_add && ifaddr) || (!do_add && !ifaddr)) {
+				PR("%s address %s %s\n", "IPv4",
+				   net_sprint_addr(AF_INET, &addr4),
+				   do_add ? "already added" : "not found");
+				return -ENOEXEC;
+			}
+
+			if (do_add) {
+				ifaddr = net_if_ipv4_addr_add(iface, &addr4,
+							      NET_ADDR_MANUAL,
+							      0);
+				if (!ifaddr) {
+					status = false;
+				} else {
+					status = true;
+				}
+			} else {
+				status = net_if_ipv4_addr_rm(iface, &addr4);
+			}
+		}
+
+		if (!status) {
+			PR_WARNING("Cannot %s %s %s interface %d\n",
+				   do_add ? "add to" : "remove from",
+				   "IPv4", net_sprint_addr(AF_INET, &addr4),
+				   idx);
+			return -ENOEXEC;
+		}
+
+		PR("%s address %s %s interface %d\n", "IPv4",
+		   do_add ? "added to" : "removed from",
+		   net_sprint_addr(AF_INET, &addr4), idx);
+#else
+		PR_WARNING("%s not enabled, cannot %s IP address.\n",
+			   "IPv4", do_add ? "add" : "remove");
+		return -ENOEXEC;
+#endif
+	}
+
+	return 0;
+}
+
+static int cmd_net_iface_addr_add(const struct shell *shell, size_t argc,
+				  char *argv[])
+{
+	return iface_addr_add_or_rm(shell, argc, argv, true);
+}
+
+static int cmd_net_iface_addr_rm(const struct shell *shell, size_t argc,
+				  char *argv[])
+{
+	return iface_addr_add_or_rm(shell, argc, argv, false);
+}
+
 #if defined(CONFIG_NET_NATIVE_IPV6)
 static uint32_t time_diff(uint32_t time1, uint32_t time2)
 {
@@ -5038,6 +5239,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_iface,
 		  "'net iface down <index>' takes network interface "
 		  "down.",
 		  cmd_net_iface_down),
+	SHELL_CMD(add, IFACE_DYN_CMD,
+		  "'net iface add <index> <IP address>' adds IP address to "
+		  "the network interface.",
+		  cmd_net_iface_addr_add),
+	SHELL_CMD(rm, IFACE_DYN_CMD,
+		  "'net iface rm <index> <IP address>' removes IP address "
+		  "from the network interface.",
+		  cmd_net_iface_addr_rm),
 	SHELL_CMD(show, IFACE_DYN_CMD,
 		  "'net iface <index>' shows network interface "
 		  "information.",
