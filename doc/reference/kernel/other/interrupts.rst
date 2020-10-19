@@ -165,7 +165,10 @@ The kernel addresses such use-cases by allowing interrupts with critical
 latency constraints to execute at a priority level that cannot be blocked
 by interrupt locking. These interrupts are defined as
 *zero-latency interrupts*. The support for zero-latency interrupts requires
-:option:`CONFIG_ZERO_LATENCY_IRQS` to be enabled.
+:option:`CONFIG_ZERO_LATENCY_IRQS` to be enabled. In addition to that, the
+flag :c:macro:`IRQ_ZERO_LATENCY` must be passed to :c:macro:`IRQ_CONNECT` or
+:c:macro:`IRQ_DIRECT_CONNECT` macros to configure the particular interrupt
+with zero latency.
 
 Zero-latency interrupts are expected to be used to manage hardware events
 directly, and not to interoperate with the kernel code at all. They should
@@ -227,7 +230,7 @@ The following code defines and enables an ISR.
     #define MY_DEV_PRIO  2       /* device uses interrupt priority 2 */
     /* argument passed to my_isr(), in this case a pointer to the device */
     #define MY_ISR_ARG  DEVICE_GET(my_device)
-    #define MY_IRQ_FLAGS 0       /* IRQ flags. Unused on non-x86 */
+    #define MY_IRQ_FLAGS 0       /* IRQ flags */
 
     void my_isr(void *arg)
     {
@@ -293,7 +296,7 @@ The following code demonstrates a direct ISR:
     #define MY_DEV_IRQ  24       /* device uses IRQ 24 */
     #define MY_DEV_PRIO  2       /* device uses interrupt priority 2 */
     /* argument passed to my_isr(), in this case a pointer to the device */
-    #define MY_IRQ_FLAGS 0       /* IRQ flags. Unused on non-x86 */
+    #define MY_IRQ_FLAGS 0       /* IRQ flags */
 
     ISR_DIRECT_DECLARE(my_isr)
     {
