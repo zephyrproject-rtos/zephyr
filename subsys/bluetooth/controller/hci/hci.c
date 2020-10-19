@@ -1067,6 +1067,7 @@ static void le_set_adv_enable(struct net_buf *buf, struct net_buf **evt)
 	*evt = cmd_complete_status(status);
 }
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
 static void le_create_big(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_create_big *cmd = (void *)buf->data;
@@ -1120,6 +1121,7 @@ static void le_terminate_big(struct net_buf *buf, struct net_buf **evt)
 
 	*evt = cmd_status(status);
 }
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_OBSERVER)
@@ -1167,6 +1169,7 @@ static void le_set_scan_enable(struct net_buf *buf, struct net_buf **evt)
 	*evt = cmd_complete_status(status);
 }
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
 static void le_big_create_sync(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_big_create_sync *cmd = (void *)buf->data;
@@ -1194,6 +1197,7 @@ static void le_big_terminate_sync(struct net_buf *buf, struct net_buf **evt)
 
 	*evt = cmd_complete_status(status);
 }
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CONN)
@@ -2355,6 +2359,7 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		le_set_adv_enable(cmd, evt);
 		break;
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
 	case BT_OCF(BT_HCI_OP_LE_CREATE_BIG):
 		le_create_big(cmd, evt);
 		break;
@@ -2366,6 +2371,7 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_LE_TERMINATE_BIG):
 		le_terminate_big(cmd, evt);
 		break;
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_OBSERVER)
@@ -2377,6 +2383,7 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		le_set_scan_enable(cmd, evt);
 		break;
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
 	case BT_OCF(BT_HCI_OP_LE_BIG_CREATE_SYNC):
 		le_big_create_sync(cmd, evt);
 		break;
@@ -2384,6 +2391,7 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_LE_BIG_TERMINATE_SYNC):
 		le_big_terminate_sync(cmd, evt);
 		break;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CONN)

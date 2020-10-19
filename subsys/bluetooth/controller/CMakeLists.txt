@@ -34,7 +34,8 @@ if(CONFIG_BT_LL_SW_SPLIT)
       CONFIG_BT_CTLR_ADV_PERIODIC
       ll_sw/ull_adv_sync.c
       )
-    zephyr_library_sources(
+    zephyr_library_sources_ifdef(
+      CONFIG_BT_CTLR_ADV_ISO
       ll_sw/ull_adv_iso.c
       )
   endif()
@@ -50,7 +51,8 @@ if(CONFIG_BT_LL_SW_SPLIT)
       CONFIG_BT_CTLR_SYNC_PERIODIC
       ll_sw/ull_sync.c
       )
-    zephyr_library_sources(
+    zephyr_library_sources_ifdef(
+      CONFIG_BT_CTLR_SYNC_ISO
       ll_sw/ull_sync_iso.c
       )
   endif()
