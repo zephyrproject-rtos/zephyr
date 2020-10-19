@@ -52,6 +52,16 @@
 		bs_trace_info_time(1, __VA_ARGS__); \
 	} while (0)
 
+#define SET_STEP(s)							\
+	do {								\
+		if (s == step + 1) {					\
+			step = s;					\
+			printk("Step %u\n", step);			\
+		} else {						\
+			FAIL("Invalid step %u (expected %u)", s, step + 1); \
+		}							\
+	} while (0)
+
 #define AD_SIZE 1
 extern const struct bt_data ad[AD_SIZE];
 
