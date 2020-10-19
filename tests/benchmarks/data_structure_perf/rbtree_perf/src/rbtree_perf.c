@@ -31,14 +31,41 @@ bool node_lessthan(struct rbnode *a, struct rbnode *b)
  * @brief Test whether rbtree node struct is embedded
  * in any user struct
  *
- * @details Initialize a user defined structure contains
- * rbtree node.And into a rbtree and enumerate
- * the rbtree nodes.
+ * @details
+ * Test Objective:
+ * - Define and initialize a rbtree, and test two features:
+ * first, rbtree node struct can be embeded in any user struct.
+ * last, rbtree can be walked though by some macro APIs.
  *
- * verify that the value enumerated is equal to the
- * value initialized.If the verification pass,the user
- * defined structure works.
- * verify "for each" style APIs work.
+ * Testing techniques:
+ * - Interface testing
+ * - Dynamic analysis and testing
+ * - Structural test coverage(entry points,statements,branches)
+ *
+ * Prerequisite Conditions:
+ * - Design a predicate function node_lessthan
+ * - Define a rbtree by using struct rbtree
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Define some arrays of rbtree nodes.And initialize
+ * the rbtree.
+ * -# Then inserting some nodes into the rbtree.
+ * -# Check if the inserted nodes are contained in the
+ * rbtree by using the iteration APIs.
+ *
+ * Expected Test Result:
+ * - The inserted nodes are contained in the
+ * rbtree by using the iteration APIs.
+ *
+ * Pass/Fail Criteria:
+ * - Successful if check points in test procedure are all pass,
+ * otherwise failure.
+ *
+ * Assumptions and Constraints:
+ * - N/A
  *
  * @ingroup lib_rbtree_tests
  *
@@ -117,15 +144,47 @@ void verify_rbtree_perf(struct rbnode *root, struct rbnode *test)
  * logarithmic time
  *
  * @details
- * Defining a rbtree and then searching height of maximum(minimum)
- * node(searched,inserted or removed),and finally record those heights.
+ * Test Objective:
+ * - The inserted, removed, get minimum and get maximum operations
+ * of rbtree are in logarithmic time by comparing a node's operation
+ * height with the worst-case's height.
  *
- * verify that search heights are less than the height of
- * worset-case condition(<= 2lg(N)).(N is the size of tree)
+ * Testing techniques:
+ * - Interface testing
+ * - Dynamic analysis and testing
+ * - Structural test coverage(entry points,statements,branches)
+ *
+ * Prerequisite Conditions:
+ * - Design a predicate function node_lessthan
+ * - Define a rbtree by using struct rbtree
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Initialize the rbtree and insert some nodes on it.
+ * -# Search the far left/right node by recursion and
+ * record its height.
+ * -# Check if the recorded heights are less than the worst
+ * case height(log2(N)).
+ * -# Select out a node at the rbtree arbitrarily as remove
+ * and insert node. And record the height.
+ * -# repeat the check point above.
+ *
+ * Expected Test Result:
+ * - Some operations of rbtree are running in
+ * logarithmic time
+ *
+ * Pass/Fail Criteria:
+ * - Successful if check points in test procedure are all pass,
+ * otherwise failure.
+ *
+ * Assumptions and Constraints:
+ * - N/A
  *
  * @ingroup lib_rbtree_tests
  *
- * @see rb_get_min(),rb_get_max()
+ * @see rb_get_min(), rb_get_max()
  */
 void test_rbtree_perf(void)
 {
