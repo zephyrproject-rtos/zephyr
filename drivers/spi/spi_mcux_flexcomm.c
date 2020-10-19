@@ -622,7 +622,7 @@ static int transceive(const struct device *dev,
 	struct spi_mcux_data *data = dev->data;
 	int ret;
 
-	spi_context_lock(&data->ctx, asynchronous, signal);
+	spi_context_lock(&data->ctx, asynchronous, signal, spi_cfg);
 
 	ret = spi_mcux_configure(dev, spi_cfg);
 	if (ret) {

@@ -366,7 +366,7 @@ static int spi_sam_transceive(const struct device *dev,
 	Spi *regs = cfg->regs;
 	int err;
 
-	spi_context_lock(&data->ctx, false, NULL);
+	spi_context_lock(&data->ctx, false, NULL, config);
 
 	err = spi_sam_configure(dev, config);
 	if (err != 0) {

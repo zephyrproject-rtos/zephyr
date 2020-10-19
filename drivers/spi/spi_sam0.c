@@ -396,7 +396,7 @@ static int spi_sam0_transceive(const struct device *dev,
 	SercomSpi *regs = cfg->regs;
 	int err;
 
-	spi_context_lock(&data->ctx, false, NULL);
+	spi_context_lock(&data->ctx, false, NULL, config);
 
 	err = spi_sam0_configure(dev, config);
 	if (err != 0) {
@@ -638,7 +638,7 @@ static int spi_sam0_transceive_async(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	spi_context_lock(&data->ctx, true, async);
+	spi_context_lock(&data->ctx, true, async, config);
 
 	retval = spi_sam0_configure(dev, config);
 	if (retval != 0) {
