@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Intel Corporation.
+ * Copyright (c) 2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,7 +25,9 @@ extern const char test_str[];
 int check_file_dir_exists(const char *path);
 
 void test_fat_mount(void);
+void test_fat_unmount(void);
 void test_fat_file(void);
 void test_fat_dir(void);
 void test_fat_fs(void);
 void test_fat_rename(void);
+void test_fat_mount_rd_only(void);
