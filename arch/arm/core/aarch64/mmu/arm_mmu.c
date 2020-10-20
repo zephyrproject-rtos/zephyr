@@ -261,6 +261,21 @@ static void init_xlat_tables(const struct arm_mmu_region *region)
 /* zephyr execution regions with appropriate attributes */
 static const struct arm_mmu_region mmu_zephyr_regions[] = {
 
+	/* Mark the whole SRAM as read-write */
+	MMU_REGION_FLAT_ENTRY("SRAM",
+			      (uintptr_t)CONFIG_SRAM_BASE_ADDRESS,
+			      (uintptr_t)KB(CONFIG_SRAM_SIZE),
+			      MT_NORMAL | MT_P_RW_U_NA | MT_SECURE),
+
+	/* Mark rest of the zephyr execution regions (data, bss, noinit, etc.)
+	 * cacheable, read-write
+	 * Note: read-write region is marked execute-ever internally
+	 */
+	MMU_REGION_FLAT_ENTRY("zephyr_data",
+			      (uintptr_t)__kernel_ram_start,
+			      (uintptr_t)__kernel_ram_size,
+			      MT_NORMAL | MT_P_RW_U_NA | MT_SECURE),
+
 	/* Mark text segment cacheable,read only and executable */
 	MMU_REGION_FLAT_ENTRY("zephyr_code",
 			      (uintptr_t)_image_text_start,
@@ -272,15 +287,6 @@ static const struct arm_mmu_region mmu_zephyr_regions[] = {
 			      (uintptr_t)_image_rodata_start,
 			      (uintptr_t)_image_rodata_size,
 			      MT_NORMAL | MT_P_RO_U_NA | MT_SECURE),
-
-	/* Mark rest of the zephyr execution regions (data, bss, noinit, etc.)
-	 * cacheable, read-write
-	 * Note: read-write region is marked execute-ever internally
-	 */
-	MMU_REGION_FLAT_ENTRY("zephyr_data",
-			      (uintptr_t)__kernel_ram_start,
-			      (uintptr_t)__kernel_ram_size,
-			      MT_NORMAL | MT_P_RW_U_NA | MT_SECURE),
 };
 
 static void setup_page_tables(void)
