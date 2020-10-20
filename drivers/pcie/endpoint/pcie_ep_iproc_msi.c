@@ -181,11 +181,13 @@ void iproc_pcie_func_mask_isr(void *arg)
 
 	LOG_DBG("%s: %x\n", __func__, data);
 
-	if ((data & SNOOP_VALID_INTR) && !is_pcie_function_mask(dev)) {
-		generate_all_pending_msix(dev);
+	if (data & SNOOP_VALID_INTR) {
+		pcie_write32(SNOOP_VALID_INTR,
+			     &cfg->base->paxb_pcie_cfg_intr_clear);
+		if (!is_pcie_function_mask(dev)) {
+			generate_all_pending_msix(dev);
+		}
 	}
-
-	pcie_write32(SNOOP_VALID_INTR, &cfg->base->paxb_pcie_cfg_intr_clear);
 }
 
 void iproc_pcie_vector_mask_isr(void *arg)
@@ -198,9 +200,9 @@ void iproc_pcie_vector_mask_isr(void *arg)
 		sys_read32(PMON_LITE_PCIE_INTERRUPT_STATUS));
 
 	if (msix_table_update) {
-		generate_all_pending_msix(dev);
 		sys_write32(BIT(WR_ADDR_CHK_INTR_EN),
 			    PMON_LITE_PCIE_INTERRUPT_CLEAR);
+		generate_all_pending_msix(dev);
 	}
 }
 #endif
