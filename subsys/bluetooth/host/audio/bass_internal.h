@@ -40,7 +40,7 @@
 	((opcode) >= BASS_OP_SCAN_STOP && (opcode) <= BASS_OP_REM_SRC)
 
 #define BASS_ACTUAL_SIZE(x) \
-	(sizeof(x) - (BASS_MAX_METADATA_LEN - (x).metadata_len))
+	((uint32_t)(sizeof(x) - (BASS_MAX_METADATA_LEN - (x).metadata_len)))
 
 struct bass_cp_scan_stop_t {
 	uint8_t opcode;
