@@ -18,6 +18,28 @@
 #endif
 
 #ifndef _ASMLANGUAGE
+
+static ALWAYS_INLINE void sys_write64(uint64_t data, mm_reg_t addr)
+{
+	__asm__ volatile("movq %0, %1"
+			 :
+			 : "r"(data), "m" (*(volatile uint64_t *)
+					   (uintptr_t) addr)
+			 : "memory");
+}
+
+static ALWAYS_INLINE uint32_t sys_read64(mm_reg_t addr)
+{
+	uint64_t ret;
+
+	__asm__ volatile("movq %1, %0"
+			 : "=r"(ret)
+			 : "m" (*(volatile uint64_t *)(uintptr_t) addr)
+			 : "memory");
+
+	return ret;
+}
+
 static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	unsigned long key;
