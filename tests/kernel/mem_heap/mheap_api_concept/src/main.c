@@ -27,8 +27,6 @@ void test_main(void)
 	ztest_test_suite(mheap_api,
 			 ztest_unit_test(test_mheap_malloc_free),
 			 ztest_unit_test(test_mheap_calloc),
-			 ztest_unit_test(test_mheap_malloc_align4),
-			 ztest_unit_test(test_mheap_block_desc),
-			 ztest_unit_test(test_mheap_block_release));
+			 ztest_unit_test(test_mheap_malloc_align4));
 	ztest_run_test_suite(mheap_api);
 }
