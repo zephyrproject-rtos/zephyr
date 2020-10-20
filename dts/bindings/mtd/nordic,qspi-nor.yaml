@@ -27,7 +27,7 @@ properties:
     type: string
     required: false
     enum:
-      - "fastread"        # Single data line SPI, FAST_READ (0x08)
+      - "fastread"        # Single data line SPI, FAST_READ (0x0B)
       - "read2o"          # Dual data line SPI, READ2O (0x3B)
       - "read2io"         # Dual data line SPI, READ2IO (0xBB)
       - "read4o"          # Quad data line SPI, READ4O (0x6B)
