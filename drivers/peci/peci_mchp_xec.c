@@ -21,6 +21,9 @@ LOG_MODULE_REGISTER(peci_mchp_xec, CONFIG_PECI_LOG_LEVEL);
 #define PECI_IDLE_DELAY     100u
 /* 5 ms */
 #define PECI_IDLE_TIMEOUT   50u
+/* Maximum retries */
+#define PECI_TIMEOUT_RETRIES 3u
+
 /* 10 us */
 #define PECI_IO_DELAY       10
 
@@ -35,11 +38,11 @@ struct peci_xec_config {
 
 struct peci_xec_data {
 	struct k_sem tx_lock;
+	uint32_t  bitrate;
+	int    timeout_retries;
 };
 
-#ifdef CONFIG_PECI_INTERRUPT_DRIVEN
 static struct peci_xec_data peci_data;
-#endif
 
 static const struct peci_xec_config peci_xec_config = {
 	.base = (PECI_Type *) DT_INST_REG_ADDR(0),
@@ -59,7 +62,7 @@ static int check_bus_idle(PECI_Type *base)
 		delay_cnt--;
 
 		if (!delay_cnt) {
-			LOG_WRN("Bus is busy\n");
+			LOG_WRN("Bus is busy");
 			return -EBUSY;
 		}
 	}
@@ -70,6 +73,7 @@ static int peci_xec_configure(const struct device *dev, uint32_t bitrate)
 {
 	ARG_UNUSED(dev);
 
+	peci_data.bitrate = bitrate;
 	PECI_Type *base = peci_xec_config.base;
 	uint16_t value;
 
@@ -122,6 +126,23 @@ static int peci_xec_enable(const struct device *dev)
 	return 0;
 }
 
+static void peci_xec_bus_recovery(const struct device *dev, bool full_reset)
+{
+	PECI_Type *base = peci_xec_config.base;
+
+	LOG_WRN("%s full_reset:%d", __func__, full_reset);
+	if (full_reset) {
+		base->CONTROL = MCHP_PECI_CTRL_PD | MCHP_PECI_CTRL_RST;
+		k_busy_wait(PECI_RESET_DELAY);
+		base->CONTROL &= ~MCHP_PECI_CTRL_RST;
+
+		peci_xec_configure(dev, peci_data.bitrate);
+	} else {
+		/* Only reset internal FIFOs */
+		base->CONTROL |= MCHP_PECI_CTRL_FRST;
+	}
+}
+
 static int peci_xec_write(const struct device *dev, struct peci_msg *msg)
 {
 	ARG_UNUSED(dev);
@@ -134,7 +155,7 @@ static int peci_xec_write(const struct device *dev, struct peci_msg *msg)
 
 	/* Check if FIFO is full */
 	if (base->STATUS2 & MCHP_PECI_STS2_WFF) {
-		LOG_WRN("%s FIFO is full\n", __func__);
+		LOG_WRN("%s FIFO is full", __func__);
 		return -EIO;
 	}
 
@@ -177,12 +198,21 @@ static int peci_xec_write(const struct device *dev, struct peci_msg *msg)
 		k_busy_wait(PECI_IO_DELAY);
 		wait_timeout_cnt--;
 		if (!wait_timeout_cnt) {
-			LOG_WRN("Tx timeout\n");
-			base->CONTROL = MCHP_PECI_CTRL_FRST;
+			LOG_WRN("Tx timeout");
+			peci_data.timeout_retries++;
+			/* Full reset only if multiple consecutive failures */
+			if (peci_data.timeout_retries > PECI_TIMEOUT_RETRIES) {
+				peci_xec_bus_recovery(dev, true);
+			} else {
+				peci_xec_bus_recovery(dev, false);
+			}
+
 			return -ETIMEDOUT;
 		}
 	}
 #endif
+	peci_data.timeout_retries = 0;
+
 	return 0;
 }
 
@@ -218,7 +248,7 @@ static int peci_xec_read(const struct device *dev, struct peci_msg *msg)
 
 	/* Check if transaction is as expected */
 	if (rx_buf->len != bytes_rcvd) {
-		LOG_DBG("Incomplete %x vs %x", bytes_rcvd, rx_buf->len);
+		LOG_INF("Incomplete %x vs %x", bytes_rcvd, rx_buf->len);
 	}
 
 	/* Once write-read transaction is complete, ensure bus is idle
@@ -229,9 +259,6 @@ static int peci_xec_read(const struct device *dev, struct peci_msg *msg)
 
 		return ret;
 	}
-
-	/* Reset internal FIFOs for next transaction */
-	base->CONTROL = MCHP_PECI_CTRL_FRST;
 
 	return 0;
 }
@@ -266,24 +293,28 @@ static int peci_xec_transfer(const struct device *dev, struct peci_msg *msg)
 	/* Check for error conditions and perform bus recovery if necessary */
 	err_val = base->ERROR;
 	if (err_val) {
-		if (base->ERROR & MCHP_PECI_ERR_RDOV) {
-			LOG_WRN("Read buffer is not empty\n");
+		if (err_val & MCHP_PECI_ERR_RDOV) {
+			LOG_ERR("Read buffer is not empty");
 		}
 
-		if (base->ERROR & MCHP_PECI_ERR_WRUN) {
-			LOG_WRN("Write buffer is not empty\n");
+		if (err_val & MCHP_PECI_ERR_WRUN) {
+			LOG_ERR("Write buffer is not empty");
 		}
 
-		if (base->ERROR & MCHP_PECI_ERR_BERR) {
-			LOG_WRN("Write buffer is not empty\n");
+		if (err_val & MCHP_PECI_ERR_BERR) {
+			LOG_ERR("PECI bus error");
 		}
+
+		LOG_DBG("PECI err %x", err_val);
+		LOG_DBG("PECI sts1 %x", base->STATUS1);
+		LOG_DBG("PECI sts2 %x", base->STATUS2);
 
 		/* ERROR is a clear-on-write register, need to clear errors
 		 * occurring at the end of a transaction. A temp variable is
 		 * used to overcome complaints by the static code analyzer
 		 */
 		base->ERROR = err_val;
-		LOG_WRN("Transaction error %x\n", base->ERROR);
+		peci_xec_bus_recovery(dev, false);
 		return -EIO;
 	}
 
@@ -303,12 +334,12 @@ static void peci_xec_isr(const void *arg)
 	}
 
 	if (base->STATUS2 & MCHP_PECI_STS2_WFE) {
-		LOG_WRN("TX FIFO empty ST2:%x\n", base->STATUS2);
+		LOG_WRN("TX FIFO empty ST2:%x", base->STATUS2);
 		k_sem_give(&peci_data.tx_lock);
 	}
 
 	if (base->STATUS2 & MCHP_PECI_STS2_RFE) {
-		LOG_WRN("RX FIFO full ST2:%x\n", base->STATUS2);
+		LOG_WRN("RX FIFO full ST2:%x", base->STATUS2);
 	}
 }
 #endif
