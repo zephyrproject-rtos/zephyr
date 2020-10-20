@@ -1153,6 +1153,17 @@ if(CONFIG_BUILD_OUTPUT_BIN)
   endif()
 endif()
 
+
+# Cleanup intermediate files
+if(CONFIG_CLEANUP_INTERMEDIATE_FILES)
+    list(APPEND
+      post_build_commands
+      COMMAND
+      # This file can be very large in some cases, delete it as we do not need it.
+      ${CMAKE_COMMAND} -E remove ${ZEPHYR_PREBUILT_EXECUTABLE}.elf
+      )
+endif()
+
 if(CONFIG_BUILD_OUTPUT_S19)
   get_property(elfconvert_formats TARGET bintools PROPERTY elfconvert_formats)
   if(srec IN_LIST elfconvert_formats)
