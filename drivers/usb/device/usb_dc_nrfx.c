@@ -219,9 +219,7 @@ K_MEM_POOL_DEFINE(fifo_elem_pool, FIFO_ELEM_MIN_SZ, FIFO_ELEM_MAX_SZ,
 		    CFG_EPOUT_CNT + CFG_EP_ISOOUT_CNT)
 
 /** Total buffer size for all endpoints */
-#define EP_BUF_TOTAL ((CFG_EPIN_CNT * EP_BUF_MAX_SZ) +	       \
-		      (CFG_EPOUT_CNT * EP_BUF_MAX_SZ) +	       \
-		      (CFG_EP_ISOIN_CNT * ISO_EP_BUF_MAX_SZ) + \
+#define EP_BUF_TOTAL ((CFG_EPOUT_CNT * EP_BUF_MAX_SZ) +	       \
 		      (CFG_EP_ISOOUT_CNT * ISO_EP_BUF_MAX_SZ))
 
 /** Total number of maximum sized buffers needed */
@@ -631,15 +629,6 @@ static int eps_ctx_init(void)
 		ep_ctx = in_endpoint_ctx(i);
 		__ASSERT_NO_MSG(ep_ctx);
 
-		if (!ep_ctx->buf.block.data) {
-			err = k_mem_pool_alloc(&ep_buf_pool, &ep_ctx->buf.block,
-					       EP_BUF_MAX_SZ, K_NO_WAIT);
-			if (err < 0) {
-				LOG_ERR("Buffer alloc failed for EP 0x%02x", i);
-				return -ENOMEM;
-			}
-		}
-
 		ep_ctx_reset(ep_ctx);
 	}
 
@@ -662,16 +651,6 @@ static int eps_ctx_init(void)
 	if (CFG_EP_ISOIN_CNT) {
 		ep_ctx = in_endpoint_ctx(NRF_USBD_EPIN(8));
 		__ASSERT_NO_MSG(ep_ctx);
-
-		if (!ep_ctx->buf.block.data) {
-			err = k_mem_pool_alloc(&ep_buf_pool, &ep_ctx->buf.block,
-					       ISO_EP_BUF_MAX_SZ,
-					       K_NO_WAIT);
-			if (err < 0) {
-				LOG_ERR("EP buffer alloc failed for ISOIN");
-				return -ENOMEM;
-			}
-		}
 
 		ep_ctx_reset(ep_ctx);
 	}
