@@ -4531,6 +4531,20 @@ extern void *k_malloc(size_t size);
 extern void k_free(void *ptr);
 
 /**
+ * @brief Reallocate memory from heap
+ *
+ * This routine provides traditional realloc() semantics. The memory must
+ * have been allocated from the heap memory pool. The new memory is allocated from
+ * the heap memory pool aswell.
+ *
+ * @param ptr Pointer to previously allocated memory.
+ * @param size Amount of memory requested (in bytes).
+ *
+ * @return Address of the allocated memory if successful; otherwise NULL.
+ */
+extern void *k_realloc(void *ptr, size_t size);
+
+/**
  * @brief Allocate memory from heap, array style
  *
  * This routine provides traditional calloc() semantics. Memory is

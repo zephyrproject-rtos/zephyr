@@ -7,6 +7,7 @@
 #include <kernel.h>
 #include <string.h>
 #include <sys/math_extras.h>
+#include <sys/mempool.h>
 
 void k_mem_pool_free(struct k_mem_block *block)
 {
@@ -63,6 +64,37 @@ K_MEM_POOL_DEFINE(_heap_mem_pool, CONFIG_HEAP_MEM_POOL_MIN_SIZE,
 void *k_malloc(size_t size)
 {
 	return k_mem_pool_malloc(_HEAP_MEM_POOL, size);
+}
+
+void *k_realloc(void *ptr, size_t size)
+{
+	void *new_ptr;
+	size_t copy_size;
+
+	if (ptr == NULL) {
+		return k_malloc(size);
+	}
+
+	if (size == 0) {
+		k_free(ptr);
+		return NULL;
+	}
+
+	copy_size = sys_mem_pool_try_expand_inplace(ptr, size);
+	if (copy_size == 0) {
+		/* Existing block large enough, nothing else to do */
+		return ptr;
+	}
+
+	new_ptr = k_malloc(size);
+	if (new_ptr == NULL) {
+		return NULL;
+	}
+
+	(void)memcpy(new_ptr, ptr, copy_size);
+	k_free(ptr);
+
+	return new_ptr;
 }
 
 void *k_calloc(size_t nmemb, size_t size)
