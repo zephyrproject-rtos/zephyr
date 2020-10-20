@@ -99,8 +99,8 @@ static void monitor_entry(void *p1, void *p2, void *p3)
 	}
 
 	while (monitor_count < NUM_LOOPS) {
-		payload = sys_mem_pool_alloc(&shared_pool,
-					     SAMPLE_DRIVER_MSG_SIZE);
+		payload = sys_heap_alloc(&shared_pool,
+					 SAMPLE_DRIVER_MSG_SIZE);
 		if (payload == NULL) {
 			LOG_ERR("couldn't alloc memory from shared pool");
 			k_oops();
@@ -168,7 +168,7 @@ static void writeback_entry(void *p1, void *p2, void *p3)
 
 		LOG_INF("writing processed data back to the sample device");
 		sample_driver_write(sample_device, data);
-		sys_mem_pool_free(data);
+		sys_heap_free(&shared_pool, data);
 		pending_count--;
 		writeback_count++;
 	}
