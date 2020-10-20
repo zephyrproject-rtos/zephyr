@@ -40,7 +40,8 @@
 #define MMU_PCD		BITL(4)		/** Page Cache Disable */
 #define MMU_A		BITL(5)		/** Accessed */
 #define MMU_D		BITL(6)		/** Dirty */
-#define MMU_PS		BITL(7)		/** Page Size */
+#define MMU_PS		BITL(7)		/** Page Size (non PTE)*/
+#define MMU_PAT		BITL(7)		/** Page Attribute (PTE) */
 #define MMU_G		BITL(8)		/** Global */
 #ifdef XD_SUPPORTED
 #define MMU_XD		BITL(63)	/** Execute Disable */
@@ -122,17 +123,13 @@ void z_x86_set_stack_guard(k_thread_stack_t *stack);
  */
 extern uint8_t z_shared_kernel_page_start;
 #endif /* CONFIG_X86_KPTI */
-
-/* Set up per-thread page tables just prior to entering user mode */
-void z_x86_thread_pt_init(struct k_thread *thread);
-
-/* Apply a memory domain policy to a set of thread page tables.
- *
- * Must be called with z_mem_domain_lock held.
- */
-void z_x86_apply_mem_domain(struct k_thread *thread,
-			    struct k_mem_domain *mem_domain);
 #endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_X86_PAE
+#define PTABLES_ALIGN	0x1fU
+#else
+#define PTABLES_ALIGN	0xfffU
+#endif
 
 /* Set CR3 to a physical address. There must be a valid top-level paging
  * structure here or the CPU will triple fault. The incoming page tables must
@@ -141,6 +138,7 @@ void z_x86_apply_mem_domain(struct k_thread *thread,
  */
 static inline void z_x86_cr3_set(uintptr_t phys)
 {
+	__ASSERT((phys & PTABLES_ALIGN) == 0U, "unaligned page tables");
 #ifdef CONFIG_X86_64
 	__asm__ volatile("movq %0, %%cr3\n\t" : : "r" (phys) : "memory");
 #else
