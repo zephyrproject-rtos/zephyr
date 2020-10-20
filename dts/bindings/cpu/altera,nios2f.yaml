@@ -3,7 +3,7 @@
 
 description: Altera NIOS-2F CPU
 
-compatible: "altera,nios2f"
+compatible: "altr,nios2f"
 
 include: [interrupt-controller.yaml, base.yaml]
 

@@ -1,6 +1,6 @@
 description: Altera JTAG UART
 
-compatible: "altera,jtag-uart"
+compatible: "altr,jtag-uart"
 
 include: uart-controller.yaml
 
