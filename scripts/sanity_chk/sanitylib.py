@@ -2144,7 +2144,7 @@ class ProjectBuilder(FilterBuilder):
             else:
                 self.cleanup_artifacts()
 
-    def cleanup_artifacts(self, additional_keep=None):
+    def cleanup_artifacts(self, additional_keep=[]):
         logger.debug("Cleaning up {}".format(self.instance.build_dir))
         allow = [
             'zephyr/.config',
