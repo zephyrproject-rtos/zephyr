@@ -295,6 +295,12 @@ config OUTPUT_PRINT_MEMORY_USAGE
 	  ram_report and
 	  https://sourceware.org/binutils/docs/ld/MEMORY.html
 
+config CLEANUP_INTERMEDIATE_FILES
+	bool "Remove all intermediate files"
+	help
+	  Delete intermediate files to save space and cleanup clutter resulting
+	  from the build process.
+
 config BUILD_NO_GAP_FILL
 	bool "Don't fill gaps in generated hex/bin/s19 files."
 
