@@ -254,4 +254,28 @@ config OPENTHREAD_TMF_ADDRESS_CACHE_ENTRIES
 	help
 	  The number of EID-to-RLOC cache entries.
 
+config OPENTHREAD_LOG_PREPEND_LEVEL_ENABLE
+	bool "Enable prepending the log level to all OpenThread log messages"
+	help
+	  When enabled the OpenThread logs will be prepended with the appropriate
+	  log level prefix i.e. [CRIT], [WARN], [NOTE], [INFO], [DEBG].
+
+config OPENTHREAD_MAC_SOFTWARE_ACK_TIMEOUT_ENABLE
+	bool "Enable software ACK timeout logic"
+	default y
+	help
+	  Set y if the radio supports AckTime event
+
+config OPENTHREAD_MAC_SOFTWARE_RETRANSMIT_ENABLE
+	bool "Enable software retransmission logic"
+	default y
+	help
+	  Set y if the radio supports tx retry logic with collision avoidance (CSMA)
+
+config OPENTHREAD_PLATFORM_USEC_TIMER_ENABLE
+	bool "Enable microsecond backoff timer implemented in platform"
+	help
+	  Set y if the platform provides microsecond backoff timer implementation.
+
+
 endif # NET_L2_OPENTHREAD
