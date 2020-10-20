@@ -21,7 +21,8 @@ Each devicetree node (dtlib.Node) gets a corresponding edtlib.Node instance,
 which has all the information related to the node.
 
 The top-level entry points for the library are the EDT and Binding classes.
-See their constructor docstrings for details.
+See their constructor docstrings for details. There is also a
+bindings_from_paths() helper function.
 """
 
 # NOTE: testedtlib.py is the test suite for this library.
@@ -1701,6 +1702,26 @@ class Binding:
         else:
             raise _err("can't _warn() outside of Binding.__init__")
 
+
+def bindings_from_paths(yaml_paths, ignore_errors=False):
+    """
+    Get a list of Binding objects from the yaml files 'yaml_paths'.
+
+    If 'ignore_errors' is True, YAML files that cause an EDTError when
+    loaded are ignored. (No other exception types are silenced.)
+    """
+
+    ret = []
+    fname2path = {os.path.basename(path): path for path in yaml_paths}
+    for path in yaml_paths:
+        try:
+            ret.append(Binding(path, fname2path))
+        except EDTError:
+            if ignore_errors:
+                continue
+            raise
+
+    return ret
 
 class PropertySpec:
     """
