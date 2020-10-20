@@ -993,7 +993,7 @@ Power management:
     # Provisional entry, subject to approval
     status: maintained
     maintainers:
-        - wentongwu
+        - ceolin
     files:
         - include/power/power.h
         - samples/subsys/power/
