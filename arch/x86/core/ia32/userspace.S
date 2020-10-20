@@ -305,42 +305,18 @@ SECTION_FUNC(TEXT, z_x86_userspace_enter)
 	 * want to leak any information.
 	 */
 	mov	%edi, %esp
-#ifdef CONFIG_X86_PAE
-	/* Skip over the toplevel PDPT stored here */
-	subl	$0x20, %esp
-#endif /* CONFIG_X86_PAE */
 
-	/* Stash some registers we are going to need to erase the user
-	 * stack.
-	 */
+	/* Erase and enable US bit in page tables for the stack buffer */
 	push	%ecx
-	push	%edi
 	push	%eax
-
-	/* Compute size of user stack in 4-byte chunks and put in ECX */
-	mov	%ebx, %ecx
-	sub	%edi, %ecx
-	shr	$2, %ecx	/* Divide by 4 */
-
-#ifdef CONFIG_INIT_STACKS
-	mov	$0xAAAAAAAA, %eax
-#else
-	xor	%eax, %eax
-#endif
-	/* Copy 4 bytes of memory at a time, starting at ES:EDI, with whatever
-	 * is in EAX. Repeat this ECX times.  Stack sizes are always at least
-	 * 4-byte aligned.
-	 */
-	cld
-	rep stosl
-
-	/* Restore registers */
+	push	%edx
+	call	z_x86_current_stack_perms
+	pop	%edx
 	pop	%eax
-	pop	%edi
 	pop	%ecx
 
-	/* Now set stack pointer to the base of the user stack. Now that this
-	 * is set we won't need EBX any more.
+	/* Set stack pointer to the base of the freshly-erased user stack.
+	 * Now that this is set we won't need EBX any more.
 	 */
 	mov	%ebx, %esp
 

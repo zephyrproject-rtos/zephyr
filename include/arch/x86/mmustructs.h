@@ -148,6 +148,8 @@
 					 Z_X86_MMU_XD)
 
 #ifndef _ASMLANGUAGE
+#include <sys/slist.h>
+
 /* Page table entry data type at all levels. Defined here due to
  * k_mem_partition_attr_t, eventually move to private x86_mmu.h
  */
@@ -157,5 +159,21 @@ typedef uint64_t pentry_t;
 typedef uint32_t pentry_t;
 #endif
 typedef pentry_t k_mem_partition_attr_t;
+
+struct arch_mem_domain {
+#ifdef CONFIG_X86_PAE
+	/* 4-entry, 32-byte top-level PDPT */
+	pentry_t pdpt[4];
+#endif
+	/* Pointer to top-level structure, either a PML4, PDPT, PD */
+	pentry_t *ptables;
+
+	/* Linked list of all active memory domains */
+	sys_snode_t node;
+#ifdef CONFIG_X86_PAE
+} __aligned(32);
+#else
+};
+#endif /* CONFIG_X86_PAE */
 #endif /* _ASMLANGUAGE */
 #endif /* ZEPHYR_INCLUDE_ARCH_X86_MMU_H */
