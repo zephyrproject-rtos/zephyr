@@ -6,7 +6,7 @@
 
 / {
 	model = "altera_max10";
-	compatible = "altera,nios2-max10";
+	compatible = "altr,nios2-max10";
 
 	aliases {
 		uart-0 = &uart0;
