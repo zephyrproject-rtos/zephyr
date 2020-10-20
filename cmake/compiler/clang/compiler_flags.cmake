@@ -24,6 +24,7 @@ set_compiler_property(PROPERTY warning_base
                       -Wformat-security
                       -Wno-format-zero-length
                       -Wno-main
+                      -Wno-typedef-redefinition
 )
 
 check_set_compiler_property(APPEND PROPERTY warning_base -Wno-pointer-sign)
