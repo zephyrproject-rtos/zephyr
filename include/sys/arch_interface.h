@@ -552,8 +552,9 @@ int arch_mem_domain_init(struct k_mem_domain *domain);
  * Architecture-specific hook to manage internal data structures or hardware
  * state when the provided thread has been added to a memory domain.
  *
- * The thread's memory domain pointer will be set to the domain to be added
- * to.
+ * The thread->mem_domain_info.mem_domain pointer will be set to the domain to
+ * be added to before this is called. Implementations may assume that the
+ * thread is not already a member of this domain.
  *
  * @param thread Thread which needs to be configured.
  */
