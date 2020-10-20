@@ -1,0 +1,53 @@
+# ICM42605 Six-Axis Motion Tracking device configuration options
+
+# Copyright (c) 2020 TDK Invensense
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ICM42605
+	bool "ICM42605 Six-Axis Motion Tracking Device"
+	depends on SPI
+	help
+	  Enable driver for ICM42605 SPI-based six-axis motion tracking device.
+
+if ICM42605
+
+choice
+	prompt "Trigger mode"
+	default ICM42605_TRIGGER_GLOBAL_THREAD
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config ICM42605_TRIGGER_NONE
+	bool "No trigger"
+
+config ICM42605_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select ICM42605_TRIGGER
+
+config ICM42605_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select ICM42605_TRIGGER
+
+
+endchoice
+
+config ICM42605_TRIGGER
+	bool
+
+config ICM42605_THREAD_PRIORITY
+	int "Thread priority"
+	depends on ICM42605_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config ICM42605_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on ICM42605_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif # ICM42605

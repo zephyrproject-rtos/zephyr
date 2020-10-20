@@ -1,0 +1,99 @@
+# Copyright (c) 2020 TDK Invensense
+# SPDX-License-Identifier: Apache-2.0
+
+description: ICM-42605 motion tracking device
+
+# ICM-42605 is SPI.
+compatible: "invensense,icm42605"
+
+include: spi-device.yaml
+
+properties:
+    int-gpios:
+      type: phandle-array
+      required: true
+      description: |
+        The INT signal default configuration is active-high.  The
+        property value should ensure the flags properly describe the
+        signal that is presented to the driver.
+
+    cpha:
+      type: boolean
+      required: true
+      description: |
+        Set to indicate phase starts with asserted half-phase (CPHA=1).
+        For this driver using this property requires also using cpol.
+
+    cpol:
+      type: boolean
+      required: true
+      description: |
+        Set to indicate clock leading edge is falling (CPOL=1).
+        For this driver using this property requires also using cpha.
+
+    accel-hz:
+      type: int
+      required: false
+      default: 12
+      description: |
+        Default frequency of accelerometer.
+      enum:
+        - 1
+        - 3
+        - 6
+        - 12
+        - 25
+        - 50
+        - 100
+        - 200
+        - 500
+        - 1000
+        - 2000
+        - 4000
+        - 8000
+
+    gyro-hz:
+      type: int
+      required: false
+      default: 12
+      description: |
+        Default frequency of gyroscope.
+      enum:
+        - 12
+        - 25
+        - 50
+        - 100
+        - 200
+        - 500
+        - 1000
+        - 2000
+        - 4000
+        - 8000
+
+    accel-fs:
+      type: string
+      required: false
+      default: "16"
+      description: |
+        Default full scale of accelerometer. (Unit - g)
+      enum:
+        - "16"
+        - "8"
+        - "4"
+        - "2"
+
+    gyro-fs:
+      type: string
+      required: false
+      default: "2000"
+      description: |
+        Default full scale of gyroscope. (Unit - DPS)
+      enum:
+        - "2000"
+        - "1000"
+        - "500"
+        - "250"
+        - "125"
+        - "62.5"
+        - "31.25"
+        - "15.625"
