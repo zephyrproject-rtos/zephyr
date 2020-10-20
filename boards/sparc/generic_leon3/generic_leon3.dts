@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2019-2020 Cobham Gaisler AB
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <leon3soc.dtsi>
+
+/ {
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,sram = &ram0;
+	};
+};
+
+&ram0 {
+	reg = <0x40000000 0x00400000>;
+};
+
+&uart0 {
+	status = "okay";
+};
