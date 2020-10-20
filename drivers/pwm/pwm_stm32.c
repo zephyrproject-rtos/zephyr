@@ -315,8 +315,8 @@ static int pwm_stm32_init(const struct device *dev)
 
 #define DT_INST_CLK(index, inst)                                               \
 	{                                                                      \
-		.bus = DT_CLOCKS_CELL(DT_INST(index, st_stm32_timers), bus),   \
-		.enr = DT_CLOCKS_CELL(DT_INST(index, st_stm32_timers), bits)   \
+		.bus = DT_CLOCKS_CELL(DT_PARENT(DT_DRV_INST(index)), bus),     \
+		.enr = DT_CLOCKS_CELL(DT_PARENT(DT_DRV_INST(index)), bits)     \
 	}
 
 #define PWM_DEVICE_INIT(index)                                                 \
@@ -327,7 +327,7 @@ static int pwm_stm32_init(const struct device *dev)
 									       \
 	static const struct pwm_stm32_config pwm_stm32_config_##index = {      \
 		.timer = (TIM_TypeDef *)DT_REG_ADDR(                           \
-			DT_INST(index, st_stm32_timers)),                      \
+			DT_PARENT(DT_DRV_INST(index))),                        \
 		.prescaler = DT_INST_PROP(index, st_prescaler),                \
 		.pclken = DT_INST_CLK(index, timer),                           \
 		.pinctrl = pwm_pins_##index,                                   \
