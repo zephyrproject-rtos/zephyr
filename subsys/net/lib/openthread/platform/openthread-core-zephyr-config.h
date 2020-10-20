@@ -67,32 +67,6 @@
 #define OPENTHREAD_CONFIG_MAC_SOFTWARE_RETRANSMIT_ENABLE        1
 
 /**
- * @def SETTINGS_CONFIG_BASE_ADDRESS
- *
- * The base address of settings.
- *
- */
-#define SETTINGS_CONFIG_BASE_ADDRESS                            0
-
-/**
- * @def SETTINGS_CONFIG_PAGE_SIZE
- *
- * The page size of settings. Ensure that 'erase-block-size'
- * is set in your SOC dts file.
- *
- */
-#define SETTINGS_CONFIG_PAGE_SIZE \
-	DT_PROP(DT_CHOSEN(zephyr_flash), erase_block_size)
-
-/**
- * @def SETTINGS_CONFIG_PAGE_NUM
- *
- * The page number of settings.
- *
- */
-#define SETTINGS_CONFIG_PAGE_NUM                                4
-
-/**
  * @def OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE
  *
  * Define to 1 if you want to enable microsecond backoff timer implemented
