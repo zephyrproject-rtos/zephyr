@@ -139,7 +139,7 @@ int stm32_dt_pinctrl_configure(const struct soc_gpio_pinctrl *pinctrl,
 	}
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
-	if (!stm32_dt_pinctrl_remap(pinctrl, list_size, base)) {
+	if (stm32_dt_pinctrl_remap(pinctrl, list_size, base)) {
 		/* Wrong remap config. Exit */
 		return -EINVAL;
 	}
