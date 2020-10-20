@@ -1581,17 +1581,36 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 	return NULL;
 }
 
+static int get_ipv6_address_count(struct net_if *iface)
+{
+	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
+	int i, count = 0;
+
+	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+		if (!ipv6->unicast[i].is_used ||
+		    ipv6->unicast[i].address.family != AF_INET6) {
+			continue;
+		}
+
+		count++;
+	}
+
+	return count;
+}
+
 bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 {
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 	atomic_val_t ref;
-	int i;
+	int i, addr_count;
 
 	NET_ASSERT(addr);
 
 	if (!ipv6) {
 		return false;
 	}
+
+	addr_count = get_ipv6_address_count(iface);
 
 	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
 		struct in6_addr maddr;
@@ -1603,6 +1622,19 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 		if (!net_ipv6_addr_cmp(&ipv6->unicast[i].address.in6_addr,
 				       addr)) {
 			continue;
+		}
+
+		/* We cannot remove the only IP address if there are any
+		 * sockets that might be using it.
+		 */
+		if (atomic_get(&iface->config.ipv6_socket_count) > 0 &&
+		    addr_count == 1) {
+			NET_INFO("Cannot remove the last %s address from "
+				 "interface %d, %d socket(s) use it.",
+				 "IPv6",
+				 net_if_get_by_iface(iface),
+				 atomic_get(&iface->config.ipv6_socket_count));
+			return false;
 		}
 
 		if (!ipv6->unicast[i].is_infinite) {
@@ -3205,15 +3237,34 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 	return NULL;
 }
 
+static int get_ipv4_address_count(struct net_if *iface)
+{
+	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
+	int i, count = 0;
+
+	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+		if (!ipv4->unicast[i].is_used ||
+		    ipv4->unicast[i].address.family != AF_INET) {
+			continue;
+		}
+
+		count++;
+	}
+
+	return count;
+}
+
 bool net_if_ipv4_addr_rm(struct net_if *iface, const struct in_addr *addr)
 {
 	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
 	atomic_val_t ref;
-	int i;
+	int i, addr_count;
 
 	if (!ipv4) {
 		return false;
 	}
+
+	addr_count = get_ipv4_address_count(iface);
 
 	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
 		if (!ipv4->unicast[i].is_used) {
@@ -3223,6 +3274,19 @@ bool net_if_ipv4_addr_rm(struct net_if *iface, const struct in_addr *addr)
 		if (!net_ipv4_addr_cmp(&ipv4->unicast[i].address.in_addr,
 				       addr)) {
 			continue;
+		}
+
+		/* We cannot remove the only IP address if there are any
+		 * sockets that might be using it.
+		 */
+		if (atomic_get(&iface->config.ipv4_socket_count) > 0 &&
+		    addr_count == 1) {
+			NET_INFO("Cannot remove the last %s address from "
+				 "interface %d, %d socket(s) use it.",
+				 "IPv4",
+				 net_if_get_by_iface(iface),
+				 atomic_get(&iface->config.ipv4_socket_count));
+			return false;
 		}
 
 		ipv4->unicast[i].addr_state = NET_ADDR_DEPRECATED;
@@ -3727,10 +3791,18 @@ static int lookup_ifaddr(struct net_if *iface, struct sockaddr *addr,
 	if (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == AF_INET6) {
 		*ifaddr = net_if_ipv6_addr_lookup_by_iface(iface,
 						&net_sin6(addr)->sin6_addr);
+		if (*ifaddr == NULL &&
+		    net_ipv6_is_addr_unspecified(&net_sin6(addr)->sin6_addr)) {
+			return -EADDRNOTAVAIL;
+		}
 
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == AF_INET) {
 		*ifaddr = net_if_ipv4_addr_lookup_by_iface(iface,
 						&net_sin(addr)->sin_addr);
+		if (*ifaddr == NULL &&
+		    net_ipv4_is_addr_unspecified(&net_sin(addr)->sin_addr)) {
+			return -EADDRNOTAVAIL;
+		}
 	}
 
 	return *ifaddr ? 0 : -ENOENT;
@@ -3818,16 +3890,43 @@ static int addr_manage(struct net_if *iface, struct sockaddr *addr,
 	return 0;
 }
 
+static void update_socket_count(sa_family_t family,
+				struct net_if *iface,
+				int count)
+{
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
+		atomic_add(&iface->config.ipv6_socket_count, count);
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
+		atomic_add(&iface->config.ipv4_socket_count, count);
+	} else {
+		NET_ERR("Invalid address family %d", family);
+	}
+}
+
 int net_if_addr_reserve(struct net_if *iface, struct sockaddr *addr,
 			bool is_mcast)
 {
-	return addr_manage(iface, addr, is_mcast, 1);
+	int ret;
+
+	ret = addr_manage(iface, addr, is_mcast, 1);
+	if (!ret || ret == -EADDRNOTAVAIL) {
+		update_socket_count(addr->sa_family, iface, 1);
+	}
+
+	return ret;
 }
 
 int net_if_addr_release(struct net_if *iface, struct sockaddr *addr,
 			bool is_mcast)
 {
-	return addr_manage(iface, addr, is_mcast, -1);
+	int ret;
+
+	ret = addr_manage(iface, addr, is_mcast, -1);
+	if (!ret || ret == -EADDRNOTAVAIL) {
+		update_socket_count(addr->sa_family, iface, -1);
+	}
+
+	return ret;
 }
 
 static int promisc_mode_set(struct net_if *iface, bool enable)

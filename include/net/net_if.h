@@ -384,6 +384,12 @@ struct net_if_config {
 #if defined(CONFIG_NET_IPV4_AUTO) && defined(CONFIG_NET_NATIVE_IPV4)
 	struct net_if_ipv4_autoconf ipv4auto;
 #endif /* CONFIG_NET_IPV4_AUTO */
+
+	/** Number of IPv6 sockets bound to this interface */
+	atomic_t ipv6_socket_count;
+
+	/** Number of IPv4 sockets bound to this interface */
+	atomic_t ipv4_socket_count;
 };
 
 /**
@@ -2215,6 +2221,8 @@ struct net_if_api {
 	.config = {					\
 		.ip = {					\
 		},					\
+		.ipv6_socket_count = ATOMIC_INIT(0),	\
+		.ipv4_socket_count = ATOMIC_INIT(0),	\
 		NET_IF_DHCPV4_INIT			\
 	}
 
