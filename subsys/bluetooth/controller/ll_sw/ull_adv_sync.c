@@ -42,7 +42,8 @@ static int init_reset(void);
 static inline struct ll_adv_sync_set *sync_acquire(void);
 static inline void sync_release(struct ll_adv_sync_set *sync);
 static inline uint16_t sync_handle_get(struct ll_adv_sync_set *sync);
-static inline uint8_t sync_stop(struct ll_adv_sync_set *sync);
+static inline uint8_t sync_remove(struct ll_adv_sync_set *sync,
+				  struct ll_adv_set *adv, uint8_t enable);
 static void mfy_sync_offset_get(void *param);
 static inline struct pdu_adv_sync_info *sync_info_get(struct pdu_adv *pdu);
 static inline void sync_info_offset_fill(struct pdu_adv_sync_info *si,
@@ -171,7 +172,6 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 	uint8_t sync_got_enabled;
 	struct ll_adv_set *adv;
 	uint8_t pri_idx;
-	uint8_t err_val;
 	uint8_t err;
 
 	adv = ull_adv_is_created_get(handle);
@@ -197,8 +197,8 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 			return 0;
 		}
 
-		err_val = 0U;
-		goto sync_cleanup;
+		err = sync_remove(sync, adv, 0U);
+		return err;
 	}
 
 	/* TODO: Check for periodic data being complete */
@@ -253,8 +253,9 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 
 		ret = ull_adv_sync_start(sync, ticks_anchor_sync);
 		if (ret) {
-			err_val = BT_HCI_ERR_INSUFFICIENT_RESOURCES;
-			goto sync_cleanup;
+			sync_remove(sync, adv, 1U);
+
+			return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 		}
 
 		sync->is_started = 1U;
@@ -272,8 +273,9 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 			ret = ull_adv_aux_start(aux, ticks_anchor_aux,
 						ticks_slot_overhead_aux);
 			if (ret) {
-				err_val = BT_HCI_ERR_INSUFFICIENT_RESOURCES;
-				goto sync_cleanup;
+				sync_remove(sync, adv, 1U);
+
+				return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 			}
 
 			aux->is_started = 1U;
@@ -285,43 +287,6 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 	}
 
 	return 0;
-
-sync_cleanup:
-	/* Remove sync_info from auxiliary PDU */
-	err = ull_adv_aux_hdr_set_clear(adv, 0,
-					ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
-					NULL, NULL, &pri_idx);
-	if (err) {
-		if (err_val) {
-			return err_val;
-		}
-
-		return err;
-	}
-
-	lll_adv_data_enqueue(&adv->lll, pri_idx);
-
-	if (sync->is_started) {
-		/* TODO: we removed sync info, but if sync_stop() fails, what do
-		 * we do?
-		 */
-		err = sync_stop(sync);
-		if (err) {
-			if (err_val) {
-				return err_val;
-			}
-
-			return err;
-		}
-
-		sync->is_started = 0U;
-	}
-
-	if (!enable) {
-		sync->is_enabled = 0U;
-	}
-
-	return err_val;
 }
 
 int ull_adv_sync_init(void)
@@ -440,7 +405,7 @@ static inline uint16_t sync_handle_get(struct ll_adv_sync_set *sync)
 			     sizeof(struct ll_adv_sync_set));
 }
 
-static inline uint8_t sync_stop(struct ll_adv_sync_set *sync)
+static uint8_t sync_stop(struct ll_adv_sync_set *sync)
 {
 	uint32_t volatile ret_cb;
 	uint8_t sync_handle;
@@ -471,6 +436,41 @@ static inline uint8_t sync_stop(struct ll_adv_sync_set *sync)
 	LL_ASSERT(mark == sync);
 
 	return 0;
+}
+
+static inline uint8_t sync_remove(struct ll_adv_sync_set *sync,
+				  struct ll_adv_set *adv, uint8_t enable)
+{
+	uint8_t pri_idx;
+	uint8_t err;
+
+	/* Remove sync_info from auxiliary PDU */
+	err = ull_adv_aux_hdr_set_clear(adv, 0,
+					ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
+					NULL, NULL, &pri_idx);
+	if (err) {
+		return err;
+	}
+
+	lll_adv_data_enqueue(&adv->lll, pri_idx);
+
+	if (sync->is_started) {
+		/* TODO: we removed sync info, but if sync_stop() fails, what do
+		 * we do?
+		 */
+		err = sync_stop(sync);
+		if (err) {
+			return err;
+		}
+
+		sync->is_started = 0U;
+	}
+
+	if (!enable) {
+		sync->is_enabled = 0U;
+	}
+
+	return 0U;
 }
 
 static void mfy_sync_offset_get(void *param)
