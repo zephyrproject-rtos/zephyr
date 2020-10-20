@@ -9,9 +9,11 @@
 #include <init.h>
 #include <errno.h>
 #include <sys/math_extras.h>
-#include <sys/mempool.h>
 #include <string.h>
 #include <app_memory/app_memdomain.h>
+#include <sys/sys_heap.h>
+
+#define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 

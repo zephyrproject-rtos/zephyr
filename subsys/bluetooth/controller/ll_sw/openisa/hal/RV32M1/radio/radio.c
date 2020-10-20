@@ -9,7 +9,6 @@
 #include <string.h>
 #include <sys/printk.h>
 #include <sys/dlist.h>
-#include <sys/mempool_base.h>
 #include <sys/byteorder.h>
 #include <bluetooth/addr.h>
 #include <toolchain.h>

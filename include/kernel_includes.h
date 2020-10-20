@@ -25,7 +25,6 @@
 #include <sys/slist.h>
 #include <sys/sflist.h>
 #include <sys/util.h>
-#include <sys/mempool_base.h>
 #include <kernel_structs.h>
 #include <mempool_heap.h>
 #include <kernel_version.h>
