@@ -781,6 +781,7 @@ static uint8_t alloc_value(struct bt_gatt_attr *attr, struct set_value *data)
 			indicate_params.data = value->data;
 			indicate_params.len = value->len;
 			indicate_params.func = indicate_cb;
+			indicate_params.destroy = NULL;
 
 			bt_gatt_indicate(NULL, &indicate_params);
 		}

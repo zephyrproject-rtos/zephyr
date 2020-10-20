@@ -1900,7 +1900,11 @@ static void gatt_indicate_rsp(struct bt_conn *conn, uint8_t err,
 {
 	struct bt_gatt_indicate_params *params = user_data;
 
+	params->_ref--;
 	params->func(conn, params, err);
+	if (params->destroy && (params->_ref == 0)) {
+		params->destroy(params);
+	}
 }
 
 static int gatt_send(struct bt_conn *conn, struct net_buf *buf,
@@ -2056,6 +2060,9 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 		if (data->type == BT_GATT_CCC_INDICATE) {
 			err = gatt_indicate(conn, data->handle,
 					    data->ind_params);
+			if (err == 0) {
+				data->ind_params->_ref++;
+			}
 		} else {
 			err = gatt_notify(conn, data->handle, data->nfy_params);
 		}
@@ -2212,6 +2219,7 @@ int bt_gatt_indicate(struct bt_conn *conn,
 	}
 
 	if (conn) {
+		params->_ref = 1;
 		return gatt_indicate(conn, data.handle, params);
 	}
 
@@ -2219,6 +2227,7 @@ int bt_gatt_indicate(struct bt_conn *conn,
 	data.type = BT_GATT_CCC_INDICATE;
 	data.ind_params = params;
 
+	params->_ref = 0;
 	bt_gatt_foreach_attr_type(data.handle, 0xffff, BT_UUID_GATT_CCC, NULL,
 				  1, notify_cb, &data);
 

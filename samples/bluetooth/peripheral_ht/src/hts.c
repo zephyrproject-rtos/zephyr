@@ -117,6 +117,7 @@ gatt_indicate:
 
 		ind_params.attr = &hts_svc.attrs[2];
 		ind_params.func = indicate_cb;
+		ind_params.destroy = NULL;
 		ind_params.data = &htm;
 		ind_params.len = sizeof(htm);
 
