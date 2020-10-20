@@ -168,6 +168,7 @@ void service_b_3_2_value_v6_indicate(void)
 	 */
 	ind_params.attr = &service_b_3_2_attrs[2];
 	ind_params.func = value_v6_indicate_cb;
+	ind_params.destroy = NULL;
 	ind_params.data = &value_v6_value;
 	ind_params.len = sizeof(value_v6_value);
 

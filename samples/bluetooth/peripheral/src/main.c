@@ -356,6 +356,7 @@ void main(void)
 
 			ind_params.attr = &vnd_svc.attrs[2];
 			ind_params.func = indicate_cb;
+			ind_params.destroy = NULL;
 			ind_params.data = &indicating;
 			ind_params.len = sizeof(indicating);
 
