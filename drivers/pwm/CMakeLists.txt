@@ -19,6 +19,7 @@ zephyr_library_sources_ifdef(CONFIG_PWM_RV32M1_TPM	pwm_rv32m1_tpm.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_MCUX_TPM	pwm_mcux_tpm.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_SAM0_TCC	pwm_sam0_tcc.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_NPCX		pwm_npcx.c)
+zephyr_library_sources_ifdef(CONFIG_PWM_XLNX_AXI_TIMER	pwm_xlnx_axi_timer.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   pwm_handlers.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_SHELL   pwm_shell.c)
