@@ -42,6 +42,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 static struct in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 static struct in_addr my_ipv4_addr1 = { { { 192, 0, 2, 1 } } };
+static struct in_addr my_ipv4_addr4 = { { { 192, 0, 2, 4 } } };
 
 static struct in6_addr my_maddr1 = { { { 0xff, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
@@ -391,7 +392,7 @@ static void test_iface_setup(void)
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
-	ifaddr = net_if_ipv6_addr_add(iface2, &my_addr3,
+	ifaddr = net_if_ipv6_addr_add(iface3, &my_addr3,
 				      NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
@@ -545,8 +546,8 @@ static void test_select_src_iface(void)
 			  iface, iface1);
 
 	iface = net_if_ipv6_select_src_iface(&dst_addr3);
-	zassert_equal_ptr(iface, iface2, "Invalid interface %p vs %p selected",
-			  iface, iface2);
+	zassert_equal_ptr(iface, iface3, "Invalid interface %p vs %p selected",
+			  iface, iface3);
 
 	ifaddr = net_if_ipv6_addr_lookup(&ll_addr, NULL);
 	zassert_not_null(ifaddr, "No such ll_addr found");
@@ -872,6 +873,14 @@ static void test_v4_addr_add_rm_in_use(void)
 		DBG("Cannot add IPv4 address %s\n",
 		    net_sprint_ipv4_addr(&my_ipv4_addr1));
 		zassert_not_null(ifaddr, "ipv4 addr1");
+	}
+
+	ifaddr = net_if_ipv4_addr_add(iface1, &my_ipv4_addr4,
+				      NET_ADDR_MANUAL, 0);
+	if (!ifaddr) {
+		DBG("Cannot add IPv4 address %s\n",
+		    net_sprint_ipv4_addr(&my_ipv4_addr4));
+		zassert_not_null(ifaddr, "ipv4 addr4");
 	}
 
 	sock1 = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -1233,6 +1242,153 @@ static void test_v6_addr_add_in_use(void)
 	zassert_true(ret, "Cannot remove IPv6 address");
 }
 
+static struct net_if_addr *get_ifaddr(sa_family_t family, struct net_if *iface)
+{
+	if (family == AF_INET) {
+		return net_if_ipv4_addr_lookup_by_iface(iface,
+							&my_ipv4_addr1);
+	} else {
+		if (iface == iface1) {
+			return net_if_ipv6_addr_lookup_by_iface(iface1,
+								&my_addr1);
+		} else if (iface == iface2) {
+			return net_if_ipv6_addr_lookup_by_iface(iface2,
+								&my_addr2);
+		} else if (iface == iface3) {
+			return net_if_ipv6_addr_lookup_by_iface(iface3,
+								&my_addr3);
+		} else {
+			return NULL;
+		}
+	}
+}
+
+static struct in6_addr *get_in6addr(struct net_if_addr *ifaddr)
+{
+	return &ifaddr->address.in6_addr;
+}
+
+static struct in_addr *get_in4addr(struct net_if_addr *ifaddr)
+{
+	return &ifaddr->address.in_addr;
+}
+
+static void test_v4_addr_add_rm_socket_anyaddr(void)
+{
+	struct net_if_addr *ifaddr;
+	struct sockaddr_in addr4;
+	socklen_t addrlen = sizeof(addr4);
+	struct in_addr *addr;
+	struct net_if *iface;
+	int sock1;
+	int ret;
+
+	ifaddr = net_if_ipv4_addr_add(iface1, &my_ipv4_addr1,
+				      NET_ADDR_MANUAL, 0);
+	zassert_not_null(ifaddr, "Cannot create ifaddr");
+
+	/* The other test added second IPv4 address to iface1,
+	 * remove it here for this test.
+	 */
+	ret = net_if_ipv4_addr_rm(iface1, &my_ipv4_addr4);
+	zassert_true(ret, "Cannot remove extra IPv4 address");
+
+	/* Use the interface that will get selected by bind() */
+	iface = net_if_ipv4_select_src_iface(net_ipv4_unspecified_address());
+
+	ifaddr = get_ifaddr(AF_INET, iface);
+	zassert_not_null(ifaddr, "ifaddr not found");
+
+	addr = get_in4addr(ifaddr);
+
+	sock1 = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	zassert_true(sock1 >= 0, "socket open failed");
+
+	(void)memset(&addr4, 0, sizeof(addr4));
+	addr4.sin_family = AF_INET;
+	addr4.sin_port = htons(4242);
+
+	/* We do not set the bind IP address here on purpose so
+	 * bind will be done for INADDR_ANY (all zeros)
+	 */
+
+	ret = zsock_bind(sock1, (struct sockaddr *)&addr4, addrlen);
+	zassert_equal(ret, 0, "bind failed (%d)", errno);
+
+	ret = zsock_listen(sock1, 2);
+	zassert_equal(ret, 0, "listen failed (%d)", errno);
+
+	/* This removal should fail even if we have not bound using a specific
+	 * IP address.
+	 */
+	ret = net_if_ipv4_addr_rm(iface, addr);
+	zassert_false(ret, "Could remove IPv4 address");
+
+	ifaddr = net_if_ipv4_addr_lookup_by_iface(iface, addr);
+	zassert_not_null(ifaddr, "ipv4 addr1");
+
+	ret = zsock_close(sock1);
+	zassert_equal(ret, 0, "close failed (%d)", errno);
+
+	/* This removal should now succeed as we have no sockets bound.
+	 */
+	ret = net_if_ipv4_addr_rm(iface, addr);
+	zassert_true(ret, "Cannot remove IPv4 address");
+}
+
+static void test_v6_addr_add_rm_socket_anyaddr(void)
+{
+	struct net_if_addr *ifaddr;
+	struct sockaddr_in6 addr6;
+	socklen_t addrlen = sizeof(addr6);
+	struct in6_addr *addr;
+	struct net_if *iface;
+	int sock1;
+	int ret;
+
+	/* Use the interface that will get selected by bind() */
+	iface = net_if_ipv6_select_src_iface(net_ipv6_unspecified_address());
+
+	ifaddr = get_ifaddr(AF_INET6, iface);
+	zassert_not_null(ifaddr, "ifaddr not found");
+
+	addr = get_in6addr(ifaddr);
+
+	sock1 = zsock_socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+	zassert_true(sock1 >= 0, "socket open failed");
+
+	(void)memset(&addr6, 0, sizeof(addr6));
+	addr6.sin6_family = AF_INET6;
+	addr6.sin6_port = htons(4242);
+
+	/* We do not set the bind IP address here on purpose so
+	 * bind will be done for IN6ADDR_ANY_INIT (all zeros)
+	 */
+
+	ret = zsock_bind(sock1, (struct sockaddr *)&addr6, addrlen);
+	zassert_equal(ret, 0, "bind failed (%d)", errno);
+
+	ret = zsock_listen(sock1, 2);
+	zassert_equal(ret, 0, "listen failed (%d)", errno);
+
+	/* This removal should fail even if we have not bound using a specific
+	 * IP address.
+	 */
+	ret = net_if_ipv6_addr_rm(iface, addr);
+	zassert_false(ret, "Could remove IPv6 address");
+
+	ifaddr = net_if_ipv6_addr_lookup_by_iface(iface, addr);
+	zassert_not_null(ifaddr, "ipv6 addr1");
+
+	ret = zsock_close(sock1);
+	zassert_equal(ret, 0, "close failed (%d)", errno);
+
+	/* This removal should now succeed as we have no sockets bound.
+	 */
+	ret = net_if_ipv6_addr_rm(iface, addr);
+	zassert_true(ret, "Cannot remove IPv6 address");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(net_iface_test,
@@ -1276,7 +1432,9 @@ void test_main(void)
 			 ztest_unit_test(test_v6_maddr_add_rm),
 			 ztest_unit_test(test_v6_maddr_add_rm_in_use),
 			 ztest_unit_test(test_v4_addr_add_in_use),
-			 ztest_unit_test(test_v6_addr_add_in_use)
+			 ztest_unit_test(test_v6_addr_add_in_use),
+			 ztest_unit_test(test_v4_addr_add_rm_socket_anyaddr),
+			 ztest_unit_test(test_v6_addr_add_rm_socket_anyaddr)
 		);
 
 	ztest_run_test_suite(net_iface_test);
