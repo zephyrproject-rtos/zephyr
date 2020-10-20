@@ -114,7 +114,7 @@ static inline void set_fault_valid(bool valid)
 #ifndef _TEST_SYSCALLS_H_
 #define _TEST_SYSCALLS_H_
 
-__syscall struct k_mem_pool *ret_resource_pool_ptr(void);
+__syscall struct k_heap *ret_resource_pool_ptr(void);
 
 #include <syscalls/mem_protect.h>
 

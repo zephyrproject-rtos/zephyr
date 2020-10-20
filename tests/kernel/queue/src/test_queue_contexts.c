@@ -11,7 +11,7 @@
 /**TESTPOINT: init via K_QUEUE_DEFINE*/
 K_QUEUE_DEFINE(kqueue);
 
-Z_MEM_POOL_DEFINE(mem_pool_fail, 4, _MPOOL_MINBLK, 1, 4);
+Z_MEM_POOL_DEFINE(mem_pool_fail, 4, 8, 1, 4);
 Z_MEM_POOL_DEFINE(mem_pool_pass, 4, 64, 4, 4);
 
 struct k_queue queue;

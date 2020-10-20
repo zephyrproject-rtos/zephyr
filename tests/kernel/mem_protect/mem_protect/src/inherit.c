@@ -21,7 +21,7 @@ static inline void dummy_end(struct k_timer *timer)
 K_THREAD_STACK_DEFINE(test_1_stack, INHERIT_STACK_SIZE);
 K_THREAD_STACK_DEFINE(parent_thr_stack, STACK_SIZE);
 K_THREAD_STACK_DEFINE(child_thr_stack, STACK_SIZE);
-Z_MEM_POOL_DEFINE(res_pool, BLK_SIZE_MIN, BLK_SIZE_MAX, BLK_NUM_MAX, BLK_ALIGN);
+K_HEAP_DEFINE(res_pool, BLK_SIZE_MAX * BLK_NUM_MAX);
 K_SEM_DEFINE(inherit_sem, SEMAPHORE_INIT_COUNT, SEMAPHORE_MAX_COUNT);
 K_SEM_DEFINE(sync_sem, SEM_INIT_VAL, SEM_MAX_VAL);
 K_MUTEX_DEFINE(inherit_mutex);
@@ -123,18 +123,18 @@ void test_permission_inheritance(void)
 	k_thread_join(&test_1_tid, K_FOREVER);
 }
 
-struct k_mem_pool *z_impl_ret_resource_pool_ptr(void)
+struct k_heap *z_impl_ret_resource_pool_ptr(void)
 {
 	return _current->resource_pool;
 }
 
-static inline struct k_mem_pool *z_vrfy_ret_resource_pool_ptr(void)
+static inline struct k_heap *z_vrfy_ret_resource_pool_ptr(void)
 {
 	return z_impl_ret_resource_pool_ptr();
 }
 #include <syscalls/ret_resource_pool_ptr_mrsh.c>
-struct k_mem_pool *child_res_pool_ptr;
-struct k_mem_pool *parent_res_pool_ptr;
+struct k_heap *child_res_pool_ptr;
+struct k_heap *parent_res_pool_ptr;
 
 void child_handler(void *p1, void *p2, void *p3)
 {
@@ -177,7 +177,7 @@ void test_inherit_resource_pool(void)
 			parent_handler,
 			NULL, NULL, NULL,
 			PRIORITY, 0, K_NO_WAIT);
-	z_thread_resource_pool_assign(&parent_thr, &res_pool);
+	k_thread_heap_assign(&parent_thr, &res_pool);
 	k_sem_take(&sync_sem, K_FOREVER);
 	zassert_true(parent_res_pool_ptr == child_res_pool_ptr,
 		     "Resource pool of the parent thread not inherited,"
