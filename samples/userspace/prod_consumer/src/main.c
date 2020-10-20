@@ -9,7 +9,6 @@
 #include <sys/printk.h>
 #include <app_memory/app_memdomain.h>
 #include <sys/libc-hooks.h>
-#include <sys/mempool.h>
 #include <logging/log.h>
 
 #include "main.h"

@@ -265,24 +265,6 @@ used as provided in ``app_macro_support.h``:
 
     FOR_EACH(K_APPMEM_PARTITION_DEFINE, part0, part1, part2);
 
-There are some kernel objects which are defined by macros and take an argument
-for a destination section. A good example of these are sys_mem_pools, which
-are heap objects. The destination section name for an automatic partition
-can be obtained with :c:macro:`K_APP_DMEM_SECTION()` and
-:c:macro:`K_APP_BMEM_SECTION()` respectively for initialized data and BSS:
-
-.. code-block:: c
-
-    /* Declare automatic memory partition foo_partition */
-    K_APPMEM_PARTITION_DEFINE(foo_partition);
-
-    /* Section argument for the destination section obtained via
-     * K_APP_DMEM_SECTION()
-     */
-    SYS_MEM_POOL_DEFINE(foo_pool, NULL, BLK_SIZE_MIN, BLK_SIZE_MAX,
-                        BLK_NUM_MAX, BLK_ALIGN,
-    			K_APP_DMEM_SECTION(foo_partition));
-
 Automatic Partitions for Static Library Globals
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -315,7 +297,7 @@ There are a few memory partitions which are pre-defined by the system:
  - ``z_malloc_partition`` - This partition contains the system-wide pool of
    memory used by libc malloc(). Due to possible starvation issues, it is
    not recommended to draw heap memory from a global pool, instead
-   it is better to define various sys_mem_pool objects and assign them
+   it is better to define various sys_heap objects and assign them
    to specific memory domains.
 
  - ``z_libc_partition`` - Contains globals required by the C library and runtime.

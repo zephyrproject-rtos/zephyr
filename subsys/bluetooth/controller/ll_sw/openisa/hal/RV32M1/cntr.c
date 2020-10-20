@@ -7,7 +7,6 @@
  */
 
 #include <sys/dlist.h>
-#include <sys/mempool_base.h>
 
 #include "hal/cntr.h"
 

@@ -94,9 +94,8 @@ config MINIMAL_LIBC_MALLOC_ARENA_SIZE
 	default 0
 	depends on MINIMAL_LIBC_MALLOC
 	help
-	  Indicate the size of the memory arena used for minimal libc's
-	  malloc() implementation. This size value must be compatible with
-	  a sys_mem_pool definition with nmax of 1 and minsz of 16.
+	  Indicate the size in bytes of the memory arena used for
+	  minimal libc's malloc() implementation.
 
 config MINIMAL_LIBC_CALLOC
 	bool "Enable minimal libc trivial calloc implementation"
