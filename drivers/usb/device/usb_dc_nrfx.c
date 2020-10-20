@@ -237,6 +237,7 @@ K_MEM_POOL_DEFINE(ep_buf_pool, EP_BUF_POOL_BLOCK_MIN_SZ,
  * @brief USBD control structure
  *
  * @param status_cb	Status callback for USB DC notifications
+ * @param setup		Setup packet for Control requests
  * @param hfxo_cli	Onoff client used to control HFXO
  * @param hfxo_mgr	Pointer to onoff manager associated with HFXO.
  * @param clk_requested	Flag used to protect against double stop.
@@ -249,6 +250,7 @@ K_MEM_POOL_DEFINE(ep_buf_pool, EP_BUF_POOL_BLOCK_MIN_SZ,
  */
 struct nrf_usbd_ctx {
 	usb_dc_status_callback status_cb;
+	struct usb_setup_packet setup;
 	struct onoff_client hfxo_cli;
 	struct onoff_manager *hfxo_mgr;
 	atomic_t clk_requested;
@@ -795,6 +797,9 @@ static inline void usbd_work_process_setup(struct nrf_usbd_ep_ctx *ep_ctx)
 	usbd_setup->wIndex = nrf_usbd_setup_windex_get(NRF_USBD);
 	usbd_setup->wLength = nrf_usbd_setup_wlength_get(NRF_USBD);
 	ep_ctx->buf.len = sizeof(struct usb_setup_packet);
+
+	/* Copy setup packet to driver internal structure */
+	memcpy(&usbd_ctx.setup, usbd_setup, sizeof(struct usb_setup_packet));
 
 	LOG_DBG("SETUP: bR:0x%02x bmRT:0x%02x wV:0x%04x wI:0x%04x wL:%d",
 		(uint32_t)usbd_setup->bRequest,
