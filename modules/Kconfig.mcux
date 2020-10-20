@@ -137,6 +137,12 @@ config HAS_MCUX_SCG
 	  Set if the system clock generator (SCG) module is present in the
 	  SoC.
 
+config HAS_MCUX_SEMC
+	bool
+	help
+	  Set if the smart external memory controller (SEMC) module is present
+	  in the SoC.
+
 config HAS_MCUX_SIM
 	bool
 	help
