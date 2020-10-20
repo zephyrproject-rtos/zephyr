@@ -531,6 +531,11 @@ void openthread_api_mutex_lock(struct openthread_context *ot_context)
 	(void)k_mutex_lock(&ot_context->api_lock, K_FOREVER);
 }
 
+int openthread_api_mutex_try_lock(struct openthread_context *ot_context)
+{
+	return k_mutex_lock(&ot_context->api_lock, K_NO_WAIT);
+}
+
 void openthread_api_mutex_unlock(struct openthread_context *ot_context)
 {
 	(void)k_mutex_unlock(&ot_context->api_lock);
