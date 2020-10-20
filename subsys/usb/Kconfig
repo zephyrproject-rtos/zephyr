@@ -88,12 +88,6 @@ config USB_DEVICE_REMOTE_WAKEUP
 	help
 	  This option requires USBD peripheral driver to also support remote wakeup.
 
-config USB_DEVICE_DISABLE_ZLP_EPIN_HANDLING
-	bool
-	help
-	  Stack should not handle ZLP for Variable-length Data Stage
-	  because it is taken over by the hardware.
-
 config USB_DEVICE_BOS
 	bool "Enable USB Binary Device Object Store (BOS)"
 

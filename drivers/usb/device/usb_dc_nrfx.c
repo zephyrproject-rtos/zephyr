@@ -111,6 +111,9 @@ struct nrf_usbd_ep_buf {
  *				a data transfer.
  * @param write_in_progress	A flag indicating that write operation has
  *				been scheduled.
+ * @param trans_zlp		Flag required for Control IN Endpoint. It
+ *				indicates that ZLP is required to end data
+ *				stage of the control request.
  */
 struct nrf_usbd_ep_ctx {
 	struct nrf_usbd_ep_cfg cfg;
@@ -118,6 +121,7 @@ struct nrf_usbd_ep_ctx {
 	volatile bool read_complete;
 	volatile bool read_pending;
 	volatile bool write_in_progress;
+	bool trans_zlp;
 };
 
 /**
@@ -612,6 +616,7 @@ static void ep_ctx_reset(struct nrf_usbd_ep_ctx *ep_ctx)
 	ep_ctx->read_complete = true;
 	ep_ctx->read_pending = false;
 	ep_ctx->write_in_progress = false;
+	ep_ctx->trans_zlp = false;
 }
 
 /**
@@ -871,7 +876,12 @@ static inline void usbd_work_process_ep_events(struct usbd_ep_event *ep_evt)
 		break;
 
 	case EP_EVT_WRITE_COMPLETE:
-		if (ep_ctx->cfg.type == USB_DC_EP_CONTROL) {
+		if (ep_ctx->cfg.type == USB_DC_EP_CONTROL &&
+		    !ep_ctx->trans_zlp) {
+			/* Trigger the hardware to perform
+			 * status stage, but only if there is
+			 * no ZLP required.
+			 */
 			k_mutex_lock(&ctx->drv_lock, K_FOREVER);
 			nrfx_usbd_setup_clear();
 			k_mutex_unlock(&ctx->drv_lock);
@@ -1693,6 +1703,27 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 	if (ep_ctx->write_in_progress) {
 		k_mutex_unlock(&ctx->drv_lock);
 		return -EAGAIN;
+	}
+
+	/** Clear the ZLP flag if current write is ZLP. After the ZLP will be
+	 * send the driver will perform status stage.
+	 */
+	if (!data_len && ep_ctx->trans_zlp) {
+		ep_ctx->trans_zlp = false;
+	}
+
+	/** If writing to a Control Endpoint there might be a need to transfer
+	 * ZLP. If the Hosts asks for more data that the device may return and
+	 * the last packet is wMaxPacketSize long. The driver must send ZLP.
+	 * For consistance with the Zephyr USB stack sending ZLP must be issued
+	 * from the stack level. Making trans_zlp flag true results in blocking
+	 * the driver from starting setup stage without required ZLP.
+	 */
+	if (ep_ctx->cfg.type == USB_DC_EP_CONTROL) {
+		if (data_len && usbd_ctx.setup.wLength > data_len &&
+		    !(data_len % ep_ctx->cfg.max_sz)) {
+			ep_ctx->trans_zlp = true;
+		}
 	}
 
 	/* Setup stage is handled by hardware.
