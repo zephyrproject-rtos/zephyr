@@ -86,15 +86,15 @@ struct k_mem_partition;
  * and read-only data.
  */
 struct k_mem_domain {
+#ifdef CONFIG_ARCH_MEM_DOMAIN_DATA
+	struct arch_mem_domain arch;
+#endif /* CONFIG_ARCH_MEM_DOMAIN_DATA */
 	/** partitions in the domain */
 	struct k_mem_partition partitions[CONFIG_MAX_DOMAIN_PARTITIONS];
 	/** Doubly linked list of member threads */
 	sys_dlist_t mem_domain_q;
 	/** number of active partitions in the domain */
 	uint8_t num_partitions;
-#ifdef CONFIG_ARCH_MEM_DOMAIN_DATA
-	struct arch_mem_domain arch;
-#endif /* CONFIG_ARCH_MEM_DOMAIN_DATA */
 };
 
 /**
