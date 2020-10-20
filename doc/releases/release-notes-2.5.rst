@@ -46,6 +46,8 @@ API Changes
 Deprecated in this release
 ==========================
 
+* ARM Musca-A board and SoC support deprecated and planned to be removed in 2.6.0.
+
 Removed APIs in this release
 ============================
 
