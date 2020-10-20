@@ -111,8 +111,6 @@ struct nrf_usbd_ep_buf {
  *				a data transfer.
  * @param write_in_progress	A flag indicating that write operation has
  *				been scheduled.
- * @param write_fragmented	A flag indicating that IN transfer has
- *				been fragmented.
  */
 struct nrf_usbd_ep_ctx {
 	struct nrf_usbd_ep_cfg cfg;
@@ -120,7 +118,6 @@ struct nrf_usbd_ep_ctx {
 	volatile bool read_complete;
 	volatile bool read_pending;
 	volatile bool write_in_progress;
-	bool write_fragmented;
 };
 
 /**
@@ -890,13 +887,7 @@ static inline void usbd_work_process_ep_events(struct usbd_ep_event *ep_evt)
 		break;
 
 	case EP_EVT_WRITE_COMPLETE:
-		if ((ep_ctx->cfg.type == USB_DC_EP_CONTROL)
-		    && (!ep_ctx->write_fragmented)) {
-			/* Trigger the hardware to perform
-			 * status stage, but only if there is
-			 * no more data to send (IN transfer
-			 * has not beed fragmented).
-			 */
+		if (ep_ctx->cfg.type == USB_DC_EP_CONTROL) {
 			k_mutex_lock(&ctx->drv_lock, K_FOREVER);
 			nrfx_usbd_setup_clear();
 			k_mutex_unlock(&ctx->drv_lock);
@@ -1689,7 +1680,6 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 	LOG_DBG("ep_write: ep 0x%02x, len %d", ep, data_len);
 	struct nrf_usbd_ctx *ctx = get_usbd_ctx();
 	struct nrf_usbd_ep_ctx *ep_ctx;
-	uint32_t bytes_to_copy;
 	int result = 0;
 
 	if (!dev_attached() || !dev_ready()) {
@@ -1721,27 +1711,6 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 		return -EAGAIN;
 	}
 
-	/* NRFX driver performs the fragmentation if buffer length exceeds
-	 * maximum packet size, however in current implementation, data is
-	 * copied to the internal buffer and must me fragmented here.
-	 * In case of fragmentation, a flag is set to prevent triggering
-	 * status stage which is handled by hardware, because there will be
-	 * another write coming.
-	 */
-	if (data_len > ep_ctx->cfg.max_sz) {
-		bytes_to_copy = ep_ctx->cfg.max_sz;
-		ep_ctx->write_fragmented = true;
-	} else {
-		bytes_to_copy = data_len;
-		ep_ctx->write_fragmented = false;
-	}
-	memcpy(ep_ctx->buf.data, data, bytes_to_copy);
-	ep_ctx->buf.len = bytes_to_copy;
-
-	if (ret_bytes) {
-		*ret_bytes = bytes_to_copy;
-	}
-
 	/* Setup stage is handled by hardware.
 	 * Detect the setup stage initiated by the stack
 	 * and perform appropriate action.
@@ -1754,13 +1723,20 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 	}
 
 	ep_ctx->write_in_progress = true;
-	NRFX_USBD_TRANSFER_IN(transfer, ep_ctx->buf.data, ep_ctx->buf.len, 0);
+	NRFX_USBD_TRANSFER_IN(transfer, data, data_len, 0);
 	nrfx_err_t err = nrfx_usbd_ep_transfer(ep_addr_to_nrfx(ep), &transfer);
 
 	if (err != NRFX_SUCCESS) {
 		ep_ctx->write_in_progress = false;
+		if (ret_bytes) {
+			*ret_bytes = 0;
+		}
 		result = -EIO;
 		LOG_ERR("nRF USBD write error: %d", (uint32_t)err);
+	} else {
+		if (ret_bytes) {
+			*ret_bytes = data_len;
+		}
 	}
 
 	k_mutex_unlock(&ctx->drv_lock);
