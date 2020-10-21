@@ -98,36 +98,6 @@ config FLASH_BASE_ADDRESS
 
 endif # CODE_FLEXSPI2
 
-if DATA_DTCM
-
-config SRAM_SIZE
-	default $(dt_node_reg_size_int,/soc/flexram@400b0000/dtcm@20000000,0,K)
-
-config SRAM_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/flexram@400b0000/dtcm@20000000)
-
-endif # DATA_DTCM
-
-if DATA_SEMC
-
-config SRAM_SIZE
-	default $(dt_node_reg_size_int,/memory@80000000,0,K)
-
-config SRAM_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/memory@80000000)
-
-endif # DATA_SEMC
-
-if DATA_OCRAM
-
-config SRAM_SIZE
-	default $(dt_node_reg_size_int,/soc/flexram@400b0000/ocram@20200000,0,K)
-
-config SRAM_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/flexram@400b0000/ocram@20200000)
-
-endif # DATA_OCRAM
-
 config USB_DC_NXP_EHCI
 	default y
 	depends on USB

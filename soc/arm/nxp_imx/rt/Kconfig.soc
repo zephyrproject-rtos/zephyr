@@ -413,19 +413,4 @@ config CODE_FLEXSPI2
 
 endchoice
 
-choice DATA_LOCATION
-	prompt "Data location selection"
-	default DATA_DTCM
-
-config DATA_DTCM
-	bool "Link data into internal data tightly coupled memory (DTCM)"
-
-config DATA_SEMC
-	bool "Link data into external SEMC-controlled memory"
-
-config DATA_OCRAM
-	bool "Link data into On-Chip RAM memory"
-
-endchoice
-
 endif # SOC_SERIES_IMX_RT
