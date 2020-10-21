@@ -13,6 +13,7 @@
 #include <fs/fs.h>
 #include <sys/__assert.h>
 #include <ff.h>
+#include <fs/fs_sys.h>
 
 #define FATFS_MAX_FILE_NAME 12 /* Uses 8.3 SFN */
 
@@ -407,7 +408,7 @@ static int fatfs_unmount(struct fs_mount_t *mountp)
 }
 
 /* File system interface */
-static const struct fs_file_system_t fatfs_fs = {
+const FILE_SYSTEM_DEFINE(fatfs_fs,
 	.open = fatfs_open,
 	.close = fatfs_close,
 	.read = fatfs_read,
@@ -426,7 +427,7 @@ static const struct fs_file_system_t fatfs_fs = {
 	.mkdir = fatfs_mkdir,
 	.stat = fatfs_stat,
 	.statvfs = fatfs_statvfs,
-};
+);
 
 static int fatfs_init(const struct device *dev)
 {

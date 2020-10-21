@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <init.h>
 #include <fs/fs.h>
+#include <fs/fs_sys.h>
 
 #define LFS_LOG_REGISTER
 #include <lfs_util.h>
@@ -722,7 +723,7 @@ static int littlefs_unmount(struct fs_mount_t *mountp)
 }
 
 /* File system interface */
-static const struct fs_file_system_t littlefs_fs = {
+const FILE_SYSTEM_DEFINE(littlefs_fs,
 	.open = littlefs_open,
 	.close = littlefs_close,
 	.read = littlefs_read,
@@ -741,7 +742,7 @@ static const struct fs_file_system_t littlefs_fs = {
 	.mkdir = littlefs_mkdir,
 	.stat = littlefs_stat,
 	.statvfs = littlefs_statvfs,
-};
+);
 
 static int littlefs_init(const struct device *dev)
 {
