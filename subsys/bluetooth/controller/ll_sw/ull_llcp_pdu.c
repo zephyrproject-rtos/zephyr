@@ -23,8 +23,9 @@
 #include "lll.h"
 #include "lll_conn.h"
 
-#include "ull_conn_types.h"
 #include "ull_tx_queue.h"
+
+#include "ull_conn_types.h"
 #include "ull_llcp.h"
 #include "ull_llcp_internal.h"
 
@@ -102,7 +103,7 @@ static void feature_filter(uint8_t *featuresin, uint64_t *featuresout)
 	*featuresout = feat;
 }
 
-void ull_cp_priv_pdu_encode_feature_req(struct ull_cp_conn *conn,
+void ull_cp_priv_pdu_encode_feature_req(struct ll_conn *conn,
 					struct pdu_data *pdu)
 {
 	struct pdu_data_llctrl_feature_req *p;
@@ -120,7 +121,7 @@ void ull_cp_priv_pdu_encode_feature_req(struct ull_cp_conn *conn,
 	sys_put_le64(LL_FEAT, p->features);
 }
 
-void ull_cp_priv_pdu_encode_feature_rsp(struct ull_cp_conn *conn,
+void ull_cp_priv_pdu_encode_feature_rsp(struct ll_conn *conn,
 					struct pdu_data *pdu)
 {
 	struct pdu_data_llctrl_feature_rsp *p;
@@ -142,7 +143,7 @@ void ull_cp_priv_pdu_encode_feature_rsp(struct ull_cp_conn *conn,
 	sys_put_le64(feature_rsp, p->features);
 }
 
-void ull_cp_priv_ntf_encode_feature_rsp(struct ull_cp_conn *conn,
+void ull_cp_priv_ntf_encode_feature_rsp(struct ll_conn *conn,
 					struct pdu_data *pdu)
 {
 	struct pdu_data_llctrl_feature_rsp *p;
@@ -156,7 +157,7 @@ void ull_cp_priv_ntf_encode_feature_rsp(struct ull_cp_conn *conn,
 	sys_put_le64(conn->llcp.fex.features_peer, p->features);
 }
 
-void ull_cp_priv_pdu_decode_feature_req(struct ull_cp_conn *conn,
+void ull_cp_priv_pdu_decode_feature_req(struct ll_conn *conn,
 					struct pdu_data *pdu)
 {
 	uint64_t featureset;
@@ -170,7 +171,7 @@ void ull_cp_priv_pdu_decode_feature_req(struct ull_cp_conn *conn,
 	conn->llcp.fex.valid = 1;
 }
 
-void ull_cp_priv_pdu_decode_feature_rsp(struct ull_cp_conn *conn,
+void ull_cp_priv_pdu_decode_feature_rsp(struct ll_conn *conn,
 					struct pdu_data *pdu)
 {
 	uint64_t featureset;
@@ -197,7 +198,7 @@ void ull_cp_priv_pdu_encode_min_used_chans_ind(struct proc_ctx *ctx, struct pdu_
 	p->min_used_chans = ctx->data.muc.min_used_chans;
 }
 
-void ull_cp_priv_pdu_decode_min_used_chans_ind(struct ull_cp_conn *conn, struct pdu_data *pdu)
+void ull_cp_priv_pdu_decode_min_used_chans_ind(struct ll_conn *conn, struct pdu_data *pdu)
 {
 	conn->llcp.muc.phys = pdu->llctrl.min_used_chans_ind.phys;
 	conn->llcp.muc.min_used_chans = pdu->llctrl.min_used_chans_ind.min_used_chans;
@@ -256,7 +257,7 @@ void ull_cp_priv_pdu_encode_version_ind(struct pdu_data *pdu)
 	p->sub_version_number = svn;
 }
 
-void ull_cp_priv_ntf_encode_version_ind(struct ull_cp_conn *conn,
+void ull_cp_priv_ntf_encode_version_ind(struct ll_conn *conn,
 					struct pdu_data *pdu)
 {
 	struct pdu_data_llctrl_version_ind *p;
@@ -272,7 +273,7 @@ void ull_cp_priv_ntf_encode_version_ind(struct ull_cp_conn *conn,
 	p->sub_version_number = sys_cpu_to_le16(conn->llcp.vex.cached.sub_version_number);
 }
 
-void ull_cp_priv_pdu_decode_version_ind(struct ull_cp_conn *conn, struct pdu_data *pdu)
+void ull_cp_priv_pdu_decode_version_ind(struct ll_conn *conn, struct pdu_data *pdu)
 {
 	conn->llcp.vex.valid = 1;
 	conn->llcp.vex.cached.version_number = pdu->llctrl.version_ind.version_number;
