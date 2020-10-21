@@ -57,6 +57,16 @@ config FUSE_FS_ACCESS
 	help
 	  Expose file system partitions to the host system through FUSE.
 
+config FILE_SYSTEM_NOTSUP_CHECK
+	bool "Check if driver implements operation before invoking it"
+	default y
+	help
+	  This will cause additional code to be present in fs_* functions,
+	  that checks whether driver implements operation, by comparing
+	  operation pointer to NULL, before invoking the operation.
+	  This is REQUIRED if file system driver inferface has not been
+	  defined with FILE_SYSTEM_DEFINE macro.
+
 source "subsys/fs/Kconfig.fatfs"
 source "subsys/fs/Kconfig.littlefs"
 
