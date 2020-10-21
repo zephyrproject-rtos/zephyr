@@ -24,6 +24,11 @@ GDATA(z_interrupt_stacks)
 #if defined(CONFIG_PLATFORM_SPECIFIC_INIT)
 GTEXT(z_platform_init)
 #endif
+#if defined(CONFIG_INIT_ARCH_HW_AT_BOOT)
+GTEXT(z_arm_init_arch_hw_at_boot)
+GDATA(z_main_stack)
+#endif
+
 
 /**
  *
@@ -59,9 +64,37 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,z_arm_reset)
  */
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
+#if defined(CONFIG_INIT_ARCH_HW_AT_BOOT)
+    /* Reset CONTROL register */
+    movs.n r0, #0
+    msr CONTROL, r0
+    isb
+#endif
+
 #if defined(CONFIG_PLATFORM_SPECIFIC_INIT)
     bl z_platform_init
 #endif
+
+#if defined(CONFIG_INIT_ARCH_HW_AT_BOOT)
+#if defined(CONFIG_CPU_HAS_ARM_MPU)
+    /* Disable MPU */
+    movs.n r0, #0
+    ldr r1, =_SCS_MPU_CTRL
+    str r0, [r1]
+    dsb
+#endif /* CONFIG_CPU_HAS_ARM_MPU */
+#if defined(CONFIG_CPU_CORTEX_M_HAS_SPLIM)
+    /* Clear SPLIM registers */
+    movs.n r0, #0
+	msr MSPLIM, r0
+    msr PSPLIM, r0
+#endif /* CONFIG_CPU_CORTEX_M_HAS_SPLIM */
+    ldr r0, =z_main_stack + CONFIG_MAIN_STACK_SIZE
+    msr msp, r0
+
+    /* Initialize core architecture registers and system blocks */
+    bl z_arm_init_arch_hw_at_boot
+#endif /* CONFIG_INIT_ARCH_HW_AT_BOOT */
 
     /* lock interrupts: will get unlocked when switch to main task */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
