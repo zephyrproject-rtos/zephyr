@@ -14,7 +14,7 @@
  */
 &ocram {
 	compatible = "mmio-sram";
-	reg = <0x20200000 0xC0000>;
+	reg = <0x20200000 DT_SIZE_K(768)>;
 };
 
 /* i.MX rt1060 has a second Ethernet controller. */

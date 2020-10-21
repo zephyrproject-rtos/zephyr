@@ -10,19 +10,14 @@
 	clock-frequency = <500000000>;
 };
 
-/* i.MX rt1020 default FlexRAM partition:
- * ITCM: 64KB
- * DTCM: 64KB
- * OCRAM: 128KB
- */
 &itcm {
-	reg = <0x00000000 0x10000>;
+	reg = <0x00000000 DT_SIZE_K(64)>;
 };
 
 &dtcm {
-	reg = <0x20000000 0x10000>;
+	reg = <0x20000000 DT_SIZE_K(64)>;
 };
 
 &ocram {
-	reg = <0x20200000 0x20000>;
+	reg = <0x20200000 DT_SIZE_K(128)>;
 };
