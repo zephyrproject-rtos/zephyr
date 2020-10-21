@@ -426,6 +426,61 @@ static struct bt_le_ext_adv_cb adv_callbacks = {
 #endif /* CONFIG_BT_BROADCASTER */
 #endif /* CONFIG_BT_EXT_ADV */
 
+
+#if defined(CONFIG_BT_PER_ADV_SYNC)
+static struct bt_le_per_adv_sync *per_adv_syncs[CONFIG_BT_PER_ADV_SYNC_MAX];
+
+static void per_adv_sync_sync_cb(struct bt_le_per_adv_sync *sync,
+				 struct bt_le_per_adv_sync_synced_info *info)
+{
+	char le_addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	shell_print(ctx_shell, "PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
+		    "Interval 0x%04x (%u ms), PHY %s",
+		    bt_le_per_adv_sync_get_index(sync), le_addr,
+		    info->interval, info->interval * 5 / 4, phy2str(info->phy));
+}
+
+static void per_adv_sync_terminated_cb(
+	struct bt_le_per_adv_sync *sync,
+	const struct bt_le_per_adv_sync_term_info *info)
+{
+	char le_addr[BT_ADDR_LE_STR_LEN];
+
+	for (int i = 0; i < ARRAY_SIZE(per_adv_syncs); i++) {
+		if (per_adv_syncs[i] == sync) {
+			per_adv_syncs[i] = NULL;
+			break;
+		}
+	}
+
+	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	shell_print(ctx_shell, "PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated",
+		    bt_le_per_adv_sync_get_index(sync), le_addr);
+}
+
+static void per_adv_sync_recv_cb(
+	struct bt_le_per_adv_sync *sync,
+	const struct bt_le_per_adv_sync_recv_info *info,
+	struct net_buf_simple *buf)
+{
+	char le_addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	shell_print(ctx_shell, "PER_ADV_SYNC[%u]: [DEVICE]: %s, tx_power %i, "
+		    "RSSI %i, CTE %u, data length %u",
+		    bt_le_per_adv_sync_get_index(sync), le_addr, info->tx_power,
+		    info->rssi, info->cte_type, buf->len);
+}
+
+static struct bt_le_per_adv_sync_cb per_adv_sync_cb = {
+	.synced = per_adv_sync_sync_cb,
+	.term = per_adv_sync_terminated_cb,
+	.recv = per_adv_sync_recv_cb
+};
+#endif /* CONFIG_BT_PER_ADV_SYNC */
+
 static void bt_ready(int err)
 {
 	if (err) {
@@ -452,6 +507,10 @@ static void bt_ready(int err)
 
 	bt_conn_cb_register(&conn_callbacks);
 #endif /* CONFIG_BT_CONN */
+
+#if defined(CONFIG_BT_PER_ADV_SYNC)
+	bt_le_per_adv_sync_cb_register(&per_adv_sync_cb);
+#endif /* CONFIG_BT_PER_ADV_SYNC */
 }
 
 static int cmd_init(const struct shell *shell, size_t argc, char *argv[])
@@ -1399,57 +1458,6 @@ static int cmd_per_adv_data(const struct shell *shell, size_t argc,
 #endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_PER_ADV_SYNC)
-static struct bt_le_per_adv_sync *per_adv_syncs[CONFIG_BT_PER_ADV_SYNC_MAX];
-
-static void per_adv_sync_sync_cb(struct bt_le_per_adv_sync *sync,
-				 struct bt_le_per_adv_sync_synced_info *info)
-{
-	char le_addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-	shell_print(ctx_shell, "PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
-		    "Interval 0x%04x (%u ms), PHY %s",
-		    bt_le_per_adv_sync_get_index(sync), le_addr,
-		    info->interval, info->interval * 5 / 4, phy2str(info->phy));
-}
-
-static void per_adv_sync_terminated_cb(
-	struct bt_le_per_adv_sync *sync,
-	const struct bt_le_per_adv_sync_term_info *info)
-{
-	char le_addr[BT_ADDR_LE_STR_LEN];
-
-	for (int i = 0; i < ARRAY_SIZE(per_adv_syncs); i++) {
-		if (per_adv_syncs[i] == sync) {
-			per_adv_syncs[i] = NULL;
-			break;
-		}
-	}
-
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-	shell_print(ctx_shell, "PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated",
-		    bt_le_per_adv_sync_get_index(sync), le_addr);
-}
-
-static void per_adv_sync_recv_cb(
-	struct bt_le_per_adv_sync *sync,
-	const struct bt_le_per_adv_sync_recv_info *info,
-	struct net_buf_simple *buf)
-{
-	char le_addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-	shell_print(ctx_shell, "PER_ADV_SYNC[%u]: [DEVICE]: %s, tx_power %i, "
-		    "RSSI %i, CTE %u, data length %u",
-		    bt_le_per_adv_sync_get_index(sync), le_addr, info->tx_power,
-		    info->rssi, info->cte_type, buf->len);
-}
-
-static struct bt_le_per_adv_sync_cb per_adv_sync_cb = {
-	.synced = per_adv_sync_sync_cb,
-	.term = per_adv_sync_terminated_cb,
-	.recv = per_adv_sync_recv_cb
-};
 
 static int cmd_per_adv_sync_create(const struct shell *shell, size_t argc,
 				   char *argv[])
@@ -1517,8 +1525,6 @@ static int cmd_per_adv_sync_create(const struct shell *shell, size_t argc,
 	}
 
 	create_params.options = options;
-
-	bt_le_per_adv_sync_cb_register(&per_adv_sync_cb);
 
 	err = bt_le_per_adv_sync_create(&create_params, free_per_adv_sync);
 	if (err) {
