@@ -24,15 +24,15 @@
 #include "lll.h"
 #include "lll_conn.h"
 
-#include "ull_conn_types.h"
 #include "ull_tx_queue.h"
+#include "ull_conn_types.h"
 #include "ull_llcp.h"
 #include "ull_llcp_internal.h"
 
 #include "helper_pdu.h"
 #include "helper_util.h"
 
-struct ull_cp_conn conn;
+struct ll_conn conn;
 
 static void setup(void)
 {

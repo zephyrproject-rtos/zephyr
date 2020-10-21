@@ -207,23 +207,23 @@ static inline struct proc_ctx *create_remote_procedure(enum llcp_proc proc)
 /*
  * ULL -> LLL Interface
  */
-void ull_cp_priv_tx_enqueue(struct ull_cp_conn *conn, struct node_tx *tx);
+void ull_cp_priv_tx_enqueue(struct ll_conn *conn, struct node_tx *tx);
 
-static inline void tx_enqueue(struct ull_cp_conn *conn, struct node_tx *tx)
+static inline void tx_enqueue(struct ll_conn *conn, struct node_tx *tx)
 {
 	return ull_cp_priv_tx_enqueue(conn, tx);
 }
 
-void ull_cp_priv_tx_pause_data(struct ull_cp_conn *conn);
+void ull_cp_priv_tx_pause_data(struct ll_conn *conn);
 
-static inline void tx_pause_data(struct ull_cp_conn *conn)
+static inline void tx_pause_data(struct ll_conn *conn)
 {
 	return ull_cp_priv_tx_pause_data(conn);
 }
 
-void ull_cp_priv_tx_flush(struct ull_cp_conn *conn);
+void ull_cp_priv_tx_flush(struct ll_conn *conn);
 
-static inline void tx_flush(struct ull_cp_conn *conn)
+static inline void tx_flush(struct ll_conn *conn)
 {
 	return ull_cp_priv_tx_flush(conn);
 }
@@ -232,16 +232,16 @@ static inline void tx_flush(struct ull_cp_conn *conn)
 /*
  * LLCP Local Procedure Common
  */
-void ull_cp_priv_lp_comm_tx_ack(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
+void ull_cp_priv_lp_comm_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
 
-static inline void lp_comm_tx_ack(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
+static inline void lp_comm_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
 {
 	return ull_cp_priv_lp_comm_tx_ack(conn, ctx, tx);
 }
 
-void ull_cp_priv_lp_comm_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+void ull_cp_priv_lp_comm_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 
-static inline void lp_comm_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+static inline void lp_comm_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	return ull_cp_priv_lp_comm_rx(conn, ctx, rx);
 }
@@ -253,9 +253,9 @@ static inline void lp_comm_init_proc(struct proc_ctx *ctx)
 	return ull_cp_priv_lp_comm_init_proc(ctx);
 }
 
-void ull_cp_priv_lp_comm_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param);
+void ull_cp_priv_lp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 
-static inline void lp_comm_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param)
+static inline void lp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	return ull_cp_priv_lp_comm_run(conn, ctx, param);
 }
@@ -263,9 +263,9 @@ static inline void lp_comm_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, v
 /*
  * LLCP Remote Procedure Common
  */
-void ull_cp_priv_rp_comm_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+void ull_cp_priv_rp_comm_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 
-static inline void rp_comm_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+static inline void rp_comm_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	return ull_cp_priv_rp_comm_rx(conn, ctx, rx);
 }
@@ -277,9 +277,9 @@ static inline void rp_comm_init_proc(struct proc_ctx *ctx)
 	return ull_cp_priv_rp_comm_init_proc(ctx);
 }
 
-void ull_cp_priv_rp_comm_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param);
+void ull_cp_priv_rp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 
-static inline void rp_comm_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param)
+static inline void rp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	return ull_cp_priv_rp_comm_run(conn, ctx, param);
 }
@@ -288,9 +288,9 @@ static inline void rp_comm_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, v
 /*
  * LLCP Local Procedure Encryption
  */
-void ull_cp_priv_lp_enc_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+void ull_cp_priv_lp_enc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 
-static inline void lp_enc_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+static inline void lp_enc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	return ull_cp_priv_lp_enc_rx(conn, ctx, rx);
 }
@@ -302,9 +302,9 @@ static inline void lp_enc_init_proc(struct proc_ctx *ctx)
 	return ull_cp_priv_lp_enc_init_proc(ctx);
 }
 
-void ull_cp_priv_lp_enc_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param);
+void ull_cp_priv_lp_enc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 
-static inline void lp_enc_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param)
+static inline void lp_enc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	return ull_cp_priv_lp_enc_run(conn, ctx, param);
 }
@@ -313,9 +313,9 @@ static inline void lp_enc_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, vo
 /*
  * LLCP Remote Procedure Encryption
  */
-void ull_cp_priv_rp_enc_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+void ull_cp_priv_rp_enc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 
-static inline void rp_enc_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+static inline void rp_enc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	return ull_cp_priv_rp_enc_rx(conn, ctx, rx);
 }
@@ -327,23 +327,23 @@ static inline void rp_enc_init_proc(struct proc_ctx *ctx)
 	return ull_cp_priv_rp_enc_init_proc(ctx);
 }
 
-void ull_cp_priv_rp_enc_ltk_req_reply(struct ull_cp_conn *conn, struct proc_ctx *ctx);
+void ull_cp_priv_rp_enc_ltk_req_reply(struct ll_conn *conn, struct proc_ctx *ctx);
 
-static inline void rp_enc_ltk_req_reply(struct ull_cp_conn *conn, struct proc_ctx *ctx)
+static inline void rp_enc_ltk_req_reply(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	return ull_cp_priv_rp_enc_ltk_req_reply(conn, ctx);
 }
 
-void ull_cp_priv_rp_enc_ltk_req_neg_reply(struct ull_cp_conn *conn, struct proc_ctx *ctx);
+void ull_cp_priv_rp_enc_ltk_req_neg_reply(struct ll_conn *conn, struct proc_ctx *ctx);
 
-static inline void rp_enc_ltk_req_neg_reply(struct ull_cp_conn *conn, struct proc_ctx *ctx)
+static inline void rp_enc_ltk_req_neg_reply(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	return ull_cp_priv_rp_enc_ltk_req_neg_reply(conn, ctx);
 }
 
-void ull_cp_priv_rp_enc_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param);
+void ull_cp_priv_rp_enc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 
-static inline void rp_enc_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param)
+static inline void rp_enc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	return ull_cp_priv_rp_enc_run(conn, ctx, param);
 }
@@ -352,9 +352,9 @@ static inline void rp_enc_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, vo
 /*
  * LLCP Local Procedure PHY Update
  */
-void ull_cp_priv_lp_pu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+void ull_cp_priv_lp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 
-static inline void lp_pu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+static inline void lp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	return ull_cp_priv_lp_pu_rx(conn, ctx, rx);
 }
@@ -366,9 +366,9 @@ static inline void lp_pu_init_proc(struct proc_ctx *ctx)
 	return ull_cp_priv_lp_pu_init_proc(ctx);
 }
 
-void ull_cp_priv_lp_pu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param);
+void ull_cp_priv_lp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 
-static inline void lp_pu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param)
+static inline void lp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	return ull_cp_priv_lp_pu_run(conn, ctx, param);
 }
@@ -402,9 +402,9 @@ static inline void lp_cu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, voi
 /*
  * LLCP Remote Procedure PHY Update
  */
-void ull_cp_priv_rp_pu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+void ull_cp_priv_rp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 
-static inline void rp_pu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+static inline void rp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	return ull_cp_priv_rp_pu_rx(conn, ctx, rx);
 }
@@ -416,9 +416,9 @@ static inline void rp_pu_init_proc(struct proc_ctx *ctx)
 	return ull_cp_priv_rp_pu_init_proc(ctx);
 }
 
-void ull_cp_priv_rp_pu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param);
+void ull_cp_priv_rp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 
-static inline void rp_pu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param)
+static inline void rp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	return ull_cp_priv_rp_pu_run(conn, ctx, param);
 }
@@ -488,59 +488,59 @@ static inline void pdu_decode_terminate_ind(struct proc_ctx *ctx, struct pdu_dat
 /*
  * LLCP Local Request
  */
-struct proc_ctx *lr_peek(struct ull_cp_conn *conn);
-void ull_cp_priv_lr_tx_ack(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
+struct proc_ctx *lr_peek(struct ll_conn *conn);
+void ull_cp_priv_lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
 
-static inline void lr_tx_ack(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
+static inline void lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
 {
 	return ull_cp_priv_lr_tx_ack(conn, ctx, tx);
 }
 
-void ull_cp_priv_lr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+void ull_cp_priv_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 
-static inline void lr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+static inline void lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	return ull_cp_priv_lr_rx(conn, ctx, rx);
 }
 
-void ull_cp_priv_lr_enqueue(struct ull_cp_conn *conn, struct proc_ctx *ctx);
+void ull_cp_priv_lr_enqueue(struct ll_conn *conn, struct proc_ctx *ctx);
 
-static inline void lr_enqueue(struct ull_cp_conn *conn, struct proc_ctx *ctx)
+static inline void lr_enqueue(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	return ull_cp_priv_lr_enqueue(conn, ctx);
 }
 
-void ull_cp_priv_lr_init(struct ull_cp_conn *conn);
+void ull_cp_priv_lr_init(struct ll_conn *conn);
 
-static inline void lr_init(struct ull_cp_conn *conn)
+static inline void lr_init(struct ll_conn *conn)
 {
 	return ull_cp_priv_lr_init(conn);
 }
 
-void ull_cp_priv_lr_run(struct ull_cp_conn *conn);
+void ull_cp_priv_lr_run(struct ll_conn *conn);
 
-static inline void lr_run(struct ull_cp_conn *conn)
+static inline void lr_run(struct ll_conn *conn)
 {
 	return ull_cp_priv_lr_run(conn);
 }
 
-void ull_cp_priv_lr_complete(struct ull_cp_conn *conn);
+void ull_cp_priv_lr_complete(struct ll_conn *conn);
 
-static inline void lr_complete(struct ull_cp_conn *conn)
+static inline void lr_complete(struct ll_conn *conn)
 {
 	return ull_cp_priv_lr_complete(conn);
 }
 
-void ull_cp_priv_lr_connect(struct ull_cp_conn *conn);
+void ull_cp_priv_lr_connect(struct ll_conn *conn);
 
-static inline void lr_connect(struct ull_cp_conn *conn)
+static inline void lr_connect(struct ll_conn *conn)
 {
 	return ull_cp_priv_lr_connect(conn);
 }
 
-void ull_cp_priv_lr_disconnect(struct ull_cp_conn *conn);
+void ull_cp_priv_lr_disconnect(struct ll_conn *conn);
 
-static inline void lr_disconnect(struct ull_cp_conn *conn)
+static inline void lr_disconnect(struct ll_conn *conn)
 {
 	return ull_cp_priv_lr_disconnect(conn);
 }
@@ -549,80 +549,80 @@ static inline void lr_disconnect(struct ull_cp_conn *conn)
 /*
  * LLCP Remote Request
  */
-void ull_cp_priv_rr_set_incompat(struct ull_cp_conn *conn, enum proc_incompat incompat);
+void ull_cp_priv_rr_set_incompat(struct ll_conn *conn, enum proc_incompat incompat);
 
-static inline void rr_set_incompat(struct ull_cp_conn *conn, enum proc_incompat incompat)
+static inline void rr_set_incompat(struct ll_conn *conn, enum proc_incompat incompat)
 {
 	return ull_cp_priv_rr_set_incompat(conn, incompat);
 }
 
-bool ull_cp_priv_rr_get_collision(struct ull_cp_conn *conn);
+bool ull_cp_priv_rr_get_collision(struct ll_conn *conn);
 
-static inline bool rr_get_collision(struct ull_cp_conn *conn)
+static inline bool rr_get_collision(struct ll_conn *conn)
 {
 	return ull_cp_priv_rr_get_collision(conn);
 }
 
-struct proc_ctx *rr_peek(struct ull_cp_conn *conn);
-void ull_cp_priv_rr_tx_ack(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
+struct proc_ctx *rr_peek(struct ll_conn *conn);
+void ull_cp_priv_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
 
-static inline void rr_tx_ack(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
+static inline void rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
 {
 	return ull_cp_priv_rr_tx_ack(conn, ctx, tx);
 }
 
-void ull_cp_priv_rr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+void ull_cp_priv_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 
-static inline void rr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+static inline void rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	return ull_cp_priv_rr_rx(conn, ctx, rx);
 }
 
-void ull_cp_priv_rr_init(struct ull_cp_conn *conn);
+void ull_cp_priv_rr_init(struct ll_conn *conn);
 
-static inline void rr_init(struct ull_cp_conn *conn)
+static inline void rr_init(struct ll_conn *conn)
 {
 	return ull_cp_priv_rr_init(conn);
 }
 
-void ull_cp_priv_rr_prepare(struct ull_cp_conn *conn, struct node_rx_pdu *rx);
+void ull_cp_priv_rr_prepare(struct ll_conn *conn, struct node_rx_pdu *rx);
 
-static inline void rr_prepare(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
+static inline void rr_prepare(struct ll_conn *conn, struct node_rx_pdu *rx)
 {
 	return ull_cp_priv_rr_prepare(conn, rx);
 }
 
-void ull_cp_priv_rr_run(struct ull_cp_conn *conn);
+void ull_cp_priv_rr_run(struct ll_conn *conn);
 
-static inline void rr_run(struct ull_cp_conn *conn)
+static inline void rr_run(struct ll_conn *conn)
 {
 	return ull_cp_priv_rr_run(conn);
 }
 
-void ull_cp_priv_rr_complete(struct ull_cp_conn *conn);
+void ull_cp_priv_rr_complete(struct ll_conn *conn);
 
-static inline void rr_complete(struct ull_cp_conn *conn)
+static inline void rr_complete(struct ll_conn *conn)
 {
 	return ull_cp_priv_rr_complete(conn);
 }
 
-void ull_cp_priv_rr_connect(struct ull_cp_conn *conn);
+void ull_cp_priv_rr_connect(struct ll_conn *conn);
 
-static inline void rr_connect(struct ull_cp_conn *conn)
+static inline void rr_connect(struct ll_conn *conn)
 {
 	return ull_cp_priv_rr_connect(conn);
 }
 
-void ull_cp_priv_rr_disconnect(struct ull_cp_conn *conn);
+void ull_cp_priv_rr_disconnect(struct ll_conn *conn);
 
-static inline void rr_disconnect(struct ull_cp_conn *conn)
+static inline void rr_disconnect(struct ll_conn *conn)
 {
 	return ull_cp_priv_rr_disconnect(conn);
 }
 
-void ull_cp_priv_rr_new(struct ull_cp_conn *conn, struct node_rx_pdu *rx);
+void ull_cp_priv_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx);
 
-static inline void rr_new(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
+static inline void rr_new(struct ll_conn *conn, struct node_rx_pdu *rx)
 {
 	return ull_cp_priv_rr_new(conn, rx);
 }
@@ -669,55 +669,55 @@ static inline void ntf_encode_unknown_rsp(struct proc_ctx *ctx,
 /*
  * Feature Exchange Procedure Helper
  */
-void ull_cp_priv_pdu_encode_feature_req(struct ull_cp_conn *conn,
+void ull_cp_priv_pdu_encode_feature_req(struct ll_conn *conn,
 					struct pdu_data *pdu);
 
-static inline void pdu_encode_feature_req(struct ull_cp_conn *conn,
+static inline void pdu_encode_feature_req(struct ll_conn *conn,
 					   struct pdu_data *pdu)
 {
 	return ull_cp_priv_pdu_encode_feature_req(conn, pdu);
 }
 
-void ull_cp_priv_pdu_encode_feature_rsp(struct ull_cp_conn *conn,
+void ull_cp_priv_pdu_encode_feature_rsp(struct ll_conn *conn,
 					struct pdu_data *pdu);
 
-static inline void pdu_encode_feature_rsp(struct ull_cp_conn *conn,
+static inline void pdu_encode_feature_rsp(struct ll_conn *conn,
 					struct pdu_data *pdu)
 {
 	return ull_cp_priv_pdu_encode_feature_rsp(conn, pdu);
 }
 
-void ull_cp_priv_ntf_encode_feature_rsp(struct ull_cp_conn *conn,
+void ull_cp_priv_ntf_encode_feature_rsp(struct ll_conn *conn,
 					struct pdu_data *pdu);
 
-static inline void ntf_encode_feature_rsp(struct ull_cp_conn *conn,
+static inline void ntf_encode_feature_rsp(struct ll_conn *conn,
 				    struct pdu_data *pdu)
 {
 	return ull_cp_priv_ntf_encode_feature_rsp(conn, pdu);
 }
 
-void ull_cp_priv_ntf_encode_feature_req(struct ull_cp_conn *conn,
+void ull_cp_priv_ntf_encode_feature_req(struct ll_conn *conn,
 					      struct pdu_data *pdu);
 
-static inline void ntf_encode_feature_req(struct ull_cp_conn *conn,
+static inline void ntf_encode_feature_req(struct ll_conn *conn,
 					  struct pdu_data *pdu)
 {
 	return ull_cp_priv_ntf_encode_feature_req(conn, pdu);
 }
 
-void ull_cp_priv_pdu_decode_feature_req(struct ull_cp_conn *conn,
+void ull_cp_priv_pdu_decode_feature_req(struct ll_conn *conn,
 					struct pdu_data *pdu);
 
-static inline void pdu_decode_feature_req(struct ull_cp_conn *conn,
+static inline void pdu_decode_feature_req(struct ll_conn *conn,
 					  struct pdu_data *pdu)
 {
 	return ull_cp_priv_pdu_decode_feature_req(conn, pdu);
 }
 
-void ull_cp_priv_pdu_decode_feature_rsp(struct ull_cp_conn *conn,
+void ull_cp_priv_pdu_decode_feature_rsp(struct ll_conn *conn,
 					struct pdu_data *pdu);
 
-static inline void pdu_decode_feature_rsp(struct ull_cp_conn *conn,
+static inline void pdu_decode_feature_rsp(struct ll_conn *conn,
 					  struct pdu_data *pdu)
 {
 	return ull_cp_priv_pdu_decode_feature_rsp(conn, pdu);
@@ -733,9 +733,9 @@ static inline void pdu_encode_min_used_chans_ind(struct proc_ctx *ctx, struct pd
 	return ull_cp_priv_pdu_encode_min_used_chans_ind(ctx, pdu);
 }
 
-void ull_cp_priv_pdu_decode_min_used_chans_ind(struct ull_cp_conn *conn, struct pdu_data *pdu);
+void ull_cp_priv_pdu_decode_min_used_chans_ind(struct ll_conn *conn, struct pdu_data *pdu);
 
-static inline void pdu_decode_min_used_chans_ind(struct ull_cp_conn *conn, struct pdu_data *pdu)
+static inline void pdu_decode_min_used_chans_ind(struct ll_conn *conn, struct pdu_data *pdu)
 {
 	return ull_cp_priv_pdu_decode_min_used_chans_ind(conn, pdu);
 }
@@ -750,16 +750,16 @@ static inline void pdu_encode_version_ind(struct pdu_data *pdu)
 	return ull_cp_priv_pdu_encode_version_ind(pdu);
 }
 
-void ull_cp_priv_ntf_encode_version_ind(struct ull_cp_conn *conn, struct pdu_data *pdu);
+void ull_cp_priv_ntf_encode_version_ind(struct ll_conn *conn, struct pdu_data *pdu);
 
-static inline void ntf_encode_version_ind(struct ull_cp_conn *conn, struct pdu_data *pdu)
+static inline void ntf_encode_version_ind(struct ll_conn *conn, struct pdu_data *pdu)
 {
 	return ull_cp_priv_ntf_encode_version_ind(conn, pdu);
 }
 
-void ull_cp_priv_pdu_decode_version_ind(struct ull_cp_conn *conn, struct pdu_data *pdu);
+void ull_cp_priv_pdu_decode_version_ind(struct ll_conn *conn, struct pdu_data *pdu);
 
-static inline void pdu_decode_version_ind(struct ull_cp_conn *conn, struct pdu_data *pdu)
+static inline void pdu_decode_version_ind(struct ll_conn *conn, struct pdu_data *pdu)
 {
 	return ull_cp_priv_pdu_decode_version_ind(conn, pdu);
 }
@@ -875,8 +875,8 @@ static inline void pdu_decode_conn_update_ind(struct proc_ctx *ctx, struct pdu_d
 
 
 #ifdef ZTEST_UNITTEST
-bool lr_is_disconnected(struct ull_cp_conn *conn);
-bool lr_is_idle(struct ull_cp_conn *conn);
-bool rr_is_disconnected(struct ull_cp_conn *conn);
-bool rr_is_idle(struct ull_cp_conn *conn);
+bool lr_is_disconnected(struct ll_conn *conn);
+bool lr_is_idle(struct ll_conn *conn);
+bool rr_is_disconnected(struct ll_conn *conn);
+bool rr_is_idle(struct ll_conn *conn);
 #endif

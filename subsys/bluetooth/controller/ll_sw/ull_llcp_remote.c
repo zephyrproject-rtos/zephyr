@@ -23,8 +23,9 @@
 #include "lll.h"
 #include "lll_conn.h"
 
-#include "ull_conn_types.h"
 #include "ull_tx_queue.h"
+
+#include "ull_conn_types.h"
 #include "ull_llcp.h"
 #include "ull_llcp_internal.h"
 
@@ -98,37 +99,37 @@ static bool proc_with_instant(struct proc_ctx *ctx)
  * LLCP Remote Request FSM
  */
 
-static void rr_set_state(struct ull_cp_conn *conn, enum rr_state state)
+static void rr_set_state(struct ll_conn *conn, enum rr_state state)
 {
 	conn->llcp.remote.state = state;
 }
 
-void ull_cp_priv_rr_set_incompat(struct ull_cp_conn *conn, enum proc_incompat incompat)
+void ull_cp_priv_rr_set_incompat(struct ll_conn *conn, enum proc_incompat incompat)
 {
 	conn->llcp.remote.incompat = incompat;
 }
 
-static enum proc_incompat rr_get_incompat(struct ull_cp_conn *conn)
+static enum proc_incompat rr_get_incompat(struct ll_conn *conn)
 {
 	return conn->llcp.remote.incompat;
 }
 
-static void rr_set_collision(struct ull_cp_conn *conn, bool collision)
+static void rr_set_collision(struct ll_conn *conn, bool collision)
 {
 	conn->llcp.remote.collision = collision;
 }
 
-bool ull_cp_priv_rr_get_collision(struct ull_cp_conn *conn)
+bool ull_cp_priv_rr_get_collision(struct ll_conn *conn)
 {
 	return conn->llcp.remote.collision;
 }
 
-static void rr_enqueue(struct ull_cp_conn *conn, struct proc_ctx *ctx)
+static void rr_enqueue(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	sys_slist_append(&conn->llcp.remote.pend_proc_list, &ctx->node);
 }
 
-static struct proc_ctx *rr_dequeue(struct ull_cp_conn *conn)
+static struct proc_ctx *rr_dequeue(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
@@ -136,7 +137,7 @@ static struct proc_ctx *rr_dequeue(struct ull_cp_conn *conn)
 	return ctx;
 }
 
-struct proc_ctx *rr_peek(struct ull_cp_conn *conn)
+struct proc_ctx *rr_peek(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
@@ -144,7 +145,7 @@ struct proc_ctx *rr_peek(struct ull_cp_conn *conn)
 	return ctx;
 }
 
-void ull_cp_priv_rr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+void ull_cp_priv_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	switch (ctx->proc) {
 	case PROC_LE_PING:
@@ -177,7 +178,7 @@ void ull_cp_priv_rr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct no
 	}
 }
 
-void ull_cp_priv_rr_tx_ack(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
+void ull_cp_priv_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
 {
 	switch (ctx->proc) {
 	default:
@@ -186,7 +187,7 @@ void ull_cp_priv_rr_tx_ack(struct ull_cp_conn *conn, struct proc_ctx *ctx, struc
 	}
 }
 
-static void rr_act_run(struct ull_cp_conn *conn)
+static void rr_act_run(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
@@ -223,7 +224,7 @@ static void rr_act_run(struct ull_cp_conn *conn)
 	}
 }
 
-static void rr_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
+static void rr_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 {
 	struct node_tx *tx;
 	struct pdu_data *pdu;
@@ -250,7 +251,7 @@ static void rr_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t opcode
 	tx_enqueue(conn, tx);
 }
 
-static void rr_act_reject(struct ull_cp_conn *conn)
+static void rr_act_reject(struct ll_conn *conn)
 {
 	if (!tx_alloc_is_available()) {
 		rr_set_state(conn, RR_STATE_REJECT);
@@ -266,7 +267,7 @@ static void rr_act_reject(struct ull_cp_conn *conn)
 	}
 }
 
-static void rr_act_complete(struct ull_cp_conn *conn)
+static void rr_act_complete(struct ll_conn *conn)
 {
 	rr_set_collision(conn, 0U);
 
@@ -274,17 +275,17 @@ static void rr_act_complete(struct ull_cp_conn *conn)
 	(void) rr_dequeue(conn);
 }
 
-static void rr_act_connect(struct ull_cp_conn *conn)
+static void rr_act_connect(struct ll_conn *conn)
 {
 	/* TODO */
 }
 
-static void rr_act_disconnect(struct ull_cp_conn *conn)
+static void rr_act_disconnect(struct ll_conn *conn)
 {
 	rr_dequeue(conn);
 }
 
-static void rr_st_disconnect(struct ull_cp_conn *conn, uint8_t evt, void *param)
+static void rr_st_disconnect(struct ll_conn *conn, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case RR_EVT_CONNECT:
@@ -297,7 +298,7 @@ static void rr_st_disconnect(struct ull_cp_conn *conn, uint8_t evt, void *param)
 	}
 }
 
-static void rr_st_idle(struct ull_cp_conn *conn, uint8_t evt, void *param)
+static void rr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 {
 	struct proc_ctx *ctx;
 
@@ -364,13 +365,13 @@ static void rr_st_idle(struct ull_cp_conn *conn, uint8_t evt, void *param)
 		break;
 	}
 }
-static void rr_st_reject(struct ull_cp_conn *conn, uint8_t evt, void *param)
+static void rr_st_reject(struct ll_conn *conn, uint8_t evt, void *param)
 {
 	/* TODO */
 	LL_ASSERT(0);
 }
 
-static void rr_st_active(struct ull_cp_conn *conn, uint8_t evt, void *param)
+static void rr_st_active(struct ll_conn *conn, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case RR_EVT_RUN:
@@ -392,7 +393,7 @@ static void rr_st_active(struct ull_cp_conn *conn, uint8_t evt, void *param)
 	}
 }
 
-static void rr_execute_fsm(struct ull_cp_conn *conn, uint8_t evt, void *param)
+static void rr_execute_fsm(struct ll_conn *conn, uint8_t evt, void *param)
 {
 	switch (conn->llcp.remote.state) {
 	case RR_STATE_DISCONNECT:
@@ -411,43 +412,39 @@ static void rr_execute_fsm(struct ull_cp_conn *conn, uint8_t evt, void *param)
 		/* Unknown state */
 		LL_ASSERT(0);
 	}
-	/*
-	 * EGON TODO: is this the right place to release the ctx if we
-	 * received the RR_EVT_COMPLETE?
-	 */
 }
 
-void ull_cp_priv_rr_init(struct ull_cp_conn *conn)
+void ull_cp_priv_rr_init(struct ll_conn *conn)
 {
 	rr_set_state(conn, RR_STATE_DISCONNECT);
 }
 
-void ull_cp_priv_rr_prepare(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
+void ull_cp_priv_rr_prepare(struct ll_conn *conn, struct node_rx_pdu *rx)
 {
 	rr_execute_fsm(conn, RR_EVT_PREPARE, rx);
 }
 
-void ull_cp_priv_rr_run(struct ull_cp_conn *conn)
+void ull_cp_priv_rr_run(struct ll_conn *conn)
 {
 	rr_execute_fsm(conn, RR_EVT_RUN, NULL);
 }
 
-void ull_cp_priv_rr_complete(struct ull_cp_conn *conn)
+void ull_cp_priv_rr_complete(struct ll_conn *conn)
 {
 	rr_execute_fsm(conn, RR_EVT_COMPLETE, NULL);
 }
 
-void ull_cp_priv_rr_connect(struct ull_cp_conn *conn)
+void ull_cp_priv_rr_connect(struct ll_conn *conn)
 {
 	rr_execute_fsm(conn, RR_EVT_CONNECT, NULL);
 }
 
-void ull_cp_priv_rr_disconnect(struct ull_cp_conn *conn)
+void ull_cp_priv_rr_disconnect(struct ll_conn *conn)
 {
 	rr_execute_fsm(conn, RR_EVT_DISCONNECT, NULL);
 }
 
-void ull_cp_priv_rr_new(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
+void ull_cp_priv_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx)
 {
 	struct proc_ctx *ctx;
 	struct pdu_data *pdu;
@@ -507,26 +504,26 @@ void ull_cp_priv_rr_new(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
 
 #ifdef ZTEST_UNITTEST
 
-bool rr_is_disconnected(struct ull_cp_conn *conn)
+bool rr_is_disconnected(struct ll_conn *conn)
 {
 	return conn->llcp.remote.state == RR_STATE_DISCONNECT;
 }
 
-bool rr_is_idle(struct ull_cp_conn *conn)
+bool rr_is_idle(struct ll_conn *conn)
 {
 	return conn->llcp.remote.state == RR_STATE_IDLE;
 }
 
 void test_int_remote_pending_requests(void)
 {
-	struct ull_cp_conn conn;
+	struct ll_conn conn;
 	struct proc_ctx *peek_ctx;
 	struct proc_ctx *dequeue_ctx;
 	struct proc_ctx ctx;
 
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
-	ull_cp_conn_init(&conn);
+	ll_conn_init(&conn);
 
 	peek_ctx = rr_peek(&conn);
 	zassert_is_null(peek_ctx, NULL);
