@@ -24,7 +24,7 @@
 GTEXT(_isr_wrapper)
 GTEXT(_isr_demux)
 
-#if defined(CONFIG_SYS_POWER_MANAGEMENT)
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
 GTEXT(z_sys_power_save_idle_exit)
 #endif
 
@@ -201,7 +201,7 @@ From RIRQ:
  */
 
 SECTION_FUNC(TEXT, _isr_wrapper)
-#if defined(CONFIG_ARC_FIRQ)
+#ifdef CONFIG_ARC_FIRQ
 #if CONFIG_RGF_NUM_BANKS == 1
 /* free r0 here, use r0 to check whether irq is firq.
  * for rirq,  as sp will not change and r0 already saved, this action
@@ -246,7 +246,7 @@ rirq_path:
 
 /* r0, r1, and r3 will be used in exit_tickless_idle macro */
 .macro exit_tickless_idle
-#if defined(CONFIG_SYS_POWER_MANAGEMENT)
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
 	clri r0 /* do not interrupt exiting tickless idle operations */
 	mov_s r1, _kernel
 	ld_s r3, [r1, _kernel_offset_to_idle] /* requested idle duration */
@@ -276,7 +276,7 @@ SECTION_FUNC(TEXT, _isr_demux)
 	push r59
 #endif
 
-#if defined(CONFIG_TRACING_ISR)
+#ifdef CONFIG_TRACING_ISR
 	bl sys_trace_isr_enter
 #endif
 	/* cannot be done before this point because we must be able to run C */
@@ -298,7 +298,7 @@ irq_hint_handled:
 	jl_s.d [r1]
 	ld_s r0, [r0] /* delay slot: ISR parameter into r0  */
 
-#if defined(CONFIG_TRACING_ISR)
+#ifdef CONFIG_TRACING_ISR
 	bl sys_trace_isr_exit
 #endif
 
