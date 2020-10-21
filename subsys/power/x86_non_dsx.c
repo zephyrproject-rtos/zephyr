@@ -231,6 +231,19 @@ static void power_states_handler(void)
 	}
 }
 
+static void power_pass_thru_handler(const char *in_signal,
+			const char *out_signal, uint32_t delay_ms)
+{
+	int in_sig_val = gpio_get_level(in_signal);
+
+	if (in_sig_val != gpio_get_level(out_signal)) {
+		if (in_sig_val)
+			k_msleep(delay_ms);
+
+		gpio_set_level(out_signal, in_sig_val);
+	}
+}
+
 void pwrseq_thread(void *p1, void *p2, void *p3)
 {
 	int32_t t_wait_ms = *(int32_t *) p1;
@@ -239,6 +252,37 @@ void pwrseq_thread(void *p1, void *p2, void *p3)
 
 	while (true) {
 		LOG_INF("In power state %d", power_state);
+
+#if POWER_SEQ_GPIO_PRESENT(EC_PCH_DSW_PWROK)
+		/* Handle DSW_PWROK passthrough */
+		power_pass_thru_handler(
+#if POWER_SEQ_GPIO_PRESENT(VR_EC_DSW_PWROK)
+			GPIO_NET_NAME(VR_EC_DSW_PWROK),
+#else
+			GPIO_NET_NAME(EC_VR_EN_PP3300_A),
+#endif
+			GPIO_NET_NAME(EC_PCH_DSW_PWROK),
+			POWER_EC_PCH_DSW_PWROK_DELAY_MS);
+#endif
+
+		/* Handle RSMRST passthrough */
+		power_pass_thru_handler(GPIO_NET_NAME(VR_EC_EC_RSMRST_ODL),
+				GPIO_NET_NAME(EC_PCH_RSMRST_L),
+				POWER_EC_PCH_RSMRST_DELAY_MS);
+
+#if POWER_SEQ_GPIO_PRESENT(EC_PCH_SYS_PWROK)
+		/* Handle SYS_PWROK passthrough */
+		power_pass_thru_handler(GPIO_NET_NAME(VR_EC_ALL_SYS_PWRGD),
+			GPIO_NET_NAME(EC_PCH_SYS_PWROK),
+			POWER_EC_PCH_SYS_PWROK_DELAY_MS);
+#endif
+
+#if POWER_SEQ_GPIO_PRESENT(EC_VR_PPVAR_VCCIN)
+		/* Handle VCCIN passthrough */
+		power_pass_thru_handler(GPIO_NET_NAME(VR_EC_ALL_SYS_PWRGD),
+			GPIO_NET_NAME(EC_VR_PPVAR_VCCIN),
+			POWER_EC_VR_EN_VCCIN_DELAY_MS);
+#endif
 
 		power_states_handler();
 

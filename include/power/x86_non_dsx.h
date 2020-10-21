@@ -99,6 +99,12 @@ enum power_states_ndsx {
 	SYS_POWER_STATE_S0S3,
 };
 
+/* Delay in ms for pass through signals */
+#define POWER_EC_PCH_DSW_PWROK_DELAY_MS	100
+#define POWER_EC_PCH_RSMRST_DELAY_MS	10
+#define POWER_EC_PCH_SYS_PWROK_DELAY_MS	50
+#define POWER_EC_VR_EN_VCCIN_DELAY_MS	5
+
 /*
  * @brief Create power sequencing thread
  *
