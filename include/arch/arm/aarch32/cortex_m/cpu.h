@@ -15,6 +15,7 @@
 #define _SCS_ICSR_UNPENDSV (1 << 27)
 #define _SCS_ICSR_RETTOBASE (1 << 11)
 
+#define _SCS_MPU_CTRL (_SCS_BASE_ADDR + 0xd94)
 #endif
 
 #endif

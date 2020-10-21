@@ -324,8 +324,13 @@ static int arm_mpu_init(const struct device *arg)
 	arm_core_mpu_disable();
 
 #if defined(CONFIG_NOCACHE_MEMORY)
+	/* Clean and invalidate data cache if
+	 * that was not already done at boot
+	 */
+#if !defined(CONFIG_INIT_ARCH_HW_AT_BOOT)
 	SCB_CleanInvalidateDCache();
 #endif
+#endif /* CONFIG_NOCACHE_MEMORY */
 
 	/* Architecture-specific configuration */
 	mpu_init();

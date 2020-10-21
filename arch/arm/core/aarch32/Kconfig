@@ -19,6 +19,7 @@ config CPU_CORTEX_M
 	select SWAP_NONATOMIC
 	select ARCH_HAS_EXTRA_EXCEPTION_INFO
 	select ARCH_HAS_TIMING_FUNCTIONS if CPU_CORTEX_M_HAS_DWT
+	select ARCH_SUPPORTS_ARCH_HW_INIT
 	imply XIP
 	help
 	  This option signifies the use of a CPU of the Cortex-M family.
