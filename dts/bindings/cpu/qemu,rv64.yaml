@@ -1,0 +1,9 @@
+# Copyright (c) 2020 Katsuhiro Suzuki
+# SPDX-License-Identifier: Apache-2.0
+
+description: >
+    This is a representation of QEMU rv64 CPU.
+
+compatible: "qemu,rv64"
+
+include: cpu.yaml
