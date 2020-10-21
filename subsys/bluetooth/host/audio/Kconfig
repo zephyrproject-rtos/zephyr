@@ -188,5 +188,6 @@ source "subsys/bluetooth/host/audio/Kconfig.csis"
 source "subsys/bluetooth/host/audio/Kconfig.bass"
 source "subsys/bluetooth/host/audio/Kconfig.tbs"
 source "subsys/bluetooth/host/audio/Kconfig.ots"
+source "subsys/bluetooth/host/audio/Kconfig.mcs"
 
 endif # BT_AUDIO
