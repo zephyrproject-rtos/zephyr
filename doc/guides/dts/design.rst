@@ -24,6 +24,8 @@ Examples
   used in the current build. For example, the :ref:`blinky-sample` uses this to
   determine the LED to blink.
 
+- Boot-time pin muxing and pin control can be accomplished via devicetree.
+
 Example remaining work
 ======================
 
@@ -41,9 +43,6 @@ Example remaining work
 
 - Runtime determination of ``struct device`` relationships should be done using
   information obtained from devicetree, e.g. for device power management.
-
-- Pin muxing and pin control, at least at boot time, should be accomplished via
-  devicetree.
 
 Source compatibility with other operating systems
 *************************************************
@@ -82,10 +81,3 @@ Example remaining work
   set of bindings supported by Linux.
 
 - Devicetree source sharing between Zephyr and Linux is not done.
-
-To be determined
-****************
-
-The scope and amount of code generation for device instantiation has been the
-subject of extended discussion and prototyping without reaching a firm
-conclusion.
