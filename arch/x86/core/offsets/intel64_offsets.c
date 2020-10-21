@@ -37,6 +37,7 @@ GEN_OFFSET_SYM(_thread_arch_t, ptables);
 
 GEN_OFFSET_SYM(x86_tss64_t, ist1);
 GEN_OFFSET_SYM(x86_tss64_t, ist2);
+GEN_OFFSET_SYM(x86_tss64_t, ist6);
 GEN_OFFSET_SYM(x86_tss64_t, ist7);
 GEN_OFFSET_SYM(x86_tss64_t, cpu);
 #ifdef CONFIG_USERSPACE
