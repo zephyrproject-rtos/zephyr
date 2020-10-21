@@ -5,6 +5,7 @@
  */
 #include <sys/sys_heap.h>
 #include <kernel.h>
+#include <string.h>
 #include "heap.h"
 
 static void *chunk_mem(struct z_heap *h, chunkid_t c)
@@ -292,6 +293,54 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 
 	set_chunk_used(h, c, true);
 	return mem;
+}
+
+void *sys_heap_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
+{
+	struct z_heap *h = heap->heap;
+	chunkid_t c = mem_to_chunkid(h, ptr);
+	chunkid_t rc = right_chunk(h, c);
+	size_t chunks_need = bytes_to_chunksz(h, bytes);
+
+	if (chunk_size(h, c) > chunks_need) {
+		/* Shrink in place, split off and free unused suffix */
+		split_chunks(h, c, c + chunks_need);
+		set_chunk_used(h, c, true);
+		free_chunk(h, c + chunks_need);
+		return ptr;
+	} else if (!chunk_used(h, rc) &&
+		   (chunk_size(h, c) + chunk_size(h, rc) >= chunks_need)) {
+		/* Expand: split the right chunk and append */
+		chunkid_t split_size = chunks_need - chunk_size(h, c);
+
+		free_list_remove(h, rc);
+		if (split_size < chunk_size(h, rc)) {
+			split_chunks(h, rc, rc + split_size);
+			free_list_add(h, rc + split_size);
+		}
+
+		chunkid_t newsz = chunk_size(h, c) + split_size;
+
+		set_chunk_size(h, c, newsz);
+		set_chunk_used(h, c, true);
+		set_left_chunk_size(h, c + newsz, newsz);
+
+		CHECK(chunk_used(h, c));
+
+		return chunk_mem(h, c);
+	} else {
+		/* Reallocate and copy */
+		void *ptr2 = sys_heap_alloc(heap, bytes);
+
+		if (ptr2 == NULL) {
+			return NULL;
+		}
+
+		memcpy(ptr2, ptr,
+		       chunk_size(h, c) * CHUNK_UNIT - chunk_header_bytes(h));
+		sys_heap_free(heap, ptr);
+		return ptr2;
+	}
 }
 
 void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
