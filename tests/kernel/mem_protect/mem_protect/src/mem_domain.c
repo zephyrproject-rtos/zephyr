@@ -12,27 +12,27 @@
 	("Fault didn't occur when we accessed a unassigned memory domain.")
 
 /****************************************************************************/
-K_THREAD_STACK_DEFINE(mem_domain_1_stack, MEM_DOMAIN_STACK_SIZE);
-K_THREAD_STACK_DEFINE(mem_domain_2_stack, MEM_DOMAIN_STACK_SIZE);
-K_THREAD_STACK_DEFINE(mem_domain_6_stack, MEM_DOMAIN_STACK_SIZE);
-struct k_thread mem_domain_1_tid, mem_domain_2_tid, mem_domain_6_tid;
-struct k_mem_domain domain0, domain1, domain4, name_domain, overlap_domain;
+static K_THREAD_STACK_DEFINE(mem_domain_1_stack, MEM_DOMAIN_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(mem_domain_2_stack, MEM_DOMAIN_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(mem_domain_6_stack, MEM_DOMAIN_STACK_SIZE);
+static struct k_thread mem_domain_1_tid, mem_domain_2_tid, mem_domain_6_tid;
+static struct k_mem_domain domain0, domain1, domain4;
 
-struct k_thread user_thread0, parent_thr_md, child_thr_md;
-k_tid_t usr_tid0, usr_tid1, child_tid;
-K_THREAD_STACK_DEFINE(user_thread0_stack, STACK_SIZE_MD);
-K_THREAD_STACK_DEFINE(child_thr_stack_md, STACK_SIZE_MD);
-K_THREAD_STACK_DEFINE(parent_thr_stack_md, STACK_SIZE_MD);
+static struct k_thread user_thread0, parent_thr_md, child_thr_md;
+static k_tid_t usr_tid0;
+static K_THREAD_STACK_DEFINE(user_thread0_stack, STACK_SIZE_MD);
+static K_THREAD_STACK_DEFINE(child_thr_stack_md, STACK_SIZE_MD);
+static K_THREAD_STACK_DEFINE(parent_thr_stack_md, STACK_SIZE_MD);
 
-struct k_sem sync_sem_md;
+static struct k_sem sync_sem_md;
 
-uint8_t __aligned(MEM_REGION_ALLOC) buf0[MEM_REGION_ALLOC];
-K_MEM_PARTITION_DEFINE(part0, buf0, sizeof(buf0),
-		K_MEM_PARTITION_P_RW_U_RW);
+static uint8_t __aligned(MEM_REGION_ALLOC) buf0[MEM_REGION_ALLOC];
+static K_MEM_PARTITION_DEFINE(part0, buf0, sizeof(buf0),
+			      K_MEM_PARTITION_P_RW_U_RW);
 
 K_APPMEM_PARTITION_DEFINE(part1);
-K_APP_BMEM(part1) uint8_t __aligned(MEM_REGION_ALLOC) buf1[MEM_REGION_ALLOC];
-struct k_mem_partition *app1_parts[] = {
+static K_APP_BMEM(part1) uint8_t __aligned(MEM_REGION_ALLOC) buf1[MEM_REGION_ALLOC];
+static struct k_mem_partition *app1_parts[] = {
 	&part1
 };
 K_APPMEM_PARTITION_DEFINE(part_arch);
@@ -40,59 +40,59 @@ K_APP_BMEM(part_arch) uint8_t __aligned(MEM_REGION_ALLOC) \
 buf_arc[MEM_REGION_ALLOC];
 
 K_APPMEM_PARTITION_DEFINE(part2);
-K_APP_DMEM(part2) int part2_var = 1356;
-K_APP_BMEM(part2) int part2_zeroed_var = 20420;
-K_APP_BMEM(part2) int part2_bss_var;
+static K_APP_DMEM(part2) int part2_var = 1356;
+static K_APP_BMEM(part2) int part2_zeroed_var = 20420;
+static K_APP_BMEM(part2) int part2_bss_var;
 
 SYS_MEM_POOL_DEFINE(data_pool, NULL, BLK_SIZE_MIN_MD, BLK_SIZE_MAX_MD,
 		BLK_NUM_MAX_MD, BLK_ALIGN_MD, K_APP_DMEM_SECTION(part2));
 
 /****************************************************************************/
 /* The mem domains needed.*/
-uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_buf[MEM_REGION_ALLOC];
-uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_buf1[MEM_REGION_ALLOC];
+static uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_buf[MEM_REGION_ALLOC];
+static uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_buf1[MEM_REGION_ALLOC];
 
 /* partitions added later in the test cases.*/
-uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part1[MEM_REGION_ALLOC];
-uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part2[MEM_REGION_ALLOC];
-uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part3[MEM_REGION_ALLOC];
-uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part4[MEM_REGION_ALLOC];
-uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part5[MEM_REGION_ALLOC];
-uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part6[MEM_REGION_ALLOC];
-uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part7[MEM_REGION_ALLOC];
-uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part8[MEM_REGION_ALLOC];
+static uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part1[MEM_REGION_ALLOC];
+static uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part2[MEM_REGION_ALLOC];
+static uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part3[MEM_REGION_ALLOC];
+static uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part4[MEM_REGION_ALLOC];
+static uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part5[MEM_REGION_ALLOC];
+static uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part6[MEM_REGION_ALLOC];
+static uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part7[MEM_REGION_ALLOC];
+static uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part8[MEM_REGION_ALLOC];
 
-K_MEM_PARTITION_DEFINE(mem_domain_memory_partition,
-		       mem_domain_buf,
-		       sizeof(mem_domain_buf),
-		       K_MEM_PARTITION_P_RW_U_RW);
+static K_MEM_PARTITION_DEFINE(mem_domain_memory_partition,
+			      mem_domain_buf,
+			      sizeof(mem_domain_buf),
+			      K_MEM_PARTITION_P_RW_U_RW);
 
 #if defined(CONFIG_X86) || \
 	((defined(CONFIG_ARMV8_M_BASELINE) || \
 		defined(CONFIG_ARMV8_M_MAINLINE)) \
 		&& defined(CONFIG_CPU_HAS_ARM_MPU))
-K_MEM_PARTITION_DEFINE(mem_domain_memory_partition1,
-		       mem_domain_buf1,
-		       sizeof(mem_domain_buf1),
-		       K_MEM_PARTITION_P_RO_U_RO);
+static K_MEM_PARTITION_DEFINE(mem_domain_memory_partition1,
+			      mem_domain_buf1,
+			      sizeof(mem_domain_buf1),
+			      K_MEM_PARTITION_P_RO_U_RO);
 #else
-K_MEM_PARTITION_DEFINE(mem_domain_memory_partition1,
-		       mem_domain_buf1,
-		       sizeof(mem_domain_buf1),
-		       K_MEM_PARTITION_P_RW_U_RO);
+static K_MEM_PARTITION_DEFINE(mem_domain_memory_partition1,
+			      mem_domain_buf1,
+			      sizeof(mem_domain_buf1),
+			      K_MEM_PARTITION_P_RW_U_RO);
 #endif
 
-struct k_mem_partition *mem_domain_memory_partition_array[] = {
+static struct k_mem_partition *mem_domain_memory_partition_array[] = {
 	&mem_domain_memory_partition,
 	&ztest_mem_partition
 };
 
-struct k_mem_partition *mem_domain_memory_partition_array1[] = {
+static struct k_mem_partition *mem_domain_memory_partition_array1[] = {
 	&mem_domain_memory_partition1,
 	&ztest_mem_partition
 };
-struct k_mem_domain mem_domain_mem_domain;
-struct k_mem_domain mem_domain1;
+static struct k_mem_domain mem_domain_mem_domain;
+static struct k_mem_domain mem_domain1;
 
 /****************************************************************************/
 /* Common init functions */
@@ -291,46 +291,45 @@ void test_mem_domain_partitions_supervisor_rw(void)
 /****************************************************************************/
 
 /* add partitions */
-K_MEM_PARTITION_DEFINE(mem_domain_tc3_part1_struct,
-		       mem_domain_tc3_part1,
-		       sizeof(mem_domain_tc3_part1),
-		       K_MEM_PARTITION_P_RW_U_RW);
+static K_MEM_PARTITION_DEFINE(mem_domain_tc3_part1_struct,
+			      mem_domain_tc3_part1,
+			      sizeof(mem_domain_tc3_part1),
+			      K_MEM_PARTITION_P_RW_U_RW);
 
-K_MEM_PARTITION_DEFINE(mem_domain_tc3_part2_struct,
-		       mem_domain_tc3_part2,
-		       sizeof(mem_domain_tc3_part2),
-		       K_MEM_PARTITION_P_RW_U_RW);
+static K_MEM_PARTITION_DEFINE(mem_domain_tc3_part2_struct,
+			      mem_domain_tc3_part2,
+			      sizeof(mem_domain_tc3_part2),
+			      K_MEM_PARTITION_P_RW_U_RW);
 
-K_MEM_PARTITION_DEFINE(mem_domain_tc3_part3_struct,
-		       mem_domain_tc3_part3,
-		       sizeof(mem_domain_tc3_part3),
-		       K_MEM_PARTITION_P_RW_U_RW);
+static K_MEM_PARTITION_DEFINE(mem_domain_tc3_part3_struct,
+			      mem_domain_tc3_part3,
+			      sizeof(mem_domain_tc3_part3),
+			      K_MEM_PARTITION_P_RW_U_RW);
 
-K_MEM_PARTITION_DEFINE(mem_domain_tc3_part4_struct,
-		       mem_domain_tc3_part4,
-		       sizeof(mem_domain_tc3_part4),
-		       K_MEM_PARTITION_P_RW_U_RW);
+static K_MEM_PARTITION_DEFINE(mem_domain_tc3_part4_struct,
+			      mem_domain_tc3_part4,
+			      sizeof(mem_domain_tc3_part4),
+			      K_MEM_PARTITION_P_RW_U_RW);
 
-K_MEM_PARTITION_DEFINE(mem_domain_tc3_part5_struct,
-		       mem_domain_tc3_part5,
-		       sizeof(mem_domain_tc3_part5),
-		       K_MEM_PARTITION_P_RW_U_RW);
+static K_MEM_PARTITION_DEFINE(mem_domain_tc3_part5_struct,
+			      mem_domain_tc3_part5,
+			      sizeof(mem_domain_tc3_part5),
+			      K_MEM_PARTITION_P_RW_U_RW);
 
-K_MEM_PARTITION_DEFINE(mem_domain_tc3_part6_struct,
-		       mem_domain_tc3_part6,
-		       sizeof(mem_domain_tc3_part6),
-		       K_MEM_PARTITION_P_RW_U_RW);
+static K_MEM_PARTITION_DEFINE(mem_domain_tc3_part6_struct,
+			      mem_domain_tc3_part6,
+			      sizeof(mem_domain_tc3_part6),
+			      K_MEM_PARTITION_P_RW_U_RW);
 
-K_MEM_PARTITION_DEFINE(mem_domain_tc3_part7_struct,
-		       mem_domain_tc3_part7,
-		       sizeof(mem_domain_tc3_part7),
-		       K_MEM_PARTITION_P_RW_U_RW);
+static K_MEM_PARTITION_DEFINE(mem_domain_tc3_part7_struct,
+			      mem_domain_tc3_part7,
+			      sizeof(mem_domain_tc3_part7),
+			      K_MEM_PARTITION_P_RW_U_RW);
 
-K_MEM_PARTITION_DEFINE(mem_domain_tc3_part8_struct,
-		       mem_domain_tc3_part8,
-		       sizeof(mem_domain_tc3_part8),
-		       K_MEM_PARTITION_P_RW_U_RW);
-
+static K_MEM_PARTITION_DEFINE(mem_domain_tc3_part8_struct,
+			      mem_domain_tc3_part8,
+			      sizeof(mem_domain_tc3_part8),
+			      K_MEM_PARTITION_P_RW_U_RW);
 
 static struct k_mem_partition *mem_domain_tc3_partition_array[] = {
 	&ztest_mem_partition,
@@ -584,7 +583,7 @@ void test_mem_domain_api_kernel_thread_only(void)
 	k_mem_domain_add_partition(&domain0, &part0);
 }
 
-void user_handler_func(void *p1, void *p2, void *p3)
+static void user_handler_func(void *p1, void *p2, void *p3)
 {
 	/* Read the partition */
 	uint8_t read_data = buf1[0];
@@ -671,14 +670,14 @@ void test_mem_part_auto_determ_size_per_mpu(void)
 	zassert_true(part_arch.size == MEM_REGION_ALLOC, NULL);
 }
 
-void child_thr_handler(void *p1, void *p2, void *p3)
+static void child_thr_handler(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p1);
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 }
 
-void parent_thr_handler(void *p1, void *p2, void *p3)
+static void parent_thr_handler(void *p1, void *p2, void *p3)
 {
 	k_tid_t child_tid = k_thread_create(&child_thr_md, child_thr_stack_md,
 					K_THREAD_STACK_SIZEOF(child_thr_stack_md),
@@ -788,8 +787,8 @@ static void zzz_entry(void *p1, void *p2, void *p3)
 	k_sleep(K_FOREVER);
 }
 
-K_THREAD_DEFINE(zzz_thread, 256 + CONFIG_TEST_EXTRA_STACKSIZE, zzz_entry,
-		NULL, NULL, NULL, 0, 0, 0);
+static K_THREAD_DEFINE(zzz_thread, 256 + CONFIG_TEST_EXTRA_STACKSIZE,
+		       zzz_entry, NULL, NULL, NULL, 0, 0, 0);
 
 void test_mem_domain_boot_threads(void)
 {
