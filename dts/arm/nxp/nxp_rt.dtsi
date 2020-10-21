@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <mem.h>
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/clock/imx_ccm.h>
 #include <dt-bindings/gpio/gpio.h>
@@ -77,17 +78,17 @@
 
 			itcm: itcm@0 {
 				compatible = "nxp,imx-itcm";
-				reg = <0x00000000 0x20000>;
+				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
 
 			dtcm: dtcm@20000000 {
 				compatible = "nxp,imx-dtcm";
-				reg = <0x20000000 0x20000>;
+				reg = <0x20000000 DT_SIZE_K(128)>;
 			};
 
 			ocram: ocram@20200000 {
 				compatible = "mmio-sram";
-				reg = <0x20200000 0x40000>;
+				reg = <0x20200000 DT_SIZE_K(256)>;
 			};
 		};
 
