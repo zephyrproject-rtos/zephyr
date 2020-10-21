@@ -35,6 +35,10 @@
 #include "lll_filter.h"
 #include "lll/lll_df_types.h"
 
+#if !defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
+#include "ull_tx_queue.h"
+#endif
+
 #include "ull_adv_types.h"
 #include "ull_conn_types.h"
 #include "ull_filter.h"

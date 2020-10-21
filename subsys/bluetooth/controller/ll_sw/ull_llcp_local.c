@@ -23,8 +23,9 @@
 #include "lll.h"
 #include "lll_conn.h"
 
-#include "ull_conn_types.h"
 #include "ull_tx_queue.h"
+
+#include "ull_conn_types.h"
 #include "ull_llcp.h"
 #include "ull_llcp_internal.h"
 
@@ -60,17 +61,17 @@ enum {
  * LLCP Local Request FSM
  */
 
-static void lr_set_state(struct ull_cp_conn *conn, enum lr_state state)
+static void lr_set_state(struct ll_conn *conn, enum lr_state state)
 {
 	conn->llcp.local.state = state;
 }
 
-void ull_cp_priv_lr_enqueue(struct ull_cp_conn *conn, struct proc_ctx *ctx)
+void ull_cp_priv_lr_enqueue(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	sys_slist_append(&conn->llcp.local.pend_proc_list, &ctx->node);
 }
 
-static struct proc_ctx *lr_dequeue(struct ull_cp_conn *conn)
+static struct proc_ctx *lr_dequeue(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
@@ -78,7 +79,7 @@ static struct proc_ctx *lr_dequeue(struct ull_cp_conn *conn)
 	return ctx;
 }
 
-struct proc_ctx *lr_peek(struct ull_cp_conn *conn)
+struct proc_ctx *lr_peek(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
@@ -86,7 +87,7 @@ struct proc_ctx *lr_peek(struct ull_cp_conn *conn)
 	return ctx;
 }
 
-void ull_cp_priv_lr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+void ull_cp_priv_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	switch (ctx->proc) {
 	case PROC_LE_PING:
@@ -119,7 +120,7 @@ void ull_cp_priv_lr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct no
 	}
 }
 
-void ull_cp_priv_lr_tx_ack(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
+void ull_cp_priv_lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
 {
 	switch (ctx->proc) {
 	case PROC_MIN_USED_CHANS:
@@ -134,7 +135,7 @@ void ull_cp_priv_lr_tx_ack(struct ull_cp_conn *conn, struct proc_ctx *ctx, struc
 	}
 }
 
-static void lr_act_run(struct ull_cp_conn *conn)
+static void lr_act_run(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
@@ -171,23 +172,23 @@ static void lr_act_run(struct ull_cp_conn *conn)
 	}
 }
 
-static void lr_act_complete(struct ull_cp_conn *conn)
+static void lr_act_complete(struct ll_conn *conn)
 {
 	/* Dequeue pending request that just completed */
 	(void) lr_dequeue(conn);
 }
 
-static void lr_act_connect(struct ull_cp_conn *conn)
+static void lr_act_connect(struct ll_conn *conn)
 {
 	/* TODO */
 }
 
-static void lr_act_disconnect(struct ull_cp_conn *conn)
+static void lr_act_disconnect(struct ll_conn *conn)
 {
 	lr_dequeue(conn);
 }
 
-static void lr_st_disconnect(struct ull_cp_conn *conn, uint8_t evt, void *param)
+static void lr_st_disconnect(struct ll_conn *conn, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case LR_EVT_CONNECT:
@@ -200,7 +201,7 @@ static void lr_st_disconnect(struct ull_cp_conn *conn, uint8_t evt, void *param)
 	}
 }
 
-static void lr_st_idle(struct ull_cp_conn *conn, uint8_t evt, void *param)
+static void lr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case LR_EVT_RUN:
@@ -219,7 +220,7 @@ static void lr_st_idle(struct ull_cp_conn *conn, uint8_t evt, void *param)
 	}
 }
 
-static void lr_st_active(struct ull_cp_conn *conn, uint8_t evt, void *param)
+static void lr_st_active(struct ll_conn *conn, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case LR_EVT_RUN:
@@ -241,7 +242,7 @@ static void lr_st_active(struct ull_cp_conn *conn, uint8_t evt, void *param)
 	}
 }
 
-static void lr_execute_fsm(struct ull_cp_conn *conn, uint8_t evt, void *param)
+static void lr_execute_fsm(struct ll_conn *conn, uint8_t evt, void *param)
 {
 	switch (conn->llcp.local.state) {
 	case LR_STATE_DISCONNECT:
@@ -257,59 +258,55 @@ static void lr_execute_fsm(struct ull_cp_conn *conn, uint8_t evt, void *param)
 		/* Unknown state */
 		LL_ASSERT(0);
 	}
-	/*
-	 * EGON TODO: is this the right place to release ctx
-	 * if we received the LR_EVT_COMPLETE event?
-	 */
 }
 
-void ull_cp_priv_lr_init(struct ull_cp_conn *conn)
+void ull_cp_priv_lr_init(struct ll_conn *conn)
 {
 	lr_set_state(conn, LR_STATE_DISCONNECT);
 }
 
-void ull_cp_priv_lr_run(struct ull_cp_conn *conn)
+void ull_cp_priv_lr_run(struct ll_conn *conn)
 {
 	lr_execute_fsm(conn, LR_EVT_RUN, NULL);
 }
 
-void ull_cp_priv_lr_complete(struct ull_cp_conn *conn)
+void ull_cp_priv_lr_complete(struct ll_conn *conn)
 {
 	lr_execute_fsm(conn, LR_EVT_COMPLETE, NULL);
 }
 
-void ull_cp_priv_lr_connect(struct ull_cp_conn *conn)
+void ull_cp_priv_lr_connect(struct ll_conn *conn)
 {
 	lr_execute_fsm(conn, LR_EVT_CONNECT, NULL);
 }
 
-void ull_cp_priv_lr_disconnect(struct ull_cp_conn *conn)
+void ull_cp_priv_lr_disconnect(struct ll_conn *conn)
 {
 	lr_execute_fsm(conn, LR_EVT_DISCONNECT, NULL);
 }
 
 #ifdef ZTEST_UNITTEST
 
-bool lr_is_disconnected(struct ull_cp_conn *conn)
+bool lr_is_disconnected(struct ll_conn *conn)
 {
 	return conn->llcp.local.state == LR_STATE_DISCONNECT;
 }
 
-bool lr_is_idle(struct ull_cp_conn *conn)
+bool lr_is_idle(struct ll_conn *conn)
 {
 	return conn->llcp.local.state == LR_STATE_IDLE;
 }
 
 void test_int_local_pending_requests(void)
 {
-	struct ull_cp_conn conn;
+	struct ll_conn conn;
 	struct proc_ctx *peek_ctx;
 	struct proc_ctx *dequeue_ctx;
 	struct proc_ctx ctx;
 
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
-	ull_cp_conn_init(&conn);
+	ll_conn_init(&conn);
 
 	peek_ctx = lr_peek(&conn);
 	zassert_is_null(peek_ctx, NULL);

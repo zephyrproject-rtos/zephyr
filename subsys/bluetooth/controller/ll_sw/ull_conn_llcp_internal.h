@@ -10,11 +10,11 @@
 
 #define ULL_HANDLE_NOT_CONNECTED 0xFFFF
 
-struct ull_cp_conn *ll_conn_acquire(void);
-void ll_conn_release(struct ull_cp_conn *conn);
-uint16_t ll_conn_handle_get(struct ull_cp_conn *conn);
-struct ull_cp_conn *ll_conn_get(uint16_t handle);
-struct ull_cp_conn *ll_connected_get(uint16_t handle);
+struct ll_conn *ll_conn_acquire(void);
+void ll_conn_release(struct ll_conn *conn);
+uint16_t ll_conn_handle_get(struct ll_conn *conn);
+struct ll_conn *ll_conn_get(uint16_t handle);
+struct ll_conn *ll_connected_get(uint16_t handle);
 uint16_t ull_conn_init(void);
 int ull_conn_reset(void);
 uint8_t ull_conn_chan_map_cpy(uint8_t *chan_map);
@@ -29,10 +29,10 @@ void ull_conn_default_phy_tx_set(uint8_t tx);
 void ull_conn_default_phy_rx_set(uint8_t rx);
 void ull_conn_setup(memq_link_t *link, struct node_rx_hdr *rx);
 int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx);
-int ull_conn_llcp(struct ull_cp_conn *conn, uint32_t ticks_at_expire, uint16_t lazy);
+int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy);
 void ull_conn_done(struct node_rx_event_done *done);
 void ull_conn_tx_demux(uint8_t count);
-void ull_conn_tx_lll_enqueue(struct ull_cp_conn *conn, uint8_t count);
+void ull_conn_tx_lll_enqueue(struct ll_conn *conn, uint8_t count);
 void ull_conn_link_tx_release(void *link);
 uint8_t ull_conn_ack_last_idx_get(void);
 memq_link_t *ull_conn_ack_peek(uint8_t *ack_last, uint16_t *handle,
@@ -40,7 +40,7 @@ memq_link_t *ull_conn_ack_peek(uint8_t *ack_last, uint16_t *handle,
 memq_link_t *ull_conn_ack_by_last_peek(uint8_t last, uint16_t *handle,
 				       struct node_tx **tx);
 void *ull_conn_ack_dequeue(void);
-struct ull_cp_conn *ull_conn_tx_ack(uint16_t handle, memq_link_t *link,
+struct ll_conn *ull_conn_tx_ack(uint16_t handle, memq_link_t *link,
 				struct node_tx *tx);
 uint8_t ull_conn_llcp_req(void *conn);
 
