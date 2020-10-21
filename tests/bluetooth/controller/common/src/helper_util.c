@@ -26,9 +26,9 @@
 
 #include "lll.h"
 #include "lll_conn.h"
-
-#include "ull_conn_types.h"
 #include "ull_tx_queue.h"
+#include "ull_conn_types.h"
+
 #include "ull_llcp.h"
 
 #include "helper_pdu.h"
@@ -103,7 +103,7 @@ helper_node_verify_func_t * const helper_node_verify[] = {
 /*
  * for debugging purpose only
  */
-void test_print_conn(struct ull_cp_conn *conn)
+void test_print_conn(struct ll_conn *conn)
 {
 	printf("------------------>\n");
 	printf("Mock structure\n");
@@ -117,7 +117,7 @@ void test_print_conn(struct ull_cp_conn *conn)
 	printf("--------------------->\n");
 
 }
-void test_setup(struct ull_cp_conn *conn)
+void test_setup(struct ll_conn *conn)
 {
 	/* Initialize the upper test rx queue */
 	sys_slist_init(&ut_rx_q);
@@ -132,22 +132,22 @@ void test_setup(struct ull_cp_conn *conn)
 	ull_tx_q_init(&conn->tx_q);
 
 	/* Initialize the connection object */
-	ull_cp_conn_init(conn);
+	ll_conn_init(conn);
 
 	conn->lll.event_counter = 0;
 	event_active = 0;
 	lazy = 0;
 }
 
-void test_set_role(struct ull_cp_conn *conn, uint8_t role)
+void test_set_role(struct ll_conn *conn, uint8_t role)
 {
 	conn->lll.role = role;
 }
 
 
-void event_prepare(struct ull_cp_conn *conn)
+void event_prepare(struct ll_conn *conn)
 {
-	struct mocked_lll_conn *lll;
+	struct lll_conn *lll;
 
 	/* Can only be called with no active event */
 	zassert_equal(event_active, 0, "Called inside an active event");
@@ -175,7 +175,7 @@ void event_prepare(struct ull_cp_conn *conn)
 	/* Rest lazy */
 	lazy = 0;
 }
-void event_tx_ack(struct ull_cp_conn *conn, struct node_tx* tx)
+void event_tx_ack(struct ll_conn *conn, struct node_tx* tx)
 {
 	/* Can only be called with active event */
 	zassert_equal(event_active, 1, "Called outside an active event");
@@ -184,7 +184,7 @@ void event_tx_ack(struct ull_cp_conn *conn, struct node_tx* tx)
 
 }
 
-void event_done(struct ull_cp_conn *conn)
+void event_done(struct ll_conn *conn)
 {
 	struct node_rx_pdu *rx;
 
@@ -198,10 +198,10 @@ void event_done(struct ull_cp_conn *conn)
 	}
 }
 
-uint16_t event_counter(struct ull_cp_conn *conn)
+uint16_t event_counter(struct ll_conn *conn)
 {
 	/* TODO(thoh): Mocked lll_conn */
-	struct mocked_lll_conn *lll;
+	struct lll_conn *lll;
 	uint16_t event_counter;
 
 	/**/
@@ -220,7 +220,7 @@ uint16_t event_counter(struct ull_cp_conn *conn)
 }
 
 
-void lt_tx_real(const char *file, uint32_t line, helper_pdu_opcode_t opcode, struct ull_cp_conn *conn, void *param)
+void lt_tx_real(const char *file, uint32_t line, helper_pdu_opcode_t opcode, struct ll_conn *conn, void *param)
 {
 	struct pdu_data *pdu;
 	struct node_rx_pdu *rx;
@@ -235,7 +235,7 @@ void lt_tx_real(const char *file, uint32_t line, helper_pdu_opcode_t opcode, str
 	sys_slist_append(&lt_tx_q, (sys_snode_t *) rx);
 }
 
-void lt_rx_real(const char *file, uint32_t line, helper_pdu_opcode_t opcode, struct ull_cp_conn *conn, struct node_tx **tx_ref, void *param)
+void lt_rx_real(const char *file, uint32_t line, helper_pdu_opcode_t opcode, struct ll_conn *conn, struct node_tx **tx_ref, void *param)
 {
 	struct node_tx *tx;
 	struct pdu_data *pdu;
@@ -253,7 +253,7 @@ void lt_rx_real(const char *file, uint32_t line, helper_pdu_opcode_t opcode, str
 }
 
 
-void lt_rx_q_is_empty_real(const char *file, uint32_t line, struct ull_cp_conn *conn)
+void lt_rx_q_is_empty_real(const char *file, uint32_t line, struct ll_conn *conn)
 {
 	struct node_tx *tx;
 
