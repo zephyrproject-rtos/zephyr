@@ -55,7 +55,7 @@
 		 * no_ks000-17 - PIN21.20.17.16.15.14.13.12.11.10.07.06.05.04.
 		 *                  82.83.03.B1
 		 */
-		pinctrl = <&alt0_gpio_no_spip
+		pinctrl-0 = <&alt0_gpio_no_spip
 			   &alt0_gpio_no_fpip
 			   &alt1_no_pwrgd
 			   &alt1_no_lpc_espi
@@ -116,7 +116,7 @@
 			reg = <0x400C4000 0x2000>;
 			interrupts = <33 0>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL1 4>;
-			pinctrl = <&alta_uart1_sl1>; /* PIN10.11 */
+			pinctrl-0 = <&alta_uart1_sl1>; /* PIN10.11 */
 			uart_rx = <&wui_cr_sin1>;
 			status = "disabled";
 			label = "UART_1";
@@ -127,7 +127,7 @@
 			reg = <0x400C6000 0x2000>;
 			interrupts = <32 0>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL7 6>;
-			pinctrl = <&alta_uart2_sl>; /* PIN75.86 */
+			pinctrl-0 = <&alta_uart2_sl>; /* PIN75.86 */
 			uart_rx = <&wui_cr_sin2>;
 			status = "disabled";
 			label = "UART_2";
@@ -337,7 +337,7 @@
 			compatible = "nuvoton,npcx-pwm";
 			reg = <0x40080000 0x2000>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 0>;
-			pinctrl = <&alt4_pwm0_sl>; /* PINC3 */
+			pinctrl-0 = <&alt4_pwm0_sl>; /* PINC3 */
 			#pwm-cells = <2>;
 			status = "disabled";
 			label = "PWM_0";
@@ -347,7 +347,7 @@
 			compatible = "nuvoton,npcx-pwm";
 			reg = <0x40082000 0x2000>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 1>;
-			pinctrl = <&alt4_pwm1_sl>; /* PINC2 */
+			pinctrl-0 = <&alt4_pwm1_sl>; /* PINC2 */
 			#pwm-cells = <2>;
 			status = "disabled";
 			label = "PWM_1";
@@ -357,7 +357,7 @@
 			compatible = "nuvoton,npcx-pwm";
 			reg = <0x40084000 0x2000>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 2>;
-			pinctrl = <&alt4_pwm2_sl>; /* PINC4 */
+			pinctrl-0 = <&alt4_pwm2_sl>; /* PINC4 */
 			#pwm-cells = <2>;
 			status = "disabled";
 			label = "PWM_2";
@@ -367,7 +367,7 @@
 			compatible = "nuvoton,npcx-pwm";
 			reg = <0x40086000 0x2000>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 3>;
-			pinctrl = <&alt4_pwm3_sl>; /* PIN80 */
+			pinctrl-0 = <&alt4_pwm3_sl>; /* PIN80 */
 			#pwm-cells = <2>;
 			status = "disabled";
 			label = "PWM_3";
@@ -377,7 +377,7 @@
 			compatible = "nuvoton,npcx-pwm";
 			reg = <0x40088000 0x2000>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 4>;
-			pinctrl = <&alt4_pwm4_sl>; /* PINB6 */
+			pinctrl-0 = <&alt4_pwm4_sl>; /* PINB6 */
 			#pwm-cells = <2>;
 			status = "disabled";
 			label = "PWM_4";
@@ -387,7 +387,7 @@
 			compatible = "nuvoton,npcx-pwm";
 			reg = <0x4008a000 0x2000>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 5>;
-			pinctrl = <&alt4_pwm5_sl>; /* PINB7 */
+			pinctrl-0 = <&alt4_pwm5_sl>; /* PINB7 */
 			#pwm-cells = <2>;
 			status = "disabled";
 			label = "PWM_5";
@@ -397,7 +397,7 @@
 			compatible = "nuvoton,npcx-pwm";
 			reg = <0x4008c000 0x2000>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 6>;
-			pinctrl = <&alt4_pwm6_sl>; /* PINC0 */
+			pinctrl-0 = <&alt4_pwm6_sl>; /* PINC0 */
 			#pwm-cells = <2>;
 			status = "disabled";
 			label = "PWM_6";
@@ -407,7 +407,7 @@
 			compatible = "nuvoton,npcx-pwm";
 			reg = <0x4008e000 0x2000>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 7>;
-			pinctrl = <&alt4_pwm7_sl>; /* PIN60 */
+			pinctrl-0 = <&alt4_pwm7_sl>; /* PIN60 */
 			#pwm-cells = <2>;
 			status = "disabled";
 			label = "PWM_7";
@@ -421,7 +421,7 @@
 			/* clocks for eSPI modules */
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL6 7>;
 			/* PIN46.47.51.52.53.54.55.57 */
-			pinctrl = <&alt1_no_lpc_espi>;
+			pinctrl-0 = <&alt1_no_lpc_espi>;
 			/* WUI maps for eSPI signals */
 			espi_rst_wui = <&wui_espi_rst>;
 			label = "ESPI_0";
@@ -454,7 +454,7 @@
 					  "pmch_obe", "p80_fifo";
 
 			/* Host serial port pinmux PIN75 86 36 33 42 C7 B3 B2 */
-			pinctrl = <&altb_rxd_sl &altb_txd_sl
+			pinctrl-0 = <&altb_rxd_sl &altb_txd_sl
 						&altb_rts_sl &altb_cts_sl
 						&altb_ri_sl &altb_dtr_bout_sl
 						&altb_dcd_sl &altb_dsr_sl>;
