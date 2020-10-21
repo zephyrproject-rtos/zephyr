@@ -108,17 +108,16 @@ if ARM_MMU
 
 config MAX_XLAT_TABLES
 	int "Maximum numbers of translation tables"
-	default 7
+	default 8
 	help
-	  This option specifies the maximum numbers of translation tables
-	  excluding the base translation table. Based on this, translation
-	  tables are allocated at compile time and used at runtime as needed.
-	  If the runtime need exceeds preallocated numbers of translation
-	  tables, it will result in assert. Number of translation tables
-	  required is decided based on how many discrete memory regions
-	  (both normal and device memory) are present on given platform and
-	  how much granularity is required while assigning attributes
-	  to these memory regions.
+	  This option specifies the maximum numbers of translation tables.
+	  Based on this, translation tables are allocated at compile time and
+	  used at runtime as needed.  If the runtime need exceeds preallocated
+	  numbers of translation tables, it will result in assert. Number of
+	  translation tables required is decided based on how many discrete
+	  memory regions (both normal and device memory) are present on given
+	  platform and how much granularity is required while assigning
+	  attributes to these memory regions.
 
 choice
 	prompt "Virtual address space size"
