@@ -12,10 +12,8 @@
 #include <arch/arm/aarch64/arm_mmu.h>
 #include <linker/linker-defs.h>
 #include <sys/util.h>
-#include "arm_mmu.h"
 
-static uint64_t base_xlat_table[BASE_XLAT_NUM_ENTRIES]
-		__aligned(BASE_XLAT_NUM_ENTRIES * sizeof(uint64_t));
+#include "arm_mmu.h"
 
 static uint64_t xlat_tables[CONFIG_MAX_XLAT_TABLES][Ln_XLAT_NUM_ENTRIES]
 		__aligned(Ln_XLAT_NUM_ENTRIES * sizeof(uint64_t));
@@ -62,7 +60,7 @@ static uint64_t *calculate_pte_index(uint64_t addr, int level)
 	unsigned int i;
 
 	/* Walk through all translation tables to find pte index */
-	pte = (uint64_t *)base_xlat_table;
+	pte = (uint64_t *)xlat_tables;
 	for (i = base_level; i < XLAT_LEVEL_MAX; i++) {
 		idx = XLAT_TABLE_VA_IDX(addr, i);
 		pte += idx;
@@ -188,7 +186,7 @@ static void set_pte_block_desc(uint64_t *pte, uint64_t addr_pa,
 /* Returns a new reallocated table */
 static uint64_t *new_prealloc_table(void)
 {
-	static unsigned int table_idx;
+	static unsigned int table_idx = 1;
 
 	__ASSERT(table_idx < CONFIG_MAX_XLAT_TABLES,
 		"Enough xlat tables not allocated");
@@ -357,7 +355,7 @@ static void enable_mmu_el1(unsigned int flags)
 			: "memory", "cc");
 	__asm__ volatile("msr ttbr0_el1, %0"
 			:
-			: "r" ((uint64_t)base_xlat_table)
+			: "r" ((uint64_t)xlat_tables)
 			: "memory", "cc");
 
 	/* Ensure these changes are seen before MMU is enabled */
@@ -400,8 +398,6 @@ static int arm_mmu_init(const struct device *arg)
 	__ASSERT((val & SCTLR_M) == 0, "MMU is already enabled\n");
 
 	MMU_DEBUG("xlat tables:\n");
-	MMU_DEBUG("base table(L%d): %p, %d entries\n", BASE_XLAT_LEVEL,
-			(uint64_t *)base_xlat_table, BASE_XLAT_NUM_ENTRIES);
 	for (idx = 0; idx < CONFIG_MAX_XLAT_TABLES; idx++)
 		MMU_DEBUG("%d: %p\n", idx, (uint64_t *)(xlat_tables + idx));
 
