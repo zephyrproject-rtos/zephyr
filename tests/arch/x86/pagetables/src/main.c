@@ -100,6 +100,18 @@ void test_ram_perms(void)
 				expected = MMU_P | MMU_XD;
 			}
 #endif /* CONFIG_X86_64 */
+#ifndef CONFIG_X86_KPTI
+		} else if (IN_REGION(_app_smem, pos)) {
+			/* If KPTI is not enabled, then the default memory
+			 * domain affects our page tables even though we are
+			 * in supervisor mode. We'd expect everything in
+			 * the _app_smem region to have US set since all the
+			 * partitions within it would be active in
+			 * k_mem_domain_default (ztest_partition and any libc
+			 * partitions)
+			 */
+			expected = MMU_P | MMU_US | MMU_RW | MMU_XD;
+#endif /* CONFIG_X86_KPTI */
 		} else {
 			/* We forced CONFIG_HW_STACK_PROTECTION off otherwise
 			 * guard pages will have RW cleared. We can relax this
@@ -109,8 +121,8 @@ void test_ram_perms(void)
 		}
 
 		zassert_equal(flags, expected,
-				"bad flags " PRI_ENTRY " at %p",
-				flags, pos);
+			      "bad flags " PRI_ENTRY " at %p, expected "
+			      PRI_ENTRY, flags, pos, expected);
 	}
 
 }
