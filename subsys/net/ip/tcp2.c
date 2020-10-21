@@ -368,13 +368,10 @@ int net_tcp_unref(struct net_context *context)
 	return ref_count;
 }
 
-static void tcp_send_process(struct k_work *work)
+static bool tcp_send_process_no_lock(struct tcp *conn)
 {
-	struct tcp *conn = CONTAINER_OF(work, struct tcp, send_timer);
 	bool unref = false;
 	struct net_pkt *pkt;
-
-	k_mutex_lock(&conn->lock, K_FOREVER);
 
 	pkt = tcp_slist(&conn->send_queue, peek_head,
 			struct net_pkt, next);
@@ -423,6 +420,18 @@ static void tcp_send_process(struct k_work *work)
 	}
 
 out:
+	return unref;
+}
+
+static void tcp_send_process(struct k_work *work)
+{
+	struct tcp *conn = CONTAINER_OF(work, struct tcp, send_timer);
+	bool unref;
+
+	k_mutex_lock(&conn->lock, K_FOREVER);
+
+	unref = tcp_send_process_no_lock(conn);
+
 	k_mutex_unlock(&conn->lock);
 
 	if (unref) {
@@ -723,7 +732,9 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 
 	sys_slist_append(&conn->send_queue, &pkt->next);
 
-	tcp_send_process(&conn->send_timer.work);
+	if (tcp_send_process_no_lock(conn)) {
+		tcp_conn_unref(conn);
+	}
 out:
 	return ret;
 }
