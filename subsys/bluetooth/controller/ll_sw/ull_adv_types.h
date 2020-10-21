@@ -59,4 +59,33 @@ struct ll_adv_sync_set {
 	uint8_t is_enabled:1;
 	uint8_t is_started:1;
 };
+
+struct ll_adv_iso {
+	struct evt_hdr        evt;
+	struct ull_hdr        ull;
+	struct ll_adv_aux_set adv_aux;
+	struct lll_adv_iso    lll;
+
+	uint8_t  hci_handle;
+	uint16_t bis_handle; /* TODO: Support multiple BIS per BIG */
+
+	uint8_t  is_created:1;
+	uint8_t  encryption:1;
+	uint8_t  framing:1;
+	uint8_t  num_bis:5;
+
+	uint32_t sdu_interval:20;
+	uint16_t max_sdu:12;
+
+	uint16_t max_latency:12;
+
+	uint8_t  rtn:4;
+	uint8_t  phy:3;
+	uint8_t  packing:1;
+
+	uint8_t  bcode[16];
+
+	struct node_rx_hdr *node_rx_complete;
+};
+
 #endif /* CONFIG_BT_CTLR_ADV_EXT */

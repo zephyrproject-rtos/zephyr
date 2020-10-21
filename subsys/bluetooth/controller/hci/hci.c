@@ -28,9 +28,11 @@
 #include "hal/ccm.h"
 #include "ll_sw/pdu.h"
 #include "ll_sw/lll.h"
+#include "ll_sw/lll_adv.h"
 #include "ll_sw/lll_scan.h"
 #include "ll_sw/lll_sync.h"
 #include "ll_sw/lll_conn.h"
+#include "ll_sw/ull_adv_types.h"
 #include "ll_sw/ull_scan_types.h"
 #include "ll_sw/ull_sync_types.h"
 #include "ll_sw/ull_conn_types.h"
@@ -1377,22 +1379,37 @@ static void le_set_adv_enable(struct net_buf *buf, struct net_buf **evt)
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
-static void le_create_big(struct net_buf *buf, struct net_buf **evt)
+static void le_create_big(struct net_buf *buf, struct net_buf **evt,
+			  void **node_rx)
 {
 	struct bt_hci_cp_le_create_big *cmd = (void *)buf->data;
 	uint8_t status;
 	uint32_t sdu_interval;
 	uint16_t max_sdu;
 	uint16_t max_latency;
+	uint8_t big_handle;
+	uint8_t adv_handle;
+
+	status = ll_adv_iso_by_hci_handle_new(cmd->big_handle, &big_handle);
+	if (status) {
+		*evt = cmd_status(status);
+		return;
+	}
+
+	status = ll_adv_set_by_hci_handle_get(cmd->adv_handle, &adv_handle);
+	if (status) {
+		*evt = cmd_status(status);
+		return;
+	}
 
 	sdu_interval = sys_get_le24(cmd->sdu_interval);
 	max_sdu = sys_le16_to_cpu(cmd->max_sdu);
 	max_latency = sys_le16_to_cpu(cmd->max_latency);
 
-	status = ll_big_create(cmd->big_handle, cmd->adv_handle, cmd->num_bis,
+	status = ll_big_create(big_handle, adv_handle, cmd->num_bis,
 			       sdu_interval, max_sdu, max_latency, cmd->rtn,
 			       cmd->phy, cmd->packing, cmd->framing,
-			       cmd->encryption, cmd->bcode);
+			       cmd->encryption, cmd->bcode, node_rx);
 
 	*evt = cmd_status(status);
 }
@@ -3144,7 +3161,7 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
 	case BT_OCF(BT_HCI_OP_LE_CREATE_BIG):
-		le_create_big(cmd, evt);
+		le_create_big(cmd, evt, node_rx);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_CREATE_BIG_TEST):
@@ -5068,6 +5085,48 @@ static void le_per_adv_sync_lost(struct pdu_data *pdu_data,
 	sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
 }
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+static void le_big_complete(struct pdu_data *pdu_data,
+			    struct node_rx_pdu *node_rx,
+			    struct net_buf *buf)
+{
+	struct bt_hci_evt_le_big_complete *sep;
+	struct ll_adv_iso *adv_iso;
+	struct node_rx_sync *se;
+	size_t evt_size;
+
+	adv_iso = node_rx->hdr.rx_ftr.param;
+
+	evt_size = sizeof(*sep) +
+			adv_iso->num_bis * sizeof(adv_iso->bis_handle);
+
+	adv_iso = node_rx->hdr.rx_ftr.param;
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_BIG_COMPLETE, evt_size);
+
+	se = (void *)pdu_data;
+	sep->status = se->status;
+	sep->big_handle = sys_cpu_to_le16(node_rx->hdr.handle);
+
+	if (sep->status) {
+		return;
+	}
+
+	/* TODO: Fill values */
+	sys_put_le24(0, sep->sync_delay);
+	sys_put_le24(0, sep->latency);
+	sep->phy = adv_iso->phy;
+	sep->nse = 0;
+	sep->bn = 0;
+	sep->pto = 0;
+	sep->irc = 0;
+	sep->max_pdu = 0;
+	sep->num_bis = adv_iso->num_bis;
+	/* TODO: Add support for multiple BIS per BIG */
+	LL_ASSERT(sep->num_bis == 1);
+	sep->handle[0] = sys_cpu_to_le16(adv_iso->bis_handle);
+}
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
 
@@ -5438,6 +5497,10 @@ static void encode_control(struct node_rx_pdu *node_rx,
 		le_per_adv_sync_lost(pdu_data, node_rx, buf);
 		break;
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	case NODE_RX_TYPE_BIG_COMPLETE:
+		le_big_complete(pdu_data, node_rx, buf);
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
 
