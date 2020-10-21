@@ -30,7 +30,7 @@
 	sdram0: memory@80000000 {
 		/* Micron MT48LC16M16A2B4-6AIT:G */
 		device_type = "memory";
-		reg = <0x80000000 0x2000000>;
+		reg = <0x80000000 DT_SIZE_M(32)>;
 	};
 
 	leds {
