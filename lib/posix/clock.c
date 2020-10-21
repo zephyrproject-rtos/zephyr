@@ -25,7 +25,7 @@ static struct timespec rt_clock_base;
  */
 int z_impl_clock_gettime(clockid_t clock_id, struct timespec *ts)
 {
-	uint64_t elapsed_msecs;
+	uint64_t elapsed_nsecs;
 	struct timespec base;
 
 	switch (clock_id) {
@@ -43,10 +43,9 @@ int z_impl_clock_gettime(clockid_t clock_id, struct timespec *ts)
 		return -1;
 	}
 
-	elapsed_msecs = k_uptime_get();
-	ts->tv_sec = (int32_t) (elapsed_msecs / MSEC_PER_SEC);
-	ts->tv_nsec = (int32_t) ((elapsed_msecs % MSEC_PER_SEC) *
-					USEC_PER_MSEC * NSEC_PER_USEC);
+	elapsed_nsecs = k_ticks_to_ns_floor64(k_uptime_ticks());
+	ts->tv_sec = (int32_t) (elapsed_nsecs / NSEC_PER_SEC);
+	ts->tv_nsec = (int32_t) (elapsed_nsecs % NSEC_PER_SEC);
 
 	ts->tv_sec += base.tv_sec;
 	ts->tv_nsec += base.tv_nsec;
@@ -84,9 +83,9 @@ int clock_settime(clockid_t clock_id, const struct timespec *tp)
 		return -1;
 	}
 
-	uint64_t elapsed_msecs = k_uptime_get();
+	uint64_t elapsed_nsecs = k_ticks_to_ns_floor64(k_uptime_ticks());
 	int64_t delta = (int64_t)NSEC_PER_SEC * tp->tv_sec + tp->tv_nsec
-		- elapsed_msecs * USEC_PER_MSEC * NSEC_PER_USEC;
+		- elapsed_nsecs;
 
 	base.tv_sec = delta / NSEC_PER_SEC;
 	base.tv_nsec = delta % NSEC_PER_SEC;
