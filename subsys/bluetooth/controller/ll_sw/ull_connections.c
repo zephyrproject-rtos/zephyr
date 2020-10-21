@@ -24,11 +24,11 @@
 #include "pdu.h"
 #include "lll.h"
 #include "lll_conn.h"
-#include "ull_internal.h"
 #include "ull_tx_queue.h"
+#include "ull_conn_types.h"
+#include "ull_internal.h"
 #include "ull_llcp.h"
 #include "ull_conn_llcp_internal.h"
-#include "ull_conn_types.h"
 #include "ull_master_internal.h"
 #include "ull_slave_internal.h"
 
@@ -61,7 +61,7 @@ static struct {
 	uint8_t pool[CONN_TX_BUF_SIZE * CONFIG_BT_CTLR_TX_BUFFERS];
 } mem_conn_tx;
 
-static struct ull_cp_conn conn_pool[CONFIG_BT_MAX_CONN];
+static struct ll_conn conn_pool[CONFIG_BT_MAX_CONN];
 static struct ll_conn *conn_upd_curr;
 static void *conn_free;
 
@@ -82,7 +82,7 @@ static uint8_t default_phy_rx;
 static uint16_t init_reset(void);
 static inline void disable(uint16_t handle);
 static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
-			  struct pdu_data *pdu_rx, struct ull_cp_conn *conn);
+			  struct pdu_data *pdu_rx, struct ll_conn *conn);
 
 
 /*
@@ -157,26 +157,26 @@ int ull_conn_reset(void)
 	return 0;
 }
 
-struct ull_cp_conn *ll_conn_acquire(void)
+struct ll_conn *ll_conn_acquire(void)
 {
 	return mem_acquire(&conn_free);
 }
 
 
-struct ull_cp_conn *ll_conn_get(uint16_t handle)
+struct ll_conn *ll_conn_get(uint16_t handle)
 {
-	return mem_get(conn_pool, sizeof(struct ull_cp_conn), handle);
+	return mem_get(conn_pool, sizeof(struct ll_conn), handle);
 }
 
-uint16_t ll_conn_handle_get(struct ull_cp_conn *conn)
+uint16_t ll_conn_handle_get(struct ll_conn *conn)
 {
-	return mem_index_get(conn, conn_pool, sizeof(struct ull_cp_conn));
+	return mem_index_get(conn, conn_pool, sizeof(struct ll_conn));
 }
 
 
-struct ull_cp_conn  *ll_connected_get(uint16_t handle)
+struct ll_conn  *ll_connected_get(uint16_t handle)
 {
-	struct ull_cp_conn  *conn;
+	struct ll_conn  *conn;
 
 	if (handle >= CONFIG_BT_MAX_CONN) {
 		return NULL;
@@ -196,7 +196,7 @@ struct ull_cp_conn  *ll_connected_get(uint16_t handle)
 	return conn;
 }
 
-void ll_conn_release(struct ull_cp_conn  *conn)
+void ll_conn_release(struct ll_conn  *conn)
 {
 	mem_release(conn, &conn_free);
 }
@@ -389,7 +389,7 @@ void ull_conn_setup(memq_link_t *link, struct node_rx_hdr *rx)
 int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 {
 	struct pdu_data *pdu_rx;
-	struct ull_cp_conn *conn;
+	struct ll_conn *conn;
 
 	conn = ll_connected_get((*rx)->hdr.handle);
 	if (!conn) {
@@ -416,15 +416,13 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 		/*
 		 * EGON TODO: use correct data structure
 		 */
-#if 0
-		if (conn->llcp_enc.pause_rx) {
-			conn->llcp_terminate.reason_peer =
+		if (conn->llcp.enc.pause_rx) {
+			conn->llcp.terminate.reason_peer =
 				BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
 
 			/* Mark for buffer for release */
 			(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
 		}
-#endif /* 0 */
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 		break;
 
@@ -435,12 +433,10 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 		 * EGON TODO: use correct data structure
 		 * or more likely this is handled in ull_llcp.c
 		 */
-#if 0
-		if (conn->llcp_enc.pause_rx) {
-			conn->llcp_terminate.reason_peer =
+		if (conn->llcp.enc.pause_rx) {
+			conn->llcp.terminate.reason_peer =
 				BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
 		}
-#endif /* 0 */
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 		/* Invalid LL id, drop it. */
@@ -460,7 +456,7 @@ uint8_t ull_conn_llcp_req(void *conn)
 	return 0;
 }
 
-int ull_conn_llcp(struct ull_cp_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
+int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 {
 	LL_ASSERT(conn->lll.handle != ULL_HANDLE_NOT_CONNECTED);
 
@@ -477,7 +473,7 @@ void ull_conn_tx_demux(uint8_t count)
 	return;
 }
 
-void ull_conn_tx_lll_enqueue(struct ull_cp_conn *conn, uint8_t count)
+void ull_conn_tx_lll_enqueue(struct ll_conn *conn, uint8_t count)
 {
 	return;
 }
@@ -509,7 +505,7 @@ void *ull_conn_ack_dequeue(void)
 	return NULL;
 }
 
-struct ull_cp_conn *ull_conn_tx_ack(uint16_t handle, memq_link_t *link,
+struct ll_conn *ull_conn_tx_ack(uint16_t handle, memq_link_t *link,
 				struct node_tx *tx)
 {
 	return NULL;
@@ -517,8 +513,8 @@ struct ull_cp_conn *ull_conn_tx_ack(uint16_t handle, memq_link_t *link,
 static uint16_t init_reset(void)
 {
 	/* Initialize conn pool. */
-	mem_init(conn_pool, sizeof(struct ull_cp_conn),
-		 sizeof(conn_pool) / sizeof(struct ull_cp_conn), &conn_free);
+	mem_init(conn_pool, sizeof(struct ll_conn),
+		 sizeof(conn_pool) / sizeof(struct ll_conn), &conn_free);
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	/* Initialize the DLE defaults */
@@ -548,7 +544,7 @@ static uint16_t init_reset(void)
 static inline void disable(uint16_t handle)
 {
 	volatile uint32_t ret_cb = TICKER_STATUS_BUSY;
-	struct ull_cp_conn *conn;
+	struct ll_conn *conn;
 	void *mark;
 	uint32_t ret;
 
@@ -577,7 +573,7 @@ static inline void disable(uint16_t handle)
 }
 
 static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
-			  struct pdu_data *pdu_rx, struct ull_cp_conn *conn)
+			  struct pdu_data *pdu_rx, struct ll_conn *conn)
 {
 	/*
 	 * EGON TODO: this is part of the receiving of PDUs,
