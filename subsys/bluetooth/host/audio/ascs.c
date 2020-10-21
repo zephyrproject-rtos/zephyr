@@ -706,7 +706,7 @@ static ssize_t ascs_config(struct bt_ascs *ascs, struct net_buf_simple *buf)
 		cfg = net_buf_simple_pull_mem(buf, sizeof(*cfg));
 
 		if (buf->len < cfg->cc_len) {
-			BT_ERR("Malformed ASE Codec Config len %u != %zu",
+			BT_ERR("Malformed ASE Codec Config len %u != %u",
 				buf->len, cfg->cc_len);
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 		}
@@ -923,7 +923,7 @@ static ssize_t ascs_enable(struct bt_ascs *ascs, struct net_buf_simple *buf)
 		BT_DBG("ase 0x%02x meta->len %u", meta->ase, meta->len);
 
 		if (buf->len < meta->len) {
-			BT_ERR("Malformed ASE Enable Metadata len %u != %zu",
+			BT_ERR("Malformed ASE Enable Metadata len %u != %u",
 				buf->len, meta->len);
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 		}
@@ -973,7 +973,7 @@ static ssize_t ascs_start(struct bt_ascs *ascs, struct net_buf_simple *buf)
 	BT_DBG("num_ases %u", req->num_ases);
 
 	if (buf->len < req->num_ases) {
-		BT_ERR("Malformed ASE Start: len %u < %zu", buf->len,
+		BT_ERR("Malformed ASE Start: len %u < %u", buf->len,
 		       req->num_ases);
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
@@ -1014,7 +1014,7 @@ static ssize_t ascs_disable(struct bt_ascs *ascs, struct net_buf_simple *buf)
 	BT_DBG("num_ases %u", req->num_ases);
 
 	if (buf->len < req->num_ases) {
-		BT_ERR("Malformed ASE Disable: len %u < %zu", buf->len,
+		BT_ERR("Malformed ASE Disable: len %u < %u", buf->len,
 		       req->num_ases);
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
@@ -1072,7 +1072,7 @@ static ssize_t ascs_stop(struct bt_ascs *ascs, struct net_buf_simple *buf)
 	BT_DBG("num_ases %u", req->num_ases);
 
 	if (buf->len < req->num_ases) {
-		BT_ERR("Malformed ASE Start: len %u < %zu", buf->len,
+		BT_ERR("Malformed ASE Start: len %u < %u", buf->len,
 		       req->num_ases);
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
@@ -1125,7 +1125,7 @@ static ssize_t ascs_metadata(struct bt_ascs *ascs, struct net_buf_simple *buf)
 		meta = net_buf_simple_pull_mem(buf, sizeof(*meta));
 
 		if (buf->len < meta->len) {
-			BT_ERR("Malformed ASE Metadata: len %u < %zu", buf->len,
+			BT_ERR("Malformed ASE Metadata: len %u < %u", buf->len,
 			       meta->len);
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 		}
@@ -1160,7 +1160,7 @@ static ssize_t ascs_release(struct bt_ascs *ascs, struct net_buf_simple *buf)
 	BT_DBG("num_ases %u", req->num_ases);
 
 	if (buf->len < req->num_ases) {
-		BT_ERR("Malformed ASE Release: len %u < %zu", buf->len,
+		BT_ERR("Malformed ASE Release: len %u < %u", buf->len,
 		       req->num_ases);
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}

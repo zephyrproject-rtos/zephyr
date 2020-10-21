@@ -36,7 +36,7 @@ static void ep_iso_recv(struct bt_iso_chan *chan, struct net_buf *buf)
 {
 	struct bt_audio_ep *ep = EP_ISO(chan);
 
-	BT_DBG("chan %p ep %p len %u", chan, ep, net_buf_frags_len(buf));
+	BT_DBG("chan %p ep %p len %zu", chan, ep, net_buf_frags_len(buf));
 }
 
 static void ep_iso_connected(struct bt_iso_chan *chan)
