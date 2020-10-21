@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_GPIO_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_GPIO_H_
 
+#include <drivers/gpio_flags.h>
+
 /**
  * @brief GPIO Driver APIs
  * @defgroup gpio_interface GPIO Driver APIs
