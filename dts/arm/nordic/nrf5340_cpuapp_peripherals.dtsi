@@ -344,6 +344,16 @@ gpio1: gpio@842800 {
 	status = "disabled";
 };
 
+qspi: qspi@2b000 {
+	compatible = "nordic,nrf-qspi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0x2b000 0x1000>;
+	interrupts = <43 1>;
+	status = "disabled";
+	label = "QSPI";
+};
+
 rtc0: rtc@14000 {
 	compatible = "nordic,nrf-rtc";
 	reg = <0x14000 0x1000>;
