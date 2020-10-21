@@ -384,6 +384,7 @@ config BOOTLOADER_SRAM_SIZE
 config BOOTLOADER_MCUBOOT
 	bool "MCUboot bootloader support"
 	select USE_DT_CODE_PARTITION
+	imply INIT_ARCH_HW_AT_BOOT if ARCH_SUPPORTS_ARCH_HW_INIT
 	help
 	  This option signifies that the target uses MCUboot as a bootloader,
 	  or in other words that the image is to be chain-loaded by MCUboot.
@@ -396,6 +397,11 @@ config BOOTLOADER_MCUBOOT
 	    * Activating SW_VECTOR_RELAY_CLIENT on Cortex-M0
 	      (or Armv8-M baseline) targets with no built-in vector relocation
 	      mechanisms
+
+	  By default, this option instructs Zephyr to initialize the core
+	  architecture HW registers during boot, when this is supported by
+	  the application. This removes the need by MCUboot to reset
+	  the core registers' state itself.
 
 if BOOTLOADER_MCUBOOT
 
