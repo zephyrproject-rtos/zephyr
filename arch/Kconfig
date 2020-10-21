@@ -384,6 +384,24 @@ config EXTRA_EXCEPTION_INFO
 
 endmenu # Interrupt configuration
 
+config INIT_ARCH_HW_AT_BOOT
+	bool "Initialize internal architecture state at boot"
+	depends on ARCH_SUPPORTS_ARCH_HW_INIT
+	help
+	  This option instructs Zephyr to force the initialization
+	  of the internal architectural state (for example ARCH-level
+	  HW registers and system control blocks) during boot to
+	  the reset values as specified by the corresponding
+	  architecture manual. The option is useful when the Zephyr
+	  firmware image is chain-loaded, for example, by a debugger
+	  or a bootloader, and we need to guarantee that the internal
+	  states of the architecture core blocks are restored to the
+	  reset values (as specified by the architecture).
+
+	  Note: the functionality is architecture-specific. For the
+	  implementation details refer to each architecture where
+	  this feature is supported.
+
 endmenu
 
 #
@@ -415,6 +433,9 @@ config ARCH_HAS_NESTED_EXCEPTION_DETECTION
 	bool
 
 config ARCH_SUPPORTS_COREDUMP
+	bool
+
+config ARCH_SUPPORTS_ARCH_HW_INIT
 	bool
 
 config ARCH_HAS_EXTRA_EXCEPTION_INFO
