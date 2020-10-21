@@ -33,7 +33,7 @@ FILE(GLOB ll_sw_sources
 )
 
 FILE(GLOB mock_sources
-        ${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/ll.c
+        ${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/lll.c
         ${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/ll_assert.c
 	${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/util.c
 	${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/ticker.c

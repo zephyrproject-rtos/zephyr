@@ -47,6 +47,9 @@
 #include "ll_sw/ull_adv_types.h"
 #include "ll_sw/ull_scan_types.h"
 #include "ll_sw/ull_sync_types.h"
+#if !defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
+#include "ull_tx_queue.h"
+#endif
 #include "ll_sw/ull_sync_internal.h"
 #include "ll_sw/ull_conn_types.h"
 #include "ll_sw/ull_conn_internal.h"

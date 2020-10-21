@@ -36,6 +36,10 @@
 #include "lll_central.h"
 #include "lll_filter.h"
 
+#if !defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
+#include "ull_tx_queue.h"
+#endif
+
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
 #include "ull_conn_types.h"
@@ -1129,7 +1133,9 @@ static inline void conn_release(struct ll_scan_set *scan)
 
 	conn = HDR_LLL2ULL(lll);
 
+#if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
 	cc = (void *)&conn->llcp_terminate.node_rx;
+#endif
 	link = cc->hdr.link;
 	LL_ASSERT(link);
 

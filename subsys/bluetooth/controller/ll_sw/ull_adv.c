@@ -38,6 +38,10 @@
 #include "lll_filter.h"
 #include "lll/lll_df_types.h"
 
+#if (!defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACYa))
+#include "ll_sw/ull_tx_queue.h"
+#endif
+
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
 #include "ull_conn_types.h"
@@ -1015,6 +1019,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn->appto_expire = 0U;
 #endif
 
+#ifdef CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
 		conn->own_id_addr_type = BT_ADDR_LE_NONE->type;
 		(void)memcpy(conn->own_id_addr, BT_ADDR_LE_NONE->a.val,
@@ -1042,7 +1047,14 @@ uint8_t ll_adv_enable(uint8_t enable)
 		 * terminate ind rx node
 		 */
 		conn->llcp_terminate.node_rx.hdr.link = link;
+#else
+		conn->llcp.fex.features_used = LL_FEAT;
+		conn->llcp.fex.features_peer = 0;
+		conn->llcp.vex.valid = 0;
+		conn->llcp.terminate.reason_peer = 0;
+#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 
+#ifdef CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 		conn_lll->enc_rx = conn_lll->enc_tx = 0U;
 		conn->llcp_enc.req = conn->llcp_enc.ack = 0U;
@@ -1050,14 +1062,22 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn->llcp_enc.refresh = 0U;
 		conn->periph.llcp_type = 0U;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+#else
+		/* EGON TODO: fill in encoding */
+#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 
+#ifdef CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		conn->llcp_conn_param.req = 0;
 		conn->llcp_conn_param.ack = 0;
 		conn->llcp_conn_param.disabled = 0;
 		conn->periph.ticks_to_offset = 0;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+#else
+		/* EGON TODO: fill in conn param */
+#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 
+#ifdef CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		conn->llcp_length.req = conn->llcp_length.ack = 0U;
 		conn->llcp_length.disabled = 0U;
@@ -1068,7 +1088,9 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn->default_tx_time = ull_conn_default_tx_time_get();
 #endif /* CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 
+#ifdef CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY
 #if defined(CONFIG_BT_CTLR_PHY)
 		conn->llcp_phy.req = conn->llcp_phy.ack = 0;
 		conn->llcp_phy.disabled = 0U;
@@ -1076,6 +1098,12 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn->phy_pref_tx = ull_conn_default_phy_tx_get();
 		conn->phy_pref_rx = ull_conn_default_phy_rx_get();
 #endif /* CONFIG_BT_CTLR_PHY */
+#else
+		conn->phy_pref_tx = ull_conn_default_phy_tx_get();
+		conn->phy_pref_rx = ull_conn_default_phy_rx_get();
+		conn->phy_pref_flags = 0;
+#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
+
 
 		conn->tx_head = conn->tx_ctrl = conn->tx_ctrl_last =
 		conn->tx_data = conn->tx_data_last = 0;

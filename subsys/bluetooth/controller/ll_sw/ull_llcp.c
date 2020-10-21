@@ -23,8 +23,9 @@
 #include "lll.h"
 #include "lll_conn.h"
 
-#include "ull_conn_types.h"
 #include "ull_tx_queue.h"
+
+#include "ull_conn_types.h"
 #include "ull_llcp.h"
 #include "ull_llcp_internal.h"
 
@@ -133,17 +134,17 @@ static void ntf_release(struct node_rx_pdu *ntf)
  * ULL -> LLL Interface
  */
 
-void ull_cp_priv_tx_enqueue(struct ull_cp_conn *conn, struct node_tx *tx)
+void ull_cp_priv_tx_enqueue(struct ll_conn *conn, struct node_tx *tx)
 {
 	ull_tx_q_enqueue_ctrl(&conn->tx_q, tx);
 }
 
-void ull_cp_priv_tx_pause_data(struct ull_cp_conn *conn)
+void ull_cp_priv_tx_pause_data(struct ll_conn *conn)
 {
 	ull_tx_q_pause_data(&conn->tx_q);
 }
 
-void ull_cp_priv_tx_flush(struct ull_cp_conn *conn)
+void ull_cp_priv_tx_flush(struct ll_conn *conn)
 {
 	/* TODO(thoh): do something here to flush the TX Q */
 }
@@ -269,7 +270,7 @@ void ull_cp_init(void)
 	mem_init(mem_ntf.pool, NTF_BUF_SIZE, NTF_BUF_NUM, &mem_ntf.free);
 }
 
-void ull_cp_conn_init(struct ull_cp_conn *conn)
+void ll_conn_init(struct ll_conn *conn)
 {
 	/* Reset local request fsm */
 	lr_init(conn);
@@ -312,13 +313,13 @@ void ull_cp_release_ntf(struct node_rx_pdu *ntf)
 	ntf_release(ntf);
 }
 
-void ull_cp_run(struct ull_cp_conn *conn)
+void ull_cp_run(struct ll_conn *conn)
 {
 	rr_run(conn);
 	lr_run(conn);
 }
 
-void ull_cp_state_set(struct ull_cp_conn *conn, uint8_t state)
+void ull_cp_state_set(struct ll_conn *conn, uint8_t state)
 {
 	switch (state) {
 	case ULL_CP_CONNECTED:
@@ -334,7 +335,7 @@ void ull_cp_state_set(struct ull_cp_conn *conn, uint8_t state)
 	}
 }
 
-uint8_t ull_cp_min_used_chans(struct ull_cp_conn *conn, uint8_t phys, uint8_t min_used_chans)
+uint8_t ull_cp_min_used_chans(struct ll_conn *conn, uint8_t phys, uint8_t min_used_chans)
 {
 	struct proc_ctx *ctx;
 
@@ -360,7 +361,7 @@ uint8_t ull_cp_min_used_chans(struct ull_cp_conn *conn, uint8_t phys, uint8_t mi
 	return BT_HCI_ERR_SUCCESS;
 }
 
-uint8_t ull_cp_le_ping(struct ull_cp_conn *conn)
+uint8_t ull_cp_le_ping(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
@@ -374,7 +375,7 @@ uint8_t ull_cp_le_ping(struct ull_cp_conn *conn)
 	return BT_HCI_ERR_SUCCESS;
 }
 
-uint8_t ull_cp_feature_exchange(struct ull_cp_conn *conn)
+uint8_t ull_cp_feature_exchange(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
@@ -388,7 +389,7 @@ uint8_t ull_cp_feature_exchange(struct ull_cp_conn *conn)
 	return BT_HCI_ERR_SUCCESS;
 }
 
-uint8_t ull_cp_version_exchange(struct ull_cp_conn *conn)
+uint8_t ull_cp_version_exchange(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
@@ -402,7 +403,7 @@ uint8_t ull_cp_version_exchange(struct ull_cp_conn *conn)
 	return BT_HCI_ERR_SUCCESS;
 }
 
-uint8_t ull_cp_encryption_start(struct ull_cp_conn *conn)
+uint8_t ull_cp_encryption_start(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
@@ -418,7 +419,7 @@ uint8_t ull_cp_encryption_start(struct ull_cp_conn *conn)
 	return BT_HCI_ERR_SUCCESS;
 }
 
-uint8_t ull_cp_phy_update(struct ull_cp_conn *conn)
+uint8_t ull_cp_phy_update(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
@@ -434,7 +435,7 @@ uint8_t ull_cp_phy_update(struct ull_cp_conn *conn)
 	return BT_HCI_ERR_SUCCESS;
 }
 
-uint8_t ull_cp_terminate(struct ull_cp_conn *conn, uint8_t error_code)
+uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code)
 {
 	struct proc_ctx *ctx;
 
@@ -454,7 +455,7 @@ uint8_t ull_cp_terminate(struct ull_cp_conn *conn, uint8_t error_code)
 	return BT_HCI_ERR_SUCCESS;
 }
 
-void ull_cp_ltk_req_reply(struct ull_cp_conn *conn)
+void ull_cp_ltk_req_reply(struct ll_conn *conn)
 {
 	/* TODO */
 	struct proc_ctx *ctx;
@@ -465,7 +466,7 @@ void ull_cp_ltk_req_reply(struct ull_cp_conn *conn)
 	}
 }
 
-void ull_cp_ltk_req_neq_reply(struct ull_cp_conn *conn)
+void ull_cp_ltk_req_neq_reply(struct ll_conn *conn)
 {
 	/* TODO */
 	struct proc_ctx *ctx;
@@ -535,7 +536,7 @@ static bool pdu_is_reject(struct pdu_data *pdu, struct proc_ctx *ctx)
 	return (((pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND) && (ctx->tx_opcode == pdu->llctrl.reject_ext_ind.reject_opcode)) || (pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_IND));
 }
 
-void ull_cp_tx_ack(struct ull_cp_conn *conn, struct node_tx *tx)
+void ull_cp_tx_ack(struct ll_conn *conn, struct node_tx *tx)
 {
 	struct proc_ctx *ctx;
 
@@ -546,7 +547,7 @@ void ull_cp_tx_ack(struct ull_cp_conn *conn, struct node_tx *tx)
 	}
 }
 
-void ull_cp_rx(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
+void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 {
 	struct pdu_data *pdu;
 	struct proc_ctx *ctx;
@@ -721,12 +722,12 @@ void test_int_mem_ntf(void)
 
 void test_int_create_proc(void)
 {
-	struct ull_cp_conn conn;
+	struct ll_conn conn;
 	struct proc_ctx *ctx;
 
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
-	ull_cp_conn_init(&conn);
+	ll_conn_init(&conn);
 
 	ctx = create_procedure(PROC_VERSION_EXCHANGE);
 	zassert_not_null(ctx, NULL);

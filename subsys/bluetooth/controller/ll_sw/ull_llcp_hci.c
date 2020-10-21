@@ -13,9 +13,11 @@
 
 #include <stddef.h>
 #include <zephyr.h>
+#include <soc.h>
 #include <bluetooth/bluetooth.h>
 #include <sys/byteorder.h>
 
+#include "hal/cpu.h"
 #include "hal/ecb.h"
 #include "hal/ccm.h"
 #include "hal/ticker.h"
@@ -27,10 +29,15 @@
 #include "util/mayfly.h"
 
 #include "ticker/ticker.h"
+#include "ull_tx_queue.h"
 
 #include "pdu.h"
 #include "lll.h"
 #include "lll_conn.h"
+#include "lll_filter.h"
+#include "lll_adv.h"
+#include "ull_adv_types.h"
+#include "ull_filter.h"
 #include "ull_conn_types.h"
 #include "ull_internal.h"
 #include "ull_sched_internal.h"
@@ -45,7 +52,6 @@
 #include "ull_scan_internal.h"
 
 #include "ull_conn_llcp_internal.h"
-#include "ull_tx_queue.h"
 #include "ull_llcp.h"
 
 #include "ll.h"
@@ -69,10 +75,11 @@
 static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
 					       void *params);
 #endif /* CONFIG_BT_PERIPHERAL */
+static inline void conn_release(struct ll_scan_set *scan);
 
 uint8_t ll_version_ind_send(uint16_t handle)
 {
-	struct ull_cp_conn *conn;
+	struct ll_conn *conn;
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
@@ -85,7 +92,7 @@ uint8_t ll_version_ind_send(uint16_t handle)
 #if defined(CONFIG_BT_CTLR_LE_PING)
 uint8_t ll_apto_get(uint16_t handle, uint16_t *apto)
 {
-	struct ull_cp_conn *conn;
+	struct ll_conn *conn;
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
@@ -101,7 +108,7 @@ uint8_t ll_apto_get(uint16_t handle, uint16_t *apto)
 
 uint8_t ll_apto_set(uint16_t handle, uint16_t apto)
 {
-	struct ull_cp_conn *conn;
+	struct ll_conn *conn;
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
@@ -120,7 +127,7 @@ uint8_t ll_apto_set(uint16_t handle, uint16_t apto)
 
 uint8_t ll_feature_req_send(uint16_t handle)
 {
-	struct ull_cp_conn *conn;
+	struct ll_conn *conn;
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
@@ -145,7 +152,7 @@ uint8_t ll_phy_default_set(uint8_t tx, uint8_t rx)
 
 uint8_t ll_phy_get(uint16_t handle, uint8_t *tx, uint8_t *rx)
 {
-	struct ull_cp_conn *conn;
+	struct ll_conn *conn;
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
@@ -167,7 +174,7 @@ uint8_t ll_phy_get(uint16_t handle, uint8_t *tx, uint8_t *rx)
 
 uint8_t ll_phy_req_send(uint16_t handle, uint8_t tx, uint8_t flags, uint8_t rx)
 {
-	struct ull_cp_conn *conn;
+	struct ll_conn *conn;
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
@@ -201,7 +208,7 @@ uint8_t ll_phy_req_send(uint16_t handle, uint8_t tx, uint8_t flags, uint8_t rx)
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 uint32_t ll_length_req_send(uint16_t handle, uint16_t tx_octets, uint16_t tx_time)
 {
-	struct ull_cp_conn *conn;
+	struct ll_conn *conn;
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
@@ -258,7 +265,7 @@ uint32_t ll_length_default_set(uint16_t max_tx_octets, uint16_t max_tx_time)
 
 uint8_t ll_terminate_ind_send(uint16_t handle, uint8_t reason)
 {
-	struct ull_cp_conn *conn;
+	struct ll_conn *conn;
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
@@ -280,7 +287,7 @@ uint8_t ll_terminate_ind_send(uint16_t handle, uint8_t reason)
 uint8_t ll_conn_update(uint16_t handle, uint8_t cmd, uint8_t status, uint16_t interval_min,
 		    uint16_t interval_max, uint16_t latency, uint16_t timeout)
 {
-	struct ull_cp_conn *conn;
+	struct ll_conn *conn;
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
@@ -349,7 +356,7 @@ uint8_t ll_conn_update(uint16_t handle, uint8_t cmd, uint8_t status, uint16_t in
 	}
 
 	if (!cmd) {
-		/* replace with call to correct ull_cp_conn procedure */
+		/* replace with call to correct ll_conn procedure */
 		return BT_HCI_ERR_UNKNOWN_CMD;
 	} else {
 		return BT_HCI_ERR_UNKNOWN_CMD;
@@ -360,7 +367,7 @@ uint8_t ll_conn_update(uint16_t handle, uint8_t cmd, uint8_t status, uint16_t in
 
 uint8_t ll_chm_get(uint16_t handle, uint8_t *chm)
 {
-	struct ull_cp_conn *conn;
+	struct ll_conn *conn;
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
@@ -380,7 +387,7 @@ uint8_t ll_chm_get(uint16_t handle, uint8_t *chm)
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
 uint8_t ll_rssi_get(uint16_t handle, uint8_t *rssi)
 {
-	struct ull_cp_conn *conn;
+	struct ll_conn *conn;
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
@@ -402,7 +409,7 @@ uint8_t ll_rssi_get(uint16_t handle, uint8_t *rssi)
 uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
 			    uint8_t const *const ltk)
 {
-	struct ull_cp_conn *conn;
+	struct ll_conn *conn;
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
@@ -446,19 +453,59 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 			  uint16_t interval, uint16_t latency, uint16_t timeout)
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 {
-	/*
-	 * disabled for now
-	 */
-#if 0
 	struct lll_conn *conn_lll;
 	struct ll_scan_set *scan;
 	uint32_t conn_interval_us;
 	struct lll_scan *lll;
-	struct ull_cp_conn *conn;
+	struct ll_conn *conn;
 	memq_link_t *link;
-	uint8_t access_addr[4];
 	uint8_t hop;
 	int err;
+
+	scan = ull_scan_is_disabled_get(SCAN_HANDLE_1M);
+	if (!scan) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	struct ll_scan_set *scan_coded;
+	struct lll_scan *lll_coded;
+
+	scan_coded = ull_scan_is_disabled_get(SCAN_HANDLE_PHY_CODED);
+	if (!scan_coded) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	lll = &scan->lll;
+	lll_coded = &scan_coded->lll;
+
+	if (phy & BT_HCI_LE_EXT_SCAN_PHY_CODED) {
+		if (!lll_coded->conn) {
+			lll_coded->conn = lll->conn;
+		}
+		scan = scan_coded;
+		lll = lll_coded;
+	} else {
+		if (!lll->conn) {
+			lll->conn = lll_coded->conn;
+		}
+	}
+
+#else /* !CONFIG_BT_CTLR_PHY_CODED */
+	if (phy & ~BT_HCI_LE_EXT_SCAN_PHY_1M) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	lll = &scan->lll;
+
+#endif /* !CONFIG_BT_CTLR_PHY_CODED */
+
+	lll->phy = phy;
+
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+	lll = &scan->lll;
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 	if (lll->conn) {
 		goto conn_is_valid;
@@ -578,40 +625,24 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 			     conn->apto_reload;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
-	conn->common.fex_valid = 0U;
-	conn->master.terminate_ack = 0U;
+	conn->llcp.fex.valid = 0U;
 
-	conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0U;
-	conn->llcp_rx = NULL;
-	conn->llcp_feature.features_conn = LL_FEAT;
-	conn->llcp_feature.features_peer = 0;
-	conn->llcp_version.tx = conn->llcp_version.rx = 0U;
-	conn->llcp_terminate.reason_peer = 0U;
 	/* NOTE: use allocated link for generating dedicated
 	 * terminate ind rx node
 	 */
-	conn->llcp_terminate.node_rx.hdr.link = link;
+	conn->llcp.terminate.node_rx.hdr.link = link;
 
-#if 0 /* EGON TODO: set correct variable to 0 when implementing terminate proc */
+	conn->llcp.fex.features_used = LL_FEAT;
+	conn->llcp.fex.features_peer = 0;
+
+	conn->default_tx_octets = ull_conn_default_tx_octets_get();
+
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	conn_lll->enc_rx = conn_lll->enc_tx = 0U;
-
-	conn->llcp_enc.pause_tx = conn->llcp_enc.pause_rx = 0U;
-	conn->llcp_enc.refresh = 0U;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
-#endif
 
-#if 0 /* EGON TODO: set correct variable to 0 when implementing terminate proc */
-#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-	conn->llcp_conn_param.disabled = 0U;
-#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
-#endif
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-#if 0 /* EGON TODO: set correct variable to 0 when implementing terminate proc */
-	conn->llcp_length.disabled = 0U;
-	conn->llcp_length.cache.tx_octets = 0U;
-#endif
 	conn->default_tx_octets = ull_conn_default_tx_octets_get();
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -670,9 +701,7 @@ conn_is_valid:
 
 	return ull_scan_enable(scan);
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
-#else
-	return 0;
-#endif /* 0 */
+
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
@@ -714,10 +743,6 @@ uint8_t ll_connect_enable(uint8_t is_coded_included)
 
 uint8_t ll_connect_disable(void **rx)
 {
-	/*
-	 * disable for now
-	 */
-#if 0
 	struct lll_conn *conn_lll;
 	struct ll_scan_set *scan;
 	uint8_t status;
@@ -739,7 +764,7 @@ uint8_t ll_connect_disable(void **rx)
 		struct node_rx_pdu *cc;
 		memq_link_t *link;
 
-		cc = (void *)&conn->llcp_terminate.node_rx;
+		cc = (void *)&conn->llcp.terminate.node_rx;
 		link = cc->hdr.link;
 		LL_ASSERT(link);
 
@@ -757,9 +782,6 @@ uint8_t ll_connect_disable(void **rx)
 	}
 
 	return status;
-#else
-	return 0;
-#endif /* 0 */
 }
 
 uint8_t ll_chm_update(uint8_t const *const chm)
@@ -770,7 +792,7 @@ uint8_t ll_chm_update(uint8_t const *const chm)
 
 	handle = CONFIG_BT_MAX_CONN;
 	while (handle--) {
-		struct ull_cp_conn *conn;
+		struct ll_conn *conn;
 
 		conn = ll_connected_get(handle);
 		if (!conn || conn->lll.role) {
@@ -788,7 +810,7 @@ uint8_t ll_chm_update(uint8_t const *const chm)
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand, uint8_t const *const ediv, uint8_t const *const ltk)
 {
-	struct ull_cp_conn *conn;
+	struct ll_conn *conn;
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
@@ -819,7 +841,7 @@ int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 {
 
 	struct lll_tx *lll_tx;
-	struct ull_cp_conn *conn;
+	struct ll_conn *conn;
 	uint8_t idx;
 
 	conn = ll_connected_get(handle);
@@ -870,3 +892,27 @@ static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
 	conn->slave.latency_cancel = 0U;
 }
 #endif /* CONFIG_BT_PERIPHERAL */
+
+static inline void conn_release(struct ll_scan_set *scan)
+{
+	struct lll_conn *lll = scan->lll.conn;
+	struct node_rx_pdu *cc;
+	struct ll_conn *conn;
+	memq_link_t *link;
+
+	LL_ASSERT(!lll->link_tx_free);
+	link = memq_deinit(&lll->memq_tx.head, &lll->memq_tx.tail);
+	LL_ASSERT(link);
+	lll->link_tx_free = link;
+
+	conn = (void *)HDR_LLL2EVT(lll);
+
+	cc = (void *)&conn->llcp.terminate.node_rx;
+	link = cc->hdr.link;
+	LL_ASSERT(link);
+
+	ll_rx_link_release(link);
+
+	ll_conn_release(conn);
+	scan->lll.conn = NULL;
+}

@@ -28,9 +28,9 @@
 
 #include "lll.h"
 #include "lll_conn.h"
-
-#include "ull_conn_types.h"
 #include "ull_tx_queue.h"
+#include "ull_conn_types.h"
+
 #include "ull_llcp.h"
 #include "ull_llcp_internal.h"
 #include "ull_conn_llcp_internal.h"
@@ -39,7 +39,7 @@
 #include "helper_util.h"
 #include "helper_features.h"
 
-struct ull_cp_conn *conn_from_pool;
+struct ll_conn *conn_from_pool;
 
 static void setup(void)
 {
