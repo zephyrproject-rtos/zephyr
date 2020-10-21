@@ -206,6 +206,7 @@
 /drivers/i2s/*litex*                      @mateusz-holenko @kgugala @pgielda
 /drivers/ieee802154/                      @jukkar @tbursztyka
 /drivers/ieee802154/ieee802154_rf2xx*     @jukkar @tbursztyka @nandojve
+/drivers/ieee802154/ieee802154_cc13xx*    @bwitherspoon @cfriedt
 /drivers/interrupt_controller/            @andrewboie
 /drivers/interrupt_controller/intc_gic.c  @stephanosio
 /drivers/*/intc_vexriscv_litex.c          @mateusz-holenko @kgugala @pgielda

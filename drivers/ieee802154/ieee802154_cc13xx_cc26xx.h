@@ -10,6 +10,8 @@
 #include <kernel.h>
 #include <net/net_if.h>
 
+#include <ti/drivers/rf/RF.h>
+
 #include <driverlib/rf_common_cmd.h>
 #include <driverlib/rf_data_entry.h>
 #include <driverlib/rf_ieee_cmd.h>
@@ -59,22 +61,21 @@
 #define CC13XX_CC26XX_RSSI_DYNAMIC_RANGE 95
 
 struct ieee802154_cc13xx_cc26xx_data {
+	RF_Handle rf_handle;
+	RF_Object rf_object;
+
 	struct net_if *iface;
 
 	uint8_t mac[8];
 
-	struct k_sem fg_done;
-	struct k_sem rx_done;
-
-	K_KERNEL_STACK_MEMBER(rx_stack,
-			      CONFIG_IEEE802154_CC13XX_CC26XX_RX_STACK_SIZE);
-	struct k_thread rx_thread;
+	struct k_mutex tx_mutex;
 
 	dataQueue_t rx_queue;
-	rfc_dataEntryPointer_t rx_entry[CC13XX_CC26XX_RX_BUF_SIZE];
+	rfc_dataEntryPointer_t rx_entry[CC13XX_CC26XX_NUM_RX_BUF];
 	uint8_t rx_data[CC13XX_CC26XX_NUM_RX_BUF]
 		    [CC13XX_CC26XX_RX_BUF_SIZE] __aligned(4);
 
+	volatile rfc_CMD_FS_t cmd_fs;
 	volatile rfc_CMD_IEEE_CCA_REQ_t cmd_ieee_cca_req;
 	volatile rfc_CMD_CLEAR_RX_t cmd_clear_rx;
 	volatile rfc_CMD_IEEE_RX_t cmd_ieee_rx;

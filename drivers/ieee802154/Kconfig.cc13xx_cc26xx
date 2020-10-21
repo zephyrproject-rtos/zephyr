@@ -20,10 +20,4 @@ config IEEE802154_CC13XX_CC26XX_INIT_PRIO
 	help
 	  Set the initialization priority number.
 
-config IEEE802154_CC13XX_CC26XX_RX_STACK_SIZE
-	int "TI CC13xx / CC26xx IEEE 802.15.4 driver's RX thread stack size"
-	default 800
-	help
-	  This option sets the driver's stack size for its internal RX thread.
-
 endif # IEEE802154_CC13XX_CC26XX
