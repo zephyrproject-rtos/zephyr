@@ -23,16 +23,27 @@
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 
+const PowerCC26X2_Config PowerCC26X2_config = {
+#if defined(CONFIG_IEEE802154_CC13XX_CC26XX) \
+	|| defined(CONFIG_BLE_CC13XX_CC26XX)
+	/* TODO: check for IEEE802154_CC13XX_CC26XX_SUB_GHZ */
+	.policyInitFxn      = NULL,
+	.policyFxn          = NULL,
+	.calibrateFxn       = &PowerCC26XX_calibrate,
+	.enablePolicy       = false,
+	.calibrateRCOSC_LF  = true,
+	.calibrateRCOSC_HF  = true
+#else
 /* Configuring TI Power module to not use its policy function (we use Zephyr's
  * instead), and disable oscillator calibration functionality for now.
  */
-const PowerCC26X2_Config PowerCC26X2_config = {
 	.policyInitFxn      = NULL,
 	.policyFxn          = NULL,
 	.calibrateFxn       = NULL,
 	.enablePolicy       = false,
 	.calibrateRCOSC_LF  = false,
 	.calibrateRCOSC_HF  = false
+#endif
 };
 
 extern PowerCC26X2_ModuleState PowerCC26X2_module;
