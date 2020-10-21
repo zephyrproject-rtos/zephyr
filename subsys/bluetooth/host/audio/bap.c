@@ -747,7 +747,7 @@ static uint8_t read_func(struct bt_conn *conn, uint8_t err,
 		meta = net_buf_simple_pull_mem(&buf, sizeof(*meta));
 
 		if (buf.len < meta->len) {
-			BT_ERR("Malformed PAC: remaining len %u expected %zu",
+			BT_ERR("Malformed PAC: remaining len %u expected %u",
 			       buf.len, meta->len);
 			break;
 		}
