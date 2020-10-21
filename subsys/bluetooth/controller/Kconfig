@@ -489,6 +489,14 @@ config BT_CTLR_SYNC_ISO
 	  Enable support for Bluetooth 5.2 LE Isochronous Advertising sync in
 	  the Controller.
 
+config BT_CTLR_ADV_ISO_SET
+	int "LE Isochronous Channel advertising sets"
+	depends on BT_CTLR_ADV_ISO
+	range 1 32
+	default 1
+	help
+	  Maximum supported advertising sets.
+
 config BT_CTLR_SYNC_ISO
 	bool "LE Broadcast Isochronous Channel advertising sync [EXPERIMENTAL]" if BT_LL_SW_SPLIT
 

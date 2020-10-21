@@ -37,9 +37,16 @@ struct lll_adv_aux {
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 };
 
+struct lll_adv_iso {
+	struct lll_hdr hdr;
+};
+
 struct lll_adv_sync {
 	struct lll_hdr hdr;
 	struct lll_adv *adv;
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	struct lll_adv_iso *adv_iso;
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 
 	uint8_t access_addr[4];
 	uint8_t crc_init[3];

@@ -36,7 +36,9 @@ static inline uint8_t ll_adv_set_by_hci_handle_get_or_new(uint8_t hci_handle,
 	return 0;
 }
 #endif
-
+uint8_t ll_adv_iso_by_hci_handle_get(uint8_t hci_handle, uint8_t *handle);
+uint8_t ll_adv_iso_by_hci_handle_new(uint8_t hci_handle, uint8_t *handle);
+;
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_HCI_RAW)
 int ll_adv_cmds_set(uint8_t adv_cmds);
@@ -98,7 +100,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		      uint32_t sdu_interval, uint16_t max_sdu,
 		      uint16_t max_latency, uint8_t rtn, uint8_t phy,
 		      uint8_t packing, uint8_t framing, uint8_t encryption,
-		      uint8_t *bcode);
+		      uint8_t *bcode, void **node_rx);
 uint8_t ll_big_test_create(uint8_t big_handle, uint8_t adv_handle,
 			   uint8_t num_bis, uint32_t sdu_interval,
 			   uint16_t iso_interval, uint8_t nse, uint16_t max_sdu,
