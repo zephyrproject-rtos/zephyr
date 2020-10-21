@@ -9,5 +9,7 @@
 /* Application main Thread */
 void main(void)
 {
-	pwrseq_thread(NULL, NULL, NULL);
+	int32_t t_time = 1000;
+
+	pwrseq_thread((void *)&t_time, NULL, NULL);
 }

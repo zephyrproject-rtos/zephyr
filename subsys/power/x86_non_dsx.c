@@ -6,6 +6,7 @@
 
 #include <device.h>
 #include <devicetree/gpio.h>
+#include <drivers/espi.h>
 #include <power/x86_non_dsx.h>
 #include <zephyr.h>
 
@@ -63,6 +64,67 @@ static struct gpio_config power_seq_gpios[] = {
 	},
 };
 
+/* On power-on start boot up sequence */
+static enum power_states_ndsx power_state = SYS_POWER_STATE_G3S5;
+
+const struct gpio_config *get_gpio_config_from_net_name(const char *net_name)
+{
+	const struct gpio_config *gpio;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(power_seq_gpios); i++) {
+		gpio = &power_seq_gpios[i];
+		if (!strcmp(gpio->net_name, net_name))
+			return gpio;
+	}
+
+	LOG_ERR("Failed to find GPIO %s", net_name);
+	return NULL;
+}
+
+static int gpio_get_level(const char *net_name)
+{
+	const struct gpio_config *gpio =
+		get_gpio_config_from_net_name(net_name);
+
+	if (gpio)
+		return gpio_pin_get_raw(gpio->port, gpio->pin);
+
+	return 0;
+}
+
+static void gpio_set_level(const char *net_name, int val)
+{
+	const struct gpio_config *gpio =
+		get_gpio_config_from_net_name(net_name);
+
+	if (gpio) {
+		if (gpio_pin_set_raw(gpio->port, gpio->pin, val))
+			LOG_ERR("Failed to set GPIO %s", net_name);
+	}
+}
+
+/* TODO: Add code for eSPI init */
+static int vw_get_level(enum espi_vwire_signal signal)
+{
+	return 0;
+}
+
+static void enable_power_rails(bool enable)
+{
+	if (enable) {
+#if POWER_SEQ_GPIO_PRESENT(EC_VR_EN_PP5000_A)
+		gpio_set_level(GPIO_NET_NAME(EC_VR_EN_PP5000_A), 1);
+#endif
+		gpio_set_level(GPIO_NET_NAME(EC_VR_EN_PP3300_A), 1);
+	} else {
+		gpio_set_level(GPIO_NET_NAME(EC_VR_EN_PP3300_A), 0);
+#if POWER_SEQ_GPIO_PRESENT(EC_VR_EN_PP5000_A)
+		gpio_set_level(GPIO_NET_NAME(EC_VR_EN_PP5000_A), 0);
+#endif
+	}
+}
+
 static void powseq_gpio_init(void)
 {
 	struct gpio_config *gpio;
@@ -96,10 +158,90 @@ static void powseq_gpio_init(void)
 			gpio->pin, gpio->flags);
 }
 
+static void power_states_handler(void)
+{
+	switch (power_state) {
+	case SYS_POWER_STATE_G3:
+		/* Nothing to do */
+		break;
+
+	case SYS_POWER_STATE_S5:
+		/* If A-rails are stable move to higher state */
+		if (gpio_get_level(
+#if POWER_SEQ_GPIO_PRESENT(VR_EC_DSW_PWROK)
+			GPIO_NET_NAME(VR_EC_DSW_PWROK)
+#else
+			GPIO_NET_NAME(EC_VR_EN_PP3300_A)
+#endif
+			)) {
+#if POWER_SEQ_GPIO_PRESENT(EC_PCH_DSW_PWROK)
+			gpio_set_level(GPIO_NET_NAME(EC_PCH_DSW_PWROK), 1);
+#endif
+			power_state = SYS_POWER_STATE_S5S4;
+		}
+		break;
+
+	case SYS_POWER_STATE_S4:
+		/* AP is out of suspend to disk */
+		if (vw_get_level(ESPI_VWIRE_SIGNAL_SLP_S4))
+			power_state = SYS_POWER_STATE_S4S3;
+		break;
+
+	case SYS_POWER_STATE_S3:
+		/* AP is out of suspend to RAM */
+		if (vw_get_level(ESPI_VWIRE_SIGNAL_SLP_S3))
+			power_state = SYS_POWER_STATE_S3S0;
+		break;
+
+	case SYS_POWER_STATE_S0:
+		/* Stay in S0 */
+		break;
+
+	case SYS_POWER_STATE_G3S5:
+		/* Enable AP power rails */
+		enable_power_rails(true);
+		power_state = SYS_POWER_STATE_S5;
+		break;
+
+	case SYS_POWER_STATE_S5S4:
+		/* Check if the PCH has come out of suspend state */
+		if (gpio_get_level(GPIO_NET_NAME(PCH_EC_SLP_SUS_L)) &&
+			gpio_get_level(GPIO_NET_NAME(VR_EC_EC_RSMRST_ODL)))
+			power_state = SYS_POWER_STATE_S4;
+		break;
+
+	case SYS_POWER_STATE_S4S3:
+		power_state = SYS_POWER_STATE_S3;
+		break;
+
+	case SYS_POWER_STATE_S3S0:
+		/* All the power rails must be stable */
+		if (gpio_get_level(GPIO_NET_NAME(VR_EC_ALL_SYS_PWRGD)))
+			power_state = SYS_POWER_STATE_S0;
+		break;
+
+	case SYS_POWER_STATE_S5G3:
+	case SYS_POWER_STATE_S4S5:
+	case SYS_POWER_STATE_S3S4:
+	case SYS_POWER_STATE_S0S3:
+		break;
+
+	default:
+		break;
+	}
+}
+
 void pwrseq_thread(void *p1, void *p2, void *p3)
 {
+	int32_t t_wait_ms = *(int32_t *) p1;
+
 	powseq_gpio_init();
 
 	while (true) {
+		LOG_INF("In power state %d", power_state);
+
+		power_states_handler();
+
+		k_msleep(t_wait_ms);
 	}
 }
