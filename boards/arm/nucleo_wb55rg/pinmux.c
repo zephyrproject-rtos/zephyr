@@ -14,10 +14,6 @@
 
 /* pin assignments for NUCLEO-WB55RG board */
 static const struct pin_config pinconf[] = {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usb), okay)
-	{STM32_PIN_PA11, STM32WBX_PINMUX_FUNC_PA11_USB_DM},
-	{STM32_PIN_PA12, STM32WBX_PINMUX_FUNC_PA12_USB_DP},
-#endif
 };
 
 static int pinmux_stm32_init(const struct device *port)
