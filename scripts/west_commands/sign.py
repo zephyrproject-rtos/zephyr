@@ -393,7 +393,7 @@ class RimageSigner(Signer):
 
     @staticmethod
     def edt_get_rimage_target(board):
-        if 'up_squared_adsp' in board:
+        if 'intel_adsp_cavs15' in board:
             return 'apl'
         if 'intel_adsp_cavs18' in board:
             return 'cnl'

@@ -9,7 +9,7 @@
 #include <intel/intel_cavs15.dtsi>
 
 / {
-	model = "up_squared_adsp";
+	model = "intel_adsp_cavs15";
 	compatible = "intel";
 
 	chosen {

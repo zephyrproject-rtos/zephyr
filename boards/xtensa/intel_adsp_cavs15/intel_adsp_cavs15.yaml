@@ -1,4 +1,4 @@
-identifier: up_squared_adsp
+identifier: intel_adsp_cavs15
 name: Up Squared Audio DSP using CAVS (Connected Audio Voice and Speech)
 type: mcu
 arch: xtensa
