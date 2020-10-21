@@ -244,12 +244,13 @@ rirq_path:
 	j_s [r2]
 #endif
 
+/* r0, r1, and r3 will be used in exit_tickless_idle macro */
 .macro exit_tickless_idle
 #if defined(CONFIG_SYS_POWER_MANAGEMENT)
 	clri r0 /* do not interrupt exiting tickless idle operations */
 	mov_s r1, _kernel
-	ld_s r0, [r1, _kernel_offset_to_idle] /* requested idle duration */
-	breq r0, 0, _skip_sys_power_save_idle_exit
+	ld_s r3, [r1, _kernel_offset_to_idle] /* requested idle duration */
+	breq r3, 0, _skip_sys_power_save_idle_exit
 
 	st 0, [r1, _kernel_offset_to_idle] /* zero idle duration */
 	push_s blink
@@ -279,7 +280,6 @@ SECTION_FUNC(TEXT, _isr_demux)
 	bl sys_trace_isr_enter
 #endif
 	/* cannot be done before this point because we must be able to run C */
-	/* r0 is available to be stomped here, and exit_tickless_idle uses it */
 	exit_tickless_idle
 
 	lr r0, [_ARC_V2_ICAUSE]
