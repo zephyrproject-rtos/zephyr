@@ -14,10 +14,6 @@
 
 /* pin assignments for OLIMEX-STM32-H103 board */
 static const struct pin_config pinconf[] = {
-#ifdef CONFIG_USB_DC_STM32
-	{STM32_PIN_PA11, STM32F1_PINMUX_FUNC_PA11_USB_DM},
-	{STM32_PIN_PA12, STM32F1_PINMUX_FUNC_PA12_USB_DP},
-#endif /* CONFIG_USB_DC_STM32 */
 };
 
 static int pinmux_stm32_init(const struct device *port)

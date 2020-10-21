@@ -14,16 +14,6 @@
 
 /* pin assignments for OLIMEX-STM32-E407 board */
 static const struct pin_config pinconf[] = {
-#ifdef CONFIG_USB_DC_STM32
-#if DT_NODE_HAS_STATUS(DT_INST(0, st_stm32_otgfs), okay)
-	{STM32_PIN_PA11, STM32F4_PINMUX_FUNC_PA11_OTG_FS_DM},
-	{STM32_PIN_PA12, STM32F4_PINMUX_FUNC_PA12_OTG_FS_DP},
-#endif /* DT_NODE_HAS_STATUS(DT_INST(0, st_stm32_otgfs), okay) */
-#if DT_NODE_HAS_STATUS(DT_INST(0, st_stm32_otghs), okay)
-	{STM32_PIN_PB14, STM32F4_PINMUX_FUNC_PB14_OTG_HS_DM},
-	{STM32_PIN_PB15, STM32F4_PINMUX_FUNC_PB15_OTG_HS_DP},
-#endif /* DT_NODE_HAS_STATUS(DT_INST(0, st_stm32_otghs), okay) */
-#endif  /* CONFIG_USB_DC_STM32 */
 };
 
 static int pinmux_stm32_init(const struct device *port)
