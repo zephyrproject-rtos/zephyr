@@ -167,9 +167,6 @@ struct bt_le_per_adv_sync {
 
 	/** Flags */
 	ATOMIC_DEFINE(flags, BT_PER_ADV_SYNC_NUM_FLAGS);
-
-	/** Callbacks */
-	const struct bt_le_per_adv_sync_cb *cb;
 };
 
 struct bt_dev_le {
