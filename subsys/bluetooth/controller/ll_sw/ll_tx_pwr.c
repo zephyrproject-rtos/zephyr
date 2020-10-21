@@ -30,6 +30,9 @@
 #include "ull_adv_types.h"
 #include "ull_adv_internal.h"
 
+#if !defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
+#include "ull_tx_queue.h"
+#endif
 #include "lll_conn.h"
 #include "ull_conn_types.h"
 #include "ull_conn_internal.h"

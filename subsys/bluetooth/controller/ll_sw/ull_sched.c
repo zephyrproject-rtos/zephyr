@@ -26,6 +26,10 @@
 #include "lll_scan.h"
 #include "lll_conn.h"
 
+#if !defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
+#include "ull_tx_queue.h"
+#endif
+
 #include "ull_scan_types.h"
 #include "ull_conn_types.h"
 
@@ -174,6 +178,7 @@ void ull_sched_mfy_win_offset_use(void *param)
 		ticks_slot_overhead = 0U;
 	}
 
+#if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
 	after_mstr_offset_get(conn->lll.interval,
 			      (ticks_slot_overhead + conn->evt.ticks_slot),
 			      conn->llcp.conn_upd.ticks_anchor,
@@ -182,6 +187,16 @@ void ull_sched_mfy_win_offset_use(void *param)
 	win_offset = conn->llcp_cu.win_offset_us / 1250;
 
 	sys_put_le16(win_offset, (void *)conn->llcp.conn_upd.pdu_win_offset);
+#else
+	after_mstr_offset_get(conn->lll.interval,
+			      (ticks_slot_overhead + conn->evt.ticks_slot),
+			      conn->llcp.conn_upd.ticks_anchor,
+			      &conn->llcp.cu.win_offset_us);
+
+	win_offset = conn->llcp.cu.win_offset_us / 1250;
+
+	sys_put_le16(win_offset, (void *)conn->llcp.conn_upd.pdu_win_offset);
+#endif
 }
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
@@ -194,6 +209,7 @@ void ull_sched_mfy_free_win_offset_calc(void *param)
 
 	ticks_to_offset_next = &ticks_to_offset_default;
 
+#if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
 #if defined(CONFIG_BT_PERIPHERAL)
 	if (conn->lll.role) {
 		conn->llcp_conn_param.ticks_to_offset_next =
@@ -207,6 +223,22 @@ void ull_sched_mfy_free_win_offset_calc(void *param)
 	win_offset_calc(conn, 0, ticks_to_offset_next,
 			conn->llcp_conn_param.interval_max, &offset_max,
 			(void *)conn->llcp_conn_param.pdu_win_offset0);
+#else
+#if defined(CONFIG_BT_PERIPHERAL)
+	if (conn->lll.role) {
+		conn->llcp.conn_param.ticks_to_offset_next =
+			conn->slave.ticks_to_offset;
+
+		ticks_to_offset_next =
+			&conn->llcp.conn_param.ticks_to_offset_next;
+	}
+#endif /* CONFIG_BT_PERIPHERAL */
+
+	win_offset_calc(conn, 0, ticks_to_offset_next,
+			conn->llcp.conn_param.interval_max, &offset_max,
+			(void *)conn->llcp.conn_param.pdu_win_offset0);
+
+#endif /* CONFIG_BT_CTLR_LL_SW_SPLIT_LEGACY */
 }
 
 void ull_sched_mfy_win_offset_select(void *param)
@@ -221,19 +253,37 @@ void ull_sched_mfy_win_offset_select(void *param)
 	uint32_t ticks_to_offset;
 	uint16_t win_offset_s;
 
+#if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
 	ticks_to_offset = HAL_TICKER_US_TO_TICKS(conn->llcp_conn_param.offset0 *
 						 1250);
 
 	win_offset_calc(conn, 1, &ticks_to_offset,
 			conn->llcp_conn_param.interval_max, &offset_m_max,
 			(void *)win_offset_m);
+#else
+	ticks_to_offset = HAL_TICKER_US_TO_TICKS(conn->llcp.conn_param.offset0 *
+						 1250);
+
+	win_offset_calc(conn, 1, &ticks_to_offset,
+			conn->llcp.conn_param.interval_max, &offset_m_max,
+			(void *)win_offset_m);
+
+#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 
 	while (offset_index_s < OFFSET_S_MAX) {
 		uint8_t offset_index_m = 0U;
 
+#if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
 		win_offset_s =
 			sys_get_le16((uint8_t *)&conn->llcp_conn_param.offset0 +
 				     (sizeof(uint16_t) * offset_index_s));
+#else
+		win_offset_s =
+			sys_get_le16((uint8_t *)&conn->llcp.conn_param.offset0 +
+				     (sizeof(uint16_t) * offset_index_s));
+
+#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
+
 
 		while (offset_index_m < offset_m_max) {
 			if (win_offset_s != 0xffff) {
@@ -255,6 +305,7 @@ void ull_sched_mfy_win_offset_select(void *param)
 		offset_index_s++;
 	}
 
+#if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
 	if (offset_index_s < OFFSET_S_MAX) {
 		conn->llcp_cu.win_offset_us = win_offset_s * 1250;
 		sys_put_le16(win_offset_s,
@@ -271,6 +322,18 @@ void ull_sched_mfy_win_offset_select(void *param)
 
 		/* CPR request acked */
 		conn->llcp_conn_param.ack = conn->llcp_conn_param.req;
+#else
+	if (offset_index_s < OFFSET_S_MAX) {
+		conn->llcp.cu.win_offset_us = win_offset_s * 1250;
+		sys_put_le16(win_offset_s,
+			     (void *)conn->llcp.conn_upd.pdu_win_offset);
+	} else if (!has_offset_s) {
+		conn->llcp.cu.win_offset_us = win_offset_m[0] * 1250;
+		sys_put_le16(win_offset_m[0],
+			     (void *)conn->llcp.conn_upd.pdu_win_offset);
+	} else {
+		struct pdu_data *pdu_ctrl_tx;
+#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 
 		/* reset mutex */
 		ull_conn_upd_curr_reset();

@@ -26,15 +26,15 @@
 #include "lll.h"
 #include "lll_conn.h"
 
-#include "ull_conn_types.h"
 #include "ull_tx_queue.h"
+#include "ull_conn_types.h"
 #include "ull_llcp.h"
 #include "ull_llcp_internal.h"
 
 #include "helper_pdu.h"
 #include "helper_util.h"
 
-struct ull_cp_conn conn;
+struct ll_conn conn;
 
 /*
  * Note API and internal test are not yet split out here
@@ -45,7 +45,7 @@ void test_api_init(void)
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
 
-	ull_cp_conn_init(&conn);
+	ll_conn_init(&conn);
 
 	zassert_true(lr_is_disconnected(&conn), NULL);
 	zassert_true(rr_is_disconnected(&conn), NULL);
@@ -64,7 +64,7 @@ void test_api_connect(void)
 {
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
-	ull_cp_conn_init(&conn);
+	ll_conn_init(&conn);
 
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 	zassert_true(lr_is_idle(&conn), NULL);
@@ -75,7 +75,7 @@ void test_api_disconnect(void)
 {
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
-	ull_cp_conn_init(&conn);
+	ll_conn_init(&conn);
 
 	ull_cp_state_set(&conn, ULL_CP_DISCONNECTED);
 	zassert_true(lr_is_disconnected(&conn), NULL);
