@@ -92,21 +92,22 @@
 	}
 
 /**
- * @brief Get phandle from 'pinctrl' prop which type is 'phandles' at index 'i'
+ * @brief Get phandle from 'pinctrl-0' prop which type is 'phandles' at index
+ *        'i'
  *
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
- * @param i index of pinctrl prop which type is 'phandles'
- * @return phandle from 'pinctrl' prop at index 'i'
+ * @param i index of pinctrl-0 prop which type is 'phandles'
+ * @return phandle from 'pinctrl-0' prop at index 'i'
  */
 #define DT_PHANDLE_FROM_PINCTRL(inst, i) \
-	DT_INST_PHANDLE_BY_IDX(inst, pinctrl, i)
+	DT_INST_PHANDLE_BY_IDX(inst, pinctrl_0, i)
 
 /**
- * @brief Construct a npcx_alt structure from 'pinctrl' property at index 'i'
+ * @brief Construct a npcx_alt structure from 'pinctrl-0' property at index 'i'
  *
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
- * @param i index of pinctrl prop which type is 'phandles'
- * @return npcx_alt item from 'pinctrl' property at index 'i'
+ * @param i index of pinctrl-0 prop which type is 'phandles'
+ * @return npcx_alt item from 'pinctrl-0' property at index 'i'
  */
 #define DT_NPCX_ALT_ITEM_BY_IDX(inst, i)                                       \
 	{                                                                      \
@@ -116,12 +117,12 @@
 	},
 
 /**
- * @brief Length of npcx_alt structures in 'pinctrl' property
+ * @brief Length of npcx_alt structures in 'pinctrl-0' property
  *
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
- * @return length of 'pinctrl' property which type is 'phandles'
+ * @return length of 'pinctrl-0' property which type is 'phandles'
  */
-#define DT_NPCX_ALT_ITEMS_LEN(inst) DT_INST_PROP_LEN(inst, pinctrl)
+#define DT_NPCX_ALT_ITEMS_LEN(inst) DT_INST_PROP_LEN(inst, pinctrl_0)
 
 /**
  * @brief Macro function to construct npcx_alt item in UTIL_LISTIFY extension.
@@ -139,12 +140,12 @@
  * Example devicetree fragment:
  *    / {
  *		uart1: serial@400c4000 {
- *			pinctrl = <&alta_uart1_sl1>;
+ *			pinctrl-0 = <&alta_uart1_sl1>;
  *			...
  *		};
  *
  *		host_sub: lpc@400c1000 {
- *			pinctrl = <&altb_rxd_sl &altb_txd_sl
+ *			pinctrl-0 = <&altb_rxd_sl &altb_txd_sl
  *				   &altb_rts_sl &altb_cts_sl
  *				   &altb_ri_sl &altb_dtr_bout_sl
  *				   &altb_dcd_sl &altb_dsr_sl>;
