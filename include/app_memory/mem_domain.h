@@ -117,6 +117,9 @@ struct k_mem_domain;
  * See documentation for k_mem_domain_add_partition() for details about
  * partition constraints.
  *
+ * Do not call k_mem_domain_init() on the same memory domain more than once,
+ * doing so is undefined behavior.
+ *
  * @param domain The memory domain to be initialized.
  * @param num_parts The number of array items of "parts" parameter.
  * @param parts An array of pointers to the memory partitions. Can be NULL

@@ -533,6 +533,11 @@ int arch_mem_domain_max_partitions_get(void);
  * This function may fail if initializing the memory domain requires allocation,
  * such as for page tables.
  *
+ * The associated function k_mem_domain_init() documents that making
+ * multiple init calls to the same memory domain is undefined behavior,
+ * but has no assertions in place to check this. If this matters, it may be
+ * desirable to add checks for this in the implementation of this function.
+ *
  * @param domain The memory domain to initialize
  * @retval 0 Success
  * @retval -ENOMEM Insufficient memory
