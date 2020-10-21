@@ -118,6 +118,30 @@ void *sys_heap_aligned_alloc(struct sys_heap *h, size_t align, size_t bytes);
  */
 void sys_heap_free(struct sys_heap *h, void *mem);
 
+/** @brief Expand the size of an existing allocation
+ *
+ * Returns a pointer to a new memory region with the same contents,
+ * but a different allocated size.  If the new allocation can be
+ * expanded in place, the pointer returned will be identical.
+ * Otherwise the data will be copies to a new block and the old one
+ * will be freed as per sys_heap_free().  If the specified size is
+ * smaller than the original, the block will be truncated in place and
+ * the remaining memory returned to the heap.  If the allocation of a
+ * new block fails, then NULL will be returned and the old block will
+ * not be freed or modified.
+ *
+ * @note The return of a NULL on failure is a different behavior than
+ * POSIX realloc(), which specifies that the original pointer will be
+ * returned (i.e. it is not possible to safely detect realloc()
+ * failure in POSIX, but it is here).
+ *
+ * @param heap Heap from which to allocate
+ * @param ptr Original pointer returned from a previous allocation
+ * @param bytes Number of bytes requested for the new block
+ * @return Pointer to memory the caller can now use, or NULL
+ */
+void *sys_heap_realloc(struct sys_heap *heap, void *ptr, size_t bytes);
+
 /** @brief Validate heap integrity
  *
  * Validates the internal integrity of a sys_heap.  Intended for unit
