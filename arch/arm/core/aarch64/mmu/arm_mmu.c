@@ -218,19 +218,16 @@ static void split_pte_block_desc(uint64_t *pte, uint64_t desc, int level)
 	set_pte_table_desc(pte, new_table, level);
 }
 
-/* Create/Populate translation table(s) for given region */
-static void init_xlat_tables(const struct arm_mmu_region *region)
+static void add_map(const char *name, uint64_t phys, uint64_t virt,
+		    uint64_t size, uint64_t attrs)
 {
 	uint64_t desc, *pte;
-	uint64_t virt = region->base_va;
-	uint64_t phys = region->base_pa;
-	uint64_t size = region->size;
-	uint64_t attrs = region->attrs;
 	uint64_t level_size;
 	uint64_t *new_table;
 	unsigned int level = BASE_XLAT_LEVEL;
 
-	MMU_DEBUG("mmap: virt %llx phys %llx size %llx\n", virt, phys, size);
+	MMU_DEBUG("mmap [%s]: virt %llx phys %llx size %llx\n",
+		   name, virt, phys, size);
 	/* check minimum alignment requirement for given mmap region */
 	__ASSERT(((virt & (PAGE_SIZE - 1)) == 0) &&
 		 ((size & (PAGE_SIZE - 1)) == 0),
@@ -307,6 +304,12 @@ static const struct arm_mmu_region mmu_zephyr_regions[] = {
 			      MT_NORMAL | MT_P_RO_U_NA | MT_DEFAULT_SECURE_STATE),
 };
 
+static inline void add_arm_mmu_region(const struct arm_mmu_region *region)
+{
+	add_map(region->name, region->base_pa, region->base_va,
+		region->size, region->attrs);
+}
+
 static void setup_page_tables(void)
 {
 	unsigned int index;
@@ -328,14 +331,14 @@ static void setup_page_tables(void)
 	for (index = 0; index < mmu_config.num_regions; index++) {
 		region = &mmu_config.mmu_regions[index];
 		if (region->size || region->attrs)
-			init_xlat_tables(region);
+			add_arm_mmu_region(region);
 	}
 
 	/* setup translation table for zephyr execution regions */
 	for (index = 0; index < ARRAY_SIZE(mmu_zephyr_regions); index++) {
 		region = &mmu_zephyr_regions[index];
 		if (region->size || region->attrs)
-			init_xlat_tables(region);
+			add_arm_mmu_region(region);
 	}
 }
 
