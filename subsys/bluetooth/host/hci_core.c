@@ -4654,6 +4654,17 @@ static void le_per_adv_sync_established(struct net_buf *buf)
 		}
 	}
 
+	if (evt->status == BT_HCI_ERR_OP_CANCELLED_BY_HOST) {
+		/* Cancelled locally, don't call CB */
+		if (pending_per_adv_sync) {
+			per_adv_sync_delete(pending_per_adv_sync);
+		} else {
+			BT_ERR("Unexpected per adv sync cancelled event");
+		}
+
+		return;
+	}
+
 	if (!pending_per_adv_sync ||
 	    pending_per_adv_sync->sid != evt->sid ||
 	    bt_addr_le_cmp(&pending_per_adv_sync->addr, &evt->adv_addr)) {
@@ -4682,11 +4693,6 @@ static void le_per_adv_sync_established(struct net_buf *buf)
 				}
 			}
 		}
-		return;
-	}
-
-	if (evt->status == BT_HCI_ERR_OP_CANCELLED_BY_HOST) {
-		/* Cancelled locally, don't call CB */
 		return;
 	}
 
@@ -7474,15 +7480,16 @@ int bt_le_per_adv_sync_delete(struct bt_le_per_adv_sync *per_adv_sync)
 
 	if (atomic_test_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCED)) {
 		err = bt_le_per_adv_sync_terminate(per_adv_sync);
+
+		if (!err) {
+			per_adv_sync_delete(per_adv_sync);
+		}
 	} else if (get_pending_per_adv_sync() == per_adv_sync) {
 		err = bt_le_per_adv_sync_create_cancel(per_adv_sync);
+		/* Delete of the per_adv_sync will be done in the event
+		 * handler when cancelling */
 	}
 
-	if (err) {
-		return err;
-	}
-
-	per_adv_sync_delete(per_adv_sync);
 	return err;
 }
 

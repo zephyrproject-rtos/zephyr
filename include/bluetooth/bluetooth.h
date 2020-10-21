@@ -1176,6 +1176,10 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
  * cancelled. If the sync has been established, it is terminated. The
  * periodic advertising sync object will be invalidated afterwards.
  *
+ * If the state of the sync object is syncing, then a new periodic advertising
+ * sync object may not be created until the controller has finished canceling
+ * this object.
+ *
  * @param per_adv_sync The periodic advertising sync object.
  *
  * @return Zero on success or (negative) error code otherwise.
