@@ -25,16 +25,16 @@
 
 #include "lll.h"
 #include "lll_conn.h"
+#include "ull_tx_queue.h"
 
 #include "ull_conn_types.h"
-#include "ull_tx_queue.h"
 #include "ull_llcp.h"
 #include "ull_llcp_internal.h"
 
 #include "helper_pdu.h"
 #include "helper_util.h"
 
-struct ull_cp_conn conn;
+struct ll_conn conn;
 
 static void setup(void)
 {
@@ -114,7 +114,7 @@ void test_version_exchange_mas_loc_2(void)
 
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
-	ull_cp_conn_init(&conn);
+	ll_conn_init(&conn);
 
 	err = ull_cp_version_exchange(&conn);
 

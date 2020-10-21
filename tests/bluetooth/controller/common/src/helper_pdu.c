@@ -26,9 +26,9 @@
 
 #include "lll.h"
 #include "lll_conn.h"
-
-#include "ull_conn_types.h"
 #include "ull_tx_queue.h"
+#include "ull_conn_types.h"
+
 #include "ull_llcp.h"
 
 
