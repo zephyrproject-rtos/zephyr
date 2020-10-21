@@ -279,6 +279,8 @@ static inline struct net_if *get_iface(struct eth_context *ctx, uint16_t vlan_ta
 
 static void eth_mcux_phy_enter_reset(struct eth_context *context)
 {
+	context->phy_state = eth_mcux_phy_state_reset;
+
 	if (context->use_phy_smi) {
 		/* Reset the PHY. */
 		ENET_StartSMIWrite(context->base, context->phy_addr,
@@ -287,10 +289,7 @@ static void eth_mcux_phy_enter_reset(struct eth_context *context)
 				   PHY_BCTL_RESET_MASK);
 	}
 
-	context->phy_state = eth_mcux_phy_state_reset;
-
 	if (!context->use_phy_smi) {
-
 		k_work_submit(&context->phy_work);
 	}
 }
@@ -308,16 +307,16 @@ static void eth_mcux_phy_start(struct eth_context *context)
 	case eth_mcux_phy_state_initial:
 		ENET_ActiveRead(context->base);
 		if (context->use_phy_smi) {
-			/* Reset the PHY. */
-			ENET_StartSMIWrite(context->base, context->phy_addr,
-					   PHY_BASICCONTROL_REG,
-					   kENET_MiiWriteValidFrame,
-					   PHY_BCTL_RESET_MASK);
 #if defined(CONFIG_SOC_SERIES_IMX_RT)
 			context->phy_state = eth_mcux_phy_state_initial;
 #else
 			context->phy_state = eth_mcux_phy_state_reset;
 #endif
+			/* Reset the PHY. */
+			ENET_StartSMIWrite(context->base, context->phy_addr,
+					   PHY_BASICCONTROL_REG,
+					   kENET_MiiWriteValidFrame,
+					   PHY_BCTL_RESET_MASK);
 		} else {
 			/*
 			 * With no SMI communication one needs to wait for
@@ -389,6 +388,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 			uint32_t ctrl2;
 			status_t res;
 
+			context->phy_state = eth_mcux_phy_state_reset;
 			ENET_DisableInterrupts(context->base,
 					       ENET_EIR_MII_MASK);
 			res = PHY_Read(context->base, context->phy_addr,
@@ -407,7 +407,6 @@ static void eth_mcux_phy_event(struct eth_context *context)
 						   kENET_MiiWriteValidFrame,
 						   ctrl2);
 			}
-			context->phy_state = eth_mcux_phy_state_reset;
 		} else {
 			/*
 			 * When the iface is available proceed with
@@ -431,6 +430,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 		}
 		break;
 	case eth_mcux_phy_state_reset:
+		context->phy_state = eth_mcux_phy_state_autoneg;
 		if (context->use_phy_smi) {
 			/* Setup PHY auto-negotiation. */
 			ENET_StartSMIWrite(context->base, context->phy_addr,
@@ -444,9 +444,9 @@ static void eth_mcux_phy_event(struct eth_context *context)
 		} else {
 			k_work_submit(&context->phy_work);
 		}
-		context->phy_state = eth_mcux_phy_state_autoneg;
 		break;
 	case eth_mcux_phy_state_autoneg:
+		context->phy_state = eth_mcux_phy_state_restart;
 		if (context->use_phy_smi) {
 			/* Setup PHY auto-negotiation. */
 			ENET_StartSMIWrite(context->base, context->phy_addr,
@@ -457,10 +457,10 @@ static void eth_mcux_phy_event(struct eth_context *context)
 		} else {
 			k_work_submit(&context->phy_work);
 		}
-		context->phy_state = eth_mcux_phy_state_restart;
 		break;
 	case eth_mcux_phy_state_wait:
 	case eth_mcux_phy_state_restart:
+		context->phy_state = eth_mcux_phy_state_read_status;
 		if (context->use_phy_smi) {
 			/* Start reading the PHY basic status. */
 			ENET_StartSMIRead(context->base, context->phy_addr,
@@ -469,7 +469,6 @@ static void eth_mcux_phy_event(struct eth_context *context)
 		} else {
 			k_work_submit(&context->phy_work);
 		}
-		context->phy_state = eth_mcux_phy_state_read_status;
 		break;
 	case eth_mcux_phy_state_read_status:
 		if (context->use_phy_smi) {
@@ -482,6 +481,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 		}
 		if (link_up && !context->link_up) {
 			LOG_DBG("%s link-up event", eth_name(context->base));
+			context->phy_state = eth_mcux_phy_state_read_duplex;
 			if (context->use_phy_smi) {
 				/* Start reading the PHY control register. */
 				ENET_StartSMIRead(context->base,
@@ -490,7 +490,6 @@ static void eth_mcux_phy_event(struct eth_context *context)
 						  kENET_MiiReadValidFrame);
 			}
 			context->link_up = link_up;
-			context->phy_state = eth_mcux_phy_state_read_duplex;
 
 			/* Network interface might be NULL at this point */
 			if (context->iface) {
@@ -507,15 +506,15 @@ static void eth_mcux_phy_event(struct eth_context *context)
 		} else if (!link_up && context->link_up) {
 			LOG_INF("%s link down", eth_name(context->base));
 			context->link_up = link_up;
+			context->phy_state = eth_mcux_phy_state_wait;
 			k_delayed_work_submit(&context->delayed_phy_work,
 					K_MSEC(CONFIG_ETH_MCUX_PHY_TICK_MS));
-			context->phy_state = eth_mcux_phy_state_wait;
 			net_eth_carrier_off(context->iface);
 		} else {
 			LOG_DBG("%s waiting", eth_name(context->base));
+			context->phy_state = eth_mcux_phy_state_wait;
 			k_delayed_work_submit(&context->delayed_phy_work,
 					K_MSEC(CONFIG_ETH_MCUX_PHY_TICK_MS));
-			context->phy_state = eth_mcux_phy_state_wait;
 		}
 		break;
 	case eth_mcux_phy_state_read_duplex:
@@ -540,9 +539,10 @@ static void eth_mcux_phy_event(struct eth_context *context)
 			eth_name(context->base),
 			(phy_speed ? "100" : "10"),
 			(phy_duplex ? "full" : "half"));
+
+		context->phy_state = eth_mcux_phy_state_wait;
 		k_delayed_work_submit(&context->delayed_phy_work,
 				      K_MSEC(CONFIG_ETH_MCUX_PHY_TICK_MS));
-		context->phy_state = eth_mcux_phy_state_wait;
 		break;
 	}
 }
