@@ -447,7 +447,7 @@ void host_uart_init(void)
 	struct c2h_reg *const inst_c2h = host_sub_cfg.inst_c2h;
 
 	/* Configure pin-mux for serial port device */
-	soc_pinctrl_mux_configure(host_uart_alts, ARRAY_SIZE(host_uart_alts),
+	npcx_pinctrl_mux_configure(host_uart_alts, ARRAY_SIZE(host_uart_alts),
 									1);
 	/* Make sure unlock host access of serial port */
 	inst_c2h->LKSIOHA &= ~BIT(NPCX_LKSIOHA_LKSPHA);
@@ -582,8 +582,8 @@ uint8_t host_c2h_read_io_cfg_reg(uint8_t reg_index)
 	return data_val;
 }
 
-/* Soc specific host sub modules functions */
-int soc_host_periph_read_request(enum lpc_peripheral_opcode op,
+/* Platform specific host sub modules functions */
+int npcx_host_periph_read_request(enum lpc_peripheral_opcode op,
 								uint32_t *data)
 {
 	struct kbc_reg *const inst_kbc = host_sub_cfg.inst_kbc;
@@ -620,7 +620,7 @@ int soc_host_periph_read_request(enum lpc_peripheral_opcode op,
 	return 0;
 }
 
-int soc_host_periph_write_request(enum lpc_peripheral_opcode op,
+int npcx_host_periph_write_request(enum lpc_peripheral_opcode op,
 								uint32_t *data)
 {
 	volatile uint32_t __attribute__((unused)) dummy;
@@ -687,7 +687,7 @@ int soc_host_periph_write_request(enum lpc_peripheral_opcode op,
 	return 0;
 }
 
-void soc_host_init_subs_host_domain(void)
+void npcx_host_init_subs_host_domain(void)
 {
 	struct c2h_reg *const inst_c2h = host_sub_cfg.inst_c2h;
 
@@ -744,7 +744,7 @@ void soc_host_init_subs_host_domain(void)
 	LOG_DBG("Hos sub-modules configurations are done!");
 }
 
-int soc_host_init_subs_core_domain(const struct device *host_bus_dev,
+int npcx_host_init_subs_core_domain(const struct device *host_bus_dev,
 							sys_slist_t *callbacks)
 {
 	struct mswc_reg *const inst_mswc = host_sub_cfg.inst_mswc;

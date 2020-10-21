@@ -51,8 +51,8 @@ static void npcx_pinctrl_alt_sel(const struct npcx_alt *alt, int alt_func)
 		NPCX_DEVALT(scfg_base, alt->group) &= ~alt_mask;
 }
 
-/* Soc specific pin-control functions */
-void soc_pinctrl_mux_configure(const struct npcx_alt *alts_list,
+/* Platform specific pin-control functions */
+void npcx_pinctrl_mux_configure(const struct npcx_alt *alts_list,
 		      uint8_t alts_size, int altfunc)
 {
 	int i;
@@ -76,7 +76,7 @@ static int npcx_pinctrl_init(const struct device *dev)
 #endif
 
 	/* Change all pads whose default functionality isn't IO to GPIO */
-	soc_pinctrl_mux_configure(def_alts, ARRAY_SIZE(def_alts), 0);
+	npcx_pinctrl_mux_configure(def_alts, ARRAY_SIZE(def_alts), 0);
 
 	return 0;
 }

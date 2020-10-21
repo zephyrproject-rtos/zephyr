@@ -186,7 +186,7 @@ static int pwm_npcx_init(const struct device *dev)
 	pwm_npcx_configure(dev, config->clk_cfg.bus);
 
 	/* Configure pin-mux for PWM device */
-	soc_pinctrl_mux_configure(config->alts_list, config->alts_size, 1);
+	npcx_pinctrl_mux_configure(config->alts_list, config->alts_size, 1);
 
 	return 0;
 }

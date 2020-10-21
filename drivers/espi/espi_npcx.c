@@ -171,13 +171,13 @@ static void espi_init_wui_callback(const struct device *dev,
 		return;
 
 	/* Install callback function */
-	soc_miwu_init_dev_callback(callback, wui, handler, dev);
-	soc_miwu_manage_dev_callback(callback, 1);
+	npcx_miwu_init_dev_callback(callback, wui, handler, dev);
+	npcx_miwu_manage_dev_callback(callback, 1);
 
 	/* Congiure MIWU setting and enable its interrupt */
-	soc_miwu_interrupt_configure(wui, NPCX_MIWU_MODE_EDGE,
+	npcx_miwu_interrupt_configure(wui, NPCX_MIWU_MODE_EDGE,
 							NPCX_MIWU_TRIG_BOTH);
-	soc_miwu_irq_enable(wui);
+	npcx_miwu_irq_enable(wui);
 }
 
 /* eSPI local bus interrupt service functions */
@@ -388,7 +388,7 @@ static void espi_vw_notify_plt_rst(const struct device *dev)
 		/* Set Peripheral Channel ready when PLTRST is de-asserted */
 		inst->ESPICFG |= BIT(NPCX_ESPICFG_PCHANEN);
 		/* Configure all host sub-modules in host doamin */
-		soc_host_init_subs_host_domain();
+		npcx_host_init_subs_host_domain();
 	}
 
 	/* PLT_RST will be received several times */
@@ -633,7 +633,7 @@ static int espi_npcx_read_lpc_request(const struct device *dev,
 	if (!IS_BIT_SET(inst->ESPICFG, NPCX_ESPICFG_PCHANEN))
 		return -ENOTSUP;
 
-	return soc_host_periph_read_request(op, data);
+	return npcx_host_periph_read_request(op, data);
 }
 
 static int espi_npcx_write_lpc_request(const struct device *dev,
@@ -646,7 +646,7 @@ static int espi_npcx_write_lpc_request(const struct device *dev,
 	if (!IS_BIT_SET(inst->ESPICFG, NPCX_ESPICFG_PCHANEN))
 		return -ENOTSUP;
 
-	return soc_host_periph_write_request(op, data);
+	return npcx_host_periph_write_request(op, data);
 }
 
 #if defined(CONFIG_ESPI_OOB_CHANNEL)
@@ -863,10 +863,10 @@ static int espi_npcx_init(const struct device *dev)
 				&config->espi_rst_wui, espi_vw_espi_rst_isr);
 
 	/* Configure pin-mux for eSPI bus device */
-	soc_pinctrl_mux_configure(config->alts_list, config->alts_size, 1);
+	npcx_pinctrl_mux_configure(config->alts_list, config->alts_size, 1);
 
 	/* Configure host sub-modules which HW blocks belong to core domain */
-	soc_host_init_subs_core_domain(dev, &data->callbacks);
+	npcx_host_init_subs_core_domain(dev, &data->callbacks);
 
 	/* eSPI Bus interrupt installation */
 	IRQ_CONNECT(DT_INST_IRQN(0),
