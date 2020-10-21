@@ -821,16 +821,18 @@ IRQ(248); IRQ(249); IRQ(250); IRQ(251); IRQ(252); IRQ(253); IRQ(254); IRQ(255)
 #define	IRQ_STACK	2
 #define EXC_STACK	2
 #define BAD_STACK	2
+#define NMI_STACK	2
 #else
 #define	IRQ_STACK	1
+#define NMI_STACK	6 /* NMI stack */
 #define EXC_STACK	7
-#define BAD_STACK	7 /* Horrible things: NMIs, double faults, MCEs */
+#define BAD_STACK	7 /* Horrible things: double faults, MCEs */
 #endif
 
 .align 16
 idt:
 	IDT(  0, TRAP, EXC_STACK); IDT(  1, TRAP, EXC_STACK)
-	IDT(  2, TRAP, BAD_STACK); IDT(  3, TRAP, EXC_STACK)
+	IDT(  2, TRAP, NMI_STACK); IDT(  3, TRAP, EXC_STACK)
 	IDT(  4, TRAP, EXC_STACK); IDT(  5, TRAP, EXC_STACK)
 	IDT(  6, TRAP, EXC_STACK); IDT(  7, TRAP, EXC_STACK)
 	IDT(  8, TRAP, BAD_STACK); IDT(  9, TRAP, EXC_STACK)
@@ -1041,11 +1043,19 @@ gdt80:  /* LGDT descriptor for long mode */
 .align 16
 _exception_stack:
 	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
+.global _nmi_stack
+.align 16
+_nmi_stack:
+	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
 
 #if CONFIG_MP_NUM_CPUS > 1
 .global _exception_stack1
 .align 16
 _exception_stack1:
+	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
+.global _nmi_stack1
+.align 16
+_nmi_stack1:
 	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
 #endif
 
@@ -1054,12 +1064,20 @@ _exception_stack1:
 .align 16
 _exception_stack2:
 	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
+.global _nmi_stack2
+.align 16
+_nmi_stack2:
+	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
 #endif
 
 #if CONFIG_MP_NUM_CPUS > 3
 .global _exception_stack3
 .align 16
 _exception_stack3:
+	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
+.global _nmi_stack3
+.align 16
+_nmi_stack3:
 	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
 #endif
 
