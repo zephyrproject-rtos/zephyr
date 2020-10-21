@@ -344,16 +344,16 @@ static int uart_npcx_init(const struct device *dev)
 	 * Configure the UART wake-up event triggered from a falling edge
 	 * on CR_SIN pin. No need for callback function.
 	 */
-	soc_miwu_interrupt_configure(&config->uart_rx_wui,
+	npcx_miwu_interrupt_configure(&config->uart_rx_wui,
 			NPCX_MIWU_MODE_EDGE, NPCX_MIWU_TRIG_LOW);
 
 	/* Enable irq of interrupt-input module */
-	soc_miwu_irq_enable(&config->uart_rx_wui);
+	npcx_miwu_irq_enable(&config->uart_rx_wui);
 #endif
 
 
 	/* Configure pin-mux for uart device */
-	soc_pinctrl_mux_configure(config->alts_list, config->alts_size, 1);
+	npcx_pinctrl_mux_configure(config->alts_list, config->alts_size, 1);
 
 	return 0;
 }

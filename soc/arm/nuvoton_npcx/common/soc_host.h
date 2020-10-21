@@ -24,7 +24,7 @@ extern "C" {
  * @retval 0 If successful.
  * @retval -EIO if cannot turn on host sub-module source clocks in core domain.
  */
-int soc_host_init_subs_core_domain(const struct device *host_bus_dev,
+int npcx_host_init_subs_core_domain(const struct device *host_bus_dev,
 							sys_slist_t *callbacks);
 
 /**
@@ -34,7 +34,7 @@ int soc_host_init_subs_core_domain(const struct device *host_bus_dev,
  * Host domain. Please notcie it must be executed after receiving PLT_RST
  * de-asserted signal and eSPI peripheral channel is enabled and ready.
  */
-void soc_host_init_subs_host_domain(void);
+void npcx_host_init_subs_host_domain(void);
 
 /**
  * @brief Reads data from a host sub-module which is updated via eSPI.
@@ -49,7 +49,7 @@ void soc_host_init_subs_host_domain(void);
  * @retval -ENOTSUP if eSPI peripheral is off or not supported.
  * @retval -EINVAL for unimplemented lpc opcode, but in range.
  */
-int soc_host_periph_read_request(enum lpc_peripheral_opcode op,
+int npcx_host_periph_read_request(enum lpc_peripheral_opcode op,
 								uint32_t *data);
 
 /**
@@ -65,7 +65,7 @@ int soc_host_periph_read_request(enum lpc_peripheral_opcode op,
  * @retval -ENOTSUP if eSPI peripheral is off or not supported.
  * @retval -EINVAL for unimplemented lpc opcode, but in range.
  */
-int soc_host_periph_write_request(enum lpc_peripheral_opcode op,
+int npcx_host_periph_write_request(enum lpc_peripheral_opcode op,
 								uint32_t *data);
 
 #ifdef __cplusplus
