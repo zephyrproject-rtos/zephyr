@@ -15,6 +15,7 @@
 #include "spi_nor.h"
 #include "flash_priv.h"
 #include <nrfx_qspi.h>
+#include <hal/nrf_clock.h>
 
 struct qspi_nor_config {
        /* JEDEC id from devicetree */
@@ -32,6 +33,10 @@ struct qspi_nor_config {
 
 /* instance 0 flash size in bytes */
 #define INST_0_BYTES (DT_INST_PROP(0, size) / 8)
+
+#define INST_0_SCK_FREQUENCY DT_INST_PROP(0, sck_frequency)
+BUILD_ASSERT(INST_0_SCK_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
+	     "Unsupported SCK frequency.");
 
 /* for accessing devicetree properties of the bus node */
 #define QSPI_NODE DT_BUS(DT_DRV_INST(0))
@@ -171,30 +176,6 @@ static inline int qspi_get_lines_read(uint8_t lines)
 		break;
 	}
 	__ASSERT(ret != -EINVAL, "Invalid QSPI read line");
-	return ret;
-}
-
-/**
- * @brief Get QSPI prescaler
- * Get supported frequency prescaler not exceeding the requested one.
- *
- * @param frequency - desired QSPI bus frequency
- * @retval NRF_SPI_PRESCALER in case of success or;
- *		   -EINVAL in case of failure
- */
-static inline nrf_qspi_frequency_t get_nrf_qspi_prescaler(uint32_t frequency)
-{
-	register int ret = -EINVAL;
-
-	if (frequency < 2000000UL) {
-		ret = -EINVAL;
-	} else if (frequency >= 32000000UL) {
-		ret = NRF_QSPI_FREQ_32MDIV1;
-	} else {
-		ret = (nrf_qspi_frequency_t)((32000000UL / frequency) - 1);
-	}
-
-	__ASSERT(ret != -EINVAL, "Invalid QSPI frequency");
 	return ret;
 }
 
@@ -423,7 +404,9 @@ static inline void qspi_fill_init_struct(nrfx_qspi_config_t *initstruct)
 
 	/* Configure physical interface */
 	initstruct->phy_if.sck_freq =
-		get_nrf_qspi_prescaler(DT_INST_PROP(0, sck_frequency));
+		(INST_0_SCK_FREQUENCY > NRF_QSPI_BASE_CLOCK_FREQ)
+		? NRF_QSPI_FREQ_DIV1
+		: (NRF_QSPI_BASE_CLOCK_FREQ / INST_0_SCK_FREQUENCY) - 1;
 	initstruct->phy_if.sck_delay = DT_INST_PROP(0, sck_delay);
 	initstruct->phy_if.spi_mode = qspi_get_mode(DT_INST_PROP(0, cpol),
 						    DT_INST_PROP(0, cpha));
@@ -803,6 +786,14 @@ static int qspi_nor_configure(const struct device *dev)
  */
 static int qspi_nor_init(const struct device *dev)
 {
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+	/* Make sure the PCLK192M clock, from which the SCK frequency is
+	 * derived, is not prescaled (the default setting after reset is
+	 * "divide by 4").
+	 */
+	nrf_clock_hfclk192m_div_set(NRF_CLOCK, NRF_CLOCK_HFCLK_DIV_1);
+#endif
+
 	IRQ_CONNECT(DT_IRQN(QSPI_NODE), DT_IRQ(QSPI_NODE, priority),
 		    nrfx_isr, nrfx_qspi_irq_handler, 0);
 	return qspi_nor_configure(dev);
