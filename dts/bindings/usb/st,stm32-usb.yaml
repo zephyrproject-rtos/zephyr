@@ -39,3 +39,13 @@ properties:
 
     clocks:
       required: true
+
+    pinctrl-0:
+      type: phandles
+      required: false
+      description: |
+        Pin configuration for USB signals (DM/DP/NOE).
+        We expect that the phandles will reference pinctrl nodes.
+
+        For example:
+           <&usb_dm_pa11 &usb_dp_pa12>;
