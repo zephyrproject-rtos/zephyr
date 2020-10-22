@@ -27,18 +27,24 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define NETWORK_CONNECT_TIMEOUT	K_SECONDS(10)
 #define PACKET_TRANSFER_RETRY_MAX	3
 
+static void set_update_result_from_error(int error_code);
+
 struct firmware_pull_context {
 	char uri[URI_LEN];
 	int retry;
 	struct k_work firmware_work;
 	struct lwm2m_ctx firmware_ctx;
 	struct coap_block_context block_ctx;
+
+	void (*result_cb)(int error_code);
+	lwm2m_engine_set_data_cb_t write_cb;
 };
 
 static struct firmware_pull_context fota_context = {
 	.firmware_ctx = {
 		.sock_fd = -1
-	}
+	},
+	.result_cb = set_update_result_from_error
 };
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
@@ -300,7 +306,7 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 			write_buf = res->pre_write_cb(0, 0, 0, &write_buflen);
 		}
 
-		write_cb = lwm2m_firmware_get_write_cb();
+		write_cb = fota_context.write_cb;
 		if (write_cb) {
 			/* flush incoming data to write_cb */
 			while (payload_len > 0) {
@@ -337,14 +343,14 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 		}
 	} else {
 		/* Download finished */
-		set_update_result_from_error(0);
+		fota_context.result_cb(0);
 		lwm2m_engine_context_close(&fota_context.firmware_ctx);
 	}
 
 	return 0;
 
 error:
-	set_update_result_from_error(ret);
+	fota_context.result_cb(ret);
 	lwm2m_engine_context_close(&fota_context.firmware_ctx);
 	return ret;
 }
@@ -362,7 +368,7 @@ static void do_transmit_timeout_cb(struct lwm2m_message *msg)
 				       do_firmware_transfer_reply_cb);
 		if (ret < 0) {
 			/* abort retries / transfer */
-			set_update_result_from_error(ret);
+			fota_context.result_cb(ret);
 			fota_context.retry = PACKET_TRANSFER_RETRY_MAX;
 			lwm2m_engine_context_close(&fota_context.firmware_ctx);
 			return;
@@ -372,7 +378,7 @@ static void do_transmit_timeout_cb(struct lwm2m_message *msg)
 	} else {
 		LOG_ERR("TIMEOUT - Too many retry packet attempts! "
 			"Aborting firmware download.");
-		set_update_result_from_error(-ENOMSG);
+		fota_context.result_cb(-ENOMSG);
 		lwm2m_engine_context_close(&fota_context.firmware_ctx);
 	}
 }
@@ -425,7 +431,7 @@ static void firmware_transfer(struct k_work *work)
 	return;
 
 error:
-	set_update_result_from_error(ret);
+	fota_context.result_cb(ret);
 	lwm2m_engine_context_close(&fota_context.firmware_ctx);
 }
 
@@ -437,6 +443,8 @@ int lwm2m_firmware_cancel_transfer(void)
 
 int lwm2m_firmware_start_transfer(char *package_uri)
 {
+	fota_context.write_cb = lwm2m_firmware_get_write_cb();
+
 	/* close old socket */
 	if (fota_context.firmware_ctx.sock_fd > -1) {
 		lwm2m_engine_context_close(&fota_context.firmware_ctx);
