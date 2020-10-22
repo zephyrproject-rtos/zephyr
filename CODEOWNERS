@@ -100,6 +100,7 @@
 /boards/arm/hexiwear*/                    @MaureenHelm @mmahadevan108 @dleach02
 /boards/arm/hexiwear*/doc/                @MaureenHelm @MeganHansen
 /boards/arm/ip_k66f/                      @parthitce @lmajewski
+/boards/arm/legend/                       @mbittan @simonguinot
 /boards/arm/lpcxpresso*/                  @MaureenHelm @mmahadevan108 @dleach02
 /boards/arm/lpcxpresso*/doc/              @MaureenHelm @MeganHansen
 /boards/arm/mimx8mm_evk/                  @Mani-Sadhasivam
