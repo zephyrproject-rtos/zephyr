@@ -1542,6 +1542,205 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_MICS_MUTE \
 	BT_UUID_DECLARE_16(BT_UUID_MICS_MUTE_VAL)
+/* TODO: Update MCS UUIDs when permanent UUIDs are assigned */
+/** @def BT_UUID_MCS_VAL
+ *  @brief Media Control Service value
+ */
+#define BT_UUID_MCS_VAL 0x8fd7
+/** @def BT_UUID_MCS
+ *  @brief Media Control Service
+ */
+#define BT_UUID_MCS \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_VAL)
+/** @def BT_UUID_MCS_PLAYER_NAME_VAL
+ *  @brief Media player name value
+ */
+#define BT_UUID_MCS_PLAYER_NAME_VAL 0x8fa0
+/** @def BT_UUID_MCS_PLAYER_NAME
+ *  @brief Media player name
+ */
+#define BT_UUID_MCS_PLAYER_NAME \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_PLAYER_NAME_VAL)
+/** @def BT_UUID_MCS_ICON_OBJ_ID_VAL
+ *  @brief Media Icon Object ID value
+ */
+#define BT_UUID_MCS_ICON_OBJ_ID_VAL 0x8fa1
+/** @def BT_UUID_MCS_ICON_OBJ_ID
+ *  @brief Media Icon Object ID
+ */
+#define BT_UUID_MCS_ICON_OBJ_ID \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_ICON_OBJ_ID_VAL)
+/** @def BT_UUID_MCS_ICON_URI_VAL
+ *  @brief Media Icon URI value
+ */
+#define BT_UUID_MCS_ICON_URI_VAL 0x8fa2
+/** @def BT_UUID_MCS_ICON_URI
+ *  @brief Media Icon URI
+ */
+#define BT_UUID_MCS_ICON_URI \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_ICON_URI_VAL)
+/** @def BT_UUID_MCS_TRACK_CHANGED_VAL
+ *  @brief Track Changed value
+ */
+#define BT_UUID_MCS_TRACK_CHANGED_VAL 0x8fa3
+/** @def BT_UUID_MCS_TRACK_CHANGED
+ *  @brief Track Changed
+ */
+#define BT_UUID_MCS_TRACK_CHANGED \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_TRACK_CHANGED_VAL)
+/** @def BT_UUID_MCS_TRACK_TITLE_VAL
+ *  @brief Track Title value
+ */
+#define BT_UUID_MCS_TRACK_TITLE_VAL 0x8fa4
+/** @def BT_UUID_MCS_TRACK_TITLE
+ *  @brief Track Title
+ */
+#define BT_UUID_MCS_TRACK_TITLE \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_TRACK_TITLE_VAL)
+/** @def BT_UUID_MCS_TRACK_DURATION_VAL
+ *  @brief Track Duration value
+ */
+#define BT_UUID_MCS_TRACK_DURATION_VAL 0x8fa5
+/** @def BT_UUID_MCS_TRACK_DURATION
+ *  @brief Track Duration
+ */
+#define BT_UUID_MCS_TRACK_DURATION \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_TRACK_DURATION_VAL)
+/** @def BT_UUID_MCS_TRACK_POSITION_VAL
+ *  @brief Track Position value
+ */
+#define BT_UUID_MCS_TRACK_POSITION_VAL 0x8fa6
+/** @def BT_UUID_MCS_TRACK_POSITION
+ *  @brief Track Position
+ */
+#define BT_UUID_MCS_TRACK_POSITION \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_TRACK_POSITION_VAL)
+/** @def BT_UUID_MCS_PLAYBACK_SPEED_VAL
+ *  @brief Playback Speed value
+ */
+#define BT_UUID_MCS_PLAYBACK_SPEED_VAL 0x8fa7
+/** @def BT_UUID_MCS_PLAYBACK_SPEED
+ *  @brief Playback Speed
+ */
+#define BT_UUID_MCS_PLAYBACK_SPEED \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_PLAYBACK_SPEED_VAL)
+/** @def BT_UUID_MCS_SEEKING_SPEED_VAL
+ *  @brief Seeking Speed value
+ */
+#define BT_UUID_MCS_SEEKING_SPEED_VAL 0x8fa9
+/** @def BT_UUID_MCS_SEEKING_SPEED
+ *  @brief Seeking Speed
+ */
+#define BT_UUID_MCS_SEEKING_SPEED \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_SEEKING_SPEED_VAL)
+/** @def BT_UUID_MCS_TRACK_SEGMENTS_OBJ_ID_VAL
+ *  @brief Track Segments Object ID value
+ */
+#define BT_UUID_MCS_TRACK_SEGMENTS_OBJ_ID_VAL 0x8faa
+/** @def BT_UUID_MCS_TRACK_SEGMENTS_OBJ_ID
+ *  @brief Track Segments Object ID
+ */
+#define BT_UUID_MCS_TRACK_SEGMENTS_OBJ_ID \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_TRACK_SEGMENTS_OBJ_ID_VAL)
+/** @def BT_UUID_MCS_CURRENT_TRACK_OBJ_ID_VAL
+ *  @brief Current Track Object ID value
+ */
+#define BT_UUID_MCS_CURRENT_TRACK_OBJ_ID_VAL 0x8fab
+/** @def BT_UUID_MCS_CURRENT_TRACK_OBJ_ID
+ *  @brief Current Track Object ID
+ */
+#define BT_UUID_MCS_CURRENT_TRACK_OBJ_ID \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_CURRENT_TRACK_OBJ_ID_VAL)
+/** @def BT_UUID_MCS_NEXT_TRACK_OBJ_ID_VAL
+ *  @brief Next Track Object ID value
+ */
+#define BT_UUID_MCS_NEXT_TRACK_OBJ_ID_VAL 0x8fac
+/** @def BT_UUID_MCS_NEXT_TRACK_OBJ_ID
+ *  @brief Next Track Object ID
+ */
+#define BT_UUID_MCS_NEXT_TRACK_OBJ_ID \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_NEXT_TRACK_OBJ_ID_VAL)
+/** @def BT_UUID_MCS_GROUP_OBJ_ID_VAL
+ *  @brief Group Object ID value
+ */
+#define BT_UUID_MCS_GROUP_OBJ_ID_VAL 0x8fad
+/** @def BT_UUID_MCS_GROUP_OBJ_ID
+ *  @brief Group Object ID
+ */
+#define BT_UUID_MCS_GROUP_OBJ_ID \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_GROUP_OBJ_ID_VAL)
+/** @def BT_UUID_MCS_PARENT_GROUP_OBJ_ID_VAL
+ *  @brief Parent Group Object ID value
+ */
+#define BT_UUID_MCS_PARENT_GROUP_OBJ_ID_VAL 0x8fb6
+/** @def BT_UUID_MCS_PARENT_GROUP_OBJ_ID
+ *  @brief Parent Group Object ID
+ */
+#define BT_UUID_MCS_PARENT_GROUP_OBJ_ID \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_PARENT_GROUP_OBJ_ID_VAL)
+/** @def BT_UUID_MCS_PLAYING_ORDER_VAL
+ *  @brief Playing Order value
+ */
+#define BT_UUID_MCS_PLAYING_ORDER_VAL 0x8fae
+/** @def BT_UUID_MCS_PLAYING_ORDER
+ *  @brief Playing Order
+ */
+#define BT_UUID_MCS_PLAYING_ORDER \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_PLAYING_ORDER_VAL)
+/** @def BT_UUID_MCS_PLAYING_ORDERS_VAL
+ *  @brief Playing Orders supported value
+ */
+#define BT_UUID_MCS_PLAYING_ORDERS_VAL 0x8faf
+/** @def BT_UUID_MCS_PLAYING_ORDERS
+ *  @brief Playing Orders supported
+ */
+#define BT_UUID_MCS_PLAYING_ORDERS \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_PLAYING_ORDERS_VAL)
+/** @def BT_UUID_MCS_MEDIA_STATE_VAL
+ *  @brief Media State value
+ */
+#define BT_UUID_MCS_MEDIA_STATE_VAL 0x8fb0
+/** @def BT_UUID_MCS_MEDIA_STATE
+ *  @brief Media State
+ */
+#define BT_UUID_MCS_MEDIA_STATE \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_MEDIA_STATE_VAL)
+/** @def BT_UUID_MCS_MEDIA_CONTROL_POINT_VAL
+ *  @brief Media Control Point value
+ */
+#define BT_UUID_MCS_MEDIA_CONTROL_POINT_VAL 0x8fb1
+/** @def BT_UUID_MCS_MEDIA_CONTROL_POINT
+ *  @brief Media Control Point
+ */
+#define BT_UUID_MCS_MEDIA_CONTROL_POINT \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_MEDIA_CONTROL_POINT_VAL)
+/** @def BT_UUID_MCS_MEDIA_CONTROL_OPCODES_VAL
+ *  @brief Media control opcodes supported value
+ */
+#define BT_UUID_MCS_MEDIA_CONTROL_OPCODES_VAL 0x8fb2
+/** @def BT_UUID_MCS_MEDIA_CONTROL_OPCODES
+ *  @brief Media control opcodes supported
+ */
+#define BT_UUID_MCS_MEDIA_CONTROL_OPCODES \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_MEDIA_CONTROL_OPCODES_VAL)
+/** @def BT_UUID_MCS_SEARCH_CONTROL_POINT_VAL
+ *  @brief Search control point value
+ */
+#define BT_UUID_MCS_SEARCH_CONTROL_POINT_VAL 0x8fb4
+/** @def BT_UUID_MCS_SEARCH_CONTROL_POINT
+ *  @brief Search control point
+ */
+#define BT_UUID_MCS_SEARCH_CONTROL_POINT \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_SEARCH_CONTROL_POINT_VAL)
+/** @def BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID_VAL
+ *  @brief Search result object ID value
+ */
+#define BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID_VAL 0x8fb3
+/** @def BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID
+ *  @brief Search result object ID
+ */
+#define BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID_VAL)
 /** @def BT_UUID_BASS_VAL
  *  @brief Broadcast Audio Scan Service value
  */
