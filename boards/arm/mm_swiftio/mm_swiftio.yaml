@@ -16,3 +16,4 @@ ram: 32768
 flash: 8192
 supported:
   - counter
+  - sdhc
