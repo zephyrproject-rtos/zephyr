@@ -57,7 +57,7 @@ static int pte_desc_type(uint64_t *pte)
 }
 
 static uint64_t *calculate_pte_index(struct arm_mmu_ptables *ptables,
-				     uint64_t addr, int level)
+				     uintptr_t addr, unsigned int level)
 {
 	int base_level = BASE_XLAT_LEVEL;
 	uint64_t *pte;
@@ -93,7 +93,7 @@ static void set_pte_table_desc(uint64_t *pte, uint64_t *table, unsigned int leve
 	*pte = PTE_TABLE_DESC | (uint64_t)table;
 }
 
-static uint64_t get_region_desc(unsigned int attrs)
+static uint64_t get_region_desc(uint32_t attrs)
 {
 	unsigned int mem_type;
 	uint64_t desc = 0;
@@ -202,13 +202,13 @@ static uint64_t *new_prealloc_table(struct arm_mmu_ptables *ptables)
 
 /* Splits a block into table with entries spanning the old block */
 static void split_pte_block_desc(struct arm_mmu_ptables *ptables, uint64_t *pte,
-				 uint64_t desc, int level)
+				 uint64_t desc, unsigned int level)
 {
 	uint64_t old_block_desc = *pte;
 	uint64_t *new_table;
 	unsigned int i = 0;
 	/* get address size shift bits for next level */
-	int levelshift = LEVEL_TO_VA_SIZE_SHIFT(level + 1);
+	unsigned int levelshift = LEVEL_TO_VA_SIZE_SHIFT(level + 1);
 
 	MMU_DEBUG("Splitting existing PTE %p(L%d)\n", pte, level);
 
@@ -226,15 +226,16 @@ static void split_pte_block_desc(struct arm_mmu_ptables *ptables, uint64_t *pte,
 }
 
 static void add_map(struct arm_mmu_ptables *ptables, const char *name,
-		    uint64_t phys, uint64_t virt, uint64_t size, uint64_t attrs)
+		    uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs)
 {
 	uint64_t desc, *pte;
 	uint64_t level_size;
 	uint64_t *new_table;
 	unsigned int level = BASE_XLAT_LEVEL;
 
-	MMU_DEBUG("mmap [%s]: virt %llx phys %llx size %llx\n",
+	MMU_DEBUG("mmap [%s]: virt %lx phys %lx size %lx\n",
 		   name, virt, phys, size);
+
 	/* check minimum alignment requirement for given mmap region */
 	__ASSERT(((virt & (PAGE_SIZE - 1)) == 0) &&
 		 ((size & (PAGE_SIZE - 1)) == 0),
@@ -322,7 +323,7 @@ static void setup_page_tables(struct arm_mmu_ptables *ptables)
 {
 	unsigned int index;
 	const struct arm_mmu_region *region;
-	uint64_t max_va = 0, max_pa = 0;
+	uintptr_t max_va = 0, max_pa = 0;
 
 	MMU_DEBUG("xlat tables:\n");
 	for (index = 0; index < CONFIG_MAX_XLAT_TABLES; index++)

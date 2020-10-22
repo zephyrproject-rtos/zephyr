@@ -139,28 +139,28 @@
 /* Region definition data structure */
 struct arm_mmu_region {
 	/* Region Base Physical Address */
-	uint64_t base_pa;
+	uintptr_t base_pa;
 	/* Region Base Virtual Address */
-	uint64_t base_va;
+	uintptr_t base_va;
 	/* Region size */
-	uint64_t size;
+	size_t size;
 	/* Region Name */
 	const char *name;
 	/* Region Attributes */
-	unsigned int attrs;
+	uint32_t attrs;
 };
 
 /* MMU configuration data structure */
 struct arm_mmu_config {
 	/* Number of regions */
-	uint32_t num_regions;
+	unsigned int num_regions;
 	/* Regions */
 	const struct arm_mmu_region *mmu_regions;
 };
 
 struct arm_mmu_ptables {
 	uint64_t *xlat_tables;
-	unsigned char next_table;
+	unsigned int next_table;
 };
 
 /* Convenience macros to represent the ARMv8-A-specific
