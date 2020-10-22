@@ -17,6 +17,10 @@
 extern struct z_coredump_backend_api z_coredump_backend_logging;
 static struct z_coredump_backend_api
 	*backend_api = &z_coredump_backend_logging;
+#elif defined(CONFIG_DEBUG_COREDUMP_BACKEND_FLASH_PARTITION)
+extern struct z_coredump_backend_api z_coredump_backend_flash_partition;
+static struct z_coredump_backend_api
+	*backend_api = &z_coredump_backend_flash_partition;
 #else
 #error "Need to select a coredump backend"
 #endif
