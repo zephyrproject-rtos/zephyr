@@ -26,6 +26,7 @@
 #include <kernel.h>
 #include <sys/mutex.h>
 #include <net/coap.h>
+#include <net/lwm2m_path.h>
 
 /**
  * @brief LwM2M Objects managed by OMA for LwM2M tech specification.  Objects
