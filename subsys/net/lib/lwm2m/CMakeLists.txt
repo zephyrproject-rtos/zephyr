@@ -26,6 +26,9 @@ zephyr_library_sources_ifdef(CONFIG_LWM2M_CONN_MON_OBJ_SUPPORT
 zephyr_library_sources_ifdef(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT
     lwm2m_obj_firmware.c
     )
+zephyr_library_sources_ifdef(CONFIG_LWM2M_SWMGMT_OBJ_SUPPORT
+    lwm2m_obj_swmgmt.c
+    )
 zephyr_library_sources_ifdef(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
     lwm2m_obj_firmware_pull.c
     lwm2m_pull_context.c

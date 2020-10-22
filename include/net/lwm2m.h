@@ -42,6 +42,7 @@
 #define LWM2M_OBJECT_FIRMWARE_ID			5
 #define LWM2M_OBJECT_LOCATION_ID			6
 #define LWM2M_OBJECT_CONNECTIVITY_STATISTICS_ID		7
+#define LWM2M_OBJECT_SOFTWARE_MANAGEMENT_ID             9
 
 /**
  * @brief LwM2M Objects produced by 3rd party Standards Development
@@ -309,6 +310,99 @@ lwm2m_engine_user_cb_t lwm2m_firmware_get_update_cb(void);
  */
 struct coap_block_context *lwm2m_firmware_get_block_context();
 #endif
+#endif
+
+
+#if defined(CONFIG_LWM2M_SWMGMT_OBJ_SUPPORT)
+
+/**
+ * @brief Set callback to handle software activation requests
+ *
+ * This callback will get called when the Activate execute on
+ * the corresponding object instance is called and the object is
+ * in the correct state.
+ *
+ * @param[in] obj_inst_id The instance number to set the callback for.
+ *
+ * @return 0 on success, otherwise a negative integer.
+ */
+int lwm2m_swmgmt_set_activate_cb(uint16_t obj_inst_id, lwm2m_engine_user_cb_t cb);
+
+/**
+ * @brief Set callback to handle software deactivation requests
+ *
+ * This callback will get called when the Deactivate execute on
+ * the corresponding object instance is called and the object is
+ * in the correct state.
+ *
+ * @param[in] obj_inst_id The instance number to set the callback for.
+ *
+ * @return 0 on success, otherwise a negative integer.
+ */
+int lwm2m_swmgmt_set_deactivate_cb(uint16_t obj_inst_id, lwm2m_engine_user_cb_t cb);
+
+/**
+ * @brief Set callback to handle software install requests
+ *
+ * This callback will get called when the Install execute on
+ * the corresponding object instance is called and the object is
+ * in the correct state.
+ *
+ * @param[in] obj_inst_id The instance number to set the callback for.
+ *
+ * @return 0 on success, otherwise a negative integer.
+ */
+int lwm2m_swmgmt_set_install_package_cb(uint16_t obj_inst_id, lwm2m_engine_user_cb_t cb);
+
+/**
+ * @brief Set callback to handle software uninstall requests
+ *
+ * This callback will get called when the uninstall execute on
+ * the corresponding object instance is called and the object is
+ * in the correct state.
+ *
+ * @param[in] obj_inst_id The instance number to set the callback for.
+ *
+ * @return 0 on success, otherwise a negative integer.
+ */
+int lwm2m_swmgmt_set_delete_package_cb(uint16_t obj_inst_id, lwm2m_engine_user_cb_t cb);
+
+/**
+ * @brief Set callback to read software package
+ *
+ * This callback will get called during read on package version attribute on
+ * the corresponding object instance is called
+ *
+ * @param[in] obj_inst_id The instance number to set the callback for.
+ *
+ * @return 0 on success, otherwise a negative integer.
+ */
+int lwm2m_swmgmt_set_read_package_cb(uint16_t obj_inst_id, lwm2m_engine_get_data_cb_t cb);
+
+/**
+ * @brief Set data callback for software management block transfer.
+ *
+ * LwM2M clients use this function to register a callback for receiving the
+ * block transfer data when performing downloading.
+ *
+ * @param[in] obj_inst_id The instance number to set the callback for.
+ * @param[in] cb A callback function to receive the block transfer data
+ *
+ * @return 0 on success, otherwise a negative integer.
+ */
+int lwm2m_swmgmt_set_write_package_cb(uint16_t obj_inst_id, lwm2m_engine_set_data_cb_t cb);
+
+/**
+ * Function to be called when an instance is finished.
+ *
+ * @param[in] obj_inst_id The instance number this call concerns
+ * @param[in] error_code The result code of the operation. Zero on success
+ * otherwise it should be a negative integer.
+ *
+ * return 0 on success, otherwise a negative integer.
+ */
+int lwm2m_swmgmt_install_completed(uint16_t obj_inst_id, int error_code);
+
 #endif
 
 /**

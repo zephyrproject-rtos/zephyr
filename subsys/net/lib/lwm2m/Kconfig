@@ -215,6 +215,17 @@ config LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 	  block transfer and "FIRMWARE PACKAGE URI" resource.  This option
 	  adds another UDP context and packet handling.
 
+config LWM2M_SWMGMT_OBJ_SUPPORT
+	bool "Software management object support"
+	default y
+	help
+	  Include support for LWM2M Software Management Object (ID 9)
+
+config LWM2M_SWMGMT_MAX_INSTANCE_COUNT
+	int "Maximum # of object instances"
+	depends on LWM2M_SWMGMT_OBJ_SUPPORT
+	default 1
+
 config LWM2M_NUM_BLOCK1_CONTEXT
 	int "Maximum # of LWM2M block1 contexts"
 	default 3
