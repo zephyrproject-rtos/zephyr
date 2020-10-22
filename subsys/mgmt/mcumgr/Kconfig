@@ -123,6 +123,18 @@ config FS_MGMT_PATH_SIZE
 	  and download commands.
 endif
 
+config MCUMGR_CMD_SHELL_MGMT
+	bool "Enable mcumgr handlers for shell management"
+	depends on SHELL
+	select SHELL_BACKEND_DUMMY
+	help
+	  Enables mcumgr handlers for shell management. The handler will utilize
+	  the dummy backend to execute shell commands and capture the output to
+	  an internal memory buffer. This way, there is no interaction with
+	  physical interfaces outside of the scope of the user.
+	  It is possible to use additional shell backends in coordination
+	  with this handler and they will not interfere.
+
 menuconfig MCUMGR_CMD_IMG_MGMT
 	bool "Enable mcumgr handlers for image management"
 	select FLASH
