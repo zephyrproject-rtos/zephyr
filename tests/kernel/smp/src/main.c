@@ -63,6 +63,20 @@ static int curr_cpu(void)
  * @}
  */
 
+/**
+ * @defgroup kernel_smp_integration_tests SMP Tests
+ * @ingroup all_tests
+ * @{
+ * @}
+ */
+
+/**
+ * @defgroup kernel_smp_module_tests SMP Tests
+ * @ingroup all_tests
+ * @{
+ * @}
+ */
+
 static void t2_fn(void *a, void *b, void *c)
 {
 	ARG_UNUSED(a);
@@ -468,7 +482,7 @@ static void thread_get_cpu_entry(void *p1, void *p2, void *p3)
 /**
  * @brief Test get a pointer of CPU
  *
- * @ingroup kernel_smp_tests
+ * @ingroup kernel_smp_module_tests
  *
  * @details
  * Test Objective:
@@ -503,7 +517,7 @@ static void thread_get_cpu_entry(void *p1, void *p2, void *p3)
  * - The pointer of current cpu data that we got from function call is correct.
  *
  * Pass/Fail Criteria:
- * - Successful if the check of step 3,5 are all pass.
+ * - Successful if the check of step 3,5 are all passed.
  * - Failure if one of the check of step 3,5 is failed.
  *
  * Assumptions and Constraints:
@@ -538,11 +552,12 @@ void z_trace_sched_ipi(void)
 {
 	sched_ipi_has_called++;
 }
+#endif
 
 /**
  * @brief Test interprocessor interrupt
  *
- * @ingroup kernel_smp_tests
+ * @ingroup kernel_smp_integration_tests
  *
  * @details
  * Test Objective:
@@ -574,7 +589,7 @@ void z_trace_sched_ipi(void)
  * - The pointer of current cpu data that we got from function call is correct.
  *
  * Pass/Fail Criteria:
- * - Successful if the check of step 4 are all pass.
+ * - Successful if the check of step 4 are all passed.
  * - Failure if one of the check of step 4 is failed.
  *
  * Assumptions and Constraints:
@@ -585,6 +600,10 @@ void z_trace_sched_ipi(void)
  */
 void test_smp_ipi(void)
 {
+#ifndef CONFIG_TRACE_SCHED_IPI
+	ztest_test_skip();
+#endif
+
 	TC_PRINT("cpu num=%d", CONFIG_MP_NUM_CPUS);
 
 	for (int i = 0; i < 3 ; i++) {
@@ -604,12 +623,6 @@ void test_smp_ipi(void)
 				sched_ipi_has_called);
 	}
 }
-#else
-void test_smp_ipi(void)
-{
-	ztest_test_skip();
-}
-#endif
 
 void test_main(void)
 {
