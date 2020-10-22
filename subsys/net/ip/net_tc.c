@@ -75,10 +75,22 @@ int net_rx_priority2tc(enum net_priority prio)
 	return rx_prio2tc_map[prio];
 }
 
-#define BASE_PRIO 8
-#define PRIO(i, _) (BASE_PRIO - i),
 
-BUILD_ASSERT(BASE_PRIO >= 7, "Base priority needs to be >= 7");
+#if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
+#define BASE_PRIO_TX (CONFIG_NET_TC_NUM_PRIORITIES - 1)
+#else
+#define BASE_PRIO_TX (CONFIG_NET_TC_TX_COUNT - 1)
+#endif
+
+#define PRIO_TX(i, _) (BASE_PRIO_TX - i),
+
+#if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
+#define BASE_PRIO_RX (CONFIG_NET_TC_NUM_PRIORITIES - 1)
+#else
+#define BASE_PRIO_RX (CONFIG_NET_TC_RX_COUNT - 1)
+#endif
+
+#define PRIO_RX(i, _) (BASE_PRIO_RX - i),
 
 /* Convert traffic class to thread priority */
 static uint8_t tx_tc2thread(uint8_t tc)
@@ -97,23 +109,26 @@ static uint8_t tx_tc2thread(uint8_t tc)
 	 *
 	 * For example, if NET_TC_TX_COUNT = 8, which is the maximum number of
 	 * traffic classes, then this priority array will contain following
-	 * values:
-	 *      8, 7, 6, 5, 4, 3, 2, 1
+	 * values if preemptive priorities are used:
+	 *      7, 6, 5, 4, 3, 2, 1, 0
+	 * and
+	 *      14, 13, 12, 11, 10, 9, 8, 7
+	 * if cooperative priorities are used.
 	 *
-	 * and these will be converted to following thread priorities if
+	 * Then these will be converted to following thread priorities if
 	 * CONFIG_NET_TC_THREAD_COOPERATIVE is enabled:
-	 *      -8, -9, -10, -11, -12, -13, -14, -15
+	 *      -1, -2, -3, -4, -5, -6, -7, -8
 	 *
 	 * and if CONFIG_NET_TC_THREAD_PREEMPTIVE is enabled, following thread
 	 * priorities are used:
-	 *       8, 7, 6, 5, 4, 3, 2, 1
+	 *       7, 6, 5, 4, 3, 2, 1, 0
 	 *
-	 * This means that the highest traffic class 8, will always have the
-	 * highest priority, either -15 for coop priorities or 1 for preemptive
+	 * This means that the lowest traffic class 1, will have the lowest
+	 * cooperative priority -1 for coop priorities and 7 for preemptive
 	 * priority.
 	 */
 	static const uint8_t thread_priorities[] = {
-		UTIL_LISTIFY(NET_TC_TX_COUNT, PRIO)
+		UTIL_LISTIFY(NET_TC_TX_COUNT, PRIO_TX)
 	};
 
 	BUILD_ASSERT(NET_TC_TX_COUNT <= CONFIG_NUM_COOP_PRIORITIES,
@@ -128,7 +143,7 @@ static uint8_t tx_tc2thread(uint8_t tc)
 static uint8_t rx_tc2thread(uint8_t tc)
 {
 	static const uint8_t thread_priorities[] = {
-		UTIL_LISTIFY(NET_TC_RX_COUNT, PRIO)
+		UTIL_LISTIFY(NET_TC_RX_COUNT, PRIO_RX)
 	};
 
 	BUILD_ASSERT(NET_TC_RX_COUNT <= CONFIG_NUM_COOP_PRIORITIES,

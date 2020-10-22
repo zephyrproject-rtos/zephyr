@@ -140,6 +140,7 @@ config NET_SHELL_DYN_CMD_COMPLETION
 config NET_TC_TX_COUNT
 	int "How many Tx traffic classes to have for each network device"
 	default 1
+	range 1 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8
 	range 1 8
 	help
 	  Define how many Tx traffic classes (queues) the system should have
@@ -155,6 +156,7 @@ config NET_TC_TX_COUNT
 config NET_TC_RX_COUNT
 	int "How many Rx traffic classes to have for each network device"
 	default 1
+	range 1 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8
 	range 1 8
 	help
 	  Define how many Rx traffic classes (queues) the system should have
@@ -186,6 +188,11 @@ config NET_TC_THREAD_PREEMPTIVE
 	  With pre-emptive threads, the thread can be pre-empted.
 
 endchoice
+
+config NET_TC_NUM_PRIORITIES
+	int
+	default NUM_COOP_PRIORITIES if NET_TC_THREAD_COOPERATIVE
+	default NUM_PREEMPT_PRIORITIES if NET_TC_THREAD_PREEMPTIVE
 
 choice
 	prompt "Priority to traffic class mapping"
