@@ -14,6 +14,16 @@ enum coredump_query_id {
 	 */
 	COREDUMP_QUERY_GET_ERROR,
 
+	/*
+	 * Check if there is a stored coredump from backend.
+	 *
+	 * Returns 1 if there is a stored coredump.
+	 *         0 if none.
+	 *         -ENOTSUP if this query is not supported.
+	 *	   Otherwise, error code from backend.
+	 */
+	COREDUMP_QUERY_HAS_STORED_DUMP,
+
 	COREDUMP_QUERY_MAX
 };
 
@@ -25,6 +35,25 @@ enum coredump_cmd_id {
 	 * Returns 0 if successful, failed otherwise.
 	 */
 	COREDUMP_CMD_CLEAR_ERROR,
+
+	/*
+	 * Verify that the stored coredump is valid.
+	 *
+	 * Returns 1 if valid.
+	 *         0 if not valid or no stored coredump.
+	 *         -ENOTSUP if this command is not supported.
+	 *	   Otherwise, error code from backend.
+	 */
+	COREDUMP_CMD_VERIFY_STORED_DUMP,
+
+	/*
+	 * Erase the stored coredump.
+	 *
+	 * Returns 0 if successful.
+	 *         -ENOTSUP if this command is not supported.
+	 *	   Otherwise, error code from backend.
+	 */
+	COREDUMP_CMD_ERASE_STORED_DUMP,
 
 	COREDUMP_CMD_MAX
 };
