@@ -18,6 +18,7 @@
 /* Helper functions to initialise and reset ull_adv module */
 int ull_adv_init(void);
 int ull_adv_reset(void);
+int ull_adv_reset_finalize(void);
 
 /* Return ll_adv_set context (unconditional) */
 struct ll_adv_set *ull_adv_set_get(uint8_t handle);

@@ -7,10 +7,7 @@
 struct lll_adv_pdu {
 	uint8_t volatile first;
 	uint8_t          last;
-	/* TODO: use,
-	 * struct pdu_adv *pdu[DOUBLE_BUFFER_SIZE];
-	 */
-	uint8_t pdu[DOUBLE_BUFFER_SIZE][PDU_AC_LL_SIZE_MAX];
+	uint8_t          *pdu[DOUBLE_BUFFER_SIZE];
 };
 
 struct lll_adv_aux {
@@ -102,39 +99,10 @@ struct lll_adv {
 
 int lll_adv_init(void);
 int lll_adv_reset(void);
-
+int lll_adv_data_init(struct lll_adv_pdu *pdu);
+int lll_adv_data_reset(struct lll_adv_pdu *pdu);
+struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx);
 void lll_adv_prepare(void *param);
-
-static inline struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu,
-						uint8_t *idx)
-{
-	uint8_t first, last;
-
-	first = pdu->first;
-	last = pdu->last;
-	if (first == last) {
-		last++;
-		if (last == DOUBLE_BUFFER_SIZE) {
-			last = 0U;
-		}
-	} else {
-		uint8_t first_latest;
-
-		pdu->last = first;
-		cpu_dsb();
-		first_latest = pdu->first;
-		if (first_latest != first) {
-			last++;
-			if (last == DOUBLE_BUFFER_SIZE) {
-				last = 0U;
-			}
-		}
-	}
-
-	*idx = last;
-
-	return (void *)pdu->pdu[last];
-}
 
 static inline void lll_adv_pdu_enqueue(struct lll_adv_pdu *pdu, uint8_t idx)
 {

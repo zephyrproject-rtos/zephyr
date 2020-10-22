@@ -1290,12 +1290,12 @@ int ull_adv_init(void)
 		}
 	}
 
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
-	err = ull_adv_sync_init();
-	if (err) {
-		return err;
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC)) {
+		err = ull_adv_sync_init();
+		if (err) {
+			return err;
+		}
 	}
-#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_AUX_SET */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -1310,33 +1310,48 @@ int ull_adv_init(void)
 int ull_adv_reset(void)
 {
 	uint8_t handle;
-	int err;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-
 #if defined(CONFIG_BT_HCI_RAW)
 	ll_adv_cmds = LL_ADV_CMDS_ANY;
 #endif
 
 #if defined(CONFIG_BT_CTLR_ADV_AUX_SET)
 	if (CONFIG_BT_CTLR_ADV_AUX_SET > 0) {
+		int err;
+
 		err = ull_adv_aux_reset();
 		if (err) {
 			return err;
 		}
 	}
 
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
-	err = ull_adv_sync_reset();
-	if (err) {
-		return err;
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC)) {
+		int err;
+
+		err = ull_adv_sync_reset();
+		if (err) {
+			return err;
+		}
 	}
-#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_AUX_SET */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	for (handle = 0U; handle < BT_CTLR_ADV_SET; handle++) {
 		(void)disable(handle);
+	}
+
+	return 0;
+}
+
+int ull_adv_reset_finalize(void)
+{
+	uint8_t handle;
+	int err;
+
+	for (handle = 0U; handle < BT_CTLR_ADV_SET; handle++) {
+		lll_adv_data_reset(&ll_adv[handle].lll.adv_data);
+		lll_adv_data_reset(&ll_adv[handle].lll.scan_rsp);
 	}
 
 	err = init_reset();
@@ -1532,10 +1547,17 @@ void ull_adv_done(struct node_rx_event_done *done)
 
 static int init_reset(void)
 {
+	uint8_t handle;
+
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL) && \
 	!defined(CONFIG_BT_CTLR_ADV_EXT)
 	ll_adv[0].lll.tx_pwr_lvl = RADIO_TXP_DEFAULT;
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL && !CONFIG_BT_CTLR_ADV_EXT */
+
+	for (handle = 0U; handle < BT_CTLR_ADV_SET; handle++) {
+		lll_adv_data_init(&ll_adv[handle].lll.adv_data);
+		lll_adv_data_init(&ll_adv[handle].lll.scan_rsp);
+	}
 
 	return 0;
 }

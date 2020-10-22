@@ -87,6 +87,12 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		lll->sync = lll_sync;
 		lll_sync->adv = lll;
 
+		lll_adv_data_reset(&lll_sync->data);
+		err = lll_adv_data_init(&lll_sync->data);
+		if (err) {
+			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+		}
+
 		/* NOTE: ull_hdr_init(&sync->ull); is done on start */
 		lll_hdr_init(lll_sync, sync);
 
