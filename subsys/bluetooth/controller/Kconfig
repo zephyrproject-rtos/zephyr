@@ -72,6 +72,9 @@ config BT_CTLR_SMI_SUPPORT
 config BT_CTLR_CONN_RSSI_SUPPORT
 	bool
 
+config BT_CTLR_ECDH_SUPPORT
+	bool
+
 config BT_CTLR
 	bool "Bluetooth Controller"
 	help
@@ -265,6 +268,14 @@ config BT_CTLR_LE_ENC
 	help
 	  Enable support for Bluetooth v4.0 LE Encryption feature in the
 	  Controller.
+
+config BT_CTLR_ECDH
+	bool "Elliptic Curve Diffie-Hellman (ECDH)"
+	depends on BT_CTLR_ECDH_SUPPORT
+	default y
+	help
+	  Enable support for Bluetoooth v4.2 Elliptic Curve Diffie-Hellman
+	  feature in the controller.
 
 config BT_CTLR_CONN_PARAM_REQ
 	bool "Connection Parameter Request"
