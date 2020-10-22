@@ -641,63 +641,6 @@ void test_mem_part_auto_determ_size(void)
 	k_mem_domain_add_thread(&domain1, usr_tid0);
 }
 
-static void child_thr_handler(void *p1, void *p2, void *p3)
-{
-	ARG_UNUSED(p1);
-	ARG_UNUSED(p2);
-	ARG_UNUSED(p3);
-}
-
-static void parent_thr_handler(void *p1, void *p2, void *p3)
-{
-	k_tid_t child_tid = k_thread_create(&child_thr_md, child_thr_stack_md,
-					K_THREAD_STACK_SIZEOF(child_thr_stack_md),
-					child_thr_handler,
-					NULL, NULL, NULL,
-					PRIORITY_MD, 0, K_NO_WAIT);
-	struct k_thread *thread = child_tid;
-
-	zassert_true(thread->mem_domain_info.mem_domain == &domain4, NULL);
-	k_sem_give(&sync_sem_md);
-}
-
-/**
- * @brief Test memory partition is inherited by the child thread
- *
- * @details
- * - Define memory partition and add it to the parent thread.
- * - Parent thread creates a child thread. That child thread should be already
- *   added to the parent's memory domain too.
- * - It will be checked by using thread->mem_domain_info.mem_domain
- * - If that child thread structure is equal to the current
- *   memory domain address, then pass the test. It means child thread inherited
- *   the memory domain assignment of their parent.
- *
- * @ingroup kernel_memprotect_tests
- *
- * @see k_mem_add_thread(), k_mem_remove_thread()
- */
-void test_mem_part_inherit_by_child_thr(void)
-{
-	k_sem_reset(&sync_sem_md);
-	k_mem_domain_init(&domain4, 0, NULL);
-	k_mem_domain_add_partition(&domain4, &part0);
-	/* that line below is a replacament for
-	 * k_mem_domain_remove_thread(k_current_get())
-	 */
-	k_mem_domain_add_thread(&domain0, k_current_get());
-
-	k_tid_t parent_tid = k_thread_create(&parent_thr_md, parent_thr_stack_md,
-					K_THREAD_STACK_SIZEOF(parent_thr_stack_md),
-					parent_thr_handler,
-					NULL, NULL, NULL,
-					PRIORITY_MD, 0, K_NO_WAIT);
-	k_mem_domain_add_thread(&domain4, parent_tid);
-	k_sem_take(&sync_sem_md, K_FOREVER);
-}
-
-
-
 static void zzz_entry(void *p1, void *p2, void *p3)
 {
 	k_sleep(K_FOREVER);
