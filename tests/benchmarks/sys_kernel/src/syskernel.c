@@ -165,6 +165,7 @@ void main(void)
 		test_result += lifo_test();
 		test_result += fifo_test();
 		test_result += stack_test();
+		test_result += mem_slab_test();
 
 		if (test_result) {
 			/* sema/lifo/fifo/stack account for 12 tests in total */
