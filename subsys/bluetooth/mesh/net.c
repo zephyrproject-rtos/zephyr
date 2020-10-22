@@ -830,38 +830,6 @@ static void ivu_refresh(struct k_work *work)
 	}
 }
 
-void bt_mesh_net_start(void)
-{
-	if (bt_mesh_beacon_get() == BT_MESH_BEACON_ENABLED) {
-		bt_mesh_beacon_enable();
-	} else {
-		bt_mesh_beacon_disable();
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
-	    bt_mesh_gatt_proxy_get() != BT_MESH_GATT_PROXY_NOT_SUPPORTED) {
-		bt_mesh_proxy_gatt_enable();
-		bt_mesh_adv_update();
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
-		bt_mesh_lpn_init();
-	} else {
-		bt_mesh_scan_enable();
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
-		bt_mesh_friend_init();
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_PROV)) {
-		struct bt_mesh_subnet *sub = bt_mesh_subnet_next(NULL);
-		uint16_t addr = bt_mesh_primary_addr();
-
-		bt_mesh_prov_complete(sub->net_idx, addr);
-	}
-}
-
 void bt_mesh_net_init(void)
 {
 	k_delayed_work_init(&bt_mesh.ivu_timer, ivu_refresh);
