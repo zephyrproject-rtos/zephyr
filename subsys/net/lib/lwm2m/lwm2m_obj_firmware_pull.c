@@ -16,35 +16,47 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_pull_context.h"
 #include "lwm2m_engine.h"
 
-static void set_update_result_from_error(int error_code)
+static void set_update_result(uint16_t obj_inst_id, int error_code)
 {
+	int result;
+
 	if (!error_code) {
 		lwm2m_firmware_set_update_state(STATE_DOWNLOADED);
 		return;
 	}
 
-	if (error_code == -ENOMEM) {
-		lwm2m_firmware_set_update_result(RESULT_OUT_OF_MEM);
-	} else if (error_code == -ENOSPC) {
-		lwm2m_firmware_set_update_result(RESULT_NO_STORAGE);
-	} else if (error_code == -EFAULT) {
-		lwm2m_firmware_set_update_result(RESULT_INTEGRITY_FAILED);
-	} else if (error_code == -ENOMSG) {
-		lwm2m_firmware_set_update_result(RESULT_CONNECTION_LOST);
-	} else if (error_code == -ENOTSUP) {
-		lwm2m_firmware_set_update_result(RESULT_INVALID_URI);
-	} else if (error_code == -EPROTONOSUPPORT) {
-		lwm2m_firmware_set_update_result(RESULT_UNSUP_PROTO);
-	} else {
-		lwm2m_firmware_set_update_result(RESULT_UPDATE_FAILED);
+	switch (error_code) {
+	case -ENOMEM:
+		result = RESULT_OUT_OF_MEM;
+		break;
+	case -ENOSPC:
+		result = RESULT_NO_STORAGE;
+		break;
+	case -EFAULT:
+		result = RESULT_INTEGRITY_FAILED;
+		break;
+	case -ENOMSG:
+		result = RESULT_CONNECTION_LOST;
+		break;
+	case -ENOTSUP:
+		result = RESULT_INVALID_URI;
+		break;
+	case -EPROTONOSUPPORT:
+		result = RESULT_UNSUP_PROTO;
+		break;
+	default:
+		result = RESULT_UPDATE_FAILED;
+		break;
 	}
+
+	lwm2m_firmware_set_update_result(result);
 }
 
-static struct firmware_pull_context fota_context = {
-	.firmware_ctx = {
-		.sock_fd = -1
-	},
-	.result_cb = set_update_result_from_error
+static struct requesting_object req = {
+	.obj_inst_id = 0,
+	.is_firmware_uri = true,
+	.result_cb = set_update_result,
+	.verify_cb = NULL
 };
 
 /* TODO: */
@@ -55,22 +67,18 @@ int lwm2m_firmware_cancel_transfer(void)
 
 int lwm2m_firmware_start_transfer(char *package_uri)
 {
-	fota_context.write_cb = lwm2m_firmware_get_write_cb();
+	int error_code;
+
+	req.write_cb = lwm2m_firmware_get_write_cb();
 
 	/* start file transfer work */
-	strncpy(fota_context.uri, package_uri, LWM2M_PACKAGE_URI_LEN - 1);
-	lwm2m_pull_context_start_transfer(&fota_context);
+	error_code = lwm2m_pull_context_start_transfer(package_uri, req, K_NO_WAIT);
+
+	if (error_code) {
+		return error_code;
+	}
+
 	lwm2m_firmware_set_update_state(STATE_DOWNLOADING);
 
 	return 0;
-}
-
-/**
- * @brief Get the block context of the current firmware block.
- *
- * @return A pointer to the firmware block context
- */
-struct coap_block_context *lwm2m_firmware_get_block_context()
-{
-	return &firmware_block_ctx;
 }

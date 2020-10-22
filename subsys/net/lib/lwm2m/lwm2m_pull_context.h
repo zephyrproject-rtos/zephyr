@@ -7,17 +7,22 @@
 
 #include <stdio.h>
 #include <net/lwm2m.h>
+#include <sys_clock.h>
 
-#define LWM2M_PACKAGE_URI_LEN 255
-struct firmware_pull_context {
-	char uri[LWM2M_PACKAGE_URI_LEN];
-	int retry;
-	struct k_work firmware_work;
-	struct lwm2m_ctx firmware_ctx;
-	struct coap_block_context block_ctx;
+#define LWM2M_PACKAGE_URI_LEN CONFIG_LWM2M_SWMGMT_PACKAGE_URI_LEN
 
-	void (*result_cb)(int error_code);
+struct requesting_object {
+	uint8_t obj_inst_id;
+	bool is_firmware_uri;
+
+	void (*result_cb)(uint16_t obj_inst_id, int error_code);
 	lwm2m_engine_set_data_cb_t write_cb;
+	int (*verify_cb)(void);
 };
 
-int lwm2m_pull_context_start_transfer(struct firmware_pull_context *ctx);
+/*
+ * The pull context is also used in the LWM2M's Software Management object.
+ * This means that the transfer needs to know if it's used for firmware or
+ * something else.
+ */
+int lwm2m_pull_context_start_transfer(char *uri, struct requesting_object req, k_timeout_t timeout);
