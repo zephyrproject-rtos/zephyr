@@ -40,7 +40,7 @@ void test_main(void)
 				 test_mem_part_auto_determ_size_per_mpu),
 			 ztest_unit_test(test_mem_part_inherit_by_child_thr),
 			 ztest_unit_test(test_macros_obtain_names_data_bss),
-			 ztest_unit_test(test_mem_part_assign_bss_vars_zero),
+			 ztest_user_unit_test(test_mem_part_assign_bss_vars_zero),
 			 ztest_unit_test(test_kobject_access_grant),
 			 ztest_unit_test(test_syscall_invalid_kobject),
 			 ztest_unit_test(test_thread_without_kobject_permission),
