@@ -165,10 +165,11 @@ void main(void)
 		test_result += lifo_test();
 		test_result += fifo_test();
 		test_result += stack_test();
+		test_result += mem_slab_test();
 
 		if (test_result) {
-			/* sema/lifo/fifo/stack account for 12 tests in total */
-			if (test_result == 12) {
+			/* sema/lifo/fifo/stack/mem_slab account for 14 tests in total */
+			if (test_result == 14) {
 				fprintf(output_file, sz_module_result_fmt,
 					sz_success);
 			} else {
