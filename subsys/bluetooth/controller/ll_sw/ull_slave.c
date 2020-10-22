@@ -310,6 +310,26 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	mayfly_enable(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 0);
 #endif
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
+	struct lll_adv_aux *lll_aux = adv->lll.aux;
+
+	if (lll_aux) {
+		struct ll_adv_aux_set *aux;
+
+		aux = (void *)HDR_LLL2EVT(lll_aux);
+
+		ticker_id_adv = TICKER_ID_ADV_AUX_BASE +
+				ull_adv_aux_handle_get(aux);
+		ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR,
+					    TICKER_USER_ID_ULL_HIGH,
+					    ticker_id_adv,
+					    ticker_op_stop_adv_cb, aux);
+		ticker_op_stop_adv_cb(ticker_status, aux);
+
+		aux->is_started = 0U;
+	}
+#endif
+
 	/* Stop Advertiser */
 	ticker_id_adv = TICKER_ID_ADV_BASE + ull_adv_handle_get(adv);
 	ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR,
