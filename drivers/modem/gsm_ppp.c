@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 #define GSM_CMD_READ_BUF       128
 #define GSM_CMD_AT_TIMEOUT     K_SECONDS(2)
 #define GSM_CMD_SETUP_TIMEOUT  K_SECONDS(6)
+#define GSM_REGISTRATION_TIMEOUT K_SECONDS(180)
 #define GSM_RX_STACK_SIZE      CONFIG_MODEM_GSM_RX_STACK_SIZE
 #define GSM_RECV_MAX_BUF       30
 #define GSM_RECV_BUF_SIZE      128
@@ -296,14 +297,14 @@ static int gsm_setup_mccmno(struct gsm_modem *gsm)
 					    CONFIG_MODEM_GSM_MANUAL_MCCMNO
 					    "\"",
 					    &gsm->sem_response,
-					    GSM_CMD_AT_TIMEOUT);
+					    GSM_REGISTRATION_TIMEOUT);
 	} else {
 		/* register operator automatically */
 		ret = modem_cmd_send_nolock(&gsm->context.iface,
 					    &gsm->context.cmd_handler,
 					    NULL, 0, "AT+COPS=0,0",
 					    &gsm->sem_response,
-					    GSM_CMD_AT_TIMEOUT);
+					    GSM_REGISTRATION_TIMEOUT);
 	}
 
 	if (ret < 0) {
