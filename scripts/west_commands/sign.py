@@ -173,11 +173,6 @@ class Sign(Forceable):
         elif args.gen_hex is None and hex_exists:
             formats.append('hex')
 
-        if not formats:
-            if not args.quiet:
-                log.dbg('nothing to do: no output files')
-            return
-
         # Delegate to the signer.
         if args.tool == 'imgtool':
             signer = ImgtoolSigner()
