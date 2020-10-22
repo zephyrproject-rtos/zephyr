@@ -1333,12 +1333,6 @@ int usb_dc_attach(void)
 		return 0;
 	}
 
-	k_work_q_start(&usbd_work_queue,
-		       usbd_work_queue_stack,
-		       K_KERNEL_STACK_SIZEOF(usbd_work_queue_stack),
-		       CONFIG_SYSTEM_WORKQUEUE_PRIORITY);
-
-	k_work_init(&ctx->usb_work, usbd_work_handler);
 	k_mutex_init(&ctx->drv_lock);
 	ctx->hfxo_mgr =
 		z_nrf_clock_control_get_onoff(
@@ -1940,6 +1934,8 @@ int usb_dc_wakeup_request(void)
 
 static int usb_init(const struct device *arg)
 {
+	struct nrf_usbd_ctx *ctx = get_usbd_ctx();
+
 #ifdef CONFIG_HAS_HW_NRF_USBREG
 	/* Use CLOCK/POWER priority for compatibility with other series where
 	 * USB events are handled by CLOCK interrupt handler.
@@ -1968,7 +1964,14 @@ static int usb_init(const struct device *arg)
 	(void)nrfx_power_init(&power_config);
 	nrfx_power_usbevt_init(&usbevt_config);
 
+	k_work_q_start(&usbd_work_queue,
+		usbd_work_queue_stack,
+		K_KERNEL_STACK_SIZEOF(usbd_work_queue_stack),
+		CONFIG_SYSTEM_WORKQUEUE_PRIORITY);
+
+	k_work_init(&ctx->usb_work, usbd_work_handler);
+
 	return 0;
 }
 
-SYS_INIT(usb_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(usb_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
