@@ -270,8 +270,6 @@ void bt_mesh_net_loopback_clear(uint16_t net_idx);
 
 uint32_t bt_mesh_next_seq(void);
 
-void bt_mesh_net_start(void);
-
 void bt_mesh_net_init(void);
 void bt_mesh_net_header_parse(struct net_buf_simple *buf,
 			      struct bt_mesh_net_rx *rx);
