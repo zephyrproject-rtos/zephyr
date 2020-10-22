@@ -8,13 +8,13 @@
 #include <sys/mempool.h>
 #include "mem_protect.h"
 
-K_APPMEM_PARTITION_DEFINE(part2);
-static K_APP_DMEM(part2) int part2_var = 1356;
-static K_APP_BMEM(part2) int part2_zeroed_var = 20420;
-static K_APP_BMEM(part2) int part2_bss_var;
+static K_APP_DMEM(ztest_mem_partition) int var = 1356;
+static K_APP_BMEM(ztest_mem_partition) int zeroed_var = 20420;
+static K_APP_BMEM(ztest_mem_partition) int bss_var;
 
 SYS_MEM_POOL_DEFINE(data_pool, NULL, BLK_SIZE_MIN_MD, BLK_SIZE_MAX_MD,
-		    BLK_NUM_MAX_MD, BLK_ALIGN_MD, K_APP_DMEM_SECTION(part2));
+		    BLK_NUM_MAX_MD, BLK_ALIGN_MD,
+		    K_APP_DMEM_SECTION(ztest_mem_partition));
 
 /**
  * @brief Test system provide means to obtain names of the data and BSS sections
@@ -51,26 +51,22 @@ void test_macros_obtain_names_data_bss(void)
  */
 void test_mem_part_assign_bss_vars_zero(void)
 {
-	uint32_t read_data;
-	/* The global variable part2_var will be inside the bounds of part2
-	 * and be initialized with 1356 at boot.
+	/* The global variable var will be inside the bounds of
+	 * ztest_mem_partition and be initialized with 1356 at boot.
 	 */
-	read_data = part2_var;
-	zassert_true(read_data == 1356, NULL);
+	zassert_true(var == 1356, NULL);
 
-	/* The global variable part2_zeroed_var will be inside the bounds of
-	 * part2 and must be zeroed at boot size K_APP_BMEM() was used,
-	 * indicating a BSS variable.
+	/* The global variable zeroed_var will be inside the bounds of
+	 * ztest_mem_partition and must be zeroed at boot size K_APP_BMEM() was
+	 * used, indicating a BSS variable.
 	 */
-	read_data = part2_zeroed_var;
-	zassert_true(read_data == 0, NULL);
+	zassert_true(zeroed_var == 0, NULL);
 
-	/* The global variable part2_var will be inside the bounds of
-	 * part2 and must be zeroed at boot size K_APP_BMEM() was used,
-	 * indicating a BSS variable.
+	/* The global variable var will be inside the bounds of
+	 * ztest_mem_partition and must be zeroed at boot size K_APP_BMEM() was
+	 * used, indicating a BSS variable.
 	 */
-	read_data = part2_bss_var;
-	zassert_true(read_data == 0, NULL);
+	zassert_true(bss_var == 0, NULL);
 }
 
 K_APPMEM_PARTITION_DEFINE(part_arch);
