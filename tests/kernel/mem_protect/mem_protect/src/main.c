@@ -32,6 +32,7 @@ void test_main(void)
 		ztest_unit_test(test_mem_domain_remove_add_partition),
 		ztest_unit_test(test_mem_domain_api_supervisor_only),
 		ztest_unit_test(test_mem_domain_boot_threads),
+		ztest_unit_test(test_mem_domain_migration),
 
 		/* mem_partition.c */
 		ztest_unit_test(test_macros_obtain_names_data_bss),

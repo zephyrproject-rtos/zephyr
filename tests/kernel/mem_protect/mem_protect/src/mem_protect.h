@@ -20,6 +20,7 @@ extern void test_mem_domain_no_writes_to_ro(void);
 extern void test_mem_domain_remove_add_partition(void);
 extern void test_mem_domain_api_supervisor_only(void);
 extern void test_mem_domain_boot_threads(void);
+extern void test_mem_domain_migration(void);
 
 extern void test_macros_obtain_names_data_bss(void);
 extern void test_mem_part_assign_bss_vars_zero(void);

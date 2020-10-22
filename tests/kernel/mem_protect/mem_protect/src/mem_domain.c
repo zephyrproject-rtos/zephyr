@@ -265,3 +265,69 @@ void test_mem_domain_boot_threads(void)
 
 	k_thread_abort(zzz_thread);
 }
+
+static ZTEST_BMEM volatile bool spin_done;
+static K_SEM_DEFINE(spin_sem, 0, 1);
+
+static void spin_entry(void *p1, void *p2, void *p3)
+{
+	printk("spin thread entry\n");
+	k_sem_give(&spin_sem);
+
+	while (!spin_done) {
+		k_busy_wait(1);
+	}
+	printk("spin thread completed\n");
+}
+
+/**
+ * @brief Show that moving a thread from one domain to another works
+ *
+ * Start a thread and have it spin. Then while it is spinning, show that
+ * adding it to another memory domain doesn't cause any faults.
+ *
+ * This test is of particular importance on SMP systems where the child
+ * thread is spinning on a different CPU concurrently with the migration
+ * operation.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_mem_domain_add_thread()
+ */
+
+#ifdef CONFIG_SMP
+#define PRIO	K_PRIO_COOP(0)
+#else
+#define PRIO	K_PRIO_PREEMPT(1)
+#endif
+
+void test_mem_domain_migration(void)
+{
+	int ret;
+
+	set_fault_valid(false);
+
+	k_thread_create(&child_thread, child_stack,
+			K_THREAD_STACK_SIZEOF(child_stack), spin_entry,
+			NULL, NULL, NULL,
+			PRIO, K_USER | K_INHERIT_PERMS, K_FOREVER);
+	k_thread_name_set(&child_thread, "child_thread");
+	k_object_access_grant(&spin_sem, &child_thread);
+	k_thread_start(&child_thread);
+
+	/* Ensure that the child thread has started */
+	ret = k_sem_take(&spin_sem, K_FOREVER);
+	zassert_equal(ret, 0, "k_sem_take failed");
+
+	/* Now move it to test_domain. This domain also has the ztest partition,
+	 * so the child thread should keep running and not explode
+	 */
+	printk("migrate to new domain\n");
+	k_mem_domain_add_thread(&test_domain, &child_thread);
+
+	/* set spin_done so the child thread completes */
+	printk("set test completion\n");
+	spin_done = true;
+
+	k_thread_join(&child_thread, K_FOREVER);
+}
