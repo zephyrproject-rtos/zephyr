@@ -1,8 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 import re
+import os
+import subprocess
 from collections import OrderedDict
+import xml.etree.ElementTree as ET
 
 result_re = re.compile(".*(PASS|FAIL|SKIP) - (test_)?(.*)")
+pytest_running_dir = ""
 
 class Harness:
     GCOV_START = "GCOV_COVERAGE_DUMP_START"
@@ -28,6 +32,10 @@ class Harness:
         self.recording = []
         self.fieldnames = []
         self.ztest = False
+        self.running_dir = None
+        self.source_dir = None
+        self.pytest_root = 'pytest'
+        self.pytest_timeout = 15
 
     def configure(self, instance):
         config = instance.testcase.harness_config
@@ -41,6 +49,10 @@ class Harness:
             self.repeat = config.get('repeat', 1)
             self.ordered = config.get('ordered', True)
             self.record = config.get('record', {})
+            self.running_dir = config.get('running_dir', None)
+            self.source_dir = config.get('source_dir', None)
+            self.pytest_root = config.get('pytest_root', 'pytest')
+            self.pytest_timeout = config.get('pytest_timeout', 15)
 
     def process_test(self, line):
 
@@ -116,6 +128,63 @@ class Console(Harness):
 
         if self.state == "passed":
             self.tests[self.id] = "PASS"
+        else:
+            self.tests[self.id] = "FAIL"
+
+        self.process_test(line)
+
+class Pytest(Harness):
+
+    def handle(self, line):
+        ''' To keep artifacts of pytest in self.running_dir, pass this directory
+            by "--cmdopt". On pytest end, add a command line option and provide
+            the cmdopt through a fixture function
+			pytest handle output as a whole, it's not necessary to handle it
+			line by line
+        '''
+        global pytest_running_dir
+        if self.running_dir is pytest_running_dir:
+            return
+
+        pytest_running_dir = self.running_dir
+        cmd = [
+			'pytest',
+			'-s',
+			os.path.join(self.source_dir, self.pytest_root),
+			'--cmdopt',
+			self.running_dir,
+			'--junit-xml',
+			os.path.join(self.running_dir, 'report.html'),
+			'-q'
+        ]
+
+        with subprocess.Popen(cmd) as proc:
+            try:
+                proc.wait(self.pytest_timeout)
+                tree = ET.parse(os.path.join(self.running_dir, "report.html"))
+                root = tree.getroot()
+                for child in root:
+                    if child.tag == 'testsuite':
+                        if child.attrib['failures'] != '0':
+                            self.state = "failed"
+                        elif child.attrib['skipped'] != '0':
+                            self.state = "skipped"
+                        elif child.attrib['errors'] != '0':
+                            self.state = "errors"
+                        else:
+                            self.state = "passed"
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                self.state = "failed"
+            except ET.ParseError:
+                self.state = "failed"
+            except IOError:
+                self.state = "failed"
+
+        if self.state == "passed":
+            self.tests[self.id] = "PASS"
+        elif self.state == "skipped":
+            self.tests[self.id] = "SKIP"
         else:
             self.tests[self.id] = "FAIL"
 

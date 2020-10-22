@@ -62,6 +62,12 @@ mapping:
           "repeat":
             type: int
             required: no
+          "pytest_root":
+            type: str
+            required: no
+          "pytest_timeout":
+            type: int
+            required: no
           "regex":
             type: seq
             required: no
@@ -185,6 +191,12 @@ mapping:
                 type: bool
                 required: no
               "repeat":
+                type: int
+                required: no
+              "pytest_root":
+                type: str
+                required: no
+              "pytest_timeout":
                 type: int
                 required: no
               "regex":

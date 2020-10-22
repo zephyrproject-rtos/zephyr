@@ -509,6 +509,8 @@ class BinaryHandler(Handler):
         harness_import = HarnessImporter(harness_name)
         harness = harness_import.instance
         harness.configure(self.instance)
+        harness.running_dir = self.build_dir
+        harness.source_dir = self.sourcedir
 
         if self.call_make_run:
             command = [self.generator_cmd, "run"]
@@ -789,6 +791,8 @@ class DeviceHandler(Handler):
         harness_import = HarnessImporter(harness_name)
         harness = harness_import.instance
         harness.configure(self.instance)
+        harness.running_dir = self.build_dir
+        harness.source_dir = self.sourcedir
         read_pipe, write_pipe = os.pipe()
         start_time = time.time()
 
@@ -1053,6 +1057,9 @@ class QEMUHandler(Handler):
         harness_import = HarnessImporter(self.instance.testcase.harness.capitalize())
         harness = harness_import.instance
         harness.configure(self.instance)
+        harness.running_dir = self.build_dir
+        harness.source_dir = self.sourcedir
+
         self.thread = threading.Thread(name=self.name, target=QEMUHandler._thread,
                                        args=(self, self.timeout, self.build_dir,
                                              self.log_fn, self.fifo_fn,
@@ -1757,7 +1764,7 @@ class TestInstance(DisablePyTestCollectionMixin):
     def testcase_runnable(testcase, fixtures):
         can_run = False
         # console harness allows us to run the test and capture data.
-        if testcase.harness in [ 'console', 'ztest']:
+        if testcase.harness in [ 'console', 'ztest', 'pytest']:
             can_run = True
             # if we have a fixture that is also being supplied on the
             # command-line, then we need to run the test, not just build it.
