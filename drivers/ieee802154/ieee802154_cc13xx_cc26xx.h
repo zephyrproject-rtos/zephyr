@@ -84,6 +84,8 @@ struct ieee802154_cc13xx_cc26xx_data {
 	volatile rfc_CMD_IEEE_TX_t cmd_ieee_tx;
 	volatile rfc_CMD_IEEE_RX_ACK_t cmd_ieee_rx_ack;
 	volatile rfc_CMD_RADIO_SETUP_t cmd_radio_setup;
+
+	volatile int16_t saved_cmdhandle;
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_CC13XX_CC26XX_H_ */
