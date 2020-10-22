@@ -135,17 +135,22 @@ static inline void z_vrfy_k_queue_cancel_wait(struct k_queue *queue)
 #include <syscalls/k_queue_cancel_wait_mrsh.c>
 #endif
 
+/* Insert data into queue.
+ * API is not thread safe, lock the queue before using this API
+ * usage:
+ *     k_spinlock_key_t key = k_spin_lock(&queue->lock);
+ *     queue_insert(arguments);
+ *     z_reschedule(&queue->lock, key);
+ */
 static int32_t queue_insert(struct k_queue *queue, void *prev, void *data,
-			  bool alloc)
+			    bool alloc)
 {
-	k_spinlock_key_t key = k_spin_lock(&queue->lock);
 	struct k_thread *first_pending_thread;
 
 	first_pending_thread = z_unpend_first_thread(&queue->wait_q);
 
 	if (first_pending_thread != NULL) {
 		prepare_thread_to_run(first_pending_thread, data);
-		z_reschedule(&queue->lock, key);
 		return 0;
 	}
 
@@ -155,7 +160,6 @@ static int32_t queue_insert(struct k_queue *queue, void *prev, void *data,
 
 		anode = z_thread_malloc(sizeof(*anode));
 		if (anode == NULL) {
-			k_spin_unlock(&queue->lock, key);
 			return -ENOMEM;
 		}
 		anode->data = data;
@@ -167,35 +171,50 @@ static int32_t queue_insert(struct k_queue *queue, void *prev, void *data,
 
 	sys_sflist_insert(&queue->data_q, prev, data);
 	handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE);
-	z_reschedule(&queue->lock, key);
 	return 0;
 }
 
 void k_queue_insert(struct k_queue *queue, void *prev, void *data)
 {
+	k_spinlock_key_t key = k_spin_lock(&queue->lock);
+
 	(void)queue_insert(queue, prev, data, false);
+	z_reschedule(&queue->lock, key);
 }
 
 void k_queue_append(struct k_queue *queue, void *data)
 {
+	k_spinlock_key_t key = k_spin_lock(&queue->lock);
+
 	(void)queue_insert(queue, sys_sflist_peek_tail(&queue->data_q),
 			   data, false);
+
+	z_reschedule(&queue->lock, key);
 }
 
 void k_queue_prepend(struct k_queue *queue, void *data)
 {
+	k_spinlock_key_t key = k_spin_lock(&queue->lock);
+
 	(void)queue_insert(queue, NULL, data, false);
+	z_reschedule(&queue->lock, key);
 }
 
 int32_t z_impl_k_queue_alloc_append(struct k_queue *queue, void *data)
 {
-	return queue_insert(queue, sys_sflist_peek_tail(&queue->data_q), data,
-			    true);
+	k_spinlock_key_t key = k_spin_lock(&queue->lock);
+	int32_t ret_val = queue_insert(queue,
+				       sys_sflist_peek_tail(&queue->data_q),
+				       data,
+				       true);
+
+	z_reschedule(&queue->lock, key);
+	return ret_val;
 }
 
 #ifdef CONFIG_USERSPACE
 static inline int32_t z_vrfy_k_queue_alloc_append(struct k_queue *queue,
-						void *data)
+						  void *data)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
 	return z_impl_k_queue_alloc_append(queue, data);
@@ -205,12 +224,16 @@ static inline int32_t z_vrfy_k_queue_alloc_append(struct k_queue *queue,
 
 int32_t z_impl_k_queue_alloc_prepend(struct k_queue *queue, void *data)
 {
-	return queue_insert(queue, NULL, data, true);
+	k_spinlock_key_t key = k_spin_lock(&queue->lock);
+	int32_t ret_val = queue_insert(queue, NULL, data, true);
+
+	z_reschedule(&queue->lock, key);
+	return ret_val;
 }
 
 #ifdef CONFIG_USERSPACE
 static inline int32_t z_vrfy_k_queue_alloc_prepend(struct k_queue *queue,
-						 void *data)
+						   void *data)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
 	return z_impl_k_queue_alloc_prepend(queue, data);
