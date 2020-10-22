@@ -15,8 +15,12 @@
 
 #include "arm_mmu.h"
 
-static uint64_t xlat_tables[CONFIG_MAX_XLAT_TABLES][Ln_XLAT_NUM_ENTRIES]
+static uint64_t kernel_xlat_tables[CONFIG_MAX_XLAT_TABLES * Ln_XLAT_NUM_ENTRIES]
 		__aligned(Ln_XLAT_NUM_ENTRIES * sizeof(uint64_t));
+
+static struct arm_mmu_ptables kernel_ptables = {
+	.xlat_tables = kernel_xlat_tables,
+};
 
 /* Translation table control register settings */
 static uint64_t get_tcr(int el)
@@ -52,7 +56,8 @@ static int pte_desc_type(uint64_t *pte)
 	return *pte & PTE_DESC_TYPE_MASK;
 }
 
-static uint64_t *calculate_pte_index(uint64_t addr, int level)
+static uint64_t *calculate_pte_index(struct arm_mmu_ptables *ptables,
+				     uint64_t addr, int level)
 {
 	int base_level = BASE_XLAT_LEVEL;
 	uint64_t *pte;
@@ -60,7 +65,7 @@ static uint64_t *calculate_pte_index(uint64_t addr, int level)
 	unsigned int i;
 
 	/* Walk through all translation tables to find pte index */
-	pte = (uint64_t *)xlat_tables;
+	pte = (uint64_t *)ptables->xlat_tables;
 	for (i = base_level; i < XLAT_LEVEL_MAX; i++) {
 		idx = XLAT_TABLE_VA_IDX(addr, i);
 		pte += idx;
@@ -184,18 +189,20 @@ static void set_pte_block_desc(uint64_t *pte, uint64_t addr_pa,
 }
 
 /* Returns a new reallocated table */
-static uint64_t *new_prealloc_table(void)
+static uint64_t *new_prealloc_table(struct arm_mmu_ptables *ptables)
 {
-	static unsigned int table_idx = 1;
+	ptables->next_table++;
 
-	__ASSERT(table_idx < CONFIG_MAX_XLAT_TABLES,
+	__ASSERT(ptables->next_table < CONFIG_MAX_XLAT_TABLES,
 		"Enough xlat tables not allocated");
 
-	return (uint64_t *)(xlat_tables[table_idx++]);
+	return (uint64_t *)(&ptables->xlat_tables[ptables->next_table *
+			    Ln_XLAT_NUM_ENTRIES]);
 }
 
 /* Splits a block into table with entries spanning the old block */
-static void split_pte_block_desc(uint64_t *pte, uint64_t desc, int level)
+static void split_pte_block_desc(struct arm_mmu_ptables *ptables, uint64_t *pte,
+				 uint64_t desc, int level)
 {
 	uint64_t old_block_desc = *pte;
 	uint64_t *new_table;
@@ -205,7 +212,7 @@ static void split_pte_block_desc(uint64_t *pte, uint64_t desc, int level)
 
 	MMU_DEBUG("Splitting existing PTE %p(L%d)\n", pte, level);
 
-	new_table = new_prealloc_table();
+	new_table = new_prealloc_table(ptables);
 
 	for (i = 0; i < Ln_XLAT_NUM_ENTRIES; i++) {
 		new_table[i] = old_block_desc | (i << levelshift);
@@ -218,8 +225,8 @@ static void split_pte_block_desc(uint64_t *pte, uint64_t desc, int level)
 	set_pte_table_desc(pte, new_table, level);
 }
 
-static void add_map(const char *name, uint64_t phys, uint64_t virt,
-		    uint64_t size, uint64_t attrs)
+static void add_map(struct arm_mmu_ptables *ptables, const char *name,
+		    uint64_t phys, uint64_t virt, uint64_t size, uint64_t attrs)
 {
 	uint64_t desc, *pte;
 	uint64_t level_size;
@@ -240,7 +247,7 @@ static void add_map(const char *name, uint64_t phys, uint64_t virt,
 			 "max translation table level exceeded\n");
 
 		/* Locate PTE for given virtual address and page table level */
-		pte = calculate_pte_index(virt, level);
+		pte = calculate_pte_index(ptables, virt, level);
 		__ASSERT(pte != NULL, "pte not found\n");
 
 		level_size = 1ULL << LEVEL_TO_VA_SIZE_SHIFT(level);
@@ -257,7 +264,7 @@ static void add_map(const char *name, uint64_t phys, uint64_t virt,
 			level = BASE_XLAT_LEVEL;
 		} else if (pte_desc_type(pte) == PTE_INVALID_DESC) {
 			/* Range doesn't fit, create subtable */
-			new_table = new_prealloc_table();
+			new_table = new_prealloc_table(ptables);
 			set_pte_table_desc(pte, new_table, level);
 			level++;
 		} else if (pte_desc_type(pte) == PTE_BLOCK_DESC) {
@@ -266,7 +273,7 @@ static void add_map(const char *name, uint64_t phys, uint64_t virt,
 				return;
 
 			/* We need to split a new table */
-			split_pte_block_desc(pte, desc, level);
+			split_pte_block_desc(ptables, pte, desc, level);
 			level++;
 		} else if (pte_desc_type(pte) == PTE_TABLE_DESC)
 			level++;
@@ -304,17 +311,23 @@ static const struct arm_mmu_region mmu_zephyr_regions[] = {
 			      MT_NORMAL | MT_P_RO_U_NA | MT_DEFAULT_SECURE_STATE),
 };
 
-static inline void add_arm_mmu_region(const struct arm_mmu_region *region)
+static inline void add_arm_mmu_region(struct arm_mmu_ptables *ptables,
+				      const struct arm_mmu_region *region)
 {
-	add_map(region->name, region->base_pa, region->base_va,
+	add_map(ptables, region->name, region->base_pa, region->base_va,
 		region->size, region->attrs);
 }
 
-static void setup_page_tables(void)
+static void setup_page_tables(struct arm_mmu_ptables *ptables)
 {
 	unsigned int index;
 	const struct arm_mmu_region *region;
 	uint64_t max_va = 0, max_pa = 0;
+
+	MMU_DEBUG("xlat tables:\n");
+	for (index = 0; index < CONFIG_MAX_XLAT_TABLES; index++)
+		MMU_DEBUG("%d: %p\n", index, (uint64_t *)(ptables->xlat_tables +
+					(index * Ln_XLAT_NUM_ENTRIES)));
 
 	for (index = 0; index < mmu_config.num_regions; index++) {
 		region = &mmu_config.mmu_regions[index];
@@ -331,18 +344,18 @@ static void setup_page_tables(void)
 	for (index = 0; index < mmu_config.num_regions; index++) {
 		region = &mmu_config.mmu_regions[index];
 		if (region->size || region->attrs)
-			add_arm_mmu_region(region);
+			add_arm_mmu_region(ptables, region);
 	}
 
 	/* setup translation table for zephyr execution regions */
 	for (index = 0; index < ARRAY_SIZE(mmu_zephyr_regions); index++) {
 		region = &mmu_zephyr_regions[index];
 		if (region->size || region->attrs)
-			add_arm_mmu_region(region);
+			add_arm_mmu_region(ptables, region);
 	}
 }
 
-static void enable_mmu_el1(unsigned int flags)
+static void enable_mmu_el1(struct arm_mmu_ptables *ptables, unsigned int flags)
 {
 	ARG_UNUSED(flags);
 	uint64_t val;
@@ -358,7 +371,7 @@ static void enable_mmu_el1(unsigned int flags)
 			: "memory", "cc");
 	__asm__ volatile("msr ttbr0_el1, %0"
 			:
-			: "r" ((uint64_t)xlat_tables)
+			: "r" ((uint64_t)ptables->xlat_tables)
 			: "memory", "cc");
 
 	/* Ensure these changes are seen before MMU is enabled */
@@ -388,7 +401,7 @@ static void enable_mmu_el1(unsigned int flags)
 static int arm_mmu_init(const struct device *arg)
 {
 	uint64_t val;
-	unsigned int idx, flags = 0;
+	unsigned int flags = 0;
 
 	/* Current MMU code supports only EL1 */
 	__asm__ volatile("mrs %0, CurrentEL" : "=r" (val));
@@ -400,14 +413,10 @@ static int arm_mmu_init(const struct device *arg)
 	__asm__ volatile("mrs %0, sctlr_el1" : "=r" (val));
 	__ASSERT((val & SCTLR_M) == 0, "MMU is already enabled\n");
 
-	MMU_DEBUG("xlat tables:\n");
-	for (idx = 0; idx < CONFIG_MAX_XLAT_TABLES; idx++)
-		MMU_DEBUG("%d: %p\n", idx, (uint64_t *)(xlat_tables + idx));
-
-	setup_page_tables();
+	setup_page_tables(&kernel_ptables);
 
 	/* currently only EL1 is supported */
-	enable_mmu_el1(flags);
+	enable_mmu_el1(&kernel_ptables, flags);
 
 	return 0;
 }

@@ -158,6 +158,11 @@ struct arm_mmu_config {
 	const struct arm_mmu_region *mmu_regions;
 };
 
+struct arm_mmu_ptables {
+	uint64_t *xlat_tables;
+	unsigned char next_table;
+};
+
 /* Convenience macros to represent the ARMv8-A-specific
  * configuration for memory access permission and
  * cache-ability attribution.
