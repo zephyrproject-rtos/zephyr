@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(adc_mcux_adc16);
 struct mcux_adc16_config {
 	ADC_Type *base;
 	void (*irq_config_func)(const struct device *dev);
+	bool channel_mux_b;
 };
 
 struct mcux_adc16_data {
@@ -256,7 +257,9 @@ static int mcux_adc16_init(const struct device *dev)
 	ADC16_SetHardwareAverage(base, kADC16_HardwareAverageCount32);
 	ADC16_DoAutoCalibration(base);
 #endif
-
+	if (config->channel_mux_b) {
+		ADC16_SetChannelMuxMode(base, kADC16_ChannelMuxB);
+	}
 	ADC16_EnableHardwareTrigger(base, false);
 
 	config->irq_config_func(dev);
@@ -281,6 +284,7 @@ static const struct adc_driver_api mcux_adc16_driver_api = {
 	static const struct mcux_adc16_config mcux_adc16_config_##n = {	\
 		.base = (ADC_Type *)DT_INST_REG_ADDR(n),		\
 		.irq_config_func = mcux_adc16_config_func_##n,		\
+		.channel_mux_b = DT_INST_PROP(n, channel_mux_b),	\
 	};								\
 									\
 	static struct mcux_adc16_data mcux_adc16_data_##n = {		\
