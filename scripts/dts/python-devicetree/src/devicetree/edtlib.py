@@ -68,6 +68,7 @@ bindings_from_paths() helper function.
 #   variables. See the existing @properties for a template.
 
 from collections import OrderedDict, defaultdict
+from copy import deepcopy
 import logging
 import os
 import re
@@ -1607,26 +1608,51 @@ class Binding:
             return raw
 
         include = raw.pop("include")
-        fnames = []
-        if isinstance(include, str):
-            fnames.append(include)
-        elif isinstance(include, list):
-            if not all(isinstance(elem, str) for elem in include):
-                _err(f"all elements in 'include:' in {binding_path} "
-                     "should be strings")
-            fnames += include
-        else:
-            _err(f"'include:' in {binding_path} "
-                 "should be a string or a list of strings")
 
         # First, merge the included files together. If more than one included
         # file has a 'required:' for a particular property, OR the values
         # together, so that 'required: true' wins.
 
         merged = {}
-        for fname in fnames:
-            _merge_props(merged, self._load_raw(fname), None, binding_path,
-                         check_required=False)
+
+        if isinstance(include, str):
+            # Simple scalar string case
+            _merge_props(merged, self._load_raw(include), None, binding_path,
+                         False)
+        elif isinstance(include, list):
+            # List of strings and maps. These types may be intermixed.
+            for elem in include:
+                if isinstance(elem, str):
+                    _merge_props(merged, self._load_raw(elem), None,
+                                 binding_path, False)
+                elif isinstance(elem, dict):
+                    name = elem.pop('name', None)
+                    allowlist = elem.pop('property-allowlist', None)
+                    blocklist = elem.pop('property-blocklist', None)
+                    child_filter = elem.pop('child-binding', None)
+
+                    if elem:
+                        # We've popped out all the valid keys.
+                        _err(f"'include:' in {binding_path} should not have "
+                             f"these unexpected contents: {elem}")
+
+                    _check_include_dict(name, allowlist, blocklist,
+                                        child_filter, binding_path)
+
+                    contents = self._load_raw(name)
+
+                    _filter_properties(contents, allowlist, blocklist,
+                                       child_filter, binding_path)
+                    _merge_props(merged, contents, None, binding_path, False)
+                else:
+                    _err(f"all elements in 'include:' in {binding_path} "
+                         "should be either strings or maps with a 'name' key "
+                         "and optional 'property-allowlist' or "
+                         f"'property-blocklist' keys, but got: {elem}")
+        else:
+            # Invalid item.
+            _err(f"'include:' in {binding_path} "
+                 f"should be a string or list, but has type {type(include)}")
 
         # Next, merge the merged included files into 'raw'. Error out if
         # 'raw' has 'required: false' while the merged included files have
@@ -1950,6 +1976,89 @@ def _binding_inc_error(msg):
     # Helper for reporting errors in the !include implementation
 
     raise yaml.constructor.ConstructorError(None, None, "error: " + msg)
+
+
+def _check_include_dict(name, allowlist, blocklist, child_filter,
+                        binding_path):
+    # Check that an 'include:' named 'name' with property-allowlist
+    # 'allowlist', property-blocklist 'blocklist', and
+    # child-binding filter 'child_filter' has valid structure.
+
+    if name is None:
+        _err(f"'include:' element in {binding_path} "
+             "should have a 'name' key")
+
+    if allowlist is not None and blocklist is not None:
+        _err(f"'include:' of file '{name}' in {binding_path} "
+             "should not specify both 'property-allowlist:' "
+             "and 'property-blocklist:'")
+
+    while child_filter is not None:
+        child_copy = deepcopy(child_filter)
+        child_allowlist = child_copy.pop('property-allowlist', None)
+        child_blocklist = child_copy.pop('property-blocklist', None)
+        next_child_filter = child_copy.pop('child-binding', None)
+
+        if child_copy:
+            # We've popped out all the valid keys.
+            _err(f"'include:' of file '{name}' in {binding_path} "
+                 "should not have these unexpected contents in a "
+                 f"'child-binding': {child_copy}")
+
+        if child_allowlist is not None and child_blocklist is not None:
+            _err(f"'include:' of file '{name}' in {binding_path} "
+                 "should not specify both 'property-allowlist:' and "
+                 "'property-blocklist:' in a 'child-binding:'")
+
+        child_filter = next_child_filter
+
+
+def _filter_properties(raw, allowlist, blocklist, child_filter,
+                       binding_path):
+    # Destructively modifies 'raw["properties"]' and
+    # 'raw["child-binding"]', if they exist, according to
+    # 'allowlist', 'blocklist', and 'child_filter'.
+
+    props = raw.get('properties')
+    _filter_properties_helper(props, allowlist, blocklist, binding_path)
+
+    child_binding = raw.get('child-binding')
+    while child_filter is not None and child_binding is not None:
+        _filter_properties_helper(child_binding.get('properties'),
+                                  child_filter.get('property-allowlist'),
+                                  child_filter.get('property-blocklist'),
+                                  binding_path)
+        child_filter = child_filter.get('child-binding')
+        child_binding = child_binding.get('child-binding')
+
+
+def _filter_properties_helper(props, allowlist, blocklist, binding_path):
+    if props is None or (allowlist is None and blocklist is None):
+        return
+
+    _check_prop_filter('property-allowlist', allowlist, binding_path)
+    _check_prop_filter('property-blocklist', blocklist, binding_path)
+
+    if allowlist is not None:
+        allowset = set(allowlist)
+        to_del = [prop for prop in props if prop not in allowset]
+    else:
+        blockset = set(blocklist)
+        to_del = [prop for prop in props if prop in blockset]
+
+    for prop in to_del:
+        del props[prop]
+
+
+def _check_prop_filter(name, value, binding_path):
+    # Ensure an include: ... property-allowlist or property-blocklist
+    # is a list.
+
+    if value is None:
+        return
+
+    if not isinstance(value, list):
+        _err(f"'{name}' value {value} in {binding_path} should be a list")
 
 
 def _merge_props(to_dict, from_dict, parent, binding_path, check_required):
