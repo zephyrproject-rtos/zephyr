@@ -11,21 +11,20 @@
 #include <stdlib.h>
 
 extern void test_permission_inheritance(void);
+extern void test_inherit_resource_pool(void);
+
+extern void test_mem_domain_setup(void);
 extern void test_mem_domain_valid_access(void);
 extern void test_mem_domain_invalid_access(void);
-extern void test_mem_domain_partitions_user_rw(void);
-extern void test_mem_domain_partitions_user_ro(void);
-extern void test_mem_domain_partitions_supervisor_rw(void);
-extern void test_mem_domain_add_partitions_invalid(void);
-extern void test_mem_domain_add_partitions_simple(void);
-extern void test_mem_domain_remove_partitions_simple(void);
-extern void test_mem_domain_remove_partitions(void);
-extern void test_mem_domain_api_kernel_thread_only(void);
-extern void test_mem_part_auto_determ_size(void);
-extern void test_mem_part_auto_determ_size_per_mpu(void);
-extern void test_mem_part_inherit_by_child_thr(void);
+extern void test_mem_domain_no_writes_to_ro(void);
+extern void test_mem_domain_remove_add_partition(void);
+extern void test_mem_domain_api_supervisor_only(void);
+extern void test_mem_domain_boot_threads(void);
+
 extern void test_macros_obtain_names_data_bss(void);
 extern void test_mem_part_assign_bss_vars_zero(void);
+extern void test_mem_part_auto_determ_size(void);
+
 extern void test_kobject_access_grant(void);
 extern void test_syscall_invalid_kobject(void);
 extern void test_thread_without_kobject_permission(void);
@@ -49,9 +48,7 @@ extern void test_create_new_supervisor_thread_from_user(void);
 extern void test_create_new_essential_thread_from_user(void);
 extern void test_create_new_higher_prio_thread_from_user(void);
 extern void test_create_new_invalid_prio_thread_from_user(void);
-extern void test_inherit_resource_pool(void);
 extern void test_mark_thread_exit_uninitialized(void);
-extern void test_mem_domain_boot_threads(void);
 
 /* Flag needed to figure out if the fault was expected or not. */
 extern volatile bool valid_fault;

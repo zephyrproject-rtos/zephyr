@@ -25,17 +25,12 @@ void test_main(void)
 		ztest_unit_test(test_inherit_resource_pool),
 
 		/* mem_domain.c */
+		ztest_unit_test(test_mem_domain_setup),
 		ztest_unit_test(test_mem_domain_valid_access),
 		ztest_unit_test(test_mem_domain_invalid_access),
-		ztest_unit_test(test_mem_domain_partitions_user_rw),
-		ztest_unit_test(test_mem_domain_partitions_user_ro),
-		ztest_unit_test(test_mem_domain_partitions_supervisor_rw),
-		ztest_unit_test(test_mem_domain_add_partitions_invalid),
-		ztest_unit_test(test_mem_domain_add_partitions_simple),
-		ztest_unit_test(test_mem_domain_remove_partitions_simple),
-		ztest_unit_test(test_mem_domain_remove_partitions),
-		ztest_unit_test(test_mem_domain_api_kernel_thread_only),
-		ztest_user_unit_test(test_mem_domain_api_kernel_thread_only),
+		ztest_unit_test(test_mem_domain_no_writes_to_ro),
+		ztest_unit_test(test_mem_domain_remove_add_partition),
+		ztest_unit_test(test_mem_domain_api_supervisor_only),
 		ztest_unit_test(test_mem_domain_boot_threads),
 
 		/* mem_partition.c */
@@ -67,7 +62,8 @@ void test_main(void)
 		ztest_unit_test(test_create_new_essential_thread_from_user),
 		ztest_unit_test(test_create_new_higher_prio_thread_from_user),
 		ztest_unit_test(test_create_new_invalid_prio_thread_from_user),
-		ztest_unit_test(test_mark_thread_exit_uninitialized));
+		ztest_unit_test(test_mark_thread_exit_uninitialized)
+		);
 
 	ztest_run_test_suite(memory_protection_test_suite);
 }
