@@ -14,8 +14,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_FLASH_H_
 
 /**
- * @brief FLASH Interface
- * @defgroup flash_interface FLASH Interface
+ * @brief FLASH internal Interface
+ * @defgroup flash_internal_interface FLASH internal Interface
  * @ingroup io_interfaces
  * @{
  */
@@ -37,6 +37,17 @@ struct flash_pages_layout {
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
 /**
+ * @}
+ */
+
+/**
+ * @brief FLASH Interface
+ * @defgroup flash_interface FLASH Interface
+ * @ingroup io_interfaces
+ * @{
+ */
+
+/**
  * Flash memory parameters. Contents of this structure suppose to be
  * filled in during flash device initialization and stay constant
  * through a runtime.
@@ -45,6 +56,15 @@ struct flash_parameters {
 	const size_t write_block_size;
 	uint8_t erase_value; /* Byte value of erased flash */
 };
+
+/**
+ * @}
+ */
+
+/**
+ * @addtogroup flash_internal_interface
+ * @{
+ */
 
 typedef int (*flash_api_read)(const struct device *dev, off_t offset,
 			      void *data,
@@ -102,6 +122,15 @@ __subsystem struct flash_driver_api {
 	flash_api_read_jedec_id read_jedec_id;
 #endif /* CONFIG_FLASH_JESD216_API */
 };
+
+/**
+ * @}
+ */
+
+/**
+ * @addtogroup flash_interface
+ * @{
+ */
 
 /**
  *  @brief  Read data from flash
