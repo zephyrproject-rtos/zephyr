@@ -37,7 +37,6 @@ void test_main(void)
 		ztest_unit_test(test_mem_domain_api_kernel_thread_only),
 		ztest_user_unit_test(test_mem_domain_api_kernel_thread_only),
 		ztest_unit_test(test_mem_part_auto_determ_size),
-		ztest_unit_test(test_mem_part_inherit_by_child_thr),
 		ztest_unit_test(test_mem_domain_boot_threads),
 
 		/* mem_partition.c */
