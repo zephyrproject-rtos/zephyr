@@ -65,11 +65,21 @@ get_dev_data(const struct device *dev)
 	return dev->data;
 }
 
+/* TODO remove when rf driver bugfix is pulled in */
+static void update_saved_cmdhandle(RF_CmdHandle ch, RF_CmdHandle *saved)
+{
+	*saved = MAX(ch, *saved);
+}
+
 /* This is really the TX callback, because CSMA and TX are chained */
 static void cmd_ieee_csma_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
 {
 	ARG_UNUSED(h);
-	ARG_UNUSED(ch);
+
+	const struct device *dev = &DEVICE_NAME_GET(ieee802154_cc13xx_cc26xx);
+	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
+
+	update_saved_cmdhandle(ch, (RF_CmdHandle *) &drv_data->saved_cmdhandle);
 
 	LOG_DBG("e: 0x%" PRIx64, e);
 
@@ -81,10 +91,11 @@ static void cmd_ieee_csma_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
 static void cmd_ieee_rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
 {
 	ARG_UNUSED(h);
-	ARG_UNUSED(ch);
 
 	const struct device *dev = &DEVICE_NAME_GET(ieee802154_cc13xx_cc26xx);
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
+
+	update_saved_cmdhandle(ch, (RF_CmdHandle *) &drv_data->saved_cmdhandle);
 
 	LOG_DBG("e: 0x%" PRIx64, e);
 
@@ -194,6 +205,23 @@ out:
 	return r;
 }
 
+/* TODO remove when rf driver bugfix is pulled in */
+static int ieee802154_cc13xx_cc26xx_reset_channel(
+	const struct device *dev)
+{
+	uint8_t channel;
+	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
+
+	/* extract the channel from cmd_ieee_rx */
+	channel = drv_data->cmd_ieee_rx.channel;
+
+	__ASSERT_NO_MSG(11 <= channel && channel <= 26);
+
+	LOG_DBG("re-setting channel to %u", channel);
+
+	return ieee802154_cc13xx_cc26xx_set_channel(dev, channel);
+}
+
 static int
 ieee802154_cc13xx_cc26xx_filter(const struct device *dev, bool set,
 				enum ieee802154_filter_type type,
@@ -267,6 +295,20 @@ static int ieee802154_cc13xx_cc26xx_tx(const struct device *dev,
 	}
 
 	k_mutex_lock(&drv_data->tx_mutex, K_FOREVER);
+
+	/* Workaround for Issue #29418 where the driver stalls after
+	 * wrapping around RF command handle 4096. This change
+	 * effectively empties the RF command queue every ~4 minutes
+	 * but otherwise causes the system to incur little overhead.
+	 * A subsequent SimpleLink SDK release should resolve the issue.
+	 */
+	if (drv_data->saved_cmdhandle >= BIT(12) - 5) {
+		r = ieee802154_cc13xx_cc26xx_reset_channel(dev);
+		if (r < 0) {
+			goto out;
+		}
+		drv_data->saved_cmdhandle = -1;
+	}
 
 	do {
 
