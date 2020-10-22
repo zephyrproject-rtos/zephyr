@@ -43,7 +43,6 @@ static int init_reset(void);
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 static inline struct ll_adv_aux_set *aux_acquire(void);
 static inline void aux_release(struct ll_adv_aux_set *aux);
-static inline uint8_t aux_handle_get(struct ll_adv_aux_set *aux);
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 static inline void sync_info_fill(struct lll_adv_sync *lll_sync,
 				  uint8_t **dptr);
@@ -807,7 +806,7 @@ void ull_adv_aux_ptr_fill(uint8_t **dptr, uint8_t phy_s)
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 uint8_t ull_adv_aux_lll_handle_get(struct lll_adv_aux *lll)
 {
-	return aux_handle_get((void *)lll->hdr.parent);
+	return ull_adv_aux_handle_get((void *)lll->hdr.parent);
 }
 
 uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux)
@@ -844,8 +843,7 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 	uint32_t ret;
 
 	ull_hdr_init(&aux->ull);
-
-	aux_handle = aux_handle_get(aux);
+	aux_handle = ull_adv_aux_handle_get(aux);
 
 	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
@@ -867,7 +865,7 @@ uint8_t ull_adv_aux_stop(struct ll_adv_aux_set *aux)
 	uint8_t aux_handle;
 	int err;
 
-	aux_handle = aux_handle_get(aux);
+	aux_handle = ull_adv_aux_handle_get(aux);
 
 	err = ull_ticker_stop_with_mark(TICKER_ID_ADV_AUX_BASE + aux_handle,
 					aux, &aux->lll);
@@ -984,7 +982,7 @@ static inline void aux_release(struct ll_adv_aux_set *aux)
 	mem_release(aux, &adv_aux_free);
 }
 
-static inline uint8_t aux_handle_get(struct ll_adv_aux_set *aux)
+inline uint8_t ull_adv_aux_handle_get(struct ll_adv_aux_set *aux)
 {
 	return mem_index_get(aux, ll_adv_aux_pool,
 			     sizeof(struct ll_adv_aux_set));
@@ -1029,7 +1027,7 @@ static void mfy_aux_offset_get(void *param)
 	uint8_t id;
 
 	aux = (void *)HDR_LLL2EVT(adv->lll.aux);
-	ticker_id = TICKER_ID_ADV_AUX_BASE + aux_handle_get(aux);
+	ticker_id = TICKER_ID_ADV_AUX_BASE + ull_adv_aux_handle_get(aux);
 
 	id = TICKER_NULL;
 	ticks_to_expire = 0U;

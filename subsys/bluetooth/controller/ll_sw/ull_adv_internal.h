@@ -57,6 +57,9 @@ void ull_adv_done(struct node_rx_event_done *done);
 int ull_adv_aux_init(void);
 int ull_adv_aux_reset(void);
 
+/* Return the aux set handle given the aux set instance */
+uint8_t ull_adv_aux_handle_get(struct ll_adv_aux_set *aux);
+
 /* Helper to read back random address */
 uint8_t const *ll_adv_aux_random_addr_get(struct ll_adv_set const *const adv,
 				       uint8_t *const addr);
