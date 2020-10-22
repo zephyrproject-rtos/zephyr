@@ -46,6 +46,11 @@ static void do_transmit_timeout_cb(struct lwm2m_message *msg);
 
 static void set_update_result_from_error(int error_code)
 {
+	if (!error_code) {
+		lwm2m_firmware_set_update_state(STATE_DOWNLOADED);
+		return;
+	}
+
 	if (error_code == -ENOMEM) {
 		lwm2m_firmware_set_update_result(RESULT_OUT_OF_MEM);
 	} else if (error_code == -ENOSPC) {
@@ -326,7 +331,7 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 		}
 	} else {
 		/* Download finished */
-		lwm2m_firmware_set_update_state(STATE_DOWNLOADED);
+		set_update_result_from_error(0);
 		lwm2m_engine_context_close(&firmware_ctx);
 	}
 
@@ -361,7 +366,7 @@ static void do_transmit_timeout_cb(struct lwm2m_message *msg)
 	} else {
 		LOG_ERR("TIMEOUT - Too many retry packet attempts! "
 			"Aborting firmware download.");
-		lwm2m_firmware_set_update_result(RESULT_CONNECTION_LOST);
+		set_update_result_from_error(-ENOMSG);
 		lwm2m_engine_context_close(&firmware_ctx);
 	}
 }
