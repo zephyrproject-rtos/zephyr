@@ -519,6 +519,12 @@ void ll_reset(void)
 #endif /* !CONFIG_BT_CTLR_ZLI */
 	}
 
+#if defined(CONFIG_BT_BROADCASTER)
+	/* Finalize after adv state reset */
+	err = ull_adv_reset_finalize();
+	LL_ASSERT(!err);
+#endif /* CONFIG_BT_BROADCASTER */
+
 	/* Common to init and reset */
 	err = init_reset();
 	LL_ASSERT(!err);

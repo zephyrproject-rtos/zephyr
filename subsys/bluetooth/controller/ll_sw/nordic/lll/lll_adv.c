@@ -18,6 +18,7 @@
 #include "hal/ticker.h"
 
 #include "util/util.h"
+#include "util/mem.h"
 #include "util/memq.h"
 
 #include "ticker/ticker.h"
@@ -71,6 +72,22 @@ static inline bool isr_rx_ci_tgta_check(struct lll_adv *lll,
 static inline bool isr_rx_ci_adva_check(struct pdu_adv *adv,
 					struct pdu_adv *ci);
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#define PAYLOAD_SIZE_MAX MAX(MIN(CONFIG_BT_CTLR_ADV_DATA_LEN_MAX, \
+				 PDU_AC_EXT_PAYLOAD_SIZE_MAX), \
+			     PDU_AC_PAYLOAD_SIZE_MAX)
+#else
+#define PAYLOAD_SIZE_MAX PDU_AC_PAYLOAD_SIZE_MAX
+#endif
+
+#define PDU_MEM_SIZE  MROUND(PDU_AC_LL_HEADER_SIZE + PAYLOAD_SIZE_MAX)
+#define PDU_POOL_SIZE (PDU_MEM_SIZE * 7)
+
+static struct {
+	void *free;
+	uint8_t pool[PDU_POOL_SIZE];
+} mem_pdu;
+
 int lll_adv_init(void)
 {
 	int err;
@@ -93,6 +110,75 @@ int lll_adv_reset(void)
 	}
 
 	return 0;
+}
+
+int lll_adv_data_init(struct lll_adv_pdu *pdu)
+{
+	struct pdu_adv *p;
+
+	p = mem_acquire(&mem_pdu.free);
+	if (!p) {
+		return -ENOMEM;
+	}
+
+	pdu->pdu[0] = (void *)p;
+
+	return 0;
+}
+
+int lll_adv_data_reset(struct lll_adv_pdu *pdu)
+{
+	pdu->first = 0U;
+	pdu->last = 0U;
+	pdu->pdu[1] = NULL;
+
+	return 0;
+}
+
+struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx)
+{
+	uint8_t first, last;
+	struct pdu_adv *p;
+
+	first = pdu->first;
+	last = pdu->last;
+	if (first == last) {
+		last++;
+		if (last == DOUBLE_BUFFER_SIZE) {
+			last = 0U;
+		}
+	} else {
+		uint8_t first_latest;
+
+		pdu->last = first;
+		cpu_dsb();
+		first_latest = pdu->first;
+		if (first_latest != first) {
+			last++;
+			if (last == DOUBLE_BUFFER_SIZE) {
+				last = 0U;
+			}
+		}
+	}
+
+	*idx = last;
+
+	p = (void *)pdu->pdu[last];
+	if (p) {
+		return p;
+	}
+
+	p = mem_acquire(&mem_pdu.free);
+	if (p) {
+		pdu->pdu[last] = (void *)p;
+
+		return p;
+	}
+
+	/* TODO: Wait for semaphore before trying again */
+	LL_ASSERT(false);
+
+	return NULL;
 }
 
 void lll_adv_prepare(void *param)
@@ -164,6 +250,10 @@ int lll_adv_scan_req_report(struct lll_adv *lll, struct pdu_adv *pdu_adv_rx,
 
 static int init_reset(void)
 {
+	/* Initialize AC PDU pool */
+	mem_init(mem_pdu.pool, PDU_MEM_SIZE,
+		 (sizeof(mem_pdu.pool) / PDU_MEM_SIZE), &mem_pdu.free);
+
 	return 0;
 }
 

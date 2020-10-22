@@ -875,6 +875,7 @@ struct ll_adv_aux_set *ull_adv_aux_acquire(struct lll_adv *lll)
 {
 	struct lll_adv_aux *lll_aux;
 	struct ll_adv_aux_set *aux;
+	int err;
 
 	aux = aux_acquire();
 	if (!aux) {
@@ -884,6 +885,12 @@ struct ll_adv_aux_set *ull_adv_aux_acquire(struct lll_adv *lll)
 	lll_aux = &aux->lll;
 	lll->aux = lll_aux;
 	lll_aux->adv = lll;
+
+	lll_adv_data_reset(&lll_aux->data);
+	err = lll_adv_data_init(&lll_aux->data);
+	if (err) {
+		return NULL;
+	}
 
 	/* NOTE: ull_hdr_init(&aux->ull); is done on start */
 	lll_hdr_init(lll_aux, aux);
