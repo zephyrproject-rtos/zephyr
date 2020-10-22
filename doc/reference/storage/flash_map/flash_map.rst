@@ -47,6 +47,9 @@ both MCUboot and a storage partition. Some details were left out for clarity.
    :language: DTS
    :start-after: start-after-here
 
+Rule for offsets is that each partition offset shall be expressed in relation to
+the flash memory beginning address to which the partition belong.
+
 The ``boot_partition``, ``slot0_partition``, ``slot1_partition``, and
 ``scratch_partition`` nodes are defined for MCUboot, though not all MCUboot
 configurations require all of them to be defined. See the `MCUboot
