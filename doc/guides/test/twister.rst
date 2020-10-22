@@ -329,7 +329,7 @@ harness: <string>
     simple as a loopback wiring or a complete hardware test setup for
     sensor and IO testing.
     Usually pertains to external dependency domains but can be anything such as
-    console, sensor, net, keyboard, or Bluetooth.
+    console, sensor, net, keyboard, Bluetooth or pytest.
 
 harness_config: <harness configuration options>
     Extra harness configuration options to be used to select a board and/or
@@ -369,6 +369,11 @@ harness_config: <harness configuration options>
 
         Only one fixture can be defined per testcase.
 
+    pytest_root: <pytest dirctory> (default pytest)
+        Specify a pytest directory which need to excute when test case begin to running,
+        default pytest directory name is pytest, after pytest finished, twister will
+        check if this case pass or fail according the pytest report.
+
     The following is an example yaml file with a few harness_config options.
 
     ::
@@ -389,6 +394,18 @@ harness_config: <harness configuration options>
            test:
              tags: sensors
              depends_on: i2c
+
+    The following is an example yaml file with pytest harness_config options,
+    default pytest_root name "pytest" will be used if pytest_root not specified.
+    please refer the example in samples/subsys/testsuite/pytest/.
+
+    ::
+
+        tests:
+          pytest.example:
+            harness: pytest
+            harness_config:
+              pytest_root: [pytest directory name]
 
 filter: <expression>
     Filter whether the testcase should be run by evaluating an expression
