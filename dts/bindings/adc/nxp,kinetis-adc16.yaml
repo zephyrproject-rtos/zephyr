@@ -11,6 +11,12 @@ properties:
     reg:
       required: true
 
+    channel-mux-b:
+      type: boolean
+      required: false
+      description: |
+        Use alternate set (b instead of a) of ADC channels
+
     interrupts:
       required: true
 
