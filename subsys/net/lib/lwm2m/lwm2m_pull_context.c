@@ -21,6 +21,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_pull_context.h"
 #include "lwm2m_engine.h"
 
+K_SEM_DEFINE(lwm2m_pull_sem, 1, 1);
+
 #define NETWORK_INIT_TIMEOUT        K_SECONDS(10)
 #define NETWORK_CONNECT_TIMEOUT     K_SECONDS(10)
 #define PACKET_TRANSFER_RETRY_MAX   3
@@ -35,6 +37,18 @@ static char proxy_uri[URI_LEN];
 static struct firmware_pull_context *context = NULL;
 
 static void do_transmit_timeout_cb(struct lwm2m_message *msg);
+
+
+/**
+ * Close all open connections and release the context semaphore
+ */
+static void cleanup_context()
+{
+	lwm2m_engine_context_close(&context->firmware_ctx);
+	context = NULL;
+
+	k_sem_give(&lwm2m_pull_sem);
+}
 
 static int transfer_request(struct coap_block_context *ctx,
 			    uint8_t *token, uint8_t tkl,
@@ -278,7 +292,8 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 					goto error;
 				}
 
-				ret = write_cb(0, 0, 0,
+				ret = write_cb(context->obj_inst_id,
+								0, 0,
 					       write_buf, len,
 					       last_block &&
 							(payload_len == 0U),
@@ -299,15 +314,15 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 		}
 	} else {
 		/* Download finished */
-		context->result_cb(0);
-		lwm2m_engine_context_close(&context->firmware_ctx);
+		context->result_cb(context, 0);
+		cleanup_context();
 	}
 
 	return 0;
 
 error:
-	context->result_cb(ret);
-	lwm2m_engine_context_close(&context->firmware_ctx);
+	context->result_cb(context, ret);
+	cleanup_context();
 	return ret;
 }
 
@@ -324,9 +339,9 @@ static void do_transmit_timeout_cb(struct lwm2m_message *msg)
 				       do_firmware_transfer_reply_cb);
 		if (ret < 0) {
 			/* abort retries / transfer */
-			context->result_cb(ret);
 			context->retry = PACKET_TRANSFER_RETRY_MAX;
-			lwm2m_engine_context_close(&context->firmware_ctx);
+			context->result_cb(context, ret);
+			cleanup_context();
 			return;
 		}
 
@@ -334,8 +349,8 @@ static void do_transmit_timeout_cb(struct lwm2m_message *msg)
 	} else {
 		LOG_ERR("TIMEOUT - Too many retry packet attempts! "
 			"Aborting firmware download.");
-		context->result_cb(-ENOMSG);
-		lwm2m_engine_context_close(&context->firmware_ctx);
+		context->result_cb(context, -ENOMSG);
+		cleanup_context();
 	}
 }
 
@@ -343,6 +358,18 @@ static void firmware_transfer(struct k_work *work)
 {
 	int ret;
 	char *server_addr;
+
+	struct k_delayed_work *delayed_work;
+
+	delayed_work = CONTAINER_OF(work, struct k_delayed_work, work);
+
+	ret = k_sem_take(&lwm2m_pull_sem, K_NO_WAIT);
+	if (ret) {
+		k_delayed_work_submit(delayed_work, K_SECONDS(5));
+		return;
+	}
+
+	context = CONTAINER_OF(delayed_work, struct firmware_pull_context, firmware_work);
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 	server_addr = CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_ADDR;
@@ -387,18 +414,17 @@ static void firmware_transfer(struct k_work *work)
 	return;
 
 error:
-	context->result_cb(ret);
-	lwm2m_engine_context_close(&context->firmware_ctx);
+	context->result_cb(context, ret);
+	cleanup_context();
 }
 
-int lwm2m_pull_context_start_transfer(struct firmware_pull_context *ctx)
+int lwm2m_pull_context_start_transfer(struct firmware_pull_context *ctx,
+                                      k_timeout_t timeout)
 {
 	if (!ctx || !ctx->write_cb || !ctx->result_cb) {
 		LOG_DBG("Context failed sanity check. Verify initialization!");
 		return -EINVAL;
 	}
-
-	context = ctx;
 
 	/* close old socket */
 	if (ctx->firmware_ctx.sock_fd > -1) {
@@ -409,8 +435,8 @@ int lwm2m_pull_context_start_transfer(struct firmware_pull_context *ctx)
 	ctx->firmware_ctx.sock_fd = -1;
 	ctx->retry = 0;
 
-	k_work_init(&ctx->firmware_work, firmware_transfer);
-	k_work_submit(&ctx->firmware_work);
+	k_delayed_work_init(&ctx->firmware_work, firmware_transfer);
+	k_delayed_work_submit(&ctx->firmware_work, K_NO_WAIT);
 
 	return 0;
 }
