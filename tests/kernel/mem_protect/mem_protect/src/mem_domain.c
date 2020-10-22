@@ -15,26 +15,11 @@ static K_THREAD_STACK_DEFINE(mem_domain_1_stack, MEM_DOMAIN_STACK_SIZE);
 static K_THREAD_STACK_DEFINE(mem_domain_2_stack, MEM_DOMAIN_STACK_SIZE);
 static K_THREAD_STACK_DEFINE(mem_domain_6_stack, MEM_DOMAIN_STACK_SIZE);
 static struct k_thread mem_domain_1_tid, mem_domain_2_tid, mem_domain_6_tid;
-static struct k_mem_domain domain0, domain1, domain4;
-
-static struct k_thread user_thread0, parent_thr_md, child_thr_md;
-static k_tid_t usr_tid0;
-static K_THREAD_STACK_DEFINE(user_thread0_stack, STACK_SIZE_MD);
-static K_THREAD_STACK_DEFINE(child_thr_stack_md, STACK_SIZE_MD);
-static K_THREAD_STACK_DEFINE(parent_thr_stack_md, STACK_SIZE_MD);
-
-static struct k_sem sync_sem_md;
+static struct k_mem_domain domain0;
 
 static uint8_t __aligned(MEM_REGION_ALLOC) buf0[MEM_REGION_ALLOC];
 static K_MEM_PARTITION_DEFINE(part0, buf0, sizeof(buf0),
 			      K_MEM_PARTITION_P_RW_U_RW);
-
-K_APPMEM_PARTITION_DEFINE(part1);
-static K_APP_BMEM(part1) uint8_t __aligned(MEM_REGION_ALLOC) buf1[MEM_REGION_ALLOC];
-static struct k_mem_partition *app1_parts[] = {
-	&part1
-};
-
 
 /****************************************************************************/
 /* The mem domains needed.*/
@@ -570,75 +555,6 @@ void test_mem_domain_api_kernel_thread_only(void)
 
 	k_mem_domain_init(&domain0, 0, NULL);
 	k_mem_domain_add_partition(&domain0, &part0);
-}
-
-static void user_handler_func(void *p1, void *p2, void *p3)
-{
-	/* Read the partition */
-	uint8_t read_data = buf1[0];
-
-	/* Just to avoid compiler warning */
-	(void) read_data;
-
-	/* Writing to the partition, this should generate fault
-	 * as the partition has read only permission for
-	 * user threads
-	 */
-	buf1[0] = 10U;
-}
-
-/**
- * @brief Test system auto determine memory partition base addresses and sizes
- *
- * @details
- * - Ensure that system automatically determine memory partition
- *   base address and size according to its content correctly by taking
- *   memory partition's size and compare it with size of content.
- * - If size of memory partition is equal to the size of content -test passes.
- * - If possible to take base address of the memory partition -test passes.
- * - Test that system supports the definition of memory partitions and it has
- *   a starting address and a size.
- * - Test that OS supports removing thread from its memory domain assignment.
- * - Test that user thread can't write into memory partition. Try to write data,
- *   that will lead to the fatal error.
- *
- * @ingroup kernel_memprotect_tests
- */
-void test_mem_part_auto_determ_size(void)
-{
-	set_fault_valid(true);
-
-	k_sem_init(&sync_sem_md, SYNC_SEM_INIT_COUNT, SYNC_SEM_MAX_COUNT);
-	k_thread_access_grant(&user_thread0, &sync_sem_md);
-
-	/* check that size of memory partition is correct */
-	zassert_true(part1.size == MEM_REGION_ALLOC, "Size of memory partition"
-			" determined not correct according to its content");
-	/* check base address of memory partition determined at build time */
-	zassert_true(part1.start, "Base address of memory partition"
-			" not determined at build time");
-
-	k_mem_domain_init(&domain1, ARRAY_SIZE(app1_parts), app1_parts);
-
-	/* That line below is a replacament for the obsolete API call
-	 * k_mem_domain_remove_thread(k_current_get())
-	 * Test possibility to remove thread from its domain memory assignment,
-	 * so the current thread assigned to the domain1 will be removed
-	 */
-	k_mem_domain_add_thread(&domain0, k_current_get());
-
-	usr_tid0 = k_thread_create(&user_thread0, user_thread0_stack,
-					K_THREAD_STACK_SIZEOF(
-						user_thread0_stack),
-					user_handler_func,
-					NULL, NULL, NULL,
-					PRIORITY_MD,
-					K_USER, K_NO_WAIT);
-
-	/* Add user thread to the memory domain, and try to write to its
-	 * partition. That will generate fatal error, because user thread not
-	 * allowed to write*/
-	k_mem_domain_add_thread(&domain1, usr_tid0);
 }
 
 static void zzz_entry(void *p1, void *p2, void *p3)

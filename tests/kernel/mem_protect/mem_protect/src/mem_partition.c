@@ -70,23 +70,23 @@ void test_mem_part_assign_bss_vars_zero(void)
 }
 
 K_APPMEM_PARTITION_DEFINE(part_arch);
-K_APP_BMEM(part_arch) uint8_t __aligned(MEM_REGION_ALLOC) \
-buf_arc[MEM_REGION_ALLOC];
+K_APP_BMEM(part_arch) uint8_t __aligned(MEM_REGION_ALLOC)
+	buf_arc[MEM_REGION_ALLOC];
 
 /**
  * @brief Test partitions sized per the constraints of the MPU hardware
  *
  * @details
- * - Test that system automatically determine memory partition size according
- *   to the constraints of the platform's MPU hardware.
- * - Different platforms like x86, ARM and ARC have different MPU hardware for
- *   memory management.
- * - That test checks that MPU hardware works as expected and gives for the
- *   memory partition the most suitable and possible size.
+ * - MEM_REGION_ALLOC is pre-sized to naturally fit in the target hardware's
+ *   memory management granularity. Show that the partition size matches.
+ * - Show that the base address of the partition is properly set, it should
+ *   match the base address of buf_arc.
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_mem_part_auto_determ_size_per_mpu(void)
+void test_mem_part_auto_determ_size(void)
 {
 	zassert_true(part_arch.size == MEM_REGION_ALLOC, NULL);
+	zassert_true(part_arch.start == (uintptr_t)buf_arc,
+	   "Base address of memory partition not determined at build time");
 }
