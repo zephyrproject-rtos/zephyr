@@ -798,6 +798,15 @@ void ll_rx_dequeue(void)
 				}
 			}
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+			if (lll->aux) {
+				struct ll_adv_aux_set *aux;
+
+				aux = (void *)HDR_LLL2EVT(lll->aux);
+				aux->is_started = 0U;
+			}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
 			adv->is_enabled = 0U;
 #else /* !CONFIG_BT_PERIPHERAL */
 			ARG_UNUSED(cc);
