@@ -70,6 +70,10 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
+&i2s1 {
+	pinctrl-0 = <&i2s1_ck_pa5 &i2s1_sd_pa7>;
+};
+
 &spi1 {
 	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
 		     &spi1_miso_pa6 &spi1_mosi_pa7>;

@@ -14,10 +14,6 @@
 
 /* pin assignments for 96b_stm32_sensor_mez board */
 static const struct pin_config pinconf[] = {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s2), okay) && CONFIG_I2S
-	{STM32_PIN_PC7, STM32F4_PINMUX_FUNC_PC7_I2S2_CK},
-	{STM32_PIN_PC1, STM32F4_PINMUX_FUNC_PC1_I2S2_SD},
-#endif
 };
 
 static int pinmux_stm32_init(const struct device *port)
