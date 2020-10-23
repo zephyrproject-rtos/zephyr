@@ -14,10 +14,6 @@
 
 /* pin assignments for 96boards Argonkey board */
 static const struct pin_config pinconf[] = {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s5), okay) && CONFIG_I2S
-	{STM32_PIN_PB0, STM32F4_PINMUX_FUNC_PB0_I2S5_CK},
-	{STM32_PIN_PB8, STM32F4_PINMUX_FUNC_PB8_I2S5_SD},
-#endif
 };
 
 static int pinmux_stm32_init(const struct device *port)
