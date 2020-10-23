@@ -1,0 +1,35 @@
+# Virtualization drivers configuration options
+
+# Copyright (c) 2015-2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig VIRTUALIZATION
+	bool "Virtualization guests drivers"
+	help
+	  This contains various drivers meant to support and expose features
+	  when Zephyr is running as a guest in a virtualized or emulated
+	  environment.
+
+if VIRTUALIZATION
+
+config IVSHMEM
+	bool "Inter-VM shared memory device (ivshmem)"
+	depends on PCIE
+	help
+	  This will enable support of qemu's ivshmem device, which is also
+	  present in ACRN hypervizor, and lets VM sharing memory with each
+	  other.
+
+if IVSHMEM
+
+config IVSHMEM_DEV_NAME
+       string
+       default "IVSHMEM"
+
+module = IVSHMEM
+module-str = ivshmem
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # IVSHMEM
+
+endif # VIRTUALIZATION
