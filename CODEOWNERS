@@ -405,6 +405,9 @@
 /include/mgmt/osdp.h                      @cbsiddharth
 /include/net/                             @jukkar @tbursztyka @pfalcon
 /include/net/buf.h                        @jukkar @jhedberg @tbursztyka @pfalcon
+/include/net/coap*.h                      @jukkar @rlubos
+/include/net/lwm2m*.h                     @jukkar @rlubos
+/include/net/mqtt.h                       @jukkar @rlubos
 /include/posix/                           @pfalcon
 /include/power/power.h                    @wentongwu @nashif @ceolin
 /include/ptp_clock.h                      @jukkar
