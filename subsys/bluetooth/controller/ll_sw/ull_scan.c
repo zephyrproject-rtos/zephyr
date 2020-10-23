@@ -118,16 +118,17 @@ uint8_t ll_scan_params_set(uint8_t type, uint16_t interval, uint16_t window,
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 uint8_t ll_scan_enable(uint8_t enable, uint16_t duration, uint16_t period)
-#else /* !CONFIG_BT_CTLR_ADV_EXT */
-uint8_t ll_scan_enable(uint8_t enable)
-#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 {
 	struct node_rx_pdu *node_rx_scan_term = NULL;
-	struct ll_scan_set *scan_coded = NULL;
 	uint8_t is_update_coded = 0U;
+	uint8_t is_update_1m = 0U;
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+uint8_t ll_scan_enable(uint8_t enable)
+{
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+	struct ll_scan_set *scan_coded = NULL;
 	uint8_t own_addr_type = 0U;
 	uint8_t is_coded_phy = 0U;
-	uint8_t is_update_1m = 0U;
 	struct ll_scan_set *scan;
 	uint8_t err;
 
