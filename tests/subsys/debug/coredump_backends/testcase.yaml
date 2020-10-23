@@ -1,0 +1,16 @@
+tests:
+  coredump.backends.logging:
+    tags: ignore_faults ignore_qemu_crash
+    filter: CONFIG_ARCH_SUPPORTS_COREDUMP
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "E: #CD:BEGIN#"
+        - "E: #CD:5([aA])45([0-9a-fA-F]+)"
+        - "E: #CD:END#"
+  coredump.backends.flash:
+    tags: ignore_faults ignore_qemu_crash
+    filter: CONFIG_ARCH_SUPPORTS_COREDUMP
+    extra_args: CONF_FILE=prj_flash_partition.conf
+    platform_allow: qemu_x86
