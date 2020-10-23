@@ -212,6 +212,8 @@ static int pwm_stm32_pin_set(const struct device *dev, uint32_t pwm,
 		return 0;
 	}
 
+	LL_TIM_DisableUpdateEvent(cfg->timer);
+
 	if (!LL_TIM_CC_IsEnabledChannel(cfg->timer, channel)) {
 		LL_TIM_OC_InitTypeDef oc_init;
 
@@ -235,6 +237,9 @@ static int pwm_stm32_pin_set(const struct device *dev, uint32_t pwm,
 	}
 
 	LL_TIM_SetAutoReload(cfg->timer, period_cycles - 1u);
+
+	LL_TIM_EnableUpdateEvent(cfg->timer);
+	LL_TIM_GenerateEvent_UPDATE(cfg->timer);
 
 	return 0;
 }
