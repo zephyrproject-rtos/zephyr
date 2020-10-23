@@ -12,5 +12,4 @@ common:
 tests:
   sample.kernel.memory_protection.shared_mem:
     filter: CONFIG_ARCH_HAS_USERSPACE
-    # Until #21317 is fixed
-    platform_exclude: twr_ke18f qemu_x86_64
+    platform_exclude: twr_ke18f
