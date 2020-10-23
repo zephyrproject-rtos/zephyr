@@ -234,6 +234,8 @@ static int process_tcp(struct data *data)
 
 	LOG_INF("TCP (%s): Accepted connection", data->proto);
 
+#define MAX_NAME_LEN sizeof("tcp6[0]")
+
 #if defined(CONFIG_NET_IPV6)
 	if (client_addr.sin_family == AF_INET6) {
 		tcp6_handler_in_use[slot] = true;
@@ -248,6 +250,13 @@ static int process_tcp(struct data *data)
 			IS_ENABLED(CONFIG_USERSPACE) ? K_USER |
 						       K_INHERIT_PERMS : 0,
 			K_NO_WAIT);
+
+		if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+			char name[MAX_NAME_LEN];
+
+			snprintk(name, sizeof(name), "tcp6[%d]", slot);
+			k_thread_name_set(&tcp6_handler_thread[slot], name);
+		}
 	}
 #endif
 
@@ -265,6 +274,13 @@ static int process_tcp(struct data *data)
 			IS_ENABLED(CONFIG_USERSPACE) ? K_USER |
 						       K_INHERIT_PERMS : 0,
 			K_NO_WAIT);
+
+		if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+			char name[MAX_NAME_LEN];
+
+			snprintk(name, sizeof(name), "tcp4[%d]", slot);
+			k_thread_name_set(&tcp4_handler_thread[slot], name);
+		}
 	}
 #endif
 
