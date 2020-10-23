@@ -489,6 +489,8 @@ static int bind_default(struct net_context *context)
 int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		     socklen_t addrlen)
 {
+	int ret;
+
 	NET_ASSERT(addr);
 	NET_ASSERT(PART_OF_ARRAY(contexts, context));
 
@@ -506,7 +508,6 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		struct net_if *iface = NULL;
 		struct in6_addr *ptr;
 		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)addr;
-		int ret;
 
 		if (addrlen < sizeof(struct sockaddr_in6)) {
 			return -EINVAL;
@@ -558,6 +559,10 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 						addrlen);
 		}
 
+		k_mutex_lock(&context->lock, K_FOREVER);
+
+		ret = 0;
+
 		net_context_set_iface(context, iface);
 
 		net_sin6_ptr(&context->local)->sin6_family = AF_INET6;
@@ -571,7 +576,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			} else {
 				NET_ERR("Port %d is in use!",
 					ntohs(addr6->sin6_port));
-				return ret;
+				goto unlock_ipv6;
 			}
 		} else {
 			addr6->sin6_port =
@@ -585,7 +590,10 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			log_strdup(net_sprint_ipv6_addr(ptr)),
 			ntohs(addr6->sin6_port), iface);
 
-		return 0;
+	unlock_ipv6:
+		k_mutex_unlock(&context->lock);
+
+		return ret;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == AF_INET) {
@@ -593,7 +601,6 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		struct net_if *iface = NULL;
 		struct net_if_addr *ifaddr;
 		struct in_addr *ptr;
-		int ret;
 
 		if (addrlen < sizeof(struct sockaddr_in)) {
 			return -EINVAL;
@@ -660,7 +667,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			} else {
 				NET_ERR("Port %d is in use!",
 					ntohs(addr4->sin_port));
-				goto unlock;
+				goto unlock_ipv4;
 			}
 		} else {
 			addr4->sin_port =
@@ -674,7 +681,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			log_strdup(net_sprint_ipv4_addr(ptr)),
 			ntohs(addr4->sin_port), iface);
 
-	unlock:
+	unlock_ipv4:
 		k_mutex_unlock(&context->lock);
 
 		return ret;
@@ -710,6 +717,8 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 						addrlen);
 		}
 
+		k_mutex_lock(&context->lock, K_FOREVER);
+
 		net_context_set_iface(context, iface);
 
 		net_sll_ptr(&context->local)->sll_family = AF_PACKET;
@@ -728,6 +737,8 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			log_strdup(net_sprint_ll_addr(
 				net_sll_ptr(&context->local)->sll_addr,
 				net_sll_ptr(&context->local)->sll_halen)));
+
+		k_mutex_unlock(&context->lock);
 
 		return 0;
 	}
@@ -761,6 +772,8 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 						addrlen);
 		}
 
+		k_mutex_lock(&context->lock, K_FOREVER);
+
 		net_context_set_iface(context, iface);
 		net_context_set_family(context, AF_CAN);
 
@@ -771,6 +784,8 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		NET_DBG("Context %p binding to %d iface[%d] %p",
 			context, net_context_get_ip_proto(context),
 			can_addr->can_ifindex, iface);
+
+		k_mutex_unlock(&context->lock);
 
 		return 0;
 	}
