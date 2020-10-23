@@ -127,7 +127,7 @@ manifest:
       revision: 9e4498d1c73009acd84bb36036ee5e2869112a6c
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
-      revision: 957d46bc3ce0d5f628f0d525196bb4db207672ee
+      revision: 75e671550ac1acb502f315fe4952514dc73f7bfb
     - name: nrf_hw_models
       path: modules/bsim_hw_models/nrf_hw_models
       revision: 71a8a9ef086d57ff5f3974138b0951f24c2017ad
