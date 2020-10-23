@@ -10,30 +10,6 @@
 
 /* functions documented in include/drivers/pcie/msi.h */
 
-uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id)
-{
-	uint32_t reg = 0U;
-	uint32_t data;
-
-	data = pcie_conf_read(bdf, PCIE_CONF_CMDSTAT);
-	if (data & PCIE_CONF_CMDSTAT_CAPS) {
-		data = pcie_conf_read(bdf, PCIE_CONF_CAPPTR);
-		reg = PCIE_CONF_CAPPTR_FIRST(data);
-	}
-
-	while (reg) {
-		data = pcie_conf_read(bdf, reg);
-
-		if (PCIE_CONF_CAP_ID(data) == cap_id) {
-			break;
-		}
-
-		reg = PCIE_CONF_CAP_NEXT(data);
-	}
-
-	return reg;
-}
-
 bool pcie_set_msi(pcie_bdf_t bdf, unsigned int irq)
 {
 	bool success = false; /* keepin' the MISRA peeps employed */
