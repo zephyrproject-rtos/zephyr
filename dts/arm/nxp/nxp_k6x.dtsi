@@ -476,7 +476,7 @@
 			compatible = "nxp,kinetis-ethernet";
 			reg = <0x400c0000 0x620>;
 			interrupts = <83 0>, <84 0>, <85 0>;
-			interrupt-names = "TX", "RX", "ERR_MISC";
+			interrupt-names = "TX", "RX", "ERR";
 			status = "disabled";
 			label = "ETH_0";
 			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0 0>;
