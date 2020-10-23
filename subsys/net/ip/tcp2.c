@@ -1211,6 +1211,7 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 {
 	struct tcphdr *th = pkt ? th_get(pkt) : NULL;
 	uint8_t next = 0, fl = 0;
+	bool do_close = false;
 	size_t tcp_options_len = th ? (th->th_off - 5) * 4 : 0;
 	struct net_conn *conn_handler = NULL;
 	struct net_pkt *recv_pkt;
@@ -1439,7 +1440,7 @@ next_state:
 		}
 		break;
 	case TCP_CLOSED:
-		tcp_conn_unref(conn);
+		do_close = true;
 		break;
 	case TCP_FIN_WAIT_1:
 		if (th && FL(&fl, ==, (FIN | ACK), th_seq(th) == conn->ack)) {
@@ -1511,6 +1512,15 @@ next_state:
 	       (recv_pkt = k_fifo_get(recv_data_fifo, K_NO_WAIT)) != NULL) {
 		net_context_packet_received(conn_handler, recv_pkt, NULL, NULL,
 					    recv_user_data);
+	}
+
+	/* We must not try to unref the connection while having a connection
+	 * lock because the unref will try to acquire net_context lock and the
+	 * application might have that lock held already, and that might lead
+	 * to a deadlock.
+	 */
+	if (do_close) {
+		tcp_conn_unref(conn);
 	}
 }
 
