@@ -80,7 +80,7 @@ manifest:
       revision: 405dfc8faba13e01c1cb9e29e70b31b50f71d117
       path: modules/hal/ti
     - name: libmetal
-      revision: 0b23894a041bd00a0d3a2288bb34751bbbef790d
+      revision: 9d4ee2c3cfd5f49861939447990f3b7d7bf9bf94
       path: modules/hal/libmetal
     - name: hal_quicklogic
       repo-path: hal_quicklogic
