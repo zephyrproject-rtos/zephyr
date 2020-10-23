@@ -346,14 +346,14 @@ static int w5500_set_config(const struct device *dev,
 	if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE) &&
 	    type == ETHERNET_CONFIG_TYPE_PROMISC_MODE) {
 		if (config->promisc_mode) {
-			if (!(mode & W5500_S0_MR_MF))
+			if (!(mode & BIT(mr)))
 				return -EALREADY;
 			}
 
 			/* clear */
 			WRITE_BIT(mode, mr, 0);
 	} else {
-		if (mode & mr) {
+		if (mode & BIT(mr)) {
 			return -EALREADY;
 		}
 
