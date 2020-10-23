@@ -193,6 +193,7 @@ void start_udp(void)
 		k_mem_domain_add_thread(&app_domain, udp6_thread_id);
 #endif
 
+		k_thread_name_set(udp6_thread_id, "udp6");
 		k_thread_start(udp6_thread_id);
 	}
 
@@ -201,6 +202,7 @@ void start_udp(void)
 		k_mem_domain_add_thread(&app_domain, udp4_thread_id);
 #endif
 
+		k_thread_name_set(udp4_thread_id, "udp4");
 		k_thread_start(udp4_thread_id);
 	}
 }
