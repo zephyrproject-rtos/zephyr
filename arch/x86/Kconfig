@@ -192,12 +192,26 @@ config X86_MMU
 
 config X86_MMU_PAGE_POOL_PAGES
 	int "Number of pages to reserve for building page tables"
-	default 17
+	default 0
 	depends on X86_MMU
 	help
-	  Building page tables at boot requires a pool of free memory pages
-	  to construct it. This can't be derived at build time, tune this
-	  to your SoC's specific memory map.
+	  Define the number of pages in the pool used to allocate page table
+	  data structures at runtime.
+
+	  Pages might need to be drawn from the pool during memory mapping
+	  operations, unless the address space has been completely pre-allocated.
+
+	  Pages will need to drawn from the pool to initialize memory domains.
+	  This does not include the default memory domain if KPTI=n.
+
+	  The specific value used here depends on the size of physical RAM,
+	  how much additional virtual memory will be mapped at runtime, and
+	  how many memory domains need to be initialized.
+
+	  The current suite of Zephyr test cases may initialize at most two
+	  additional memory domains besides the default domain.
+
+	  Unused pages in this pool cannot be used for other purposes.
 
 config X86_NO_MELTDOWN
 	bool
