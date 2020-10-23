@@ -256,6 +256,34 @@ static inline bool arch_is_in_isr(void);
  * @retval -ENOMEM Memory for additional paging structures unavailable
  */
 int arch_mem_map(void *dest, uintptr_t addr, size_t size, uint32_t flags);
+
+/**
+ * Remove mappings for a provided virtual address range
+ *
+ * This is a low-level interface for un-mapping pages from the address space.
+ * When this completes, the relevant page table entries will be updated as
+ * if no mapping was ever made for that memory range. No previous context
+ * needs to be preserved. This function must update mappings in all active
+ * page tables.
+ *
+ * Behavior when providing unaligned addresses/sizes is undefined, these
+ * are assumed to be aligned to CONFIG_MMU_PAGE_SIZE.
+ *
+ * Behavior when providing an address range that is not already mapped is
+ * undefined.
+ *
+ * This function should never require memory allocations for paging structures,
+ * and it is not necessary to free any paging structures. Empty page tables
+ * due to all contained entries being un-mapped may remain in place.
+ *
+ * Implementations must invalidate TLBs as necessary.
+ *
+ * This API is part of infrastructure still under development and may change.
+ *
+ * @param addr Page-aligned base virtual address to un-map
+ * @param size Page-aligned region size
+ */
+void arch_mem_unmap(void *addr, size_t size);
 #endif /* CONFIG_MMU */
 /** @} */
 
