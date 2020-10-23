@@ -19,3 +19,13 @@ properties:
 
     dma-names:
       required: true
+
+    pinctrl-0:
+      type: phandles
+      required: false
+      description: |
+        Pin configuration for I2S signals.
+        We expect that the phandles will reference pinctrl nodes.
+
+        For example the I2S1 would be:
+        pinctrl-0 = <&i2s1_ck_pa5 &i2s1_sd_pa7>;
