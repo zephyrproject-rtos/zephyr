@@ -533,6 +533,14 @@ extern void k_thread_foreach_unlocked(
  */
 #define K_INHERIT_PERMS (BIT(3))
 
+/**
+ * @brief dynamically allocated stack
+ *
+ * This flag indicates that a thread stack has been heap-allocated with
+ * @ref k_malloc.
+ */
+#define K_STACK_ON_HEAP (BIT(4))
+
 #ifdef CONFIG_X86
 /* x86 Bitmask definitions for threads user options */
 
