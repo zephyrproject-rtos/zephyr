@@ -55,7 +55,7 @@
 #define W5500_S0_RX_RD		(W5500_S0_REGS + W5500_Sn_RX_RD)
 #define W5500_S0_IMR		(W5500_S0_REGS + W5500_Sn_IMR)
 
-#define W5500_S0_MR_MF		BIT(7) /* MAC Filter for W5500 */
+#define W5500_S0_MR_MF		7 /* MAC Filter for W5500 */
 #define W5500_Sn_REGS_LEN	0x0040
 #define W5500_SIMR		0x0018 /* Socket Interrupt Mask Register */
 #define IR_S0			0x01
