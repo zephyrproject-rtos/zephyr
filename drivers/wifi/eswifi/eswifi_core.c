@@ -4,7 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if defined(CONFIG_WIFI_ESWIFI_BUS_UART)
+#define DT_DRV_COMPAT inventek_eswifi_uart
+#else
 #define DT_DRV_COMPAT inventek_eswifi
+#endif
+
 #include "eswifi_log.h"
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
