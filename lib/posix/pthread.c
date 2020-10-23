@@ -16,6 +16,12 @@
 #include <zephyr/posix/pthread.h>
 #include <zephyr/sys/slist.h>
 
+#ifdef CONFIG_DYNAMIC_THREAD_STACK_SIZE
+#define DYNAMIC_STACK_SIZE CONFIG_DYNAMIC_THREAD_STACK_SIZE
+#else
+#define DYNAMIC_STACK_SIZE 0
+#endif
+
 #define PTHREAD_INIT_FLAGS	PTHREAD_CANCEL_ENABLE
 #define PTHREAD_CANCELED	((void *) -1)
 
@@ -34,6 +40,7 @@ BUILD_ASSERT((PTHREAD_CREATE_DETACHED == 0 || PTHREAD_CREATE_JOINABLE == 0) &&
 BUILD_ASSERT((PTHREAD_CANCEL_ENABLE == 0 || PTHREAD_CANCEL_DISABLE == 0) &&
 	     (PTHREAD_CANCEL_ENABLE == 1 || PTHREAD_CANCEL_DISABLE == 1));
 
+static void posix_thread_recycle(void);
 static sys_dlist_t ready_q = SYS_DLIST_STATIC_INIT(&ready_q);
 static sys_dlist_t run_q = SYS_DLIST_STATIC_INIT(&run_q);
 static sys_dlist_t done_q = SYS_DLIST_STATIC_INIT(&done_q);
@@ -205,13 +212,13 @@ int pthread_attr_setstack(pthread_attr_t *_attr, void *stackaddr, size_t stacksi
 
 static bool pthread_attr_is_valid(const struct pthread_attr *attr)
 {
-	/*
-	 * FIXME: Pthread attribute must be non-null and it provides stack
-	 * pointer and stack size. So even though POSIX 1003.1 spec accepts
-	 * attrib as NULL but zephyr needs it initialized with valid stack.
-	 */
-	if (attr == NULL || attr->initialized == 0U || attr->stack == NULL ||
-	    attr->stacksize == 0) {
+	/* auto-alloc thread stack */
+	if (attr == NULL) {
+		return true;
+	}
+
+	/* caller-provided thread stack */
+	if (attr->initialized == 0U || attr->stack == NULL || attr->stacksize == 0) {
 		return false;
 	}
 
@@ -233,6 +240,13 @@ static bool pthread_attr_is_valid(const struct pthread_attr *attr)
 
 	return true;
 }
+
+static void posix_thread_recycle_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+	posix_thread_recycle();
+}
+static K_WORK_DELAYABLE_DEFINE(posix_thread_recycle_work, posix_thread_recycle_work_handler);
 
 static void posix_thread_finalize(struct posix_thread *t, void *retval)
 {
@@ -259,6 +273,9 @@ static void posix_thread_finalize(struct posix_thread *t, void *retval)
 	t->retval = retval;
 	k_spin_unlock(&pthread_pool_lock, key);
 
+	/* trigger recycle work */
+	(void)k_work_schedule(&posix_thread_recycle_work, K_MSEC(CONFIG_PTHREAD_RECYCLER_DELAY_MS));
+
 	/* abort the underlying k_thread */
 	k_thread_abort(&t->thread);
 }
@@ -283,6 +300,45 @@ static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 	CODE_UNREACHABLE;
 }
 
+static void posix_thread_recycle(void)
+{
+	k_spinlock_key_t key;
+	struct posix_thread *t;
+	struct posix_thread *safe_t;
+	sys_dlist_t recyclables = SYS_DLIST_STATIC_INIT(&recyclables);
+
+	key = k_spin_lock(&pthread_pool_lock);
+	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&done_q, t, safe_t, q_node) {
+		if (t->detachstate == PTHREAD_CREATE_JOINABLE) {
+			/* thread has not been joined yet */
+			continue;
+		}
+
+		sys_dlist_remove(&t->q_node);
+		sys_dlist_append(&recyclables, &t->q_node);
+	}
+	k_spin_unlock(&pthread_pool_lock, key);
+
+	if (sys_dlist_is_empty(&recyclables)) {
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
+		SYS_DLIST_FOR_EACH_CONTAINER(&recyclables, t, q_node) {
+			if (t->dynamic_stack != NULL) {
+				(void)k_thread_stack_free(t->dynamic_stack);
+				t->dynamic_stack = NULL;
+			}
+		}
+	}
+
+	key = k_spin_lock(&pthread_pool_lock);
+	while (!sys_dlist_is_empty(&recyclables)) {
+		sys_dlist_append(&ready_q, sys_dlist_get(&recyclables));
+	}
+	k_spin_unlock(&pthread_pool_lock, key);
+}
+
 /**
  * @brief Create a new thread.
  *
@@ -297,32 +353,33 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 	int err;
 	k_spinlock_key_t key;
 	pthread_barrier_t barrier;
-	struct posix_thread *safe_t;
 	struct posix_thread *t = NULL;
-	const struct pthread_attr *attr = (const struct pthread_attr *)_attr;
+	struct pthread_attr attr_storage = init_pthread_attrs;
+	struct pthread_attr *attr = (struct pthread_attr *)_attr;
 
 	if (!pthread_attr_is_valid(attr)) {
 		return EINVAL;
 	}
 
-	key = k_spin_lock(&pthread_pool_lock);
-	if (!sys_dlist_is_empty(&ready_q)) {
-		/* spawn thread 't' directly from ready_q */
-		t = CONTAINER_OF(sys_dlist_get(&ready_q), struct posix_thread, q_node);
-	} else {
-		SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&done_q, t, safe_t, q_node) {
-			if (t->detachstate == PTHREAD_CREATE_JOINABLE) {
-				/* thread has not been joined yet */
-				continue;
-			}
-
-			/* spawn thread 't' from done_q */
-			sys_dlist_remove(&t->q_node);
-			break;
+	if (attr == NULL) {
+		attr = &attr_storage;
+		attr->stacksize = DYNAMIC_STACK_SIZE;
+		attr->stack =
+			k_thread_stack_alloc(attr->stacksize, k_is_user_context() ? K_USER : 0);
+		if (attr->stack == NULL) {
+			return EAGAIN;
 		}
+	} else {
+		__ASSERT_NO_MSG(attr != &attr_storage);
 	}
 
-	if (t != NULL) {
+	/* reclaim resources greedily */
+	posix_thread_recycle();
+
+	key = k_spin_lock(&pthread_pool_lock);
+	if (!sys_dlist_is_empty(&ready_q)) {
+		t = CONTAINER_OF(sys_dlist_get(&ready_q), struct posix_thread, q_node);
+
 		/* initialize thread state */
 		sys_dlist_append(&run_q, &t->q_node);
 		t->qid = POSIX_THREAD_RUN_Q;
@@ -332,12 +389,22 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 		}
 		t->cancel_pending = false;
 		sys_slist_init(&t->key_list);
+		t->dynamic_stack = _attr == NULL ? attr->stack : NULL;
 	}
 	k_spin_unlock(&pthread_pool_lock, key);
+
+	if (t == NULL) {
+		/* no threads are ready */
+		return EAGAIN;
+	}
 
 	if (IS_ENABLED(CONFIG_PTHREAD_CREATE_BARRIER)) {
 		err = pthread_barrier_init(&barrier, NULL, 2);
 		if (err != 0) {
+			if (t->dynamic_stack != NULL) {
+				(void)k_thread_stack_free(attr->stack);
+			}
+
 			/* cannot allocate barrier. move thread back to ready_q */
 			key = k_spin_lock(&pthread_pool_lock);
 			sys_dlist_remove(&t->q_node);
@@ -346,11 +413,6 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 			k_spin_unlock(&pthread_pool_lock, key);
 			t = NULL;
 		}
-	}
-
-	if (t == NULL) {
-		/* no threads are ready */
-		return EAGAIN;
 	}
 
 	/* spawn the thread */
