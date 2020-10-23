@@ -103,4 +103,6 @@ source "drivers/regulator/Kconfig"
 
 source "drivers/memc/Kconfig"
 
+source "drivers/virtualization/Kconfig"
+
 endmenu
