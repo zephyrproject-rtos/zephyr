@@ -341,7 +341,7 @@ int net_context_unref(struct net_context *context)
 		return old_rc - 1;
 	}
 
-	k_mutex_lock(&context->lock, K_FOREVER);
+	NET_MUTEX_LOCK(&context->lock);
 
 	net_tcp_unref(context);
 
@@ -360,7 +360,7 @@ int net_context_unref(struct net_context *context)
 
 	NET_DBG("Context %p released", context);
 
-	k_mutex_unlock(&context->lock);
+	NET_MUTEX_UNLOCK(&context->lock);
 
 	return 0;
 }
@@ -375,7 +375,7 @@ int net_context_put(struct net_context *context)
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&context->lock, K_FOREVER);
+	NET_MUTEX_LOCK(&context->lock);
 
 	if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
 	    net_if_is_ip_offloaded(net_context_get_iface(context))) {
@@ -395,7 +395,7 @@ int net_context_put(struct net_context *context)
 	net_tcp_put(context);
 
 unlock:
-	k_mutex_unlock(&context->lock);
+	NET_MUTEX_UNLOCK(&context->lock);
 
 	return ret;
 }
@@ -559,7 +559,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 						addrlen);
 		}
 
-		k_mutex_lock(&context->lock, K_FOREVER);
+		NET_MUTEX_LOCK(&context->lock);
 
 		ret = 0;
 
@@ -591,7 +591,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			ntohs(addr6->sin6_port), iface);
 
 	unlock_ipv6:
-		k_mutex_unlock(&context->lock);
+		NET_MUTEX_UNLOCK(&context->lock);
 
 		return ret;
 	}
@@ -650,7 +650,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 						addrlen);
 		}
 
-		k_mutex_lock(&context->lock, K_FOREVER);
+		NET_MUTEX_LOCK(&context->lock);
 
 		ret = 0;
 
@@ -682,7 +682,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			ntohs(addr4->sin_port), iface);
 
 	unlock_ipv4:
-		k_mutex_unlock(&context->lock);
+		NET_MUTEX_UNLOCK(&context->lock);
 
 		return ret;
 	}
@@ -717,7 +717,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 						addrlen);
 		}
 
-		k_mutex_lock(&context->lock, K_FOREVER);
+		NET_MUTEX_LOCK(&context->lock);
 
 		net_context_set_iface(context, iface);
 
@@ -738,7 +738,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 				net_sll_ptr(&context->local)->sll_addr,
 				net_sll_ptr(&context->local)->sll_halen)));
 
-		k_mutex_unlock(&context->lock);
+		NET_MUTEX_UNLOCK(&context->lock);
 
 		return 0;
 	}
@@ -772,7 +772,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 						addrlen);
 		}
 
-		k_mutex_lock(&context->lock, K_FOREVER);
+		NET_MUTEX_LOCK(&context->lock);
 
 		net_context_set_iface(context, iface);
 		net_context_set_family(context, AF_CAN);
@@ -785,7 +785,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			context, net_context_get_ip_proto(context),
 			can_addr->can_ifindex, iface);
 
-		k_mutex_unlock(&context->lock);
+		NET_MUTEX_UNLOCK(&context->lock);
 
 		return 0;
 	}
@@ -826,14 +826,14 @@ int net_context_listen(struct net_context *context, int backlog)
 					  context, backlog);
 	}
 
-	k_mutex_lock(&context->lock, K_FOREVER);
+	NET_MUTEX_LOCK(&context->lock);
 
 	if (net_tcp_listen(context) >= 0) {
-		k_mutex_unlock(&context->lock);
+		NET_MUTEX_UNLOCK(&context->lock);
 		return 0;
 	}
 
-	k_mutex_unlock(&context->lock);
+	NET_MUTEX_UNLOCK(&context->lock);
 
 	return -EOPNOTSUPP;
 }
@@ -909,7 +909,7 @@ int net_context_connect(struct net_context *context,
 	NET_ASSERT(addr);
 	NET_ASSERT(PART_OF_ARRAY(contexts, context));
 
-	k_mutex_lock(&context->lock, K_FOREVER);
+	NET_MUTEX_LOCK(&context->lock);
 
 	if (!net_context_is_used(context)) {
 		ret = -EBADF;
@@ -1066,7 +1066,7 @@ int net_context_connect(struct net_context *context,
 	}
 
 unlock:
-	k_mutex_unlock(&context->lock);
+	NET_MUTEX_UNLOCK(&context->lock);
 
 	return ret;
 }
@@ -1084,7 +1084,7 @@ int net_context_accept(struct net_context *context,
 		return -EBADF;
 	}
 
-	k_mutex_lock(&context->lock, K_FOREVER);
+	NET_MUTEX_LOCK(&context->lock);
 
 	if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
 	    net_if_is_ip_offloaded(net_context_get_iface(context))) {
@@ -1112,7 +1112,7 @@ int net_context_accept(struct net_context *context,
 	}
 
 unlock:
-	k_mutex_unlock(&context->lock);
+	NET_MUTEX_UNLOCK(&context->lock);
 
 	return ret;
 }
@@ -1699,7 +1699,7 @@ int net_context_send(struct net_context *context,
 	socklen_t addrlen;
 	int ret = 0;
 
-	k_mutex_lock(&context->lock, K_FOREVER);
+	NET_MUTEX_LOCK(&context->lock);
 
 	if (!(context->flags & NET_CONTEXT_REMOTE_ADDR_SET) ||
 	    !net_sin(&context->remote)->sin_port) {
@@ -1727,7 +1727,7 @@ int net_context_send(struct net_context *context,
 	ret = context_sendto(context, buf, len, &context->remote,
 			     addrlen, cb, timeout, user_data, false);
 unlock:
-	k_mutex_unlock(&context->lock);
+	NET_MUTEX_UNLOCK(&context->lock);
 
 	return ret;
 }
@@ -1741,12 +1741,12 @@ int net_context_sendmsg(struct net_context *context,
 {
 	int ret;
 
-	k_mutex_lock(&context->lock, K_FOREVER);
+	NET_MUTEX_LOCK(&context->lock);
 
 	ret = context_sendto(context, msghdr, 0, NULL, 0,
 			     cb, timeout, user_data, true);
 
-	k_mutex_unlock(&context->lock);
+	NET_MUTEX_UNLOCK(&context->lock);
 
 	return ret;
 }
@@ -1762,12 +1762,12 @@ int net_context_sendto(struct net_context *context,
 {
 	int ret;
 
-	k_mutex_lock(&context->lock, K_FOREVER);
+	NET_MUTEX_LOCK(&context->lock);
 
 	ret = context_sendto(context, buf, len, dst_addr, addrlen,
 			     cb, timeout, user_data, true);
 
-	k_mutex_unlock(&context->lock);
+	NET_MUTEX_UNLOCK(&context->lock);
 
 	return ret;
 }
@@ -1784,7 +1784,7 @@ enum net_verdict net_context_packet_received(struct net_conn *conn,
 	NET_ASSERT(context);
 	NET_ASSERT(net_pkt_iface(pkt));
 
-	k_mutex_lock(&context->lock, K_FOREVER);
+	NET_MUTEX_LOCK(&context->lock);
 
 	net_context_set_iface(context, net_pkt_iface(pkt));
 	net_pkt_set_context(pkt, context);
@@ -1805,7 +1805,7 @@ enum net_verdict net_context_packet_received(struct net_conn *conn,
 	k_sem_give(&context->recv_data_wait);
 #endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
 
-	k_mutex_unlock(&context->lock);
+	NET_MUTEX_UNLOCK(&context->lock);
 
 	context->recv_cb(context, pkt, ip_hdr, proto_hdr, 0, user_data);
 
@@ -1814,7 +1814,7 @@ enum net_verdict net_context_packet_received(struct net_conn *conn,
 	return verdict;
 
 unlock:
-	k_mutex_unlock(&context->lock);
+	NET_MUTEX_UNLOCK(&context->lock);
 
 	return verdict;
 }
@@ -1963,7 +1963,7 @@ int net_context_recv(struct net_context *context,
 		return -EBADF;
 	}
 
-	k_mutex_lock(&context->lock, K_FOREVER);
+	NET_MUTEX_LOCK(&context->lock);
 
 	if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
 	    net_if_is_ip_offloaded(net_context_get_iface(context))) {
@@ -2033,11 +2033,11 @@ int net_context_recv(struct net_context *context,
 		 */
 		k_sem_reset(&context->recv_data_wait);
 
-		k_mutex_unlock(&context->lock);
+		NET_MUTEX_UNLOCK(&context->lock);
 
 		ret = k_sem_take(&context->recv_data_wait, timeout);
 
-		k_mutex_lock(&context->lock, K_FOREVER);
+		NET_MUTEX_LOCK(&context->lock);
 
 		if (ret == -EAGAIN) {
 			ret = -ETIMEDOUT;
@@ -2047,7 +2047,7 @@ int net_context_recv(struct net_context *context,
 #endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
 
 unlock:
-	k_mutex_unlock(&context->lock);
+	NET_MUTEX_UNLOCK(&context->lock);
 
 	return ret;
 }
@@ -2062,11 +2062,11 @@ int net_context_update_recv_wnd(struct net_context *context,
 		return 0;
 	}
 
-	k_mutex_lock(&context->lock, K_FOREVER);
+	NET_MUTEX_LOCK(&context->lock);
 
 	ret = net_tcp_update_recv_wnd(context, delta);
 
-	k_mutex_unlock(&context->lock);
+	NET_MUTEX_UNLOCK(&context->lock);
 
 	return ret;
 }
@@ -2154,7 +2154,7 @@ int net_context_set_option(struct net_context *context,
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&context->lock, K_FOREVER);
+	NET_MUTEX_LOCK(&context->lock);
 
 	switch (option) {
 	case NET_OPT_PRIORITY:
@@ -2171,7 +2171,7 @@ int net_context_set_option(struct net_context *context,
 		break;
 	}
 
-	k_mutex_unlock(&context->lock);
+	NET_MUTEX_UNLOCK(&context->lock);
 
 	return ret;
 }
@@ -2188,7 +2188,7 @@ int net_context_get_option(struct net_context *context,
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&context->lock, K_FOREVER);
+	NET_MUTEX_LOCK(&context->lock);
 
 	switch (option) {
 	case NET_OPT_PRIORITY:
@@ -2205,7 +2205,7 @@ int net_context_get_option(struct net_context *context,
 		break;
 	}
 
-	k_mutex_unlock(&context->lock);
+	NET_MUTEX_UNLOCK(&context->lock);
 
 	return ret;
 }

@@ -428,11 +428,11 @@ static void tcp_send_process(struct k_work *work)
 	struct tcp *conn = CONTAINER_OF(work, struct tcp, send_timer);
 	bool unref;
 
-	k_mutex_lock(&conn->lock, K_FOREVER);
+	NET_MUTEX_LOCK(&conn->lock);
 
 	unref = tcp_send_process_no_lock(conn);
 
-	k_mutex_unlock(&conn->lock);
+	NET_MUTEX_UNLOCK(&conn->lock);
 
 	if (unref) {
 		tcp_conn_unref(conn);
@@ -899,7 +899,7 @@ static void tcp_resend_data(struct k_work *work)
 	bool conn_unref = false;
 	int ret;
 
-	k_mutex_lock(&conn->lock, K_FOREVER);
+	NET_MUTEX_LOCK(&conn->lock);
 
 	NET_DBG("send_data_retries=%hu", conn->send_data_retries);
 
@@ -937,7 +937,7 @@ static void tcp_resend_data(struct k_work *work)
 	k_delayed_work_submit(&conn->send_data_timer, K_MSEC(tcp_rto));
 
  out:
-	k_mutex_unlock(&conn->lock);
+	NET_MUTEX_UNLOCK(&conn->lock);
 
 	if (conn_unref) {
 		tcp_conn_unref(conn);
@@ -1225,7 +1225,7 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		fl = th->th_flags & ~(ECN | CWR);
 	}
 
-	k_mutex_lock(&conn->lock, K_FOREVER);
+	NET_MUTEX_LOCK(&conn->lock);
 
 	NET_DBG("%s", log_strdup(tcp_conn_state(conn, pkt)));
 
@@ -1502,7 +1502,7 @@ next_state:
 	recv_user_data = conn->recv_user_data;
 	recv_data_fifo = &conn->recv_data;
 
-	k_mutex_unlock(&conn->lock);
+	NET_MUTEX_UNLOCK(&conn->lock);
 
 	/* Pass all the received data stored in recv fifo to the application.
 	 * This is done like this so that we do not have any connection lock
@@ -1533,7 +1533,7 @@ int net_tcp_put(struct net_context *context)
 		return -ENOENT;
 	}
 
-	k_mutex_lock(&conn->lock, K_FOREVER);
+	NET_MUTEX_LOCK(&conn->lock);
 
 	NET_DBG("%s", conn ? log_strdup(tcp_conn_state(conn, NULL)) : "");
 	NET_DBG("context %p %s", context,
@@ -1573,7 +1573,7 @@ int net_tcp_put(struct net_context *context)
 		net_context_ref(context);
 	}
 
-	k_mutex_unlock(&conn->lock);
+	NET_MUTEX_UNLOCK(&conn->lock);
 
 	net_context_unref(context);
 
@@ -1608,7 +1608,7 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 		return -ENOTCONN;
 	}
 
-	k_mutex_lock(&conn->lock, K_FOREVER);
+	NET_MUTEX_LOCK(&conn->lock);
 
 	if (tcp_window_full(conn)) {
 		/* Trigger resend if the timer is not active */
@@ -1659,7 +1659,7 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 		tcp_pkt_unref(pkt);
 	}
 out:
-	k_mutex_unlock(&conn->lock);
+	NET_MUTEX_UNLOCK(&conn->lock);
 
 	return ret;
 }

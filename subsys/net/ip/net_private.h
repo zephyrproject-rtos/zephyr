@@ -272,3 +272,20 @@ static inline void net_pkt_print_buffer_info(struct net_pkt *pkt, const char *st
 
 	printk("\n");
 }
+
+/* Only enable mutex lock/unlock debugging when needed as it will print
+ * lot of data which is not normally needed.
+ */
+#if 0
+#define NET_MUTEX_LOCK(mtx) do {					\
+		NET_DBG("%d: lock %p", __LINE__, mtx);			\
+		k_mutex_lock(mtx, K_FOREVER);				\
+	} while (0)
+#define NET_MUTEX_UNLOCK(mtx) do {					\
+		NET_DBG("%d: unlock %p", __LINE__, mtx);		\
+		k_mutex_unlock(mtx);					\
+	} while (0)
+#else
+#define NET_MUTEX_LOCK(mtx) k_mutex_lock(mtx, K_FOREVER)
+#define NET_MUTEX_UNLOCK(mtx) k_mutex_unlock(mtx)
+#endif
