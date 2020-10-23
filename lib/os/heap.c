@@ -261,7 +261,8 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	 * We over-allocate to account for alignment and then free
 	 * the extra allocations afterwards.
 	 */
-	size_t padded_sz = bytes_to_chunksz(h, bytes + align - 1);
+	size_t padded_sz =
+		bytes_to_chunksz(h, bytes + align - chunk_header_bytes(h));
 	chunkid_t c0 = alloc_chunk(h, padded_sz);
 
 	if (c0 == 0) {
