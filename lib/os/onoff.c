@@ -7,6 +7,8 @@
 
 #include <kernel.h>
 #include <sys/onoff.h>
+#include <sys/onoff_delayed.h>
+#include <timeout_q.h>
 #include <stdio.h>
 
 #define SERVICE_REFS_MAX UINT16_MAX
@@ -415,19 +417,14 @@ out:
 	k_spin_unlock(&mgr->lock, key);
 }
 
-int onoff_request(struct onoff_manager *mgr,
-		  struct onoff_client *cli)
+static int request_and_unlock(struct onoff_manager *mgr,
+			      struct onoff_client *cli,
+			      k_spinlock_key_t key)
 {
 	bool add_client = false;        /* add client to pending list */
 	bool start = false;             /* trigger a start transition */
 	bool notify = false;            /* do client notification */
-	int rv = validate_args(mgr, cli);
-
-	if (rv < 0) {
-		return rv;
-	}
-
-	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
+	int rv;
 	uint32_t state = mgr->flags & ONOFF_STATE_MASK;
 
 	/* Reject if this would overflow the reference count. */
@@ -470,6 +467,20 @@ out:
 	}
 
 	return rv;
+}
+
+int onoff_request(struct onoff_manager *mgr,
+		  struct onoff_client *cli)
+{
+	int rv = validate_args(mgr, cli);
+
+	if (rv < 0) {
+		return rv;
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
+
+	return request_and_unlock(mgr, cli, key);
 }
 
 int onoff_release(struct onoff_manager *mgr)
@@ -650,3 +661,255 @@ int onoff_sync_finalize(struct onoff_sync_service *srv,
 
 	return rv;
 }
+
+#if CONFIG_ONOFF_DELAYED
+
+static void timeout_handler(struct _timeout *t);
+
+static inline struct onoff_delayed_client *get_delayed_cli(sys_snode_t *node)
+{
+	struct onoff_client *cli =
+			CONTAINER_OF(node, struct onoff_client, node);
+
+	 return CONTAINER_OF(cli, struct onoff_delayed_client, cli);
+}
+
+/**
+ * @brief Convert input timeout to an absolute timeout.
+ *
+ * Input timeout can be relative or absolute. It is reduced by the offset.
+ *
+ * @param timeout output timeout.
+ * @param t input timeout as provided by the user.
+ * @param offset offset given in system ticks.
+ *
+ * @retval true if request is instant.
+ * @retval false if request is in the future.
+ */
+static bool get_abs_time(k_timeout_t *timeout, k_timeout_t t, uint32_t offset)
+{
+	if (K_TIMEOUT_EQ(t, K_NO_WAIT)) {
+		return true;
+	}
+
+	if (Z_TICK_ABS(t.ticks) < 0) {
+		if (t.ticks < offset) {
+			return true;
+		}
+
+		timeout->ticks =
+			Z_TICK_ABS((z_tick_get() + t.ticks - offset));
+	} else {
+		timeout->ticks =
+			Z_TICK_ABS(Z_TICK_ABS(t.ticks) - offset);
+	}
+
+	return false;
+}
+
+static inline sys_snode_t *sortlist_head_peek(sys_slist_t *list)
+{
+	return sys_slist_peek_head(list);
+}
+
+static inline sys_snode_t *sortlist_get(sys_slist_t *list)
+{
+	return sys_slist_get(list);
+}
+
+static inline bool sortlist_remove(sys_slist_t *list, sys_snode_t *node)
+{
+	return sys_slist_find_and_remove(list, node);
+}
+
+/** @brief Compare to absolute tick values as represented in k_timeout_t.
+ *
+ * @param t0 First absolute tick value.
+ * @param t1 Second absolute tick value.
+ *
+ * @retval true if @p t0 is equal or later than @t1
+ * @retval false if @p t1 is later than @p t0
+ */
+static inline bool abs_tick_compare(int64_t t0, int64_t t1)
+{
+	/* Absolute values are stored as negative values. */
+	return (t0 <= t1);
+}
+
+static void sortlist_add(sys_slist_t *list, sys_snode_t *node)
+{
+	struct onoff_delayed_client *newcli = get_delayed_cli(node);
+	struct onoff_delayed_client *cli;
+	struct onoff_delayed_client *prev = NULL;
+	sys_snode_t *n;
+
+	SYS_SLIST_FOR_EACH_NODE(list, n) {
+		cli = get_delayed_cli(n);
+		/* ticks are negative (abs) so inverted comparison */
+		if (abs_tick_compare(cli->timeout.ticks,
+				     newcli->timeout.ticks)) {
+			break;
+		}
+		prev = cli;
+	}
+
+	if (prev == NULL) {
+		sys_slist_prepend(list, node);
+	} else {
+		sys_slist_insert(list, &prev->cli.node, node);
+	}
+}
+
+/**
+ * @brief Reset timer if necessary.
+ *
+ * Function checks if head of future clients list has changed. If so, timeout
+ * is reset.
+ *
+ * @param mgr Manager.
+ * @param head Head value before an action that may have triggered a need for
+ * timer resetting.
+ */
+static void reset_timer(struct onoff_delayed_manager *mgr,
+			sys_snode_t *head, uint32_t noffset)
+{
+	sys_snode_t *new_head = sortlist_head_peek(&mgr->future_clients);
+
+	if (head == new_head) {
+		return;
+	}
+	/* closest request changed. */
+	if (head) {
+		z_abort_timeout(&mgr->timer);
+	}
+
+	if (new_head) {
+		k_timeout_t t = get_delayed_cli(new_head)->timeout;
+
+		if (noffset) {
+			t = Z_TIMEOUT_TICKS(
+				Z_TICK_ABS(Z_TICK_ABS(t.ticks) - noffset));
+		}
+
+		z_add_timeout(&mgr->timer, timeout_handler, t);
+	}
+}
+
+static inline bool is_on_or_to_on(uint32_t flags)
+{
+	return (flags & ONOFF_STATE_ON) == ONOFF_STATE_ON;
+}
+
+static inline uint32_t get_noffset(struct onoff_delayed_manager *mgr)
+{
+	return is_on_or_to_on(mgr->mgr.flags) ? mgr->stop_time : 0;
+}
+
+static void timeout_handler(struct _timeout *t)
+{
+	struct onoff_delayed_client *cli;
+	int rv;
+	struct onoff_delayed_manager *mgr =
+		CONTAINER_OF(t, struct onoff_delayed_manager, timer);
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&mgr->mgr.lock);
+	sys_snode_t *head = sortlist_get(&mgr->future_clients);
+
+	reset_timer(mgr, head, get_noffset(mgr));
+
+	cli = get_delayed_cli(head);
+	rv = request_and_unlock(&mgr->mgr, &cli->cli, key);
+	if (rv < 0) {
+		onoff_client_callback cb =
+		(onoff_client_callback)sys_notify_finalize(&cli->cli.notify,
+								rv);
+
+		if (cb) {
+			cb(&mgr->mgr, &cli->cli, ONOFF_STATE_ERROR, rv);
+		}
+	}
+}
+
+int onoff_delayed_request(struct onoff_delayed_manager *mgr,
+			  struct onoff_delayed_client *cli,
+			  k_timeout_t delay)
+{
+	int rv = validate_args(&mgr->mgr, &cli->cli);
+
+	if (rv < 0) {
+		return rv;
+	}
+
+	/* Convert to exact timeout. If time behind trigger request. */
+	if (get_abs_time(&cli->timeout, delay, mgr->startup_time)) {
+		return onoff_request(&mgr->mgr, &cli->cli);
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&mgr->mgr.lock);
+	sys_snode_t *head = sortlist_head_peek(&mgr->future_clients);
+
+	sortlist_add(&mgr->future_clients, &cli->cli.node);
+	reset_timer(mgr, head, get_noffset(mgr));
+
+	k_spin_unlock(&mgr->mgr.lock, key);
+
+	return rv;
+}
+
+int onoff_delayed_cancel(struct onoff_delayed_manager *mgr,
+			 struct onoff_delayed_client *cli)
+{
+	k_spinlock_key_t key = k_spin_lock(&mgr->mgr.lock);
+	sys_snode_t *head = sortlist_head_peek(&mgr->future_clients);
+
+	if (sortlist_remove(&mgr->future_clients, &cli->cli.node)) {
+		reset_timer(mgr, head, get_noffset(mgr));
+		k_spin_unlock(&mgr->mgr.lock, key);
+		return 0;
+	}
+
+	k_spin_unlock(&mgr->mgr.lock, key);
+
+	return onoff_cancel(&mgr->mgr, &cli->cli);
+}
+
+static void onoff_delayed_monitor(struct onoff_manager *mgr,
+				  struct onoff_monitor *mon,
+				  uint32_t state,
+				  int res)
+{
+	if (state == ONOFF_STATE_TO_ON || state == ONOFF_STATE_TO_OFF) {
+		struct onoff_delayed_manager *dmgr =
+			CONTAINER_OF(mgr, struct onoff_delayed_manager, mgr);
+		k_spinlock_key_t key = k_spin_lock(&mgr->lock);
+		sys_snode_t *head = sortlist_head_peek(&dmgr->future_clients);
+
+		if (head) {
+			uint32_t offset = state == ONOFF_STATE_TO_ON ?
+					  dmgr->stop_time : 0;
+
+			reset_timer(dmgr, NULL, offset);
+		}
+
+		k_spin_unlock(&mgr->lock, key);
+	}
+}
+
+int onoff_delayed_manager_init(struct onoff_delayed_manager *mgr,
+			       const struct onoff_transitions *transitions,
+			       uint32_t startup_time, uint32_t stop_time)
+{
+	int err;
+
+	mgr->startup_time = startup_time;
+	mgr->stop_time = stop_time;
+	mgr->monitor.callback = onoff_delayed_monitor;
+
+	err = onoff_monitor_register(&mgr->mgr, &mgr->monitor);
+	__ASSERT_NO_MSG(err >= 0);
+
+	return onoff_manager_init(&mgr->mgr, transitions);
+}
+
+#endif /* CONFIG_ONOFF_DELAYED */

@@ -72,4 +72,10 @@ config PRINTK_SYNC
 	  interleaving with concurrent usage from another CPU or an
 	  preempting interrupt.
 
+config ONOFF_DELAYED
+	bool "Delayed On-Off Manager"
+	select TIMEOUT_64BIT
+	help
+	  Enable Delayed On-Off Manager.
+
 endmenu

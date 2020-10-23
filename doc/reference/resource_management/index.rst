@@ -84,5 +84,23 @@ state.
    :c:type:`onoff_manager`, with only a small reduction in functionality
    (primarily no support for the monitor API).
 
+.. _resource_mgmt_onoff_delayed:
+
+Delayed On-Off Manager
+**********************
+
+A delayed on-off manager is an extension to :ref:`resource_mgmt_onoff` which
+allows scheduled requests to the service. Manager takes the best effort to
+ensure that service will be in the on state at requested absolute or relative
+time. It takes into account service transision times. Start time should be a
+sum of maximum serivce startup time and maximum interrupt latency of the system
+to ensure that service is ready on time.
+
+Requests to a delayed on-off manager can be used together with direct requests
+to the underlaying on-off manager.
+
 .. doxygengroup:: resource_mgmt_onoff_apis
+   :project: Zephyr
+
+.. doxygengroup:: resource_mgmt_onoff_delayed_apis
    :project: Zephyr
