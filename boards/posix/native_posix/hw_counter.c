@@ -83,6 +83,14 @@ void hw_counter_stop(void)
 }
 
 /**
+ * Resets the counter value.
+ */
+void hw_counter_reset(void)
+{
+	counter_value = 0;
+}
+
+/**
  * Returns the current counter value.
  */
 uint64_t hw_counter_get_value(void)

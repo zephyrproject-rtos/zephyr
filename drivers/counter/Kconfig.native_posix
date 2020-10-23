@@ -10,3 +10,11 @@ config COUNTER_NATIVE_POSIX_FREQUENCY
     int "native_posix counter frequency in Hz"
     default 1000
     depends on COUNTER_NATIVE_POSIX
+
+config COUNTER_NATIVE_POSIX_CHANNELS_NUMBER
+    int "native_posix counter channels number"
+    range 1 16
+    default 4
+    depends on COUNTER_NATIVE_POSIX
+    help
+      Set the number of available alarm channels.

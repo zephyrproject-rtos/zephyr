@@ -11,33 +11,81 @@
 
 #define DT_COUNTER_LABEL counter0
 #define DRIVER_CONFIG_INFO_FLAGS (COUNTER_CONFIG_INFO_COUNT_UP)
-#define DRIVER_CONFIG_INFO_CHANNELS 1
+#define DRIVER_CONFIG_INFO_CHANNELS CONFIG_COUNTER_NATIVE_POSIX_CHANNELS_NUMBER
 #define COUNTER_NATIVE_POSIX_IRQ_FLAGS (0)
 #define COUNTER_NATIVE_POSIX_IRQ_PRIORITY (2)
 
 #define COUNTER_PERIOD (USEC_PER_SEC / CONFIG_COUNTER_NATIVE_POSIX_FREQUENCY)
 #define TOP_VALUE (UINT_MAX)
 
-static struct counter_alarm_cfg pending_alarm;
-static bool is_alarm_pending;
+struct counter_alarm {
+	struct counter_alarm_cfg config;
+	bool active;
+};
+
+static struct counter_top_cfg top_cfg;
+static struct counter_alarm alarms[DRIVER_CONFIG_INFO_CHANNELS];
 static const struct device *device;
+
+static bool any_alarm_active(void)
+{
+	for (int ch_id = 0; ch_id < DRIVER_CONFIG_INFO_CHANNELS; ch_id++) {
+		if (alarms[ch_id].active) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static void schedule_next_irq(void)
+{
+	uint32_t next_value = top_cfg.ticks;
+	uint32_t current_value = hw_counter_get_value();
+
+	for (int ch_id = 0; ch_id < DRIVER_CONFIG_INFO_CHANNELS; ch_id++) {
+		if (alarms[ch_id].active &&
+		    alarms[ch_id].config.ticks >= current_value &&
+		    alarms[ch_id].config.ticks < next_value) {
+			next_value = alarms[ch_id].config.ticks;
+		}
+	}
+
+	hw_counter_set_target(next_value);
+	irq_enable(COUNTER_EVENT_IRQ);
+}
 
 static void counter_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 	uint32_t current_value = hw_counter_get_value();
 
-	if (is_alarm_pending) {
-		is_alarm_pending = false;
-		pending_alarm.callback(device, 0, current_value,
-				       pending_alarm.user_data);
+	for (int ch_id = 0; ch_id < DRIVER_CONFIG_INFO_CHANNELS; ch_id++) {
+		if (alarms[ch_id].active &&
+		    alarms[ch_id].config.ticks >= current_value) {
+			alarms[ch_id].active = false;
+			alarms[ch_id].config.callback(
+				device, 0, current_value,
+				alarms[ch_id].config.user_data);
+		}
 	}
+
+	if (current_value == top_cfg.ticks) {
+		if (top_cfg.callback) {
+			top_cfg.callback(device, top_cfg.user_data);
+		}
+		hw_counter_reset();
+	}
+
+	schedule_next_irq();
 }
 
 static int ctr_init(const struct device *dev)
 {
 	device = dev;
-	is_alarm_pending = false;
+	for (int ch_id = 0; ch_id < DRIVER_CONFIG_INFO_CHANNELS; ch_id++) {
+		alarms[ch_id].active = false;
+	}
+	top_cfg.ticks = TOP_VALUE;
 
 	IRQ_CONNECT(COUNTER_EVENT_IRQ, COUNTER_NATIVE_POSIX_IRQ_PRIORITY,
 		    counter_isr, NULL, COUNTER_NATIVE_POSIX_IRQ_FLAGS);
@@ -52,6 +100,7 @@ static int ctr_start(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	hw_counter_start();
+	schedule_next_irq();
 	return 0;
 }
 
@@ -81,20 +130,34 @@ static int ctr_set_top_value(const struct device *dev,
 			     const struct counter_top_cfg *cfg)
 {
 	ARG_UNUSED(dev);
-	ARG_UNUSED(cfg);
 
-	posix_print_warning("%s not supported\n", __func__);
-	return -ENOTSUP;
+	if (any_alarm_active()) {
+		return -EBUSY;
+	}
+
+	if ((cfg->flags & COUNTER_TOP_CFG_DONT_RESET) &&
+	    (cfg->ticks < hw_counter_get_value())) {
+		return -ETIME;
+	}
+
+	if (cfg->ticks < hw_counter_get_value()) {
+		hw_counter_reset();
+	}
+
+	top_cfg = *cfg;
+	schedule_next_irq();
+
+	return 0;
 }
 
 static uint32_t ctr_get_top_value(const struct device *dev)
 {
-	return TOP_VALUE;
+	return top_cfg.ticks;
 }
 
 static uint32_t ctr_get_max_relative_alarm(const struct device *dev)
 {
-	return TOP_VALUE;
+	return top_cfg.ticks;
 }
 
 static int ctr_set_alarm(const struct device *dev, uint8_t chan_id,
@@ -107,17 +170,31 @@ static int ctr_set_alarm(const struct device *dev, uint8_t chan_id,
 		return -ENOTSUP;
 	}
 
-	pending_alarm = *alarm_cfg;
-	is_alarm_pending = true;
-
-	if (!(alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE)) {
-		pending_alarm.ticks =
-			hw_counter_get_value() + pending_alarm.ticks;
+	if (alarms[chan_id].active) {
+		posix_print_warning("channel %u is busy\n", chan_id);
+		return -EBUSY;
 	}
 
-	hw_counter_set_target(pending_alarm.ticks);
-	irq_enable(COUNTER_EVENT_IRQ);
+	if (alarm_cfg->ticks > top_cfg.ticks) {
+		posix_print_warning(
+			"channel %u alarm value exceeds top value (%d)\n",
+			chan_id, top_cfg.ticks);
+		return -EINVAL;
+	}
 
+	alarms[chan_id].config = *alarm_cfg;
+	alarms[chan_id].active = true;
+
+	if (!(alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE)) {
+		alarms[chan_id].config.ticks =
+			hw_counter_get_value() + alarm_cfg->ticks;
+		if (alarms[chan_id].config.ticks > top_cfg.ticks) {
+			alarms[chan_id].config.ticks =
+				alarms[chan_id].config.ticks - top_cfg.ticks;
+		}
+	}
+
+	schedule_next_irq();
 	return 0;
 }
 
@@ -130,7 +207,8 @@ static int ctr_cancel_alarm(const struct device *dev, uint8_t chan_id)
 		return -ENOTSUP;
 	}
 
-	is_alarm_pending = false;
+	alarms[chan_id].active = false;
+	schedule_next_irq();
 
 	return 0;
 }
