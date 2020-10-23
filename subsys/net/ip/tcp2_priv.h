@@ -189,7 +189,7 @@ struct tcp { /* TCP connection */
 		net_tcp_accept_cb_t accept_cb;
 		struct tcp *accepted_conn;
 	};
-	struct k_mutex lock;
+	struct k_mutex *lock;
 	struct k_sem connect_sem; /* semaphore for blocking connect */
 	struct k_fifo recv_data;  /* temp queue before passing data to app */
 	struct tcp_options recv_options;
