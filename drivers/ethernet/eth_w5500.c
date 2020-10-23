@@ -161,10 +161,13 @@ static int w5500_command(const struct device *dev, uint8_t cmd)
 
 	w5500_spi_write(dev, W5500_S0_CR, &cmd, 1);
 	do {
-		w5500_spi_read(dev, W5500_S0_CR, &reg, 1);
-		if (end - z_tick_get() <= 0) {
+		int64_t remaining = end - z_tick_get();
+
+		if (remaining <= 0) {
 			return -EIO;
 		}
+
+		w5500_spi_read(dev, W5500_S0_CR, &reg, 1);
 
 		k_msleep(1);
 	} while (reg != 0);
