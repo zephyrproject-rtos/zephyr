@@ -694,6 +694,12 @@ static void *page_pool_get(void)
 	return ret;
 }
 
+/* Debugging function to show how many pages are free in the pool */
+static inline unsigned int pages_free(void)
+{
+	return (page_pos - page_pool) / CONFIG_MMU_PAGE_SIZE;
+}
+
 /* Reset permissions on a PTE to original state when the mapping was made */
 static inline pentry_t reset_pte(pentry_t old_val)
 {
@@ -1011,6 +1017,10 @@ static int range_map(void *virt, uintptr_t phys, size_t size,
 #ifdef CONFIG_USERSPACE
 out_unlock:
 #endif /* CONFIG_USERSPACE */
+	if (ret == 0 && (options & OPTION_ALLOC) != 0) {
+		LOG_DBG("page pool pages free: %u / %u", pages_free(),
+			CONFIG_X86_MMU_PAGE_POOL_PAGES);
+	}
 	k_spin_unlock(&x86_mmu_lock, key);
 
 #ifdef CONFIG_SMP
@@ -1311,6 +1321,9 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	if (ret == 0) {
 		sys_slist_append(&x86_domain_list, &domain->arch.node);
 	}
+
+	LOG_DBG("page pool pages free: %u / %u\n", pages_free(),
+		CONFIG_X86_MMU_PAGE_POOL_PAGES);
 	k_spin_unlock(&x86_mmu_lock, key);
 
 	return ret;
