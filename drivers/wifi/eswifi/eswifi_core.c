@@ -637,7 +637,7 @@ static int eswifi_init(const struct device *dev)
 	eswifi->role = ESWIFI_ROLE_CLIENT;
 	k_mutex_init(&eswifi->mutex);
 
-	eswifi->bus = &eswifi_bus_ops_spi;
+	eswifi->bus = eswifi_get_bus();
 	eswifi->bus->init(eswifi);
 
 	eswifi->resetn.dev = device_get_binding(
