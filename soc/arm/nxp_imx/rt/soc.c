@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017,2018, NXP
+ * Copyright (c) 2017-2020 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,7 +50,10 @@ const clock_usb_pll_config_t usb1PllConfig = {
 #ifdef CONFIG_INIT_ENET_PLL
 /* ENET PLL configuration for RUN mode */
 const clock_enet_pll_config_t ethPllConfig = {
-#if defined(CONFIG_SOC_MIMXRT1021) || defined(CONFIG_SOC_MIMXRT1015) || defined(CONFIG_SOC_MIMXRT1011)
+#if defined(CONFIG_SOC_MIMXRT1011) || \
+	defined(CONFIG_SOC_MIMXRT1015) || \
+	defined(CONFIG_SOC_MIMXRT1021) || \
+	defined(CONFIG_SOC_MIMXRT1024)
 	.enableClkOutput500M = true,
 #endif
 #ifdef CONFIG_ETH_MCUX
