@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _STM32F7_SOC_H_
-#define _STM32F7_SOC_H_
+#ifndef _STM32H7_SOC_H_
+#define _STM32H7_SOC_H_
 
 #include <sys/util.h>
 
