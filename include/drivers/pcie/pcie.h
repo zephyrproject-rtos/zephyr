@@ -136,6 +136,30 @@ extern unsigned int pcie_get_irq(pcie_bdf_t bdf);
  */
 extern void pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq);
 
+/**
+ * @brief Find a PCI(e) capability in an endpoint's configuration space.
+ *
+ * @param bdf the PCI endpoint to examine
+ * @param cap_id the capability ID of interest
+ * @return the index of the configuration word, or 0 if no capability.
+ */
+extern uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id);
+
+/*
+ * Configuration word 13 contains the head of the capabilities list.
+ */
+
+#define PCIE_CONF_CAPPTR	13U	/* capabilities pointer */
+#define PCIE_CONF_CAPPTR_FIRST(w)	(((w) >> 2) & 0x3FU)
+
+/*
+ * The first word of every capability contains a capability identifier,
+ * and a link to the next capability (or 0) in configuration space.
+ */
+
+#define PCIE_CONF_CAP_ID(w)		((w) & 0xFFU)
+#define PCIE_CONF_CAP_NEXT(w)		(((w) >> 10) & 0x3FU)
+
 /*
  * Configuration word 0 aligns directly with pcie_id_t.
  */
