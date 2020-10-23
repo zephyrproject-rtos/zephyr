@@ -72,6 +72,8 @@ struct i2s_stm32_cfg {
 	SPI_TypeDef *i2s;
 	struct stm32_pclken pclken;
 	uint32_t i2s_clk_sel;
+	const struct soc_gpio_pinctrl *pinctrl_list;
+	size_t pinctrl_list_size;
 	void (*irq_config)(const struct device *dev);
 };
 
