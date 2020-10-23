@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) 2020, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt1024.dtsi>
+
+/ {
+	model = "NXP MIMXRT1024-EVK board";
+	compatible = "nxp,mimxrt1024";
+
+	aliases {
+		led0 = &green_led;
+		sw0 = &user_button;
+	};
+
+	chosen {
+		zephyr,sram = &sdram0;
+		zephyr,dtcm = &dtcm;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+	};
+
+	sdram0: memory@80000000 {
+		/* ISSI IS42S16160J-6TLI */
+		device_type = "memory";
+		reg = <0x80000000 DT_SIZE_M(32)>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led-1 {
+			gpios = <&gpio1 24 GPIO_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button-1 {
+			label = "User SW4";
+			gpios = <&gpio5 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+};
