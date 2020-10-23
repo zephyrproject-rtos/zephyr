@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2020, Linaro
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_rt.dtsi>
+
+&sysclk {
+	clock-frequency = <500000000>;
+};
+
+/* i.MX rt1024 default FlexRAM partition:
+ * ITCM: 64KB
+ * DTCM: 64KB
+ * OCRAM: 128KB
+ */
+&itcm {
+	reg = <0x00000000 DT_SIZE_K(64)>;
+};
+
+&dtcm {
+	reg = <0x20000000 DT_SIZE_K(64)>;
+};
+
+&ocram {
+	reg = <0x20200000 DT_SIZE_K(128)>;
+};
+
+&flexspi {
+	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(4)>;
+	is25wp064: is25wp064@0 {
+		compatible = "issi,is25wp064", "jedec,spi-nor";
+		size = <67108864>;
+		label = "IS25WP064";
+		reg = <0>;
+		spi-max-frequency = <133000000>;
+		status = "okay";
+		jedec-id = [9d 70 17];
+	};
+};
