@@ -29,7 +29,7 @@
 /* prepare the memory partition structures  */
 FOR_EACH(K_APPMEM_PARTITION_DEFINE, (;), user_part, red_part, enc_part, blk_part, ct_part);
 /* prepare the memory domain structures  */
-struct k_mem_domain pt_domain, enc_domain, ct_domain;
+struct k_mem_domain pt_domain, enc_domain;
 /* each variable starts with a name defined in main.h
  * the names are symbolic for the memory partitions
  * purpose.
@@ -99,7 +99,6 @@ _app_ct_d char ctMSG[] = "CT!\n";
 void main(void)
 {
 	struct k_mem_partition *enc_parts[] = {&enc_part, &red_part, &blk_part};
-	struct k_mem_partition *ct_parts[] = {&ct_part, &blk_part};
 	struct k_mem_partition *pt_parts[] = {&user_part, &red_part};
 	k_tid_t tPT, tENC, tCT;
 
@@ -147,9 +146,10 @@ void main(void)
 			K_FOREVER);
 	k_thread_access_grant(tCT, &allforone);
 	printk("CT Thread Created %p\n", tCT);
-	k_mem_domain_init(&ct_domain, 2, ct_parts);
-	k_mem_domain_add_thread(&ct_domain, tCT);
-	printk("ct_domain Created\n");
+	/* Re-using the default memory domain for CT */
+	k_mem_domain_add_partition(&k_mem_domain_default, &ct_part);
+	k_mem_domain_add_partition(&k_mem_domain_default, &blk_part);
+	printk("ct partitions installed\n");
 
 	k_thread_start(&enc_thread);
 	/* need to start all three threads.  let enc go first to perform init step */
