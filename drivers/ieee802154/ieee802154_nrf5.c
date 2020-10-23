@@ -173,9 +173,14 @@ drop:
 
 static enum ieee802154_hw_caps nrf5_get_capabilities(const struct device *dev)
 {
-	return IEEE802154_HW_FCS | IEEE802154_HW_FILTER |
-	       IEEE802154_HW_CSMA | IEEE802154_HW_2_4_GHZ |
-	       IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_ENERGY_SCAN |
+	return IEEE802154_HW_FCS |
+	       IEEE802154_HW_FILTER |
+#if !defined(CONFIG_NRF_802154_SL_OPENSOURCE)
+	       IEEE802154_HW_CSMA |
+#endif
+	       IEEE802154_HW_2_4_GHZ |
+	       IEEE802154_HW_TX_RX_ACK |
+	       IEEE802154_HW_ENERGY_SCAN |
 	       IEEE802154_HW_SLEEP_TO_TX;
 }
 
