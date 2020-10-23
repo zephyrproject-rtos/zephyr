@@ -90,3 +90,11 @@
 &rng {
 	status = "okay";
 };
+
+&spi1 {
+	status = "okay";
+};
+
+&sdmmc1 {
+	status = "okay";
+};
