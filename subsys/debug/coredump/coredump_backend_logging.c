@@ -86,8 +86,46 @@ static void coredump_logging_backend_buffer_output(uint8_t *buf, size_t buflen)
 	}
 }
 
+static int coredump_logging_backend_query(enum coredump_query_id query_id,
+					  void *arg)
+{
+	int ret;
+
+	switch (query_id) {
+	case COREDUMP_QUERY_GET_ERROR:
+		ret = error;
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	return ret;
+}
+
+static int coredump_logging_backend_cmd(enum coredump_cmd_id cmd_id,
+					void *arg)
+{
+	int ret;
+
+	switch (cmd_id) {
+	case COREDUMP_CMD_CLEAR_ERROR:
+		ret = 0;
+		error = 0;
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	return ret;
+}
+
+
 struct z_coredump_backend_api z_coredump_backend_logging = {
 	.start = coredump_logging_backend_start,
 	.end = coredump_logging_backend_end,
 	.buffer_output = coredump_logging_backend_buffer_output,
+	.query = coredump_logging_backend_query,
+	.cmd = coredump_logging_backend_cmd,
 };

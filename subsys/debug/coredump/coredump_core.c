@@ -158,3 +158,29 @@ void z_coredump_memory_dump(uintptr_t start_addr, uintptr_t end_addr)
 
 	z_coredump_buffer_output((uint8_t *)start_addr, len);
 }
+
+int coredump_query(enum coredump_query_id query_id, void *arg)
+{
+	int ret;
+
+	if (backend_api->query == NULL) {
+		ret = -ENOTSUP;
+	} else {
+		ret = backend_api->query(query_id, arg);
+	}
+
+	return ret;
+}
+
+int coredump_cmd(enum coredump_cmd_id cmd_id, void *arg)
+{
+	int ret;
+
+	if (backend_api->cmd == NULL) {
+		ret = -ENOTSUP;
+	} else {
+		ret = backend_api->cmd(cmd_id, arg);
+	}
+
+	return ret;
+}

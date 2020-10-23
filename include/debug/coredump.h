@@ -7,6 +7,28 @@
 #ifndef ZEPHYR_INCLUDE_DEBUG_COREDUMP_H_
 #define ZEPHYR_INCLUDE_DEBUG_COREDUMP_H_
 
+/* Query ID */
+enum coredump_query_id {
+	/*
+	 * Returns error code from backend.
+	 */
+	COREDUMP_QUERY_GET_ERROR,
+
+	COREDUMP_QUERY_MAX
+};
+
+/* Command ID */
+enum coredump_cmd_id {
+	/*
+	 * Clear error code from backend.
+	 *
+	 * Returns 0 if successful, failed otherwise.
+	 */
+	COREDUMP_CMD_CLEAR_ERROR,
+
+	COREDUMP_CMD_MAX
+};
+
 #ifdef CONFIG_DEBUG_COREDUMP
 
 #include <toolchain.h>
@@ -80,6 +102,9 @@ void z_coredump(unsigned int reason, const z_arch_esf_t *esf,
 void z_coredump_memory_dump(uintptr_t start_addr, uintptr_t end_addr);
 void z_coredump_buffer_output(uint8_t *buf, size_t buflen);
 
+int coredump_query(enum coredump_query_id query_id, void *arg);
+int coredump_cmd(enum coredump_cmd_id cmd_id, void *arg);
+
 #else
 
 void z_coredump(unsigned int reason, const z_arch_esf_t *esf,
@@ -93,6 +118,16 @@ void z_coredump_memory_dump(uintptr_t start_addr, uintptr_t end_addr)
 
 void z_coredump_buffer_output(uint8_t *buf, size_t buflen)
 {
+}
+
+int coredump_query(enum coredump_query_id query_id, void *arg)
+{
+	return -ENOTSUP;
+}
+
+int coredump_cmd(enum coredump_cmd_id query_id, void *arg)
+{
+	return -ENOTSUP;
 }
 
 #endif /* CONFIG_DEBUG_COREDUMP */
@@ -134,6 +169,30 @@ void z_coredump_buffer_output(uint8_t *buf, size_t buflen)
  *
  * @param buf Buffer to be send to coredump output
  * @param buflen Buffer length
+ */
+
+/**
+ * @fn int coredump_query(enum coredump_query_id query_id, void *arg);
+ * @brief Perform query on coredump subsystem.
+ *
+ * Query the coredump subsystem for information, for example, if there is
+ * an error.
+ *
+ * @param[in] query_id Query ID
+ * @param[in,out] arg Pointer to argument for exchanging information
+ * @return Depends on the query
+ */
+
+/**
+ * @fn int coredump_cmd(enum coredump_cmd_id cmd_id, void *arg);
+ * @brief Perform command on coredump subsystem.
+ *
+ * Perform certain on coredump subsystem, for example, output the stored
+ * coredump via logging.
+ *
+ * @param[in] cmd_id Command ID
+ * @param[in,out] arg Pointer to argument for exchanging information
+ * @return Depends on the command
  */
 
 /**
