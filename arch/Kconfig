@@ -214,8 +214,10 @@ config HW_STACK_PROTECTION
 config USERSPACE
 	bool "User mode threads"
 	depends on ARCH_HAS_USERSPACE
+	depends on ARCH_HAS_THREAD_LOCAL_STORAGE
 	depends on RUNTIME_ERROR_CHECKS
 	select SRAM_REGION_PERMISSIONS if MMU
+	select THREAD_LOCAL_STORAGE if ERRNO
 	help
 	  When enabled, threads may be created or dropped down to user mode,
 	  which has significantly restricted permissions and must interact

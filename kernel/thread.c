@@ -495,14 +495,6 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	delta += arch_tls_stack_setup(new_thread, (stack_ptr - delta));
 #endif /* CONFIG_THREAD_LOCAL_STORAGE */
-#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
-	size_t tls_size = sizeof(struct _thread_userspace_local_data);
-
-	/* reserve space on highest memory of stack buffer for local data */
-	delta += tls_size;
-	new_thread->userspace_local_data =
-		(struct _thread_userspace_local_data *)(stack_ptr - delta);
-#endif
 #if CONFIG_STACK_POINTER_RANDOM
 	delta += random_offset(stack_buf_size);
 #endif
@@ -835,10 +827,6 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 #ifdef CONFIG_USERSPACE
 	__ASSERT(z_stack_is_user_capable(_current->stack_obj),
 		 "dropping to user mode with kernel-only stack object");
-#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
-	memset(_current->userspace_local_data, 0,
-	       sizeof(struct _thread_userspace_local_data));
-#endif
 	arch_user_mode_enter(entry, p1, p2, p3);
 #else
 	/* XXX In this case we do not reset the stack */

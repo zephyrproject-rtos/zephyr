@@ -13,36 +13,13 @@
 extern "C" {
 #endif
 
-/* NOTE: located here to avoid include dependency loops between errno.h
- * and kernel.h
- */
-
-#ifdef CONFIG_ERRNO_IN_TLS
-extern __thread int z_errno_var;
-
-static inline int *z_errno(void)
-{
-	return &z_errno_var;
-}
-#else
-/**
- * return a pointer to a memory location containing errno
- *
- * errno is thread-specific, and can't just be a global. This pointer
- * is guaranteed to be read/writable from user mode.
- *
- * @return Memory location of errno data for current thread
- */
-__syscall int *z_errno(void);
-
-#endif /* CONFIG_ERRNO_IN_TLS */
+/* XXX: Make this inline after sorting out dependency loops */
+#ifdef CONFIG_ERRNO
+int *z_errno(void);
+#endif
 
 #ifdef __cplusplus
 }
 #endif
-
-#ifndef CONFIG_ERRNO_IN_TLS
-#include <syscalls/errno_private.h>
-#endif /* CONFIG_ERRNO_IN_TLS */
 
 #endif /* ZEPHYR_INCLUDE_SYS_ERRNO_PRIVATE_H_ */

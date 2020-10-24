@@ -886,14 +886,27 @@ void test_syscall_context(void)
 	check_syscall_context();
 }
 
+__thread uint32_t secret_data = 0xDEADC0DE;
+__thread uint32_t secret_bss;
+
 static void tls_leakage_user_part(void *p1, void *p2, void *p3)
 {
-	char *tls_area = p1;
+	struct _thread_stack_info si;
+	uintptr_t *pos;
 
-	for (int i = 0; i < sizeof(struct _thread_userspace_local_data); i++) {
-		zassert_false(tls_area[i] == 0xff,
-			      "TLS data leakage to user mode");
+	si.start = (uintptr_t)p1;
+	si.size = (size_t)p2;
+	si.delta = (size_t)p3;
+
+	zassert_equal(secret_data, 0xDEADC0DE,
+		      "TLS data not in expected state");
+	zassert_equal(secret_bss, 0, "TLS bss not in expected state");
+
+	for (pos = (uintptr_t *)(si.start + si.size - si.delta);
+	     pos < (uintptr_t *)(si.start + si.size); pos++) {
+		printk("TLS %p: 0x%lX\n", pos, *pos);
 	}
+
 }
 
 void test_tls_leakage(void)
@@ -904,12 +917,13 @@ void test_tls_leakage(void)
 	 * - That dropping to user mode doesn't allow any TLS data set in
 	 * supervisor mode to be leaked
 	 */
-
-	memset(_current->userspace_local_data, 0xff,
-	       sizeof(struct _thread_userspace_local_data));
+	secret_data = 0xF0CCAC1A;
+	secret_bss = 0xCAFEBABE;
 
 	k_thread_user_mode_enter(tls_leakage_user_part,
-				 _current->userspace_local_data, NULL, NULL);
+				 (void *)_current->stack_info.start,
+				 (void *)_current->stack_info.size,
+				 (void *)_current->stack_info.delta);
 }
 
 void tls_entry(void *p1, void *p2, void *p3)
@@ -923,7 +937,7 @@ void test_tls_pointer(void)
 			NULL, NULL, NULL, 1, K_USER, K_FOREVER);
 
 	printk("tls pointer for thread %p: %p\n",
-	       &test_thread, (void *)test_thread.userspace_local_data);
+	       &test_thread, (void *)test_thread.tls);
 
 	printk("stack buffer reported bounds: [%p, %p)\n",
 	       (void *)test_thread.stack_info.start,
@@ -933,9 +947,9 @@ void test_tls_pointer(void)
 	printk("stack object bounds: [%p, %p)\n",
 	       test_stack, test_stack + sizeof(test_stack));
 
-	uintptr_t tls_start = (uintptr_t)test_thread.userspace_local_data;
-	uintptr_t tls_end = tls_start +
-		sizeof(struct _thread_userspace_local_data);
+	uintptr_t tls_start = (uintptr_t)test_thread.tls;
+	uintptr_t tls_end = (test_thread.stack_info.start +
+			     test_thread.stack_info.size);
 
 	if ((tls_start < (uintptr_t)test_stack) ||
 	    (tls_end > (uintptr_t)test_stack + sizeof(test_stack))) {

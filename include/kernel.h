@@ -264,14 +264,6 @@ struct _mem_domain_info {
 
 #endif /* CONFIG_USERSPACE */
 
-#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
-struct _thread_userspace_local_data {
-#if defined(CONFIG_ERRNO) && !defined(CONFIG_ERRNO_IN_TLS)
-	int errno_var;
-#endif
-};
-#endif
-
 /**
  * @ingroup thread_apis
  * Thread Structure
@@ -327,15 +319,9 @@ struct k_thread {
 	void *custom_data;
 #endif
 
-#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
-	struct _thread_userspace_local_data *userspace_local_data;
-#endif
-
 #if defined(CONFIG_ERRNO) && !defined(CONFIG_ERRNO_IN_TLS)
-#ifndef CONFIG_USERSPACE
-	/** per-thread errno variable */
+	/** per-thread errno variable, for systems without TLS support */
 	int errno_var;
-#endif
 #endif
 
 #if defined(CONFIG_THREAD_STACK_INFO)
