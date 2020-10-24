@@ -1088,16 +1088,14 @@ void ll_rx_release(void *node_rx)
 
 void ll_rx_put(memq_link_t *link, void *rx)
 {
+#if defined(CONFIG_BT_CONN)
 	struct node_rx_hdr *rx_hdr = rx;
 
 	/* Serialize Tx ack with Rx enqueue by storing reference to
 	 * last element index in Tx ack FIFO.
 	 */
-#if defined(CONFIG_BT_CONN)
 	rx_hdr->ack_last = mfifo_tx_ack.l;
-#else /* !CONFIG_BT_CONN */
-	ARG_UNUSED(rx_hdr);
-#endif /* !CONFIG_BT_CONN */
+#endif /* CONFIG_BT_CONN */
 
 	/* Enqueue the Rx object */
 	memq_enqueue(link, rx, &memq_ll_rx.tail);
@@ -1280,16 +1278,14 @@ void *ull_pdu_rx_alloc(void)
 
 void ull_rx_put(memq_link_t *link, void *rx)
 {
+#if defined(CONFIG_BT_CONN)
 	struct node_rx_hdr *rx_hdr = rx;
 
 	/* Serialize Tx ack with Rx enqueue by storing reference to
 	 * last element index in Tx ack FIFO.
 	 */
-#if defined(CONFIG_BT_CONN)
 	rx_hdr->ack_last = ull_conn_ack_last_idx_get();
-#else
-	ARG_UNUSED(rx_hdr);
-#endif
+#endif /* CONFIG_BT_CONN */
 
 	/* Enqueue the Rx object */
 	memq_enqueue(link, rx, &memq_ull_rx.tail);
