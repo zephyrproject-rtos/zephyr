@@ -558,6 +558,19 @@ __syscall k_tid_t k_thread_create(struct k_thread *new_thread,
 /**
  * @brief Drop a thread's privileges permanently to user mode
  *
+ * This allows a supervisor thread to be re-used as a user thread.
+ * This function does not return, but control will transfer to the provided
+ * entry point as if this was a new user thread.
+ *
+ * The implementation ensures that the stack buffer contents are erased.
+ * Any thread-local storage will be reverted to a pristine state.
+ *
+ * Memory domain membership, resource pool assignment, kernel object
+ * permissions, priority, and thread options are preserved.
+ *
+ * A common use of this function is to re-use the main thread as a user thread
+ * once all supervisor mode-only tasks have been completed.
+ *
  * @param entry Function to start executing from
  * @param p1 1st entry point parameter
  * @param p2 2nd entry point parameter
