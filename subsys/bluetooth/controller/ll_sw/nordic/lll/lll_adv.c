@@ -499,7 +499,6 @@ isr_rx_do_close:
 
 static void isr_done(void *param)
 {
-	struct node_rx_hdr *node_rx;
 	struct lll_adv *lll;
 
 	/* Clear radio status and events */
@@ -595,7 +594,8 @@ static void isr_done(void *param)
 	}
 
 #if defined(CONFIG_BT_CTLR_ADV_INDICATION)
-	node_rx = ull_pdu_rx_alloc_peek(3);
+	struct node_rx_hdr *node_rx = ull_pdu_rx_alloc_peek(3);
+
 	if (node_rx) {
 		ull_pdu_rx_alloc();
 
@@ -605,9 +605,7 @@ static void isr_done(void *param)
 		ull_rx_put(node_rx->link, node_rx);
 		ull_rx_sched();
 	}
-#else /* !CONFIG_BT_CTLR_ADV_INDICATION */
-	ARG_UNUSED(node_rx);
-#endif /* !CONFIG_BT_CTLR_ADV_INDICATION */
+#endif /* CONFIG_BT_CTLR_ADV_INDICATION */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	struct event_done_extra *extra;

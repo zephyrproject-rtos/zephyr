@@ -545,20 +545,16 @@ static void isr_common_done(void *param)
 
 static void isr_done(void *param)
 {
-	uint32_t start_us;
-
 	isr_common_done(param);
 
 #if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
-	start_us = radio_tmr_start_now(0);
+	uint32_t start_us = radio_tmr_start_now(0);
 
 	radio_gpio_lna_setup();
 	radio_gpio_pa_lna_enable(start_us +
 				 radio_rx_ready_delay_get(0, 0) -
 				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
 #else /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
-	ARG_UNUSED(start_us);
-
 	radio_rx_enable();
 #endif /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
@@ -641,7 +637,6 @@ static void isr_done_cleanup(void *param)
 
 static void isr_cleanup(void *param)
 {
-	struct node_rx_hdr *node_rx;
 	struct lll_scan *lll;
 
 	radio_filter_disable();
@@ -659,7 +654,8 @@ static void isr_cleanup(void *param)
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
 #if defined(CONFIG_BT_CTLR_SCAN_INDICATION)
-	node_rx = ull_pdu_rx_alloc_peek(3);
+	struct node_rx_hdr *node_rx = ull_pdu_rx_alloc_peek(3);
+
 	if (node_rx) {
 		ull_pdu_rx_alloc();
 
@@ -669,9 +665,7 @@ static void isr_cleanup(void *param)
 		ull_rx_put(node_rx->link, node_rx);
 		ull_rx_sched();
 	}
-#else /* !CONFIG_BT_CTLR_SCAN_INDICATION */
-	ARG_UNUSED(node_rx);
-#endif /* !CONFIG_BT_CTLR_SCAN_INDICATION */
+#endif /* CONFIG_BT_CTLR_SCAN_INDICATION */
 
 	lll_isr_cleanup(param);
 }
