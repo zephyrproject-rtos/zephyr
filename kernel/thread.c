@@ -493,7 +493,8 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 	*((uint32_t *)stack_buf_start) = STACK_SENTINEL;
 #endif /* CONFIG_STACK_SENTINEL */
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
-	delta += arch_tls_stack_setup(new_thread, (stack_ptr - delta));
+	/* TLS is always last within the stack buffer */
+	delta += arch_tls_stack_setup(new_thread, stack_ptr);
 #endif /* CONFIG_THREAD_LOCAL_STORAGE */
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 	size_t tls_size = sizeof(struct _thread_userspace_local_data);
@@ -838,6 +839,11 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 	memset(_current->userspace_local_data, 0,
 	       sizeof(struct _thread_userspace_local_data));
+#endif
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	arch_tls_stack_setup(_current,
+			     (char *)(_current->stack_info.start +
+				      _current->stack_info.size));
 #endif
 	arch_user_mode_enter(entry, p1, p2, p3);
 #else
