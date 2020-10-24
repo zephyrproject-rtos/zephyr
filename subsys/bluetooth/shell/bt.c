@@ -2883,8 +2883,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	SHELL_CMD(mesh_adv, NULL, "<on, off>", cmd_mesh_adv),
 #endif /* CONFIG_BT_HCI_MESH_EXT */
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
+
 #if defined(CONFIG_BT_LL_SW_SPLIT)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_BROADCASTER)
 	SHELL_CMD_ARG(advx, NULL,
 		      "<on hdcd ldcd off> [coded] [anon] [txp] [ad]",
@@ -2903,6 +2904,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(test_end, NULL, HELP_NONE, cmd_test_end, 1, 0),
 #endif /* CONFIG_BT_CTLR_DTM */
 #endif /* CONFIG_BT_LL_SW_SPLIT */
+
 	SHELL_SUBCMD_SET_END
 );
 

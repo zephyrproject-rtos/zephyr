@@ -19,11 +19,8 @@ properties:
     uart_rx:
         type: phandle
         required: true
-        description: mapping item between wui and uart rx START signal
         description: |
             Mapping table between Wake-Up Input (WUI) and uart rx START signal.
 
             For example the WUI mapping on NPCX7 UART1 would be
                uart_rx = <&wui_cr_sin1>;
-
-        required: true

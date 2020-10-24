@@ -19,58 +19,6 @@ LOG_MODULE_REGISTER(sof);
 
 #include <cavs/mailbox.h>
 
-#define SRAM_WINDOW_HOST_OFFSET(x) (0x80000 + x * 0x20000)
-
-static const struct adsp_ipc_fw_ready fw_ready_apl
-	__attribute__((section(".fw_ready"))) __attribute__((used)) = {
-	.hdr = {
-		.cmd = ADSP_IPC_FW_READY,
-		.size = sizeof(struct adsp_ipc_fw_ready),
-	},
-	.version = {
-		.hdr.size = sizeof(struct adsp_ipc_fw_version),
-		.micro = 0,
-		.minor = 1,
-		.major = 0,
-
-		.build = 0,
-		.date = __DATE__,
-		.time = __TIME__,
-
-		.tag = "zephyr",
-		.abi_version = 0,
-	},
-	.flags = 0,
-};
-
-#define NUM_WINDOWS			2
-
-static const struct adsp_ipc_window sram_window = {
-	.ext_hdr = {
-		.hdr.cmd = ADSP_IPC_FW_READY,
-		.hdr.size = sizeof(struct adsp_ipc_window) +
-			    sizeof(struct adsp_ipc_window_elem) * NUM_WINDOWS,
-		.type = ADSP_IPC_EXT_WINDOW,
-	},
-	.num_windows = NUM_WINDOWS,
-	.window = {
-		{
-			.type   = ADSP_IPC_REGION_REGS,
-			.id     = 0,	/* map to host window 0 */
-			.flags  = 0,
-			.size   = MAILBOX_SW_REG_SIZE,
-			.offset = 0,
-		},
-		{
-			.type   = ADSP_IPC_REGION_TRACE,
-			.id     = 3,	/* map to host window 3 */
-			.flags  = 0,
-			.size   = MAILBOX_TRACE_SIZE,
-			.offset = 0,
-		},
-	},
-};
-
 /*
  * Sets up the host windows so that the host can see the memory
  * content on the DSP SRAM.
@@ -96,38 +44,9 @@ static void prepare_host_windows(void)
 	SOC_DCACHE_FLUSH((void *)HP_SRAM_WIN3_BASE, HP_SRAM_WIN3_SIZE);
 }
 
-/*
- * Sends the firmware ready message so the firmware loader can
- * map the host windows.
- */
-static void send_fw_ready(void)
-{
-	memcpy((void *)MAILBOX_DSPBOX_BASE,
-	       &fw_ready_apl, sizeof(fw_ready_apl));
-
-	memcpy((void *)(MAILBOX_DSPBOX_BASE + sizeof(fw_ready_apl)),
-	       &sram_window, sizeof(sram_window));
-
-	SOC_DCACHE_FLUSH((void *)MAILBOX_DSPBOX_BASE, MAILBOX_DSPBOX_SIZE);
-
-#if defined(CONFIG_SOC_SERIES_INTEL_CAVS_V15)
-	sys_write32(SRAM_WINDOW_HOST_OFFSET(0) >> 12,
-		    IPC_HOST_BASE + IPC_DIPCIE);
-	sys_write32(0x80000000 | ADSP_IPC_FW_READY,
-		    IPC_HOST_BASE + IPC_DIPCI);
-#else
-	sys_write32(SRAM_WINDOW_HOST_OFFSET(0) >> 12,
-		    IPC_HOST_BASE + IPC_DIPCIDD);
-	sys_write32(0x80000000 | ADSP_IPC_FW_READY,
-		    IPC_HOST_BASE + IPC_DIPCIDR);
-#endif
-}
-
 static int adsp_init(const struct device *dev)
 {
 	prepare_host_windows();
-
-	send_fw_ready();
 
 	return 0;
 }

@@ -108,11 +108,30 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
+	scan->per_scan.state = LL_SYNC_STATE_IDLE;
+	node_rx->link = link_sync_estab;
+	scan->per_scan.node_rx_estab = node_rx;
 	scan->per_scan.filter_policy = options & BIT(0);
+	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
+		scan_coded->per_scan.state = LL_SYNC_STATE_IDLE;
+		scan_coded->per_scan.node_rx_estab =
+			scan->per_scan.node_rx_estab;
+		scan_coded->per_scan.filter_policy =
+			scan->per_scan.filter_policy;
+	}
+
 	if (!scan->per_scan.filter_policy) {
 		scan->per_scan.sid = sid;
 		scan->per_scan.adv_addr_type = adv_addr_type;
 		memcpy(scan->per_scan.adv_addr, adv_addr, BDADDR_SIZE);
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
+			scan_coded->per_scan.sid = scan->per_scan.sid;
+			scan_coded->per_scan.adv_addr_type =
+				scan->per_scan.adv_addr_type;
+			memcpy(scan_coded->per_scan.adv_addr,
+			       scan->per_scan.adv_addr, BDADDR_SIZE);
+		}
 	}
 
 	sync->skip = skip;
@@ -133,12 +152,7 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	/* Reporting initially enabled/disabled */
 	lll_sync->is_enabled = options & BIT(1);
 
-	/* Initialise state */
-	scan->per_scan.state = LL_SYNC_STATE_IDLE;
-
-	/* established and sync_lost node_rx */
-	node_rx->link = link_sync_estab;
-	scan->per_scan.node_rx_estab = node_rx;
+	/* sync_lost node_rx */
 	sync->node_rx_lost.link = link_sync_lost;
 
 	/* Initialise ULL and LLL headers */
@@ -323,6 +337,19 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 
 	sync = scan->per_scan.sync;
 	scan->per_scan.sync = NULL;
+	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
+		struct ll_scan_set *scan_1m;
+
+		scan_1m = ull_scan_set_get(SCAN_HANDLE_1M);
+		if (scan == scan_1m) {
+			struct ll_scan_set *scan_coded;
+
+			scan_coded = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
+			scan_coded->per_scan.sync = NULL;
+		} else {
+			scan_1m->per_scan.sync = NULL;
+		}
+	}
 
 	lll = &sync->lll;
 	memcpy(lll->data_chan_map, si->sca_chm, sizeof(lll->data_chan_map));

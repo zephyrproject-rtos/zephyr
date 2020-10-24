@@ -173,11 +173,6 @@ class Sign(Forceable):
         elif args.gen_hex is None and hex_exists:
             formats.append('hex')
 
-        if not formats:
-            if not args.quiet:
-                log.dbg('nothing to do: no output files')
-            return
-
         # Delegate to the signer.
         if args.tool == 'imgtool':
             signer = ImgtoolSigner()
@@ -393,7 +388,7 @@ class RimageSigner(Signer):
 
     @staticmethod
     def edt_get_rimage_target(board):
-        if 'up_squared_adsp' in board:
+        if 'intel_adsp_cavs15' in board:
             return 'apl'
         if 'intel_adsp_cavs18' in board:
             return 'cnl'

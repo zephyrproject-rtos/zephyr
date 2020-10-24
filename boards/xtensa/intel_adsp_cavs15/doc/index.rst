@@ -57,7 +57,7 @@ for building ``hello_world`` application following steps are needed.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: up_squared_adsp
+      :board: intel_adsp_cavs15
       :goals: build
 
 #. Sign and create firmware image
@@ -74,7 +74,7 @@ in the board support directory use the interface to load firmware to ``ADSP``.
 
 .. code-block:: console
 
-   $ sudo boards/xtensa/up_squared_adsp/tools/fw_loader.py -f <path to zephyr.ri>
+   $ sudo boards/xtensa/intel_adsp_cavs15/tools/fw_loader.py -f <path to zephyr.ri>
 
 Debugging
 =========
@@ -87,9 +87,9 @@ Python tools are using `SOF Diagnostic Driver`_ interface to get logs.
 
 .. code-block:: console
 
-   $ sudo boards/xtensa/up_squared_adsp/tools/dump_trace.py
+   $ sudo boards/xtensa/intel_adsp_cavs15/tools/dump_trace.py
    Open HDA device: /dev/hda
-   0 : Hello World! up_squared_adsp
+   0 : Hello World! intel_adsp_cavs15
 
 .. target-notes::
 

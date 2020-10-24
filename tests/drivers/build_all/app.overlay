@@ -107,6 +107,15 @@
 			#include "spi.dtsi"
 		};
 
+		test_uart: uart@55556666 {
+			compatible = "vnd,serial";
+			reg = <0x55556666 0x1000>;
+			label = "TEST_UART_CTLR";
+			status = "okay";
+
+			#include "uart.dtsi"
+		};
+
 		dht22 {
 			compatible = "aosong,dht";
 			status = "okay";

@@ -5,7 +5,7 @@
 if BOARD_UP_SQUARED_ADSP
 
 config BOARD
-	default "up_squared_adsp"
+	default "intel_adsp_cavs15"
 
 config CAVS_ICTL_0_OFFSET
 	default 6

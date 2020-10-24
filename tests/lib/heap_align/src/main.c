@@ -81,6 +81,12 @@ static void test_aligned_alloc(void)
 			}
 		}
 	}
+
+	/* corner case on small heaps */
+	p = sys_heap_aligned_alloc(&heap, 8, 12);
+	memset(p, 0, 12);
+	zassert_true(sys_heap_validate(&heap), "heap invalid");
+	sys_heap_free(&heap, p);
 }
 
 void test_main(void)

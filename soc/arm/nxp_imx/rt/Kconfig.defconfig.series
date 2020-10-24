@@ -58,6 +58,10 @@ config SPI_MCUX_LPSPI
 	default y if HAS_MCUX_LPSPI
 	depends on SPI
 
+config WDT_MCUX_IMX_WDOG
+	default y
+	depends on WATCHDOG
+
 if CODE_SEMC
 
 config FLASH_SIZE
