@@ -33,24 +33,20 @@ extern void arm_core_mpu_disable(void);
 
 K_SEM_DEFINE(test_revoke_sem, 0, 1);
 
-/*
- * Create partitions. part0 is for all variables to run
- * ztest and this test suite. part1 is for
- * subsequent test specifically for this new implementation.
+/* Used for tests that switch between domains, we will switch between the
+ * default domain and this one.
  */
-FOR_EACH(K_APPMEM_PARTITION_DEFINE, (;), part0, part1);
+struct k_mem_domain alternate_domain;
 
-/*
- * Create memory domains. dom0 is for the ztest and this
- * test suite, specifically. dom1 is for a specific test
- * in this test suite.
- */
-struct k_mem_domain dom0;
-struct k_mem_domain dom1;
+ZTEST_BMEM static volatile bool expect_fault;
+ZTEST_BMEM static volatile unsigned int expected_reason;
 
-K_APP_DMEM(part0) bool mem_access_check;
-K_APP_BMEM(part0) static volatile bool expect_fault;
-K_APP_BMEM(part0) static volatile unsigned int expected_reason;
+/* Partition unique to default domain */
+K_APPMEM_PARTITION_DEFINE(default_part);
+K_APP_BMEM(default_part) volatile bool default_bool;
+/* Partition unique to alternate domain */
+K_APPMEM_PARTITION_DEFINE(alt_part);
+K_APP_BMEM(alt_part) volatile bool alt_bool;
 
 static struct k_thread test_thread;
 static K_THREAD_STACK_DEFINE(test_stack, STACKSIZE);
@@ -290,9 +286,9 @@ static void test_write_kernel_data(void)
 /*
  * volatile to avoid compiler mischief.
  */
-K_APP_DMEM(part0) volatile char *priv_stack_ptr;
+K_APP_DMEM(default_part) volatile char *priv_stack_ptr;
 #if defined(CONFIG_ARC)
-K_APP_DMEM(part0) int32_t size = (0 - CONFIG_PRIVILEGED_STACK_SIZE -
+K_APP_DMEM(default_part) int32_t size = (0 - CONFIG_PRIVILEGED_STACK_SIZE -
 				 Z_ARC_STACK_GUARD_SIZE);
 #endif
 
@@ -345,7 +341,7 @@ static void test_write_priv_stack(void)
 }
 
 
-K_APP_BMEM(part0) static struct k_sem sem;
+K_APP_BMEM(default_part) static struct k_sem sem;
 
 /**
  * @brief Test to pass a user object to system call
@@ -513,7 +509,7 @@ static void test_user_mode_enter(void)
 
 /* Define and initialize pipe. */
 K_PIPE_DEFINE(kpipe, PIPE_LEN, BYTES_TO_READ_WRITE);
-K_APP_BMEM(part0) static size_t bytes_written_read;
+K_APP_BMEM(default_part) static size_t bytes_written_read;
 
 /**
  * @brief Test to write to kobject using pipe
@@ -555,74 +551,65 @@ static void test_read_kobject_user_pipe(void)
 			    "did not fault");
 }
 
-/* Create bool in part1 partitions */
-K_APP_DMEM(part1) bool thread_bool;
-
-static void shared_mem_thread(void)
-{
-	/*
-	 * Try to access thread_bool_1 in denied memory
-	 * domain.
-	 */
-	set_fault(K_ERR_CPU_EXCEPTION);
-
-	thread_bool = false;
-	zassert_unreachable("Thread accessed global in other "
-			    "memory domain\n");
-}
-
-/**
- * @brief Test to access other memory domain
- *
- * @ingroup kernel_memprotect_tests
- */
-static void test_access_other_memdomain(void)
-{
-	struct k_mem_partition *parts[] = {&part0};
-	/*
-	 * Following tests the ability for a thread to access data
-	 * in a domain that it is denied.
-	 */
-
-	k_mem_domain_init(&dom1, ARRAY_SIZE(parts), parts);
-	k_mem_domain_add_thread(&dom1, k_current_get());
-
-	/* Create user mode thread */
-	k_thread_create(&test_thread, test_stack, STACKSIZE,
-			(k_thread_entry_t)shared_mem_thread, NULL,
-			NULL, NULL, -1, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
-
-	k_thread_join(&test_thread, K_FOREVER);
-}
-
-
-#if defined(CONFIG_ARM)
-extern uint8_t *z_priv_stack_find(void *obj);
-#endif
-extern k_thread_stack_t ztest_thread_stack[];
-
-struct k_mem_domain add_thread_drop_dom;
-struct k_mem_domain add_part_drop_dom;
-struct k_mem_domain remove_thread_drop_dom;
-struct k_mem_domain remove_part_drop_dom;
-
-struct k_mem_domain add_thread_ctx_dom;
-struct k_mem_domain add_part_ctx_dom;
-struct k_mem_domain remove_thread_ctx_dom;
-struct k_mem_domain remove_part_ctx_dom;
-
-K_APPMEM_PARTITION_DEFINE(access_part);
-K_APP_BMEM(access_part) volatile bool test_bool;
-
 static void user_half(void *arg1, void *arg2, void *arg3)
 {
-	test_bool = 1;
+	volatile bool *bool_ptr = arg1;
+
+	*bool_ptr = true;
+	compiler_barrier();
 	if (expect_fault) {
 		printk("Expecting a fatal error %d but succeeded instead\n",
 		       expected_reason);
 		ztest_test_fail();
 	}
 }
+
+
+static void spawn_user(volatile bool *to_modify)
+{
+	k_thread_create(&test_thread, test_stack, STACKSIZE, user_half,
+			(void *)to_modify, NULL, NULL,
+			-1, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
+
+	k_thread_join(&test_thread, K_FOREVER);
+}
+
+static void drop_user(volatile bool *to_modify)
+{
+	k_sleep(K_MSEC(1)); /* Force a context switch */
+	k_thread_user_mode_enter(user_half, (void *)to_modify, NULL, NULL);
+}
+
+/**
+ * @brief Test creation of new memory domains
+ *
+ * We initialize a new memory domain and show that its partition configuration
+ * is correct. This new domain has "alt_part" in it, but not "default_part".
+ * We then try to modify data in "default_part" and show it produces an
+ * exception since that partition is not in the new domain.
+ *
+ * This caught a bug once where an MMU system copied page tables for the new
+ * domain and accidentally copied memory partition permissions from the source
+ * page tables, allowing the write to "default_part" to work.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+static void test_init_and_access_other_memdomain(void)
+{
+	struct k_mem_partition *parts[] = { &ztest_mem_partition, &alt_part };
+	k_mem_domain_init(&alternate_domain, ARRAY_SIZE(parts), parts);
+	/* Switch to alternate_domain which does not have default_part that
+	 * contains default_bool. This should fault when we try to write it.
+	 */
+	k_mem_domain_add_thread(&alternate_domain, k_current_get());
+	set_fault(K_ERR_CPU_EXCEPTION);
+	spawn_user(&default_bool);
+}
+
+#if defined(CONFIG_ARM)
+extern uint8_t *z_priv_stack_find(void *obj);
+#endif
+extern k_thread_stack_t ztest_thread_stack[];
 
 /**
  * Show that changing between memory domains and dropping to user mode works
@@ -632,14 +619,9 @@ static void user_half(void *arg1, void *arg2, void *arg3)
  */
 static void test_domain_add_thread_drop_to_user(void)
 {
-	struct k_mem_partition *parts[] = {&part0, &access_part,
-					   &ztest_mem_partition};
-
 	clear_fault();
-	k_mem_domain_init(&add_thread_drop_dom, ARRAY_SIZE(parts), parts);
-	k_mem_domain_add_thread(&add_thread_drop_dom, k_current_get());
-
-	k_thread_user_mode_enter(user_half, NULL, NULL, NULL);
+	k_mem_domain_add_thread(&alternate_domain, k_current_get());
+	drop_user(&alt_bool);
 }
 
 /* @brief Test adding application memory partition to memory domain
@@ -651,16 +633,9 @@ static void test_domain_add_thread_drop_to_user(void)
  */
 static void test_domain_add_part_drop_to_user(void)
 {
-	struct k_mem_partition *parts[] = {&part0, &ztest_mem_partition};
-
 	clear_fault();
-	k_mem_domain_init(&add_part_drop_dom, ARRAY_SIZE(parts), parts);
-	k_mem_domain_add_thread(&add_part_drop_dom, k_current_get());
-
-	k_sleep(K_MSEC(1));
-	k_mem_domain_add_partition(&add_part_drop_dom, &access_part);
-
-	k_thread_user_mode_enter(user_half, NULL, NULL, NULL);
+	k_mem_domain_add_partition(&k_mem_domain_default, &alt_part);
+	drop_user(&alt_bool);
 }
 
 /**
@@ -671,38 +646,12 @@ static void test_domain_add_part_drop_to_user(void)
  */
 static void test_domain_remove_part_drop_to_user(void)
 {
-	struct k_mem_partition *parts[] = {&part0, &access_part,
-					   &ztest_mem_partition};
-
+	/* We added alt_part to the default domain in the previous test,
+	 * remove it, and then try to access again.
+	 */
 	set_fault(K_ERR_CPU_EXCEPTION);
-	k_mem_domain_init(&remove_part_drop_dom, ARRAY_SIZE(parts), parts);
-	k_mem_domain_add_thread(&remove_part_drop_dom, k_current_get());
-
-	k_sleep(K_MSEC(1));
-	k_mem_domain_remove_partition(&remove_part_drop_dom, &access_part);
-
-	k_thread_user_mode_enter(user_half, NULL, NULL, NULL);
-}
-
-static void user_ctx_switch_half(void *arg1, void *arg2, void *arg3)
-{
-	test_bool = 1;
-}
-
-static void spawn_user(void)
-{
-	k_thread_create(&test_thread, test_stack, STACKSIZE,
-			user_ctx_switch_half, NULL, NULL, NULL,
-			-1, K_INHERIT_PERMS | K_USER,
-			K_NO_WAIT);
-
-	k_thread_join(&test_thread, K_FOREVER);
-
-	if (expect_fault) {
-		printk("Expecting a fatal error %d but succeeded instead\n",
-		       expected_reason);
-		ztest_test_fail();
-	}
+	k_mem_domain_remove_partition(&k_mem_domain_default, &alt_part);
+	drop_user(&alt_bool);
 }
 
 /**
@@ -713,14 +662,9 @@ static void spawn_user(void)
  */
 static void test_domain_add_thread_context_switch(void)
 {
-	struct k_mem_partition *parts[] = {&part0, &access_part,
-					   &ztest_mem_partition};
-
 	clear_fault();
-	k_mem_domain_init(&add_thread_ctx_dom, ARRAY_SIZE(parts), parts);
-	k_mem_domain_add_thread(&add_thread_ctx_dom, k_current_get());
-
-	spawn_user();
+	k_mem_domain_add_thread(&alternate_domain, k_current_get());
+	spawn_user(&alt_bool);
 }
 
 /* Show that adding a partition to a domain and then switching to another
@@ -730,16 +674,9 @@ static void test_domain_add_thread_context_switch(void)
  */
 static void test_domain_add_part_context_switch(void)
 {
-	struct k_mem_partition *parts[] = {&part0, &ztest_mem_partition};
-
 	clear_fault();
-	k_mem_domain_init(&add_part_ctx_dom, ARRAY_SIZE(parts), parts);
-	k_mem_domain_add_thread(&add_part_ctx_dom, k_current_get());
-
-	k_sleep(K_MSEC(1));
-	k_mem_domain_add_partition(&add_part_ctx_dom, &access_part);
-
-	spawn_user();
+	k_mem_domain_add_partition(&k_mem_domain_default, &alt_part);
+	spawn_user(&alt_bool);
 }
 
 /**
@@ -751,17 +688,12 @@ static void test_domain_add_part_context_switch(void)
  */
 static void test_domain_remove_part_context_switch(void)
 {
-	struct k_mem_partition *parts[] = {&part0, &access_part,
-					   &ztest_mem_partition};
-
+	/* We added alt_part to the default domain in the previous test,
+	 * remove it, and then try to access again.
+	 */
 	set_fault(K_ERR_CPU_EXCEPTION);
-	k_mem_domain_init(&remove_part_ctx_dom, ARRAY_SIZE(parts), parts);
-	k_mem_domain_add_thread(&remove_part_ctx_dom, k_current_get());
-
-	k_sleep(K_MSEC(1));
-	k_mem_domain_remove_partition(&remove_part_ctx_dom, &access_part);
-
-	spawn_user();
+	k_mem_domain_remove_partition(&k_mem_domain_default, &alt_part);
+	spawn_user(&alt_bool);
 }
 
 void z_impl_missing_syscall(void)
@@ -947,11 +879,8 @@ void test_tls_pointer(void)
 
 void test_main(void)
 {
-	struct k_mem_partition *parts[] = {&part0, &part1,
-		&ztest_mem_partition};
-
-	k_mem_domain_init(&dom0, ARRAY_SIZE(parts), parts);
-	k_mem_domain_add_thread(&dom0, k_current_get());
+	/* Most of these scenarios use the default domain */
+	k_mem_domain_add_partition(&k_mem_domain_default, &default_part);
 
 #if defined(CONFIG_ARM)
 	priv_stack_ptr = (char *)z_priv_stack_find(ztest_thread_stack);
@@ -966,45 +895,45 @@ void test_main(void)
 			      &test_thread, &test_stack,
 			      &test_revoke_sem, &kpipe);
 	ztest_test_suite(userspace,
-			 ztest_user_unit_test(test_is_usermode),
-			 ztest_user_unit_test(test_write_control),
-			 ztest_user_unit_test(test_disable_mmu_mpu),
-			 ztest_user_unit_test(test_read_kernram),
-			 ztest_user_unit_test(test_write_kernram),
-			 ztest_user_unit_test(test_write_kernro),
-			 ztest_user_unit_test(test_write_kerntext),
-			 ztest_user_unit_test(test_read_kernel_data),
-			 ztest_user_unit_test(test_write_kernel_data),
-			 ztest_user_unit_test(test_read_priv_stack),
-			 ztest_user_unit_test(test_write_priv_stack),
-			 ztest_user_unit_test(test_pass_user_object),
-			 ztest_user_unit_test(test_pass_noperms_object),
-			 ztest_user_unit_test(test_start_kernel_thread),
-			 ztest_1cpu_user_unit_test(test_read_other_stack),
-			 ztest_1cpu_user_unit_test(test_write_other_stack),
-			 ztest_user_unit_test(test_revoke_noperms_object),
-			 ztest_user_unit_test(test_access_after_revoke),
-			 ztest_unit_test(test_user_mode_enter),
-			 ztest_user_unit_test(test_write_kobject_user_pipe),
-			 ztest_user_unit_test(test_read_kobject_user_pipe),
-			 ztest_1cpu_unit_test(test_access_other_memdomain),
-			 ztest_unit_test(test_domain_add_thread_drop_to_user),
-			 ztest_unit_test(test_domain_add_part_drop_to_user),
-			 ztest_unit_test(test_domain_remove_part_drop_to_user),
-			 ztest_unit_test(test_domain_add_thread_context_switch),
-			 ztest_unit_test(test_domain_add_part_context_switch),
-			 ztest_unit_test(test_domain_remove_part_context_switch),
-			 ztest_user_unit_test(test_unimplemented_syscall),
-			 ztest_user_unit_test(test_bad_syscall),
-			 ztest_user_unit_test(test_oops_panic),
-			 ztest_user_unit_test(test_oops_oops),
-			 ztest_user_unit_test(test_oops_exception),
-			 ztest_user_unit_test(test_oops_maxint),
-			 ztest_user_unit_test(test_oops_stackcheck),
-			 ztest_unit_test(test_object_recycle),
-			 ztest_user_unit_test(test_syscall_context),
-			 ztest_unit_test(test_tls_leakage),
-			 ztest_unit_test(test_tls_pointer)
-			 );
+		ztest_user_unit_test(test_is_usermode),
+		ztest_user_unit_test(test_write_control),
+		ztest_user_unit_test(test_disable_mmu_mpu),
+		ztest_user_unit_test(test_read_kernram),
+		ztest_user_unit_test(test_write_kernram),
+		ztest_user_unit_test(test_write_kernro),
+		ztest_user_unit_test(test_write_kerntext),
+		ztest_user_unit_test(test_read_kernel_data),
+		ztest_user_unit_test(test_write_kernel_data),
+		ztest_user_unit_test(test_read_priv_stack),
+		ztest_user_unit_test(test_write_priv_stack),
+		ztest_user_unit_test(test_pass_user_object),
+		ztest_user_unit_test(test_pass_noperms_object),
+		ztest_user_unit_test(test_start_kernel_thread),
+		ztest_1cpu_user_unit_test(test_read_other_stack),
+		ztest_1cpu_user_unit_test(test_write_other_stack),
+		ztest_user_unit_test(test_revoke_noperms_object),
+		ztest_user_unit_test(test_access_after_revoke),
+		ztest_unit_test(test_user_mode_enter),
+		ztest_user_unit_test(test_write_kobject_user_pipe),
+		ztest_user_unit_test(test_read_kobject_user_pipe),
+		ztest_1cpu_unit_test(test_init_and_access_other_memdomain),
+		ztest_unit_test(test_domain_add_thread_drop_to_user),
+		ztest_unit_test(test_domain_add_part_drop_to_user),
+		ztest_unit_test(test_domain_remove_part_drop_to_user),
+		ztest_unit_test(test_domain_add_thread_context_switch),
+		ztest_unit_test(test_domain_add_part_context_switch),
+		ztest_unit_test(test_domain_remove_part_context_switch),
+		ztest_user_unit_test(test_unimplemented_syscall),
+		ztest_user_unit_test(test_bad_syscall),
+		ztest_user_unit_test(test_oops_panic),
+		ztest_user_unit_test(test_oops_oops),
+		ztest_user_unit_test(test_oops_exception),
+		ztest_user_unit_test(test_oops_maxint),
+		ztest_user_unit_test(test_oops_stackcheck),
+		ztest_unit_test(test_object_recycle),
+		ztest_user_unit_test(test_syscall_context),
+		ztest_unit_test(test_tls_leakage),
+		ztest_unit_test(test_tls_pointer)
+		);
 	ztest_run_test_suite(userspace);
 }
