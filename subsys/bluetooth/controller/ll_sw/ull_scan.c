@@ -163,13 +163,10 @@ uint8_t ll_scan_enable(uint8_t enable)
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_CTLR_PHY_CODED)
 	scan_coded = ull_scan_is_disabled_get(SCAN_HANDLE_PHY_CODED);
 	if (!scan_coded) {
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
 		is_update_coded = is_scan_update(SCAN_HANDLE_PHY_CODED,
 						 duration, period, &scan_coded,
 						 &node_rx_scan_term);
-		if (!is_update_coded)
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
-		{
+		if (!is_update_coded) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 	}
