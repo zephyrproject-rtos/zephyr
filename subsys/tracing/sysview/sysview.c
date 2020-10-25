@@ -105,6 +105,35 @@ void sys_trace_mutex_unlock(struct k_mutex *mutex)
 		SYS_TRACE_ID_MUTEX_UNLOCK, (uint32_t)(uintptr_t)mutex);
 }
 
+static void set_thread_name(char *name, struct k_thread *thread)
+{
+	const char *tname = k_thread_name_get(thread);
+
+	if (tname != NULL && tname[0] != '\0') {
+		memcpy(name, tname, THREAD_NAME_LEN);
+		name[THREAD_NAME_LEN - 1] = '\0';
+	} else {
+		snprintk(name, THREAD_NAME_LEN, "T%pE%p",
+		thread, &thread->entry);
+	}
+}
+
+void sys_trace_thread_info(struct k_thread *thread)
+{
+	char name[THREAD_NAME_LEN];
+
+	set_thread_name(name, thread);
+
+	SEGGER_SYSVIEW_TASKINFO Info;
+
+	Info.TaskID = (uint32_t)(uintptr_t)thread;
+	Info.sName = name;
+	Info.Prio = thread->base.prio;
+	Info.StackBase = thread->stack_info.size;
+	Info.StackSize = thread->stack_info.start;
+	SEGGER_SYSVIEW_SendTaskInfo(&Info);
+}
+
 
 
 static void send_task_list_cb(void)
@@ -113,19 +142,13 @@ static void send_task_list_cb(void)
 
 	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
 		char name[THREAD_NAME_LEN];
-		const char *tname = k_thread_name_get(thread);
 
 		if (z_is_idle_thread_object(thread)) {
 			continue;
 		}
 
-		if (tname != NULL && tname[0] != '\0') {
-			memcpy(name, tname, THREAD_NAME_LEN);
-			name[THREAD_NAME_LEN - 1] = '\0';
-		} else {
-			snprintk(name, sizeof(name), "T%pE%p",
-				 thread, &thread->entry);
-		}
+		set_thread_name(name, thread);
+
 		SEGGER_SYSVIEW_SendTaskInfo(&(SEGGER_SYSVIEW_TASKINFO) {
 			.TaskID = (uint32_t)(uintptr_t)thread,
 			.sName = name,

@@ -25,36 +25,9 @@ void sys_trace_semaphore_give(struct k_sem *sem);
 void sys_trace_mutex_init(struct k_mutex *mutex);
 void sys_trace_mutex_lock(struct k_mutex *mutex);
 void sys_trace_mutex_unlock(struct k_mutex *mutex);
+void sys_trace_thread_info(struct k_thread *thread);
 
 #define sys_trace_thread_priority_set(thread)
-
-static inline void sys_trace_thread_info(struct k_thread *thread)
-{
-#if IS_ENABLED(CONFIG_THREAD_NAME)
-	char name[CONFIG_THREAD_MAX_NAME_LEN];
-#else
-	char name[20];
-#endif
-
-	const char *tname = k_thread_name_get(thread);
-
-	if (tname != NULL && tname[0] != '\0') {
-		memcpy(name, tname, sizeof(name));
-		name[sizeof(name) - 1] = '\0';
-	} else {
-		snprintk(name, sizeof(name), "T%pE%p",
-		thread, &thread->entry);
-	}
-
-	SEGGER_SYSVIEW_TASKINFO Info;
-
-	Info.TaskID = (uint32_t)(uintptr_t)thread;
-	Info.sName = name;
-	Info.Prio = thread->base.prio;
-	Info.StackBase = thread->stack_info.size;
-	Info.StackSize = thread->stack_info.start;
-	SEGGER_SYSVIEW_SendTaskInfo(&Info);
-}
 
 #define sys_trace_thread_create(thread)				       \
 	do {							       \
