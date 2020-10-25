@@ -36,3 +36,17 @@ tests:
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
       - CONFIG_TEST_HW_STACK_PROTECTION=n
+  portability.posix.common.dynamic_stack:
+    platform_exclude: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=n
+      - CONFIG_PTHREAD_DYNAMIC_STACK=y
+      - CONFIG_IDLE_STACK_SIZE=768
+      - CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE=16384
+  portability.posix.common.dynamic_stack.newlib:
+    platform_exclude: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+      - CONFIG_PTHREAD_DYNAMIC_STACK=y
+      - CONFIG_IDLE_STACK_SIZE=768
