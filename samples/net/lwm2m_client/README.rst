@@ -37,6 +37,9 @@ samples/net/lwm2m_client directory:
 - :file:`prj.conf`
   This is the standard default config.
 
+- :file:`overlay-bootstrap.conf`
+  This overlay config can be added to enable LWM2M Bootstrap support.
+
 - :file:`overlay-ot.conf`
   This overlay config can be added for OpenThread support.
 
@@ -66,7 +69,7 @@ Download and run the latest build of the Leshan Demo Server:
 
 .. code-block:: console
 
-    $ wget https://hudson.eclipse.org/leshan/job/leshan/lastSuccessfulBuild/artifact/leshan-server-demo.jar
+    $ wget https://ci.eclipse.org/leshan/job/leshan/lastSuccessfulBuild/artifact/leshan-server-demo.jar
     $ java -jar ./leshan-server-demo.jar -wp 8080
 
 You can now open a web browser to: http://localhost:8080 This is where you
@@ -105,15 +108,70 @@ To build the lwm2m-client sample for QEMU with DTLS support do the following:
 
 Setup DTLS security in Leshan Demo Server:
 
-- Open up the Leshan Demo Server web UI
-- Click on "Security"
-- Click on "Add new client security configuration"
-- Enter the following data:
-    Client endpoint: qemu_x86
-    Security mode: Pre-Shared Key
-    Identity: Client_identity
-    Key: 000102030405060708090a0b0c0d0e0f
-- Start the Zephyr sample
+1. Open up the Leshan Demo Server web UI
+#. Click on "Security"
+#. Click on "Add new client security configuration"
+#. Enter the following data:
+
+    * Client endpoint: qemu_x86
+    * Security mode: Pre-Shared Key
+    * Identity: Client_identity
+    * Key: 000102030405060708090a0b0c0d0e0f
+
+#. Start the Zephyr sample
+
+Bootstrap Support
+=================
+
+In order to run Bootstrap procedure with the sample, you need to download and
+run the Leshan Demo Bootstrap Server:
+
+.. code-block:: console
+
+    $ wget https://ci.eclipse.org/leshan/job/leshan/lastSuccessfulBuild/artifact/leshan-bsserver-demo.jar
+    $ java -jar ./leshan-bsserver-demo.jar -wp 8888 -lp 5783 -slp 5784
+
+
+You can now open a web browser to: http://localhost:8888 The Demo Bootstrap
+Server web UI will open, this is where you can configure your device for
+bootstrap.
+
+Configure the lwm2m-client sample in the Demo Bootsrap Server:
+
+1. Click on "Add new client bootstrap configuration"
+#. Enter the following data:
+
+    * Client endpoint: qemu_x86
+
+#. In the ``LWM2M Server`` tab, enter the following data:
+
+    * LWM2M Server URL: coap://[2001:db8::2]:5683 (or coap://192.0.2.2:5683 if IPv4 is used)
+    * Security mode: No Security
+
+#. The ``LWM2M Bootstrap Server`` tab can be left intact in the default
+   configuration (No Security).
+
+To build the lwm2m-client sample for QEMU with Bootstrap enabled do the
+following:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/lwm2m_client
+   :host-os: unix
+   :board: qemu_x86
+   :conf: "prj.conf overlay-bootstrap.conf"
+   :goals: run
+   :compact:
+
+The sample will start and automatically connect to the Leshan Demo Bootstrap
+Server to obtain the LwM2M Server information. After that, the sample will
+automatically connect to the Leshan Demo Sever, as it was indicated in the
+Bootstrap Server configuraion.
+
+It is possible to combine overlay files, to enable DTLS and Bootstrap for
+instance. In that case, the user should make sure to update the port number in
+the overlay file for Bootstrap over DTLS (5784 in case of Leshan Demo Bootstrap
+Server) and to configure correct security mode in the ``LWM2M Bootstrap Server``
+tab in the web UI (Pre-shared Key).
 
 Bluetooth Support
 =================
