@@ -39,12 +39,6 @@
   #define ROM_ADDR (CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET)
 #endif
 
-/*
- * MMU currently supports 4 kB translation granule size,
- * so all regions are required to be 4 kB aligned
- */
-#define PAGE_SIZE	0x1000
-
 #if CONFIG_FLASH_LOAD_SIZE > 0
   #define ROM_SIZE CONFIG_FLASH_LOAD_SIZE
 #else
@@ -66,7 +60,7 @@
 #endif
 
 #if defined(CONFIG_ARM_MMU)
-  _region_min_align = PAGE_SIZE;
+  _region_min_align = CONFIG_MMU_PAGE_SIZE;
 #else
   /* If building without MMU support, use default 4-byte alignment. */
   _region_min_align = 4;
