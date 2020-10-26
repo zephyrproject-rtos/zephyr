@@ -550,6 +550,7 @@ config BT_CTLR_SMI_TX_SETTING
 	help
 	  Enable support for Bluetooth 5.0 SMI TX through a system setting.
 
+source "subsys/bluetooth/controller/Kconfig.df"
 source "subsys/bluetooth/controller/Kconfig.ll_sw_split"
 
 config BT_CTLR_ASSERT_HANDLER
@@ -560,11 +561,6 @@ config BT_CTLR_ASSERT_HANDLER
 	  application code as void \"bt_ctlr_assert_handle(char \*, int)\"
 	  and will be invoked whenever the controller code encounters
 	  an unrecoverable error.
-
-config BT_CTLR_DF
-	bool "LE Direction Finding Support [EXPERIMENTAL]" if BT_LL_SW_SPLIT
-	help
-	  Enable support for Bluetooth 5.1 Direction Finding
 
 endif # BT_CTLR
 

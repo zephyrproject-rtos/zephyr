@@ -37,6 +37,13 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_XTAL_ADVANCED_SUPPORT
 	select BT_CTLR_SCHED_ADVANCED_SUPPORT
 	select BT_CTLR_TIFS_HW_SUPPORT
+	# Direction Finding
+	select BT_CTLR_DF_SUPPORT if HAS_HW_NRF_RADIO_BLE_DF
+	select BT_CTLR_DF_CTE_TX_SUPPORT if HAS_HW_NRF_RADIO_BLE_DF
+	select BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT if HAS_HW_NRF_RADIO_BLE_DF
+	# optional ant switching slot mode
+	select BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT if HAS_HW_NRF_RADIO_BLE_DF
+
 	default y
 	help
 	  Use Nordic Lower Link Layer implementation.
