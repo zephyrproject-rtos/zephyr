@@ -1,4 +1,4 @@
-set(LEGEND_REVISIONS "25hdd" "25ssd")
+set(LEGEND_REVISIONS "25hdd" "25ssd" "35")
 if (NOT DEFINED BOARD_REVISION)
   set(BOARD_REVISION "25hdd")
 else()
