@@ -50,6 +50,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #endif
 
 #define ENGINE_UPDATE_INTERVAL_MS 500
+#define OBSERVE_COUNTER_START 0U
 
 #define WELL_KNOWN_CORE_PATH	"</.well-known/core>"
 
@@ -521,7 +522,7 @@ static int engine_add_observer(struct lwm2m_message *msg,
 	observe_node_data[i].min_period_sec = attrs.pmin;
 	observe_node_data[i].max_period_sec = MAX(attrs.pmax, attrs.pmin);
 	observe_node_data[i].format = format;
-	observe_node_data[i].counter = 1U;
+	observe_node_data[i].counter = OBSERVE_COUNTER_START;
 	sys_slist_append(&engine_observer_list,
 			 &observe_node_data[i].node);
 
@@ -3543,7 +3544,7 @@ static int handle_request(struct coap_packet *request,
 					r = coap_append_option_int(
 						msg->out.out_cpkt,
 						COAP_OPTION_OBSERVE,
-						1);
+						OBSERVE_COUNTER_START);
 					if (r < 0) {
 						LOG_ERR("OBSERVE option error: %d", r);
 						goto error;
