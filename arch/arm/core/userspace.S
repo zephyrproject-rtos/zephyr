@@ -232,8 +232,9 @@ SECTION_FUNC(TEXT, z_arm_do_syscall)
     b dispatch_syscall
 
 valid_syscall:
+    mov ip, sp
     /* push args to complete stack frame */
-    push {r4,r5}
+    push {r4,r5,ip}
 
 dispatch_syscall:
     ldr ip, =_k_syscall_table
@@ -244,7 +245,7 @@ dispatch_syscall:
     blx ip
 
     /* restore LR */
-    ldr lr, [sp,#12]
+    ldr lr, [sp,#16]
 
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
     /* clear stack limit (stack protection not required in user mode) */
@@ -253,7 +254,7 @@ dispatch_syscall:
 #endif
 
     /* set stack back to unprivileged stack */
-    ldr ip, [sp,#8]
+    ldr ip, [sp,#12]
     msr PSP, ip
 
     push {r0, r1}
