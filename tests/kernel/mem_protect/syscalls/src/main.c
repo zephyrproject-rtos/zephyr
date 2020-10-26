@@ -94,6 +94,31 @@ Z_SYSCALL_HANDLER(to_copy, dest)
 	return z_user_to_copy((char *)dest, user_string, BUF_SIZE);
 }
 
+unsigned int z_impl_more_args(unsigned int arg1, unsigned int arg2,
+			      unsigned int arg3, unsigned int arg4,
+			      unsigned int arg5, unsigned int arg6,
+			      unsigned int arg7)
+{
+	unsigned int ret = 0x4ef464cc;
+	unsigned int args[] = { arg1, arg2, arg3, arg4, arg5, arg6, arg7 };
+
+	for (int i = 0; i < ARRAY_SIZE(args); i++) {
+		ret += args[i];
+		ret = (ret << 11) | (ret >> 5);
+	}
+
+	return ret;
+}
+
+Z_SYSCALL_HANDLER(more_args, arg1, arg2, arg3, arg4, arg5, more_args_ptr)
+{
+	struct _syscall_7_args *margs =
+		(struct _syscall_7_args  *)more_args_ptr;
+
+	return z_impl_more_args(arg1, arg2, arg3, arg4,
+				arg5, margs->arg6, margs->arg7);
+}
+
 /**
  * @brief Test to demonstrate usage of z_user_string_nlen()
  *
@@ -199,6 +224,13 @@ void test_to_copy(void)
 	zassert_equal(ret, 0, "string should have matched");
 }
 
+void test_more_args(void)
+{
+	zassert_equal(more_args(1, 2, 3, 4, 5, 6, 7),
+		      z_impl_more_args(1, 2, 3, 4, 5, 6, 7),
+		      "syscall didn't match impl");
+}
+
 K_MEM_POOL_DEFINE(test_pool, BUF_SIZE, BUF_SIZE, 4, 4);
 
 void test_main(void)
@@ -211,6 +243,7 @@ void test_main(void)
 			 ztest_unit_test(test_string_nlen),
 			 ztest_user_unit_test(test_string_nlen),
 			 ztest_user_unit_test(test_to_copy),
+			 ztest_user_unit_test(test_more_args),
 			 ztest_user_unit_test(test_user_string_copy),
 			 ztest_user_unit_test(test_user_string_alloc_copy));
 	ztest_run_test_suite(syscalls);
