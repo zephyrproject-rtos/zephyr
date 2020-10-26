@@ -514,6 +514,7 @@ config BT_CTLR_SMI_TX_SETTING
 	  Enable support for Bluetooth 5.0 SMI TX through a system setting.
 
 source "subsys/bluetooth/controller/Kconfig.ll_sw_split"
+source "subsys/bluetooth/controller/Kconfig.df"
 
 config BT_CTLR_ASSERT_HANDLER
 	bool "Application Defined Assertion Handler"

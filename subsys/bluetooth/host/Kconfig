@@ -603,7 +603,6 @@ config BT_ID_MAX
 
 config BT_DIRECTION_FINDING
 	bool "Enable Direction Finding support [EXPERIMENTAL]"
-	default y
 	help
 	  Enable support for Bluetooth 5.1 Direction Finding.
 	  It will allow to: get information about antennae, configure
