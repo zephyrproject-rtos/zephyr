@@ -881,7 +881,7 @@ static int esp_init(const struct device *dev)
 	data->cmd_handler_data.match_buf = &data->cmd_match_buf[0];
 	data->cmd_handler_data.match_buf_len = sizeof(data->cmd_match_buf);
 	data->cmd_handler_data.buf_pool = &mdm_recv_pool;
-	data->cmd_handler_data.alloc_timeout = CMD_BUF_ALLOC_TIMEOUT;
+	data->cmd_handler_data.alloc_timeout = K_NO_WAIT;
 	data->cmd_handler_data.eol = "\r\n";
 	ret = modem_cmd_handler_init(&data->mctx.cmd_handler,
 				       &data->cmd_handler_data);
