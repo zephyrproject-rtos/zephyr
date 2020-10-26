@@ -534,6 +534,8 @@ struct bt_le_adv_param {
 	 *
 	 * The advertising type will either be high duty cycle, or low duty
 	 * cycle if the BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY option is enabled.
+	 * When using @ref BT_LE_ADV_OPT_EXT_ADV then only low duty cycle is
+	 * allowed.
 	 *
 	 * In case of connectable high duty cycle if the connection could not
 	 * be established within the timeout the connected() callback will be
