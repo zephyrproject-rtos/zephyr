@@ -12,6 +12,37 @@
 #define LOG_MODULE_NAME bt_ctlr_ull_df
 #include "common/log.h"
 
+/* @brief Function sets CTE transmission parameters for a connection.
+ *
+ * @param[in]handle                     Connection handle.
+ * @param[in]cte_types                  Bitfield holding information about
+ *                                      allowed CTE types.
+ * @param[in]switch_pattern_len         Number of antenna ids in switch pattern.
+ * @param[in]ant_id                     Array of antenna identifiers.
+ *
+ * @return Status of command completion.
+ */
+uint8_t ll_df_set_conn_cte_tx_params(uint16_t handle, uint8_t cte_types,
+				     uint8_t switch_pattern_len,
+				     uint8_t *ant_id)
+{
+	if (cte_types & BT_HCI_LE_AOD_CTE_RSP_1US ||
+	    cte_types & BT_HCI_LE_AOD_CTE_RSP_2US) {
+
+		if (!IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX)) {
+			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+		}
+
+		if (switch_pattern_len < BT_HCI_LE_SWITCH_PATTERN_LEN_MIN ||
+		    switch_pattern_len > BT_HCI_LE_SWITCH_PATTERN_LEN_MAX ||
+		    !ant_id) {
+			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+		}
+	}
+
+	return BT_HCI_ERR_CMD_DISALLOWED;
+}
+
 /* @brief Function provides information about Direction Finding
  * antennae switching and sampling related settings.
  *
