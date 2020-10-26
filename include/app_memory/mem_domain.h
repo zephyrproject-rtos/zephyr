@@ -13,6 +13,10 @@
 #include <sys/dlist.h>
 #include <toolchain.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Forward declaration */
 struct k_thread;
 typedef struct k_thread *k_tid_t;
@@ -204,6 +208,10 @@ extern void k_mem_domain_add_thread(struct k_mem_domain *domain,
  */
 __deprecated
 extern void k_mem_domain_remove_thread(k_tid_t thread);
+
+#ifdef __cplusplus
+}
+#endif
 
 /** @} */
 #endif /* INCLUDE_APP_MEMORY_MEM_DOMAIN_H */
