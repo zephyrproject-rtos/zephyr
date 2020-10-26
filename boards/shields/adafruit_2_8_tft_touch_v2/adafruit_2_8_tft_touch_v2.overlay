@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/display/ili9340.h>
+#include <dt-bindings/display/ili9xxx.h>
 
 &arduino_spi {
 	status = "okay";
@@ -17,7 +17,7 @@
 		spi-max-frequency = <15151515>;
 		reg = <0>;
 		cmd-data-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
-		pixel-format = <ILI9340_PIXEL_FORMAT_RGB888>;
+		pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB888>;
 		rotation = <90>;
 		frmctr1 = [00 18];
 		pwctrl1 = [23 00];
