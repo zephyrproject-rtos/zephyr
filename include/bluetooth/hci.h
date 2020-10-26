@@ -1351,6 +1351,26 @@ struct bt_hci_cp_le_set_privacy_mode {
 	uint8_t         mode;
 } __packed;
 
+#define BT_HCI_LE_AOA_CTE_RSP                   BIT(0)
+#define BT_HCI_LE_AOD_CTE_RSP_1US               BIT(1)
+#define BT_HCI_LE_AOD_CTE_RSP_2US               BIT(2)
+
+#define BT_HCI_LE_SWITCH_PATTERN_LEN_MIN        0x2
+#define BT_HCI_LE_SWITCH_PATTERN_LEN_MAX        0x4B
+
+#define BT_HCI_OP_LE_SET_CONN_CTE_TX_PARAMS     BT_OP(BT_OGF_LE, 0x0055)
+struct bt_hci_cp_le_set_conn_cte_tx_params {
+	uint16_t handle;
+	uint8_t  cte_types;
+	uint8_t  switch_pattern_len;
+	uint8_t  ant_id[0];
+} __packed;
+
+struct bt_hci_rp_le_set_conn_cte_tx_params {
+	uint8_t  status;
+	uint16_t handle;
+} __packed;
+
 #define BT_HCI_LE_1US_AOD_TX                    BIT(0)
 #define BT_HCI_LE_1US_AOD_RX                    BIT(1)
 #define BT_HCI_LE_1US_AOA_RX                    BIT(2)
