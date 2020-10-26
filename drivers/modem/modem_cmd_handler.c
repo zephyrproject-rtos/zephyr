@@ -36,7 +36,8 @@ static bool is_crlf(uint8_t c)
 
 static void skipcrlf(struct modem_cmd_handler_data *data)
 {
-	while (data->rx_buf && is_crlf(*data->rx_buf->data)) {
+	while (data->rx_buf && data->rx_buf->len &&
+			is_crlf(*data->rx_buf->data)) {
 		net_buf_pull_u8(data->rx_buf);
 		if (!data->rx_buf->len) {
 			data->rx_buf = net_buf_frag_del(NULL, data->rx_buf);
@@ -50,7 +51,7 @@ static uint16_t findcrlf(struct modem_cmd_handler_data *data,
 	struct net_buf *buf = data->rx_buf;
 	uint16_t len = 0U, pos = 0U;
 
-	while (buf && !is_crlf(*(buf->data + pos))) {
+	while (buf && buf->len && !is_crlf(*(buf->data + pos))) {
 		if (pos + 1 >= buf->len) {
 			len += buf->len;
 			buf = buf->frags;
@@ -60,7 +61,7 @@ static uint16_t findcrlf(struct modem_cmd_handler_data *data,
 		}
 	}
 
-	if (buf && is_crlf(*(buf->data + pos))) {
+	if (buf && buf->len && is_crlf(*(buf->data + pos))) {
 		len += pos;
 		*offset = pos;
 		*frag = buf;
@@ -256,41 +257,51 @@ static struct modem_cmd *find_cmd_direct_match(
 	return NULL;
 }
 
-static void cmd_handler_process_iface_data(struct modem_cmd_handler_data *data,
-					   struct modem_iface *iface)
+static int cmd_handler_process_iface_data(struct modem_cmd_handler_data *data,
+					  struct modem_iface *iface)
 {
-	size_t rx_len, bytes_read = 0;
+	struct net_buf *last;
+	size_t bytes_read = 0;
 	int ret;
+
+	if (!data->rx_buf) {
+		data->rx_buf = net_buf_alloc(data->buf_pool,
+					     data->alloc_timeout);
+		if (!data->rx_buf) {
+			/* there is potentially more data waiting */
+			return -ENOMEM;
+		}
+	}
+
+	last = net_buf_frag_last(data->rx_buf);
 
 	/* read all of the data from modem iface */
 	while (true) {
-		ret = iface->read(iface, data->read_buf,
-				  data->read_buf_len, &bytes_read);
+		struct net_buf *frag = last;
+		size_t frag_room = net_buf_tailroom(frag);
+
+		if (!frag_room) {
+			frag = net_buf_alloc(data->buf_pool,
+					    data->alloc_timeout);
+			if (!frag) {
+				/* there is potentially more data waiting */
+				return -ENOMEM;
+			}
+
+			net_buf_frag_insert(last, frag);
+			last = frag;
+
+			frag_room = net_buf_tailroom(frag);
+		}
+
+		ret = iface->read(iface, net_buf_tail(frag), frag_room,
+				  &bytes_read);
 		if (ret < 0 || bytes_read == 0) {
 			/* modem context buffer is empty */
-			break;
+			return 0;
 		}
 
-		/* make sure we have storage */
-		if (!data->rx_buf) {
-			data->rx_buf = net_buf_alloc(data->buf_pool,
-						     data->alloc_timeout);
-			if (!data->rx_buf) {
-				LOG_ERR("Can't allocate RX data! "
-					"Skipping data!");
-				break;
-			}
-		}
-
-		rx_len = net_buf_append_bytes(data->rx_buf, bytes_read,
-					      data->read_buf,
-					      data->alloc_timeout,
-					      read_rx_allocator,
-					      data->buf_pool);
-		if (rx_len < bytes_read) {
-			LOG_ERR("Data was lost! read %zu of %zu!",
-				rx_len, bytes_read);
-		}
+		net_buf_add(frag, bytes_read);
 	}
 }
 
@@ -303,9 +314,9 @@ static void cmd_handler_process_rx_buf(struct modem_cmd_handler_data *data)
 	uint16_t offset, len;
 
 	/* process all of the data in the net_buf */
-	while (data->rx_buf) {
+	while (data->rx_buf && data->rx_buf->len) {
 		skipcrlf(data);
-		if (!data->rx_buf) {
+		if (!data->rx_buf || !data->rx_buf->len) {
 			break;
 		}
 
@@ -402,6 +413,7 @@ static void cmd_handler_process(struct modem_cmd_handler *cmd_handler,
 				struct modem_iface *iface)
 {
 	struct modem_cmd_handler_data *data;
+	int err;
 
 	if (!cmd_handler || !cmd_handler->cmd_handler_data ||
 	    !iface || !iface->read) {
@@ -410,8 +422,10 @@ static void cmd_handler_process(struct modem_cmd_handler *cmd_handler,
 
 	data = (struct modem_cmd_handler_data *)(cmd_handler->cmd_handler_data);
 
-	cmd_handler_process_iface_data(data, iface);
-	cmd_handler_process_rx_buf(data);
+	do {
+		err = cmd_handler_process_iface_data(data, iface);
+		cmd_handler_process_rx_buf(data);
+	} while (err);
 }
 
 int modem_cmd_handler_get_error(struct modem_cmd_handler_data *data)
@@ -635,7 +649,7 @@ int modem_cmd_handler_init(struct modem_cmd_handler *handler,
 		return -EINVAL;
 	}
 
-	if (!data->read_buf_len || !data->match_buf_len) {
+	if (!data->match_buf_len) {
 		return -EINVAL;
 	}
 

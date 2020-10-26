@@ -46,7 +46,6 @@ static struct gsm_modem {
 	struct modem_context context;
 
 	struct modem_cmd_handler_data cmd_handler_data;
-	uint8_t cmd_read_buf[GSM_CMD_READ_BUF];
 	uint8_t cmd_match_buf[GSM_CMD_READ_BUF];
 	struct k_sem sem_response;
 
@@ -728,8 +727,6 @@ static int gsm_init(const struct device *device)
 
 	gsm->cmd_handler_data.cmds[CMD_RESP] = response_cmds;
 	gsm->cmd_handler_data.cmds_len[CMD_RESP] = ARRAY_SIZE(response_cmds);
-	gsm->cmd_handler_data.read_buf = &gsm->cmd_read_buf[0];
-	gsm->cmd_handler_data.read_buf_len = sizeof(gsm->cmd_read_buf);
 	gsm->cmd_handler_data.match_buf = &gsm->cmd_match_buf[0];
 	gsm->cmd_handler_data.match_buf_len = sizeof(gsm->cmd_match_buf);
 	gsm->cmd_handler_data.buf_pool = &gsm_recv_pool;

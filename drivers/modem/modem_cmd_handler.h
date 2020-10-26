@@ -80,9 +80,6 @@ struct modem_cmd_handler_data {
 	struct modem_cmd *cmds[CMD_MAX];
 	size_t cmds_len[CMD_MAX];
 
-	char *read_buf;
-	size_t read_buf_len;
-
 	char *match_buf;
 	size_t match_buf_len;
 
