@@ -1,4 +1,0 @@
-tests:
-  dts.build.build:
-    build_only: true
-    platform_allow:  frdm_k64f

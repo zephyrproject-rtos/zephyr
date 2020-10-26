@@ -25,10 +25,22 @@ extern "C" {
 
 /** @brief Bluetooth UUID types */
 enum {
+	/** UUID type 16-bit. */
 	BT_UUID_TYPE_16,
+	/** UUID type 32-bit. */
 	BT_UUID_TYPE_32,
+	/** UUID type 128-bit. */
 	BT_UUID_TYPE_128,
 };
+
+/** Size in octets of a 16-bit UUID */
+#define BT_UUID_SIZE_16                  2
+
+/** Size in octets of a 32-bit UUID */
+#define BT_UUID_SIZE_32                  4
+
+/** Size in octets of a 128-bit UUID */
+#define BT_UUID_SIZE_128                 16
 
 /** @brief This is a 'tentative' type and should be used as a pointer only */
 struct bt_uuid {
@@ -36,59 +48,114 @@ struct bt_uuid {
 };
 
 struct bt_uuid_16 {
+	/** UUID generic type. */
 	struct bt_uuid uuid;
+	/** UUID value, 16-bit in host endianness. */
 	uint16_t val;
 };
 
 struct bt_uuid_32 {
+	/** UUID generic type. */
 	struct bt_uuid uuid;
+	/** UUID value, 32-bit in host endianness. */
 	uint32_t val;
 };
 
 struct bt_uuid_128 {
+	/** UUID generic type. */
 	struct bt_uuid uuid;
-	uint8_t val[16];
+	/** UUID value, 128-bit in little-endian format. */
+	uint8_t val[BT_UUID_SIZE_128];
 };
 
+/** @brief Initialize a 16-bit UUID.
+ *
+ *  @param value 16-bit UUID value in host endianness.
+ */
 #define BT_UUID_INIT_16(value)		\
 {					\
 	.uuid = { BT_UUID_TYPE_16 },	\
 	.val = (value),			\
 }
 
+/** @brief Initialize a 32-bit UUID.
+ *
+ *  @param value 32-bit UUID value in host endianness.
+ */
 #define BT_UUID_INIT_32(value)		\
 {					\
 	.uuid = { BT_UUID_TYPE_32 },	\
 	.val = (value),			\
 }
 
+/** @brief Initialize a 128-bit UUID.
+ *
+ *  @param value 128-bit UUID array values in little-endian format.
+ *               Can be combined with @ref BT_UUID_128_ENCODE to initialize a
+ *               UUID from the readable form of UUIDs.
+ */
 #define BT_UUID_INIT_128(value...)	\
 {					\
 	.uuid = { BT_UUID_TYPE_128 },	\
 	.val = { value },		\
 }
 
+/** @brief Helper to declare a 16-bit UUID inline.
+ *
+ *  @param value 16-bit UUID value in host endianness.
+ *
+ *  @return Pointer to a generic UUID.
+ */
 #define BT_UUID_DECLARE_16(value) \
 	((struct bt_uuid *) ((struct bt_uuid_16[]) {BT_UUID_INIT_16(value)}))
+
+/** @brief Helper to declare a 32-bit UUID inline.
+ *
+ *  @param value 32-bit UUID value in host endianness.
+ *
+ *  @return Pointer to a generic UUID.
+ */
 #define BT_UUID_DECLARE_32(value) \
 	((struct bt_uuid *) ((struct bt_uuid_32[]) {BT_UUID_INIT_32(value)}))
+
+/** @brief Helper to declare a 128-bit UUID inline.
+ *
+ *  @param value 128-bit UUID array values in little-endian format.
+ *               Can be combined with @ref BT_UUID_128_ENCODE to declare a
+ *               UUID from the readable form of UUIDs.
+ *
+ *  @return Pointer to a generic UUID.
+ */
 #define BT_UUID_DECLARE_128(value...) \
 	((struct bt_uuid *) ((struct bt_uuid_128[]) {BT_UUID_INIT_128(value)}))
 
+/** Helper macro to access the 16-bit UUID from a generic UUID. */
 #define BT_UUID_16(__u) CONTAINER_OF(__u, struct bt_uuid_16, uuid)
+
+/** Helper macro to access the 32-bit UUID from a generic UUID. */
 #define BT_UUID_32(__u) CONTAINER_OF(__u, struct bt_uuid_32, uuid)
+
+/** Helper macro to access the 128-bit UUID from a generic UUID. */
 #define BT_UUID_128(__u) CONTAINER_OF(__u, struct bt_uuid_128, uuid)
 
-/** @brief Encode 128 bit UUID into an array values
+/** @brief Encode 128 bit UUID into array values in little-endian format.
  *
- *  Helper macro to initialize a 128-bit UUID value from the UUID format.
- *  Can be combined with BT_UUID_DECLARE_128 to declare a 128-bit UUID from
- *  the readable form of UUIDs.
+ *  Helper macro to initialize a 128-bit UUID array value from the readable form
+ *  of UUIDs, or encode 128-bit UUID values into advertising data
+ *  Can be combined with BT_UUID_DECLARE_128 to declare a 128-bit UUID.
  *
- *  Example for how to declare the UUID `6E400001-B5A3-F393-E0A9-E50E24DCCA9E`
+ *  Example of how to declare the UUID `6E400001-B5A3-F393-E0A9-E50E24DCCA9E`
  *
  *  @code
  *  BT_UUID_DECLARE_128(
+ *       BT_UUID_128_ENCODE(0x6E400001, 0xB5A3, 0xF393, 0xE0A9, 0xE50E24DCCA9E))
+ *  @endcode
+ *
+ *  Example of how to encode the UUID `6E400001-B5A3-F393-E0A9-E50E24DCCA9E`
+ *  into advertising data.
+ *
+ *  @code
+ *  BT_DATA_BYTES(BT_DATA_UUID128_ALL,
  *       BT_UUID_128_ENCODE(0x6E400001, 0xB5A3, 0xF393, 0xE0A9, 0xE50E24DCCA9E))
  *  @endcode
  *
@@ -122,14 +189,14 @@ struct bt_uuid_128 {
 	(((w32) >> 16) & 0xFF), \
 	(((w32) >> 24) & 0xFF)
 
-/** @brief Encode 16 bit UUID into an array values
+/** @brief Encode 16-bit UUID into array values in little-endian format.
  *
  *  Helper macro to encode 16-bit UUID values into advertising data.
  *
- *  Example for how to declare the UUID `0x180a`
+ *  Example of how to encode the UUID `0x180a` into advertising data.
  *
  *  @code
- *  BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(0x180a),
+ *  BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(0x180a))
  *  @endcode
  *
  * @param w16 UUID value (16-bits)
@@ -141,14 +208,14 @@ struct bt_uuid_128 {
 	(((w16) >>  0) & 0xFF), \
 	(((w16) >>  8) & 0xFF)
 
-/** @brief Encode 32 bit UUID into an array values
+/** @brief Encode 32-bit UUID into array values in little-endian format.
  *
  *  Helper macro to encode 32-bit UUID values into advertising data.
  *
- *  Example for how to declare the UUID `0x180a01af`
+ *  Example of how to encode the UUID `0x180a01af` into advertising data.
  *
  *  @code
- *  BT_DATA_BYTES(BT_DATA_UUID32_ALL, BT_UUID_32_ENCODE(0x180a01af),
+ *  BT_DATA_BYTES(BT_DATA_UUID32_ALL, BT_UUID_32_ENCODE(0x180a01af))
  *  @endcode
  *
  * @param w32 UUID value (32-bits)

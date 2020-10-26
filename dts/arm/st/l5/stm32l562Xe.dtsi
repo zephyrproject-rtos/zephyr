@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2020 Yestin Sun
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/l5/stm32l552Xe.dtsi>

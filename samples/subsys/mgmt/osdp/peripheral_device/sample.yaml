@@ -1,0 +1,10 @@
+sample:
+  description: OSDP Peripheral Device Sample
+  name: osdp
+tests:
+  sample.mgmt.osdp.peripheral_device:
+    tags: osdp
+    filter: dt_compat_enabled_with_alias("gpio-leds", "led0") and CONFIG_SERIAL
+    harness: osdp
+    integration_platforms:
+      - frdm_k64f

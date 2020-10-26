@@ -293,6 +293,7 @@ static void tcp_send_queue_flush(struct tcp *conn)
 static int tcp_conn_unref(struct tcp *conn)
 {
 	int key, ref_count = atomic_get(&conn->ref_count);
+	struct net_pkt *pkt;
 
 	NET_DBG("conn: %p, ref_count=%d", conn, ref_count);
 
@@ -313,6 +314,13 @@ static int tcp_conn_unref(struct tcp *conn)
 	}
 
 	key = irq_lock();
+
+	/* If there is any pending data, pass that to application */
+	while ((pkt = k_fifo_get(&conn->recv_data, K_NO_WAIT)) != NULL) {
+		net_context_packet_received(
+			(struct net_conn *)conn->context->conn_handler,
+			pkt, NULL, NULL, conn->recv_user_data);
+	}
 
 	if (conn->context->conn_handler) {
 		net_conn_unregister(conn->context->conn_handler);
@@ -360,13 +368,10 @@ int net_tcp_unref(struct net_context *context)
 	return ref_count;
 }
 
-static void tcp_send_process(struct k_work *work)
+static bool tcp_send_process_no_lock(struct tcp *conn)
 {
-	struct tcp *conn = CONTAINER_OF(work, struct tcp, send_timer);
 	bool unref = false;
 	struct net_pkt *pkt;
-
-	k_mutex_lock(&conn->lock, K_FOREVER);
 
 	pkt = tcp_slist(&conn->send_queue, peek_head,
 			struct net_pkt, next);
@@ -415,6 +420,18 @@ static void tcp_send_process(struct k_work *work)
 	}
 
 out:
+	return unref;
+}
+
+static void tcp_send_process(struct k_work *work)
+{
+	struct tcp *conn = CONTAINER_OF(work, struct tcp, send_timer);
+	bool unref;
+
+	k_mutex_lock(&conn->lock, K_FOREVER);
+
+	unref = tcp_send_process_no_lock(conn);
+
 	k_mutex_unlock(&conn->lock);
 
 	if (unref) {
@@ -597,9 +614,13 @@ static int tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
 
 			net_pkt_skip(up, net_pkt_get_len(up) - len);
 
-			net_context_packet_received(
-				(struct net_conn *)conn->context->conn_handler,
-				up, NULL, NULL, conn->recv_user_data);
+			/* Do not pass data to application with TCP conn
+			 * locked as there could be an issue when the app tries
+			 * to send the data and the conn is locked. So the recv
+			 * data is placed in fifo which is flushed in tcp_in()
+			 * after unlocking the conn
+			 */
+			k_fifo_put(&conn->recv_data, up);
 		}
 	}
  out:
@@ -711,7 +732,9 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 
 	sys_slist_append(&conn->send_queue, &pkt->next);
 
-	tcp_send_process(&conn->send_timer.work);
+	if (tcp_send_process_no_lock(conn)) {
+		tcp_conn_unref(conn);
+	}
 out:
 	return ret;
 }
@@ -962,6 +985,7 @@ static struct tcp *tcp_conn_alloc(void)
 	memset(conn, 0, sizeof(*conn));
 
 	k_mutex_init(&conn->lock);
+	k_fifo_init(&conn->recv_data);
 
 	conn->state = TCP_LISTEN;
 
@@ -1079,10 +1103,7 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 
 		net_ipaddr_copy(&conn_old->context->remote, &conn->dst.sa);
 
-		conn_old->accept_cb(conn->context,
-				    &conn_old->context->remote,
-				    sizeof(struct sockaddr), 0,
-				    conn_old->context);
+		conn->accepted_conn = conn_old;
 	}
  in:
 	if (conn) {
@@ -1189,10 +1210,19 @@ err:
 static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 {
 	struct tcphdr *th = pkt ? th_get(pkt) : NULL;
-	uint8_t next = 0, fl = th ? th->th_flags : 0;
+	uint8_t next = 0, fl = 0;
 	size_t tcp_options_len = th ? (th->th_off - 5) * 4 : 0;
+	struct net_conn *conn_handler = NULL;
+	struct net_pkt *recv_pkt;
+	void *recv_user_data;
+	struct k_fifo *recv_data_fifo;
 	size_t len;
 	int ret;
+
+	if (th) {
+		/* Currently we ignore ECN and CWR flags */
+		fl = th->th_flags & ~(ECN | CWR);
+	}
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
@@ -1265,6 +1295,18 @@ next_state:
 			next = TCP_ESTABLISHED;
 			net_context_set_state(conn->context,
 					      NET_CONTEXT_CONNECTED);
+
+			if (conn->accepted_conn) {
+				conn->accepted_conn->accept_cb(
+					conn->context,
+					&conn->accepted_conn->context->remote,
+					sizeof(struct sockaddr), 0,
+					conn->accepted_conn->context);
+
+				/* Make sure the accept_cb is only called once.
+				 */
+				conn->accepted_conn = NULL;
+			}
 
 			if (len) {
 				if (tcp_data_get(conn, pkt) < 0) {
@@ -1449,7 +1491,27 @@ next_state:
 		goto next_state;
 	}
 
+	/* If the conn->context is not set, then the connection was already
+	 * closed.
+	 */
+	if (conn->context) {
+		conn_handler = (struct net_conn *)conn->context->conn_handler;
+	}
+
+	recv_user_data = conn->recv_user_data;
+	recv_data_fifo = &conn->recv_data;
+
 	k_mutex_unlock(&conn->lock);
+
+	/* Pass all the received data stored in recv fifo to the application.
+	 * This is done like this so that we do not have any connection lock
+	 * held.
+	 */
+	while (conn_handler && atomic_get(&conn->ref_count) > 0 &&
+	       (recv_pkt = k_fifo_get(recv_data_fifo, K_NO_WAIT)) != NULL) {
+		net_context_packet_received(conn_handler, recv_pkt, NULL, NULL,
+					    recv_user_data);
+	}
 }
 
 /* Active connection close: send FIN and go to FIN_WAIT_1 state */

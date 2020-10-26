@@ -69,7 +69,7 @@ def test_bossac_init(cc, req, supports, runner_config):
 
 @patch('runners.bossac.BossacBinaryRunner.supports', return_value=True)
 @patch('runners.core.BuildConfiguration._init')
-@patch('runners.core.ZephyrBinaryRunner.get_flash_address',
+@patch('runners.bossac.BossacBinaryRunner.get_flash_offset',
        return_value=None)
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
@@ -86,7 +86,7 @@ def test_bossac_create(cc, req, gfa, bcfg, supports, runner_config):
 
 @patch('runners.bossac.BossacBinaryRunner.supports', return_value=True)
 @patch('runners.core.BuildConfiguration._init')
-@patch('runners.core.ZephyrBinaryRunner.get_flash_address',
+@patch('runners.bossac.BossacBinaryRunner.get_flash_offset',
        return_value=TEST_FLASH_ADDRESS)
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
@@ -105,7 +105,7 @@ def test_bossac_create_with_offset(cc, req, gfa, bcfg, supports,
 
 @patch('runners.bossac.BossacBinaryRunner.supports', return_value=True)
 @patch('runners.core.BuildConfiguration._init')
-@patch('runners.core.ZephyrBinaryRunner.get_flash_address',
+@patch('runners.bossac.BossacBinaryRunner.get_flash_offset',
        return_value=TEST_FLASH_ADDRESS)
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')

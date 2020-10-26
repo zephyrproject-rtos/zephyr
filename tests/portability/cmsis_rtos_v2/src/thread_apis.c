@@ -284,6 +284,7 @@ void test_thread_join(void)
 	zassert_not_null(tB, "Failed to create thread B with osThreadNew!");
 
 	printk(" - Creating thread A...\n");
+	attr.priority = osPriorityLow;
 	tA = osThreadNew(thread4, tB, &attr);
 	zassert_not_null(tA, "Failed to create thread A with osThreadNew!");
 

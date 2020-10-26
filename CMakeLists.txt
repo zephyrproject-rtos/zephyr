@@ -84,6 +84,7 @@ foreach(optional_include_dir
   ${SOC_DIR}/${ARCH}/${SOC_PATH}
   ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
   ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/include
+  ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/common/include
   )
   if(EXISTS ${optional_include_dir})
     zephyr_include_directories(${optional_include_dir})
@@ -289,6 +290,11 @@ zephyr_cc_option(-fno-asynchronous-unwind-tables)
 zephyr_cc_option(-fno-pie)
 zephyr_cc_option(-fno-pic)
 zephyr_cc_option(-fno-strict-overflow)
+
+if(CONFIG_THREAD_LOCAL_STORAGE)
+# Only support local exec TLS model at this point.
+zephyr_cc_option(-ftls-model=local-exec)
+endif()
 
 if(CONFIG_OVERRIDE_FRAME_POINTER_DEFAULT)
   if(CONFIG_OMIT_FRAME_POINTER)
@@ -566,9 +572,12 @@ add_custom_command(
   DEPENDS ${syscalls_subdirs_trigger} ${PARSE_SYSCALLS_HEADER_DEPENDS}
   )
 
-add_custom_target(${SYSCALL_LIST_H_TARGET} DEPENDS             ${syscall_list_h})
+add_custom_target(${SYSCALL_LIST_H_TARGET} DEPENDS ${syscall_list_h})
 add_custom_target(${PARSE_SYSCALLS_TARGET}
-	          DEPENDS ${syscalls_json} ${struct_tags_json})
+  DEPENDS
+  ${syscalls_json}
+  ${struct_tags_json}
+  )
 
 # 64-bit systems do not require special handling of 64-bit system call
 # parameters or return values, indicate this to the system call boilerplate
@@ -594,7 +603,6 @@ add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
   ${SYSCALL_SPLIT_TIMEOUT_ARG}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   DEPENDS ${PARSE_SYSCALLS_TARGET}
-  ${syscalls_json}
   )
 
 # This is passed into all calls to the gen_kobject_list.py script.
@@ -612,7 +620,6 @@ add_custom_command(
   DEPENDS
   ${ZEPHYR_BASE}/scripts/gen_kobject_list.py
   ${PARSE_SYSCALLS_TARGET}
-  ${struct_tags_json}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 add_custom_target(${DRIVER_VALIDATION_H_TARGET} DEPENDS ${DRV_VALIDATION})
@@ -642,7 +649,7 @@ target_include_directories(${OFFSETS_LIB} PRIVATE
   ${ARCH_DIR}/${ARCH}/include
   )
 target_link_libraries(${OFFSETS_LIB} zephyr_interface)
-add_dependencies(     ${OFFSETS_LIB}
+add_dependencies(zephyr_interface
   ${SYSCALL_LIST_H_TARGET}
   ${DRIVER_VALIDATION_H_TARGET}
   ${KOBJ_TYPES_H_TARGET}
@@ -1150,6 +1157,17 @@ if(CONFIG_BUILD_OUTPUT_BIN)
       # ${out_hex_byprod} # Is this needed ?
       )
   endif()
+endif()
+
+
+# Cleanup intermediate files
+if(CONFIG_CLEANUP_INTERMEDIATE_FILES)
+    list(APPEND
+      post_build_commands
+      COMMAND
+      # This file can be very large in some cases, delete it as we do not need it.
+      ${CMAKE_COMMAND} -E remove ${ZEPHYR_PREBUILT_EXECUTABLE}.elf
+      )
 endif()
 
 if(CONFIG_BUILD_OUTPUT_S19)

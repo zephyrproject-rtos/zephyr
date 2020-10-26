@@ -16,6 +16,16 @@
 
 LOG_MODULE_REGISTER(osdp, CONFIG_OSDP_LOG_LEVEL);
 
+#ifdef CONFIG_OSDP_SC_ENABLED
+#ifdef CONFIG_OSDP_MODE_PD
+#define OSDP_KEY_STRING CONFIG_OSDP_PD_SCBK
+#else
+#define OSDP_KEY_STRING CONFIG_OSDP_MASTER_KEY
+#endif
+#else
+#define OSDP_KEY_STRING ""
+#endif	/* CONFIG_OSDP_SC_ENABLED */
+
 struct osdp_device {
 	struct ring_buf rx_buf;
 	struct ring_buf tx_buf;
@@ -27,6 +37,8 @@ struct osdp_device {
 	uint8_t tx_fbuf[CONFIG_OSDP_UART_BUFFER_LENGTH];
 	struct uart_config dev_config;
 	const struct device *dev;
+	int wait_for_mark;
+	uint8_t last_byte;
 };
 
 static struct osdp osdp_ctx;
@@ -36,21 +48,35 @@ static struct osdp_device osdp_device;
 static struct k_thread osdp_refresh_thread;
 static K_THREAD_STACK_DEFINE(osdp_thread_stack, CONFIG_OSDP_THREAD_STACK_SIZE);
 
+static void osdp_handle_in_byte(struct osdp_device *p, uint8_t *buf, int len)
+{
+	if (p->wait_for_mark) {
+		/* Check for new packet beginning with [FF,53,...] sequence */
+		if (p->last_byte == 0xFF && buf[0] == 0x53) {
+			buf[0] = 0xFF;
+			ring_buf_put(&p->rx_buf, buf, 1);   /* put last byte */
+			buf[0] = 0x53;
+			ring_buf_put(&p->rx_buf, buf, len); /* put rest */
+			p->wait_for_mark = 0; /* Mark found. Clear flag */
+		}
+		p->last_byte = buf[0];
+		return;
+	}
+	ring_buf_put(&p->rx_buf, buf, len);
+}
+
 static void osdp_uart_isr(const struct device *dev, void *user_data)
 {
+	size_t len;
 	uint8_t buf[64];
-	size_t read, wrote, len;
 	struct osdp_device *p = user_data;
 
 	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
 
 		if (uart_irq_rx_ready(dev)) {
-			read = uart_fifo_read(dev, buf, sizeof(buf));
-			if (read) {
-				wrote = ring_buf_put(&p->rx_buf, buf, read);
-				if (wrote < read) {
-					LOG_ERR("RX: Drop %u", read - wrote);
-				}
+			len = uart_fifo_read(dev, buf, sizeof(buf));
+			if (len) {
+				osdp_handle_in_byte(p, buf, len);
 			}
 		}
 
@@ -59,13 +85,15 @@ static void osdp_uart_isr(const struct device *dev, void *user_data)
 			if (!len) {
 				uart_irq_tx_disable(dev);
 			} else {
-				wrote = uart_fifo_fill(dev, buf, 1);
+				uart_fifo_fill(dev, buf, 1);
 			}
 		}
 	}
 #ifdef CONFIG_OSDP_MODE_PD
-	/* wake osdp_refresh thread */
-	k_fifo_put(&p->rx_event_fifo, &p->rx_event_data);
+	if (p->wait_for_mark == 0) {
+		/* wake osdp_refresh thread */
+		k_fifo_put(&p->rx_event_fifo, &p->rx_event_data);
+	}
 #endif
 }
 
@@ -90,6 +118,7 @@ static void osdp_uart_flush(void *data)
 {
 	struct osdp_device *p = data;
 
+	p->wait_for_mark = 1;
 	ring_buf_reset(&p->tx_buf);
 	ring_buf_reset(&p->rx_buf);
 }
@@ -152,7 +181,8 @@ void osdp_refresh(void *arg1, void *arg2, void *arg3)
 static int osdp_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
-	uint8_t c;
+	int len;
+	uint8_t c, *key = NULL, key_buf[16];
 	struct osdp *ctx;
 	struct osdp_device *p = &osdp_device;
 	struct osdp_channel channel = {
@@ -188,10 +218,11 @@ static int osdp_init(const struct device *arg)
 	uart_irq_tx_disable(p->dev);
 	uart_irq_callback_user_data_set(p->dev, osdp_uart_isr, p);
 
-	/* Drain UART fifo */
+	/* Drain UART fifo and set channel to wait for mark byte */
 	while (uart_irq_rx_ready(p->dev)) {
 		uart_fifo_read(p->dev, &c, 1);
 	}
+	p->wait_for_mark = 1;
 
 	/* Both TX and RX are interrupt driven */
 	uart_irq_rx_enable(p->dev);
@@ -202,7 +233,24 @@ static int osdp_init(const struct device *arg)
 		LOG_ERR("OSDP build ctx failed!");
 		k_panic();
 	}
-	if (osdp_setup(ctx)) {
+
+	if (IS_ENABLED(CONFIG_OSDP_SC_ENABLED)) {
+		if (strcmp(OSDP_KEY_STRING, "NONE") != 0) {
+			len = strlen(OSDP_KEY_STRING);
+			if (len != 32) {
+				LOG_ERR("Key string length must be 32");
+				k_panic();
+			}
+			len = hex2bin(OSDP_KEY_STRING, 32, key_buf, 16);
+			if (len != 16) {
+				LOG_ERR("Failed to parse key buffer");
+				k_panic();
+			}
+			key = key_buf;
+		}
+	}
+
+	if (osdp_setup(ctx, key)) {
 		LOG_ERR("Failed to setup OSDP device!");
 		k_panic();
 	}

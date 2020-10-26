@@ -301,16 +301,16 @@ static int ism330dhcx_attr_set(const struct device *dev,
 static int ism330dhcx_sample_fetch_accel(const struct device *dev)
 {
 	struct ism330dhcx_data *data = dev->data;
-	union axis3bit16_t buf;
+	int16_t buf[3];
 
-	if (ism330dhcx_acceleration_raw_get(data->ctx, buf.u8bit) < 0) {
+	if (ism330dhcx_acceleration_raw_get(data->ctx, buf) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
 
-	data->acc[0] = sys_le16_to_cpu(buf.i16bit[0]);
-	data->acc[1] = sys_le16_to_cpu(buf.i16bit[1]);
-	data->acc[2] = sys_le16_to_cpu(buf.i16bit[2]);
+	data->acc[0] = sys_le16_to_cpu(buf[0]);
+	data->acc[1] = sys_le16_to_cpu(buf[1]);
+	data->acc[2] = sys_le16_to_cpu(buf[2]);
 
 	return 0;
 }
@@ -318,16 +318,16 @@ static int ism330dhcx_sample_fetch_accel(const struct device *dev)
 static int ism330dhcx_sample_fetch_gyro(const struct device *dev)
 {
 	struct ism330dhcx_data *data = dev->data;
-	union axis3bit16_t buf;
+	int16_t buf[3];
 
-	if (ism330dhcx_angular_rate_raw_get(data->ctx, buf.u8bit) < 0) {
+	if (ism330dhcx_angular_rate_raw_get(data->ctx, buf) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
 
-	data->gyro[0] = sys_le16_to_cpu(buf.i16bit[0]);
-	data->gyro[1] = sys_le16_to_cpu(buf.i16bit[1]);
-	data->gyro[2] = sys_le16_to_cpu(buf.i16bit[2]);
+	data->gyro[0] = sys_le16_to_cpu(buf[0]);
+	data->gyro[1] = sys_le16_to_cpu(buf[1]);
+	data->gyro[2] = sys_le16_to_cpu(buf[2]);
 
 	return 0;
 }
@@ -336,14 +336,14 @@ static int ism330dhcx_sample_fetch_gyro(const struct device *dev)
 static int ism330dhcx_sample_fetch_temp(const struct device *dev)
 {
 	struct ism330dhcx_data *data = dev->data;
-	union axis1bit16_t buf;
+	int16_t buf;
 
-	if (ism330dhcx_temperature_raw_get(data->ctx, buf.u8bit) < 0) {
+	if (ism330dhcx_temperature_raw_get(data->ctx, &buf) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
 
-	data->temp_sample = sys_le16_to_cpu(buf.i16bit);
+	data->temp_sample = sys_le16_to_cpu(buf);
 
 	return 0;
 }
@@ -823,17 +823,17 @@ static int ism330dhcx_init(const struct device *dev)
 
 	config->bus_init(dev);
 
+	if (ism330dhcx_init_chip(dev) < 0) {
+		LOG_DBG("failed to initialize chip");
+		return -EIO;
+	}
+
 #ifdef CONFIG_ISM330DHCX_TRIGGER
 	if (ism330dhcx_init_interrupt(dev) < 0) {
 		LOG_ERR("Failed to initialize interrupt.");
 		return -EIO;
 	}
 #endif
-
-	if (ism330dhcx_init_chip(dev) < 0) {
-		LOG_DBG("failed to initialize chip");
-		return -EIO;
-	}
 
 #ifdef CONFIG_ISM330DHCX_SENSORHUB
 	if (ism330dhcx_shub_init(dev) < 0) {

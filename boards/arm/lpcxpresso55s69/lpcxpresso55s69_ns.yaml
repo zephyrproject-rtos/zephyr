@@ -15,7 +15,9 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - adc
   - arduino_spi
+  - dma
   - gpio
   - spi
   - watchdog

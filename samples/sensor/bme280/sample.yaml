@@ -4,7 +4,7 @@ tests:
   sample.sensor.bme280:
     harness: console
     tags: sensors
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk_nrf52840 adafruit_feather_m0_basic_proto
     harness_config:
         type: one_line
         regex:

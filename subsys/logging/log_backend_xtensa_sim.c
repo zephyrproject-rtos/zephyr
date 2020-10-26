@@ -12,7 +12,7 @@
 #include <logging/log_core.h>
 #include <logging/log_msg.h>
 #include <logging/log_output.h>
-#include "log_backend_std.h"
+#include <logging/log_backend_std.h>
 #include <xtensa/simcall.h>
 
 #define CHAR_BUF_SIZE (IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? \

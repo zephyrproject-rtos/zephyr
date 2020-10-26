@@ -125,8 +125,8 @@ void lll_conn_flush(uint16_t handle, struct lll_conn *lll)
 void lll_conn_prepare_reset(void)
 {
 	trx_cnt = 0U;
-	crc_expire = 0U;
 	crc_valid = 0U;
+	crc_expire = 0U;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	mic_state = LLL_CONN_MIC_NONE;
@@ -159,17 +159,17 @@ void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 void lll_conn_isr_rx(void *param)
 {
-	struct node_tx *tx_release = NULL;
-	struct lll_conn *lll = param;
+	uint8_t is_empty_pdu_tx_retry;
 	struct pdu_data *pdu_data_rx;
 	struct pdu_data *pdu_data_tx;
 	struct node_rx_pdu *node_rx;
-	uint8_t is_empty_pdu_tx_retry;
-	uint8_t is_rx_enqueue = 0U;
-	uint8_t is_ull_rx = 0U;
-	uint8_t is_done = 0U;
+	struct node_tx *tx_release;
+	uint8_t is_rx_enqueue;
+	struct lll_conn *lll;
 	uint8_t rssi_ready;
+	uint8_t is_ull_rx;
 	uint8_t trx_done;
+	uint8_t is_done;
 	uint8_t crc_ok;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
@@ -197,6 +197,12 @@ void lll_conn_isr_rx(void *param)
 	}
 
 	trx_cnt++;
+
+	is_done = 0U;
+	tx_release = NULL;
+	is_rx_enqueue = 0U;
+
+	lll = param;
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
 	LL_ASSERT(node_rx);
@@ -319,6 +325,8 @@ lll_conn_isr_rx_exit:
 	lll_prof_cputime_capture();
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
+	is_ull_rx = 0U;
+
 	if (tx_release) {
 		LL_ASSERT(lll->handle != 0xFFFF);
 
@@ -384,7 +392,7 @@ lll_conn_isr_rx_exit:
 
 void lll_conn_isr_tx(void *param)
 {
-	struct lll_conn *lll = (void *)param;
+	struct lll_conn *lll;
 	uint32_t hcto;
 
 	/* Clear radio tx status and events */
@@ -392,6 +400,9 @@ void lll_conn_isr_tx(void *param)
 
 	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
+
+	lll = param;
+
 #if defined(CONFIG_BT_CTLR_PHY)
 	radio_switch_complete_and_tx(lll->phy_rx, 0,
 				     lll->phy_tx,

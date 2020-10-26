@@ -1,7 +1,9 @@
 # Copyright (c) 2020 Richard Osterloh
 # SPDX-License-Identifier: Apache-2.0
 
-description: VCNL4040 proximity and ambient light sensor
+description: |
+    VCNL4040 proximity and ambient light sensor.  See datasheet at
+    https://www.vishay.com/docs/84274/vcnl4040.pdf
 
 compatible: "vishay,vcnl4040"
 
@@ -21,6 +23,7 @@ properties:
       type: int
       required: false
       default: 50
+      # default of 50 mA is POR (0b000) for PS_MS[LED_I] register
       description: LED current in mA
       enum:
         - 50
@@ -36,6 +39,7 @@ properties:
       type: int
       required: false
       default: 40
+      # default of 40 Hz is POR (0b00) for PS_CONF1[PS_Duty] register
       description: LED duty cycle in Hz
       enum:
         - 40
@@ -47,6 +51,7 @@ properties:
       type: string
       required: false
       default: "1"
+      # default of 1 is POR (0b000) for PS_CONF2[PS_IT] register
       description: Proximity integration time in T
       enum:
         - "1"
@@ -61,7 +66,8 @@ properties:
     proximity-trigger:
       type: string
       required: false
-      default: "close-away"
+      default: "disabled"
+      # default of "disabled" is POR (0b00) for PS_CONF2[PS_INT] register
       description: Proximity trigger type
       enum:
         - "disabled"
@@ -73,6 +79,7 @@ properties:
       type: int
       required: false
       default: 80
+      # default of 80 is POR (0b00) for ALS_CONF[ALS_IT] register
       description: ALS integration time in ms
       enum:
         - 80

@@ -1,8 +1,0 @@
-# Xtensa board configuration
-
-# Copyright (c) 2019 Intel Corporation
-# SPDX-License-Identifier: Apache-2.0
-
-config  BOARD_UP_SQUARED_ADSP
-	bool "Xtensa on Up Squared"
-	depends on SOC_INTEL_APL_ADSP

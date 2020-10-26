@@ -10,13 +10,371 @@ system those are called *modules*. These modules must be integrated with the
 Zephyr build system, as described in more detail in other sections on
 this page.
 
-Zephyr depends on several categories of modules, including:
+To be classified as a candidate for being included in the default list of
+modules, an external project is required to have its own life-cycle outside
+the Zephyr Project, that is, reside in its own repository, and have its own
+contribution and maintenance workfow and release process. Zephyr modules
+should not contain code that is written exclusively for Zephyr. Instead,
+such code should be contributed to the main zephyr tree.
+
+Modules to be included in the default manifest of the Zephyr project need to
+provide functionality or features endorsed and approved by the project Technical
+Steering Committee and should comply with the
+:ref:`module licensing requirements<modules_licensing>` and
+:ref:`contribute guidelines<modules_contributing>`. They should also have a
+Zephyr developer that is committed to maintain the module codebase.
+
+Zephyr depends on several categories of modules, including but not limited to:
 
 - Debugger integration
 - Silicon vendor Hardware Abstraction Layers (HALs)
 - Cryptography libraries
 - File Systems
 - Inter-Process Communication (IPC) libraries
+
+This page summarizes a list of policies and best practices which aim at
+better organizing the workflow in Zephyr modules.
+
+Module Repositories
+*******************
+
+* All modules included in the default manifest shall be hosted in repositories
+  under the zephyrproject-rtos GitHub organization.
+
+* The module repository codebase shall include a *module.yml* file in a
+  :file:`zephyr/` folder at the root of the repository.
+
+* Module repository names should follow the convention of using lowercase
+  letters and dashes instead of underscores. This rule will apply to all
+  new module repositories, except for repositories that are directly
+  tracking external projects (hosted in Git repositories); such modules
+  may be named as their external project counterparts.
+
+  .. note::
+
+     Existing module repositories that do not conform to the above convention
+     do not need to be renamed to comply with the above convention.
+
+* Modules should use "zephyr" as the default name for the repository main
+  branch. Branches for specific purposes, for example, a module branch for
+  an LTS Zephyr version, shall have names starting with the 'zephyr\_' prefix.
+
+* If the module has an external (upstream) project repository, the module
+  repository should preserve the upstream repository folder structure.
+
+  .. note::
+
+     It is not required in module repositories to maintain a 'master'
+     branch mirroring the master branch of the external repository. It
+     is not recommended as this may generate confusion around the module's
+     main branch, which should be 'zephyr'.
+
+.. _modules_synchronization:
+
+Synchronizing with upstream
+===========================
+
+It is preferred to synchronize a module respository with the latest stable
+release of the corresponding external project. It is permitted, however, to
+update a Zephyr module repository with the latest development branch tip,
+if this is required to get important updates in the module codebase. When
+synchronizing a module with upstream it is mandatory to document the
+rationale for performing the particular update.
+
+Requirements for allowed practices
+----------------------------------
+
+Changes to the main branch of a module repository, including synchronization
+with upstream code base, may only be applied via pull requests. These pull
+requests shall be *verifiable* by Zephyr CI and *mergeable* (e.g. with the
+*Rebase and merge*, or *Create a merge commit* option using Github UI). This
+ensures that the incoming changes are always **reviewable**, and the
+*downstream* module repository history is incremental (that is, existing
+commits, tags, etc. are always preserved). This policy also allows to run
+Zephyr CI, git lint, identity, and license checks directly on the set of
+changes that are to be brought into the module repository.
+
+.. note::
+
+     Force-pushing to a module's main branch is not allowed.
+
+Allowed practices
+---------------------
+
+The following practices conform to the above requirements and should be
+followed in all modules repositories. It is up to the module code owner
+to select the preferred synchronization practice, however, it is required
+that the selected practice is consistently followed in the respective
+module repository.
+
+**Updating modules with a diff from upstream:**
+Upstream changes brought as a single *snapshot* commit (manual diff) in a
+pull request against the module's main branch, which may be merged using
+the *Rebase & merge* operation. This approach is simple and
+should be applicable to all modules with the downside of supressing the
+upstream history in the module repository.
+
+  .. note::
+
+     The above practice is the only allowed practice in modules where
+     the external project is not hosted in an upstream Git repository.
+
+The commit message is expected to identify the upstream project URL, the
+version to which the module is updated (upstream version, tag, commit SHA,
+if applicable, etc.), and the reason for the doing the update.
+
+**Updating modules by merging the upstream branch:**
+Upstream changes brought in by performing a Git merge of the intended upstream
+branch (e.g. main branch, latest release branch, etc.) submitting the result in
+pull request against the module main branch, and merging the pull request using
+the *Create a merge commit* operation.
+This approach is applicable to modules with an upstream project Git repository.
+The main advantages of this approach is that the upstream repository history
+(that is, the original commit SHAs) is preserved in the module repository. The
+downside of this approach is that two additional merge commits are generated in
+the downstream main branch.
+
+
+Contributing to Zephyr modules
+******************************
+
+.. _modules_contributing:
+
+
+Individual Roles & Responsibilities
+===================================
+
+To facilitate management of Zephyr module repositories, the following
+individual roles are defined.
+
+**Administrator:** Each Zephyr module shall have an administrator
+who is responsible for managing access to the module repository,
+for example, for adding individuals as Collaborators in the repository
+at the request of the module owner. Module administrators are
+members of the Administrators team, that is a group of project
+members with admin rights to module GitHub repositories.
+
+**Module owner:** Each module shall have a module code owner. Module
+owners will have the overall responsibility of the contents of a
+Zephyr module repository. In particular, a module owner will:
+
+* coordinate code reviewing in the module repository
+* be the default assignee in pull-requests against the repository's
+  main branch
+* request additional collaborators to be added to the repository, as
+  they see fit
+* regularly synchronize the module repository with its upstream
+  counterpart following the policies described in
+  :ref:`modules_synchronization`
+* be aware of security vulnerability issues in the external project
+  and update the module repository to include security fixes, as
+  soon as the fixes are available in the upstream code base
+* list any known security vulnerability issues, present in the
+  module codebase, in Zephyr release notes.
+
+
+  .. note::
+
+     Module owners are not required to be Zephyr
+     :ref:`Maintainers <project_roles>`.
+
+**Merger:** The Zephyr Release Engineering team has the right and the
+responsibility to merge approved pull requests in the main branch of a
+module repository.
+
+
+Maintaining the module codebase
+===============================
+
+Updates in the zephyr main tree, for example, in public Zephyr APIs,
+may require patching a module's codebase. The responsibility for keeping
+the module codebase up to date is shared between the **contributor** of
+such updates in Zephyr and the module **owner**. In particular:
+
+* the contributor of the original changes in Zephyr is required to submit
+  the corresponding changes that are required in module repositories, to
+  ensure that Zephyr CI on the pull request with the original changes, as
+  well as the module integration testing are successful.
+
+* the module owner has the overall responsibility for synchronizing
+  and testing the module codebase with the zephyr main tree.
+  This includes occasional advanced testing of the module's codebase
+  in addition to the testing performed by Zephyr's CI.
+  The module owner is required to fix issues in the module's codebase that
+  have not been caught by Zephyr pull request CI runs.
+
+
+
+Contributing changes to modules
+===============================
+
+Submitting and merging changes directly to a module's codebase, that is,
+before they have been merged in the corresponding external project
+repository, should be limited to:
+
+* changes required due to updates in the zephyr main tree
+* urgent changes that should not wait to be merged in the external project
+  first, such as fixes to security vulnerabilities.
+
+Non-trivial changes to a module's codebase, including changes in the module
+design or functionality should be discouraged, if the module has an upstream
+project repository. In that case, such changes shall be submitted to the
+upstream project, directly.
+
+:ref:`Submitting changes to modules <submitting_new_modules>` describes in
+detail the process of contributing changes to module repositories.
+
+Contribution guidelines
+-----------------------
+
+Contributing to Zephyr modules shall follow the generic project
+:ref:`Contribution guidelines <contribute_guidelines>`.
+
+**Pull Requests:** may be merged with minimum of 2 approvals, including
+an approval by the PR assignee. In addition to this, pull requests in module
+repositories may only be merged if the introduced changes are verified
+with Zephyr CI tools, as described in more detail in other sections on
+this page.
+
+The merging of pull requests in the main branch of a module
+repository must be coupled with the corresponding manifest
+file update in the zephyr main tree.
+
+**Issue Reporting:** GitHub issues are intentionally disabled in module
+repositories, in
+favor of a centralized policy for issue reporting. Tickets concerning, for
+example, bugs or enhancements in modules shall be opened in the main
+zephyr repository. Issues should be appropriately labeled using GitHub
+labels corresponding to each module, where applicable.
+
+  .. note::
+
+     It is allowed to file bug reports for zephyr modules to track
+     the corresponding upstream project bugs in Zephyr. These bug reports
+     shall not affect the
+     :ref:`Release Quality Criteria<release_quality_criteria>`.
+
+
+.. _modules_licensing:
+
+Licensing requirements and policies
+***********************************
+
+All source files in a module's codebase shall include a license header,
+unless the module repository has **main license file** that covers source
+files that do not include license headers.
+
+Main license files shall be added in the module's codebase by Zephyr
+developers, only if they exist as part of the external project,
+and they contain a permissive OSI-compliant license. Main license files
+should preferably contain the full license text instead of including an
+SPDX license identifier. If multiple main license files are present it
+shall be made clear which license applies to each source file in a module's
+codebase.
+
+Individual license headers in module source files supersede the main license.
+
+Any new content to be added in a module repository will require to have
+license coverage.
+
+  .. note::
+
+     Zephyr recommends conveying module licensing via individual license
+     headers and main license files. This not a hard requirement; should
+     an external project have its own practice of conveying how licensing
+     applies in the module's codebase (for example, by having a single or
+     multiple main license files), this practice may be accepted by and
+     be referred to in the Zephyr module, as long as licensing requirements,
+     for example OSI compliance, are satisfied.
+
+License policies
+================
+
+When creating a module repository a developer shall:
+
+* import the main license files, if they exist in the external project, and
+* document (for example in the module README or .yml file) the default license
+  that covers the module's codebase.
+
+License checks
+--------------
+
+License checks (via CI tools) shall be enabled on every pull request that
+adds new content in module repositories.
+
+
+Documentation requirements
+**************************
+
+All Zephyr module repositories shall include an .rst file documenting:
+
+* the scope and the purpose of the module
+* how the module integrates with Zephyr
+* the owner of the module repository
+* synchronization information with the external project (commit, SHA, version etc.)
+* licensing information as described in :ref:`modules_licensing`.
+
+The file shall be required for the inclusion of the module and the contained
+information should be kept up to date.
+
+
+Testing requirements
+********************
+
+All Zephyr modules should provide some level of **integration** testing,
+ensuring that the integration with Zephyr works correctly.
+Integration tests:
+
+* may be in the form of a minimal set of samples and tests that reside
+  in the zephyr main tree
+* should verify basic usage of the module (configuration,
+  functional APIs, etc.) that is integrated with Zephyr.
+* shall be built and executed (for example in QEMU) as part of
+  sanitycheck runs in pull requests that introduce changes in module
+  repositories.
+
+  .. note::
+
+     New modules, that are candidates for being included in the Zephyr
+     default manifest, shall provide some level of integration testing.
+
+  .. note::
+
+     Vendor HALs are implicitly tested via Zephyr tests built or executed
+     on target platforms, so they do not need to provide integration tests.
+
+The purpose of integration testing is not to provide functional verification
+of the module; this should be part of the testing framework of the external
+project.
+
+Certain external projects provide test suites that reside in the upstream
+testing infrastructure but are written explicitly for Zephyr. These tests
+may (but are not required to) be part of the Zephyr test framework.
+
+Deprecating and removing modules
+*********************************
+
+Modules may be deprecated for reasons including, but not limited to:
+
+* Lack of maintainership in the module
+* Licensing changes in the external project
+* Codebase becoming obsolete
+
+The module information shall indicate whether a module is
+deprecated and the build system shall issue a warning
+when trying to build Zephyr using a deprecated module.
+
+Deprecated modules may be removed from the Zephyr default manifest
+after 2 Zephyr releases.
+
+  .. note::
+
+     Repositories of removed modules shall remain accessible via their
+     original URL, as they are required by older Zephyr versions.
+
+
+Integrate modules in Zephyr build system
+****************************************
 
 The build system variable :makevar:`ZEPHYR_MODULES` is a `CMake list`_ of
 absolute paths to the directories containing Zephyr modules. These modules
@@ -202,12 +560,12 @@ are maintained in the module. For example:
 
 
 Module Inclusion
-****************
+================
 
 .. _modules_using_west:
 
 Using West
-==========
+----------
 
 If west is installed and :makevar:`ZEPHYR_MODULES` is not already set, the
 build system finds all the modules in your :term:`west installation` and uses
@@ -230,7 +588,7 @@ Each project in the ``west list`` output is tested like this:
   and is not added to :makevar:`ZEPHYR_MODULES`.
 
 Without West
-============
+------------
 
 If you don't have west installed or don't want the build system to use it to
 find Zephyr modules, you can set :makevar:`ZEPHYR_MODULES` yourself using one
@@ -268,7 +626,7 @@ section.
    zephyr-modules.cmake`` to your CMake command line.
 
 Not using modules
-=================
+-----------------
 
 If you don't have west installed and don't specify :makevar:`ZEPHYR_MODULES`
 yourself, then no additional modules are added to the build. You will still be
@@ -286,7 +644,7 @@ Zephyr needs a reference to the changes to be able to verify the changes. In the
 main tree this is done using revisions. For code that is already merged and part
 of the tree we use the commit hash, a tag, or a branch name. For pull requests
 however, we require specifying the pull request number in the revision field to
-allow building the Zephyr main tree with the changes submitted to the
+allow building the zephyr main tree with the changes submitted to the
 module.
 
 To avoid merging changes to master with pull request information, the pull
@@ -301,16 +659,8 @@ using exactly the same process. In this case you will change multiple entries of
 all modules that have a pull request against them.
 
 
-Submitting a new module
-========================
-
-Requirements
--------------
-
-Modules to be included in the default manifest of the Zephyr project need to
-provide functionality or features endorsed and approved by the project technical
-steering committee and should follow the project licensing and
-:ref:`contribute_guidelines`.
+Process for submitting a new module
+===================================
 
 A request for a new module should be initialized using an RFC issue in the
 Zephyr project issue tracking system with details about the module and how it
@@ -319,14 +669,9 @@ created by the project team and initialized with basic information that would
 allow submitting code to the module project following the project contribution
 guidelines.
 
-All modules should be hosted in repositories under the Zephyr organization. The
-manifest should only point to repositories maintained under the Zephyr project.
 If a module is maintained as a fork of another project on Github, the Zephyr module
 related files and changes in relation to upstream need to be maintained in a
 special branch named ``zephyr``.
-
-Process
--------
 
 Follow the following steps to request a new module:
 
@@ -363,8 +708,8 @@ revision needs to be changed to the commit hash from the module repository.
 
 .. _changes_to_existing_module:
 
-Changes to existing modules
-===========================
+Process for submitting changes to existing modules
+==================================================
 
 #. Submit the changes using a pull request to an existing repository following
    the :ref:`contribution guidelines <contribute_guidelines>`.

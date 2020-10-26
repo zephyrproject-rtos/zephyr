@@ -103,7 +103,9 @@
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 #define BT_SCAN_SYNC_TICKER_NODES ((TICKER_ID_SCAN_SYNC_LAST) - \
 				   (TICKER_ID_SCAN_SYNC_BASE) + 1)
-#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+#else /* !CONFIG_BT_CTLR_SYNC_PERIODIC */
+#define BT_SCAN_SYNC_TICKER_NODES 0
+#endif /* !CONFIG_BT_CTLR_SYNC_PERIODIC */
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 #define BT_SCAN_AUX_TICKER_NODES 0
 #define BT_SCAN_SYNC_TICKER_NODES 0
@@ -632,6 +634,12 @@ void ll_rx_dequeue(void)
 		}
 	}
 	break;
+
+	case NODE_RX_TYPE_EXT_SCAN_TERMINATE:
+	{
+		ull_scan_term_dequeue(rx->handle);
+	}
+	break;
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_BROADCASTER)
@@ -854,6 +862,24 @@ void ll_rx_mem_release(void **node_rx)
 		rx = rx->next;
 
 		switch (rx_free->type) {
+#if defined(CONFIG_BT_BROADCASTER)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		case NODE_RX_TYPE_EXT_ADV_TERMINATE:
+			mem_release(rx_free, &mem_pdu_rx.free);
+			break;
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+#endif /* CONFIG_BT_BROADCASTER */
+
+#if defined(CONFIG_BT_OBSERVER)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		case NODE_RX_TYPE_EXT_SCAN_TERMINATE:
+		{
+			mem_release(rx_free, &mem_pdu_rx.free);
+		}
+		break;
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+#endif /* CONFIG_BT_OBSERVER */
+
 #if defined(CONFIG_BT_CONN)
 		case NODE_RX_TYPE_CONNECTION:
 		{
@@ -915,20 +941,14 @@ void ll_rx_mem_release(void **node_rx)
 
 #if defined(CONFIG_BT_OBSERVER)
 		case NODE_RX_TYPE_REPORT:
-#endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-#if defined(CONFIG_BT_OBSERVER)
 			__fallthrough;
 		case NODE_RX_TYPE_EXT_1M_REPORT:
 		case NODE_RX_TYPE_EXT_2M_REPORT:
 		case NODE_RX_TYPE_EXT_CODED_REPORT:
-#endif /* CONFIG_BT_OBSERVER */
-
-#if defined(CONFIG_BT_BROADCASTER)
-		case NODE_RX_TYPE_EXT_ADV_TERMINATE:
-#endif /* CONFIG_BT_BROADCASTER */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
+#endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
 		case NODE_RX_TYPE_SCAN_REQ:
@@ -1159,6 +1179,17 @@ uint32_t ull_ticker_status_take(uint32_t ret, uint32_t volatile *ret_cb)
 {
 	if (ret == TICKER_STATUS_BUSY) {
 		/* TODO: Enable ticker job in case of CONFIG_BT_CTLR_LOW_LAT */
+	} else {
+		/* Check for ticker operation enqueue failed, in which case
+		 * function return value (ret) will be TICKER_STATUS_FAILURE
+		 * and callback return value (ret_cb) will remain as
+		 * TICKER_STATUS_BUSY.
+		 * This assert check will avoid waiting forever to take the
+		 * semaphore that will never be given when the ticker operation
+		 * callback does not get called due to enqueue failure.
+		 */
+		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+			  (*ret_cb != TICKER_STATUS_BUSY));
 	}
 
 	k_sem_take(&sem_ticker_api_cb, K_FOREVER);
@@ -1914,10 +1945,14 @@ static inline void rx_demux_event_done(memq_link_t *link,
 #endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_OBSERVER)
-		/* fallthrough checkpatch workaround! */
+	case EVENT_DONE_EXTRA_TYPE_SCAN:
+		ull_scan_done(done);
+		break;
+
 	case EVENT_DONE_EXTRA_TYPE_SCAN_AUX:
 		ull_scan_aux_done(done);
 		break;
+
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	case EVENT_DONE_EXTRA_TYPE_SYNC:
 		ull_sync_done(done);

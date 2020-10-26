@@ -4,3 +4,4 @@ tests:
   kernel.fifo.usage.poll:
     extra_args: CONF_FILE="prj_poll.conf"
     tags: kernel
+    filter: not CONFIG_KERNEL_COHERENCE

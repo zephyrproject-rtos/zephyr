@@ -9,6 +9,11 @@ struct ll_scan_set {
 	struct ull_hdr  ull;
 	struct lll_scan lll;
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	uint16_t duration_lazy;
+	struct node_rx_hdr *node_rx_scan_term;
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
 	uint8_t is_enabled:1;
 	uint8_t own_addr_type:2;
 

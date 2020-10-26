@@ -75,4 +75,7 @@
 /* Boot vector resideing in LP-SRAM for core #1 */
 #define LPSRAM_BOOT_VECTOR_ADDR			(LPRAM_BASE + 0x08)
 
+#define IPC_DSP_SIZE                0x00000080
+#define IPC_DSP_BASE(x)             (0x00001200 + x * IPC_DSP_SIZE)
+
 #endif /* __INC_MEMORY_H */

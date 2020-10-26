@@ -131,4 +131,11 @@ config STDOUT_CONSOLE
 	  device, rather than suppressing it entirely. See also EARLY_CONSOLE
 	  option.
 
+config NEED_LIBC_MEM_PARTITION
+	bool
+	help
+	  Hidden option to signal that a memory partition is needed for
+	  the C libraray even though it would not have been enabled
+	  otherwise.
+
 endmenu

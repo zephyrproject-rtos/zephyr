@@ -22,7 +22,7 @@ extern "C" {
  * @retval Pointer to structure device
  * @retval NULL Invalid parameter of GPIO port index
  */
-const struct device *soc_get_gpio_dev(int port);
+const struct device *npcx_get_gpio_dev(int port);
 
 #ifdef __cplusplus
 }

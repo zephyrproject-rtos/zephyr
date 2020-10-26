@@ -162,7 +162,7 @@ Default Zephyr Peripheral Mapping:
 - LD2 : PA5
 - USB DM : PA11
 - USB DP : PA12
-- ADC1 : PA0
+- ADC1_IN1 : PA0
 
 System Clock
 ------------

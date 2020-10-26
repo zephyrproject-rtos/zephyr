@@ -50,30 +50,6 @@ module = I2C
 module-str = i2c
 source "subsys/logging/Kconfig.template.log_config"
 
-config I2C_0
-	bool "Enable I2C Port 0"
-
-config I2C_1
-	bool "Enable I2C Port 1"
-
-config I2C_2
-	bool "Enable I2C Port 2"
-
-config I2C_3
-	bool "Enable I2C Port 3"
-
-config I2C_4
-	bool "Enable I2C Port 4"
-
-config I2C_5
-	bool "Enable I2C Port 5"
-
-config I2C_6
-	bool "Enable I2C Port 6"
-
-config I2C_7
-	bool "Enable I2C Port 7"
-
 config I2C_GECKO
 	bool "Gecko I2C driver"
 	depends on HAS_SILABS_GECKO

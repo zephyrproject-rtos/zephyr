@@ -15,7 +15,7 @@
 
 LOG_MODULE_DECLARE(os);
 
-void *xtensa_init_stack(int *stack_top,
+void *xtensa_init_stack(struct k_thread *thread, int *stack_top,
 			void (*entry)(void *, void *, void *),
 			void *arg1, void *arg2, void *arg3)
 {
@@ -27,12 +27,16 @@ void *xtensa_init_stack(int *stack_top,
 	 * start will decrement the stack pointer by 16.
 	 */
 	const int bsasz = BASE_SAVE_AREA_SIZE - 16;
-	void **bsa = (void **) (((char *) stack_top) - bsasz);
+	void *ret, **bsa = (void **) (((char *) stack_top) - bsasz);
 
 	(void)memset(bsa, 0, bsasz);
 
 	bsa[BSA_PC_OFF/4] = z_thread_entry;
 	bsa[BSA_PS_OFF/4] = (void *)(PS_WOE | PS_UM | PS_CALLINC(1));
+
+#if XCHAL_HAVE_THREADPTR && defined(CONFIG_THREAD_LOCAL_STORAGE)
+	bsa[BSA_THREADPTR_OFF/4] = UINT_TO_POINTER(thread->tls);
+#endif
 
 	/* Arguments to z_thread_entry().  Remember these start at A6,
 	 * which will be rotated into A2 by the ENTRY instruction that
@@ -53,14 +57,20 @@ void *xtensa_init_stack(int *stack_top,
 	 * as the handle
 	 */
 	bsa[-9] = bsa;
-	return &bsa[-9];
+	ret = &bsa[-9];
+
+#ifdef CONFIG_KERNEL_COHERENCE
+	xthal_dcache_region_writeback(ret, (char *)stack_top - (char *)ret);
+#endif
+	return ret;
 }
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     char *stack_ptr, k_thread_entry_t entry,
 		     void *p1, void *p2, void *p3)
 {
-	thread->switch_handle = xtensa_init_stack((int *)stack_ptr, entry,
+	thread->switch_handle = xtensa_init_stack(thread,
+						  (int *)stack_ptr, entry,
 						  p1, p2, p3);
 }
 

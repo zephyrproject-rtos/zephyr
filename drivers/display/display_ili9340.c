@@ -97,7 +97,7 @@ static int ili9340_exit_sleep(const struct device *dev)
 {
 	int r;
 
-	r = ili9340_transmit(dev, ILI9340_CMD_EXIT_SLEEP, NULL, 0);
+	r = ili9340_transmit(dev, ILI9340_SLPOUT, NULL, 0);
 	if (r < 0) {
 		return r;
 	}
@@ -131,14 +131,14 @@ static int ili9340_set_mem_area(const struct device *dev, const uint16_t x,
 
 	spi_data[0] = sys_cpu_to_be16(x);
 	spi_data[1] = sys_cpu_to_be16(x + w - 1U);
-	r = ili9340_transmit(dev, ILI9340_CMD_COLUMN_ADDR, &spi_data[0], 4U);
+	r = ili9340_transmit(dev, ILI9340_CASET, &spi_data[0], 4U);
 	if (r < 0) {
 		return r;
 	}
 
 	spi_data[0] = sys_cpu_to_be16(y);
 	spi_data[1] = sys_cpu_to_be16(y + h - 1U);
-	r = ili9340_transmit(dev, ILI9340_CMD_PAGE_ADDR, &spi_data[0], 4U);
+	r = ili9340_transmit(dev, ILI9340_PASET, &spi_data[0], 4U);
 	if (r < 0) {
 		return r;
 	}
@@ -180,8 +180,7 @@ static int ili9340_write(const struct device *dev, const uint16_t x,
 		nbr_of_writes = 1U;
 	}
 
-	r = ili9340_transmit(dev, ILI9340_CMD_MEM_WRITE,
-			     write_data_start,
+	r = ili9340_transmit(dev, ILI9340_RAMWR, write_data_start,
 			     desc->width * data->bytes_per_pixel * write_h);
 	if (r < 0) {
 		return r;
@@ -224,13 +223,13 @@ static void *ili9340_get_framebuffer(const struct device *dev)
 static int ili9340_display_blanking_off(const struct device *dev)
 {
 	LOG_DBG("Turning display blanking off");
-	return ili9340_transmit(dev, ILI9340_CMD_DISPLAY_ON, NULL, 0);
+	return ili9340_transmit(dev, ILI9340_DISPON, NULL, 0);
 }
 
 static int ili9340_display_blanking_on(const struct device *dev)
 {
 	LOG_DBG("Turning display blanking on");
-	return ili9340_transmit(dev, ILI9340_CMD_DISPLAY_OFF, NULL, 0);
+	return ili9340_transmit(dev, ILI9340_DISPOFF, NULL, 0);
 }
 
 static int ili9340_set_brightness(const struct device *dev,
@@ -258,18 +257,16 @@ static int ili9340_set_pixel_format(const struct device *dev,
 
 	if (pixel_format == PIXEL_FORMAT_RGB_565) {
 		bytes_per_pixel = 2U;
-		tx_data = ILI9340_DATA_PIXEL_FORMAT_MCU_16_BIT |
-			  ILI9340_DATA_PIXEL_FORMAT_RGB_16_BIT;
+		tx_data = ILI9340_PIXSET_MCU_16_BIT | ILI9340_PIXSET_RGB_16_BIT;
 	} else if (pixel_format == PIXEL_FORMAT_RGB_888) {
 		bytes_per_pixel = 3U;
-		tx_data = ILI9340_DATA_PIXEL_FORMAT_MCU_18_BIT |
-			  ILI9340_DATA_PIXEL_FORMAT_RGB_18_BIT;
+		tx_data = ILI9340_PIXSET_MCU_18_BIT | ILI9340_PIXSET_RGB_18_BIT;
 	} else {
 		LOG_ERR("Unsupported pixel format");
 		return -ENOTSUP;
 	}
 
-	r = ili9340_transmit(dev, ILI9340_CMD_PIXEL_FORMAT_SET, &tx_data, 1U);
+	r = ili9340_transmit(dev, ILI9340_PIXSET, &tx_data, 1U);
 	if (r < 0) {
 		return r;
 	}
@@ -286,21 +283,19 @@ static int ili9340_set_orientation(const struct device *dev,
 	struct ili9340_data *data = (struct ili9340_data *)dev->data;
 
 	int r;
-	uint8_t tx_data = ILI9340_DATA_MEM_ACCESS_CTRL_BGR;
+	uint8_t tx_data = ILI9340_MADCTL_BGR;
 
 	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
-		tx_data |= ILI9340_DATA_MEM_ACCESS_CTRL_MX;
+		tx_data |= ILI9340_MADCTL_MX;
 	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_90) {
-		tx_data |= ILI9340_DATA_MEM_ACCESS_CTRL_MV;
+		tx_data |= ILI9340_MADCTL_MV;
 	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) {
-		tx_data |= ILI9340_DATA_MEM_ACCESS_CTRL_MY;
+		tx_data |= ILI9340_MADCTL_MY;
 	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_270) {
-		tx_data |= ILI9340_DATA_MEM_ACCESS_CTRL_MV |
-			   ILI9340_DATA_MEM_ACCESS_CTRL_MX |
-			   ILI9340_DATA_MEM_ACCESS_CTRL_MY;
+		tx_data |= ILI9340_MADCTL_MV | ILI9340_MADCTL_MX | ILI9340_MADCTL_MY;
 	}
 
-	r = ili9340_transmit(dev, ILI9340_CMD_MEM_ACCESS_CTRL, &tx_data, 1U);
+	r = ili9340_transmit(dev, ILI9340_MADCTL, &tx_data, 1U);
 	if (r < 0) {
 		return r;
 	}
@@ -372,72 +367,63 @@ static int ili9340_configure(const struct device *dev)
 
 	LOG_HEXDUMP_DBG(config->gamset, ILI9340_GAMSET_LEN, "GAMSET");
 	memcpy(tx_data, config->gamset, ILI9340_GAMSET_LEN);
-	r = ili9340_transmit(dev, ILI9340_CMD_GAMMA_SET, tx_data,
-			     ILI9340_GAMSET_LEN);
+	r = ili9340_transmit(dev, ILI9340_GAMSET, tx_data, ILI9340_GAMSET_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(config->frmctr1, ILI9340_FRMCTR1_LEN, "FRMCTR1");
 	memcpy(tx_data, config->frmctr1, ILI9340_FRMCTR1_LEN);
-	r = ili9340_transmit(dev, ILI9340_CMD_FRAME_CTRL_NORMAL_MODE, tx_data,
-			     ILI9340_FRMCTR1_LEN);
+	r = ili9340_transmit(dev, ILI9340_FRMCTR1, tx_data, ILI9340_FRMCTR1_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(config->disctrl, ILI9340_DISCTRL_LEN, "DISCTRL");
 	memcpy(tx_data, config->disctrl, ILI9340_DISCTRL_LEN);
-	r = ili9340_transmit(dev, ILI9340_CMD_DISPLAY_FUNCTION_CTRL, tx_data,
-			     ILI9340_DISCTRL_LEN);
+	r = ili9340_transmit(dev, ILI9340_DISCTRL, tx_data, ILI9340_DISCTRL_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(config->pwctrl1, ILI9340_PWCTRL1_LEN, "PWCTRL1");
 	memcpy(tx_data, config->pwctrl1, ILI9340_PWCTRL1_LEN);
-	r = ili9340_transmit(dev, ILI9340_CMD_POWER_CTRL_1, tx_data,
-			     ILI9340_PWCTRL1_LEN);
+	r = ili9340_transmit(dev, ILI9340_PWCTRL1, tx_data, ILI9340_PWCTRL1_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(config->pwctrl2, ILI9340_PWCTRL2_LEN, "PWCTRL2");
 	memcpy(tx_data, config->pwctrl2, ILI9340_PWCTRL2_LEN);
-	r = ili9340_transmit(dev, ILI9340_CMD_POWER_CTRL_2, tx_data,
-			     ILI9340_PWCTRL2_LEN);
+	r = ili9340_transmit(dev, ILI9340_PWCTRL2, tx_data, ILI9340_PWCTRL2_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(config->vmctrl1, ILI9340_VMCTRL1_LEN, "VMCTRL1");
 	memcpy(tx_data, config->vmctrl1, ILI9340_VMCTRL1_LEN);
-	r = ili9340_transmit(dev, ILI9340_CMD_VCOM_CTRL_1, tx_data,
-			     ILI9340_VMCTRL1_LEN);
+	r = ili9340_transmit(dev, ILI9340_VMCTRL1, tx_data, ILI9340_VMCTRL1_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(config->vmctrl2, ILI9340_VMCTRL2_LEN, "VMCTRL2");
 	memcpy(tx_data, config->vmctrl2, ILI9340_VMCTRL2_LEN);
-	r = ili9340_transmit(dev, ILI9340_CMD_VCOM_CTRL_2, tx_data,
-			     ILI9340_VMCTRL2_LEN);
+	r = ili9340_transmit(dev, ILI9340_VMCTRL2, tx_data, ILI9340_VMCTRL2_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(config->pgamctrl, ILI9340_PGAMCTRL_LEN, "PGAMCTRL");
 	memcpy(tx_data, config->pgamctrl, ILI9340_PGAMCTRL_LEN);
-	r = ili9340_transmit(dev, ILI9340_CMD_POSITIVE_GAMMA_CORRECTION,
-			     tx_data, ILI9340_PGAMCTRL_LEN);
+	r = ili9340_transmit(dev, ILI9340_PGAMCTRL, tx_data, ILI9340_PGAMCTRL_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(config->ngamctrl, ILI9340_NGAMCTRL_LEN, "NGAMCTRL");
 	memcpy(tx_data, config->ngamctrl, ILI9340_NGAMCTRL_LEN);
-	r = ili9340_transmit(dev, ILI9340_CMD_NEGATIVE_GAMMA_CORRECTION,
-			     tx_data, ILI9340_NGAMCTRL_LEN);
+	r = ili9340_transmit(dev, ILI9340_NGAMCTRL, tx_data, ILI9340_NGAMCTRL_LEN);
 	if (r < 0) {
 		return r;
 	}

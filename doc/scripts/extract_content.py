@@ -125,6 +125,11 @@ def find_content(zephyr_base, src, dest, fnfilter, ignore, src_root):
         dirnames[:] = [d for d in dirnames if not
                        path.normpath(path.join(dirpath, d)).startswith(ignore)]
 
+        # Exclude (other) build directories. They may contain previous
+        # output from ourselves!
+        dirnames[:] = [d for d in dirnames if not
+                       path.exists(path.join(dirpath, d, 'CMakeCache.txt'))]
+
         # If the current directory contains no matching files, keep going.
         sources = fnmatch.filter(filenames, fnfilter)
         if not sources:

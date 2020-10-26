@@ -13,7 +13,7 @@ K_SEM_DEFINE(rx_buf_released, 0, 1);
 K_SEM_DEFINE(rx_disabled, 0, 1);
 
 ZTEST_BMEM volatile bool failed_in_isr;
-static const struct device *uart_dev;
+ZTEST_BMEM static const struct device *uart_dev;
 
 void init_test(void)
 {
@@ -74,9 +74,14 @@ void test_single_read(void)
 			  "Initial buffer check failed");
 
 	uart_rx_enable(uart_dev, rx_buf, 10, 50);
+	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(100)), -EAGAIN,
+		      "RX_RDY not expected at this point");
+
 	uart_tx(uart_dev, tx_buf, sizeof(tx_buf), 100);
 	zassert_equal(k_sem_take(&tx_done, K_MSEC(100)), 0, "TX_DONE timeout");
 	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(100)), 0, "RX_RDY timeout");
+	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(100)), -EAGAIN,
+		      "Extra RX_RDY received");
 
 	zassert_equal(memcmp(tx_buf, rx_buf, 5), 0, "Buffers not equal");
 	zassert_not_equal(memcmp(tx_buf, rx_buf+5, 5), 0, "Buffers not equal");
@@ -89,6 +94,9 @@ void test_single_read(void)
 		      "RX_BUF_RELEASED timeout");
 	zassert_equal(k_sem_take(&rx_disabled, K_MSEC(1000)), 0,
 		      "RX_DISABLED timeout");
+	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(100)), -EAGAIN,
+		      "Extra RX_RDY received");
+
 	zassert_equal(memcmp(tx_buf, rx_buf+5, 5), 0, "Buffers not equal");
 	zassert_equal(tx_aborted_count, 0, "TX aborted triggered");
 }

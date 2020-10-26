@@ -35,7 +35,7 @@
 #include "hal/debug.h"
 
 static int init_reset(void);
-static int prepare_cb(struct lll_prepare_param *prepare_param);
+static int prepare_cb(struct lll_prepare_param *p);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
 static void isr_rx(void *param);
 static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t rssi_ready);
@@ -70,13 +70,12 @@ int lll_scan_aux_reset(void)
 
 void lll_scan_aux_prepare(void *param)
 {
-	struct lll_prepare_param *p = param;
 	int err;
 
 	err = lll_hfclock_on();
 	LL_ASSERT(err >= 0);
 
-	err = lll_prepare(lll_is_abort_cb, abort_cb, prepare_cb, 0, p);
+	err = lll_prepare(lll_is_abort_cb, abort_cb, prepare_cb, 0, param);
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 
@@ -87,22 +86,25 @@ static int init_reset(void)
 
 static int prepare_cb(struct lll_prepare_param *p)
 {
-	uint32_t aa = sys_cpu_to_le32(PDU_AC_ACCESS_ADDR);
-	struct lll_scan_aux *lll = p->param;
 	struct node_rx_pdu *node_rx;
+	struct lll_scan_aux *lll;
 	uint32_t ticks_at_event;
 	uint32_t ticks_at_start;
 	struct evt_hdr *evt;
 	uint32_t remainder_us;
 	uint32_t remainder;
 	uint32_t hcto;
+	uint32_t aa;
 
 	DEBUG_RADIO_START_O(1);
 
-	trx_cnt = 0U;
-
 	/* Start setting up Radio h/w */
 	radio_reset();
+
+	/* Reset Tx/rx count */
+	trx_cnt = 0U;
+
+	lll = p->param;
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	radio_tx_power_set(lll->tx_pwr_lvl);
@@ -118,6 +120,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	radio_pkt_rx_set(node_rx->pdu);
 
+	aa = sys_cpu_to_le32(PDU_AC_ACCESS_ADDR);
 	radio_aa_set((uint8_t *)&aa);
 	radio_crc_configure(((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16)),
 			    0x555555);
@@ -232,7 +235,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 static void isr_rx(void *param)
 {
-	struct lll_scan_aux *lll = param;
+	struct lll_scan_aux *lll;
 	uint8_t rssi_ready;
 	uint8_t trx_done;
 	uint8_t crc_ok;
@@ -252,6 +255,8 @@ static void isr_rx(void *param)
 
 	/* Clear radio rx status and events */
 	lll_isr_rx_status_reset();
+
+	lll = param;
 
 	/* No Rx */
 	if (!trx_done) {

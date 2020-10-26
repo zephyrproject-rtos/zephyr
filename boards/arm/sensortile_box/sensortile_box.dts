@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/l4/stm32l4r9Xi.dtsi>
+#include <st/l4/stm32l4r9z(g-i)tx-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics SensorTile.box board";
@@ -47,16 +48,19 @@
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
@@ -76,6 +80,7 @@
 };
 
 &i2c3 {
+	pinctrl-0 = <&i2c3_scl_pg7 &i2c3_sda_pg8>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
@@ -88,6 +93,8 @@
 };
 
 &spi1 {
+	pinctrl-0 = <&spi1_nss_pe12 &spi1_sck_pe13
+		     &spi1_miso_pe14 &spi1_mosi_pe15>;
 	status = "okay";
 
 	cs-gpios = <&gpioe 11 GPIO_ACTIVE_LOW>, <&gpioe 12 GPIO_ACTIVE_LOW>, <&gpioe 10 GPIO_ACTIVE_LOW>;
@@ -118,6 +125,8 @@
 };
 
 &spi3 {
+	pinctrl-0 = <&spi3_nss_pa15 &spi3_sck_pb3
+		     &spi3_miso_pb4 &spi3_mosi_pb5>;
 	status = "okay";
 
 	cs-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;

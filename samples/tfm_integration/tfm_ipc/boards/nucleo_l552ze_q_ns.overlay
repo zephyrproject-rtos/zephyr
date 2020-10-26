@@ -6,7 +6,10 @@
 
 
  /* This partition table should be used along with TFM configuration:
-  * ConfigRegressionIPCTfmLevel2
+  * - TFM_PSA_API=ON (IPC)
+  * - ISOLATION_LEVEL 2
+  * - TEST_S=ON (REGRESSION)
+  * - TEST_NS=ON (REGRESSION)
   *
   * In this configuration, TFM binary includes tests. As a consequence,
   * its size is bloated and it is not possible to set secondary partitions
@@ -28,18 +31,18 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0x00011000>;
+			reg = <0x00000000 0x00013000>;
 			read-only;
 		};
 		/* Secure image primary slot */
-		slot0_partition: partition@00011000 {
+		slot0_partition: partition@00013000 {
 			label = "image-0";
-			reg = <0x00011000 0x00040000>;
+			reg = <0x00013000 0x00038000>;
 		};
 		/* Non-secure image primary slot */
-		slot1_partition: partition@00051000 {
+		slot1_partition: partition@0004B000 {
 			label = "image-1";
-			reg = <0x00051000 0x0002E000>;
+			reg = <0x0004B000 0x0002A000>;
 		};
 		/*
 		 * The flash starting at 0x7F000 and ending at

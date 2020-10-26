@@ -48,6 +48,19 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	mov	x1, sp
 	str	x1, [x2]
 
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	/* Grab the TLS pointer */
+	ldr	x2, =_thread_offset_to_tls
+	add	x2, x2, x0
+	ldr	x2, [x2]
+
+	/* Store in the "Thread ID" register.
+	 * This register is used as a base pointer to all
+	 * thread variables with offsets added by toolchain.
+	 */
+	msr	tpidr_el0, x2
+#endif
+
 	/* addr of callee-saved regs in thread in x2 */
 	ldr	x2, =_thread_offset_to_callee_saved
 	add	x2, x2, x0

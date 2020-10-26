@@ -19,6 +19,7 @@ source "subsys/shell/Kconfig.backends"
 
 config SHELL_STACK_SIZE
 	int "Shell thread stack size"
+	default 2520 if OPENTHREAD_SHELL
 	default 2048 if MULTITHREADING
 	default 0 if !MULTITHREADING
 	help

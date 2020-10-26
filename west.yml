@@ -56,7 +56,7 @@ manifest:
       revision: f1fa8241f8786198ba41155413243de36ed878a5
       path: modules/hal/infineon
     - name: hal_nordic
-      revision: 0f4ff90fbf8137086e2f9c1b78a6fc2aa5ef731f
+      revision: 844f117c70ffdd5c119b33731ab4fd285e524aee
       path: modules/hal/nordic
     - name: hal_openisa
       revision: 40d049f69c50b58ea20473bee14cf93f518bf262
@@ -71,10 +71,10 @@ manifest:
       revision: 69c3e1e6e167767cb75aa2b468df4ade05988cdb
       path: modules/hal/silabs
     - name: hal_st
-      revision: 5b3ec3e182d4310e8943cc34c6c70ae57d9711da
+      revision: b52fdbf4b62439be9fab9bb4bae9690a42d2fb14
       path: modules/hal/st
     - name: hal_stm32
-      revision: 8128bd26b2b94c6a0ebd9a2e3a8746d138e3de35
+      revision: 2b123553b84cfe9e5a28078355774b636c475da0
       path: modules/hal/stm32
     - name: hal_ti
       revision: 405dfc8faba13e01c1cb9e29e70b31b50f71d117
@@ -93,7 +93,7 @@ manifest:
       revision: aef137b1af8aa7a0f43345c82459254b8832262e
       path: modules/crypto/mbedtls
     - name: mcuboot
-      revision: a5d79cf8ccb2c71e68ef32a71d6a2716e831d12e
+      revision: e312fa2cec3e8440bf484d7da3443e149b7eb9d8
       path: bootloader/mcuboot
     - name: mcumgr
       revision: 5051f9d900bbb194a23d4ce80f3c6dc6d6780cc2
@@ -102,7 +102,7 @@ manifest:
       revision: 1c4fdba512b268033a4cf926bddd323866c3261a
       path: tools/net-tools
     - name: hal_nxp
-      revision: 68bbdbdec1153355b14386d8f095058a496f66f4
+      revision: 83e5a13640417a2efb26a31f88b232e4dac31fb2
       path: modules/hal/nxp
     - name: open-amp
       revision: 724f7e2a4519d7e1d40ef330042682dea950c991
@@ -130,16 +130,16 @@ manifest:
       revision: 957d46bc3ce0d5f628f0d525196bb4db207672ee
     - name: nrf_hw_models
       path: modules/bsim_hw_models/nrf_hw_models
-      revision: f86079a7333968f0ba71fe1266e241295a4e9943
+      revision: 71a8a9ef086d57ff5f3974138b0951f24c2017ad
     - name: hal_xtensa
-      revision: e7a57d0c252f9c5f3cab9d5ceadda8753cacee5b
+      revision: 2f04b615cd5ad3a1b8abef33f9bdd10cc1990ed6
       path: modules/hal/xtensa
     - name: edtt
       path: tools/edtt
       revision: c39888ff74acf421eeff9a7514fa9b172c3373f7
     - name: trusted-firmware-m
       path: modules/tee/tfm
-      revision: 143df675557305b61f7930a50459a53a8d2bb097
+      revision: bb15a511a509c81135af61e02f9f4bfaf86d7fde
 
   self:
     path: zephyr

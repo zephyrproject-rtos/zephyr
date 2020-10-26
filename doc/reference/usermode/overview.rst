@@ -35,15 +35,32 @@ For threads running in a non-privileged CPU state (hereafter referred to as
   memory that has an incompatible policy, such as attempting to write to a
   read-only area.
 
-  - Threads are automatically granted access to their own stack memory
-    region, and all other stacks are inaccessible.
+  - Access to thread stack buffers will be controlled with a policy which
+    partially depends on the underlying memory protection hardware.
+
+    - A user thread will by default have read/write access to its own stack
+      buffer.
+
+    - A user thread will never by default have access to user thread stacks
+      that are not members of the same memory domain.
+
+    - A user thread will never by default have access to thread stacks owned
+      by a supervisor thread, or thread stacks used to handle system call
+      privilege elevations, interrupts, or CPU exceptions.
+
+    - A user thread may have read/write access to the stacks of other user
+      threads in the same memory domain, depending on hardware.
+
+       - On MPU systems, threads may only access their own stack buffer.
+
+       - On MMU systems, threads may access any user thread stack in the same
+         memory domain. Portable code should not assume this.
 
   - By default, program text and read-only data are accessible to all threads
     on read-only basis, kernel-wide. This policy may be adjusted.
 
-  - If the optional "application memory" feature is enabled, then all
-    non-kernel globals defined in the application and libraries will be
-    accessible.
+  - User threads by default are not granted default access to any memory
+    except what is noted above.
 
 - We prevent use of device drivers or kernel objects not specifically granted,
   with the permission granularity on a per object or per driver instance
@@ -115,13 +132,14 @@ High-level Policy Details
 Broadly speaking, we accomplish these thread-level memory protection goals
 through the following mechanisms:
 
-- Any user thread will only have access to its own stack memory by default.
-  Access to any other RAM will need to be done on the thread's behalf through
-  system calls, or specifically granted by a supervisor thread using the
-  :ref:`memory_domain` APIs. Newly created threads inherit the memory domain
-  configuration of the parent. Threads may communicate with each other
-  by having shared membership of the same memory domains, or via kernel objects
-  such as semaphores and pipes.
+- Any user thread will only have access to a subset of memory:
+  typically its stack, program text, read-only data, and any partitions
+  configured in the :ref:`memory_domain` it belongs to. Access to any other RAM
+  must be done on the thread's behalf through system calls, or specifically
+  granted by a supervisor thread using the memory domain APIs. Newly created
+  threads inherit the memory domain configuration of the parent. Threads may
+  communicate with each other by having shared membership of the same memory
+  domains, or via kernel objects such as semaphores and pipes.
 
 - User threads cannot directly access memory belonging to kernel objects.
   Although pointers to kernel objects are used to reference them, actual

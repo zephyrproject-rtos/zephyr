@@ -46,9 +46,9 @@ struct npcx_alt {
  *    - Pinmux configuration list
  *         const struct npcx_alt alts_list[] = DT_NPCX_ALT_ITEMS_LIST(inst);
  *    - Change pinmux to UART:
- *         soc_pinctrl_mux_configure(alts_list, ARRAY_SIZE(alts_list), 1);
+ *         npcx_pinctrl_mux_configure(alts_list, ARRAY_SIZE(alts_list), 1);
  *    - Change pinmux back to GPIO64.65:
- *         soc_pinctrl_mux_configure(alts_list, ARRAY_SIZE(alts_list), 0);
+ *         npcx_pinctrl_mux_configure(alts_list, ARRAY_SIZE(alts_list), 0);
  *
  * Please refer more details in Table 3. (Pin Multiplexing Configuration).
  *
@@ -56,7 +56,7 @@ struct npcx_alt {
  * @param alts_size Pin-mux configuration list size
  * @param altfunc 0: set pin-mux to GPIO, otherwise specific functionality
  */
-void soc_pinctrl_mux_configure(const struct npcx_alt *alts_list,
+void npcx_pinctrl_mux_configure(const struct npcx_alt *alts_list,
 			uint8_t alts_size, int altfunc);
 
 #ifdef __cplusplus

@@ -6,6 +6,7 @@
 
 #include "mem_protect.h"
 #include <sys/mempool.h>
+#include <kernel_internal.h> /* For z_main_thread */
 
 #define ERROR_STR \
 	("Fault didn't occur when we accessed a unassigned memory domain.")
@@ -780,4 +781,27 @@ void test_mem_part_assign_bss_vars_zero(void)
 	 */
 	read_data = part2_bss_var;
 	zassert_true(read_data == 0, NULL);
+}
+
+static void zzz_entry(void *p1, void *p2, void *p3)
+{
+	k_sleep(K_FOREVER);
+}
+
+K_THREAD_DEFINE(zzz_thread, 256 + CONFIG_TEST_EXTRA_STACKSIZE, zzz_entry,
+		NULL, NULL, NULL, 0, 0, 0);
+
+void test_mem_domain_boot_threads(void)
+{
+	/* Check that a static thread got put in the default memory domain */
+	zassert_true(zzz_thread->mem_domain_info.mem_domain ==
+		     &k_mem_domain_default, "unexpected mem domain %p",
+		     zzz_thread->mem_domain_info.mem_domain);
+
+	/* Check that the main thread is also a member of the default domain */
+	zassert_true(z_main_thread.mem_domain_info.mem_domain ==
+		     &k_mem_domain_default, "unexpected mem domain %p",
+		     z_main_thread.mem_domain_info.mem_domain);
+
+	k_thread_abort(zzz_thread);
 }

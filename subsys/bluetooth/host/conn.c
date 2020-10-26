@@ -1565,7 +1565,11 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 				bt_iso_disconnected(iso);
 				bt_iso_cleanup(iso);
 				bt_conn_unref(iso);
-				break;
+
+				/* Stop if only ISO was Disconnected */
+				if (iso == conn) {
+					break;
+				}
 			}
 		}
 

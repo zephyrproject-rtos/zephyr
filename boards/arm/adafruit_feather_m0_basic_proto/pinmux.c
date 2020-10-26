@@ -61,6 +61,27 @@ static int board_pinmux_init(const struct device *dev)
 #warning Pin mapping may not be configured
 #endif
 
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(3, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
+	/* SERCOM3 on SDA=PA22/pad 0, SCL=PA23/pad 1 */
+	pinmux_pin_set(muxa, 22, PINMUX_FUNC_C);
+	pinmux_pin_set(muxa, 23, PINMUX_FUNC_C);
+#endif
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(0, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
+#warning Pin mapping may not be configured
+#endif
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(1, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
+#warning Pin mapping may not be configured
+#endif
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(2, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
+#warning Pin mapping may not be configured
+#endif
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(4, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
+#warning Pin mapping may not be configured
+#endif
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(5, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
+#warning Pin mapping may not be configured
+#endif
+
 #ifdef CONFIG_USB_DC_SAM0
 	/* USB DP on PA25, USB DM on PA24 */
 	pinmux_pin_set(muxa, 25, PINMUX_FUNC_G);

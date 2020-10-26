@@ -81,8 +81,6 @@ struct bt_mesh_ctl_friend_sub_confirm {
 
 void bt_mesh_set_hb_sub_dst(uint16_t addr);
 
-struct bt_mesh_app_key *bt_mesh_app_key_find(uint16_t app_idx);
-
 bool bt_mesh_tx_in_progress(void);
 
 void bt_mesh_rx_reset(void);
@@ -92,6 +90,16 @@ int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, uint8_t ctl_op, void *data,
 		     size_t data_len, const struct bt_mesh_send_cb *cb,
 		     void *cb_data);
 
+/** @brief Send an access payload message.
+ *
+ *  @param tx      Network TX parameters. Only @c ctx, @c src and @c friend_cred
+ *                 have to be filled.
+ *  @param msg     Access payload to send.
+ *  @param cb      Message callback.
+ *  @param cb_data Message callback data.
+ *
+ *  @return 0 on success, or (negative) error code otherwise.
+ */
 int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 		       const struct bt_mesh_send_cb *cb, void *cb_data);
 
@@ -100,6 +108,3 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx);
 void bt_mesh_trans_init(void);
 
 int bt_mesh_heartbeat_send(const struct bt_mesh_send_cb *cb, void *cb_data);
-
-int bt_mesh_app_key_get(const struct bt_mesh_subnet *subnet, uint16_t app_idx,
-			uint16_t addr, const uint8_t **key, uint8_t *aid);

@@ -69,6 +69,24 @@ config NRF_802154_CCA_CORR_LIMIT
 	  Limit for occurrences above correlator threshold. When not equal to
 	  zero the correlator based signal detect is enabled.
 
+config NRF_802154_PENDING_SHORT_ADDRESSES
+	int "nRF 802.15.4 pending short addresses"
+	default 16
+	help
+	  Number of slots containing short addresses of nodes for which pending data is stored
+
+config NRF_802154_PENDING_EXTENDED_ADDRESSES
+	int "nRF 802.15.4 pending extended addresses"
+	default 16
+	help
+	  Number of slots containing extended addresses of nodes for which pending data is stored
+
+config NRF_802154_RX_BUFFERS
+	int "nRF 802.15.4 receive buffers"
+	default 16
+	help
+	  Number of buffers in nRF 802.15.4 driver receive queue.
+
 endif # NRF_802154_RADIO_DRIVER
 
 endmenu

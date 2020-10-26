@@ -1500,6 +1500,22 @@ int gsm_mux_send(struct gsm_mux *mux, uint8_t dlci_address,
 	return gsm_mux_send_data_msg(mux, true, dlci, FT_UIH, buf, size);
 }
 
+void gsm_mux_detach(struct gsm_mux *mux)
+{
+	struct gsm_dlci *dlci;
+
+	for (int i = 0; i < ARRAY_SIZE(dlcis); i++) {
+		dlci = &dlcis[i];
+
+		if (mux != dlci->mux || !dlci->in_use) {
+			continue;
+		}
+
+		dlci->in_use = false;
+		sys_slist_prepend(&dlci_free_entries, &dlci->node);
+	}
+}
+
 void gsm_mux_init(void)
 {
 	int i;

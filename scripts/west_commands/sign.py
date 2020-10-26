@@ -173,11 +173,6 @@ class Sign(Forceable):
         elif args.gen_hex is None and hex_exists:
             formats.append('hex')
 
-        if not formats:
-            if not args.quiet:
-                log.dbg('nothing to do: no output files')
-            return
-
         # Delegate to the signer.
         if args.tool == 'imgtool':
             signer = ImgtoolSigner()
@@ -391,6 +386,20 @@ class ImgtoolSigner(Signer):
 
 class RimageSigner(Signer):
 
+    @staticmethod
+    def edt_get_rimage_target(board):
+        if 'intel_adsp_cavs15' in board:
+            return 'apl'
+        if 'intel_adsp_cavs18' in board:
+            return 'cnl'
+        if 'intel_adsp_cavs20' in board:
+            return 'icl'
+        if 'intel_adsp_cavs25' in board:
+            return 'tgl'
+
+        log.die('Signing not supported for board ' + board)
+
+
     def sign(self, command, build_dir, bcfg, formats):
         args = command.args
 
@@ -409,8 +418,9 @@ class RimageSigner(Signer):
         cache = CMakeCache.from_build_dir(build_dir)
 
         board = cache['CACHED_BOARD']
-        if board != 'up_squared_adsp':
-            log.die('Supported only for up_squared_adsp board')
+        log.inf('Signing for board ' + board)
+        target = self.edt_get_rimage_target(board)
+        log.inf('Signing for SOC target ' + target)
 
         if not args.quiet:
             log.inf('Signing with tool {}'.format(tool_path))
@@ -420,7 +430,7 @@ class RimageSigner(Signer):
         out_bin = str(b / 'zephyr' / 'zephyr.ri')
 
         sign_base = ([tool_path] + args.tool_args +
-                     ['-o', out_bin, '-m', 'apl', '-i', '3'] +
+                     ['-o', out_bin, '-m', target, '-i', '3'] +
                      [bootloader, kernel])
 
         if not args.quiet:

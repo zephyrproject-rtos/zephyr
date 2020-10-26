@@ -416,15 +416,16 @@ In other words, the west workspace you want looks like this:
 
 .. code-block:: none
 
-   my-downstream
-   ├── .west                      # west directory
-   ├── zephyr                     # mainline zephyr repository
-   ├── modules                    # modules from mainline zephyr
-   │   ├── hal
+   my-downstream/
+   ├── .west/                     # west directory
+   ├── zephyr/                    # mainline zephyr repository
+   │   └── west.yml               # the v1.14.1 version of this file is imported
+   ├── modules/                   # modules from mainline zephyr
+   │   ├── hal/
    │   └── [...other directories..]
    ├── [ ... other projects ...]  # other mainline repositories
-   └── my-repo                    # your downstream repository
-       ├── west.yml
+   └── my-repo/                   # your downstream repository
+       ├── west.yml               # main manifest importing zephyr/west.yml v1.14.1
        └── [...other files..]
 
 You can do this with the following :file:`my-repo/west.yml`:
@@ -529,14 +530,14 @@ This manifest is similar to the one in :ref:`west-manifest-ex1.1`, except it:
        - name: my-remote
          url-base: https://git.example.com
      projects:
-       - name: hal_nordic
+       - name: hal_nordic         # higher precedence
          remote: my-remote
          revision: my-sha
          path: modules/hal/nordic
        - name: zephyr
          remote: zephyrproject-rtos
          revision: v2.0.0
-         import: true
+         import: true             # imported projects have lower precedence
 
    # subset of zephyr/west.yml contents at v2.0.0:
    manifest:
@@ -547,7 +548,7 @@ This manifest is similar to the one in :ref:`west-manifest-ex1.1`, except it:
          url-base: https://github.com/zephyrproject-rtos
      projects:
      # ...
-     - name: hal_nordic
+     - name: hal_nordic           # lower precedence, values ignored
        path: modules/hal/nordic
        revision: another-sha
 
@@ -785,13 +786,13 @@ hosted at ``https://git.example.com/mainline/manifest``.
    # mainline west.yml:
    manifest:
      projects:
-       - name: mainline-app
+       - name: mainline-app                # included
          path: examples/app
          url: https://git.example.com/mainline/app
        - name: lib
          path: libraries/lib
          url: https://git.example.com/mainline/lib
-       - name: lib2
+       - name: lib2                        # included
          path: libraries/lib2
          url: https://git.example.com/mainline/lib2
 
@@ -823,10 +824,10 @@ An equivalent manifest in a single file would be:
        - name: lib3
          path: libraries/lib3
          url: https://git.example.com/downstream/lib3
-       - name: mainline-app
+       - name: mainline-app                   # imported
          path: examples/app
          url: https://git.example.com/mainline/app
-       - name: lib2
+       - name: lib2                           # imported
          path: libraries/lib2
          url: https://git.example.com/mainline/lib2
 
@@ -850,10 +851,10 @@ using ``path-whitelist``.
          path: examples/app
          url: https://git.example.com/mainline/app
        - name: lib
-         path: libraries/lib
+         path: libraries/lib                  # included
          url: https://git.example.com/mainline/lib
        - name: lib2
-         path: libraries/lib2
+         path: libraries/lib2                 # included
          url: https://git.example.com/mainline/lib2
 
    # downstream west.yml:
@@ -875,10 +876,10 @@ An equivalent manifest in a single file would be:
 
    manifest:
      projects:
-       - name: lib
+       - name: lib                          # imported
          path: libraries/lib
          url: https://git.example.com/mainline/lib
-       - name: lib2
+       - name: lib2                         # imported
          path: libraries/lib2
          url: https://git.example.com/mainline/lib2
        - name: mainline
@@ -914,11 +915,11 @@ you're targeting, and keep everything else.
        - name: lib2
          path: libraries/lib2
        - name: hal_foo
-         path: modules/hals/foo
+         path: modules/hals/foo     # excluded
        - name: hal_bar
-         path: modules/hals/bar
+         path: modules/hals/bar     # excluded
        - name: hal_baz
-         path: modules/hals/baz
+         path: modules/hals/baz     # excluded
 
    # downstream west.yml:
    manifest:
@@ -942,10 +943,10 @@ An equivalent manifest in a single file would be:
        - name: mainline
          url-base: https://git.example.com/mainline
      projects:
-       - name: app
-       - name: lib
+       - name: app                  # imported
+       - name: lib                  # imported
          path: libraries/lib
-       - name: lib2
+       - name: lib2                 # imported
          path: libraries/lib2
        - name: mainline
          repo-path: https://git.example.com/mainline/manifest

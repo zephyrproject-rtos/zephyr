@@ -33,22 +33,22 @@ static int lps22hh_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
 	struct lps22hh_data *data = dev->data;
-	union axis1bit32_t raw_press;
-	union axis1bit16_t raw_temp;
+	uint32_t raw_press;
+	int16_t raw_temp;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	if (lps22hh_pressure_raw_get(data->ctx, raw_press.u8bit) < 0) {
+	if (lps22hh_pressure_raw_get(data->ctx, &raw_press) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
-	if (lps22hh_temperature_raw_get(data->ctx, raw_temp.u8bit) < 0) {
+	if (lps22hh_temperature_raw_get(data->ctx, &raw_temp) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
 
-	data->sample_press = raw_press.i32bit;
-	data->sample_temp = raw_temp.i16bit;
+	data->sample_press = raw_press;
+	data->sample_temp = raw_temp;
 
 	return 0;
 }

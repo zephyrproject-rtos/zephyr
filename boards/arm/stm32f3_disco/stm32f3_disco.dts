@@ -72,16 +72,19 @@
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pc4 &usart1_rx_pc5>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
@@ -101,15 +104,20 @@
 };
 
 &i2c2 {
+	pinctrl-0 = <&i2c2_scl_pa9 &i2c2_sda_pa10>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
+		     &spi1_miso_pa6 &spi1_mosi_pa7>;
 	status = "okay";
 };
 
 &spi2 {
+	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13
+		     &spi2_miso_pb14 &spi2_mosi_pb15>;
 	status = "okay";
 };
 
@@ -122,6 +130,7 @@
 };
 
 &can1 {
+	pinctrl-0 = <&can_rx_pd0 &can_tx_pd1>;
 	status = "okay";
 };
 
@@ -156,5 +165,6 @@
 };
 
 &adc1 {
+	pinctrl-0 = <&adc1_in1_pa0>;
 	status = "okay";
 };

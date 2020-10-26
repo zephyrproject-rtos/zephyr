@@ -555,6 +555,7 @@ static int sm_do_bootstrap_reg(void)
 	msg->type = COAP_TYPE_CON;
 	msg->code = COAP_METHOD_POST;
 	msg->mid = coap_next_id();
+	msg->tkl = LWM2M_MSG_TOKEN_GENERATE_NEW;
 	msg->reply_cb = do_bootstrap_reply_cb;
 	msg->message_timeout_cb = do_bootstrap_reg_timeout_cb;
 
@@ -635,6 +636,7 @@ static int sm_send_registration(bool send_obj_support_data,
 	msg->type = COAP_TYPE_CON;
 	msg->code = COAP_METHOD_POST;
 	msg->mid = coap_next_id();
+	msg->tkl = LWM2M_MSG_TOKEN_GENERATE_NEW;
 	msg->reply_cb = reply_cb;
 	msg->message_timeout_cb = timeout_cb;
 
@@ -827,6 +829,7 @@ static int sm_do_deregister(void)
 	msg->type = COAP_TYPE_CON;
 	msg->code = COAP_METHOD_DELETE;
 	msg->mid = coap_next_id();
+	msg->tkl = LWM2M_MSG_TOKEN_GENERATE_NEW;
 	msg->reply_cb = do_deregister_reply_cb;
 	msg->message_timeout_cb = do_deregister_timeout_cb;
 

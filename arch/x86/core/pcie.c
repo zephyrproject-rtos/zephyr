@@ -70,7 +70,7 @@ static inline void pcie_mm_conf(pcie_bdf_t bdf, unsigned int reg,
 				       PCIE_BDF_TO_FUNC(bdf));
 
 			volatile uint32_t *regs
-				= (void *)&bus_segs[0].mmio[bdf << 4];
+				= (void *)&bus_segs[i].mmio[bdf << 4];
 
 			if (write) {
 				regs[reg] = *data;

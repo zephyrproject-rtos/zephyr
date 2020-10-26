@@ -142,9 +142,6 @@ config BT_RX_STACK_SIZE
 	default 2048 if BT_MESH
 	default 2200 if BT_SETTINGS
 	default 1024
-	range 512 65536 if BT_HCI_RAW
-	range 1100 65536 if BT_MESH
-	range 1024 65536
 	help
 	  Size of the receiving thread stack. This is the context from
 	  which all event callbacks to the application occur. The
@@ -607,11 +604,11 @@ config BT_ECC
 	  This option adds support for ECDH HCI commands.
 
 config BT_TINYCRYPT_ECC
-	bool "Use TinyCrypt library for ECDH"
+	bool "Emulate ECDH in the Host using TinyCrypt library"
 	select TINYCRYPT
 	select TINYCRYPT_ECC_DH
 	depends on BT_ECC && (BT_HCI_RAW || BT_HCI_HOST)
-	default y if BT_CTLR
+	default y if BT_CTLR && !BT_CTLR_ECDH
 	help
 	  If this option is set TinyCrypt library is used for emulating the
 	  ECDH HCI commands and events needed by e.g. LE Secure Connections.

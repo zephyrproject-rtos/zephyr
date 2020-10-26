@@ -57,11 +57,13 @@
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -84,15 +86,18 @@
 };
 
 &can1 {
+	pinctrl-0 = <&can1_rx_pd0 &can1_tx_pd1>;
 	bus-speed = <125000>;
 	status = "disabled";
 };
 
 &can2 {
+	pinctrl-0 = <&can2_rx_pb12 &can2_tx_pb13>;
 	bus-speed = <125000>;
 	status = "okay";
 };
 
 &spi2 {
+	pinctrl-0 = <&spi2_sck_pb10 &spi2_miso_pc2 &spi2_mosi_pc3>;
 	status = "okay";
 };

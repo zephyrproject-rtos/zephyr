@@ -413,7 +413,14 @@ static void update_cache(int preempt_ok)
 
 static void ready_thread(struct k_thread *thread)
 {
-	if (z_is_thread_ready(thread)) {
+#ifdef KERNEL_COHERENCE
+	__ASSERT_NO_MSG(arch_mem_coherent(thread));
+#endif
+
+	/* If thread is queued already, do not try and added it to the
+	 * run queue again
+	 */
+	if (!z_is_thread_queued(thread) && z_is_thread_ready(thread)) {
 		sys_trace_thread_ready(thread);
 		_priq_run_add(&_kernel.ready_q.runq, thread);
 		z_mark_thread_as_queued(thread);
@@ -483,6 +490,12 @@ void z_impl_k_thread_resume(struct k_thread *thread)
 {
 	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
 
+	/* Do not try to resume a thread that was not suspended */
+	if (!z_is_thread_suspended(thread)) {
+		k_spin_unlock(&sched_spinlock, key);
+		return;
+	}
+
 	z_mark_thread_as_not_suspended(thread);
 	ready_thread(thread);
 
@@ -507,7 +520,7 @@ static _wait_q_t *pended_on(struct k_thread *thread)
 
 void z_thread_single_abort(struct k_thread *thread)
 {
-	void (*fn_abort)(void) = NULL;
+	void (*fn_abort)(struct k_thread *aborted) = NULL;
 
 	__ASSERT(!(thread->base.user_options & K_ESSENTIAL),
 		 "essential thread aborted");
@@ -585,6 +598,12 @@ void z_thread_single_abort(struct k_thread *thread)
 		z_thread_monitor_exit(thread);
 
 #ifdef CONFIG_USERSPACE
+		/* Remove this thread from its memory domain, which takes
+		 * it off the domain's thread list and possibly also arch-
+		 * specific tasks.
+		 */
+		z_mem_domain_exit_thread(thread);
+
 		/* Revoke permissions on thread's ID so that it may be
 		 * recycled
 		 */
@@ -610,7 +629,8 @@ void z_thread_single_abort(struct k_thread *thread)
 	}
 
 	if (fn_abort != NULL) {
-		fn_abort();
+		/* Thread object provided to be freed or recycled */
+		fn_abort(thread);
 	}
 }
 
@@ -656,6 +676,10 @@ static void add_thread_timeout(struct k_thread *thread, k_timeout_t timeout)
 static void pend(struct k_thread *thread, _wait_q_t *wait_q,
 		 k_timeout_t timeout)
 {
+#ifdef KERNEL_COHERENCE
+	__ASSERT_NO_MSG(arch_mem_coherent(wait_q));
+#endif
+
 	LOCKED(&sched_spinlock) {
 		add_to_waitq_locked(thread, wait_q);
 	}
@@ -897,22 +921,26 @@ static inline void set_current(struct k_thread *new_thread)
 #ifdef CONFIG_USE_SWITCH
 void *z_get_next_switch_handle(void *interrupted)
 {
-	_current->switch_handle = interrupted;
-
 	z_check_stack_sentinel();
 
 #ifdef CONFIG_SMP
 	LOCKED(&sched_spinlock) {
-		struct k_thread *thread = next_up();
+		struct k_thread *old_thread = _current, *new_thread;
 
-		if (_current != thread) {
-			update_metairq_preempt(thread);
+		old_thread->switch_handle = NULL;
+		new_thread = next_up();
+
+		if (old_thread != new_thread) {
+			update_metairq_preempt(new_thread);
+			wait_for_switch(new_thread);
+			arch_cohere_stacks(old_thread, interrupted, new_thread);
 
 #ifdef CONFIG_TIMESLICING
 			z_reset_time_slice();
 #endif
 			_current_cpu->swap_ok = 0;
-			set_current(thread);
+			set_current(new_thread);
+
 #ifdef CONFIG_SPIN_VALIDATE
 			/* Changed _current!  Update the spinlock
 			 * bookeeping so the validation doesn't get
@@ -922,15 +950,12 @@ void *z_get_next_switch_handle(void *interrupted)
 			z_spin_lock_set_owner(&sched_spinlock);
 #endif
 		}
+		old_thread->switch_handle = interrupted;
 	}
 #else
-	struct k_thread *thread = z_get_next_ready_thread();
-	if (_current != thread) {
-		set_current(thread);
-	}
+	_current->switch_handle = interrupted;
+	set_current(z_get_next_ready_thread());
 #endif
-
-	wait_for_switch(_current);
 	return _current->switch_handle;
 }
 #endif
@@ -1286,6 +1311,7 @@ int32_t z_impl_k_sleep(k_timeout_t timeout)
 	__ASSERT(!arch_is_in_isr(), "");
 	sys_trace_void(SYS_TRACE_ID_SLEEP);
 
+	/* in case of K_FOREVER, we suspend */
 	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 		k_thread_suspend(_current);
 		return (int32_t) K_TICKS_FOREVER;

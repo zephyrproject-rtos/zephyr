@@ -140,6 +140,8 @@ add_custom_target(
 
 # For incremental builds not to miss any source change this MUST be kept
 # a superset of INPUT= and FILE_PATTERNS= in zephyr.doxyfile.in
+#
+# NOTE: any changes here should be reflected in .github/workflows/doc-build.yml
 file(GLOB_RECURSE  DOXY_SOURCES
   ${ZEPHYR_BASE}/include/*.[c,h,S]
   ${ZEPHYR_BASE}/kernel/include/kernel_arch_interface.h
@@ -259,10 +261,11 @@ set(SPHINX_BUILD_HTML_COMMAND
 add_custom_target(
   sphinx-html
   COMMAND ${SPHINX_BUILD_HTML_COMMAND}
-  DEPENDS ${EXTRACT_CONTENT_OUTPUTS}
   COMMENT "Just re-generating HTML (USE WITH CAUTION)"
+  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
   USES_TERMINAL
 )
+add_dependencies(sphinx-html content)
 
 # "breathe", the sphinx plugin that parses XML output from doxygen, has
 # an "everything on everything" dependency issue reported at:
@@ -294,10 +297,12 @@ set(SPHINX_BUILD_LATEX_COMMAND
 add_custom_target(
   sphinx-latex
   COMMAND ${SPHINX_BUILD_LATEX_COMMAND}
-  DEPENDS ${EXTRACT_CONTENT_OUTPUTS}
   COMMENT "Just re-generating LaTeX (USE WITH CAUTION)"
+  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
   USES_TERMINAL
 )
+add_dependencies(sphinx-latex content)
+
 
 add_custom_command(
   OUTPUT ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex

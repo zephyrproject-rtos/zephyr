@@ -26,5 +26,10 @@ zephyr_library_sources_ifdef(CONFIG_GDBSTUB		ia32/gdbstub.c)
 
 zephyr_library_sources_ifdef(CONFIG_DEBUG_COREDUMP	ia32/coredump.c)
 
+zephyr_library_sources_ifdef(
+  CONFIG_X86_USE_THREAD_LOCAL_STORAGE
+  ia32/tls.c
+)
+
 # Last since we declare default exception handlers here
 zephyr_library_sources(ia32/fatal.c)

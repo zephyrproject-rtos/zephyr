@@ -119,6 +119,12 @@ struct zsock_pollfd {
  *    - 1 - server
  */
 #define TLS_DTLS_ROLE 6
+/** Socket option for setting the supported Application Layer Protocols.
+ *  It accepts and returns a const char array of NULL terminated strings
+ *  representing the supported application layer protocols listed during
+ *  the TLS handshake.
+ */
+#define TLS_ALPN_LIST 7
 
 /** @} */
 

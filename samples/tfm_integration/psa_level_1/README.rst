@@ -140,12 +140,45 @@ and non-secure (``zephyr.hex``) images wth a J-Link as follows:
    .. code-block:: console
 
       JLinkExe -device lpc55s69 -if swd -speed 2000 -autoconnect 1
-      J-Link>loadfile build/tfm/install/outputs/LPC55S69/tfm_s.hex
+      J-Link>loadfile build/tfm/install/outputs/NXP/LPCXPRESSO55S69/tfm_s.hex
       J-Link>loadfile build/zephyr/zephyr.hex
 
 NOTE: At present, the LPC55S69 doesn't include support for the MCUBoot bootloader.
 
 We need to reset the board manually after flashing the image to run this code.
+
+On nRF5340 and nRF9160:
+=======================
+
+Build Zephyr with a non-secure configuration
+(``-DBOARD=nrf5340pdk_nrf5340_cpuappns`` or ``-DBOARD=nrf9160dk_nrf9160ns``).
+
+   Example, for nRF9160, using ``cmake`` and ``ninja``
+
+   .. code-block:: bash
+
+      cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_level_1/
+      rm -rf build
+      mkdir build && cd build
+      cmake -GNinja -DBOARD=nrf9160dk_nrf9160ns ..
+
+If building with BL2 (MCUboot bootloader) enabled, manually flash
+the MCUboot bootloader image binary (``bl2.hex``).
+
+   Example, using ``nrfjprog`` on nRF9160:
+
+   .. code-block:: bash
+
+      nrfjprg -f NRF91 --program tfm/bin/bl2.hex --sectorerase
+
+Finally, flash the concatenated TF-M + Zephyr binary.
+
+   Example, for nRF9160, using ``cmake`` and ``ninja``
+
+   .. code-block:: bash
+
+      ninja flash
+
 
 Sample Output
 =============

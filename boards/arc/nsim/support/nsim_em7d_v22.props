@@ -49,5 +49,5 @@
 	nsim_isa_dmac_registers=0
 	nsim_isa_dmac_fifo_depth=2
 	nsim_isa_dmac_int_config=single_internal
-	nsim_mem-dev=uart0,base=0xf0000000,irq=24
+	nsim_mem-dev=uart0,kind=dwuart,base=0xf0000000,irq=24
 	nsim_isa_unaligned_option=1

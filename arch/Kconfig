@@ -32,6 +32,7 @@ config ARM
 	# FIXME: current state of the code for all ARM requires this, but
 	# is really only necessary for Cortex-M with ARM MPU!
 	select GEN_PRIV_STACKS
+	select ARCH_HAS_THREAD_LOCAL_STORAGE if ARM64 || CPU_CORTEX_R || CPU_CORTEX_M
 	help
 	  ARM architecture
 
@@ -46,6 +47,7 @@ config X86
 	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
 	select ARCH_HAS_GDBSTUB if !X86_64
 	select ARCH_HAS_TIMING_FUNCTIONS
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	help
 	  x86 architecture
 
@@ -63,6 +65,7 @@ config RISCV
 	bool
 	select ARCH_IS_SET
 	select HAS_DTS
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	imply XIP
 	help
 	  RISCV architecture
@@ -418,6 +421,16 @@ config ARCH_HAS_EXTRA_EXCEPTION_INFO
 	bool
 
 config ARCH_HAS_GDBSTUB
+	bool
+
+config ARCH_HAS_COHERENCE
+	bool
+	help
+	  When selected, the architecture supports the
+	  arch_mem_coherent() API and can link into incoherent/cached
+	  memory using the ".cached" linker section.
+
+config ARCH_HAS_THREAD_LOCAL_STORAGE
 	bool
 
 #

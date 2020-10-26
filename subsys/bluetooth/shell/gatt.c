@@ -377,23 +377,17 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 	handle = strtoul(argv[1], NULL, 16);
 	offset = strtoul(argv[2], NULL, 16);
 
-	gatt_write_buf[0] = strtoul(argv[3], NULL, 16);
 	write_params.data = gatt_write_buf;
-	write_params.length = 1U;
 	write_params.handle = handle;
 	write_params.offset = offset;
 	write_params.func = write_func;
 
-	if (argc == 5) {
-		size_t len, i;
+	write_params.length = hex2bin(argv[3], strlen(argv[3]),
+				      gatt_write_buf, sizeof(gatt_write_buf));
 
-		len = MIN(strtoul(argv[4], NULL, 16), sizeof(gatt_write_buf));
-
-		for (i = 1; i < len; i++) {
-			gatt_write_buf[i] = gatt_write_buf[0];
-		}
-
-		write_params.length = len;
+	if (write_params.length == 0) {
+		shell_error(shell, "No data set");
+		return -ENOEXEC;
 	}
 
 	err = bt_gatt_write(default_conn, &write_params);
@@ -1152,8 +1146,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
 		      cmd_subscribe, 3, 1),
 	SHELL_CMD_ARG(resubscribe, NULL, HELP_ADDR_LE" <CCC handle> "
 		      "<value handle> [ind]", cmd_resubscribe, 5, 1),
-	SHELL_CMD_ARG(write, NULL, "<handle> <offset> <data> [length]",
-		      cmd_write, 4, 1),
+	SHELL_CMD_ARG(write, NULL, "<handle> <offset> <data>", cmd_write, 4, 0),
 	SHELL_CMD_ARG(write-without-response, NULL,
 		      "<handle> <data> [length] [repeat]",
 		      cmd_write_without_rsp, 3, 2),

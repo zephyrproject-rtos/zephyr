@@ -62,17 +62,17 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	msr	vbar_el3, x19
 	isb
 
+	/* Setup a stack for EL3 (SP_ELx) */
+	ldr	x0, =(z_interrupt_stacks)
+	add	x0, x0, #(CONFIG_ISR_STACK_SIZE)
+	mov	sp, x0
+
 	/* Initialize sctlr_el3 to reset value */
 	mov_imm	x1, SCTLR_EL3_RES1
 	mrs     x0, sctlr_el3
 	orr	x0, x0, x1
 	msr	sctlr_el3, x0
 	isb
-
-	/* SError, IRQ and FIQ routing enablement in EL3 */
-	mrs	x0, scr_el3
-	orr	x0, x0, #(SCR_EL3_IRQ | SCR_EL3_FIQ | SCR_EL3_EA)
-	msr	scr_el3, x0
 
 	/*
 	* Disable access traps to EL3 for CPACR, Trace, FP, ASIMD,
@@ -126,6 +126,12 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 1:
 	/* Initialize VBAR */
 	msr	vbar_el1, x19
+	isb
+
+	/* Setup the stack (SP_ELx) */
+	ldr	x0, =(z_interrupt_stacks)
+	add	x0, x0, #(CONFIG_ISR_STACK_SIZE)
+	mov	sp, x0
 
 	/* Disable access trapping in EL1 for NEON/FP */
 	mov	x0, #(CPACR_EL1_FPEN_NOTRAP)
@@ -144,11 +150,5 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
 	/* Enable the SError interrupt */
 	msr	daifclr, #(DAIFSET_ABT)
-
-	/* Switch to SP_ELn and setup the stack */
-	msr	spsel, #1
-	ldr	x0, =(z_interrupt_stacks)
-	add	x0, x0, #(CONFIG_ISR_STACK_SIZE)
-	mov	sp, x0
 
 	bl	z_arm64_prep_c

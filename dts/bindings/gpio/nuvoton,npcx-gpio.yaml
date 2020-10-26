@@ -31,8 +31,6 @@ properties:
                wui_maps = <&wui_io80 &wui_io81 &wui_io82 &wui_io83
                            &wui_none &wui_none &wui_io86 &wui_io87>;
 
-        required: true
-
     "#gpio-cells":
       const: 2
 

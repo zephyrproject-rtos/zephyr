@@ -42,7 +42,7 @@ int iis2dh_trigger_set(const struct device *dev,
 		       sensor_trigger_handler_t handler)
 {
 	struct iis2dh_data *iis2dh = dev->data;
-	union axis3bit16_t raw;
+	int16_t raw[3];
 	int state = (handler != NULL) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
 
 	switch (trig->type) {
@@ -50,7 +50,7 @@ int iis2dh_trigger_set(const struct device *dev,
 		iis2dh->drdy_handler = handler;
 		if (state) {
 			/* dummy read: re-trigger interrupt */
-			iis2dh_acceleration_raw_get(iis2dh->ctx, raw.u8bit);
+			iis2dh_acceleration_raw_get(iis2dh->ctx, raw);
 		}
 		return iis2dh_enable_drdy(dev, SENSOR_TRIG_DATA_READY, state);
 	default:

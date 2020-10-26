@@ -798,7 +798,7 @@ def main():
         hwm.dump(hwmap=hwm.connected_hardware, connected_only=True)
         return
 
-    if options.west_runner and not options.west_flash:
+    if options.west_runner and options.west_flash is None:
         logger.error("west-runner requires west-flash to be enabled")
         sys.exit(1)
 
@@ -1116,7 +1116,7 @@ def main():
     logger.info("%d test configurations selected, %d configurations discarded due to filters." %
                 (len(suite.instances), len(discards)))
 
-    if options.device_testing:
+    if options.device_testing and not options.build_only:
         print("\nDevice testing on:")
         hwm.dump(suite.connected_hardware, suite.selected_platforms)
         print("")
@@ -1191,7 +1191,7 @@ def main():
         coverage_tool.add_ignore_directory('samples')
         coverage_tool.generate(options.outdir)
 
-    if options.device_testing:
+    if options.device_testing and not options.build_only:
         print("\nHardware distribution summary:\n")
         table = []
         header = ['Board', 'ID', 'Counter']

@@ -43,20 +43,7 @@ SECTION_FUNC(TEXT, arch_cpu_idle)
 
 	ld r1, [z_arc_cpu_sleep_mode]
 	or r1, r1, (1 << 4) /* set IRQ-enabled bit */
-/*
- * It's found that (in nsim_hs_smp), when cpu
- * is sleeping, no response to inter-processor interrupt
- * although it's pending and interrupts are enabled.
- * (Here fire SNPS JIRA issue P10019563-41294 to trace)
- * here is a workround
- */
-#if defined(CONFIG_SOC_NSIM) && defined(CONFIG_SMP)
-	seti r1
-_z_arc_idle_loop:
-	b _z_arc_idle_loop
-#else
 	sleep r1
-#endif
 	j_s [blink]
 	nop
 

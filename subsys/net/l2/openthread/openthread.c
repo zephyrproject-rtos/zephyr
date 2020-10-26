@@ -330,6 +330,8 @@ int openthread_start(struct openthread_context *ot_context)
 
 	openthread_api_mutex_lock(ot_context);
 
+	otIp6SetEnabled(ot_context->instance, true);
+
 	/* Sleepy End Device specific configuration. */
 	if (IS_ENABLED(CONFIG_OPENTHREAD_MTD_SED)) {
 		otLinkModeConfig ot_mode = otThreadGetLinkMode(ot_instance);
@@ -432,8 +434,6 @@ static int openthread_init(struct net_if *iface)
 		otNcpInit(ot_context->instance);
 	}
 
-	otIp6SetEnabled(ot_context->instance, true);
-
 	if (!IS_ENABLED(CONFIG_OPENTHREAD_NCP)) {
 		otIp6SetReceiveFilterEnabled(ot_context->instance, true);
 		otIp6SetReceiveCallback(ot_context->instance,
@@ -529,6 +529,11 @@ void openthread_set_state_changed_cb(otStateChangedCallback cb)
 void openthread_api_mutex_lock(struct openthread_context *ot_context)
 {
 	(void)k_mutex_lock(&ot_context->api_lock, K_FOREVER);
+}
+
+int openthread_api_mutex_try_lock(struct openthread_context *ot_context)
+{
+	return k_mutex_lock(&ot_context->api_lock, K_NO_WAIT);
 }
 
 void openthread_api_mutex_unlock(struct openthread_context *ot_context)

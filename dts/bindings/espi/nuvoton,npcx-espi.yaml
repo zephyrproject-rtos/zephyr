@@ -16,7 +16,7 @@ properties:
         required: true
         description: configurations of device source clock controller
 
-    pinctrl:
+    pinctrl-0:
         type: phandles
         required: true
         description: configurations of pinmux controllers

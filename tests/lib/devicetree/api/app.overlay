@@ -34,6 +34,10 @@
 
 		test_phandles: phandle-holder-0 {
 			compatible = "vnd,phandle-holder";
+			/*
+			 * At least one of these phandles must refer to
+			 * test_gpio_1, or dependency ordinal tests may fail.
+			 */
 			ph = <&test_gpio_1>;
 			phs = <&test_gpio_1 &test_gpio_2 &test_i2c>;
 			gpios = <&test_gpio_1 10 20>, <&test_gpio_2 30 40>;
@@ -337,6 +341,7 @@
 			status = "okay";
 		};
 
+		/* there should only be one of these */
 		test_children: test-children {
 			compatible = "vnd,child-bindings";
 

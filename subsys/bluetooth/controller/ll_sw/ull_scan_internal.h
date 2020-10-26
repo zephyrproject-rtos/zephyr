@@ -9,6 +9,25 @@
 #define SCAN_HANDLE_1M        0
 #define SCAN_HANDLE_PHY_CODED 1
 
+#define SCAN_INTERVAL_UNIT_US     625U
+#define EXT_SCAN_DURATION_UNIT_US 10000U
+#define EXT_SCAN_PERIOD_UNIT_US   1280000U
+
+/* Convert period in 1.28 s units to duration of 10 ms units*/
+#define ULL_SCAN_PERIOD_TO_DURATION(period) \
+	((uint32_t)(period) * EXT_SCAN_PERIOD_UNIT_US / \
+	 EXT_SCAN_DURATION_UNIT_US)
+
+/* Convert duration in 10 ms unit to radio events count */
+#define ULL_SCAN_DURATION_TO_EVENTS(duration, interval) \
+	(((uint32_t)(duration) * EXT_SCAN_DURATION_UNIT_US / \
+	  SCAN_INTERVAL_UNIT_US) / (interval))
+
+/* Convert period in 1.28 s unit to radio events count */
+#define ULL_SCAN_PERIOD_TO_EVENTS(period, interval) \
+	(((uint32_t)(period) * EXT_SCAN_PERIOD_UNIT_US / \
+	  SCAN_INTERVAL_UNIT_US) / (interval))
+
 int ull_scan_init(void);
 int ull_scan_reset(void);
 
@@ -21,6 +40,9 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan);
 
 /* Disable scanning/initiating role */
 uint8_t ull_scan_disable(uint8_t handle, struct ll_scan_set *scan);
+
+/* Helper function to dequeue scan timeout event */
+void ull_scan_term_dequeue(uint8_t handle);
 
 /* Return ll_scan_set context (unconditional) */
 struct ll_scan_set *ull_scan_set_get(uint8_t handle);
@@ -45,6 +67,9 @@ int ull_scan_aux_reset(void);
 
 /* Helper to setup scanning on auxiliary channel */
 void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy);
+
+/* Helper function to handle scan done events */
+void ull_scan_done(struct node_rx_event_done *done);
 
 /* Helper to clean up auxiliary channel scanning */
 void ull_scan_aux_done(struct node_rx_event_done *done);

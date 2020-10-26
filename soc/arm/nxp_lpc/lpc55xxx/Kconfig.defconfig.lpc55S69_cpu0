@@ -28,4 +28,12 @@ config WDT_MCUX_WWDT
 	default y
 	depends on WATCHDOG
 
+config ADC_MCUX_LPADC
+	default y
+	depends on ADC
+
+config DMA_MCUX_LPC
+	default y
+	depends on DMA
+
 endif # SOC_LPC55S69_CPU0

@@ -480,16 +480,19 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 		/* Make sure aux is created if we have AuxPtr */
 		if (pri_hdr->aux_ptr) {
+			uint8_t pri_idx;
 			uint8_t err;
 
 			err = ull_adv_aux_hdr_set_clear(adv,
 							ULL_ADV_PDU_HDR_FIELD_ADVA,
 							0, &own_addr_type,
-							NULL);
+							NULL, &pri_idx);
 			if (err) {
 				/* TODO: cleanup? */
 				return err;
 			}
+
+			lll_adv_data_enqueue(&adv->lll, pri_idx);
 		}
 #endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 
@@ -1103,18 +1106,21 @@ uint8_t ll_adv_enable(uint8_t enable)
 	{
 		const uint32_t ticks_slot = adv->evt.ticks_slot +
 					 ticks_slot_overhead;
-
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+		uint8_t pri_idx = 0U;
+
 		/* Add sync_info into auxiliary PDU */
 		if (lll->sync) {
 			sync = (void *)HDR_LLL2EVT(lll->sync);
 			if (sync->is_enabled && !sync->is_started) {
-				ret = ull_adv_aux_hdr_set_clear(adv,
+				uint8_t err;
+
+				err = ull_adv_aux_hdr_set_clear(adv,
 					ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
-					0, NULL, NULL);
-				if (ret) {
-					return ret;
+					0, NULL, NULL, &pri_idx);
+				if (err) {
+					return err;
 				}
 			} else {
 				/* Do not start periodic advertising */
@@ -1150,33 +1156,27 @@ uint8_t ll_adv_enable(uint8_t enable)
 					ticks_slot_aux +
 					HAL_TICKER_US_TO_TICKS(EVENT_MAFS_US);
 
-				ull_hdr_init(&sync->ull);
-
 				ret = ull_adv_sync_start(sync,
-							 ticks_anchor_sync,
-							 &ret_cb);
+							 ticks_anchor_sync);
 				if (ret) {
 					goto failure_cleanup;
 				}
 
 				sync_is_started = 1U;
+
+				lll_adv_data_enqueue(lll, pri_idx);
 			}
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
-
-			/* Initialise ULL header */
-			ull_hdr_init(&aux->ull);
 
 			/* Keep aux interval equal or higher than primary PDU
 			 * interval.
 			 */
-			aux->interval =
-				adv->interval +
-				(HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY) /
-				 625U);
+			aux->interval = adv->interval +
+					(HAL_TICKER_TICKS_TO_US(
+						ULL_ADV_RANDOM_DELAY) / 625U);
 
 			ret = ull_adv_aux_start(aux, ticks_anchor_aux,
-						ticks_slot_overhead_aux,
-						&ret_cb);
+						ticks_slot_overhead_aux);
 			if (ret) {
 				goto failure_cleanup;
 			}
@@ -1511,12 +1511,13 @@ void ull_adv_done(struct node_rx_event_done *done)
 		return;
 	}
 
-	rx_hdr->type = NODE_RX_TYPE_EXT_ADV_TERMINATE;
-	rx_hdr->rx_ftr.param_adv_term.conn_handle = 0xffff;
-	rx_hdr->rx_ftr.param_adv_term.num_events = adv->event_counter;
-
 	handle = ull_adv_handle_get(adv);
 	LL_ASSERT(handle < BT_CTLR_ADV_SET);
+
+	rx_hdr->type = NODE_RX_TYPE_EXT_ADV_TERMINATE;
+	rx_hdr->handle = handle;
+	rx_hdr->rx_ftr.param_adv_term.conn_handle = 0xffff;
+	rx_hdr->rx_ftr.param_adv_term.num_events = adv->event_counter;
 
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 			  (TICKER_ID_ADV_BASE + handle), ticker_op_ext_stop_cb,

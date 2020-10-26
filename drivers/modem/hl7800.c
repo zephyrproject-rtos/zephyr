@@ -1486,7 +1486,7 @@ done:
 
 static void dns_work_cb(struct k_work *work)
 {
-#ifdef CONFIG_DNS_RESOLVER
+#if defined(CONFIG_DNS_RESOLVER) && !defined(CONFIG_DNS_SERVER_IP_ADDRESSES)
 	int ret;
 	struct dns_resolve_context *dnsCtx;
 	const char *dns_servers_str[] = { ictx.dns_string };
@@ -4577,9 +4577,7 @@ static int offload_put(struct net_context *context)
 
 	wakeup_hl7800();
 
-	if (sock->state != SOCK_SERVER_CLOSED) {
-		send_at_cmd(sock, cmd1, MDM_CMD_SEND_TIMEOUT, 0, false);
-	}
+	send_at_cmd(sock, cmd1, MDM_CMD_SEND_TIMEOUT, 0, false);
 
 	if (sock->type == SOCK_STREAM) {
 		/* delete session */
@@ -4654,7 +4652,7 @@ int32_t mdm_hl7800_update_fw(char *file_path)
 		goto err;
 	}
 
-	ret = fs_open(&ictx.fw_update_file, file_path);
+	ret = fs_open(&ictx.fw_update_file, file_path, FS_O_READ);
 	if (ret < 0) {
 		LOG_ERR("%s open err: %d", log_strdup(file_path), ret);
 		goto err;

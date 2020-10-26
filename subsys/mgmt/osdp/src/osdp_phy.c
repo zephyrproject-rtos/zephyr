@@ -146,6 +146,57 @@ int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 	pkt->len_lsb = BYTE_0(len - 1 + 2);
 	pkt->len_msb = BYTE_1(len - 1 + 2);
 
+#ifdef CONFIG_OSDP_SC_ENABLED
+	uint8_t *data;
+	int i, is_cmd, data_len;
+
+	if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE) &&
+	    pkt->control & PKT_CONTROL_SCB &&
+	    pkt->data[1] >= SCS_15) {
+		is_cmd = !ISSET_FLAG(pd, PD_FLAG_PD_MODE);
+		if (pkt->data[1] == SCS_17 || pkt->data[1] == SCS_18) {
+			/**
+			 * Only the data portion of message (after id byte)
+			 * is encrypted. While (en/de)crypting, we must skip
+			 * header, security block, and cmd/reply ID byte.
+			 *
+			 * Note: if cmd/reply has no data, we must set type to
+			 * SCS_15/SCS_16 and send them.
+			 */
+			data = pkt->data + pkt->data[0] + 1;
+			data_len = len - (sizeof(struct osdp_packet_header)
+					  + pkt->data[0] + 1);
+			len -= data_len;
+			/**
+			 * check if the passed buffer can hold the encrypted
+			 * data where length may be rounded up to the nearest
+			 * 16 byte block bondary.
+			 */
+			if (AES_PAD_LEN(data_len + 1) > max_len) {
+				/* data_len + 1 for OSDP_SC_EOM_MARKER */
+				goto out_of_space_error;
+			}
+			len += osdp_encrypt_data(pd, is_cmd, data, data_len);
+		}
+		/* len: with 4bytes MAC; with 2 byte CRC; without 1 byte mark */
+		if (len + 4 > max_len) {
+			goto out_of_space_error;
+		}
+
+		/* len: without 1 mark byte; with 2 byte CRC; with 4 byte MAC */
+		pkt->len_lsb = BYTE_0(len - 1 + 2 + 4);
+		pkt->len_msb = BYTE_1(len - 1 + 2 + 4);
+
+		/* compute and extend the buf with 4 MAC bytes */
+		osdp_compute_mac(pd, is_cmd, buf + 1, len - 1);
+		data = is_cmd ? pd->sc.c_mac : pd->sc.r_mac;
+		for (i = 0; i < 4; i++) {
+			buf[len + i] = data[i];
+		}
+		len += 4;
+	}
+#endif /* CONFIG_OSDP_SC_ENABLED */
+
 	/* fill crc16 */
 	if (len + 2 > max_len) {
 		goto out_of_space_error;
@@ -266,6 +317,87 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 	}
 
 	data = pkt->data;
+
+#ifdef CONFIG_OSDP_SC_ENABLED
+	uint8_t *mac;
+	int is_cmd;
+
+	if (pkt->control & PKT_CONTROL_SCB) {
+		if (pd_mode && !ISSET_FLAG(pd, PD_FLAG_SC_CAPABLE)) {
+			LOG_ERR(TAG "PD is not SC capable");
+			pd->reply_id = REPLY_NAK;
+			pd->cmd_data[0] = OSDP_PD_NAK_SC_UNSUP;
+			return OSDP_ERR_PKT_FMT;
+		}
+		if (pkt->data[1] < SCS_11 || pkt->data[1] > SCS_18) {
+			LOG_ERR(TAG "invalid SB Type");
+			pd->reply_id = REPLY_NAK;
+			pd->cmd_data[0] = OSDP_PD_NAK_SC_COND;
+			return OSDP_ERR_PKT_FMT;
+		}
+		if (pkt->data[1] == SCS_11 || pkt->data[1] == SCS_13) {
+			/**
+			 * CP signals PD to use SCBKD by setting SB data byte
+			 * to 0. In CP, PD_FLAG_SC_USE_SCBKD comes from FSM; on
+			 * PD we extract it from the command itself. But this
+			 * usage of SCBKD is allowed only when the PD is in
+			 * install mode (indicated by PD_FLAG_INSTALL_MODE).
+			 */
+			if (ISSET_FLAG(pd, PD_FLAG_INSTALL_MODE) &&
+			    pkt->data[2] == 0) {
+				SET_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
+			}
+		}
+		data = pkt->data + pkt->data[0];
+		len -= pkt->data[0]; /* consume security block */
+	} else {
+		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
+			LOG_ERR(TAG "Received plain-text message in SC");
+			pd->reply_id = REPLY_NAK;
+			pd->cmd_data[0] = OSDP_PD_NAK_SC_COND;
+			return OSDP_ERR_PKT_FMT;
+		}
+	}
+
+	if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE) &&
+	    pkt->control & PKT_CONTROL_SCB &&
+	    pkt->data[1] >= SCS_15) {
+		/* validate MAC */
+		is_cmd = ISSET_FLAG(pd, PD_FLAG_PD_MODE);
+		osdp_compute_mac(pd, is_cmd, buf + 1, mac_offset);
+		mac = is_cmd ? pd->sc.c_mac : pd->sc.r_mac;
+		if (memcmp(buf + 1 + mac_offset, mac, 4) != 0) {
+			LOG_ERR(TAG "invalid MAC");
+			pd->reply_id = REPLY_NAK;
+			pd->cmd_data[0] = OSDP_PD_NAK_SC_COND;
+			return OSDP_ERR_PKT_FMT;
+		}
+		len -= 4; /* consume MAC */
+
+		/* decrypt data block */
+		if (pkt->data[1] == SCS_17 || pkt->data[1] == SCS_18) {
+			/**
+			 * Only the data portion of message (after id byte)
+			 * is encrypted. While (en/de)crypting, we must skip
+			 * header (6), security block (2) and cmd/reply id (1)
+			 * bytes if cmd/reply has no data, use SCS_15/SCS_16.
+			 *
+			 * At this point, the header and security block is
+			 * already consumed. So we can just skip the cmd/reply
+			 * ID (data[0])  when calling osdp_decrypt_data().
+			 */
+			len = osdp_decrypt_data(pd, is_cmd, data + 1, len - 1);
+			if (len <= 0) {
+				LOG_ERR(TAG "failed at decrypt");
+				pd->reply_id = REPLY_NAK;
+				pd->cmd_data[0] = OSDP_PD_NAK_SC_COND;
+				return OSDP_ERR_PKT_FMT;
+			}
+			len += 1; /* put back cmd/reply ID */
+		}
+	}
+#endif /* CONFIG_OSDP_SC_ENABLED */
+
 	memmove(buf, data, len);
 	return len;
 }

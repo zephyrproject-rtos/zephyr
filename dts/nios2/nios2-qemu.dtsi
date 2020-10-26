@@ -34,7 +34,7 @@
 		ranges;
 
 		jtag_uart: uart@201000 {
-			compatible = "altera,jtag-uart";
+			compatible = "altr,jtag-uart";
 			reg = <0x201000 0x400>;
 			label = "jtag_uart0";
 

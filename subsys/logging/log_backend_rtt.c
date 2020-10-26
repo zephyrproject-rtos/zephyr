@@ -8,7 +8,7 @@
 #include <logging/log_core.h>
 #include <logging/log_msg.h>
 #include <logging/log_output.h>
-#include "log_backend_std.h"
+#include <logging/log_backend_std.h>
 #include <SEGGER_RTT.h>
 
 #ifndef CONFIG_LOG_BACKEND_RTT_BUFFER_SIZE

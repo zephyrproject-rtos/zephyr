@@ -204,17 +204,17 @@ static int iis2dh_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan)
 {
 	struct iis2dh_data *iis2dh = dev->data;
-	union axis3bit16_t buf;
+	int16_t buf[3];
 
 	/* fetch raw data sample */
-	if (iis2dh_acceleration_raw_get(iis2dh->ctx, buf.u8bit) < 0) {
+	if (iis2dh_acceleration_raw_get(iis2dh->ctx, buf) < 0) {
 		LOG_DBG("Failed to fetch raw data sample");
 		return -EIO;
 	}
 
-	iis2dh->acc[0] = sys_le16_to_cpu(buf.i16bit[0]);
-	iis2dh->acc[1] = sys_le16_to_cpu(buf.i16bit[1]);
-	iis2dh->acc[2] = sys_le16_to_cpu(buf.i16bit[2]);
+	iis2dh->acc[0] = sys_le16_to_cpu(buf[0]);
+	iis2dh->acc[1] = sys_le16_to_cpu(buf[1]);
+	iis2dh->acc[2] = sys_le16_to_cpu(buf[2]);
 
 	return 0;
 }

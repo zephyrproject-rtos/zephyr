@@ -295,6 +295,12 @@ config OUTPUT_PRINT_MEMORY_USAGE
 	  ram_report and
 	  https://sourceware.org/binutils/docs/ld/MEMORY.html
 
+config CLEANUP_INTERMEDIATE_FILES
+	bool "Remove all intermediate files"
+	help
+	  Delete intermediate files to save space and cleanup clutter resulting
+	  from the build process.
+
 config BUILD_NO_GAP_FILL
 	bool "Don't fill gaps in generated hex/bin/s19 files."
 
@@ -341,13 +347,6 @@ config MAKEFILE_EXPORTS
 	help
 	  Generates a file with build information that can be read by
 	  third party Makefile-based build systems.
-
-config LEGACY_DEVICETREE_MACROS
-	bool "Allow use of legacy devicetree macros"
-	help
-	  Allows use of legacy devicetree macros which were used in
-	  Zephyr 2.2 and previous versions, rather than the devicetree.h
-	  API introduced during the Zephyr 2.3 development cycle.
 
 config DEPRECATED_ZEPHYR_INT_TYPES
 	bool "Allow the use of the deprecated zephyr integer types"
@@ -489,13 +488,6 @@ config BOOTLOADER_BOSSA_ADAFRUIT_UF2
 	  0xf01669ef as the magic value to enter the bootloader.
 
 endchoice
-
-config BOOTLOADER_KEXEC
-	bool "Boot using Linux kexec() system call"
-	depends on X86
-	help
-	  This option signifies that Linux boots the kernel using kexec system call
-	  and utility. This method is used to boot the kernel over the network.
 
 config BOOTLOADER_CONTEXT_RESTORE
 	bool "Boot loader has context restore support"

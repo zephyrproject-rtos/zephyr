@@ -58,7 +58,7 @@ config OSDP_UART_BUFFER_LENGTH
 
 config OSDP_THREAD_STACK_SIZE
 	int "OSDP Thread stack size"
-	default 512
+	default 1024
 	help
 	  Thread stack size for osdp refresh thread
 
@@ -67,6 +67,36 @@ config OSDP_PACKET_TRACE
 	help
 	  Prints bytes sent/received over OSDP to console for debugging.
 	  LOG_HEXDUMP_DBG() is used to achieve this and can be very verbose.
+
+config OSDP_SC_ENABLED
+	bool "Enable OSDP Secure Channel"
+	depends on CSPRING_ENABLED
+	default y
+	select CRYPTO
+	select CRYPTO_MBEDTLS_SHIM
+	select MBEDTLS
+	select MBEDTLS_CIPHER_CCM_ENABLED
+	help
+	  Secure the OSDP communication channel with encryption and mutual
+	  authentication.
+
+if OSDP_SC_ENABLED
+
+config OSDP_SC_RETRY_WAIT_SEC
+	int "Retry wait time in seconds after a Secure Channel error"
+	default 600
+	help
+	  Time in seconds to wait after a secure channel failure, and before
+	  retrying to establish it.
+
+config OSDP_CRYPTO_DRV_NAME
+	string "Crypto driver to use with OSDP"
+	default "CRYPTO_MTLS"
+	help
+	  OSDP Secure Channel uses AES-128 to secure communication between
+	  CP and PD. Provide an available crypto driver name here.
+
+endif # OSDP_SC_ENABLED
 
 if OSDP_MODE_PD
 source "subsys/mgmt/osdp/Kconfig.pd"

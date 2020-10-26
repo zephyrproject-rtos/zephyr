@@ -630,7 +630,33 @@ void nrf_802154_received_timestamp_raw(uint8_t *data, int8_t power, uint8_t lqi,
 
 void nrf_802154_receive_failed(nrf_802154_rx_error_t error)
 {
+	enum ieee802154_rx_fail_reason reason;
+
+	switch (error) {
+	case NRF_802154_RX_ERROR_INVALID_FRAME:
+	case NRF_802154_RX_ERROR_DELAYED_TIMEOUT:
+		reason = IEEE802154_RX_FAIL_NOT_RECEIVED;
+		break;
+
+	case NRF_802154_RX_ERROR_INVALID_FCS:
+		reason = IEEE802154_RX_FAIL_INVALID_FCS;
+		break;
+
+	case NRF_802154_RX_ERROR_INVALID_DEST_ADDR:
+		reason = IEEE802154_RX_FAIL_ADDR_FILTERED;
+		break;
+
+	default:
+		reason = IEEE802154_RX_FAIL_OTHER;
+		break;
+	}
+
 	nrf5_data.last_frame_ack_fpb = false;
+	if (nrf5_data.event_handler) {
+		nrf5_data.event_handler(net_if_get_device(nrf5_data.iface),
+					IEEE802154_EVENT_RX_FAILED,
+					(void *)&reason);
+	}
 }
 
 void nrf_802154_tx_ack_started(const uint8_t *data)

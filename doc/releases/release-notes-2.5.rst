@@ -36,8 +36,17 @@ API Changes
   ``flags`` parameter, which allows to configure current LwM2M client session,
   for instance enable bootstrap procedure in the curent session.
 
+* Changed vcnl4040 dts binding default for property 'proximity-trigger'.
+  Changed the default to match the HW POR state for this property.
+
+* The :c:func:`clock_control_async_on` function will now take ``callback`` and
+  ``user_data`` as arguments instead of structure which contained list node,
+  callback and user data.
+
 Deprecated in this release
 ==========================
+
+* ARM Musca-A board and SoC support deprecated and planned to be removed in 2.6.0.
 
 Removed APIs in this release
 ============================
@@ -187,6 +196,11 @@ Build and Infrastructure
 * Devicetree
 
   * :c:macro:`DT_ENUM_IDX_OR`: new macro
+  * Support for legacy devicetree macros via
+    ``CONFIG_LEGACY_DEVICETREE_MACROS`` was removed. All devicetree-based code
+    should be using the new devicetree API introduced in Zephyr 2.3 and
+    documented in :ref:`dt-from-c`. Information on flash partitions has moved
+    to :ref:`flash_map_api`.
 
 Libraries / Subsystems
 **********************
@@ -224,6 +238,35 @@ HALs
 
 * HALs are now moved out of the main tree as external modules and reside in
   their own standalone repositories.
+
+MCUBoot
+*******
+
+* bootloader
+
+  * Added hardening against hardware level fault injection and timing attacks,
+    see ``CONFIG_BOOT_FIH_PROFILE_HIGH`` and similar kconfig options.
+  * Introduced Abstract crypto primitives to simplify porting.
+  * Added ram-load upgrade mode (not enabled for zephy-rtos yet).
+  * Renamed single-image mode to single-slot mode,
+    see ``CONFIG_SINGLE_APPLICATION_SLOT``.
+  * Added patch for turning off cache for Cortex M7 before chain-loading.
+  * Fixed boostrapping in swap-move mode.
+  * Fixed issue causing that interrupted swap-move operation might brick device
+    if the primary image was padded.
+  * Fixed issue causing that HW stack protection catches the chain-loaded
+    application during its early ini, by disableing HW stack protection
+    (temporary hack).
+  * Added reset of Cortex SPLIM registers before boot.
+  * Fixesd build issue that occurs if CONF_FILE contains multiple file paths
+    instead of single file path.
+
+* imgtool
+
+  * Print image digest during verify.
+  * Add possibility to set confirm flag for hex files as well.
+  * Usage of --confirm implies --pad.
+  * Fixed 'custom_tlvs' argument handling.
 
 Documentation
 *************

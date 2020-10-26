@@ -180,6 +180,13 @@ def main():
     else:
         num_entries = 3
 
+    use_tls = False
+    if ("CONFIG_THREAD_LOCAL_STORAGE" in syms) and ("CONFIG_X86_64" not in syms):
+        use_tls = True
+
+        # x86_64 does not use descriptor for thread local storage
+        num_entries += 1
+
     gdt_base = syms["_gdt"]
 
     with open(args.output_gdt, "wb") as fp:
@@ -205,12 +212,21 @@ def main():
             # Selector 0x20: double-fault TSS
             fp.write(create_tss_entry(df_tss, 0x67, 0))
 
-        if num_entries == 7:
+        if num_entries >= 7:
             # Selector 0x28: code descriptor, dpl = 3
             fp.write(create_code_data_entry(0, 0xFFFFF, 3,
                                             FLAGS_GRAN, ACCESS_EX | ACCESS_RW))
 
             # Selector 0x30: data descriptor, dpl = 3
+            fp.write(create_code_data_entry(0, 0xFFFFF, 3,
+                                            FLAGS_GRAN, ACCESS_RW))
+
+        if use_tls:
+            # Selector 0x18, 0x28 or 0x38 (depending on entries above):
+            # data descriptor, dpl = 3
+            #
+            # for use with thread local storage while this will be
+            # modified at runtime.
             fp.write(create_code_data_entry(0, 0xFFFFF, 3,
                                             FLAGS_GRAN, ACCESS_RW))
 

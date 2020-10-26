@@ -8,7 +8,7 @@
 #include <logging/log_core.h>
 #include <logging/log_msg.h>
 #include <logging/log_output.h>
-#include "log_backend_std.h"
+#include <logging/log_backend_std.h>
 #include <device.h>
 #include <drivers/uart.h>
 #include <sys/__assert.h>

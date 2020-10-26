@@ -60,14 +60,14 @@ static int iis2mdc_set_hard_iron(const struct device *dev,
 {
 	struct iis2mdc_data *iis2mdc = dev->data;
 	uint8_t i;
-	union axis3bit16_t offset;
+	int16_t offset[3];
 
 	for (i = 0U; i < 3; i++) {
-		offset.i16bit[i] = sys_cpu_to_le16(val->val1);
+		offset[i] = sys_cpu_to_le16(val->val1);
 		val++;
 	}
 
-	return iis2mdc_mag_user_offset_set(iis2mdc->ctx, offset.u8bit);
+	return iis2mdc_mag_user_offset_set(iis2mdc->ctx, offset);
 }
 
 static void iis2mdc_channel_get_mag(const struct device *dev,
@@ -177,17 +177,17 @@ static int iis2mdc_attr_set(const struct device *dev,
 static int iis2mdc_sample_fetch_mag(const struct device *dev)
 {
 	struct iis2mdc_data *iis2mdc = dev->data;
-	union axis3bit16_t raw_mag;
+	int16_t raw_mag[3];
 
 	/* fetch raw data sample */
-	if (iis2mdc_magnetic_raw_get(iis2mdc->ctx, raw_mag.u8bit) < 0) {
+	if (iis2mdc_magnetic_raw_get(iis2mdc->ctx, raw_mag) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
 
-	iis2mdc->mag[0] = sys_le16_to_cpu(raw_mag.i16bit[0]);
-	iis2mdc->mag[1] = sys_le16_to_cpu(raw_mag.i16bit[1]);
-	iis2mdc->mag[2] = sys_le16_to_cpu(raw_mag.i16bit[2]);
+	iis2mdc->mag[0] = sys_le16_to_cpu(raw_mag[0]);
+	iis2mdc->mag[1] = sys_le16_to_cpu(raw_mag[1]);
+	iis2mdc->mag[2] = sys_le16_to_cpu(raw_mag[2]);
 
 	return 0;
 }
@@ -195,17 +195,17 @@ static int iis2mdc_sample_fetch_mag(const struct device *dev)
 static int iis2mdc_sample_fetch_temp(const struct device *dev)
 {
 	struct iis2mdc_data *iis2mdc = dev->data;
-	union axis1bit16_t raw_temp;
+	int16_t raw_temp;
 	int32_t temp;
 
 	/* fetch raw temperature sample */
-	if (iis2mdc_temperature_raw_get(iis2mdc->ctx, raw_temp.u8bit) < 0) {
+	if (iis2mdc_temperature_raw_get(iis2mdc->ctx, &raw_temp) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
 
 	/* formula is temp = 25 + (temp / 8) C */
-	temp = (sys_le16_to_cpu(raw_temp.i16bit) & 0x8FFF);
+	temp = sys_le16_to_cpu(raw_temp);
 	iis2mdc->temp_sample = 2500 + (temp * 100) / 8;
 
 	return 0;

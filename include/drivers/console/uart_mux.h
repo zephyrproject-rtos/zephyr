@@ -128,6 +128,25 @@ typedef void (*uart_mux_cb_t)(const struct device *uart,
  */
 void uart_mux_foreach(uart_mux_cb_t cb, void *user_data);
 
+/**
+ * @brief Disable the mux.
+ *
+ * @details Disable does not re-instate whatever ISRs and configs were present
+ * before the mux was enabled. This must be done by the user.
+ *
+ * @param dev UART mux device pointer
+ */
+void uart_mux_disable(const struct device *dev);
+
+/**
+ * @brief Enable the mux.
+ *
+ * @details Enables the correct ISRs for the UART mux.
+ *
+ * @param dev UART mux device pointer
+ */
+void uart_mux_enable(const struct device *dev);
+
 #ifdef __cplusplus
 }
 #endif

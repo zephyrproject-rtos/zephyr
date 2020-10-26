@@ -117,6 +117,9 @@ struct k_mem_domain;
  * See documentation for k_mem_domain_add_partition() for details about
  * partition constraints.
  *
+ * Do not call k_mem_domain_init() on the same memory domain more than once,
+ * doing so is undefined behavior.
+ *
  * @param domain The memory domain to be initialized.
  * @param num_parts The number of array items of "parts" parameter.
  * @param parts An array of pointers to the memory partitions. Can be NULL
@@ -127,7 +130,12 @@ extern void k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 /**
  * @brief Destroy a memory domain.
  *
- * Destroy a memory domain.
+ * Destroy a memory domain. All member threads will be re-assigned to the
+ * default memory domain.
+ *
+ * The default memory domain may not be destroyed.
+ *
+ * This API is deprecated and will be removed in Zephyr 2.5.
  *
  * @param domain The memory domain to be destroyed.
  */

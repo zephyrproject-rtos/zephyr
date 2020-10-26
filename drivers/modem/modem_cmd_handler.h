@@ -173,7 +173,7 @@ int modem_cmd_send(struct modem_iface *iface,
 		   const uint8_t *buf, struct k_sem *sem, k_timeout_t timeout);
 
 /**
- * @brief  send a series of AT commands
+ * @brief  send a series of AT commands w/ a TX lock
  *
  * @param  *iface: interface to use
  * @param  *handler: command handler to use
@@ -190,6 +190,23 @@ int modem_cmd_handler_setup_cmds(struct modem_iface *iface,
 				 struct k_sem *sem, k_timeout_t timeout);
 
 /**
+ * @brief  send a series of AT commands w/o locking TX
+ *
+ * @param  *iface: interface to use
+ * @param  *handler: command handler to use
+ * @param  *cmds: array of setup commands to send
+ * @param  cmds_len: size of the setup command array
+ * @param  *sem: wait for response semaphore
+ * @param  timeout: timeout of command
+ *
+ * @retval 0 if ok, < 0 if error.
+ */
+int modem_cmd_handler_setup_cmds_nolock(struct modem_iface *iface,
+					struct modem_cmd_handler *handler,
+					struct setup_cmd *cmds, size_t cmds_len,
+					struct k_sem *sem, k_timeout_t timeout);
+
+/**
  * @brief  Init command handler
  *
  * @param  *handler: command handler to initialize
@@ -199,6 +216,25 @@ int modem_cmd_handler_setup_cmds(struct modem_iface *iface,
  */
 int modem_cmd_handler_init(struct modem_cmd_handler *handler,
 			   struct modem_cmd_handler_data *data);
+
+/**
+ * @brief  Lock the modem for sending cmds
+ *
+ * This is semaphore-based rather than mutex based, which means there's no
+ * requirements of thread ownership for the user. These functions are useful
+ * when one needs to prevent threads from sending UART data to the modem for an
+ * extended period of time (for example during modem reset).
+ *
+ * @param  *handler: command handler to lock
+ * @param  lock: set true to lock, false to unlock
+ * @param  timeout: give up after timeout
+ *
+ * @retval 0 if ok, < 0 if error.
+ */
+int modem_cmd_handler_tx_lock(struct modem_cmd_handler *handler,
+			      k_timeout_t timeout);
+void modem_cmd_handler_tx_unlock(struct modem_cmd_handler *handler);
+
 
 #ifdef __cplusplus
 }

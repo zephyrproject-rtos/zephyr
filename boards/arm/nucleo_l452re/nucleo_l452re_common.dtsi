@@ -35,15 +35,25 @@
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	current-speed = <115200>;
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
+		     &spi1_miso_pa6 &spi1_mosi_pa7>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	clock-frequency = <I2C_BITRATE_FAST>;
 	status = "okay";
 };
 
@@ -57,6 +67,7 @@
 };
 
 &can1 {
+	pinctrl-0 = <&can1_rx_pa11 &can1_tx_pa12>;
 	bus-speed = <125000>;
 	status = "okay";
 };

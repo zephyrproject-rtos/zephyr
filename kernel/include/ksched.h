@@ -105,6 +105,11 @@ static inline bool z_is_idle_thread_object(struct k_thread *thread)
 #endif /* CONFIG_MULTITHREADING */
 }
 
+static inline bool z_is_thread_suspended(struct k_thread *thread)
+{
+	return (thread->base.thread_state & _THREAD_SUSPENDED) != 0U;
+}
+
 static inline bool z_is_thread_pending(struct k_thread *thread)
 {
 	return (thread->base.thread_state & _THREAD_PENDING) != 0U;

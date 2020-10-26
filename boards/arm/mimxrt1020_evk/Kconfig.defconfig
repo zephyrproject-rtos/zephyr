@@ -12,17 +12,10 @@ choice CODE_LOCATION
 	default CODE_FLEXSPI
 endchoice
 
-choice DATA_LOCATION
-	default DATA_SEMC
-endchoice
-
 if NETWORKING
 
 config NET_L2_ETHERNET
 	default y
-
-config ETH_MCUX_0
-	default y if NET_L2_ETHERNET
 
 endif # NETWORKING
 

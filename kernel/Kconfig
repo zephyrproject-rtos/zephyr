@@ -195,16 +195,24 @@ config THREAD_CUSTOM_DATA
 config THREAD_USERSPACE_LOCAL_DATA
 	bool
 	depends on USERSPACE
+	default y if ERRNO && !ERRNO_IN_TLS
 
 config ERRNO
 	bool "Enable errno support"
 	default y
-	select THREAD_USERSPACE_LOCAL_DATA if USERSPACE
 	help
 	  Enable per-thread errno in the kernel. Application and library code must
 	  include errno.h provided by the C library (libc) to use the errno
 	  symbol. The C library must access the per-thread errno via the
-	  _get_errno() symbol.
+	  z_errno() symbol.
+
+config ERRNO_IN_TLS
+	bool "Store errno in thread local storage (TLS)"
+	depends on ERRNO && THREAD_LOCAL_STORAGE
+	default y
+	help
+	  Use thread local storage to store errno instead of storing it in
+	  the kernel thread struct. This avoids a syscall if userspace is enabled.
 
 choice SCHED_ALGORITHM
 	prompt "Scheduler priority queue algorithm"
@@ -806,6 +814,23 @@ config TRACE_SCHED_IPI
 	depends on SCHED_IPI_SUPPORTED
 	depends on MP_NUM_CPUS>1
 
+config KERNEL_COHERENCE
+	bool "Place all shared data into coherent memory"
+	default y if ARCH_HAS_COHERENCE && SMP && MP_NUM_CPUS > 1
+	select THREAD_STACK_INFO
+	help
+	  When available and selected, the kernel will build in a mode
+	  where all shared data is placed in multiprocessor-coherent
+	  (generally "uncached") memory.  Thread stacks will remain
+	  cached, as will application memory declared with
+	  __incoherent.  This is intended for Zephyr SMP kernels
+	  running on cache-incoherent architectures only.  Note that
+	  when this is selected, there is an implicit API change that
+	  assumes cache coherence to any memory passed to the kernel.
+	  Code that creates kernel data structures in uncached regions
+	  may fail strangely.  Some assertions exist to catch these
+	  mistakes, but not all circumstances can be tested.
+
 endmenu
 
 config TICKLESS_IDLE
@@ -835,5 +860,12 @@ config TICKLESS_KERNEL
 	help
 	  This option enables a fully event driven kernel. Periodic system
 	  clock interrupt generation would be stopped at all times.
+
+config THREAD_LOCAL_STORAGE
+	bool "Thread Local Storage (TLS)"
+	depends on ARCH_HAS_THREAD_LOCAL_STORAGE
+	select NEED_LIBC_MEM_PARTITION if (CPU_CORTEX_M && USERSPACE)
+	help
+	  This option enables thread local storage (TLS) support in kernel.
 
 endmenu

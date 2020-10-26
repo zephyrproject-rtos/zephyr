@@ -1,0 +1,17 @@
+#
+# Copyright (c) 2018, Cypress
+# Copyright (c) 2020, ATL Electronics
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: cy8ckit_062_ble_m4
+name: Cypress PSoC6 BLE Pioneer Kit
+type: mcu
+arch: arm
+ram: 288
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools

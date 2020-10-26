@@ -107,12 +107,6 @@ config BT_CTLR_ADVANCED_FEATURES
 menu "Advanced features"
 	visible if BT_CTLR_ADVANCED_FEATURES
 
-config BT_CTLR_FILTER
-	bool "Device Whitelist Support"
-	default y
-	help
-	  Enable support for controller device whitelist feature
-
 config BT_CTLR_SW_DEFERRED_PRIVACY
 	bool "LE Controller-based Software Privacy"
 	depends on BT_CTLR_PRIVACY

@@ -25,6 +25,7 @@
 LOG_MODULE_REGISTER(adc_stm32);
 
 #include <drivers/clock_control/stm32_clock_control.h>
+#include <pinmux/stm32/pinmux_stm32.h>
 
 #if !defined(CONFIG_SOC_SERIES_STM32F0X) && \
 	!defined(CONFIG_SOC_SERIES_STM32L0X)
@@ -216,11 +217,10 @@ struct adc_stm32_data {
 
 struct adc_stm32_cfg {
 	ADC_TypeDef *base;
-
 	void (*irq_cfg_func)(void);
-
 	struct stm32_pclken pclken;
-	const struct device *p_dev;
+	const struct soc_gpio_pinctrl *pinctrl;
+	size_t pinctrl_len;
 };
 
 static int check_buffer_size(const struct adc_sequence *sequence,
@@ -549,6 +549,7 @@ static int adc_stm32_init(const struct device *dev)
 	const struct device *clk =
 		device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	int err;
 
 	LOG_DBG("Initializing....");
 
@@ -566,6 +567,15 @@ static int adc_stm32_init(const struct device *dev)
 	if (clock_control_on(clk,
 		(clock_control_subsys_t *) &config->pclken) != 0) {
 		return -EIO;
+	}
+
+	/* Configure dt provided device signals when available */
+	err = stm32_dt_pinctrl_configure(config->pinctrl,
+					 config->pinctrl_len,
+					 (uint32_t)config->base);
+	if (err < 0) {
+		LOG_ERR("ADC pinctrl setup failed (%d)", err);
+		return err;
 	}
 
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
@@ -710,13 +720,18 @@ static const struct adc_driver_api api_stm32_driver_api = {
 									\
 static void adc_stm32_cfg_func_##index(void);				\
 									\
+static const struct soc_gpio_pinctrl adc_pins_##index[] =		\
+	ST_STM32_DT_INST_PINCTRL(index, 0);				\
+									\
 static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
-	.base = (ADC_TypeDef *)DT_INST_REG_ADDR(index),\
+	.base = (ADC_TypeDef *)DT_INST_REG_ADDR(index),			\
 	.irq_cfg_func = adc_stm32_cfg_func_##index,			\
 	.pclken = {							\
-		.enr = DT_INST_CLOCKS_CELL(index, bits),	\
-		.bus = DT_INST_CLOCKS_CELL(index, bus),	\
+		.enr = DT_INST_CLOCKS_CELL(index, bits),		\
+		.bus = DT_INST_CLOCKS_CELL(index, bus),			\
 	},								\
+	.pinctrl = adc_pins_##index,					\
+	.pinctrl_len = ARRAY_SIZE(adc_pins_##index),			\
 };									\
 static struct adc_stm32_data adc_stm32_data_##index = {			\
 	ADC_CONTEXT_INIT_TIMER(adc_stm32_data_##index, ctx),		\
@@ -724,7 +739,7 @@ static struct adc_stm32_data adc_stm32_data_##index = {			\
 	ADC_CONTEXT_INIT_SYNC(adc_stm32_data_##index, ctx),		\
 };									\
 									\
-DEVICE_AND_API_INIT(adc_##index, DT_INST_LABEL(index),	\
+DEVICE_AND_API_INIT(adc_##index, DT_INST_LABEL(index),			\
 		    &adc_stm32_init,					\
 		    &adc_stm32_data_##index, &adc_stm32_cfg_##index,	\
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
@@ -732,10 +747,10 @@ DEVICE_AND_API_INIT(adc_##index, DT_INST_LABEL(index),	\
 									\
 static void adc_stm32_cfg_func_##index(void)				\
 {									\
-	IRQ_CONNECT(DT_INST_IRQN(index),		\
-		    DT_INST_IRQ(index, priority),	\
+	IRQ_CONNECT(DT_INST_IRQN(index),				\
+		    DT_INST_IRQ(index, priority),			\
 		    adc_stm32_isr, DEVICE_GET(adc_##index), 0);		\
-	irq_enable(DT_INST_IRQN(index));		\
+	irq_enable(DT_INST_IRQN(index));				\
 }
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_ADC_INIT)

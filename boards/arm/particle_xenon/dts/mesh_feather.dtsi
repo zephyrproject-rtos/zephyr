@@ -185,7 +185,7 @@ arduino_i2c: &i2c0 { /* feather I2C */
 
 feather_i2c: &i2c0 { };
 
-/* TWI1 used on Boron; also see mesh_feather_spi1_spi1.dtsi */
+/* TWI1 used on Boron; also see mesh_feather_spi_spi1.dtsi */
 
 &spi2 { /* dedicated MX25L */
 	compatible = "nordic,nrf-spi";

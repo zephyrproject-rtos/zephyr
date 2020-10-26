@@ -256,6 +256,34 @@ static inline bool arch_is_in_isr(void);
  * @retval -ENOMEM Memory for additional paging structures unavailable
  */
 int arch_mem_map(void *dest, uintptr_t addr, size_t size, uint32_t flags);
+
+/**
+ * Remove mappings for a provided virtual address range
+ *
+ * This is a low-level interface for un-mapping pages from the address space.
+ * When this completes, the relevant page table entries will be updated as
+ * if no mapping was ever made for that memory range. No previous context
+ * needs to be preserved. This function must update mappings in all active
+ * page tables.
+ *
+ * Behavior when providing unaligned addresses/sizes is undefined, these
+ * are assumed to be aligned to CONFIG_MMU_PAGE_SIZE.
+ *
+ * Behavior when providing an address range that is not already mapped is
+ * undefined.
+ *
+ * This function should never require memory allocations for paging structures,
+ * and it is not necessary to free any paging structures. Empty page tables
+ * due to all contained entries being un-mapped may remain in place.
+ *
+ * Implementations must invalidate TLBs as necessary.
+ *
+ * This API is part of infrastructure still under development and may change.
+ *
+ * @param addr Page-aligned base virtual address to un-map
+ * @param size Page-aligned region size
+ */
+void arch_mem_unmap(void *addr, size_t size);
 #endif /* CONFIG_MMU */
 /** @} */
 
@@ -318,6 +346,26 @@ void arch_coredump_info_dump(const z_arch_esf_t *esf);
  * @brief Get the target code specified by the architecture.
  */
 uint16_t arch_coredump_tgt_code_get(void);
+
+/** @} */
+
+/**
+ * @defgroup arch-tls Architecture-specific Thread Local Storage APIs
+ * @ingroup arch-interface
+ * @{
+ */
+
+/**
+ * @brief Setup Architecture-specific TLS area in stack
+ *
+ * This sets up the stack area for thread local storage.
+ * The structure inside in area is architecture specific.
+ *
+ * @param new_thread New thread object
+ * @param stack_ptr Stack pointer
+ * @return Number of bytes taken by the TLS area
+ */
+size_t arch_tls_stack_setup(struct k_thread *new_thread, char *stack_ptr);
 
 /** @} */
 

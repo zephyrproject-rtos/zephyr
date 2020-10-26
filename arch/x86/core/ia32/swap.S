@@ -303,6 +303,18 @@ CROHandlingDone:
 
 	movl    %eax, _kernel_offset_to_current(%edi)
 
+#if defined(CONFIG_X86_USE_THREAD_LOCAL_STORAGE)
+	pushl	%eax
+
+	call	z_x86_tls_update_gdt
+
+	/* Since segment descriptor has changed, need to reload */
+	movw	$GS_TLS_SEG, %ax
+	movw	%ax, %gs
+
+	popl	%eax
+#endif
+
 	/* recover thread stack pointer from k_thread */
 
 	movl	_thread_offset_to_esp(%eax), %esp

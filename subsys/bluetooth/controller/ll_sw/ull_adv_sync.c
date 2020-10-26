@@ -42,7 +42,8 @@ static int init_reset(void);
 static inline struct ll_adv_sync_set *sync_acquire(void);
 static inline void sync_release(struct ll_adv_sync_set *sync);
 static inline uint16_t sync_handle_get(struct ll_adv_sync_set *sync);
-static inline uint8_t sync_stop(struct ll_adv_sync_set *sync);
+static inline uint8_t sync_remove(struct ll_adv_sync_set *sync,
+				  struct ll_adv_set *adv, uint8_t enable);
 static void mfy_sync_offset_get(void *param);
 static inline struct pdu_adv_sync_info *sync_info_get(struct pdu_adv *pdu);
 static inline void sync_info_offset_fill(struct pdu_adv_sync_info *si,
@@ -168,7 +169,10 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 {
 	struct lll_adv_sync *lll_sync;
 	struct ll_adv_sync_set *sync;
+	uint8_t sync_got_enabled;
 	struct ll_adv_set *adv;
+	uint8_t pri_idx;
+	uint8_t err;
 
 	adv = ull_adv_is_created_get(handle);
 	if (!adv) {
@@ -183,8 +187,6 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 	sync = (void *)HDR_LLL2EVT(lll_sync);
 
 	if (!enable) {
-		uint8_t err;
-
 		if (!sync->is_enabled) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
@@ -195,63 +197,93 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 			return 0;
 		}
 
-		/* Remove sync_info from auxiliary PDU */
-		err = ull_adv_aux_hdr_set_clear(adv, 0,
-						ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
-						NULL, NULL);
-		if (err) {
-			return err;
-		}
-
-		err = sync_stop(sync);
-		if (err) {
-			return err;
-		}
-
-		sync->is_started = 0U;
-		sync->is_enabled = 0U;
-
-		return 0;
+		err = sync_remove(sync, adv, 0U);
+		return err;
 	}
 
 	/* TODO: Check for periodic data being complete */
 
 	/* TODO: Check packet too long */
 
+	sync_got_enabled = 0U;
 	if (sync->is_enabled) {
 		/* TODO: Enabling an already enabled advertising changes its
 		 * random address.
 		 */
 	} else {
-		sync->is_enabled = 1U;
+		sync_got_enabled = 1U;
 	}
 
 	if (adv->is_enabled && !sync->is_started) {
-		volatile uint32_t ret_cb = TICKER_STATUS_BUSY;
-		uint32_t ticks_anc_sync;
-		uint8_t err;
+		uint32_t ticks_slot_overhead_aux;
+		struct lll_adv_aux *lll_aux;
+		struct ll_adv_aux_set *aux;
+		uint32_t ticks_anchor_sync;
+		uint32_t ticks_anchor_aux;
+		uint32_t ret;
 
-		/* FIXME: Find absolute ticks until after auxliary PDU on air
-		 *        to place the periodic advertising PDU.
-		 */
-		ticks_anc_sync = ticker_ticks_now_get();
+		lll_aux = adv->lll.aux;
 
 		/* Add sync_info into auxiliary PDU */
 		err = ull_adv_aux_hdr_set_clear(adv,
 						ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
-						0, NULL, NULL);
+						0, NULL, NULL, &pri_idx);
 		if (err) {
 			return err;
 		}
 
-		ull_hdr_init(&sync->ull);
+		if (lll_aux) {
+			/* FIXME: Find absolute ticks until after auxiliary PDU
+			 *        on air to place the periodic advertising PDU.
+			 */
+			ticks_anchor_aux = 0U; /* unused in this path */
+			ticks_slot_overhead_aux = 0U; /* unused in this path */
+			ticks_anchor_sync = ticker_ticks_now_get();
+			aux = NULL;
+		} else {
+			lll_aux = adv->lll.aux;
+			aux = (void *)HDR_LLL2EVT(lll_aux);
+			ticks_anchor_aux = ticker_ticks_now_get();
+			ticks_slot_overhead_aux = ull_adv_aux_evt_init(aux);
+			ticks_anchor_sync =
+				ticks_anchor_aux + ticks_slot_overhead_aux +
+				aux->evt.ticks_slot +
+				HAL_TICKER_US_TO_TICKS(EVENT_MAFS_US);
+		}
 
-		err = ull_adv_sync_start(sync, ticks_anc_sync, &ret_cb);
-		if (err) {
-			return BT_HCI_ERR_CMD_DISALLOWED;
+		ret = ull_adv_sync_start(sync, ticks_anchor_sync);
+		if (ret) {
+			sync_remove(sync, adv, 1U);
+
+			return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 		}
 
 		sync->is_started = 1U;
+
+		lll_adv_data_enqueue(&adv->lll, pri_idx);
+
+		if (aux) {
+			/* Keep aux interval equal or higher than primary PDU
+			 * interval.
+			 */
+			aux->interval = adv->interval +
+					(HAL_TICKER_TICKS_TO_US(
+						ULL_ADV_RANDOM_DELAY) /	625U);
+
+			ret = ull_adv_aux_start(aux, ticks_anchor_aux,
+						ticks_slot_overhead_aux);
+			if (ret) {
+				sync_remove(sync, adv, 1U);
+
+				return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+			}
+
+			aux->is_started = 1U;
+		}
+	}
+
+	if (sync_got_enabled) {
+		sync->is_enabled = sync_got_enabled;
 	}
 
 	return 0;
@@ -286,16 +318,20 @@ uint16_t ull_adv_sync_lll_handle_get(struct lll_adv_sync *lll)
 	return sync_handle_get((void *)lll->hdr.parent);
 }
 
-uint32_t ull_adv_sync_start(struct ll_adv_sync_set *sync, uint32_t ticks_anchor,
-			 uint32_t volatile *ret_cb)
+uint32_t ull_adv_sync_start(struct ll_adv_sync_set *sync,
+			    uint32_t ticks_anchor)
 {
-	uint32_t slot_us = EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 	uint32_t ticks_slot_overhead;
+	uint32_t volatile ret_cb;
 	uint32_t interval_us;
 	uint8_t sync_handle;
+	uint32_t slot_us;
 	uint32_t ret;
 
+	ull_hdr_init(&sync->ull);
+
 	/* TODO: Calc AUX_SYNC_IND slot_us */
+	slot_us = EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 	slot_us += 1000;
 
 	/* TODO: active_to_start feature port */
@@ -317,7 +353,7 @@ uint32_t ull_adv_sync_start(struct ll_adv_sync_set *sync, uint32_t ticks_anchor,
 
 	sync_handle = sync_handle_get(sync);
 
-	*ret_cb = TICKER_STATUS_BUSY;
+	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			   (TICKER_ID_ADV_SYNC_BASE + sync_handle),
 			   ticks_anchor, 0,
@@ -325,7 +361,8 @@ uint32_t ull_adv_sync_start(struct ll_adv_sync_set *sync, uint32_t ticks_anchor,
 			   HAL_TICKER_REMAINDER(interval_us), TICKER_NULL_LAZY,
 			   (sync->evt.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, sync,
-			   ull_ticker_status_give, (void *)ret_cb);
+			   ull_ticker_status_give, (void *)&ret_cb);
+	ret = ull_ticker_status_take(ret, &ret_cb);
 
 	return ret;
 }
@@ -368,7 +405,7 @@ static inline uint16_t sync_handle_get(struct ll_adv_sync_set *sync)
 			     sizeof(struct ll_adv_sync_set));
 }
 
-static inline uint8_t sync_stop(struct ll_adv_sync_set *sync)
+static uint8_t sync_stop(struct ll_adv_sync_set *sync)
 {
 	uint32_t volatile ret_cb;
 	uint8_t sync_handle;
@@ -399,6 +436,41 @@ static inline uint8_t sync_stop(struct ll_adv_sync_set *sync)
 	LL_ASSERT(mark == sync);
 
 	return 0;
+}
+
+static inline uint8_t sync_remove(struct ll_adv_sync_set *sync,
+				  struct ll_adv_set *adv, uint8_t enable)
+{
+	uint8_t pri_idx;
+	uint8_t err;
+
+	/* Remove sync_info from auxiliary PDU */
+	err = ull_adv_aux_hdr_set_clear(adv, 0,
+					ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
+					NULL, NULL, &pri_idx);
+	if (err) {
+		return err;
+	}
+
+	lll_adv_data_enqueue(&adv->lll, pri_idx);
+
+	if (sync->is_started) {
+		/* TODO: we removed sync info, but if sync_stop() fails, what do
+		 * we do?
+		 */
+		err = sync_stop(sync);
+		if (err) {
+			return err;
+		}
+
+		sync->is_started = 0U;
+	}
+
+	if (!enable) {
+		sync->is_enabled = 0U;
+	}
+
+	return 0U;
 }
 
 static void mfy_sync_offset_get(void *param)

@@ -63,12 +63,15 @@ The following Python modules are required when building TF-M binaries:
 * pyasn1
 * pyyaml
 * cbor>=1.0.0
+* imgtool>=1.6.0
+* jinja2
+* click
 
 You can install them via:
 
    .. code-block:: bash
 
-      $ pip3 install --user cryptography pyasn1 pyyaml cbor>=1.0.0
+      $ pip3 install --user cryptography pyasn1 pyyaml cbor>=1.0.0 imgtool>=1.6.0 jinja2 click
 
 They are used by TF-M's signing utility to prepare firmware images for
 validation by the bootloader.
@@ -106,7 +109,7 @@ images, and ``tfm/bl2/ext/mcuboot/root-rsa-3072_1.pem`` is used to sign
 non-secure images. Theses default .pem keys keys can be overridden using the
 ``CONFIG_TFM_KEY_FILE_S`` and ``CONFIG_TFM_KEY_FILE_NS`` values.
 
-The ``imgtool.py`` script from TF-M signs the TF-M + Zephyr binary using the
+The ``wrapper.py`` script from TF-M signs the TF-M + Zephyr binary using the
 .pem private key..
 
 To satisfy `PSA Certified Level 1`_ requirements, **You MUST replace

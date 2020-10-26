@@ -168,6 +168,10 @@ _restore_context:
 	l32i a0, a1, BSA_SCOMPARE1_OFF
 	wsr.SCOMPARE1 a0
 #endif
+#if XCHAL_HAVE_THREADPTR && defined(CONFIG_THREAD_LOCAL_STORAGE)
+	l32i a0, a1, BSA_THREADPTR_OFF
+	wur.THREADPTR a0
+#endif
 	rsync
 
 	l32i a0, a1, BSA_A0_OFF
@@ -209,6 +213,18 @@ xtensa_switch:
 
 	/* Now the high registers */
 	call0 xtensa_save_high_regs
+
+#ifdef CONFIG_KERNEL_COHERENCE
+	/* Flush the stack.  The top of stack was stored for us in
+	 * EXCSAVE3 (FIXME: shouldn't be hardcoded!) by arch_cohere_stacks().
+	 */
+	rsr.EXCSAVE3 a0
+	mov a3, a1
+flushloop:
+	dhwb a3, 0
+	addi a3, a3, XCHAL_DCACHE_LINESIZE
+	blt a3, a0, flushloop
+#endif
 
 	/* Restore the A3 argument we spilled earlier (via the base
 	 * save pointer pushed at the bottom of the stack) and set the

@@ -175,7 +175,7 @@ Bluetooth Mesh:
     # Provisional entry, subject to approval
     status: maintained
     maintainers:
-            - trond-snekvik
+        - trond-snekvik
     collaborators:
         - jhedberg
     files:
@@ -728,6 +728,7 @@ Documentation:
         - tbursztyka
     collaborators:
         - jukkar
+        - kludentwo
     files:
         - drivers/wifi/
     labels:

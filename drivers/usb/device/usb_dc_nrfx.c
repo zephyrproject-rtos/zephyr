@@ -1950,8 +1950,13 @@ static int usb_init(const struct device *arg)
 	irq_enable(USBREGULATOR_IRQn);
 #endif
 
-	/* Use default configuration of the nrfx_power driver. */
-	static const nrfx_power_config_t power_config = { 0 };
+	static const nrfx_power_config_t power_config = {
+		.dcdcen = IS_ENABLED(CONFIG_SOC_DCDC_NRF52X) ||
+			  IS_ENABLED(CONFIG_SOC_DCDC_NRF53X_APP),
+#if NRFX_POWER_SUPPORTS_DCDCEN_VDDH
+		.dcdcenhv = IS_ENABLED(CONFIG_SOC_DCDC_NRF53X_HV),
+#endif
+	};
 
 	static const nrfx_power_usbevt_config_t usbevt_config = {
 		.handler = usb_dc_power_event_handler

@@ -60,14 +60,14 @@ static int lis2mdl_set_hard_iron(const struct device *dev,
 {
 	struct lis2mdl_data *lis2mdl = dev->data;
 	uint8_t i;
-	union axis3bit16_t offset;
+	int16_t offset[3];
 
 	for (i = 0U; i < 3; i++) {
-		offset.i16bit[i] = sys_cpu_to_le16(val->val1);
+		offset[i] = sys_cpu_to_le16(val->val1);
 		val++;
 	}
 
-	return lis2mdl_mag_user_offset_set(lis2mdl->ctx, offset.u8bit);
+	return lis2mdl_mag_user_offset_set(lis2mdl->ctx, offset);
 }
 
 static void lis2mdl_channel_get_mag(const struct device *dev,
@@ -177,17 +177,17 @@ static int lis2mdl_attr_set(const struct device *dev,
 static int lis2mdl_sample_fetch_mag(const struct device *dev)
 {
 	struct lis2mdl_data *lis2mdl = dev->data;
-	union axis3bit16_t raw_mag;
+	int16_t raw_mag[3];
 
 	/* fetch raw data sample */
-	if (lis2mdl_magnetic_raw_get(lis2mdl->ctx, raw_mag.u8bit) < 0) {
+	if (lis2mdl_magnetic_raw_get(lis2mdl->ctx, raw_mag) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
 
-	lis2mdl->mag[0] = sys_le16_to_cpu(raw_mag.i16bit[0]);
-	lis2mdl->mag[1] = sys_le16_to_cpu(raw_mag.i16bit[1]);
-	lis2mdl->mag[2] = sys_le16_to_cpu(raw_mag.i16bit[2]);
+	lis2mdl->mag[0] = sys_le16_to_cpu(raw_mag[0]);
+	lis2mdl->mag[1] = sys_le16_to_cpu(raw_mag[1]);
+	lis2mdl->mag[2] = sys_le16_to_cpu(raw_mag[2]);
 
 	return 0;
 }
@@ -195,17 +195,17 @@ static int lis2mdl_sample_fetch_mag(const struct device *dev)
 static int lis2mdl_sample_fetch_temp(const struct device *dev)
 {
 	struct lis2mdl_data *lis2mdl = dev->data;
-	union axis1bit16_t raw_temp;
+	int16_t raw_temp;
 	int32_t temp;
 
 	/* fetch raw temperature sample */
-	if (lis2mdl_temperature_raw_get(lis2mdl->ctx, raw_temp.u8bit) < 0) {
+	if (lis2mdl_temperature_raw_get(lis2mdl->ctx, &raw_temp) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
 
 	/* formula is temp = 25 + (temp / 8) C */
-	temp = (sys_le16_to_cpu(raw_temp.i16bit) & 0x8FFF);
+	temp = (sys_le16_to_cpu(raw_temp) & 0x8FFF);
 	lis2mdl->temp_sample = 2500 + (temp * 100) / 8;
 
 	return 0;

@@ -142,6 +142,8 @@ enum th_flags {
 	PSH = 1 << 3,
 	ACK = 1 << 4,
 	URG = 1 << 5,
+	ECN = 1 << 6,
+	CWR = 1 << 7,
 };
 
 enum tcp_state {
@@ -183,9 +185,13 @@ struct tcp { /* TCP connection */
 	struct net_if *iface;
 	void *recv_user_data;
 	sys_slist_t send_queue;
-	net_tcp_accept_cb_t accept_cb;
+	union {
+		net_tcp_accept_cb_t accept_cb;
+		struct tcp *accepted_conn;
+	};
 	struct k_mutex lock;
 	struct k_sem connect_sem; /* semaphore for blocking connect */
+	struct k_fifo recv_data;  /* temp queue before passing data to app */
 	struct tcp_options recv_options;
 	struct k_delayed_work send_timer;
 	struct k_delayed_work send_data_timer;

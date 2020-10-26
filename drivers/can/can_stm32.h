@@ -76,6 +76,8 @@ struct can_stm32_config {
 	uint8_t ts2;
 	struct stm32_pclken pclken;
 	void (*config_irq)(CAN_TypeDef *can);
+	const struct soc_gpio_pinctrl *pinctrl;
+	size_t pinctrl_len;
 };
 
 #endif /*ZEPHYR_DRIVERS_CAN_STM32_CAN_H_*/

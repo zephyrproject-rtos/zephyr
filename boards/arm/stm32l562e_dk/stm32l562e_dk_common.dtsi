@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2020 Yestin Sun
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/l5/stm32l562Xe.dtsi>
+#include <st/l5/stm32l562qeixq-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+		red_led_9: led_9 {
+			gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
+			label = "User LD9";
+		};
+		green_led_10: led_10 {
+			gpios = <&gpiog 12 GPIO_ACTIVE_HIGH>;
+			label = "User LD10";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User";
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	current-speed = <115200>;
+	status = "okay";
+};

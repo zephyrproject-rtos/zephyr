@@ -56,8 +56,8 @@ static struct k_spinlock mm_lock;
   * beginning of system RAM.
   */
 static uint8_t *mapping_pos =
-		(uint8_t *)((uintptr_t)(CONFIG_SRAM_BASE_ADDRESS +
-					CONFIG_KERNEL_VM_SIZE));
+		(uint8_t *)((uintptr_t)CONFIG_SRAM_BASE_ADDRESS +
+			    (uintptr_t)CONFIG_KERNEL_VM_SIZE);
 
 /* Lower-limit of virtual address mapping. Immediately below this is the
  * permanent identity mapping for all SRAM.

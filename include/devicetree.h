@@ -16,20 +16,7 @@
 #ifndef DEVICETREE_H
 #define DEVICETREE_H
 
-#ifdef _LINKER
-/*
- * Linker scripts include this file too, and autoconf.h isn't
- * automatically included for those files the way it is for C source
- * files. Make sure we pull it in before using
- * CONFIG_LEGACY_DEVICETREE_MACROS in that case.
- */
-#include <autoconf.h>
-#endif
-
 #include <devicetree_unfixed.h>
-#ifdef CONFIG_LEGACY_DEVICETREE_MACROS
-#include <devicetree_legacy_unfixed.h>
-#endif
 #include <devicetree_fixups.h>
 
 #include <sys/util.h>
@@ -40,6 +27,15 @@
  * @{
  * @}
  */
+
+/**
+ * @brief Name for an invalid node identifier
+ *
+ * This supports cases where factored macros can be invoked from paths where
+ * devicetree data may or may not be available.  It is a preprocessor identifier
+ * that does not match any valid devicetree node identifier.
+ */
+#define DT_INVALID_NODE _
 
 /*
  * Property suffixes
@@ -1939,7 +1935,7 @@
 	IS_ENABLED(UTIL_CAT(DT_CAT(DT_COMPAT_, compat), _BUS_##bus))
 
 /* have these last so they have access to all previously defined macros */
-#include <devicetree/adc.h>
+#include <devicetree/io-channels.h>
 #include <devicetree/clocks.h>
 #include <devicetree/gpio.h>
 #include <devicetree/spi.h>
@@ -1947,5 +1943,6 @@
 #include <devicetree/pwms.h>
 #include <devicetree/fixed-partitions.h>
 #include <devicetree/zephyr.h>
+#include <devicetree/ordinals.h>
 
 #endif /* DEVICETREE_H */

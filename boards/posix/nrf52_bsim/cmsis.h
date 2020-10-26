@@ -22,10 +22,21 @@ extern "C" {
  * - ARM Instruction Synchronization Barrier
  * - ARM No Operation
  */
-static inline void __DMB(void) {}
-static inline void __DSB(void) {}
-static inline void __ISB(void) {}
-static inline void __NOP(void) {}
+#ifndef __DMB
+#define __DMB()
+#endif
+
+#ifndef __DSB
+#define __DSB()
+#endif
+
+#ifndef __ISB
+#define __ISB()
+#endif
+
+#ifndef __NOP
+#define __NOP()
+#endif
 
 #ifdef __cplusplus
 }

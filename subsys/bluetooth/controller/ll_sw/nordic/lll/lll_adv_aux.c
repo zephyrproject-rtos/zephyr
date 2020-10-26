@@ -40,7 +40,7 @@
 #include "hal/debug.h"
 
 static int init_reset(void);
-static int prepare_cb(struct lll_prepare_param *prepare_param);
+static int prepare_cb(struct lll_prepare_param *p);
 static void isr_tx(void *param);
 static void isr_rx(void *param);
 static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
@@ -74,13 +74,12 @@ int lll_adv_aux_reset(void)
 
 void lll_adv_aux_prepare(void *param)
 {
-	struct lll_prepare_param *p = param;
 	int err;
 
 	err = lll_hfclock_on();
 	LL_ASSERT(err >= 0);
 
-	err = lll_prepare(lll_is_abort_cb, lll_abort_cb, prepare_cb, 0, p);
+	err = lll_prepare(lll_is_abort_cb, lll_abort_cb, prepare_cb, 0, param);
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 
@@ -93,15 +92,14 @@ static int init_reset(void)
 	return 0;
 }
 
-static int prepare_cb(struct lll_prepare_param *prepare_param)
+static int prepare_cb(struct lll_prepare_param *p)
 {
-	struct lll_adv_aux *lll = prepare_param->param;
-	uint32_t aa = sys_cpu_to_le32(PDU_AC_ACCESS_ADDR);
 	struct pdu_adv_com_ext_adv *pri_com_hdr;
 	uint32_t ticks_at_event, ticks_at_start;
 	struct pdu_adv *pri_pdu, *sec_pdu;
 	struct pdu_adv_aux_ptr *aux_ptr;
 	struct pdu_adv_hdr *pri_hdr;
+	struct lll_adv_aux *lll;
 	struct lll_adv *lll_adv;
 	struct evt_hdr *evt;
 	uint32_t remainder;
@@ -109,8 +107,16 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	uint8_t *pri_dptr;
 	uint8_t phy_s;
 	uint8_t upd;
+	uint32_t aa;
 
 	DEBUG_RADIO_START_A(1);
+
+#if !defined(BT_CTLR_ADV_EXT_PBACK)
+	/* Set up Radio H/W */
+	radio_reset();
+#endif  /* !BT_CTLR_ADV_EXT_PBACK */
+
+	lll = p->param;
 
 	/* FIXME: get latest only when primary PDU without Aux PDUs */
 	sec_pdu = lll_adv_aux_data_latest_get(lll, &upd);
@@ -138,15 +144,18 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	aux_ptr = (void *)pri_dptr;
 
 	/* Abort if no aux_ptr filled */
-	if (!pri_hdr->aux_ptr || !aux_ptr->offs) {
-		radio_isr_set(lll_isr_abort, lll);
-		radio_disable();
+	if (unlikely(!pri_hdr->aux_ptr || !aux_ptr->offs)) {
+		int err;
+
+		err = lll_hfclock_off();
+		LL_ASSERT(err >= 0);
+
+		lll_done(NULL);
+
+		DEBUG_RADIO_CLOSE_A(0);
+		return 0;
 	}
 
-#if !defined(BT_CTLR_ADV_EXT_PBACK)
-	/* Set up Radio H/W */
-	radio_reset();
-#endif  /* !BT_CTLR_ADV_EXT_PBACK */
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	radio_tx_power_set(lll->tx_pwr_lvl);
@@ -162,6 +171,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 
 #if !defined(BT_CTLR_ADV_EXT_PBACK)
 	/* Access address and CRC */
+	aa = sys_cpu_to_le32(PDU_AC_ACCESS_ADDR);
 	radio_aa_set((uint8_t *)&aa);
 	radio_crc_configure(((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16)),
 			    0x555555);
@@ -208,14 +218,14 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	radio_tmr_start_us(1, start_us);
 #else /* !BT_CTLR_ADV_EXT_PBACK */
 
-	ticks_at_event = prepare_param->ticks_at_expire;
+	ticks_at_event = p->ticks_at_expire;
 	evt = HDR_LLL2EVT(lll);
 	ticks_at_event += lll_evt_offset_get(evt);
 
 	ticks_at_start = ticks_at_event;
 	ticks_at_start += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
-	remainder = prepare_param->remainder;
+	remainder = p->remainder;
 	start_us = radio_tmr_start(1, ticks_at_start, remainder);
 #endif /* !BT_CTLR_ADV_EXT_PBACK */
 
@@ -254,8 +264,8 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 
 static void isr_tx(void *param)
 {
-	struct lll_adv_aux *lll_aux = param;
-	struct lll_adv *lll = lll_aux->adv;
+	struct lll_adv_aux *lll_aux;
+	struct lll_adv *lll;
 	uint32_t hcto;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
@@ -264,6 +274,9 @@ static void isr_tx(void *param)
 
 	/* Clear radio tx status and events */
 	lll_isr_tx_status_reset();
+
+	lll_aux = param;
+	lll = lll_aux->adv;
 
 	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
@@ -328,13 +341,13 @@ static void isr_tx(void *param)
 
 static void isr_rx(void *param)
 {
-	uint8_t trx_done;
-	uint8_t crc_ok;
 	uint8_t devmatch_ok;
 	uint8_t devmatch_id;
 	uint8_t irkmatch_ok;
 	uint8_t irkmatch_id;
 	uint8_t rssi_ready;
+	uint8_t trx_done;
+	uint8_t crc_ok;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_latency_capture();
@@ -386,8 +399,10 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 			     uint8_t irkmatch_ok, uint8_t irkmatch_id,
 			     uint8_t rssi_ready)
 {
-	struct pdu_adv *pdu_rx, *pdu_adv, *pdu_aux;
-	struct lll_adv *lll = lll_aux->adv;
+	struct pdu_adv *pdu_adv;
+	struct pdu_adv *pdu_aux;
+	struct pdu_adv *pdu_rx;
+	struct lll_adv *lll;
 	uint8_t tx_addr;
 	uint8_t *addr;
 	uint8_t upd;
@@ -399,6 +414,8 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 #else
 	uint8_t rl_idx = FILTER_IDX_NONE;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
+
+	lll = lll_aux->adv;
 
 	pdu_rx = (void *)radio_pkt_scratch_get();
 	pdu_adv = lll_adv_data_curr_get(lll);

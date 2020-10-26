@@ -13,9 +13,12 @@
 #include <arch/common/sys_io.h>
 
 #include <soc.h>
+#include <soc/shim.h>
+#ifndef CONFIG_SOC_INTEL_S1000
+#include <adsp/io.h>
+#endif
 
 #include "ipm_cavs_idc.h"
-#include "ipm_cavs_idc_priv.h"
 
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
 extern void z_sched_ipi(void);
@@ -47,15 +50,15 @@ static void cavs_idc_isr(const struct device *dev)
 			continue;
 		}
 
-		idctfc = idc_read(REG_IDCTFC(i), curr_cpu_id);
+		idctfc = idc_read(IPC_IDCTFC(i), curr_cpu_id);
 
-		if ((idctfc & REG_IDCTFC_BUSY) == 0) {
+		if ((idctfc & IPC_IDCTFC_BUSY) == 0) {
 			/* No message from this core */
 			continue;
 		}
 
 		/* Extract the message */
-		id = idctfc & REG_IDCTFC_MSG_MASK;
+		id = idctfc & IPC_IDCTFC_MSG_MASK;
 
 		switch (id) {
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
@@ -66,16 +69,16 @@ static void cavs_idc_isr(const struct device *dev)
 		default:
 			if (drv_data->cb != NULL) {
 				ext = UINT_TO_POINTER(
-					idc_read(REG_IDCTEFC(i), curr_cpu_id) &
-					REG_IDCTEFC_MSG_MASK);
-				drv_data->cb(dev, drv_data->user_data, id, ext);
+					idc_read(IPC_IDCTEFC(i), curr_cpu_id) &
+					IPC_IDCTEFC_MSG_MASK);
+			drv_data->cb(dev, drv_data->user_data, id, ext);
 			}
 			break;
 		}
 
 		/* Reset busy bit by writing to it */
-		idctfc |= REG_IDCTFC_BUSY;
-		idc_write(REG_IDCTFC(i), curr_cpu_id, idctfc);
+		idctfc |= IPC_IDCTFC_BUSY;
+		idc_write(IPC_IDCTFC(i), curr_cpu_id, idctfc);
 	}
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
 	if (do_sched_ipi) {
@@ -105,8 +108,8 @@ static int cavs_idc_send(const struct device *dev, int wait, uint32_t id,
 			continue;
 		}
 
-		reg = idc_read(REG_IDCITC(i), curr_cpu_id);
-		if ((reg & REG_IDCITC_BUSY) != 0) {
+		reg = idc_read(IPC_IDCITC(i), curr_cpu_id);
+		if ((reg & IPC_IDCITC_BUSY) != 0) {
 			busy = true;
 			break;
 		}
@@ -117,9 +120,9 @@ static int cavs_idc_send(const struct device *dev, int wait, uint32_t id,
 		return -EBUSY;
 	}
 
-	id &= REG_IDCITC_MSG_MASK;
-	ext &= REG_IDCIETC_MSG_MASK;
-	ext |= REG_IDCIETC_DONE; /* always clear DONE bit */
+	id &= IPC_IDCITC_MSG_MASK;
+	ext &= IPC_IDCIETC_MSG_MASK;
+	ext |= IPC_IDCIETC_DONE; /* always clear DONE bit */
 
 	for (i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
 		if (i == curr_cpu_id) {
@@ -127,8 +130,8 @@ static int cavs_idc_send(const struct device *dev, int wait, uint32_t id,
 			continue;
 		}
 
-		idc_write(REG_IDCIETC(i), curr_cpu_id, ext);
-		idc_write(REG_IDCITC(i), curr_cpu_id, id | REG_IDCITC_BUSY);
+		idc_write(IPC_IDCIETC(i), curr_cpu_id, ext);
+		idc_write(IPC_IDCITC(i), curr_cpu_id, id | IPC_IDCITC_BUSY);
 	}
 
 	return 0;
@@ -187,11 +190,11 @@ static int cavs_idc_set_enabled(const struct device *dev, int enable)
 					continue;
 				}
 
-				mask |= REG_IDCCTL_IDCTBIE(j);
+				mask |= IPC_IDCCTL_IDCTBIE(j);
 			}
 		}
 
-		idc_write(REG_IDCCTL, i, mask);
+		idc_write(IPC_IDCCTL, i, mask);
 
 		/* FIXME: when we have API to enable IRQ on specific core. */
 		sys_set_bit(DT_REG_ADDR(DT_NODELABEL(cavs0)) + 0x04 +

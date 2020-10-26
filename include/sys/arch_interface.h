@@ -533,6 +533,11 @@ int arch_mem_domain_max_partitions_get(void);
  * This function may fail if initializing the memory domain requires allocation,
  * such as for page tables.
  *
+ * The associated function k_mem_domain_init() documents that making
+ * multiple init calls to the same memory domain is undefined behavior,
+ * but has no assertions in place to check this. If this matters, it may be
+ * desirable to add checks for this in the implementation of this function.
+ *
  * @param domain The memory domain to initialize
  * @retval 0 Success
  * @retval -ENOMEM Insufficient memory
@@ -547,8 +552,9 @@ int arch_mem_domain_init(struct k_mem_domain *domain);
  * Architecture-specific hook to manage internal data structures or hardware
  * state when the provided thread has been added to a memory domain.
  *
- * The thread's memory domain pointer will be set to the domain to be added
- * to.
+ * The thread->mem_domain_info.mem_domain pointer will be set to the domain to
+ * be added to before this is called. Implementations may assume that the
+ * thread is not already a member of this domain.
  *
  * @param thread Thread which needs to be configured.
  */
@@ -690,6 +696,79 @@ FUNC_NORETURN void arch_syscall_oops(void *ssf);
  */
 size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err);
 #endif /* CONFIG_USERSPACE */
+
+/**
+ * @brief Detect memory coherence type
+ *
+ * Required when ARCH_HAS_COHERENCE is true.  This function returns
+ * true if the byte pointed to lies within an architecture-defined
+ * "coherence region" (typically implemented with uncached memory) and
+ * can safely be used in multiprocessor code without explicit flush or
+ * invalidate operations.
+ *
+ * @note The result is for only the single byte at the specified
+ * address, this API is not required to check region boundaries or to
+ * expect aligned pointers.  The expectation is that the code above
+ * will have queried the appropriate address(es).
+ */
+#ifndef CONFIG_ARCH_HAS_COHERENCE
+static inline bool arch_mem_coherent(void *ptr)
+{
+	ARG_UNUSED(ptr);
+	return true;
+}
+#endif
+
+/**
+ * @brief Ensure cache coherence prior to context switch
+ *
+ * Required when ARCH_HAS_COHERENCE is true.  On cache-incoherent
+ * multiprocessor architectures, thread stacks are cached by default
+ * for performance reasons.  They must therefore be flushed
+ * appropriately on context switch.  The rules are:
+ *
+ * 1. The region containing live data in the old stack (generally the
+ *    bytes between the current stack pointer and the top of the stack
+ *    memory) must be flushed to underlying storage so a new CPU that
+ *    runs the same thread sees the correct data.  This must happen
+ *    before the assignment of the switch_handle field in the thread
+ *    struct which signals the completion of context switch.
+ *
+ * 2. Any data areas to be read from the new stack (generally the same
+ *    as the live region when it was saved) should be invalidated (and
+ *    NOT flushed!) in the data cache.  This is because another CPU
+ *    may have run or re-initialized the thread since this CPU
+ *    suspended it, and any data present in cache will be stale.
+ *
+ * @note The kernel will call this function during interrupt exit when
+ * a new thread has been chosen to run, and also immediately before
+ * entering arch_switch() to effect a code-driven context switch.  In
+ * the latter case, it is very likely that more data will be written
+ * to the old_thread stack region after this function returns but
+ * before the completion of the switch.  Simply flushing naively here
+ * is not sufficient on many architectures and coordination with the
+ * arch_switch() implementation is likely required.
+ *
+ * @arg old_thread The old thread to be flushed before being allowed
+ *                 to run on other CPUs.
+ * @arg old_switch_handle The switch handle to be stored into
+ *                        old_thread (it will not be valid until the
+ *                        cache is flushed so is not present yet).
+ *                        This will be NULL if inside z_swap()
+ *                        (because the arch_switch() has not saved it
+ *                        yet).
+ * @arg new_thread The new thread to be invalidated before it runs locally.
+ */
+#ifndef CONFIG_KERNEL_COHERENCE
+static inline void arch_cohere_stacks(struct k_thread *old_thread,
+				      void *old_switch_handle,
+				      struct k_thread *new_thread)
+{
+	ARG_UNUSED(old_thread);
+	ARG_UNUSED(old_switch_handle);
+	ARG_UNUSED(new_thread);
+}
+#endif
 
 /** @} */
 

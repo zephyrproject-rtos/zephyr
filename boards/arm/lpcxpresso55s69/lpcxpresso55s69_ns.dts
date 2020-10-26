@@ -79,8 +79,27 @@
 
 &hs_lspi {
 	status = "okay";
+	dmas = <&dma0 2>, <&dma0 3>;
+	dma-names = "rx", "tx";
 };
 
 &wwdt0 {
+	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
+};
+
+&dma0 {
+	/*
+	 * The total number of dma channels available is defined by
+	 * FSL_FEATURE_DMA_NUMBER_OF_CHANNELS in the SoC features file.
+	 * Since memory from the heap pool is allocated based on the number
+	 * of DMA channels, set this property to as many channels is needed
+	 * for the platform. Adjust HEAP_MEM_POOL_SIZE in case you need more
+	 * memory.
+	 */
+	dma-channels = <20>;
 	status = "okay";
 };

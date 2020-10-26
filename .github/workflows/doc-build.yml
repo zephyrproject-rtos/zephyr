@@ -3,7 +3,16 @@
 
 name: Documentation GitHub Workflow
 
-on: [pull_request]
+on:
+  pull_request:
+    paths:
+    - 'doc/**'
+    - '**.rst'
+    - 'include/**'
+    - 'kernel/include/kernel_arch_interface.h'
+    - 'lib/libc/**'
+    - 'subsys/testsuite/ztest/include/**'
+    - 'tests/**'
 
 jobs:
   build:

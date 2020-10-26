@@ -110,15 +110,16 @@ void *z_x86_userspace_prepare_thread(struct k_thread *thread)
 FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 					void *p1, void *p2, void *p3)
 {
+	k_spinlock_key_t key;
+
 	z_x86_thread_pt_init(_current);
 
+	key = k_spin_lock(&z_mem_domain_lock);
 	/* Apply memory domain configuration, if assigned. Threads that
 	 * started in user mode already had this done via z_setup_new_thread()
 	 */
-	if (_current->mem_domain_info.mem_domain != NULL) {
-		z_x86_apply_mem_domain(_current,
-				       _current->mem_domain_info.mem_domain);
-	}
+	z_x86_apply_mem_domain(_current, _current->mem_domain_info.mem_domain);
+	k_spin_unlock(&z_mem_domain_lock, key);
 
 #ifndef CONFIG_X86_KPTI
 	/* We're synchronously dropping into user mode from a thread that

@@ -11,6 +11,7 @@ flash: 128
 supported:
   - arduino_gpio
   - arduino_spi
+  - arduino_i2c
   - gpio
   - spi
   - pwm

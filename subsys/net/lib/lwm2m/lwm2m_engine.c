@@ -188,7 +188,7 @@ static char *sprint_token(const uint8_t *token, uint8_t tkl)
 	static char buf[32];
 	char *ptr = buf;
 
-	if (token && tkl != LWM2M_MSG_TOKEN_LEN_SKIP) {
+	if (token && tkl != 0) {
 		int i;
 
 		tkl = MIN(tkl, sizeof(buf) / 2 - 1);
@@ -199,8 +199,6 @@ static char *sprint_token(const uint8_t *token, uint8_t tkl)
 		}
 
 		*ptr = '\0';
-	} else if (tkl == LWM2M_MSG_TOKEN_LEN_SKIP) {
-		strcpy(buf, "[skip-token]");
 	} else {
 		strcpy(buf, "[no-token]");
 	}
@@ -923,14 +921,10 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 		return -EINVAL;
 	}
 
-	/*
-	 * msg->tkl == 0 is for a new TOKEN
-	 * msg->tkl == LWM2M_MSG_TOKEN_LEN_SKIP means dont set
-	 */
 	if (msg->tkl == LWM2M_MSG_TOKEN_GENERATE_NEW) {
-		tokenlen = 0U;
+		tokenlen = 8U;
 		token = coap_next_token();
-	} else if (msg->token && msg->tkl != LWM2M_MSG_TOKEN_LEN_SKIP) {
+	} else if (msg->token && msg->tkl != 0) {
 		tokenlen = msg->tkl;
 		token = msg->token;
 	}
@@ -3354,6 +3348,8 @@ static int handle_request(struct coap_packet *request,
 		   strncmp(options[0].value, "bs", options[0].len) == 0) {
 		engine_bootstrap_finish();
 
+		msg->code = COAP_RESPONSE_CODE_CHANGED;
+
 		r = lwm2m_init_message(msg);
 		if (r < 0) {
 			goto error;
@@ -3753,7 +3749,7 @@ static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
 		msg->code = coap_header_get_code(&response);
 		msg->mid = coap_header_get_id(&response);
 		/* skip token generation by default */
-		msg->tkl = LWM2M_MSG_TOKEN_LEN_SKIP;
+		msg->tkl = 0;
 
 		/* process the response to this request */
 		r = udp_request_handler(&response, msg);

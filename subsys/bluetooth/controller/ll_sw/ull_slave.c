@@ -221,6 +221,8 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	if (ll_adv_cmds_is_ext()) {
+		uint8_t handle;
+
 		/* Enqueue connection or CSA event */
 		ll_rx_put(link, rx);
 
@@ -230,8 +232,11 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		rx = adv->lll.node_rx_adv_term;
 		link = rx->link;
 
-		rx->handle = ull_adv_handle_get(adv);
+		handle = ull_adv_handle_get(adv);
+		LL_ASSERT(handle < BT_CTLR_ADV_SET);
+
 		rx->type = NODE_RX_TYPE_EXT_ADV_TERMINATE;
+		rx->handle = handle;
 		rx->rx_ftr.param_adv_term.status = 0U;
 		rx->rx_ftr.param_adv_term.conn_handle = lll->handle;
 		rx->rx_ftr.param_adv_term.num_events = 0U;
@@ -366,7 +371,7 @@ void ull_slave_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 	/* Check if stopping ticker (on disconnection, race with ticker expiry)
 	 */
 	if (unlikely(conn->lll.handle == 0xFFFF)) {
-		DEBUG_RADIO_PREPARE_S(0);
+		DEBUG_RADIO_CLOSE_S(0);
 		return;
 	}
 
@@ -380,7 +385,7 @@ void ull_slave_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		/* Handle any LL Control Procedures */
 		ret = ull_conn_llcp(conn, ticks_at_expire, lazy);
 		if (ret) {
-			DEBUG_RADIO_PREPARE_S(0);
+			DEBUG_RADIO_CLOSE_S(0);
 			return;
 		}
 	}

@@ -107,18 +107,18 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 
 	scan = NULL;
 	sync = NULL;
-	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC)) {
-		if (aux) {
-			struct lll_scan *lll_scan;
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+	if (aux) {
+		struct lll_scan *lll_scan;
 
-			lll_scan = aux->rx_head->rx_ftr.param;
-			scan = (void *)HDR_LLL2EVT(lll_scan);
-		} else {
-			scan = (void *)HDR_LLL2EVT(ftr->param);
-		}
-
-		sync = scan->per_scan.sync;
+		lll_scan = aux->rx_head->rx_ftr.param;
+		scan = (void *)HDR_LLL2EVT(lll_scan);
+	} else {
+		scan = (void *)HDR_LLL2EVT(ftr->param);
 	}
+
+	sync = scan->per_scan.sync;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 	rx->link = link;
 	ftr->extra = NULL;
@@ -137,11 +137,12 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 	ptr = (uint8_t *)h + sizeof(*h);
 
 	if (h->adv_addr) {
-		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && sync &&
-		    (pdu->tx_addr == scan->per_scan.adv_addr_type) &&
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+		if (sync && (pdu->tx_addr == scan->per_scan.adv_addr_type) &&
 		    !memcmp(ptr, scan->per_scan.adv_addr, BDADDR_SIZE)) {
 			scan->per_scan.state = LL_SYNC_STATE_ADDR_MATCH;
 		}
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 		ptr += BDADDR_SIZE;
 	}
@@ -168,11 +169,12 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 		si = (void *)ptr;
 		ptr += sizeof(*si);
 
-		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && sync &&
-		    adi && (adi->sid == scan->per_scan.sid) &&
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+		if (sync && adi && (adi->sid == scan->per_scan.sid) &&
 		    (scan->per_scan.state == LL_SYNC_STATE_ADDR_MATCH)) {
 			ull_sync_setup(scan, aux, rx, si);
 		}
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 	}
 
 	if (!aux_ptr || !aux_ptr->offs) {
@@ -271,9 +273,11 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 	return;
 
 ull_scan_aux_rx_flush:
-	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && sync) {
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+	if (sync) {
 		scan->per_scan.state = LL_SYNC_STATE_IDLE;
 	}
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 	if (aux) {
 		flush(aux, rx);

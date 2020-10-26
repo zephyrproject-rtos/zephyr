@@ -108,6 +108,44 @@ documented elsewhere on this page.
 .. doxygengroup:: devicetree-generic-exist
    :project: Zephyr
 
+.. _devicetree-dep-ord:
+
+Inter-node dependencies
+=======================
+
+The ``devicetree.h`` API has some support for tracking dependencies between
+nodes. Dependency tracking relies on a binary "depends on" relation between
+devicetree nodes, which is defined as the `transitive closure
+<https://en.wikipedia.org/wiki/Transitive_closure>`_ of the following "directly
+depends on" relation:
+
+- every non-root node directly depends on its parent node
+- a node directly depends on any nodes its properties refer to by phandle
+- a node directly depends on its ``interrupt-parent`` if it has an
+  ``interrupts`` property
+
+A *dependency ordering* of a devicetree is a list of its nodes, where each node
+``n`` appears earlier in the list than any nodes that depend on ``n``. A node's
+*dependency ordinal* is then its zero-based index in that list. Thus, for two
+distinct devicetree nodes ``n1`` and ``n2`` with dependency ordinals ``d1`` and
+``d2``, we have:
+
+- ``d1 != d2``
+- if ``n1`` depends on ``n2``, then ``d1 > d2``
+- ``d1 > d2`` does **not** necessarily imply that ``n1`` depends on ``n2``
+
+The Zephyr build system chooses a dependency ordering of the final devicetree
+and assigns a dependency ordinal to each node. Dependency related information
+can be accessed using the following macros. The exact dependency ordering
+chosen is an implementation detail, but cyclic dependencies are detected and
+cause errors, so it's safe to assume there are none when using these macros.
+
+There are instance number-based conveniences as well; see
+:c:func:`DT_INST_DEP_ORD` and subsequent documentation.
+
+.. doxygengroup:: devicetree-dep-ord
+   :project: Zephyr
+
 Bus helpers
 ===========
 
@@ -177,15 +215,6 @@ Hardware specific APIs
 The following APIs can also be used by including ``<devicetree.h>``;
 no additional include is needed.
 
-ADC
-===
-
-These are commonly used by sensor device drivers which need to use an ADC
-channel for conversion.
-
-.. doxygengroup:: devicetree-adc
-   :project: Zephyr
-
 Clocks
 ======
 
@@ -211,7 +240,8 @@ Fixed flash partitions
 
 These conveniences may be used for the special-purpose ``fixed-partitions``
 compatible used to encode information about flash memory partitions in the
-device tree.
+device tree. See :zephyr_file:`dts/bindings/mtd/partition.yaml` for this
+compatible's binding.
 
 .. doxygengroup:: devicetree-fixed-partition
    :project: Zephyr
@@ -225,6 +255,15 @@ These conveniences may be used for nodes which describe GPIO controllers/pins,
 and properties related to them.
 
 .. doxygengroup:: devicetree-gpio
+   :project: Zephyr
+
+IO channels
+===========
+
+These are commonly used by device drivers which need to use IO
+channels (e.g. ADC or DAC channels) for conversion.
+
+.. doxygengroup:: devicetree-io-channels
    :project: Zephyr
 
 PWM

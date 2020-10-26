@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Actinius
+ * Copyright (c) 2019-2020 Actinius
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -73,6 +73,13 @@
 		blue-pwm-led = &blue_pwm_led;
 		sw0 = &button0;
 	};
+
+	vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc 0>;
+		output-ohms = <10000000>;
+		full-ohms = <(10000000 + 4700000)>;
+	};
 };
 
 &adc {
@@ -120,7 +127,7 @@
 	scl-pin = <27>;
 
 	lis2dh12-accel@19 {
-		compatible = "st,lis2dh";
+		compatible = "st,lis2dh12", "st,lis2dh";
 		reg = <0x19>;
 		irq-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>,
 			  <&gpio0 29 GPIO_ACTIVE_HIGH>;
@@ -187,13 +194,13 @@
 		slot0_partition: partition@10000 {
 			label = "image-0";
 		};
-		slot0_ns_partition: partition@40000 {
+		slot0_ns_partition: partition@50000 {
 			label = "image-0-nonsecure";
 		};
 		slot1_partition: partition@80000 {
 			label = "image-1";
 		};
-		slot1_ns_partition: partition@b0000 {
+		slot1_ns_partition: partition@c0000 {
 			label = "image-1-nonsecure";
 		};
 		scratch_partition: partition@f0000 {
@@ -208,16 +215,28 @@
 };
 
 / {
-	/* SRAM allocated and used by the BSD library */
-	sram0_bsd: memory@20010000 {
-		compatible = "mmio-sram";
-	};
 
-	/* SRAM allocated to the Non-Secure image */
-	sram0_ns: memory@20020000 {
-		compatible = "mmio-sram";
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		sram0_s: image_s@20000000 {
+			/* Secure image memory */
+		};
+
+		sram0_bsd: image_bsd@20010000 {
+			/* BSD (shared) memory */
+		};
+
+		sram0_ns: image_ns@20020000 {
+			/* Non-Secure image memory */
+		};
 	};
 };
+
+/* Include file with mappings and aliases for feather compatibility */
+#include "feather_connector.dtsi"
 
 /* Include partition configuration file */
 #include "actinius_icarus_partition_conf.dts"

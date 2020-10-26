@@ -490,6 +490,13 @@ static void generate_mac(uint8_t mac_addr[6])
 {
 #if DT_INST_PROP(0, zephyr_random_mac_address)
 	gen_random_mac(mac_addr, SILABS_OUI_B0, SILABS_OUI_B1, SILABS_OUI_B2);
+#elif !NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
+	mac_addr[0] = DEVINFO->EUI48H >> 8;
+	mac_addr[1] = DEVINFO->EUI48H >> 0;
+	mac_addr[2] = DEVINFO->EUI48L >> 24;
+	mac_addr[3] = DEVINFO->EUI48L >> 16;
+	mac_addr[4] = DEVINFO->EUI48L >> 8;
+	mac_addr[5] = DEVINFO->EUI48L >> 0;
 #endif
 }
 

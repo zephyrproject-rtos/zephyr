@@ -19,6 +19,8 @@ LOG_MODULE_REGISTER(mcux_flexcomm);
 
 struct mcux_flexcomm_config {
 	I2C_Type *base;
+	char *clock_name;
+	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
 	uint32_t bitrate;
 };
@@ -26,6 +28,7 @@ struct mcux_flexcomm_config {
 struct mcux_flexcomm_data {
 	i2c_master_handle_t handle;
 	struct k_sem device_sync_sem;
+	const struct device *dev_clock;
 	status_t callback_status;
 };
 
@@ -33,6 +36,7 @@ static int mcux_flexcomm_configure(const struct device *dev,
 				   uint32_t dev_config_raw)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
+	struct mcux_flexcomm_data *data = dev->data;
 	I2C_Type *base = config->base;
 	uint32_t clock_freq;
 	uint32_t baudrate;
@@ -59,7 +63,11 @@ static int mcux_flexcomm_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	clock_freq = MHZ(12);
+	/* Get the clock frequency */
+	if (clock_control_get_rate(data->dev_clock, config->clock_subsys,
+				   &clock_freq)) {
+		return -EINVAL;
+	}
 
 	I2C_MasterSetBaudRate(base, baudrate, clock_freq);
 
@@ -179,7 +187,16 @@ static int mcux_flexcomm_init(const struct device *dev)
 
 	k_sem_init(&data->device_sync_sem, 0, UINT_MAX);
 
-	clock_freq = MHZ(12);
+	data->dev_clock = device_get_binding(config->clock_name);
+	if (data->dev_clock == NULL) {
+		return -ENODEV;
+	}
+
+	/* Get the clock frequency */
+	if (clock_control_get_rate(data->dev_clock, config->clock_subsys,
+				   &clock_freq)) {
+		return -EINVAL;
+	}
 
 	I2C_MasterGetDefaultConfig(&master_config);
 	I2C_MasterInit(base, &master_config, clock_freq);
@@ -208,6 +225,9 @@ static const struct i2c_driver_api mcux_flexcomm_driver_api = {
 	static void mcux_flexcomm_config_func_##id(const struct device *dev); \
 	static const struct mcux_flexcomm_config mcux_flexcomm_config_##id = {	\
 		.base = (I2C_Type *) DT_INST_REG_ADDR(id),		\
+		.clock_name = DT_INST_CLOCKS_LABEL(id),		\
+		.clock_subsys =				\
+		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),\
 		.irq_config_func = mcux_flexcomm_config_func_##id,	\
 		.bitrate = DT_INST_PROP(id, clock_frequency),		\
 	};								\

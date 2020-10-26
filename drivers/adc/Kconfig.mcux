@@ -15,6 +15,12 @@ config ADC_MCUX_ADC16
 	help
 	  Enable the MCUX ADC16 driver.
 
+config ADC_MCUX_LPADC
+	bool "MCUX LPADC driver"
+	depends on HAS_MCUX_LPADC
+	help
+	  Enable the MCUX LPADC driver.
+
 if ADC_MCUX_ADC16
 
 choice
@@ -48,3 +54,13 @@ config ADC_MCUX_ADC16_VREF_ALTERNATE
 endchoice
 
 endif # ADC_MCUX_ADC16
+
+
+if ADC_MCUX_LPADC
+
+config LPADC_DO_OFFSET_CALIBRATION
+	bool "Do offset calibration"
+	help
+	  Do offset calibration
+
+endif # ADC_MCUX_LPADC

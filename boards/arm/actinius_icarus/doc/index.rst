@@ -6,9 +6,17 @@ Actinius Icarus
 Overview
 ********
 
-The Icarus IoT Dev Board is a complete development board for developing
-LTE-M/NB-IoT applications, with GPS, Accelerometer, battery management
-and others.
+.. figure:: img/Icarus_front.png
+     :width: 450px
+     :align: center
+     :alt: Icarus IoT Dev Board
+
+     Icarus IoT Dev Board (nRF9160 Feather)
+
+The Icarus is a cost-effective cellular IoT board in Adafruit's Feather/FeatherWing
+form factor. It is built around Nordic Semi's nRF9160 modem and combines
+LTE-M, NB-IoT, GPS, accelerometer, USB, LiPo charger as well as
+an eSIM and a nano SIM connector.
 
 The main uController is the Nordic Semiconductor nRF9160, with
 ARM Cortex-M33F CPU, ARMv8-M Security Extension and the
@@ -110,7 +118,8 @@ have to set the IDAU (SPU) configuration to allow Non-Secure access to all
 CPU resources utilized by the Non-Secure application firmware. SPU
 configuration shall take place before jumping to the Non-Secure application.
 
-More information can be found in the `Icarus "Get Started" Guide`_.
+More information can be found in the `Icarus "Get Started" Guide`_ or the
+`Actinius Documentation Portal`_.
 
 References
 **********
@@ -125,3 +134,6 @@ References
 
 .. _Icarus "Get Started" Guide:
    https://www.actinius.com/get-started
+
+.. _Actinius Documentation Portal:
+   https://docs.actinius.com

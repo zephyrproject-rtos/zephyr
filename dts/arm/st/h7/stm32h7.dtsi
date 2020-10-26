@@ -549,9 +549,30 @@
 			};
 		};
 
-		adc1_2: adc@40022000 {
+		adc1: adc@40022000 {
 			compatible = "st,stm32-adc";
 			reg = <0x40022000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000020>;
+			interrupts = <18 0>;
+			status = "disabled";
+			label = "ADC_1";
+			#io-channel-cells = <1>;
+		};
+
+		adc2: adc@40022100 {
+			compatible = "st,stm32-adc";
+			reg = <0x40022100 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000020>;
+			interrupts = <18 0>;
+			status = "disabled";
+			label = "ADC_2";
+			#io-channel-cells = <1>;
+		};
+
+		/* dual mode: adc1 and adc2 coupled */
+		adc1_2: adc@40022300 {
+			compatible = "st,stm32-adc";
+			reg = <0x40022300 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000020>;
 			interrupts = <18 0>;
 			status = "disabled";

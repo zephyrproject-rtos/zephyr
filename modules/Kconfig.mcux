@@ -20,6 +20,11 @@ config HAS_MCUX_ADC16
 	help
 	  Set if the 16-bit ADC (ADC16) module is present in the SoC.
 
+config HAS_MCUX_LPADC
+	bool
+	help
+	  Set if the LPADC module is present in the SoC.
+
 config HAS_MCUX_CACHE
 	bool
 	help
@@ -29,6 +34,11 @@ config HAS_MCUX_CCM
 	bool
 	help
 	  Set if the clock control module (CCM) module is present in the SoC.
+
+config HAS_MCUX_SYSCON
+	bool
+	help
+	  Set if the syscon module is present in the SoC.
 
 config HAS_MCUX_PCC
 	bool
@@ -126,6 +136,12 @@ config HAS_MCUX_SCG
 	help
 	  Set if the system clock generator (SCG) module is present in the
 	  SoC.
+
+config HAS_MCUX_SEMC
+	bool
+	help
+	  Set if the smart external memory controller (SEMC) module is present
+	  in the SoC.
 
 config HAS_MCUX_SIM
 	bool
