@@ -21,9 +21,7 @@ static struct z_coredump_backend_api
 #error "Need to select a coredump backend"
 #endif
 
-static int error;
-
-static int dump_header(unsigned int reason)
+static void dump_header(unsigned int reason)
 {
 	struct z_coredump_hdr_t hdr = {
 		.id = {'Z', 'E'},
@@ -41,7 +39,7 @@ static int dump_header(unsigned int reason)
 
 	hdr.tgt_code = sys_cpu_to_le16(arch_coredump_tgt_code_get());
 
-	return backend_api->buffer_output((uint8_t *)&hdr, sizeof(hdr));
+	backend_api->buffer_output((uint8_t *)&hdr, sizeof(hdr));
 }
 
 static void dump_thread(struct k_thread *thread)
@@ -92,8 +90,6 @@ void process_memory_region_list(void)
 void z_coredump(unsigned int reason, const z_arch_esf_t *esf,
 		struct k_thread *thread)
 {
-	error = 0;
-
 	z_coredump_start();
 
 	dump_header(reason);
@@ -108,10 +104,6 @@ void z_coredump(unsigned int reason, const z_arch_esf_t *esf,
 
 	process_memory_region_list();
 
-	if (error != 0)	{
-		z_coredump_error();
-	}
-
 	z_coredump_end();
 }
 
@@ -125,28 +117,14 @@ void z_coredump_end(void)
 	backend_api->end();
 }
 
-void z_coredump_error(void)
+void z_coredump_buffer_output(uint8_t *buf, size_t buflen)
 {
-	backend_api->error();
-}
-
-int z_coredump_buffer_output(uint8_t *buf, size_t buflen)
-{
-	int ret;
-
-	/* Error encountered before, skip */
-	if (error != 0) {
-		return -EAGAIN;
-	}
-
 	if ((buf == NULL) || (buflen == 0)) {
-		ret = -EINVAL;
-	} else {
-		error = backend_api->buffer_output(buf, buflen);
-		ret = error;
+		/* Invalid buffer, skip */
+		return;
 	}
 
-	return ret;
+	backend_api->buffer_output(buf, buflen);
 }
 
 void z_coredump_memory_dump(uintptr_t start_addr, uintptr_t end_addr)

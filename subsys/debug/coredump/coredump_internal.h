@@ -43,15 +43,9 @@ void z_coredump_start(void);
  */
 void z_coredump_end(void);
 
-/**
- * @brief Signal to coredump subsys there is an error.
- */
-void z_coredump_error(void);
-
 typedef void (*z_coredump_backend_start_t)(void);
 typedef void (*z_coredump_backend_end_t)(void);
-typedef void (*z_coredump_backend_error_t)(void);
-typedef int (*z_coredump_backend_buffer_output_t)(uint8_t *buf, size_t buflen);
+typedef void (*z_coredump_backend_buffer_output_t)(uint8_t *buf, size_t buflen);
 
 struct z_coredump_backend_api {
 	/* Signal to backend of the start of coredump. */
@@ -59,9 +53,6 @@ struct z_coredump_backend_api {
 
 	/* Signal to backend of the end of coredump. */
 	z_coredump_backend_end_t		end;
-
-	/* Signal to backend an error has been encountered. */
-	z_coredump_backend_error_t		error;
 
 	/* Raw buffer output */
 	z_coredump_backend_buffer_output_t	buffer_output;
