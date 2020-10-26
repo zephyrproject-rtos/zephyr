@@ -88,8 +88,6 @@ static struct modem_pin modem_pins[] = {
 #define MDM_WAIT_FOR_RSSI_COUNT		10
 #define MDM_WAIT_FOR_RSSI_DELAY		K_SECONDS(2)
 
-#define BUF_ALLOC_TIMEOUT		K_SECONDS(1)
-
 #define MDM_MANUFACTURER_LENGTH		10
 #define MDM_MODEL_LENGTH		16
 #define MDM_REVISION_LENGTH		64
@@ -1743,7 +1741,7 @@ static int modem_init(const struct device *dev)
 	mdata.cmd_handler_data.match_buf = &mdata.cmd_match_buf[0];
 	mdata.cmd_handler_data.match_buf_len = sizeof(mdata.cmd_match_buf);
 	mdata.cmd_handler_data.buf_pool = &mdm_recv_pool;
-	mdata.cmd_handler_data.alloc_timeout = BUF_ALLOC_TIMEOUT;
+	mdata.cmd_handler_data.alloc_timeout = K_NO_WAIT;
 	mdata.cmd_handler_data.eol = "\r";
 	ret = modem_cmd_handler_init(&mctx.cmd_handler,
 				     &mdata.cmd_handler_data);
