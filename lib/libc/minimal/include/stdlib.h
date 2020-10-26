@@ -35,6 +35,7 @@ static inline void exit(int status)
 {
 	_exit(status);
 }
+void abort(void);
 
 int rand(void);
 
