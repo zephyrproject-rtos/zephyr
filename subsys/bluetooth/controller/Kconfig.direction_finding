@@ -1,0 +1,142 @@
+# Zephyr Bluetooth Controller configuration options
+
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+
+menuconfig BT_CTRL_DIRECTION_FINDING
+	bool "LE Direction Finding Support [Experimental]"
+	help
+	  Enable support for Bluetooth 5.1 Direction Finding
+
+if BT_CTRL_DIRECTION_FINDING
+
+config BT_CTLR_DF_CTE_TX_SUPPORT
+	bool
+
+config BT_CTLR_DF_CTE_RX_2US_SUPPORT
+	bool
+
+config BT_CTLR_DF_CTE_RX_1US_SUPPORT
+	bool
+
+config BT_CTLR_DF_ANT_SWITCHING_2US_SUPPORT
+	bool
+
+config BT_CTLR_DF_ANT_SWITCHING_1US_SUPPORT
+	bool
+
+# Basic controller functionalities required for implementation of
+# Bluetooth v5.1 Direction Finding
+
+config BT_CTLR_DF_CTE_TX
+	bool "Enable transmission of Constant Tone Extension"
+	depends on BT_CTLR_DF_CTE_TX_SUPPORT
+	default y
+	help
+	  Enable support for transmission of Constant Tone Extension in
+	  controller.
+
+menu "BT Direction Finding CTE sampling slots"
+
+config BT_CTLR_DF_CTE_RX_2US
+	bool "Enable reception of CTE with 2us sampling slots"
+	depends on BT_CTLR_DF_CTE_RX_2US_SUPPORT
+	default y
+	help
+	  Enable reception of Constant Tone Extension. Process IQ sampling
+	  during CTE reception with 2us sampling slots.
+	  This sampling type is mandatory for Direction Finding according to
+	  Bluetooth v5.1.
+
+config BT_CTLR_DF_CTE_RX_1US
+	bool "Enable reception of CTE with 1us sampling slots"
+	depends on BT_CTLR_DF_CTE_RX_1US_SUPPORT
+	default y
+	help
+	  Enable reception of Constant Tone Extension. Process IQ sampling
+	  during CTE reception with 1us sampling slots.
+	  This sampling type is optional for Direction Finding according to
+	  Bluetooth v5.1.
+
+endmenu
+
+menu "BT Direction Finding CTE antenna switching slots"
+
+config BT_CTLR_DF_ANT_SWITCHING_2US
+	bool "Enable support for 2us antenna switching slots"
+	depends on BT_CTLR_DF_ANT_SWITCHING_2US_SUPPORT
+	default y
+	help
+	  Enable support for 2us antenna switching slots. This antenna switching
+	  mode is mandatory for Direction Finding according to Bluetooth v5.1.
+
+config BT_CTLR_DF_ANT_SWITCHING_1US
+	bool "Enable support for 1us antenna switching slots"
+	depends on BT_CTLR_DF_ANT_SWITCHING_1US_SUPPORT
+	default y
+	help
+	  Enable support for 1us antenna switching slots. This antenna switching
+	  mode is optional for Direction Finding according to Bluetooth v5.1.
+
+endmenu
+# Features related with Direction Finding
+# BT Core spec 5.1, Vol 6, Part B, sec. 4.6 Feature Support
+
+config BT_CTLR_DF_ANT_SWITCHING_TX
+	bool "Enable antenna switching during CTE transmission (AoD) feature"
+	depends on BT_CTLR_DF_CTE_TX && BT_CTLR_DF_ANT_SWITCHING_2US
+	default y
+	help
+	  Enable support for antenna switching during CTE transmission.
+	  It is Angle of Departure mode.
+
+config BT_CTLR_DF_ANT_SWITCHING_RX
+	bool "Enable antenna switching during CTE reception (AoA) feature"
+	depends on BT_CTLR_DF_ANT_SWITCHING_RX_SUPPORT
+	depends on BT_CTLR_DF_ANT_SWITCHING_2US
+	default y
+	help
+	  Enable support for antenna switching during CTE reception.
+	  It is Angle of Arrival mode.
+
+config BT_CTLR_DF_CTE_RX
+	bool "Enable receive of Constant Tone Extension feature"
+	depends on BT_CTLR_DF_CTE_RX_2US
+	default y
+	help
+	  Enable support for reception of Constant Tone Extension in controller.
+
+config BT_CTLR_DF_CONN_CTE_REQ
+	bool "Enable Connection CTE Request feature"
+	depends on BT_CTLR_DF_CTE_RX || BT_CONN
+	help
+	  Enable support for Bluetooth v5.1 Connection CTE Request feature
+	  in controller.
+
+config BT_CTLR_DF_CONN_CTE_RSP
+	bool "Enable Connection CTE Response feature"
+	depends on BT_CTLR_DF_CTE_TX || BT_CONN
+	default y
+	help
+	  Enable support for Bluetooth v5.1 Connection CTE Response feature
+	  in controller.
+
+config BT_CTLR_DF_BROADCAST_CTE_TX
+	bool "Enable Connectionless CTE Transmitter feature"
+	depends on BT_CTLR_DF_CTE_TX && BT_CTLR_ADV_PERIODIC
+	default y
+	help
+	  Enable support for Bluetooth v5.1 Connectionless CTE Response feature
+	  in controller.
+
+config BT_CTLR_DF_BROADCAST_CTE_RX
+	bool "Enable Connectionless CTE Receiver feature"
+	depends on BT_CTLR_DF_CTE_RX && BT_CTLR_ADV_PERIODIC
+	default y
+	# depends on periodic advertising
+	help
+	  Enable support for Bluetooth v5.1 Connectionless CTE Request feature
+	  in controller.
+
+endif # BT_CTRL_DIRECTION_FINDING
