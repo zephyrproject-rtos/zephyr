@@ -18,6 +18,11 @@
 #include <logging/log.h>
 #include "lis2mdl.h"
 
+/* The worst case turn-on time is approximately 20 ms with smallest ODR=10
+ * ("9.4 ms + 1/ODR"). The 30 ms gives us the reasonable margin of 50%.
+ */
+#define SAMPLE_FETCH_TIMEOUT_MS 30
+
 struct lis2mdl_data lis2mdl_data;
 
 LOG_MODULE_REGISTER(LIS2MDL, CONFIG_SENSOR_LOG_LEVEL);
@@ -179,6 +184,18 @@ static int lis2mdl_sample_fetch_mag(const struct device *dev)
 	struct lis2mdl_data *lis2mdl = dev->data;
 	int16_t raw_mag[3];
 
+#ifdef CONFIG_LIS2MDL_SINGLE_MODE
+	if (lis2mdl_operating_mode_set(lis2mdl->ctx, LIS2MDL_SINGLE_TRIGGER)) {
+		LOG_DBG("set single mode failed\n");
+		return -EIO;
+	}
+
+	if (k_sem_take(&lis2mdl->fetch_sem, K_MSEC(SAMPLE_FETCH_TIMEOUT_MS))) {
+		/* SAMPLE FETCH FAILED */
+		return -EIO;
+	}
+#endif
+
 	/* fetch raw data sample */
 	if (lis2mdl_magnetic_raw_get(lis2mdl->ctx, raw_mag) < 0) {
 		LOG_DBG("Failed to read sample");
@@ -197,6 +214,18 @@ static int lis2mdl_sample_fetch_temp(const struct device *dev)
 	struct lis2mdl_data *lis2mdl = dev->data;
 	int16_t raw_temp;
 	int32_t temp;
+
+#ifdef CONFIG_LIS2MDL_SINGLE_MODE
+	if (lis2mdl_operating_mode_set(lis2mdl->ctx, LIS2MDL_SINGLE_TRIGGER)) {
+		LOG_DBG("set single mode failed\n");
+		return -EIO;
+	}
+
+	if (k_sem_take(&lis2mdl->fetch_sem, K_MSEC(SAMPLE_FETCH_TIMEOUT_MS))) {
+		/* SAMPLE FETCH FAILED */
+		return -EIO;
+	}
+#endif
 
 	/* fetch raw temperature sample */
 	if (lis2mdl_temperature_raw_get(lis2mdl->ctx, &raw_temp) < 0) {
@@ -351,11 +380,28 @@ static int lis2mdl_init(const struct device *dev)
 		return -EIO;
 	}
 
+#ifdef CONFIG_LIS2MDL_SINGLE_MODE
+	/* Set device in single mode */
+	if (lis2mdl_operating_mode_set(lis2mdl->ctx, LIS2MDL_SINGLE_TRIGGER)) {
+		LOG_DBG("set single mode failed\n");
+		return -EIO;
+	}
+
+	/* Set drdy on pin 7*/
+	if (lis2mdl_drdy_on_pin_set(lis2mdl->ctx, 1)) {
+		LOG_DBG("set drdy on pin failed!\n");
+		return -EIO;
+	}
+
+	k_sem_init(&lis2mdl->fetch_sem, 0, 1);
+#else
 	/* Set device in continuous mode */
 	if (lis2mdl_operating_mode_set(lis2mdl->ctx, LIS2MDL_CONTINUOUS_MODE)) {
 		LOG_DBG("set continuos mode failed\n");
 		return -EIO;
 	}
+
+#endif
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	lis2mdl->power_state = DEVICE_PM_ACTIVE_STATE;
@@ -378,8 +424,15 @@ static int lis2mdl_set_power_state(struct lis2mdl_data *lis2mdl,
 	int status = 0;
 
 	if (new_state == DEVICE_PM_ACTIVE_STATE) {
+
+#ifdef CONFIG_LIS2MDL_SINGLE_MODE
+		status = lis2mdl_operating_mode_set(lis2mdl->ctx,
+				LIS2MDL_SINGLE_TRIGGER);
+#else
 		status = lis2mdl_operating_mode_set(lis2mdl->ctx,
 				LIS2MDL_CONTINUOUS_MODE);
+#endif
+
 		if (status) {
 			LOG_ERR("Power up failed");
 		}

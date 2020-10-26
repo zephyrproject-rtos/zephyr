@@ -67,6 +67,10 @@ struct lis2mdl_data {
 	stmdev_ctx_t ctx_spi;
 #endif
 
+#ifdef CONFIG_LIS2MDL_SINGLE_MODE
+	struct k_sem fetch_sem;
+#endif
+
 #ifdef CONFIG_LIS2MDL_TRIGGER
 	const struct device *gpio;
 	struct gpio_callback gpio_cb;

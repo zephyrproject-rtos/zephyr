@@ -62,6 +62,10 @@ static void lis2mdl_handle_interrupt(const struct device *dev)
 		lis2mdl->handler_drdy(dev, &drdy_trigger);
 	}
 
+#ifdef CONFIG_LIS2MDL_SINGLE_MODE
+	k_sem_give(&lis2mdl->fetch_sem);
+#endif
+
 	gpio_pin_interrupt_configure(lis2mdl->gpio, config->gpio_pin,
 				     GPIO_INT_EDGE_TO_ACTIVE);
 }

@@ -11,6 +11,20 @@ menuconfig LIS2MDL
 
 if LIS2MDL
 
+choice LIS2MDL_OPERATION_MODE
+	prompt "Operation mode"
+	default LIS2MDL_CONTINUOUS_MODE
+	help
+	  Specify the type of operation mode to be used by driver.
+
+config LIS2MDL_SINGLE_MODE
+	bool "Single mode"
+
+config LIS2MDL_CONTINUOUS_MODE
+	bool "Continuous mode"
+
+endchoice # LIS2MDL_OPERATION_MODE
+
 choice LIS2MDL_TRIGGER_MODE
 	prompt "Trigger mode"
 	default LIS2MDL_TRIGGER_GLOBAL_THREAD
