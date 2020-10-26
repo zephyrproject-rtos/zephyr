@@ -42,7 +42,6 @@
 
 /* Only 4K granule is supported */
 #define PAGE_SIZE_SHIFT		12U
-#define PAGE_SIZE		(1U << PAGE_SIZE_SHIFT)
 
 /* 48-bit VA address */
 #define VA_SIZE_SHIFT_MAX	48U

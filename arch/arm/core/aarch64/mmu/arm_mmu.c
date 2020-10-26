@@ -237,8 +237,8 @@ static void add_map(struct arm_mmu_ptables *ptables, const char *name,
 		   name, virt, phys, size);
 
 	/* check minimum alignment requirement for given mmap region */
-	__ASSERT(((virt & (PAGE_SIZE - 1)) == 0) &&
-		 ((size & (PAGE_SIZE - 1)) == 0),
+	__ASSERT(((virt & (CONFIG_MMU_PAGE_SIZE - 1)) == 0) &&
+		 ((size & (CONFIG_MMU_PAGE_SIZE - 1)) == 0),
 		 "address/size are not page aligned\n");
 
 	desc = get_region_desc(attrs);
@@ -407,6 +407,9 @@ static int arm_mmu_init(const struct device *arg)
 	/* Current MMU code supports only EL1 */
 	__asm__ volatile("mrs %0, CurrentEL" : "=r" (val));
 
+	__ASSERT(CONFIG_MMU_PAGE_SIZE == KB(4),
+		 "Only 4K page size is supported\n");
+
 	__ASSERT(GET_EL(val) == MODE_EL1,
 		 "Exception level not EL1, MMU not enabled!\n");
 
@@ -429,3 +432,51 @@ SYS_INIT(arm_mmu_init, PRE_KERNEL_1,
 	 CONFIG_KERNEL_INIT_PRIORITY_DEVICE
 #endif
 );
+
+int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
+{
+	struct arm_mmu_ptables *ptables;
+	uint32_t entry_flags = MT_SECURE | MT_P_RX_U_NA;
+
+	/* Always map in the kernel page tables */
+	ptables = &kernel_ptables;
+
+	/* Translate flags argument into HW-recognized entry flags. */
+	switch (flags & K_MEM_CACHE_MASK) {
+	/*
+	 * K_MEM_CACHE_NONE => MT_DEVICE_nGnRnE
+	 *			(Device memory nGnRnE)
+	 * K_MEM_CACHE_WB   => MT_NORMAL
+	 *			(Normal memory Outer WB + Inner WB)
+	 * K_MEM_CACHE_WT   => MT_NORMAL_WT
+	 *			(Normal memory Outer WT + Inner WT)
+	 */
+	case K_MEM_CACHE_NONE:
+		entry_flags |= MT_DEVICE_nGnRnE;
+		break;
+	case K_MEM_CACHE_WT:
+		entry_flags |= MT_NORMAL_WT;
+		break;
+	case K_MEM_CACHE_WB:
+		entry_flags |= MT_NORMAL;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	if ((flags & K_MEM_PERM_RW) != 0U) {
+		entry_flags |= MT_RW;
+	}
+
+	if ((flags & K_MEM_PERM_EXEC) == 0U) {
+		entry_flags |= MT_P_EXECUTE_NEVER;
+	}
+
+	if ((flags & K_MEM_PERM_USER) != 0U) {
+		return -ENOTSUP;
+	}
+
+	add_map(ptables, "generic", phys, (uintptr_t)virt, size, entry_flags);
+
+	return 0;
+}
