@@ -78,7 +78,7 @@ struct z_coredump_mem_hdr_t {
 void z_coredump(unsigned int reason, const z_arch_esf_t *esf,
 		struct k_thread *thread);
 void z_coredump_memory_dump(uintptr_t start_addr, uintptr_t end_addr);
-int z_coredump_buffer_output(uint8_t *buf, size_t buflen);
+void z_coredump_buffer_output(uint8_t *buf, size_t buflen);
 
 #else
 
@@ -91,9 +91,8 @@ void z_coredump_memory_dump(uintptr_t start_addr, uintptr_t end_addr)
 {
 }
 
-int z_coredump_buffer_output(uint8_t *buf, size_t buflen)
+void z_coredump_buffer_output(uint8_t *buf, size_t buflen)
 {
-	return 0;
 }
 
 #endif /* CONFIG_DEBUG_COREDUMP */
