@@ -5,7 +5,7 @@ Legend
 
 Overview
 ********
-The Legend board family contains two revisions: 25hdd and 25ssd.
+The Legend board family contains three revisions: 25hdd, 25ssd, and 35.
 
 The Legend 2.5" HDD board (revision 25hdd) can be found in the Seagate FireCuda
 Gaming Hard Drive, Gaming Drive for Xbox and Gaming Drive for PlayStation
@@ -18,12 +18,22 @@ The Legend 2.5" SSD board (revision 25ssd) is found in the Seagate SSD Gaming
 Drive for Xbox. A Realtek RTS5411S USB hub is embedded and connected to a Phison
 U17 2.5" SSD, as well as a STM32F070 MCU.
 
-On both boards, the Zephyr port is running on the STM32F070 MCU.
+The Legend 3.5" board (revision 35) can be found in the Seagate FireCuda Gaming
+Hub and Gaming Drive Hub for Xbox devices. A Genesys Logic GL3523-S USB hub is
+connected to an ASMedia ASM1153 USB-to-SATA bridge controller and a STM32F070
+MCU. The two chips are connected together using I2C.
+
+On all boards, the Zephyr port is running on the STM32F070 MCU.
 
 .. image:: img/firecuda_gaming_hard_drive.png
-   :width: 750px
+   :width: 550px
    :align: center
    :alt: Seagate FireCuda Gaming Hard Drive
+
+.. image:: img/firecuda_gaming_hub.png
+   :width: 550px
+   :align: center
+   :alt: Seagate FireCuda Gaming Hub
 
 Hardware
 ********
@@ -44,7 +54,7 @@ Hardware
 Supported Features
 ==================
 
-All the hardware features available on the Legend 2.5" boards are supported by
+All the hardware features available on the Legend boards are supported by
 Zephyr.
 
 +-----------+------------+-------------------------------------+
@@ -96,9 +106,9 @@ Connections and IOs
 +---------+-----------------+----------------------------+
 | PA7     | LED strip       | SPI1 MOSI                  |
 +---------+-----------------+----------------------------+
-| PA12    | USB             | USB DM (SSD only)          |
+| PA12    | USB             | USB DM (25ssd and 35 only) |
 +---------+-----------------+----------------------------+
-| PA13    | USB             | USB DP (SSD only)          |
+| PA13    | USB             | USB DP (25ssd and 35 only) |
 +---------+-----------------+----------------------------+
 
 Programming and Debugging
