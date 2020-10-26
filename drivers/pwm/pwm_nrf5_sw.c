@@ -98,7 +98,6 @@ static int pwm_nrf5_sw_pin_set(const struct device *dev, uint32_t pwm,
 	struct pwm_data *data;
 	uint8_t ppi_index;
 	uint8_t channel;
-	uint16_t div;
 	uint32_t ret;
 
 	config = (const struct pwm_config *)dev->config;
@@ -118,6 +117,15 @@ static int pwm_nrf5_sw_pin_set(const struct device *dev, uint32_t pwm,
 	if (ret) {
 		LOG_ERR("Incompatible period");
 		return ret;
+	}
+
+	/* TODO: if the assigned NRF_TIMER supports higher bit resolution,
+	 * use that info in config struct.
+	 */
+	if (period_cycles > BIT_MASK(16)) {
+		LOG_ERR("Too long period (%u), adjust pwm prescaler!",
+			period_cycles);
+		return -EINVAL;
 	}
 
 	/* map pwm pin to GPIOTE config/channel */
@@ -154,18 +162,12 @@ static int pwm_nrf5_sw_pin_set(const struct device *dev, uint32_t pwm,
 		nrf_gpio_pin_clear(pwm);
 	}
 
-	/* TODO: if the assigned NRF_TIMER supports higher bit resolution,
-	 * use that info in config struct and setup accordingly.
-	 */
-
-	/* calc div, to scale down to fit in 16 bits */
-	div = period_cycles >> 16;
-
+	/* configure TIMER */
 	timer->EVENTS_COMPARE[channel] = 0;
 	timer->EVENTS_COMPARE[config->map_size] = 0;
 
-	timer->CC[channel] = pulse_cycles >> div;
-	timer->CC[config->map_size] = period_cycles >> div;
+	timer->CC[channel] = pulse_cycles;
+	timer->CC[config->map_size] = period_cycles;
 	timer->TASKS_CLEAR = 1;
 
 	/* configure GPIOTE, toggle with initialise output high */
