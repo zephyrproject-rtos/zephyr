@@ -256,22 +256,11 @@ static struct modem_cmd *find_cmd_direct_match(
 	return NULL;
 }
 
-static void cmd_handler_process(struct modem_cmd_handler *cmd_handler,
-				struct modem_iface *iface)
+static void cmd_handler_process_iface_data(struct modem_cmd_handler_data *data,
+					   struct modem_iface *iface)
 {
-	struct modem_cmd_handler_data *data;
-	struct modem_cmd *cmd;
-	struct net_buf *frag = NULL;
-	size_t match_len, rx_len, bytes_read = 0;
+	size_t rx_len, bytes_read = 0;
 	int ret;
-	uint16_t offset, len;
-
-	if (!cmd_handler || !cmd_handler->cmd_handler_data ||
-	    !iface || !iface->read) {
-		return;
-	}
-
-	data = (struct modem_cmd_handler_data *)(cmd_handler->cmd_handler_data);
 
 	/* read all of the data from modem iface */
 	while (true) {
@@ -303,6 +292,15 @@ static void cmd_handler_process(struct modem_cmd_handler *cmd_handler,
 				rx_len, bytes_read);
 		}
 	}
+}
+
+static void cmd_handler_process_rx_buf(struct modem_cmd_handler_data *data)
+{
+	struct modem_cmd *cmd;
+	struct net_buf *frag = NULL;
+	size_t match_len;
+	int ret;
+	uint16_t offset, len;
 
 	/* process all of the data in the net_buf */
 	while (data->rx_buf) {
@@ -398,6 +396,22 @@ static void cmd_handler_process(struct modem_cmd_handler *cmd_handler,
 			net_buf_pull(data->rx_buf, offset);
 		}
 	}
+}
+
+static void cmd_handler_process(struct modem_cmd_handler *cmd_handler,
+				struct modem_iface *iface)
+{
+	struct modem_cmd_handler_data *data;
+
+	if (!cmd_handler || !cmd_handler->cmd_handler_data ||
+	    !iface || !iface->read) {
+		return;
+	}
+
+	data = (struct modem_cmd_handler_data *)(cmd_handler->cmd_handler_data);
+
+	cmd_handler_process_iface_data(data, iface);
+	cmd_handler_process_rx_buf(data);
 }
 
 int modem_cmd_handler_get_error(struct modem_cmd_handler_data *data)
