@@ -7580,6 +7580,15 @@ static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 			return false;
 		}
 
+		if (param->peer &&
+		    (param->options & BT_LE_ADV_OPT_EXT_ADV) &&
+		    !(param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY)) {
+			/* High duty cycle directed connectable advertising
+			 * shall not be used with Extended Advertising.
+			 */
+			return false;
+		}
+
 		if (!(param->options & BT_LE_ADV_OPT_EXT_ADV) &&
 		    param->options & (BT_LE_ADV_OPT_EXT_ADV |
 				      BT_LE_ADV_OPT_NO_2M |
