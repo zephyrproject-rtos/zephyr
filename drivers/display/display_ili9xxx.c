@@ -489,3 +489,8 @@ static const struct display_driver_api ili9xxx_api = {
 #include "display_ili9340.h"
 DT_INST_FOREACH_ILI9XXX_STATUS_OKAY(9340);
 #endif
+
+#ifdef CONFIG_ILI9488
+#include "display_ili9488.h"
+DT_INST_FOREACH_ILI9XXX_STATUS_OKAY(9488);
+#endif
