@@ -1,0 +1,13 @@
+identifier: qemu_x86_tiny
+name: QEMU Emulation for X86 (small VM)
+type: qemu
+arch: x86
+simulation: qemu
+toolchain:
+  - zephyr
+  - xtools
+testing:
+  default: true
+  only_tags:
+     - kernel
+     - userspace
