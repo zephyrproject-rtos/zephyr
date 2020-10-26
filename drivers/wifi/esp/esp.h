@@ -173,7 +173,6 @@ struct esp_data {
 
 	/* modem cmds */
 	struct modem_cmd_handler_data cmd_handler_data;
-	uint8_t cmd_read_buf[MDM_RECV_BUF_SIZE];
 	uint8_t cmd_match_buf[MDM_RECV_BUF_SIZE];
 
 	/* socket data */

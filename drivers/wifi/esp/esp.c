@@ -878,8 +878,6 @@ static int esp_init(const struct device *dev)
 	data->cmd_handler_data.cmds_len[CMD_RESP] = ARRAY_SIZE(response_cmds);
 	data->cmd_handler_data.cmds[CMD_UNSOL] = unsol_cmds;
 	data->cmd_handler_data.cmds_len[CMD_UNSOL] = ARRAY_SIZE(unsol_cmds);
-	data->cmd_handler_data.read_buf = &data->cmd_read_buf[0];
-	data->cmd_handler_data.read_buf_len = sizeof(data->cmd_read_buf);
 	data->cmd_handler_data.match_buf = &data->cmd_match_buf[0];
 	data->cmd_handler_data.match_buf_len = sizeof(data->cmd_match_buf);
 	data->cmd_handler_data.buf_pool = &mdm_recv_pool;
