@@ -79,7 +79,7 @@ static void setup(void)
  */
 void test_encryption_start_mas_loc(void)
 {
-	u8_t err;
+	uint8_t err;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
@@ -183,7 +183,7 @@ void test_encryption_start_mas_loc(void)
  */
 void test_encryption_start_mas_loc_limited_memory(void)
 {
-	u8_t err;
+	uint8_t err;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
@@ -312,7 +312,7 @@ void test_encryption_start_mas_loc_limited_memory(void)
  */
 void test_encryption_start_mas_loc_no_ltk(void)
 {
-	u8_t err;
+	uint8_t err;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 

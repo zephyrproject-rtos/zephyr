@@ -87,9 +87,9 @@ void ull_cp_priv_ntf_encode_unknown_rsp(struct proc_ctx *ctx,
  * Feature Exchange Procedure Helper
  */
 
-static void feature_filter(u8_t *featuresin, u64_t *featuresout)
+static void feature_filter(uint8_t *featuresin, uint64_t *featuresout)
 {
-	u64_t feat;
+	uint64_t feat;
 
 	/*
 	 * Note that in the split controller invalid bits are set
@@ -124,7 +124,7 @@ void ull_cp_priv_pdu_encode_feature_rsp(struct ull_cp_conn *conn,
 					struct pdu_data *pdu)
 {
 	struct pdu_data_llctrl_feature_rsp *p;
-	u64_t feature_rsp = LL_FEAT;
+	uint64_t feature_rsp = LL_FEAT;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, feature_rsp) +
@@ -159,7 +159,7 @@ void ull_cp_priv_ntf_encode_feature_rsp(struct ull_cp_conn *conn,
 void ull_cp_priv_pdu_decode_feature_req(struct ull_cp_conn *conn,
 					struct pdu_data *pdu)
 {
-	u64_t featureset;
+	uint64_t featureset;
 
 	feature_filter(pdu->llctrl.feature_req.features, &featureset);
 	conn->llcp.fex.features_used = LL_FEAT & featureset;
@@ -173,7 +173,7 @@ void ull_cp_priv_pdu_decode_feature_req(struct ull_cp_conn *conn,
 void ull_cp_priv_pdu_decode_feature_rsp(struct ull_cp_conn *conn,
 					struct pdu_data *pdu)
 {
-	u64_t featureset;
+	uint64_t featureset;
 
 	feature_filter(pdu->llctrl.feature_rsp.features, &featureset);
 	conn->llcp.fex.features_used = LL_FEAT & featureset;
@@ -208,8 +208,8 @@ void ull_cp_priv_pdu_decode_min_used_chans_ind(struct ull_cp_conn *conn, struct 
  */
 void ull_cp_priv_pdu_encode_version_ind(struct pdu_data *pdu)
 {
-	u16_t cid;
-	u16_t svn;
+	uint16_t cid;
+	uint16_t svn;
 	struct pdu_data_llctrl_version_ind *p;
 
 
@@ -295,7 +295,7 @@ void ull_cp_priv_pdu_encode_start_enc_rsp(struct pdu_data *pdu)
 	/* TODO(thoh): Fill in PDU with correct data */
 }
 
-void ull_cp_priv_pdu_encode_reject_ind(struct pdu_data *pdu, u8_t error_code)
+void ull_cp_priv_pdu_encode_reject_ind(struct pdu_data *pdu, uint8_t error_code)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, reject_ind) + sizeof(struct pdu_data_llctrl_reject_ind);
@@ -303,7 +303,7 @@ void ull_cp_priv_pdu_encode_reject_ind(struct pdu_data *pdu, u8_t error_code)
 	pdu->llctrl.reject_ind.error_code = error_code;
 }
 
-void ull_cp_priv_pdu_encode_reject_ext_ind(struct pdu_data *pdu, u8_t reject_opcode, u8_t error_code)
+void ull_cp_priv_pdu_encode_reject_ext_ind(struct pdu_data *pdu, uint8_t reject_opcode, uint8_t error_code)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, reject_ext_ind) + sizeof(struct pdu_data_llctrl_reject_ext_ind);
@@ -332,7 +332,7 @@ void ull_cp_priv_pdu_encode_phy_rsp(struct pdu_data *pdu)
 	/* TODO(thoh): Fill in PDU with correct data */
 }
 
-void ull_cp_priv_pdu_encode_phy_update_ind(struct pdu_data *pdu, u16_t instant)
+void ull_cp_priv_pdu_encode_phy_update_ind(struct pdu_data *pdu, uint16_t instant)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, phy_upd_ind) + sizeof(struct pdu_data_llctrl_phy_upd_ind);
