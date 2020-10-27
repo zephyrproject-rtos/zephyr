@@ -3226,7 +3226,7 @@ static void context_info(struct net_context *context, void *user_data)
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
 		PR("%p\t%d\t%d\tEDATA (%s)\n",
 		   pool, pool->buf_count,
-		   pool->avail_count, pool->name);
+		   atomic_get(&pool->avail_count), pool->name);
 #else
 		PR("%p\t%d\tEDATA\n", pool, pool->buf_count);
 #endif
@@ -3265,11 +3265,11 @@ static int cmd_net_mem(const struct shell *shell, size_t argc, char *argv[])
 
 	PR("%p\t%d\t%d\tRX DATA (%s)\n",
 	       rx_data, rx_data->buf_count,
-	       rx_data->avail_count, rx_data->name);
+	       atomic_get(&rx_data->avail_count), rx_data->name);
 
 	PR("%p\t%d\t%d\tTX DATA (%s)\n",
 	       tx_data, tx_data->buf_count,
-	       tx_data->avail_count, tx_data->name);
+	       atomic_get(&tx_data->avail_count), tx_data->name);
 #else
 	PR("Address\t\tTotal\tName\n");
 
