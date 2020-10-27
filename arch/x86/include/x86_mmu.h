@@ -174,7 +174,7 @@ extern pentry_t z_x86_kernel_ptables[];
 /* Get the page tables used by this thread during normal execution */
 static inline pentry_t *z_x86_thread_page_tables_get(struct k_thread *thread)
 {
-#ifdef CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE) && !defined(CONFIG_X86_COMMON_PAGE_TABLE)
 	return (pentry_t *)(thread->arch.ptables);
 #else
 	return z_x86_kernel_ptables;
@@ -184,5 +184,9 @@ static inline pentry_t *z_x86_thread_page_tables_get(struct k_thread *thread)
 #ifdef CONFIG_SMP
 /* Handling function for TLB shootdown inter-processor interrupts. */
 void z_x86_tlb_ipi(const void *arg);
+#endif
+
+#ifdef CONFIG_X86_COMMON_PAGE_TABLE
+void z_x86_swap_update_common_page_table(struct k_thread *incoming);
 #endif
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_X86_MMU_H */

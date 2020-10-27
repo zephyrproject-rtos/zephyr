@@ -100,7 +100,7 @@ void test_ram_perms(void)
 				expected = MMU_P | MMU_XD;
 			}
 #endif /* CONFIG_X86_64 */
-#ifndef CONFIG_X86_KPTI
+#if !defined(CONFIG_X86_KPTI) && !defined(CONFIG_X86_COMMON_PAGE_TABLE)
 		} else if (IN_REGION(_app_smem, pos)) {
 			/* If KPTI is not enabled, then the default memory
 			 * domain affects our page tables even though we are
@@ -109,6 +109,10 @@ void test_ram_perms(void)
 			 * partitions within it would be active in
 			 * k_mem_domain_default (ztest_partition and any libc
 			 * partitions)
+			 *
+			 * If we have a common page table, no thread has
+			 * entered user mode yet and no domain regions
+			 * will be programmed.
 			 */
 			expected = MMU_P | MMU_US | MMU_RW | MMU_XD;
 #endif /* CONFIG_X86_KPTI */

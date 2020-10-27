@@ -53,7 +53,7 @@ LOG_MODULE_DECLARE(os);
 /* Protects x86_domain_list and serializes any changes to page tables */
 static struct k_spinlock x86_mmu_lock;
 
-#ifdef CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE) && !defined(CONFIG_X86_COMMON_PAGE_TABLE)
 /* List of all active and initialized memory domains. This is used to make
  * sure all memory mappings are the same across all page tables when invoking
  * range_map()
@@ -994,7 +994,7 @@ static int range_map(void *virt, uintptr_t phys, size_t size,
 	 * Any new mappings need to be applied to all page tables.
 	 */
 	key = k_spin_lock(&x86_mmu_lock);
-#ifdef CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE) && !defined(CONFIG_X86_COMMON_PAGE_TABLE)
 	sys_snode_t *node;
 
 	SYS_SLIST_FOR_EACH_NODE(&x86_domain_list, node) {
@@ -1014,7 +1014,7 @@ static int range_map(void *virt, uintptr_t phys, size_t size,
 #endif /* CONFIG_USERSPACE */
 	ret = range_map_ptables(z_x86_kernel_ptables, virt, phys, size,
 				entry_flags, mask, options);
-#ifdef CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE) && !defined(CONFIG_X86_COMMON_PAGE_TABLE)
 out_unlock:
 #endif /* CONFIG_USERSPACE */
 	if (ret == 0 && (options & OPTION_ALLOC) != 0) {
@@ -1151,6 +1151,166 @@ int arch_buffer_validate(void *addr, size_t size, int write)
 
 	return ret;
 }
+#ifdef CONFIG_X86_COMMON_PAGE_TABLE
+/* Very low memory configuration. A single set of page tables is used for
+ * all threads. This relies on some assumptions:
+ *
+ * - No KPTI. If that were supported, we would need both a kernel and user
+ *   set of page tables.
+ * - No SMP. If that were supported, we would need per-core page tables.
+ * - Memory domains don't affect supervisor mode.
+ * - All threads have the same virtual-to-physical mappings.
+ * - Memory domain APIs can't be called by user mode.
+ *
+ * Because there is no SMP, only one set of page tables, and user threads can't
+ * modify their own memory domains, we don't have to do much when
+ * arch_mem_domain_* APIs are called. We do use a caching scheme to avoid
+ * updating page tables if the last user thread scheduled was in the same
+ * domain.
+ *
+ * We don't set CONFIG_ARCH_MEM_DOMAIN_DATA, since we aren't setting
+ * up any arch-specific memory domain data (per domain page tables.)
+ *
+ * This is all nice and simple and saves a lot of memory. The cost is that
+ * context switching is not trivial CR3 update. We have to reset all partitions
+ * for the current domain configuration and then apply all the partitions for
+ * the incoming thread's domain if they are not the same. We also need to
+ * update permissions similarly on the thread stack region.
+ */
+
+static inline void reset_region(uintptr_t start, size_t size)
+{
+	(void)range_map((void *)start, 0, size, 0, 0,
+			OPTION_FLUSH | OPTION_RESET);
+}
+
+static inline void apply_region(uintptr_t start, size_t size, pentry_t attr)
+{
+	(void)range_map((void *)start, 0, size, attr, MASK_PERM, OPTION_FLUSH);
+}
+
+/* Cache of the current memory domain applied to the common page tables and
+ * the stack buffer region that had User access granted.
+ */
+static struct k_mem_domain *current_domain;
+static uintptr_t current_stack_start;
+static size_t current_stack_size;
+
+void z_x86_swap_update_common_page_table(struct k_thread *incoming)
+{
+	k_spinlock_key_t key;
+
+	if ((incoming->base.user_options & K_USER) == 0) {
+		/* Incoming thread is not a user thread. Memory domains don't
+		 * affect supervisor threads and we don't need to enable User
+		 * bits for its stack buffer; do nothing.
+		 */
+		return;
+	}
+
+	/* Step 1: Make sure the thread stack is set up correctly for the
+	 * for the incoming thread
+	 */
+	if (incoming->stack_info.start != current_stack_start ||
+	    incoming->stack_info.size != current_stack_size) {
+		if (current_stack_size != 0U) {
+			reset_region(current_stack_start, current_stack_size);
+		}
+
+		/* The incoming thread's stack region needs User permissions */
+		apply_region(incoming->stack_info.start,
+			     incoming->stack_info.size,
+			     K_MEM_PARTITION_P_RW_U_RW);
+
+		/* Update cache */
+		current_stack_start = incoming->stack_info.start;
+		current_stack_size = incoming->stack_info.size;
+	}
+
+	/* Step 2: The page tables always have some memory domain applied to
+	 * them. If the incoming thread's memory domain is different,
+	 * update the page tables
+	 */
+	key = k_spin_lock(&z_mem_domain_lock);
+	if (incoming->mem_domain_info.mem_domain == current_domain) {
+		/* The incoming thread's domain is already applied */
+		goto out_unlock;
+	}
+
+	/* Reset the current memory domain regions... */
+	if (current_domain != NULL) {
+		for (int i = 0; i < CONFIG_MAX_DOMAIN_PARTITIONS; i++) {
+			struct k_mem_partition *ptn =
+				&current_domain->partitions[i];
+
+			if (ptn->size == 0) {
+				continue;
+			}
+			reset_region(ptn->start, ptn->size);
+		}
+	}
+
+	/* ...and apply all the incoming domain's regions */
+	for (int i = 0; i < CONFIG_MAX_DOMAIN_PARTITIONS; i++) {
+		struct k_mem_partition *ptn =
+			&incoming->mem_domain_info.mem_domain->partitions[i];
+
+		if (ptn->size == 0) {
+			continue;
+		}
+		apply_region(ptn->start, ptn->size, ptn->attr);
+	}
+	current_domain = incoming->mem_domain_info.mem_domain;
+out_unlock:
+	k_spin_unlock(&z_mem_domain_lock, key);
+}
+
+/* If a partition was added or removed in the cached domain, update the
+ * page tables.
+ */
+void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
+				      uint32_t partition_id)
+{
+	struct k_mem_partition *ptn;
+
+	if (domain != current_domain) {
+		return;
+	}
+
+	ptn = &domain->partitions[partition_id];
+	reset_region(ptn->start, ptn->size);
+}
+
+void arch_mem_domain_partition_add(struct k_mem_domain *domain,
+				   uint32_t partition_id)
+{
+	struct k_mem_partition *ptn;
+
+	if (domain != current_domain) {
+		return;
+	}
+
+	ptn = &domain->partitions[partition_id];
+	apply_region(ptn->start, ptn->size, ptn->attr);
+}
+
+/* Rest of the APIs don't need to do anything */
+void arch_mem_domain_thread_add(struct k_thread *thread)
+{
+
+}
+
+void arch_mem_domain_thread_remove(struct k_thread *thread)
+{
+
+}
+
+void arch_mem_domain_destroy(struct k_mem_domain *domain)
+{
+
+}
+#else
+/* Memory domains each have a set of page tables assigned to them */
 
 /**
 *  Duplicate an entire set of page tables
@@ -1416,7 +1576,7 @@ void arch_mem_domain_thread_add(struct k_thread *thread)
 			     thread->stack_info.size);
 	}
 
-#if !defined(CONFIG_X86_KPTI)
+#if !defined(CONFIG_X86_KPTI) && !defined(CONFIG_X86_COMMON_PAGE_TABLE)
 	/* Need to switch to using these new page tables, in case we drop
 	 * to user mode before we are ever context switched out.
 	 * IPI takes care of this if the thread is currently running on some
@@ -1427,6 +1587,7 @@ void arch_mem_domain_thread_add(struct k_thread *thread)
 	}
 #endif /* CONFIG_X86_KPTI */
 }
+#endif /* !CONFIG_X86_COMMON_PAGE_TABLE */
 
 int arch_mem_domain_max_partitions_get(void)
 {
@@ -1445,11 +1606,18 @@ void z_x86_current_stack_perms(void)
 	/* Only now is it safe to grant access to the stack buffer since any
 	 * previous context has been erased.
 	 */
-
+#ifdef CONFIG_X86_COMMON_PAGE_TABLE
+	/* Re run swap page table update logic since we're entering User mode.
+	 * This will grant stack and memory domain access if it wasn't set
+	 * already (in which case this returns very quickly).
+	 */
+	z_x86_swap_update_common_page_table(_current);
+#else
 	/* Memory domain access is already programmed into the page tables.
 	 * Need to enable access to this new user thread's stack buffer in
 	 * its domain-specific page tables.
 	 */
 	set_stack_perms(_current, z_x86_thread_page_tables_get(_current));
+#endif
 }
 #endif /* CONFIG_USERSPACE */

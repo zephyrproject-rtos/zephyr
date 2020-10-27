@@ -215,8 +215,10 @@ struct _thread_arch {
 	uint8_t flags;
 
 #ifdef CONFIG_USERSPACE
+#ifndef CONFIG_X86_COMMON_PAGE_TABLE
 	/* Physical address of the page tables used by this thread */
 	uintptr_t ptables;
+#endif /* CONFIG_X86_COMMON_PAGE_TABLE */
 
 	/* Initial privilege mode stack pointer when doing a system call.
 	 * Un-set for supervisor threads.
