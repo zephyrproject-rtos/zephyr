@@ -39,7 +39,7 @@
 /* LLCP Memory Pool Descriptor */
 struct mem_pool {
 	void *free;
-	u8_t *pool;
+	uint8_t *pool;
 };
 
 #define LLCTRL_PDU_SIZE		(offsetof(struct pdu_data, llctrl) + sizeof(struct pdu_data_llctrl))
@@ -65,15 +65,15 @@ struct mem_pool {
 #endif
 
 /* TODO: Determine correct number of tx nodes */
-static u8_t buffer_mem_tx[TX_CTRL_BUF_SIZE * TX_CTRL_BUF_NUM];
+static uint8_t buffer_mem_tx[TX_CTRL_BUF_SIZE * TX_CTRL_BUF_NUM];
 static struct mem_pool mem_tx = { .pool = buffer_mem_tx };
 
 /* TODO: Determine correct number of ntf nodes */
-static u8_t buffer_mem_ntf[NTF_BUF_SIZE * NTF_BUF_NUM];
+static uint8_t buffer_mem_ntf[NTF_BUF_SIZE * NTF_BUF_NUM];
 static struct mem_pool mem_ntf = { .pool = buffer_mem_ntf };
 
 /* TODO: Determine correct number of ctx */
-static u8_t buffer_mem_ctx[PROC_CTX_BUF_SIZE * PROC_CTX_BUF_NUM];
+static uint8_t buffer_mem_ctx[PROC_CTX_BUF_SIZE * PROC_CTX_BUF_NUM];
 static struct mem_pool mem_ctx = { .pool = buffer_mem_ctx };
 
 /*
@@ -297,7 +297,7 @@ void ull_cp_run(struct ull_cp_conn *conn)
 	lr_run(conn);
 }
 
-void ull_cp_state_set(struct ull_cp_conn *conn, u8_t state)
+void ull_cp_state_set(struct ull_cp_conn *conn, uint8_t state)
 {
 	switch (state) {
 	case ULL_CP_CONNECTED:
@@ -313,7 +313,7 @@ void ull_cp_state_set(struct ull_cp_conn *conn, u8_t state)
 	}
 } 
 
-u8_t ull_cp_min_used_chans(struct ull_cp_conn *conn, u8_t phys, u8_t min_used_chans)
+uint8_t ull_cp_min_used_chans(struct ull_cp_conn *conn, uint8_t phys, uint8_t min_used_chans)
 {
 	struct proc_ctx *ctx;
 
@@ -339,7 +339,7 @@ u8_t ull_cp_min_used_chans(struct ull_cp_conn *conn, u8_t phys, u8_t min_used_ch
 	return BT_HCI_ERR_SUCCESS;
 }
 
-u8_t ull_cp_le_ping(struct ull_cp_conn *conn)
+uint8_t ull_cp_le_ping(struct ull_cp_conn *conn)
 {
 	struct proc_ctx *ctx;
 
@@ -353,7 +353,7 @@ u8_t ull_cp_le_ping(struct ull_cp_conn *conn)
 	return BT_HCI_ERR_SUCCESS;
 }
 
-u8_t ull_cp_feature_exchange(struct ull_cp_conn *conn)
+uint8_t ull_cp_feature_exchange(struct ull_cp_conn *conn)
 {
 	struct proc_ctx *ctx;
 
@@ -367,7 +367,7 @@ u8_t ull_cp_feature_exchange(struct ull_cp_conn *conn)
 	return BT_HCI_ERR_SUCCESS;
 }
 
-u8_t ull_cp_version_exchange(struct ull_cp_conn *conn)
+uint8_t ull_cp_version_exchange(struct ull_cp_conn *conn)
 {
 	struct proc_ctx *ctx;
 
@@ -381,7 +381,7 @@ u8_t ull_cp_version_exchange(struct ull_cp_conn *conn)
 	return BT_HCI_ERR_SUCCESS;
 }
 
-u8_t ull_cp_encryption_start(struct ull_cp_conn *conn)
+uint8_t ull_cp_encryption_start(struct ull_cp_conn *conn)
 {
 	struct proc_ctx *ctx;
 
@@ -397,7 +397,7 @@ u8_t ull_cp_encryption_start(struct ull_cp_conn *conn)
 	return BT_HCI_ERR_SUCCESS;
 }
 
-u8_t ull_cp_phy_update(struct ull_cp_conn *conn)
+uint8_t ull_cp_phy_update(struct ull_cp_conn *conn)
 {
 	struct proc_ctx *ctx;
 
