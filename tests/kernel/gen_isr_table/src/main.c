@@ -5,6 +5,7 @@
  */
 
 #include <zephyr.h>
+#include <ztest.h>
 #include <irq.h>
 #include <tc_util.h>
 #include <sw_isr_table.h>
@@ -61,7 +62,7 @@ extern uint32_t _irq_vector_table[];
 #define TEST_NUM_IRQS	CONFIG_NUM_IRQS
 #endif
 
-#define TEST_IRQ_TABLE_SIZE 	(IRQ_TABLE_SIZE - \
+#define TEST_IRQ_TABLE_SIZE	(IRQ_TABLE_SIZE - \
 				 (CONFIG_NUM_IRQS - TEST_NUM_IRQS))
 #define IRQ_LINE(offset)	(TEST_NUM_IRQS - ((offset) + 1))
 #define TABLE_INDEX(offset)	(TEST_IRQ_TABLE_SIZE - ((offset) + 1))
@@ -243,32 +244,24 @@ static int check_sw_isr(void *isr, uint32_t arg, int offset)
 
 /**
  * @ingroup kernel_interrupt_tests
- * @brief test to validate gen_isr_table
+ * @brief test to validate direct interrupt
  *
- * @details initialize two normal and two direct interrupt handler using
- * IRQ_CONNECT and IRQ_DIRECT_CONNECT api respectively.
- * For ‘direct’ interrupts, address of handler function will be placed in
- * the irq vector table. And for 'regular' interrupts , the address of the
- * common software isr table is placed in the irq vector table.
- * Software ISR table is an array of struct _isr_table_entry.
- * And each entry contains the pointer to isr and the corresponding parameters.
+ * @details initialize two direct interrupt handler using IRQ_DIRECT_CONNECT
+ * api at build time. For ‘direct’ interrupts, address of handler function will
+ * be placed in the irq vector table. And each entry contains the pointer to
+ * isr and the corresponding parameters.
  *
  * At the end according to architecture, we manually trigger the interrupt.
  * And all irq handler should get called.
  *
- * @see IRQ_DIRECT_CONNECT(), IRQ_CONNECT(), irq_enable()
+ * @see IRQ_DIRECT_CONNECT(), irq_enable()
  *
  */
-
-void main(void)
+void test_build_time_direct_interrupt(void)
 {
-	int rv = TC_FAIL;
-
-	TC_START("Test gen_isr_tables");
-
-	TC_PRINT("IRQ configuration (total lines %d):\n", CONFIG_NUM_IRQS);
-
-#ifdef HAS_DIRECT_IRQS
+#ifndef HAS_DIRECT_IRQS
+	ztest_test_skip();
+#else
 	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR1_OFFSET), 0, isr1, 0);
 	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR2_OFFSET), 0, isr2, 0);
 	irq_enable(IRQ_LINE(ISR1_OFFSET));
@@ -276,43 +269,86 @@ void main(void)
 	TC_PRINT("isr1 isr=%p irq=%d\n", isr1, IRQ_LINE(ISR1_OFFSET));
 	TC_PRINT("isr2 isr=%p irq=%d\n", isr2, IRQ_LINE(ISR2_OFFSET));
 
-	if (check_vector(isr1, ISR1_OFFSET)) {
-		goto done;
-	}
+	zassert_ok(check_vector(isr1, ISR1_OFFSET),
+			"check direct interrpt isr1 failed");
 
-	if (check_vector(isr2, ISR2_OFFSET)) {
-		goto done;
-	}
+	zassert_ok(check_vector(isr2, ISR2_OFFSET),
+			"check direct interrpt isr2 failed");
 #endif
-#ifdef CONFIG_GEN_SW_ISR_TABLE
+}
+
+/**
+ * @ingroup kernel_interrupt_tests
+ * @brief test to validate gen_isr_table and interrupt
+ *
+ * @details initialize two normal interrupt handler using IRQ_CONNECT api at
+ * build time. For 'regular' interrupts, the address of the common software isr
+ * table is placed in the irq vector table, and software ISR table is an array
+ * of struct _isr_table_entry. And each entry contains the pointer to isr and
+ * the corresponding parameters.
+ *
+ * At the end according to architecture, we manually trigger the interrupt.
+ * And all irq handler should get called.
+ *
+ * @see IRQ_CONNECT(), irq_enable()
+ *
+ */
+void test_build_time_interrupt(void)
+{
+#ifndef CONFIG_GEN_SW_ISR_TABLE
+	ztest_test_skip();
+#else
 	TC_PRINT("_sw_isr_table at location %p\n", _sw_isr_table);
 
 	IRQ_CONNECT(IRQ_LINE(ISR3_OFFSET), 1, isr3, ISR3_ARG, 0);
 	irq_enable(IRQ_LINE(ISR3_OFFSET));
 	TC_PRINT("isr3 isr=%p irq=%d param=%p\n", isr3, IRQ_LINE(ISR3_OFFSET),
 		 (void *)ISR3_ARG);
-	if (check_sw_isr(isr3, ISR3_ARG, ISR3_OFFSET)) {
-		goto done;
-	}
+
+	zassert_ok(check_sw_isr(isr3, ISR3_ARG, ISR3_OFFSET),
+			"check interrupt isr3 failed");
 
 #ifdef ISR4_OFFSET
 	IRQ_CONNECT(IRQ_LINE(ISR4_OFFSET), 1, isr4, ISR4_ARG, 0);
 	irq_enable(IRQ_LINE(ISR4_OFFSET));
 	TC_PRINT("isr4 isr=%p irq=%d param=%p\n", isr4, IRQ_LINE(ISR4_OFFSET),
 		 (void *)ISR4_ARG);
-	if (check_sw_isr(isr4, ISR4_ARG, ISR4_OFFSET)) {
-		goto done;
-	}
-#endif
 
+	zassert_ok(check_sw_isr(isr4, ISR4_ARG, ISR4_OFFSET),
+			"check interrupt isr4 failed");
+#endif
+#endif
+}
+
+/**
+ * @ingroup kernel_interrupt_tests
+ * @brief test to validate gen_isr_table and dynamic interrupt
+ *
+ * @details initialize two dynamic interrupt handler using irq_connect_dynamic
+ * api at run time. For dynamic interrupts, the address of the common software
+ * isr table is also placed in the irq vector table. Software ISR table is an
+ * array of struct _isr_table_entry. And each entry contains the pointer to isr
+ * and the corresponding parameters.
+ *
+ * At the end according to architecture, we manually trigger the interrupt.
+ * And all irq handler should get called.
+ *
+ * @see irq_connect_dynamic(), irq_enable()
+ *
+ */
+void test_run_time_interrupt(void)
+{
+
+#ifndef CONFIG_GEN_SW_ISR_TABLE
+	ztest_test_skip();
+#else
 	irq_connect_dynamic(IRQ_LINE(ISR5_OFFSET), 1, isr5,
 			    (const void *)ISR5_ARG, 0);
 	irq_enable(IRQ_LINE(ISR5_OFFSET));
 	TC_PRINT("isr5 isr=%p irq=%d param=%p\n", isr5, IRQ_LINE(ISR5_OFFSET),
 		 (void *)ISR5_ARG);
-	if (check_sw_isr(isr5, ISR5_ARG, ISR5_OFFSET)) {
-		goto done;
-	}
+	zassert_ok(check_sw_isr(isr5, ISR5_ARG, ISR5_OFFSET),
+			"test dynamic interrupt isr5 failed");
 
 #ifdef ISR6_OFFSET
 	irq_connect_dynamic(IRQ_LINE(ISR6_OFFSET), 1, isr6,
@@ -320,16 +356,26 @@ void main(void)
 	irq_enable(IRQ_LINE(ISR6_OFFSET));
 	TC_PRINT("isr6 isr=%p irq=%d param=%p\n", isr6, IRQ_LINE(ISR6_OFFSET),
 		 (void *)ISR6_ARG);
-	if (check_sw_isr(isr6, ISR6_ARG, ISR6_OFFSET)) {
-		goto done;
-	}
+
+	zassert_ok(check_sw_isr(isr6, ISR6_ARG, ISR6_OFFSET),
+			"check dynamic interrupt isr6 failed");
 #endif
-#endif /* CONFIG_GEN_SW_ISR_TABLE */
-	rv = TC_PASS;
+#endif
+}
+
+void test_main(void)
+{
+	TC_START("Test gen_isr_tables");
+
+	TC_PRINT("IRQ configuration (total lines %d):\n", CONFIG_NUM_IRQS);
+
+	ztest_test_suite(context,
+			ztest_unit_test(test_build_time_direct_interrupt),
+			ztest_unit_test(test_build_time_interrupt),
+			ztest_unit_test(test_run_time_interrupt)
+	);
+	ztest_run_test_suite(context);
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-label"
-done:
-	TC_END_RESULT(rv);
-	TC_END_REPORT(rv);
 }
