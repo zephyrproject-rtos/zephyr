@@ -112,6 +112,9 @@ MEMORY
   static_log_entries_seg (!ari) :
         org = LOG_ENTRY_ELF_BASE,
         len = LOG_ENTRY_ELF_SIZE
+  fw_metadata_seg (!ari) :
+        org = EXT_MANIFEST_ELF_BASE,
+        len = EXT_MANIFEST_ELF_SIZE
 }
 
 PHDRS
@@ -141,6 +144,7 @@ PHDRS
 
   static_uuid_entries_phdr PT_NOTE;
   static_log_entries_phdr PT_NOTE;
+  metadata_entries_phdr PT_NOTE;
 }
 _rom_store_table = 0;
 PROVIDE(_memmap_vecbase_reset = XCHAL_VECBASE_RESET_PADDR_SRAM);
@@ -194,6 +198,11 @@ _memmap_cacheattr_intel_cavs18_adsp = 0xFF22FFF2;
 #endif
 
 PROVIDE(_memmap_cacheattr_reset = _memmap_cacheattr_intel_cavs18_adsp);
+
+_EXT_MAN_ALIGN_ = 16;
+EXTERN(ext_man_fw_ver)
+EXTERN(ext_man_cavs_config)
+
 SECTIONS
 {
 
@@ -532,4 +541,10 @@ SECTIONS
   {
     *(*.static_log*)
   } > static_log_entries_seg :static_log_entries_phdr
+
+  .fw_metadata (COPY) : ALIGN(1024)
+  {
+    KEEP (*(.fw_metadata))
+    . = ALIGN(_EXT_MAN_ALIGN_);
+  } >fw_metadata_seg :metadata_entries_phdr
 }
