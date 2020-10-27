@@ -150,6 +150,30 @@ static inline uint64_t z_vrfy_syscall_arg64_big(uint32_t arg1, uint32_t arg2,
 }
 #include <syscalls/syscall_arg64_big_mrsh.c>
 
+uint32_t z_impl_more_args(uint32_t arg1, uint32_t arg2, uint32_t arg3,
+			  uint32_t arg4, uint32_t arg5, uint32_t arg6,
+			  uint32_t arg7)
+{
+	uint32_t ret = 0x4ef464cc;
+	uint32_t args[] = { arg1, arg2, arg3, arg4, arg5, arg6, arg7 };
+
+	for (int i = 0; i < ARRAY_SIZE(args); i++) {
+		ret += args[i];
+		ret = (ret << 11) | (ret >> 5);
+	}
+
+	return ret;
+}
+
+static inline uint32_t z_vrfy_more_args(uint32_t arg1, uint32_t arg2,
+					uint32_t arg3, uint32_t arg4,
+					uint32_t arg5, uint32_t arg6,
+					uint32_t arg7)
+{
+	return z_impl_more_args(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+}
+#include <syscalls/more_args_mrsh.c>
+
 /**
  * @brief Test to demonstrate usage of z_user_string_nlen()
  *
@@ -271,6 +295,13 @@ void test_arg64(void)
 
 	zassert_equal(syscall_arg64_big(1, 2, 3, 4, 5, 6),
 		      z_impl_syscall_arg64_big(1, 2, 3, 4, 5, 6),
+		      "syscall didn't match impl");
+}
+
+void test_more_args(void)
+{
+	zassert_equal(more_args(1, 2, 3, 4, 5, 6, 7),
+		      z_impl_more_args(1, 2, 3, 4, 5, 6, 7),
 		      "syscall didn't match impl");
 }
 
@@ -398,6 +429,7 @@ void test_main(void)
 			 ztest_user_unit_test(test_user_string_copy),
 			 ztest_user_unit_test(test_user_string_alloc_copy),
 			 ztest_user_unit_test(test_arg64),
+			 ztest_user_unit_test(test_more_args),
 			 ztest_unit_test(test_syscall_torture),
 			 ztest_unit_test(test_syscall_context)
 			 );
