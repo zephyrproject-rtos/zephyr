@@ -42,7 +42,9 @@ extern "C" {
 struct fs_file_system_t;
 
 enum fs_dir_entry_type {
+	/** Identifier for file entry */
 	FS_DIR_ENTRY_FILE = 0,
+	/** Identifier for directory entry */
 	FS_DIR_ENTRY_DIR
 };
 
@@ -129,26 +131,52 @@ struct fs_statvfs {
 	unsigned long f_bfree;
 };
 
+
+/**
+ * @name fs_open open and creation mode flags
+ * @{
+ */
+/** Open for read flag */
 #define FS_O_READ       0x01
+/** Open for write flag */
 #define FS_O_WRITE      0x02
+/** Open for read-write flag combination */
 #define FS_O_RDWR       (FS_O_READ | FS_O_WRITE)
+/** Bitmask for read and write flags */
 #define FS_O_MODE_MASK  0x03
 
+/** Create file if it does not exist */
 #define FS_O_CREATE     0x10
+/** Open/create file for append */
 #define FS_O_APPEND     0x20
+/** Bitmask for open/create flags */
 #define FS_O_FLAGS_MASK 0x30
 
+/** Bitmask for open flags */
 #define FS_O_MASK       (FS_O_MODE_MASK | FS_O_FLAGS_MASK)
+/**
+ * @}
+ */
 
+/**
+ * @name fs_seek whence parameter values
+ * @{
+ */
 #ifndef FS_SEEK_SET
-#define FS_SEEK_SET	0	/* Seek from beginning of file. */
+/** Seek from the beginning of file */
+#define FS_SEEK_SET	0
 #endif
 #ifndef FS_SEEK_CUR
-#define FS_SEEK_CUR	1	/* Seek from current position. */
+/** Seek from a current position */
+#define FS_SEEK_CUR	1
 #endif
 #ifndef FS_SEEK_END
-#define FS_SEEK_END	2	/* Seek from end of file.  */
+/** Seek from the end of file */
+#define FS_SEEK_END	2
 #endif
+/**
+ * @}
+ */
 
 /**
  * @brief Open or create file
