@@ -10,11 +10,12 @@
  */
 
 #include <stdlib.h>
+#include <shell/shell.h>
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/conn.h>
 
 #include "../host/audio/uint48_util.h"
 #include "../host/audio/mpl.h"
-#include "mpl.h"
-
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCS)
 #define LOG_MODULE_NAME bt_mpl_shell
