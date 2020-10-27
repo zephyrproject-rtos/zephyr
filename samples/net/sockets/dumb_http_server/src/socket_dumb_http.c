@@ -141,7 +141,7 @@ close_client:
 
 		net_pkt_get_info(&rx, &tx, &rx_data, &tx_data);
 		printf("rx buf: %d, tx buf: %d\n",
-		       rx_data->avail_count, tx_data->avail_count);
+		       atomic_get(&rx_data->avail_count), atomic_get(&tx_data->avail_count));
 #endif
 
 	}

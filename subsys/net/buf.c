@@ -346,8 +346,8 @@ success:
 	net_buf_reset(buf);
 
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
-	pool->avail_count--;
-	__ASSERT_NO_MSG(pool->avail_count >= 0);
+	atomic_dec(&pool->avail_count);
+	__ASSERT_NO_MSG(atomic_get(&pool->avail_count) >= 0);
 #endif
 	return buf;
 }
@@ -552,8 +552,8 @@ void net_buf_unref(struct net_buf *buf)
 		pool = net_buf_pool_get(buf->pool_id);
 
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
-		pool->avail_count++;
-		__ASSERT_NO_MSG(pool->avail_count <= pool->buf_count);
+		atomic_inc(&pool->avail_count);
+		__ASSERT_NO_MSG(atomic_get(&pool->avail_count) <= pool->buf_count);
 #endif
 
 		if (pool->destroy) {
