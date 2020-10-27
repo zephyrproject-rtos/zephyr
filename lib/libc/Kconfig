@@ -27,6 +27,7 @@ config MINIMAL_LIBC
 config NEWLIB_LIBC
 	bool "Newlib C library"
 	depends on !NATIVE_APPLICATION
+	select LIBC_ERRNO
 	help
 	  Build with newlib library. The newlib library is expected to be
 	  part of the SDK in this case.
@@ -46,6 +47,7 @@ if NEWLIB_LIBC
 config NEWLIB_LIBC_NANO
 	bool "Build with newlib-nano C library"
 	depends on HAS_NEWLIB_LIBC_NANO
+	select LIBC_ERRNO
 	default y
 	help
 	  Build with newlib-nano library, for small embedded apps.
