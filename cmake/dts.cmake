@@ -95,7 +95,7 @@ if(SUPPORTS_DTS)
         dts/${ARCH}
         dts
         )
-      set(full_path ${dts_root}/${dts_root_path})
+      get_filename_component(full_path ${dts_root}/${dts_root_path} REALPATH)
       if(EXISTS ${full_path})
         list(APPEND
           DTS_ROOT_SYSTEM_INCLUDE_DIRS
