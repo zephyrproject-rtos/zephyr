@@ -20,7 +20,7 @@ endmenu
 # precedence over SoC defaults, so include them in that order.
 #
 # $ARCH and $BOARD_DIR will be glob patterns when building documentation.
-source "boards/shields/*/Kconfig.defconfig"
+source "$(KCONFIG_BINARY_DIR)/Kconfig.shield.defconfig"
 source "$(BOARD_DIR)/Kconfig.defconfig"
 source "$(KCONFIG_BINARY_DIR)/Kconfig.soc.defconfig"
 

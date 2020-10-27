@@ -21,6 +21,18 @@ foreach(root ${SOC_ROOT})
   set(OPERATION APPEND)
 endforeach()
 
+# Support multiple shields in BOARD_ROOT
+set(OPERATION WRITE)
+foreach(root ${BOARD_ROOT})
+  file(${OPERATION} ${KCONFIG_BINARY_DIR}/Kconfig.shield.defconfig
+       "osource \"${root}/boards/shields/*/Kconfig.defconfig\"\n"
+  )
+  file(${OPERATION} ${KCONFIG_BINARY_DIR}/Kconfig.shield
+       "osource \"${root}/boards/shields/*/Kconfig.shield\"\n"
+  )
+  set(OPERATION APPEND)
+endforeach()
+
 if(KCONFIG_ROOT)
   zephyr_file(APPLICATION_ROOT KCONFIG_ROOT)
   # KCONFIG_ROOT has either been specified as a CMake variable or is
