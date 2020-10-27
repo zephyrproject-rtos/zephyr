@@ -48,6 +48,48 @@ FUNC_NORETURN void cpu1_fn(void *arg)
  *
  * @ingroup kernel_mp_tests
  *
+ * @details
+ * Test Objective:
+ * - To verify kernel architecture layer shall provide a means to start non-boot
+ *   CPUs on SMP systems.
+ *   The way we verify it is to call it by give it parameters especially the
+ *   target executing function, etc. Then check if the function is running or
+ *   not.
+ *
+ * Testing techniques:
+ * - Interface testing, function and block box testing,
+ *   dynamic analysis and testing
+ *
+ * Prerequisite Conditions:
+ * - CONFIG_MP_NUM_CPUS > 1
+ *
+ * Input Specifications:
+ * - CPU ID: the cpu want to start
+ * - Stack structure
+ * - Stack size
+ * - Target executing function
+ * - An argument that pass to the function
+ *
+ * Test Procedure:
+ * -# In main thread, given and set a global variable cpu_arg to 12345.
+ * -# Call arch_start_cpu() with parameters
+ * -# Enter a while loop and wait for cpu_running equals to 1.
+ * -# In target function, check if the address is &cpu_arg and its content
+ *  equal to 12345.
+ * -# Set the global flag varible cpu_running to 1.
+ * -# In main thread, check if the cpu_running equals to 1.
+ *
+ * Expected Test Result:
+ * - The given function execute cpu is running and .
+ *
+ * Pass/Fail Criteria:
+ * - Successful if the check of step 4, 6 are all pass.
+ * - Failure if one of the check of step 4, 6 is failed.
+ *
+ * Assumptions and Constraints:
+ * - This test using for the platform that support MP or SMP, in our current
+ *   scenario which own over two CPUs.
+ *
  * @see arch_start_cpu()
  */
 void test_mp_start(void)
