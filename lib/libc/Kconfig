@@ -29,6 +29,15 @@ config MINIMAL_LIBC
 	help
 	  Build with minimal C library.
 
+config PICOLIBC
+	bool "Picolibc library"
+	depends on !NATIVE_APPLICATION
+	select THREAD_LOCAL_STORAGE if ARCH_HAS_THREAD_LOCAL_STORAGE
+	select LIBC_ERRNO
+	help
+	  Build with picolibc library. The picolibc library is expected to be
+	  part of the SDK in this case.
+
 config NEWLIB_LIBC
 	bool "Newlib C library"
 	depends on !NATIVE_APPLICATION
@@ -52,6 +61,30 @@ endchoice # LIBC_IMPLEMENTATION
 
 config HAS_NEWLIB_LIBC_NANO
 	bool
+
+if PICOLIBC
+
+config PICOLIBC_INTEGER_PRINTF
+	bool "Build with picolibc integer-only printf"
+	help
+	  Build with floating point printf disabled. This will reduce the size
+	  of the image.
+
+config PICOLIBC_ALIGNED_HEAP_SIZE
+	int "Picolibc aligned heap size (bytes)"
+	depends on MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+	depends on USERSPACE
+	default 0
+	help
+	  If user mode is enabled, and MPU hardware has requirements that
+	  regions be sized to a power of two and aligned to their size,
+	  and user mode threads need to access this heap, then this is necessary
+	  to properly define an MPU region for the heap.
+
+	  If this is left at 0, then remaining system RAM will be used for this
+	  area and it may not be possible to program it as an MPU region.
+
+endif # PICOLIBC
 
 if NEWLIB_LIBC
 

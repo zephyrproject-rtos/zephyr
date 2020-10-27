@@ -33,6 +33,7 @@ set(SYSROOT_TARGET ${CROSS_COMPILE_TARGET})
 set(CROSS_COMPILE ${some_toolchain_root}/${CROSS_COMPILE_TARGET}/bin/${CROSS_COMPILE_TARGET}-)
 set(SYSROOT_DIR   ${some_toolchain_root}/${SYSROOT_TARGET}/${SYSROOT_TARGET})
 set(TOOLCHAIN_HAS_NEWLIB ON CACHE BOOL "True if toolchain supports newlib")
+set(TOOLCHAIN_HAS_PICOLIBC ON CACHE BOOL "True if toolchain supports picolibc")
 
 unset(some_toolchain_root)
 unset(some_toolchain)

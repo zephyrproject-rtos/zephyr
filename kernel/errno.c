@@ -44,10 +44,13 @@ static inline int *z_vrfy_z_errno(void)
 #include <syscalls/z_errno_mrsh.c>
 
 #else
+#ifndef CONFIG_LIBC_ERRNO
 int *z_impl_z_errno(void)
 {
 	return &_current->errno_var;
 }
+#endif /* CONFIG_PICOLIBC */
+
 #endif /* CONFIG_USERSPACE */
 
 #endif /* CONFIG_ERRNO_IN_TLS */
