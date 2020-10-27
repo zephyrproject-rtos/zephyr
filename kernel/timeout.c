@@ -74,7 +74,7 @@ static int32_t next_timeout(void)
 	struct _timeout *to = first();
 	int32_t ticks_elapsed = elapsed();
 	int32_t ret = to == NULL ? MAX_WAIT
-		: MIN(MAX_WAIT, MAX(0, to->dticks - ticks_elapsed));
+		: CLAMP(to->dticks - ticks_elapsed, 0, MAX_WAIT);
 
 #ifdef CONFIG_TIMESLICING
 	if (_current_cpu->slice_ticks && _current_cpu->slice_ticks < ret) {

@@ -94,7 +94,7 @@ static int spi_sam_configure(const struct device *dev,
 
 	/* Use the requested or next highest possible frequency */
 	div = SOC_ATMEL_SAM_MCK_FREQ_HZ / config->frequency;
-	div = MAX(1, MIN(UINT8_MAX, div));
+	div = CLAMP(div, 1, UINT8_MAX);
 	spi_csr |= SPI_CSR_SCBR(div);
 
 	regs->SPI_CR = SPI_CR_SPIDIS; /* Disable SPI */
