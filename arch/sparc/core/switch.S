@@ -118,6 +118,9 @@ SECTION_FUNC(TEXT, z_sparc_context_switch)
 
 	/* restore output registers */
 	ldd	[%o0 + _thread_offset_to_o6], %o6
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	ld	[%o0 + _thread_offset_to_tls], %g7
+#endif
 
 	ld	[%o0 + _thread_offset_to_psr], %g1  /* %g1 = new thread psr */
 
