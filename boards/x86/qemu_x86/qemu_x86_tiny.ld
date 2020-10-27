@@ -143,6 +143,14 @@ MEMORY
 
 #endif /* CONFIG_NEWLIB_LIBC */
 
+#ifdef CONFIG_PICOLIBC
+/* For Picolibc libc-hook.c. */
+#define LIB_C_IN_SECT(lsect)						\
+	*liblib__libc__picolibc.a:libc-hooks.c.obj(.##lsect)		\
+	*liblib__libc__picolibc.a:libc-hooks.c.obj(.##lsect##.*)
+
+#endif /* CONFIG_PICOLIBC */
+
 /*
  * For drivers that are usually used (e.g. serial)
  */
