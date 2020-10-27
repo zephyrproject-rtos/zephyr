@@ -69,11 +69,11 @@ static void setup(void)
  */
 void test_feature_exchange_mas_loc(void)
 {
-	u64_t err;
-	u64_t set_featureset[] = {
+	uint64_t err;
+	uint64_t set_featureset[] = {
 		DEFAULT_FEATURE,
 		DEFAULT_FEATURE };
-	u64_t rsp_featureset[] = {
+	uint64_t rsp_featureset[] = {
 		(LL_FEAT_BIT_MASK_VALID & FEAT_FILTER_OCTET0) | DEFAULT_FEATURE,
 		0x0 };
 	int feat_to_test = ARRAY_SIZE(set_featureset);
@@ -123,7 +123,7 @@ void test_feature_exchange_mas_loc(void)
 
 void test_feature_exchange_mas_loc_2(void)
 {
-	u8_t err;
+	uint8_t err;
 
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -154,13 +154,13 @@ void test_feature_exchange_mas_loc_2(void)
 #define MAS_REM_NR_OF_EVENTS 2
 void test_feature_exchange_mas_rem(void)
 {
-	u64_t set_featureset[] = {
+	uint64_t set_featureset[] = {
 		DEFAULT_FEATURE,
 		LL_FEAT_BIT_MASK_VALID,
 		EXPECTED_FEAT_EXCH_VALID,
 		0xFFFFFFFFFFFFFFFF,
 		0x0 };
-	u64_t exp_featureset[] = {
+	uint64_t exp_featureset[] = {
 		DEFAULT_FEATURE,
 		DEFAULT_FEATURE,
 		DEFAULT_FEATURE,
@@ -212,25 +212,25 @@ void test_feature_exchange_mas_rem_2(void)
 	 * but in reality we should add some more
 	 * test cases
 	 */
-	u64_t set_featureset[] = {
+	uint64_t set_featureset[] = {
 		DEFAULT_FEATURE,
 		LL_FEAT_BIT_MASK_VALID,
 		EXPECTED_FEAT_EXCH_VALID,
 		0xFFFFFFFFFFFFFFFF,
 		0x0 };
-	u64_t exp_featureset[] = {
+	uint64_t exp_featureset[] = {
 		DEFAULT_FEATURE,
 		DEFAULT_FEATURE,
 		DEFAULT_FEATURE,
 		DEFAULT_FEATURE,
 		0x0 };
-	u64_t ut_featureset[] = {
+	uint64_t ut_featureset[] = {
 		DEFAULT_FEATURE,
 		DEFAULT_FEATURE,
 		DEFAULT_FEATURE,
 		DEFAULT_FEATURE,
 		DEFAULT_FEATURE };
-	u64_t ut_exp_featureset[] = {
+	uint64_t ut_exp_featureset[] = {
 		DEFAULT_FEATURE,
 		DEFAULT_FEATURE,
 		DEFAULT_FEATURE,
@@ -238,7 +238,7 @@ void test_feature_exchange_mas_rem_2(void)
 		0x00 };
 
 	int feat_to_test = ARRAY_SIZE(set_featureset);
-	u64_t err;
+	uint64_t err;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
@@ -299,8 +299,8 @@ void test_feature_exchange_mas_rem_2(void)
 
 void test_slave_feature_exchange_sla_loc(void)
 {
-	u64_t err;
-	u64_t featureset;
+	uint64_t err;
+	uint64_t featureset;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
@@ -339,8 +339,8 @@ void test_slave_feature_exchange_sla_loc(void)
 
 void test_feature_exchange_sla_loc_unknown_rsp(void)
 {
-	u64_t err;
-	u64_t featureset;
+	uint64_t err;
+	uint64_t featureset;
 	struct node_tx *tx;
 
 	struct pdu_data_llctrl_feature_req local_feature_req;
