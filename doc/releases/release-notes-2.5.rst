@@ -66,6 +66,10 @@ Architectures
 
   * AARCH32
 
+    * Introduced the functionality for chain-loadable Zephyr
+      fimrmware images to force the initialization of internal
+      architecture state during early system boot (Cortex-M).
+
   * AARCH64
 
 * POSIX
