@@ -42,6 +42,7 @@ extern void test_multilib(void);
 extern void test_thread_context(void);
 extern void test_bootdelay(void);
 extern void test_irq_offload(void);
+extern void test_nested_locking(void);
 
 /**
  * @defgroup kernel_common_tests Common Tests
@@ -109,6 +110,7 @@ void test_main(void)
 {
 	ztest_test_suite(common,
 			 ztest_unit_test(test_bootdelay),
+			 ztest_unit_test(test_nested_locking),
 			 ztest_unit_test(test_irq_offload),
 			 ztest_unit_test(test_byteorder_memcpy_swap),
 			 ztest_unit_test(test_byteorder_mem_swap),
