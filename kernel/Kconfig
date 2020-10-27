@@ -202,9 +202,17 @@ config THREAD_USERSPACE_LOCAL_DATA
 	depends on USERSPACE
 	default y if ERRNO && !ERRNO_IN_TLS
 
+config LIBC_ERRNO
+	bool
+	help
+	  Use external libc errno, not the internal one. This makes sure that
+	  ERRNO is not set for libc configurations that provide their own
+	  implementation.
+
 config ERRNO
 	bool "Enable errno support"
 	default y
+	depends on !LIBC_ERRNO
 	help
 	  Enable per-thread errno in the kernel. Application and library code must
 	  include errno.h provided by the C library (libc) to use the errno

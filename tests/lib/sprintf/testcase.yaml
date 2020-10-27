@@ -10,3 +10,7 @@ tests:
     extra_args: CONF_FILE=prj_new.conf
     tags: libc
     platform_exclude: native_posix native_posix_64 nrf52_bsim
+  libraries.picolibc.sprintf:
+    extra_args: CONF_FILE=prj_picolibc.conf
+    tags: clib ignore_faults picolibc
+    platform_exclude: native_posix native_posix_64 nrf52_bsim

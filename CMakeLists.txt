@@ -875,6 +875,9 @@ if(CONFIG_USERSPACE)
   if(CONFIG_NEWLIB_LIBC_NANO)
     set(NEWLIB_PART -l libc_nano.a z_libc_partition)
   endif()
+  if(CONFIG_PICOLIBC)
+    set(NEWLIB_PART -l libc.a z_libc_partition)
+  endif()
 
   add_custom_command(
     OUTPUT ${APP_SMEM_UNALIGNED_LD} ${APP_SMEM_PINNED_UNALIGNED_LD}
