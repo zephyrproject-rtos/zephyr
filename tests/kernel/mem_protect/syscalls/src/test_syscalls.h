@@ -23,6 +23,10 @@ __syscall uint64_t syscall_arg64_big(uint32_t arg1, uint32_t arg2, uint64_t arg3
 
 __syscall bool syscall_context(void);
 
+__syscall uint32_t more_args(uint32_t arg1, uint32_t arg2, uint32_t arg3,
+			     uint32_t arg4, uint32_t arg5, uint32_t arg6,
+			     uint32_t arg7);
+
 #include <syscalls/test_syscalls.h>
 
 #endif /* _TEST_SYSCALLS_H_ */
