@@ -152,8 +152,6 @@ extern void k_mem_domain_destroy(struct k_mem_domain *domain);
  * Add a memory partition into a memory domain. Partitions must conform to
  * the following constraints:
  *
- * - Partition bounds must be within system RAM boundaries on MMU-based
- *   systems.
  * - Partitions in the same memory domain may not overlap each other.
  * - Partitions must not be defined which expose private kernel
  *   data structures or kernel objects.
