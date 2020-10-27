@@ -34,8 +34,8 @@
 #include "helper_pdu.h"
 #include "helper_util.h"
 
-static u32_t event_active;
-static u16_t lazy;
+static uint32_t event_active;
+static uint16_t lazy;
 sys_slist_t ut_rx_q;
 static sys_slist_t lt_tx_q;
 
@@ -130,7 +130,7 @@ void test_setup(struct ull_cp_conn *conn)
 	lazy = 0;
 }
 
-void test_set_role(struct ull_cp_conn *conn, u8_t role)
+void test_set_role(struct ull_cp_conn *conn, uint8_t role)
 {
 	conn->lll.role = role;
 }
@@ -156,7 +156,7 @@ void event_prepare(struct ull_cp_conn *conn)
 	lll->latency_prepare += lazy;
 
 	/* Calc current event counter value */
-	u16_t event_counter = lll->event_counter + lll->latency_prepare;
+	uint16_t event_counter = lll->event_counter + lll->latency_prepare;
 
 	/* Store the next event counter value */
 	lll->event_counter = event_counter + 1;
@@ -189,11 +189,11 @@ void event_done(struct ull_cp_conn *conn)
 	}
 }
 
-u16_t event_counter(struct ull_cp_conn *conn)
+uint16_t event_counter(struct ull_cp_conn *conn)
 {
 	/* TODO(thoh): Mocked lll_conn */
 	struct mocked_lll_conn *lll;
-	u16_t event_counter;
+	uint16_t event_counter;
 
 	/**/
 	lll = &conn->lll;
@@ -211,7 +211,7 @@ u16_t event_counter(struct ull_cp_conn *conn)
 }
 
 
-void lt_tx_real(const char *file, u32_t line, helper_pdu_opcode_t opcode, struct ull_cp_conn *conn, void *param)
+void lt_tx_real(const char *file, uint32_t line, helper_pdu_opcode_t opcode, struct ull_cp_conn *conn, void *param)
 {
 	struct pdu_data *pdu;
 	struct node_rx_pdu *rx;
@@ -227,7 +227,7 @@ void lt_tx_real(const char *file, u32_t line, helper_pdu_opcode_t opcode, struct
 }
 
 
-void lt_rx_real(const char *file, u32_t line, helper_pdu_opcode_t opcode, struct ull_cp_conn *conn, struct node_tx **tx_ref, void *param)
+void lt_rx_real(const char *file, uint32_t line, helper_pdu_opcode_t opcode, struct ull_cp_conn *conn, struct node_tx **tx_ref, void *param)
 {
 	struct node_tx *tx;
 	struct pdu_data *pdu;
@@ -245,7 +245,7 @@ void lt_rx_real(const char *file, u32_t line, helper_pdu_opcode_t opcode, struct
 }
 
 
-void lt_rx_q_is_empty_real(const char *file, u32_t line, struct ull_cp_conn *conn)
+void lt_rx_q_is_empty_real(const char *file, uint32_t line, struct ull_cp_conn *conn)
 {
 	struct node_tx *tx;
 
@@ -255,7 +255,7 @@ void lt_rx_q_is_empty_real(const char *file, u32_t line, struct ull_cp_conn *con
 
 
 
-void ut_rx_pdu_real(const char *file, u32_t line, helper_pdu_opcode_t opcode, struct node_rx_pdu **ntf_ref, void *param)
+void ut_rx_pdu_real(const char *file, uint32_t line, helper_pdu_opcode_t opcode, struct node_rx_pdu **ntf_ref, void *param)
 {
 	struct pdu_data *pdu;
 	struct node_rx_pdu *ntf;
@@ -274,7 +274,7 @@ void ut_rx_pdu_real(const char *file, u32_t line, helper_pdu_opcode_t opcode, st
 }
 
 
-void ut_rx_node_real(const char *file, u32_t line, helper_node_opcode_t opcode, struct node_rx_pdu **ntf_ref, void *param)
+void ut_rx_node_real(const char *file, uint32_t line, helper_node_opcode_t opcode, struct node_rx_pdu **ntf_ref, void *param)
 {
 	struct node_rx_pdu *ntf;
 
@@ -291,7 +291,7 @@ void ut_rx_node_real(const char *file, u32_t line, helper_node_opcode_t opcode, 
 }
 
 
-void ut_rx_q_is_empty_real(const char *file, u32_t line)
+void ut_rx_q_is_empty_real(const char *file, uint32_t line)
 {
 	struct node_rx_pdu *ntf;
 

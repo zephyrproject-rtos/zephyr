@@ -7,7 +7,7 @@
 #include <sys/slist.h>
 
 struct ull_tx_q {
-	u8_t pause_data; /* Data pause state of the tx queue */
+	uint8_t pause_data; /* Data pause state of the tx queue */
 
 	sys_slist_t tx_list; /* Data and control node_tx list */
 	sys_slist_t data_list; /* Data node_tx wait list */
