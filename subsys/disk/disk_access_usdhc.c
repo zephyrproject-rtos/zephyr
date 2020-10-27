@@ -617,8 +617,13 @@ enum usdhc_capability_flag {
 		USDHC_HOST_CTRL_CAP_VS30_MASK,
 	/*!< Support voltage 3.0V */
 	USDHC_SUPPORT_V180_FLAG =
+#if defined(CONFIG_BOARD_MM_SWIFTIO)
+		SDMMCHOST_NOT_SUPPORT,
+	/*!< No Support voltage 1.8V */
+#else
 		USDHC_HOST_CTRL_CAP_VS18_MASK,
 	/*!< Support voltage 1.8V */
+#endif
 	/* Put additional two flags in
 	 * HTCAPBLT_MBL's position.
 	 */
@@ -2803,6 +2808,30 @@ static int disk_usdhc_init(const struct device *dev)
 	return disk_access_register(&usdhc_disk);
 }
 
+#define DISK_ACCESS_USDHC_INIT_NONE(n)
+
+#define DISK_ACCESS_USDHC_INIT_PWR_PROPS(n)				\
+	.pwr_name = DT_INST_GPIO_LABEL(n, pwr_gpios),			\
+	.pwr_pin = DT_INST_GPIO_PIN(n, pwr_gpios),			\
+	.pwr_flags = DT_INST_GPIO_FLAGS(n, pwr_gpios),
+
+#define DISK_ACCESS_USDHC_INIT_CD_PROPS(n)				\
+	.detect_name = DT_INST_GPIO_LABEL(n, cd_gpios),			\
+	.detect_pin = DT_INST_GPIO_PIN(n, cd_gpios),			\
+	.detect_flags = DT_INST_GPIO_FLAGS(n, cd_gpios),
+
+#define DISK_ACCESS_USDHC_INIT_PWR(n)					\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, pwr_gpios),		\
+		    (DISK_ACCESS_USDHC_INIT_PWR_PROPS(n)),		\
+		    (DISK_ACCESS_USDHC_INIT_NONE(n)))
+
+#define DISK_ACCESS_USDHC_INIT_CD(n)					\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, cd_gpios),			\
+		    (DISK_ACCESS_USDHC_INIT_CD_PROPS(n)),		\
+		    (DISK_ACCESS_USDHC_INIT_NONE(n)))
+
+#define DISK_ACCESS_USDHC_INIT(n)					\
+
 #define DISK_ACCESS_USDHC_INIT(n)					\
 	static const struct usdhc_config usdhc_config_##n = {		\
 		.base = (USDHC_Type  *) DT_INST_REG_ADDR(n),		\
@@ -2810,12 +2839,8 @@ static int disk_usdhc_init(const struct device *dev)
 		.clock_subsys =						\
 		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
 		.nusdhc = n,						\
-		.pwr_name = DT_INST_GPIO_LABEL(n, pwr_gpios),		\
-		.pwr_pin = DT_INST_GPIO_PIN(n, pwr_gpios),		\
-		.pwr_flags = DT_INST_GPIO_FLAGS(n, pwr_gpios),		\
-		.detect_name = DT_INST_GPIO_LABEL(n, cd_gpios),		\
-		.detect_pin = DT_INST_GPIO_PIN(n, cd_gpios),		\
-		.detect_flags = DT_INST_GPIO_FLAGS(n, cd_gpios),	\
+		DISK_ACCESS_USDHC_INIT_PWR(n)				\
+		DISK_ACCESS_USDHC_INIT_CD(n)				\
 		.data_timeout = USDHC_DATA_TIMEOUT,			\
 		.endian = USDHC_LITTLE_ENDIAN,				\
 		.read_watermark = USDHC_READ_WATERMARK_LEVEL,		\
