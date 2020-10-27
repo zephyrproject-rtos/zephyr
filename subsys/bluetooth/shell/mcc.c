@@ -11,9 +11,11 @@
 
 #include <stdlib.h>
 #include <bluetooth/mcc.h>
+#include <shell/shell.h>
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/conn.h>
 
 #include "../host/audio/uint48_util.h"
-#include "mcc.h"
 #include "../host/audio/otc.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCS)
