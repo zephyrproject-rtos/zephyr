@@ -420,7 +420,8 @@ class RimageSigner(Signer):
         board = cache['CACHED_BOARD']
         log.inf('Signing for board ' + board)
         target = self.edt_get_rimage_target(board)
-        log.inf('Signing for SOC target ' + target)
+        conf = target + '.toml'
+        log.inf('Signing for SOC target ' + target + ' using ' + conf)
 
         if not args.quiet:
             log.inf('Signing with tool {}'.format(tool_path))
@@ -428,11 +429,24 @@ class RimageSigner(Signer):
         bootloader = str(b / 'zephyr' / 'bootloader.elf.mod')
         kernel = str(b / 'zephyr' / 'zephyr.elf.mod')
         out_bin = str(b / 'zephyr' / 'zephyr.ri')
+        out_xman = str(b / 'zephyr' / 'zephyr.ri.xman')
+        out_tmp = str(b / 'zephyr' / 'zephyr.rix')
+        rimage_conf = pathlib.Path(cache['RIMAGE_CONFIG_PATH'])
+        conf_path = str(rimage_conf / conf)
 
         sign_base = ([tool_path] + args.tool_args +
-                     ['-o', out_bin, '-m', target, '-i', '3'] +
+                     ['-o', out_bin, '-c', conf_path, '-i', '3', '-e'] +
                      [bootloader, kernel])
 
         if not args.quiet:
             log.inf(quote_sh_list(sign_base))
         subprocess.check_call(sign_base)
+
+        filenames = [out_xman, out_bin]
+        with open(out_tmp, 'wb') as outfile:
+            for fname in filenames:
+                with open(fname, 'rb') as infile:
+                    outfile.write(infile.read())
+
+        os.remove(out_bin)
+        os.rename(out_tmp, out_bin)
