@@ -71,6 +71,9 @@ struct pcie_ep_driver_api {
 	int (*register_reset_cb)(const struct device *dev,
 				 enum pcie_reset reset,
 				 pcie_ep_reset_callback_t cb, void *arg);
+	int (*dma_xfer)(const struct device *dev, uint64_t mapped_addr,
+			uintptr_t local_addr, uint32_t size,
+			enum xfer_direction dir);
 };
 
 /**
@@ -219,6 +222,41 @@ static inline int pcie_ep_register_reset_cb(const struct device *dev,
 
 	if (api->register_reset_cb) {
 		return api->register_reset_cb(dev, reset, cb, arg);
+	}
+
+	return -ENOTSUP;
+}
+
+/**
+ * @brief Data transfer between mapped Host memory and device memory with
+ *	  "System DMA". The term "System DMA" is used to clarify that we
+ *	  are not talking about dedicated "PCIe DMA"; rather the one
+ *	  which does not understand PCIe address directly, and
+ *	  uses the mapped Host memory.
+ *
+ * @details If DMA controller is available in the EP device, this API can be
+ *	    used to achieve data transfer between mapped Host memory,
+ *	    i.e. outbound memory and EP device's local memory with DMA
+ *
+ * @param   dev         Pointer to the device structure for the driver instance
+ * @param   mapped_addr Mapped Host memory address
+ * @param   local_addr  Device memory address
+ * @param   size        DMA transfer length (bytes)
+ * @param   dir         Direction of DMA transfer
+ *
+ * @return 0 if successful, negative errno code if failure.
+ */
+
+static inline int pcie_ep_dma_xfer(const struct device *dev,
+				   uint64_t mapped_addr,
+				   uintptr_t local_addr, uint32_t size,
+				   const enum xfer_direction dir)
+{
+	const struct pcie_ep_driver_api *api =
+			(const struct pcie_ep_driver_api *)dev->api;
+
+	if (api->dma_xfer) {
+		return api->dma_xfer(dev, mapped_addr, local_addr, size, dir);
 	}
 
 	return -ENOTSUP;
