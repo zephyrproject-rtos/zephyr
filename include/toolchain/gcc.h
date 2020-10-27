@@ -474,6 +474,21 @@ do {                                                                    \
 		_value_a_ < _value_b_ ? _value_a_ : _value_b_; \
 	})
 
+/** @brief Return a value clamped to a given range.
+ *
+ * Macro ensures that expressions are evaluated only once. See @ref Z_MAX for
+ * macro limitations.
+ */
+#define Z_CLAMP(val, low, high) ({                                             \
+		/* random suffix to avoid naming conflict */                   \
+		__typeof__(val) _value_val_ = (val);                           \
+		__typeof__(low) _value_low_ = (low);                           \
+		__typeof__(high) _value_high_ = (high);                        \
+		(_value_val_ < _value_low_)  ? _value_low_ :                   \
+		(_value_val_ > _value_high_) ? _value_high_ :                  \
+					       _value_val_;                    \
+	})
+
 /**
  * @brief Calculate power of two ceiling for some nonzero value
  *

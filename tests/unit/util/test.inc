@@ -203,10 +203,10 @@ static int inc_func(void)
 	return a++;
 }
 
-/* Test checks if @ref Z_MAX and @ref Z_MIN return correct result and perform
- * single evaluation of input arguments.
+/* Test checks if @ref Z_MAX, @ref Z_MIN and @ref Z_CLAMP return correct result
+ * and perform single evaluation of input arguments.
  */
-static void test_z_max_z_min(void)
+static void test_z_max_z_min_z_clamp(void)
 {
 	zassert_equal(Z_MAX(inc_func(), 0), 1, "Unexpected macro result");
 	/* Z_MAX should have call inc_func only once */
@@ -215,6 +215,31 @@ static void test_z_max_z_min(void)
 	zassert_equal(Z_MIN(inc_func(), 2), 2, "Unexpected macro result");
 	/* Z_MIN should have call inc_func only once */
 	zassert_equal(inc_func(), 4, "Unexpected return value");
+
+	zassert_equal(Z_CLAMP(inc_func(), 1, 3), 3, "Unexpected macro result");
+	/* Z_CLAMP should have call inc_func only once */
+	zassert_equal(inc_func(), 6, "Unexpected return value");
+
+	zassert_equal(Z_CLAMP(inc_func(), 10, 15), 10,
+		      "Unexpected macro result");
+	/* Z_CLAMP should have call inc_func only once */
+	zassert_equal(inc_func(), 8, "Unexpected return value");
+}
+
+static void test_CLAMP(void)
+{
+	zassert_equal(CLAMP(5, 3, 7), 5, "Unexpected clamp result");
+	zassert_equal(CLAMP(3, 3, 7), 3, "Unexpected clamp result");
+	zassert_equal(CLAMP(7, 3, 7), 7, "Unexpected clamp result");
+	zassert_equal(CLAMP(1, 3, 7), 3, "Unexpected clamp result");
+	zassert_equal(CLAMP(8, 3, 7), 7, "Unexpected clamp result");
+
+	zassert_equal(CLAMP(-5, -7, -3), -5, "Unexpected clamp result");
+	zassert_equal(CLAMP(-9, -7, -3), -7, "Unexpected clamp result");
+	zassert_equal(CLAMP(1, -7, -3), -3, "Unexpected clamp result");
+
+	zassert_equal(CLAMP(0xffffffffaULL, 0xffffffff0ULL, 0xfffffffffULL),
+		      0xffffffffaULL, "Unexpected clamp result");
 }
 
 static void test_FOR_EACH(void)
@@ -433,7 +458,8 @@ void test_cc(void)
 			 ztest_unit_test(test_IF_ENABLED),
 			 ztest_unit_test(test_UTIL_LISTIFY),
 			 ztest_unit_test(test_MACRO_MAP_CAT),
-			 ztest_unit_test(test_z_max_z_min),
+			 ztest_unit_test(test_z_max_z_min_z_clamp),
+			 ztest_unit_test(test_CLAMP),
 			 ztest_unit_test(test_FOR_EACH),
 			 ztest_unit_test(test_FOR_EACH_NONEMPTY_TERM),
 			 ztest_unit_test(test_FOR_EACH_FIXED_ARG),
