@@ -194,7 +194,7 @@ static void lp_comm_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 	ll_rx_enqueue(ntf);
 }
 
-static void lp_comm_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_comm_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (ctx->proc) {
 	case PROC_LE_PING:
@@ -236,7 +236,7 @@ static void lp_comm_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_
 	}
 }
 
-static void lp_comm_send_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_comm_send_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (ctx->proc) {
 	case PROC_LE_PING:
@@ -285,7 +285,7 @@ static void lp_comm_send_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_
 	}
 }
 
-static void lp_comm_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_comm_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case LP_COMMON_EVT_RUN:
@@ -301,12 +301,12 @@ static void lp_comm_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t
 	}
 }
 
-static void lp_comm_st_wait_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_comm_st_wait_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
 }
 
-static void lp_comm_st_wait_tx_ack(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_comm_st_wait_tx_ack(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case LP_COMMON_EVT_ACK:
@@ -357,7 +357,7 @@ static void lp_comm_rx_decode(struct ull_cp_conn *conn, struct proc_ctx *ctx, st
 	}
 }
 
-static void lp_comm_st_wait_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_comm_st_wait_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case LP_COMMON_EVT_RESPONSE:
@@ -369,12 +369,12 @@ static void lp_comm_st_wait_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u
 	}
 }
 
-static void lp_comm_st_wait_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_comm_st_wait_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
 }
 
-static void lp_comm_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_comm_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (ctx->state) {
 	case LP_COMMON_STATE_IDLE:
@@ -481,7 +481,7 @@ static void rp_comm_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 	tx_enqueue(conn, tx);
 }
 
-static void rp_comm_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_comm_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case RP_COMMON_EVT_RUN:
@@ -493,7 +493,7 @@ static void rp_comm_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t
 	}
 }
 
-static void rp_comm_send_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_comm_send_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (ctx->proc) {
 	case PROC_LE_PING:
@@ -547,7 +547,7 @@ static void rp_comm_send_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_
 	}
 }
 
-static void rp_comm_st_wait_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_comm_st_wait_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case RP_COMMON_EVT_REQUEST:
@@ -564,17 +564,17 @@ static void rp_comm_st_wait_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u
 	}
 }
 
-static void rp_comm_st_wait_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_comm_st_wait_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
 }
 
-static void rp_comm_st_wait_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_comm_st_wait_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
 }
 
-static void rp_comm_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_comm_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (ctx->state) {
 	case RP_COMMON_STATE_IDLE:

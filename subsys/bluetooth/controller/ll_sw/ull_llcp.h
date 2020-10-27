@@ -14,22 +14,22 @@ struct ull_cp_conn {
 		/* Local Request */
 		struct {
 			sys_slist_t pend_proc_list;
-			u8_t state;
+			uint8_t state;
 		} local;
 
 		/* Remote Request */
 		struct {
 			sys_slist_t pend_proc_list;
-			u8_t state;
-			u8_t collision;
-			u8_t incompat;
-			u8_t reject_opcode;
+			uint8_t state;
+			uint8_t collision;
+			uint8_t incompat;
+			uint8_t reject_opcode;
 		} remote;
 
 		/* Version Exchange Procedure State */
 		struct {
-			u8_t sent;
-			u8_t valid;
+			uint8_t sent;
+			uint8_t valid;
 			struct pdu_data_llctrl_version_ind cached;
 		} vex;
 
@@ -42,31 +42,31 @@ struct ull_cp_conn {
 		 * see BT Core spec 5.2 Vol 6, Part B, sec. 5.1.4
 		 */
 		struct {
-			u8_t sent;
-			u8_t valid;
-			u64_t features_peer;
-			u64_t features_used;
+			uint8_t sent;
+			uint8_t valid;
+			uint64_t features_peer;
+			uint64_t features_used;
 		} fex;
 
 		/* Minimum used channels procedure state */
 		struct {
-			u8_t phys;
-			u8_t min_used_chans;
+			uint8_t phys;
+			uint8_t min_used_chans;
 		} muc;
 
 	} llcp;
 
 	struct mocked_lll_conn {
 		/* Encryption State (temporary) */
-		u8_t enc_tx;
-		u8_t enc_rx;
+		uint8_t enc_tx;
+		uint8_t enc_rx;
 
 		/**/
-		 u16_t latency_prepare;
-		 u16_t latency_event;
-		 u16_t event_counter;
+		 uint16_t latency_prepare;
+		 uint16_t latency_event;
+		 uint16_t event_counter;
 
-		 u8_t role;
+		 uint8_t role;
 	} lll;
 };
 
@@ -88,7 +88,7 @@ void ull_cp_conn_init(struct ull_cp_conn *conn);
 /**
  * @brief XXX
  */
-void ull_cp_state_set(struct ull_cp_conn *conn, u8_t state);
+void ull_cp_state_set(struct ull_cp_conn *conn, uint8_t state);
 
 /**
  *
@@ -118,27 +118,27 @@ void ull_cp_rx(struct ull_cp_conn *conn, struct node_rx_pdu *rx);
 /**
  * @brief Initiate a LE Ping Procedure.
  */
-u8_t ull_cp_le_ping(struct ull_cp_conn *conn);
+uint8_t ull_cp_le_ping(struct ull_cp_conn *conn);
 
 /**
  * @brief Initiate a Version Exchange Procedure.
  */
-u8_t ull_cp_version_exchange(struct ull_cp_conn *conn);
+uint8_t ull_cp_version_exchange(struct ull_cp_conn *conn);
 
 /**
  * @brief Initiate a Featue Exchange Procedure.
  */
-u8_t ull_cp_feature_exchange(struct ull_cp_conn *conn);
+uint8_t ull_cp_feature_exchange(struct ull_cp_conn *conn);
 
 /**
  * @brief Initiate a Minimum used channels Procedure.
  */
-u8_t ull_cp_min_used_chans(struct ull_cp_conn *conn, u8_t phys, u8_t min_used_chans);
+uint8_t ull_cp_min_used_chans(struct ull_cp_conn *conn, uint8_t phys, uint8_t min_used_chans);
 
 /**
  * @brief Initiate a Encryption Start Procedure.
  */
-u8_t ull_cp_encryption_start(struct ull_cp_conn *conn);
+uint8_t ull_cp_encryption_start(struct ull_cp_conn *conn);
 
 /**
  */
@@ -151,4 +151,4 @@ void ull_cp_ltk_req_neq_reply(struct ull_cp_conn *conn);
 /**
  * @brief Initiate a PHY Update Procedure.
  */
-u8_t ull_cp_phy_update(struct ull_cp_conn *conn);
+uint8_t ull_cp_phy_update(struct ull_cp_conn *conn);
