@@ -26,7 +26,7 @@ struct proc_ctx {
 	enum pdu_data_llctrl_type response_opcode;
 
 	/* Procedure FSM */
-	u8_t state;
+	uint8_t state;
 
 	/* Expected opcode to be recieved next */
 	enum pdu_data_llctrl_type rx_opcode;
@@ -47,24 +47,24 @@ struct proc_ctx {
 	union {
 		/* Used by Minimum Used Channels Procedure */
 		struct {
-			u8_t phys;
-			u8_t min_used_chans;
+			uint8_t phys;
+			uint8_t min_used_chans;
 		} muc;
 
 		/* Used by Encryption Procedure */
 		struct {
-			u8_t error;
+			uint8_t error;
 		} enc;
 
 		/* PHY Update */
 		struct {
-			u8_t error;
-			u16_t instant;
+			uint8_t error;
+			uint16_t instant;
 		} pu;
 
 	} data;
 	struct {
-		u8_t type;
+		uint8_t type;
 	} unknown_response;
 
 };
@@ -633,16 +633,16 @@ static inline void pdu_encode_start_enc_rsp(struct pdu_data *pdu)
 	return ull_cp_priv_pdu_encode_start_enc_rsp(pdu);
 }
 
-void ull_cp_priv_pdu_encode_reject_ind(struct pdu_data *pdu, u8_t error_code);
+void ull_cp_priv_pdu_encode_reject_ind(struct pdu_data *pdu, uint8_t error_code);
 
-static inline void pdu_encode_reject_ind(struct pdu_data *pdu, u8_t error_code)
+static inline void pdu_encode_reject_ind(struct pdu_data *pdu, uint8_t error_code)
 {
 	return ull_cp_priv_pdu_encode_reject_ind(pdu, error_code);
 }
 
-void ull_cp_priv_pdu_encode_reject_ext_ind(struct pdu_data *pdu, u8_t reject_opcode, u8_t error_code);
+void ull_cp_priv_pdu_encode_reject_ext_ind(struct pdu_data *pdu, uint8_t reject_opcode, uint8_t error_code);
 
-static inline void pdu_encode_reject_ext_ind(struct pdu_data *pdu, u8_t reject_opcode, u8_t error_code)
+static inline void pdu_encode_reject_ext_ind(struct pdu_data *pdu, uint8_t reject_opcode, uint8_t error_code)
 {
 	return ull_cp_priv_pdu_encode_reject_ext_ind(pdu, reject_opcode, error_code);
 }
@@ -665,9 +665,9 @@ static inline void pdu_encode_phy_rsp(struct pdu_data *pdu)
 	return ull_cp_priv_pdu_encode_phy_rsp(pdu);
 }
 
-void ull_cp_priv_pdu_encode_phy_update_ind(struct pdu_data *pdu, u16_t instant);
+void ull_cp_priv_pdu_encode_phy_update_ind(struct pdu_data *pdu, uint16_t instant);
 
-static inline void pdu_encode_phy_update_ind(struct pdu_data *pdu, u16_t instant)
+static inline void pdu_encode_phy_update_ind(struct pdu_data *pdu, uint16_t instant)
 {
 	return ull_cp_priv_pdu_encode_phy_update_ind(pdu, instant);
 }

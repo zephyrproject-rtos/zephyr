@@ -64,7 +64,7 @@ static void setup(void)
  */
 void test_version_exchange_mas_loc(void)
 {
-	u8_t err;
+	uint8_t err;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
@@ -110,7 +110,7 @@ void test_version_exchange_mas_loc(void)
 
 void test_version_exchange_mas_loc_2(void)
 {
-	u8_t err;
+	uint8_t err;
 
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
@@ -204,7 +204,7 @@ void test_version_exchange_mas_rem(void)
  */
 void test_version_exchange_mas_rem_2(void)
 {
-	u8_t err;
+	uint8_t err;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
@@ -276,7 +276,7 @@ void test_version_exchange_mas_rem_2(void)
  */
 void test_version_exchange_mas_loc_twice(void)
 {
-	u8_t err;
+	uint8_t err;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
