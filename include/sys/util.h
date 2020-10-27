@@ -179,6 +179,16 @@ extern "C" {
 #endif
 
 /**
+ * @def CLAMP
+ * @brief Clamp a value to a given range.
+ * @note Arguments are evaluated multiple times.
+ */
+#ifndef CLAMP
+/* Use Z_CLAMP for a GCC-only, single evaluation version */
+#define CLAMP(val, low, high) (((val) <= (low)) ? (low) : MIN(val, high))
+#endif
+
+/**
  * @brief Is @p x a power of two?
  * @param x value to check
  * @return true if @p x is a power of two, false otherwise
