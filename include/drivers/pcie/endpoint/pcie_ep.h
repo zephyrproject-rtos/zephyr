@@ -267,10 +267,44 @@ static inline int pcie_ep_dma_xfer(const struct device *dev,
  *
  * @details Helper API to achieve data transfer with memcpy
  *          through PCIe outbound memory
+ *
+ * @param dev         Pointer to the device structure for the driver instance
+ * @param pcie_addr   Host memory buffer address
+ * @param local_addr  Local memory buffer address
+ * @param size        Data transfer size (bytes)
+ * @param ob_mem_type Hint if lowmem/highmem outbound region has to be used
+ *                    (PCIE_OB_LOWMEM / PCIE_OB_HIGHMEM / PCIE_OB_ANYMEM),
+ *                    should be PCIE_OB_LOWMEM if bus master cannot generate
+ *                    more than 32-bit address
+ * @param dir         Data transfer direction (HOST_TO_DEVICE / DEVICE_TO_HOST)
+ *
+ * @return 0 if successful, negative errno code if failure.
  */
 int pcie_ep_xfer_data_memcpy(const struct device *dev, uint64_t pcie_addr,
 			     uintptr_t *local_addr, uint32_t size,
 			     enum pcie_ob_mem_type ob_mem_type,
 			     enum xfer_direction dir);
+
+/**
+ * @brief Data transfer using system DMA
+ *
+ * @details Helper API to achieve data transfer with system DMA through PCIe
+ *          outbound memory, this API is based off pcie_ep_xfer_data_memcpy,
+ *          here we use "system dma" instead of memcpy
+ *
+ * @param dev         Pointer to the device structure for the driver instance
+ * @param pcie_addr   Host memory buffer address
+ * @param local_addr  Local memory buffer address
+ * @param size        Data transfer size (bytes)
+ * @param ob_mem_type Hint if lowmem/highmem outbound region has to be used
+ *                    (PCIE_OB_LOWMEM / PCIE_OB_HIGHMEM / PCIE_OB_ANYMEM)
+ * @param dir         Data transfer direction (HOST_TO_DEVICE / DEVICE_TO_HOST)
+ *
+ * @return 0 if successful, negative errno code if failure.
+ */
+int pcie_ep_xfer_data_dma(const struct device *dev, uint64_t pcie_addr,
+			  uintptr_t *local_addr, uint32_t size,
+			  enum pcie_ob_mem_type ob_mem_type,
+			  enum xfer_direction dir);
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_PCIE_EP_H_ */
