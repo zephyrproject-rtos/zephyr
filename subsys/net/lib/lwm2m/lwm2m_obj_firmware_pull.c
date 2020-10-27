@@ -389,6 +389,7 @@ static void firmware_transfer(struct k_work *work)
 	ret = lwm2m_parse_peerinfo(server_addr, &firmware_ctx.remote_addr,
 				   &firmware_ctx.use_dtls);
 	if (ret < 0) {
+		LOG_ERR("Failed to parse server URI.");
 		goto error;
 	}
 
@@ -431,6 +432,7 @@ int lwm2m_firmware_start_transfer(char *package_uri)
 	}
 
 	(void)memset(&firmware_ctx, 0, sizeof(struct lwm2m_ctx));
+	firmware_ctx.sock_fd = -1;
 	firmware_retry = 0;
 	k_work_init(&firmware_work, firmware_transfer);
 	lwm2m_firmware_set_update_state(STATE_DOWNLOADING);
