@@ -10,7 +10,7 @@
 
 #define CYC_PER_TICK ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec()	\
 			      / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
-#define MAX_CYC 0xffffffffu
+#define MAX_CYC INT_MAX
 #define MAX_TICKS ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
 #define MIN_DELAY 1000
 
