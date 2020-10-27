@@ -213,6 +213,18 @@ config X86_MMU_PAGE_POOL_PAGES
 
 	  Unused pages in this pool cannot be used for other purposes.
 
+config X86_COMMON_PAGE_TABLE
+	bool "Use a single page table for all threads"
+	default n
+	depends on USERSPACE
+	depends on !SMP
+	depends on !X86_KPTI
+	help
+	  If this option is enabled, userspace memory domains will not have their
+	  own page tables. Instead, context switching operations will modify
+	  page tables in place. This is much slower, but uses much less RAM
+	  for page tables.
+
 config X86_NO_MELTDOWN
 	bool
 	help
