@@ -119,18 +119,6 @@ static void iproc_pcie_unmap_addr(const struct device *dev,
 
 	key = k_spin_lock(&ctx->ob_map_lock);
 
-	/*
-	 * When doing Host writes using PCIe outbound window, it is seen
-	 * that before the writes gets completed using the existing outbound
-	 * window mapping, next mapping is overwriting it, causing few bytes
-	 * write failure with former mapping.
-	 *
-	 * To safeguard outbound window mapping, perform PCIe read in unmap,
-	 * which ensures that all PCIe writes before the read
-	 * are completed with this window.
-	 */
-	sys_read8(mapped_addr);
-
 	if (mapped_addr >> 32) {
 		ctx->highmem_in_use = false;
 	} else {
