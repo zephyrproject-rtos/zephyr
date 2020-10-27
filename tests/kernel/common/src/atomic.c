@@ -16,13 +16,65 @@
  */
 
 /**
- * @brief Verify automic functionalities
+ * @brief Verify atomic functionalities
+ * @details
+ * Test Objective:
+ * - Test the function of the atomic operation API is correct.
+ *
+ * Test techniques:
+ * - Dynamic analysis and testing
+ * - Functional and black box testing
+ *
+ * Prerequisite Conditions:
+ * - N/A
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Call the API interface of the following atomic operations in turn,
+ * judge the change of function return value and target operands.
+ * - atomic_cas()
+ * - atomic_ptr_cas()
+ * - atomic_add()
+ * - atomic_sub()
+ * - atomic_inc()
+ * - atomic_dec()
+ * - atomic_get()
+ * - atomic_ptr_get()
+ * - atomic_set()
+ * - atomic_ptr_set()
+ * - atomic_clear()
+ * - atomic_ptr_clear()
+ * - atomic_or()
+ * - atomic_xor()
+ * - atomic_and()
+ * - atomic_nand()
+ * - atomic_test_bit()
+ * - atomic_test_and_clear_bit()
+ * - atomic_test_and_set_bit()
+ * - atomic_clear_bit()
+ * - atomic_set_bit()
+ * - atomic_set_bit_to()
+ * - ATOMIC_DEFINE
+ *
+ * Expected Test Result:
+ * - The change of function return value and target operands is correct.
+ *
+ * Pass/Fail Criteria:
+ * - Successful if check points in test procedure are all passed, otherwise failure.
+ *
+ * Assumptions and Constraints:
+ * - N/A
  *
  * @see atomic_cas(), atomic_add(), atomic_sub(),
  * atomic_inc(), atomic_dec(), atomic_get(), atomic_set(),
  * atomic_clear(), atomic_or(), atomic_and(), atomic_xor(),
  * atomic_nand(), atomic_test_bit(), atomic_test_and_clear_bit(),
- * atomic_test_and_set_bit(), atomic_clear_bit(), atomic_set_bit()
+ * atomic_test_and_set_bit(), atomic_clear_bit(), atomic_set_bit(),
+ * ATOMIC_DEFINE
+ *
+ * @ingroup kernel_common_tests
  */
 void test_atomic(void)
 {
