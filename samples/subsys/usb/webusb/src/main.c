@@ -120,6 +120,17 @@ USB_DEVICE_BOS_DESC_DEFINE_CAP struct usb_bos_msosv2_desc {
 	},
 };
 
+USB_DEVICE_BOS_DESC_DEFINE_CAP struct usb_bos_capability_lpm bos_cap_lpm = {
+	.bLength = sizeof(struct usb_bos_capability_lpm),
+	.bDescriptorType = USB_DEVICE_CAPABILITY_DESC,
+	.bDevCapabilityType = USB_BOS_CAPABILITY_EXTENSION,
+	/**
+	 * BIT(1) - LPM support
+	 * BIT(2) - BESL support
+	 */
+	.bmAttributes = BIT(1) | BIT(2),
+};
+
 /* WebUSB Device Requests */
 static const uint8_t webusb_allowed_origins[] = {
 	/* Allowed Origins Header:
@@ -289,6 +300,7 @@ void main(void)
 
 	usb_bos_register_cap((void *)&bos_cap_webusb);
 	usb_bos_register_cap((void *)&bos_cap_msosv2);
+	usb_bos_register_cap((void *)&bos_cap_lpm);
 
 	/* Set the custom and vendor request handlers */
 	webusb_register_request_handlers(&req_handlers);
