@@ -96,14 +96,14 @@ extern void ll_rx_enqueue(struct node_rx_pdu *rx);
  * LLCP Local Procedure PHY Update FSM
  */
 
-static u16_t lp_event_counter(struct ull_cp_conn *conn)
+static uint16_t lp_event_counter(struct ull_cp_conn *conn)
 {
 	/* TODO(thoh): Mocked lll_conn */
 	struct mocked_lll_conn *lll;
-	u16_t event_counter;
+	uint16_t event_counter;
 
 	/* TODO(thoh): Lazy hardcoded */
-	u16_t lazy = 0;
+	uint16_t lazy = 0;
 
 	/**/
 	lll = &conn->lll;
@@ -114,7 +114,7 @@ static u16_t lp_event_counter(struct ull_cp_conn *conn)
 	return event_counter;
 }
 
-static void lp_pu_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t opcode)
+static void lp_pu_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 {
 	struct node_tx *tx;
 	struct pdu_data *pdu;
@@ -161,7 +161,7 @@ static void lp_pu_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 	ll_rx_enqueue(ntf);
 }
 
-static void lp_pu_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_pu_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	if (!ntf_alloc_is_available()) {
 		ctx->state = LP_PU_STATE_WAIT_NTF;
@@ -172,7 +172,7 @@ static void lp_pu_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t 
 	}
 }
 
-static void lp_pu_send_phy_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_pu_send_phy_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	if (!tx_alloc_is_available() || rr_get_collision(conn)) {
 		ctx->state = LP_PU_STATE_WAIT_TX_PHY_REQ;
@@ -197,7 +197,7 @@ static void lp_pu_send_phy_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u
 	}
 }
 
-static void lp_pu_send_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_pu_send_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	if (!tx_alloc_is_available()) {
 		ctx->state = LP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
@@ -210,7 +210,7 @@ static void lp_pu_send_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx 
 	}
 }
 
-static void lp_pu_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_pu_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
 	switch (evt) {
@@ -223,7 +223,7 @@ static void lp_pu_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t e
 	}
 }
 
-static void lp_pu_st_wait_tx_phy_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_pu_st_wait_tx_phy_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case LP_PU_EVT_RUN:
@@ -235,7 +235,7 @@ static void lp_pu_st_wait_tx_phy_req(struct ull_cp_conn *conn, struct proc_ctx *
 	}
 }
 
-static void lp_pu_st_wait_rx_phy_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_pu_st_wait_rx_phy_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case LP_PU_EVT_RUN:
@@ -260,7 +260,7 @@ static void lp_pu_st_wait_rx_phy_rsp(struct ull_cp_conn *conn, struct proc_ctx *
 	}
 }
 
-static void lp_pu_st_wait_tx_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_pu_st_wait_tx_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case LP_PU_EVT_RUN:
@@ -272,7 +272,7 @@ static void lp_pu_st_wait_tx_phy_update_ind(struct ull_cp_conn *conn, struct pro
 	}
 }
 
-static void lp_pu_st_wait_rx_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_pu_st_wait_rx_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case LP_PU_EVT_PHY_UPDATE_IND:
@@ -289,9 +289,9 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ull_cp_conn *conn, struct pro
 	}
 }
 
-static void lp_pu_check_instant(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_pu_check_instant(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	u16_t event_counter = lp_event_counter(conn);
+	uint16_t event_counter = lp_event_counter(conn);
 	if (((event_counter - ctx->data.pu.instant) & 0xFFFF) <= 0x7FFF) {
 		rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 		ctx->data.pu.error = BT_HCI_ERR_SUCCESS;
@@ -299,7 +299,7 @@ static void lp_pu_check_instant(struct ull_cp_conn *conn, struct proc_ctx *ctx, 
 	}
 }
 
-static void lp_pu_st_wait_instant(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_pu_st_wait_instant(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
 	switch (evt) {
@@ -312,7 +312,7 @@ static void lp_pu_st_wait_instant(struct ull_cp_conn *conn, struct proc_ctx *ctx
 	}
 }
 
-static void lp_pu_st_wait_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_pu_st_wait_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case LP_PU_EVT_RUN:
@@ -324,7 +324,7 @@ static void lp_pu_st_wait_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8
 	}
 }
 
-static void lp_pu_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void lp_pu_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (ctx->state) {
 	case LP_PU_STATE_IDLE:
@@ -391,14 +391,14 @@ void ull_cp_priv_lp_pu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void 
  * LLCP Remote Procedure PHY Update FSM
  */
 
-static u16_t rp_event_counter(struct ull_cp_conn *conn)
+static uint16_t rp_event_counter(struct ull_cp_conn *conn)
 {
 	/* TODO(thoh): Mocked lll_conn */
 	struct mocked_lll_conn *lll;
-	u16_t event_counter;
+	uint16_t event_counter;
 
 	/* TODO(thoh): Lazy hardcoded */
-	u16_t lazy = 0;
+	uint16_t lazy = 0;
 
 	/**/
 	lll = &conn->lll;
@@ -409,7 +409,7 @@ static u16_t rp_event_counter(struct ull_cp_conn *conn)
 	return event_counter;
 }
 
-static void rp_pu_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t opcode)
+static void rp_pu_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 {
 	struct node_tx *tx;
 	struct pdu_data *pdu;
@@ -456,7 +456,7 @@ static void rp_pu_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 	ll_rx_enqueue(ntf);
 }
 
-static void rp_pu_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_pu_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	if (!ntf_alloc_is_available()) {
 		ctx->state = RP_PU_STATE_WAIT_NTF;
@@ -467,7 +467,7 @@ static void rp_pu_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t 
 	}
 }
 
-static void rp_pu_send_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_pu_send_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	if (!tx_alloc_is_available()) {
 		ctx->state = RP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
@@ -480,7 +480,7 @@ static void rp_pu_send_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx 
 	}
 }
 
-static void rp_pu_send_phy_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_pu_send_phy_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	if (!tx_alloc_is_available()) {
 		ctx->state = RP_PU_STATE_WAIT_TX_PHY_RSP;
@@ -491,7 +491,7 @@ static void rp_pu_send_phy_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u
 	}
 }
 
-static void rp_pu_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_pu_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
 	switch (evt) {
@@ -504,7 +504,7 @@ static void rp_pu_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t e
 	}
 }
 
-static void rp_pu_st_wait_rx_phy_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_pu_st_wait_rx_phy_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case RP_PU_EVT_PHY_REQ:
@@ -526,7 +526,7 @@ static void rp_pu_st_wait_rx_phy_req(struct ull_cp_conn *conn, struct proc_ctx *
 	}
 }
 
-static void rp_pu_st_wait_tx_phy_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_pu_st_wait_tx_phy_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case RP_PU_EVT_RUN:
@@ -538,7 +538,7 @@ static void rp_pu_st_wait_tx_phy_rsp(struct ull_cp_conn *conn, struct proc_ctx *
 	}
 }
 
-static void rp_pu_st_wait_tx_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_pu_st_wait_tx_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case RP_PU_EVT_RUN:
@@ -550,7 +550,7 @@ static void rp_pu_st_wait_tx_phy_update_ind(struct ull_cp_conn *conn, struct pro
 	}
 }
 
-static void rp_pu_st_wait_rx_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_pu_st_wait_rx_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case RP_PU_EVT_PHY_UPDATE_IND:
@@ -563,16 +563,16 @@ static void rp_pu_st_wait_rx_phy_update_ind(struct ull_cp_conn *conn, struct pro
 	}
 }
 
-static void rp_pu_check_instant(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_pu_check_instant(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	u16_t event_counter = rp_event_counter(conn);
+	uint16_t event_counter = rp_event_counter(conn);
 	if (((event_counter - ctx->data.pu.instant) & 0xFFFF) <= 0x7FFF) {
 		ctx->data.pu.error = BT_HCI_ERR_SUCCESS;
 		rp_pu_complete(conn, ctx, evt, param);
 	}
 }
 
-static void rp_pu_st_wait_instant(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_pu_st_wait_instant(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
 	switch (evt) {
@@ -585,7 +585,7 @@ static void rp_pu_st_wait_instant(struct ull_cp_conn *conn, struct proc_ctx *ctx
 	}
 }
 
-static void rp_pu_st_wait_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_pu_st_wait_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (evt) {
 	case RP_PU_EVT_RUN:
@@ -597,7 +597,7 @@ static void rp_pu_st_wait_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8
 	}
 }
 
-static void rp_pu_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+static void rp_pu_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (ctx->state) {
 	case RP_PU_STATE_IDLE:
