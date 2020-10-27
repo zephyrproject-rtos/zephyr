@@ -707,9 +707,9 @@ irq_enter_unnested: /* Not nested: dump state to thread struct for __resume */
 #endif
 
 irq_dispatch:
-	movq x86_irq_funcs(,%rcx,8), %rbx
+	movq x86_irq_funcs(,%rcx,8), %rax
 	movq x86_irq_args(,%rcx,8), %rdi
-	call *%rbx
+	call *%rax
 
 	xorq %rax, %rax
 #ifdef CONFIG_X2APIC
