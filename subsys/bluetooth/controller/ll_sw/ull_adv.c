@@ -1702,7 +1702,6 @@ static void ticker_op_stop_cb(uint32_t status, void *param)
 
 static void disabled_cb(void *param)
 {
-	struct node_rx_ftr *ftr;
 	struct ll_adv_set *adv;
 	struct node_rx_pdu *rx;
 	struct node_rx_cc *cc;
@@ -1725,8 +1724,27 @@ static void disabled_cb(void *param)
 	memset(cc, 0x00, sizeof(struct node_rx_cc));
 	cc->status = BT_HCI_ERR_ADV_TIMEOUT;
 
-	ftr = &(rx->hdr.rx_ftr);
-	ftr->param = param;
+	rx->hdr.rx_ftr.param = param;
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	if (adv->lll.node_rx_adv_term) {
+		uint8_t handle;
+
+		ll_rx_put(link, rx);
+
+		handle = ull_adv_handle_get(adv);
+		LL_ASSERT(handle < BT_CTLR_ADV_SET);
+
+		rx = (void *)adv->lll.node_rx_adv_term;
+		rx->hdr.type = NODE_RX_TYPE_EXT_ADV_TERMINATE;
+		rx->hdr.handle = handle;
+		rx->hdr.rx_ftr.param_adv_term.status = BT_HCI_ERR_ADV_TIMEOUT;
+		rx->hdr.rx_ftr.param_adv_term.conn_handle = 0xffff;
+		rx->hdr.rx_ftr.param_adv_term.num_events = adv->event_counter;
+
+		link = rx->hdr.link;
+	}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	ll_rx_put(link, rx);
 	ll_rx_sched();
