@@ -100,7 +100,7 @@
  * https://github.com/zephyrproject-rtos/sdk-ng/issues/255
  */
 #if !defined(CONFIG_CPU_CORTEX_M1) && !defined(CONFIG_NIOS2) && \
-    !defined(CONFIG_SOC_QEMU_CORTEX_A53) && \
+	!defined(CONFIG_SOC_QEMU_CORTEX_A53) && \
 	(!defined(CONFIG_RISCV) || defined(CONFIG_RISCV_HAS_CPU_IDLE))
 #define HAS_POWERSAVE_INSTRUCTION
 #endif
@@ -431,15 +431,51 @@ static void _test_kernel_interrupts(disable_int_func disable_int,
 }
 
 /**
- *
  * @brief Test routines for disabling and enabling interrupts
  *
  * @ingroup kernel_context_tests
  *
- * This routine tests the routines for disabling and enabling interrupts.
- * These include irq_lock() and irq_unlock(), irq_disable() and irq_enable().
+ * @details
+ * Test Objective:
+ * - To verify kernel architecture layer shall provide a mechanism to
+ *   selectively disable and enable specific numeric interrupts.
+ * - This routine tests the routines for disabling and enabling interrupts.
+ *   These include irq_lock() and irq_unlock().
  *
- * @see irq_lock(), irq_unlock(), irq_disable(), irq_enable()
+ * Testing techniques:
+ * - Interface testing, function and black box testing,
+ *   dynamic analysis and testing
+ *
+ * Prerequisite Conditions:
+ * - CONFIG_TICKLESS_KERNEL is not set.
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Do action to align to a tick boundary.
+ * -# Left shift 4 bits for the value of counts.
+ * -# Call irq_lock() and restore its return value to imask.
+ * -# Call z_tick_get_32() and store its return value to tick.
+ * -# Repeat counts of calling z_tick_get_32().
+ * -# Call z_tick_get_32() and store its return value to tick2.
+ * -# Call irq_unlock() with parameter imask.
+ * -# Check if tick is equal to tick2.
+ * -# Repeat counts of calling z_tick_get_32().
+ * -# Call z_tick_get_32() and store its return value to tick2.
+ * -# Check if tick is NOT equal to tick2.
+ *
+ * Expected Test Result:
+ * - The ticks shall not increase while interrupt locked.
+ *
+ * Pass/Fail Criteria:
+ * - Successful if check points in test procedure are all passed, otherwise
+ *   failure.
+ *
+ * Assumptions and Constraints:
+ * - N/A
+ *
+ * @see irq_lock(), irq_unlock()
  */
 static void test_kernel_interrupts(void)
 {
@@ -452,15 +488,52 @@ static void test_kernel_interrupts(void)
 }
 
 /**
- *
  * @brief Test routines for disabling and enabling interrupts (disable timer)
  *
  * @ingroup kernel_context_tests
  *
- * This routine tests the routines for disabling and enabling interrupts.
- * These include irq_lock() and irq_unlock(), irq_disable() and irq_enable().
+ * @details
+ * Test Objective:
+ * - To verify the kernel architecture layer shall provide a mechanism to
+ *   simultenously mask all local CPU interrupts and return the previous mask
+ *   state for restoration.
+ * - This routine tests the routines for disabling and enabling interrupts.
+ *   These include irq_disable() and irq_enable().
  *
- * @see irq_lock(), irq_unlock(), irq_disable(), irq_enable()
+ * Testing techniques:
+ * - Interface testing, function and black box testing,
+ *   dynamic analysis and testing
+ *
+ * Prerequisite Conditions:
+ * - TICK_IRQ is defined.
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Do action to align to a tick boundary.
+ * -# Left shift 4 bit for the value of counts.
+ * -# Call irq_disable() and restore its return value to imask.
+ * -# Call z_tick_get_32() and store its return value to tick.
+ * -# Repeat counts of calling z_tick_get_32().
+ * -# Call z_tick_get_32() and store its return value to tick2.
+ * -# Call irq_enable() with parameter imask.
+ * -# Check if tick is equal to tick2.
+ * -# Repeat counts of calling z_tick_get_32().
+ * -# Call z_tick_get_32() and store its return value to tick2.
+ * -# Check if tick is NOT equal to tick2.
+ *
+ * Expected Test Result:
+ * - The ticks shall not increase while interrupt locked.
+ *
+ * Pass/Fail Criteria:
+ * - Successful if check points in test procedure are all passed, otherwise
+ *   failure.
+ *
+ * Assumptions and Constraints:
+ * - N/A
+ *
+ * @see irq_disable(), irq_enable()
  */
 static void test_kernel_timer_interrupts(void)
 {
