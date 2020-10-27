@@ -16,3 +16,31 @@ properties:
       description: microcode's physical memory address
     label:
       required: true
+    "#dma-cells":
+      const: 1
+
+# Parameter syntax
+dma-cells:
+  - channel
+
+description: |
+  A phandle to the DMA controller plus "channel" integer cell specifying
+  channel to be used for data transfer
+
+  Example for pl330 DMA Controller
+     pl330: pl330@48300000 {
+                  compatible = "arm,dma-pl330";
+                  ...
+                  dma-channels = <8>;
+                  #dma-cells = <1>;
+                  label = "PL330";
+            };
+
+  If PCIe EP client uses channel 0 for Tx DMA and channel 1 for Rx DMA
+     pcie0_ep: pcie@4e100000 {
+                  compatible = "brcm,iproc-pcie-ep";
+                  ...
+                  dmas = <&pl330 0>, <&pl330 1>;
+                  dma-names = "txdma", "rxdma";
+                  label = "PCIE_0";
+            };
