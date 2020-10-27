@@ -3235,9 +3235,9 @@ static inline void dle_max_time_get(const struct ll_conn *conn,
 	    (!feature_coded_phy && !feature_phy_2m)) {
 		rx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, PHY_1M);
 #if defined(CONFIG_BT_CTLR_PHY)
-		tx_time = MAX(MIN(PKT_US(LL_LENGTH_OCTETS_RX_MAX, PHY_1M),
-				  conn->default_tx_time),
-			      PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M));
+		tx_time = CLAMP(conn->default_tx_time,
+				PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M),
+				PKT_US(LL_LENGTH_OCTETS_RX_MAX, PHY_1M));
 #else /* !CONFIG_BT_CTLR_PHY */
 		tx_time = PKT_US(conn->default_tx_octets, PHY_1M);
 #endif /* !CONFIG_BT_CTLR_PHY */

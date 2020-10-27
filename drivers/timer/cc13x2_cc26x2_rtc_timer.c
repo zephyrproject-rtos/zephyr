@@ -208,7 +208,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 #ifdef CONFIG_TICKLESS_KERNEL
 
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
-	ticks = MAX(MIN(ticks - 1, (int32_t) MAX_TICKS), 0);
+	ticks = CLAMP(ticks - 1, 0, (int32_t) MAX_TICKS);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 

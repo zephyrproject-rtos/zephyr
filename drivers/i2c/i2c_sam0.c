@@ -574,7 +574,7 @@ static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 		/* 2:1 low:high ratio */
 		baud_high = baud;
 		baud_high /= 3U;
-		baud_high = MAX(MIN(baud_high, 255U), 1U);
+		baud_high = CLAMP(baud_high, 1U, 255U);
 		baud_low = baud - baud_high;
 		if (baud_low < 1U && baud_high > 1U) {
 			--baud_high;
@@ -605,7 +605,7 @@ static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 		/* 2:1 low:high ratio */
 		baud_high = baud;
 		baud_high /= 3U;
-		baud_high = MAX(MIN(baud_high, 255U), 1U);
+		baud_high = CLAMP(baud_high, 1U, 255U);
 		baud_low = baud - baud_high;
 		if (baud_low < 1U && baud_high > 1U) {
 			--baud_high;

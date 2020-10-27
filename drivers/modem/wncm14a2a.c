@@ -1654,7 +1654,7 @@ static int offload_connect(struct net_context *context,
 	 * AT@SOCKCONN timeout param has minimum value of 30 seconds and
 	 * maximum value of 360 seconds, otherwise an error is generated
 	 */
-	timeout_sec = MIN(360, MAX(timeout_sec, 30));
+	timeout_sec = CLAMP(timeout_sec, 30, 360);
 
 	snprintk(buf, sizeof(buf), "AT@SOCKCONN=%d,\"%s\",%d,%d",
 		 sock->socket_id, wncm14a2a_sprint_ip_addr(addr),
