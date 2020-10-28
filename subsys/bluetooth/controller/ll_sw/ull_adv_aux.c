@@ -238,6 +238,17 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
+	/* If no length is provided, discard data */
+	if (!len) {
+		sr_pdu = lll_adv_scan_rsp_alloc(lll, &idx);
+		sr_pdu->type = PDU_ADV_TYPE_AUX_SCAN_RSP;
+		sr_pdu->len = 0;
+
+		lll_adv_scan_rsp_enqueue(&adv->lll, idx);
+
+		return 0;
+	}
+
 	/* Update scan response PDU fields. */
 	sr_pdu = lll_adv_scan_rsp_alloc(lll, &idx);
 	sr_pdu->type = PDU_ADV_TYPE_AUX_SCAN_RSP;
