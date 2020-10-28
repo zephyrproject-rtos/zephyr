@@ -2699,7 +2699,7 @@ static void bt_att_encrypt_change(struct bt_l2cap_chan *chan,
 	 * outstanding request about security failure.
 	 */
 	if (hci_status) {
-		if (att_chan->req) {
+		if (att_chan->req && att_chan->req->retrying) {
 			att_handle_rsp(att_chan, NULL, 0,
 				       BT_ATT_ERR_AUTHENTICATION);
 		}
@@ -2713,7 +2713,7 @@ static void bt_att_encrypt_change(struct bt_l2cap_chan *chan,
 		return;
 	}
 
-	if (!att_chan->req || !att_chan->req->retrying) {
+	if (!(att_chan->req && att_chan->req->retrying)) {
 		return;
 	}
 
