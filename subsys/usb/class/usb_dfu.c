@@ -357,6 +357,8 @@ static void dfu_flash_write(uint8_t *data, size_t len)
 			dfu_data.state = dfuERROR;
 			dfu_data.status = errWRITE;
 		}
+
+		k_poll_signal_raise(&dfu_signal, 0);
 	} else {
 		dfu_data.state = dfuDNLOAD_IDLE;
 	}
@@ -462,10 +464,6 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 			dfu_data.state = dfuDNBUSY;
 			dfu_data_worker.worker_state = dfuDNLOAD_IDLE;
 			dfu_data_worker.worker_len  = pSetup->wLength;
-			if (dfu_data_worker.worker_len == 0U) {
-				dfu_data.state = dfuMANIFEST_SYNC;
-				k_poll_signal_raise(&dfu_signal, 0);
-			}
 
 			memcpy(dfu_data_worker.buf, *data, pSetup->wLength);
 			k_work_submit_to_queue(&USB_WORK_Q, &dfu_work);
