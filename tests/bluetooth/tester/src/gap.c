@@ -575,6 +575,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
 	if (adv_buf->len) {
 		tester_send(BTP_SERVICE_ID_GAP, GAP_EV_DEVICE_FOUND,
 			    CONTROLLER_INDEX, adv_buf->data, adv_buf->len);
+		net_buf_simple_reset(adv_buf);
 	}
 
 	store_adv(addr, rssi, ad);
@@ -589,6 +590,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t evtype,
 done:
 	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_DEVICE_FOUND,
 		    CONTROLLER_INDEX, adv_buf->data, adv_buf->len);
+	net_buf_simple_reset(adv_buf);
 }
 
 static void start_discovery(const uint8_t *data, uint16_t len)
