@@ -11,12 +11,10 @@ if CONSOLE_SUBSYS
 choice
 	prompt "Console 'get' function selection"
 	optional
-	depends on UART_CONSOLE && SERIAL_SUPPORT_INTERRUPT
+	depends on UART_CONSOLE
 
 config CONSOLE_GETCHAR
 	bool "Character by character input and output"
-	select UART_CONSOLE_DEBUG_SERVER_HOOKS
-	select CONSOLE_HANDLER
 
 config CONSOLE_GETLINE
 	bool "Line by line input"
@@ -29,6 +27,7 @@ if CONSOLE_GETCHAR
 config CONSOLE_GETCHAR_BUFSIZE
 	int "console_getchar() buffer size"
 	default 16
+	depends on UART_INTERRUPT_DRIVEN
 	help
 	  Buffer size for console_getchar(). The default is optimized
 	  to save RAM. You may need to increase it e.g. to support
@@ -38,6 +37,7 @@ config CONSOLE_GETCHAR_BUFSIZE
 config CONSOLE_PUTCHAR_BUFSIZE
 	int "console_putchar() buffer size"
 	default 16
+	depends on UART_INTERRUPT_DRIVEN
 	help
 	  Buffer size for console_putchar().  The default is optimized
 	  to save RAM. You may need to increase it e.g. to support

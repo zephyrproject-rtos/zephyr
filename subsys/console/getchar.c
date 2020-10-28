@@ -12,9 +12,6 @@
 
 static struct tty_serial console_serial;
 
-static uint8_t console_rxbuf[CONFIG_CONSOLE_GETCHAR_BUFSIZE];
-static uint8_t console_txbuf[CONFIG_CONSOLE_PUTCHAR_BUFSIZE];
-
 ssize_t console_write(void *dummy, const void *buf, size_t size)
 {
 	ARG_UNUSED(dummy);
@@ -59,17 +56,24 @@ int console_init(void)
 		return ret;
 	}
 
+#if CONFIG_UART_INTERRUPT_DRIVEN
 	/* Checks device driver supports for interrupt driven data transfers. */
 	if (CONFIG_CONSOLE_GETCHAR_BUFSIZE + CONFIG_CONSOLE_PUTCHAR_BUFSIZE) {
+		static uint8_t console_rxbuf[CONFIG_CONSOLE_GETCHAR_BUFSIZE];
+		static uint8_t console_txbuf[CONFIG_CONSOLE_PUTCHAR_BUFSIZE];
+
 		const struct uart_driver_api *api =
 			(const struct uart_driver_api *)uart_dev->api;
 		if (!api->irq_callback_set) {
 			return -ENOTSUP;
 		}
-	}
 
-	tty_set_tx_buf(&console_serial, console_txbuf, sizeof(console_txbuf));
-	tty_set_rx_buf(&console_serial, console_rxbuf, sizeof(console_rxbuf));
+		tty_set_tx_buf(&console_serial, console_txbuf,
+			       sizeof(console_txbuf));
+		tty_set_rx_buf(&console_serial, console_rxbuf,
+			       sizeof(console_rxbuf));
+	}
+#endif
 
 	return 0;
 }
