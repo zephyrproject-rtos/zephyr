@@ -617,6 +617,14 @@ uint8_t ll_adv_enable(uint8_t enable)
 		pri_hdr = (void *)pri_com_hdr->ext_hdr_adi_adv_data;
 		pri_dptr = (uint8_t *)pri_hdr + sizeof(*pri_hdr);
 
+		if (pri_com_hdr->adv_mode & BT_HCI_LE_ADV_PROP_SCAN) {
+			struct pdu_adv *sr = lll_adv_scan_rsp_peek(lll);
+
+			if (!sr->len) {
+				return BT_HCI_ERR_CMD_DISALLOWED;
+			}
+		}
+
 		/* AdvA, fill here at enable */
 		if (pri_hdr->adv_addr) {
 			uint8_t const *tx_addr =
