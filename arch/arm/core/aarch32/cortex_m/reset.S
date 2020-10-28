@@ -29,9 +29,10 @@ GTEXT(z_platform_init)
  *
  * @brief Reset vector
  *
- * Ran when the system comes out of reset. The processor is in thread mode with
- * privileged level. At this point, the main stack pointer (MSP) is already
- * pointing to a valid area in SRAM.
+ * Ran when the system comes out of reset, or when the firmware image is chain-
+ * loaded by another application (for instance, a bootloader). At minimum, the
+ * processor must be in thread mode with privileged level. At this point, the
+ * main stack pointer (MSP) should be already pointing to a valid area in SRAM.
  *
  * Locking interrupts prevents anything but NMIs and hard faults from
  * interrupting the CPU. A default NMI handler is already in place in the
