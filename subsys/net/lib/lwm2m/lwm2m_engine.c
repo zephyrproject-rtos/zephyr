@@ -2838,7 +2838,7 @@ static int lwm2m_delete_handler(struct lwm2m_message *msg)
 	ret = lwm2m_delete_obj_inst(msg->path.obj_id, msg->path.obj_inst_id);
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
 	if (!ret && !msg->ctx->bootstrap_mode) {
-		engine_trigger_update();
+		engine_trigger_update(true);
 	}
 #endif
 
@@ -3239,7 +3239,7 @@ int lwm2m_get_or_create_engine_obj(struct lwm2m_message *msg,
 
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
 		if (!msg->ctx->bootstrap_mode) {
-			engine_trigger_update();
+			engine_trigger_update(true);
 		}
 #endif
 	}

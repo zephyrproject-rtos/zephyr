@@ -99,8 +99,6 @@ struct lwm2m_rd_client_info {
 	uint32_t lifetime;
 	struct lwm2m_ctx *ctx;
 	uint8_t engine_state;
-	uint8_t use_bootstrap;
-	uint8_t trigger_update;
 
 	int64_t last_update;
 	int64_t last_tx;
@@ -109,6 +107,10 @@ struct lwm2m_rd_client_info {
 	char server_ep[CLIENT_EP_LEN];
 
 	lwm2m_ctx_event_cb_t event_cb;
+
+	bool use_bootstrap : 1;
+	bool trigger_update : 1;
+	bool update_objects : 1;
 } client;
 
 /* buffers */
@@ -209,10 +211,14 @@ void engine_trigger_restart(void)
 }
 
 /* force re-update with remote peer */
-void engine_trigger_update(void)
+void engine_trigger_update(bool update_objects)
 {
 	/* TODO: add locking? */
-	client.trigger_update = 1U;
+	client.trigger_update = true;
+
+	if (update_objects) {
+		client.update_objects = true;
+	}
 }
 
 /* state machine reply callbacks */
@@ -424,15 +430,23 @@ static bool sm_bootstrap_verify(bool bootstrap_server, int sec_obj_inst)
 	}
 }
 
-static void sm_update_lifetime(int srv_obj_inst, uint32_t *lifetime)
+static bool sm_update_lifetime(int srv_obj_inst, uint32_t *lifetime)
 {
 	char pathstr[MAX_RESOURCE_LEN];
+	uint32_t new_lifetime;
 
 	snprintk(pathstr, sizeof(pathstr), "1/%d/1", srv_obj_inst);
-	if (lwm2m_engine_get_u32(pathstr, lifetime) < 0) {
-		*lifetime = CONFIG_LWM2M_ENGINE_DEFAULT_LIFETIME;
-		LOG_INF("Using default lifetime: %u", *lifetime);
+	if (lwm2m_engine_get_u32(pathstr, &new_lifetime) < 0) {
+		new_lifetime = CONFIG_LWM2M_ENGINE_DEFAULT_LIFETIME;
+		LOG_INF("Using default lifetime: %u", new_lifetime);
 	}
+
+	if (new_lifetime != *lifetime) {
+		*lifetime = new_lifetime;
+		return true;
+	}
+
+	return false;
 }
 
 static int sm_select_server_inst(int sec_obj_inst, int *srv_obj_inst,
@@ -457,7 +471,6 @@ static int sm_select_server_inst(int sec_obj_inst, int *srv_obj_inst,
 	}
 
 	*srv_obj_inst = obj_inst_id;
-	sm_update_lifetime(*srv_obj_inst, lifetime);
 
 	return 0;
 }
@@ -499,7 +512,7 @@ static int sm_do_init(void)
 {
 	client.ctx->sec_obj_inst = -1;
 	client.ctx->srv_obj_inst = -1;
-	client.trigger_update = 0U;
+	client.trigger_update = false;
 	client.lifetime = 0U;
 
 	/* Do bootstrap or registration */
@@ -645,47 +658,76 @@ static int sm_send_registration(bool send_obj_support_data,
 		goto cleanup;
 	}
 
-	/* TODO: handle return error */
-	coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH,
-				  LWM2M_RD_CLIENT_URI,
-				  strlen(LWM2M_RD_CLIENT_URI));
-
-	if (!sm_is_registered()) {
-		/* include client endpoint in URI QUERY on 1st registration */
-		coap_append_option_int(&msg->cpkt, COAP_OPTION_CONTENT_FORMAT,
-				       LWM2M_FORMAT_APP_LINK_FORMAT);
-		snprintk(query_buffer, sizeof(query_buffer) - 1,
-			 "lwm2m=%s", LWM2M_PROTOCOL_VERSION);
-		/* TODO: handle return error */
-		coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_QUERY,
-					  query_buffer, strlen(query_buffer));
-		snprintk(query_buffer, sizeof(query_buffer) - 1,
-			 "ep=%s", client.ep_name);
-		/* TODO: handle return error */
-		coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_QUERY,
-					  query_buffer, strlen(query_buffer));
-	} else {
-		/* include server endpoint in URI PATH otherwise */
-		/* TODO: handle return error */
-		coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH,
-					  client.server_ep,
-					  strlen(client.server_ep));
+	ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH,
+					LWM2M_RD_CLIENT_URI,
+					strlen(LWM2M_RD_CLIENT_URI));
+	if (ret < 0) {
+		goto cleanup;
 	}
 
-	snprintk(query_buffer, sizeof(query_buffer) - 1,
-		 "lt=%d", client.lifetime);
-	/* TODO: handle return error */
-	coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_QUERY,
-				  query_buffer, strlen(query_buffer));
+	if (sm_is_registered()) {
+		ret = coap_packet_append_option(
+			&msg->cpkt, COAP_OPTION_URI_PATH,
+			client.server_ep, strlen(client.server_ep));
+		if (ret < 0) {
+			goto cleanup;
+		}
+	}
+
+	if (send_obj_support_data) {
+		ret = coap_append_option_int(
+			&msg->cpkt, COAP_OPTION_CONTENT_FORMAT,
+			LWM2M_FORMAT_APP_LINK_FORMAT);
+		if (ret < 0) {
+			goto cleanup;
+		}
+	}
+
+	if (!sm_is_registered()) {
+		snprintk(query_buffer, sizeof(query_buffer) - 1,
+			"lwm2m=%s", LWM2M_PROTOCOL_VERSION);
+		ret = coap_packet_append_option(
+			&msg->cpkt, COAP_OPTION_URI_QUERY,
+			query_buffer, strlen(query_buffer));
+		if (ret < 0) {
+			goto cleanup;
+		}
+
+		snprintk(query_buffer, sizeof(query_buffer) - 1,
+			 "ep=%s", client.ep_name);
+		ret = coap_packet_append_option(
+			&msg->cpkt, COAP_OPTION_URI_QUERY,
+			query_buffer, strlen(query_buffer));
+		if (ret < 0) {
+			goto cleanup;
+		}
+	}
+
+	/* Send lifetime only if changed or on initial registration.*/
+	if (sm_update_lifetime(client.ctx->srv_obj_inst, &client.lifetime) ||
+	    !sm_is_registered()) {
+		snprintk(query_buffer, sizeof(query_buffer) - 1,
+			 "lt=%d", client.lifetime);
+		ret = coap_packet_append_option(
+			&msg->cpkt, COAP_OPTION_URI_QUERY,
+			query_buffer, strlen(query_buffer));
+		if (ret < 0) {
+			goto cleanup;
+		}
+	}
 
 	lwm2m_engine_get_binding(binding);
 	/* UDP is a default binding, no need to add option if UDP is used. */
-	if (strcmp(binding, "U") != 0) {
+	if ((!sm_is_registered() && strcmp(binding, "U") != 0)) {
 		snprintk(query_buffer, sizeof(query_buffer) - 1,
 			 "b=%s", binding);
-		/* TODO: handle return error */
-		coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_QUERY,
-					  query_buffer, strlen(query_buffer));
+
+		ret = coap_packet_append_option(
+			&msg->cpkt, COAP_OPTION_URI_QUERY,
+			query_buffer, strlen(query_buffer));
+		if (ret < 0) {
+			goto cleanup;
+		}
 	}
 
 	if (send_obj_support_data) {
@@ -774,7 +816,7 @@ static int sm_do_registration(void)
 static int sm_registration_done(void)
 {
 	int ret = 0;
-	bool forced_update;
+	bool update_objects;
 
 	/*
 	 * check for lifetime seconds - SECONDS_TO_UPDATE_EARLY
@@ -784,15 +826,11 @@ static int sm_registration_done(void)
 	    (client.trigger_update ||
 	     ((client.lifetime - SECONDS_TO_UPDATE_EARLY) <=
 	      (k_uptime_get() - client.last_update) / 1000))) {
-		forced_update = client.trigger_update;
-		client.trigger_update = 0U;
+		update_objects = client.update_objects;
+		client.trigger_update = false;
+		client.update_objects = false;
 
-		/** The LwM2M server might've changed the lifetime,
-		 *  update it just in case.
-		 */
-		sm_update_lifetime(client.ctx->srv_obj_inst, &client.lifetime);
-
-		ret = sm_send_registration(forced_update,
+		ret = sm_send_registration(update_objects,
 					   do_update_reply_cb,
 					   do_update_timeout_cb);
 		if (!ret) {
