@@ -140,7 +140,7 @@
 #define K_MEM_PARTITION_P_RO_U_NA	Z_X86_MMU_XD
 /* Execution-allowed attributes */
 #define K_MEM_PARTITION_P_RWX_U_RWX	(Z_X86_MMU_RW | Z_X86_MMU_US)
-#define K_MEM_PARTITION_P_RWX_U_NA	Z_X96_MMU_RW
+#define K_MEM_PARTITION_P_RWX_U_NA	Z_X86_MMU_RW
 #define K_MEM_PARTITION_P_RX_U_RX	Z_X86_MMU_US
 #define K_MEM_PARTITION_P_RX_U_NA	(0)
  /* memory partition access permission mask */
