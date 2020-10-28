@@ -228,13 +228,17 @@ static int pwm_stm32_pin_set(const struct device *dev, uint32_t pwm,
 			return -EIO;
 		}
 
+		LL_TIM_EnableARRPreload(cfg->timer);
 		LL_TIM_OC_EnablePreload(cfg->timer, channel);
+		LL_TIM_SetAutoReload(cfg->timer, period_cycles - 1u);
+		LL_TIM_GenerateEvent_UPDATE(cfg->timer);
 	} else {
 		LL_TIM_OC_SetPolarity(cfg->timer, channel, get_polarity(flags));
 		set_timer_compare[pwm - 1u](cfg->timer, pulse_cycles);
+		LL_TIM_SetAutoReload(cfg->timer, period_cycles - 1u);
 	}
 
-	LL_TIM_SetAutoReload(cfg->timer, period_cycles - 1u);
+
 
 	return 0;
 }
