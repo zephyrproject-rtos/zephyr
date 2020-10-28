@@ -128,6 +128,10 @@ struct apbuart_dev_cfg {
 
 struct apbuart_dev_data {
 	int usefifo;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	uart_irq_callback_user_data_t cb;
+	void *cb_data;
+#endif
 };
 
 #define DEV_CFG(dev) \
@@ -299,6 +303,122 @@ static int apbuart_config_get(const struct device *dev, struct uart_config *cfg)
 	return 0;
 }
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static int apbuart_fifo_fill(const struct device *dev, const uint8_t *tx_data,
+			     int size)
+{
+	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+	int i;
+
+	for (i = 0; (i < size) && (regs->status & APBUART_STATUS_TE); i++) {
+		regs->data = tx_data[i];
+	}
+
+	return i;
+}
+
+static int apbuart_fifo_read(const struct device *dev, uint8_t *rx_data,
+			     const int size)
+{
+	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+	int i;
+
+	for (i = 0; (i < size) && (regs->status & APBUART_STATUS_DR); i++) {
+		rx_data[i] = regs->data & 0xff;
+	}
+
+	return i;
+}
+
+static void apbuart_irq_tx_enable(const struct device *dev)
+{
+	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+
+	regs->ctrl |= APBUART_CTRL_TI;
+}
+
+static void apbuart_irq_tx_disable(const struct device *dev)
+{
+	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+
+	regs->ctrl &= ~APBUART_CTRL_TI;
+}
+
+static int apbuart_irq_tx_ready(const struct device *dev)
+{
+	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+
+	return !!(regs->status & APBUART_STATUS_TE);
+}
+
+static int apbuart_irq_tx_complete(const struct device *dev)
+{
+	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+
+	return !!(regs->status & APBUART_STATUS_TS);
+}
+
+static void apbuart_irq_rx_enable(const struct device *dev)
+{
+	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+
+	regs->ctrl |= APBUART_CTRL_RI;
+}
+
+static void apbuart_irq_rx_disable(const struct device *dev)
+{
+	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+
+	regs->ctrl &= ~APBUART_CTRL_RI;
+}
+
+static int apbuart_irq_rx_ready(const struct device *dev)
+{
+	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+
+	return !!(regs->status & APBUART_STATUS_DR);
+}
+
+static int apbuart_irq_is_pending(const struct device *dev)
+{
+	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+	uint32_t status = regs->status;
+	uint32_t ctrl = regs->ctrl;
+
+	if ((ctrl & APBUART_CTRL_RI) && (status & APBUART_STATUS_DR)) {
+		return 1;
+	}
+	if ((ctrl & APBUART_CTRL_TI) && (status & APBUART_STATUS_TE)) {
+		return 1;
+	}
+	return 0;
+}
+
+static int apbuart_irq_update(const struct device *dev)
+{
+	return 1;
+}
+
+static void apbuart_irq_callback_set(const struct device *dev,
+				     uart_irq_callback_user_data_t cb,
+				     void *cb_data)
+{
+	struct apbuart_dev_data *const dev_data = DEV_DATA(dev);
+
+	dev_data->cb = cb;
+	dev_data->cb_data = cb_data;
+}
+
+static void apbuart_isr(const struct device *dev)
+{
+	struct apbuart_dev_data *const dev_data = DEV_DATA(dev);
+
+	if (dev_data->cb) {
+		dev_data->cb(dev, dev_data->cb_data);
+	}
+}
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
 static int apbuart_init(const struct device *dev)
 {
 	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
@@ -319,6 +439,12 @@ static int apbuart_init(const struct device *dev)
 
 	regs->status = 0;
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	irq_connect_dynamic(DEV_CFG(dev)->interrupt,
+			    0, (void (*)(const void *))apbuart_isr, dev, 0);
+	irq_enable(DEV_CFG(dev)->interrupt);
+#endif
+
 	return 0;
 }
 
@@ -329,6 +455,20 @@ static const struct uart_driver_api apbuart_driver_api = {
 	.err_check              = apbuart_err_check,
 	.configure              = apbuart_configure,
 	.config_get             = apbuart_config_get,
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.fifo_fill              = apbuart_fifo_fill,
+	.fifo_read              = apbuart_fifo_read,
+	.irq_tx_enable          = apbuart_irq_tx_enable,
+	.irq_tx_disable         = apbuart_irq_tx_disable,
+	.irq_tx_ready           = apbuart_irq_tx_ready,
+	.irq_rx_enable          = apbuart_irq_rx_enable,
+	.irq_rx_disable         = apbuart_irq_rx_disable,
+	.irq_tx_complete        = apbuart_irq_tx_complete,
+	.irq_rx_ready           = apbuart_irq_rx_ready,
+	.irq_is_pending         = apbuart_irq_is_pending,
+	.irq_update             = apbuart_irq_update,
+	.irq_callback_set       = apbuart_irq_callback_set,
+#endif
 };
 
 #define APBUART_INIT(index)						\
