@@ -1,4 +1,5 @@
 tests:
   kernel.workqueue.api:
+    filter: CONFIG_KERNEL_WORK1
     min_flash: 34
     tags: kernel userspace
