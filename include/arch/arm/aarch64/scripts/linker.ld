@@ -119,6 +119,11 @@ SECTIONS
 
         _vector_end = .;
 
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-pre-text.ld>
+
         *(.text)
         *(".text.*")
         *(.gnu.linkonce.t.*)
@@ -173,6 +178,11 @@ SECTIONS
 
         KEEP(*(.openocd_dbg))
         KEEP(*(".openocd_dbg.*"))
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-pre-rodata.ld>
 
         *(.rodata)
         *(".rodata.*")
