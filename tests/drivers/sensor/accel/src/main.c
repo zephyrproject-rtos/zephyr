@@ -65,7 +65,7 @@ void test_main(void)
 {
 	run_tests_on_accel(DT_LABEL(DT_ALIAS(accel_0)));
 
-#ifdef DT_N_ALIAS_accel_1
+#if DT_NODE_EXISTS(DT_ALIAS(accel_1))
 	run_tests_on_accel(DT_LABEL(DT_ALIAS(accel_1)));
 #endif
 }
