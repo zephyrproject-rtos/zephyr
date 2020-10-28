@@ -1639,19 +1639,21 @@ static void ticker_update_conn_op_cb(uint32_t status, void *param)
 
 static void ticker_stop_conn_op_cb(uint32_t status, void *param)
 {
+	void *p;
+
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 
-	void *p = ull_update_mark(param);
-
+	p = ull_update_mark(param);
 	LL_ASSERT(p == param);
 }
 
 static void ticker_start_conn_op_cb(uint32_t status, void *param)
 {
+	void *p;
+
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 
-	void *p = ull_update_unmark(param);
-
+	p = ull_update_unmark(param);
 	LL_ASSERT(p == param);
 }
 
