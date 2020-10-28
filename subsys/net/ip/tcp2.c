@@ -1342,6 +1342,12 @@ next_state:
 	case TCP_ESTABLISHED:
 		/* full-close */
 		if (th && FL(&fl, ==, (FIN | ACK), th_seq(th) == conn->ack)) {
+			if (net_tcp_seq_cmp(th_ack(th), conn->seq) > 0) {
+				uint32_t len_acked = th_ack(th) - conn->seq;
+
+				conn_seq(conn, + len_acked);
+			}
+
 			conn_ack(conn, + 1);
 			tcp_out(conn, FIN | ACK);
 			next = TCP_LAST_ACK;
