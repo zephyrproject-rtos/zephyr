@@ -374,6 +374,9 @@ SECTION_FUNC(TEXT, z_arm_do_syscall)
     mov r1, lr
     b dispatch_syscall
 valid_syscall:
+    /* push ssf to privileged stack */
+    mov r1, sp
+    push {r1}
     /* push args to complete stack frame */
     push {r4,r5}
 
@@ -396,8 +399,7 @@ dispatch_syscall:
      */
     mov ip, r0
     mov r0, sp
-    adds r0, #12
-    ldr r0, [r0]
+    ldr r0, [r0,#16]
     mov lr, r0
     /* Restore r0 */
     mov r0, ip
@@ -415,7 +417,8 @@ dispatch_syscall:
 
 valid_syscall:
     /* push args to complete stack frame */
-    push {r4,r5}
+    mov ip, sp
+    push {r4,r5,ip}
 
 dispatch_syscall:
     ldr ip, =_k_syscall_table
@@ -426,7 +429,7 @@ dispatch_syscall:
     blx ip
 
     /* restore LR */
-    ldr lr, [sp,#12]
+    ldr lr, [sp,#16]
 #endif
 
 
@@ -467,14 +470,14 @@ dispatch_syscall:
     /* set stack back to unprivileged stack */
     mov ip, r0
     mov r0, sp
-    ldr r0, [r0,#8]
+    ldr r0, [r0,#12]
     msr PSP, r0
     /* Restore r0 */
     mov r0, ip
 
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     /* set stack back to unprivileged stack */
-    ldr ip, [sp,#8]
+    ldr ip, [sp,#12]
     msr PSP, ip
 #endif
 
