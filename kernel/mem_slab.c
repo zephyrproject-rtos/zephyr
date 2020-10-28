@@ -122,7 +122,7 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 		if (result == 0) {
 			*mem = _current->base.swap_data;
 		}
-		return result;
+		return *mem ? result : -EAGAIN;
 	}
 
 	k_spin_unlock(&lock, key);
