@@ -1429,6 +1429,10 @@ uint8_t ull_adv_data_set(struct ll_adv_set *adv, uint8_t len,
 		return 0;
 	}
 
+	if (len > 31) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
 	/* update adv pdu fields. */
 	pdu = lll_adv_data_alloc(&adv->lll, &idx);
 
