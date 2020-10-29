@@ -11,10 +11,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
 #include "util/memq.h"
 #include "pdu.h"
 #include "lll.h"
+
+/* mock ccm which is used in lll_conn.h */
+struct ccm {
+};
 #include "lll_conn.h"
 
 #include "ull_tx_queue.h"
