@@ -13,6 +13,16 @@
 #include <tracing/tracing.h>
 #include <stdbool.h>
 
+/* WARNING WARNING WARNING HERE THERE BE DRAGONS
+ *
+ * Many of the APIs here are unsafe to call without sched_spinlock held.
+ * This is particularly the case with most of the APIs here which take a
+ * struct k_thread pointer argument.
+ *
+ * The contents of this file should be treated as private to the core kernel
+ * and may change at any time.
+ */
+
 BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
 	     >= K_HIGHEST_APPLICATION_THREAD_PRIO);
 

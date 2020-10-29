@@ -16,6 +16,7 @@
 #include <kernel_internal.h>
 #include <logging/log.h>
 #include <sys/atomic.h>
+#include <sys/scheduler.h>
 LOG_MODULE_DECLARE(os);
 
 /* Maximum time between the time a self-aborting thread flags itself
@@ -1614,3 +1615,47 @@ static inline void z_vrfy_k_thread_abort(k_tid_t thread)
 }
 #include <syscalls/k_thread_abort_mrsh.c>
 #endif /* CONFIG_USERSPACE */
+
+/*
+ * scheduler.h API implementations
+ */
+bool k_sched_callback_wake(_wait_q_t *wait_q, int swap_retval, void *swap_data,
+			   k_sched_wake_cb_t cb, void *obj, void *context)
+{
+	struct k_thread *thread;
+	bool ret = false;
+
+	LOCKED(&sched_spinlock) {
+		thread = _priq_wait_best(&wait_q->waitq);
+
+		if (thread != NULL) {
+			if (cb != NULL) {
+				cb(thread, obj, context);
+			}
+			z_thread_return_value_set_with_data(thread,
+							    swap_retval,
+							    swap_data);
+			unpend_thread_no_timeout(thread);
+			(void)z_abort_thread_timeout(thread);
+			ready_thread(thread);
+			ret = true;
+		}
+	}
+
+	return ret;
+}
+
+int k_sched_wait(struct k_spinlock *lock, k_spinlock_key_t key,
+		 _wait_q_t *wait_q, k_timeout_t timeout, void **data)
+{
+	int ret = z_pend_curr(lock, key, wait_q, timeout);
+	if (data != NULL) {
+		*data = _current->base.swap_data;
+	}
+	return ret;
+}
+
+void k_sched_invoke(struct k_spinlock *lock, k_spinlock_key_t key)
+{
+	z_reschedule(lock, key);
+}
