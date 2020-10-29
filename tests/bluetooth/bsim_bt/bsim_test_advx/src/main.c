@@ -407,8 +407,6 @@ static void test_advx_main(void)
 
 	k_sleep(K_MSEC(400));
 
-	/* FIXME: re-enable when 251 byte advertising PDU support is added */
-#if 0
 	printk("Update advertising data 1...");
 	err = ll_adv_aux_ad_data_set(handle, AD_OP, AD_FRAG_PREF,
 				     sizeof(adv_data1), (void *)adv_data1);
@@ -418,7 +416,6 @@ static void test_advx_main(void)
 	printk("success.\n");
 
 	k_sleep(K_MSEC(400));
-#endif
 
 	printk("Update advertising data 2...");
 	err = ll_adv_aux_ad_data_set(handle, AD_OP, AD_FRAG_PREF,
