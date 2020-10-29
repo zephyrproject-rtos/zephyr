@@ -372,7 +372,13 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 static void isr_tx(void *param)
 {
+	struct lll_adv *lll = param;
 	uint32_t hcto;
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	uint8_t phy_p = lll->phy_p;
+#else
+	uint8_t phy_p = 0;
+#endif
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_latency_capture();
@@ -383,7 +389,7 @@ static void isr_tx(void *param)
 
 	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
-	radio_switch_complete_and_tx(0, 0, 0, 0);
+	radio_switch_complete_and_tx(phy_p, 0, phy_p, 0);
 
 	radio_pkt_rx_set(radio_pkt_scratch_get());
 	/* assert if radio packet ptr is not set and radio started rx */
@@ -405,9 +411,9 @@ static void isr_tx(void *param)
 
 	/* +/- 2us active clock jitter, +1 us hcto compensation */
 	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US + 4 + 1;
-	hcto += radio_rx_chain_delay_get(0, 0);
-	hcto += addr_us_get(0);
-	hcto -= radio_tx_chain_delay_get(0, 0);
+	hcto += radio_rx_chain_delay_get(phy_p, 0);
+	hcto += addr_us_get(phy_p);
+	hcto -= radio_tx_chain_delay_get(phy_p, 0);
 	radio_tmr_hcto_configure(hcto);
 
 	/* capture end of CONNECT_IND PDU, used for calculating first
@@ -430,7 +436,7 @@ static void isr_tx(void *param)
 
 	radio_gpio_lna_setup();
 	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_IFS_US - 4 -
-				 radio_tx_chain_delay_get(0, 0) -
+				 radio_tx_chain_delay_get(phy_p, 0) -
 				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
