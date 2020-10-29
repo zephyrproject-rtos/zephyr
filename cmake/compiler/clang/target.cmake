@@ -32,7 +32,7 @@ if(NOT "${ARCH}" STREQUAL "posix")
     include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_arm.cmake)
   endif()
 
-  foreach(file_name include/stddef.h include-fixed/limits.h)
+  foreach(file_name include/stddef.h)
     execute_process(
       COMMAND ${CMAKE_C_COMPILER} --print-file-name=${file_name}
       OUTPUT_VARIABLE _OUTPUT
