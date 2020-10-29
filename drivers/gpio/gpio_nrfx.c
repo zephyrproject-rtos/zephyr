@@ -10,6 +10,8 @@
 
 #include "gpio_utils.h"
 
+#define GPIO(id) DT_NODELABEL(gpio##id)
+
 /* Mask holding information about which channels are allocated. */
 static atomic_t gpiote_alloc_mask;
 
@@ -395,10 +397,10 @@ static inline void fire_callbacks(const struct device *port, uint32_t pins)
 }
 
 #ifdef CONFIG_GPIO_NRF_P0
-DEVICE_DECLARE(gpio_nrfx_p0);
+DEVICE_DT_DECLARE(GPIO(0));
 #endif
 #ifdef CONFIG_GPIO_NRF_P1
-DEVICE_DECLARE(gpio_nrfx_p1);
+DEVICE_DT_DECLARE(GPIO(1));
 #endif
 
 static void gpiote_event_handler(void)
@@ -410,11 +412,11 @@ static void gpiote_event_handler(void)
 	if (port_event) {
 #ifdef CONFIG_GPIO_NRF_P0
 		fired_triggers[0] =
-			check_level_trigger_pins(DEVICE_GET(gpio_nrfx_p0));
+			check_level_trigger_pins(DEVICE_DT_GET(GPIO(0)));
 #endif
 #ifdef CONFIG_GPIO_NRF_P1
 		fired_triggers[1] =
-			check_level_trigger_pins(DEVICE_GET(gpio_nrfx_p1));
+			check_level_trigger_pins(DEVICE_DT_GET(GPIO(1)));
 #endif
 
 		/* Sense detect was disabled while checking pins so
@@ -439,12 +441,12 @@ static void gpiote_event_handler(void)
 
 #ifdef CONFIG_GPIO_NRF_P0
 	if (fired_triggers[0]) {
-		fire_callbacks(DEVICE_GET(gpio_nrfx_p0), fired_triggers[0]);
+		fire_callbacks(DEVICE_DT_GET(GPIO(0)), fired_triggers[0]);
 	}
 #endif
 #ifdef CONFIG_GPIO_NRF_P1
 	if (fired_triggers[1]) {
-		fire_callbacks(DEVICE_GET(gpio_nrfx_p1), fired_triggers[1]);
+		fire_callbacks(DEVICE_DT_GET(GPIO(1)), fired_triggers[1]);
 	}
 #endif
 
@@ -453,10 +455,10 @@ static void gpiote_event_handler(void)
 		 * This may cause DETECT to be re-asserted.
 		 */
 #ifdef CONFIG_GPIO_NRF_P0
-		cfg_level_pins(DEVICE_GET(gpio_nrfx_p0));
+		cfg_level_pins(DEVICE_DT_GET(GPIO(0)));
 #endif
 #ifdef CONFIG_GPIO_NRF_P1
-		cfg_level_pins(DEVICE_GET(gpio_nrfx_p1));
+		cfg_level_pins(DEVICE_DT_GET(GPIO(1)));
 #endif
 	}
 }
@@ -485,8 +487,6 @@ static int gpio_nrfx_init(const struct device *port)
  * DT_INST APIs here without wider changes.
  */
 
-#define GPIO(id) DT_NODELABEL(gpio##id)
-
 #define GPIO_NRF_DEVICE(id)						\
 	static const struct gpio_nrfx_cfg gpio_nrfx_p##id##_cfg = {	\
 		.common = {						\
@@ -499,14 +499,13 @@ static int gpio_nrfx_init(const struct device *port)
 									\
 	static struct gpio_nrfx_data gpio_nrfx_p##id##_data;		\
 									\
-	DEVICE_AND_API_INIT(gpio_nrfx_p##id,				\
-			    DT_LABEL(GPIO(id)),				\
-			    gpio_nrfx_init,				\
-			    &gpio_nrfx_p##id##_data,			\
-			    &gpio_nrfx_p##id##_cfg,			\
-			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
-			    &gpio_nrfx_drv_api_funcs)
+	DEVICE_DT_DEFINE(GPIO(id), gpio_nrfx_init,			\
+			 device_pm_control_nop,				\
+			 &gpio_nrfx_p##id##_data,			\
+			 &gpio_nrfx_p##id##_cfg,			\
+			 POST_KERNEL,					\
+			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		\
+			 &gpio_nrfx_drv_api_funcs)
 
 #ifdef CONFIG_GPIO_NRF_P0
 GPIO_NRF_DEVICE(0);
