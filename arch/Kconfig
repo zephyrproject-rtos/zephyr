@@ -244,6 +244,7 @@ config KOBJECT_TEXT_AREA
 	int "Size if kobject text area"
 	default 512 if COVERAGE_GCOV
 	default 512 if NO_OPTIMIZATIONS
+	default 512 if STACK_CANARIES && RISCV
 	default 256
 	depends on ARCH_HAS_USERSPACE
 	help
