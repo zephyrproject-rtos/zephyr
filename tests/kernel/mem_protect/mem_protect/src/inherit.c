@@ -55,7 +55,7 @@ static void access_test(void)
 	(void) k_timer_status_get(&inherit_timer);
 	k_msgq_put(&inherit_msgq, (void *)&msg_q_data, K_NO_WAIT);
 	k_mutex_unlock(&inherit_mutex);
-	inherit_buf[10] = 0xA5;
+	inherit_buf[MEM_REGION_ALLOC-1] = 0xA5;
 }
 
 static void test_thread_1_for_user(void *p1, void *p2, void *p3)
