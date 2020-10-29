@@ -28,6 +28,7 @@
 #include <syscall_handler.h>
 #include <tracing/tracing.h>
 #include <sys/check.h>
+#include <sys/scheduler.h>
 
 /* We use a system-wide lock to synchronize semaphores, which has
  * unfortunate performance impact vs. using a per-object lock
@@ -107,20 +108,14 @@ static inline void handle_poll_events(struct k_sem *sem)
 void z_impl_k_sem_give(struct k_sem *sem)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	struct k_thread *thread;
 
 	sys_trace_semaphore_give(sem);
-	thread = z_unpend_first_thread(&sem->wait_q);
 
-	if (thread != NULL) {
-		arch_thread_return_value_set(thread, 0);
-		z_ready_thread(thread);
-	} else {
+	if (!k_sched_wake(&sem->wait_q, 0, NULL)) {
 		sem->count += (sem->count != sem->limit) ? 1U : 0U;
 		handle_poll_events(sem);
 	}
-
-	z_reschedule(&lock, key);
+	k_sched_invoke(&lock, key);
 	sys_trace_end_call(SYS_TRACE_ID_SEMA_GIVE);
 }
 
@@ -156,8 +151,7 @@ int z_impl_k_sem_take(struct k_sem *sem, k_timeout_t timeout)
 		goto out;
 	}
 
-	ret = z_pend_curr(&lock, key, &sem->wait_q, timeout);
-
+	ret = k_sched_wait(&lock, key, &sem->wait_q, timeout, NULL);
 out:
 	sys_trace_end_call(SYS_TRACE_ID_SEMA_TAKE);
 	return ret;
