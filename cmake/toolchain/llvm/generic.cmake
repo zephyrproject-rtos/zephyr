@@ -1,13 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-find_appropriate_cache_directory(USER_CACHE_DIR)
-
-if((NOT "${USER_CACHE_DIR}" STREQUAL "") AND (EXISTS "${USER_CACHE_DIR}"))
-  message(STATUS "Invalidating toolchain capability cache in ${USER_CACHE_DIR}")
-  execute_process(COMMAND
-    ${CMAKE_COMMAND} -E remove_directory "${USER_CACHE_DIR}")
-endif()
-
 if(DEFINED $ENV{CLANG_ROOT_DIR})
   set(TOOLCHAIN_HOME ${CLANG_ROOT}/bin/)
 endif()
