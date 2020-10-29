@@ -9,12 +9,6 @@
 /* Bitmask value returned by ull_adv_is_enabled() */
 #define ULL_ADV_ENABLED_BITMASK_ENABLED  BIT(0)
 
-#if defined(CONFIG_BT_CTLR_ADV_SET)
-#define BT_CTLR_ADV_SET CONFIG_BT_CTLR_ADV_SET
-#else /* CONFIG_BT_CTLR_ADV_SET */
-#define BT_CTLR_ADV_SET 1
-#endif /* CONFIG_BT_CTLR_ADV_SET */
-
 /* Helper functions to initialise and reset ull_adv module */
 int ull_adv_init(void);
 int ull_adv_reset(void);

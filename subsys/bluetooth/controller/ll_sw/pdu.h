@@ -34,7 +34,7 @@
 #define BYTES2US(bytes, phy) (((bytes)<<3)/BIT((phy&0x3)>>1))
 
 /* Advertisement channel maximum legacy payload size */
-#define PDU_AC_PAYLOAD_SIZE_MAX 37
+#define PDU_AC_LEG_PAYLOAD_SIZE_MAX 37
 /* Advertisement channel maximum extended payload size */
 #define PDU_AC_EXT_PAYLOAD_SIZE_MAX 251
 /* Advertisement channel minimum extended payload size */
@@ -48,6 +48,14 @@
 				     sizeof(struct pdu_adv_sync_info) + \
 				     TX_PWR_SIZE + \
 				     ACAD_SIZE)
+/* Advertisement channel maximum payload size */
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#define PDU_AC_PAYLOAD_SIZE_MAX MAX(MIN(CONFIG_BT_CTLR_ADV_DATA_LEN_MAX, \
+					PDU_AC_EXT_PAYLOAD_SIZE_MAX), \
+				    PDU_AC_LEG_PAYLOAD_SIZE_MAX)
+#else
+#define PDU_AC_PAYLOAD_SIZE_MAX     PDU_AC_LEG_PAYLOAD_SIZE_MAX
+#endif
 
 /* Link Layer header size of Adv PDU. Assumes pdu_adv is packed */
 #define PDU_AC_LL_HEADER_SIZE  (offsetof(struct pdu_adv, payload))
