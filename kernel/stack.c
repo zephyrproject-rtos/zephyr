@@ -12,12 +12,12 @@
 #include <kernel_structs.h>
 #include <debug/object_tracing_common.h>
 #include <toolchain.h>
-#include <ksched.h>
 #include <wait_q.h>
 #include <sys/check.h>
 #include <init.h>
 #include <syscall_handler.h>
 #include <kernel_internal.h>
+#include <sys/scheduler.h>
 
 #ifdef CONFIG_OBJECT_TRACING
 
@@ -96,7 +96,6 @@ int k_stack_cleanup(struct k_stack *stack)
 
 int z_impl_k_stack_push(struct k_stack *stack, stack_data_t data)
 {
-	struct k_thread *first_pending_thread;
 	int ret = 0;
 	k_spinlock_key_t key = k_spin_lock(&stack->lock);
 
@@ -105,14 +104,8 @@ int z_impl_k_stack_push(struct k_stack *stack, stack_data_t data)
 		goto out;
 	}
 
-	first_pending_thread = z_unpend_first_thread(&stack->wait_q);
-
-	if (first_pending_thread != NULL) {
-		z_ready_thread(first_pending_thread);
-
-		z_thread_return_value_set_with_data(first_pending_thread,
-						   0, (void *)data);
-		z_reschedule(&stack->lock, key);
+	if (k_sched_wake(&stack->wait_q, 0, (void *)data)) {
+		k_sched_invoke(&stack->lock, key);
 		goto end;
 	} else {
 		*(stack->next) = data;
@@ -157,13 +150,9 @@ int z_impl_k_stack_pop(struct k_stack *stack, stack_data_t *data,
 		return -EBUSY;
 	}
 
-	result = z_pend_curr(&stack->lock, key, &stack->wait_q, timeout);
-	if (result == -EAGAIN) {
-		return -EAGAIN;
-	}
-
-	*data = (stack_data_t)_current->base.swap_data;
-	return 0;
+	result = k_sched_wait(&stack->lock, key, &stack->wait_q, timeout,
+			      (void **)data);
+	return result;
 }
 
 #ifdef CONFIG_USERSPACE
