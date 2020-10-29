@@ -436,8 +436,7 @@ static int spim_nrfx_pm_control(const struct device *dev,
 			SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)		       \
 		}							       \
 	};								       \
-	DEVICE_DEFINE(spi_##idx,					       \
-		      SPIM_PROP(idx, label),				       \
+	DEVICE_DT_DEFINE(SPIM(idx),					       \
 		      spi_##idx##_init,					       \
 		      spim_nrfx_pm_control,				       \
 		      &spi_##idx##_data,				       \
