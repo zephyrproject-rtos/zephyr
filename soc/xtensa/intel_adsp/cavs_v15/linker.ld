@@ -411,12 +411,6 @@ SECTIONS
     KEEP (*(.fw_ready_metadata))
   } >ram :ram_phdr
 
-  .noinit : ALIGN(4)
-  {
-    *(.noinit)
-    *(.noinit.*)
-  } >ram :ram_phdr
-
   .lit4 : ALIGN(4)
   {
     _lit4_start = ABSOLUTE(.);
@@ -445,6 +439,12 @@ SECTIONS
     *(.gna_model)
     _data_end = ABSOLUTE(.);
     . = ALIGN(4096);
+  } >ucram :ucram_phdr
+
+  .noinit : ALIGN(4)
+  {
+    *(.noinit)
+    *(.noinit.*)
   } >ucram :ucram_phdr
 
 /* These values need to change in our scheme, where the common-ram
