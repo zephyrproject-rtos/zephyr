@@ -20,6 +20,7 @@
 #include "util/util.h"
 #include "util/mem.h"
 #include "util/memq.h"
+#include "util/mfifo.h"
 
 #include "ticker/ticker.h"
 
@@ -106,6 +107,9 @@ static struct {
 	uint8_t pool[PDU_POOL_SIZE];
 } mem_pdu;
 
+/* FIFO to return stale AD data PDU buffers from LLL to thread context */
+static MFIFO_DEFINE(pdu_free, sizeof(void *), PDU_MEM_FIFO_COUNT);
+
 int lll_adv_init(void)
 {
 	int err;
@@ -186,6 +190,16 @@ struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx)
 		return p;
 	}
 
+	p = MFIFO_DEQUEUE_PEEK(pdu_free);
+	if (p) {
+		/* TODO: take the semaphore, dont wait */
+
+		MFIFO_DEQUEUE(pdu_free);
+		pdu->pdu[last] = (void *)p;
+
+		return p;
+	}
+
 	p = mem_acquire(&mem_pdu.free);
 	if (p) {
 		pdu->pdu[last] = (void *)p;
@@ -193,10 +207,49 @@ struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx)
 		return p;
 	}
 
-	/* TODO: Wait for semaphore before trying again */
-	LL_ASSERT(false);
+	/* TODO: take the semaphore, wait forever? */
 
-	return NULL;
+	p = MFIFO_DEQUEUE(pdu_free);
+	LL_ASSERT(p);
+
+	pdu->pdu[last] = (void *)p;
+
+	return p;
+}
+
+struct pdu_adv *lll_adv_pdu_latest_get(struct lll_adv_pdu *pdu,
+				       uint8_t *is_modified)
+{
+	uint8_t first;
+
+	first = pdu->first;
+	if (first != pdu->last) {
+		uint8_t free_idx;
+		uint8_t pdu_idx;
+		void *p;
+
+		if (!MFIFO_ENQUEUE_IDX_GET(pdu_free, &free_idx)) {
+			LL_ASSERT(false);
+
+			return NULL;
+		}
+
+		pdu_idx = first;
+
+		first += 1U;
+		if (first == DOUBLE_BUFFER_SIZE) {
+			first = 0U;
+		}
+		pdu->first = first;
+		*is_modified = 1U;
+
+		p = pdu->pdu[pdu_idx];
+		pdu->pdu[pdu_idx] = NULL;
+
+		MFIFO_BY_IDX_ENQUEUE(pdu_free, free_idx, p);
+	}
+
+	return (void *)pdu->pdu[first];
 }
 
 void lll_adv_prepare(void *param)
@@ -271,6 +324,9 @@ static int init_reset(void)
 	/* Initialize AC PDU pool */
 	mem_init(mem_pdu.pool, PDU_MEM_SIZE,
 		 (sizeof(mem_pdu.pool) / PDU_MEM_SIZE), &mem_pdu.free);
+
+	/* Initialize AC PDU free buffer return queue */
+	MFIFO_INIT(pdu_free);
 
 	return 0;
 }
