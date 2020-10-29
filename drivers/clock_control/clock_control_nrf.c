@@ -109,11 +109,14 @@ static struct onoff_manager *get_onoff_manager(const struct device *dev,
 	return &data->mgr[type];
 }
 
-DEVICE_DECLARE(clock_nrf);
+
+DEVICE_DT_DECLARE(DT_NODELABEL(clock));
+
+#define CLOCK_DEVICE DEVICE_DT_GET(DT_NODELABEL(clock))
 
 struct onoff_manager *z_nrf_clock_control_get_onoff(clock_control_subsys_t sys)
 {
-	return get_onoff_manager(DEVICE_GET(clock_nrf),
+	return get_onoff_manager(CLOCK_DEVICE,
 				(enum clock_control_nrf_type)sys);
 }
 
@@ -249,7 +252,7 @@ static void hfclk192m_stop(void)
 
 static uint32_t *get_hf_flags(void)
 {
-	struct nrf_clock_control_data *data = DEVICE_GET(clock_nrf)->data;
+	struct nrf_clock_control_data *data = CLOCK_DEVICE->data;
 
 	return &data->subsys[CLOCK_CONTROL_NRF_TYPE_HFCLK].flags;
 }
@@ -276,7 +279,7 @@ static void generic_hfclk_start(void)
 
 	if (already_started) {
 		/* Clock already started by z_nrf_clock_bt_ctlr_hf_request */
-		clkstarted_handle(DEVICE_GET(clock_nrf),
+		clkstarted_handle(CLOCK_DEVICE,
 				  CLOCK_CONTROL_NRF_TYPE_HFCLK);
 		return;
 	}
@@ -394,7 +397,7 @@ static int api_blocking_start(const struct device *dev,
 
 static clock_control_subsys_t get_subsys(struct onoff_manager *mgr)
 {
-	struct nrf_clock_control_data *data = DEVICE_GET(clock_nrf)->data;
+	struct nrf_clock_control_data *data = CLOCK_DEVICE->data;
 	size_t offset = (size_t)(mgr - data->mgr);
 
 	return (clock_control_subsys_t)offset;
@@ -405,7 +408,7 @@ static void onoff_stop(struct onoff_manager *mgr,
 {
 	int res;
 
-	res = stop(DEVICE_GET(clock_nrf), get_subsys(mgr), CTX_ONOFF);
+	res = stop(CLOCK_DEVICE, get_subsys(mgr), CTX_ONOFF);
 	notify(mgr, res);
 }
 
@@ -425,7 +428,7 @@ static void onoff_start(struct onoff_manager *mgr,
 {
 	int err;
 
-	err = async_start(DEVICE_GET(clock_nrf), get_subsys(mgr),
+	err = async_start(CLOCK_DEVICE, get_subsys(mgr),
 			  onoff_started_callback, notify, CTX_ONOFF);
 	if (err < 0) {
 		notify(mgr, err);
@@ -528,7 +531,7 @@ void z_nrf_clock_control_lf_on(enum nrf_lfclk_start_mode start_mode)
 	if (atomic_set(&on, 1) == 0) {
 		int err;
 		struct onoff_manager *mgr =
-				get_onoff_manager(DEVICE_GET(clock_nrf),
+				get_onoff_manager(CLOCK_DEVICE,
 						  CLOCK_CONTROL_NRF_TYPE_LFCLK);
 
 		sys_notify_init_spinwait(&cli.notify);
@@ -557,7 +560,7 @@ void z_nrf_clock_control_lf_on(enum nrf_lfclk_start_mode start_mode)
 
 static void clock_event_handler(nrfx_clock_evt_type_t event)
 {
-	const struct device *dev = DEVICE_GET(clock_nrf);
+	const struct device *dev = CLOCK_DEVICE;
 
 	switch (event) {
 	case NRFX_CLOCK_EVT_HFCLK_STARTED:
@@ -671,10 +674,10 @@ static const struct nrf_clock_control_config config = {
 	}
 };
 
-DEVICE_AND_API_INIT(clock_nrf, DT_INST_LABEL(0),
-		    clk_init, &data, &config, PRE_KERNEL_1,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &clock_control_api);
+DEVICE_DT_DEFINE(DT_NODELABEL(clock), clk_init, device_pm_control_nop,
+		 &data, &config,
+		 PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		 &clock_control_api);
 
 static int cmd_status(const struct shell *shell, size_t argc, char **argv)
 {
@@ -682,10 +685,10 @@ static int cmd_status(const struct shell *shell, size_t argc, char **argv)
 	bool hf_status;
 	bool lf_status = nrfx_clock_is_running(NRF_CLOCK_DOMAIN_LFCLK, NULL);
 	struct onoff_manager *hf_mgr =
-				get_onoff_manager(DEVICE_GET(clock_nrf),
+				get_onoff_manager(CLOCK_DEVICE,
 						  CLOCK_CONTROL_NRF_TYPE_HFCLK);
 	struct onoff_manager *lf_mgr =
-				get_onoff_manager(DEVICE_GET(clock_nrf),
+				get_onoff_manager(CLOCK_DEVICE,
 						  CLOCK_CONTROL_NRF_TYPE_LFCLK);
 	uint32_t abs_start, abs_stop;
 	int key = irq_lock();
