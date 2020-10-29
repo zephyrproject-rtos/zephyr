@@ -146,7 +146,10 @@ start_zephyr ()
 	cmake -GNinja -DBOARD=native_posix -B build "$@" . && \
 	ninja -C build
 
-    ninja -C build run &
+    # Run the binary directly so that ninja does not print errors that
+    # could be confusing.
+    #ninja -C build run &
+    build/zephyr/zephyr.exe &
     zephyr_pid=$!
 
     sleep 3
@@ -359,6 +362,28 @@ docker_exec ()
 	    stop_docker
 
 	    return $result
+	    ;;
+
+	gptp)
+	    start_configuration || return $?
+	    start_docker \
+		    "/usr/local/sbin/ptp4l -2 -f /etc/gptp.cfg -m -q -l 6 -S -i eth0" \
+	        || return $?
+
+	    # For native_posix gPTP run, the delay threshold needs to be huge
+	    start_zephyr "$overlay" "-DCONFIG_NET_SAMPLE_RUN_DURATION=10" \
+	                 "-DCONFIG_NET_GPTP_NEIGHBOR_PROP_DELAY_THR=12000000"
+
+	    wait_zephyr
+	    gptp_result=$?
+
+	    if [ $gptp_result -eq 1 -o $gptp_result -eq 2 ]; then
+	        result=0
+	    else
+	        result=1
+	    fi
+
+	    stop_docker
 	    ;;
 
 	*)
