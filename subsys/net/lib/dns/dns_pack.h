@@ -21,7 +21,10 @@
 
 /* This is the label's length octet, see 4.1.2. Question section format */
 #define DNS_LABEL_LEN_SIZE	1
+#define DNS_POINTER_SIZE	2
+#define DNS_LABEL_MIN_SIZE	1
 #define DNS_LABEL_MAX_SIZE	63
+#define DNS_NAME_MAX_SIZE       255
 #define DNS_ANSWER_MIN_SIZE	12
 #define DNS_COMMON_UINT_SIZE	2
 
@@ -86,7 +89,10 @@ enum dns_rr_type {
 	DNS_RR_TYPE_INVALID = 0,
 	DNS_RR_TYPE_A	= 1,		/* IPv4  */
 	DNS_RR_TYPE_CNAME = 5,		/* CNAME */
-	DNS_RR_TYPE_AAAA = 28		/* IPv6  */
+	DNS_RR_TYPE_PTR = 12,		/* PTR   */
+	DNS_RR_TYPE_TXT = 16,		/* TXT   */
+	DNS_RR_TYPE_AAAA = 28,		/* IPv6  */
+	DNS_RR_TYPE_SRV = 33,		/* SRV   */
 };
 
 enum dns_response_type {
@@ -99,6 +105,7 @@ enum dns_response_type {
 enum dns_class {
 	DNS_CLASS_INVALID = 0,
 	DNS_CLASS_IN,
+	DNS_CLASS_FLUSH = BIT(15)
 };
 
 enum dns_msg_type {
@@ -114,6 +121,63 @@ enum dns_header_rcode {
 	DNS_HEADER_NOTIMPLEMENTED,
 	DNS_HEADER_REFUSED
 };
+
+struct dns_header {
+	/** Transaction ID */
+	uint16_t id;
+	/**
+	 * | Name | Bit Position | Width | Description |
+	 * |------|--------------|-------|-------------|
+	 * | RCODE | 0 | 4 | Response / Error code |
+	 * | CD | 4 | 1 | |
+	 * | AD | 5 | 1 | Authenticated Data. 0 := Unacceptable, 1 := Acceptable |
+	 * | Z | 6 | 1 | Reserved (WZ/RAZ) |
+	 * | RA | 7 | 1 | Recursion Available. 0 := Unavailable, 1 := Available |
+	 * | RD | 8 | 1 | Recursion Desired. 0 := No Recursion, 1 := Recursion |
+	 * | TC | 9 | 1 | 0 := Not Truncated, 1 := Truncated |
+	 * | AA | 10 | 1 | Answer Authenticated / Answer Authoritative. 0 := Not Authenticated, 1 := Authenticated|
+	 * | Opcode | 11 | 4 | See @ref dns_opcode |
+	 * | QR | 15 | 1 | 0 := Query, 1 := Response |
+	 */
+	uint16_t flags;
+	/** Query count */
+	uint16_t qdcount;
+	/** Answer count */
+	uint16_t ancount;
+	/** Authority count */
+	uint16_t nscount;
+	/** Additional information count */
+	uint16_t arcount;
+	/** Flexible array member for records */
+	uint8_t data[];
+} __packed;
+
+struct dns_query {
+	uint16_t type;
+	uint16_t class_;
+} __packed;
+
+struct dns_rr {
+	uint16_t type;
+	uint16_t class_;
+	uint32_t ttl;
+	uint16_t rdlength;
+	uint8_t rdata[];
+} __packed;
+
+struct dns_srv_rdata {
+	uint16_t priority;
+	uint16_t weight;
+	uint16_t port;
+} __packed;
+
+struct dns_a_rdata {
+	uint32_t address;
+} __packed;
+
+struct dns_aaaa_rdata {
+	uint8_t address[16];
+} __packed;
 
 /** It returns the ID field in the DNS msg header	*/
 static inline int dns_header_id(uint8_t *header)
