@@ -110,6 +110,9 @@ static struct {
 /* FIFO to return stale AD data PDU buffers from LLL to thread context */
 static MFIFO_DEFINE(pdu_free, sizeof(void *), PDU_MEM_FIFO_COUNT);
 
+/* Semaphore to wakeup thread waiting for free AD data PDU buffers */
+static struct k_sem sem_pdu_free;
+
 int lll_adv_init(void)
 {
 	int err;
@@ -184,6 +187,7 @@ struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx)
 {
 	uint8_t first, last;
 	struct pdu_adv *p;
+	int err;
 
 	first = pdu->first;
 	last = pdu->last;
@@ -215,7 +219,8 @@ struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx)
 
 	p = MFIFO_DEQUEUE_PEEK(pdu_free);
 	if (p) {
-		/* TODO: take the semaphore, dont wait */
+		err = k_sem_take(&sem_pdu_free, K_NO_WAIT);
+		LL_ASSERT(!err);
 
 		MFIFO_DEQUEUE(pdu_free);
 		pdu->pdu[last] = (void *)p;
@@ -230,7 +235,8 @@ struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx)
 		return p;
 	}
 
-	/* TODO: take the semaphore, wait forever? */
+	err = k_sem_take(&sem_pdu_free, K_FOREVER);
+	LL_ASSERT(!err);
 
 	p = MFIFO_DEQUEUE(pdu_free);
 	LL_ASSERT(p);
@@ -270,6 +276,7 @@ struct pdu_adv *lll_adv_pdu_latest_get(struct lll_adv_pdu *pdu,
 		pdu->pdu[pdu_idx] = NULL;
 
 		MFIFO_BY_IDX_ENQUEUE(pdu_free, free_idx, p);
+		k_sem_give(&sem_pdu_free);
 	}
 
 	return (void *)pdu->pdu[first];
@@ -350,6 +357,9 @@ static int init_reset(void)
 
 	/* Initialize AC PDU free buffer return queue */
 	MFIFO_INIT(pdu_free);
+
+	/* Initialize semaphore for ticker API blocking wait */
+	k_sem_init(&sem_pdu_free, 0, PDU_MEM_FIFO_COUNT);
 
 	return 0;
 }
