@@ -532,7 +532,7 @@
 /subsys/net/buf.c                         @jukkar @jhedberg @tbursztyka @pfalcon
 /subsys/net/ip/                           @jukkar @tbursztyka @pfalcon
 /subsys/net/lib/                          @jukkar @tbursztyka @pfalcon
-/subsys/net/lib/dns/                      @jukkar @tbursztyka @pfalcon
+/subsys/net/lib/dns/                      @jukkar @tbursztyka @pfalcon @cfriedt
 /subsys/net/lib/lwm2m/                    @rlubos
 /subsys/net/lib/config/                   @jukkar @tbursztyka @pfalcon
 /subsys/net/lib/mqtt/                     @jukkar @tbursztyka @rlubos

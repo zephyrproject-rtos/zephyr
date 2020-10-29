@@ -134,6 +134,10 @@
 	} GROUP_LINK_IN(ROMABLE_REGION)
 #endif /* CONFIG_EMUL */
 
+#if defined(CONFIG_DNS_SD)
+	Z_ITERABLE_SECTION_ROM(dns_sd_rec, 4)
+#endif
+
 	SECTION_DATA_PROLOGUE(log_const_sections,,)
 	{
 		__log_const_start = .;
