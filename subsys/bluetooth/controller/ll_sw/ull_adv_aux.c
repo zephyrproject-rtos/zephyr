@@ -220,8 +220,8 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	}
 
 	LL_ASSERT(lll->aux);
+
 	aux_pdu = lll_adv_aux_data_peek(lll->aux);
-	sr_prev = lll_adv_scan_rsp_peek(lll);
 
 	/* Can only discard data on non-scannable instances */
 	if (!(aux_pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_SCAN) && len) {
@@ -248,6 +248,8 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	sr_hdr->adi = 1;
 #endif
 	sr_dptr++;
+
+	sr_prev = lll_adv_scan_rsp_peek(lll);
 
 	/* AdvA */
 	memcpy(sr_dptr, &sr_prev->adv_ext_ind.ext_hdr_adi_adv_data[1],
