@@ -337,6 +337,7 @@ uint8_t ll_adv_aux_set_remove(uint8_t handle)
 		struct ll_adv_aux_set *aux;
 
 		aux = (void *)HDR_LLL2EVT(lll->aux);
+		lll->aux = NULL;
 
 		ull_adv_aux_release(aux);
 	}
@@ -902,6 +903,7 @@ struct ll_adv_aux_set *ull_adv_aux_acquire(struct lll_adv *lll)
 
 void ull_adv_aux_release(struct ll_adv_aux_set *aux)
 {
+	lll_adv_data_release(&aux->lll.data);
 	aux_release(aux);
 }
 

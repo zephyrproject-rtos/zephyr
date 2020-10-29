@@ -294,9 +294,9 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 
 				/* Release auxiliary channel set */
 				aux = (void *)HDR_LLL2EVT(lll_aux);
-				ull_adv_aux_release(aux);
-
 				adv->lll.aux = NULL;
+
+				ull_adv_aux_release(aux);
 			} else {
 				/* No previous AD data in auxiliary channel
 				 * PDU.

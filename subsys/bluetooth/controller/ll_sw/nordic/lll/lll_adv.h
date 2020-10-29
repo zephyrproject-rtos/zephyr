@@ -107,6 +107,7 @@ int lll_adv_init(void);
 int lll_adv_reset(void);
 int lll_adv_data_init(struct lll_adv_pdu *pdu);
 int lll_adv_data_reset(struct lll_adv_pdu *pdu);
+int lll_adv_data_release(struct lll_adv_pdu *pdu);
 struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx);
 void lll_adv_prepare(void *param);
 
