@@ -122,6 +122,13 @@ static uint16_t find_available_port(struct net_context *context,
 #define find_available_port(...) 0
 #endif
 
+bool net_context_port_in_use(enum net_ip_protocol ip_proto,
+			   uint16_t local_port,
+			   const struct sockaddr *local_addr)
+{
+	return check_used_port(ip_proto, htons(local_port), local_addr) != 0;
+}
+
 int net_context_get(sa_family_t family,
 		    enum net_sock_type type,
 		    uint16_t ip_proto,
