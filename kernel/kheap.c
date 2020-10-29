@@ -5,9 +5,10 @@
  */
 
 #include <kernel.h>
-#include <ksched.h>
 #include <wait_q.h>
 #include <init.h>
+#include <sys/scheduler.h>
+#include <kernel_arch_interface.h>
 
 void k_heap_init(struct k_heap *h, void *mem, size_t bytes)
 {
@@ -42,8 +43,8 @@ void *k_heap_alloc(struct k_heap *h, size_t bytes, k_timeout_t timeout)
 			break;
 		}
 
-		(void) z_pend_curr(&h->lock, key, &h->wait_q,
-				   K_TICKS(end - now));
+		(void)k_sched_wait(&h->lock, key, &h->wait_q,
+				   K_TICKS(end - now), NULL);
 		key = k_spin_lock(&h->lock);
 	}
 
@@ -57,8 +58,8 @@ void k_heap_free(struct k_heap *h, void *mem)
 
 	sys_heap_free(&h->heap, mem);
 
-	if (z_unpend_all(&h->wait_q) != 0) {
-		z_reschedule(&h->lock, key);
+	if (k_sched_wake_all(&h->wait_q, 0, NULL)) {
+		k_sched_invoke(&h->lock, key);
 	} else {
 		k_spin_unlock(&h->lock, key);
 	}
