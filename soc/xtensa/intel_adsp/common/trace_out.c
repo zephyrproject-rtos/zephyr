@@ -7,11 +7,12 @@
 #include <adsp/cache.h>
 #include <soc/shim.h>
 
-/* Simple char-at-a-time output rig to the host kernel from a ADSP
- * device.  The protocol uses an array of "slots" in shared memory,
- * each of which has a 16 bit magic number to validate and a
- * sequential ID number.  The remaining bytes are a (potentially
- * nul-terminated) string containing output data.
+/* Simple output driver for the trace window of an ADSP device used
+ * for communication with the host processor as a shared memory
+ * region.  The protocol uses an array of 64-byte "slots", each of
+ * which is prefixed by a 16 bit magic number followed by a sequential
+ * ID number.  The remaining bytes are a (potentially nul-terminated)
+ * string containing output data.
  *
  * IMPORTANT NOTE on cache coherence: the shared memory window is in
  * HP-SRAM.  Each DSP core has an L1 cache that is incoherent (!) from
@@ -44,9 +45,9 @@ struct slot {
 
 struct metadata {
 	struct k_spinlock lock;
-	int initialized;
-	int curr_slot;   /* To which slot are we writing? */
-	int n_bytes;     /* How many bytes buffered in curr_slot */
+	bool initialized;
+	uint32_t curr_slot;   /* To which slot are we writing? */
+	uint32_t n_bytes;     /* How many bytes buffered in curr_slot */
 };
 
 /* Give it a cache line all its own! */
@@ -64,7 +65,7 @@ static inline struct slot *slot(int i)
 	return &slots[i];
 }
 
-int arch_printk_char_out(int c)
+void intel_adsp_trace_out(int8_t *str, size_t len)
 {
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
@@ -75,22 +76,41 @@ int arch_printk_char_out(int c)
 		data->initialized = 1;
 	}
 
-	struct slot *s = slot(data->curr_slot);
+	/* We work with a local copy of the global data for
+	 * performance reasons (*data is uncached!) and put it back at
+	 * the end.
+	 */
+	uint32_t curr_slot = data->curr_slot;
+	uint32_t n_bytes = data->n_bytes;
 
-	s->msg[data->n_bytes++] = c;
+	for (size_t i = 0; i < len; i++) {
+		int8_t c = str[i];
+		struct slot *s = slot(curr_slot);
 
-	if (data->n_bytes < MSGSZ) {
-		s->msg[data->n_bytes] = 0;
+		s->msg[n_bytes++] = c;
+
+		if (c == '\n' || n_bytes >= MSGSZ) {
+			curr_slot = (curr_slot + 1) % NSLOTS;
+			n_bytes = 0;
+			slot(curr_slot)->hdr.magic = 0;
+			slot(curr_slot)->hdr.id = s->hdr.id + 1;
+			s->hdr.magic = SLOT_MAGIC;
+		}
 	}
 
-	if (c == '\n' || data->n_bytes >= MSGSZ) {
-		data->curr_slot = (data->curr_slot + 1) % NSLOTS;
-		data->n_bytes = 0;
-		slot(data->curr_slot)->hdr.magic = 0;
-		slot(data->curr_slot)->hdr.id = s->hdr.id + 1;
-		s->hdr.magic = SLOT_MAGIC;
+	if (n_bytes < MSGSZ) {
+		slot(curr_slot)->msg[n_bytes] = 0;
 	}
 
+	data->curr_slot = curr_slot;
+	data->n_bytes = n_bytes;
 	k_spin_unlock(&data->lock, key);
+}
+
+int arch_printk_char_out(int c)
+{
+	int8_t s = c;
+
+	intel_adsp_trace_out(&s, 1);
 	return 0;
 }

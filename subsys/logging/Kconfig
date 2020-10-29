@@ -528,46 +528,12 @@ config LOG_BACKEND_NET_AUTOSTART
 
 endif # LOG_BACKEND_NET
 
-config LOG_BACKEND_RB
-	bool "Enable memory ring buffer backend"
-	select RING_BUFFER
+config LOG_BACKEND_ADSP
+	bool "Enable Intel ADSP buffer backend"
+	depends on SOC_FAMILY_INTEL_ADSP
 	help
-	  Enable backend in memory using ring buffer to keep messages.
-
-if LOG_BACKEND_RB
-
-config LOG_BACKEND_RB_MEM_BASE
-	hex "Ring buffer memory base address"
-	help
-	  Address of the ring buffer in the memory.
-
-config LOG_BACKEND_RB_MEM_SIZE
-	int "Size of the ring buffer"
-	help
-	  Size of the ring buffer. Must be multiply of the message slot
-	  size.
-
-config LOG_BACKEND_RB_SLOT_SIZE
-	int "Size of the message slot"
-	default 64
-	help
-	  Size of the message slot inside ring buffer. All log messages
-	  are split to similar sized logging slots.
-
-config LOG_BACKEND_RB_CLEAR
-	bool "Clear ring buffer slot"
-	default y
-	help
-	  Clearing ring buffer slot helps to write more easy tools to read logs
-	  on different platforms.
-
-config LOG_BACKEND_RB_TIMESTAMP
-	bool "Add timestamp to the log"
-	default y
-	help
-	  Add timestamp to the logging string.
-
-endif # LOG_BACKEND_RB
+	  Enable backend for the host trace protocol of the Intel ADSP
+	  family of audio processors
 
 config LOG_BACKEND_SHOW_COLOR
 	bool "Enable colors in the backend"

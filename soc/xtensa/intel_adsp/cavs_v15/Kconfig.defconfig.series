@@ -66,14 +66,8 @@ if LOG
 config LOG_PRINTK
 	default y
 
-config LOG_BACKEND_RB
+config LOG_BACKEND_ADSP
 	default y
-
-config LOG_BACKEND_RB_MEM_BASE
-	default 0xBE000000
-
-config LOG_BACKEND_RB_MEM_SIZE
-	default 8192
 
 endif # LOG
 
