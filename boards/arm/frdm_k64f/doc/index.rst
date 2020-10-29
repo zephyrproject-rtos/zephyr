@@ -61,43 +61,89 @@ Supported Features
 
 The frdm_k64f board configuration supports the following hardware features:
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | ethernet                            |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | soc flash                           |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-| SENSOR    | off-chip   | fxos8700 polling;                   |
-|           |            | fxos8700 trigger                    |
-+-----------+------------+-------------------------------------+
-| CAN       | on-chip    | can                                 |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
+.. list-table::
+   :header-rows: 1
+
+   * - Interface
+     - Controller
+     - Driver/Component
+
+   * - :ref:`adc_api`
+     - on-chip
+     - :option:`CONFIG_ADC_MCUX_ADC16`
+
+   * - :ref:`can_api`
+     - on-chip
+     - :option:`CONFIG_CAN_MCUX_FLEXCAN`
+
+   * - :ref:`clock_control_api`
+     - on-chip
+     - :option:`CONFIG_CLOCK_CONTROL_MCUX_SIM`
+       :option:`CONFIG_CLOCK_CONTROL_MCUX_MCG`
+
+   * - :ref:`counter_api`
+     - on-chip
+     - :option:`CONFIG_COUNTER_MCUX_RTC`
+
+   * - :ref:`dac_api`
+     - on-chip
+     - :option:`CONFIG_DAC_MCUX_DAC`
+
+   * - :ref:`entropy_api`
+     - on-chip
+     - :option:`CONFIG_ENTROPY_MCUX_RNGA`
+
+   * - :ref:`ethernet_interface`
+     - on-chip
+     - :option:`CONFIG_ETH_MCUX`
+
+   * - :ref:`flash_api`
+     - on-chip
+     - :option:`CONFIG_SOC_FLASH_MCUX`
+
+   * - :ref:`gpio_api`
+     - on-chip
+     - :option:`CONFIG_GPIO_MCUX`
+
+   * - :ref:`i2c_api`
+     - on-chip
+     - :option:`CONFIG_I2C_MCUX`
+
+   * - MPU
+     - on-chip
+     - :option:`CONFIG_ARM_MPU`
+
+   * - :ref:`pinmux_api`
+     - on-chip
+     - :option:`CONFIG_PINMUX_MCUX`
+
+   * - :ref:`pwm_api`
+     - on-chip
+     - :option:`CONFIG_PWM_MCUX_FTM`
+
+   * - :ref:`sensor_api`
+     - off-chip
+     - :option:`CONFIG_FXOS8700`
+
+   * - :ref:`spi_api`
+     - on-chip
+     - :option:`CONFIG_SPI_MCUX_DSPI`
+
+   * - Timer
+     - on-chip
+     - :option:`CONFIG_CORTEX_M_SYSTICK`
+
+   * - :ref:`uart_api`
+     - on-chip
+     - :option:`CONFIG_UART_MCUX`
+
+   * - :ref:`usb_api`
+     - on-chip
+     - :option:`CONFIG_USB_KINETIS`
+
+   * - :ref:`watchdog_api`
+     - on-chip
+     - :option:`CONFIG_WDT_MCUX_WDOG`
 
 The default configuration can be found in the defconfig file:
 
