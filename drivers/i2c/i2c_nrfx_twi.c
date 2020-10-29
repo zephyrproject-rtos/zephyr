@@ -296,8 +296,7 @@ static int twi_nrfx_pm_control(const struct device *dev,
 			.frequency = I2C_FREQUENCY(idx),		       \
 		}							       \
 	};								       \
-	DEVICE_DEFINE(twi_##idx,					       \
-		      DT_LABEL(I2C(idx)),				       \
+	DEVICE_DT_DEFINE(I2C(idx),					       \
 		      twi_##idx##_init,					       \
 		      twi_nrfx_pm_control,				       \
 		      &twi_##idx##_data,				       \
