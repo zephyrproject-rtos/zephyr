@@ -118,7 +118,6 @@
  * LL_FEAT_BIT_MASK_VALID is defined as per
  * Core Spec V5.2 Volume 6, Part B, chapter 4.6
  */
->>>>>>> 7621b12272... Bluetooth: controller: llcp: Feature Exchange compliance with BTLE V5.0+
 #define LL_FEAT_BIT_MASK         0x1FFFF
 #define LL_FEAT_BIT_MASK_VALID   0x1CF2F
 #define LL_FEAT_FILTER_OCTET0    0x1FF00
