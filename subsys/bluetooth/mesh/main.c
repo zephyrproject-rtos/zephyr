@@ -179,6 +179,8 @@ void bt_mesh_reset(void)
 	bt_mesh_rx_reset();
 	bt_mesh_tx_reset();
 
+	bt_mesh_rpl_clear();
+
 	bt_mesh_net_loopback_clear(BT_MESH_KEY_ANY);
 
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
