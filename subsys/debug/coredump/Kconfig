@@ -47,4 +47,11 @@ config DEBUG_COREDUMP_MEMORY_DUMP_LINKER_RAM
 
 endchoice
 
+config DEBUG_COREDUMP_SHELL
+	bool "Enable Coredump shell"
+	default y
+	depends on SHELL
+	help
+	  This shell provides access to coredump and its backends.
+
 endif # DEBUG_COREDUMP
