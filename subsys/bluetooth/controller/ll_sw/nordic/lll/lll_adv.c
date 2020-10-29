@@ -157,6 +157,29 @@ int lll_adv_data_reset(struct lll_adv_pdu *pdu)
 	return 0;
 }
 
+int lll_adv_data_release(struct lll_adv_pdu *pdu)
+{
+	uint8_t last;
+	void *p;
+
+	last = pdu->last;
+	p = pdu->pdu[last];
+	pdu->pdu[last] = NULL;
+	mem_release(p, &mem_pdu.free);
+
+	last++;
+	if (last == DOUBLE_BUFFER_SIZE) {
+		last = 0U;
+	}
+	p = pdu->pdu[last];
+	if (p) {
+		pdu->pdu[last] = NULL;
+		mem_release(p, &mem_pdu.free);
+	}
+
+	return 0;
+}
+
 struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx)
 {
 	uint8_t first, last;
