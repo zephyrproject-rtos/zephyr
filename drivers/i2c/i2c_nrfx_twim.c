@@ -349,8 +349,7 @@ static int twim_nrfx_pm_control(const struct device *dev,
 			.frequency = I2C_FREQUENCY(idx),		       \
 		}							       \
 	};								       \
-	DEVICE_DEFINE(twim_##idx,					       \
-		      DT_LABEL(I2C(idx)),				       \
+	DEVICE_DT_DEFINE(I2C(idx),					       \
 		      twim_##idx##_init,				       \
 		      twim_nrfx_pm_control,				       \
 		      &twim_##idx##_data,				       \
