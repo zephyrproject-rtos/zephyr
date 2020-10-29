@@ -97,6 +97,14 @@ config FS_FATFS_CODEPAGE
 	  949 - Korean (DBCS)
 	  950 - Traditional Chinese (DBCS)
 
+config FS_FATFS_VOLUMES
+	int "Maximum number of logical drives"
+	range 1 8
+	default 8
+	help
+	  Number of file system objects of which one is needed per used logical
+	  drive. Reducing this setting results in less memory usage.
+
 endmenu
 
 endif # FAT_FILESYSTEM_ELM
