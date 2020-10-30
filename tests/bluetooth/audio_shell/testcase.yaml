@@ -34,3 +34,83 @@ tests:
       - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
       - CONFIG_BT_OTS=n
       - CONFIG_BT_OTC=n
+  bluetooth.audio_shell.no_bass:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - CONFIG_BT_BASS=n
+  bluetooth.audio_shell.no_bass_client:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - CONFIG_BT_BASS_CLIENT=n
+  bluetooth.audio_shell.no_bass_bass_client:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - CONFIG_BT_BASS=n
+      - CONFIG_BT_BASS_CLIENT=n
+  bluetooth.audio_shell.no_csis:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - CONFIG_BT_CSIS=n
+  bluetooth.audio_shell.no_csip:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - CONFIG_BT_CSIP=n
+  bluetooth.audio_shell.no_csis_csip:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - CONFIG_BT_CSIS=n
+      - CONFIG_BT_CSIP=n
+  bluetooth.audio_shell.no_vcs:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - CONFIG_BT_VCS=n
+  bluetooth.audio_shell.no_vcs_client:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - CONFIG_BT_VCS_CLIENT=n
+  bluetooth.audio_shell.no_vcs_vcs_client:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - CONFIG_BT_VCS=n
+      - CONFIG_BT_VCS_CLIENT=n
+  bluetooth.audio_shell.no_mics:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - CONFIG_BT_MICS=n
+  bluetooth.audio_shell.no_mics_client:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - CONFIG_BT_MICS_CLIENT=n
+  bluetooth.audio_shell.no_mics_mics_client:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - CONFIG_BT_MICS=n
+      - CONFIG_BT_MICS_CLIENT=n
+  bluetooth.audio_shell.no_tbs:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - CONFIG_BT_TBS=n
+  bluetooth.audio_shell.no_ccp:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - CONFIG_BT_CCP=n
+  bluetooth.audio_shell.no_tbs_ccp:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - CONFIG_BT_TBS=n
+      - CONFIG_BT_CCP=n
