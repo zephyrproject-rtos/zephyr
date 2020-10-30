@@ -443,7 +443,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 	struct bt_gatt_chrc *chrc;
 	struct set_member_t *member = lookup_member_by_conn(conn);
 	struct bt_gatt_subscribe_params *sub_params = NULL;
-	void *notify_handler;
+	void *notify_handler = NULL;
 
 	if (!member) {
 		busy = false;
@@ -514,7 +514,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 			cur_inst->rank_handle = chrc->value_handle;
 		}
 
-		if (subscribe_all && sub_params) {
+		if (subscribe_all && sub_params && notify_handler) {
 			sub_params->value = 0;
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
 				sub_params->value = BT_GATT_CCC_NOTIFY;
