@@ -8,4 +8,11 @@ if BOARD_NUCLEO_H743ZI
 config BOARD
 	default "nucleo_h743zi"
 
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # NETWORKING
+
 endif # BOARD_NUCLEO_H743ZI
