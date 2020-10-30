@@ -56,6 +56,13 @@ config BT_L2CAP_DYNAMIC_CHANNEL
 	  This option enables support for LE Connection oriented Channels,
 	  allowing the creation of dynamic L2CAP Channels.
 
+config BT_L2CAP_ECRED
+	bool "L2CAP Enhanced Credit Based Flow Control support"
+	depends on BT_L2CAP_DYNAMIC_CHANNEL
+	help
+	  This option enables support for LE Connection oriented Channels with
+	  Enhanced Credit Based Flow Control support on dynamic L2CAP Channels.
+
 config BT_DEBUG_L2CAP
 	bool "Bluetooth L2CAP debug"
 	depends on BT_DEBUG
