@@ -30,6 +30,16 @@ config MCUBOOT_IMG_MANAGER
 
 endchoice
 
+config MCUBOOT_SHELL
+	bool "MCUboot shell"
+	default y
+	depends on MCUBOOT_IMG_MANAGER
+	depends on SHELL
+	help
+	  Enable shell module, which provides information about image slots and
+	  allows to perform such operations as: confirm, erase and request
+	  upgrade.
+
 config MCUBOOT_TRAILER_SWAP_TYPE
 	bool "use trailer's swap_type field"
 	default y
