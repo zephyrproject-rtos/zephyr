@@ -193,6 +193,23 @@ config BT_CTLR_TX_BUFFER_SIZE
 	  Maximum is set to 251 due to implementation limitations (use of
 	  uint8_t for length field in PDU buffer structure).
 
+config BT_CTLR_ISO_TX_BUFFERS
+	int "Number of Isochronous Tx buffers"
+	default 3
+	range 1 19
+	depends on BT_CTLR_ADV_ISO || BT_CTLR_CENTRAL_ISO || BT_CTLR_PERIPHERAL_ISO
+	help
+	  Set the number of Isochronous Tx PDUs to be queued for transmission
+	  in the controller.
+
+config BT_CTLR_ISO_TX_BUFFER_SIZE
+	int "Isochronous Tx buffer size"
+	range 1 4095
+	default 27
+	help
+	  Size of the Isochronous Tx buffers and the value returned in HCI LE
+	  Read Buffer Size V2 command response.
+
 choice BT_CTLR_TX_PWR
 	prompt "Tx Power"
 	default BT_CTLR_TX_PWR_0
