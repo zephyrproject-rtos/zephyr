@@ -8,3 +8,29 @@ tests:
     platform_allow: qemu_cortex_m3 qemu_x86 native_posix native_posix_64 nrf52840dk_nrf52840
     extra_configs:
       - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+  bluetooth.audio_shell.no_mcs:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - CONFIG_BT_MCS=n
+  bluetooth.audio_shell.no_mcc:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - CONFIG_BT_MCC=n
+  bluetooth.audio_shell.no_ots:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - CONFIG_BT_OTS=n
+  bluetooth.audio_shell.no_otc:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - CONFIG_BT_OTC=n
+  bluetooth.audio_shell.no_otsc:
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - CONFIG_BT_OTS=n
+      - CONFIG_BT_OTC=n
