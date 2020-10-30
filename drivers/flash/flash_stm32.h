@@ -66,6 +66,11 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 				 unsigned int offset,
 				 unsigned int len);
 
+/* Check and clear error flags ins Status Register (SR)*/
+#if !defined(CONFIG_SOC_SERIES_STM32WBX)
+int flash_stm32_check_status(const struct device *dev);
+#endif
+
 int flash_stm32_wait_flash_idle(const struct device *dev);
 
 #ifdef CONFIG_SOC_SERIES_STM32WBX

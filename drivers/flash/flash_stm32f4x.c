@@ -46,8 +46,19 @@ static int write_byte(const struct device *dev, off_t offset, uint8_t val)
 		return -EIO;
 	}
 
+	rc = flash_stm32_check_status(dev);
+	if (rc) {
+		LOG_DBG("Try to clear flash ERR");
+		rc = flash_stm32_check_status(dev);
+		if (rc) {
+			LOG_ERR("Persistent flash error before write");
+			return rc;
+		}
+	}
+	/* Check that no Flash memory operation is ongoing */
 	rc = flash_stm32_wait_flash_idle(dev);
 	if (rc < 0) {
+		LOG_ERR("Not in idle before erase");
 		return rc;
 	}
 
@@ -60,7 +71,11 @@ static int write_byte(const struct device *dev, off_t offset, uint8_t val)
 
 	*((uint8_t *) offset + CONFIG_FLASH_BASE_ADDRESS) = val;
 
-	rc = flash_stm32_wait_flash_idle(dev);
+	rc = flash_stm32_check_status(dev);
+	if (!rc) {
+		rc = flash_stm32_wait_flash_idle(dev);
+	}
+
 	regs->CR &= (~FLASH_CR_PG);
 
 	return rc;
@@ -77,8 +92,19 @@ static int erase_sector(const struct device *dev, uint32_t sector)
 		return -EIO;
 	}
 
+	rc = flash_stm32_check_status(dev);
+	if (rc) {
+		LOG_DBG("Try to clear flash ERR");
+		rc = flash_stm32_check_status(dev);
+		if (rc) {
+			LOG_ERR("Persistent flash error before write");
+			return rc;
+		}
+	}
+	/* Check that no Flash memory operation is ongoing */
 	rc = flash_stm32_wait_flash_idle(dev);
 	if (rc < 0) {
+		LOG_ERR("Not in idle before erase");
 		return rc;
 	}
 
@@ -100,7 +126,11 @@ static int erase_sector(const struct device *dev, uint32_t sector)
 	/* flush the register write */
 	tmp = regs->CR;
 
-	rc = flash_stm32_wait_flash_idle(dev);
+	rc = flash_stm32_check_status(dev);
+	if (!rc) {
+		rc = flash_stm32_wait_flash_idle(dev);
+	}
+
 	regs->CR &= ~(FLASH_CR_SER | FLASH_CR_SNB);
 
 	return rc;

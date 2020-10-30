@@ -53,9 +53,19 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 		return -EIO;
 	}
 
+	rc = flash_stm32_check_status(dev);
+	if (rc) {
+		LOG_DBG("Try to clear flash ERR");
+		rc = flash_stm32_check_status(dev);
+		if (rc) {
+			LOG_ERR("Persistent flash error before write");
+			return rc;
+		}
+	}
 	/* Check that no Flash main memory operation is ongoing */
 	rc = flash_stm32_wait_flash_idle(dev);
 	if (rc < 0) {
+		LOG_ERR("Not in idle before write");
 		return rc;
 	}
 
@@ -74,10 +84,14 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 
 	/* Perform the data write operation at the desired memory address */
 	flash[0] = (uint32_t)val;
+	__ISB();
 	flash[1] = (uint32_t)(val >> 32);
 
 	/* Wait until the BSY bit is cleared */
-	rc = flash_stm32_wait_flash_idle(dev);
+	rc = flash_stm32_check_status(dev);
+	if (!rc) {
+		rc = flash_stm32_wait_flash_idle(dev);
+	}
 
 	/* Clear the PG bit */
 	regs->CR &= (~FLASH_CR_PG);
@@ -97,9 +111,19 @@ static int erase_page(const struct device *dev, unsigned int page)
 		return -EIO;
 	}
 
+	rc = flash_stm32_check_status(dev);
+	if (rc) {
+		LOG_DBG("Try to clear flash ERR");
+		rc = flash_stm32_check_status(dev);
+		if (rc) {
+			LOG_ERR("Persistent flash error before write");
+			return rc;
+		}
+	}
 	/* Check that no Flash memory operation is ongoing */
 	rc = flash_stm32_wait_flash_idle(dev);
 	if (rc < 0) {
+		LOG_ERR("Not in idle before erase");
 		return rc;
 	}
 
@@ -113,13 +137,13 @@ static int erase_page(const struct device *dev, unsigned int page)
 		/* The pages to be erased is in bank 2*/
 		regs->CR |= FLASH_CR_BKER;
 		page = page - 128;
-		LOG_DBG("Erase page %d on bank 2", page);
+		LOG_DBG("Erase page 0x%zx on bank 2", page);
 	} else {
-		LOG_DBG("Erase page %d on bank 1", page);
+		LOG_DBG("Erase page 0x%zx on bank 1", page);
 	}
 
 
-	__ASSERT(page <= 127, "There are only 127 pages, but page is %d", page);
+	__ASSERT(page <= 127, "There are only 127 pages, but page is 0x%zx", page);
 #endif
 
 	/* Set the PER bit and select the page you wish to erase */
@@ -134,7 +158,14 @@ static int erase_page(const struct device *dev, unsigned int page)
 	tmp = regs->CR;
 
 	/* Wait for the BSY bit */
-	rc = flash_stm32_wait_flash_idle(dev);
+	rc = flash_stm32_check_status(dev);
+	if (!rc) {
+		rc = flash_stm32_wait_flash_idle(dev);
+	}
+
+	if (rc) {
+		LOG_ERR("erase %08x failed", page);
+	}
 
 #ifdef FLASH_OPTR_DBANK
 	regs->CR &= ~(FLASH_CR_PER | FLASH_CR_BKER);
@@ -176,6 +207,29 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 
 	return rc;
 }
+#ifdef FLASH_OPTR_DBANK
+void flash_stm32_page_layout(const struct device *dev,
+			     const struct flash_pages_layout **layout,
+			     size_t *layout_size)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+
+	static struct flash_pages_layout stm32g4_flash_layout;
+
+	if (regs->OPTR & FLASH_OPTR_DBANK) {
+		stm32g4_flash_layout.pages_count = FLASH_SIZE / FLASH_PAGE_SIZE;
+		stm32g4_flash_layout.pages_size = FLASH_PAGE_SIZE;
+	} else {
+		stm32g4_flash_layout.pages_count = FLASH_SIZE /
+						   FLASH_PAGE_SIZE_128_BITS;
+		stm32g4_flash_layout.pages_size = FLASH_PAGE_SIZE_128_BITS;
+	}
+
+	*layout = &stm32g4_flash_layout;
+	*layout_size = 1;
+}
+
+#else
 
 void flash_stm32_page_layout(const struct device *dev,
 			     const struct flash_pages_layout **layout,
@@ -196,3 +250,4 @@ void flash_stm32_page_layout(const struct device *dev,
 	*layout = &stm32g4_flash_layout;
 	*layout_size = 1;
 }
+#endif

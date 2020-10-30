@@ -98,7 +98,7 @@ static inline void _flash_stm32_sem_give(const struct device *dev)
 #endif
 
 #if !defined(CONFIG_SOC_SERIES_STM32WBX)
-static int flash_stm32_check_status(const struct device *dev)
+int flash_stm32_check_status(const struct device *dev)
 {
 	uint32_t const error =
 #if defined(FLASH_FLAG_PGAERR)
@@ -122,7 +122,9 @@ static int flash_stm32_check_status(const struct device *dev)
 		FLASH_FLAG_WRPERR;
 
 	if (FLASH_STM32_REGS(dev)->SR & error) {
-		LOG_DBG("Status: 0x%08x", FLASH_STM32_REGS(dev)->SR & error);
+		LOG_ERR("Status: 0x%08x", FLASH_STM32_REGS(dev)->SR & error);
+		/* Clear errors */
+		FLASH_STM32_REGS(dev)->SR &= error;
 		return -EIO;
 	}
 
@@ -133,12 +135,7 @@ static int flash_stm32_check_status(const struct device *dev)
 int flash_stm32_wait_flash_idle(const struct device *dev)
 {
 	int64_t timeout_time = k_uptime_get() + STM32_FLASH_TIMEOUT;
-	int rc;
 
-	rc = flash_stm32_check_status(dev);
-	if (rc < 0) {
-		return -EIO;
-	}
 #if defined(CONFIG_SOC_SERIES_STM32G0X)
 	while ((FLASH_STM32_REGS(dev)->SR & FLASH_SR_BSY1)) {
 #else
@@ -268,6 +265,8 @@ static int flash_stm32_write_protection(const struct device *dev, bool enable)
 	if (enable) {
 		rc = flash_stm32_wait_flash_idle(dev);
 		if (rc) {
+			LOG_ERR("Flash not in idle");
+			printk("Not in idle before protection");
 			flash_stm32_sem_give(dev);
 			return rc;
 		}
