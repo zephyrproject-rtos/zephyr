@@ -123,6 +123,22 @@ static	void _rlrshift(uint64_t *v)
 	*v = (*v & 1) + (*v >> 1);
 }
 
+#ifdef CONFIG_64BIT
+
+static void _ldiv5(uint64_t *v)
+{
+	/*
+	 * Usage in this file wants rounded behavior, not truncation.  So add
+	 * two to get the threshold right.
+	 */
+	*v += 2U;
+
+	/* The compiler can optimize this on its own on 64-bit architectures */
+	*v /= 5U;
+}
+
+#else
+
 /*
  * Tiny integer divide-by-five routine.  The full 64 bit division
  * implementations in libgcc are very large on some architectures, and
@@ -181,6 +197,8 @@ static void _ldiv5(uint64_t *v)
 
 	*v = result;
 }
+
+#endif
 
 static	char _get_digit(uint64_t *fr, int *digit_count)
 {
