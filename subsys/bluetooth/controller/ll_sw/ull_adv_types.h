@@ -63,7 +63,6 @@ struct ll_adv_sync_set {
 struct ll_adv_iso {
 	struct evt_hdr        evt;
 	struct ull_hdr        ull;
-	struct ll_adv_aux_set adv_aux;
 	struct lll_adv_iso    lll;
 
 	uint8_t  hci_handle;
@@ -86,6 +85,7 @@ struct ll_adv_iso {
 	uint8_t  bcode[16];
 
 	struct node_rx_hdr *node_rx_complete;
+	struct pdu_bis pdu;
 };
 
 #endif /* CONFIG_BT_CTLR_ADV_EXT */

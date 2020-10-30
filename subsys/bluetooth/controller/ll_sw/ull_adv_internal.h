@@ -128,4 +128,7 @@ uint32_t ull_adv_sync_start(struct ll_adv_sync_set *sync,
 
 /* helper function to schedule a mayfly to get sync offset */
 void ull_adv_sync_offset_get(struct ll_adv_set *adv);
+
+int ull_adv_iso_init(void);
+int ull_adv_iso_reset(void);
 #endif /* CONFIG_BT_CTLR_ADV_EXT */

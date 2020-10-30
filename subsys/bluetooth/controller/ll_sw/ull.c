@@ -403,6 +403,13 @@ int ll_init(struct k_sem *sem_rx)
 	}
 #endif /* CONFIG_BT_CONN */
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	err = ull_adv_iso_init();
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_BT_CONN */
+
 #if defined(CONFIG_BT_CTLR_USER_EXT)
 	err = ull_user_init();
 	if (err) {
@@ -447,6 +454,12 @@ void ll_reset(void)
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	/* Reset periodic sync sets */
 	err = ull_sync_reset();
+	LL_ASSERT(!err);
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+	/* Reset periodic sync sets */
+	err = ull_adv_iso_reset();
 	LL_ASSERT(!err);
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 

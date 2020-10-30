@@ -690,6 +690,17 @@ struct pdu_big_ctrl {
 	} __packed;
 } __packed;
 
+enum pdu_bis_llid {
+	/** Unframed complete or end fragment */
+	PDU_BIS_LLID_COMPLETE_END = 0x00,
+	/** Unframed start or continuation fragment */
+	PDU_BIS_LLID_START_CONTINUE = 0x01,
+	/** Framed; one or more segments of a SDU */
+	PDU_BIS_LLID_FRAMED = 0x02,
+	/** BIG Control PDU */
+	PDU_BIS_LLID_CTRL = 0x03,
+};
+
 struct pdu_bis {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	uint8_t ll_id:2;
