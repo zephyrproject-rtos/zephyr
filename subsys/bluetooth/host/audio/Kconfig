@@ -29,6 +29,7 @@ config BT_AUDIO_UNICAST
 	select BT_ISO
 	select BT_GATT_DYNAMIC_DB
 	select BT_GATT_CACHING
+	select BT_L2CAP_ECRED
 	select BT_EATT
 	help
 	  This option enables support for Bluetooth Unicast Audio using

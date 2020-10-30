@@ -36,7 +36,7 @@ config BT_ATT_TX_MAX
 
 config BT_EATT
 	bool "Enhanced ATT Bearers support [EXPERIMENTAL]"
-	depends on BT_L2CAP_DYNAMIC_CHANNEL
+	depends on BT_L2CAP_ECRED
 	help
 	  This option enables support for Enhanced ATT bearers support. When
 	  enabled additional L2CAP channels can be connected as bearers enabling
