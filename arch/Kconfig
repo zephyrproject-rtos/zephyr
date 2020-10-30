@@ -21,6 +21,7 @@ config ARC
 	select ARCH_IS_SET
 	select HAS_DTS
 	imply XIP
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	help
 	  ARC architecture
 

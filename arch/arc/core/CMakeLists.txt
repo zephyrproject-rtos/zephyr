@@ -32,6 +32,8 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S)
 zephyr_library_sources_ifdef(CONFIG_ARC_CONNECT arc_connect.c)
 zephyr_library_sources_ifdef(CONFIG_ARC_CONNECT arc_smp.c)
 
+zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE tls.c)
+
 add_subdirectory_ifdef(CONFIG_ARC_CORE_MPU mpu)
 add_subdirectory_ifdef(CONFIG_ARC_SECURE_FIRMWARE secureshield)
 
