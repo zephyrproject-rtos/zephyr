@@ -130,37 +130,56 @@ static	void _rlrshift(uint64_t *v)
  * sense to define this much smaller special case here to avoid
  * including it just for printf.
  *
- * It works by iteratively dividing the most significant 32 bits of
- * the 64 bit value by 5.  This will leave a remainder of 0-4
- * (i.e. three significant bits), ensuring that the top 29 bits of the
- * remainder are zero for the next iteration.  Thus in the second
- * iteration only 35 significant bits remain, and in the third only
- * six.  This was tested exhaustively through the first ~10B values in
- * the input space, and for ~2e12 (4 hours runtime) random inputs
- * taken from the full 64 bit space.
+ * It works by multiplying v by the reciprocal of 5 i.e.:
+ *
+ *	result = v * ((1 << 64) / 5) / (1 << 64)
+ *
+ * This produces a 128-bit result, but we drop the bottom 64 bits which
+ * accounts for the division by (1 << 64). The product is kept to 64 bits
+ * by summing partial multiplications and shifting right by 32 which on
+ * most 32-bit architectures means only a register drop.
+ *
+ * Here the multiplier is: (1 << 64) / 5 = 0x3333333333333333
+ * i.e. a 62 bits value. To compensate for the reduced precision, we
+ * add an initial bias of 1 to v. Enlarging the multiplier to 64 bits
+ * would also work but a final right shift would be needed, and carry
+ * handling on the summing of partial mults would be necessary, requiring
+ * more instructions. Given that we already want to add bias of 2 for
+ * the result to be rounded to nearest and not truncated, we might  as well
+ * combine those together into a bias of 3. This also conveniently allows
+ * for keeping the multiplier in a single 32-bit register given its pattern.
  */
 static void _ldiv5(uint64_t *v)
 {
-	uint32_t hi;
-	uint64_t rem = *v, quot = 0U, q;
-	int i;
-
-	static const char shifts[] = { 32, 3, 0 };
+	uint32_t v_lo = *v;
+	uint32_t v_hi = *v >> 32;
+	uint32_t m = 0x33333333;
+	uint64_t result;
 
 	/*
-	 * Usage in this file wants rounded behavior, not truncation.  So add
-	 * two to get the threshold right.
+	 * Force the multiplier constant into a register and make it
+	 * opaque to the compiler, otherwise gcc tries to be too smart
+	 * for its own good with a large expansion of adds and shifts.
 	 */
-	rem += 2U;
+	__asm__ ("" : "+r" (m));
 
-	for (i = 0; i < 3; i++) {
-		hi = rem >> shifts[i];
-		q = (uint64_t)(hi / 5U) << shifts[i];
-		rem -= q * 5U;
-		quot += q;
-	}
+	/*
+	 * Apply the bias of 3. We can't add it to v as this would overflow
+	 * it when at max range. Factor it out with the multiplier upfront.
+	 * Here we multiply the low and high parts separately to avoid an
+	 * unnecessary 64-bit add-with-carry.
+	 */
+	result = ((uint64_t)(m * 3U) << 32) | (m * 3U);
 
-	*v = quot;
+	/* The actual multiplication. */
+	result += (uint64_t)v_lo * m;
+	result >>= 32;
+	result += (uint64_t)v_lo * m;
+	result += (uint64_t)v_hi * m;
+	result >>= 32;
+	result += (uint64_t)v_hi * m;
+
+	*v = result;
 }
 
 static	char _get_digit(uint64_t *fr, int *digit_count)
