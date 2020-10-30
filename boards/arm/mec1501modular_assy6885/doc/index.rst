@@ -7,7 +7,7 @@ Overview
 ********
 
 The MEC1501 Modular card ASSY6885 is a development board to evaluate the Microchip
-MEC15XX series microcontrollers. This board can work standalone or be mated with
+MEC152X series microcontrollers. This board can work standalone or be mated with
 any platform that complies with MECC specification.
 
 .. image:: ./mec1501modular_assy6885.png
@@ -18,7 +18,7 @@ any platform that complies with MECC specification.
 Hardware
 ********
 
-- MEC1501HB0SZ ARM Cortex-M4 Processor
+- MEC1521HA0SZ ARM Cortex-M4 Processor
 - 256 KB RAM and 64 KB boot ROM
 - GPIO headers
 - UART1 using microUSB
@@ -28,7 +28,7 @@ Hardware
 - VCI interface
 - Independent Hardware Driven PS/2 Ports
 
-At difference from MEC15xx evaluation board, modular MEC1501 exposes the pins
+At difference from MEC15xx evaluation board, modular MEC1521 exposes the pins
 in 2 different ways:
 
 1) Standalone mode via headers
@@ -48,7 +48,7 @@ in 2 different ways:
 The board is powered through the +5V USB Micro A connector or from the MECC connector.
 
 
-For more information about the SOC please see the `MEC1501 Reference Manual`_
+For more information about the SOC please see the `MEC152x Reference Manual`_
 
 Supported Features
 ==================
@@ -236,8 +236,9 @@ Programming and Debugging
 Setup
 =====
 
-#. Clone the `SPI Image Gen`_ repository or download the files within
-   that directory.
+#. Clone the `MEC152x SPI Image Gen`_ repository or download the files within
+   that directory. For the pre-production MEC150x use the `MEC150x SPI Image Gen`_
+   repository.
 
 #. Make the image generation available for Zephyr, by making the tool
    searchable by path, or by setting an environment variable
@@ -245,9 +246,10 @@ Setup
 
    .. code-block:: console
 
-      export EVERGLADES_SPI_GEN=<path to tool>/everglades_spi_gen_lin64
+      export EVERGLADES_SPI_GEN=<path to tool>/everglades_spi_gen_RomE
 
    Note that the tools for Linux and Windows have different file names.
+   For the pre-production MEC1501 SOC use everglades_spi_gen_lin64.
 
 #. If needed, a custom SPI image configuration file can be specified
    to override the default one.
@@ -259,10 +261,9 @@ Setup
 
 Building
 ==========
-
 #. Build :ref:`hello_world` application as you would normally do.
 
-#. Once you have ``zephyr.bin``, use the `SPI Image Gen`_ microchip tool
+#. Once you have ``zephyr.bin``, use the `MEC152x SPI Image Gen`_ microchip tool
    to create the final binary. You need the output from this tool to flash
    in the SHD SPI memory.
 
@@ -309,11 +310,13 @@ References
 **********
 .. target-notes::
 
-.. _MEC1501 Preliminary Data Sheet:
-    https://github.com/MicrochipTech/CPGZephyrDocs/blob/master/MEC1501/MEC1501_Datasheet.pdf
-.. _MEC1501 Reference Manual:
-    https://github.com/MicrochipTech/CPGZephyrDocs/blob/master/MEC1501/MEC1501_Datasheet.pdf
+.. _MEC152x Preliminary Data Sheet:
+    https://github.com/MicrochipTech/CPGZephyrDocs/blob/master/MEC152x/MEC152x_Datasheet.pdf
+.. _MEC152x Reference Manual:
+    https://github.com/MicrochipTech/CPGZephyrDocs/blob/master/MEC152x/MEC152x_Datasheet.pdf
 .. _MEC1501 Modular EC Card - Assy_6885 Rev A0p1:
     https://github.com/MicrochipTech/CPGZephyrDocs/blob/master/MEC1501/MEC1501%20Modular%20EC%20Card%20-%20Assy_6885%20Rev%20A0p1%20-%20SCH.pdf
-.. _SPI Image Gen:
+.. _MEC152x SPI Image Gen:
+    https://github.com/MicrochipTech/CPGZephyrDocs/tree/master/MEC152x/SPI_image_gen
+.. _MEC150x SPI Image Gen:
     https://github.com/MicrochipTech/CPGZephyrDocs/tree/master/MEC1501/SPI_image_gen
