@@ -2717,7 +2717,7 @@ typedef int (*_poller_cb_t)(struct k_poll_event *event, uint32_t state);
 struct _poller {
 	volatile bool is_polling;
 	struct k_thread *thread;
-	_poller_cb_t cb;
+	uint8_t mode;
 };
 
 /**
