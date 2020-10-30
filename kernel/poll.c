@@ -374,11 +374,11 @@ static inline int z_vrfy_k_poll(struct k_poll_event *events,
 	ret = k_poll(events_copy, num_events, timeout);
 	(void)memcpy((void *)events, events_copy, bounds);
 out_free:
-	k_free(events_copy);
+	z_thread_free(events_copy);
 out:
 	return ret;
 oops_free:
-	k_free(events_copy);
+	z_thread_free(events_copy);
 	Z_OOPS(1);
 }
 #include <syscalls/k_poll_mrsh.c>

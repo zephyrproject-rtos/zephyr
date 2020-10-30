@@ -106,7 +106,7 @@ int k_msgq_cleanup(struct k_msgq *msgq)
 	}
 
 	if ((msgq->flags & K_MSGQ_FLAG_ALLOC) != 0) {
-		k_free(msgq->buffer_start);
+		z_thread_free(msgq->buffer_start);
 		msgq->flags &= ~K_MSGQ_FLAG_ALLOC;
 	}
 	return 0;

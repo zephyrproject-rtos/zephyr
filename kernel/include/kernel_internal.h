@@ -51,7 +51,7 @@ extern char *z_setup_new_thread(struct k_thread *new_thread,
  *
  * Threads may be assigned a resource pool, which will be used to allocate
  * memory on behalf of certain kernel and driver APIs. Memory reserved
- * in this way should be freed with k_free().
+ * in this way should be freed with z_thread_free().
  *
  * If called from an ISR, the k_malloc() system heap will be used if it exists.
  *
@@ -60,6 +60,13 @@ extern char *z_setup_new_thread(struct k_thread *new_thread,
  * RAM in the pool or there is no pool to draw memory from
  */
 void *z_thread_malloc(size_t size);
+
+/**
+ * @brief Free memory allocated from a resource pool
+ *
+ * @param ptr Memory to free, or NULL (in which case this is a no-op)
+ */
+void z_thread_free(void *ptr);
 
 /* set and clear essential thread flag */
 

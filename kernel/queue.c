@@ -42,7 +42,7 @@ void *z_queue_node_peek(sys_sfnode_t *node, bool needs_free)
 		anode = CONTAINER_OF(node, struct alloc_node, node);
 		ret = anode->data;
 		if (needs_free) {
-			k_free(anode);
+			z_thread_free(anode);
 		}
 	} else {
 		/* Data was directly placed in the queue, the first word

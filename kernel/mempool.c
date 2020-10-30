@@ -108,3 +108,25 @@ void *z_thread_malloc(size_t size)
 
 	return ret;
 }
+
+void z_thread_free(void *ptr)
+{
+#ifdef CONFIG_MEM_POOL_HEAP_BACKEND
+	/* Basically k_heap free without scheduling hooks, we never set a
+	 * timeout for z_thread_malloc anyway
+	 */
+	if (ptr != NULL) {
+		k_spinlock_key_t key;
+		struct k_mem_block_id *id;
+
+		/* point to hidden block descriptor at start of block */
+		id = (struct k_mem_block_id *)((char *)ptr -
+				WB_UP(sizeof(struct k_mem_block_id)));
+
+		/* return block4 to the heap memory pool */
+		key = k_spin_lock(&id->heap->lock);
+		sys_heap_free(&id->heap->heap, id->data);
+		k_spin_unlock(&id->heap->lock, key);
+	}
+#endif
+}

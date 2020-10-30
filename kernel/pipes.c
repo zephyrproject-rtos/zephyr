@@ -181,7 +181,7 @@ int k_pipe_cleanup(struct k_pipe *pipe)
 	}
 
 	if ((pipe->flags & K_PIPE_FLAG_ALLOC) != 0) {
-		k_free(pipe->buffer);
+		z_thread_free(pipe->buffer);
 		pipe->buffer = NULL;
 		pipe->flags &= ~K_PIPE_FLAG_ALLOC;
 	}

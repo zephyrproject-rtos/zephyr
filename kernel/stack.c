@@ -87,7 +87,7 @@ int k_stack_cleanup(struct k_stack *stack)
 	}
 
 	if ((stack->flags & K_STACK_FLAG_ALLOC) != (uint8_t)0) {
-		k_free(stack->base);
+		z_thread_free(stack->base);
 		stack->base = NULL;
 		stack->flags &= ~K_STACK_FLAG_ALLOC;
 	}
