@@ -328,10 +328,4 @@ config ARC_EXCEPTION_DEBUG
 	  and parameters, at a cost of code/data size for the human-readable
 	  strings.
 
-config ARC_CUSTOM_INIT
-	bool "Enable custom initialization code"
-	help
-	  This option enables custom initialization code as a supplement
-	  method of initialization to some corner cases on SoCs and boards.
-
 endmenu
