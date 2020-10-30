@@ -1811,6 +1811,7 @@ class CMake():
                 return None
         else:
             # A real error occurred, raise an exception
+            log_msg = ""
             if out:
                 log_msg = out.decode(sys.getdefaultencoding())
                 with open(os.path.join(self.build_dir, self.log), "a") as log:
@@ -1822,6 +1823,7 @@ class CMake():
                     logger.debug("Test skipped due to {} Overflow".format(res[0]))
                     self.instance.status = "skipped"
                     self.instance.reason = "{} overflow".format(res[0])
+                    self.suite.build_filtered_tests += 1
                 else:
                     self.instance.status = "error"
                     self.instance.reason = "Build failure"
