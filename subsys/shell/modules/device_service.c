@@ -10,15 +10,15 @@
 #include <string.h>
 #include <device.h>
 
-extern struct device __device_start[];
-extern struct device __device_PRE_KERNEL_1_start[];
-extern struct device __device_PRE_KERNEL_2_start[];
-extern struct device __device_POST_KERNEL_start[];
-extern struct device __device_APPLICATION_start[];
-extern struct device __device_end[];
+extern const struct device __device_start[];
+extern const struct device __device_PRE_KERNEL_1_start[];
+extern const struct device __device_PRE_KERNEL_2_start[];
+extern const struct device __device_POST_KERNEL_start[];
+extern const struct device __device_APPLICATION_start[];
+extern const struct device __device_end[];
 
 #ifdef CONFIG_SMP
-extern struct device __device_SMP_start[];
+extern const struct device __device_SMP_start[];
 #endif
 
 static const struct device *levels[] = {
