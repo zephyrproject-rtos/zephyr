@@ -98,6 +98,7 @@ SECTIONS {
 	_image_rodata_start = .;
 
 #include <linker/common-rom.ld>
+#include <linker/thread-local-storage.ld>
 
 	SECTION_PROLOGUE(_RODATA_SECTION_NAME,,) {
 		KEEP(*(.openocd_dbg))
@@ -220,5 +221,11 @@ SECTIONS {
 		KEEP(*(.gnu.attributes))
 	}
 
-	/DISCARD/ : { *(.note.GNU-stack) }
+	/DISCARD/ : {
+		*(.note.GNU-stack)
+		*(.got.plt)
+		*(.igot.plt)
+		*(.got)
+		*(.igot)
+	}
 }
