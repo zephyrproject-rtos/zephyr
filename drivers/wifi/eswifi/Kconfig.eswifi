@@ -13,10 +13,6 @@ menuconfig WIFI_ESWIFI
 
 if WIFI_ESWIFI
 
-config WIFI_ESWIFI_NAME
-	string "Driver name"
-	default "ESWIFI"
-
 config WIFI_ESWIFI_THREAD_PRIO
 	int "esWiFi threads priority"
 	default 2
