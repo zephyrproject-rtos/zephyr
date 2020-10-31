@@ -11,6 +11,14 @@ properties:
     reg:
       required: true
 
+    cc-num:
+      type: int
+      required: true
+      description: |
+        Number of compare (CC) registers available.
+
+        On nRF53 these registers can also be used for capture.
+
     # If enabled, overflow different than full range (24 bits) is handled
     # through PPI channel which ensures precise timing. If disabled then
     # counter is cleared in the interrupt which results in accumulative error
