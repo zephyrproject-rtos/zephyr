@@ -15,6 +15,11 @@ dt-schema tools used by the Linux kernel). With one exception in
 :ref:`dt-inferred-bindings` the build system uses bindings when generating
 code for :ref:`dt-from-c`.
 
+.. note::
+
+   See the :ref:`devicetree_binding_index` for information on existing
+   bindings.
+
 .. _dt-binding-compat:
 
 Mapping nodes to bindings
