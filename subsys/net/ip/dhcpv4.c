@@ -215,7 +215,7 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, uint8_t type,
 
 	msg->op    = DHCPV4_MSG_BOOT_REQUEST;
 	msg->htype = HARDWARE_ETHERNET_TYPE;
-	msg->hlen  = HARDWARE_ETHERNET_LEN;
+	msg->hlen  = net_if_get_link_addr(iface)->len;
 	msg->xid   = htonl(iface->config.dhcpv4.xid);
 	msg->flags = htons(DHCPV4_MSG_BROADCAST);
 
@@ -1003,6 +1003,11 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 
 		NET_DBG("Unexpected op (%d), xid (%x vs %x) or chaddr",
 			msg->op, iface->config.dhcpv4.xid, ntohl(msg->xid));
+		return NET_DROP;
+	}
+
+	if (msg->hlen != net_if_get_link_addr(iface)->len) {
+		NET_DBG("Unexpected hlen (%d)", msg->hlen);
 		return NET_DROP;
 	}
 
