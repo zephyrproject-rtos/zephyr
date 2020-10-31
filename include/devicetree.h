@@ -318,6 +318,27 @@
 #define DT_PARENT(node_id) UTIL_CAT(node_id, _PARENT)
 
 /**
+ * @brief Get a node identifier for a grandparent node
+ *
+ * Example devicetree fragment:
+ *
+ *     gparent: grandparent-node {
+ *             parent: parent-node {
+ *                     child: child-node { ... }
+ *             };
+ *     };
+ *
+ * The following are equivalent ways to get the same node identifier:
+ *
+ *     DT_GPARENT(DT_NODELABEL(child))
+ *     DT_PARENT(DT_PARENT(DT_NODELABEL(child))
+ *
+ * @param node_id node identifier
+ * @return a node identifier for the node's parent's parent
+ */
+#define DT_GPARENT(node_id) DT_PARENT(DT_PARENT(node_id))
+
+/**
  * @brief Get a node identifier for a child node
  *
  * Example devicetree fragment:
