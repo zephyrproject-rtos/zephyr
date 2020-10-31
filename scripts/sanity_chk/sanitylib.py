@@ -3193,7 +3193,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                             passes += 1
                         elif instance.results[k] == 'BLOCK':
                             errors += 1
-                        elif instance.results[k] == 'SKIP':
+                        elif instance.results[k] == 'SKIP' or instance.status in ['skipped']:
                             skips += 1
                         else:
                             fails += 1
@@ -3292,8 +3292,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                         elif instance.results[k] == 'PASS' \
                             or (not instance.run and instance.status in ["passed"]):
                             pass
-                        elif instance.results[k] == 'SKIP' \
-                            or (not instance.run and instance.status in ["skipped"]):
+                        elif instance.results[k] == 'SKIP' or (instance.status in ["skipped"]):
                             el = ET.SubElement(eleTestcase, 'skipped', type="skipped", message=instance.reason)
                         else:
                             el = ET.SubElement(
