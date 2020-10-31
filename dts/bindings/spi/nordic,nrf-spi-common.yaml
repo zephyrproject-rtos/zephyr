@@ -15,14 +15,29 @@ properties:
     sck-pin:
       type: int
       required: true
-      description: SCK pin
+      description: |
+        The SCK pin to use.
+
+        For pins P0.0 through P0.31, use the pin number. For example,
+        to use P0.16 for SCK, set:
+
+            sck-pin = <16>;
+
+        For pins P1.0 through P1.31, add 32 to the pin number. For
+        example, to use P1.2 for SCK, set:
+
+            sck-pin = <34>;  /* 32 + 2 */
 
     mosi-pin:
       type: int
       required: true
-      description: MOSI pin
+      description: |
+        The MOSI pin to use. The pin numbering scheme is the same as
+        the sck-pin property's.
 
     miso-pin:
       type: int
       required: true
-      description: MISO pin
+      description: |
+        The MISO pin to use. The pin numbering scheme is the same as
+        the sck-pin property's.
