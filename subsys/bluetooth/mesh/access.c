@@ -797,7 +797,7 @@ void bt_mesh_model_tree_walk(struct bt_mesh_model *root,
 			     void *user_data)
 {
 	struct bt_mesh_model *m = root;
-	uint32_t depth = 0;
+	int depth = 0;
 	/* 'skip' is set to true when we ascend from child to parent node.
 	 * In that case, we want to skip calling the callback on the parent
 	 * node and we don't want to descend onto a child node as those
@@ -806,7 +806,8 @@ void bt_mesh_model_tree_walk(struct bt_mesh_model *root,
 	bool skip = false;
 
 	do {
-		if (!skip && cb(m, depth, user_data) == BT_MESH_WALK_STOP) {
+		if (!skip &&
+		    cb(m, (uint32_t)depth, user_data) == BT_MESH_WALK_STOP) {
 			return;
 		}
 #ifdef CONFIG_BT_MESH_MODEL_EXTENSIONS
@@ -822,7 +823,7 @@ void bt_mesh_model_tree_walk(struct bt_mesh_model *root,
 			skip = false;
 		}
 #endif
-	} while (m);
+	} while (m && depth > 0);
 }
 
 #ifdef CONFIG_BT_MESH_MODEL_EXTENSIONS
