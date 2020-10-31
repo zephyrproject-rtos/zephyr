@@ -17,6 +17,11 @@
 /* Matches LFS_NAME_MAX */
 #define MAX_PATH_LEN 255
 
+#define PARTITION_NODE DT_NODELABEL(lfs1)
+
+#if DT_NODE_EXISTS(PARTITION_NODE)
+FS_FSTAB_DECLARE_ENTRY(PARTITION_NODE);
+#else /* PARTITION_NODE */
 FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(storage);
 static struct fs_mount_t lfs_storage_mnt = {
 	.type = FS_LITTLEFS,
@@ -24,10 +29,17 @@ static struct fs_mount_t lfs_storage_mnt = {
 	.storage_dev = (void *)FLASH_AREA_ID(storage),
 	.mnt_point = "/lfs",
 };
+#endif /* PARTITION_NODE */
 
 void main(void)
 {
-	struct fs_mount_t *mp = &lfs_storage_mnt;
+	struct fs_mount_t *mp =
+#if DT_NODE_EXISTS(PARTITION_NODE)
+		&FS_FSTAB_ENTRY(PARTITION_NODE)
+#else
+		&lfs_storage_mnt
+#endif
+		;
 	unsigned int id = (uintptr_t)mp->storage_dev;
 	char fname[MAX_PATH_LEN];
 	struct fs_statvfs sbuf;
