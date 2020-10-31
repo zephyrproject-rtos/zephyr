@@ -69,6 +69,17 @@ extern "C" {
 #define DT_FIXED_PARTITION_ID(node_id) DT_CAT(node_id, _PARTITION_ID)
 
 /**
+ * @brief Get the node identifier of the flash device for a partition
+ * @param node_id node identifier for a fixed-partitions child node
+ * @return the node identifier of the memory technology device that
+ * contains the fixed-partitions node.
+ */
+#define DT_MTD_FROM_FIXED_PARTITION(node_id)				\
+	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_GPARENT(node_id), soc_nv_flash), \
+		    (DT_PARENT(DT_GPARENT(node_id))),			\
+		    (DT_GPARENT(node_id)))
+
+/**
  * @}
  */
 
