@@ -70,3 +70,7 @@
 		     &eth_txd0_pg13
 		     &eth_txd1_pg12>;
 };
+
+&rng {
+	status = "okay";
+};
