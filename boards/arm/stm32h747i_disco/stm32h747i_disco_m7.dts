@@ -54,3 +54,19 @@
 	current-speed = <115200>;
 	status = "okay";
 };
+
+/* From UM2411 Rev 4:
+   With the default setting, the Ethernet feature is not working because of
+   a conflict between ETH_MDC and SAI4_D1 of the MEMs digital microphone */
+   &mac {
+	status = "okay";
+	pinctrl-0 = <&eth_ref_clk_pa1
+		     &eth_mdio_pa2
+		     &eth_crs_dv_pa7
+		     &eth_mdc_pc1
+		     &eth_rxd0_pc4
+		     &eth_rxd1_pc5
+		     &eth_tx_en_pg11
+		     &eth_txd0_pg13
+		     &eth_txd1_pg12>;
+};
