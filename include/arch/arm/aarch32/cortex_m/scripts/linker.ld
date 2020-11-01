@@ -106,6 +106,14 @@ MEMORY
     SRAM1                 (rw) : ORIGIN = RAM1_ADDR, LENGTH = RAM1_SIZE
     SRAM2                 (rw) : ORIGIN = RAM2_ADDR, LENGTH = RAM2_SIZE
 #endif
+#ifdef CONFIG_MEMC_STM32_SDRAM
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(sdram1), okay)
+    SDRAM1                (rw) : ORIGIN = DT_REG_ADDR(DT_NODELABEL(sdram1)), LENGTH = DT_REG_SIZE(DT_NODELABEL(sdram1))
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(sdram2), okay)
+    SDRAM2                (rw) : ORIGIN = DT_REG_ADDR(DT_NODELABEL(sdram2)), LENGTH = DT_REG_SIZE(DT_NODELABEL(sdram2))
+#endif
+#endif
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx)      : ORIGIN = (RAM_ADDR + RAM_SIZE), LENGTH = 2K
     }
