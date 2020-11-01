@@ -3782,6 +3782,8 @@ static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 				PR_WARNING("Cannot send IPv4 ping\n");
 			} else if (ret == -EINVAL) {
 				PR_WARNING("Invalid IP address\n");
+			} else if (ret == -ENOTSUP) {
+				PR_WARNING("Feature is not supported\n");
 			}
 
 			return -ENOEXEC;
