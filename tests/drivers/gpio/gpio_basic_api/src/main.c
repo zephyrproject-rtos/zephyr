@@ -115,6 +115,13 @@ static void board_setup(void)
 
 	pinmux_pin_set(pmx, PIN_OUT, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(pmx, PIN_IN, PORT_PCR_MUX(kPORT_MuxAsGpio));
+#elif defined(CONFIG_GPIO_EMUL)
+	extern struct gpio_callback gpio_emul_callback;
+	const struct device *dev = device_get_binding(DEV_NAME);
+	zassert_not_equal(dev, NULL,
+			  "Device not found");
+	int rc = gpio_add_callback(dev, &gpio_emul_callback);
+	__ASSERT(rc == 0, "gpio_add_callback() failed: %d", rc);
 #endif
 }
 
