@@ -1,0 +1,19 @@
+# Copyright (c) 2020 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+config MEMC_STM32
+	bool "Enable STM32 Flexible Memory Controller (FMC)"
+	depends on SOC_SERIES_STM32H7X
+	help
+	  Enable STM32 Flexible Memory Controller.
+
+DT_COMPAT_ST_STM32_FMC_SDRAM := st,stm32-fmc-sdram
+
+config MEMC_STM32_SDRAM
+	bool "Enable STM32 FMC SDRAM controller"
+	depends on MEMC_STM32
+	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_FMC_SDRAM))
+	select USE_STM32_LL_FMC
+	select USE_STM32_HAL_SDRAM
+	help
+	  Enable STM32 FMC SDRAM controller.

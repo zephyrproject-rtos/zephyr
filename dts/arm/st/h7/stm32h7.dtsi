@@ -11,6 +11,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/pwm/pwm.h>
+#include <dt-bindings/memory-controller/stm32-fmc-sdram.h>
 
 / {
 	chosen {
@@ -697,6 +698,22 @@
 				 <&rcc STM32_CLOCK_BUS_AHB1 0x00010000>,
 				 <&rcc STM32_CLOCK_BUS_AHB1 0x00020000>;
 			status = "disabled";
+		};
+
+		fmc: memory-controller@52004000 {
+			compatible = "st,stm32-fmc";
+			reg = <0x52004000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00001000>;
+			label = "STM32_FMC";
+			status = "disabled";
+
+			sdram: sdram {
+				compatible = "st,stm32-fmc-sdram";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				label = "STM32_FMC_SDRAM";
+				status = "disabled";
+			};
 		};
 	};
 };

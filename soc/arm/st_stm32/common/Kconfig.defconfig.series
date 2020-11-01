@@ -81,4 +81,8 @@ config HEAP_MEM_POOL_SIZE
 
 endif # DMA
 
+config MEMC_STM32
+	default y
+	depends on MEMC
+
 endif # SOC_FAMILY_STM32
