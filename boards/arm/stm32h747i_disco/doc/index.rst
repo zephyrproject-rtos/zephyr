@@ -63,6 +63,13 @@ The current Zephyr stm32h747i_disco board configuration supports the following h
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| ETHERNET  | on-chip    | ethernet  (*)                       |
++-----------+------------+-------------------------------------+
+
+(*) From UM2411 Rev 4:
+   With the default setting, the Ethernet feature is not working because of
+   a conflict between ETH_MDC and SAI4_D1 of the MEMs digital microphone.
+   Make sure you have SB8 closed and SB21 open to get Ethernet working.
 
 Other hardware features are not yet supported on Zephyr porting.
 
