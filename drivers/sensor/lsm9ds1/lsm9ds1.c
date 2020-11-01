@@ -29,8 +29,8 @@ static struct lsm9ds1_data lsm9ds1_data;
 static struct sensor_value floatToSensorValue(float f) {
     struct sensor_value sv;
 
-    sv.val1 = (s32_t) f;
-    sv.val2 = (s32_t) ((f - sv.val1) * 1000000);
+    sv.val1 = (int32_t) f;
+    sv.val2 = (int32_t) ((f - sv.val1) * 1000000);
 
     return sv;
 }
@@ -40,8 +40,8 @@ static struct sensor_value floatToSensorValue(float f) {
 /*
  * Read byte. This function depends on the static variable 'lsm9ds1_data'.
  */
-static uint8_t readByte(u8_t addr, u8_t subAddr) {
-    u8_t data;
+static uint8_t readByte(uint8_t addr, uint8_t subAddr) {
+    uint8_t data;
 
     if (i2c_reg_read_byte(lsm9ds1_data.i2c_master, addr, subAddr, &data) < 0) {
         return -EIO;
@@ -80,15 +80,15 @@ static void writeByte(uint8_t addr, uint8_t subAddr, uint8_t data)
  * 
  */
 static void setChanAttr(
-    struct device* dev,
+    const struct device* dev,
     enum sensor_channel chan,
     enum sensor_attribute attr,
-    u8_t val) {
+    uint8_t val) {
 ////
     struct sensor_value sv;
     sv.val1 = val;
     sv.val2 = 0;
-    
+
     lsm9ds1_attr_set(dev, chan, attr, &sv);
 }
 
@@ -97,8 +97,8 @@ static void setChanAttr(
 /*
  * Get resolutions of all sensors and save them globally.
  */
-static void updateSensorResolutions(struct device* dev) {
-    struct lsm9ds1_data *data = dev->driver_data;
+static void updateSensorResolutions(const struct device* dev) {
+    struct lsm9ds1_data *data = dev->data;
 
     /**
      * Get accl scale resolution.
@@ -142,9 +142,9 @@ static void updateSensorResolutions(struct device* dev) {
  * Read acceleration data.
  * Use the OUT_X_L_XL register.
  */
-static void readAcclData(struct device* dev, int16_t * destination) {
+static void readAcclData(const struct device* dev, int16_t * destination) {
     // Get config struct from device
-    const struct lsm9ds1_config *config = dev->config_info;
+    const struct lsm9ds1_config *config = dev->config;
 
     // X,Y,Z register data stored here (2 8-bit values for each axis).
     uint8_t rawData[6];
@@ -167,9 +167,9 @@ static void readAcclData(struct device* dev, int16_t * destination) {
  * Read gyro data.
  * Use the OUT_X_L_G register.
  */
-static void readGyroData(struct device* dev, int16_t * destination) {
+static void readGyroData(const struct device* dev, int16_t * destination) {
     // Get config struct from device
-    const struct lsm9ds1_config *config = dev->config_info;
+    const struct lsm9ds1_config *config = dev->config;
 
     // X,Y,Z register data stored here (2 8-bit values for each axis).
     uint8_t rawData[6];
@@ -192,9 +192,9 @@ static void readGyroData(struct device* dev, int16_t * destination) {
  * Read magn data.
  * Use the OUT_X_L_M register.
  */
-static void readMagnData(struct device* dev, int16_t * destination) {
+static void readMagnData(const struct device* dev, int16_t * destination) {
     // Get config struct from device
-    const struct lsm9ds1_config *config = dev->config_info;
+    const struct lsm9ds1_config *config = dev->config;
 
     // X,Y,Z register data stored here (2 8-bit values for each axis).
     uint8_t rawData[6];
@@ -217,9 +217,9 @@ static void readMagnData(struct device* dev, int16_t * destination) {
  * Read temp data.
  * Use OUT_TEMP_L register.
  */
-static void readTempData(struct device* dev, int16_t* destination) {
+static void readTempData(const struct device* dev, int16_t* destination) {
     // Get config struct from device
-    const struct lsm9ds1_config *config = dev->config_info;
+    const struct lsm9ds1_config *config = dev->config;
 
     // Temperature register data stored here (2 8-bit values).
     uint8_t rawData[2];
@@ -237,9 +237,9 @@ static void readTempData(struct device* dev, int16_t* destination) {
 
 /* -------------------------------------------------------------------------- */
 
-static void enableAndConfigureAccl(struct device* dev) {
-    struct lsm9ds1_data *data = dev->driver_data;
-    const struct lsm9ds1_config *config = dev->config_info;
+static void enableAndConfigureAccl(const struct device* dev) {
+    struct lsm9ds1_data *data = dev->data;
+    const struct lsm9ds1_config *config = dev->config;
 
     /**
      * Enable the X,Y,Z axes of the accelerometer.
@@ -282,24 +282,24 @@ static void enableAndConfigureAccl(struct device* dev) {
      * register as the documentation specifies.
      * 
      */
-    u8_t Aodr   = data->accl_outputDataRate;
-    u8_t Ascale = data->accl_scale;
-    u8_t Abw    = data->accl_bandwidth;
+    uint8_t Aodr   = data->accl_outputDataRate;
+    uint8_t Ascale = data->accl_scale;
+    uint8_t Abw    = data->accl_bandwidth;
 
     writeByte(
         config->i2c_slave_addr_acclgyro, LSM9DS1XG_CTRL_REG6_XL,
         Aodr << 5 | Ascale << 3 | 0x04 | Abw
     );
-    
+
     // Enable auto block updates and auto increment
     enableBlockDataUpdateAndAutoInc(dev);
 
     k_msleep(200);
 }
 
-static void enableAndConfigureGyro(struct device* dev) {
-    struct lsm9ds1_data *data = dev->driver_data;
-    const struct lsm9ds1_config *config = dev->config_info;
+static void enableAndConfigureGyro(const struct device* dev) {
+    struct lsm9ds1_data *data = dev->data;
+    const struct lsm9ds1_config *config = dev->config;
 
     /**
      * Enable the X,Y,Z axes of the gyroscope.
@@ -342,9 +342,9 @@ static void enableAndConfigureGyro(struct device* dev) {
      * register as the documentation specifies.
      * 
      */
-    u8_t Godr   = data->gyro_outputDataRate;
-    u8_t Gscale = data->gyro_scale;
-    u8_t Gbw    = data->gyro_bandwidth;
+    uint8_t Godr   = data->gyro_outputDataRate;
+    uint8_t Gscale = data->gyro_scale;
+    uint8_t Gbw    = data->gyro_bandwidth;
 
     writeByte(
         config->i2c_slave_addr_acclgyro, LSM9DS1XG_CTRL_REG1_G,
@@ -371,9 +371,9 @@ static void enableAndConfigureGyro(struct device* dev) {
     k_msleep(200);
 }
 
-static void enableAndConfigureMagn(struct device* dev) {
-    struct lsm9ds1_data *data = dev->driver_data;
-    const struct lsm9ds1_config *config = dev->config_info;
+static void enableAndConfigureMagn(const struct device* dev) {
+    struct lsm9ds1_data *data = dev->data;
+    const struct lsm9ds1_config *config = dev->config;
 
     /**
      * Enable the X,Y axes of the magnetometer.
@@ -399,8 +399,8 @@ static void enableAndConfigureMagn(struct device* dev) {
      * Shifting and the binari 'or' operation places the values into the 8-bit
      * register as the documentation specifies.
      */
-    u8_t Mmode  = data->magn_mode;
-    u8_t Modr   = data->magn_outputDataRate;
+    uint8_t Mmode  = data->magn_mode;
+    uint8_t Modr   = data->magn_outputDataRate;
 
     writeByte(
         config->i2c_slave_addr_magn, LSM9DS1M_CTRL_REG1_M,
@@ -425,7 +425,7 @@ static void enableAndConfigureMagn(struct device* dev) {
      * Shifting places the values into the 8-bit
      * register as the documentation specifies.
      */
-    u8_t Mscale = data->magn_scale;
+    uint8_t Mscale = data->magn_scale;
 
     writeByte(config->i2c_slave_addr_magn, LSM9DS1M_CTRL_REG2_M, Mscale << 5 );
 
@@ -491,9 +491,9 @@ static void enableAndConfigureMagn(struct device* dev) {
 
 /* -------------------------------------------------------------------------- */
 
-static void calibrateAccl(struct device* dev) {
-    struct lsm9ds1_data *data = dev->driver_data;
-    const struct lsm9ds1_config *config = dev->config_info;
+static void calibrateAccl(const struct device* dev) {
+    struct lsm9ds1_data *data = dev->data;
+    const struct lsm9ds1_config *config = dev->config;
 
     /**
      * These variables are used to store the bias value before
@@ -574,9 +574,9 @@ static void calibrateAccl(struct device* dev) {
     writeByte(config->i2c_slave_addr_acclgyro, LSM9DS1XG_FIFO_CTRL, 0x00);
 }
 
-static void calibrateGyro(struct device* dev) {
-    struct lsm9ds1_data *data = dev->driver_data;
-    const struct lsm9ds1_config *config = dev->config_info;
+static void calibrateGyro(const struct device* dev) {
+    struct lsm9ds1_data *data = dev->data;
+    const struct lsm9ds1_config *config = dev->config;
 
     /**
      * These variables are used to store the bias value before
@@ -655,9 +655,9 @@ static void calibrateGyro(struct device* dev) {
     writeByte(config->i2c_slave_addr_acclgyro, LSM9DS1XG_FIFO_CTRL, 0x00);
 }
 
-static void calibrateMagn(struct device* dev) {
-    struct lsm9ds1_data *data = dev->driver_data;
-    const struct lsm9ds1_config *config = dev->config_info;
+static void calibrateMagn(const struct device* dev) {
+    struct lsm9ds1_data *data = dev->data;
+    const struct lsm9ds1_config *config = dev->config;
 
     int32_t magnBias[3] = {0, 0, 0};
     int16_t magn_max[3] = {0, 0, 0}, magn_min[3] = {0, 0, 0};
@@ -724,8 +724,8 @@ static void calibrateMagn(struct device* dev) {
 
 /* -------------------------------------------------------------------------- */
 
-static void enableBlockDataUpdateAndAutoInc(struct device* dev) {
-    const struct lsm9ds1_config *config = dev->config_info;
+static void enableBlockDataUpdateAndAutoInc(const struct device* dev) {
+    const struct lsm9ds1_config *config = dev->config;
 
     /**
      * Enable
@@ -740,14 +740,14 @@ static void enableBlockDataUpdateAndAutoInc(struct device* dev) {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Define 'init' API function
-static int lsm9ds1_init(struct device *dev) {
+static int lsm9ds1_init(const struct device *dev) {
     // Get config and data from the device
-    const struct lsm9ds1_config * const config  = dev->config_info;
-    struct lsm9ds1_data *data                   = dev->driver_data;
+    const struct lsm9ds1_config * const config  = dev->config;
+    struct lsm9ds1_data *data             = dev->data;
 
     // Set i2c_master by getting the i2c master device binding by name
     data->i2c_master = device_get_binding(config->i2c_master_dev_name);
-    
+
     // If i2c_master was not found return.
     if (!data->i2c_master) {
         LOG_DBG("I2C master not found: %s", config->i2c_master_dev_name);
@@ -805,9 +805,9 @@ static int lsm9ds1_init(struct device *dev) {
 }
 
 // Define 'sample fetch' API function
-static int lsm9ds1_sample_fetch(struct device* dev, enum sensor_channel chan) {
+static int lsm9ds1_sample_fetch(const struct device* dev, enum sensor_channel chan) {
     // Get data struct from device
-    struct lsm9ds1_data *data = dev->driver_data;
+    struct lsm9ds1_data *data = dev->data;
 
     int16_t raw[3] = {};
 
@@ -938,11 +938,11 @@ static int lsm9ds1_sample_fetch(struct device* dev, enum sensor_channel chan) {
 
 // Define 'channel get' API function
 static int lsm9ds1_channel_get(
-    struct device *dev,
+    const struct device *dev,
     enum sensor_channel chan,
     struct sensor_value *val) {
 ////
-    struct lsm9ds1_data *data = dev->driver_data;
+    struct lsm9ds1_data *data = dev->data;
 
     switch (chan) {
         case SENSOR_CHAN_ACCL_XYZ:
@@ -994,15 +994,15 @@ static int lsm9ds1_channel_get(
  * E.g: AFS_2G, AODR_119Hz, ABW_50Hz, ...
  */
 static int lsm9ds1_attr_set(
-    struct device *dev,
+    const struct device *dev,
     enum sensor_channel chan,
     enum sensor_attribute attr,
     const struct sensor_value *val
 ) {
-    struct lsm9ds1_data *data = dev->driver_data;
+    struct lsm9ds1_data *data = dev->data;
 
     /**
-     * TODO: bei den ganzen Zuweisungen wird einem u8_t ein s32_t zugewiesen.
+     * TODO: bei den ganzen Zuweisungen wird einem uint8_t ein s32_t zugewiesen.
      * Kann man das machen, signed zu unsigned?
      */
 

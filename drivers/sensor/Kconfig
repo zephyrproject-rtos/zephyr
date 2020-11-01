@@ -131,6 +131,8 @@ source "drivers/sensor/lsm9ds0_gyro/Kconfig"
 
 source "drivers/sensor/lsm9ds0_mfd/Kconfig"
 
+source "drivers/sensor/lsm9ds1/Kconfig"
+
 source "drivers/sensor/max17055/Kconfig"
 
 source "drivers/sensor/max30101/Kconfig"
