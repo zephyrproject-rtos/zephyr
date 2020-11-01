@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2020 Mohamed ElShahawi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ &uart5 {
+	pinctrl-0 = <&uart5_tx_pc12 &uart5_rx_pd2>;
+	current-speed = <115200>;
+	status = "okay";
+	esp8266 {
+		compatible = "espressif,esp";
+		label = "esp8266";
+		reset-gpios = <&gpioj 14 GPIO_ACTIVE_LOW>;
+		power-gpios = <&gpioh 7 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+};
