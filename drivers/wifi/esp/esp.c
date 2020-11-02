@@ -27,6 +27,9 @@ LOG_MODULE_REGISTER(wifi_esp);
 
 #include "esp.h"
 
+#define RX_NET_PKT_ALLOC_TIMEOUT				\
+	K_MSEC(CONFIG_WIFI_ESP_RX_NET_PKT_ALLOC_TIMEOUT)
+
 /* pin settings */
 enum modem_control_pins {
 #if DT_INST_NODE_HAS_PROP(0, power_gpios)
@@ -322,7 +325,7 @@ struct net_pkt *esp_prepare_pkt(struct esp_data *dev, struct net_buf *src,
 	size_t to_copy;
 
 	pkt = net_pkt_rx_alloc_with_buffer(dev->net_iface, len, AF_UNSPEC,
-					   0, K_MSEC(100));
+					   0, RX_NET_PKT_ALLOC_TIMEOUT);
 	if (!pkt) {
 		return NULL;
 	}

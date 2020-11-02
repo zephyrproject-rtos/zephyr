@@ -75,6 +75,12 @@ config WIFI_ESP_RESET_TIMEOUT
 	  sent. This can vary with chipset (ESP8266/ESP32) and firmware
 	  version. This is ignored if a reset pin is configured.
 
+config WIFI_ESP_RX_NET_PKT_ALLOC_TIMEOUT
+	int "Network interface RX packet allocation timeout"
+	default 100
+	help
+	  Network interface RX net_pkt allocation timeout in milliseconds.
+
 choice WIFI_ESP_AT_VERSION
 	prompt "AT version"
 	default WIFI_ESP_AT_VERSION_2_0
