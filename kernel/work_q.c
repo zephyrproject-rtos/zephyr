@@ -46,13 +46,6 @@ static void work_timeout(struct _timeout *t)
 	k_work_submit_to_queue(w->work_q, &w->work);
 }
 
-void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
-{
-	k_work_init(&work->work, handler);
-	z_init_timeout(&work->timeout);
-	work->work_q = NULL;
-}
-
 static int work_cancel(struct k_delayed_work *work)
 {
 	if (k_work_pending(&work->work)) {

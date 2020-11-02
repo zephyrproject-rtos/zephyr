@@ -3004,6 +3004,31 @@ extern void k_work_q_user_start(struct k_work_q *work_q,
 				k_thread_stack_t *stack,
 				size_t stack_size, int prio);
 
+#define Z_DELAYED_WORK_INITIALIZER(work_handler) \
+	{ \
+		.work = Z_WORK_INITIALIZER(work_handler), \
+		.timeout = { \
+			.node = {},\
+			.fn = NULL, \
+			.dticks = 0, \
+		}, \
+		.work_q = NULL, \
+	}
+
+/**
+ * @brief Initialize a statically-defined delayed work item.
+ *
+ * This macro can be used to initialize a statically-defined workqueue
+ * delayed work item, prior to its first use. For example,
+ *
+ * @code static K_DELAYED_WORK_DEFINE(<work>, <work_handler>); @endcode
+ *
+ * @param work Symbol name for delayed work item object
+ * @param work_handler Function to invoke each time work item is processed.
+ */
+#define K_DELAYED_WORK_DEFINE(work, work_handler) \
+	struct k_delayed_work work = Z_DELAYED_WORK_INITIALIZER(work_handler)
+
 /**
  * @brief Initialize a delayed work item.
  *
@@ -3015,8 +3040,11 @@ extern void k_work_q_user_start(struct k_work_q *work_q,
  *
  * @return N/A
  */
-extern void k_delayed_work_init(struct k_delayed_work *work,
-				k_work_handler_t handler);
+static inline void k_delayed_work_init(struct k_delayed_work *work,
+				       k_work_handler_t handler)
+{
+	*work = (struct k_delayed_work)Z_DELAYED_WORK_INITIALIZER(handler);
+}
 
 /**
  * @brief Submit a delayed work item.

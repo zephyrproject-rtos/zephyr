@@ -778,6 +778,27 @@ static void test_triggered_wait_expired(void)
 	reset_results();
 }
 
+/**
+ * @brief Test delayed work queue define macro.
+ *
+ * The macro should initialize the k_delayed_work exactly the same as
+ * @ref k_delayed_work_init does.
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @see K_DELAYED_WORK_DEFINE()
+ */
+void test_delayed_work_define(void)
+{
+	struct k_delayed_work initialized_by_function = { 0 };
+	K_DELAYED_WORK_DEFINE(initialized_by_macro, delayed_work_handler);
+
+	k_delayed_work_init(&initialized_by_function, delayed_work_handler);
+
+	zassert_mem_equal(&initialized_by_function, &initialized_by_macro,
+			  sizeof(struct k_delayed_work), NULL);
+}
+
 /*test case main entry*/
 void test_main(void)
 {
@@ -796,7 +817,8 @@ void test_main(void)
 			 ztest_1cpu_unit_test(test_triggered_no_wait),
 			 ztest_1cpu_unit_test(test_triggered_no_wait_expired),
 			 ztest_1cpu_unit_test(test_triggered_wait),
-			 ztest_1cpu_unit_test(test_triggered_wait_expired)
+			 ztest_1cpu_unit_test(test_triggered_wait_expired),
+			 ztest_1cpu_unit_test(test_delayed_work_define)
 			 );
 	ztest_run_test_suite(workqueue);
 }
