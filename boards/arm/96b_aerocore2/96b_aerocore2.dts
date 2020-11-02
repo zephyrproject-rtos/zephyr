@@ -115,10 +115,10 @@
 
 	pwm4: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim4_ch1_pwm_pd12
-			     &tim4_ch2_pwm_pd13
-			     &tim4_ch3_pwm_pd14
-			     &tim4_ch4_pwm_pd15>;
+		pinctrl-0 = <&tim4_ch1_pd12
+			     &tim4_ch2_pd13
+			     &tim4_ch3_pd14
+			     &tim4_ch4_pd15>;
 	};
 };
 
@@ -127,10 +127,10 @@
 
 	pwm5: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim5_ch1_pwm_pa0
-			     &tim5_ch2_pwm_pa1
-			     &tim5_ch3_pwm_pa2
-			     &tim5_ch4_pwm_pa3>;
+		pinctrl-0 = <&tim5_ch1_pa0
+			     &tim5_ch2_pa1
+			     &tim5_ch3_pa2
+			     &tim5_ch4_pa3>;
 	};
 };
 

@@ -98,7 +98,7 @@
 
 	pwm1: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim1_ch3_pwm_pe13>;
+		pinctrl-0 = <&tim1_ch3_pe13>;
 	};
 };
 

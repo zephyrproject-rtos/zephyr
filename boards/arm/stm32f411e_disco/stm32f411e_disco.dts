@@ -69,7 +69,7 @@
 
 	pwm4: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim4_ch1_pwm_pd12>;
+		pinctrl-0 = <&tim4_ch1_pd12>;
 	};
 };
 
