@@ -173,7 +173,7 @@ static int generate_all_pending_msix(const struct device *dev)
 
 void iproc_pcie_func_mask_isr(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	const struct iproc_pcie_ep_config *cfg = dev->config;
 	uint32_t data;
 
@@ -192,7 +192,7 @@ void iproc_pcie_func_mask_isr(void *arg)
 
 void iproc_pcie_vector_mask_isr(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	int msix_table_update = sys_test_bit(PMON_LITE_PCIE_INTERRUPT_STATUS,
 					     WR_ADDR_CHK_INTR_EN);
 
