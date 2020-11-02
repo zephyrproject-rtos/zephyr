@@ -77,7 +77,7 @@ config WIFI_ESP_RESET_TIMEOUT
 
 config WIFI_ESP_RX_NET_PKT_ALLOC_TIMEOUT
 	int "Network interface RX packet allocation timeout"
-	default 100
+	default 5000
 	help
 	  Network interface RX net_pkt allocation timeout in milliseconds.
 
