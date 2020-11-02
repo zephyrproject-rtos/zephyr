@@ -83,9 +83,9 @@
 
 	pwm1: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim1_ch1_pwm_pe9
-			     &tim1_ch2_pwm_pe11
-			     &tim1_ch3_pwm_pe13>;
+		pinctrl-0 = <&tim1_ch1_pe9
+			     &tim1_ch2_pe11
+			     &tim1_ch3_pe13>;
 	};
 };
 
@@ -94,7 +94,7 @@
 
 	pwm2: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim2_ch1_pwm_pa0>;
+		pinctrl-0 = <&tim2_ch1_pa0>;
 	};
 };
 
@@ -103,7 +103,7 @@
 
 	pwm15: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim15_ch1_pwm_pb14>;
+		pinctrl-0 = <&tim15_ch1_pb14>;
 	};
 };
 

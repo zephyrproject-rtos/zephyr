@@ -84,7 +84,7 @@ arduino_serial: &lpuart1 {};
 
 	pwm2: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim2_ch1_pwm_pa0>;
+		pinctrl-0 = <&tim2_ch1_pa0>;
 	};
 };
 

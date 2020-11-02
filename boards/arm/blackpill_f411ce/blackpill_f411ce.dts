@@ -80,7 +80,7 @@
 
 	pwm4: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim4_ch1_pwm_pb6 &tim4_ch2_pwm_pb7>;
+		pinctrl-0 = <&tim4_ch1_pb6 &tim4_ch2_pb7>;
 	};
 };
 
