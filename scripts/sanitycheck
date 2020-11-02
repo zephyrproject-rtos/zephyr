@@ -1013,11 +1013,24 @@ def main():
         suite.load_from_file(last_run, filter_status=['skipped', 'passed'])
         suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
     elif options.load_tests:
-        suite.load_from_file(options.load_tests, filter_status=['skipped'])
+        suite.load_from_file(options.load_tests, filter_status=['skipped', 'error'])
         suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
     elif options.test_only:
-        suite.load_from_file(last_run, filter_status=['skipped'])
+        # Get list of connected hardware and filter tests to only be run on connected hardware
+        # in cases where no platform was specified when runn the tests.
+        # If the platform does not exist in the hardware map, just skip it.
+        connected_list = []
+        if not options.platform:
+            for connected in hwm.connected_hardware:
+                if connected['connected']:
+                    connected_list.append(connected['platform'])
+
+        suite.load_from_file(last_run, filter_status=['skipped', 'error'],
+                             filter_platform=connected_list)
         suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
+
+
+
     else:
         discards = suite.apply_filters(
             enable_slow=options.enable_slow,
