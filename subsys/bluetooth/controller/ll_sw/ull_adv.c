@@ -75,6 +75,9 @@ static void ext_disabled_cb(void *param);
 
 static inline uint8_t disable(uint8_t handle);
 
+static const uint8_t *adva_update(struct ll_adv_set *adv, struct pdu_adv *pdu);
+static void tgta_update(struct ll_adv_set *adv, struct pdu_adv *pdu);
+
 static struct ll_adv_set ll_adv[BT_CTLR_ADV_SET];
 
 #if defined(CONFIG_BT_TICKER_EXT)
@@ -381,10 +384,15 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		} else {
 			pdu->tx_addr = 0;
 		}
-		pdu->rx_addr = 0;
 
-		/* TODO: TargetA flag in primary channel PDU only for directed
-		 */
+		/* TargetA flag in primary channel PDU only for directed */
+		if (evt_prop & BT_HCI_LE_ADV_PROP_DIRECT) {
+			pri_hdr->tgt_addr = 1;
+			pdu->rx_addr = direct_addr_type;
+			pri_dptr += BDADDR_SIZE;
+		} else {
+			pdu->rx_addr = 0;
+		}
 
 		/* No CTEInfo flag in primary channel PDU */
 
@@ -473,7 +481,12 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 
 		/* No CTEInfo field in primary channel PDU */
 
-		/* NOTE: TargetA, filled at enable and RPA timeout */
+		/* TargetA */
+		if (pri_hdr->tgt_addr) {
+			pri_dptr -= BDADDR_SIZE;
+			/* NOTE: RPA will be updated on enable, if needed */
+			memcpy(pri_dptr, direct_addr, BDADDR_SIZE);
+		}
 
 		/* NOTE: AdvA, filled at enable and RPA timeout */
 
@@ -582,6 +595,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 	uint8_t const handle = 0;
 	uint32_t ticks_anchor;
 #endif /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
+	struct pdu_adv *pdu_adv_to_update;
 	uint32_t ticks_slot_overhead;
 	uint32_t ticks_slot_offset;
 	uint32_t volatile ret_cb;
@@ -604,18 +618,16 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 	pdu_adv = lll_adv_data_peek(lll);
 	pdu_scan = lll_adv_scan_rsp_peek(lll);
+	pdu_adv_to_update = NULL;
 
 	if (0) {
-
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	} else if (pdu_adv->type == PDU_ADV_TYPE_EXT_IND) {
 		struct pdu_adv_com_ext_adv *pri_com_hdr;
 		struct pdu_adv_hdr *pri_hdr;
-		uint8_t *pri_dptr;
 
 		pri_com_hdr = (void *)&pdu_adv->adv_ext_ind;
 		pri_hdr = (void *)pri_com_hdr->ext_hdr_adi_adv_data;
-		pri_dptr = (uint8_t *)pri_hdr + sizeof(*pri_hdr);
 
 		if (pri_com_hdr->adv_mode & BT_HCI_LE_ADV_PROP_SCAN) {
 			struct pdu_adv *sr = lll_adv_scan_rsp_peek(lll);
@@ -627,100 +639,73 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 		/* AdvA, fill here at enable */
 		if (pri_hdr->adv_addr) {
-			uint8_t const *tx_addr =
-					ll_adv_aux_random_addr_get(adv, NULL);
-
-			/* TODO: Privacy */
-
-			if (pdu_adv->tx_addr &&
-			    !mem_nz((void *)tx_addr, BDADDR_SIZE)) {
-				return BT_HCI_ERR_INVALID_PARAM;
-			}
-
-			memcpy(pri_dptr, tx_addr, BDADDR_SIZE);
+			pdu_adv_to_update = pdu_adv;
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 		} else if (pri_hdr->aux_ptr) {
 			struct pdu_adv_com_ext_adv *sec_com_hdr;
 			struct pdu_adv_hdr *sec_hdr;
 			struct pdu_adv *sec_pdu;
-			uint8_t *sec_dptr;
 
 			sec_pdu = lll_adv_aux_data_peek(lll->aux);
 
 			sec_com_hdr = (void *)&sec_pdu->adv_ext_ind;
 			sec_hdr = (void *)sec_com_hdr->ext_hdr_adi_adv_data;
-			sec_dptr = (uint8_t *)sec_hdr + sizeof(*sec_hdr);
 
 			if (sec_hdr->adv_addr) {
-				uint8_t const *tx_addr =
-					ll_adv_aux_random_addr_get(adv,	NULL);
-
-				/* TODO: Privacy */
-
-				if (sec_pdu->tx_addr &&
-				    !mem_nz((void *)tx_addr, BDADDR_SIZE)) {
-					return BT_HCI_ERR_INVALID_PARAM;
-				}
-
-				memcpy(sec_dptr, tx_addr, BDADDR_SIZE);
+				pdu_adv_to_update = sec_pdu;
 			}
 #endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 		}
-
-		/* TODO: TargetA, fill here at enable */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 	} else {
-		bool priv = false;
+		pdu_adv_to_update = pdu_adv;
+	}
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-		lll->rl_idx = FILTER_IDX_NONE;
+	lll->rl_idx = FILTER_IDX_NONE;
 
-		/* Prepare whitelist and optionally resolving list */
-		ull_filter_adv_update(lll->filter_policy);
+	/* Prepare whitelist and optionally resolving list */
+	ull_filter_adv_update(lll->filter_policy);
 
-		if (adv->own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
-		    adv->own_addr_type == BT_ADDR_LE_RANDOM_ID) {
-			/* Look up the resolving list */
-			lll->rl_idx = ull_filter_rl_find(adv->id_addr_type,
-							 adv->id_addr, NULL);
+	if (adv->own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
+	    adv->own_addr_type == BT_ADDR_LE_RANDOM_ID) {
+		/* Look up the resolving list */
+		lll->rl_idx = ull_filter_rl_find(adv->id_addr_type,
+						 adv->id_addr, NULL);
 
-			if (lll->rl_idx != FILTER_IDX_NONE) {
-				/* Generate RPAs if required */
-				ull_filter_rpa_update(false);
-			}
-
-			ull_filter_adv_pdu_update(adv, pdu_adv);
-			ull_filter_adv_pdu_update(adv, pdu_scan);
-
-			priv = true;
+		if (lll->rl_idx != FILTER_IDX_NONE) {
+			/* Generate RPAs if required */
+			ull_filter_rpa_update(false);
 		}
+	}
 #endif /* !CONFIG_BT_CTLR_PRIVACY */
 
-		if (!priv) {
-			uint8_t const *tx_addr;
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-			if (ll_adv_cmds_is_ext() && pdu_adv->tx_addr) {
-				tx_addr = ll_adv_aux_random_addr_get(adv, NULL);
-			} else
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
-			{
-				tx_addr = ll_addr_get(pdu_adv->tx_addr, NULL);
-			}
+	if (pdu_adv_to_update) {
+		const uint8_t *adv_addr;
 
-			memcpy(&pdu_adv->adv_ind.addr[0], tx_addr,
-			       BDADDR_SIZE);
-			memcpy(&pdu_scan->scan_rsp.addr[0], tx_addr,
-			       BDADDR_SIZE);
-		}
+		adv_addr = ull_adv_pdu_update_addrs(adv, pdu_adv_to_update);
 
 		/* In case the local IRK was not set or no match was
 		 * found the fallback address was used instead, check
 		 * that a valid address has been set.
 		 */
-		if (pdu_adv->tx_addr &&
-		    !mem_nz(pdu_adv->adv_ind.addr, BDADDR_SIZE)) {
+		if (pdu_adv_to_update->tx_addr &&
+		    !mem_nz((void *)adv_addr, BDADDR_SIZE)) {
 			return BT_HCI_ERR_INVALID_PARAM;
 		}
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		/* Do not update scan response for extended non-scannable since
+		 * there may be no scan response set.
+		 */
+		if ((pdu_adv->type != PDU_ADV_TYPE_EXT_IND) ||
+		    (pdu_adv->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_SCAN)) {
+#else
+		if (1) {
+#endif
+			ull_adv_pdu_update_addrs(adv, pdu_scan);
+		}
+
 	}
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
@@ -1555,6 +1540,31 @@ void ull_adv_done(struct node_rx_event_done *done)
 }
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
+const uint8_t *ull_adv_pdu_update_addrs(struct ll_adv_set *adv,
+					struct pdu_adv *pdu)
+{
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	struct pdu_adv_hdr *hdr = (void *)pdu->adv_ext_ind.ext_hdr_adi_adv_data;
+#endif
+	const uint8_t *adv_addr;
+
+	adv_addr = adva_update(adv, pdu);
+
+	/* Update TargetA only if directed advertising PDU is supplied. Note
+	 * that AUX_SCAN_REQ does not have TargetA flag set so it will be
+	 * ignored here as expected.
+	 */
+	if ((pdu->type == PDU_ADV_TYPE_DIRECT_IND) ||
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	    ((pdu->type == PDU_ADV_TYPE_EXT_IND) && hdr->tgt_addr) ||
+#endif
+	    0) {
+		tgta_update(adv, pdu);
+	}
+
+	return adv_addr;
+}
+
 static int init_reset(void)
 {
 	uint8_t handle;
@@ -1939,4 +1949,66 @@ static inline uint8_t disable(uint8_t handle)
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 	return 0;
+}
+
+static inline uint8_t *adv_pdu_adva_get(struct pdu_adv *pdu)
+{
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	struct pdu_adv_hdr *hdr = (void *)pdu->adv_ext_ind.ext_hdr_adi_adv_data;
+
+	/* All extended PDUs have AdvA at the same offset in common header */
+	if (pdu->type == PDU_ADV_TYPE_EXT_IND) {
+		LL_ASSERT(hdr->adv_addr);
+		return &pdu->adv_ext_ind.ext_hdr_adi_adv_data[1];
+	}
+#endif
+
+	/* All legacy PDUs have AdvA at the same offset */
+	return pdu->adv_ind.addr;
+}
+
+static const uint8_t *adva_update(struct ll_adv_set *adv, struct pdu_adv *pdu)
+{
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	const uint8_t *tx_addr = ull_filter_adva_get(adv);
+#else
+	const uint8_t *tx_addr = NULL;
+#endif
+	uint8_t *adv_addr;
+
+	if (tx_addr) {
+		pdu->tx_addr = 1;
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	} else if (ll_adv_cmds_is_ext() && pdu->tx_addr) {
+		tx_addr = ll_adv_aux_random_addr_get(adv, NULL);
+#endif
+	} else {
+		tx_addr = ll_addr_get(pdu->tx_addr, NULL);
+	}
+
+	adv_addr = adv_pdu_adva_get(pdu);
+	memcpy(adv_addr, tx_addr, BDADDR_SIZE);
+
+	return adv_addr;
+}
+
+static void tgta_update(struct ll_adv_set *adv, struct pdu_adv *pdu)
+{
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	const uint8_t *rx_addr = NULL;
+	uint8_t *tgt_addr;
+
+	rx_addr = ull_filter_tgta_get(adv);
+	if (rx_addr) {
+		pdu->rx_addr = 1;
+
+		/* TargetA always follows AdvA in all PDUs */
+		tgt_addr = adv_pdu_adva_get(pdu) + BDADDR_SIZE;
+		memcpy(tgt_addr, rx_addr, BDADDR_SIZE);
+	}
+#endif
+
+	/* NOTE: identity TargetA is set when configuring advertising set, no
+	 *       need to update if LL Privacy is not supported.
+	 */
 }

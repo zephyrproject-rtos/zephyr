@@ -40,6 +40,9 @@ uint8_t ull_adv_data_set(struct ll_adv_set *adv, uint8_t len,
 uint8_t ull_scan_rsp_set(struct ll_adv_set *adv, uint8_t len,
 			 uint8_t const *const data);
 
+/* Update AdvA and TgtA (if application) in advertising PDU */
+const uint8_t *ull_adv_pdu_update_addrs(struct ll_adv_set *adv,
+					struct pdu_adv *pdu);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 

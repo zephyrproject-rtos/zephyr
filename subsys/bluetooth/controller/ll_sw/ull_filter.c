@@ -576,42 +576,29 @@ void ull_filter_rpa_update(bool timeout)
 }
 
 #if defined(CONFIG_BT_BROADCASTER)
-void ull_filter_adv_pdu_update(struct ll_adv_set *adv, struct pdu_adv *pdu)
+const uint8_t *ull_filter_adva_get(struct ll_adv_set *adv)
 {
-	uint8_t *adva = pdu->type == PDU_ADV_TYPE_SCAN_RSP ?
-				  &pdu->scan_rsp.addr[0] :
-				  &pdu->adv_ind.addr[0];
 	uint8_t idx = adv->lll.rl_idx;
 
 	/* AdvA */
 	if (idx < ARRAY_SIZE(rl) && rl[idx].lirk) {
 		LL_ASSERT(rl[idx].rpas_ready);
-		pdu->tx_addr = 1;
-		memcpy(adva, rl[idx].local_rpa->val, BDADDR_SIZE);
-	} else {
-		pdu->tx_addr = adv->own_addr_type & 0x1;
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-		if (ll_adv_cmds_is_ext() && pdu->tx_addr) {
-			ll_adv_aux_random_addr_get(adv, adva);
-		} else
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
-		{
-			ll_addr_get(pdu->tx_addr, adva);
-		}
+		return rl[idx].local_rpa->val;
 	}
 
+	return NULL;
+}
+
+const uint8_t *ull_filter_tgta_get(struct ll_adv_set *adv)
+{
+	uint8_t idx = adv->lll.rl_idx;
+
 	/* TargetA */
-	if (pdu->type == PDU_ADV_TYPE_DIRECT_IND) {
-		if (idx < ARRAY_SIZE(rl) && rl[idx].pirk) {
-			pdu->rx_addr = 1;
-			memcpy(&pdu->direct_ind.tgt_addr[0],
-			       rl[idx].peer_rpa.val, BDADDR_SIZE);
-		} else {
-			pdu->rx_addr = adv->id_addr_type;
-			memcpy(&pdu->direct_ind.tgt_addr[0],
-			       adv->id_addr, BDADDR_SIZE);
-		}
+	if (idx < ARRAY_SIZE(rl) && rl[idx].pirk) {
+		return rl[idx].peer_rpa.val;
 	}
+
+	return NULL;
 }
 #endif /* CONFIG_BT_BROADCASTER */
 
@@ -986,20 +973,9 @@ static void rpa_adv_refresh(struct ll_adv_set *adv)
 
 	prev = lll_adv_data_peek(&adv->lll);
 	pdu = lll_adv_data_alloc(&adv->lll, &idx);
-	pdu->type = prev->type;
-	pdu->rfu = 0;
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
-		pdu->chan_sel = prev->chan_sel;
-	} else {
-		pdu->chan_sel = 0;
-	}
-
-	ull_filter_adv_pdu_update(adv, pdu);
-
-	memcpy(&pdu->adv_ind.data[0], &prev->adv_ind.data[0],
-	       prev->len - BDADDR_SIZE);
-	pdu->len = prev->len;
+	memcpy(pdu, prev, PDU_AC_LL_HEADER_SIZE + pdu->len);
+	ull_adv_pdu_update_addrs(adv, pdu);
 
 	lll_adv_data_enqueue(&adv->lll, idx);
 }
