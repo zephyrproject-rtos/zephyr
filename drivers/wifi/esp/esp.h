@@ -100,7 +100,8 @@ extern struct esp_data esp_driver_data;
 enum esp_socket_flags {
 	ESP_SOCK_IN_USE     = BIT(1),
 	ESP_SOCK_CONNECTING = BIT(2),
-	ESP_SOCK_CONNECTED  = BIT(3)
+	ESP_SOCK_CONNECTED  = BIT(3),
+	ESP_SOCK_CLOSE_PENDING = BIT(4),
 };
 
 struct esp_socket {
@@ -203,6 +204,7 @@ int esp_socket_put(struct esp_socket *sock);
 struct esp_socket *esp_socket_from_link_id(struct esp_data *data,
 					   uint8_t link_id);
 void esp_socket_init(struct esp_data *data);
+void esp_socket_close(struct esp_socket *sock);
 
 static inline struct esp_data *esp_socket_to_dev(struct esp_socket *sock)
 {
@@ -217,6 +219,11 @@ static inline bool esp_socket_in_use(struct esp_socket *sock)
 static inline bool esp_socket_connected(struct esp_socket *sock)
 {
 	return (sock->flags & ESP_SOCK_CONNECTED) != 0;
+}
+
+static inline bool esp_socket_close_pending(struct esp_socket *sock)
+{
+	return (sock->flags & ESP_SOCK_CLOSE_PENDING) != 0;
 }
 
 static inline void esp_flag_set(struct esp_data *dev,
