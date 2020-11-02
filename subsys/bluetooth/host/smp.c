@@ -1107,7 +1107,7 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 
 	keys = bt_keys_get_type(BT_KEYS_LTK_P256, conn->id, &addr);
 	if (!keys) {
-		BT_ERR("No keys space for %s", bt_addr_le_str(&addr));
+		BT_ERR("Unable to get keys for %s", bt_addr_le_str(&addr));
 		return;
 	}
 
@@ -1305,6 +1305,7 @@ static uint8_t smp_br_pairing_req(struct bt_smp_br *smp, struct net_buf *buf)
 
 	max_key_size = bt_conn_enc_key_size(conn);
 	if (!max_key_size) {
+		BT_DBG("Invalid encryption key size");
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -1377,6 +1378,7 @@ static uint8_t smp_br_pairing_rsp(struct bt_smp_br *smp, struct net_buf *buf)
 
 	max_key_size = bt_conn_enc_key_size(conn);
 	if (!max_key_size) {
+		BT_DBG("Invalid encryption key size");
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -1743,6 +1745,7 @@ int bt_smp_br_send_pairing_req(struct bt_conn *conn)
 
 	max_key_size = bt_conn_enc_key_size(conn);
 	if (!max_key_size) {
+		BT_DBG("Invalid encryption key size");
 		return -EIO;
 	}
 
@@ -2007,6 +2010,7 @@ static uint8_t smp_send_pairing_confirm(struct bt_smp *smp)
 		r |= 0x80;
 		break;
 	default:
+		BT_ERR("Unknown pairing method (%u)", smp->method);
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -2459,6 +2463,7 @@ static uint8_t legacy_pairing_random(struct bt_smp *smp)
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
 		err = smp_s1(smp->tk, smp->prnd, smp->rrnd, tmp);
 		if (err) {
+			BT_ERR("Calculate STK failed");
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -2889,6 +2894,8 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 	if (!conn->le.keys) {
 		conn->le.keys = bt_keys_get_addr(conn->id, &conn->le.dst);
 		if (!conn->le.keys) {
+			BT_DBG("Unable to get keys for %s",
+			       bt_addr_le_str(&conn->le.dst));
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 	}
@@ -2941,6 +2948,7 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 		atomic_set_bit(smp->flags, SMP_FLAG_BOND);
 	} else if (IS_ENABLED(CONFIG_BT_BONDING_REQUIRED)) {
 		/* Reject pairing req if not both intend to bond */
+		BT_DBG("Bonding required");
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -3144,6 +3152,7 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 		atomic_set_bit(smp->flags, SMP_FLAG_BOND);
 	} else if (IS_ENABLED(CONFIG_BT_BONDING_REQUIRED)) {
 		/* Reject pairing req if not both intend to bond */
+		BT_DBG("Bonding required");
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -3261,6 +3270,7 @@ static uint8_t smp_pairing_confirm(struct bt_smp *smp, struct net_buf *buf)
 	case JUST_WORKS:
 	case PASSKEY_CONFIRM:
 	default:
+		BT_ERR("Unknown pairing method (%u)", smp->method);
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 }
@@ -3306,6 +3316,7 @@ static uint8_t compute_and_send_master_dhcheck(struct bt_smp *smp)
 		}
 		break;
 	default:
+		BT_ERR("Unknown pairing method (%u)", smp->method);
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -3314,12 +3325,14 @@ static uint8_t compute_and_send_master_dhcheck(struct bt_smp *smp)
 		   &smp->chan.chan.conn->le.init_addr,
 		   &smp->chan.chan.conn->le.resp_addr, smp->mackey,
 		   smp->tk)) {
+		BT_ERR("Calculate LTK failed");
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 	/* calculate local DHKey check */
 	if (smp_f6(smp->mackey, smp->prnd, smp->rrnd, r, &smp->preq[1],
 		   &smp->chan.chan.conn->le.init_addr,
 		   &smp->chan.chan.conn->le.resp_addr, e)) {
+		BT_ERR("Calculate local DHKey check failed");
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -3350,6 +3363,7 @@ static uint8_t compute_and_check_and_send_slave_dhcheck(struct bt_smp *smp)
 		}
 		break;
 	default:
+		BT_ERR("Unknown pairing method (%u)", smp->method);
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -3358,6 +3372,7 @@ static uint8_t compute_and_check_and_send_slave_dhcheck(struct bt_smp *smp)
 		   &smp->chan.chan.conn->le.init_addr,
 		   &smp->chan.chan.conn->le.resp_addr, smp->mackey,
 		   smp->tk)) {
+		BT_ERR("Calculate LTK failed");
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -3365,6 +3380,7 @@ static uint8_t compute_and_check_and_send_slave_dhcheck(struct bt_smp *smp)
 	if (smp_f6(smp->mackey, smp->prnd, smp->rrnd, r, &smp->prsp[1],
 		   &smp->chan.chan.conn->le.resp_addr,
 		   &smp->chan.chan.conn->le.init_addr, e)) {
+		BT_ERR("Calculate local DHKey check failed");
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -3380,6 +3396,7 @@ static uint8_t compute_and_check_and_send_slave_dhcheck(struct bt_smp *smp)
 	if (smp_f6(smp->mackey, smp->rrnd, smp->prnd, r, &smp->preq[1],
 		   &smp->chan.chan.conn->le.init_addr,
 		   &smp->chan.chan.conn->le.resp_addr, re)) {
+		BT_ERR("Calculate remote DHKey check failed");
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -3515,10 +3532,12 @@ static uint8_t sc_smp_check_confirm(struct bt_smp *smp)
 		r |= 0x80;
 		break;
 	default:
+		BT_ERR("Unknown pairing method (%u)", smp->method);
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
 	if (smp_f4(smp->pkey, sc_public_key, smp->rrnd, r, cfm)) {
+		BT_ERR("Calculate confirm failed");
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -3631,6 +3650,7 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 				       BT_SMP_CMD_PAIRING_CONFIRM);
 			return smp_send_pairing_confirm(smp);
 		default:
+			BT_ERR("Unknown pairing method (%u)", smp->method);
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -3708,6 +3728,7 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 			return BT_SMP_ERR_OOB_NOT_AVAIL;
 		}
 	default:
+		BT_ERR("Unknown pairing method (%u)", smp->method);
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -3924,6 +3945,7 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 	if (IS_ENABLED(CONFIG_BT_BONDING_REQUIRED) &&
 	    !(bondable && (auth & BT_SMP_AUTH_BONDING))) {
 		/* Reject security req if not both intend to bond */
+		BT_DBG("Bonding required");
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -3970,6 +3992,7 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 					conn->le.keys->ltk.ediv,
 					conn->le.keys->ltk.val,
 					conn->le.keys->enc_size) < 0) {
+		BT_ERR("Failed to start encryption");
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -4068,6 +4091,7 @@ static uint8_t smp_public_key_slave(struct bt_smp *smp)
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
 		break;
 	default:
+		BT_ERR("Unknown pairing method (%u)", smp->method);
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -4157,6 +4181,7 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 			}
 			break;
 		default:
+			BT_ERR("Unknown pairing method (%u)", smp->method);
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -4205,6 +4230,7 @@ static uint8_t smp_dhkey_check(struct bt_smp *smp, struct net_buf *buf)
 			}
 			break;
 		default:
+			BT_ERR("Unknown pairing method (%u)", smp->method);
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -4226,6 +4252,7 @@ static uint8_t smp_dhkey_check(struct bt_smp *smp, struct net_buf *buf)
 		(void)memset(rand, 0, sizeof(rand));
 		if (bt_conn_le_start_encryption(smp->chan.chan.conn, rand, ediv,
 						smp->tk, enc_size) < 0) {
+			BT_ERR("Failed to start encryption");
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -5357,6 +5384,8 @@ int bt_smp_auth_cancel(struct bt_conn *conn)
 		return -EINVAL;
 	}
 
+	BT_DBG("");
+
 	switch (smp->method) {
 	case PASSKEY_INPUT:
 	case PASSKEY_DISPLAY:
@@ -5369,6 +5398,7 @@ int bt_smp_auth_cancel(struct bt_conn *conn)
 	case JUST_WORKS:
 		return smp_error(smp, BT_SMP_ERR_UNSPECIFIED);
 	default:
+		BT_ERR("Unknown pairing method (%u)", smp->method);
 		return 0;
 	}
 }
