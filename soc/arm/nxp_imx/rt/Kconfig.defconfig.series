@@ -118,6 +118,16 @@ config DMA_MCUX_EDMA
 	default y if HAS_MCUX_EDMA
 	depends on DMA
 
+choice SEGGER_RTT_SECTION
+	default SEGGER_RTT_SECTION_DTCM if HAS_MCUX_SEMC
+	depends on USE_SEGGER_RTT
+endchoice
+
+choice SEGGER_SYSVIEW_SECTION
+	default SEGGER_SYSVIEW_SECTION_DTCM if HAS_MCUX_SEMC
+	depends on SEGGER_SYSTEMVIEW
+endchoice
+
 source "soc/arm/nxp_imx/rt/Kconfig.defconfig.mimxrt*"
 
 endif # SOC_SERIES_IMX_RT
