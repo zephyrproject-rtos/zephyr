@@ -160,8 +160,6 @@ Default Zephyr Peripheral Mapping:
 - PWM_3_CH1 : PB4
 - USER_PB : PC13
 - LD2 : PA5
-- USB DM : PA11
-- USB DP : PA12
 - ADC1_IN1 : PA0
 
 System Clock
