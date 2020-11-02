@@ -31,7 +31,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
     def __init__(self, cfg, device,
                  commander=DEFAULT_JLINK_EXE,
                  flash_addr=0x0, erase=True, reset_after_load=False,
-                 iface='swd', speed='auto',
+                 iface='swd', speed='auto', ip=None,
                  gdbserver='JLinkGDBServer', gdb_port=DEFAULT_JLINK_GDB_PORT,
                  tui=False, tool_opt=[]):
         super().__init__(cfg)
@@ -46,6 +46,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.gdbserver = gdbserver
         self.iface = iface
         self.speed = speed
+        self.ip = ip
         self.gdb_port = gdb_port
         self.tui_arg = ['-tui'] if tui else []
 
@@ -72,6 +73,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                             help='interface to use, default is swd')
         parser.add_argument('--speed', default='auto',
                             help='interface speed, default is autodetect')
+        parser.add_argument('--ip', default=None,
+                            help='selects IP as host interface')
         parser.add_argument('--tui', default=False, action='store_true',
                             help='if given, GDB uses -tui')
         parser.add_argument('--gdbserver', default='JLinkGDBServer',
@@ -99,7 +102,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                                  commander=args.commander,
                                  flash_addr=flash_addr, erase=args.erase,
                                  reset_after_load=args.reset_after_load,
-                                 iface=args.iface, speed=args.speed,
+                                 iface=args.iface, speed=args.speed, ip=args.ip,
                                  gdbserver=args.gdbserver,
                                  gdb_port=args.gdb_port,
                                  tui=args.tui, tool_opt=args.tool_opt)
@@ -220,7 +223,12 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             else:
                 nogui = []
 
-            cmd = ([self.commander] + nogui +
+            if self.ip:
+                ip = ['-IP', self.ip]
+            else:
+                ip = []
+
+            cmd = ([self.commander] + nogui + ip +
                    ['-if', self.iface,
                     '-speed', self.speed,
                     '-device', self.device,
