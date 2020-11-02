@@ -60,72 +60,58 @@ static struct mpl_track_t track_1_5;
 
 /* Tracks */
 static struct mpl_track_t track_1_1 = {
-	.id	     = 0x00010001,
 	.title	     = "Interlude #1 (Song for Alison)",
 	.duration    = 6300,
 	.segment     = &seg_1,
-	.segments_id = 0x00020001,
 	.prev	     = NULL,
 	.next	     = &track_1_2,
 };
 
 
 static struct mpl_track_t track_1_2 = {
-	.id	     = 0x00010002,
 	.title	     = "Interlude #2 (For Bobbye)",
 	.duration    = 7500,
 	.segment     = NULL,
-	.segments_id = 0,
 	.prev	     = &track_1_1,
 	.next	     = &track_1_3,
 };
 
 static struct mpl_track_t track_1_3 = {
-	.id	     = 0x00010003,
 	.title	     = "Interlude #3 (Levanto Seventy)",
 	.duration    = 7800,
 	.segment     = NULL,
-	.segments_id = 0,
 	.prev	     = &track_1_2,
 	.next	     = &track_1_4,
 };
 
 static struct mpl_track_t track_1_4 = {
-	.id	     = 0x00010004,
 	.title	     = "Interlude #4 (Vesper Dreams)",
 	.duration    = 13500,
 	.segment     = NULL,
-	.segments_id = 0,
 	.prev	     = &track_1_3,
 	.next	     = &track_1_5,
 };
 
 static struct mpl_track_t track_1_5 = {
-	.id	     = 0x00010005,
 	.title	     = "Interlude #5 (Shasti)",
 	.duration    = 7500,
 	.segment     = NULL,
-	.segments_id = 0,
 	.prev	     = &track_1_4,
 	.next	     = NULL,
 };
 
 static struct mpl_track_t track_dummy = {
-	.id	     = 0x00010010,
 	.title	     = "My dummy track",
 	.duration    = 18700,
 	.segment     = NULL,
-	.segments_id = 0,
 	.prev	     = NULL,
 	.next	     = NULL,
 };
 
 static struct mpl_track_t track_timmy = {
-	.id	     = 0x00010010,
 	.title	     = "My Timmy track",
 	.duration    = 18700,
 	.segment     = NULL,
-	.segments_id = 0,
 	.prev	     = NULL,
 	.next	     = NULL,
 };
@@ -134,31 +120,25 @@ static struct mpl_track_t track_2_2;
 static struct mpl_track_t track_2_3;
 
 static struct mpl_track_t track_2_1 = {
-	.id	     = 0x00010021,
 	.title	     = "Track 2.1",
 	.duration    = 30000,
 	.segment     = NULL,
-	.segments_id = 0,
 	.prev	     = NULL,
 	.next	     = &track_2_2,
 };
 
 static struct mpl_track_t track_2_2 = {
-	.id	     = 0x00010022,
 	.title	     = "Track 2.2",
 	.duration    = 30000,
 	.segment     = NULL,
-	.segments_id = 0,
 	.prev	     = &track_2_1,
 	.next	     = &track_2_3,
 };
 
 static struct mpl_track_t track_2_3 = {
-	.id	     = 0x00010023,
 	.title	     = "Track 2.3",
 	.duration    = 30000,
 	.segment     = NULL,
-	.segments_id = 0,
 	.prev	     = &track_2_2,
 	.next	     = NULL,
 };
@@ -167,31 +147,25 @@ static struct mpl_track_t track_3_2;
 static struct mpl_track_t track_3_3;
 
 static struct mpl_track_t track_3_1 = {
-	.id	     = 0x00010031,
 	.title	     = "Track 3.1",
 	.duration    = 30000,
 	.segment     = NULL,
-	.segments_id = 0,
 	.prev	     = NULL,
 	.next	     = &track_3_2,
 };
 
 static struct mpl_track_t track_3_2 = {
-	.id	     = 0x00010032,
 	.title	     = "Track 3.2",
 	.duration    = 30000,
 	.segment     = NULL,
-	.segments_id = 0,
 	.prev	     = &track_3_1,
 	.next	     = &track_3_3,
 };
 
 static struct mpl_track_t track_3_3 = {
-	.id	     = 0x00010033,
 	.title	     = "Track 3.3",
 	.duration    = 30000,
 	.segment     = NULL,
-	.segments_id = 0,
 	.prev	     = &track_3_2,
 	.next	     = NULL,
 };
@@ -199,21 +173,17 @@ static struct mpl_track_t track_3_3 = {
 static struct mpl_track_t track_4_2;
 
 static struct mpl_track_t track_4_1 = {
-	.id	     = 0x00010041,
 	.title	     = "Track 4.1",
 	.duration    = 30000,
 	.segment     = NULL,
-	.segments_id = 0,
 	.prev	     = NULL,
 	.next	     = &track_4_2,
 };
 
 static struct mpl_track_t track_4_2 = {
-	.id	     = 0x00010042,
 	.title	     = "Track 4.2",
 	.duration    = 30000,
 	.segment     = NULL,
-	.segments_id = 0,
 	.prev	     = &track_4_1,
 	.next	     = NULL,
 };
@@ -225,7 +195,6 @@ static struct mpl_group_t group_4;
 static struct mpl_group_t group_p;
 
 static struct mpl_group_t group_1 = {
-	.id	= 0x00030001,
 	.title  = "Joe Pass - Guitar Interludes",
 	.track	= &track_1_1,
 	.parent = &group_p,
@@ -234,7 +203,6 @@ static struct mpl_group_t group_1 = {
 };
 
 static struct mpl_group_t group_2 = {
-	.id	= 0x00030002,
 	.title  = "Group 2",
 	.track	= &track_2_2,
 	.parent = &group_p,
@@ -243,7 +211,6 @@ static struct mpl_group_t group_2 = {
 };
 
 static struct mpl_group_t group_3 = {
-	.id	= 0x00030003,
 	.title  = "Group 3",
 	.track	= &track_3_3,
 	.parent = &group_p,
@@ -252,7 +219,6 @@ static struct mpl_group_t group_3 = {
 };
 
 static struct mpl_group_t group_4 = {
-	.id	= 0x00030004,
 	.title  = "Group 4",
 	.track	= &track_4_2,
 	.parent = &group_p,
@@ -261,7 +227,6 @@ static struct mpl_group_t group_4 = {
 };
 
 static struct mpl_group_t group_p = {
-	.id	= 0x00040001,
 	.title  = "Parent group",
 	.track	= &track_4_1,
 	.parent = &group_p,
