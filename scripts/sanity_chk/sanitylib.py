@@ -2796,7 +2796,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                 break
         return selected_platform
 
-    def load_from_file(self, file, filter_status=[]):
+    def load_from_file(self, file, filter_status=[], filter_platform=[]):
         try:
             with open(file, "r") as fp:
                 cr = csv.DictReader(fp)
@@ -2807,6 +2807,8 @@ class TestSuite(DisablePyTestCollectionMixin):
                     test = row["test"]
 
                     platform = self.get_platform(row["platform"])
+                    if filter_platform and platform.name not in filter_platform:
+                        continue
                     instance = TestInstance(self.testcases[test], platform, self.outdir)
                     if self.device_testing:
                         tfilter = 'runnable'
@@ -3226,7 +3228,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                     elif instance.status == 'passed':
                         passes += 1
                     else:
-                        logger.error(f"Unknown status {instance.status}")
+                        logger.debug(f"Unknown status {instance.status}")
 
             total = (errors + passes + fails + skips)
             # do not produce a report if no tests were actually run (only built)
