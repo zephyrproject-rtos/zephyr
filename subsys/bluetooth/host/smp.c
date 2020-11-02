@@ -119,6 +119,7 @@ enum {
 	SMP_FLAG_SC,		/* if LE Secure Connections is used */
 	SMP_FLAG_PKEY_SEND,	/* if should send Public Key when available */
 	SMP_FLAG_DHKEY_PENDING,	/* if waiting for local DHKey */
+	SMP_FLAG_DHKEY_GEN,     /* if generating DHKey */
 	SMP_FLAG_DHKEY_SEND,	/* if should generate and send DHKey Check */
 	SMP_FLAG_USER,		/* if waiting for user input */
 	SMP_FLAG_DISPLAY,       /* if display_passkey() callback was called */
@@ -3390,65 +3391,95 @@ static uint8_t compute_and_check_and_send_slave_dhcheck(struct bt_smp *smp)
 }
 #endif /* CONFIG_BT_PERIPHERAL */
 
-static void bt_smp_dhkey_ready(const uint8_t *dhkey)
+static void bt_smp_dhkey_ready(const uint8_t *dhkey);
+static uint8_t smp_dhkey_generate(struct bt_smp *smp)
 {
-	struct bt_smp *smp = NULL;
-	int i;
+	int err;
 
-	BT_DBG("%p", dhkey);
+	atomic_set_bit(smp->flags, SMP_FLAG_DHKEY_GEN);
+	err = bt_dh_key_gen(smp->pkey, bt_smp_dhkey_ready);
+	if (err) {
+		atomic_clear_bit(smp->flags, SMP_FLAG_DHKEY_GEN);
 
-	for (i = 0; i < ARRAY_SIZE(bt_smp_pool); i++) {
-		if (atomic_test_and_clear_bit(bt_smp_pool[i].flags,
-					      SMP_FLAG_DHKEY_PENDING)) {
-			smp = &bt_smp_pool[i];
-			break;
-		}
+		BT_ERR("Failed to generate DHKey");
+		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	if (!smp) {
-		return;
-	}
+	return 0;
+}
 
+static uint8_t smp_dhkey_ready(struct bt_smp *smp, const uint8_t *dhkey)
+{
 	if (!dhkey) {
-		smp_error(smp, BT_SMP_ERR_DHKEY_CHECK_FAILED);
-		return;
+		return BT_SMP_ERR_DHKEY_CHECK_FAILED;
 	}
 
+	atomic_clear_bit(smp->flags, SMP_FLAG_DHKEY_PENDING);
 	memcpy(smp->dhkey, dhkey, 32);
 
 	/* wait for user passkey confirmation */
 	if (atomic_test_bit(smp->flags, SMP_FLAG_USER)) {
 		atomic_set_bit(smp->flags, SMP_FLAG_DHKEY_SEND);
-		return;
+		return 0;
 	}
 
 	/* wait for remote DHKey Check */
 	if (atomic_test_bit(smp->flags, SMP_FLAG_DHCHECK_WAIT)) {
 		atomic_set_bit(smp->flags, SMP_FLAG_DHKEY_SEND);
-		return;
+		return 0;
 	}
 
 	if (atomic_test_bit(smp->flags, SMP_FLAG_DHKEY_SEND)) {
-		uint8_t err;
-
 #if defined(CONFIG_BT_CENTRAL)
 		if (smp->chan.chan.conn->role == BT_HCI_ROLE_MASTER) {
-			err = compute_and_send_master_dhcheck(smp);
-			if (err) {
-				smp_error(smp, err);
-			}
-
-			return;
+			return compute_and_send_master_dhcheck(smp);
 		}
+
 #endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_PERIPHERAL)
-		err = compute_and_check_and_send_slave_dhcheck(smp);
+		return  compute_and_check_and_send_slave_dhcheck(smp);
+#endif /* CONFIG_BT_PERIPHERAL */
+	}
+
+	return 0;
+}
+
+static struct bt_smp *smp_find(int flag)
+{
+	for (int i = 0; i < ARRAY_SIZE(bt_smp_pool); i++) {
+		if (atomic_test_bit(bt_smp_pool[i].flags, flag)) {
+			return &bt_smp_pool[i];
+		}
+	}
+
+	return NULL;
+}
+
+static void bt_smp_dhkey_ready(const uint8_t *dhkey)
+{
+	BT_DBG("%p", dhkey);
+	int err;
+
+	struct bt_smp *smp = smp_find(SMP_FLAG_DHKEY_GEN);
+	if (smp) {
+		atomic_clear_bit(smp->flags, SMP_FLAG_DHKEY_GEN);
+		err = smp_dhkey_ready(smp, dhkey);
 		if (err) {
 			smp_error(smp, err);
 		}
-#endif /* CONFIG_BT_PERIPHERAL */
 	}
+
+	err = 0;
+	do {
+		smp = smp_find(SMP_FLAG_DHKEY_PENDING);
+		if (smp) {
+			err = smp_dhkey_generate(smp);
+			if (err) {
+				smp_error(smp, err);
+			}
+		}
+	} while (smp && err);
 }
 
 static uint8_t sc_smp_check_confirm(struct bt_smp *smp)
@@ -3959,11 +3990,11 @@ static uint8_t generate_dhkey(struct bt_smp *smp)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	if (bt_dh_key_gen(smp->pkey, bt_smp_dhkey_ready)) {
-		return BT_SMP_ERR_UNSPECIFIED;
+	atomic_set_bit(smp->flags, SMP_FLAG_DHKEY_PENDING);
+	if (!smp_find(SMP_FLAG_DHKEY_GEN)) {
+		return smp_dhkey_generate(smp);
 	}
 
-	atomic_set_bit(smp->flags, SMP_FLAG_DHKEY_PENDING);
 	return 0;
 }
 
