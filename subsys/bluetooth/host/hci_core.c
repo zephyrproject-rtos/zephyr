@@ -3860,8 +3860,10 @@ static void le_dhkey_complete(struct net_buf *buf)
 	BT_DBG("status: 0x%02x", evt->status);
 
 	if (dh_key_cb) {
-		dh_key_cb(evt->status ? NULL : evt->dhkey);
+		bt_dh_key_cb_t cb = dh_key_cb;
+
 		dh_key_cb = NULL;
+		cb(evt->status ? NULL : evt->dhkey);
 	}
 }
 #endif /* CONFIG_BT_ECC */
@@ -9325,6 +9327,10 @@ int bt_dh_key_gen(const uint8_t remote_pk[64], bt_dh_key_cb_t cb)
 	struct bt_hci_cp_le_generate_dhkey *cp;
 	struct net_buf *buf;
 	int err;
+
+	if (dh_key_cb == cb) {
+		return -EALREADY;
+	}
 
 	if (dh_key_cb || atomic_test_bit(bt_dev.flags, BT_DEV_PUB_KEY_BUSY)) {
 		return -EBUSY;
