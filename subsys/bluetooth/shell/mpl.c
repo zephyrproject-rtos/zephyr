@@ -90,6 +90,7 @@ int cmd_mpl_seeking_speed_changed_cb(const struct shell *shell, size_t argc,
 	return 0;
 }
 
+#ifdef CONFIG_BT_OTS
 int cmd_mpl_current_track_id_changed_cb(const struct shell *shell, size_t argc,
 					char *argv[])
 {
@@ -121,6 +122,7 @@ int cmd_mpl_parent_group_id_changed_cb(const struct shell *shell, size_t argc,
 
 	return 0;
 }
+#endif /* CONFIG_BT_OTS */
 
 int cmd_mpl_playing_order_changed_cb(const struct shell *shell, size_t argc,
 				     char *argv[])
@@ -146,6 +148,7 @@ int cmd_mpl_media_opcodes_changed_cb(const struct shell *shell, size_t argc,
 	return 0;
 }
 
+#ifdef CONFIG_BT_OTS
 int cmd_mpl_search_results_changed_cb(const struct shell *shell, size_t argc,
 				      char *argv[])
 {
@@ -153,6 +156,7 @@ int cmd_mpl_search_results_changed_cb(const struct shell *shell, size_t argc,
 
 	return 0;
 }
+#endif /* CONFIG_BT_OTS */
 
 static int cmd_mpl(const struct shell *shell, size_t argc, char **argv)
 {
@@ -176,6 +180,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mpl_cmds,
 		      cmd_mpl_playback_speed_changed_cb, 1, 0),
 	SHELL_CMD_ARG(seeking_speed_changed_cb, NULL, NULL,
 		      cmd_mpl_seeking_speed_changed_cb, 1, 0),
+#ifdef CONFIG_BT_OTS
 	SHELL_CMD_ARG(current_track_id_changed_cb, NULL, NULL,
 		      cmd_mpl_current_track_id_changed_cb, 1, 0),
 	SHELL_CMD_ARG(next_track_id_changed_cb, NULL, NULL,
@@ -184,14 +189,17 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mpl_cmds,
 		      cmd_mpl_group_id_changed_cb, 1, 0),
 	SHELL_CMD_ARG(parent_group_id_changed_cb, NULL, NULL,
 		      cmd_mpl_parent_group_id_changed_cb, 1, 0),
+#endif /* CONFIG_BT_OTS */
 	SHELL_CMD_ARG(playing_order_changed_cb, NULL, NULL,
 		      cmd_mpl_playing_order_changed_cb, 1, 0),
 	SHELL_CMD_ARG(state_changed_cb, NULL, NULL,
 		      cmd_mpl_state_changed_cb, 1, 0),
 	SHELL_CMD_ARG(media_opcodes_changed_cb, NULL, NULL,
 		      cmd_mpl_media_opcodes_changed_cb, 1, 0),
+#ifdef CONFIG_BT_OTS
 	SHELL_CMD_ARG(search_results_changed_cb, NULL, NULL,
 		      cmd_mpl_search_results_changed_cb, 1, 0),
+#endif /* CONFIG_BT_OTS */
 	SHELL_SUBCMD_SET_END
 );
 
