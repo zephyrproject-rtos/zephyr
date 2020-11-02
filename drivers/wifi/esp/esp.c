@@ -446,14 +446,24 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ipd)
 
 	ret = data_offset + data_len; /* Skip */
 
-	pkt = esp_prepare_pkt(dev, data->rx_buf, data_offset, data_len);
-	if (!pkt) {
-		/* FIXME: Should probably terminate connection */
-		LOG_ERR("Failed to get net_pkt: len %d", data_len);
+	if ((sock->flags & (ESP_SOCK_CONNECTED | ESP_SOCK_CLOSE_PENDING)) !=
+							ESP_SOCK_CONNECTED) {
+		LOG_DBG("Received data on closed link %d", link_id);
 		goto out;
 	}
 
+	pkt = esp_prepare_pkt(dev, data->rx_buf, data_offset, data_len);
+	if (!pkt) {
+		LOG_ERR("Failed to get net_pkt: len %d", data_len);
+		if (sock->type == SOCK_STREAM) {
+			sock->flags |= ESP_SOCK_CLOSE_PENDING;
+		}
+		goto submit_work;
+	}
+
 	k_fifo_put(&sock->fifo_rx_pkt, pkt);
+
+submit_work:
 	k_work_submit_to_queue(&dev->workq, &sock->recv_work);
 
 out:

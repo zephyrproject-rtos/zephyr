@@ -8,6 +8,9 @@
 
 #include "esp.h"
 
+#include <logging/log.h>
+LOG_MODULE_DECLARE(wifi_esp);
+
 /* esp_data->mtx_sock should be held */
 struct esp_socket *esp_socket_get(struct esp_data *data)
 {
@@ -66,5 +69,26 @@ void esp_socket_init(struct esp_data *data)
 		sock->flags = 0;
 		k_sem_init(&sock->sem_data_ready, 0, 1);
 		k_fifo_init(&sock->fifo_rx_pkt);
+	}
+}
+
+void esp_socket_close(struct esp_socket *sock)
+{
+	struct esp_data *dev = esp_socket_to_dev(sock);
+	char cmd_buf[16];
+	int ret;
+
+	snprintk(cmd_buf, sizeof(cmd_buf), "AT+CIPCLOSE=%d",
+		 sock->link_id);
+	ret = modem_cmd_send(&dev->mctx.iface, &dev->mctx.cmd_handler,
+			     NULL, 0, cmd_buf, &dev->sem_response,
+			     ESP_CMD_TIMEOUT);
+	if (ret < 0) {
+		/* FIXME:
+		 * If link doesn't close correctly here, esp_get could
+		 * allocate a socket with an already open link.
+		 */
+		LOG_ERR("Failed to close link %d, ret %d",
+			sock->link_id, ret);
 	}
 }
