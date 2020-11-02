@@ -16,4 +16,15 @@ config SEGGER_SYSVIEW_POST_MORTEM_MODE
 	bool "Enable post-mortem mode for SystemView"
 	depends on SEGGER_SYSTEMVIEW
 
+choice SEGGER_SYSVIEW_SECTION
+	prompt "Choose SystemView data linker section"
+
+config SEGGER_SYSVIEW_SECTION_NONE
+	bool "Place SystemView data in the default linker section"
+
+config SEGGER_SYSVIEW_SECTION_DTCM
+	bool "Place SystemView data in the DTCM linker section"
+
+endchoice
+
 endif
