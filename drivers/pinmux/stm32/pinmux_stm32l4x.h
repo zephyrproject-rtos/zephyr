@@ -262,11 +262,11 @@
 #define STM32L4X_PINMUX_FUNC_PC7_USART6_RX __DEPRECATED_MACRO                                     \
 	(STM32_PINMUX_ALT_FUNC_8 | STM32_PUPDR_NO_PULL)
 
-#define STM32L4X_PINMUX_FUNC_PC8_SDMMC1_D0                                     \
+#define STM32L4X_PINMUX_FUNC_PC8_SDMMC1_D0 __DEPRECATED_MACRO                                     \
 	(STM32_PINMUX_ALT_FUNC_12 | STM32_PUSHPULL_PULLUP |                    \
 	 STM32_OSPEEDR_VERY_HIGH_SPEED)
 
-#define STM32L4X_PINMUX_FUNC_PC9_SDMMC1_D1                                     \
+#define STM32L4X_PINMUX_FUNC_PC9_SDMMC1_D1 __DEPRECATED_MACRO                                     \
 	(STM32_PINMUX_ALT_FUNC_12 | STM32_PUSHPULL_PULLUP |                    \
 	 STM32_OSPEEDR_VERY_HIGH_SPEED)
 
@@ -277,7 +277,7 @@
 	(STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_PULLUP)
 #define STM32L4X_PINMUX_FUNC_PC10_UART4_TX __DEPRECATED_MACRO                                     \
 	(STM32_PINMUX_ALT_FUNC_8 | STM32_PUSHPULL_PULLUP)
-#define STM32L4X_PINMUX_FUNC_PC10_SDMMC1_D2                                    \
+#define STM32L4X_PINMUX_FUNC_PC10_SDMMC1_D2 __DEPRECATED_MACRO                                    \
 	(STM32_PINMUX_ALT_FUNC_12 | STM32_PUSHPULL_PULLUP |                    \
 	 STM32_OSPEEDR_VERY_HIGH_SPEED)
 
@@ -287,14 +287,14 @@
 	(STM32_PINMUX_ALT_FUNC_7 | STM32_PUPDR_NO_PULL)
 #define STM32L4X_PINMUX_FUNC_PC11_UART4_RX __DEPRECATED_MACRO                                     \
 	(STM32_PINMUX_ALT_FUNC_8 | STM32_PUPDR_NO_PULL)
-#define STM32L4X_PINMUX_FUNC_PC11_SDMMC1_D3                                    \
+#define STM32L4X_PINMUX_FUNC_PC11_SDMMC1_D3 __DEPRECATED_MACRO                                    \
 	(STM32_PINMUX_ALT_FUNC_12 | STM32_PUSHPULL_PULLUP |                    \
 	 STM32_OSPEEDR_VERY_HIGH_SPEED)
 
 #define STM32L4X_PINMUX_FUNC_PC12_SPI3_MOSI __DEPRECATED_MACRO                                    \
 	(STM32_PINMUX_ALT_FUNC_6 | STM32_PUPDR_PULL_DOWN | \
 	 STM32_OSPEEDR_VERY_HIGH_SPEED)
-#define STM32L4X_PINMUX_FUNC_PC12_SDMMC1_CK                                    \
+#define STM32L4X_PINMUX_FUNC_PC12_SDMMC1_CK __DEPRECATED_MACRO                                    \
 	(STM32_PINMUX_ALT_FUNC_12 | STM32_PUSHPULL_PULLUP |                    \
 	 STM32_OSPEEDR_VERY_HIGH_SPEED)
 
@@ -311,7 +311,7 @@
 
 #define STM32L4X_PINMUX_FUNC_PD2_USART3_RTS __DEPRECATED_MACRO                                    \
 	(STM32_PINMUX_ALT_FUNC_7 | STM32_OPENDRAIN_PULLUP)
-#define STM32L4X_PINMUX_FUNC_PD2_SDMMC1_CMD                                    \
+#define STM32L4X_PINMUX_FUNC_PD2_SDMMC1_CMD __DEPRECATED_MACRO                                    \
 	(STM32_PINMUX_ALT_FUNC_12 | STM32_PUSHPULL_PULLUP |                    \
 	 STM32_OSPEEDR_VERY_HIGH_SPEED)
 
