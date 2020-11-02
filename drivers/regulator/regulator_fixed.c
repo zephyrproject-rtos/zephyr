@@ -264,14 +264,17 @@ static const struct regulator_driver_api api_onoff = {
 static int regulator_fixed_init_onoff(const struct device *dev)
 {
 	struct driver_data_onoff *data = dev->data;
-	int rc = common_init(dev, &data->gpio);
+	int rc;
 
 	data->dev = dev;
-	onoff_manager_init(&data->mgr, &transitions);
+	rc = onoff_manager_init(&data->mgr, &transitions);
+	__ASSERT_NO_MSG(rc == 0);
+
 #ifdef CONFIG_MULTITHREADING
 	k_delayed_work_init(&data->delayed_work, onoff_worker);
 #endif /* CONFIG_MULTITHREADING */
 
+	rc = common_init(dev, &data->gpio);
 	if (rc >= 0) {
 		rc = 0;
 	}
