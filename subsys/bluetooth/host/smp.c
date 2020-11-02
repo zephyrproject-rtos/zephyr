@@ -1251,7 +1251,10 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 
 		info = net_buf_add(buf, sizeof(*info));
 
-		bt_rand(info->csrk, sizeof(info->csrk));
+		if (bt_rand(info->csrk, sizeof(info->csrk))) {
+			BT_ERR("Unable to get random bytes");
+			return;
+		}
 
 		if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
 			bt_keys_add_type(keys, BT_KEYS_LOCAL_CSRK);
@@ -2048,7 +2051,10 @@ static void legacy_distribute_keys(struct bt_smp *smp)
 			uint8_t ediv[2];
 		} rand;
 
-		bt_rand((void *)&rand, sizeof(rand));
+		if (bt_rand((void *)&rand, sizeof(rand))) {
+			BT_ERR("Unable to get random bytes");
+			return;
+		}
 
 		buf = smp_create_pdu(smp, BT_SMP_CMD_ENCRYPT_INFO,
 				     sizeof(*info));
@@ -2158,7 +2164,9 @@ static uint8_t bt_smp_distribute_keys(struct bt_smp *smp)
 
 		info = net_buf_add(buf, sizeof(*info));
 
-		bt_rand(info->csrk, sizeof(info->csrk));
+		if (bt_rand(info->csrk, sizeof(info->csrk))) {
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
 
 		if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
 			bt_keys_add_type(keys, BT_KEYS_LOCAL_CSRK);
