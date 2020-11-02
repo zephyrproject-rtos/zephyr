@@ -46,6 +46,7 @@ static ssize_t player_name_read(struct bt_conn *conn,
 				 strlen(name));
 }
 
+#ifdef CONFIG_BT_OTS
 static ssize_t icon_id_read(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr, void *buf,
 			    uint16_t len, uint16_t offset)
@@ -62,6 +63,7 @@ static ssize_t icon_id_read(struct bt_conn *conn,
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &icon_id,
 				 UINT48_LEN);
 }
+#endif /* CONFIG_BT_OTS */
 
 static ssize_t icon_uri_read(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
@@ -218,6 +220,7 @@ static void seeking_speed_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_DBG("value 0x%04x", value);
 }
 
+#ifdef CONFIG_BT_OTS
 static ssize_t track_segments_id_read(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
 				      void *buf, uint16_t len, uint16_t offset)
@@ -406,6 +409,7 @@ static void parent_group_id_cfg_changed(const struct bt_gatt_attr *attr,
 {
 	BT_DBG("value 0x%04x", value);
 }
+#endif /* CONFIG_BT_OTS */
 
 static ssize_t playing_order_read(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr, void *buf,
@@ -537,6 +541,7 @@ static void opcodes_supported_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_DBG("value 0x%04x", value);
 }
 
+#ifdef CONFIG_BT_OTS
 static ssize_t search_control_point_write(struct bt_conn *conn,
 					  const struct bt_gatt_attr *attr,
 					  const void *buf, uint16_t len,
@@ -604,6 +609,7 @@ static void search_results_id_cfg_changed(const struct bt_gatt_attr *attr,
 {
 	BT_DBG("value 0x%04x", value);
 }
+#endif /* CONFIG_BT_OTS */
 
 static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 				    const struct bt_gatt_attr *attr, void *buf,
@@ -617,6 +623,72 @@ static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 				 sizeof(id));
 }
 
+/* Defines for OTS-dependent characteristics - empty if no OTS */
+#ifdef CONFIG_BT_OTS
+#define ICON_OBJ_ID_CHARACTERISTIC_IF_OTS  \
+	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_ICON_OBJ_ID,	\
+	BT_GATT_CHRC_READ, BT_GATT_PERM_READ_ENCRYPT, \
+	icon_id_read, NULL, NULL),
+#define SEGMENTS_TRACK_GROUP_ID_CHARACTERISTICS_IF_OTS  \
+	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_TRACK_SEGMENTS_OBJ_ID,	\
+			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ_ENCRYPT, \
+			       track_segments_id_read, NULL, NULL), \
+	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_CURRENT_TRACK_OBJ_ID, \
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | \
+			       BT_GATT_CHRC_WRITE_WITHOUT_RESP | \
+			       BT_GATT_CHRC_NOTIFY, \
+			       BT_GATT_PERM_READ_ENCRYPT | \
+			       BT_GATT_PERM_WRITE_ENCRYPT, \
+			       current_track_id_read, current_track_id_write, \
+			       NULL), \
+	BT_GATT_CCC(current_track_id_cfg_changed, \
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
+	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_NEXT_TRACK_OBJ_ID, \
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | \
+			       BT_GATT_CHRC_WRITE_WITHOUT_RESP | \
+			       BT_GATT_CHRC_NOTIFY, \
+			       BT_GATT_PERM_READ_ENCRYPT | \
+			       BT_GATT_PERM_WRITE_ENCRYPT, \
+			       next_track_id_read, next_track_id_write, NULL), \
+	BT_GATT_CCC(next_track_id_cfg_changed, \
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
+	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_GROUP_OBJ_ID, \
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | \
+			       BT_GATT_CHRC_WRITE_WITHOUT_RESP | \
+			       BT_GATT_CHRC_NOTIFY, \
+			       BT_GATT_PERM_READ_ENCRYPT | \
+			       BT_GATT_PERM_WRITE_ENCRYPT, \
+			       group_id_read, group_id_write, NULL), \
+	BT_GATT_CCC(group_id_cfg_changed, \
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
+	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_PARENT_GROUP_OBJ_ID, \
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
+			       BT_GATT_PERM_READ_ENCRYPT, \
+			       parent_group_id_read, NULL, NULL), \
+	BT_GATT_CCC(parent_group_id_cfg_changed, \
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
+#define	SEARCH_CHARACTERISTICS_IF_OTS \
+	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_SEARCH_CONTROL_POINT, \
+			       BT_GATT_CHRC_WRITE | \
+			       BT_GATT_CHRC_WRITE_WITHOUT_RESP | \
+			       BT_GATT_CHRC_NOTIFY, \
+			       BT_GATT_PERM_WRITE_ENCRYPT, \
+			       NULL, search_control_point_write, NULL), \
+	BT_GATT_CCC(search_control_point_cfg_changed, \
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
+	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID, \
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
+			       BT_GATT_PERM_READ_ENCRYPT, \
+			       search_results_id_read, NULL, NULL), \
+	BT_GATT_CCC(search_results_id_cfg_changed, \
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
+
+#else
+#define ICON_OBJ_ID_CHARACTERISTIC_IF_OTS
+#define SEGMENTS_TRACK_GROUP_ID_CHARACTERISTICS_IF_OTS
+#define SEARCH_CHARACTERISTICS_IF_OTS
+#endif /* CONFIG_BT_OTS */
+
 /* Media control service attributes */
 #define BT_MCS_SERVICE_DEFINITION \
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_MCS), \
@@ -624,9 +696,7 @@ static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_PLAYER_NAME, \
 			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ_ENCRYPT, \
 			       player_name_read, NULL, NULL), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_ICON_OBJ_ID, \
-			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ_ENCRYPT, \
-			       icon_id_read, NULL, NULL), \
+	ICON_OBJ_ID_CHARACTERISTIC_IF_OTS \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_ICON_URI, \
 			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ_ENCRYPT, \
 			       icon_uri_read, NULL, NULL), \
@@ -673,43 +743,7 @@ static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 			       seeking_speed_read, NULL, NULL), \
 	BT_GATT_CCC(seeking_speed_cfg_changed, \
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_TRACK_SEGMENTS_OBJ_ID, \
-			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ_ENCRYPT, \
-			       track_segments_id_read, NULL, NULL), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_CURRENT_TRACK_OBJ_ID, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | \
-			       BT_GATT_CHRC_WRITE_WITHOUT_RESP | \
-			       BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT | \
-			       BT_GATT_PERM_WRITE_ENCRYPT, \
-			       current_track_id_read, current_track_id_write, \
-			       NULL), \
-	BT_GATT_CCC(current_track_id_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_NEXT_TRACK_OBJ_ID, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | \
-			       BT_GATT_CHRC_WRITE_WITHOUT_RESP | \
-			       BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT | \
-			       BT_GATT_PERM_WRITE_ENCRYPT, \
-			       next_track_id_read, next_track_id_write, NULL), \
-	BT_GATT_CCC(next_track_id_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_GROUP_OBJ_ID, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | \
-			       BT_GATT_CHRC_WRITE_WITHOUT_RESP | \
-			       BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT | \
-			       BT_GATT_PERM_WRITE_ENCRYPT, \
-			       group_id_read, group_id_write, NULL), \
-	BT_GATT_CCC(group_id_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_PARENT_GROUP_OBJ_ID, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT, \
-			       parent_group_id_read, NULL, NULL), \
-	BT_GATT_CCC(parent_group_id_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
+	SEGMENTS_TRACK_GROUP_ID_CHARACTERISTICS_IF_OTS \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_PLAYING_ORDER, \
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | \
 			       BT_GATT_CHRC_WRITE_WITHOUT_RESP | \
@@ -742,20 +776,7 @@ static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 			       opcodes_supported_read, NULL, NULL), \
 	BT_GATT_CCC(opcodes_supported_cfg_changed, \
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_SEARCH_CONTROL_POINT, \
-			       BT_GATT_CHRC_WRITE | \
-			       BT_GATT_CHRC_WRITE_WITHOUT_RESP | \
-			       BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_WRITE_ENCRYPT, \
-			       NULL, search_control_point_write, NULL), \
-	BT_GATT_CCC(search_control_point_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID, \
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
-			       BT_GATT_PERM_READ_ENCRYPT, \
-			       search_results_id_read, NULL, NULL), \
-	BT_GATT_CCC(search_results_id_cfg_changed, \
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
+	SEARCH_CHARACTERISTICS_IF_OTS \
 	BT_GATT_CHARACTERISTIC(BT_UUID_CCID, \
 			       BT_GATT_CHRC_READ, \
 			       BT_GATT_PERM_READ_ENCRYPT, \
@@ -775,8 +796,11 @@ int bt_mcs_init(struct bt_ots_cb *ots_cbs)
 		return -EALREADY;
 	}
 
-	struct bt_ots_service_register_t service_reg;
 	int err;
+	mcs = (struct bt_gatt_service)BT_GATT_SERVICE(svc_attrs);
+
+#ifdef CONFIG_BT_OTS
+	struct bt_ots_service_register_t service_reg;
 
 	service_reg.cb = ots_cbs;
 	service_reg.features = (struct bt_ots_feat){
@@ -789,20 +813,21 @@ int bt_mcs_init(struct bt_ots_cb *ots_cbs)
 		return -ENOEXEC;
 	}
 
-	mcs = (struct bt_gatt_service)BT_GATT_SERVICE(svc_attrs);
-
 	/* TODO: Maybe the user_data pointer can be in a different way */
 	for (int i = 0; i < mcs.attr_count; i++) {
 		if (!bt_uuid_cmp(mcs.attrs[i].uuid, BT_UUID_GATT_INCLUDE)) {
 			mcs.attrs[i].user_data = bt_ots_get_incl(ots_svc_inst);
 		}
 	}
+#endif /* CONFIG_BT_OTS */
 
 	err = bt_gatt_service_register(&mcs);
 
 	if (err) {
 		BT_ERR("Could not register the MCS service");
+#ifdef CONFIG_BT_OTS
 		bt_ots_unregister_service(ots_svc_inst);
+#endif /* CONFIG_BT_OTS */
 		return -ENOEXEC;
 	}
 
