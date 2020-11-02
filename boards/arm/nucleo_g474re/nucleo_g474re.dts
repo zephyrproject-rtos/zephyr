@@ -96,10 +96,6 @@
 	};
 };
 
-&usb {
-	status = "okay";
-};
-
 &rtc {
 	status = "okay";
 };
