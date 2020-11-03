@@ -8,9 +8,7 @@
 
 #include <stdarg.h>
 #include <stdio.h>
-
-extern int z_prf(int (*func)(), void *dest,
-				const char *format, va_list vargs);
+#include <sys/cbprintf.h>
 
 struct emitter {
 	char *ptr;
@@ -44,7 +42,7 @@ int snprintf(char *_MLIBC_RESTRICT s, size_t len,
 	p.len = (int) len;
 
 	va_start(vargs, format);
-	r = z_prf(sprintf_out, (void *) (&p), format, vargs);
+	r = cbvprintf(sprintf_out, (void *) (&p), format, vargs);
 	va_end(vargs);
 
 	*(p.ptr) = 0;
@@ -62,7 +60,7 @@ int sprintf(char *_MLIBC_RESTRICT s, const char *_MLIBC_RESTRICT format, ...)
 	p.len = (int) 0x7fffffff; /* allow up to "maxint" characters */
 
 	va_start(vargs, format);
-	r = z_prf(sprintf_out, (void *) (&p), format, vargs);
+	r = cbvprintf(sprintf_out, (void *) (&p), format, vargs);
 	va_end(vargs);
 
 	*(p.ptr) = 0;
@@ -83,7 +81,7 @@ int vsnprintf(char *_MLIBC_RESTRICT s, size_t len,
 	p.ptr = s;
 	p.len = (int) len;
 
-	r = z_prf(sprintf_out, (void *) (&p), format, vargs);
+	r = cbvprintf(sprintf_out, (void *) (&p), format, vargs);
 
 	*(p.ptr) = 0;
 	return r;
@@ -98,7 +96,7 @@ int vsprintf(char *_MLIBC_RESTRICT s, const char *_MLIBC_RESTRICT format,
 	p.ptr = s;
 	p.len = (int) 0x7fffffff; /* allow up to "maxint" characters */
 
-	r = z_prf(sprintf_out, (void *) (&p), format, vargs);
+	r = cbvprintf(sprintf_out, (void *) (&p), format, vargs);
 
 	*(p.ptr) = 0;
 	return r;
