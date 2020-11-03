@@ -20,6 +20,11 @@
 #define SKIP_EXECUTE_TESTS
 #endif
 
+/* RISC-V have no mechanism to restrict execution */
+#if defined(CONFIG_RISCV)
+#define SKIP_EXECUTE_TESTS
+#endif
+
 #define INFO(fmt, ...) printk(fmt, ##__VA_ARGS__)
 
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
