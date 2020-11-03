@@ -57,6 +57,12 @@ config BT_CTLR_SYNC_ISO_SUPPORT
 	depends on BT_CTLR_SYNC_PERIODIC_SUPPORT
 	bool
 
+config BT_CTLR_CENTRAL_ISO_SUPPORT
+	bool
+
+config BT_CTLR_PERIPHERAL_ISO_SUPPORT
+	bool
+
 config BT_CTLR_CHAN_SEL_2_SUPPORT
 	bool
 
@@ -482,6 +488,26 @@ config BT_CTLR_ADV_DATA_LEN_MAX
 	  Maximum Extended Advertising Data Length.
 
 endif # BT_CTLR_ADV_EXT
+
+config BT_CTLR_CENTRAL_ISO
+	bool "LE Connected Isochronous Stream Central" if !BT_LL_SW_SPLIT
+	depends on BT_CTLR_CENTRAL_ISO_SUPPORT && BT_CENTRAL
+	help
+	  Enable support for Bluetooth 5.2 LE Connected Isochronous Stream
+	  Central role in the Controller.
+
+config BT_CTLR_CENTRAL_ISO
+	bool "LE Connected Isochronous Stream Central [EXPERIMENTAL]" if BT_LL_SW_SPLIT
+
+config BT_CTLR_PERIPHERAL_ISO
+	bool "LE Connected Isochronous Stream Peripheral" if !BT_LL_SW_SPLIT
+	depends on BT_CTLR_PERIPHERAL_ISO_SUPPORT && BT_PERIPHERAL
+	help
+	  Enable support for Bluetooth 5.2 LE Connected Isochronous Stream
+	  Peripheral role in the Controller.
+
+config BT_CTLR_PERIPHERAL_ISO
+	bool "LE Connected Isochronous Stream Peripheral [EXPERIMENTAL]" if BT_LL_SW_SPLIT
 
 config BT_CTLR_DTM
 	bool
