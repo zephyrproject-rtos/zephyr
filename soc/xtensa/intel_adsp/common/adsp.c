@@ -17,8 +17,6 @@ LOG_MODULE_REGISTER(sof);
 #include <soc/shim.h>
 #include <adsp/io.h>
 
-#include <cavs/mailbox.h>
-
 /*
  * Sets up the host windows so that the host can see the memory
  * content on the DSP SRAM.
