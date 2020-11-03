@@ -63,6 +63,8 @@
 #define IPSO_OBJECT_PUSH_BUTTON_ID          3347
 /* clang-format on */
 
+typedef void (*lwm2m_socket_fault_cb_t)(int error);
+
 /**
  * @brief LwM2M context structure to maintain information for a single
  * LwM2M connection.
@@ -109,6 +111,11 @@ struct lwm2m_ctx {
 
 	/** Socket File Descriptor */
 	int sock_fd;
+
+	/** Socket fault callback. LwM2M processing thread will call this
+	 *  callback in case of socket errors on receive.
+	 */
+	lwm2m_socket_fault_cb_t fault_cb;
 };
 
 

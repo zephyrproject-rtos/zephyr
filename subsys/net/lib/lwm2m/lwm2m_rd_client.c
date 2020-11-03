@@ -197,8 +197,10 @@ static void sm_handle_timeout_state(struct lwm2m_message *msg,
 }
 
 /* force state machine restart */
-void engine_trigger_restart(void)
+static void socket_fault_cb(int error)
 {
+	LOG_ERR("RD Client socket error: %d", error);
+
 	lwm2m_engine_context_close(client.ctx);
 
 	client.ctx->sec_obj_inst = -1;
@@ -983,6 +985,7 @@ void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
 
 	client.ctx = client_ctx;
 	client.ctx->sock_fd = -1;
+	client.ctx->fault_cb = socket_fault_cb;
 	client.event_cb = event_cb;
 	client.use_bootstrap = flags & LWM2M_RD_CLIENT_FLAG_BOOTSTRAP;
 
