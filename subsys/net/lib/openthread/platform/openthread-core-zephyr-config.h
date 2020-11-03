@@ -123,6 +123,16 @@
 #define RADIO_CONFIG_SRC_MATCH_SHORT_ENTRY_NUM 0
 
 /**
+ * @def OPENTHREAD_CONFIG_PLATFORM_INFO
+ *
+ * The platform-specific string to insert into the OpenThread version string.
+ *
+ */
+#ifdef CONFIG_OPENTHREAD_CONFIG_PLATFORM_INFO
+#define OPENTHREAD_CONFIG_PLATFORM_INFO CONFIG_OPENTHREAD_CONFIG_PLATFORM_INFO
+#endif /* CONFIG_OPENTHREAD_CONFIG_PLATFORM_INFO */
+
+/**
  * @def OPENTHREAD_CONFIG_MLE_MAX_CHILDREN
  *
  * The maximum number of children.
