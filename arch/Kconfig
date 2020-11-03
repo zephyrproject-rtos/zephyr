@@ -155,9 +155,9 @@ config FLASH_SIZE
 	int "Flash Size in kB"
 	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K) if (XIP && ARM) || !ARM
 	help
-	  This option specifies the size of the flash in kB.  It is normally set by
-	  the board's defconfig file and the user should generally avoid modifying
-	  it via the menu configuration.
+	  This option specifies the size of the flash on the board in kB. It is
+	  normally set by the board's defconfig file and the user should generally
+	  avoid modifying it via the menu configuration.
 
 config FLASH_BASE_ADDRESS
 	hex "Flash Base Address"
