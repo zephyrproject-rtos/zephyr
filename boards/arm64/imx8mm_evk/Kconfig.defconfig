@@ -1,0 +1,9 @@
+# Copyright 2020 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_IMX8MM_EVK_A53
+
+config BOARD
+	default "imx8mm_evk"
+
+endif # BOARD_IMX8MM_EVK_A53
