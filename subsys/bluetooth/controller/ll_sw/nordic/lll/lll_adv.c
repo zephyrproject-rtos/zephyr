@@ -153,6 +153,14 @@ int lll_adv_data_init(struct lll_adv_pdu *pdu)
 
 int lll_adv_data_reset(struct lll_adv_pdu *pdu)
 {
+	/* NOTE: this function is used on HCI reset to mem-zero the structure
+	 *       members that otherwise was zero-ed by the architecture
+	 *       startup code that zero-ed the .bss section.
+	 *       pdu[0] element in the array is not initialized as subsequent
+	 *       call to lll_adv_data_init will allocate a PDU buffer and
+	 *       assign that.
+	 */
+
 	pdu->first = 0U;
 	pdu->last = 0U;
 	pdu->pdu[1] = NULL;
@@ -349,6 +357,10 @@ int lll_adv_scan_req_report(struct lll_adv *lll, struct pdu_adv *pdu_adv_rx,
 }
 #endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
 
+
+/* Helper function to initialize data variable both at power up and on
+ * HCI reset.
+ */
 static int init_reset(void)
 {
 	/* Initialize AC PDU pool */

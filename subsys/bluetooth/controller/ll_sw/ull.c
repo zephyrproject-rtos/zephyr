@@ -418,6 +418,16 @@ void ll_reset(void)
 {
 	int err;
 
+	/* Note: The sequence of reset control flow is as follows:
+	 * - Reset ULL context, i.e. stop ULL scheduling, abort LLL events etc.
+	 * - Reset LLL context, i.e. post LLL event abort, let LLL cleanup its
+	 *   variables, if any.
+	 * - Reset ULL static variables (which otherwise was mem-zeroed in cases
+	 *   if power-on reset wherein architecture startup mem-zeroes .bss
+	 *   sections.
+	 * - Initialize ULL context variable, similar to on-power-up.
+	 */
+
 #if defined(CONFIG_BT_BROADCASTER)
 	/* Reset adv state */
 	err = ull_adv_reset();
@@ -520,7 +530,7 @@ void ll_reset(void)
 	}
 
 #if defined(CONFIG_BT_BROADCASTER)
-	/* Finalize after adv state reset */
+	/* Finalize after adv state LLL context reset */
 	err = ull_adv_reset_finalize();
 	LL_ASSERT(!err);
 #endif /* CONFIG_BT_BROADCASTER */
