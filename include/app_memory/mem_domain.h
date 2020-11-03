@@ -23,7 +23,7 @@ typedef struct k_thread *k_tid_t;
  * @{
  */
 
-#ifdef CONFIG_MEMORY_PROTECTION
+#if defined(CONFIG_MEMORY_PROTECTION) || defined(CONFIG_USERSPACE)
 /**
  * @def K_MEM_PARTITION_DEFINE
  *
@@ -62,7 +62,7 @@ struct k_mem_partition {
 #else
 /* To support use of IS_ENABLED for the APIs below */
 struct k_mem_partition;
-#endif /* CONFIG_MEMORY_PROTECTION */
+#endif /* CONFIG_MEMORY_PROTECTION || CONFIG_USERSPACE*/
 
 #ifdef CONFIG_USERSPACE
 /**
