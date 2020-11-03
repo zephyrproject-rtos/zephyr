@@ -23,14 +23,6 @@ typedef struct {
 	uint32_t length;
 } tracing_ctx_t;
 
-#ifdef CONFIG_NEWLIB_LIBC
-typedef int (*str_put_func_t)(int c, void *ctx);
-extern void z_vprintk(str_put_func_t out, void *ctx,
-		      const char *fmt, va_list ap);
-#else
-extern int z_prf(int (*func)(), void *dest, char *format, va_list vargs);
-#endif
-
 /**
  * @brief Put string format tracing message to tracing buffer.
  *
