@@ -49,7 +49,7 @@ jobs:
     - name: build-docs
       run: |
         source zephyr-env.sh
-        make htmldocs
+        make VERBOSE=1 htmldocs
         tar cvf htmldocs.tar --directory=./doc/_build html
 
     - name: upload-build
