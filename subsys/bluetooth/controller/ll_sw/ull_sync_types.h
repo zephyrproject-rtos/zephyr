@@ -18,7 +18,10 @@ struct ll_sync_set {
 	uint16_t volatile timeout_reload; /* Non-zero when sync established */
 	uint16_t timeout_expire;
 
-	struct node_rx_hdr node_rx_lost;
+	struct {
+		struct node_rx_hdr hdr;
+		uint8_t reason;
+	} node_rx_lost;
 };
 
 struct node_rx_sync {

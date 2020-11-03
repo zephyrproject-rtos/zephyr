@@ -153,7 +153,7 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	lll_sync->is_enabled = options & BIT(1);
 
 	/* sync_lost node_rx */
-	sync->node_rx_lost.link = link_sync_lost;
+	sync->node_rx_lost.hdr.link = link_sync_lost;
 
 	/* Initialise ULL and LLL headers */
 	ull_hdr_init(&sync->ull);
@@ -205,17 +205,17 @@ uint8_t ll_sync_create_cancel(void **rx)
 
 	node_rx = (void *)scan->per_scan.node_rx_estab;
 	link_sync_estab = node_rx->hdr.link;
-	link_sync_lost = sync->node_rx_lost.link;
+	link_sync_lost = sync->node_rx_lost.hdr.link;
 
 	ll_rx_link_release(link_sync_lost);
 	ll_rx_link_release(link_sync_estab);
 	ll_rx_release(node_rx);
 
-	node_rx = (void *)&sync->node_rx_lost;
+	node_rx = (void *)&sync->node_rx_lost.hdr;
 	node_rx->hdr.type = NODE_RX_TYPE_SYNC;
 	node_rx->hdr.handle = 0xffff;
 	node_rx->hdr.rx_ftr.param = sync;
-	se = (void *)node_rx->pdu;
+	se = (void *)&sync->node_rx_lost.reason;
 	se->status = BT_HCI_ERR_OP_CANCELLED_BY_HOST;
 
 	*rx = node_rx;
@@ -254,7 +254,7 @@ uint8_t ll_sync_terminate(uint16_t handle)
 	mark = ull_disable_unmark(sync);
 	LL_ASSERT(mark == sync);
 
-	link_sync_lost = sync->node_rx_lost.link;
+	link_sync_lost = sync->node_rx_lost.hdr.link;
 	ll_rx_link_release(link_sync_lost);
 
 	ull_sync_release(sync);
