@@ -15,6 +15,7 @@
 	chosen {
 		zephyr,sram = &sram0_ns;
 		zephyr,flash = &flash0;
+		zephyr,flash-reserved = &flash0_reserved;
 		zephyr,code-partition = &slot0_ns_partition;
 	};
 };

@@ -19,6 +19,7 @@
 		zephyr,bt-mon-uart = &uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,flash-reserved = &flash0_reserved;
 	};
 };
 
@@ -83,6 +84,20 @@
 		 */
 		storage_partition: partition@f8000 {
 			label = "storage";
+			reg = <0x000f8000 0x00008000>;
+		};
+	};
+};
+
+/ {
+	/* Flash area reserved for the application */
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		flash0_reserved: flash0_reserved@f8000 {
+			/* Only the storage partition is reserved. */
 			reg = <0x000f8000 0x00008000>;
 		};
 	};

@@ -38,3 +38,17 @@
 		};
 	};
 };
+
+/ {
+	/* Flash area reserved for the application */
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		flash0_reserved: flash0_reserved@fc000 {
+			/* Only the storage partition is reserved. */
+			reg = <0x000fc000 0x00004000>;
+		};
+	};
+};
