@@ -7,6 +7,7 @@
 #include <ksched.h>
 #include <arch/cpu.h>
 #include <kernel_arch_data.h>
+#include <kernel_arch_func.h>
 #include <drivers/interrupt_controller/sysapic.h>
 #include <drivers/interrupt_controller/loapic.h>
 #include <irq.h>
@@ -42,25 +43,26 @@ void x86_64_irq_init(void)
 	}
 }
 
-/*
- * Find a free IRQ vector at the specified priority, or return -1 if none left.
- */
-
-static int allocate_vector(unsigned int priority)
+int z_x86_allocate_vector(unsigned int priority, int prev_vector)
 {
 	const int VECTORS_PER_PRIORITY = 16;
 	const int MAX_PRIORITY = 13;
-
-	int vector;
+	int vector = prev_vector;
 	int i;
 
 	if (priority >= MAX_PRIORITY) {
 		priority = MAX_PRIORITY;
 	}
 
-	vector = (priority * VECTORS_PER_PRIORITY) + IV_IRQS;
+	if (vector == -1) {
+		vector = (priority * VECTORS_PER_PRIORITY) + IV_IRQS;
+	}
 
 	for (i = 0; i < VECTORS_PER_PRIORITY; ++i, ++vector) {
+		if (prev_vector != 1 && vector == prev_vector) {
+			continue;
+		}
+
 #ifdef CONFIG_IRQ_OFFLOAD
 		if (vector == CONFIG_IRQ_OFFLOAD_VECTOR) {
 			continue;
@@ -69,6 +71,7 @@ static int allocate_vector(unsigned int priority)
 		if (vector == Z_X86_OOPS_VECTOR) {
 			continue;
 		}
+
 		if (x86_irq_funcs[vector - IV_IRQS] == irq_spurious) {
 			return vector;
 		}
@@ -94,7 +97,7 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 
 	key = irq_lock();
 
-	vector = allocate_vector(priority);
+	vector = z_x86_allocate_vector(priority, -1);
 	if (vector >= 0) {
 		_irq_to_interrupt_vector[irq] = vector;
 		z_irq_controller_irq_config(vector, irq, flags);
