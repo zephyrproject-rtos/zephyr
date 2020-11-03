@@ -1251,12 +1251,12 @@ static int ztls_socket(int family, int type, int proto)
 	ctx = tls_alloc();
 	if (ctx == NULL) {
 		errno = ENOMEM;
-		goto error;
+		goto free_fd;
 	}
 
 	sock = zsock_socket(family, type, proto);
 	if (sock < 0) {
-		goto error;
+		goto release_tls;
 	}
 
 	ctx->tls_version = tls_proto;
@@ -1268,7 +1268,10 @@ static int ztls_socket(int family, int type, int proto)
 
 	return fd;
 
-error:
+release_tls:
+	(void)tls_release(ctx);
+
+free_fd:
 	z_free_fd(fd);
 
 	return -1;
