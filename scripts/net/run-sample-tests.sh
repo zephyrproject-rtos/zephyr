@@ -130,6 +130,10 @@ stop_configuration ()
 	        echo "Could not stop Docker network '$network'" >&2
 	    fi
     fi
+
+    # No need to keep the zephyr eth interface around
+    "$NET_TOOLS_BASE/net-setup.sh" --config "$NET_TOOLS_BASE/docker.conf" \
+			               stop > /dev/null 2>&1
 }
 
 start_zephyr ()
