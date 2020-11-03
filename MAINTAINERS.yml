@@ -980,8 +980,8 @@ nRF52 BSIM:
         - "platform: nrf52_bsim"
 
 POSIX API layer:
-    status: maintained
-    maintainers:
+    status: orphaned
+    collaborators:
         - pfalcon
     files:
         - include/posix/
