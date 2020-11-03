@@ -12,7 +12,7 @@ jobs:
     steps:
     - name: Update PATH for west
       run: |
-        echo "::add-path::$HOME/.local/bin"
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
 
     - name: checkout
       uses: actions/checkout@v2
