@@ -94,6 +94,6 @@ Glossary of Terms
    XIP
       (eXecute In Place) a method of executing programs directly from long
       term storage rather than copying it into RAM, saving writable memory for
-      dynamic data and not the static program code.
+      d ynamic data and not the static program code.
 
 .. _System on a chip: https://en.wikipedia.org/wiki/System_on_a_chip
