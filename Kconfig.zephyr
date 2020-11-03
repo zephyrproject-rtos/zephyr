@@ -112,9 +112,46 @@ config FLASH_LOAD_SIZE
 	  If non-zero, this option specifies the size, in bytes, of the flash
 	  area that the Zephyr image will be allowed to occupy.  If zero, the
 	  image will be able to occupy from the FLASH_LOAD_OFFSET to the end of
-	  the device.
+	  the device (or up to FLASH_RESERVED_BASE_ADDRESS depending on whether
+	  the latter is none-zero).
 
 	  If unsure, leave at the default value 0.
+
+if !USE_DT_CODE_PARTITION
+
+DT_CHOSEN_Z_FLASH_RESERVED := zephyr,flash-reserved
+
+config FLASH_RESERVED_BASE_ADDRESS
+	hex "Reserved Flash Base Address"
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH_RESERVED)) if (XIP && ARM) || !ARM
+	default 0
+	help
+	  This option specifies the start address of an area in the device
+	  flash which is reserved for use by the application and may not be
+	  used by the Zephyr image. The symbol is set, optionally, by the
+	  board's defconfig file, or via the board DeviceTree configuration,
+	  and the user should generally avoid modifying it via the menu
+	  configuration. When USE_DT_CODE_PARTITION is defined, the Zephyr
+	  image is linked into the desired code partition, as it is
+	  determined by DeviceTree. Therefore, it is not required to define
+	  a symbol to denote the start address of the reserved flash area.
+
+config FLASH_RESERVED_SIZE
+	hex "Reserved Flash Size"
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_FLASH_RESERVED)) if (XIP && ARM) || !ARM
+	default 0
+	help
+	  This option specifies the size of an area in the device
+	  flash which is reserved for use by the application and may not be
+	  used by the Zephyr image. The symbol is set, optionally, by the
+	  board's defconfig file, or via the board DeviceTree configuration,
+	  and the user should generally avoid modifying it via the menu
+	  configuration. When USE_DT_CODE_PARTITION is defined, the Zephyr
+	  image is linked into the desired code partition, as it is
+	  determined by DeviceTree. Therefore, it is not required to define
+	  a symbol to denote the size of the reserved flash area.
+
+endif # USE_DT_CODE_PARTITION
 
 endif # HAS_FLASH_LOAD_OFFSET
 
