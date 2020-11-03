@@ -137,7 +137,6 @@ def test_bus():
     assert str(edt.get_node("/buses/foo-bus/node/nested").binding_path) == \
         hpath("test-bindings/device-on-foo-bus.yaml")
 
-@pytest.mark.xfail
 def test_child_binding():
     '''Test 'child-binding:' in bindings'''
     edt = edtlib.EDT("test.dts", ["test-bindings"])
