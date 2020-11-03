@@ -73,6 +73,7 @@ struct espi_xec_data {
 	uint8_t plt_rst_asserted;
 	uint8_t espi_rst_asserted;
 	uint8_t sx_state;
+	bool oob_sync_pending;
 };
 
 struct xec_signal {
@@ -505,6 +506,7 @@ static int espi_xec_send_oob(const struct device *dev,
 	ESPI_OOB_REGS->TX_LEN = pckt->len;
 	ESPI_OOB_REGS->TX_CTRL = MCHP_ESPI_OOB_TX_CTRL_START;
 	LOG_DBG("%s %d", __func__, ESPI_OOB_REGS->TX_LEN);
+	data->oob_sync_pending = true;
 
 	/* Wait until ISR or timeout */
 	ret = k_sem_take(&data->tx_lock, K_MSEC(MAX_OOB_TIMEOUT));
@@ -533,10 +535,6 @@ static int espi_xec_receive_oob(const struct device *dev,
 		return -EIO;
 	}
 
-	/* Enable Rx only when we want to receive data */
-	ESPI_OOB_REGS->RX_IEN |= MCHP_ESPI_OOB_RX_IEN;
-	ESPI_OOB_REGS->RX_CTRL |= MCHP_ESPI_OOB_RX_CTRL_AVAIL;
-
 	/* Wait until ISR or timeout */
 	ret = k_sem_take(&data->rx_lock, K_MSEC(MAX_OOB_TIMEOUT));
 	if (ret == -EAGAIN) {
@@ -553,6 +551,11 @@ static int espi_xec_receive_oob(const struct device *dev,
 
 	pckt->len = rcvd_len;
 	memcpy(pckt->buf, slave_rx_mem, pckt->len);
+
+	/* Only after data has been copied from SRAM, indicate channel
+	 * is available for next packet
+	 */
+	ESPI_OOB_REGS->RX_CTRL |= MCHP_ESPI_OOB_RX_CTRL_AVAIL;
 
 	return 0;
 }
@@ -651,8 +654,6 @@ static int espi_xec_flash_write(const struct device *dev,
 		return -EIO;
 	}
 
-	memcpy(pckt->buf, slave_rx_mem, pckt->len);
-
 	return 0;
 }
 
@@ -699,6 +700,12 @@ static void espi_init_oob(const struct device *dev)
 	/* Enable OOB Tx channel enable change status interrupt */
 	ESPI_OOB_REGS->TX_IEN |= MCHP_ESPI_OOB_TX_IEN_CHG_EN |
 				MCHP_ESPI_OOB_TX_IEN_DONE;
+
+	/* Enable Rx channel to receive data any time
+	 * there are case where OOB is not initiated by a previous OOB Tx
+	 */
+	ESPI_OOB_REGS->RX_IEN |= MCHP_ESPI_OOB_RX_IEN;
+	ESPI_OOB_REGS->RX_CTRL |= MCHP_ESPI_OOB_RX_CTRL_AVAIL;
 }
 #endif
 
@@ -893,6 +900,9 @@ static void espi_vwire_chanel_isr(const struct device *dev)
 #ifdef CONFIG_ESPI_OOB_CHANNEL
 static void espi_oob_down_isr(const struct device *dev)
 {
+	struct espi_event evt = { .evt_type = ESPI_BUS_EVENT_OOB_RECEIVED,
+				  .evt_details = 0,
+				  .evt_data = 0 };
 	uint32_t status;
 	struct espi_xec_data *data = (struct espi_xec_data *)(dev->data);
 
@@ -903,10 +913,19 @@ static void espi_oob_down_isr(const struct device *dev)
 		/* Register is write-on-clear, ensure only 1 bit is affected */
 		ESPI_OOB_REGS->RX_STS = MCHP_ESPI_OOB_RX_STS_DONE;
 
-		/* Disable Rx interrupt */
-		ESPI_OOB_REGS->RX_IEN &= ~MCHP_ESPI_OOB_RX_IEN;
+		evt.evt_details = data->oob_sync_pending;
+		if (data->oob_sync_pending) {
+			data->oob_sync_pending = false;
+			k_sem_give(&data->rx_lock);
+		} else {
+			LOG_WRN("%s async OOB", __func__);
+			/* For now discard packet from master-initiated
+			 * OOB transaction and indicate channel is free again
+			 */
+			ESPI_OOB_REGS->RX_CTRL |= MCHP_ESPI_OOB_RX_CTRL_AVAIL;
+		}
 
-		k_sem_give(&data->rx_lock);
+		espi_send_callbacks(&data->callbacks, dev, evt);
 	}
 }
 
