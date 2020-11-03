@@ -79,6 +79,18 @@
 			channels = <2>;
 			counter-size = <16>;
 		};
+
+		usbh0: usbh@41005000{
+			compatible = "atmel,sam0-usbh";
+			label = "USBHO";
+			reg = <0x41005000 0x1000>;
+			buf-len = <1024>;
+			nbr-ep-bulk = <2>;
+			nbr-ep-intr = <2>;
+			nbr-isoc-ep = <2>;
+			interrupts = <7 0>;
+			status = "disabled";
+		};
 	};
 };
 
