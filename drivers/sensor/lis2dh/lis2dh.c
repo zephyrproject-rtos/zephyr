@@ -409,11 +409,39 @@ int lis2dh_init(const struct device *dev)
 		.cs_gpios_label = LIS2DH_SPI_CS_LABEL(inst),		\
 	})
 
+#ifdef CONFIG_LIS2DH_TRIGGER
+#define LIS2DH_HAS_IRQ_IDX(inst, idx)					\
+		DT_INST_PROP_HAS_IDX(inst, irq_gpios, idx)
+
+#define LIS2DH_CFG_INT(inst) \
+	.irq1_dev_name = COND_CODE_1(LIS2DH_HAS_IRQ_IDX(inst, 0),	\
+		(DT_INST_GPIO_LABEL_BY_IDX(inst, irq_gpios, 0)),	\
+		(NULL)),						\
+	.irq1_pin = COND_CODE_1(LIS2DH_HAS_IRQ_IDX(inst, 0),		\
+		(DT_INST_GPIO_PIN_BY_IDX(inst, irq_gpios, 0)),		\
+		(0)),						\
+	.irq1_flags = COND_CODE_1(LIS2DH_HAS_IRQ_IDX(inst, 0),		\
+		(DT_INST_GPIO_FLAGS_BY_IDX(inst, irq_gpios, 0)),	\
+		(0)),						\
+	.irq2_dev_name = COND_CODE_1(LIS2DH_HAS_IRQ_IDX(inst, 1),	\
+		(DT_INST_GPIO_LABEL_BY_IDX(inst, irq_gpios, 1)),	\
+		(NULL)),						\
+	.irq2_pin = COND_CODE_1(LIS2DH_HAS_IRQ_IDX(inst, 1),		\
+		(DT_INST_GPIO_PIN_BY_IDX(inst, irq_gpios, 1)),		\
+		(0)),						\
+	.irq2_flags = COND_CODE_1(LIS2DH_HAS_IRQ_IDX(inst, 1),		\
+		(DT_INST_GPIO_FLAGS_BY_IDX(inst, irq_gpios, 1)),	\
+		(0)),
+#else
+#define LIS2DH_CFG_INT(inst)
+#endif /* CONFIG_LIS2DH_TRIGGER */
+
 #define LIS2DH_CONFIG_SPI(inst)						\
 	{								\
 		.bus_name = DT_INST_BUS_LABEL(inst),			\
 		.bus_init = lis2dh_spi_init,				\
-		.bus_cfg = { .spi_cfg = LIS2DH_SPI_CFG(inst)	}	\
+		.bus_cfg = { .spi_cfg = LIS2DH_SPI_CFG(inst)	},	\
+		LIS2DH_CFG_INT(inst)					\
 	}
 
 #define LIS2DH_DEFINE_SPI(inst)						\
@@ -431,7 +459,8 @@ int lis2dh_init(const struct device *dev)
 	{								\
 		.bus_name = DT_INST_BUS_LABEL(inst),			\
 		.bus_init = lis2dh_i2c_init,				\
-		.bus_cfg = { .i2c_slv_addr = DT_INST_REG_ADDR(inst), }	\
+		.bus_cfg = { .i2c_slv_addr = DT_INST_REG_ADDR(inst), },	\
+		LIS2DH_CFG_INT(inst)					\
 	}
 
 #define LIS2DH_DEFINE_I2C(inst)						\
