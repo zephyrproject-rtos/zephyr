@@ -447,10 +447,12 @@ static int ieee802154_cc13xx_cc26xx_stop(const struct device *dev)
 
 	RF_Stat status;
 
-	status = RF_flushCmd(drv_data->rf_handle, RF_CMDHANDLE_FLUSH_ALL, RF_ABORT_PREEMPTION);
-	if (!(status == RF_StatCmdDoneSuccess || status == RF_StatSuccess
+	status = RF_flushCmd(drv_data->rf_handle, RF_CMDHANDLE_FLUSH_ALL, 0);
+	if (!(status == RF_StatCmdDoneSuccess
+		|| status == RF_StatSuccess
+		|| status == RF_StatRadioInactiveError
 		|| status == RF_StatInvalidParamsError)) {
-		LOG_ERR("Failed to abort radio operations (%d)", status);
+		LOG_DBG("Failed to abort radio operations (%d)", status);
 		return -EIO;
 	}
 
