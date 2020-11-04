@@ -85,6 +85,14 @@ static uint8_t sr_data[] = {
 		7, BT_DATA_NAME_COMPLETE, 'Z', 'e', 'p', 'h', 'y', 'r',
 	};
 
+static uint8_t per_adv_data1[] = {
+		7, BT_DATA_NAME_COMPLETE, 'Z', 'e', 'p', 'h', 'y', 'r',
+	};
+
+static uint8_t per_adv_data2[] = {
+		8, BT_DATA_NAME_COMPLETE, 'Z', 'e', 'p', 'h', 'y', 'r', '1',
+	};
+
 static struct bt_conn *default_conn;
 static bool volatile is_connected, is_disconnected;
 
@@ -420,6 +428,26 @@ static void test_advx_main(void)
 	printk("Update advertising data 2...");
 	err = ll_adv_aux_ad_data_set(handle, AD_OP, AD_FRAG_PREF,
 				     sizeof(adv_data2), (void *)adv_data2);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(400));
+
+	printk("Update periodic advertising data 1...");
+	err = ll_adv_sync_ad_data_set(handle, AD_OP, sizeof(per_adv_data1),
+				      (void *)per_adv_data1);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(400));
+
+	printk("Update periodic advertising data 2...");
+	err = ll_adv_sync_ad_data_set(handle, AD_OP, sizeof(per_adv_data2),
+				      (void *)per_adv_data2);
 	if (err) {
 		goto exit;
 	}
