@@ -1092,7 +1092,12 @@
  * @return node identifier for the node with the phandle at that index
  */
 #define DT_PHANDLE_BY_IDX(node_id, prop, idx) \
-	DT_PROP(node_id, prop##_IDX_##idx##_PH)
+	DT_CAT6(node_id, _P_, prop, _IDX_, idx, _PH)
+/*
+ * Implementation note: using DT_CAT6 above defers concatenation until
+ * after expansion of each parameter. This is important when 'idx' is
+ * expandable to a number, but it isn't one "yet".
+ */
 
 /**
  * @brief Get a node identifier for a phandle property's value
