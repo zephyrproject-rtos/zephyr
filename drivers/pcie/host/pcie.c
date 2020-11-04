@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Intel Corporation
+ * Copyright (c) 2020 acontis technologies GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,26 +47,57 @@ void pcie_set_cmd(pcie_bdf_t bdf, uint32_t bits, bool on)
 	pcie_conf_write(bdf, PCIE_CONF_CMDSTAT, cmdstat);
 }
 
-uintptr_t pcie_get_mbar(pcie_bdf_t bdf, unsigned int index)
+bool pcie_get_mbar(pcie_bdf_t bdf, unsigned int index, struct pcie_mbar *mbar)
 {
-	uint32_t reg, bar;
-	uintptr_t addr = PCIE_CONF_BAR_NONE;
+	bool valid_bar = false;
+	uint32_t reg;
+	uintptr_t phys_addr = PCIE_CONF_BAR_NONE;
+	size_t size = 0;
 
-	reg = PCIE_CONF_BAR0;
-	for (bar = 0; bar < index && reg <= PCIE_CONF_BAR5; bar++) {
-		if (PCIE_CONF_BAR_64(pcie_conf_read(bdf, reg++))) {
+	for (reg = PCIE_CONF_BAR0; reg <= PCIE_CONF_BAR5; reg++) {
+		uint32_t addr = pcie_conf_read(bdf, reg);
+
+		/* skip useless bars and I/O Bars */
+		if (addr == 0xFFFFFFFFU || addr == 0x0U || PCIE_CONF_BAR_IO(addr)) {
+			continue;
+		}
+
+		if (index == 0) {
+			valid_bar = true;
+			break;
+		}
+
+		if (PCIE_CONF_BAR_64(addr)) {
 			reg++;
 		}
+
+		index--;
 	}
 
-	if (bar == index) {
-		addr = pcie_conf_read(bdf, reg++);
-		if (IS_ENABLED(CONFIG_64BIT) && PCIE_CONF_BAR_64(addr)) {
-			addr |= ((uint64_t)pcie_conf_read(bdf, reg)) << 32;
+	if (valid_bar) {
+		phys_addr = pcie_conf_read(bdf, reg);
+		pcie_conf_write(bdf, reg, 0xFFFFFFFF);
+		size = pcie_conf_read(bdf, reg);
+		pcie_conf_write(bdf, reg, (uint32_t)phys_addr);
+
+		if (IS_ENABLED(CONFIG_64BIT) && PCIE_CONF_BAR_64(phys_addr)) {
+			reg++;
+			phys_addr |= ((uint64_t)pcie_conf_read(bdf, reg)) << 32;
+			pcie_conf_write(bdf, reg, 0xFFFFFFFF);
+			size |= ((uint64_t)pcie_conf_read(bdf, reg)) << 32;
+			pcie_conf_write(bdf, reg, (uint32_t)((uint64_t)phys_addr >> 32));
+		}
+
+		size = PCIE_CONF_BAR_ADDR(size);
+		if (size) {
+			mbar->phys_addr = PCIE_CONF_BAR_ADDR(phys_addr);
+			mbar->size = size & ~(size-1);
+		} else {
+			valid_bar = false;
 		}
 	}
 
-	return PCIE_CONF_BAR_ADDR(addr);
+	return valid_bar;
 }
 
 /* The first bit is used to indicate whether the list of reserved interrupts

@@ -79,15 +79,15 @@ int arch_printk_char_out(int c)
 void z_x86_early_serial_init(void)
 {
 #if defined(DEVICE_MMIO_IS_IN_RAM) && !defined(UART_NS16550_ACCESS_IOPORT)
-	uintptr_t phys;
-
 #ifdef X86_SOC_EARLY_SERIAL_PCIDEV
-	phys = pcie_get_mbar(X86_SOC_EARLY_SERIAL_PCIDEV, 0);
+	struct pcie_mbar mbar;
+	pcie_get_mbar(X86_SOC_EARLY_SERIAL_PCIDEV, 0, &mbar);
 	pcie_set_cmd(X86_SOC_EARLY_SERIAL_PCIDEV, PCIE_CONF_CMDSTAT_MEM, true);
+	device_map(&mmio, mbar.phys_addr, mbar.size, K_MEM_CACHE_NONE);
 #else
-	phys = X86_SOC_EARLY_SERIAL_MMIO8_ADDR;
+	device_map(&mmio, X86_SOC_EARLY_SERIAL_MMIO8_ADDR, 0x1000, K_MEM_CACHE_NONE);
 #endif
-	device_map(&mmio, phys, 0x1000, K_MEM_CACHE_NONE);
+
 #endif /* DEVICE_MMIO_IS_IN_RAM */
 
 	OUT(REG_IER, IER_DISABLE);     /* Disable interrupts */

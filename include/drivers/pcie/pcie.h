@@ -7,6 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_PCIE_PCIE_H_
 #define ZEPHYR_INCLUDE_DRIVERS_PCIE_PCIE_H_
 
+#include <stddef.h>
 #include <dt-bindings/pcie/pcie.h>
 #include <zephyr/types.h>
 
@@ -34,6 +35,11 @@ typedef uint32_t pcie_bdf_t;
  * look to PCIE_ID_* macros in include/dt-bindings/pcie/pcie.h for more.
  */
 typedef uint32_t pcie_id_t;
+
+struct pcie_mbar {
+	uintptr_t phys_addr;
+	size_t size;
+};
 
 /*
  * These functions are arch-, board-, or SoC-specific.
@@ -74,15 +80,19 @@ extern bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id);
  * @brief Get the nth MMIO address assigned to an endpoint.
  * @param bdf the PCI(e) endpoint
  * @param index (0-based) index
- * @return the address, or PCIE_CONF_BAR_NONE if nonexistent.
+ * @param mbar Pointer to struct pcie_mbar
+ * @return true if the mbar was found, false otherwise
  *
  * A PCI(e) endpoint has 0 or more memory-mapped regions. This function
  * allows the caller to enumerate them by calling with index=0..n. If
- * PCIE_CONF_BAR_NONE is returned, there are no further regions. The indices
- * are order-preserving with respect to the endpoint BARs: e.g., index 0
- * will return the lowest-numbered memory BAR on the endpoint.
+ * false is returned, there are no further regions. The indices
+ * are order-preserving with respect to the endpoint BARs (skips useless bars
+ * and I/O Bars): e.g., index 0 will return the lowest-numbered valid memory BAR
+ * on the endpoint.
  */
-extern uintptr_t pcie_get_mbar(pcie_bdf_t bdf, unsigned int index);
+extern bool pcie_get_mbar(pcie_bdf_t bdf,
+			unsigned int index,
+			struct pcie_mbar *mbar);
 
 /**
  * @brief Set or reset bits in the endpoint command/status register.
