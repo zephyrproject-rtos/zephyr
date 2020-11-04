@@ -260,6 +260,9 @@ Libraries / Subsystems
 
 * Storage
 
+  * flash_map: Added API to get the value of an erased byte in the flash_area,
+    see ``flash_area_erased_val()``.
+
 * Tracing
 
 * Debug
@@ -286,13 +289,16 @@ MCUBoot
   * Fixed issue causing that interrupted swap-move operation might brick device
     if the primary image was padded.
   * Fixed issue causing that HW stack protection catches the chain-loaded
-    application during its early ini, by disableing HW stack protection
-    (temporary hack).
+    application during its early initialization.
   * Added reset of Cortex SPLIM registers before boot.
   * Fixesd build issue that occurs if CONF_FILE contains multiple file paths
     instead of single file path.
   * Added watchdog feed on nRF devices. See ``CONFIG_BOOT_WATCHDOG_FEED`` option.
   * Removed the flash_area_read_is_empty() port implementation function.
+  * Initialize the ARM core configuration only when selected by the user,
+    see ``CONFIG_MCUBOOT_CLEANUP_ARM_CORE``.
+  * Allow the final data chunk in the image to be unaligned in
+    the serial-recovery protocol.
 
 * imgtool
 
