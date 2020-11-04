@@ -392,25 +392,33 @@ uint8_t ll_connect_disable(void **rx)
 	status = ull_scan_disable(0, scan);
 	if (!status) {
 		struct ll_conn *conn = (void *)HDR_LLL2EVT(conn_lll);
-		struct node_rx_ftr *ftr;
-		struct node_rx_pdu *cc;
+		struct node_rx_pdu *node_rx;
+		struct node_rx_cc *cc;
 		memq_link_t *link;
 
-		cc = (void *)&conn->llcp_terminate.node_rx;
-		link = cc->hdr.link;
+		node_rx = (void *)&conn->llcp_terminate.node_rx;
+		link = node_rx->hdr.link;
 		LL_ASSERT(link);
 
 		/* free the memq link early, as caller could overwrite it */
 		ll_rx_link_release(link);
 
-		cc->hdr.type = NODE_RX_TYPE_CONNECTION;
-		cc->hdr.handle = 0xffff;
-		*((uint8_t *)cc->pdu) = BT_HCI_ERR_UNKNOWN_CONN_ID;
+		node_rx->hdr.type = NODE_RX_TYPE_CONNECTION;
+		node_rx->hdr.handle = 0xffff;
 
-		ftr = &(cc->hdr.rx_ftr);
-		ftr->param = &scan->lll;
+		/* NOTE: struct llcp_terminate.node_rx has uint8_t member
+		 *       following the struct node_rx_hdr to store the reason.
+		 */
+		cc = (void *)node_rx->pdu;
+		cc->status = BT_HCI_ERR_UNKNOWN_CONN_ID;
 
-		*rx = cc;
+		/* NOTE: Since NODE_RX_TYPE_CONNECTION is also generated from
+		 *       LLL context for other cases, pass LLL context as
+		 *       parameter.
+		 */
+		node_rx->hdr.rx_ftr.param = &scan->lll;
+
+		*rx = node_rx;
 	}
 
 	return status;
