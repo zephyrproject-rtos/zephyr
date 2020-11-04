@@ -256,6 +256,15 @@ end:
 	return buf;
 }
 
+#define is_6lo_technology(pkt)						\
+	(IS_ENABLED(CONFIG_NET_IPV6) &&	net_pkt_family(pkt) == AF_INET6 && \
+	 ((IS_ENABLED(CONFIG_NET_L2_BT) &&				\
+	   net_pkt_lladdr_dst(pkt)->type == NET_LINK_BLUETOOTH) ||	\
+	  (IS_ENABLED(CONFIG_NET_L2_IEEE802154) &&			\
+	   net_pkt_lladdr_dst(pkt)->type == NET_LINK_IEEE802154) ||	\
+	  (IS_ENABLED(CONFIG_NET_L2_CANBUS) &&				\
+	   net_pkt_lladdr_dst(pkt)->type == NET_LINK_CANBUS)))
+
 static void tcp_send(struct net_pkt *pkt)
 {
 	NET_DBG("%s", log_strdup(tcp_th(pkt)));
@@ -270,9 +279,35 @@ static void tcp_send(struct net_pkt *pkt)
 		goto out;
 	}
 
-	if (net_send_data(pkt) < 0) {
-		NET_ERR("net_send_data()");
+	/* We must have special handling for some network technologies that
+	 * tweak the IP protocol headers during packet sending. This happens
+	 * with Bluetooth and IEEE 802.15.4 which use IPv6 header compression
+	 * (6lo) and alter the sent network packet. So in order to avoid any
+	 * corruption of the original data buffer, we must copy the sent data.
+	 * For Bluetooth, its fragmentation code will even mangle the data
+	 * part of the message so we need to copy those too.
+	 */
+	if (is_6lo_technology(pkt)) {
+		struct net_pkt *new_pkt;
+
+		new_pkt = net_pkt_clone(pkt, TCP_PKT_ALLOC_TIMEOUT);
+		if (!new_pkt) {
+			goto out;
+		}
+
+		if (net_send_data(new_pkt) < 0) {
+			net_pkt_unref(new_pkt);
+		}
+
+		/* We simulate sending of the original pkt and unref it like
+		 * the device driver would do.
+		 */
 		tcp_pkt_unref(pkt);
+	} else {
+		if (net_send_data(pkt) < 0) {
+			NET_ERR("net_send_data()");
+			tcp_pkt_unref(pkt);
+		}
 	}
 out:
 	tcp_pkt_unref(pkt);
