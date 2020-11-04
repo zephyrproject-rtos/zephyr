@@ -611,17 +611,17 @@ static int i2c_dw_initialize(const struct device *dev)
 
 #ifdef I2C_DW_PCIE_ENABLED
 	if (rom->pcie) {
-		uintptr_t mmio_phys_addr;
+		struct pcie_mbar mbar;
 
 		if (!pcie_probe(rom->pcie_bdf, rom->pcie_id)) {
 			return -EINVAL;
 		}
 
-		mmio_phys_addr = pcie_get_mbar(rom->pcie_bdf, 0);
+		pcie_get_mbar(rom->pcie_bdf, 0, &mbar);
 		pcie_set_cmd(rom->pcie_bdf, PCIE_CONF_CMDSTAT_MEM, true);
 
-		device_map(DEVICE_MMIO_RAM_PTR(dev), mmio_phys_addr,
-			   0x1000, K_MEM_CACHE_NONE);
+		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr,
+			   mbar.size, K_MEM_CACHE_NONE);
 	} else
 #endif
 	{
