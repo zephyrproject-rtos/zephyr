@@ -49,6 +49,7 @@ typedef void (*bt_mcc_discover_mcs_cb_t)(struct bt_conn *conn, int err);
 typedef void (*bt_mcc_player_name_read_cb_t)(struct bt_conn *conn, int err,
 					     char *name);
 
+#ifdef CONFIG_BT_OTC
 /** @brief Callback function for mcc_read_icon_obj_id
  *
  * @param conn          The connection that was used to initialise MCC
@@ -57,6 +58,7 @@ typedef void (*bt_mcc_player_name_read_cb_t)(struct bt_conn *conn, int err,
  */
 typedef void (*bt_mcc_icon_obj_id_read_cb_t)(struct bt_conn *conn, int err,
 					     uint64_t id);
+#endif /* CONFIG_BT_OTC */
 
 /** @brief Callback function for mcc_read_icon_uri
  *
@@ -140,6 +142,7 @@ typedef void (*bt_mcc_playback_speed_set_cb_t)(struct bt_conn *conn, int err,
 typedef void (*bt_mcc_seeking_speed_read_cb_t)(struct bt_conn *conn, int err,
 					       int8_t speed);
 
+#ifdef CONFIG_BT_OTC
 /** @brief Callback function for mcc_segments_obj_read
  *
  * @param conn          The connection that was used to initialise MCC
@@ -184,6 +187,7 @@ typedef void (*bt_mcc_current_group_obj_id_read_cb_t)(struct bt_conn *conn,
  */
 typedef void (*bt_mcc_parent_group_obj_id_read_cb_t)(struct bt_conn *conn,
 						     int err, uint64_t id);
+#endif /* CONFIG_BT_OTC */
 
 /** @brief Callback function for playing_order_read
  *
@@ -251,6 +255,7 @@ typedef void (*bt_mcc_cp_ntf_cb_t)(struct bt_conn *conn, int err,
 typedef void (*bt_mcc_opcodes_supported_read_cb_t)(struct bt_conn *conn,
 						   int err, uint32_t opcodes);
 
+#ifdef CONFIG_BT_OTC
 /** @brief Callback function for mcc_set_scp
  *
  * @param conn          The connection that was used to initialise MCC
@@ -284,6 +289,7 @@ typedef void (*bt_mcc_scp_ntf_cb_t)(struct bt_conn *conn, int err,
  */
 typedef void (*bt_mcc_search_results_obj_id_read_cb_t)(struct bt_conn *conn,
 						       int err, uint64_t id);
+#endif /* CONFIG_BT_OTC */
 
 /** @brief Callback function for mcc_read_content_control_id
  *
@@ -293,6 +299,7 @@ typedef void (*bt_mcc_search_results_obj_id_read_cb_t)(struct bt_conn *conn,
  */
 typedef void (*bt_mcc_content_control_id_read_cb_t)(struct bt_conn *conn,
 						    int err, int8_t ccid);
+#ifdef CONFIG_BT_OTC
 #if CONFIG_BT_DEBUG_MCC
 /**** Callback functions for the included Object Transfer service *************/
 
@@ -311,6 +318,7 @@ typedef void (*bt_mcc_otc_obj_selected_cb_t)(struct bt_conn *conn, int err);
 typedef void (*bt_mcc_otc_obj_metadata_cb_t)(struct bt_conn *conn, int err);
 
 #endif /* CONFIG_BT_DEBUG_MCC */
+#endif /* CONFIG_BT_OTC */
 
 
 /** @brief Callback function structure */
@@ -318,7 +326,9 @@ struct bt_mcc_cb_t {
 	bt_mcc_init_cb_t                          init;
 	bt_mcc_discover_mcs_cb_t                  discover_mcs;
 	bt_mcc_player_name_read_cb_t              player_name_read;
+#ifdef CONFIG_BT_OTC
 	bt_mcc_icon_obj_id_read_cb_t              icon_obj_id_read;
+#endif /* CONFIG_BT_OTC */
 	bt_mcc_icon_uri_read_cb_t                 icon_uri_read;
 	bt_mcc_track_changed_ntf_cb_t             track_changed_ntf;
 	bt_mcc_track_title_read_cb_t              track_title_read;
@@ -328,11 +338,13 @@ struct bt_mcc_cb_t {
 	bt_mcc_playback_speed_read_cb_t           playback_speed_read;
 	bt_mcc_playback_speed_set_cb_t            playback_speed_set;
 	bt_mcc_seeking_speed_read_cb_t            seeking_speed_read;
+#ifdef CONFIG_BT_OTC
 	bt_mcc_segments_obj_id_read_cb_t          segments_obj_id_read;
 	bt_mcc_current_track_obj_id_read_cb_t     current_track_obj_id_read;
 	bt_mcc_next_track_obj_id_read_cb_t        next_track_obj_id_read;
 	bt_mcc_current_group_obj_id_read_cb_t     current_group_obj_id_read;
 	bt_mcc_parent_group_obj_id_read_cb_t      parent_group_obj_id_read;
+#endif /* CONFIG_BT_OTC */
 	bt_mcc_playing_order_read_cb_t	          playing_order_read;
 	bt_mcc_playing_order_set_cb_t             playing_order_set;
 	bt_mcc_playing_orders_supported_read_cb_t playing_orders_supported_read;
@@ -340,14 +352,18 @@ struct bt_mcc_cb_t {
 	bt_mcc_cp_set_cb_t                        cp_set;
 	bt_mcc_cp_ntf_cb_t                        cp_ntf;
 	bt_mcc_opcodes_supported_read_cb_t        opcodes_supported_read;
+#ifdef CONFIG_BT_OTC
 	bt_mcc_scp_set_cb_t                       scp_set;
 	bt_mcc_scp_ntf_cb_t                       scp_ntf;
 	bt_mcc_search_results_obj_id_read_cb_t    search_results_obj_id_read;
+#endif /* CONFIG_BT_OTC */
 	bt_mcc_content_control_id_read_cb_t       content_control_id_read;
+#ifdef CONFIG_BT_OTC
 #if CONFIG_BT_DEBUG_MCC
 	bt_mcc_otc_obj_selected_cb_t              otc_obj_selected;
 	bt_mcc_otc_obj_metadata_cb_t              otc_obj_metadata;
 #endif /* CONFIG_BT_DEBUG_MCC */
+#endif /* CONFIG_BT_OTC */
 };
 
 /**** Functions ***************************************************************/
@@ -376,10 +392,10 @@ int bt_mcc_discover_mcs(struct bt_conn *conn, bool subscribe);
 /** @brief Read Media Player Name */
 int bt_mcc_read_player_name(struct bt_conn *conn);
 
-
+#ifdef CONFIG_BT_OTC
 /** @brief Read Icon Object ID */
 int bt_mcc_read_icon_obj_id(struct bt_conn *conn);
-
+#endif /* CONFIG_BT_OTC */
 
 /** @brief Read Icon Object URI */
 int bt_mcc_read_icon_uri(struct bt_conn *conn);
@@ -417,6 +433,7 @@ int bt_mcc_set_playback_speed(struct bt_conn *conn, int8_t speed);
 /** @brief Read Seeking speed */
 int bt_mcc_read_seeking_speed(struct bt_conn *conn);
 
+#ifdef CONFIG_BT_OTC
 /** @brief Read Track Segments Object ID */
 int bt_mcc_read_segments_obj_id(struct bt_conn *conn);
 
@@ -431,6 +448,7 @@ int bt_mcc_read_current_group_obj_id(struct bt_conn *conn);
 
 /** @brief Read Parent Group Object ID */
 int bt_mcc_read_parent_group_obj_id(struct bt_conn *conn);
+#endif /* CONFIG_BT_OTC */
 
 /** @brief Read Playing Order */
 int bt_mcc_read_playing_order(struct bt_conn *conn);
@@ -464,6 +482,7 @@ int bt_mcc_set_cp(struct bt_conn *conn, struct mpl_op_t op);
 /** @brief Read Opcodes Supported */
 int bt_mcc_read_opcodes_supported(struct bt_conn *conn);
 
+#ifdef CONFIG_BT_OTC
 /** @brief Set Search Control Point
  *
  * Write a search to the search control point.
@@ -477,10 +496,12 @@ int bt_mcc_set_scp(struct bt_conn *conn, struct mpl_search_t search);
 
 /** @brief Search Results Group Object ID */
 int bt_mcc_read_search_results_obj_id(struct bt_conn *conn);
+#endif /* CONFIG_BT_OTC */
 
 /** @brief Read Content Control ID */
 int bt_mcc_read_content_control_id(struct bt_conn *conn);
 
+#ifdef CONFIG_BT_OTC
 /** @brief Read the current object metadata */
 int bt_mcc_otc_read_object_metadata(struct bt_conn *conn);
 
@@ -505,6 +526,7 @@ int bt_mcc_otc_read_parent_group_object(struct bt_conn *conn);
 #if defined(CONFIG_BT_MCC_SHELL)
 struct bt_otc_instance_t *bt_mcc_otc_inst(uint8_t index);
 #endif /* defined(CONFIG_BT_MCC_SHELL) */
+#endif /* CONFIG_BT_OTC */
 
 #ifdef __cplusplus
 }
