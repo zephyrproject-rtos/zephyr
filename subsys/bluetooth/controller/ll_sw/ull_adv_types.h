@@ -84,7 +84,15 @@ struct ll_adv_iso {
 
 	uint8_t  bcode[16];
 
-	struct node_rx_hdr *node_rx_complete;
+	struct node_rx_hdr node_rx_complete;
+	struct {
+		struct node_rx_hdr node_rx_hdr_terminate;
+		union {
+			uint8_t    pdu[0] __aligned(4);
+			uint8_t    reason;
+		};
+	} node_rx_terminate;
+
 	struct pdu_bis pdu;
 };
 

@@ -28,7 +28,7 @@
 #include "hal/ccm.h"
 #include "ll_sw/pdu.h"
 #include "ll_sw/lll.h"
-#include "ll_sw/lll_adv.h"
+#include "lll_adv.h"
 #include "ll_sw/lll_scan.h"
 #include "ll_sw/lll_sync.h"
 #include "ll_sw/lll_conn.h"
@@ -1438,12 +1438,13 @@ static void le_create_big_test(struct net_buf *buf, struct net_buf **evt)
 	*evt = cmd_status(status);
 }
 
-static void le_terminate_big(struct net_buf *buf, struct net_buf **evt)
+static void le_terminate_big(struct net_buf *buf, struct net_buf **evt,
+			     void **node_rx)
 {
 	struct bt_hci_cp_le_terminate_big *cmd = (void *)buf->data;
 	uint8_t status;
 
-	status = ll_big_terminate(cmd->big_handle, cmd->reason);
+	status = ll_big_terminate(cmd->big_handle, cmd->reason, node_rx);
 
 	*evt = cmd_status(status);
 }
@@ -3169,7 +3170,7 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_TERMINATE_BIG):
-		le_terminate_big(cmd, evt);
+		le_terminate_big(cmd, evt, node_rx);
 		break;
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_BROADCASTER */
