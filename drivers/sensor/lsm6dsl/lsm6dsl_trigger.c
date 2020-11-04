@@ -75,9 +75,9 @@ int lsm6dsl_trigger_set(const struct device *dev,
 static void lsm6dsl_gpio_callback(const struct device *dev,
 				  struct gpio_callback *cb, uint32_t pins)
 {
-	const struct lsm6dsl_config *config = dev->config;
 	struct lsm6dsl_data *drv_data =
 		CONTAINER_OF(cb, struct lsm6dsl_data, gpio_cb);
+	const struct lsm6dsl_config *config = drv_data->dev->config;
 
 	ARG_UNUSED(pins);
 
