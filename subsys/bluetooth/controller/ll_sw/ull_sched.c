@@ -142,6 +142,7 @@ void ull_sched_after_mstr_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 	}
 }
 
+#if defined(CONFIG_BT_CENTRAL)
 void ull_sched_mfy_after_mstr_offset_get(void *param)
 {
 	struct lll_prepare_param *p = param;
@@ -160,6 +161,7 @@ void ull_sched_mfy_after_mstr_offset_get(void *param)
 			      (ticks_slot_overhead + conn_evt->ticks_slot),
 			      p->ticks_at_expire, &lll->conn_win_offset_us);
 }
+#endif /* CONFIG_BT_CENTRAL */
 
 void ull_sched_mfy_win_offset_use(void *param)
 {
