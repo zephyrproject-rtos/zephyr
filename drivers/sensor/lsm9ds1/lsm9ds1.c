@@ -262,25 +262,25 @@ static void enableAndConfigureAccl(const struct device* dev) {
 
     /**
      * Configure the accelerometer.
-     * 
+     *
      * CTRL_REG6_XL:
-     * 
+     *
      * ODR_XL [2:0] : Output data rate and power mode selection
      * FS_XL  [1:0] : Accelerometer full-scale selection
      * BW_SCAL_ODR  : Bandwith selection
      * BW_XL  [1:0] : Anti-aliasing filter bandwith selection
-     * 
+     *
      * ODR_XL2  ODR_XL1 ODR_XL0 FS1_XL  FS0_XL  BW_SCAL_ODR BW_XL1  BW_XL0
      *                                                |
      *                                                1 => 0x04
-     * 
+     *
      * => Aodr      is a value between 0-6 (000-110)
      * => Ascale    is a value between 0-3 ( 00- 11)
      * => Abw       is a value between 0-3 ( 00- 11)
-     * 
+     *
      * Shifting and the binari 'or' operation places the values into the 8-bit
      * register as the documentation specifies.
-     * 
+     *
      */
     uint8_t Aodr   = data->accl_outputDataRate;
     uint8_t Ascale = data->accl_scale;
@@ -303,17 +303,17 @@ static void enableAndConfigureGyro(const struct device* dev) {
 
     /**
      * Enable the X,Y,Z axes of the gyroscope.
-     * 
+     *
      * CTRL_REG4:
-     * 
+     *
      * [X,Y,Z]en_G  : enable the respective axis output mode.
      * LIR_XL1      : Latched Interrupt (0: Interrupt request not latched).
      * 4D_XL1       : 4D option (0: Interrupt generator uses 6D for position).
-     * 
+     *
      *  0   0   Zen_G   Yen_G   Xen_G   0   LIR_XL1 4D_XL1
      *  |   |     |       |       |     |      |      |
      *  0   0     1       1       1     0      0      0
-     * 
+     *
      *  => 0011 1000 => 0x38
      */
     writeByte(
@@ -324,23 +324,23 @@ static void enableAndConfigureGyro(const struct device* dev) {
 
     /**
      * Configure the gyroscope.
-     * 
+     *
      * CTRL_REG1_G:
-     * 
+     *
      * ODR_G [2:0]  : Gyroscope output data rate selection.
      * FS_G  [1:0]  : Gyroscope full-scale selection.
      * BW_G  [1:0]  : Gyroscope bandwith selection.
-     * 
+     *
      * ODR_G2   ODR_G1  ODR_G0  FS_G1   FS_G0   0   BW_G1   BW_G0
-     * 
-     * 
+     *
+     *
      * => Godr      is a value between 0-6 (000-110)
      * => Gscale    is a value between 0-3 ( 00- 11)
      * => Gbw       is a value between 0-3 ( 00- 11)
-     * 
+     *
      * Shifting and the binari 'or' operation places the values into the 8-bit
      * register as the documentation specifies.
-     * 
+     *
      */
     uint8_t Godr   = data->gyro_outputDataRate;
     uint8_t Gscale = data->gyro_scale;
@@ -378,24 +378,24 @@ static void enableAndConfigureMagn(const struct device* dev) {
     /**
      * Enable the X,Y axes of the magnetometer.
      * Enable the temperature compensation.
-     * 
+     *
      * CTRL_REG1_M
-     * 
+     *
      * TEMP_COMP    : Default: 0 (1: temp. compensation enabled)
      * OM   [1:0]   : X and Y axes operative mode selection.
      * DO   [2:0]   : Output data rate selection.
      * FAST_ODR     : enables data rates higher than 80Hz.
      * ST           : Self-test enable (default 0; 1: self-test enabled).
-     * 
+     *
      * TEMP_COMP    OM1     OM0     DO2     DO1     DO0     FAST_ODR    ST
      *     |         |       |       |       |       |          |        |
      *     1        var     var     var     var     var         0        0
      *     |
      *     +-> 0x80
-     * 
+     *
      * => Mmode     is a value between 0-3 ( 00- 11)
      * => Modr      is a value between 0-6 (000-110)
-     * 
+     *
      * Shifting and the binari 'or' operation places the values into the 8-bit
      * register as the documentation specifies.
      */
@@ -409,19 +409,19 @@ static void enableAndConfigureMagn(const struct device* dev) {
 
     /**
      * Configure magnetometer: select full scale
-     * 
+     *
      * CTRL_REG2_M
-     * 
+     *
      * FS   [1:0]   : Full-scale configuration (default: 00)
      * REBOOT       : Reboot memory content (default: 0)
      * SOFT_RST     : Configuration registers and user registers reset function.
-     * 
+     *
      * 0    FS1     FS0     0   REBOOT      SOFT_RST    0       0
      * |     |       |      |     |             |       |       |
      * 0    var     var     0     0             0       0       0
-     * 
+     *
      * => Mscale    is a value between 0-3 ( 00- 11)
-     * 
+     *
      * Shifting places the values into the 8-bit
      * register as the documentation specifies.
      */
@@ -431,56 +431,56 @@ static void enableAndConfigureMagn(const struct device* dev) {
 
     /**
      * Configure magnetometer: continuous conversion mode
-     * 
+     *
      * CTRL_REG3_M
-     * 
+     *
      * I2C_DISABLE  : 0: I²C enabled, 1: I²C disabled
      * LP           : 0: data rate is configured by CTRL_REG1M, 1: Low-pwr mode
      * SIM          : 0: SPI only write operations, 1: SPI read and write
      * MD   [1:0]   : Operating mode selection (default: 11).
-     * 
+     *
      * I2C_DISABLE  0   LP  0   0   SIM     MD1     MD0
      *     |        |    |  |   |    |       |       |
      *     0        0    0  0   0    0       0       0 
-     * 
+     *
      */
     writeByte(config->i2c_slave_addr_magn, LSM9DS1M_CTRL_REG3_M, 0x00 );
 
     /**
      * Configure magnetometer: z-axis mode
-     * 
+     *
      * CTRL_REG4_M
-     * 
+     *
      * OMZ [1:0]    : z-axis operative mode selection
      * BLE          : Big/Little endian data selection
      *                (default: 0 -> data LSb at lower address)
-     * 
+     *
      * 0    0   0   0    OMZ1   OMZ0    BLE     0
      * |    |   |   |     |      |       |      |
      * 0    0   0   0    var    var      0      0
-     * 
+     *
      * => Mmode     is a value between 0-3 ( 00- 11)
-     * 
+     *
      * Sfifting it by 2 places the values into the 8-bit register as the
      * documentation specifies.
-     * 
+     *
      */
     writeByte(config->i2c_slave_addr_magn, LSM9DS1M_CTRL_REG4_M, Mmode << 2 );
 
     /**
      * Configure magnetometer: select block update mode
-     * 
+     *
      * CTRL_REG5_M
-     * 
+     *
      * FAST_READ    : 0: disabled, 1: enabled
      * BDU          : Block data update for magn. data
      *                0: continuous update; 1: output registers not updated
      *                until MSB and LSB have been read.
-     * 
+     *
      * FAST_READ    BDU     0   0   0   0   0   0
      *     |         |      |   |   |   |   |   |
      *     0         1      0   0   0   0   0   0
-     * 
+     *
      * => 0100 0000 => 0x40
      */
     writeByte(config->i2c_slave_addr_magn, LSM9DS1M_CTRL_REG5_M, 0x40 );
@@ -512,9 +512,9 @@ static void calibrateAccl(const struct device* dev) {
         config->i2c_slave_addr_acclgyro, LSM9DS1XG_CTRL_REG9,
         readByte(config->i2c_slave_addr_acclgyro, LSM9DS1XG_CTRL_REG9) | 0x02
     );
-    
+
     k_sleep(K_MSEC(50));
-    
+
     /**
      * Set FIFO mode: 001 (FIFO mode, stops collecting data when FIFO is full).
      * Set FIFO threshold to: 1 1111 = 32
@@ -526,39 +526,39 @@ static void calibrateAccl(const struct device* dev) {
 
     // Wait for the FIFO to collect samples.
     k_sleep(K_MSEC(1000));
-    
+
     uint16_t numSamples = (
         readByte(config->i2c_slave_addr_acclgyro, LSM9DS1XG_FIFO_SRC) & 0x2F
     );
-    
+
     // Collect samples in FIFO and add them to acclBias.
     for(uint16_t i = 0; i < numSamples; i++) {
         // Make 16-bit integers from 8-bit values in FIFO.
         int16_t acclData[3] = {0, 0, 0};
         readAcclData(dev, acclData);
-        
+
         acclBias[0] += (int32_t) acclData[0];
         acclBias[1] += (int32_t) acclData[1];
         acclBias[2] += (int32_t) acclData[2];
     }
-    
+
     // Calculate average over samples.
     acclBias[0] /= numSamples;
     acclBias[1] /= numSamples;
     acclBias[2] /= numSamples;
-    
+
     // Remove gravity from the z-axis accelerometer bias calculation
     if(acclBias[2] > 0L) {
         acclBias[2] -= (int32_t) (1.0f / data->acclRes);
     } else {
         acclBias[2] += (int32_t) (1.0f / data->acclRes);
     }
-    
+
     // Scale data to get g's.
     data->acclBias[0] = (float)acclBias[0] * data->acclRes;
     data->acclBias[1] = (float)acclBias[1] * data->acclRes;
     data->acclBias[2] = (float)acclBias[2] * data->acclRes;
-    
+
     /**
      * Disable FIFO memory.
      */
@@ -597,7 +597,7 @@ static void calibrateGyro(const struct device* dev) {
     );
 
     k_msleep(50);
-    
+
     /**
      * Set FIFO mode: 001 (FIFO mode, stops collecting data when FIFO is full).
      * Set FIFO threshold to: 1 1111 = 32
@@ -607,7 +607,7 @@ static void calibrateGyro(const struct device* dev) {
 
     // Wait for FIFO to collect samples.
     k_msleep(1000);
-    
+
     /**
      * Get number of samples stored in the FIFO.
      * 
@@ -617,28 +617,28 @@ static void calibrateGyro(const struct device* dev) {
     uint16_t numSamples = (
         readByte(config->i2c_slave_addr_acclgyro, LSM9DS1XG_FIFO_SRC) & 0x2F
     );
-    
+
     // Collect samples in FIFO and add them to gyroBias.
     for(uint16_t i = 0; i < numSamples ; i++) {
         // Make 16-bit integers from 8-bit values in FIFO.
         int16_t gyroData[3] = {0, 0, 0};
         readGyroData(dev, gyroData);
-        
+
         gyroBias[0] += (int32_t) gyroData[0];
         gyroBias[1] += (int32_t) gyroData[1];
         gyroBias[2] += (int32_t) gyroData[2];
     }
-    
+
     // Calculate average over samples.
     gyroBias[0] /= numSamples;
     gyroBias[1] /= numSamples;
     gyroBias[2] /= numSamples;
-    
+
     // Scale data to get deg/s
     data->gyroBias[0] = (float)gyroBias[0] * data->gyroRes;
     data->gyroBias[1] = (float)gyroBias[1] * data->gyroRes;
     data->gyroBias[2] = (float)gyroBias[2] * data->gyroRes;
-    
+
     /**
      * Disable FIFO memory.
      */
@@ -661,7 +661,7 @@ static void calibrateMagn(const struct device* dev) {
 
     int32_t magnBias[3] = {0, 0, 0};
     int16_t magn_max[3] = {0, 0, 0}, magn_min[3] = {0, 0, 0};
-    
+
     printk("Mag Calibration: Wave device in a figure eight until done!\n");
     k_msleep(1000);
 
@@ -680,12 +680,12 @@ static void calibrateMagn(const struct device* dev) {
     magnBias[0]  = (magn_max[0] + magn_min[0])/2;
     magnBias[1]  = (magn_max[1] + magn_min[1])/2;
     magnBias[2]  = (magn_max[2] + magn_min[2])/2;
-    
+
     // Scale data to Gauss
     data->magnBias[0] = (float) magnBias[0] * data->magnRes;
     data->magnBias[1] = (float) magnBias[1] * data->magnRes;
     data->magnBias[2] = (float) magnBias[2] * data->magnRes;
-    
+
     /**
      * Write magnetometer offset register.
      */
@@ -713,12 +713,12 @@ static void calibrateMagn(const struct device* dev) {
         config->i2c_slave_addr_magn, LSM9DS1M_OFFSET_Z_REG_L_M,
         (int16_t) magnBias[2] & 0xFF
     );
-    
+
     writeByte(
         config->i2c_slave_addr_magn, LSM9DS1M_OFFSET_Z_REG_H_M,
         ((int16_t)magnBias[2] >> 8) & 0xFF
     );
-    
+
     printk("Mag Calibration done!\n");
 }
 
@@ -734,7 +734,7 @@ static void enableBlockDataUpdateAndAutoInc(const struct device* dev) {
      *      allow auto-increment during multiple byte read.
      */
     writeByte(config->i2c_slave_addr_acclgyro, LSM9DS1XG_CTRL_REG8, 0x44);
-    
+
     //printk("LSM9DS1 initialized for active data mode.\n");
 }
 
@@ -768,7 +768,7 @@ static int lsm9ds1_init(const struct device *dev) {
         config->i2c_slave_addr_magn,
         LSM9DS1M_WHO_AM_I
     );
-    
+
     // Check the values for correctness
     if (whoAmI_ac == 0x68 && whoAmI_m == 0x3D) {
         printk("LSM9DS1 is online!\n");
@@ -776,7 +776,7 @@ static int lsm9ds1_init(const struct device *dev) {
         /**
          * Set default settings for sensors
          */
-        
+
         // Accelerometer
         setChanAttr(dev, SENSOR_CHAN_ACCL_XYZ, SENSOR_ATTR_SCALE, AFS_2G);
         setChanAttr(dev, SENSOR_CHAN_ACCL_XYZ, SENSOR_ATTR_ODR, AODR_50Hz);
@@ -895,7 +895,7 @@ static int lsm9ds1_sample_fetch(const struct device* dev, enum sensor_channel ch
             data->magn_y = (float) raw[1]*data->magnRes;
             data->magn_z = (float) raw[2]*data->magnRes;
             break;
-        
+
         case SENSOR_CHAN_AMBIENT_TEMP:
             // Get raw data
             readTempData(dev, raw);
@@ -957,7 +957,7 @@ static int lsm9ds1_channel_get(
             val[1] = floatToSensorValue(data->gyro_y);
             val[2] = floatToSensorValue(data->gyro_z);
             break;
-        
+
         case SENSOR_CHAN_MAGN_XYZ:
             val[0] = floatToSensorValue(data->magn_x);
             val[1] = floatToSensorValue(data->magn_y);
@@ -967,11 +967,11 @@ static int lsm9ds1_channel_get(
         case SENSOR_CHAN_AMBIENT_TEMP:
             *val = floatToSensorValue(data->temp_c);
             break;
-        
+
         case SENSOR_CHAN_ALL:
             *val = floatToSensorValue(123);
             break;
-        
+
         default:
             break;
     }
@@ -1024,13 +1024,13 @@ static int lsm9ds1_attr_set(
                 case SENSOR_ATTR_BW:
                     data->accl_bandwidth = val->val1;
                     break;
-                
+
                 default:
                     break;
             }
 
             break;
-        
+
         /**
          * Change gyroscope settings.
          */
@@ -1047,7 +1047,7 @@ static int lsm9ds1_attr_set(
                 case SENSOR_ATTR_BW:
                     data->gyro_bandwidth = val->val1;
                     break;
-                
+
                 default:
                     break;
             }
@@ -1070,7 +1070,7 @@ static int lsm9ds1_attr_set(
                 case SENSOR_ATTR_MODE:
                     data->magn_mode = val->val1;
                     break;
-                
+
                 default:
                     break;
             }
@@ -1087,7 +1087,7 @@ static int lsm9ds1_attr_set(
                 case SENSOR_ATTR_OSR:
                     data->temp_oversampleRate = val->val1;
                     break;
-                
+
                 default:
                     break;
             }
