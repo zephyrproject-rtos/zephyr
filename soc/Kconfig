@@ -30,6 +30,12 @@ config SOC_COMPATIBLE_NRF52X
 config SOC_COMPATIBLE_NRF52832
 	bool
 
+config SOC_COMPATIBLE_NRF53X_CPUNET
+	bool
+
+config SOC_COMPATIBLE_NRF5340_CPUNET
+	bool
+
 #
 # SOC_*_LD: SoC specific Linker script additions
 #

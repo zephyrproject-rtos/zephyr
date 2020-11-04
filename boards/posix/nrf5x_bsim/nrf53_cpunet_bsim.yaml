@@ -1,0 +1,11 @@
+identifier: nrf53_cpunet_bsim
+name: NRF53 CPUNET BabbleSim board
+type: native
+arch: posix
+env:
+  - BSIM_OUT_PATH
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - drivers

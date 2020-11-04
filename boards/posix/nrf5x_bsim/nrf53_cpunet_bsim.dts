@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2020 Linaro Limited.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arm/nordic/nrf5340_cpunet.dtsi>
+
+/ {
+	model = "nrf53 cpunet bsim";
+	compatible = "bsim,nrf5340_cpunet";
+
+	/* We need to remove aliases to nodes we delete */
+	aliases {
+		/delete-property/ i2c-0;
+		/delete-property/ spi-0;
+		/delete-property/ uart-0;
+		/delete-property/ gpio-0;
+		/delete-property/ gpio-1;
+		/delete-property/ gpiote-0;
+		/delete-property/ wdt-0;
+	};
+
+	chosen {
+		/delete-property/ zephyr,flash-controller;
+	};
+
+	cpus {
+		cpu@1 {
+			/delete-node/ mpu@e000ed90;
+		};
+	};
+
+	soc {
+		/delete-node/ memory@20000000;
+		/delete-node/ memory@21000000;
+		/delete-node/ uart@41013000;
+		/delete-node/ gpiote@4100a000;
+		/delete-node/ gpio@418c0500;
+		/delete-node/ gpio@418c0800;
+		/delete-node/ i2c@41013000;
+		/delete-node/ spi@41013000;
+		/delete-node/ temp@41010000;
+		/delete-node/ watchdog@4100b000;
+	};
+
+	/delete-node/ flash-controller@41080000;
+	/delete-node/ sw-pwm;
+};

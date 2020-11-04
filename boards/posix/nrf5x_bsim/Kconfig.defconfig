@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NRF52_BSIM
+if BOARD_NRF52_BSIM || BOARD_NRF53_CPUNET_BSIM
 
 config BUILD_OUTPUT_BIN
 	default n
@@ -12,7 +12,8 @@ config OUTPUT_PRINT_MEMORY_USAGE
 	default n
 
 config BOARD
-	default "nrf52_bsim"
+	default "nrf52_bsim" if BOARD_NRF52_BSIM
+	default "nrf53_cpunet_bsim" if BOARD_NRF53_CPUNET_BSIM
 
 config BT_CTLR
 	default y
@@ -26,4 +27,4 @@ config LOG_BACKEND_NATIVE_POSIX
 
 endif # LOG
 
-endif # BOARD_NRF52_BSIM
+endif # BOARD_NRF52_BSIM || BOARD_NRF53_CPUNET_BSIM
