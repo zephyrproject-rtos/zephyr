@@ -256,7 +256,7 @@ uint32_t ull_adv_iso_start(struct ll_adv_iso *adv_iso, uint32_t ticks_anchor)
 	iso_interval_us = adv_iso->sdu_interval;
 
 	ret_cb = TICKER_STATUS_BUSY;
-	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
+	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 			   (TICKER_ID_ADV_ISO_BASE + adv_iso->bis_handle),
 			   ticks_anchor, 0,
 			   HAL_TICKER_US_TO_TICKS(iso_interval_us),
@@ -401,7 +401,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 
 	*rx = node_rx;
 
-	return 0;
+	return BT_HCI_ERR_SUCCESS;
 }
 
 uint8_t ll_big_test_create(uint8_t big_handle, uint8_t adv_handle,
@@ -432,18 +432,61 @@ uint8_t ll_big_test_create(uint8_t big_handle, uint8_t adv_handle,
 	return BT_HCI_ERR_CMD_DISALLOWED;
 }
 
-uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
+
+static void tx_lll_flush(void *param)
+{
+	/* TODO: LLL support for ADV ISO */
+	/* TODO: Send terminate complete event to host */
+#if 0
+	/* TODO: Flush TX */
+	struct ll_adv_iso *lll = param;
+#endif
+}
+
+static void ticker_op_stop_cb(uint32_t status, void *param)
+{
+	uint32_t retval;
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, tx_lll_flush};
+
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+
+	mfy.param = param;
+
+	/* Flush pending tx PDUs in LLL (using a mayfly) */
+	retval = mayfly_enqueue(TICKER_USER_ID_ULL_LOW, TICKER_USER_ID_LLL, 0,
+				&mfy);
+	LL_ASSERT(!retval);
+}
+
+uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason, void **rx)
 {
 	struct ll_adv_iso *adv_iso;
+	struct node_rx_pdu *node_rx;
+	uint32_t ret;
 
 	adv_iso = ull_adv_iso_get(big_handle);
 
 	if (!adv_iso) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
+		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
 
-	/* TODO: Implement */
-	ARG_UNUSED(reason);
+	/* TODO: Terminate all BIS data paths */
 
-	return BT_HCI_ERR_CMD_DISALLOWED;
+	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+			  TICKER_ID_ADV_ISO_BASE + adv_iso->bis_handle,
+			  ticker_op_stop_cb, adv_iso);
+
+	adv_iso->is_created = 0U;
+
+	/* Prepare BIG terminate event */
+	node_rx = (void *)&adv_iso->node_rx_terminate;
+	node_rx->hdr.type = NODE_RX_TYPE_BIG_TERMINATE;
+	node_rx->hdr.handle = big_handle;
+	node_rx->hdr.rx_ftr.param = adv_iso;
+	*((uint8_t *)node_rx->pdu) = reason;
+
+	*rx = node_rx;
+
+	return BT_HCI_ERR_SUCCESS;
 }
