@@ -888,8 +888,8 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 							 length);
 
 		} else if (handle == mcs_inst.parent_group_obj_id_handle) {
-			BT_DBG("Current Group notification");
-			mcc_read_current_group_obj_id_cb(conn, 0, NULL, data,
+			BT_DBG("Parent Group notification");
+			mcc_read_parent_group_obj_id_cb(conn, 0, NULL, data,
 							 length);
 #endif /* CONFIG_BT_OTC */
 
