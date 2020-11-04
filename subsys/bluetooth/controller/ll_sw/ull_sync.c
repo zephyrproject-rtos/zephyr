@@ -211,12 +211,20 @@ uint8_t ll_sync_create_cancel(void **rx)
 	ll_rx_link_release(link_sync_estab);
 	ll_rx_release(node_rx);
 
-	node_rx = (void *)&sync->node_rx_lost.hdr;
+	node_rx = (void *)&sync->node_rx_lost;
 	node_rx->hdr.type = NODE_RX_TYPE_SYNC;
 	node_rx->hdr.handle = 0xffff;
-	node_rx->hdr.rx_ftr.param = sync;
-	se = (void *)&sync->node_rx_lost.reason;
+
+	/* NOTE: struct node_rx_lost has uint8_t member following the
+	 *       struct node_rx_hdr to store the reason.
+	 */
+	se = (void *)node_rx->pdu;
 	se->status = BT_HCI_ERR_OP_CANCELLED_BY_HOST;
+
+	/* NOTE: Since NODE_RX_TYPE_SYNC is only generated from ULL context,
+	 *       pass ULL context as parameter.
+	 */
+	node_rx->hdr.rx_ftr.param = sync;
 
 	*rx = node_rx;
 
