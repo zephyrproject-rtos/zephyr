@@ -99,6 +99,11 @@ static struct k_poll_signal *hbuf_signal;
 static uint32_t conn_count;
 #endif
 
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+static uint32_t cis_pending_count;
+#endif
+
+
 #define DEFAULT_EVENT_MASK           0x1fffffffffff
 #define DEFAULT_EVENT_MASK_PAGE_2    0x0
 #define DEFAULT_LE_EVENT_MASK 0x1f
@@ -305,6 +310,10 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 
 #if defined(CONFIG_BT_CONN)
 	conn_count = 0U;
+#endif
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	cis_pending_count = 0U;
 #endif
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
@@ -1301,6 +1310,119 @@ static void le_start_encryption(struct net_buf *buf, struct net_buf **evt)
 	*evt = cmd_status(status);
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+static void le_set_cig_parameters(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_set_cig_params *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_set_cig_params *rp;
+	uint32_t m_interval;
+	uint32_t s_interval;
+	uint16_t m_latency;
+	uint16_t s_latency;
+	uint8_t status;
+	uint8_t i;
+
+	m_interval = sys_get_le24(cmd->m_interval);
+	s_interval = sys_get_le24(cmd->s_interval);
+	m_latency = sys_le16_to_cpu(cmd->m_latency);
+	s_latency = sys_le16_to_cpu(cmd->s_latency);
+
+	/* Create CIG or start modifying existing CIG */
+	status = ll_cig_parameters_open(cmd->cig_id, m_interval, s_interval,
+					cmd->sca, cmd->packing, cmd->framing,
+					m_latency, s_latency, cmd->num_cis);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp) +
+				   cmd->num_cis * sizeof(uint16_t));
+	rp->cig_id = cmd->cig_id;
+	rp->num_handles = cmd->num_cis;
+
+	/* Configure individual CISes */
+	for (i = 0; !status && i < cmd->num_cis; i++) {
+		struct bt_hci_cis_params *params = cmd->cis;
+		uint16_t handle;
+		uint16_t m_sdu;
+		uint16_t s_sdu;
+
+		m_sdu = sys_le16_to_cpu(params->m_sdu);
+		s_sdu = sys_le16_to_cpu(params->s_sdu);
+
+		status = ll_cis_parameters_set(params->cis_id, m_sdu, s_sdu,
+					       params->m_phy, params->s_phy,
+					       params->m_rtn, params->s_rtn,
+					       &handle);
+		rp->handle[i] = sys_cpu_to_le16(handle);
+	}
+
+	/* Only apply parameters if all went well */
+	if (!status) {
+		status = ll_cig_parameters_commit(cmd->cig_id);
+	}
+
+	rp->status = status;
+}
+
+static void le_create_cis(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_create_cis *cmd = (void *)buf->data;
+	uint8_t status;
+	uint8_t i;
+
+	/*
+	 * Creating new CISes is disallowed until all previous CIS
+	 * established events have been generated
+	 */
+	if (cis_pending_count) {
+		*evt = cmd_status(BT_HCI_ERR_CMD_DISALLOWED);
+		return;
+	}
+
+	/* Check all handles before actually starting to create CISes */
+	status = 0x00;
+	for (i = 0; !status && i < cmd->num_cis; i++) {
+		uint16_t cis_handle;
+		uint16_t acl_handle;
+
+		cis_handle = sys_le16_to_cpu(cmd->cis[i].cis_handle);
+		acl_handle = sys_le16_to_cpu(cmd->cis[i].acl_handle);
+		status = ll_cis_create_check(cis_handle, acl_handle);
+	}
+	*evt = cmd_status(status);
+
+	if (!status) {
+		return;
+	}
+
+	/*
+	 * Actually create CISes, any errors are to be reported
+	 * through CIS established events
+	 */
+	cis_pending_count = cmd->num_cis;
+	for (i = 0; i < cmd->num_cis; i++) {
+		uint16_t cis_handle;
+		uint16_t acl_handle;
+
+		cis_handle = sys_le16_to_cpu(cmd->cis[i].cis_handle);
+		acl_handle = sys_le16_to_cpu(cmd->cis[i].acl_handle);
+		ll_cis_create(cis_handle, acl_handle);
+	}
+}
+
+static void le_remove_cig(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_remove_cig *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_remove_cig *rp;
+	uint8_t status;
+
+	status = ll_cig_remove(cmd->cig_id);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp->status = status;
+	rp->cig_id = cmd->cig_id;
+}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
+
 #endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_PERIPHERAL)
@@ -1336,6 +1458,35 @@ static void le_ltk_req_neg_reply(struct net_buf *buf, struct net_buf **evt)
 	rp->handle = sys_le16_to_cpu(handle);
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+static void le_accept_cis(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_accept_cis *cmd = (void *)buf->data;
+	uint16_t handle;
+	uint8_t status;
+
+	handle = sys_le16_to_cpu(cmd->handle);
+	status = ll_cis_accept(handle);
+	*evt = cmd_status(status);
+}
+
+static void le_reject_cis(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_reject_cis *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_reject_cis *rp;
+	uint16_t handle;
+	uint8_t status;
+
+	handle = sys_le16_to_cpu(cmd->handle);
+	status = ll_cis_reject(handle, cmd->reason);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp->status = status;
+	rp->handle = sys_cpu_to_le16(handle);
+}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
 #endif /* CONFIG_BT_PERIPHERAL */
 
 static void le_read_remote_features(struct net_buf *buf, struct net_buf **evt)
@@ -2302,6 +2453,29 @@ static void le_ext_create_connection(struct net_buf *buf, struct net_buf **evt)
 #endif /* CONFIG_BT_CENTRAL */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+static void le_cis_request(struct pdu_data *pdu_data,
+			   struct node_rx_pdu *node_rx,
+			   struct net_buf *buf)
+{
+	/* TODO: generate event and fill in data from LL */
+}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+static void le_cis_established(struct pdu_data *pdu_data,
+			       struct node_rx_pdu *node_rx,
+			       struct net_buf *buf)
+{
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	cis_pending_count--;
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
+
+	/* TODO: generate event and fill in data from LL */
+}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO || CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
 static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 				 struct net_buf **evt, void **node_rx)
 {
@@ -2427,6 +2601,18 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		le_start_encryption(cmd, evt);
 		break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	case BT_OCF(BT_HCI_OP_LE_SET_CIG_PARAMS):
+		le_set_cig_parameters(cmd, evt);
+		break;
+	case BT_OCF(BT_HCI_OP_LE_CREATE_CIS):
+		le_create_cis(cmd, evt);
+		break;
+	case BT_OCF(BT_HCI_OP_LE_REMOVE_CIG):
+		le_remove_cig(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
 #endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_PERIPHERAL)
@@ -2439,6 +2625,15 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		le_ltk_req_neg_reply(cmd, evt);
 		break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	case BT_OCF(BT_HCI_OP_LE_ACCEPT_CIS):
+		le_accept_cis(cmd, evt);
+		break;
+	case BT_OCF(BT_HCI_OP_LE_REJECT_CIS):
+		le_reject_cis(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 #endif /* CONFIG_BT_PERIPHERAL */
 
 	case BT_OCF(BT_HCI_OP_LE_READ_CHAN_MAP):
@@ -4415,6 +4610,20 @@ static void encode_control(struct node_rx_pdu *node_rx,
 			pdu_data->rssi);
 		return;
 #endif /* CONFIG_BT_CTLR_CONN_RSSI_EVENT */
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	case NODE_RX_TYPE_CIS_REQUEST:
+		le_cis_request(pdu_data, node_rx, buf);
+		return;
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	case NODE_RX_TYPE_CIS_ESTABLISHED:
+		le_cis_established(pdu_data, node_rx, buf);
+		return;
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO || CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CTLR_ADV_INDICATION)
@@ -4811,6 +5020,14 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 
 #if defined(CONFIG_BT_CONN)
 		case NODE_RX_TYPE_CONNECTION:
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+		case NODE_RX_TYPE_CIS_REQUEST:
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+		case NODE_RX_TYPE_CIS_ESTABLISHED:
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO || CONFIG_BT_CTLR_PERIPHERAL_ISO */
 			return HCI_CLASS_EVT_REQUIRED;
 
 		case NODE_RX_TYPE_TERMINATE:

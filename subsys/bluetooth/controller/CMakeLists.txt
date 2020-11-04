@@ -64,11 +64,19 @@ if(CONFIG_BT_LL_SW_SPLIT)
       zephyr_library_sources(
         ll_sw/ull_slave.c
       )
+    zephyr_library_sources_ifdef(
+        CONFIG_BT_CTLR_PERIPHERAL_ISO
+        ll_sw/ull_peripheral_iso.c
+      )
     endif()
     if(CONFIG_BT_CENTRAL)
       zephyr_library_sources(
         ll_sw/ull_master.c
         )
+      zephyr_library_sources_ifdef(
+        CONFIG_BT_CTLR_CENTRAL_ISO
+        ll_sw/ull_central_iso.c
+      )
     endif()
     if(CONFIG_BT_CTLR_SCHED_ADVANCED)
       zephyr_library_sources(
