@@ -27,6 +27,8 @@ void *reallocarray(void *ptr, size_t nmemb, size_t size);
 void *bsearch(const void *key, const void *array,
 	      size_t count, size_t size,
 	      int (*cmp)(const void *key, const void *element));
+void qsort(void *base, size_t nel, size_t width,
+		int (*cmp)(const void *, const void *));
 
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1
