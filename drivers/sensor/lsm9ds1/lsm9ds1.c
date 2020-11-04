@@ -1,3 +1,13 @@
+/* lsm9ds1.c - Driver for LSM9DS1 inertial module which includes:
+ * 3D accelerometer, 3D gyroscope, 3D magnetometer.
+ */
+
+/*
+ * Copyright (c) 2020 Luca Quaer
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 #include <stdio.h>
@@ -25,7 +35,16 @@ LOG_MODULE_REGISTER(LSM9DS1, CONFIG_SENSOR_LOG_LEVEL);
 static struct lsm9ds1_data lsm9ds1_data;
 
 ////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 // Helper functions
+/**
+ * This function converts the given float value to a sensor_value.
+ *
+ * @param f the float value to be convertet to a sensor_value struct.
+ *
+ * @return the sensor_value struct representing the given float value.
+ */
 static struct sensor_value floatToSensorValue(float f) {
     struct sensor_value sv;
 
@@ -35,49 +54,16 @@ static struct sensor_value floatToSensorValue(float f) {
     return sv;
 }
 
-/* -------------------------------------------------------------------------- */
-
-/*
- * Read byte. This function depends on the static variable 'lsm9ds1_data'.
- */
-static uint8_t readByte(uint8_t addr, uint8_t subAddr) {
-    uint8_t data;
-
-    if (i2c_reg_read_byte(lsm9ds1_data.i2c_master, addr, subAddr, &data) < 0) {
-        return -EIO;
-    }
-
-    return data;
-}
-
-/*
- * Read multiple bytes. This function depends on the static variable
- * 'lsm9ds1_data'.
- */
-static int readBytes(
-    uint8_t addr, uint8_t subAddr,
-    uint8_t count, uint8_t *dest) {
-////
-    if (
-        i2c_burst_read(lsm9ds1_data.i2c_master, addr, subAddr, dest, count) < 0
-    ) {
-        return -EIO;
-    }
-    return 0;
-}
-
-/*
- * Write byte. This function depends on the static variable 'lsm9ds1_data'.
- */
-static void writeByte(uint8_t addr, uint8_t subAddr, uint8_t data)
-{
-    i2c_reg_write_byte(lsm9ds1_data.i2c_master, addr, subAddr, data);
-}
-
-/* -------------------------------------------------------------------------- */
-
 /**
- * 
+ * Function to wrap the function "lsm9ds1_attr_set". The original function
+ * has a sensor_value as 4th attribute. This function has a uint8_t as
+ * 4th attribute which is convertet to sensor_value before internally
+ * calling "lsm9ds1_attr_set".
+ *
+ * @param dev device whose attribute should be set
+ * @param chan channel of the device which is affected by the attribute change
+ * @param attr attribute of the channel which should be set
+ * @param val value that should be set to the attribute of the channel
  */
 static void setChanAttr(
     const struct device* dev,
@@ -92,10 +78,88 @@ static void setChanAttr(
     lsm9ds1_attr_set(dev, chan, attr, &sv);
 }
 
-/* -------------------------------------------------------------------------- */
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// I²C wrapper functions
 
-/*
- * Get resolutions of all sensors and save them globally.
+/**
+ * Read a single byte.
+ * This function depends on the static variable 'lsm9ds1_data'.
+ *
+ * @param addr address to read data from
+ * @param subAddr sub-address to read data from
+ *
+ * @return the data read from the given address and sub-address
+ */
+static uint8_t readByte(uint8_t addr, uint8_t subAddr) {
+    uint8_t data;
+
+    if (i2c_reg_read_byte(lsm9ds1_data.i2c_master, addr, subAddr, &data) < 0) {
+        return -EIO;
+    }
+
+    return data;
+}
+
+/**
+ * Read multiple bytes.
+ * This function depends on the static variable 'lsm9ds1_data'.
+ *
+ * @param addr address to read data from
+ * @param subAddr sub-address to read data from
+ * @param count length of the data to read
+ * @param dest pointer to the destination of the requested data
+ *
+ * @return 0 on success; -EIO on failure
+ */
+static int readBytes(
+    uint8_t addr, uint8_t subAddr,
+    uint8_t count, uint8_t *dest) {
+////
+    if (
+        i2c_burst_read(lsm9ds1_data.i2c_master, addr, subAddr, dest, count) < 0
+    ) {
+        return -EIO;
+    }
+    return 0;
+}
+
+/**
+ * Write a single byte.
+ * This function depends on the static variable 'lsm9ds1_data'.
+ *
+ * @param addr address to write data to
+ * @param subAddr sub-address to write data to
+ * @param data data to write
+ */
+static void writeByte(uint8_t addr, uint8_t subAddr, uint8_t data)
+{
+    i2c_reg_write_byte(lsm9ds1_data.i2c_master, addr, subAddr, data);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// Hardware settings - helper functions
+
+/**
+ * The driver stores a resolution for each component the LSM9DS1 offers
+ * (accelerometer, gyroscope and magnetometer).
+ * This resolution is used to convert the raw sensor readings to useful units.
+ *
+ * This function updates the before mentioned resolution for all three
+ * components of the LSM9DS1 (accelerometer, gyroscope, magnetometer).
+ *
+ * This function is (ment to be) called in
+ *  -   enableAndConfigureAccl
+ *  -   enableAndConfigureGyro
+ *  -   enableAndConfigureMagn
+ * because if settings change these functions must be called
+ * and setting changes also affect the resolutions.
+ * Therefore this function gets called in these functions.
+ *
+ * @param dev device
  */
 static void updateSensorResolutions(const struct device* dev) {
     struct lsm9ds1_data *data = dev->data;
@@ -136,122 +200,32 @@ static void updateSensorResolutions(const struct device* dev) {
     }
 }
 
-/* -------------------------------------------------------------------------- */
 
-/*
- * Read acceleration data.
- * Use the OUT_X_L_XL register.
+/**
+ * This function enables and configures the accelerometer.
+ * When the settings
+ *  -   accl_scale
+ *  -   accl_outputDataRate
+ *  -   accl_bandwidth
+ * change, this function must be called to apply these changes.
+ *
+ * @param dev device
  */
-static void readAcclData(const struct device* dev, int16_t * destination) {
-    // Get config struct from device
-    const struct lsm9ds1_config *config = dev->config;
-
-    // X,Y,Z register data stored here (2 8-bit values for each axis).
-    uint8_t rawData[6];
-
-    if (readBytes(
-            config->i2c_slave_addr_acclgyro,
-            LSM9DS1XG_OUT_X_L_XL,
-            6,
-            rawData
-        ) == 0) {
-    ////
-        // Turn the MSB and LSB into a signed 16-bit value.
-        destination[0] = ((int16_t)rawData[1] << 8) | rawData[0];
-        destination[1] = ((int16_t)rawData[3] << 8) | rawData[2];
-        destination[2] = ((int16_t)rawData[5] << 8) | rawData[4];
-    }
-}
-
-/*
- * Read gyro data.
- * Use the OUT_X_L_G register.
- */
-static void readGyroData(const struct device* dev, int16_t * destination) {
-    // Get config struct from device
-    const struct lsm9ds1_config *config = dev->config;
-
-    // X,Y,Z register data stored here (2 8-bit values for each axis).
-    uint8_t rawData[6];
-
-    if (readBytes(
-            config->i2c_slave_addr_acclgyro,
-            LSM9DS1XG_OUT_X_L_G,
-            6,
-            rawData
-        ) == 0 ) {
-    ////
-        // Turn the MSB and LSB into a signed 16-bit value
-        destination[0] = ((int16_t)rawData[1] << 8) | rawData[0];
-        destination[1] = ((int16_t)rawData[3] << 8) | rawData[2];
-        destination[2] = ((int16_t)rawData[5] << 8) | rawData[4];
-    }
-}
-
-/*
- * Read magn data.
- * Use the OUT_X_L_M register.
- */
-static void readMagnData(const struct device* dev, int16_t * destination) {
-    // Get config struct from device
-    const struct lsm9ds1_config *config = dev->config;
-
-    // X,Y,Z register data stored here (2 8-bit values for each axis).
-    uint8_t rawData[6];
-
-    if ( readBytes(
-            config->i2c_slave_addr_magn,
-            LSM9DS1M_OUT_X_L_M,
-            6,
-            rawData
-        ) == 0) {
-    ////
-        // Turn the MSB and LSB into a signed 16-bit value
-        destination[0] = ((int16_t)rawData[1] << 8) | rawData[0];
-        destination[1] = ((int16_t)rawData[3] << 8) | rawData[2];
-        destination[2] = ((int16_t)rawData[5] << 8) | rawData[4];
-    }
-}
-
-/*
- * Read temp data.
- * Use OUT_TEMP_L register.
- */
-static void readTempData(const struct device* dev, int16_t* destination) {
-    // Get config struct from device
-    const struct lsm9ds1_config *config = dev->config;
-
-    // Temperature register data stored here (2 8-bit values).
-    uint8_t rawData[2];
-
-    if( readBytes(
-            config->i2c_slave_addr_acclgyro,
-            LSM9DS1XG_OUT_TEMP_L,
-            2,
-            rawData
-        ) == 0) {
-    ////
-        *destination = ((int16_t)rawData[1] << 8) | rawData[0];
-    }
-}
-
-/* -------------------------------------------------------------------------- */
-
 static void enableAndConfigureAccl(const struct device* dev) {
     struct lsm9ds1_data *data = dev->data;
     const struct lsm9ds1_config *config = dev->config;
 
     /**
      * Enable the X,Y,Z axes of the accelerometer.
-     * 
+     *
      * CTRL_REG5_XL:
-     * 
+     *
      * DEC_[0:1]    : Decimation of acceleration data on OUT REG and FIFO
      *                (default: 00)
      * Zen_XL       : Enable Z axis
      * Yen_XL       : Enable Y axis
      * Xen_XL       : Enable X axis
-     * 
+     *
      * DEC_1    DEC_0   Zen_XL  Yen_XL  Xen_XL  0   0   0
      *   |        |        |       |       |    |   |   |
      *   0        0        1       1       1    0   0   0
@@ -291,12 +265,29 @@ static void enableAndConfigureAccl(const struct device* dev) {
         Aodr << 5 | Ascale << 3 | 0x04 | Abw
     );
 
+    /**
+     * Final configurations.
+     */
+
     // Enable auto block updates and auto increment
     enableBlockDataUpdateAndAutoInc(dev);
+
+    // Update resoluctions
+    updateSensorResolutions(dev);
 
     k_msleep(200);
 }
 
+/**
+ * This function enables and configures the gyroscope.
+ * When the settings
+ *  -   gyro_scale
+ *  -   gyro_outputDataRate
+ *  -   gyro_bandwidth
+ * change, this function must be called to apply these changes.
+ *
+ * @param dev device
+ */
 static void enableAndConfigureGyro(const struct device* dev) {
     struct lsm9ds1_data *data = dev->data;
     const struct lsm9ds1_config *config = dev->config;
@@ -353,7 +344,7 @@ static void enableAndConfigureGyro(const struct device* dev) {
 
     /**
      * Low power mode.
-     * TOTO: Sollte der low power mode während der Kalibrierung nicht
+     * TODO: Sollte der low power mode während der Kalibrierung nicht
      * erlaubt sein?
      */
     #ifdef CONFIG_LSM9DS1_GYRO_LOW_POWER
@@ -365,12 +356,29 @@ static void enableAndConfigureGyro(const struct device* dev) {
         );
     #endif
 
+    /**
+     * Final configurations.
+     */
+
     // Enable auto block updates and auto increment
     enableBlockDataUpdateAndAutoInc(dev);
+
+    // Update resoluctions
+    updateSensorResolutions(dev);
 
     k_msleep(200);
 }
 
+/**
+ * This function enables and configures the magnetometer.
+ * When the settings
+ *  -   magn_scale
+ *  -   magn_outputDataRate
+ *  -   magn_mode
+ * changes, this function must be called to apply these changes.
+ *
+ * @param dev device
+ */
 static void enableAndConfigureMagn(const struct device* dev) {
     struct lsm9ds1_data *data = dev->data;
     const struct lsm9ds1_config *config = dev->config;
@@ -485,12 +493,160 @@ static void enableAndConfigureMagn(const struct device* dev) {
      */
     writeByte(config->i2c_slave_addr_magn, LSM9DS1M_CTRL_REG5_M, 0x40 );
 
+    /**
+     * Final configurations.
+     */
+
     // Enable auto block updates and auto increment
     enableBlockDataUpdateAndAutoInc(dev);
+
+    // Update resoluctions
+    updateSensorResolutions(dev);
+
+    k_msleep(200);
 }
 
-/* -------------------------------------------------------------------------- */
+/**
+ * This function enables block data update and auto increment on multiple
+ * byte reads.
+ *
+ * @param dev device
+ */
+static void enableBlockDataUpdateAndAutoInc(const struct device* dev) {
+    const struct lsm9ds1_config *config = dev->config;
 
+    /**
+     * Enable
+     *      block data update
+     * and
+     *      allow auto-increment during multiple byte read.
+     */
+    writeByte(config->i2c_slave_addr_acclgyro, LSM9DS1XG_CTRL_REG8, 0x44);
+
+    //printk("LSM9DS1 initialized for active data mode.\n");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// Read raw sensor data from registers - helper functions
+
+/**
+ * Read acceleration data.
+ * Use the OUT_X_L_XL register.
+ *
+ * @param dev device
+ * @param destination destination of the data that got read out
+ */
+static void readAcclData(const struct device* dev, int16_t* destination) {
+    // Get config struct from device
+    const struct lsm9ds1_config *config = dev->config;
+
+    // X,Y,Z register data stored here (2 8-bit values for each axis).
+    uint8_t rawData[6];
+
+    if (readBytes(
+            config->i2c_slave_addr_acclgyro,
+            LSM9DS1XG_OUT_X_L_XL,
+            6,
+            rawData
+        ) == 0) {
+    ////
+        // Turn the MSB and LSB into a signed 16-bit value.
+        destination[0] = ((int16_t)rawData[1] << 8) | rawData[0];
+        destination[1] = ((int16_t)rawData[3] << 8) | rawData[2];
+        destination[2] = ((int16_t)rawData[5] << 8) | rawData[4];
+    }
+}
+
+/**
+ * Read gyro data.
+ * Use the OUT_X_L_G register.
+ */
+static void readGyroData(const struct device* dev, int16_t * destination) {
+    // Get config struct from device
+    const struct lsm9ds1_config *config = dev->config;
+
+    // X,Y,Z register data stored here (2 8-bit values for each axis).
+    uint8_t rawData[6];
+
+    if (readBytes(
+            config->i2c_slave_addr_acclgyro,
+            LSM9DS1XG_OUT_X_L_G,
+            6,
+            rawData
+        ) == 0 ) {
+    ////
+        // Turn the MSB and LSB into a signed 16-bit value
+        destination[0] = ((int16_t)rawData[1] << 8) | rawData[0];
+        destination[1] = ((int16_t)rawData[3] << 8) | rawData[2];
+        destination[2] = ((int16_t)rawData[5] << 8) | rawData[4];
+    }
+}
+
+/**
+ * Read magn data.
+ * Use the OUT_X_L_M register.
+ *
+ * @param dev device
+ * @param destination destination of the data that got read out
+ */
+static void readMagnData(const struct device* dev, int16_t * destination) {
+    // Get config struct from device
+    const struct lsm9ds1_config *config = dev->config;
+
+    // X,Y,Z register data stored here (2 8-bit values for each axis).
+    uint8_t rawData[6];
+
+    if ( readBytes(
+            config->i2c_slave_addr_magn,
+            LSM9DS1M_OUT_X_L_M,
+            6,
+            rawData
+        ) == 0) {
+    ////
+        // Turn the MSB and LSB into a signed 16-bit value
+        destination[0] = ((int16_t)rawData[1] << 8) | rawData[0];
+        destination[1] = ((int16_t)rawData[3] << 8) | rawData[2];
+        destination[2] = ((int16_t)rawData[5] << 8) | rawData[4];
+    }
+}
+
+/**
+ * Read temp data.
+ * Use OUT_TEMP_L register.
+ *
+ * @param dev device
+ * @param destination destination of the data that got read out
+ */
+static void readTempData(const struct device* dev, int16_t* destination) {
+    // Get config struct from device
+    const struct lsm9ds1_config *config = dev->config;
+
+    // Temperature register data stored here (2 8-bit values).
+    uint8_t rawData[2];
+
+    if( readBytes(
+            config->i2c_slave_addr_acclgyro,
+            LSM9DS1XG_OUT_TEMP_L,
+            2,
+            rawData
+        ) == 0) {
+    ////
+        *destination = ((int16_t)rawData[1] << 8) | rawData[0];
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// Calibrate sensors
+
+/**
+ * Calibrate accelerometer.
+ *
+ * @param dev device
+ */
 static void calibrateAccl(const struct device* dev) {
     struct lsm9ds1_data *data = dev->data;
     const struct lsm9ds1_config *config = dev->config;
@@ -574,6 +730,11 @@ static void calibrateAccl(const struct device* dev) {
     writeByte(config->i2c_slave_addr_acclgyro, LSM9DS1XG_FIFO_CTRL, 0x00);
 }
 
+/**
+ * Calibrate gyroscope.
+ *
+ * @param dev device
+ */
 static void calibrateGyro(const struct device* dev) {
     struct lsm9ds1_data *data = dev->data;
     const struct lsm9ds1_config *config = dev->config;
@@ -610,8 +771,8 @@ static void calibrateGyro(const struct device* dev) {
 
     /**
      * Get number of samples stored in the FIFO.
-     * 
-     * TOTO: BUG? => Should it be "& 0x3F" to get the first 6 bits of the
+     *
+     * TODO: BUG? => Should it be "& 0x3F" to get the first 6 bits of the
      *       FIFO_SRC register?
      */
     uint16_t numSamples = (
@@ -655,6 +816,11 @@ static void calibrateGyro(const struct device* dev) {
     writeByte(config->i2c_slave_addr_acclgyro, LSM9DS1XG_FIFO_CTRL, 0x00);
 }
 
+/**
+ * Calibrate magnetometer.
+ *
+ * @param dev device
+ */
 static void calibrateMagn(const struct device* dev) {
     struct lsm9ds1_data *data = dev->data;
     const struct lsm9ds1_config *config = dev->config;
@@ -722,24 +888,11 @@ static void calibrateMagn(const struct device* dev) {
     printk("Mag Calibration done!\n");
 }
 
-/* -------------------------------------------------------------------------- */
-
-static void enableBlockDataUpdateAndAutoInc(const struct device* dev) {
-    const struct lsm9ds1_config *config = dev->config;
-
-    /**
-     * Enable
-     *      block data update
-     * and
-     *      allow auto-increment during multiple byte read.
-     */
-    writeByte(config->i2c_slave_addr_acclgyro, LSM9DS1XG_CTRL_REG8, 0x44);
-
-    //printk("LSM9DS1 initialized for active data mode.\n");
-}
-
 ////////////////////////////////////////////////////////////////////////////////
-// Define 'init' API function
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// API functions
+
 static int lsm9ds1_init(const struct device *dev) {
     // Get config and data from the device
     const struct lsm9ds1_config * const config  = dev->config;
@@ -804,71 +957,83 @@ static int lsm9ds1_init(const struct device *dev) {
     return 0;
 }
 
-// Define 'sample fetch' API function
-static int lsm9ds1_sample_fetch(const struct device* dev, enum sensor_channel chan) {
+/**
+ * This function is part of the "Sensor API".
+ * This function is used for fetching data from the sensor
+ * and saving it driver-internally (in a kind of buffer).
+ *
+ * @param dev device
+ * @param chan channel to fetch the data from
+ *
+ * @return 0 on success
+ */
+static int lsm9ds1_sample_fetch(
+    const struct device* dev,
+    enum sensor_channel chan) {
+////
     // Get data struct from device
     struct lsm9ds1_data *data = dev->data;
 
     int16_t raw[3] = {};
 
     switch (chan) {
-        case SENSOR_CHAN_APPLY_SETTINGS:
-            // Enable and configure all sensors.
-            enableAndConfigureAccl(dev);
-            enableAndConfigureGyro(dev);
-            enableAndConfigureMagn(dev);
+        // case SENSOR_CHAN_APPLY_SETTINGS:
+        //     // Enable and configure all sensors.
+        //     enableAndConfigureAccl(dev);
+        //     enableAndConfigureGyro(dev);
+        //     enableAndConfigureMagn(dev);
 
-            break;
+        //     break;
 
-        case SENSOR_CHAN_CALIBRATE_ACCL:
-            // Re-calculate resolutions based on resolution settings.
-            updateSensorResolutions(dev);
+        // case SENSOR_CHAN_CALIBRATE_ACCL:
+        //     // Re-calculate resolutions based on resolution settings.
+        //     updateSensorResolutions(dev);
 
-            // Enable and configure sensors
-            enableAndConfigureAccl(dev);
+        //     // Enable and configure sensors
+        //     enableAndConfigureAccl(dev);
 
-            // Calibrate sensors
-            calibrateAccl(dev);
+        //     // Calibrate sensors
+        //     calibrateAccl(dev);
 
-            // printf("Accl biases:\n");
-            // printf("%f | %f | %f\n",
-            //     data->acclBias[0], data->acclBias[1], data->acclBias[2]);
+        //     // printf("Accl biases:\n");
+        //     // printf("%f | %f | %f\n",
+        //     //     data->acclBias[0], data->acclBias[1], data->acclBias[2]);
 
-            break;
+        //     break;
 
-        case SENSOR_CHAN_CALIBRATE_GYRO:
-            // Re-calculate resolutions based on resolution settings.
-            updateSensorResolutions(dev);
+        // case SENSOR_CHAN_CALIBRATE_GYRO:
+        //     // Re-calculate resolutions based on resolution settings.
+        //     updateSensorResolutions(dev);
 
-            // Enable and configure sensors
-            enableAndConfigureGyro(dev);
+        //     // Enable and configure sensors
+        //     enableAndConfigureGyro(dev);
 
-            // Calibrate sensors
-            calibrateGyro(dev);
+        //     // Calibrate sensors
+        //     calibrateGyro(dev);
 
-            // printf("Gyro biases:\n");
-            // printf("%f | %f | %f\n",
-            //     data->gyroBias[0], data->gyroBias[1], data->gyroBias[2]);
+        //     // printf("Gyro biases:\n");
+        //     // printf("%f | %f | %f\n",
+        //     //     data->gyroBias[0], data->gyroBias[1], data->gyroBias[2]);
 
-            break;
+        //     break;
 
-        case SENSOR_CHAN_CALIBRATE_MAGN:
-            // Re-calculate resolutions based on resolution settings.
-            updateSensorResolutions(dev);
+        // case SENSOR_CHAN_CALIBRATE_MAGN:
+        //     // Re-calculate resolutions based on resolution settings.
+        //     updateSensorResolutions(dev);
 
-            // Enable and configure sensors
-            enableAndConfigureMagn(dev);
+        //     // Enable and configure sensors
+        //     enableAndConfigureMagn(dev);
 
-            // Calibrate sensors
-            calibrateMagn(dev);
+        //     // Calibrate sensors
+        //     calibrateMagn(dev);
 
-            // printf("Magn biases:\n");
-            // printf("%f | %f | %f\n",
-            //     data->magnBias[0], data->magnBias[1], data->magnBias[2]);
+        //     // printf("Magn biases:\n");
+        //     // printf("%f | %f | %f\n",
+        //     //     data->magnBias[0], data->magnBias[1], data->magnBias[2]);
 
-            break;
+        //     break;
 
-        case SENSOR_CHAN_ACCL_XYZ:
+        //case SENSOR_CHAN_ACCL_XYZ:
         case SENSOR_CHAN_ACCEL_XYZ:
             // Get raw data
             readAcclData(dev, raw);
@@ -936,7 +1101,17 @@ static int lsm9ds1_sample_fetch(const struct device* dev, enum sensor_channel ch
     return 0;
 }
 
-// Define 'channel get' API function
+/**
+ * This function is part of the "Sensor API".
+ * This function is used for getting (previously fetched) data
+ * from the sensor.
+ *
+ * @param dev device
+ * @param chan channel to get the data from
+ * @param val destination to save the value to (pointer to sensor_value)
+ *
+ * @return 0 on success
+ */
 static int lsm9ds1_channel_get(
     const struct device *dev,
     enum sensor_channel chan,
@@ -945,7 +1120,7 @@ static int lsm9ds1_channel_get(
     struct lsm9ds1_data *data = dev->data;
 
     switch (chan) {
-        case SENSOR_CHAN_ACCL_XYZ:
+        //case SENSOR_CHAN_ACCL_XYZ:
         case SENSOR_CHAN_ACCEL_XYZ:
             val[0] = floatToSensorValue(data->accl_x);
             val[1] = floatToSensorValue(data->accl_y);
@@ -968,9 +1143,9 @@ static int lsm9ds1_channel_get(
             *val = floatToSensorValue(data->temp_c);
             break;
 
-        case SENSOR_CHAN_ALL:
-            *val = floatToSensorValue(123);
-            break;
+        // case SENSOR_CHAN_ALL:
+        //     *val = floatToSensorValue(123);
+        //     break;
 
         default:
             break;
@@ -981,16 +1156,16 @@ static int lsm9ds1_channel_get(
 
 /**
  * This function configures the settings on the sensors.
- * 
+ *
  * As sensor_value *val you should pass a sensor_value which only contains
  * an integer (therefore the val2 property is not relevant and not used
  * in this function).
- * 
+ *
  * E.g: struct sensor_value sv; sv.val1 = AFS_2G; sv.val2 = 0;
- * 
+ *
  * As values for the sensor_value val1 property you should use
  * the values defined as enums in the lsm9ds1.h file.
- * 
+ *
  * E.g: AFS_2G, AODR_119Hz, ABW_50Hz, ...
  */
 static int lsm9ds1_attr_set(
@@ -1010,76 +1185,114 @@ static int lsm9ds1_attr_set(
         /**
          * Change accelerometer settings.
          */
-        case SENSOR_CHAN_ACCL_XYZ:
+        //case SENSOR_CHAN_ACCL_XYZ:
         case SENSOR_CHAN_ACCEL_XYZ:
-            switch (attr) {
-                case SENSOR_ATTR_SCALE:
-                    data->accl_scale = val->val1;
-                    break;
+            if (attr == SENSOR_ATTR_CALIB_TARGET) {
+                // Apply changes to accelerometer and re-calculate resolution.
+                enableAndConfigureAccl(dev);
 
-                case SENSOR_ATTR_ODR:
-                    data->accl_outputDataRate = val->val1;
-                    break;
+                // Calibrate with new settings.
+                calibrateAccl(dev);
 
-                case SENSOR_ATTR_BW:
-                    data->accl_bandwidth = val->val1;
-                    break;
+            } else {
+                // Change settings.
+                switch (attr) {
+                    case SENSOR_ATTR_SCALE:
+                        data->accl_scale = val->val1;
+                        break;
 
-                default:
-                    break;
+                    case SENSOR_ATTR_ODR:
+                        data->accl_outputDataRate = val->val1;
+                        break;
+
+                    case SENSOR_ATTR_BW:
+                        data->accl_bandwidth = val->val1;
+                        break;
+
+                    default:
+                        break;
+                }
+
+                // Apply changes to accelerometer and re-calculate resolution.
+                enableAndConfigureAccl(dev);
             }
 
-            break;
+            break; // Break the SENSOR_CHAN_ACCEL_XYZ case
 
         /**
          * Change gyroscope settings.
          */
         case SENSOR_CHAN_GYRO_XYZ:
-            switch (attr) {
-                case SENSOR_ATTR_SCALE:
-                    data->gyro_scale = val->val1;
-                    break;
+            if (attr == SENSOR_ATTR_CALIB_TARGET) {
+                // Apply changes to accelerometer and re-calculate resolution.
+                enableAndConfigureGyro(dev);
 
-                case SENSOR_ATTR_ODR:
-                    data->gyro_outputDataRate = val->val1;
-                    break;
+                // Calibrate with new settings.
+                calibrateGyro(dev);
+            } else {
+                // Change settings.
+                switch (attr) {
+                    case SENSOR_ATTR_SCALE:
+                        data->gyro_scale = val->val1;
+                        break;
 
-                case SENSOR_ATTR_BW:
-                    data->gyro_bandwidth = val->val1;
-                    break;
+                    case SENSOR_ATTR_ODR:
+                        data->gyro_outputDataRate = val->val1;
+                        break;
 
-                default:
-                    break;
+                    case SENSOR_ATTR_BW:
+                        data->gyro_bandwidth = val->val1;
+                        break;
+
+                    default:
+                        break;
+                }
+
+                // Apply changes to accelerometer and re-calculate resolution.
+                enableAndConfigureGyro(dev);
             }
 
-            break;
+            break; // Break the SENSOR_CHAN_GYRO_XYZ case
 
         /**
          * Change magnetoscope settings.
          */
         case SENSOR_CHAN_MAGN_XYZ:
-            switch (attr) {
-                case SENSOR_ATTR_SCALE:
-                    data->magn_scale = val->val1;
-                    break;
+            if (attr == SENSOR_CHAN_MAGN_XYZ) {
+                // Apply changes to accelerometer and re-calculate resolution.
+                enableAndConfigureMagn(dev);
 
-                case SENSOR_ATTR_ODR:
-                    data->magn_outputDataRate = val->val1;
-                    break;
+                // Calibrate with new settings.
+                calibrateMagn(dev);
 
-                case SENSOR_ATTR_MODE:
-                    data->magn_mode = val->val1;
-                    break;
+            } else {
+                // Change settings.
+                switch (attr) {
+                    case SENSOR_ATTR_SCALE:
+                        data->magn_scale = val->val1;
+                        break;
 
-                default:
-                    break;
+                    case SENSOR_ATTR_ODR:
+                        data->magn_outputDataRate = val->val1;
+                        break;
+
+                    case SENSOR_ATTR_MODE:
+                        data->magn_mode = val->val1;
+                        break;
+
+                    default:
+                        break;
+                }
+
+                // Apply changes to accelerometer and re-calculate resolution.
+                enableAndConfigureMagn(dev);
             }
 
-            break;
+            break; // Break the SENSOR_CHAN_MAGN_XYZ case
 
         /**
          * Change temperature sensor settings.
-         * 
+         *
          * TODO: This setting is never used or written to a register.
          */
         case SENSOR_CHAN_AMBIENT_TEMP:
@@ -1097,11 +1310,14 @@ static int lsm9ds1_attr_set(
             break;
     }
 
-    updateSensorResolutions(dev);
+    //updateSensorResolutions(dev);
 
     return 0;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 // This variable holds the api functions.
 static struct sensor_driver_api lsm9ds1_api_funcs = {
