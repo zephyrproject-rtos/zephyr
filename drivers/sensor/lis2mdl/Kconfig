@@ -30,6 +30,11 @@ config LIS2MDL_TRIGGER_OWN_THREAD
 	depends on GPIO
 	select LIS2MDL_TRIGGER
 
+config LIS2MDL_TRIGGER_DIRECT
+	bool "Use interrupt handler"
+	depends on GPIO
+	select LIS2MDL_TRIGGER
+
 endchoice # LIS2MDL_TRIGGER_MODE
 
 config LIS2MDL_TRIGGER

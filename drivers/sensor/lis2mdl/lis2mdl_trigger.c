@@ -81,6 +81,8 @@ static void lis2mdl_gpio_callback(const struct device *dev,
 	k_sem_give(&lis2mdl->gpio_sem);
 #elif defined(CONFIG_LIS2MDL_TRIGGER_GLOBAL_THREAD)
 	k_work_submit(&lis2mdl->work);
+#elif defined(CONFIG_LIS2MDL_TRIGGER_DIRECT)
+	lis2mdl_handle_interrupt(lis2mdl->dev);
 #endif
 }
 
