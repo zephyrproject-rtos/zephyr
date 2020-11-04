@@ -177,11 +177,18 @@ Other features
 Limitations
 ===========
 
-Doesn't work out of the box on Windows, but can be made to work with
+Doesn't work out of the box on Windows, where there is no 'curses' module
+in the Python standard library.
+
+On Python versions up to 3.9, you can get a Windows version of 'curses' with:
 
     pip install windows-curses
 
-See the https://github.com/zephyrproject-rtos/windows-curses repository.
+However, this is no longer maintained and won't work for future versions
+of Python unless a maintainer volunteers.
+
+See the https://github.com/zephyrproject-rtos/windows-curses repository
+for more information.
 """
 from __future__ import print_function
 
@@ -193,22 +200,12 @@ _IS_WINDOWS = os.name == "nt"  # Are we running on Windows?
 try:
     import curses
 except ImportError as e:
-    if not _IS_WINDOWS:
-        raise
-    sys.exit("""\
-menuconfig failed to import the standard Python 'curses' library. Try
-installing a package like windows-curses
-(https://github.com/zephyrproject-rtos/windows-curses) by running this command
-in cmd.exe:
-
-    pip install windows-curses
-
-Starting with Kconfiglib 13.0.0, windows-curses is no longer automatically
-installed when installing Kconfiglib via pip on Windows (because it breaks
-installation on MSYS2).
-
-Exception:
-{}: {}""".format(type(e).__name__, e))
+    sys.exit(
+        "error: 'menuconfig' failed to import the 'curses' module; "
+        "try running 'guiconfig' instead\n" +
+        ("note: the Zephyr Project no longer maintains a Windows port "
+         "of 'curses'\n" if _IS_WINDOWS else "") +
+        f"exception: {type(e).__name__}: {e}")
 
 import errno
 import locale

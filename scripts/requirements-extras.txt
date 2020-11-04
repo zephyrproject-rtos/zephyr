@@ -14,3 +14,9 @@ lpc_checksum
 
 # used by scripts/gen_cfb_font_header.py - helper script for user
 Pillow
+
+# Used for windows based 'menuconfig' on Python up to 3.9.
+# No longer maintained. Windows users should use 'guiconfig' from now on.
+#
+# "win32" is used for 64-bit Windows as well
+windows-curses; sys_platform == "win32" and python_version <= "3.9"
