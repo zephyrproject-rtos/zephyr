@@ -134,17 +134,25 @@ is running.
 
 .. important::
     The IRQ lock is thread-specific. If thread A locks out interrupts
-    then performs an operation that allows thread B to run
-    (e.g. giving a semaphore or sleeping for N milliseconds), the thread's
-    IRQ lock no longer applies once thread A is swapped out. This means
-    that interrupts can be processed while thread B is running unless
-    thread B has also locked out interrupts using its own IRQ lock.
-    (Whether interrupts can be processed while the kernel is switching
-    between two threads that are using the IRQ lock is architecture-specific.)
+    then performs an operation that puts itself to sleep (e.g. sleeping
+    for N milliseconds), the thread's IRQ lock no longer applies once
+    thread A is swapped out and the next ready thread B starts to
+    run.
+
+    This means that interrupts can be processed while thread B is
+    running unless thread B has also locked out interrupts using its own
+    IRQ lock.  (Whether interrupts can be processed while the kernel is
+    switching between two threads that are using the IRQ lock is
+    architecture-specific.)
 
     When thread A eventually becomes the current thread once again, the kernel
     re-establishes thread A's IRQ lock. This ensures thread A won't be
     interrupted until it has explicitly unlocked its IRQ lock.
+
+    If thread A does not sleep but does make a higher-priority thread B
+    ready, the IRQ lock will inhibit any preemption that would otherwise
+    occur.  Thread B will not run until the next :ref:`reschedule point
+    <scheduling_v2>` reached after releasing the IRQ lock.
 
 Alternatively, a thread may temporarily **disable** a specified IRQ
 so its associated ISR does not execute when the IRQ is signaled.
