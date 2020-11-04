@@ -200,6 +200,30 @@ static void updateSensorResolutions(const struct device* dev) {
     }
 }
 
+/**
+ * This function enables block data update and auto increment on multiple
+ * byte reads.
+ *
+ * This function is also (ment to be) called in
+ *  -   enableAndConfigureAccl
+ *  -   enableAndConfigureGyro
+ *  -   enableAndConfigureMagn
+ *
+ * @param dev device
+ */
+static void enableBlockDataUpdateAndAutoInc(const struct device* dev) {
+    const struct lsm9ds1_config *config = dev->config;
+
+    /**
+     * Enable
+     *      block data update
+     * and
+     *      allow auto-increment during multiple byte read.
+     */
+    writeByte(config->i2c_slave_addr_acclgyro, LSM9DS1XG_CTRL_REG8, 0x44);
+
+    //printk("LSM9DS1 initialized for active data mode.\n");
+}
 
 /**
  * This function enables and configures the accelerometer.
@@ -504,26 +528,6 @@ static void enableAndConfigureMagn(const struct device* dev) {
     updateSensorResolutions(dev);
 
     k_msleep(200);
-}
-
-/**
- * This function enables block data update and auto increment on multiple
- * byte reads.
- *
- * @param dev device
- */
-static void enableBlockDataUpdateAndAutoInc(const struct device* dev) {
-    const struct lsm9ds1_config *config = dev->config;
-
-    /**
-     * Enable
-     *      block data update
-     * and
-     *      allow auto-increment during multiple byte read.
-     */
-    writeByte(config->i2c_slave_addr_acclgyro, LSM9DS1XG_CTRL_REG8, 0x44);
-
-    //printk("LSM9DS1 initialized for active data mode.\n");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -931,9 +935,9 @@ static int lsm9ds1_init(const struct device *dev) {
          */
 
         // Accelerometer
-        setChanAttr(dev, SENSOR_CHAN_ACCL_XYZ, SENSOR_ATTR_SCALE, AFS_2G);
-        setChanAttr(dev, SENSOR_CHAN_ACCL_XYZ, SENSOR_ATTR_ODR, AODR_50Hz);
-        setChanAttr(dev, SENSOR_CHAN_ACCL_XYZ, SENSOR_ATTR_BW, ABW_211Hz);
+        setChanAttr(dev, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_SCALE, AFS_2G);
+        setChanAttr(dev, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_ODR, AODR_50Hz);
+        setChanAttr(dev, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_BW, ABW_211Hz);
 
         // Gyroscope
         setChanAttr(dev, SENSOR_CHAN_GYRO_XYZ, SENSOR_ATTR_SCALE, GFS_245DPS);
@@ -1258,7 +1262,7 @@ static int lsm9ds1_attr_set(
          * Change magnetoscope settings.
          */
         case SENSOR_CHAN_MAGN_XYZ:
-            if (attr == SENSOR_CHAN_MAGN_XYZ) {
+            if (attr == SENSOR_ATTR_CALIB_TARGET) {
                 // Apply changes to accelerometer and re-calculate resolution.
                 enableAndConfigureMagn(dev);
 

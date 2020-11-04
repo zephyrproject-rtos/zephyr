@@ -99,12 +99,12 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 // Define API functions
-// static int lsm9ds1_attr_set(
-//     const struct device *dev,
-//     enum sensor_channel chan,
-//     enum sensor_attribute attr,
-//     const struct sensor_value *val
-// );
+static int lsm9ds1_attr_set(
+    const struct device *dev,
+    enum sensor_channel chan,
+    enum sensor_attribute attr,
+    const struct sensor_value *val
+);
 
 // static void enableBlockDataUpdateAndAutoInc(const struct device* dev);
 
@@ -190,7 +190,7 @@ enum sensor_attribute_extended {
     SENSOR_ATTR_OSR     = SENSOR_ATTR_PRIV_START + 4,
 };
 
-enum sensor_channel_extended {
+//enum sensor_channel_extended {
     /**
      * Custom sensor channels to configure sensors.
      */
@@ -209,7 +209,7 @@ enum sensor_channel_extended {
      * it doesn't matter which one is used.
      */
     //SENSOR_CHAN_ACCL_XYZ       = SENSOR_CHAN_PRIV_START + 4,
-};
+//};
 
 ///////////////////
 // Accelerometer //
