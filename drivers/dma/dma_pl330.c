@@ -142,16 +142,16 @@ static void dma_pl330_config_channel(struct dma_pl330_ch_config *ch_cfg,
 	}
 }
 
-static inline uint32_t dma_pl330_gen_mov(uint8_t *buf,
+static inline uint32_t dma_pl330_gen_mov(mem_addr_t buf,
 					 enum dmamov_type type,
 					 uint32_t val)
 {
-	sys_write8(OP_DMA_MOV, (uint32_t)buf + 0);
-	sys_write8(type, (uint32_t)buf + 1);
-	sys_write8(val, (uint32_t)buf + 2);
-	sys_write8(val >> 8, (uint32_t)buf + 3);
-	sys_write8(val >> 16, (uint32_t)buf + 4);
-	sys_write8(val >> 24, (uint32_t)buf + 5);
+	sys_write8(OP_DMA_MOV, buf);
+	sys_write8(type, buf + 1);
+	sys_write8(val, buf + 2);
+	sys_write8(val >> 8, buf + 3);
+	sys_write8(val >> 16, buf + 4);
+	sys_write8(val >> 24, buf + 5);
 
 	return SZ_CMD_DMAMOV;
 }
@@ -166,30 +166,29 @@ static int dma_pl330_setup_ch(const struct device *dev,
 			      struct dma_pl330_ch_internal *ch_dat,
 			      int ch)
 {
-	uint32_t dma_exe_addr, offset = 0, ccr;
+	mem_addr_t dma_exec_addr;
+	uint32_t offset = 0, ccr;
 	uint32_t lp0_start, lp1_start;
 	uint32_t loop_counter0 = 0, loop_counter1 = 0;
 	uint32_t srcbytewidth, dstbytewidth;
 	uint32_t loop_counter, residue;
 	struct dma_pl330_dev_data *const dev_data = DEV_DATA(dev);
 	struct dma_pl330_ch_config *channel_cfg;
-	uint8_t *dma_exec_addr8;
 	int secure = ch_dat->nonsec_mode ? SRC_PRI_NONSEC_VALUE :
 				SRC_PRI_SEC_VALUE;
 
 	channel_cfg = &dev_data->channels[ch];
-	dma_exe_addr = channel_cfg->dma_exe_addr;
-	dma_exec_addr8 = (uint8_t *)dma_exe_addr;
+	dma_exec_addr = channel_cfg->dma_exec_addr;
 
-	offset  += dma_pl330_gen_mov(dma_exec_addr8,
+	offset  += dma_pl330_gen_mov(dma_exec_addr,
 				     SAR, ch_dat->src_addr);
 
-	offset  += dma_pl330_gen_mov(dma_exec_addr8 + offset,
+	offset  += dma_pl330_gen_mov(dma_exec_addr + offset,
 				     DAR, ch_dat->dst_addr);
 
 	ccr = dma_pl330_ch_ccr(ch_dat);
 
-	offset  += dma_pl330_gen_mov(dma_exec_addr8 + offset,
+	offset  += dma_pl330_gen_mov(dma_exec_addr + offset,
 				     CCR, ccr);
 
 	dma_pl330_get_counter(ch_dat, &srcbytewidth, &dstbytewidth,
@@ -198,40 +197,40 @@ static int dma_pl330_setup_ch(const struct device *dev,
 	if (loop_counter >= PL330_LOOP_COUNTER0_MAX) {
 		loop_counter0 = PL330_LOOP_COUNTER0_MAX - 1;
 		loop_counter1 = loop_counter / PL330_LOOP_COUNTER0_MAX - 1;
-		dma_pl330_gen_op(OP_DMA_LOOP_COUNT1, dma_exe_addr + offset,
-				 (loop_counter1 & 0xff));
+		dma_pl330_gen_op(OP_DMA_LOOP_COUNT1, dma_exec_addr + offset,
+				 loop_counter1 & 0xff);
 		offset = offset + 2;
-		dma_pl330_gen_op(OP_DMA_LOOP, dma_exe_addr + offset,
-				 (loop_counter0 & 0xff));
+		dma_pl330_gen_op(OP_DMA_LOOP, dma_exec_addr + offset,
+				 loop_counter0 & 0xff);
 		offset = offset + 2;
 		lp1_start = offset;
 		lp0_start = offset;
-		sys_write8(OP_DMA_LD, (dma_exe_addr + offset));
-		sys_write8(OP_DMA_ST, (dma_exe_addr + offset + 1));
+		sys_write8(OP_DMA_LD, dma_exec_addr + offset);
+		sys_write8(OP_DMA_ST, dma_exec_addr + offset + 1);
 		offset = offset + 2;
-		dma_pl330_gen_op(OP_DMA_LP_BK_JMP1, (dma_exe_addr + offset),
+		dma_pl330_gen_op(OP_DMA_LP_BK_JMP1, dma_exec_addr + offset,
 				 ((offset - lp0_start) & 0xff));
 		offset = offset + 2;
-		dma_pl330_gen_op(OP_DMA_LOOP, (dma_exe_addr + offset),
+		dma_pl330_gen_op(OP_DMA_LOOP, dma_exec_addr + offset,
 				 (loop_counter0 & 0xff));
 		offset = offset + 2;
 		loop_counter1--;
-		dma_pl330_gen_op(OP_DMA_LP_BK_JMP2, (dma_exe_addr + offset),
+		dma_pl330_gen_op(OP_DMA_LP_BK_JMP2, dma_exec_addr + offset,
 				 ((offset - lp1_start) & 0xff));
 		offset = offset + 2;
 	}
 
 	if ((loop_counter % PL330_LOOP_COUNTER0_MAX) != 0) {
 		loop_counter0 = (loop_counter % PL330_LOOP_COUNTER0_MAX) - 1;
-		dma_pl330_gen_op(OP_DMA_LOOP, (dma_exe_addr + offset),
+		dma_pl330_gen_op(OP_DMA_LOOP, dma_exec_addr + offset,
 				 (loop_counter0 & 0xff));
 		offset = offset + 2;
 		loop_counter1--;
 		lp0_start = offset;
-		sys_write8(OP_DMA_LD, (dma_exe_addr + offset));
-		sys_write8(OP_DMA_ST, (dma_exe_addr + offset + 1));
+		sys_write8(OP_DMA_LD, dma_exec_addr + offset);
+		sys_write8(OP_DMA_ST, dma_exec_addr + offset + 1);
 		offset = offset + 2;
-		dma_pl330_gen_op(OP_DMA_LP_BK_JMP1, (dma_exe_addr + offset),
+		dma_pl330_gen_op(OP_DMA_LP_BK_JMP1, dma_exec_addr + offset,
 				 ((offset - lp0_start) & 0xff));
 		offset = offset + 2;
 	}
@@ -245,24 +244,24 @@ static int dma_pl330_setup_ch(const struct device *dev,
 		       (0x0 << CC_SRCBRSTLEN_SHIFT) +
 		       (0x0 << CC_SRCBRSTSIZE_SHIFT) +
 		       ch_dat->src_inc;
-		offset += dma_pl330_gen_mov(dma_exec_addr8 + offset,
+		offset += dma_pl330_gen_mov(dma_exec_addr + offset,
 					    CCR, ccr);
-		dma_pl330_gen_op(OP_DMA_LOOP, (dma_exe_addr + offset),
+		dma_pl330_gen_op(OP_DMA_LOOP, dma_exec_addr + offset,
 				 ((residue - 1) & 0xff));
 		offset = offset + 2;
 		lp0_start = offset;
-		sys_write8(OP_DMA_LD, (dma_exe_addr + offset));
-		sys_write8(OP_DMA_ST, (dma_exe_addr + offset + 1));
+		sys_write8(OP_DMA_LD, dma_exec_addr + offset);
+		sys_write8(OP_DMA_ST, dma_exec_addr + offset + 1);
 		offset = offset + 2;
-		dma_pl330_gen_op(OP_DMA_LP_BK_JMP1, (dma_exe_addr + offset),
+		dma_pl330_gen_op(OP_DMA_LP_BK_JMP1, dma_exec_addr + offset,
 				 ((offset - lp0_start) & 0xff));
 		offset = offset + 2;
 	}
 
-	sys_write8(OP_DMA_END, (dma_exe_addr + offset));
-	sys_write8(OP_DMA_END, (dma_exe_addr + offset + 1));
-	sys_write8(OP_DMA_END, (dma_exe_addr + offset + 2));
-	sys_write8(OP_DMA_END, (dma_exe_addr + offset + 3));
+	sys_write8(OP_DMA_END, dma_exec_addr + offset);
+	sys_write8(OP_DMA_END, dma_exec_addr + offset + 1);
+	sys_write8(OP_DMA_END, dma_exec_addr + offset + 2);
+	sys_write8(OP_DMA_END, dma_exec_addr + offset + 3);
 
 	return 0;
 }
@@ -289,7 +288,7 @@ static int dma_pl330_start_dma_ch(const struct device *dev,
 		    (secure << DMA_SECURE_SHIFT) + (ch << DMA_CH_SHIFT)),
 		    reg_base + DMAC_PL330_DBGINST0);
 
-	sys_write32(channel_cfg->dma_exe_addr,
+	sys_write32(channel_cfg->dma_exec_addr,
 		    reg_base + DMAC_PL330_DBGINST1);
 
 	sys_write32(0x0, reg_base + DMAC_PL330_DBGCMD);
@@ -567,7 +566,7 @@ static int dma_pl330_initialize(const struct device *dev)
 
 	for (int channel = 0; channel < MAX_DMA_CHANNELS; channel++) {
 		channel_cfg = &dev_data->channels[channel];
-		channel_cfg->dma_exe_addr = dev_cfg->mcode_base +
+		channel_cfg->dma_exec_addr = dev_cfg->mcode_base +
 					(channel * MICROCODE_SIZE_MAX);
 		k_mutex_init(&channel_cfg->ch_mutex);
 	}

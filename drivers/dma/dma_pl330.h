@@ -143,7 +143,7 @@ struct dma_pl330_ch_config {
 	uint32_t trans_size;
 	void *user_data;
 	dma_callback_t dma_callback;
-	uint32_t dma_exe_addr;
+	mem_addr_t dma_exec_addr;
 	struct k_mutex ch_mutex;
 	int channel_active;
 
@@ -152,10 +152,10 @@ struct dma_pl330_ch_config {
 };
 
 struct dma_pl330_config {
-	uint32_t mcode_base;
-	uint32_t reg_base;
+	mem_addr_t mcode_base;
+	mem_addr_t reg_base;
 #ifdef CONFIG_DMA_64BIT
-	uint32_t control_reg_base;
+	mem_addr_t control_reg_base;
 #endif
 };
 
