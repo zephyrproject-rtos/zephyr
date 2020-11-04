@@ -177,6 +177,7 @@ uint8_t ll_adv_params_set(uint8_t handle, uint16_t evt_prop, uint32_t interval,
 				     PDU_ADV_TYPE_DIRECT_IND,
 				     PDU_ADV_TYPE_EXT_IND};
 	uint8_t is_pdu_type_changed = 0;
+	uint8_t is_new_set;
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		       uint8_t own_addr_type, uint8_t direct_addr_type,
@@ -253,6 +254,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		adv->lll.phy_p = PHY_1M;
 	}
 
+	is_new_set = !adv->is_created;
 	adv->is_created = 1;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -276,7 +278,10 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 	/* update the "current" primary adv data */
 	pdu = lll_adv_data_peek(&adv->lll);
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	if (pdu->type != pdu_adv_type[adv_type]) {
+	if (is_new_set) {
+		pdu->type = pdu_adv_type[adv_type];
+		is_pdu_type_changed = 1;
+	} else if (pdu->type != pdu_adv_type[adv_type]) {
 		is_pdu_type_changed = 1;
 
 		if (pdu->type == PDU_ADV_TYPE_EXT_IND) {
@@ -520,15 +525,31 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		pdu->rx_addr = 0;
 	}
 
-	/* update the current scan data */
-	pdu = lll_adv_scan_rsp_peek(&adv->lll);
-	pdu->type = PDU_ADV_TYPE_SCAN_RSP;
-	pdu->rfu = 0;
-	pdu->chan_sel = 0;
-	pdu->tx_addr = own_addr_type & 0x1;
-	pdu->rx_addr = 0;
-	if (pdu->len == 0) {
-		pdu->len = BDADDR_SIZE;
+	if (0) {
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	} else if (pdu->type == PDU_ADV_TYPE_EXT_IND) {
+		/* Make sure new extended advertising set is initialized with no
+		 * scan response data. Existing sets keep whatever data was set.
+		 */
+		if (is_new_set) {
+			pdu = lll_adv_scan_rsp_peek(&adv->lll);
+			pdu->type = PDU_ADV_TYPE_AUX_SCAN_REQ;
+			pdu->len = 0;
+		}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+	} else {
+		/* Make sure legacy advertising set has scan response data
+		 * initialized.
+		 */
+		pdu = lll_adv_scan_rsp_peek(&adv->lll);
+		pdu->type = PDU_ADV_TYPE_SCAN_RSP;
+		pdu->rfu = 0;
+		pdu->chan_sel = 0;
+		pdu->tx_addr = own_addr_type & 0x1;
+		pdu->rx_addr = 0;
+		if (pdu->len == 0) {
+			pdu->len = BDADDR_SIZE;
+		}
 	}
 
 	return 0;
