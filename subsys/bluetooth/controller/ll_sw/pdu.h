@@ -55,6 +55,9 @@
 /* Link Layer Advertisement channel maximum PDU buffer size */
 #define PDU_AC_LL_SIZE_MAX     (PDU_AC_LL_HEADER_SIZE + PDU_AC_PAYLOAD_SIZE_MAX)
 
+/* Advertisement channel maximum legacy advertising/scan data size */
+#define PDU_AC_DATA_SIZE_MAX 31
+
 /* Advertisement channel Access Address */
 #define PDU_AC_ACCESS_ADDR     0x8e89bed6
 
@@ -163,7 +166,7 @@
 
 struct pdu_adv_adv_ind {
 	uint8_t addr[BDADDR_SIZE];
-	uint8_t data[31];
+	uint8_t data[PDU_AC_DATA_SIZE_MAX];
 } __packed;
 
 struct pdu_adv_direct_ind {
@@ -173,7 +176,7 @@ struct pdu_adv_direct_ind {
 
 struct pdu_adv_scan_rsp {
 	uint8_t addr[BDADDR_SIZE];
-	uint8_t data[31];
+	uint8_t data[PDU_AC_DATA_SIZE_MAX];
 } __packed;
 
 struct pdu_adv_scan_req {
