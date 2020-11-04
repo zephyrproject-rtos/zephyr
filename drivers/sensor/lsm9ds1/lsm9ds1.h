@@ -149,7 +149,7 @@ struct lsm9ds1_data {
     // Temperature value
     float temp_c;
 
-    
+
     // Accelerometer settings
     uint8_t accl_scale;
     uint8_t accl_outputDataRate;
@@ -199,7 +199,7 @@ enum sensor_channel_extended {
     SENSOR_CHAN_CALIBRATE_MAGN = SENSOR_CHAN_PRIV_START + 2,
 
     SENSOR_CHAN_APPLY_SETTINGS = SENSOR_CHAN_PRIV_START + 3,
-    
+
     /**
      * Custom sensor channel to accomodate the naming scheme with 4 characters
      * per sensor. The included sensor channel for the accelerometer
