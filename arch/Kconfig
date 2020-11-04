@@ -575,6 +575,51 @@ config SRAM_REGION_PERMISSIONS
 	  If not enabled, all SRAM mappings will allow supervisor mode to
 	  read, write, and execute. User mode support requires this.
 
+config KERNEL_VM_BASE
+	hex "Base virtual address to link the kernel"
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
+	help
+	  Define the base virtual memory address for the core kernel.
+
+	  The kernel expects a mappings for all physical RAM regions starting at
+	  this virtual address, with any unused space up to the size denoted by
+	  KERNEL_VM_SIZE available for memory mappings. This base address denotes
+	  the start of the RAM mapping and may not be the base address of the
+	  kernel itself, but the offset of the kernel here will be the same as the
+	  offset from the beginning of physical memory where it was loaded.
+
+	  If there are multiple physical RAM regions which are discontinuous in
+	  the physical memory map, they should all be mapped in a continuous
+	  virtual region, with bounds defined by KERNEL_RAM_SIZE.
+
+	  By default, this is the same as the DT_CHOSEN_Z_SRAM physical base SRAM
+	  address from DTS, in which case RAM will be identity-mapped. Some
+	  architectures may require RAM to be mapped in this way; they may have
+	  just one RAM region and doing this makes linking much simpler, as
+	  at least when the kernel boots all virtual RAM addresses are the same
+	  as their physical address (demand paging at runtime may later modify
+	  this for some subset of non-pinned pages).
+
+	  Otherwise, if RAM isn't identity-mapped:
+	  1. It is the architecture's responsibility to transition the
+	  instruction pointer to virtual addresses at early boot before
+	  entering the kernel at z_cstart().
+	  2. The underlying architecture may impose constraints on the bounds of
+	  the kernel's address space, such as not overlapping physical RAM
+	  regions if RAM is not identity-mapped, or the virtual and physical
+	  base addresses being aligned to some common value (which allows
+	  double-linking of paging structures to make the instruction pointer
+	  transition simpler).
+
+config KERNEL_RAM_SIZE
+	hex "Total size of RAM mappings in bytes"
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_SRAM))
+	help
+	  Indicates to the kernel the total size of RAM that is mapped. The
+	  kernel expects that all physical RAM has a memory mapping in the virtual
+	  address space, and that these RAM mappings are all within the virtual
+	  region [KERNEL_VM_BASE..KERNEL_VM_BASE + KERNEL_RAM_SIZE).
+
 config KERNEL_VM_SIZE
 	hex "Size of kernel address space in bytes"
 	default 0xC0000000
@@ -582,10 +627,17 @@ config KERNEL_VM_SIZE
 	  Size of the kernel's address space. Constraining this helps control
 	  how much total memory can be used for page tables.
 
-	  The area defined by SRAM_BASE_ADDRESS to SRAM_BASE_ADDRESS +
-	  KERNEL_VM_SIZE must have enough room to map system RAM, plus any driver
-	  mappings. Further mappings may be made at runtime depending on
-	  configuration options (such as memory-mapping stacks, VDSO pages, etc).
+	  The difference between KERNEL_RAM_SIZE and KERNEL_VM_SIZE indicates the
+	  size of the virtual region for runtime memory mappings. This is needed
+	  for mapping driver MMIO regions, as well as special RAM mapping use-cases
+	  such as VSDO pages, memory mapped thread stacks, and anonymous memory
+	  mappings.
+
+	  The system currently assumes all RAM can be mapped in the virtual address
+	  space. Systems with very large amounts of memory (such as 512M or more)
+	  will want to use a 64-bit build of Zephyr, there are no plans to
+	  implement a notion of "high" memory in Zephyr to work around physical
+	  RAM which can't have a boot-time mapping due to a too-small address space.
 
 endif   # MMU
 

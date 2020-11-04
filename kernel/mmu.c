@@ -20,14 +20,17 @@ LOG_MODULE_DECLARE(os);
 static struct k_spinlock mm_lock;
 
 /*
- * Overall virtual memory map. System RAM is identity-mapped:
+ * Overall virtual memory map. When the kernel starts, it is expected that all
+ * memory regions are mapped into one large virtual region at the beginning of
+ * CONFIG_KERNEL_VM_BASE. Unused virtual memory up to the limit noted by
+ * CONFIG_KERNEL_VM_SIZE may be used for runtime memory mappings.
  *
- * +--------------+ <- CONFIG_SRAM_BASE_ADDRESS
+ * +--------------+ <- CONFIG_KERNEL_VM_BASE
  * | Mapping for  |
  * | all RAM      |
  * |              |
  * |              |
- * +--------------+ <- CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_SIZE
+ * +--------------+ <- CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_RAM_SIZE
  * | Available    |    also the mapping limit as mappings grown downward
  * | virtual mem  |
  * |              |
@@ -39,7 +42,7 @@ static struct k_spinlock mm_lock;
  * | ...          |
  * +--------------+
  * | Mapping      |
- * +--------------+ <- CONFIG_SRAM_BASE_ADDRESS + CONFIG_KERNEL_VM_SIZE
+ * +--------------+ <- CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_SIZE
  *
  * At the moment we just have one area for mappings and they are permanent.
  * This is under heavy development and may change.
@@ -50,21 +53,18 @@ static struct k_spinlock mm_lock;
   * z_mem_map() mappings start at the end of the address space, and grow
   * downward.
   *
-  * TODO: If we ever encounter a board with RAM in high enough memory
-  * such that there isn't room in the address space, define mapping_pos
-  * and mapping_limit such that we have mappings grow downward from the
-  * beginning of system RAM.
+  * All of this is under heavy development and is subject to change.
   */
 static uint8_t *mapping_pos =
-		(uint8_t *)((uintptr_t)CONFIG_SRAM_BASE_ADDRESS +
+		(uint8_t *)((uintptr_t)CONFIG_KERNEL_VM_BASE +
 			    (uintptr_t)CONFIG_KERNEL_VM_SIZE);
 
 /* Lower-limit of virtual address mapping. Immediately below this is the
  * permanent identity mapping for all SRAM.
  */
 static uint8_t *mapping_limit =
-	(uint8_t *)((uintptr_t)CONFIG_SRAM_BASE_ADDRESS +
-		    KB((size_t)CONFIG_SRAM_SIZE));
+	(uint8_t *)((uintptr_t)CONFIG_KERNEL_VM_BASE +
+		    (size_t)CONFIG_KERNEL_RAM_SIZE);
 
 size_t k_mem_region_align(uintptr_t *aligned_addr, size_t *aligned_size,
 			  uintptr_t phys_addr, size_t size, size_t align)
