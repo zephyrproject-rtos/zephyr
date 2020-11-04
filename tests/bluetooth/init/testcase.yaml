@@ -129,6 +129,14 @@ tests:
     extra_args: CONF_FILE=prj_ctlr_per_sync.conf
     platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
       nrf51dk_nrf51422
+  bluetooth.init.test_ctlr_peripheral_iso:
+    extra_args: CONF_FILE=prj_ctlr_peripheral_iso.conf
+    platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
+      nrf51dk_nrf51422
+  bluetooth.init.test_ctlr_central_iso:
+    extra_args: CONF_FILE=prj_ctlr_central_iso.conf
+    platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
+      nrf51dk_nrf51422
   bluetooth.init.test_h5:
     extra_args: CONF_FILE=prj_h5.conf
     platform_allow: qemu_cortex_m3

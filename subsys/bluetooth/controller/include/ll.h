@@ -126,6 +126,26 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle);
 uint8_t ll_scan_enable(uint8_t enable);
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
+uint8_t ll_cig_parameters_open(uint8_t cig_id,
+			       uint32_t m_interval, uint32_t s_interval,
+			       uint8_t sca, uint8_t packing, uint8_t framing,
+			       uint16_t m_latency, uint16_t s_latency,
+			       uint8_t num_cis);
+uint8_t ll_cis_parameters_set(uint8_t cis_id,
+			      uint16_t m_sdu, uint16_t s_sdu,
+			      uint8_t m_phy, uint8_t s_phy,
+			      uint8_t m_rtn, uint8_t s_rtn,
+			      uint16_t *handle);
+uint8_t ll_cig_parameters_commit(uint8_t cig_id);
+
+uint8_t ll_cig_remove(uint8_t cig_id);
+
+uint8_t ll_cis_create_check(uint16_t cis_handle, uint16_t acl_handle);
+void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle);
+
+uint8_t ll_cis_accept(uint16_t handle);
+uint8_t ll_cis_reject(uint16_t handle, uint8_t reason);
+
 uint8_t ll_wl_size_get(void);
 uint8_t ll_wl_clear(void);
 uint8_t ll_wl_add(bt_addr_le_t *addr);
