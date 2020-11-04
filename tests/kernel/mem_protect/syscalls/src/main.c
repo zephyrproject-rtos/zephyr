@@ -17,7 +17,7 @@
 #define FAULTY_ADDRESS 0x0FFFFFFF
 #elif CONFIG_MMU
 /* Just past the permanent RAM mapping should be a non-present page */
-#define FAULTY_ADDRESS (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024UL))
+#define FAULTY_ADDRESS (CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_RAM_SIZE)
 #else
 #define FAULTY_ADDRESS 0xFFFFFFF0
 #endif
