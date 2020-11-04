@@ -167,8 +167,127 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 				uint8_t const *const data)
 {
-	/* TODO */
-	return BT_HCI_ERR_CMD_DISALLOWED;
+	struct pdu_adv_com_ext_adv *ter_com_hdr, *ter_com_hdr_prev;
+	struct pdu_adv_hdr *ter_hdr, ter_hdr_prev;
+	struct pdu_adv *ter_pdu, *ter_pdu_prev;
+	uint8_t ter_len, ter_len_prev;
+	uint8_t *ter_dptr, *ter_dptr_prev;
+	struct lll_adv_sync *lll_sync;
+	struct ll_adv_set *adv;
+	uint8_t ter_idx;
+
+	adv =  ull_adv_is_created_get(handle);
+	if (!adv) {
+		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+	}
+
+	lll_sync = adv->lll.sync;
+	if (!lll_sync) {
+		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+	}
+
+	/* Get reference to previous tertiary PDU data */
+	ter_pdu_prev = lll_adv_sync_data_peek(lll_sync);
+	ter_com_hdr_prev = (void *)&ter_pdu_prev->adv_ext_ind;
+	ter_hdr = (void *)ter_com_hdr_prev->ext_hdr_adi_adv_data;
+	ter_hdr_prev = *ter_hdr;
+	ter_dptr_prev = (uint8_t *)ter_hdr + sizeof(*ter_hdr);
+
+	/* Get reference to new tertiary PDU data buffer */
+	ter_pdu = lll_adv_sync_data_alloc(lll_sync, &ter_idx);
+	ter_pdu->type = ter_pdu_prev->type;
+	ter_pdu->rfu = 0U;
+	ter_pdu->chan_sel = 0U;
+	ter_com_hdr = (void *)&ter_pdu->adv_ext_ind;
+	ter_com_hdr->adv_mode = ter_com_hdr_prev->adv_mode;
+	ter_hdr = (void *)ter_com_hdr->ext_hdr_adi_adv_data;
+	ter_dptr = (uint8_t *)ter_hdr + sizeof(*ter_hdr);
+	*(uint8_t *)ter_hdr = 0U;
+
+	/* No AdvA */
+	/* No TargetA */
+
+	/* TODO: CTEInfo */
+
+	/* No ADI */
+
+	/* AuxPtr */
+	if (ter_hdr_prev.aux_ptr) {
+		ter_dptr_prev += sizeof(struct pdu_adv_aux_ptr);
+
+		ter_hdr->aux_ptr = 1;
+		ter_dptr += sizeof(struct pdu_adv_aux_ptr);
+	}
+
+	/* No SyncInfo */
+
+	/* Tx Power flag */
+	if (ter_hdr_prev.tx_pwr) {
+		ter_dptr_prev++;
+
+		ter_hdr->tx_pwr = 1;
+		ter_dptr++;
+	}
+
+	/* TODO: ACAD */
+
+	/* AdvData */
+	/* Calc previous tertiary PDU len */
+	ter_len_prev = ull_adv_aux_hdr_len_calc(ter_com_hdr_prev,
+						&ter_dptr_prev);
+
+	/* Did we parse beyond PDU length? */
+	if (ter_len_prev > ter_pdu_prev->len) {
+		/* we should not encounter invalid length */
+		return BT_HCI_ERR_UNSPECIFIED;
+	}
+
+	/* Calc current tertiary PDU len */
+	ter_len = ull_adv_aux_hdr_len_calc(ter_com_hdr, &ter_dptr);
+	ull_adv_aux_hdr_len_fill(ter_com_hdr, ter_len);
+
+	/* Set the tertiary PDU len */
+	ter_pdu->len = ter_len + len;
+
+	/* Check AdvData overflow */
+	if (ter_pdu->len > CONFIG_BT_CTLR_ADV_DATA_LEN_MAX) {
+		return BT_HCI_ERR_PACKET_TOO_LONG;
+	}
+
+	/* Start filling tertiary PDU payload based on flags from here
+	 * ==============================================================
+	 */
+
+	/* Fill AdvData in tertiary PDU */
+	memcpy(ter_dptr, data, len);
+
+	/* TODO: Fill ACAD in tertiary PDU */
+
+	/* Tx Power */
+	if (ter_hdr->tx_pwr) {
+		*--ter_dptr = *--ter_dptr_prev;
+	}
+
+	/* No SyncInfo in tertiary PDU */
+
+	/* AuxPtr */
+	if (ter_hdr_prev.aux_ptr) {
+		ter_dptr_prev -= sizeof(struct pdu_adv_aux_ptr);
+
+		ull_adv_aux_ptr_fill(&ter_dptr, lll_sync->adv->phy_s);
+	}
+
+	/* No ADI */
+
+	/* TODO: CTEInfo */
+
+	/* No TargetA*/
+	/* No AdvA */
+
+	lll_adv_sync_data_enqueue(lll_sync, ter_idx);
+
+
+	return 0;
 }
 
 uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
