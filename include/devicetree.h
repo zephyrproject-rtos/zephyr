@@ -1965,6 +1965,13 @@
 #define DT_INST_IRQN(inst) DT_INST_IRQ(inst, irq)
 
 /**
+ * @brief Get a DT_DRV_COMPAT's bus node identifier
+ * @param inst instance number
+ * @return node identifier for the instance's bus node
+ */
+#define DT_INST_BUS(inst) DT_BUS(DT_DRV_INST(inst))
+
+/**
  * @brief Get a DT_DRV_COMPAT's bus node's label property
  * @param inst instance number
  * @return the label property of the instance's bus controller

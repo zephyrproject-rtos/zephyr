@@ -227,7 +227,10 @@
 			status = "okay";
 			clock-frequency = < 2000000 >;
 
-			/* no vnd,spi-device-2 instances should have CS */
+			/*
+			 * There should only be one spi-device-2 node.
+			 * It should not have a CS GPIO.
+			 */
 			test_spi_dev_no_cs: test-spi-dev@0 {
 				compatible = "vnd,spi-device-2";
 				label = "TEST_SPI_DEV_NO_CS";

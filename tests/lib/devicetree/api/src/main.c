@@ -286,6 +286,9 @@ static void test_bus(void)
 #define DT_DRV_COMPAT vnd_spi_device_2
 	/* there is only one instance, and it has no CS */
 	zassert_equal(DT_INST_SPI_DEV_HAS_CS_GPIOS(0), 0, "");
+	/* since there's only one instance, we also know its bus. */
+	zassert_true(DT_SAME_NODE(TEST_SPI_NO_CS, DT_INST_BUS(0)),
+		     "expected TEST_SPI_NO_CS as bus for vnd,spi-device-2");
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_spi_device
