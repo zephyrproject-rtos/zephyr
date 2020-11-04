@@ -197,6 +197,10 @@ static int bmi160_emul_io_spi(struct spi_emul *emul,
 		switch (tx->len) {
 		case 1:
 			regn = *(uint8_t *)tx->buf;
+			if ((regn & BMI160_REG_READ) && rxd == NULL) {
+				LOG_ERR("Cannot read without rxd");
+				return -EPERM;
+			}
 			switch (txd->len) {
 			case 1:
 				if (regn & BMI160_REG_READ) {
