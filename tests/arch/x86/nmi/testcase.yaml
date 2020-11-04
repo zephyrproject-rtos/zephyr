@@ -1,0 +1,5 @@
+tests:
+  arch.interrupt.nmi:
+    arch_allow: x86
+    platform_allow: qemu_x86_64
+    tags: interrupt
