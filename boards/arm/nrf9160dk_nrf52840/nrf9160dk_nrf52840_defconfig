@@ -20,3 +20,6 @@ CONFIG_UART_CONSOLE=y
 
 # additional board options
 CONFIG_GPIO_AS_PINRESET=y
+
+# Link application into a code-partition from devicetree
+CONFIG_USE_DT_CODE_PARTITION=y

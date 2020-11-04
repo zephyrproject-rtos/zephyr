@@ -25,3 +25,6 @@ CONFIG_GPIO_AS_PINRESET=y
 
 # Bluetooth not enabled by default on nRF52805 due to RAM limitations when
 # running the default set of kernel tests.
+
+# Link application into a code-partition from devicetree
+CONFIG_USE_DT_CODE_PARTITION=y

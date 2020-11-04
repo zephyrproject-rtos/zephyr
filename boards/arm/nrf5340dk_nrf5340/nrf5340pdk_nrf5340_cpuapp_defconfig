@@ -24,3 +24,6 @@ CONFIG_SERIAL=y
 # enable console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
+
+# Link application into a code-partition from devicetree
+CONFIG_USE_DT_CODE_PARTITION=y
