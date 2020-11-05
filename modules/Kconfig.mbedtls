@@ -86,6 +86,14 @@ config MBEDTLS_DEBUG_LEVEL
 	  3 Information
 	  4 Verbose
 
+config MBEDTLS_MEMORY_DEBUG
+	bool "mbed TLS memory debug activation"
+	depends on MBEDTLS_BUILTIN
+	help
+	  Enable debugging of buffer allocator memory issues. Automatically
+	  prints (to stderr) all (fatal) messages on memory allocation
+	  issues. Enables function for 'debug output' of allocated memory.
+
 config MBEDTLS_TEST
 	bool "Compile internal self test functions"
 	depends on MBEDTLS_BUILTIN
