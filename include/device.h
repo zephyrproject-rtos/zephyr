@@ -68,8 +68,7 @@ extern "C" {
  */
 #define DEVICE_INIT(dev_name, drv_name, init_fn,			\
 		    data_ptr, cfg_ptr, level, prio)			\
-	DEVICE_DEFINE(dev_name, drv_name, init_fn,			\
-		      device_pm_control_nop,				\
+	DEVICE_DEFINE(dev_name, drv_name, init_fn, NULL,		\
 		      data_ptr, cfg_ptr, level, prio, NULL)
 
 /**
@@ -81,7 +80,7 @@ extern "C" {
 #define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn,		\
 			    data_ptr, cfg_ptr, level, prio, api_ptr)	\
 	DEVICE_DEFINE(dev_name, drv_name, init_fn,			\
-		      device_pm_control_nop,				\
+		      NULL,						\
 		      data_ptr, cfg_ptr, level, prio, api_ptr)
 
 /**
@@ -383,9 +382,15 @@ static inline int device_set_power_state(const struct device *dev,
 					 uint32_t device_power_state,
 					 device_pm_cb cb, void *arg)
 {
-	return dev->device_pm_control(dev,
-					 DEVICE_PM_SET_POWER_STATE,
-					 &device_power_state, cb, arg);
+	if (dev->device_pm_control) {
+		return dev->device_pm_control(dev,
+						 DEVICE_PM_SET_POWER_STATE,
+						 &device_power_state, cb, arg);
+	} else {
+		return device_pm_control_nop(dev,
+						 DEVICE_PM_SET_POWER_STATE,
+						 &device_power_state, cb, arg);
+	}
 }
 
 /**
@@ -404,10 +409,15 @@ static inline int device_set_power_state(const struct device *dev,
 static inline int device_get_power_state(const struct device *dev,
 					 uint32_t *device_power_state)
 {
-	return dev->device_pm_control(dev,
-					 DEVICE_PM_GET_POWER_STATE,
-					 device_power_state,
-					 NULL, NULL);
+	if (dev->device_pm_control) {
+		return dev->device_pm_control(dev,
+						 DEVICE_PM_GET_POWER_STATE,
+						 device_power_state, NULL, NULL);
+	} else {
+		return device_pm_control_nop(dev,
+						 DEVICE_PM_GET_POWER_STATE,
+						 device_power_state, NULL, NULL);
+	}
 }
 
 /**
