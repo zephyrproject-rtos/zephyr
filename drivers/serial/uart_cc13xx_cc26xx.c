@@ -579,25 +579,12 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	     \
 		&uart_cc13xx_cc26xx_driver_api)
 
-#define UART_CC13XX_CC26XX_DEVICE_API_INIT(n)				     \
-	DEVICE_AND_API_INIT(uart_cc13xx_cc26xx_##n, DT_INST_LABEL(n),	     \
-		uart_cc13xx_cc26xx_init_##n, &uart_cc13xx_cc26xx_data_##n,   \
-		&uart_cc13xx_cc26xx_config_##n, PRE_KERNEL_1,		     \
-		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			     \
-		&uart_cc13xx_cc26xx_driver_api)
-
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-#define UART_CC13XX_CC26XX_DEVICE_INIT(n)				\
-	UART_CC13XX_CC26XX_DEVICE_DEFINE(n)
-
 #define UART_CC13XX_CC26XX_INIT_PM_STATE				\
 	do {								\
 		get_dev_data(dev)->pm_state = DEVICE_PM_ACTIVE_STATE;	\
 	} while (0)
 #else
-#define UART_CC13XX_CC26XX_DEVICE_INIT(n)				\
-	UART_CC13XX_CC26XX_DEVICE_API_INIT(n)
-
 #define UART_CC13XX_CC26XX_INIT_PM_STATE
 #endif
 
@@ -651,6 +638,6 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 		UART_CC13XX_CC26XX_INT_FIELDS			     \
 	};							     \
 								     \
-	UART_CC13XX_CC26XX_DEVICE_INIT(n);
+	UART_CC13XX_CC26XX_DEVICE_DEFINE(n);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_CC13XX_CC26XX_INIT)

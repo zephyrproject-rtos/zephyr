@@ -370,13 +370,6 @@ static const struct vcnl4040_config vcnl4040_config = {
 
 static struct vcnl4040_data vcnl4040_data;
 
-#ifndef CONFIG_DEVICE_POWER_MANAGEMENT
-DEVICE_AND_API_INIT(vcnl4040, DT_INST_LABEL(0), vcnl4040_init,
-		    &vcnl4040_data, &vcnl4040_config,
-		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		    &vcnl4040_driver_api);
-#else
 DEVICE_DEFINE(vcnl4040, DT_INST_LABEL(0), vcnl4040_init,
 	      vcnl4040_device_ctrl, &vcnl4040_data, &vcnl4040_config,
 	      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &vcnl4040_driver_api);
-#endif
