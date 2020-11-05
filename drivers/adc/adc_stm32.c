@@ -11,12 +11,15 @@
 
 #include <errno.h>
 
+#include <dt-bindings/dma/stm32_dma.h>
 #include <drivers/adc.h>
 #include <drivers/dma.h>
 #include <device.h>
 #include <kernel.h>
 #include <init.h>
 #include <soc.h>
+
+#include "dma_stm32.h"
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
@@ -719,7 +722,11 @@ static const struct adc_driver_api api_stm32_driver_api = {
 
 int adc_dma_config(const struct device *dev, uint32_t channel,
 			      struct dma_config *config){
+
+		struct dma_stm32_data *data = dev->data;
+		struct ddma_stm32_config *dev_config = dev->config;
 		// Check stream is disabled, if not disable it with EN DMA_SxCR
+		// Check wheter channel is not greater than the number of dma channels
 		// Set the peripherial port register address DMA_SxPAR
 		// Set memory address DMA_SxMA0R
 		// Configure total number of items to be transfered
@@ -732,10 +739,12 @@ int adc_dma_config(const struct device *dev, uint32_t channel,
 
 int adc_dma_start (const struct device *dev, uint32_t channel) {
 	//Enable/Activate the stream
+	//stm32_dma_enable_stream(DMA_TypeDef *dma, uint32_t id);
 };
 
 int adc_dma_stop (const struct device *dev, uint32_t channel) {
 	//Disable the stream
+	//stm32_dma_disable_stream(DMA_TypeDef *dma, uint32_t id);
 };
 
 int adc_dma_status(const struct device *dev, uint32_t channel,
@@ -748,13 +757,12 @@ int adc_dma_reload(const struct device *dev, uint32_t channel,
 
 };
 
-
 static const struct dma_driver_api adc_dma_funcs = {
 	.config = adc_dma_config,
 	.reload = adc_dma_reload,
 	.start = adc_dma_start,
 	.stop = adc_dma_stop,
-	.status = adc_dma_status,
+	.get_status = adc_dma_status,
 };
 
 #define STM32_ADC_INIT(index)						\
