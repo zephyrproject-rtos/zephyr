@@ -114,27 +114,6 @@ config FXOS8700_MAG_VECM_INT1
 	  Say Y to route magnetic vector-magnitude interrupt to INT1 pin.
 	  Say N to route to INT2 pin.
 
-config FXOS8700_MAG_VECM_CFG
-	hex "Magnetic vector-magnitude configuration register"
-	range 0 0x7f
-	default 0x4e
-
-config FXOS8700_MAG_VECM_THS_MSB
-	hex "Magnetic vector-magnitude threshold configuration register"
-	range 0 0x7f
-	default 0x00
-	help
-	  Seven most significant bits of 15-bit unsigned magnetic
-	  vector-magnitude threshold. Resolution is 0.1 Î¼T/LSB.
-
-config FXOS8700_MAG_VECM_THS_LSB
-	hex "Magnetic vector-magnitude threshold configuration register"
-	range 0 0xff
-	default 0x5a
-	help
-	  Eight least significant bits of 15-bit unsigned magnetic
-	  vector-magnitude threshold. Resolution is 0.1 Î¼T/LSB.
-
 endif # FXOS8700_MAG_VECM
 
 endif # FXOS8700_TRIGGER

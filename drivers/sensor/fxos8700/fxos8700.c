@@ -578,9 +578,9 @@ static const struct fxos8700_config fxos8700_config = {
 	.pulse_wind = DT_INST_PROP(0, pulse_wind),
 #endif
 #ifdef CONFIG_FXOS8700_MAG_VECM
-	.mag_vecm_cfg = CONFIG_FXOS8700_MAG_VECM_CFG,
-	.mag_vecm_ths[0] = CONFIG_FXOS8700_MAG_VECM_THS_MSB,
-	.mag_vecm_ths[1] = CONFIG_FXOS8700_MAG_VECM_THS_LSB,
+	.mag_vecm_cfg = DT_INST_PROP(0, mag_vecm_cfg),
+	.mag_vecm_ths[0] = DT_INST_PROP(0, mag_vecm_ths_msb),
+	.mag_vecm_ths[1] = DT_INST_PROP(0, mag_vecm_ths_lsb),
 #endif
 };
 

@@ -126,3 +126,23 @@ properties:
         PULSE_WIND register. The resolution depends upon the sample rate (ODR)
         and the high-pass filter configuration (HP_FILTER_CUTOFF[pls_hpf_en]).
         For ODR=800 Hz and pls_hpf_en=0, the resolution is 1.25 ms/LSB.
+
+    mag-vecm-cfg:
+      type: int
+      required: false
+      default: 0x4e
+      description: Magnetic vector-magnitude configuration register
+
+    mag-vecm-ths-msb:
+      type: int
+      required: false
+      default: 0x00
+      description: Magnetic vector-magnitude threshold most significant byte.
+        Resolution is 0.1 uT/LSB.
+
+    mag-vecm-ths-lsb:
+      type: int
+      required: false
+      default: 0x5a
+      description: Magnetic vector-magnitude threshold least significant byte.
+        Resolution is 0.1 uT/LSB.
