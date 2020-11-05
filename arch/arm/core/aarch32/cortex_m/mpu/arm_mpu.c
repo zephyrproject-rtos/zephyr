@@ -10,6 +10,7 @@
 #include <soc.h>
 #include "arm_core_mpu_dev.h"
 #include <linker/linker-defs.h>
+#include <kernel_arch_data.h>
 
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
 #include <logging/log.h>
@@ -99,7 +100,7 @@ static int region_allocate_and_init(const uint8_t index,
  * of a given configuration at a given MPU index.
  */
 static int mpu_configure_region(const uint8_t index,
-	const struct k_mem_partition *new_region)
+	const struct z_arm_mpu_partition *new_region)
 {
 	struct arm_mpu_region region_conf;
 
@@ -107,7 +108,7 @@ static int mpu_configure_region(const uint8_t index,
 
 	/* Populate internal ARM MPU region configuration structure. */
 	region_conf.base = new_region->start;
-	get_region_attr_from_k_mem_partition_info(&region_conf.attr,
+	get_region_attr_from_mpu_partition_info(&region_conf.attr,
 		&new_region->attr, new_region->start, new_region->size);
 
 	/* Allocate and program region */
@@ -121,26 +122,26 @@ static int mpu_configure_region(const uint8_t index,
  * over a background memory area, optionally performing a
  * sanity check of the memory regions to be programmed.
  */
-static int mpu_configure_regions(const struct k_mem_partition
-	*regions[], uint8_t regions_num, uint8_t start_reg_index,
+static int mpu_configure_regions(const struct z_arm_mpu_partition
+	regions[], uint8_t regions_num, uint8_t start_reg_index,
 	bool do_sanity_check)
 {
 	int i;
 	int reg_index = start_reg_index;
 
 	for (i = 0; i < regions_num; i++) {
-		if (regions[i]->size == 0U) {
+		if (regions[i].size == 0U) {
 			continue;
 		}
 		/* Non-empty region. */
 
 		if (do_sanity_check &&
-				(!mpu_partition_is_valid(regions[i]))) {
+				(!mpu_partition_is_valid(&regions[i]))) {
 			LOG_ERR("Partition %u: sanity check failed.", i);
 			return -EINVAL;
 		}
 
-		reg_index = mpu_configure_region(reg_index, regions[i]);
+		reg_index = mpu_configure_region(reg_index, &regions[i]);
 
 		if (reg_index == -EINVAL) {
 			return reg_index;
@@ -188,7 +189,7 @@ void arm_core_mpu_disable(void)
  * @brief update configuration of an active memory partition
  */
 void arm_core_mpu_mem_partition_config_update(
-	struct k_mem_partition *partition,
+	struct z_arm_mpu_partition *partition,
 	k_mem_partition_attr_t *new_attr)
 {
 	/* Find the partition. ASSERT if not found. */
@@ -249,8 +250,8 @@ int arm_core_mpu_buffer_validate(void *addr, size_t size, int write)
 /**
  * @brief configure fixed (static) MPU regions.
  */
-void arm_core_mpu_configure_static_mpu_regions(const struct k_mem_partition
-	*static_regions[], const uint8_t regions_num,
+void arm_core_mpu_configure_static_mpu_regions(const struct z_arm_mpu_partition
+	static_regions[], const uint8_t regions_num,
 	const uint32_t background_area_start, const uint32_t background_area_end)
 {
 	if (mpu_configure_static_mpu_regions(static_regions, regions_num,
@@ -266,7 +267,7 @@ void arm_core_mpu_configure_static_mpu_regions(const struct k_mem_partition
  * @brief mark memory areas for dynamic region configuration
  */
 void arm_core_mpu_mark_areas_for_dynamic_regions(
-	const struct k_mem_partition dyn_region_areas[],
+	const struct z_arm_mpu_partition dyn_region_areas[],
 	const uint8_t dyn_region_areas_num)
 {
 	if (mpu_mark_areas_for_dynamic_regions(dyn_region_areas,
@@ -281,8 +282,8 @@ void arm_core_mpu_mark_areas_for_dynamic_regions(
 /**
  * @brief configure dynamic MPU regions.
  */
-void arm_core_mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
-	*dynamic_regions[], uint8_t regions_num)
+void arm_core_mpu_configure_dynamic_mpu_regions(const struct z_arm_mpu_partition
+	dynamic_regions[], uint8_t regions_num)
 {
 	if (mpu_configure_dynamic_mpu_regions(dynamic_regions, regions_num)
 		== -EINVAL) {
