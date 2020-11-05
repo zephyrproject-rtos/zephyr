@@ -66,7 +66,7 @@ Check if your SoC is listed in `OpenOCD Supported Devices`_.
 
    - Download openocd for Windows from here: `OpenOCD Windows`_
    - Copy bin and share dirs to ``C:\Program Files\OpenOCD\``
-   - Add ``C:\Program Files\OpenOCD\bin`` to 'Path'
+   - Add ``C:\Program Files\OpenOCD\bin`` to 'PATH' environment variable
 
 .. _pyocd-debug-host-tools:
 
