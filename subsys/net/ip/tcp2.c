@@ -1250,6 +1250,12 @@ err:
 	return conn;
 }
 
+static bool tcp_validate_seq(struct tcp *conn, struct tcphdr *hdr)
+{
+	return (net_tcp_seq_cmp(th_seq(hdr), conn->ack) >= 0) &&
+		(net_tcp_seq_cmp(th_seq(hdr), conn->ack + conn->recv_win) < 0);
+}
+
 /* TCP state machine, everything happens here */
 static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 {
@@ -1275,6 +1281,19 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 
 	if (th && th->th_off < 5) {
 		tcp_out(conn, RST);
+		conn_state(conn, TCP_CLOSED);
+		goto next_state;
+	}
+
+	if (FL(&fl, &, RST)) {
+		/* We only accept RST packet that has valid seq field. */
+		if (!tcp_validate_seq(conn, th)) {
+			net_stats_update_tcp_seg_rsterr(net_pkt_iface(pkt));
+			k_mutex_unlock(&conn->lock);
+			return;
+		}
+
+		net_stats_update_tcp_seg_rst(net_pkt_iface(pkt));
 		conn_state(conn, TCP_CLOSED);
 		goto next_state;
 	}
@@ -1314,11 +1333,6 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		}
 	}
 
-	if (FL(&fl, &, RST)) {
-		net_stats_update_tcp_seg_rst(net_pkt_iface(pkt));
-
-		conn_state(conn, TCP_CLOSED);
-	}
 next_state:
 	len = pkt ? tcp_data_len(pkt) : 0;
 
