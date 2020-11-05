@@ -56,7 +56,14 @@
 #define DMAC_PL330_DBGINST0	0xd08
 #define DMAC_PL330_DBGINST1	0xd0c
 
-#define DMA_TIMEOUT_US		10
+/*
+ * TIMEOUT value of 100000us is kept to cover all possible data
+ * transfer sizes, with lesser time out value(10us) DMA channel
+ * appears to be busy on FPGA/Emul environment. Ideally 100000us
+ * timeout value should never hit.
+ */
+#define DMA_TIMEOUT_US		100000
+
 #define CH_STATUS_MASK		0xf
 #define DATA_MASK		0xf
 
