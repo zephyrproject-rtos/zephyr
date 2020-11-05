@@ -129,6 +129,9 @@ struct net_stats_tcp {
 	/** Amount of retransmitted data. */
 	net_stats_t resent;
 
+	/** Number of dropped packets at the TCP layer. */
+	net_stats_t drop;
+
 	/** Number of received TCP segments. */
 	net_stats_t recv;
 
@@ -136,7 +139,7 @@ struct net_stats_tcp {
 	net_stats_t sent;
 
 	/** Number of dropped TCP segments. */
-	net_stats_t drop;
+	net_stats_t seg_drop;
 
 	/** Number of TCP segments with a bad checksum. */
 	net_stats_t chkerr;

@@ -204,6 +204,11 @@ static inline void net_stats_update_tcp_resent(struct net_if *iface,
 	UPDATE_STAT(iface, stats.tcp.resent += bytes);
 }
 
+static inline void net_stats_update_tcp_drop(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.tcp.drop++);
+}
+
 static inline void net_stats_update_tcp_seg_sent(struct net_if *iface)
 {
 	UPDATE_STAT(iface, stats.tcp.sent++);
@@ -216,7 +221,7 @@ static inline void net_stats_update_tcp_seg_recv(struct net_if *iface)
 
 static inline void net_stats_update_tcp_seg_drop(struct net_if *iface)
 {
-	UPDATE_STAT(iface, stats.tcp.drop++);
+	UPDATE_STAT(iface, stats.tcp.seg_drop++);
 }
 
 static inline void net_stats_update_tcp_seg_rst(struct net_if *iface)
@@ -257,6 +262,7 @@ static inline void net_stats_update_tcp_seg_rexmit(struct net_if *iface)
 #define net_stats_update_tcp_sent(iface, bytes)
 #define net_stats_update_tcp_resent(iface, bytes)
 #define net_stats_update_tcp_recv(iface, bytes)
+#define net_stats_update_tcp_drop(iface)
 #define net_stats_update_tcp_seg_sent(iface)
 #define net_stats_update_tcp_seg_recv(iface)
 #define net_stats_update_tcp_seg_drop(iface)
@@ -293,7 +299,7 @@ static inline void net_stats_update_per_proto_drop(struct net_if *iface,
 	if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
 		net_stats_update_udp_drop(iface);
 	} else if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
-		net_stats_update_tcp_seg_drop(iface);
+		net_stats_update_tcp_drop(iface);
 	}
 }
 
