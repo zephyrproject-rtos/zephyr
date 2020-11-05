@@ -451,6 +451,21 @@ int fs_mount(struct fs_mount_t *mp);
 int fs_unmount(struct fs_mount_t *mp);
 
 /**
+ * @brief Unmount filesystem by mount point path
+ *
+ * Searches list of mount points for mount point that matches given path
+ * and unmounts it.
+ *
+ * @param mnt_point Pointer to a path representing mount point
+ *
+ * @retval 0 on success;
+ * @retval -ENOENT if no system has been mounted at given mount point;
+ * @retval -ENOTSUP when not supported by underlying file system driver;
+ * @retval <0 an other negative errno code on error.
+ */
+int fs_unmount_path(const char *mnt_point);
+
+/**
  * @brief Get path of mount point at index
  *
  * This function iterates through the list of mount points and returns

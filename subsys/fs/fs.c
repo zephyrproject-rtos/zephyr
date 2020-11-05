@@ -722,6 +722,66 @@ unmount_err:
 	return rc;
 }
 
+int fs_unmount_path(const char *mnt_point)
+{
+	int rc = -EINVAL;
+	struct fs_mount_t *itr = NULL;
+	sys_dnode_t *node;
+	size_t len = 0;
+
+	if (mnt_point == NULL) {
+		return rc;
+	}
+
+	len = strlen(mnt_point);
+	if (len <= 1) {
+		return rc;
+	}
+
+	k_mutex_lock(&mutex, K_FOREVER);
+
+	/* Search list of mount points */
+	SYS_DLIST_FOR_EACH_NODE(&fs_mnt_list, node) {
+		itr = CONTAINER_OF(node, struct fs_mount_t, node);
+		/* continue if length does not match */
+		if (len != itr->mountp_len) {
+			continue;
+		}
+
+		if (strncmp(mnt_point, itr->mnt_point, len) == 0) {
+			break;
+		}
+	}
+
+	if (itr == NULL) {
+		LOG_ERR("fs not mounted at %s", log_strdup(mnt_point));
+		goto unmount_err;
+	}
+
+	CHECKIF(itr->fs->unmount == NULL) {
+		LOG_ERR("fs unmount not supported!!");
+		rc = -ENOTSUP;
+		goto unmount_err;
+	}
+
+	rc = itr->fs->unmount(itr);
+	if (rc < 0) {
+		LOG_ERR("fs unmount error (%d)", rc);
+		goto unmount_err;
+	}
+
+	/* clear file system interface */
+	itr->fs = NULL;
+
+	/* remove mount node from the list */
+	sys_dlist_remove(&itr->node);
+	LOG_DBG("fs unmounted from %s", log_strdup(mnt_point));
+
+unmount_err:
+	k_mutex_unlock(&mutex);
+	return rc;
+}
+
 int fs_readmount(int *index, const char **name)
 {
 	sys_dnode_t *node;
