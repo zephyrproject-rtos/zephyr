@@ -1616,6 +1616,10 @@ int usb_dc_ep_enable(const uint8_t ep)
 		 * toggle sequencing and should only send DATA0 PID.
 		 */
 		nrfx_usbd_ep_dtoggle_clear(ep_addr_to_nrfx(ep));
+		/** Endpoint is enabled on SetInterface request.
+		 * This should also clear EP's halt status.
+		 */
+		nrfx_usbd_ep_stall_clear(ep_addr_to_nrfx(ep));
 	}
 	if (ep_ctx->cfg.en) {
 		return -EALREADY;
