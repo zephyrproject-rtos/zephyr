@@ -460,12 +460,6 @@ static struct st7789v_data st7789v_data = {
 	.y_offset = DT_INST_PROP(0, y_offset),
 };
 
-#ifndef CONFIG_DEVICE_POWER_MANAGEMENT
-DEVICE_AND_API_INIT(st7789v, DT_INST_LABEL(0), &st7789v_init,
-		    &st7789v_data, NULL, APPLICATION,
-		    CONFIG_APPLICATION_INIT_PRIORITY, &st7789v_api);
-#else
 DEVICE_DEFINE(st7789v, DT_INST_LABEL(0), &st7789v_init,
 	      st7789v_pm_control, &st7789v_data, NULL, APPLICATION,
 	      CONFIG_APPLICATION_INIT_PRIORITY, &st7789v_api);
-#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */

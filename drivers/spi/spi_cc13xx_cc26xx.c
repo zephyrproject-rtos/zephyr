@@ -329,7 +329,6 @@ static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 	} while (0)
 #endif
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 #define SPI_CC13XX_CC26XX_DEVICE_INIT(n)				    \
 	DEVICE_DEFINE(spi_cc13xx_cc26xx_##n, DT_INST_LABEL(n),		    \
 		spi_cc13xx_cc26xx_init_##n,				    \
@@ -338,18 +337,12 @@ static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 		POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,			    \
 		&spi_cc13xx_cc26xx_driver_api)
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 #define SPI_CC13XX_CC26XX_INIT_PM_STATE					    \
 	do {								    \
 		get_dev_data(dev)->pm_state = DEVICE_PM_ACTIVE_STATE;	    \
 	} while (0)
 #else
-#define SPI_CC13XX_CC26XX_DEVICE_INIT(n)				    \
-	DEVICE_AND_API_INIT(spi_cc13xx_cc26xx_##n, DT_INST_LABEL(n),	    \
-		    spi_cc13xx_cc26xx_init_##n, &spi_cc13xx_cc26xx_data_##n,\
-		    &spi_cc13xx_cc26xx_config_##n, POST_KERNEL,		    \
-		    CONFIG_SPI_INIT_PRIORITY,				    \
-		    &spi_cc13xx_cc26xx_driver_api)
-
 #define SPI_CC13XX_CC26XX_INIT_PM_STATE
 #endif
 
