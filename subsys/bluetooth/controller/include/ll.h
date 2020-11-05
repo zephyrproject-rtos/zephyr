@@ -21,6 +21,7 @@ uint8_t ll_addr_set(uint8_t addr_type, uint8_t const *const p_bdaddr);
 uint8_t ll_adv_set_by_hci_handle_get(uint8_t hci_handle, uint8_t *handle);
 uint8_t ll_adv_set_by_hci_handle_get_or_new(uint8_t hci_handle,
 					    uint8_t *handle);
+uint8_t ll_adv_set_hci_handle_get(uint8_t handle);
 uint8_t ll_adv_iso_by_hci_handle_get(uint8_t hci_handle, uint8_t *handle);
 uint8_t ll_adv_iso_by_hci_handle_new(uint8_t hci_handle, uint8_t *handle);
 #else
@@ -37,6 +38,12 @@ static inline uint8_t ll_adv_set_by_hci_handle_get_or_new(uint8_t hci_handle,
 	*handle = hci_handle;
 	return 0;
 }
+
+static inline uint8_t ll_adv_set_hci_handle_get(uint8_t handle)
+{
+	return handle;
+}
+
 static inline uint8_t ll_adv_iso_by_hci_handle_get(uint8_t hci_handle,
 						   uint8_t *handle)
 {
