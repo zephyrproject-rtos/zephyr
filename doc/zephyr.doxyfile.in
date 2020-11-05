@@ -227,6 +227,7 @@ ALIASES += option{1}="\verbatim embed:rst:inline :option:`\1` \endverbatim"
 ALIASES += req{1}="\ref ZEPH_\1 \"ZEPH-\1\" "
 ALIASES += satisfy{1}="\xrefitem satisfy \"Satisfies requirement\" \"Requirement Implementation\" \1"
 ALIASES += verify{1}="\xrefitem verify \"Verifies requirement\" \"Requirement Verification\" \1"
+ALIASES += dtcompatible{1}="\xrefitem dtcompatible \"Handles devicetree compatible\" \"Devicetree compatible to driver index\" \1"
 
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C sources
 # only. Doxygen will then generate output that is more tailored for C. For
