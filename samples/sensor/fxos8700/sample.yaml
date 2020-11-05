@@ -14,6 +14,7 @@ tests:
       - CONFIG_FXOS8700_PULSE_INT1=y
       - CONFIG_FXOS8700_MOTION=y
       - CONFIG_FXOS8700_MOTION_INT1=y
+      - CONFIG_FXOS8700_MAG_VECM=y
   sample.sensor.fxos8700.accel:
     platform_allow: frdm_kl25z bbc_microbit lpcxpresso55s69_cpu0 reel_board
                         mimxrt685_evk_cm33
