@@ -273,9 +273,28 @@ static void isr_rx(void *param)
 
 	/* Check CRC and generate Periodic Advertising Report */
 	if (crc_ok) {
-		/* TODO: */
-		BT_INFO("CRC OK, Periodic event sync-ed, report generation"
-			" is unsupported, work in progress.");
+		struct node_rx_pdu *node_rx;
+
+		node_rx = ull_pdu_rx_alloc_peek(3);
+		if (node_rx) {
+			struct node_rx_ftr *ftr;
+
+			ull_pdu_rx_alloc();
+
+			node_rx->hdr.type = NODE_RX_TYPE_SYNC_REPORT;
+
+			ftr = &(node_rx->hdr.rx_ftr);
+			ftr->param = lll;
+			ftr->rssi = (rssi_ready) ? (radio_rssi_get() & 0x7f) :
+				    0x7f;
+			ftr->ticks_anchor = radio_tmr_start_get();
+			ftr->radio_end_us = radio_tmr_end_get() -
+					    radio_rx_chain_delay_get(lll->phy,
+								     1);
+
+			ull_rx_put(node_rx->hdr.link, node_rx);
+			ull_rx_sched();
+		}
 	}
 
 isr_rx_done:

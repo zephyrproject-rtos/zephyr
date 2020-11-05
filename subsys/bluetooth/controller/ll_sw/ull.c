@@ -634,6 +634,9 @@ void ll_rx_dequeue(void)
 	case NODE_RX_TYPE_EXT_1M_REPORT:
 	case NODE_RX_TYPE_EXT_2M_REPORT:
 	case NODE_RX_TYPE_EXT_CODED_REPORT:
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+	case NODE_RX_TYPE_SYNC_REPORT:
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 	{
 		struct node_rx_hdr *rx_curr;
 		struct pdu_adv *adv;
@@ -967,6 +970,9 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_EXT_1M_REPORT:
 		case NODE_RX_TYPE_EXT_2M_REPORT:
 		case NODE_RX_TYPE_EXT_CODED_REPORT:
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+		case NODE_RX_TYPE_SYNC_REPORT:
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
 
@@ -1861,11 +1867,13 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 #if defined(CONFIG_BT_OBSERVER)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	case NODE_RX_TYPE_EXT_1M_REPORT:
-	case NODE_RX_TYPE_EXT_2M_REPORT:
 	case NODE_RX_TYPE_EXT_CODED_REPORT:
+	case NODE_RX_TYPE_EXT_AUX_REPORT:
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+	case NODE_RX_TYPE_SYNC_REPORT:
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 	{
 		struct pdu_adv *adv;
-		uint8_t phy = 0U;
 
 		memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
 
@@ -1876,22 +1884,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 			break;
 		}
 
-		switch (rx->type) {
-		case NODE_RX_TYPE_EXT_1M_REPORT:
-			phy = BIT(0);
-			break;
-		case NODE_RX_TYPE_EXT_2M_REPORT:
-			phy = BIT(1);
-			break;
-		case NODE_RX_TYPE_EXT_CODED_REPORT:
-			phy = BIT(2);
-			break;
-		default:
-			LL_ASSERT(0);
-			break;
-		}
-
-		ull_scan_aux_setup(link, rx, phy);
+		ull_scan_aux_setup(link, rx);
 	}
 	break;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */

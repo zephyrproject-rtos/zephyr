@@ -565,6 +565,18 @@ uint8_t ull_scan_lll_handle_get(struct lll_scan *lll)
 	return ull_scan_handle_get((void *)lll->hdr.parent);
 }
 
+struct ll_scan_set *ull_scan_is_valid_get(struct ll_scan_set *scan)
+{
+	if (((uint8_t *)scan < (uint8_t *)ll_scan) ||
+	    ((uint8_t *)scan > ((uint8_t *)ll_scan +
+				(sizeof(struct ll_scan_set) *
+				 (BT_CTLR_SCAN_SET - 1))))) {
+		return NULL;
+	}
+
+	return scan;
+}
+
 struct ll_scan_set *ull_scan_is_enabled_get(uint8_t handle)
 {
 	struct ll_scan_set *scan;

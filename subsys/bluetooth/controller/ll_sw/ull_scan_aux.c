@@ -73,7 +73,7 @@ int ull_scan_aux_reset(void)
 	return 0;
 }
 
-void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
+void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 {
 	struct pdu_adv_aux_ptr *aux_ptr;
 	struct pdu_adv_com_ext_adv *p;
@@ -93,32 +93,81 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 	struct pdu_adv *pdu;
 	uint8_t aux_handle;
 	uint8_t *ptr;
+	uint8_t phy;
 
 	ftr = &rx->rx_ftr;
-	lll = ftr->param;
-	aux = (void *)HDR_LLL2EVT(lll);
-	if (((uint8_t *)aux < (uint8_t *)ll_scan_aux_pool) ||
-	    ((uint8_t *)aux > ((uint8_t *)ll_scan_aux_pool +
-			    (sizeof(struct ll_scan_aux_set) *
-			     (CONFIG_BT_CTLR_SCAN_AUX_SET - 1))))) {
-		/* NOTE: We are most probably ADV_EXT_IND on primary channel */
+
+	switch (rx->type) {
+	case NODE_RX_TYPE_EXT_1M_REPORT:
+		lll = NULL;
 		aux = NULL;
-	}
-
-	scan = NULL;
-	sync = NULL;
-#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
-	if (aux) {
-		struct lll_scan *lll_scan;
-
-		lll_scan = aux->rx_head->rx_ftr.param;
-		scan = (void *)HDR_LLL2EVT(lll_scan);
-	} else {
 		scan = (void *)HDR_LLL2EVT(ftr->param);
-	}
+		sync = scan->per_scan.sync;
+		phy = BIT(0);
+		break;
+	case NODE_RX_TYPE_EXT_CODED_REPORT:
+		lll = NULL;
+		aux = NULL;
+		scan = (void *)HDR_LLL2EVT(ftr->param);
+		sync = scan->per_scan.sync;
+		phy = BIT(2);
+		break;
+	case NODE_RX_TYPE_EXT_AUX_REPORT:
+		lll = ftr->param;
+		aux = (void *)HDR_LLL2EVT(lll);
+		scan = (void *)HDR_LLL2EVT(aux->rx_head->rx_ftr.param);
+		sync = (void *)scan;
+		scan = ull_scan_is_valid_get(scan);
+		if (scan) {
+			sync = scan->per_scan.sync;
+			phy = lll->phy;
+			switch (phy) {
+			case BIT(0):
+				rx->type = NODE_RX_TYPE_EXT_1M_REPORT;
+				break;
+			case BIT(1):
+				rx->type = NODE_RX_TYPE_EXT_2M_REPORT;
+				break;
+			case BIT(2):
+				rx->type = NODE_RX_TYPE_EXT_CODED_REPORT;
+				break;
+			default:
+				LL_ASSERT(0);
+				return;
+			}
+		} else {
+			rx->type = NODE_RX_TYPE_SYNC_REPORT;
+			rx->handle = ull_sync_handle_get(sync);
 
-	sync = scan->per_scan.sync;
+			sync = NULL;
+			phy = lll->phy;
+		}
+		break;
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+	case NODE_RX_TYPE_SYNC_REPORT:
+		{
+			struct ll_sync_set *ull_sync;
+			struct lll_sync *lll_sync;
+
+			/* set the sync handle corresponding to the LLL context
+			 * passed in the node rx footer field.
+			 */
+			lll_sync = ftr->param;
+			ull_sync = (void *)HDR_LLL2EVT(lll_sync);
+			rx->handle = ull_sync_handle_get(ull_sync);
+
+			lll = NULL;
+			aux = NULL;
+			scan = NULL;
+			sync = NULL;
+			phy =  lll_sync->phy;
+		}
+		break;
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+	default:
+		LL_ASSERT(0);
+		return;
+	}
 
 	rx->link = link;
 	ftr->extra = NULL;
