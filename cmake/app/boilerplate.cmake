@@ -380,6 +380,17 @@ foreach(root ${BOARD_ROOT})
       list(GET shields_refs_list ${_idx} s_path)
       get_filename_component(s_dir ${s_path} DIRECTORY)
 
+      # if shield config flag is on, add shield overlay to the shield overlays
+      # list and dts_fixup file to the shield fixup file
+      list(APPEND
+        shield_dts_files
+        ${shield_dir}/${s_path}
+        )
+      list(APPEND
+        shield_dts_fixups
+        ${shield_dir}/${s_dir}/dts_fixup.h
+        )
+
       # search for shield/boards/board.overlay file
       if(EXISTS ${shield_dir}/${s_dir}/boards/${BOARD}.overlay)
         # add shield/board overlay to the shield overlays list
@@ -397,17 +408,6 @@ foreach(root ${BOARD_ROOT})
           ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.overlay
           )
       endif()
-
-      # if shield config flag is on, add shield overlay to the shield overlays
-      # list and dts_fixup file to the shield fixup file
-      list(APPEND
-        shield_dts_files
-        ${shield_dir}/${s_path}
-        )
-      list(APPEND
-        shield_dts_fixups
-        ${shield_dir}/${s_dir}/dts_fixup.h
-        )
 
       # search for shield/shield.conf file
       if(EXISTS ${shield_dir}/${s_dir}/${s}.conf)
