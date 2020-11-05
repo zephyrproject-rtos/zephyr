@@ -7600,6 +7600,14 @@ static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 		}
 	}
 
+	if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
+	    param->peer &&
+	    (param->options & BT_LE_ADV_OPT_USE_IDENTITY) &&
+	    (param->options & BT_LE_ADV_OPT_DIR_ADDR_RPA)) {
+		/* own addr type used for both RPAs in directed advertising. */
+		return false;
+	}
+
 	if (param->id >= bt_dev.id_count ||
 	    !bt_addr_le_cmp(&bt_dev.id_addr[param->id], BT_ADDR_LE_ANY)) {
 		return false;
@@ -7791,6 +7799,11 @@ static int le_adv_set_random_addr(struct bt_le_ext_adv *adv, uint32_t options,
 	id_addr = &bt_dev.id_addr[adv->id];
 
 	if (options & BT_LE_ADV_OPT_CONNECTABLE) {
+		if (dir_adv && (options & BT_LE_ADV_OPT_DIR_ADDR_RPA) &&
+		    !BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
+			return -ENOTSUP;
+		}
+
 		if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
 		    !(options & BT_LE_ADV_OPT_USE_IDENTITY)) {
 			err = le_adv_set_private_addr(adv);
@@ -7798,7 +7811,7 @@ static int le_adv_set_random_addr(struct bt_le_ext_adv *adv, uint32_t options,
 				return err;
 			}
 
-			if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
+			if (dir_adv && (options & BT_LE_ADV_OPT_DIR_ADDR_RPA)) {
 				*own_addr_type = BT_HCI_OWN_ADDR_RPA_OR_RANDOM;
 			} else {
 				*own_addr_type = BT_ADDR_LE_RANDOM;
@@ -7818,16 +7831,8 @@ static int le_adv_set_random_addr(struct bt_le_ext_adv *adv, uint32_t options,
 			}
 
 			*own_addr_type = id_addr->type;
-		}
 
-		if (dir_adv) {
-			if (IS_ENABLED(CONFIG_BT_SMP) &&
-			    !IS_ENABLED(CONFIG_BT_PRIVACY) &&
-			    BT_FEAT_LE_PRIVACY(bt_dev.le.features) &&
-			    (options & BT_LE_ADV_OPT_DIR_ADDR_RPA)) {
-				/* This will not use RPA for our own address
-				 * since we have set zeroed out the local IRK.
-				 */
+			if (dir_adv && (options & BT_LE_ADV_OPT_DIR_ADDR_RPA)) {
 				*own_addr_type |= BT_HCI_OWN_ADDR_RPA_MASK;
 			}
 		}
