@@ -724,7 +724,7 @@ static int cmd_active_scan_on(const struct shell *shell, uint32_t options,
 	int err;
 	struct bt_le_scan_param param = {
 			.type       = BT_LE_SCAN_TYPE_ACTIVE,
-			.options    = BT_LE_SCAN_OPT_FILTER_DUPLICATE,
+			.options    = BT_LE_SCAN_OPT_NONE,
 			.interval   = BT_GAP_SCAN_FAST_INTERVAL,
 			.window     = BT_GAP_SCAN_FAST_WINDOW,
 			.timeout    = timeout, };
