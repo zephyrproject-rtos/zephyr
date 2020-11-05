@@ -2006,7 +2006,12 @@ PREDEFINED             = "CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT" \
                          "__printf_like(x, y)=" \
                          "__attribute__(x)=" \
                          "__syscall=" \
-                         "DT_DOXYGEN"
+                         "DT_DOXYGEN" \
+                         "LOG_MODULE_REGISTER(...)=" \
+                         "DEVICE_DECLARE(...)=" \
+                         "DEVICE_AND_API_INIT(...)=" \
+                         "DT_INST_FOREACH_STATUS_OKAY(...)=" \
+                         "SHELL_STATIC_SUBCMD_SET_CREATE(...)="
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The
