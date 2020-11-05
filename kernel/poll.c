@@ -503,6 +503,8 @@ static void triggered_work_handler(struct k_work *work)
 	struct k_work_poll *twork =
 			CONTAINER_OF(work, struct k_work_poll, work);
 
+	__ASSERT(twork->poller.thread == NULL, "");//DEBUG
+
 	/*
 	 * If callback is not set, the k_work_poll_submit_to_queue()
 	 * already cleared event registrations.
@@ -518,7 +520,7 @@ static void triggered_work_handler(struct k_work *work)
 
 	/* Drop work ownership and execute real handler. */
 	handler = twork->real_handler;
-	twork->poller.thread = NULL;
+	twork->thread = NULL;
 	handler(work);
 }
 
@@ -527,7 +529,7 @@ static void triggered_work_expiration_handler(struct _timeout *timeout)
 	struct k_work_poll *twork =
 		CONTAINER_OF(timeout, struct k_work_poll, timeout);
 	struct k_work_q *work_q =
-		CONTAINER_OF(twork->poller.thread, struct k_work_q, thread);
+		CONTAINER_OF(twork->thread, struct k_work_q, thread);
 
 	twork->poller.is_polling = false;
 	twork->poll_result = -EAGAIN;
@@ -588,7 +590,8 @@ void k_work_poll_init(struct k_work_poll *work,
 {
 	k_work_init(&work->work, triggered_work_handler);
 	work->events = NULL;
-	work->poller.thread = NULL;
+	work->poller = (struct _poller){};
+	work->thread = NULL;
 	work->real_handler = handler;
 	z_init_timeout(&work->timeout);
 }
@@ -607,10 +610,12 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 	__ASSERT(events != NULL, "NULL events\n");
 	__ASSERT(num_events > 0, "zero events\n");
 
+	__ASSERT(work->poller.thread == NULL, "");//DEBUG
+
 	/* Take overship of the work if it is possible. */
 	key = k_spin_lock(&lock);
-	if (work->poller.thread != NULL) {
-		if (work->poller.thread == &work_q->thread) {
+	if (work->thread != NULL) {
+		if (work->thread == &work_q->thread) {
 			int retval;
 
 			retval = triggered_work_cancel(work, key);
@@ -625,7 +630,7 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 	}
 
 	work->poller.is_polling = true;
-	work->poller.thread = &work_q->thread;
+	work->thread = &work_q->thread;
 	work->poller.mode = MODE_NONE;
 	k_spin_unlock(&lock, key);
 
@@ -699,8 +704,10 @@ int k_work_poll_cancel(struct k_work_poll *work)
 	k_spinlock_key_t key;
 	int retval;
 
+	__ASSERT(work->poller.thread == NULL, "");//DEBUG
+
 	/* Check if the work was submitted. */
-	if (work == NULL || work->poller.thread == NULL) {
+	if (work == NULL || work->thread == NULL) {
 		return -EINVAL;
 	}
 
