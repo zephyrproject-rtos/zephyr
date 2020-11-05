@@ -52,8 +52,10 @@ static const struct pwr_ctrl_cfg vdd_pwr_ctrl_cfg = {
 	.pin = VDD_PWR_CTRL_GPIO_PIN,
 };
 
-DEVICE_INIT(vdd_pwr_ctrl_init, "", pwr_ctrl_init, NULL, &vdd_pwr_ctrl_cfg,
-	    POST_KERNEL, CONFIG_BOARD_VDD_PWR_CTRL_INIT_PRIORITY);
+DEVICE_DEFINE(vdd_pwr_ctrl_init, "", pwr_ctrl_init, NULL, NULL,
+	      &vdd_pwr_ctrl_cfg,
+	      POST_KERNEL, CONFIG_BOARD_VDD_PWR_CTRL_INIT_PRIORITY,
+	      NULL);
 
 #ifdef CONFIG_SENSOR
 
@@ -70,8 +72,8 @@ static const struct pwr_ctrl_cfg ccs_vdd_pwr_ctrl_cfg = {
 	.pin = CCS_VDD_PWR_CTRL_GPIO_PIN,
 };
 
-DEVICE_INIT(ccs_vdd_pwr_ctrl_init, "", pwr_ctrl_init, NULL,
-	    &ccs_vdd_pwr_ctrl_cfg, POST_KERNEL,
-	    CONFIG_BOARD_CCS_VDD_PWR_CTRL_INIT_PRIORITY);
+DEVICE_DEFINE(ccs_vdd_pwr_ctrl_init, "", pwr_ctrl_init, NULL, NULL,
+	      &ccs_vdd_pwr_ctrl_cfg, POST_KERNEL,
+	      CONFIG_BOARD_CCS_VDD_PWR_CTRL_INIT_PRIORITY, NULL);
 
 #endif
