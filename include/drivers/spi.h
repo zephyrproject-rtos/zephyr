@@ -142,6 +142,79 @@ struct spi_cs_control {
 	gpio_dt_flags_t		gpio_dt_flags;
 };
 
+#ifndef __cplusplus
+/**
+ * @brief Initialize and get a pointer to a @p spi_cs_control from a
+ *        devicetree node identifier
+ *
+ * This helper is useful for initializing a device on a SPI bus. It
+ * initializes a struct spi_cs_control and returns a pointer to it.
+ * Here, @p node_id is a node identifier for a SPI device, not a SPI
+ * controller.
+ *
+ * Example devicetree fragment:
+ *
+ *     spi@... {
+ *             cs-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+ *             spidev: spi-device@0 { ... };
+ *     };
+ *
+ * Assume that @p gpio0 follows the standard convention for specifying
+ * GPIOs, i.e. it has the following in its binding:
+ *
+ *     gpio-cells:
+ *     - pin
+ *     - flags
+ *
+ * Example usage:
+ *
+ *     struct spi_cs_control *ctrl =
+ *             SPI_CS_CONTROL_PTR_DT(DT_NODELABEL(spidev), 2);
+ *
+ * This example is equivalent to:
+ *
+ *     struct spi_cs_control *ctrl =
+ *             &(struct spi_cs_control) {
+ *                     .gpio_dev = DEVICE_DT_GET(DT_NODELABEL(gpio0)),
+ *                     .delay = 2,
+ *                     .gpio_pin = 1,
+ *                     .gpio_dt_flags = GPIO_ACTIVE_LOW
+ *             };
+ *
+ * This macro is not available in C++.
+ *
+ * @param node_id Devicetree node identifier for a device on a SPI bus
+ * @param delay_ The @p delay field to set in the @p spi_cs_control
+ * @return a pointer to the @p spi_cs_control structure
+ */
+#define SPI_CS_CONTROL_PTR_DT(node_id, delay_)				\
+	(&(struct spi_cs_control) {						\
+		.gpio_dev = DEVICE_DT_GET(				\
+			DT_SPI_DEV_CS_GPIOS_CTLR(node_id)),		\
+		.delay = (delay_),					\
+		.gpio_pin = DT_SPI_DEV_CS_GPIOS_PIN(node_id),		\
+		.gpio_dt_flags = DT_SPI_DEV_CS_GPIOS_FLAGS(node_id),	\
+	})
+
+/**
+ * @brief Get a pointer to a @p spi_cs_control from a devicetree node
+ *
+ * This is equivalent to
+ * <tt>SPI_CS_CONTROL_PTR_DT(DT_DRV_INST(inst), delay)</tt>.
+ *
+ * Therefore, @p DT_DRV_COMPAT must already be defined before using
+ * this macro.
+ *
+ * This macro is not available in C++.
+ *
+ * @param inst Devicetree node instance number
+ * @param delay_ The @p delay field to set in the @p spi_cs_control
+ * @return a pointer to the @p spi_cs_control structure
+ */
+#define SPI_CS_CONTROL_PTR_DT_INST(inst, delay_)		\
+	SPI_CS_CONTROL_PTR_DT(DT_DRV_INST(inst), delay_)
+#endif
+
 /**
  * @brief SPI controller configuration structure
  *
@@ -175,6 +248,54 @@ struct spi_config {
 
 	const struct spi_cs_control *cs;
 };
+
+#ifndef __cplusplus
+/**
+ * @brief Structure initializer for spi_config from devicetree
+ *
+ * This helper macro expands to a static initializer for a <tt>struct
+ * spi_config</tt> by reading the relevant @p frequency, @p slave, and
+ * @p cs data from the devicetree.
+ *
+ * Important: the @p cs field is initialized using
+ * SPI_CS_CONTROL_PTR_DT(). The @p gpio_dev value pointed to by this
+ * structure must be checked using device_is_ready() before use.
+ *
+ * This macro is not available in C++.
+ *
+ * @param node_id Devicetree node identifier for the SPI device whose
+ *                struct spi_config to create an initializer for
+ * @param operation_ the desired @p operation field in the struct spi_config
+ * @param delay_ the desired @p delay field in the struct spi_config's
+ *               spi_cs_control, if there is one
+ */
+#define SPI_CONFIG_DT(node_id, operation_, delay_)			\
+	{								\
+		.frequency = DT_PROP(node_id, spi_max_frequency),	\
+		.operation = (operation_),				\
+		.slave = DT_REG_ADDR(node_id),				\
+		.cs = COND_CODE_1(					\
+			DT_SPI_DEV_HAS_CS_GPIOS(node_id),		\
+			(SPI_CS_CONTROL_PTR_DT(node_id, delay_)),	\
+			(NULL)),					\
+	}
+
+/**
+ * @brief Structure initializer for spi_config from devicetree instance
+ *
+ * This is equivalent to
+ * <tt>SPI_CONFIG_DT(DT_DRV_INST(inst), operation_, delay_)</tt>.
+ *
+ * This macro is not available in C++.
+ *
+ * @param inst Devicetree instance number
+ * @param operation_ the desired @p operation field in the struct spi_config
+ * @param delay_ the desired @p delay field in the struct spi_config's
+ *               spi_cs_control, if there is one
+ */
+#define SPI_CONFIG_DT_INST(inst, operation_, delay_)	\
+	SPI_CONFIG_DT(DT_DRV_INST(inst), operation_, delay_)
+#endif
 
 /**
  * @brief SPI buffer structure
