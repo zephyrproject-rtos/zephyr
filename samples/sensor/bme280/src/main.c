@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.
+ * Copyright (c) 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,25 +10,37 @@
 #include <devicetree.h>
 #include <drivers/sensor.h>
 
-#define BME280 DT_INST(0, bosch_bme280)
+/*
+ * Get a device structure from a devicetree node with compatible
+ * "bosch,bme280". (If there are multiple, just pick one.)
+ */
+static const struct device *get_bme280_device(void)
+{
+	const struct device *dev = DEVICE_DT_GET_ANY(bosch_bme280);
 
-#if DT_NODE_HAS_STATUS(BME280, okay)
-#define BME280_LABEL DT_LABEL(BME280)
-#else
-#error Your devicetree has no enabled nodes with compatible "bosch,bme280"
-#define BME280_LABEL "<none>"
-#endif
+	if (dev == NULL) {
+		/* No such node, or the node does not have status "okay". */
+		printk("\nError: no device found.\n");
+		return NULL;
+	}
+
+	if (!device_is_ready(dev)) {
+		printk("\nError: Device \"%s\" is not ready; "
+		       "check the driver initialization logs for errors.\n",
+		       dev->name);
+		return NULL;
+	}
+
+	printk("Found device \"%s\", getting sensor data\n", dev->name);
+	return dev;
+}
 
 void main(void)
 {
-	const struct device *dev = device_get_binding(BME280_LABEL);
+	const struct device *dev = get_bme280_device();
 
 	if (dev == NULL) {
-		printk("No device \"%s\" found; did initialization fail?\n",
-		       BME280_LABEL);
 		return;
-	} else {
-		printk("Found device \"%s\"\n", BME280_LABEL);
 	}
 
 	while (1) {
