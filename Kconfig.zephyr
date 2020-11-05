@@ -80,8 +80,26 @@ config HAS_FLASH_LOAD_OFFSET
 
 if HAS_FLASH_LOAD_OFFSET
 
+config HAS_DT_CODE_PARTITION
+	bool
+	default y if MCUBOOT
+	help
+	  This hidden option signifies that the platform DeviceTree:
+	  1. defines a flash partition layout, specifying the default
+	  code partition to be used when linking the image, and
+	  2. selects this code partition by chosing the appropriate
+	  code-partition symbol in the device tree configuration.
+	  The existence of the code partition is a required dependency
+	  for USE_DT_CODE_PARTITION.
+	  To be able to select the code partition using device tree,
+	  a platform definition needs to have a zephyr,code-partition
+	  symbol chosen by DT configuration.
+	  MCUboot application chooses the code partition independently,
+	  therefore, the dependency is always satisfied.
+
 config USE_DT_CODE_PARTITION
 	bool "Link application into /chosen/zephyr,code-partition from devicetree"
+	depends on HAS_DT_CODE_PARTITION
 	help
 	  When enabled, the application will be linked into the flash partition
 	  selected by the zephyr,code-partition property in /chosen in devicetree.
