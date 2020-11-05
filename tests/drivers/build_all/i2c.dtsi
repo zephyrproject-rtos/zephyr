@@ -610,3 +610,10 @@ test_i2c_fdc2x1x: fdc2x1x@2a {
 		inductance = <18>;
 	};
 };
+
+test_i2c_bmp388: bmp388@4c {
+	compatible = "bosch,bmp388";
+	label = "BMP388";
+	reg = <0x4c>;
+	int-gpios = <&test_gpio 0 0>;
+};

@@ -70,6 +70,8 @@ source "drivers/sensor/bmi270/Kconfig"
 
 source "drivers/sensor/bmm150/Kconfig"
 
+source "drivers/sensor/bmp388/Kconfig"
+
 source "drivers/sensor/bq274xx/Kconfig"
 
 source "drivers/sensor/ccs811/Kconfig"
