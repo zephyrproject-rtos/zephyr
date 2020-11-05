@@ -50,6 +50,9 @@ struct ll_scan_set *ull_scan_set_get(uint8_t handle);
 /* Return the scan set handle given the scan set instance */
 uint8_t ull_scan_handle_get(struct ll_scan_set *scan);
 
+/* Helper function to check and return if a valid scan context */
+struct ll_scan_set *ull_scan_is_valid_get(struct ll_scan_set *scan);
+
 /* Return ll_scan_set context if enabled */
 struct ll_scan_set *ull_scan_is_enabled_get(uint8_t handle);
 
@@ -66,7 +69,7 @@ int ull_scan_aux_init(void);
 int ull_scan_aux_reset(void);
 
 /* Helper to setup scanning on auxiliary channel */
-void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy);
+void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx);
 
 /* Helper function to handle scan done events */
 void ull_scan_done(struct node_rx_event_done *done);

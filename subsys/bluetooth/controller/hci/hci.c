@@ -4429,6 +4429,205 @@ static void le_per_adv_sync_established(struct pdu_data *pdu_data,
 	sep->clock_accuracy = se->sca;
 }
 
+static void le_per_adv_sync_report(struct pdu_data *pdu_data,
+				   struct node_rx_pdu *node_rx,
+				   struct net_buf *buf)
+{
+	struct bt_hci_evt_le_per_advertising_report *sep;
+	struct pdu_adv *adv = (void *)pdu_data;
+	struct node_rx_pdu *node_rx_curr;
+	struct node_rx_pdu *node_rx_next;
+	uint8_t total_data_len = 0U;
+	uint8_t data_status = 0U;
+	uint8_t data_len = 0U;
+	int8_t tx_pwr = 0x7f;
+	uint8_t *data = NULL;
+	int8_t rssi;
+
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_PER_ADVERTISING_REPORT)) {
+		return;
+	}
+
+	node_rx_curr = node_rx;
+	node_rx_next = node_rx_curr->hdr.rx_ftr.extra;
+	do {
+		struct pdu_adv_com_ext_adv *p;
+		uint8_t data_len_curr = 0U;
+		uint8_t *data_curr = NULL;
+		uint8_t sec_phy_curr = 0U;
+		struct pdu_adv_hdr *h;
+		uint8_t hdr_len;
+		uint8_t *ptr;
+
+		/* The Link Layer currently returns RSSI as an absolute value */
+		rssi = -(node_rx_curr->hdr.rx_ftr.rssi);
+
+		BT_DBG("len = %u, rssi = %d", adv->len, rssi);
+
+		p = (void *)&adv->adv_ext_ind;
+		h = (void *)p->ext_hdr_adi_adv_data;
+		ptr = (void *)h;
+
+		BT_DBG("    Ext. adv mode= 0x%x, hdr len= %u", p->adv_mode,
+		       p->ext_hdr_len);
+
+		if (!p->ext_hdr_len) {
+			hdr_len = ptr - (uint8_t *)p;
+
+			goto no_ext_hdr;
+		}
+
+		ptr += sizeof(*h);
+
+		/* No AdvA */
+		/* No TargetA */
+		/* No ADI */
+
+		/* AuxPtr */
+		if (h->aux_ptr) {
+			struct pdu_adv_aux_ptr *aux;
+			uint8_t aux_phy;
+
+			aux = (void *)ptr;
+			ptr += sizeof(*aux);
+
+			sec_phy_curr = aux->phy + 1;
+
+			aux_phy = BIT(aux->phy);
+
+			BT_DBG("    AuxPtr chan_idx = %u, ca = %u, offs_units "
+			       "= %u offs = 0x%x, phy = 0x%x", aux->chan_idx,
+			       aux->ca, aux->offs_units, aux->offs, aux_phy);
+		}
+
+		/* No SyncInfo */
+
+		/* Tx Power */
+		if (h->tx_pwr) {
+			tx_pwr = *(int8_t *)ptr;
+			ptr++;
+
+			BT_DBG("    Tx pwr= %d dB", tx_pwr);
+		}
+
+		hdr_len = ptr - (uint8_t *)p;
+		if (hdr_len <= (offsetof(struct pdu_adv_com_ext_adv,
+					 ext_hdr_adi_adv_data) +
+				sizeof(struct pdu_adv_hdr))) {
+			hdr_len = offsetof(struct pdu_adv_com_ext_adv,
+					   ext_hdr_adi_adv_data);
+			ptr = (uint8_t *)h;
+		}
+
+		if (hdr_len > (p->ext_hdr_len +
+			       offsetof(struct pdu_adv_com_ext_adv,
+					ext_hdr_adi_adv_data))) {
+			BT_WARN("    Header length %u/%u, INVALID.", hdr_len,
+				p->ext_hdr_len);
+		} else {
+			uint8_t acad_len = p->ext_hdr_len +
+					   offsetof(struct pdu_adv_com_ext_adv,
+						    ext_hdr_adi_adv_data) -
+					   hdr_len;
+
+			if (acad_len) {
+				ptr += acad_len;
+				hdr_len += acad_len;
+
+				BT_DBG("ACAD: <todo>");
+			}
+		}
+
+no_ext_hdr:
+		if (hdr_len < adv->len) {
+			data_len_curr = adv->len - hdr_len;
+			data_curr = ptr;
+
+			BT_DBG("    AD Data (%u): <todo>", data_len);
+		}
+
+		if (node_rx_curr == node_rx) {
+			data_len = data_len_curr;
+			total_data_len = data_len;
+			data = data_curr;
+		} else {
+			/* TODO: Validate current value with previous ??
+			 */
+
+			if (!data) {
+				data_len = data_len_curr;
+				total_data_len = data_len;
+				data = data_curr;
+			} else {
+				total_data_len += data_len_curr;
+
+				/* TODO: construct new HCI event for this
+				 * fragment.
+				 */
+			}
+		}
+
+		if (!node_rx_next) {
+			if (sec_phy_curr) {
+				data_status = BIT(1);
+			}
+
+			break;
+		}
+
+		node_rx_curr = node_rx_next;
+		node_rx_next = node_rx_curr->hdr.rx_ftr.extra;
+		adv = (void *)node_rx_curr->pdu;
+	} while (1);
+
+	/* FIXME: move most of below into above loop to dispatch fragments of
+	 * data in HCI event.
+	 */
+
+	/* If data complete */
+	if (!data_status) {
+		uint8_t data_max_len;
+
+		data_max_len = CONFIG_BT_DISCARDABLE_BUF_SIZE -
+			       BT_HCI_ACL_HDR_SIZE - sizeof(*sep);
+
+		/* if data cannot fit the event, mark it as incomplete */
+		if (data_len > data_max_len) {
+			data_len = data_max_len;
+			data_status = BIT(0);
+		}
+	} else {
+		/* Data incomplete and no more to come */
+		if ((tx_pwr == 0x7f) && !data) {
+			goto le_per_adv_report_invalid;
+		}
+	}
+
+	/* Start constructing the event */
+	sep = meta_evt(buf, BT_HCI_EVT_LE_PER_ADVERTISING_REPORT,
+		       sizeof(*sep) + data_len);
+
+	sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
+	sep->tx_power = tx_pwr;
+	sep->rssi = rssi;
+	sep->cte_type = 0U; /* TODO */
+	sep->data_status = data_status;
+	sep->length = data_len;
+	memcpy(&sep->data[0], data, data_len);
+
+le_per_adv_report_invalid:
+	/* Free the node_rx list */
+	node_rx_next = node_rx->hdr.rx_ftr.extra;
+	while (node_rx_next) {
+		node_rx_curr = node_rx_next;
+		node_rx_next = node_rx_curr->hdr.rx_ftr.extra;
+
+		node_rx_curr->hdr.next = NULL;
+		ll_rx_mem_release((void **)&node_rx_curr);
+	}
+}
+
 static void le_per_adv_sync_lost(struct pdu_data *pdu_data,
 				 struct node_rx_pdu *node_rx,
 				 struct net_buf *buf)
@@ -4806,6 +5005,9 @@ static void encode_control(struct node_rx_pdu *node_rx,
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	case NODE_RX_TYPE_SYNC:
 		le_per_adv_sync_established(pdu_data, node_rx, buf);
+		break;
+	case NODE_RX_TYPE_SYNC_REPORT:
+		le_per_adv_sync_report(pdu_data, node_rx, buf);
 		break;
 	case NODE_RX_TYPE_SYNC_LOST:
 		le_per_adv_sync_lost(pdu_data, node_rx, buf);
@@ -5272,6 +5474,7 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 			__fallthrough;
 		case NODE_RX_TYPE_SYNC:
+		case NODE_RX_TYPE_SYNC_REPORT:
 		case NODE_RX_TYPE_SYNC_LOST:
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_OBSERVER */
