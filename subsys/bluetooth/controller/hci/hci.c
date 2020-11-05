@@ -5144,7 +5144,7 @@ static void le_adv_ext_terminate(struct pdu_data *pdu_data,
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_ADV_SET_TERMINATED, sizeof(*sep));
 	sep->status = node_rx->hdr.rx_ftr.param_adv_term.status;
-	sep->adv_handle = node_rx->hdr.handle & 0xff;
+	sep->adv_handle = ll_adv_set_hci_handle_get(node_rx->hdr.handle & 0xff);
 	sep->conn_handle =
 		sys_cpu_to_le16(node_rx->hdr.rx_ftr.param_adv_term.conn_handle);
 	sep->num_completed_ext_adv_evts =
@@ -5171,7 +5171,7 @@ static void le_scan_req_received(struct pdu_data *pdu_data,
 		uint8_t handle;
 		int8_t rssi;
 
-		handle = node_rx->hdr.handle & 0xff;
+		handle = ll_adv_set_hci_handle_get(node_rx->hdr.handle & 0xff);
 		addr.type = adv->tx_addr;
 		memcpy(&addr.a.val[0], &adv->scan_req.scan_addr[0],
 		       sizeof(bt_addr_t));
@@ -5186,7 +5186,7 @@ static void le_scan_req_received(struct pdu_data *pdu_data,
 	}
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_SCAN_REQ_RECEIVED, sizeof(*sep));
-	sep->handle = node_rx->hdr.handle & 0xff;
+	sep->handle = ll_adv_set_hci_handle_get(node_rx->hdr.handle & 0xff);
 	sep->addr.type = adv->tx_addr;
 	memcpy(&sep->addr.a.val[0], &adv->scan_req.scan_addr[0],
 	       sizeof(bt_addr_t));

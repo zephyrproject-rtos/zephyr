@@ -160,6 +160,16 @@ uint8_t ll_adv_set_by_hci_handle_get_or_new(uint8_t hci_handle, uint8_t *handle)
 
 	return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 }
+
+uint8_t ll_adv_set_hci_handle_get(uint8_t handle)
+{
+	struct ll_adv_set *adv;
+
+	adv = ull_adv_set_get(handle);
+	LL_ASSERT(adv && adv->is_created);
+
+	return adv->hci_handle;
+}
 #endif
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
