@@ -68,6 +68,7 @@ extern "C" {
  */
 #define DEVICE_INIT(dev_name, drv_name, init_fn,			\
 		    data_ptr, cfg_ptr, level, prio)			\
+	__DEPRECATED_MACRO						\
 	DEVICE_DEFINE(dev_name, drv_name, init_fn, NULL,		\
 		      data_ptr, cfg_ptr, level, prio, NULL)
 
@@ -143,11 +144,11 @@ extern "C" {
  * @brief Obtain a pointer to a device object by name
  *
  * @details Return the address of a device object created by
- * DEVICE_INIT(), using the dev_name provided to DEVICE_INIT().
+ * DEVICE_DEFINE(), using the dev_name provided to DEVICE_DEFINE().
  *
- * @param name The same as dev_name provided to DEVICE_INIT()
+ * @param name The same as dev_name provided to DEVICE_DEFINE()
  *
- * @return A pointer to the device object created by DEVICE_INIT()
+ * @return A pointer to the device object created by DEVICE_DEFINE()
  */
 #define DEVICE_GET(name) (&DEVICE_NAME_GET(name))
 
@@ -157,11 +158,11 @@ extern "C" {
  *
  * This macro can be used at the top-level to declare a device, such
  * that DEVICE_GET() may be used before the full declaration in
- * DEVICE_INIT().
+ * DEVICE_DEFINE().
  *
  * This is often useful when configuring interrupts statically in a
  * device's init or per-instance config function, as the init function
- * itself is required by DEVICE_INIT() and use of DEVICE_GET()
+ * itself is required by DEVICE_DEFINE() and use of DEVICE_GET()
  * inside it creates a circular dependency.
  *
  * @param name Device name
@@ -217,7 +218,7 @@ struct device {
 /**
  * @brief Retrieve the device structure for a driver by name
  *
- * @details Device objects are created via the DEVICE_INIT() macro and
+ * @details Device objects are created via the DEVICE_DEFINE() macro and
  * placed in memory by the linker. If a driver needs to bind to another driver
  * it can use this function to retrieve the device structure of the lower level
  * driver by the name the driver exposes to the system.

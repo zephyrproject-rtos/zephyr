@@ -154,7 +154,7 @@ Explanation
 -----------
 
 This attribute is similar to **isr-ok** in function, but is intended for
-use by any API that is expected to be called in :c:macro:`DEVICE_INIT()`
+use by any API that is expected to be called in :c:macro:`DEVICE_DEFINE()`
 or :c:macro:`SYS_INIT()` calls that may be invoked with ``PRE_KERNEL_1``
 or ``PRE_KERNEL_2`` initialization levels.
 

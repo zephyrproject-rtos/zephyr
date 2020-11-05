@@ -48,6 +48,8 @@ Deprecated in this release
 
 * ARM Musca-A board and SoC support deprecated and planned to be removed in 2.6.0.
 
+* DEVICE_INIT was deprecated in favor of utilizing DEVICE_DEFINE directly.
+
 Removed APIs in this release
 ============================
 
