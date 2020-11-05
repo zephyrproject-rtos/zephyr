@@ -372,9 +372,9 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 static void isr_tx(void *param)
 {
-	struct lll_adv *lll = param;
 	uint32_t hcto;
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+	struct lll_adv *lll = param;
 	uint8_t phy_p = lll->phy_p;
 #else
 	uint8_t phy_p = 0;
