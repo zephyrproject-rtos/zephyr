@@ -4,6 +4,25 @@
 
 # based on http://protips.readthedocs.io/link-roles.html
 
+"""
+This file contains Sphinx extensions for the following Zephyr-specific
+documentation roles:
+
+:zephyr_file:
+  Create a link to a file within the zephyr repository tree.
+  The link is to an HTML view of the file as a blob on a Git forge.
+
+  The version displayed corresponds to the current tag if
+  HEAD points at a tag, or the 'master' branch otherwise.
+
+  For example, :zephyr_file:`doc/extensions/zephyr/link-roles.py`
+  creates a link to this file on GitHub by default.
+
+:zephyr_raw:
+  Like ``:zephyr_file:``, but for "raw" output, rather than
+  the usual fancy UI for viewing a git blob's contents.
+"""
+
 from __future__ import print_function
 from __future__ import unicode_literals
 import re
