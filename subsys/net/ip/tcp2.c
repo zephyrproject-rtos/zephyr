@@ -831,6 +831,14 @@ static int tcp_send_data(struct tcp *conn)
 	ret = tcp_out_ext(conn, PSH | ACK, pkt, conn->seq + conn->unacked_len);
 	if (ret == 0) {
 		conn->unacked_len += len;
+
+		if (conn->data_mode == TCP_DATA_MODE_RESEND) {
+			net_stats_update_tcp_resent(net_pkt_iface(pkt), len);
+			net_stats_update_tcp_seg_rexmit(conn->iface);
+		} else {
+			net_stats_update_tcp_sent(net_pkt_iface(pkt), len);
+			net_stats_update_tcp_seg_sent(net_pkt_iface(pkt));
+		}
 	}
 
 	/* The data we want to send, has been moved to the send queue so we
@@ -1203,6 +1211,10 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 		goto err;
 	}
 err:
+	if (!conn) {
+		net_stats_update_tcp_seg_conndrop(net_pkt_iface(pkt));
+	}
+
 	return conn;
 }
 
@@ -1271,6 +1283,8 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 	}
 
 	if (FL(&fl, &, RST)) {
+		net_stats_update_tcp_seg_rst(net_pkt_iface(pkt));
+
 		conn_state(conn, TCP_CLOSED);
 	}
 next_state:
@@ -1382,6 +1396,7 @@ next_state:
 				NET_ERR("conn: %p, Invalid len_acked=%u "
 					"(total=%zu)", conn, len_acked,
 					conn->send_data_total);
+				net_stats_update_tcp_seg_drop(conn->iface);
 				tcp_out(conn, RST);
 				conn_state(conn, TCP_CLOSED);
 				break;
@@ -1390,6 +1405,7 @@ next_state:
 			conn->send_data_total -= len_acked;
 			conn->unacked_len -= len_acked;
 			conn_seq(conn, + len_acked);
+			net_stats_update_tcp_seg_recv(conn->iface);
 
 			conn_send_data_dump(conn);
 
@@ -1428,10 +1444,14 @@ next_state:
 				if (tcp_data_get(conn, pkt) < 0) {
 					break;
 				}
+
+				net_stats_update_tcp_seg_recv(conn->iface);
 				conn_ack(conn, + len);
 				tcp_out(conn, ACK);
 			} else if (net_tcp_seq_greater(conn->ack, th_seq(th))) {
 				tcp_out(conn, ACK); /* peer has resent */
+
+				net_stats_update_tcp_seg_ackerr(conn->iface);
 			}
 		}
 		break;
