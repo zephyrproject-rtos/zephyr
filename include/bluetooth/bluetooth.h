@@ -379,8 +379,7 @@ enum {
 	 * @brief Directed advertising to privacy-enabled peer.
 	 *
 	 * Enable use of Resolvable Private Address (RPA) as the target address
-	 * in directed advertisements when @option{CONFIG_BT_PRIVACY} is not
-	 * enabled.
+	 * in directed advertisements.
 	 * This is required if the remote device is privacy-enabled and
 	 * supports address resolution of the target address in directed
 	 * advertisement.
