@@ -836,6 +836,9 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 			(dev_data->mac_addr[2] << 16) |
 			(dev_data->mac_addr[1] << 8) |
 			dev_data->mac_addr[0];
+		net_if_set_link_addr(dev_data->iface, dev_data->mac_addr,
+				     sizeof(dev_data->mac_addr),
+				     NET_LINK_ETHERNET);
 		return 0;
 	default:
 		break;
