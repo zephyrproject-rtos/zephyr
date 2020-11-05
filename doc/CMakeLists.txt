@@ -148,6 +148,7 @@ file(GLOB_RECURSE  DOXY_SOURCES
   ${ZEPHYR_BASE}/lib/libc/*.[c,h,S]
   ${ZEPHYR_BASE}/subsys/testsuite/ztest/include/*.[h,c,S]
   ${ZEPHYR_BASE}/tests/*.[h,c,S]
+  ${ZEPHYR_BASE}/drivers/*.[c,h,S]
   )
 # For debug. Also find generated list in doc/_build/(build.ninja|CMakeFiles/)
 # message("DOXY_SOURCES= " ${DOXY_SOURCES})
