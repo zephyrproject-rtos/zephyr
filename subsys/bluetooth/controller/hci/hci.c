@@ -4027,8 +4027,8 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 	int8_t tx_pwr = 0x7f;
 	uint8_t *data = NULL;
 	uint8_t sec_phy = 0U;
-	int8_t rssi = 0x7f;
 	uint8_t info_len;
+	int8_t rssi;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	uint8_t rl_idx;
@@ -4069,7 +4069,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 
 		p = (void *)&adv->adv_ext_ind;
 		h = (void *)p->ext_hdr_adi_adv_data;
-		ptr = (uint8_t *)h + sizeof(*h);
+		ptr = (void *)h;
 
 		BT_DBG("    Ext. adv mode= 0x%x, hdr len= %u", p->adv_mode,
 		       p->ext_hdr_len);
@@ -4077,8 +4077,13 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 		evt_type_curr = p->adv_mode;
 
 		if (!p->ext_hdr_len) {
+			hdr_len = offsetof(struct pdu_adv_com_ext_adv,
+					   ext_hdr_adi_adv_data);
+
 			goto no_ext_hdr;
 		}
+
+		ptr += sizeof(*h);
 
 		if (h->adv_addr) {
 			bt_addr_le_t addr;
@@ -4188,16 +4193,16 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 
 				BT_DBG("ACAD: <todo>");
 			}
-
-			if (hdr_len < adv->len) {
-				data_len_curr = adv->len - hdr_len;
-				data_curr = ptr;
-
-				BT_DBG("    AD Data (%u): <todo>", data_len);
-			}
 		}
 
 no_ext_hdr:
+		if (hdr_len < adv->len) {
+			data_len_curr = adv->len - hdr_len;
+			data_curr = ptr;
+
+			BT_DBG("    AD Data (%u): <todo>", data_len);
+		}
+
 		if (node_rx_curr == node_rx) {
 			evt_type = evt_type_curr;
 			adv_addr_type = adv_addr_type_curr;
