@@ -183,7 +183,6 @@ config X86_VERY_EARLY_CONSOLE
 
 config X86_MMU
 	bool "Enable Memory Management Unit"
-	select MEMORY_PROTECTION
 	select MMU
 	help
 	  This options enables the memory management unit present in x86

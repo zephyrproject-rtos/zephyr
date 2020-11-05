@@ -229,7 +229,7 @@ config USERSPACE
 	bool "User mode threads"
 	depends on ARCH_HAS_USERSPACE
 	depends on RUNTIME_ERROR_CHECKS
-	select SRAM_REGION_PERMISSIONS if MMU
+	depends on SRAM_REGION_PERMISSIONS
 	select THREAD_STACK_INFO
 	help
 	  When enabled, threads may be created or dropped down to user mode,
@@ -564,6 +564,7 @@ config CPU_HAS_MMU
 	help
 	  This hidden option is selected when the CPU has a Memory Management Unit
 	  (MMU).
+
 menuconfig MMU
 	bool "Enable MMU features"
 	depends on CPU_HAS_MMU
@@ -578,16 +579,6 @@ config MMU_PAGE_SIZE
 	help
 	  Size of memory pages. Varies per MMU but 4K is common. For MMUs that
 	  support multiple page sizes, put the smallest one here.
-
-config SRAM_REGION_PERMISSIONS
-	bool "Assign appropriate permissions to kernel areas in SRAM"
-	default y
-	help
-	  If enabled, the program text, rodata, and data parts of the kernel in
-	  the permanent mappings created at build time will have appropriate
-	  permissions set. Uses extra memory due to page-alignment constraints.
-	  If not enabled, all SRAM mappings will allow supervisor mode to
-	  read, write, and execute. User mode support requires this.
 
 config KERNEL_VM_BASE
 	hex "Base virtual address to link the kernel"
@@ -655,13 +646,14 @@ config KERNEL_VM_SIZE
 
 endif   # MMU
 
-config MEMORY_PROTECTION
-	bool
+menuconfig MPU
+	bool "Enable MPU features"
+	depends on CPU_HAS_MPU
 	help
-	  This option is enabled when Memory Protection features are supported.
-	  Memory protection support is currently available on ARC, ARM, and x86
-	  architectures.
+	  This option, when enabled, indicates to the core kernel that an MPU
+	  is enabled.
 
+if MPU
 config MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	bool
 	help
@@ -698,6 +690,40 @@ config MPU_GAP_FILLING
 	  code on an ARCH-specific basis. Refer to ARCH-specific
 	  documentation for more information on how this option is
 	  used.
+
+endif # MPU
+
+config SRAM_REGION_PERMISSIONS
+	bool "Assign appropriate permissions to kernel areas in SRAM"
+	depends on MMU || MPU
+	default y
+	help
+	  This option indicates that memory protection hardware
+	  is present, enabled, and regions have been configured at boot for memory
+	  ranges within the kernel image.
+
+	  If this option is turned on, certain areas of the kernel image will
+	  have the following access policies applied for all threads, including
+	  supervisor threads:
+
+	  1) All program text will be have read-only, execute memory permission
+	  2) All read-only data will have read-only permission, and execution
+	     disabled if the hardware supports it.
+	  3) All other RAM addresses will have read-write permission, and
+	     execution disabled if the hardware supports it.
+
+	  Options such as USERSPACE or HW_STACK_PROTECTION may additionally
+	  impose additional policies on the memory map, which may be global
+	  or local to the current running thread.
+
+	  This option may consume additional memory to satisfy memory protection
+	  hardware alignment constraints.
+
+	  If this option is disabled, the entire kernel will have default memory
+	  access permissions set, typically read/write/execute. It may be desirable
+	  to turn this off on MMU systems which are using the MMU for demand
+	  paging, do not need memory protection, and would rather not use up
+	  RAM for the alignment between regions.
 
 menu "Floating Point Options"
 
