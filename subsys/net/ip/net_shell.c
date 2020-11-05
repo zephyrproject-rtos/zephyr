@@ -323,30 +323,33 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	PR("MTU       : %d\n", net_if_get_mtu(iface));
 
 #if defined(CONFIG_NET_L2_ETHERNET_MGMT)
-	count = 0;
-	ret = net_mgmt(NET_REQUEST_ETHERNET_GET_PRIORITY_QUEUES_NUM,
-		       iface,
-		       &params, sizeof(struct ethernet_req_params));
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
+		count = 0;
+		ret = net_mgmt(NET_REQUEST_ETHERNET_GET_PRIORITY_QUEUES_NUM,
+				iface, &params,
+				sizeof(struct ethernet_req_params));
 
-	if (!ret && params.priority_queues_num) {
-		count = params.priority_queues_num;
-		PR("Priority queues:\n");
-		for (i = 0; i < count; ++i) {
-			params.qav_param.queue_id = i;
-			params.qav_param.type = ETHERNET_QAV_PARAM_TYPE_STATUS;
-			ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QAV_PARAM,
-				       iface,
-				       &params,
-				       sizeof(struct ethernet_req_params));
+		if (!ret && params.priority_queues_num) {
+			count = params.priority_queues_num;
+			PR("Priority queues:\n");
+			for (i = 0; i < count; ++i) {
+				params.qav_param.queue_id = i;
+				params.qav_param.type =
+					ETHERNET_QAV_PARAM_TYPE_STATUS;
+				ret = net_mgmt(
+					NET_REQUEST_ETHERNET_GET_QAV_PARAM,
+					iface, &params,
+					sizeof(struct ethernet_req_params));
 
-			PR("\t%d: Qav ", i);
-			if (ret) {
-				PR("not supported\n");
-			} else {
-				PR("%s\n",
-				   params.qav_param.enabled ?
-				       "enabled" :
-				       "disabled");
+				PR("\t%d: Qav ", i);
+				if (ret) {
+					PR("not supported\n");
+				} else {
+					PR("%s\n",
+						params.qav_param.enabled ?
+						"enabled" :
+						"disabled");
+				}
 			}
 		}
 	}
