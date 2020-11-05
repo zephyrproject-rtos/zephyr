@@ -2,6 +2,7 @@
 
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2020 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 
@@ -80,9 +81,15 @@ config HAS_FLASH_LOAD_OFFSET
 
 if HAS_FLASH_LOAD_OFFSET
 
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+DT_CHOSEN_Z_SINGLE_IMAGE_CODE_PARTITION := zephyr,single-image-code-partition
+
 config HAS_DT_CODE_PARTITION
 	bool
 	default y if MCUBOOT
+	default $(dt_chosen_enabled,$(DT_CHOSEN_Z_CODE_PARTITION)) if IS_CHAIN_LOADABLE_APPLICATION
+	default $(dt_chosen_enabled,$(DT_CHOSEN_Z_SINGLE_IMAGE_CODE_PARTITION))
 	help
 	  This hidden option signifies that the platform DeviceTree:
 	  1. defines a flash partition layout, specifying the default
@@ -106,13 +113,11 @@ config USE_DT_CODE_PARTITION
 	  When this is disabled, the flash load offset and size can be set manually
 	  below.
 
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
-
 config FLASH_LOAD_OFFSET
 	# Only user-configurable when USE_DT_CODE_PARTITION is disabled
 	hex "Kernel load offset" if !USE_DT_CODE_PARTITION
-	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_DT_CODE_PARTITION
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_DT_CODE_PARTITION && IS_CHAIN_LOADABLE_APPLICATION
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SINGLE_IMAGE_CODE_PARTITION)) if USE_DT_CODE_PARTITION
 	default 0
 	help
 	  This option specifies the byte offset from the beginning of flash that
@@ -125,7 +130,8 @@ config FLASH_LOAD_OFFSET
 config FLASH_LOAD_SIZE
 	# Only user-configurable when USE_DT_CODE_PARTITION is disabled
 	hex "Kernel load size" if !USE_DT_CODE_PARTITION
-	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_DT_CODE_PARTITION
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_DT_CODE_PARTITION && IS_CHAIN_LOADABLE_APPLICATION
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_SINGLE_IMAGE_CODE_PARTITION)) if USE_DT_CODE_PARTITION
 	default 0
 	help
 	  If non-zero, this option specifies the size, in bytes, of the flash
