@@ -1110,24 +1110,25 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 #endif
 
 #if defined(CONFIG_NET_STATISTICS_TCP) && defined(CONFIG_NET_NATIVE_TCP)
-	PR("TCP bytes recv %u\tsent\t%d\n",
+	PR("TCP bytes recv %u\tsent\t%d\tresent\t%d\n",
 	   GET_STAT(iface, tcp.bytes.received),
-	   GET_STAT(iface, tcp.bytes.sent));
+	   GET_STAT(iface, tcp.bytes.sent),
+	   GET_STAT(iface, tcp.resent));
 	PR("TCP seg recv   %d\tsent\t%d\tdrop\t%d\n",
 	   GET_STAT(iface, tcp.recv),
 	   GET_STAT(iface, tcp.sent),
-	   GET_STAT(iface, tcp.drop));
+	   GET_STAT(iface, tcp.seg_drop));
 	PR("TCP seg resent %d\tchkerr\t%d\tackerr\t%d\n",
-	   GET_STAT(iface, tcp.resent),
+	   GET_STAT(iface, tcp.rexmit),
 	   GET_STAT(iface, tcp.chkerr),
 	   GET_STAT(iface, tcp.ackerr));
-	PR("TCP seg rsterr %d\trst\t%d\tre-xmit\t%d\n",
+	PR("TCP seg rsterr %d\trst\t%d\n",
 	   GET_STAT(iface, tcp.rsterr),
-	   GET_STAT(iface, tcp.rst),
-	   GET_STAT(iface, tcp.rexmit));
+	   GET_STAT(iface, tcp.rst));
 	PR("TCP conn drop  %d\tconnrst\t%d\n",
 	   GET_STAT(iface, tcp.conndrop),
 	   GET_STAT(iface, tcp.connrst));
+	PR("TCP pkt drop   %d\n", GET_STAT(iface, tcp.drop));
 #endif
 
 #if defined(CONFIG_NET_CONTEXT_TIMESTAMP) && defined(CONFIG_NET_NATIVE)
