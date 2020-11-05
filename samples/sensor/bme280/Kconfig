@@ -10,17 +10,13 @@ config LOG_PRINTK
 config SENSOR_LOG_LEVEL
 	default 4
 
-# Workaround for not being able to have commas in macro arguments
-DT_COMPAT_BOSCH_BME280 := bosch,bme280
-
-# Enable SPI support by default if there are any BME280 sensors
-# on a SPI bus.
+# Enable SPI and I2C support by default so that the sample works with
+# the device connected either way. These defaults can be overridden if
+# needed.
 config SPI
-	default $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BME280),spi)
+	default y
 
-# Enable I2C support by default if there are any BME280 sensors
-# on an I2C bus.
 config I2C
-	default $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BME280),i2c)
+	default y
 
 source "Kconfig.zephyr"
