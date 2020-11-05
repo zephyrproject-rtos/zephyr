@@ -41,9 +41,9 @@ static struct ipm_console_sender_config_info sender_config = {
 	.bind_to = "ipm_dummy0",
 	.flags = SOURCE
 };
-DEVICE_INIT(ipm_console_send0, "ipm_send0", ipm_console_sender_init,
-	    NULL, &sender_config,
-	    APPLICATION, INIT_PRIO_IPM_SEND);
+DEVICE_DEFINE(ipm_console_send0, "ipm_send0", ipm_console_sender_init,
+	      NULL, NULL, &sender_config,
+	      APPLICATION, INIT_PRIO_IPM_SEND, NULL);
 
 /* Receiving side of the console IPM driver. These numbers are
  * more or less arbitrary
@@ -67,9 +67,9 @@ static struct ipm_console_receiver_config_info receiver_config = {
 };
 
 struct ipm_console_receiver_runtime_data receiver_data;
-DEVICE_INIT(ipm_console_recv0, "ipm_recv0", ipm_console_receiver_init,
-	    &receiver_data, &receiver_config,
-	    APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+DEVICE_DEFINE(ipm_console_recv0, "ipm_recv0", ipm_console_receiver_init,
+	      NULL, &receiver_data, &receiver_config,
+	      APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
 static const char thestr[] = "everything is awesome\n";
 

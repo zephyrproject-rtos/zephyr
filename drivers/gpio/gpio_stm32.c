@@ -649,6 +649,6 @@ static int gpio_stm32_afio_init(const struct device *device)
 	return 0;
 }
 
-DEVICE_INIT(gpio_stm32_afio, "", gpio_stm32_afio_init, NULL, NULL, PRE_KERNEL_2, 0);
+SYS_DEVICE_DEFINE("gpio_stm32_afio", gpio_stm32_afio_init, NULL, PRE_KERNEL_2, 0);
 
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
