@@ -29,6 +29,14 @@ static K_THREAD_STACK_DEFINE(tstack1, STACK_SIZE);
 static struct k_thread tdata1;
 static struct k_sem end_sema;
 
+void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
+{
+	if (reason != K_ERR_KERNEL_OOPS) {
+		printk("Wrong error type\n");
+		k_fatal_halt(reason);
+	}
+}
+
 static void tqueue_append(struct k_queue *pqueue)
 {
 	k_queue_insert(pqueue, k_queue_peek_tail(pqueue),
@@ -397,4 +405,38 @@ void test_multiple_queues(void)
 		tqueue_append(&queues[i]);
 		tqueue_get(&queues[i]);
 	}
+}
+
+void user_access_queue_private_data(void *p1, void *p2, void *p3)
+{
+	/* try to access to private kernel data, will happen kernel oops */
+	k_queue_is_empty(&queue);
+}
+
+/**
+ * @brief Test access kernel object with private data using system call
+ *
+ * @details
+ * - When defining system calls, it is very important to ensure that
+ *   access to the API’s private data is done exclusively through system call
+ *   interfaces. Private kernel data should never be made available to user mode
+ *   threads directly. For example, the k_queue APIs were intentionally not made
+ *   available as they store bookkeeping information about the queue directly
+ *   in the queue buffers which are visible from user mode.
+ * - Current test makes user thread try to access private kernel data within
+ *   their associated data structures. Kernel will track that system call
+ *   access to these object with the kernel object permission system.
+ *   Current user thread doesn't have permission on it, trying to access
+ *   &pqueue kernel object will happen kernel oops, because current user
+ *   thread doesn't have permission on k_queue object with private kernel data.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_access_kernel_obj_with_priv_data(void)
+{
+	k_queue_init(&queue);
+	k_queue_insert(&queue, k_queue_peek_tail(&queue), (void *)&data[0]);
+	k_thread_create(&tdata, tstack, STACK_SIZE, user_access_queue_private_data,
+					NULL, NULL, NULL, 0, K_USER, K_NO_WAIT);
+	k_thread_join(&tdata, K_FOREVER);
 }

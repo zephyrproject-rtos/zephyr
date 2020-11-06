@@ -45,6 +45,8 @@ void test_main(void)
 			 ztest_1cpu_unit_test(test_queue_loop),
 			 ztest_unit_test(test_queue_alloc),
 			 ztest_1cpu_unit_test(test_queue_poll_race),
-			 ztest_unit_test(test_multiple_queues));
+			 ztest_unit_test(test_multiple_queues),
+			 ztest_unit_test(test_access_kernel_obj_with_priv_data)
+			 );
 	ztest_run_test_suite(queue_api);
 }
