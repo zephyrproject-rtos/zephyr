@@ -3,22 +3,31 @@
  */
 
 /*
+ * Copyright (c) 2016 Intel Corporation
  * Copyright (c) 2020 Luca Quaer
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Original Arduino library: https://github.com/kriswiner/LSM9DS1
+ *
+ * LSM9DS1_MS5611_t3 Basic Example Code
+ * by: Kris Winer
+ * date: November 1, 2014
+ * license: Beerware - Use this code however you'd like. If you
+ * find it useful you can buy me a beer some time.
+ */
+
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 #include <stdio.h>
+#include <init.h>
+#include <kernel.h>
+
 #include <drivers/i2c.h>
 #include <drivers/sensor.h>
-#include <init.h>
 #include <sys/byteorder.h>
 #include <logging/log.h>
-
-#include <kernel.h>
-#include <device.h>
 
 #include "lsm9ds1.h"
 
@@ -981,63 +990,6 @@ static int lsm9ds1_sample_fetch(
     int16_t raw[3] = {};
 
     switch (chan) {
-        // case SENSOR_CHAN_APPLY_SETTINGS:
-        //     // Enable and configure all sensors.
-        //     enableAndConfigureAccl(dev);
-        //     enableAndConfigureGyro(dev);
-        //     enableAndConfigureMagn(dev);
-
-        //     break;
-
-        // case SENSOR_CHAN_CALIBRATE_ACCL:
-        //     // Re-calculate resolutions based on resolution settings.
-        //     updateSensorResolutions(dev);
-
-        //     // Enable and configure sensors
-        //     enableAndConfigureAccl(dev);
-
-        //     // Calibrate sensors
-        //     calibrateAccl(dev);
-
-        //     // printf("Accl biases:\n");
-        //     // printf("%f | %f | %f\n",
-        //     //     data->acclBias[0], data->acclBias[1], data->acclBias[2]);
-
-        //     break;
-
-        // case SENSOR_CHAN_CALIBRATE_GYRO:
-        //     // Re-calculate resolutions based on resolution settings.
-        //     updateSensorResolutions(dev);
-
-        //     // Enable and configure sensors
-        //     enableAndConfigureGyro(dev);
-
-        //     // Calibrate sensors
-        //     calibrateGyro(dev);
-
-        //     // printf("Gyro biases:\n");
-        //     // printf("%f | %f | %f\n",
-        //     //     data->gyroBias[0], data->gyroBias[1], data->gyroBias[2]);
-
-        //     break;
-
-        // case SENSOR_CHAN_CALIBRATE_MAGN:
-        //     // Re-calculate resolutions based on resolution settings.
-        //     updateSensorResolutions(dev);
-
-        //     // Enable and configure sensors
-        //     enableAndConfigureMagn(dev);
-
-        //     // Calibrate sensors
-        //     calibrateMagn(dev);
-
-        //     // printf("Magn biases:\n");
-        //     // printf("%f | %f | %f\n",
-        //     //     data->magnBias[0], data->magnBias[1], data->magnBias[2]);
-
-        //     break;
-
-        //case SENSOR_CHAN_ACCL_XYZ:
         case SENSOR_CHAN_ACCEL_XYZ:
             // Get raw data
             readAcclData(dev, raw);
@@ -1124,7 +1076,6 @@ static int lsm9ds1_channel_get(
     struct lsm9ds1_data *data = dev->data;
 
     switch (chan) {
-        //case SENSOR_CHAN_ACCL_XYZ:
         case SENSOR_CHAN_ACCEL_XYZ:
             val[0] = floatToSensorValue(data->accl_x);
             val[1] = floatToSensorValue(data->accl_y);
@@ -1146,10 +1097,6 @@ static int lsm9ds1_channel_get(
         case SENSOR_CHAN_AMBIENT_TEMP:
             *val = floatToSensorValue(data->temp_c);
             break;
-
-        // case SENSOR_CHAN_ALL:
-        //     *val = floatToSensorValue(123);
-        //     break;
 
         default:
             break;
@@ -1180,16 +1127,10 @@ static int lsm9ds1_attr_set(
 ) {
     struct lsm9ds1_data *data = dev->data;
 
-    /**
-     * TODO: bei den ganzen Zuweisungen wird einem uint8_t ein s32_t zugewiesen.
-     * Kann man das machen, signed zu unsigned?
-     */
-
     switch (chan) {
         /**
          * Change accelerometer settings.
          */
-        //case SENSOR_CHAN_ACCL_XYZ:
         case SENSOR_CHAN_ACCEL_XYZ:
             if (attr == SENSOR_ATTR_CALIB_TARGET) {
                 // Apply changes to accelerometer and re-calculate resolution.
@@ -1294,11 +1235,6 @@ static int lsm9ds1_attr_set(
 
             break; // Break the SENSOR_CHAN_MAGN_XYZ case
 
-        /**
-         * Change temperature sensor settings.
-         *
-         * TODO: This setting is never used or written to a register.
-         */
         case SENSOR_CHAN_AMBIENT_TEMP:
             switch (attr) {
                 case SENSOR_ATTR_OSR:
@@ -1313,8 +1249,6 @@ static int lsm9ds1_attr_set(
         default:
             break;
     }
-
-    //updateSensorResolutions(dev);
 
     return 0;
 }

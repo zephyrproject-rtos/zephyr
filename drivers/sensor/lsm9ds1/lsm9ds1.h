@@ -1,13 +1,30 @@
+/* lsm9ds1.c - Driver for LSM9DS1 inertial module which includes:
+ * 3D accelerometer, 3D gyroscope, 3D magnetometer.
+ */
+
+/*
+ * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2020 Luca Quaer
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Original Arduino library: https://github.com/kriswiner/LSM9DS1
+ *
+ * LSM9DS1_MS5611_t3 Basic Example Code
+ * by: Kris Winer
+ * date: November 1, 2014
+ * license: Beerware - Use this code however you'd like. If you
+ * find it useful you can buy me a beer some time.
+ */
+
 #ifndef ZEPHYR_DRIVERS_SENSOR_LSM9DS1_LSM9DS1_H_
 #define ZEPHYR_DRIVERS_SENSOR_LSM9DS1_LSM9DS1_H_
 
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 #include <device.h>
-//#include <drivers/gpio.h>
-//#include <sys/util.h>
 #include <zephyr/types.h>
-//#include <drivers/sensor.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Define Registers
@@ -91,7 +108,7 @@
 
 /**
  * The address of the accl, gyro and magn are set in the devicetree.
- * 
+ *
  * reg = <0x6B 0x1E>;
  */
 //#define LSM9DS1XG_ADDRESS           0x6B   //  Device address
@@ -105,12 +122,6 @@ static int lsm9ds1_attr_set(
     enum sensor_attribute attr,
     const struct sensor_value *val
 );
-
-// static void enableBlockDataUpdateAndAutoInc(const struct device* dev);
-
-/**
- * TODO: Guter Stil wenn man alle funktionen im Header aufführt?
- */
 
 ////////////////////////////////////////////////////////////////////////////////
 // Define structs
@@ -189,27 +200,6 @@ enum sensor_attribute_extended {
     SENSOR_ATTR_MODE    = SENSOR_ATTR_PRIV_START + 3,
     SENSOR_ATTR_OSR     = SENSOR_ATTR_PRIV_START + 4,
 };
-
-//enum sensor_channel_extended {
-    /**
-     * Custom sensor channels to configure sensors.
-     */
-    //SENSOR_CHAN_CALIBRATE_ACCL = SENSOR_CHAN_PRIV_START,
-    //SENSOR_CHAN_CALIBRATE_GYRO = SENSOR_CHAN_PRIV_START + 1,
-    //SENSOR_CHAN_CALIBRATE_MAGN = SENSOR_CHAN_PRIV_START + 2,
-
-    //SENSOR_CHAN_APPLY_SETTINGS = SENSOR_CHAN_PRIV_START + 3,
-
-    /**
-     * Custom sensor channel to accomodate the naming scheme with 4 characters
-     * per sensor. The included sensor channel for the accelerometer
-     * is called 'SENSOR_CHAN_ACCEL_XYZ' but I use ACCL throughout the
-     * whole driver code. Therefore I define this custom sensor channel.
-     * Both (the default and my custom) sensor channels trigger the same code,
-     * it doesn't matter which one is used.
-     */
-    //SENSOR_CHAN_ACCL_XYZ       = SENSOR_CHAN_PRIV_START + 4,
-//};
 
 ///////////////////
 // Accelerometer //
