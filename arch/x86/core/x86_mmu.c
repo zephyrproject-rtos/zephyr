@@ -293,7 +293,7 @@ static inline uintptr_t get_entry_phys(pentry_t entry, int level)
 /* Return the virtual address of a linked table stored in the provided entry */
 static inline pentry_t *next_table(pentry_t entry, int level)
 {
-	return (pentry_t *)(get_entry_phys(entry, level));
+	return z_mem_virt_addr(get_entry_phys(entry, level));
 }
 
 /* Number of table entries at this level */
@@ -359,7 +359,7 @@ static inline bool is_flipped_pte(pentry_t pte)
 #if defined(CONFIG_SMP)
 void z_x86_tlb_ipi(const void *arg)
 {
-	uintptr_t ptables;
+	uintptr_t ptables_phys;
 
 	ARG_UNUSED(arg);
 
@@ -367,13 +367,13 @@ void z_x86_tlb_ipi(const void *arg)
 	/* We're always on the kernel's set of page tables in this context
 	 * if KPTI is turned on
 	 */
-	ptables = z_x86_cr3_get();
-	__ASSERT(ptables == (uintptr_t)&z_x86_kernel_ptables, "");
+	ptables_phys = z_x86_cr3_get();
+	__ASSERT(ptables_phys == (uintptr_t)z_x86_kernel_ptables, "");
 #else
 	/* We might have been moved to another memory domain, so always invoke
 	 * z_x86_thread_page_tables_get() instead of using current CR3 value.
 	 */
-	ptables = (uintptr_t)z_x86_thread_page_tables_get(_current);
+	ptables_phys = z_mem_phys_addr(z_x86_thread_page_tables_get(_current));
 #endif
 	/*
 	 * In the future, we can consider making this smarter, such as
@@ -383,7 +383,7 @@ void z_x86_tlb_ipi(const void *arg)
 	 */
 	LOG_DBG("%s on CPU %d\n", __func__, arch_curr_cpu()->id);
 
-	z_x86_cr3_set(ptables);
+	z_x86_cr3_set(ptables_phys);
 }
 
 static inline void tlb_shootdown(void)
@@ -489,9 +489,12 @@ static void print_entries(pentry_t entries_array[], uint8_t *base, int level,
 				if (phys == virt) {
 					/* Identity mappings */
 					COLOR(YELLOW);
-				} else {
-					/* Other mappings */
+				} else if (phys + Z_MEM_VM_OFFSET == virt) {
+					/* Permanent ram mappings */
 					COLOR(GREEN);
+				} else {
+					/* general mapped pages */
+					COLOR(CYAN);
 				}
 			} else {
 				COLOR(MAGENTA);
@@ -526,7 +529,8 @@ static void dump_ptables(pentry_t *table, uint8_t *base, int level)
 	}
 #endif
 
-	printk("%s at %p: ", info->name, table);
+	printk("%s at %p (0x%" PRIxPTR ") ", info->name, table,
+		z_mem_phys_addr(table));
 	if (level == 0) {
 		printk("entire address space\n");
 	} else {
@@ -666,6 +670,8 @@ void z_x86_dump_mmu_flags(pentry_t *ptables, void *virt)
  * the optimal value of CONFIG_X86_MMU_PAGE_POOL_PAGES is not intuitive,
  * Better to have a kernel managed page pool of unused RAM that can be used for
  * this, sbrk(), and other anonymous mappings. See #29526
+ *
+ * TODO: With demand paging, these pages must all be pinned in memory.
  */
 static uint8_t __noinit
 	page_pool[CONFIG_MMU_PAGE_SIZE * CONFIG_X86_MMU_PAGE_POOL_PAGES]
@@ -735,8 +741,9 @@ static inline void set_leaf_entry(pentry_t *entryp, pentry_t val,
 				  bool user_table)
 {
 #ifdef CONFIG_X86_KPTI
-	/* Ram is identity-mapped, so phys=virt for this page */
-	uintptr_t shared_phys_addr = (uintptr_t)&z_shared_kernel_page_start;
+	/* Shared page must be pinned to its page frame at boot */
+	uintptr_t shared_phys_addr =
+		z_mem_phys_addr(&z_shared_kernel_page_start);
 
 	if (user_table && (val & MMU_US) == 0 && (val & MMU_P) != 0 &&
 	    get_entry_phys(val, NUM_LEVELS - 1) != shared_phys_addr) {
@@ -851,7 +858,8 @@ static int page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
 			if (new_table == NULL) {
 				return -ENOMEM;
 			}
-			*entryp = ((pentry_t)(uintptr_t)new_table) | INT_FLAGS;
+			*entryp = ((pentry_t)z_mem_phys_addr(new_table) |
+				   INT_FLAGS);
 			table = new_table;
 		} else {
 			/* We fail an assertion here due to no support for
@@ -1074,6 +1082,42 @@ int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
 	return range_map(virt, phys, size, flags_to_entry(flags), MASK_ALL,
 			 OPTION_ALLOC);
+}
+
+static void identity_map_remove(void)
+{
+#if CONFIG_SRAM_BASE_ADDRESS != CONFIG_KERNEL_VM_BASE
+	size_t size, scope = get_entry_scope(0);
+	uint8_t *pos;
+
+	k_mem_region_align((uintptr_t *)&pos, &size,
+			   (uintptr_t)CONFIG_SRAM_BASE_ADDRESS,
+			   (size_t)CONFIG_SRAM_SIZE * 1024U, scope);
+
+	/* We booted with RAM mapped both to its identity and virtual
+	 * mapping starting at CONFIG_KERNEL_VM_BASE. This was done by
+	 * double-linking the relevant tables in the top-level table.
+	 * At this point we don't need the identity mapping(s) any more,
+	 * zero the top-level table entries corresponding to the
+	 * physical mapping.
+	 */
+	while (size) {
+		pentry_t *entry = get_entry_ptr(z_x86_kernel_ptables, pos, 0);
+
+		/* set_pte */
+		*entry = 0;
+		pos += scope;
+		size -= scope;
+	}
+#endif
+}
+
+/* Invoked to remove the identity mappings in the page tables,
+ * they were only needed to tranisition the instruction pointer at early boot
+ */
+void z_x86_mmu_init(void)
+{
+	identity_map_remove();
 }
 
 #if CONFIG_X86_STACK_PROTECTION
@@ -1356,12 +1400,8 @@ static int copy_page_table(pentry_t *dst, pentry_t *src, int level)
 				return -ENOMEM;
 			}
 
-			/* Page table links are by physical address. RAM
-			 * for page tables is identity-mapped, but double-
-			 * cast needed for PAE case where sizeof(void *) and
-			 * sizeof(pentry_t) are not the same.
-			 */
-			dst[i] = ((pentry_t)(uintptr_t)child_dst) | INT_FLAGS;
+			dst[i] = ((pentry_t)z_mem_phys_addr(child_dst) |
+				  INT_FLAGS);
 
 			ret = copy_page_table(child_dst,
 					      next_table(src[i], level),
@@ -1461,6 +1501,10 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 #ifdef CONFIG_X86_PAE
 	/* PDPT is stored within the memory domain itself since it is
 	 * much smaller than a full page
+	 *
+	 * XXX: With demand paging this will not be possible unless we
+	 * choose to start pinning all the struct k_mem_domain in memory,
+	 * as all paging structures must be pinned to their page frames.
 	 */
 	(void)memset(domain->arch.pdpt, 0, sizeof(domain->arch.pdpt));
 	domain->arch.ptables = domain->arch.pdpt;
@@ -1546,8 +1590,11 @@ void arch_mem_domain_thread_add(struct k_thread *thread)
 	struct k_mem_domain *domain = thread->mem_domain_info.mem_domain;
 	/* This is only set for threads that were migrating from some other
 	 * memory domain; new threads this is NULL
+	 *
+	 * FIXME this sucks
 	 */
-	pentry_t *old_ptables = (pentry_t *)thread->arch.ptables;
+	pentry_t *old_ptables = ((thread->arch.ptables != 0UL) ?
+			z_mem_virt_addr(thread->arch.ptables) : NULL);
 	bool is_user = (thread->base.user_options & K_USER) != 0;
 	bool is_migration = (old_ptables != NULL) && is_user;
 
@@ -1559,8 +1606,8 @@ void arch_mem_domain_thread_add(struct k_thread *thread)
 		set_stack_perms(thread, domain->arch.ptables);
 	}
 
-	thread->arch.ptables = (uintptr_t)domain->arch.ptables;
-	LOG_DBG("set thread %p page tables to %p", thread,
+	thread->arch.ptables = z_mem_phys_addr(domain->arch.ptables);
+	LOG_DBG("set thread %p page tables to physical addr %p", thread,
 		(void *)thread->arch.ptables);
 
 	/* Check if we're doing a migration from a different memory domain

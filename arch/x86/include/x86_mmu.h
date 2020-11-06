@@ -163,7 +163,7 @@ static inline uintptr_t z_x86_cr3_get(void)
 /* Return the virtual address of the page tables installed in this CPU in CR3 */
 static inline pentry_t *z_x86_page_tables_get(void)
 {
-	return (pentry_t *)z_x86_cr3_get();
+	return z_mem_virt_addr(z_x86_cr3_get());
 }
 
 /* Kernel's page table. This is in CR3 for all supervisor threads.
@@ -175,7 +175,7 @@ extern pentry_t z_x86_kernel_ptables[];
 static inline pentry_t *z_x86_thread_page_tables_get(struct k_thread *thread)
 {
 #if defined(CONFIG_USERSPACE) && !defined(CONFIG_X86_COMMON_PAGE_TABLE)
-	return (pentry_t *)(thread->arch.ptables);
+	return z_mem_virt_addr((thread->arch.ptables));
 #else
 	return z_x86_kernel_ptables;
 #endif
@@ -189,4 +189,7 @@ void z_x86_tlb_ipi(const void *arg);
 #ifdef CONFIG_X86_COMMON_PAGE_TABLE
 void z_x86_swap_update_common_page_table(struct k_thread *incoming);
 #endif
+
+/* Early-boot paging setup tasks, called from prep_c */
+void z_x86_mmu_init(void);
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_X86_MMU_H */
