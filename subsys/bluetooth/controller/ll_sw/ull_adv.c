@@ -418,7 +418,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		}
 
 		/* Calc primary PDU len */
-		len = ull_adv_aux_hdr_len_get(pri_com_hdr, pri_dptr);
+		len = ull_adv_aux_hdr_len_calc(pri_com_hdr, &pri_dptr);
 		ull_adv_aux_hdr_len_fill(pri_com_hdr, len);
 
 		/* Set PDU length */

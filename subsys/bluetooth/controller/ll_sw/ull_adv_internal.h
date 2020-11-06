@@ -85,17 +85,23 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 				  struct pdu_adv_adi *adi,
 				  uint8_t *pri_idx);
 
-/* helper function to calculate common ext adv payload header length */
+/* helper function to calculate common ext adv payload header length and
+ * adjust the data pointer.
+ * NOTE: This function reverts the header data pointer if there is no
+ *       header fields flags set, and hence no header fields have been
+ *       populated.
+ */
 static inline uint8_t
-ull_adv_aux_hdr_len_get(struct pdu_adv_com_ext_adv *com_hdr, uint8_t *dptr)
+ull_adv_aux_hdr_len_calc(struct pdu_adv_com_ext_adv *com_hdr, uint8_t **dptr)
 {
 	uint8_t len;
 
-	len = dptr - (uint8_t *)com_hdr;
+	len = *dptr - (uint8_t *)com_hdr;
 	if (len <= (offsetof(struct pdu_adv_com_ext_adv, ext_hdr_adi_adv_data) +
 		    sizeof(struct pdu_adv_hdr))) {
 		len = offsetof(struct pdu_adv_com_ext_adv,
 			       ext_hdr_adi_adv_data);
+		*dptr = (uint8_t *)com_hdr + len;
 	}
 
 	return len;

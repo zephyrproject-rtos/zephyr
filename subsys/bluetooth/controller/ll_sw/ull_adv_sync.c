@@ -156,7 +156,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 	/* TODO: AdvData */
 
 	/* Calc tertiary PDU len */
-	ter_len = ull_adv_aux_hdr_len_get(ter_com_hdr, ter_dptr);
+	ter_len = ull_adv_aux_hdr_len_calc(ter_com_hdr, &ter_dptr);
 	ull_adv_aux_hdr_len_fill(ter_com_hdr, ter_len);
 
 	ter_pdu->len = ter_len;

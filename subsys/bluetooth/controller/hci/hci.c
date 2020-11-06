@@ -3809,6 +3809,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 		struct pdu_adv_hdr *h;
 		uint8_t sec_phy_curr = 0U;
 		uint8_t evt_type_curr;
+		uint8_t hdr_len;
 		uint8_t *ptr;
 
 		/* The Link Layer currently returns RSSI as an absolute value */
@@ -3917,24 +3918,35 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 			BT_DBG("    Tx pwr= %d dB", tx_pwr);
 		}
 
-		uint8_t len = ptr - (uint8_t *)p;
-		uint8_t hdr_len = len - offsetof(struct pdu_adv_com_ext_adv,
-					      ext_hdr_adi_adv_data);
-		if (hdr_len > p->ext_hdr_len) {
+		hdr_len = ptr - (uint8_t *)p;
+		if (hdr_len <= (offsetof(struct pdu_adv_com_ext_adv,
+					 ext_hdr_adi_adv_data) +
+				sizeof(struct pdu_adv_hdr))) {
+			hdr_len = offsetof(struct pdu_adv_com_ext_adv,
+					   ext_hdr_adi_adv_data);
+			ptr = (uint8_t *)h;
+		}
+
+		if (hdr_len > (p->ext_hdr_len +
+			       offsetof(struct pdu_adv_com_ext_adv,
+					ext_hdr_adi_adv_data))) {
 			BT_WARN("    Header length %u/%u, INVALID.", hdr_len,
 				p->ext_hdr_len);
 		} else {
-			uint8_t acad_len = p->ext_hdr_len - hdr_len;
+			uint8_t acad_len = p->ext_hdr_len +
+					   offsetof(struct pdu_adv_com_ext_adv,
+						    ext_hdr_adi_adv_data) -
+					   hdr_len;
 
 			if (acad_len) {
 				ptr += acad_len;
-				len += acad_len;
+				hdr_len += acad_len;
 
 				BT_DBG("ACAD: <todo>");
 			}
 
-			if (len < adv->len) {
-				data_len_curr = adv->len - len;
+			if (hdr_len < adv->len) {
+				data_len_curr = adv->len - hdr_len;
 				data_curr = ptr;
 
 				BT_DBG("    AD Data (%u): <todo>", data_len);
