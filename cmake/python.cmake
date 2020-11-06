@@ -29,15 +29,13 @@ foreach(PYTHON_PREFER ${PYTHON_PREFER} "python" "python3")
        set(PYTHON_MINIMUM_REQUIRED ${version})
        set(PYTHON_EXACT EXACT)
        # Python3_ROOT_DIR ensures that location will be preferred by FindPython3.
-       # On Linux, skip this to preserve virtualenv settings.
+       # On Linux, this has no impact as it will usually be /usr/bin
        # but on Windows it solve issues when both 32 and 64 bit versions are
        # installed, as version is not enough and FindPython3 might pick the
        # version not on %PATH%. Setting Python3_ROOT_DIR ensures we are using
        # the version we just tested.
-       if (WIN32)
-         get_filename_component(PYTHON_PATH ${PYTHON_PREFER_EXECUTABLE} DIRECTORY)
-         set(Python3_ROOT_DIR ${PYTHON_PATH})
-       endif()
+       get_filename_component(PYTHON_PATH ${PYTHON_PREFER_EXECUTABLE} DIRECTORY)
+       #set(Python3_ROOT_DIR ${PYTHON_PATH})
        break()
      endif()
   endif()
