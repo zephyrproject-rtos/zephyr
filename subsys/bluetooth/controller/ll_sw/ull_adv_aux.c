@@ -628,14 +628,15 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	/* TODO: ACAD in secondary channel PDU */
 
 	/* Calc primary PDU len */
-	pri_len = ull_adv_aux_hdr_len_get(pri_com_hdr, pri_dptr);
+	pri_len = ull_adv_aux_hdr_len_calc(pri_com_hdr, &pri_dptr);
 	ull_adv_aux_hdr_len_fill(pri_com_hdr, pri_len);
 
 	/* set the primary PDU len */
 	pri_pdu->len = pri_len;
 
 	/* Calc previous secondary PDU len */
-	sec_len_prev = ull_adv_aux_hdr_len_get(sec_com_hdr_prev, sec_dptr_prev);
+	sec_len_prev = ull_adv_aux_hdr_len_calc(sec_com_hdr_prev,
+					       &sec_dptr_prev);
 
 	/* Did we parse beyond PDU length? */
 	if (sec_len_prev > sec_pdu_prev->len) {
@@ -645,7 +646,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	}
 
 	/* Calc current secondary PDU len */
-	sec_len = ull_adv_aux_hdr_len_get(sec_com_hdr, sec_dptr);
+	sec_len = ull_adv_aux_hdr_len_calc(sec_com_hdr, &sec_dptr);
 	ull_adv_aux_hdr_len_fill(sec_com_hdr, sec_len);
 
 	/* AD Data, add or remove */
