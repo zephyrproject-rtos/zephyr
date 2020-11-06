@@ -20,6 +20,8 @@
 #define DAIF_DBG		BIT(9)
 #define DAIF_MASK		(0xf << 6)
 
+#define SPSR_MODE_EL0T		(0x0)
+#define SPSR_MODE_EL1T		(0x4)
 #define SPSR_MODE_EL1H		(0x5)
 
 #define SCTLR_EL3_RES1		(BIT(29) | BIT(28) | BIT(23) | \

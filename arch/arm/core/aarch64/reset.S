@@ -59,7 +59,9 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	msr	vbar_el3, x19
 	isb
 
-	/* Setup a stack for EL3 (SP_ELx) */
+	/* Switch to SP_EL0 and setup the stack */
+	msr	spsel, #0
+
 	ldr	x0, =(z_interrupt_stacks)
 	add	x0, x0, #(CONFIG_ISR_STACK_SIZE)
 	mov	sp, x0
@@ -121,7 +123,9 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	msr	vbar_el1, x19
 	isb
 
-	/* Setup the stack (SP_ELx) */
+	/* Switch to SP_EL0 and setup the stack */
+	msr	spsel, #0
+
 	ldr	x0, =(z_interrupt_stacks)
 	add	x0, x0, #(CONFIG_ISR_STACK_SIZE)
 	mov	sp, x0
