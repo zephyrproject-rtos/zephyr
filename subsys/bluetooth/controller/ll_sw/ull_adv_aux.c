@@ -645,7 +645,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	sec_pdu->len = sec_len + ad_len;
 
 	/* Check AdvData overflow */
-	if (sec_pdu->len > CONFIG_BT_CTLR_ADV_DATA_LEN_MAX) {
+	if (sec_pdu->len > PDU_AC_PAYLOAD_SIZE_MAX) {
 		/* FIXME: release allocations */
 		return BT_HCI_ERR_PACKET_TOO_LONG;
 	}
