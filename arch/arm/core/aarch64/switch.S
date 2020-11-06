@@ -100,8 +100,12 @@ SECTION_FUNC(TEXT, z_arm64_sync_exc)
 
 	/* Demux the SVC call */
 	and	x1, x0, #0xff
+
 	cmp	x1, #_SVC_CALL_CONTEXT_SWITCH
 	beq	context_switch
+
+	cmp	x1, #_SVC_CALL_RUNTIME_EXCEPT
+	beq	oops
 
 #ifdef CONFIG_IRQ_OFFLOAD
 	cmp	x1, #_SVC_CALL_IRQ_OFFLOAD
@@ -118,6 +122,10 @@ offload:
 	b	exit
 #endif
 	b	inv
+
+oops:
+	mov	x0, sp
+	b	z_arm64_do_kernel_oops
 
 context_switch:
 	/*

@@ -9,7 +9,8 @@
  * @brief Kernel fatal error handler for ARM64 Cortex-A
  *
  * This module provides the z_arm64_fatal_error() routine for ARM64 Cortex-A
- * CPUs
+ * CPUs and z_arm64_do_kernel_oops() routine to manage software-generated fatal
+ * exceptions
  */
 
 #include <kernel.h>
@@ -221,4 +222,18 @@ void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
 	z_fatal_error(reason, esf);
 
 	CODE_UNREACHABLE;
+}
+
+/**
+ * @brief Handle a software-generated fatal exception
+ * (e.g. kernel oops, panic, etc.).
+ *
+ * @param esf exception frame
+ */
+void z_arm64_do_kernel_oops(z_arch_esf_t *esf)
+{
+	/* x8 holds the exception reason */
+	unsigned int reason = esf->x8;
+
+	z_arm64_fatal_error(reason, esf);
 }
