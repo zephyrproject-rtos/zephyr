@@ -1916,12 +1916,12 @@ static void le_set_phy(struct net_buf *buf, struct net_buf **evt)
 	handle = sys_le16_to_cpu(cmd->handle);
 	phy_opts = sys_le16_to_cpu(cmd->phy_opts);
 
-	mask_phys = 0x01;
+	mask_phys = BT_HCI_LE_PHY_PREFER_1M;
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_2M)) {
-		mask_phys |= BIT(1);
+		mask_phys |= BT_HCI_LE_PHY_PREFER_2M;
 	}
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
-		mask_phys |= BIT(2);
+		mask_phys |= BT_HCI_LE_PHY_PREFER_CODED;
 	}
 
 	if (cmd->all_phys & BT_HCI_LE_PHY_TX_ANY) {
@@ -3986,7 +3986,7 @@ static void le_ext_adv_legacy_report(struct pdu_data *pdu_data,
 	adv_info->prim_phy = BT_HCI_LE_EXT_SCAN_PHY_1M;
 	adv_info->sec_phy = 0U;
 	adv_info->sid = 0xff;
-	adv_info->tx_power = 0x7f;
+	adv_info->tx_power = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
 	adv_info->rssi = rssi;
 	adv_info->interval = 0U;
 
@@ -4011,6 +4011,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 {
 	struct bt_hci_evt_le_ext_advertising_info *adv_info;
 	struct bt_hci_evt_le_ext_advertising_report *sep;
+	int8_t tx_pwr = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
 	struct pdu_adv *adv = (void *)pdu_data;
 	struct node_rx_pdu *node_rx_curr;
 	struct node_rx_pdu *node_rx_next;
@@ -4024,7 +4025,6 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 	uint8_t data_status = 0U;
 	uint8_t data_len = 0U;
 	uint8_t evt_type = 0U;
-	int8_t tx_pwr = 0x7f;
 	uint8_t *data = NULL;
 	uint8_t sec_phy = 0U;
 	uint8_t info_len;
@@ -4244,7 +4244,8 @@ no_ext_hdr:
 
 		if (!node_rx_next) {
 			if (sec_phy_curr) {
-				data_status = BIT(1);
+				data_status =
+				  BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE;
 			}
 
 			break;
@@ -4270,11 +4271,14 @@ no_ext_hdr:
 		/* if data cannot fit the event, mark it as incomplete */
 		if (data_len > data_max_len) {
 			data_len = data_max_len;
-			data_status = BIT(0);
+			data_status =
+				BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
 		}
 	} else {
 		/* Data incomplete and no more to come */
-		if (!(adv_addr || (adi && ((tx_pwr != 0x7f) || data)))) {
+		if (!(adv_addr ||
+		      (adi && ((tx_pwr != BT_HCI_LE_ADV_TX_POWER_NO_PREF) ||
+			       data)))) {
 			goto le_ext_adv_report_invalid;
 		}
 	}
@@ -4290,7 +4294,7 @@ no_ext_hdr:
 
 	/* Set directed advertising bit */
 	if ((evt_type == BT_HCI_LE_ADV_EVT_TYPE_CONN) && direct_addr) {
-		evt_type |= BIT(2);
+		evt_type |= BT_HCI_LE_ADV_EVT_TYPE_DIRECT;
 	}
 
 	/* TODO: Set scan response bit */
@@ -4365,21 +4369,21 @@ static void le_adv_ext_1M_report(struct pdu_data *pdu_data,
 				 struct node_rx_pdu *node_rx,
 				 struct net_buf *buf)
 {
-	le_adv_ext_report(pdu_data, node_rx, buf, BIT(0));
+	le_adv_ext_report(pdu_data, node_rx, buf, BT_HCI_LE_EXT_SCAN_PHY_1M);
 }
 
 static void le_adv_ext_2M_report(struct pdu_data *pdu_data,
 				 struct node_rx_pdu *node_rx,
 				 struct net_buf *buf)
 {
-	le_adv_ext_report(pdu_data, node_rx, buf, BIT(1));
+	le_adv_ext_report(pdu_data, node_rx, buf, BT_HCI_LE_EXT_SCAN_PHY_2M);
 }
 
 static void le_adv_ext_coded_report(struct pdu_data *pdu_data,
 				    struct node_rx_pdu *node_rx,
 				    struct net_buf *buf)
 {
-	le_adv_ext_report(pdu_data, node_rx, buf, BIT(2));
+	le_adv_ext_report(pdu_data, node_rx, buf, BT_HCI_LE_EXT_SCAN_PHY_CODED);
 }
 
 static void le_scan_timeout(struct pdu_data *pdu_data,
@@ -4434,13 +4438,13 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 				   struct net_buf *buf)
 {
 	struct bt_hci_evt_le_per_advertising_report *sep;
+	int8_t tx_pwr = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
 	struct pdu_adv *adv = (void *)pdu_data;
 	struct node_rx_pdu *node_rx_curr;
 	struct node_rx_pdu *node_rx_next;
 	uint8_t total_data_len = 0U;
 	uint8_t data_status = 0U;
 	uint8_t data_len = 0U;
-	int8_t tx_pwr = 0x7f;
 	uint8_t *data = NULL;
 	int8_t rssi;
 
@@ -4570,7 +4574,8 @@ no_ext_hdr:
 
 		if (!node_rx_next) {
 			if (sec_phy_curr) {
-				data_status = BIT(1);
+				data_status =
+				  BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE;
 			}
 
 			break;
@@ -4595,11 +4600,12 @@ no_ext_hdr:
 		/* if data cannot fit the event, mark it as incomplete */
 		if (data_len > data_max_len) {
 			data_len = data_max_len;
-			data_status = BIT(0);
+			data_status =
+				BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
 		}
 	} else {
 		/* Data incomplete and no more to come */
-		if ((tx_pwr == 0x7f) && !data) {
+		if ((tx_pwr == BT_HCI_LE_ADV_TX_POWER_NO_PREF) && !data) {
 			goto le_per_adv_report_invalid;
 		}
 	}
