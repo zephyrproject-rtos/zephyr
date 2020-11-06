@@ -13,6 +13,10 @@
 
 #include <kernel.h>
 
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+__thread k_tid_t z_tls_current;
+#endif
+
 /*
  * Common thread entry point function (used by all threads)
  *
@@ -26,6 +30,9 @@
 FUNC_NORETURN void z_thread_entry(k_thread_entry_t entry,
 				 void *p1, void *p2, void *p3)
 {
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	z_tls_current = z_current_get();
+#endif
 	entry(p1, p2, p3);
 
 	k_thread_abort(k_current_get());

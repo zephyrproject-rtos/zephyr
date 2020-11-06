@@ -490,10 +490,32 @@ __syscall void k_wakeup(k_tid_t thread);
 /**
  * @brief Get thread ID of the current thread.
  *
+ * This unconditionally queries the kernel via a system call.
+ *
+ * @return ID of current thread.
+ */
+__syscall k_tid_t z_current_get(void);
+
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+/* Thread-local cache of current thread ID, set in z_thread_entry() */
+extern __thread k_tid_t z_tls_current;
+#endif
+
+/**
+ * @brief Get thread ID of the current thread.
+ *
  * @return ID of current thread.
  *
  */
-__syscall k_tid_t k_current_get(void) __attribute_const__;
+__attribute_const__
+static inline k_tid_t k_current_get(void)
+{
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	return z_tls_current;
+#else
+	return z_current_get();
+#endif
+}
 
 /**
  * @brief Abort a thread.
