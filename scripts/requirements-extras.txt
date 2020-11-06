@@ -14,3 +14,6 @@ lpc_checksum
 
 # used by scripts/gen_cfb_font_header.py - helper script for user
 Pillow
+
+# can be used to sign a Zephyr application binary for consumption by a bootloader
+imgtool
