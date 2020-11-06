@@ -311,7 +311,8 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t rssi_ready)
 	ftr->radio_end_us = radio_tmr_end_get() -
 			    radio_rx_chain_delay_get(lll->phy, 1);
 
-	ftr->rssi = (rssi_ready) ? (radio_rssi_get() & 0x7f) : 0x7f;
+	ftr->rssi = (rssi_ready) ? radio_rssi_get() :
+				   BT_HCI_LE_RSSI_NOT_AVAILABLE;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	/* TODO: Use correct rl_idx value when privacy support is added */

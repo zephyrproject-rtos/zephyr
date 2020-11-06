@@ -285,8 +285,8 @@ static void isr_rx(void *param)
 
 			ftr = &(node_rx->hdr.rx_ftr);
 			ftr->param = lll;
-			ftr->rssi = (rssi_ready) ? (radio_rssi_get() & 0x7f) :
-				    0x7f;
+			ftr->rssi = (rssi_ready) ? radio_rssi_get() :
+						   BT_HCI_LE_RSSI_NOT_AVAILABLE;
 			ftr->ticks_anchor = radio_tmr_start_get();
 			ftr->radio_end_us = radio_tmr_end_get() -
 					    radio_rx_chain_delay_get(lll->phy,

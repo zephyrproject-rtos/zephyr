@@ -103,14 +103,14 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		aux = NULL;
 		scan = (void *)HDR_LLL2EVT(ftr->param);
 		sync = scan->per_scan.sync;
-		phy = BIT(0);
+		phy = BT_HCI_LE_EXT_SCAN_PHY_1M;
 		break;
 	case NODE_RX_TYPE_EXT_CODED_REPORT:
 		lll = NULL;
 		aux = NULL;
 		scan = (void *)HDR_LLL2EVT(ftr->param);
 		sync = scan->per_scan.sync;
-		phy = BIT(2);
+		phy = BT_HCI_LE_EXT_SCAN_PHY_CODED;
 		break;
 	case NODE_RX_TYPE_EXT_AUX_REPORT:
 		lll = ftr->param;
@@ -122,13 +122,13 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			sync = scan->per_scan.sync;
 			phy = lll->phy;
 			switch (phy) {
-			case BIT(0):
+			case BT_HCI_LE_EXT_SCAN_PHY_1M:
 				rx->type = NODE_RX_TYPE_EXT_1M_REPORT;
 				break;
-			case BIT(1):
+			case BT_HCI_LE_EXT_SCAN_PHY_2M:
 				rx->type = NODE_RX_TYPE_EXT_2M_REPORT;
 				break;
-			case BIT(2):
+			case BT_HCI_LE_EXT_SCAN_PHY_CODED:
 				rx->type = NODE_RX_TYPE_EXT_CODED_REPORT;
 				break;
 			default:

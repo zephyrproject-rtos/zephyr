@@ -1967,6 +1967,8 @@ struct bt_hci_evt_le_conn_complete {
 	uint8_t      clock_accuracy;
 } __packed;
 
+#define BT_HCI_LE_RSSI_NOT_AVAILABLE            0x7F
+
 #define BT_HCI_EVT_LE_ADVERTISING_REPORT        0x02
 struct bt_hci_evt_le_advertising_info {
 	uint8_t      evt_type;
