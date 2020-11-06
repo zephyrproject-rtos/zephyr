@@ -25,6 +25,8 @@ LOG_MODULE_DECLARE(espi, CONFIG_ESPI_LOG_LEVEL);
 
 /* Maximum bytes for OOB transactions */
 #define MAX_RESP_SIZE         20u
+/* 100ms */
+#define MAX_OOB_TIMEOUT       100ul
 
 /* eSPI flash parameters */
 #define MAX_TEST_BUF_SIZE     1024u
@@ -73,6 +75,9 @@ static struct espi_callback espi_bus_cb;
 static struct espi_callback vw_rdy_cb;
 static struct espi_callback vw_cb;
 static struct espi_callback p80_cb;
+static struct espi_callback oob_cb;
+static struct k_sem oob_lock;
+static int temp;
 
 static uint8_t espi_rst_sts;
 
@@ -186,6 +191,42 @@ static void periph_handler(const struct device *dev, struct espi_callback *cb,
 	}
 }
 
+#ifdef CONFIG_ESPI_OOB_CHANNEL
+
+static void oob_rx_handler(const struct device *dev, struct espi_callback *cb,
+			   struct espi_event event)
+{
+	int ret;
+	struct espi_oob_packet resp_pckt;
+	uint8_t buf[MAX_RESP_SIZE];
+
+	LOG_WRN("%s", __func__);
+	/* This operation should never timeout since callback indicates
+	 * data was received over OOB channel
+	 */
+	resp_pckt.buf = (uint8_t *)&buf;
+	resp_pckt.len = MAX_RESP_SIZE;
+	ret = espi_receive_oob(dev, &resp_pckt);
+	if (ret) {
+		LOG_ERR("OOB Rx failed %d", ret);
+		k_sem_give(&oob_lock);
+	}
+
+	LOG_INF("OOB transaction completed rcvd: %d bytes", resp_pckt.len);
+	for (int i = 0; i < resp_pckt.len; i++) {
+		LOG_INF("%x ", buf[i]);
+	}
+
+	if (resp_pckt.len == OOB_RESPONSE_LEN) {
+		temp = buf[OOB_RESPONSE_INDEX];
+	} else {
+		LOG_ERR("Incorrect size response");
+	}
+
+	k_sem_give(&oob_lock);
+}
+#endif
+
 int espi_init(void)
 {
 	int ret;
@@ -225,6 +266,8 @@ int espi_init(void)
 			   ESPI_BUS_EVENT_VWIRE_RECEIVED);
 	espi_init_callback(&p80_cb, periph_handler,
 			   ESPI_BUS_PERIPHERAL_NOTIFICATION);
+	espi_init_callback(&oob_cb, oob_rx_handler,
+			   ESPI_BUS_EVENT_OOB_RECEIVED);
 	LOG_INF("complete");
 
 	LOG_INF("eSPI test - callbacks registration... ");
@@ -232,6 +275,7 @@ int espi_init(void)
 	espi_add_callback(espi_dev, &vw_rdy_cb);
 	espi_add_callback(espi_dev, &vw_cb);
 	espi_add_callback(espi_dev, &p80_cb);
+	espi_add_callback(espi_dev, &oob_cb);
 	LOG_INF("complete");
 
 	return ret;
@@ -478,12 +522,10 @@ static int espi_flash_test(uint32_t start_flash_addr, uint8_t blocks)
 }
 #endif /* CONFIG_ESPI_FLASH_CHANNEL */
 
-int get_pch_temp(const struct device *dev, int *temp)
+int get_cpu_temp(const struct device *dev)
 {
 	struct espi_oob_packet req_pckt;
-	struct espi_oob_packet resp_pckt;
 	struct oob_header oob_hdr;
-	uint8_t buf[MAX_RESP_SIZE];
 	int ret;
 
 	LOG_INF("%s", __func__);
@@ -496,8 +538,6 @@ int get_pch_temp(const struct device *dev, int *temp)
 	/* Packetize OOB request */
 	req_pckt.buf = (uint8_t *)&oob_hdr;
 	req_pckt.len = sizeof(struct oob_header);
-	resp_pckt.buf = (uint8_t *)&buf;
-	resp_pckt.len = MAX_RESP_SIZE;
 
 	ret = espi_send_oob(dev, &req_pckt);
 	if (ret) {
@@ -505,21 +545,14 @@ int get_pch_temp(const struct device *dev, int *temp)
 		return ret;
 	}
 
-	ret = espi_receive_oob(dev, &resp_pckt);
+	/* This waits until callback, for more complex scenarios
+	 * this operation should be in separate thread
+	 * for this sample do it here
+	 */
+	ret = k_sem_take(&oob_lock, K_FOREVER);
 	if (ret) {
 		LOG_ERR("OOB Rx failed %d", ret);
 		return ret;
-	}
-
-	LOG_INF("OOB transaction completed rcvd: %d bytes", resp_pckt.len);
-	for (int i = 0; i < resp_pckt.len; i++) {
-		LOG_INF("%x ", buf[i]);
-	}
-
-	if (resp_pckt.len == OOB_RESPONSE_LEN) {
-		*temp = buf[OOB_RESPONSE_INDEX];
-	} else {
-		LOG_ERR("Incorrect size response");
 	}
 
 	return 0;
@@ -673,10 +706,9 @@ int espi_test(void)
 	/*  Attempt to use OOB channel to read temperature, regardless of
 	 * if is enabled or not.
 	 */
+	k_sem_init(&oob_lock, 0, 1);
 	for (int i = 0; i < 5; i++) {
-		int temp;
-
-		ret = get_pch_temp(espi_dev, &temp);
+		ret = get_cpu_temp(espi_dev);
 		if (ret)  {
 			LOG_ERR("eSPI OOB transaction failed %d", ret);
 		} else {
