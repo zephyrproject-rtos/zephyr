@@ -1,16 +1,17 @@
-.. _debug-host-tools:
+.. _flash-debug-host-tools:
 
-Debug Host Tools
-################
+Flash & Debug Host Tools
+########################
 
 This guide describes the software tools you can run on your host workstation to
-debug Zephyr applications.
+flash and debug Zephyr applications.
 
-Zephyr's west tool has built-in support for all of these in its ``debug``,
-``debugserver``, and ``attach`` commands, provided your board hardware supports
-them and your Zephyr board directory's :file:`board.cmake` file declares that
-support properly. See :ref:`west-build-flash-debug` for more information on
-these commands.
+Zephyr's west tool has built-in support for all of these in its ``flash``,
+``debug``, ``debugserver``, and ``attach`` commands, provided your board
+hardware supports them and your Zephyr board directory's :file:`board.cmake`
+file declares that support properly. See :ref:`west-build-flash-debug` for
+more information on these commands.
+
 
 .. _jlink-debug-host-tools:
 

@@ -450,7 +450,7 @@ to configure a "runner" for your board. (There's nothing special you need to
 do to get ``west build`` support for your board.)
 
 "Runners" are Zephyr-specific Python classes that wrap :ref:`flash and debug
-host tools <debug-host-tools>` and integrate with west and the zephyr build
+host tools <flash-debug-host-tools>` and integrate with west and the zephyr build
 system to support ``west flash`` and related commands. Each runner supports
 flashing, debugging, or both. You need to configure the arguments to these
 Python scripts in your :file:`board.cmake` to support those commands like this

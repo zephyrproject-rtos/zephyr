@@ -9,7 +9,7 @@ reading and writing registers and memory, and support breakpoint debugging of
 the Zephyr application on your host workstation using tools like GDB. They may
 also support other debug software and more advanced features such as
 :ref:`tracing program execution <tracing>`. For details on the related host
-software supported by Zephyr, see :ref:`debug-host-tools`.
+software supported by Zephyr, see :ref:`flash-debug-host-tools`.
 
 Debug probes are usually connected to your host workstation via USB; they
 are sometimes also accessible via an IP network or other means. They usually
