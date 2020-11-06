@@ -62,11 +62,16 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 
 	/* Current EL with SP0 / Synchronous */
 	.align 7
-	b	.
+	b	z_arm64_sync_exc
 
 	/* Current EL with SP0 / IRQ */
 	.align 7
-	b	.
+
+#ifdef CONFIG_GEN_SW_ISR_TABLE
+	b 	_isr_wrapper
+#else
+	b	z_irq_spurious
+#endif
 
 	/* Current EL with SP0 / FIQ */
 	.align 7
@@ -74,7 +79,7 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 
 	/* Current EL with SP0 / SError */
 	.align 7
-	b	.
+	b	z_arm64_serror
 
 	/* Current EL with SPx / Synchronous */
 	.align 7
