@@ -187,7 +187,7 @@ bool z_smp_cpu_mobile(void);
 
 #define _current_cpu ({ __ASSERT_NO_MSG(!z_smp_cpu_mobile()); \
 			arch_curr_cpu(); })
-#define _current k_current_get()
+#define _current z_current_get()
 
 #else
 #define _current_cpu (&_kernel.cpus[0])

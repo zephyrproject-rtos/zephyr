@@ -1365,7 +1365,7 @@ static inline void z_vrfy_k_wakeup(k_tid_t thread)
 #include <syscalls/k_wakeup_mrsh.c>
 #endif
 
-k_tid_t z_impl_k_current_get(void)
+k_tid_t z_impl_z_current_get(void)
 {
 #ifdef CONFIG_SMP
 	/* In SMP, _current is a field read from _current_cpu, which
@@ -1384,11 +1384,11 @@ k_tid_t z_impl_k_current_get(void)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline k_tid_t z_vrfy_k_current_get(void)
+static inline k_tid_t z_vrfy_z_current_get(void)
 {
-	return z_impl_k_current_get();
+	return z_impl_z_current_get();
 }
-#include <syscalls/k_current_get_mrsh.c>
+#include <syscalls/z_current_get_mrsh.c>
 #endif
 
 int z_impl_k_is_preempt_thread(void)
