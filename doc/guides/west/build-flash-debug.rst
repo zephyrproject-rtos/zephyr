@@ -537,9 +537,9 @@ Flash and debug runners
 ***********************
 
 The flash and debug commands use Python wrappers around various
-:ref:`debug-host-tools`. These wrappers are all defined in a Python library at
-:zephyr_file:`scripts/west_commands/runners`. Each wrapper is called a
-*runner*. Runners can flash and/or debug Zephyr programs.
+:ref:`flash-debug-host-tools`. These wrappers are all defined in a Python
+library at :zephyr_file:`scripts/west_commands/runners`. Each wrapper is
+called a *runner*. Runners can flash and/or debug Zephyr programs.
 
 The central abstraction within this library is ``ZephyrBinaryRunner``, an
 abstract class which represents runners. The set of available runners is

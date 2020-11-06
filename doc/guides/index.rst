@@ -18,7 +18,7 @@ User and Developer Guides
    coccinelle.rst
    code-relocation.rst
    crypto/index
-   debugging/index
+   flash_debug/index
    device_mgmt/index
    device_mgmt/dfu
    dts/index

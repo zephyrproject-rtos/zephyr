@@ -1,7 +1,7 @@
-.. _debugging:
+.. _flashing_and_debugging:
 
-Debugging
-#########
+Flashing and Debugging
+######################
 
 .. toctree::
    :maxdepth: 1
