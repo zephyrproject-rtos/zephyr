@@ -51,7 +51,7 @@ void test_z_mem_map_rw(void)
 	expect_fault = false;
 
 	/* Map in a page that allows writes */
-	z_mem_map(&mapped_rw, (uintptr_t)buf,
+	z_mem_map(&mapped_rw, Z_MEM_PHYS_ADDR((uintptr_t)buf),
 		  BUF_SIZE, BASE_FLAGS | K_MEM_PERM_RW);
 
 	/* Initialize buf with some bytes */
@@ -60,7 +60,7 @@ void test_z_mem_map_rw(void)
 	}
 
 	/* Map again this time only allowing reads */
-	z_mem_map(&mapped_ro, (uintptr_t)buf,
+	z_mem_map(&mapped_ro, Z_MEM_PHYS_ADDR((uintptr_t)buf),
 		  BUF_SIZE, BASE_FLAGS);
 
 	/* Check that the mapped area contains the expected data. */
@@ -97,13 +97,13 @@ void test_z_mem_map_exec(void)
 	expect_fault = false;
 
 	/* Map with write permissions and copy the function into the page */
-	z_mem_map(&mapped_rw, (uintptr_t)test_page,
+	z_mem_map(&mapped_rw, Z_MEM_PHYS_ADDR((uintptr_t)test_page),
 		  sizeof(test_page), BASE_FLAGS | K_MEM_PERM_RW);
 
 	memcpy(mapped_rw, (void *)&transplanted_function, CONFIG_MMU_PAGE_SIZE);
 
 	/* Now map with execution enabled and try to run the copied fn */
-	z_mem_map(&mapped_exec, (uintptr_t)test_page,
+	z_mem_map(&mapped_exec, Z_MEM_PHYS_ADDR((uintptr_t)test_page),
 		  sizeof(test_page), BASE_FLAGS | K_MEM_PERM_EXEC);
 
 	func = (void (*)(bool *executed))mapped_exec;
@@ -111,7 +111,7 @@ void test_z_mem_map_exec(void)
 	zassert_true(executed, "function did not execute");
 
 	/* Now map without execution and execution should now fail */
-	z_mem_map(&mapped_ro, (uintptr_t)test_page,
+	z_mem_map(&mapped_ro, Z_MEM_PHYS_ADDR((uintptr_t)test_page),
 		  sizeof(test_page), BASE_FLAGS);
 
 	func = (void (*)(bool *executed))mapped_ro;
@@ -143,7 +143,7 @@ void test_z_mem_map_side_effect(void)
 	 * Show that by mapping test_page to an RO region, we can still
 	 * modify test_page.
 	 */
-	z_mem_map(&mapped, (uintptr_t)test_page,
+	z_mem_map(&mapped, Z_MEM_PHYS_ADDR((uintptr_t)test_page),
 		  sizeof(test_page), BASE_FLAGS);
 
 	/* Should NOT fault */
