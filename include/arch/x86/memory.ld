@@ -22,6 +22,12 @@
  * are set up, such that read/write data/bss have their VMA addresses
  * in RAM and are copied from flash at boot. Text/rodata linked in-place in
  * flash.
+ *
+ * If CONFIG_MMU is enabled, then the ROM region in MEMORY is used to set the
+ * LMA for all sections relative to physical address. The virtual address VMAs
+ * for all sections are relative to the base virtual address for the kernel.
+ * Setting LMAs here helps let QEMU or any other ELF-aware loader know where to
+ * physically load the image.
  */
 
 #ifndef ARCH_X86_MEMORY_LD
@@ -29,28 +35,26 @@
 
 #include <autoconf.h>
 #include <devicetree.h>
+#include <sys/mem_manage.h>
 
 /* Bounds of physical RAM from DTS */
 #define PHYS_RAM_ADDR		DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
 #define PHYS_RAM_SIZE		DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
 
-#ifdef CONFIG_KERNEL_LINK_IN_VIRT
-
-/* Linked at virtual address space */
-#define KERNEL_BASE_ADDR	\
-	(CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_OFFSET)
-#define KERNEL_RAM_SIZE		\
-	(CONFIG_KERNEL_VM_SIZE - CONFIG_KERNEL_VM_OFFSET)
-
+/* Virtual base address for the kernel; with CONFIG_MMU this is not necessarily
+ * the same as its physical location, although an identity mapping for RAM
+ * is still supported by setting CONFIG_KERNEL_VM_BASE=CONFIG_SRAM_BASE_ADDRESS.
+ */
+#ifdef Z_VM_KERNEL
+#define KERNEL_BASE_ADDR  (CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_OFFSET)
+#define KERNEL_RAM_SIZE   (CONFIG_KERNEL_VM_SIZE - CONFIG_KERNEL_VM_OFFSET)
+#define PHYS_RAM_AVAIL    (PHYS_RAM_SIZE - CONFIG_SRAM_OFFSET)
 #else
+#define KERNEL_BASE_ADDR  (PHYS_RAM_ADDR + CONFIG_SRAM_OFFSET)
+#define KERNEL_RAM_SIZE   (PHYS_RAM_SIZE - CONFIG_SRAM_OFFSET)
+#endif
 
-/* Linked at physical address */
-#define KERNEL_BASE_ADDR	\
-	(PHYS_RAM_ADDR + CONFIG_SRAM_OFFSET)
-#define KERNEL_RAM_SIZE		\
-	(PHYS_RAM_SIZE - CONFIG_SRAM_OFFSET)
-
-#endif /* CONFIG_DEMAND_PAGING */
+/* "kernel RAM" for linker VMA allocations starts at the offset */
 
 #ifdef CONFIG_XIP
   /* "ROM" is flash, we leave rodata and text there and just copy in data.
@@ -59,7 +63,10 @@
    */
   #define FLASH_ROM_SIZE      DT_REG_SIZE(DT_CHOSEN(zephyr_flash))
   #define PHYS_LOAD_ADDR      DT_REG_ADDR(DT_CHOSEN(zephyr_flash))
-#endif
+#else
+  /* Physical RAM location where the kernel image is loaded */
+  #define PHYS_LOAD_ADDR      (PHYS_RAM_ADDR + CONFIG_SRAM_OFFSET)
+#endif /* CONFIG_XIP */
 
 #ifdef CONFIG_X86_64
 /* Locore must be addressable by real mode and so cannot extend past 64K.
@@ -67,7 +74,11 @@
  */
 #define LOCORE_BASE         0x1000
 #define LOCORE_SIZE         (0x10000 - LOCORE_BASE)
+
+#if PHYS_RAM_ADDR != CONFIG_KERNEL_VM_BASE
+#error Virtual kernel linking is not yet implemented for 64-bit
 #endif
+#endif /* CONFIG_X86_64 */
 
 MEMORY
     {
@@ -76,6 +87,8 @@ MEMORY
      * or copied into physical RAM by a loader (MMU)
      */
     ROM (rx)        : ORIGIN = PHYS_LOAD_ADDR, LENGTH = FLASH_ROM_SIZE
+#elif defined(Z_VM_KERNEL)
+    ROM (rx)        : ORIGIN = PHYS_LOAD_ADDR, LENGTH = PHYS_RAM_AVAIL
 #endif
     /* Linear address range to link the kernel. If non-XIP, everything is
      * linked in this space. Otherwise, rodata and text are linked at their
