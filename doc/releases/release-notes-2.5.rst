@@ -182,6 +182,10 @@ Bluetooth
 
 * Host
 
+  * When privacy has been enabled in order to advertise towards a
+    privacy-enabled peer the BT_LE_ADV_OPT_DIR_ADDR_RPA option must now
+    be set, same as when privacy has been disabled.
+
 * Mesh
 
 * BLE split software Controller
