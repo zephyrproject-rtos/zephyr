@@ -60,7 +60,7 @@ static uint8_t *mapping_pos =
 			    (uintptr_t)CONFIG_KERNEL_VM_SIZE);
 
 /* Lower-limit of virtual address mapping. Immediately below this is the
- * permanent identity mapping for all SRAM.
+ * permanent mapping for all SRAM.
  */
 static uint8_t *mapping_limit =
 	(uint8_t *)((uintptr_t)CONFIG_KERNEL_VM_BASE +
