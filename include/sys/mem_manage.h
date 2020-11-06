@@ -38,11 +38,80 @@
 /** Region will be accessible to user mode (normally supervisor-only) */
 #define K_MEM_PERM_USER		BIT(5)
 
+/*
+ * This is the offset to subtract from a virtual address mapped in the
+ * kernel's permanent mapping of RAM, to obtain its physical address.
+ *
+ *     virt_addr = phys_addr + Z_MEM_VM_OFFSET
+ *
+ * This only works for virtual addresses within the interval
+ * [CONFIG_KERNEL_VM_BASE, CONFIG_KERNEL_VM_BASE + (CONFIG_SRAM_SIZE * 1024)).
+ *
+ * These macros are intended for assembly, linker code, and static initializers.
+ * Use with care.
+ *
+ * Note that when demand paging is active, these will only work with page
+ * frames that are pinned to their virtual mapping at boot.
+ *
+ * TODO: This will likely need to move to an arch API or need additional
+ * constraints defined.
+ */
+#ifdef CONFIG_MMU
+#define Z_MEM_VM_OFFSET	((CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_OFFSET) - \
+			 (CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_OFFSET))
+#else
+#define Z_MEM_VM_OFFSET	0
+#endif
+
+#define Z_MEM_PHYS_ADDR(virt)	((virt) - Z_MEM_VM_OFFSET)
+#define Z_MEM_VIRT_ADDR(phys)	((phys) + Z_MEM_VM_OFFSET)
+
 #ifndef _ASMLANGUAGE
 #include <stdint.h>
 #include <stddef.h>
 #include <inttypes.h>
 #include <sys/__assert.h>
+
+/* Just like Z_MEM_PHYS_ADDR() but with type safety and assertions */
+static inline uintptr_t z_mem_phys_addr(void *virt)
+{
+	uintptr_t addr = (uintptr_t)virt;
+
+#ifdef CONFIG_MMU
+	__ASSERT((addr >= CONFIG_KERNEL_VM_BASE) &&
+		 (addr < (CONFIG_KERNEL_VM_BASE +
+			  (CONFIG_KERNEL_VM_SIZE))),
+		 "address %p not in permanent mappings", virt);
+#else
+	/* Should be identity-mapped */
+	__ASSERT((addr >= CONFIG_SRAM_BASE_ADDRESS) &&
+		 (addr < (CONFIG_SRAM_BASE_ADDRESS +
+			  (CONFIG_SRAM_SIZE * 1024UL))),
+		 "physical address 0x%lx not in RAM",
+		 (unsigned long)addr);
+#endif /* CONFIG_MMU */
+
+	/* TODO add assertion that this page is pinned to boot mapping,
+	 * the above checks won't be sufficient with demand paging
+	 */
+
+	return Z_MEM_PHYS_ADDR(addr);
+}
+
+/* Just like Z_MEM_VIRT_ADDR() but with type safety and assertions */
+static inline void *z_mem_virt_addr(uintptr_t phys)
+{
+	__ASSERT((phys >= CONFIG_SRAM_BASE_ADDRESS) &&
+		 (phys < (CONFIG_SRAM_BASE_ADDRESS +
+			  (CONFIG_SRAM_SIZE * 1024UL))),
+		 "physical address 0x%lx not in RAM", (unsigned long)phys);
+
+	/* TODO add assertion that this page frame is pinned to boot mapping,
+	 * the above check won't be sufficient with demand paging
+	 */
+
+	return (void *)Z_MEM_VIRT_ADDR(phys);
+}
 
 #ifdef __cplusplus
 extern "C" {
