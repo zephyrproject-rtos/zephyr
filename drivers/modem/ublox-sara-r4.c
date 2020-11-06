@@ -347,14 +347,20 @@ static ssize_t send_socket_data(struct modem_socket *sock,
 
 	/* slight pause per spec so that @ prompt is received */
 	k_sleep(MDM_PROMPT_CMD_DELAY);
+
+	/* Reset response semaphore before sending data
+	 * So that we are sure that we won't use a previously pending one
+	 * And we won't miss the one that is going to be freed
+	 */
+	k_sem_reset(&mdata.sem_response);
+
+	/* Send data directly on modem iface */
 	mctx.iface.write(&mctx.iface, buf, buf_len);
 
 	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		ret = 0;
 		goto exit;
 	}
-
-	k_sem_reset(&mdata.sem_response);
 	ret = k_sem_take(&mdata.sem_response, timeout);
 
 	if (ret == 0) {
