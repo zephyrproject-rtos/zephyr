@@ -74,7 +74,7 @@ static struct modem_pin modem_pins[] = {
 #define MDM_DNS_TIMEOUT			K_SECONDS(70)
 #define MDM_CMD_CONN_TIMEOUT		K_SECONDS(120)
 #define MDM_REGISTRATION_TIMEOUT	K_SECONDS(180)
-#define MDM_PROMPT_CMD_DELAY		K_MSEC(75)
+#define MDM_PROMPT_CMD_DELAY		K_MSEC(50)
 #define MDM_SENDMSG_SLEEP       K_MSEC(1)
 
 #define MDM_MAX_DATA_LENGTH		1024
@@ -167,6 +167,9 @@ struct modem_data {
 
 	/* response semaphore */
 	struct k_sem sem_response;
+
+	/* prompt semaphore */
+	struct k_sem sem_prompt;
 };
 
 static struct modem_data mdata;
@@ -331,6 +334,9 @@ static ssize_t send_socket_data(struct modem_socket *sock,
 
 	k_sem_take(&mdata.cmd_handler_data.sem_tx_lock, K_FOREVER);
 
+	/* Reset prompt '@' semaphore */
+	k_sem_reset(&mdata.sem_prompt);
+
 	ret = modem_cmd_send_nolock(&mctx.iface, &mctx.cmd_handler,
 				    NULL, 0U, send_buf, NULL, K_NO_WAIT);
 	if (ret < 0) {
@@ -344,6 +350,9 @@ static ssize_t send_socket_data(struct modem_socket *sock,
 	if (ret < 0) {
 		goto exit;
 	}
+
+	/* Wait for prompt '@' */
+	k_sem_take(&mdata.sem_prompt, K_FOREVER);
 
 	/* slight pause per spec so that @ prompt is received */
 	k_sleep(MDM_PROMPT_CMD_DELAY);
@@ -392,6 +401,17 @@ MODEM_CMD_DEFINE(on_cmd_ok)
 	modem_cmd_handler_set_error(data, 0);
 	k_sem_give(&mdata.sem_response);
 	return 0;
+}
+
+/* Handler: @ */
+MODEM_CMD_DEFINE(on_prompt)
+{
+	k_sem_give(&mdata.sem_prompt);
+
+	/* A direct cmd should return the number of byte processed.
+	 * Therefore, here we always return 1
+	 */
+	return 1;
 }
 
 /* Handler: ERROR */
@@ -1708,6 +1728,7 @@ static const struct modem_cmd response_cmds[] = {
 	MODEM_CMD("OK", on_cmd_ok, 0U, ""), /* 3GPP */
 	MODEM_CMD("ERROR", on_cmd_error, 0U, ""), /* 3GPP */
 	MODEM_CMD("+CME ERROR: ", on_cmd_exterror, 1U, ""),
+	MODEM_CMD_DIRECT("@", on_prompt),
 };
 
 static const struct modem_cmd unsol_cmds[] = {
@@ -1724,6 +1745,7 @@ static int modem_init(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	k_sem_init(&mdata.sem_response, 0, 1);
+	k_sem_init(&mdata.sem_prompt, 0, 1);
 
 	/* initialize the work queue */
 	k_work_q_start(&modem_workq,
