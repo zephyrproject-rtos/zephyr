@@ -656,6 +656,8 @@ void test_workq_start_before_submit(void)
 {
 	k_work_q_start(&workq, tstack, STACK_SIZE,
 		       CONFIG_MAIN_THREAD_PRIORITY);
+	zassert_equal(strcmp(k_thread_name_get(&workq.thread), "workqueue"), 0,
+		"workq thread creat failed");
 }
 
 /**
