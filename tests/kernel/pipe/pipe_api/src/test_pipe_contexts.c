@@ -176,8 +176,48 @@ static void thread_for_block_put(void *p1, void *p2, void *p3)
 
 /**
  * @brief Test pipe data passing between threads
+ *
+ * @ingroup kernel_pipe_tests
+ *
+ * @details
+ * Test Objective:
+ * - Verify data passing with "pipe put/get" APIs between
+ * threads
+ *
+ * Testing techniques:
+ * - function and block box testing,Interface testing,
+ * Dynamic analysis and testing.
+ *
+ * Prerequisite Conditions:
+ * - CONFIG_TEST_USERSPACE.
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Initialize a pipe, which is defined at run time.
+ * -# Create a thread (A).
+ * -# In A thread, check if it can get data, which is sent
+ * by main thread via the pipe.
+ * -# In A thread, send data to main thread via the pipe.
+ * -# In main thread, send data to A thread  via the pipe.
+ * -# In main thread, check if it can get data, which is sent
+ * by A thread.
+ * -# Do the same testing with a pipe, which is defined at compile
+ * time
+ *
+ * Expected Test Result:
+ * - Data can be sent/received between threads.
+ *
+ * Pass/Fail Criteria:
+ * - Successful if check points in test procedure are all passed, otherwise failure.
+ *
+ * Assumptions and Constraints:
+ * - N/A
+ *
  * @see k_pipe_init(), k_pipe_put(), #K_PIPE_DEFINE(x)
  */
+
 void test_pipe_thread2thread(void)
 {
 	/**TESTPOINT: test k_pipe_init pipe*/
