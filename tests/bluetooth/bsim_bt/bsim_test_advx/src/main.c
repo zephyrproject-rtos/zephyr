@@ -850,7 +850,10 @@ static struct bt_le_scan_cb scan_callbacks = {
 };
 
 static bool volatile is_sync;
+static bool volatile is_sync_report;
 static bool volatile is_sync_lost;
+static uint8_t volatile sync_report_len;
+static uint8_t sync_report_data[251];
 
 static void
 per_adv_sync_sync_cb(struct bt_le_per_adv_sync *sync,
@@ -895,6 +898,12 @@ per_adv_sync_recv_cb(struct bt_le_per_adv_sync *sync,
 	       "RSSI %i, CTE %u, data length %u\n",
 	       bt_le_per_adv_sync_get_index(sync), le_addr, info->tx_power,
 	       info->rssi, info->cte_type, buf->len);
+
+	if (!is_sync_report) {
+		is_sync_report = true;
+		sync_report_len = buf->len;
+		memcpy(sync_report_data, buf->data, buf->len);
+	}
 }
 
 static struct bt_le_per_adv_sync_cb sync_cb = {
@@ -914,6 +923,7 @@ static void test_scanx_main(void)
 	struct bt_le_per_adv_sync_param sync_create_param;
 	struct bt_le_per_adv_sync *sync = NULL;
 	uint8_t per_adv_evt_cnt_expected;
+	uint8_t sync_report_len_prev;
 	int err;
 
 	printk("\n*Extended Scanning test*\n");
@@ -1113,6 +1123,8 @@ static void test_scanx_main(void)
 
 	printk("Creating Periodic Advertising Sync 3, test sync lost...");
 	is_sync = false;
+	is_sync_report = false;
+	sync_report_len = 0;
 	is_sync_lost = false;
 	bt_addr_le_copy(&sync_create_param.addr, &per_addr);
 	sync_create_param.options = 0;
@@ -1144,6 +1156,46 @@ static void test_scanx_main(void)
 		goto exit;
 	}
 	printk("success.\n");
+
+	printk("Waiting for Periodic Advertising Report of 0 bytes...");
+	while (!is_sync_report) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("done.\n");
+
+	printk("sync_report_len = %u\n", sync_report_len);
+
+	if (sync_report_len != 0) {
+		FAIL("Incorrect Periodic Advertising Report data.");
+	}
+
+	printk("Waiting for Periodic Advertising Report of %u bytes...",
+	       sizeof(per_adv_data1));
+	sync_report_len_prev = sync_report_len;
+	while (!is_sync_report || (sync_report_len == sync_report_len_prev)) {
+		is_sync_report = false;
+		k_sleep(K_MSEC(100));
+	}
+	printk("done.\n");
+
+	if ((sync_report_len != sizeof(per_adv_data1)) ||
+	    memcmp(sync_report_data, per_adv_data1, sizeof(per_adv_data1))) {
+		FAIL("Incorrect Periodic Advertising Report data.");
+	}
+
+	printk("Waiting for Periodic Advertising Report of %u bytes...",
+	       sizeof(per_adv_data2));
+	sync_report_len_prev = sync_report_len;
+	while (!is_sync_report || (sync_report_len == sync_report_len_prev)) {
+		is_sync_report = false;
+		k_sleep(K_MSEC(100));
+	}
+	printk("done.\n");
+
+	if ((sync_report_len != sizeof(per_adv_data2)) ||
+	    memcmp(sync_report_data, per_adv_data2, sizeof(per_adv_data2))) {
+		FAIL("Incorrect Periodic Advertising Report data.");
+	}
 
 	printk("Waiting for sync loss...");
 	while (!is_sync_lost) {
