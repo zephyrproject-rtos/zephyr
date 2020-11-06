@@ -657,6 +657,20 @@ static struct bt_audio_chan *lc3_config(struct bt_conn *conn,
 	return NULL;
 }
 
+static int lc3_reconfig(struct bt_audio_chan *chan, struct bt_audio_cap *cap,
+			struct bt_codec *codec)
+{
+	shell_print(ctx_shell, "ASE Codec Reconfig: chan %p cap %p", chan, cap);
+
+	print_codec(codec);
+
+	if (!default_chan) {
+		set_channel(chan);
+	}
+
+	return 0;
+}
+
 static int lc3_qos(struct bt_audio_chan *chan, struct bt_codec_qos *qos)
 {
 	shell_print(ctx_shell, "QoS: chan %p", chan, qos);
@@ -711,6 +725,7 @@ static struct bt_codec lc3_codec = BT_CODEC_LC3(BT_CODEC_LC3_FREQ_ANY,
 
 static struct bt_audio_cap_ops lc3_ops = {
 	.config = lc3_config,
+	.reconfig = lc3_reconfig,
 	.qos = lc3_qos,
 	.enable = lc3_enable,
 	.metadata = lc3_metadata,
