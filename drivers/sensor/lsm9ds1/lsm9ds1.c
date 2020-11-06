@@ -14,8 +14,6 @@
  * LSM9DS1_MS5611_t3 Basic Example Code
  * by: Kris Winer
  * date: November 1, 2014
- * license: Beerware - Use this code however you'd like. If you
- * find it useful you can buy me a beer some time.
  */
 
 ////////////////////////////////////////////////////////////////////////////////
