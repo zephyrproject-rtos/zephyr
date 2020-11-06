@@ -27,9 +27,6 @@
 #define INITA_SIZE    BDADDR_SIZE
 #define TARGETA_SIZE  BDADDR_SIZE
 #define LLDATA_SIZE   22
-#define CTE_INFO_SIZE 1
-#define TX_PWR_SIZE   1
-#define ACAD_SIZE     0
 
 #define BYTES2US(bytes, phy) (((bytes)<<3)/BIT((phy&0x3)>>1))
 
@@ -37,17 +34,7 @@
 #define PDU_AC_LEG_PAYLOAD_SIZE_MAX 37
 /* Advertisement channel maximum extended payload size */
 #define PDU_AC_EXT_PAYLOAD_SIZE_MAX 251
-/* Advertisement channel minimum extended payload size */
-#define PDU_AC_EXT_PAYLOAD_SIZE_MIN (offsetof(pdu_adv_com_ext_adv, \
-					      ext_hdr_adi_adv_data) + \
-				     ADVA_SIZE + \
-				     TARGETA_SIZE + \
-				     CTE_INFO_SIZE + \
-				     sizeof(struct pdu_adv_adi) + \
-				     sizeof(struct pdu_adv_aux_ptr) + \
-				     sizeof(struct pdu_adv_sync_info) + \
-				     TX_PWR_SIZE + \
-				     ACAD_SIZE)
+
 /* Advertisement channel maximum payload size */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #define PDU_AC_PAYLOAD_SIZE_MAX MAX(MIN(CONFIG_BT_CTLR_ADV_DATA_LEN_MAX, \
