@@ -2242,6 +2242,72 @@ static void test_cb_register(sa_family_t family, uint8_t proto, uint16_t remote_
 }
 #endif /* CONFIG_NET_TEST_PROTOCOL */
 
+void net_tcp_foreach(net_tcp_cb_t cb, void *user_data)
+{
+	struct tcp *conn;
+	struct tcp *tmp;
+	int key;
+
+	key = irq_lock();
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&tcp_conns, conn, tmp, next) {
+
+		if (atomic_get(&conn->ref_count) > 0) {
+			irq_unlock(key);
+			cb(conn, user_data);
+			key = irq_lock();
+		}
+	}
+
+	irq_unlock(key);
+}
+
+uint16_t net_tcp_get_recv_mss(const struct tcp *conn)
+{
+	sa_family_t family = net_context_get_family(conn->context);
+
+	if (family == AF_INET) {
+#if defined(CONFIG_NET_IPV4)
+		struct net_if *iface = net_context_get_iface(conn->context);
+
+		if (iface && net_if_get_mtu(iface) >= NET_IPV4TCPH_LEN) {
+			/* Detect MSS based on interface MTU minus "TCP,IP
+			 * header size"
+			 */
+			return net_if_get_mtu(iface) - NET_IPV4TCPH_LEN;
+		}
+#else
+		return 0;
+#endif /* CONFIG_NET_IPV4 */
+	}
+#if defined(CONFIG_NET_IPV6)
+	else if (family == AF_INET6) {
+		struct net_if *iface = net_context_get_iface(conn->context);
+		int mss = 0;
+
+		if (iface && net_if_get_mtu(iface) >= NET_IPV6TCPH_LEN) {
+			/* Detect MSS based on interface MTU minus "TCP,IP
+			 * header size"
+			 */
+			mss = net_if_get_mtu(iface) - NET_IPV6TCPH_LEN;
+		}
+
+		if (mss < NET_IPV6_MTU) {
+			mss = NET_IPV6_MTU;
+		}
+
+		return mss;
+	}
+#endif /* CONFIG_NET_IPV6 */
+
+	return 0;
+}
+
+const char *net_tcp_state_str(enum tcp_state state)
+{
+	return tcp_state_to_str(state, false);
+}
+
 void net_tcp_init(void)
 {
 #if defined(CONFIG_NET_TEST_PROTOCOL)

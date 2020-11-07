@@ -27,6 +27,9 @@
 extern "C" {
 #endif
 
+/* Some of the stuff here is only for legacy TCP stack */
+#if defined(CONFIG_NET_TCP1)
+
 /** Is this TCP context/socket used or not */
 #define NET_TCP_IN_USE BIT(0)
 
@@ -83,8 +86,6 @@ enum net_tcp_state {
 
 /* Maximal value of the sequence number */
 #define NET_TCP_MAX_SEQ   0xffffffff
-
-#define NET_TCP_MAX_OPT_SIZE  8
 
 /* TCP Option codes */
 #define NET_TCP_END_OPT          0
@@ -390,51 +391,6 @@ static inline void net_tcp_foreach(net_tcp_cb_t cb, void *user_data)
 #endif
 
 /**
- * @brief Send available queued data over TCP connection
- *
- * @param context TCP context
- * @param cb TCP callback function
- * @param user_data User specified data
- *
- * @return 0 if ok, < 0 if error
- */
-#if defined(CONFIG_NET_NATIVE_TCP)
-int net_tcp_send_data(struct net_context *context, net_context_send_cb_t cb,
-		      void *user_data);
-#else
-static inline int net_tcp_send_data(struct net_context *context,
-				    net_context_send_cb_t cb,
-				    void *user_data)
-{
-	ARG_UNUSED(context);
-	ARG_UNUSED(cb);
-	ARG_UNUSED(user_data);
-
-	return 0;
-}
-#endif
-
-/**
- * @brief Enqueue a single packet for transmission
- *
- * @param context TCP context
- * @param pkt Packet
- *
- * @return 0 if ok, < 0 if error
- */
-#if defined(CONFIG_NET_NATIVE_TCP)
-int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt);
-#else
-static inline int net_tcp_queue_data(struct net_context *context,
-				     struct net_pkt *pkt)
-{
-	ARG_UNUSED(context);
-	ARG_UNUSED(pkt);
-	return -EPROTONOSUPPORT;
-}
-#endif
-
-/**
  * @brief Sends one TCP packet initialized with the _prepare_*()
  *        family of functions.
  *
@@ -541,23 +497,6 @@ static inline bool net_tcp_validate_seq(struct net_tcp *tcp,
 #endif
 
 /**
- * @brief Finalize TCP packet
- *
- * @param pkt Network packet
- *
- * @return 0 on success, negative errno otherwise.
- */
-#if defined(CONFIG_NET_NATIVE_TCP)
-int net_tcp_finalize(struct net_pkt *pkt);
-#else
-static inline int net_tcp_finalize(struct net_pkt *pkt)
-{
-	ARG_UNUSED(pkt);
-	return 0;
-}
-#endif
-
-/**
  * @brief Parse TCP options from network packet.
  *
  * Parse TCP options, returning MSS value (as that the only one we
@@ -574,92 +513,67 @@ static inline int net_tcp_finalize(struct net_pkt *pkt)
 int net_tcp_parse_opts(struct net_pkt *pkt, int opt_totlen,
 		       struct net_tcp_options *opts);
 
+#else /* TCP1 vs TCP2 */
+
+/* TCP2 specific stuff */
+
+#include "tcp2_priv.h"
+
 /**
- * @brief TCP receive function
+ * @brief Calculates and returns the MSS for a given TCP context
  *
- * @param context Network context
- * @param cb TCP receive callback function
- * @param user_data TCP receive callback user data
+ * @param tcp TCP context
  *
- * @return 0 if no erro, < 0 in case of error
+ * @return Maximum Segment Size
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
-int net_tcp_recv(struct net_context *context, net_context_recv_cb_t cb,
-		 void *user_data);
+uint16_t net_tcp_get_recv_mss(const struct tcp *conn);
 #else
-static inline int net_tcp_recv(struct net_context *context,
-			       net_context_recv_cb_t cb, void *user_data)
+static inline uint16_t net_tcp_get_recv_mss(const struct tcp *conn)
 {
-	ARG_UNUSED(context);
+	ARG_UNUSED(conn);
+	return 0;
+}
+#endif
+
+const char *net_tcp_state_str(enum tcp_state state);
+
+/**
+ * @brief Obtains the state for a TCP context
+ *
+ * @param tcp TCP context
+ */
+#if defined(CONFIG_NET_NATIVE_TCP)
+static inline enum tcp_state net_tcp_get_state(const struct tcp *conn)
+{
+	return conn->state;
+}
+#else
+static inline enum tcp_state net_tcp_get_state(const struct tcp *conn)
+{
+	ARG_UNUSED(conn);
+	return TCP_CLOSED;
+}
+#endif
+
+/**
+ * @brief Go through all the TCP connections and call callback
+ * for each of them.
+ *
+ * @param cb User supplied callback function to call.
+ * @param user_data User specified data.
+ */
+#if defined(CONFIG_NET_NATIVE_TCP)
+void net_tcp_foreach(net_tcp_cb_t cb, void *user_data);
+#else
+static inline void net_tcp_foreach(net_tcp_cb_t cb, void *user_data)
+{
 	ARG_UNUSED(cb);
 	ARG_UNUSED(user_data);
-
-	return -EPROTOTYPE;
 }
 #endif
 
-/**
- * @brief Queue a TCP FIN packet if needed to close the socket
- *
- * @param context Network context
- *
- * @return 0 on success where a TCP FIN packet has been queueed, -ENOTCONN
- *         in case the socket was not connected or listening, -EOPNOTSUPP
- *         in case it was not a TCP socket or -EPROTONOSUPPORT if TCP is not
- *         supported
- */
-#if defined(CONFIG_NET_NATIVE_TCP)
-int net_tcp_put(struct net_context *context);
-#else
-static inline int net_tcp_put(struct net_context *context)
-{
-	ARG_UNUSED(context);
-
-	return -EPROTONOSUPPORT;
-}
-#endif
-
-/**
- * @brief Set TCP socket into listening state
- *
- * @param context Network context
- *
- * @return 0 if successful, -EOPNOTSUPP if the context was not for TCP,
- *         -EPROTONOSUPPORT if TCP is not supported
- */
-#if defined(CONFIG_NET_NATIVE_TCP)
-int net_tcp_listen(struct net_context *context);
-#else
-static inline int net_tcp_listen(struct net_context *context)
-{
-	ARG_UNUSED(context);
-
-	return -EPROTONOSUPPORT;
-}
-#endif
-
-/**
- * @brief Update TCP receive window
- *
- * @param context Network context
- * @param delta Receive window delta
- *
- * @return 0 on success, -EPROTOTYPE if there is no TCP context, -EINVAL
- *         if the receive window delta is out of bounds, -EPROTONOSUPPORT
- *         if TCP is not supported
- */
-#if defined(CONFIG_NET_NATIVE_TCP)
-int net_tcp_update_recv_wnd(struct net_context *context, int32_t delta);
-#else
-static inline int net_tcp_update_recv_wnd(struct net_context *context,
-					  int32_t delta)
-{
-	ARG_UNUSED(context);
-	ARG_UNUSED(delta);
-
-	return -EPROTONOSUPPORT;
-}
-#endif
+#endif /* CONFIG_NET_TCP1 vs TCP2 */
 
 /**
  * @brief Initialize TCP parts of a context
@@ -698,30 +612,6 @@ static inline int net_tcp_unref(struct net_context *context)
 #endif
 
 /**
- * @brief Accept TCP connection
- *
- * @param context Network context
- * @param cb Accept callback
- * @param user_data Accept callback user data
- *
- * @return 0 on success, < 0 on error
- */
-#if defined(CONFIG_NET_NATIVE_TCP)
-int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
-		   void *user_data);
-#else
-static inline int net_tcp_accept(struct net_context *context,
-				 net_tcp_accept_cb_t cb, void *user_data)
-{
-	ARG_UNUSED(context);
-	ARG_UNUSED(cb);
-	ARG_UNUSED(user_data);
-
-	return -EPROTONOSUPPORT;
-}
-#endif
-
-/**
  * @brief Connect TCP connection
  *
  * @param context Network context
@@ -748,7 +638,8 @@ int net_tcp_connect(struct net_context *context,
 static inline int net_tcp_connect(struct net_context *context,
 				  const struct sockaddr *addr,
 				  struct sockaddr *laddr,
-				  uint16_t rport, uint16_t lport, k_timeout_t timeout,
+				  uint16_t rport, uint16_t lport,
+				  k_timeout_t timeout,
 				  net_context_connect_cb_t cb, void *user_data)
 {
 	ARG_UNUSED(context);
@@ -760,6 +651,115 @@ static inline int net_tcp_connect(struct net_context *context,
 	ARG_UNUSED(user_data);
 
 	return -EPROTONOSUPPORT;
+}
+#endif
+
+/**
+ * @brief Set TCP socket into listening state
+ *
+ * @param context Network context
+ *
+ * @return 0 if successful, -EOPNOTSUPP if the context was not for TCP,
+ *         -EPROTONOSUPPORT if TCP is not supported
+ */
+#if defined(CONFIG_NET_NATIVE_TCP)
+int net_tcp_listen(struct net_context *context);
+#else
+static inline int net_tcp_listen(struct net_context *context)
+{
+	ARG_UNUSED(context);
+
+	return -EPROTONOSUPPORT;
+}
+#endif
+
+/**
+ * @brief Accept TCP connection
+ *
+ * @param context Network context
+ * @param cb Accept callback
+ * @param user_data Accept callback user data
+ *
+ * @return 0 on success, < 0 on error
+ */
+#if defined(CONFIG_NET_NATIVE_TCP)
+int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
+		   void *user_data);
+#else
+static inline int net_tcp_accept(struct net_context *context,
+				 net_tcp_accept_cb_t cb, void *user_data)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(cb);
+	ARG_UNUSED(user_data);
+
+	return -EPROTONOSUPPORT;
+}
+#endif
+
+/**
+ * @brief Send available queued data over TCP connection
+ *
+ * @param context TCP context
+ * @param cb TCP callback function
+ * @param user_data User specified data
+ *
+ * @return 0 if ok, < 0 if error
+ */
+#if defined(CONFIG_NET_NATIVE_TCP)
+int net_tcp_send_data(struct net_context *context, net_context_send_cb_t cb,
+		      void *user_data);
+#else
+static inline int net_tcp_send_data(struct net_context *context,
+				    net_context_send_cb_t cb,
+				    void *user_data)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(cb);
+	ARG_UNUSED(user_data);
+
+	return 0;
+}
+#endif
+
+/**
+ * @brief TCP receive function
+ *
+ * @param context Network context
+ * @param cb TCP receive callback function
+ * @param user_data TCP receive callback user data
+ *
+ * @return 0 if no erro, < 0 in case of error
+ */
+#if defined(CONFIG_NET_NATIVE_TCP)
+int net_tcp_recv(struct net_context *context, net_context_recv_cb_t cb,
+		 void *user_data);
+#else
+static inline int net_tcp_recv(struct net_context *context,
+			       net_context_recv_cb_t cb, void *user_data)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(cb);
+	ARG_UNUSED(user_data);
+
+	return -EPROTOTYPE;
+}
+#endif
+
+/**
+ * @brief Finalize TCP packet
+ *
+ * @param pkt Network packet
+ *
+ * @return 0 on success, negative errno otherwise.
+ */
+#if defined(CONFIG_NET_NATIVE_TCP)
+int net_tcp_finalize(struct net_pkt *pkt);
+#else
+static inline int net_tcp_finalize(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+	return 0;
 }
 #endif
 
@@ -785,6 +785,72 @@ struct net_tcp_hdr *net_tcp_input(struct net_pkt *pkt,
 	return NULL;
 }
 #endif
+
+/**
+ * @brief Enqueue a single packet for transmission
+ *
+ * @param context TCP context
+ * @param pkt Packet
+ *
+ * @return 0 if ok, < 0 if error
+ */
+#if defined(CONFIG_NET_NATIVE_TCP)
+int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt);
+#else
+static inline int net_tcp_queue_data(struct net_context *context,
+				     struct net_pkt *pkt)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(pkt);
+	return -EPROTONOSUPPORT;
+}
+#endif
+
+/**
+ * @brief Update TCP receive window
+ *
+ * @param context Network context
+ * @param delta Receive window delta
+ *
+ * @return 0 on success, -EPROTOTYPE if there is no TCP context, -EINVAL
+ *         if the receive window delta is out of bounds, -EPROTONOSUPPORT
+ *         if TCP is not supported
+ */
+#if defined(CONFIG_NET_NATIVE_TCP)
+int net_tcp_update_recv_wnd(struct net_context *context, int32_t delta);
+#else
+static inline int net_tcp_update_recv_wnd(struct net_context *context,
+					  int32_t delta)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(delta);
+
+	return -EPROTONOSUPPORT;
+}
+#endif
+
+/**
+ * @brief Queue a TCP FIN packet if needed to close the socket
+ *
+ * @param context Network context
+ *
+ * @return 0 on success where a TCP FIN packet has been queueed, -ENOTCONN
+ *         in case the socket was not connected or listening, -EOPNOTSUPP
+ *         in case it was not a TCP socket or -EPROTONOSUPPORT if TCP is not
+ *         supported
+ */
+#if defined(CONFIG_NET_NATIVE_TCP)
+int net_tcp_put(struct net_context *context);
+#else
+static inline int net_tcp_put(struct net_context *context)
+{
+	ARG_UNUSED(context);
+
+	return -EPROTONOSUPPORT;
+}
+#endif
+
+#define NET_TCP_MAX_OPT_SIZE  8
 
 #if defined(CONFIG_NET_NATIVE_TCP)
 void net_tcp_init(void);

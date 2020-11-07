@@ -230,3 +230,5 @@ struct tcp { /* TCP connection */
 
 #define FL(_fl, _op, _mask, _args...)					\
 	_flags(_fl, _op, _mask, strlen("" #_args) ? _args : true)
+
+typedef void (*net_tcp_cb_t)(struct tcp *conn, void *user_data);
