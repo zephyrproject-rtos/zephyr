@@ -51,6 +51,7 @@ extensions = [
     'zephyr.application',
     'zephyr.html_redirects',
     'only.eager_only',
+    'zephyr.dtcompatible-role',
     'zephyr.link-roles',
     'sphinx_tabs.tabs'
 ]
