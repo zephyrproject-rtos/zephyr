@@ -1319,6 +1319,14 @@ static void conn_handler_cb(struct net_conn *conn, void *user_data)
 }
 #endif /* CONFIG_NET_CONN_LOG_LEVEL >= LOG_LEVEL_DBG */
 
+#if CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG
+struct tcp2_detail_info {
+	int printed_send_queue_header;
+	int printed_details;
+	int count;
+};
+#endif
+
 #if defined(CONFIG_NET_TCP1) && \
 	(defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_NATIVE))
 static void tcp_cb(struct net_tcp *tcp, void *user_data)
@@ -1392,7 +1400,98 @@ static void tcp_sent_list_cb(struct net_tcp *tcp, void *user_data)
 	*printed = true;
 }
 #endif /* CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG */
-#endif
+#endif /* TCP1 */
+
+#if defined(CONFIG_NET_TCP2) && \
+	(defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_NATIVE))
+static void tcp_cb(struct tcp *conn, void *user_data)
+{
+	struct net_shell_user_data *data = user_data;
+	const struct shell *shell = data->shell;
+	int *count = data->user_data;
+	uint16_t recv_mss = net_tcp_get_recv_mss(conn);
+
+	PR("%p %p   %5u    %5u %10u %10u %5u   %s\n",
+	   conn, conn->context,
+	   ntohs(net_sin6_ptr(&conn->context->local)->sin6_port),
+	   ntohs(net_sin6(&conn->context->remote)->sin6_port),
+	   conn->seq, conn->ack, recv_mss,
+	   net_tcp_state_str(net_tcp_get_state(conn)));
+
+	(*count)++;
+}
+
+#if CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG
+static void tcp_sent_list_cb(struct tcp *conn, void *user_data)
+{
+	struct net_shell_user_data *data = user_data;
+	const struct shell *shell = data->shell;
+	struct tcp2_detail_info *details = data->user_data;
+	struct net_pkt *pkt;
+	struct net_pkt *tmp;
+
+	if (conn->state != TCP_LISTEN) {
+		if (!details->printed_details) {
+			PR("\nTCP        Ref  Recv_win Send_win Pending "
+			   "Unacked Flags Queue\n");
+			details->printed_details = true;
+		}
+
+		PR("%p   %d    %u\t %u\t  %zd\t  %d\t  %d/%d/%d %s\n",
+		   conn, atomic_get(&conn->ref_count), conn->recv_win,
+		   conn->send_win, conn->send_data_total, conn->unacked_len,
+		   conn->in_retransmission, conn->in_connect, conn->in_close,
+		   sys_slist_is_empty(&conn->send_queue) ? "empty" : "data");
+
+		details->count++;
+	}
+
+	if (sys_slist_is_empty(&conn->send_queue)) {
+		return;
+	}
+
+	if (!details->printed_send_queue_header) {
+		PR("\nTCP packets waiting ACK:\n");
+		PR("TCP             net_pkt[ref/totlen]->net_buf[ref/len]..."
+		   "\n");
+	}
+
+	PR("%p      ", conn);
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn->send_queue, pkt, tmp,
+					  sent_list) {
+		struct net_buf *frag = pkt->frags;
+
+		if (!details->printed_send_queue_header) {
+			PR("%p[%d/%zd]", pkt, atomic_get(&pkt->atomic_ref),
+			       net_pkt_get_len(pkt));
+			details->printed_send_queue_header = true;
+		} else {
+			PR("                %p[%d/%zd]",
+			   pkt, atomic_get(&pkt->atomic_ref),
+			   net_pkt_get_len(pkt));
+		}
+
+		if (frag) {
+			PR("->");
+		}
+
+		while (frag) {
+			PR("%p[%d/%d]", frag, frag->ref, frag->len);
+
+			frag = frag->frags;
+			if (frag) {
+				PR("->");
+			}
+		}
+
+		PR("\n");
+	}
+
+	details->printed_send_queue_header = true;
+}
+#endif /* CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG */
+#endif /* TCP2 */
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 static void ipv6_frag_cb(struct net_ipv6_reassembly *reass,
@@ -1630,7 +1729,7 @@ static int cmd_net_conn(const struct shell *shell, size_t argc, char *argv[])
 	}
 #endif
 
-#if defined(CONFIG_NET_TCP1)
+#if defined(CONFIG_NET_TCP)
 	PR("\nTCP        Context   Src port Dst port   "
 	   "Send-Seq   Send-Ack  MSS    State\n");
 
@@ -1643,8 +1742,22 @@ static int cmd_net_conn(const struct shell *shell, size_t argc, char *argv[])
 	} else {
 #if CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG
 		/* Print information about pending packets */
+		struct tcp2_detail_info details;
+
 		count = 0;
+
+		if (IS_ENABLED(CONFIG_NET_TCP2)) {
+			memset(&details, 0, sizeof(details));
+			user_data.user_data = &details;
+		}
+
 		net_tcp_foreach(tcp_sent_list_cb, &user_data);
+
+		if (IS_ENABLED(CONFIG_NET_TCP2)) {
+			if (details.count == 0) {
+				PR("No active connections.\n");
+			}
+		}
 #endif /* CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG */
 	}
 
