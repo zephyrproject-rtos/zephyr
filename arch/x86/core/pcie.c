@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Intel Corporation
+ * Copyright (c) 2020 acontis technologies GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -58,28 +59,36 @@ static void pcie_mm_init(void)
 #endif
 }
 
-static inline void pcie_mm_conf(pcie_bdf_t bdf, unsigned int reg,
-				bool write, uint32_t *data)
-{
-	for (int i = 0; i < ARRAY_SIZE(bus_segs); i++) {
-		int off = PCIE_BDF_TO_BUS(bdf) - bus_segs[i].start_bus;
 
-		if (off >= 0 && off < bus_segs[i].n_buses) {
-			bdf = PCIE_BDF(off,
-				       PCIE_BDF_TO_DEV(bdf),
-				       PCIE_BDF_TO_FUNC(bdf));
+#define PCIE_MM_CONF_write(phys_addr, data) (*phys_addr = data)
+#define PCIE_MM_CONF_read(phys_addr, data) (*data = *phys_addr)
 
-			volatile uint32_t *regs
-				= (void *)&bus_segs[i].mmio[bdf << 4];
-
-			if (write) {
-				regs[reg] = *data;
-			} else {
-				*data = regs[reg];
-			}
-		}
-	}
+#define PCIE_MM_CONF(rw, size, type, ptr_type)                                 \
+static inline void pcie_mm_conf_##rw##_##size                                  \
+	(pcie_bdf_t bdf, unsigned int addr, type data)                         \
+{                                                                              \
+	for (int i = 0; i < ARRAY_SIZE(bus_segs); i++) {                       \
+		int off = PCIE_BDF_TO_BUS(bdf) - bus_segs[i].start_bus;        \
+\
+		if (off >= 0 && off < bus_segs[i].n_buses) {                   \
+			bdf = PCIE_BDF(off,                                    \
+			    PCIE_BDF_TO_DEV(bdf), PCIE_BDF_TO_FUNC(bdf));      \
+\
+			volatile ptr_type phys_addr =                          \
+				(void *)(bus_segs[i].mmio + (bdf << 4) + addr);\
+\
+			PCIE_MM_CONF_##rw(phys_addr, data);                    \
+		}                                                              \
+	}                                                                      \
 }
+
+PCIE_MM_CONF(read, 8, uint8_t *, uint8_t *)
+PCIE_MM_CONF(read, 16, uint16_t *, uint16_t *)
+PCIE_MM_CONF(read, 32, uint32_t *, uint32_t *)
+
+PCIE_MM_CONF(write, 8, uint8_t, uint8_t *)
+PCIE_MM_CONF(write, 16, uint16_t, uint16_t *)
+PCIE_MM_CONF(write, 32, uint32_t, uint32_t *)
 
 #endif /* CONFIG_PCIE_MMIO_CFG */
 
@@ -88,8 +97,7 @@ static inline void pcie_mm_conf(pcie_bdf_t bdf, unsigned int reg,
 #define PCIE_X86_CAP	0xCF8U	/* Configuration Address Port */
 #define PCIE_X86_CAP_BDF_MASK	0x00FFFF00U  /* b/d/f bits */
 #define PCIE_X86_CAP_EN		0x80000000U  /* enable bit */
-#define PCIE_X86_CAP_WORD_MASK	0x3FU  /*  6-bit word index .. */
-#define PCIE_X86_CAP_WORD_SHIFT	2U  /* .. is in CAP[7:2] */
+#define PCIE_X86_CAP_WORD_MASK	0xFCU  /*  6-bit word index .. */
 
 #define PCIE_X86_CDP	0xCFCU	/* Configuration Data Port */
 
@@ -97,60 +105,91 @@ static inline void pcie_mm_conf(pcie_bdf_t bdf, unsigned int reg,
  * Helper function for exported configuration functions. Configuration access
  * ain't atomic, so spinlock to keep drivers from clobbering each other.
  */
-static inline void pcie_io_conf(pcie_bdf_t bdf, unsigned int reg,
-				bool write, uint32_t *data)
-{
-	static struct k_spinlock lock;
-	k_spinlock_key_t k;
+static struct k_spinlock pcie_io_conf_spinlock;
 
-	bdf &= PCIE_X86_CAP_BDF_MASK;
-	bdf |= PCIE_X86_CAP_EN;
-	bdf |= (reg & PCIE_X86_CAP_WORD_MASK) << PCIE_X86_CAP_WORD_SHIFT;
+#define PCIE_IO_CONF_write(size, data) sys_out##size(data, PCIE_X86_CDP)
+#define PCIE_IO_CONF_read(size, data) (*data = sys_in##size(PCIE_X86_CDP))
 
-	k = k_spin_lock(&lock);
-	sys_out32(bdf, PCIE_X86_CAP);
-
-	if (write) {
-		sys_out32(*data, PCIE_X86_CDP);
-	} else {
-		*data = sys_in32(PCIE_X86_CDP);
-	}
-
-	sys_out32(0U, PCIE_X86_CAP);
-	k_spin_unlock(&lock, k);
+#define PCIE_IO_CONF(rw, size, type)                   \
+static inline void pcie_io_conf_##rw##_##size          \
+	(pcie_bdf_t bdf, unsigned int addr, type data) \
+{                                                      \
+	k_spinlock_key_t k;                            \
+\
+	bdf &= PCIE_X86_CAP_BDF_MASK;                  \
+	bdf |= PCIE_X86_CAP_EN;                        \
+	bdf |= (addr & PCIE_X86_CAP_WORD_MASK);        \
+\
+	k = k_spin_lock(&pcie_io_conf_spinlock);       \
+	sys_out32(bdf, PCIE_X86_CAP);                  \
+\
+	PCIE_IO_CONF_##rw(size, data);                 \
+\
+	sys_out32(0U, PCIE_X86_CAP);                   \
+	k_spin_unlock(&pcie_io_conf_spinlock, k);      \
 }
 
-static inline void pcie_conf(pcie_bdf_t bdf, unsigned int reg,
-			     bool write, uint32_t *data)
+PCIE_IO_CONF(read, 8, uint8_t *)
+PCIE_IO_CONF(read, 16, uint16_t *)
+PCIE_IO_CONF(read, 32, uint32_t *)
 
-{
-#ifdef CONFIG_PCIE_MMIO_CFG
-	if (bus_segs[0].mmio == NULL) {
-		pcie_mm_init();
-	}
-
-	if (do_pcie_mmio_cfg) {
-		pcie_mm_conf(bdf, reg, write, data);
-	} else
-#endif
-	{
-		pcie_io_conf(bdf, reg, write, data);
-	}
-}
+PCIE_IO_CONF(write, 8, uint8_t)
+PCIE_IO_CONF(write, 16, uint16_t)
+PCIE_IO_CONF(write, 32, uint32_t)
 
 /* these functions are explained in include/drivers/pcie/pcie.h */
+
+#ifdef CONFIG_PCIE_MMIO_CFG
+#define IF_CONFIG_PCIE_MMIO_CFG(...) __VA_ARGS__
+#else
+#define IF_CONFIG_PCIE_MMIO_CFG(...)
+#endif
+
+#define PCIE_CONF_VALIDATE_write(size, data) 0
+#define PCIE_CONF_VALIDATE_read(size, data) \
+	((*data == (uint##size##_t)(~0x0)) ? -ENXIO : 0)
+
+#define PCIE_CONF(rw, size, type)                                         \
+int pcie_conf_##rw##_##size(pcie_bdf_t bdf, unsigned int addr, type data) \
+{                                                                         \
+	/* validate alignment */                                          \
+	if (addr & ((size / 8) - 1)) {                                    \
+		return -EINVAL;                                           \
+	}                                                                 \
+IF_CONFIG_PCIE_MMIO_CFG(                                                  \
+	if (bus_segs[0].mmio == NULL) {                                   \
+		pcie_mm_init();                                           \
+	}                                                                 \
+	if (do_pcie_mmio_cfg) {                                           \
+		pcie_mm_conf_##rw##_##size(bdf, addr, data);              \
+	} else                                                            \
+)                                                                         \
+	{                                                                 \
+		pcie_io_conf_##rw##_##size(bdf, addr, data);              \
+	}                                                                 \
+	return PCIE_CONF_VALIDATE_##rw(size, data);                       \
+}
+
+PCIE_CONF(read, 8, uint8_t *)
+PCIE_CONF(read, 16, uint16_t *)
+PCIE_CONF(read, 32, uint32_t *)
+
+PCIE_CONF(write, 8, uint8_t)
+PCIE_CONF(write, 16, uint16_t)
+PCIE_CONF(write, 32, uint32_t)
+
 
 uint32_t pcie_conf_read(pcie_bdf_t bdf, unsigned int reg)
 {
 	uint32_t data = 0;
 
-	pcie_conf(bdf, reg, false, &data);
+	pcie_conf_read_32(bdf, reg * sizeof(uint32_t), &data);
 	return data;
 }
 
 void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data)
 {
-	pcie_conf(bdf, reg, true, &data);
+	pcie_conf_write_32(bdf, reg * sizeof(uint32_t), data);
 }
 
 #ifdef CONFIG_PCIE_MSI

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Intel Corporation
+ * Copyright (c) 2020 acontis technologies GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,6 +39,78 @@ typedef uint32_t pcie_id_t;
 /*
  * These functions are arch-, board-, or SoC-specific.
  */
+
+/**
+ * @brief Read a 8-bit word from an endpoint's configuration space.
+ *
+ * This function is exported by the arch/SoC/board code.
+ *
+ * @param bdf PCI(e) endpoint
+ * @param addr byte offset from the beginning of the configuration space
+ * @param data the byte read (0xFF if nonexistent endpoint or word)
+ * @return 0 on success; negative error code otherwise
+ */
+extern int pcie_conf_read_8(pcie_bdf_t bdf, unsigned int addr, uint8_t *data);
+
+/**
+ * @brief Write a 8-bit word to an endpoint's configuration space.
+ *
+ * This function is exported by the arch/SoC/board code.
+ *
+ * @param bdf PCI(e) endpoint
+ * @param addr byte offset from the beginning of the configuration space
+ * @param data the value to write
+ * @return 0 on success; negative error code otherwise
+ */
+extern int pcie_conf_write_8(pcie_bdf_t bdf, unsigned int addr, uint8_t data);
+
+/**
+ * @brief Read a 16-bit word from an endpoint's configuration space.
+ *
+ * This function is exported by the arch/SoC/board code.
+ *
+ * @param bdf PCI(e) endpoint
+ * @param addr byte offset from the beginning of the configuration space
+ * @param data the word read (0xFFFF if nonexistent endpoint or word)
+ * @return 0 on success; negative error code otherwise
+ */
+extern int pcie_conf_read_16(pcie_bdf_t bdf, unsigned int addr, uint16_t *data);
+
+/**
+ * @brief Write a 16-bit word to an endpoint's configuration space.
+ *
+ * This function is exported by the arch/SoC/board code.
+ *
+ * @param bdf PCI(e) endpoint
+ * @param addr byte offset from the beginning of the configuration space
+ * @param data the value to write
+ * @return 0 on success; negative error code otherwise
+ */
+extern int pcie_conf_write_16(pcie_bdf_t bdf, unsigned int addr, uint16_t data);
+
+/**
+ * @brief Read a 32-bit word from an endpoint's configuration space.
+ *
+ * This function is exported by the arch/SoC/board code.
+ *
+ * @param bdf PCI(e) endpoint
+ * @param addr byte offset from the beginning of the configuration space
+ * @param data the dword read (0xFFFFFFFF if nonexistent endpoint or word)
+ * @return 0 on success; negative error code otherwise
+ */
+extern int pcie_conf_read_32(pcie_bdf_t bdf, unsigned int addr, uint32_t *data);
+
+/**
+ * @brief Write a 32-bit word to an endpoint's configuration space.
+ *
+ * This function is exported by the arch/SoC/board code.
+ *
+ * @param bdf PCI(e) endpoint
+ * @param addr byte offset from the beginning of the configuration space
+ * @param data the value to write
+ * @return 0 on success; negative error code otherwise
+ */
+extern int pcie_conf_write_32(pcie_bdf_t bdf, unsigned int addr, uint32_t data);
 
 /**
  * @brief Read a 32-bit word from an endpoint's configuration space.
