@@ -625,41 +625,38 @@ end:
 	return result;
 }
 
-static int tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
+static int tcp_data_get(struct tcp *conn, struct net_pkt *pkt, size_t len)
 {
-	int len = tcp_data_len(pkt);
+	int ret = 0;
 
 	if (tcp_recv_cb) {
 		tcp_recv_cb(conn, pkt);
 		goto out;
 	}
 
-	if (len > 0) {
-		if (conn->context->recv_cb) {
-			struct net_pkt *up =
-				net_pkt_clone(pkt, TCP_PKT_ALLOC_TIMEOUT);
+	if (conn->context->recv_cb) {
+		struct net_pkt *up = net_pkt_clone(pkt, TCP_PKT_ALLOC_TIMEOUT);
 
-			if (!up) {
-				len = -ENOBUFS;
-				goto out;
-			}
-
-			net_pkt_cursor_init(up);
-			net_pkt_set_overwrite(up, true);
-
-			net_pkt_skip(up, net_pkt_get_len(up) - len);
-
-			/* Do not pass data to application with TCP conn
-			 * locked as there could be an issue when the app tries
-			 * to send the data and the conn is locked. So the recv
-			 * data is placed in fifo which is flushed in tcp_in()
-			 * after unlocking the conn
-			 */
-			k_fifo_put(&conn->recv_data, up);
+		if (!up) {
+			ret = -ENOBUFS;
+			goto out;
 		}
+
+		net_pkt_cursor_init(up);
+		net_pkt_set_overwrite(up, true);
+
+		net_pkt_skip(up, net_pkt_get_len(up) - len);
+
+		/* Do not pass data to application with TCP conn
+		 * locked as there could be an issue when the app tries
+		 * to send the data and the conn is locked. So the recv
+		 * data is placed in fifo which is flushed in tcp_in()
+		 * after unlocking the conn
+		 */
+		k_fifo_put(&conn->recv_data, up);
 	}
  out:
-	return len;
+	return ret;
 }
 
 static int tcp_finalize_pkt(struct net_pkt *pkt)
@@ -1359,7 +1356,7 @@ next_state:
 			}
 
 			if (len) {
-				if (tcp_data_get(conn, pkt) < 0) {
+				if (tcp_data_get(conn, pkt, len) < 0) {
 					break;
 				}
 				conn_ack(conn, + len);
@@ -1376,7 +1373,7 @@ next_state:
 			tcp_send_timer_cancel(conn);
 			conn_ack(conn, th_seq(th) + 1);
 			if (len) {
-				if (tcp_data_get(conn, pkt) < 0) {
+				if (tcp_data_get(conn, pkt, len) < 0) {
 					break;
 				}
 				conn_ack(conn, + len);
@@ -1409,7 +1406,7 @@ next_state:
 		} else if (th && FL(&fl, ==, (FIN | ACK | PSH),
 				    th_seq(th) == conn->ack)) {
 			if (len) {
-				if (tcp_data_get(conn, pkt) < 0) {
+				if (tcp_data_get(conn, pkt, len) < 0) {
 					break;
 				}
 			}
@@ -1476,7 +1473,7 @@ next_state:
 
 		if (th && len) {
 			if (th_seq(th) == conn->ack) {
-				if (tcp_data_get(conn, pkt) < 0) {
+				if (tcp_data_get(conn, pkt, len) < 0) {
 					break;
 				}
 
