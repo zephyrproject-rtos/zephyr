@@ -78,6 +78,11 @@ static void indicate_cb(struct bt_conn *conn,
 			struct bt_gatt_indicate_params *params, uint8_t err)
 {
 	printk("Indication %s\n", err != 0U ? "fail" : "success");
+}
+
+static void indicate_destroy(struct bt_gatt_indicate_params *params)
+{
+	printk("Indication complete\n");
 	indicating = 0U;
 }
 
@@ -356,7 +361,7 @@ void main(void)
 
 			ind_params.attr = &vnd_svc.attrs[2];
 			ind_params.func = indicate_cb;
-			ind_params.destroy = NULL;
+			ind_params.destroy = indicate_destroy;
 			ind_params.data = &indicating;
 			ind_params.len = sizeof(indicating);
 
