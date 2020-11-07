@@ -457,10 +457,6 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 	BT_DBG("Payload len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 	BT_DBG("Seq 0x%06x", bt_mesh.seq);
 
-	if (tx->ctx->send_ttl == BT_MESH_TTL_DEFAULT) {
-		tx->ctx->send_ttl = bt_mesh_default_ttl_get();
-	}
-
 	cred = net_tx_cred_get(tx);
 	err = net_header_encode(tx, cred->nid, &buf->b);
 	if (err) {

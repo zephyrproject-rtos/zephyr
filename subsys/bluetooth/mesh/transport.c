@@ -492,12 +492,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 	tx->blocked = blocked;
 	tx->started = 0;
 	tx->ctl = !!ctl_op;
-
-	if (net_tx->ctx->send_ttl == BT_MESH_TTL_DEFAULT) {
-		tx->ttl = bt_mesh_default_ttl_get();
-	} else {
-		tx->ttl = net_tx->ctx->send_ttl;
-	}
+	tx->ttl = net_tx->ctx->send_ttl;
 
 	BT_DBG("SeqZero 0x%04x (segs: %u)",
 	       (uint16_t)(tx->seq_auth & TRANS_SEQ_ZERO_MASK), tx->nack_count);
@@ -629,6 +624,13 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 
 	if (net_buf_simple_tailroom(msg) < 4) {
 		BT_ERR("Insufficient tailroom for Transport MIC");
+		return -EINVAL;
+	}
+
+	if (tx->ctx->send_ttl == BT_MESH_TTL_DEFAULT) {
+		tx->ctx->send_ttl = bt_mesh_default_ttl_get();
+	} else if (tx->ctx->send_ttl > BT_MESH_TTL_MAX) {
+		BT_ERR("TTL too large (max 127)");
 		return -EINVAL;
 	}
 
@@ -987,6 +989,13 @@ int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, uint8_t ctl_op, void *data,
 		     const struct bt_mesh_send_cb *cb, void *cb_data)
 {
 	struct net_buf_simple buf;
+
+	if (tx->ctx->send_ttl == BT_MESH_TTL_DEFAULT) {
+		tx->ctx->send_ttl = bt_mesh_default_ttl_get();
+	} else if (tx->ctx->send_ttl > BT_MESH_TTL_MAX) {
+		BT_ERR("TTL too large (max 127)");
+		return -EINVAL;
+	}
 
 	net_buf_simple_init_with_data(&buf, data, data_len);
 
