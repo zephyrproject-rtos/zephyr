@@ -1535,6 +1535,16 @@ static inline uint8_t net_if_ipv4_get_ttl(struct net_if *iface)
 }
 
 /**
+ * @brief Check if this IPv4 address belongs to this specific interfaces.
+ *
+ * @param iface Network interface
+ * @param addr IPv4 address
+ *
+ * @return Pointer to interface address, NULL if not found.
+ */
+struct net_if_addr *net_if_ipv4_addr_lookup_by_iface(struct net_if *iface,
+						     struct in_addr *addr);
+/**
  * @brief Check if this IPv4 address belongs to one of the interfaces.
  *
  * @param addr IPv4 address

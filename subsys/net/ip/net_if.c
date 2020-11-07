@@ -2940,6 +2940,32 @@ struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
 	return NULL;
 }
 
+struct net_if_addr *net_if_ipv4_addr_lookup_by_iface(struct net_if *iface,
+						     struct in_addr *addr)
+{
+	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
+	int i;
+
+	if (!ipv4) {
+		return NULL;
+	}
+
+	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+		if (!ipv4->unicast[i].is_used ||
+			ipv4->unicast[i].address.family != AF_INET) {
+			continue;
+		}
+
+		if (UNALIGNED_GET(&addr->s4_addr32[0]) ==
+			ipv4->unicast[i].address.in_addr.s_addr) {
+
+			return &ipv4->unicast[i];
+		}
+	}
+
+	return NULL;
+}
+
 int z_impl_net_if_ipv4_addr_lookup_by_index(const struct in_addr *addr)
 {
 	struct net_if_addr *if_addr;

@@ -417,31 +417,22 @@ static enum net_verdict set_vlan_tag(struct ethernet_context *ctx,
 
 #if defined(CONFIG_NET_IPV6)
 	if (net_pkt_family(pkt) == AF_INET6) {
-		struct net_if *target;
-
-		if (net_if_ipv6_addr_lookup(&NET_IPV6_HDR(pkt)->src,
-					    &target)) {
-			if (target != iface) {
-				NET_DBG("Iface %p should be %p", iface,
-					target);
-
-				iface = target;
-			}
+		if (!net_if_ipv6_addr_lookup_by_iface(iface,
+			&NET_IPV6_HDR(pkt)->src)) {
+			NET_DBG("Iface %p doesn't have src ip %s", iface,
+			log_strdup(net_sprint_ipv6_addr(NET_IPV6_HDR(pkt)->src)));
+			return NET_DROP;
 		}
 	}
 #endif
 
 #if defined(CONFIG_NET_IPV4)
 	if (net_pkt_family(pkt) == AF_INET) {
-		struct net_if *target;
-
-		if (net_if_ipv4_addr_lookup(&NET_IPV4_HDR(pkt)->src,
-					    &target)) {
-			if (target != iface) {
-				NET_DBG("Iface %p should be %p", iface,
-					target);
-				iface = target;
-			}
+		if (!net_if_ipv4_addr_lookup_by_iface(iface,
+			&NET_IPV4_HDR(pkt)->src)) {
+			NET_DBG("Iface %p doesn't have src ip %s", iface,
+			log_strdup(net_sprint_ipv4_addr(NET_IPV4_HDR(pkt)->src)));
+			return NET_DROP;
 		}
 	}
 #endif
