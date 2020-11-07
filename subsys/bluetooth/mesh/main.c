@@ -178,6 +178,12 @@ void bt_mesh_reset(void)
 	bt_mesh_rx_reset();
 	bt_mesh_tx_reset();
 
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_clear_rpl();
+	} else {
+		(void)memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
+	}
+
 	bt_mesh_net_loopback_clear(BT_MESH_KEY_ANY);
 
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
