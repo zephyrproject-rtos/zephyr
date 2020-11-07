@@ -256,11 +256,11 @@ def dump_content(bindings, base_binding, vnd_lookup, out_dir):
 
     setup_bindings_dir(bindings, out_dir)
     write_bindings_rst(vnd_lookup, out_dir)
-    write_per_compatible_orphans(bindings, base_binding, vnd_lookup, out_dir)
+    write_orphans(bindings, base_binding, vnd_lookup, out_dir)
 
 def setup_bindings_dir(bindings, out_dir):
     # Make a set of all the Path objects we will be creating for
-    # out_dir / bindings / {compatible}.rst. Delete all the ones that
+    # out_dir / bindings / {binding_path}.rst. Delete all the ones that
     # shouldn't be there. Make sure the bindings output directory
     # exists.
 
@@ -272,10 +272,12 @@ def setup_bindings_dir(bindings, out_dir):
     for binding in bindings:
         paths.add(bindings_dir / binding_filename(binding))
 
-    for path in bindings_dir.iterdir():
-        if path not in paths:
-            logger.info('removing unexpected file %s', path)
-            path.unlink()
+    for dirpath, _, filenames in os.walk(bindings_dir):
+        for filename in filenames:
+            path = Path(dirpath) / filename
+            if path not in paths:
+                logger.info('removing unexpected file %s', path)
+                path.unlink()
 
 def write_bindings_rst(vnd_lookup, out_dir):
     # Write out_dir / bindings.rst, the top level index of bindings.
@@ -352,80 +354,40 @@ def write_bindings_rst(vnd_lookup, out_dir):
 
     write_if_updated(out_dir / 'bindings.rst', string_io.getvalue())
 
-def write_per_compatible_orphans(bindings, base_binding, vnd_lookup, out_dir):
-    # For each compatible in vnd2bindings, write the corresponding
-    # out_dir / bindings / {binding.compatible}.rst file, if its
-    # content needs updating. This file is an 'orphan' because it's not
-    # in any toctree.
+def write_orphans(bindings, base_binding, vnd_lookup, out_dir):
+    # Write out_dir / bindings / foo / binding_page.rst for each binding
+    # in 'bindings', along with any "disambiguation" pages needed when a
+    # single compatible string can be handled by multiple bindings.
+    #
+    # These files are 'orphans' in the Sphinx sense: they are not in
+    # any toctree.
 
-    logging.info('updating up to %d :orphan: files', len(bindings))
+    logging.info('updating :orphan: files for %d bindings', len(bindings))
     num_written = 0
+
+    # First, figure out which compatibles map to multiple bindings. We
+    # need this information to decide which of the generated files for
+    # a compatible are "disambiguation" pages that point to per-bus
+    # binding pages, and which ones aren't.
+
+    compat2bindings = defaultdict(list)
+    for binding in bindings:
+        compat2bindings[binding.compatible].append(binding)
+    dup_compat2bindings = {compatible: bindings for compatible, bindings
+                           in compat2bindings.items() if len(bindings) > 1}
+
+    # Next, write the per-binding pages. These contain the
+    # per-compatible targets for compatibles not in 'dup_compats'.
+    # We'll finish up by writing per-compatible "disambiguation" pages
+    # for copmatibles in 'dup_compats'.
+
     # Names of properties in base.yaml.
     base_names = set(base_binding.prop2specs.keys())
     for binding in bindings:
         string_io = io.StringIO()
 
-        # :orphan:
-        #
-        # .. ref_target:
-        #
-        # Title [(on <bus> bus)]
-        # ######################
-        if binding.on_bus:
-            on_bus_title = f' (on {binding.on_bus} bus)'
-        else:
-            on_bus_title = ''
-        compatible = binding.compatible
-        title = f'{compatible}{on_bus_title}'
-        underline = '#' * len(title)
-        print_block(f'''\
-        :orphan:
-
-        .. _{binding_ref_target(binding)}:
-
-        {title}
-        {underline}
-        ''', string_io)
-
-        # Vendor: <link-to-vendor-section>
-        vnd = compatible_vnd(compatible)
-        print('Vendor: '
-              f':ref:`{vnd_lookup.vendor(vnd)} <{vnd_lookup.target(vnd)}>`\n',
-              file=string_io)
-
-        # Binding description.
-        if binding.bus:
-            bus_help = f'These nodes are "{binding.bus}" bus nodes.'
-        else:
-            bus_help = ''
-        print_block(f'''\
-        Description
-        ***********
-
-        {bus_help}
-        ''', string_io)
-        print(to_code_block(binding.description.strip()), file=string_io)
-
-        # Properties.
-        print_block('''\
-        Properties
-        **********
-        ''', string_io)
-        print_top_level_properties(binding, base_names, string_io)
-        print_child_binding_properties(binding, string_io)
-
-        # Specifier cells.
-        #
-        # This presentation isn't particularly nice. Perhaps something
-        # better can be done for future work.
-        if binding.specifier2cells:
-            print_block('''\
-            Specifier cell names
-            ********************
-            ''', string_io)
-            for specifier, cells in binding.specifier2cells.items():
-                print(f'- {specifier} cells: {", ".join(cells)}',
-                      file=string_io)
+        print_binding_page(binding, base_names, vnd_lookup,
+                           dup_compat2bindings, string_io)
 
         written = write_if_updated(out_dir / 'bindings' /
                                    binding_filename(binding),
@@ -434,8 +396,107 @@ def write_per_compatible_orphans(bindings, base_binding, vnd_lookup, out_dir):
         if written:
             num_written += 1
 
+    # Generate disambiguation pages for dup_compats.
+    compatibles_dir = out_dir / 'compatibles'
+    setup_compatibles_dir(dup_compat2bindings.keys(), compatibles_dir)
+    for compatible in dup_compat2bindings:
+        string_io = io.StringIO()
+
+        print_compatible_disambiguation_page(
+            compatible, dup_compat2bindings[compatible], string_io)
+
+        written = write_if_updated(compatibles_dir /
+                                   compatible_filename(compatible),
+                                   string_io.getvalue())
+
+        if written:
+            num_written += 1
+
     logging.info('done writing :orphan: files; %d files needed updates',
                  num_written)
+
+def print_binding_page(binding, base_names, vnd_lookup, dup_compats,
+                       string_io):
+    # Print the rst content for 'binding' to 'string_io'. The
+    # 'dup_compats' argument should support membership testing for
+    # compatibles which have multiple associated bindings; if
+    # 'binding.compatible' is not in it, then the ref target for the
+    # entire compatible is generated in this page as well.
+
+    # :orphan:
+    #
+    # .. ref_target:
+    #
+    # Title [(on <bus> bus)]
+    # ######################
+    if binding.on_bus:
+        on_bus_title = f' (on {binding.on_bus} bus)'
+    else:
+        on_bus_title = ''
+    compatible = binding.compatible
+
+    title = f'{compatible}{on_bus_title}'
+    underline = '#' * len(title)
+    if compatible not in dup_compats:
+        # If this binding is the only one that handles this
+        # compatible, point the ".. dtcompatible:" directive straight
+        # to this page. There's no need for disambiguation.
+        dtcompatible = f'.. dtcompatible:: {binding.compatible}'
+    else:
+        # This compatible is handled by multiple bindings;
+        # its ".. dtcompatible::" should be in a disambiguation page
+        # instead.
+        dtcompatible = ''
+
+    print_block(f'''\
+    :orphan:
+
+    {dtcompatible}
+    .. _{binding_ref_target(binding)}:
+
+    {title}
+    {underline}
+    ''', string_io)
+
+    # Vendor: <link-to-vendor-section>
+    vnd = compatible_vnd(compatible)
+    print('Vendor: '
+          f':ref:`{vnd_lookup.vendor(vnd)} <{vnd_lookup.target(vnd)}>`\n',
+          file=string_io)
+
+    # Binding description.
+    if binding.bus:
+        bus_help = f'These nodes are "{binding.bus}" bus nodes.'
+    else:
+        bus_help = ''
+    print_block(f'''\
+    Description
+    ***********
+
+    {bus_help}
+    ''', string_io)
+    print(to_code_block(binding.description.strip()), file=string_io)
+
+    # Properties.
+    print_block('''\
+    Properties
+    **********
+    ''', string_io)
+    print_top_level_properties(binding, base_names, string_io)
+    print_child_binding_properties(binding, string_io)
+
+    # Specifier cells.
+    #
+    # This presentation isn't particularly nice. Perhaps something
+    # better can be done for future work.
+    if binding.specifier2cells:
+        print_block('''\
+        Specifier cell names
+        ********************
+        ''', string_io)
+        for specifier, cells in binding.specifier2cells.items():
+            print(f'- {specifier} cells: {", ".join(cells)}',
+                  file=string_io)
 
 def print_top_level_properties(binding, base_names, string_io):
     # Print the RST for top level properties for 'binding' to 'string_io'.
@@ -590,6 +651,48 @@ def print_property_table(prop_specs, string_io, deprecated=False):
     for prop_spec in prop_specs:
         print(to_prop_table_row(prop_spec), file=string_io)
 
+def setup_compatibles_dir(compatibles, compatibles_dir):
+    # Make a set of all the Path objects we will be creating for
+    # out_dir / copmatibles / {compatible_path}.rst. Delete all the ones that
+    # shouldn't be there. Make sure the compatibles output directory
+    # exists.
+
+    logger.info('making output subdirectory %s', compatibles_dir)
+    compatibles_dir.mkdir(parents=True, exist_ok=True)
+
+    paths = set(compatibles_dir / compatible_filename(compatible)
+                for compatible in compatibles)
+
+    for path in compatibles_dir.iterdir():
+        if path not in paths:
+            logger.info('removing unexpected file %s', path)
+            path.unlink()
+
+
+def print_compatible_disambiguation_page(compatible, bindings, string_io):
+    # Print the disambiguation page for 'compatible', which can be
+    # handled by any of the bindings in 'bindings', to 'string_io'.
+
+    assert len(bindings) > 1, (compatible, bindings)
+
+    underline = '#' * len(compatible)
+    output_list = '\n    '.join(f'- :ref:`{binding_ref_target(binding)}`'
+                                for binding in bindings)
+
+    print_block(f'''\
+    :orphan:
+
+    .. dtcompatible:: {compatible}
+
+    {compatible}
+    {underline}
+
+    The devicetree compatible ``{compatible}`` may be handled by any
+    of the following bindings:
+
+    {output_list}
+    ''', string_io)
+
 def print_block(block, string_io):
     # Helper for dedenting and printing a triple-quoted RST block.
     # (Just a block of text, not necessarily just a 'code-block'
@@ -617,13 +720,11 @@ def compatible_vnd(compatible):
 
     return compatible.split(',', 1)[0]
 
-def binding_ref_target(binding):
-    # Return the sphinx ':ref:' target name for a binding.
+def compatible_filename(compatible):
+    # Name of the per-compatible disambiguation page within the
+    # out_dir / compatibles directory.
 
-    ret = re.sub('[,-]', '_', binding.compatible)
-    if binding.on_bus is not None:
-        ret += f'_{binding.on_bus}'
-    return ret
+    return f'{compatible}.rst'
 
 def zref(target, text=None):
     # Make an appropriate RST :ref:`text <target>` or :ref:`target`
@@ -651,14 +752,40 @@ def zref(target, text=None):
     return f':ref:`{target}`'
 
 def binding_filename(binding):
-    if binding.on_bus is None:
-        return f'{binding.compatible}.rst'
+    # Returns the output file name for a binding relative to the
+    # directory containing documentation for all bindings. It does
+    # this by stripping off the '.../dts/bindings/' prefix common to
+    # all bindings files in a DTS_ROOT directory.
+    #
+    # For example, for .../zephyr/dts/bindings/base/base.yaml, this
+    # would return 'base/base.yaml'.
+    #
+    # Hopefully that's unique across roots. If not, we'll need to
+    # update this function.
 
-    return f'{binding.compatible}-{binding.on_bus}.rst'
+    as_posix = Path(binding.path).as_posix()
+    dts_bindings = 'dts/bindings/'
+    idx = as_posix.rfind(dts_bindings)
+
+    if idx == -1:
+        raise ValueError(f'binding path has no {dts_bindings}: {binding.path}')
+
+    # Cut past dts/bindings, strip off the .yaml, and replace with
+    # .rst.
+    return as_posix[idx + len(dts_bindings):-4] + 'rst'
+
+def binding_ref_target(binding):
+    # Return the sphinx ':ref:' target name for a binding.
+
+    stem = Path(binding.path).stem
+    return 'dtbinding_' + re.sub('[/,-]', '_', stem)
 
 def write_if_updated(path, s):
-    # gen_helpers.write_if_updated() wrapper that handles logging.
+    # gen_helpers.write_if_updated() wrapper that handles logging and
+    # creating missing parents, as needed.
 
+    if not path.parent.is_dir():
+        path.parent.mkdir(parents=True)
     written = gen_helpers.write_if_updated(path, s)
     logger.debug('%s %s', 'wrote' if written else 'did NOT write', path)
     return written
