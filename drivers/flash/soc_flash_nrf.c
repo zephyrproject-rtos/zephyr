@@ -6,6 +6,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @zephyrdriver{Nordic Semiconductor nRF NVMC}
+ * @dtcompatible{nordic,nrf51-flash-controller}
+ * @dtcompatible{nordic,nrf52-flash-controller}
+ * @dtcompatible{nordic,nrf53-flash-controller}
+ * @dtcompatible{nordic,nrf91-flash-controller}
+ */
+
 #include <errno.h>
 
 #include <kernel.h>

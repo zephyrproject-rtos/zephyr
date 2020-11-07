@@ -5,7 +5,9 @@
  */
 
 /**
- * @brief Driver for Nordic Semiconductor nRF UARTE
+ * @file
+ * @zephyrdriver{Nordic Semiconductor nRF UARTE}
+ * @dtcompatible{nordic,nrf-uarte}
  */
 
 #include <drivers/uart.h>

@@ -5,6 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @zephyrdriver{Nordic Semiconductor nRF5X TEMP}
+ * @dtcompatible{nordic,nrf-temp}
+ */
+
 #define DT_DRV_COMPAT nordic_nrf_temp
 
 #include <device.h>

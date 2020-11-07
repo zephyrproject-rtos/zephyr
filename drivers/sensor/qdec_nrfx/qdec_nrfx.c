@@ -4,6 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @zephyrdriver{Nordic Semiconductor nRF5X QDEC}
+ * @dtcompatible{nordic,nrf-qdec}
+ *
+ * \rst
+ * This driver implements the ``SENSOR_CHAN_ROTATION`` channel
+ * using the QDEC peripheral.
+ * \endrst
+ */
+
 #include <drivers/sensor.h>
 
 #include <nrfx_qdec.h>

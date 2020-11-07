@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @zephyrdriver{Nordic Semiconductor nRF5X GPIOTE based PWM}
+ * @dtcompatible{nordic,nrf-sw-pwm}
+ */
+
 #define DT_DRV_COMPAT nordic_nrf_sw_pwm
 
 #include <soc.h>

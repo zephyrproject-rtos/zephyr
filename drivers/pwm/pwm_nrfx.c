@@ -3,6 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @zephyrdriver{Nordic Semiconductor nRF PWM}
+ * @dtcompatible{nordic,nrf-pwm}
+ */
+
 #include <nrfx_pwm.h>
 #include <drivers/pwm.h>
 #include <hal/nrf_gpio.h>

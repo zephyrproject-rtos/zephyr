@@ -4,6 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @zephyrdriver{Nordic Semiconductor nRF5X TWI}
+ * @dtcompatible{nordic,nrf-twi}
+ *
+ * \rst
+ *
+ * To enable this driver, set :option:`CONFIG_I2C`\ ``=y`` via Kconfig,
+ * and make sure you have at least one :dtcompatible:`nordic,nrf-twi` node
+ * in your devicetree with ``status = "okay";`` and other properties
+ * configured as needed.
+ *
+ * \endrst
+ */
 
 #include <drivers/i2c.h>
 #include <dt-bindings/i2c/i2c.h>

@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @zephyrdriver{Nordic Semiconductor nRF51x ADC}
+ * @dtcompatible{nordic,nrf-adc}
+ */
+
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 #include <nrfx_adc.h>

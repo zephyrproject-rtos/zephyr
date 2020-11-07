@@ -5,6 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @zephyrdriver{Nordic Semiconductor nRF CLOCK}
+ * @dtcompatible{nordic,nrf-clock}
+ */
+
 #include <soc.h>
 #include <sys/onoff.h>
 #include <drivers/clock_control.h>

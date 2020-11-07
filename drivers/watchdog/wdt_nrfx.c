@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @zephyrdriver{Nordic Semiconductor nRF WDT}
+ * @dtcompatible{nordic,nrf-watchdog}
+ */
+
 #include <nrfx_wdt.h>
 #include <drivers/watchdog.h>
 

@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @zephyrdriver{Nordic Semiconductor nRF5X SPIM}
+ * @dtcompatible{nordic,nrf-spim}
+ */
+
 #include <drivers/spi.h>
 #include <nrfx_spim.h>
 #include <string.h>

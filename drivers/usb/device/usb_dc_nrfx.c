@@ -6,11 +6,9 @@
  */
 
 /**
- * @file  usb_dc_nrfx.c
- * @brief Nordic USB device controller driver
- *
- * The driver implements the interface between the USBD peripheral
- * driver from nrfx package and the operating system.
+ * @file
+ * @zephyrdriver{Nordic Semiconductor USBD}
+ * @dtcompatible{nordic,nrf-usbd}
  */
 
 #include <soc.h>

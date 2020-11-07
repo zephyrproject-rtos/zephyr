@@ -3,6 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @zephyrdriver{Nordic Semiconductor nRF RTC}
+ * @dtcompatible{nordic,nrf-rtc}
+ */
+
 #include <drivers/counter.h>
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/nrf_clock_control.h>

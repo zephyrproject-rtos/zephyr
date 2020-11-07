@@ -10,6 +10,15 @@
 #include <hal/nrf_ficr.h>
 #include <sys/byteorder.h>
 
+/**
+ * @file
+ * @zephyrdriver{Nordic Semiconductor nRF SoCs}
+ * @dtcompatible{nordic,nrf-ficr}
+ *
+ * This driver implements HWINFO via the nRF FICR device identifier
+ * registers.
+ */
+
 struct nrf_uid {
 	uint32_t id[2];
 };

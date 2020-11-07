@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @zephyrdriver{Nordic Semiconductor nRF GPIO}
+ * @dtcompatible{nordic,nrf-gpio}
+ */
+
 #include <drivers/gpio.h>
 #include <hal/nrf_gpio.h>
 #include <hal/nrf_gpiote.h>

@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @zephyrdriver{QSPI NOR on Nordic Semiconductor nRF}
+ * @dtcompatible{nordic,qspi-nor}
+ */
+
 #define DT_DRV_COMPAT nordic_qspi_nor
 
 #include <errno.h>

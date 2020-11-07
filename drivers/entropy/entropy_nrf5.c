@@ -5,6 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @zephyrdriver{Nordic Semiconductor nRF RNG}
+ * @dtcompatible{nordic,nrf-rng}
+ */
+
 #include <drivers/entropy.h>
 #include <sys/atomic.h>
 #include <soc.h>

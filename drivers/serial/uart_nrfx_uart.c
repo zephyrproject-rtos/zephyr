@@ -5,7 +5,9 @@
  */
 
 /**
- * @brief Driver for Nordic Semiconductor nRF5X UART
+ * @file
+ * @zephyrdriver{Nordic Semiconductor nRF5X UART}
+ * @dtcompatible{nordic,nrf-uart}
  */
 
 #include <drivers/uart.h>

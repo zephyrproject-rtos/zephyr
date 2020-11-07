@@ -11,4 +11,4 @@ config PWM_NRFX
 	select NRFX_PWM2 if "$(dt_nodelabel_enabled,pwm2)"
 	select NRFX_PWM3 if "$(dt_nodelabel_enabled,pwm3)"
 	help
-	  Enable support for nrfx Hardware PWM driver for nRF52 MCU series.
+	  Enable support for nrfx Hardware PWM driver for nRF MCU series.

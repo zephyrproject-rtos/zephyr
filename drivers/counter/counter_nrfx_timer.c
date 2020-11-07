@@ -3,6 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @zephyrdriver{Nordic Semiconductor nRF TIMER}
+ * @dtcompatible{nordic,nrf-timer}
+ */
+
 #include <drivers/counter.h>
 #include <hal/nrf_timer.h>
 #include <sys/atomic.h>
