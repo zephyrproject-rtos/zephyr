@@ -259,6 +259,9 @@ def main():
             if param != 0:
                 error("Direct irq %d declared, but has non-NULL parameter"
                         % irq)
+            if not 0 <= irq - offset < len(vt):
+                error("IRQ %d (offset=%d) exceeds the maximum of %d" %
+                      (irq - offset, offset, len(vt) - 1))
             vt[irq - offset] = func
         else:
             # Regular interrupt
@@ -302,6 +305,9 @@ def main():
                     debug('IRQ_Pos  = ' + str(irq1))
                     table_index = irq1 - offset
 
+            if not 0 <= table_index < len(swt):
+                error("IRQ %d (offset=%d) exceeds the maximum of %d" %
+                      (table_index, offset, len(swt) - 1))
             if swt[table_index] != (0, spurious_handler):
                 error(f"multiple registrations at table_index {table_index} for irq {irq} (0x{irq:x})"
                       + f"\nExisting handler 0x{swt[table_index][1]:x}, new handler 0x{func:x}"
