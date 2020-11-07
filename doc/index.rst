@@ -114,6 +114,7 @@ licensing, as described in :ref:`Zephyr_Licensing`.
    development_process/index.rst
    application/index.rst
    reference/index.rst
+   drivers/index.rst
    guides/index.rst
    security/index.rst
    samples/index.rst

@@ -92,6 +92,7 @@ set(I18NSPHINXOPTS  ${SPHINXOPTS})
 set(DOXYFILE_IN ${CMAKE_CURRENT_LIST_DIR}/zephyr.doxyfile.in)
 set(DOXYFILE_OUT ${CMAKE_CURRENT_BINARY_DIR}/zephyr.doxyfile)
 set(DOXY_OUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
+set(DOXY_XML_OUT ${DOXY_OUT}/xml)
 set(RST_OUT ${CMAKE_CURRENT_BINARY_DIR}/rst)
 set(DOC_LOG ${CMAKE_CURRENT_BINARY_DIR}/doc.log)
 set(DOXY_LOG ${CMAKE_CURRENT_BINARY_DIR}/doxy.log)
@@ -99,6 +100,8 @@ set(SPHINX_LOG ${CMAKE_CURRENT_BINARY_DIR}/sphinx.log)
 set(DOC_WARN ${CMAKE_CURRENT_BINARY_DIR}/doc.warnings)
 set(CONTENT_OUTPUTS ${CMAKE_CURRENT_BINARY_DIR}/extracted-content.txt)
 
+# TODO: need to pass all the modules which have drivers/
+# subdirectories in here too
 configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
 
 # This command is used to copy all documentation source files from the
@@ -301,6 +304,48 @@ add_custom_target(
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${GEN_DEVICETREE_REST_SCRIPT})
 
 #
+# Generated device driver .rst documents.
+#
+# The device drivers discovered in ${DRIVER_MODULES} are parsed and
+# documentation for them is generated in the directory ${DRIVERS_RST_OUT}.
+# Defaults:
+#
+# - DRIVER_MODULES: ZEPHYR_BASE
+# - DRIVERS_RST_OUT: ${RST_OUT}/doc/drivers
+
+set(GEN_DRIVER_REST_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/scripts/gen_driver_rest.py)
+
+if(NOT DRIVER_MODULES)
+  set(DRIVER_MODULES ${ZEPHYR_BASE})
+endif()
+
+set(DRIVER_MODULES_ARGS)
+foreach(module ${DRIVER_MODULES})
+  list(APPEND DRIVER_MODULES_ARGS --module ${module})
+endforeach()
+
+if(NOT DRIVERS_RST_OUT)
+  set(DRIVERS_RST_OUT ${RST_OUT}/doc/drivers)
+endif()
+
+add_custom_target(
+  drivers
+  COMMAND ${CMAKE_COMMAND} -E env
+  ${PYTHON_EXECUTABLE} ${GEN_DRIVER_REST_SCRIPT}
+    --doxygen-xml ${DOXY_XML_OUT}
+    ${DRIVER_MODULES_ARGS}
+    ${DRIVERS_RST_OUT}
+  VERBATIM
+  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+  COMMENT "Running gen_drivers_rest.py ${DRIVERS_RST_OUT}"
+  USES_TERMINAL
+)
+
+add_dependencies(drivers doxy_real_modified_times)
+
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${GEN_DRIVER_REST_SCRIPT})
+
+#
 # HTML section
 #
 set(SPHINX_BUILD_HTML_COMMAND
@@ -414,7 +459,7 @@ endif()
 #
 # Dependencies and final targets
 #
-add_dependencies(html content doxy_real_modified_times kconfig devicetree)
+add_dependencies(html content doxy_real_modified_times kconfig devicetree drivers)
 
 add_custom_target(
   htmldocs
@@ -427,7 +472,7 @@ add_custom_target(
 )
 add_dependencies(doxygen doxy_real_modified_times)
 
-add_dependencies(latex content doxy_real_modified_times kconfig devicetree)
+add_dependencies(latex content doxy_real_modified_times kconfig devicetree drivers)
 
 add_custom_target(
   latexdocs
