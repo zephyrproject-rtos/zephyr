@@ -45,14 +45,17 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 #else
 	bl	z_soc_irq_get_active
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
-	stp	x0, x1, [sp, #-16]!
-	lsl	x0, x0, #4 /* table is 16-byte wide */
+	stp x0, x1, [sp, #-16]!
+	cmp x0, #CONFIG_NUM_IRQS
+	b.hi spr
+	lsl x0, x0, #4 /* table is 16-byte wide */
 
 	/* Retrieve the interrupt service routine */
 	ldr	x1, =_sw_isr_table
 	add	x1, x1, x0
 	ldp	x0, x3, [x1] /* arg in x0, ISR in x3 */
-
+	cmp	x3, #0x0
+	b.eq spr
 	/*
 	 * Call the ISR. Unmask and mask again the IRQs to support nested
 	 * exception handlers
@@ -61,6 +64,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	blr	x3
 	msr	daifset, #(DAIFSET_IRQ)
 
+spr:
 	/* Signal end-of-interrupt */
 	ldp	x0, x1, [sp], #16
 #if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
