@@ -72,4 +72,6 @@ config PRINTK_SYNC
 	  interleaving with concurrent usage from another CPU or an
 	  preempting interrupt.
 
+rsource "Kconfig.cbprintf"
+
 endmenu
