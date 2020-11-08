@@ -86,6 +86,16 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
                 return True
         return False
 
+    def is_extended_samba_protocol(self):
+        build_conf = BuildConfiguration(self.cfg.build_dir)
+        ext_samba_versions = ['CONFIG_BOOTLOADER_BOSSA_ARDUINO',
+                              'CONFIG_BOOTLOADER_BOSSA_ADAFRUIT_UF2']
+
+        for x in ext_samba_versions:
+            if x in build_conf:
+                return True
+        return False
+
     def get_offset(self, supports_offset):
         """Validates and returns the flash offset"""
         if supports_offset:
@@ -111,6 +121,8 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
     def set_serial_config(self):
         if platform.system() == 'Linux':
             self.require('stty')
+            if self.is_extended_samba_protocol():
+                self.speed = '1200'
             cmd_stty = ['stty', '-F', self.port, 'raw', 'ispeed', self.speed,
                         'ospeed', self.speed, 'cs8', '-cstopb', 'ignpar',
                         'eol', '255', 'eof', '255']
