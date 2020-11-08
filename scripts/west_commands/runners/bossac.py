@@ -108,19 +108,21 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
 
         return self.offset
 
-    def do_run(self, command, **kwargs):
-        if platform.system() == 'Windows':
-            msg = 'CAUTION: BOSSAC runner not support on Windows!'
-            raise NotImplementedError(msg)
-
-        self.require(self.bossac)
-
+    def set_serial_config(self):
         if platform.system() == 'Linux':
             self.require('stty')
             cmd_stty = ['stty', '-F', self.port, 'raw', 'ispeed', self.speed,
                         'ospeed', self.speed, 'cs8', '-cstopb', 'ignpar',
                         'eol', '255', 'eof', '255']
             self.check_call(cmd_stty)
+
+    def do_run(self, command, **kwargs):
+        if platform.system() == 'Windows':
+            msg = 'CAUTION: BOSSAC runner not support on Windows!'
+            raise NotImplementedError(msg)
+
+        self.require(self.bossac)
+        self.set_serial_config()
 
         cmd_flash = [self.bossac, '-p', self.port, '-R', '-e', '-w', '-v',
                      '-b', self.cfg.bin_file]
