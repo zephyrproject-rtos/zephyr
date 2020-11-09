@@ -170,8 +170,8 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 	struct pdu_adv_com_ext_adv *ter_com_hdr, *ter_com_hdr_prev;
 	struct pdu_adv_hdr *ter_hdr, ter_hdr_prev;
 	struct pdu_adv *ter_pdu, *ter_pdu_prev;
-	uint8_t ter_len, ter_len_prev;
 	uint8_t *ter_dptr, *ter_dptr_prev;
+	uint16_t ter_len, ter_len_prev;
 	struct lll_adv_sync *lll_sync;
 	struct ll_adv_set *adv;
 	uint8_t ter_idx;
@@ -246,13 +246,16 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 	ter_len = ull_adv_aux_hdr_len_calc(ter_com_hdr, &ter_dptr);
 	ull_adv_aux_hdr_len_fill(ter_com_hdr, ter_len);
 
-	/* Set the tertiary PDU len */
-	ter_pdu->len = ter_len + len;
+	/* Add AD len to secondary PDU length */
+	ter_len += len;
 
 	/* Check AdvData overflow */
-	if (ter_pdu->len > CONFIG_BT_CTLR_ADV_DATA_LEN_MAX) {
+	if (ter_len > PDU_AC_PAYLOAD_SIZE_MAX) {
 		return BT_HCI_ERR_PACKET_TOO_LONG;
 	}
+
+	/* set the secondary PDU len */
+	ter_pdu->len = ter_len;
 
 	/* Start filling tertiary PDU payload based on flags from here
 	 * ==============================================================
