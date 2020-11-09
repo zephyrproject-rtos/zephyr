@@ -14,6 +14,8 @@
 
 #if defined(CONFIG_X86) || defined(CONFIG_X86_64)
 #include <arch/x86/arch_inlines.h>
+#elif defined(CONFIG_ARM64)
+#include <arch/arm/aarch64/arch_inlines.h>
 #elif defined(CONFIG_ARC)
 #include <arch/arc/arch_inlines.h>
 #elif defined(CONFIG_XTENSA)
