@@ -710,6 +710,10 @@ static void espi_init_flash(const struct device *dev)
 
 	LOG_DBG("%s", __func__);
 
+	/* Need to clear status done when ROM boots in MAF */
+	LOG_DBG("%s ESPI_FC_REGS->CFG %X", __func__, ESPI_FC_REGS->CFG);
+	ESPI_FC_REGS->STS = MCHP_ESPI_FC_STS_DONE;
+
 	/* Enable interrupts */
 	MCHP_GIRQ_ENSET(config->bus_girq_id) = BIT(MCHP_ESPI_FC_GIRQ_POS);
 	ESPI_FC_REGS->IEN |= MCHP_ESPI_FC_IEN_CHG_EN;
