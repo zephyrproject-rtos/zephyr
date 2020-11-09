@@ -51,7 +51,7 @@ static int write_byte(const struct device *dev, off_t offset, uint8_t val)
 		return rc;
 	}
 
-	regs->CR &= ~CR_PSIZE_MASK;
+	regs->CR &= CR_PSIZE_MASK;
 	regs->CR |= FLASH_PSIZE_BYTE;
 	regs->CR |= FLASH_CR_PG;
 
