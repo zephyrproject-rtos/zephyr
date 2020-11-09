@@ -95,12 +95,7 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 
 	/* Current EL with SPx / SError */
 	.align 7
-	z_arm64_enter_exc x0, x1
-
-	mov	x1, sp
-	mov	x0, #0 /* K_ERR_CPU_EXCEPTION */
-
-	b	z_arm64_fatal_error
+	b	z_arm64_serror
 
 	/* Lower EL using AArch64 / Synchronous */
 	.align 7
@@ -134,3 +129,11 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 	.align 7
 	b	.
 
+GTEXT(z_arm64_serror)
+SECTION_FUNC(TEXT, z_arm64_serror)
+	z_arm64_enter_exc x0, x1
+
+	mov	x1, sp
+	mov	x0, #0 /* K_ERR_CPU_EXCEPTION */
+
+	b	z_arm64_fatal_error
