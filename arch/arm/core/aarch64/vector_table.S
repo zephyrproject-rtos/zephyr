@@ -136,4 +136,7 @@ SECTION_FUNC(TEXT, z_arm64_serror)
 	mov	x1, sp
 	mov	x0, #0 /* K_ERR_CPU_EXCEPTION */
 
-	b	z_arm64_fatal_error
+	bl	z_arm64_fatal_error
+
+	/* Return here only in case of recoverable error */
+	z_arm64_exit_exc x0, x1

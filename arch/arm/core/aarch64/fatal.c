@@ -169,7 +169,18 @@ static void esf_dump(const z_arch_esf_t *esf)
 		esf->basic.regs[0], esf->basic.regs[1]);
 }
 
-void z_arm64_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
+static bool is_recoverable(z_arch_esf_t *esf, uint64_t esr, uint64_t far,
+			   uint64_t elr)
+{
+	if (!esf)
+		return false;
+
+	/* Empty */
+
+	return false;
+}
+
+void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
 {
 	uint64_t esr = 0;
 	uint64_t elr = 0;
@@ -201,6 +212,9 @@ void z_arm64_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 
 			if (dump_far)
 				LOG_ERR("FAR_ELn: 0x%016llx", far);
+
+			if (is_recoverable(esf, esr, far, elr))
+				return;
 		}
 	}
 
