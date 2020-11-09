@@ -54,7 +54,9 @@ contains the processor's information and the datasheet.
 
 .. note::
 
-   In previous Zephyr releases this board was named *nrf5340_dk_nrf5340*.
+   nRF5340 PDK board is deprecated and will be replaced by nRF5340 DK.
+   The support for nRF5340 PDK will be removed in Zephyr v2.6.0 release.
+
 
 Hardware
 ********
