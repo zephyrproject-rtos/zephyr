@@ -58,7 +58,7 @@ static int getErrno(_i32 error)
 		error = EBADF;
 		break;
 #endif
-#if ENSOCK !=  SL_ERROR_BSD_ENSOCK
+#if ENOTSOCK !=  SL_ERROR_BSD_ENSOCK
 	case SL_ERROR_BSD_ENSOCK:
 		/* The limit on total # of open sockets has been reached */
 		error = ENSOCK;
