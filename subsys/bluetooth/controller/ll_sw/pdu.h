@@ -232,7 +232,7 @@ enum pdu_adv_mode {
 	EXT_ADV_MODE_NON_CONN_SCAN = 0x02,
 };
 
-struct pdu_adv_hdr {
+struct pdu_adv_ext_hdr {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	uint8_t adv_addr:1;
 	uint8_t tgt_addr:1;

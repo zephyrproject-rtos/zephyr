@@ -98,7 +98,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	uint32_t ticks_at_event, ticks_at_start;
 	struct pdu_adv *pri_pdu, *sec_pdu;
 	struct pdu_adv_aux_ptr *aux_ptr;
-	struct pdu_adv_hdr *pri_hdr;
+	struct pdu_adv_ext_hdr *pri_hdr;
 	struct lll_adv_aux *lll;
 	struct lll_adv *lll_adv;
 	struct evt_hdr *evt;

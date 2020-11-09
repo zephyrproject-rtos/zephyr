@@ -101,7 +101,7 @@ ull_adv_aux_hdr_len_calc(struct pdu_adv_com_ext_adv *com_hdr, uint8_t **dptr)
 
 	len = *dptr - (uint8_t *)com_hdr;
 	if (len <= (offsetof(struct pdu_adv_com_ext_adv, ext_hdr_adv_data) +
-		    sizeof(struct pdu_adv_hdr))) {
+		    sizeof(struct pdu_adv_ext_hdr))) {
 		len = offsetof(struct pdu_adv_com_ext_adv,
 			       ext_hdr_adv_data);
 		*dptr = (uint8_t *)com_hdr + len;

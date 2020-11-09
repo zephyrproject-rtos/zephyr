@@ -361,7 +361,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	} else if (pdu->type == PDU_ADV_TYPE_EXT_IND) {
-		struct pdu_adv_hdr *pri_hdr, pri_hdr_prev;
+		struct pdu_adv_ext_hdr *pri_hdr, pri_hdr_prev;
 		struct pdu_adv_com_ext_adv *pri_com_hdr;
 		uint8_t *pri_dptr_prev, *pri_dptr;
 		uint8_t len;
@@ -655,7 +655,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	} else if (pdu_adv->type == PDU_ADV_TYPE_EXT_IND) {
 		struct pdu_adv_com_ext_adv *pri_com_hdr;
-		struct pdu_adv_hdr *pri_hdr;
+		struct pdu_adv_ext_hdr *pri_hdr;
 
 		pri_com_hdr = (void *)&pdu_adv->adv_ext_ind;
 		pri_hdr = (void *)pri_com_hdr->ext_hdr_adv_data;
@@ -674,7 +674,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 		} else if (pri_hdr->aux_ptr) {
 			struct pdu_adv_com_ext_adv *sec_com_hdr;
-			struct pdu_adv_hdr *sec_hdr;
+			struct pdu_adv_ext_hdr *sec_hdr;
 			struct pdu_adv *sec_pdu;
 
 			sec_pdu = lll_adv_aux_data_peek(lll->aux);
@@ -1575,7 +1575,7 @@ const uint8_t *ull_adv_pdu_update_addrs(struct ll_adv_set *adv,
 					struct pdu_adv *pdu)
 {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	struct pdu_adv_hdr *hdr = (void *)pdu->adv_ext_ind.ext_hdr_adv_data;
+	struct pdu_adv_ext_hdr *hdr = (void *)pdu->adv_ext_ind.ext_hdr_adv_data;
 #endif
 	const uint8_t *adv_addr;
 
@@ -1985,7 +1985,7 @@ static inline uint8_t disable(uint8_t handle)
 static inline uint8_t *adv_pdu_adva_get(struct pdu_adv *pdu)
 {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	struct pdu_adv_hdr *hdr = (void *)pdu->adv_ext_ind.ext_hdr_adv_data;
+	struct pdu_adv_ext_hdr *hdr = (void *)pdu->adv_ext_ind.ext_hdr_adv_data;
 
 	/* All extended PDUs have AdvA at the same offset in common header */
 	if (pdu->type == PDU_ADV_TYPE_EXT_IND) {
