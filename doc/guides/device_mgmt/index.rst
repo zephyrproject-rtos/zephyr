@@ -13,6 +13,7 @@ The following management operations are available:
 * File System management
 * Log management (currently disabled)
 * OS management
+* Shell management
 
 over the following transports:
 
