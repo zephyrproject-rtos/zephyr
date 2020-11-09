@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(ieee802154_cc13xx_cc26xx);
 #include <driverlib/rfc.h>
 #include <inc/hw_ccfg.h>
 #include <inc/hw_fcfg1.h>
-#include <rf_patches/rf_patch_cpe_ieee_802_15_4.h>
+#include <rf_patches/rf_patch_cpe_multi_protocol.h>
 
 #include <ti/drivers/rf/RF.h>
 
@@ -536,8 +536,8 @@ static int ieee802154_cc13xx_cc26xx_init(const struct device *dev)
 	RF_Params rf_params;
 	RF_EventMask reason;
 	RF_Mode rf_mode = {
-		.rfMode      = RF_MODE_IEEE_15_4,
-		.cpePatchFxn = &rf_patch_cpe_ieee_802_15_4,
+		.rfMode      = RF_MODE_MULTIPLE,
+		.cpePatchFxn = &rf_patch_cpe_multi_protocol,
 	};
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
 
