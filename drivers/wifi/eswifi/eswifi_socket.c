@@ -80,6 +80,11 @@ int __eswifi_bind(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket,
 		return -EIO;
 	}
 
+	if (socket->type == ESWIFI_TRANSPORT_UDP) {
+		/* Start UDP server now */
+		return __eswifi_accept(eswifi, socket);
+	}
+
 	return 0;
 }
 
@@ -212,11 +217,11 @@ int __eswifi_accept(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket)
 
 	/* Start TCP Server */
 	if (eswifi_at_cmd(eswifi, cmd) < 0) {
-		LOG_ERR("Unable to start TCP server");
+		LOG_ERR("Unable to start TCP|UDP server");
 		return -EIO;
 	}
 
-	LOG_DBG("TCP Server started");
+	LOG_DBG("TCP|UDP Server started");
 	socket->state = ESWIFI_SOCKET_STATE_ACCEPTING;
 
 	return 0;
