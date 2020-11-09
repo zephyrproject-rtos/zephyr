@@ -82,6 +82,7 @@ config ARCV2_TIMER_IRQ_PRIORITY
 config ARM_ARCH_TIMER
 	bool "ARM architected timer"
 	depends on GIC
+	select ARCH_HAS_CUSTOM_BUSY_WAIT
 	select TICKLESS_CAPABLE
 	help
 	  This module implements a kernel device driver for the ARM architected
