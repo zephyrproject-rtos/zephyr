@@ -9,6 +9,7 @@
 
 #include <sys/byteorder.h>
 #include <bluetooth/hci.h>
+#include <soc.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -36,7 +37,6 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_lll_adv_aux
 #include "common/log.h"
-#include <soc.h>
 #include "hal/debug.h"
 
 static uint8_t lll_adv_connect_rsp_pdu[PDU_AC_LL_HEADER_SIZE +

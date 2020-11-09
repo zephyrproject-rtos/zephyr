@@ -732,3 +732,59 @@ struct pdu_bis {
 		struct pdu_big_ctrl ctrl;
 	} __packed;
 } __packed;
+
+struct pdu_biginfo {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	uint32_t offset:14;
+	uint32_t offset_units:1;
+	uint32_t iso_interval:12;
+	uint32_t num_bis:5;
+
+	uint32_t nse:5;
+	uint32_t bn:3;
+	uint32_t sub_interval:20;
+	uint32_t pto:4;
+
+	uint32_t spacing:20;
+	uint32_t irc:4;
+	uint32_t max_pdu:8;
+
+	uint8_t  rfu;
+
+	uint32_t seed_access_addr;
+
+	uint32_t sdu_interval:20;
+	uint32_t max_sdu:12;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	uint32_t num_bis:5;
+	uint32_t iso_interval:12;
+	uint32_t offset_units:1;
+	uint32_t offset:14;
+
+	uint32_t pto:4;
+	uint32_t sub_interval:20;
+	uint32_t bn:3;
+	uint32_t nse:5;
+
+	uint32_t max_pdu:8;
+	uint32_t irc:4;
+	uint32_t spacing:20;
+
+	uint8_t  rfu;
+
+	uint32_t seed_access_addr;
+
+	uint32_t max_sdu:12;
+	uint32_t sdu_interval:20;
+#else
+#error "Unsupported endianness"
+#endif /* __BYTE_ORDER__ */
+
+	uint16_t base_crc_init;
+
+	uint8_t chm_phy[5]; /* 37 bit chm; 3 bit phy */
+	uint8_t payload_count_framing[5]; /* 39 bit count; 1 bit framing */
+
+	uint8_t giv; /* encryption required */
+	uint16_t gskd; /* encryption required */
+} __packed;

@@ -27,6 +27,7 @@
 #include "lll_clock.h"
 #include "lll_scan.h"
 #include "lll_sync.h"
+#include "lll_sync_iso.h"
 
 #include "ull_scan_types.h"
 #include "ull_sync_types.h"
@@ -43,7 +44,6 @@
 
 static int init_reset(void);
 static inline struct ll_sync_set *sync_acquire(void);
-static struct ll_sync_set *is_enabled_get(uint16_t handle);
 static void timeout_cleanup(struct ll_sync_set *sync);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, void *param);
@@ -237,7 +237,7 @@ uint8_t ll_sync_terminate(uint16_t handle)
 	struct ll_sync_set *sync;
 	int err;
 
-	sync = is_enabled_get(handle);
+	sync = ull_sync_is_enabled_get(handle);
 	if (!sync) {
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
@@ -294,6 +294,18 @@ struct ll_sync_set *ull_sync_set_get(uint16_t handle)
 	}
 
 	return &ll_sync_pool[handle];
+}
+
+struct ll_sync_set *ull_sync_is_enabled_get(uint16_t handle)
+{
+	struct ll_sync_set *sync;
+
+	sync = ull_sync_set_get(handle);
+	if (!sync || !sync->timeout_reload) {
+		return NULL;
+	}
+
+	return sync;
 }
 
 uint16_t ull_sync_handle_get(struct ll_sync_set *sync)
@@ -546,18 +558,6 @@ static int init_reset(void)
 static inline struct ll_sync_set *sync_acquire(void)
 {
 	return mem_acquire(&sync_free);
-}
-
-static struct ll_sync_set *is_enabled_get(uint16_t handle)
-{
-	struct ll_sync_set *sync;
-
-	sync = ull_sync_set_get(handle);
-	if (!sync || !sync->timeout_reload) {
-		return NULL;
-	}
-
-	return sync;
 }
 
 static void timeout_cleanup(struct ll_sync_set *sync)
