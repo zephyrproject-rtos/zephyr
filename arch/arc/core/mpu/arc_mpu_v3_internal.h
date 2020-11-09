@@ -586,7 +586,7 @@ int arc_core_mpu_buffer_validate(void *addr, size_t size, int write)
 {
 	int r_index;
 
-
+	unsigned int key = z_arch_irq_lock();
 	/*
 	 * For ARC MPU v3, overlapping is not supported.
 	 * we can stop the iteration immediately once we find the
@@ -596,13 +596,16 @@ int arc_core_mpu_buffer_validate(void *addr, size_t size, int write)
 	/*  match and the area is in one region */
 	if (r_index >= 0 && r_index == _mpu_probe((u32_t)addr + (size - 1))) {
 		if (_is_user_accessible_region(r_index, write)) {
-			return 0;
+			r_index = 0;
 		} else {
-			return -EPERM;
+			r_index = -EPERM;
 		}
+	} else {
+		r_index = -EPERM;
 	}
+	z_arch_irq_unlock(key);
 
-	return -EPERM;
+	return r_index;
 }
 #endif /* CONFIG_USERSPACE */
 
