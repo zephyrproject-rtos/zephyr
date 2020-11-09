@@ -119,12 +119,12 @@ SECTION_FUNC(TEXT, z_arm64_sync_exc)
 	b	inv
 offload:
 	/* ++(_kernel->nested) to be checked by arch_is_in_isr() */
-	inc_nest_counter x0, x1
+	inc_nest_counter
 
 	bl	z_irq_do_offload
 
 	/* --(_kernel->nested) */
-	dec_nest_counter x0, x1
+	dec_nest_counter
 	b	z_arm64_exit_exc
 #endif
 	b	inv
