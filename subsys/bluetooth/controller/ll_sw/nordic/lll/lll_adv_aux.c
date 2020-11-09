@@ -128,7 +128,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	/* Get reference to extended header */
 	pri_com_hdr = (void *)&pri_pdu->adv_ext_ind;
-	pri_hdr = (void *)pri_com_hdr->ext_hdr_adi_adv_data;
+	pri_hdr = (void *)pri_com_hdr->ext_hdr_adv_data;
 	pri_dptr = (uint8_t *)pri_hdr + sizeof(*pri_hdr);
 
 	/* traverse through adv_addr, if present */
@@ -196,8 +196,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 			/* Copy the address from the adv packet we will send
 			 * into the scan response.
 			 */
-			memcpy(&scan_pdu->adv_ext_ind.ext_hdr_adi_adv_data[1],
-			       &sec_pdu->adv_ext_ind.ext_hdr_adi_adv_data[1],
+			memcpy(&scan_pdu->adv_ext_ind.ext_hdr_adv_data[1],
+			       &sec_pdu->adv_ext_ind.ext_hdr_adv_data[1],
 			       BDADDR_SIZE);
 		}
 #else
@@ -422,7 +422,7 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 	pdu_aux = lll_adv_aux_data_latest_get(lll_aux, &upd);
 
 	/* AdvA is placed at 2nd byte of ext hdr data */
-	addr = &pdu_aux->adv_ext_ind.ext_hdr_adi_adv_data[1];
+	addr = &pdu_aux->adv_ext_ind.ext_hdr_adv_data[1];
 	tx_addr = pdu_aux->tx_addr;
 
 	if ((pdu_rx->type == PDU_ADV_TYPE_AUX_SCAN_REQ) &&

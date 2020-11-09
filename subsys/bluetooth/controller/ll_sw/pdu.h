@@ -43,7 +43,7 @@
  *       18 octets in the Common Extended Advertising Payload Format.
  */
 #define PDU_AC_EXT_PAYLOAD_OVERHEAD (offsetof(struct pdu_adv_com_ext_adv, \
-					      ext_hdr_adi_adv_data) + \
+					      ext_hdr_adv_data) + \
 				     PDU_AC_EXT_HEADER_SIZE_MAX)
 #define PDU_AC_PAYLOAD_SIZE_MAX     MAX(MIN((PDU_AC_EXT_PAYLOAD_OVERHEAD + \
 					     CONFIG_BT_CTLR_ADV_DATA_LEN_MAX), \
@@ -223,7 +223,7 @@ struct pdu_adv_com_ext_adv {
 #else
 #error "Unsupported endianness"
 #endif
-	uint8_t ext_hdr_adi_adv_data[254];
+	uint8_t ext_hdr_adv_data[254];
 } __packed;
 
 enum pdu_adv_mode {

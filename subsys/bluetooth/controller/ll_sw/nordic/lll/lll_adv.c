@@ -778,7 +778,7 @@ static void isr_done(void *param)
 
 		pdu = lll_adv_data_curr_get(lll);
 		p = (void *)&pdu->adv_ext_ind;
-		h = (void *)p->ext_hdr_adi_adv_data;
+		h = (void *)p->ext_hdr_adv_data;
 
 		if ((pdu->type == PDU_ADV_TYPE_EXT_IND) && h->aux_ptr) {
 			radio_filter_disable();

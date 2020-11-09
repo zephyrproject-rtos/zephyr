@@ -187,7 +187,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		goto ull_scan_aux_rx_flush;
 	}
 
-	h = (void *)p->ext_hdr_adi_adv_data;
+	h = (void *)p->ext_hdr_adv_data;
 	if (!h->aux_ptr && !sync) {
 		goto ull_scan_aux_rx_flush;
 	}
