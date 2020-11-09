@@ -128,9 +128,6 @@ static int peci_xec_write(const struct device *dev, struct peci_msg *msg)
 	int i;
 	int ret;
 
-#ifndef CONFIG_PECI_INTERRUPT_DRIVEN
-	uint8_t wait_timeout;
-#endif
 	struct peci_buf *tx_buf = &msg->tx_buffer;
 	struct peci_buf *rx_buf = &msg->rx_buffer;
 	PECI_Type *base = peci_xec_config.base;
@@ -148,15 +145,13 @@ static int peci_xec_write(const struct device *dev, struct peci_msg *msg)
 	base->WR_DATA = tx_buf->len;
 	base->WR_DATA = rx_buf->len;
 
-	/* PING command doesn't require opcode to be sent */
-	if (msg->cmd_code != PECI_CMD_PING) {
+	/* Add PECI payload to Tx FIFO only if write length is valid */
+	if (tx_buf->len) {
 		base->WR_DATA = msg->cmd_code;
-	}
-
-	/* Add PECI payload data to FIFO */
-	for (i = 0; i < tx_buf->len - 1; i++) {
-		if (!(base->STATUS2 & MCHP_PECI_STS2_WFF)) {
-			base->WR_DATA = tx_buf->buf[i];
+		for (i = 0; i < tx_buf->len - 1; i++) {
+			if (!(base->STATUS2 & MCHP_PECI_STS2_WFF)) {
+				base->WR_DATA = tx_buf->buf[i];
+			}
 		}
 	}
 
@@ -175,11 +170,13 @@ static int peci_xec_write(const struct device *dev, struct peci_msg *msg)
 		return -ETIMEDOUT;
 	}
 #else
-	wait_timeout = tx_buf->len;
+	/* In worst case, overall timeout will be 1msec (100 * 10usec) */
+	uint8_t wait_timeout_cnt = 100;
+
 	while (!(base->STATUS1 & MCHP_PECI_STS1_EOF)) {
 		k_busy_wait(PECI_IO_DELAY);
-
-		if (!wait_timeout) {
+		wait_timeout_cnt--;
+		if (!wait_timeout_cnt) {
 			LOG_WRN("Tx timeout\n");
 			base->CONTROL = MCHP_PECI_CTRL_FRST;
 			return -ETIMEDOUT;
