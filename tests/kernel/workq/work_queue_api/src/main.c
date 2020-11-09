@@ -67,13 +67,42 @@ void common_work_handler(struct k_work *unused)
 /**
  * @brief Test work item can take call back function defined by user
  * @details
- * - Creating a work item, then add handler function to that work item.
- * - Then process that work item.
- * - To check that handler function executed successfully, we use semaphore
- *   sync_sema with initial count 0.
- * - Handler function gives semaphore, then we wait for that semaphore
- *   from the test function body.
- * - If semaphore was obtained successfully, test passed.
+ * Test Objective:
+ * - Test a work item shall be supplied as a user-defined callback
+ * function, and the handler function of a work item shall be able
+ * to utilize any kernel API available to threads.
+ *
+ * Test techniques:
+ * - Dynamic analysis and testing
+ * - Interface testing
+ *
+ * Prerequisite Conditions:
+ * - N/A
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Creating a work item, then add handler function to that work item.
+ * -# Then process that work item.
+ * -# To check that handler function executed successfully, we use semaphore
+ * sync_sema with initial count 0.
+ * -# Handler function gives semaphore, then we wait for that semaphore
+ * from the test function body.
+ * -# Check if semaphore was obtained successfully.
+ *
+ * Expected Test Result:
+ * - The callback function defined by user works successful.
+ *
+ * Pass/Fail Criteria:
+ * - Successful if check points in test procedure are all passed,
+ * otherwise failure.
+ *
+ * Assumptions and Constraints:
+ * - N/A
+ *
+ * @see k_work_init()
+ *
  * @ingroup kernel_workqueue_tests
  */
 void test_work_item_supplied_with_func(void)
@@ -135,19 +164,46 @@ void test_process_work_items_fifo(void)
 }
 
 /**
- * @brief Test kernel support scheduling work item that is to be processed
- * after user defined period of time
+ * @brief Test submitting a delayed work item to a workqueue
  * @details
- * - For that test is using semaphore sync_sema, with initial count 0.
- * - In that test we measure actual spent time and compare it with time
+ * Test Objective:
+ * - Test kernel support scheduling work item that is to be processed
+ * after user defined period of time.
+ *
+ * Test techniques:
+ * - Dynamic analysis and testing
+ * - Interface testing
+ *
+ * Prerequisite Conditions:
+ * - N/A
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# For that test is using semaphore sync_sema, with initial count 0.
+ * -# In that test we measure actual spent time and compare it with time
  * which was measured by function k_delayed_work_remaining_get().
- * - Using system clocks we measure actual spent time
+ * -# Using system clocks we measure actual spent time
  * in the period between delayed work submitted and delayed work
  * executed.
- * - To know that delayed work was executed, we use semaphore.
- * - Right after semaphore was given from handler function, we stop
+ * -# To know that delayed work was executed, we use semaphore.
+ * -# Right after semaphore was given from handler function, we stop
  * measuring actual time.
- * - Then compare results.
+ * -# Then compare results.
+ *
+ * Expected Test Result:
+ * - The measured time results are in a very small range.
+ *
+ * Pass/Fail Criteria:
+ * - Successful if check points in test procedure are all passed,
+ * otherwise failure.
+ *
+ * Assumptions and Constraints:
+ * - N/A
+ *
+ * @see k_delayed_work_init()
+ *
  * @ingroup kernel_workqueue_tests
  */
 void test_sched_delayed_work_item(void)
@@ -176,12 +232,43 @@ void test_sched_delayed_work_item(void)
 }
 
 /**
- * @brief Test application can define workqueues without any limit
+ * @brief Test define any number of workqueues
  * @details
- * - We can define any number of workqueus using a var of type struct k_work_q.
- * - Define and initialize maximum possible real number of the workqueues
- *   available according to the stack size.
- * - Test defines and initializes max number of the workqueues and starts them.
+ * Test Objective:
+ * - Test application can define workqueues without any limit.
+ *
+ * Test techniques:
+ * - Dynamic analysis and testing
+ * - Interface testing
+ *
+ * Prerequisite Conditions:
+ * - N/A
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Define any number of workqueus using a var of type
+ * struct k_work_q.
+ * -# Define and initialize maximum possible real number of the
+ * workqueues available according to the stack size.
+ * -# Test defines and initializes max number of the workqueues
+ * and starts them.
+ * -# Check if the number of workqueues defined is the same as the
+ * number of times the definition operation was performed.
+ *
+ * Expected Test Result:
+ * - The max number of workqueues be created.
+ *
+ * Pass/Fail Criteria:
+ * - Successful if check points in test procedure are all passed,
+ * otherwise failure.
+ *
+ * Assumptions and Constraints:
+ * - N/A
+ *
+ * @see k_work_q_start()
+ *
  * @ingroup kernel_workqueue_tests
  */
 void test_workqueue_max_number(void)
@@ -644,13 +731,40 @@ static void ttriggered_work_cancel(const void *data)
 	/*work items not cancelled: triggered_work[1], triggered_work_sleepy*/
 }
 
-/*test cases*/
 /**
  * @brief Test work queue start before submit
+ * @details
+ * Test Objective:
+ * - Test the workqueue is initialized by defining the stack area used by
+ * its thread and then calling k_work_q_start().
  *
- * @ingroup kernel_workqueue_tests
+ * Test techniques:
+ * - Dynamic analysis and testing
+ * - Interface testing
+ *
+ * Prerequisite Conditions:
+ * - N/A
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Call the k_work_q_start() to create a work queue which has it's own
+ * thread that processes the work items in the queue.
+ *
+ * Expected Test Result:
+ * - The user-defined work queue was created successfully.
+ *
+ * Pass/Fail Criteria:
+ * - Successful if check points in test procedure are all passed,
+ *otherwise failure.
+ *
+ * Assumptions and Constraints:
+ * - N/A
  *
  * @see k_work_q_start()
+ *
+ * @ingroup kernel_workqueue_tests
  */
 void test_workq_start_before_submit(void)
 {
@@ -838,20 +952,49 @@ static void work_handler_resubmit(struct k_work *w)
 }
 
 /**
- * @brief Test work submission to queue from handler context, resubmitting
- * a work item during execution of its callback
+ * @brief Test resubmitting work item in callback
  * @details
- * - That test uses sync_sema semaphore with initial count 0.
- * - That test verifies that it is possible during execution of the handler
- *   function, resubmit a work item from that handler function.
- * - twork_submit_1() initializes a work item with handler function.
- * - Then handler function gives a semaphore sync_sema.
- * - Then in test main body using for() loop, we are waiting for that semaphore.
- * - When semaphore obtained, handler function checks count of the semaphore
- *   (now it is again 0) and submits work one more time.
- * @ingroup kernel_workqueue_tests
+ * Test Objective:
+ * - Test work submission to queue from handler context, resubmitting
+ * a work item during execution of its callback.
+ *
+ * Test techniques:
+ * - Dynamic analysis and testing
+ * - Functional and black box testing
+ * - Interface testing
+ *
+ * Prerequisite Conditions:
+ * - N/A
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Uses sync_sema semaphore with initial count 0.
+ * -# Verifies that it is possible during execution of the handler
+ * function, resubmit a work item from that handler function.
+ * -# twork_submit_1() initializes a work item with handler function.
+ * -# Then handler function gives a semaphore sync_sema.
+ * -# Then in test main body using for() loop, we are waiting for that
+ * semaphore.
+ * -# When semaphore given, handler function checks count of the semaphore
+ * and submits work one more time.
+ *
+ * Expected Test Result:
+ * - The work item is recommitted. The callback will normally terminated
+ * according to the exit condition(semaphore count).
+ *
+ * Pass/Fail Criteria:
+ * - Successful if check points in test procedure are all passed,
+ * otherwise failure.
+ *
+ * Assumptions and Constraints:
+ * - N/A
+ *
  * @see k_work_init(), k_work_pending(), k_work_submit_to_queue(),
  * k_work_submit()
+ *
+ * @ingroup kernel_workqueue_tests
  */
 void test_work_submit_handler(void)
 {
