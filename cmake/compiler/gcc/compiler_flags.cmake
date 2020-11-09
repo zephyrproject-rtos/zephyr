@@ -89,7 +89,7 @@ check_set_compiler_property(APPEND PROPERTY warning_dw_3
                             -Wvla
 )
 
-set_compiler_property(PROPERTY warning_extended -Wno-unused-but-set-variable)
+check_set_compiler_property(PROPERTY warning_extended -Wno-unused-but-set-variable)
 
 check_set_compiler_property(PROPERTY warning_error_implicit_int -Werror=implicit-int)
 
