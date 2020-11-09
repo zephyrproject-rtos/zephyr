@@ -18,7 +18,7 @@
 #include <sw_isr_table.h>
 #include <drivers/interrupt_controller/gic.h>
 
-void z_arm64_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
+void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf);
 
 #if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 /*
