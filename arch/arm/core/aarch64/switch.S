@@ -38,14 +38,21 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	add	x2, x1, x3
 
 	/* Save the current SP */
-	mov	x1, sp
+	mov	x4, sp
 
 	stp	x19, x20, [x2, ___callee_saved_t_x19_x20_OFFSET]
 	stp	x21, x22, [x2, ___callee_saved_t_x21_x22_OFFSET]
 	stp	x23, x24, [x2, ___callee_saved_t_x23_x24_OFFSET]
 	stp	x25, x26, [x2, ___callee_saved_t_x25_x26_OFFSET]
 	stp	x27, x28, [x2, ___callee_saved_t_x27_x28_OFFSET]
-	stp	x29, x1, [x2, ___callee_saved_t_x29_sp_OFFSET]
+	stp	x29, x4, [x2, ___callee_saved_t_x29_sp_OFFSET]
+
+#ifdef CONFIG_SMP
+	/* save old thread into switch handle which is required by
+	 * wait_for_switch
+	 */
+	 str	x1, [x1, #___thread_t_switch_handle_OFFSET]
+#endif
 
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	/* Grab the TLS pointer */
