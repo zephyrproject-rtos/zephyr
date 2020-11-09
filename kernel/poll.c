@@ -88,6 +88,11 @@ static inline bool is_condition_met(struct k_poll_event *event, uint32_t *state)
 	return false;
 }
 
+static struct k_thread *poller_thread(struct _poller *p)
+{
+	return p ? CONTAINER_OF(p, struct k_thread, poller) : NULL;
+}
+
 static inline void add_event(sys_dlist_t *events, struct k_poll_event *event,
 			     struct _poller *poller)
 {
@@ -95,15 +100,15 @@ static inline void add_event(sys_dlist_t *events, struct k_poll_event *event,
 
 	pending = (struct k_poll_event *)sys_dlist_peek_tail(events);
 	if ((pending == NULL) ||
-		z_is_t1_higher_prio_than_t2(pending->poller->thread,
-					    poller->thread)) {
+	    z_is_t1_higher_prio_than_t2(poller_thread(pending->poller),
+					poller_thread(poller))) {
 		sys_dlist_append(events, &event->_node);
 		return;
 	}
 
 	SYS_DLIST_FOR_EACH_CONTAINER(events, pending, _node) {
-		if (z_is_t1_higher_prio_than_t2(poller->thread,
-						pending->poller->thread)) {
+		if (z_is_t1_higher_prio_than_t2(poller_thread(poller),
+					poller_thread(pending->poller))) {
 			sys_dlist_insert(&pending->_node, &event->_node);
 			return;
 		}
@@ -223,7 +228,7 @@ static inline int register_events(struct k_poll_event *events,
 
 static int signal_poller(struct k_poll_event *event, uint32_t state)
 {
-	struct k_thread *thread = event->poller->thread;
+	struct k_thread *thread = poller_thread(event->poller);
 
 	__ASSERT(thread != NULL, "poller should have a thread\n");
 
@@ -248,28 +253,21 @@ static int signal_poller(struct k_poll_event *event, uint32_t state)
 	return 0;
 }
 
-#ifdef CONFIG_KERNEL_COHERENCE
-#error CONFIG_POLL and CONFIG_KERNEL_COHERENCE are not compatible
-#endif
-
 int z_impl_k_poll(struct k_poll_event *events, int num_events,
 		  k_timeout_t timeout)
 {
 	int events_registered;
 	k_spinlock_key_t key;
+	struct _poller *poller = &_current->poller;
 
-	/* FIXME: this shared data is stack-allocated and needs
-	 * proper treatment to be compatible with KERNEL_COHERENCE.
-	 */
-	struct _poller poller = { .is_polling = true,
-				  .thread     = _current,
-				  .mode       = MODE_POLL };
+	poller->is_polling = true;
+	poller->mode = MODE_POLL;
 
 	__ASSERT(!arch_is_in_isr(), "");
 	__ASSERT(events != NULL, "NULL events\n");
 	__ASSERT(num_events >= 0, "<0 events\n");
 
-	events_registered = register_events(events, num_events, &poller,
+	events_registered = register_events(events, num_events, poller,
 					    K_TIMEOUT_EQ(timeout, K_NO_WAIT));
 
 	key = k_spin_lock(&lock);
@@ -279,13 +277,13 @@ int z_impl_k_poll(struct k_poll_event *events, int num_events,
 	 * condition is met, either when looping through the events here or
 	 * because one of the events registered has had its state changed.
 	 */
-	if (!poller.is_polling) {
+	if (!poller->is_polling) {
 		clear_event_registrations(events, events_registered, key);
 		k_spin_unlock(&lock, key);
 		return 0;
 	}
 
-	poller.is_polling = false;
+	poller->is_polling = false;
 
 	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		k_spin_unlock(&lock, key);
@@ -502,8 +500,6 @@ static void triggered_work_handler(struct k_work *work)
 	struct k_work_poll *twork =
 			CONTAINER_OF(work, struct k_work_poll, work);
 
-	__ASSERT(twork->poller.thread == NULL, "");//DEBUG
-
 	/*
 	 * If callback is not set, the k_work_poll_submit_to_queue()
 	 * already cleared event registrations.
@@ -602,8 +598,6 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 	__ASSERT(events != NULL, "NULL events\n");
 	__ASSERT(num_events > 0, "zero events\n");
 
-	__ASSERT(work->poller.thread == NULL, "");//DEBUG
-
 	/* Take overship of the work if it is possible. */
 	key = k_spin_lock(&lock);
 	if (work->workq != NULL) {
@@ -696,8 +690,6 @@ int k_work_poll_cancel(struct k_work_poll *work)
 {
 	k_spinlock_key_t key;
 	int retval;
-
-	__ASSERT(work->poller.thread == NULL, "");//DEBUG
 
 	/* Check if the work was submitted. */
 	if (work == NULL || work->workq == NULL) {

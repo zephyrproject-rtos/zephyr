@@ -272,6 +272,14 @@ struct _thread_userspace_local_data {
 };
 #endif
 
+/* private, used by k_poll and k_work_poll */
+struct k_work_poll;
+typedef int (*_poller_cb_t)(struct k_poll_event *event, uint32_t state);
+struct _poller {
+	bool is_polling;
+	uint8_t mode;
+};
+
 /**
  * @ingroup thread_apis
  * Thread Structure
@@ -308,6 +316,10 @@ struct k_thread {
 	 * concurrently.
 	 */
 	void (*fn_abort)(struct k_thread *aborted);
+
+#if defined(CONFIG_POLL)
+	struct _poller poller;
+#endif
 
 #if defined(CONFIG_THREAD_MONITOR)
 	/** thread entry and parameters description */
@@ -2710,15 +2722,6 @@ __syscall int k_stack_pop(struct k_stack *stack, stack_data_t *data,
 /** @} */
 
 struct k_work;
-struct k_work_poll;
-
-/* private, used by k_poll and k_work_poll */
-typedef int (*_poller_cb_t)(struct k_poll_event *event, uint32_t state);
-struct _poller {
-	volatile bool is_polling;
-	struct k_thread *thread;
-	uint8_t mode;
-};
 
 /**
  * @addtogroup thread_apis
