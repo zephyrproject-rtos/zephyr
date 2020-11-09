@@ -140,6 +140,16 @@ config MDNS_RESPONDER_INIT_PRIO
 	  Note that if NET_CONFIG_AUTO_INIT is enabled, then this value
 	  should be bigger than its value.
 
+config MDNS_RESPONDER_DNS_SD
+	bool "Enable DNS Service Discovery via mDNS"
+	default y
+	depends on DNS_SD
+	help
+	  Selecting this option ensures that the MDNS Responder
+	  processes PTR, SRV, and TXT records according to RFC 6763.
+	  By doing so, Zephyr network services are discoverable
+	  using e.g. 'avahi-browse -t -r _greybus._tcp'.
+
 module = MDNS_RESPONDER
 module-dep = NET_LOG
 module-str = Log level for mDNS responder
