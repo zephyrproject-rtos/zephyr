@@ -13,3 +13,10 @@
 		rsm-gpios = <&gpio_040_076 12 GPIO_ACTIVE_HIGH>;
 	};
 };
+
+&spi0 {
+	status = "okay";
+	port_sel = <0>;
+	chip_select = <0>;
+	lines = <4>;
+};
