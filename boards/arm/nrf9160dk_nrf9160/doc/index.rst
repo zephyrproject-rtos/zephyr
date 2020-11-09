@@ -37,9 +37,6 @@ More information about the board can be found at the
 `nRF9160 DK website`_. The `Nordic Semiconductor Infocenter`_
 contains the processor's information and the datasheet.
 
-.. note::
-
-   In previous Zephyr releases this board was named *nrf9160_pca10090*.
 
 Hardware
 ********
