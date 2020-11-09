@@ -58,7 +58,7 @@ static void *adv_sync_free;
 
 uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 {
-	struct pdu_adv_hdr *ter_hdr, ter_hdr_prev;
+	struct pdu_adv_ext_hdr *ter_hdr, ter_hdr_prev;
 	struct pdu_adv_com_ext_adv *ter_com_hdr;
 	uint8_t *ter_dptr_prev, *ter_dptr;
 	struct lll_adv_sync *lll_sync;
@@ -168,7 +168,7 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 				uint8_t const *const data)
 {
 	struct pdu_adv_com_ext_adv *ter_com_hdr, *ter_com_hdr_prev;
-	struct pdu_adv_hdr *ter_hdr, ter_hdr_prev;
+	struct pdu_adv_ext_hdr *ter_hdr, ter_hdr_prev;
 	struct pdu_adv *ter_pdu, *ter_pdu_prev;
 	uint8_t *ter_dptr, *ter_dptr_prev;
 	uint16_t ter_len, ter_len_prev;
@@ -647,7 +647,7 @@ static void mfy_sync_offset_get(void *param)
 static inline struct pdu_adv_sync_info *sync_info_get(struct pdu_adv *pdu)
 {
 	struct pdu_adv_com_ext_adv *p;
-	struct pdu_adv_hdr *h;
+	struct pdu_adv_ext_hdr *h;
 	uint8_t *ptr;
 
 	p = (void *)&pdu->adv_ext_ind;

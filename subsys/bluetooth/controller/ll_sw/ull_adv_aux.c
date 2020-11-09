@@ -174,7 +174,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 {
 	struct pdu_adv_com_ext_adv *sr_com_hdr;
 	struct pdu_adv *pri_pdu_prev;
-	struct pdu_adv_hdr *sr_hdr;
+	struct pdu_adv_ext_hdr *sr_hdr;
 	struct pdu_adv_adi *sr_adi;
 	struct pdu_adv *sr_prev;
 	struct pdu_adv *aux_pdu;
@@ -419,8 +419,8 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 {
 	struct pdu_adv_com_ext_adv *pri_com_hdr, *pri_com_hdr_prev;
 	struct pdu_adv_com_ext_adv *sec_com_hdr, *sec_com_hdr_prev;
-	struct pdu_adv_hdr *pri_hdr, pri_hdr_prev;
-	struct pdu_adv_hdr *sec_hdr, sec_hdr_prev;
+	struct pdu_adv_ext_hdr *pri_hdr, pri_hdr_prev;
+	struct pdu_adv_ext_hdr *sec_hdr, sec_hdr_prev;
 	uint16_t pri_len, sec_len, sec_len_prev;
 	struct pdu_adv *pri_pdu, *pri_pdu_prev;
 	struct pdu_adv *sec_pdu_prev, *sec_pdu;
@@ -934,7 +934,7 @@ struct pdu_adv_aux_ptr *ull_adv_aux_lll_offset_fill(uint32_t ticks_offset,
 {
 	struct pdu_adv_com_ext_adv *pri_com_hdr;
 	struct pdu_adv_aux_ptr *aux;
-	struct pdu_adv_hdr *h;
+	struct pdu_adv_ext_hdr *h;
 	uint32_t offs;
 	uint8_t *ptr;
 

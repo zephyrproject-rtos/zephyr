@@ -90,7 +90,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	uint32_t ready_delay_us;
 	uint32_t aux_offset_us;
 	uint32_t ticker_status;
-	struct pdu_adv_hdr *h;
+	struct pdu_adv_ext_hdr *h;
 	struct pdu_adv *pdu;
 	uint8_t aux_handle;
 	uint8_t *ptr;
