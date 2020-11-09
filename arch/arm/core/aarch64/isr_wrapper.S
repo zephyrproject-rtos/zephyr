@@ -33,7 +33,7 @@ GTEXT(_isr_wrapper)
 SECTION_FUNC(TEXT, _isr_wrapper)
 
 	/* ++(_kernel->nested) to be checked by arch_is_in_isr() */
-	inc_nest_counter x0, x1
+	inc_nest_counter
 
 #ifdef CONFIG_TRACING
 	bl	sys_trace_isr_enter
@@ -80,7 +80,8 @@ spurious_continue:
 #endif
 
 	/* if (--(_kernel->nested) != 0) exit */
-	dec_nest_counter x0, x1
+	dec_nest_counter
+
 	bne	exit
 
 	/*
