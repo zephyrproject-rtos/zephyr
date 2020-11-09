@@ -171,7 +171,7 @@ static int peci_xec_write(const struct device *dev, struct peci_msg *msg)
 	}
 #else
 	/* In worst case, overall timeout will be 1msec (100 * 10usec) */
-	u8_t wait_timeout_cnt = 100;
+	uint8_t wait_timeout_cnt = 100;
 
 	while (!(base->STATUS1 & MCHP_PECI_STS1_EOF)) {
 		k_busy_wait(PECI_IO_DELAY);
