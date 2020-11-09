@@ -79,6 +79,19 @@ extern "C" {
 		    (DT_PARENT(DT_GPARENT(node_id))),			\
 		    (DT_GPARENT(node_id)))
 
+/*
+ * @brief Get the common mount flags for an fstab entry.
+
+ * @param node_id the node identifier for a child entry in a
+ * zephyr,fstab node.
+ * @return a value suitable for initializing an fs_mount_t flags
+ * member.
+ */
+#define DT_FSTAB_ENTRY_MOUNT_FLAGS(node_id)				\
+	((DT_PROP(node_id, automount) ? FS_MOUNT_FLAG_AUTOMOUNT : 0)	\
+	 | (DT_PROP(node_id, read_only) ? FS_MOUNT_FLAG_READ_ONLY : 0)	\
+	 | (DT_PROP(node_id, no_format) ? FS_MOUNT_FLAG_NO_FORMAT : 0))
+
 /**
  * @}
  */
