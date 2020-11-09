@@ -77,6 +77,13 @@ enum {
 #define FS_MOUNT_FLAG_NO_FORMAT BIT(0)
 /** Flag makes mounted file system read-only */
 #define FS_MOUNT_FLAG_READ_ONLY BIT(1)
+/** Flag used in pre-defined mount structures that are to be mounted
+ * on startup.
+ *
+ * This flag has no impact in user-defined mount structures.
+ */
+#define FS_MOUNT_FLAG_AUTOMOUNT BIT(2)
+
 
 /**
  * @brief File system mount info structure
