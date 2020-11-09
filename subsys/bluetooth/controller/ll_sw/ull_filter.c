@@ -820,16 +820,16 @@ bool ull_filter_lll_rl_enabled(void)
 #if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
 uint8_t ull_filter_deferred_resolve(bt_addr_t *rpa, resolve_callback_t cb)
 {
-	LL_ASSERT(rl_enable);
+	if (rl_enable) {
+		if (!k_work_pending(&(resolve_work.prpa_work))) {
+			/* copy input param to work variable */
+			memcpy(resolve_work.rpa.val, rpa->val, sizeof(bt_addr_t));
+			resolve_work.cb = cb;
 
-	if (!k_work_pending(&(resolve_work.prpa_work))) {
-		/* copy input param to work variable */
-		memcpy(resolve_work.rpa.val, rpa->val, sizeof(bt_addr_t));
-		resolve_work.cb = cb;
+			k_work_submit(&(resolve_work.prpa_work));
 
-		k_work_submit(&(resolve_work.prpa_work));
-
-		return 1;
+			return 1;
+		}
 	}
 
 	return 0;
@@ -838,19 +838,18 @@ uint8_t ull_filter_deferred_resolve(bt_addr_t *rpa, resolve_callback_t cb)
 uint8_t ull_filter_deferred_targeta_resolve(bt_addr_t *rpa, uint8_t rl_idx,
 					 resolve_callback_t cb)
 {
-	LL_ASSERT(rl_enable);
+	if (rl_enable) {
+		if (!k_work_pending(&(t_work.target_work))) {
+			/* copy input param to work variable */
+			memcpy(t_work.rpa.val, rpa->val, sizeof(bt_addr_t));
+			t_work.cb = cb;
+			t_work.idx = rl_idx;
 
-	if (!k_work_pending(&(t_work.target_work))) {
-		/* copy input param to work variable */
-		memcpy(t_work.rpa.val, rpa->val, sizeof(bt_addr_t));
-		t_work.cb = cb;
-		t_work.idx = rl_idx;
+			k_work_submit(&(t_work.target_work));
 
-		k_work_submit(&(t_work.target_work));
-
-		return 1;
+			return 1;
+		}
 	}
-
 	return 0;
 }
 #endif /* CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY */
