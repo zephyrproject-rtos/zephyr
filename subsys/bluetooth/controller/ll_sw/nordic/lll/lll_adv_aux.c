@@ -196,8 +196,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 			/* Copy the address from the adv packet we will send
 			 * into the scan response.
 			 */
-			memcpy(&scan_pdu->adv_ext_ind.ext_hdr.data[0],
-			       &sec_pdu->adv_ext_ind.ext_hdr.data[0],
+			memcpy(&scan_pdu->adv_ext_ind.ext_hdr.data[ADVA_OFFSET],
+			       &sec_pdu->adv_ext_ind.ext_hdr.data[ADVA_OFFSET],
 			       BDADDR_SIZE);
 		}
 #else
@@ -421,8 +421,7 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 	pdu_adv = lll_adv_data_curr_get(lll);
 	pdu_aux = lll_adv_aux_data_latest_get(lll_aux, &upd);
 
-	/* AdvA is placed at the beginning of extended header data */
-	addr = pdu_aux->adv_ext_ind.ext_hdr.data;
+	addr = &pdu_aux->adv_ext_ind.ext_hdr.data[ADVA_OFFSET];
 	tx_addr = pdu_aux->tx_addr;
 
 	if ((pdu_rx->type == PDU_ADV_TYPE_AUX_SCAN_REQ) &&

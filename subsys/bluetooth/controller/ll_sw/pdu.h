@@ -28,6 +28,10 @@
 #define TARGETA_SIZE  BDADDR_SIZE
 #define LLDATA_SIZE   22
 
+/* Constant offsets in extended header (TargetA is present in PDUs with AdvA) */
+#define ADVA_OFFSET   0
+#define TGTA_OFFSET   (ADVA_OFFSET + BDADDR_SIZE)
+
 #define BYTES2US(bytes, phy) (((bytes)<<3)/BIT((phy&0x3)>>1))
 
 /* Advertisement channel maximum legacy payload size */
