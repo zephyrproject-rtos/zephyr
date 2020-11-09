@@ -87,7 +87,7 @@ manifest:
       revision: 7deb3aab1cc430a7650143f9833cfc8ddad76eb5
       path: modules/hal/quicklogic
     - name: lvgl
-      revision: 9339a1331cc36e82c180d8277ab22953282595d9
+      revision: 31acbaa36e9e74ab88ac81e3d21e7f1d00a71136
       path: modules/lib/gui/lvgl
     - name: mbedtls
       revision: e3e135f89693a0342bbc72f31a4e00cdf36c3977
