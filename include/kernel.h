@@ -1475,7 +1475,8 @@ const char *k_thread_state_str(k_tid_t thread_id);
  * @param t Tick uptime value
  * @return Timeout delay value
  */
-#define K_TIMEOUT_ABS_TICKS(t) Z_TIMEOUT_TICKS(Z_TICK_ABS(MAX(t, 0)))
+#define K_TIMEOUT_ABS_TICKS(t) \
+	Z_TIMEOUT_TICKS(Z_TICK_ABS((k_ticks_t)MAX(t, 0)))
 
 /**
  * @brief Generates an absolute/uptime timeout value from milliseconds
