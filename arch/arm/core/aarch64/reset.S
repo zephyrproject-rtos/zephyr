@@ -75,12 +75,32 @@ out:
 	/* Select SP_EL0 */
 	msr	SPSel, #0
 
+#if CONFIG_MP_NUM_CPUS > 1
+	z_arm64_get_cpu_id	x0
+	cbnz    x0, L_secondary_stack
+#endif
+
 	/* Initialize stack */
 	ldr	x0, =(z_interrupt_stacks)
 	add	x0, x0, #(CONFIG_ISR_STACK_SIZE)
 	mov	sp, x0
 
 	ret	x23
+
+#if CONFIG_MP_NUM_CPUS > 1
+L_secondary_stack:
+	z_arm64_get_cpu_id	x1
+	adr	x0, arm64_cpu_init
+	mov	x2, #ARM64_CPU_INIT_SIZE
+	madd	x0, x1, x2, x0
+	ldr	x0, [x0]
+	cbz	x0, L_enable_secondary
+	dmb	ld
+
+	mov	sp, x0
+
+	ret	x23
+#endif
 
 /*
  * Reset vector
@@ -135,4 +155,14 @@ switch_el:
 	msr	DAIFClr, #(DAIFCLR_ABT_BIT)
 	isb
 
+#if CONFIG_MP_NUM_CPUS > 1
+	z_arm64_get_cpu_id	x0
+	cbnz    x0, L_enable_secondary
+#endif
+
 	b	z_arm64_prep_c
+
+#if CONFIG_MP_NUM_CPUS > 1
+L_enable_secondary:
+	b	z_arm64_secondary_prep_c
+#endif
