@@ -273,7 +273,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	sr_prev = lll_adv_scan_rsp_peek(lll);
 
 	/* AdvA */
-	memcpy(sr_dptr, &sr_prev->adv_ext_ind.ext_hdr.data[0],
+	memcpy(sr_dptr, &sr_prev->adv_ext_ind.ext_hdr.data[ADVA_OFFSET],
 	       BDADDR_SIZE);
 	sr_dptr += BDADDR_SIZE;
 
