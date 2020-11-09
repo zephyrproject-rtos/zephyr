@@ -981,7 +981,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 						  ADVA_SIZE + pdu_scan->len),
 						 phy);
 		const uint8_t rx_to_us	= EVENT_RX_TO_US(phy);
-		const uint8_t rxtx_turn_us = EVENT_RX_TX_TURNAROUND(phy);
+		const uint32_t rxtx_turn_us = EVENT_RX_TX_TURNAROUND(phy);
 
 		if (phy != 0x01) {
 			/* Legacy ADV only supports LE_1M PHY */
