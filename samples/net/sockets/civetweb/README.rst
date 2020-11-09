@@ -33,7 +33,7 @@ Build it with:
 
 The sample application uses a static IP configuration.
 
-After flashing the board, the server can be accessed with the web browser of your choice at ``10.0.0.111:8080``.
+After flashing the board, the server can be accessed with the web browser of your choice at ``192.0.2.1:8080``.
 
 The sample does not serve any files like HTTP (it does not use any filesystem).
 Instead it serves the following three URLs:
