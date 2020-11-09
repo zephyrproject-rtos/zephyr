@@ -9,6 +9,11 @@
 
 #ifdef _ASMLANGUAGE
 
+.macro z_arm64_get_cpu_id xreg0
+	mrs	\xreg0, mpidr_el1
+	/* FIMXME: aff3 not taken into consideration */
+	ubfx	\xreg0, \xreg0, #0, #24
+.endm
 /*
  * Increment nested counter
  */

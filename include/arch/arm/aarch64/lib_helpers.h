@@ -127,6 +127,10 @@ static ALWAYS_INLINE void disable_fiq(void)
 			  :: "i" (DAIFSET_FIQ_BIT) : "memory");
 }
 
+#define sev()	__asm__ volatile("sev" : : : "memory")
+#define wfe()	__asm__ volatile("wfe" : : : "memory")
+#define wfi()	__asm__ volatile("wfi" : : : "memory")
+
 #define dsb()	__asm__ volatile ("dsb sy" ::: "memory")
 #define dmb()	__asm__ volatile ("dmb sy" ::: "memory")
 #define isb()	__asm__ volatile ("isb" ::: "memory")
