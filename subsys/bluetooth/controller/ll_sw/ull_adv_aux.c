@@ -421,9 +421,9 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	struct pdu_adv_com_ext_adv *sec_com_hdr, *sec_com_hdr_prev;
 	struct pdu_adv_hdr *pri_hdr, pri_hdr_prev;
 	struct pdu_adv_hdr *sec_hdr, sec_hdr_prev;
+	uint16_t pri_len, sec_len, sec_len_prev;
 	struct pdu_adv *pri_pdu, *pri_pdu_prev;
 	struct pdu_adv *sec_pdu_prev, *sec_pdu;
-	uint8_t pri_len, sec_len, sec_len_prev;
 	uint8_t *pri_dptr, *pri_dptr_prev;
 	uint8_t *sec_dptr, *sec_dptr_prev;
 	struct lll_adv_aux *lll_aux;
@@ -663,14 +663,17 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 		ad_data = sec_dptr_prev;
 	}
 
-	/* set the secondary PDU len */
-	sec_pdu->len = sec_len + ad_len;
+	/* Add AD len to secondary PDU length */
+	sec_len += ad_len;
 
 	/* Check AdvData overflow */
-	if (sec_pdu->len > PDU_AC_PAYLOAD_SIZE_MAX) {
+	if (sec_len > PDU_AC_PAYLOAD_SIZE_MAX) {
 		/* FIXME: release allocations */
 		return BT_HCI_ERR_PACKET_TOO_LONG;
 	}
+
+	/* set the secondary PDU len */
+	sec_pdu->len = sec_len;
 
 	/* Start filling pri and sec PDU payload based on flags from here
 	 * ==============================================================
