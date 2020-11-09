@@ -113,3 +113,25 @@ uint32_t z_timer_cycle_get_32(void)
 {
 	return (uint32_t)arm_arch_timer_count();
 }
+
+#ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
+void arch_busy_wait(uint32_t usec_to_wait)
+{
+	if (usec_to_wait == 0) {
+		return;
+	}
+
+	uint64_t start_cycles = arm_arch_timer_count();
+
+	uint64_t cycles_to_wait = sys_clock_hw_cycles_per_sec() / USEC_PER_SEC * usec_to_wait;
+
+	for (;;) {
+		uint64_t current_cycles = arm_arch_timer_count();
+
+		/* this handles the rollover on an unsigned 32-bit value */
+		if ((current_cycles - start_cycles) >= cycles_to_wait) {
+			break;
+		}
+	}
+}
+#endif
