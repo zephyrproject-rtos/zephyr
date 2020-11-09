@@ -143,7 +143,7 @@ start_zephyr ()
     fi
 
     rm -rf build && mkdir build && \
-	cmake -GNinja -DBOARD=native_posix -B build "$@" && \
+	cmake -GNinja -DBOARD=native_posix -B build "$@" . && \
 	ninja -C build
 
     ninja -C build run &
@@ -273,6 +273,34 @@ docker_exec ()
 	    wait_zephyr
 	    result=$?
 
+	    stop_docker
+	    ;;
+
+	http_client)
+	    # First the non-tls version
+	    start_configuration "--ip=192.0.2.2 --ip6=2001:db8::2" || return $?
+	    start_docker "/usr/local/bin/http-server.py" || return $?
+	    start_zephyr "$overlay" "-DCONFIG_NET_SAMPLE_SEND_ITERATIONS=5"
+	    wait_zephyr
+	    result=$?
+	    stop_docker
+
+	    if [ $result -ne 0 ]; then
+	        break;
+	    fi
+
+	    # If everything is ok so far, do the TLS version
+	    if [ -n "$zephyr_overlay" ]; then
+	        overlay="${zephyr_overlay};overlay-tls.conf"
+	    else
+	        overlay="-DOVERLAY_CONFIG=overlay-tls.conf"
+	    fi
+
+	    start_configuration "--ip=192.0.2.2 --ip6=2001:db8::2" || return $?
+	    start_docker "/usr/local/bin/https-server.py" || return $?
+	    start_zephyr "$overlay" "-DCONFIG_NET_SAMPLE_SEND_ITERATIONS=5"
+	    wait_zephyr
+	    result=$?
 	    stop_docker
 	    ;;
 
