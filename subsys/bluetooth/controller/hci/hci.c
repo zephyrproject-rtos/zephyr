@@ -4504,7 +4504,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 		       adv->rx_addr, rssi);
 
 		p = (void *)&adv->adv_ext_ind;
-		h = (void *)p->ext_hdr_adi_adv_data;
+		h = (void *)p->ext_hdr_adv_data;
 		ptr = (void *)h;
 
 		BT_DBG("    Ext. adv mode= 0x%x, hdr len= %u", p->adv_mode,
@@ -4514,7 +4514,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 
 		if (!p->ext_hdr_len) {
 			hdr_len = offsetof(struct pdu_adv_com_ext_adv,
-					   ext_hdr_adi_adv_data);
+					   ext_hdr_adv_data);
 
 			goto no_ext_hdr;
 		}
@@ -4605,22 +4605,22 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 
 		hdr_len = ptr - (uint8_t *)p;
 		if (hdr_len <= (offsetof(struct pdu_adv_com_ext_adv,
-					 ext_hdr_adi_adv_data) +
+					 ext_hdr_adv_data) +
 				sizeof(struct pdu_adv_hdr))) {
 			hdr_len = offsetof(struct pdu_adv_com_ext_adv,
-					   ext_hdr_adi_adv_data);
+					   ext_hdr_adv_data);
 			ptr = (uint8_t *)h;
 		}
 
 		if (hdr_len > (p->ext_hdr_len +
 			       offsetof(struct pdu_adv_com_ext_adv,
-					ext_hdr_adi_adv_data))) {
+					ext_hdr_adv_data))) {
 			BT_WARN("    Header length %u/%u, INVALID.", hdr_len,
 				p->ext_hdr_len);
 		} else {
 			uint8_t acad_len = p->ext_hdr_len +
 					   offsetof(struct pdu_adv_com_ext_adv,
-						    ext_hdr_adi_adv_data) -
+						    ext_hdr_adv_data) -
 					   hdr_len;
 
 			if (acad_len) {
@@ -4908,7 +4908,7 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 		BT_DBG("len = %u, rssi = %d", adv->len, rssi);
 
 		p = (void *)&adv->adv_ext_ind;
-		h = (void *)p->ext_hdr_adi_adv_data;
+		h = (void *)p->ext_hdr_adv_data;
 		ptr = (void *)h;
 
 		BT_DBG("    Ext. adv mode= 0x%x, hdr len= %u", p->adv_mode,
@@ -4955,22 +4955,22 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 
 		hdr_len = ptr - (uint8_t *)p;
 		if (hdr_len <= (offsetof(struct pdu_adv_com_ext_adv,
-					 ext_hdr_adi_adv_data) +
+					 ext_hdr_adv_data) +
 				sizeof(struct pdu_adv_hdr))) {
 			hdr_len = offsetof(struct pdu_adv_com_ext_adv,
-					   ext_hdr_adi_adv_data);
+					   ext_hdr_adv_data);
 			ptr = (uint8_t *)h;
 		}
 
 		if (hdr_len > (p->ext_hdr_len +
 			       offsetof(struct pdu_adv_com_ext_adv,
-					ext_hdr_adi_adv_data))) {
+					ext_hdr_adv_data))) {
 			BT_WARN("    Header length %u/%u, INVALID.", hdr_len,
 				p->ext_hdr_len);
 		} else {
 			uint8_t acad_len = p->ext_hdr_len +
 					   offsetof(struct pdu_adv_com_ext_adv,
-						    ext_hdr_adi_adv_data) -
+						    ext_hdr_adv_data) -
 					   hdr_len;
 
 			if (acad_len) {

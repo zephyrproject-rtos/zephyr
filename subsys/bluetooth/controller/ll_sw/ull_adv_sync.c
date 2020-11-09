@@ -125,7 +125,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 	ter_pdu->rx_addr = 0U;
 
 	ter_com_hdr = (void *)&ter_pdu->adv_ext_ind;
-	ter_hdr = (void *)ter_com_hdr->ext_hdr_adi_adv_data;
+	ter_hdr = (void *)ter_com_hdr->ext_hdr_adv_data;
 	ter_dptr = (uint8_t *)ter_hdr + sizeof(*ter_hdr);
 	ter_hdr_prev = *ter_hdr;
 	*(uint8_t *)ter_hdr = 0U;
@@ -189,7 +189,7 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 	/* Get reference to previous tertiary PDU data */
 	ter_pdu_prev = lll_adv_sync_data_peek(lll_sync);
 	ter_com_hdr_prev = (void *)&ter_pdu_prev->adv_ext_ind;
-	ter_hdr = (void *)ter_com_hdr_prev->ext_hdr_adi_adv_data;
+	ter_hdr = (void *)ter_com_hdr_prev->ext_hdr_adv_data;
 	ter_hdr_prev = *ter_hdr;
 	ter_dptr_prev = (uint8_t *)ter_hdr + sizeof(*ter_hdr);
 
@@ -200,7 +200,7 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 	ter_pdu->chan_sel = 0U;
 	ter_com_hdr = (void *)&ter_pdu->adv_ext_ind;
 	ter_com_hdr->adv_mode = ter_com_hdr_prev->adv_mode;
-	ter_hdr = (void *)ter_com_hdr->ext_hdr_adi_adv_data;
+	ter_hdr = (void *)ter_com_hdr->ext_hdr_adv_data;
 	ter_dptr = (uint8_t *)ter_hdr + sizeof(*ter_hdr);
 	*(uint8_t *)ter_hdr = 0U;
 
@@ -651,7 +651,7 @@ static inline struct pdu_adv_sync_info *sync_info_get(struct pdu_adv *pdu)
 	uint8_t *ptr;
 
 	p = (void *)&pdu->adv_ext_ind;
-	h = (void *)p->ext_hdr_adi_adv_data;
+	h = (void *)p->ext_hdr_adv_data;
 	ptr = (uint8_t *)h + sizeof(*h);
 
 	if (h->adv_addr) {

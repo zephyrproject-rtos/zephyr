@@ -259,7 +259,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	sr_pdu->len = 0;
 
 	sr_com_hdr = &sr_pdu->adv_ext_ind;
-	sr_hdr = (void *)&sr_com_hdr->ext_hdr_adi_adv_data[0];
+	sr_hdr = (void *)&sr_com_hdr->ext_hdr_adv_data[0];
 	sr_dptr = (void *)sr_hdr;
 
 	/* Flags */
@@ -273,7 +273,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	sr_prev = lll_adv_scan_rsp_peek(lll);
 
 	/* AdvA */
-	memcpy(sr_dptr, &sr_prev->adv_ext_ind.ext_hdr_adi_adv_data[1],
+	memcpy(sr_dptr, &sr_prev->adv_ext_ind.ext_hdr_adv_data[1],
 	       BDADDR_SIZE);
 	sr_dptr += BDADDR_SIZE;
 
@@ -287,8 +287,8 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 
 	/* Check if data will fit in remaining space */
 	/* TODO: need aux_chain_ind support */
-	ext_hdr_len = sr_dptr - &sr_com_hdr->ext_hdr_adi_adv_data[0];
-	if (sizeof(sr_com_hdr->ext_hdr_adi_adv_data) -
+	ext_hdr_len = sr_dptr - &sr_com_hdr->ext_hdr_adv_data[0];
+	if (sizeof(sr_com_hdr->ext_hdr_adv_data) -
 	    sr_com_hdr->ext_hdr_len < len) {
 		return BT_HCI_ERR_PACKET_TOO_LONG;
 	}
@@ -457,7 +457,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	}
 
 	pri_com_hdr_prev = (void *)&pri_pdu_prev->adv_ext_ind;
-	pri_hdr = (void *)pri_com_hdr_prev->ext_hdr_adi_adv_data;
+	pri_hdr = (void *)pri_com_hdr_prev->ext_hdr_adv_data;
 	pri_hdr_prev = *pri_hdr;
 	pri_dptr_prev = (uint8_t *)pri_hdr + sizeof(*pri_hdr);
 
@@ -474,7 +474,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	pri_pdu->chan_sel = 0U;
 	pri_com_hdr = (void *)&pri_pdu->adv_ext_ind;
 	pri_com_hdr->adv_mode = pri_com_hdr_prev->adv_mode;
-	pri_hdr = (void *)pri_com_hdr->ext_hdr_adi_adv_data;
+	pri_hdr = (void *)pri_com_hdr->ext_hdr_adv_data;
 	pri_dptr = (uint8_t *)pri_hdr + sizeof(*pri_hdr);
 	*(uint8_t *)pri_hdr = 0U;
 
@@ -498,7 +498,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	/* Get reference to previous secondary PDU data */
 	sec_pdu_prev = lll_adv_aux_data_peek(lll_aux);
 	sec_com_hdr_prev = (void *)&sec_pdu_prev->adv_ext_ind;
-	sec_hdr = (void *)sec_com_hdr_prev->ext_hdr_adi_adv_data;
+	sec_hdr = (void *)sec_com_hdr_prev->ext_hdr_adv_data;
 	if (!is_aux_new) {
 		sec_hdr_prev = *sec_hdr;
 	} else {
@@ -508,7 +508,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 		sec_pdu_prev->tx_addr = 0U;
 		sec_pdu_prev->rx_addr = 0U;
 		sec_pdu_prev->len = offsetof(struct pdu_adv_com_ext_adv,
-					     ext_hdr_adi_adv_data);
+					     ext_hdr_adv_data);
 		*(uint8_t *)&sec_hdr_prev = 0U;
 	}
 	sec_dptr_prev = (uint8_t *)sec_hdr + sizeof(*sec_hdr);
@@ -524,7 +524,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 
 	sec_com_hdr = (void *)&sec_pdu->adv_ext_ind;
 	sec_com_hdr->adv_mode = pri_com_hdr->adv_mode;
-	sec_hdr = (void *)sec_com_hdr->ext_hdr_adi_adv_data;
+	sec_hdr = (void *)sec_com_hdr->ext_hdr_adv_data;
 	sec_dptr = (uint8_t *)sec_hdr + sizeof(*sec_hdr);
 	*(uint8_t *)sec_hdr = 0U;
 
@@ -939,7 +939,7 @@ struct pdu_adv_aux_ptr *ull_adv_aux_lll_offset_fill(uint32_t ticks_offset,
 	uint8_t *ptr;
 
 	pri_com_hdr = (void *)&pdu->adv_ext_ind;
-	h = (void *)pri_com_hdr->ext_hdr_adi_adv_data;
+	h = (void *)pri_com_hdr->ext_hdr_adv_data;
 	ptr = (uint8_t *)h + sizeof(*h);
 
 	if (h->adv_addr) {
