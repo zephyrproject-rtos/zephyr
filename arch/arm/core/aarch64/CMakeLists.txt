@@ -27,3 +27,5 @@ zephyr_library_sources_ifdef(CONFIG_HAS_ARM_SMCCC smccc-call.S)
 zephyr_library_sources_ifdef(CONFIG_AARCH64_IMAGE_HEADER header.S)
 
 add_subdirectory_ifdef(CONFIG_ARM_MMU mmu)
+zephyr_library_sources_ifdef(CONFIG_CACHE_MANAGEMENT cache.S)
+zephyr_library_sources_ifdef(CONFIG_CACHE_MANAGEMENT cache.c)
