@@ -17,118 +17,132 @@
 
 LOG_MODULE_DECLARE(os);
 
-static void print_EC_cause(uint64_t esr)
+static void dump_esr(uint64_t esr, bool *dump_far)
 {
-	uint32_t EC = (uint32_t)esr >> 26;
+	const char *err;
 
-	switch (EC) {
-	case 0b000000:
-		LOG_ERR("Unknown reason");
+	switch (ESR_EC(esr)) {
+	case 0b000000: /* 0x00 */
+		err = "Unknown reason";
 		break;
-	case 0b000001:
-		LOG_ERR("Trapped WFI or WFE instruction execution");
+	case 0b000001: /* 0x01 */
+		err = "Trapped WFI or WFE instruction execution";
 		break;
-	case 0b000011:
-		LOG_ERR("Trapped MCR or MRC access with (coproc==0b1111) that "
-			"is not reported using EC 0b000000");
+	case 0b000011: /* 0x03 */
+		err = "Trapped MCR or MRC access with (coproc==0b1111) that "
+		      "is not reported using EC 0b000000";
 		break;
-	case 0b000100:
-		LOG_ERR("Trapped MCRR or MRRC access with (coproc==0b1111) "
-			"that is not reported using EC 0b000000");
+	case 0b000100: /* 0x04 */
+		err = "Trapped MCRR or MRRC access with (coproc==0b1111) "
+		      "that is not reported using EC 0b000000";
 		break;
-	case 0b000101:
-		LOG_ERR("Trapped MCR or MRC access with (coproc==0b1110)");
+	case 0b000101: /* 0x05 */
+		err = "Trapped MCR or MRC access with (coproc==0b1110)";
 		break;
-	case 0b000110:
-		LOG_ERR("Trapped LDC or STC access");
+	case 0b000110: /* 0x06 */
+		err = "Trapped LDC or STC access";
 		break;
-	case 0b000111:
-		LOG_ERR("Trapped access to SVE, Advanced SIMD, or "
-			"floating-point functionality");
+	case 0b000111: /* 0x07 */
+		err = "Trapped access to SVE, Advanced SIMD, or "
+		      "floating-point functionality";
 		break;
-	case 0b001100:
-		LOG_ERR("Trapped MRRC access with (coproc==0b1110)");
+	case 0b001100: /* 0x0c */
+		err = "Trapped MRRC access with (coproc==0b1110)";
 		break;
-	case 0b001101:
-		LOG_ERR("Branch Target Exception");
+	case 0b001101: /* 0x0d */
+		err = "Branch Target Exception";
 		break;
-	case 0b001110:
-		LOG_ERR("Illegal Execution state");
+	case 0b001110: /* 0x0e */
+		err = "Illegal Execution state";
 		break;
-	case 0b010001:
-		LOG_ERR("SVC instruction execution in AArch32 state");
+	case 0b010001: /* 0x11 */
+		err = "SVC instruction execution in AArch32 state";
 		break;
-	case 0b011000:
-		LOG_ERR("Trapped MSR, MRS or System instruction execution in "
-			"AArch64 state, that is not reported using EC "
-			"0b000000, 0b000001 or 0b000111");
+	case 0b011000: /* 0x18 */
+		err = "Trapped MSR, MRS or System instruction execution in "
+		      "AArch64 state, that is not reported using EC "
+		      "0b000000, 0b000001 or 0b000111";
 		break;
-	case 0b011001:
-		LOG_ERR("Trapped access to SVE functionality");
+	case 0b011001: /* 0x19 */
+		err = "Trapped access to SVE functionality";
 		break;
-	case 0b100000:
-		LOG_ERR("Instruction Abort from a lower Exception level, that "
-			"might be using AArch32 or AArch64");
+	case 0b100000: /* 0x20 */
+		*dump_far = true;
+		err = "Instruction Abort from a lower Exception level, that "
+		      "might be using AArch32 or AArch64";
 		break;
-	case 0b100001:
-		LOG_ERR("Instruction Abort taken without a change in Exception "
-			"level.");
+	case 0b100001: /* 0x21 */
+		*dump_far = true;
+		err = "Instruction Abort taken without a change in Exception "
+		      "level.";
 		break;
-	case 0b100010:
-		LOG_ERR("PC alignment fault exception.");
+	case 0b100010: /* 0x22 */
+		*dump_far = true;
+		err = "PC alignment fault exception.";
 		break;
-	case 0b100100:
-		LOG_ERR("Data Abort from a lower Exception level, that might "
-			"be using AArch32 or AArch64");
+	case 0b100100: /* 0x24 */
+		*dump_far = true;
+		err = "Data Abort from a lower Exception level, that might "
+		      "be using AArch32 or AArch64";
 		break;
-	case 0b100101:
-		LOG_ERR("Data Abort taken without a change in Exception level");
+	case 0b100101: /* 0x25 */
+		*dump_far = true;
+		err = "Data Abort taken without a change in Exception level";
 		break;
-	case 0b100110:
-		LOG_ERR("SP alignment fault exception");
+	case 0b100110: /* 0x26 */
+		err = "SP alignment fault exception";
 		break;
-	case 0b101000:
-		LOG_ERR("Trapped floating-point exception taken from AArch32 "
-			"state");
+	case 0b101000: /* 0x28 */
+		err = "Trapped floating-point exception taken from AArch32 "
+		      "state";
 		break;
-	case 0b101100:
-		LOG_ERR("Trapped floating-point exception taken from AArch64 "
-			"state.");
+	case 0b101100: /* 0x2c */
+		err = "Trapped floating-point exception taken from AArch64 "
+		      "state.";
 		break;
-	case 0b101111:
-		LOG_ERR("SError interrupt");
+	case 0b101111: /* 0x2f */
+		err = "SError interrupt";
 		break;
-	case 0b110000:
-		LOG_ERR("Breakpoint exception from a lower Exception level, "
-			"that might be using AArch32 or AArch64");
+	case 0b110000: /* 0x30 */
+		err = "Breakpoint exception from a lower Exception level, "
+		      "that might be using AArch32 or AArch64";
 		break;
-	case 0b110001:
-		LOG_ERR("Breakpoint exception taken without a change in "
-			"Exception level");
+	case 0b110001: /* 0x31 */
+		err = "Breakpoint exception taken without a change in "
+		      "Exception level";
 		break;
-	case 0b110010:
-		LOG_ERR("Software Step exception from a lower Exception level, "
-			"that might be using AArch32 or AArch64");
+	case 0b110010: /* 0x32 */
+		err = "Software Step exception from a lower Exception level, "
+		      "that might be using AArch32 or AArch64";
 		break;
-	case 0b110011:
-		LOG_ERR("Software Step exception taken without a change in "
-			"Exception level");
+	case 0b110011: /* 0x33 */
+		err = "Software Step exception taken without a change in "
+		      "Exception level";
 		break;
-	case 0b110100:
-		LOG_ERR("Watchpoint exception from a lower Exception level, "
-			"that might be using AArch32 or AArch64");
+	case 0b110100: /* 0x34 */
+		*dump_far = true;
+		err = "Watchpoint exception from a lower Exception level, "
+		      "that might be using AArch32 or AArch64";
 		break;
-	case 0b110101:
-		LOG_ERR("Watchpoint exception taken without a change in "
-			"Exception level.");
+	case 0b110101: /* 0x35 */
+		*dump_far = true;
+		err = "Watchpoint exception taken without a change in "
+		      "Exception level.";
 		break;
-	case 0b111000:
-		LOG_ERR("BKPT instruction execution in AArch32 state");
+	case 0b111000: /* 0x38 */
+		err = "BKPT instruction execution in AArch32 state";
 		break;
-	case 0b111100:
-		LOG_ERR("BRK instruction execution in AArch64 state.");
+	case 0b111100: /* 0x3c */
+		err = "BRK instruction execution in AArch64 state.";
 		break;
+	default:
+		err = "Unknown";
 	}
+
+	LOG_ERR("ESR_ELn: 0x%016llx", esr);
+	LOG_ERR("  EC:  0x%llx (%s)", ESR_EC(esr), err);
+	LOG_ERR("  IL:  0x%llx", ESR_IL(esr));
+	LOG_ERR("  ISS: 0x%llx", ESR_ISS(esr));
 }
 
 static void esf_dump(const z_arch_esf_t *esf)
@@ -179,11 +193,14 @@ void z_arm64_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 		}
 
 		if (GET_EL(el) != MODE_EL0) {
-			LOG_ERR("ESR_ELn: 0x%016llx", esr);
-			LOG_ERR("FAR_ELn: 0x%016llx", far);
+			bool dump_far = false;
+
 			LOG_ERR("ELR_ELn: 0x%016llx", elr);
 
-			print_EC_cause(esr);
+			dump_esr(esr, &dump_far);
+
+			if (dump_far)
+				LOG_ERR("FAR_ELn: 0x%016llx", far);
 		}
 	}
 

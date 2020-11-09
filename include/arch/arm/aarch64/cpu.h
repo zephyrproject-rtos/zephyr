@@ -160,6 +160,10 @@
 
 #define GET_EL(_mode)		(((_mode) >> MODE_EL_SHIFT) & MODE_EL_MASK)
 
+#define ESR_EC(esr)		(((esr) >> 26) & BIT_MASK(6))
+#define ESR_IL(esr)		(((esr) >> 25) & BIT_MASK(1))
+#define ESR_ISS(esr)		((esr) & BIT_MASK(25))
+
 /* mpidr */
 #define MPIDR_AFFLVL_MASK	0xff
 
