@@ -213,25 +213,6 @@ struct pdu_adv_connect_ind {
 	} __packed;
 } __packed;
 
-struct pdu_adv_com_ext_adv {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	uint8_t ext_hdr_len:6;
-	uint8_t adv_mode:2;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	uint8_t adv_mode:2;
-	uint8_t ext_hdr_len:6;
-#else
-#error "Unsupported endianness"
-#endif
-	uint8_t ext_hdr_adv_data[254];
-} __packed;
-
-enum pdu_adv_mode {
-	EXT_ADV_MODE_NON_CONN_NON_SCAN = 0x00,
-	EXT_ADV_MODE_CONN_NON_SCAN = 0x01,
-	EXT_ADV_MODE_NON_CONN_SCAN = 0x02,
-};
-
 struct pdu_adv_ext_hdr {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	uint8_t adv_addr:1;
@@ -254,7 +235,30 @@ struct pdu_adv_ext_hdr {
 #else
 #error "Unsupported endianness"
 #endif
+	uint8_t data[0];
 } __packed;
+
+struct pdu_adv_com_ext_adv {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	uint8_t ext_hdr_len:6;
+	uint8_t adv_mode:2;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	uint8_t adv_mode:2;
+	uint8_t ext_hdr_len:6;
+#else
+#error "Unsupported endianness"
+#endif
+	union {
+		struct pdu_adv_ext_hdr ext_hdr;
+		uint8_t ext_hdr_adv_data[254];
+	};
+} __packed;
+
+enum pdu_adv_mode {
+	EXT_ADV_MODE_NON_CONN_NON_SCAN = 0x00,
+	EXT_ADV_MODE_CONN_NON_SCAN = 0x01,
+	EXT_ADV_MODE_NON_CONN_SCAN = 0x02,
+};
 
 struct pdu_adv_adi {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__

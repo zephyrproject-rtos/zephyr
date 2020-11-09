@@ -368,7 +368,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 
 		pri_com_hdr = (void *)&pdu->adv_ext_ind;
 		pri_hdr = (void *)pri_com_hdr->ext_hdr_adv_data;
-		pri_dptr = (uint8_t *)pri_hdr + sizeof(*pri_hdr);
+		pri_dptr = pri_hdr->data;
 		pri_dptr_prev = pri_dptr;
 
 		/* No ACAD and no AdvData */

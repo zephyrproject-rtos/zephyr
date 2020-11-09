@@ -192,7 +192,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		goto ull_scan_aux_rx_flush;
 	}
 
-	ptr = (uint8_t *)h + sizeof(*h);
+	ptr = h->data;
 
 	if (h->adv_addr) {
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
