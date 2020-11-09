@@ -15,9 +15,6 @@ IC while using the nRF52 Development Kit (PCA10040).
 See :ref:`nrf52dk_nrf52832` for more information about the development board and
 `nRF52810 website`_ for the official reference on the IC itself.
 
-.. note::
-
-   In previous Zephyr releases this board was named *nrf52810_pca10040*.
 
 References
 **********
