@@ -236,16 +236,15 @@ void test_pipe_thread2thread(void)
  */
 void test_pipe_user_thread2thread(void)
 {
-	/**TESTPOINT: test k_pipe_init pipe*/
-
+	/**TESTPOINT: test k_object_alloc pipe*/
 	struct k_pipe *p = k_object_alloc(K_OBJ_PIPE);
 
 	zassert_true(p != NULL, NULL);
-	zassert_false(k_pipe_alloc_init(p, PIPE_LEN), NULL);
-	tpipe_thread_thread(&pipe);
 
-	/**TESTPOINT: test K_PIPE_DEFINE pipe*/
-	tpipe_thread_thread(&kpipe);
+	/**TESTPOINT: test k_pipe_alloc_init*/
+	zassert_false(k_pipe_alloc_init(p, PIPE_LEN), NULL);
+	tpipe_thread_thread(p);
+
 }
 #endif
 
