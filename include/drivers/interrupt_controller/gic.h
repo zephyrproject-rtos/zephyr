@@ -252,9 +252,13 @@
 #define GIC_INTID_SPURIOUS		1023
 
 /* Fixme: update from platform specific define or dt */
-#define GIC_NUM_CPU_IF			1
+#define GIC_NUM_CPU_IF			CONFIG_MP_NUM_CPUS
 /* Fixme: arch support need to provide api/macro in SMP implementation */
-#define GET_CPUID			0
+#if defined(CONFIG_ARM64) && (CONFIG_MP_NUM_CPUS > 1)
+#define GET_CPUID()			MPIDR_TO_CORE(GET_MPIDR())
+#else
+#define GET_CPUID()			0
+#endif
 
 #ifndef _ASMLANGUAGE
 
@@ -310,6 +314,13 @@ unsigned int arm_gic_get_active(void);
  * @param irq interrupt ID
  */
 void arm_gic_eoi(unsigned int irq);
+
+#ifdef CONFIG_SMP
+/**
+ * @brief Initialize GIC of secondary cores
+ */
+void arm_gic_secondary_init(void);
+#endif
 
 #if defined(CONFIG_GIC_V3)
 /**
