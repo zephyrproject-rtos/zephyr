@@ -3823,11 +3823,13 @@ static void bt_hci_evt_read_remote_version_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_remote_version_info *evt;
 	struct bt_conn *conn;
+	uint16_t handle;
 
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
-	conn = bt_conn_lookup_handle(evt->handle);
+	handle = sys_le16_to_cpu(evt->handle);
+	conn = bt_conn_lookup_handle(handle);
 	if (!conn) {
-		BT_ERR("No connection for handle %u", evt->handle);
+		BT_ERR("No connection for handle %u", handle);
 		return;
 	}
 
