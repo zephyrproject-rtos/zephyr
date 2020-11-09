@@ -29,6 +29,7 @@
 #include "ll_sw/pdu.h"
 #include "ll_sw/lll.h"
 #include "lll_adv.h"
+#include "lll_sync_iso.h"
 #include "ll_sw/lll_scan.h"
 #include "ll_sw/lll_sync.h"
 #include "ll_sw/lll_conn.h"

@@ -22,6 +22,7 @@
 #include "lll_scan.h"
 #include "lll_scan_aux.h"
 #include "lll_sync.h"
+#include "lll_sync_iso.h"
 
 #include "ull_scan_types.h"
 #include "ull_sync_types.h"

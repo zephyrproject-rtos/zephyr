@@ -8,6 +8,17 @@
 #define LL_SYNC_STATE_ADDR_MATCH 0x01
 #define LL_SYNC_STATE_CREATED    0x02
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+struct ll_sync_iso {
+	struct evt_hdr evt;
+	struct ull_hdr ull;
+	struct lll_sync_iso lll;
+
+	struct node_rx_hdr node_rx_lost;
+	struct node_rx_hdr node_rx_estab;
+};
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
+
 struct ll_sync_set {
 	struct evt_hdr evt;
 	struct ull_hdr ull;
@@ -29,6 +40,10 @@ struct ll_sync_set {
 			uint8_t    reason;
 		};
 	} node_rx_lost;
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+	struct ll_sync_iso *sync_iso;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 };
 
 struct node_rx_sync {
