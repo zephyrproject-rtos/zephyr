@@ -499,7 +499,6 @@ static inline void z_vrfy_k_poll_signal_reset(struct k_poll_signal *signal)
 
 static void triggered_work_handler(struct k_work *work)
 {
-	k_work_handler_t handler;
 	struct k_work_poll *twork =
 			CONTAINER_OF(work, struct k_work_poll, work);
 
@@ -519,33 +518,28 @@ static void triggered_work_handler(struct k_work *work)
 	}
 
 	/* Drop work ownership and execute real handler. */
-	handler = twork->real_handler;
-	twork->thread = NULL;
-	handler(work);
+	twork->workq = NULL;
+	twork->real_handler(work);
 }
 
 static void triggered_work_expiration_handler(struct _timeout *timeout)
 {
 	struct k_work_poll *twork =
 		CONTAINER_OF(timeout, struct k_work_poll, timeout);
-	struct k_work_q *work_q =
-		CONTAINER_OF(twork->thread, struct k_work_q, thread);
 
 	twork->poller.is_polling = false;
 	twork->poll_result = -EAGAIN;
-
-	k_work_submit_to_queue(work_q, &twork->work);
+	k_work_submit_to_queue(twork->workq, &twork->work);
 }
 
 static int signal_triggered_work(struct k_poll_event *event, uint32_t status)
 {
 	struct _poller *poller = event->poller;
+	struct k_work_poll *twork =
+		CONTAINER_OF(poller, struct k_work_poll, poller);
 
-	if (poller->is_polling && poller->thread) {
-		struct k_work_poll *twork =
-			CONTAINER_OF(poller, struct k_work_poll, poller);
-		struct k_work_q *work_q =
-			CONTAINER_OF(poller->thread, struct k_work_q, thread);
+	if (poller->is_polling && twork->workq != NULL) {
+		struct k_work_q *work_q = twork->workq;
 
 		z_abort_timeout(&twork->timeout);
 		twork->poll_result = 0;
@@ -571,7 +565,7 @@ static int triggered_work_cancel(struct k_work_poll *work,
 
 		/* Clear registrations and work ownership. */
 		clear_event_registrations(work->events, work->num_events, key);
-		work->poller.thread = NULL;
+		work->workq = NULL;
 		return 0;
 	}
 
@@ -588,10 +582,8 @@ static int triggered_work_cancel(struct k_work_poll *work,
 void k_work_poll_init(struct k_work_poll *work,
 		      k_work_handler_t handler)
 {
+	*work = (struct k_work_poll) {};
 	k_work_init(&work->work, triggered_work_handler);
-	work->events = NULL;
-	work->poller = (struct _poller){};
-	work->thread = NULL;
 	work->real_handler = handler;
 	z_init_timeout(&work->timeout);
 }
@@ -614,8 +606,8 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 
 	/* Take overship of the work if it is possible. */
 	key = k_spin_lock(&lock);
-	if (work->thread != NULL) {
-		if (work->thread == &work_q->thread) {
+	if (work->workq != NULL) {
+		if (work->workq == work_q) {
 			int retval;
 
 			retval = triggered_work_cancel(work, key);
@@ -629,8 +621,9 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 		}
 	}
 
+
 	work->poller.is_polling = true;
-	work->thread = &work_q->thread;
+	work->workq = work_q;
 	work->poller.mode = MODE_NONE;
 	k_spin_unlock(&lock, key);
 
@@ -707,7 +700,7 @@ int k_work_poll_cancel(struct k_work_poll *work)
 	__ASSERT(work->poller.thread == NULL, "");//DEBUG
 
 	/* Check if the work was submitted. */
-	if (work == NULL || work->thread == NULL) {
+	if (work == NULL || work->workq == NULL) {
 		return -EINVAL;
 	}
 

@@ -2765,8 +2765,8 @@ struct k_delayed_work {
 
 struct k_work_poll {
 	struct k_work work;
+	struct k_work_q *workq;
 	struct _poller poller;
-	struct k_thread *thread;
 	struct k_poll_event *events;
 	int num_events;
 	k_work_handler_t real_handler;
