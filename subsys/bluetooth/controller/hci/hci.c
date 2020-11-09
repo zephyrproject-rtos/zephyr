@@ -4519,7 +4519,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 			goto no_ext_hdr;
 		}
 
-		ptr += sizeof(*h);
+		ptr = h->data;
 
 		if (h->adv_addr) {
 			bt_addr_le_t addr;

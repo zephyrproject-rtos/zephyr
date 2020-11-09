@@ -126,7 +126,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 
 	ter_com_hdr = (void *)&ter_pdu->adv_ext_ind;
 	ter_hdr = (void *)ter_com_hdr->ext_hdr_adv_data;
-	ter_dptr = (uint8_t *)ter_hdr + sizeof(*ter_hdr);
+	ter_dptr = ter_hdr->data;
 	ter_hdr_prev = *ter_hdr;
 	*(uint8_t *)ter_hdr = 0U;
 	ter_dptr_prev = ter_dptr;
@@ -191,7 +191,7 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 	ter_com_hdr_prev = (void *)&ter_pdu_prev->adv_ext_ind;
 	ter_hdr = (void *)ter_com_hdr_prev->ext_hdr_adv_data;
 	ter_hdr_prev = *ter_hdr;
-	ter_dptr_prev = (uint8_t *)ter_hdr + sizeof(*ter_hdr);
+	ter_dptr_prev = ter_hdr->data;
 
 	/* Get reference to new tertiary PDU data buffer */
 	ter_pdu = lll_adv_sync_data_alloc(lll_sync, &ter_idx);
@@ -201,7 +201,7 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 	ter_com_hdr = (void *)&ter_pdu->adv_ext_ind;
 	ter_com_hdr->adv_mode = ter_com_hdr_prev->adv_mode;
 	ter_hdr = (void *)ter_com_hdr->ext_hdr_adv_data;
-	ter_dptr = (uint8_t *)ter_hdr + sizeof(*ter_hdr);
+	ter_dptr = ter_hdr->data;
 	*(uint8_t *)ter_hdr = 0U;
 
 	/* No AdvA */
@@ -652,7 +652,7 @@ static inline struct pdu_adv_sync_info *sync_info_get(struct pdu_adv *pdu)
 
 	p = (void *)&pdu->adv_ext_ind;
 	h = (void *)p->ext_hdr_adv_data;
-	ptr = (uint8_t *)h + sizeof(*h);
+	ptr = h->data;
 
 	if (h->adv_addr) {
 		ptr += BDADDR_SIZE;

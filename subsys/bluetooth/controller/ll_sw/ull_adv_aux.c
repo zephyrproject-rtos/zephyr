@@ -273,7 +273,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	sr_prev = lll_adv_scan_rsp_peek(lll);
 
 	/* AdvA */
-	memcpy(sr_dptr, &sr_prev->adv_ext_ind.ext_hdr_adv_data[1],
+	memcpy(sr_dptr, &sr_prev->adv_ext_ind.ext_hdr.data[0],
 	       BDADDR_SIZE);
 	sr_dptr += BDADDR_SIZE;
 
@@ -459,7 +459,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	pri_com_hdr_prev = (void *)&pri_pdu_prev->adv_ext_ind;
 	pri_hdr = (void *)pri_com_hdr_prev->ext_hdr_adv_data;
 	pri_hdr_prev = *pri_hdr;
-	pri_dptr_prev = (uint8_t *)pri_hdr + sizeof(*pri_hdr);
+	pri_dptr_prev = pri_hdr->data;
 
 	/* Advertising data are not supported by scannable instances */
 	if ((sec_hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_AD_DATA) &&
@@ -475,7 +475,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	pri_com_hdr = (void *)&pri_pdu->adv_ext_ind;
 	pri_com_hdr->adv_mode = pri_com_hdr_prev->adv_mode;
 	pri_hdr = (void *)pri_com_hdr->ext_hdr_adv_data;
-	pri_dptr = (uint8_t *)pri_hdr + sizeof(*pri_hdr);
+	pri_dptr = pri_hdr->data;
 	*(uint8_t *)pri_hdr = 0U;
 
 	/* Get the reference to aux instance */
@@ -511,7 +511,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 					     ext_hdr_adv_data);
 		*(uint8_t *)&sec_hdr_prev = 0U;
 	}
-	sec_dptr_prev = (uint8_t *)sec_hdr + sizeof(*sec_hdr);
+	sec_dptr_prev = sec_hdr->data;
 
 	/* Get reference to new secondary PDU data buffer */
 	sec_pdu = lll_adv_aux_data_alloc(lll_aux, &sec_idx);
@@ -525,7 +525,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	sec_com_hdr = (void *)&sec_pdu->adv_ext_ind;
 	sec_com_hdr->adv_mode = pri_com_hdr->adv_mode;
 	sec_hdr = (void *)sec_com_hdr->ext_hdr_adv_data;
-	sec_dptr = (uint8_t *)sec_hdr + sizeof(*sec_hdr);
+	sec_dptr = sec_hdr->data;
 	*(uint8_t *)sec_hdr = 0U;
 
 	/* AdvA flag */
@@ -940,7 +940,7 @@ struct pdu_adv_aux_ptr *ull_adv_aux_lll_offset_fill(uint32_t ticks_offset,
 
 	pri_com_hdr = (void *)&pdu->adv_ext_ind;
 	h = (void *)pri_com_hdr->ext_hdr_adv_data;
-	ptr = (uint8_t *)h + sizeof(*h);
+	ptr = h->data;
 
 	if (h->adv_addr) {
 		ptr += BDADDR_SIZE;
