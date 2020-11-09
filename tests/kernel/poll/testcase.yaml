@@ -2,4 +2,3 @@ tests:
   kernel.poll:
     tags: kernel userspace
     platform_exclude: nrf52dk_nrf52810
-    filter: not CONFIG_KERNEL_COHERENCE
