@@ -234,6 +234,17 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+		espi_saf0: espi@40008000 {
+			compatible = "microchip,xec-espi-saf";
+			reg = < 0x40008000 0x400
+				0x40070000 0x400
+				0x40071000 0x400>;
+			label = "ESPI_SAF_0";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		timer0: timer@40000c00 {
 			compatible = "microchip,xec-timer";
 			clock-frequency = <48000000>;

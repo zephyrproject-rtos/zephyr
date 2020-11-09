@@ -37,4 +37,19 @@ config ESPI_PERIPHERAL_UART_SOC_MAPPING
 	  This tells the driver to which SoC UART to direct the UART traffic
 	  send over eSPI from host.
 
+config ESPI_SAF
+	bool "XEC Microchip ESPI SAF driver"
+	depends on ESPI_FLASH_CHANNEL
+	default n
+	help
+	  Enable Slave Attached Flash eSPI driver. SAF depends upon ESPI XEC driver
+	  and flash channel.
+
+config ESPI_SAF_INIT_PRIORITY
+	int "ESPI SAF driver initialization priority"
+	depends on ESPI_SAF
+	default 4
+	help
+	  Driver initialization priority for eSPI SAF driver.
+
 endif #ESPI_XEC
