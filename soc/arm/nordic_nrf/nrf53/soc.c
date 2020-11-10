@@ -20,11 +20,15 @@
 #include <nrf_erratas.h>
 #if defined(CONFIG_SOC_NRF5340_CPUAPP)
 #include <hal/nrf_cache.h>
+#include <hal/nrf_gpio.h>
 #include <hal/nrf_oscillators.h>
 #include <hal/nrf_regulators.h>
 #elif defined(CONFIG_SOC_NRF5340_CPUNET)
 #include <hal/nrf_nvmc.h>
 #endif
+
+#define PIN_XL1 0
+#define PIN_XL2 1
 
 #ifdef CONFIG_RUNTIME_NMI
 extern void z_arm_nmi_init(void);
@@ -60,9 +64,12 @@ static int nordicsemi_nrf53_init(const struct device *arg)
 #endif
 
 #if defined(CONFIG_SOC_NRF5340_CPUAPP) && \
-	!defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+	!defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) && \
+	defined(CONFIG_SOC_ENABLE_LFXO)
 	nrf_oscillators_lfxo_cap_set(NRF_OSCILLATORS,
 				     NRF_OSCILLATORS_LFXO_CAP_6PF);
+	nrf_gpio_pin_mcu_select(PIN_XL1, NRF_GPIO_PIN_MCUSEL_PERIPHERAL);
+	nrf_gpio_pin_mcu_select(PIN_XL2, NRF_GPIO_PIN_MCUSEL_PERIPHERAL);
 #endif
 
 #if defined(CONFIG_SOC_DCDC_NRF53X_APP)
