@@ -113,5 +113,13 @@
 		pinctrl_shi_cs: shi_cs {
 			pinctrls = <&pinmuxm 5 IT8XXX2_PINMUX_FUNC_1>;
 		};
+
+		/* Keyboard alternate function */
+		pinctrl_kso16: kso16 {
+			pinctrls = <&pinmuxc 3 IT8XXX2_PINMUX_FUNC_1>;
+		};
+		pinctrl_kso17: kso17 {
+			pinctrls = <&pinmuxc 5 IT8XXX2_PINMUX_FUNC_1>;
+		};
 	};
 };
