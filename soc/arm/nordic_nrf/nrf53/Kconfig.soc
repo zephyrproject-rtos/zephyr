@@ -130,6 +130,16 @@ config SOC_DCDC_NRF53X_HV
 	help
 	  Enable nRF53 series System on Chip High Voltage DC/DC converter.
 
+config SOC_ENABLE_LFXO
+	bool "Enable LFXO"
+	default y
+	help
+	  Enable the low-frequency oscillator (LFXO) functionality on XL1 and
+	  XL2 pins.
+	  This option must be enabled if either application or network core is
+	  to use the LFXO. Otherwise, XL1 and XL2 pins will behave as regular
+	  GPIOs.
+
 endif # SOC_NRF5340_CPUAPP
 
 
