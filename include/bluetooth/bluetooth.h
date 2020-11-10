@@ -636,6 +636,75 @@ struct bt_le_per_adv_param {
 						 BT_GAP_ADV_FAST_INT_MAX_2, \
 						 NULL)
 
+/** Non-connectable extended advertising with private address */
+#define BT_LE_EXT_ADV_NCONN BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, \
+					    BT_GAP_ADV_FAST_INT_MIN_2, \
+					    BT_GAP_ADV_FAST_INT_MAX_2, NULL)
+
+/** Non-connectable extended advertising with @ref BT_LE_ADV_OPT_USE_NAME */
+#define BT_LE_EXT_ADV_NCONN_NAME BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | \
+						 BT_LE_ADV_OPT_USE_NAME, \
+						 BT_GAP_ADV_FAST_INT_MIN_2, \
+						 BT_GAP_ADV_FAST_INT_MAX_2, \
+						 NULL)
+
+/** Non-connectable extended advertising with @ref BT_LE_ADV_OPT_USE_IDENTITY */
+#define BT_LE_EXT_ADV_NCONN_IDENTITY \
+		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | \
+				BT_LE_ADV_OPT_USE_IDENTITY, \
+				BT_GAP_ADV_FAST_INT_MIN_2, \
+				BT_GAP_ADV_FAST_INT_MAX_2, NULL)
+
+/** Non-connectable extended advertising on coded PHY with private address */
+#define BT_LE_EXT_ADV_CODED_NCONN BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | \
+						  BT_LE_ADV_OPT_CODED, \
+						  BT_GAP_ADV_FAST_INT_MIN_2, \
+						  BT_GAP_ADV_FAST_INT_MAX_2, \
+						  NULL)
+
+/** Non-connectable extended advertising on coded PHY with
+ *  @ref BT_LE_ADV_OPT_USE_NAME
+ */
+#define BT_LE_EXT_ADV_CODED_NCONN_NAME \
+		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_CODED | \
+				BT_LE_ADV_OPT_USE_NAME, \
+				BT_GAP_ADV_FAST_INT_MIN_2, \
+				BT_GAP_ADV_FAST_INT_MAX_2, NULL)
+
+/** Non-connectable extended advertising on coded PHY with
+ *  @ref BT_LE_ADV_OPT_USE_IDENTITY
+ */
+#define BT_LE_EXT_ADV_CODED_NCONN_IDENTITY \
+		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_CODED | \
+				BT_LE_ADV_OPT_USE_IDENTITY, \
+				BT_GAP_ADV_FAST_INT_MIN_2, \
+				BT_GAP_ADV_FAST_INT_MAX_2, NULL)
+
+/**
+ * Helper to initialize extended advertising start parameters inline
+ *
+ * @param _timeout Advertiser timeout
+ * @param _n_evts  Number of advertising events
+ */
+#define BT_LE_EXT_ADV_START_PARAM_INIT(_timeout, _n_evts) \
+{ \
+	.timeout = (_timeout), \
+	.num_events = (_n_evts), \
+}
+
+/**
+ * Helper to declare extended advertising start parameters inline
+ *
+ * @param _timeout Advertiser timeout
+ * @param _n_evts  Number of advertising events
+ */
+#define BT_LE_EXT_ADV_START_PARAM(_timeout, _n_evts) \
+	((struct bt_le_ext_adv_start_param[]) { \
+		BT_LE_EXT_ADV_START_PARAM_INIT((_timeout), (_n_evts)) \
+	})
+
+#define BT_LE_EXT_ADV_START_DEFAULT BT_LE_EXT_ADV_START_PARAM(0, 0)
+
 /**
  * Helper to declare periodic advertising parameters inline
  *
@@ -1556,7 +1625,9 @@ struct bt_le_scan_cb {
 		BT_LE_SCAN_PARAM_INIT(_type, _options, _interval, _window) \
 	 })
 
-/** Helper macro to enable active scanning to discover new devices. */
+/**
+ * @brief Helper macro to enable active scanning to discover new devices.
+ */
 #define BT_LE_SCAN_ACTIVE BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_ACTIVE, \
 					   BT_LE_SCAN_OPT_FILTER_DUPLICATE, \
 					   BT_GAP_SCAN_FAST_INTERVAL, \
@@ -1572,6 +1643,31 @@ struct bt_le_scan_cb {
 					    BT_LE_SCAN_OPT_FILTER_DUPLICATE, \
 					    BT_GAP_SCAN_FAST_INTERVAL, \
 					    BT_GAP_SCAN_FAST_WINDOW)
+
+/**
+ * @brief Helper macro to enable active scanning to discover new devices.
+ * Include scanning on Coded PHY in addition to 1M PHY.
+ */
+#define BT_LE_SCAN_CODED_ACTIVE \
+		BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_ACTIVE, \
+				 BT_LE_SCAN_OPT_CODED | \
+				 BT_LE_SCAN_OPT_FILTER_DUPLICATE, \
+				 BT_GAP_SCAN_FAST_INTERVAL, \
+				 BT_GAP_SCAN_FAST_WINDOW)
+
+/**
+ * @brief Helper macro to enable passive scanning to discover new devices.
+ * Include scanning on Coded PHY in addition to 1M PHY.
+ *
+ * This macro should be used if information required for device identification
+ * (e.g., UUID) are known to be placed in Advertising Data.
+ */
+#define BT_LE_SCAN_CODED_PASSIVE \
+		BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_PASSIVE, \
+				 BT_LE_SCAN_OPT_CODED | \
+				 BT_LE_SCAN_OPT_FILTER_DUPLICATE, \
+				 BT_GAP_SCAN_FAST_INTERVAL, \
+				 BT_GAP_SCAN_FAST_WINDOW)
 
 /**
  * @brief Start (LE) scanning
