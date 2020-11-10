@@ -21,6 +21,11 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup sys-util
+ * @{
+ */
+
 /*
  * Most of the eldritch implementation details for all the macrobatics
  * below (APIs like IS_ENABLED(), COND_CODE_1(), etc.) are hidden away
