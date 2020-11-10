@@ -193,7 +193,7 @@ zephyr_linker_sources(SECTIONS)
 # Check that BOARD has been provided, and that it has not changed.
 zephyr_check_cache(BOARD REQUIRED)
 
-message(STATUS "Board: ${BOARD}")
+set(BOARD_MESSAGE "Board: ${BOARD}")
 
 if(DEFINED ENV{ZEPHYR_BOARD_ALIASES})
   include($ENV{ZEPHYR_BOARD_ALIASES})
@@ -212,6 +212,12 @@ endif()
 
 # Check that SHIELD has not changed.
 zephyr_check_cache(SHIELD)
+
+if(SHIELD)
+  set(BOARD_MESSAGE "${BOARD_MESSAGE}, Shield(s): ${SHIELD}")
+endif()
+
+message(STATUS "${BOARD_MESSAGE}")
 
 # 'BOARD_ROOT' is a prioritized list of directories where boards may
 # be found. It always includes ${ZEPHYR_BASE} at the lowest priority.
