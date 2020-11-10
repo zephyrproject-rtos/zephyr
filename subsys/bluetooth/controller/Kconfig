@@ -550,6 +550,12 @@ config BT_CTLR_SMI_TX_SETTING
 	help
 	  Enable support for Bluetooth 5.0 SMI TX through a system setting.
 
+config BT_CTLR_HCI_CODEC_AND_DELAY_INFO
+	bool "Codecs and controller delay information commands"
+	help
+	  Enable HCI commands to read information about supported
+	  codecs, codec capabilities, and controller delay.
+
 source "subsys/bluetooth/controller/Kconfig.df"
 source "subsys/bluetooth/controller/Kconfig.ll_sw_split"
 
