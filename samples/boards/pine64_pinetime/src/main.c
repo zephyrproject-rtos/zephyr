@@ -1,32 +1,83 @@
+/*
+ * Copyright (c) 2020 Stephane Dorre <stephane.dorre@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
+#include <sys/printk.h>
 #include <zephyr.h>
 #include <drivers/gpio.h>
 
-#define LED_PORT  DT_ALIAS_STATUS_LED_GPIOS_CONTROLLER
-#define LED_PIN   DT_ALIAS_STATUS_LED_GPIOS_PIN
+static void button_pressed(struct device *dev,
+			   struct gpio_callback *cb, u32_t pins)
+{
+	printk("Button pressed at %" PRIu32 "\n", k_cycle_get_32());
+}
 
-#define BTN_PORT  DT_ALIAS_KEY_IN_GPIOS_CONTROLLER
-#define BTN_PIN   DT_ALIAS_KEY_IN_GPIOS_PIN
+static struct gpio_callback button_cb;
 
 int main(void)
 {
-    struct device *dev_led = device_get_binding(LED_PORT);
-    gpio_pin_configure(dev_led, LED_PIN, GPIO_DIR_OUT);
+	int ret = 0;
+	struct device *dev_gpio = NULL;
 
-    struct device *dev_btn = device_get_binding(BTN_PORT);
-    gpio_pin_configure(dev_btn, BTN_PIN, GPIO_DIR_IN);
+	/* Only one GPIO peripheral in nRF52832 */
+	/* So let's take the same for led AND button */
+	dev_gpio = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led0), gpios));
+	if (!dev_gpio) {
+		return (-EOPNOTSUPP);
+	}
 
-    while (1)
-    {
-        // button is pressed ==> turn on status LED
-        u32_t val = 0U;
-        gpio_pin_read(dev_btn, BTN_PIN, &val);
-        gpio_pin_write(dev_led, LED_PIN, val);
+	ret = gpio_pin_configure(dev_gpio, DT_GPIO_PIN(DT_ALIAS(led0), gpios),
+			   GPIO_OUTPUT |
+			   DT_GPIO_FLAGS(DT_ALIAS(led0), gpios));
+	if (ret != 0) {
+		printk("Error %d: failed to configure pin %d '%s'\n",
+			ret, DT_GPIO_PIN(DT_ALIAS(led0), gpios), DT_LABEL(DT_ALIAS(led0)));
+		return ret;
+	}
 
-        // dont burn the CPU
-        k_sleep(10);
-    }
+	ret = gpio_pin_configure(dev_gpio, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
+				 GPIO_INPUT | GPIO_INT_EDGE_TO_ACTIVE |
+				 DT_GPIO_FLAGS(DT_ALIAS(sw0), gpios));
+	if (ret != 0) {
+		printk("Error %d: failed to configure pin %d '%s'\n",
+			ret, DT_GPIO_PIN(DT_ALIAS(sw0), gpios), DT_LABEL(DT_ALIAS(sw0)));
+		return ret;
+	}
 
-    return 0;
+	gpio_init_callback(&button_cb, button_pressed,
+			   BIT(DT_GPIO_PIN(DT_ALIAS(sw0), gpios)));
+
+	gpio_add_callback(dev_gpio, &button_cb);
+
+	/* Pinetime trick : Enable button */
+	ret = gpio_pin_configure(dev_gpio, DT_GPIO_PIN(DT_ALIAS(sw1), gpios),
+				 GPIO_OUTPUT_ACTIVE |
+				 DT_GPIO_FLAGS(DT_ALIAS(sw1), gpios));
+	if (ret != 0) {
+		printk("Error %d: failed to configure pin %d '%s'\n",
+			ret, DT_GPIO_PIN(DT_ALIAS(sw1), gpios), DT_LABEL(DT_ALIAS(sw1)));
+		return ret;
+	}
+
+	printk("Init Done.");
+
+	while (1) {
+		/* button is pressed ==> turn on status LED */
+		u32_t val = 0u;
+		u8_t new_val = 0u;
+
+		new_val = gpio_pin_get(dev_gpio, DT_GPIO_PIN(DT_ALIAS(sw0), gpios));
+		if (new_val != val) {
+			printk("New Button state %d.\n", new_val);
+			gpio_pin_toggle(dev_gpio, DT_GPIO_PIN(DT_ALIAS(led0), gpios));
+			val = new_val;
+		}
+
+		/* dont burn the CPU */
+		k_sleep(K_MSEC(10));
+	}
+
+	return 0;
 }
-

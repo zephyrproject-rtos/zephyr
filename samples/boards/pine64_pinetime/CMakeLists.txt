@@ -1,9 +1,7 @@
-# Boilerplate code, which pulls in the Zephyr build system.
+# SPDX-License-Identifier: Apache-2.0
+
 cmake_minimum_required(VERSION 3.13.1)
-include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(sample_pinetime_app)
 
-# Add your source file to the "app" target. This must come after
-# the boilerplate code, which defines the target.
 target_sources(app PRIVATE src/main.c)
-
