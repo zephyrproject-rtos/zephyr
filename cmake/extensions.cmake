@@ -1777,6 +1777,115 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
 endfunction()
 
 # Usage:
+#   zephyr_check_cache(<variable> [REQUIRED])
+#
+# Check the current CMake cache for <variable> and warn the user if the value
+# is being modified.
+#
+# This can be used to ensure the user does not accidentally try to change
+# Zephyr build variables, such as:
+# - BOARD
+# - SHIELD
+#
+# variable: Name of <variable> to check and set, for example BOARD.
+# REQUIRED: Optional flag. If specified, then an unset <variable> will be
+#           treated as an error.
+#
+# Details:
+#   <variable> can be set by 3 sources.
+#   - Using CMake argument, -D<variable>
+#   - Using an environment variable
+#   - In the project CMakeLists.txt before `find_package(Zephyr)`.
+#
+#   CLI has the highest precedence, then comes environment variables,
+#   and then finally CMakeLists.txt.
+#
+#   The value defined on the first CMake invocation will be stored in the CMake
+#   cache as CACHED_<variable>. This allows the Zephyr build system to detect
+#   when a user reconfigures a sticky variable.
+#
+#   A user can ignore all the precedence rules if the same source is always used
+#   E.g. always specifies -D<variable>= on the command line,
+#   always has an environment <variable> set, or always has a set(<variable> foo)
+#   line in his CMakeLists.txt and avoids mixing sources.
+#
+#   The selected <variable> can be accessed through the variable '<variable>' in
+#   following Zephyr CMake code.
+#
+#   If the user tries to change <variable> to a new value, then a warning will
+#   be printed, and the previously cached value (CACHED_<variable>) will be
+#   used, as it has precedence.
+#
+#   Together with the warning, user is informed that in order to change
+#   <variable> the build directory must be cleaned.
+#
+function(zephyr_check_cache variable)
+  cmake_parse_arguments(CACHE_VAR "REQUIRED" "" "" ${ARGN})
+  string(TOLOWER ${variable} variable_text)
+  string(REPLACE "_" " " variable_text ${variable_text})
+
+  get_property(cached_value CACHE ${variable} PROPERTY VALUE)
+
+  # If the build has already been configured in an earlier CMake invocation,
+  # then CACHED_${variable} is set. The CACHED_${variable} setting takes
+  # precedence over any user or CMakeLists.txt input.
+  # If we detect that user tries to change the setting, then print a warning
+  # that a pristine build is needed.
+
+  # If user uses -D<variable>=<new_value>, then cli_argument will hold the new
+  # value, otherwise cli_argument will hold the existing (old) value.
+  set(cli_argument ${cached_value})
+  if(cli_argument STREQUAL CACHED_${variable})
+    # The is no changes to the <variable> value.
+    unset(cli_argument)
+  endif()
+
+  set(app_cmake_lists ${${variable}})
+  if(cached_value STREQUAL ${variable})
+    # The app build scripts did not set a default, The BOARD we are
+    # reading is the cached value from the CLI
+    unset(app_cmake_lists)
+  endif()
+
+  if(DEFINED CACHED_${variable})
+    # Warn the user if it looks like he is trying to change the board
+    # without cleaning first
+    if(cli_argument)
+      if(NOT ((CACHED_${variable} STREQUAL cli_argument) OR (${variable}_DEPRECATED STREQUAL cli_argument)))
+        message(WARNING "The build directory must be cleaned pristinely when "
+                        "changing ${variable_text},\n"
+                        "Current value=\"${CACHED_${variable}}\", "
+                        "Ignored value=\"${cli_argument}\"")
+      endif()
+    endif()
+
+    if(CACHED_${variable})
+      set(${variable} ${CACHED_${variable}} PARENT_SCOPE)
+      # This resets the user provided value with previous (working) value.
+      set(${variable} ${CACHED_${variable}} CACHE STRING "Selected ${variable_text}" FORCE)
+    else()
+      unset(${variable} PARENT_SCOPE)
+      unset(${variable} CACHE)
+    endif()
+  elseif(cli_argument)
+    set(${variable} ${cli_argument})
+
+  elseif(DEFINED ENV{${variable}})
+    set(${variable} $ENV{${variable}})
+
+  elseif(app_cmake_lists)
+    set(${variable} ${app_cmake_lists})
+
+  elseif(${CACHE_VAR_REQUIRED})
+    message(FATAL_ERROR "${variable} is not being defined on the CMake command-line in the environment or by the app.")
+  endif()
+
+  # Store the specified variable in parent scope and the cache
+  set(${variable} ${${variable}} PARENT_SCOPE)
+  set(CACHED_${variable} ${${variable}} CACHE STRING "Selected ${variable_text}")
+endfunction(zephyr_check_cache variable)
+
+# Usage:
 #   zephyr_get_targets(<directory> <types> <targets>)
 #
 # Get build targets for a given directory and sub-directories.
