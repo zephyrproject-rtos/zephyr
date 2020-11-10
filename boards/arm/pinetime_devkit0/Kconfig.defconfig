@@ -1,29 +1,12 @@
-# Kconfig - PineTime DevKit0 board configuration
-#
-# Copyright (c) 2016 Nordic Semiconductor ASA
-#
+# PineTime DevKit0 board configuration
+
+# Copyright (c) 2020 Stephane Dorre <stephane.dorre@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_PINETIME_DEVKIT0
 
 config BOARD
 	default "pinetime_devkit0"
-
-if I2C
-
-config I2C_0
-	default y
-
-if I2C_0
-
-choice I2C_0_NRF_TYPE
-	default I2C_0_NRF_TWIM
-
-endchoice
-
-endif # I2C_0
-
-endif # I2C
 
 config BT_CTLR
 	default BT
