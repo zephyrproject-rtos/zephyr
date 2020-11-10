@@ -36,11 +36,6 @@ NET_BUF_POOL_FIXED_DEFINE(iso_frag_pool, CONFIG_BT_ISO_TX_FRAG_COUNT,
 static struct bt_iso_server *iso_server;
 struct bt_conn iso_conns[CONFIG_BT_MAX_ISO_CONN];
 
-/* Audio Data Path direction */
-enum {
-	BT_ISO_CHAN_HOST_TO_CTRL,
-	BT_ISO_CHAN_CTRL_TO_HOST,
-};
 
 struct bt_iso_data_path {
 	/* Data Path direction */
@@ -562,9 +557,9 @@ static int hci_le_setup_iso_data_path(struct bt_conn *conn,
 	cp->handle = sys_cpu_to_le16(conn->handle);
 	cp->path_dir = path->dir;
 	cp->path_id = path->pid;
-	cp->coding_format = path->path->format;
-	cp->company_id = sys_cpu_to_le16(path->path->cid);
-	cp->vendor_id = sys_cpu_to_le16(path->path->vid);
+	cp->codec_id.coding_format = path->path->format;
+	cp->codec_id.company_id = sys_cpu_to_le16(path->path->cid);
+	cp->codec_id.vs_codec_id = sys_cpu_to_le16(path->path->vid);
 	sys_put_le24(path->path->delay, cp->controller_delay);
 	cp->codec_config_len = path->path->cc_len;
 	cc = net_buf_add(buf, cp->codec_config_len);
@@ -655,8 +650,10 @@ static int bt_iso_setup_data_path(struct bt_conn *conn)
 	int err;
 	struct bt_iso_chan *chan;
 	struct bt_iso_chan_path path = {};
-	struct bt_iso_data_path out_path = { .dir = BT_ISO_CHAN_CTRL_TO_HOST };
-	struct bt_iso_data_path in_path = { .dir = BT_ISO_CHAN_HOST_TO_CTRL };
+	struct bt_iso_data_path out_path = {
+		.dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST };
+	struct bt_iso_data_path in_path = {
+		.dir = BT_HCI_DATAPATH_DIR_HOST_TO_CTLR };
 
 	chan = SYS_SLIST_PEEK_HEAD_CONTAINER(&conn->channels, chan, node);
 	if (!chan) {
@@ -719,8 +716,8 @@ static void bt_iso_remove_data_path(struct bt_conn *conn)
 	BT_DBG("%p", conn);
 
 	/* Remove both directions */
-	hci_le_remove_iso_data_path(conn, BT_ISO_CHAN_CTRL_TO_HOST);
-	hci_le_remove_iso_data_path(conn, BT_ISO_CHAN_HOST_TO_CTRL);
+	hci_le_remove_iso_data_path(conn, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST);
+	hci_le_remove_iso_data_path(conn, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
 }
 
 void bt_iso_disconnected(struct bt_conn *conn)
