@@ -88,13 +88,13 @@ static inline bool is_condition_met(struct k_poll_event *event, uint32_t *state)
 	return false;
 }
 
-static struct k_thread *poller_thread(struct _poller *p)
+static struct k_thread *poller_thread(struct z_poller *p)
 {
 	return p ? CONTAINER_OF(p, struct k_thread, poller) : NULL;
 }
 
 static inline void add_event(sys_dlist_t *events, struct k_poll_event *event,
-			     struct _poller *poller)
+			     struct z_poller *poller)
 {
 	struct k_poll_event *pending;
 
@@ -119,7 +119,7 @@ static inline void add_event(sys_dlist_t *events, struct k_poll_event *event,
 
 /* must be called with interrupts locked */
 static inline int register_event(struct k_poll_event *event,
-				 struct _poller *poller)
+				 struct z_poller *poller)
 {
 	switch (event->type) {
 	case K_POLL_TYPE_SEM_AVAILABLE:
@@ -199,7 +199,7 @@ static inline void set_event_ready(struct k_poll_event *event, uint32_t state)
 
 static inline int register_events(struct k_poll_event *events,
 				  int num_events,
-				  struct _poller *poller,
+				  struct z_poller *poller,
 				  bool just_check)
 {
 	int events_registered = 0;
@@ -258,7 +258,7 @@ int z_impl_k_poll(struct k_poll_event *events, int num_events,
 {
 	int events_registered;
 	k_spinlock_key_t key;
-	struct _poller *poller = &_current->poller;
+	struct z_poller *poller = &_current->poller;
 
 	poller->is_polling = true;
 	poller->mode = MODE_POLL;
@@ -390,7 +390,7 @@ oops_free:
 /* must be called with interrupts locked */
 static int signal_poll_event(struct k_poll_event *event, uint32_t state)
 {
-	struct _poller *poller = event->poller;
+	struct z_poller *poller = event->poller;
 	int retcode = 0;
 
 	if (poller) {
@@ -530,7 +530,7 @@ static void triggered_work_expiration_handler(struct _timeout *timeout)
 
 static int signal_triggered_work(struct k_poll_event *event, uint32_t status)
 {
-	struct _poller *poller = event->poller;
+	struct z_poller *poller = event->poller;
 	struct k_work_poll *twork =
 		CONTAINER_OF(poller, struct k_work_poll, poller);
 

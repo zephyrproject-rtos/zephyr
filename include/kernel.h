@@ -275,7 +275,7 @@ struct _thread_userspace_local_data {
 /* private, used by k_poll and k_work_poll */
 struct k_work_poll;
 typedef int (*_poller_cb_t)(struct k_poll_event *event, uint32_t state);
-struct _poller {
+struct z_poller {
 	bool is_polling;
 	uint8_t mode;
 };
@@ -318,7 +318,7 @@ struct k_thread {
 	void (*fn_abort)(struct k_thread *aborted);
 
 #if defined(CONFIG_POLL)
-	struct _poller poller;
+	struct z_poller poller;
 #endif
 
 #if defined(CONFIG_THREAD_MONITOR)
@@ -2769,7 +2769,7 @@ struct k_delayed_work {
 struct k_work_poll {
 	struct k_work work;
 	struct k_work_q *workq;
-	struct _poller poller;
+	struct z_poller poller;
 	struct k_poll_event *events;
 	int num_events;
 	k_work_handler_t real_handler;
@@ -4710,7 +4710,7 @@ struct k_poll_event {
 	sys_dnode_t _node;
 
 	/** PRIVATE - DO NOT TOUCH */
-	struct _poller *poller;
+	struct z_poller *poller;
 
 	/** optional user-specified tag, opaque, untouched by the API */
 	uint32_t tag:8;
