@@ -57,9 +57,8 @@ _ASM_FILE_PROLOGUE
  */
 
 	/* The whole table must be 2K aligned */
-	.align 11
-
 SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
+	.align 11
 
 	/* Current EL with SP0 / Synchronous */
 	.align 7
