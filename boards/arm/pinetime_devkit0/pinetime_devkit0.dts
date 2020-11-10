@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2020 Stephane Dorre <stephane.dorre@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -13,7 +13,7 @@
 
 / {
 	model = "Pine64 PineTime DevKit0";
-	compatible = "pine64,pinetime-devkit0", "nordic,nrf52832-qfaa", "nordic,nrf52832";
+	compatible = "pine64,pinetime-devkit0";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -29,35 +29,40 @@
 		led0 = &blled0;	/* backlight low */
 		led1 = &blled1;	/* backlight mid */
 		led2 = &blled2;	/* backlight high */
+		led3 = &statusled;	/* status led, may be not populated */
 		sw0 = &key_in;  /* key in */
-		sw1 = &key_pu;  /* key pull-up */
+		sw1 = &key_out;  /* key out */
 	};
 
 	leds {
 		compatible = "gpio-leds";
 		blled0: bl_led_0 {
-			gpios = <&gpio0 14 GPIO_DIR_OUT>;
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 			label = "Backlight LED 0";
 		};
 		blled1: bl_led_1 {
-			gpios = <&gpio0 22 GPIO_DIR_OUT>;
+			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 			label = "Backlight LED 1";
 		};
 		blled2: bl_led_2 {
-			gpios = <&gpio0 23 GPIO_DIR_OUT>;
+			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
 			label = "Backlight LED 2";
+		};
+		statusled: led_3 {
+			gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+			label = "Status Led";
 		};
 	};
 
 	buttons {
 		compatible = "gpio-keys";
 		key_in: button_0 {
-			gpios = <&gpio0 13 (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE | GPIO_INT_ACTIVE_HIGH | GPIO_INT_ACTIVE_LOW)>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
 			label = "Key in";
 		};
-		key_pu: button_1 {
-			gpios = <&gpio0 15 (GPIO_DIR_IN | GPIO_PUD_PULL_UP)>;
-			label = "Key pullup";
+		key_out: button_1 {
+			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+			label = "Key out";
 		};
 	};
 };
@@ -90,7 +95,7 @@
 		compatible = "bosch,bma4xx";
 		reg = <0x18>;
 		label = "BMA421";
-		int1-gpios = <&gpio0 8 GPIO_INT_ACTIVE_LOW>;
+		int1-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 	};
 
 	/* TianYiHeXin HRS3300 PPG Hear Rate Sensor (800KHz) */
@@ -105,8 +110,8 @@
 		compatible = "hynitron,cst816s";
 		reg = <0x15>;
 		label = "CST816S";
-		irq-gpios = <&gpio0 28 GPIO_INT_ACTIVE_LOW>;
-		rst-gpios = <&gpio0 10 GPIO_INT_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
+		rst-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 	};
 };
 
@@ -117,7 +122,7 @@
 	mosi-pin = <3>;
 	miso-pin = <4>;
 
-	cs-gpios = <&gpio0 5 0>, <&gpio0 25 0>;
+	cs-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>, <&gpio0 25 GPIO_ACTIVE_LOW>;
 
 	/* Macronix MX25L CMOS Flash Memory */
 	mx25l: mx25l@0 {
@@ -133,8 +138,8 @@
 		reg = <1>;
 		spi-max-frequency = <8000000>; /* 8MHz */
 		label = "ST7789V";
-		cmd-data-gpios = <&gpio0 18 0>;	/* DET */
-		reset-gpios = <&gpio0 26 0>;	/* RESX reset */
+		cmd-data-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;	/* DET */
+		reset-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;	/* RESX reset */
 		width = <240>;
 		height = <240>;
 		x-offset = <0>;
