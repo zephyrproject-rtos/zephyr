@@ -4661,7 +4661,7 @@ static void encode_control(struct node_rx_pdu *node_rx,
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
 #if defined(CONFIG_BT_CTLR_USER_EXT)
-	case NODE_RX_TYPE_USER_START ... NODE_RX_TYPE_USER_END:
+	case NODE_RX_TYPE_USER_START ... NODE_RX_TYPE_USER_END - 1:
 		hci_user_ext_encode_control(node_rx, pdu_data, buf);
 		return;
 #endif /* CONFIG_BT_CTLR_USER_EXT */
@@ -5053,7 +5053,7 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CTLR_USER_EXT)
-		case NODE_RX_TYPE_USER_START ... NODE_RX_TYPE_USER_END:
+		case NODE_RX_TYPE_USER_START ... NODE_RX_TYPE_USER_END - 1:
 			return hci_user_ext_get_class(node_rx);
 #endif /* CONFIG_BT_CTLR_USER_EXT */
 
