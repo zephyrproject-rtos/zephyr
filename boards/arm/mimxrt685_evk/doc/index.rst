@@ -119,14 +119,14 @@ functionality of a pin.
 System Clock
 ============
 
-The MIMXRT685 SoC is configured to use the internal FRO at 48MHz as a source for
-the system clock. Other sources for the system clock are provided in the SOC,
-depending on your system requirements.
+The MIMXRT685 SoC is configured to use the main system PLL at 250MHz
+as a source for the system clock. Other sources for the system clock
+are provided in the SOC, depending on your system requirements.
 
 Serial Port
 ===========
 
-The MIMXRT685 SoC has 8 FLEXCOMM interfaces for serial communication.  One is
+The MIMXRT685 SoC has 8 FLEXCOMM interfaces for serial communication. One is
 configured as USART for the console and the remaining are not used.
 
 Programming and Debugging
