@@ -110,6 +110,14 @@
 				 <5 &adc 7>;	/* A5 = P0.31 = AIN7 */
 	};
 
+	nrf_radio_fem: nrf21540_fem {
+		compatible = "nordic,nrf21540-fem";
+		tx-en-gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+		rx-en-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+		pdn-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
+		ant-sel-gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
+	};
+
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;
