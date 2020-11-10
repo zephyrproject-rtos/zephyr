@@ -21,6 +21,7 @@
 #endif
 
 #define RECV_BUFFER_SIZE 1280
+#define STATS_TIMER 60 /* How often to print statistics (in seconds) */
 
 #if defined(CONFIG_USERSPACE)
 #include <app_memory/app_memdomain.h>
@@ -40,10 +41,14 @@ struct data {
 		int sock;
 		char recv_buffer[RECV_BUFFER_SIZE];
 		uint32_t counter;
+		atomic_t bytes_received;
+		struct k_delayed_work stats_print;
 	} udp;
 
 	struct {
 		int sock;
+		atomic_t bytes_received;
+		struct k_delayed_work stats_print;
 
 		struct {
 			int sock;
