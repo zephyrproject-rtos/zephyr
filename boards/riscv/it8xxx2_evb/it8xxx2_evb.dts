@@ -39,6 +39,24 @@
 			label = "LED1_BLUE";
 		};
 	};
+
+	soc {
+		kscan0: kscan@f01d00 {
+			compatible = "ite,it8xxx2-kscan";
+			reg = <0x00f01d00 0x29
+			       0x00f01b02 0x01   /* WUEMR3 */
+			       0x00f01b06 0x01   /* WUESR3 */
+			       0x00f01b0a 0x01>; /* WUENR3 */
+			label = "KSCAN";
+			interrupt-parent = <&intc>;
+			interrupts = <IT8XXX2_IRQ_WKINTC IRQ_TYPE_LEVEL_HIGH>;
+			status = "disabled";
+			gpio-dev = <&gpioc>;
+			pinctrl-0 = <&pinctrl_kso16   /* GPC3 */
+				     &pinctrl_kso17>; /* GPC5 */
+		};
+	};
+
 };
 &adc0 {
 	status = "okay";
@@ -90,6 +108,9 @@
 	status = "okay";
 	prescaler-cx = <PWM_PRESCALER_C4>;
 	pwm-output-frequency = <30000>;
+};
+&kscan0 {
+	status = "okay";
 };
 &flash0 {
 	partitions {
