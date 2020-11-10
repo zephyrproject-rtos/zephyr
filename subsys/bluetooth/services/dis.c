@@ -141,7 +141,7 @@ BT_GATT_SERVICE_DEFINE(dis_svc,
 
 );
 
-#if defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_DIS_SETTINGS)
+#if defined(CONFIG_BT_DIS_SETTINGS)
 static int dis_set(const char *name, size_t len_rd,
 		   settings_read_cb read_cb, void *store)
 {
@@ -236,4 +236,4 @@ static int dis_set(const char *name, size_t len_rd,
 
 SETTINGS_STATIC_HANDLER_DEFINE(bt_dis, "bt/dis", NULL, dis_set, NULL, NULL);
 
-#endif /* CONFIG_BT_DIS_SETTINGS && CONFIG_BT_SETTINGS*/
+#endif /* CONFIG_BT_DIS_SETTINGS*/
