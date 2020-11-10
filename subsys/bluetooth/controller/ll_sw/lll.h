@@ -290,9 +290,16 @@ struct node_rx_hdr {
 	};
 };
 
+/* Template node rx type with memory aligned offset to PDU buffer.
+ * NOTE: offset to memory aligned pdu buffer location is used to reference
+ *       node rx type specific information, like, terminate or sync lost reason
+ *       from a dedicated node rx structure storage location.
+ */
 struct node_rx_pdu {
 	struct node_rx_hdr hdr;
-	uint8_t               pdu[0];
+	union {
+		uint8_t    pdu[0] __aligned(4);
+	};
 };
 
 enum {
