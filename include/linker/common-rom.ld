@@ -138,6 +138,15 @@
 	Z_ITERABLE_SECTION_ROM(dns_sd_rec, 4)
 #endif
 
+#if defined(CONFIG_PCIE)
+	SECTION_DATA_PROLOGUE(irq_alloc,,)
+	{
+		__irq_alloc_start = .;
+		KEEP(*(SORT_BY_NAME("._irq_alloc*")));
+		__irq_alloc_end = .;
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif /* CONFIG_PCIE */
+
 	SECTION_DATA_PROLOGUE(log_const_sections,,)
 	{
 		__log_const_start = .;
