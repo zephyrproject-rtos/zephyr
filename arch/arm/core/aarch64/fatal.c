@@ -17,6 +17,7 @@
 
 LOG_MODULE_DECLARE(os);
 
+#ifdef CONFIG_EXCEPTION_DEBUG
 static void dump_esr(uint64_t esr, bool *dump_far)
 {
 	const char *err;
@@ -168,6 +169,7 @@ static void esf_dump(const z_arch_esf_t *esf)
 	LOG_ERR("x18: 0x%016llx  x30: 0x%016llx",
 		esf->basic.regs[0], esf->basic.regs[1]);
 }
+#endif /* CONFIG_EXCEPTION_DEBUG */
 
 static bool is_recoverable(z_arch_esf_t *esf, uint64_t esr, uint64_t far,
 			   uint64_t elr)
@@ -204,6 +206,7 @@ void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
 		}
 
 		if (GET_EL(el) != MODE_EL0) {
+#ifdef CONFIG_EXCEPTION_DEBUG
 			bool dump_far = false;
 
 			LOG_ERR("ELR_ELn: 0x%016llx", elr);
@@ -212,15 +215,19 @@ void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
 
 			if (dump_far)
 				LOG_ERR("FAR_ELn: 0x%016llx", far);
+#endif /* CONFIG_EXCEPTION_DEBUG */
 
 			if (is_recoverable(esf, esr, far, elr))
 				return;
 		}
 	}
 
+#ifdef CONFIG_EXCEPTION_DEBUG
 	if (esf != NULL) {
 		esf_dump(esf);
 	}
+#endif /* CONFIG_EXCEPTION_DEBUG */
+
 	z_fatal_error(reason, esf);
 
 	CODE_UNREACHABLE;
