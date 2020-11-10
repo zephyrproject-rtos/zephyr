@@ -640,25 +640,40 @@ static void isr_tx_connect_rsp(void *param)
 	struct node_rx_ftr *ftr;
 	struct node_rx_pdu *rx;
 	struct lll_adv *lll;
+	bool is_done;
 	int ret;
 
 	rx = param;
 	ftr = &(rx->hdr.rx_ftr);
 	lll = ftr->param;
 
-	if (!radio_is_done()) {
-		/* TODO: release node_rx somehow */
-		return;
+	is_done = radio_is_done();
+
+	if (!is_done) {
+		/* AUX_CONNECT_RSP was not sent properly, need to release
+		 * allocated resources and keep advertising.
+		 */
+
+		rx->hdr.type = NODE_RX_TYPE_RELEASE;
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
+			ull_rx_put(rx->hdr.link, rx);
+
+			rx = ftr->extra;
+			rx->hdr.type = NODE_RX_TYPE_RELEASE;
+		}
+	}
+
+	ull_rx_put(rx->hdr.link, rx);
+	ull_rx_sched();
+
+	if (is_done) {
+		/* Stop further LLL radio events */
+		ret = lll_stop(lll);
+		LL_ASSERT(!ret);
 	}
 
 	/* Clear radio status and events */
 	lll_isr_status_reset();
 	lll_isr_cleanup(lll);
-
-	/* Stop further LLL radio events */
-	ret = lll_stop(lll);
-	LL_ASSERT(!ret);
-
-	ull_rx_put(rx->hdr.link, rx);
-	ull_rx_sched();
 }
