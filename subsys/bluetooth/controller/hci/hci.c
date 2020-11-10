@@ -4271,16 +4271,16 @@ static void le_scan_req_received(struct pdu_data *pdu_data,
 static void le_conn_complete(struct pdu_data *pdu_data, uint16_t handle,
 			     struct net_buf *buf)
 {
-	struct node_rx_cc *node_rx = (void *)pdu_data;
+	struct node_rx_cc *cc = (void *)pdu_data;
 	struct bt_hci_evt_le_conn_complete *lecc;
-	uint8_t status = node_rx->status;
+	uint8_t status = cc->status;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (!status) {
 		/* Update current RPA */
-		ll_rl_crpa_set(node_rx->peer_addr_type,
-			       &node_rx->peer_addr[0], 0xff,
-			       &node_rx->peer_rpa[0]);
+		ll_rl_crpa_set(cc->peer_addr_type,
+			       &cc->peer_addr[0], 0xff,
+			       &cc->peer_rpa[0]);
 	}
 #endif
 
@@ -4313,26 +4313,26 @@ static void le_conn_complete(struct pdu_data *pdu_data, uint16_t handle,
 
 		leecc->status = 0x00;
 		leecc->handle = sys_cpu_to_le16(handle);
-		leecc->role = node_rx->role;
+		leecc->role = cc->role;
 
-		leecc->peer_addr.type = node_rx->peer_addr_type;
-		memcpy(&leecc->peer_addr.a.val[0], &node_rx->peer_addr[0],
+		leecc->peer_addr.type = cc->peer_addr_type;
+		memcpy(&leecc->peer_addr.a.val[0], &cc->peer_addr[0],
 		       BDADDR_SIZE);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-		memcpy(&leecc->local_rpa.val[0], &node_rx->local_rpa[0],
+		memcpy(&leecc->local_rpa.val[0], &cc->local_rpa[0],
 		       BDADDR_SIZE);
-		memcpy(&leecc->peer_rpa.val[0], &node_rx->peer_rpa[0],
+		memcpy(&leecc->peer_rpa.val[0], &cc->peer_rpa[0],
 		       BDADDR_SIZE);
 #else /* !CONFIG_BT_CTLR_PRIVACY */
 		memset(&leecc->local_rpa.val[0], 0, BDADDR_SIZE);
 		memset(&leecc->peer_rpa.val[0], 0, BDADDR_SIZE);
 #endif /* !CONFIG_BT_CTLR_PRIVACY */
 
-		leecc->interval = sys_cpu_to_le16(node_rx->interval);
-		leecc->latency = sys_cpu_to_le16(node_rx->latency);
-		leecc->supv_timeout = sys_cpu_to_le16(node_rx->timeout);
-		leecc->clock_accuracy = node_rx->sca;
+		leecc->interval = sys_cpu_to_le16(cc->interval);
+		leecc->latency = sys_cpu_to_le16(cc->latency);
+		leecc->supv_timeout = sys_cpu_to_le16(cc->timeout);
+		leecc->clock_accuracy = cc->sca;
 		return;
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY || CONFIG_BT_CTLR_ADV_EXT */
@@ -4347,13 +4347,13 @@ static void le_conn_complete(struct pdu_data *pdu_data, uint16_t handle,
 
 	lecc->status = 0x00;
 	lecc->handle = sys_cpu_to_le16(handle);
-	lecc->role = node_rx->role;
-	lecc->peer_addr.type = node_rx->peer_addr_type & 0x1;
-	memcpy(&lecc->peer_addr.a.val[0], &node_rx->peer_addr[0], BDADDR_SIZE);
-	lecc->interval = sys_cpu_to_le16(node_rx->interval);
-	lecc->latency = sys_cpu_to_le16(node_rx->latency);
-	lecc->supv_timeout = sys_cpu_to_le16(node_rx->timeout);
-	lecc->clock_accuracy = node_rx->sca;
+	lecc->role = cc->role;
+	lecc->peer_addr.type = cc->peer_addr_type & 0x1;
+	memcpy(&lecc->peer_addr.a.val[0], &cc->peer_addr[0], BDADDR_SIZE);
+	lecc->interval = sys_cpu_to_le16(cc->interval);
+	lecc->latency = sys_cpu_to_le16(cc->latency);
+	lecc->supv_timeout = sys_cpu_to_le16(cc->timeout);
+	lecc->clock_accuracy = cc->sca;
 }
 
 void hci_disconn_complete_encode(struct pdu_data *pdu_data, uint16_t handle,
