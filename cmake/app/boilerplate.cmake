@@ -190,66 +190,9 @@ add_custom_target(
 # Dummy add to generate files.
 zephyr_linker_sources(SECTIONS)
 
-# The BOARD can be set by 3 sources. Through environment variables,
-# through the cmake CLI, and through CMakeLists.txt.
-#
-# CLI has the highest precedence, then comes environment variables,
-# and then finally CMakeLists.txt.
-#
-# A user can ignore all the precedence rules if he simply always uses
-# the same source. E.g. always specifies -DBOARD= on the command line,
-# always has an environment variable set, or always has a set(BOARD
-# foo) line in his CMakeLists.txt and avoids mixing sources.
-#
-# The selected BOARD can be accessed through the variable 'BOARD'.
+# Check that BOARD has been provided, and that it has not changed.
+zephyr_check_cache(BOARD REQUIRED)
 
-# Read out the cached board value if present
-get_property(cached_board_value CACHE BOARD PROPERTY VALUE)
-
-# There are actually 4 sources, the three user input sources, and the
-# previously used value (CACHED_BOARD). The previously used value has
-# precedence, and if we detect that the user is trying to change the
-# value we give him a warning about needing to clean the build
-# directory to be able to change boards.
-
-set(board_cli_argument ${cached_board_value}) # Either new or old
-if(board_cli_argument STREQUAL CACHED_BOARD)
-  # We already have a CACHED_BOARD so there is no new input on the CLI
-  unset(board_cli_argument)
-endif()
-
-set(board_app_cmake_lists ${BOARD})
-if(cached_board_value STREQUAL BOARD)
-  # The app build scripts did not set a default, The BOARD we are
-  # reading is the cached value from the CLI
-  unset(board_app_cmake_lists)
-endif()
-
-if(CACHED_BOARD)
-  # Warn the user if it looks like he is trying to change the board
-  # without cleaning first
-  if(board_cli_argument)
-    if(NOT ((CACHED_BOARD STREQUAL board_cli_argument) OR (BOARD_DEPRECATED STREQUAL board_cli_argument)))
-      message(WARNING "The build directory must be cleaned pristinely when changing boards")
-      # TODO: Support changing boards without requiring a clean build
-    endif()
-  endif()
-
-  set(BOARD ${CACHED_BOARD})
-elseif(board_cli_argument)
-  set(BOARD ${board_cli_argument})
-
-elseif(DEFINED ENV{BOARD})
-  set(BOARD $ENV{BOARD})
-
-elseif(board_app_cmake_lists)
-  set(BOARD ${board_app_cmake_lists})
-
-else()
-  message(FATAL_ERROR "BOARD is not being defined on the CMake command-line in the environment or by the app.")
-endif()
-
-assert(BOARD "BOARD not set")
 message(STATUS "Board: ${BOARD}")
 
 if(DEFINED ENV{ZEPHYR_BOARD_ALIASES})
@@ -267,67 +210,8 @@ if(${BOARD}_DEPRECATED)
   message(WARNING "Deprecated BOARD=${BOARD_DEPRECATED} name specified, board automatically changed to: ${BOARD}.")
 endif()
 
-# Store the selected board in the cache
-set(CACHED_BOARD ${BOARD} CACHE STRING "Selected board")
-
-# The SHIELD can be set by 3 sources. Through environment variables,
-# through the cmake CLI, and through CMakeLists.txt.
-#
-# CLI has the highest precedence, then comes environment variables,
-# and then finally CMakeLists.txt.
-#
-# A user can ignore all the precedence rules if he simply always uses
-# the same source. E.g. always specifies -DSHIELD= on the command line,
-# always has an environment variable set, or always has a set(SHIELD
-# foo) line in his CMakeLists.txt and avoids mixing sources.
-#
-# The selected SHIELD can be accessed through the variable 'SHIELD'.
-
-# Read out the cached shield value if present
-get_property(cached_shield_value CACHE SHIELD PROPERTY VALUE)
-
-# There are actually 4 sources, the three user input sources, and the
-# previously used value (CACHED_SHIELD). The previously used value has
-# precedence, and if we detect that the user is trying to change the
-# value we give him a warning about needing to clean the build
-# directory to be able to change shields.
-
-set(shield_cli_argument ${cached_shield_value}) # Either new or old
-if(shield_cli_argument STREQUAL CACHED_SHIELD)
-  # We already have a CACHED_SHIELD so there is no new input on the CLI
-  unset(shield_cli_argument)
-endif()
-
-set(shield_app_cmake_lists ${SHIELD})
-if(cached_shield_value STREQUAL SHIELD)
-  # The app build scripts did not set a default, The SHIELD we are
-  # reading is the cached value from the CLI
-  unset(shield_app_cmake_lists)
-endif()
-
-if(CACHED_SHIELD)
-  # Warn the user if it looks like he is trying to change the shield
-  # without cleaning first
-  if(shield_cli_argument)
-    if(NOT (CACHED_SHIELD STREQUAL shield_cli_argument))
-      message(WARNING "The build directory must be cleaned pristinely when changing shields")
-      # TODO: Support changing shields without requiring a clean build
-    endif()
-  endif()
-
-  set(SHIELD ${CACHED_SHIELD})
-elseif(shield_cli_argument)
-  set(SHIELD ${shield_cli_argument})
-
-elseif(DEFINED ENV{SHIELD})
-  set(SHIELD $ENV{SHIELD})
-
-elseif(shield_app_cmake_lists)
-  set(SHIELD ${shield_app_cmake_lists})
-endif()
-
-# Store the selected shield in the cache
-set(CACHED_SHIELD ${SHIELD} CACHE STRING "Selected shield")
+# Check that SHIELD has not changed.
+zephyr_check_cache(SHIELD)
 
 # 'BOARD_ROOT' is a prioritized list of directories where boards may
 # be found. It always includes ${ZEPHYR_BASE} at the lowest priority.
