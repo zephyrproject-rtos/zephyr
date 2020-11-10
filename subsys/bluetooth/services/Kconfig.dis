@@ -108,6 +108,13 @@ config BT_DIS_SERIAL_NUMBER_STR
 	help
 	  Enable Serial Number characteristic in Device Information Service.
 
+config BT_DIS_SERIAL_NUMBER_USER_FN
+	bool "Serial Number user function"
+	depends on BT_DIS_SERIAL_NUMBER
+	help
+	  Enable Serial Number characteristic by implementing
+	  bt_dis_serial_number().
+
 config BT_DIS_FW_REV
 	bool "Enable DIS Firmware Revision characteristic"
 	help
@@ -118,6 +125,13 @@ config BT_DIS_FW_REV_STR
 	depends on BT_DIS_FW_REV
 	help
 	  Enable firmware revision characteristic in Device Information Service.
+
+config BT_DIS_FW_REV_USER_FN
+	bool "Firmware revision user function"
+	depends on BT_DIS_FW_REV
+	help
+	  Enable firmware revision characteristic by implementing
+	  bt_dis_fw_rev().
 
 config BT_DIS_HW_REV
 	bool "Enable DIS Hardware Revision characteristic"
@@ -130,6 +144,13 @@ config BT_DIS_HW_REV_STR
 	help
 	  Enable hardware revision characteristic in Device Information Service.
 
+config BT_DIS_HW_REV_USER_FN
+	bool "Hardware revision user function"
+	depends on BT_DIS_HW_REV
+	help
+	  Enable hardware revision characteristic by implementing
+	  bt_dis_hw_rev().
+
 config BT_DIS_SW_REV
 	bool "Enable DIS Software Revision characteristic"
 	help
@@ -140,5 +161,12 @@ config BT_DIS_SW_REV_STR
 	depends on BT_DIS_SW_REV
 	help
 	  Enable software revision characteristic in Device Information Service.
+
+config BT_DIS_SW_REV_USER_FN
+	bool "Software revision user function"
+	depends on BT_DIS_SW_REV
+	help
+	  Enable software revision characteristic by implementing
+	  bt_dis_sw_rev().
 
 endif # BT_DIS

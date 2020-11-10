@@ -20,6 +20,7 @@
 #include <settings/settings.h>
 
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/dis.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
@@ -83,6 +84,30 @@ static uint8_t dis_sw_rev[CONFIG_BT_DIS_STR_MAX] =
 
 #endif /* CONFIG_BT_DIS_SETTINGS */
 
+#if defined(CONFIG_BT_DIS_SERIAL_NUMBER_USER_FN)
+#define BT_DIS_SERIAL_NUMBER_FN	bt_dis_serial_number
+#else
+#define BT_DIS_SERIAL_NUMBER_FN	read_str
+#endif
+
+#if defined(CONFIG_BT_DIS_FW_REV_USER_FN)
+#define BT_DIS_FW_REV_FN	bt_dis_fw_rev
+#else
+#define BT_DIS_FW_REV_FN	read_str
+#endif
+
+#if defined(CONFIG_BT_DIS_HW_REV_USER_FN)
+#define BT_DIS_HW_REV_FN	bt_dis_hw_rev
+#else
+#define BT_DIS_HW_REV_FN	read_str
+#endif
+
+#if defined(CONFIG_BT_DIS_SW_REV_USER_FN)
+#define BT_DIS_SW_REV_FN	bt_dis_sw_rev
+#else
+#define BT_DIS_SW_REV_FN	read_str
+#endif
+
 static ssize_t read_str(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, void *buf,
 			  uint16_t len, uint16_t offset)
@@ -120,23 +145,23 @@ BT_GATT_SERVICE_DEFINE(dis_svc,
 #if defined(CONFIG_BT_DIS_SERIAL_NUMBER)
 	BT_GATT_CHARACTERISTIC(BT_UUID_DIS_SERIAL_NUMBER,
 			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ,
-			       read_str, NULL,
+			       BT_DIS_SERIAL_NUMBER_FN, NULL,
 			       BT_DIS_SERIAL_NUMBER_STR_REF),
 #endif
 #if defined(CONFIG_BT_DIS_FW_REV)
 	BT_GATT_CHARACTERISTIC(BT_UUID_DIS_FIRMWARE_REVISION,
 			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ,
-			       read_str, NULL, BT_DIS_FW_REV_STR_REF),
+			       BT_DIS_FW_REV_FN, NULL, BT_DIS_FW_REV_STR_REF),
 #endif
 #if defined(CONFIG_BT_DIS_HW_REV)
 	BT_GATT_CHARACTERISTIC(BT_UUID_DIS_HARDWARE_REVISION,
 			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ,
-			       read_str, NULL, BT_DIS_HW_REV_STR_REF),
+			       BT_DIS_HW_REV_FN, NULL, BT_DIS_HW_REV_STR_REF),
 #endif
 #if defined(CONFIG_BT_DIS_SW_REV)
 	BT_GATT_CHARACTERISTIC(BT_UUID_DIS_SOFTWARE_REVISION,
 			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ,
-			       read_str, NULL, BT_DIS_SW_REV_STR_REF),
+			       BT_DIS_SW_REV_FN, NULL, BT_DIS_SW_REV_STR_REF),
 #endif
 
 );
