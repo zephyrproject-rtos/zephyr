@@ -159,9 +159,17 @@ struct ll_conn {
 		uint8_t ack;
 		uint8_t reason_own;
 		uint8_t reason_peer;
+		/* node rx type with memory aligned storage for terminate
+		 * reason.
+		 * HCI will reference the value using the pdu member of
+		 * struct node_rx_pdu.
+		 */
 		struct {
 			struct node_rx_hdr hdr;
-			uint8_t reason;
+			union {
+				uint8_t    pdu[0] __aligned(4);
+				uint8_t    reason;
+			};
 		} node_rx;
 	} llcp_terminate;
 
