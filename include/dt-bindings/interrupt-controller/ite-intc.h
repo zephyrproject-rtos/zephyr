@@ -19,6 +19,7 @@
 #define IT8XXX2_IRQ_WU23        6
 /* Group 1 */
 #define IT8XXX2_IRQ_WU26        12
+#define IT8XXX2_IRQ_WKINTC      13
 #define IT8XXX2_IRQ_WU25        14
 /* Group 2 */
 #define IT8XXX2_IRQ_WU24        17

@@ -25,6 +25,7 @@
 		zephyr,flash = &flash0;
 		zephyr,flash-controller = &flashctrl;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,keyboard-scan = &kscan0;
 	};
 
 	pwmleds {
@@ -90,6 +91,9 @@
 	status = "okay";
 	prescaler-cx = <PWM_PRESCALER_C4>;
 	pwm-output-frequency = <30000>;
+};
+&kscan0 {
+	status = "okay";
 };
 &flash0 {
 	partitions {
