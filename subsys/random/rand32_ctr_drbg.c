@@ -112,7 +112,8 @@ int z_impl_sys_csrand_get(void *dst, uint32_t outlen)
 	if (unlikely(!entropy_driver)) {
 		ret = ctr_drbg_initialize();
 		if (ret != 0) {
-			return ret;
+			ret = -EIO;
+			goto end;
 		}
 	}
 
@@ -150,8 +151,8 @@ int z_impl_sys_csrand_get(void *dst, uint32_t outlen)
 	} else {
 		ret = -EIO;
 	}
-end:
 #endif
+end:
 	irq_unlock(key);
 
 	return ret;
