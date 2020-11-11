@@ -39,5 +39,6 @@
 #include <sys/thread_stack.h>
 #include <app_memory/mem_domain.h>
 #include <sys/kobject.h>
+#include <kernel/thread.h>
 
 #endif /* ZEPHYR_INCLUDE_KERNEL_INCLUDES_H_ */
