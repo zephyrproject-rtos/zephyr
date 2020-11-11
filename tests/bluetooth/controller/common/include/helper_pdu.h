@@ -31,6 +31,10 @@ void helper_pdu_encode_phy_rsp(struct pdu_data *pdu, void *param);
 void helper_pdu_encode_phy_update_ind(struct pdu_data *pdu, void *param);
 void helper_pdu_encode_unknown_rsp(struct pdu_data *pdu, void *param);
 
+void helper_pdu_encode_conn_param_req(struct pdu_data *pdu, void *param);
+void helper_pdu_encode_conn_param_rsp(struct pdu_data *pdu, void *param);
+void helper_pdu_encode_conn_update_ind(struct pdu_data *pdu, void *param);
+
 void helper_pdu_encode_terminate_ind(struct pdu_data *pdu, void *param);
 
 void helper_pdu_verify_ping_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
@@ -68,6 +72,11 @@ void helper_pdu_verify_terminate_ind(const char *file, uint32_t line, struct pdu
 
 void helper_node_verify_phy_update(const char *file, uint32_t line,
 				   struct node_rx_pdu *rx, void *param);
+void helper_pdu_verify_conn_param_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
+void helper_pdu_verify_conn_param_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
+void helper_pdu_verify_conn_update_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
+void helper_node_verify_conn_update(const char *file, uint32_t line, struct node_rx_pdu *rx, void *param);
+
 
 typedef enum {
 	LL_VERSION_IND,
@@ -87,11 +96,15 @@ typedef enum {
 	LL_PHY_RSP,
 	LL_PHY_UPDATE_IND,
 	LL_UNKNOWN_RSP,
+	LL_CONNECTION_UPDATE_IND,
+	LL_CONNECTION_PARAM_REQ,
+	LL_CONNECTION_PARAM_RSP,
 	LL_TERMINATE_IND,
 } helper_pdu_opcode_t;
 
 typedef enum {
-	NODE_PHY_UPDATE
+	NODE_PHY_UPDATE,
+	NODE_CONN_UPDATE
 } helper_node_opcode_t;
 
 typedef void (helper_pdu_encode_func_t) (struct pdu_data *data, void *param);

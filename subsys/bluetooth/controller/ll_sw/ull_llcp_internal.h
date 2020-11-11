@@ -13,6 +13,8 @@ enum llcp_proc {
 	PROC_VERSION_EXCHANGE,
 	PROC_ENCRYPTION_START,
 	PROC_PHY_UPDATE,
+	PROC_CONN_UPDATE,
+	PROC_CONN_PARAM_REQ,
 	PROC_TERMINATE,
 };
 
@@ -63,6 +65,12 @@ struct proc_ctx {
 			uint16_t instant;
 		} pu;
 
+		/* Connection Update & Connection Parameter Request */
+		struct {
+			uint8_t error;
+			uint16_t instant;
+		} cu;
+
 		/* Use by ACL Termination Procedure */
 		struct {
 			uint8_t error_code;
@@ -86,6 +94,69 @@ enum proc_incompat {
 	/* Local incompatible procedure has received first PDU */
 	INCOMPAT_RESERVED,
 };
+
+/* Invalid LL Control PDU Opcode */
+#define ULL_LLCP_INVALID_OPCODE (0xFFU)
+
+static inline bool is_instant_passed(uint16_t instant, uint16_t event_count)
+{
+	/*
+	 * BLUETOOTH CORE SPECIFICATION Version 5.2 | Vol 6, Part B
+	 * 5.5.1 ACL Control Procedures
+	 * When a slave receives such a PDU where (Instant – connEventCount) modulo
+	 * 65536 is less than 32767 and Instant is not equal to connEventCount, the slave
+	 * shall listen to all the connection events until it has confirmation that the master
+	 * has received its acknowledgment of the PDU or connEventCount equals
+	 * Instant.
+	 *
+	 * x % 2^n == x & (2^n - 1)
+	 *
+	 * 65535 = 2^16 - 1
+	 * 65536 = 2^16
+	 */
+
+	return ((instant - event_count) & 0xFFFFU) > 0x7FFFU;
+}
+
+static inline bool is_instant_not_passed(uint16_t instant, uint16_t event_count)
+{
+	/*
+	 * BLUETOOTH CORE SPECIFICATION Version 5.2 | Vol 6, Part B
+	 * 5.5.1 ACL Control Procedures
+	 * When a slave receives such a PDU where (Instant – connEventCount) modulo
+	 * 65536 is less than 32767 and Instant is not equal to connEventCount, the slave
+	 * shall listen to all the connection events until it has confirmation that the master
+	 * has received its acknowledgment of the PDU or connEventCount equals
+	 * Instant.
+	 *
+	 * x % 2^n == x & (2^n - 1)
+	 *
+	 * 65535 = 2^16 - 1
+	 * 65536 = 2^16
+	 */
+
+	return ((instant - event_count) & 0xFFFFU) < 0x7FFFU;
+}
+
+static inline bool is_instant_reached_or_passed(uint16_t instant, uint16_t event_count)
+{
+	/*
+	 * BLUETOOTH CORE SPECIFICATION Version 5.2 | Vol 6, Part B
+	 * 5.5.1 ACL Control Procedures
+	 * When a slave receives such a PDU where (Instant – connEventCount) modulo
+	 * 65536 is less than 32767 and Instant is not equal to connEventCount, the slave
+	 * shall listen to all the connection events until it has confirmation that the master
+	 * has received its acknowledgment of the PDU or connEventCount equals
+	 * Instant.
+	 *
+	 * x % 2^n == x & (2^n - 1)
+	 *
+	 * 65535 = 2^16 - 1
+	 * 65536 = 2^16
+	 */
+
+	return ((event_count - instant) & 0xFFFFU) <= 0x7FFFU;
+}
 
 /*
  * LLCP Resource Management
@@ -304,6 +375,31 @@ static inline void lp_pu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, voi
 
 
 /*
+ * LLCP Local Procedure Connection Update
+ */
+void ull_cp_priv_lp_cu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+
+static inline void lp_cu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+{
+	return ull_cp_priv_lp_cu_rx(conn, ctx, rx);
+}
+
+void ull_cp_priv_lp_cu_init_proc(struct proc_ctx *ctx);
+
+static inline void lp_cu_init_proc(struct proc_ctx *ctx)
+{
+	return ull_cp_priv_lp_cu_init_proc(ctx);
+}
+
+void ull_cp_priv_lp_cu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param);
+
+static inline void lp_cu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param)
+{
+	return ull_cp_priv_lp_cu_run(conn, ctx, param);
+}
+
+
+/*
  * LLCP Remote Procedure PHY Update
  */
 void ull_cp_priv_rp_pu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
@@ -325,6 +421,44 @@ void ull_cp_priv_rp_pu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void 
 static inline void rp_pu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	return ull_cp_priv_rp_pu_run(conn, ctx, param);
+}
+
+/*
+ * LLCP Remote Procedure Connection Update
+ */
+void ull_cp_priv_rp_cu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+
+static inline void rp_cu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+{
+	return ull_cp_priv_rp_cu_rx(conn, ctx, rx);
+}
+
+void ull_cp_priv_rp_cu_init_proc(struct proc_ctx *ctx);
+
+static inline void rp_cu_init_proc(struct proc_ctx *ctx)
+{
+	return ull_cp_priv_rp_cu_init_proc(ctx);
+}
+
+void ull_cp_priv_rp_cu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param);
+
+static inline void rp_cu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param)
+{
+	return ull_cp_priv_rp_cu_run(conn, ctx, param);
+}
+
+void ull_cp_priv_rp_conn_param_req_reply(struct ull_cp_conn *conn, struct proc_ctx *ctx);
+
+static inline void rp_conn_param_req_reply(struct ull_cp_conn *conn, struct proc_ctx *ctx)
+{
+	return ull_cp_priv_rp_conn_param_req_reply(conn, ctx);
+}
+
+void ull_cp_priv_rp_conn_param_req_neg_reply(struct ull_cp_conn *conn, struct proc_ctx *ctx);
+
+static inline void rp_conn_param_req_neg_reply(struct ull_cp_conn *conn, struct proc_ctx *ctx)
+{
+	return ull_cp_priv_rp_conn_param_req_neg_reply(conn, ctx);
 }
 
 /*
@@ -707,6 +841,38 @@ static inline void pdu_decode_phy_update_ind(struct proc_ctx *ctx, struct pdu_da
 {
 	return ull_cp_priv_pdu_decode_phy_update_ind(ctx, pdu);
 }
+
+/*
+ * Connection Update Procedure Helper
+ */
+void ull_cp_priv_pdu_encode_conn_param_req(struct proc_ctx *ctx, struct pdu_data *pdu);
+
+static inline void pdu_encode_conn_param_req(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_encode_conn_param_req(ctx, pdu);
+}
+
+void ull_cp_priv_pdu_encode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
+
+static inline void pdu_encode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_encode_conn_param_rsp(ctx, pdu);
+}
+
+void ull_cp_priv_pdu_encode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+
+static inline void pdu_encode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_encode_conn_update_ind(ctx, pdu);
+}
+
+void ull_cp_priv_pdu_decode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+
+static inline void pdu_decode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_decode_conn_update_ind(ctx, pdu);
+}
+
 
 #ifdef ZTEST_UNITTEST
 bool lr_is_disconnected(struct ull_cp_conn *conn);
