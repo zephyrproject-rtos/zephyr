@@ -145,7 +145,7 @@ unsigned int pcie_alloc_irq(pcie_bdf_t bdf)
 	return irq;
 }
 
-unsigned int pcie_wired_irq(pcie_bdf_t bdf)
+unsigned int pcie_get_irq(pcie_bdf_t bdf)
 {
 	uint32_t data = pcie_conf_read(bdf, PCIE_CONF_INTR);
 
