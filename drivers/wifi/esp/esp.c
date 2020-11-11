@@ -260,7 +260,11 @@ static void esp_ip_addr_work(struct k_work *work)
 	/* update interface addresses */
 	net_if_ipv4_set_gw(dev->net_iface, &dev->gw);
 	net_if_ipv4_set_netmask(dev->net_iface, &dev->nm);
+#if defined(CONFIG_WIFI_ESP_IP_STATIC)
+	net_if_ipv4_addr_add(dev->net_iface, &dev->ip, NET_ADDR_MANUAL, 0);
+#else
 	net_if_ipv4_addr_add(dev->net_iface, &dev->ip, NET_ADDR_DHCP, 0);
+#endif
 }
 
 MODEM_CMD_DEFINE(on_cmd_got_ip)
@@ -733,6 +737,16 @@ static void esp_init_work(struct k_work *work)
 		SETUP_CMD_NOHANDLE("AT"),
 #endif
 		SETUP_CMD_NOHANDLE("AT+"_CWMODE"=1"),
+#if defined(CONFIG_WIFI_ESP_IP_STATIC)
+		/* enable Static IP Config */
+		SETUP_CMD_NOHANDLE(ESP_CMD_DHCP_ENABLE(STATION, 0)),
+		SETUP_CMD_NOHANDLE(ESP_CMD_SET_IP(CONFIG_WIFI_ESP_IP_ADDRESS,
+						  CONFIG_WIFI_ESP_IP_GATEWAY,
+						  CONFIG_WIFI_ESP_IP_MASK)),
+#else
+		/* enable DHCP */
+		SETUP_CMD_NOHANDLE(ESP_CMD_DHCP_ENABLE(STATION, 1)),
+#endif
 		/* enable multiple socket support */
 		SETUP_CMD_NOHANDLE("AT+CIPMUX=1"),
 		/* only need ecn,ssid,rssi,channel */

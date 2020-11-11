@@ -81,6 +81,38 @@ config WIFI_ESP_RX_NET_PKT_ALLOC_TIMEOUT
 	help
 	  Network interface RX net_pkt allocation timeout in milliseconds.
 
+choice
+	prompt "ESP IP Address configuration"
+	default WIFI_ESP_IP_DHCP
+	help
+	  Choose whether to use an IP assigned by DHCP Server or
+	  configure a static IP Address.
+
+config WIFI_ESP_IP_DHCP
+	bool "DHCP"
+	help
+	  Use DHCP to get an IP Address.
+
+config WIFI_ESP_IP_STATIC
+	bool "Static"
+	help
+	  Setup Static IP Address.
+
+endchoice
+
+if WIFI_ESP_IP_STATIC
+
+config WIFI_ESP_IP_ADDRESS
+	string "ESP Station mode IP Address"
+
+config WIFI_ESP_IP_GATEWAY
+	string "Gateway Address"
+
+config WIFI_ESP_IP_MASK
+	string "Network Mask"
+
+endif
+
 choice WIFI_ESP_AT_VERSION
 	prompt "AT version"
 	default WIFI_ESP_AT_VERSION_2_0
