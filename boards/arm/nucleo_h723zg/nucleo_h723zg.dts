@@ -1,0 +1,105 @@
+/*
+ * Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h723Xg.dtsi>
+#include <st/h7/stm32h723zgtx-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+
+/*
+ * WARNING:
+ * JP6 and SB72 must be ON when using Ethernet.
+ */
+
+/ {
+	model = "STMicroelectronics STM32H723ZG-NUCLEO board";
+	compatible = "st,stm32h723zg-nucleo";
+
+	chosen {
+		zephyr,console = &usart3;
+		zephyr,shell-uart = &usart3;
+		zephyr,dtcm = &dtcm;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led_0 {
+			gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+		yellow_led: led_1 {
+			gpios = <&gpioe 1 GPIO_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		red_pwm_led: red_pwm_led {
+			pwms = <&pwm12 1 4 PWM_POLARITY_NORMAL>;
+			label = "User LD3 - PWM12";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button_0 {
+			label = "User";
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led;
+		led1 = &yellow_led;
+		pwm-led0 = &red_pwm_led;
+		sw0 = &user_button;
+	};
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&timers12 {
+	status = "okay";
+
+	pwm12: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim12_ch1_pb14>;
+	};
+};
+
+&mac {
+	status = "okay";
+	pinctrl-0 = <&eth_ref_clk_pa1
+		     &eth_mdio_pa2
+		     &eth_crs_dv_pa7
+		     &eth_mdc_pc1
+		     &eth_rxd0_pc4
+		     &eth_rxd1_pc5
+		     &eth_tx_en_pg11
+		     &eth_txd0_pg13
+		     &eth_txd1_pb13>;
+};
+
+&rng {
+	status = "okay";
+};
