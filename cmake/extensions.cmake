@@ -630,10 +630,17 @@ endfunction()
 
 # 1.4. board_*
 #
-# This section is for extensions which control Zephyr's board runners
-# from the build system. The Zephyr build system has targets for
-# flashing and debugging supported boards. These are wrappers around a
-# "runner" Python subpackage that is part of Zephyr's "west" tool.
+# This section is for extensions related to Zephyr board handling.
+#
+# Zephyr board extensions current contains:
+# - Board runners
+# - Board revision
+
+# Zephyr board runners:
+#   Zephyr board runner extension functions control Zephyr's board runners
+#   from the build system. The Zephyr build system has targets for
+#   flashing and debugging supported boards. These are wrappers around a
+#   "runner" Python subpackage that is part of Zephyr's "west" tool.
 #
 # This section provides glue between CMake and the Python code that
 # manages the runners.
@@ -765,6 +772,148 @@ function(board_finalize_runner_args runner)
 
   # Add the finalized runner to the global property list.
   set_property(GLOBAL APPEND PROPERTY ZEPHYR_RUNNERS ${runner})
+endfunction()
+
+# Zephyr board revision:
+#
+# This section provides a function for revision checking.
+
+# Usage:
+#   board_check_revision(FORMAT <LETTER | MAJOR.MINOR.PATCH>
+#                        [EXACT]
+#                        [DEFAULT_REVISION <revision>]
+#                        [HIGHEST_REVISION <revision>]
+#   )
+#
+# Zephyr board extension function.
+#
+# This function can be used in `boards/<board>/revision.cmake` to check a user
+# requested revision against available board revisions.
+#
+# The function will check the revision from `-DBOARD=<board>@<revision>` that
+# is provided by the user according to the arguments.
+# When `EXACT` is not specified, this function will set the Zephyr build system
+# variable `ACTIVE_BOARD_REVISION` with the selected revision.
+#
+# FORMAT <LETTER | MAJOR.MINOR.PATCH>: Specify the revision format.
+#         LETTER:             Revision format is a single letter from A - Z.
+#         MAJOR.MINOR.PATCH:  Revision format is three digits, separated by `.`,
+#                             `x.y.z`. Trailing zeroes may be omitted on the
+#                             command line, which means:
+#                             1.0.0 == 1.0 == 1
+#
+# EXACT: Revision is required to be an exact match. As example, available revisions are:
+#        0.1.0 and 0.3.0, and user provides 0.2.0, then an error is reported
+#        when `EXACT` is given.
+#        If `EXACT` is not provided, then closest lower revision will be selected
+#        as the active revision, which in the example will be `0.1.0`.
+#
+# DEFAULT_REVISION: Provides a default revision to use when user has not selected
+#                   a revision number. If no default revision is provided then
+#                   user will be printed with an error if no revision is given
+#                   on the command line.
+#
+# HIGHEST_REVISION: Allows to specify highest valid revision for a board.
+#                   This can be used to ensure that a newer board cannot be used
+#                   with an older Zephyr. As example, if current board supports
+#                   revisions 0.x.0-0.99.99 and 1.0.0-1.99.99, and it is expected
+#                   that current board implementation will not work with board
+#                   revision 2.0.0, then HIGHEST_REVISION can be set to 1.99.99,
+#                   and user will be printed with an error if using
+#                   `<board>@2.0.0` or higher.
+#                   This field is not needed when `EXACT` is used.
+#
+function(board_check_revision)
+  set(options EXACT)
+  set(single_args FORMAT DEFAULT_REVISION HIGHEST_REVISION)
+  cmake_parse_arguments(BOARD_REV "${options}" "${single_args}" "" ${ARGN})
+
+  file(GLOB revision_candidates LIST_DIRECTORIES false RELATIVE ${BOARD_DIR}
+         ${BOARD_DIR}/${BOARD}_*.conf
+    )
+
+  string(TOUPPER ${BOARD_REV_FORMAT} BOARD_REV_FORMAT)
+
+  if(NOT DEFINED BOARD_REVISION)
+    if(DEFINED BOARD_REV_DEFAULT_REVISION)
+      set(BOARD_REVISION ${BOARD_REV_DEFAULT_REVISION})
+      set(BOARD_REVISION ${BOARD_REVISION} PARENT_SCOPE)
+    else()
+      message(FATAL_ERROR "No board revision specified, Board: `${BOARD}` \
+              requires a revision. Please use: `-DBOARD=${BOARD}@<revision>`")
+    endif()
+  endif()
+
+  if(DEFINED BOARD_REV_HIGHEST_REVISION)
+    if(((BOARD_REV_FORMAT STREQUAL LETTER) AND
+        (BOARD_REVISION STRGREATER BOARD_REV_HIGHEST_REVISION)) OR
+       ((BOARD_REV_FORMAT MATCHES "^MAJOR\.MINOR\.PATCH$") AND
+        (BOARD_REVISION VERSION_GREATER BOARD_REV_HIGHEST_REVISION))
+    )
+      message(FATAL_ERROR "Board revision `${BOARD_REVISION}` greater than \
+              highest supported revision `${BOARD_REV_HIGHEST_REVISION}`. \
+              Please specify a valid board revision.")
+    endif()
+  endif()
+
+  if(BOARD_REV_FORMAT STREQUAL LETTER)
+    set(revision_regex "([A-Z])")
+  elseif(BOARD_REV_FORMAT MATCHES "^MAJOR\.MINOR\.PATCH$")
+    set(revision_regex "((0|[1-9]+)(\.[0-9]+)(\.[0-9]+))")
+    # We allow loose <board>@<revision> typing on command line.
+    # so append missing zeroes.
+    if(BOARD_REVISION MATCHES "((0|[1-9]+)(\.[0-9]+)?(\.[0-9]+)?)")
+      if(NOT CMAKE_MATCH_3)
+        set(BOARD_REVISION ${BOARD_REVISION}.0)
+        set(BOARD_REVISION ${BOARD_REVISION} PARENT_SCOPE)
+      endif()
+      if(NOT CMAKE_MATCH_4)
+        set(BOARD_REVISION ${BOARD_REVISION}.0)
+        set(BOARD_REVISION ${BOARD_REVISION} PARENT_SCOPE)
+      endif()
+    endif()
+  else()
+    message(FATAL_ERROR "Invalid format specified for \
+    `zephyr_check_board_revision(FORMAT <LETTER | MAJOR.MINOR.PATCH>)`")
+  endif()
+
+  if(NOT (BOARD_REVISION MATCHES "^${revision_regex}$"))
+    message(FATAL_ERROR "Invalid revision format used for `${BOARD_REVISION}`. \
+            Board `${BOARD}` uses revision format: ${BOARD_REV_FORMAT}.")
+  endif()
+
+  string(REPLACE "." "_" underscore_revision_regex ${revision_regex})
+  set(file_revision_regex "${BOARD}_${underscore_revision_regex}.conf")
+  foreach(candidate ${revision_candidates})
+    if(${candidate} MATCHES "${file_revision_regex}")
+      string(REPLACE "_" "." FOUND_BOARD_REVISION ${CMAKE_MATCH_1})
+      if(${BOARD_REVISION} STREQUAL ${FOUND_BOARD_REVISION})
+        # Found exact match.
+        return()
+      endif()
+
+      if(NOT BOARD_REV_EXACT)
+        if((BOARD_REV_FORMAT MATCHES "^MAJOR\.MINOR\.PATCH$") AND
+           (${BOARD_REVISION} VERSION_GREATER_EQUAL ${FOUND_BOARD_REVISION}) AND
+           (${FOUND_BOARD_REVISION} VERSION_GREATER_EQUAL "${ACTIVE_BOARD_REVISION}")
+        )
+          set(ACTIVE_BOARD_REVISION ${FOUND_BOARD_REVISION})
+        elseif((BOARD_REV_FORMAT STREQUAL LETTER) AND
+               (${BOARD_REVISION} STRGREATER ${FOUND_BOARD_REVISION}) AND
+               (${FOUND_BOARD_REVISION} STRGREATER "${ACTIVE_BOARD_REVISION}")
+        )
+          set(ACTIVE_BOARD_REVISION ${FOUND_BOARD_REVISION})
+        endif()
+      endif()
+    endif()
+  endforeach()
+
+  if(BOARD_REV_EXACT OR NOT DEFINED ACTIVE_BOARD_REVISION)
+    message(FATAL_ERROR "Board revision `${BOARD_REVISION}` for board \
+            `${BOARD}` not found. Please specify a valid board revision.")
+  endif()
+
+  set(ACTIVE_BOARD_REVISION ${ACTIVE_BOARD_REVISION} PARENT_SCOPE)
 endfunction()
 
 # 1.5. Misc.
@@ -1796,25 +1945,36 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
   endif()
 
   if(FILE_CONF_FILES)
+    set(FILENAMES ${BOARD})
+
+    if(DEFINED BOARD_REVISION)
+      list(APPEND FILENAMES "${BOARD}_${BOARD_REVISION_STRING}")
+    endif()
+
     if(FILE_DTS)
-      if(EXISTS ${FILE_CONF_FILES}/${BOARD}.overlay)
-        list(APPEND ${FILE_DTS} ${FILE_CONF_FILES}/${BOARD}.overlay)
-        # This updates the provided list in parent scope (callers scope)
-        set(${FILE_DTS} ${${FILE_DTS}} PARENT_SCOPE)
-      endif()
+      foreach(filename ${FILENAMES})
+        if(EXISTS ${FILE_CONF_FILES}/${filename}.overlay)
+          list(APPEND ${FILE_DTS} ${FILE_CONF_FILES}/${filename}.overlay)
+        endif()
+      endforeach()
+
+      # This updates the provided list in parent scope (callers scope)
+      set(${FILE_DTS} ${${FILE_DTS}} PARENT_SCOPE)
     endif()
 
     if(FILE_KCONF)
-      set(FILENAME ${BOARD})
-      if(FILE_BUILD)
-        set(FILENAME "${FILENAME}_${FILE_BUILD}")
-      endif()
+      foreach(filename ${FILENAMES})
+        if(FILE_BUILD)
+          set(filename "${filename}_${FILE_BUILD}")
+        endif()
 
-      if(EXISTS ${FILE_CONF_FILES}/${FILENAME}.conf)
-        list(APPEND ${FILE_KCONF} ${FILE_CONF_FILES}/${FILENAME}.conf)
-        # This updates the provided list in parent scope (callers scope)
-        set(${FILE_KCONF} ${${FILE_KCONF}} PARENT_SCOPE)
-      endif()
+        if(EXISTS ${FILE_CONF_FILES}/${filename}.conf)
+          list(APPEND ${FILE_KCONF} ${FILE_CONF_FILES}/${filename}.conf)
+        endif()
+      endforeach()
+
+      # This updates the provided list in parent scope (callers scope)
+      set(${FILE_KCONF} ${${FILE_KCONF}} PARENT_SCOPE)
     endif()
   endif()
 endfunction()
