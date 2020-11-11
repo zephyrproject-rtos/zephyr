@@ -35,7 +35,11 @@ static const unsigned char private_key[] = {
 #define THREAD_PRIORITY K_PRIO_COOP(0)
 
 static const char content[] = {
+#if defined(CONFIG_NET_SAMPLE_SERVE_LARGE_FILE)
+    #include "response_100k.html.bin.inc"
+#else
     #include "response_big.html.bin.inc"
+#endif
 };
 
 #define MAX_CLIENT_QUEUE CONFIG_NET_SAMPLE_NUM_HANDLERS
