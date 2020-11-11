@@ -16,11 +16,22 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(pwm_nrf5_sw);
 
+BUILD_ASSERT(DT_INST_NODE_HAS_PROP(0, timer_instance) !=
+	     DT_INST_NODE_HAS_PROP(0, generator),
+	     "Please define either the timer-instance or generator property, but not both");
+
+#if DT_INST_NODE_HAS_PROP(0, timer_instance)
+#define GENERATOR_ADDR	_CONCAT(NRF_TIMER, DT_INST_PROP(0, timer_instance))
+#define GENERATOR_CC_NUM \
+	_CONCAT(_CONCAT(TIMER, DT_INST_PROP(0, timer_instance)), _CC_NUM)
+#else /* DT_INST_NODE_HAS_PROP(0, timer_instance) */
+#define GENERATOR_NODE	DT_PHANDLE(DT_DRV_INST(0), generator)
+#define GENERATOR_ADDR	((NRF_TIMER_Type *) DT_REG_ADDR(GENERATOR_NODE))
+#define GENERATOR_CC_NUM	DT_PROP(GENERATOR_NODE, cc_num)
+#endif /* DT_INST_NODE_HAS_PROP(0, timer_instance) */
+
 /* One compare channel is needed to set the PWM period, hence +1. */
-#if ((DT_INST_PROP(0, channel_count) + 1) > \
-	(_CONCAT( \
-		_CONCAT(TIMER, DT_INST_PROP(0, timer_instance)), \
-		_CC_NUM)))
+#if ((DT_INST_PROP(0, channel_count) + 1) > GENERATOR_CC_NUM)
 #error "Invalid number of PWM channels configured."
 #endif
 #define PWM_0_MAP_SIZE DT_INST_PROP(0, channel_count)
@@ -257,7 +268,7 @@ static int pwm_nrf5_sw_init(const struct device *dev)
 }
 
 static const struct pwm_config pwm_nrf5_sw_0_config = {
-	.timer = _CONCAT(NRF_TIMER, DT_INST_PROP(0, timer_instance)),
+	.timer = GENERATOR_ADDR,
 	.ppi_base = DT_INST_PROP(0, ppi_base),
 	.gpiote_base = DT_INST_PROP(0, gpiote_base),
 	.map_size = PWM_0_MAP_SIZE,

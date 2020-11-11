@@ -5,10 +5,18 @@ compatible: "nordic,nrf-sw-pwm"
 include: [pwm-controller.yaml, base.yaml]
 
 properties:
+    generator:
+      type: phandle
+      description: Reference to TIMER instance for generating PWM output signals
+      required: false
+
     timer-instance:
       type: int
-      description: Timer instance to use for generating the PWM output signals
-      required: true
+      description: |
+        Timer instance to use for generating the PWM output signals. Deprecated
+        in favour of 'generator' property.
+      required: false
+      deprecated: true
 
     channel-count:
       type: int
