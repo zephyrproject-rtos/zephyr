@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(ieee802154_cc13xx_cc26xx_subg);
 #include <random/rand32.h>
 #include <string.h>
 #include <sys/sys_io.h>
+#include <sys/crc.h>
 
 #include <driverlib/rf_mailbox.h>
 #include <driverlib/rf_prop_mailbox.h>
@@ -328,7 +329,7 @@ static int ieee802154_cc13xx_cc26xx_subg_tx(const struct device *dev,
 {
 	struct ieee802154_cc13xx_cc26xx_subg_data *drv_data =
 		get_dev_data(dev);
-	int retry = CONFIG_NET_L2_IEEE802154_RADIO_TX_RETRIES;
+	int retry = CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_RADIO_TX_RETRIES;
 	RF_EventMask reason;
 	int r;
 
@@ -434,17 +435,27 @@ static void ieee802154_cc13xx_cc26xx_subg_rx_done(
 {
 	struct net_pkt *pkt;
 	uint8_t len;
-	int8_t rssi;
+	int8_t rssi, status;
 	uint8_t *sdu;
 
 	for (int i = 0; i < CC13XX_CC26XX_NUM_RX_BUF; i++) {
 		if (drv_data->rx_entry[i].status == DATA_ENTRY_FINISHED) {
-			len = drv_data->rx_data[i][1];
-			sdu = &drv_data->rx_data[i][3];
-			rssi = sdu[len - 2];
-			len -= 2;
+			len = drv_data->rx_data[i][0];
+			sdu = drv_data->rx_data[i] + 1;
+			status = drv_data->rx_data[i][len--];
+			rssi = drv_data->rx_data[i][len--];
 
-			LOG_DBG("Received: len = %u, rssi = %d", len, rssi);
+			if (IS_ENABLED(CONFIG_IEEE802154_RAW_MODE)) {
+				/* append CRC-16/CCITT */
+				uint16_t crc = 0;
+
+				crc = crc16_ccitt(0, sdu, len);
+				sdu[len++] = crc;
+				sdu[len++] = crc >> 8;
+			}
+
+			LOG_DBG("Received: len = %u, rssi = %d status = %u",
+				len, rssi, status);
 
 			pkt = net_pkt_rx_alloc_with_buffer(
 				drv_data->iface, len, AF_UNSPEC, 0, K_NO_WAIT);
@@ -697,8 +708,8 @@ static struct ieee802154_cc13xx_cc26xx_subg_data
 		.rxConf = {
 			.bAutoFlushIgnored = true,
 			.bAutoFlushCrcErr = true,
-			.bIncludeHdr = true,
 			.bAppendRssi = true,
+			.bAppendStatus = true,
 		},
 		/* Preamble & SFD for 2-FSK SUN PHY. 802.15.4-2015, 20.2.1 */
 		.syncWord0 = 0x0055904E,
@@ -745,6 +756,7 @@ static struct ieee802154_cc13xx_cc26xx_subg_data
 	},
 };
 
+#if defined(CONFIG_NET_L2_IEEE802154_SUB_GHZ)
 NET_DEVICE_INIT(ieee802154_cc13xx_cc26xx_subg,
 		CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_DRV_NAME,
 		ieee802154_cc13xx_cc26xx_subg_init, device_pm_control_nop,
@@ -752,3 +764,11 @@ NET_DEVICE_INIT(ieee802154_cc13xx_cc26xx_subg,
 		CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_INIT_PRIO,
 		&ieee802154_cc13xx_cc26xx_subg_radio_api, IEEE802154_L2,
 		NET_L2_GET_CTX_TYPE(IEEE802154_L2), IEEE802154_MTU);
+#else
+DEVICE_AND_API_INIT(ieee802154_cc13xx_cc26xx_subg,
+		CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_DRV_NAME,
+		ieee802154_cc13xx_cc26xx_subg_init,
+		&ieee802154_cc13xx_cc26xx_subg_data, NULL, POST_KERNEL,
+		CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_INIT_PRIO,
+		&ieee802154_cc13xx_cc26xx_subg_radio_api);
+#endif

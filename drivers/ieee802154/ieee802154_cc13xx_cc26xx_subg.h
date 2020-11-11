@@ -57,12 +57,8 @@
 #define CC13XX_CC26XX_NUM_RX_BUF \
 	CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_NUM_RX_BUF
 
-/*
- * Two additional bytes for the PHR in PROP mode
- * One additional byte for RSSI value from CPE
- */
-#define CC13XX_CC26XX_RX_BUF_SIZE (IEEE802154_MAX_PHY_PACKET_SIZE \
-		+ IEEE802154_SUN_PHY_FSK_PHR_LEN + 1)
+/* Three additional bytes for length, RSSI and status values from CPE */
+#define CC13XX_CC26XX_RX_BUF_SIZE (IEEE802154_MAX_PHY_PACKET_SIZE + 3)
 
 /*
  * Two additional bytes for the SUN FSK PHY HDR

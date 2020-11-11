@@ -51,8 +51,8 @@
 
 #define CC13XX_CC26XX_NUM_RX_BUF 2
 
-/* Two additional bytes for RSSI and correlation values from CPE. */
-#define CC13XX_CC26XX_RX_BUF_SIZE (IEEE802154_MAX_PHY_PACKET_SIZE + 2)
+/* Three additional bytes for length, RSSI and correlation values from CPE. */
+#define CC13XX_CC26XX_RX_BUF_SIZE (IEEE802154_MAX_PHY_PACKET_SIZE + 3)
 
 #define CC13XX_CC26XX_CPE0_IRQ (INT_RFC_CPE_0 - 16)
 #define CC13XX_CC26XX_CPE1_IRQ (INT_RFC_CPE_1 - 16)
