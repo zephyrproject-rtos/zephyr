@@ -58,6 +58,9 @@ static struct k_thread tcp6_handler_thread[CONFIG_NET_SAMPLE_NUM_HANDLERS];
 static k_tid_t tcp6_handler_tid[CONFIG_NET_SAMPLE_NUM_HANDLERS];
 #endif
 
+K_SEM_DEFINE(quit_lock, 0, 1);
+static bool running_status;
+static bool want_to_quit;
 static int tcp4_listen_sock;
 static int tcp4_accepted[CONFIG_NET_SAMPLE_NUM_HANDLERS];
 static int tcp6_listen_sock;
@@ -174,7 +177,20 @@ static void client_conn_handler(void *ptr1, void *ptr2, void *ptr3)
 		}
 	} while (true);
 
-	(void)sendall(client, content, sizeof(content));
+	if (received > 0 && received < 10) {
+		/* We received status from the client */
+		if (strstr(buf, "OK")) {
+			running_status = true;
+		} else {
+			running_status = false;
+		}
+
+		want_to_quit = true;
+		k_sem_give(&quit_lock);
+	} else {
+		(void)sendall(client, content, sizeof(content));
+	}
+
 	(void)close(client);
 
 	*sock = -1;
@@ -281,7 +297,7 @@ static void process_tcp4(void)
 	LOG_DBG("Waiting for IPv4 HTTP connections on port %d, sock %d",
 		MY_PORT, tcp4_listen_sock);
 
-	while (ret == 0) {
+	while (ret == 0 || !want_to_quit) {
 		ret = process_tcp(&tcp4_listen_sock, tcp4_accepted);
 		if (ret < 0) {
 			return;
@@ -307,7 +323,7 @@ static void process_tcp6(void)
 	LOG_DBG("Waiting for IPv6 HTTP connections on port %d, sock %d",
 		MY_PORT, tcp6_listen_sock);
 
-	while (ret == 0) {
+	while (ret == 0 || !want_to_quit) {
 		ret = process_tcp(&tcp6_listen_sock, tcp6_accepted);
 		if (ret != 0) {
 			return;
@@ -359,4 +375,13 @@ void main(void)
 #endif
 
 	start_listener();
+
+	k_sem_take(&quit_lock, K_FOREVER);
+
+	if (running_status) {
+		/* No issues, let the testing system know about this */
+		exit(0);
+	} else {
+		exit(1);
+	}
 }
