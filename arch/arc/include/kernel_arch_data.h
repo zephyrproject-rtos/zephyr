@@ -37,70 +37,70 @@ extern "C" {
 
 #ifdef CONFIG_ARC_HAS_SECURE
 struct _irq_stack_frame {
-	uint32_t lp_end;
-	uint32_t lp_start;
-	uint32_t lp_count;
+	uintptr_t lp_end;
+	uintptr_t lp_start;
+	uintptr_t lp_count;
 #ifdef CONFIG_CODE_DENSITY
 	/*
 	 * Currently unsupported. This is where those registers are
 	 * automatically pushed on the stack by the CPU when taking a regular
 	 * IRQ.
 	 */
-	uint32_t ei_base;
-	uint32_t ldi_base;
-	uint32_t jli_base;
+	uintptr_t ei_base;
+	uintptr_t ldi_base;
+	uintptr_t jli_base;
 #endif
-	uint32_t r0;
-	uint32_t r1;
-	uint32_t r2;
-	uint32_t r3;
-	uint32_t r4;
-	uint32_t r5;
-	uint32_t r6;
-	uint32_t r7;
-	uint32_t r8;
-	uint32_t r9;
-	uint32_t r10;
-	uint32_t r11;
-	uint32_t r12;
-	uint32_t r13;
-	uint32_t blink;
-	uint32_t pc;
-	uint32_t sec_stat;
-	uint32_t status32;
+	uintptr_t r0;
+	uintptr_t r1;
+	uintptr_t r2;
+	uintptr_t r3;
+	uintptr_t r4;
+	uintptr_t r5;
+	uintptr_t r6;
+	uintptr_t r7;
+	uintptr_t r8;
+	uintptr_t r9;
+	uintptr_t r10;
+	uintptr_t r11;
+	uintptr_t r12;
+	uintptr_t r13;
+	uintptr_t blink;
+	uintptr_t pc;
+	uintptr_t sec_stat;
+	uintptr_t status32;
 };
 #else
 struct _irq_stack_frame {
-	uint32_t r0;
-	uint32_t r1;
-	uint32_t r2;
-	uint32_t r3;
-	uint32_t r4;
-	uint32_t r5;
-	uint32_t r6;
-	uint32_t r7;
-	uint32_t r8;
-	uint32_t r9;
-	uint32_t r10;
-	uint32_t r11;
-	uint32_t r12;
-	uint32_t r13;
-	uint32_t blink;
-	uint32_t lp_end;
-	uint32_t lp_start;
-	uint32_t lp_count;
+	uintptr_t r0;
+	uintptr_t r1;
+	uintptr_t r2;
+	uintptr_t r3;
+	uintptr_t r4;
+	uintptr_t r5;
+	uintptr_t r6;
+	uintptr_t r7;
+	uintptr_t r8;
+	uintptr_t r9;
+	uintptr_t r10;
+	uintptr_t r11;
+	uintptr_t r12;
+	uintptr_t r13;
+	uintptr_t blink;
+	uintptr_t lp_end;
+	uintptr_t lp_start;
+	uintptr_t lp_count;
 #ifdef CONFIG_CODE_DENSITY
 	/*
 	 * Currently unsupported. This is where those registers are
 	 * automatically pushed on the stack by the CPU when taking a regular
 	 * IRQ.
 	 */
-	uint32_t ei_base;
-	uint32_t ldi_base;
-	uint32_t jli_base;
+	uintptr_t ei_base;
+	uintptr_t ldi_base;
+	uintptr_t jli_base;
 #endif
-	uint32_t pc;
-	uint32_t status32;
+	uintptr_t pc;
+	uintptr_t status32;
 };
 #endif
 
@@ -110,47 +110,47 @@ typedef struct _irq_stack_frame _isf_t;
 
 /* callee-saved registers pushed on the stack, not in k_thread */
 struct _callee_saved_stack {
-	uint32_t r13;
-	uint32_t r14;
-	uint32_t r15;
-	uint32_t r16;
-	uint32_t r17;
-	uint32_t r18;
-	uint32_t r19;
-	uint32_t r20;
-	uint32_t r21;
-	uint32_t r22;
-	uint32_t r23;
-	uint32_t r24;
-	uint32_t r25;
-	uint32_t r26;
-	uint32_t fp; /* r27 */
+	uintptr_t r13;
+	uintptr_t r14;
+	uintptr_t r15;
+	uintptr_t r16;
+	uintptr_t r17;
+	uintptr_t r18;
+	uintptr_t r19;
+	uintptr_t r20;
+	uintptr_t r21;
+	uintptr_t r22;
+	uintptr_t r23;
+	uintptr_t r24;
+	uintptr_t r25;
+	uintptr_t r26;
+	uintptr_t fp; /* r27 */
 
 #ifdef CONFIG_USERSPACE
 #ifdef CONFIG_ARC_HAS_SECURE
-	uint32_t user_sp;
-	uint32_t kernel_sp;
+	uintptr_t user_sp;
+	uintptr_t kernel_sp;
 #else
-	uint32_t user_sp;
+	uintptr_t user_sp;
 #endif
 #endif
 	/* r28 is the stack pointer and saved separately */
 	/* r29 is ILINK and does not need to be saved */
-	uint32_t r30;
+	uintptr_t r30;
 
 #ifdef CONFIG_ARC_HAS_ACCL_REGS
-	uint32_t r58;
-	uint32_t r59;
+	uintptr_t r58;
+	uintptr_t r59;
 #endif
 
 #ifdef CONFIG_FPU_SHARING
-	uint32_t fpu_status;
-	uint32_t fpu_ctrl;
+	uintptr_t fpu_status;
+	uintptr_t fpu_ctrl;
 #ifdef CONFIG_FP_FPU_DA
-	uint32_t dpfp2h;
-	uint32_t dpfp2l;
-	uint32_t dpfp1h;
-	uint32_t dpfp1l;
+	uintptr_t dpfp2h;
+	uintptr_t dpfp2l;
+	uintptr_t dpfp1h;
+	uintptr_t dpfp1l;
 #endif
 
 #endif
