@@ -405,7 +405,7 @@ if(DEFINED CONF_FILE)
     # Need path in order to check if it is absolute.
     get_filename_component(CONF_FILE_NAME ${CONF_FILE} NAME)
     get_filename_component(CONF_FILE_DIR ${CONF_FILE} DIRECTORY)
-    if(${CONF_FILE} MATCHES "prj_(.*).conf")
+    if(${CONF_FILE_NAME} MATCHES "prj_(.*).conf")
       if(NOT IS_ABSOLUTE ${CONF_FILE_DIR})
         set(CONF_FILE_DIR ${APPLICATION_SOURCE_DIR}/${CONF_FILE_DIR})
       endif()
