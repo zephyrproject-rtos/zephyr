@@ -100,6 +100,7 @@ start_configuration ()
 	    if [ -n "$*" ]; then
 	        echo -n " with extra arguments '$*'"
 	    fi
+
 	    echo "..."
     else
 	    echo "Could not start Docker container '$image'"
@@ -244,6 +245,7 @@ wait_docker ()
 docker_exec ()
 {
     local result=0
+    local docker_result=0
     local overlay=""
 
     if [ -n "$zephyr_overlay" ]; then
@@ -316,6 +318,32 @@ docker_exec ()
 	    result=$?
 
 	    stop_zephyr
+	    ;;
+
+	dumb_http_server_mt)
+	    # First the non-tls version
+	    start_configuration || return $?
+	    start_zephyr "$overlay" "-DCONFIG_NET_SAMPLE_SERVE_LARGE_FILE=y" || return $?
+	    start_docker "/usr/local/bin/http-get-file-test.sh 5" || return $?
+	    wait_docker
+	    docker_result=$?
+
+	    # curl timeout is return code 28. If we get that, zephyr will never
+	    # return so we can just kill it here
+	    if [ $docker_result -eq 28 ]; then
+	        stop_zephyr
+	        result=1
+	    else
+	        sleep 1
+	        wait_zephyr
+	        result=$?
+	    fi
+
+	    stop_docker
+
+	    if [ $result -ne 0 ] || [ $docker_result -ne 0 ]; then
+	        break;
+	    fi
 	    ;;
 
 	mqtt_publisher)
