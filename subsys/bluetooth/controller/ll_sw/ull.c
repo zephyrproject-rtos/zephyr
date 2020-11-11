@@ -828,10 +828,10 @@ void ll_rx_dequeue(void)
 	case NODE_RX_TYPE_MESH_REPORT:
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
-#if defined(CONFIG_BT_CTLR_USER_EXT)
+#if CONFIG_BT_CTLR_USER_EVT_RANGE > 0
 	case NODE_RX_TYPE_USER_START ... NODE_RX_TYPE_USER_END - 1:
 		__fallthrough;
-#endif /* CONFIG_BT_CTLR_USER_EXT */
+#endif /* CONFIG_BT_CTLR_USER_EVT_RANGE > 0 */
 
 	/* Ensure that at least one 'case' statement is present for this
 	 * code block.
@@ -1006,9 +1006,9 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_MESH_REPORT:
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
-#if defined(CONFIG_BT_CTLR_USER_EXT)
+#if CONFIG_BT_CTLR_USER_EVT_RANGE > 0
 		case NODE_RX_TYPE_USER_START ... NODE_RX_TYPE_USER_END - 1:
-#endif /* CONFIG_BT_CTLR_USER_EXT */
+#endif /* CONFIG_BT_CTLR_USER_EVT_RANGE > 0 */
 
 		/* Ensure that at least one 'case' statement is present for this
 		 * code block.
