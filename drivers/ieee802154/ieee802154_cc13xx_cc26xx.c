@@ -287,7 +287,7 @@ static int ieee802154_cc13xx_cc26xx_tx(const struct device *dev,
 	};
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
 	bool ack = ieee802154_is_ar_flag_set(frag);
-	int retry = CONFIG_NET_L2_IEEE802154_RADIO_TX_RETRIES;
+	int retry = CONFIG_IEEE802154_CC13XX_CC26XX_RADIO_TX_RETRIES;
 
 	if (mode != IEEE802154_TX_MODE_CSMA_CA) {
 		NET_ERR("TX mode %d not supported", mode);
@@ -385,20 +385,31 @@ static void ieee802154_cc13xx_cc26xx_rx_done(
 	struct ieee802154_cc13xx_cc26xx_data *drv_data)
 {
 	struct net_pkt *pkt;
-	uint8_t len, seq, corr;
+	uint8_t len, seq, corr, lqi;
 	int8_t rssi;
 	uint8_t *sdu;
 
 	for (int i = 0; i < CC13XX_CC26XX_NUM_RX_BUF; i++) {
 		if (drv_data->rx_entry[i].status == DATA_ENTRY_FINISHED) {
+			/* rx_data contains length, psdu, fcs, rssi, corr */
 			len = drv_data->rx_data[i][0];
 			sdu = drv_data->rx_data[i] + 1;
 			seq = drv_data->rx_data[i][3];
 			corr = drv_data->rx_data[i][len--] & 0x3F;
 			rssi = drv_data->rx_data[i][len--];
 
+			/* remove fcs as it is not expected by L2
+			 * But keep it for RAW mode
+			 */
+			if (IS_ENABLED(CONFIG_NET_L2_IEEE802154)) {
+				len -= 2;
+			}
+
+			/* scale 6-bit corr to 8-bit lqi */
+			lqi = corr << 2;
+
 			LOG_DBG("Received: len = %u, seq = %u, rssi = %d, lqi = %u",
-				len, seq, rssi, corr);
+				len, seq, rssi, lqi);
 
 			pkt = net_pkt_rx_alloc_with_buffer(
 				drv_data->iface, len, AF_UNSPEC, 0, K_NO_WAIT);
@@ -415,8 +426,7 @@ static void ieee802154_cc13xx_cc26xx_rx_done(
 
 			drv_data->rx_entry[i].status = DATA_ENTRY_PENDING;
 
-			/* TODO Convert to LQI in 0 to 255 range */
-			net_pkt_set_ieee802154_lqi(pkt, corr);
+			net_pkt_set_ieee802154_lqi(pkt, lqi);
 			net_pkt_set_ieee802154_rssi(
 				pkt,
 				ieee802154_cc13xx_cc26xx_convert_rssi(rssi));
@@ -604,7 +614,7 @@ static struct ieee802154_cc13xx_cc26xx_data ieee802154_cc13xx_cc26xx_data = {
 			.bAutoFlushCrc = 1,
 			.bAutoFlushIgn = 1,
 			.bIncludePhyHdr = 0,
-			.bIncludeCrc = 0,
+			.bIncludeCrc = 1,
 			.bAppendRssi = 1,
 			.bAppendCorrCrc = 1,
 			.bAppendSrcInd = 0,
@@ -677,9 +687,10 @@ static struct ieee802154_cc13xx_cc26xx_data ieee802154_cc13xx_cc26xx_data = {
 		.startTrigger.triggerType = TRIG_NOW,
 		.condition.rule = COND_STOP_ON_FALSE,
 		.randomState = 0,
-		.macMaxBE = CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BE,
+		.macMaxBE =
+			CONFIG_IEEE802154_CC13XX_CC26XX_RADIO_CSMA_CA_MAX_BE,
 		.macMaxCSMABackoffs =
-			CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BO,
+			CONFIG_IEEE802154_CC13XX_CC26XX_RADIO_CSMA_CA_MAX_BO,
 		.csmaConfig = {
 			/* Initial value of CW for unslotted CSMA */
 			.initCW = 1,
@@ -689,7 +700,7 @@ static struct ieee802154_cc13xx_cc26xx_data ieee802154_cc13xx_cc26xx_data = {
 			.rxOffMode = 0,
 		},
 		.NB = 0,
-		.BE = CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MIN_BE,
+		.BE = CONFIG_IEEE802154_CC13XX_CC26XX_RADIO_CSMA_CA_MIN_BE,
 		.remainingPeriods = 0,
 		.endTrigger.triggerType = TRIG_NEVER,
 	},
@@ -747,6 +758,7 @@ static struct ieee802154_cc13xx_cc26xx_data ieee802154_cc13xx_cc26xx_data = {
 	},
 };
 
+#if defined(CONFIG_NET_L2_IEEE802154)
 NET_DEVICE_INIT(ieee802154_cc13xx_cc26xx,
 		CONFIG_IEEE802154_CC13XX_CC26XX_DRV_NAME,
 		ieee802154_cc13xx_cc26xx_init, device_pm_control_nop,
@@ -754,3 +766,10 @@ NET_DEVICE_INIT(ieee802154_cc13xx_cc26xx,
 		CONFIG_IEEE802154_CC13XX_CC26XX_INIT_PRIO,
 		&ieee802154_cc13xx_cc26xx_radio_api, IEEE802154_L2,
 		NET_L2_GET_CTX_TYPE(IEEE802154_L2), IEEE802154_MTU);
+#else
+DEVICE_AND_API_INIT(ieee802154_cc13xx_cc26xx,
+		CONFIG_IEEE802154_CC13XX_CC26XX_DRV_NAME,
+		ieee802154_cc13xx_cc26xx_init, &ieee802154_cc13xx_cc26xx_data,
+		NULL, POST_KERNEL, CONFIG_IEEE802154_CC13XX_CC26XX_INIT_PRIO,
+		&ieee802154_cc13xx_cc26xx_radio_api);
+#endif
