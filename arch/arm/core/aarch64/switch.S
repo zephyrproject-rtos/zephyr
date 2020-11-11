@@ -35,17 +35,15 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	ldr	x2, =_thread_offset_to_callee_saved
 	add	x2, x2, x1
 
-	/* Store callee-saved registers */
-	stp	x19, x20, [x2], #16
-	stp	x21, x22, [x2], #16
-	stp	x23, x24, [x2], #16
-	stp	x25, x26, [x2], #16
-	stp	x27, x28, [x2], #16
-	stp	x29, xzr, [x2], #16
-
 	/* Save the current SP */
 	mov	x1, sp
-	str	x1, [x2]
+
+	stp	x19, x20, [x2, ___callee_saved_t_x19_x20_OFFSET]
+	stp	x21, x22, [x2, ___callee_saved_t_x21_x22_OFFSET]
+	stp	x23, x24, [x2, ___callee_saved_t_x23_x24_OFFSET]
+	stp	x25, x26, [x2, ___callee_saved_t_x25_x26_OFFSET]
+	stp	x27, x28, [x2, ___callee_saved_t_x27_x28_OFFSET]
+	stp	x29, x1, [x2, ___callee_saved_t_x29_sp_OFFSET]
 
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	/* Grab the TLS pointer */
@@ -64,15 +62,13 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	ldr	x2, =_thread_offset_to_callee_saved
 	add	x2, x2, x0
 
-	/* Restore x19-x29 */
-	ldp	x19, x20, [x2], #16
-	ldp	x21, x22, [x2], #16
-	ldp	x23, x24, [x2], #16
-	ldp	x25, x26, [x2], #16
-	ldp	x27, x28, [x2], #16
-	ldp	x29, xzr, [x2], #16
+	ldp	x19, x20, [x2, ___callee_saved_t_x19_x20_OFFSET]
+	ldp	x21, x22, [x2, ___callee_saved_t_x21_x22_OFFSET]
+	ldp	x23, x24, [x2, ___callee_saved_t_x23_x24_OFFSET]
+	ldp	x25, x26, [x2, ___callee_saved_t_x25_x26_OFFSET]
+	ldp	x27, x28, [x2, ___callee_saved_t_x27_x28_OFFSET]
+	ldp	x29, x1, [x2, ___callee_saved_t_x29_sp_OFFSET]
 
-	ldr	x1, [x2]
 	mov	sp, x1
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
