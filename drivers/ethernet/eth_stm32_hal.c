@@ -227,10 +227,17 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	/* Reset TX complete interrupt semaphore before TX request*/
 	k_sem_reset(&dev_data->tx_int_sem);
 
+	/* Memory barriers (e.g. __DSB()) should flush Tx descriptors
+	 * into memory. Incomplete writing of Tx descriptors may occur
+	 * with different compilation levels
+	 */
+	__DSB();
+
 	/* tx_buffer is allocated on function stack, we need */
 	/* to wait for the transfer to complete */
 	/* So it is not freed before the interrupt happens */
 	hal_ret = HAL_ETH_Transmit_IT(heth, &tx_config);
+	__DSB();
 
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("HAL_ETH_Transmit: failed!");
