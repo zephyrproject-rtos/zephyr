@@ -26,20 +26,23 @@
 	 * - Context-switch: the callee-saved registers are saved by
 	 *   z_arm64_context_switch() in the kernel structure.
 	 */
-	stp	x0, x1, [sp, #-16]!
-	stp	x2, x3, [sp, #-16]!
-	stp	x4, x5, [sp, #-16]!
-	stp	x6, x7, [sp, #-16]!
-	stp	x8, x9, [sp, #-16]!
-	stp	x10, x11, [sp, #-16]!
-	stp	x12, x13, [sp, #-16]!
-	stp	x14, x15, [sp, #-16]!
-	stp     x16, x17, [sp, #-16]!
-	stp     x18, x30, [sp, #-16]!
+
+	sub	sp, sp, ___esf_t_SIZEOF
+
+	stp	x0, x1, [sp, ___esf_t_x0_x1_OFFSET]
+	stp	x2, x3, [sp, ___esf_t_x2_x3_OFFSET]
+	stp	x4, x5, [sp, ___esf_t_x4_x5_OFFSET]
+	stp	x6, x7, [sp, ___esf_t_x6_x7_OFFSET]
+	stp	x8, x9, [sp, ___esf_t_x8_x9_OFFSET]
+	stp	x10, x11, [sp, ___esf_t_x10_x11_OFFSET]
+	stp	x12, x13, [sp, ___esf_t_x12_x13_OFFSET]
+	stp	x14, x15, [sp, ___esf_t_x14_x15_OFFSET]
+	stp	x16, x17, [sp, ___esf_t_x16_x17_OFFSET]
+	stp	x18, x30, [sp, ___esf_t_x18_x30_OFFSET]
 
 	mrs	\xreg0, spsr_el1
 	mrs	\xreg1, elr_el1
-	stp	\xreg0, \xreg1, [sp, #-16]!
+	stp	\xreg0, \xreg1, [sp, ___esf_t_spsr_elr_OFFSET]
 .endm
 
 /*
@@ -49,21 +52,22 @@
  */
 
 .macro z_arm64_exit_exc xreg0, xreg1
-	ldp	\xreg0, \xreg1, [sp], #16
+	ldp	\xreg0, \xreg1, [sp, ___esf_t_spsr_elr_OFFSET]
 	msr	spsr_el1, \xreg0
 	msr	elr_el1, \xreg1
 
-	ldp	x18, x30, [sp], #16
-	ldp	x16, x17, [sp], #16
-	ldp	x14, x15, [sp], #16
-	ldp	x12, x13, [sp], #16
-	ldp	x10, x11, [sp], #16
-	ldp	x8, x9, [sp], #16
-	ldp	x6, x7, [sp], #16
-	ldp	x4, x5, [sp], #16
-	ldp	x2, x3, [sp], #16
-	ldp	x0, x1, [sp], #16
+	ldp	x18, x30, [sp, ___esf_t_x18_x30_OFFSET]
+	ldp	x16, x17, [sp, ___esf_t_x16_x17_OFFSET]
+	ldp	x14, x15, [sp, ___esf_t_x14_x15_OFFSET]
+	ldp	x12, x13, [sp, ___esf_t_x12_x13_OFFSET]
+	ldp	x10, x11, [sp, ___esf_t_x10_x11_OFFSET]
+	ldp	x8, x9, [sp, ___esf_t_x8_x9_OFFSET]
+	ldp	x6, x7, [sp, ___esf_t_x6_x7_OFFSET]
+	ldp	x4, x5, [sp, ___esf_t_x4_x5_OFFSET]
+	ldp	x2, x3, [sp, ___esf_t_x2_x3_OFFSET]
+	ldp	x0, x1, [sp, ___esf_t_x0_x1_OFFSET]
 
+	add	sp, sp, ___esf_t_SIZEOF
 	/*
 	 * In general in the ELR_EL1 register we can find:
 	 *

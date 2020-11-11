@@ -126,7 +126,7 @@ context_switch:
 	 *  - x0 = new_thread->switch_handle = switch_to thread
 	 *  - x1 = &old_thread->switch_handle = current thread
 	 */
-	ldp	x0, x1, [sp, #(16 * 10)]
+	ldp	x0, x1, [sp, ___esf_t_x0_x1_OFFSET]
 
 	/* Get old thread from x1 */
 	sub	x1, x1, ___thread_t_switch_handle_OFFSET
