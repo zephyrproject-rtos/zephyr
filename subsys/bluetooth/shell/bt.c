@@ -39,6 +39,9 @@
 #define DEVICE_NAME		CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
 
+/* Multiply bt 1.25 to get MS */
+#define BT_INTERVAL_TO_MS(interval) ((interval) * 5 / 4)
+
 static bool no_settings_load;
 
 uint8_t selected_id = BT_ID_DEFAULT;
@@ -123,7 +126,8 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 		    (info->adv_props & BT_GAP_ADV_PROP_SCAN_RESPONSE) != 0,
 		    (info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0,
 		    phy2str(info->primary_phy), phy2str(info->secondary_phy),
-		    info->interval, info->interval * 5 / 4, info->sid);
+		    info->interval, BT_INTERVAL_TO_MS(info->interval),
+		    info->sid);
 }
 
 static void scan_timeout(void)
@@ -479,8 +483,8 @@ static void per_adv_sync_sync_cb(struct bt_le_per_adv_sync *sync,
 	shell_print(ctx_shell, "PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
 		    "Interval 0x%04x (%u ms), PHY %s, SD 0x%04X, PAST peer %s",
 		    bt_le_per_adv_sync_get_index(sync), le_addr,
-		    info->interval, info->interval * 5 / 4, phy2str(info->phy),
-		    info->service_data, past_peer);
+		    info->interval, BT_INTERVAL_TO_MS(info->interval),
+		    phy2str(info->phy), info->service_data, past_peer);
 
 	if (info->conn) { /* if from PAST */
 		for (int i = 0; i < ARRAY_SIZE(per_adv_syncs); i++) {
@@ -1996,9 +2000,11 @@ static int cmd_info(const struct shell *shell, size_t argc, char *argv[])
 		print_le_addr("Local on-air", info.le.local);
 
 		shell_print(ctx_shell, "Interval: 0x%04x (%u ms)",
-			    info.le.interval, info.le.interval * 5 / 4);
+			    info.le.interval,
+			    BT_INTERVAL_TO_MS(info.le.interval));
 		shell_print(ctx_shell, "Latency: 0x%04x (%u ms)",
-			    info.le.latency, info.le.latency * 5 / 4);
+			    info.le.latency,
+			    BT_INTERVAL_TO_MS(info.le.latency));
 		shell_print(ctx_shell, "Supervision timeout: 0x%04x (%d ms)",
 			    info.le.timeout, info.le.timeout * 10);
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
