@@ -32,3 +32,4 @@ API Reference
    usermode/index.rst
    util/index.rst
    settings/index.rst
+   timing_functions/index.rst
