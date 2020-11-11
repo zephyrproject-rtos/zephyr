@@ -28,6 +28,12 @@ if (CONFIG_BUILD_WITH_TFM)
 		set(TFM_PUBLIC_KEY_FORMAT "full")
 	endif()
 
+	if(CONFIG_BOARD_NRF5340PDK_NRF5340_CPUAPPNS)
+		set(TFM_INSTALL_DIR ${CMAKE_BINARY_DIR}/tfm/install/outputs/NORDIC_NRF/NRF5340PDK_NRF5340_CPUAPP)
+	elseif(CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPPNS)
+		set(TFM_INSTALL_DIR ${CMAKE_BINARY_DIR}/tfm/install/outputs/NORDIC_NRF/NRF5340DK_NRF5340_CPUAPP)
+	endif()
+
 	# Set srec_cat binary name
 	find_program(SREC_CAT srec_cat)
 	if(${SREC_CAT} STREQUAL SREC_CAT-NOTFOUND)
@@ -49,7 +55,7 @@ if (CONFIG_BUILD_WITH_TFM)
 			 ${ADD_NS_IMAGE_MIN_VER}
 			 -s auto
 			 -H 0x400
-			 ${CMAKE_BINARY_DIR}/tfm/install/outputs/NORDIC_NRF/NRF5340PDK_NRF5340_CPUAPP/tfm_s.bin
+			 ${TFM_INSTALL_DIR}/tfm_s.bin
 			 ${CMAKE_BINARY_DIR}/tfm_s_signed.bin
 
 		#Sign non-secure binary image with public key
