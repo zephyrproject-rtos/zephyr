@@ -11,6 +11,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <arch/cpu.h>
+#include <offsets_short.h>
 #include "vector_table.h"
 #include "macro_priv.inc"
 
