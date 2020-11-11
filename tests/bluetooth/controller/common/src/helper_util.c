@@ -64,6 +64,9 @@ helper_pdu_encode_func_t * const helper_pdu_encode[] = {
 	helper_pdu_encode_phy_rsp,
 	helper_pdu_encode_phy_update_ind,
 	helper_pdu_encode_unknown_rsp,
+	helper_pdu_encode_conn_update_ind,
+	helper_pdu_encode_conn_param_req,
+	helper_pdu_encode_conn_param_rsp,
 	helper_pdu_encode_terminate_ind,
 };
 
@@ -85,12 +88,16 @@ helper_pdu_verify_func_t *const helper_pdu_verify[] = {
 	helper_pdu_verify_phy_rsp,
 	helper_pdu_verify_phy_update_ind,
 	helper_pdu_verify_unknown_rsp,
+	helper_pdu_verify_conn_update_ind,
+	helper_pdu_verify_conn_param_req,
+	helper_pdu_verify_conn_param_rsp,
 	helper_pdu_verify_terminate_ind,
 };
 
 
 helper_node_verify_func_t * const helper_node_verify[] = {
 	helper_node_verify_phy_update,
+	helper_node_verify_conn_update,
 };
 
 /*
