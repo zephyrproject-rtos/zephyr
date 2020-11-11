@@ -188,6 +188,7 @@ void helper_pdu_encode_phy_update_ind(struct pdu_data *pdu, void *param)
 	/* TODO(thoh): Fill in correct data */
 }
 
+
 void helper_pdu_encode_unknown_rsp(struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_unknown_rsp *p = param;
@@ -196,6 +197,33 @@ void helper_pdu_encode_unknown_rsp(struct pdu_data *pdu, void *param)
 	pdu->len = offsetof(struct pdu_data_llctrl, unknown_rsp) + sizeof(struct pdu_data_llctrl_unknown_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP;
 	pdu->llctrl.unknown_rsp.type = p->type;
+}
+
+void helper_pdu_encode_conn_param_req(struct pdu_data *pdu, void *param)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, conn_param_req) + sizeof(struct pdu_data_llctrl_conn_param_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
+	/* TODO(thoh): Fill in correct data */
+}
+
+void helper_pdu_encode_conn_param_rsp(struct pdu_data *pdu, void *param)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, conn_param_rsp) + sizeof(struct pdu_data_llctrl_conn_param_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP;
+	/* TODO(thoh): Fill in correct data */
+}
+
+void helper_pdu_encode_conn_update_ind(struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_conn_update_ind *p = param;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, conn_update_ind) + sizeof(struct pdu_data_llctrl_conn_update_ind);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND;
+	pdu->llctrl.conn_update_ind.instant = sys_cpu_to_le16(p->instant);
+	/* TODO(thoh): Fill in correct data */
 }
 
 void helper_pdu_encode_terminate_ind(struct pdu_data *pdu, void *param)
@@ -382,6 +410,39 @@ void helper_pdu_verify_unknown_rsp(const char *file, uint32_t line, struct pdu_d
 	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, unknown_rsp) + sizeof(struct pdu_data_llctrl_unknown_rsp), "Wrong length.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP, "Not a LL_UNKNOWN_RSP.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.unknown_rsp.type, p->type, "Type mismatch.\nCalled at %s:%d\n", file, line);
+}
+
+void helper_pdu_verify_conn_param_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
+{
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, conn_param_req) + sizeof(struct pdu_data_llctrl_conn_param_req), "Wrong length.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ, "Not a LL_CONNECTION_PARAM_REQ.\nCalled at %s:%d\n", file, line);
+	/* TODO(thoh): Fill in correct data */
+}
+
+void helper_pdu_verify_conn_param_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
+{
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, conn_param_rsp) + sizeof(struct pdu_data_llctrl_conn_param_rsp), "Wrong length.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP, "Not a LL_CONNECTION_PARAM_RSP.\nCalled at %s:%d\n", file, line);
+	/* TODO(thoh): Fill in correct data */
+}
+
+void helper_pdu_verify_conn_update_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
+{
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, conn_update_ind) + sizeof(struct pdu_data_llctrl_conn_update_ind), "Wrong length.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND, "Not a LL_CONNECTION_UPDATE_IND.\nCalled at %s:%d\n", file, line);
+	/* TODO(thoh): Fill in correct data */
+}
+
+void helper_node_verify_conn_update(const char *file, uint32_t line, struct node_rx_pdu *rx, void *param)
+{
+	struct node_rx_pu *pdu = (struct node_rx_pu *)rx->pdu;
+	struct node_rx_pu *p = param;
+
+	zassert_equal(rx->hdr.type, NODE_RX_TYPE_CONN_UPDATE, "Not a CONN_UPDATE node.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->status, p->status, "Status mismatch.\nCalled at %s:%d\n", file, line);
 }
 
 void helper_pdu_verify_terminate_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
