@@ -535,17 +535,11 @@ static int dma_pl330_transfer_start(const struct device *dev,
 			       channel_cfg->src_addr, channel,
 			       channel_cfg->trans_size);
 
-	/* Execute callback */
-	if (channel_cfg->dma_callback) {
-		channel_cfg->dma_callback(dev, channel_cfg->user_data,
-					  channel, ret);
-	}
-
 	k_mutex_lock(&channel_cfg->ch_mutex, K_FOREVER);
 	channel_cfg->channel_active = 0;
 	k_mutex_unlock(&channel_cfg->ch_mutex);
 
-	return 0;
+	return ret;
 }
 
 static int dma_pl330_transfer_stop(const struct device *dev, uint32_t channel)
