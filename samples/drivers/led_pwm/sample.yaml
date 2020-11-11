@@ -6,3 +6,4 @@ tests:
     filter: dt_compat_enabled("pwm-leds")
     tags: LED
     depends_on: pwm
+    platform_exclude: reel_board
