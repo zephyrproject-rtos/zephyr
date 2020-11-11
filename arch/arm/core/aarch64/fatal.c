@@ -148,26 +148,16 @@ static void dump_esr(uint64_t esr, bool *dump_far)
 
 static void esf_dump(const z_arch_esf_t *esf)
 {
-	LOG_ERR("x0:  0x%016llx  x1:  0x%016llx",
-		esf->basic.regs[18], esf->basic.regs[19]);
-	LOG_ERR("x2:  0x%016llx  x3:  0x%016llx",
-		esf->basic.regs[16], esf->basic.regs[17]);
-	LOG_ERR("x4:  0x%016llx  x5:  0x%016llx",
-		esf->basic.regs[14], esf->basic.regs[15]);
-	LOG_ERR("x6:  0x%016llx  x7:  0x%016llx",
-		esf->basic.regs[12], esf->basic.regs[13]);
-	LOG_ERR("x8:  0x%016llx  x9:  0x%016llx",
-		esf->basic.regs[10], esf->basic.regs[11]);
-	LOG_ERR("x10: 0x%016llx  x11: 0x%016llx",
-		esf->basic.regs[8], esf->basic.regs[9]);
-	LOG_ERR("x12: 0x%016llx  x13: 0x%016llx",
-		esf->basic.regs[6], esf->basic.regs[7]);
-	LOG_ERR("x14: 0x%016llx  x15: 0x%016llx",
-		esf->basic.regs[4], esf->basic.regs[5]);
-	LOG_ERR("x16: 0x%016llx  x17: 0x%016llx",
-		esf->basic.regs[2], esf->basic.regs[3]);
-	LOG_ERR("x18: 0x%016llx  x30: 0x%016llx",
-		esf->basic.regs[0], esf->basic.regs[1]);
+	LOG_ERR("x0:  0x%016llx  x1:  0x%016llx", esf->x0, esf->x1);
+	LOG_ERR("x2:  0x%016llx  x3:  0x%016llx", esf->x2, esf->x3);
+	LOG_ERR("x4:  0x%016llx  x5:  0x%016llx", esf->x4, esf->x5);
+	LOG_ERR("x6:  0x%016llx  x7:  0x%016llx", esf->x6, esf->x7);
+	LOG_ERR("x8:  0x%016llx  x9:  0x%016llx", esf->x8, esf->x9);
+	LOG_ERR("x10: 0x%016llx  x11: 0x%016llx", esf->x10, esf->x11);
+	LOG_ERR("x12: 0x%016llx  x13: 0x%016llx", esf->x12, esf->x13);
+	LOG_ERR("x14: 0x%016llx  x15: 0x%016llx", esf->x14, esf->x15);
+	LOG_ERR("x16: 0x%016llx  x17: 0x%016llx", esf->x16, esf->x17);
+	LOG_ERR("x18: 0x%016llx  x30: 0x%016llx", esf->x18, esf->x30);
 }
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
