@@ -165,6 +165,11 @@ static struct proc_ctx *create_procedure(enum llcp_proc proc)
 	ctx->collision = 0U;
 	ctx->pause = 0U;
 
+	/* Initialize opcodes fields to  known values */
+	ctx->rx_opcode = ULL_LLCP_INVALID_OPCODE;
+	ctx->tx_opcode = ULL_LLCP_INVALID_OPCODE;
+	//ctx->response_opcode = 0xFFU;
+
 	return ctx;
 }
 
@@ -195,6 +200,9 @@ struct proc_ctx *ull_cp_priv_create_local_procedure(enum llcp_proc proc)
 		break;
 	case PROC_PHY_UPDATE:
 		lp_pu_init_proc(ctx);
+		break;
+	case PROC_CONN_PARAM_REQ:
+		lp_cu_init_proc(ctx);
 		break;
 	case PROC_TERMINATE:
 		lp_comm_init_proc(ctx);
@@ -234,6 +242,9 @@ struct proc_ctx *ull_cp_priv_create_remote_procedure(enum llcp_proc proc)
 		break;
 	case PROC_PHY_UPDATE:
 		rp_pu_init_proc(ctx);
+		break;
+	case PROC_CONN_PARAM_REQ:
+		rp_cu_init_proc(ctx);
 		break;
 	case PROC_TERMINATE:
 		rp_comm_init_proc(ctx);
@@ -462,6 +473,49 @@ void ull_cp_ltk_req_neq_reply(struct ull_cp_conn *conn)
 	ctx = rr_peek(conn);
 	if (ctx && ctx->proc == PROC_ENCRYPTION_START) {
 		rp_enc_ltk_req_neg_reply(conn, ctx);
+	}
+}
+
+uint8_t ull_cp_conn_update(struct ull_cp_conn *conn, uint16_t interval_min, uint16_t interval_max, uint16_t latency, uint16_t timeout)
+{
+	struct proc_ctx *ctx;
+
+	/* TODO(thoh): Proper checks for role, parameters etc. */
+
+	/* TODO(thoh): Determine proper procedure:
+	 *	Role == Slave => CPR
+	 *	Role == Master:
+	 *		CPR in Peer Feats. => CPR
+	 *		CPR not in Peer Feats. => CU
+	 *		FEX not performed => CPR
+	 *	*/
+	ctx = create_local_procedure(PROC_CONN_PARAM_REQ);
+	if (!ctx) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	lr_enqueue(conn, ctx);
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
+void ull_cp_conn_param_req_reply(struct ull_cp_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = rr_peek(conn);
+	if (ctx && ctx->proc == PROC_CONN_PARAM_REQ) {
+		rp_conn_param_req_reply(conn, ctx);
+	}
+}
+
+void ull_cp_conn_param_req_neg_reply(struct ull_cp_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = rr_peek(conn);
+	if (ctx && ctx->proc == PROC_CONN_PARAM_REQ) {
+		rp_conn_param_req_neg_reply(conn, ctx);
 	}
 }
 
