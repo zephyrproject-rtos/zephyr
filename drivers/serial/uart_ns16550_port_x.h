@@ -80,7 +80,7 @@ static void irq_config_func_@NUM@(const struct device *dev)
 
 	unsigned int irq;
 
-	irq = pcie_wired_irq(DT_INST_REG_ADDR(@NUM@));
+	irq = pcie_alloc_irq(DT_INST_REG_ADDR(@NUM@));
 
 	if (irq == PCIE_CONF_INTR_IRQ_NONE) {
 		return;
