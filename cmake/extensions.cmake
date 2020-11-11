@@ -199,16 +199,8 @@ function(zephyr_get_include_directories_for_lang lang i)
   get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
 
   process_flags(${lang} flags output_list)
-  string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
+  list(TRANSFORM output_list PREPEND "-I" OUTPUT_VARIABLE result_output_list)
 
-  if(NOT ARGN)
-    set(result_output_list "-I$<JOIN:${genexp_output_list}, -I>")
-  elseif(args_STRIP_PREFIX)
-    # The list has no prefix, so don't add it.
-    set(result_output_list ${output_list})
-  else()
-    set(result_output_list "-I$<JOIN:${genexp_output_list},${ARGN}-I>")
-  endif()
   set(${i} ${result_output_list} PARENT_SCOPE)
 endfunction()
 
@@ -216,8 +208,7 @@ function(zephyr_get_system_include_directories_for_lang lang i)
   get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
 
   process_flags(${lang} flags output_list)
-  string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
-  set(result_output_list "$<$<BOOL:${genexp_output_list}>:-isystem$<JOIN:${genexp_output_list}, -isystem>>")
+  list(TRANSFORM output_list PREPEND "-isystem" OUTPUT_VARIABLE result_output_list)
 
   set(${i} ${result_output_list} PARENT_SCOPE)
 endfunction()
@@ -226,8 +217,7 @@ function(zephyr_get_compile_definitions_for_lang lang i)
   get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_COMPILE_DEFINITIONS)
 
   process_flags(${lang} flags output_list)
-  string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
-  set(result_output_list "-D$<JOIN:${genexp_output_list}, -D>")
+  list(TRANSFORM output_list PREPEND "-D" OUTPUT_VARIABLE result_output_list)
 
   set(${i} ${result_output_list} PARENT_SCOPE)
 endfunction()
@@ -236,10 +226,8 @@ function(zephyr_get_compile_options_for_lang lang i)
   get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_COMPILE_OPTIONS)
 
   process_flags(${lang} flags output_list)
-  string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
-  set(result_output_list " $<JOIN:${genexp_output_list}, >")
 
-  set(${i} ${result_output_list} PARENT_SCOPE)
+  set(${i} ${output_list} PARENT_SCOPE)
 endfunction()
 
 # This function writes a dict to it's output parameter
