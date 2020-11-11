@@ -15,8 +15,17 @@
 
 #include <kernel.h>
 #include <logging/log.h>
+#include <exc_handle.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
+
+#ifdef CONFIG_USERSPACE
+Z_EXC_DECLARE(z_arm64_user_string_nlen);
+
+static const struct z_exc_handle exceptions[] = {
+	Z_EXC_HANDLE(z_arm64_user_string_nlen),
+};
+#endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_EXCEPTION_DEBUG
 static void dump_esr(uint64_t esr, bool *dump_far)
@@ -168,7 +177,18 @@ static bool is_recoverable(z_arch_esf_t *esf, uint64_t esr, uint64_t far,
 	if (!esf)
 		return false;
 
-	/* Empty */
+#ifdef CONFIG_USERSPACE
+	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
+		/* Mask out instruction mode */
+		uint64_t start = (uint64_t)exceptions[i].start;
+		uint64_t end = (uint64_t)exceptions[i].end;
+
+		if (esf->elr >= start && esf->elr < end) {
+			esf->elr = (uint64_t)(exceptions[i].fixup);
+			return true;
+		}
+	}
+#endif
 
 	return false;
 }
