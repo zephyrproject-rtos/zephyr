@@ -478,6 +478,28 @@ The following code illustrates the ways a thread can terminate.
 If CONFIG_USERSPACE is enabled, aborting a thread will additionally mark the
 thread and stack objects as uninitialized so that they may be re-used.
 
+Runtime Statistics
+******************
+
+Thread runtime statistics can be gathered and retrieved if
+:option:`CONFIG_THREAD_RUNTIME_STATS` is enabled, for example, total number of
+execution cycles of a thread.
+
+By default, the runtime statistics are gathered using the default kernel
+timer. For some architectures, SoCs or boards, there are timers with higher
+resolution available via timing functions. Using of these timers can be
+enabled via :option:`CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS`.
+
+Here is an example:
+
+.. code-block:: c
+
+   k_thread_runtime_stats_t rt_stats_thread;
+
+   k_thread_runtime_stats_get(k_current_get(), &rt_stats_thread);
+
+   printk("Cycles: %llu\n", rt_stats_thread.execution_cycles);
+
 Suggested Uses
 **************
 
