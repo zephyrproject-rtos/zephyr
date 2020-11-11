@@ -373,3 +373,36 @@ void ull_cp_priv_pdu_decode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data
 {
 	ctx->data.pu.instant = sys_le16_to_cpu(pdu->llctrl.phy_upd_ind.instant);
 }
+/*
+ * Connection Update Procedure Helper
+ */
+void ull_cp_priv_pdu_encode_conn_param_req(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, conn_param_req) + sizeof(struct pdu_data_llctrl_conn_param_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
+}
+
+void ull_cp_priv_pdu_encode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, conn_param_rsp) + sizeof(struct pdu_data_llctrl_conn_param_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP;
+}
+
+void ull_cp_priv_pdu_encode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_conn_update_ind *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, conn_update_ind) + sizeof(struct pdu_data_llctrl_conn_update_ind);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND;
+
+	p = (void *)&pdu->llctrl.conn_update_ind;
+	p->instant = sys_cpu_to_le16(ctx->data.cu.instant);
+}
+
+void ull_cp_priv_pdu_decode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	ctx->data.cu.instant = sys_le16_to_cpu(pdu->llctrl.conn_update_ind.instant);
+}
