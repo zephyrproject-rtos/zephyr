@@ -111,7 +111,7 @@ extern unsigned int pcie_alloc_irq(pcie_bdf_t bdf);
  * @param bdf the PCI(e) endpoint
  * @return the IRQ number, or PCIE_CONF_INTR_IRQ_NONE if unknown.
  */
-extern unsigned int pcie_wired_irq(pcie_bdf_t bdf);
+extern unsigned int pcie_get_irq(pcie_bdf_t bdf);
 
 /**
  * @brief Enable the PCI(e) endpoint to generate the specified IRQ.
