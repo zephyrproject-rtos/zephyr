@@ -125,14 +125,11 @@ int bt_audio_chan_reconfig(struct bt_audio_chan *chan,
 		return -ENOTSUP;
 	}
 
-	if (!cap->ops->reconfig) {
-		chan_attach(chan->conn, chan, chan->ep, cap, codec);
-		return 0;
-	}
-
-	err = cap->ops->reconfig(chan, cap, codec);
-	if (err) {
-		return err;
+	if (cap->ops->reconfig) {
+		err = cap->ops->reconfig(chan, cap, codec);
+		if (err) {
+			return err;
+		}
 	}
 
 	chan_attach(chan->conn, chan, chan->ep, cap, codec);
