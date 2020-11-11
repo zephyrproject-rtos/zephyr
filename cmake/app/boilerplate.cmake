@@ -190,8 +190,30 @@ add_custom_target(
 # Dummy add to generate files.
 zephyr_linker_sources(SECTIONS)
 
+# 'BOARD_ROOT' is a prioritized list of directories where boards may
+# be found. It always includes ${ZEPHYR_BASE} at the lowest priority.
+zephyr_file(APPLICATION_ROOT BOARD_ROOT)
+list(APPEND BOARD_ROOT ${ZEPHYR_BASE})
+
+# 'SOC_ROOT' is a prioritized list of directories where socs may be
+# found. It always includes ${ZEPHYR_BASE}/soc at the lowest priority.
+zephyr_file(APPLICATION_ROOT SOC_ROOT)
+list(APPEND SOC_ROOT ${ZEPHYR_BASE})
+
+# 'ARCH_ROOT' is a prioritized list of directories where archs may be
+# found. It always includes ${ZEPHYR_BASE} at the lowest priority.
+zephyr_file(APPLICATION_ROOT ARCH_ROOT)
+list(APPEND ARCH_ROOT ${ZEPHYR_BASE})
+
 # Check that BOARD has been provided, and that it has not changed.
 zephyr_check_cache(BOARD REQUIRED)
+
+string(FIND "${BOARD}" "@" REVIVISION_SEPARATOR_INDEX)
+if(NOT (REVIVISION_SEPARATOR_INDEX EQUAL -1))
+  math(EXPR BOARD_REVISION_INDEX "${REVIVISION_SEPARATOR_INDEX} + 1")
+  string(SUBSTRING ${BOARD} ${BOARD_REVISION_INDEX} -1 BOARD_REVISION)
+  string(SUBSTRING ${BOARD} 0 ${REVIVISION_SEPARATOR_INDEX} BOARD)
+endif()
 
 set(BOARD_MESSAGE "Board: ${BOARD}")
 
@@ -210,40 +232,6 @@ if(${BOARD}_DEPRECATED)
   message(WARNING "Deprecated BOARD=${BOARD_DEPRECATED} name specified, board automatically changed to: ${BOARD}.")
 endif()
 
-# Check that SHIELD has not changed.
-zephyr_check_cache(SHIELD)
-
-if(SHIELD)
-  set(BOARD_MESSAGE "${BOARD_MESSAGE}, Shield(s): ${SHIELD}")
-endif()
-
-message(STATUS "${BOARD_MESSAGE}")
-
-# 'BOARD_ROOT' is a prioritized list of directories where boards may
-# be found. It always includes ${ZEPHYR_BASE} at the lowest priority.
-zephyr_file(APPLICATION_ROOT BOARD_ROOT)
-list(APPEND BOARD_ROOT ${ZEPHYR_BASE})
-
-# 'SOC_ROOT' is a prioritized list of directories where socs may be
-# found. It always includes ${ZEPHYR_BASE}/soc at the lowest priority.
-zephyr_file(APPLICATION_ROOT SOC_ROOT)
-list(APPEND SOC_ROOT ${ZEPHYR_BASE})
-
-# 'ARCH_ROOT' is a prioritized list of directories where archs may be
-# found. It always includes ${ZEPHYR_BASE} at the lowest priority.
-zephyr_file(APPLICATION_ROOT ARCH_ROOT)
-list(APPEND ARCH_ROOT ${ZEPHYR_BASE})
-
-if(DEFINED SHIELD)
-  string(REPLACE " " ";" SHIELD_AS_LIST "${SHIELD}")
-endif()
-# SHIELD-NOTFOUND is a real CMake list, from which valid shields can be popped.
-# After processing all shields, only invalid shields will be left in this list.
-set(SHIELD-NOTFOUND ${SHIELD_AS_LIST})
-
-# Use BOARD to search for a '_defconfig' file.
-# e.g. zephyr/boards/arm/96b_carbon_nrf51/96b_carbon_nrf51_defconfig.
-# When found, use that path to infer the ARCH we are building for.
 foreach(root ${BOARD_ROOT})
   # NB: find_path will return immediately if the output variable is
   # already set
@@ -265,7 +253,46 @@ foreach(root ${BOARD_ROOT})
   if(BOARD_DIR AND NOT (${root} STREQUAL ${ZEPHYR_BASE}))
     set(USING_OUT_OF_TREE_BOARD 1)
   endif()
+endforeach()
 
+if(EXISTS ${BOARD_DIR}/revision.cmake)
+  # Board provides revision handling.
+  include(${BOARD_DIR}/revision.cmake)
+elseif(BOARD_REVISION)
+  message(WARNING "Board revision ${BOARD_REVISION} specified for ${BOARD}, \
+                   but board has no revision so revision will be ignored.")
+endif()
+
+if(DEFINED BOARD_REVISION)
+  set(BOARD_MESSAGE "${BOARD_MESSAGE}, Revision: ${BOARD_REVISION}")
+  if(DEFINED ACTIVE_BOARD_REVISION)
+    set(BOARD_MESSAGE "${BOARD_MESSAGE} (Active: ${ACTIVE_BOARD_REVISION})")
+    set(BOARD_REVISION ${ACTIVE_BOARD_REVISION})
+  endif()
+
+  string(REPLACE "." "_" BOARD_REVISION_STRING ${BOARD_REVISION})
+endif()
+
+# Check that SHIELD has not changed.
+zephyr_check_cache(SHIELD)
+
+if(SHIELD)
+  set(BOARD_MESSAGE "${BOARD_MESSAGE}, Shield(s): ${SHIELD}")
+endif()
+
+message(STATUS "${BOARD_MESSAGE}")
+
+if(DEFINED SHIELD)
+  string(REPLACE " " ";" SHIELD_AS_LIST "${SHIELD}")
+endif()
+# SHIELD-NOTFOUND is a real CMake list, from which valid shields can be popped.
+# After processing all shields, only invalid shields will be left in this list.
+set(SHIELD-NOTFOUND ${SHIELD_AS_LIST})
+
+# Use BOARD to search for a '_defconfig' file.
+# e.g. zephyr/boards/arm/96b_carbon_nrf51/96b_carbon_nrf51_defconfig.
+# When found, use that path to infer the ARCH we are building for.
+foreach(root ${BOARD_ROOT})
   set(shield_dir ${root}/boards/shields)
   # Match the .overlay files in the shield directories to make sure we are
   # finding shields, e.g. x_nucleo_iks01a1/x_nucleo_iks01a1.overlay
@@ -380,10 +407,12 @@ if(DEFINED CONF_FILE)
     get_filename_component(CONF_FILE_NAME ${CONF_FILE} NAME)
     get_filename_component(CONF_FILE_DIR ${CONF_FILE} DIRECTORY)
     if(${CONF_FILE_NAME} MATCHES "prj_(.*).conf")
+      set(CONF_FILE_BUILD_TYPE ${CMAKE_MATCH_1})
+      set(CONF_FILE_INCLUDE_FRAGMENTS true)
+
       if(NOT IS_ABSOLUTE ${CONF_FILE_DIR})
         set(CONF_FILE_DIR ${APPLICATION_SOURCE_DIR}/${CONF_FILE_DIR})
       endif()
-      zephyr_file(CONF_FILES ${CONF_FILE_DIR}/boards KCONF CONF_FILE BUILD ${CMAKE_MATCH_1})
     endif()
   endif()
 elseif(CACHED_CONF_FILE)
@@ -401,11 +430,16 @@ elseif(COMMAND set_conf_file)
 elseif(EXISTS   ${APPLICATION_SOURCE_DIR}/prj_${BOARD}.conf)
   set(CONF_FILE ${APPLICATION_SOURCE_DIR}/prj_${BOARD}.conf)
 
-elseif(EXISTS   ${APPLICATION_SOURCE_DIR}/boards/${BOARD}.conf)
-  set(CONF_FILE ${APPLICATION_SOURCE_DIR}/prj.conf ${APPLICATION_SOURCE_DIR}/boards/${BOARD}.conf)
-
 elseif(EXISTS   ${APPLICATION_SOURCE_DIR}/prj.conf)
   set(CONF_FILE ${APPLICATION_SOURCE_DIR}/prj.conf)
+  set(CONF_FILE_INCLUDE_FRAGMENTS true)
+endif()
+
+if(CONF_FILE_INCLUDE_FRAGMENTS)
+  if(NOT CONF_FILE_DIR)
+     set(CONF_FILE_DIR ${APPLICATION_SOURCE_DIR})
+  endif()
+  zephyr_file(CONF_FILES ${CONF_FILE_DIR}/boards KCONF CONF_FILE BUILD ${CONF_FILE_BUILD_TYPE})
 endif()
 
 set(CACHED_CONF_FILE ${CONF_FILE} CACHE STRING "If desired, you can build the application using\
@@ -424,6 +458,9 @@ elseif(DEFINED ENV{DTC_OVERLAY_FILE})
   set(DTC_OVERLAY_FILE $ENV{DTC_OVERLAY_FILE})
 elseif(EXISTS          ${APPLICATION_SOURCE_DIR}/boards/${BOARD}.overlay)
   set(DTC_OVERLAY_FILE ${APPLICATION_SOURCE_DIR}/boards/${BOARD}.overlay)
+elseif((DEFINED BOARD_REVISION) AND
+       EXISTS          ${APPLICATION_SOURCE_DIR}/${BOARD}_${BOARD_REVISION_STRING}.overlay)
+  set(DTC_OVERLAY_FILE ${APPLICATION_SOURCE_DIR}/${BOARD}_${BOARD_REVISION_STRING}.overlay)
 elseif(EXISTS          ${APPLICATION_SOURCE_DIR}/${BOARD}.overlay)
   set(DTC_OVERLAY_FILE ${APPLICATION_SOURCE_DIR}/${BOARD}.overlay)
 elseif(EXISTS          ${APPLICATION_SOURCE_DIR}/app.overlay)

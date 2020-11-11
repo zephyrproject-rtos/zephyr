@@ -55,6 +55,10 @@ if(OVERLAY_CONFIG)
   string(REPLACE " " ";" OVERLAY_CONFIG_AS_LIST "${OVERLAY_CONFIG}")
 endif()
 
+if((DEFINED BOARD_REVISION) AND EXISTS ${BOARD_DIR}/${BOARD}_${BOARD_REVISION_STRING}.conf)
+  list(INSERT CONF_FILE_AS_LIST 0 ${BOARD_DIR}/${BOARD}_${BOARD_REVISION_STRING}.conf)
+endif()
+
 # DTS_ROOT_BINDINGS is a semicolon separated list, this causes
 # problems when invoking kconfig_target since semicolon is a special
 # character in the C shell, so we make it into a question-mark

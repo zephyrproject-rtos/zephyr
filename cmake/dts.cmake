@@ -45,18 +45,21 @@ list(REMOVE_DUPLICATES
   DTS_ROOT
   )
 
-set(dts_files
-  ${DTS_SOURCE}
-  ${shield_dts_files}
-  )
-
 # TODO: What to do about non-posix platforms where NOT CONFIG_HAS_DTS (xtensa)?
 # Drop support for NOT CONFIG_HAS_DTS perhaps?
 if(EXISTS ${DTS_SOURCE})
   set(SUPPORTS_DTS 1)
+  if(BOARD_REVISION AND EXISTS ${BOARD_DIR}/${BOARD}_${BOARD_REVISION_STRING}.overlay)
+    list(APPEND DTS_SOURCE ${BOARD_DIR}/${BOARD}_${BOARD_REVISION_STRING}.overlay)
+  endif()
 else()
   set(SUPPORTS_DTS 0)
 endif()
+
+set(dts_files
+  ${DTS_SOURCE}
+  ${shield_dts_files}
+  )
 
 if(SUPPORTS_DTS)
   if(DTC_OVERLAY_FILE)
