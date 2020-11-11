@@ -95,6 +95,27 @@ extern "C" {
 #define ESP_CONNECT_TIMEOUT	K_SECONDS(20)
 #define ESP_INIT_TIMEOUT	K_SECONDS(10)
 
+#define ESP_CWDHCP_MODE_STATION		"1"
+#if defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
+#define ESP_CWDHCP_MODE_SOFTAP		"0"
+#else
+#define ESP_CWDHCP_MODE_SOFTAP		"2"
+#endif
+
+#if defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
+#define _ESP_CMD_DHCP_ENABLE(mode, enable) \
+			  "AT+CWDHCP_CUR=" mode "," STRINGIFY(enable)
+#else
+#define _ESP_CMD_DHCP_ENABLE(mode, enable) \
+			  "AT+CWDHCP=" STRINGIFY(enable) "," mode
+#endif
+
+#define ESP_CMD_DHCP_ENABLE(mode, enable) \
+	_ESP_CMD_DHCP_ENABLE(_CONCAT(ESP_CWDHCP_MODE_, mode), enable)
+
+#define ESP_CMD_SET_IP(ip, gateway, mask) "AT+"_CIPSTA"=\"" \
+			  ip "\",\""  gateway  "\",\""  mask "\""
+
 extern struct esp_data esp_driver_data;
 
 enum esp_socket_flags {
