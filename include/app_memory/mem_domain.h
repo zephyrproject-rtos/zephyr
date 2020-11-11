@@ -12,14 +12,11 @@
 #include <stddef.h>
 #include <sys/dlist.h>
 #include <toolchain.h>
+#include <kernel/thread.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* Forward declaration */
-struct k_thread;
-typedef struct k_thread *k_tid_t;
 
 /**
  * @defgroup mem_domain_apis Memory domain APIs
