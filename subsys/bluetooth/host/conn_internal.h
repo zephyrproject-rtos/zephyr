@@ -118,8 +118,8 @@ struct bt_conn_tx {
 };
 
 struct acl_data {
-	/** BT_BUF_ACL_IN */
-	uint8_t  type;
+	/* Extend the bt_buf user data */
+	struct bt_buf_data buf_data;
 
 	/* Index into the bt_conn storage array */
 	uint8_t  index;

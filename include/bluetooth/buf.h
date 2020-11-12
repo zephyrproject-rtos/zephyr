@@ -40,6 +40,11 @@ enum bt_buf_type {
 	BT_BUF_H4,
 };
 
+/** @brief This is a base type for bt_buf user data. */
+struct bt_buf_data {
+	uint8_t type;
+};
+
 /** Minimum amount of user data size for buffers passed to the stack. */
 #define BT_BUF_USER_DATA_MIN __DEPRECATED_MACRO 4
 
@@ -114,7 +119,7 @@ struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable, k_timeout_t timeou
  */
 static inline void bt_buf_set_type(struct net_buf *buf, enum bt_buf_type type)
 {
-	*(uint8_t *)net_buf_user_data(buf) = type;
+	((struct bt_buf_data *)net_buf_user_data(buf))->type = type;
 }
 
 /** Get the buffer type
@@ -125,13 +130,7 @@ static inline void bt_buf_set_type(struct net_buf *buf, enum bt_buf_type type)
  */
 static inline enum bt_buf_type bt_buf_get_type(struct net_buf *buf)
 {
-	/* De-referencing the pointer from net_buf_user_data(buf) as a
-	 * pointer to an enum causes issues on qemu_x86 because the true
-	 * size is 8-bit, but the enum is 32-bit on qemu_x86. So we put in
-	 * a temporary cast to 8-bit to ensure only 8 bits are read from
-	 * the pointer.
-	 */
-	return (enum bt_buf_type)(*(uint8_t *)net_buf_user_data(buf));
+	return ((struct bt_buf_data *)net_buf_user_data(buf))->type;
 }
 
 /**
