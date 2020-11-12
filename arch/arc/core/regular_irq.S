@@ -152,6 +152,24 @@ SECTION_FUNC(TEXT, _rirq_exit)
 .balign 4
 _rirq_reschedule:
 
+#if defined(CONFIG_USERSPACE)
+/*
+ * when USERSPACE is enabled, according to ARCv2 ISA, SP will be switched
+ * if interrupt comes out in user mode, and will be recorded in bit 31
+ * (U bit) of IRQ_ACT. when interrupt exits, SP will be switched back
+ * according to U bit.
+ *
+ * need to remember the user/kernel status of interrupted thread, will be
+ * restored when thread switched back
+ *
+ */
+	lr r4, [_ARC_V2_AUX_IRQ_ACT]
+	and r3, r4, 0x80000000
+	push_s r3
+
+	bclr r4, r4, 31
+	sr r4, [_ARC_V2_AUX_IRQ_ACT]
+#endif
 	/* _save_callee_saved_regs expects outgoing thread in r2 */
 	_save_callee_saved_regs
 
@@ -181,21 +199,6 @@ _rirq_common_interrupt_swap:
 	pop_s r2
 #endif
 
-#if defined(CONFIG_USERSPACE)
-/*
- * when USERSPACE is enabled, according to ARCv2 ISA, SP will be switched
- * if interrupt comes out in user mode, and will be recorded in bit 31
- * (U bit) of IRQ_ACT. when interrupt exits, SP will be switched back
- * according to U bit.
- *
- * For the case that context switches in interrupt, the target sp must be
- * thread's kernel stack, no need to do hardware sp switch. so, U bit should
- * be cleared.
- */
-	lr r0, [_ARC_V2_AUX_IRQ_ACT]
-	bclr r0, r0, 31
-	sr r0, [_ARC_V2_AUX_IRQ_ACT]
-#endif
 
 	ld r3, [r2, _thread_offset_to_relinquish_cause]
 
@@ -250,11 +253,24 @@ _rirq_return_from_coop:
 
 	/* fall through to rtie instruction */
 
+	/* stack now has the IRQ stack frame layout, pointing to sp */
+	/* rtie will pop the rest from the stack */
+	rtie
+
 #endif /* CONFIG_PREEMPT_ENABLED */
 
 .balign 4
 _rirq_return_from_firq:
 _rirq_return_from_rirq:
+#if defined(CONFIG_USERSPACE)
+/*
+ * need to recover the user/kernel status of interrupted thread
+ */
+	pop_s r3
+	lr r2, [_ARC_V2_AUX_IRQ_ACT]
+	or r2, r2, r3
+	sr r2, [_ARC_V2_AUX_IRQ_ACT]
+#endif
 #ifdef CONFIG_TRACING
 	push_s blink
 

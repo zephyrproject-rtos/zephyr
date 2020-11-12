@@ -194,6 +194,15 @@ return_loc:
 _swap_return_from_rirq:
 _swap_return_from_firq:
 
+#if defined(CONFIG_USERSPACE)
+/*
+ * need to recover the user/kernel status of interrupted thread
+ */
+	pop_s r3
+	lr r2, [_ARC_V2_AUX_IRQ_ACT]
+	or r2, r2, r3
+	sr r2, [_ARC_V2_AUX_IRQ_ACT]
+#endif
 	lr r3, [_ARC_V2_STATUS32]
 	bbit1 r3, _ARC_V2_STATUS32_AE_BIT, _return_from_exc_irq
 
@@ -209,13 +218,10 @@ _swap_return_from_firq:
 #endif
 
 	lr r3, [_ARC_V2_AUX_IRQ_ACT]
-	brne r3, 0, _swap_already_in_irq
-
 	/* use lowest interrupt priority */
 	or r3, r3, (1<<(CONFIG_NUM_IRQ_PRIO_LEVELS-1))
 	sr r3, [_ARC_V2_AUX_IRQ_ACT]
 
-_swap_already_in_irq:
 #ifdef CONFIG_TRACING
 	push_s blink
 

@@ -222,11 +222,36 @@ _firq_reschedule:
 	 * registers from the interrupted thread.
 	 */
 
+#if defined(CONFIG_USERSPACE)
+/* when USERSPACE is configured, here need to consider the case where firq comes
+ * out in user mode, according to ARCv2 ISA and nsim, the following micro ops
+ * will be executed:
+ *	sp<-reg bank1'sp
+ *      switch between sp and _ARC_V2_USER_SP
+ * then:
+ *      sp is the sp of kernel stack of interrupted thread
+ *      _ARC_V2_USER_SP is reg bank1'sp
+ *      the sp of user stack of interrupted thread is reg bank0'sp
+ * if firq comes out in kernel mode, the following micro ops will be executed:
+ *      sp<-reg bank'sp
+ * so, sw needs to do necessary handling to set up the correct sp
+ */
+	lr r0, [_ARC_V2_AUX_IRQ_ACT]
+	bbit0 r0, 31, _firq_from_kernel
+	aex sp, [_ARC_V2_USER_SP]
+	lr r0, [_ARC_V2_STATUS32]
+	and r0, r0, ~_ARC_V2_STATUS32_RB(7)
+	kflag r0
+	aex sp, [_ARC_V2_USER_SP]
+	b _firq_create_irq_stack_frame
+_firq_from_kernel:
+#endif
 	/* chose register bank #0 */
 	lr r0, [_ARC_V2_STATUS32]
 	and r0, r0, ~_ARC_V2_STATUS32_RB(7)
 	kflag r0
 
+_firq_create_irq_stack_frame:
 	/* we're back on the outgoing thread's stack */
 	_create_irq_stack_frame
 
@@ -241,6 +266,24 @@ _firq_reschedule:
 	st ilink, [sp, ___isf_t_pc_OFFSET] /* ilink into pc */
 #endif
 
+#if defined(CONFIG_USERSPACE)
+/*
+ * when USERSPACE is enabled, according to ARCv2 ISA, SP will be switched
+ * if interrupt comes out in user mode, and will be recorded in bit 31
+ * (U bit) of IRQ_ACT. when interrupt exits, SP will be switched back
+ * according to U bit.
+ *
+ * need to remember the user/kernel status of interrupted thread, will be
+ * restored when thread switched back
+ *
+ */
+	lr r4, [_ARC_V2_AUX_IRQ_ACT]
+	and r3, r4, 0x80000000
+	push_s r3
+
+	bclr r4, r4, 31
+	sr r4, [_ARC_V2_AUX_IRQ_ACT]
+#endif
 	mov_s r1, _kernel
 	ld_s r2, [r1, _kernel_offset_to_current]
 
@@ -323,6 +366,15 @@ _firq_return_from_coop:
 _firq_return_from_rirq:
 _firq_return_from_firq:
 
+#if defined(CONFIG_USERSPACE)
+/*
+ * need to recover the user/kernel status of interrupted thread
+ */
+	pop_s r3
+	lr r2, [_ARC_V2_AUX_IRQ_ACT]
+	or r2, r2, r3
+	sr r2, [_ARC_V2_AUX_IRQ_ACT]
+#endif
 	_pop_irq_stack_frame
 
 	ld ilink, [sp, -4] /* status32 into ilink */
