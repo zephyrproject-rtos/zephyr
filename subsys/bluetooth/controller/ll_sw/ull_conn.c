@@ -792,7 +792,7 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 	conn = ll_connected_get((*rx)->hdr.handle);
 	if (!conn) {
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		return 0;
 	}
@@ -816,7 +816,7 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 				BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
 
 			/* Mark for buffer for release */
-			(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+			(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 		}
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 		break;
@@ -833,7 +833,7 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 		/* Invalid LL id, drop it. */
 
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		break;
 	}
@@ -1746,7 +1746,7 @@ static void conn_cleanup(struct ll_conn *conn, uint8_t reason)
 		rx = hdr->link->mem;
 
 		/* Mark for buffer for release */
-		hdr->type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		hdr->type = NODE_RX_TYPE_RELEASE;
 
 		/* enqueue rx node towards Thread */
 		ll_rx_put(hdr->link, hdr);
@@ -2323,7 +2323,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 			cu->timeout = conn->llcp_cu.timeout;
 		} else {
 			/* Mark for buffer for release */
-			rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+			rx->hdr.type = NODE_RX_TYPE_RELEASE;
 		}
 
 		/* enqueue rx node towards Thread */
@@ -3708,7 +3708,7 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 		if (!conn->llcp.phy_upd_ind.cmd && (lll->phy_tx == old_tx) &&
 		    (lll->phy_rx == old_rx)) {
 			/* Mark for buffer for release */
-			rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+			rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 			/* enqueue rx node towards Thread */
 			ll_rx_put(rx->hdr.link, rx);
@@ -3720,7 +3720,7 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 				conn->llcp_rx = rx->hdr.link->mem;
 
 				/* Mark for buffer for release */
-				rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+				rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 				/* enqueue rx node towards Thread */
 				ll_rx_put(rx->hdr.link, rx);
@@ -3754,7 +3754,7 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 		    (eff_rx_time <= lll->max_rx_time) &&
 		    (lll->max_rx_time <= max_rx_time)) {
 			/* Mark buffer for release */
-			rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+			rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 			/* enqueue rx node towards Thread */
 			ll_rx_put(rx->hdr.link, rx);
@@ -3800,7 +3800,7 @@ static uint8_t conn_upd_recv(struct ll_conn *conn, memq_link_t *link,
 	instant = sys_le16_to_cpu(pdu->llctrl.conn_update_ind.instant);
 	if (((instant - conn->lll.event_counter) & 0xFFFF) > 0x7FFF) {
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		return BT_HCI_ERR_INSTANT_PASSED;
 	}
@@ -3808,7 +3808,7 @@ static uint8_t conn_upd_recv(struct ll_conn *conn, memq_link_t *link,
 	/* different transaction collision */
 	if (((conn->llcp_req - conn->llcp_ack) & 0x03) == 0x02) {
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		return BT_HCI_ERR_DIFF_TRANS_COLLISION;
 	}
@@ -3882,7 +3882,7 @@ static uint8_t chan_map_upd_recv(struct ll_conn *conn, struct node_rx_pdu *rx,
 
 chan_map_upd_recv_exit:
 	/* Mark for buffer for release */
-	rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+	rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 	return err;
 }
@@ -3894,7 +3894,7 @@ static void terminate_ind_recv(struct ll_conn *conn, struct node_rx_pdu *rx,
 	conn->llcp_terminate.reason_peer = pdu->llctrl.terminate_ind.error_code;
 
 	/* Mark for buffer for release */
-	rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+	rx->hdr.type = NODE_RX_TYPE_RELEASE;
 }
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
@@ -4060,7 +4060,7 @@ static int unknown_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 	ctrl_tx_enqueue(conn, tx);
 
 	/* Mark for buffer for release */
-	rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+	rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 	return 0;
 }
@@ -4137,7 +4137,7 @@ static int feature_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 	ctrl_tx_sec_enqueue(conn, tx);
 
 	/* Mark for buffer for release */
-	rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+	rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 	return 0;
 }
@@ -4214,7 +4214,7 @@ static int pause_enc_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 
 pause_enc_rsp_send_exit:
 	/* Mark for buffer for release */
-	rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+	rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 	return 0;
 }
@@ -4249,7 +4249,7 @@ static int version_ind_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 		ctrl_tx_sec_enqueue(conn, tx);
 
 		/* Mark for buffer for release */
-		rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		rx->hdr.type = NODE_RX_TYPE_RELEASE;
 	} else if (!conn->llcp_version.rx) {
 		/* procedure request acked */
 		conn->llcp_version.ack = conn->llcp_version.req;
@@ -4260,7 +4260,7 @@ static int version_ind_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 		/* Tx-ed and Rx-ed before, ignore this invalid Rx. */
 
 		/* Mark for buffer for release */
-		rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		return 0;
 	}
@@ -4299,7 +4299,7 @@ static int reject_ext_ind_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 	ctrl_tx_enqueue(conn, tx);
 
 	/* Mark for buffer for release */
-	rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+	rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 	return 0;
 }
@@ -4537,7 +4537,7 @@ static inline void reject_ind_recv(struct ll_conn *conn, struct node_rx_pdu *rx,
 
 	if (err) {
 		/* Mark for buffer for release */
-		rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		rx->hdr.type = NODE_RX_TYPE_RELEASE;
 	}
 }
 
@@ -4590,7 +4590,7 @@ static inline void reject_ext_ind_recv(struct ll_conn *conn,
 
 	if (err) {
 		/* Mark for buffer for release */
-		rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		rx->hdr.type = NODE_RX_TYPE_RELEASE;
 	}
 }
 
@@ -4785,7 +4785,7 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 #endif /* CONFIG_BT_CTLR_PHY */
 			    (1)) {
 				/* Mark for buffer for release */
-				(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+				(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 				goto send_length_resp;
 			}
@@ -4893,7 +4893,7 @@ static int ping_resp_send(struct ll_conn *conn, struct node_rx_pdu *rx)
 	ctrl_tx_sec_enqueue(conn, tx);
 
 	/* Mark for buffer for release */
-	rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+	rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 	return 0;
 }
@@ -4949,7 +4949,7 @@ static int phy_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 	ctrl_tx_enqueue(conn, tx);
 
 	/* Mark for buffer for release */
-	rx->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+	rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 	return 0;
 }
@@ -4969,7 +4969,7 @@ static inline uint8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 		if ((conn->llcp_phy.ack == conn->llcp_phy.req) ||
 		    (conn->llcp_phy.state != LLCP_PHY_STATE_RSP_WAIT)) {
 			/* Mark for buffer for release */
-			(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+			(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 			return 0;
 		}
@@ -4985,7 +4985,7 @@ static inline uint8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 		/* Ignore event generation if not local cmd initiated */
 		if (!conn->llcp_phy.cmd) {
 			/* Mark for buffer for release */
-			(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+			(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 			return 0;
 		}
@@ -5005,7 +5005,7 @@ static inline uint8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 	instant = sys_le16_to_cpu(ind->instant);
 	if (((instant - conn->lll.event_counter) & 0xffff) > 0x7fff) {
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		return BT_HCI_ERR_INSTANT_PASSED;
 	}
@@ -5013,7 +5013,7 @@ static inline uint8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 	/* different transaction collision */
 	if (((conn->llcp_req - conn->llcp_ack) & 0x03) == 0x02) {
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		return BT_HCI_ERR_DIFF_TRANS_COLLISION;
 	}
@@ -5353,7 +5353,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
 
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		return 0;
 	}
@@ -5438,7 +5438,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		conn->llcp.encryption.state = LLCP_ENC_STATE_INIT;
 
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 #endif /* CONFIG_BT_CTLR_FAST_ENC */
 
 		/* Enc Setup state machine active */
@@ -5477,7 +5477,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		conn->llcp_enc.pause_rx = 1U;
 
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		break;
 
@@ -5493,7 +5493,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		conn->llcp.encryption.state = LLCP_ENC_STATE_INPROG;
 
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		break;
 
@@ -5757,7 +5757,8 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 							LLCP_CPR_STATE_APP_REQ;
 
 						/* Mark for buffer for release */
-						(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+						(*rx)->hdr.type =
+							NODE_RX_TYPE_RELEASE;
 					} else
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 					{
@@ -5772,7 +5773,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 
 					/* Mark for buffer for release */
 					(*rx)->hdr.type =
-						NODE_RX_TYPE_DC_PDU_RELEASE;
+						NODE_RX_TYPE_RELEASE;
 				}
 
 				conn->llcp_conn_param.ack--;
@@ -5859,7 +5860,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 					LLCP_CPR_STATE_RSP;
 
 				/* Mark for buffer for release */
-				(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+				(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 			}
 
 			conn->llcp_conn_param.ack--;
@@ -5942,7 +5943,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		}
 
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		break;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
@@ -5974,7 +5975,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		conn->procedure_expire = 0U;
 
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
@@ -6020,7 +6021,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				conn->llcp_cu.ack--;
 
 				/* Mark for buffer for release */
-				(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+				(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 				break;
 			}
@@ -6036,7 +6037,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			/* skip event generation if not cmd initiated */
 			if (!conn->llcp_conn_param.cmd) {
 				/* Mark for buffer for release */
-				(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+				(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 				break;
 			}
@@ -6097,7 +6098,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				p->rx = lll->phy_rx;
 			} else {
 				/* Mark for buffer for release */
-				(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+				(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 			}
 #endif /* CONFIG_BT_CTLR_PHY */
 
@@ -6111,7 +6112,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				 */
 
 				/* Mark for buffer for release */
-				(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+				(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 				break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
@@ -6219,7 +6220,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				conn->llcp_phy.pause_tx = 1U;
 
 				/* Mark for buffer for release */
-				(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+				(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 			}
 		} else {
 			nack = phy_rsp_send(conn, *rx, pdu_rx);
@@ -6256,7 +6257,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		}
 
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		break;
 
@@ -6313,7 +6314,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		}
 
 		/* Mark for buffer for release */
-		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		break;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */

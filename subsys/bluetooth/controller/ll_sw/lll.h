@@ -160,12 +160,12 @@ struct lll_event {
 enum node_rx_type {
 	/* Unused */
 	NODE_RX_TYPE_NONE = 0x00,
+	/* Signals release of node */
+	NODE_RX_TYPE_RELEASE,
 	/* Signals completion of RX event */
 	NODE_RX_TYPE_EVENT_DONE,
 	/* Signals arrival of RX Data Channel payload */
 	NODE_RX_TYPE_DC_PDU,
-	/* Signals release of RX Data Channel payload */
-	NODE_RX_TYPE_DC_PDU_RELEASE,
 	/* Advertisement report from scanning */
 	NODE_RX_TYPE_REPORT,
 	NODE_RX_TYPE_EXT_1M_REPORT,

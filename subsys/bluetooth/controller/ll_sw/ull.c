@@ -634,7 +634,7 @@ ll_rx_get_again:
 			/* Do not send up buffers to Host thread that are
 			 * marked for release
 			 */
-			if (rx->type == NODE_RX_TYPE_DC_PDU_RELEASE) {
+			if (rx->type == NODE_RX_TYPE_RELEASE) {
 				(void)memq_dequeue(memq_ll_rx.tail,
 						   &memq_ll_rx.head, NULL);
 				mem_release(link, &mem_link_rx.free);
@@ -2003,6 +2003,8 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 #if defined(CONFIG_BT_CTLR_SCAN_INDICATION)
 	case NODE_RX_TYPE_SCAN_INDICATION:
 #endif /* CONFIG_BT_CTLR_SCAN_INDICATION */
+
+	case NODE_RX_TYPE_RELEASE:
 	{
 		memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
 		ll_rx_put(link, rx);
