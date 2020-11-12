@@ -11,6 +11,7 @@
 #define ZEPHYR_INCLUDE_BLUETOOTH_ADDR_H_
 
 #include <string.h>
+#include <sys/printk.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus
@@ -95,6 +96,107 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
 
 	return BT_ADDR_IS_STATIC(&addr->a);
 }
+
+/**
+ * @def BT_ADDR_STR_LEN
+ *
+ * @brief Recommended length of user string buffer for Bluetooth address
+ *
+ * @details The recommended length guarantee the output of address
+ * conversion will not lose valuable information about address being
+ * processed.
+ */
+#define BT_ADDR_STR_LEN 18
+
+/**
+ * @def BT_ADDR_LE_STR_LEN
+ *
+ * @brief Recommended length of user string buffer for Bluetooth LE address
+ *
+ * @details The recommended length guarantee the output of address
+ * conversion will not lose valuable information about address being
+ * processed.
+ */
+#define BT_ADDR_LE_STR_LEN 30
+
+/**
+ * @brief Converts binary Bluetooth address to string.
+ *
+ * @param addr Address of buffer containing binary Bluetooth address.
+ * @param str Address of user buffer with enough room to store formatted
+ * string containing binary address.
+ * @param len Length of data to be copied to user string buffer. Refer to
+ * BT_ADDR_STR_LEN about recommended value.
+ *
+ * @return Number of successfully formatted bytes from binary address.
+ */
+static inline int bt_addr_to_str(const bt_addr_t *addr, char *str, size_t len)
+{
+	return snprintk(str, len, "%02X:%02X:%02X:%02X:%02X:%02X",
+			addr->val[5], addr->val[4], addr->val[3],
+			addr->val[2], addr->val[1], addr->val[0]);
+}
+
+/**
+ * @brief Converts binary LE Bluetooth address to string.
+ *
+ * @param addr Address of buffer containing binary LE Bluetooth address.
+ * @param str Address of user buffer with enough room to store
+ * formatted string containing binary LE address.
+ * @param len Length of data to be copied to user string buffer. Refer to
+ * BT_ADDR_LE_STR_LEN about recommended value.
+ *
+ * @return Number of successfully formatted bytes from binary address.
+ */
+static inline int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str,
+				    size_t len)
+{
+	char type[10];
+
+	switch (addr->type) {
+	case BT_ADDR_LE_PUBLIC:
+		strcpy(type, "public");
+		break;
+	case BT_ADDR_LE_RANDOM:
+		strcpy(type, "random");
+		break;
+	case BT_ADDR_LE_PUBLIC_ID:
+		strcpy(type, "public-id");
+		break;
+	case BT_ADDR_LE_RANDOM_ID:
+		strcpy(type, "random-id");
+		break;
+	default:
+		snprintk(type, sizeof(type), "0x%02x", addr->type);
+		break;
+	}
+
+	return snprintk(str, len, "%02X:%02X:%02X:%02X:%02X:%02X (%s)",
+			addr->a.val[5], addr->a.val[4], addr->a.val[3],
+			addr->a.val[2], addr->a.val[1], addr->a.val[0], type);
+}
+
+/**
+ * @brief Convert Bluetooth address from string to binary.
+ *
+ * @param[in]  str   The string representation of a Bluetooth address.
+ * @param[out] addr  Address of buffer to store the Bluetooth address
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_addr_from_str(const char *str, bt_addr_t *addr);
+
+/**
+ * @brief Convert LE Bluetooth address from string to binary.
+ *
+ * @param[in]  str   The string representation of an LE Bluetooth address.
+ * @param[in]  type  The string representation of the LE Bluetooth address
+ *                   type.
+ * @param[out] addr  Address of buffer to store the LE Bluetooth address
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_addr_le_from_str(const char *str, const char *type, bt_addr_le_t *addr);
 
 /**
  * @}
