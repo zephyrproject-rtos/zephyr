@@ -117,6 +117,17 @@ struct bt_conn_tx {
 	uint32_t pending_no_cb;
 };
 
+struct acl_data {
+	/** BT_BUF_ACL_IN */
+	uint8_t  type;
+
+	/* Index into the bt_conn storage array */
+	uint8_t  index;
+
+	/** ACL connection handle */
+	uint16_t handle;
+};
+
 struct bt_conn {
 	uint16_t			handle;
 	uint8_t			type;
