@@ -7,5 +7,7 @@ toolchain:
   - gnuarmemb
 supported:
   - gpio
+  - i2c
+  - lsm6dso
 ram: 192
 flash: 512
