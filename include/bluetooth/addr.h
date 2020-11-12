@@ -41,44 +41,89 @@ typedef struct {
 	bt_addr_t a;
 } bt_addr_le_t;
 
+/* Bluetooth device "any" address, not a valid address */
 #define BT_ADDR_ANY     ((bt_addr_t[]) { { { 0, 0, 0, 0, 0, 0 } } })
+/* Bluetooth device "none" address, not a valid address */
 #define BT_ADDR_NONE    ((bt_addr_t[]) { { \
 			 { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } } })
+/* Bluetooth LE device "any" address, not a valid address */
 #define BT_ADDR_LE_ANY  ((bt_addr_le_t[]) { { 0, { { 0, 0, 0, 0, 0, 0 } } } })
+/* Bluetooth LE device "none" address, not a valid address */
 #define BT_ADDR_LE_NONE ((bt_addr_le_t[]) { { 0, \
 			 { { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } } } })
 
+/** @brief Compare Bluetooth device addresses.
+ *
+ *  @param a First Bluetooth device address to compare
+ *  @param b Second Bluetooth device address to compare
+ *
+ *  @return negative value if @a a < @a b, 0 if @a a == @a b, else positive
+ */
 static inline int bt_addr_cmp(const bt_addr_t *a, const bt_addr_t *b)
 {
 	return memcmp(a, b, sizeof(*a));
 }
 
+/** @brief Compare Bluetooth LE device addresses.
+ *
+ *  @param a First Bluetooth LE device address to compare
+ *  @param b Second Bluetooth LE device address to compare
+ *
+ *  @return negative value if @a a < @a b, 0 if @a a == @a b, else positive
+ */
 static inline int bt_addr_le_cmp(const bt_addr_le_t *a, const bt_addr_le_t *b)
 {
 	return memcmp(a, b, sizeof(*a));
 }
 
+/** @brief Copy Bluetooth device address.
+ *
+ *  @param dst Bluetooth device address destination buffer.
+ *  @param src Bluetooth device address source buffer.
+ */
 static inline void bt_addr_copy(bt_addr_t *dst, const bt_addr_t *src)
 {
 	memcpy(dst, src, sizeof(*dst));
 }
 
+/** @brief Copy Bluetooth LE device address.
+ *
+ *  @param dst Bluetooth LE device address destination buffer.
+ *  @param src Bluetooth LE device address source buffer.
+ */
 static inline void bt_addr_le_copy(bt_addr_le_t *dst, const bt_addr_le_t *src)
 {
 	memcpy(dst, src, sizeof(*dst));
 }
 
+/** Check if a Bluetooth LE random address is resolvable private address. */
 #define BT_ADDR_IS_RPA(a)     (((a)->val[5] & 0xc0) == 0x40)
+/** Check if a Bluetooth LE random address is a non-resolvable private address.
+ */
 #define BT_ADDR_IS_NRPA(a)    (((a)->val[5] & 0xc0) == 0x00)
+/** Check if a Bluetooth LE random address is a static address. */
 #define BT_ADDR_IS_STATIC(a)  (((a)->val[5] & 0xc0) == 0xc0)
 
+/** Set a Bluetooth LE random address as a resolvable private address. */
 #define BT_ADDR_SET_RPA(a)    ((a)->val[5] = (((a)->val[5] & 0x3f) | 0x40))
+/** Set a Bluetooth LE random address as a non-resolvable private address. */
 #define BT_ADDR_SET_NRPA(a)   ((a)->val[5] &= 0x3f)
+/** Set a Bluetooth LE random address as a static address. */
 #define BT_ADDR_SET_STATIC(a) ((a)->val[5] |= 0xc0)
 
+/** @brief Create a Bluetooth LE random non-resolvable private address. */
 int bt_addr_le_create_nrpa(bt_addr_le_t *addr);
+
+/** @brief Create a Bluetooth LE random static address. */
 int bt_addr_le_create_static(bt_addr_le_t *addr);
 
+/** @brief Check if a Bluetooth LE address is a random private resolvable
+ *         address.
+ *
+ *  @param addr Bluetooth LE device address.
+ *
+ *  @return true if address is a random private resolvable address.
+ */
 static inline bool bt_addr_le_is_rpa(const bt_addr_le_t *addr)
 {
 	if (addr->type != BT_ADDR_LE_RANDOM) {
@@ -88,6 +133,15 @@ static inline bool bt_addr_le_is_rpa(const bt_addr_le_t *addr)
 	return BT_ADDR_IS_RPA(&addr->a);
 }
 
+/** @brief Check if a Bluetooth LE address is valid identity address.
+ *
+ *  Valid Bluetooth LE identity addresses are either public address or
+ *  random static address.
+ *
+ *  @param addr Bluetooth LE device address.
+ *
+ *  @return true if address is a valid identity address.
+ */
 static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
 {
 	if (addr->type == BT_ADDR_LE_PUBLIC) {
