@@ -235,35 +235,19 @@ uint8_t ll_sync_terminate(uint16_t handle)
 {
 	memq_link_t *link_sync_lost;
 	struct ll_sync_set *sync;
-	uint32_t volatile ret_cb;
-	uint32_t ret;
-	void *mark;
+	int err;
 
 	sync = is_enabled_get(handle);
 	if (!sync) {
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
 
-	mark = ull_disable_mark(sync);
-	LL_ASSERT(mark == sync);
-
-	ret_cb = TICKER_STATUS_BUSY;
-	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
-			  TICKER_ID_SCAN_SYNC_BASE + handle,
-			  ull_ticker_status_give, (void *)&ret_cb);
-	ret = ull_ticker_status_take(ret, &ret_cb);
-	if (ret) {
-		mark = ull_disable_mark(sync);
-		LL_ASSERT(mark == sync);
-
+	err = ull_ticker_stop_with_mark(TICKER_ID_SCAN_SYNC_BASE + handle,
+					sync, &sync->lll);
+	LL_ASSERT(err == 0 || err == -EALREADY);
+	if (err) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
-
-	ret = ull_disable(&sync->lll);
-	LL_ASSERT(!ret);
-
-	mark = ull_disable_unmark(sync);
-	LL_ASSERT(mark == sync);
 
 	link_sync_lost = sync->node_rx_lost.hdr.link;
 	ll_rx_link_release(link_sync_lost);

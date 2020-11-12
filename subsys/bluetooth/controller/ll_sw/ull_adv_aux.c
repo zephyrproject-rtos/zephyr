@@ -866,33 +866,17 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 
 uint8_t ull_adv_aux_stop(struct ll_adv_aux_set *aux)
 {
-	uint32_t volatile ret_cb;
 	uint8_t aux_handle;
-	void *mark;
-	uint32_t ret;
-
-	mark = ull_disable_mark(aux);
-	LL_ASSERT(mark == aux);
+	int err;
 
 	aux_handle = aux_handle_get(aux);
 
-	ret_cb = TICKER_STATUS_BUSY;
-	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
-			  TICKER_ID_ADV_AUX_BASE + aux_handle,
-			  ull_ticker_status_give, (void *)&ret_cb);
-	ret = ull_ticker_status_take(ret, &ret_cb);
-	if (ret) {
-		mark = ull_disable_mark(aux);
-		LL_ASSERT(mark == aux);
-
+	err = ull_ticker_stop_with_mark(TICKER_ID_ADV_AUX_BASE + aux_handle,
+					aux, &aux->lll);
+	LL_ASSERT(err == 0 || err == -EALREADY);
+	if (err) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
-
-	ret = ull_disable(&aux->lll);
-	LL_ASSERT(!ret);
-
-	mark = ull_disable_unmark(aux);
-	LL_ASSERT(mark == aux);
 
 	aux->is_started = 0U;
 

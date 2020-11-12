@@ -1230,6 +1230,54 @@ void *ull_disable_mark_get(void)
 	return mark_get(mark_disable);
 }
 
+/**
+ * @brief Stops a specified ticker using the ull_disable_(un)mark functions.
+ *
+ * @param ticker_handle The handle of the ticker.
+ * @param param         The object to mark.
+ * @param lll_disable   Optional object when calling @ref ull_disable
+ *
+ * @return 0 if success, else ERRNO.
+ */
+int ull_ticker_stop_with_mark(uint8_t ticker_handle, void *param,
+			      void *lll_disable)
+{
+	uint32_t volatile ret_cb;
+	uint32_t ret;
+	void *mark;
+
+	mark = ull_disable_mark(param);
+	if (mark != param) {
+		return -ENOLCK;
+	}
+
+	ret_cb = TICKER_STATUS_BUSY;
+	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
+			  ticker_handle, ull_ticker_status_give,
+			  (void *)&ret_cb);
+	ret = ull_ticker_status_take(ret, &ret_cb);
+	if (ret) {
+		mark = ull_disable_unmark(param);
+		if (mark != param) {
+			return -ENOLCK;
+		}
+
+		return -EALREADY;
+	}
+
+	ret = ull_disable(lll_disable);
+	if (ret) {
+		return -EBUSY;
+	}
+
+	mark = ull_disable_unmark(param);
+	if (mark != param) {
+		return -ENOLCK;
+	}
+
+	return 0;
+}
+
 #if defined(CONFIG_BT_CONN)
 void *ull_update_mark(void *param)
 {

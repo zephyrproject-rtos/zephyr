@@ -535,33 +535,17 @@ static inline uint16_t sync_handle_get(struct ll_adv_sync_set *sync)
 
 static uint8_t sync_stop(struct ll_adv_sync_set *sync)
 {
-	uint32_t volatile ret_cb;
 	uint8_t sync_handle;
-	void *mark;
-	uint32_t ret;
-
-	mark = ull_disable_mark(sync);
-	LL_ASSERT(mark == sync);
+	int err;
 
 	sync_handle = sync_handle_get(sync);
 
-	ret_cb = TICKER_STATUS_BUSY;
-	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
-			  TICKER_ID_ADV_SYNC_BASE + sync_handle,
-			  ull_ticker_status_give, (void *)&ret_cb);
-	ret = ull_ticker_status_take(ret, &ret_cb);
-	if (ret) {
-		mark = ull_disable_mark(sync);
-		LL_ASSERT(mark == sync);
-
+	err = ull_ticker_stop_with_mark(TICKER_ID_ADV_SYNC_BASE + sync_handle,
+					sync, &sync->lll);
+	LL_ASSERT(err == 0 || err == -EALREADY);
+	if (err) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
-
-	ret = ull_disable(&sync->lll);
-	LL_ASSERT(!ret);
-
-	mark = ull_disable_unmark(sync);
-	LL_ASSERT(mark == sync);
 
 	return 0;
 }
