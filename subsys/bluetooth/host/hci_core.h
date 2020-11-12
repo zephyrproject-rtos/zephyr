@@ -340,6 +340,8 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 void bt_le_adv_resume(void);
 bool bt_le_scan_random_addr_check(void);
 
+void bt_hci_host_num_completed_packets(struct net_buf *buf);
+
 /* HCI event handlers */
 void hci_evt_pin_code_req(struct net_buf *buf);
 void hci_evt_link_key_notify(struct net_buf *buf);
