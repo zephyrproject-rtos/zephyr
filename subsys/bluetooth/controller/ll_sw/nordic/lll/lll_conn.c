@@ -650,7 +650,8 @@ static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 			lll->empty = 0;
 
 			pdu_data_tx = (void *)radio_pkt_empty_get();
-			if (IS_ENABLED(CONFIG_BT_CENTRAL) && !lll->role) {
+			if (IS_ENABLED(CONFIG_BT_CENTRAL) && !lll->role &&
+			    !pdu_data_rx->md) {
 				*is_done = !pdu_data_tx->md;
 			}
 
@@ -693,7 +694,8 @@ static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 				*tx_release = tx;
 			}
 
-			if (IS_ENABLED(CONFIG_BT_CENTRAL) && !lll->role) {
+			if (IS_ENABLED(CONFIG_BT_CENTRAL) && !lll->role &&
+			    !pdu_data_rx->md) {
 				*is_done = !pdu_data_tx->md;
 			}
 		}
