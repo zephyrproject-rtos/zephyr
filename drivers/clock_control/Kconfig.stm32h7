@@ -5,6 +5,14 @@
 
 if SOC_SERIES_STM32H7X
 
+config CLOCK_STM32_SKIP_INIT
+	bool "Skip clock init"
+	help
+	  Skip a clock init in the driver when the clock was already configured
+	  eg. in a bootloader.
+
+if ! CLOCK_STM32_SKIP_INIT
+
 # Oscillator clocks configuration options
 
 config CLOCK_STM32_HSI_DIVISOR
@@ -105,3 +113,5 @@ config CLOCK_STM32_PLL_R_DIVISOR
 	  PLL R Output divisor, allowed values: 1-128.
 
 endif # SOC_SERIES_STM32H7X
+
+endif # ! CLOCK_STM32_SKIP_INIT

@@ -51,6 +51,8 @@
 #define HSE_FREQ HSE_VALUE
 #define CSI_FREQ 4000000UL	/* CSI_VALUE ((uint32_t)4000000) */
 
+#if !defined(CONFIG_CLOCK_STM32_SKIP_INIT)
+
 /* Choose PLL SRC */
 #ifdef CONFIG_CLOCK_STM32_PLL_SRC_HSI
 #define PLLSRC_FREQ  ((HSI_FREQ)/(CONFIG_CLOCK_STM32_HSI_DIVISOR))
@@ -135,6 +137,8 @@
 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC"
 #endif
 
+#endif
+
 /* end of clock feasability check */
 #endif /* CONFIG_CPU_CORTEX_M7 */
 
@@ -156,7 +160,167 @@ static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 	return clock / prescaler;
 }
 
-#if !defined(CONFIG_CPU_CORTEX_M4)
+static int ahb_div_value(uint32_t reg)
+{
+	int val = 1;
+
+	switch (reg) {
+	case LL_RCC_AHB_DIV_1:
+		val = 1;
+		break;
+	case LL_RCC_AHB_DIV_2:
+		val = 2;
+		break;
+	case LL_RCC_AHB_DIV_4:
+		val = 4;
+		break;
+	case LL_RCC_AHB_DIV_8:
+		val = 8;
+		break;
+	case LL_RCC_AHB_DIV_16:
+		val = 16;
+		break;
+	case LL_RCC_AHB_DIV_64:
+		val = 64;
+		break;
+	case LL_RCC_AHB_DIV_128:
+		val = 128;
+		break;
+	case LL_RCC_AHB_DIV_256:
+		val = 256;
+		break;
+	case LL_RCC_AHB_DIV_512:
+		val = 512;
+		break;
+	}
+
+	return val;
+}
+
+static int apb1_div_value(uint32_t reg)
+{
+	int val = 1;
+
+	switch (reg) {
+	case LL_RCC_APB1_DIV_1:
+		val = 1;
+		break;
+	case LL_RCC_APB1_DIV_2:
+		val = 2;
+		break;
+	case LL_RCC_APB1_DIV_4:
+		val = 4;
+		break;
+	case LL_RCC_APB1_DIV_8:
+		val = 8;
+		break;
+	case LL_RCC_APB1_DIV_16:
+		val = 16;
+		break;
+	}
+
+	return val;
+}
+
+static int apb2_div_value(uint32_t reg)
+{
+	int val = 1;
+
+	switch (reg) {
+	case LL_RCC_APB2_DIV_1:
+		val = 1;
+		break;
+	case LL_RCC_APB2_DIV_2:
+		val = 2;
+		break;
+	case LL_RCC_APB2_DIV_4:
+		val = 4;
+		break;
+	case LL_RCC_APB2_DIV_8:
+		val = 8;
+		break;
+	case LL_RCC_APB2_DIV_16:
+		val = 16;
+		break;
+	}
+
+	return val;
+}
+
+static int apb3_div_value(uint32_t reg)
+{
+	int val = 1;
+
+	switch (reg) {
+	case LL_RCC_APB3_DIV_1:
+		val = 1;
+		break;
+	case LL_RCC_APB3_DIV_2:
+		val = 2;
+		break;
+	case LL_RCC_APB3_DIV_4:
+		val = 4;
+		break;
+	case LL_RCC_APB3_DIV_8:
+		val = 8;
+		break;
+	case LL_RCC_APB3_DIV_16:
+		val = 16;
+		break;
+	}
+
+	return val;
+}
+
+static int apb4_div_value(uint32_t reg)
+{
+	int val = 1;
+
+	switch (reg) {
+	case LL_RCC_APB4_DIV_1:
+		val = 1;
+		break;
+	case LL_RCC_APB4_DIV_2:
+		val = 2;
+		break;
+	case LL_RCC_APB4_DIV_4:
+		val = 4;
+		break;
+	case LL_RCC_APB4_DIV_8:
+		val = 8;
+		break;
+	case LL_RCC_APB4_DIV_16:
+		val = 16;
+		break;
+	}
+
+	return val;
+}
+
+static int hsi_div_value(void)
+{
+	int val;
+
+	switch (LL_RCC_HSI_GetDivider()) {
+	case LL_RCC_HSI_DIV2:
+		val = 2;
+		break;
+	case LL_RCC_HSI_DIV4:
+		val = 4;
+		break;
+	case LL_RCC_HSI_DIV8:
+		val = 8;
+		break;
+	case LL_RCC_HSI_DIV1:
+	default:
+		val = 1;
+		break;
+	}
+
+	return val;
+}
+
+#if !defined(CONFIG_CPU_CORTEX_M4) && !defined(CONFIG_CLOCK_STM32_SKIP_INIT)
 
 static inline uint32_t get_pllsrc_frequency(void)
 {
@@ -179,22 +343,7 @@ static uint32_t get_hclk_frequency(void)
 	uint32_t hpre = 0;
 	uint32_t hsidiv = 0;
 
-	/* Get the current HSI divider */
-	switch (LL_RCC_HSI_GetDivider()) {
-	case LL_RCC_HSI_DIV2:
-		hsidiv = 2;
-		break;
-	case LL_RCC_HSI_DIV4:
-		hsidiv = 4;
-		break;
-	case LL_RCC_HSI_DIV8:
-		hsidiv = 8;
-		break;
-	case LL_RCC_HSI_DIV1:
-	default:
-		hsidiv = 1;
-		break;
-	}
+	hsidiv = hsi_div_value();
 
 	/* Get the current system clock source */
 	switch (LL_RCC_GetSysClkSource()) {
@@ -215,38 +364,8 @@ static uint32_t get_hclk_frequency(void)
 		break;
 	}
 	/* AHB/HCLK clock is sysclk/HPRE AHB prescaler*/
-	switch (LL_RCC_GetAHBPrescaler()) {
-	case LL_RCC_AHB_DIV_1:
-		hpre = 1;
-		break;
-	case LL_RCC_AHB_DIV_2:
-		hpre = 2;
-		break;
-	case LL_RCC_AHB_DIV_4:
-		hpre = 4;
-		break;
-	case LL_RCC_AHB_DIV_8:
-		hpre = 8;
-		break;
-	case LL_RCC_AHB_DIV_16:
-		hpre = 16;
-		break;
-	case LL_RCC_AHB_DIV_64:
-		hpre = 64;
-		break;
-	case LL_RCC_AHB_DIV_128:
-		hpre = 128;
-		break;
-	case LL_RCC_AHB_DIV_256:
-		hpre = 256;
-		break;
-	case LL_RCC_AHB_DIV_512:
-		hpre = 512;
-		break;
-	default:
-		hpre = 1;
-		break;
-	}
+	hpre = ahb_div_value(LL_RCC_GetAHBPrescaler());
+
 	return get_bus_clock(sysclk, hpre);
 }
 
@@ -402,16 +521,16 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 	uint32_t ahb_clock = SystemCoreClock;
 #else
 	uint32_t ahb_clock = get_bus_clock(SystemCoreClock,
-				CONFIG_CLOCK_STM32_HPRE);
+			ahb_div_value(LL_RCC_GetAHBPrescaler()));
 #endif
 	uint32_t apb1_clock = get_bus_clock(ahb_clock,
-				CONFIG_CLOCK_STM32_D2PPRE1);
+			apb1_div_value(LL_RCC_GetAPB1Prescaler()));
 	uint32_t apb2_clock = get_bus_clock(ahb_clock,
-				CONFIG_CLOCK_STM32_D2PPRE2);
+			apb2_div_value(LL_RCC_GetAPB2Prescaler()));
 	uint32_t apb3_clock = get_bus_clock(ahb_clock,
-				CONFIG_CLOCK_STM32_D1PPRE);
+			apb3_div_value(LL_RCC_GetAPB3Prescaler()));
 	uint32_t apb4_clock = get_bus_clock(ahb_clock,
-				CONFIG_CLOCK_STM32_D3PPRE);
+			apb4_div_value(LL_RCC_GetAPB4Prescaler()));
 
 	ARG_UNUSED(clock);
 
@@ -450,7 +569,7 @@ static struct clock_control_driver_api stm32_clock_control_api = {
 
 static int stm32_clock_control_init(const struct device *dev)
 {
-
+#if !defined(CONFIG_CLOCK_STM32_SKIP_INIT)
 #if !defined(CONFIG_CPU_CORTEX_M4)
 	uint32_t old_hclk_freq = 0;
 	uint32_t new_hclk_freq = 0;
@@ -649,6 +768,7 @@ static int stm32_clock_control_init(const struct device *dev)
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 
 #endif /* CONFIG_CPU_CORTEX_M4 */
+#endif /* !CONFIG_CLOCK_STM32_SKIP_INIT */
 
 	/* Set systick to 1ms */
 	SysTick_Config(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 1000);
