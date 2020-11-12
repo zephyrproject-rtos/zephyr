@@ -218,6 +218,7 @@ config USERSPACE
 	depends on ARCH_HAS_USERSPACE
 	depends on RUNTIME_ERROR_CHECKS
 	select SRAM_REGION_PERMISSIONS if MMU
+	select THREAD_STACK_INFO
 	help
 	  When enabled, threads may be created or dropped down to user mode,
 	  which has significantly restricted permissions and must interact
