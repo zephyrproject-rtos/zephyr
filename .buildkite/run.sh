@@ -49,13 +49,6 @@ echo ""
 echo "--- ccache stats at start"
 ccache -s
 
-# Temporary fix: Install lpc_checksum, needed to build images for
-# lpcxpresso11u68 boards
-pip3 install lpc_checksum
-
-# Temporary fix: Install imgtool, needed for MCUboot to sign images
-# when builindg the TF-M integration samples
-pip3 install imgtool
 
 if [ -n "${DAILY_BUILD}" ]; then
    SANITYCHECK_OPTIONS=" --inline-logs -N --build-only --all --retry-failed 3 -v "
