@@ -1726,53 +1726,96 @@ endfunction()
 #                          Issue an error for any relative path not specified
 #                          by user with `-D<path>`
 #
+# CONF_FILES <path>: Find all configuration files in path and return them in a
+#                    list. Configuration files will be:
+#                    - DTS:       Overlay files (.overlay)
+#                    - Kconfig:   Config fragments (.conf)
+#                    The conf file search will return existing configuration
+#                    files for the current board.
+#                    CONF_FILES takes the following additional arguments:
+#                    DTS <list>:   List to populate with DTS overlay files
+#                    KCONF <list>: List to populate with Kconfig fragment files
+#                    BUILD <type>: Build type to include for search.
+#                                  For example:
+#                                  BUILD debug, will look for <board>_debug.conf
+#                                  and <board>_debug.overlay, instead of <board>.conf
+#
 # returns an updated list of absolute paths
 function(zephyr_file)
-  set(options APPLICATION_ROOT)
-  cmake_parse_arguments(FILE "${options}" "" "" ${ARGN})
-  if(NOT FILE_APPLICATION_ROOT)
+  set(file_options APPLICATION_ROOT CONF_FILES)
+  if((ARGC EQUAL 0) OR (NOT (ARGV0 IN_LIST file_options)))
     message(FATAL_ERROR "No <mode> given to `zephyr_file(<mode> <args>...)` function,\n \
-Please provide one of following: APPLICATION_ROOT")
+Please provide one of following: APPLICATION_ROOT, CONF_FILES")
   endif()
 
-  if(FILE_APPLICATION_ROOT)
-    if(NOT (${ARGC} EQUAL 2))
-      math(EXPR ARGC "${ARGC} - 1")
-      message(FATAL_ERROR "zephyr_file(APPLICATION_ROOT <path-variable>) takes exactly 1 argument, ${ARGC} were given")
-    endif()
+  if(${ARGV0} STREQUAL APPLICATION_ROOT)
+    set(single_args APPLICATION_ROOT)
+  elseif(${ARGV0} STREQUAL CONF_FILES)
+    set(single_args CONF_FILES DTS KCONF BUILD)
+  endif()
 
+  cmake_parse_arguments(FILE "" "${single_args}" "" ${ARGN})
+  if(FILE_UNPARSED_ARGUMENTS)
+      message(FATAL_ERROR "zephyr_file(${ARGV0} <path> ...) given unknown arguments: ${FILE_UNPARSED_ARGUMENTS}")
+  endif()
+
+
+  if(FILE_APPLICATION_ROOT)
     # Note: user can do: `-D<var>=<relative-path>` and app can at same
     # time specify `list(APPEND <var> <abs-path>)`
     # Thus need to check and update only CACHED variables (-D<var>).
-    set(CACHED_PATH $CACHE{${ARGV1}})
+    set(CACHED_PATH $CACHE{${FILE_APPLICATION_ROOT}})
     foreach(path ${CACHED_PATH})
       # The cached variable is relative path, i.e. provided by `-D<var>` or
       # `set(<var> CACHE)`, so let's update current scope variable to absolute
       # path from  `APPLICATION_SOURCE_DIR`.
       if(NOT IS_ABSOLUTE ${path})
         set(abs_path ${APPLICATION_SOURCE_DIR}/${path})
-        list(FIND ${ARGV1} ${path} index)
+        list(FIND ${FILE_APPLICATION_ROOT} ${path} index)
         if(NOT ${index} LESS 0)
-          list(REMOVE_AT ${ARGV1} ${index})
-          list(INSERT ${ARGV1} ${index} ${abs_path})
+          list(REMOVE_AT ${FILE_APPLICATION_ROOT} ${index})
+          list(INSERT ${FILE_APPLICATION_ROOT} ${index} ${abs_path})
         endif()
       endif()
     endforeach()
 
     # Now all cached relative paths has been updated.
     # Let's check if anyone uses relative path as scoped variable, and fail
-    foreach(path ${${ARGV1}})
+    foreach(path ${${FILE_APPLICATION_ROOT}})
       if(NOT IS_ABSOLUTE ${path})
         message(FATAL_ERROR
-"Relative path encountered in scoped variable: ${ARGV1}, value=${path}\n \
-Please adjust any `set(${ARGV1} ${path})` or `list(APPEND ${ARGV1} ${path})`\n \
+"Relative path encountered in scoped variable: ${FILE_APPLICATION_ROOT}, value=${path}\n \
+Please adjust any `set(${FILE_APPLICATION_ROOT} ${path})` or `list(APPEND ${FILE_APPLICATION_ROOT} ${path})`\n \
 to absolute path using `\${CMAKE_CURRENT_SOURCE_DIR}/${path}` or similar. \n \
 Relative paths are only allowed with `-D${ARGV1}=<path>`")
       endif()
     endforeach()
 
     # This updates the provided argument in parent scope (callers scope)
-    set(${ARGV1} ${${ARGV1}} PARENT_SCOPE)
+    set(${FILE_APPLICATION_ROOT} ${${FILE_APPLICATION_ROOT}} PARENT_SCOPE)
+  endif()
+
+  if(FILE_CONF_FILES)
+    if(FILE_DTS)
+      if(EXISTS ${FILE_CONF_FILES}/${BOARD}.overlay)
+        list(APPEND ${FILE_DTS} ${FILE_CONF_FILES}/${BOARD}.overlay)
+        # This updates the provided list in parent scope (callers scope)
+        set(${FILE_DTS} ${${FILE_DTS}} PARENT_SCOPE)
+      endif()
+    endif()
+
+    if(FILE_KCONF)
+      set(FILENAME ${BOARD})
+      if(FILE_BUILD)
+        set(FILENAME "${FILENAME}_${FILE_BUILD}")
+      endif()
+
+      if(EXISTS ${FILE_CONF_FILES}/${FILENAME}.conf)
+        list(APPEND ${FILE_KCONF} ${FILE_CONF_FILES}/${FILENAME}.conf)
+        # This updates the provided list in parent scope (callers scope)
+        set(${FILE_KCONF} ${${FILE_KCONF}} PARENT_SCOPE)
+      endif()
+    endif()
   endif()
 endfunction()
 
