@@ -43,6 +43,8 @@ uint32_t ull_ticker_status_take(uint32_t ret, uint32_t volatile *ret_cb);
 void *ull_disable_mark(void *param);
 void *ull_disable_unmark(void *param);
 void *ull_disable_mark_get(void);
+int ull_ticker_stop_with_mark(uint8_t ticker_handle, void *param,
+			      void *lll_disable);
 void *ull_update_mark(void *param);
 void *ull_update_unmark(void *param);
 void *ull_update_mark_get(void);
