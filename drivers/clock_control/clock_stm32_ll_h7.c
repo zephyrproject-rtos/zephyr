@@ -448,6 +448,9 @@ static inline int stm32_clock_control_on(const struct device *dev,
 	case STM32_CLOCK_BUS_APB4:
 		LL_APB4_GRP1_EnableClock(pclken->enr);
 		break;
+	case STM32_CLOCK_BUS_HSI:
+		/* always on */
+		break;
 	default:
 		rc = -ENOTSUP;
 		break;
@@ -553,6 +556,9 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		break;
 	case STM32_CLOCK_BUS_APB4:
 		*rate = apb4_clock;
+		break;
+	case STM32_CLOCK_BUS_HSI:
+		*rate = HSI_VALUE/hsi_div_value();
 		break;
 	default:
 		return -ENOTSUP;
