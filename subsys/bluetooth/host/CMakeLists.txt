@@ -30,6 +30,7 @@ zephyr_library_sources_ifdef(
 if(CONFIG_BT_HCI_HOST)
   zephyr_library_sources(
     uuid.c
+    addr.c
     hci_core.c
     hci_common.c
     )
