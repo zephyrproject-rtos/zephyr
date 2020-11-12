@@ -162,6 +162,8 @@ The Zephyr stm32l562e_dk board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -181,6 +183,7 @@ Default Zephyr Peripheral Mapping:
 ----------------------------------
 
 - USART_1 TX/RX : PA9/PA10
+- I2C_1 SCL/SDA : PB6/PB7
 - USER_PB : PC13
 - LD10 : PG12
 
