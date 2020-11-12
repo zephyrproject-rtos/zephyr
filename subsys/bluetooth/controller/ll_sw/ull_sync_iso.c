@@ -11,6 +11,8 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
+#include <sys/byteorder.h>
+
 #include "util/util.h"
 #include "util/mem.h"
 #include "util/memq.h"
@@ -45,6 +47,9 @@ static void *sync_iso_free;
 
 static int init_reset(void);
 static inline struct ll_sync_iso *sync_iso_acquire(void);
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
+		      uint16_t lazy, void *param);
+static void ticker_op_cb(uint32_t status, void *param);
 
 uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 			   uint8_t encryption, uint8_t *bcode, uint8_t mse,
@@ -97,7 +102,7 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle)
 	memq_link_t *big_sync_estab;
 	memq_link_t *big_sync_lost;
 	struct ll_sync_iso *sync_iso;
-	void *mark;
+	int err;
 
 	sync_iso = ull_sync_iso_get(big_handle);
 	if (!sync_iso) {
@@ -108,13 +113,14 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	mark = ull_disable_mark(sync_iso);
-	LL_ASSERT(mark == sync_iso);
-
 	/* TODO: Stop ticker */
-
-	mark = ull_disable_unmark(sync_iso);
-	LL_ASSERT(mark == sync_iso);
+	err = ull_ticker_stop_with_mark(
+		TICKER_ID_SCAN_SYNC_ISO_BASE + big_handle,
+		sync_iso, &sync_iso->lll);
+	LL_ASSERT(err == 0 || err == -EALREADY);
+	if (err) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
 
 	big_sync_lost = sync_iso->node_rx_lost.link;
 	ll_rx_link_release(big_sync_lost);
@@ -181,12 +187,60 @@ void ull_sync_iso_setup(struct ll_sync_iso *sync_iso,
 			struct node_rx_hdr *node_rx,
 			struct pdu_biginfo *biginfo)
 {
-	/* TODO: Implement and start ticker.
-	 * Depends on ACAD (biginfo) support
-	 */
-	ARG_UNUSED(sync_iso);
-	ARG_UNUSED(node_rx);
-	ARG_UNUSED(biginfo);
+	uint16_t handle;
+	struct node_rx_sync_iso *se;
+	uint16_t interval;
+	uint32_t interval_us;
+	uint32_t ticks_slot_overhead;
+	uint32_t ticks_slot_offset;
+	uint32_t ret;
+	struct node_rx_ftr *ftr;
+	uint32_t sync_offset_us;
+	struct node_rx_pdu *rx;
+	struct lll_sync_iso *lll;
+
+	lll = &sync_iso->lll;
+	handle = ull_sync_iso_handle_get(sync_iso);
+
+	interval = sys_le16_to_cpu(biginfo->iso_interval);
+	interval_us = interval * 1250U;
+
+	/* TODO: Populate LLL with information from the BIGINFO */
+
+	rx = (void *)sync_iso->node_rx_estab.link;
+	rx->hdr.type = NODE_RX_TYPE_SYNC_ISO;
+	rx->hdr.handle = handle;
+	rx->hdr.rx_ftr.param = sync_iso;
+	se = (void *)rx->pdu;
+	se->status = BT_HCI_ERR_SUCCESS;
+	se->interval = interval;
+
+	ll_rx_put(rx->hdr.link, rx);
+	ll_rx_sched();
+
+	ftr = &node_rx->rx_ftr;
+
+	/* TODO: Calculate offset */
+	sync_offset_us = 0;
+	ticks_slot_offset = 0;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
+		ticks_slot_overhead = ticks_slot_offset;
+	} else {
+		ticks_slot_overhead = 0U;
+	}
+
+	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+			   (TICKER_ID_SCAN_SYNC_ISO_BASE + handle),
+			   ftr->ticks_anchor - ticks_slot_offset,
+			   HAL_TICKER_US_TO_TICKS(sync_offset_us),
+			   HAL_TICKER_US_TO_TICKS(interval_us),
+			   HAL_TICKER_REMAINDER(interval_us),
+			   TICKER_NULL_LAZY,
+			   ticks_slot_overhead,
+			   ticker_cb, sync_iso, ticker_op_cb, (void *)__LINE__);
+	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+		  (ret == TICKER_STATUS_BUSY));
 }
 
 static int init_reset(void)
@@ -202,4 +256,48 @@ static int init_reset(void)
 static inline struct ll_sync_iso *sync_iso_acquire(void)
 {
 	return mem_acquire(&sync_iso_free);
+}
+
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
+		      uint16_t lazy, void *param)
+{
+	/* TODO: Implement LLL handling */
+#if 0
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, lll_sync_prepare};
+	static struct lll_prepare_param p;
+	struct ll_sync_set *sync = param;
+	struct lll_sync *lll;
+	uint32_t ret;
+	uint8_t ref;
+
+	DEBUG_RADIO_PREPARE_O(1);
+
+	lll = &sync->lll;
+
+	/* Increment prepare reference count */
+	ref = ull_ref_inc(&sync->ull);
+	LL_ASSERT(ref);
+
+	/* Append timing parameters */
+	p.ticks_at_expire = ticks_at_expire;
+	p.remainder = remainder;
+	p.lazy = lazy;
+	p.param = lll;
+	mfy.param = &p;
+
+	/* Kick LLL prepare */
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
+			     TICKER_USER_ID_LLL, 0, &mfy);
+	LL_ASSERT(!ret);
+
+	DEBUG_RADIO_PREPARE_O(1);
+#endif
+}
+
+static void ticker_op_cb(uint32_t status, void *param)
+{
+	ARG_UNUSED(param);
+
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 }

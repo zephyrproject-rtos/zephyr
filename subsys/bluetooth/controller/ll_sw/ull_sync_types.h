@@ -17,6 +17,11 @@ struct ll_sync_iso {
 	struct node_rx_hdr node_rx_lost;
 	struct node_rx_hdr node_rx_estab;
 };
+
+struct node_rx_sync_iso {
+	uint8_t status;
+	uint16_t interval;
+};
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 
 struct ll_sync_set {
