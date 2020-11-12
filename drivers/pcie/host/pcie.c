@@ -223,7 +223,7 @@ unsigned int pcie_get_irq(pcie_bdf_t bdf)
 void pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq)
 {
 #if CONFIG_PCIE_MSI
-	if (pcie_set_msi(bdf, irq)) {
+	if (pcie_msi_enable(bdf, NULL, 1)) {
 		return;
 	}
 #endif
