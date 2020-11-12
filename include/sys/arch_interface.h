@@ -948,6 +948,41 @@ uint32_t arch_timing_freq_get_mhz(void);
 
 #endif /* CONFIG_TIMING_FUNCTIONS */
 
+#ifdef CONFIG_PCIE_MSI_MULTI_VECTOR
+
+struct msi_vector;
+typedef struct msi_vector msi_vector_t;
+
+/**
+ * @brief Allocate vector(s) for the endpoint MSI message(s).
+ *
+ * @param priority the MSI vectors base interrupt priority
+ * @param vectors an array to fill with allocated MSI vectors
+ * @param n_vector the size of MSI vectors array
+ *
+ * @return The number of allocated MSI vectors
+ */
+uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
+				       msi_vector_t *vectors,
+				       uint8_t n_vector);
+
+/**
+ * @brief Connect an MSI vector to the given routine
+ *
+ * @param vector The MSI vector to connect to
+ * @param routine Interrupt service routine
+ * @param parameter ISR parameter
+ * @param flags Arch-specific IRQ configuration flag
+ *
+ * @return True on success, false otherwise
+ */
+bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
+				  void (*routine)(const void *parameter),
+				  const void *parameter,
+				  uint32_t flags);
+
+#endif /* CONFIG_PCIE_MSI_MULTI_VECTOR */
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
