@@ -480,7 +480,9 @@ isr_rx_do_close:
 
 static void isr_tx(void *param)
 {
+#if defined(CONFIG_BT_CTLR_PRIVACY) && defined(CONFIG_BT_CTLR_ADV_EXT)
 	struct lll_scan *lll = param;
+#endif
 	struct node_rx_pdu *node_rx;
 	uint32_t hcto;
 
@@ -505,7 +507,6 @@ static void isr_tx(void *param)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		radio_ar_configure(count, irks, (lll->phy << 2));
 #else
-		ARG_UNUSED(lll);
 		radio_ar_configure(count, irks, 0);
 #endif
 	}
