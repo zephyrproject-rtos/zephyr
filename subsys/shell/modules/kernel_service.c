@@ -180,7 +180,7 @@ static int cmd_kernel_stacks(const struct shell *shell,
 			     size_t argc, char **argv)
 {
 	uint8_t *buf;
-	size_t size, unused = 0;
+	size_t size, unused;
 
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -194,6 +194,7 @@ static int cmd_kernel_stacks(const struct shell *shell,
 		buf = Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[i]);
 		size = K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i]);
 
+		unused = 0;
 		for (size_t i = 0; i < size; i++) {
 			if (buf[i] == 0xAAU) {
 				unused++;
