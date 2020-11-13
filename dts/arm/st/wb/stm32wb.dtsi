@@ -311,6 +311,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x1>;
 			st,mem2mem;
 			dma-requests = <7>;
+			dma-offset = <0>;
 			status = "disabled";
 			label = "DMA_1";
 		};
@@ -323,6 +324,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x2>;
 			st,mem2mem;
 			dma-requests = <7>;
+			dma-offset = <7>;
 			status = "disabled";
 			label = "DMA_2";
 		};
