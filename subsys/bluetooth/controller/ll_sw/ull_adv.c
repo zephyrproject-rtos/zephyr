@@ -1298,12 +1298,12 @@ int ull_adv_init(void)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC)) {
-		err = ull_adv_sync_init();
-		if (err) {
-			return err;
-		}
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+	err = ull_adv_sync_init();
+	if (err) {
+		return err;
 	}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_AUX_SET */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -1334,7 +1334,8 @@ int ull_adv_reset(void)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC)) {
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+	{
 		int err;
 
 		err = ull_adv_sync_reset();
@@ -1342,6 +1343,7 @@ int ull_adv_reset(void)
 			return err;
 		}
 	}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_AUX_SET */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
