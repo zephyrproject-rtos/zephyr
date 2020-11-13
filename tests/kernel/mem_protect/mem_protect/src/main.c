@@ -33,6 +33,7 @@ void test_main(void)
 		ztest_unit_test(test_mem_domain_api_supervisor_only),
 		ztest_unit_test(test_mem_domain_boot_threads),
 		ztest_unit_test(test_mem_domain_migration),
+		ztest_unit_test(test_mem_part_overlap),
 
 		/* mem_partition.c */
 		ztest_unit_test(test_macros_obtain_names_data_bss),

@@ -14,13 +14,13 @@ static K_THREAD_STACK_DEFINE(child_stack, 512 + CONFIG_TEST_EXTRA_STACKSIZE);
 static struct k_mem_domain test_domain;
 
 #define PARTS_USED	2
-/* Maximum number of alloable memory partitions defined by the build */
+/* Maximum number of allowable memory partitions defined by the build */
 #define NUM_RW_PARTS	(CONFIG_MAX_DOMAIN_PARTITIONS - PARTS_USED)
 
 /* Max number of allowable partitions, derived at runtime. Might be less. */
 ZTEST_BMEM int num_rw_parts;
 
-/* Set of read-write buffers each in their own partrition */
+/* Set of read-write buffers each in their own partition */
 static volatile uint8_t __aligned(MEM_REGION_ALLOC)
 	rw_bufs[NUM_RW_PARTS][MEM_REGION_ALLOC];
 static struct k_mem_partition rw_parts[NUM_RW_PARTS];
@@ -29,6 +29,9 @@ static struct k_mem_partition rw_parts[NUM_RW_PARTS];
 static volatile uint8_t __aligned(MEM_REGION_ALLOC) ro_buf[MEM_REGION_ALLOC];
 K_MEM_PARTITION_DEFINE(ro_part, ro_buf, sizeof(ro_buf),
 		       K_MEM_PARTITION_P_RO_U_RO);
+/* A partition to test overlap that has same ro_buf as a partition ro_part */
+K_MEM_PARTITION_DEFINE(overlap_part, ro_buf, sizeof(ro_buf),
+		       K_MEM_PARTITION_P_RW_U_RW);
 
 /* Static thread, used by a couple tests */
 static void zzz_entry(void *p1, void *p2, void *p3)
@@ -330,4 +333,49 @@ void test_mem_domain_migration(void)
 	spin_done = true;
 
 	k_thread_join(&child_thread, K_FOREVER);
+}
+
+/**
+ * @brief Test system assert when new partition overlaps the existing partition
+ *
+ * @details
+ * Test Objective:
+ * - Test assertion if the new partition overlaps existing partition in domain
+ *
+ * Testing techniques:
+ * - System testing
+ *
+ * Prerequisite Conditions:
+* - N/A
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Define testing memory partition overlap_part with the same start ro_buf
+ *  as has the existing memory partition ro_part
+ * -# Try to add overlap_part to the memory domain. When adding the new
+ *  partition to the memory domain the system will assert that new partition
+ *  overlaps with the existing partition ro_part .
+ *
+ * Expected Test Result:
+ * - Must happen an assertion error indicating that the new partition overlaps
+ *   the existing one.
+ *
+ * Pass/Fail Criteria:
+ * - Success if the overlap assertion will happen.
+ * - Failure if the overlap assertion will not happen.
+ *
+ * Assumptions and Constraints:
+ * - N/A
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_mem_domain_add_partition()
+ */
+void test_mem_part_overlap(void)
+{
+	set_fault_valid(true);
+
+	k_mem_domain_add_partition(&test_domain, &overlap_part);
 }
