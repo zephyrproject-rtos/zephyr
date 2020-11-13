@@ -140,16 +140,21 @@ Build Zephyr with a non-secure configuration:
 
       $ west build -p -b lpcxpresso55s69_ns samples/tfm_integration/tfm_ipc/ --
 
-Next we need to manually flash the secure (``tfm_s.hex``)
-and non-secure (``zephyr.hex``) images wth a J-Link as follows:
+Make sure your board is set up with :ref:`lpclink2-jlink-onboard-debug-probe`,
+since this isn't the debug interface boards ship with from the factory;
+
+Next we need to manually flash the resulting image (``tfm_merged.bin``) with a
+J-Link as follows:
 
    .. code-block:: console
 
       JLinkExe -device lpc55s69 -if swd -speed 2000 -autoconnect 1
-      J-Link>loadfile build/tfm/install/outputs/NXP/LPCXPRESSO55S69/tfm_s.hex
-      J-Link>loadfile build/zephyr/zephyr.hex
+      J-Link>r
+      J-Link>erase
+      J-Link>loadfile build/tfm_merged.bin
 
-NOTE: At present, the LPC55S69 doesn't include support for the MCUBoot bootloader.
+Resetting the board and erasing it will unlock the board, this is useful in case
+it's in an unknown state and can't be flashed.
 
 We need to reset the board manually after flashing the image to run this code.
 
