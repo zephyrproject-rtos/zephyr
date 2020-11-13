@@ -26,7 +26,8 @@ static int statics_init(const struct device *unused)
 
 SYS_INIT(statics_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
-void *k_heap_alloc(struct k_heap *h, size_t bytes, k_timeout_t timeout)
+void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
+			k_timeout_t timeout)
 {
 	int64_t now, end = z_timeout_end_calc(timeout);
 	void *ret = NULL;
@@ -35,7 +36,7 @@ void *k_heap_alloc(struct k_heap *h, size_t bytes, k_timeout_t timeout)
 	__ASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT), "");
 
 	while (ret == NULL) {
-		ret = sys_heap_alloc(&h->heap, bytes);
+		ret = sys_heap_aligned_alloc(&h->heap, align, bytes);
 
 		now = z_tick_get();
 		if ((ret != NULL) || ((end - now) <= 0)) {
