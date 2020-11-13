@@ -80,6 +80,17 @@ int z_x86_allocate_vector(unsigned int priority, int prev_vector)
 	return -1;
 }
 
+void z_x86_irq_connect_on_vector(unsigned int irq,
+				 uint8_t vector,
+				 void (*func)(const void *arg),
+				 const void *arg, uint32_t flags)
+{
+	_irq_to_interrupt_vector[irq] = vector;
+	z_irq_controller_irq_config(vector, irq, flags);
+	x86_irq_funcs[vector - IV_IRQS] = func;
+	x86_irq_args[vector - IV_IRQS] = arg;
+}
+
 /*
  * N.B.: the API docs don't say anything about returning error values, but
  * this function returns -1 if a vector at the specific priority can't be
@@ -99,10 +110,7 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 
 	vector = z_x86_allocate_vector(priority, -1);
 	if (vector >= 0) {
-		_irq_to_interrupt_vector[irq] = vector;
-		z_irq_controller_irq_config(vector, irq, flags);
-		x86_irq_funcs[vector - IV_IRQS] = func;
-		x86_irq_args[vector - IV_IRQS] = arg;
+		z_x86_irq_connect_on_vector(irq, vector, func, arg, flags);
 	}
 
 	irq_unlock(key);
