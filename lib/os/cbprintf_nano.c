@@ -37,77 +37,72 @@ typedef uint32_t uint_value_type;
 BUILD_ASSERT(sizeof(uint_value_type) <= 8U,
 	     "DIGITS_BUFLEN formula may be incorrect");
 
+#define OUTC(_c) do { \
+	out((int)(_c), ctx); \
+	if (IS_ENABLED(CONFIG_CBPRINTF_LIBC_SUBSTS)) { \
+		++count; \
+	} \
+} while (false)
+
 static void print_digits(cbprintf_cb out, void *ctx, uint_value_type num,
 			 unsigned int base, bool pad_before, char pad_char,
 			 int min_width, size_t *countp)
 {
 	size_t count = 0;
 	char buf[DIGITS_BUFLEN];
-	unsigned int i;
+	int i = 0;
 
-	/* Print it backwards into the end of the buffer, low digits first */
-	for (i = DIGITS_BUFLEN - 1U; num != 0U; i--) {
-		buf[i] = "0123456789abcdef"[num % base];
+	/* Print it backwards, low digits first */
+	do {
+		char c = num % base;
+		if (c >= 10) {
+			c += 'a' - '0' - 10;
+		}
+		buf[i++] = c + '0';
 		num /= base;
-	}
+	} while (num);
 
-	if (i == DIGITS_BUFLEN - 1U) {
-		buf[i] = '0';
-	} else {
-		i++;
-	}
-
-	int pad = MAX(min_width - (int)(DIGITS_BUFLEN - i), 0);
+	int pad = MAX(min_width - i, 0);
 
 	for (/**/; pad > 0 && pad_before; pad--) {
-		out(pad_char, ctx);
-		if (IS_ENABLED(CONFIG_CBPRINTF_LIBC_SUBSTS)) {
-			++count;
-		}
+		OUTC(pad_char);
 	}
-	for (/**/; i < DIGITS_BUFLEN; i++) {
-		out(buf[i], ctx);
-		if (IS_ENABLED(CONFIG_CBPRINTF_LIBC_SUBSTS)) {
-			++count;
-		}
-	}
+	do {
+		OUTC(buf[--i]);
+	} while (i > 0);
 	for (/**/; pad > 0; pad--) {
-		out(pad_char, ctx);
-		if (IS_ENABLED(CONFIG_CBPRINTF_LIBC_SUBSTS)) {
-			++count;
-		}
+		OUTC(pad_char);
 	}
 
-	if (IS_ENABLED(CONFIG_CBPRINTF_LIBC_SUBSTS)) {
-		*countp += count;
-	}
+	*countp += count;
 }
 
 static void print_hex(cbprintf_cb out, void *ctx, uint_value_type num,
-		      enum pad_type padding, int min_width, size_t *count)
+		      enum pad_type padding, int min_width, size_t *countp)
 {
 	print_digits(out, ctx, num, 16U, padding != PAD_SPACE_AFTER,
 		     padding == PAD_ZERO_BEFORE ? '0' : ' ', min_width,
-		     count);
+		     countp);
 }
 
 static void print_dec(cbprintf_cb out, void *ctx, uint_value_type num,
-		      enum pad_type padding, int min_width, size_t *count)
+		      enum pad_type padding, int min_width, size_t *countp)
 {
 	print_digits(out, ctx, num, 10U, padding != PAD_SPACE_AFTER,
 		     padding == PAD_ZERO_BEFORE ? '0' : ' ', min_width,
-		     count);
+		     countp);
 }
 
-static bool ok64(cbprintf_cb out, void *ctx, long long val, size_t *count)
+static bool ok64(cbprintf_cb out, void *ctx, long long val, size_t *countp)
 {
+	size_t count = 0;
+
 	if (sizeof(int_value_type) < 8U && val != (int_value_type) val) {
-		out('E', ctx);
-		out('R', ctx);
-		out('R', ctx);
-		if (IS_ENABLED(CONFIG_CBPRINTF_LIBC_SUBSTS)) {
-			*count += 3;
-		}
+		const char *cp = "ERR";
+		do {
+			OUTC(*cp++);
+		} while (*cp);
+		*countp += count;
 		return false;
 	}
 	return true;
@@ -134,15 +129,8 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fmt, va_list ap)
 	size_t count = 0;
 	int might_format = 0; /* 1 if encountered a '%' */
 	enum pad_type padding = PAD_NONE;
-	int min_width = -1;
+	int padlen, min_width = -1;
 	char length_mod = 0;
-
-#define OUTC(_c) do { \
-	out((int)(_c), ctx); \
-	if (IS_ENABLED(CONFIG_CBPRINTF_LIBC_SUBSTS)) { \
-		++count; \
-	} \
-} while (false)
 
 	/* fmt has already been adjusted if needed */
 	while (*fmt) {
@@ -176,10 +164,9 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fmt, va_list ap)
 			case '8':
 			case '9':
 				if (min_width < 0) {
-					min_width = *fmt - '0';
-				} else {
-					min_width = 10 * min_width + *fmt - '0';
+					min_width = 0;
 				}
+				min_width = 10 * min_width + *fmt - '0';
 
 				if (padding == PAD_NONE) {
 					padding = PAD_SPACE_BEFORE;
@@ -247,12 +234,14 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fmt, va_list ap)
 						cp = "0x";
 					}
 
-					while (*cp) {
+					do {
 						OUTC(*cp++);
-					}
+					} while (*cp);
 					if (x == 0) {
-						break;
+						padlen = min_width - 5;
+						goto pad_string;
 					}
+					min_width -= 2;
 				} else if (length_mod == 'l') {
 					x = va_arg(ap, unsigned long);
 				} else if (length_mod == 'L') {
@@ -272,11 +261,11 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fmt, va_list ap)
 				while (*s) {
 					OUTC(*s++);
 				}
+				padlen = min_width - (s - start);
 
+pad_string:
 				if (padding == PAD_SPACE_AFTER) {
-					int remaining = min_width - (s - start);
-
-					while (remaining-- > 0) {
+					while (padlen-- > 0) {
 						OUTC(' ');
 					}
 				}
