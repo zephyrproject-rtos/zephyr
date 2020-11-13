@@ -67,11 +67,6 @@
 };
 
 / {
-	aliases {
-		/delete-property/ gpio-3;
-		/delete-property/ gpio-4;
-	};
-
 	soc {
 		/* Fixup GPIO2 its a different location on RT1010 */
 		/delete-node/ gpio@401bc000;

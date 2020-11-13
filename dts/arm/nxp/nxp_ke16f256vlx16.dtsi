@@ -7,9 +7,3 @@
 #include <nxp/nxp_ke1xf256vlx16.dtsi>
 
 /delete-node/ &flexcan1;
-
-/ {
-	aliases {
-		can-0 = &flexcan0;
-	};
-};

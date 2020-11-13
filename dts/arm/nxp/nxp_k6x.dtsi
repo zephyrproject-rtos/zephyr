@@ -9,33 +9,6 @@
 
 / {
 	aliases {
-		adc-0 = &adc0;
-		adc-1 = &adc1;
-		can-0 = &flexcan0;
-		eth = &enet;
-		gpio-a = &gpioa;
-		gpio-b = &gpiob;
-		gpio-c = &gpioc;
-		gpio-d = &gpiod;
-		gpio-e = &gpioe;
-		i2c-0 = &i2c0;
-		i2c-1 = &i2c1;
-		i2c-2 = &i2c2;
-		pinmux-a = &porta;
-		pinmux-b = &portb;
-		pinmux-c = &portc;
-		pinmux-d = &portd;
-		pinmux-e = &porte;
-		spi-0 = &spi0;
-		spi-1 = &spi1;
-		spi-2 = &spi2;
-		uart-0 = &uart0;
-		uart-1 = &uart1;
-		uart-2 = &uart2;
-		uart-3 = &uart3;
-		uart-4 = &uart4;
-		uart-5 = &uart5;
-		usbd-0 = &usbotg;
 		watchdog0 = &wdog;
 	};
 
