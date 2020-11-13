@@ -11,6 +11,13 @@ config CPU_CORTEX_A
 	help
 	  This option signifies the use of a CPU of the Cortex-A family.
 
+config CPU_AARCH64_CORTEX_R
+	bool
+	select CPU_CORTEX
+	select HAS_FLASH_LOAD_OFFSET
+	help
+	  This option signifies the use of a CPU of the Cortex-R 64-bit family.
+
 config CPU_CORTEX_A53
 	bool
 	select CPU_CORTEX_A
@@ -24,6 +31,13 @@ config CPU_CORTEX_A72
 	select ARMV8_A
 	help
 	  This option signifies the use of a Cortex-A72 CPU
+
+config CPU_CORTEX_R82
+	bool
+	select CPU_AARCH64_CORTEX_R
+	select ARMV8_R
+	help
+	  This option signifies the use of a Cortex-R82 CPU
 
 config HAS_ARM_SMCCC
 	bool
@@ -101,6 +115,27 @@ config ARMV8_A
 	  so that it can support some features included in the AArch64 state.
 	  It supports the T32 and A32 instruction sets.
 
+endif # CPU_CORTEX_A
+
+if CPU_AARCH64_CORTEX_R
+
+config ARMV8_R
+	bool
+	select ATOMIC_OPERATIONS_BUILTIN
+	help
+	  This option signifies the use of an ARMv8-R processor
+	  implementation.
+
+	  From https://developer.arm.com/products/architecture/cpu-architecture/r-profile:
+	  The Armv8-R architecture targets at the Real-time profile. It introduces
+	  virtualization at the highest security level while retaining the
+	  Protected Memory System Architecture (PMSA) based on a Memory Protection
+	  Unit (MPU). It supports the A32 and T32 instruction sets.
+
+endif # CPU_AARCH64_CORTEX_R
+
+if CPU_CORTEX_A || CPU_AARCH64_CORTEX_R
+
 config GEN_ISR_TABLES
 	default y
 
@@ -109,6 +144,7 @@ config GEN_IRQ_VECTOR_TABLE
 
 config ARM_MMU
 	bool "ARM MMU Support"
+	default n if CPU_AARCH64_CORTEX_R
 	default y
 	select MMU
 	select SRAM_REGION_PERMISSIONS
@@ -215,4 +251,4 @@ config MAX_XLAT_TABLES
 
 endif # ARM_MMU
 
-endif # CPU_CORTEX_A
+endif # CPU_CORTEX_A || CPU_AARCH64_CORTEX_R
