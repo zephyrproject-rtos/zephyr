@@ -9,6 +9,9 @@ We are pleased to announce the release of Zephyr RTOS version 2.5.0.
 
 Major enhancements with this release include:
 
+* Introduced support for the SPARC processor architecture and the LEON
+  processor implementation.
+
 The following sections provide detailed lists of changes by component.
 
 Security Vulnerability Related
@@ -79,6 +82,11 @@ Architectures
 
 * RISC-V
 
+* SPARC
+
+  * Added support for the SPARC architecture, compatible with the SPARC V8
+    specification and the SPARC ABI.
+
 * x86
 
 Boards & SoC Support
@@ -91,6 +99,12 @@ Boards & SoC Support
 * Changes for ARC boards:
 
 * Added support for these ARM boards:
+
+* Added support for these SPARC boards:
+
+  * GR716-MINI LEON3FT microcontroller development board
+  * Generic LEON3 board configuration for GRLIB FPGA reference designs
+  * SPARC QEMU for emulating LEON3 processors and running kernel tests
 
 * Made these changes in other boards:
 
