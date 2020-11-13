@@ -190,9 +190,19 @@ To upload the initial image file to an empty slot-0, we simply use ``west flash`
 like normal. ``west flash`` will automatically detect slot-0 address and confirm
 the image.
 
-.. code-block:: console
+.. tabs::
 
-    west flash --bin-file build/zephyr/zephyr.signed.bin
+   .. group-tab:: board supports *.bin flashing
+
+      .. code-block:: console
+
+         west flash --bin-file build/zephyr/zephyr.signed.bin
+
+   .. group-tab:: board supports *.hex flashing
+
+      .. code-block:: console
+
+         west flash --hex-file build/zephyr/zephyr.signed.hex
 
 We need to explicity specify the *signed* image file, otherwise the non-signed version
 will be used and the image wont be runnable.
