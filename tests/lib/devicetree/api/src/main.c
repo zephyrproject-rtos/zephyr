@@ -1206,6 +1206,8 @@ static char *c[] = DT_PROP(TEST_ARRAYS, c);
 
 static void test_arrays(void)
 {
+	int ok;
+
 	zassert_equal(ARRAY_SIZE(a), 3, "a size");
 	zassert_equal(ARRAY_SIZE(b), 4, "b size");
 	zassert_equal(ARRAY_SIZE(c), 2, "c size");
@@ -1218,6 +1220,18 @@ static void test_arrays(void)
 	zassert_true(DT_PROP_HAS_IDX(TEST_ARRAYS, a, 1), "a idx 1");
 	zassert_true(DT_PROP_HAS_IDX(TEST_ARRAYS, a, 2), "a idx 2");
 	zassert_false(DT_PROP_HAS_IDX(TEST_ARRAYS, a, 3), "!a idx 3");
+
+	/*
+	 * Verify that DT_PROP_HAS_IDX can be used with COND_CODE_1()
+	 * and COND_CODE_0(), i.e. its expansion is a literal 1 or 0,
+	 * not an equivalent expression that evaluates to 1 or 0.
+	 */
+	ok = 0;
+	COND_CODE_1(DT_PROP_HAS_IDX(TEST_ARRAYS, a, 0), (ok = 1;), ());
+	zassert_equal(ok, 1, "a idx 0 as a literal 1");
+	ok = 0;
+	COND_CODE_0(DT_PROP_HAS_IDX(TEST_ARRAYS, a, 3), (ok = 1;), ());
+	zassert_equal(ok, 1, "a idx 3 as a literal 0");
 
 	zassert_equal(DT_PROP_BY_IDX(TEST_ARRAYS, a, 0), a[0], "a 0");
 	zassert_equal(DT_PROP_BY_IDX(TEST_ARRAYS, a, 1), a[1], "a 1");

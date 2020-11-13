@@ -428,11 +428,13 @@ def write_vanilla_props(node):
             macro2val.update(phandle_macros(prop, macro))
         elif "array" in prop.type:
             # DT_N_<node-id>_P_<prop-id>_IDX_<i>
+            # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS
             for i, subval in enumerate(prop.val):
                 if isinstance(subval, str):
                     macro2val[macro + f"_IDX_{i}"] = quote_str(subval)
                 else:
                     macro2val[macro + f"_IDX_{i}"] = subval
+                macro2val[macro + f"_IDX_{i}_EXISTS"] = 1
 
         plen = prop_len(prop)
         if plen is not None:
@@ -542,9 +544,11 @@ def phandle_macros(prop, macro):
     if prop.type == "phandle":
         # A phandle is treated as a phandles with fixed length 1.
         ret[f"{macro}_IDX_0_PH"] = f"DT_{prop.val.z_path_id}"
+        ret[f"{macro}_IDX_0_EXISTS"] = 1
     elif prop.type == "phandles":
         for i, node in enumerate(prop.val):
             ret[f"{macro}_IDX_{i}_PH"] = f"DT_{node.z_path_id}"
+            ret[f"{macro}_IDX_{i}_EXISTS"] = 1
     elif prop.type == "phandle-array":
         for i, entry in enumerate(prop.val):
             ret.update(controller_and_data_macros(entry, i, macro))
@@ -562,6 +566,8 @@ def controller_and_data_macros(entry, i, macro):
     ret = {}
     data = entry.data
 
+    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS
+    ret[f"{macro}_IDX_{i}_EXISTS"] = 1
     # DT_N_<node-id>_P_<prop-id>_IDX_<i>_PH
     ret[f"{macro}_IDX_{i}_PH"] = f"DT_{entry.controller.z_path_id}"
     # DT_N_<node-id>_P_<prop-id>_IDX_<i>_VAL_<VAL>
