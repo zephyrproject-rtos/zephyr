@@ -2999,15 +2999,18 @@ class TestSuite(DisablePyTestCollectionMixin):
                         self.add_instances(instance_list[:1])
                 else:
                     instances = list(filter(lambda tc: tc.platform.default, instance_list))
+                    if self.integration:
+                        instances += list(filter(lambda item: item.platform.name in tc.integration_platforms, \
+                                         instance_list))
                     self.add_instances(instances)
 
-                for instance in list(filter(lambda inst: not inst.platform.default, instance_list)):
+                for instance in list(filter(lambda inst: not inst.platform.default and \
+                        not inst.platform.name in tc.integration_platforms, instance_list)):
                     discards[instance] = discards.get(instance, "Not a default test platform")
             elif emulation_platforms:
                 self.add_instances(instance_list)
                 for instance in list(filter(lambda inst: not inst.platform.simulation != 'na', instance_list)):
                     discards[instance] = discards.get(instance, "Not an emulated platform")
-
             else:
                 self.add_instances(instance_list)
 
