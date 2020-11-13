@@ -7,14 +7,6 @@
 #include <dt-bindings/i2c/i2c.h>
 
 / {
-	aliases {
-		adc-0 = &adc0;
-		i2c-0 = &i2c0;
-		i2c-1 = &i2c1;
-		uart-0 = &uart0;
-		usbd-0 = &usbotg;
-	};
-
 	chosen {
 		zephyr,flash-controller = &ftfa;
 	};

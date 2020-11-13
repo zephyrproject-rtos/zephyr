@@ -12,8 +12,6 @@
 
 / {
 	aliases {
-		gpio-0 = &gpio0;
-		gpio-1 = &gpio1;
 		watchdog0 = &wwdt0;
 	};
 

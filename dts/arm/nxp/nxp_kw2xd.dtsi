@@ -9,20 +9,6 @@
 
 / {
 	aliases {
-		adc-0 = &adc0;
-		i2c-0 = &i2c0;
-		i2c-1 = &i2c1;
-		pinmux-a = &pinmux_a;
-		pinmux-b = &pinmux_b;
-		pinmux-c = &pinmux_c;
-		pinmux-d = &pinmux_d;
-		pinmux-e = &pinmux_e;
-		spi-0 = &spi0;
-		spi-1 = &spi1;
-		uart-0 = &uart0;
-		uart-1 = &uart1;
-		uart-2 = &uart2;
-		usbd-0 = &usbd;
 		watchdog0 = &wdog;
 	};
 

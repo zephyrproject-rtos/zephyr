@@ -12,21 +12,6 @@
 #include <dt-bindings/i2c/i2c.h>
 
 / {
-	aliases {
-		adc-0 = &adc0;
-		i2c-0 = &i2c0;
-		i2c-1 = &i2c1;
-		pinmux-a = &porta;
-		pinmux-b = &portb;
-		pinmux-c = &portc;
-		pwm-0 = &tpm0;
-		pwm-1 = &tpm1;
-		pwm-2 = &tpm2;
-		spi-0 = &spi0;
-		spi-1 = &spi1;
-		uart-0 = &lpuart0;
-	};
-
 	chosen {
 		zephyr,entropy = &trng;
 		zephyr,flash-controller = &ftfa;
