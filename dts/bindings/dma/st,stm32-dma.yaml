@@ -93,6 +93,16 @@ properties:
       type: boolean
       description: If the DMA controller V1 supports memory to memory transfer
 
+    dma-offset:
+      type: int
+      required: false
+      description: >
+        offset in the table of channels when mapping to a DMAMUX
+        for 1st dma instance, offset is 0,
+        for 2nd dma instance, offset is the nb of dma channels of the 1st dma,
+        for 3rd dma instance, offset is the nb of dma channels of the 2nd dma
+        plus the nb of dma channels of the 1st dma instance, etc.
+
     "#dma-cells":
       const: 4
 
