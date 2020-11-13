@@ -1062,6 +1062,16 @@ Shields:
     labels:
         - "area: Shields"
 
+SPARC arch:
+    status: maintained
+    collaborators:
+        - martin-aberg
+    files:
+        - arch/sparc/
+        - include/arch/sparc/
+    labels:
+        - "area: SPARC"
+
 STM32:
     status: maintained
     maintainers:
