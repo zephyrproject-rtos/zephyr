@@ -253,8 +253,6 @@ static struct setup_cmd setup_cmds[] = {
 	/* disable unsolicited network registration codes */
 	SETUP_CMD_NOHANDLE("AT+CREG=0"),
 
-	/* create PDP context */
-	SETUP_CMD_NOHANDLE("AT+CGDCONT=1,\"IP\",\"" CONFIG_MODEM_GSM_APN "\""),
 };
 
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_attached)
@@ -346,6 +344,13 @@ static void set_ppp_carrier_on(struct gsm_modem *gsm)
 	}
 }
 
+void __weak gsm_ppp_application_setup(struct modem_context *context,
+				      struct k_sem *sem)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(sem);
+}
+
 static void gsm_finalize_connection(struct gsm_modem *gsm)
 {
 	int ret;
@@ -381,6 +386,14 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 					    K_SECONDS(1));
 		return;
 	}
+
+	gsm_ppp_application_setup(&gsm->context, &gsm->sem_response);
+
+	/* Finalize PDP context */
+	(void)modem_cmd_send_nolock(
+		&gsm->context.iface, &gsm->context.cmd_handler,
+		NULL, 0, "AT+CGDCONT=1,\"IP\",\"" CONFIG_MODEM_GSM_APN "\"",
+		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
 
 	/* Don't initialize PPP until we're attached to packet service */
 	ret = modem_cmd_send_nolock(&gsm->context.iface,
