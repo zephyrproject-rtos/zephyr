@@ -699,7 +699,7 @@ static int qspi_nor_write(const struct device *dev, off_t addr,
 
 	if (size < 4U) {
 		res = write_sub_word(dev, addr, src, size);
-	} else if (((uintptr_t)src < CONFIG_SRAM_BASE_ADDRESS)) {
+	} else if (!nrfx_is_in_ram(src)) {
 		res = write_from_nvmc(dev, addr, src, size);
 	} else {
 		res = nrfx_qspi_write(src, size, addr);
