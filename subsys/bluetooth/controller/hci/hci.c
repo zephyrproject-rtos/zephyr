@@ -476,6 +476,29 @@ static void write_auth_payload_timeout(struct net_buf *buf,
 }
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || \
+	defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+static void configure_data_path(struct net_buf *buf,
+				struct net_buf **evt)
+{
+	struct bt_hci_cp_configure_data_path *cmd = (void *)buf->data;
+	struct bt_hci_rp_configure_data_path *rp;
+
+	uint8_t *vs_config;
+	uint8_t status;
+
+	vs_config = &cmd->vs_config[0];
+
+	status = ll_configure_data_path(cmd->data_path_dir,
+					cmd->data_path_id,
+					cmd->vs_config_len,
+					vs_config);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp->status = status;
+}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO */
+
 #if defined(CONFIG_BT_CONN)
 static void read_tx_power_level(struct net_buf *buf, struct net_buf **evt)
 {
@@ -543,6 +566,13 @@ static int ctrl_bb_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		write_auth_payload_timeout(cmd, evt);
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || \
+	defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	case BT_OCF(BT_HCI_OP_CONFIGURE_DATA_PATH):
+		configure_data_path(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO */
 
 	default:
 		return -EINVAL;
@@ -1363,6 +1393,67 @@ static void le_set_cig_parameters(struct net_buf *buf, struct net_buf **evt)
 	rp->status = status;
 }
 
+static void le_set_cig_params_test(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_set_cig_params_test *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_set_cig_params_test *rp;
+
+	uint32_t m_interval;
+	uint32_t s_interval;
+	uint16_t iso_interval;
+	uint8_t status;
+	uint8_t i;
+
+	m_interval = sys_get_le24(cmd->m_interval);
+	s_interval = sys_get_le24(cmd->s_interval);
+	iso_interval = sys_le16_to_cpu(cmd->iso_interval);
+
+	/* Create CIG or start modifying existing CIG */
+	status = ll_cig_parameters_test_open(cmd->cig_id, m_interval,
+					     s_interval, cmd->m_ft,
+					     cmd->s_ft, iso_interval,
+					     cmd->sca, cmd->packing,
+					     cmd->framing,
+					     cmd->num_cis);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp) +
+				   cmd->num_cis * sizeof(uint16_t));
+	rp->cig_id = cmd->cig_id;
+	rp->num_handles = cmd->num_cis;
+
+	/* Configure individual CISes */
+	for (i = 0; !status && i < cmd->num_cis; i++) {
+		struct bt_hci_cis_params_test *params = cmd->cis;
+		uint16_t handle;
+		uint16_t m_sdu;
+		uint16_t s_sdu;
+		uint16_t m_pdu;
+		uint16_t s_pdu;
+
+		m_sdu = sys_le16_to_cpu(params->m_sdu);
+		s_sdu = sys_le16_to_cpu(params->s_sdu);
+		m_pdu = sys_le16_to_cpu(params->m_pdu);
+		s_pdu = sys_le16_to_cpu(params->s_pdu);
+
+		status = ll_cis_parameters_test_set(params->cis_id,
+						    m_sdu, s_sdu,
+						    m_pdu, s_pdu,
+						    params->m_phy,
+						    params->s_phy,
+						    params->m_bn,
+						    params->s_bn,
+						    &handle);
+		rp->handle[i] = sys_cpu_to_le16(handle);
+	}
+
+	/* Only apply parameters if all went well */
+	if (!status) {
+		status = ll_cig_parameters_commit(cmd->cig_id);
+	}
+
+	rp->status = status;
+}
+
 static void le_create_cis(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_create_cis *cmd = (void *)buf->data;
@@ -1424,6 +1515,128 @@ static void le_remove_cig(struct net_buf *buf, struct net_buf **evt)
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
 
 #endif /* CONFIG_BT_CENTRAL */
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+static void le_setup_iso_path(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_setup_iso_path *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_setup_iso_path *rp;
+	uint8_t status;
+	uint16_t handle;
+	uint16_t company_id;
+	uint16_t vendor_id;
+	uint32_t controller_delay;
+	uint8_t *codec_config;
+
+	handle     = sys_le16_to_cpu(cmd->handle);
+	company_id = sys_le16_to_cpu(cmd->company_id);
+	vendor_id  = sys_le16_to_cpu(cmd->vendor_id);
+	controller_delay = sys_get_le24(cmd->controller_delay);
+	codec_config = &cmd->codec_config[0];
+
+	status = ll_setup_iso_path(handle, cmd->path_dir, cmd->path_id,
+				   cmd->coding_format, company_id, vendor_id,
+				   controller_delay, cmd->codec_config_len,
+				   codec_config);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp->status = status;
+	rp->handle = cmd->handle;
+}
+
+static void le_remove_iso_path(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_remove_iso_path *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_remove_iso_path *rp;
+	uint8_t status;
+	uint16_t handle;
+
+	handle = sys_le16_to_cpu(cmd->handle);
+
+	status = ll_remove_iso_path(handle, cmd->path_dir);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp->status = status;
+	rp->handle = cmd->handle;
+}
+
+static void le_iso_receive_test(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_iso_receive_test *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_iso_receive_test *rp;
+	uint8_t status;
+	uint16_t handle;
+
+	handle = sys_le16_to_cpu(cmd->handle);
+
+	status = ll_iso_receive_test(handle, cmd->payload_type);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp->status = status;
+	rp->handle = cmd->handle;
+}
+
+static void le_iso_transmit_test(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_iso_transmit_test *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_iso_transmit_test *rp;
+	uint8_t status;
+	uint16_t handle;
+
+	handle = sys_le16_to_cpu(cmd->handle);
+
+	status = ll_iso_transmit_test(handle, cmd->payload_type);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp->status = status;
+	rp->handle = cmd->handle;
+}
+
+static void le_iso_test_end(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_iso_test_end *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_iso_test_end *rp;
+	uint8_t status;
+	uint16_t handle;
+	uint32_t received_cnt;
+	uint32_t missed_cnt;
+	uint32_t failed_cnt;
+
+	handle = sys_le16_to_cpu(cmd->handle);
+	status = ll_iso_test_end(handle, &received_cnt, &missed_cnt,
+				 &failed_cnt);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp->status = status;
+	rp->handle = cmd->handle;
+	rp->received_cnt = sys_cpu_to_le32(received_cnt);
+	rp->missed_cnt   = sys_cpu_to_le32(missed_cnt);
+	rp->failed_cnt   = sys_cpu_to_le32(failed_cnt);
+}
+
+static void le_iso_read_test_counters(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_read_test_counters *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_read_test_counters *rp;
+	uint8_t status;
+	uint16_t handle;
+	uint32_t received_cnt;
+	uint32_t missed_cnt;
+	uint32_t failed_cnt;
+
+	handle = sys_le16_to_cpu(cmd->handle);
+	status = ll_iso_read_test_counters(handle, &received_cnt,
+					   &missed_cnt, &failed_cnt);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp->status = status;
+	rp->handle = cmd->handle;
+	rp->received_cnt = sys_cpu_to_le32(received_cnt);
+	rp->missed_cnt   = sys_cpu_to_le32(missed_cnt);
+	rp->failed_cnt   = sys_cpu_to_le32(failed_cnt);
+}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO || CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
 #if defined(CONFIG_BT_PERIPHERAL)
 #if defined(CONFIG_BT_CTLR_LE_ENC)
@@ -2606,6 +2819,9 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_LE_SET_CIG_PARAMS):
 		le_set_cig_parameters(cmd, evt);
 		break;
+	case BT_OCF(BT_HCI_OP_LE_SET_CIG_PARAMS_TEST):
+		le_set_cig_params_test(cmd, evt);
+		break;
 	case BT_OCF(BT_HCI_OP_LE_CREATE_CIS):
 		le_create_cis(cmd, evt);
 		break;
@@ -2635,6 +2851,34 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		break;
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 #endif /* CONFIG_BT_PERIPHERAL */
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+
+	case BT_OCF(BT_HCI_OP_LE_SETUP_ISO_PATH):
+		le_setup_iso_path(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_REMOVE_ISO_PATH):
+		le_remove_iso_path(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_ISO_RECEIVE_TEST):
+		le_iso_receive_test(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_ISO_TRANSMIT_TEST):
+		le_iso_transmit_test(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_ISO_TEST_END):
+		le_iso_test_end(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_ISO_READ_TEST_COUNTERS):
+		le_iso_read_test_counters(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO || CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
 	case BT_OCF(BT_HCI_OP_LE_READ_CHAN_MAP):
 		le_read_chan_map(cmd, evt);

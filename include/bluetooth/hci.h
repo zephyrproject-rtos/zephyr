@@ -568,6 +568,18 @@ struct bt_hci_rp_write_auth_payload_timeout {
 	uint16_t handle;
 } __packed;
 
+#define BT_HCI_OP_CONFIGURE_DATA_PATH           BT_OP(BT_OGF_BASEBAND, 0x0083)
+struct bt_hci_cp_configure_data_path {
+	uint8_t  data_path_dir;
+	uint8_t  data_path_id;
+	uint8_t  vs_config_len;
+	uint8_t  vs_config[0];
+} __packed;
+
+struct bt_hci_rp_configure_data_path {
+	uint8_t  status;
+} __packed;
+
 /* HCI version from Assigned Numbers */
 #define BT_HCI_VERSION_1_0B                     0
 #define BT_HCI_VERSION_1_1                      1
@@ -1459,6 +1471,39 @@ struct bt_hci_rp_le_set_cig_params {
 } __packed;
 
 #define BT_HCI_OP_LE_SET_CIG_PARAMS_TEST        BT_OP(BT_OGF_LE, 0x0063)
+struct bt_hci_cis_params_test {
+	uint8_t  cis_id;
+	uint8_t  nse;
+	uint16_t m_sdu;
+	uint16_t s_sdu;
+	uint16_t m_pdu;
+	uint16_t s_pdu;
+	uint8_t  m_phy;
+	uint8_t  s_phy;
+	uint8_t  m_bn;
+	uint8_t  s_bn;
+} __packed;
+
+struct bt_hci_cp_le_set_cig_params_test {
+	uint8_t  cig_id;
+	uint8_t  m_interval[3];
+	uint8_t  s_interval[3];
+	uint8_t  m_ft;
+	uint8_t  s_ft;
+	uint16_t iso_interval;
+	uint8_t  sca;
+	uint8_t  packing;
+	uint8_t  framing;
+	uint8_t  num_cis;
+	struct bt_hci_cis_params_test cis[0];
+} __packed;
+
+struct bt_hci_rp_le_set_cig_params_test {
+	uint8_t  status;
+	uint8_t  cig_id;
+	uint8_t  num_handles;
+	uint16_t handle[0];
+} __packed;
 
 #define BT_HCI_OP_LE_CREATE_CIS                 BT_OP(BT_OGF_LE, 0x0064)
 struct bt_hci_cis {
@@ -1596,12 +1641,52 @@ struct bt_hci_rp_le_remove_iso_path {
 } __packed;
 
 #define BT_HCI_OP_LE_ISO_TRANSMIT_TEST          BT_OP(BT_OGF_LE, 0x0070)
+struct bt_hci_cp_le_iso_transmit_test {
+	uint16_t handle;
+	uint8_t  payload_type;
+} __packed;
+
+struct bt_hci_rp_le_iso_transmit_test {
+	uint8_t  status;
+	uint16_t handle;
+} __packed;
 
 #define BT_HCI_OP_LE_ISO_RECEIVE_TEST           BT_OP(BT_OGF_LE, 0x0071)
+struct bt_hci_cp_le_iso_receive_test {
+	uint16_t handle;
+	uint8_t  payload_type;
+} __packed;
+
+struct bt_hci_rp_le_iso_receive_test {
+	uint8_t  status;
+	uint16_t handle;
+} __packed;
 
 #define BT_HCI_OP_LE_ISO_READ_TEST_COUNTERS     BT_OP(BT_OGF_LE, 0x0072)
+struct bt_hci_cp_le_read_test_counters {
+	uint16_t handle;
+} __packed;
+
+struct bt_hci_rp_le_read_test_counters {
+	uint8_t  status;
+	uint16_t handle;
+	uint32_t received_cnt;
+	uint32_t missed_cnt;
+	uint32_t failed_cnt;
+} __packed;
 
 #define BT_HCI_OP_LE_ISO_TEST_END               BT_OP(BT_OGF_LE, 0x0073)
+struct bt_hci_cp_le_iso_test_end {
+	uint16_t handle;
+} __packed;
+
+struct bt_hci_rp_le_iso_test_end {
+	uint8_t  status;
+	uint16_t handle;
+	uint32_t received_cnt;
+	uint32_t missed_cnt;
+	uint32_t failed_cnt;
+} __packed;
 
 #define BT_HCI_OP_LE_SET_HOST_FEATURE           BT_OP(BT_OGF_LE, 0x0074)
 struct bt_hci_cp_le_set_host_feature {
