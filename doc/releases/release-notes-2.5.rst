@@ -189,6 +189,10 @@ Drivers and Sensors
 
 * USB
 
+  * Made USB DFU class compatible with the target configuration that does not
+    have a secondary image slot.
+  * Support to use USB DFU within MCUBoot with single application slot mode.
+
 * Video
 
 * Watchdog
