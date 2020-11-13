@@ -42,6 +42,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "ieee802154_nrf5.h"
 #include "nrf_802154.h"
 
+#ifdef CONFIG_NRF_802154_SER_HOST
+#include "nrf_802154_serialization_error.h"
+#endif
+
 struct nrf5_802154_config {
 	void (*irq_config_func)(const struct device *dev);
 };
@@ -52,6 +56,12 @@ static struct nrf5_802154_data nrf5_data;
 #define ACK_REQUEST_BIT (1 << 5)
 #define FRAME_PENDING_BYTE 1
 #define FRAME_PENDING_BIT (1 << 4)
+
+#if defined(CONFIG_SOC_NRF5340_CPUAPP) || defined(CONFIG_SOC_NRF5340_CPUNET)
+#define EUI64_ADDR (NRF_FICR->INFO.DEVICEID)
+#else
+#define EUI64_ADDR (NRF_FICR->DEVICEID)
+#endif
 
 /* Convenience defines for RADIO */
 #define NRF5_802154_DATA(dev) \
@@ -77,8 +87,8 @@ static void nrf5_get_eui64(uint8_t *mac)
 	mac[index++] = IEEE802154_NRF5_VENDOR_OUI & 0xff;
 
 	/* Use device identifier assigned during the production. */
-	factoryAddress = (uint64_t)NRF_FICR->DEVICEID[0] << 32;
-	factoryAddress |= NRF_FICR->DEVICEID[1];
+	factoryAddress = (uint64_t)EUI64_ADDR[0] << 32;
+	factoryAddress |= EUI64_ADDR[1];
 	memcpy(mac + index, &factoryAddress, sizeof(factoryAddress) - index);
 }
 
@@ -175,7 +185,8 @@ static enum ieee802154_hw_caps nrf5_get_capabilities(const struct device *dev)
 {
 	return IEEE802154_HW_FCS |
 	       IEEE802154_HW_FILTER |
-#if !defined(CONFIG_NRF_802154_SL_OPENSOURCE)
+#if !defined(CONFIG_NRF_802154_SL_OPENSOURCE) && \
+    !defined(CONFIG_NRF_802154_SER_HOST)
 	       IEEE802154_HW_CSMA |
 #endif
 	       IEEE802154_HW_2_4_GHZ |
@@ -732,6 +743,13 @@ void nrf_802154_energy_detection_failed(nrf_802154_ed_error_t error)
 		callback(net_if_get_device(nrf5_data.iface), SHRT_MAX);
 	}
 }
+
+#ifdef CONFIG_NRF_802154_SER_HOST
+void nrf_802154_serialization_error(const nrf_802154_ser_err_data_t *p_err)
+{
+	__ASSERT(false, "802.15.4 serialization error");
+}
+#endif
 
 static const struct nrf5_802154_config nrf5_radio_cfg = {
 	.irq_config_func = nrf5_irq_config,
