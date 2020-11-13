@@ -350,6 +350,14 @@ static void model_start(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 
 int bt_mesh_start(void)
 {
+	int err;
+
+	err = bt_mesh_adv_enable();
+	if (err) {
+		BT_ERR("Failed enabling advertiser");
+		return err;
+	}
+
 	if (bt_mesh_beacon_enabled()) {
 		bt_mesh_beacon_enable();
 	} else {

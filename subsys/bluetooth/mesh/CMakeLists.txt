@@ -20,6 +20,10 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH
     health_srv.c
 )
 
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_ADV_LEGACY adv_legacy.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_ADV_EXT adv_ext.c)
+
 zephyr_library_sources_ifdef(CONFIG_BT_SETTINGS settings.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_LOW_POWER lpn.c)

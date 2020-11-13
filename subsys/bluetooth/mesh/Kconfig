@@ -228,8 +228,32 @@ config BT_MESH_ADV_BUF_COUNT
 	  be at least three more advertising buffers than the maximum
 	  supported outgoing segment count (BT_MESH_TX_SEG_MAX).
 
+choice BT_MESH_ADV
+	prompt "Advertiser mode"
+	default BT_MESH_ADV_EXT if BT_EXT_ADV
+	default BT_MESH_ADV_LEGACY
+
+config BT_MESH_ADV_LEGACY
+	bool "Legacy advertising"
+	help
+	  Use legacy advertising commands for mesh sending. Legacy
+	  advertising is significantly slower than the extended advertising, but
+	  is supported by all controllers.
+
+config BT_MESH_ADV_EXT
+	bool "Extended advertising"
+	depends on BT_CTLR_ADV_EXT || !BT_CTLR
+	depends on BT_EXT_ADV
+	help
+	  Use extended advertising commands for operating the advertiser.
+	  Extended advertising is faster and uses less memory than legacy
+	  advertising, but isn't supported by all controllers.
+
+endchoice
+
 config BT_MESH_ADV_STACK_SIZE
 	int "Mesh advertiser thread stack size"
+	depends on BT_MESH_ADV_LEGACY
 	default 1024 if BT_HOST_CRYPTO
 	default 768
 	help
