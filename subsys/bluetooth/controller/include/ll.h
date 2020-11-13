@@ -137,6 +137,38 @@ uint8_t ll_cis_parameters_set(uint8_t cis_id,
 			      uint8_t m_rtn, uint8_t s_rtn,
 			      uint16_t *handle);
 uint8_t ll_cig_parameters_commit(uint8_t cig_id);
+uint8_t ll_cig_parameters_test_open(uint8_t cig_id,
+				    uint32_t m_interval,
+				    uint32_t s_interval,
+				    uint8_t m_ft,
+				    uint8_t s_ft,
+				    uint16_t iso_interval,
+				    uint8_t sca,
+				    uint8_t packing,
+				    uint8_t framing,
+				    uint8_t num_cis);
+uint8_t ll_cis_parameters_test_set(uint8_t cis_id,
+				   uint16_t m_sdu, uint16_t s_sdu,
+				   uint16_t m_pdu, uint16_t s_pdu,
+				   uint8_t m_phy, uint8_t s_phy,
+				   uint8_t m_bn, uint8_t s_bn,
+				   uint16_t *handle);
+uint8_t ll_configure_data_path(uint8_t data_path_dir,
+			       uint8_t data_path_id,
+			       uint8_t vs_config_len,
+			       uint8_t  *vs_config);
+uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
+			  uint8_t coding_format, uint16_t company_id,
+			  uint16_t vendor_id, uint32_t controller_delay,
+			  uint8_t codec_config_len, uint8_t *codec_config);
+uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir);
+uint8_t ll_iso_receive_test(uint16_t handle, uint8_t payload_type);
+uint8_t ll_iso_transmit_test(uint16_t handle, uint8_t payload_type);
+uint8_t ll_iso_test_end(uint16_t handle, uint32_t *received_cnt,
+			uint32_t *missed_cnt, uint32_t *failed_cnt);
+uint8_t ll_iso_read_test_counters(uint16_t handle, uint32_t *received_cnt,
+				  uint32_t *missed_cnt,
+				  uint32_t *failed_cnt);
 
 uint8_t ll_cig_remove(uint8_t cig_id);
 
