@@ -1626,8 +1626,6 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 			 * has 0x prefix followed by significant address hex
 			 * digits, no leading zeros.
 			 */
-			value.uint = (uintptr_t)value.ptr;
-
 			if (value.ptr != NULL) {
 				bps = encode_uint((uintptr_t)value.ptr, &conv,
 						  buf, bpe);
