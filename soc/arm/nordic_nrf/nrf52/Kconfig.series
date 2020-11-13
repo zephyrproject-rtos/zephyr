@@ -13,6 +13,7 @@ config SOC_SERIES_NRF52X
 	select HAS_SYS_POWER_STATE_DEEP_SLEEP_1
 	select XIP
 	select HAS_NRFX
+	select HAS_NORDIC_DRIVERS
 	select HAS_SEGGER_RTT
 	help
 	  Enable support for NRF52 MCU series

@@ -3,7 +3,6 @@
 
 config HAS_NORDIC_DRIVERS
 	bool
-	default y if HAS_HW_NRF_RADIO_IEEE802154
 
 menu "Nordic drivers"
 	depends on HAS_NORDIC_DRIVERS
@@ -94,11 +93,94 @@ config NRF_802154_RX_BUFFERS
 	int "nRF 802.15.4 receive buffers"
 	default 16
 	help
-	  Number of buffers in nRF 802.15.4 driver receive queue.
+	  Number of buffers in nRF 802.15.4 driver receive queue. If this value is modified,
+	  its serialization host counterpart must be set to the exact same value.
 
 endif # NRF_802154_RADIO_DRIVER
 
-endmenu
+config NRF_802154_SER_HOST
+	bool "nRF IEEE 802.15.4 Driver serialization host"
+	depends on !NRF_802154_RADIO_DRIVER
+	depends on !HAS_HW_NRF_RADIO_IEEE802154
+	select IPM
+	select IPM_NRFX
+	select IPM_MSG_CH_0_ENABLE
+	select IPM_MSG_CH_1_ENABLE
+	select IPM_MSG_CH_0_TX
+	select IPM_MSG_CH_1_RX
+	select OPENAMP
+	select IEEE802154_NRF5_EXT_IRQ_MGMT
+	help
+	  Enable serialization of nRF IEEE 802.15.4 Driver. This option is to be
+	  used if radio is not available in the core, but radio services are
+	  provided by a serialization backend.
+
+menuconfig NRF_802154_SER_RADIO
+	bool "nRF IEEE 802.15.4 Driver serialization radio"
+	depends on HAS_HW_NRF_RADIO_IEEE802154
+	depends on !IEEE802154_NRF5
+	select IPM
+	select IPM_NRFX
+	select IPM_MSG_CH_0_ENABLE
+	select IPM_MSG_CH_1_ENABLE
+	select IPM_MSG_CH_0_RX
+	select IPM_MSG_CH_1_TX
+	select OPENAMP
+	select NRF_802154_RADIO_DRIVER
+	help
+	  Enable serialization of nRF IEEE 802.15.4 Driver. This option is to be
+	  used if radio is available in the core to provide radio services over
+	  a serialization backend.
+
+if NRF_802154_SER_RADIO
+
+config NRF_802154_SER_RADIO_INIT_PRIO
+	int "nRF52 IEEE 802.15.4 serialization initialization priority"
+	default 81
+	help
+	  Set the initialization priority number. Do not mess with it unless
+	  you know what you are doing.
+
+endif
+
+menu "nRF 802.15.4 serialization"
+	depends on NRF_802154_SER_HOST || NRF_802154_SER_RADIO
+
+config NRF_802154_SER_LOG
+	bool "802.15.4 serialization logs"
+	default n
+	help
+	  This option enable debug logs of 802.15.4 serialization module.
+
+config NRF_802154_SER_BUFFER_ALLOCATOR_THREAD_SAFE
+	bool
+	# Hidden option
+	default y
+	help
+	  This option specifies if buffers for 802.15.4 serialization are allocated
+	  in a thread-safe manner.
+
+config NRF_802154_SER_DEFAULT_RESPONSE_TIMEOUT
+	int "Default Spinel serialization response timeout in milliseconds"
+	default 500
+	help
+	  This option specifies default timeout of spinel status response
+	  in milliseconds.
+
+if NRF_802154_SER_HOST
+
+config NRF_802154_RX_BUFFERS
+	int "nRF 802.15.4 receive buffers"
+	default 16
+	help
+	  Number of buffers in nRF 802.15.4 driver serialization host's receive queue.
+	  If this value is modified, its remote counterpart must be set to the exact same value.
+
+endif
+
+endmenu # NRF_802154_SER_HOST || NRF_802154_SER_RADIO
+
+endmenu # HAS_NORDIC_DRIVERS
 
 config HAS_NRFX
 	bool
