@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.13.1)
+cmake_minimum_required(VERSION 3.15.7)
 
 if(BOARD MATCHES "qemu_.*")
   list(APPEND QEMU_EXTRA_FLAGS -serial file:channel0_0)

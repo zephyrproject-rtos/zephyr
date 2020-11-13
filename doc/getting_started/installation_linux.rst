@@ -125,7 +125,7 @@ need one.
 CMake
 =====
 
-CMake version 3.13.1 or higher is required. Check what version you have by
+CMake version 3.15.7 or higher is required. Check what version you have by
 using ``cmake --version``. If you have an older version, there are several ways
 of obtaining a more recent one:
 
@@ -149,14 +149,14 @@ of obtaining a more recent one:
 
 * Download and install from the pre-built binaries provided by the CMake
   project itself in the `CMake Downloads`_ page.
-  For example, to install version 3.13.1 in :file:`~/bin/cmake`:
+  For example, to install version 3.15.7 in :file:`~/bin/cmake`:
 
   .. code-block:: console
 
      mkdir $HOME/bin/cmake && cd $HOME/bin/cmake
-     wget https://github.com/Kitware/CMake/releases/download/v3.13.1/cmake-3.13.1-Linux-x86_64.sh
-     yes | sh cmake-3.13.1-Linux-x86_64.sh | cat
-     echo "export PATH=$PWD/cmake-3.13.1-Linux-x86_64/bin:\$PATH" >> $HOME/.zephyrrc
+     wget https://github.com/Kitware/CMake/releases/download/v3.15.7/cmake-3.15.7-Linux-x86_64.sh
+     yes | sh cmake-3.15.7-Linux-x86_64.sh | cat
+     echo "export PATH=$PWD/cmake-3.15.7-Linux-x86_64/bin:\$PATH" >> $HOME/.zephyrrc
 
 * Use ``pip3``:
 

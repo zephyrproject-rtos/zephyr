@@ -206,7 +206,7 @@ Follow these steps to create a new application directory. (Refer to
    .. code-block:: cmake
 
       # Find Zephyr. This also loads Zephyr's build system.
-      cmake_minimum_required(VERSION 3.13.1)
+      cmake_minimum_required(VERSION 3.15.7)
       find_package(Zephyr)
       project(my_zephyr_app)
 

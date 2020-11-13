@@ -70,7 +70,7 @@ Next, you'll install some host dependencies using your package manager.
 
             cmake --version
 
-         If it's not version 3.13.1 or higher, follow these steps to
+         If it's not version 3.15.7 or higher, follow these steps to
          add the `Kitware third-party apt repository <https://apt.kitware.com/>`__
          to get an updated version of cmake.
 

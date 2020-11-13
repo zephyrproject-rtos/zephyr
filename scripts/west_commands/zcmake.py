@@ -294,5 +294,5 @@ def _ensure_min_version(cmake, dry_run):
         log.dbg('cmake version', version, 'is OK; minimum version is',
                 _MIN_CMAKE_VERSION_STR)
 
-_MIN_CMAKE_VERSION_STR = '3.13.1'
+_MIN_CMAKE_VERSION_STR = '3.15.7'
 _MIN_CMAKE_VERSION = packaging.version.parse(_MIN_CMAKE_VERSION_STR)
