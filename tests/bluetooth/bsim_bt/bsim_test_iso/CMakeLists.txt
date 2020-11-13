@@ -10,11 +10,12 @@ if (NOT DEFINED ENV{BSIM_COMPONENTS_PATH})
 endif()
 
 find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
-project(bsim_test_advx)
+project(bsim_test_iso)
 
 target_sources(app PRIVATE src/main.c)
 
 zephyr_include_directories(
+  ${ZEPHYR_BASE}
   $ENV{BSIM_COMPONENTS_PATH}/libUtilv1/src/
   $ENV{BSIM_COMPONENTS_PATH}/libPhyComv1/src/
   ${ZEPHYR_BASE}/subsys/bluetooth/controller/include
