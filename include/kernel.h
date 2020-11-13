@@ -4450,6 +4450,25 @@ struct k_heap {
  */
 void k_heap_init(struct k_heap *h, void *mem, size_t bytes);
 
+/** @brief Allocate aligned memory from a k_heap
+ *
+ * Behaves in all ways like k_heap_alloc(), except that the returned
+ * memory (if available) will have a starting address in memory which
+ * is a multiple of the specified power-of-two alignment value in
+ * bytes.  The resulting memory can be returned to the heap using
+ * k_heap_free().
+ *
+ * @note Can be called by ISRs, but @a timeout must be set to K_NO_WAIT.
+ *
+ * @param h Heap from which to allocate
+ * @param align Alignment in bytes, must be a power of two
+ * @param bytes Number of bytes requested
+ * @param timeout How long to wait, or K_NO_WAIT
+ * @return Pointer to memory the caller can now use
+ */
+void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
+			k_timeout_t timeout);
+
 /**
  * @brief Allocate memory from a k_heap
  *
@@ -4467,7 +4486,11 @@ void k_heap_init(struct k_heap *h, void *mem, size_t bytes);
  * @param timeout How long to wait, or K_NO_WAIT
  * @return A pointer to valid heap memory, or NULL
  */
-void *k_heap_alloc(struct k_heap *h, size_t bytes, k_timeout_t timeout);
+static inline void *k_heap_alloc(struct k_heap *h, size_t bytes,
+				 k_timeout_t timeout)
+{
+	return k_heap_aligned_alloc(h, sizeof(void *), bytes, timeout);
+}
 
 /**
  * @brief Free memory allocated by k_heap_alloc()
