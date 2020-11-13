@@ -14,7 +14,7 @@ function Execute(){
  compile it?)\e[39m"
     exit 1
   fi
-  timeout 120 $@ & process_ids="$process_ids $!"
+  timeout 20 $@ & process_ids="$process_ids $!"
 }
 
 : "${BSIM_OUT_PATH:?BSIM_OUT_PATH must be defined}"
@@ -25,14 +25,13 @@ BOARD="${BOARD:-nrf52_bsim}"
 cd ${BSIM_OUT_PATH}/bin
 
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_iso_prj_conf \
-  -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=broadcast
+  -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=receive
 
-# TODO: Add and enable BIS receiver
-# Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_iso_prj_conf\
-#  -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=scanx
+Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_iso_prj_conf \
+  -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=broadcast
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
-  -D=1 -sim_length=50e6 $@
+  -D=2 -sim_length=20e6 $@
 
 for process_id in $process_ids; do
   wait $process_id || let "exit_code=$?"
