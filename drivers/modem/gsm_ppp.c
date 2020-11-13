@@ -238,10 +238,13 @@ static struct setup_cmd setup_cmds[] = {
 	/* extender errors in numeric form */
 	SETUP_CMD_NOHANDLE("AT+CMEE=1"),
 
+	SETUP_CMD("AT+CGMM", "", on_cmd_atcmdinfo_model, 0U, ""),
+};
+
+static struct setup_cmd setup_cmds2[] = {
 #if defined(CONFIG_MODEM_SHELL)
 	/* query modem info */
 	SETUP_CMD("AT+CGMI", "", on_cmd_atcmdinfo_manufacturer, 0U, ""),
-	SETUP_CMD("AT+CGMM", "", on_cmd_atcmdinfo_model, 0U, ""),
 	SETUP_CMD("AT+CGMR", "", on_cmd_atcmdinfo_revision, 0U, ""),
 # if defined(CONFIG_MODEM_SIM_NUMBERS)
 	SETUP_CMD("AT+CIMI", "", on_cmd_atcmdinfo_imsi, 0U, ""),
@@ -388,6 +391,20 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 	}
 
 	gsm_ppp_application_setup(&gsm->context, &gsm->sem_response);
+
+	ret = modem_cmd_handler_setup_cmds_nolock(&gsm->context.iface,
+						  &gsm->context.cmd_handler,
+						  setup_cmds2,
+						  ARRAY_SIZE(setup_cmds2),
+						  &gsm->sem_response,
+						  GSM_CMD_SETUP_TIMEOUT);
+	if (ret < 0) {
+		LOG_DBG("modem setup2 returned %d, %s",
+			ret, "retrying...");
+		(void)k_delayed_work_submit(&gsm->gsm_configure_work,
+					    K_SECONDS(1));
+		return;
+	}
 
 	/* Finalize PDP context */
 	(void)modem_cmd_send_nolock(
