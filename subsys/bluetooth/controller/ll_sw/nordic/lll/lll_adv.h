@@ -15,7 +15,7 @@
  * context safe. Thread always appends or updates the buffer pointed to
  * the array element indexed by the member last.
  * LLL in the ISR context, checks, traverses to the valid pointer indexed
- * by the member first, such that the buffer is the latest commited by
+ * by the member first, such that the buffer is the latest committed by
  * the thread context.
  */
 struct lll_adv_pdu {
