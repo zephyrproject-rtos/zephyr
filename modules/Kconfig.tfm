@@ -67,6 +67,22 @@ config TFM_KEY_FILE_NS
 	  that should be used by the BL2 bootloader when signing non-secure
 	  firmware images.
 
+config TFM_PROFILE
+	string "The build profile used for TFM Secure image."
+	depends on BUILD_WITH_TFM
+	help
+	  Build profile used to build tfm_s image. The available values are
+	  profile_medium and profile_small. The default profile does not need
+	  to have this configuration set.
+
+config TFM_ISOLATION_LEVEL
+	int "Isolation level setting."
+	range 1 3
+	depends on BUILD_WITH_TFM
+	help
+	  Manually set the required TFM isolation level. Possible values are
+	  1,2 or 3; the default is set by build configuration.
+
 choice TFM_BL2
         prompt "BL2 configuration, should TFM build with MCUboot support"
         default TFM_BL2_CONFIG_FILE_DEFAULT
