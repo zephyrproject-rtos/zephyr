@@ -217,6 +217,8 @@ Build and Infrastructure
     documented in :ref:`dt-from-c`. Information on flash partitions has moved
     to :ref:`flash_map_api`.
 
+*  Increased minimum required CMake version from 3.13.3 to 3.15.7.
+
 Libraries / Subsystems
 **********************
 
