@@ -213,6 +213,12 @@ file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.soc.defconfig
 file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.soc
      "osource \"${ZEPHYR_BASE}/soc/$(ARCH)/*/Kconfig.soc\"\n"
 )
+file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.shield.defconfig
+     "osource \"${ZEPHYR_BASE}/boards/shields/*/Kconfig.defconfig\"\n"
+)
+file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.shield
+     "osource \"${ZEPHYR_BASE}/boards/shields/*/Kconfig.shield\"\n"
+)
 file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.soc.arch
      "osource \"${ZEPHYR_BASE}/soc/$(ARCH)/Kconfig\"\n"
      "osource \"${ZEPHYR_BASE}/soc/$(ARCH)/*/Kconfig\"\n"
