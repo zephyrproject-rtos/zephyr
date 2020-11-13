@@ -100,6 +100,14 @@ void z_x86_do_kernel_oops(const z_arch_esf_t *esf);
  */
 int z_x86_allocate_vector(unsigned int priority, int prev_vector);
 
+/*
+ * Connect a vector
+ */
+void z_x86_irq_connect_on_vector(unsigned int irq,
+				 uint8_t vector,
+				 void (*func)(const void *arg),
+				 const void *arg, uint32_t flags);
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_FUNC_H_ */
