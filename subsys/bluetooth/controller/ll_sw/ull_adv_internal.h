@@ -119,7 +119,6 @@ ull_adv_aux_hdr_len_fill(struct pdu_adv_com_ext_adv *com_hdr, uint8_t len)
 /* helper function to fill the aux ptr structure in common ext adv payload */
 void ull_adv_aux_ptr_fill(uint8_t **dptr, uint8_t phy_s);
 
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 int ull_adv_sync_init(void);
 int ull_adv_sync_reset(void);
 
@@ -129,5 +128,4 @@ uint32_t ull_adv_sync_start(struct ll_adv_sync_set *sync,
 
 /* helper function to schedule a mayfly to get sync offset */
 void ull_adv_sync_offset_get(struct ll_adv_set *adv);
-#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
