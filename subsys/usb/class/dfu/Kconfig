@@ -18,14 +18,6 @@ config USB_DEVICE_DFU_PID
 	help
 	  USB device product ID in DFU mode. MUST be configured by vendor.
 
-config USB_DFU_WAIT_DELAY_MS
-	int "wait_for_usb_dfu() timeout"
-	default 12000
-	range 1000 120000
-	help
-	  A thread can use wait_for_usb_dfu() call for wait a prescribed
-	  time (in ms) for DFU to begin
-
 config USB_DFU_DETACH_TIMEOUT
 	int
 	default 1000

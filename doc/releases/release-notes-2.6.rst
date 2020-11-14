@@ -29,6 +29,9 @@ interface and listing all issues with the `bug label
 API Changes
 ***********
 
+* The :c:func:`wait_for_usb_dfu` function now accepts a ``k_timeout_t`` argument instead of
+  using the ``CONFIG_USB_DFU_WAIT_DELAY_MS`` macro.
+
 Deprecated in this release
 
 * :c:macro:`DT_CLOCKS_LABEL_BY_IDX`, :c:macro:`DT_CLOCKS_LABEL_BY_NAME`,
