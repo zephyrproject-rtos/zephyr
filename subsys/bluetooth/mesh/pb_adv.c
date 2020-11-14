@@ -460,7 +460,7 @@ static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
 	link.rx.last_seg = START_LAST_SEG(rx->gpc);
 
 	if ((link.rx.seg & BIT(0)) &&
-	    (find_msb_set(~link.rx.seg) >= link.rx.last_seg)) {
+	    (find_msb_set((~link.rx.seg) & SEG_NVAL) - 1 > link.rx.last_seg)) {
 		BT_ERR("Invalid segment index %u", seg);
 		prov_failed(PROV_ERR_NVAL_FMT);
 		return;
