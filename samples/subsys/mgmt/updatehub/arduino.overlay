@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2020 O.S.Systems
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_serial {
+	status = "okay";
+	label = "arduino_serial";
+
+	current-speed = <115200>;
+};

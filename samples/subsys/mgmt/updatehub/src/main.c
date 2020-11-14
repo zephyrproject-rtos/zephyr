@@ -129,6 +129,12 @@ void main(void)
 		LOG_ERR("Error connecting to WiFi");
 		return;
 	}
+#elif defined(CONFIG_MODEM_GSM_PPP)
+	const struct device *uart_dev =
+		device_get_binding(CONFIG_MODEM_GSM_UART_NAME);
+
+	LOG_INF("APN '%s' UART '%s' device %p", CONFIG_MODEM_GSM_APN,
+		CONFIG_MODEM_GSM_UART_NAME, uart_dev);
 #endif
 
 	net_mgmt_init_event_callback(&mgmt_cb, event_handler, EVENT_MASK);
