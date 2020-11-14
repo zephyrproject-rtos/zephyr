@@ -26,6 +26,11 @@
 /* 1s */
 #define MAX_FLASH_TIMEOUT           1000ul
 
+/* While issuing flash erase command, it should be ensured that the transfer
+ * length specified is non-zero.
+ */
+#define ESPI_FLASH_ERASE_DUMMY	    0x01ul
+
 /* OOB maximum address configuration */
 #define ESPI_XEC_OOB_ADDR_MSW       0x1FFFul
 #define ESPI_XEC_OOB_ADDR_LSW       0xFFFFul
@@ -656,6 +661,56 @@ static int espi_xec_flash_write(const struct device *dev,
 	return 0;
 }
 
+static int espi_xec_flash_erase(const struct device *dev,
+				struct espi_flash_packet *pckt)
+{
+	int ret;
+	uint32_t status;
+	uint32_t err_mask = MCHP_ESPI_FC_STS_IBERR |
+			MCHP_ESPI_FC_STS_OVRUN |
+			MCHP_ESPI_FC_STS_FAIL |
+			MCHP_ESPI_FC_STS_BADREQ;
+
+	struct espi_xec_data *data = (struct espi_xec_data *)(dev->data);
+
+	LOG_DBG("%s", __func__);
+
+	if (!(ESPI_FC_REGS->STS & MCHP_ESPI_FC_STS_CHAN_EN)) {
+		LOG_ERR("Flash channel is disabled");
+		return -EIO;
+	}
+
+	if ((ESPI_FC_REGS->CFG & MCHP_ESPI_FC_CFG_BUSY)) {
+		LOG_ERR("Flash channel is busy");
+		return -EBUSY;
+	}
+
+	/* Clear status register */
+	status = ESPI_FC_REGS->STS;
+	ESPI_FC_REGS->STS = status;
+
+	ESPI_FC_REGS->FL_ADDR_MSW = 0;
+	ESPI_FC_REGS->FL_ADDR_LSW = pckt->flash_addr;
+	ESPI_FC_REGS->XFR_LEN = ESPI_FLASH_ERASE_DUMMY;
+	ESPI_FC_REGS->CTRL = MCHP_ESPI_FC_CTRL_FUNC(MCHP_ESPI_FC_CTRL_ERS0);
+	ESPI_FC_REGS->CTRL |= MCHP_ESPI_FC_CTRL_START;
+
+	/* Wait until ISR or timeout */
+	ret = k_sem_take(&data->flash_lock, K_MSEC(MAX_FLASH_TIMEOUT));
+	if (ret == -EAGAIN) {
+		LOG_ERR("%s timeout", __func__);
+		return -ETIMEDOUT;
+	}
+
+	if (ESPI_FC_REGS->STS & err_mask) {
+		LOG_ERR("%s err: %x", __func__, err_mask);
+		ESPI_FC_REGS->STS = err_mask;
+		return -EIO;
+	}
+
+	return 0;
+}
+
 static int espi_xec_manage_callback(const struct device *dev,
 				    struct espi_callback *callback, bool set)
 {
@@ -1279,6 +1334,7 @@ static const struct espi_driver_api espi_xec_driver_api = {
 	.receive_oob = espi_xec_receive_oob,
 	.flash_read = espi_xec_flash_read,
 	.flash_write = espi_xec_flash_write,
+	.flash_erase = espi_xec_flash_erase,
 	.manage_callback = espi_xec_manage_callback,
 	.read_lpc_request = espi_xec_read_lpc_request,
 	.write_lpc_request = espi_xec_write_lpc_request,
