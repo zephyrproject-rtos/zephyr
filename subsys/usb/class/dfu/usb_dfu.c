@@ -64,10 +64,6 @@ LOG_MODULE_REGISTER(usb_dfu);
 #define FIRMWARE_IMAGE_0_LABEL "image-0"
 #define FIRMWARE_IMAGE_1_LABEL "image-1"
 
-/* MCUBoot waits for CONFIG_USB_DFU_WAIT_DELAY_MS time in total to let DFU to
- * be commenced. It intermittently checks every INTERMITTENT_CHECK_DELAY
- * milliseconds to see if DFU has started.
- */
 #define INTERMITTENT_CHECK_DELAY	50
 
 static struct k_poll_event dfu_event;
@@ -829,14 +825,14 @@ static bool is_dfu_started(void)
  *
  * @return  N/A
  */
-void wait_for_usb_dfu(void)
+void wait_for_usb_dfu(k_timeout_t delay)
 {
+	uint64_t end = z_timeout_end_calc(delay);
+
 	/* Wait for a prescribed duration of time. If DFU hasn't started within
 	 * that time, stop waiting and proceed further.
 	 */
-	for (int time = 0;
-		time < (CONFIG_USB_DFU_WAIT_DELAY_MS/INTERMITTENT_CHECK_DELAY);
-		time++) {
+	while (end > k_uptime_ticks()) {
 		if (is_dfu_started()) {
 			k_poll_event_init(&dfu_event, K_POLL_TYPE_SIGNAL,
 				K_POLL_MODE_NOTIFY_ONLY, &dfu_signal);
