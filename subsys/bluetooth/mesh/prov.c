@@ -223,7 +223,7 @@ int bt_mesh_input_number(uint32_t num)
 
 int bt_mesh_input_string(const char *str)
 {
-	BT_DBG("%s", str);
+	BT_DBG("%s", log_strdup(str));
 
 	if (!atomic_test_and_clear_bit(bt_mesh_prov_link.flags, WAIT_STRING)) {
 		return -EINVAL;
