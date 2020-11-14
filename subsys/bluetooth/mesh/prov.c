@@ -59,6 +59,7 @@ int bt_mesh_prov_reset_state(void (*func)(const uint8_t key[64]))
 		bt_mesh_attention(NULL, 0);
 	}
 
+	atomic_clear(bt_mesh_prov_link.flags);
 	(void)memset((uint8_t *)&bt_mesh_prov_link + offset, 0,
 		     sizeof(bt_mesh_prov_link) - offset);
 

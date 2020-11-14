@@ -91,6 +91,11 @@ struct bt_mesh_prov_role {
 };
 
 struct bt_mesh_prov_link {
+	ATOMIC_DEFINE(flags, NUM_FLAGS);
+
+	const struct prov_bearer *bearer;
+	const struct bt_mesh_prov_role *role;
+
 	uint8_t oob_method;             /* Authen method */
 	uint8_t oob_action;             /* Authen action */
 	uint8_t oob_size;               /* Authen size */
@@ -106,11 +111,6 @@ struct bt_mesh_prov_link {
 	uint8_t conf_key[16];           /* ConfirmationKey */
 	uint8_t conf_inputs[145];       /* ConfirmationInputs */
 	uint8_t prov_salt[16];          /* Provisioning Salt */
-
-	const struct prov_bearer *bearer;
-	const struct bt_mesh_prov_role *role;
-
-	ATOMIC_DEFINE(flags, NUM_FLAGS);
 };
 
 extern struct bt_mesh_prov_link bt_mesh_prov_link;
