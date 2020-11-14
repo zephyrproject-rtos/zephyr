@@ -1601,6 +1601,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		case 'X':
 			bps = encode_uint(value.uint, &conv, buf, bpe);
 
+		prec_int_pad0:
 			/* Update pad0 values based on precision and converted
 			 * length.  Note that a non-empty sign is not in the
 			 * converted sequence, but it does not affect the
@@ -1629,13 +1630,16 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 			if (value.ptr != NULL) {
 				bps = encode_uint((uintptr_t)value.ptr, &conv,
 						  buf, bpe);
+
 				/* Use 0x prefix */
 				conv.altform_0c = true;
 				conv.specifier = 'x';
-			} else {
-				bps = "(nil)";
-				bpe = bps + 5;
+
+				goto prec_int_pad0;
 			}
+
+			bps = "(nil)";
+			bpe = bps + 5;
 
 			break;
 		case 'n':
@@ -1796,7 +1800,6 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 			OUTC(' ');
 			--width;
 		}
-
 	}
 
 	return count;

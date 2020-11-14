@@ -924,8 +924,37 @@ static void test_p(void)
 	rc = TEST_PRF("%p", ptr);
 	PRF_CHECK("0xcafe21", rc);
 	rc = TEST_PRF("%p", NULL);
-	printf("buffer '%s'\n", buf);
 	PRF_CHECK("(nil)", rc);
+
+	/* Nano doesn't support left-justification of pointer
+	 * values.
+	 */
+	if (!IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
+		reset_out();
+		rc = rawprf("/%12p/", ptr);
+		zassert_equal(rc, 14, NULL);
+		zassert_equal(strncmp("/    0xcafe21/", buf, rc), 0, NULL);
+	}
+
+	reset_out();
+	rc = rawprf("/%-12p/", ptr);
+	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)
+	    && !IS_ENABLED(CONFIG_CBPRINTF_LIBC_SUBSTS)) {
+		zassert_equal(rc, 0, NULL);
+		rc = 14;
+	} else {
+		zassert_equal(rc, 14, NULL);
+	}
+	zassert_equal(strncmp("/0xcafe21    /", buf, rc), 0, NULL);
+
+	/* Nano doesn't support zero-padding of pointer values.
+	 */
+	if (!IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
+		reset_out();
+		rc = rawprf("/%.8p/", ptr);
+		zassert_equal(rc, 12, NULL);
+		zassert_equal(strncmp("/0x00cafe21/", buf, rc), 0, NULL);
+	}
 }
 
 static int out_counter(int c,
