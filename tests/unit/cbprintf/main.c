@@ -182,6 +182,12 @@ static int rawprf(const char *format, ...)
 	va_start(ap, format);
 	rv = cbvprintf(out, NULL, format, ap);
 	va_end(ap);
+
+	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)
+	    && !IS_ENABLED(CONFIG_CBPRINTF_LIBC_SUBSTS)) {
+		zassert_equal(rv, 0, NULL);
+		rv = bp - buf;
+	}
 	return rv;
 }
 
@@ -224,9 +230,11 @@ static inline bool prf_check(const char *expected,
 	};
 
 	const char *str = buf;
-	const char *sp = str;
-	int rc = match_pfx(&str);
+	const char *sp;
+	int rc;
 
+	sp = str;
+	rc = match_pfx(&str);
 	if (rc != 0) {
 		return prf_failed(&ctx, sp, "pfx mismatch %d\n", rc);
 	}
@@ -235,7 +243,6 @@ static inline bool prf_check(const char *expected,
 	rc = match_str(&str, expected, strlen(expected));
 	if (rc != 0) {
 		return prf_failed(&ctx, sp, "str mismatch %d\n", rc);
-		return false;
 	}
 
 	sp = str;
@@ -247,9 +254,7 @@ static inline bool prf_check(const char *expected,
 	rc = (*str != 0);
 	if (rc != 0) {
 		return prf_failed(&ctx, str, "no eos %02x\n", *str);
-		return false;
 	}
-
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)
 	    && !IS_ENABLED(CONFIG_CBPRINTF_LIBC_SUBSTS)) {
@@ -354,19 +359,13 @@ static void test_v_c(void)
 	reset_out();
 	buf[1] = 'b';
 	rc = rawprf("%c", 'a');
-	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)
-	    && !IS_ENABLED(CONFIG_CBPRINTF_LIBC_SUBSTS)) {
-		zassert_equal(rc, 0, NULL);
-		rc = 1;
-	} else {
-		zassert_equal(rc, 1, NULL);
-	}
+	zassert_equal(rc, 1, NULL);
 	zassert_equal(buf[0], 'a', NULL);
 	if (!IS_ENABLED(USE_LIBC)) {
 		zassert_equal(buf[1], 'b', "wth %x", buf[1]);
 	}
-
 }
+
 static void test_d_length(void)
 {
 	int min = -1234567890;
@@ -928,9 +927,6 @@ static void test_p(void)
 		return;
 	}
 
-	/* NANO and COMPLETE agree on the format of none-null
-	 * pointers, but not on null pointers.
-	 */
 	uintptr_t uip = 0xcafe21;
 	void *ptr = (void *)uip;
 	int rc;
@@ -952,13 +948,7 @@ static void test_p(void)
 
 	reset_out();
 	rc = rawprf("/%-12p/", ptr);
-	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)
-	    && !IS_ENABLED(CONFIG_CBPRINTF_LIBC_SUBSTS)) {
-		zassert_equal(rc, 0, NULL);
-		rc = 14;
-	} else {
-		zassert_equal(rc, 14, NULL);
-	}
+	zassert_equal(rc, 14, NULL);
 	zassert_equal(strncmp("/0xcafe21    /", buf, rc), 0, NULL);
 
 	/* Nano doesn't support zero-padding of pointer values.
