@@ -1008,6 +1008,7 @@ RISCV arch:
     collaborators:
         - mgielda
         - nategraff-sifive
+        - katsuster
     files:
         - arch/riscv/
         - include/arch/riscv/
