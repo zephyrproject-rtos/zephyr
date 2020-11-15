@@ -1052,7 +1052,7 @@ static uint32_t filter_add(struct lll_filter *filter, uint8_t addr_type,
 {
 	int index;
 
-	if (filter->enable_bitmask == 0xFF) {
+	if (filter->enable_bitmask == LLL_FILTER_BITMASK_ALL) {
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
@@ -1074,7 +1074,7 @@ static uint32_t filter_remove(struct lll_filter *filter, uint8_t addr_type,
 		return BT_HCI_ERR_INVALID_PARAM;
 	}
 
-	index = 8;
+	index = WL_SIZE;
 	while (index--) {
 		if ((filter->enable_bitmask & BIT(index)) &&
 		    (((filter->addr_type_bitmask >> index) & 0x01) ==
