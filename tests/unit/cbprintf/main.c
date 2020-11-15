@@ -944,12 +944,22 @@ static void test_p(void)
 		rc = rawprf("/%12p/", ptr);
 		zassert_equal(rc, 14, NULL);
 		zassert_equal(strncmp("/    0xcafe21/", buf, rc), 0, NULL);
+
+		reset_out();
+		rc = rawprf("/%12p/", NULL);
+		zassert_equal(rc, 14, NULL);
+		zassert_equal(strncmp("/       (nil)/", buf, rc), 0, NULL);
 	}
 
 	reset_out();
 	rc = rawprf("/%-12p/", ptr);
 	zassert_equal(rc, 14, NULL);
 	zassert_equal(strncmp("/0xcafe21    /", buf, rc), 0, NULL);
+
+	reset_out();
+	rc = rawprf("/%-12p/", NULL);
+	zassert_equal(rc, 14, NULL);
+	zassert_equal(strncmp("/(nil)       /", buf, rc), 0, NULL);
 
 	/* Nano doesn't support zero-padding of pointer values.
 	 */
