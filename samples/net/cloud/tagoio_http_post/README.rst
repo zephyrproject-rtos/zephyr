@@ -1,7 +1,7 @@
 .. _cloud-tagoio-http-post-sample:
 
-Socket TagoIO HTTP Client
-#########################
+TagoIO IoT Cloud HTTP Sample
+############################
 
 Overview
 ********
