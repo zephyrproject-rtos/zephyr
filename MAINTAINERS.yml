@@ -282,7 +282,7 @@ Display drivers:
     maintainers:
         - vanwinkeljan
     collaborators:
-        - jfischer-phytec-iot
+        - jfischer-no
     files:
         - drivers/display/
         - dts/bindings/display/
@@ -1056,7 +1056,7 @@ Shields:
         - erwango
     collaborators:
         - avisconti
-        - jfischer-phytec-iot
+        - jfischer-no
     files:
         - boards/shields/
     labels:
@@ -1131,7 +1131,7 @@ USB:
     # Provisional entry, subject to approval
     status: maintained
     maintainers:
-        - jfischer-phytec-iot
+        - jfischer-no
     collaborators:
         - finikorg
     files:
