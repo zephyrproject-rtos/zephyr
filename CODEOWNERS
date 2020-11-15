@@ -281,7 +281,7 @@
 /drivers/timer/cavs_timer.c               @dcpleung
 /drivers/timer/stm32_lptim_timer.c        @FRASTM
 /drivers/timer/leon_gptimer.c             @martin-aberg
-/drivers/usb/                             @jfischer-phytec-iot @finikorg
+/drivers/usb/                             @jfischer-no @finikorg
 /drivers/usb/device/usb_dc_stm32.c        @ydamigos @loicpoulain
 /drivers/video/                           @loicpoulain
 /drivers/i2c/i2c_ll_stm32*                @ydamigos
@@ -469,7 +469,7 @@
 /samples/subsys/mgmt/mcumgr/smp_svr/      @aunsbjerg @nvlsianpu
 /samples/subsys/mgmt/updatehub/           @nandojve @otavio
 /samples/subsys/mgmt/osdp/                @cbsiddharth
-/samples/subsys/usb/                      @jfischer-phytec-iot @finikorg
+/samples/subsys/usb/                      @jfischer-no @finikorg
 /samples/subsys/power/                    @wentongwu @pabigot @ceolin
 /samples/tfm_integration/                 @ioannisg @microbuilder
 /samples/userspace/                       @andrewboie
@@ -521,7 +521,7 @@
 /subsys/disk/disk_access_usdhc.c          @JunYangNXP
 /subsys/disk/disk_access_stm32_sdmmc.c    @anthonybrandon
 /subsys/emul/                             @sjg20
-/subsys/fb/                               @jfischer-phytec-iot
+/subsys/fb/                               @jfischer-no
 /subsys/fs/                               @nashif
 /subsys/fs/fcb/                           @nvlsianpu
 /subsys/fs/fuse_fs_access.c               @vanwinkeljan
@@ -558,7 +558,7 @@
 /subsys/storage/                          @nvlsianpu
 /subsys/testsuite/                        @nashif
 /subsys/timing/                           @nashif @dcpleung
-/subsys/usb/                              @jfischer-phytec-iot @finikorg
+/subsys/usb/                              @jfischer-no @finikorg
 /tests/                                   @nashif
 /tests/application_development/libcxx/    @pabigot
 /tests/arch/arm/                          @ioannisg @stephanosio
