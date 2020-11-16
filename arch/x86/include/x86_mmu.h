@@ -166,6 +166,21 @@ static inline pentry_t *z_x86_page_tables_get(void)
 	return (pentry_t *)z_x86_cr3_get();
 }
 
+/* Return cr2 value, which contains the page fault linear address.
+ * See Section 6.15 of the IA32 Software Developer's Manual vol 3.
+ * Used by page fault handling code.
+ */
+static inline void *z_x86_cr2_get(void)
+{
+	void *cr2;
+#ifdef CONFIG_X86_64
+	__asm__ volatile("movq %%cr2, %0\n\t" : "=r" (cr2));
+#else
+	__asm__ volatile("movl %%cr2, %0\n\t" : "=r" (cr2));
+#endif
+	return cr2;
+}
+
 /* Kernel's page table. This is in CR3 for all supervisor threads.
  * if KPTI is enabled, we switch to this when handling exceptions or syscalls
  */
