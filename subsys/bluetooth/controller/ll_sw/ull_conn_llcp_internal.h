@@ -6,40 +6,7 @@
 
 /*
  * copied from ull_conn_internal.h
- * some macros will need to be moved to other, more logical places
  */
-
-/*
- * Macros to return correct Data Channel PDU time
- * Note: formula is valid for 1M, 2M and Coded S8
- * see BT spec Version 5.1 Vol 6. Part B, chapters 2.1 and 2.2
- * for packet formats and thus lengths
- *
- * Payload overhead size is the Data Channel PDU Header + the MIC
- */
-#define PAYLOAD_OVERHEAD_SIZE (2 + 4)
-
-#define PHY_1M BIT(0)
-#define PHY_2M BIT(1)
-#define PHY_CODED BIT(2)
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-#define CODED_PHY_PREAMBLE_TIME_US (80)
-#define CODED_PHY_ACCESS_ADDRESS_TIME_US (256)
-#define CODED_PHY_CI_TIME_US (16)
-#define CODED_PHY_TERM1_TIME_US (24)
-#define CODED_PHY_CRC_SIZE (24)
-#define CODED_PHY_TERM2_SIZE (3)
-
-#define FEC_BLOCK1_TIME_US (CODED_PHY_ACCESS_ADDRESS_TIME_US + \
-			    CODED_PHY_CI_TIME_US + \
-			    CODED_PHY_TERM1_TIME_US)
-#define FEC_BLOCK2_TIME_US(octets) ((((PAYLOAD_OVERHEAD_SIZE + \
-				       (octets)) * 8) + \
-				     CODED_PHY_CRC_SIZE + \
-				     CODED_PHY_TERM2_SIZE) * 8)
-
-#else /* !CONFIG_BT_CTLR_PHY_CODED */
-#endif /* !CONFIG_BT_CTLR_PHY_CODED */
 
 #define ULL_HANDLE_NOT_CONNECTED 0xFFFF
 
