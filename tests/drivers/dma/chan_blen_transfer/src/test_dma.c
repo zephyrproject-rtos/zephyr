@@ -20,7 +20,8 @@
 #include <drivers/dma.h>
 #include <ztest.h>
 
-#define DMA_DEVICE_NAME CONFIG_DMA_0_NAME
+#define DMA_DEVICE_NAME CONFIG_DMA_TRANSFER_DRV_NAME
+
 #define RX_BUFF_SIZE (48)
 
 #ifdef CONFIG_NOCACHE_MEMORY
@@ -49,7 +50,6 @@ static int test_task(uint32_t chan_id, uint32_t blen)
 	struct dma_config dma_cfg = { 0 };
 	struct dma_block_config dma_block_cfg = { 0 };
 	const struct device *dma = device_get_binding(DMA_DEVICE_NAME);
-
 	if (!dma) {
 		TC_PRINT("Cannot get dma controller\n");
 		return TC_FAIL;
@@ -101,20 +101,20 @@ static int test_task(uint32_t chan_id, uint32_t blen)
 /* export test cases */
 void test_dma_m2m_chan0_burst8(void)
 {
-	zassert_true((test_task(0, 8) == TC_PASS), NULL);
+	zassert_true((test_task(CONFIG_DMA_TRANSFER_CHANNEL_NR_0, 8) == TC_PASS), NULL);
 }
 
 void test_dma_m2m_chan1_burst8(void)
 {
-	zassert_true((test_task(1, 8) == TC_PASS), NULL);
+	zassert_true((test_task(CONFIG_DMA_TRANSFER_CHANNEL_NR_1, 8) == TC_PASS), NULL);
 }
 
 void test_dma_m2m_chan0_burst16(void)
 {
-	zassert_true((test_task(0, 16) == TC_PASS), NULL);
+	zassert_true((test_task(CONFIG_DMA_TRANSFER_CHANNEL_NR_0, 16) == TC_PASS), NULL);
 }
 
 void test_dma_m2m_chan1_burst16(void)
 {
-	zassert_true((test_task(1, 16) == TC_PASS), NULL);
+	zassert_true((test_task(CONFIG_DMA_TRANSFER_CHANNEL_NR_1, 16) == TC_PASS), NULL);
 }
