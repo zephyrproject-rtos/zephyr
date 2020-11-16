@@ -728,6 +728,10 @@ int boot_erase_img_bank(uint8_t area_id)
 	const struct flash_area *fa;
 	int rc;
 
+	if (area_id != FLASH_AREA_IMAGE_SECONDARY) {
+		return -EINVAL;
+	}
+
 	rc = flash_area_open(area_id, &fa);
 	if (rc) {
 		return rc;
