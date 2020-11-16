@@ -789,5 +789,5 @@ static int gsm_init(const struct device *device)
 	return 0;
 }
 
-DEVICE_DEFINE(gsm_ppp, GSM_MODEM_DEVICE_NAME, gsm_init, &gsm, NULL, NULL,
+DEVICE_DEFINE(gsm_ppp, GSM_MODEM_DEVICE_NAME, gsm_init, NULL, &gsm, NULL,
 	      POST_KERNEL, CONFIG_MODEM_GSM_INIT_PRIORITY, NULL);
