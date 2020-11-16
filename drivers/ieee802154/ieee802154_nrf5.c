@@ -86,9 +86,14 @@ static void nrf5_get_eui64(uint8_t *mac)
 	mac[index++] = (IEEE802154_NRF5_VENDOR_OUI >> 8) & 0xff;
 	mac[index++] = IEEE802154_NRF5_VENDOR_OUI & 0xff;
 
+#if defined(CONFIG_SOC_NRF5340_CPUAPP) && \
+	defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+#error Accessing EUI64 on the non-secure mode is not supported at the moment
+#else
 	/* Use device identifier assigned during the production. */
 	factoryAddress = (uint64_t)EUI64_ADDR[0] << 32;
 	factoryAddress |= EUI64_ADDR[1];
+#endif
 	memcpy(mac + index, &factoryAddress, sizeof(factoryAddress) - index);
 }
 
