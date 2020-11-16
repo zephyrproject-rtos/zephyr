@@ -574,6 +574,11 @@ static void clock_event_handler(nrfx_clock_evt_type_t event)
 
 		break;
 	}
+#if NRF_CLOCK_HAS_HFCLK192M
+	case NRFX_CLOCK_EVT_HFCLK192M_STARTED:
+		clkstarted_handle(dev, CLOCK_CONTROL_NRF_TYPE_HFCLK192M);
+		break;
+#endif
 	case NRFX_CLOCK_EVT_LFCLK_STARTED:
 		if (IS_ENABLED(
 			CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION)) {
