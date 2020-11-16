@@ -1006,7 +1006,7 @@ int z_vrfy_k_thread_stack_space_get(const struct k_thread *thread,
 
 #ifdef CONFIG_USERSPACE
 static inline k_ticks_t z_vrfy_k_thread_timeout_remaining_ticks(
-						    struct k_thread *t)
+						    const struct k_thread *t)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(t, K_OBJ_THREAD));
 	return z_impl_k_thread_timeout_remaining_ticks(t);
@@ -1014,7 +1014,7 @@ static inline k_ticks_t z_vrfy_k_thread_timeout_remaining_ticks(
 #include <syscalls/k_thread_timeout_remaining_ticks_mrsh.c>
 
 static inline k_ticks_t z_vrfy_k_thread_timeout_expires_ticks(
-						  struct k_thread *t)
+						  const struct k_thread *t)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(t, K_OBJ_THREAD));
 	return z_impl_k_thread_timeout_expires_ticks(t);
