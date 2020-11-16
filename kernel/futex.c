@@ -5,12 +5,10 @@
  */
 
 #include <kernel.h>
-#include <kernel_structs.h>
 #include <spinlock.h>
-#include <kswap.h>
 #include <syscall_handler.h>
-#include <init.h>
-#include <ksched.h>
+#include <wait_q.h>
+#include <sys/scheduler.h>
 
 static struct z_futex_data *k_futex_find_data(struct k_futex *futex)
 {
@@ -28,7 +26,6 @@ int z_impl_k_futex_wake(struct k_futex *futex, bool wake_all)
 {
 	k_spinlock_key_t key;
 	unsigned int woken = 0;
-	struct k_thread *thread;
 	struct z_futex_data *futex_data;
 
 	futex_data = k_futex_find_data(futex);
@@ -37,17 +34,15 @@ int z_impl_k_futex_wake(struct k_futex *futex, bool wake_all)
 	}
 
 	key = k_spin_lock(&futex_data->lock);
-
 	do {
-		thread = z_unpend_first_thread(&futex_data->wait_q);
-		if (thread) {
-			z_ready_thread(thread);
-			arch_thread_return_value_set(thread, 0);
+		if (k_sched_wake(&futex_data->wait_q, 0, NULL)) {
 			woken++;
+		} else {
+			break;
 		}
-	} while (thread && wake_all);
+	} while (wake_all);
 
-	z_reschedule(&futex_data->lock, key);
+	k_sched_invoke(&futex_data->lock, key);
 
 	return woken;
 }
@@ -81,8 +76,8 @@ int z_impl_k_futex_wait(struct k_futex *futex, int expected,
 		return -EAGAIN;
 	}
 
-	ret = z_pend_curr(&futex_data->lock,
-			key, &futex_data->wait_q, timeout);
+	ret = k_sched_wait(&futex_data->lock, key, &futex_data->wait_q,
+			   timeout, NULL);
 	if (ret == -EAGAIN) {
 		ret = -ETIMEDOUT;
 	}

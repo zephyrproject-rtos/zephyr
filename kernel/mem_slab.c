@@ -14,6 +14,7 @@
 #include <ksched.h>
 #include <init.h>
 #include <sys/check.h>
+#include <sys/scheduler.h>
 
 static struct k_spinlock lock;
 
@@ -118,11 +119,7 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 		result = -ENOMEM;
 	} else {
 		/* wait for a free block or timeout */
-		result = z_pend_curr(&lock, key, &slab->wait_q, timeout);
-		if (result == 0) {
-			*mem = _current->base.swap_data;
-		}
-		return result;
+		return k_sched_wait(&lock, key, &slab->wait_q, timeout, mem);
 	}
 
 	k_spin_unlock(&lock, key);
@@ -133,12 +130,9 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 void k_mem_slab_free(struct k_mem_slab *slab, void **mem)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	struct k_thread *pending_thread = z_unpend_first_thread(&slab->wait_q);
 
-	if (pending_thread != NULL) {
-		z_thread_return_value_set_with_data(pending_thread, 0, *mem);
-		z_ready_thread(pending_thread);
-		z_reschedule(&lock, key);
+	if (k_sched_wake(&slab->wait_q, 0, *mem)) {
+		k_sched_invoke(&lock, key);
 	} else {
 		**(char ***)mem = slab->free_list;
 		slab->free_list = *(char **)mem;
