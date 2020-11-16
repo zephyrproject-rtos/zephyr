@@ -30,10 +30,3 @@
 #include "ull_conn_types.h"
 #include "ull_tx_queue.h"
 #include "ull_llcp.h"
-
-extern sys_slist_t ut_rx_q;
-
-void ll_rx_enqueue(struct node_rx_pdu *rx)
-{
-	sys_slist_append(&ut_rx_q, (sys_snode_t *) rx);
-}
