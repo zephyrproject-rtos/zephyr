@@ -1157,9 +1157,7 @@ static inline void net_ipv6_addr_create_ll_allrouters_mcast(struct in6_addr *add
 static inline void net_ipv6_addr_create_iid(struct in6_addr *addr,
 					    struct net_linkaddr *lladdr)
 {
-	addr->s6_addr[0] = 0xfe;
-	addr->s6_addr[1] = 0x80;
-	UNALIGNED_PUT(0, &addr->s6_addr16[1]);
+	UNALIGNED_PUT(htonl(0xfe800000), &addr->s6_addr32[0]);
 	UNALIGNED_PUT(0, &addr->s6_addr32[1]);
 
 	switch (lladdr->len) {
