@@ -127,6 +127,7 @@ static int random_byte_get(void)
 		} else {
 			retval = LL_RNG_ReadRandData32(
 						    entropy_stm32_rng_data.rng);
+			retval &= 0xFF;
 		}
 	}
 
