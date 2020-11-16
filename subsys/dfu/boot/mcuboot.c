@@ -98,8 +98,7 @@ struct mcuboot_v1_raw_header {
 				  BOOT_MAX_ALIGN)
 #define MAGIC_OFFS(bank_area) ((bank_area)->fa_size - BOOT_MAGIC_SZ)
 
-#if defined(CONFIG_BOOTLOADER_MCUBOOT) || defined(CONFIG_ZTEST) ||	\
-	defined(FLASH_AREA_IMAGE_SECONDARY)
+#if !defined(CONFIG_MCUBOOT) || defined(FLASH_AREA_IMAGE_SECONDARY)
 static const uint32_t boot_img_magic[4] = {
 	0xf395c277,
 	0x7fefd260,
@@ -194,7 +193,7 @@ static const struct boot_swap_table boot_swap_tables[] = {
 #define BOOT_SWAP_TABLES_COUNT (ARRAY_SIZE(boot_swap_tables))
 #endif
 
-#if defined(CONFIG_BOOTLOADER_MCUBOOT) || defined(CONFIG_ZTEST)
+#if !defined(CONFIG_MCUBOOT)
 static int boot_magic_decode(const uint32_t *magic)
 {
 	if (memcmp(magic, boot_img_magic, BOOT_MAGIC_SZ) == 0) {
@@ -214,7 +213,7 @@ static int boot_flag_decode(uint8_t flag)
 }
 #endif
 
-#if defined(CONFIG_BOOTLOADER_MCUBOOT) || defined(CONFIG_ZTEST)
+#if !defined(CONFIG_MCUBOOT)
 int flash_area_read_is_empty(const struct flash_area *fa, uint32_t off,
 	void *dst, uint32_t len)
 {
@@ -250,7 +249,7 @@ static int erased_flag_val(uint8_t bank_id)
 	return flash_area_erased_val(fa);
 }
 
-#if !defined(CONFIG_BOOTLOADER_MCUBOOT) && !defined(CONFIG_ZTEST)
+#if defined(CONFIG_MCUBOOT)
 /* Provided by MCUBoot */
 int boot_magic_compatible_check(uint8_t tbl_val, uint8_t val);
 #else
@@ -503,7 +502,7 @@ int boot_read_bank_header(uint8_t area_id,
 	return 0;
 }
 
-#if defined(CONFIG_BOOTLOADER_MCUBOOT) || defined(CONFIG_ZTEST)
+#if !defined(CONFIG_MCUBOOT)
 static int boot_read_swap_state(const struct flash_area *fa,
 				struct boot_swap_state *state)
 {
@@ -580,7 +579,7 @@ static int boot_read_swap_state(const struct flash_area *fa,
 }
 #endif
 
-#if !defined(CONFIG_BOOTLOADER_MCUBOOT) && !defined(CONFIG_ZTEST)
+#if defined(CONFIG_MCUBOOT)
 /* provided by MCUBoot */
 int
 boot_read_swap_state_by_id(int flash_area_id, struct boot_swap_state *state);
