@@ -517,6 +517,12 @@ config CPU_HAS_MMU
 	  This hidden option is selected when the CPU has a Memory Management Unit
 	  (MMU).
 
+config ARCH_HAS_DEMAND_PAGING
+	bool
+	help
+	  This hidden configuration should be selected by the architecture if
+	  demand paging is supported.
+
 config ARCH_HAS_RESERVED_PAGE_FRAMES
 	bool
 	help
@@ -607,6 +613,30 @@ config KERNEL_VM_SIZE
 	  implement a notion of "high" memory in Zephyr to work around physical
 	  RAM size larger than the defined bounds of the virtual address space.
 
+config DEMAND_PAGING
+	bool "Enable demand paging [EXPERIMENTAL]"
+	depends on ARCH_HAS_DEMAND_PAGING
+	help
+	  Enable demand paging. Requires architecture support in how the kernel
+	  is linked and the implementation of an eviction algorithm and a
+	  backing store for evicted pages.
+
+if DEMAND_PAGING
+config DEMAND_PAGING_ALLOW_IRQ
+	bool "Allow interrupts during page-ins/outs"
+	help
+	  Allow interrupts to be serviced while pages are being evicted or
+	  retrieved from the backing store. This is much better for system
+	  latency, but any code running in interrupt context that page faults
+	  will cause a kernel panic. Such code must work with exclusively pinned
+	  code and data pages.
+
+	  The scheduler is still disabled during this operation.
+
+	  If this option is disabled, the page fault servicing logic
+	  runs with interrupts disabled for the entire operation. However,
+	  ISRs may also page fault.
+endif	# DEMAND_PAGING
 endif   # MMU
 
 menuconfig MPU
