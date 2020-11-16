@@ -531,6 +531,7 @@ void ull_slave_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 	DEBUG_RADIO_PREPARE_S(1);
 }
 
+#if defined(BT_LL_SW_SPLIT_LLCP_LEGACY)
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
 			    uint8_t const *const ltk)
@@ -577,6 +578,7 @@ uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
 	return 0;
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+#endif /* BT_LL_SW_SPLIT_LLCP_LEGACY */
 
 static void ticker_op_stop_adv_cb(uint32_t status, void *param)
 {
