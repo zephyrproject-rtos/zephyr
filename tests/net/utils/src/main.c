@@ -109,14 +109,14 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_pton_1 = {
 	.family = AF_INET6,
 	.pton = true,
 	.ipv6.c_addr = "ff08::",
-	.ipv6.verify.s6_addr32 = { htons(0xff08), 0, 0, 0 },
+	.ipv6.verify.s6_addr16 = { htons(0xff08), 0, 0, 0, 0, 0, 0, 0 },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv6_pton_2 = {
 	.family = AF_INET6,
 	.pton = true,
 	.ipv6.c_addr = "::",
-	.ipv6.verify.s6_addr32 = { 0, 0, 0, 0 },
+	.ipv6.verify.s6_addr16 = { 0 },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv6_pton_3 = {
@@ -150,6 +150,13 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_pton_6 = {
 				   htons(0x3344), htons(0x5566),
 				   htons(0x7788), htons(0x9900),
 				   htons(0xaabb), htons(0xccdd) },
+};
+
+static ZTEST_DMEM struct net_addr_test_data ipv6_pton_7 = {
+	.family = AF_INET6,
+	.pton = true,
+	.ipv6.c_addr = "0:ff08::",
+	.ipv6.verify.s6_addr16 = { 0, htons(0xff08), 0, 0, 0, 0, 0, 0 },
 };
 
 /* net_addr_ntop test cases */
@@ -213,14 +220,14 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_1 = {
 	.family = AF_INET6,
 	.pton = false,
 	.ipv6.c_verify = "ff08::",
-	.ipv6.addr.s6_addr32 = { htons(0xff08), 0, 0, 0 },
+	.ipv6.addr.s6_addr16 = { htons(0xff08), 0, 0, 0, 0, 0, 0, 0 },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_2 = {
 	.family = AF_INET6,
 	.pton = false,
 	.ipv6.c_verify = "::",
-	.ipv6.addr.s6_addr32 = { 0, 0, 0, 0 },
+	.ipv6.addr.s6_addr16 = { 0 },
 };
 
 static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_3 = {
@@ -256,6 +263,13 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_6 = {
 				 htons(0xaabb), htons(0xccdd) },
 };
 
+static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_7 = {
+	.family = AF_INET6,
+	.pton = false,
+	.ipv6.c_verify = "0:ff08::",
+	.ipv6.addr.s6_addr16 = { 0, htons(0xff08), 0, 0, 0, 0, 0, 0 },
+};
+
 static const struct {
 	const char *name;
 	struct net_addr_test_data *data;
@@ -277,6 +291,7 @@ static const struct {
 	{ "test_ipv6_pton_4", &ipv6_pton_4},
 	{ "test_ipv6_pton_5", &ipv6_pton_5},
 	{ "test_ipv6_pton_6", &ipv6_pton_6},
+	{ "test_ipv6_pton_7", &ipv6_pton_7},
 
 	/* IPv4 net_addr_ntop */
 	{ "test_ipv4_ntop_1", &ipv4_ntop_1},
@@ -295,6 +310,7 @@ static const struct {
 	{ "test_ipv6_ntop_4", &ipv6_ntop_4},
 	{ "test_ipv6_ntop_5", &ipv6_ntop_5},
 	{ "test_ipv6_ntop_6", &ipv6_ntop_6},
+	{ "test_ipv6_ntop_7", &ipv6_ntop_7},
 };
 
 static bool check_net_addr(struct net_addr_test_data *data)
