@@ -7,6 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_ZEPHYR_TYPES_H_
 #define ZEPHYR_INCLUDE_ZEPHYR_TYPES_H_
 
+#include <stddef.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -29,6 +30,21 @@ typedef unsigned long long  u64_t;
 
 /* 32 bits on ILP32 builds, 64 bits on LP64 builts */
 typedef unsigned long       ulong_t;
+
+/*
+ * A type with strong alignment requiremnts, similar to C11 max_align_t. It can
+ * be used to force alignment of data structures allocated on the stack or as
+ * return * type for heap allocators.
+ */
+typedef union {
+	long long       thelonglong;
+	long double     thelongdouble;
+	uintmax_t       theuintmax_t;
+	size_t          thesize_t;
+	uintptr_t       theuintptr_t;
+	void            *thepvoid;
+	void            (*thepfunc)(void);
+} z_max_align_t;
 
 #ifdef __cplusplus
 }
