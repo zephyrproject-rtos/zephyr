@@ -56,6 +56,15 @@
 #define MMU_IGNORED1	BITL(10)
 #define MMU_IGNORED2	BITL(11)
 
+/* Page fault error code flags. See Chapter 4.7 of the Intel SDM vol. 3A. */
+#define PF_P		BIT(0)	/* 0 Non-present page  1 Protection violation */
+#define PF_WR		BIT(1)  /* 0 Read              1 Write */
+#define PF_US		BIT(2)  /* 0 Supervisor mode   1 User mode */
+#define PF_RSVD		BIT(3)  /* 1 reserved bit set */
+#define PF_ID		BIT(4)  /* 1 instruction fetch */
+#define PF_PK		BIT(5)  /* 1 protection-key violation */
+#define PF_SGX		BIT(15) /* 1 SGX-specific access control requirements */
+
 #ifdef CONFIG_EXCEPTION_DEBUG
 /**
  * Dump out page table entries for a particular virtual memory address
