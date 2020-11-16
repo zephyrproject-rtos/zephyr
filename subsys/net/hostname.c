@@ -54,7 +54,7 @@ int net_hostname_set_postfix(const uint8_t *hostname_postfix,
 			 2 + 1, "%02x", hostname_postfix[i]);
 	}
 
-	NET_DBG("New hostname %s", hostname);
+	NET_DBG("New hostname %s", log_strdup(hostname));
 
 	postfix_set = true;
 
@@ -66,5 +66,5 @@ void net_hostname_init(void)
 {
 	memcpy(hostname, CONFIG_NET_HOSTNAME, sizeof(CONFIG_NET_HOSTNAME) - 1);
 
-	NET_DBG("Hostname set to %s", hostname);
+	NET_DBG("Hostname set to %s", CONFIG_NET_HOSTNAME);
 }
