@@ -30,6 +30,7 @@
 #include <arch/arm/aarch64/timer.h>
 #include <arch/arm/aarch64/error.h>
 #include <arch/arm/aarch64/arm_mmu.h>
+#include <arch/arm/aarch64/thread_stack.h>
 #include <arch/common/addr_types.h>
 #include <arch/common/sys_bitops.h>
 #include <arch/common/ffs.h>
@@ -39,15 +40,6 @@ extern "C" {
 #endif
 
 #ifndef _ASMLANGUAGE
-
-/**
- * @brief Declare the ARCH_STACK_PTR_ALIGN
- *
- * Denotes the required alignment of the stack pointer on public API
- * boundaries
- *
- */
-#define ARCH_STACK_PTR_ALIGN	16
 
 /* Kernel macros for memory attribution
  * (access permissions and cache-ability).
