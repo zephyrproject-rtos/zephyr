@@ -201,19 +201,19 @@ choice BT_CTLR_TX_PWR
 
 config BT_CTLR_TX_PWR_PLUS_8
 	bool "+8 dBm"
-	depends on SOC_NRF52840
+	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH
 
 config BT_CTLR_TX_PWR_PLUS_7
 	bool "+7 dBm"
-	depends on SOC_NRF52840
+	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH
 
 config BT_CTLR_TX_PWR_PLUS_6
 	bool "+6 dBm"
-	depends on SOC_NRF52840
+	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH
 
 config BT_CTLR_TX_PWR_PLUS_5
 	bool "+5 dBm"
-	depends on SOC_NRF52840
+	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH
 
 config BT_CTLR_TX_PWR_PLUS_4
 	bool "+4 dBm"
@@ -225,7 +225,7 @@ config BT_CTLR_TX_PWR_PLUS_3
 
 config BT_CTLR_TX_PWR_PLUS_2
 	bool "+2 dBm"
-	depends on SOC_NRF52840
+	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH
 
 config BT_CTLR_TX_PWR_0
 	bool "0 dBm"
