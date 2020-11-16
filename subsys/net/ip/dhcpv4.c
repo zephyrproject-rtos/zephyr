@@ -822,9 +822,14 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 				return false;
 			}
 
-			if (net_pkt_read_u8(pkt, (uint8_t *)msg_type)) {
-				NET_DBG("options_msg_type, read err");
-				return false;
+			{
+				uint8_t val = 0U;
+
+				if (net_pkt_read_u8(pkt, &val)) {
+					NET_DBG("options_msg_type, read err");
+					return false;
+				}
+				*msg_type = val;
 			}
 
 			break;
