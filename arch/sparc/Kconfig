@@ -64,4 +64,10 @@ config IPM_CONSOLE_STACK_SIZE
 	default 4096 if COVERAGE
 	default 1024
 
+config NET_TX_STACK_SIZE
+	default 2048
+
+config NET_RX_STACK_SIZE
+	default 2048
+
 endmenu
