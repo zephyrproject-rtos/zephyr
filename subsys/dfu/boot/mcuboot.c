@@ -98,7 +98,8 @@ struct mcuboot_v1_raw_header {
 				  BOOT_MAX_ALIGN)
 #define MAGIC_OFFS(bank_area) ((bank_area)->fa_size - BOOT_MAGIC_SZ)
 
-#if defined(CONFIG_BOOTLOADER_MCUBOOT) || defined(CONFIG_ZTEST)
+#if defined(CONFIG_BOOTLOADER_MCUBOOT) || defined(CONFIG_ZTEST) ||	\
+	defined(FLASH_AREA_IMAGE_SECONDARY)
 static const uint32_t boot_img_magic[4] = {
 	0xf395c277,
 	0x7fefd260,
