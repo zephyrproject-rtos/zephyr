@@ -298,13 +298,12 @@ static void log_exception(uintptr_t vector, uintptr_t code)
 
 static void dump_page_fault(z_arch_esf_t *esf)
 {
-	uintptr_t err, cr2;
+	uintptr_t err;
+	void *cr2;
 
-	/* See Section 6.15 of the IA32 Software Developer's Manual vol 3 */
-	__asm__ ("mov %%cr2, %0" : "=r" (cr2));
-
+	cr2 = z_x86_cr2_get();
 	err = esf_get_code(esf);
-	LOG_ERR("Page fault at address 0x%lx (error code 0x%lx)", cr2, err);
+	LOG_ERR("Page fault at address %p (error code 0x%lx)", cr2, err);
 
 	if ((err & RSVD) != 0) {
 		LOG_ERR("Reserved bits set in page tables");
@@ -325,7 +324,7 @@ static void dump_page_fault(z_arch_esf_t *esf)
 	}
 
 #ifdef CONFIG_X86_MMU
-	z_x86_dump_mmu_flags(get_ptables(esf), (void *)cr2);
+	z_x86_dump_mmu_flags(get_ptables(esf), cr2);
 #endif /* CONFIG_X86_MMU */
 }
 #endif /* CONFIG_EXCEPTION_DEBUG */
