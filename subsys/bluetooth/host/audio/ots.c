@@ -1445,5 +1445,5 @@ void bt_ots_dump_metadata(struct bt_ots_obj_metadata *p_metadata)
 }
 #endif /* defined(CONFIG_BT_DEBUG_OTS) */
 
-DEVICE_INIT(bt_ots, "bt_ots", &bt_ots_init, NULL, NULL,
-	    APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_DEFINE(bt_ots, "bt_ots", &bt_ots_init, NULL, NULL, NULL,
+	      APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
