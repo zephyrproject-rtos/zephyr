@@ -46,7 +46,6 @@ static void test_transfer(const struct device *dev, uint32_t id)
 		dma_block_cfg.block_size = strlen(tx_data);
 		dma_block_cfg.source_address = (uint32_t)tx_data;
 		dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
-
 		ret = dma_config(dev, id, &dma_cfg);
 		if (ret == 0) {
 			dma_start(dev, id);
@@ -63,7 +62,14 @@ static void dma_user_callback(const struct device *dma_dev, void *arg,
 			      uint32_t id, int error_code)
 {
 	if (error_code == 0) {
+#ifdef CONFIG_DMAMUX_STM32
+		/* the channel is the DMAMUX's one
+		 * the device is the DMAMUX, given through
+		 * the stream->user_data by the dma_stm32_irq_handler */
+		test_transfer((struct device *)arg, id);
+#else
 		test_transfer(dma_dev, id);
+#endif /* CONFIG_DMAMUX_STM32 */
 	} else {
 		test_error();
 	}
@@ -96,17 +102,21 @@ void main(void)
 	dma_cfg.dest_data_size = 1U;
 	dma_cfg.source_burst_length = 1U;
 	dma_cfg.dest_burst_length = 1U;
+#ifdef CONFIG_DMAMUX_STM32
+	dma_cfg.user_data = (struct device *)dma;
+#else
 	dma_cfg.user_data = NULL;
+#endif /* CONFIG_DMAMUX_STM32 */
 	dma_cfg.dma_callback = dma_user_callback;
 	dma_cfg.block_count = 1U;
 	dma_cfg.head_block = &dma_block_cfg;
+
 #ifdef CONFIG_DMA_MCUX_TEST_SLOT_START
 	dma_cfg.dma_slot = CONFIG_DMA_MCUX_TEST_SLOT_START;
 #endif
-
 	chan_id = CONFIG_DMA_LOOP_TRANSFER_CHANNEL_NR;
 	transfer_count = 0;
-	printk("Starting the transfer and waiting for 1 second\n");
+	printk("Starting the transfer on channel %d and waiting for 1 second\n", chan_id);
 	printk("TX data: %s\n", tx_data);
 	printk("block_size %d\n", strlen(tx_data));
 	dma_block_cfg.block_size = strlen(tx_data);
@@ -114,12 +124,12 @@ void main(void)
 	dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
 
 	if (dma_config(dma, chan_id, &dma_cfg)) {
-		printk("ERROR: transfer config\n");
+		printk("ERROR: transfer config (%d)\n", chan_id);
 		return;
 	}
 
 	if (dma_start(dma, chan_id)) {
-		printk("ERROR: transfer start\n");
+		printk("ERROR: transfer start (%d)\n", chan_id);
 		return;
 	}
 
