@@ -53,7 +53,6 @@ int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, uint16_t *next_hdr_off,
 	struct net_ipv6_hdr *hdr;
 	uint8_t next_nexthdr;
 	uint8_t nexthdr;
-	uint16_t length;
 
 	if (!pkt || !pkt->frags || !next_hdr_off || !last_hdr_off) {
 		return -EINVAL;
@@ -83,18 +82,20 @@ int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, uint16_t *next_hdr_off,
 		switch (nexthdr) {
 		case NET_IPV6_NEXTHDR_HBHO:
 		case NET_IPV6_NEXTHDR_DESTO:
-			length = 0U;
+			{
+				uint8_t val = 0U;
+				uint16_t length;
 
-			if (net_pkt_read_u8(pkt, (uint8_t *)&length)) {
-				goto fail;
+				if (net_pkt_read_u8(pkt, &val)) {
+					goto fail;
+				}
+
+				length = val * 8U + 8 - 2;
+
+				if (net_pkt_skip(pkt, length)) {
+					goto fail;
+				}
 			}
-
-			length = length * 8U + 8 - 2;
-
-			if (net_pkt_skip(pkt, length)) {
-				goto fail;
-			}
-
 			break;
 		case NET_IPV6_NEXTHDR_FRAG:
 			if (net_pkt_skip(pkt, 7)) {
