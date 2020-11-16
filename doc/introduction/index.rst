@@ -16,6 +16,7 @@ The Zephyr kernel supports multiple architectures, including:
  - Intel x86 (32- and 64-bit)
  - NIOS II Gen 2
  - RISC-V (32- and 64-bit)
+ - SPARC V8
  - Tensilica Xtensa
 
 The full list of supported boards based on these architectures can be found :ref:`here <boards>`.
