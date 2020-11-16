@@ -6,6 +6,5 @@ arch: sparc
 toolchain:
   - zephyr
   - xtools
-testing:
-  ignore_tags:
-    - net
+supported:
+  - netif
