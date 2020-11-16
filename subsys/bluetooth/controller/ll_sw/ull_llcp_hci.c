@@ -624,15 +624,10 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
 	conn->common.fex_valid = 0U;
-	conn->master.terminate_ack = 0U;
 
-	conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0U;
 	conn->llcp_rx = NULL;
-	conn->llcp_cu.req = conn->llcp_cu.ack = 0;
-	conn->llcp_feature.req = conn->llcp_feature.ack = 0;
 	conn->llcp_feature.features_conn = LL_FEAT;
 	conn->llcp_feature.features_peer = 0;
-	conn->llcp_version.req = conn->llcp_version.ack = 0;
 	conn->llcp_version.tx = conn->llcp_version.rx = 0U;
 	conn->llcp_terminate.reason_peer = 0U;
 	/* NOTE: use allocated link for generating dedicated
@@ -642,19 +637,15 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	conn_lll->enc_rx = conn_lll->enc_tx = 0U;
-	conn->llcp_enc.req = conn->llcp_enc.ack = 0U;
 	conn->llcp_enc.pause_tx = conn->llcp_enc.pause_rx = 0U;
 	conn->llcp_enc.refresh = 0U;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-	conn->llcp_conn_param.req = 0U;
-	conn->llcp_conn_param.ack = 0U;
 	conn->llcp_conn_param.disabled = 0U;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	conn->llcp_length.req = conn->llcp_length.ack = 0U;
 	conn->llcp_length.disabled = 0U;
 	conn->llcp_length.cache.tx_octets = 0U;
 	conn->default_tx_octets = ull_conn_default_tx_octets_get();
@@ -665,7 +656,6 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	conn->llcp_phy.req = conn->llcp_phy.ack = 0U;
 	conn->llcp_phy.disabled = 0U;
 	conn->llcp_phy.pause_tx = 0U;
 	conn->phy_pref_tx = ull_conn_default_phy_tx_get();
