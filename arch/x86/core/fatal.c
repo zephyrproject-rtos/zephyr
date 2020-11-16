@@ -287,15 +287,6 @@ static void log_exception(uintptr_t vector, uintptr_t code)
 	}
 }
 
-/* Page fault error code flags */
-#define PRESENT	BIT(0)
-#define WR	BIT(1)
-#define US	BIT(2)
-#define RSVD	BIT(3)
-#define ID	BIT(4)
-#define PK	BIT(5)
-#define SGX	BIT(15)
-
 static void dump_page_fault(z_arch_esf_t *esf)
 {
 	uintptr_t err;
@@ -305,20 +296,20 @@ static void dump_page_fault(z_arch_esf_t *esf)
 	err = esf_get_code(esf);
 	LOG_ERR("Page fault at address %p (error code 0x%lx)", cr2, err);
 
-	if ((err & RSVD) != 0) {
+	if ((err & PF_RSVD) != 0) {
 		LOG_ERR("Reserved bits set in page tables");
 	} else {
-		if ((err & PRESENT) == 0) {
+		if ((err & PF_P) == 0) {
 			LOG_ERR("Linear address not present in page tables");
 		}
 		LOG_ERR("Access violation: %s thread not allowed to %s",
-			(err & US) != 0U ? "user" : "supervisor",
-			(err & ID) != 0U ? "execute" : ((err & WR) != 0U ?
-							"write" :
-							"read"));
-		if ((err & PK) != 0) {
+			(err & PF_US) != 0U ? "user" : "supervisor",
+			(err & PF_ID) != 0U ? "execute" : ((err & PF_WR) != 0U ?
+							   "write" :
+							   "read"));
+		if ((err & PF_PK) != 0) {
 			LOG_ERR("Protection key disallowed");
-		} else if ((err & SGX) != 0) {
+		} else if ((err & PF_SGX) != 0) {
 			LOG_ERR("SGX access control violation");
 		}
 	}
