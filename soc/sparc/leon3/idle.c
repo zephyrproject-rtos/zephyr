@@ -5,9 +5,11 @@
  */
 
 #include <kernel.h>
+#include <tracing/tracing.h>
 
 static void leon_idle(unsigned int key)
 {
+	sys_trace_idle();
 	irq_unlock(key);
 
 	__asm__ volatile ("wr  %g0, %asr19");
