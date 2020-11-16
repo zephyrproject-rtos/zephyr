@@ -127,9 +127,19 @@ __sparc_trap_interrupt:
 	nop
 	nop
 
-	/* SPARC interrupt request level is the first agrument */
+#ifdef CONFIG_TRACING_ISR
+	call	sys_trace_isr_enter
+	 nop
+#endif
+
+	/* SPARC interrupt request level is the first argument */
 	call	z_sparc_enter_irq
 	 mov	%l3, %o0
+
+#ifdef CONFIG_TRACING_ISR
+	call	sys_trace_isr_exit
+	 nop
+#endif
 
 	/*
 	 * Switch back to interrupted task stack
