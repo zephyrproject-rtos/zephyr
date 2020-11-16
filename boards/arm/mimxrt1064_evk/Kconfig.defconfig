@@ -8,10 +8,6 @@ if BOARD_MIMXRT1064_EVK
 config BOARD
 	default "mimxrt1064_evk"
 
-choice CODE_LOCATION
-	default CODE_FLEXSPI2
-endchoice
-
 config DISK_ACCESS_USDHC1
 	default y
 	depends on DISK_ACCESS_USDHC

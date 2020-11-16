@@ -8,10 +8,6 @@ if BOARD_MM_SWIFTIO
 config BOARD
 	default "mm_swiftio"
 
-choice CODE_LOCATION
-	default CODE_FLEXSPI
-endchoice
-
 config DISK_ACCESS_USDHC1
 	default y
 	depends on DISK_ACCESS_USDHC
