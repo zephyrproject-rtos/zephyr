@@ -125,9 +125,10 @@ Flagged List
 
 The ``sys_sflist_t`` is implemented using the described genlist
 template API.  With the exception of symbol naming ("sflist" instead
-of "sflist"), it operates in all ways identically to the slist API.
+of "slist") and the additional API described next, it operates in all
+ways identically to the slist API.
 
-It includes the ability to associate exactly two bits of user defined
+It adds the ability to associate exactly two bits of user defined
 "flags" with each list node.  These can be accessed and modified with
 ``sys_sflist_flags_get()`` and ``sys_sflist_flags_get()``.
 Internally, the flags are stored unioned with the bottom bits of the
