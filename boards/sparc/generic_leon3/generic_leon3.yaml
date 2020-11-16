@@ -8,3 +8,5 @@ flash: 2048
 toolchain:
   - zephyr
   - xtools
+supported:
+  - netif
