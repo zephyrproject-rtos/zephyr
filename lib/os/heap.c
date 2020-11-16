@@ -123,6 +123,11 @@ static void free_chunk(struct z_heap *h, chunkid_t c)
 		c = left_chunk(h, c);
 	}
 
+	if (chunk_size(h, c) > h->avail_contig) {
+		h->top_available = c;
+		h->avail_contig = chunk_size(h, c);
+	}
+
 	free_list_add(h, c);
 }
 
@@ -220,6 +225,33 @@ static chunkid_t alloc_chunk(struct z_heap *h, size_t sz)
 	return 0;
 }
 
+/* O(n) with chunks in the top bucket.*/
+static void update_top_available(struct z_heap *h)
+{
+	CHECK(h->avail_buckets);
+
+	/* Find the bucket for the largest available chunks*/
+	int bi_max = 8 * sizeof(int) - __builtin_clz(h->avail_buckets) - 1;
+	struct z_heap_bucket *b = &h->buckets[bi_max];
+
+	/* Iterate through the bucket to identify the largest chunk */
+	h->avail_contig = 0;
+	chunkid_t first = b->next;
+	do {
+		if (chunk_size(h, b->next) > h->avail_contig) {
+			h->top_available = b->next;
+			h->avail_contig = chunk_size(h, b->next);
+		}
+		b->next = next_free_chunk(h, b->next);
+		CHECK(b->next != 0);
+	} while (b->next != first);
+
+	/* Update minimum free chunk size */
+	if (h->avail_contig < h->avail_contig_min) {
+		h->avail_contig_min = h->avail_contig;
+	}
+}
+
 void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 {
 	if (bytes == 0U) {
@@ -239,7 +271,14 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 		free_list_add(h, c + chunk_sz);
 	}
 
+	if (c == h->top_available) {
+		update_top_available(h);
+	}
+
 	set_chunk_used(h, c, true);
+
+	sys_heap_print_stats(heap);
+
 	return chunk_mem(h, c);
 }
 
@@ -290,7 +329,38 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	}
 
 	set_chunk_used(h, c, true);
+
+	if (c0 == h->top_available) {
+		update_top_available(h);
+	}
+
+	sys_heap_print_stats(heap);
+
 	return mem;
+}
+
+void heap_print_stats(struct z_heap *h)
+{
+	printk("Heap stats for %p | Free: %u (min %u) "
+	       "| Contiguous: %u (min %u) | Total: %u\n", h,
+	       h->avail_chunks * CHUNK_UNIT,
+	       h->avail_chunks_min * CHUNK_UNIT,
+	       h->avail_contig * CHUNK_UNIT,
+	       h->avail_contig_min * CHUNK_UNIT,
+	       h->len * CHUNK_UNIT);
+}
+
+void sys_heap_print_stats(struct sys_heap *heap)
+{
+	heap_print_stats(heap->heap);
+}
+
+void sys_heap_get_stats(struct sys_heap *h, struct sys_heap_stats *stats)
+{
+	stats->avail_chunks = h->heap->avail_chunks;
+	stats->avail_chunks_min = h->heap->avail_chunks_min;
+	stats->avail_contig = h->heap->avail_contig;
+	stats->avail_contig_min = h->heap->avail_contig_min;
 }
 
 void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
@@ -316,11 +386,18 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 	h->len = buf_sz;
 	h->avail_buckets = 0;
 
+	h->avail_chunks = buf_sz;
+	h->avail_chunks_min = buf_sz;
+
 	int nb_buckets = bucket_idx(h, buf_sz) + 1;
 	size_t chunk0_size = chunksz(sizeof(struct z_heap) +
 				     nb_buckets * sizeof(struct z_heap_bucket));
 
 	__ASSERT(chunk0_size + min_chunk_size(h) < buf_sz, "heap size is too small");
+
+	h->top_available = chunk0_size;
+	h->avail_contig = buf_sz - chunk0_size;
+	h->avail_contig_min = buf_sz - chunk0_size;
 
 	for (int i = 0; i < nb_buckets; i++) {
 		h->buckets[i].next = 0;
