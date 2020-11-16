@@ -204,7 +204,9 @@ endif()
 zephyr_compile_options("SHELL: $<TARGET_PROPERTY:compiler,imacros> ${AUTOCONF_H}")
 
 # @Intent: Set compiler specific flag for bare metal freestanding option
-zephyr_compile_options($<TARGET_PROPERTY:compiler,freestanding>)
+if(NOT CONFIG_SOC_POSIX)
+  zephyr_compile_options($<TARGET_PROPERTY:compiler,freestanding>)
+endif()
 
 # @Intent: Set compiler specific flag for tentative definitions, no-common
 zephyr_compile_options($<TARGET_PROPERTY:compiler,no_common>)
