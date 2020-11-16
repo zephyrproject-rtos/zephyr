@@ -85,6 +85,32 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			  struct pdu_data *pdu_rx, struct ull_cp_conn *conn);
 
 
+/*
+ * EGON: following 2 functions need to be removed when implementing tx/rx path
+ */
+
+sys_slist_t ut_rx_q;
+
+void ll_rx_enqueue(struct node_rx_pdu *rx)
+{
+	sys_slist_append(&ut_rx_q, (sys_snode_t *) rx);
+}
+
+void ull_conn_lll_ack_enqueue(uint16_t handle, struct node_tx *tx)
+{
+	struct lll_tx *lll_tx;
+	uint8_t idx;
+
+	idx = MFIFO_ENQUEUE_GET(conn_ack, (void **)&lll_tx);
+	LL_ASSERT(lll_tx);
+
+	lll_tx->handle = handle;
+	lll_tx->node = tx;
+
+	MFIFO_ENQUEUE(conn_ack, idx);
+}
+
+
 uint16_t ull_conn_init(void)
 {
 	int err;
@@ -217,6 +243,77 @@ void ull_conn_default_phy_rx_set(uint8_t phy_rx)
 	default_phy_rx = phy_rx;
 }
 #endif /* CONFIG_BT_CTLR_PHY */
+
+uint16_t ull_conn_lll_max_tx_octets_get(struct lll_conn *lll)
+{
+	uint16_t max_tx_octets;
+
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+#if defined(CONFIG_BT_CTLR_PHY)
+	switch (lll->phy_tx_time) {
+	default:
+	case BIT(0):
+		/* 1M PHY, 1us = 1 bit, hence divide by 8.
+		 * Deduct 10 bytes for preamble (1), access address (4),
+		 * header (2), and CRC (3).
+		 */
+		max_tx_octets = (lll->max_tx_time >> 3) - 10;
+		break;
+
+	case BIT(1):
+		/* 2M PHY, 1us = 2 bits, hence divide by 4.
+		 * Deduct 11 bytes for preamble (2), access address (4),
+		 * header (2), and CRC (3).
+		 */
+		max_tx_octets = (lll->max_tx_time >> 2) - 11;
+		break;
+
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	case BIT(2):
+		if (lll->phy_flags & 0x01) {
+			/* S8 Coded PHY, 8us = 1 bit, hence divide by
+			 * 64.
+			 * Subtract time for preamble (80), AA (256),
+			 * CI (16), TERM1 (24), CRC (192) and
+			 * TERM2 (24), total 592 us.
+			 * Subtract 2 bytes for header.
+			 */
+			max_tx_octets = ((lll->max_tx_time - 592) >>
+					  6) - 2;
+		} else {
+			/* S2 Coded PHY, 2us = 1 bit, hence divide by
+			 * 16.
+			 * Subtract time for preamble (80), AA (256),
+			 * CI (16), TERM1 (24), CRC (48) and
+			 * TERM2 (6), total 430 us.
+			 * Subtract 2 bytes for header.
+			 */
+			max_tx_octets = ((lll->max_tx_time - 430) >>
+					  4) - 2;
+		}
+		break;
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
+	}
+
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+	if (lll->enc_tx) {
+		/* deduct the MIC */
+		max_tx_octets -= 4U;
+	}
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
+	if (max_tx_octets > lll->max_tx_octets) {
+		max_tx_octets = lll->max_tx_octets;
+	}
+#else /* !CONFIG_BT_CTLR_PHY */
+	max_tx_octets = lll->max_tx_octets;
+#endif /* !CONFIG_BT_CTLR_PHY */
+#else /* !CONFIG_BT_CTLR_DATA_LENGTH */
+	max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
+#endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
+	return max_tx_octets;
+}
+
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 uint16_t ull_conn_default_tx_octets_get(void)
