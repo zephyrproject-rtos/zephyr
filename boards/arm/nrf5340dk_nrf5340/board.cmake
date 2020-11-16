@@ -1,14 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-# Set the corresponding TF-M target platform when building for the Non-Secure
-# version of the board (Application MCU).
-if(CONFIG_BOARD_NRF5340PDK_NRF5340_CPUAPPNS)
-  set(TFM_TARGET_PLATFORM "nordic_nrf/nrf5340pdk_nrf5340_cpuapp")
-  set(TFM_PUBLIC_KEY_FORMAT "full")
-endif()
-
-if(CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPPNS)
-  set(TFM_TARGET_PLATFORM "nordic_nrf/nrf5340dk_nrf5340_cpuapp")
+if(CONFIG_BOARD_NRF5340PDK_NRF5340_CPUAPPNS OR CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPPNS)
   set(TFM_PUBLIC_KEY_FORMAT "full")
 endif()
 
