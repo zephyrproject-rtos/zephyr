@@ -722,6 +722,22 @@ static int esp_mgmt_ap_disable(const struct device *dev)
 	return ret;
 }
 
+static void esp_configure_hostname(struct esp_data *data)
+{
+#if defined(CONFIG_NET_HOSTNAME_ENABLE)
+	char cmd[sizeof("AT+CWHOSTNAME=\"\"") + NET_HOSTNAME_MAX_LEN];
+
+	snprintk(cmd, sizeof(cmd), "AT+CWHOSTNAME=\"%s\"", net_hostname_get());
+	cmd[sizeof(cmd) - 1] = '\0';
+
+	modem_cmd_send(&data->mctx.iface, &data->mctx.cmd_handler,
+		       NULL, 0, cmd, &data->sem_response,
+		       ESP_CMD_TIMEOUT);
+#else
+	ARG_UNUSED(data);
+#endif
+}
+
 static void esp_init_work(struct k_work *work)
 {
 	struct esp_data *dev;
@@ -807,6 +823,8 @@ static void esp_init_work(struct k_work *work)
 
 	net_if_set_link_addr(dev->net_iface, dev->mac_addr,
 			     sizeof(dev->mac_addr), NET_LINK_ETHERNET);
+
+	esp_configure_hostname(dev);
 
 	LOG_INF("ESP Wi-Fi ready");
 
