@@ -238,17 +238,18 @@ struct cmsghdr {
 	socklen_t cmsg_len;    /* Number of bytes, including header */
 	int       cmsg_level;  /* Originating protocol */
 	int       cmsg_type;   /* Protocol-specific type */
-	/* Followed by unsigned char cmsg_data[]; */
+	/* Flexible array member to force alignment of cmsghdr */
+	z_max_align_t cmsg_data[];
 };
 
 /* Alignment for headers and data. These are arch specific but define
  * them here atm if not found alredy.
  */
 #if !defined(ALIGN_H)
-#define ALIGN_H(x) WB_UP(x)
+#define ALIGN_H(x) ROUND_UP(x, __alignof__(struct cmsghdr))
 #endif
 #if !defined(ALIGN_D)
-#define ALIGN_D(x) WB_UP(x)
+#define ALIGN_D(x) ROUND_UP(x, __alignof__(z_max_align_t))
 #endif
 
 #if !defined(CMSG_FIRSTHDR)
