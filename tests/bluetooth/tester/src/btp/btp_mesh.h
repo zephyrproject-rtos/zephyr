@@ -864,3 +864,11 @@ struct btp_mesh_prov_node_added_ev {
 	uint8_t uuid[16];
 	uint8_t num_elems;
 } __packed;
+
+#define BTP_MESH_EV_MODEL_RECV			0x8f
+struct btp_mesh_model_recv_ev {
+	uint16_t src;
+	uint16_t dst;
+	uint8_t payload_len;
+	uint8_t payload[];
+} __packed;
