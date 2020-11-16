@@ -63,6 +63,7 @@ static void ticker_op_stop_scan_other_cb(uint32_t status, void *param);
 static void ticker_op_cb(uint32_t status, void *param);
 static inline void conn_release(struct ll_scan_set *scan);
 
+#if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 			  uint8_t filter_policy, uint8_t peer_addr_type,
@@ -437,6 +438,7 @@ conn_is_valid:
 	return ull_scan_enable(scan);
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 }
+#endif /* CONFIG_BT_LL_SW_SPLIT_LEGACY */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 uint8_t ll_connect_enable(uint8_t is_coded_included)
@@ -474,6 +476,7 @@ uint8_t ll_connect_enable(uint8_t is_coded_included)
 }
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
+#if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
 uint8_t ll_connect_disable(void **rx)
 {
 	struct ll_scan_set *scan_coded;
@@ -570,7 +573,10 @@ uint8_t ll_connect_disable(void **rx)
 
 	return err;
 }
+#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 
+
+#if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand,
 		     uint8_t const *const ediv, uint8_t const *const ltk)
@@ -645,6 +651,7 @@ uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand,
 	return BT_HCI_ERR_CMD_DISALLOWED;
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 
 int ull_central_reset(void)
 {
@@ -1028,6 +1035,7 @@ void ull_central_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	DEBUG_RADIO_PREPARE_M(1);
 }
 
+#if defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY)
 uint8_t ull_central_chm_update(void)
 {
 	uint16_t handle;
@@ -1057,7 +1065,7 @@ uint8_t ull_central_chm_update(void)
 
 	return 0;
 }
-
+#endif /* CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY */
 static void ticker_op_stop_scan_cb(uint32_t status, void *param)
 {
 	/* NOTE: Nothing to do here, present here to add debug code if required
