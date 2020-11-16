@@ -8,8 +8,8 @@
 #include <zephyr.h>
 #include <drivers/gpio.h>
 
-static void button_pressed(struct device *dev,
-			   struct gpio_callback *cb, u32_t pins)
+static void button_pressed(const struct device *dev,
+			   struct gpio_callback *cb, uint32_t pins)
 {
 	printk("Button pressed at %" PRIu32 "\n", k_cycle_get_32());
 }
@@ -19,7 +19,7 @@ static struct gpio_callback button_cb;
 int main(void)
 {
 	int ret = 0;
-	struct device *dev_gpio = NULL;
+	const struct device *dev_gpio = NULL;
 
 	/* Only one GPIO peripheral in nRF52832 */
 	/* So let's take the same for led AND button */
@@ -65,8 +65,8 @@ int main(void)
 
 	while (1) {
 		/* button is pressed ==> turn on status LED */
-		u32_t val = 0u;
-		u8_t new_val = 0u;
+		uint32_t val = 0u;
+		uint8_t new_val = 0u;
 
 		new_val = gpio_pin_get(dev_gpio, DT_GPIO_PIN(DT_ALIAS(sw0), gpios));
 		if (new_val != val) {
