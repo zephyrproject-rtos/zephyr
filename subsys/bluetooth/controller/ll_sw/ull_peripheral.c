@@ -533,6 +533,7 @@ void ull_periph_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	DEBUG_RADIO_PREPARE_S(1);
 }
 
+#if defined(BT_LL_SW_SPLIT_LLCP_LEGACY)
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
 			    uint8_t const *const ltk)
@@ -579,6 +580,7 @@ uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
 	return 0;
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+#endif /* BT_LL_SW_SPLIT_LLCP_LEGACY */
 
 static void invalid_release(struct ull_hdr *hdr, struct lll_conn *lll,
 			    memq_link_t *link, struct node_rx_hdr *rx)
