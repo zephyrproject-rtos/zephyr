@@ -5,7 +5,7 @@ description: NXP FlexSPI controller
 
 compatible: "nxp,imx-flexspi"
 
-include: spi-controller.yaml
+include: flash-controller.yaml
 
 properties:
     reg:
@@ -13,3 +13,11 @@ properties:
 
     interrupts:
       required: true
+
+    "#address-cells":
+      required: true
+      const: 1
+
+    "#size-cells":
+      required: true
+      const: 1

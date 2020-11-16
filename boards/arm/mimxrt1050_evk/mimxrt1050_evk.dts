@@ -91,9 +91,9 @@ arduino_serial: &lpuart3 {};
 
 &flexspi {
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(64)>;
-	hyperflash0: hyperflash@0 {
+	hyperflash0: hyperflash@60000000 {
 		compatible = "cypress,s26ks512s";
-		reg = <0>;
+		reg = <0x60000000 DT_SIZE_M(64)>;
 		status = "okay";
 	};
 };
