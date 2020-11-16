@@ -426,10 +426,10 @@ static int l2cap_obj_send(struct ots_svc_inst_t *inst, uint32_t data_len,
 }
 
 /******************** Object Action Control Point ****************************/
-void oacp_ind_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+void oacp_ind_cb(struct bt_conn *conn, struct bt_gatt_indicate_params *params,
 		 uint8_t err)
 {
-	struct ots_svc_inst_t *inst = lookup_inst_by_attr(attr);
+	struct ots_svc_inst_t *inst = lookup_inst_by_attr(params->attr);
 
 	if (!inst) {
 		BT_WARN("Could not find instance from attr");
@@ -965,7 +965,7 @@ static enum bt_ots_olcp_res_code olcp_next(struct ots_svc_inst_t *inst,
 	return BT_OTS_OLCP_RES_SUCCESS;
 }
 
-void olcp_ind_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+void olcp_ind_cb(struct bt_conn *conn, struct bt_gatt_indicate_params *params,
 		 uint8_t err)
 {
 	BT_DBG("olcp indication callback, err: 0x%4x", err);
