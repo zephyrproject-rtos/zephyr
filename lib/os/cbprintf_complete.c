@@ -1393,57 +1393,69 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 			continue;
 		}
 
+		/* Force union into RAM with conversion state to
+		 * mitigate LLVM code generation bug.
+		 */
+		struct {
+			union argument_value value;
+			struct conversion conv;
+		} state = {
+			.value = {
+				.uint = 0,
+			},
+		};
+		struct conversion *const conv = &state.conv;
+		union argument_value *const value = &state.value;
 		const char *sp = fp;
-		struct conversion conv;
 		int width = -1;
 		int precision = -1;
 		const char *bps = NULL;
 		const char *bpe = buf + sizeof(buf);
 		char sign = 0;
 
-		fp = extract_conversion(&conv, sp);
+		fp = extract_conversion(conv, sp);
 
 		/* If dynamic width is specified, process it,
 		 * otherwise set with if present.
 		 */
-		if (conv.width_star) {
+		if (conv->width_star) {
 			width = va_arg(ap, int);
 
 			if (width < 0) {
-				conv.flag_dash = true;
+				conv->flag_dash = true;
 				width = -width;
 			}
-		} else if (conv.width_present) {
-			width = conv.width_value;
+		} else if (conv->width_present) {
+			width = conv->width_value;
 		}
 
 		/* If dynamic precision is specified, process it, otherwise
 		 * set precision if present.  For floating point where
 		 * precision is not present use 6.
 		 */
-		if (conv.prec_star) {
+		if (conv->prec_star) {
 			int arg = va_arg(ap, int);
 
 			if (arg < 0) {
-				conv.prec_present = false;
+				conv->prec_present = false;
 			} else {
 				precision = arg;
 			}
-		} else if (conv.prec_present) {
-			precision = conv.prec_value;
+		} else if (conv->prec_present) {
+			precision = conv->prec_value;
 		}
 
 		/* Reuse width and precision memory in conv for value
 		 * padding counts.
 		 */
-		conv.pad0_value = 0;
-		conv.pad0_pre_exp = 0;
+		conv->pad0_value = 0;
+		conv->pad0_pre_exp = 0;
 
 		/* FP conversion requires knowing the precision. */
 		if (IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)
-		    && (conv.specifier_cat == SPECIFIER_FP)
-		    && !conv.prec_present) {
-			if (conv.specifier_a) {
+		    && (conv->specifier_cat == SPECIFIER_FP)
+		    && !conv->prec_present) {
+			if (conv->specifier_a) {
 				precision = FRACTION_HEX;
 			} else {
 				precision = 6;
@@ -1457,12 +1469,9 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		 * https://stackoverflow.com/a/8048892.
 		 */
 		enum specifier_cat_enum specifier_cat
-			= (enum specifier_cat_enum)conv.specifier_cat;
+			= (enum specifier_cat_enum)conv->specifier_cat;
 		enum length_mod_enum length_mod
-			= (enum length_mod_enum)conv.length_mod;
-		union argument_value value = (union argument_value){
-			.uint = 0,
-		};
+			= (enum length_mod_enum)conv->length_mod;
 
 		/* Extract the value based on the argument category and length.
 		 *
@@ -1475,17 +1484,17 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 			case LENGTH_NONE:
 			case LENGTH_HH:
 			case LENGTH_H:
-				value.sint = va_arg(ap, int);
+				value->sint = va_arg(ap, int);
 				break;
 			case LENGTH_L:
-				value.sint = va_arg(ap, long);
+				value->sint = va_arg(ap, long);
 				break;
 			case LENGTH_LL:
-				value.sint =
+				value->sint =
 					(sint_value_type)va_arg(ap, long long);
 				break;
 			case LENGTH_J:
-				value.sint =
+				value->sint =
 					(sint_value_type)va_arg(ap, intmax_t);
 				break;
 			case LENGTH_Z:		/* size_t */
@@ -1497,14 +1506,14 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 				 * other.  This can be checked in a platform
 				 * test.
 				 */
-				value.sint =
+				value->sint =
 					(sint_value_type)va_arg(ap, ptrdiff_t);
 				break;
 			}
 			if (length_mod == LENGTH_HH) {
-				value.sint = (char)value.sint;
+				value->sint = (char)value->sint;
 			} else if (length_mod == LENGTH_H) {
-				value.sint = (short)value.sint;
+				value->sint = (short)value->sint;
 			}
 		} else if (specifier_cat == SPECIFIER_UINT) {
 			switch (length_mod) {
@@ -1512,40 +1521,40 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 			case LENGTH_NONE:
 			case LENGTH_HH:
 			case LENGTH_H:
-				value.uint = va_arg(ap, unsigned int);
+				value->uint = va_arg(ap, unsigned int);
 				break;
 			case LENGTH_L:
-				value.uint = va_arg(ap, unsigned long);
+				value->uint = va_arg(ap, unsigned long);
 				break;
 			case LENGTH_LL:
-				value.uint =
+				value->uint =
 					(uint_value_type)va_arg(ap,
 						unsigned long long);
 				break;
 			case LENGTH_J:
-				value.uint =
+				value->uint =
 					(uint_value_type)va_arg(ap,
 								uintmax_t);
 				break;
 			case LENGTH_Z:		/* size_t */
 			case LENGTH_T:		/* ptrdiff_t */
-				value.uint =
+				value->uint =
 					(uint_value_type)va_arg(ap, size_t);
 				break;
 			}
 			if (length_mod == LENGTH_HH) {
-				value.uint = (unsigned char)value.uint;
+				value->uint = (unsigned char)value->uint;
 			} else if (length_mod == LENGTH_H) {
-				value.uint = (unsigned short)value.uint;
+				value->uint = (unsigned short)value->uint;
 			}
 		} else if (specifier_cat == SPECIFIER_FP) {
 			if (length_mod == LENGTH_UPPER_L) {
-				value.ldbl = va_arg(ap, long double);
+				value->ldbl = va_arg(ap, long double);
 			} else {
-				value.dbl = va_arg(ap, double);
+				value->dbl = va_arg(ap, double);
 			}
 		} else if (specifier_cat == SPECIFIER_PTR) {
-			value.ptr = va_arg(ap, void *);
+			value->ptr = va_arg(ap, void *);
 		}
 
 		/* We've now consumed all arguments related to this
@@ -1553,7 +1562,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		 * something we don't support, then output the original
 		 * specification and move on.
 		 */
-		if (conv.invalid || conv.unsupported) {
+		if (conv->invalid || conv->unsupported) {
 			OUTS(sp, fp);
 			continue;
 		}
@@ -1561,12 +1570,12 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		/* Do formatting, either into the buffer or
 		 * referencing external data.
 		 */
-		switch (conv.specifier) {
+		switch (conv->specifier) {
 		case '%':
 			OUTC('%');
 			break;
 		case 's': {
-			bps = (const char *)value.ptr;
+			bps = (const char *)value->ptr;
 
 			size_t len = strlen(bps);
 
@@ -1582,20 +1591,22 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		}
 		case 'c':
 			bps = buf;
-			buf[0] = value.uint;
+			buf[0] = value->uint;
 			bpe = buf + 1;
 			break;
 		case 'd':
 		case 'i':
-			if (conv.flag_plus) {
+			if (conv->flag_plus) {
 				sign = '+';
-			} else if (conv.flag_space) {
+			} else if (conv->flag_space) {
 				sign = ' ';
 			}
 
-			if (value.sint < 0) {
+			if (value->sint < 0) {
 				sign = '-';
-				value.uint = -value.sint;
+				value->uint = (uint_value_type)-value->sint;
+			} else {
+				value->uint = (uint_value_type)value->sint;
 			}
 
 			__fallthrough;
@@ -1603,7 +1614,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		case 'u':
 		case 'x':
 		case 'X':
-			bps = encode_uint(value.uint, &conv, buf, bpe);
+			bps = encode_uint(value->uint, conv, buf, bpe);
 
 		prec_int_pad0:
 			/* Update pad0 values based on precision and converted
@@ -1617,11 +1628,11 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 				/* Zero-padding flag is ignored for integer
 				 * conversions with precision.
 				 */
-				conv.flag_zero = false;
+				conv->flag_zero = false;
 
 				/* Set pad0_value to satisfy precision */
 				if (len < (size_t)precision) {
-					conv.pad0_value = precision - (int)len;
+					conv->pad0_value = precision - (int)len;
 				}
 			}
 
@@ -1631,13 +1642,13 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 			 * has 0x prefix followed by significant address hex
 			 * digits, no leading zeros.
 			 */
-			if (value.ptr != NULL) {
-				bps = encode_uint((uintptr_t)value.ptr, &conv,
+			if (value->ptr != NULL) {
+				bps = encode_uint((uintptr_t)value->ptr, conv,
 						  buf, bpe);
 
 				/* Use 0x prefix */
-				conv.altform_0c = true;
-				conv.specifier = 'x';
+				conv->altform_0c = true;
+				conv->specifier = 'x';
 
 				goto prec_int_pad0;
 			}
@@ -1648,14 +1659,14 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 			break;
 		case 'n':
 			if (IS_ENABLED(CONFIG_CBPRINTF_N_SPECIFIER)) {
-				store_count(&conv, value.ptr, count);
+				store_count(conv, value->ptr, count);
 			}
 
 			break;
 
 		case FP_CONV_CASES:
 			if (IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)) {
-				bps = encode_float(value.dbl, &conv, precision,
+				bps = encode_float(value->dbl, conv, precision,
 						   &sign, buf, &bpe);
 			}
 			break;
@@ -1694,15 +1705,15 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 			nj_len += 1U;
 		}
 
-		if (conv.altform_0c) {
+		if (conv->altform_0c) {
 			nj_len += 2U;
-		} else if (conv.altform_0) {
+		} else if (conv->altform_0) {
 			nj_len += 1U;
 		}
 
-		nj_len += conv.pad0_value;
-		if (conv.pad_fp) {
-			nj_len += conv.pad0_pre_exp;
+		nj_len += conv->pad0_value;
+		if (conv->pad_fp) {
+			nj_len += conv->pad0_pre_exp;
 		}
 
 		/* If we have a width update width to hold the padding we need
@@ -1715,13 +1726,13 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		if (width > 0) {
 			width -= (int)nj_len;
 
-			if (!conv.flag_dash) {
+			if (!conv->flag_dash) {
 				char pad = ' ';
 
 				/* If we're zero-padding we have to emit the
 				 * sign first.
 				 */
-				if (conv.flag_zero) {
+				if (conv->flag_zero) {
 					if (sign != 0) {
 						OUTC(sign);
 						sign = 0;
@@ -1742,10 +1753,10 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 			OUTC(sign);
 		}
 
-		if (IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT) && conv.pad_fp) {
+		if (IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT) && conv->pad_fp) {
 			const char *cp = bps;
 
-			if (conv.specifier_a) {
+			if (conv->specifier_a) {
 				/* Only padding is pre_exp */
 				while (*cp != 'p') {
 					OUTC(*cp++);
@@ -1755,8 +1766,8 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 					OUTC(*cp++);
 				}
 
-				pad_len = conv.pad0_value;
-				if (!conv.pad_postdp) {
+				pad_len = conv->pad0_value;
+				if (!conv->pad_postdp) {
 					while (pad_len-- > 0) {
 						OUTC('0');
 					}
@@ -1776,22 +1787,22 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 				}
 			}
 
-			pad_len = conv.pad0_pre_exp;
+			pad_len = conv->pad0_pre_exp;
 			while (pad_len-- > 0) {
 				OUTC('0');
 			}
 
 			OUTS(cp, bpe);
 		} else {
-			if (conv.altform_0c | conv.altform_0) {
+			if (conv->altform_0c | conv->altform_0) {
 				OUTC('0');
 			}
 
-			if (conv.altform_0c) {
-				OUTC(conv.specifier);
+			if (conv->altform_0c) {
+				OUTC(conv->specifier);
 			}
 
-			pad_len = conv.pad0_value;
+			pad_len = conv->pad0_value;
 			while (pad_len-- > 0) {
 				OUTC('0');
 			}
