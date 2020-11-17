@@ -173,6 +173,37 @@ void z_thread_mark_switched_out(void);
 
 #endif /* CONFIG_INSTRUMENT_THREAD_SWITCHING */
 
+#ifdef CONFIG_DEMAND_PAGING
+/**
+ * Handle a page fault for a virtual data page
+ *
+ * This is invoked from the architecture page fault handler.
+ *
+ * If a valid page fault, the core kernel will obtain a page frame,
+ * populate it with the data page that was evicted to the backing store,
+ * update page tables, and return so that the faulting instruction may be
+ * re-tried.
+ *
+ * The architecture must not call this function if the page was mapped and
+ * not paged out at the tiume the exception was triggered (i.e. a protection
+ * violation for a mapped page).
+ *
+ * If the faulting context had interrupts disabled when the page fault was
+ * triggered, the entire page fault handling path must have interrupts
+ * disabled, including the invocation of this function.
+ *
+ * Otherwise, interrupts may be enabled and the page fault handler may be
+ * preemptible. Races to page-in will be appropriately handled by the kernel.
+ *
+ * @param addr Faulting virtual address
+ * @retval true Page fault successfully handled, or nothing needed to be done.
+ *              The arch layer should retry the faulting instruction.
+ * @retval false This page fault was from an un-mapped page, should
+ *               be treated as an error, and not re-tried.
+ */
+bool z_page_fault(void *addr);
+#endif /* CONFIG_DEMAND_PAGING */
+
 #ifdef __cplusplus
 }
 #endif
