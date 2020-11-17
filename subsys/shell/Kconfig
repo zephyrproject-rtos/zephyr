@@ -14,6 +14,24 @@ if SHELL
 
 module = SHELL
 module-str = Shell
+
+config SHELL_MINIMAL
+	bool "Enable minimal-footprint shell"
+	help
+	  Enable only minimal shell functionality to limit memory footprint.
+	  Following features are not active:
+	  - Build-in shell commands
+	  - History
+	  - Command help
+	  - Partial completion and autocompletion with the Tab key
+	  - Changing the prompt name in runtime
+	  - Calling shell_execute_cmd from the application
+	  - Colors in the shell
+	  - Arrows handling
+	  - Insert mode
+	  - Wildcards
+	  - Meta-keys
+
 source "subsys/logging/Kconfig.template.log_config"
 source "subsys/shell/Kconfig.backends"
 
@@ -35,6 +53,7 @@ config SHELL_BACKSPACE_MODE_DELETE
 
 config SHELL_CMD_BUFF_SIZE
 	int "Shell command buffer size"
+	default 128 if SHELL_MINIMAL
 	default 256
 	help
 	  Maximum command size in bytes. One byte is reserved for the string
@@ -61,12 +80,14 @@ config SHELL_DEFAULT_TERMINAL_HEIGHT
 config SHELL_ARGC_MAX
 	int "Maximum arguments in shell command"
 	range 3 255
+	default 5 if SHELL_MINIMAL
 	default 12
 	help
 	  Maximum number of arguments that can build a command.
 
 config SHELL_WILDCARD
 	bool "Enable wildcard support in shell"
+	depends on !SHELL_MINIMAL
 	select FNMATCH
 	default y
 	help
@@ -80,12 +101,14 @@ config SHELL_ECHO_STATUS
 
 config SHELL_VT100_COLORS
 	bool "Enable colors in shell"
+	depends on !SHELL_MINIMAL
 	default y
 	help
 	  If enabled VT100 colors are used in shell (e.g. print errors in red).
 
 config SHELL_METAKEYS
 	bool "Enable metakeys"
+	depends on !SHELL_MINIMAL
 	default y
 	help
 	  Enables shell meta keys: Ctrl+a, Ctrl+b, Ctrl+c, Ctrl+d, Ctrl+e,
@@ -94,6 +117,7 @@ config SHELL_METAKEYS
 
 config SHELL_HELP
 	bool "Enable help message"
+	depends on !SHELL_MINIMAL
 	default y
 	help
 	  Enables formatting help message when requested with '-h' or '--help'.
@@ -105,6 +129,7 @@ config SHELL_HELP_ON_WRONG_ARGUMENT_COUNT
 
 config SHELL_HISTORY
 	bool "Enable history in shell"
+	depends on !SHELL_MINIMAL
 	default y
 	select RING_BUFFER
 	help
@@ -120,10 +145,12 @@ config SHELL_HISTORY_BUFFER
 
 config SHELL_STATS
 	bool "Enable shell statistics"
+	depends on !SHELL_MINIMAL
 	default y
 
 config SHELL_CMDS
 	bool "Enable built-in commands"
+	depends on !SHELL_MINIMAL
 	default y
 	help
 	  Enable built-in commands like 'clear', 'history', etc.
@@ -140,6 +167,7 @@ config SHELL_CMDS_RESIZE
 
 config SHELL_CMDS_SELECT
 	bool "Enable select command"
+	depends on !SHELL_MINIMAL
 	depends on SHELL_CMDS
 	help
 	  This option enables select command. It can be used to set new root
