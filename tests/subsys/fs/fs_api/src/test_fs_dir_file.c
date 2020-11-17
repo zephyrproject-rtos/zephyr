@@ -32,9 +32,24 @@ static struct fs_mount_t test_fs_mnt_unsupported_fs = {
 		.fs_data = &test_data,
 };
 
-static struct fs_mount_t test_fs_mnt_invalid_root = {
+/* invalid name of mount point, not start with '/' */
+static struct fs_mount_t test_fs_mnt_invalid_root_1 = {
 		.type = TEST_FS_2,
 		.mnt_point = "SDA:",
+		.fs_data = &test_data,
+};
+
+/* length of the name of mount point is too short */
+static struct fs_mount_t test_fs_mnt_invalid_root_2 = {
+		.type = TEST_FS_2,
+		.mnt_point = "/",
+		.fs_data = &test_data,
+};
+
+/* NULL mount point */
+static struct fs_mount_t test_fs_mnt_invalid_root_3 = {
+		.type = TEST_FS_2,
+		.mnt_point = NULL,
 		.fs_data = &test_data,
 };
 
@@ -44,23 +59,30 @@ static struct fs_mount_t test_fs_mnt_already_mounted = {
 		.fs_data = &test_data,
 };
 
-static struct fs_mount_t test_fs_mnt_invalid_parm = {
+/* for test_fs, name of mount point must end with ':' */
+static struct fs_mount_t test_fs_mnt_invalid_mntp = {
 		.type = TEST_FS_2,
 		.mnt_point = "/SDA",
 		.fs_data = &test_data,
 };
 
+#define NOOP_MNTP "/SDCD:"
 static struct fs_mount_t test_fs_mnt_no_op = {
 		.type = TEST_FS_2,
-		.mnt_point = "/SDA:",
+		.mnt_point = NOOP_MNTP,
 		.fs_data = &test_data,
 };
 
 static struct fs_file_t filep;
+static struct fs_file_t err_filep;
 static const char test_str[] = "hello world!";
 
 /**
  * @brief Test mount interface of filesystem
+ *
+ * @details
+ * Test fs_mount() interface in file system core
+ * Following test cases depend on file systems mounted in this test case
  *
  * @ingroup filesystem_api
  */
@@ -69,22 +91,25 @@ void test_mount(void)
 	int ret;
 
 	TC_PRINT("\nmount tests:\n");
-	TC_PRINT("Mount to a NULL directory\n");
+	TC_PRINT("Pass NULL pointer to fs_mount()\n");
 	ret = fs_mount(NULL);
 	zassert_not_equal(ret, 0, "Mount a NULL fs");
 
-	TC_PRINT("Mount to a unsupported directory\n");
+	TC_PRINT("Mount an unsupported file system\n");
 	ret = fs_mount(&test_fs_mnt_unsupported_fs);
-	zassert_not_equal(ret, 0, "Mount a unsupported fs");
+	zassert_not_equal(ret, 0, "Mount an unsupported fs");
 
 	fs_register(TEST_FS_2, &temp_fs);
-	TC_PRINT("Mount to an invalid directory\n");
-	ret = fs_mount(&test_fs_mnt_invalid_root);
-	zassert_not_equal(ret, 0, "Mount to an invalid dir");
 
-	TC_PRINT("Invalid parameter pass to file system operation interface\n");
-	ret = fs_mount(&test_fs_mnt_invalid_parm);
-	zassert_not_equal(ret, 0, "Mount with invalid parm");
+	TC_PRINT("Mount to an invalid directory\n");
+	ret = fs_mount(&test_fs_mnt_invalid_root_1);
+	zassert_not_equal(ret, 0, "Mount to an invalid dir");
+	ret = fs_mount(&test_fs_mnt_invalid_root_2);
+	zassert_not_equal(ret, 0, "Mount dir name too short");
+	ret = fs_mount(&test_fs_mnt_invalid_root_3);
+	zassert_not_equal(ret, 0, "Mount point is NULL");
+	ret = fs_mount(&test_fs_mnt_invalid_mntp);
+	zassert_not_equal(ret, 0, "Mount with invalid mount point");
 
 	ret = fs_mount(&test_fs_mnt_1);
 	zassert_equal(ret, 0, "Error mounting fs");
@@ -94,16 +119,20 @@ void test_mount(void)
 	zassert_not_equal(ret, 0, "Mount to a mounted dir");
 
 	fs_unregister(TEST_FS_2, &temp_fs);
-
 	fs_register(TEST_FS_2, &null_fs);
+
 	TC_PRINT("Mount a file system has no interface implemented\n");
 	ret = fs_mount(&test_fs_mnt_no_op);
 	zassert_not_equal(ret, 0, "Mount to a fs without op interface");
-	fs_unregister(TEST_FS_2, &null_fs);
+
+	/* mount an file system has no unmmount functionality */
+	null_fs.mount = temp_fs.mount;
+	ret = fs_mount(&test_fs_mnt_no_op);
+	zassert_equal(ret, 0, "fs has no unmount functionality can be mounted");
 }
 
 /**
- * @brief Test unmount interface of filesystem
+ * @brief Test fs_unmount() interface in file system core
  *
  * @ingroup filesystem_api
  */
@@ -119,19 +148,25 @@ void test_unmount(void)
 
 	TC_PRINT("\nunmount file system that has never been mounted:\n");
 	ret = fs_unmount(&test_fs_mnt_unsupported_fs);
-	zassert_equal(ret, -EINVAL, "Unmount a never mounted fs");
+	zassert_not_equal(ret, 0, "Unmount a never mounted fs");
 
-	TC_PRINT("\nunmount file system multiple times:\n");
 	ret = fs_unmount(&test_fs_mnt_1);
 	zassert_true(ret >= 0, "Fail to unmount fs");
 
+	TC_PRINT("\nunmount file system multiple times:\n");
 	test_fs_mnt_1.fs = &temp_fs;
 	ret = fs_unmount(&test_fs_mnt_1);
-	zassert_equal(ret, -EINVAL, "Unmount a unmounted fs");
+	zassert_not_equal(ret, 0, "Unmount an unmounted fs");
+
+	TC_PRINT("unmount a file system has no unmount functionality\n");
+	ret = fs_unmount(&test_fs_mnt_no_op);
+	zassert_not_equal(ret, 0, "Unmount a fs has no unmount fuctionality");
+	/* TEST_FS_2 is registered in test_mount(), unregister it here */
+	fs_unregister(TEST_FS_2, &null_fs);
 }
 
 /**
- * @brief Test statvfs interface of filesystem
+ * @brief Test fs_statvfs() interface in file system core
  *
  * @ingroup filesystem_api
  */
@@ -141,17 +176,25 @@ void test_file_statvfs(void)
 	int ret;
 
 	ret = fs_statvfs(NULL, &stat);
-	zassert_not_equal(ret, 0, "Get valume without path");
+	zassert_not_equal(ret, 0, "Pass NULL for path pointer");
+	ret = fs_statvfs(TEST_FS_MNTP, NULL);
+	zassert_not_equal(ret, 0, "Pass NULL for stat structure pointer");
+
+	ret = fs_statvfs("/", &stat);
+	zassert_not_equal(ret, 0, "Path name too short");
+
+	ret = fs_statvfs("SDCARD:", &stat);
+	zassert_not_equal(ret, 0, "Path name should start with /");
 
 	ret = fs_statvfs("/SDCARD:", &stat);
-	zassert_not_equal(ret, 0, "Get valume by no-exist path");
+	zassert_not_equal(ret, 0, "Get volume info by no-exist path");
 
-	ret = fs_statvfs(TEST_FS_MNTP, NULL);
-	zassert_not_equal(ret, 0, "Get valume without stat structure");
+	/* It's ok if there is no stat interface */
+	ret = fs_statvfs(NOOP_MNTP, &stat);
+	zassert_equal(ret, 0, "fs has no statvfs functionality");
 
 	ret = fs_statvfs(TEST_FS_MNTP, &stat);
 	zassert_equal(ret, 0, "Error getting voluem stats");
-
 	TC_PRINT("\n");
 	TC_PRINT("Optimal transfer block size   = %lu\n", stat.f_bsize);
 	TC_PRINT("Allocation unit size          = %lu\n", stat.f_frsize);
@@ -160,7 +203,7 @@ void test_file_statvfs(void)
 }
 
 /**
- * @brief Test make directory interface of filesystem
+ * @brief Test fs_mkdir() interface in file system core
  *
  * @ingroup filesystem_api
  */
@@ -173,20 +216,27 @@ void test_mkdir(void)
 	ret = fs_mkdir(NULL);
 	zassert_not_equal(ret, 0, "Create a NULL directory");
 
+	ret = fs_mkdir("d");
+	zassert_not_equal(ret, 0, "Create dir with too short name");
+
+	ret = fs_mkdir("SDCARD:/testdir");
+	zassert_not_equal(ret, 0, "Create dir with wrong path");
+
 	ret = fs_mkdir("/SDCARD:/testdir");
 	zassert_not_equal(ret, 0, "Create dir in no fs mounted dir");
 
 	ret = fs_mkdir(TEST_FS_MNTP);
 	zassert_not_equal(ret, 0, "Shoult not create root dir");
 
+	ret = fs_mkdir(NOOP_MNTP"/testdir");
+	zassert_not_equal(ret, 0, "Filesystem has no mkdir interface");
+
 	ret = fs_mkdir(TEST_DIR);
 	zassert_equal(ret, 0, "Error creating dir");
-
-	TC_PRINT("Created dir %s!\n", TEST_DIR);
 }
 
 /**
- * @brief Test open directory interface of filesystem
+ * @brief Test fs_opendir() interface in file system core
  *
  * @ingroup filesystem_api
  */
@@ -200,15 +250,27 @@ void test_opendir(void)
 	memset(&dirp, 0, sizeof(dirp));
 	TC_PRINT("Test null path\n");
 	ret = fs_opendir(NULL, NULL);
-	zassert_not_equal(ret, 0, "Open NULL dir");
+	zassert_not_equal(ret, 0, "Open dir with NULL pointer parameter");
+
+	TC_PRINT("Test directory without root path\n");
+	ret = fs_opendir(&dirp, "ab");
+	zassert_not_equal(ret, 0, "Can't open dir without root path");
+
+	TC_PRINT("Test directory without name\n");
+	ret = fs_opendir(&dirp, "");
+	zassert_not_equal(ret, 0, "Can't open dir without path name");
+
+	TC_PRINT("Test not existing mount point\n");
+	ret = fs_opendir(&dirp, "/SDCARD:/test_dir");
+	zassert_not_equal(ret, 0, "Open dir in an unmounted fs");
+
+	TC_PRINT("Test filesystem has no opendir functionality\n");
+	ret = fs_opendir(&dirp, NOOP_MNTP"/test_dir");
+	zassert_not_equal(ret, 0, "Filesystem has no opendir functionality");
 
 	TC_PRINT("Test root directory\n");
 	ret = fs_opendir(&dirp, "/");
 	zassert_equal(ret, 0, "Fail to open root dir");
-
-	TC_PRINT("Test non-exist mount point\n");
-	ret = fs_opendir(&dirp, "/SDCARD:/test_dir");
-	zassert_not_equal(ret, 0, "Open dir in a unmounted fs");
 
 	ret = fs_opendir(&dirp, TEST_DIR);
 	zassert_equal(ret, 0, "Fail to open dir");
@@ -216,12 +278,10 @@ void test_opendir(void)
 	TC_PRINT("Open same directory multi times\n");
 	ret = fs_opendir(&dirp, TEST_DIR);
 	zassert_not_equal(ret, 0, "Can't reopen an opened dir");
-
-	TC_PRINT("Opening dir successfully\n");
 }
 
 /**
- * @brief Test close directory interface of filesystem
+ * @brief Test fs_close() interface in file system core
  *
  * @ingroup filesystem_api
  */
@@ -241,6 +301,10 @@ void test_closedir(void)
 	dirp.mp = &test_fs_mnt_1;
 	ret = fs_closedir(&dirp);
 	zassert_not_equal(ret, 0, "Should no close a closed dir");
+
+	dirp.mp = &test_fs_mnt_no_op;
+	ret = fs_closedir(&dirp);
+	zassert_not_equal(ret, 0, "Filesystem has no closedir interface");
 }
 
 static int _test_lsdir(const char *path)
@@ -257,6 +321,12 @@ static int _test_lsdir(const char *path)
 	TC_PRINT("read an unopened dir\n");
 	dirp.dirp = "somepath";
 	ret = fs_readdir(&dirp, &entry);
+	if (!ret) {
+		return TC_FAIL;
+	}
+
+	dirp.mp = &test_fs_mnt_no_op;
+	ret = fs_readdir(&dirp, NULL);
 	if (!ret) {
 		return TC_FAIL;
 	}
@@ -303,7 +373,7 @@ static int _test_lsdir(const char *path)
 }
 
 /**
- * @brief Test lsdir interface include opendir, readdir, closedir
+ * @brief Test fs_readdir() interface in file system core
  *
  * @ingroup filesystem_api
  */
@@ -316,11 +386,10 @@ void test_lsdir(void)
 }
 
 /**
- * @brief Open a existing file or create a new file
+ * @brief Test fs_open() interface in file system core
  *
  * @ingroup filesystem_api
  */
-
 void test_file_open(void)
 {
 	int ret;
@@ -332,8 +401,20 @@ void test_file_open(void)
 	zassert_not_equal(ret, 0, "Open a NULL file");
 
 	TC_PRINT("\nOpen a file with wrong abs path\n");
-	ret = fs_open(&filep, "/test_file.txt", FS_O_READ);
+	ret = fs_open(&filep, "/", FS_O_READ);
 	zassert_not_equal(ret, 0, "Open a file with wrong path");
+
+	TC_PRINT("\nOpen a file with wrong path\n");
+	ret = fs_open(&filep, "test_file.txt", FS_O_READ);
+	zassert_not_equal(ret, 0, "Open a file with wrong path");
+
+	TC_PRINT("\nOpen a file with wrong abs path\n");
+	ret = fs_open(&filep, "/test_file.txt", FS_O_READ);
+	zassert_not_equal(ret, 0, "Open a file with wrong abs path");
+
+	TC_PRINT("\nFilesystem has no open functionality\n");
+	ret = fs_open(&filep, NOOP_MNTP"/test_file.txt", FS_O_READ);
+	zassert_not_equal(ret, 0, "Filesystem has no open functionality");
 
 	ret = fs_open(&filep, TEST_FILE, FS_O_READ);
 	zassert_equal(ret, 0, "Fail to open file");
@@ -351,6 +432,20 @@ static int _test_file_write(void)
 	int ret;
 
 	TC_PRINT("\nWrite tests:\n");
+
+	TC_PRINT("Write to an unopened file\n");
+	err_filep.mp = NULL;
+	brw = fs_write(&err_filep, (char *)test_str, strlen(test_str));
+	if (brw >= 0) {
+		return TC_FAIL;
+	}
+
+	TC_PRINT("Write to filesystem has no write interface\n");
+	err_filep.mp = &test_fs_mnt_no_op;
+	brw = fs_write(&err_filep, (char *)test_str, strlen(test_str));
+	if (brw >= 0) {
+		return TC_FAIL;
+	}
 
 	ret = fs_seek(&filep, 0, FS_SEEK_SET);
 	if (ret) {
@@ -387,10 +482,9 @@ static int _test_file_write(void)
 }
 
 /**
- * @brief Write items of data of size bytes long
+ * @brief Test fs_write() interface in file system core
  *
  * @ingroup filesystem_api
- *
  */
 void test_file_write(void)
 {
@@ -403,6 +497,20 @@ static int _test_file_sync(void)
 	ssize_t brw;
 
 	TC_PRINT("\nSync tests:\n");
+
+	TC_PRINT("sync an unopened file\n");
+	err_filep.mp = NULL;
+	ret = fs_sync(&err_filep);
+	if (!ret) {
+		return TC_FAIL;
+	}
+
+	TC_PRINT("sync to filesystem has no sync functionality\n");
+	err_filep.mp = &test_fs_mnt_no_op;
+	ret = fs_sync(&err_filep);
+	if (!ret) {
+		return TC_FAIL;
+	}
 
 	ret = fs_open(&filep, TEST_FILE, FS_O_RDWR);
 
@@ -446,7 +554,7 @@ static int _test_file_sync(void)
 }
 
 /**
- * @brief Flush the cache of an open file
+ * @brief Test fs_sync() interface in file system core
  *
  * @ingroup filesystem_api
  */
@@ -456,7 +564,7 @@ void test_file_sync(void)
 }
 
 /**
- * @brief Read items of data of size bytes long
+ * @brief Test fs_read() interface in file system core
  *
  * @ingroup filesystem_api
  */
@@ -467,6 +575,16 @@ void test_file_read(void)
 	size_t sz = strlen(test_str);
 
 	TC_PRINT("\nRead tests:\n");
+
+	TC_PRINT("Read an unopened file\n");
+	err_filep.mp = NULL;
+	brw = fs_read(&err_filep, read_buff, sz);
+	zassert_false(brw >= 0, "Can't read an unopened file");
+
+	TC_PRINT("Filesystem has no read interface\n");
+	err_filep.mp = &test_fs_mnt_no_op;
+	brw = fs_read(&err_filep, read_buff, sz);
+	zassert_false(brw >= 0, "Filesystem has no read interface");
 
 	TC_PRINT("Read to a invalid buffer\n");
 	brw = fs_read(&filep, NULL, sz);
@@ -492,6 +610,38 @@ static int _test_file_truncate(void)
 	ssize_t brw;
 
 	TC_PRINT("\nTruncate tests: max file size is 128byte\n");
+
+	TC_PRINT("\nTruncate, seek, tell an unopened file\n");
+	err_filep.mp = NULL;
+	ret = fs_truncate(&err_filep, 256);
+	if (!ret) {
+		return TC_FAIL;
+	}
+	ret = fs_seek(&err_filep, 0, FS_SEEK_END);
+	if (!ret) {
+		return TC_FAIL;
+	}
+
+	ret = fs_tell(&err_filep);
+	if (!ret) {
+		return TC_FAIL;
+	}
+
+	TC_PRINT("\nTruncate, seek, tell fs has no these functionality\n");
+	err_filep.mp = &test_fs_mnt_no_op;
+	ret = fs_truncate(&err_filep, 256);
+	if (!ret) {
+		return TC_FAIL;
+	}
+	ret = fs_seek(&err_filep, 0, FS_SEEK_END);
+	if (!ret) {
+		return TC_FAIL;
+	}
+
+	ret = fs_tell(&err_filep);
+	if (!ret) {
+		return TC_FAIL;
+	}
 
 	TC_PRINT("Truncating to size larger than 128byte\n");
 	ret = fs_truncate(&filep, 256);
@@ -597,12 +747,12 @@ static int _test_file_truncate(void)
 }
 
 /**
- * @brief Truncate the file to the new length
+ * @brief Truncate the file to the new length and check
  *
- * @details This test include three cases:
- *            - fs_seek, locate the position to truncate
- *            - fs_truncate
- *            - fs_tell, retrieve the current position
+ * @details
+ * - fs_seek(), locate the position to truncate
+ * - fs_truncate()
+ * - fs_tell(), retrieve the current position
  *
  * @ingroup filesystem_api
  */
@@ -612,17 +762,25 @@ void test_file_truncate(void)
 }
 
 /**
- * @brief Flush associated stream and close the file
+ * @brief Test close file interface in file system core
  *
  * @ingroup filesystem_api
- *
  */
-
 void test_file_close(void)
 {
 	int ret;
 
 	TC_PRINT("\nClose tests:\n");
+
+	TC_PRINT("Close an unopened file\n");
+	err_filep.mp = NULL;
+	ret = fs_close(&err_filep);
+	zassert_equal(ret, 0, "Should close an unopened file");
+
+	TC_PRINT("Filesystem has no close interface\n");
+	err_filep.mp = &test_fs_mnt_no_op;
+	ret = fs_close(&err_filep);
+	zassert_not_equal(ret, 0, "Filesystem has no close interface");
 
 	ret = fs_close(&filep);
 	zassert_equal(ret, 0, "Fail to close file");
@@ -636,7 +794,7 @@ void test_file_close(void)
 }
 
 /**
- * @brief Rename a file or directory
+ * @brief Test fs_rename() interface in file system core
  *
  * @ingroup filesystem_api
  */
@@ -649,8 +807,23 @@ void test_file_rename(void)
 	ret = fs_rename(NULL, NULL);
 	zassert_not_equal(ret, 0, "Rename a NULL file");
 
+	ret = fs_rename("/", TEST_FILE_RN);
+	zassert_not_equal(ret, 0, "source file name is too short");
+
+	ret = fs_rename("testfile.txt", TEST_FILE_RN);
+	zassert_not_equal(ret, 0, "source file name doesn't start with /");
+
+	ret = fs_rename("/SDCARD:/testfile.txt", NULL);
+	zassert_not_equal(ret, 0, "Rename to a NULL file");
+
+	ret = fs_rename("/SDCARD:/testfile.txt", "/");
+	zassert_not_equal(ret, 0, "dest file name too short");
+
+	ret = fs_rename("/SDCARD:/testfile.txt", "rename.txt");
+	zassert_not_equal(ret, 0, "dest file name doesn't start with /");
+
 	ret = fs_rename("/SDCARD:/testfile.txt", TEST_FILE_RN);
-	zassert_not_equal(ret, 0, "Rename a non-exist file");
+	zassert_not_equal(ret, 0, "Rename a not existing file");
 
 	ret = fs_rename(TEST_FILE, "/SDCARD:/testfile_renamed.txt");
 	zassert_not_equal(ret, 0, "Rename file to different mount point");
@@ -658,12 +831,15 @@ void test_file_rename(void)
 	ret = fs_rename(TEST_FILE, TEST_FILE_EX);
 	zassert_not_equal(ret, 0, "Rename file to an exist file");
 
+	ret = fs_rename(NOOP_MNTP"/test.txt", NOOP_MNTP"/test_new.txt");
+	zassert_not_equal(ret, 0, "Filesystem has no rename functionality");
+
 	ret = fs_rename(TEST_FILE, TEST_FILE_RN);
 	zassert_equal(ret, 0, "Fail to rename a file");
 }
 
 /**
- * @brief Check the status of a file or directory specified by the path
+ * @brief Test fs_stat() interface in filesystem core
  *
  * @ingroup filesystem_api
  */
@@ -675,13 +851,22 @@ void test_file_stat(void)
 	TC_PRINT("\nStat file tests:\n");
 
 	ret = fs_stat(NULL, &entry);
-	zassert_not_equal(ret, 0, "Stat a NULL dir");
-
-	ret = fs_stat("/SDCARD", &entry);
-	zassert_not_equal(ret, 0, "Stat a non-exist dir");
+	zassert_not_equal(ret, 0, "Pointer to path is NULL");
 
 	ret = fs_stat(TEST_DIR, NULL);
 	zassert_not_equal(ret, 0, "Stat a dir without entry");
+
+	ret = fs_stat("/", &entry);
+	zassert_not_equal(ret, 0, "dir path name is too short");
+
+	ret = fs_stat("SDCARD", &entry);
+	zassert_not_equal(ret, 0, "Stat a dir path without /");
+
+	ret = fs_stat("/SDCARD", &entry);
+	zassert_not_equal(ret, 0, "Stat a not existing dir");
+
+	ret = fs_stat(NOOP_MNTP, &entry);
+	zassert_not_equal(ret, 0, "filesystem has no stat functionality");
 
 	ret = fs_stat(TEST_DIR, &entry);
 	zassert_equal(ret, 0, "Fail to stat a dir");
@@ -691,12 +876,10 @@ void test_file_stat(void)
 }
 
 /**
- * @brief Delete the specified file or directory
+ * @brief Test fs_unlink() interface in filesystem core
  *
  * @ingroup filesystem_api
- *
  */
-
 void test_file_unlink(void)
 {
 	int ret;
@@ -706,11 +889,30 @@ void test_file_unlink(void)
 	ret = fs_unlink(NULL);
 	zassert_not_equal(ret, 0, "Delete a NULL file");
 
+	ret = fs_unlink("/");
+	zassert_not_equal(ret, 0, "Delete a file with too short name");
+
+	ret = fs_unlink("SDCARD:/test_file.txt");
+	zassert_not_equal(ret, 0, "Delete a file with missing root / in path");
+
 	ret = fs_unlink("/SDCARD:/test_file.txt");
-	zassert_not_equal(ret, 0, "Delete a non-exist file");
+	zassert_not_equal(ret, 0, "Delete a not existing file");
 
 	ret = fs_unlink(TEST_FS_MNTP);
 	zassert_not_equal(ret, 0, "Delete a root dir");
+
+	ret = fs_unlink(NOOP_MNTP);
+	zassert_not_equal(ret, 0, "Filesystem has no unlink functionality");
+
+	/* In filesystem core, static function fs_get_mnt_point() check
+	 * the length of mount point's name. It is not an API, test this
+	 * function at this point because test_file_unlink() is the
+	 * last test case before test_unmount(), change mountp_len of
+	 * test_fs_mnt_no_op to 0 could not effect other test cases
+	 */
+	test_fs_mnt_no_op.mountp_len = 0;
+	ret = fs_unlink(NOOP_MNTP);
+	zassert_not_equal(ret, 0, "mount point with 0 mountp_len can't be get");
 
 	ret = fs_unlink(TEST_FILE_RN);
 	zassert_equal(ret, 0, "Fail to delete file");

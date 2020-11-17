@@ -250,6 +250,11 @@ static int temp_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry)
 		entry->type = FS_DIR_ENTRY_FILE;
 		i++;
 		break;
+	case 3:
+		strcpy(entry->name, "..");
+		entry->type = FS_DIR_ENTRY_DIR;
+		i++;
+		break;
 	default:
 		strcpy(entry->name, "\0");
 		i = 0;
