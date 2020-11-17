@@ -44,6 +44,19 @@ struct _sflist {
 
 typedef struct _sflist sys_sflist_t;
 
+/* A proxy node can be used when linking a userspace object to an sflist, to
+ * avoid exposing the kernel linked list to userspace via the contained node.
+ *
+ * A flag bit should be used in node to distinguish proxy nodes from standard
+ * nodes when traversing the list.  The proxied node can be found using the
+ * data field.
+ */
+struct _sfnode_proxy {
+	sys_sfnode_t node;
+	void *data;
+};
+
+typedef struct _sfnode_proxy sys_sfnode_proxy_t;
 
 /**
  * @brief Provide the primitive to iterate on a list
@@ -283,6 +296,27 @@ static inline void sys_sfnode_init(sys_sfnode_t *node, uint8_t flags)
 {
 	__ASSERT((flags & ~SYS_SFLIST_FLAGS_MASK) == 0UL, "flags too large");
 	node->next_and_flags = flags;
+}
+
+/**
+ * @brief Initialize an sflist proxy node
+ *
+ * Set a proxy node to point to the real node, and initialize its flags.  See
+ * also sys_sfnode_init().  The proxy node should then be inserted into the
+ * sflist in lieu of the real node.
+ *
+ * Using a proxy node avoids exposing pointers to kernel objects through the
+ * sys_sfnode_t in a containing userspace object.
+ *
+ * @param proxy A pointer to the proxy to set the flags on
+ * @param data A pointer used to locate the proxied node
+ * @param flags A value between 0 and 3 to set the flags value
+ */
+static inline void sys_sfnode_proxy_init(sys_sfnode_proxy_t *proxy, void *data,
+					 uint8_t flags)
+{
+	sys_sfnode_init(&proxy->node, flags);
+	proxy->data = data;
 }
 
 /**

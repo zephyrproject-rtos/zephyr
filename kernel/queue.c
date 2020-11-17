@@ -22,11 +22,6 @@
 #include <kernel_internal.h>
 #include <sys/check.h>
 
-struct alloc_node {
-	sys_sfnode_t node;
-	void *data;
-};
-
 void *z_queue_node_peek(sys_sfnode_t *node, bool needs_free)
 {
 	void *ret;
@@ -37,12 +32,12 @@ void *z_queue_node_peek(sys_sfnode_t *node, bool needs_free)
 		 * struct, which is what got put in the queue. Free it and pass
 		 * back the data pointer.
 		 */
-		struct alloc_node *anode;
+		sys_sfnode_proxy_t *proxy;
 
-		anode = CONTAINER_OF(node, struct alloc_node, node);
-		ret = anode->data;
+		proxy = CONTAINER_OF(node, sys_sfnode_proxy_t, node);
+		ret = proxy->data;
 		if (needs_free) {
-			k_free(anode);
+			k_free(proxy);
 		}
 	} else {
 		/* Data was directly placed in the queue, the first word
@@ -154,16 +149,15 @@ static int32_t queue_insert(struct k_queue *queue, void *prev, void *data,
 
 	/* Only need to actually allocate if no threads are pending */
 	if (alloc) {
-		struct alloc_node *anode;
+		sys_sfnode_proxy_t *proxy;
 
-		anode = z_thread_malloc(sizeof(*anode));
-		if (anode == NULL) {
+		proxy = z_thread_malloc(sizeof(*proxy));
+		if (proxy == NULL) {
 			k_spin_unlock(&queue->lock, key);
 			return -ENOMEM;
 		}
-		anode->data = data;
-		sys_sfnode_init(&anode->node, 0x1);
-		data = anode;
+		sys_sfnode_proxy_init(proxy, data, 0x1);
+		data = proxy;
 	} else {
 		sys_sfnode_init(data, 0x0);
 	}
