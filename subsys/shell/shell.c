@@ -343,6 +343,16 @@ static void autocomplete(const struct shell *shell,
 	__ASSERT_NO_MSG(match != NULL);
 	cmd_len = shell_strlen(match->syntax);
 
+	if (IS_ENABLED(CONFIG_SHELL_MINIMAL)) {
+		/* Add a space if the Tab button is pressed when command is
+		 * complete.
+		 */
+		if (cmd_len == arg_len) {
+			shell_op_char_insert(shell, ' ');
+		}
+		return;
+	}
+
 	/* no exact match found */
 	if (cmd_len != arg_len) {
 		shell_op_completion_insert(shell,
@@ -463,6 +473,10 @@ static void partial_autocomplete(const struct shell *shell,
 				 const char *arg,
 				 size_t first, size_t cnt)
 {
+	if (IS_ENABLED(CONFIG_SHELL_MINIMAL)) {
+		return;
+	}
+
 	const char *completion;
 	uint16_t arg_len = shell_strlen(arg);
 	uint16_t common = common_beginning_find(shell, cmd, &completion, first,
@@ -599,26 +613,36 @@ static int execute(const struct shell *shell)
 
 	memset(&shell->ctx->active_cmd, 0, sizeof(shell->ctx->active_cmd));
 
-	shell_cmd_trim(shell);
-
-	history_put(shell, shell->ctx->cmd_buff,
-		    shell->ctx->cmd_buff_len);
-
-	if (IS_ENABLED(CONFIG_SHELL_WILDCARD)) {
-		shell_wildcard_prepare(shell);
-	}
-
-	/* Parent present means we are in select mode. */
-	if (parent != NULL) {
-		argv[0] = parent->syntax;
-		argv[1] = cmd_buf;
-		argvp = &argv[1];
-		active_cmd_prepare(parent, &shell->ctx->active_cmd, &help_entry,
-				   &cmd_lvl, &cmd_with_handler_lvl, &args_left);
-		cmd_lvl++;
-	} else {
-		help_entry.help = NULL;
+	if (IS_ENABLED(CONFIG_SHELL_MINIMAL)) {
+		/* Following features are not used for CONFIG_SHELL_MINIMAL:
+		 * 1. help
+		 * 2. select command
+		 * 3. wildcards
+		 * 4. history - no need to trim command
+		 */
 		argvp = &argv[0];
+	} else {
+		shell_cmd_trim(shell);
+
+		history_put(shell, shell->ctx->cmd_buff,
+			    shell->ctx->cmd_buff_len);
+
+		if (IS_ENABLED(CONFIG_SHELL_WILDCARD)) {
+			shell_wildcard_prepare(shell);
+		}
+
+		/* Parent present means we are in select mode. */
+		if (parent != NULL) {
+			argv[0] = parent->syntax;
+			argv[1] = cmd_buf;
+			argvp = &argv[1];
+			active_cmd_prepare(parent, &shell->ctx->active_cmd, &help_entry,
+					   &cmd_lvl, &cmd_with_handler_lvl, &args_left);
+			cmd_lvl++;
+		} else {
+			help_entry.help = NULL;
+			argvp = &argv[0];
+		}
 	}
 
 	/* Below loop is analyzing subcommands of found root command. */
@@ -1000,6 +1024,7 @@ static void state_collect(const struct shell *shell)
 			}
 
 			switch (data) {
+#if !CONFIG_SHELL_MINIMAL
 			case 'A': /* UP arrow */
 				history_handle(shell, true);
 				break;
@@ -1015,13 +1040,15 @@ static void state_collect(const struct shell *shell)
 			case 'D': /* LEFT arrow */
 				shell_op_left_arrow(shell);
 				break;
-
+#endif
 			case '4': /* END Button in ESC[n~ mode */
 				receive_state_change(shell,
 						SHELL_RECEIVE_TILDE_EXP);
 				__fallthrough;
 			case 'F': /* END Button in VT100 mode */
+#if !CONFIG_SHELL_MINIMAL
 				shell_op_cursor_end_move(shell);
+#endif
 				break;
 
 			case '1': /* HOME Button in ESC[n~ mode */
@@ -1029,7 +1056,9 @@ static void state_collect(const struct shell *shell)
 						SHELL_RECEIVE_TILDE_EXP);
 				__fallthrough;
 			case 'H': /* HOME Button in VT100 mode */
+#if !CONFIG_SHELL_MINIMAL
 				shell_op_cursor_home_move(shell);
+#endif
 				break;
 
 			case '2': /* INSERT Button in ESC[n~ mode */
@@ -1037,8 +1066,10 @@ static void state_collect(const struct shell *shell)
 						SHELL_RECEIVE_TILDE_EXP);
 				__fallthrough;
 			case 'L': {/* INSERT Button in VT100 mode */
+#if !CONFIG_SHELL_MINIMAL
 				bool status = flag_insert_mode_get(shell);
 				flag_insert_mode_set(shell, !status);
+#endif
 				break;
 			}
 
@@ -1084,6 +1115,10 @@ static void shell_log_process(const struct shell *shell)
 	bool processed = false;
 	int signaled = 0;
 	int result;
+
+	if (!IS_ENABLED(CONFIG_SHELL_LOG_BACKEND)) {
+		return;
+	}
 
 	do {
 		if (!IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
@@ -1475,6 +1510,10 @@ void shell_hexdump(const struct shell *shell, const uint8_t *data, size_t len)
 
 int shell_prompt_change(const struct shell *shell, const char *prompt)
 {
+	if (IS_ENABLED(CONFIG_SHELL_MINIMAL)) {
+		return -EINVAL;
+	}
+
 	__ASSERT_NO_MSG(shell);
 
 	if (prompt == NULL) {
@@ -1488,6 +1527,11 @@ int shell_prompt_change(const struct shell *shell, const char *prompt)
 
 void shell_help(const struct shell *shell)
 {
+	if (IS_ENABLED(CONFIG_SHELL_MINIMAL) ||
+	    !IS_ENABLED(CONFIG_SHELL_HELP)) {
+		return;
+	}
+
 	k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
 	shell_internal_help_print(shell);
 	k_mutex_unlock(&shell->ctx->wr_mtx);
@@ -1495,6 +1539,10 @@ void shell_help(const struct shell *shell)
 
 int shell_execute_cmd(const struct shell *shell, const char *cmd)
 {
+	if (IS_ENABLED(CONFIG_SHELL_MINIMAL)) {
+		return -ENOEXEC;
+	}
+
 	uint16_t cmd_len = shell_strlen(cmd);
 	int ret_val;
 
