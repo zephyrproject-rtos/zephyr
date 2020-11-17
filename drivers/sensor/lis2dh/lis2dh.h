@@ -200,6 +200,8 @@ struct lis2dh_config {
 	gpio_pin_t irq2_pin;
 	gpio_dt_flags_t irq2_flags;
 #endif /* CONFIG_LIS2DH_TRIGGER */
+	bool is_lsm303agr_dev;
+	bool disc_pull_up;
 };
 
 struct lis2dh_transfer_function {
