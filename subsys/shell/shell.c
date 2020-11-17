@@ -1555,3 +1555,51 @@ int shell_execute_cmd(const struct shell *shell, const char *cmd)
 
 	return ret_val;
 }
+
+static int cmd_help(const struct shell *shell, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+#if defined(CONFIG_SHELL_TAB)
+	shell_print(shell, "Please press the <Tab> button to see all available "
+			   "commands.");
+#endif
+
+#if defined(CONFIG_SHELL_TAB_AUTOCOMPLETION)
+	shell_print(shell,
+		"You can also use the <Tab> button to prompt or auto-complete"
+		" all commands or its subcommands.");
+#endif
+
+#if defined(CONFIG_SHELL_HELP)
+	shell_print(shell,
+		"You can try to call commands with <-h> or <--help> parameter"
+		" for more information.");
+#endif
+
+#if defined(CONFIG_SHELL_METAKEYS)
+	shell_print(shell,
+		"\nShell supports following meta-keys:\n"
+		"  Ctrl + (a key from: abcdefklnpuw)\n"
+		"  Alt  + (a key from: bf)\n"
+		"Please refer to shell documentation for more details.");
+#endif
+
+	if (IS_ENABLED(CONFIG_SHELL_HELP)) {
+		/* For NULL argument function will print all root commands */
+		shell_help_subcmd_print(shell, NULL, "\nAvailable commands:\n");
+	} else {
+		const struct shell_static_entry *entry;
+		size_t idx = 0;
+
+		shell_print(shell, "\nAvailable commands:");
+		while ((entry = shell_cmd_get(NULL, idx++, NULL)) != NULL) {
+			shell_print(shell, "  %s", entry->syntax);
+		}
+	}
+
+	return 0;
+}
+
+SHELL_CMD_ARG_REGISTER(help, NULL, "Prints the help message.", cmd_help, 1, 0);
