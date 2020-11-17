@@ -299,6 +299,185 @@ void arch_mem_unmap(void *addr, size_t size);
  */
 void arch_reserved_pages_update(void);
 #endif /* ARCH_HAS_RESERVED_PAGE_FRAMES */
+
+#ifdef CONFIG_DEMAND_PAGING
+/**
+ * Update all page tables for a paged-out data page
+ *
+ * This function:
+ * - Sets the data page virtual address to trigger a fault if accessed that
+ *   can be distinguished from access violations or un-mapped pages.
+ * - Saves the provided location value so that it can retrieved for that
+ *   data page in the page fault handler.
+ * - The location value semantics are undefined here but the value will be
+ *   always be page-aligned. It could be 0.
+ *
+ * If multiple page tables are in use, this must update all page tables.
+ * This function is called with interrupts locked.
+ *
+ * Calling this function on data pages which are already paged out is
+ * undefined behavior.
+ *
+ * This API is part of infrastructure still under development and may change.
+ */
+void arch_mem_page_out(void *addr, uintptr_t location);
+
+/**
+ * Update all page tables for a paged-in data page
+ *
+ * This function:
+ * - Maps the specified virtual data page address to the provided physical
+ *   page frame address, such that future memory accesses will function as
+ *   expected. Access and caching attributes are undisturbed.
+ * - Clears any accounting for "accessed" and "dirty" states.
+ *
+ * If multiple page tables are in use, this must update all page tables.
+ * This function is called with interrupts locked.
+ *
+ * Calling this function on data pages which are already paged in is
+ * undefined behavior.
+ *
+ * This API is part of infrastructure still under development and may change.
+ */
+void arch_mem_page_in(void *addr, uintptr_t phys);
+
+/**
+ * Update current page tables for a temporary mapping
+ *
+ * Map a physical page frame address to a special virtual address
+ * Z_SCRATCH_PAGE, with read/write access to supervisor mode, such that
+ * when this function returns, the calling context can read/write the page
+ * frame's contents from the Z_SCRATCH_PAGE address.
+ *
+ * This mapping only needs to be done on the current set of page tables,
+ * as it is only used for a short period of time exclusively by the caller.
+ * This function is called with interrupts locked.
+ *
+ * This API is part of infrastructure still under development and may change.
+ */
+void arch_mem_scratch(uintptr_t phys);
+
+enum arch_page_location {
+	ARCH_PAGE_LOCATION_PAGED_OUT,
+	ARCH_PAGE_LOCATION_PAGED_IN,
+	ARCH_PAGE_LOCATION_BAD
+};
+
+/**
+ * Fetch location information about a page at a particular address
+ *
+ * The function only needs to query the current set of page tables as
+ * the information it reports must be common to all of them if multiple
+ * page tables are in use. If multiple page tables are active it is unnecessary
+ * to iterate over all of them. This may allow certain types of optimizations
+ * (such as reverse page table mapping on x86).
+ *
+ * This function is called with interrupts locked, so that the reported
+ * information can't become stale while decisions are being made based on it.
+ *
+ * Unless otherwise specified, virtual data pages have the same mappings
+ * across all page tables. Calling this function on data pages that are
+ * exceptions to this rule (such as the scratch page) is undefined behavior.
+ * Just check the currently installed page tables and return the information
+ * in that.
+ *
+ * @param addr Virtual data page address that took the page fault
+ * @param [out] location In the case of ARCH_PAGE_FAULT_PAGED_OUT, the backing
+ *        store location value used to retrieve the data page. In the case of
+ *        ARCH_PAGE_FAULT_PAGED_IN, the physical address the page is mapped to.
+ * @retval ARCH_PAGE_FAULT_PAGED_OUT The page was evicted to the backing store.
+ * @retval ARCH_PAGE_FAULT_PAGED_IN The data page is resident in memory.
+ * @retval ARCH_PAGE_FAULT_BAD The page is un-mapped or otherwise has had
+ *         invalid access
+ */
+enum arch_page_location arch_page_location_get(void *addr, uintptr_t *location);
+
+/**
+ * @def ARCH_DATA_PAGE_ACCESSED
+ *
+ * Bit indicating the data page was accessed since the value was last cleared.
+ *
+ * Used by marking eviction algorithms. Safe to set this if uncertain.
+ *
+ * This bit is undefined if ARCH_DATA_PAGE_LOADED is not set.
+ */
+
+ /**
+  * @def ARCH_DATA_PAGE_DIRTY
+  *
+  * Bit indicating the data page, if evicted, will need to be paged out.
+  *
+  * Set if the data page was modified since it was last paged out, or if
+  * it has never been paged out before. Safe to set this if uncertain.
+  *
+  * This bit is undefined if ARCH_DATA_PAGE_LOADED is not set.
+  */
+
+ /**
+  * @def ARCH_DATA_PAGE_LOADED
+  *
+  * Bit indicating that the data page is loaded into a physical page frame.
+  *
+  * If un-set, the data page is paged out or not mapped.
+  */
+
+/**
+ * @def ARCH_DATA_PAGE_NOT_MAPPED
+ *
+ * If ARCH_DATA_PAGE_LOADED is un-set, this will indicate that the page
+ * is not mapped at all. This bit is undefined if ARCH_DATA_PAGE_LOADED is set.
+ */
+
+/**
+ * Retrieve page characteristics from the page table(s)
+ *
+ * The architecture is responsible for maintaining "accessed" and "dirty"
+ * states of data pages to support marking eviction algorithms. This can
+ * either be directly supported by hardware or emulated by modifying
+ * protection policy to generate faults on reads or writes. In all cases
+ * the architecture must maintain this information in some way.
+ *
+ * For the provided virtual address, report the logical OR of the accessed
+ * and dirty states for the relevant entries in all active page tables in
+ * the system if the page is mapped and not paged out.
+ *
+ * If clear_accessed is true, the ARCH_DATA_PAGE_ACCESSED flag will be reset.
+ * This function will report its prior state. If multiple page tables are in
+ * use, this function clears accessed state in all of them.
+ *
+ * This function is called with interrupts locked, so that the reported
+ * information can't become stale while decisions are being made based on it.
+ *
+ * The return value may have other bits set which the caller must ignore.
+ *
+ * Clearing accessed state for data pages that are not ARCH_DATA_PAGE_LOADED
+ * is undefined behavior.
+ *
+ * ARCH_DATA_PAGE_DIRTY and ARCH_DATA_PAGE_ACCESSED bits in the return value
+ * are only significant if ARCH_DATA_PAGE_LOADED is set, otherwise ignore
+ * them.
+ *
+ * ARCH_DATA_PAGE_NOT_MAPPED bit in the return value is only significant
+ * if ARCH_DATA_PAGE_LOADED is un-set, otherwise ignore it.
+ *
+ * Unless otherwise specified, virtual data pages have the same mappings
+ * across all page tables. Calling this function on data pages that are
+ * exceptions to this rule (such as the scratch page) is undefined behavior.
+ *
+ * This API is part of infrastructure still under development and may change.
+ *
+ * @param addr Virtual address to look up in page tables
+ * @param [out] location If non-NULL, updated with either physical page frame
+ *                   address or backing store location depending on
+ *                   ARCH_DATA_PAGE_LOADED state. This is not touched if
+ *                   ARCH_DATA_PAGE_NOT_MAPPED.
+ * @param clear_accessed Whether to clear ARCH_DATA_PAGE_ACCESSED state
+ * @retval Value with ARCH_DATA_PAGE_* bits set reflecting the data page
+ *         configuration
+ */
+uintptr_t arch_page_info_get(void *addr, uintptr_t *location,
+			     bool clear_accessed);
+#endif /* CONFIG_DEMAND_PAGING */
 #endif /* CONFIG_MMU */
 /** @} */
 
