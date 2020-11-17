@@ -205,6 +205,11 @@ on-bus: <string describing bus type, e.g. "i2c">
 #     foo = <&label1 1 2>, <&label2 3 4>;         // Okay for 'type: phandle-array'
 #     etc.
 #
+# A property with 'deprecated: True' indicates to both the user and the tooling
+# that the property is meant to be phased out.  The tooling will report a
+# warning if the devicetree includes the property that is flagged as deprecated.
+# There will be no other impact to having 'deprecated: True' set on the property.
+#
 # The optional 'default:' setting gives a value that will be used if the
 # property is missing from the device tree node. If 'default: <default>' is
 # given for a property <prop> and <prop> is missing, then the output will be as
@@ -214,10 +219,27 @@ on-bus: <string describing bus type, e.g. "i2c">
 # Note that it only makes sense to combine 'default:' with 'required: false'.
 # Combining it with 'required: true' will raise an error.
 #
-# A property with 'deprecated: True' indicates to both the user and the tooling
-# that the property is meant to be phased out.  The tooling will report a
-# warning if the devicetree includes the property that is flagged as deprecated.
-# There will be no other impact to having 'deprecated: True' set on the property.
+# There is a risk in using 'default:' when the value in the binding may be
+# incorrect for a particular board or hardware configuration.  For example,
+# defaulting the capacity of the connected power cell in a charging IC binding
+# is likely to be incorrect.  For such properties it's better to make the
+# property 'required: true', forcing the devicetree maintainer into an explicit
+# and witting choice.
+#
+# Driver developers should use their best judgment as to whether a value can be
+# safely defaulted. Candidates for default values include delays that would
+# different only under unusual conditions (such as intervening hardware), or
+# configuration for devices that have a standard initial configuration (such as
+# a USB audio headset).
+#
+# Properties may also be defaulted to the vendor-specified power-up default as
+# long as they're independent. If changing one property would require changing
+# another to create a consistent configuration then those properties should be
+# made required.
+#
+# In any case where 'default:' is used the property documentation should
+# explain why the value was selected and any conditions that would make it
+# necessary to provide a different value.
 #
 # See below for examples of 'default:'. Putting 'default:' on any property type
 # besides those used in the examples will raise an error.
@@ -258,6 +280,7 @@ properties:
         type: int
         required: false
         default: 123
+        description: Value for int register, default is power-up configuration.
 
     array-with-default:
         type: array
