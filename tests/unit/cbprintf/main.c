@@ -731,6 +731,20 @@ static void test_fp_length(void)
 	double dv = 1.2345;
 	int rc;
 
+	rc = TEST_PRF("/%g/", dv);
+	if (IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)) {
+		PRF_CHECK("/1.2345/", rc);
+	} else {
+		PRF_CHECK("/%g/", rc);
+	}
+
+	rc = TEST_PRF("/%lg/", dv);
+	if (IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)) {
+		PRF_CHECK("/1.2345/", rc);
+	} else {
+		PRF_CHECK("/%lg/", rc);
+	}
+
 	rc = TEST_PRF("/%Lg/", (long double)dv);
 	if (IS_ENABLED(USE_LIBC)) {
 		PRF_CHECK("/1.2345/", rc);
