@@ -1,6 +1,7 @@
-# TF-M/PSA Related
+# Configuration for the TF-M Module
 
 # Copyright (c) 2019, 2020 Linaro Limited
+# Copyright (c) 2020 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 
@@ -83,9 +84,16 @@ endchoice
 
 config TFM_IPC
 	bool "IPC"
+	help
+	  When enabled, this option signifies that the TF-M build supports
+	  the PSA API (IPC mode) instead of the secure library mode.
 
 config TFM_REGRESSION
 	bool "Regression tests"
+	help
+	  When enabled, this option signifies that the TF-M build includes
+	  the Secure and the Non-Secure regression tests.
+
 
 if !TFM_BL2_FALSE
 
