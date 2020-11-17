@@ -538,9 +538,13 @@ int_conv:
 			break;
 		}
 
-		/* Length modifiers other than L are invalid. */
-		if ((conv->length_mod != LENGTH_NONE)
-		    && (conv->length_mod != LENGTH_UPPER_L)) {
+		/* The l specifier has no effect.  Otherwise length
+		 * modifiers other than L are invalid.
+		 */
+		if (conv->length_mod == LENGTH_L) {
+			conv->length_mod = LENGTH_NONE;
+		} else if ((conv->length_mod != LENGTH_NONE)
+			   && (conv->length_mod != LENGTH_UPPER_L)) {
 			conv->invalid = true;
 		}
 
