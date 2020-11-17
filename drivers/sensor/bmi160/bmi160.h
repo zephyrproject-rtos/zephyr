@@ -468,7 +468,6 @@ union bmi160_pmu_status {
 union bmi160_sample {
 	uint8_t raw[BMI160_BUF_SIZE];
 	struct {
-		uint8_t dummy_byte;
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
 		uint16_t gyr[BMI160_AXES];
 #endif
