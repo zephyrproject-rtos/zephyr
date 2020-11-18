@@ -262,7 +262,7 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 	 */
 
 	/* Fill AdvData in tertiary PDU */
-	memcpy(ter_dptr, data, len);
+	memmove(ter_dptr, data, len);
 
 	/* TODO: Fill ACAD in tertiary PDU */
 

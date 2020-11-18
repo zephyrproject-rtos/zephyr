@@ -681,7 +681,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 
 	/* No AdvData in primary channel PDU */
 	/* Fill AdvData in secondary PDU */
-	memcpy(sec_dptr, ad_data, ad_len);
+	memmove(sec_dptr, ad_data, ad_len);
 
 	/* No ACAD in primary channel PDU */
 	/* TODO: Fill ACAD in secondary channel PDU */
@@ -733,8 +733,6 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 			pri_dptr_prev -= sizeof(struct pdu_adv_adi);
 			sec_dptr_prev -= sizeof(struct pdu_adv_adi);
 
-			/* NOTE: memcpy shall handle overlapping buffers
-			 */
 			memcpy(pri_dptr, pri_dptr_prev,
 			       sizeof(struct pdu_adv_adi));
 			memcpy(sec_dptr, sec_dptr_prev,
