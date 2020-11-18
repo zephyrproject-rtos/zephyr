@@ -52,6 +52,8 @@ source "subsys/storage/Kconfig"
 
 source "subsys/settings/Kconfig"
 
+source "subsys/task_wdt/Kconfig"
+
 source "subsys/testsuite/Kconfig"
 
 source "subsys/timing/Kconfig"

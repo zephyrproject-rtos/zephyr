@@ -596,6 +596,7 @@
 /subsys/shell/                            @jakub-uC @nordic-krch
 /subsys/stats/                            @nvlsianpu
 /subsys/storage/                          @nvlsianpu
+/subsys/task_wdt/                         @martinjaeger
 /subsys/testsuite/                        @nashif
 /subsys/timing/                           @nashif @dcpleung
 /subsys/usb/                              @jfischer-no
