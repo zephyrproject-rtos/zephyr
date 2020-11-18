@@ -8,7 +8,7 @@ set_compiler_property(PROPERTY security_fortify)
 
 # No property flag, this is used by the native_posix, clang has problems
 # compiling the native_posix with -fno-freestanding.
-check_set_compiler_property(PROPERTY hosted)
+set_compiler_property(PROPERTY hosted)
 
 # clang flags for coverage generation
 set_property(TARGET compiler PROPERTY coverage --coverage -fno-inline)
