@@ -259,6 +259,9 @@ uint8_t ll_sync_terminate(uint16_t handle)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
+	ret = ull_disable(&sync->lll);
+	LL_ASSERT(!ret);
+
 	mark = ull_disable_unmark(sync);
 	LL_ASSERT(mark == sync);
 
