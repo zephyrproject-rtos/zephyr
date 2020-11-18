@@ -71,6 +71,19 @@ struct bt_le_ext_adv *adv_sets[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
 #endif /* CONFIG_BT_BROADCASTER */
 #endif /* CONFIG_BT_EXT_ADV */
 
+#if defined(CONFIG_BT_OBSERVER) || defined(CONFIG_BT_USER_PHY_UPDATE)
+static const char *phy2str(uint8_t phy)
+{
+	switch (phy) {
+	case 0: return "No packets";
+	case BT_GAP_LE_PHY_1M: return "LE 1M";
+	case BT_GAP_LE_PHY_2M: return "LE 2M";
+	case BT_GAP_LE_PHY_CODED: return "LE Coded";
+	default: return "Unknown";
+	}
+}
+#endif
+
 #if defined(CONFIG_BT_OBSERVER)
 static bool data_cb(struct bt_data *data, void *user_data)
 {
@@ -86,16 +99,6 @@ static bool data_cb(struct bt_data *data, void *user_data)
 	}
 }
 
-static const char *phy2str(uint8_t phy)
-{
-	switch (phy) {
-	case 0: return "No packets";
-	case BT_GAP_LE_PHY_1M: return "LE 1M";
-	case BT_GAP_LE_PHY_2M: return "LE 2M";
-	case BT_GAP_LE_PHY_CODED: return "LE Coded";
-	default: return "Unknown";
-	}
-}
 
 static void scan_recv(const struct bt_le_scan_recv_info *info,
 		      struct net_buf_simple *buf)
