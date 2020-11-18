@@ -303,6 +303,8 @@ MCUBoot
     see ``CONFIG_MCUBOOT_CLEANUP_ARM_CORE``.
   * Allow the final data chunk in the image to be unaligned in
     the serial-recovery protocol.
+  * Added ``revert mechanism`` support to the direct-xip mode.
+    See ``CONFIG_MCUBOOT_DIRECT_XIP_REVERT`` option.
 
 * imgtool
 
