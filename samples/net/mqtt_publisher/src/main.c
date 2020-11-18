@@ -482,7 +482,7 @@ static int publisher(void)
 	return r;
 }
 
-static void start_app(void)
+static int start_app(void)
 {
 	int r = 0, i = 0;
 
@@ -494,6 +494,8 @@ static void start_app(void)
 			k_sleep(K_MSEC(5000));
 		}
 	}
+
+	return r;
 }
 
 #if defined(CONFIG_USERSPACE)
@@ -537,6 +539,6 @@ void main(void)
 	k_thread_start(app_thread);
 	k_thread_join(app_thread, K_FOREVER);
 #else
-	start_app();
+	exit(start_app());
 #endif
 }
