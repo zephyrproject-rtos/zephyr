@@ -99,7 +99,7 @@
 		"send_win=%hu, mss=%hu",				\
 		(_conn), net_pkt_get_len((_conn)->send_data),		\
 		conn->unacked_len, conn->send_win,			\
-		conn_mss((_conn)));					\
+		(uint16_t)conn_mss((_conn)));				\
 	NET_DBG("conn: %p send_data_timer=%hu, send_data_retries=%hu",	\
 		(_conn),						\
 		(bool)k_delayed_work_remaining_get(&(_conn)->send_data_timer),\
