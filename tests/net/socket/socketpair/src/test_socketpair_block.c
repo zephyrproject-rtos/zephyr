@@ -93,10 +93,7 @@ void test_socketpair_write_block(void)
 
 		LOG_DBG("queueing work");
 		k_work_init(&work, work_handler);
-		res = k_work_submit_to_user_queue(&test_socketpair_work_q,
-			&work);
-		zassert_equal(res, 0,
-			"k_work_submit_to_user_queue() failed: %d", res);
+		k_work_submit(&work);
 
 		/* fill up the buffer */
 		for (ctx.m = 0; atomic_get(&ctx.m)
@@ -146,10 +143,7 @@ void test_socketpair_read_block(void)
 
 		LOG_DBG("queueing work");
 		k_work_init(&work, work_handler);
-		res = k_work_submit_to_user_queue(&test_socketpair_work_q,
-			&work);
-		zassert_equal(res, 0,
-			"k_work_submit_to_user_queue() failed: %d", res);
+		k_work_submit(&work);
 
 		/* try to read one byte */
 		LOG_DBG("reading from fd %d", sv[i]);

@@ -144,8 +144,7 @@ void test_socketpair_poll_close_remote_end_POLLIN(void)
 
 	LOG_DBG("scheduling work");
 	k_work_init(&work, close_fun);
-	res = k_work_submit_to_user_queue(&test_socketpair_work_q, &work);
-	zassert_equal(res, 0, "k_work_submit_to_user_queue() failed: %d", res);
+	k_work_submit(&work);
 
 	res = poll(fds, 1, -1);
 	zassert_equal(res, 1, "poll(2) failed: %d", res);
@@ -187,8 +186,7 @@ void test_socketpair_poll_close_remote_end_POLLOUT(void)
 
 	LOG_DBG("scheduling work");
 	k_work_init(&work, close_fun);
-	res = k_work_submit_to_user_queue(&test_socketpair_work_q, &work);
-	zassert_equal(res, 0, "k_work_submit_to_user_queue() failed: %d", res);
+	k_work_submit(&work);
 
 	res = poll(fds, 1, -1);
 	zassert_equal(res, 1, "poll(2) failed: %d", res);
@@ -310,8 +308,7 @@ void test_socketpair_poll_delayed_data(void)
 
 	LOG_DBG("scheduling work");
 	k_work_init(&work, rw_fun);
-	res = k_work_submit_to_user_queue(&test_socketpair_work_q, &work);
-	zassert_equal(res, 0, "k_work_submit_to_user_queue() failed: %d", res);
+	k_work_submit(&work);
 
 	res = poll(fds, 1, 5000);
 	zassert_not_equal(res, -1, "poll(2) failed: %d", errno);
@@ -334,8 +331,7 @@ void test_socketpair_poll_delayed_data(void)
 
 	LOG_DBG("scheduling work");
 	k_work_init(&work, rw_fun);
-	res = k_work_submit_to_user_queue(&test_socketpair_work_q, &work);
-	zassert_equal(res, 0, "k_work_submit_to_user_queue() failed: %d", res);
+	k_work_submit(&work);
 
 	res = poll(fds, 1, 5000);
 	zassert_not_equal(res, -1, "poll(2) failed: %d", errno);
