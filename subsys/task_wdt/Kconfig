@@ -1,0 +1,60 @@
+# Software watchdog configuration
+
+# Copyright (c) 2020 Libre Solar Technologies GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig TASK_WDT
+	bool "Task-level software watchdog"
+	select REBOOT
+	help
+	  Enable task watchdog
+
+	  The task watchdog allows to have individual watchdog channels
+	  per thread, even if the hardware supports only a single watchdog.
+
+config TASK_WDT_CHANNELS
+	int "Maximum number of task watchdog channels"
+	depends on TASK_WDT
+	default 5
+	range 2 100
+	help
+	  The timeouts for each channel are stored in an array. Allocate only
+	  the required amount of channels to reduce memory footprint.
+
+config TASK_WDT_HW_FALLBACK
+	bool "Use hardware watchdog as a fallback"
+	depends on TASK_WDT
+	default y
+	help
+	  This option allows to specify a hardware watchdog device in the
+	  application that is used as an additional safety layer if the task
+	  watchdog itself gets stuck.
+
+config TASK_WDT_MIN_TIMEOUT
+	int "Minimum timeout for task watchdog (ms)"
+	depends on TASK_WDT_HW_FALLBACK
+	default 100
+	range 1 10000
+	help
+	  The task watchdog uses a continuously restarted k_timer as its
+	  backend. This value specifies the minimum timeout in milliseconds
+	  among all task watchdogs used in the application.
+
+	  If a hardware watchdog is configured as a fallback for the task
+	  watchdog, its timeout is set to this value plus
+	  TASK_WDT_HW_FALLBACK_DELAY.
+
+config TASK_WDT_HW_FALLBACK_DELAY
+	int "Additional delay for hardware watchdog (ms)"
+	depends on TASK_WDT_HW_FALLBACK
+	default 20
+	range 1 1000
+	help
+	  The timeout of the hardware watchdog fallback will be increased by
+	  this value to provide sufficient time for corrective actions in the
+	  callback function.
+
+	  In addition to that, the delay allows to compensate deviations
+	  between different clock sources for the hardware watchdog and the
+	  kernel timer. This is especially important if the hardware watchdog
+	  is clocked by an inaccurate low-speed RC oscillator.
