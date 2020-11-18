@@ -30,6 +30,7 @@ API Reference
    resource_management/index.rst
    shell/index.rst
    storage/index.rst
+   task_wdt/index.rst
    misc/timeutil.rst
    usb/index.rst
    usermode/index.rst
