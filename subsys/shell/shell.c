@@ -599,10 +599,11 @@ static int execute(const struct shell *shell)
 
 	memset(&shell->ctx->active_cmd, 0, sizeof(shell->ctx->active_cmd));
 
-	shell_cmd_trim(shell);
-
-	history_put(shell, shell->ctx->cmd_buff,
-		    shell->ctx->cmd_buff_len);
+	if (IS_ENABLED(CONFIG_SHELL_HISTORY)) {
+		shell_cmd_trim(shell);
+		history_put(shell, shell->ctx->cmd_buff,
+			    shell->ctx->cmd_buff_len);
+	}
 
 	if (IS_ENABLED(CONFIG_SHELL_WILDCARD)) {
 		shell_wildcard_prepare(shell);
