@@ -102,6 +102,16 @@ static inline enum shell_state state_get(const struct shell *shell)
 	return shell->ctx->state;
 }
 
+static inline const struct shell_static_entry *
+selected_cmd_get(const struct shell *shell)
+{
+	if (IS_ENABLED(CONFIG_SHELL_CMDS_SELECT)) {
+	       return shell->ctx->selected_cmd;
+	}
+
+	return NULL;
+}
+
 static void tab_item_print(const struct shell *shell, const char *option,
 			   uint16_t longest_option)
 {
@@ -272,13 +282,13 @@ static bool tab_prepare(const struct shell *shell,
 	/* root command completion */
 	if ((*argc == 0) || ((space == 0) && (*argc == 1))) {
 		*complete_arg_idx = SHELL_CMD_ROOT_LVL;
-		*cmd = shell->ctx->selected_cmd;
+		*cmd = selected_cmd_get(shell);
 		return true;
 	}
 
 	search_argc = space ? *argc : *argc - 1;
 
-	*cmd = shell_get_last_command(shell->ctx->selected_cmd, search_argc,
+	*cmd = shell_get_last_command(selected_cmd_get(shell), search_argc,
 				      *argv, complete_arg_idx,	d_entry, false);
 
 	/* if search_argc == 0 (empty command line) shell_get_last_command will
@@ -580,7 +590,7 @@ static int execute(const struct shell *shell)
 {
 	struct shell_static_entry dloc; /* Memory for dynamic commands. */
 	const char *argv[CONFIG_SHELL_ARGC_MAX + 1]; /* +1 reserved for NULL */
-	const struct shell_static_entry *parent = shell->ctx->selected_cmd;
+	const struct shell_static_entry *parent = selected_cmd_get(shell);
 	const struct shell_static_entry *entry = NULL;
 	struct shell_static_entry help_entry;
 	size_t cmd_lvl = 0;
@@ -730,11 +740,11 @@ static int execute(const struct shell *shell)
 		 * be called again.
 		 */
 		(void)shell_make_argv(&cmd_lvl,
-				      &argv[shell->ctx->selected_cmd ? 1 : 0],
+				      &argv[selected_cmd_get(shell) ? 1 : 0],
 				      shell->ctx->cmd_buff,
 				      CONFIG_SHELL_ARGC_MAX);
 
-		if (shell->ctx->selected_cmd) {
+		if (selected_cmd_get(shell)) {
 			/* Apart from what is in the command buffer, there is
 			 * a selected command.
 			 */
@@ -794,7 +804,7 @@ static void alt_metakeys_handle(const struct shell *shell, char data)
 		shell_op_cursor_word_move(shell, 1);
 	} else if (data == SHELL_VT100_ASCII_ALT_R &&
 		   IS_ENABLED(CONFIG_SHELL_CMDS_SELECT)) {
-		if (shell->ctx->selected_cmd != NULL) {
+		if (selected_cmd_get(shell) != NULL) {
 			shell_cmd_line_erase(shell);
 			shell_internal_fprintf(shell, SHELL_WARNING,
 					"Restored default root commands\n");
