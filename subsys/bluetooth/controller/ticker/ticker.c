@@ -853,15 +853,20 @@ void ticker_worker(void *param)
 					TICKER_RESCHEDULE_STATE_NONE;
 			}
 #endif /* CONFIG_BT_TICKER_EXT */
+			/* Increment lazy_current to indicate skipped event. In case
+			 * of re-scheduled node, the lazy count will be decremented in
+			 * ticker_job_reschedule_in_window when completed.
+			 */
 			ticker->lazy_current++;
 
 			if ((ticker->must_expire == 0U) ||
 			    (ticker->lazy_periodic >= ticker->lazy_current) ||
 			    TICKER_RESCHEDULE_PENDING(ticker)) {
-				/* Not a must-expire case, this is programmed
+				/* Not a must-expire node or this is periodic
 				 * latency or pending re-schedule. Skip this
-				 * ticker node.
+				 * ticker node. Mark it as elapsed.
 				 */
+				ticker->ack--;
 				continue;
 			}
 			/* Continue but perform shallow expiry */
@@ -1382,7 +1387,7 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 	node = &instance->nodes[0];
 	ticks_expired = 0U;
 	while (instance->ticker_id_head != TICKER_NULL) {
-		uint8_t is_must_expire_skip = 0U;
+		uint8_t skip_collision = 0U;
 		struct ticker_node *ticker;
 		uint32_t ticks_to_expire;
 		uint8_t id_expired;
@@ -1405,8 +1410,11 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 #if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
 		ticks_latency -= ticks_to_expire;
 
-		is_must_expire_skip = (ticker->must_expire &&
-				       (ticker->lazy_current != 0U));
+		/* Node with lazy count did not expire with callback, but
+		 * was either a collision or re-scheduled. This node should
+		 * not define the active slot reservation (slot_previous).
+		 */
+		skip_collision = (ticker->lazy_current != 0U);
 #endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
 
 		/* decrement ticks_slot_previous */
@@ -1422,7 +1430,7 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 		 */
 		if ((ticker->ticks_slot != 0U) &&
 		    (((ticker->req - ticker->ack) & 0xff) == 2U) &&
-		    !is_must_expire_skip &&
+		    !skip_collision &&
 		    !TICKER_RESCHEDULE_PENDING(ticker)) {
 			instance->ticker_id_slot_previous = id_expired;
 			instance->ticks_slot_previous = ticker->ticks_slot;
