@@ -287,11 +287,10 @@ static void np_uart_poll_out(const struct device *dev,
 		}
 	}
 
+	/* The return value of write() cannot be ignored (there is a warning)
+	 * but we do not need the return value for anything.
+	 */
 	ret = write(d->out_fd, &out_char, 1);
-
-	if (ret != 1) {
-		WARN("%s: a character could not be output\n", __func__);
-	}
 }
 
 /**
