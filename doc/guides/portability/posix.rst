@@ -261,9 +261,9 @@ This is implemented as part of the minimal C library available in Zephyr.
     isspace(),+
     isupper(),+
     isxdigit(),+
-    labs(),
+    labs(),+
     ldiv(),
-    llabs(),
+    llabs(),+
     lldiv(),
     localeconv(),
     localtime(),+
