@@ -313,11 +313,12 @@ static void find_completion_candidates(const struct shell *shell,
 				       size_t *first_idx, size_t *cnt,
 				       uint16_t *longest)
 {
-	size_t incompl_cmd_len = shell_strlen(incompl_cmd);
 	const struct shell_static_entry *candidate;
 	struct shell_static_entry dloc;
+	size_t incompl_cmd_len;
 	size_t idx = 0;
 
+	incompl_cmd_len = shell_strlen(incompl_cmd);
 	*longest = 0U;
 	*cnt = 0;
 
@@ -352,6 +353,16 @@ static void autocomplete(const struct shell *shell,
 	match = shell_cmd_get(cmd, subcmd_idx, &shell->ctx->active_cmd);
 	__ASSERT_NO_MSG(match != NULL);
 	cmd_len = shell_strlen(match->syntax);
+
+	if (!IS_ENABLED(CONFIG_SHELL_TAB_AUTOCOMPLETION)) {
+		/* Add a space if the Tab button is pressed when command is
+		 * complete.
+		 */
+		if (cmd_len == arg_len) {
+			shell_op_char_insert(shell, ' ');
+		}
+		return;
+	}
 
 	/* no exact match found */
 	if (cmd_len != arg_len) {
@@ -477,6 +488,10 @@ static void partial_autocomplete(const struct shell *shell,
 	uint16_t arg_len = shell_strlen(arg);
 	uint16_t common = common_beginning_find(shell, cmd, &completion, first,
 					     cnt, arg_len);
+
+	if (!IS_ENABLED(CONFIG_SHELL_TAB_AUTOCOMPLETION)) {
+		return;
+	}
 
 	if (common) {
 		shell_op_completion_insert(shell, &completion[arg_len],
@@ -951,7 +966,8 @@ static void state_collect(const struct shell *shell)
 				break;
 
 			case '\t': /* TAB */
-				if (flag_echo_get(shell)) {
+				if (flag_echo_get(shell) &&
+				    IS_ENABLED(CONFIG_SHELL_TAB)) {
 					/* If the Tab key is pressed, "history
 					 * mode" must be terminated because
 					 * tab and history handlers are sharing
