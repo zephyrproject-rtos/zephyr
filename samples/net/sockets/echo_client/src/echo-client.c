@@ -274,7 +274,7 @@ static void init_app(void)
 	init_vlan();
 }
 
-static void start_client(void)
+static int start_client(void)
 {
 	int iterations = CONFIG_NET_SAMPLE_SEND_ITERATIONS;
 	int i = 0;
@@ -300,6 +300,8 @@ static void start_client(void)
 
 		stop_udp_and_tcp();
 	}
+
+	return ret;
 }
 
 void main(void)
@@ -323,6 +325,6 @@ void main(void)
 	k_thread_user_mode_enter((k_thread_entry_t)start_client, NULL, NULL,
 				 NULL);
 #else
-	start_client();
+	exit(start_client());
 #endif
 }
