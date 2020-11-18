@@ -282,6 +282,20 @@ int arch_mem_map(void *dest, uintptr_t addr, size_t size, uint32_t flags);
  * @param size Page-aligned region size
  */
 void arch_mem_unmap(void *addr, size_t size);
+
+#ifdef CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES
+/**
+ * Update page frame database with reserved pages
+ *
+ * Some page frames within system RAM may not be available for use. A good
+ * example of this is reserved regions in the first megabyte on PC-like systems.
+ *
+ * Implementations of this function should mark all relavent entries in
+ * z_page_frames with K_PAGE_FRAME_RESERVED. This function is called at
+ * early system initialization with mm_lock held.
+ */
+void arch_reserved_pages_update(void);
+#endif /* ARCH_HAS_RESERVED_PAGE_FRAMES */
 #endif /* CONFIG_MMU */
 /** @} */
 
