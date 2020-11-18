@@ -987,7 +987,10 @@ RISCV arch:
         - katsuster
     files:
         - arch/riscv/
+        - boards/riscv/
+        - dts/bindings/riscv/
         - include/arch/riscv/
+        - soc/riscv/
     labels:
         - "area: RISCV"
 
