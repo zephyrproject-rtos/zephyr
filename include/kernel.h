@@ -2527,17 +2527,6 @@ struct k_delayed_work {
 	struct k_work_q *work_q;
 };
 
-struct k_work_poll {
-	struct k_work work;
-	struct k_work_q *workq;
-	struct z_poller poller;
-	struct k_poll_event *events;
-	int num_events;
-	k_work_handler_t real_handler;
-	struct _timeout timeout;
-	int poll_result;
-};
-
 extern struct k_work_q k_sys_work_q;
 
 /**
@@ -2964,116 +2953,6 @@ static inline int32_t k_delayed_work_remaining_get(const struct k_delayed_work *
 	return k_ticks_to_ms_floor32(z_timeout_remaining(&work->timeout));
 }
 
-/**
- * @brief Initialize a triggered work item.
- *
- * This routine initializes a workqueue triggered work item, prior to
- * its first use.
- *
- * @param work Address of triggered work item.
- * @param handler Function to invoke each time work item is processed.
- *
- * @return N/A
- */
-extern void k_work_poll_init(struct k_work_poll *work,
-			     k_work_handler_t handler);
-
-/**
- * @brief Submit a triggered work item.
- *
- * This routine schedules work item @a work to be processed by workqueue
- * @a work_q when one of the given @a events is signaled. The routine
- * initiates internal poller for the work item and then returns to the caller.
- * Only when one of the watched events happen the work item is actually
- * submitted to the workqueue and becomes pending.
- *
- * Submitting a previously submitted triggered work item that is still
- * waiting for the event cancels the existing submission and reschedules it
- * the using the new event list. Note that this behavior is inherently subject
- * to race conditions with the pre-existing triggered work item and work queue,
- * so care must be taken to synchronize such resubmissions externally.
- *
- * @note Can be called by ISRs.
- *
- * @warning
- * Provided array of events as well as a triggered work item must be placed
- * in persistent memory (valid until work handler execution or work
- * cancellation) and cannot be modified after submission.
- *
- * @param work_q Address of workqueue.
- * @param work Address of delayed work item.
- * @param events An array of events which trigger the work.
- * @param num_events The number of events in the array.
- * @param timeout Timeout after which the work will be scheduled
- *		  for execution even if not triggered.
- *
- *
- * @retval 0 Work item started watching for events.
- * @retval -EINVAL Work item is being processed or has completed its work.
- * @retval -EADDRINUSE Work item is pending on a different workqueue.
- */
-extern int k_work_poll_submit_to_queue(struct k_work_q *work_q,
-				       struct k_work_poll *work,
-				       struct k_poll_event *events,
-				       int num_events,
-				       k_timeout_t timeout);
-
-/**
- * @brief Submit a triggered work item to the system workqueue.
- *
- * This routine schedules work item @a work to be processed by system
- * workqueue when one of the given @a events is signaled. The routine
- * initiates internal poller for the work item and then returns to the caller.
- * Only when one of the watched events happen the work item is actually
- * submitted to the workqueue and becomes pending.
- *
- * Submitting a previously submitted triggered work item that is still
- * waiting for the event cancels the existing submission and reschedules it
- * the using the new event list. Note that this behavior is inherently subject
- * to race conditions with the pre-existing triggered work item and work queue,
- * so care must be taken to synchronize such resubmissions externally.
- *
- * @note Can be called by ISRs.
- *
- * @warning
- * Provided array of events as well as a triggered work item must not be
- * modified until the item has been processed by the workqueue.
- *
- * @param work Address of delayed work item.
- * @param events An array of events which trigger the work.
- * @param num_events The number of events in the array.
- * @param timeout Timeout after which the work will be scheduled
- *		  for execution even if not triggered.
- *
- * @retval 0 Work item started watching for events.
- * @retval -EINVAL Work item is being processed or has completed its work.
- * @retval -EADDRINUSE Work item is pending on a different workqueue.
- */
-static inline int k_work_poll_submit(struct k_work_poll *work,
-				     struct k_poll_event *events,
-				     int num_events,
-				     k_timeout_t timeout)
-{
-	return k_work_poll_submit_to_queue(&k_sys_work_q, work,
-						events, num_events, timeout);
-}
-
-/**
- * @brief Cancel a triggered work item.
- *
- * This routine cancels the submission of triggered work item @a work.
- * A triggered work item can only be canceled if no event triggered work
- * submission.
- *
- * @note Can be called by ISRs.
- *
- * @param work Address of delayed work item.
- *
- * @retval 0 Work item canceled.
- * @retval -EINVAL Work item is being processed or has completed its work.
- */
-extern int k_work_poll_cancel(struct k_work_poll *work);
-
 /** @} */
 /**
  * @defgroup mutex_apis Mutex APIs
@@ -3406,6 +3285,142 @@ static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
 		Z_SEM_INITIALIZER(name, initial_count, count_limit); \
 	BUILD_ASSERT(((count_limit) != 0) && \
 		     ((initial_count) <= (count_limit)));
+
+/** @} */
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
+struct k_work_poll {
+	struct k_work work;
+	struct k_work_q *workq;
+	struct z_poller poller;
+	struct k_poll_event *events;
+	int num_events;
+	k_work_handler_t real_handler;
+	struct _timeout timeout;
+	int poll_result;
+};
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @addtogroup thread_apis
+ * @{
+ */
+
+/**
+ * @brief Initialize a triggered work item.
+ *
+ * This routine initializes a workqueue triggered work item, prior to
+ * its first use.
+ *
+ * @param work Address of triggered work item.
+ * @param handler Function to invoke each time work item is processed.
+ *
+ * @return N/A
+ */
+extern void k_work_poll_init(struct k_work_poll *work,
+			     k_work_handler_t handler);
+
+/**
+ * @brief Submit a triggered work item.
+ *
+ * This routine schedules work item @a work to be processed by workqueue
+ * @a work_q when one of the given @a events is signaled. The routine
+ * initiates internal poller for the work item and then returns to the caller.
+ * Only when one of the watched events happen the work item is actually
+ * submitted to the workqueue and becomes pending.
+ *
+ * Submitting a previously submitted triggered work item that is still
+ * waiting for the event cancels the existing submission and reschedules it
+ * the using the new event list. Note that this behavior is inherently subject
+ * to race conditions with the pre-existing triggered work item and work queue,
+ * so care must be taken to synchronize such resubmissions externally.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @warning
+ * Provided array of events as well as a triggered work item must be placed
+ * in persistent memory (valid until work handler execution or work
+ * cancellation) and cannot be modified after submission.
+ *
+ * @param work_q Address of workqueue.
+ * @param work Address of delayed work item.
+ * @param events An array of events which trigger the work.
+ * @param num_events The number of events in the array.
+ * @param timeout Timeout after which the work will be scheduled
+ *		  for execution even if not triggered.
+ *
+ *
+ * @retval 0 Work item started watching for events.
+ * @retval -EINVAL Work item is being processed or has completed its work.
+ * @retval -EADDRINUSE Work item is pending on a different workqueue.
+ */
+extern int k_work_poll_submit_to_queue(struct k_work_q *work_q,
+				       struct k_work_poll *work,
+				       struct k_poll_event *events,
+				       int num_events,
+				       k_timeout_t timeout);
+
+/**
+ * @brief Submit a triggered work item to the system workqueue.
+ *
+ * This routine schedules work item @a work to be processed by system
+ * workqueue when one of the given @a events is signaled. The routine
+ * initiates internal poller for the work item and then returns to the caller.
+ * Only when one of the watched events happen the work item is actually
+ * submitted to the workqueue and becomes pending.
+ *
+ * Submitting a previously submitted triggered work item that is still
+ * waiting for the event cancels the existing submission and reschedules it
+ * the using the new event list. Note that this behavior is inherently subject
+ * to race conditions with the pre-existing triggered work item and work queue,
+ * so care must be taken to synchronize such resubmissions externally.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @warning
+ * Provided array of events as well as a triggered work item must not be
+ * modified until the item has been processed by the workqueue.
+ *
+ * @param work Address of delayed work item.
+ * @param events An array of events which trigger the work.
+ * @param num_events The number of events in the array.
+ * @param timeout Timeout after which the work will be scheduled
+ *		  for execution even if not triggered.
+ *
+ * @retval 0 Work item started watching for events.
+ * @retval -EINVAL Work item is being processed or has completed its work.
+ * @retval -EADDRINUSE Work item is pending on a different workqueue.
+ */
+static inline int k_work_poll_submit(struct k_work_poll *work,
+				     struct k_poll_event *events,
+				     int num_events,
+				     k_timeout_t timeout)
+{
+	return k_work_poll_submit_to_queue(&k_sys_work_q, work,
+					   events, num_events, timeout);
+}
+
+/**
+ * @brief Cancel a triggered work item.
+ *
+ * This routine cancels the submission of triggered work item @a work.
+ * A triggered work item can only be canceled if no event triggered work
+ * submission.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param work Address of delayed work item.
+ *
+ * @retval 0 Work item canceled.
+ * @retval -EINVAL Work item is being processed or has completed its work.
+ */
+extern int k_work_poll_cancel(struct k_work_poll *work);
 
 /** @} */
 
