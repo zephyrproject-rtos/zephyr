@@ -861,7 +861,7 @@ static uint8_t model_send(const void *cmd, uint16_t cmd_len,
 		.net_idx = net.net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
 		.addr = sys_le16_to_cpu(cp->dst),
-		.send_ttl = BT_MESH_TTL_DEFAULT,
+		.send_ttl = cp->ttl,
 	};
 
 	if (BT_MESH_ADDR_IS_VIRTUAL(ctx.addr)) {
