@@ -603,6 +603,14 @@ config KERNEL_VM_SIZE
 	  implement a notion of "high" memory in Zephyr to work around physical
 	  RAM which can't have a boot-time mapping due to a too-small address space.
 
+config ARCH_HAS_RESERVED_PAGE_FRAMES
+	bool
+	help
+	  This hidden configuration should be selected by the architecture if
+	  certain RAM page frames need to be marked as reserved and never used for
+	  memory mappings. The architecture will need to implement
+	  arch_reserved_pages_update().
+
 config ARCH_HAS_DEMAND_PAGING
 	bool
 	help
