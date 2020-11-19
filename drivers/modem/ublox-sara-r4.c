@@ -294,7 +294,7 @@ int modem_detect_apn(const char *imsi)
 /* send binary data via the +USO[ST/WR] commands */
 static ssize_t send_socket_data(struct modem_socket *sock,
 				const struct sockaddr *dst_addr,
-				struct modem_cmd *handler_cmds,
+				const struct modem_cmd *handler_cmds,
 				size_t handler_cmds_len,
 				const char *buf, size_t buf_len,
 				k_timeout_t timeout)
@@ -824,7 +824,7 @@ static int pin_init(void)
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_VARIANT)
 static void modem_rssi_query_work(struct k_work *work)
 {
-	struct modem_cmd cmds[] = {
+	static const struct modem_cmd cmds[] = {
 		  MODEM_CMD("+CSQ: ", on_cmd_atcmdinfo_rssi_csq, 2U, ","),
 		  MODEM_CMD("+CESQ: ", on_cmd_atcmdinfo_rssi_cesq, 6U, ","),
 	};
@@ -859,7 +859,7 @@ static void modem_rssi_query_work(struct k_work *work)
 #else
 static void modem_rssi_query_work(struct k_work *work)
 {
-	struct modem_cmd cmd =
+	static const struct modem_cmd cmd =
 #if defined(CONFIG_MODEM_UBLOX_SARA_U2)
 		MODEM_CMD("+CSQ: ", on_cmd_atcmdinfo_rssi_csq, 2U, ",");
 	static char *send_cmd = "AT+CSQ";
@@ -889,7 +889,7 @@ static void modem_rssi_query_work(struct k_work *work)
 static void modem_reset(void)
 {
 	int ret = 0, retry_count = 0, counter = 0;
-	static struct setup_cmd setup_cmds[] = {
+	static const struct setup_cmd setup_cmds[] = {
 		/* turn off echo */
 		SETUP_CMD_NOHANDLE("ATE0"),
 		/* stop functionality */
@@ -924,7 +924,7 @@ static void modem_reset(void)
 	};
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_VARIANT)
-	static struct setup_cmd post_setup_cmds_u2[] = {
+	static const struct setup_cmd post_setup_cmds_u2[] = {
 #if !defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 		/* set the APN */
 		SETUP_CMD_NOHANDLE("AT+UPSD=0,1,\""
@@ -937,7 +937,7 @@ static void modem_reset(void)
 	};
 #endif
 
-	static struct setup_cmd post_setup_cmds[] = {
+	static const struct setup_cmd post_setup_cmds[] = {
 #if defined(CONFIG_MODEM_UBLOX_SARA_U2)
 		/* set the APN */
 		SETUP_CMD_NOHANDLE("AT+UPSD=0,1,\""
@@ -1144,7 +1144,8 @@ error:
 static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
 {
 	int ret;
-	struct modem_cmd cmd = MODEM_CMD("+USOCR: ", on_cmd_sockcreate, 1U, "");
+	static const struct modem_cmd cmd =
+		MODEM_CMD("+USOCR: ", on_cmd_sockcreate, 1U, "");
 	char buf[sizeof("AT+USOCR=#,#####\r")];
 	uint16_t local_port = 0U, proto = 6U;
 
@@ -1336,7 +1337,7 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	int ret, next_packet_size;
-	struct modem_cmd cmd[] = {
+	static const struct modem_cmd cmd[] = {
 		MODEM_CMD("+USORF: ", on_cmd_sockreadfrom, 4U, ","),
 		MODEM_CMD("+USORD: ", on_cmd_sockread, 2U, ","),
 	};
@@ -1421,7 +1422,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len,
 {
 	int ret;
 	struct modem_socket *sock = (struct modem_socket *)obj;
-	struct modem_cmd cmd[] = {
+	static const struct modem_cmd cmd[] = {
 		MODEM_CMD("+USOST: ", on_cmd_sockwrite, 2U, ","),
 		MODEM_CMD("+USOWR: ", on_cmd_sockwrite, 2U, ","),
 	};
@@ -1558,7 +1559,8 @@ static int offload_getaddrinfo(const char *node, const char *service,
 			       const struct zsock_addrinfo *hints,
 			       struct zsock_addrinfo **res)
 {
-	struct modem_cmd cmd = MODEM_CMD("+UDNSRN: ", on_cmd_dns, 1U, ",");
+	static const struct modem_cmd cmd =
+		MODEM_CMD("+UDNSRN: ", on_cmd_dns, 1U, ",");
 	uint32_t port = 0U;
 	int ret;
 	/* DNS command + 128 bytes for domain name parameter */
@@ -1696,13 +1698,13 @@ static struct net_if_api api_funcs = {
 	.init = modem_net_iface_init,
 };
 
-static struct modem_cmd response_cmds[] = {
+static const struct modem_cmd response_cmds[] = {
 	MODEM_CMD("OK", on_cmd_ok, 0U, ""), /* 3GPP */
 	MODEM_CMD("ERROR", on_cmd_error, 0U, ""), /* 3GPP */
 	MODEM_CMD("+CME ERROR: ", on_cmd_exterror, 1U, ""),
 };
 
-static struct modem_cmd unsol_cmds[] = {
+static const struct modem_cmd unsol_cmds[] = {
 	MODEM_CMD("+UUSOCL: ", on_cmd_socknotifyclose, 1U, ""),
 	MODEM_CMD("+UUSORD: ", on_cmd_socknotifydata, 2U, ","),
 	MODEM_CMD("+UUSORF: ", on_cmd_socknotifydata, 2U, ","),
