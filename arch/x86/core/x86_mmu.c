@@ -1185,20 +1185,30 @@ static bool page_validate(pentry_t *ptables, uint8_t *addr, bool write)
 	for (int level = 0; level < NUM_LEVELS; level++) {
 		pentry_t entry = get_entry(table, addr, level);
 
-		if ((entry & MMU_P) == 0U) {
-			/* Non-present, no access.
-			 * TODO: will need re-visiting with demand paging
-			 * implemented, could just be paged out
-			 */
-			return false;
-		}
-
 		if (is_leaf(level, entry)) {
+#ifdef CONFIG_X86_KPTI
+			if (is_flipped_pte(entry)) {
+				/* We flipped this to prevent user access
+				 * since just clearing US isn't sufficient
+				 */
+				return false;
+			}
+#endif
+			/* US and RW bits still carry meaning if non-present.
+			 * If the data page is paged out, access bits are
+			 * preserved. If un-mapped, the whole entry is 0.
+			 */
 			if (((entry & MMU_US) == 0U) ||
 			    (write && ((entry & MMU_RW) == 0U))) {
 				return false;
 			}
 		} else {
+			if ((entry & MMU_P) == 0U) {
+				/* Missing intermediate table, address is
+				 * un-mapped
+				 */
+				return false;
+			}
 			table = next_table(entry, level);
 		}
 	}
