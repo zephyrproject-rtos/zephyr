@@ -221,7 +221,7 @@ void net_tc_tx_init(void)
 
 		NET_DBG("[%d] Starting TX queue %p stack size %zd "
 			"prio %d %s(%d)", i,
-			&tx_classes[i].work_q.queue,
+			&tx_classes[i].work_q,
 			K_KERNEL_STACK_SIZEOF(tx_stack[i]),
 			thread_priority,
 			IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE) ?
@@ -264,7 +264,7 @@ void net_tc_rx_init(void)
 
 		NET_DBG("[%d] Starting RX queue %p stack size %zd "
 			"prio %d %s(%d)", i,
-			&rx_classes[i].work_q.queue,
+			&rx_classes[i].work_q,
 			K_KERNEL_STACK_SIZEOF(rx_stack[i]),
 			thread_priority,
 			IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE) ?
