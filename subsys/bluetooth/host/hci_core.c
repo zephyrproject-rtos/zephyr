@@ -4777,6 +4777,7 @@ static void le_per_adv_sync_lost(struct net_buf *buf)
 	}
 }
 
+#if defined(CONFIG_BT_CONN)
 static void le_past_received(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_past_received *evt =
@@ -4828,6 +4829,7 @@ static void le_past_received(struct net_buf *buf)
 		}
 	}
 }
+#endif /* CONFIG_BT_CONN */
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
@@ -5102,8 +5104,10 @@ static const struct event_handler meta_events[] = {
 		      sizeof(struct bt_hci_evt_le_per_advertising_report)),
 	EVENT_HANDLER(BT_HCI_EVT_LE_PER_ADV_SYNC_LOST, le_per_adv_sync_lost,
 		      sizeof(struct bt_hci_evt_le_per_adv_sync_lost)),
+#if defined(CONFIG_BT_CONN)
 	EVENT_HANDLER(BT_HCI_EVT_LE_PAST_RECEIVED, le_past_received,
 		      sizeof(struct bt_hci_evt_le_past_received)),
+#endif /* CONFIG_BT_CONN */
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 #if defined(CONFIG_BT_ISO)
@@ -7631,6 +7635,7 @@ int bt_le_per_adv_sync_recv_disable(struct bt_le_per_adv_sync *per_adv_sync)
 	return bt_le_set_per_adv_recv_enable(per_adv_sync, false);
 }
 
+#if defined(CONFIG_BT_CONN)
 int bt_le_per_adv_sync_transfer(const struct bt_le_per_adv_sync *per_adv_sync,
 				const struct bt_conn *conn,
 				uint16_t service_data)
@@ -7798,7 +7803,7 @@ int bt_le_per_adv_sync_transfer_unsubscribe(const struct bt_conn *conn)
 					      0x0a, 0);
 	}
 }
-
+#endif /* CONFIG_BT_CONN */
 
 int bt_le_per_adv_list_add(const bt_addr_le_t *addr, uint8_t sid)
 {
