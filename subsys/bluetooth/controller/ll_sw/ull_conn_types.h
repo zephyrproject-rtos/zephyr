@@ -59,6 +59,9 @@ struct ll_conn {
 	union {
 		struct {
 			uint8_t fex_valid:1;
+#if defined(CONFIG_BT_CTLR_CONN_META)
+			uint8_t is_must_expire:1;
+#endif /* CONFIG_BT_CTLR_CONN_META */
 		} common;
 
 #if defined(CONFIG_BT_PERIPHERAL)
