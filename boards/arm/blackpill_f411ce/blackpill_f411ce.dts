@@ -10,7 +10,7 @@
 
 / {
 	model = "WeAct Studio Black Pill V2.0 Board";
-	compatible = "weact,blackpill-f411ce","st,stm32f411";
+	compatible = "weact,blackpill-f411ce";
 
 	chosen {
 		zephyr,console = &usart1;
