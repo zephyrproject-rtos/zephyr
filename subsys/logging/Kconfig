@@ -14,9 +14,7 @@ rsource "Kconfig.mode"
 
 rsource "Kconfig.filtering"
 
-if !LOG_MINIMAL
-
-if !LOG_FRONTEND
+if !LOG_FRONTEND && !LOG_MINIMAL
 
 rsource "Kconfig.formatting"
 
@@ -24,9 +22,8 @@ rsource "Kconfig.processing"
 
 rsource "Kconfig.backends"
 
-endif # !LOG_FRONTEND
+endif # !LOG_FRONTEND && !LOG_MINIMAL
 
 rsource "Kconfig.misc"
 
-endif # LOG_MINIMAL
 endif # LOG

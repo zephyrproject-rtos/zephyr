@@ -6,13 +6,13 @@
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_CTRL_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_CTRL_H_
 
-#include <logging/log_backend.h>
 #include <kernel.h>
+#include <logging/log_backend.h>
+#include <logging/log_msg.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 /**
  * @brief Logger
@@ -29,7 +29,7 @@ extern "C" {
  * @{
  */
 
-typedef uint32_t (*timestamp_get_t)(void);
+typedef log_timestamp_t (*log_timestamp_get_t)(void);
 
 /** @brief Function system initialization of the logger.
  *
@@ -63,7 +63,8 @@ void log_thread_set(k_tid_t process_tid);
  *
  * @return 0 on success or error.
  */
-int log_set_timestamp_func(timestamp_get_t timestamp_getter, uint32_t freq);
+int log_set_timestamp_func(log_timestamp_get_t timestamp_getter,
+			   uint32_t freq);
 
 /**
  * @brief Switch the logger subsystem to the panic mode.
