@@ -107,6 +107,12 @@ SECTIONS
 #ifndef CONFIG_XIP
         z_mapped_start = .;
 #endif
+
+#ifdef CONFIG_AARCH64_IMAGE_HEADER
+        KEEP(*(.image_header))
+        KEEP(*(".image_header.*"))
+#endif
+
         _vector_start = .;
         KEEP(*(.exc_vector_table))
         KEEP(*(".exc_vector_table.*"))
