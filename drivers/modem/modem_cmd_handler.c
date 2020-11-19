@@ -514,11 +514,14 @@ static int _modem_cmd_send(struct modem_iface *iface,
 		LOG_DBG("EOL not set!!!");
 	}
 #endif
+	if (sem) {
+		k_sem_reset(sem);
+	}
+
 	iface->write(iface, buf, strlen(buf));
 	iface->write(iface, data->eol, data->eol_len);
 
 	if (sem) {
-		k_sem_reset(sem);
 		ret = k_sem_take(sem, timeout);
 
 		if (ret == 0) {
