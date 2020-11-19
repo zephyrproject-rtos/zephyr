@@ -477,7 +477,15 @@ static int _modem_cmd_send(struct modem_iface *iface,
 	struct modem_cmd_handler_data *data;
 	int ret;
 
-	if (!iface || !handler || !handler->cmd_handler_data || !buf) {
+	if (!iface || !handler || !handler->cmd_handler_data || !buf || !sem) {
+		return -EINVAL;
+	}
+
+	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		/* semaphore is not needed if there is no timeout */
+		sem = NULL;
+	} else if (!sem) {
+		/* cannot respect timeout without semaphore */
 		return -EINVAL;
 	}
 
@@ -509,23 +517,15 @@ static int _modem_cmd_send(struct modem_iface *iface,
 	iface->write(iface, buf, strlen(buf));
 	iface->write(iface, data->eol, data->eol_len);
 
-	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-		ret = 0;
-		goto exit;
-	}
+	if (sem) {
+		k_sem_reset(sem);
+		ret = k_sem_take(sem, timeout);
 
-	if (!sem) {
-		ret = -EINVAL;
-		goto exit;
-	}
-
-	k_sem_reset(sem);
-	ret = k_sem_take(sem, timeout);
-
-	if (ret == 0) {
-		ret = data->last_error;
-	} else if (ret == -EAGAIN) {
-		ret = -ETIMEDOUT;
+		if (ret == 0) {
+			ret = data->last_error;
+		} else if (ret == -EAGAIN) {
+			ret = -ETIMEDOUT;
+		}
 	}
 
 exit:
