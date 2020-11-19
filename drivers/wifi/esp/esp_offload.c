@@ -78,9 +78,7 @@ static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 		sock->ip_proto == IPPROTO_TCP ? "TCP" : "UDP",
 		log_strdup(addr_str));
 
-	ret = modem_cmd_send(&dev->mctx.iface, &dev->mctx.cmd_handler,
-			     NULL, 0, connect_msg, &dev->sem_response,
-			     ESP_CMD_TIMEOUT);
+	ret = esp_cmd_send(dev, NULL, 0, connect_msg, ESP_CMD_TIMEOUT);
 	if (ret == 0) {
 		sock->flags |= ESP_SOCK_CONNECTED;
 	} else if (ret == -ETIMEDOUT) {
@@ -521,9 +519,7 @@ static void esp_recvdata_work(struct k_work *work)
 
 	snprintk(cmd, sizeof(cmd), "AT+CIPRECVDATA=%d,%d", sock->link_id, len);
 
-	ret = modem_cmd_send(&dev->mctx.iface, &dev->mctx.cmd_handler,
-			     cmds, ARRAY_SIZE(cmds), cmd, &dev->sem_response,
-			     ESP_CMD_TIMEOUT);
+	ret = esp_cmd_send(dev, cmds, ARRAY_SIZE(cmds), cmd, ESP_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_ERR("Error during rx: link %d, ret %d", sock->link_id,
 			ret);

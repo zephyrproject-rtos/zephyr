@@ -247,9 +247,8 @@ static void esp_ip_addr_work(struct k_work *work)
 		MODEM_CMD("+"_CIPSTA":", on_cmd_cipsta, 2U, ":"),
 	};
 
-	ret = modem_cmd_send(&dev->mctx.iface, &dev->mctx.cmd_handler,
-			     cmds, ARRAY_SIZE(cmds), "AT+"_CIPSTA"?",
-			     &dev->sem_response, ESP_CMD_TIMEOUT);
+	ret = esp_cmd_send(dev, cmds, ARRAY_SIZE(cmds), "AT+"_CIPSTA"?",
+			   ESP_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_WRN("Failed to query IP settings: ret %d", ret);
 		k_delayed_work_submit_to_queue(&dev->workq, &dev->ip_addr_work,
@@ -548,9 +547,8 @@ static void esp_mgmt_scan_work(struct k_work *work)
 
 	dev = CONTAINER_OF(work, struct esp_data, scan_work);
 
-	ret = modem_cmd_send(&dev->mctx.iface, &dev->mctx.cmd_handler,
-			     cmds, ARRAY_SIZE(cmds), "AT+CWLAP",
-			     &dev->sem_response, ESP_SCAN_TIMEOUT);
+	ret = esp_cmd_send(dev, cmds, ARRAY_SIZE(cmds), "AT+CWLAP",
+			   ESP_SCAN_TIMEOUT);
 	if (ret < 0) {
 		LOG_ERR("Failed to scan: ret %d", ret);
 	}
@@ -599,9 +597,8 @@ static void esp_mgmt_connect_work(struct k_work *work)
 
 	dev = CONTAINER_OF(work, struct esp_data, connect_work);
 
-	ret = modem_cmd_send(&dev->mctx.iface, &dev->mctx.cmd_handler,
-			     cmds, ARRAY_SIZE(cmds), dev->conn_cmd,
-			     &dev->sem_response, ESP_CONNECT_TIMEOUT);
+	ret = esp_cmd_send(dev, cmds, ARRAY_SIZE(cmds), dev->conn_cmd,
+			   ESP_CONNECT_TIMEOUT);
 
 	memset(dev->conn_cmd, 0, sizeof(dev->conn_cmd));
 
@@ -664,9 +661,7 @@ static int esp_mgmt_disconnect(const struct device *dev)
 	struct esp_data *data = dev->data;
 	int ret;
 
-	ret = modem_cmd_send(&data->mctx.iface, &data->mctx.cmd_handler,
-			     NULL, 0, "AT+CWQAP", &data->sem_response,
-			     ESP_CMD_TIMEOUT);
+	ret = esp_cmd_send(data, NULL, 0, "AT+CWQAP", ESP_CMD_TIMEOUT);
 
 	return ret;
 }
@@ -679,9 +674,7 @@ static int esp_mgmt_ap_enable(const struct device *dev,
 	struct esp_data *data = dev->data;
 	int ecn = 0, len, ret;
 
-	ret = modem_cmd_send(&data->mctx.iface, &data->mctx.cmd_handler,
-			     NULL, 0, "AT+"_CWMODE"=3", &data->sem_response,
-			     ESP_CMD_TIMEOUT);
+	ret = esp_cmd_send(data, NULL, 0, "AT+"_CWMODE"=3", ESP_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_ERR("Failed to enable AP mode, ret %d", ret);
 		return ret;
@@ -703,9 +696,7 @@ static int esp_mgmt_ap_enable(const struct device *dev,
 	snprintk(&cmd[len], sizeof(cmd) - len, "\",%d,%d", params->channel,
 		 ecn);
 
-	ret = modem_cmd_send(&data->mctx.iface, &data->mctx.cmd_handler,
-			     NULL, 0, cmd, &data->sem_response,
-			     ESP_CMD_TIMEOUT);
+	ret = esp_cmd_send(data, NULL, 0, cmd, ESP_CMD_TIMEOUT);
 
 	return ret;
 }
@@ -715,9 +706,7 @@ static int esp_mgmt_ap_disable(const struct device *dev)
 	struct esp_data *data = dev->data;
 	int ret;
 
-	ret = modem_cmd_send(&data->mctx.iface, &data->mctx.cmd_handler,
-			     NULL, 0, "AT+"_CWMODE"=1", &data->sem_response,
-			     ESP_CMD_TIMEOUT);
+	ret = esp_cmd_send(data, NULL, 0, "AT+"_CWMODE"=1", ESP_CMD_TIMEOUT);
 
 	return ret;
 }
@@ -730,9 +719,7 @@ static void esp_configure_hostname(struct esp_data *data)
 	snprintk(cmd, sizeof(cmd), "AT+CWHOSTNAME=\"%s\"", net_hostname_get());
 	cmd[sizeof(cmd) - 1] = '\0';
 
-	modem_cmd_send(&data->mctx.iface, &data->mctx.cmd_handler,
-		       NULL, 0, cmd, &data->sem_response,
-		       ESP_CMD_TIMEOUT);
+	esp_cmd_send(data, NULL, 0, cmd, ESP_CMD_TIMEOUT);
 #else
 	ARG_UNUSED(data);
 #endif
