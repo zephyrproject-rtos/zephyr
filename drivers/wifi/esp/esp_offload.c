@@ -206,7 +206,7 @@ static int _sock_send(struct esp_data *dev, struct esp_socket *sock)
 	char cmd_buf[64], addr_str[NET_IPV4_ADDR_LEN];
 	int ret, write_len, pkt_len;
 	struct net_buf *frag;
-	struct modem_cmd cmds[] = {
+	static const struct modem_cmd cmds[] = {
 		MODEM_CMD_DIRECT(">", on_cmd_tx_ready),
 		MODEM_CMD("SEND OK", on_cmd_send_ok, 0U, ""),
 		MODEM_CMD("SEND FAIL", on_cmd_send_fail, 0U, ""),
@@ -507,7 +507,7 @@ static void esp_recvdata_work(struct k_work *work)
 	struct esp_data *dev;
 	int len = CIPRECVDATA_MAX_LEN, ret;
 	char cmd[32];
-	struct modem_cmd cmds[] = {
+	static const struct modem_cmd cmds[] = {
 		MODEM_CMD_DIRECT(_CIPRECVDATA, on_cmd_ciprecvdata),
 	};
 
