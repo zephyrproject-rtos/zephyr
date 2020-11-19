@@ -175,7 +175,7 @@ MODEM_CMD_DEFINE(on_cmd_cwlap)
 	return 0;
 }
 
-static struct modem_cmd response_cmds[] = {
+static const struct modem_cmd response_cmds[] = {
 	MODEM_CMD("OK", on_cmd_ok, 0U, ""), /* 3GPP */
 	MODEM_CMD("ERROR", on_cmd_error, 0U, ""), /* 3GPP */
 };
@@ -243,7 +243,7 @@ static void esp_ip_addr_work(struct k_work *work)
 					    ip_addr_work);
 	int ret;
 
-	struct modem_cmd cmds[] = {
+	static const struct modem_cmd cmds[] = {
 		MODEM_CMD("+"_CIPSTA":", on_cmd_cipsta, 2U, ":"),
 	};
 
@@ -518,7 +518,7 @@ MODEM_CMD_DEFINE(on_cmd_ready)
 	return 0;
 }
 
-static struct modem_cmd unsol_cmds[] = {
+static const struct modem_cmd unsol_cmds[] = {
 	MODEM_CMD("WIFI CONNECTED", on_cmd_wifi_connected, 0U, ""),
 	MODEM_CMD("WIFI DISCONNECT", on_cmd_wifi_disconnected, 0U, ""),
 	MODEM_CMD("WIFI GOT IP", on_cmd_got_ip, 0U, ""),
@@ -542,7 +542,7 @@ static void esp_mgmt_scan_work(struct k_work *work)
 {
 	struct esp_data *dev;
 	int ret;
-	struct modem_cmd cmds[] = {
+	static const struct modem_cmd cmds[] = {
 		MODEM_CMD("+CWLAP:", on_cmd_cwlap, 4U, ","),
 	};
 
@@ -593,7 +593,7 @@ static void esp_mgmt_connect_work(struct k_work *work)
 {
 	struct esp_data *dev;
 	int ret;
-	struct modem_cmd cmds[] = {
+	static const struct modem_cmd cmds[] = {
 		MODEM_CMD("FAIL", on_cmd_fail, 0U, ""),
 	};
 
@@ -742,14 +742,14 @@ static void esp_init_work(struct k_work *work)
 {
 	struct esp_data *dev;
 	int ret;
-	static struct setup_cmd setup_cmds[] = {
+	static const struct setup_cmd setup_cmds[] = {
 		SETUP_CMD_NOHANDLE("AT"),
 		/* turn off echo */
 		SETUP_CMD_NOHANDLE("ATE0"),
 		SETUP_CMD_NOHANDLE("AT+UART_CUR="_UART_CUR),
 #if DT_INST_NODE_HAS_PROP(0, target_speed)
 	};
-	static struct setup_cmd setup_cmds_target_baudrate[] = {
+	static const struct setup_cmd setup_cmds_target_baudrate[] = {
 		SETUP_CMD_NOHANDLE("AT"),
 #endif
 		SETUP_CMD_NOHANDLE("AT+"_CWMODE"=1"),
