@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 Nordic Semiconductor ASA
+ * Copyright (c) 2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -237,14 +237,14 @@ uint8_t ll_df_set_conn_cte_tx_params(uint16_t handle, uint8_t cte_types,
 }
 
 /* @brief Function provides information about Direction Finding
- *        antennae switching and sampling related settings.
+ *        antennas switching and sampling related settings.
  *
- * @param[out]switch_sample_rates       Pointer to store available antennae
+ * @param[out]switch_sample_rates       Pointer to store available antennas
  *                                      switch-sampling configurations.
  * @param[out]num_ant                   Pointer to store number of available
- *                                      antennae.
+ *                                      antennas.
  * @param[out]max_switch_pattern_len    Pointer to store maximum number of
- *                                      antennae switch patterns.
+ *                                      antennas ids in switch pattern.
  * @param[out]max_cte_len               Pointer to store maximum length of CTE
  *                                      in [8us] units.
  */
@@ -253,13 +253,25 @@ void ll_df_read_ant_inf(uint8_t *switch_sample_rates,
 			uint8_t *max_switch_pattern_len,
 			uint8_t *max_cte_len)
 {
-	/* Currently filled with data that inform about
-	 * lack of antenna support for Direction Finding
-	 */
 	*switch_sample_rates = 0;
-	*num_ant = 0;
-	*max_switch_pattern_len = 0;
-	*max_cte_len = 0;
+	if (IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX) &&
+	    IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_1US)) {
+		*switch_sample_rates |= DF_AOD_1US_TX;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_DF_CTE_RX) &&
+	    IS_ENABLED(CONFIG_BT_CTLR_DF_CTE_RX_SAMPLE_1US)) {
+		*switch_sample_rates |= DF_AOD_1US_RX;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX) &&
+	    IS_ENABLED(CONFIG_BT_CTLR_DF_CTE_RX_SAMPLE_1US)) {
+		*switch_sample_rates |= DF_AOA_1US;
+	}
+
+	*max_switch_pattern_len = CONFIG_BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN;
+	*num_ant = lll_df_ant_num_get();
+	*max_cte_len = LLL_DF_MAX_CTE_LEN;
 }
 
 static struct lll_df_adv_cfg *ull_df_adv_cfg_acquire(void)
