@@ -77,7 +77,7 @@ struct setup_cmd {
 };
 
 struct modem_cmd_handler_data {
-	struct modem_cmd *cmds[CMD_MAX];
+	const struct modem_cmd *cmds[CMD_MAX];
 	size_t cmds_len[CMD_MAX];
 
 	char *match_buf;
@@ -131,7 +131,7 @@ int modem_cmd_handler_set_error(struct modem_cmd_handler_data *data,
  * @retval 0 if ok, < 0 if error.
  */
 int modem_cmd_handler_update_cmds(struct modem_cmd_handler_data *data,
-				  struct modem_cmd *handler_cmds,
+				  const struct modem_cmd *handler_cmds,
 				  size_t handler_cmds_len,
 				  bool reset_error_flag);
 
@@ -148,7 +148,7 @@ int modem_cmd_handler_update_cmds(struct modem_cmd_handler_data *data,
  */
 int modem_cmd_send_nolock(struct modem_iface *iface,
 			  struct modem_cmd_handler *handler,
-			  struct modem_cmd *handler_cmds,
+			  const struct modem_cmd *handler_cmds,
 			  size_t handler_cmds_len,
 			  const uint8_t *buf, struct k_sem *sem,
 			  k_timeout_t timeout);
@@ -166,8 +166,9 @@ int modem_cmd_send_nolock(struct modem_iface *iface,
  */
 int modem_cmd_send(struct modem_iface *iface,
 		   struct modem_cmd_handler *handler,
-		   struct modem_cmd *handler_cmds, size_t handler_cmds_len,
-		   const uint8_t *buf, struct k_sem *sem, k_timeout_t timeout);
+		   const struct modem_cmd *handler_cmds,
+		   size_t handler_cmds_len, const uint8_t *buf,
+		   struct k_sem *sem, k_timeout_t timeout);
 
 /**
  * @brief  send a series of AT commands w/ a TX lock
@@ -183,7 +184,7 @@ int modem_cmd_send(struct modem_iface *iface,
  */
 int modem_cmd_handler_setup_cmds(struct modem_iface *iface,
 				 struct modem_cmd_handler *handler,
-				 struct setup_cmd *cmds, size_t cmds_len,
+				 const struct setup_cmd *cmds, size_t cmds_len,
 				 struct k_sem *sem, k_timeout_t timeout);
 
 /**
@@ -200,8 +201,9 @@ int modem_cmd_handler_setup_cmds(struct modem_iface *iface,
  */
 int modem_cmd_handler_setup_cmds_nolock(struct modem_iface *iface,
 					struct modem_cmd_handler *handler,
-					struct setup_cmd *cmds, size_t cmds_len,
-					struct k_sem *sem, k_timeout_t timeout);
+					const struct setup_cmd *cmds,
+					size_t cmds_len, struct k_sem *sem,
+					k_timeout_t timeout);
 
 /**
  * @brief  Init command handler
