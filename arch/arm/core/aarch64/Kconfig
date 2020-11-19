@@ -56,6 +56,12 @@ config CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE
 config IPM_CONSOLE_STACK_SIZE
 	default 2048
 
+config AARCH64_IMAGE_HEADER
+	bool "Add image header"
+	help
+	  This option enables standard ARM64 boot image header used by Linux
+	  and understood by loaders such as u-boot on Xen xl tool.
+
 if CPU_CORTEX_A
 
 config ARMV8_A_NS
