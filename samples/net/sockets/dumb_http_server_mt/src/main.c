@@ -226,14 +226,13 @@ static void client_conn_handler(void *ptr1, void *ptr2, void *ptr3)
 		}
 	} while (true);
 
-	if (received > 0 && received < 10) {
-		/* We received status from the client */
-		if (strstr(buf, "OK")) {
-			running_status = true;
-		} else {
-			running_status = false;
-		}
-
+	/* We received status from the client */
+	if (strstr(buf, "\r\n\r\nOK")) {
+		running_status = true;
+		want_to_quit = true;
+		k_sem_give(&quit_lock);
+	} else if (strstr(buf, "\r\n\r\nFAIL")) {
+		running_status = false;
 		want_to_quit = true;
 		k_sem_give(&quit_lock);
 	} else {
