@@ -2772,7 +2772,6 @@ class TestSuite(DisablePyTestCollectionMixin):
                          board_root)
 
             for file in glob.glob(os.path.join(board_root, "*", "*", "*.yaml")):
-                logger.debug("Found platform configuration " + file)
                 try:
                     platform = Platform()
                     platform.load(file)
@@ -2821,7 +2820,6 @@ class TestSuite(DisablePyTestCollectionMixin):
             logger.debug("Reading test case configuration files under %s..." % root)
 
             for dirpath, dirnames, filenames in os.walk(root, topdown=True):
-                logger.debug("scanning %s" % dirpath)
                 if self.SAMPLE_FILENAME in filenames:
                     filename = self.SAMPLE_FILENAME
                 elif self.TESTCASE_FILENAME in filenames:
@@ -2991,6 +2989,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                     tfilter,
                     self.fixtures
                 )
+
                 for t in tc.cases:
                     instance.results[t] = None
 
