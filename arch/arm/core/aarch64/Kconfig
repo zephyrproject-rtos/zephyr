@@ -67,6 +67,9 @@ config AARCH64_IMAGE_HEADER
 config PRIVILEGED_STACK_SIZE
 	default 4096
 
+config KOBJECT_TEXT_AREA
+	default 512 if TEST
+
 if CPU_CORTEX_A
 
 config ARMV8_A_NS
