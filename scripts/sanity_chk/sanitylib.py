@@ -3266,7 +3266,9 @@ class TestSuite(DisablePyTestCollectionMixin):
         total = 0
         if platform:
             selected = [platform]
+            logger.debug(f"Writing target report for {platform}...")
         else:
+            logger.debug(f"Writing xunit report {filename}...")
             selected = self.selected_platforms
 
         if os.path.exists(filename) and append:
