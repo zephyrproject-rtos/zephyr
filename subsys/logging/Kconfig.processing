@@ -138,6 +138,24 @@ config LOG_STRDUP_POOL_PROFILING
 
 endif # LOG_MODE_DEFERRED
 
+if LOG2
+
+config LOG_TRACE_SHORT_TIMESTAMP
+	bool "Use 24 bit timestamp for tracing"
+	default y
+	help
+	  When enabled, shorter timestamp is used and trace message is
+	  compressed.
+
+config LOG_TIMESTAMP_64BIT
+	bool "Use 64 bit timestamp"
+
+config LOG_SPEED
+	bool "Prefer performance over size"
+	help
+	  If enabled, logging may take more code size to get faster logging.
+endif # LOG2
+
 endif # !LOG_MINIMAL
 
 endmenu

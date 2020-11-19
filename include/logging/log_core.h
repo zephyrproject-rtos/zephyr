@@ -7,6 +7,7 @@
 #define ZEPHYR_INCLUDE_LOGGING_LOG_CORE_H_
 
 #include <logging/log_msg.h>
+#include <logging/log_core2.h>
 #include <logging/log_instance.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -437,6 +438,7 @@ enum log_strdup_action {
 			  CONFIG_LOG_DOMAIN_ID, NULL, \
 			  LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, __VA_ARGS__);\
 } while (0)
+
 
 /** @brief Get name of the log source.
  *

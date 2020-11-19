@@ -12,6 +12,10 @@ config LOG_MODE_DEFERRED
 	  least impact on the application. Time consuming processing is
 	  deferred to the known context.
 
+config LOG2
+	bool "Deferred logging v2"
+	select MPSC_PBUF
+
 config LOG_MODE_IMMEDIATE
 	bool "Synchronous"
 	help
