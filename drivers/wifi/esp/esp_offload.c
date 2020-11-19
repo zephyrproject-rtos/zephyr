@@ -52,7 +52,7 @@ static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 	char connect_msg[100];
 	int ret;
 
-	if (!esp_flag_is_set(dev, EDF_STA_CONNECTED)) {
+	if (!esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
 		return -ENETUNREACH;
 	}
 
@@ -210,7 +210,7 @@ static int _sock_send(struct esp_data *dev, struct esp_socket *sock)
 		MODEM_CMD("SEND FAIL", on_cmd_send_fail, 0U, ""),
 	};
 
-	if (!esp_flag_is_set(dev, EDF_STA_CONNECTED)) {
+	if (!esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
 		return -ENETUNREACH;
 	}
 
@@ -337,7 +337,7 @@ static int esp_sendto(struct net_pkt *pkt,
 
 	LOG_DBG("link %d, timeout %d", sock->link_id, timeout);
 
-	if (!esp_flag_is_set(dev, EDF_STA_CONNECTED)) {
+	if (!esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
 		return -ENETUNREACH;
 	}
 

@@ -185,11 +185,11 @@ MODEM_CMD_DEFINE(on_cmd_wifi_connected)
 	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
 					    cmd_handler_data);
 
-	if (esp_flag_is_set(dev, EDF_STA_CONNECTED)) {
+	if (esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
 		return 0;
 	}
 
-	esp_flag_set(dev, EDF_STA_CONNECTED);
+	esp_flags_set(dev, EDF_STA_CONNECTED);
 	wifi_mgmt_raise_connect_result_event(dev->net_iface, 0);
 
 	return 0;
@@ -200,11 +200,11 @@ MODEM_CMD_DEFINE(on_cmd_wifi_disconnected)
 	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
 					    cmd_handler_data);
 
-	if (!esp_flag_is_set(dev, EDF_STA_CONNECTED)) {
+	if (!esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
 		return 0;
 	}
 
-	esp_flag_clear(dev, EDF_STA_CONNECTED);
+	esp_flags_clear(dev, EDF_STA_CONNECTED);
 	net_if_ipv4_addr_rm(dev->net_iface, &dev->ip);
 	wifi_mgmt_raise_disconnect_result_event(dev->net_iface, 0);
 
@@ -503,11 +503,11 @@ MODEM_CMD_DEFINE(on_cmd_ready)
 		LOG_ERR("Unexpected reset");
 	}
 
-	if (esp_flag_is_set(dev, EDF_STA_CONNECTING)) {
-		esp_flag_clear(dev, EDF_STA_CONNECTING);
+	if (esp_flags_are_set(dev, EDF_STA_CONNECTING)) {
+		esp_flags_clear(dev, EDF_STA_CONNECTING);
 		wifi_mgmt_raise_connect_result_event(dev->net_iface, -1);
-	} else if (esp_flag_is_set(dev, EDF_STA_CONNECTED)) {
-		esp_flag_clear(dev, EDF_STA_CONNECTED);
+	} else if (esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
+		esp_flags_clear(dev, EDF_STA_CONNECTED);
 		wifi_mgmt_raise_disconnect_result_event(dev->net_iface, 0);
 	}
 
@@ -603,20 +603,20 @@ static void esp_mgmt_connect_work(struct k_work *work)
 	memset(dev->conn_cmd, 0, sizeof(dev->conn_cmd));
 
 	if (ret < 0) {
-		if (esp_flag_is_set(dev, EDF_STA_CONNECTED)) {
-			esp_flag_clear(dev, EDF_STA_CONNECTED);
+		if (esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
+			esp_flags_clear(dev, EDF_STA_CONNECTED);
 			wifi_mgmt_raise_disconnect_result_event(dev->net_iface,
 								0);
 		} else {
 			wifi_mgmt_raise_connect_result_event(dev->net_iface,
 							     ret);
 		}
-	} else if (!esp_flag_is_set(dev, EDF_STA_CONNECTED)) {
-		esp_flag_set(dev, EDF_STA_CONNECTED);
+	} else if (!esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
+		esp_flags_set(dev, EDF_STA_CONNECTED);
 		wifi_mgmt_raise_connect_result_event(dev->net_iface, 0);
 	}
 
-	esp_flag_clear(dev, EDF_STA_CONNECTING);
+	esp_flags_clear(dev, EDF_STA_CONNECTING);
 }
 
 static int esp_mgmt_connect(const struct device *dev,
@@ -629,12 +629,11 @@ static int esp_mgmt_connect(const struct device *dev,
 		return -EIO;
 	}
 
-	if (esp_flag_is_set(data, EDF_STA_CONNECTED) ||
-	    esp_flag_is_set(data, EDF_STA_CONNECTING)) {
+	if (esp_flags_are_set(data, EDF_STA_CONNECTED | EDF_STA_CONNECTING)) {
 		return -EALREADY;
 	}
 
-	esp_flag_set(data, EDF_STA_CONNECTING);
+	esp_flags_set(data, EDF_STA_CONNECTING);
 
 	len = snprintk(data->conn_cmd, sizeof(data->conn_cmd),
 		       "AT+"_CWJAP"=\"");

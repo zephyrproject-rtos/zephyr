@@ -247,22 +247,19 @@ static inline bool esp_socket_close_pending(struct esp_socket *sock)
 	return (sock->flags & ESP_SOCK_CLOSE_PENDING) != 0;
 }
 
-static inline void esp_flag_set(struct esp_data *dev,
-				enum esp_data_flag flag)
+static inline void esp_flags_set(struct esp_data *dev, uint8_t flags)
 {
-	dev->flags |= flag;
+	dev->flags |= flags;
 }
 
-static inline void esp_flag_clear(struct esp_data *dev,
-				  enum esp_data_flag flag)
+static inline void esp_flags_clear(struct esp_data *dev, uint8_t flags)
 {
-	dev->flags &= (~flag);
+	dev->flags &= (~flags);
 }
 
-static inline bool esp_flag_is_set(struct esp_data *dev,
-				   enum esp_data_flag flag)
+static inline bool esp_flags_are_set(struct esp_data *dev, uint8_t flags)
 {
-	return (dev->flags & flag) != 0;
+	return (dev->flags & flags) != 0;
 }
 
 static inline int esp_cmd_send(struct esp_data *data,
