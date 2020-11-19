@@ -22,7 +22,7 @@
 #include <arch/arc/v2/mpu/arc_core_mpu.h>
 #endif
 
-#if defined(CONFIG_ARM)
+#if defined(CONFIG_ARM) && !defined(CONFIG_ARM64)
 extern void arm_core_mpu_disable(void);
 #endif
 
@@ -124,6 +124,19 @@ static void test_write_control(void)
 		);
 #endif
 	zassert_unreachable("Write to control register did not fault");
+
+#elif defined(CONFIG_ARM64)
+	uint64_t val = SPSR_MODE_EL1T;
+
+	set_fault(K_ERR_CPU_EXCEPTION);
+
+	__asm__ volatile("msr spsr_el1, %0"
+			:
+			: "r" (val)
+			: "memory", "cc");
+
+	zassert_unreachable("Write to control register did not fault");
+
 #elif defined(CONFIG_ARM)
 	unsigned int msr_value;
 
@@ -183,6 +196,17 @@ static void test_disable_mmu_mpu(void)
 		"mov %eax, %cr0;\n\t"
 		);
 #endif
+#elif defined(CONFIG_ARM64)
+	uint64_t val;
+
+	set_fault(K_ERR_CPU_EXCEPTION);
+
+	__asm__ volatile("mrs %0, sctlr_el1" : "=r" (val));
+	__asm__ volatile("msr sctlr_el1, %0"
+			:
+			: "r" (val & ~(SCTLR_M_BIT | SCTLR_C_BIT))
+			: "memory", "cc");
+
 #elif defined(CONFIG_ARM)
 #ifndef CONFIG_TRUSTED_EXECUTION_NONSECURE
 	set_fault(K_ERR_CPU_EXCEPTION);
