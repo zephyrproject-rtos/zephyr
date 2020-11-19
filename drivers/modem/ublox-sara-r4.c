@@ -75,7 +75,6 @@ static struct modem_pin modem_pins[] = {
 #define MDM_CMD_CONN_TIMEOUT		K_SECONDS(120)
 #define MDM_REGISTRATION_TIMEOUT	K_SECONDS(180)
 #define MDM_PROMPT_CMD_DELAY		K_MSEC(50)
-#define MDM_SENDMSG_SLEEP       K_MSEC(1)
 
 #define MDM_MAX_DATA_LENGTH		1024
 #define MDM_RECV_MAX_BUF		30
@@ -296,17 +295,41 @@ int modem_detect_apn(const char *imsi)
 }
 #endif
 
+/* Forward declaration */
+MODEM_CMD_DEFINE(on_cmd_sockwrite);
+
 /* send binary data via the +USO[ST/WR] commands */
-static ssize_t send_socket_data(struct modem_socket *sock,
-				const struct sockaddr *dst_addr,
-				const struct modem_cmd *handler_cmds,
-				size_t handler_cmds_len,
-				const char *buf, size_t buf_len,
+static ssize_t send_socket_data(void *obj,
+				const struct msghdr *msg,
 				k_timeout_t timeout)
 {
 	int ret;
 	char send_buf[sizeof("AT+USO**=#,!###.###.###.###!,#####,####\r\n")];
 	uint16_t dst_port = 0U;
+	struct modem_socket *sock = (struct modem_socket *)obj;
+	const struct modem_cmd handler_cmds[] = {
+		MODEM_CMD("+USOST: ", on_cmd_sockwrite, 2U, ","),
+		MODEM_CMD("+USOWR: ", on_cmd_sockwrite, 2U, ","),
+	};
+	struct sockaddr *dst_addr = msg->msg_name;
+	size_t buf_len = 0;
+
+	for (int i = 0; i < msg->msg_iovlen; i++) {
+		if (!msg->msg_iov[i].iov_base || msg->msg_iov[i].iov_len == 0) {
+			errno = EINVAL;
+			return -1;
+		}
+		buf_len += msg->msg_iov[i].iov_len;
+	}
+
+	if (!sock->is_connected && sock->ip_proto != IPPROTO_UDP) {
+		errno = ENOTCONN;
+		return -1;
+	}
+
+	if (!dst_addr && sock->ip_proto == IPPROTO_UDP) {
+		dst_addr = &sock->dst;
+	}
 
 	if (!sock) {
 		return -EINVAL;
@@ -347,7 +370,8 @@ static ssize_t send_socket_data(struct modem_socket *sock,
 
 	/* set command handlers */
 	ret = modem_cmd_handler_update_cmds(&mdata.cmd_handler_data,
-					    handler_cmds, handler_cmds_len,
+					    handler_cmds,
+					    ARRAY_SIZE(handler_cmds),
 					    true);
 	if (ret < 0) {
 		goto exit;
@@ -366,7 +390,15 @@ static ssize_t send_socket_data(struct modem_socket *sock,
 	k_sem_reset(&mdata.sem_response);
 
 	/* Send data directly on modem iface */
-	mctx.iface.write(&mctx.iface, buf, buf_len);
+	for (int i = 0; i < msg->msg_iovlen; i++) {
+		int len = MIN(buf_len, msg->msg_iov[i].iov_len);
+
+		if (len == 0) {
+			break;
+		}
+		mctx.iface.write(&mctx.iface, msg->msg_iov[i].iov_base, len);
+		buf_len -= len;
+	}
 
 	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		ret = 0;
@@ -1456,29 +1488,18 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len,
 			      int flags, const struct sockaddr *to,
 			      socklen_t tolen)
 {
-	int ret;
-	struct modem_socket *sock = (struct modem_socket *)obj;
-	static const struct modem_cmd cmd[] = {
-		MODEM_CMD("+USOST: ", on_cmd_sockwrite, 2U, ","),
-		MODEM_CMD("+USOWR: ", on_cmd_sockwrite, 2U, ","),
+	struct iovec msg_iov = {
+		.iov_base = (void *)buf,
+		.iov_len = len,
+	};
+	struct msghdr msg = {
+		.msg_iovlen = 1,
+		.msg_name = (struct sockaddr *)to,
+		.msg_namelen = tolen,
+		.msg_iov = &msg_iov,
 	};
 
-	if (!buf || len == 0) {
-		errno = EINVAL;
-		return -1;
-	}
-
-	if (!sock->is_connected && sock->ip_proto != IPPROTO_UDP) {
-		errno = ENOTCONN;
-		return -1;
-	}
-
-	if (!to && sock->ip_proto == IPPROTO_UDP) {
-		to = &sock->dst;
-	}
-
-	ret = send_socket_data(sock, to, cmd, ARRAY_SIZE(cmd), buf, len,
-			       MDM_CMD_TIMEOUT);
+	int ret = send_socket_data(obj, &msg, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
 		errno = -ret;
 		return -1;
@@ -1528,32 +1549,79 @@ static ssize_t offload_write(void *obj, const void *buffer, size_t count)
 static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 {
 	ssize_t sent = 0;
-	int rc;
+	int bkp_iovec_idx;
+	struct iovec bkp_iovec = {0};
+	struct msghdr crafted_msg = {
+		.msg_name = msg->msg_name,
+		.msg_namelen = msg->msg_namelen,
+	};
+	size_t full_len = 0;
+	int ret;
 
-	LOG_DBG("msg_iovlen:%d flags:%d", msg->msg_iovlen, flags);
-
+	/* Compute the full length to be send and check for invalid values */
 	for (int i = 0; i < msg->msg_iovlen; i++) {
-
-		const char *buf = msg->msg_iov[i].iov_base;
-		size_t len = msg->msg_iov[i].iov_len;
-
-		while (len > 0) {
-			rc = offload_sendto(obj, buf, len, flags,
-							msg->msg_name,
-							msg->msg_namelen);
-			if (rc < 0) {
-				if (rc == -EAGAIN) {
-					k_sleep(MDM_SENDMSG_SLEEP);
-				} else {
-					sent = rc;
-					break;
-				}
-			} else {
-				sent += rc;
-				buf += rc;
-				len -= rc;
-			}
+		if (!msg->msg_iov[i].iov_base || msg->msg_iov[i].iov_len == 0) {
+			errno = EINVAL;
+			return -1;
 		}
+		full_len += msg->msg_iov[i].iov_len;
+	}
+
+	LOG_DBG("msg_iovlen:%d flags:%d, full_len:%d",
+		msg->msg_iovlen, flags, full_len);
+
+	while (full_len > sent) {
+		int removed = 0;
+		int i = 0;
+
+		crafted_msg.msg_iovlen = msg->msg_iovlen;
+		crafted_msg.msg_iov = &msg->msg_iov[0];
+
+		bkp_iovec_idx = -1;
+		/*  Iterate on iovec to remove the bytes already sent */
+		while (removed < sent) {
+			int to_removed = sent - removed;
+
+			if (to_removed >= msg->msg_iov[i].iov_len) {
+				crafted_msg.msg_iovlen -= 1;
+				crafted_msg.msg_iov = &msg->msg_iov[i + 1];
+
+				removed += msg->msg_iov[i].iov_len;
+			} else {
+				/* Backup msg->msg_iov[i] before "removing"
+				 * starting bytes already send.
+				 */
+				bkp_iovec_idx = i;
+				bkp_iovec.iov_len = msg->msg_iov[i].iov_len;
+				bkp_iovec.iov_base = msg->msg_iov[i].iov_base;
+
+				/* Update msg->msg_iov[i] to "remove"
+				 * starting bytes already send.
+				 */
+				msg->msg_iov[i].iov_len -= to_removed;
+				msg->msg_iov[i].iov_base = &(((uint8_t *)msg->msg_iov[i].iov_base)[to_removed]);
+
+				removed += to_removed;
+			}
+
+			i++;
+		}
+
+		ret = send_socket_data(obj, &crafted_msg, MDM_CMD_TIMEOUT);
+
+		/* Restore backup iovec when necessary */
+		if (bkp_iovec_idx != -1) {
+			msg->msg_iov[bkp_iovec_idx].iov_len = bkp_iovec.iov_len;
+			msg->msg_iov[bkp_iovec_idx].iov_base = bkp_iovec.iov_base;
+		}
+
+		/* Handle send_socket_data() returned value */
+		if (ret < 0) {
+			errno = -ret;
+			return -1;
+		}
+
+		sent += ret;
 	}
 
 	return (ssize_t)sent;
