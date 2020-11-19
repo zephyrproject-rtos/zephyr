@@ -383,19 +383,7 @@ static int esp_sendto(struct net_pkt *pkt,
 		return 0;
 	}
 
-	/*
-	 * FIXME:
-	 * In _modem_cmd_send() in modem_cmd_handler.c it can happen that a
-	 * response, eg 'OK', is received before k_sem_reset(sem) is called.
-	 * If the sending thread can be preempted, the command handler could
-	 * run and call k_sem_give(). This will cause a timeout and the send
-	 * will fail. This can be avoided by locking the scheduler. Maybe this
-	 * should be done in _modem_cmd_send() instead.
-	 */
-	k_sched_lock();
 	ret = _sock_send(dev, sock);
-	k_sched_unlock();
-
 	if (ret == 0) {
 		net_pkt_unref(sock->tx_pkt);
 	} else {
