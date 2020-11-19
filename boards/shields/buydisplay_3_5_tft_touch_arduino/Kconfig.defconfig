@@ -33,10 +33,10 @@ if LVGL
 config LVGL_DISPLAY_DEV_NAME
 	default "DISPLAY"
 
-config LVGL_HOR_RES_MAX
+config LV_HOR_RES_MAX
 	default 320
 
-config LVGL_VER_RES_MAX
+config LV_VER_RES_MAX
 	default 480
 
 config LVGL_VDB_SIZE
@@ -45,9 +45,8 @@ config LVGL_VDB_SIZE
 config LVGL_BITS_PER_PIXEL
 	default 24
 
-choice LVGL_COLOR_DEPTH
-	default LVGL_COLOR_DEPTH_16
-endchoice
+config LV_COLOR_DEPTH
+	default 16
 
 config KSCAN
 	default y
