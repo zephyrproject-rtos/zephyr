@@ -47,10 +47,10 @@ static void can_stm32_get_msg_fifo(CAN_FIFOMailBox_TypeDef *mbox,
 				    struct zcan_frame *msg)
 {
 	if (mbox->RIR & CAN_RI0R_IDE) {
-		msg->ext_id = mbox->RIR >> CAN_RI0R_EXID_Pos;
+		msg->id = mbox->RIR >> CAN_RI0R_EXID_Pos;
 		msg->id_type = CAN_EXTENDED_IDENTIFIER;
 	} else {
-		msg->std_id =  mbox->RIR >> CAN_RI0R_STID_Pos;
+		msg->id =  mbox->RIR >> CAN_RI0R_STID_Pos;
 		msg->id_type = CAN_STANDARD_IDENTIFIER;
 	}
 
@@ -603,8 +603,7 @@ int can_stm32_send(const struct device *dev, const struct zcan_frame *msg,
 		    "ID type: %s, "
 		    "Remote Frame: %s"
 		    , msg->dlc, dev->name
-		    , msg->id_type == CAN_STANDARD_IDENTIFIER ?
-				      msg->std_id :  msg->ext_id
+		    , msg->id
 		    , msg->id_type == CAN_STANDARD_IDENTIFIER ?
 		    "standard" : "extended"
 		    , msg->rtr == CAN_DATAFRAME ? "no" : "yes");
@@ -654,9 +653,9 @@ int can_stm32_send(const struct device *dev, const struct zcan_frame *msg,
 	mailbox->TIR &= CAN_TI0R_TXRQ;
 
 	if (msg->id_type == CAN_STANDARD_IDENTIFIER) {
-		mailbox->TIR |= (msg->std_id << CAN_TI0R_STID_Pos);
+		mailbox->TIR |= (msg->id << CAN_TI0R_STID_Pos);
 	} else {
-		mailbox->TIR |= (msg->ext_id << CAN_TI0R_EXID_Pos)
+		mailbox->TIR |= (msg->id << CAN_TI0R_EXID_Pos)
 				| CAN_TI0R_IDE;
 	}
 
@@ -836,31 +835,31 @@ static inline void can_stm32_set_mode_scale(enum can_filter_type filter_type,
 
 static inline uint32_t can_generate_std_mask(const struct zcan_filter *filter)
 {
-	return  (filter->std_id_mask << CAN_FIRX_STD_ID_POS) |
-		(filter->rtr_mask    << CAN_FIRX_STD_RTR_POS) |
-		(1U                  << CAN_FIRX_STD_IDE_POS);
+	return  (filter->id_mask  << CAN_FIRX_STD_ID_POS) |
+		(filter->rtr_mask << CAN_FIRX_STD_RTR_POS) |
+		(1U               << CAN_FIRX_STD_IDE_POS);
 }
 
 static inline uint32_t can_generate_ext_mask(const struct zcan_filter *filter)
 {
-	return  (filter->ext_id_mask << CAN_FIRX_EXT_EXT_ID_POS) |
-		(filter->rtr_mask    << CAN_FIRX_EXT_RTR_POS) |
-		(1U                  << CAN_FIRX_EXT_IDE_POS);
+	return  (filter->id_mask  << CAN_FIRX_EXT_EXT_ID_POS) |
+		(filter->rtr_mask << CAN_FIRX_EXT_RTR_POS) |
+		(1U               << CAN_FIRX_EXT_IDE_POS);
 }
 
 static inline uint32_t can_generate_std_id(const struct zcan_filter *filter)
 {
 
-	return  (filter->std_id << CAN_FIRX_STD_ID_POS) |
+	return  (filter->id << CAN_FIRX_STD_ID_POS) |
 		(filter->rtr    << CAN_FIRX_STD_RTR_POS);
 
 }
 
 static inline uint32_t can_generate_ext_id(const struct zcan_filter *filter)
 {
-	return  (filter->ext_id << CAN_FIRX_EXT_EXT_ID_POS) |
-		(filter->rtr    << CAN_FIRX_EXT_RTR_POS) |
-		(1U             << CAN_FIRX_EXT_IDE_POS);
+	return  (filter->id  << CAN_FIRX_EXT_EXT_ID_POS) |
+		(filter->rtr << CAN_FIRX_EXT_RTR_POS) |
+		(1U          << CAN_FIRX_EXT_IDE_POS);
 }
 
 static inline int can_stm32_set_filter(const struct zcan_filter *filter,
@@ -882,7 +881,7 @@ static inline int can_stm32_set_filter(const struct zcan_filter *filter,
 		id = can_generate_std_id(filter);
 		filter_type = CAN_FILTER_STANDARD;
 
-		if (filter->std_id_mask != CAN_STD_ID_MASK) {
+		if (filter->id_mask != CAN_STD_ID_MASK) {
 			mask = can_generate_std_mask(filter);
 			filter_type = CAN_FILTER_STANDARD_MASKED;
 		}
@@ -890,7 +889,7 @@ static inline int can_stm32_set_filter(const struct zcan_filter *filter,
 		id = can_generate_ext_id(filter);
 		filter_type = CAN_FILTER_EXTENDED;
 
-		if (filter->ext_id_mask != CAN_EXT_ID_MASK) {
+		if (filter->id_mask != CAN_EXT_ID_MASK) {
 			mask = can_generate_ext_mask(filter);
 			filter_type = CAN_FILTER_EXTENDED_MASKED;
 		}
@@ -898,8 +897,8 @@ static inline int can_stm32_set_filter(const struct zcan_filter *filter,
 
 	register_demand = reg_demand[filter_type];
 
-	LOG_DBG("Setting filter ID: 0x%x, mask: 0x%x", filter->ext_id,
-		    filter->ext_id_mask);
+	LOG_DBG("Setting filter ID: 0x%x, mask: 0x%x", filter->id,
+		filter->id_mask);
 	LOG_DBG("Filter type: %s ID %s mask (%d)",
 		    (filter_type == CAN_FILTER_STANDARD ||
 		     filter_type == CAN_FILTER_STANDARD_MASKED) ?

@@ -202,16 +202,16 @@ static void mcp2515_convert_zcanframe_to_mcp2515frame(const struct zcan_frame
 	uint8_t data_idx = 0U;
 
 	if (source->id_type == CAN_STANDARD_IDENTIFIER) {
-		target[MCP2515_FRAME_OFFSET_SIDH] = source->std_id >> 3;
+		target[MCP2515_FRAME_OFFSET_SIDH] = source->id >> 3;
 		target[MCP2515_FRAME_OFFSET_SIDL] =
-			(source->std_id & 0x07) << 5;
+			(source->id & 0x07) << 5;
 	} else {
-		target[MCP2515_FRAME_OFFSET_SIDH] = source->ext_id >> 21;
+		target[MCP2515_FRAME_OFFSET_SIDH] = source->id >> 21;
 		target[MCP2515_FRAME_OFFSET_SIDL] =
-			(((source->ext_id >> 18) & 0x07) << 5) | (BIT(3)) |
-			((source->ext_id >> 16) & 0x03);
-		target[MCP2515_FRAME_OFFSET_EID8] = source->ext_id >> 8;
-		target[MCP2515_FRAME_OFFSET_EID0] = source->ext_id;
+			(((source->id >> 18) & 0x07) << 5) | (BIT(3)) |
+			((source->id >> 16) & 0x03);
+		target[MCP2515_FRAME_OFFSET_EID8] = source->id >> 8;
+		target[MCP2515_FRAME_OFFSET_EID0] = source->id;
 	}
 
 	rtr = (source->rtr == CAN_REMOTEREQUEST) ? BIT(6) : 0;
@@ -232,7 +232,7 @@ static void mcp2515_convert_mcp2515frame_to_zcanframe(const uint8_t *source,
 
 	if (source[MCP2515_FRAME_OFFSET_SIDL] & BIT(3)) {
 		target->id_type = CAN_EXTENDED_IDENTIFIER;
-		target->ext_id =
+		target->id =
 			(source[MCP2515_FRAME_OFFSET_SIDH] << 21) |
 			((source[MCP2515_FRAME_OFFSET_SIDL] >> 5) << 18) |
 			((source[MCP2515_FRAME_OFFSET_SIDL] & 0x03) << 16) |
@@ -240,7 +240,7 @@ static void mcp2515_convert_mcp2515frame_to_zcanframe(const uint8_t *source,
 			source[MCP2515_FRAME_OFFSET_EID0];
 	} else {
 		target->id_type = CAN_STANDARD_IDENTIFIER;
-		target->std_id = (source[MCP2515_FRAME_OFFSET_SIDH] << 3) |
+		target->id = (source[MCP2515_FRAME_OFFSET_SIDH] << 3) |
 				 (source[MCP2515_FRAME_OFFSET_SIDL] >> 5);
 	}
 
@@ -556,14 +556,8 @@ static uint8_t mcp2515_filter_match(struct zcan_frame *msg,
 		return 0;
 	}
 
-	if (msg->id_type == CAN_STANDARD_IDENTIFIER) {
-		if ((msg->std_id ^ filter->std_id) & filter->std_id_mask) {
-			return 0;
-		}
-	} else {
-		if ((msg->ext_id ^ filter->ext_id) & filter->ext_id_mask) {
-			return 0;
-		}
+	if ((msg->id ^ filter->id) & filter->id_mask) {
+		return 0;
 	}
 
 	return 1;

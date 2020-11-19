@@ -395,10 +395,10 @@ static void canbus_set_frame_addr(struct zcan_frame *frame,
 	frame->id_type = CAN_EXTENDED_IDENTIFIER;
 	frame->rtr = CAN_DATAFRAME;
 
-	frame->ext_id = canbus_addr_to_id(dest->addr, src->addr);
+	frame->id = canbus_addr_to_id(dest->addr, src->addr);
 
 	if (mcast) {
-		frame->ext_id |= CAN_NET_IF_ADDR_MCAST_MASK;
+		frame->id |= CAN_NET_IF_ADDR_MCAST_MASK;
 	}
 }
 
@@ -447,7 +447,7 @@ static int canbus_send_fc(const struct device *net_can_dev,
 	frame.data[2] = NET_CAN_STMIN;
 	canbus_set_frame_datalength(&frame, 3);
 
-	NET_DBG("Sending FC to ID: 0x%08x", frame.ext_id);
+	NET_DBG("Sending FC to ID: 0x%08x", frame.id);
 	return api->send(net_can_dev, &frame, canbus_fc_send_cb, NULL,
 			 K_FOREVER);
 }
@@ -885,11 +885,11 @@ static inline int canbus_send_ff(struct net_pkt *pkt, size_t len, bool mcast,
 	if (mcast) {
 		NET_DBG("Sending FF (multicast). ID: 0x%08x. PKT len: %zu"
 			" CTX: %p",
-			frame.ext_id, len, pkt->canbus_tx_ctx);
+			frame.id, len, pkt->canbus_tx_ctx);
 	} else {
 		NET_DBG("Sending FF (unicast). ID: 0x%08x. PKT len: %zu"
 			" CTX: %p",
-			frame.ext_id, len, pkt->canbus_tx_ctx);
+			frame.id, len, pkt->canbus_tx_ctx);
 	}
 
 #if defined(CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR)
@@ -1506,7 +1506,7 @@ static inline int canbus_send_dad_request(const struct device *net_can_dev,
 	canbus_set_frame_datalength(&frame, 0);
 	frame.rtr = CAN_REMOTEREQUEST;
 	frame.id_type = CAN_EXTENDED_IDENTIFIER;
-	frame.ext_id = canbus_addr_to_id(ll_addr->addr,
+	frame.id = canbus_addr_to_id(ll_addr->addr,
 					 sys_rand32_get() & CAN_NET_IF_ADDR_MASK);
 
 	ret = api->send(net_can_dev, &frame, NULL, NULL, K_FOREVER);
@@ -1550,7 +1550,7 @@ static inline void canbus_send_dad_response(struct k_work *item)
 	canbus_set_frame_datalength(&frame, 0);
 	frame.rtr = CAN_DATAFRAME;
 	frame.id_type = CAN_EXTENDED_IDENTIFIER;
-	frame.ext_id = canbus_addr_to_id(NET_CAN_DAD_ADDR,
+	frame.id = canbus_addr_to_id(NET_CAN_DAD_ADDR,
 					 ntohs(UNALIGNED_GET((uint16_t *) ll_addr->addr)));
 
 	ret = api->send(net_can_dev, &frame, canbus_send_dad_resp_cb, item,
@@ -1587,11 +1587,11 @@ int canbus_attach_dad_resp_filter(const struct device *net_can_dev,
 		.id_type = CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.rtr_mask = 1,
-		.ext_id_mask = CAN_EXT_ID_MASK
+		.id_mask = CAN_EXT_ID_MASK
 	};
 	int filter_id;
 
-	filter.ext_id = canbus_addr_to_id(NET_CAN_DAD_ADDR, ll_addr->addr);
+	filter.id = canbus_addr_to_id(NET_CAN_DAD_ADDR, ll_addr->addr);
 
 	filter_id = api->attach_filter(net_can_dev, canbus_dad_resp_cb,
 				       dad_sem, &filter);
@@ -1618,11 +1618,11 @@ static inline int canbus_attach_dad_filter(const struct device *net_can_dev,
 		.id_type = CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_REMOTEREQUEST,
 		.rtr_mask = 1,
-		.ext_id_mask = (CAN_NET_IF_ADDR_MASK << CAN_NET_IF_ADDR_DEST_POS)
+		.id_mask = (CAN_NET_IF_ADDR_MASK << CAN_NET_IF_ADDR_DEST_POS)
 	};
 	int filter_id;
 
-	filter.ext_id = canbus_addr_to_id(ll_addr->addr, 0);
+	filter.id = canbus_addr_to_id(ll_addr->addr, 0);
 
 	filter_id = api->attach_filter(net_can_dev, canbus_dad_request_cb,
 				       dad_work, &filter);

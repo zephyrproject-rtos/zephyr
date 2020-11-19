@@ -33,9 +33,7 @@ static void dispatch_frame(const struct zcan_frame *frame,
 	struct zcan_frame frame_tmp = *frame;
 
 	LOG_DBG("Receiving %d bytes. Id: 0x%x, ID type: %s %s",
-		frame->dlc,
-		frame->id_type == CAN_STANDARD_IDENTIFIER ?
-				  frame->std_id : frame->ext_id,
+		frame->dlc, frame->id,
 		frame->id_type == CAN_STANDARD_IDENTIFIER ?
 				  "standard" : "extended",
 		frame->rtr == CAN_DATAFRAME ? "" : ", RTR frame");
@@ -46,16 +44,8 @@ static void dispatch_frame(const struct zcan_frame *frame,
 static inline int check_filter_match(const struct zcan_frame *frame,
 				     const struct zcan_filter *filter)
 {
-	uint32_t id, mask, frame_id;
-
-	frame_id = frame->id_type == CAN_STANDARD_IDENTIFIER ?
-			frame->std_id : frame->ext_id;
-	id = filter->id_type == CAN_STANDARD_IDENTIFIER ?
-			filter->std_id : filter->ext_id;
-	mask = filter->id_type == CAN_STANDARD_IDENTIFIER ?
-			filter->std_id_mask : filter->ext_id_mask;
-
-	return ((id & mask) == (frame_id & mask));
+	return ((filter->id & filter->id_mask) ==
+		(frame->id & filter->id_mask));
 }
 
 void tx_thread(void *data_arg, void *arg2, void *arg3)
@@ -99,9 +89,7 @@ int can_loopback_send(const struct device *dev,
 	struct k_sem tx_sem;
 
 	LOG_DBG("Sending %d bytes on %s. Id: 0x%x, ID type: %s %s",
-		frame->dlc, dev->name,
-		frame->id_type == CAN_STANDARD_IDENTIFIER ?
-				  frame->std_id : frame->ext_id,
+		frame->dlc, dev->name, frame->id,
 		frame->id_type == CAN_STANDARD_IDENTIFIER ?
 				  "standard" : "extended",
 		frame->rtr == CAN_DATAFRAME ? "" : ", RTR frame");
@@ -153,14 +141,14 @@ int can_loopback_attach_isr(const struct device *dev, can_rx_callback_t isr,
 	struct can_loopback_filter *loopback_filter;
 	int filter_id;
 
-	LOG_DBG("Setting filter ID: 0x%x, mask: 0x%x", filter->ext_id,
-		    filter->ext_id_mask);
+	LOG_DBG("Setting filter ID: 0x%x, mask: 0x%x", filter->id,
+		    filter->id_mask);
 	LOG_DBG("Filter type: %s ID %s mask",
-		    filter->id_type == CAN_STANDARD_IDENTIFIER ?
-			"standard" : "extended",
-		     ((filter->id_type && (filter->std_id_mask == CAN_STD_ID_MASK)) ||
-		     (!filter->id_type && (filter->ext_id_mask == CAN_EXT_ID_MASK))) ?
-			"with" : "without");
+		filter->id_type == CAN_STANDARD_IDENTIFIER ?
+				   "standard" : "extended",
+		((filter->id_type && (filter->id_mask == CAN_STD_ID_MASK)) ||
+		(!filter->id_type && (filter->id_mask == CAN_EXT_ID_MASK))) ?
+		"with" : "without");
 
 	k_mutex_lock(&data->mtx, K_FOREVER);
 	filter_id = get_free_filter(data->filters);

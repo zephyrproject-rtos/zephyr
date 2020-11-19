@@ -177,10 +177,10 @@ static void mcux_flexcan_copy_zframe_to_frame(const struct zcan_frame *src,
 {
 	if (src->id_type == CAN_STANDARD_IDENTIFIER) {
 		dest->format = kFLEXCAN_FrameFormatStandard;
-		dest->id = FLEXCAN_ID_STD(src->std_id);
+		dest->id = FLEXCAN_ID_STD(src->id);
 	} else {
 		dest->format = kFLEXCAN_FrameFormatExtend;
-		dest->id = FLEXCAN_ID_EXT(src->ext_id);
+		dest->id = FLEXCAN_ID_EXT(src->id);
 	}
 
 	if (src->rtr == CAN_DATAFRAME) {
@@ -199,10 +199,10 @@ static void mcux_flexcan_copy_frame_to_zframe(const flexcan_frame_t *src,
 {
 	if (src->format == kFLEXCAN_FrameFormatStandard) {
 		dest->id_type = CAN_STANDARD_IDENTIFIER;
-		dest->std_id = FLEXCAN_ID_TO_ZCAN_ID_STD(src->id);
+		dest->id = FLEXCAN_ID_TO_ZCAN_ID_STD(src->id);
 	} else {
 		dest->id_type = CAN_EXTENDED_IDENTIFIER;
-		dest->ext_id = FLEXCAN_ID_TO_ZCAN_ID_EXT(src->id);
+		dest->id = FLEXCAN_ID_TO_ZCAN_ID_EXT(src->id);
 	}
 
 	if (src->type == kFLEXCAN_FrameTypeData) {
@@ -225,13 +225,13 @@ static void mcux_flexcan_copy_zfilter_to_mbconfig(const struct zcan_filter *src,
 {
 	if (src->id_type == CAN_STANDARD_IDENTIFIER) {
 		dest->format = kFLEXCAN_FrameFormatStandard;
-		dest->id = FLEXCAN_ID_STD(src->std_id);
-		*mask = FLEXCAN_RX_MB_STD_MASK(src->std_id_mask,
+		dest->id = FLEXCAN_ID_STD(src->id);
+		*mask = FLEXCAN_RX_MB_STD_MASK(src->id_mask,
 					       src->rtr & src->rtr_mask, 1);
 	} else {
 		dest->format = kFLEXCAN_FrameFormatExtend;
-		dest->id = FLEXCAN_ID_EXT(src->ext_id);
-		*mask = FLEXCAN_RX_MB_EXT_MASK(src->ext_id_mask,
+		dest->id = FLEXCAN_ID_EXT(src->id);
+		*mask = FLEXCAN_RX_MB_EXT_MASK(src->id_mask,
 					       src->rtr & src->rtr_mask, 1);
 	}
 
