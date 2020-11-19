@@ -17,9 +17,20 @@
 extern "C" {
 #endif
 
+struct msix_vector {
+	uint32_t msg_addr;
+	uint32_t msg_up_addr;
+	uint32_t msg_data;
+	uint32_t vector_ctrl;
+};
+
 struct msi_vector {
 	pcie_bdf_t bdf;
 	arch_msi_vector_t arch;
+#ifdef CONFIG_PCIE_MSI_X
+	struct msix_vector *msix_vector;
+	bool msix;
+#endif /* CONFIG_PCIE_MSI_X */
 };
 
 typedef struct msi_vector msi_vector_t;
@@ -126,6 +137,28 @@ extern bool pcie_msi_enable(pcie_bdf_t bdf,
 #define PCIE_MSI_MAP1_64	2U
 #define PCIE_MSI_MDR_32		2U
 #define PCIE_MSI_MDR_64		3U
+
+/*
+ * As for MSI, he first word of the MSI-X capability is shared
+ * with the capability ID and list link.  The high 16 bits are the MCR.
+ */
+
+#define PCIE_MSIX_MCR			0U
+
+#define PCIE_MSIX_MCR_EN		0x80000000U /* Enable MSI-X */
+#define PCIE_MSIX_MCR_FMASK		0x40000000U /* Function Mask */
+#define PCIE_MSIX_MCR_TSIZE		0x07FF0000U /* Table size mask */
+#define PCIE_MSIX_MCR_TSIZE_SHIFT	16
+#define PCIE_MSIR_TABLE_ENTRY_SIZE	16
+
+#define PCIE_MSIX_TR			1U
+#define PCIE_MSIX_TR_BIR		0x00000007U /* BIR mask */
+#define PCIE_MSIX_TR_OFFSET		0xFFFFFFF8U /* Offset mask */
+
+#define PCIE_VTBL_MA			0U /* Msg Address offset */
+#define PCIE_VTBL_MUA			4U /* Msg Upper Address offset */
+#define PCIE_VTBL_MD			8U /* Msg Data offset */
+#define PCIE_VTBL_VCTRL			12U /* Vector control offset */
 
 #ifdef __cplusplus
 }
