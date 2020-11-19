@@ -124,3 +124,5 @@ void bt_keys_link_key_store(struct bt_keys_link_key *link_key);
 /* BT_KEYS_SAVE_AGING_COUNTER_ON_PAIRING is enabled */
 void bt_keys_update_usage(uint8_t id, const bt_addr_le_t *addr);
 void bt_keys_link_key_update_usage(const bt_addr_t *addr);
+
+void bt_keys_show_sniffer_info(struct bt_keys *keys, void *data);

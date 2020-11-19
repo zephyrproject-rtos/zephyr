@@ -754,6 +754,17 @@ config BT_DEBUG_SERVICE
 
 endif # BT_DEBUG
 
+config BT_LOG_SNIFFER_INFO
+	bool "Bluetooth log information for sniffer"
+	help
+	  This option enables the Bluetooth stack to log information such as
+	  DH private key and LTK keys, which can be used by sniffers to decrypt
+	  the connection without the use of Debug keys.
+
+	  WARNING: This option prints out private security keys such as
+	  the Long Term Key.
+	  Use of this feature in production is strongly discouraged
+
 config BT_TESTING
 	bool "Bluetooth Testing"
 	help

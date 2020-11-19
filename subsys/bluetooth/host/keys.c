@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <sys/atomic.h>
 #include <sys/util.h>
+#include <sys/byteorder.h>
 
 #include <settings/settings.h>
 
@@ -435,3 +436,27 @@ void bt_keys_update_usage(uint8_t id, const bt_addr_le_t *addr)
 }
 
 #endif  /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
+
+#if defined(CONFIG_BT_LOG_SNIFFER_INFO)
+void bt_keys_show_sniffer_info(struct bt_keys *keys, void *data)
+{
+	uint8_t ltk[16];
+
+	if (keys->keys & BT_KEYS_LTK_P256) {
+		sys_memcpy_swap(ltk, keys->ltk.val, keys->enc_size);
+		BT_INFO("SC LTK: 0x%s", bt_hex(ltk, keys->enc_size));
+	}
+
+	if (keys->keys & BT_KEYS_SLAVE_LTK) {
+		sys_memcpy_swap(ltk, keys->slave_ltk.val, keys->enc_size);
+		BT_INFO("Legacy LTK: 0x%s (peripheral)",
+			bt_hex(ltk, keys->enc_size));
+	}
+
+	if (keys->keys & BT_KEYS_LTK) {
+		sys_memcpy_swap(ltk, keys->ltk.val, keys->enc_size);
+		BT_INFO("Legacy LTK: 0x%s (central)",
+			bt_hex(ltk, keys->enc_size));
+	}
+}
+#endif /* defined(CONFIG_BT_LOG_SNIFFER_INFO) */
