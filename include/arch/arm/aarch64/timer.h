@@ -21,6 +21,7 @@ extern "C" {
 #define ARM_ARCH_TIMER_FLAGS	ARM_TIMER_VIRTUAL_FLAGS
 
 #define CNTV_CTL_ENABLE		((1) << 0)
+#define CNTV_CTL_IMASK			((1) << 1)
 
 
 static ALWAYS_INLINE void arm_arch_timer_set_compare(uint64_t val)
@@ -36,10 +37,28 @@ static ALWAYS_INLINE void arm_arch_timer_enable(unsigned char enable)
 	__asm__ volatile("mrs %0, cntv_ctl_el0\n\t"
 			 : "=r" (cntv_ctl) :  : "memory");
 
-	if (enable)
+	if (enable) {
 		cntv_ctl |= CNTV_CTL_ENABLE;
-	else
+	} else {
 		cntv_ctl &= ~CNTV_CTL_ENABLE;
+	}
+
+	__asm__ volatile("msr cntv_ctl_el0, %0\n\t"
+			 : : "r" (cntv_ctl) : "memory");
+}
+
+static ALWAYS_INLINE void arm_arch_timer_set_irq_mask(bool mask)
+{
+	uint32_t cntv_ctl;
+
+	__asm__ volatile("mrs %0, cntv_ctl_el0\n\t"
+			 : "=r" (cntv_ctl) :  : "memory");
+
+	if (mask) {
+		cntv_ctl |= CNTV_CTL_IMASK;
+	} else {
+		cntv_ctl &= ~CNTV_CTL_IMASK;
+	}
 
 	__asm__ volatile("msr cntv_ctl_el0, %0\n\t"
 			 : : "r" (cntv_ctl) : "memory");
