@@ -102,7 +102,7 @@ MODEM_CMD_DEFINE(gsm_cmd_error)
 	return 0;
 }
 
-static struct modem_cmd response_cmds[] = {
+static const struct modem_cmd response_cmds[] = {
 	MODEM_CMD("OK", gsm_cmd_ok, 0U, ""),
 	MODEM_CMD("ERROR", gsm_cmd_error, 0U, ""),
 	MODEM_CMD("CONNECT", gsm_cmd_ok, 0U, ""),
@@ -230,7 +230,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_iccid)
 #endif /* CONFIG_MODEM_SIM_NUMBERS */
 #endif /* CONFIG_MODEM_SHELL */
 
-static struct setup_cmd setup_cmds[] = {
+static const struct setup_cmd setup_cmds[] = {
 	/* no echo */
 	SETUP_CMD_NOHANDLE("ATE0"),
 	/* hang up */
@@ -273,10 +273,10 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_attached)
 	return 0;
 }
 
-static struct modem_cmd check_attached_cmd =
+static const struct modem_cmd check_attached_cmd =
 	MODEM_CMD("+CGATT:", on_cmd_atcmdinfo_attached, 1U, ",");
 
-static struct setup_cmd connect_cmds[] = {
+static const struct setup_cmd connect_cmds[] = {
 	/* connect to network */
 	SETUP_CMD_NOHANDLE("ATD*99#"),
 };
