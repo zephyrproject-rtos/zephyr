@@ -10,6 +10,10 @@ config BOARD
 
 if TRUSTED_EXECUTION_NONSECURE
 
+# nucleo_l552ze_q is supported in TF-M
+config TFM_BOARD_NUCLEO_L552ZE_Q
+	default y
+
 # Get flash configuration for NS image from dts flash partition
 config USE_DT_CODE_PARTITION
 	default y

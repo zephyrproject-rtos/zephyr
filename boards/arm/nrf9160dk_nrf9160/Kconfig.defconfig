@@ -33,6 +33,10 @@ config FLASH_LOAD_OFFSET
 config FLASH_LOAD_SIZE
 	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
 
+# nrf9160dk_nrf9160 is supported in TF-M
+config TFM_BOARD_NRF9160DK_NRF9160
+	default y
+
 endif # BOARD_NRF9160DK_NRF9160NS
 
 endif # BOARD_NRF9160DK_NRF9160 || BOARD_NRF9160DK_NRF9160NS

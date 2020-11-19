@@ -39,4 +39,8 @@ config IPM_MHU
 
 endif # IPM
 
+# mps2_an521 is supported in TF-M
+config TFM_BOARD_MPS2_AN521
+	default y if TRUSTED_EXECUTION_NONSECURE
+
 endif

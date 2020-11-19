@@ -37,4 +37,8 @@ config IPM_MHU
 
 endif # IPM
 
+# musca_b1 is supported in TF-M
+config TFM_BOARD_MUSCA_B1
+	default y if TRUSTED_EXECUTION_NONSECURE
+
 endif
