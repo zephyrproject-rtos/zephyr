@@ -190,8 +190,7 @@ static void print_frame(struct zcan_frame *frame, void *arg)
 	const struct shell *shell = (const struct shell *)arg;
 
 	shell_fprintf(shell, SHELL_NORMAL, "|0x%-8x|%s|%s|%d|",
-		      frame->id_type == CAN_STANDARD_IDENTIFIER ?
-				frame->std_id : frame->ext_id,
+		      frame->id,
 		      frame->id_type == CAN_STANDARD_IDENTIFIER ? "std" : "ext",
 		      frame->rtr ? "RTR" : "   ", frame->dlc);
 
@@ -293,7 +292,7 @@ static int cmd_send(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	frame.ext_id = id;
+	frame.id = id;
 
 	pos = read_data(shell, pos, argv, argc, frame.data, &frame.dlc);
 	if (pos < 0) {
@@ -301,8 +300,7 @@ static int cmd_send(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	shell_print(shell, "Send frame with ID 0x%x (%s id) and %d data bytes",
-		    ext ? frame.ext_id : frame.std_id,
-		    ext ? "extended" : "standard", frame.dlc);
+		    frame.id, ext ? "extended" : "standard", frame.dlc);
 
 	ret = can_send(can_dev, &frame, K_FOREVER, NULL, NULL);
 	if (ret) {
@@ -344,16 +342,16 @@ static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	filter.ext_id = id;
+	filter.id = id;
 
 	if (pos != argc) {
 		pos = read_mask(shell, pos, argv, ext, &mask);
 		if (pos < 0) {
 			return -EINVAL;
 		}
-		filter.ext_id_mask = mask;
+		filter.id_mask = mask;
 	} else {
-		filter.ext_id_mask = ext ? CAN_EXT_ID_MASK : CAN_STD_ID_MASK;
+		filter.id_mask = ext ? CAN_EXT_ID_MASK : CAN_STD_ID_MASK;
 	}
 
 	if (pos != argc) {
@@ -367,9 +365,7 @@ static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
 
 	shell_print(shell, "Attach filter with ID 0x%x (%s id) and mask 0x%x "
 			   " RTR: %d",
-		    ext ? filter.ext_id : filter.std_id,
-		    ext ? "extended" : "standard",
-		    ext ? filter.ext_id_mask : filter.std_id_mask,
+		    filter.id, ext ? "extended" : "standard", filter.id_mask,
 		    filter.rtr_mask);
 
 	ret = can_attach_workq(can_dev, &k_sys_work_q, &work, print_frame,

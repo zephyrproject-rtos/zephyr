@@ -30,7 +30,7 @@ static void test_can_frame_to_zcan_frame(void)
 
 	expected.rtr = 1U;
 	expected.id_type = 1U;
-	expected.std_id = 1234U;
+	expected.id = 1234U;
 	expected.dlc = sizeof(data);
 
 	can_copy_frame_to_zframe(&frame, &msg);
@@ -41,7 +41,7 @@ static void test_can_frame_to_zcan_frame(void)
 
 	zassert_equal(msg.rtr, expected.rtr, "RTR bit not set");
 	zassert_equal(msg.id_type, expected.id_type, "Id-type bit not set");
-	zassert_equal(msg.std_id, expected.std_id, "Std CAN id invalid");
+	zassert_equal(msg.id, expected.id, "Std CAN id invalid");
 	zassert_equal(msg.dlc, expected.dlc, "Msg length invalid");
 }
 
@@ -59,7 +59,7 @@ static void test_zcan_frame_to_can_frame(void)
 
 	msg.rtr = 1U;
 	msg.id_type = 1U;
-	msg.std_id = 1234U;
+	msg.id = 1234U;
 	msg.dlc = sizeof(data);
 	memcpy(msg.data, data, sizeof(data));
 
@@ -90,7 +90,7 @@ static void test_invalid_zcan_frame_to_can_frame(void)
 	memcpy(expected.data, data, sizeof(expected.data));
 
 	msg.id_type = CAN_STANDARD_IDENTIFIER;
-	msg.ext_id = 0x12345678U;
+	msg.id = 0x12345678U;
 	msg.dlc = sizeof(data);
 	memcpy(msg.data, data, sizeof(data));
 
@@ -120,9 +120,9 @@ static void test_can_filter_to_zcan_filter(void)
 
 	expected.rtr = 1U;
 	expected.id_type = 1U;
-	expected.std_id = 1234U;
+	expected.id = 1234U;
 	expected.rtr_mask = 1U;
-	expected.std_id_mask = 1234U;
+	expected.id_mask = 1234U;
 
 	can_copy_filter_to_zfilter(&filter, &msg_filter);
 
@@ -134,11 +134,11 @@ static void test_can_filter_to_zcan_filter(void)
 	zassert_equal(msg_filter.rtr, expected.rtr, "RTR bit not set");
 	zassert_equal(msg_filter.id_type, expected.id_type,
 		      "Id-type bit not set");
-	zassert_equal(msg_filter.std_id, expected.std_id,
+	zassert_equal(msg_filter.id, expected.id,
 		      "Std CAN id invalid");
 	zassert_equal(msg_filter.rtr_mask, expected.rtr_mask,
 		      "RTR mask bit not set");
-	zassert_equal(msg_filter.std_id_mask, expected.std_id_mask,
+	zassert_equal(msg_filter.id_mask, expected.id_mask,
 		      "Std id mask not set");
 }
 
@@ -153,9 +153,9 @@ static void test_zcan_filter_to_can_filter(void)
 
 	msg_filter.rtr = 1U;
 	msg_filter.id_type = 1U;
-	msg_filter.std_id = 1234U;
+	msg_filter.id = 1234U;
 	msg_filter.rtr_mask = 1U;
-	msg_filter.std_id_mask = 1234U;
+	msg_filter.id_mask = 1234U;
 
 	can_copy_zfilter_to_filter(&msg_filter, &filter);
 

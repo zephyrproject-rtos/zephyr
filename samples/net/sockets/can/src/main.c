@@ -32,9 +32,9 @@ static struct k_thread rx_data;
 static const struct zcan_filter zfilter = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
-	.std_id = 0x1,
+	.id = 0x1,
 	.rtr_mask = 1,
-	.std_id_mask = CAN_STD_ID_MASK
+	.id_mask = CAN_STD_ID_MASK
 };
 
 static struct can_filter filter;
@@ -48,7 +48,7 @@ static void tx(int *can_fd)
 
 	msg.dlc = 8U;
 	msg.id_type = CAN_STANDARD_IDENTIFIER;
-	msg.std_id = 0x1;
+	msg.id = 0x1;
 	msg.rtr = CAN_DATAFRAME;
 
 	for (i = 0; i < msg.dlc; i++) {
@@ -127,7 +127,7 @@ static void rx(int *can_fd, int *do_close_period,
 		can_copy_frame_to_zframe(&frame, &msg);
 
 		LOG_INF("[%d] CAN msg: type 0x%x RTR 0x%x EID 0x%x DLC 0x%x",
-			fd, msg.id_type, msg.rtr, msg.std_id, msg.dlc);
+			fd, msg.id_type, msg.rtr, msg.id, msg.dlc);
 
 		if (!msg.rtr) {
 			if (msg.dlc > 8) {

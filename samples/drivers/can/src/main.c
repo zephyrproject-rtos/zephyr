@@ -55,9 +55,9 @@ void rx_thread(void *arg1, void *arg2, void *arg3)
 	const struct zcan_filter filter = {
 		.id_type = CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
-		.ext_id = COUNTER_MSG_ID,
+		.id = COUNTER_MSG_ID,
 		.rtr_mask = 1,
-		.ext_id_mask = CAN_EXT_ID_MASK
+		.id_mask = CAN_EXT_ID_MASK
 	};
 	struct zcan_frame msg;
 	int filter_id;
@@ -177,20 +177,20 @@ void main(void)
 	const struct zcan_filter change_led_filter = {
 		.id_type = CAN_STANDARD_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
-		.std_id = LED_MSG_ID,
+		.id = LED_MSG_ID,
 		.rtr_mask = 1,
-		.std_id_mask = CAN_STD_ID_MASK
+		.id_mask = CAN_STD_ID_MASK
 	};
 	struct zcan_frame change_led_frame = {
 		.id_type = CAN_STANDARD_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
-		.std_id = LED_MSG_ID,
+		.id = LED_MSG_ID,
 		.dlc = 1
 	};
 	struct zcan_frame counter_frame = {
 		.id_type = CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
-		.ext_id = COUNTER_MSG_ID,
+		.id = COUNTER_MSG_ID,
 		.dlc = 2
 	};
 	uint8_t toggle = 1;

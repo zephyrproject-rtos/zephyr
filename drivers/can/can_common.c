@@ -6,12 +6,12 @@
 
 #include <drivers/can.h>
 #include <kernel.h>
+#include <sys/util.h>
 
 #define LOG_LEVEL CONFIG_CAN_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(can_driver);
 
-#define CAN_CLAMP(val, min, max) MIN(MAX(val, min), max)
 #define CAN_SYNC_SEG 1
 
 #define WORK_BUF_COUNT_IS_POWER_OF_2 !(CONFIG_CAN_WORKQ_FRAMES_BUF_CNT & \
@@ -36,9 +36,7 @@ static void can_msgq_put(struct zcan_frame *frame, void *arg)
 
 	ret = k_msgq_put(msgq, frame, K_NO_WAIT);
 	if (ret) {
-		LOG_ERR("Msgq %p overflowed. Frame ID: 0x%x", arg,
-			frame->id_type == CAN_STANDARD_IDENTIFIER ?
-				frame->std_id : frame->ext_id);
+		LOG_ERR("Msgq %p overflowed. Frame ID: 0x%x", arg, frame->id);
 	}
 }
 
@@ -122,9 +120,7 @@ static void can_work_isr_put(struct zcan_frame *frame, void *arg)
 
 	ret = can_work_buffer_put(frame, &work->buf);
 	if (ret) {
-		LOG_ERR("Workq buffer overflow. Msg ID: 0x%x",
-			frame->id_type == CAN_STANDARD_IDENTIFIER ?
-				frame->std_id : frame->ext_id);
+		LOG_ERR("Workq buffer overflow. Msg ID: 0x%x", frame->id);
 		return;
 	}
 
@@ -175,7 +171,7 @@ static int update_sampling_pnt(uint32_t ts, uint32_t sp, struct can_timing *res,
 		}
 	}
 
-	res->prop_seg = CAN_CLAMP(ts1 / 2, min->prop_seg, max->prop_seg);
+	res->prop_seg = CLAMP(ts1 / 2, min->prop_seg, max->prop_seg);
 	res->phase_seg1 = ts1 - res->prop_seg;
 	res->phase_seg2 = ts2;
 

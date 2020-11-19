@@ -221,7 +221,7 @@ static void send_frame_series(struct frame_desired *frames, size_t length,
 	struct zcan_frame frame = {
 		.id_type = CAN_STANDARD_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
-		.std_id = id
+		.id = id
 	};
 	struct frame_desired *desired = frames;
 
@@ -263,9 +263,9 @@ static int attach_msgq(uint32_t id)
 	struct zcan_filter filter = {
 		.id_type = CAN_STANDARD_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
-		.std_id = id,
+		.id = id,
 		.rtr_mask = 1,
-		.std_id_mask = CAN_STD_ID_MASK
+		.id_mask = CAN_STD_ID_MASK
 	};
 
 	filter_id = can_attach_msgq(can_dev, &frame_msgq, &filter);
