@@ -41,7 +41,7 @@ To gather timing information:
 7. Repeat from step 3 to gather timing information for other
    blocks of code.
 
-8. Call :c:func:'timing_stop` to signal the end of gathering of
+8. Call :c:func:`timing_stop` to signal the end of gathering of
    timing information. This usually stops the timer.
 
 Example
