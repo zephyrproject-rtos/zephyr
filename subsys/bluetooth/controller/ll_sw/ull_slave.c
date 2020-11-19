@@ -375,6 +375,9 @@ void ull_slave_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		return;
 	}
 
+#if defined(CONFIG_BT_CTLR_CONN_META)
+	conn->common.is_must_expire = (lazy == TICKER_LAZY_MUST_EXPIRE);
+#endif
 	/* If this is a must-expire callback, LLCP state machine does not need
 	 * to know. Will be called with lazy > 0 when scheduled in air.
 	 */

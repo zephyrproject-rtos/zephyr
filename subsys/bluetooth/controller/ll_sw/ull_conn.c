@@ -1084,7 +1084,14 @@ void ull_conn_done(struct node_rx_event_done *done)
 	}
 
 	/* Events elapsed used in timeout checks below */
+#if defined(CONFIG_BT_CTLR_CONN_META)
+	/* If event has shallow expiry do not add latency, but rely on
+	 * accumulated lazy count.
+	 */
+	latency_event = conn->common.is_must_expire ? 0 : lll->latency_event;
+#else
 	latency_event = lll->latency_event;
+#endif
 	elapsed_event = latency_event + 1;
 
 	/* Slave drift compensation calc and new latency or
