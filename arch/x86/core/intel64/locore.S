@@ -429,10 +429,20 @@ __resume:
 	iretq
 
 
-
-
+#ifdef CONFIG_X86_KPTI
+#define EXCEPT_CODE(nr, ist)						\
+	vector_ ## nr: pushq %gs:__x86_tss64_t_ist ## ist ## _OFFSET;	\
+	pushq $nr;							\
+	jmp except
+#define EXCEPT(nr, ist)							\
+	vector_ ## nr: pushq $0;					\
+	pushq %gs:__x86_tss64_t_ist ## ist ## _OFFSET;			\
+	pushq $nr; \
+	jmp except
+#else
 #define EXCEPT_CODE(nr) vector_ ## nr: pushq $nr; jmp except
 #define EXCEPT(nr)	vector_ ## nr: pushq $0; pushq $nr; jmp except
+#endif
 
 /*
  * When we arrive at 'except' from one of the EXCEPT(X) stubs,
@@ -445,6 +455,7 @@ __resume:
  *   CS
  *   RIP
  *   Error Code if pushed by CPU, else 0
+ *   IST index in TSS
  *   Vector number <- RSP points here
  *
  */
@@ -458,7 +469,7 @@ except: /*
 
 #ifdef CONFIG_USERSPACE
 	/* Swap GS register values and page tables if we came from user mode */
-	testb $0x3, 32(%rsp)
+	testb $0x3, 40(%rsp)
 	jz 1f
 	swapgs
 #ifdef CONFIG_X86_KPTI
@@ -475,16 +486,16 @@ except: /*
 	/* Save old trampoline stack pointer in R11 */
 	movq %rsp, %r11
 
-	/* Switch to the exception stack */
-	movq %gs:__x86_tss64_t_ist7_OFFSET, %rsp
+	/* Switch to the correct stack */
+	movq 16(%r11), %rsp
 
 	/* Transplant trampoline stack contents */
-	pushq 56(%r11)	/* SS */
-	pushq 48(%r11)	/* RSP */
-	pushq 40(%r11)	/* RFLAGS */
-	pushq 32(%r11)	/* CS */
-	pushq 24(%r11)	/* RIP */
-	pushq 16(%r11)	/* Error code */
+	pushq 64(%r11)	/* SS */
+	pushq 56(%r11)	/* RSP */
+	pushq 48(%r11)	/* RFLAGS */
+	pushq 40(%r11)	/* CS */
+	pushq 32(%r11)	/* RIP */
+	pushq 24(%r11)	/* Error code */
 	pushq 8(%r11)	/* Vector */
 	pushq (%r11)	/* Stashed R15 */
 	movq $0, (%r11) /* Cover our tracks */
@@ -562,6 +573,21 @@ except: /*
 
 	iretq
 
+#ifdef CONFIG_X86_KPTI
+EXCEPT      ( 0, 7); EXCEPT      ( 1, 7); EXCEPT       (2, 6); EXCEPT      ( 3, 7)
+EXCEPT      ( 4, 7); EXCEPT      ( 5, 7); EXCEPT       (6, 7); EXCEPT      ( 7, 7)
+EXCEPT_CODE ( 8, 7); EXCEPT      ( 9, 7); EXCEPT_CODE (10, 7); EXCEPT_CODE (11, 7)
+EXCEPT_CODE (12, 7); EXCEPT_CODE (13, 7); EXCEPT_CODE (14, 7); EXCEPT      (15, 7)
+EXCEPT      (16, 7); EXCEPT_CODE (17, 7); EXCEPT      (18, 7); EXCEPT      (19, 7)
+EXCEPT      (20, 7); EXCEPT      (21, 7); EXCEPT      (22, 7); EXCEPT      (23, 7)
+EXCEPT      (24, 7); EXCEPT      (25, 7); EXCEPT      (26, 7); EXCEPT      (27, 7)
+EXCEPT      (28, 7); EXCEPT      (29, 7); EXCEPT      (30, 7); EXCEPT      (31, 7)
+
+/* Vector reserved for handling a kernel oops; treat as an exception
+ * and not an interrupt
+ */
+EXCEPT(Z_X86_OOPS_VECTOR, 7);
+#else
 EXCEPT      ( 0); EXCEPT      ( 1); EXCEPT      ( 2); EXCEPT      ( 3)
 EXCEPT      ( 4); EXCEPT      ( 5); EXCEPT      ( 6); EXCEPT      ( 7)
 EXCEPT_CODE ( 8); EXCEPT      ( 9); EXCEPT_CODE (10); EXCEPT_CODE (11)
@@ -575,6 +601,7 @@ EXCEPT      (28); EXCEPT      (29); EXCEPT      (30); EXCEPT      (31)
  * and not an interrupt
  */
 EXCEPT(Z_X86_OOPS_VECTOR);
+#endif /* CONFIG_X86_KPTI */
 
 /*
  * When we arrive at 'irq' from one of the IRQ(X) stubs,
