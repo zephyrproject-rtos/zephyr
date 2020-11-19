@@ -265,6 +265,16 @@ static inline bool esp_flag_is_set(struct esp_data *dev,
 	return (dev->flags & flag) != 0;
 }
 
+static inline int esp_cmd_send(struct esp_data *data,
+			       const struct modem_cmd *handlers,
+			       size_t handlers_len, const char *buf,
+			       k_timeout_t timeout)
+{
+	return modem_cmd_send(&data->mctx.iface, &data->mctx.cmd_handler,
+			      handlers, handlers_len, buf, &data->sem_response,
+			      timeout);
+}
+
 #ifdef __cplusplus
 }
 #endif

@@ -80,9 +80,7 @@ void esp_socket_close(struct esp_socket *sock)
 
 	snprintk(cmd_buf, sizeof(cmd_buf), "AT+CIPCLOSE=%d",
 		 sock->link_id);
-	ret = modem_cmd_send(&dev->mctx.iface, &dev->mctx.cmd_handler,
-			     NULL, 0, cmd_buf, &dev->sem_response,
-			     ESP_CMD_TIMEOUT);
+	ret = esp_cmd_send(dev, NULL, 0, cmd_buf, ESP_CMD_TIMEOUT);
 	if (ret < 0) {
 		/* FIXME:
 		 * If link doesn't close correctly here, esp_get could
