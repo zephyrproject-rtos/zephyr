@@ -235,6 +235,17 @@ void z_arm64_do_kernel_oops(z_arch_esf_t *esf)
 	/* x8 holds the exception reason */
 	unsigned int reason = esf->x8;
 
+#if defined(CONFIG_USERSPACE)
+	/*
+	 * User mode is only allowed to induce oopses and stack check
+	 * failures via software-triggered system fatal exceptions.
+	 */
+	if (((_current->base.user_options & K_USER) != 0) &&
+		reason != K_ERR_STACK_CHK_FAIL) {
+		reason = K_ERR_KERNEL_OOPS;
+	}
+#endif
+
 	z_arm64_fatal_error(reason, esf);
 }
 
