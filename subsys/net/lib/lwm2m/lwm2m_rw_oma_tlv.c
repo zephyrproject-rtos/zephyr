@@ -946,7 +946,8 @@ int do_write_op_tlv(struct lwm2m_message *msg)
 	 * message processing - consecutive blocks will not carry the TLV
 	 * header.
 	 */
-	if (msg->path.obj_id == 5 && msg->path.res_id == 0) {
+	if (msg->in.block_ctx != NULL && msg->in.block_ctx->ctx.current > 0 &&
+	    msg->path.obj_id == 5 && msg->path.res_id == 0) {
 		ret = do_write_op_tlv_item(msg);
 		if (ret < 0) {
 			return ret;
