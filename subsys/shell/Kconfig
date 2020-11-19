@@ -125,7 +125,7 @@ config SHELL_HISTORY
 	select RING_BUFFER
 	help
 	  Enable commands history. History can be accessed using up and down
-	  arrows.
+	  arrows or Ctrl+n and Ctrl+p meta keys.
 
 config SHELL_HISTORY_BUFFER
 	int "History buffer in bytes"
