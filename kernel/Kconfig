@@ -165,7 +165,7 @@ config IDLE_STACK_SIZE
 	default 1024 if XTENSA
 	default 512 if RISCV
 	default 384 if DYNAMIC_OBJECTS
-	default 320 if ARC || (ARM && CPU_HAS_FPU)
+	default 320 if ARC || (ARM && CPU_HAS_FPU) || (X86 && MMU)
 	default 256
 	help
 	  Depending on the work that the idle task must do, most likely due to
