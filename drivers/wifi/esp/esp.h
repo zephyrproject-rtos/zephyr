@@ -176,7 +176,9 @@ struct esp_socket {
 
 enum esp_data_flag {
 	EDF_STA_CONNECTING = BIT(1),
-	EDF_STA_CONNECTED  = BIT(2)
+	EDF_STA_CONNECTED  = BIT(2),
+	EDF_STA_LOCK       = BIT(3),
+	EDF_AP_ENABLED     = BIT(4),
 };
 
 /* driver data */
@@ -184,6 +186,7 @@ struct esp_data {
 	struct net_if *net_iface;
 
 	uint8_t flags;
+	uint8_t mode;
 
 	char conn_cmd[CONN_CMD_MAX_LEN];
 
@@ -214,6 +217,7 @@ struct esp_data {
 	struct k_delayed_work ip_addr_work;
 	struct k_work scan_work;
 	struct k_work connect_work;
+	struct k_work mode_switch_work;
 
 	scan_result_cb_t scan_cb;
 

@@ -68,14 +68,77 @@ K_KERNEL_STACK_DEFINE(esp_workq_stack,
 
 struct esp_data esp_driver_data;
 
+static inline uint8_t esp_mode_from_flags(struct esp_data *data)
+{
+	uint8_t flags = data->flags;
+	uint8_t mode = 0;
+
+	if (flags & (EDF_STA_CONNECTED | EDF_STA_LOCK)) {
+		mode |= ESP_MODE_STA;
+	}
+
+	if (flags & EDF_AP_ENABLED) {
+		mode |= ESP_MODE_AP;
+	}
+
+	return mode;
+}
+
 static int esp_mode_switch(struct esp_data *data, uint8_t mode)
 {
 	char cmd[] = "AT+"_CWMODE"=X";
+	int err;
 
 	cmd[sizeof(cmd) - 2] = ('0' + mode);
 	LOG_DBG("Switch to mode %hhu", mode);
 
-	return esp_cmd_send(data, NULL, 0, cmd, ESP_CMD_TIMEOUT);
+	err = esp_cmd_send(data, NULL, 0, cmd, ESP_CMD_TIMEOUT);
+	if (err) {
+		LOG_WRN("Failed to switch to mode %d: %d", (int) mode, err);
+	}
+
+	return err;
+}
+
+static int esp_mode_switch_if_needed(struct esp_data *data)
+{
+	uint8_t new_mode = esp_mode_from_flags(data);
+
+	if (data->mode != new_mode) {
+		data->mode = new_mode;
+		return esp_mode_switch(data, new_mode);
+	}
+
+	return 0;
+}
+
+static void esp_mode_switch_submit_if_needed(struct esp_data *data)
+{
+	if (data->mode != esp_mode_from_flags(data)) {
+		k_work_submit_to_queue(&data->workq, &data->mode_switch_work);
+	}
+}
+
+static void esp_mode_switch_work(struct k_work *work)
+{
+	struct esp_data *data =
+		CONTAINER_OF(work, struct esp_data, mode_switch_work);
+
+	(void)esp_mode_switch_if_needed(data);
+}
+
+static inline int esp_mode_flags_set(struct esp_data *data, uint8_t flags)
+{
+	esp_flags_set(data, flags);
+
+	return esp_mode_switch_if_needed(data);
+}
+
+static inline int esp_mode_flags_clear(struct esp_data *data, uint8_t flags)
+{
+	esp_flags_clear(data, flags);
+
+	return esp_mode_switch_if_needed(data);
 }
 
 /*
@@ -215,6 +278,8 @@ MODEM_CMD_DEFINE(on_cmd_wifi_disconnected)
 	}
 
 	esp_flags_clear(dev, EDF_STA_CONNECTED);
+	esp_mode_switch_submit_if_needed(dev);
+
 	net_if_ipv4_addr_rm(dev->net_iface, &dev->ip);
 	wifi_mgmt_raise_disconnect_result_event(dev->net_iface, 0);
 
@@ -514,12 +579,13 @@ MODEM_CMD_DEFINE(on_cmd_ready)
 	}
 
 	if (esp_flags_are_set(dev, EDF_STA_CONNECTING)) {
-		esp_flags_clear(dev, EDF_STA_CONNECTING);
 		wifi_mgmt_raise_connect_result_event(dev->net_iface, -1);
 	} else if (esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
-		esp_flags_clear(dev, EDF_STA_CONNECTED);
 		wifi_mgmt_raise_disconnect_result_event(dev->net_iface, 0);
 	}
+
+	dev->flags = 0;
+	dev->mode = 0;
 
 	net_if_ipv4_addr_rm(dev->net_iface, &dev->ip);
 	k_work_submit_to_queue(&dev->workq, &dev->init_work);
@@ -557,12 +623,18 @@ static void esp_mgmt_scan_work(struct k_work *work)
 
 	dev = CONTAINER_OF(work, struct esp_data, scan_work);
 
+	ret = esp_mode_flags_set(dev, EDF_STA_LOCK);
+	if (ret < 0) {
+		goto out;
+	}
 	ret = esp_cmd_send(dev, cmds, ARRAY_SIZE(cmds), "AT+CWLAP",
 			   ESP_SCAN_TIMEOUT);
+	esp_mode_flags_clear(dev, EDF_STA_LOCK);
 	if (ret < 0) {
 		LOG_ERR("Failed to scan: ret %d", ret);
 	}
 
+out:
 	dev->scan_cb(dev->net_iface, 0, NULL);
 	dev->scan_cb = NULL;
 }
@@ -607,6 +679,11 @@ static void esp_mgmt_connect_work(struct k_work *work)
 
 	dev = CONTAINER_OF(work, struct esp_data, connect_work);
 
+	ret = esp_mode_flags_set(dev, EDF_STA_LOCK);
+	if (ret < 0) {
+		goto out;
+	}
+
 	ret = esp_cmd_send(dev, cmds, ARRAY_SIZE(cmds), dev->conn_cmd,
 			   ESP_CONNECT_TIMEOUT);
 
@@ -626,6 +703,9 @@ static void esp_mgmt_connect_work(struct k_work *work)
 		wifi_mgmt_raise_connect_result_event(dev->net_iface, 0);
 	}
 
+	esp_mode_flags_clear(dev, EDF_STA_LOCK);
+
+out:
 	esp_flags_clear(dev, EDF_STA_CONNECTING);
 }
 
@@ -683,7 +763,7 @@ static int esp_mgmt_ap_enable(const struct device *dev,
 	struct esp_data *data = dev->data;
 	int ecn = 0, len, ret;
 
-	ret = esp_mode_switch(data, ESP_MODE_STA_AP);
+	ret = esp_mode_flags_set(data, EDF_AP_ENABLED);
 	if (ret < 0) {
 		LOG_ERR("Failed to enable AP mode, ret %d", ret);
 		return ret;
@@ -713,11 +793,8 @@ static int esp_mgmt_ap_enable(const struct device *dev,
 static int esp_mgmt_ap_disable(const struct device *dev)
 {
 	struct esp_data *data = dev->data;
-	int ret;
 
-	ret = esp_mode_switch(data, ESP_MODE_STA);
-
-	return ret;
+	return esp_mode_flags_clear(data, EDF_AP_ENABLED);
 }
 
 static void esp_configure_hostname(struct esp_data *data)
@@ -748,7 +825,6 @@ static void esp_init_work(struct k_work *work)
 	static const struct setup_cmd setup_cmds_target_baudrate[] = {
 		SETUP_CMD_NOHANDLE("AT"),
 #endif
-		SETUP_CMD_NOHANDLE(ESP_CMD_CWMODE(STA)),
 #if defined(CONFIG_WIFI_ESP_IP_STATIC)
 		/* enable Static IP Config */
 		SETUP_CMD_NOHANDLE(ESP_CMD_DHCP_ENABLE(STATION, 0)),
@@ -764,8 +840,10 @@ static void esp_init_work(struct k_work *work)
 		/* only need ecn,ssid,rssi,channel */
 		SETUP_CMD_NOHANDLE("AT+CWLAPOPT=0,23"),
 #if defined(CONFIG_WIFI_ESP_AT_VERSION_2_0)
+		SETUP_CMD_NOHANDLE(ESP_CMD_CWMODE(STA)),
 		SETUP_CMD_NOHANDLE("AT+CWAUTOCONN=0"),
 #endif
+		SETUP_CMD_NOHANDLE(ESP_CMD_CWMODE(NONE)),
 #if defined(CONFIG_WIFI_ESP_PASSIVE_MODE)
 		SETUP_CMD_NOHANDLE("AT+CIPRECVMODE=1"),
 #endif
@@ -905,6 +983,7 @@ static int esp_init(const struct device *dev)
 	k_delayed_work_init(&data->ip_addr_work, esp_ip_addr_work);
 	k_work_init(&data->scan_work, esp_mgmt_scan_work);
 	k_work_init(&data->connect_work, esp_mgmt_connect_work);
+	k_work_init(&data->mode_switch_work, esp_mode_switch_work);
 
 	esp_socket_init(data);
 
