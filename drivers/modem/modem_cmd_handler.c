@@ -497,7 +497,7 @@ static int _modem_cmd_send(struct modem_iface *iface,
 	ret = modem_cmd_handler_update_cmds(data, handler_cmds,
 					    handler_cmds_len, true);
 	if (ret < 0) {
-		goto exit;
+		goto unlock_tx_lock;
 	}
 
 #if defined(CONFIG_MODEM_CONTEXT_VERBOSE_DEBUG)
@@ -531,9 +531,10 @@ static int _modem_cmd_send(struct modem_iface *iface,
 		}
 	}
 
-exit:
 	/* unset handlers and ignore any errors */
 	(void)modem_cmd_handler_update_cmds(data, NULL, 0U, false);
+
+unlock_tx_lock:
 	if (!no_tx_lock) {
 		k_sem_give(&data->sem_tx_lock);
 	}
