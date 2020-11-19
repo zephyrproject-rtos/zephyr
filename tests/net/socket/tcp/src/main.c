@@ -368,6 +368,67 @@ void test_v6_sendto_recvfrom_null_dest(void)
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
+void _test_recv_enotconn(int c_sock, int s_sock)
+{
+	char rx_buf[1] = {0};
+	int res;
+
+	test_listen(s_sock);
+
+	/* Check "client" socket, just created. */
+	res = recv(c_sock, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(res, -1, "recv() on not connected sock didn't fail");
+	zassert_equal(errno, ENOTCONN, "recv() on not connected sock didn't "
+				       "lead to ENOTCONN");
+
+	/* Check "server" socket, bound and listen()ed . */
+	res = recv(s_sock, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(res, -1, "recv() on not connected sock didn't fail");
+	zassert_equal(errno, ENOTCONN, "recv() on not connected sock didn't "
+				       "lead to ENOTCONN");
+
+	test_close(s_sock);
+	test_close(c_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+void test_v4_recv_enotconn(void)
+{
+	/* For a stream socket, recv() without connect() or accept()
+	 * should lead to ENOTCONN.
+	 */
+	int c_sock, s_sock;
+	struct sockaddr_in c_saddr, s_saddr;
+
+	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
+			    &c_sock, &c_saddr);
+	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, SERVER_PORT,
+			    &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+
+	_test_recv_enotconn(c_sock, s_sock);
+}
+
+void test_v6_recv_enotconn(void)
+{
+	/* For a stream socket, recv() without connect() or accept()
+	 * should lead to ENOTCONN.
+	 */
+	int c_sock, s_sock;
+	struct sockaddr_in6 c_saddr, s_saddr;
+
+	prepare_sock_tcp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
+			    &c_sock, &c_saddr);
+	prepare_sock_tcp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, SERVER_PORT,
+			    &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+
+	_test_recv_enotconn(c_sock, s_sock);
+}
+
 static void calc_net_context(struct net_context *context, void *user_data)
 {
 	int *count = user_data;
@@ -521,6 +582,8 @@ void test_main(void)
 		ztest_user_unit_test(test_v6_sendto_recvfrom),
 		ztest_user_unit_test(test_v4_sendto_recvfrom_null_dest),
 		ztest_user_unit_test(test_v6_sendto_recvfrom_null_dest),
+		ztest_user_unit_test(test_v4_recv_enotconn),
+		ztest_user_unit_test(test_v6_recv_enotconn),
 		ztest_unit_test(test_open_close_immediately),
 		ztest_user_unit_test(test_v4_accept_timeout),
 		ztest_user_unit_test(test_socket_permission)
