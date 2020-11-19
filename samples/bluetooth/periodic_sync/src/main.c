@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <device.h>
+#include <devicetree.h>
+#include <drivers/gpio.h>
 #include <bluetooth/bluetooth.h>
 
 #define TIMEOUT_SYNC_CREATE K_SECONDS(10)
@@ -16,6 +19,29 @@ static uint8_t      per_sid;
 static K_SEM_DEFINE(sem_per_adv, 0, 1);
 static K_SEM_DEFINE(sem_per_sync, 0, 1);
 static K_SEM_DEFINE(sem_per_sync_lost, 0, 1);
+
+/* The devicetree node identifier for the "led0" alias. */
+#define LED0_NODE DT_ALIAS(led0)
+
+#if DT_NODE_HAS_STATUS(LED0_NODE, okay)
+#define HAS_LED     1
+#define LED0        DT_GPIO_LABEL(LED0_NODE, gpios)
+#define PIN         DT_GPIO_PIN(LED0_NODE, gpios)
+#define FLAGS       DT_GPIO_FLAGS(LED0_NODE, gpios)
+#define BLINK_ONOFF K_MSEC(500)
+
+static struct device const   *dev;
+static struct k_delayed_work blink_work;
+static bool                  led_is_on;
+
+static void blink_timeout(struct k_work *work)
+{
+	led_is_on = !led_is_on;
+	gpio_pin_set(dev, PIN, (int)led_is_on);
+
+	k_delayed_work_submit(&blink_work, BLINK_ONOFF);
+}
+#endif
 
 static bool data_cb(struct bt_data *data, void *user_data)
 {
@@ -140,6 +166,25 @@ void main(void)
 
 	printk("Starting Periodic Advertising Synchronization Demo\n");
 
+#if defined(HAS_LED)
+	printk("Get reference to LED device...");
+	dev = device_get_binding(LED0);
+	if (!dev) {
+		printk("Failed.\n");
+		return;
+	}
+	printk("done.\n");
+
+	printk("Configure GPIO pin...");
+	err = gpio_pin_configure(dev, PIN, GPIO_OUTPUT_ACTIVE | FLAGS);
+	if (err) {
+		return;
+	}
+	printk("done.\n");
+
+	k_delayed_work_init(&blink_work, blink_timeout);
+#endif /* HAS_LED */
+
 	/* Initialize the Bluetooth Subsystem */
 	err = bt_enable(NULL);
 	if (err) {
@@ -164,6 +209,13 @@ void main(void)
 	printk("success.\n");
 
 	do {
+#if defined(HAS_LED)
+		printk("Start blinking LED...\n");
+		led_is_on = false;
+		gpio_pin_set(dev, PIN, (int)led_is_on);
+		k_delayed_work_submit(&blink_work, BLINK_ONOFF);
+#endif /* HAS_LED */
+
 		printk("Waiting for periodic advertising...\n");
 		per_adv_found = false;
 		err = k_sem_take(&sem_per_adv, K_FOREVER);
@@ -200,6 +252,15 @@ void main(void)
 			continue;
 		}
 		printk("Periodic sync established.\n");
+
+#if defined(HAS_LED)
+		printk("Stop blinking LED.\n");
+		k_delayed_work_cancel(&blink_work);
+
+		/* Keep LED on */
+		led_is_on = true;
+		gpio_pin_set(dev, PIN, (int)led_is_on);
+#endif /* HAS_LED */
 
 		printk("Waiting for periodic sync lost...\n");
 		err = k_sem_take(&sem_per_sync_lost, K_FOREVER);
