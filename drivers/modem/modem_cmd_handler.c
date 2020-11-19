@@ -107,7 +107,7 @@ static inline struct net_buf *read_rx_allocator(k_timeout_t timeout,
 
 /* return scanned length for params */
 static int parse_params(struct modem_cmd_handler_data *data,  size_t match_len,
-			struct modem_cmd *cmd,
+			const struct modem_cmd *cmd,
 			uint8_t **argv, size_t argv_len, uint16_t *argc)
 {
 	int i, count = 0;
@@ -170,7 +170,7 @@ static int parse_params(struct modem_cmd_handler_data *data,  size_t match_len,
 }
 
 /* process a "matched" command */
-static int process_cmd(struct modem_cmd *cmd, size_t match_len,
+static int process_cmd(const struct modem_cmd *cmd, size_t match_len,
 			struct modem_cmd_handler_data *data)
 {
 	int parsed_len = 0, ret = 0;
@@ -212,7 +212,8 @@ static int process_cmd(struct modem_cmd *cmd, size_t match_len,
  * - unsolicited handlers[1]
  * - current assigned handlers[2]
  */
-static struct modem_cmd *find_cmd_match(struct modem_cmd_handler_data *data)
+static const struct modem_cmd *find_cmd_match(
+		struct modem_cmd_handler_data *data)
 {
 	int j, i;
 
@@ -234,7 +235,7 @@ static struct modem_cmd *find_cmd_match(struct modem_cmd_handler_data *data)
 	return NULL;
 }
 
-static struct modem_cmd *find_cmd_direct_match(
+static const struct modem_cmd *find_cmd_direct_match(
 		struct modem_cmd_handler_data *data)
 {
 	int j, i;
@@ -307,7 +308,7 @@ static int cmd_handler_process_iface_data(struct modem_cmd_handler_data *data,
 
 static void cmd_handler_process_rx_buf(struct modem_cmd_handler_data *data)
 {
-	struct modem_cmd *cmd;
+	const struct modem_cmd *cmd;
 	struct net_buf *frag = NULL;
 	size_t match_len;
 	int ret;
@@ -449,7 +450,7 @@ int modem_cmd_handler_set_error(struct modem_cmd_handler_data *data,
 }
 
 int modem_cmd_handler_update_cmds(struct modem_cmd_handler_data *data,
-				  struct modem_cmd *handler_cmds,
+				  const struct modem_cmd *handler_cmds,
 				  size_t handler_cmds_len,
 				  bool reset_error_flag)
 {
@@ -468,7 +469,7 @@ int modem_cmd_handler_update_cmds(struct modem_cmd_handler_data *data,
 
 static int _modem_cmd_send(struct modem_iface *iface,
 			   struct modem_cmd_handler *handler,
-			   struct modem_cmd *handler_cmds,
+			   const struct modem_cmd *handler_cmds,
 			   size_t handler_cmds_len,
 			   const uint8_t *buf, struct k_sem *sem,
 			   k_timeout_t timeout, bool no_tx_lock)
@@ -539,7 +540,7 @@ exit:
 
 int modem_cmd_send_nolock(struct modem_iface *iface,
 			  struct modem_cmd_handler *handler,
-			  struct modem_cmd *handler_cmds,
+			  const struct modem_cmd *handler_cmds,
 			  size_t handler_cmds_len,
 			  const uint8_t *buf, struct k_sem *sem,
 			  k_timeout_t timeout)
@@ -550,8 +551,9 @@ int modem_cmd_send_nolock(struct modem_iface *iface,
 
 int modem_cmd_send(struct modem_iface *iface,
 		   struct modem_cmd_handler *handler,
-		   struct modem_cmd *handler_cmds, size_t handler_cmds_len,
-		   const uint8_t *buf, struct k_sem *sem, k_timeout_t timeout)
+		   const struct modem_cmd *handler_cmds,
+		   size_t handler_cmds_len, const uint8_t *buf,
+		   struct k_sem *sem, k_timeout_t timeout)
 {
 	return _modem_cmd_send(iface, handler, handler_cmds, handler_cmds_len,
 			       buf, sem, timeout, false);
@@ -560,7 +562,7 @@ int modem_cmd_send(struct modem_iface *iface,
 /* run a set of AT commands */
 int modem_cmd_handler_setup_cmds(struct modem_iface *iface,
 				 struct modem_cmd_handler *handler,
-				 struct setup_cmd *cmds, size_t cmds_len,
+				 const struct setup_cmd *cmds, size_t cmds_len,
 				 struct k_sem *sem, k_timeout_t timeout)
 {
 	int ret = 0, i;
@@ -594,8 +596,9 @@ int modem_cmd_handler_setup_cmds(struct modem_iface *iface,
 /* run a set of AT commands, without lock */
 int modem_cmd_handler_setup_cmds_nolock(struct modem_iface *iface,
 					struct modem_cmd_handler *handler,
-					struct setup_cmd *cmds, size_t cmds_len,
-					struct k_sem *sem, k_timeout_t timeout)
+					const struct setup_cmd *cmds,
+					size_t cmds_len, struct k_sem *sem,
+					k_timeout_t timeout)
 {
 	int ret = 0, i;
 
