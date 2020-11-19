@@ -7235,6 +7235,7 @@ bool bt_addr_le_is_bonded(uint8_t id, const bt_addr_le_t *addr)
 	}
 }
 
+#if defined(CONFIG_BT_PER_ADV)
 int bt_le_per_adv_set_param(struct bt_le_ext_adv *adv,
 			    const struct bt_le_per_adv_param *param)
 {
@@ -7380,8 +7381,38 @@ int bt_le_per_adv_stop(struct bt_le_ext_adv *adv)
 	return bt_le_per_adv_enable(adv, false);
 }
 
-#if defined(CONFIG_BT_PER_ADV_SYNC)
+#if defined(CONFIG_BT_CONN)
+int bt_le_per_adv_set_info_transfer(const struct bt_le_ext_adv *adv,
+				    const struct bt_conn *conn,
+				    uint16_t service_data)
+{
+	struct bt_hci_cp_le_per_adv_set_info_transfer *cp;
+	struct net_buf *buf;
 
+	if (!BT_FEAT_LE_PAST_SEND(bt_dev.le.features)) {
+		return -EOPNOTSUPP;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_PER_ADV_SET_INFO_TRANSFER,
+				sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	(void)memset(cp, 0, sizeof(*cp));
+
+	cp->conn_handle = sys_cpu_to_le16(conn->handle);
+	cp->adv_handle = adv->handle;
+	cp->service_data = sys_cpu_to_le16(service_data);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_SET_INFO_TRANSFER, buf,
+				    NULL);
+}
+#endif /* CONFIG_BT_CONN */
+#endif /* CONFIG_BT_PER_ADV */
+
+#if defined(CONFIG_BT_PER_ADV_SYNC)
 uint8_t bt_le_per_adv_sync_get_index(struct bt_le_per_adv_sync *per_adv_sync)
 {
 	uintptr_t index = per_adv_sync - per_adv_sync_pool;
@@ -7661,34 +7692,6 @@ int bt_le_per_adv_sync_transfer(const struct bt_le_per_adv_sync *per_adv_sync,
 	cp->service_data = sys_cpu_to_le16(service_data);
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_SYNC_TRANSFER, buf,
-				    NULL);
-}
-
-int bt_le_per_adv_set_info_transfer(const struct bt_le_ext_adv *adv,
-				    const struct bt_conn *conn,
-				    uint16_t service_data)
-{
-	struct bt_hci_cp_le_per_adv_set_info_transfer *cp;
-	struct net_buf *buf;
-
-	if (!BT_FEAT_LE_PAST_SEND(bt_dev.le.features)) {
-		return -EOPNOTSUPP;
-	}
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_PER_ADV_SET_INFO_TRANSFER,
-				sizeof(*cp));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-	(void)memset(cp, 0, sizeof(*cp));
-
-	cp->conn_handle = sys_cpu_to_le16(conn->handle);
-	cp->adv_handle = adv->handle;
-	cp->service_data = sys_cpu_to_le16(service_data);
-
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_SET_INFO_TRANSFER, buf,
 				    NULL);
 }
 
