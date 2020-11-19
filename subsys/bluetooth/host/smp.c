@@ -1839,6 +1839,10 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 #endif /* CONFIG_BT_BREDR */
 		bool bond_flag = atomic_test_bit(smp->flags, SMP_FLAG_BOND);
 
+		if (IS_ENABLED(CONFIG_BT_LOG_SNIFFER_INFO)) {
+			bt_keys_show_sniffer_info(conn->le.keys, NULL);
+		}
+
 		if (bond_flag) {
 			bt_keys_store(conn->le.keys);
 		}
@@ -2337,6 +2341,10 @@ static uint8_t legacy_request_tk(struct bt_smp *smp)
 			}
 
 			passkey %= 1000000;
+		}
+
+		if (IS_ENABLED(CONFIG_BT_LOG_SNIFFER_INFO)) {
+			BT_INFO("Legacy passkey %u", passkey);
 		}
 
 		if (bt_auth && bt_auth->passkey_display) {
@@ -5285,6 +5293,13 @@ int bt_smp_le_oob_set_tk(struct bt_conn *conn, const uint8_t *tk)
 
 	if (!atomic_test_and_clear_bit(smp->flags, SMP_FLAG_USER)) {
 		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_LOG_SNIFFER_INFO)) {
+		uint8_t oob[16];
+
+		sys_memcpy_swap(oob, tk, 16);
+		BT_INFO("Legacy OOB data 0x%s", bt_hex(oob, 16));
 	}
 
 	memcpy(smp->tk, tk, 16*sizeof(uint8_t));

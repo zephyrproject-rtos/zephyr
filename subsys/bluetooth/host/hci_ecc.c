@@ -111,6 +111,10 @@ static uint8_t generate_keys(void)
 	/* make sure generated key isn't debug key */
 	} while (memcmp(ecc.private_key_be, debug_private_key_be, 32) == 0);
 
+	if (IS_ENABLED(CONFIG_BT_LOG_SNIFFER_INFO)) {
+		BT_INFO("SC private key 0x%s", bt_hex(ecc.private_key_be, 32));
+	}
+
 	return 0;
 }
 
