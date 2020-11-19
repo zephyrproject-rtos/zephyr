@@ -1027,6 +1027,11 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 		return -1;
 	}
 
+	if (net_context_get_state(ctx) != NET_CONTEXT_CONNECTED) {
+		errno = ENOTCONN;
+		return -1;
+	}
+
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
 		timeout = K_NO_WAIT;
 	}
