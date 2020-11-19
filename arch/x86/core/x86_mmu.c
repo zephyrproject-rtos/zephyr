@@ -50,7 +50,9 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
  */
 #define PTE_ZERO	MMU_PAT
 
-/* Protects x86_domain_list and serializes any changes to page tables */
+/* Protects x86_domain_list and serializes instantiation of intermediate
+ * paging structures.
+ */
 static struct k_spinlock x86_mmu_lock;
 
 #if defined(CONFIG_USERSPACE) && !defined(CONFIG_X86_COMMON_PAGE_TABLE)
@@ -731,21 +733,65 @@ static inline pentry_t reset_pte(pentry_t old_val)
  *  - Flipping the physical address bits cheaply mitigates L1TF
  *  - State is preserved; to get original PTE, just complement again
  */
-static inline void set_leaf_entry(pentry_t *entryp, pentry_t val,
-				  bool user_table)
+static inline pentry_t pte_finalize_value(pentry_t val, bool user_table)
 {
 #ifdef CONFIG_X86_KPTI
-	/* Ram is identity-mapped, so phys=virt for this page */
-	uintptr_t shared_phys_addr = (uintptr_t)&z_shared_kernel_page_start;
+	/* Ram is identity-mapped at boot, so phys=virt for this pinned page */
+	static const uintptr_t shared_phys_addr =
+			(uintptr_t)&z_shared_kernel_page_start;
 
 	if (user_table && (val & MMU_US) == 0 && (val & MMU_P) != 0 &&
 	    get_entry_phys(val, NUM_LEVELS - 1) != shared_phys_addr) {
-		*entryp = ~val;
-		return;
+		val = ~val;
 	}
 #endif
-	*entryp = val;
+	return val;
 }
+
+/* Atomic functions for modifying PTEs. These don't map nicely to Zephyr's
+ * atomic API since the only types supported are 'int' and 'void *' and
+ * the size of pentry_t depends on other factors like PAE.
+ */
+#ifndef CONFIG_X86_PAE
+/* Non-PAE, pentry_t is same size as void ptr so use atomic_ptr_* APIs */
+static inline pentry_t atomic_pte_get(const pentry_t *target)
+{
+	return (pentry_t)atomic_ptr_get((atomic_ptr_t *)target);
+}
+
+static inline bool atomic_pte_cas(pentry_t *target, pentry_t old_value,
+				  pentry_t new_value)
+{
+	return atomic_ptr_cas((atomic_ptr_t *)target, (void *)old_value,
+			      (void *)new_value);
+}
+#else
+/* Atomic builtins for 64-bit values on 32-bit x86 require floating point.
+ * Don't do this, just lock local interrupts. Needless to say, this
+ * isn't workable if someone ever adds SMP to the 32-bit x86 port.
+ */
+BUILD_ASSERT(!IS_ENABLED(CONFIG_SMP));
+
+static inline pentry_t atomic_pte_get(const pentry_t *target)
+{
+	return *target;
+}
+
+static inline bool atomic_pte_cas(pentry_t *target, pentry_t old_value,
+				  pentry_t new_value)
+{
+	bool ret = false;
+	int key = arch_irq_lock();
+
+	if (*target == old_value) {
+		*target = new_value;
+		ret = true;
+	}
+	arch_irq_unlock(key);
+
+	return ret;
+}
+#endif /* CONFIG_X86_PAE */
 
 /* Indicates that the target page tables will be used by user mode threads.
  * This only has implications for CONFIG_X86_KPTI where user thread facing
@@ -772,6 +818,53 @@ static inline void set_leaf_entry(pentry_t *entryp, pentry_t val,
 #define OPTION_ALLOC		BIT(3)
 
 /**
+ * Atomically update bits in a page table entry
+ *
+ * This is atomic with respect to modifications by other CPUs or preempted
+ * contexts, which can be very important when making decisions based on
+ * the PTE's prior "dirty" state.
+ *
+ * @param pte Pointer to page table entry to update
+ * @param update_val Updated bits to set/clear in PTE. Ignored with
+ *        OPTION_RESET.
+ * @param update_mask Which bits to modify in the PTE. Ignored with
+ *        OPTION_RESET
+ * @param options Control flags
+ * @retval Old PTE value
+ */
+static inline pentry_t pte_atomic_update(pentry_t *pte, pentry_t update_val,
+					 pentry_t update_mask,
+					 uint32_t options)
+{
+	bool user_table = (options & OPTION_USER) != 0U;
+	bool reset = (options & OPTION_RESET) != 0U;
+	pentry_t old_val, new_val;
+
+	do {
+		old_val = atomic_pte_get(pte);
+
+		new_val = old_val;
+#ifdef CONFIG_X86_KPTI
+		if (is_flipped_pte(new_val)) {
+			/* Page was flipped for KPTI. Un-flip it */
+			new_val = ~new_val;
+		}
+#endif /* CONFIG_X86_KPTI */
+
+		if (reset) {
+			new_val = reset_pte(new_val);
+		} else {
+			new_val = ((new_val & ~update_mask) |
+				   (update_val & update_mask));
+		}
+
+		new_val = pte_finalize_value(new_val, user_table);
+	} while (atomic_pte_cas(pte, old_val, new_val) == false);
+
+	return old_val;
+}
+
+/**
  * Low level page table update function for a virtual page
  *
  * For the provided set of page tables, update the PTE associated with the
@@ -781,7 +874,13 @@ static inline void set_leaf_entry(pentry_t *entryp, pentry_t val,
  * It is permitted to set up mappings without the Present bit set, in which
  * case all other bits may be used for OS accounting.
  *
- * Must call this with x86_mmu_lock held.
+ * This function is atomic with respect to the page table entries being
+ * modified by another CPU, using atomic operations to update the requested
+ * bits and return the previous PTE value.
+ *
+ * This function is NOT atomic with respect to allocating intermediate
+ * paging structures, and this must be called with x86_mmu_lock held if
+ * OPTION_ALLOC is used.
  *
  * Common mask values:
  *  MASK_ALL  - Update all PTE bits. Exitsing state totally discarded.
@@ -791,17 +890,16 @@ static inline void set_leaf_entry(pentry_t *entryp, pentry_t val,
  * @param ptables Page tables to modify
  * @param virt Virtual page table entry to update
  * @param entry_val Value to update in the PTE (ignored if OPTION_RESET)
+ * @param [out] old_val_ptr Filled in with previous PTE value. May be NULL.
  * @param mask What bits to update in the PTE (ignored if OPTION_RESET)
  * @param options Control options, described above
  * @retval 0 Success
  * @retval -ENOMEM allocation required and no free pages (only if OPTION_ALLOC)
  */
 static int page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
-			pentry_t mask, uint32_t options)
+			pentry_t *old_val_ptr, pentry_t mask, uint32_t options)
 {
 	pentry_t *table = ptables;
-	bool user_table = (options & OPTION_USER) != 0U;
-	bool reset = (options & OPTION_RESET) != 0U;
 	bool flush = (options & OPTION_FLUSH) != 0U;
 
 	assert_virt_addr_aligned(virt);
@@ -815,24 +913,11 @@ static int page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
 
 		/* Check if we're a PTE */
 		if (level == (NUM_LEVELS - 1)) {
-			pentry_t cur_pte = *entryp;
-			pentry_t new_pte;
-
-#ifdef CONFIG_X86_KPTI
-			if (is_flipped_pte(cur_pte)) {
-				/* Page was flipped for KPTI. Un-flip it */
-				cur_pte = ~cur_pte;
+			pentry_t old_val = pte_atomic_update(entryp, entry_val,
+							     mask, options);
+			if (old_val_ptr != NULL) {
+				*old_val_ptr = old_val;
 			}
-#endif
-
-			if (reset) {
-				new_pte = reset_pte(cur_pte);
-			} else {
-				new_pte = ((cur_pte & ~mask) |
-					   (entry_val & mask));
-			}
-
-			set_leaf_entry(entryp, new_pte, user_table);
 			break;
 		}
 
@@ -878,7 +963,7 @@ static int page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
  * See documentation for page_map_set() for additional notes about masks and
  * supported options.
  *
- * Must call this with x86_mmu_lock held.
+ * Must call this with x86_mmu_lock held if OPTION_ALLOC is used.
  *
  * It is vital to remember that all virtual-to-physical mappings must be
  * the same with respect to supervisor mode regardless of what thread is
@@ -930,7 +1015,7 @@ static int range_map_ptables(pentry_t *ptables, void *virt, uintptr_t phys,
 			entry_val = (phys + offset) | entry_flags;
 		}
 
-		ret = page_map_set(ptables, dest_virt, entry_val, mask,
+		ret = page_map_set(ptables, dest_virt, entry_val, NULL, mask,
 				   options);
 		if (ret != 0) {
 			return ret;
@@ -1333,7 +1418,7 @@ static int copy_page_table(pentry_t *dst, pentry_t *src, int level)
 	if (level == (NUM_LEVELS - 1)) {
 		/* Base case: leaf page table */
 		for (int i = 0; i < get_num_entries(level); i++) {
-			set_leaf_entry(&dst[i], reset_pte(src[i]), true);
+			dst[i] = pte_finalize_value(reset_pte(src[i]), true);
 		}
 	} else {
 		/* Recursive case: allocate sub-structures as needed and
