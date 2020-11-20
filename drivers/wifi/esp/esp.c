@@ -68,6 +68,16 @@ K_KERNEL_STACK_DEFINE(esp_workq_stack,
 
 struct esp_data esp_driver_data;
 
+static int esp_mode_switch(struct esp_data *data, uint8_t mode)
+{
+	char cmd[] = "AT+"_CWMODE"=X";
+
+	cmd[sizeof(cmd) - 2] = ('0' + mode);
+	LOG_DBG("Switch to mode %hhu", mode);
+
+	return esp_cmd_send(data, NULL, 0, cmd, ESP_CMD_TIMEOUT);
+}
+
 /*
  * Modem Response Command Handlers
  */
@@ -673,7 +683,7 @@ static int esp_mgmt_ap_enable(const struct device *dev,
 	struct esp_data *data = dev->data;
 	int ecn = 0, len, ret;
 
-	ret = esp_cmd_send(data, NULL, 0, "AT+"_CWMODE"=3", ESP_CMD_TIMEOUT);
+	ret = esp_mode_switch(data, ESP_MODE_STA_AP);
 	if (ret < 0) {
 		LOG_ERR("Failed to enable AP mode, ret %d", ret);
 		return ret;
@@ -705,7 +715,7 @@ static int esp_mgmt_ap_disable(const struct device *dev)
 	struct esp_data *data = dev->data;
 	int ret;
 
-	ret = esp_cmd_send(data, NULL, 0, "AT+"_CWMODE"=1", ESP_CMD_TIMEOUT);
+	ret = esp_mode_switch(data, ESP_MODE_STA);
 
 	return ret;
 }
@@ -738,7 +748,7 @@ static void esp_init_work(struct k_work *work)
 	static const struct setup_cmd setup_cmds_target_baudrate[] = {
 		SETUP_CMD_NOHANDLE("AT"),
 #endif
-		SETUP_CMD_NOHANDLE("AT+"_CWMODE"=1"),
+		SETUP_CMD_NOHANDLE(ESP_CMD_CWMODE(STA)),
 #if defined(CONFIG_WIFI_ESP_IP_STATIC)
 		/* enable Static IP Config */
 		SETUP_CMD_NOHANDLE(ESP_CMD_DHCP_ENABLE(STATION, 0)),

@@ -95,6 +95,14 @@ extern "C" {
 #define ESP_CONNECT_TIMEOUT	K_SECONDS(20)
 #define ESP_INIT_TIMEOUT	K_SECONDS(10)
 
+#define ESP_MODE_NONE		0
+#define ESP_MODE_STA		1
+#define ESP_MODE_AP		2
+#define ESP_MODE_STA_AP		3
+
+#define ESP_CMD_CWMODE(mode) \
+	"AT+"_CWMODE"="STRINGIFY(_CONCAT(ESP_MODE_, mode))
+
 #define ESP_CWDHCP_MODE_STATION		"1"
 #if defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
 #define ESP_CWDHCP_MODE_SOFTAP		"0"
