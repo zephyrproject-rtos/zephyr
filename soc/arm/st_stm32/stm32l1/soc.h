@@ -25,10 +25,6 @@
 
 #include <stm32l1xx_ll_system.h>
 
-#ifdef CONFIG_EXTI_STM32
-#include <stm32l1xx_ll_exti.h>
-#endif
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32L1_SOC_H_ */

@@ -19,6 +19,7 @@
  */
 #include <device.h>
 #include <soc.h>
+#include <stm32_ll_exti.h>
 #include <sys/__assert.h>
 #include <drivers/interrupt_controller/exti_stm32.h>
 

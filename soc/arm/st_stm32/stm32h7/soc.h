@@ -29,10 +29,6 @@
 
 #endif /* CONFIG_STM32H7_DUAL_CORE */
 
-#ifdef CONFIG_EXTI_STM32
-#include <stm32h7xx_ll_exti.h>
-#endif /* CONFIG_EXTI_STM32 */
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F7_SOC_H7_ */
