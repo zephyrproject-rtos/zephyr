@@ -193,7 +193,7 @@
 			/* Secure image memory */
 		};
 
-		sram0_ns: image_ns@20010000 {
+		sram0_ns: image_ns@20040000 {
 			/* Non-Secure image memory */
 		};
 	};
