@@ -1329,6 +1329,8 @@ int bt_csip_lock_set(void)
 	char addr[BT_ADDR_LE_STR_LEN];
 	bool fully_connected = true;
 
+	/* TODO: Check ranks of devices in sets for duplicates */
+
 	if (busy) {
 		return -EBUSY;
 	}

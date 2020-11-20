@@ -708,3 +708,16 @@ void bt_csis_print_sirk(void)
 	BT_HEXDUMP_DBG(&csis_inst.set_sirk, sizeof(csis_inst.set_sirk),
 			"Set SIRK");
 }
+
+#if defined(CONFIG_BT_TESTING)
+int bt_csis_test_set_rank(uint8_t rank)
+{
+	if (rank > CONFIG_BT_CSIS_SET_SIZE) {
+		return -EINVAL;
+	}
+
+	csis_inst.rank = rank;
+
+	return 0;
+}
+#endif /* CONFIG_BT_TESTING */
