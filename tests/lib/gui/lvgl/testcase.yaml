@@ -2,6 +2,9 @@ tests:
   libraries.gui.lvgl:
     tags: display gui
     platform_allow: native_posix
+    extra_configs:
+      - CONFIG_LV_COLOR_DEPTH_32=y
+      - CONFIG_LV_COLOR_SCREEN_TRANSP=y
   libraries.gui.lvgl.dynamic.heap.libc:
     tags: display gui
     platform_allow: native_posix
@@ -29,20 +32,20 @@ tests:
     tags: display gui
     platform_allow: native_posix
     extra_configs:
-      - CONFIG_LVGL_COLOR_DEPTH_16=y
+      - CONFIG_LV_COLOR_DEPTH_16=y
   libraries.gui.lvgl.8bit:
     tags: display gui
     platform_allow: native_posix
     extra_configs:
-      - CONFIG_LVGL_COLOR_DEPTH_8=y
+      - CONFIG_LV_COLOR_DEPTH_8=y
   libraries.gui.lvgl.mono:
     tags: display gui
     platform_allow: native_posix
     extra_configs:
-      - CONFIG_LVGL_COLOR_DEPTH_1=y
+      - CONFIG_LV_COLOR_DEPTH_1=y
   libraries.gui.lvgl.16bit.swap:
     tags: display gui
     platform_allow: native_posix
     extra_configs:
-      - CONFIG_LVGL_COLOR_DEPTH_16=y
-      - CONFIG_LVGL_COLOR_16_SWAP=y
+      - CONFIG_LV_COLOR_DEPTH_16=y
+      - CONFIG_LV_COLOR_16_SWAP=y
