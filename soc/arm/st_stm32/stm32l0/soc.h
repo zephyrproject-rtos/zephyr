@@ -35,12 +35,6 @@
 #include <stm32l0xx_ll_rcc.h>
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
-#if defined(CONFIG_COUNTER_RTC_STM32)
-#include <stm32l0xx_ll_rtc.h>
-#include <stm32l0xx_ll_exti.h>
-#include <stm32l0xx_ll_pwr.h>
-#endif
-
 #ifdef CONFIG_DMA_STM32
 #include <stm32l0xx_ll_dma.h>
 #endif
