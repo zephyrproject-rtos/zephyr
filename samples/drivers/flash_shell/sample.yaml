@@ -5,6 +5,6 @@ sample:
 tests:
   sample.drivers.flash.shell:
     tags: flash shell
-    filter: CONFIG_FLASH_HAS_DRIVER_ENABLED
+    filter: CONFIG_FLASH_HAS_DRIVER_ENABLED and dt_chosen_enabled("zephyr,flash-controller")
     harness: keyboard
     min_ram: 12
