@@ -28,13 +28,6 @@
 #include <stm32f1xx_ll_exti.h>
 #endif
 
-#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
-#include <stm32f1xx_ll_utils.h>
-#include <stm32f1xx_ll_bus.h>
-#include <stm32f1xx_ll_rcc.h>
-#include <stm32f1xx_ll_system.h>
-#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F1_SOC_H_ */

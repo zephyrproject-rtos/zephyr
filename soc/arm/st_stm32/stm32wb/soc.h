@@ -26,13 +26,6 @@
 /* Add include for DTS generated information */
 #include <st_stm32_dt.h>
 
-#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
-#include <stm32wbxx_ll_utils.h>
-#include <stm32wbxx_ll_bus.h>
-#include <stm32wbxx_ll_rcc.h>
-#include <stm32wbxx_ll_system.h>
-#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32WBX_SOC_H_ */

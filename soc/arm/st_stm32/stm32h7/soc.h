@@ -29,20 +29,9 @@
 
 #endif /* CONFIG_STM32H7_DUAL_CORE */
 
-#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
-#include <stm32h7xx_ll_bus.h>
-#include <stm32h7xx_ll_rcc.h>
-#include <stm32h7xx_ll_pwr.h>
-#include <stm32h7xx_ll_system.h>
-#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
-
 #ifdef CONFIG_EXTI_STM32
 #include <stm32h7xx_ll_exti.h>
 #endif /* CONFIG_EXTI_STM32 */
-
-#if defined(CONFIG_CLOCK_CONTROL_STM32_CUBE)
-#include <stm32h7xx_ll_utils.h>
-#endif
 
 #endif /* !_ASMLANGUAGE */
 
