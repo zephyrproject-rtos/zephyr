@@ -13,6 +13,7 @@
 #include <kernel.h>
 #include <init.h>
 #include <soc.h>
+#include <stm32_ll_dac.h>
 
 #define LOG_LEVEL CONFIG_DAC_LOG_LEVEL
 #include <logging/log.h>
