@@ -11,7 +11,9 @@
 #include <bluetooth/conn.h>
 #include <sys/byteorder.h>
 
+#include "hci_core.h"
 #include "conn_internal.h"
+#include "direction.h"
 #include "direction_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_DF)
@@ -40,6 +42,71 @@ static struct bt_le_df_ant_info df_ant_info;
 						BT_HCI_LE_1US_AOD_RX))
 #define DF_AOA_RX_1US_SUPPORT(supp)             (DF_SUPP_TEST(supp, \
 						BT_HCI_LE_1US_AOA_RX))
+
+static int hci_df_set_cl_cte_tx_params(const struct bt_le_ext_adv *adv,
+				const struct bt_le_df_adv_cte_tx_params *params)
+{
+	struct bt_hci_cp_le_set_cl_cte_tx_params *cp;
+	struct net_buf *buf;
+
+	/* If AoD is not enabled, ant_ids are ignored by controller:
+	 * BT Core spec 5.2 Vol 4, Part E sec. 7.8.80.
+	 */
+	if (params->cte_type == BT_HCI_LE_AOD_CTE_1US ||
+	    params->cte_type == BT_HCI_LE_AOD_CTE_2US) {
+
+		if (!BT_FEAT_LE_ANT_SWITCH_TX_AOD(bt_dev.le.features)) {
+			return -EINVAL;
+		}
+
+		if (params->cte_type == BT_HCI_LE_AOD_CTE_1US &&
+		    !DF_AOD_TX_1US_SUPPORT(df_ant_info.switch_sample_rates)) {
+			return -EINVAL;
+		}
+
+		if (params->num_ant_ids < BT_HCI_LE_SWITCH_PATTERN_LEN_MIN ||
+		    params->num_ant_ids > BT_HCI_LE_SWITCH_PATTERN_LEN_MAX ||
+		    !params->ant_ids) {
+			return -EINVAL;
+		}
+	} else if (params->cte_type != BT_HCI_LE_AOA_CTE) {
+		return -EINVAL;
+	}
+
+	if (params->cte_len < BT_HCI_LE_CTE_LEN_MIN ||
+	    params->cte_len > BT_HCI_LE_CTE_LEN_MAX) {
+		return -EINVAL;
+	}
+
+	if (params->cte_count < BT_HCI_LE_CTE_COUNT_MIN ||
+	    params->cte_count > BT_HCI_LE_CTE_COUNT_MAX) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_CL_CTE_TX_PARAMS,
+				sizeof(*cp) + params->num_ant_ids);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = adv->handle;
+	cp->cte_len = params->cte_len;
+	cp->cte_type = params->cte_type;
+	cp->cte_count = params->cte_count;
+
+	if (params->num_ant_ids) {
+		uint8_t *dest_ant_ids = net_buf_add(buf, params->num_ant_ids);
+
+		memcpy(dest_ant_ids, params->ant_ids, params->num_ant_ids);
+		cp->switch_pattern_len = params->num_ant_ids;
+	} else {
+		cp->switch_pattern_len = 0;
+	}
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CL_CTE_TX_PARAMS,
+				    buf, NULL);
+}
 
 /* @brief Function provides information about DF antennae numer and
  *	  controller capabilities related with Constant Tone Extension.
