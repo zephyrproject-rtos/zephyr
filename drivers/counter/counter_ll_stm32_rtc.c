@@ -18,6 +18,10 @@
 #include <sys/util.h>
 #include <kernel.h>
 #include <soc.h>
+#include <stm32_ll_exti.h>
+#include <stm32_ll_pwr.h>
+#include <stm32_ll_rcc.h>
+#include <stm32_ll_rtc.h>
 #include <drivers/counter.h>
 
 #include <logging/log.h>

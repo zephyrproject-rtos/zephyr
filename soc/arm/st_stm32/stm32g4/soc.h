@@ -39,12 +39,6 @@
 #include <stm32g4xx_ll_exti.h>
 #endif
 
-#if defined(CONFIG_COUNTER_RTC_STM32)
-#include <stm32g4xx_ll_rtc.h>
-#include <stm32g4xx_ll_exti.h>
-#include <stm32g4xx_ll_pwr.h>
-#endif
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32G4_SOC_H_ */
