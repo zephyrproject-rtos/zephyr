@@ -1460,6 +1460,27 @@ struct bt_hci_cp_le_set_privacy_mode {
 	uint8_t         mode;
 } __packed;
 
+/* Min and max Constant Tone Extension length in 8us units */
+#define BT_HCI_LE_CTE_LEN_MIN                  0x2
+#define BT_HCI_LE_CTE_LEN_MAX                  0x14
+
+#define BT_HCI_LE_AOA_CTE                      0x1
+#define BT_HCI_LE_AOD_CTE_1US                  0x2
+#define BT_HCI_LE_AOD_CTE_2US                  0x3
+
+#define BT_HCI_LE_CTE_COUNT_MIN                0x1
+#define BT_HCI_LE_CTE_COUNT_MAX                0x10
+
+#define BT_HCI_OP_LE_SET_CL_CTE_TX_PARAMS      BT_OP(BT_OGF_LE, 0x0051)
+struct bt_hci_cp_le_set_cl_cte_tx_params {
+	uint8_t handle;
+	uint8_t cte_len;
+	uint8_t cte_type;
+	uint8_t cte_count;
+	uint8_t switch_pattern_len;
+	uint8_t ant_ids[0];
+} __packed;
+
 #define BT_HCI_LE_AOA_CTE_RSP                   BIT(0)
 #define BT_HCI_LE_AOD_CTE_RSP_1US               BIT(1)
 #define BT_HCI_LE_AOD_CTE_RSP_2US               BIT(2)

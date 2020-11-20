@@ -49,6 +49,7 @@
 #include "ull_scan_internal.h"
 #include "ull_sync_internal.h"
 #include "ull_conn_internal.h"
+#include "ull_df.h"
 
 #if defined(CONFIG_BT_CTLR_USER_EXT)
 #include "ull_vendor.h"
@@ -404,6 +405,13 @@ int ll_init(struct k_sem *sem_rx)
 	}
 #endif /* CONFIG_BT_CONN */
 
+#if IS_ENABLED(CONFIG_BT_CTLR_DF)
+	err = ull_df_init();
+	if (err) {
+		return err;
+	}
+#endif
+
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || \
 	defined(CONFIG_BT_CTLR_SYNC_ISO) || \
 	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || \
@@ -485,6 +493,11 @@ void ll_reset(void)
 	err = ull_adv_iso_reset();
 	LL_ASSERT(!err);
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+
+#if IS_ENABLED(CONFIG_BT_CTLR_DF)
+	err = ull_df_reset();
+	LL_ASSERT(!err);
+#endif
 
 #if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_CENTRAL)
