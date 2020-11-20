@@ -754,7 +754,7 @@ if(CONFIG_CODE_DATA_RELOCATION)
 endif()
 
 if(CONFIG_USERSPACE)
-  zephyr_get_compile_options_for_lang(C compiler_flags_priv)
+  zephyr_get_compile_options_for_lang_as_string(C compiler_flags_priv)
   string(REPLACE "$<TARGET_PROPERTY:compiler,coverage>" ""
          NO_COVERAGE_FLAGS "${compiler_flags_priv}"
   )
