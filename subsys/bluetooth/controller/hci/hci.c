@@ -4005,6 +4005,19 @@ static void le_ext_adv_legacy_report(struct pdu_data *pdu_data,
 	memcpy(&adv_info->data[0], &adv->adv_ind.data[0], data_len);
 }
 
+static void node_rx_extra_list_release(struct node_rx_pdu *node_rx_extra)
+{
+	while (node_rx_extra) {
+		struct node_rx_pdu *node_rx_curr;
+
+		node_rx_curr = node_rx_extra;
+		node_rx_extra = node_rx_curr->hdr.rx_ftr.extra;
+
+		node_rx_curr->hdr.next = NULL;
+		ll_rx_mem_release((void **)&node_rx_curr);
+	}
+}
+
 static void le_ext_adv_report(struct pdu_data *pdu_data,
 			      struct node_rx_pdu *node_rx,
 			      struct net_buf *buf, uint8_t phy)
@@ -4036,6 +4049,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    !(le_event_mask & BT_EVT_MASK_LE_EXT_ADVERTISING_REPORT)) {
+		node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
 		return;
 	}
 
@@ -4288,7 +4302,8 @@ no_ext_hdr:
 			 * is present or if Tx pwr and/or data is present from
 			 * anonymous device.
 			 */
-			goto le_ext_adv_report_invalid;
+			node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
+			return;
 		}
 	}
 
@@ -4349,16 +4364,7 @@ no_ext_hdr:
 	adv_info->length = data_len;
 	memcpy(&adv_info->data[0], data, data_len);
 
-le_ext_adv_report_invalid:
-	/* Free the node_rx list */
-	node_rx_next = node_rx->hdr.rx_ftr.extra;
-	while (node_rx_next) {
-		node_rx_curr = node_rx_next;
-		node_rx_next = node_rx_curr->hdr.rx_ftr.extra;
-
-		node_rx_curr->hdr.next = NULL;
-		ll_rx_mem_release((void **)&node_rx_curr);
-	}
+	node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
 }
 
 static void le_adv_ext_report(struct pdu_data *pdu_data,
@@ -4459,6 +4465,7 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    !(le_event_mask & BT_EVT_MASK_LE_PER_ADVERTISING_REPORT)) {
+		node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
 		return;
 	}
 
@@ -4620,7 +4627,8 @@ no_ext_hdr:
 			/* No Tx Power value and no valid AD data parsed in this
 			 * chain of PDUs, skip HCI event generation.
 			 */
-			goto le_per_adv_report_invalid;
+			node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
+			return;
 		}
 	}
 
@@ -4636,16 +4644,7 @@ no_ext_hdr:
 	sep->length = data_len;
 	memcpy(&sep->data[0], data, data_len);
 
-le_per_adv_report_invalid:
-	/* Free the node_rx list */
-	node_rx_next = node_rx->hdr.rx_ftr.extra;
-	while (node_rx_next) {
-		node_rx_curr = node_rx_next;
-		node_rx_next = node_rx_curr->hdr.rx_ftr.extra;
-
-		node_rx_curr->hdr.next = NULL;
-		ll_rx_mem_release((void **)&node_rx_curr);
-	}
+	node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
 }
 
 static void le_per_adv_sync_lost(struct pdu_data *pdu_data,
