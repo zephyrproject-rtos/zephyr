@@ -117,7 +117,8 @@ choice BT_LL_CHOICE
 	  Select the Bluetooth Link Layer to compile.
 
 config BT_LL_SW_SPLIT
-	bool "Software-based BLE Link Layer"
+	bool "Software-based BLE Link Layer [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	select ENTROPY_GENERATOR
 	help
 	  Use Zephyr software BLE Link Layer ULL LLL split implementation.
