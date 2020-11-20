@@ -143,10 +143,12 @@ config BT_CTLR
 	  the HAS_BT_CTLR option.
 
 config BT_LL_SW_SPLIT
-	bool "Software-based Bluetooth LE Link Layer"
+	bool "Software-based Bluetooth LE Link Layer [EXPERIMENTAL]"
 	default y
 	depends on DT_HAS_ZEPHYR_BT_HCI_LL_SW_SPLIT_ENABLED
 	select HAS_BT_CTLR
+	select EXPERIMENTAL
+	select ENTROPY_GENERATOR
 	help
 	  Use Zephyr software Bluetooth LE Link Layer ULL LLL split implementation.
 
