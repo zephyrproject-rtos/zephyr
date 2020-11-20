@@ -43,10 +43,6 @@
 #include <stm32g0xx_ll_gpio.h>
 #endif
 
-#ifdef CONFIG_I2C
-#include <stm32g0xx_ll_i2c.h>
-#endif
-
 /* Add include for DTS generated information */
 #include <devicetree.h>
 

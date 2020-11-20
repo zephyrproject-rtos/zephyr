@@ -45,10 +45,6 @@
 #include <stm32l4xx_ll_spi.h>
 #endif
 
-#ifdef CONFIG_I2C_STM32
-#include <stm32l4xx_ll_i2c.h>
-#endif
-
 #if defined(CONFIG_COUNTER_RTC_STM32)
 #include <stm32l4xx_ll_rtc.h>
 #include <stm32l4xx_ll_exti.h>

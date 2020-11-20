@@ -43,10 +43,6 @@
 #include <stm32l5xx_ll_gpio.h>
 #endif
 
-#ifdef CONFIG_I2C_STM32
-#include <stm32l5xx_ll_i2c.h>
-#endif
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32L5_SOC_H_ */
