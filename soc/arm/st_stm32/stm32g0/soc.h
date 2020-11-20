@@ -39,10 +39,6 @@
 #include <stm32g0xx_ll_exti.h>
 #endif
 
-#ifdef CONFIG_GPIO_STM32
-#include <stm32g0xx_ll_gpio.h>
-#endif
-
 /* Add include for DTS generated information */
 #include <devicetree.h>
 
