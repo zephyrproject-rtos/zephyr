@@ -45,10 +45,6 @@
 #include <stm32l1xx_ll_pwr.h>
 #endif
 
-#ifdef CONFIG_SPI_STM32
-#include <stm32l1xx_ll_spi.h>
-#endif
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32L1_SOC_H_ */

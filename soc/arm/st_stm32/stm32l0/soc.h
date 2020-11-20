@@ -41,10 +41,6 @@
 #include <stm32l0xx_ll_pwr.h>
 #endif
 
-#ifdef CONFIG_SPI_STM32
-#include <stm32l0xx_ll_spi.h>
-#endif
-
 #ifdef CONFIG_GPIO_STM32
 #include <stm32l0xx_ll_gpio.h>
 #endif

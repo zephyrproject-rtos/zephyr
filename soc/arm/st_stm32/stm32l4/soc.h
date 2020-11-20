@@ -41,10 +41,6 @@
 #include <stm32l4xx_ll_pwr.h>
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
-#ifdef CONFIG_SPI_STM32
-#include <stm32l4xx_ll_spi.h>
-#endif
-
 #if defined(CONFIG_COUNTER_RTC_STM32)
 #include <stm32l4xx_ll_rtc.h>
 #include <stm32l4xx_ll_exti.h>

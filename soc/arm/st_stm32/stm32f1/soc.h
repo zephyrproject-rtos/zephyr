@@ -35,10 +35,6 @@
 #include <stm32f1xx_ll_system.h>
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
-#ifdef CONFIG_SPI_STM32
-#include <stm32f1xx_ll_spi.h>
-#endif
-
 #ifdef CONFIG_GPIO_STM32
 #include <stm32f1xx_ll_gpio.h>
 #endif
