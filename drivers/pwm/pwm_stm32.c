@@ -10,6 +10,8 @@
 #include <errno.h>
 
 #include <soc.h>
+#include <stm32_ll_rcc.h>
+#include <stm32_ll_tim.h>
 #include <drivers/pwm.h>
 #include <device.h>
 #include <kernel.h>

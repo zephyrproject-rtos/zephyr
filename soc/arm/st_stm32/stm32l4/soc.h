@@ -75,10 +75,6 @@
 #include <stm32l4xx_ll_system.h>
 #endif
 
-#ifdef CONFIG_PWM_STM32
-#include <stm32l4xx_ll_tim.h>
-#endif /* CONFIG_PWM_STM32 */
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32L4X_SOC_H_ */
