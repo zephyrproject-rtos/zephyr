@@ -5,6 +5,7 @@
  */
 
 #define DT_DRV_COMPAT arm_pl011
+#define SBSA_COMPAT arm_sbsa_uart
 
 #include <kernel.h>
 #include <arch/cpu.h>
@@ -41,6 +42,7 @@ struct pl011_regs {
 /* Device data structure */
 struct pl011_data {
 	uint32_t baud_rate;	/* Baud rate */
+	bool sbsa;		/* SBSA mode */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t irq_cb;
 	void *irq_cb_data;
@@ -199,13 +201,12 @@ static int pl011_set_baudrate(const struct device *dev,
 
 static bool pl011_is_readable(const struct device *dev)
 {
-	if ((PL011_REGS(dev)->cr & PL011_CR_UARTEN) &&
-	    (PL011_REGS(dev)->cr & PL011_CR_RXE) &&
-	   ((PL011_REGS(dev)->fr & PL011_FR_RXFE) == 0U)) {
-		return true;
-	}
+	if (!DEV_DATA(dev)->sbsa &&
+	    (!(PL011_REGS(dev)->cr & PL011_CR_UARTEN) ||
+	     !(PL011_REGS(dev)->cr & PL011_CR_RXE)))
+		return false;
 
-	return false;
+	return (PL011_REGS(dev)->fr & PL011_FR_RXFE) == 0U;
 }
 
 static int pl011_poll_in(const struct device *dev, unsigned char *c)
@@ -276,8 +277,10 @@ static int pl011_irq_tx_complete(const struct device *dev)
 
 static int pl011_irq_tx_ready(const struct device *dev)
 {
-	return ((PL011_REGS(dev)->cr & PL011_CR_TXE) &&
-		(PL011_REGS(dev)->imsc & PL011_IMSC_TXIM) &&
+	if (!DEV_DATA(dev)->sbsa && !(PL011_REGS(dev)->cr & PL011_CR_TXE))
+		return false;
+
+	return ((PL011_REGS(dev)->imsc & PL011_IMSC_TXIM) &&
 		pl011_irq_tx_complete(dev));
 }
 
@@ -295,8 +298,10 @@ static void pl011_irq_rx_disable(const struct device *dev)
 
 static int pl011_irq_rx_ready(const struct device *dev)
 {
-	return ((PL011_REGS(dev)->cr & PL011_CR_RXE) &&
-		(PL011_REGS(dev)->imsc & PL011_IMSC_RXIM) &&
+	if (!DEV_DATA(dev)->sbsa && !(PL011_REGS(dev)->cr & PL011_CR_RXE))
+		return false;
+
+	return ((PL011_REGS(dev)->imsc & PL011_IMSC_RXIM) &&
 		(!(PL011_REGS(dev)->fr & PL011_FR_RXFE)));
 }
 
@@ -356,40 +361,48 @@ static int pl011_init(const struct device *dev)
 	int ret;
 	uint32_t lcrh;
 
-	/* disable the uart */
-	pl011_disable(dev);
-	pl011_disable_fifo(dev);
+	/*
+	 * If working in SBSA mode, we assume that UART is already configured,
+	 * or does not require configuration at all (if UART is emulated by
+	 * virtualization software).
+	 */
+	if (!DEV_DATA(dev)->sbsa) {
+		/* disable the uart */
+		pl011_disable(dev);
+		pl011_disable_fifo(dev);
 
-	/* Set baud rate */
-	ret = pl011_set_baudrate(dev, DEV_CFG(dev)->sys_clk_freq,
-				      DEV_DATA(dev)->baud_rate);
-	if (ret != 0) {
-		return ret;
+		/* Set baud rate */
+		ret = pl011_set_baudrate(dev, DEV_CFG(dev)->sys_clk_freq,
+					 DEV_DATA(dev)->baud_rate);
+		if (ret != 0) {
+			return ret;
+		}
+
+		/* Setting the default character format */
+		lcrh = PL011_REGS(dev)->lcr_h & ~(PL011_LCRH_FORMAT_MASK);
+		lcrh &= ~(BIT(0) | BIT(7));
+		lcrh |= PL011_LCRH_WLEN_SIZE(8) << PL011_LCRH_WLEN_SHIFT;
+		PL011_REGS(dev)->lcr_h = lcrh;
+
+		/* Enabling the FIFOs */
+		pl011_enable_fifo(dev);
 	}
-
-	/* Setting the default character format */
-	lcrh = PL011_REGS(dev)->lcr_h & ~(PL011_LCRH_FORMAT_MASK);
-	lcrh &= ~(BIT(0) | BIT(7));
-	lcrh |= PL011_LCRH_WLEN_SIZE(8) << PL011_LCRH_WLEN_SHIFT;
-	PL011_REGS(dev)->lcr_h = lcrh;
-
-	/* Enabling the FIFOs */
-	pl011_enable_fifo(dev);
-
 	/* initialize all IRQs as masked */
 	PL011_REGS(dev)->imsc = 0U;
 	PL011_REGS(dev)->icr = PL011_IMSC_MASK_ALL;
 
-	PL011_REGS(dev)->dmacr = 0U;
-	__ISB();
-	PL011_REGS(dev)->cr &= ~(BIT(14) | BIT(15) | BIT(1));
-	PL011_REGS(dev)->cr |= PL011_CR_RXE | PL011_CR_TXE;
-	__ISB();
-
+	if (!DEV_DATA(dev)->sbsa) {
+		PL011_REGS(dev)->dmacr = 0U;
+		__ISB();
+		PL011_REGS(dev)->cr &= ~(BIT(14) | BIT(15) | BIT(1));
+		PL011_REGS(dev)->cr |= PL011_CR_RXE | PL011_CR_TXE;
+		__ISB();
+	}
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	DEV_CFG(dev)->irq_config_func(dev);
 #endif
-	pl011_enable(dev);
+	if (!DEV_DATA(dev)->sbsa)
+		pl011_enable(dev);
 
 	return 0;
 }
@@ -532,3 +545,45 @@ static void pl011_irq_config_func_1(const struct device *dev)
 #endif
 
 #endif /* CONFIG_UART_PL011_PORT1 */
+
+#ifdef CONFIG_UART_PL011_SBSA
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT SBSA_COMPAT
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void pl011_irq_config_func_sbsa(const struct device *dev);
+#endif
+
+static struct uart_device_config pl011_cfg_sbsa = {
+	.base = (uint8_t *)DT_INST_REG_ADDR(0),
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.irq_config_func = pl011_irq_config_func_sbsa,
+#endif
+};
+
+static struct pl011_data pl011_data_sbsa = {
+	.sbsa = true,
+};
+
+DEVICE_DT_INST_DEFINE(0,
+		      &pl011_init,
+		      device_pm_control_nop,
+		      &pl011_data_sbsa,
+		      &pl011_cfg_sbsa, PRE_KERNEL_1,
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		      &pl011_driver_api);
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void pl011_irq_config_func_sbsa(const struct device *dev)
+{
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
+		    pl011_isr,
+		    DEVICE_GET(pl011_sbsa),
+		    0);
+	irq_enable(DT_INST_IRQN(0));
+}
+#endif
+
+#endif /* CONFIG_UART_PL011_SBSA */
