@@ -18,7 +18,7 @@ int set_lvgl_rendering_cb(lv_disp_drv_t *disp_drv)
 	case PIXEL_FORMAT_ARGB_8888:
 		disp_drv->flush_cb = lvgl_flush_cb_32bit;
 		disp_drv->rounder_cb = NULL;
-#ifdef CONFIG_LVGL_COLOR_DEPTH_32
+#if CONFIG_LV_COLOR_DEPTH == 32
 		disp_drv->set_px_cb = NULL;
 #else
 		disp_drv->set_px_cb = lvgl_set_px_cb_32bit;
@@ -33,7 +33,7 @@ int set_lvgl_rendering_cb(lv_disp_drv_t *disp_drv)
 	case PIXEL_FORMAT_BGR_565:
 		disp_drv->flush_cb = lvgl_flush_cb_16bit;
 		disp_drv->rounder_cb = NULL;
-#ifdef CONFIG_LVGL_COLOR_DEPTH_16
+#if CONFIG_LV_COLOR_DEPTH == 16
 		disp_drv->set_px_cb = NULL;
 #else
 		disp_drv->set_px_cb = lvgl_set_px_cb_16bit;

@@ -12,7 +12,7 @@ zephyr_library_sources(lvgl_display_mono.c)
 zephyr_library_sources(lvgl_display_16bit.c)
 zephyr_library_sources(lvgl_display_24bit.c)
 zephyr_library_sources(lvgl_display_32bit.c)
-zephyr_library_sources_ifdef(CONFIG_LVGL_USE_FILESYSTEM lvgl_fs.c)
+zephyr_library_sources_ifdef(CONFIG_LV_USE_FILESYSTEM lvgl_fs.c)
 zephyr_library_sources_ifdef(CONFIG_LVGL_MEM_POOL_USER lvgl_mem_user.c)
 zephyr_library_sources_ifdef(CONFIG_LVGL_MEM_POOL_KERNEL lvgl_mem_kernel.c)
 
