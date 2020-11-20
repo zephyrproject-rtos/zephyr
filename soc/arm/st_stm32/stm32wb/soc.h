@@ -62,10 +62,6 @@
 #include <stm32wbxx_ll_iwdg.h>
 #endif /* CONFIG_IWDG_STM32 */
 
-#ifdef CONFIG_WWDG_STM32
-#include <stm32wbxx_ll_wwdg.h>
-#endif
-
 #ifdef CONFIG_STM32_LPTIM_TIMER
 #include <stm32wbxx_ll_lptim.h>
 #include <stm32wbxx_ll_system.h>

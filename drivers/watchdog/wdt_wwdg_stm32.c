@@ -8,6 +8,9 @@
 
 #include <drivers/watchdog.h>
 #include <soc.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_wwdg.h>
+#include <stm32_ll_system.h>
 #include <errno.h>
 #include <sys/__assert.h>
 #include <drivers/clock_control/stm32_clock_control.h>

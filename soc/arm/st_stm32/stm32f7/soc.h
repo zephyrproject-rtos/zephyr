@@ -64,10 +64,6 @@
 #include <stm32f7xx_ll_iwdg.h>
 #endif
 
-#ifdef CONFIG_WWDG_STM32
-#include <stm32f7xx_ll_wwdg.h>
-#endif
-
 #ifdef CONFIG_DMA_STM32
 #include <stm32f7xx_ll_dma.h>
 #endif
