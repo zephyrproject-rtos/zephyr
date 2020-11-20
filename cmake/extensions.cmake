@@ -202,7 +202,7 @@ function(zephyr_get_include_directories_for_lang lang i)
   string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
 
   if(NOT ARGN)
-    set(result_output_list "-I$<JOIN:${genexp_output_list}, -I>")
+    set(result_output_list "-I$<JOIN:${genexp_output_list},$<SEMICOLON>-I>")
   elseif(args_STRIP_PREFIX)
     # The list has no prefix, so don't add it.
     set(result_output_list ${output_list})
@@ -217,7 +217,7 @@ function(zephyr_get_system_include_directories_for_lang lang i)
 
   process_flags(${lang} flags output_list)
   string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
-  set(result_output_list "$<$<BOOL:${genexp_output_list}>:-isystem$<JOIN:${genexp_output_list}, -isystem>>")
+  set(result_output_list "$<$<BOOL:${genexp_output_list}>:-isystem$<JOIN:${genexp_output_list},$<SEMICOLON>-isystem>>")
 
   set(${i} ${result_output_list} PARENT_SCOPE)
 endfunction()
@@ -227,7 +227,7 @@ function(zephyr_get_compile_definitions_for_lang lang i)
 
   process_flags(${lang} flags output_list)
   string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
-  set(result_output_list "-D$<JOIN:${genexp_output_list}, -D>")
+  set(result_output_list "-D$<JOIN:${genexp_output_list},$<SEMICOLON>-D>")
 
   set(${i} ${result_output_list} PARENT_SCOPE)
 endfunction()
@@ -237,7 +237,7 @@ function(zephyr_get_compile_options_for_lang lang i)
 
   process_flags(${lang} flags output_list)
   string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
-  set(result_output_list " $<JOIN:${genexp_output_list}, >")
+  set(result_output_list "$<JOIN:${genexp_output_list},$<SEMICOLON>>")
 
   set(${i} ${result_output_list} PARENT_SCOPE)
 endfunction()
