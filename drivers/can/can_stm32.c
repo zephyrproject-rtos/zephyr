@@ -26,6 +26,25 @@ LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
 #error Simultaneous use of CAN_1 and CAN_2 not supported yet
 #endif
 
+#define DT_DRV_COMPAT st_stm32_can
+
+#define SP_IS_SET(inst) DT_INST_NODE_HAS_PROP(inst, sample_point) ||
+
+/* Macro to exclude the sample point algorithm from compilation if not used
+ * Without the macro, the algorithm would always waste ROM
+ */
+#define USE_SP_ALGO (DT_INST_FOREACH_STATUS_OKAY(SP_IS_SET) 0)
+
+#define SP_AND_TIMING_NOT_SET(inst) \
+	(!DT_INST_NODE_HAS_PROP(inst, sample_point) && \
+	!(DT_INST_NODE_HAS_PROP(inst, prop_seg) && \
+	DT_INST_NODE_HAS_PROP(inst, phase_seg1) && \
+	DT_INST_NODE_HAS_PROP(inst, phase_seg2))) ||
+
+#if DT_INST_FOREACH_STATUS_OKAY(SP_AND_TIMING_NOT_SET) 0
+#error You must either set a sampling-point or timings (phase-seg* and prop-seg)
+#endif
+
 /*
  * Translation tables
  * filter_in_bank[enum can_filter_type] = number of filters in bank for this type
@@ -462,7 +481,7 @@ static int can_stm32_init(const struct device *dev)
 	can->MCR |= CAN_MCR_ABOM;
 #endif
 	timing.sjw = cfg->sjw;
-	if (cfg->sample_point) {
+	if (cfg->sample_point && USE_SP_ALGO) {
 		ret = can_calc_timing(dev, &timing, cfg->bus_speed,
 				      cfg->sample_point);
 		if (ret == -EINVAL) {
@@ -472,7 +491,7 @@ static int can_stm32_init(const struct device *dev)
 		LOG_DBG("Presc: %d, TS1: %d, TS2: %d",
 			timing.prescaler, timing.phase_seg1, timing.phase_seg2);
 		LOG_DBG("Sample-point err : %d", ret);
-	} else if (cfg->prop_ts1) {
+	} else {
 		timing.prop_seg = 0;
 		timing.phase_seg1 = cfg->prop_ts1;
 		timing.phase_seg2 = cfg->ts2;
@@ -480,9 +499,6 @@ static int can_stm32_init(const struct device *dev)
 		if (ret) {
 			LOG_WRN("Bitrate error: %d", ret);
 		}
-	} else {
-		LOG_ERR("Timing not configured");
-		return -EINVAL;
 	}
 
 	ret = can_stm32_set_timing(dev, &timing, NULL);
@@ -1118,16 +1134,11 @@ static const struct can_stm32_config can_stm32_cfg_1 = {
 	.can = (CAN_TypeDef *)DT_REG_ADDR(DT_NODELABEL(can1)),
 	.master_can = (CAN_TypeDef *)DT_REG_ADDR(DT_NODELABEL(can1)),
 	.bus_speed = DT_PROP(DT_NODELABEL(can1), bus_speed),
-#if DT_PROP(DT_NODELABEL(can1), sample_point) > 0
-	.sample_point = DT_PROP(DT_NODELABEL(can1), sample_point),
-#endif
-	.sjw = DT_PROP(DT_NODELABEL(can1), sjw),
-#if DT_PROP(DT_NODELABEL(can1), phase_seg1) > 0 && \
-    DT_PROP(DT_NODELABEL(can1), phase_seg2) > 0
-	.prop_ts1 = DT_PROP(DT_NODELABEL(can1), prop_seg) +
-		    DT_PROP(DT_NODELABEL(can1), phase_seg1),
-	.ts2 = DT_PROP(DT_NODELABEL(can1), phase_seg2),
-#endif
+	.sample_point = DT_PROP_OR(DT_NODELABEL(can1), sample_point, 0),
+	.sjw = DT_PROP_OR(DT_NODELABEL(can1), sjw, 1),
+	.prop_ts1 = DT_PROP_OR(DT_NODELABEL(can1), prop_seg, 0) +
+		    DT_PROP_OR(DT_NODELABEL(can1), phase_seg1, 0),
+	.ts2 = DT_PROP_OR(DT_NODELABEL(can1), phase_seg2, 0),
 	.pclken = {
 		.enr = DT_CLOCKS_CELL(DT_NODELABEL(can1), bits),
 		.bus = DT_CLOCKS_CELL(DT_NODELABEL(can1), bus),
@@ -1219,16 +1230,11 @@ static const struct can_stm32_config can_stm32_cfg_2 = {
 	.master_can = (CAN_TypeDef *)DT_PROP(DT_NODELABEL(can2),
 								master_can_reg),
 	.bus_speed = DT_PROP(DT_NODELABEL(can2), bus_speed),
-#if DT_PROP(DT_NODELABEL(can2), sample_point) > 0
-	.sample_point = DT_PROP(DT_NODELABEL(can2), sample_point),
-#endif
-	.sjw = DT_PROP(DT_NODELABEL(can2), sjw),
-#if DT_PROP(DT_NODELABEL(can2), phase_seg1) > 0 && \
-    DT_PROP(DT_NODELABEL(can2), phase_seg2) > 0
-	.prop_ts1 = DT_PROP(DT_NODELABEL(can2), prop_seg) +
-		    DT_PROP(DT_NODELABEL(can2), phase_seg1),
-	.ts2 = DT_PROP(DT_NODELABEL(can2), phase_seg2),
-#endif
+	.sample_point = DT_PROP_OR(DT_NODELABEL(can2), sample_point, 0),
+	.sjw = DT_PROP_OR(DT_NODELABEL(can2), sjw, 1),
+	.prop_ts1 = DT_PROP_OR(DT_NODELABEL(can2), prop_seg, 0) +
+		    DT_PROP_OR(DT_NODELABEL(can2), phase_seg1, 0),
+	.ts2 = DT_PROP_OR(DT_NODELABEL(can2), phase_seg2, 0),
 	.pclken = {
 		.enr = DT_CLOCKS_CELL(DT_NODELABEL(can2), bits),
 		.bus = DT_CLOCKS_CELL(DT_NODELABEL(can2), bus),

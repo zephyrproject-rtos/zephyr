@@ -18,6 +18,23 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(can_mcux_flexcan);
 
+#define SP_IS_SET(inst) DT_INST_NODE_HAS_PROP(inst, sample_point) ||
+
+/* Macro to exclude the sample point algorithm from compilation if not used
+ * Without the macro, the algorithm would always waste ROM
+ */
+#define USE_SP_ALGO (DT_INST_FOREACH_STATUS_OKAY(SP_IS_SET) 0)
+
+#define SP_AND_TIMING_NOT_SET(inst) \
+	(!DT_INST_NODE_HAS_PROP(inst, sample_point) && \
+	!(DT_INST_NODE_HAS_PROP(inst, prop_seg) && \
+	DT_INST_NODE_HAS_PROP(inst, phase_seg1) && \
+	DT_INST_NODE_HAS_PROP(inst, phase_seg2))) ||
+
+#if DT_INST_FOREACH_STATUS_OKAY(SP_AND_TIMING_NOT_SET) 0
+#error You must either set a sampling-point or timings (phase-seg* and prop-seg)
+#endif
+
 /*
  * RX message buffers (filters) will take up the first N message
  * buffers. The rest are available for TX use.
@@ -669,7 +686,7 @@ static int mcux_flexcan_init(const struct device *dev)
 	}
 
 	timing.sjw = config->sjw;
-	if (config->sample_point) {
+	if (config->sample_point && USE_SP_ALGO) {
 		err = can_calc_timing(dev, &timing, config->bitrate,
 				      config->sample_point);
 		if (err == -EINVAL) {
@@ -679,7 +696,7 @@ static int mcux_flexcan_init(const struct device *dev)
 		LOG_DBG("Presc: %d, Seg1S1: %d, Seg2: %d",
 			timing.prescaler, timing.phase_seg1, timing.phase_seg2);
 		LOG_DBG("Sample-point err : %d", err);
-	} else if (config->phase_seg1) {
+	} else {
 		timing.prop_seg = config->prop_seg;
 		timing.phase_seg1 = config->phase_seg1;
 		timing.phase_seg2 = config->phase_seg2;
@@ -687,9 +704,6 @@ static int mcux_flexcan_init(const struct device *dev)
 		if (err) {
 			LOG_WRN("Bitrate error: %d", err);
 		}
-	} else {
-		LOG_ERR("Timing not configured");
-		return -EINVAL;
 	}
 
 	data->timing.preDivider = timing.prescaler;
@@ -770,9 +784,10 @@ static const struct can_driver_api mcux_flexcan_driver_api = {
 		.clk_source = DT_INST_PROP(id, clk_source),		\
 		.bitrate = DT_INST_PROP(id, bus_speed),			\
 		.sjw = DT_INST_PROP(id, sjw),				\
-		.prop_seg = DT_INST_PROP(id, prop_seg),			\
-		.phase_seg1 = DT_INST_PROP(id, phase_seg1),		\
-		.phase_seg2 = DT_INST_PROP(id, phase_seg2),		\
+		.prop_seg = DT_INST_PROP_OR(id, prop_seg, 0),		\
+		.phase_seg1 = DT_INST_PROP_OR(id, phase_seg1, 0),	\
+		.phase_seg2 = DT_INST_PROP_OR(id, phase_seg2, 0),	\
+		.sample_point = DT_INST_PROP_OR(id, sample_point, 0),	\
 		.irq_config_func = mcux_flexcan_irq_config_##id,	\
 	};								\
 									\

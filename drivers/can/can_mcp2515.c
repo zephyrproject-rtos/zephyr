@@ -17,6 +17,23 @@ LOG_MODULE_REGISTER(mcp2515_can);
 
 #include "can_mcp2515.h"
 
+#define SP_IS_SET(inst) DT_INST_NODE_HAS_PROP(inst, sample_point) ||
+
+/* Macro to exclude the sample point algorithm from compilation if not used
+ * Without the macro, the algorithm would always waste ROM
+ */
+#define USE_SP_ALGO (DT_INST_FOREACH_STATUS_OKAY(SP_IS_SET) 0)
+
+#define SP_AND_TIMING_NOT_SET(inst) \
+	(!DT_INST_NODE_HAS_PROP(inst, sample_point) && \
+	!(DT_INST_NODE_HAS_PROP(inst, prop_seg) && \
+	DT_INST_NODE_HAS_PROP(inst, phase_seg1) && \
+	DT_INST_NODE_HAS_PROP(inst, phase_seg2))) ||
+
+#if DT_INST_FOREACH_STATUS_OKAY(SP_AND_TIMING_NOT_SET) 0
+#error You must either set a sampling-point or timings (phase-seg* and prop-seg)
+#endif
+
 static int mcp2515_cmd_soft_reset(const struct device *dev)
 {
 	uint8_t cmd_buf[] = { MCP2515_OPCODE_RESET };
@@ -886,7 +903,7 @@ static int mcp2515_init(const struct device *dev)
 	dev_data->old_state = CAN_ERROR_ACTIVE;
 
 	timing.sjw = dev_cfg->tq_sjw;
-	if (dev_cfg->sample_point) {
+	if (dev_cfg->sample_point && USE_SP_ALGO) {
 		ret = can_calc_timing(dev, &timing, dev_cfg->bus_speed,
 				      dev_cfg->sample_point);
 		if (ret == -EINVAL) {
@@ -944,18 +961,12 @@ static const struct mcp2515_config mcp2515_config_1 = {
 	.spi_cs_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0),
 #endif  /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 	.tq_sjw = DT_INST_PROP(0, sjw),
-#if DT_INST_PROP(0, prop_seg) > 0 && \
-    DT_INST_PROP(0, phase_seg1) > 0 && \
-    DT_INST_PROP(0, phase_seg2) > 0
-	.tq_prop = DT_INST_PROP(0, prop_seg),
-	.tq_bs1 = DT_INST_PROP(0, phase_seg1),
-	.tq_bs2 = DT_INST_PROP(0, phase_seg2),
-#endif
+	.tq_prop = DT_INST_PROP_OR(0, prop_seg, 0),
+	.tq_bs1 = DT_INST_PROP_OR(0, phase_seg1, 0),
+	.tq_bs2 = DT_INST_PROP_OR(0, phase_seg2, 0),
 	.bus_speed = DT_INST_PROP(0, bus_speed),
-	.osc_freq = DT_INST_PROP(0, osc_freq)
-#if DT_INST_PROP(0, sample_point)
-	.sample_point = DT_INST_PROP(0, sample_point),
-#endif
+	.osc_freq = DT_INST_PROP(0, osc_freq),
+	.sample_point = DT_INST_PROP_OR(0, sample_point, 0)
 };
 
 DEVICE_AND_API_INIT(can_mcp2515_1, DT_INST_LABEL(0), &mcp2515_init,
