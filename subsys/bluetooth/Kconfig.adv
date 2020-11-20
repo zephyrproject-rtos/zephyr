@@ -15,8 +15,7 @@ config BT_LIM_ADV_TIMEOUT
 	  than 180s.
 
 config BT_EXT_ADV
-	bool "Extended Advertising and Scanning support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Extended Advertising and Scanning support"
 	help
 	  Select this to enable Extended Advertising API support.
 	  This enables support for advertising with multiple advertising sets,
