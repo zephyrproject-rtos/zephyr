@@ -52,12 +52,6 @@
 #include <stm32l4xx_ll_pwr.h>
 #endif /* CONFIG_USB */
 
-#ifdef CONFIG_GPIO_STM32
-#include <stm32l4xx_ll_gpio.h>
-/* Required to enable VDDio2 for port G */
-#include <stm32l4xx_ll_pwr.h>
-#endif
-
 #ifdef CONFIG_DMA_STM32
 #include <stm32l4xx_ll_dma.h>
 #endif

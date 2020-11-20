@@ -6,6 +6,8 @@
 
 #include <init.h>
 #include <soc.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_system.h>
 
 #include <pinmux/stm32/pinmux_stm32.h>
 

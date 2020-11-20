@@ -11,6 +11,11 @@
 #include <kernel.h>
 #include <device.h>
 #include <soc.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_exti.h>
+#include <stm32_ll_gpio.h>
+#include <stm32_ll_pwr.h>
+#include <stm32_ll_system.h>
 #include <drivers/gpio.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <pinmux/stm32/pinmux_stm32.h>

@@ -40,11 +40,6 @@
 #include <stm32h7xx_ll_exti.h>
 #endif /* CONFIG_EXTI_STM32 */
 
-#ifdef CONFIG_GPIO_STM32
-#include <stm32h7xx_ll_gpio.h>
-#include <stm32h7xx_ll_system.h>
-#endif /* CONFIG_GPIO_STM32 */
-
 #if defined(CONFIG_CLOCK_CONTROL_STM32_CUBE)
 #include <stm32h7xx_ll_utils.h>
 #endif
