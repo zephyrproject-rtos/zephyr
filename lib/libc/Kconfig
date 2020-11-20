@@ -98,6 +98,17 @@ config MINIMAL_LIBC_MALLOC_ARENA_SIZE
 	  malloc() implementation. This size value must be compatible with
 	  a sys_mem_pool definition with nmax of 1 and minsz of 16.
 
+config MINIMAL_LIBC_POSIX_MEMALIGN
+	bool "Enable minimal libc trivial posix_memalign implementation"
+	help
+	  Enable the minimal libc's trivial implementation of posix_memalign.
+
+config MINIMAL_LIBC_ALIGNED_ALLOC
+	bool "Enable minimal libc trivial aligned_alloc implementation"
+	default y
+	help
+	  Enable the minimal libc's trivial implementation of aligned_alloc.
+
 config MINIMAL_LIBC_CALLOC
 	bool "Enable minimal libc trivial calloc implementation"
 	default y
