@@ -10,6 +10,8 @@
 #include <sys/util.h>
 #include <kernel.h>
 #include <soc.h>
+#include <stm32_ll_i2c.h>
+#include <stm32_ll_rcc.h>
 #include <errno.h>
 #include <drivers/i2c.h>
 #include <drivers/pinmux.h>

@@ -35,10 +35,6 @@
 #include <stm32f1xx_ll_system.h>
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
-#ifdef CONFIG_I2C_STM32
-#include <stm32f1xx_ll_i2c.h>
-#endif
-
 #ifdef CONFIG_SPI_STM32
 #include <stm32f1xx_ll_spi.h>
 #endif

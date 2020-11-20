@@ -55,10 +55,6 @@
 #include <stm32h7xx_ll_pwr.h>
 #endif /* CONFIG_COUNTER_RTC_STM32 */
 
-#ifdef CONFIG_I2C_STM32
-#include <stm32h7xx_ll_i2c.h>
-#endif /* CONFIG_I2C_STM32 */
-
 #ifdef CONFIG_SPI_STM32
 #include <stm32h7xx_ll_spi.h>
 #endif /* CONFIG_SPI_STM32 */
