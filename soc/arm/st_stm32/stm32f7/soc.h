@@ -60,10 +60,6 @@
 #include <stm32f7xx_ll_gpio.h>
 #endif
 
-#ifdef CONFIG_IWDG_STM32
-#include <stm32f7xx_ll_iwdg.h>
-#endif
-
 #ifdef CONFIG_DMA_STM32
 #include <stm32f7xx_ll_dma.h>
 #endif

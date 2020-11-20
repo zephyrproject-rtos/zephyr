@@ -51,10 +51,6 @@
 #include <stm32g4xx_ll_i2c.h>
 #endif /* CONFIG_I2C */
 
-#ifdef CONFIG_IWDG_STM32
-#include <stm32g4xx_ll_iwdg.h>
-#endif
-
 #ifdef CONFIG_ENTROPY_STM32_RNG
 #include <stm32g4xx_ll_rng.h>
 #endif
