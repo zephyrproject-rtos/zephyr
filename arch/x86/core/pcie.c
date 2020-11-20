@@ -185,10 +185,16 @@ uint32_t pcie_msi_map(unsigned int irq,
 	uint32_t map;
 
 	ARG_UNUSED(irq);
-#ifdef CONFIG_INTEL_VTD_ICTL
+#if defined(CONFIG_INTEL_VTD_ICTL)
+#if !defined(CONFIG_PCIE_MSI_X)
 	if (vector != NULL) {
-		map = vtd_remap_msi(vtd, vectors);
+		map = vtd_remap_msi(vtd, vector);
 	} else
+#else
+	if (vector != NULL && !vector->msix) {
+		map = vtd_remap_msi(vtd, vector);
+	} else
+#endif
 #endif
 	{
 		map = 0xFEE00000U; /* standard delivery to BSP local APIC */
@@ -200,7 +206,11 @@ uint32_t pcie_msi_map(unsigned int irq,
 uint16_t pcie_msi_mdr(unsigned int irq,
 		      msi_vector_t *vector)
 {
-	ARG_UNUSED(vectors);
+#ifdef CONFIG_PCIE_MSI_X
+	if ((vector != NULL) && (vector->msix)) {
+		return 0x4000U | vector->arch.vector;
+	}
+#endif
 
 	if (vector == NULL) {
 		/* edge triggered */
@@ -211,9 +221,7 @@ uint16_t pcie_msi_mdr(unsigned int irq,
 	return 0;
 }
 
-#ifdef CONFIG_INTEL_VTD_ICTL
-
-#include <arch/x86/msi.h>
+#if defined(CONFIG_INTEL_VTD_ICTL) || defined(CONFIG_PCIE_MSI_X)
 
 static inline uint32_t _read_pcie_irq_data(pcie_bdf_t bdf)
 {
@@ -237,22 +245,29 @@ uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
 {
 	if (n_vector > 1) {
 		int prev_vector = -1;
-		int irte;
 		int i;
+#ifdef CONFIG_INTEL_VTD_ICTL
+#ifdef CONFIG_PCIE_MSI_X
+		if (!vectors[0].msix)
+#endif
+		{
+			int irte;
 
-		if (!get_vtd()) {
-			return 0;
-		}
+			if (!get_vtd()) {
+				return 0;
+			}
 
-		irte = vtd_allocate_entries(vtd, n_vector);
-		if (irte < 0) {
-			return 0;
-		}
+			irte = vtd_allocate_entries(vtd, n_vector);
+			if (irte < 0) {
+				return 0;
+			}
 
-		for (i = irte; i < (irte + n_vector); i++) {
-			vectors[i].arch.irte = i;
-			vectors[i].arch.remap = true;
+			for (i = irte; i < (irte + n_vector); i++) {
+				vectors[i].arch.irte = i;
+				vectors[i].arch.remap = true;
+			}
 		}
+#endif /* CONFIG_INTEL_VTD_ICTL */
 
 		for (i = 0; i < n_vector; i++) {
 			uint32_t data;
@@ -283,6 +298,7 @@ bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
 				  const void *parameter,
 				  uint32_t flags)
 {
+#ifdef CONFIG_INTEL_VTD_ICTL
 	if (vector->arch.remap) {
 		if (!get_vtd()) {
 			return false;
@@ -290,6 +306,7 @@ bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
 
 		vtd_remap(vtd, vector);
 	}
+#endif /* CONFIG_INTEL_VTD_ICTL */
 
 	z_x86_irq_connect_on_vector(vector->arch.irq, vector->arch.vector,
 				    routine, parameter, flags);
@@ -297,5 +314,5 @@ bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
 	return true;
 }
 
-#endif /* CONFIG_INTEL_VTD_ICTL */
+#endif /* CONFIG_INTEL_VTD_ICTL || CONFIG_PCIE_MSI_X */
 #endif /* CONFIG_PCIE_MSI */
