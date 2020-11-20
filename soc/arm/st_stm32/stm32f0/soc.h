@@ -57,10 +57,6 @@
 #include <stm32f0xx_ll_dma.h>
 #endif
 
-#ifdef CONFIG_HWINFO_STM32
-#include <stm32f0xx_ll_utils.h>
-#endif
-
 #ifdef CONFIG_PWM_STM32
 #include <stm32f0xx_ll_tim.h>
 #endif /* CONFIG_PWM_STM32 */
