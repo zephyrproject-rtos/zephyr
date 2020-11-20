@@ -47,10 +47,6 @@
 #include <stm32g0xx_ll_i2c.h>
 #endif
 
-#ifdef CONFIG_HWINFO_STM32
-#include <stm32g0xx_ll_utils.h>
-#endif
-
 #ifdef CONFIG_PWM_STM32
 #include <stm32g0xx_ll_tim.h>
 #endif /* CONFIG_PWM_STM32 */

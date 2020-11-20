@@ -45,7 +45,7 @@
 #include <stm32h7xx_ll_system.h>
 #endif /* CONFIG_GPIO_STM32 */
 
-#if defined(CONFIG_HWINFO_STM32) || defined(CONFIG_CLOCK_CONTROL_STM32_CUBE)
+#if defined(CONFIG_CLOCK_CONTROL_STM32_CUBE)
 #include <stm32h7xx_ll_utils.h>
 #endif
 
