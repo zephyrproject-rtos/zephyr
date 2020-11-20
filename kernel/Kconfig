@@ -886,7 +886,7 @@ config THREAD_LOCAL_STORAGE
 
 choice KERNEL_WORK
 	prompt "Which work queue implementation to use"
-	default KERNEL_WORK1
+	default KERNEL_WORK2
 
 config KERNEL_WORK1
 	bool "Select the original racy work API"
