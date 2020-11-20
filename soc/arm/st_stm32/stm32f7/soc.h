@@ -38,10 +38,6 @@
 #include <stm32f7xx_ll_pwr.h>
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
-#ifdef CONFIG_DMA_STM32
-#include <stm32f7xx_ll_dma.h>
-#endif
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F7_SOC_H_ */

@@ -35,10 +35,6 @@
 #include <stm32l0xx_ll_rcc.h>
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
-#ifdef CONFIG_DMA_STM32
-#include <stm32l0xx_ll_dma.h>
-#endif
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32L0_SOC_H_ */
