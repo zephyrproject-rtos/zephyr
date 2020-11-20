@@ -52,7 +52,7 @@ config BT_L2CAP_DYNAMIC_CHANNEL
 	  allowing the creation of dynamic L2CAP Channels.
 
 config BT_L2CAP_ECRED
-	bool "L2CAP Enhanced Credit Based Flow Control support"
+	bool "L2CAP Enhanced Credit Based Flow Control support [EXPERIMENTAL]"
 	depends on BT_L2CAP_DYNAMIC_CHANNEL
 	help
 	  This option enables support for LE Connection oriented Channels with
