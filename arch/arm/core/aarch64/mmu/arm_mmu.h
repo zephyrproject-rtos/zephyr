@@ -109,3 +109,9 @@
 #else
 #define TCR_PS_BITS TCR_PS_BITS_4GB
 #endif
+
+/* Upper and lower attributes mask for page/block descriptor */
+#define DESC_ATTRS_UPPER_MASK	GENMASK(63, 51)
+#define DESC_ATTRS_LOWER_MASK	GENMASK(11, 2)
+
+#define DESC_ATTRS_MASK		(DESC_ATTRS_UPPER_MASK | DESC_ATTRS_UPPER_MASK)

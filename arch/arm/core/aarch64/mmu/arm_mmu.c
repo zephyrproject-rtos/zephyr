@@ -90,13 +90,10 @@ static void set_pte_table_desc(uint64_t *pte, uint64_t *table, unsigned int leve
 	*pte = PTE_TABLE_DESC | (uint64_t)table;
 }
 
-static void set_pte_block_desc(uint64_t *pte, uint64_t addr_pa,
-			       unsigned int attrs, unsigned int level)
+static uint64_t get_region_desc(unsigned int attrs)
 {
-	uint64_t desc = addr_pa;
 	unsigned int mem_type;
-
-	desc |= (level == 3) ? PTE_PAGE_DESC : PTE_BLOCK_DESC;
+	uint64_t desc = 0;
 
 	/* NS bit for security memory access from secure state */
 	desc |= (attrs & MT_NS) ? PTE_BLOCK_DESC_NS : 0;
@@ -156,16 +153,32 @@ static void set_pte_block_desc(uint64_t *pte, uint64_t addr_pa,
 			desc |= PTE_BLOCK_DESC_OUTER_SHARE;
 	}
 
+	return desc;
+}
+
+static uint64_t get_region_desc_from_pte(uint64_t *pte)
+{
+	return ((*pte) & DESC_ATTRS_MASK);
+}
+
+static void set_pte_block_desc(uint64_t *pte, uint64_t addr_pa,
+			       uint64_t desc, unsigned int level)
+{
+	desc |= addr_pa;
+	desc |= (level == 3) ? PTE_PAGE_DESC : PTE_BLOCK_DESC;
+
 #if DUMP_PTE
+	uint8_t mem_type = (desc >> 2) & MT_TYPE_MASK;
+
 	MMU_DEBUG("%s", XLAT_TABLE_LEVEL_SPACE(level));
 	MMU_DEBUG("%p: ", pte);
 	MMU_DEBUG((mem_type == MT_NORMAL) ? "MEM" :
 		  ((mem_type == MT_NORMAL_NC) ? "NC" : "DEV"));
-	MMU_DEBUG((attrs & MT_RW) ? "-RW" : "-RO");
-	MMU_DEBUG((attrs & MT_NS) ? "-NS" : "-S");
-	MMU_DEBUG((attrs & MT_RW_AP_ELx) ? "-ELx" : "-ELh");
-	MMU_DEBUG((attrs & MT_P_EXECUTE_NEVER) ? "-PXN" : "-PX");
-	MMU_DEBUG((attrs & MT_U_EXECUTE_NEVER) ? "-UXN" : "-UX");
+	MMU_DEBUG((desc & PTE_BLOCK_DESC_AP_RO) ? "-RO" : "-RW");
+	MMU_DEBUG((desc & PTE_BLOCK_DESC_NS) ? "-NS" : "-S");
+	MMU_DEBUG((desc & PTE_BLOCK_DESC_AP_ELx) ? "-ELx" : "-ELh");
+	MMU_DEBUG((desc & PTE_BLOCK_DESC_PXN) ? "-PXN" : "-PX");
+	MMU_DEBUG((desc & PTE_BLOCK_DESC_UXN) ? "-UXN" : "-UX");
 	MMU_DEBUG("\n");
 #endif
 
@@ -184,7 +197,7 @@ static uint64_t *new_prealloc_table(void)
 }
 
 /* Splits a block into table with entries spanning the old block */
-static void split_pte_block_desc(uint64_t *pte, int level)
+static void split_pte_block_desc(uint64_t *pte, uint64_t desc, int level)
 {
 	uint64_t old_block_desc = *pte;
 	uint64_t *new_table;
@@ -210,7 +223,7 @@ static void split_pte_block_desc(uint64_t *pte, int level)
 /* Create/Populate translation table(s) for given region */
 static void init_xlat_tables(const struct arm_mmu_region *region)
 {
-	uint64_t *pte;
+	uint64_t desc, *pte;
 	uint64_t virt = region->base_va;
 	uint64_t phys = region->base_pa;
 	uint64_t size = region->size;
@@ -224,6 +237,8 @@ static void init_xlat_tables(const struct arm_mmu_region *region)
 	__ASSERT(((virt & (PAGE_SIZE - 1)) == 0) &&
 		 ((size & (PAGE_SIZE - 1)) == 0),
 		 "address/size are not page aligned\n");
+
+	desc = get_region_desc(attrs);
 
 	while (size) {
 		__ASSERT(level < XLAT_LEVEL_MAX,
@@ -239,7 +254,7 @@ static void init_xlat_tables(const struct arm_mmu_region *region)
 			/* Given range fits into level size,
 			 * create block/page descriptor
 			 */
-			set_pte_block_desc(pte, phys, attrs, level);
+			set_pte_block_desc(pte, phys, desc, level);
 			virt += level_size;
 			phys += level_size;
 			size -= level_size;
@@ -251,7 +266,12 @@ static void init_xlat_tables(const struct arm_mmu_region *region)
 			set_pte_table_desc(pte, new_table, level);
 			level++;
 		} else if (pte_desc_type(pte) == PTE_BLOCK_DESC) {
-			split_pte_block_desc(pte, level);
+			/* Check if the block is already mapped with the correct attrs */
+			if (desc == get_region_desc_from_pte(pte))
+				return;
+
+			/* We need to split a new table */
+			split_pte_block_desc(pte, desc, level);
 			level++;
 		} else if (pte_desc_type(pte) == PTE_TABLE_DESC)
 			level++;
