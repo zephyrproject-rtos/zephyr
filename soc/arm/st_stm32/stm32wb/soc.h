@@ -44,10 +44,6 @@
 #include <stm32wbxx_ll_system.h>
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
-#ifdef CONFIG_SPI_STM32
-#include <stm32wbxx_ll_spi.h>
-#endif /* CONFIG_SPI_STM32 */
-
 #ifdef CONFIG_STM32_LPTIM_TIMER
 #include <stm32wbxx_ll_lptim.h>
 #include <stm32wbxx_ll_system.h>

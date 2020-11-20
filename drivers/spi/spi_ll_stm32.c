@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <sys/util.h>
 #include <kernel.h>
 #include <soc.h>
+#include <stm32_ll_spi.h>
 #include <errno.h>
 #include <drivers/spi.h>
 #include <toolchain.h>
