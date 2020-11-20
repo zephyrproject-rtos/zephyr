@@ -2793,7 +2793,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                 except Exception as e:
                     logger.error("%s: can't load (skipping): %s" % (tc_path, e))
                     self.load_errors += 1
-
+        return len(self.testcases)
 
     def get_platform(self, name):
         selected_platform = None
