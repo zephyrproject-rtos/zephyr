@@ -61,10 +61,6 @@
 #include <stm32l0xx_ll_wwdg.h>
 #endif
 
-#ifdef CONFIG_DAC_STM32
-#include <stm32l0xx_ll_dac.h>
-#endif
-
 #ifdef CONFIG_DMA_STM32
 #include <stm32l0xx_ll_dma.h>
 #endif
