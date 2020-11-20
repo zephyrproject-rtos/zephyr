@@ -143,5 +143,4 @@ config TEST_ARM_CORTEX_M
 	  the testing suite to utilize these exceptions, in tests.
 	  Note that by default, when building with ARM_SECURE_FIRMWARE
 	  set, these exceptions are set to target the Non-Secure state.
-
 endmenu
