@@ -10,6 +10,9 @@
 
 #include <drivers/watchdog.h>
 #include <soc.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_iwdg.h>
+#include <stm32_ll_system.h>
 #include <errno.h>
 
 #include "wdt_iwdg_stm32.h"

@@ -38,10 +38,6 @@
 #include <stm32f2xx_ll_gpio.h>
 #endif
 
-#ifdef CONFIG_IWDG_STM32
-#include <stm32f2xx_ll_iwdg.h>
-#endif
-
 #if defined(CONFIG_COUNTER_RTC_STM32)
 #include <stm32f2xx_ll_rtc.h>
 #include <stm32f2xx_ll_exti.h>

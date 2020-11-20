@@ -43,10 +43,6 @@
 #include <stm32f1xx_ll_spi.h>
 #endif
 
-#ifdef CONFIG_IWDG_STM32
-#include <stm32f1xx_ll_iwdg.h>
-#endif
-
 #ifdef CONFIG_GPIO_STM32
 #include <stm32f1xx_ll_gpio.h>
 #endif

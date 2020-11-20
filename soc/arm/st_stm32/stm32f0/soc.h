@@ -41,10 +41,6 @@
 #include <stm32f0xx_ll_pwr.h>
 #endif
 
-#ifdef CONFIG_IWDG_STM32
-#include <stm32f0xx_ll_iwdg.h>
-#endif
-
 #ifdef CONFIG_I2C_STM32
 #include <stm32f0xx_ll_i2c.h>
 #endif
