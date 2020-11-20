@@ -7,6 +7,11 @@
  */
 
 #include <soc.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_pwr.h>
+#include <stm32_ll_rcc.h>
+#include <stm32_ll_system.h>
+#include <stm32_ll_utils.h>
 #include <drivers/clock_control.h>
 #include <sys/util.h>
 #include <sys/__assert.h>
@@ -43,7 +48,7 @@
  * So, changing this prescaler is not allowed until it is made possible to
  * use them independently in zephyr clock subsystem.
  */
-#error "AHB presacler can't be higher than 1"
+#error "AHB prescaler can't be higher than 1"
 #endif
 
 /**

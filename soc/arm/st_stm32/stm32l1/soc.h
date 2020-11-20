@@ -25,12 +25,6 @@
 
 #include <stm32l1xx_ll_system.h>
 
-#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
-#include <stm32l1xx_ll_utils.h>
-#include <stm32l1xx_ll_bus.h>
-#include <stm32l1xx_ll_rcc.h>
-#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
-
 #ifdef CONFIG_EXTI_STM32
 #include <stm32l1xx_ll_exti.h>
 #endif
