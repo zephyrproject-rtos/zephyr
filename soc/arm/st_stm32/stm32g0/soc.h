@@ -29,10 +29,6 @@
 
 #include <stm32g0xx_ll_system.h>
 
-#ifdef CONFIG_EXTI_STM32
-#include <stm32g0xx_ll_exti.h>
-#endif
-
 /* Add include for DTS generated information */
 #include <devicetree.h>
 

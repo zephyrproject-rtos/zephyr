@@ -24,10 +24,6 @@
 
 #include <st_stm32_dt.h>
 
-#ifdef CONFIG_EXTI_STM32
-#include <stm32f0xx_ll_exti.h>
-#endif
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F0_SOC_H_ */

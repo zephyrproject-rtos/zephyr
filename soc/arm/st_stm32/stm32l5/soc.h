@@ -27,10 +27,6 @@
 /* Add include for DTS generated information */
 #include <st_stm32_dt.h>
 
-#ifdef CONFIG_EXTI_STM32
-#include <stm32l5xx_ll_exti.h>
-#endif
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32L5_SOC_H_ */
