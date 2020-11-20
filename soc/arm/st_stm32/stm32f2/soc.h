@@ -52,10 +52,6 @@
 #include <stm32f2xx_ll_pwr.h>
 #endif
 
-#ifdef CONFIG_ADC_STM32
-#include <stm32f2xx_ll_adc.h>
-#endif
-
 #ifdef CONFIG_DAC_STM32
 #include <stm32f2xx_ll_dac.h>
 #endif

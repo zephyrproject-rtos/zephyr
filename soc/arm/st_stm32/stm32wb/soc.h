@@ -58,10 +58,6 @@
 #include <stm32wbxx_ll_spi.h>
 #endif /* CONFIG_SPI_STM32 */
 
-#ifdef CONFIG_ADC_STM32
-#include <stm32wbxx_ll_adc.h>
-#endif /* CONFIG_ADC_STM32 */
-
 #ifdef CONFIG_IWDG_STM32
 #include <stm32wbxx_ll_iwdg.h>
 #endif /* CONFIG_IWDG_STM32 */
