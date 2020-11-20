@@ -57,10 +57,6 @@
 #include <stm32l1xx_ll_iwdg.h>
 #endif
 
-#ifdef CONFIG_WWDG_STM32
-#include <stm32l1xx_ll_wwdg.h>
-#endif
-
 #ifdef CONFIG_PWM_STM32
 #include <stm32l1xx_ll_tim.h>
 #endif /* CONFIG_PWM_STM32 */
