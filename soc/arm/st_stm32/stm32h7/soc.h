@@ -68,10 +68,6 @@
 #include <stm32h7xx_ll_spi.h>
 #endif /* CONFIG_SPI_STM32 */
 
-#ifdef CONFIG_ADC_STM32
-#include <stm32h7xx_ll_adc.h>
-#endif /* CONFIG_ADC_STM32 */
-
 #ifdef CONFIG_PWM_STM32
 #include <stm32h7xx_ll_tim.h>
 #endif /* CONFIG_PWM_STM32 */

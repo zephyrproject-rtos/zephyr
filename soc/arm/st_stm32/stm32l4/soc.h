@@ -78,10 +78,6 @@
 #include <stm32l4xx_ll_pwr.h>
 #endif
 
-#ifdef CONFIG_ADC_STM32
-#include <stm32l4xx_ll_adc.h>
-#endif
-
 #ifdef CONFIG_DMA_STM32
 #include <stm32l4xx_ll_dma.h>
 #endif

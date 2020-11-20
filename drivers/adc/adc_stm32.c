@@ -16,6 +16,7 @@
 #include <kernel.h>
 #include <init.h>
 #include <soc.h>
+#include <stm32_ll_adc.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"

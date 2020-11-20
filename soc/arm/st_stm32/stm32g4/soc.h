@@ -51,10 +51,6 @@
 #include <stm32g4xx_ll_i2c.h>
 #endif /* CONFIG_I2C */
 
-#ifdef CONFIG_ADC_STM32
-#include <stm32g4xx_ll_adc.h>
-#endif
-
 #ifdef CONFIG_DAC_STM32
 #include <stm32g4xx_ll_dac.h>
 #endif
