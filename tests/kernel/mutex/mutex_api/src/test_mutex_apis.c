@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <ztest.h>
+#include <irq_offload.h>
+#include <negative_handler.h>
 
 #define TIMEOUT 500
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
@@ -17,6 +19,9 @@ static ZTEST_DMEM int thread_ret = TC_FAIL;
 
 /**TESTPOINT: init via K_MUTEX_DEFINE*/
 K_MUTEX_DEFINE(kmutex);
+K_MUTEX_DEFINE(negative_mutex1);
+K_MUTEX_DEFINE(negative_mutex2);
+K_MUTEX_DEFINE(negative_mutex3);
 static struct k_mutex mutex;
 
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
@@ -386,12 +391,59 @@ void test_mutex_priority_inheritance(void)
 	k_msleep(TIMEOUT+1000);
 }
 
+void test_negative_mutex_init(void)
+{
+	/* Set up the valid_fault as true to catch error */
+	set_fault_valid(true);
+	/* TESTPOINT: Pass a null pointer into the API k_mutex_init */
+	k_mutex_init(NULL);
+}
+void test_negative_mutex_lock(void)
+{
+	/* Set up the valid_fault as true to catch error */
+	set_fault_valid(true);
+	/* TESTPOINT: Pass a null pointer into the API k_mutex_lock */
+	k_mutex_lock(NULL, K_FOREVER);
+}
+void test_negative_mutex_unlock(void)
+{
+	/* Set up the valid_fault as true to catch error */
+	set_fault_valid(true);
+	/* TESTPOINT: Pass a null pointer into the API k_mutex_unlock */
+	k_mutex_unlock(NULL);
+}
+
+static void tIsr_entry_lock_unlock(const void *p)
+{
+	/* Set up the valid_fault as true to catch error */
+	set_assert_valid(true);
+	k_mutex_lock(&negative_mutex1, K_FOREVER);
+	set_assert_valid(true);
+	k_mutex_unlock(&negative_mutex2);
+}
+void test_negative_mutex_lock_unlock_irq(void)
+{
+	/* TESTPOINT: Try to lock/unlock mutex in isr context */
+	irq_offload(tIsr_entry_lock_unlock, NULL);
+}
+
+void test_negative_mutex_unlock_assert(void)
+{
+	set_assert_valid(true);
+	zassert_true(k_mutex_lock(&negative_mutex3, K_FOREVER) == 0,
+			"current thread failed to lock the mutex");
+	/* Verify that when current thread is equal to the lock_ower
+	 * but the lock_count is equal to zero.
+	 */
+	negative_mutex3.lock_count = 0;
+	k_mutex_unlock(&negative_mutex3);
+}
+
 /*test case main entry*/
 void test_main(void)
 {
 	k_thread_access_grant(k_current_get(), &tdata, &tstack, &tdata2,
-				&tstack2, &tdata3, &tstack3, &kmutex,
-				&mutex);
+				&tstack2, &tdata3, &tstack3, &kmutex, &mutex);
 
 	ztest_test_suite(mutex_api,
 		 ztest_1cpu_user_unit_test(test_mutex_lock_unlock),
@@ -400,7 +452,12 @@ void test_main(void)
 		 ztest_user_unit_test(test_mutex_reent_lock_timeout_fail),
 		 ztest_1cpu_user_unit_test(test_mutex_reent_lock_timeout_pass),
 		 ztest_user_unit_test(test_mutex_recursive),
-		 ztest_user_unit_test(test_mutex_priority_inheritance)
+		 ztest_user_unit_test(test_mutex_priority_inheritance),
+		 ztest_1cpu_user_unit_test(test_negative_mutex_init),
+		 ztest_1cpu_user_unit_test(test_negative_mutex_lock),
+		 ztest_1cpu_user_unit_test(test_negative_mutex_unlock),
+		 ztest_unit_test(test_negative_mutex_lock_unlock_irq),
+		 ztest_unit_test(test_negative_mutex_unlock_assert)
 		 );
 	ztest_run_test_suite(mutex_api);
 }
