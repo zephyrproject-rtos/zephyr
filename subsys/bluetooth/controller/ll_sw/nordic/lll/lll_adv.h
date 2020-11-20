@@ -37,6 +37,10 @@ struct lll_adv_aux {
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 };
 
+#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+struct lll_df_adv_cfg;
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
 struct lll_adv_iso {
 	struct lll_hdr hdr;
 };
@@ -66,6 +70,10 @@ struct lll_adv_sync {
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	int8_t tx_pwr_lvl;
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
+
+#if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	struct lll_df_adv_cfg *df_cfg;
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 };
 
 struct lll_adv {

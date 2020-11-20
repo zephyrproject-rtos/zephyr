@@ -34,7 +34,7 @@ config BT_CTLR_DF_CTE_TX
 	  Enable support for transmission of Constant Tone Extension in
 	  controller.
 
-config BT_CTLR_DF_ANT_SWITCHING_1US
+config BT_CTLR_DF_ANT_SWITCH_1US
 	bool "Enable support for 1us antenna switching slots"
 	depends on BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT
 	default y
@@ -61,4 +61,25 @@ config BT_CTLR_DF_CONN_CTE_RSP
 	  Enable support for Bluetooth v5.1 Connection CTE Response feature
 	  in controller.
 
-endif # BT_CTRL_DIRECTION_FINDING
+config BT_CTLR_DF_ADV_CTE_TX
+	bool "Enable Connectionless CTE Transmitter feature"
+	depends on BT_CTLR_DF_CTE_TX && BT_CTLR_ADV_PERIODIC
+	default y
+	help
+	  Enable support for Bluetooth v5.1 Connectionless CTE Transmitter
+	  feature in controller.
+
+# Customization setting to manage memory usage footprint
+
+config BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN
+	int "Maximum length of antenna switch pattern"
+	range 3 40 if SOC_COMPATIBLE_NRF
+	range 2 75 if !SOC_COMPATIBLE_NRF
+	default 12
+	help
+	  Defines maximum number of antenna switch patterns that controller
+	  will store. For nRF5x-based controllers, the hardware imposes
+	  the value is within range 3 to 40. For general use cases Bluetoot
+	  Core 5.1 spec. requires the value to be within range 2 up to 75.
+
+endif # BT_CTLR_DF

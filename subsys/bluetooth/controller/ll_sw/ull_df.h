@@ -20,3 +20,6 @@ enum df_switch_sample_support {
 	DF_AOD_1US_RX   = BIT(1),
 	DF_AOA_1US      = BIT(2)
 };
+
+int ull_df_init(void);
+int ull_df_reset(void);
