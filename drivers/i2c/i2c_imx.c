@@ -233,13 +233,15 @@ static int i2c_imx_transfer(const struct device *dev, struct i2c_msg *msgs,
 		}
 
 		/* Transfer data */
-		buf = msgs->buf;
-		buf_end = buf + msgs->len;
-		if ((msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
-			i2c_imx_read(dev, msgs->buf, msgs->len);
-		} else {
-			if (!i2c_imx_write(dev, msgs->buf, msgs->len)) {
-				goto finish; /* No ACK received */
+		if (msgs->len) {
+			buf = msgs->buf;
+			buf_end = buf + msgs->len;
+			if ((msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
+				i2c_imx_read(dev, msgs->buf, msgs->len);
+			} else {
+				if (!i2c_imx_write(dev, msgs->buf, msgs->len)) {
+					goto finish; /* No ACK received */
+				}
 			}
 		}
 
