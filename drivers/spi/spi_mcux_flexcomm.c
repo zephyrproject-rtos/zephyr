@@ -544,7 +544,7 @@ static int transceive_dma(const struct device *dev,
 	int ret;
 	uint32_t word_size;
 
-	spi_context_lock(&data->ctx, asynchronous, signal);
+	spi_context_lock(&data->ctx, asynchronous, signal, spi_cfg);
 
 	ret = spi_mcux_configure(dev, spi_cfg);
 	if (ret) {
