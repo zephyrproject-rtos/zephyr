@@ -33,11 +33,6 @@
 #include <stm32wbxx_ll_system.h>
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
-#ifdef CONFIG_STM32_LPTIM_TIMER
-#include <stm32wbxx_ll_lptim.h>
-#include <stm32wbxx_ll_system.h>
-#endif
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32WBX_SOC_H_ */
