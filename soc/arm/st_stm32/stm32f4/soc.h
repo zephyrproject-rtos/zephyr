@@ -46,10 +46,6 @@
 #include <stm32f4xx_ll_spi.h>
 #endif
 
-#ifdef CONFIG_ENTROPY_STM32_RNG
-#include <stm32f4xx_ll_rng.h>
-#endif
-
 #if defined(CONFIG_COUNTER_RTC_STM32)
 #include <stm32f4xx_ll_rtc.h>
 #include <stm32f4xx_ll_exti.h>
