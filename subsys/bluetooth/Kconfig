@@ -107,7 +107,7 @@ config BT_BROADCASTER
 endmenu
 
 config BT_EXT_ADV
-	bool "Extended Advertising and Scanning support [EXPERIMENTAL]"
+	bool "Extended Advertising and Scanning support"
 	help
 	  Select this to enable Extended Advertising API support.
 	  This enables support for advertising with multiple advertising sets,
