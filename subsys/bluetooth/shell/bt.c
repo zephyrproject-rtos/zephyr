@@ -2936,13 +2936,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      cmd_per_adv_sync_create, 4, 6),
 	SHELL_CMD_ARG(per-adv-sync-delete, NULL, "[<index>]",
 		      cmd_per_adv_sync_delete, 1, 1),
+#endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
+#if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_PER_ADV_SYNC)
 	SHELL_CMD_ARG(past-subscribe, NULL, "[conn] [skip <count>] "
 		      "[timeout <ms>] [aoa] [aod_1us] [aod_2us] [cte_only]",
 		      cmd_past_subscribe, 1, 7),
 	SHELL_CMD_ARG(past-unsubscribe, NULL, "[conn]",
 		      cmd_past_unsubscribe, 1, 1),
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
-#if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_CENTRAL)
 	SHELL_CMD_ARG(connect, NULL, HELP_ADDR_LE EXT_ADV_SCAN_OPT,
 		      cmd_connect_le, 3, 3),
