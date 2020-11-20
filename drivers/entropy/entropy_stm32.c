@@ -18,6 +18,10 @@
 #include <sys/util.h>
 #include <errno.h>
 #include <soc.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_rcc.h>
+#include <stm32_ll_rng.h>
+#include <stm32_ll_system.h>
 #include <sys/printk.h>
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/stm32_clock_control.h>

@@ -57,9 +57,6 @@
 #include <stm32l0xx_ll_dma.h>
 #endif
 
-#ifdef CONFIG_ENTROPY_STM32_RNG
-#include <stm32l0xx_ll_rng.h>
-#endif
 #ifdef CONFIG_PWM_STM32
 #include <stm32l0xx_ll_tim.h>
 #endif /* CONFIG_PWM_STM32 */
