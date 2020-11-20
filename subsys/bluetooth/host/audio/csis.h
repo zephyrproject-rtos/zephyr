@@ -58,4 +58,11 @@ int bt_csis_lock(bool lock, bool force);
  */
 void bt_csis_register_cb(struct bt_csis_cb_t *cb);
 
+/**
+ * @brief Test function to dynamically set rank during runtime.
+ *
+ * @param rank The rank to set.
+ */
+int bt_csis_test_set_rank(uint8_t rank);
+
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_CSIS_ */
