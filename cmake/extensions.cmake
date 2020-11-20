@@ -163,7 +163,7 @@ endfunction()
 # writes "-Isome_dir;-Isome/other/dir" to x
 
 function(zephyr_get_include_directories_for_lang_as_string lang i)
-  zephyr_get_include_directories_for_lang(${lang} list_of_flags ${ARGN})
+  zephyr_get_include_directories_for_lang(${lang} list_of_flags DELIMITER " " ${ARGN})
 
   convert_list_of_flags_to_string_of_flags(list_of_flags str_of_flags)
 
@@ -171,7 +171,7 @@ function(zephyr_get_include_directories_for_lang_as_string lang i)
 endfunction()
 
 function(zephyr_get_system_include_directories_for_lang_as_string lang i)
-  zephyr_get_system_include_directories_for_lang(${lang} list_of_flags ${ARGN})
+  zephyr_get_system_include_directories_for_lang(${lang} list_of_flags DELIMITER " " ${ARGN})
 
   convert_list_of_flags_to_string_of_flags(list_of_flags str_of_flags)
 
@@ -179,7 +179,7 @@ function(zephyr_get_system_include_directories_for_lang_as_string lang i)
 endfunction()
 
 function(zephyr_get_compile_definitions_for_lang_as_string lang i)
-  zephyr_get_compile_definitions_for_lang(${lang} list_of_flags ${ARGN})
+  zephyr_get_compile_definitions_for_lang(${lang} list_of_flags DELIMITER " " ${ARGN})
 
   convert_list_of_flags_to_string_of_flags(list_of_flags str_of_flags)
 
@@ -187,7 +187,7 @@ function(zephyr_get_compile_definitions_for_lang_as_string lang i)
 endfunction()
 
 function(zephyr_get_compile_options_for_lang_as_string lang i)
-  zephyr_get_compile_options_for_lang(${lang} list_of_flags)
+  zephyr_get_compile_options_for_lang(${lang} list_of_flags DELIMITER " ")
 
   convert_list_of_flags_to_string_of_flags(list_of_flags str_of_flags)
 
@@ -206,38 +206,47 @@ function(zephyr_get_include_directories_for_lang lang i)
   elseif(args_STRIP_PREFIX)
     # The list has no prefix, so don't add it.
     set(result_output_list ${output_list})
-  else()
-    set(result_output_list "-I$<JOIN:${genexp_output_list},${ARGN}-I>")
+  elseif(args_DELIMITER)
+    set(result_output_list "-I$<JOIN:${genexp_output_list},${args_DELIMITER}-I>")
   endif()
   set(${i} ${result_output_list} PARENT_SCOPE)
 endfunction()
 
 function(zephyr_get_system_include_directories_for_lang lang i)
+  zephyr_get_parse_args(args ${ARGN})
   get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
 
   process_flags(${lang} flags output_list)
   string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
-  set(result_output_list "$<$<BOOL:${genexp_output_list}>:-isystem$<JOIN:${genexp_output_list},$<SEMICOLON>-isystem>>")
+
+  set_ifndef(args_DELIMITER "$<SEMICOLON>")
+  set(result_output_list "$<$<BOOL:${genexp_output_list}>:-isystem$<JOIN:${genexp_output_list},${args_DELIMITER}-isystem>>")
 
   set(${i} ${result_output_list} PARENT_SCOPE)
 endfunction()
 
 function(zephyr_get_compile_definitions_for_lang lang i)
+  zephyr_get_parse_args(args ${ARGN})
   get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_COMPILE_DEFINITIONS)
 
   process_flags(${lang} flags output_list)
   string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
-  set(result_output_list "-D$<JOIN:${genexp_output_list},$<SEMICOLON>-D>")
+
+  set_ifndef(args_DELIMITER "$<SEMICOLON>")
+  set(result_output_list "-D$<JOIN:${genexp_output_list},${args_DELIMITER}-D>")
 
   set(${i} ${result_output_list} PARENT_SCOPE)
 endfunction()
 
 function(zephyr_get_compile_options_for_lang lang i)
+  zephyr_get_parse_args(args ${ARGN})
   get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_COMPILE_OPTIONS)
 
   process_flags(${lang} flags output_list)
   string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
-  set(result_output_list "$<JOIN:${genexp_output_list},$<SEMICOLON>>")
+
+  set_ifndef(args_DELIMITER "$<SEMICOLON>")
+  set(result_output_list "$<JOIN:${genexp_output_list},${args_DELIMITER}>")
 
   set(${i} ${result_output_list} PARENT_SCOPE)
 endfunction()
@@ -250,11 +259,17 @@ endfunction()
 #   print(foo_STRIP_PREFIX) # foo_STRIP_PREFIX might be set to 1
 function(zephyr_get_parse_args return_dict)
   foreach(x ${ARGN})
-    if(x STREQUAL STRIP_PREFIX)
-      set(${return_dict}_STRIP_PREFIX 1 PARENT_SCOPE)
-    endif()
-    if(x STREQUAL NO_SPLIT)
-      set(${return_dict}_NO_SPLIT 1 PARENT_SCOPE)
+    if(DEFINED single_argument)
+      set(${single_argument} ${x} PARENT_SCOPE)
+      unset(single_argument)
+    else()
+      if(x STREQUAL STRIP_PREFIX)
+        set(${return_dict}_STRIP_PREFIX 1 PARENT_SCOPE)
+      elseif(x STREQUAL NO_SPLIT)
+        set(${return_dict}_NO_SPLIT 1 PARENT_SCOPE)
+      elseif(x STREQUAL DELIMITER)
+        set(single_argument ${return_dict}_DELIMITER)
+      endif()
     endif()
   endforeach()
 endfunction()
