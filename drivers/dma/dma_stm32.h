@@ -8,6 +8,7 @@
 #define DMA_STM32_H_
 
 #include <soc.h>
+#include <stm32_ll_dma.h>
 #include <drivers/dma.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 

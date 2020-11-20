@@ -46,10 +46,6 @@
 #include <stm32l4xx_ll_pwr.h>
 #endif /* CONFIG_USB */
 
-#ifdef CONFIG_DMA_STM32
-#include <stm32l4xx_ll_dma.h>
-#endif
-
 #ifdef CONFIG_STM32_LPTIM_TIMER
 #include <stm32l4xx_ll_lptim.h>
 #include <stm32l4xx_ll_system.h>
