@@ -18,6 +18,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <drivers/spi.h>
 #include <drivers/gpio.h>
 
+#include <net/ieee802154_radio.h>
+
 #include "ieee802154_rf2xx.h"
 #include "ieee802154_rf2xx_regs.h"
 #include "ieee802154_rf2xx_iface.h"
