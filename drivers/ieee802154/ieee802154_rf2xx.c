@@ -537,9 +537,27 @@ static int rf2xx_tx(const struct device *dev,
 	struct rf2xx_context *ctx = dev->data;
 	int response = 0;
 
-	if (mode != IEEE802154_TX_MODE_CSMA_CA) {
-		NET_ERR("TX mode %d not supported", mode);
-		return -ENOTSUP;
+	if (ctx->tx_mode != mode) {
+		switch (mode) {
+		case IEEE802154_TX_MODE_DIRECT:
+			/* skip retries & csma/ca algorithm */
+			rf2xx_iface_reg_write(dev, RF2XX_XAH_CTRL_0_REG, 0x0E);
+			break;
+		case IEEE802154_TX_MODE_CSMA_CA:
+			/* backoff maxBE = 5, minBE = 3 */
+			rf2xx_iface_reg_write(dev, RF2XX_CSMA_BE_REG, 0x53);
+			/* max frame retries = 3, csma/ca retries = 4 */
+			rf2xx_iface_reg_write(dev, RF2XX_XAH_CTRL_0_REG, 0x38);
+			break;
+		case IEEE802154_TX_MODE_CCA:
+		case IEEE802154_TX_MODE_TXTIME:
+		case IEEE802154_TX_MODE_TXTIME_CCA:
+		default:
+			NET_ERR("TX mode %d not supported", mode);
+			return -ENOTSUP;
+		}
+
+		ctx->tx_mode = mode;
 	}
 
 	rf2xx_trx_set_tx_state(dev);
@@ -680,6 +698,8 @@ static int power_on_and_setup(const struct device *dev)
 		config |= (1 << RF2XX_OQPSK_SCRAM_EN);
 	}
 	rf2xx_iface_reg_write(dev, RF2XX_TRX_CTRL_2_REG, config);
+
+	ctx->tx_mode = IEEE802154_TX_MODE_CSMA_CA;
 
 	/* Configure INT behaviour */
 	config = (1 << RF2XX_RX_START) |
