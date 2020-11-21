@@ -75,7 +75,7 @@ static void delayed_test_items_init(void)
 
 	for (i = 0; i < NUM_TEST_ITEMS; i++) {
 		delayed_tests[i].key = i + 1;
-		k_work_init(&delayed_tests[i].work.work, work_handler);
+		k_delayed_work_init(&delayed_tests[i].work, work_handler);
 	}
 }
 
@@ -102,7 +102,7 @@ static void coop_work_main(int arg1, int arg2)
 
 	for (i = 1; i < NUM_TEST_ITEMS; i += 2) {
 		TC_PRINT(" - Submitting work %d from coop thread\n", i + 1);
-		k_work_submit(&delayed_tests[i].work.work);
+		k_delayed_work_submit(&delayed_tests[i].work, K_NO_WAIT);
 		k_msleep(SUBMIT_WAIT);
 	}
 }
@@ -121,7 +121,7 @@ static void delayed_test_items_submit(void)
 
 	for (i = 0; i < NUM_TEST_ITEMS; i += 2) {
 		TC_PRINT(" - Submitting work %d from preempt thread\n", i + 1);
-		k_work_submit(&delayed_tests[i].work.work);
+		k_delayed_work_submit(&delayed_tests[i].work, K_NO_WAIT);
 		k_msleep(SUBMIT_WAIT);
 	}
 }
@@ -194,10 +194,10 @@ static void test_resubmit(void)
 	TC_PRINT("Starting resubmit test\n");
 
 	delayed_tests[0].key = 1;
-	delayed_tests[0].work.work.handler = resubmit_work_handler;
+	k_delayed_work_init(&delayed_tests[0].work, resubmit_work_handler);
 
 	TC_PRINT(" - Submitting work\n");
-	k_work_submit(&delayed_tests[0].work.work);
+	k_delayed_work_submit(&delayed_tests[0].work, K_NO_WAIT);
 
 	TC_PRINT(" - Waiting for work to finish\n");
 	k_msleep(CHECK_WAIT);
