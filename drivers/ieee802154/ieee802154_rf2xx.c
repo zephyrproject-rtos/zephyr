@@ -638,6 +638,23 @@ static int rf2xx_stop(const struct device *dev)
 	return 0;
 }
 
+static int rf2xx_pan_coord_set(const struct device *dev, bool pan_coordinator)
+{
+	uint8_t reg;
+
+	if (pan_coordinator) {
+		reg = rf2xx_iface_reg_read(dev, RF2XX_CSMA_SEED_1_REG);
+		reg |= (1 << RF2XX_AACK_I_AM_COORD);
+		rf2xx_iface_reg_write(dev, RF2XX_CSMA_SEED_1_REG, reg);
+	} else {
+		reg = rf2xx_iface_reg_read(dev, RF2XX_CSMA_SEED_1_REG);
+		reg &= ~(1 << RF2XX_AACK_I_AM_COORD);
+		rf2xx_iface_reg_write(dev, RF2XX_CSMA_SEED_1_REG, reg);
+	}
+
+	return 0;
+}
+
 static int rf2xx_promiscuous_set(const struct device *dev, bool promiscuous)
 {
 	uint8_t reg;
@@ -672,7 +689,10 @@ int rf2xx_configure(const struct device *dev,
 	switch (type) {
 	case IEEE802154_CONFIG_AUTO_ACK_FPB:
 	case IEEE802154_CONFIG_ACK_FPB:
+		break;
+
 	case IEEE802154_CONFIG_PAN_COORDINATOR:
+		ret = rf2xx_pan_coord_set(dev, config->pan_coordinator);
 		break;
 
 	case IEEE802154_CONFIG_PROMISCUOUS:
@@ -1011,7 +1031,7 @@ static struct ieee802154_radio_api rf2xx_radio_api = {
 		.spi.cs.flags = DRV_INST_SPI_DEV_CS_GPIOS_FLAGS(n),	\
 	}
 
-#define IEEE802154_RF2XX_DEVICE_DATA(n)                                \
+#define IEEE802154_RF2XX_DEVICE_DATA(n)                                 \
 	static struct rf2xx_context rf2xx_ctx_data_##n = {              \
 		.mac_addr = DRV_INST_LOCAL_MAC_ADDRESS(n)               \
 	}
