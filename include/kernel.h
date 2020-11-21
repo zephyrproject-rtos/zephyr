@@ -2482,6 +2482,8 @@ __syscall int k_stack_pop(struct k_stack *stack, stack_data_t *data,
 
 /** @} */
 
+#ifdef CONFIG_KERNEL_WORK1
+
 struct k_work;
 
 /**
@@ -2954,6 +2956,9 @@ static inline int32_t k_delayed_work_remaining_get(const struct k_delayed_work *
 }
 
 /** @} */
+
+#endif /* CONFIG_KERNEL_WORK1 */
+
 /**
  * @defgroup mutex_apis Mutex APIs
  * @ingroup kernel_apis
