@@ -4279,6 +4279,13 @@ no_ext_hdr:
 		if (!(adv_addr ||
 		      (adi && ((tx_pwr != BT_HCI_LE_ADV_TX_POWER_NO_PREF) ||
 			       data)))) {
+			/* No device address and no valid AD data parsed or
+			 * Tx Power present for this PDU chain that has ADI,
+			 * skip HCI event generation.
+			 * In other terms, generate HCI event if device address
+			 * is present or if Tx pwr and/or data is present from
+			 * anonymous device.
+			 */
 			goto le_ext_adv_report_invalid;
 		}
 	}
@@ -4606,6 +4613,9 @@ no_ext_hdr:
 	} else {
 		/* Data incomplete and no more to come */
 		if ((tx_pwr == BT_HCI_LE_ADV_TX_POWER_NO_PREF) && !data) {
+			/* No Tx Power value and no valid AD data parsed in this
+			 * chain of PDUs, skip HCI event generation.
+			 */
 			goto le_per_adv_report_invalid;
 		}
 	}
