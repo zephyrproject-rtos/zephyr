@@ -22,7 +22,6 @@ list(APPEND kernel_files
   system_work_q.c
   thread.c
   version.c
-  work_q.c
   condvar.c
   smp.c
   banner.c
@@ -37,12 +36,15 @@ add_library(kernel ${kernel_files})
 
 # Kernel files has the macro __ZEPHYR_SUPERVISOR__ set so that it
 # optimizes the code when userspace is enabled.
+
 set_target_properties(
   kernel
   PROPERTIES
   COMPILE_DEFINITIONS
   __ZEPHYR_SUPERVISOR__
   )
+
+target_sources_ifdef(CONFIG_KERNEL_WORK1          kernel PRIVATE work_q.c)
 
 target_sources_ifdef(CONFIG_STACK_CANARIES        kernel PRIVATE compiler_stack_protect.c)
 target_sources_ifdef(CONFIG_SYS_CLOCK_EXISTS      kernel PRIVATE timeout.c timer.c)

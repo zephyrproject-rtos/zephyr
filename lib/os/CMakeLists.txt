@@ -19,10 +19,11 @@ zephyr_sources(
   sem.c
   thread_entry.c
   timeutil.c
-  work_q.c
   heap.c
   heap-validate.c
   )
+
+zephyr_sources_ifdef(CONFIG_KERNEL_WORK1 work_q.c)
 
 zephyr_sources_ifdef(CONFIG_CBPRINTF_COMPLETE cbprintf_complete.c)
 zephyr_sources_ifdef(CONFIG_CBPRINTF_NANO cbprintf_nano.c)
