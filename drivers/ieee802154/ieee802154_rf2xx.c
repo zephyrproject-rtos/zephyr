@@ -550,6 +550,11 @@ static int rf2xx_tx(const struct device *dev,
 			rf2xx_iface_reg_write(dev, RF2XX_XAH_CTRL_0_REG, 0x38);
 			break;
 		case IEEE802154_TX_MODE_CCA:
+			/* backoff period = 0 */
+			rf2xx_iface_reg_write(dev, RF2XX_CSMA_BE_REG, 0x00);
+			/* no frame retries & no csma/ca retries */
+			rf2xx_iface_reg_write(dev, RF2XX_XAH_CTRL_0_REG, 0x00);
+			break;
 		case IEEE802154_TX_MODE_TXTIME:
 		case IEEE802154_TX_MODE_TXTIME_CCA:
 		default:
