@@ -4243,7 +4243,9 @@ no_ext_hdr:
 		}
 
 		if (!node_rx_next) {
-			if (sec_phy_curr) {
+			bool has_aux_ptr = !!sec_phy_curr;
+
+			if (has_aux_ptr) {
 				data_status =
 				  BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE;
 			}
@@ -4580,7 +4582,9 @@ no_ext_hdr:
 		}
 
 		if (!node_rx_next) {
-			if (sec_phy_curr) {
+			bool has_aux_ptr = !!sec_phy_curr;
+
+			if (has_aux_ptr) {
 				data_status =
 				  BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE;
 			}
