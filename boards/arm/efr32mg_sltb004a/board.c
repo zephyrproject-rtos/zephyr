@@ -28,6 +28,18 @@ static int efr32mg_sltb004a_init(const struct device *dev)
 
 #endif /* CONFIG_CCS811 */
 
+#ifdef CONFIG_SI7021
+	cur_dev = device_get_binding(SI7021_PWR_ENABLE_GPIO_NAME);
+	if (!cur_dev) {
+		printk("SI7021 power gpio port was not found!\n");
+		return -ENODEV;
+	}
+
+	gpio_pin_configure(cur_dev, SI7021_PWR_ENABLE_GPIO_PIN, GPIO_OUTPUT);
+	gpio_pin_set(cur_dev, SI7021_PWR_ENABLE_GPIO_PIN, 1);
+
+#endif /* CONFIG_SI7021 */
+
 	return 0;
 }
 

@@ -273,6 +273,12 @@ test_i2c_si7055: si7055@40 {
 	reg = <0x40>;
 };
 
+test_i2c_si7021: si7021@40 {
+	compatible = "silabs,si7021";
+	label = "SI7021";
+	reg = <0x40>;
+};
+
 test_i2c_si7060: si7060@25 {
 	compatible = "silabs,si7060";
 	label = "SI7060";

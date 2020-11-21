@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) Nikolaus Huber, Uppsala University
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c1 {
+	location-sda = <GECKO_LOCATION(17) GECKO_PORT_C GECKO_PIN(4)>;
+	location-scl = <GECKO_LOCATION(17) GECKO_PORT_C GECKO_PIN(5)>;
+	status = "okay";
+
+	si7021: si7021@40 {
+		compatible = "silabs,si7021";
+		reg = <0x40>;
+		label = "SI7021";
+	};
+};
