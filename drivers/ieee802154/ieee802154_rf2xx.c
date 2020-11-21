@@ -257,6 +257,10 @@ static void rf2xx_process_rx_frame(const struct device *dev)
 {
 	struct rf2xx_context *ctx = dev->data;
 
+	/*
+	 * NOTE: In promiscuous mode invalid frames will be processed.
+	 */
+
 	if (ctx->trx_model != RF2XX_TRX_MODEL_231) {
 		rf2xx_trx_rx(dev);
 	} else {
@@ -634,15 +638,53 @@ static int rf2xx_stop(const struct device *dev)
 	return 0;
 }
 
+static int rf2xx_promiscuous_set(const struct device *dev, bool promiscuous)
+{
+	uint8_t reg;
+
+	if (promiscuous) {
+		reg = rf2xx_iface_reg_read(dev, RF2XX_XAH_CTRL_1_REG);
+		reg |= (1 << RF2XX_AACK_PROM_MODE);
+		rf2xx_iface_reg_write(dev, RF2XX_XAH_CTRL_1_REG, reg);
+
+		reg = rf2xx_iface_reg_read(dev, RF2XX_CSMA_SEED_1_REG);
+		reg |= (1 << RF2XX_AACK_DIS_ACK);
+		rf2xx_iface_reg_write(dev, RF2XX_CSMA_SEED_1_REG, reg);
+	} else {
+		reg = rf2xx_iface_reg_read(dev, RF2XX_XAH_CTRL_1_REG);
+		reg &= ~(1 << RF2XX_AACK_PROM_MODE);
+		rf2xx_iface_reg_write(dev, RF2XX_XAH_CTRL_1_REG, reg);
+
+		reg = rf2xx_iface_reg_read(dev, RF2XX_CSMA_SEED_1_REG);
+		reg &= ~(1 << RF2XX_AACK_DIS_ACK);
+		rf2xx_iface_reg_write(dev, RF2XX_CSMA_SEED_1_REG, reg);
+	}
+
+	return 0;
+}
+
 int rf2xx_configure(const struct device *dev,
 		    enum ieee802154_config_type type,
 		    const struct ieee802154_config *config)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(type);
-	ARG_UNUSED(config);
+	int ret = -EINVAL;
 
-	return 0;
+	switch (type) {
+	case IEEE802154_CONFIG_AUTO_ACK_FPB:
+	case IEEE802154_CONFIG_ACK_FPB:
+	case IEEE802154_CONFIG_PAN_COORDINATOR:
+		break;
+
+	case IEEE802154_CONFIG_PROMISCUOUS:
+		ret = rf2xx_promiscuous_set(dev, config->promiscuous);
+		break;
+
+	case IEEE802154_CONFIG_EVENT_HANDLER:
+	default:
+		break;
+	}
+
+	return ret;
 }
 
 static int power_on_and_setup(const struct device *dev)
