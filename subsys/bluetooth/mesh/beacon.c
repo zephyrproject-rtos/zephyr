@@ -438,7 +438,7 @@ void bt_mesh_beacon_ivu_initiator(bool enable)
 	atomic_set_bit_to(bt_mesh.flags, BT_MESH_IVU_INITIATOR, enable);
 
 	if (enable) {
-		k_work_submit(&beacon_timer.work);
+		k_delayed_work_submit(&beacon_timer, K_NO_WAIT);
 	} else if (!bt_mesh_beacon_enabled()) {
 		k_delayed_work_cancel(&beacon_timer);
 	}
@@ -455,13 +455,13 @@ static void subnet_beacon_enable(struct bt_mesh_subnet *sub)
 void bt_mesh_beacon_enable(void)
 {
 	if (!bt_mesh_is_provisioned()) {
-		k_work_submit(&beacon_timer.work);
+		k_delayed_work_submit(&beacon_timer, K_NO_WAIT);
 		return;
 	}
 
 	bt_mesh_subnet_foreach(subnet_beacon_enable);
 
-	k_work_submit(&beacon_timer.work);
+	k_delayed_work_submit(&beacon_timer, K_NO_WAIT);
 }
 
 void bt_mesh_beacon_disable(void)
