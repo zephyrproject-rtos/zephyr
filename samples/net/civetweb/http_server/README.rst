@@ -1,4 +1,4 @@
-.. _sockets-civetweb-sample:
+.. _civetweb-http_server-sample:
 
 Civetweb sample
 ###############
@@ -10,7 +10,7 @@ This sample application uses the HTTP APIs provided by the external `Civetweb <h
 The Civetweb module is available as a west :ref:`module <modules>`.
 
 The source code for this sample application can be found at:
-:zephyr_file:`samples/net/sockets/civetweb`.
+:zephyr_file:`samples/net/civetweb/http_server`.
 
 Requirements
 ************
@@ -26,7 +26,7 @@ This sample was tested on the Atmel SAM E70 Xplained board, so this is the recom
 Build it with:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/net/sockets/civetweb
+   :zephyr-app: samples/net/civetweb/http_server
    :board: sam_e70_xplained
    :goals: build
    :compact:

@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2019 Antmicro Ltd
  * Copyright (c) 2020 Alexander Kozhinov
  * Mail: AlexanderKozhinov@yandex.com
  *
