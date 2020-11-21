@@ -265,7 +265,7 @@ static const struct arm_mmu_region mmu_zephyr_regions[] = {
 	MMU_REGION_FLAT_ENTRY("SRAM",
 			      (uintptr_t)CONFIG_SRAM_BASE_ADDRESS,
 			      (uintptr_t)KB(CONFIG_SRAM_SIZE),
-			      MT_NORMAL | MT_P_RW_U_NA | MT_SECURE),
+			      MT_NORMAL | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE),
 
 	/* Mark rest of the zephyr execution regions (data, bss, noinit, etc.)
 	 * cacheable, read-write
@@ -274,19 +274,19 @@ static const struct arm_mmu_region mmu_zephyr_regions[] = {
 	MMU_REGION_FLAT_ENTRY("zephyr_data",
 			      (uintptr_t)__kernel_ram_start,
 			      (uintptr_t)__kernel_ram_size,
-			      MT_NORMAL | MT_P_RW_U_NA | MT_SECURE),
+			      MT_NORMAL | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE),
 
 	/* Mark text segment cacheable,read only and executable */
 	MMU_REGION_FLAT_ENTRY("zephyr_code",
 			      (uintptr_t)_image_text_start,
 			      (uintptr_t)_image_text_size,
-			      MT_NORMAL | MT_P_RX_U_NA | MT_SECURE),
+			      MT_NORMAL | MT_P_RX_U_NA | MT_DEFAULT_SECURE_STATE),
 
 	/* Mark rodata segment cacheable, read only and execute-never */
 	MMU_REGION_FLAT_ENTRY("zephyr_rodata",
 			      (uintptr_t)_image_rodata_start,
 			      (uintptr_t)_image_rodata_size,
-			      MT_NORMAL | MT_P_RO_U_NA | MT_SECURE),
+			      MT_NORMAL | MT_P_RO_U_NA | MT_DEFAULT_SECURE_STATE),
 };
 
 static void setup_page_tables(void)
