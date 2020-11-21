@@ -67,6 +67,12 @@
 #define MT_P_RX_U_RX		(MT_RO | MT_RW_AP_ELx | MT_P_EXECUTE | MT_U_EXECUTE)
 #define MT_P_RX_U_NA		(MT_RO | MT_RW_AP_EL_HIGHER  | MT_P_EXECUTE | MT_U_EXECUTE_NEVER)
 
+#ifdef CONFIG_ARMV8_A_NS
+#define MT_DEFAULT_SECURE_STATE	MT_NS
+#else
+#define MT_DEFAULT_SECURE_STATE	MT_SECURE
+#endif
+
 /*
  * PTE descriptor can be Block descriptor or Table descriptor
  * or Page descriptor.
