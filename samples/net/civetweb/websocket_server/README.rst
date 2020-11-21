@@ -1,4 +1,4 @@
-.. _sockets-civetweb-websocket-server-sample:
+.. _civetweb-websocket-server-sample:
 
 Civetweb WebSocket Server sample
 ################################
@@ -12,7 +12,7 @@ server demonstrating selected Civetweb features.
 The Civetweb module is available as a west :ref:`module <modules>`.
 
 The source code for this sample application can be found at:
-:zephyr_file:`samples/net/sockets/civetweb_websocket_server`.
+:zephyr_file:`samples/net/civetweb/websocket_server`.
 
 Requirements
 ************
@@ -28,7 +28,7 @@ This sample was tested on the NUCLEO H745ZI-Q board, so this is the recommended 
 Build it with:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/net/sockets/civetweb_websocket_server
+   :zephyr-app: samples/net/civetweb/websocket_server
    :board: nucleo_h745zi_q_m7
    :goals: build
    :compact:
@@ -37,8 +37,8 @@ The sample application uses a static IP configuration.
 
 After flashing the board, the server can be accessed with the web browser
 of your choice (preferably Chrome) under ``192.0.2.1`` IPv4 address.
-The IP address can be changed in :zephyr_file:`samples/net/sockets/civetweb_websocket_server/prj.conf`
-The port number can be changed in :zephyr_file:`samples/net/sockets/civetweb_websocket_server/main.c`
+The IP address can be changed in :zephyr_file:`samples/net/civetweb/websocket_server/prj.conf`
+The port number can be changed in :zephyr_file:`samples/net/civetweb/websocket_server/main.c`
 
 This sample application consists of two main parts:
 

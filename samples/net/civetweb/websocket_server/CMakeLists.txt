@@ -5,10 +5,17 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
+set(common_dir ${CMAKE_CURRENT_SOURCE_DIR}/../common)
+set(common_src_dir ${common_dir}/src)
+set(common_include_dir ${common_dir}/include)
+
 set(inc_dir ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(src_dir ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-include_directories(${inc_dir})
+include_directories(
+	${inc_dir}
+	${common_include_dir}
+)
 
 option(CIVETWEB_ENABLE_WEBSOCKETS "Enable websockets connections" ON)
 
@@ -17,7 +24,7 @@ project(civetweb_websocket_server)
 
 target_sources(app PRIVATE
 		${src_dir}/main.c
-		${src_dir}/libc_extensions.c
+		${common_src_dir}/libc_extensions.c
 		${src_dir}/http_server_handlers.c
 		${src_dir}/websocket_server_handlers.c)
 
