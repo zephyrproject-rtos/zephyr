@@ -40,6 +40,7 @@ static int init_reset(void);
 static inline struct ll_scan_aux_set *aux_acquire(void);
 static inline void aux_release(struct ll_scan_aux_set *aux);
 static inline uint8_t aux_handle_get(struct ll_scan_aux_set *aux);
+static inline struct ll_sync_set *sync_create_get(struct ll_scan_set *scan);
 static void flush(struct ll_scan_aux_set *aux, struct node_rx_hdr *rx);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, void *param);
@@ -102,14 +103,14 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		lll = NULL;
 		aux = NULL;
 		scan = (void *)HDR_LLL2EVT(ftr->param);
-		sync = scan->per_scan.sync;
+		sync = sync_create_get(scan);
 		phy = BT_HCI_LE_EXT_SCAN_PHY_1M;
 		break;
 	case NODE_RX_TYPE_EXT_CODED_REPORT:
 		lll = NULL;
 		aux = NULL;
 		scan = (void *)HDR_LLL2EVT(ftr->param);
-		sync = scan->per_scan.sync;
+		sync = sync_create_get(scan);
 		phy = BT_HCI_LE_EXT_SCAN_PHY_CODED;
 		break;
 	case NODE_RX_TYPE_EXT_AUX_REPORT:
@@ -118,9 +119,10 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		scan = (void *)HDR_LLL2EVT(aux->rx_head->rx_ftr.param);
 		sync = (void *)scan;
 		scan = ull_scan_is_valid_get(scan);
+		phy = lll->phy;
 		if (scan) {
-			sync = scan->per_scan.sync;
-			phy = lll->phy;
+			/* Here we are scanner context */
+			sync = sync_create_get(scan);
 			switch (phy) {
 			case BT_HCI_LE_EXT_SCAN_PHY_1M:
 				rx->type = NODE_RX_TYPE_EXT_1M_REPORT;
@@ -135,15 +137,21 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 				LL_ASSERT(0);
 				return;
 			}
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 		} else {
+			/* Here we are periodic sync context */
 			rx->type = NODE_RX_TYPE_SYNC_REPORT;
 			rx->handle = ull_sync_handle_get(sync);
 
+			/* lll and aux are auxiliary channel context,
+			 * reuse the existing aux context to scan the chain.
+			 * hence lll and aux are not released or set to NULL.
+			 */
 			sync = NULL;
-			phy = lll->phy;
 		}
 		break;
-#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+
 	case NODE_RX_TYPE_SYNC_REPORT:
 		{
 			struct ll_sync_set *ull_sync;
@@ -161,9 +169,10 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			scan = NULL;
 			sync = NULL;
 			phy =  lll_sync->phy;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+
 		}
 		break;
-#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 	default:
 		LL_ASSERT(0);
 		return;
@@ -375,6 +384,15 @@ static inline uint8_t aux_handle_get(struct ll_scan_aux_set *aux)
 {
 	return mem_index_get(aux, ll_scan_aux_pool,
 			     sizeof(struct ll_scan_aux_set));
+}
+
+static inline struct ll_sync_set *sync_create_get(struct ll_scan_set *scan)
+{
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+	return scan->per_scan.sync;
+#else /* !CONFIG_BT_CTLR_SYNC_PERIODIC */
+	return NULL;
+#endif /* !CONFIG_BT_CTLR_SYNC_PERIODIC */
 }
 
 static void flush(struct ll_scan_aux_set *aux, struct node_rx_hdr *rx)
