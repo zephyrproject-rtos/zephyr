@@ -77,6 +77,7 @@
 
 #define GET_MPIDR()		read_sysreg(mpidr_el1)
 #define MPIDR_TO_CORE(mpidr)	MPIDR_AFFLVL(mpidr, 0)
+#define IS_PRIMARY_CORE()	(!MPIDR_TO_CORE(GET_MPIDR()))
 
 #define MODE_EL_SHIFT		(0x2)
 #define MODE_EL_MASK		(0x3)
