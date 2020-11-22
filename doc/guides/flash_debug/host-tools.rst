@@ -12,6 +12,170 @@ hardware supports them and your Zephyr board directory's :file:`board.cmake`
 file declares that support properly. See :ref:`west-build-flash-debug` for
 more information on these commands.
 
+.. _atmel_sam_ba_bootloader:
+
+
+SAM Boot Assistant (SAM-BA)
+***************************
+
+Atmel SAM Boot Assistant (Atmel SAM-BA) allows In-System Programming (ISP)
+from USB or UART host without any external programming interface.  Zephyr
+allows users to develop and program boards with SAM-BA support using
+:ref:`west <west-flashing>`.  Zephyr supports devices with/without ROM
+bootloader and both extensions from Arduino and Adafruit. Full support was
+introduced in Zephyr SDK 0.12.0.
+
+The typical command to flash the board is:
+
+.. code-block:: console
+
+	west flash [ -r bossac ] [ -p /dev/ttyX ]
+
+
+Devices with ROM bootloader
+---------------------------
+
+These devices don't need any special configuration.  After building your
+application, just run ``west flash`` to flash the board.
+
+
+Devices without ROM bootloader
+------------------------------
+
+For these devices, the user should:
+
+1. Define flash partitions required to accommodate the bootloader and
+   application image; see :ref:`flash_map_api` for details.
+2. Have board :file:`.defconfig` file with the
+   :option:`CONFIG_USE_DT_CODE_PARTITION` Kconfig option set to ``y`` to
+   instruct the build system to use these partitions for code relocation.
+   This option can also be set in ``prj.conf`` or any other Kconfig fragment.
+3. Build and flash the SAM-BA bootloader on the device.
+
+
+Devices with compatible SAM-BA bootloader
+-----------------------------------------
+
+For these devices, the user should:
+
+1. Define flash partitions required to accommodate the bootloader and
+   application image; see :ref:`flash_map_api` for details.
+2. Have board :file:`.defconfig` file with the
+   :option:`CONFIG_BOOTLOADER_BOSSA` Kconfig option set to ``y``.  This will
+   automatically select the :option:`CONFIG_USE_DT_CODE_PARTITION` Kconfig
+   option which instruct the build system to use these partitions for code
+   relocation.  The board :file:`.defconfig` file should have
+   :option:`CONFIG_BOOTLOADER_BOSSA_ARDUINO` or the
+   :option:`CONFIG_BOOTLOADER_BOSSA_ADAFRUIT_UF2` Kconfig option set to ``y``
+   to select the right compatible SAM-BA bootloader mode.
+   These options can also be set in ``prj.conf`` or any other Kconfig fragment.
+3. Build and flash the SAM-BA bootloader on the device.
+
+
+Typical flash layout and configuration
+--------------------------------------
+
+For bootloaders that reside on flash, the devicetree partition layout is
+mandatory.  For devices that have a ROM bootloader, they are mandatory when
+the application uses a storage or other non-application partition.  In this
+special case, the boot partition should be omitted and code_partition should
+start from offset 0.  It is necessary to define the partitions with sizes that
+avoid overlaps, always.
+
+A typical flash layout for devices without a ROM bootloader is:
+
+.. code-block:: DTS
+
+	/ {
+		chosen {
+			zephyr,code-partition = &code_partition;
+		};
+	};
+
+	&flash0 {
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_partition: partition@0 {
+				label = "sam-ba";
+				reg = <0x00000000 0x2000>;
+				read-only;
+			};
+
+			code_partition: partition@2000 {
+				label = "code";
+				reg = <0x2000 0x3a000>;
+				read-only;
+			};
+
+			/*
+			* The final 16 KiB is reserved for the application.
+			* Storage partition will be used by FCB/LittleFS/NVS
+			* if enabled.
+			*/
+			storage_partition: partition@3c000 {
+				label = "storage";
+				reg = <0x0003c000 0x00004000>;
+			};
+		};
+	};
+
+A typical flash layout for devices with a ROM bootloader and storage
+partition is:
+
+.. code-block:: DTS
+
+	/ {
+		chosen {
+			zephyr,code-partition = &code_partition;
+		};
+	};
+
+	&flash0 {
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			code_partition: partition@0 {
+				label = "code";
+				reg = <0x0 0xF0000>;
+				read-only;
+			};
+
+			/*
+			* The final 64 KiB is reserved for the application.
+			* Storage partition will be used by FCB/LittleFS/NVS
+			* if enabled.
+			*/
+			storage_partition: partition@F0000 {
+				label = "storage";
+				reg = <0x000F0000 0x00100000>;
+			};
+		};
+	};
+
+
+Enabling SAM-BA runner
+----------------------
+
+In order to instruct Zephyr west tool to use the SAM-BA bootloader the
+:file:`board.cmake` file must have
+``include(${ZEPHYR_BASE}/boards/common/bossac.board.cmake)`` entry.  Note that
+Zephyr tool accept more entries to define multiple runners.  By default, the
+first one will be selected when using ``west flash`` command.  The remaining
+options are available passing the runner option, for instance
+``west flash -r bossac``.
+
+
+More implementation details can be found in the :ref:`boards` documentation.
+As a quick reference, see these three board documentation pages:
+
+  - :ref:`sam4e_xpro` (ROM bootloader)
+  - :ref:`adafruit_feather_m0_basic_proto` (Adafruit UF2 bootloader)
+  - :ref:`arduino_nano_33_iot` (Arduino bootloader)
 
 .. _jlink-debug-host-tools:
 
