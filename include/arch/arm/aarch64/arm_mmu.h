@@ -142,6 +142,7 @@
 #define TCR_PS_BITS_256TB	0x5ULL
 
 #ifndef _ASMLANGUAGE
+
 /* Region definition data structure */
 struct arm_mmu_region {
 	/* Region Base Physical Address */
@@ -193,6 +194,7 @@ struct arm_mmu_ptables {
  */
 extern const struct arm_mmu_config mmu_config;
 
+void z_arm64_mmu_init(void);
 #endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM64_MMU_ARM_MMU_H_ */

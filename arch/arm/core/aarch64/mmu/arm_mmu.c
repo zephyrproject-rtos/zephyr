@@ -532,8 +532,13 @@ void z_arm64_mmu_init(void)
 	/* Ensure that MMU is already not enabled */
 	__ASSERT((read_sctlr_el1() & SCTLR_M_BIT) == 0, "MMU is already enabled\n");
 
-	kernel_ptables.base_xlat_table = new_table();
-	setup_page_tables(&kernel_ptables);
+	/*
+	 * Only booting core setup up the page tables.
+	 */
+	if (IS_PRIMARY_CORE()) {
+		kernel_ptables.base_xlat_table = new_table();
+		setup_page_tables(&kernel_ptables);
+	}
 
 	/* currently only EL1 is supported */
 	enable_mmu_el1(&kernel_ptables, flags);
