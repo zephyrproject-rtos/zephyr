@@ -190,7 +190,7 @@ static void start(struct onoff_manager *mgr,
 		__ASSERT_NO_MSG(data->task == WORK_TASK_UNDEFINED);
 		data->task = WORK_TASK_ENABLE;
 		data->notify = notify;
-		k_work_submit(&data->delayed_work.work);
+		k_delayed_work_submit(&data->delayed_work, K_NO_WAIT);
 		return;
 	}
 #endif /* CONFIG_MULTITHREADING */
@@ -228,7 +228,7 @@ static void stop(struct onoff_manager *mgr,
 		__ASSERT_NO_MSG(data->task == WORK_TASK_UNDEFINED);
 		data->task = WORK_TASK_DISABLE;
 		data->notify = notify;
-		k_work_submit(&data->delayed_work.work);
+		k_delayed_work_submit(&data->delayed_work, K_NO_WAIT);
 		return;
 	}
 #endif /* CONFIG_MULTITHREADING */
