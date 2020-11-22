@@ -1164,7 +1164,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 			if (conn->supervision_expire <= 6U) {
 				force = 1U;
 			}
-#if defined(CONFIG_BT_PERIPHERAL)
+#if defined(CONFIG_BT_CTLR_CONN_RANDOM_FORCE)
 			/* use randomness to force slave role when anchor
 			 * points are being missed.
 			 */
@@ -1181,7 +1181,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 					}
 				}
 			}
-#endif /* CONFIG_BT_PERIPHERAL */
+#endif /* CONFIG_BT_CTLR_CONN_RANDOM_FORCE */
 		} else {
 			conn_cleanup(conn, BT_HCI_ERR_CONN_TIMEOUT);
 

@@ -431,6 +431,20 @@ config BT_CTLR_FORCE_MD_AUTO
 	  Force MD bit in transmitted PDU based on runtime incoming transmit
 	  data throughput.
 
+config BT_CTLR_CONN_RANDOM_FORCE
+	bool "Enable random forced scheduling for peripheral on missed anchor point"
+	depends on BT_PERIPHERAL
+	default y
+	help
+	  When enabled, controller will have legacy behavior and randomly force
+	  priority at next ticker scheduling for peripheral role, if anchor point is
+	  missed.
+	  Two or more connections with similar interval on a device connected
+	  to a peer device having two or more connections at its end with same
+	  interval could lock to a round robin pattern where in neither of the central
+	  nor peripheral event would be in sync at either end. Randomness allows
+	  to break this locked round robin pattern permitting an anchor point sync.
+
 config BT_CTLR_CONN_RSSI_EVENT
 	bool "Connection RSSI event"
 	depends on BT_CTLR_CONN_RSSI
