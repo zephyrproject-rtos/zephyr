@@ -856,6 +856,18 @@ static void test_phandles(void)
 #define DT_DRV_COMPAT vnd_phandle_holder
 static void test_gpio(void)
 {
+	/* DT_GPIO_CTLR_BY_IDX */
+	zassert_true(!strcmp(TO_STRING(DT_GPIO_CTLR_BY_IDX(TEST_PH, gpios, 0)),
+			     TO_STRING(DT_NODELABEL(test_gpio_1))),
+		     "gpio 0 ctlr idx");
+	zassert_true(!strcmp(TO_STRING(DT_GPIO_CTLR_BY_IDX(TEST_PH, gpios, 1)),
+			     TO_STRING(DT_NODELABEL(test_gpio_2))),
+		     "gpio 1 ctlr idx");
+
+	/* DT_GPIO_CTLR */
+	zassert_true(!strcmp(TO_STRING(DT_GPIO_CTLR(TEST_PH, gpios)),
+			     TO_STRING(DT_NODELABEL(test_gpio_1))),
+		     "gpio 0 ctlr");
 
 	/* DT_GPIO_LABEL_BY_IDX */
 	zassert_true(!strcmp(DT_GPIO_LABEL_BY_IDX(TEST_PH, gpios, 0),
