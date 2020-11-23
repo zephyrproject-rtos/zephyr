@@ -7,10 +7,11 @@
 
 import os
 import shlex
+import subprocess
 import sys
 from re import fullmatch, escape
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from runners.core import ZephyrBinaryRunner, RunnerCaps, BuildConfiguration
 
 try:
     from intelhex import IntelHex
@@ -33,19 +34,22 @@ def has_region(regions, hex_file):
     except FileNotFoundError:
         return False
 
+# https://infocenter.nordicsemi.com/index.jsp?topic=%2Fug_nrf_cltools%2FUG%2Fcltools%2Fnrf_nrfjprogexe_return_codes.html&cp=9_1_3_1
+UnavailableOperationBecauseProtectionError = 16
 
 class NrfJprogBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for nrfjprog.'''
 
     def __init__(self, cfg, family, softreset, snr, erase=False,
-        tool_opt=[], force=False):
+                 tool_opt=[], force=False, recover=False):
         super().__init__(cfg)
         self.hex_ = cfg.hex_file
         self.family = family
         self.softreset = softreset
         self.snr = snr
-        self.erase = erase
+        self.erase = bool(erase)
         self.force = force
+        self.recover = bool(recover)
 
         self.tool_opt = []
         for opts in [shlex.split(opt) for opt in tool_opt]:
@@ -61,9 +65,10 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def do_add_parser(cls, parser):
-        parser.add_argument('--nrf-family', required=True,
+        parser.add_argument('--nrf-family',
                             choices=['NRF51', 'NRF52', 'NRF53', 'NRF91'],
-                            help='family of nRF MCU')
+                            help='''MCU family; still accepted for
+                            compatibility only''')
         parser.add_argument('--softreset', required=False,
                             action='store_true',
                             help='use reset instead of pinreset')
@@ -76,16 +81,23 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--force', required=False,
                             action='store_true',
                             help='Flash even if the result cannot be guaranteed.')
+        parser.add_argument('--recover', required=False,
+                            action='store_true',
+                            help='''erase all user available non-volatile
+                            memory and disable read back protection before
+                            flashing (erases flash for both cores on nRF53)''')
 
     @classmethod
     def do_create(cls, cfg, args):
         return NrfJprogBinaryRunner(cfg, args.nrf_family, args.softreset,
                                     args.snr, erase=args.erase,
-                                    tool_opt=args.tool_opt, force=args.force)
+                                    tool_opt=args.tool_opt, force=args.force,
+                                    recover=args.recover)
 
     def ensure_snr(self):
         if not self.snr or "*" in self.snr:
             self.snr = self.get_board_snr(self.snr or "*")
+        self.snr = self.snr.lstrip("0")
 
     def get_boards(self):
         snrs = self.check_output(['nrfjprog', '--ids'])
@@ -150,68 +162,144 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
 
         return snrs[value - 1]
 
-    def do_run(self, command, **kwargs):
-        self.require('nrfjprog')
+    def ensure_family(self):
+        # Ensure self.family is set.
 
-        self.ensure_snr()
+        if self.family is not None:
+            return
 
-        commands = []
-        board_snr = self.snr.lstrip("0")
-
-        if not os.path.isfile(self.hex_):
-            raise ValueError('Cannot flash; hex file ({}) does not exist. '.
-                             format(self.hex_) +
-                             'Try enabling CONFIG_BUILD_OUTPUT_HEX.')
-
-        program_cmd = ['nrfjprog', '--program', self.hex_, '-f', self.family,
-                    '--snr', board_snr] + self.tool_opt
-
-        self.logger.info('Flashing file: {}'.format(self.hex_))
-        if self.erase:
-            commands.extend([
-                ['nrfjprog',
-                 '--eraseall',
-                 '-f', self.family,
-                 '--snr', board_snr],
-                program_cmd
-            ])
+        if self.build_conf.get('CONFIG_SOC_SERIES_NRF51X', False):
+            self.family = 'NRF51'
+        elif self.build_conf.get('CONFIG_SOC_SERIES_NRF52X', False):
+            self.family = 'NRF52'
+        elif self.build_conf.get('CONFIG_SOC_SERIES_NRF53X', False):
+            self.family = 'NRF53'
+        elif self.build_conf.get('CONFIG_SOC_SERIES_NRF91X', False):
+            self.family = 'NRF91'
         else:
-            if self.family == 'NRF51':
-                commands.append(program_cmd + ['--sectorerase'])
-            elif self.family == 'NRF52':
-                commands.append(program_cmd + ['--sectoranduicrerase'])
+            raise RuntimeError(f'unknown nRF; update {__file__}')
+
+    def check_force_uicr(self):
+        # On SoCs without --sectoranduicrerase, we want to fail by
+        # default if the application contains UICR data and we're not sure
+        # that the flash will succeed.
+
+        # A map from SoCs which need this check to their UICR address
+        # ranges. If self.family isn't in here, do nothing.
+        uicr_ranges = {
+            'NRF53': ((0x00FF8000, 0x00FF8800),
+                      (0x01FF8000, 0x01FF8800)),
+            'NRF91': ((0x00FF8000, 0x00FF8800),),
+        }
+
+        if self.family not in uicr_ranges:
+            return
+
+        uicr = uicr_ranges[self.family]
+
+        if not self.force and has_region(uicr, self.hex_):
+            # Hex file has UICR contents.
+            raise RuntimeError(
+                'The hex file contains data placed in the UICR, which '
+                'needs a full erase before reprogramming. Run west '
+                'flash again with --force or --erase.')
+
+    def recover_target(self):
+        if self.family == 'NRF53':
+            self.logger.info(
+                'Recovering and erasing flash memory for both the network '
+                'and application cores.')
+        else:
+            self.logger.info('Recovering and erasing all flash memory.')
+
+        if self.family == 'NRF53':
+            self.check_call(['nrfjprog', '--recover', '-f', self.family,
+                             '--coprocessor', 'CP_NETWORK',
+                             '--snr', self.snr])
+
+        self.check_call(['nrfjprog', '--recover',  '-f', self.family,
+                         '--snr', self.snr])
+
+    def program_hex(self):
+        # Get the nrfjprog command use to actually program self.hex_.
+        self.logger.info('Flashing file: {}'.format(self.hex_))
+
+        # What type of erase argument should we pass to nrfjprog?
+        if self.erase:
+            erase_arg = '--chiperase'
+        else:
+            if self.family == 'NRF52':
+                erase_arg = '--sectoranduicrerase'
             else:
-                uicr = {
-                    'NRF53': ((0x00FF8000, 0x00FF8800),
-                              (0x01FF8000, 0x01FF8800)),
-                    'NRF91': ((0x00FF8000, 0x00FF8800),),
-                }[self.family]
+                erase_arg = '--sectorerase'
 
-                if not self.force and has_region(uicr, self.hex_):
-                    # Hex file has UICR contents.
-                    raise RuntimeError(
-                        'The hex file contains data placed in the UICR, which '
-                        'needs a full erase before reprogramming. Run west '
-                        'flash again with --force or --erase.')
+        if self.family == 'NRF53':
+            if self.build_conf.get('CONFIG_SOC_NRF5340_CPUAPP', False):
+                coprocessor = 'CP_APPLICATION'
+            elif self.build_conf.get('CONFIG_SOC_NRF5340_CPUNET', False):
+                coprocessor = 'CP_NETWORK'
+            else:
+                # When it's time to update this file, it would probably be best
+                # to handle this by adding common 'SOC_NRF53X_CPUAPP'
+                # and 'SOC_NRF53X_CPUNET' options, so we don't have to
+                # maintain a list of SoCs in this file too.
+                raise RuntimeError(f'unknown nRF53; update {__file__}')
+            coprocessor_args = ['--coprocessor', coprocessor]
+        else:
+            coprocessor_args = []
+
+        # It's important for tool_opt to come last, so it can override
+        # any options that we set here.
+        try:
+            self.check_call(['nrfjprog', '--program', self.hex_, erase_arg,
+                             '-f', self.family, '--snr', self.snr] +
+                            coprocessor_args + self.tool_opt)
+        except subprocess.CalledProcessError as cpe:
+            if cpe.returncode == UnavailableOperationBecauseProtectionError:
+                if self.family == 'NRF53':
+                    family_help = (
+                        '  Note: your target is an nRF53; all flash memory '
+                        'for both the network and application cores will be '
+                        'erased prior to reflashing.')
                 else:
-                    commands.append(program_cmd + ['--sectorerase'])
+                    family_help = (
+                        '  Note: this will recover and erase all flash memory '
+                        'prior to reflashing.')
+                self.logger.error(
+                    'Flashing failed because the target '
+                    'must be recovered.\n'
+                    '  To fix, run "west flash --recover" instead.\n' +
+                    family_help)
+            raise
 
+    def reset_target(self):
         if self.family == 'NRF52' and not self.softreset:
-            commands.extend([
-                # Enable pin reset
-                ['nrfjprog', '--pinresetenable', '-f', self.family,
-                 '--snr', board_snr],
-            ])
+            self.check_call(['nrfjprog', '--pinresetenable', '-f', self.family,
+                             '--snr', self.snr])  # Enable pin reset
 
         if self.softreset:
-            commands.append(['nrfjprog', '--reset', '-f', self.family,
-                             '--snr', board_snr])
+            self.check_call(['nrfjprog', '--reset', '-f', self.family,
+                             '--snr', self.snr])
         else:
-            commands.append(['nrfjprog', '--pinreset', '-f', self.family,
-                             '--snr', board_snr])
+            self.check_call(['nrfjprog', '--pinreset', '-f', self.family,
+                             '--snr', self.snr])
 
-        for cmd in commands:
-            self.check_call(cmd)
+    def do_run(self, command, **kwargs):
+        self.require('nrfjprog')
+        self.build_conf = BuildConfiguration(self.cfg.build_dir)
+        if not os.path.isfile(self.hex_):
+            raise RuntimeError(
+                f'Cannot flash; hex file ({self.hex_}) does not exist. '
+                'Try enabling CONFIG_BUILD_OUTPUT_HEX.')
 
-        self.logger.info('Board with serial number {} flashed successfully.'.
-                         format(board_snr))
+        self.ensure_snr()
+        self.ensure_family()
+        self.check_force_uicr()
+
+        if self.recover:
+            self.recover_target()
+        self.program_hex()
+        self.reset_target()
+
+        self.logger.info(f'Board with serial number {self.snr} '
+                         'flashed successfully.')
