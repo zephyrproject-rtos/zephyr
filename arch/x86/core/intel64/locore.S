@@ -497,7 +497,7 @@ except: /*
 	pushq 32(%r11)	/* RIP */
 	pushq 24(%r11)	/* Error code */
 	pushq 8(%r11)	/* Vector */
-	pushq (%r11)	/* Stashed R15 */
+	pushq (%r11)	/* Stashed R11 */
 	movq $0, (%r11) /* Cover our tracks */
 
 	/* We're done, it's safe to re-enable interrupts. */
