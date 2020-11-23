@@ -49,55 +49,67 @@ void pcie_set_cmd(pcie_bdf_t bdf, uint32_t bits, bool on)
 
 bool pcie_get_mbar(pcie_bdf_t bdf, unsigned int index, struct pcie_mbar *mbar)
 {
-	bool valid_bar = false;
+	uintptr_t phys_addr;
 	uint32_t reg;
-	uintptr_t phys_addr = PCIE_CONF_BAR_NONE;
-	size_t size = 0;
+	size_t size;
 
-	for (reg = PCIE_CONF_BAR0; reg <= PCIE_CONF_BAR5; reg++) {
-		uint32_t addr = pcie_conf_read(bdf, reg);
+	for (reg = PCIE_CONF_BAR0;
+	     index > 0 && reg <= PCIE_CONF_BAR5; reg++, index--) {
+		uintptr_t addr = pcie_conf_read(bdf, reg);
 
-		/* skip useless bars and I/O Bars */
-		if (addr == 0xFFFFFFFFU || addr == 0x0U || PCIE_CONF_BAR_IO(addr)) {
-			continue;
-		}
-
-		if (index == 0) {
-			valid_bar = true;
-			break;
-		}
-
-		if (PCIE_CONF_BAR_64(addr)) {
+		if (PCIE_CONF_BAR_MEM(addr) && PCIE_CONF_BAR_64(addr)) {
 			reg++;
 		}
-
-		index--;
 	}
 
-	if (valid_bar) {
-		phys_addr = pcie_conf_read(bdf, reg);
+	if (index != 0 || reg > PCIE_CONF_BAR5) {
+		return false;
+	}
+
+	phys_addr = pcie_conf_read(bdf, reg);
+	if (PCIE_CONF_BAR_IO(phys_addr)) {
+		/* Discard I/O bars */
+		return false;
+	}
+
+	if (PCIE_CONF_BAR_INVAL_FLAGS(phys_addr)) {
+		/* Discard on invalid flags */
+		return false;
+	}
+
+	pcie_conf_write(bdf, reg, 0xFFFFFFFF);
+	size = pcie_conf_read(bdf, reg);
+	pcie_conf_write(bdf, reg, (uint32_t)phys_addr);
+
+	if (IS_ENABLED(CONFIG_64BIT) && PCIE_CONF_BAR_64(phys_addr)) {
+		reg++;
+		phys_addr |= ((uint64_t)pcie_conf_read(bdf, reg)) << 32;
+
+		if (PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_INVAL64 ||
+		    PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_NONE) {
+			/* Discard on invalid address */
+			return false;
+		}
+
 		pcie_conf_write(bdf, reg, 0xFFFFFFFF);
-		size = pcie_conf_read(bdf, reg);
-		pcie_conf_write(bdf, reg, (uint32_t)phys_addr);
-
-		if (IS_ENABLED(CONFIG_64BIT) && PCIE_CONF_BAR_64(phys_addr)) {
-			reg++;
-			phys_addr |= ((uint64_t)pcie_conf_read(bdf, reg)) << 32;
-			pcie_conf_write(bdf, reg, 0xFFFFFFFF);
-			size |= ((uint64_t)pcie_conf_read(bdf, reg)) << 32;
-			pcie_conf_write(bdf, reg, (uint32_t)((uint64_t)phys_addr >> 32));
-		}
-
-		size = PCIE_CONF_BAR_ADDR(size);
-		if (size) {
-			mbar->phys_addr = PCIE_CONF_BAR_ADDR(phys_addr);
-			mbar->size = size & ~(size-1);
-		} else {
-			valid_bar = false;
-		}
+		size |= ((uint64_t)pcie_conf_read(bdf, reg)) << 32;
+		pcie_conf_write(bdf, reg, (uint32_t)((uint64_t)phys_addr >> 32));
+	} else if (PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_INVAL ||
+		   PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_NONE) {
+		/* Discard on invalid address */
+		return false;
 	}
 
-	return valid_bar;
+	size = PCIE_CONF_BAR_ADDR(size);
+	if (size == 0) {
+		/* Discard on invalid size */
+		return false;
+	}
+
+	mbar->phys_addr = PCIE_CONF_BAR_ADDR(phys_addr);
+	mbar->size = size & ~(size-1);
+
+	return true;
 }
 
 /* The first bit is used to indicate whether the list of reserved interrupts
