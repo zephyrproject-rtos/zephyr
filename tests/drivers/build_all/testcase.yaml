@@ -94,6 +94,11 @@ tests:
     extra_args: CONF_FILE=modem_ublox_sara.conf
     platform_exclude: serpente pinnacle_100_dvk
     tags: drivers
+  drivers.modem.quectel_bg9x.build:
+    build_only: true
+    extra_args: CONF_FILE=modem_quectel_bg9x.conf
+    platform_exclude: serpente pinnacle_100_dvk
+    tags: drivers
   drivers.xlnx.build:
     build_only: true
     extra_args: CONF_FILE=xlnx.conf
