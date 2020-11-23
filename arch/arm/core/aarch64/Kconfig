@@ -10,6 +10,7 @@ config CPU_CORTEX_A
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	select HAS_ARM_SMCCC
+	select SCHED_IPI_SUPPORTED if SMP
 	help
 	  This option signifies the use of a CPU of the Cortex-A family.
 
