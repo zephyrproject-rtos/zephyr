@@ -220,8 +220,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	_create_irq_stack_frame
 	lr r0, [_ARC_V2_STATUS32_P0]
 	st_s r0, [sp, ___isf_t_status32_OFFSET]
-	lr r0, [_ARC_V2_ERET]
-	st_s r0, [sp, ___isf_t_pc_OFFSET]
+	st ilink, [sp, ___isf_t_pc_OFFSET]
 
 	mov_s r3, _firq_exit
 	mov_s r2, _firq_enter
