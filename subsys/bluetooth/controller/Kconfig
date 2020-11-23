@@ -500,6 +500,11 @@ config BT_CTLR_ADV_DATA_LEN_MAX
 
 endif # BT_CTLR_ADV_EXT
 
+config BT_CTLR_SET_HOST_FEATURE
+	bool "LE Set Host Feature Command [EXPERIMENTAL]"
+	help
+	  Enables optional LE Set Host Feature Command
+
 config BT_CTLR_CENTRAL_ISO
 	bool "LE Connected Isochronous Stream Central" if !BT_LL_SW_SPLIT
 	depends on BT_CTLR_CENTRAL_ISO_SUPPORT && BT_CENTRAL
@@ -509,6 +514,7 @@ config BT_CTLR_CENTRAL_ISO
 
 config BT_CTLR_CENTRAL_ISO
 	bool "LE Connected Isochronous Stream Central [EXPERIMENTAL]" if BT_LL_SW_SPLIT
+	select BT_CTLR_SET_HOST_FEATURE
 
 config BT_CTLR_PERIPHERAL_ISO
 	bool "LE Connected Isochronous Stream Peripheral" if !BT_LL_SW_SPLIT
@@ -519,6 +525,7 @@ config BT_CTLR_PERIPHERAL_ISO
 
 config BT_CTLR_PERIPHERAL_ISO
 	bool "LE Connected Isochronous Stream Peripheral [EXPERIMENTAL]" if BT_LL_SW_SPLIT
+	select BT_CTLR_SET_HOST_FEATURE
 
 config BT_CTLR_DTM
 	bool

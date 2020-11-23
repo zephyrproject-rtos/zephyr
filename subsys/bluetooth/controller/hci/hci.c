@@ -1777,6 +1777,68 @@ static void le_remove_cig(struct net_buf *buf, struct net_buf **evt)
 
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || \
 	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+static void le_read_iso_tx_sync(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_read_iso_tx_sync *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_read_iso_tx_sync *rp;
+	uint8_t status;
+	uint16_t handle, handle_le16;
+
+	uint16_t seq;
+	uint32_t timestamp;
+	uint32_t offset;
+
+	handle_le16 = cmd->handle;
+	handle = sys_le16_to_cpu(handle_le16);
+
+	status = ll_read_iso_tx_sync(handle, &seq, &timestamp, &offset);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp->status = status;
+	rp->handle = handle_le16;
+	rp->seq       = sys_cpu_to_le16(seq);
+	rp->timestamp = sys_cpu_to_le32(timestamp);
+	sys_put_le24(offset, rp->offset);
+}
+
+static void le_read_iso_link_quality(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_read_iso_link_quality *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_read_iso_link_quality *rp;
+	uint8_t status;
+	uint16_t handle, handle_le16;
+
+	uint32_t tx_unacked_packets;
+	uint32_t tx_flushed_packets;
+	uint32_t tx_last_subevent_packets;
+	uint32_t retransmitted_packets;
+	uint32_t crc_error_packets;
+	uint32_t rx_unreceived_packets;
+	uint32_t duplicate_packets;
+
+	handle_le16 = cmd->handle;
+	handle = sys_le16_to_cpu(handle_le16);
+	status = ll_read_iso_link_quality(handle, &tx_unacked_packets,
+					  &tx_flushed_packets,
+					  &tx_last_subevent_packets,
+					  &retransmitted_packets,
+					  &crc_error_packets,
+					  &rx_unreceived_packets,
+					  &duplicate_packets);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp->status = status;
+	rp->handle = handle_le16;
+	rp->tx_unacked_packets = sys_cpu_to_le32(tx_unacked_packets);
+	rp->tx_flushed_packets = sys_cpu_to_le32(tx_flushed_packets);
+	rp->tx_last_subevent_packets =
+		sys_cpu_to_le32(tx_last_subevent_packets);
+	rp->retransmitted_packets = sys_cpu_to_le32(retransmitted_packets);
+	rp->crc_error_packets     = sys_cpu_to_le32(crc_error_packets);
+	rp->rx_unreceived_packets = sys_cpu_to_le32(rx_unreceived_packets);
+	rp->duplicate_packets     = sys_cpu_to_le32(duplicate_packets);
+}
+
 static void le_setup_iso_path(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_setup_iso_path *cmd = (void *)buf->data;
@@ -1898,6 +1960,20 @@ static void le_iso_read_test_counters(struct net_buf *buf, struct net_buf **evt)
 	rp->failed_cnt   = sys_cpu_to_le32(failed_cnt);
 }
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO || CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
+#if defined(CONFIG_BT_CTLR_SET_HOST_FEATURE)
+static void le_set_host_feature(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_set_host_feature *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_set_host_feature *rp;
+	uint8_t status;
+
+	status = ll_set_host_feature(cmd->bit_number, cmd->bit_value);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp->status = status;
+}
+#endif /* CONFIG_BT_CTLR_SET_HOST_FEATURE */
 
 #if defined(CONFIG_BT_PERIPHERAL)
 #if defined(CONFIG_BT_CTLR_LE_ENC)
@@ -3160,6 +3236,9 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO) || \
 	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	case BT_OCF(BT_HCI_OP_LE_READ_ISO_TX_SYNC):
+		le_read_iso_tx_sync(cmd, evt);
+		break;
 
 	case BT_OCF(BT_HCI_OP_LE_SETUP_ISO_PATH):
 		le_setup_iso_path(cmd, evt);
@@ -3184,7 +3263,17 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_LE_ISO_READ_TEST_COUNTERS):
 		le_iso_read_test_counters(cmd, evt);
 		break;
+
+	case BT_OCF(BT_HCI_OP_LE_READ_ISO_LINK_QUALITY):
+		le_read_iso_link_quality(cmd, evt);
+		break;
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO || CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
+#if defined(CONFIG_BT_CTLR_SET_HOST_FEATURE)
+	case BT_OCF(BT_HCI_OP_LE_SET_HOST_FEATURE):
+		le_set_host_feature(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_SET_HOST_FEATURE */
 
 	case BT_OCF(BT_HCI_OP_LE_READ_CHAN_MAP):
 		le_read_chan_map(cmd, evt);

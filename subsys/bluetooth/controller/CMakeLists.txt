@@ -84,6 +84,12 @@ if(CONFIG_BT_LL_SW_SPLIT)
       )
     endif()
   endif()
+  if(CONFIG_BT_CTLR_SET_HOST_FEATURE)
+    zephyr_library_sources(
+      ll_sw/ll_feat.c
+      )
+  endif()
+
   if(CONFIG_BT_CTLR_ADV_ISO OR
      CONFIG_BT_CTLR_SYNC_ISO OR
      CONFIG_BT_CTLR_PERIPHERAL_ISO OR
