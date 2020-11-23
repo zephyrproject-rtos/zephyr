@@ -69,7 +69,14 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
     movs.n r0, #0
     msr CONTROL, r0
     isb
-#endif
+#if defined(CONFIG_CPU_CORTEX_M_HAS_SPLIM)
+    /* Clear SPLIM registers */
+    movs.n r0, #0
+    msr MSPLIM, r0
+    msr PSPLIM, r0
+#endif /* CONFIG_CPU_CORTEX_M_HAS_SPLIM */
+
+#endif /* CONFIG_INIT_ARCH_HW_AT_BOOT */
 
 #if defined(CONFIG_PLATFORM_SPECIFIC_INIT)
     bl z_platform_init
@@ -83,12 +90,6 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
     str r0, [r1]
     dsb
 #endif /* CONFIG_CPU_HAS_ARM_MPU */
-#if defined(CONFIG_CPU_CORTEX_M_HAS_SPLIM)
-    /* Clear SPLIM registers */
-    movs.n r0, #0
-	msr MSPLIM, r0
-    msr PSPLIM, r0
-#endif /* CONFIG_CPU_CORTEX_M_HAS_SPLIM */
     ldr r0, =z_main_stack + CONFIG_MAIN_STACK_SIZE
     msr msp, r0
 
