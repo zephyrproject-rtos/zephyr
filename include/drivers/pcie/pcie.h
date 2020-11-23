@@ -81,18 +81,17 @@ extern bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id);
  * @param bdf the PCI(e) endpoint
  * @param index (0-based) index
  * @param mbar Pointer to struct pcie_mbar
- * @return true if the mbar was found, false otherwise
+ * @return true if the mbar was found and is valid, false otherwise
  *
  * A PCI(e) endpoint has 0 or more memory-mapped regions. This function
- * allows the caller to enumerate them by calling with index=0..n. If
- * false is returned, there are no further regions. The indices
- * are order-preserving with respect to the endpoint BARs (skips useless bars
- * and I/O Bars): e.g., index 0 will return the lowest-numbered valid memory BAR
- * on the endpoint.
+ * allows the caller to enumerate them by calling with index=0..n.
+ * Value of n has to be below 6, as there is a maximum of 6 BARs. The indices
+ * are order-preserving with respect to the endpoint BARs: e.g., index 0
+ * will return the lowest-numbered memory BAR on the endpoint.
  */
 extern bool pcie_get_mbar(pcie_bdf_t bdf,
-			unsigned int index,
-			struct pcie_mbar *mbar);
+			  unsigned int index,
+			  struct pcie_mbar *mbar);
 
 /**
  * @brief Set or reset bits in the endpoint command/status register.
@@ -193,7 +192,15 @@ extern void pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq);
 #define PCIE_CONF_BAR_MEM(w)		(((w) & 0x00000001U) != 0x00000001U)
 #define PCIE_CONF_BAR_64(w)		(((w) & 0x00000006U) == 0x00000004U)
 #define PCIE_CONF_BAR_ADDR(w)		((w) & ~0xfUL)
+#define PCIE_CONF_BAR_FLAGS(w)		((w) & 0xfUL)
 #define PCIE_CONF_BAR_NONE		0U
+
+#define PCIE_CONF_BAR_INVAL		0xFFFFFFF0U
+#define PCIE_CONF_BAR_INVAL64		0xFFFFFFFFFFFFFFF0UL
+
+#define PCIE_CONF_BAR_INVAL_FLAGS(w)			\
+	((((w) & 0x00000006U) == 0x00000006U) ||	\
+	 (((w) & 0x00000006U) == 0x00000002U))
 
 /*
  * Word 15 contains information related to interrupts.
