@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2020 Petri Oksanen <petri@iote.ai>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/h7/stm32h743.dtsi>
