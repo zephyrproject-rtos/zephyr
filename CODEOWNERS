@@ -58,6 +58,7 @@
 /soc/arm64/bcm_vk/                        @abhishek-brcm
 /soc/arm64/nxp_layerscape/                @JiafeiPan
 /soc/arm64/xenvm/                         @lorc
+/soc/arm64/arm/                           @povergoing
 /arch/x86/                                @jhedberg @nashif @jenmwms @aasthagr
 /arch/nios2/                              @nashif
 /arch/posix/                              @aescolar @daor-oti
