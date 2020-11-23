@@ -132,7 +132,7 @@ extern "C" {
 /**
  * @def DEVICE_DT_DEFINE
  *
- * @brief Like DEVICE_DEFINE but taking metadata from a devicetree node
+ * @brief Like DEVICE_DEFINE but taking metadata from a devicetree node.
  *
  * @details This macro defines a device object that is automatically
  * configured by the kernel during system initialization.  The device
@@ -140,8 +140,10 @@ extern "C" {
  * devicetree path to the node), and the driver name is from the @p
  * label property of the devicetree node.
  *
- * Device objects defined through this API can be obtained directly
- * through DEVICE_DT_GET() using @p node_id.
+ * The device is declared with extern visibility, so device objects
+ * defined through this API can be obtained directly through
+ * DEVICE_DT_GET() using @p node_id.  Before using the pointer the
+ * referenced object should be checked using device_is_ready().
  *
  * @param node_id The devicetree node identifier.
  *
@@ -196,6 +198,11 @@ extern "C" {
  * @details Return the address of a device object created by
  * DEVICE_DT_INIT(), using the dev_name derived from @p node_id
  *
+ * @note A declaration for the corresponding device must be in scope;
+ * e.g:
+ *
+ * @code DEVICE_DT_DECLARE(node_id); @endcode
+ *
  * @param node_id The same as node_id provided to DEVICE_DT_DEFINE()
  *
  * @return A pointer to the device object created by DEVICE_DT_DEFINE()
@@ -206,7 +213,10 @@ extern "C" {
  *
  * @brief Declare a device object associated with @p node_id
  *
- * This macro can be used at the top-level to declare a device, such
+ * This macro can be used in source files to get a reference to the
+ * device structure corresponding to a devicetree node.
+ *
+ * Within driver implementation files it is used to declare a device so
  * that DEVICE_DT_GET() may be used before the full declaration in
  * DEVICE_DT_DEFINE().
  *
@@ -215,10 +225,16 @@ extern "C" {
  * itself is required by DEVICE_DT_DEFINE() and use of DEVICE_DT_GET()
  * inside it creates a circular dependency.
  *
+ * It can also be used in unrelated modules to store the pointer to a
+ * device without having to look it up at runtime through
+ * device_get_binding().
+ *
+ * Note that the device declaration has no storage class specifiers.
+ *
  * @param node_id The same as node_id provided to DEVICE_DT_DEFINE()
  */
-#define DEVICE_DT_DECLARE(node_id)				\
-	static const struct device DEVICE_DT_NAME_GET(node_id)
+#define DEVICE_DT_DECLARE(node_id)			\
+	extern const struct device DEVICE_DT_NAME_GET(node_id)
 
 /**
  * @def DEVICE_GET
@@ -328,6 +344,28 @@ size_t z_device_get_all_static(const struct device * *devices);
  * @return true if and only if the device is available for use.
  */
 bool z_device_ready(const struct device *dev);
+
+/** @brief Verify that a device is ready for use.
+ *
+ * Indicates whether the provided device pointer is for a device known to be
+ * in a state where it can be used with its standard API.
+ *
+ * This can be used with device pointers captured from DEVICE_DT_GET(), which
+ * does not include the readiness checks of device_get_binding().  At minimum
+ * this means that the device has been successfully initialized, but it may
+ * take on further conditions (e.g. is not powered down).
+ *
+ * @param dev pointer to the device in question.
+ *
+ * @retval true if the device is ready for use.
+ * @retval false if the device is not ready for use.
+ */
+__syscall bool device_is_ready(const struct device *dev);
+
+static inline bool z_impl_device_is_ready(const struct device *dev)
+{
+	return z_device_ready(dev);
+}
 
 /**
  * @}
@@ -659,7 +697,8 @@ static inline int device_pm_put_sync(const struct device *dev) { return -ENOTSUP
 #define Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn, pm_control_fn, \
 			data_ptr, cfg_ptr, level, prio, api_ptr)	\
 	Z_DEVICE_DEFINE_PM(dev_name)					\
-	static const Z_DECL_ALIGN(struct device)			\
+	COND_CODE_1(DT_NODE_EXISTS(dev_name), (), (static))		\
+		const Z_DECL_ALIGN(struct device)			\
 		DEVICE_NAME_GET(dev_name) __used			\
 	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
 		.name = drv_name,					\
