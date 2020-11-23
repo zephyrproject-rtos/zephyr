@@ -1391,6 +1391,7 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 		struct ticker_node *ticker;
 		uint32_t ticks_to_expire;
 		uint8_t id_expired;
+		uint8_t state;
 
 		/* auto variable for current ticker node */
 		id_expired = instance->ticker_id_head;
@@ -1428,9 +1429,8 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 		/* If a reschedule is set pending, we will need to keep
 		 * the slot_previous information
 		 */
-		if ((ticker->ticks_slot != 0U) &&
-		    (((ticker->req - ticker->ack) & 0xff) == 2U) &&
-		    !skip_collision &&
+		state = (ticker->req - ticker->ack) & 0xff;
+		if (ticker->ticks_slot && (state == 2U) && !skip_collision &&
 		    !TICKER_RESCHEDULE_PENDING(ticker)) {
 			instance->ticker_id_slot_previous = id_expired;
 			instance->ticks_slot_previous = ticker->ticks_slot;
@@ -1539,7 +1539,11 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 			ticker->req++;
 		} else {
 #if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
-			if ((((ticker->req - ticker->ack) & 0xff) == 1U) &&
+			/* A single-shot ticker in requested or skipped due to
+			 * collision shall generate a operation function
+			 * callback with failure status.
+			 */
+			if (state && ((state == 1U) || skip_collision) &&
 			    ticker->fp_op_func) {
 				ticker->fp_op_func(TICKER_STATUS_FAILURE,
 						   ticker->op_context);
