@@ -598,6 +598,78 @@ void test_strtok_r(void)
 	test_strtok_r_do("1|2|3,4|5",           "| ", 5, tc01, false);
 }
 
+#if defined(CONFIG_MINIMAL_LIBC_POSIX_MEMALIGN) \
+	&& (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE > 0)
+void test_posix_memalign(void)
+{
+	void *r;
+
+	r = (void *) 0x3a210;
+	/* multiples of sizeof(void *) alignment OK */
+	zassert_equal(0, posix_memalign(&r, sizeof(void *), 0), "");
+	/* zero-size allocation results in NULL ptr */
+	zassert_equal(NULL, r, "");
+
+	r = (void *) 0x2e1da;
+	/* multiples of sizeof(void *) alignment OK */
+	zassert_equal(0, posix_memalign(&r, 2 * sizeof(void *), 0), "");
+	/* zero-size allocation results in NULL ptr */
+	zassert_equal(NULL, r, "");
+
+	r = (void *) 0x7e7215;
+	/* TESTPOINT: posix_memalign accepts a size that is any number */
+	zassert_equal(0, posix_memalign(&r, sizeof(void *), 1), "");
+	/* allocation succeeds */
+	zassert_not_equal(NULL, r, "");
+	/* r is suitably aligned */
+	zassert_equal(0, (uintptr_t)r % sizeof(void *), "");
+	free(r);
+
+	r = (void *) 0x3e7201d;
+	/* TESTPOINT: allocate with > 8 byte alignment */
+	zassert_equal(0, posix_memalign(&r, 16, 1), "");
+	zassert_not_equal(NULL, r, "");
+	/* r is suitably aligned */
+	zassert_equal(0, (uintptr_t)r % 16, "");
+	free(r);
+
+	r = (void *) 0xc0272a;
+	/* fail without alignment as integral multiple of sizeof(void *) */
+	zassert_equal(EINVAL, posix_memalign(&r, sizeof(void *) + 1, 0), "");
+	/* return value should be unchanged on failure */
+	zassert_equal((void *) 0xc0272a, r, "");
+
+	/* 1 is not an integral multiple of sizeof(void *) */
+	zassert_equal(EINVAL, posix_memalign(&r, 1, 0), "");
+}
+#else
+void test_posix_memalign(void)
+{
+}
+#endif
+
+#if defined(CONFIG_MINIMAL_LIBC_ALIGNED_ALLOC) \
+	&& (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE > 0)
+void test_aligned_alloc(void)
+{
+	void *r;
+
+	/* uses posix_memalign internally so no need for duplicate tests */
+
+	/* TESTPOINT: size must be multiple of alignment */
+	zassert_equal(NULL, aligned_alloc(sizeof(void *),
+		sizeof(void *) + 1), "");
+	r = aligned_alloc(sizeof(void *), sizeof(void *));
+	free(r);
+	zassert_not_equal(r, NULL, "");
+	zassert_equal(0, (uintptr_t) r % sizeof(void *), "");
+}
+#else
+void test_aligned_alloc(void)
+{
+}
+#endif
+
 void test_main(void)
 {
 	ztest_test_suite(test_c_lib,
@@ -621,7 +693,9 @@ void test_main(void)
 			 ztest_unit_test(test_memstr),
 			 ztest_unit_test(test_str_operate),
 			 ztest_unit_test(test_tolower_toupper),
-			 ztest_unit_test(test_strtok_r)
+			 ztest_unit_test(test_strtok_r),
+			 ztest_unit_test(test_posix_memalign),
+			 ztest_unit_test(test_aligned_alloc)
 			 );
 	ztest_run_test_suite(test_c_lib);
 }

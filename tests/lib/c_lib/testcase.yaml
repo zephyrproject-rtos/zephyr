@@ -1,3 +1,9 @@
 tests:
   libraries.libc:
     tags: clib
+  libraries.libc.alloc:
+    tags: clib
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE=16384
+      - CONFIG_MINIMAL_LIBC_POSIX_MEMALIGN=y
+      - CONFIG_MINIMAL_LIBC_ALIGNED_ALLOC=y
