@@ -1,0 +1,12 @@
+# HDC20x0 ±2% ultra-low-power, digital humidity sensor with
+# temperature sensor in WCSP
+
+# Copyright (c) 2020 seeed.cc
+# SPDX-License-Identifier: Apache-2.0
+
+config HDC20X0
+	bool "HDC20X0 sensor"
+	depends on I2C
+	help
+	  Enable driver for HDC2010/HDC2080 I2C-based digital humidity sensor
+	  with temperature sensor.
