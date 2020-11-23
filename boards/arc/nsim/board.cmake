@@ -19,7 +19,7 @@ elseif(${CONFIG_SOC_NSIM_HS})
 board_runner_args(arc-nsim "--props=nsim_hs.props")
 board_runner_args(mdb-nsim "--nsim_args=mdb_hs.args")
 elseif(${CONFIG_SOC_NSIM_HS_SMP})
-board_runner_args(mdb-nsim "--cores=2" "--nsim_args=mdb_hs_smp.args")
+board_runner_args(mdb-nsim "--cores=${CONFIG_MP_NUM_CPUS}" "--nsim_args=mdb_hs_smp.args")
 endif()
 
 board_finalize_runner_args(arc-nsim)
