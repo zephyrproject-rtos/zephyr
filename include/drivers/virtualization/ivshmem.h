@@ -18,8 +18,23 @@ extern "C" {
 typedef size_t (*ivshmem_get_mem_f)(const struct device *dev,
 				    uintptr_t *memmap);
 
+typedef uint32_t (*ivshmem_get_id_f)(const struct device *dev);
+
+typedef uint16_t (*ivshmem_get_vectors_f)(const struct device *dev);
+
+typedef int (*ivshmem_int_peer_f)(const struct device *dev,
+				  uint32_t peer_id, uint16_t vector);
+
+typedef int (*ivshmem_register_handler_f)(const struct device *dev,
+					  struct k_poll_signal *signal,
+					  uint16_t vector);
+
 struct ivshmem_driver_api {
 	ivshmem_get_mem_f get_mem;
+	ivshmem_get_id_f get_id;
+	ivshmem_get_vectors_f get_vectors;
+	ivshmem_int_peer_f int_peer;
+	ivshmem_register_handler_f register_handler;
 };
 
 /**
@@ -37,6 +52,79 @@ static inline size_t ivshmem_get_mem(const struct device *dev,
 		(const struct ivshmem_driver_api *)dev->api;
 
 	return api->get_mem(dev, memmap);
+}
+
+/**
+ * @brief Get our VM ID
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ *
+ * @return our VM ID or 0 if we are not running on doorbell version
+ */
+static inline uint32_t ivshmem_get_id(const struct device *dev)
+{
+	const struct ivshmem_driver_api *api =
+		(const struct ivshmem_driver_api *)dev->api;
+
+	return api->get_id(dev);
+}
+
+/**
+ * @brief Get the number of interrupt vectors we can use
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ *
+ * @return the number of available interrupt vectors
+ */
+static inline uint16_t ivshmem_get_vectors(const struct device *dev)
+{
+	const struct ivshmem_driver_api *api =
+		(const struct ivshmem_driver_api *)dev->api;
+
+	return api->get_vectors(dev);
+}
+
+/**
+ * @brief Interrupt another VM
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param peer_id The VM ID to interrupt
+ * @param vector The interrupt vector to use
+ *
+ * @return 0 on success, a negative errno otherwise
+ */
+static inline int ivshmem_int_peer(const struct device *dev,
+				   uint32_t peer_id, uint16_t vector)
+{
+	const struct ivshmem_driver_api *api =
+		(const struct ivshmem_driver_api *)dev->api;
+
+	return api->int_peer(dev, peer_id, vector);
+}
+
+/**
+ * @brief Register a vector notification (interrupt) handler
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param signal A pointer to a valid and ready to be signaled
+ *        struct k_poll_signal. Or NULL to unregister any handler
+ *        registered for the given vector.
+ * @param vector The interrupt vector to get notification from
+ *
+ * Note: The returned status, if positive, to a raised signal is the vector
+ *       that generated the signal. This lets the possibility to the user
+ *       to have one signal for all vectors, or one per-vector.
+ *
+ * @return 0 on success, a negative errno otherwise
+ */
+static inline int ivshmem_register_handler(const struct device *dev,
+					   struct k_poll_signal *signal,
+					   uint16_t vector)
+{
+	const struct ivshmem_driver_api *api =
+		(const struct ivshmem_driver_api *)dev->api;
+
+	return api->register_handler(dev, signal, vector);
 }
 
 #ifdef __cplusplus

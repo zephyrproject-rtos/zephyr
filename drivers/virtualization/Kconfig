@@ -30,6 +30,30 @@ module = IVSHMEM
 module-str = ivshmem
 source "subsys/logging/Kconfig.template.log_config"
 
+config IVSHMEM_DOORBELL
+	bool "Support interrupt based ivshmem (doorbell version)"
+	depends on PCIE_MSI_X && PCIE_MSI_MULTI_VECTOR
+	help
+	  This will enable support of ivshmem-doorbell, i.e. the interrupt
+	  based ivshmem.
+
+config IVSHMEM_MSI_X_VECTORS
+	int "How many notification vectors should be pre-allocated?"
+	default 2
+	depends on IVSHMEM_DOORBELL
+	help
+	  MSI-X vector holders must be pre-allocated. One can pre-allocate
+	  more or less than necessary. Depends on how many VMs will connect
+	  with each other. These are know to be the notification vectors in
+	  ivshmem.
+
+config IVSHMEM_INT_PRIORITY
+	int "Interrupt priority"
+	default 2
+	depends on IVSHMEM_DOORBELL
+	help
+	  Interrupt priority used for the MSI-X generated interrupts.
+
 endif # IVSHMEM
 
 endif # VIRTUALIZATION
