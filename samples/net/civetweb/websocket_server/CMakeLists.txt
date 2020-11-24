@@ -1,5 +1,4 @@
-# Copyright (c) 2020 Alexander Kozhinov
-# Mail: AlexanderKozhinov@yandex.com
+# Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
