@@ -1,0 +1,18 @@
+name: Manifest
+on:
+  - pull_request_target
+
+jobs:
+  contribs:
+    runs-on: ubuntu-latest
+    name: Manifest
+    steps:
+      - name: Manifest
+        uses: zephyrproject-rtos/action-manifest@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          manifest-path: 'west.yml'
+          label-prefix: 'manifest-'
+          verbosity-level: '1'
+          labels: 'manifest, west'
+          dnm-labels: 'DNM'
