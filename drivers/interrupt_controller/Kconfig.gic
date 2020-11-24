@@ -36,4 +36,11 @@ config GIC_VER
 	default 2 if GIC_V2
 	default 3 if GIC_V3
 
+config GIC_SINGLE_SECURITY_STATE
+	bool
+	depends on GIC_V3
+	help
+	  Some ARM Cortex-family processors only supports single security
+	  state.
+
 endif # CPU_CORTEX
