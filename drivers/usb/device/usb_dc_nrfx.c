@@ -690,7 +690,6 @@ static void eps_ctx_uninit(void)
 	for (i = 0U; i < CFG_EPIN_CNT; i++) {
 		ep_ctx = in_endpoint_ctx(i);
 		__ASSERT_NO_MSG(ep_ctx);
-		k_mem_pool_free(&ep_ctx->buf.block);
 		memset(ep_ctx, 0, sizeof(*ep_ctx));
 	}
 
@@ -704,7 +703,6 @@ static void eps_ctx_uninit(void)
 	if (CFG_EP_ISOIN_CNT) {
 		ep_ctx = in_endpoint_ctx(NRF_USBD_EPIN(8));
 		__ASSERT_NO_MSG(ep_ctx);
-		k_mem_pool_free(&ep_ctx->buf.block);
 		memset(ep_ctx, 0, sizeof(*ep_ctx));
 	}
 
