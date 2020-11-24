@@ -531,7 +531,6 @@ static int espi_xec_receive_oob(const struct device *dev,
 {
 	uint8_t err_mask = MCHP_ESPI_OOB_RX_STS_IBERR |
 			MCHP_ESPI_OOB_RX_STS_OVRUN;
-	struct espi_xec_data *data = (struct espi_xec_data *)(dev->data);
 
 	if (ESPI_OOB_REGS->TX_STS & err_mask) {
 		return -EIO;
@@ -539,7 +538,7 @@ static int espi_xec_receive_oob(const struct device *dev,
 
 #ifndef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
 	int ret;
-	struct espi_xec_data *data = (struct espi_xec_data *)(dev->driver_data);
+	struct espi_xec_data *data = (struct espi_xec_data *)(dev->data);
 
 	/* Wait until ISR or timeout */
 	ret = k_sem_take(&data->rx_lock, K_MSEC(MAX_OOB_TIMEOUT));
