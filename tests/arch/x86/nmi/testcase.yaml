@@ -1,5 +1,11 @@
+common:
+  arch_allow: x86
+  filter: CONFIG_X86_64
+  tags: interrupt nmi
 tests:
   arch.interrupt.nmi:
-    arch_allow: x86
-    platform_allow: qemu_x86_64
-    tags: interrupt
+    extra_configs:
+      - CONFIG_USERSPACE=n
+  arch.interrupt.nmi.kpti:
+    extra_configs:
+      - CONFIG_USERSPACE=y

@@ -15,4 +15,6 @@
 
 #define _trigger_isr_handler(irq) __asm__ volatile("int %0" : : "i" (irq) : "memory")
 
+#define _get_esp(x) __asm__("movq %%rsp, %0" : "=r" (x))
+
 #endif /* _TEST_ASM_INLINE_GCC_H */

@@ -17,8 +17,37 @@
 
 static volatile int int_handler_executed;
 
+extern uint8_t _nmi_stack[];
+extern uint8_t _nmi_stack1[];
+extern uint8_t _nmi_stack2[];
+extern uint8_t _nmi_stack3[];
+
+uint8_t *nmi_stacks[] = {
+	_nmi_stack,
+#if CONFIG_MP_NUM_CPUS > 1
+	_nmi_stack1,
+#if CONFIG_MP_NUM_CPUS > 2
+	_nmi_stack2,
+#if CONFIG_MP_NUM_CPUS > 3
+	_nmi_stack3
+#endif
+#endif
+#endif
+};
+
 bool z_x86_do_kernel_nmi(const z_arch_esf_t *esf)
 {
+	uint64_t stack;
+
+	_get_esp(stack);
+
+	TC_PRINT("ESP: 0x%llx CPU %d nmi_stack %p\n", stack,
+		 arch_curr_cpu()->id, nmi_stacks[arch_curr_cpu()->id]);
+
+	zassert_true(stack > (uint64_t)nmi_stacks[arch_curr_cpu()->id] &&
+		     stack < (uint64_t)nmi_stacks[arch_curr_cpu()->id] +
+		     CONFIG_X86_EXCEPTION_STACK_SIZE, "Incorrect stack");
+
 	int_handler_executed++;
 
 	return true;
