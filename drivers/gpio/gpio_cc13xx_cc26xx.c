@@ -70,11 +70,32 @@ static int gpio_cc13xx_cc26xx_config(const struct device *port,
 		return -ENOTSUP;
 	}
 
-	config |= IOC_CURRENT_2MA | IOC_STRENGTH_AUTO | IOC_SLEW_DISABLE |
-		 IOC_NO_WAKE_UP;
+	config |= IOC_SLEW_DISABLE | IOC_NO_WAKE_UP;
 
 	config |= (flags & GPIO_INT_DEBOUNCE) ? IOC_HYST_ENABLE :
 							IOC_HYST_DISABLE;
+
+	/*
+	 * The GPIO_DS_ALT_HIGH and GPIO_DS_ALT_LOW flags are for setting
+	 * the highest drive strength for a GPIO in the output HIGH and
+	 * output LOW states, respectively. Since only 1 drive strength
+	 * setting is available for a GPIO (irrespective of output state),
+	 * require both flags to be set for highest drive strength, default
+	 * to low/auto drive strength.
+	 * Not all GPIO support 8ma, but setting that bit will use the highest
+	 * supported drive strength.
+	 */
+	switch (flags & (GPIO_DS_ALT_HIGH | GPIO_DS_ALT_LOW)) {
+	case 0:
+		config |= IOC_CURRENT_2MA | IOC_STRENGTH_AUTO;
+		break;
+	case (GPIO_DS_ALT_HIGH | GPIO_DS_ALT_LOW):
+		config |= IOC_CURRENT_8MA | IOC_STRENGTH_MAX;
+		break;
+	case GPIO_DS_ALT_HIGH:
+	case GPIO_DS_ALT_LOW:
+		return -ENOTSUP;
+	}
 
 	switch (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) {
 	case 0:
