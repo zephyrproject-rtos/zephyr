@@ -3,7 +3,8 @@ sample:
 tests:
   sample.usb.mass_flash:
     min_ram: 32
-    depends_on: usb_device flash
+    depends_on: usb_device
+    platform_allow: nrf52840dk_nrf52840
     extra_args: OVERLAY_CONFIG="overlay-flash-disk.conf"
     extra_configs:
         - CONFIG_LOG_DEFAULT_LEVEL=3
@@ -14,11 +15,14 @@ tests:
       regex:
         - "The device is put in USB mass storage mode."
   sample.usb.mass_ram:
-    min_ram: 32
-    depends_on: usb_device gpio
+    min_ram: 128
+    depends_on: usb_device
+    platform_exclude: native_posix native_posix_64
     extra_args: OVERLAY_CONFIG="overlay-ram-disk.conf"
     extra_configs:
         - CONFIG_LOG_DEFAULT_LEVEL=3
+        - CONFIG_FILE_SYSTEM_LITTLEFS=n
+        - CONFIG_FAT_FILESYSTEM_ELM=y
     tags: msd usb
     harness: console
     harness_config:
