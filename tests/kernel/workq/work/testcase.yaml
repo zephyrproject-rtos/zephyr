@@ -1,5 +1,4 @@
 tests:
   kernel.work.api:
-    filter: CONFIG_KERNEL_WORK2
     min_flash: 34
     tags: kernel

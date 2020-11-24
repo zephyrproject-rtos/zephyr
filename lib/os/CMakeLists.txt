@@ -23,11 +23,6 @@ zephyr_sources(
   heap-validate.c
   )
 
-zephyr_sources_ifdef(CONFIG_KERNEL_WORK1 work_q.c)
-if(${CONFIG_USERSPACE})
-zephyr_sources_ifdef(CONFIG_KERNEL_WORK2 user_work.c)
-endif()
-
 zephyr_sources_ifdef(CONFIG_CBPRINTF_COMPLETE cbprintf_complete.c)
 zephyr_sources_ifdef(CONFIG_CBPRINTF_NANO cbprintf_nano.c)
 
@@ -37,7 +32,7 @@ zephyr_sources_ifdef(CONFIG_RING_BUFFER ring_buffer.c)
 
 zephyr_sources_ifdef(CONFIG_ASSERT assert.c)
 
-zephyr_sources_ifdef(CONFIG_USERSPACE mutex.c)
+zephyr_sources_ifdef(CONFIG_USERSPACE mutex.c user_work.c)
 
 zephyr_sources_ifdef(CONFIG_SCHED_DEADLINE p4wq.c)
 

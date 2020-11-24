@@ -27,19 +27,10 @@ static int k_sys_work_q_init(const struct device *dev)
 		.no_yield = IS_ENABLED(CONFIG_SYSTEM_WORKQUEUE_NO_YIELD),
 	};
 
-#ifdef CONFIG_KERNEL_WORK1
-	k_work_q_start(&k_sys_work_q,
-		       sys_work_q_stack,
-		       K_KERNEL_STACK_SIZEOF(sys_work_q_stack),
-		       CONFIG_SYSTEM_WORKQUEUE_PRIORITY);
-	k_thread_name_set(&k_sys_work_q.thread, "sysworkq");
-#else /* CONFIG_KERNEL_WORK1 */
 	k_work_queue_start(&k_sys_work_q,
 			    sys_work_q_stack,
 			    K_KERNEL_STACK_SIZEOF(sys_work_q_stack),
 			    CONFIG_SYSTEM_WORKQUEUE_PRIORITY, &cfg);
-#endif /* CONFIG_KERNEL_WORK1 */
-
 	return 0;
 }
 
