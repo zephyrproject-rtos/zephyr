@@ -2715,7 +2715,8 @@ class TestSuite(DisablePyTestCollectionMixin):
                 self.duration))
 
         self.total_platforms = len(self.platforms)
-        if self.platforms:
+        # if we are only building, do not report about tests being executed.
+        if self.platforms and not self.build_only:
             logger.info("In total {} test cases were executed, {} skipped on {} out of total {} platforms ({:02.2f}%)".format(
                 results.cases - results.skipped_cases,
                 results.skipped_cases,
