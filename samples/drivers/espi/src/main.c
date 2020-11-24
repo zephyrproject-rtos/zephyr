@@ -12,20 +12,10 @@
 #include <drivers/espi.h>
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
+#ifdef CONFIG_ESPI_OOB_CHANNEL
+#include "espi_oob_handler.h"
+#endif
 LOG_MODULE_DECLARE(espi, CONFIG_ESPI_LOG_LEVEL);
-
-/* eSPI host entity address  */
-#define DEST_SLV_ADDR         0x02u
-#define SRC_SLV_ADDR          0x21u
-
-/* Temperature command opcode */
-#define OOB_CMDCODE           0x01u
-#define OOB_RESPONSE_LEN      0x05u
-#define OOB_RESPONSE_INDEX    0x03u
-
-/* Maximum bytes for OOB transactions */
-#define MAX_RESP_SIZE         20u
-#define MIN_GET_TEMP_CYCLES   5u
 
 /* eSPI flash parameters */
 #define MAX_TEST_BUF_SIZE     1024u
@@ -44,13 +34,6 @@ LOG_MODULE_DECLARE(espi, CONFIG_ESPI_LOG_LEVEL);
 #define EVENT_DETAILS_POS     16u
 #define EVENT_TYPE(x)         (x & EVENT_MASK)
 #define EVENT_DETAILS(x)      ((x & EVENT_DETAILS_MASK) >> EVENT_DETAILS_POS)
-
-struct oob_header {
-	uint8_t dest_slave_addr;
-	uint8_t oob_cmd_code;
-	uint8_t byte_cnt;
-	uint8_t src_slave_addr;
-};
 
 #define PWR_SEQ_TIMEOUT    3000u
 
@@ -74,8 +57,10 @@ static struct espi_callback espi_bus_cb;
 static struct espi_callback vw_rdy_cb;
 static struct espi_callback vw_cb;
 static struct espi_callback p80_cb;
-
 static uint8_t espi_rst_sts;
+#ifdef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
+static struct espi_callback oob_cb;
+#endif
 
 #ifdef CONFIG_ESPI_FLASH_CHANNEL
 static uint8_t flash_write_buf[MAX_TEST_BUF_SIZE];
@@ -226,6 +211,10 @@ int espi_init(void)
 			   ESPI_BUS_EVENT_VWIRE_RECEIVED);
 	espi_init_callback(&p80_cb, periph_handler,
 			   ESPI_BUS_PERIPHERAL_NOTIFICATION);
+#ifdef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
+			   espi_init_callback(&oob_cb, oob_rx_handler,
+			   ESPI_BUS_EVENT_OOB_RECEIVED);
+#endif
 	LOG_INF("complete");
 
 	LOG_INF("eSPI test - callbacks registration... ");
@@ -233,6 +222,9 @@ int espi_init(void)
 	espi_add_callback(espi_dev, &vw_rdy_cb);
 	espi_add_callback(espi_dev, &vw_cb);
 	espi_add_callback(espi_dev, &p80_cb);
+#ifdef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
+	espi_add_callback(espi_dev, &oob_cb);
+#endif
 	LOG_INF("complete");
 
 	return ret;
@@ -479,53 +471,6 @@ static int espi_flash_test(uint32_t start_flash_addr, uint8_t blocks)
 }
 #endif /* CONFIG_ESPI_FLASH_CHANNEL */
 
-int get_pch_temp(const struct device *dev, int *temp)
-{
-	struct espi_oob_packet req_pckt;
-	struct espi_oob_packet resp_pckt;
-	struct oob_header oob_hdr;
-	uint8_t buf[MAX_RESP_SIZE];
-	int ret;
-
-	LOG_INF("%s", __func__);
-
-	oob_hdr.dest_slave_addr = DEST_SLV_ADDR;
-	oob_hdr.oob_cmd_code = OOB_CMDCODE;
-	oob_hdr.byte_cnt = 1;
-	oob_hdr.src_slave_addr = SRC_SLV_ADDR;
-
-	/* Packetize OOB request */
-	req_pckt.buf = (uint8_t *)&oob_hdr;
-	req_pckt.len = sizeof(struct oob_header);
-	resp_pckt.buf = (uint8_t *)&buf;
-	resp_pckt.len = MAX_RESP_SIZE;
-
-	ret = espi_send_oob(dev, &req_pckt);
-	if (ret) {
-		LOG_ERR("OOB Tx failed %d", ret);
-		return ret;
-	}
-
-	ret = espi_receive_oob(dev, &resp_pckt);
-	if (ret) {
-		LOG_ERR("OOB Rx failed %d", ret);
-		return ret;
-	}
-
-	LOG_INF("OOB transaction completed rcvd: %d bytes", resp_pckt.len);
-	for (int i = 0; i < resp_pckt.len; i++) {
-		LOG_INF("%x ", buf[i]);
-	}
-
-	if (resp_pckt.len == OOB_RESPONSE_LEN) {
-		*temp = buf[OOB_RESPONSE_INDEX];
-	} else {
-		LOG_ERR("Incorrect size response");
-	}
-
-	return 0;
-}
-
 #ifndef CONFIG_ESPI_AUTOMATIC_BOOT_DONE_ACKNOWLEDGE
 static void send_slave_bootdone(void)
 {
@@ -674,16 +619,13 @@ int espi_test(void)
 	/*  Attempt to use OOB channel to read temperature, regardless of
 	 * if is enabled or not.
 	 */
-	for (int i = 0; i < MIN_GET_TEMP_CYCLES; i++) {
-		int temp;
-
-		ret = get_pch_temp(espi_dev, &temp);
-		if (ret)  {
-			LOG_ERR("eSPI OOB transaction failed %d", ret);
-		} else {
-			LOG_INF("Temp: %d ", temp);
-		}
-	}
+#ifndef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
+	/* System without host-initiated OOB Rx traffic */
+	get_pch_temp_sync(espi_dev);
+#else
+	/* System with host-initiated OOB Rx traffic */
+	get_pch_temp_async(espi_dev);
+#endif
 
 	/* Cleanup */
 	k_sleep(K_SECONDS(1));
