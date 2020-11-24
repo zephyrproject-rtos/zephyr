@@ -20,6 +20,9 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #define STM32G4X_PAGE_SHIFT	11
 
+#define STM32G4_SERIES_MAX_FLASH	512
+#define BANK2_OFFSET	(KB(STM32G4_SERIES_MAX_FLASH) / 2)
+
 /*
  * offset and len must be aligned on 8 for write,
  * positive and not beyond end of flash
@@ -28,6 +31,18 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 			     uint32_t len,
 			     bool write)
 {
+
+#if defined(FLASH_OPTR_DBANK) && (CONFIG_FLASH_SIZE < STM32G4_SERIES_MAX_FLASH)
+	/*
+	 * In case of bank1/2 discontinuity, the range should not
+	 * start before bank2 and end beyond bank1 at the same time.
+	 * Locations beyond bank2 are caught by flash_stm32_range_exists.
+	 */
+	if ((offset < BANK2_OFFSET) && (offset + len > FLASH_SIZE / 2)) {
+		return 0;
+	}
+#endif
+
 	return (!write || (offset % 8 == 0 && len % 8 == 0U)) &&
 		flash_stm32_range_exists(dev, offset, len);
 }
@@ -181,18 +196,34 @@ void flash_stm32_page_layout(const struct device *dev,
 			     const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {
-	static struct flash_pages_layout stm32g4_flash_layout = {
-		.pages_count = 0,
-		.pages_size = 0,
-	};
-
 	ARG_UNUSED(dev);
 
-	if (stm32g4_flash_layout.pages_count == 0) {
-		stm32g4_flash_layout.pages_count = FLASH_SIZE / FLASH_PAGE_SIZE;
-		stm32g4_flash_layout.pages_size = FLASH_PAGE_SIZE;
-	}
+#if defined(FLASH_OPTR_DBANK) && (CONFIG_FLASH_SIZE < STM32G4_SERIES_MAX_FLASH)
+#define PAGES_PER_BANK  ((FLASH_SIZE / FLASH_PAGE_SIZE) / 2)
+	static struct flash_pages_layout stm32g4_flash_layout[3];
 
-	*layout = &stm32g4_flash_layout;
-	*layout_size = 1;
+	if (stm32g4_flash_layout[0].pages_count == 0) {
+		/* Bank1 */
+		stm32g4_flash_layout[0].pages_count = PAGES_PER_BANK;
+		stm32g4_flash_layout[0].pages_size = FLASH_PAGE_SIZE;
+		/* Dummy page corresponding to discontinuity between bank1/2 */
+		stm32g4_flash_layout[1].pages_count = 1;
+		stm32g4_flash_layout[1].pages_size = BANK2_OFFSET
+					- (PAGES_PER_BANK * FLASH_PAGE_SIZE);
+		/* Bank2 */
+		stm32g4_flash_layout[2].pages_count = PAGES_PER_BANK;
+		stm32g4_flash_layout[2].pages_size = FLASH_PAGE_SIZE;
+	}
+#else
+	static struct flash_pages_layout stm32g4_flash_layout[1];
+
+	if (stm32g4_flash_layout[0].pages_count == 0) {
+		stm32g4_flash_layout[0].pages_count = FLASH_SIZE
+						/ FLASH_PAGE_SIZE;
+		stm32g4_flash_layout[0].pages_size = FLASH_PAGE_SIZE;
+	}
+#endif
+
+	*layout = stm32g4_flash_layout;
+	*layout_size = ARRAY_SIZE(stm32g4_flash_layout);
 }
