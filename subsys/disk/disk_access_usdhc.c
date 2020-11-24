@@ -2831,8 +2831,6 @@ static int disk_usdhc_init(const struct device *dev)
 		    (DISK_ACCESS_USDHC_INIT_NONE(n)))
 
 #define DISK_ACCESS_USDHC_INIT(n)					\
-
-#define DISK_ACCESS_USDHC_INIT(n)					\
 	static const struct usdhc_config usdhc_config_##n = {		\
 		.base = (USDHC_Type  *) DT_INST_REG_ADDR(n),		\
 		.clock_name = DT_INST_CLOCKS_LABEL(n),			\

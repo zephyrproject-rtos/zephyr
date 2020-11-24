@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, NXP
+ * Copyright (c) 2020 Softube
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +29,7 @@ struct mcux_lpuart_data {
 	uart_irq_callback_user_data_t callback;
 	void *cb_data;
 #endif
+	struct uart_config uart_config;
 };
 
 static int mcux_lpuart_poll_in(const struct device *dev, unsigned char *c)
@@ -232,10 +234,11 @@ static void mcux_lpuart_isr(const struct device *dev)
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static int mcux_lpuart_init(const struct device *dev)
+static int mcux_lpuart_configure_init(const struct device *dev,
+				      const struct uart_config *cfg)
 {
 	const struct mcux_lpuart_config *config = dev->config;
-	lpuart_config_t uart_config;
+	struct mcux_lpuart_data *data = dev->data;
 	const struct device *clock_dev;
 	uint32_t clock_freq;
 
@@ -249,12 +252,119 @@ static int mcux_lpuart_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+	lpuart_config_t uart_config;
 	LPUART_GetDefaultConfig(&uart_config);
+
+	/* Translate UART API enum to LPUART enum from HAL */
+	switch (cfg->parity) {
+	case UART_CFG_PARITY_NONE:
+		uart_config.parityMode = kLPUART_ParityDisabled;
+		break;
+	case UART_CFG_PARITY_ODD:
+		uart_config.parityMode = kLPUART_ParityOdd;
+		break;
+	case UART_CFG_PARITY_EVEN:
+		uart_config.parityMode = kLPUART_ParityEven;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	switch (cfg->data_bits) {
+#if defined(FSL_FEATURE_LPUART_HAS_7BIT_DATA_SUPPORT) && \
+	FSL_FEATURE_LPUART_HAS_7BIT_DATA_SUPPORT
+	case UART_CFG_DATA_BITS_7:
+		uart_config.dataBitsCount  = kLPUART_SevenDataBits;
+		break;
+#endif
+	case UART_CFG_DATA_BITS_8:
+		uart_config.dataBitsCount  = kLPUART_EightDataBits;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+#if defined(FSL_FEATURE_LPUART_HAS_STOP_BIT_CONFIG_SUPPORT) && \
+	FSL_FEATURE_LPUART_HAS_STOP_BIT_CONFIG_SUPPORT
+	switch (cfg->stop_bits) {
+	case UART_CFG_STOP_BITS_1:
+		uart_config.stopBitCount = kLPUART_OneStopBit;
+		break;
+	case UART_CFG_STOP_BITS_2:
+		uart_config.stopBitCount = kLPUART_TwoStopBit;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+#endif
+
+#if defined(FSL_FEATURE_LPUART_HAS_MODEM_SUPPORT) && \
+	FSL_FEATURE_LPUART_HAS_MODEM_SUPPORT
+	switch (cfg->flow_ctrl) {
+	case UART_CFG_FLOW_CTRL_NONE:
+		uart_config.enableTxCTS = false;
+		uart_config.enableRxRTS = false;
+		break;
+	case UART_CFG_FLOW_CTRL_RTS_CTS:
+		uart_config.enableTxCTS = true;
+		uart_config.enableRxRTS = true;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+#endif
+	uart_config.baudRate_Bps = cfg->baudrate;
 	uart_config.enableTx = true;
 	uart_config.enableRx = true;
-	uart_config.baudRate_Bps = config->baud_rate;
 
 	LPUART_Init(config->base, &uart_config, clock_freq);
+
+	/* update internal uart_config */
+	data->uart_config = *cfg;
+
+	return 0;
+}
+
+static int mcux_lpuart_config_get(const struct device *dev, struct uart_config *cfg)
+{
+	struct mcux_lpuart_data *data = dev->data;
+	*cfg = data->uart_config;
+	return 0;
+}
+
+static int mcux_lpuart_configure(const struct device *dev,
+				 const struct uart_config *cfg)
+{
+	const struct mcux_lpuart_config *config = dev->config;
+
+	/* disable LPUART */
+	LPUART_Deinit(config->base);
+
+	int ret = mcux_lpuart_configure_init(dev, cfg);
+	if (ret) {
+		return ret;
+	}
+
+	/* wait for hardware init */
+	k_sleep(K_MSEC(1));
+
+	return 0;
+}
+
+static int mcux_lpuart_init(const struct device *dev)
+{
+	const struct mcux_lpuart_config *config = dev->config;
+	struct mcux_lpuart_data *data = dev->data;
+	struct uart_config *uart_api_config = &data->uart_config;
+
+	uart_api_config->baudrate = config->baud_rate;
+	uart_api_config->parity = UART_CFG_PARITY_NONE;
+	uart_api_config->stop_bits = UART_CFG_STOP_BITS_1;
+	uart_api_config->data_bits = UART_CFG_DATA_BITS_8;
+	uart_api_config->flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
+
+	/* set initial configuration */
+	mcux_lpuart_configure_init(dev, uart_api_config);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->irq_config_func(dev);
@@ -267,6 +377,8 @@ static const struct uart_driver_api mcux_lpuart_driver_api = {
 	.poll_in = mcux_lpuart_poll_in,
 	.poll_out = mcux_lpuart_poll_out,
 	.err_check = mcux_lpuart_err_check,
+	.configure = mcux_lpuart_configure,
+	.config_get = mcux_lpuart_config_get,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = mcux_lpuart_fifo_fill,
 	.fifo_read = mcux_lpuart_fifo_read,
