@@ -167,4 +167,11 @@ config ESPI_PERIPHERAL_HOST_CMD_PARAM_PORT_NUM
 
 endif # ESPI_PERIPHERAL_CHANNEL
 
+config ESPI_OOB_CHANNEL_RX_ASYNC
+	bool "OOB host-initiated traffic handling"
+	depends on ESPI_OOB_CHANNEL
+	help
+	  Enables asynchronous handling for host-initiated OOB traffic.
+	  Otherwise OOB traffic is assumed to be always client-initiated.
+
 endif # ESPI
