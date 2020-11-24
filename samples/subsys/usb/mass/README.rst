@@ -7,36 +7,61 @@ Overview
 ********
 
 This sample app demonstrates use of a USB Mass Storage driver by the Zephyr
-project.  This very simple driver enumerates a board with either RAM or FLASH
+project. This very simple driver enumerates a board with either RAM or FLASH
 into an USB disk.  This sample can be found under
 :zephyr_file:`samples/subsys/usb/mass` in the Zephyr project tree.
 
 Requirements
 ************
 
-This project requires a USB device driver, and either 16KiB of RAM or a FLASH
-device.
+This project requires a USB device driver, and either 32KiB (96KiB optional)
+of RAM or a FLASH device.
 
 Building and Running
 ********************
 
-This sample can be built for multiple boards, some generic and some
-customized through configurations found in
-:zephyr_file:`samples/subsys/usb/mass/boards` in the Zephyr project
-tree.
+This sample can be built for multiple boards, customized through overlays found
+in :zephyr_file:`samples/subsys/usb/mass/boards` in the Zephyr project tree.
+The selection between a RAM-based or a FLASH-based disk and file system
+can be chosen passing Kconfig configuration via the -D command-line switch.
 
-Generic Example
-===============
+RAM-disk Example without any file system
+========================================
 
-The selection between a RAM-based or a FLASH-based disk can be selected
-using the ``overlay-ram-disk.conf`` or the ``overlay-flash-disk.conf``
-overlays.  In this example we will build the sample with a RAM-based
-disk:
+The default configurations selects RAM-based disk without any file system.
+This example only needs additional 32KiB RAM for the RAM-disk and is intended
+for testing USB mass storage class implementation.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/mass
    :board: reel_board
-   :gen-args: -DOVERLAY_CONFIG="overlay-ram-disk.conf"
+   :goals: build
+   :compact:
+
+
+FAT FS Example
+==============
+
+If more than 96KiB are available, FAT files system can be used
+with a RAM-disk. Alternatively it is possible with the FLASH-based disk.
+In this example we will build the sample with a RAM-based disk:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/usb/mass
+   :board: reel_board
+   :gen-args: -DCONFIG_APP_MSC_STORAGE_RAM=y
+   :goals: build
+   :compact:
+
+
+In this example we will build the sample with a FLASH-based disk and FAT
+file system for Adafruit Feather nRF52840 Express.  This board configures
+to use the external 16 MiBi QSPI flash chip with a 2 MiBy FAT partition.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/usb/mass
+   :board: adafruit_feather_nrf52840
+   :gen-args: -DCONFIG_APP_MSC_STORAGE_FLASH_FATFS=y
    :goals: build
    :compact:
 
@@ -56,8 +81,8 @@ The board will be detected as shown by the Linux journalctl command:
     usb-storage 2-2.4:1.0: USB Mass Storage device detected
     scsi host3: usb-storage 2-2.4:1.0
     scsi 3:0:0:0: Direct-Access     ZEPHYR   ZEPHYR USB DISK  0.01 PQ: 0 ANSI: 0 CCS
-    sd 3:0:0:0: Attached scsi generic sg1 type 0
-    sd 3:0:0:0: [sdb] 32 512-byte logical blocks: (16.4 kB/16.0 KiB)
+    sd 3:0:0:0: Attached scsi generic sg4 type 0
+    sd 3:0:0:0: [sdb] 256 512-byte logical blocks: (131 kB/128 KiB)
     sd 3:0:0:0: [sdb] Write Protect is off
     sd 3:0:0:0: [sdb] Mode Sense: 03 00 00 00
     sd 3:0:0:0: [sdb] No Caching mode page found
@@ -65,25 +90,33 @@ The board will be detected as shown by the Linux journalctl command:
      sdb:
     sd 3:0:0:0: [sdb] Attached SCSI removable disk
 
-The disk contains a simple ``README.TXT`` file with the following content:
+The output to the console will look something like this
+(file system contents will be different):
 
-.. code-block:: console
+.. code-block:: none
 
-    This is a  RAM Disk based  USB Mass Storage demo for Zephyr.
+    *** Booting Zephyr OS build zephyr-v2.3.0-1991-g4c8d1496eafb  ***
+    Area 4 at 0x0 on GD25Q16 for 2097152 bytes
+    Mount /NAND:: 0
+    /NAND:: bsize = 512 ; frsize = 1024 ; blocks = 2028 ; bfree = 1901
+    /NAND: opendir: 0
+      F 0 SAMPLE.TXT
+    End of files
+    [00:00:00.077,423] <inf> main: The device is put in USB mass storage mode.
 
-Files can be added or removed like with a simple USB disk, of course within
-the 16KiB limit.
+On most operating systems the drive will be automatically mounted.
 
-nrf52840dk_nrf52840 Example
-===========================
+LittleFS Example
+================
 
 This board configures to use the external 64 MiBi QSPI flash chip with a
-64 KiBy `littlefs`_ partition compatible with the one produced by the
+128 KiBy `littlefs`_ partition compatible with the one produced by the
 :ref:`littlefs-sample`.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/mass
    :board: nrf52840dk_nrf52840
+   :gen-args: -DCONFIG_APP_MSC_STORAGE_FLASH_LITTLEFS=y
    :goals: build
    :compact:
 
@@ -114,36 +147,6 @@ different):
 For information on mounting littlefs file system on Linux or FreeBSD
 systems refer to the "littlefs Usage" section below.
 
-adafruit_feather_nrf52840 Example
-=================================
-
-This board configures to use the external 16 MiBi QSPI flash chip with a
-2 MiBy FAT partition.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/subsys/usb/mass
-   :board: adafruit_feather_nrf52840
-   :goals: build
-   :compact:
-
-After you have built and flashed the sample app image to your board,
-connect the board's USB connector to a host capable of mounting FAT
-drives. The output to the console will look something like this
-(file system contents will be different):
-
-.. code-block:: none
-
-    *** Booting Zephyr OS build zephyr-v2.3.0-1991-g4c8d1496eafb  ***
-    Area 4 at 0x0 on GD25Q16 for 2097152 bytes
-    Mount /NAND:: 0
-    /NAND:: bsize = 512 ; frsize = 1024 ; blocks = 2028 ; bfree = 1901
-    /NAND: opendir: 0
-      F 0 SAMPLE.TXT
-    End of files
-    [00:00:00.077,423] <inf> main: The device is put in USB mass storage mode.
-
-On most operating systems the drive will be automatically mounted.
-
 littlefs Usage
 ==============
 
@@ -157,7 +160,7 @@ First determine the local device name from the system log, e.g.:
 
     Apr 25 08:10:25 tirzah kernel: [570310.921039] scsi 17:0:0:0: Direct-Access     ZEPHYR   ZEPHYR USB DISK  0.01 PQ: 0 ANSI: 0 CCS
     Apr 25 08:10:25 tirzah kernel: [570310.921550] sd 17:0:0:0: Attached scsi generic sg4 type 0
-    Apr 25 08:10:25 tirzah kernel: [570310.922277] sd 17:0:0:0: [sdd] 128 512-byte logical blocks: (65.5 kB/64.0 KiB)
+    Apr 25 08:10:25 tirzah kernel: [570310.922277] sd 17:0:0:0: [sdd] 256 512-byte logical blocks: (131 kB/128 KiB)
     Apr 25 08:10:25 tirzah kernel: [570310.922696] sd 17:0:0:0: [sdd] Write Protect is off
 
 This shows that the block device associated with the USB drive is
@@ -178,12 +181,12 @@ This can be mounted as a file system with the following commands:
           --read_size=16 \
           --prog_size=16 \
           --block_size=4096 \
-          --block_count=16 \
+          --block_count=32 \
           --cache_size=64 \
           --lookahead_size=32 \
           /dev/sdd /tmp/lfs
 
-which produces this output:
+which produces output like this (disk contents will vary):
 
 .. code-block:: none
 
