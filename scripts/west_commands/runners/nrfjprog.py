@@ -163,8 +163,13 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
                              format(self.hex_) +
                              'Try enabling CONFIG_BUILD_OUTPUT_HEX.')
 
-        program_cmd = ['nrfjprog', '--program', self.hex_, '-f', self.family,
-                    '--snr', board_snr] + self.tool_opt
+        program_cmd = ['nrfjprog', '--program', self.hex_]
+        if self.family == 'NRF53':
+            # Due to multi-core related issues, flashing
+            # requires --recover on the network core. We just
+            # add it on both cores for simplicity and consistency.
+            program_cmd.append('--recover')
+        program_cmd += ['-f', self.family, '--snr', board_snr]
 
         self.logger.info('Flashing file: {}'.format(self.hex_))
         if self.erase:
@@ -173,13 +178,15 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
                  '--eraseall',
                  '-f', self.family,
                  '--snr', board_snr],
-                program_cmd
+                program_cmd + self.tool_opt
             ])
         else:
             if self.family == 'NRF51':
-                commands.append(program_cmd + ['--sectorerase'])
+                commands.append(program_cmd + ['--sectorerase'] +
+                                self.tool_opt)
             elif self.family == 'NRF52':
-                commands.append(program_cmd + ['--sectoranduicrerase'])
+                commands.append(program_cmd + ['--sectoranduicrerase'] +
+                                self.tool_opt)
             else:
                 uicr = {
                     'NRF53': ((0x00FF8000, 0x00FF8800),
@@ -193,8 +200,14 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
                         'The hex file contains data placed in the UICR, which '
                         'needs a full erase before reprogramming. Run west '
                         'flash again with --force or --erase.')
+
+                if self.family == 'NRF53':
+                    # --sectorerase cannot be combined with another erase
+                    # command, like --recover which is given above.
+                    commands.append(program_cmd + self.tool_opt)
                 else:
-                    commands.append(program_cmd + ['--sectorerase'])
+                    commands.append(program_cmd + ['--sectorerase'] +
+                                    self.tool_opt)
 
         if self.family == 'NRF52' and not self.softreset:
             commands.extend([

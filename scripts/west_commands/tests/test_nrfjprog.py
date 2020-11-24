@@ -115,39 +115,39 @@ EXPECTED_COMMANDS = {
 
     # NRF53:
     '3NNN':
-    (['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF53', '--snr', TEST_DEF_SNR, '--sectorerase'],  # noqa: E501
+    (['nrfjprog', '--program', RC_KERNEL_HEX, '--recover', '-f', 'NRF53', '--snr', TEST_DEF_SNR],  # noqa: E501
      ['nrfjprog', '--pinreset', '-f', 'NRF53', '--snr', TEST_DEF_SNR]),
 
     '3NNY':
     (['nrfjprog', '--eraseall', '-f', 'NRF53', '--snr', TEST_DEF_SNR],
-     ['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF53', '--snr', TEST_DEF_SNR],  # noqa: E501
+     ['nrfjprog', '--program', RC_KERNEL_HEX, '--recover', '-f', 'NRF53', '--snr', TEST_DEF_SNR],  # noqa: E501
      ['nrfjprog', '--pinreset', '-f', 'NRF53', '--snr', TEST_DEF_SNR]),
 
     '3NYN':
-    (['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF53', '--snr', TEST_OVR_SNR, '--sectorerase'],  # noqa: E501
+    (['nrfjprog', '--program', RC_KERNEL_HEX, '--recover', '-f', 'NRF53', '--snr', TEST_OVR_SNR],  # noqa: E501
      ['nrfjprog', '--pinreset', '-f', 'NRF53', '--snr', TEST_OVR_SNR]),
 
     '3NYY':
     (['nrfjprog', '--eraseall', '-f', 'NRF53', '--snr', TEST_OVR_SNR],
-     ['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF53', '--snr', TEST_OVR_SNR],  # noqa: E501
+     ['nrfjprog', '--program', RC_KERNEL_HEX, '--recover', '-f', 'NRF53', '--snr', TEST_OVR_SNR],  # noqa: E501
      ['nrfjprog', '--pinreset', '-f', 'NRF53', '--snr', TEST_OVR_SNR]),
 
     '3YNN':
-    (['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF53', '--snr', TEST_DEF_SNR, '--sectorerase'],  # noqa: E501
+    (['nrfjprog', '--program', RC_KERNEL_HEX, '--recover', '-f', 'NRF53', '--snr', TEST_DEF_SNR],  # noqa: E501
      ['nrfjprog', '--reset', '-f', 'NRF53', '--snr', TEST_DEF_SNR]),
 
     '3YNY':
     (['nrfjprog', '--eraseall', '-f', 'NRF53', '--snr', TEST_DEF_SNR],
-     ['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF53', '--snr', TEST_DEF_SNR],  # noqa: E501
+     ['nrfjprog', '--program', RC_KERNEL_HEX, '--recover', '-f', 'NRF53', '--snr', TEST_DEF_SNR],  # noqa: E501
      ['nrfjprog', '--reset', '-f', 'NRF53', '--snr', TEST_DEF_SNR]),
 
     '3YYN':
-    (['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF53', '--snr', TEST_OVR_SNR, '--sectorerase'],  # noqa: E501
+    (['nrfjprog', '--program', RC_KERNEL_HEX, '--recover', '-f', 'NRF53', '--snr', TEST_OVR_SNR],  # noqa: E501
      ['nrfjprog', '--reset', '-f', 'NRF53', '--snr', TEST_OVR_SNR]),
 
     '3YYY':
     (['nrfjprog', '--eraseall', '-f', 'NRF53', '--snr', TEST_OVR_SNR],
-     ['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF53', '--snr', TEST_OVR_SNR],  # noqa: E501
+     ['nrfjprog', '--program', RC_KERNEL_HEX, '--recover', '-f', 'NRF53', '--snr', TEST_OVR_SNR],  # noqa: E501
      ['nrfjprog', '--reset', '-f', 'NRF53', '--snr', TEST_OVR_SNR]),
 
     # NRF91:
