@@ -552,7 +552,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     parser.add_argument(
         "-K", "--force-platform", action="store_true",
         help="""Force testing on selected platforms,
-        even if they are excluded in the test configuration"""
+        even if they are excluded in the test configuration (testcase.yaml)"""
     )
 
     parser.add_argument(
@@ -1132,8 +1132,8 @@ def main():
         suite.csv_report(options.save_tests)
         return
 
-    logger.info("%d test configurations selected, %d configurations discarded due to filters." %
-                (len(suite.instances), len(discards)))
+    logger.info("%d test suites (%d configurations) selected, %d configurations discarded due to filters." %
+                (len(suite.testcases), len(suite.instances), len(discards)))
 
     if options.device_testing and not options.build_only:
         print("\nDevice testing on:")
@@ -1165,6 +1165,8 @@ def main():
         if completed > 1:
             logger.info("%d Iteration:" % (completed))
             time.sleep(options.retry_interval)  # waiting for the system to settle down
+            results.done = results.total - results.failed
+            results.failed = results.error
 
         results = suite.execute(pipeline, done_queue, results)
 
@@ -1243,6 +1245,9 @@ def main():
                        options.no_update,
                        options.release,
                        options.only_failed)
+
+    # FIXME: remove later
+    #logger.info(f"failed: {results.failed}, cases: {results.cases}, skipped configurations: {results.skipped_configs}, skipped_cases: {results.skipped_cases}, skipped(runtime): {results.skipped_runtime}, passed: {results.passed}, total: {results.total}, done: {results.done}")
 
     if results.failed or (suite.warnings and options.warnings_as_errors):
         sys.exit(1)
