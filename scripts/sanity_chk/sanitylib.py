@@ -3153,9 +3153,8 @@ class TestSuite(DisablePyTestCollectionMixin):
             if build_only:
                 instance.run = False
 
-            if test_only:
-                if instance.run:
-                    pipeline.put({"op": "run", "test": instance, "status": "built"})
+            if test_only and instance.run:
+                pipeline.put({"op": "run", "test": instance})
             else:
                 if instance.status not in ['passed', 'skipped', 'error']:
                     instance.status = None
@@ -3308,7 +3307,10 @@ class TestSuite(DisablePyTestCollectionMixin):
                     elif instance.status == 'passed':
                         passes += 1
                     else:
-                        logger.debug(f"Unknown status {instance.status}")
+                        if instance.status:
+                            logger.error(f"{instance.name}: Unknown status {instance.status}")
+                        else:
+                            logger.error(f"{instance.name}: No status")
 
             total = (errors + passes + fails + skips)
             # do not produce a report if no tests were actually run (only built)
