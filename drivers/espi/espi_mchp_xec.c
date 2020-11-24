@@ -21,8 +21,8 @@
  */
 #define ESPI_XEC_VWIRE_SEND_TIMEOUT 100ul
 
-/* 100ms */
-#define MAX_OOB_TIMEOUT             100ul
+/* 200ms */
+#define MAX_OOB_TIMEOUT             200ul
 /* 1s */
 #define MAX_FLASH_TIMEOUT           1000ul
 
@@ -529,7 +529,6 @@ static int espi_xec_send_oob(const struct device *dev,
 static int espi_xec_receive_oob(const struct device *dev,
 				struct espi_oob_packet *pckt)
 {
-	int ret;
 	uint8_t err_mask = MCHP_ESPI_OOB_RX_STS_IBERR |
 			MCHP_ESPI_OOB_RX_STS_OVRUN;
 	struct espi_xec_data *data = (struct espi_xec_data *)(dev->data);
@@ -538,16 +537,16 @@ static int espi_xec_receive_oob(const struct device *dev,
 		return -EIO;
 	}
 
-	/* Enable Rx only when we want to receive data */
-	ESPI_OOB_REGS->RX_IEN |= MCHP_ESPI_OOB_RX_IEN;
-	ESPI_OOB_REGS->RX_CTRL |= MCHP_ESPI_OOB_RX_CTRL_AVAIL;
+#ifndef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
+	int ret;
+	struct espi_xec_data *data = (struct espi_xec_data *)(dev->driver_data);
 
 	/* Wait until ISR or timeout */
 	ret = k_sem_take(&data->rx_lock, K_MSEC(MAX_OOB_TIMEOUT));
 	if (ret == -EAGAIN) {
 		return -ETIMEDOUT;
 	}
-
+#endif
 	/* Check if buffer passed to driver can fit the received buffer */
 	uint32_t rcvd_len = ESPI_OOB_REGS->RX_LEN & MCHP_ESPI_OOB_RX_LEN_MASK;
 
@@ -558,6 +557,12 @@ static int espi_xec_receive_oob(const struct device *dev,
 
 	pckt->len = rcvd_len;
 	memcpy(pckt->buf, slave_rx_mem, pckt->len);
+	memset(slave_rx_mem, 0, pckt->len);
+
+	/* Only after data has been copied from SRAM, indicate channel
+	 * is available for next packet
+	 */
+	ESPI_OOB_REGS->RX_CTRL |= MCHP_ESPI_OOB_RX_CTRL_AVAIL;
 
 	return 0;
 }
@@ -656,8 +661,6 @@ static int espi_xec_flash_write(const struct device *dev,
 		return -EIO;
 	}
 
-	memcpy(pckt->buf, slave_rx_mem, pckt->len);
-
 	return 0;
 }
 
@@ -754,6 +757,12 @@ static void espi_init_oob(const struct device *dev)
 	/* Enable OOB Tx channel enable change status interrupt */
 	ESPI_OOB_REGS->TX_IEN |= MCHP_ESPI_OOB_TX_IEN_CHG_EN |
 				MCHP_ESPI_OOB_TX_IEN_DONE;
+
+	/* Enable Rx channel to receive data any time
+	 * there are case where OOB is not initiated by a previous OOB Tx
+	 */
+	ESPI_OOB_REGS->RX_IEN |= MCHP_ESPI_OOB_RX_IEN;
+	ESPI_OOB_REGS->RX_CTRL |= MCHP_ESPI_OOB_RX_CTRL_AVAIL;
 }
 #endif
 
@@ -950,6 +959,11 @@ static void espi_oob_down_isr(const struct device *dev)
 {
 	uint32_t status;
 	struct espi_xec_data *data = (struct espi_xec_data *)(dev->data);
+#ifdef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
+	struct espi_event evt = { .evt_type = ESPI_BUS_EVENT_OOB_RECEIVED,
+				  .evt_details = 0,
+				  .evt_data = 0 };
+#endif
 
 	status = ESPI_OOB_REGS->RX_STS;
 
@@ -958,10 +972,12 @@ static void espi_oob_down_isr(const struct device *dev)
 		/* Register is write-on-clear, ensure only 1 bit is affected */
 		ESPI_OOB_REGS->RX_STS = MCHP_ESPI_OOB_RX_STS_DONE;
 
-		/* Disable Rx interrupt */
-		ESPI_OOB_REGS->RX_IEN &= ~MCHP_ESPI_OOB_RX_IEN;
-
+#ifndef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
 		k_sem_give(&data->rx_lock);
+#else
+		evt.evt_details = ESPI_OOB_REGS->RX_LEN & MCHP_ESPI_OOB_RX_LEN_MASK;
+		espi_send_callbacks(&data->callbacks, dev, evt);
+#endif
 	}
 }
 
@@ -1378,7 +1394,9 @@ static int espi_xec_init(const struct device *dev)
 	ESPI_CAP_REGS->OOB_CAP |= MCHP_ESPI_OOB_CAP_MAX_PLD_SZ_73;
 
 	k_sem_init(&data->tx_lock, 0, 1);
+#ifndef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
 	k_sem_init(&data->rx_lock, 0, 1);
+#endif /* CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC */
 #else
 	ESPI_CAP_REGS->GLB_CAP0 &= ~MCHP_ESPI_GBL_CAP0_OOB_SUPP;
 #endif
