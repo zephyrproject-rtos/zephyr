@@ -1527,6 +1527,11 @@ static int mod_sub(uint32_t op, uint16_t net_idx, uint16_t addr, uint16_t elem_a
 		return err;
 	}
 
+	if (!status) {
+		cli_reset();
+		return 0;
+	}
+
 	return cli_wait();
 }
 
