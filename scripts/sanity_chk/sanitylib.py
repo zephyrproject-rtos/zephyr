@@ -88,13 +88,14 @@ class ExecutionCounter(object):
     def __init__(self, total=0):
         self._done = Value('i', 0)
         self._passed = Value('i', 0)
-        self._skipped = Value('i', 0)
-        self._runtime_skipped = Value('i', 0)
+        self._skipped_configs = Value('i', 0)
+        self._skipped_runtime = Value('i', 0)
+        self._skipped_cases = Value('i', 0)
         self._error = Value('i', 0)
         self._failed = Value('i', 0)
         self._total = Value('i', total)
         self._cases = Value('i', 0)
-        self._skipped_cases = Value('i', 0)
+
 
         self.lock = Lock()
 
@@ -149,24 +150,24 @@ class ExecutionCounter(object):
             self._passed.value = value
 
     @property
-    def skipped(self):
-        with self._skipped.get_lock():
-            return self._skipped.value
+    def skipped_configs(self):
+        with self._skipped_configs.get_lock():
+            return self._skipped_configs.value
 
-    @skipped.setter
-    def skipped(self, value):
-        with self._skipped.get_lock():
-            self._skipped.value = value
+    @skipped_configs.setter
+    def skipped_configs(self, value):
+        with self._skipped_configs.get_lock():
+            self._skipped_configs.value = value
 
     @property
-    def runtime_skipped(self):
-        with self._runtime_skipped.get_lock():
-            return self._runtime_skipped.value
+    def skipped_runtime(self):
+        with self._skipped_runtime.get_lock():
+            return self._skipped_runtime.value
 
-    @runtime_skipped.setter
-    def runtime_skipped(self, value):
-        with self._runtime_skipped.get_lock():
-            self._runtime_skipped.value = value
+    @skipped_runtime.setter
+    def skipped_runtime(self, value):
+        with self._skipped_runtime.get_lock():
+            self._skipped_runtime.value = value
 
     @property
     def failed(self):
@@ -2233,7 +2234,7 @@ class ProjectBuilder(FilterBuilder):
                     logger.debug("filtering %s" % self.instance.name)
                     self.instance.status = "skipped"
                     self.instance.reason = "filter"
-                    results.runtime_skipped += 1
+                    results.skipped_runtime += 1
                     for case in self.instance.testcase.cases:
                         self.instance.results.update({case: 'SKIP'})
                     pipeline.put({"op": "report", "test": self.instance})
@@ -2253,7 +2254,7 @@ class ProjectBuilder(FilterBuilder):
                 # due to ram/rom overflow.
                 inst = res.get("instance", None)
                 if inst and inst.status == "skipped":
-                    results.runtime_skipped += 1
+                    results.skipped_runtime += 1
 
                 if res.get('returncode', 1) > 0:
                     pipeline.put({"op": "report", "test": self.instance})
@@ -2354,7 +2355,7 @@ class ProjectBuilder(FilterBuilder):
                 fin.write(data)
 
     def report_out(self, results):
-        total_to_do = results.total - results.skipped
+        total_to_do = results.total - results.skipped_configs
         total_tests_width = len(str(total_to_do))
         results.done += 1
         instance = self.instance
@@ -2409,7 +2410,7 @@ class ProjectBuilder(FilterBuilder):
             if total_to_do > 0:
                 completed_perc = int((float(results.done) / total_to_do) * 100)
 
-            skipped = results.skipped + results.runtime_skipped
+            skipped = results.skipped_configs + results.skipped_runtime
             sys.stdout.write("\rINFO    - Total complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s" % (
                 Fore.GREEN,
                 results.done,
@@ -2598,12 +2599,13 @@ class TestSuite(DisablePyTestCollectionMixin):
         sys.stdout.flush()
 
     def update_counting(self, results=None, initial=False):
-        results.skipped = 0
+        results.skipped_configs = 0
+        results.skipped_cases = 0
         for instance in self.instances.values():
             if initial:
                 results.cases += len(instance.testcase.cases)
             if instance.status == 'skipped':
-                results.skipped += 1
+                results.skipped_configs += 1
                 results.skipped_cases += len(instance.testcase.cases)
             elif instance.status == "passed":
                 results.passed += 1
@@ -2693,22 +2695,22 @@ class TestSuite(DisablePyTestCollectionMixin):
             if instance.metrics.get('handler_time', None):
                 run += 1
 
-        if results.total and results.total != results.skipped:
-            pass_rate = (float(results.passed) / float(results.total - results.skipped))
+        if results.total and results.total != results.skipped_configs:
+            pass_rate = (float(results.passed) / float(results.total - results.skipped_configs))
         else:
             pass_rate = 0
 
         logger.info(
-            "{}{} of {}{} tests passed ({:.2%}), {}{}{} failed, {} skipped with {}{}{} warnings in {:.2f} seconds".format(
+            "{}{} of {}{} test configurations passed ({:.2%}), {}{}{} failed, {} skipped with {}{}{} warnings in {:.2f} seconds".format(
                 Fore.RED if failed else Fore.GREEN,
                 results.passed,
-                results.total - results.skipped,
+                results.total - results.skipped_configs,
                 Fore.RESET,
                 pass_rate,
                 Fore.RED if results.failed else Fore.RESET,
                 results.failed,
                 Fore.RESET,
-                results.skipped,
+                results.skipped_configs,
                 Fore.YELLOW if self.warnings else Fore.RESET,
                 self.warnings,
                 Fore.RESET,
@@ -2725,8 +2727,8 @@ class TestSuite(DisablePyTestCollectionMixin):
                 (100 * len(self.selected_platforms) / len(self.platforms))
             ))
 
-        logger.info(f"{Fore.GREEN}{run}{Fore.RESET} tests executed on platforms, \
-{Fore.RED}{results.total - run - results.skipped}{Fore.RESET} tests were only built.")
+        logger.info(f"{Fore.GREEN}{run}{Fore.RESET} test configurations executed on platforms, \
+{Fore.RED}{results.total - run - results.skipped_configs}{Fore.RESET} test configurations were only built.")
 
     def save_reports(self, name, suffix, report_dir, no_update, release, only_failed):
         if not self.instances:
@@ -2954,14 +2956,6 @@ class TestSuite(DisablePyTestCollectionMixin):
         default_platforms = False
         emulation_platforms = False
 
-        if platform_filter:
-            platforms = list(filter(lambda p: p.name in platform_filter, self.platforms))
-        elif emu_filter:
-            platforms = list(filter(lambda p: p.simulation != 'na', self.platforms))
-        elif arch_filter:
-            platforms = list(filter(lambda p: p.arch in arch_filter, self.platforms))
-        else:
-            platforms = self.platforms
 
         if all_filter:
             logger.info("Selecting all possible platforms per test case")
@@ -2973,6 +2967,17 @@ class TestSuite(DisablePyTestCollectionMixin):
         elif emu_filter:
             logger.info("Selecting emulation platforms per test case")
             emulation_platforms = True
+
+        if platform_filter:
+            platforms = list(filter(lambda p: p.name in platform_filter, self.platforms))
+        elif emu_filter:
+            platforms = list(filter(lambda p: p.simulation != 'na', self.platforms))
+        elif arch_filter:
+            platforms = list(filter(lambda p: p.arch in arch_filter, self.platforms))
+        elif default_platforms:
+            platforms = list(filter(lambda p: p.default, self.platforms))
+        else:
+            platforms = self.platforms
 
         logger.info("Building initial testcase list...")
 
@@ -3107,9 +3112,6 @@ class TestSuite(DisablePyTestCollectionMixin):
                                          instance_list))
                     self.add_instances(instances)
 
-                for instance in list(filter(lambda inst: not inst.platform.default and \
-                        not inst.platform.name in tc.integration_platforms, instance_list)):
-                    discards[instance] = discards.get(instance, "Not a default test platform")
             elif emulation_platforms:
                 self.add_instances(instance_list)
                 for instance in list(filter(lambda inst: not inst.platform.simulation != 'na', instance_list)):
@@ -3158,6 +3160,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                 pipeline.put({"op": "run", "test": instance})
             else:
                 if instance.status not in ['passed', 'skipped', 'error']:
+                    logger.debug(f"adding {instance.name}")
                     instance.status = None
                     pipeline.put({"op": "cmake", "test": instance})
 
