@@ -2842,9 +2842,17 @@ static int lwm2m_delete_handler(struct lwm2m_message *msg)
 		return -EINVAL;
 	}
 
+	/* Device management interface is not allowed to delete Security and
+	 * Device objects instances.
+	 */
+	if (msg->path.obj_id == LWM2M_OBJECT_SECURITY_ID ||
+	    msg->path.obj_id == LWM2M_OBJECT_DEVICE_ID) {
+		return -EPERM;
+	}
+
 	ret = lwm2m_delete_obj_inst(msg->path.obj_id, msg->path.obj_inst_id);
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
-	if (!ret && !msg->ctx->bootstrap_mode) {
+	if (!ret) {
 		engine_trigger_update(true);
 	}
 #endif
@@ -3282,21 +3290,74 @@ static int do_write_op(struct lwm2m_message *msg,
 }
 
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
-static int bootstrap_delete(void)
+static bool bootstrap_delete_allowed(int obj_id, int obj_inst_id)
+{
+	char pathstr[MAX_RESOURCE_LEN];
+	bool bootstrap_server;
+	int ret;
+
+	if (obj_id == LWM2M_OBJECT_SECURITY_ID) {
+		snprintk(pathstr, sizeof(pathstr), "%d/%d/1",
+			 LWM2M_OBJECT_SECURITY_ID, obj_inst_id);
+		ret = lwm2m_engine_get_bool(pathstr, &bootstrap_server);
+		if (ret < 0) {
+			return false;
+		}
+
+		if (bootstrap_server) {
+			return false;
+		}
+	}
+
+	if (obj_id == LWM2M_OBJECT_DEVICE_ID) {
+		return false;
+	}
+
+	return true;
+}
+
+
+static int bootstrap_delete(struct lwm2m_message *msg)
 {
 	struct lwm2m_engine_obj_inst *obj_inst, *tmp;
 	int ret = 0;
 
-	/* delete SECURITY instances > 0 */
+	if (msg->path.level > 2) {
+		return -EPERM;
+	}
+
+	if (msg->path.level == 2) {
+		if (!bootstrap_delete_allowed(msg->path.obj_id,
+					      msg->path.obj_inst_id)) {
+			return -EPERM;
+		}
+
+		return lwm2m_delete_obj_inst(msg->path.obj_id,
+					     msg->path.obj_inst_id);
+	}
+
+	/* DELETE all instances of a specific object or all object instances if
+	 * not specified, excluding the following exceptions (according to the
+	 * LwM2M specification v1.0.2, ch 5.2.7.5):
+	 * - LwM2M Bootstrap-Server Account (Bootstrap Security object, ID 0)
+	 * - Device object (ID 3)
+	 */
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&engine_obj_inst_list,
 					  obj_inst, tmp, node) {
-		if (obj_inst->obj->obj_id == LWM2M_OBJECT_SECURITY_ID &&
-		    obj_inst->obj_inst_id > 0) {
-			ret = lwm2m_delete_obj_inst(obj_inst->obj->obj_id,
-						    obj_inst->obj_inst_id);
-			if (ret < 0) {
-				return ret;
-			}
+		if (msg->path.level == 1 &&
+		    obj_inst->obj->obj_id != msg->path.obj_id) {
+			continue;
+		}
+
+		if (!bootstrap_delete_allowed(obj_inst->obj->obj_id,
+					      obj_inst->obj_inst_id)) {
+			continue;
+		}
+
+		ret = lwm2m_delete_obj_inst(obj_inst->obj->obj_id,
+					    obj_inst->obj_inst_id);
+		if (ret < 0) {
+			return ret;
 		}
 	}
 
@@ -3343,27 +3404,30 @@ static int handle_request(struct coap_packet *request,
 	/* parse the URL path into components */
 	r = coap_find_options(msg->in.in_cpkt, COAP_OPTION_URI_PATH, options,
 			      ARRAY_SIZE(options));
-	if (r <= 0) {
+	if (r < 0) {
+		goto error;
+	}
+
+	/* Treat empty URI path option as is there were no option - this will be
+	 * represented as a level "zero" in the path structure.
+	 */
+	if (r == 1 && options[0].len == 0) {
+		r = 0;
+	}
+
+	if (r == 0) {
+		/* No URI path or empty URI path option - allowed only during
+		 * bootstrap.
+		 */
 		switch (code & COAP_REQUEST_MASK) {
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
 		case COAP_METHOD_DELETE:
 			if (msg->ctx->bootstrap_mode) {
-				r = bootstrap_delete();
-				if (r < 0) {
-					goto error;
-				}
-
-				msg->code = COAP_RESPONSE_CODE_DELETED;
-				r = lwm2m_init_message(msg);
-			} else {
-				r = -EPERM;
+				break;
 			}
 
-			if (r < 0) {
-				goto error;
-			}
-
-			return 0;
+			r = -EPERM;
+			goto error;
 #endif
 		default:
 			r = -EPERM;
@@ -3431,7 +3495,8 @@ static int handle_request(struct coap_packet *request,
 		goto error;
 	}
 
-	if (!well_known) {
+	if (!well_known && !(msg->ctx->bootstrap_mode &&
+			     msg->path.level == 0)) {
 		/* find registered obj */
 		obj = get_engine_obj(msg->path.obj_id);
 		if (!obj) {
@@ -3630,6 +3695,12 @@ static int handle_request(struct coap_packet *request,
 			break;
 
 		case LWM2M_OP_DELETE:
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+			if (msg->ctx->bootstrap_mode) {
+				r = bootstrap_delete(msg);
+				break;
+			}
+#endif
 			r = lwm2m_delete_handler(msg);
 			break;
 
