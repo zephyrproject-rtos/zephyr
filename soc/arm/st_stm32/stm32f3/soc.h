@@ -23,6 +23,7 @@
 
 #include <stm32f3xx.h>
 
+/* Add generated devicetree information and STM32 helper macros */
 #include <st_stm32_dt.h>
 
 #endif /* !_ASMLANGUAGE */
