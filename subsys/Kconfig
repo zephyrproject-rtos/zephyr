@@ -41,6 +41,8 @@ source "subsys/stats/Kconfig"
 
 source "subsys/usb/Kconfig"
 
+source "subsys/usbh/Kconfig"
+
 source "subsys/dfu/Kconfig"
 
 source "subsys/random/Kconfig"

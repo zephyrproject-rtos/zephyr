@@ -1,0 +1,30 @@
+# Copyright (c) 2020 PHYTEC Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+include: usbh.yaml
+
+compatible: "atmel,sam0-usbh"
+properties:
+        reg:
+                required: true
+
+        interrupts:
+
+                required: true
+
+        buf-len:
+                type: int
+                required: true
+
+        nbr-ep-bulk:
+                type: int
+                required: true
+
+        nbr-ep-intr:
+                type: int
+                required: true
+
+        nbr-isoc-ep:
+                type: int
+                required: true
+

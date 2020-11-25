@@ -1,0 +1,13 @@
+# Copyright (c) 2020 PHYTEC Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if USBH
+
+config USBH_SAM0
+	bool "SAM0 series USB Host Controller driver"
+	default y
+	depends on SOC_FAMILY_SAM0
+	help
+	  SAM0 family USB host controller Driver.
+
+endif

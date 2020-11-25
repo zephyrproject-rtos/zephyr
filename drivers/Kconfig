@@ -101,4 +101,6 @@ source "drivers/peci/Kconfig"
 
 source "drivers/regulator/Kconfig"
 
+source "drivers/usbh/Kconfig"
+
 endmenu
