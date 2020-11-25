@@ -319,9 +319,10 @@ void zperf_udp_receiver_init(const struct shell *shell, int port)
 			if (ret < 0) {
 				shell_fprintf(shell, SHELL_WARNING,
 					      "Unable to set IPv4\n");
-				return;
+				goto use_existing_ipv4;
 			}
 		} else {
+		use_existing_ipv4:
 			/* Use existing IP */
 			in4_addr = zperf_get_default_if_in4_addr();
 			if (!in4_addr) {
@@ -369,9 +370,10 @@ void zperf_udp_receiver_init(const struct shell *shell, int port)
 			if (ret < 0) {
 				shell_fprintf(shell, SHELL_WARNING,
 					      "Unable to set IPv6\n");
-				return;
+				goto use_existing_ipv6;
 			}
 		} else {
+		use_existing_ipv6:
 			/* Use existing IP */
 			in6_addr = zperf_get_default_if_in6_addr();
 			if (!in6_addr) {
