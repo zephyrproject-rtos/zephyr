@@ -18,7 +18,6 @@
 #include <st_stm32_dt.h>
 
 #ifdef CONFIG_STM32H7_DUAL_CORE
-#include <stm32h7xx_ll_hsem.h>
 
 #ifdef CONFIG_CPU_CORTEX_M4
 

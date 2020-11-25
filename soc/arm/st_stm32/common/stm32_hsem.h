@@ -7,6 +7,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_HSEM_STM32_HSEM_H_
 
 #include <soc.h>
+#include <stm32_ll_hsem.h>
 #include <kernel.h>
 
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
