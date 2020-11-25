@@ -55,6 +55,15 @@ _ASM_FILE_PROLOGUE
 	mrs	\xreg1, elr_el1
 	stp	\xreg0, \xreg1, [sp, ___esf_t_spsr_elr_OFFSET]
 
+#ifdef CONFIG_USERSPACE
+	/* Save the current kernel/user mode in the context */
+	mrs	\xreg0, tpidrro_el0
+	str	\xreg0, [sp, ___esf_t_tpidrro_el0_OFFSET]
+
+	/* Switch TPIDRRO_EL0 to kernel mode */
+	msr	tpidrro_el0, xzr
+#endif
+
 .endm
 
 /*
@@ -200,6 +209,12 @@ SECTION_FUNC(TEXT, z_arm64_exit_exc)
 	ldp	x0, x1, [sp, ___esf_t_spsr_elr_OFFSET]
 	msr	spsr_el1, x0
 	msr	elr_el1, x1
+
+#ifdef CONFIG_USERSPACE
+	/* Restore the kernel/user mode flag */
+	ldr	x0, [sp, ___esf_t_tpidrro_el0_OFFSET]
+	msr	tpidrro_el0, x0
+#endif
 
 	ldp	x0, x1, [sp, ___esf_t_x0_x1_OFFSET]
 	ldp	x2, x3, [sp, ___esf_t_x2_x3_OFFSET]

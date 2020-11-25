@@ -39,6 +39,9 @@ GEN_NAMED_OFFSET_SYM(_callee_saved_t, x29, x29_sp);
 GEN_ABSOLUTE_SYM(___callee_saved_t_SIZEOF, sizeof(struct _callee_saved));
 
 GEN_NAMED_OFFSET_SYM(_esf_t, spsr, spsr_elr);
+#ifdef CONFIG_USERSPACE
+GEN_NAMED_OFFSET_SYM(_esf_t, tpidrro_el0, tpidrro_el0);
+#endif
 GEN_NAMED_OFFSET_SYM(_esf_t, x18, x18_x30);
 GEN_NAMED_OFFSET_SYM(_esf_t, x16, x16_x17);
 GEN_NAMED_OFFSET_SYM(_esf_t, x14, x14_x15);

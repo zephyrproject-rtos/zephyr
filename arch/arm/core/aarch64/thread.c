@@ -52,6 +52,8 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	} else {
 		pInitCtx->elr = (uint64_t)z_thread_entry;
 	}
+
+	pInitCtx->tpidrro_el0 = 0x0;
 #else
 	pInitCtx->elr = (uint64_t)z_thread_entry;
 #endif
@@ -94,6 +96,9 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 
 	pInitCtx->spsr = DAIF_FIQ_BIT | SPSR_MODE_EL0T;
 	pInitCtx->elr = (uint64_t)z_thread_entry;
+
+	/* The thread will be in user context */
+	pInitCtx->tpidrro_el0 = 0x1;
 
 	pInitCtx->x0 = (uint64_t)user_entry;
 	pInitCtx->x1 = (uint64_t)p1;
