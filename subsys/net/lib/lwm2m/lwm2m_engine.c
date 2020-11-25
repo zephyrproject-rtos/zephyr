@@ -3390,6 +3390,149 @@ static int bootstrap_delete(struct lwm2m_message *msg)
 
 	return ret;
 }
+
+static inline int bs_discover_fill_enabler(struct lwm2m_message *msg)
+{
+	char buf[sizeof("lwm2m='" LWM2M_PROTOCOL_VERSION "'")];
+
+	snprintk(buf, sizeof(buf), "lwm2m=\"%s\"", LWM2M_PROTOCOL_VERSION);
+	return buf_append(CPKT_BUF_WRITE(msg->out.out_cpkt), buf, strlen(buf));
+}
+
+static inline int bs_discover_fill_object(struct lwm2m_engine_obj *obj,
+					  struct lwm2m_message *msg)
+{
+	char buf[sizeof(",</xxxxx>")];
+
+	snprintk(buf, sizeof(buf), ",</%u>", obj->obj_id);
+	return buf_append(CPKT_BUF_WRITE(msg->out.out_cpkt), buf, strlen(buf));
+}
+
+static int bs_discover_fill_instance(struct lwm2m_engine_obj_inst *obj_inst,
+				     struct lwm2m_message *msg)
+{
+	char buf[sizeof(",</xxxxx/xxxxx>")];
+	bool bootstrap_inst;
+	uint16_t server_id;
+	int ret;
+
+	snprintk(buf, sizeof(buf), ",</%u/%u>", obj_inst->obj->obj_id,
+		 obj_inst->obj_inst_id);
+
+	ret = buf_append(CPKT_BUF_WRITE(msg->out.out_cpkt), buf, strlen(buf));
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Security and Server instnaces shall report Short Server ID associated
+	 * with them (but only if not bootstrap instance).
+	 */
+	if (obj_inst->obj->obj_id == LWM2M_OBJECT_SECURITY_ID) {
+		snprintk(buf, sizeof(buf), "0/%d/1", obj_inst->obj_inst_id);
+		ret = lwm2m_engine_get_bool(buf, &bootstrap_inst);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (!bootstrap_inst) {
+			snprintk(buf, sizeof(buf), "0/%d/10",
+				 obj_inst->obj_inst_id);
+			ret = lwm2m_engine_get_u16(buf, &server_id);
+			if (ret < 0) {
+				return ret;
+			}
+
+			snprintk(buf, sizeof(buf), ";ssid=%d", server_id);
+			ret = buf_append(CPKT_BUF_WRITE(msg->out.out_cpkt),
+					buf, strlen(buf));
+			if (ret < 0) {
+				return ret;
+			}
+		}
+	}
+
+	if (obj_inst->obj->obj_id == LWM2M_OBJECT_SERVER_ID) {
+		snprintk(buf, sizeof(buf), "1/%d/0", obj_inst->obj_inst_id);
+		ret = lwm2m_engine_get_u16(buf, &server_id);
+		if (ret < 0) {
+			return ret;
+		}
+
+		snprintk(buf, sizeof(buf), ";ssid=%d", server_id);
+		ret = buf_append(CPKT_BUF_WRITE(msg->out.out_cpkt),
+				 buf, strlen(buf));
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+static int bootstrap_discover(struct lwm2m_message *msg)
+{
+	struct lwm2m_engine_obj *obj;
+	struct lwm2m_engine_obj_inst *obj_inst;
+	int ret;
+	bool reported = false;
+
+	/* set output content-format */
+	ret = coap_append_option_int(msg->out.out_cpkt,
+				     COAP_OPTION_CONTENT_FORMAT,
+				     LWM2M_FORMAT_APP_LINK_FORMAT);
+	if (ret < 0) {
+		LOG_ERR("Error setting response content-format: %d", ret);
+		return ret;
+	}
+
+	ret = coap_packet_append_payload_marker(msg->out.out_cpkt);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/*
+	 * lwm2m spec 20170208-A sec 5.2.7.3 bootstrap discover on "/"
+	 * - prefixed w/ lwm2m enabler version. e.g. lwm2m="1.0"
+	 * - returns object and object instances only
+	 */
+	ret = bs_discover_fill_enabler(msg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_list, obj, node) {
+		if (msg->path.level > 0 && msg->path.obj_id != obj->obj_id) {
+			continue;
+		}
+
+		/* Only report </OBJ_ID> when no instance available */
+		if (obj->instance_count == 0U) {
+			ret = bs_discover_fill_object(obj, msg);
+			if (ret < 0) {
+				return ret;
+			}
+
+			reported = true;
+			continue;
+		}
+
+		SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_inst_list,
+					     obj_inst, node) {
+			if (obj_inst->obj->obj_id != obj->obj_id) {
+				continue;
+			}
+
+			ret = bs_discover_fill_instance(obj_inst, msg);
+			if (ret < 0) {
+				return ret;
+			}
+
+			reported = true;
+		}
+	}
+
+	return reported ? 0 : -ENOENT;
+}
 #endif
 
 static int handle_request(struct coap_packet *request,
@@ -3449,6 +3592,7 @@ static int handle_request(struct coap_packet *request,
 		switch (code & COAP_REQUEST_MASK) {
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
 		case COAP_METHOD_DELETE:
+		case COAP_METHOD_GET:
 			if (msg->ctx->bootstrap_mode) {
 				break;
 			}
@@ -3705,6 +3849,12 @@ static int handle_request(struct coap_packet *request,
 			break;
 
 		case LWM2M_OP_DISCOVER:
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+			if (msg->ctx->bootstrap_mode) {
+				r = bootstrap_discover(msg);
+				break;
+			}
+#endif
 			r = do_discover_op(msg, well_known);
 			break;
 
