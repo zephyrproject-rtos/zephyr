@@ -1,0 +1,20 @@
+sample:
+  name: Task Watchdog Subsytem Sample
+tests:
+  sample.subsys.task_wdt:
+    tags: subsys
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Task watchdog sample application."
+        - "Control thread started."
+        - "Main thread still alive..."
+        - "Control thread getting stuck..."
+        - "Task watchdog channel 1 callback, thread: control"
+        - "Resetting device...(.*)"
+        - "Task watchdog sample application."
+    depends_on: watchdog
+    integration_platforms:
+      - nucleo_g474re
