@@ -41,14 +41,14 @@ static void tcp_received(struct net_context *context,
 {
 	const struct shell *shell = tcp_shell;
 	struct session *session;
-	uint32_t time;
+	int64_t time;
 
 	if (!shell) {
 		printk("Shell is not set!\n");
 		return;
 	}
 
-	time = k_cycle_get_32();
+	time = k_uptime_ticks();
 
 	session = get_tcp_session(context);
 	if (!session) {
@@ -63,7 +63,7 @@ static void tcp_received(struct net_context *context,
 		shell_fprintf(shell, SHELL_NORMAL,
 			      "New TCP session started\n");
 		zperf_reset_session_stats(session);
-		session->start_time = k_cycle_get_32();
+		session->start_time = k_uptime_ticks();
 		session->state = STATE_ONGOING;
 		__fallthrough;
 	case STATE_ONGOING:
@@ -75,18 +75,19 @@ static void tcp_received(struct net_context *context,
 
 		if (pkt == NULL && status == 0) { /* EOF */
 			uint32_t rate_in_kbps;
-			uint32_t duration = HW_CYCLES_TO_USEC(
-				time_delta(session->start_time, time));
+			uint32_t duration;
+
+			duration = k_ticks_to_us_ceil32(time -
+							session->start_time);
 
 			session->state = STATE_COMPLETED;
 
 			/* Compute baud rate */
 			if (duration != 0U) {
 				rate_in_kbps = (uint32_t)
-					(((uint64_t)session->length *
-					  (uint64_t)8 *
+					((session->length * 8ULL *
 					  (uint64_t)USEC_PER_SEC) /
-					 ((uint64_t)duration * 1024U));
+					 ((uint64_t)duration * 1024ULL));
 			} else {
 				rate_in_kbps = 0U;
 			}
