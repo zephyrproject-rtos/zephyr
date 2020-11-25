@@ -13,14 +13,15 @@
  * Chapter 2.2.2: Memory map and register boundary addresses
  */
 
+
 #ifndef _STM32MP1SOC_H_
 #define _STM32MP1SOC_H_
 
 #ifndef _ASMLANGUAGE
 
-#include <autoconf.h>
 #include <stm32mp1xx.h>
 
+/* Add generated devicetree information and STM32 helper macros */
 #include <st_stm32_dt.h>
 
 #endif /* !_ASMLANGUAGE */

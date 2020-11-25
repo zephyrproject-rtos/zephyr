@@ -17,14 +17,11 @@
 #ifndef _STM32G4_SOC_H_
 #define _STM32G4_SOC_H_
 
-#include <sys/util.h>
-
 #ifndef _ASMLANGUAGE
 
-#include <autoconf.h>
 #include <stm32g4xx.h>
 
-/* Add include for DTS generated information */
+/* Add generated devicetree information and STM32 helper macros */
 #include <st_stm32_dt.h>
 
 #endif /* !_ASMLANGUAGE */

@@ -17,14 +17,11 @@
 #ifndef _STM32L5_SOC_H_
 #define _STM32L5_SOC_H_
 
-#include <sys/util.h>
-
 #ifndef _ASMLANGUAGE
 
-#include <autoconf.h>
 #include <stm32l5xx.h>
 
-/* Add include for DTS generated information */
+/* Add generated devicetree information and STM32 helper macros */
 #include <st_stm32_dt.h>
 
 #endif /* !_ASMLANGUAGE */
