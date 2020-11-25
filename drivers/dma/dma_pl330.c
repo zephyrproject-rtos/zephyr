@@ -128,7 +128,6 @@ static void dma_pl330_config_channel(struct dma_pl330_ch_config *ch_cfg,
 {
 	struct dma_pl330_ch_internal *ch_handle = &ch_cfg->internal;
 
-	memset(ch_handle, 0, sizeof(*ch_handle));
 	ch_handle->src_addr = src;
 	ch_handle->dst_addr = dst;
 	ch_handle->trans_size = size;
@@ -474,6 +473,7 @@ static int dma_pl330_configure(const struct device *dev, uint32_t channel,
 {
 	struct dma_pl330_dev_data *const dev_data = DEV_DATA(dev);
 	struct dma_pl330_ch_config *channel_cfg;
+	struct dma_pl330_ch_internal *ch_handle;
 
 	if (channel >= MAX_DMA_CHANNELS) {
 		return -EINVAL;
@@ -491,6 +491,9 @@ static int dma_pl330_configure(const struct device *dev, uint32_t channel,
 	if (cfg->channel_direction != MEMORY_TO_MEMORY) {
 		return -ENOTSUP;
 	}
+
+	ch_handle = &channel_cfg->internal;
+	memset(ch_handle, 0, sizeof(*ch_handle));
 
 	channel_cfg->direction = cfg->channel_direction;
 	channel_cfg->dst_addr_adj = cfg->head_block->dest_addr_adj;
