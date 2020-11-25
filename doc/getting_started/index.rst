@@ -148,7 +148,7 @@ Next, you'll install some host dependencies using your package manager.
          .. code-block:: console
 
             choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
-            choco install ninja gperf python git
+            choco install ninja gperf python git nrfjprog
 
       #. Open a new ``cmd.exe`` window **as a regular user** to continue.
 
