@@ -260,7 +260,7 @@ void zperf_udp_upload(const struct shell *shell,
 
 		/* Wait */
 #if defined(CONFIG_ARCH_POSIX)
-		k_busy_wait(K_MSEC(100) * USEC_PER_MSEC);
+		k_busy_wait(USEC_PER_MSEC);
 #else
 		while (time_delta(loop_time, k_cycle_get_32()) < delay) {
 			k_yield();

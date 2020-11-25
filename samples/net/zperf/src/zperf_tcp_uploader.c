@@ -99,7 +99,7 @@ void zperf_tcp_upload(const struct shell *shell,
 		}
 
 #if defined(CONFIG_ARCH_POSIX)
-		k_busy_wait(K_MSEC(100) * USEC_PER_MSEC);
+		k_busy_wait(100 * USEC_PER_MSEC);
 #else
 		k_yield();
 #endif
