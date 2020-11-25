@@ -41,11 +41,6 @@
 #include <stm32l4xx_ll_pwr.h>
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
-#ifdef CONFIG_USB
-/* Required to remove USB transceiver supply isolation */
-#include <stm32l4xx_ll_pwr.h>
-#endif /* CONFIG_USB */
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32L4X_SOC_H_ */
