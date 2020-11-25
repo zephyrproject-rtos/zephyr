@@ -10,3 +10,7 @@ properties:
       type: int
       required: false
       description: Clock frequency in Hz
+    pm-states:
+       type: phandles
+       required: false
+       description: List of power management states supported by this cpu

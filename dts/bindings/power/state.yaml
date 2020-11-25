@@ -1,0 +1,26 @@
+# Copyright (c) 2020, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Properties for power management state
+
+compatible: "pm-state"
+
+properties:
+    pm-state:
+        type: string
+        required: true
+        description: indicates a power state
+        enum:
+            - "active"
+            - "runtime-idle"
+            - "suspend-to-idle"
+            - "standby"
+            - "suspend-to-ram"
+            - "suspend-to-disk"
+            - "soft-off"
+    min-residency-us:
+        type: int
+        required: false
+        description: |
+            Minimum residency duration in microseconds. It is the minimum time for a
+            given idle state to be worthwhile energywise.
