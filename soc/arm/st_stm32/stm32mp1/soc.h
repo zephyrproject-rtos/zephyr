@@ -34,10 +34,6 @@
 #include <stm32mp1xx_ll_system.h>
 #endif
 
-#ifdef CONFIG_IPM_STM32_IPCC
-#include <stm32mp1xx_ll_ipcc.h>
-#endif
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32MP1SOC_H_ */
