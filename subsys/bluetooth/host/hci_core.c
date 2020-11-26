@@ -7816,6 +7816,12 @@ static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 		}
 	}
 
+	if ((param->options & (BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY |
+			       BT_LE_ADV_OPT_DIR_ADDR_RPA)) &&
+	    !param->peer) {
+		return false;
+	}
+
 	if ((param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY) ||
 	    !param->peer) {
 		if (param->interval_min > param->interval_max ||
