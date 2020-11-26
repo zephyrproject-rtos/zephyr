@@ -291,8 +291,9 @@ static int iis2dlpc_init(const struct device *dev)
 		return -EIO;
 	}
 
-	/* set default odr and full scale for acc */
-	if (iis2dlpc_data_rate_set(iis2dlpc->ctx, IIS2DLPC_DEFAULT_ODR) < 0) {
+	/* set default odr to 12.5Hz acc */
+	if (iis2dlpc_set_odr(dev, 12) < 0) {
+		LOG_ERR("odr init error (12.5 Hz)");
 		return -EIO;
 	}
 
