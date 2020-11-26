@@ -54,6 +54,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	}
 
 	pInitCtx->tpidrro_el0 = 0x0;
+	thread->arch.priv_stack_start = 0;
 #else
 	pInitCtx->elr = (uint64_t)z_thread_entry;
 #endif
@@ -81,6 +82,9 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 {
 	z_arch_esf_t *pInitCtx;
 	uintptr_t stack_ptr;
+
+	/* Setup the private stack */
+	_current->arch.priv_stack_start = (uint64_t)(_current->stack_obj);
 
 	/* Reset the stack pointer to the base discarding any old context */
 	stack_ptr = Z_STACK_PTR_ALIGN(_current->stack_info.start +

@@ -64,6 +64,9 @@ config AARCH64_IMAGE_HEADER
 	  This option enables standard ARM64 boot image header used by Linux
 	  and understood by loaders such as u-boot on Xen xl tool.
 
+config PRIVILEGED_STACK_SIZE
+	default 4096
+
 if CPU_CORTEX_A
 
 config ARMV8_A_NS

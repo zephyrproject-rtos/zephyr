@@ -86,6 +86,61 @@ abv_fail:
 	ret
 
 /*
+ * System call entry point.
+ */
+
+GTEXT(z_arm64_do_syscall)
+SECTION_FUNC(TEXT, z_arm64_do_syscall)
+	/* Recover the syscall parameters from the ESF */
+	ldp	x0, x1, [sp, ___esf_t_x0_x1_OFFSET]
+	ldp	x2, x3, [sp, ___esf_t_x2_x3_OFFSET]
+	ldp	x4, x5, [sp, ___esf_t_x4_x5_OFFSET]
+
+	/* Recover the syscall ID */
+	ldr	x8, [sp, ___esf_t_x8_x9_OFFSET]
+
+	/* Check whether the ID is valid */
+	ldr	x9, =K_SYSCALL_LIMIT
+	cmp	x8, x9
+	blo	valid_syscall_id
+	ldr	x8, =K_SYSCALL_BAD
+
+valid_syscall_id:
+	ldr	x9, =_k_syscall_table
+	ldr	x9, [x9, x8, lsl #3]
+
+	/* Recover the privileged stack */
+#ifdef CONFIG_SMP
+	get_cpu	x10, x8
+	ldr	x10, [x10, #___cpu_t_current_OFFSET]
+#else
+	ldr	x10, =_kernel
+	ldr	x10, [x10, #_kernel_offset_to_current]
+#endif
+	ldr     x10, [x10, #_thread_offset_to_priv_stack_start]
+	add	x10, x10, #CONFIG_PRIVILEGED_STACK_SIZE
+
+	/* Save the original SP on the privileged stack */
+	mov	x11, sp
+	mov	sp, x10
+	str	x11,  [sp, #-16]!
+
+	/* Jump into the syscall */
+	msr	daifclr, #(DAIFSET_IRQ_BIT)
+	blr	x9
+	msr	daifset, #(DAIFSET_IRQ_BIT)
+
+	/* Restore the original SP containing the ESF */
+	ldr	x11, [sp], #16
+	mov	sp, x11
+
+	/* Save the return value into the ESF */
+	str	x0, [sp, ___esf_t_x0_x1_OFFSET]
+
+	/* Return from exception */
+	b	z_arm64_exit_exc
+
+/*
  * Routine to jump into userspace
  *
  * We leverage z_arm64_exit_exc() to pop out the entry function and parameters
