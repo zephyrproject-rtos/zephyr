@@ -641,7 +641,7 @@ class DeviceHandler(Handler):
         ret = False
         device = instance.platform.name
         fixture = instance.testcase.harness_config.get("fixture")
-        for d in self.suite.connected_hardware:
+        for d in self.suite.duts:
             if fixture and fixture not in d.fixtures:
                 continue
             if d.platform == device and d.available and (d.serial or d.serial_pty):
@@ -653,7 +653,7 @@ class DeviceHandler(Handler):
     def get_available_device(self, instance):
         ret = None
         device = instance.platform.name
-        for d in self.suite.connected_hardware:
+        for d in self.suite.duts:
             if d.platform == device and d.available and (d.serial or d.serial_pty):
                 d.available = 0
                 d.counter += 1
@@ -663,7 +663,7 @@ class DeviceHandler(Handler):
         return ret
 
     def make_device_available(self, serial):
-        for d in self.suite.connected_hardware:
+        for d in self.suite.duts:
             if d.serial == serial or d.serial_pty:
                 d.available = 1
 
@@ -2565,7 +2565,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.warnings = 0
 
         # hardcoded for now
-        self.connected_hardware = []
+        self.duts = []
 
         # run integration tests only
         self.integration = False
@@ -3000,8 +3000,8 @@ class TestSuite(DisablePyTestCollectionMixin):
                 for t in tc.cases:
                     instance.results[t] = None
 
-                if runnable and self.connected_hardware:
-                    for h in self.connected_hardware:
+                if runnable and self.duts:
+                    for h in self.duts:
                         if h.platform == plat.name:
                             if tc.harness_config.get('fixture') in h.fixtures:
                                 instance.run = True
@@ -3762,16 +3762,17 @@ class Gcovr(CoverageTool):
                                ["-o", os.path.join(subdir, "index.html")],
                                stdout=coveragelog)
 
-class ConnectedDevice(object):
+class DUT(object):
     def __init__(self,
                  id=None,
                  serial=None,
                  platform=None,
                  product=None,
                  serial_pty=None,
-                 counter=0,
                  connected=False,
                  pre_script=None,
+                 post_script=None,
+                 post_flash_script=None,
                  runner=None):
 
         self.serial = serial
@@ -3785,8 +3786,9 @@ class ConnectedDevice(object):
         self.product = product
         self.runner = runner
         self.fixtures = []
-        self.post_flash_script = None
-        self.post_script = None
+        self.post_flash_script = post_flash_script
+        self.post_script = post_script
+        self.pre_script = pre_script
         self.probe_id = None
         self.notes = None
 
@@ -3853,35 +3855,41 @@ class HardwareMap:
 
     def __init__(self):
         self.detected = []
-        self.connected_hardware = []
+        self.duts = []
 
     def add_device(self, serial, platform, pre_script, is_pty):
-        device = ConnectedDevice(platform=platform, connected=True, pre_script=pre_script)
+        device = DUT(platform=platform, connected=True, pre_script=pre_script)
 
         if is_pty:
             device.serial_pty = serial
         else:
             device.serial = serial
 
-        self.connected_hardware.append(device)
+        self.duts.append(device)
 
     def load(self, map_file):
         hwm_schema = scl.yaml_load(self.schema_path)
-        _connected_hardware = scl.yaml_load_verify(map_file, hwm_schema)
-        for _connected in _connected_hardware:
-            pre_script = _connected.get('pre_script')
-            post_script = _connected.get('post_script')
-            platform  = _connected.get('platform')
-            id = _connected.get('id')
-            runner = _connected.get('runner')
-            serial = _connected.get('serial')
-            product = _connected.get('product')
-            dev = ConnectedDevice(platform=platform, product=product, runner=runner, id=id, serial=serial,
-                                  connected=True, pre_script=pre_script)
-            dev.counter = 0
-            dev.post_script = post_script
-
-            self.connected_hardware.append(dev)
+        duts = scl.yaml_load_verify(map_file, hwm_schema)
+        for dut in duts:
+            pre_script = dut.get('pre_script')
+            post_script = dut.get('post_script')
+            post_flash_script = dut.get('post_flash_script')
+            platform  = dut.get('platform')
+            id = dut.get('id')
+            runner = dut.get('runner')
+            serial = dut.get('serial')
+            product = dut.get('product')
+            new_dut = DUT(platform=platform,
+                          product=product,
+                          runner=runner,
+                          id=id,
+                          serial=serial,
+                          connected=serial is not None,
+                          pre_script=pre_script,
+                          post_script=post_script,
+                          post_flash_script=post_flash_script)
+            new_dut.counter = 0
+            self.duts.append(new_dut)
 
     def scan(self, persistent=False):
         from serial.tools import list_ports
@@ -3917,7 +3925,7 @@ class HardwareMap:
                 # assume endpoint 0 is the serial, skip all others
                 if d.manufacturer == 'Texas Instruments' and not d.location.endswith('0'):
                     continue
-                s_dev = ConnectedDevice(platform="unknown",
+                s_dev = DUT(platform="unknown",
                                         id=d.serial_number,
                                         serial=persistent_map.get(d.device, d.device),
                                         product=d.product,
@@ -3996,7 +4004,7 @@ class HardwareMap:
         if detected:
             to_show = self.detected
         else:
-            to_show = self.connected_hardware
+            to_show = self.duts
 
         if not header:
             header = ["Platform", "ID", "Serial device"]
