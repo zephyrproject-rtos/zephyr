@@ -194,7 +194,11 @@ struct arm_mmu_ptables {
  */
 extern const struct arm_mmu_config mmu_config;
 
+struct k_thread;
 void z_arm64_mmu_init(void);
+void z_arm64_thread_pt_init(struct k_thread *thread);
+void z_arm64_swap_ptables(struct k_thread *thread);
+
 #endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM64_MMU_ARM_MMU_H_ */

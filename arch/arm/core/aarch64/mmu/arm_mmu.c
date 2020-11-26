@@ -10,6 +10,7 @@
 #include <device.h>
 #include <init.h>
 #include <kernel.h>
+#include <kernel_arch_func.h>
 #include <kernel_arch_interface.h>
 #include <kernel_internal.h>
 #include <logging/log.h>
@@ -993,6 +994,10 @@ void arch_mem_domain_thread_add(struct k_thread *thread)
 		reset_map(old_ptables, __func__, thread->stack_info.start,
 				thread->stack_info.size);
 	}
+
+	if (thread == _current && !is_ptable_active(domain_ptables)) {
+		z_arm64_swap_ptables(thread);
+	}
 }
 
 void arch_mem_domain_thread_remove(struct k_thread *thread)
@@ -1013,6 +1018,32 @@ void arch_mem_domain_thread_remove(struct k_thread *thread)
 
 	reset_map(domain_ptables, __func__, thread->stack_info.start,
 		  thread->stack_info.size);
+}
+
+void z_arm64_swap_ptables(struct k_thread *incoming)
+{
+	struct arm_mmu_ptables *ptables = incoming->arch.ptables;
+
+	if (!is_ptable_active(ptables)) {
+		z_arm64_set_ttbr0((uintptr_t)ptables->base_xlat_table);
+	} else {
+		invalidate_tlb_all();
+	}
+}
+
+void z_arm64_thread_pt_init(struct k_thread *incoming)
+{
+	struct arm_mmu_ptables *ptables;
+
+	if ((incoming->base.user_options & K_USER) == 0)
+		return;
+
+	ptables = incoming->arch.ptables;
+
+	/* Map the thread stack */
+	map_thread_stack(incoming, ptables);
+
+	z_arm64_swap_ptables(incoming);
 }
 
 #endif /* CONFIG_USERSPACE */

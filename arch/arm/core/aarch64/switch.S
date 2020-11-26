@@ -76,6 +76,12 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 
 	mov	sp, x1
 
+#ifdef CONFIG_USERSPACE
+	stp     xzr, x30, [sp, #-16]!
+	bl      z_arm64_swap_ptables
+	ldp     xzr, x30, [sp], #16
+#endif
+
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
 	stp	xzr, x30, [sp, #-16]!
 	bl	z_thread_mark_switched_in
