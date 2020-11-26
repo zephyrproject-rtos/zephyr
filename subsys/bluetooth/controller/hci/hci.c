@@ -3712,21 +3712,23 @@ static void vs_write_tx_power_level(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_cp_vs_write_tx_power_level *cmd = (void *)buf->data;
 	struct bt_hci_rp_vs_write_tx_power_level *rp;
 	uint16_t handle, handle_le16;
+	uint8_t tx_power_level;
 	uint8_t handle_type;
 	uint8_t status;
 
 	handle_type = cmd->handle_type;
 	handle_le16 = cmd->handle;
 	handle = sys_le16_to_cpu(handle_le16);
+	tx_power_level = cmd->tx_power_level;
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
-	rp->selected_tx_power = cmd->tx_power_level;
 
-	status = ll_tx_pwr_lvl_set(handle_type, handle, &rp->selected_tx_power);
+	status = ll_tx_pwr_lvl_set(handle_type, handle, &tx_power_level);
 
 	rp->status = status;
 	rp->handle_type = handle_type;
 	rp->handle = handle_le16;
+	rp->selected_tx_power = tx_power_level;
 }
 
 static void vs_read_tx_power_level(struct net_buf *buf, struct net_buf **evt)
