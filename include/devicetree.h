@@ -597,6 +597,28 @@
 	DT_PROP(DT_PHANDLE_BY_IDX(node_id, phs, idx), prop)
 
 /**
+ * @brief Like DT_PROP_BY_PHANDLE_IDX(), but with a fallback to
+ * default_value.
+ *
+ * If the value exists, this expands to DT_PROP_BY_PHANDLE_IDX(node_id, phs,
+ * idx, prop). The default_value parameter is not expanded in this
+ * case.
+ *
+ * Otherwise, this expands to default_value.
+ *
+ * @param node_id node identifier
+ * @param phs lowercase-and-underscores property with type "phandle",
+ *            "phandles", or "phandle-array"
+ * @param idx logical index into "phs", which must be zero if "phs"
+ *            has type "phandle"
+ * @param prop lowercase-and-underscores property of the phandle's node
+ * @param default_value a fallback value to expand to
+ * @return the property's value
+ */
+#define DT_PROP_BY_PHANDLE_IDX_OR(node_id, phs, idx, prop, default_value) \
+	DT_PROP_OR(DT_PHANDLE_BY_IDX(node_id, phs, idx), prop, default_value)
+
+/**
  * @brief Get a property value from a phandle's node
  *
  * This is equivalent to DT_PROP_BY_PHANDLE_IDX(node_id, ph, 0, prop).
