@@ -3089,6 +3089,31 @@ static int print_attr(struct lwm2m_output_context *out,
 	return 0;
 }
 
+static int print_resource_dimension(struct lwm2m_output_context *out,
+				    uint8_t *buf, uint16_t buflen,
+				    struct lwm2m_engine_res *res)
+{
+	int ret, i, inst_count = 0;
+
+	if (res->multi_res_inst) {
+		for (i = 0; i < res->res_inst_count; i++) {
+			if (res->res_instances[i].res_inst_id !=
+			    RES_INSTANCE_NOT_CREATED) {
+				inst_count++;
+			}
+		}
+
+		snprintk(buf, buflen, ";dim=%d", inst_count);
+		ret = buf_append(CPKT_BUF_WRITE(out->out_cpkt), buf,
+				 strlen(buf));
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
 static int do_discover_op(struct lwm2m_message *msg, bool well_known)
 {
 	static char disc_buf[24];
@@ -3233,6 +3258,13 @@ static int do_discover_op(struct lwm2m_message *msg, bool well_known)
 
 			/* report resource attrs when path > 1 (5.4.2) */
 			if (msg->path.level > 1) {
+				ret = print_resource_dimension(
+					&msg->out, disc_buf, sizeof(disc_buf),
+					&obj_inst->resources[i]);
+				if (ret < 0) {
+					return ret;
+				}
+
 				ret = print_attr(&msg->out,
 						 disc_buf, sizeof(disc_buf),
 						 &obj_inst->resources[i]);

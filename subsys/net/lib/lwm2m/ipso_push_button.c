@@ -143,7 +143,7 @@ static struct lwm2m_engine_obj_inst *button_create(uint16_t obj_inst_id)
 
 	/* initialize instance resource data */
 	INIT_OBJ_RES(BUTTON_DIGITAL_STATE_ID, res[avail], i,
-		     res_inst[avail], j, 1, true,
+		     res_inst[avail], j, 1, false, true,
 		     &button_data[avail].state,
 		     sizeof(button_data[avail].state),
 		     NULL, NULL, state_post_write_cb, NULL);
