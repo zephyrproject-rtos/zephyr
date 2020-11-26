@@ -36,9 +36,13 @@ static inline uint8_t ll_adv_set_by_hci_handle_get_or_new(uint8_t hci_handle,
 	return 0;
 }
 #endif
+
 uint8_t ll_adv_iso_by_hci_handle_get(uint8_t hci_handle, uint8_t *handle);
 uint8_t ll_adv_iso_by_hci_handle_new(uint8_t hci_handle, uint8_t *handle);
-;
+void *ll_iso_tx_mem_acquire(void);
+void ll_iso_tx_mem_release(void *tx);
+int ll_iso_tx_mem_enqueue(uint16_t handle, void *tx);
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_HCI_RAW)
 int ll_adv_cmds_set(uint8_t adv_cmds);
