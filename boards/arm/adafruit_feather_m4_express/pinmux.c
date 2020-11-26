@@ -42,9 +42,6 @@ static int board_pinmux_init(const struct device *dev)
 
 #if ATMEL_SAM0_DT_SERCOM_CHECK(1, atmel_sam0_spi) && defined(CONFIG_SPI_SAM0)
 	/* SPI SERCOM1 on MISO=PB23/pad 3, MOSI=PA0/pad 0, SCK=PA1/pad 1 */
-	//pinmux_pin_set(muxa, 0, PINMUX_FUNC_D); //MOSI
-	//pinmux_pin_set(muxa, 1, PINMUX_FUNC_D); //SCK
-	//pinmux_pin_set(muxb, 23, PINMUX_FUNC_C); //MISO
 	pinmux_pin_set(muxb, 23, PINMUX_FUNC_D);
 	pinmux_pin_set(muxa, 17, PINMUX_FUNC_D);
 	pinmux_pin_set(muxb, 22, PINMUX_FUNC_C);
