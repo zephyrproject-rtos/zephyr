@@ -787,12 +787,12 @@ def main():
 
     hwm = HardwareMap()
     if options.generate_hardware_map:
-        hwm.scan_hw(persistent=options.persistent_hardware_map)
-        hwm.write_map(options.generate_hardware_map)
+        hwm.scan(persistent=options.persistent_hardware_map)
+        hwm.save(options.generate_hardware_map)
         return
 
     if not options.device_testing and options.hardware_map:
-        hwm.load_hardware_map(options.hardware_map)
+        hwm.load(options.hardware_map)
 
         logger.info("Available devices:")
         table = []
@@ -890,7 +890,7 @@ def main():
 
     if options.device_testing:
         if options.hardware_map:
-            hwm.load_hardware_map(options.hardware_map)
+            hwm.load(options.hardware_map)
             suite.connected_hardware = hwm.connected_hardware
             if not options.platform:
                 options.platform = []
@@ -901,12 +901,12 @@ def main():
         elif options.device_serial or options.device_serial_pty:
             if options.platform and len(options.platform) == 1:
                 if options.device_serial:
-                    hwm.load_device_from_cmdline(options.device_serial,
+                    hwm.add_device(options.device_serial,
                                                  options.platform[0],
                                                  options.pre_script,
                                                  False)
                 else:
-                    hwm.load_device_from_cmdline(options.device_serial_pty,
+                    hwm.add_device(options.device_serial_pty,
                                                  options.platform[0],
                                                  options.pre_script,
                                                  True)
