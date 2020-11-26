@@ -4759,11 +4759,12 @@ static void le_adv_report(struct net_buf *buf)
 
 		evt = net_buf_pull_mem(buf, sizeof(*evt));
 
-		adv_info.rssi = evt->data[evt->length];
 		adv_info.primary_phy = BT_GAP_LE_PHY_1M;
 		adv_info.secondary_phy = 0;
 		adv_info.tx_power = BT_GAP_TX_POWER_INVALID;
+		adv_info.rssi = evt->data[evt->length];
 		adv_info.sid = BT_GAP_SID_INVALID;
+		adv_info.interval = 0U;
 
 		adv_info.adv_type = evt->evt_type;
 		adv_info.adv_props = get_adv_props(evt->evt_type);
