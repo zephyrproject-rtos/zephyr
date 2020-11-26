@@ -40,6 +40,8 @@ source "drivers/pinmux/Kconfig.hsdk"
 
 source "drivers/pinmux/Kconfig.intel_s1000"
 
+source "drivers/pinmux/Kconfig.it8xxx2"
+
 source "drivers/pinmux/Kconfig.lpc11u6x"
 
 source "drivers/pinmux/Kconfig.mcux"
