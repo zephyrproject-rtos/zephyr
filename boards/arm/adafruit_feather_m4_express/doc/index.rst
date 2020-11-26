@@ -1,6 +1,6 @@
-.. _adafruit_itsybitsy_m4_express:
+.. _adafruit_Feather_m4_express:
 
-Adafruit ItsyBitsy M4 Express
+Adafruit Feather M4 Express
 #############################
 
 Overview
@@ -20,17 +20,17 @@ Hardware
 
 - ATSAMD51G19A ARM Cortex-M4 processor at 120 MHz
 - 512 KiB of flash memory and 192 KiB of RAM
-- 2 MiB of SPI flash
+- 4 MiB of SPI flash
 - Internal trimmed 8 MHz oscillator
 - A user LED
-- An RGB DotStar LED
+- An RGB NeoPixel LED
 - Native USB port
 - One reset button
 
 Supported Features
 ==================
 
-The adafruit_itsybitsy_m4_express board configuration supports the following
+The adafruit_feather_m4_express board configuration supports the following
 hardware features:
 
 +-----------+------------+------------------------------------------+
@@ -64,7 +64,7 @@ hardware features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/arm/adafruit_itsybitsy_m4_express/adafruit_itsybitsy_m4_express_defconfig`.
+:zephyr_file:`boards/arm/adafruit_itsybitsy_m4_express/adafruit_feather_m4_express_defconfig`.
 
 Zephyr can use the default Cortex-M SYSTICK timer or the SAM0 specific RTC.
 To use the RTC, set :code:`CONFIG_CORTEX_M_SYSTICK=n` and set
@@ -86,7 +86,7 @@ with the on-chip PLL generating the 120 MHz system clock.
 Serial Port
 ===========
 
-The SAMD51 MCU has 6 SERCOM based USARTs.  On the ItsyBitsy, SERCOM3 is
+The SAMD51 MCU has 6 SERCOM based USARTs.  On the Feather, SERCOM5 is
 the Zephyr console and is available on pins 0 (RX) and 1 (TX).
 
 SPI Port
@@ -114,7 +114,7 @@ serial port that echos characters back to the host PC.
 Programming and Debugging
 *************************
 
-The ItsyBitsy ships with a the BOSSA compatible UF2 bootloader.  The
+The Feather ships with a the BOSSA compatible UF2 bootloader.  The
 bootloader can be entered by quickly tapping the reset button twice.
 
 Additionally, if :code:`CONFIG_USB_CDC_ACM` is enabled then the bootloader
@@ -127,7 +127,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: adafruit_itsybitsy_m4_express
+      :board: adafruit_feather_m4_express
       :goals: build
       :compact:
 
@@ -158,7 +158,7 @@ Flashing
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: adafruit_itsybitsy_m4_express
+      :board: adafruit_feather_m4_express
       :goals: flash
       :compact:
 
@@ -172,14 +172,14 @@ debugged using a SWD probe such as the Segger J-Link.
 
 #. Connect the board to the probe by connecting the :code:`SWCLK`,
    :code:`SWDIO`, :code:`RESET`, :code:`GND`, and :code:`3V3` pins on the
-   ItsyBitsy to the :code:`SWCLK`, :code:`SWDIO`, :code:`RESET`, :code:`GND`,
+   Feather to the :code:`SWCLK`, :code:`SWDIO`, :code:`RESET`, :code:`GND`,
    and :code:`VTref` pins on the `J-Link`_.
 
 #. Flash the image:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: adafruit_itsybitsy_m4_express
+      :board: adafruit_feather_m4_express
       :goals: flash -r openocd
       :compact:
 
@@ -187,7 +187,7 @@ debugged using a SWD probe such as the Segger J-Link.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: adafruit_itsybitsy_m4_express
+      :board: adafruit_feather_m4_express
       :goals: debug
       :compact:
 
@@ -197,13 +197,13 @@ References
 .. target-notes::
 
 .. _Adafruit Learning System:
-    https://learn.adafruit.com/introducing-adafruit-itsybitsy-m4
+    https://learn.adafruit.com/adafruit-feather-m4-express-atsamd51
 
 .. _pinouts:
-    https://learn.adafruit.com/introducing-adafruit-itsybitsy-m4/pinouts
+    https://learn.adafruit.com/adafruit-feather-m4-express-atsamd51/pinouts
 
 .. _schematic:
-    https://learn.adafruit.com/introducing-adafruit-itsybitsy-m4/downloads
+    https://learn.adafruit.com/adafruit-feather-m4-express-atsamd51/downloads
 
 .. _J-Link:
     https://www.segger.com/products/debug-probes/j-link/technology/interface-description/
