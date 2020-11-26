@@ -36,18 +36,6 @@
 static struct ll_adv_iso ll_adv_iso[CONFIG_BT_CTLR_ADV_SET];
 static void *adv_iso_free;
 
-static MFIFO_DEFINE(iso_tx, sizeof(struct lll_tx),
-		    CONFIG_BT_CTLR_ISO_TX_BUFFERS);
-
-/* TODO: Share between BIS and CIS */
-static struct {
-	void *free;
-	uint8_t pool[CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE *
-			CONFIG_BT_CTLR_ISO_TX_BUFFERS];
-} mem_iso_tx;
-
-
-static struct ll_adv_iso *adv_iso_by_bis_handle_get(uint16_t bis_handle);
 static uint32_t ull_adv_iso_start(struct ll_adv_iso *adv_iso,
 				  uint32_t ticks_anchor);
 static inline struct ll_adv_iso *ull_adv_iso_get(uint8_t handle);
@@ -259,47 +247,10 @@ int ull_adv_iso_reset(void)
 {
 	int err;
 
-	/* Re-initialize the Tx mfifo */
-	MFIFO_INIT(iso_tx);
-
 	err = init_reset();
 	if (err) {
 		return err;
 	}
-
-	return 0;
-}
-
-void *ll_iso_tx_mem_acquire(void)
-{
-	return mem_acquire(&mem_iso_tx.free);
-}
-
-void ll_iso_tx_mem_release(void *tx)
-{
-	mem_release(tx, &mem_iso_tx.free);
-}
-
-int ll_iso_tx_mem_enqueue(uint16_t handle, void *tx)
-{
-	struct lll_tx *lll_tx;
-	struct ll_adv_iso *adv_iso;
-	uint8_t idx;
-
-	adv_iso = adv_iso_by_bis_handle_get(handle);
-	if (!adv_iso) {
-		return -EINVAL;
-	}
-
-	idx = MFIFO_ENQUEUE_GET(iso_tx, (void **) &lll_tx);
-	if (!lll_tx) {
-		return -ENOBUFS;
-	}
-
-	lll_tx->handle = handle;
-	lll_tx->node = tx;
-
-	MFIFO_ENQUEUE(iso_tx, idx);
 
 	return 0;
 }
@@ -348,23 +299,6 @@ uint8_t ll_adv_iso_by_hci_handle_new(uint8_t hci_handle, uint8_t *handle)
 	}
 
 	return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
-}
-
-static struct ll_adv_iso *adv_iso_by_bis_handle_get(uint16_t bis_handle)
-{
-	struct ll_adv_iso *adv_iso;
-	uint8_t idx;
-
-	adv_iso =  &ll_adv_iso[0];
-
-	for (idx = 0U; idx < CONFIG_BT_CTLR_ADV_SET; idx++, adv_iso++) {
-		if (adv_iso->is_created &&
-		    (adv_iso->bis_handle == bis_handle)) {
-			return adv_iso;
-		}
-	}
-
-	return NULL;
 }
 
 static uint32_t ull_adv_iso_start(struct ll_adv_iso *adv_iso,
@@ -428,13 +362,9 @@ static inline struct ll_adv_iso *ull_adv_iso_get(uint8_t handle)
 
 static int init_reset(void)
 {
-	/* Initialize conn pool. */
+	/* Initialize pool. */
 	mem_init(ll_adv_iso, sizeof(struct ll_adv_iso),
 		 sizeof(ll_adv_iso) / sizeof(struct ll_adv_iso), &adv_iso_free);
-
-	/* Initialize tx pool. */
-	mem_init(mem_iso_tx.pool, CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE,
-		 CONFIG_BT_CTLR_ISO_TX_BUFFERS, &mem_iso_tx.free);
 
 	return 0;
 }
