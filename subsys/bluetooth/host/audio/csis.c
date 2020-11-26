@@ -283,7 +283,12 @@ static ssize_t write_set_lock(struct bt_conn *conn,
 
 	if (csis_inst.set_lock == BT_CSIP_LOCK_VALUE) {
 		if (val == BT_CSIP_LOCK_VALUE) {
-			return BT_GATT_ERR(BT_CSIP_ERROR_LOCK_DENIED);
+			if (is_last_client_to_write(conn)) {
+				return BT_GATT_ERR(
+					BT_CSIP_ERROR_LOCK_ALREADY_GRANTED);
+			} else {
+				return BT_GATT_ERR(BT_CSIP_ERROR_LOCK_DENIED);
+			}
 		} else if (!is_last_client_to_write(conn)) {
 			return BT_GATT_ERR(BT_CSIP_ERROR_LOCK_RELEASE_DENIED);
 		}
