@@ -18,7 +18,7 @@
 #include <bluetooth/gatt.h>
 #include "csis.h"
 #include "csip.h"
-#include "sih.h"
+#include "csis_crypto.h"
 
 #define BT_CSIS_SIH_PRAND_SIZE          3
 #define BT_CSIS_SIH_HASH_SIZE           3
@@ -70,7 +70,7 @@ struct csis_pending_notifications_t {
 };
 
 struct csis_instance_t {
-	uint8_t set_sirk[BT_CSIP_SET_SIRK_SIZE];
+	struct bt_csip_set_sirk_t set_sirk;
 	uint8_t psri[BT_CSIS_PSRI_SIZE];
 	uint8_t set_size;
 	uint8_t set_lock;
@@ -222,10 +222,12 @@ static ssize_t read_set_sirk(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
 			     void *buf, uint16_t len, uint16_t offset)
 {
-	BT_HEXDUMP_DBG(&csis_inst.set_sirk, sizeof(csis_inst.set_sirk),
-			"Set SIRK");
+	BT_DBG("Set sirk %sencrypted", csis_inst.set_sirk.type ? "not " : "");
+	BT_HEXDUMP_DBG(&csis_inst.set_sirk.value,
+		       sizeof(csis_inst.set_sirk.value),
+		       "Set SIRK");
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
-				 csis_inst.set_sirk,
+				 &csis_inst.set_sirk,
 				 sizeof(csis_inst.set_sirk));
 }
 
@@ -548,8 +550,9 @@ static int bt_csis_init(const struct device *unused)
 	csis_inst.rank = CONFIG_BT_CSIS_SET_RANK;
 	csis_inst.set_size = CONFIG_BT_CSIS_SET_SIZE;
 	csis_inst.set_lock = BT_CSIP_RELEASE_VALUE;
+	csis_inst.set_sirk.type = BT_CSIP_SIRK_TYPE_PLAIN;
 	res = generate_sirk(CONFIG_BT_CSIS_SET_SIRK_SEED,
-			    csis_inst.set_sirk);
+			    csis_inst.set_sirk.value);
 	if (res) {
 		BT_DBG("Sirk generation failed for instance");
 	}
@@ -576,7 +579,7 @@ static int csis_update_psri(void)
 		0xb8, 0x03, 0xea, 0xc6, 0xaf, 0xbb, 0x65, 0xa2,
 		0x5a, 0x41, 0xf1, 0x53, 0x05, 0x68, 0x8e, 0x83
 	};
-	memcpy(csis_inst.set_sirk, test_sirk, sizeof(test_sirk));
+	memcpy(csis_inst.set_sirk.value, test_sirk, sizeof(test_sirk));
 #else
 	res = generate_prand(&prand);
 	if (res) {
@@ -584,7 +587,7 @@ static int csis_update_psri(void)
 		return res;
 	}
 #endif
-	res = sih(csis_inst.set_sirk, prand, &hash);
+	res = bt_csis_sih(csis_inst.set_sirk.value, prand, &hash);
 	if (res) {
 		BT_WARN("Could not generate new PSRI");
 		return res;
