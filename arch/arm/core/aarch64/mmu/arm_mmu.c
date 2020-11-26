@@ -632,13 +632,13 @@ static const struct arm_mmu_flat_range mmu_zephyr_ranges[] = {
 	{ .name  = "zephyr_code",
 	  .start = _image_text_start,
 	  .end   = _image_text_end,
-	  .attrs = MT_NORMAL | MT_P_RX_U_NA | MT_DEFAULT_SECURE_STATE },
+	  .attrs = MT_NORMAL | MT_P_RX_U_RX | MT_DEFAULT_SECURE_STATE },
 
 	/* Mark rodata segment cacheable, read only and execute-never */
 	{ .name  = "zephyr_rodata",
 	  .start = _image_rodata_start,
 	  .end   = _image_rodata_end,
-	  .attrs = MT_NORMAL | MT_P_RO_U_NA | MT_DEFAULT_SECURE_STATE },
+	  .attrs = MT_NORMAL | MT_P_RO_U_RO | MT_DEFAULT_SECURE_STATE },
 };
 
 static inline void add_arm_mmu_flat_range(struct arm_mmu_ptables *ptables,
