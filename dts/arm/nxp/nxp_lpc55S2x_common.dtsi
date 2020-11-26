@@ -1,0 +1,263 @@
+/*
+ * Copyright (c) 2020 Lemonbeat GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/i2c/i2c.h>
+#include <mem.h>
+
+/ {
+	aliases {
+		watchdog0 = &wwdt0;
+	};
+
+	chosen {
+		zephyr,flash-controller = &iap;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			compatible = "arm,cortex-m33f";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+				arm,num-mpu-regions = <8>;
+			};
+		};
+	};
+};
+
+&sram {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	sramx: memory@4000000 {
+		compatible = "mmio-sram";
+		reg = <0x4000000 DT_SIZE_K(32)>;
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 DT_SIZE_K(64)>;
+	};
+
+	sram1: memory@20010000 {
+		compatible = "mmio-sram";
+		reg = <0x20010000 DT_SIZE_K(64)>;
+	};
+
+	sram2: memory@20020000 {
+		compatible = "mmio-sram";
+		reg = <0x20020000 DT_SIZE_K(64)>;
+	};
+
+	sram4: memory@20040000 {
+		compatible = "mmio-sram";
+		reg = <0x20040000 DT_SIZE_K(16)>;
+	};
+};
+
+&peripheral {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	syscon: syscon@0 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0x0 0x1000>;
+		label = "SYSCON";
+		#clock-cells = <1>;
+	};
+
+	iap: flash-controller@34000 {
+		compatible = "nxp,lpc-iap";
+		label = "FLASH_IAP";
+		reg = <0x34000 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flash0: flash@0 {
+			compatible = "soc-nv-flash";
+			label = "MCUX_FLASH";
+			reg = <0x0 DT_SIZE_K(512)>;
+			erase-block-size = <512>;
+			write-block-size = <512>;
+		};
+
+		boot_rom: flash@3000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x3000000 DT_SIZE_K(128)>;
+		};
+	};
+
+	gpio0: gpio@0 {
+		compatible = "nxp,lpc-gpio";
+		reg = <0x8c000 0x2488>;
+		interrupts = <4 2>,<5 2>,<6 2>,<7 2>;
+		label = "GPIO_0";
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+
+	gpio1: gpio@1 {
+		compatible = "nxp,lpc-gpio";
+		reg = <0x8c000 0x2488>;
+		interrupts = <32 2>,<33 2>,<34 2>,<35 2>;
+		label = "GPIO_1";
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+
+	dma0: dma-controller@82000 {
+		compatible = "nxp,lpc-dma";
+		reg = <0x82000 0x1000>;
+		interrupts = <1 0>;
+		label = "DMA_0";
+		status = "disabled";
+		#dma-cells = <1>;
+	};
+
+	dma1: dma-controller@a7000 {
+		compatible = "nxp,lpc-dma";
+		reg = <0xa7000 0x1000>;
+		interrupts = <58 0>;
+		label = "DMA_1";
+		status = "disabled";
+		#dma-cells = <1>;
+	};
+
+	flexcomm0: flexcomm@86000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x86000 0x1000>;
+		interrupts = <14 0>;
+		clocks = <&syscon MCUX_FLEXCOMM0_CLK>;
+		label = "FLEXCOMM_0";
+		status = "disabled";
+	};
+
+	flexcomm1: flexcomm@87000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x87000 0x1000>;
+		interrupts = <15 0>;
+		clocks = <&syscon MCUX_FLEXCOMM1_CLK>;
+		label = "FLEXCOMM_1";
+		status = "disabled";
+	};
+
+	flexcomm2: flexcomm@88000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x88000 0x1000>;
+		interrupts = <16 0>;
+		clocks = <&syscon MCUX_FLEXCOMM2_CLK>;
+		label = "FLEXCOMM_2";
+		status = "disabled";
+	};
+
+	flexcomm3: flexcomm@89000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x89000 0x1000>;
+		interrupts = <17 0>;
+		clocks = <&syscon MCUX_FLEXCOMM3_CLK>;
+		label = "FLEXCOMM_3";
+		status = "disabled";
+	};
+
+	flexcomm4: flexcomm@8a000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x8a000 0x1000>;
+		interrupts = <18 0>;
+		clocks = <&syscon MCUX_FLEXCOMM4_CLK>;
+		label = "FLEXCOMM_4";
+		status = "disabled";
+	};
+
+	flexcomm5: flexcomm@96000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x96000 0x1000>;
+		interrupts = <19 0>;
+		clocks = <&syscon MCUX_FLEXCOMM5_CLK>;
+		label = "FLEXCOMM_5";
+		status = "disabled";
+	};
+
+	flexcomm6: flexcomm@97000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x97000 0x1000>;
+		interrupts = <20 0>;
+		clocks = <&syscon MCUX_FLEXCOMM6_CLK>;
+		label = "FLEXCOMM_6";
+		status = "disabled";
+	};
+
+	flexcomm7: flexcomm@98000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x98000 0x1000>;
+		interrupts = <21 0>;
+		clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
+		label = "FLEXCOMM_7";
+		status = "disabled";
+	};
+
+	hs_lspi: spi@9f000 {
+		compatible = "nxp,lpc-spi";
+		/* Enabling cs-gpios below will allow using GPIO CS,
+		 rather than Flexcomm SS */
+		/* cs-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>,
+			<&gpio1 1 GPIO_ACTIVE_LOW>,
+			<&gpio1 12 GPIO_ACTIVE_LOW>,
+			<&gpio1 26 GPIO_ACTIVE_LOW>; */
+		reg = <0x9f000 0x1000>;
+		interrupts = <59 0>;
+		clocks = <&syscon MCUX_HS_SPI_CLK>;
+		label = "HS_LSPI";
+		status = "disabled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	rng: rng@3a000 {
+		compatible = "nxp,lpc-rng";
+		reg = <0x3a000 0x1000>;
+		status = "okay";
+		label = "RNG";
+	};
+
+	wwdt0: watchdog@c000 {
+		compatible = "nxp,lpc-wwdt";
+		reg = <0xc000 0x1000>;
+		interrupts = <0 0>;
+		status = "disabled";
+		clk-divider = <1>;
+		label = "WWDT_0";
+	};
+
+	adc0: adc@a0000 {
+		compatible = "nxp,lpc-lpadc";
+		reg = <0xa0000 0x1000>;
+		interrupts = <22 0>;
+		status = "disabled";
+		clk-divider = <8>;
+		clk-source = <0>;
+		voltage-ref= <2>;
+		calibration-average = <128>;
+		power-level = <1>;
+		label = "ADC_0";
+		offset-value-a = <10>;
+		offset-value-b = <10>;
+		#io-channel-cells = <1>;
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
