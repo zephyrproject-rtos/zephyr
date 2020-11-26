@@ -52,17 +52,6 @@ union axis3bit16_t {
 /* FS reg value from Full Scale */
 #define IIS2DLPC_FS_TO_REG(_fs)	(30 - __builtin_clz(_fs))
 
-#if defined(CONFIG_IIS2DLPC_ACCEL_RANGE_RUNTIME) || \
-	defined(CONFIG_IIS2DLPC_ACCEL_RANGE_2G)
-	#define IIS2DLPC_ACC_FS		IIS2DLPC_2g
-#elif defined(CONFIG_IIS2DLPC_ACCEL_RANGE_4G)
-	#define IIS2DLPC_ACC_FS		IIS2DLPC_4g
-#elif defined(CONFIG_IIS2DLPC_ACCEL_RANGE_8G)
-	#define IIS2DLPC_ACC_FS		IIS2DLPC_8g
-#elif defined(CONFIG_IIS2DLPC_ACCEL_RANGE_16G)
-	#define IIS2DLPC_ACC_FS		IIS2DLPC_16g
-#endif
-
 /* Acc Gain value in ug/LSB in High Perf mode */
 #define IIS2DLPC_FS_2G_GAIN		244
 #define IIS2DLPC_FS_4G_GAIN		488
@@ -89,6 +78,7 @@ union axis3bit16_t {
 struct iis2dlpc_device_config {
 	const char *bus_name;
 	iis2dlpc_mode_t pm;
+	uint8_t range;
 #ifdef CONFIG_IIS2DLPC_TRIGGER
 	const char *int_gpio_port;
 	uint8_t int_gpio_pin;
