@@ -793,7 +793,6 @@ def main():
 
     if not options.device_testing and options.hardware_map:
         hwm.load(options.hardware_map)
-
         logger.info("Available devices:")
         table = []
         hwm.dump(connected_only=True)
@@ -891,10 +890,10 @@ def main():
     if options.device_testing:
         if options.hardware_map:
             hwm.load(options.hardware_map)
-            suite.connected_hardware = hwm.connected_hardware
+            suite.duts = hwm.duts
             if not options.platform:
                 options.platform = []
-                for d in hwm.connected_hardware:
+                for d in hwm.duts:
                     if d.connected:
                         options.platform.append(d.platform)
 
@@ -911,7 +910,7 @@ def main():
                                                  options.pre_script,
                                                  True)
 
-                suite.connected_hardware = hwm.connected_hardware
+                suite.duts = hwm.duts
             else:
                 logger.error("""When --device-testing is used with
                              --device-serial or --device-serial-pty,
@@ -1233,7 +1232,7 @@ def main():
         print("\nHardware distribution summary:\n")
         table = []
         header = ['Board', 'ID', 'Counter']
-        for d in hwm.connected_hardware:
+        for d in hwm.duts:
             if d.connected and d.platform in suite.selected_platforms:
                 row = [d.platform, d.id, d.counter]
                 table.append(row)
