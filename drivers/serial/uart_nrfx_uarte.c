@@ -1122,6 +1122,11 @@ static void uarte_nrfx_poll_out(const struct device *dev, unsigned char c)
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	int key;
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	if (data->pm_state != DEVICE_PM_ACTIVE_STATE) {
+		return;
+	}
+#endif
 	if (isr_mode) {
 		while (1) {
 			key = irq_lock();
@@ -1534,6 +1539,8 @@ static void uarte_nrfx_set_power_state(const struct device *dev,
 			NRF_UARTE_PSEL_DISCONNECTED) {
 			nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTRX);
 		}
+
+		data->pm_state = new_state;
 	} else {
 		__ASSERT_NO_MSG(new_state == DEVICE_PM_LOW_POWER_STATE ||
 				new_state == DEVICE_PM_SUSPEND_STATE ||
@@ -1545,6 +1552,8 @@ static void uarte_nrfx_set_power_state(const struct device *dev,
 		if (data->pm_state != DEVICE_PM_ACTIVE_STATE) {
 			return;
 		}
+
+		data->pm_state = new_state;
 
 		/* Disabling UART requires stopping RX, but stop RX event is
 		 * only sent after each RX if async UART API is used.
@@ -1587,7 +1596,6 @@ static int uarte_nrfx_pm_control(const struct device *dev,
 
 		if (new_state != data->pm_state) {
 			uarte_nrfx_set_power_state(dev, new_state);
-			data->pm_state = new_state;
 		}
 	} else {
 		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
