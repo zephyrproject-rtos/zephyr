@@ -4540,7 +4540,27 @@ extern void z_mem_pool_free_id(struct k_mem_block_id *id);
  */
 
 /**
- * @brief Allocate memory from heap.
+ * @brief Allocate memory from the heap with a specified alignment.
+ *
+ * This routine provides semantics similar to aligned_alloc(); memory is
+ * allocated from the heap with a specified alignment. However, one minor
+ * difference is that k_aligned_alloc() accepts any non-zero @p size,
+ * wherase aligned_alloc() only accepts a @p size that is an integral
+ * multiple of @p align.
+ *
+ * Above, aligned_alloc() refers to:
+ * C11 standard (ISO/IEC 9899:2011): 7.22.3.1
+ * The aligned_alloc function (p: 347-348)
+ *
+ * @param align Alignment of memory requested (in bytes).
+ * @param size Amount of memory requested (in bytes).
+ *
+ * @return Address of the allocated memory if successful; otherwise NULL.
+ */
+extern void *k_aligned_alloc(size_t align, size_t size);
+
+/**
+ * @brief Allocate memory from the heap.
  *
  * This routine provides traditional malloc() semantics. Memory is
  * allocated from the heap memory pool.
@@ -4549,7 +4569,10 @@ extern void z_mem_pool_free_id(struct k_mem_block_id *id);
  *
  * @return Address of the allocated memory if successful; otherwise NULL.
  */
-extern void *k_malloc(size_t size);
+static inline void *k_malloc(size_t size)
+{
+	return k_aligned_alloc(sizeof(void *), size);
+}
 
 /**
  * @brief Free memory allocated from heap.
