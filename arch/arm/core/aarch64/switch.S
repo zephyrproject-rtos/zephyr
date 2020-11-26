@@ -111,6 +111,11 @@ SECTION_FUNC(TEXT, z_arm64_sync_exc)
 	cmp	x1, #_SVC_CALL_RUNTIME_EXCEPT
 	beq	oops
 
+#ifdef CONFIG_USERSPACE
+	cmp	x1, #_SVC_CALL_SYSTEM_CALL
+	beq	z_arm64_do_syscall
+#endif
+
 #ifdef CONFIG_IRQ_OFFLOAD
 	cmp	x1, #_SVC_CALL_IRQ_OFFLOAD
 	beq	offload
