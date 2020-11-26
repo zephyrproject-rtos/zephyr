@@ -27,7 +27,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
 #include "csip.h"
-#include "sih.h"
+#include "csis_crypto.h"
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CSIP)
 #define LOG_MODULE_NAME bt_csip
 #include "common/log.h"
@@ -145,17 +145,19 @@ static struct csis_instance_t *lookup_instance_by_index(struct bt_conn *conn,
 }
 
 
-static int8_t lookup_index_by_sirk(struct bt_conn *conn, uint8_t *sirk)
+static int8_t lookup_index_by_sirk(struct bt_conn *conn,
+				   struct bt_csip_set_sirk_t *sirk)
 {
 	struct set_member_t *member;
-	uint8_t *set_sirk;
+	struct bt_csip_set_sirk_t *set_sirk;
 
 	member = lookup_member_by_conn(conn);
 
 	if (member) {
 		for (int i = 0; i < CONFIG_BT_CSIP_MAX_CSIS_INSTANCES; i++) {
-			set_sirk = member->sets[i].set_sirk;
-			if (!memcmp(sirk, set_sirk, BT_CSIP_SET_SIRK_SIZE)) {
+			set_sirk = &member->sets[i].set_sirk;
+			if (!memcmp(sirk->value, set_sirk->value,
+				    sizeof(set_sirk->value))) {
 				return i;
 			}
 		}
@@ -184,7 +186,7 @@ static uint8_t sirk_notify_func(struct bt_conn *conn,
 		if (length == sizeof(cur_set.set_sirk)) {
 			BT_HEXDUMP_DBG(data, length, "Set SIRK changed");
 			/* Assuming not connected to other set devices */
-			memcpy(cur_set.set_sirk, data, length);
+			memcpy(&cur_set.set_sirk, data, length);
 		} else {
 			BT_DBG("Invalid length %u", length);
 		}
@@ -614,7 +616,7 @@ static bool is_set_member(struct bt_data *data)
 	uint32_t calculated_hash;
 
 	BT_DBG("hash: 0x%06x, prand 0x%06x", hash, prand);
-	err = sih(cur_set.set_sirk, prand, &calculated_hash);
+	err = bt_csis_sih(cur_set.set_sirk.value, prand, &calculated_hash);
 	if (err) {
 		return false;
 	}
@@ -889,6 +891,8 @@ static uint8_t csip_discover_sets_read_set_sirk_cb(
 	} else if (!cur_inst) {
 		BT_DBG("cur_inst is NULL");
 	} else if (data) {
+		struct bt_csip_set_sirk_t *set_sirk;
+
 		BT_HEXDUMP_DBG(data, length, "Data read");
 		member = lookup_member_by_conn(conn);
 		if (!member) {
@@ -896,11 +900,14 @@ static uint8_t csip_discover_sets_read_set_sirk_cb(
 			return BT_GATT_ITER_STOP;
 		}
 
-		if (length == BT_CSIP_SET_SIRK_SIZE) {
-			memcpy(&member->sets[cur_inst->idx].set_sirk,
-			       data, length);
-			BT_HEXDUMP_DBG(member->sets[cur_inst->idx].set_sirk,
-				       length, "Set SIRK");
+		set_sirk = &member->sets[cur_inst->idx].set_sirk;
+
+		if (length == sizeof(*set_sirk)) {
+			memcpy(set_sirk, data, length);
+			BT_DBG("Set sirk %sencrypted",
+			       set_sirk->type ? "not " : "");
+			BT_HEXDUMP_DBG(set_sirk->value,
+				       sizeof(set_sirk->value), "Set SIRK");
 		} else {
 			BT_DBG("Invalid length");
 		}
@@ -997,7 +1004,7 @@ static void csip_write_lowest_rank(void)
 
 	for (int i = 0; i < cur_set.set_size; i++) {
 		cur_idx = lookup_index_by_sirk(set_members[i].conn,
-					       cur_set.set_sirk);
+					       &cur_set.set_sirk);
 		if (cur_idx < 0) {
 			continue;
 		}
@@ -1039,7 +1046,7 @@ static void csip_release_highest_rank(void)
 
 	for (int i = 0; i < cur_set.set_size; i++) {
 		cur_idx = lookup_index_by_sirk(set_members[i].conn,
-					       cur_set.set_sirk);
+					       &cur_set.set_sirk);
 		if (cur_idx < 0) {
 			continue;
 		}
@@ -1124,7 +1131,7 @@ static bool csip_set_is_locked(void)
 
 	for (int i = 0; i < cur_set.set_size; i++) {
 		cur_idx = lookup_index_by_sirk(set_members[i].conn,
-					       cur_set.set_sirk);
+					       &cur_set.set_sirk);
 		if (set_members[i].csis_insts[cur_idx].set_lock ==
 			BT_CSIP_LOCK_VALUE) {
 			return true;

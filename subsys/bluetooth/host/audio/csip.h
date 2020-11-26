@@ -27,8 +27,16 @@
 #define BT_CSIP_RELEASE_VALUE                   0x01
 #define BT_CSIP_LOCK_VALUE                      0x02
 
+#define BT_CSIP_SIRK_TYPE_ENCRYPTED             0x00
+#define BT_CSIP_SIRK_TYPE_PLAIN                 0x01
+
+struct bt_csip_set_sirk_t {
+	uint8_t type;
+	uint8_t value[BT_CSIP_SET_SIRK_SIZE];
+} __packed;
+
 struct bt_csip_set_t {
-	uint8_t set_sirk[BT_CSIP_SET_SIRK_SIZE];
+	struct bt_csip_set_sirk_t set_sirk;
 	uint8_t set_size;
 };
 
