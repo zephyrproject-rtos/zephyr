@@ -41,6 +41,8 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
+#include <sys/slist.h>
+
 /* Kernel macros for memory attribution
  * (access permissions and cache-ability).
  *
@@ -68,6 +70,11 @@ extern "C" {
 typedef struct {
 	uint32_t attrs;
 } k_mem_partition_attr_t;
+
+struct arch_mem_domain {
+	struct arm_mmu_ptables ptables;
+	sys_snode_t node;
+};
 
 #endif /* _ASMLANGUAGE */
 
