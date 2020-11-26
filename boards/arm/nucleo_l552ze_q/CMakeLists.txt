@@ -43,7 +43,7 @@ if (CONFIG_BUILD_WITH_TFM)
 			 ${ADD_NS_IMAGE_MIN_VER}
 			 -s auto
 			 -H 0x400
-			 ${CMAKE_BINARY_DIR}/tfm/install/outputs/STM/NUCLEO_L552ZE_Q/tfm_s.bin
+			 $<TARGET_PROPERTY:tfm,TFM_S_BIN_FILE>
 			 ${CMAKE_BINARY_DIR}/tfm_s_signed.bin
 
 		#Sign non-secure binary image with public key
@@ -60,7 +60,7 @@ if (CONFIG_BUILD_WITH_TFM)
 			 ${CMAKE_BINARY_DIR}/zephyr_ns_signed.bin
 
 		#Copy mcuboot.bin
-		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/tfm/bin/bl2.bin ${CMAKE_BINARY_DIR}/mcuboot.bin
+		COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PROPERTY:tfm,BL2_BIN_FILE> ${CMAKE_BINARY_DIR}/mcuboot.bin
 
 		#Execute post build script postbuild.sh
 		COMMAND ${CMAKE_BINARY_DIR}/tfm/postbuild.sh ${COMPILER_FULL_PATH}

@@ -42,7 +42,7 @@ if (CONFIG_BUILD_WITH_TFM)
 		#offset needs to be the same value as flash_layout.h in TFM
 		set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
 			COMMAND ${SREC_CAT}
-			ARGS ${CMAKE_BINARY_DIR}/tfm/bin/tfm_s.bin -Binary
+			ARGS $<TARGET_PROPERTY:tfm,TFM_S_BIN_FILE> -Binary
 				${CMAKE_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME} -Binary
 				-offset ${CONFIG_FLASH_LOAD_OFFSET}
 				-o ${CMAKE_BINARY_DIR}/tfm_merged.bin -Binary
@@ -63,7 +63,7 @@ if (CONFIG_BUILD_WITH_TFM)
 				${ADD_NS_IMAGE_MIN_VER}
 				-s auto
 				-H ${CONFIG_ROM_START_OFFSET}
-				${CMAKE_BINARY_DIR}/tfm/bin/tfm_s.bin
+				$<TARGET_PROPERTY:tfm,TFM_S_BIN_FILE>
 				${CMAKE_BINARY_DIR}/tfm_s_signed.bin
 
 			#Sign non-secure binary image with public key
@@ -87,7 +87,7 @@ if (CONFIG_BUILD_WITH_TFM)
 				-o ${CMAKE_BINARY_DIR}/tfm_sign.bin
 
 			#Copy mcuboot.bin
-			COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/tfm/bin/bl2.bin ${CMAKE_BINARY_DIR}/mcuboot.bin
+			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PROPERTY:tfm,BL2_BIN_FILE> ${CMAKE_BINARY_DIR}/mcuboot.bin
 
 			#Merge mcuboot.bin and tfm_sign.bin for flashing
 			COMMAND ${SREC_CAT}
