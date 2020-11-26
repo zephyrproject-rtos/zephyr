@@ -157,11 +157,17 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 
 	/* Lower EL using AArch64 / Synchronous */
 	.align 7
-	b	.
+	z_arm64_enter_exc x0, x1
+	b	z_arm64_sync_exc
 
 	/* Lower EL using AArch64 / IRQ */
 	.align 7
-	b	.
+	z_arm64_enter_exc x0, x1
+#ifdef CONFIG_GEN_SW_ISR_TABLE
+	b 	_isr_wrapper
+#else
+	b	z_irq_spurious
+#endif
 
 	/* Lower EL using AArch64 / FIQ */
 	.align 7
@@ -169,7 +175,8 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 
 	/* Lower EL using AArch64 / SError */
 	.align 7
-	b	.
+	z_arm64_enter_exc x0, x1
+	b	z_arm64_serror
 
 	/* Lower EL using AArch32 / Synchronous */
 	.align 7
