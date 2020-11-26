@@ -19,7 +19,7 @@
 #include <kernel_arch_data.h>
 #include <arch/arc/v2/exc.h>
 
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef CONFIG_ARC_EXCEPTION_DEBUG
 static void dump_arc_esf(const z_arch_esf_t *esf)

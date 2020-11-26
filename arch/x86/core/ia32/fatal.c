@@ -21,7 +21,7 @@
 #include <x86_mmu.h>
 #include <sys/mem_manage.h>
 
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef CONFIG_DEBUG_COREDUMP
 unsigned int z_x86_exception_vector;

@@ -22,7 +22,7 @@
 #include <sys/__assert.h>
 #include <syscall_handler.h>
 #include <logging/log.h>
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 FUNC_NORETURN void z_self_abort(void)
 {

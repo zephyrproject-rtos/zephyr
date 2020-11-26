@@ -16,7 +16,7 @@
 #include <kernel_internal.h>
 #include <logging/log.h>
 #include <sys/atomic.h>
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /* Maximum time between the time a self-aborting thread flags itself
  * DEAD and the last read or write to its stack memory (i.e. the time

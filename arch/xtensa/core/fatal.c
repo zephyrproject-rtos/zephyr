@@ -11,7 +11,7 @@
 #include <xtensa/config/specreg.h>
 #include <xtensa-asm2-context.h>
 #include <logging/log.h>
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef XT_SIMULATOR
 #include <xtensa/simcall.h>

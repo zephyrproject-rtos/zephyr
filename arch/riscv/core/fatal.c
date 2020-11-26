@@ -9,7 +9,7 @@
 #include <inttypes.h>
 #include <exc_handle.h>
 #include <logging/log.h>
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef CONFIG_USERSPACE
 Z_EXC_DECLARE(z_riscv_user_string_nlen);

@@ -12,10 +12,8 @@
 #include <stdbool.h>
 #include <spinlock.h>
 #include <sys/libc-hooks.h>
-
-#define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 struct k_spinlock z_mem_domain_lock;
 static uint8_t max_partitions;

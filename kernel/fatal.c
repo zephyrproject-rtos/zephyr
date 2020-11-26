@@ -15,7 +15,7 @@
 #include <fatal.h>
 #include <debug/coredump.h>
 
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /* LCOV_EXCL_START */
 FUNC_NORETURN __weak void arch_system_halt(unsigned int reason)

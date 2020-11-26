@@ -17,7 +17,7 @@
 #include <inttypes.h>
 #include <exc_handle.h>
 #include <logging/log.h>
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #if defined(CONFIG_PRINTK) || defined(CONFIG_LOG)
 #define PR_EXC(...) LOG_ERR(__VA_ARGS__)
