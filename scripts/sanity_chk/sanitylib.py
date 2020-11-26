@@ -3855,7 +3855,7 @@ class HardwareMap:
         self.detected = []
         self.connected_hardware = []
 
-    def load_device_from_cmdline(self, serial, platform, pre_script, is_pty):
+    def add_device(self, serial, platform, pre_script, is_pty):
         device = ConnectedDevice(platform=platform, connected=True, pre_script=pre_script)
 
         if is_pty:
@@ -3865,7 +3865,7 @@ class HardwareMap:
 
         self.connected_hardware.append(device)
 
-    def load_hardware_map(self, map_file):
+    def load(self, map_file):
         hwm_schema = scl.yaml_load(self.schema_path)
         _connected_hardware = scl.yaml_load_verify(map_file, hwm_schema)
         for _connected in _connected_hardware:
@@ -3883,7 +3883,7 @@ class HardwareMap:
 
             self.connected_hardware.append(dev)
 
-    def scan_hw(self, persistent=False):
+    def scan(self, persistent=False):
         from serial.tools import list_ports
 
         if persistent and platform.system() == 'Linux':
@@ -3938,7 +3938,7 @@ class HardwareMap:
             else:
                 logger.warning("Unsupported device (%s): %s" % (d.manufacturer, d))
 
-    def write_map(self, hwm_file):
+    def save(self, hwm_file):
         # use existing map
         if os.path.exists(hwm_file):
             with open(hwm_file, 'r') as yaml_file:
@@ -3961,18 +3961,34 @@ class HardwareMap:
                 new = list(filter(lambda d: not d.match, self.detected))
                 hwm = hwm + new
 
-                logger.info("Registered devices:")
-                #self.dump(hwm)
-
             with open(hwm_file, 'w') as yaml_file:
                 yaml.dump(hwm, yaml_file, Dumper=Dumper, default_flow_style=False)
 
+            self.load(hwm_file)
+            logger.info("Registered devices:")
+            self.dump()
+
         else:
             # create new file
+            dl = []
+            for _connected in self.detected:
+                platform  = _connected.platform
+                id = _connected.id
+                runner = _connected.runner
+                serial = _connected.serial
+                product = _connected.product
+                d = {
+                    'platform': platform,
+                    'id': id,
+                    'runner': runner,
+                    'serial': serial,
+                    'product': product
+                }
+                dl.append(d)
             with open(hwm_file, 'w') as yaml_file:
-                yaml.dump(self.detected, yaml_file, Dumper=Dumper, default_flow_style=False)
+                yaml.dump(dl, yaml_file, Dumper=Dumper, default_flow_style=False)
             logger.info("Detected devices:")
-            self.dump()
+            self.dump(detected=True)
 
     def dump(self, filtered=[], header=[], connected_only=False, detected=False):
         print("")
@@ -3981,6 +3997,7 @@ class HardwareMap:
             to_show = self.detected
         else:
             to_show = self.connected_hardware
+
         if not header:
             header = ["Platform", "ID", "Serial device"]
         for p in to_show:
