@@ -254,8 +254,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 	/* Enqueue the rx in aux context */
 	if (aux->rx_last) {
-		ftr = &aux->rx_last->rx_ftr;
-		ftr->extra = rx;
+		aux->rx_last->rx_ftr.extra = rx;
 	} else {
 		aux->rx_head = rx;
 	}
