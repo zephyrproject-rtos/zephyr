@@ -16,7 +16,7 @@
 #include <kernel.h>
 #include <logging/log.h>
 
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef CONFIG_EXCEPTION_DEBUG
 static void dump_esr(uint64_t esr, bool *dump_far)

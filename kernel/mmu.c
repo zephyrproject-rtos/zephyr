@@ -6,13 +6,11 @@
  * Routines for managing virtual address spaces
  */
 
- #include <stdint.h>
- #include <kernel_arch_interface.h>
- #include <spinlock.h>
-
-#define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
+#include <stdint.h>
+#include <kernel_arch_interface.h>
+#include <spinlock.h>
 #include <logging/log.h>
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /* Spinlock to protect any globals in this file and serialize page table
  * updates in arch code

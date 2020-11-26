@@ -10,7 +10,7 @@
 #include <exc_handle.h>
 #include <logging/log.h>
 #include <x86_mmu.h>
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #if defined(CONFIG_BOARD_QEMU_X86) || defined(CONFIG_BOARD_QEMU_X86_64)
 FUNC_NORETURN void arch_system_halt(unsigned int reason)

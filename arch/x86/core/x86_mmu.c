@@ -19,7 +19,7 @@
 #include <kernel_internal.h>
 #include <drivers/interrupt_controller/loapic.h>
 
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /* We will use some ignored bits in the PTE to backup permission settings
  * when the mapping was made. This is used to un-apply memory domain memory

@@ -38,7 +38,7 @@
 #include <tracing/tracing.h>
 #include <sys/check.h>
 #include <logging/log.h>
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /* We use a global spinlock here because some of the synchronization
  * is protecting things like owner thread priorities which aren't

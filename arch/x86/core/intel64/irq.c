@@ -13,7 +13,7 @@
 #include <logging/log.h>
 #include <x86_mmu.h>
 
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 unsigned char _irq_to_interrupt_vector[CONFIG_MAX_IRQ_LINES];
 

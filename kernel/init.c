@@ -35,10 +35,8 @@
 #include <stdbool.h>
 #include <debug/gcov.h>
 #include <kswap.h>
-
-#define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(os);
+LOG_MODULE_REGISTER(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /* boot banner items */
 #if defined(CONFIG_MULTITHREADING) && defined(CONFIG_BOOT_DELAY) \
