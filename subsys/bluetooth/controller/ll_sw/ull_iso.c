@@ -10,6 +10,24 @@
 #define LOG_MODULE_NAME bt_ctlr_ull_iso
 #include "common/log.h"
 #include "hal/debug.h"
+#include "hal/ccm.h"
+#include "util/memq.h"
+#include "util/mem.h"
+#include "util/mfifo.h"
+#include "pdu.h"
+#include "lll.h"
+#include "lll_conn.h" /* for `struct lll_tx` */
+
+static int init_reset(void);
+
+static MFIFO_DEFINE(iso_tx, sizeof(struct lll_tx),
+		    CONFIG_BT_CTLR_ISO_TX_BUFFERS);
+
+static struct {
+	void *free;
+	uint8_t pool[CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE *
+			CONFIG_BT_CTLR_ISO_TX_BUFFERS];
+} mem_iso_tx;
 
 /* Contains vendor specific argument, function to be implemented by vendors */
 __weak uint8_t ll_configure_data_path(uint8_t data_path_dir,
@@ -120,4 +138,68 @@ uint8_t ll_read_iso_link_quality(uint16_t  handle,
 	ARG_UNUSED(duplicate_packets);
 
 	return BT_HCI_ERR_CMD_DISALLOWED;
+}
+
+int ull_iso_init(void)
+{
+	int err;
+
+	err = init_reset();
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+
+int ull_iso_reset(void)
+{
+	int err;
+
+	/* Re-initialize the Tx mfifo */
+	MFIFO_INIT(iso_tx);
+
+	err = init_reset();
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+
+void *ll_iso_tx_mem_acquire(void)
+{
+	return mem_acquire(&mem_iso_tx.free);
+}
+
+void ll_iso_tx_mem_release(void *tx)
+{
+	mem_release(tx, &mem_iso_tx.free);
+}
+
+int ll_iso_tx_mem_enqueue(uint16_t handle, void *tx)
+{
+	struct lll_tx *lll_tx;
+	uint8_t idx;
+
+	idx = MFIFO_ENQUEUE_GET(iso_tx, (void **) &lll_tx);
+	if (!lll_tx) {
+		return -ENOBUFS;
+	}
+
+	lll_tx->handle = handle;
+	lll_tx->node = tx;
+
+	MFIFO_ENQUEUE(iso_tx, idx);
+
+	return 0;
+}
+
+static int init_reset(void)
+{
+	/* Initialize tx pool. */
+	mem_init(mem_iso_tx.pool, CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE,
+		 CONFIG_BT_CTLR_ISO_TX_BUFFERS, &mem_iso_tx.free);
+
+	return 0;
 }
