@@ -20,6 +20,9 @@
 #define BT_CSIP_ERROR_LOCK_DENIED               0x80
 #define BT_CSIP_ERROR_LOCK_RELEASE_DENIED       0x81
 #define BT_CSIP_ERROR_LOCK_INVAL_VALUE          0x82
+#define BT_CSIP_ERROR_SIRK_ACCESS_REJECTED      0x83
+#define BT_CSIP_ERROR_SIRK_OOB_ONLY             0x84
+#define BT_CSIP_ERROR_LOCK_ALREADY_GRANTED      0x85
 
 #define BT_CSIP_RELEASE_VALUE                   0x01
 #define BT_CSIP_LOCK_VALUE                      0x02
