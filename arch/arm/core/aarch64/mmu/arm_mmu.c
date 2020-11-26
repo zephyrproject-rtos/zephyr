@@ -11,6 +11,7 @@
 #include <init.h>
 #include <kernel.h>
 #include <kernel_arch_interface.h>
+#include <kernel_internal.h>
 #include <logging/log.h>
 #include <arch/arm/aarch64/cpu.h>
 #include <arch/arm/aarch64/lib_helpers.h>
@@ -748,6 +749,9 @@ static void enable_mmu_el1(struct arm_mmu_ptables *ptables, unsigned int flags)
 /* ARM MMU Driver Initial Setup */
 
 static struct arm_mmu_ptables kernel_ptables;
+#ifdef CONFIG_USERSPACE
+static sys_slist_t domain_list;
+#endif
 
 /*
  * @brief MMU default configuration
@@ -778,6 +782,29 @@ void z_arm64_mmu_init(void)
 
 	/* currently only EL1 is supported */
 	enable_mmu_el1(&kernel_ptables, flags);
+}
+
+static void sync_domains(uintptr_t virt, size_t size)
+{
+#ifdef CONFIG_USERSPACE
+	sys_snode_t *node;
+	struct arch_mem_domain *domain;
+	struct arm_mmu_ptables *domain_ptables;
+	k_spinlock_key_t key;
+	int ret;
+
+	key = k_spin_lock(&z_mem_domain_lock);
+	SYS_SLIST_FOR_EACH_NODE(&domain_list, node) {
+		domain = CONTAINER_OF(node, struct arch_mem_domain, node);
+		domain_ptables = &domain->ptables;
+		ret = globalize_page_range(domain_ptables, &kernel_ptables,
+					   virt, size, "generic");
+		if (ret) {
+			LOG_ERR("globalize_page_range() returned %d", ret);
+		}
+	}
+	k_spin_unlock(&z_mem_domain_lock, key);
+#endif
 }
 
 static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
@@ -833,6 +860,8 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 	if (ret) {
 		LOG_ERR("__arch_mem_map() returned %d", ret);
 		k_panic();
+	} else {
+		sync_domains((uintptr_t)virt, size);
 	}
 }
 
@@ -842,5 +871,140 @@ void arch_mem_unmap(void *addr, size_t size)
 
 	if (ret) {
 		LOG_ERR("remove_map() returned %d", ret);
+	} else {
+		sync_domains((uintptr_t)addr, size);
 	}
 }
+
+#ifdef CONFIG_USERSPACE
+
+int arch_mem_domain_max_partitions_get(void)
+{
+	return CONFIG_MAX_DOMAIN_PARTITIONS;
+}
+
+int arch_mem_domain_init(struct k_mem_domain *domain)
+{
+	struct arm_mmu_ptables *domain_ptables = &domain->arch.ptables;
+	k_spinlock_key_t key;
+
+	MMU_DEBUG("%s\n", __func__);
+
+	key = k_spin_lock(&xlat_lock);
+	domain_ptables->base_xlat_table =
+		dup_table(kernel_ptables.base_xlat_table, BASE_XLAT_LEVEL);
+	k_spin_unlock(&xlat_lock, key);
+	if (!domain_ptables->base_xlat_table) {
+		return -ENOMEM;
+	}
+	sys_slist_append(&domain_list, &domain->arch.node);
+	return 0;
+}
+
+void arch_mem_domain_destroy(struct k_mem_domain *domain)
+{
+	struct arm_mmu_ptables *domain_ptables = &domain->arch.ptables;
+	k_spinlock_key_t key;
+
+	MMU_DEBUG("%s\n", __func__);
+
+	sys_slist_remove(&domain_list, NULL, &domain->arch.node);
+	key = k_spin_lock(&xlat_lock);
+	discard_table(domain_ptables->base_xlat_table, BASE_XLAT_LEVEL);
+	domain_ptables->base_xlat_table = NULL;
+	k_spin_unlock(&xlat_lock, key);
+}
+
+static void private_map(struct arm_mmu_ptables *ptables, const char *name,
+			uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs)
+{
+	int ret;
+
+	ret = privatize_page_range(ptables, &kernel_ptables, virt, size, name);
+	__ASSERT(ret == 0, "privatize_page_range() returned %d", ret);
+	ret = add_map(ptables, name, phys, virt, size, attrs);
+	__ASSERT(ret == 0, "add_map() returned %d", ret);
+}
+
+static void reset_map(struct arm_mmu_ptables *ptables, const char *name,
+		      uintptr_t addr, size_t size)
+{
+	int ret;
+
+	ret = globalize_page_range(ptables, &kernel_ptables, addr, size, name);
+	__ASSERT(ret == 0, "globalize_page_range() returned %d", ret);
+}
+
+void arch_mem_domain_partition_add(struct k_mem_domain *domain,
+				   uint32_t partition_id)
+{
+	struct arm_mmu_ptables *domain_ptables = &domain->arch.ptables;
+	struct k_mem_partition *ptn = &domain->partitions[partition_id];
+
+	private_map(domain_ptables, "partition", ptn->start, ptn->start,
+		    ptn->size, ptn->attr.attrs | MT_NORMAL);
+}
+
+void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
+				      uint32_t partition_id)
+{
+	struct arm_mmu_ptables *domain_ptables = &domain->arch.ptables;
+	struct k_mem_partition *ptn = &domain->partitions[partition_id];
+
+	reset_map(domain_ptables, "partition removal", ptn->start, ptn->size);
+}
+
+static void map_thread_stack(struct k_thread *thread,
+			     struct arm_mmu_ptables *ptables)
+{
+	private_map(ptables, "thread_stack", thread->stack_info.start,
+		    thread->stack_info.start, thread->stack_info.size,
+		    MT_P_RW_U_RW | MT_NORMAL);
+}
+
+void arch_mem_domain_thread_add(struct k_thread *thread)
+{
+	struct arm_mmu_ptables *old_ptables, *domain_ptables;
+	struct k_mem_domain *domain;
+	bool is_user, is_migration;
+
+	domain = thread->mem_domain_info.mem_domain;
+	domain_ptables = &domain->arch.ptables;
+	old_ptables = thread->arch.ptables;
+
+	is_user = (thread->base.user_options & K_USER) != 0;
+	is_migration = (old_ptables != NULL) && is_user;
+
+	if (is_migration) {
+		map_thread_stack(thread, domain_ptables);
+	}
+
+	thread->arch.ptables = domain_ptables;
+
+	if (is_migration) {
+		reset_map(old_ptables, __func__, thread->stack_info.start,
+				thread->stack_info.size);
+	}
+}
+
+void arch_mem_domain_thread_remove(struct k_thread *thread)
+{
+	struct arm_mmu_ptables *domain_ptables;
+	struct k_mem_domain *domain;
+
+	domain = thread->mem_domain_info.mem_domain;
+	domain_ptables = &domain->arch.ptables;
+
+	if ((thread->base.user_options & K_USER) == 0) {
+		return;
+	}
+
+	if ((thread->base.thread_state & _THREAD_DEAD) == 0) {
+		return;
+	}
+
+	reset_map(domain_ptables, __func__, thread->stack_info.start,
+		  thread->stack_info.size);
+}
+
+#endif /* CONFIG_USERSPACE */

@@ -105,6 +105,8 @@ config ARM_MMU
 	default y
 	select MMU
 	select SRAM_REGION_PERMISSIONS
+	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
+	select ARCH_MEM_DOMAIN_DATA if USERSPACE
 	help
 	  Memory Management Unit support.
 
