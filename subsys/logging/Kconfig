@@ -465,9 +465,11 @@ config LOG_BACKEND_XTENSA_OUTPUT_BUFFER_SIZE
 	  Buffer is used by log_output module for preparing output data (e.g.
 	  string formatting).
 
+# Immediate mode cannot be used with network backend as it would cause the sent
+# rsyslog message to be malformed.
 config LOG_BACKEND_NET
 	bool "Enable networking backend"
-	depends on NETWORKING
+	depends on NETWORKING && NET_UDP && !LOG_IMMEDIATE
 	select NET_CONTEXT_NET_PKT_POOL
 	help
 	  Send syslog messages to network server.
