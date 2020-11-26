@@ -38,7 +38,7 @@ if (CONFIG_BUILD_WITH_TFM)
 		# Create concatenated binary image from the two binary files
 		COMMAND ${PYTHON_EXECUTABLE} ${TFM_MCUBOOT_DIR}/scripts/assemble.py
 		    --layout ${PREPROCESSED_FILE_NS}
-			-s ${CMAKE_BINARY_DIR}/tfm/install/outputs/MUSCA_B1/tfm_s.bin
+			-s $<TARGET_PROPERTY:tfm,TFM_S_BIN_FILE>
 			-n ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME}
 			-o ${CMAKE_BINARY_DIR}/tfm_full.bin
 
@@ -58,7 +58,7 @@ if (CONFIG_BUILD_WITH_TFM)
 			${CMAKE_BINARY_DIR}/tfm_sign.bin
 
 		#Copy mcuboot.bin
-		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/tfm/bin/bl2.bin ${CMAKE_BINARY_DIR}/mcuboot.bin
+		COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PROPERTY:tfm,BL2_BIN_FILE> ${CMAKE_BINARY_DIR}/mcuboot.bin
 
 		#srec_cat to combine images into hex for drag and drop
 		COMMAND ${SREC_CAT}

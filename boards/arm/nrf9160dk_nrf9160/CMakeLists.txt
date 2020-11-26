@@ -47,7 +47,7 @@ if (CONFIG_BUILD_WITH_TFM)
 			 ${ADD_NS_IMAGE_MIN_VER}
 			 -s auto
 			 -H 0x400
-			 ${CMAKE_BINARY_DIR}/tfm/install/outputs/NORDIC_NRF/NRF9160DK_NRF9160/tfm_s.bin
+			 $<TARGET_PROPERTY:tfm,TFM_S_BIN_FILE>
 			 ${CMAKE_BINARY_DIR}/tfm_s_signed.bin
 
 		#Sign non-secure binary image with public key
@@ -71,7 +71,7 @@ if (CONFIG_BUILD_WITH_TFM)
 			 -o ${CMAKE_BINARY_DIR}/tfm_sign.bin
 
 		#Copy mcuboot.bin
-		COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/tfm/bin/bl2.bin ${CMAKE_BINARY_DIR}/mcuboot.bin
+		COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PROPERTY:tfm,BL2_BIN_FILE> ${CMAKE_BINARY_DIR}/mcuboot.bin
 
 		# Generate an intel hex file from the signed output binary
 		COMMAND srec_cat ${CMAKE_BINARY_DIR}/tfm_sign.bin
