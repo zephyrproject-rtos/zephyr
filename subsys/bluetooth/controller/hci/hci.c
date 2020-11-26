@@ -1870,15 +1870,16 @@ static void le_setup_iso_path(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_setup_iso_path *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_setup_iso_path *rp;
+	uint16_t handle, handle_le16;
 	uint32_t controller_delay;
 	uint8_t *codec_config;
 	uint8_t coding_format;
 	uint16_t vs_codec_id;
 	uint16_t company_id;
-	uint16_t handle;
 	uint8_t status;
 
-	handle = sys_le16_to_cpu(cmd->handle);
+	handle_le16 = cmd->handle;
+	handle = sys_le16_to_cpu(handle_le16);
 	coding_format = cmd->codec_id.coding_format;
 	company_id = sys_le16_to_cpu(cmd->codec_id.company_id);
 	vs_codec_id = sys_le16_to_cpu(cmd->codec_id.vs_codec_id);
@@ -1892,74 +1893,79 @@ static void le_setup_iso_path(struct net_buf *buf, struct net_buf **evt)
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
-	rp->handle = cmd->handle;
+	rp->handle = handle_le16;
 }
 
 static void le_remove_iso_path(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_remove_iso_path *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_remove_iso_path *rp;
+	uint16_t handle, handle_le16;
 	uint8_t status;
-	uint16_t handle;
 
-	handle = sys_le16_to_cpu(cmd->handle);
+	handle_le16 = cmd->handle;
+	handle = sys_le16_to_cpu(handle_le16);
 
 	status = ll_remove_iso_path(handle, cmd->path_dir);
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
-	rp->handle = cmd->handle;
+	rp->handle = handle_le16;
 }
 
 static void le_iso_receive_test(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_iso_receive_test *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_iso_receive_test *rp;
+	uint16_t handle, handle_le16;
 	uint8_t status;
-	uint16_t handle;
 
-	handle = sys_le16_to_cpu(cmd->handle);
+	handle_le16 = cmd->handle;
+	handle = sys_le16_to_cpu(handle_le16);
 
 	status = ll_iso_receive_test(handle, cmd->payload_type);
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
-	rp->handle = cmd->handle;
+	rp->handle = handle_le16;
 }
 
 static void le_iso_transmit_test(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_iso_transmit_test *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_iso_transmit_test *rp;
+	uint16_t handle, handle_le16;
 	uint8_t status;
-	uint16_t handle;
 
-	handle = sys_le16_to_cpu(cmd->handle);
+	handle_le16 = cmd->handle;
+	handle = sys_le16_to_cpu(handle_le16);
 
 	status = ll_iso_transmit_test(handle, cmd->payload_type);
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
-	rp->handle = cmd->handle;
+	rp->handle = handle_le16;
 }
 
 static void le_iso_test_end(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_iso_test_end *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_iso_test_end *rp;
-	uint8_t status;
-	uint16_t handle;
+	uint16_t handle, handle_le16;
 	uint32_t received_cnt;
 	uint32_t missed_cnt;
 	uint32_t failed_cnt;
+	uint8_t status;
 
-	handle = sys_le16_to_cpu(cmd->handle);
+	handle_le16 = cmd->handle;
+	handle = sys_le16_to_cpu(handle_le16);
+
 	status = ll_iso_test_end(handle, &received_cnt, &missed_cnt,
 				 &failed_cnt);
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
-	rp->handle = cmd->handle;
+	rp->handle = handle_le16;
 	rp->received_cnt = sys_cpu_to_le32(received_cnt);
 	rp->missed_cnt   = sys_cpu_to_le32(missed_cnt);
 	rp->failed_cnt   = sys_cpu_to_le32(failed_cnt);
@@ -1969,19 +1975,21 @@ static void le_iso_read_test_counters(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_read_test_counters *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_read_test_counters *rp;
-	uint8_t status;
-	uint16_t handle;
+	uint16_t handle, handle_le16;
 	uint32_t received_cnt;
 	uint32_t missed_cnt;
 	uint32_t failed_cnt;
+	uint8_t status;
 
-	handle = sys_le16_to_cpu(cmd->handle);
+	handle_le16 = cmd->handle;
+	handle = sys_le16_to_cpu(handle_le16);
+
 	status = ll_iso_read_test_counters(handle, &received_cnt,
 					   &missed_cnt, &failed_cnt);
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
-	rp->handle = cmd->handle;
+	rp->handle = handle_le16;
 	rp->received_cnt = sys_cpu_to_le32(received_cnt);
 	rp->missed_cnt   = sys_cpu_to_le32(missed_cnt);
 	rp->failed_cnt   = sys_cpu_to_le32(failed_cnt);
