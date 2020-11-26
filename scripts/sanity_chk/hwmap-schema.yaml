@@ -5,7 +5,7 @@ sequence:
     mapping:
       "available":
         type: bool
-        required: true
+        required: false
       "connected":
         type: bool
         required: true
