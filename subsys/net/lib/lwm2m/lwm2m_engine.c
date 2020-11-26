@@ -3097,14 +3097,12 @@ static int do_discover_op(struct lwm2m_message *msg, bool well_known)
 	int ret;
 	bool reported = false;
 
-	/* object ID is required unless it's bootstrap discover or it's
-	 * a ".well-known/core" discovery
+	/* object ID is required unless it's a ".well-known/core" discovery
 	 * ref: lwm2m spec 20170208-A table 11
 	 */
-	if (!msg->ctx->bootstrap_mode && !well_known &&
+	if (!well_known &&
 	    (msg->path.level == 0U ||
-	     (msg->path.level > 0 &&
-	      msg->path.obj_id == LWM2M_OBJECT_SECURITY_ID))) {
+	     msg->path.obj_id == LWM2M_OBJECT_SECURITY_ID)) {
 		return -EPERM;
 	}
 
@@ -3146,28 +3144,17 @@ static int do_discover_op(struct lwm2m_message *msg, bool well_known)
 		return 0;
 	}
 
-	/*
-	 * lwm2m spec 20170208-A sec 5.2.7.3 bootstrap discover on "/"
-	 * - (TODO) prefixed w/ lwm2m enabler version. e.g. lwm2m="1.0"
-	 * - returns object and object instances only
+	/* Report object attributes only when Object ID (alone) was
+	 * provided (and do it only once in case of multiple instances).
 	 */
+	if (msg->path.level == 1) {
+		SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_list, obj, node) {
+			if (obj->obj_id != msg->path.obj_id) {
+				continue;
+			}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_inst_list, obj_inst, node) {
-		/*
-		 * - Avoid discovery for security object (5.2.7.3) unless
-		 *   Bootstrap discover
-		 * - Skip reporting unrelated object
-		 */
-		if ((!msg->ctx->bootstrap_mode &&
-		     obj_inst->obj->obj_id == LWM2M_OBJECT_SECURITY_ID) ||
-		    obj_inst->obj->obj_id != msg->path.obj_id) {
-			continue;
-		}
-
-		if (msg->path.level == 1U) {
 			snprintk(disc_buf, sizeof(disc_buf), "%s</%u>",
-				 reported ? "," : "",
-				 obj_inst->obj->obj_id);
+				 reported ? "," : "", obj->obj_id);
 
 			ret = buf_append(CPKT_BUF_WRITE(msg->out.out_cpkt),
 					 disc_buf, strlen(disc_buf));
@@ -3177,12 +3164,19 @@ static int do_discover_op(struct lwm2m_message *msg, bool well_known)
 
 			/* report object attrs (5.4.2) */
 			ret = print_attr(&msg->out, disc_buf, sizeof(disc_buf),
-					 obj_inst->obj);
+					 obj);
 			if (ret < 0) {
 				return ret;
 			}
 
 			reported = true;
+			break;
+		}
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_inst_list, obj_inst, node) {
+		if (obj_inst->obj->obj_id != msg->path.obj_id) {
+			continue;
 		}
 
 		/* skip unrelated object instance */
@@ -3191,7 +3185,8 @@ static int do_discover_op(struct lwm2m_message *msg, bool well_known)
 			continue;
 		}
 
-		if (msg->path.level == 2U) {
+		/* Report object instances only if Resource ID is missing. */
+		if (msg->path.level <= 2U) {
 			snprintk(disc_buf, sizeof(disc_buf), "%s</%u/%u>",
 				 reported ? "," : "",
 				 obj_inst->obj->obj_id, obj_inst->obj_inst_id);
@@ -3202,19 +3197,18 @@ static int do_discover_op(struct lwm2m_message *msg, bool well_known)
 				return ret;
 			}
 
-			/* report object instance attrs (5.4.2) */
-			ret = print_attr(&msg->out, disc_buf, sizeof(disc_buf),
-					 obj_inst);
-			if (ret < 0) {
-				return ret;
+			/* Report object instance attributes only when Instance
+			 * ID was specified (5.4.2).
+			 */
+			if (msg->path.level == 2U) {
+				ret = print_attr(&msg->out, disc_buf,
+						 sizeof(disc_buf), obj_inst);
+				if (ret < 0) {
+					return ret;
+				}
 			}
 
 			reported = true;
-		}
-
-		/* don't return resource info for bootstrap discovery */
-		if (msg->ctx->bootstrap_mode) {
-			continue;
 		}
 
 		for (int i = 0; i < obj_inst->resource_count; i++) {
