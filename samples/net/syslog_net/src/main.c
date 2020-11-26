@@ -12,6 +12,8 @@ LOG_MODULE_REGISTER(net_syslog, LOG_LEVEL_DBG);
 #include <net/net_core.h>
 #include <net/net_pkt.h>
 
+BUILD_ASSERT(IS_ENABLED(CONFIG_LOG_BACKEND_NET), "syslog backend not enabled");
+
 #define SLEEP_BETWEEN_PRINTS 3
 
 void main(void)
