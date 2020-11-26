@@ -90,9 +90,11 @@ void common_work_handler(struct k_work *unused)
  * -# Handler function gives semaphore, then we wait for that semaphore
  * from the test function body.
  * -# Check if semaphore was obtained successfully.
+ * -# Set a work item's flag in pending state and append the item into workqueue.
+ * -# Check if the queue is empty.
  *
  * Expected Test Result:
- * - The callback function defined by user works successful.
+ * - The work item can be submit to workqueue whenever it is in right state.
  *
  * Pass/Fail Criteria:
  * - Successful if check points in test procedure are all passed,
@@ -118,6 +120,19 @@ void test_work_item_supplied_with_func(void)
 	k_sem_take(&sync_sema, K_FOREVER);
 	sem_count = k_sem_count_get(&sync_sema);
 	zassert_equal(sem_count, COM_SEM_INIT_VAL, NULL);
+
+	/* TESTPOINT: When a work item be added to a workqueue,
+	 * it's flag will be in pending state, before the work item be processed,
+	 * it cannot be append to a workqueue another time.
+	 */
+	zassert_false(k_work_pending(&work_item), NULL);
+	k_work_submit_to_queue(&workq, &work_item);
+	zassert_true(k_work_pending(&work_item), NULL);
+	k_work_submit_to_queue(&workq, &work_item);
+
+	/* Test the work item's callback function can only be invoked once */
+	k_sem_take(&sync_sema, K_FOREVER);
+	zassert_true(k_queue_is_empty(&workq.queue), NULL);
 }
 
 /* Two handler functions fifo_work_first() and fifo_work_second
