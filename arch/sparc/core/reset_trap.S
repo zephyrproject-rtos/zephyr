@@ -14,43 +14,39 @@ GTEXT(__sparc_trap_reset)
 SECTION_FUNC(TEXT, __sparc_trap_reset)
 	set	__sparc_trap_table, %g1
 	wr	%g1, %tbr
-	wr	%g0, 4, %wim
-	/* %psr := pil=0, et=0, cwp=1 */
-	set	(PSR_S | PSR_PS | 1), %g7
-	wr	%g7, %psr
-	nop
-	nop
-	nop
+	wr	2, %wim
+	wr	PSR_PIL | PSR_S | PSR_PS | PSR_ET, %psr
 	/* NOTE: wrpsr above may have changed the current register window. */
+
+	/* We are in the 3 instruction wrpsr delay so use global registers. */
+	set	z_interrupt_stacks, %g2
+	set	CONFIG_ISR_STACK_SIZE, %g4
+	add	%g2, %g4, %g1
+	and	%g1, 0xfffffff0, %l3
 
 	/*
 	 * According to SPARC ABI, Chapter 3: The system marks the deepest
 	 * stack frame by setting the frame pointer to zero. No other frame's
 	 * %fp has a zero value.
 	 */
-	set	z_interrupt_stacks, %o0
-	set	CONFIG_ISR_STACK_SIZE, %o2
-	add	%o0, %o2, %l2
-	and	%l2, 0xfffffff0, %l3
 	sub	%l3, 96, %sp
 	clr	%fp
 	clr	%i7
 
 #ifdef CONFIG_INIT_STACKS
-	/* already have z_interrupt_stacks and CONFIG_ISR_STACK_SIZE in place */
-	call	memset
-	 mov	0xaa, %o1
+	/* In-place memset() to avoid register window related traps. */
+	set	0xaaaaaaaa, %l0
+	mov	%l0, %l1
+1:
+	std	%l0, [%g2]
+	add	%g2, 8, %g2
+	cmp	%g2, %l3
+	bne	1b
+	 nop
 #endif
 
 	call	z_bss_zero
 	 nop
-
-	/* Enable traps for the first time */
-	/* %psr := pil=0, et=1, cwp=1 */
-	wr	%g7, PSR_ET, %psr
-	nop
-	nop
-	nop
 
 	call    _PrepC
 	 nop
