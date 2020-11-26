@@ -83,6 +83,9 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	z_arch_esf_t *pInitCtx;
 	uintptr_t stack_ptr;
 
+	/* Map the thread stack */
+	z_arm64_thread_pt_init(_current);
+
 	/* Setup the private stack */
 	_current->arch.priv_stack_start = (uint64_t)(_current->stack_obj);
 
