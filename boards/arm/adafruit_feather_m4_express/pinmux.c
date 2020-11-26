@@ -19,10 +19,10 @@ static int board_pinmux_init(const struct device *dev)
 	(void)muxa;
 	(void)muxb;
 
-#if ATMEL_SAM0_DT_SERCOM_CHECK(3, atmel_sam0_uart) && defined(CONFIG_UART_SAM0)
+#if ATMEL_SAM0_DT_SERCOM_CHECK(5, atmel_sam0_uart) && defined(CONFIG_UART_SAM0)
 	/* SERCOM3 on RX=PA16/pad 1, TX=PA17/pad 0 */
-	pinmux_pin_set(muxa, 16, PINMUX_FUNC_D);
-	pinmux_pin_set(muxa, 17, PINMUX_FUNC_D);
+	pinmux_pin_set(muxb, 16, PINMUX_FUNC_D);
+	pinmux_pin_set(muxb, 17, PINMUX_FUNC_D);
 #endif
 #if ATMEL_SAM0_DT_SERCOM_CHECK(0, atmel_sam0_uart) && defined(CONFIG_UART_SAM0)
 #warning Pin mapping may not be configured
@@ -36,7 +36,7 @@ static int board_pinmux_init(const struct device *dev)
 #if ATMEL_SAM0_DT_SERCOM_CHECK(4, atmel_sam0_uart) && defined(CONFIG_UART_SAM0)
 #warning Pin mapping may not be configured
 #endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(5, atmel_sam0_uart) && defined(CONFIG_UART_SAM0)
+#if ATMEL_SAM0_DT_SERCOM_CHECK(3, atmel_sam0_uart) && defined(CONFIG_UART_SAM0)
 #warning Pin mapping may not be configured
 #endif
 
