@@ -452,16 +452,17 @@ static void read_auth_payload_timeout(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_cp_read_auth_payload_timeout *cmd = (void *)buf->data;
 	struct bt_hci_rp_read_auth_payload_timeout *rp;
 	uint16_t auth_payload_timeout;
-	uint16_t handle;
+	uint16_t handle, handle_le16;
 	uint8_t status;
 
-	handle = sys_le16_to_cpu(cmd->handle);
+	handle_le16 = cmd->handle;
+	handle = sys_le16_to_cpu(handle_le16);
 
 	status = ll_apto_get(handle, &auth_payload_timeout);
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
-	rp->handle = sys_cpu_to_le16(handle);
+	rp->handle = handle_le16;
 	rp->auth_payload_timeout = sys_cpu_to_le16(auth_payload_timeout);
 }
 
@@ -471,17 +472,18 @@ static void write_auth_payload_timeout(struct net_buf *buf,
 	struct bt_hci_cp_write_auth_payload_timeout *cmd = (void *)buf->data;
 	struct bt_hci_rp_write_auth_payload_timeout *rp;
 	uint16_t auth_payload_timeout;
-	uint16_t handle;
+	uint16_t handle, handle_le16;
 	uint8_t status;
 
-	handle = sys_le16_to_cpu(cmd->handle);
+	handle_le16 = cmd->handle;
+	handle = sys_le16_to_cpu(handle_le16);
 	auth_payload_timeout = sys_le16_to_cpu(cmd->auth_payload_timeout);
 
 	status = ll_apto_set(handle, auth_payload_timeout);
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
-	rp->handle = sys_cpu_to_le16(handle);
+	rp->handle = handle_le16;
 }
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
@@ -513,11 +515,12 @@ static void read_tx_power_level(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_read_tx_power_level *cmd = (void *)buf->data;
 	struct bt_hci_rp_read_tx_power_level *rp;
-	uint16_t handle;
+	uint16_t handle, handle_le16;
 	uint8_t status;
 	uint8_t type;
 
-	handle = sys_le16_to_cpu(cmd->handle);
+	handle_le16 = cmd->handle;
+	handle = sys_le16_to_cpu(handle_le16);
 	type = cmd->type;
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
@@ -526,7 +529,7 @@ static void read_tx_power_level(struct net_buf *buf, struct net_buf **evt)
 				   handle, type, &rp->tx_power_level);
 
 	rp->status = status;
-	rp->handle = sys_cpu_to_le16(handle);
+	rp->handle = handle_le16;
 }
 #endif /* CONFIG_BT_CONN */
 
@@ -1074,15 +1077,16 @@ static void read_rssi(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_read_rssi *cmd = (void *)buf->data;
 	struct bt_hci_rp_read_rssi *rp;
-	uint16_t handle;
+	uint16_t handle, handle_le16;
 
-	handle = sys_le16_to_cpu(cmd->handle);
+	handle_le16 = cmd->handle;
+	handle = sys_le16_to_cpu(handle_le16);
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 
 	rp->status = ll_rssi_get(handle, &rp->rssi);
 
-	rp->handle = sys_cpu_to_le16(handle);
+	rp->handle = handle_le16;
 	/* The Link Layer currently returns RSSI as an absolute value */
 	rp->rssi = (!rp->status) ? -rp->rssi : 127;
 }
@@ -2004,31 +2008,35 @@ static void le_ltk_req_reply(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_ltk_req_reply *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_ltk_req_reply *rp;
-	uint16_t handle;
+	uint16_t handle, handle_le16;
 	uint8_t status;
 
-	handle = sys_le16_to_cpu(cmd->handle);
+	handle_le16 = cmd->handle;
+	handle = sys_le16_to_cpu(handle_le16);
+
 	status = ll_start_enc_req_send(handle, 0x00, &cmd->ltk[0]);
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
-	rp->handle = sys_cpu_to_le16(handle);
+	rp->handle = handle_le16;
 }
 
 static void le_ltk_req_neg_reply(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_ltk_req_neg_reply *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_ltk_req_neg_reply *rp;
-	uint16_t handle;
+	uint16_t handle, handle_le16;
 	uint8_t status;
 
-	handle = sys_le16_to_cpu(cmd->handle);
+	handle_le16 = cmd->handle;
+	handle = sys_le16_to_cpu(handle_le16);
+
 	status = ll_start_enc_req_send(handle, BT_HCI_ERR_PIN_OR_KEY_MISSING,
 				       NULL);
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
-	rp->handle = sys_le16_to_cpu(handle);
+	rp->handle = handle_le16;
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
@@ -2048,15 +2056,17 @@ static void le_reject_cis(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_reject_cis *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_reject_cis *rp;
-	uint16_t handle;
+	uint16_t handle, handle_le16;
 	uint8_t status;
 
-	handle = sys_le16_to_cpu(cmd->handle);
+	handle_le16 = cmd->handle;
+	handle = sys_le16_to_cpu(handle_le16);
+
 	status = ll_cis_reject(handle, cmd->reason);
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
-	rp->handle = sys_cpu_to_le16(handle);
+	rp->handle = handle_le16;
 }
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
@@ -2078,17 +2088,18 @@ static void le_read_chan_map(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_read_chan_map *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_read_chan_map *rp;
-	uint16_t handle;
+	uint16_t handle, handle_le16;
 	uint8_t status;
 
-	handle = sys_le16_to_cpu(cmd->handle);
+	handle_le16 = cmd->handle;
+	handle = sys_le16_to_cpu(handle_le16);
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 
 	status = ll_chm_get(handle, rp->ch_map);
 
 	rp->status = status;
-	rp->handle = sys_le16_to_cpu(handle);
+	rp->handle = handle_le16;
 }
 
 static void le_conn_update(struct net_buf *buf, struct net_buf **evt)
@@ -2119,14 +2130,15 @@ static void le_conn_param_req_reply(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_conn_param_req_reply *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_conn_param_req_reply *rp;
+	uint16_t handle, handle_le16;
 	uint16_t interval_min;
 	uint16_t interval_max;
 	uint16_t latency;
 	uint16_t timeout;
-	uint16_t handle;
 	uint8_t status;
 
-	handle = sys_le16_to_cpu(cmd->handle);
+	handle_le16 = cmd->handle;
+	handle = sys_le16_to_cpu(handle_le16);
 	interval_min = sys_le16_to_cpu(cmd->interval_min);
 	interval_max = sys_le16_to_cpu(cmd->interval_max);
 	latency = sys_le16_to_cpu(cmd->latency);
@@ -2137,7 +2149,7 @@ static void le_conn_param_req_reply(struct net_buf *buf, struct net_buf **evt)
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
-	rp->handle = sys_cpu_to_le16(handle);
+	rp->handle = handle_le16;
 }
 
 static void le_conn_param_req_neg_reply(struct net_buf *buf,
@@ -2145,15 +2157,17 @@ static void le_conn_param_req_neg_reply(struct net_buf *buf,
 {
 	struct bt_hci_cp_le_conn_param_req_neg_reply *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_conn_param_req_neg_reply *rp;
-	uint16_t handle;
+	uint16_t handle, handle_le16;
 	uint8_t status;
 
-	handle = sys_le16_to_cpu(cmd->handle);
+	handle_le16 = cmd->handle;
+	handle = sys_le16_to_cpu(handle_le16);
+
 	status = ll_conn_update(handle, 2, cmd->reason, 0, 0, 0, 0);
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
-	rp->handle = sys_cpu_to_le16(handle);
+	rp->handle = handle_le16;
 }
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
@@ -2162,19 +2176,21 @@ static void le_set_data_len(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_set_data_len *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_set_data_len *rp;
+	uint16_t handle, handle_le16;
 	uint16_t tx_octets;
 	uint16_t tx_time;
-	uint16_t handle;
 	uint8_t status;
 
-	handle = sys_le16_to_cpu(cmd->handle);
+	handle_le16 = cmd->handle;
+	handle = sys_le16_to_cpu(handle_le16);
 	tx_octets = sys_le16_to_cpu(cmd->tx_octets);
 	tx_time = sys_le16_to_cpu(cmd->tx_time);
+
 	status = ll_length_req_send(handle, tx_octets, tx_time);
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
-	rp->handle = sys_cpu_to_le16(handle);
+	rp->handle = handle_le16;
 }
 
 static void le_read_default_data_len(struct net_buf *buf, struct net_buf **evt)
@@ -2233,17 +2249,18 @@ static void le_read_phy(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_read_phy *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_read_phy *rp;
-	uint16_t handle;
+	uint16_t handle, handle_le16;
 	uint8_t status;
 
-	handle = sys_le16_to_cpu(cmd->handle);
+	handle_le16 = cmd->handle;
+	handle = sys_le16_to_cpu(handle_le16);
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 
 	status = ll_phy_get(handle, &rp->tx_phy, &rp->rx_phy);
 
 	rp->status = status;
-	rp->handle = sys_cpu_to_le16(handle);
+	rp->handle = handle_le16;
 	rp->tx_phy = find_lsb_set(rp->tx_phy);
 	rp->rx_phy = find_lsb_set(rp->rx_phy);
 }
@@ -3686,12 +3703,13 @@ static void vs_write_tx_power_level(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_vs_write_tx_power_level *cmd = (void *)buf->data;
 	struct bt_hci_rp_vs_write_tx_power_level *rp;
+	uint16_t handle, handle_le16;
 	uint8_t handle_type;
-	uint16_t handle;
 	uint8_t status;
 
 	handle_type = cmd->handle_type;
-	handle = sys_le16_to_cpu(cmd->handle);
+	handle_le16 = cmd->handle;
+	handle = sys_le16_to_cpu(handle_le16);
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->selected_tx_power = cmd->tx_power_level;
@@ -3700,19 +3718,20 @@ static void vs_write_tx_power_level(struct net_buf *buf, struct net_buf **evt)
 
 	rp->status = status;
 	rp->handle_type = handle_type;
-	rp->handle = sys_cpu_to_le16(handle);
+	rp->handle = handle_le16;
 }
 
 static void vs_read_tx_power_level(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_vs_read_tx_power_level *cmd = (void *)buf->data;
 	struct bt_hci_rp_vs_read_tx_power_level *rp;
+	uint16_t handle, handle_le16;
 	uint8_t handle_type;
-	uint16_t handle;
 	uint8_t status;
 
 	handle_type = cmd->handle_type;
-	handle = sys_le16_to_cpu(cmd->handle);
+	handle_le16 = cmd->handle;
+	handle = sys_le16_to_cpu(handle_le16);
 
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 
@@ -3720,7 +3739,7 @@ static void vs_read_tx_power_level(struct net_buf *buf, struct net_buf **evt)
 
 	rp->status = status;
 	rp->handle_type = handle_type;
-	rp->handle = sys_cpu_to_le16(handle);
+	rp->handle = handle_le16;
 }
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 #endif /* CONFIG_BT_HCI_VS_EXT */
