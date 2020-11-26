@@ -8,6 +8,7 @@
 #define ZEPHYR_INCLUDE_POWER_POWER_STATE_H_
 
 #include <sys/util.h>
+#include <devicetree.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -102,6 +103,156 @@ enum pm_state {
 	 */
 	PM_STATE_SOFT_OFF
 };
+
+/**
+ * Information about a power management state
+ */
+struct pm_state_info {
+	enum pm_state state;
+	/**
+	 * Minimum residency duration in microseconds. It is the minimum
+	 * time for a given idle state to be worthwhile energywise.
+	 *
+	 * @note 0 means that this property is not available for this state.
+	 */
+	uint32_t min_residency_us;
+};
+
+/**
+ * @brief Construct a pm_state_info from 'pm_states' property at index 'i'
+ *
+ * @param node_id A node identifier compatible with pm-states
+ * @param i index of pm_states prop which type is 'phandles'
+ * @return pm_state_info item from 'pm_states' property at index 'i'
+ */
+#define PM_STATE_INFO_DT_ITEM_BY_IDX(node_id, i)                    \
+	{                                                           \
+		.state = DT_ENUM_IDX(DT_PHANDLE_BY_IDX(node_id,     \
+					pm_states, i), pm_state),    \
+		.min_residency_us = DT_PROP_BY_PHANDLE_IDX_OR(node_id, \
+				pm_states, i, min_residency_us, 0),   \
+	},
+
+/**
+ * @brief Length of 'pm-states' property which type is 'phandles'
+ *
+ * @param node_id A node identifier compatible with pm-states
+ * @return length of 'pm-states' property which type is 'phandles'
+ */
+#define PM_STATE_DT_ITEMS_LEN(node_id) DT_PROP_LEN(node_id, pm_states)
+
+/**
+ * @brief Macro function to construct enum pm_state item in UTIL_LISTIFY
+ * extension.
+ *
+ * @param child child index in UTIL_LISTIFY extension.
+ * @param node_id A node identifier compatible with pm-states
+ * @return macro function to construct a pm_state_info
+ */
+#define PM_STATE_INFO_DT_ITEMS_LISTIFY_FUNC(child, node_id) \
+	PM_STATE_INFO_DT_ITEM_BY_IDX(node_id, child)
+
+/**
+ * @brief Macro function to construct a list of 'pm_state_info' items by
+ * UTIL_LISTIFY func
+ *
+ * Example devicetree fragment:
+ *	cpus {
+ *		...
+ *		cpu0: cpu@0 {
+ *			device_type = "cpu";
+ *			...
+ *			pm-states = <&state0 &state1>;
+ *		};
+ *	};
+ *
+ *	...
+ *	state0: state0 {
+ *		compatible = "pm-state";
+ *		pm-state = "suspend-to-idle";
+ *		min-residency-us = <1>;
+ *	};
+ *
+ *	state1: state1 {
+ *		compatible = "pm-state";
+ *		pm-state = "suspend-to-ram";
+ *		min-residency-us = <5>;
+ *	};
+ *
+ * Example usage: *
+ *    const enum pm_state states[] =
+ *		PM_STATE_DT_INFO_ITEMS_LIST(DT_NODELABEL(cpu0));
+ *
+ * @param node_id A node identifier compatible with pm-states
+ * @return an array of struct pm_state_info.
+ */
+#define PM_STATE_INFO_DT_ITEMS_LIST(node_id) {         \
+	UTIL_LISTIFY(PM_STATE_DT_ITEMS_LEN(node_id),   \
+		     PM_STATE_INFO_DT_ITEMS_LISTIFY_FUNC,\
+		     node_id)                          \
+	}
+
+/**
+ * @brief Construct a pm_state enum from 'pm_states' property at index 'i'
+ *
+ * @param node_id A node identifier compatible with pm-states
+ * @param i index of pm_states prop which type is 'phandles'
+ * @return pm_state item from 'pm_states' property at index 'i'
+ */
+#define PM_STATE_DT_ITEM_BY_IDX(node_id, i)                \
+		DT_ENUM_IDX(DT_PHANDLE_BY_IDX(node_id,     \
+				pm_states, i), pm_state),
+
+
+/**
+ * @brief Macro function to construct enum pm_state item in UTIL_LISTIFY
+ * extension.
+ *
+ * @param child child index in UTIL_LISTIFY extension.
+ * @param node_id A node identifier compatible with pm-states
+ * @return macro function to construct a pm_state enum
+ */
+#define PM_STATE_DT_ITEMS_LISTIFY_FUNC(child, node_id) \
+	PM_STATE_DT_ITEM_BY_IDX(node_id, child)
+
+/**
+ * @brief Macro function to construct a list of enum pm_state items by
+ * UTIL_LISTIFY func
+ *
+ * Example devicetree fragment:
+ *	cpus {
+ *		...
+ *		cpu0: cpu@0 {
+ *			device_type = "cpu";
+ *			...
+ *			pm-states = <&state0 &state1>;
+ *		};
+ *	};
+ *
+ *	...
+ *	state0: state0 {
+ *		compatible = "pm-state";
+ *		pm-state = "suspend-to-idle";
+ *		min-residency-us = <1>;
+ *	};
+ *
+ *	state1: state1 {
+ *		compatible = "pm-state";
+ *		pm-state = "suspend-to-ram";
+ *		min-residency-us = <5>;
+ *	};
+ *
+ * Example usage: *
+ *    const enum pm_state states[] = PM_STATE_DT_ITEMS_LIST(DT_NODELABEL(cpu0));
+ *
+ * @param node_id A node identifier compatible with pm-states
+ * @return an array of enum pm_state items.
+ */
+#define PM_STATE_DT_ITEMS_LIST(node_id) {           \
+	UTIL_LISTIFY(PM_STATE_DT_ITEMS_LEN(node_id),\
+		     PM_STATE_DT_ITEMS_LISTIFY_FUNC,\
+		     node_id)                       \
+	}
 
 /**
  * @}
