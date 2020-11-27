@@ -1370,6 +1370,10 @@ int ull_adv_reset(void)
 {
 	uint8_t handle;
 
+	for (handle = 0U; handle < BT_CTLR_ADV_SET; handle++) {
+		(void)disable(handle);
+	}
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_HCI_RAW)
 	ll_adv_cmds = LL_ADV_CMDS_ANY;
@@ -1397,10 +1401,6 @@ int ull_adv_reset(void)
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_AUX_SET */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
-
-	for (handle = 0U; handle < BT_CTLR_ADV_SET; handle++) {
-		(void)disable(handle);
-	}
 
 	return 0;
 }
