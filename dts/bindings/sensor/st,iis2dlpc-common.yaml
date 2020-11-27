@@ -21,3 +21,15 @@ properties:
         -  8 #  8g (0.976 mg/LSB)
         -  4 #  4g (0.488 mg/LSB)
         -  2 #  2g (0.244 mg/LSB)
+
+    power-mode:
+      type: int
+      required: false
+      default: 0
+      description: Specify the sensor power mode. Default is power-up configuration.
+      enum:
+        - 0 # Low Power M1
+        - 1 # Low Power M2
+        - 2 # Low Power M3
+        - 3 # Low Power M4
+        - 4 # High Performance
