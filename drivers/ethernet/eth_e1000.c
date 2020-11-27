@@ -207,20 +207,16 @@ static void e1000_isr(const struct device *device)
 	}
 }
 
-#define PCI_VENDOR_ID_INTEL	0x8086
-#define PCI_DEVICE_ID_I82540EM	0x100e
-
 DEVICE_DECLARE(eth_e1000);
 
 int e1000_probe(const struct device *device)
 {
-	const pcie_bdf_t bdf = PCIE_BDF(0, 3, 0);
+	const pcie_bdf_t bdf = DT_INST_REG_ADDR(0);
 	struct e1000_dev *dev = device->data;
 	uint32_t ral, rah;
 	struct pcie_mbar mbar;
 
-	if (!pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
-				     PCI_DEVICE_ID_I82540EM))) {
+	if (!pcie_probe(bdf, DT_INST_REG_SIZE(0))) {
 		return -ENODEV;
 	}
 
@@ -282,7 +278,8 @@ static void e1000_iface_init(struct net_if *iface)
 			e1000_isr, DEVICE_GET(eth_e1000),
 			DT_INST_IRQ(0, sense));
 
-		irq_enable(DT_INST_IRQN(0));
+		pcie_irq_enable(DT_INST_REG_ADDR(0), DT_INST_IRQN(0));
+
 		iow32(dev, CTRL, CTRL_SLU); /* Set link up */
 		iow32(dev, RCTL, RCTL_EN | RCTL_MPE);
 	}

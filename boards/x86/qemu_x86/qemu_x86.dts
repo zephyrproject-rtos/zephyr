@@ -3,6 +3,7 @@
 /dts-v1/;
 
 #include <mem.h>
+#include <dt-bindings/pcie/pcie.h>
 
 #ifndef DT_DRAM_SIZE
 #define DT_DRAM_SIZE		DT_SIZE_K(4096)
@@ -39,9 +40,12 @@
 	};
 
 	soc {
-		eth0: eth@febc0000 {
+		eth0: eth@1800 {
 			compatible = "intel,e1000";
-			reg = <0xfebc0000 0x100>;
+
+			pcie;
+			reg = <PCIE_BDF(0,0x03,0) PCIE_ID(0x8086,0x100e)>;
+
 			label = "eth0";
 			interrupts = <11 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
