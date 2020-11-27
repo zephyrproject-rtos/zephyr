@@ -597,7 +597,9 @@ static void isr_done(void *param)
 
 static void isr_window(void *param)
 {
+	uint32_t ticks_anchor_prev;
 	uint32_t ticks_at_start;
+	bool is_sched_advanced;
 	uint32_t remainder_us;
 	struct lll_scan *lll;
 
@@ -610,6 +612,20 @@ static void isr_window(void *param)
 		lll->chan = 0U;
 	}
 	lll_chan_set(37 + lll->chan);
+
+	is_sched_advanced = IS_ENABLED(CONFIG_BT_CTLR_SCHED_ADVANCED) &&
+			    lll->conn && lll->conn_win_offset_us;
+	if (is_sched_advanced) {
+		/* Get the ticks_anchor when the offset to free time space for
+		 * a new central event was last calculated at the start of the
+		 * initiator window. This can be either the previous full window
+		 * start or remainder resume start of the continuous initiator
+		 * after it was preempted.
+		 */
+		ticks_anchor_prev = radio_tmr_start_get();
+	} else {
+		ticks_anchor_prev = 0U;
+	}
 
 	ticks_at_start = ticker_ticks_now_get() +
 			 HAL_TICKER_CNTR_CMP_OFFSET_MIN;
@@ -628,6 +644,25 @@ static void isr_window(void *param)
 #else /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
 	ARG_UNUSED(remainder_us);
 #endif /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
+
+	if (is_sched_advanced) {
+		uint32_t ticks_anchor_new, ticks_delta, ticks_delta_us;
+
+		/* Calculation to reduce the conn_win_offset_us, as a new
+		 * window is started here and the reference ticks_anchor is
+		 * now at the start of this new window.
+		 */
+		ticks_anchor_new = radio_tmr_start_get();
+		ticks_delta = ticker_ticks_diff_get(ticks_anchor_new,
+						    ticks_anchor_prev);
+		ticks_delta_us = HAL_TICKER_TICKS_TO_US(ticks_delta);
+
+		/* Underflow is accepted, as it will be corrected at the time of
+		 * connection establishment by incrementing it in connection
+		 * interval units until it is in the future.
+		 */
+		lll->conn_win_offset_us -= ticks_delta_us;
+	}
 }
 
 static void isr_abort(void *param)
