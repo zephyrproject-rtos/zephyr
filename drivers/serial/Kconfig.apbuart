@@ -3,7 +3,7 @@
 
 config UART_APBUART
 	bool "ABPUART serial driver"
-	depends on SOC_SPARC_LEON
+	depends on SOC_SPARC_LEON || SOC_RISCV_NOEL
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help
