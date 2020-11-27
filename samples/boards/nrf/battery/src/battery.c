@@ -73,7 +73,7 @@ static const struct divider_config divider_config = {
 	.full_ohm = DT_PROP(VBATT, full_ohms),
 #else /* /vbatt exists */
 	.io_channel = {
-		DT_LABEL(DT_ALIAS(adc_0)),
+		DT_LABEL(DT_NODELABEL(adc)),
 	},
 #endif /* /vbatt exists */
 };
