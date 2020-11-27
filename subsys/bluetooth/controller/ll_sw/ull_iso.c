@@ -27,7 +27,7 @@ __weak uint8_t ll_configure_data_path(uint8_t data_path_dir,
 
 uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 			  uint8_t coding_format, uint16_t company_id,
-			  uint16_t vendor_id, uint32_t controller_delay,
+			  uint16_t vs_codec_id, uint32_t controller_delay,
 			  uint8_t codec_config_len, uint8_t *codec_config)
 {
 	ARG_UNUSED(handle);
@@ -35,7 +35,7 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	ARG_UNUSED(path_id);
 	ARG_UNUSED(coding_format);
 	ARG_UNUSED(company_id);
-	ARG_UNUSED(vendor_id);
+	ARG_UNUSED(vs_codec_id);
 	ARG_UNUSED(controller_delay);
 	ARG_UNUSED(codec_config_len);
 	ARG_UNUSED(codec_config);

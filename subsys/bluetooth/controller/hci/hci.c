@@ -1781,21 +1781,23 @@ static void le_setup_iso_path(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_setup_iso_path *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_setup_iso_path *rp;
-	uint8_t status;
-	uint16_t handle;
-	uint16_t company_id;
-	uint16_t vendor_id;
 	uint32_t controller_delay;
 	uint8_t *codec_config;
+	uint8_t coding_format;
+	uint16_t vs_codec_id;
+	uint16_t company_id;
+	uint16_t handle;
+	uint8_t status;
 
-	handle     = sys_le16_to_cpu(cmd->handle);
-	company_id = sys_le16_to_cpu(cmd->company_id);
-	vendor_id  = sys_le16_to_cpu(cmd->vendor_id);
+	handle = sys_le16_to_cpu(cmd->handle);
+	coding_format = cmd->codec_id.coding_format;
+	company_id = sys_le16_to_cpu(cmd->codec_id.company_id);
+	vs_codec_id = sys_le16_to_cpu(cmd->codec_id.vs_codec_id);
 	controller_delay = sys_get_le24(cmd->controller_delay);
 	codec_config = &cmd->codec_config[0];
 
 	status = ll_setup_iso_path(handle, cmd->path_dir, cmd->path_id,
-				   cmd->coding_format, company_id, vendor_id,
+				   coding_format, company_id, vs_codec_id,
 				   controller_delay, cmd->codec_config_len,
 				   codec_config);
 
