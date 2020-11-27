@@ -287,7 +287,8 @@ static int iis2dlpc_init(const struct device *dev)
 	}
 
 	/* set power mode */
-	if (iis2dlpc_set_power_mode(iis2dlpc, CONFIG_IIS2DLPC_POWER_MODE)) {
+	LOG_INF("power-mode is %d", cfg->pm);
+	if (iis2dlpc_set_power_mode(iis2dlpc, cfg->pm)) {
 		return -EIO;
 	}
 
@@ -373,7 +374,7 @@ static int iis2dlpc_init(const struct device *dev)
 
 const struct iis2dlpc_device_config iis2dlpc_cfg = {
 	.bus_name = DT_INST_BUS_LABEL(0),
-	.pm = CONFIG_IIS2DLPC_POWER_MODE,
+	.pm = DT_INST_PROP(0, power_mode),
 	.range = DT_INST_PROP(0, range),
 #ifdef CONFIG_IIS2DLPC_TRIGGER
 	.int_gpio_port = DT_INST_GPIO_LABEL(0, drdy_gpios),
