@@ -78,6 +78,9 @@ static inline uint8_t disable(uint8_t handle);
 static const uint8_t *adva_update(struct ll_adv_set *adv, struct pdu_adv *pdu);
 static void tgta_update(struct ll_adv_set *adv, struct pdu_adv *pdu);
 
+static void init_pdu(struct pdu_adv *pdu, uint8_t pdu_type);
+static void init_set(struct ll_adv_set *adv);
+
 static struct ll_adv_set ll_adv[BT_CTLR_ADV_SET];
 
 #if defined(CONFIG_BT_TICKER_EXT)
@@ -1649,6 +1652,13 @@ static int init_reset(void)
 		lll_adv_data_init(&ll_adv[handle].lll.scan_rsp);
 	}
 
+	/* Make sure that set #0 is initialized with empty legacy PDUs. This is
+	 * especially important if legacy HCI interface is used for advertising
+	 * because it allows to enable advertising without any configuration,
+	 * thus we need to have PDUs already initialized.
+	 */
+	init_set(&ll_adv[0]);
+
 	return 0;
 }
 
@@ -2081,4 +2091,28 @@ static void tgta_update(struct ll_adv_set *adv, struct pdu_adv *pdu)
 	/* NOTE: identity TargetA is set when configuring advertising set, no
 	 *       need to update if LL Privacy is not supported.
 	 */
+}
+
+static void init_pdu(struct pdu_adv *pdu, uint8_t pdu_type)
+{
+	/* TODO: Add support for extended advertising PDU if needed */
+	pdu->type = pdu_type;
+	pdu->rfu = 0;
+	pdu->chan_sel = 0;
+	pdu->tx_addr = 0;
+	pdu->rx_addr = 0;
+	pdu->len = BDADDR_SIZE;
+}
+
+static void init_set(struct ll_adv_set *adv)
+{
+	adv->interval = BT_LE_ADV_INTERVAL_DEFAULT;
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	adv->own_addr_type = BT_ADDR_LE_PUBLIC;
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+	adv->lll.chan_map = BT_LE_ADV_CHAN_MAP_ALL;
+	adv->lll.filter_policy = BT_LE_ADV_FP_NO_WHITELIST;
+
+	init_pdu(lll_adv_data_peek(&ll_adv[0].lll), PDU_ADV_TYPE_ADV_IND);
+	init_pdu(lll_adv_scan_rsp_peek(&ll_adv[0].lll), PDU_ADV_TYPE_SCAN_RSP);
 }
