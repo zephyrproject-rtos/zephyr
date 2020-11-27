@@ -88,11 +88,12 @@ static bool z_check_thread_stack_fail(const uint32_t fault_addr, uint32_t sp)
 	}
 
 	 /* treat any MPU exceptions within the guard region as a stack
-	  * overflow if the stack pointer is at or below the end of the guard
-	  * region.
+	  * overflow.As some instrustions
+	  * (like enter_s {r13-r26, fp, blink}) push a collection of
+	  * registers on to the stack. In this situation, the fault_addr
+	  * will less than guard_end, but sp will greater than guard_end.
 	  */
-	if (sp <= guard_end && fault_addr < guard_end &&
-	    fault_addr >= guard_start) {
+	if (fault_addr < guard_end && fault_addr >= guard_start) {
 		return true;
 	}
 
