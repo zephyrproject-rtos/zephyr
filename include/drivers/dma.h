@@ -32,7 +32,12 @@ enum dma_channel_direction {
 	MEMORY_TO_MEMORY = 0x0,
 	MEMORY_TO_PERIPHERAL,
 	PERIPHERAL_TO_MEMORY,
-	PERIPHERAL_TO_PERIPHERAL /*only supported in NXP EDMA*/
+	PERIPHERAL_TO_PERIPHERAL, /*only supported in NXP EDMA*/
+	/* intel dma dedicated features */
+	MEMORY_TO_HOSTDDR,
+	HOSTDDR_TO_MEMORY,
+	MEMORY_TO_IMR,
+	IMR_TO_MEMORY,
 };
 
 /** Valid values for @a source_addr_adj and @a dest_addr_adj */
@@ -142,7 +147,11 @@ typedef void (*dma_callback_t)(const struct device *dev, void *user_data,
  *     linked_channel       [ 20 : 26 ] - after channel count exhaust will
  *                                        initiate a channel service request
  *                                        at this channel
- *     reserved             [ 27 : 31 ]
+ *     polling_mode         [ 27 ]      - whether dma uses async or polling mode
+ *                                        0 - async dma mode
+ *                                        1 - polling dma mode, can be used in
+ *                                        isr context
+ *     reserved             [ 28 : 31 ]
  *
  *     source_data_size    [ 0 : 15 ]   - width of source data (in bytes)
  *     dest_data_size      [ 16 : 31 ]  - width of dest data (in bytes)
@@ -167,7 +176,8 @@ struct dma_config {
 	uint32_t  source_chaining_en :   1;
 	uint32_t  dest_chaining_en :     1;
 	uint32_t  linked_channel   :     7;
-	uint32_t  reserved :             5;
+	uint32_t  polling_mode :         1;
+	uint32_t  reserved :             4;
 	uint32_t  source_data_size :    16;
 	uint32_t  dest_data_size :      16;
 	uint32_t  source_burst_length : 16;
