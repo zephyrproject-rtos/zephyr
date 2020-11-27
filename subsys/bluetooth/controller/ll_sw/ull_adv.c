@@ -1411,6 +1411,9 @@ int ull_adv_reset_finalize(void)
 	int err;
 
 	for (handle = 0U; handle < BT_CTLR_ADV_SET; handle++) {
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		ll_adv[handle].is_created = 0;
+#endif
 		lll_adv_data_reset(&ll_adv[handle].lll.adv_data);
 		lll_adv_data_reset(&ll_adv[handle].lll.scan_rsp);
 	}
