@@ -15,6 +15,8 @@
 #include <drivers/flash.h>
 #include <init.h>
 #include <soc.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_rcc.h>
 #include <logging/log.h>
 
 #include "flash_stm32.h"
