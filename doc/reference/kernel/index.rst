@@ -38,6 +38,7 @@ synchronization.
    other/polling.rst
    synchronization/semaphores.rst
    synchronization/mutexes.rst
+   synchronization/condvar.rst
    smp/smp.rst
 
 Data Passing
