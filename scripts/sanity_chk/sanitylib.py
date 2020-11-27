@@ -348,7 +348,7 @@ class BinaryHandler(Handler):
         self.coverage = False
 
     def try_kill_process_by_pid(self):
-        if self.pid_fn:
+        if self.pid_fn and os.path.exists(self.pid_fn):
             pid = int(open(self.pid_fn).read())
             os.unlink(self.pid_fn)
             self.pid_fn = None  # clear so we don't try to kill the binary twice
