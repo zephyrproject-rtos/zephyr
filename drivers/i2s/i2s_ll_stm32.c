@@ -11,6 +11,8 @@
 #include <drivers/i2s.h>
 #include <dt-bindings/dma/stm32_dma.h>
 #include <soc.h>
+#include <stm32_ll_rcc.h>
+#include <stm32_ll_spi.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
 #include <pinmux/stm32/pinmux_stm32.h>
