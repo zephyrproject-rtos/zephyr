@@ -48,7 +48,7 @@ struct i2c_imx_data {
 };
 
 static bool i2c_imx_write(const struct device *dev, uint8_t *txBuffer,
-			  uint8_t txSize)
+			  uint32_t txSize)
 {
 	I2C_Type *base = DEV_BASE(dev);
 	struct i2c_imx_data *data = DEV_DATA(dev);
@@ -82,7 +82,7 @@ static bool i2c_imx_write(const struct device *dev, uint8_t *txBuffer,
 }
 
 static void i2c_imx_read(const struct device *dev, uint8_t *rxBuffer,
-			 uint8_t rxSize)
+			 uint32_t rxSize)
 {
 	I2C_Type *base = DEV_BASE(dev);
 	struct i2c_imx_data *data = DEV_DATA(dev);
@@ -191,7 +191,6 @@ static int i2c_imx_transfer(const struct device *dev, struct i2c_msg *msgs,
 	I2C_Type *base = DEV_BASE(dev);
 	struct i2c_imx_data *data = DEV_DATA(dev);
 	struct i2c_master_transfer *transfer = &data->transfer;
-	uint8_t *buf, *buf_end;
 	uint16_t timeout = UINT16_MAX;
 	int result = -EIO;
 
@@ -234,8 +233,6 @@ static int i2c_imx_transfer(const struct device *dev, struct i2c_msg *msgs,
 
 		/* Transfer data */
 		if (msgs->len) {
-			buf = msgs->buf;
-			buf_end = buf + msgs->len;
 			if ((msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
 				i2c_imx_read(dev, msgs->buf, msgs->len);
 			} else {
