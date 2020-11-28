@@ -292,6 +292,7 @@
 /drivers/i2c/i2c_dw*                      @dcpleung
 /drivers/*/*xec*                          @franciscomunoz @albertofloyd @scottwcpg
 /drivers/watchdog/*gecko*                 @oanerer
+/drivers/watchdog/*sifive*                @katsuster
 /drivers/watchdog/wdt_handlers.c          @andrewboie
 /drivers/wifi/                            @jukkar @tbursztyka @pfalcon
 /drivers/wifi/esp/                        @mniestroj
