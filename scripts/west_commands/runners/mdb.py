@@ -37,8 +37,7 @@ def get_cld_pid(mdb_process):
 # process pid to file (mdb.pid) so this process can be terminated correctly by
 # sanitycheck infrastructure
 def record_cld_pid(mdb_runner, mdb_process):
-    for _i in range(20):
-        time.sleep(0.5)
+    for _i in range(100):
         found, pid = get_cld_pid(mdb_process)
         if found:
             mdb_pid_file = path.join(mdb_runner.build_dir, 'mdb.pid')
@@ -46,6 +45,7 @@ def record_cld_pid(mdb_runner, mdb_process):
             with open(mdb_pid_file, 'w') as f:
                 f.write(str(pid))
             return
+        time.sleep(0.05)
 
 def mdb_do_run(mdb_runner, command):
     commander = "mdb"
