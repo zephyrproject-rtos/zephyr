@@ -97,16 +97,16 @@
 
 &lpspi3 {
 	status = "okay";
-	pcs-sck-delay = <50>;
-	sck-pcs-delay = <50>;
-	transfer-delay = <50>;
+	pcs-sck-delay = <10>;
+	sck-pcs-delay = <10>;
+	transfer-delay = <10>;
 };
 
 &lpspi4 {
 	status = "okay";
-	pcs-sck-delay = <50>;
-	sck-pcs-delay = <50>;
-	transfer-delay = <50>;
+	pcs-sck-delay = <10>;
+	sck-pcs-delay = <10>;
+	transfer-delay = <10>;
 };
 
 &flexpwm1_pwm3 {
