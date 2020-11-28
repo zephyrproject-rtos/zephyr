@@ -1954,7 +1954,7 @@ class CMake():
 
             if log_msg:
                 res = re.findall("region `(FLASH|RAM|SRAM)' overflowed by", log_msg)
-                if res:
+                if res and not self.overflow_as_errors:
                     logger.debug("Test skipped due to {} Overflow".format(res[0]))
                     self.instance.status = "skipped"
                     self.instance.reason = "{} overflow".format(res[0])
@@ -2128,6 +2128,7 @@ class ProjectBuilder(FilterBuilder):
         self.generator_cmd = kwargs.get('generator_cmd', None)
         self.verbose = kwargs.get('verbose', None)
         self.warnings_as_errors = kwargs.get('warnings_as_errors', True)
+        self.overflow_as_errors = kwargs.get('overflow_as_errors', False)
 
     @staticmethod
     def log_info(filename, inline_logs):
@@ -2548,6 +2549,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.generator = None
         self.generator_cmd = None
         self.warnings_as_errors = True
+        self.overflow_as_errors = False
 
         # Keep track of which test cases we've filtered out and why
         self.testcases = {}
@@ -3187,7 +3189,8 @@ class TestSuite(DisablePyTestCollectionMixin):
                                     generator=self.generator,
                                     generator_cmd=self.generator_cmd,
                                     verbose=self.verbose,
-                                    warnings_as_errors=self.warnings_as_errors
+                                    warnings_as_errors=self.warnings_as_errors,
+                                    overflow_as_errors=self.overflow_as_errors
                                     )
                 pb.process(pipeline, done_queue, task, lock, results)
 
