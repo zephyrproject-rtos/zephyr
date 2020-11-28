@@ -417,6 +417,9 @@ Artificially long but functional example:
     parser.add_argument("-W", "--disable-warnings-as-errors", action="store_true",
                         help="Treat warning conditions as errors")
 
+    parser.add_argument("--overflow-as-errors", action="store_true",
+                        help="Treat RAM/SRAM overflows as errors")
+
     parser.add_argument(
         "-v",
         "--verbose",
@@ -859,6 +862,7 @@ def main():
     suite.verbose = VERBOSE
     suite.warnings_as_errors = not options.disable_warnings_as_errors
     suite.integration = options.integration
+    suite.overflow_as_errors = options.overflow_as_errors
 
     if options.ninja:
         suite.generator_cmd = "ninja"
