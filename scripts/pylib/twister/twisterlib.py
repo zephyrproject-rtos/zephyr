@@ -564,8 +564,9 @@ class BinaryHandler(Handler):
 
         # FIXME: This is needed when killing the simulator, the console is
         # garbled and needs to be reset. Did not find a better way to do that.
+        if sys.stdout.isatty():
+            subprocess.call(["stty", "sane"])
 
-        subprocess.call(["stty", "sane"])
         self.instance.results = harness.tests
 
         if not self.terminated and self.returncode != 0:
@@ -1063,7 +1064,8 @@ class QEMUHandler(Handler):
         self.thread.daemon = True
         logger.debug("Spawning QEMUHandler Thread for %s" % self.name)
         self.thread.start()
-        subprocess.call(["stty", "sane"])
+        if sys.stdout.isatty():
+            subprocess.call(["stty", "sane"])
 
         logger.debug("Running %s (%s)" % (self.name, self.type_str))
         command = [self.generator_cmd]
