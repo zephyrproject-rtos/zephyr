@@ -56,6 +56,14 @@ int fputc(int c, FILE *stream);
 int fputs(const char *_MLIBC_RESTRICT s, FILE *_MLIBC_RESTRICT stream);
 size_t fwrite(const void *_MLIBC_RESTRICT ptr, size_t size, size_t nitems,
 	      FILE *_MLIBC_RESTRICT stream);
+static inline int putc(int c, FILE *stream)
+{
+	return fputc(c, stream);
+}
+static inline int putchar(int c)
+{
+	return putc(c, stdout);
+}
 
 #ifdef __cplusplus
 }
