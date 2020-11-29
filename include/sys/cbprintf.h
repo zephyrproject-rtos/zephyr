@@ -98,6 +98,9 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap);
 
 /** @brief snprintf using Zephyrs cbprintf infrastructure.
  *
+ * @note This function is available only when `CONFIG_CBPRINTF_LIBC_SUBSTS` is
+ * selected.
+ *
  * @note The functionality of this function is significantly reduced
  * when `CONFIG_CBPRINTF_NANO` is selected.
  *
@@ -112,7 +115,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap);
  * @param ... arguments corresponding to the conversion specifications found
  * within @p format.
  *
- * return The number of characters that would have been written to @p
+ * @return The number of characters that would have been written to @p
  * str, excluding the terminating null byte.  This is greater than the
  * number actually written if @p size is too small.
  */
@@ -135,12 +138,9 @@ int snprintfcb(char *str, size_t size, const char *format, ...);
  * @param format a standard ISO C format string with characters and conversion
  * specifications.
  *
- * @param ... arguments corresponding to the conversion specifications found
- * within @p format.
- *
  * @param ap a reference to the values to be converted.
  *
- * return The number of characters that would have been written to @p
+ * @return The number of characters that would have been written to @p
  * str, excluding the terminating null byte.  This is greater than the
  * number actually written if @p size is too small.
  */
