@@ -27,21 +27,64 @@
 	* (RM0399 Rev 3)
 	*/
 
-	/* System data RAM accessible over AXI bus: AXI SRAM in D1 domain */
 	sram0: memory@24000000 {
-		reg = <0x24000000 DT_SIZE_K(512)>;
+		reg = <0x24000000 DT_SIZE_K(864)>;
 		compatible = "mmio-sram";
-	};
 
-	/* System data RAM accessible over AHB bus: SRAM1 in D2 domain */
-	sram1: memory@30000000 {
-		reg = <0x30000000 DT_SIZE_K(288)>;
-		compatible = "mmio-sram";
-	};
+		#address-cells = <1>;
+		#size-cells = <1>;
 
-	/* System data RAM accessible over AHB bus: SRAM4 in D2 domain  */
-	sram4: memory@38000000 {
-		reg = <0x38000000 DT_SIZE_K(64)>;
-		compatible = "mmio-sram";
+		ranges = <
+			0x0		0x24000000 DT_SIZE_K(512)  // axi_sram
+			0xC000000	0x30000000 DT_SIZE_K(128)  // ahb_sram1
+			0xC020000	0x30020000 DT_SIZE_K(128)  // ahb_sram2
+			0xC040000	0x30040000 DT_SIZE_K(32)   // ahb_sram3
+			0x14000000	0x38000000 DT_SIZE_K(64)   // ahb_sram4
+			>;
+
+		/*
+		 * System data RAM accessible over AXI bus:
+		 * AXI SRAM in D1 domain
+		 */
+		axi_sram: memory@0 {
+			label = "axi_sram";
+			reg = <0x0 DT_SIZE_K(512)>;
+		};
+
+		/*
+		 * System data RAM accessible over AHB bus:
+		 * SRAM1 in D2 domain
+		 */
+		ahb_sram1: memory@C000000{
+			label = "ahb_sram1";
+			reg = <0xC000000 DT_SIZE_K(128)>;
+		};
+
+		/*
+		 * System data RAM accessible over AHB bus:
+		 * SRAM2 in D2 domain
+		 */
+		ahb_sram2: memory@C020000 {
+			label = "ahb_sram2";
+			reg = <0xC020000 DT_SIZE_K(128)>;
+		};
+
+		/*
+		 * System data RAM accessible over AHB bus:
+		 * SRAM3 in D2 domain
+		 */
+		ahb_sram3: memory@C040000 {
+			label = "ahb_sram3";
+			reg = <0xC040000 DT_SIZE_K(32)>;
+		};
+
+		/*
+		 * System data RAM accessible over AHB bus:
+		 * SRAM4 in D3 domain
+		 */
+		ahb_sram4: memory@14000000 {
+			label = "ahb_sram4";
+			reg = <0x14000000 DT_SIZE_K(64)>;
+		};
 	};
 };
