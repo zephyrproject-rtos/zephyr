@@ -1966,6 +1966,7 @@ PREDEFINED             = "CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT" \
                          "CONFIG_BT_USER_PHY_UPDATE" \
                          "CONFIG_BT_SMP" \
                          "CONFIG_BT_SMP_APP_PAIRING_ACCEPT" \
+                         "CONFIG_CBPRINTF_LIBC_SUBSTS" \
                          "CONFIG_ERRNO" \
                          "CONFIG_FLASH_JESD216_API" \
                          "CONFIG_FLASH_PAGE_LAYOUT" \

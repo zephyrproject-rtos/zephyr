@@ -11,6 +11,10 @@
 #include <stddef.h>
 #include <toolchain.h>
 
+#ifdef CONFIG_CBPRINTF_LIBC_SUBSTS
+#include <stdio.h>
+#endif /* CONFIG_CBPRINTF_LIBC_SUBSTS */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -96,6 +100,84 @@ int cbprintf(cbprintf_cb out, void *ctx, const char *format, ...);
  */
 int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap);
 
+#ifdef CONFIG_CBPRINTF_LIBC_SUBSTS
+
+/** @brief fprintf using Zephyrs cbprintf infrastructure.
+ *
+ * @note This function is available only when `CONFIG_CBPRINTF_LIBC_SUBSTS` is
+ * selected.
+ *
+ * @note The functionality of this function is significantly reduced
+ * when `CONFIG_CBPRINTF_NANO` is selected.
+ *
+ * @param stream the stream to which the output should be written.
+ *
+ * @param format a standard ISO C format string with characters and
+ * conversion specifications.
+ *
+ * @param ... arguments corresponding to the conversion specifications found
+ * within @p format.
+ *
+ * return The number of characters printed.
+ */
+__printf_like(2, 3)
+int fprintfcb(FILE * stream, const char *format, ...);
+
+/** @brief vfprintf using Zephyrs cbprintf infrastructure.
+ *
+ * @note This function is available only when `CONFIG_CBPRINTF_LIBC_SUBSTS` is
+ * selected.
+ *
+ * @note The functionality of this function is significantly reduced when
+ * `CONFIG_CBPRINTF_NANO` is selected.
+ *
+ * @param stream the stream to which the output should be written.
+ *
+ * @param format a standard ISO C format string with characters and conversion
+ * specifications.
+ *
+ * @param ap a reference to the values to be converted.
+ *
+ * @return The number of characters printed.
+ */
+int vfprintfcb(FILE *stream, const char *format, va_list ap);
+
+/** @brief printf using Zephyrs cbprintf infrastructure.
+ *
+ * @note This function is available only when `CONFIG_CBPRINTF_LIBC_SUBSTS` is
+ * selected.
+ *
+ * @note The functionality of this function is significantly reduced
+ * when `CONFIG_CBPRINTF_NANO` is selected.
+ *
+ * @param format a standard ISO C format string with characters and
+ * conversion specifications.
+ *
+ * @param ... arguments corresponding to the conversion specifications found
+ * within @p format.
+ *
+ * @return The number of characters printed.
+ */
+__printf_like(1, 2)
+int printfcb(const char *format, ...);
+
+/** @brief vprintf using Zephyrs cbprintf infrastructure.
+ *
+ * @note This function is available only when `CONFIG_CBPRINTF_LIBC_SUBSTS` is
+ * selected.
+ *
+ * @note The functionality of this function is significantly reduced when
+ * `CONFIG_CBPRINTF_NANO` is selected.
+ *
+ * @param format a standard ISO C format string with characters and conversion
+ * specifications.
+ *
+ * @param ap a reference to the values to be converted.
+ *
+ * @return The number of characters printed.
+ */
+int vprintfcb(const char *format, va_list ap);
+
 /** @brief snprintf using Zephyrs cbprintf infrastructure.
  *
  * @note This function is available only when `CONFIG_CBPRINTF_LIBC_SUBSTS` is
@@ -145,6 +227,8 @@ int snprintfcb(char *str, size_t size, const char *format, ...);
  * number actually written if @p size is too small.
  */
 int vsnprintfcb(char *str, size_t size, const char *format, va_list ap);
+
+#endif /* CONFIG_CBPRINTF_LIBC_SUBSTS */
 
 /**
  * @}
