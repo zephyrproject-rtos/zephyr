@@ -22,6 +22,8 @@ int cbprintf(cbprintf_cb out, void *ctx, const char *format, ...)
 
 #if defined(CONFIG_CBPRINTF_LIBC_SUBSTS)
 
+#include <stdio.h>
+
 /* Context for sn* variants is the next space in the buffer, and the buffer
  * end.
  */
@@ -44,6 +46,40 @@ static int str_out(int c,
 	}
 
 	return c;
+}
+
+int fprintfcb(FILE *stream, const char *format, ...)
+{
+	va_list ap;
+	int rc;
+
+	va_start(ap, format);
+	rc = vfprintfcb(stream, format, ap);
+	va_end(ap);
+
+	return rc;
+}
+
+int vfprintfcb(FILE *stream, const char *format, va_list ap)
+{
+	return cbvprintf(fputc, stream, format, ap);
+}
+
+int printfcb(const char *format, ...)
+{
+	va_list ap;
+	int rc;
+
+	va_start(ap, format);
+	rc = vprintfcb(format, ap);
+	va_end(ap);
+
+	return rc;
+}
+
+int vprintfcb(const char *format, va_list ap)
+{
+	return cbvprintf(fputc, stdout, format, ap);
 }
 
 int snprintfcb(char *str, size_t size, const char *format, ...)
