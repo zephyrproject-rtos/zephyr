@@ -6,3 +6,4 @@ config BOARD_QEMU_LEON3
 	bool "QEMU LEON3 target"
 	depends on SOC_LEON3
 	select QEMU_TARGET
+	select CPU_HAS_FPU
