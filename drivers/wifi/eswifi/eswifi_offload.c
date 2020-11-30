@@ -232,8 +232,8 @@ static void eswifi_off_send_work(struct k_work *work)
 
 	eswifi_lock(eswifi);
 
-	user_data = socket->send_data;
-	cb = socket->send_cb;
+	user_data = socket->tx_pkt->user_data;
+	cb = socket->tx_pkt->send_cb;
 	context = socket->context;
 
 	err = __eswifi_off_send_pkt(eswifi, socket);
@@ -271,9 +271,6 @@ static int eswifi_off_send(struct net_pkt *pkt,
 	socket->tx_pkt = pkt;
 
 	if (timeout == 0) {
-		socket->send_data = user_data;
-		socket->send_cb = cb;
-
 		k_work_submit_to_queue(&eswifi->work_q, &socket->send_work);
 
 		eswifi_unlock(eswifi);
@@ -327,9 +324,6 @@ static int eswifi_off_sendto(struct net_pkt *pkt,
 	}
 
 	if (timeout == 0) {
-		socket->send_data = user_data;
-		socket->send_cb = cb;
-
 		k_work_submit_to_queue(&eswifi->work_q, &socket->send_work);
 
 		eswifi_unlock(eswifi);

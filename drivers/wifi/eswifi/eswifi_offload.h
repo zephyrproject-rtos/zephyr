@@ -33,11 +33,9 @@ struct eswifi_off_socket {
 	struct net_context *context;
 	net_context_recv_cb_t recv_cb;
 	net_context_connect_cb_t conn_cb;
-	net_context_send_cb_t send_cb;
 	net_tcp_accept_cb_t accept_cb;
 	void *recv_data;
 	void *conn_data;
-	void *send_data;
 	void *accept_data;
 	struct net_pkt *tx_pkt;
 	struct k_work connect_work;
