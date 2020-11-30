@@ -134,10 +134,8 @@ struct socket_data {
 	struct net_context		*context;
 	net_context_connect_cb_t	connect_cb;
 	net_tcp_accept_cb_t		accept_cb;
-	net_context_send_cb_t		send_cb;
 	net_context_recv_cb_t		recv_cb;
 	void				*connect_user_data;
-	void				*send_user_data;
 	void				*recv_user_data;
 	void				*accept_user_data;
 	struct net_pkt			*rx_pkt;
@@ -459,9 +457,6 @@ static int winc1500_send(struct net_pkt *pkt,
 		return -ENOBUFS;
 	}
 
-	w1500_data.socket_data[socket].send_cb = cb;
-	w1500_data.socket_data[socket].send_user_data = user_data;
-
 	if (net_pkt_read(pkt, buf->data, net_pkt_get_len(pkt))) {
 		ret = -ENOBUFS;
 		goto out;
@@ -501,9 +496,6 @@ static int winc1500_sendto(struct net_pkt *pkt,
 	if (!buf) {
 		return -ENOBUFS;
 	}
-
-	w1500_data.socket_data[socket].send_cb = cb;
-	w1500_data.socket_data[socket].send_user_data = user_data;
 
 	if (net_pkt_read(pkt, buf->data, net_pkt_get_len(pkt))) {
 		ret = -ENOBUFS;
