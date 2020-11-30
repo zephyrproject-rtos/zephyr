@@ -14,6 +14,10 @@ tests:
     filter: CONFIG_CPU_HAS_FPU
     arch_allow: riscv64
     tags: kernel userspace
+  kernel.fpu_sharing.float_disable.sparc:
+    filter: CONFIG_CPU_HAS_FPU
+    arch_allow: sparc
+    tags: kernel userspace
   kernel.fpu_sharing.float_disable.x86:
     extra_args: CONF_FILE=prj_x86.conf
     platform_allow: qemu_x86
