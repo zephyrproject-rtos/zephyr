@@ -27,6 +27,12 @@ struct init_stack_frame {
 	uint32_t pad[8];
 };
 
+#if defined(CONFIG_FPU_SHARING)
+  #define USER_FP_MASK K_FP_REGS
+#else
+  #define USER_FP_MASK 0
+#endif
+
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     char *stack_ptr, k_thread_entry_t entry,
 		     void *p1, void *p2, void *p3)
@@ -47,6 +53,16 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->callee_saved.o7 = (uint32_t) z_thread_entry_wrapper - 8;
 	thread->callee_saved.psr = PSR_S | PSR_PS | PSR_ET;
 
+	if (IS_ENABLED(CONFIG_FPU_SHARING)) {
+		/* Selected threads can use the FPU */
+		if (thread->base.user_options & USER_FP_MASK) {
+			thread->callee_saved.psr |= PSR_EF;
+		}
+	} else if (IS_ENABLED(CONFIG_FPU)) {
+		/* Any thread can use the FPU */
+		thread->callee_saved.psr |= PSR_EF;
+	}
+
 	thread->switch_handle = thread;
 }
 
@@ -56,3 +72,10 @@ void *z_arch_get_next_switch_handle(struct k_thread **old_thread)
 
 	return z_get_next_switch_handle(*old_thread);
 }
+
+#if defined(CONFIG_FPU_SHARING)
+int arch_float_disable(struct k_thread *thread)
+{
+	return -ENOSYS;
+}
+#endif /* CONFIG_FPU_SHARING */
