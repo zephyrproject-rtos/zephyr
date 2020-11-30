@@ -39,6 +39,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <net/ieee802154_radio.h>
 
+#if defined(CONFIG_SOC_NRF5340_CPUAPP) && \
+	defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+#include <secure_services.h>
+#endif
+
 #include "ieee802154_nrf5.h"
 #include "nrf_802154.h"
 
@@ -59,7 +64,11 @@ static struct nrf5_802154_data nrf5_data;
 #define TXTIME_OFFSET_US  (5 * USEC_PER_MSEC)
 
 #if defined(CONFIG_SOC_NRF5340_CPUAPP) || defined(CONFIG_SOC_NRF5340_CPUNET)
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+#define EUI64_ADDR (NRF_FICR_S->INFO.DEVICEID)
+#else
 #define EUI64_ADDR (NRF_FICR->INFO.DEVICEID)
+#endif
 #else
 #define EUI64_ADDR (NRF_FICR->DEVICEID)
 #endif
@@ -89,7 +98,16 @@ static void nrf5_get_eui64(uint8_t *mac)
 
 #if defined(CONFIG_SOC_NRF5340_CPUAPP) && \
 	defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
-#error Accessing EUI64 on the non-secure mode is not supported at the moment
+	int ret = -EPERM;
+#if defined(CONFIG_SPM)
+	ret = spm_request_read(&factoryAddress, (uint32_t)EUI64_ADDR,
+				   sizeof(factoryAddress));
+#endif
+	if (ret != 0) {
+		LOG_ERR("Unable to read EUI64 from the secure zone.")
+		LOG_ERR("Setting EUI64 to 0");
+		factoryAddress = 0ULL;
+	}
 #else
 	/* Use device identifier assigned during the production. */
 	factoryAddress = (uint64_t)EUI64_ADDR[0] << 32;
