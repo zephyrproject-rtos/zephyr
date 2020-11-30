@@ -93,7 +93,7 @@ static int socks5_tcp_connect(struct net_context *ctx,
 
 	ret = net_context_sendto(ctx, (uint8_t *)&method_req, size,
 				 proxy, proxy_len, NULL, K_NO_WAIT,
-				 ctx->user_data);
+				 NULL);
 	if (ret < 0) {
 		LOG_ERR("Could not send negotiation packet");
 		return ret;
@@ -154,7 +154,7 @@ static int socks5_tcp_connect(struct net_context *ctx,
 
 	ret = net_context_sendto(ctx, (uint8_t *)&cmd_req, size,
 				 proxy, proxy_len, NULL, K_NO_WAIT,
-				 ctx->user_data);
+				 NULL);
 	if (ret < 0) {
 		LOG_ERR("Could not send CONNECT command");
 		return ret;
