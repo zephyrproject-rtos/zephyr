@@ -23,6 +23,7 @@
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_rtc.h>
 #include <drivers/counter.h>
+#include <sys/timeutil.h>
 
 #include <logging/log.h>
 
@@ -118,7 +119,7 @@ static uint32_t rtc_stm32_read(const struct device *dev)
 	now.tm_min = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_MINUTE(rtc_time));
 	now.tm_sec = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_SECOND(rtc_time));
 
-	ts = mktime(&now);
+	ts = timeutil_timegm(&now);
 
 	/* Return number of seconds since RTC init */
 	ts -= T_TIME_OFFSET;
