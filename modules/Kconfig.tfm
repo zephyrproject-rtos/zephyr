@@ -22,6 +22,8 @@ menuconfig BUILD_WITH_TFM
 	bool "Build with TF-M as the Secure Execution Environment"
 	depends on TRUSTED_EXECUTION_NONSECURE
 	depends on TFM_BOARD != ""
+	depends on ARM_TRUSTZONE_M
+	imply INIT_ARCH_HW_AT_BOOT
 	help
 	  When enabled, this option instructs the Zephyr build process to
 	  additionaly generate a TF-M image for the Secure Execution
