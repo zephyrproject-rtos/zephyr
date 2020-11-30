@@ -606,10 +606,10 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 		if (dest_addr) {
 			status = net_context_sendto(ctx, buf, len, dest_addr,
 						    addrlen, NULL, timeout,
-						    ctx->user_data);
+						    NULL);
 		} else {
 			status = net_context_send(ctx, buf, len, NULL, timeout,
-						  ctx->user_data);
+						  NULL);
 		}
 
 		if (status < 0) {
