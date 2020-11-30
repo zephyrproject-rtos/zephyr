@@ -241,7 +241,7 @@ ssize_t zcan_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 
 	ret = net_context_sendto(ctx, (void *)&zframe, sizeof(zframe),
 				 dest_addr, addrlen, NULL, timeout,
-				 ctx->user_data);
+				 NULL);
 	if (ret < 0) {
 		errno = -ret;
 		return -1;
