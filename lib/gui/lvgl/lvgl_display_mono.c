@@ -24,10 +24,6 @@ void lvgl_flush_cb_mono(struct _disp_drv_t *disp_drv,
 	desc.pitch = w;
 	desc.height = h;
 	display_write(display_dev, area->x1, area->y1, &desc, (void *) color_p);
-	if (cap.screen_info & SCREEN_INFO_DOUBLE_BUFFER) {
-		display_write(display_dev, area->x1, area->y1, &desc,
-				(void *) color_p);
-	}
 
 	lv_disp_flush_ready(disp_drv);
 }
