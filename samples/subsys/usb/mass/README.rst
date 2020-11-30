@@ -106,6 +106,52 @@ The output to the console will look something like this
 
 On most operating systems the drive will be automatically mounted.
 
+SD Card Example
+===============
+
+This example requires SD card support, see :ref:`disk_access_api`, and
+a SD card formatted with FAT filesystem.
+
+If a board with SD card controller is available, the example can be built as
+follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/usb/mass
+   :board: mimxrt1050_evk
+   :gen-args: -DCONFIG_APP_MSC_STORAGE_SDCARD=y
+   :goals: build
+   :compact:
+
+In case the board has no support for SD card controller, but the card can
+be connected to SPI using e.g. a shield, example can be built as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/usb/mass
+   :board: nrf52840dk_nrf52840
+   :shield: waveshare_epaper_gdeh0154a07
+   :gen-args: -DCONFIG_APP_MSC_STORAGE_SDCARD=y
+   :goals: build
+   :compact:
+
+Depending on the size of the media it can take time until the file system has
+initialized the card and it is available via USB. It should also be noted that
+the transfer speed over SPI is very slow.
+
+.. code-block:: none
+
+   *** Booting Zephyr OS build v2.5.0-rc3-73-gd85067f0a759  ***
+   Mount /SD:: 0
+   [00:00:00.281,585] <inf> sdhc_spi: Found a ~3751 MiB SDHC card.
+   [00:00:00.282,867] <inf> sdhc_spi: Manufacturer ID=27 OEM='SM' Name='00000' Revision=0x10 Serial=0x16fdd47b
+   [00:00:00.308,654] <inf> sdhc_spi: Found a ~3751 MiB SDHC card.
+   [00:00:00.309,906] <inf> sdhc_spi: Manufacturer ID=27 OEM='SM' Name='00000' Revision=0x10 Serial=0x16fdd47b
+   /SD:: bsize = 512 ; frsize = 32768 ; blocks = 119776 ; bfree = 119773
+   /SD: opendir: 0
+     D 0 42
+     F 1111 TEST.TXT
+   End of files
+   [00:00:18.588,043] <inf> main: The device is put in USB mass storage mode.
+
 LittleFS Example
 ================
 
