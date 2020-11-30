@@ -51,13 +51,23 @@
 	"66666666666666666666666666666666"   \
 	"666666666666666666666666666666666"
 
+#ifdef CONFIG_BIG_ENDIAN
 union raw_double_u {
 	double d;
 	struct {
-		uint32_t u1;       /* This part contains the exponent */
-		uint32_t u2;       /* This part contains the fraction */
+		uint32_t fraction;
+		uint32_t exponent;
 	};
 };
+#else
+union raw_double_u {
+	double d;
+	struct {
+		uint32_t exponent;
+		uint32_t fraction;
+	};
+};
+#endif
 
 /**
  *
@@ -83,8 +93,8 @@ void test_sprintf_double(void)
 		return;
 	}
 
-	var.u1 = 0x00000000;
-	var.u2 = 0x7ff00000;    /* Bit pattern for +INF (double) */
+	var.exponent = 0x00000000;
+	var.fraction = 0x7ff00000; /* Bit pattern for +INF (double) */
 	sprintf(buffer, "%e", var.d);
 	zassert_true((strcmp(buffer, "inf") == 0),
 		     "sprintf(inf) - incorrect output '%s'\n", buffer);
@@ -109,8 +119,8 @@ void test_sprintf_double(void)
 	zassert_true((strcmp(buffer, "INF") == 0),
 		     "sprintf(INF) - incorrect output '%s'\n", buffer);
 
-	var.u1 = 0x00000000;
-	var.u2 = 0xfff00000;    /* Bit pattern for -INF (double) */
+	var.exponent = 0x00000000;
+	var.fraction = 0xfff00000; /* Bit pattern for -INF (double) */
 	sprintf(buffer, "%e", var.d);
 	zassert_true((strcmp(buffer, "-inf") == 0),
 		     "sprintf(-INF) - incorrect output '%s'\n", buffer);
@@ -139,8 +149,8 @@ void test_sprintf_double(void)
 	zassert_true((strcmp(buffer, "      -inf") == 0),
 		     "sprintf(      +inf) - incorrect output '%s'\n", buffer);
 
-	var.u1 = 0x00000000;
-	var.u2 = 0x7ff80000;    /* Bit pattern for NaN (double) */
+	var.exponent = 0x00000000;
+	var.fraction = 0x7ff80000; /* Bit pattern for NaN (double) */
 	sprintf(buffer, "%e", var.d);
 	zassert_true((strcmp(buffer, "nan") == 0),
 		     "sprintf(nan) - incorrect output '%s'\n", buffer);
@@ -169,8 +179,8 @@ void test_sprintf_double(void)
 	zassert_true((strcmp(buffer, "    +nan") == 0),
 		     "sprintf(    +nan) - incorrect output '%s'\n", buffer);
 
-	var.u1 = 0x00000000;
-	var.u2 = 0xfff80000;    /* Bit pattern for -NaN (double) */
+	var.exponent = 0x00000000;
+	var.fraction = 0xfff80000; /* Bit pattern for -NaN (double) */
 	sprintf(buffer, "%e", var.d);
 	zassert_true((strcmp(buffer, "-nan") == 0),
 		     "sprintf(-nan) - incorrect output '%s'\n", buffer);
@@ -341,8 +351,8 @@ void test_sprintf_double(void)
 		     "sprintf(0.0001505) - incorrect "
 		     "output '%s'\n", buffer);
 
-	var.u1 = 0x00000001;
-	var.u2 = 0x00000000;    /* smallest denormal value */
+	var.exponent = 0x00000001;
+	var.fraction = 0x00000000; /* smallest denormal value */
 	sprintf(buffer, "%g", var.d);
 	zassert_true((strcmp(buffer, "4.94066e-324") == 0),
 		     "sprintf(4.94066e-324) - incorrect "
