@@ -1820,10 +1820,22 @@ void bt_conn_foreach(int type, void (*func)(struct bt_conn *conn, void *data),
 
 struct bt_conn *bt_conn_ref(struct bt_conn *conn)
 {
-	atomic_val_t old = atomic_inc(&conn->ref);
+	atomic_val_t old;
 
-	BT_DBG("handle %u ref %u -> %u", conn->handle, old,
-	       atomic_get(&conn->ref));
+	/* Reference counter must be checked to avoid incrementing ref from
+	 * zero, then we should return NULL instead.
+	 * Loop on clear-and-set in case someone has modified the reference
+	 * count since the read, and start over again when that happens.
+	 */
+	do {
+		old = atomic_get(&conn->ref);
+
+		if (!old) {
+			return NULL;
+		}
+	} while (!atomic_cas(&conn->ref, old, old + 1));
+
+	BT_DBG("handle %u ref %u -> %u", conn->handle, old, old + 1);
 
 	return conn;
 }

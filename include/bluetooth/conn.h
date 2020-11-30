@@ -197,9 +197,12 @@ struct bt_conn_le_data_len_param {
  *
  *  Increment the reference count of a connection object.
  *
+ *  @note Will return NULL if the reference count is zero.
+ *
  *  @param conn Connection object.
  *
- *  @return Connection object with incremented reference count.
+ *  @return Connection object with incremented reference count, or NULL if the
+ *          reference count is zero.
  */
 struct bt_conn *bt_conn_ref(struct bt_conn *conn);
 
