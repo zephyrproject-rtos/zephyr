@@ -39,6 +39,14 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <net/ieee802154_radio.h>
 
+#if defined(CONFIG_SOC_NRF5340_CPUAPP) && defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+#if defined(CONFIG_SPM_SERVICE_READ)
+#include <secure_services.h>
+#elif defined(CONFIG_BUILD_WITH_TFM)
+#include <tfm/tfm_ioctl_api.h>
+#endif
+#endif
+
 #include "ieee802154_nrf5.h"
 #include "nrf_802154.h"
 #include "nrf_802154_const.h"
@@ -70,13 +78,21 @@ static struct nrf5_802154_data nrf5_data;
 
 #if defined(CONFIG_IEEE802154_NRF5_UICR_EUI64_ENABLE)
 #if defined(CONFIG_SOC_NRF5340_CPUAPP)
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+#define EUI64_ADDR (NRF_UICR_S->OTP)
+#else
 #define EUI64_ADDR (NRF_UICR->OTP)
+#endif /* CONFIG_TRUSTED_EXECUTION_NONSECURE */
 #else
 #define EUI64_ADDR (NRF_UICR->CUSTOMER)
 #endif /* CONFIG_SOC_NRF5340_CPUAPP */
 #else
 #if defined(CONFIG_SOC_NRF5340_CPUAPP) || defined(CONFIG_SOC_NRF5340_CPUNET)
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+#define EUI64_ADDR (NRF_FICR_S->INFO.DEVICEID)
+#else
 #define EUI64_ADDR (NRF_FICR->INFO.DEVICEID)
+#endif /* CONFIG_TRUSTED_EXECUTION_NONSECURE */
 #else
 #define EUI64_ADDR (NRF_FICR->DEVICEID)
 #endif /* CONFIG_SOC_NRF5340_CPUAPP || CONFIG_SOC_NRF5340_CPUNET */
@@ -115,9 +131,32 @@ static void nrf5_get_eui64(uint8_t *mac)
 	mac[index++] = IEEE802154_NRF5_VENDOR_OUI & 0xff;
 #endif
 
-#if defined(CONFIG_SOC_NRF5340_CPUAPP) && \
-	defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
-#error Accessing EUI64 on the non-secure mode is not supported at the moment
+#if defined(CONFIG_SOC_NRF5340_CPUAPP) && defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+	int ret = -EPERM;
+#if defined(CONFIG_SPM_SERVICE_READ)
+	ret = spm_request_read(&factoryAddress,
+			       (uint32_t)&EUI64_ADDR[EUI64_ADDR_HIGH],
+			       sizeof(factoryAddress));
+#elif defined(CONFIG_BUILD_WITH_TFM)
+	enum tfm_platform_err_t tfmError;
+	uint32_t tfmServiceError;
+
+	tfmError = tfm_platform_mem_read(&factoryAddress, (uint32_t)&EUI64_ADDR[EUI64_ADDR_HIGH],
+					 sizeof(factoryAddress), &tfmServiceError);
+
+	if (tfmError == TFM_PLATFORM_ERR_SUCCESS && tfmServiceError == 0) {
+		ret = 0;
+	} else if (tfmError == TFM_PLATFORM_ERR_INVALID_PARAM) {
+		ret = -EINVAL;
+	} else if (tfmError == TFM_PLATFORM_ERR_NOT_SUPPORTED) {
+		ret = -ENOTSUP;
+	}
+#endif
+	if (ret != 0) {
+		LOG_ERR("Unable to read EUI64 from the secure zone: %d", ret);
+		LOG_ERR("Setting EUI64 to 0");
+		factoryAddress = 0ULL;
+	}
 #else
 	/* Use device identifier assigned during the production. */
 	factoryAddress = (uint64_t)EUI64_ADDR[EUI64_ADDR_HIGH] << 32;
