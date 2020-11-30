@@ -443,6 +443,7 @@
 /lib/cmsis_rtos_v1/                       @nashif
 /lib/libc/                                @nashif @andrewboie
 /modules/                                 @nashif
+/modules/Kconfig.tfm                      @ioannisg @microbuilder
 /kernel/device.c                          @andrewboie @andyross @nashif
 /kernel/idle.c                            @andrewboie @andyross @nashif
 /samples/                                 @nashif
