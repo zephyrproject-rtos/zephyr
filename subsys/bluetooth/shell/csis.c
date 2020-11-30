@@ -16,19 +16,71 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/bluetooth.h>
 #include "../host/audio/csis.h"
+#include "bt.h"
+
+extern const struct shell *ctx_shell;
+static uint8_t sirk_read_rsp = BT_CSIS_READ_SIRK_REQ_RSP_ACCEPT;
+
+static void locked_cb(struct bt_conn *conn, bool locked)
+{
+	if (!conn) {
+		shell_error(ctx_shell, "Server %s the device",
+			    locked ? "locked" : "released");
+	} else {
+		char addr[BT_ADDR_LE_STR_LEN];
+
+		conn_addr_str(conn, addr, sizeof(addr));
+
+		shell_print(ctx_shell, "Client %s %s the device",
+			    addr, locked ? "locked" : "released");
+	}
+}
+
+static uint8_t sirk_read_req_cb(struct bt_conn *conn)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	static const char *rsp_strings[] = {
+		"Accept", "Accept Enc", "Reject", "OOB only"
+	};
+
+	conn_addr_str(conn, addr, sizeof(addr));
+
+	shell_print(ctx_shell, "Client %s requested to read the sirk. "
+		    "Responding with %s", addr, rsp_strings[sirk_read_rsp]);
+
+	return sirk_read_rsp;
+}
+
+struct bt_csis_cb_t csis_cbs = {
+	.locked = locked_cb,
+	.sirk_read_req = sirk_read_req_cb,
+};
+
+static int cmd_csis_init(const struct shell *shell, size_t argc, char **argv)
+{
+	bt_csis_register_cb(&csis_cbs);
+
+	return 0;
+}
 
 static int cmd_csis_advertise(const struct shell *shell, size_t argc,
 				     char *argv[])
 {
+	int err;
 	if (!strcmp(argv[1], "off")) {
-		if (bt_csis_advertise(false) != 0) {
-			shell_error(shell, "Failed to stop advertising");
+		err = bt_csis_advertise(false);
+		if (err) {
+			shell_error(shell, "Failed to stop advertising %d",
+				    err);
 			return -ENOEXEC;
 		}
 		shell_print(shell, "Advertising stopped");
 	} else if (!strcmp(argv[1], "on")) {
-		if (bt_csis_advertise(true) != 0) {
-			shell_error(shell, "Failed to start advertising");
+		err = bt_csis_advertise(true);
+		if (err) {
+			shell_error(shell, "Failed to start advertising %d",
+				    err);
 			return -ENOEXEC;
 		}
 		shell_print(shell, "Advertising started");
@@ -105,6 +157,26 @@ static int cmd_csis_release(const struct shell *shell, size_t argc,
 
 	return 0;
 }
+
+static int cmd_csis_set_sirk_rsp(const struct shell *shell, size_t argc,
+				 char *argv[])
+{
+	if (strcmp(argv[1], "accept") == 0) {
+		sirk_read_rsp = BT_CSIS_READ_SIRK_REQ_RSP_ACCEPT;
+	} else if (strcmp(argv[1], "accept_enc") == 0) {
+		sirk_read_rsp = BT_CSIS_READ_SIRK_REQ_RSP_ACCEPT_ENC;
+	} else if (strcmp(argv[1], "reject") == 0) {
+		sirk_read_rsp = BT_CSIS_READ_SIRK_REQ_RSP_REJECT;
+	} else if (strcmp(argv[1], "oob") == 0) {
+		sirk_read_rsp = BT_CSIS_READ_SIRK_REQ_RSP_OOB_ONLY;
+	} else {
+		shell_error(shell, "Unknown parameter: %s", argv[1]);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 static int cmd_csis(const struct shell *shell, size_t argc, char **argv)
 {
 	shell_error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
@@ -112,8 +184,10 @@ static int cmd_csis(const struct shell *shell, size_t argc, char **argv)
 	return -ENOEXEC;
 }
 
-
 SHELL_STATIC_SUBCMD_SET_CREATE(csis_cmds,
+	SHELL_CMD_ARG(init, NULL,
+		      "Initialize the service and register callbacks",
+		      cmd_csis_init, 1, 0),
 	SHELL_CMD_ARG(advertise, NULL,
 		      "Start/stop advertising CSIS PSRIs <on/off>",
 		      cmd_csis_advertise, 2, 0),
@@ -129,7 +203,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(csis_cmds,
 	SHELL_CMD_ARG(print_sirk, NULL,
 		      "Print the currently used SIRK",
 			  cmd_csis_print_sirk, 1, 0),
-			  SHELL_SUBCMD_SET_END
+	SHELL_CMD_ARG(set_sirk_rsp, NULL,
+		      "Set the response used in SIRK requests "
+		      "<accept, accept_enc, reject, oob>",
+		      cmd_csis_set_sirk_rsp, 2, 0),
+		      SHELL_SUBCMD_SET_END
 );
 
 SHELL_CMD_ARG_REGISTER(csis, &csis_cmds, "Bluetooth CSIS shell commands",

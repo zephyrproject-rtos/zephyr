@@ -15,6 +15,16 @@
 
 #define BT_CSIS_PSRI_SIZE			6
 
+/** Accept the request to read the SIRK as plaintext */
+#define BT_CSIS_READ_SIRK_REQ_RSP_ACCEPT        0x00
+/** Accept the request to read the SIRK, but return encrypted SIRK */
+#define BT_CSIS_READ_SIRK_REQ_RSP_ACCEPT_ENC    0x01
+/** Reject the request to read the SIRK */
+#define BT_CSIS_READ_SIRK_REQ_RSP_REJECT        0x02
+/** SIRK is available only via an OOB procedure */
+#define BT_CSIS_READ_SIRK_REQ_RSP_OOB_ONLY      0x03
+
+
 struct bt_csis_cb_t {
 	/** @brief Callback whenever the lock changes on the server.
 	 *
@@ -25,6 +35,17 @@ struct bt_csis_cb_t {
 	 *
 	 */
 	void (*locked)(struct bt_conn *conn, bool locked);
+
+	/** @brief Request from a peer device to read the sirk.
+	 *
+	 * If this callback is not set, all clients will be allowed to read
+	 * the SIRK unencrypted.
+	 *
+	 * @param conn The connection to the client that requested to read the
+	 *             SIRK.
+	 * @return A BT_CSIS_READ_SIRK_REQ_RSP_* response code.
+	 */
+	uint8_t (*sirk_read_req)(struct bt_conn *conn);
 };
 
 /**

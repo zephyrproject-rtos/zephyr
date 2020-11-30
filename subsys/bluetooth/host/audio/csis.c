@@ -16,9 +16,13 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
+#include <bluetooth/buf.h>
 #include "csis.h"
 #include "csip.h"
 #include "csis_crypto.h"
+#include "../conn_internal.h"
+#include "../hci_core.h"
+#include "../keys.h"
 
 #define BT_CSIS_SIH_PRAND_SIZE          3
 #define BT_CSIS_SIH_HASH_SIZE           3
@@ -80,6 +84,8 @@ struct csis_instance_t {
 	bt_addr_le_t lock_client_addr;
 	const struct bt_gatt_service_static *service_p;
 	struct csis_pending_notifications_t pend_notify[CONFIG_BT_MAX_PAIRED];
+	/* Array of connections that initiated pairing */
+	struct bt_conn *init_pairing_conns[CONFIG_BT_MAX_CONN];
 #if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	uint32_t age_counter;
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
@@ -179,6 +185,41 @@ static void notify_clients(struct bt_conn *excluded_client)
 	bt_conn_foreach(BT_CONN_TYPE_ALL, notify_client, excluded_client);
 }
 
+static int sirk_encrypt(struct bt_conn *conn,
+			const struct bt_csip_set_sirk_t *sirk,
+			struct bt_csip_set_sirk_t *enc_sirk)
+{
+	int err;
+	uint8_t k[16];
+
+	if (IS_ENABLED(CONFIG_BT_CSIS_TEST_ENC_SIRK)) {
+		/* test_k is from the sample data from A.2 in the CSIS spec */
+		uint8_t test_k[] = {0x1c, 0x01, 0xea, 0xf6,
+				    0x50, 0x7d, 0x43, 0x71,
+				    0x6f, 0x69, 0x48, 0xd4,
+				    0x9b, 0x1b, 0x6e, 0x67};
+		BT_DBG("Encrypting test SIRK");
+		memcpy(k, test_k, sizeof(k));
+	} else {
+#if defined(CONFIG_BT_PRIVACY)
+		memcpy(k, bt_dev.irk, 8);
+#else
+		memset(k, 0, 8);
+#endif /* CONFIG_BT_PRIVACY */
+		memcpy(k + 8, conn->le.keys->ltk.val + 8, 8);
+	}
+
+	err = bt_csis_sef(k, sirk->value, enc_sirk->value);
+
+	if (err) {
+		return err;
+	}
+
+	enc_sirk->type = BT_CSIP_SIRK_TYPE_ENCRYPTED;
+
+	return 0;
+}
+
 static int generate_sirk(uint32_t seed, uint8_t sirk_dest[16])
 {
 	int err;
@@ -218,17 +259,73 @@ static int generate_prand(uint32_t *dest)
 	return 0;
 }
 
+static bool conn_initiated_pairing(struct bt_conn *conn)
+{
+	for (int i = 0; i < ARRAY_SIZE(csis_inst.init_pairing_conns); i++) {
+		if (csis_inst.init_pairing_conns[i] == conn) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static ssize_t read_set_sirk(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
 			     void *buf, uint16_t len, uint16_t offset)
 {
-	BT_DBG("Set sirk %sencrypted", csis_inst.set_sirk.type ? "not " : "");
-	BT_HEXDUMP_DBG(&csis_inst.set_sirk.value,
-		       sizeof(csis_inst.set_sirk.value),
-		       "Set SIRK");
+	struct bt_csip_set_sirk_t enc_sirk;
+	struct bt_csip_set_sirk_t *sirk;
+
+	if (csis_cbs && csis_cbs->sirk_read_req) {
+		uint8_t cb_rsp;
+
+		/* Ask higher layer for what SIRK to return, if any */
+		cb_rsp = csis_cbs->sirk_read_req(conn);
+
+		if (cb_rsp == BT_CSIS_READ_SIRK_REQ_RSP_ACCEPT) {
+			sirk = &csis_inst.set_sirk;
+		} else if (IS_ENABLED(CONFIG_BT_CSIS_ENC_SIRK_SUPPORT) &&
+			   cb_rsp == BT_CSIS_READ_SIRK_REQ_RSP_ACCEPT_ENC) {
+			int err;
+
+			/* Reject if the connection did not initiate pairing as
+			 * per the specification */
+			if (!conn_initiated_pairing(conn)) {
+				BT_DBG("Reject as conn did not initiate "
+				       "pairing");
+				return BT_GATT_ERR(
+					BT_CSIP_ERROR_SIRK_ACCESS_REJECTED);
+			}
+
+			err = sirk_encrypt(conn,
+						&csis_inst.set_sirk,
+						&enc_sirk);
+			if (err) {
+				BT_ERR("Could not encrypt SIRK: %d",
+					err);
+				return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+			}
+			sirk = &enc_sirk;
+			BT_HEXDUMP_DBG(enc_sirk.value, sizeof(enc_sirk.value),
+				       "Encrypted Set SIRK");
+		} else if (cb_rsp == BT_CSIS_READ_SIRK_REQ_RSP_REJECT) {
+			return BT_GATT_ERR(BT_CSIP_ERROR_SIRK_ACCESS_REJECTED);
+		} else if (cb_rsp == BT_CSIS_READ_SIRK_REQ_RSP_OOB_ONLY) {
+			return BT_GATT_ERR(BT_CSIP_ERROR_SIRK_OOB_ONLY);
+		} else {
+			BT_ERR("Invalid callback response: %u", cb_rsp);
+			return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+		}
+	} else {
+		sirk = &csis_inst.set_sirk;
+	}
+
+	BT_DBG("Set sirk %sencrypted",
+	       sirk->type ==  BT_CSIP_SIRK_TYPE_PLAIN ? "not " : "");
+	BT_HEXDUMP_DBG(csis_inst.set_sirk.value,
+		       sizeof(csis_inst.set_sirk.value), "Set SIRK");
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
-				 &csis_inst.set_sirk,
-				 sizeof(csis_inst.set_sirk));
+				 sirk, sizeof(*sirk));
 }
 
 static void set_sirk_cfg_changed(const struct bt_gatt_attr *attr,
@@ -386,6 +483,12 @@ static void csis_disconnected(struct bt_conn *conn, uint8_t reason)
 	BT_DBG("Disconnected: %s (reason %u)",
 	       bt_addr_le_str(bt_conn_get_dst(conn)), reason);
 
+	for (int i = 0; i < ARRAY_SIZE(csis_inst.init_pairing_conns); i++) {
+		if (conn == csis_inst.init_pairing_conns[i]) {
+			csis_inst.init_pairing_conns[i] = NULL;
+		}
+	}
+
 	/*
 	 * If lock was taken by non-bonded device, set lock to released value,
 	 * and notify other connections.
@@ -425,14 +528,33 @@ static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
 {
 	/**
 	 * If a pairing is complete for a bonded device, then we
-	 * 1) Check if the device is already in the `pend_notify`, and if it is
+	 * 1) Store the connection pointer to later validate SIRK encryption
+	 * 2) Check if the device is already in the `pend_notify`, and if it is
 	 * not, then we
-	 * 2) Check if there's room for another device in the `pend_notify`
+	 * 3) Check if there's room for another device in the `pend_notify`
 	 *    array. If there are no more room for a new device, then
-	 * 3) Either we ignore this new device (bad luck), or we overwrite
+	 * 4) Either we ignore this new device (bad luck), or we overwrite
 	 *    the oldest entry, following the behavior of the key storage.
 	 */
 	bt_addr_le_t *addr;
+	struct bt_conn **free = NULL;
+
+	BT_DBG("%s paired (%sbonded)",
+	       bt_addr_le_str(bt_conn_get_dst(conn)), bonded ? "" : "not ");
+
+	/* Store the connection pointer for later use */
+	for (int i = 0; i < ARRAY_SIZE(csis_inst.init_pairing_conns); i++) {
+		if (!free && csis_inst.init_pairing_conns[i] == NULL) {
+			free = &csis_inst.init_pairing_conns[i];
+		}
+
+		if (csis_inst.init_pairing_conns[i] == conn) {
+			free = &csis_inst.init_pairing_conns[i];
+			break;
+		}
+	}
+	__ASSERT(free, "Could not store conn in init_pairing_conns");
+	*free = conn;
 
 	if (!bonded) {
 		return;
@@ -538,8 +660,7 @@ BT_GATT_SERVICE_DEFINE(csis_svc, BT_CSIS_SERVICE_DEFINITION);
 
 static int bt_csis_init(const struct device *unused)
 {
-	/* TODO: Consider deferring init to when it's actually needed (lazy) */
-	int res;
+	int res = 0;
 
 	bt_conn_cb_register(&conn_callbacks);
 	bt_conn_auth_cb_register(&auth_callbacks);
@@ -551,10 +672,27 @@ static int bt_csis_init(const struct device *unused)
 	csis_inst.set_size = CONFIG_BT_CSIS_SET_SIZE;
 	csis_inst.set_lock = BT_CSIP_RELEASE_VALUE;
 	csis_inst.set_sirk.type = BT_CSIP_SIRK_TYPE_PLAIN;
-	res = generate_sirk(CONFIG_BT_CSIS_SET_SIRK_SEED,
-			    csis_inst.set_sirk.value);
-	if (res) {
-		BT_DBG("Sirk generation failed for instance");
+
+	if (IS_ENABLED(CONFIG_BT_CSIS_TEST_SIH_SIRK)) {
+		uint8_t test_sirk[] = {
+			0xb8, 0x03, 0xea, 0xc6, 0xaf, 0xbb, 0x65, 0xa2,
+			0x5a, 0x41, 0xf1, 0x53, 0x05, 0x68, 0x8e, 0x83
+		};
+
+		memcpy(csis_inst.set_sirk.value, test_sirk, sizeof(test_sirk));
+	} else if (IS_ENABLED(CONFIG_BT_CSIS_TEST_ENC_SIRK)) {
+		uint8_t test_sirk[] = {
+			0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
+			0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45,
+		};
+
+		memcpy(csis_inst.set_sirk.value, test_sirk, sizeof(test_sirk));
+	} else {
+		res = generate_sirk(CONFIG_BT_CSIS_SET_SIRK_SEED,
+				csis_inst.set_sirk.value);
+		if (res) {
+			BT_DBG("Sirk generation failed for instance");
+		}
 	}
 
 #if defined(CONFIG_BT_EXT_ADV)
@@ -573,20 +711,17 @@ static int csis_update_psri(void)
 	uint32_t prand;
 	uint32_t hash;
 
-#if IS_ENABLED(CONFIG_BT_CSIS_TEST_SIRK)
-	prand = 0x69f563;
-	static uint8_t test_sirk[] = {
-		0xb8, 0x03, 0xea, 0xc6, 0xaf, 0xbb, 0x65, 0xa2,
-		0x5a, 0x41, 0xf1, 0x53, 0x05, 0x68, 0x8e, 0x83
-	};
-	memcpy(csis_inst.set_sirk.value, test_sirk, sizeof(test_sirk));
-#else
-	res = generate_prand(&prand);
-	if (res) {
-		BT_WARN("Could not generate new prand");
-		return res;
+	if (IS_ENABLED(CONFIG_BT_CSIS_TEST_SIH_SIRK)) {
+		prand = 0x69f563;
+	} else {
+		res = generate_prand(&prand);
+
+		if (res) {
+			BT_WARN("Could not generate new prand");
+			return res;
+		}
 	}
-#endif
+
 	res = bt_csis_sih(csis_inst.set_sirk.value, prand, &hash);
 	if (res) {
 		BT_WARN("Could not generate new PSRI");
