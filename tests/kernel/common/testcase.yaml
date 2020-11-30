@@ -5,7 +5,6 @@ tests:
     min_flash: 33
   kernel.common.tls:
     tags: kernel userspace
-    build_on_all: true
     min_flash: 33
     filter: CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE
     extra_configs:
@@ -19,7 +18,6 @@ tests:
       - CONFIG_MISRA_SANE=y
   kernel.common.nano32:
     tags: kernel userspace
-    build_on_all: true
     min_flash: 33
     filter: not CONFIG_KERNEL_COHERENCE
     extra_configs:
@@ -27,7 +25,6 @@ tests:
       - CONFIG_CBPRINTF_REDUCED_INTEGRAL=y
   kernel.common.nano64:
     tags: kernel userspace
-    build_on_all: true
     min_flash: 33
     filter: not CONFIG_KERNEL_COHERENCE
     extra_configs:
