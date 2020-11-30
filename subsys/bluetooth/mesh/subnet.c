@@ -615,10 +615,6 @@ bool bt_mesh_net_cred_find(struct bt_mesh_net_rx *rx, struct net_buf_simple *in,
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.frnd); i++) {
 		struct bt_mesh_friend *frnd = &bt_mesh.frnd[i];
 
-		if (!frnd->established) {
-			continue;
-		}
-
 		if (!frnd->subnet) {
 			continue;
 		}
