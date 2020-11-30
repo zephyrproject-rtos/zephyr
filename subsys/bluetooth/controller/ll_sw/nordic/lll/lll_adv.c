@@ -114,6 +114,15 @@ int lll_adv_init(void)
 {
 	int err;
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if (BT_CTLR_ADV_AUX_SET > 0)
+	err = lll_adv_aux_init();
+	if (err) {
+		return err;
+	}
+#endif /* BT_CTLR_ADV_AUX_SET > 0 */
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
 	err = init_reset();
 	if (err) {
 		return err;
@@ -125,6 +134,15 @@ int lll_adv_init(void)
 int lll_adv_reset(void)
 {
 	int err;
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if (BT_CTLR_ADV_AUX_SET > 0)
+	err = lll_adv_aux_reset();
+	if (err) {
+		return err;
+	}
+#endif /* BT_CTLR_ADV_AUX_SET > 0 */
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	err = init_reset();
 	if (err) {
