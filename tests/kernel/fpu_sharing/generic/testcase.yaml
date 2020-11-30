@@ -30,6 +30,12 @@ tests:
     tags: kernel
     timeout: 600
     min_ram: 16
+  kernel.fpu_sharing.generic.sparc:
+    extra_args: PI_NUM_ITERATIONS=70000
+    filter: CONFIG_CPU_HAS_FPU
+    arch_allow: sparc
+    tags: kernel
+    timeout: 600
   kernel.fpu_sharing.generic.x86:
     extra_args: CONF_FILE=prj_x86.conf
     platform_allow: qemu_x86
