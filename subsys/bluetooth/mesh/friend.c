@@ -1250,9 +1250,9 @@ static void subnet_evt(struct bt_mesh_subnet *sub, enum bt_mesh_key_evt evt)
 				BT_ERR("Failed updating friend cred for 0x%04x",
 				       frnd->lpn);
 				friend_clear(frnd);
-				break;
 			}
-
+			break;
+		case BT_MESH_KEY_SWAPPED:
 			enqueue_update(frnd, 0);
 			break;
 		case BT_MESH_KEY_REVOKED:
