@@ -727,7 +727,7 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, uint8_t hdr, uint8_t aszmic,
 			.aszmic = aszmic,
 			.src = rx->ctx.addr,
 			.dst = rx->ctx.recv_dst,
-			.seq_num = rx->seq,
+			.seq_num = seg ? (seg->seq_auth & 0xffffff) : rx->seq,
 			.iv_index = BT_MESH_NET_IVI_RX(rx),
 		},
 		.buf = buf,
@@ -1442,9 +1442,6 @@ found_rx:
 	k_delayed_work_cancel(&rx->ack);
 	send_ack(net_rx->sub, net_rx->ctx.recv_dst, net_rx->ctx.addr,
 		 net_rx->ctx.send_ttl, seq_auth, rx->block, rx->obo);
-
-	/* Decrypt with seqAuth */
-	net_rx->seq = (rx->seq_auth & 0xffffff);
 
 	if (net_rx->ctl) {
 		NET_BUF_SIMPLE_DEFINE(sdu, BT_MESH_RX_CTL_MAX);
