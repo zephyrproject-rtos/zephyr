@@ -126,7 +126,7 @@
 #endif
 
 #if defined(CONFIG_EMUL)
-	SECTION_DATA_PROLOGUE(log_const_sections,,)
+	SECTION_DATA_PROLOGUE(emulators_section,,)
 	{
 		__emul_list_start = .;
 		KEEP(*(SORT_BY_NAME(".emulators")));
