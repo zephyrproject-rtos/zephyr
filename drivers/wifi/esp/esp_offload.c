@@ -304,12 +304,13 @@ static void esp_send_work(struct k_work *work)
 			ret);
 	}
 
+	if (sock->context->send_cb) {
+		sock->context->send_cb(sock->context, ret,
+				      sock->context->user_data);
+	}
+
 	net_pkt_unref(sock->tx_pkt);
 	sock->tx_pkt = NULL;
-
-	if (sock->send_cb) {
-		sock->send_cb(sock->context, ret, sock->send_user_data);
-	}
 }
 
 static int esp_sendto(struct net_pkt *pkt,
@@ -366,8 +367,6 @@ static int esp_sendto(struct net_pkt *pkt,
 	}
 
 	sock->tx_pkt = pkt;
-	sock->send_cb = cb;
-	sock->send_user_data = user_data;
 
 	if (timeout == 0) {
 		k_work_submit_to_queue(&dev->workq, &sock->send_work);
@@ -590,7 +589,6 @@ static int esp_put(struct net_context *context)
 
 	sock->connect_cb = NULL;
 	sock->recv_cb = NULL;
-	sock->send_cb = NULL;
 	sock->tx_pkt = NULL;
 
 	/* Drain rxfifo */
