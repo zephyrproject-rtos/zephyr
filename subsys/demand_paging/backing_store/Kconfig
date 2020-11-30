@@ -1,0 +1,15 @@
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+choice BACKING_STORE_CHOICE
+	prompt "Backing store algorithms"
+	default BACKING_STORE_CUSTOM
+
+config BACKING_STORE_CUSTOM
+	bool "Custom backing store implementation"
+	help
+	  This option is chosen when the backing store will be implemented in
+	  the application. This will be typical as these tend to be very
+	  hardware-dependent.
+
+endchoice
