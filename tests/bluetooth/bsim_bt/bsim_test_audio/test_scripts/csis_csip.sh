@@ -70,4 +70,29 @@ Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \
 for PROCESS_ID in $PROCESS_IDS; do
   wait $PROCESS_ID || let "EXIT_CODE=$?"
 done
+
+# TEST WITH SIRK ENC
+printf "\n\n======== Running test with SIRK encrypted ========\n\n"
+Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=csip \
+  -RealEncryption=1 -rs=1
+
+Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=csis_enc \
+  -RealEncryption=1 -rs=2 -argstest rank 1
+
+Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 -testid=csis_enc \
+  -RealEncryption=1 -rs=3 -argstest rank 2
+
+Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=3 -testid=csis_enc \
+  -RealEncryption=1 -rs=4 -argstest rank 3
+
+Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \
+  -D=4 -sim_length=60e6 $@
+
+for PROCESS_ID in $PROCESS_IDS; do
+  wait $PROCESS_ID || let "EXIT_CODE=$?"
+done
 exit $EXIT_CODE #the last exit code != 0
