@@ -417,6 +417,7 @@ int pthread_join(pthread_t thread, void **status)
 		if (status != NULL) {
 			*status = pthread->retval;
 		}
+		pthread->state = PTHREAD_TERMINATED;
 	} else if (pthread->state == PTHREAD_DETACHED) {
 		ret = EINVAL;
 	} else {
