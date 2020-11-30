@@ -41,15 +41,24 @@
 
 
 /* Interrupt stack frame */
-#define ISF_PSR_OFFSET  (STACK_FRAME_SIZE + 0x00)
-#define ISF_PC_OFFSET   (STACK_FRAME_SIZE + 0x04)
-#define ISF_NPC_OFFSET  (STACK_FRAME_SIZE + 0x08)
-#define ISF_G1_OFFSET   (STACK_FRAME_SIZE + 0x0c)
-#define ISF_G2_OFFSET   (STACK_FRAME_SIZE + 0x10)
-#define ISF_G3_OFFSET   (STACK_FRAME_SIZE + 0x14)
-#define ISF_G4_OFFSET   (STACK_FRAME_SIZE + 0x18)
-#define ISF_Y_OFFSET    (STACK_FRAME_SIZE + 0x1c)
+#define ISF_PSR_OFFSET  (0x40 + 0x00)
+#define ISF_PC_OFFSET   (0x40 + 0x04)
+#define ISF_NPC_OFFSET  (0x40 + 0x08)
+#define ISF_G1_OFFSET   (0x40 + 0x0c)
+#define ISF_G2_OFFSET   (0x40 + 0x10)
+#define ISF_G3_OFFSET   (0x40 + 0x14)
+#define ISF_G4_OFFSET   (0x40 + 0x18)
+#define ISF_Y_OFFSET    (0x40 + 0x1c)
 
-#define ISF_SIZE        (STACK_FRAME_SIZE + 0x20)
+#if !defined(_FLAT)
+ #define ISF_SIZE       (0x20)
+#else
+/*
+ * The flat ABI stores and loads "local" and "in" registers in the save area as
+ * part of function prologue and epilogue. So we allocate space for a new save
+ * area (0x40 byte) as part of the interrupt stack frame.
+ */
+ #define ISF_SIZE       (0x40 + 0x20)
+#endif
 
 #endif /* ZEPHYR_ARCH_SPARC_CORE_STACK_H_ */

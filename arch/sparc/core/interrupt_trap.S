@@ -86,12 +86,12 @@ __sparc_trap_interrupt:
 	 * task is restored.
 	 */
 
-	/* Allocate stack for isr context including ABI frame. */
+	/* Allocate stack for isr context. */
 	sub	%fp, ISF_SIZE, %sp
 	/*
 	 * %fp: %sp of interrupted task
 	 * %sp: %sp of interrupted task - ISF_SIZE.
-	 *      (fits a full ABI frame + what we store here)
+	 *      (fits what we store here)
 	 *
 	 * Save the interrupted context.
 	 */
