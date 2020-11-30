@@ -39,6 +39,19 @@ tests:
       type: one_line
       regex:
         - "The device is put in USB mass storage mode."
+  sample.usb.mass_sdhc_fatfs:
+    min_ram: 32
+    depends_on: usb_device sdhc
+    extra_configs:
+        - CONFIG_LOG_DEFAULT_LEVEL=3
+        - CONFIG_APP_MSC_STORAGE_SDCARD=y
+    tags: msd usb
+    harness: console
+    harness_config:
+      type: one_line
+      fixture: fixture_sdcard
+      regex:
+        - "The device is put in USB mass storage mode."
   sample.usb.mass_flash_littlefs:
     min_ram: 32
     depends_on: usb_device

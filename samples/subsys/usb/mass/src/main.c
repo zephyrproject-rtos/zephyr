@@ -67,6 +67,8 @@ static int mount_app_fs(struct fs_mount_t *mnt)
 	mnt->fs_data = &fat_fs;
 	if (IS_ENABLED(CONFIG_DISK_ACCESS_RAM)) {
 		mnt->mnt_point = "/RAM:";
+	} else if (IS_ENABLED(CONFIG_DISK_ACCESS_SDHC)) {
+		mnt->mnt_point = "/SD:";
 	} else {
 		mnt->mnt_point = "/NAND:";
 	}

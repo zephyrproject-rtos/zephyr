@@ -4,7 +4,9 @@ cmake_minimum_required(VERSION 3.13.1)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(mass)
 
-if((NOT CONFIG_DISK_ACCESS_FLASH) AND (NOT CONFIG_DISK_ACCESS_RAM))
+if((NOT CONFIG_DISK_ACCESS_FLASH) AND
+   (NOT CONFIG_DISK_ACCESS_RAM) AND
+   (NOT CONFIG_DISK_ACCESS_SDHC))
 	message( FATAL_ERROR "No disk access settings detected." )
 endif()
 
