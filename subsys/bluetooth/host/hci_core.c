@@ -7135,7 +7135,7 @@ int bt_le_per_adv_set_param(struct bt_le_ext_adv *adv,
 	cp = net_buf_add(buf, sizeof(*cp));
 	(void)memset(cp, 0, sizeof(*cp));
 
-	cp->handle = sys_cpu_to_le16(adv->handle);
+	cp->handle = adv->handle;
 	cp->min_interval = sys_cpu_to_le16(param->interval_min);
 	cp->max_interval = sys_cpu_to_le16(param->interval_max);
 

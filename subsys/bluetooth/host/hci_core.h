@@ -111,13 +111,13 @@ enum {
 
 struct bt_le_ext_adv {
 	/* ID Address used for advertising */
-	uint8_t                    id;
+	uint8_t                 id;
 
 	/* Advertising handle */
-	uint16_t			handle;
+	uint8_t                 handle;
 
 	/* Current local Random Address */
-	bt_addr_le_t		random_addr;
+	bt_addr_le_t            random_addr;
 
 	/* Current target address */
 	bt_addr_le_t            target_addr;
