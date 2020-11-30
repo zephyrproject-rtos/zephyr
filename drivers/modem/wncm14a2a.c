@@ -1791,9 +1791,6 @@ static int offload_put(struct net_context *context)
 	/* clear last_socket_id */
 	ictx.last_socket_id = 0;
 
-	sock->context->connect_cb = NULL;
-	sock->context->recv_cb = NULL;
-	sock->context->send_cb = NULL;
 	socket_put(sock);
 	net_context_unref(context);
 	if (sock->type == SOCK_STREAM) {
