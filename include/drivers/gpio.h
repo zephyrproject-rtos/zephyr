@@ -206,21 +206,22 @@ extern "C" {
  * The `GPIO_DS_*` flags are used with `gpio_pin_configure` to specify the drive
  * strength configuration of a GPIO pin.
  *
- * The drive strength of individual pins can be configured
- * independently for when the pin output is low and high.
- *
- * The `GPIO_DS_*_LOW` enumerations define the drive strength of a pin
- * when output is low.
-
- * The `GPIO_DS_*_HIGH` enumerations define the drive strength of a pin
- * when output is high.
- *
  * The interface supports two different drive strengths:
- * `DFLT` - The lowest drive strength supported by the HW
- * `ALT` - The highest drive strength supported by the HW
+ * `GPIO_DS_DFLT` - The lowest drive strength supported by the HW
+ * `GPIO_DS_ALT` - The highest drive strength supported by the HW
  *
  * On hardware that supports only one standard drive strength, both
  * `DFLT` and `ALT` have the same behavior.
+ *
+ * For supporting hardware only, the drive strength can be configured
+ * independently for when the pin output state is low or high.
+ *
+ * The `GPIO_DS_*_LOW` enumerations define the drive strength of a pin
+ * when output is low.
+ *
+ * The `GPIO_DS_*_HIGH` enumerations define the drive strength of a pin
+ * when output is high.
+ *
  * @{
  */
 /** @cond INTERNAL_HIDDEN */
@@ -233,8 +234,6 @@ extern "C" {
 #define GPIO_DS_DFLT_LOW (0x0U << GPIO_DS_LOW_POS)
 
 /** Alternative drive strength when GPIO pin output is low.
- * For hardware that does not support configurable drive strength
- * use the default drive strength.
  */
 #define GPIO_DS_ALT_LOW (0x1U << GPIO_DS_LOW_POS)
 
@@ -248,10 +247,20 @@ extern "C" {
 #define GPIO_DS_DFLT_HIGH (0x0U << GPIO_DS_HIGH_POS)
 
 /** Alternative drive strength when GPIO pin output is high.
+ */
+#define GPIO_DS_ALT_HIGH (0x1U << GPIO_DS_HIGH_POS)
+
+/** Default/lowest drive strength.
+ * For hardware that does not support configurable drive strength
+ * use the default drive strength.
+ */
+#define GPIO_DS_DFLT (GPIO_DS_DFLT_LOW | GPIO_DS_DFLT_HIGH)
+
+/** Alternate/highest drive strength.
  * For hardware that does not support configurable drive strengths
  * use the default drive strength.
  */
-#define GPIO_DS_ALT_HIGH (0x1U << GPIO_DS_HIGH_POS)
+#define GPIO_DS_ALT (GPIO_DS_ALT_LOW | GPIO_DS_ALT_HIGH)
 /** @} */
 
 /** @cond INTERNAL_HIDDEN */
