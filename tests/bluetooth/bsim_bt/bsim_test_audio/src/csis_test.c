@@ -14,6 +14,7 @@ static uint8_t expected_passes = 1;
 static uint8_t passes;
 static volatile bool g_locked;
 static uint8_t dyn_rank;
+static uint8_t sirk_read_req_rsp = BT_CSIS_READ_SIRK_REQ_RSP_ACCEPT;
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
@@ -45,8 +46,14 @@ static void csis_lock_changed_cb(struct bt_conn *conn, bool locked)
 	g_locked = locked;
 }
 
+static uint8_t sirk_read_req_cb(struct bt_conn *conn)
+{
+	return sirk_read_req_rsp;
+}
+
 static struct bt_csis_cb_t csis_cbs = {
 	.locked = csis_lock_changed_cb,
+	.sirk_read_req = sirk_read_req_cb,
 };
 
 static void bt_ready(int err)
@@ -122,6 +129,13 @@ static void test_force_release(void)
 	bt_csis_lock(false, true);
 }
 
+static void test_csis_enc(void)
+{
+	printk("Running %s\n", __func__);
+	sirk_read_req_rsp = BT_CSIS_READ_SIRK_REQ_RSP_ACCEPT_ENC;
+	test_main();
+}
+
 static void test_args(int argc, char *argv[])
 {
 	long rank_arg;
@@ -155,6 +169,13 @@ static const struct bst_test_instance test_connect[] = {
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_force_release,
+		.test_args_f = test_args,
+	},
+	{
+		.test_id = "csis_enc",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_csis_enc,
 		.test_args_f = test_args,
 	},
 
