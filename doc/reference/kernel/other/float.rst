@@ -9,8 +9,9 @@ configurations that support these registers.
 .. note::
     Floating point services are currently available only for boards
     based on ARM Cortex-M SoCs supporting the Floating Point Extension,
-    the Intel x86 architecture and ARCv2 SoCs supporting the Floating
-    Point Extension. The services provided are architecture specific.
+    the Intel x86 architecture, the SPARC architecture and ARCv2 SoCs
+    supporting the Floating Point Extension. The services provided
+    are architecture specific.
 
     The kernel does not support the use of floating point registers by ISRs.
 
@@ -175,6 +176,34 @@ restored from the thread's stack. Thus, the kernel does not save or restore the
 FP context of threads that are not using the FP registers. An extra 84 bytes
 (single floating point hardware) or 164 bytes (double floating point hardware)
 of stack space is required to load and store floating point registers.
+
+SPARC architecture
+------------------
+
+On the SPARC architecture, the kernel treats each thread as a non-user
+or FPU user and the thread must be tagged by one of the
+following techniques:
+
+* A statically-created thread can be tagged by passing the
+  :c:macro:`K_FP_REGS` option to :c:macro:`K_THREAD_DEFINE`.
+
+* A dynamically-created thread can be tagged by passing the
+  :c:macro:`K_FP_REGS` to :c:func:`k_thread_create`.
+
+During thread context switch at exit from interrupt handler, the SPARC
+kernel saves *all* floating point registers, if the FPU was enabled in
+the switched-out thread. Floating point registers are saved on the thread's
+stack. Floating point registers are restored when a thread context is restored
+iff they were saved at the context save. Saving and restoring of the floating
+point registers is synchronous and thus not lazy. The FPU is always disabled
+when an ISR is called (independent of :option:`CONFIG_FPU_SHARING`).
+
+Floating point disabling with :c:func:`k_float_disable` is not implemented.
+
+When :option:`CONFIG_FPU_SHARING` is used, then 136 bytes of stack space
+is required for each FPU user thread to load and store floating point
+registers. No extra stack is required if :option:`CONFIG_FPU_SHARING` is
+not used.
 
 x86 architecture
 ----------------

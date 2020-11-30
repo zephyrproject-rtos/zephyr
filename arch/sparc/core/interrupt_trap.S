@@ -117,8 +117,30 @@ __sparc_trap_interrupt:
 	 */
 
 	/* Enable traps, raise PIL to mask all maskable interrupts. */
-	or	%l0, PSR_PIL, %o0
-	wr	%o0, PSR_ET, %psr
+	or	%l0, PSR_PIL, %l6
+
+#if defined(CONFIG_FPU)
+	/*
+	 * We now check if the interrupted context was using the FPU. The
+	 * result is stored in register l5 which will either get the value 0
+	 * (FPU not used) or PSR_EF (FPU used).
+	 *
+	 * If the FPU was used by the interrupted context, then we do two
+	 * things:
+	 * 1. Store FSR to memory. This has the side-effect of completing all
+	 *    pending FPU operations.
+	 * 2. Disable FPU. Floating point instructions in the ISR will trap.
+	 *
+	 * The FPU is be enabled again if needed after the ISR has returned.
+	 */
+	set	PSR_EF, %l5
+	andcc	%l0, %l5, %l5
+	bne,a	1f
+	 st	%fsr, [%sp]
+1:
+	andn	%l6, %l5, %l6
+#endif
+	wr	%l6, PSR_ET, %psr
 	nop
 	nop
 	nop
@@ -159,7 +181,69 @@ __sparc_trap_interrupt:
 	 */
 	cmp	%o0, %o1
 	beq	.Lno_reschedule
+	/* z_sparc_context_switch() is a leaf function not using stack. */
+	 add	%sp, (96+8-64), %sp
+
+#if defined(CONFIG_FPU_SHARING)
+	/* IF PSR_EF at trap time then store the FP context. */
+	cmp	%l5, 0
+	be	.Lno_fp_context
 	 nop
+
+	/*
+	 * PSR_EF was 1 at trap time so save the FP registers on stack.
+	 * - Set PSR_EF so we can access the FP registers.
+	 * - Allocate space for the FP registers above the save area used for
+	 *   the z_sparc_context_switch() call.
+	 */
+	wr	%l6, %l5, %psr
+	nop
+	nop
+	nop
+
+	sub	%sp, 34 * 4, %sp
+	std	%f0,  [%sp + 64 + 0x00]
+	std	%f2,  [%sp + 64 + 0x08]
+	std	%f4,  [%sp + 64 + 0x10]
+	std	%f6,  [%sp + 64 + 0x18]
+	std	%f8,  [%sp + 64 + 0x20]
+	std	%f10, [%sp + 64 + 0x28]
+	std	%f12, [%sp + 64 + 0x30]
+	std	%f14, [%sp + 64 + 0x38]
+	std	%f16, [%sp + 64 + 0x40]
+	std	%f18, [%sp + 64 + 0x48]
+	std	%f20, [%sp + 64 + 0x50]
+	std	%f22, [%sp + 64 + 0x58]
+	std	%f24, [%sp + 64 + 0x60]
+	std	%f26, [%sp + 64 + 0x68]
+	std	%f28, [%sp + 64 + 0x70]
+	std	%f30, [%sp + 64 + 0x78]
+
+	call	z_sparc_context_switch
+	 st	%fsr, [%sp + 64 + 0x80]
+
+	ldd	[%sp + 64 + 0x00], %f0
+	ldd	[%sp + 64 + 0x08], %f2
+	ldd	[%sp + 64 + 0x10], %f4
+	ldd	[%sp + 64 + 0x18], %f6
+	ldd	[%sp + 64 + 0x20], %f8
+	ldd	[%sp + 64 + 0x28], %f10
+	ldd	[%sp + 64 + 0x30], %f12
+	ldd	[%sp + 64 + 0x38], %f14
+	ldd	[%sp + 64 + 0x40], %f16
+	ldd	[%sp + 64 + 0x48], %f18
+	ldd	[%sp + 64 + 0x50], %f20
+	ldd	[%sp + 64 + 0x58], %f22
+	ldd	[%sp + 64 + 0x60], %f24
+	ldd	[%sp + 64 + 0x68], %f26
+	ldd	[%sp + 64 + 0x70], %f28
+	ldd	[%sp + 64 + 0x78], %f30
+	ld	[%sp + 64 + 0x80], %fsr
+	ba      .Lno_reschedule
+	 add	%sp, 34 * 4, %sp
+.Lno_fp_context:
+#endif /* CONFIG_FPU_SHARING */
+
 	call	z_sparc_context_switch
 	 nop
 .Lno_reschedule:
