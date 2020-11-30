@@ -515,7 +515,7 @@ static void send_prov_data(void)
 	}
 
 	bt_mesh_prov_buf_init(&pdu, PROV_DATA);
-	net_buf_simple_add_mem(&pdu, sub->keys[sub->kr_flag].net_key, 16);
+	net_buf_simple_add_mem(&pdu, sub->keys[SUBNET_KEY_TX_IDX(sub)].net_key, 16);
 	net_buf_simple_add_be16(&pdu, prov_device.node->net_idx);
 	net_buf_simple_add_u8(&pdu, bt_mesh_cdb_subnet_flags(sub));
 	net_buf_simple_add_be32(&pdu, bt_mesh_cdb.iv_index);

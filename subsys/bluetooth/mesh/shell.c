@@ -1973,7 +1973,7 @@ static int cmd_provision(const struct shell *shell, size_t argc, char *argv[])
 			return 0;
 		}
 
-		net_key = sub->keys[sub->kr_flag].net_key;
+		net_key = sub->keys[SUBNET_KEY_TX_IDX(sub)].net_key;
 	}
 
 	err = bt_mesh_provision(net_key, net_idx, 0, iv_index, addr,
@@ -2501,7 +2501,7 @@ static int cmd_cdb_node_add(const struct shell *shell, size_t argc,
 
 	memcpy(node->dev_key, dev_key, 16);
 
-	if (IS_ENABLED(CONFIG_SETTINGS)) {
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_store_cdb_node(node);
 	}
 
@@ -2557,7 +2557,7 @@ static int cmd_cdb_subnet_add(const struct shell *shell, size_t argc,
 
 	memcpy(sub->keys[0].net_key, net_key, 16);
 
-	if (IS_ENABLED(CONFIG_SETTINGS)) {
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_store_cdb_subnet(sub);
 	}
 

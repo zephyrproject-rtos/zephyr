@@ -228,14 +228,16 @@ struct bt_mesh_cdb_subnet *bt_mesh_cdb_subnet_get(uint16_t net_idx)
 
 void bt_mesh_cdb_subnet_store(const struct bt_mesh_cdb_subnet *sub)
 {
-	bt_mesh_store_cdb_subnet(sub);
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_store_cdb_subnet(sub);
+	}
 }
 
 uint8_t bt_mesh_cdb_subnet_flags(const struct bt_mesh_cdb_subnet *sub)
 {
 	uint8_t flags = 0x00;
 
-	if (sub && sub->kr_flag) {
+	if (sub && SUBNET_KEY_TX_IDX(sub)) {
 		flags |= BT_MESH_NET_FLAG_KR;
 	}
 
@@ -308,7 +310,9 @@ struct bt_mesh_cdb_node *bt_mesh_cdb_node_get(uint16_t addr)
 
 void bt_mesh_cdb_node_store(const struct bt_mesh_cdb_node *node)
 {
-	bt_mesh_store_cdb_node(node);
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_store_cdb_node(node);
+	}
 }
 
 void bt_mesh_cdb_node_foreach(bt_mesh_cdb_node_func_t func, void *user_data)
@@ -379,5 +383,7 @@ struct bt_mesh_cdb_app_key *bt_mesh_cdb_app_key_get(uint16_t app_idx)
 
 void bt_mesh_cdb_app_key_store(const struct bt_mesh_cdb_app_key *key)
 {
-	bt_mesh_store_cdb_app_key(key);
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_store_cdb_app_key(key);
+	}
 }
