@@ -100,10 +100,6 @@ __sparc_trap_interrupt:
 	st	%g1, [%sp + ISF_G1_OFFSET]      /* g1 */
 	std	%l4, [%sp + ISF_G2_OFFSET]      /* g2  g3 */
 	st	%g4, [%sp + ISF_G4_OFFSET]      /* g4 */
-	std	%i0, [%sp + ISF_I0_OFFSET]      /* i0  i1 */
-	std	%i2, [%sp + ISF_I2_OFFSET]      /* i2  i3 */
-	std	%i4, [%sp + ISF_I4_OFFSET]      /* i4  i5 */
-	std	%i6, [%sp + ISF_I6_OFFSET]      /* fp  i7 */
 	rd	%y, %g1
 	st	%g1, [%sp + ISF_Y_OFFSET]	/* y */
 
@@ -142,18 +138,17 @@ __sparc_trap_interrupt:
 #endif
 
 	/*
-	 * Switch back to interrupted task stack
 	 * %fp: %sp of interrupted task - ISF_SIZE.
 	 * %sp: irq stack - 96. An ABI frame
 	 */
-	mov	%fp, %sp
-	/*
-	 * %fp: %sp of interrupted task - ISF_SIZE.
-	 * %sp: %sp of interrupted task - ISF_SIZE.
-	 */
 
 #ifdef CONFIG_PREEMPT_ENABLED
-	sub	%sp, (96+8), %sp
+	/* allocate stack for calling C function and for its output value */
+	sub	%fp, (96+8), %sp
+	/*
+	 * %fp: %sp of interrupted task - ISF_SIZE.
+	 * %sp: %sp of interrupted task - ISF_SIZE - STACK_FRAME_SIZE - 8.
+	 */
 	call	z_arch_get_next_switch_handle
 	 add	%sp, 96, %o0
 	/* we get old thread as "return value" on stack */
@@ -168,24 +163,21 @@ __sparc_trap_interrupt:
 	call	z_sparc_context_switch
 	 nop
 .Lno_reschedule:
-	add	%sp, (96+8), %sp
 #endif /* CONFIG_PREEMPT_ENABLED */
 
 	/* Restore the interrupted context. */
-	ld	[%sp + ISF_Y_OFFSET], %g1
+	ld	[%fp + ISF_Y_OFFSET], %g1
 	wr	%g1, 0, %y
 
-	ldd	[%sp + ISF_PSR_OFFSET], %l0     /* psr, pc */
-	ld	[%sp + ISF_NPC_OFFSET], %l2     /* npc */
+	ldd	[%fp + ISF_PSR_OFFSET], %l0     /* psr, pc */
+	ld	[%fp + ISF_NPC_OFFSET], %l2     /* npc */
 	/* NOTE: %g1 will be restored later */
-	ldd	[%sp + ISF_G2_OFFSET], %g2
-	ld	[%sp + ISF_G4_OFFSET], %g4
-	ldd	[%sp + ISF_I0_OFFSET], %i0
-	ldd	[%sp + ISF_I2_OFFSET], %i2
-	ldd	[%sp + ISF_I4_OFFSET], %i4
-	ldd	[%sp + ISF_I6_OFFSET], %i6
+
 	/* %g1 is used to access the stack frame later */
-	mov	%sp, %g1
+	mov	%fp, %g1
+	ldd	[%fp + ISF_G2_OFFSET], %g2
+	ld	[%fp + ISF_G4_OFFSET], %g4
+	add	%fp, ISF_SIZE,  %fp
 
 	/*
 	 * Install the PSR we got from the interrupt context. Current PSR.CWP
