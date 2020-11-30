@@ -160,12 +160,10 @@ struct esp_socket {
 	/* net context */
 	struct net_context *context;
 	net_context_connect_cb_t connect_cb;
-	net_context_send_cb_t send_cb;
 	net_context_recv_cb_t recv_cb;
 
 	/* callback data */
 	void *conn_user_data;
-	void *send_user_data;
 	void *recv_user_data;
 };
 
