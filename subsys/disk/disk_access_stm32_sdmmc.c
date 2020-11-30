@@ -14,6 +14,7 @@
 #include <drivers/gpio.h>
 #include <logging/log.h>
 #include <soc.h>
+#include <stm32_ll_rcc.h>
 
 LOG_MODULE_REGISTER(stm32_sdmmc);
 
