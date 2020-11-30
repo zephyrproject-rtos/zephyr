@@ -1,0 +1,16 @@
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+# Demand paging sample eviction algorithms
+
+choice "Page frame eviction algorithms"
+	depends on DEMAND_PAGING
+
+config EVICTION_CUSTOM
+	bool "Custom eviction algorithm"
+	default y
+	help
+	  This option is chosen when the eviction algorithm will be implemented
+	  by the application, instead of using one included in Zephyr.
+
+endchoice
