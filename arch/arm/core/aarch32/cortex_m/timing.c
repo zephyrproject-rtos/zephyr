@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Nordic Semiconductor ASA
+ * Copyright (c) 2020 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +15,45 @@
 #include <timing/timing.h>
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 
+/* Define DWT LSR masks which are currently not defined by the CMSIS V5.1.2.
+ * (LSR register is defined but not its bitfields).
+ * Reuse ITM LSR mask as it is the same offset than DWT LSR one.
+ */
+#if !defined DWT_LSR_Present_Msk
+#define DWT_LSR_Present_Msk ITM_LSR_Present_Msk
+#endif
+#if !defined DWT_LSR_Access_Msk
+#define DWT_LSR_Access_Msk ITM_LSR_Access_Msk
+#endif
+
+static void dwt_access(bool ena)
+{
+#if defined(CONFIG_CPU_CORTEX_M7)
+	/*
+	 * In case of Cortex M7, we need to check the optional presence of
+	 * Lock Access Register (LAR) which is indicated in Lock Status
+	 * Register (LSR). When present, a special access token must be written
+	 * to unlock DWT registers.
+	 */
+	uint32_t lsr = DWT->LSR;
+
+	if ((lsr & DWT_LSR_Present_Msk) != 0) {
+		if (ena) {
+			if ((lsr & DWT_LSR_Access_Msk) != 0) {
+				/* Access is locked. unlock it */
+				DWT->LAR = 0xC5ACCE55;
+			}
+		} else {
+			if ((lsr & DWT_LSR_Access_Msk) == 0) {
+				/* Acess is unlocked. Lock it */
+				DWT->LAR = 0;
+			}
+		}
+	}
+#else /* CONFIG_CPU_CORTEX_M7 */
+	ARG_UNUSED(ena);
+#endif /* CONFIG_CPU_CORTEX_M7 */
+}
 
 /**
  * @brief Initialize and Enable the DWT cycle counter
@@ -26,6 +66,9 @@ static inline int z_arm_dwt_init(const struct device *arg)
 {
 	/* Enable tracing */
 	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+
+	/* Unlock DWT access if any */
+	dwt_access(true);
 
 	/* Clear and enable the cycle counter */
 	DWT->CYCCNT = 0;
