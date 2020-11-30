@@ -393,7 +393,6 @@ int net_context_put(struct net_context *context)
 
 	context->connect_cb = NULL;
 	context->recv_cb = NULL;
-	context->send_cb = NULL;
 
 	/* Decrement refcount on user app's behalf */
 	net_context_unref(context);
@@ -1561,8 +1560,8 @@ static int context_sendto(struct net_context *context,
 		len = tmp_len;
 	}
 
-	context->send_cb = cb;
-	context->user_data = user_data;
+	pkt->send_cb = cb;
+	pkt->user_data = user_data;
 
 	if (IS_ENABLED(CONFIG_NET_CONTEXT_PRIORITY)) {
 		uint8_t priority;

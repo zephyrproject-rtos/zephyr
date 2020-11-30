@@ -228,11 +228,6 @@ __net_socket struct net_context {
 	 */
 	net_context_recv_cb_t recv_cb;
 
-	/** Send callback to be called when the packet has been sent
-	 * successfully.
-	 */
-	net_context_send_cb_t send_cb;
-
 	/** Connect callback to be called when a connection has been
 	 *  established.
 	 */

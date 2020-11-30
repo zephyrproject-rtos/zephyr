@@ -88,6 +88,14 @@ struct net_pkt {
 	/** Network connection context */
 	struct net_context *context;
 
+	/** Network context send callback to be called when the packet has been
+	 * sent successfully
+	 */
+	net_context_send_cb_t send_cb;
+
+	/** Network context send user data */
+	void *user_data;
+
 	/** Network interface */
 	struct net_if *iface;
 

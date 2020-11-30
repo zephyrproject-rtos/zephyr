@@ -163,15 +163,16 @@ struct net_if *z_vrfy_net_if_get_by_index(int index)
 #include <syscalls/net_if_get_by_index_mrsh.c>
 #endif
 
-static inline void net_context_send_cb(struct net_context *context,
-				       int status)
+static inline void net_pkt_send_cb(struct net_pkt *pkt, int status)
 {
+	struct net_context *context = net_pkt_context(pkt);
+
 	if (!context) {
 		return;
 	}
 
-	if (context->send_cb) {
-		context->send_cb(context, status, context->user_data);
+	if (pkt->send_cb) {
+		pkt->send_cb(context, status, pkt->user_data);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_UDP) &&
@@ -322,7 +323,7 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 		NET_DBG("Calling context send cb %p status %d",
 			context, status);
 
-		net_context_send_cb(context, status);
+		net_pkt_send_cb(pkt, status);
 
 		if (IS_ENABLED(CONFIG_NET_CONTEXT_TIMESTAMP) && status >= 0 &&
 		    start_timestamp.nanosecond && curr_time > 0) {
@@ -494,7 +495,7 @@ done:
 		if (context) {
 			NET_DBG("Calling ctx send cb %p verdict %d",
 				context, verdict);
-			net_context_send_cb(context, status);
+			net_pkt_send_cb(pkt, status);
 		}
 
 		if (dst->addr) {
