@@ -112,6 +112,10 @@ Boards & SoC Support
 
 * Made these changes in other boards:
 
+  * nRF5340 DK: Selected TF-M as the default Secure Processing Element
+    (SPE) when building Zephyr for the non-secure domain.
+
+
 * Added support for these following shields:
 
 Drivers and Sensors
