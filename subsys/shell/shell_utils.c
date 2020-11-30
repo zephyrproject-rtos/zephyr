@@ -469,7 +469,7 @@ const struct device *shell_device_lookup(size_t idx,
 	const struct device *dev_end = dev + len;
 
 	while (dev < dev_end) {
-		if (z_device_ready(dev)
+		if (device_is_ready(dev)
 		    && (dev->name != NULL)
 		    && (strlen(dev->name) != 0)
 		    && ((prefix == NULL)
