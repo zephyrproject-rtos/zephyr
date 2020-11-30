@@ -545,7 +545,17 @@ void z_thread_single_abort(struct k_thread *thread)
 	if (IS_ENABLED(CONFIG_SMP)) {
 		z_sched_abort(thread);
 	}
-
+	/* Past this point the thread is guaranteed to never to run again
+	 * on this CPU, and is not currently running (or will ever run again)
+	 * on another CPU.
+	 */
+#ifdef CONFIG_USERSPACE
+	/* Remove this thread from its memory domain, which takes
+	* it off the domain's thread list and possibly also arch-
+	* specific tasks.
+	*/
+	z_mem_domain_exit_thread(thread);
+#endif
 	LOCKED(&sched_spinlock) {
 		LOG_DBG("Cleanup aborting thread %p", thread);
 		struct k_thread *waiter;
@@ -598,12 +608,6 @@ void z_thread_single_abort(struct k_thread *thread)
 		z_thread_monitor_exit(thread);
 
 #ifdef CONFIG_USERSPACE
-		/* Remove this thread from its memory domain, which takes
-		 * it off the domain's thread list and possibly also arch-
-		 * specific tasks.
-		 */
-		z_mem_domain_exit_thread(thread);
-
 		/* Revoke permissions on thread's ID so that it may be
 		 * recycled
 		 */
