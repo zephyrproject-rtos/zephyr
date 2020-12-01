@@ -146,14 +146,12 @@ struct esp_socket {
 
 	/* packets */
 	struct k_fifo fifo_rx_pkt;
-	struct net_pkt *tx_pkt;
 
 	/* sem */
 	struct k_sem sem_data_ready;
 
 	/* work */
 	struct k_work connect_work;
-	struct k_work send_work;
 	struct k_work recv_work;
 	struct k_work recvdata_work;
 

@@ -189,8 +189,9 @@ MODEM_CMD_DEFINE(on_cmd_send_fail)
 	return 0;
 }
 
-static int _sock_send(struct esp_data *dev, struct esp_socket *sock)
+static int _sock_send(struct esp_socket *sock, struct net_pkt *pkt)
 {
+	struct esp_data *dev = esp_socket_to_dev(sock);
 	char cmd_buf[sizeof("AT+CIPSEND=0,,\"\",") +
 		     sizeof(STRINGIFY(ESP_MTU)) - 1 +
 		     NET_IPV4_ADDR_LEN + sizeof("65535") - 1];
@@ -207,7 +208,7 @@ static int _sock_send(struct esp_data *dev, struct esp_socket *sock)
 		return -ENETUNREACH;
 	}
 
-	pkt_len = net_pkt_get_len(sock->tx_pkt);
+	pkt_len = net_pkt_get_len(pkt);
 
 	LOG_DBG("link %d, len %d", sock->link_id, pkt_len);
 
@@ -255,7 +256,7 @@ static int _sock_send(struct esp_data *dev, struct esp_socket *sock)
 		goto out;
 	}
 
-	frag = sock->tx_pkt->frags;
+	frag = pkt->frags;
 	while (frag && pkt_len) {
 		write_len = MIN(pkt_len, frag->len);
 		dev->mctx.iface.write(&dev->mctx.iface, frag->data, write_len);
@@ -286,31 +287,27 @@ out:
 
 static void esp_send_work(struct k_work *work)
 {
-	struct esp_socket *sock;
-	struct esp_data *dev;
+	struct net_pkt *pkt = CONTAINER_OF(work, struct net_pkt, work);
+	struct net_context *context = pkt->context;
+	struct esp_socket *sock = context->offload_context;
 	int ret = 0;
-
-	sock = CONTAINER_OF(work, struct esp_socket, send_work);
-	dev = esp_socket_to_dev(sock);
 
 	if (!esp_socket_in_use(sock)) {
 		LOG_DBG("Socket %d not in use", sock->idx);
 		return;
 	}
 
-	ret = _sock_send(dev, sock);
+	ret = _sock_send(sock, pkt);
 	if (ret < 0) {
 		LOG_ERR("Failed to send data: link %d, ret %d", sock->link_id,
 			ret);
 	}
 
-	if (sock->context->send_cb) {
-		sock->context->send_cb(sock->context, ret,
-				      sock->context->user_data);
+	if (context->send_cb) {
+		context->send_cb(context, ret, context->user_data);
 	}
 
-	net_pkt_unref(sock->tx_pkt);
-	sock->tx_pkt = NULL;
+	net_pkt_unref(pkt);
 }
 
 static int esp_sendto(struct net_pkt *pkt,
@@ -333,10 +330,6 @@ static int esp_sendto(struct net_pkt *pkt,
 
 	if (!esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
 		return -ENETUNREACH;
-	}
-
-	if (sock->tx_pkt) {
-		return -EBUSY;
 	}
 
 	if (sock->type == SOCK_STREAM) {
@@ -366,28 +359,10 @@ static int esp_sendto(struct net_pkt *pkt,
 		}
 	}
 
-	sock->tx_pkt = pkt;
+	k_work_init(&pkt->work, esp_send_work);
+	k_work_submit_to_queue(&dev->workq, &pkt->work);
 
-	if (timeout == 0) {
-		k_work_submit_to_queue(&dev->workq, &sock->send_work);
-		return 0;
-	}
-
-	ret = _sock_send(dev, sock);
-	if (ret == 0) {
-		net_pkt_unref(sock->tx_pkt);
-	} else {
-		LOG_ERR("Failed to send data: link %d, ret %d", sock->link_id,
-			ret);
-	}
-
-	sock->tx_pkt = NULL;
-
-	if (cb) {
-		cb(context, ret, user_data);
-	}
-
-	return ret;
+	return 0;
 }
 
 static int esp_send(struct net_pkt *pkt,
@@ -589,7 +564,6 @@ static int esp_put(struct net_context *context)
 
 	sock->connect_cb = NULL;
 	sock->recv_cb = NULL;
-	sock->tx_pkt = NULL;
 
 	/* Drain rxfifo */
 	for (pkt = k_fifo_get(&sock->fifo_rx_pkt, K_NO_WAIT);
@@ -630,7 +604,6 @@ static int esp_get(sa_family_t family,
 	}
 
 	k_work_init(&sock->connect_work, esp_connect_work);
-	k_work_init(&sock->send_work, esp_send_work);
 	k_work_init(&sock->recv_work, esp_recv_work);
 	k_work_init(&sock->recvdata_work, esp_recvdata_work);
 	sock->type = type;
