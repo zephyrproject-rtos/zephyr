@@ -80,6 +80,13 @@ struct lwm2m_ctx {
 	struct k_delayed_work retransmit_work;
 	struct sys_mutex send_lock;
 
+	/** A pointer to currently processed request, for internal LwM2M engine
+	 *  use. The underlying type is ``struct lwm2m_message``, but since it's
+	 *  declared in a private header and not exposed to the application,
+	 *  it's stored as a void pointer.
+	 */
+	void *processed_req;
+
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 	/** TLS tag is set by client as a reference used when the
 	 *  LwM2M engine calls tls_credential_(add|delete)
@@ -830,6 +837,19 @@ int lwm2m_engine_delete_res_inst(char *pathstr);
  * @return 0 for success or negative in case of error.
  */
 int lwm2m_engine_start(struct lwm2m_ctx *client_ctx);
+
+/**
+ * @brief Acknowledge the currently processed request with an empty ACK.
+ *
+ * LwM2M engine by default sends piggybacked responses for requests.
+ * This function allows to send an empty ACK for a request earlier (from the
+ * application callback). The LwM2M engine will then send the actual response
+ * as a separate CON message after all callbacks are executed.
+ *
+ * @param[in] client_ctx LwM2M context
+ *
+ */
+void lwm2m_acknowledge(struct lwm2m_ctx *client_ctx);
 
 /**
  * @brief LwM2M RD client events
