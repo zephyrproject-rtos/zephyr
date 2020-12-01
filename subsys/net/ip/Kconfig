@@ -140,9 +140,9 @@ config NET_SHELL_DYN_CMD_COMPLETION
 
 config NET_TC_TX_COUNT
 	int "How many Tx traffic classes to have for each network device"
-	default 1
-	range 1 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8
-	range 1 8
+	default 0
+	range 0 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8
+	range 0 8
 	help
 	  Define how many Tx traffic classes (queues) the system should have
 	  when sending a network packet. The network packet priority can then
@@ -153,12 +153,14 @@ config NET_TC_TX_COUNT
 	  The default value is 1 which means that all the network traffic is
 	  handled equally. In this implementation, the higher traffic class
 	  value corresponds to lower thread priority.
+	  If you select 0 here, then it means that all the network traffic
+	  is pushed to the driver directly without any queues.
 
 config NET_TC_RX_COUNT
 	int "How many Rx traffic classes to have for each network device"
 	default 1
-	range 1 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8
-	range 1 8
+	range 0 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8
+	range 0 8
 	help
 	  Define how many Rx traffic classes (queues) the system should have
 	  when receiving a network packet. The network packet priority can then
@@ -169,6 +171,14 @@ config NET_TC_RX_COUNT
 	  The default value is 1 which means that all the network traffic is
 	  handled equally. In this implementation, the higher traffic class
 	  value corresponds to lower thread priority.
+	  If you select 0 here, then it means that all the network traffic
+	  is pushed from the driver to application thread without any
+	  intermediate RX queue. There is always a receive socket queue between
+	  device driver and application. Disabling RX thread means that the
+	  network device driver, that is typically running in IRQ context, will
+	  handle the packet all the way to the application. This might cause
+	  other incoming packets to be lost if the RX processing takes long
+	  time.
 
 config NET_TC_SKIP_FOR_HIGH_PRIO
 	bool "Push high priority packets directly to network driver"
