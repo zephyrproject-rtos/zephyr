@@ -1076,6 +1076,27 @@ cleanup:
 	return ret;
 }
 
+void lwm2m_acknowledge(struct lwm2m_ctx *client_ctx)
+{
+	struct lwm2m_message *request;
+
+	if (client_ctx == NULL || client_ctx->processed_req == NULL) {
+		return;
+	}
+
+	request = (struct lwm2m_message *)client_ctx->processed_req;
+
+	if (request->acknowledged) {
+		return;
+	}
+
+	if (lwm2m_send_empty_ack(client_ctx, request->mid) < 0) {
+		return;
+	}
+
+	request->acknowledged = true;
+}
+
 uint16_t lwm2m_get_rd_data(uint8_t *client_data, uint16_t size)
 {
 	struct lwm2m_engine_obj *obj;
@@ -3766,6 +3787,42 @@ error:
 	return 0;
 }
 
+static int lwm2m_response_promote_to_con(struct lwm2m_message *msg)
+{
+	int ret;
+
+	msg->type = COAP_TYPE_CON;
+	msg->mid = coap_next_id();
+
+	/* Since the response CoAP packet is already generated at this point,
+	 * tweak the specific fields manually:
+	 * - CoAP message type (byte 0, bits 2 and 3)
+	 * - CoAP message id (bytes 2 and 3)
+	 */
+	msg->cpkt.data[0] &= ~(0x3 << 4);
+	msg->cpkt.data[0] |= (msg->type & 0x3) << 4;
+	msg->cpkt.data[2] = msg->mid >> 8;
+	msg->cpkt.data[3] = (uint8_t) msg->mid;
+
+	/* Add the packet to the pending list. */
+	msg->pending = coap_pending_next_unused(
+				msg->ctx->pendings,
+				CONFIG_LWM2M_ENGINE_MAX_PENDING);
+	if (!msg->pending) {
+		LOG_ERR("Unable to find a free pending to track "
+			"retransmissions.");
+		return -ENOMEM;
+	}
+
+	ret = coap_pending_init(msg->pending, &msg->cpkt, &msg->ctx->remote_addr);
+	if (ret < 0) {
+		LOG_ERR("Unable to initialize a pending "
+			"retransmission (err:%d).", ret);
+	}
+
+	return ret;
+}
+
 static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
 			      uint8_t *buf, uint16_t buf_len,
 			      struct sockaddr *from_addr,
@@ -3867,11 +3924,25 @@ static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
 		/* skip token generation by default */
 		msg->tkl = 0;
 
+		client_ctx->processed_req = msg;
+
 		/* process the response to this request */
 		r = udp_request_handler(&response, msg);
 		if (r < 0) {
 			return;
 		}
+
+		if (msg->acknowledged) {
+			r = lwm2m_response_promote_to_con(msg);
+			if (r < 0) {
+				LOG_ERR("Failed to promote reponse to CON: %d",
+					r);
+				lwm2m_reset_message(msg, true);
+				return;
+			}
+		}
+
+		client_ctx->processed_req = NULL;
 
 		r = lwm2m_send_message(msg);
 		if (r < 0) {
