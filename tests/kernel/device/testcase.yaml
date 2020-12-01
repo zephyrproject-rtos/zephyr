@@ -10,3 +10,4 @@ tests:
     platform_exclude: mec15xxevb_assy6853
     extra_configs:
       - CONFIG_DEVICE_POWER_MANAGEMENT=y
+    timeout: 120
