@@ -54,8 +54,6 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	struct ll_adv_iso *adv_iso;
 	struct ll_adv_set *adv;
 	struct node_rx_pdu *node_rx;
-	struct pdu_bis *pdu_bis;
-	struct node_tx *tx;
 
 	adv_iso = ull_adv_iso_get(big_handle);
 
@@ -138,33 +136,14 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	/* TODO: start sending BIS empty data packet for each BIS */
 	ull_adv_iso_start(adv_iso, 0 /* TODO: Calc ticks_anchor */);
 
-	tx = ll_iso_tx_mem_acquire();
-	if (!tx) {
-		BT_ERR("Tx Buffer Overflow");
-		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
-	}
-
-	adv_iso->is_created = true;
-	pdu_bis = (void *)tx->pdu;
-
-	/* Empty BIS packet */
-	pdu_bis->length = 0;
-	pdu_bis->ll_id = PDU_BIS_LLID_COMPLETE_END;
-	pdu_bis->cssn = 0;
-	pdu_bis->cstf = 0;
-
-	if (ll_iso_tx_mem_enqueue(adv_iso->bis_handle, tx)) {
-		BT_ERR("Invalid Tx Enqueue");
-		ll_iso_tx_mem_release(tx);
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
-
 	/* Prepare BIG complete event */
 	/* TODO: Implement custom node_rx struct for optimization */
 	node_rx = (void *)&adv_iso->node_rx_complete;
 	node_rx->hdr.type = NODE_RX_TYPE_BIG_COMPLETE;
 	node_rx->hdr.handle = big_handle;
 	node_rx->hdr.rx_ftr.param = adv_iso;
+
+	adv_iso->is_created = true;
 
 	return BT_HCI_ERR_SUCCESS;
 }
