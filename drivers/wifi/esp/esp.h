@@ -275,6 +275,10 @@ static inline int esp_cmd_send(struct esp_data *data,
 			      timeout);
 }
 
+void esp_connect_work(struct k_work *work);
+void esp_recv_work(struct k_work *work);
+void esp_recvdata_work(struct k_work *work);
+
 #ifdef __cplusplus
 }
 #endif

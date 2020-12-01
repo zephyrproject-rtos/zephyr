@@ -87,7 +87,7 @@ static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 	return ret;
 }
 
-static void esp_connect_work(struct k_work *work)
+void esp_connect_work(struct k_work *work)
 {
 	struct esp_socket *sock;
 	struct esp_data *dev;
@@ -444,7 +444,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 	return data_offset + data_len;
 }
 
-static void esp_recvdata_work(struct k_work *work)
+void esp_recvdata_work(struct k_work *work)
 {
 	struct esp_socket *sock;
 	struct esp_data *dev;
@@ -476,8 +476,7 @@ static void esp_recvdata_work(struct k_work *work)
 	}
 }
 
-
-static void esp_recv_work(struct k_work *work)
+void esp_recv_work(struct k_work *work)
 {
 	struct esp_socket *sock;
 	struct esp_data *dev;
@@ -603,9 +602,6 @@ static int esp_get(sa_family_t family,
 		return -ENOMEM;
 	}
 
-	k_work_init(&sock->connect_work, esp_connect_work);
-	k_work_init(&sock->recv_work, esp_recv_work);
-	k_work_init(&sock->recvdata_work, esp_recvdata_work);
 	sock->type = type;
 	sock->ip_proto = ip_proto;
 	sock->context = *context;
