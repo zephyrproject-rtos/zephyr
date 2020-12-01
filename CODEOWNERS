@@ -149,6 +149,7 @@
 /boards/arm/ubx_bmd345eval_nrf52840/      @Navin-Sankar @brec-u-blox
 /boards/common/                           @mbolivar-nordic
 /boards/deprecated.cmake                  @tejlmand
+/boards/mips/                             @frantony
 /boards/nios2/                            @nashif
 /boards/nios2/altera_max10/               @nashif
 /boards/arm/stm32_min_dev/                @sidcha
