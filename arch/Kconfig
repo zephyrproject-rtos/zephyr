@@ -49,6 +49,14 @@ config ARM64
 	help
 	  ARM64 (AArch64) architecture
 
+config MIPS
+	bool
+	select ARCH_IS_SET
+	select ATOMIC_OPERATIONS_C
+	select HAS_DTS
+	help
+	  MIPS architecture
+
 config SPARC
 	bool
 	select ARCH_IS_SET
