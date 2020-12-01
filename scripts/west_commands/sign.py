@@ -231,6 +231,23 @@ class ImgtoolSigner(Signer):
 
         kernel = dot_config.get('CONFIG_KERNEL_BIN_NAME', 'zephyr')
 
+        # Get key from .config
+        key = dot_config.get('CONFIG_MCUBOOT_SIGNATURE_KEY_FILE')
+
+        # Check if command contains --key with parameter; if yes and the path
+        # is different then the command line argument overrides the .config.
+        if '--key' in args.tool_args:
+            arg_key_index = args.tool_args.index('--key')
+            if len(args.tool_args) == arg_key_index + 1:
+                log.die('--key argument to tool is missing key file path')
+
+            arg_key = args.tool_args[arg_key_index + 1]
+
+            if os.path.realpath(key) != os.path.realpath(arg_key):
+                log.wrn('The "--key ' + arg_key +
+                        '" overrides CONFIG_MCUBOOT_SIGNATURE_KEY_FILE=' + key)
+                key = None
+
         if 'bin' in formats:
             in_bin = b / 'zephyr' / f'{kernel}.bin'
             if not in_bin.is_file():
@@ -262,6 +279,10 @@ class ImgtoolSigner(Signer):
                      '--align', str(align),
                      '--header-size', str(vtoff),
                      '--slot-size', str(size)]
+
+        if key:
+            sign_base.extend(['--key',key])
+
         sign_base.extend(args.tool_args)
 
         if not args.quiet:
