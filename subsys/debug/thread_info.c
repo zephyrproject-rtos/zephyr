@@ -68,6 +68,9 @@ size_t _kernel_thread_info_offsets[] = {
 	[THREAD_INFO_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
 						callee_saved.esp),
 #endif
+#elif defined(CONFIG_MIPS)
+	[THREAD_INFO_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
+						callee_saved.sp),
 #elif defined(CONFIG_NIOS2)
 	[THREAD_INFO_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
 						callee_saved.sp),

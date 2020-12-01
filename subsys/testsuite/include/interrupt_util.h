@@ -159,6 +159,14 @@ static inline void trigger_irq(int irq)
 	z_sparc_enter_irq(irq);
 }
 
+#elif defined(CONFIG_MIPS)
+extern void z_mips_enter_irq(int);
+
+static inline void trigger_irq(int irq)
+{
+	z_mips_enter_irq(irq);
+}
+
 #else
 /* So far, Nios II does not support this */
 #define NO_TRIGGER_FROM_SW

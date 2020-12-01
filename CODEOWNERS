@@ -25,6 +25,7 @@
 /arch/arm64/core/cortex_r/                @povergoing
 /arch/arm64/core/xen/                     @lorc @firscity
 /arch/common/                             @ioannisg @andyross
+/arch/mips/                               @frantony
 /soc/arc/snps_*/                          @abrodkin @ruuddw @evgeniy-paltsev
 /soc/nios2/                               @nashif
 /soc/arm/                                 @MaureenHelm @galak @ioannisg
@@ -533,6 +534,7 @@
 /include/arch/arm64/                      @carlocaione
 /include/arch/arm64/cortex_r/             @povergoing
 /include/arch/arm/aarch32/irq.h           @carlocaione
+/include/arch/mips/                       @frantony
 /include/arch/nios2/                      @nashif
 /include/arch/nios2/arch.h                @nashif
 /include/arch/posix/                      @aescolar @daor-oti
