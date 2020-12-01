@@ -104,14 +104,14 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		      uint32_t sdu_interval, uint16_t max_sdu,
 		      uint16_t max_latency, uint8_t rtn, uint8_t phy,
 		      uint8_t packing, uint8_t framing, uint8_t encryption,
-		      uint8_t *bcode, void **node_rx);
+		      uint8_t *bcode);
 uint8_t ll_big_test_create(uint8_t big_handle, uint8_t adv_handle,
 			   uint8_t num_bis, uint32_t sdu_interval,
 			   uint16_t iso_interval, uint8_t nse, uint16_t max_sdu,
 			   uint16_t max_pdu, uint8_t phy, uint8_t packing,
 			   uint8_t framing, uint8_t bn, uint8_t irc,
 			   uint8_t pto, uint8_t encryption, uint8_t *bcode);
-uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason, void **node_rx);
+uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason);
 
 uint8_t ll_scan_params_set(uint8_t type, uint16_t interval, uint16_t window,
 		uint8_t own_addr_type, uint8_t filter_policy);

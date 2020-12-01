@@ -49,7 +49,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		      uint32_t sdu_interval, uint16_t max_sdu,
 		      uint16_t max_latency, uint8_t rtn, uint8_t phy,
 		      uint8_t packing, uint8_t framing, uint8_t encryption,
-		      uint8_t *bcode, void **rx)
+		      uint8_t *bcode)
 {
 	struct ll_adv_iso *adv_iso;
 	struct ll_adv_set *adv;
@@ -166,8 +166,6 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	node_rx->hdr.handle = big_handle;
 	node_rx->hdr.rx_ftr.param = adv_iso;
 
-	*rx = node_rx;
-
 	return BT_HCI_ERR_SUCCESS;
 }
 
@@ -199,7 +197,7 @@ uint8_t ll_big_test_create(uint8_t big_handle, uint8_t adv_handle,
 	return BT_HCI_ERR_CMD_DISALLOWED;
 }
 
-uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason, void **rx)
+uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 {
 	struct ll_adv_iso *adv_iso;
 	struct node_rx_pdu *node_rx;
@@ -225,8 +223,6 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason, void **rx)
 	node_rx->hdr.handle = big_handle;
 	node_rx->hdr.rx_ftr.param = adv_iso;
 	*((uint8_t *)node_rx->pdu) = reason;
-
-	*rx = node_rx;
 
 	return BT_HCI_ERR_SUCCESS;
 }
