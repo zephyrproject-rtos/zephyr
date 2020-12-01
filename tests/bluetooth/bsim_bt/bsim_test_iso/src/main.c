@@ -94,7 +94,6 @@ static void test_iso_main(void)
 	uint8_t framing = 0;
 	uint8_t encryption = 0;
 	uint8_t bcode[16] = { 0 };
-	void *node_rx;
 
 	/* Assume that index == handle */
 	index = bt_le_ext_adv_get_index(adv);
@@ -102,7 +101,7 @@ static void test_iso_main(void)
 	printk("Creating BIG...\n");
 	err = ll_big_create(big_handle, index, bis_count, sdu_interval, max_sdu,
 			    max_latency, rtn, phy, packing, framing, encryption,
-			    bcode, &node_rx);
+			    bcode);
 	if (err) {
 		FAIL("Could not create BIG: %d\n", err);
 		return;
@@ -112,8 +111,7 @@ static void test_iso_main(void)
 	k_sleep(K_MSEC(5000));
 
 	printk("Terminating BIG...\n");
-	err = ll_big_terminate(big_handle, BT_HCI_ERR_LOCALHOST_TERM_CONN,
-			       &node_rx);
+	err = ll_big_terminate(big_handle, BT_HCI_ERR_LOCALHOST_TERM_CONN);
 	if (err) {
 		FAIL("Could not terminate BIG: %d\n", err);
 		return;

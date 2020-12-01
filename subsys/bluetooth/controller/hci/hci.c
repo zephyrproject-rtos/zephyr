@@ -1379,8 +1379,7 @@ static void le_set_adv_enable(struct net_buf *buf, struct net_buf **evt)
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
-static void le_create_big(struct net_buf *buf, struct net_buf **evt,
-			  void **node_rx)
+static void le_create_big(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_create_big *cmd = (void *)buf->data;
 	uint8_t status;
@@ -1409,7 +1408,7 @@ static void le_create_big(struct net_buf *buf, struct net_buf **evt,
 	status = ll_big_create(big_handle, adv_handle, cmd->num_bis,
 			       sdu_interval, max_sdu, max_latency, cmd->rtn,
 			       cmd->phy, cmd->packing, cmd->framing,
-			       cmd->encryption, cmd->bcode, node_rx);
+			       cmd->encryption, cmd->bcode);
 
 	*evt = cmd_status(status);
 }
@@ -1438,13 +1437,12 @@ static void le_create_big_test(struct net_buf *buf, struct net_buf **evt)
 	*evt = cmd_status(status);
 }
 
-static void le_terminate_big(struct net_buf *buf, struct net_buf **evt,
-			     void **node_rx)
+static void le_terminate_big(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_terminate_big *cmd = (void *)buf->data;
 	uint8_t status;
 
-	status = ll_big_terminate(cmd->big_handle, cmd->reason, node_rx);
+	status = ll_big_terminate(cmd->big_handle, cmd->reason);
 
 	*evt = cmd_status(status);
 }
@@ -3162,7 +3160,7 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
 	case BT_OCF(BT_HCI_OP_LE_CREATE_BIG):
-		le_create_big(cmd, evt, node_rx);
+		le_create_big(cmd, evt);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_CREATE_BIG_TEST):
@@ -3170,7 +3168,7 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_TERMINATE_BIG):
-		le_terminate_big(cmd, evt, node_rx);
+		le_terminate_big(cmd, evt);
 		break;
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
 #endif /* CONFIG_BT_BROADCASTER */
