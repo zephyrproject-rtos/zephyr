@@ -130,8 +130,12 @@ static ssize_t supported_context_read(struct bt_conn *conn,
 				      void *buf, uint16_t len, uint16_t offset)
 {
 	struct bt_pacs_context context = {
+#if defined(CONFIG_BT_PAC_SNK)
 		.snk = sys_cpu_to_le16(CONFIG_BT_PACS_SNK_CONTEXT),
+#endif
+#if defined(CONFIG_BT_PAC_SRC)
 		.src = sys_cpu_to_le16(CONFIG_BT_PACS_SRC_CONTEXT),
+#endif
 	};
 
 	BT_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len,
@@ -228,7 +232,7 @@ static ssize_t src_loc_write(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	if (len != sizeof(snk_loc)) {
+	if (len != sizeof(src_loc)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
@@ -331,9 +335,6 @@ int bt_audio_cap_get(uint8_t type, sys_slist_t **lst,
 	return -ENOTSUP;
 }
 
-static const struct bt_uuid *snk_uuid = BT_UUID_PACS_SNK;
-static const struct bt_uuid *src_uuid = BT_UUID_PACS_SRC;
-
 static void pac_indicate(struct k_work *work)
 {
 #if defined(CONFIG_BT_PAC_SNK) || defined(CONFIG_BT_PAC_SRC)
@@ -341,13 +342,13 @@ static void pac_indicate(struct k_work *work)
 
 #if defined(CONFIG_BT_PAC_SNK)
 	if (work == &snks_work.work) {
-		params.uuid = snk_uuid;
+		params.uuid = BT_UUID_PACS_SNK;
 	}
 #endif /* CONFIG_BT_PAC_SNK */
 
 #if defined(CONFIG_BT_PAC_SRC)
 	if (work == &srcs_work.work) {
-		params.uuid = src_uuid;
+		params.uuid = BT_UUID_PACS_SRC;
 	}
 #endif /* CONFIG_BT_PAC_SRC */
 
