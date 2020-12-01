@@ -14,6 +14,11 @@ LOG_MODULE_DECLARE(wifi_esp, CONFIG_WIFI_LOG_LEVEL);
 #define RX_NET_PKT_ALLOC_TIMEOUT				\
 	K_MSEC(CONFIG_WIFI_ESP_RX_NET_PKT_ALLOC_TIMEOUT)
 
+struct esp_workq_flush_data {
+	struct k_work work;
+	struct k_sem sem;
+};
+
 /* esp_data->mtx_sock should be held */
 struct esp_socket *esp_socket_get(struct esp_data *data)
 {
@@ -165,4 +170,25 @@ void esp_socket_close(struct esp_socket *sock)
 		LOG_ERR("Failed to close link %d, ret %d",
 			sock->link_id, ret);
 	}
+}
+
+static void esp_workq_flush_work(struct k_work *work)
+{
+	struct esp_workq_flush_data *flush =
+		CONTAINER_OF(work, struct esp_workq_flush_data, work);
+
+	k_sem_give(&flush->sem);
+}
+
+void esp_socket_workq_flush(struct esp_socket *sock)
+{
+	struct esp_data *data = esp_socket_to_dev(sock);
+	struct esp_workq_flush_data flush;
+
+	k_work_init(&flush.work, esp_workq_flush_work);
+	k_sem_init(&flush.sem, 0, 1);
+
+	k_work_submit_to_queue(&data->workq, &flush.work);
+
+	k_sem_take(&flush.sem, K_FOREVER);
 }
