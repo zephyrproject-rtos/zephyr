@@ -59,7 +59,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 
 	adv_iso = ull_adv_iso_get(big_handle);
 
-	if (!adv_iso) {
+	if (!adv_iso || adv_iso->is_created) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
