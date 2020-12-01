@@ -140,8 +140,11 @@ config NET_SHELL_DYN_CMD_COMPLETION
 
 config NET_TC_TX_COUNT
 	int "How many Tx traffic classes to have for each network device"
+	default 1 if USERSPACE
 	default 0
+	range 1 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8 && USERSPACE
 	range 0 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8
+	range 1 8 if USERSPACE
 	range 0 8
 	help
 	  Define how many Tx traffic classes (queues) the system should have
@@ -155,11 +158,15 @@ config NET_TC_TX_COUNT
 	  value corresponds to lower thread priority.
 	  If you select 0 here, then it means that all the network traffic
 	  is pushed to the driver directly without any queues.
+	  Note that if USERSPACE support is enabled, then currently we need to
+	  enable at least 1 TX thread.
 
 config NET_TC_RX_COUNT
 	int "How many Rx traffic classes to have for each network device"
 	default 1
+	range 1 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8 && USERSPACE
 	range 0 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8
+	range 1 8 if USERSPACE
 	range 0 8
 	help
 	  Define how many Rx traffic classes (queues) the system should have
@@ -179,6 +186,8 @@ config NET_TC_RX_COUNT
 	  handle the packet all the way to the application. This might cause
 	  other incoming packets to be lost if the RX processing takes long
 	  time.
+	  Note that if USERSPACE support is enabled, then currently we need to
+	  enable at least 1 RX thread.
 
 config NET_TC_SKIP_FOR_HIGH_PRIO
 	bool "Push high priority packets directly to network driver"
