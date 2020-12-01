@@ -255,9 +255,20 @@ Flashing
 
 Follow the instructions in the :ref:`nordic_segger` page to install
 and configure all the necessary software. Further information can be
-found in :ref:`nordic_segger_flashing`. Then build and flash
-applications as usual (see :ref:`build_an_application` and
+found in :ref:`nordic_segger_flashing`. Then you can build and flash
+applications as usual (:ref:`build_an_application` and
 :ref:`application_run` for more details).
+
+.. warning::
+
+   The nRF5340 has a flash read-back protection feature. When flash read-back
+   protection is active, you will need to recover the chip before reflashing.
+   If you are flashing with :ref:`west <west-build-flash-debug>`, run
+   this command for more details on the related ``--recover`` option:
+
+   .. code-block:: console
+
+      west flash -H -r nrfjprog --skip-rebuild
 
 .. note::
 
