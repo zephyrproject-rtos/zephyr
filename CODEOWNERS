@@ -388,6 +388,7 @@
 /drivers/timer/*cavs*                     @dcpleung
 /drivers/timer/*stm32_lptim*              @FRASTM
 /drivers/timer/*leon_gptimer*             @martin-aberg
+/drivers/timer/*mips_cp0*                 @frantony
 /drivers/timer/*rcar_cmt*                 @julien-massot
 /drivers/timer/*esp32c3_sys*              @uLipe
 /drivers/timer/*sam0_rtc*                 @bendiscz
