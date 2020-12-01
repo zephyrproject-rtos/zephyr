@@ -31,7 +31,7 @@ static inline bool ptr_in_rodata(const char *addr)
 #define RO_END 0
 #elif defined(CONFIG_ARC) || defined(CONFIG_ARM) || defined(CONFIG_X86) \
 	|| defined(CONFIG_RISCV) || defined(CONFIG_ARM64) \
-	|| defined(CONFIG_NIOS2)
+	|| defined(CONFIG_NIOS2) || defined(CONFIG_MIPS)
 	extern char __rodata_region_start[];
 	extern char __rodata_region_end[];
 #define RO_START __rodata_region_start
