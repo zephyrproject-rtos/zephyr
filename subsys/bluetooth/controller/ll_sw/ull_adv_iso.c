@@ -230,6 +230,7 @@ int ull_adv_iso_reset(void)
 	return 0;
 }
 
+#if defined(CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING)
 uint8_t ll_adv_iso_by_hci_handle_get(uint8_t hci_handle, uint8_t *handle)
 {
 	struct ll_adv_iso *adv_iso;
@@ -275,6 +276,7 @@ uint8_t ll_adv_iso_by_hci_handle_new(uint8_t hci_handle, uint8_t *handle)
 
 	return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 }
+#endif /* CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING */
 
 static uint32_t ull_adv_iso_start(struct ll_adv_iso *adv_iso,
 				  uint32_t ticks_anchor)
