@@ -552,10 +552,10 @@ static int esp_recv(struct net_context *context,
 
 static int esp_put(struct net_context *context)
 {
-	struct esp_socket *sock;
+	struct esp_socket *sock = context->offload_context;
 	struct net_pkt *pkt;
 
-	sock = (struct esp_socket *)context->offload_context;
+	esp_socket_workq_flush(sock);
 
 	if (esp_socket_connected(sock)) {
 		esp_socket_close(sock);

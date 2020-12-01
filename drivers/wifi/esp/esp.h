@@ -230,6 +230,8 @@ void esp_socket_close(struct esp_socket *sock);
 void esp_socket_rx(struct esp_socket *sock, struct net_buf *buf,
 		   size_t offset, size_t len);
 
+void esp_socket_workq_flush(struct esp_socket *sock);
+
 static inline struct esp_data *esp_socket_to_dev(struct esp_socket *sock)
 {
 	return CONTAINER_OF(sock - sock->idx, struct esp_data, sockets);
