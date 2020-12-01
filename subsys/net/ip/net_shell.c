@@ -4204,6 +4204,11 @@ static int cmd_net_stats_iface(const struct shell *shell, size_t argc,
 
 #if defined(CONFIG_NET_STATISTICS)
 #if defined(CONFIG_NET_STATISTICS_PER_INTERFACE)
+	if (argv[1] == NULL) {
+		PR_WARNING("Network interface index missing!\n");
+		return -ENOEXEC;
+	}
+
 	idx = strtol(argv[1], &endptr, 10);
 	if (*endptr != '\0') {
 		PR_WARNING("Invalid index %s\n", argv[1]);
