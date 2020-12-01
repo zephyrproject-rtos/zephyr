@@ -394,7 +394,11 @@ static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt)
 	NET_DBG("TC %d with prio %d pkt %p", tc, prio, pkt);
 #endif
 
-	net_tc_submit_to_rx_queue(tc, pkt);
+	if (NET_TC_RX_COUNT == 0) {
+		process_rx_packet(net_pkt_work(pkt));
+	} else {
+		net_tc_submit_to_rx_queue(tc, pkt);
+	}
 }
 
 /* Called by driver when an IP packet has been received */
