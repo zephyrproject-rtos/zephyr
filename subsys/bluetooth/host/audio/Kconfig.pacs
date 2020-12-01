@@ -7,10 +7,11 @@ config BT_PACS
 if BT_PACS
 config BT_PAC_SNK
 	bool "Sink PAC Characteristic Support"
-	default y
+	default y if BT_ASCS
 	help
 	  This option enables support for Sink PAC Characteristic.
 
+if BT_PAC_SNK
 config BT_PAC_SNK_LOC
 	hex "Sink PAC Locations Characteristic Support"
 	default 0x00000000
@@ -67,12 +68,16 @@ config BT_PACS_SNK_CONTEXT
 	  0x0100: Ringtone
 	  0x0200: TV
 
+endif # BT_PACS_SNK
+
 config BT_PAC_SRC
 	bool "Source PAC Characteristic Support"
+	default y if BT_ASCS
 	default y
 	help
 	  This option enables support for Source PAC Characteristic.
 
+if BT_PAC_SRC
 config BT_PAC_SRC_LOC
 	hex "Source PAC Locations Characteristic Support"
 	default 0x00000000
@@ -129,4 +134,5 @@ config BT_PACS_SRC_CONTEXT
 	  0x0100: Ringtone
 	  0x0200: TV
 
+endif # BT_PAC_SRC
 endif # BT_PACS
