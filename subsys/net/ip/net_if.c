@@ -346,10 +346,11 @@ void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 	net_stats_update_tc_sent_priority(iface, tc, prio);
 
 	/* For highest priority packet, skip the TX queue and push directly to
-	 * the driver.
+	 * the driver. Also if there are no TX queue/thread, push the packet
+	 * directly to the driver.
 	 */
-	if (IS_ENABLED(CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO) &&
-	    prio == NET_PRIORITY_CA) {
+	if ((IS_ENABLED(CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO) &&
+	     prio == NET_PRIORITY_CA) || NET_TC_TX_COUNT == 0) {
 		net_pkt_set_tx_stats_tick(pkt, k_cycle_get_32());
 
 		net_if_tx(net_pkt_iface(pkt), pkt);

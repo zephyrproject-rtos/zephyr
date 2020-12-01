@@ -942,7 +942,7 @@ static char *get_net_pkt_tc_stats_detail(struct net_if *iface, int i,
 }
 #endif /* (NET_TC_TX_COUNT > 1) || (NET_TC_RX_COUNT > 1) */
 
-#if (NET_TC_TX_COUNT == 1) || (NET_TC_RX_COUNT == 1)
+#if (NET_TC_TX_COUNT <= 1) || (NET_TC_RX_COUNT <= 1)
 static char *get_net_pkt_stats_detail(struct net_if *iface, bool is_tx)
 {
 	static char extra_stats[sizeof("\t[0=xxxx us]") + sizeof("->xxxx") *
