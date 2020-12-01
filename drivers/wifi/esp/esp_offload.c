@@ -144,10 +144,6 @@ static int esp_connect(struct net_context *context,
 
 	ret = _sock_connect(dev, sock);
 
-	if (esp_socket_connected(sock) && sock->tx_pkt) {
-		k_work_submit_to_queue(&dev->workq, &sock->send_work);
-	}
-
 	if (ret != -ETIMEDOUT && cb) {
 		cb(context, ret, user_data);
 	}
