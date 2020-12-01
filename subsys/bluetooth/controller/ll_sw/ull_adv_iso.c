@@ -65,11 +65,11 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 
 	adv = ull_adv_is_created_get(adv_handle);
 
-	if (!adv) {
-		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
-	} else if (!adv->lll.sync) {
-		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
-	} else if (adv->lll.sync->adv_iso) {
+	/* Does not identify a periodic advertising train or
+	 * the periodic advertising trains is already associated
+	 * with another BIG.
+	 */
+	if (!adv || !adv->lll.sync || adv->lll.sync->adv_iso) {
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
 
