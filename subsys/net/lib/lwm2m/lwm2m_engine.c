@@ -869,11 +869,13 @@ static struct lwm2m_message *find_msg(struct coap_pending *pending,
 	}
 
 	for (i = 0; i < CONFIG_LWM2M_ENGINE_MAX_MESSAGES; i++) {
-		if (messages[i].ctx && messages[i].pending == pending) {
+		if (pending != NULL && messages[i].ctx &&
+		    messages[i].pending == pending) {
 			return &messages[i];
 		}
 
-		if (messages[i].ctx && messages[i].reply == reply) {
+		if (reply != NULL && messages[i].ctx &&
+		    messages[i].reply == reply) {
 			return &messages[i];
 		}
 	}
