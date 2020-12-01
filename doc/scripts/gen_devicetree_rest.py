@@ -615,7 +615,7 @@ def zref(target, text=None):
     # This relies on intersphinx:
     # https://www.sphinx-doc.org/en/master/usage/extensions/intersphinx.html
 
-    docset = os.environ.get('GEN_DEVICETREE_REST_ZEPHYR_DOCSET')
+    docset = os.environ.get('GEN_DEVICETREE_REST_ZEPHYR_DOCSET', '')
 
     if docset.strip():
         target = f'{docset}:{target}'
