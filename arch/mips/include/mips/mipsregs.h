@@ -11,6 +11,8 @@
 #define _ZEPHYR_ARCH_MIPS_INCLUDE_MIPS_MIPSREGS_H_
 
 #define CP0_BADVADDR	$8
+#define CP0_COUNT	$9
+#define CP0_COMPARE	$11
 #define CP0_STATUS	$12
 #define CP0_CAUSE	$13
 #define CP0_EPC		$14
