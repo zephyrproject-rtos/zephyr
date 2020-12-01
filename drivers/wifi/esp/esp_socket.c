@@ -72,6 +72,9 @@ void esp_socket_init(struct esp_data *data)
 		sock->flags = 0;
 		k_sem_init(&sock->sem_data_ready, 0, 1);
 		k_fifo_init(&sock->fifo_rx_pkt);
+		k_work_init(&sock->connect_work, esp_connect_work);
+		k_work_init(&sock->recv_work, esp_recv_work);
+		k_work_init(&sock->recvdata_work, esp_recvdata_work);
 	}
 }
 
