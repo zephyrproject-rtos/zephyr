@@ -712,29 +712,56 @@ endmenu
 
 menu "Cache Options"
 
-config CACHE_LINE_SIZE_DETECT
-	bool "Detect cache line size at runtime"
-	help
-	  This option enables querying some architecture-specific hardware for
-	  finding the cache line size at the expense of taking more memory and
-	  code and a slightly increased boot time.
-
-	  If the CPU's cache line size is known in advance, disable this option and
-	  manually enter the value for CACHE_LINE_SIZE.
-
-config CACHE_LINE_SIZE
-	int "Cache line size" if !CACHE_LINE_SIZE_DETECT
-	default 0
-	help
-	  Size in bytes of a CPU cache line.
-
-	  Detect automatically at runtime by selecting CACHE_LINE_SIZE_DETECT.
-
 config CACHE_MANAGEMENT
 	bool "Enable cache management features"
 	help
 	  This links in the cache management functions (for d-cache and i-cache
 	  where possible).
+
+config DCACHE_LINE_SIZE_DETECT
+	bool "Detect d-cache line size at runtime"
+	depends on CACHE_MANAGEMENT
+	help
+	  This option enables querying some architecture-specific hardware for
+	  finding the d-cache line size at the expense of taking more memory and
+	  code and a slightly increased boot time.
+
+	  If the CPU's d-cache line size is known in advance, disable this option and
+	  manually enter the value for DCACHE_LINE_SIZE or set it in the DT
+	  using the 'd-cache-line-size' property.
+
+config DCACHE_LINE_SIZE
+	int "d-cache line size" if !DCACHE_LINE_SIZE_DETECT
+	depends on CACHE_MANAGEMENT
+	default 0
+	help
+	  Size in bytes of a CPU d-cache line. If this is set to 0 the value is
+	  obtained from the 'd-cache-line-size' DT property instead if present.
+
+
+	  Detect automatically at runtime by selecting DCACHE_LINE_SIZE_DETECT.
+
+config ICACHE_LINE_SIZE_DETECT
+	bool "Detect i-cache line size at runtime"
+	depends on CACHE_MANAGEMENT
+	help
+	  This option enables querying some architecture-specific hardware for
+	  finding the i-cache line size at the expense of taking more memory and
+	  code and a slightly increased boot time.
+
+	  If the CPU's i-cache line size is known in advance, disable this option and
+	  manually enter the value for ICACHE_LINE_SIZE or set it in the DT
+	  using the 'i-cache-line-size' property.
+
+config ICACHE_LINE_SIZE
+	int "i-cache line size" if !ICACHE_LINE_SIZE_DETECT
+	depends on CACHE_MANAGEMENT
+	default 0
+	help
+	  Size in bytes of a CPU i-cache line. If this is set to 0 the value is
+	  obtained from the 'i-cache-line-size' DT property instead if present.
+
+	  Detect automatically at runtime by selecting ICACHE_LINE_SIZE_DETECT.
 
 endmenu
 
