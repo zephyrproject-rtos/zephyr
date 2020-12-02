@@ -173,6 +173,19 @@ extern "C" {
 			data_ptr, cfg_ptr, level, prio, api_ptr)
 
 /**
+ * @def DEVICE_DT_INST_DEFINE
+ *
+ * @brief Like DEVICE_DT_DEFINE for an instance of a DT_DRV_COMPAT compatible
+ *
+ * @param inst instance number.  This is replaced by
+ * <tt>DT_DRV_COMPAT(inst)</tt> in the call to DEVICE_DT_DEFINE.
+ *
+ * @param ... other parameters as expected by DEVICE_DT_DEFINE.
+ */
+#define DEVICE_DT_INST_DEFINE(inst, ...) \
+	DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
  * @def DEVICE_DT_NAME_GET
  *
  * @brief The name of the struct device object for @p node_id
@@ -209,6 +222,15 @@ extern "C" {
  */
 #define DEVICE_DT_GET(node_id) (&DEVICE_DT_NAME_GET(node_id))
 
+/** @def DEVICE_DT_INST_GET
+ *
+ * @brief Obtain a pointer to a device object for an instance of a
+ *        DT_DRV_COMPAT compatible
+ *
+ * @param inst instance number
+ */
+#define DEVICE_DT_INST_GET(inst) DEVICE_DT_GET(DT_DRV_INST(inst))
+
 /** @def DEVICE_DT_DECLARE
  *
  * @brief Declare a device object associated with @p node_id
@@ -235,6 +257,15 @@ extern "C" {
  */
 #define DEVICE_DT_DECLARE(node_id)			\
 	extern const struct device DEVICE_DT_NAME_GET(node_id)
+
+/** @def DEVICE_DT_INST_DECLARE
+ *
+ * @brief Declare a device object associated for an instance of a
+ *        DT_DRV_COMPAT compatible
+ *
+ * @param inst instance number
+ */
+#define DEVICE_DT_INST_DECLARE(inst) DEVICE_DT_DECLARE(DT_DRV_INST(inst))
 
 /**
  * @def DEVICE_GET
