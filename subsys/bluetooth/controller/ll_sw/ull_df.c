@@ -56,12 +56,6 @@ static int init_reset(void);
  */
 static struct lll_df_adv_cfg *ull_df_adv_cfg_acquire(void);
 
-/* @brief Function releases memory for DF advertising configuration.
- *
- * @param[in] df_adv_cfg        Pointer to memory to release
- */
-static void ull_df_adv_cfg_release(struct ll_adv_aux_set *df_adv_cfg);
-
 /* @brief Function performs ULL Direction Finding initialization
  *
  * @return      Zero in case of success, other value in case of failure.
@@ -164,7 +158,8 @@ uint8_t ll_df_set_cl_cte_tx_params(uint8_t adv_handle, uint8_t cte_len,
 	if ((cte_type == BT_HCI_LE_AOD_CTE_1US ||
 	     cte_type == BT_HCI_LE_AOD_CTE_2US) &&
 	    (num_ant_ids < LLL_DF_MIN_ANT_PATTERN_LEN ||
-	     num_ant_ids > CONFIG_BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN)) {
+	     num_ant_ids > CONFIG_BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN ||
+	     !ant_ids)) {
 		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 	}
 
@@ -267,9 +262,4 @@ static struct lll_df_adv_cfg *ull_df_adv_cfg_acquire(void)
 	df_adv_cfg->is_enabled = false;
 
 	return df_adv_cfg;
-}
-
-static void ull_df_adv_cfg_release(struct ll_adv_aux_set *df_adv_cfg)
-{
-	mem_release(df_adv_cfg, &df_adv_cfg_free);
 }
