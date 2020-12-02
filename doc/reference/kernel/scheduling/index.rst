@@ -16,12 +16,15 @@ There are various points in time when the scheduler is given an
 opportunity to change the identity of the current thread.  These points
 are called **reschedule points**. Some potential reschedule points are:
 
+- transition of a thread from running state to a suspended or waiting
+  state, for example by :c:func:`k_sem_take` or :c:func:`k_sleep`.
 - transition of a thread to the :ref:`ready state <thread_states>`, for
   example by :c:func:`k_sem_give` or :c:func:`k_thread_start`
-- transition of a thread from running state to a suspended or waiting
-  state, for example by :c:func:`k_sem_take` or :c:func:`k_sleep`
 - return to thread context after processing an interrupt
 - when a running thread invokes :c:func:`k_yield`
+
+A thread **sleeps** when it voluntarily initiates an operation that
+transitions itself to a suspended or waiting state.
 
 Whenever the scheduler changes the identity of the current thread,
 or when execution of the current thread is replaced by an ISR,
