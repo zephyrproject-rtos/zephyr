@@ -5,7 +5,7 @@
 
 properties:
     supply-gpios:
-      type: phandle
+      type: phandle-array
       required: false
       description: |
         GPIO specifier that controls power to the device.
