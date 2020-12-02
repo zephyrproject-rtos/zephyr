@@ -67,7 +67,7 @@ sleep
 =====
 
 The sleep attribute is used on a function that can cause the invoking
-thread to sleep.
+thread to :ref:`sleep <scheduling_v2>`.
 
 Explanation
 -----------
