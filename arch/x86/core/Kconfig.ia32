@@ -140,7 +140,7 @@ config LAZY_FPU_SHARING
 
 endmenu
 
-config CACHE_LINE_SIZE
+config DCACHE_LINE_SIZE
 	default 64 if CPU_ATOM
 
 config CLFLUSH_INSTRUCTION_SUPPORTED

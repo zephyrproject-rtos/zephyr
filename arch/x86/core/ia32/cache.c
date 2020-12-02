@@ -26,22 +26,12 @@ extern int z_is_clflush_available(void);
 extern void z_cache_flush_wbinvd(vaddr_t addr, size_t len);
 extern size_t z_cache_line_size_get(void);
 
-#if defined(CONFIG_CACHE_LINE_SIZE_DETECT)
+#if defined(CONFIG_DCACHE_LINE_SIZE_DETECT)
 size_t sys_cache_line_size;
 #endif
 
 #if defined(CONFIG_CLFLUSH_INSTRUCTION_SUPPORTED) || \
 	defined(CONFIG_CLFLUSH_DETECT)
-
-#if (CONFIG_CACHE_LINE_SIZE == 0) && !defined(CONFIG_CACHE_LINE_SIZE_DETECT)
-#error Cannot use this implementation with a cache line size of 0
-#endif
-
-#if defined(CONFIG_CACHE_LINE_SIZE_DETECT)
-#define DCACHE_LINE_SIZE sys_cache_line_size
-#else
-#define DCACHE_LINE_SIZE CONFIG_CACHE_LINE_SIZE
-#endif
 
 /**
  *
@@ -51,59 +41,66 @@ size_t sys_cache_line_size;
  * sys_cache_flush() iterates on the cache lines, a cache line alignment for
  * both is optimal.
  *
- * The cache line size is specified either via the CONFIG_CACHE_LINE_SIZE
+ * The cache line size is specified either via the CONFIG_DCACHE_LINE_SIZE
  * kconfig option or it is detected at runtime.
  *
  * @return N/A
  */
 
-void arch_dcache_flush(void *start_addr, size_t size)
+static void arch_dcache_flush(void *start_addr, size_t size)
 {
+	size_t line_size = sys_dcache_line_size_get();
 	uintptr_t start = (uintptr_t)start_addr;
 	uintptr_t end;
 
-	size = ROUND_UP(size, DCACHE_LINE_SIZE);
+	if (line_size == 0U) {
+		return;
+	}
+
+	size = ROUND_UP(size, line_size);
 	end = start + size;
 
-	for (; start < end; start += DCACHE_LINE_SIZE) {
+	for (; start < end; start += line_size) {
 		__asm__ volatile("clflush %0;\n\t" :  : "m"(start));
 	}
 
 	__asm__ volatile("mfence;\n\t");
 }
 
-#endif /* CONFIG_CLFLUSH_INSTRUCTION_SUPPORTED || CLFLUSH_DETECT */
+int arch_dcache_range(void *addr, size_t size, int op)
+{
+	if (op & K_CACHE_WB) {
+		arch_dcache_flush(addr, size);
+		return 0;
+	}
 
-#if defined(CONFIG_CLFLUSH_DETECT) || defined(CONFIG_CACHE_LINE_SIZE_DETECT)
+	return -ENOTSUP;
+}
+
+#endif /* CONFIG_CLFLUSH_INSTRUCTION_SUPPORTED || CLFLUSH_DETECT */
 
 #include <init.h>
 
-#if defined(CONFIG_CACHE_LINE_SIZE_DETECT)
+#if defined(CONFIG_DCACHE_LINE_SIZE_DETECT)
 static void init_cache_line_size(void)
 {
 	sys_cache_line_size = z_cache_line_size_get();
 }
-#endif
 
 size_t arch_cache_line_size_get(void)
 {
-#if defined(CONFIG_CACHE_LINE_SIZE_DETECT)
 	return sys_cache_line_size;
-#else
-	return 0;
-#endif
 }
+#endif
 
-static int init_cache(const struct device *unused)
+static int init_dcache(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 
-#if defined(CONFIG_CACHE_LINE_SIZE_DETECT)
-    init_cache_line_size();
+#if defined(CONFIG_DCACHE_LINE_SIZE_DETECT)
+	init_cache_line_size();
 #endif
 	return 0;
 }
 
-SYS_INIT(init_cache, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-
-#endif /* CONFIG_CLFLUSH_DETECT || CONFIG_CACHE_LINE_SIZE_DETECT */
+SYS_INIT(init_dcache, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
