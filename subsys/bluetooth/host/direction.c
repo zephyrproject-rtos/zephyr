@@ -5,12 +5,13 @@
  */
 #include <stdint.h>
 #include <assert.h>
-
-#include <bluetooth/hci.h>
-#include <bluetooth/l2cap.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/direction.h>
 #include <sys/byteorder.h>
+
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/conn.h>
+#include <bluetooth/l2cap.h>
+#include <bluetooth/hci.h>
+#include <bluetooth/direction.h>
 
 #include "hci_core.h"
 #include "conn_internal.h"
