@@ -1419,6 +1419,7 @@ int ull_adv_reset_finalize(void)
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		adv->is_created = 0;
+		lll->aux = NULL;
 #endif
 		lll_adv_data_reset(&lll->adv_data);
 		lll_adv_data_reset(&lll->scan_rsp);
