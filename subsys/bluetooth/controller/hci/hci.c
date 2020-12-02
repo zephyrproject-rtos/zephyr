@@ -3504,7 +3504,7 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		le_read_tx_power(cmd, evt);
 		break;
 
-#if defined(CONFIG_BT_CTLR_DF)
+#if IS_ENABLED(CONFIG_BT_CTLR_DF)
 #if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	case BT_OCF(BT_HCI_OP_LE_SET_CL_CTE_TX_PARAMS):
 		le_df_set_cl_cte_tx_params(cmd, evt);
