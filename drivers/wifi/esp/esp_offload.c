@@ -24,21 +24,11 @@ LOG_MODULE_REGISTER(wifi_esp_offload);
 static int esp_bind(struct net_context *context, const struct sockaddr *addr,
 		    socklen_t addrlen)
 {
-	struct esp_socket *sock;
-
-	sock = (struct esp_socket *)context->offload_context;
-
-	sock->src.sa_family = addr->sa_family;
-
 	if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == AF_INET) {
-		net_ipaddr_copy(&net_sin(&sock->src)->sin_addr,
-				&net_sin(addr)->sin_addr);
-		net_sin(&sock->src)->sin_port = net_sin(addr)->sin_port;
-	} else {
-		return -EAFNOSUPPORT;
+		return 0;
 	}
 
-	return 0;
+	return -EAFNOSUPPORT;
 }
 
 static int esp_listen(struct net_context *context, int backlog)
@@ -666,7 +656,6 @@ static int esp_get(sa_family_t family,
 	k_work_init(&sock->send_work, esp_send_work);
 	k_work_init(&sock->recv_work, esp_recv_work);
 	k_work_init(&sock->recvdata_work, esp_recvdata_work);
-	sock->family = family;
 	sock->type = type;
 	sock->ip_proto = ip_proto;
 	sock->context = *context;

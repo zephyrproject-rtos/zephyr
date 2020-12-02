@@ -140,10 +140,8 @@ struct esp_socket {
 	uint8_t flags;
 
 	/* socket info */
-	sa_family_t family;
 	enum net_sock_type type;
 	enum net_ip_protocol ip_proto;
-	struct sockaddr src;
 	struct sockaddr dst;
 
 	/* for +CIPRECVDATA */
