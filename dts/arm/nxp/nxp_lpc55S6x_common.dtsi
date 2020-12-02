@@ -72,7 +72,6 @@
 	};
 
 	sram4: memory@20040000 {
-		/* Conencted to USB bus*/
 		compatible = "mmio-sram";
 		reg = <0x20040000 DT_SIZE_K(16)>;
 	};
