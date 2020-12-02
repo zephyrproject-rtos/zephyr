@@ -49,12 +49,16 @@ static inline uintptr_t arch_syscall_invoke6(uintptr_t arg1, uintptr_t arg2,
 	register uint32_t r5 __asm__("r5") = arg6;
 	register uint32_t r6 __asm__("r6") = call_id;
 
+	__asm__ volatile("push {r1-r3}\n");
+
 	__asm__ volatile("svc %[svid]\n"
 			 : "=r"(ret)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r2), "r" (r3),
 			   "r" (r4), "r" (r5), "r" (r6)
 			 : "r8", "memory", "ip");
+
+	__asm__ volatile("pop {r1-r3}\n");
 
 	return ret;
 }
@@ -71,12 +75,16 @@ static inline uintptr_t arch_syscall_invoke5(uintptr_t arg1, uintptr_t arg2,
 	register uint32_t r4 __asm__("r4") = arg5;
 	register uint32_t r6 __asm__("r6") = call_id;
 
+	__asm__ volatile("push {r1-r3}\n");
+
 	__asm__ volatile("svc %[svid]\n"
 			 : "=r"(ret)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r2), "r" (r3),
 			   "r" (r4), "r" (r6)
 			 : "r8", "memory", "ip");
+
+	__asm__ volatile("pop {r1-r3}\n");
 
 	return ret;
 }
@@ -91,12 +99,16 @@ static inline uintptr_t arch_syscall_invoke4(uintptr_t arg1, uintptr_t arg2,
 	register uint32_t r3 __asm__("r3") = arg4;
 	register uint32_t r6 __asm__("r6") = call_id;
 
+	__asm__ volatile("push {r1-r3}\n");
+
 	__asm__ volatile("svc %[svid]\n"
 			 : "=r"(ret)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r2), "r" (r3),
 			   "r" (r6)
 			 : "r8", "memory", "ip");
+
+	__asm__ volatile("pop {r1-r3}\n");
 
 	return ret;
 }
@@ -110,11 +122,15 @@ static inline uintptr_t arch_syscall_invoke3(uintptr_t arg1, uintptr_t arg2,
 	register uint32_t r2 __asm__("r2") = arg3;
 	register uint32_t r6 __asm__("r6") = call_id;
 
+	__asm__ volatile("push {r1-r2}\n");
+
 	__asm__ volatile("svc %[svid]\n"
 			 : "=r"(ret)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r2), "r" (r6)
 			 : "r8", "memory", "r3", "ip");
+
+	__asm__ volatile("pop {r1-r2}\n");
 
 	return ret;
 }
@@ -126,11 +142,15 @@ static inline uintptr_t arch_syscall_invoke2(uintptr_t arg1, uintptr_t arg2,
 	register uint32_t r1 __asm__("r1") = arg2;
 	register uint32_t r6 __asm__("r6") = call_id;
 
+	__asm__ volatile("push {r1}\n");
+
 	__asm__ volatile("svc %[svid]\n"
 			 : "=r"(ret)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r6)
 			 : "r8", "memory", "r2", "r3", "ip");
+
+	__asm__ volatile("pop {r1}\n");
 
 	return ret;
 }
