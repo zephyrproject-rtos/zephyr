@@ -281,7 +281,7 @@ static int nrf_flash_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_DEFINE(DT_DRV_INST(0), nrf_flash_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, nrf_flash_init, device_pm_control_nop,
 		 NULL, NULL,
 		 POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		 &flash_nrf_api);

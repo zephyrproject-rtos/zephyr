@@ -883,7 +883,7 @@ static const struct qspi_nor_config flash_id = {
 	.size = INST_0_BYTES,
 };
 
-DEVICE_DT_DEFINE(DT_DRV_INST(0), &qspi_nor_init, device_pm_control_nop,
-		 &qspi_nor_memory_data, &flash_id,
-		 POST_KERNEL, CONFIG_NORDIC_QSPI_NOR_INIT_PRIORITY,
-		 &qspi_nor_api);
+DEVICE_DT_INST_DEFINE(0, &qspi_nor_init, device_pm_control_nop,
+		&qspi_nor_memory_data, &flash_id,
+		POST_KERNEL, CONFIG_NORDIC_QSPI_NOR_INIT_PRIORITY,
+		&qspi_nor_api);

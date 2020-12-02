@@ -1039,7 +1039,7 @@ static const struct spi_nor_config spi_nor_config_0 = {
 
 static struct spi_nor_data spi_nor_data_0;
 
-DEVICE_DT_DEFINE(DT_DRV_INST(0), &spi_nor_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, &spi_nor_init, device_pm_control_nop,
 		 &spi_nor_data_0, &spi_nor_config_0,
 		 POST_KERNEL, CONFIG_SPI_NOR_INIT_PRIORITY,
 		 &spi_nor_api);
