@@ -401,65 +401,77 @@ static int esp_send(struct net_pkt *pkt,
 
 #define CIPRECVDATA_CMD_MIN_LEN (sizeof("+CIPRECVDATA,L:") - 1)
 #define CIPRECVDATA_CMD_MAX_LEN (sizeof("+CIPRECVDATA,LLLL:") - 1)
-MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
+
+static int cmd_ciprecvdata_parse(struct esp_socket *sock,
+				 struct net_buf *buf, uint16_t len,
+				 int *data_offset, int *data_len)
 {
-	char *endptr, cmd_buf[CIPRECVDATA_CMD_MAX_LEN + 1];
-	int data_offset, data_len, ret;
-	size_t match_len, frags_len;
-	struct esp_socket *sock;
-	struct esp_data *dev;
-	struct net_pkt *pkt;
+	char cmd_buf[CIPRECVDATA_CMD_MAX_LEN + 1];
+	char *endptr;
+	size_t frags_len;
+	size_t match_len;
 
-	dev = CONTAINER_OF(data, struct esp_data, cmd_handler_data);
-
-	sock = dev->rx_sock;
-
-	frags_len = net_buf_frags_len(data->rx_buf);
+	frags_len = net_buf_frags_len(buf);
 	if (frags_len < CIPRECVDATA_CMD_MIN_LEN) {
-		ret = -EAGAIN;
-		goto out;
+		return -EAGAIN;
 	}
 
 	match_len = net_buf_linearize(cmd_buf, CIPRECVDATA_CMD_MAX_LEN,
-				      data->rx_buf, 0, CIPRECVDATA_CMD_MAX_LEN);
-
+				      buf, 0, CIPRECVDATA_CMD_MAX_LEN);
 	cmd_buf[match_len] = 0;
 
-	data_len = strtol(&cmd_buf[len], &endptr, 10);
+	*data_len = strtol(&cmd_buf[len], &endptr, 10);
 	if (endptr == &cmd_buf[len] ||
 	    (*endptr == 0 && match_len >= CIPRECVDATA_CMD_MAX_LEN) ||
-	    data_len > sock->bytes_avail) {
+	    *data_len > sock->bytes_avail) {
 		LOG_ERR("Invalid cmd: %s", log_strdup(cmd_buf));
-		ret = len;
-		goto out;
+		return -EBADMSG;
 	} else if (*endptr == 0) {
-		ret = -EAGAIN;
-		goto out;
+		return -EAGAIN;
 	} else if (*endptr != _CIPRECVDATA_END) {
 		LOG_ERR("Invalid end of cmd: 0x%02x != 0x%02x", *endptr,
 			_CIPRECVDATA_END);
-		ret = len;
-		goto out;
+		return -EBADMSG;
+	}
+
+	/* data_offset is the offset to where the actual data starts */
+	*data_offset = (endptr - cmd_buf) + 1;
+
+	/* FIXME: Inefficient way of waiting for data */
+	if (*data_offset + *data_len > frags_len) {
+		return -EAGAIN;
 	}
 
 	*endptr = 0;
 
-	/* data_offset is the offset to where the actual data starts */
-	data_offset = strlen(cmd_buf) + 1;
+	return 0;
+}
 
-	/* FIXME: Inefficient way of waiting for data */
-	if (data_offset + data_len > frags_len) {
-		ret = -EAGAIN;
-		goto out;
+MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
+{
+	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
+					    cmd_handler_data);
+	struct esp_socket *sock = dev->rx_sock;
+	int data_offset, data_len;
+	struct net_pkt *pkt;
+	int err;
+
+	err = cmd_ciprecvdata_parse(sock, data->rx_buf, len, &data_offset,
+				    &data_len);
+	if (err) {
+		if (err == -EAGAIN) {
+			return -EAGAIN;
+		}
+
+		return err;
 	}
 
 	sock->bytes_avail -= data_len;
-	ret = data_offset + data_len;
 
 	if ((sock->flags & (ESP_SOCK_CONNECTED | ESP_SOCK_CLOSE_PENDING)) !=
 							ESP_SOCK_CONNECTED) {
 		LOG_DBG("Received data on closed link %d", sock->link_id);
-		goto out;
+		return data_offset + data_len;
 	}
 
 	pkt = esp_prepare_pkt(dev, data->rx_buf, data_offset, data_len);
@@ -476,8 +488,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 submit_work:
 	k_work_submit_to_queue(&dev->workq, &sock->recv_work);
 
-out:
-	return ret;
+	return data_offset + data_len;
 }
 
 static void esp_recvdata_work(struct k_work *work)
