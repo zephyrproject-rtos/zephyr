@@ -1350,6 +1350,11 @@ class Property:
         - For 'type: phandle-array', 'val' is a list of ControllerAndData
           instances. See the documentation for that class.
 
+    val_as_token:
+      The value of the property as a token, i.e. with non-alphanumeric
+      characters replaced with underscores. This is only safe to access
+      if self.enum_tokenizable returns True.
+
     enum_index:
       The index of 'val' in 'spec.enum' (which comes from the 'enum:' list
       in the binding), or None if spec.enum is None.
@@ -1374,6 +1379,11 @@ class Property:
     def type(self):
         "See the class docstring"
         return self.spec.type
+
+    @property
+    def val_as_token(self):
+        "See the class docstring"
+        return re.sub(_NOT_ALPHANUM_OR_UNDERSCORE, '_', self.val)
 
     @property
     def enum_index(self):
@@ -1781,6 +1791,20 @@ class PropertySpec:
     enum:
       A list of values the property may take as given in the binding, or None.
 
+    enum_tokenizable:
+      True if enum is not None and all the values in it are tokenizable;
+      False otherwise.
+
+      A property must have string type and an "enum:" in its binding to be
+      tokenizable. Additionally, the "enum:" values must be unique after
+      converting all non-alphanumeric characters to underscores (so "foo bar"
+      and "foo_bar" in the same "enum:" would not be tokenizable).
+
+    enum_upper_tokenizable:
+      Like 'enum_tokenizable', with the additional restriction that the
+      "enum:" values must be unique after uppercasing and converting
+      non-alphanumeric characters to underscores.
+
     const:
       The property's constant value as given in the binding, or None.
 
@@ -1821,6 +1845,35 @@ class PropertySpec:
     def enum(self):
         "See the class docstring"
         return self._raw.get("enum")
+
+    @property
+    def enum_tokenizable(self):
+        "See the class docstring"
+        if not hasattr(self, '_enum_tokenizable'):
+            if self.type != 'string' or self.enum is None:
+                self._enum_tokenizable = False
+            else:
+                # Saving _as_tokens here lets us reuse it in
+                # enum_upper_tokenizable.
+                self._as_tokens = [re.sub(_NOT_ALPHANUM_OR_UNDERSCORE,
+                                          '_', value)
+                                   for value in self.enum]
+                self._enum_tokenizable = (len(self._as_tokens) ==
+                                          len(set(self._as_tokens)))
+
+        return self._enum_tokenizable
+
+    @property
+    def enum_upper_tokenizable(self):
+        "See the class docstring"
+        if not hasattr(self, '_enum_upper_tokenizable'):
+            if not self.enum_tokenizable:
+                self._enum_upper_tokenizable = False
+            else:
+                self._enum_upper_tokenizable = \
+                    (len(self._as_tokens) ==
+                     len(set(x.upper() for x in self._as_tokens)))
+        return self._enum_upper_tokenizable
 
     @property
     def const(self):
@@ -2476,6 +2529,8 @@ def _check_dt(dt):
 def _err(msg):
     raise EDTError(msg)
 
+# Regular expression for non-alphanumeric-or-underscore characters.
+_NOT_ALPHANUM_OR_UNDERSCORE = re.compile(r'\W', re.ASCII)
 
 # Custom PyYAML binding loader class to avoid modifying yaml.Loader directly,
 # which could interfere with YAML loading in clients
