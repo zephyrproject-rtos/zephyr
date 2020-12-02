@@ -710,6 +710,34 @@ config FPU_SHARING
 
 endmenu
 
+menu "Cache Options"
+
+config CACHE_LINE_SIZE_DETECT
+	bool "Detect cache line size at runtime"
+	help
+	  This option enables querying some architecture-specific hardware for
+	  finding the cache line size at the expense of taking more memory and
+	  code and a slightly increased boot time.
+
+	  If the CPU's cache line size is known in advance, disable this option and
+	  manually enter the value for CACHE_LINE_SIZE.
+
+config CACHE_LINE_SIZE
+	int "Cache line size" if !CACHE_LINE_SIZE_DETECT
+	default 0
+	help
+	  Size in bytes of a CPU cache line.
+
+	  Detect automatically at runtime by selecting CACHE_LINE_SIZE_DETECT.
+
+config CACHE_FLUSHING
+	bool "Enable cache flushing mechanism"
+	help
+	  This links in the cache flushing functions (d-cache and i-cache where
+	  possible).
+
+endmenu
+
 config ARCH
 	string
 	help
