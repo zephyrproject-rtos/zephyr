@@ -70,6 +70,7 @@
 /arch/nios2/                              @nashif
 /arch/posix/                              @aescolar @daor-oti
 /arch/riscv/                              @kgugala @pgielda
+/soc/mips/                                @frantony
 /soc/posix/                               @aescolar @daor-oti
 /soc/riscv/                               @kgugala @pgielda
 /soc/riscv/openisa*/                      @dleach02
