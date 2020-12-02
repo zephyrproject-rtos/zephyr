@@ -282,7 +282,7 @@ source "arch/arc/core/mpu/Kconfig"
 
 endmenu
 
-config CACHE_LINE_SIZE
+config DCACHE_LINE_SIZE
 	default 32
 
 config ARC_EXCEPTION_STACK_SIZE
