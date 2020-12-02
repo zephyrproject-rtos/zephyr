@@ -14,3 +14,13 @@ properties:
        type: phandles
        required: false
        description: List of power management states supported by this cpu
+    i-cache-line-size:
+      type: int
+      required: false
+      description: i-cache line size
+      default: 0
+    d-cache-line-size:
+      type: int
+      required: false
+      description: d-cache line size
+      default: 0
