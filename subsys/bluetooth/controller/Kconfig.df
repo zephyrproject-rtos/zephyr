@@ -38,7 +38,7 @@ config BT_CTLR_DF_CTE_TX
 	  controller.
 
 config BT_CTLR_DF_ANT_SWITCH_1US
-	bool "Enable support for 1us antenna switching slots"
+	bool "Enable support for 1us antenna switch slots"
 	depends on BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT
 	default y
 	help
