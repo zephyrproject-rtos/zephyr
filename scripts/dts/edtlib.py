@@ -885,18 +885,11 @@ class Node:
             self._check_undeclared_props()
         elif default_prop_types:
             for name in node.props:
-                if name in _DEFAULT_PROP_TYPES:
-                    prop_type = _DEFAULT_PROP_TYPES[name]
-                    val = self._prop_val(name, prop_type, False, False, None)
-                    prop = Property()
-                    prop.node = self
-                    prop.name = name
-                    prop.description = None
-                    prop.val = val
-                    prop.type = prop_type
-                    # We don't set enum_index for "compatible"
-                    prop.enum_index = None
-                    self.props[name] = prop
+                if name not in _DEFAULT_PROP_SPECS:
+                    continue
+                prop_spec = _DEFAULT_PROP_SPECS[name]
+                val = self._prop_val(name, prop_spec.type, False, False, None)
+                self.props[name] = Property(prop_spec, val, self)
 
     def _init_prop(self, prop_spec):
         # _init_props() helper for initializing a single property.
@@ -934,17 +927,7 @@ class Node:
         if name[0] == "#" or name.endswith("-map"):
             return
 
-        prop = Property()
-        prop.node = self
-        prop.name = name
-        prop.description = prop_spec.description
-        if prop.description:
-            prop.description = prop.description.strip()
-        prop.val = val
-        prop.type = prop_type
-        prop.enum_index = None if enum is None else enum.index(val)
-
-        self.props[name] = prop
+        self.props[name] = Property(prop_spec, val, self)
 
     def _prop_val(self, name, prop_type, deprecated, required, default):
         # _init_prop() helper for getting the property's value
@@ -1326,28 +1309,34 @@ class Property:
     additional info from the 'properties:' section of the binding.
 
     Only properties mentioned in 'properties:' get created. Properties of type
-    'compound' currently do not get Property instances, as I'm not sure what
-    information to store for them.
+    'compound' currently do not get Property instances, as it's not clear
+    what to generate for them.
+
+    These attributes are available on Property objects. Several are
+    just convenience accessors for attributes on the PropertySpec object
+    accessible via the 'spec' attribute.
 
     These attributes are available on Property objects:
 
     node:
       The Node instance the property is on
 
+    spec:
+      The PropertySpec object which specifies this property.
+
     name:
-      The name of the property
+      Convenience for spec.name.
 
     description:
-      The description string from the property as given in the binding, or None
-      if missing. Leading and trailing whitespace (including newlines) is
-      removed.
+      Convenience for spec.name with leading and trailing whitespace
+      (including newlines) removed.
 
     type:
-      A string with the type of the property, as given in the binding.
+      Convenience for spec.type.
 
     val:
-      The value of the property, with the format determined by the 'type:' key
-      from the binding.
+      The value of the property, with the format determined by spec.type,
+      which comes from the 'type:' string in the binding.
 
         - For 'type: int/array/string/string-array', 'val' is what you'd expect
           (a Python integer or string, or a list of them)
@@ -1362,9 +1351,36 @@ class Property:
           instances. See the documentation for that class.
 
     enum_index:
-      The index of the property's value in the 'enum:' list in the binding, or
-      None if the binding has no 'enum:'
+      The index of 'val' in 'spec.enum' (which comes from the 'enum:' list
+      in the binding), or None if spec.enum is None.
     """
+
+    def __init__(self, spec, val, node):
+        self.val = val
+        self.spec = spec
+        self.node = node
+
+    @property
+    def name(self):
+        "See the class docstring"
+        return self.spec.name
+
+    @property
+    def description(self):
+        "See the class docstring"
+        return self.spec.description.strip()
+
+    @property
+    def type(self):
+        "See the class docstring"
+        return self.spec.type
+
+    @property
+    def enum_index(self):
+        "See the class docstring"
+        enum = self.spec.enum
+        return enum.index(self.val) if enum else None
+
     def __repr__(self):
         fields = ["name: " + self.name,
                   # repr() to deal with lists
@@ -2482,8 +2498,14 @@ _BindingLoader.add_constructor(
     yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
     lambda loader, node: OrderedDict(loader.construct_pairs(node)))
 
-# Zephyr: do not change this list without updating the documentation
-# for the DT_PROP() macro in include/devicetree.h.
+#
+# "Default" binding for properties which are defined by the spec.
+#
+# Zephyr: do not change the _DEFAULT_PROP_TYPES keys without
+# updating the documentation for the DT_PROP() macro in
+# include/devicetree.h.
+#
+
 _DEFAULT_PROP_TYPES = {
     "compatible": "string-array",
     "status": "string",
@@ -2494,4 +2516,31 @@ _DEFAULT_PROP_TYPES = {
     "interrupts-extended": "compound",
     "interrupt-names": "string-array",
     "interrupt-controller": "boolean",
+}
+
+_STATUS_ENUM = "ok okay disabled reserved fail fail-sss".split()
+
+def _raw_default_property_for(name):
+    ret = {
+        'type': _DEFAULT_PROP_TYPES[name],
+        'required': False,
+    }
+    if name == 'status':
+        ret['enum'] = _STATUS_ENUM
+    return ret
+
+_DEFAULT_PROP_BINDING = Binding(
+    None, {},
+    raw={
+        'properties': {
+            name: _raw_default_property_for(name)
+            for name in _DEFAULT_PROP_TYPES
+        },
+    },
+    require_compatible=False, require_description=False, warn_file=None
+)
+
+_DEFAULT_PROP_SPECS = {
+    name: PropertySpec(name, _DEFAULT_PROP_BINDING)
+    for name in _DEFAULT_PROP_TYPES
 }
