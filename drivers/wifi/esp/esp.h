@@ -145,8 +145,6 @@ struct esp_socket {
 	atomic_t flags;
 
 	/* socket info */
-	enum net_sock_type type;
-	enum net_ip_protocol ip_proto;
 	struct sockaddr dst;
 
 	/* sem */
@@ -230,8 +228,6 @@ struct esp_data {
 int esp_offload_init(struct net_if *iface);
 
 struct esp_socket *esp_socket_get(struct esp_data *data,
-				  enum net_sock_type type,
-				  enum net_ip_protocol ip_proto,
 				  struct net_context *context);
 int esp_socket_put(struct esp_socket *sock);
 void esp_socket_init(struct esp_data *data);
@@ -350,6 +346,16 @@ static inline void esp_flags_clear(struct esp_data *dev, uint8_t flags)
 static inline bool esp_flags_are_set(struct esp_data *dev, uint8_t flags)
 {
 	return (dev->flags & flags) != 0;
+}
+
+static inline enum net_sock_type esp_socket_type(struct esp_socket *sock)
+{
+	return net_context_get_type(sock->context);
+}
+
+static inline enum net_ip_protocol esp_socket_ip_proto(struct esp_socket *sock)
+{
+	return net_context_get_ip_proto(sock->context);
 }
 
 static inline int esp_cmd_send(struct esp_data *data,
