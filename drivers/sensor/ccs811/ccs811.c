@@ -593,7 +593,7 @@ out:
 
 static struct ccs811_data ccs811_driver;
 
-DEVICE_DT_DEFINE(DT_DRV_INST(0), ccs811_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, ccs811_init, device_pm_control_nop,
 		 &ccs811_driver, NULL,
 		 POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		 &ccs811_driver_api);
