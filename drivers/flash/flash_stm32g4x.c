@@ -18,8 +18,6 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #include "flash_stm32.h"
 
-#define STM32G4X_PAGE_SHIFT	11
-
 #define STM32G4_SERIES_MAX_FLASH	512
 #define BANK2_OFFSET	(KB(STM32G4_SERIES_MAX_FLASH) / 2)
 
@@ -47,13 +45,6 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 		flash_stm32_range_exists(dev, offset, len);
 }
 
-/*
- * STM32G4xx devices can have up to 64 2K pages in a single banks
- */
-static unsigned int get_page(off_t offset)
-{
-	return offset >> STM32G4X_PAGE_SHIFT;
-}
 
 static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 {
@@ -100,11 +91,12 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 	return rc;
 }
 
-static int erase_page(const struct device *dev, unsigned int page)
+static int erase_page(const struct device *dev, unsigned int offset)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	uint32_t tmp;
 	int rc;
+	int page;
 
 	/* if the control register is locked, do not fail silently */
 	if (regs->CR & FLASH_CR_LOCK) {
@@ -118,23 +110,24 @@ static int erase_page(const struct device *dev, unsigned int page)
 		return rc;
 	}
 
-#ifdef FLASH_OPTR_DBANK
-	if (page > 127) {
-		if (!(regs->OPTR & FLASH_OPTR_DBANK)) {
-			LOG_ERR("Page %d does not exist when DBANK=0", page);
-			return -EINVAL;
-		}
-
-		/* The pages to be erased is in bank 2*/
+#if defined(FLASH_OPTR_DBANK)
+	if (offset < (FLASH_SIZE / 2)) {
+		/* The pages to be erased is in bank 1 */
+		regs->CR &= ~FLASH_CR_BKER_Msk;
+		page = offset / FLASH_PAGE_SIZE;
+		LOG_DBG("Erase page %d on bank 1", page);
+	} else if (offset >= BANK2_OFFSET) {
+		/* The pages to be erased is in bank 2 */
 		regs->CR |= FLASH_CR_BKER;
-		page = page - 128;
+		page = (offset - BANK2_OFFSET) / FLASH_PAGE_SIZE;
 		LOG_DBG("Erase page %d on bank 2", page);
 	} else {
-		LOG_DBG("Erase page %d on bank 1", page);
+		LOG_ERR("Offset %d does not exist", offset);
+		return -EINVAL;
 	}
-
-
-	__ASSERT(page <= 127, "There are only 127 pages, but page is %d", page);
+#else
+	page = offset / FLASH_PAGE_SIZE;
+		LOG_DBG("Erase page %d", page);
 #endif
 
 	/* Set the PER bit and select the page you wish to erase */
@@ -164,11 +157,10 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 				 unsigned int offset,
 				 unsigned int len)
 {
-	int i, rc = 0;
+	unsigned int address = offset, rc = 0;
 
-	i = get_page(offset);
-	for (; i <= get_page(offset + len - 1) ; ++i) {
-		rc = erase_page(dev, i);
+	for (; address <= offset + len - 1 ; address += FLASH_PAGE_SIZE) {
+		rc = erase_page(dev, address);
 		if (rc < 0) {
 			break;
 		}
