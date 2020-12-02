@@ -110,7 +110,7 @@ config NRF_802154_SER_HOST
 	select IPM_MSG_CH_0_TX
 	select IPM_MSG_CH_1_RX
 	select OPENAMP
-	select IEEE802154_NRF5_EXT_IRQ_MGMT
+	select IEEE802154_NRF5_EXT_IRQ_MGMT if IEEE802154_NRF5
 	help
 	  Enable serialization of nRF IEEE 802.15.4 Driver. This option is to be
 	  used if radio is not available in the core, but radio services are
