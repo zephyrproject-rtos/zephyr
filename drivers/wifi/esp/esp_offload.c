@@ -56,7 +56,7 @@ static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 		      &net_sin(&dst)->sin_addr,
 		      addr_str, sizeof(addr_str));
 
-	if (sock->ip_proto == IPPROTO_TCP) {
+	if (esp_socket_ip_proto(sock) == IPPROTO_TCP) {
 		snprintk(connect_msg, sizeof(connect_msg),
 			 "AT+CIPSTART=%d,\"TCP\",\"%s\",%d,7200",
 			 sock->link_id, addr_str,
@@ -69,13 +69,13 @@ static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 	}
 
 	LOG_DBG("link %d, ip_proto %s, addr %s", sock->link_id,
-		sock->ip_proto == IPPROTO_TCP ? "TCP" : "UDP",
+		esp_socket_ip_proto(sock) == IPPROTO_TCP ? "TCP" : "UDP",
 		log_strdup(addr_str));
 
 	ret = esp_cmd_send(dev, NULL, 0, connect_msg, ESP_CMD_TIMEOUT);
 	if (ret == 0) {
 		esp_socket_flags_set(sock, ESP_SOCK_CONNECTED);
-		if (sock->type == SOCK_STREAM) {
+		if (esp_socket_type(sock) == SOCK_STREAM) {
 			net_context_set_state(sock->context,
 					      NET_CONTEXT_CONNECTED);
 		}
@@ -213,7 +213,7 @@ static int _sock_send(struct esp_socket *sock, struct net_pkt *pkt)
 
 	LOG_DBG("link %d, len %d", sock->link_id, pkt_len);
 
-	if (sock->ip_proto == IPPROTO_TCP) {
+	if (esp_socket_ip_proto(sock) == IPPROTO_TCP) {
 		snprintk(cmd_buf, sizeof(cmd_buf),
 			 "AT+CIPSEND=%d,%d", sock->link_id, pkt_len);
 	} else {
@@ -332,7 +332,7 @@ static int esp_sendto(struct net_pkt *pkt,
 		return -ENETUNREACH;
 	}
 
-	if (sock->type == SOCK_STREAM) {
+	if (esp_socket_type(sock) == SOCK_STREAM) {
 		if (!esp_socket_connected(sock)) {
 			return -ENOTCONN;
 		}
@@ -600,7 +600,7 @@ static int esp_get(sa_family_t family,
 	 */
 	dev = &esp_driver_data;
 
-	sock = esp_socket_get(dev, type, ip_proto, *context);
+	sock = esp_socket_get(dev, *context);
 	if (!sock) {
 		LOG_ERR("No socket available!");
 		return -ENOMEM;

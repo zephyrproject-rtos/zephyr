@@ -458,7 +458,7 @@ static int cmd_ipd_check_hdr_end(struct esp_socket *sock, char actual)
 	char expected;
 
 	/* When using passive mode, the +IPD command ends with \r\n */
-	if (ESP_PROTO_PASSIVE(sock->ip_proto)) {
+	if (ESP_PROTO_PASSIVE(esp_socket_ip_proto(sock))) {
 		expected = '\r';
 	} else {
 		expected = ':';
@@ -510,7 +510,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ipd)
 	 * When using passive TCP, the data itself is not included in the +IPD
 	 * command but must be polled with AT+CIPRECVDATA.
 	 */
-	if (ESP_PROTO_PASSIVE(sock->ip_proto)) {
+	if (ESP_PROTO_PASSIVE(esp_socket_ip_proto(sock))) {
 		esp_socket_work_submit(sock, &sock->recvdata_work);
 		ret = data_offset;
 		goto socket_unref;

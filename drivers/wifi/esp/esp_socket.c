@@ -19,8 +19,6 @@ struct esp_workq_flush_data {
 };
 
 struct esp_socket *esp_socket_get(struct esp_data *data,
-				  enum net_sock_type type,
-				  enum net_ip_protocol ip_proto,
 				  struct net_context *context)
 {
 	struct esp_socket *sock = data->sockets;
@@ -32,8 +30,6 @@ struct esp_socket *esp_socket_get(struct esp_data *data,
 			sock->context = context;
 			context->offload_context = sock;
 
-			sock->type = type;
-			sock->ip_proto = ip_proto;
 			sock->connect_cb = NULL;
 			sock->recv_cb = NULL;
 
@@ -163,7 +159,7 @@ void esp_socket_rx(struct esp_socket *sock, struct net_buf *buf,
 	pkt = esp_socket_prepare_pkt(sock, buf, offset, len);
 	if (!pkt) {
 		LOG_ERR("Failed to get net_pkt: len %zu", len);
-		if (sock->type == SOCK_STREAM) {
+		if (esp_socket_type(sock) == SOCK_STREAM) {
 			if (!esp_socket_flags_test_and_set(sock,
 						ESP_SOCK_CLOSE_PENDING)) {
 				esp_socket_work_submit(sock, &sock->close_work);
