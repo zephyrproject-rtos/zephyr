@@ -697,6 +697,8 @@ Documentation:
 
 "Drivers: Watchdog":
     status: orphaned
+    collaborators:
+        - katsuster
     files:
         - doc/reference/peripherals/watchdog.rst
         - drivers/watchdog/
