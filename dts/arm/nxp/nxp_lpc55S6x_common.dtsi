@@ -83,7 +83,7 @@
 
 	syscon: syscon@0 {
 		compatible = "nxp,lpc-syscon";
-		reg = <0x0 0x4000>;
+		reg = <0x0 0x1000>;
 		label = "SYSCON";
 		#clock-cells = <1>;
 	};
@@ -91,7 +91,7 @@
 	iap: flash-controller@34000 {
 		compatible = "nxp,lpc-iap";
 		label = "FLASH_IAP";
-		reg = <0x34000 0x18>;
+		reg = <0x34000 0x1000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		flash0: flash@0 {
@@ -257,7 +257,7 @@
 
 	adc0: adc@A0000 {
 		compatible = "nxp,lpc-lpadc";
-		reg = <0xA0000 0x580>;
+		reg = <0xA0000 0x1000>;
 		interrupts = <22 0>;
 		status = "disabled";
 		clk-divider = <8>;
