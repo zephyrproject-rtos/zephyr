@@ -20,6 +20,7 @@
 #define TEST_IRQ	DT_NODELABEL(test_irq)
 #define TEST_TEMP	DT_NODELABEL(test_temp_sensor)
 #define TEST_REG	DT_NODELABEL(test_reg)
+#define TEST_ENUM_0	DT_NODELABEL(test_enum_0)
 
 #define TEST_I2C_DEV DT_PATH(test, i2c_11112222, test_i2c_dev_10)
 #define TEST_I2C_BUS DT_BUS(TEST_I2C_DEV)
@@ -1426,10 +1427,23 @@ static void test_chosen(void)
 		     "chosen");
 }
 
+#define TO_MY_ENUM(token) TO_MY_ENUM_2(token) /* force another expansion */
+#define TO_MY_ENUM_2(token) MY_ENUM_ ## token
 static void test_enums(void)
 {
-	zassert_equal(DT_ENUM_IDX(DT_NODELABEL(test_enum_0), val), 0, "0");
+	enum {
+		MY_ENUM_zero = 0xff,
+		MY_ENUM_ZERO = 0xaa,
+	};
+
+	zassert_equal(DT_ENUM_IDX(TEST_ENUM_0, val), 0, "0");
+	zassert_equal(TO_MY_ENUM(DT_ENUM_TOKEN(TEST_ENUM_0, val)),
+		      0xff, "zero as token");
+	zassert_equal(TO_MY_ENUM(DT_ENUM_UPPER_TOKEN(TEST_ENUM_0, val)),
+		      0xaa, "zero as uppercase token");
 }
+#undef TO_MY_ENUM
+#undef TO_MY_ENUM_2
 
 static void test_enums_required_false(void)
 {
