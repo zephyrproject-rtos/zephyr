@@ -145,7 +145,7 @@ config CACHE_LINE_SIZE
 
 config CLFLUSH_INSTRUCTION_SUPPORTED
 	bool "CLFLUSH instruction supported"
-	depends on !CLFLUSH_DETECT && CACHE_FLUSHING
+	depends on !CLFLUSH_DETECT && CACHE_MANAGEMENT
 	help
 	  An implementation of sys_cache_flush() that uses CLFLUSH is made
 	  available, instead of the one using WBINVD.
@@ -156,7 +156,7 @@ config CLFLUSH_INSTRUCTION_SUPPORTED
 
 config CLFLUSH_DETECT
 	bool "Detect support of CLFLUSH instruction at runtime"
-	depends on CACHE_FLUSHING
+	depends on CACHE_MANAGEMENT
 	help
 	  This option should be enabled if it is not known in advance whether the
 	  CPU supports the CLFLUSH instruction or not.

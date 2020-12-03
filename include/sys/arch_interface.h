@@ -816,7 +816,7 @@ void arch_gdb_step(void);
  * @{
  */
 
-#ifdef CONFIG_CACHE_FLUSHING
+#ifdef CONFIG_CACHE_MANAGEMENT
 /**
  *
  * @brief Flush d-cache lines to main memory
