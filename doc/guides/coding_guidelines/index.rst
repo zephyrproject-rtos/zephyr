@@ -823,3 +823,119 @@ Excluding declarations from the header based on compile-time options may prevent
 their documentation from being generated. Their absence also prevents use of
 ``if (IS_ENABLED(CONFIG_FOO)) {}`` as an alternative to preprocessor
 conditionals when the code path should change based on the selected options.
+
+Rule A.2: Inclusive Language
+============================
+
+Severity
+--------
+
+Required
+
+Description
+-----------
+
+Do not introduce new usage of offensive terms listed below. This rule applies
+but is not limited to source code, comments, documentation, and branch names.
+Replacement terms may vary by area or subsystem, but should aim to follow
+updated industry standards when possible.
+
+Exceptions are allowed for maintaining existing implementations or adding new
+implementations of industry standard specifications governed externally to the
+Zephyr Project.
+
+Existing usage is recommended to change as soon as updated industry standard
+specifications become available or new terms are publicly announced by the
+governing body, or immediately if no specifications apply.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Offensive Terms
+     - Recommended Replacements
+
+   * - ``{master,leader} / slave``
+     - - ``{primary,main} / {secondary,replica}``
+       - ``{initiator,requester} / {target,responder}``
+       - ``{controller,host} / {device,worker,proxy,target}``
+       - ``director / performer``
+       - ``central / peripheral``
+
+   * - ``blacklist / whitelist``
+     - * ``denylist / allowlist``
+       * ``blocklist / passlist``
+       * ``rejectlist / acceptlist``
+
+   * - ``grandfather policy``
+     - * ``legacy``
+
+   * - ``sanity``
+     - * ``coherence``
+       * ``confidence``
+
+
+Rationale
+---------
+
+Offensive terms do not create an inclusive community environment and therefore
+violate the Zephyr Project `Code of Conduct`_. This coding rule was inspired by
+a similar rule in `Linux`_.
+
+.. _Code of Conduct: https://github.com/zephyrproject-rtos/zephyr/blob/master/CODE_OF_CONDUCT.md
+.. _Linux: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=49decddd39e5f6132ccd7d9fdc3d7c470b0061bb
+
+Status
+------
+
+Related GitHub Issues and Pull Requests are tagged with the `Inclusive Language Label`_.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Area
+     - Selected Replacements
+     - Status
+
+   * - :ref:`bluetooth_api`
+     - See `Bluetooth Appropriate Language Mapping Tables`_
+     -
+
+   * - eSPI
+     - * ``master / slave`` => TBD
+     -
+
+   * - gPTP
+     - * ``master / slave`` => TBD
+     -
+
+   * - :ref:`i2c_api`
+     - * ``master / slave`` => TBD
+     - NXP publishes the `I2C Specification`_ and has selected ``controller /
+       target`` as replacement terms, but the timing to publish an announcement
+       or new specification is TBD. Zephyr will update I2C when replacement
+       terminology is confirmed by a public announcement or updated
+       specification.
+
+   * - :ref:`i2s_api`
+     - * ``master / slave`` => TBD
+     -
+
+   * - SMP/AMP
+     - * ``master / slave`` => TBD
+     -
+
+   * - :ref:`spi_api`
+     - * ``master / slave`` => ``controller / peripheral``
+       * ``MOSI / MISO / SS`` => ``SDO / SDI / CS``
+     - The Open Source Hardware Association has selected these replacement
+       terms. See `OSHWA Resolution to Redefine SPI Signal Names`_
+
+   * - :ref:`twister_script`
+     - * ``platform_whitelist`` => ``platform_allow``
+       * ``sanitycheck`` => ``twister``
+     -
+
+.. _Inclusive Language Label: https://github.com/zephyrproject-rtos/zephyr/issues?q=label%3A%22Inclusive+Language%22
+.. _I2C Specification: https://www.nxp.com/docs/en/user-guide/UM10204.pdf
+.. _Bluetooth Appropriate Language Mapping Tables: https://btprodspecificationrefs.blob.core.windows.net/language-mapping/Appropriate_Language_Mapping_Table.pdf
+.. _OSHWA Resolution to Redefine SPI Signal Names: https://www.oshwa.org/a-resolution-to-redefine-spi-signal-names/
