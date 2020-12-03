@@ -618,7 +618,7 @@ int mqtt_live(struct mqtt_client *client)
 	}
 }
 
-uint32_t mqtt_keepalive_time_left(const struct mqtt_client *client)
+int mqtt_keepalive_time_left(const struct mqtt_client *client)
 {
 	uint32_t elapsed_time = mqtt_elapsed_time_in_ms_get(
 					client->internal.last_activity);
@@ -626,7 +626,7 @@ uint32_t mqtt_keepalive_time_left(const struct mqtt_client *client)
 
 	if (client->keepalive == 0) {
 		/* Keep alive not enabled. */
-		return UINT32_MAX;
+		return -1;
 	}
 
 	if (keepalive_ms <= elapsed_time) {
