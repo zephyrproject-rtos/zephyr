@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-board_runner_args(openocd "--use-elf")
 board_runner_args(jlink "--device=STM32H723ZG" "--speed=4000")
 board_runner_args(stm32cubeprogrammer "--port=swd" "--reset=hw")
 
