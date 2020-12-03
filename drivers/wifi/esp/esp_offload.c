@@ -38,8 +38,9 @@ static int esp_listen(struct net_context *context, int backlog)
 
 static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 {
+	char connect_msg[sizeof("AT+CIPSTART=0,\"TCP\",\"\",65535,7200") +
+			 NET_IPV4_ADDR_LEN];
 	char addr_str[NET_IPV4_ADDR_LEN];
-	char connect_msg[100];
 	int ret;
 
 	if (!esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
@@ -195,7 +196,10 @@ MODEM_CMD_DEFINE(on_cmd_send_fail)
 
 static int _sock_send(struct esp_data *dev, struct esp_socket *sock)
 {
-	char cmd_buf[64], addr_str[NET_IPV4_ADDR_LEN];
+	char cmd_buf[sizeof("AT+CIPSEND=0,,\"\",") +
+		     sizeof(STRINGIFY(ESP_MTU)) - 1 +
+		     NET_IPV4_ADDR_LEN + sizeof("65535") - 1];
+	char addr_str[NET_IPV4_ADDR_LEN];
 	int ret, write_len, pkt_len;
 	struct net_buf *frag;
 	static const struct modem_cmd cmds[] = {
@@ -486,7 +490,7 @@ static void esp_recvdata_work(struct k_work *work)
 	struct esp_socket *sock;
 	struct esp_data *dev;
 	int len = CIPRECVDATA_MAX_LEN, ret;
-	char cmd[32];
+	char cmd[sizeof("AT+CIPRECVDATA=0,"STRINGIFY(CIPRECVDATA_MAX_LEN))];
 	static const struct modem_cmd cmds[] = {
 		MODEM_CMD_DIRECT(_CIPRECVDATA, on_cmd_ciprecvdata),
 	};

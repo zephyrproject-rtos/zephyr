@@ -75,7 +75,7 @@ void esp_socket_init(struct esp_data *data)
 void esp_socket_close(struct esp_socket *sock)
 {
 	struct esp_data *dev = esp_socket_to_dev(sock);
-	char cmd_buf[16];
+	char cmd_buf[sizeof("AT+CIPCLOSE=0")];
 	int ret;
 
 	snprintk(cmd_buf, sizeof(cmd_buf), "AT+CIPCLOSE=%d",
