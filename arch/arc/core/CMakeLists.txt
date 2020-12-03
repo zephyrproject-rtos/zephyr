@@ -3,7 +3,8 @@
 zephyr_library()
 
 if(CONFIG_COVERAGE)
-  toolchain_cc_coverage()
+  zephyr_compile_options($<TARGET_PROPERTY:compiler,coverage>)
+  zephyr_link_libraries($<TARGET_PROPERTY:linker,coverage>)
 endif()
 
 zephyr_library_sources(
