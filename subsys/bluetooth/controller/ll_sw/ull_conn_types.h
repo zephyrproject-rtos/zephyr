@@ -265,7 +265,6 @@ struct ll_conn {
 	} llcp_phy;
 
 	uint8_t phy_pref_tx:3;
-	uint8_t phy_pref_flags:1;
 	uint8_t phy_pref_rx:3;
 #endif /* CONFIG_BT_CTLR_PHY */
 

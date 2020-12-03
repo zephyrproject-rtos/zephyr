@@ -287,7 +287,6 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn->llcp_phy.pause_tx = 0U;
 	conn->phy_pref_tx = ull_conn_default_phy_tx_get();
 	conn->phy_pref_rx = ull_conn_default_phy_rx_get();
-	conn->phy_pref_flags = 0U;
 #endif /* CONFIG_BT_CTLR_PHY */
 
 	conn->tx_head = conn->tx_ctrl = conn->tx_ctrl_last =
