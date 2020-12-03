@@ -21,3 +21,13 @@ tests:
     extra_configs:
       - CONFIG_TIMESLICING=n
     tags: kernel threads sched userspace
+  kernel.scheduler.dumb_no_timeslicing:
+    extra_args: CONF_FILE=prj_dumb.conf
+    extra_configs:
+      - CONFIG_TIMESLICING=y
+    tags: kernel threads sched userspace
+  kernel.scheduler.dumb_no_timeslicing:
+    extra_args: CONF_FILE=prj_dumb.conf
+    extra_configs:
+      - CONFIG_TIMESLICING=n
+    tags: kernel threads sched userspace
