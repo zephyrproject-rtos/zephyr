@@ -34,7 +34,7 @@ struct bt_csis_cb_t {
 	 *  @param locked  Whether the lock was locked or released.
 	 *
 	 */
-	void (*locked)(struct bt_conn *conn, bool locked);
+	void (*lock_changed)(struct bt_conn *conn, bool locked);
 
 	/** @brief Request from a peer device to read the sirk.
 	 *

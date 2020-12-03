@@ -330,8 +330,8 @@ static uint8_t lock_notify_func(struct bt_conn *conn,
 			locked = csis_inst->set_lock == BT_CSIP_LOCK_VALUE;
 			BT_DBG("Instance %u lock was %s",
 			       csis_inst->idx, locked ? "locked" : "released");
-			if (csip_cbs && csip_cbs->locked) {
-				csip_cbs->locked(conn, &cur_set, locked);
+			if (csip_cbs && csip_cbs->lock_changed) {
+				csip_cbs->lock_changed(conn, &cur_set, locked);
 			}
 		} else {
 			BT_DBG("Invalid length %u", length);
@@ -1303,6 +1303,89 @@ static void discover_members_timer_handler(struct k_work *work)
 	}
 }
 
+
+static uint8_t csip_read_lock_cb(struct bt_conn *conn, uint8_t err,
+				 struct bt_gatt_read_params *params,
+				 const void *data, uint16_t length)
+{
+	struct set_member_t *member;
+	uint8_t value;
+	int cb_err = err;
+	uint8_t idx = cur_inst->idx;
+
+	busy = false;
+
+	member = lookup_member_by_conn(conn);
+	if (!member) {
+		BT_DBG("Could not lookup member");
+		cb_err = BT_ATT_ERR_UNLIKELY;
+	} else if (err) {
+		BT_DBG("err: 0x%02X", err);
+	} else if (data) {
+		if (length == sizeof(cur_inst->set_lock)) {
+			bool locked;
+
+			memcpy(&value, data, length);
+			if (value != BT_CSIP_RELEASE_VALUE &&
+			    value != BT_CSIP_LOCK_VALUE) {
+				BT_DBG("Invalid value %u", value);
+				return BT_GATT_ITER_STOP;
+			}
+
+			memcpy(&cur_inst->set_lock, data, length);
+
+			locked = cur_inst->set_lock == BT_CSIP_LOCK_VALUE;
+			BT_DBG("Instance %u lock is %s",
+			       cur_inst->idx, locked ? "locked" : "released");
+		} else {
+			BT_DBG("Invalid length %u", length);
+			cb_err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
+		}
+	}
+
+	cur_inst = NULL;
+
+	if (csip_cbs->lock_read) {
+		csip_cbs->lock_read(conn, cb_err, idx,
+				    value == BT_CSIP_LOCK_VALUE ? true : false);
+	}
+	return BT_GATT_ITER_STOP;
+}
+
+static void csip_write_lock_cb(struct bt_conn *conn, uint8_t err,
+			       struct bt_gatt_write_params *params)
+{
+	uint8_t idx = cur_inst->idx;
+
+	busy = false;
+	cur_inst = NULL;
+
+	if (err) {
+		BT_DBG("Could not lock set (%d)", err);
+	}
+
+	if (csip_cbs && csip_cbs->lock) {
+		csip_cbs->lock(conn, err, idx);
+	}
+}
+
+static void csip_write_release_cb(struct bt_conn *conn, uint8_t err,
+				  struct bt_gatt_write_params *params)
+{
+	uint8_t idx = cur_inst->idx;
+
+	busy = false;
+	cur_inst = NULL;
+
+	if (err) {
+		BT_DBG("Could not release set (%d)", err);
+	}
+
+	if (csip_cbs && csip_cbs->release) {
+		csip_cbs->release(conn, err, idx);
+	}
+}
+
 /*************************** PUBLIC FUNCTIONS ***************************/
 void bt_csip_register_cb(struct bt_csip_cb_t *cb)
 {
@@ -1505,4 +1588,87 @@ int bt_csip_disconnect(void)
 		}
 	}
 	return 0;
+}
+
+int bt_csip_lock_get(struct bt_conn *conn, uint8_t inst_idx)
+{
+	int err;
+
+	if (inst_idx >= CONFIG_BT_CSIP_MAX_CSIS_INSTANCES) {
+		BT_DBG("Invalid index %u", inst_idx);
+		return -EINVAL;
+	} else if (busy) {
+		BT_DBG("CSIP busy");
+		return -EBUSY;
+	} else if (cur_inst) {
+		if (cur_inst != lookup_instance_by_index(conn, inst_idx)) {
+			BT_DBG("CSIP busy with current instance");
+			return -EBUSY;
+		}
+	} else {
+		cur_inst = lookup_instance_by_index(conn, inst_idx);
+		if (!cur_inst) {
+			BT_DBG("Inst not found");
+			return -EINVAL;
+		}
+	}
+
+	if (!cur_inst->set_lock_handle) {
+		BT_DBG("Handle not set");
+		cur_inst = NULL;
+		return -EINVAL;
+	}
+
+	read_params.func = csip_read_lock_cb;
+	read_params.handle_count = 1;
+	read_params.single.handle = cur_inst->set_lock_handle;
+	read_params.single.offset = 0U;
+
+	err = bt_gatt_read(conn, &read_params);
+
+	if (err) {
+		cur_inst = NULL;
+	} else {
+		busy = true;
+	}
+
+	return err;
+}
+
+int bt_csip_lock(struct bt_conn *conn, uint8_t inst_idx)
+{
+	int err;
+
+	if (cur_inst || busy) {
+		BT_DBG("CSIP busy");
+		return -EBUSY;
+	}
+
+	err = csip_write_set_lock(conn, inst_idx, true, csip_write_lock_cb);
+	if (err) {
+		cur_inst = NULL;
+	} else {
+		busy = true;
+	}
+
+	return err;
+}
+
+int bt_csip_release(struct bt_conn *conn, uint8_t inst_idx)
+{
+	int err;
+
+	if (cur_inst || busy) {
+		BT_DBG("CSIP busy");
+		return -EBUSY;
+	}
+
+	err = csip_write_set_lock(conn, inst_idx, false, csip_write_release_cb);
+	if (err) {
+		cur_inst = NULL;
+	} else {
+		busy = true;
+	}
+
+	return err;
 }

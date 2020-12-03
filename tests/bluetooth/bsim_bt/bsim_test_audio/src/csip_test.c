@@ -131,7 +131,7 @@ static struct bt_csip_cb_t cbs = {
 	.members = bt_csip_discover_members_cb,
 	.sets = csip_discover_sets_cb,
 	.discover = csis_discover_cb,
-	.locked = csis_lock_changed_cb,
+	.lock_changed = csis_lock_changed_cb,
 };
 
 static void test_main(void)
