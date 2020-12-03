@@ -192,6 +192,23 @@ config BT_DEVICE_NAME_GATT_WRITABLE
 	  Enabling this option allows remote GATT clients to write to device
 	  name GAP characteristic.
 
+if BT_DEVICE_NAME_GATT_WRITABLE
+config DEVICE_NAME_GATT_WRITABLE_ENCRYPT
+	bool "Encryption required to write name by remote GATT clients"
+	default y
+	help
+	  Enabling this option requires the connection to be encrypted to write
+	  to the device name GAP characteristic.
+
+
+config DEVICE_NAME_GATT_WRITABLE_AUTHEN
+	bool "Authentication required to write name by remote GATT clients"
+	help
+	  Enabling this option requires the connection to be encrypted and
+	  authenticated to write to the device name GAP characteristic.
+
+endif #BT_DEVICE_NAME_GATT_WRITABLE
+
 if BT_DEBUG
 
 config BT_DEBUG_ATT
