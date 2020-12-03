@@ -1291,7 +1291,7 @@ static void eth_mcux_err_isr(const struct device *dev)
 	.generate_mac = generate_eth##n##_mac,
 
 #define ETH_MCUX_MAC_ADDR(n)						\
-	COND_CODE_1(NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(n)),		\
+	COND_CODE_1(ETH_MCUX_MAC_ADDR_TO_BOOL(n),			\
 		    (ETH_MCUX_MAC_ADDR_LOCAL(n)),			\
 		    (ETH_MCUX_MAC_ADDR_GENERATE(n)))
 
@@ -1302,9 +1302,26 @@ static void eth_mcux_err_isr(const struct device *dev)
 	COND_CODE_1(CONFIG_NET_POWER_MANAGEMENT,			\
 		    (ETH_MCUX_POWER_INIT(n)),				\
 		    (ETH_MCUX_NONE))
+#define ETH_MCUX_GEN_MAC(n)                                             \
+	COND_CODE_0(ETH_MCUX_MAC_ADDR_TO_BOOL(n),                       \
+		    (ETH_MCUX_GENERATE_MAC(n)),                         \
+		    (ETH_MCUX_NONE))
+
+/*
+ * In the below code we explicitly define
+ * ETH_MCUX_MAC_ADDR_TO_BOOL_0 for the '0' instance of enet driver.
+ *
+ * For instance N one shall add definition for ETH_MCUX_MAC_ADDR_TO_BOOL_N
+ */
+#if (NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))) == 0
+#define ETH_MCUX_MAC_ADDR_TO_BOOL_0 0
+#else
+#define ETH_MCUX_MAC_ADDR_TO_BOOL_0 1
+#endif
+#define ETH_MCUX_MAC_ADDR_TO_BOOL(n) ETH_MCUX_MAC_ADDR_TO_BOOL_##n
 
 #define ETH_MCUX_INIT(n)						\
-	ETH_MCUX_GENERATE_MAC(n)					\
+	ETH_MCUX_GEN_MAC(n)                                             \
 									\
 	static void eth##n##_config_func(void);				\
 									\
