@@ -3448,7 +3448,7 @@ static inline void event_phy_req_prep(struct ll_conn *conn)
 		/* update preferred phy */
 		conn->phy_pref_tx = conn->llcp_phy.tx;
 		conn->phy_pref_rx = conn->llcp_phy.rx;
-		conn->phy_pref_flags = conn->llcp_phy.flags;
+		conn->lll.phy_flags = conn->llcp_phy.flags;
 
 		/* place the phy req packet as next in tx queue */
 		pdu_ctrl_tx = (void *)tx->pdu;
@@ -3666,7 +3666,6 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 		}
-		lll->phy_flags = conn->phy_pref_flags;
 
 		/* Acquire Rx node */
 		rx = conn->llcp_rx;

@@ -901,7 +901,6 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn->llcp_phy.pause_tx = 0U;
 		conn->phy_pref_tx = ull_conn_default_phy_tx_get();
 		conn->phy_pref_rx = ull_conn_default_phy_rx_get();
-		conn->phy_pref_flags = 0;
 #endif /* CONFIG_BT_CTLR_PHY */
 
 		conn->tx_head = conn->tx_ctrl = conn->tx_ctrl_last =
