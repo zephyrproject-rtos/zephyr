@@ -22,6 +22,9 @@
 #include "soc/cpu.h"
 #include "soc/gpio_periph.h"
 #include "esp_spi_flash.h"
+#include "esp_err.h"
+#include "esp32/spiram.h"
+#include "sys/printk.h"
 
 extern void z_cstart(void);
 
@@ -96,7 +99,26 @@ void __attribute__((section(".iram1"))) __start(void)
 	*wdt_rtc_protect = 0;
 #endif
 
-#if CONFIG_SOC_FLASH_ESP32
+#if CONFIG_ESP_SPIRAM
+	esp_err_t err = esp_spiram_init();
+
+	if (err != ESP_OK) {
+		printk("Failed to Initialize SPIRAM, aborting.\n");
+		abort();
+	}
+	esp_spiram_init_cache();
+	if (esp_spiram_get_size() < CONFIG_ESP_SPIRAM_SIZE) {
+		printk("SPIRAM size is less than configured size, aborting.\n");
+		abort();
+	}
+#endif
+
+/* Scheduler is not started at this point. Hence, guard functions
+ * must be initialized after esp_spiram_init_cache which internally
+ * uses guard functions. Setting guard functions before SPIRAM
+ * cache initialization will result in a crash.
+ */
+#if CONFIG_SOC_FLASH_ESP32 || CONFIG_ESP_SPIRAM
 	spi_flash_guard_set(&g_flash_guard_default_ops);
 #endif
 	/* Start Zephyr */
