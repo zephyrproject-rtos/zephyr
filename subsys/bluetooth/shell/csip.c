@@ -77,12 +77,47 @@ static void csip_release_set_cb(int err)
 	shell_print(ctx_shell, "Set released\n");
 }
 
+static void csip_lock_cb(struct bt_conn *conn, int err, uint8_t inst_idx)
+{
+	if (err) {
+		shell_error(ctx_shell, "Device (index 0x%02x) lock failed (%d)",
+			    inst_idx, err);
+	}
+
+	shell_print(ctx_shell, "Device (index 0x%02x) locked", inst_idx);
+}
+
+static void csip_release_cb(struct bt_conn *conn, int err, uint8_t inst_idx)
+{
+	if (err) {
+		shell_error(ctx_shell, "Device (index 0x%02x) release "
+			    "failed (%d)", inst_idx, err);
+	}
+
+	shell_print(ctx_shell, "Device (index 0x%02x) released", inst_idx);
+}
+
+static void csip_lock_get_cb(struct bt_conn *conn, int err, uint8_t inst_idx,
+			     bool locked)
+{
+	if (err) {
+		shell_error(ctx_shell, "Device (index 0x%02x) lock get "
+			    "failed (%d)", inst_idx, err);
+	}
+
+	shell_print(ctx_shell, "Device (index 0x%02x) lock value %d",
+		    inst_idx, locked);
+}
+
 static struct bt_csip_cb_t cbs = {
 	.lock_set = csip_lock_set_cb,
 	.release_set = csip_release_set_cb,
 	.members = bt_csip_discover_members_cb,
 	.sets = csip_discover_sets_cb,
 	.discover = csis_discover_cb,
+	.lock = csip_lock_cb,
+	.release = csip_release_cb,
+	.lock_read = csip_lock_get_cb
 };
 
 static int cmd_csip_discover(const struct shell *shell, size_t argc,
@@ -175,6 +210,74 @@ static int cmd_csip_disconnect(const struct shell *shell, size_t argc,
 	return result;
 }
 
+static int cmd_csip_lock_get(const struct shell *shell, size_t argc,
+			     char *argv[])
+{
+	int result;
+	long idx = 0;
+
+	if (argc > 1) {
+		idx = strtol(argv[1], NULL, 0);
+
+		if (idx < 0 || idx > CONFIG_BT_CSIP_MAX_CSIS_INSTANCES) {
+			shell_error(shell, "Invalid index %u", idx);
+			return -ENOEXEC;
+		}
+	}
+
+	result = bt_csip_lock_get(default_conn, (uint8_t)idx);
+	if (result) {
+		shell_error(shell, "Fail: %d", result);
+	}
+
+	return result;
+}
+
+static int cmd_csip_lock(const struct shell *shell, size_t argc, char *argv[])
+{
+	int result;
+	long idx = 0;
+
+	if (argc > 1) {
+		idx = strtol(argv[1], NULL, 0);
+
+		if (idx < 0 || idx > CONFIG_BT_CSIP_MAX_CSIS_INSTANCES) {
+			shell_error(shell, "Invalid index %u", idx);
+			return -ENOEXEC;
+		}
+	}
+
+	result = bt_csip_lock(default_conn, (uint8_t)idx);
+	if (result) {
+		shell_error(shell, "Fail: %d", result);
+	}
+
+	return result;
+}
+
+static int cmd_csip_release(const struct shell *shell, size_t argc,
+			    char *argv[])
+{
+	int result;
+	long idx = 0;
+
+	if (argc > 1) {
+		idx = strtol(argv[1], NULL, 0);
+
+		if (idx < 0 || idx > CONFIG_BT_CSIP_MAX_CSIS_INSTANCES) {
+			shell_error(shell, "Invalid index %u", idx);
+			return -ENOEXEC;
+		}
+	}
+
+	result = bt_csip_release(default_conn, (uint8_t)idx);
+	if (result) {
+		shell_error(shell, "Fail: %d", result);
+	}
+
+	return result;
+}
+
 static int cmd_csip(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc > 1) {
@@ -207,6 +310,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(csip_cmds,
 	SHELL_CMD_ARG(disconnect, NULL,
 		      "Release set",
 		      cmd_csip_disconnect, 1, 0),
+	SHELL_CMD_ARG(lock, NULL,
+		      "Lock connected device [idx]",
+		      cmd_csip_lock, 1, 1),
+	SHELL_CMD_ARG(release, NULL,
+		      "Release connected device [idx]",
+		      cmd_csip_release, 1, 1),
+	SHELL_CMD_ARG(lock_get, NULL,
+		      "Get the lock value of the connected device [idx]",
+		      cmd_csip_lock_get, 1, 1),
 	SHELL_SUBCMD_SET_END
 );
 

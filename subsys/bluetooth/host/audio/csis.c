@@ -496,10 +496,10 @@ static ssize_t write_set_lock(struct bt_conn *conn,
 		 */
 		notify_clients(conn);
 
-		if (csis_cbs && csis_cbs->locked) {
+		if (csis_cbs && csis_cbs->lock_changed) {
 			bool locked = csis_inst.set_lock == BT_CSIP_LOCK_VALUE;
 
-			csis_cbs->locked(conn, locked);
+			csis_cbs->lock_changed(conn, locked);
 		}
 	}
 	return len;
@@ -526,10 +526,10 @@ static void set_lock_timer_handler(struct k_work *work)
 	csis_inst.set_lock = BT_CSIP_RELEASE_VALUE;
 	notify_clients(NULL);
 
-	if (csis_cbs && csis_cbs->locked) {
+	if (csis_cbs && csis_cbs->lock_changed) {
 		bool locked = csis_inst.set_lock == BT_CSIP_LOCK_VALUE;
 
-		csis_cbs->locked(NULL, locked);
+		csis_cbs->lock_changed(NULL, locked);
 	}
 }
 
@@ -606,10 +606,10 @@ static void csis_disconnected(struct bt_conn *conn, uint8_t reason)
 		csis_inst.set_lock = BT_CSIP_RELEASE_VALUE;
 		notify_clients(NULL);
 
-		if (csis_cbs && csis_cbs->locked) {
+		if (csis_cbs && csis_cbs->lock_changed) {
 			bool locked = csis_inst.set_lock == BT_CSIP_LOCK_VALUE;
 
-			csis_cbs->locked(conn, locked);
+			csis_cbs->lock_changed(conn, locked);
 		}
 	}
 
@@ -878,8 +878,8 @@ int bt_csis_lock(bool lock, bool force)
 		csis_inst.set_lock = BT_CSIP_RELEASE_VALUE;
 		notify_clients(NULL);
 
-		if (csis_cbs && csis_cbs->locked) {
-			csis_cbs->locked(NULL, false);
+		if (csis_cbs && csis_cbs->lock_changed) {
+			csis_cbs->lock_changed(NULL, false);
 		}
 	} else {
 		err = write_set_lock(NULL, NULL, &lock_val,
