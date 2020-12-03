@@ -234,7 +234,7 @@
 	generator = <&timer1>;
 	channel-count = <3>;
 	clock-prescaler = <0>;
-	ppi-base = <7>;
+	ppi-base = <0>;
 	gpiote-base = <0>;
 	status = "okay";
 	#pwm-cells = <1>;
