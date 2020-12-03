@@ -453,7 +453,6 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 					    cmd_handler_data);
 	struct esp_socket *sock = dev->rx_sock;
 	int data_offset, data_len;
-	struct net_pkt *pkt;
 	int err;
 
 	err = cmd_ciprecvdata_parse(sock, data->rx_buf, len, &data_offset,
@@ -468,25 +467,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 
 	sock->bytes_avail -= data_len;
 
-	if ((sock->flags & (ESP_SOCK_CONNECTED | ESP_SOCK_CLOSE_PENDING)) !=
-							ESP_SOCK_CONNECTED) {
-		LOG_DBG("Received data on closed link %d", sock->link_id);
-		return data_offset + data_len;
-	}
-
-	pkt = esp_prepare_pkt(dev, data->rx_buf, data_offset, data_len);
-	if (!pkt) {
-		LOG_ERR("Failed to get net_pkt: len %d", data_len);
-		if (sock->type == SOCK_STREAM) {
-			sock->flags |= ESP_SOCK_CLOSE_PENDING;
-		}
-		goto submit_work;
-	}
-
-	k_fifo_put(&sock->fifo_rx_pkt, pkt);
-
-submit_work:
-	k_work_submit_to_queue(&dev->workq, &sock->recv_work);
+	esp_socket_rx(sock, data->rx_buf, data_offset, data_len);
 
 	return data_offset + data_len;
 }
