@@ -240,27 +240,62 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
             else:
                 erase_arg = '--sectorerase'
 
-        if self.family == 'NRF53':
-            if self.build_conf.get('CONFIG_SOC_NRF5340_CPUAPP', False):
-                coprocessor = 'CP_APPLICATION'
-            elif self.build_conf.get('CONFIG_SOC_NRF5340_CPUNET', False):
-                coprocessor = 'CP_NETWORK'
-            else:
-                # When it's time to update this file, it would probably be best
-                # to handle this by adding common 'SOC_NRF53X_CPUAPP'
-                # and 'SOC_NRF53X_CPUNET' options, so we don't have to
-                # maintain a list of SoCs in this file too.
-                raise RuntimeError(f'unknown nRF53; update {__file__}')
-            coprocessor_args = ['--coprocessor', coprocessor]
-        else:
-            coprocessor_args = []
+        program_commands = []
 
-        # It's important for tool_opt to come last, so it can override
-        # any options that we set here.
+        if self.family == 'NRF53':
+            # ************** HACK HACK HACK *********************
+            # NCSDK-7327 workaround
+            # ***************************************************
+
+            # self.hex_ can contain code for both application core and network
+            # core. Code being flashed to the network core needs to have a
+            # specific argument provided to nrfjprog. If network code is found,
+            # generate two new hex files, one for each core, and flash them
+            # with the correct '--coprocessor' argument.
+            ih = IntelHex(self.hex_)
+            net_hex = IntelHex()
+            app_hex = IntelHex()
+            for s in ih.segments():
+                if s[0] >= 0x01000000:
+                    net_hex.merge(ih[s[0]:s[1]])
+                else:
+                    app_hex.merge(ih[s[0]:s[1]])
+
+            wd = os.path.dirname(self.hex_)
+            if len(net_hex) > 0:
+                net_hex_file = os.path.join(wd, 'GENERATED_CP_NETWORK_'
+                                            + os.path.basename(self.hex_))
+                self.logger.info("Generating CP_NETWORK hex file {}"
+                                 .format(net_hex_file))
+                net_hex.write_hex_file(net_hex_file)
+
+                program_net_cmd = ['nrfjprog', '--program', net_hex_file,
+                                   erase_arg, '-f', 'NRF53',
+                                   '--coprocessor', 'CP_NETWORK',
+                                   '--snr', self.snr] + self.tool_opt
+                program_commands.append(program_net_cmd)
+            if len(app_hex) > 0:
+                app_hex_file = os.path.join(wd, 'GENERATED_CP_APPLICATION_'
+                                            + os.path.basename(self.hex_))
+                self.logger.info("Generating CP_APPLICATION hex file {}"
+                                 .format(app_hex_file))
+                app_hex.write_hex_file(app_hex_file)
+                program_app_cmd = ['nrfjprog', '--program', app_hex_file,
+                                   erase_arg, '-f', 'NRF53',
+                                   '--coprocessor', 'CP_APPLICATION',
+                                   '--snr', self.snr] + self.tool_opt
+                program_commands.append(program_app_cmd)
+        else:
+            # It's important for tool_opt to come last, so it can override
+            # any options that we set here.
+            program_commands.append(['nrfjprog', '--program', self.hex_,
+                                     erase_arg, '-f', self.family,
+                                     '--snr', self.snr] +
+                                    self.tool_opt)
+
         try:
-            self.check_call(['nrfjprog', '--program', self.hex_, erase_arg,
-                             '-f', self.family, '--snr', self.snr] +
-                            coprocessor_args + self.tool_opt)
+            for command in program_commands:
+                self.check_call(command)
         except subprocess.CalledProcessError as cpe:
             if cpe.returncode == UnavailableOperationBecauseProtectionError:
                 if self.family == 'NRF53':
