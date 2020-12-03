@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Tobias Svehagen
+ * Copyright (c) 2020 Grinn
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -357,10 +358,13 @@ MODEM_CMD_DEFINE(on_cmd_connect)
 	link_id = data->match_buf[0] - '0';
 
 	dev = CONTAINER_OF(data, struct esp_data, cmd_handler_data);
-	sock = esp_socket_from_link_id(dev, link_id);
-	if (sock == NULL) {
+	sock = esp_socket_ref_from_link_id(dev, link_id);
+	if (!sock) {
 		LOG_ERR("No socket for link %d", link_id);
+		return 0;
 	}
+
+	esp_socket_unref(sock);
 
 	return 0;
 }
@@ -370,23 +374,31 @@ MODEM_CMD_DEFINE(on_cmd_closed)
 	struct esp_socket *sock;
 	struct esp_data *dev;
 	uint8_t link_id;
+	atomic_val_t old_flags;
 
 	link_id = data->match_buf[0] - '0';
 
 	dev = CONTAINER_OF(data, struct esp_data, cmd_handler_data);
-	sock = esp_socket_from_link_id(dev, link_id);
-	if (sock == NULL) {
+	sock = esp_socket_ref_from_link_id(dev, link_id);
+	if (!sock) {
 		LOG_ERR("No socket for link %d", link_id);
 		return 0;
 	}
 
-	if (!esp_socket_connected(sock)) {
+	old_flags = esp_socket_flags_clear_and_set(sock,
+				ESP_SOCK_CONNECTED, ESP_SOCK_CLOSE_PENDING);
+
+	if (!(old_flags & ESP_SOCK_CONNECTED)) {
 		LOG_WRN("Link %d already closed", link_id);
-		return 0;
+		goto socket_unref;
 	}
 
-	sock->flags &= ~(ESP_SOCK_CONNECTED);
-	k_work_submit_to_queue(&dev->workq, &sock->close_work);
+	if (!(old_flags & ESP_SOCK_CLOSE_PENDING)) {
+		esp_socket_work_submit(sock, &sock->close_work);
+	}
+
+socket_unref:
+	esp_socket_unref(sock);
 
 	return 0;
 }
@@ -470,6 +482,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ipd)
 	uint8_t link_id;
 	char cmd_end;
 	int err;
+	int ret;
 
 	err = cmd_ipd_parse_hdr(data->rx_buf, len, &link_id, &data_offset,
 				&data_len, &cmd_end);
@@ -481,7 +494,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ipd)
 		return len;
 	}
 
-	sock = esp_socket_from_link_id(dev, link_id);
+	sock = esp_socket_ref_from_link_id(dev, link_id);
 	if (!sock) {
 		LOG_ERR("No socket for link %d", link_id);
 		return len;
@@ -489,7 +502,8 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ipd)
 
 	err = cmd_ipd_check_hdr_end(sock, cmd_end);
 	if (err) {
-		return len;
+		ret = len;
+		goto socket_unref;
 	}
 
 	/*
@@ -497,18 +511,25 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ipd)
 	 * command but must be polled with AT+CIPRECVDATA.
 	 */
 	if (ESP_PROTO_PASSIVE(sock->ip_proto)) {
-		k_work_submit_to_queue(&dev->workq, &sock->recvdata_work);
-		return data_offset;
+		esp_socket_work_submit(sock, &sock->recvdata_work);
+		ret = data_offset;
+		goto socket_unref;
 	}
 
 	/* Do we have the whole message? */
 	if (data_offset + data_len > net_buf_frags_len(data->rx_buf)) {
-		return -EAGAIN;
+		ret = -EAGAIN;
+		goto socket_unref;
 	}
 
 	esp_socket_rx(sock, data->rx_buf, data_offset, data_len);
 
-	return data_offset + data_len;
+	ret = data_offset + data_len;
+
+socket_unref:
+	esp_socket_unref(sock);
+
+	return ret;
 }
 
 MODEM_CMD_DEFINE(on_cmd_busy_sending)
