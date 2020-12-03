@@ -198,7 +198,7 @@ int bt_audio_chan_qos(struct bt_audio_chan *chan, struct bt_codec_qos *qos)
 
 	/* Allowed Range: 0x0005–0x0FA0 */
 	if (qos->latency < 0x0005 || qos->latency > 0x0fa0) {
-		BT_ERR("Invalid SDU %u", qos->sdu);
+		BT_ERR("Invalid Latency %u", qos->latency);
 		qos->latency = 0u;
 		return -ENOTSUP;
 	}
