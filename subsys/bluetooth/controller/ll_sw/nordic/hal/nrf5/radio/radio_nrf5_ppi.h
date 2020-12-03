@@ -626,7 +626,7 @@ static inline void hal_radio_nrf_ppi_channels_disable(uint32_t mask)
  * Enable Radio on Event Timer tick:
  * wire the EVENT_TIMER EVENTS_COMPARE[0] event to RADIO TASKS_TXEN/RXEN task.
  */
-#define HAL_RADIO_ENABLE_ON_TICK_PPI 0
+#define HAL_RADIO_ENABLE_ON_TICK_PPI 6
 #define HAL_RADIO_ENABLE_TX_ON_TICK_PPI HAL_RADIO_ENABLE_ON_TICK_PPI
 #define HAL_RADIO_ENABLE_RX_ON_TICK_PPI HAL_RADIO_ENABLE_ON_TICK_PPI
 
@@ -664,7 +664,7 @@ static inline void hal_radio_enable_on_tick_ppi_config_and_enable(uint8_t trx)
  * wire the RADIO EVENTS_ADDRESS event to the
  * EVENT_TIMER TASKS_CAPTURE[<address timer>] task.
  */
-#define HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI 3
+#define HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI 9
 
 static inline void hal_radio_recv_timeout_cancel_ppi_config(void)
 {
@@ -679,7 +679,7 @@ static inline void hal_radio_recv_timeout_cancel_ppi_config(void)
  * wire the EVENT_TIMER EVENTS_COMPARE[<HCTO timer>] event
  * to the RADIO TASKS_DISABLE task.
  */
-#define HAL_RADIO_DISABLE_ON_HCTO_PPI 4
+#define HAL_RADIO_DISABLE_ON_HCTO_PPI 10
 
 static inline void hal_radio_disable_on_hcto_ppi_config(void)
 {
@@ -694,7 +694,7 @@ static inline void hal_radio_disable_on_hcto_ppi_config(void)
  * wire the RADIO EVENTS_END event to the
  * EVENT_TIMER TASKS_CAPTURE[<radio end timer>] task.
  */
-#define HAL_RADIO_END_TIME_CAPTURE_PPI 5
+#define HAL_RADIO_END_TIME_CAPTURE_PPI 11
 
 static inline void hal_radio_end_time_capture_ppi_config(void)
 {
@@ -708,7 +708,7 @@ static inline void hal_radio_end_time_capture_ppi_config(void)
  * Start event timer on RTC tick:
  * wire the RTC0 EVENTS_COMPARE[2] event to EVENT_TIMER  TASKS_START task.
  */
-#define HAL_EVENT_TIMER_START_PPI 1
+#define HAL_EVENT_TIMER_START_PPI 7
 
 static inline void hal_event_timer_start_ppi_config(void)
 {
@@ -723,7 +723,7 @@ static inline void hal_event_timer_start_ppi_config(void)
  * wire the RADIO EVENTS_READY event to the
  * EVENT_TIMER TASKS_CAPTURE[<radio ready timer>] task.
  */
-#define HAL_RADIO_READY_TIME_CAPTURE_PPI 2
+#define HAL_RADIO_READY_TIME_CAPTURE_PPI 8
 
 static inline void hal_radio_ready_time_capture_ppi_config(void)
 {
@@ -754,7 +754,7 @@ static inline void hal_trigger_crypt_ppi_config(void)
  * Trigger automatic address resolution on Bit counter match:
  * wire the RADIO EVENTS_BCMATCH event to the AAR TASKS_START task.
  */
-#define HAL_TRIGGER_AAR_PPI 6
+#define HAL_TRIGGER_AAR_PPI 12
 
 static inline void hal_trigger_aar_ppi_config(void)
 {
@@ -821,7 +821,7 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
  * 2 adjacent PPIs (8 & 9) and 2 adjacent PPI groups are used for this wiring;
  * <index> must be 0 or 1. <offset> must be a valid TIMER CC register offset.
  */
-#define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE 8
+#define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE 14
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(index) \
 	(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE + index)
 
@@ -876,7 +876,7 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
  * We use the same PPI for the alternative SW Switch Timer compare
  * event.
  */
-#define HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE 8
+#define HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE 14
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI(index) \
 	(HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE + index)
 
