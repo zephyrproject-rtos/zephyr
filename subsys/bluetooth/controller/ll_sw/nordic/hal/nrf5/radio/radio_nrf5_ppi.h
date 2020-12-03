@@ -56,7 +56,7 @@ static inline void hal_radio_enable_on_tick_ppi_config_and_enable(uint8_t trx)
 
 #else
 
-#define HAL_RADIO_ENABLE_ON_TICK_PPI 1
+#define HAL_RADIO_ENABLE_ON_TICK_PPI 2
 #define HAL_RADIO_ENABLE_TX_ON_TICK_PPI HAL_RADIO_ENABLE_ON_TICK_PPI
 #define HAL_RADIO_ENABLE_RX_ON_TICK_PPI HAL_RADIO_ENABLE_ON_TICK_PPI
 
@@ -97,7 +97,7 @@ static inline void hal_radio_recv_timeout_cancel_ppi_config(void)
 
 #else
 
-#define HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI 2
+#define HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI 3
 
 static inline void hal_radio_recv_timeout_cancel_ppi_config(void)
 {
@@ -133,7 +133,7 @@ static inline void hal_radio_disable_on_hcto_ppi_config(void)
 
 #else
 
-#define HAL_RADIO_DISABLE_ON_HCTO_PPI 3
+#define HAL_RADIO_DISABLE_ON_HCTO_PPI 4
 
 static inline void hal_radio_disable_on_hcto_ppi_config(void)
 {
@@ -169,7 +169,7 @@ static inline void hal_radio_end_time_capture_ppi_config(void)
 
 #else
 
-#define HAL_RADIO_END_TIME_CAPTURE_PPI 4
+#define HAL_RADIO_END_TIME_CAPTURE_PPI 5
 
 static inline void hal_radio_end_time_capture_ppi_config(void)
 {
@@ -186,7 +186,7 @@ static inline void hal_radio_end_time_capture_ppi_config(void)
  * Start event timer on RTC tick:
  * wire the RTC0 EVENTS_COMPARE[2] event to EVENT_TIMER  TASKS_START task.
  */
-#define HAL_EVENT_TIMER_START_PPI 5
+#define HAL_EVENT_TIMER_START_PPI 6
 
 static inline void hal_event_timer_start_ppi_config(void)
 {
@@ -202,7 +202,7 @@ static inline void hal_event_timer_start_ppi_config(void)
  * wire the RADIO EVENTS_READY event to the
  * EVENT_TIMER TASKS_CAPTURE[<radio ready timer>] task.
  */
-#define HAL_RADIO_READY_TIME_CAPTURE_PPI 6
+#define HAL_RADIO_READY_TIME_CAPTURE_PPI 7
 
 static inline void hal_radio_ready_time_capture_ppi_config(void)
 {
@@ -248,7 +248,7 @@ static inline void hal_trigger_aar_ppi_config(void)
  */
 #if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 
-#define HAL_TRIGGER_RATEOVERRIDE_PPI 13
+#define HAL_TRIGGER_RATEOVERRIDE_PPI 14
 
 static inline void hal_trigger_rateoverride_ppi_config(void)
 {
@@ -264,7 +264,7 @@ static inline void hal_trigger_rateoverride_ppi_config(void)
 /******************************************************************************/
 #if defined(CONFIG_BT_CTLR_GPIO_PA_PIN) || defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
 
-#define HAL_ENABLE_PALNA_PPI 14
+#define HAL_ENABLE_PALNA_PPI 15
 
 static inline void hal_enable_palna_ppi_config(void)
 {
@@ -276,7 +276,7 @@ static inline void hal_enable_palna_ppi_config(void)
 				CONFIG_BT_CTLR_PA_LNA_GPIOTE_CHAN]));
 }
 
-#define HAL_DISABLE_PALNA_PPI 15
+#define HAL_DISABLE_PALNA_PPI 16
 
 static inline void hal_disable_palna_ppi_config(void)
 {
@@ -301,7 +301,7 @@ static inline void hal_disable_palna_ppi_config(void)
  *
  * Note: this PPI is not needed if we use a single TIMER instance in radio.c
  */
-#define HAL_SW_SWITCH_TIMER_CLEAR_PPI 7
+#define HAL_SW_SWITCH_TIMER_CLEAR_PPI 8
 
 static inline void hal_sw_switch_timer_clear_ppi_config(void)
 {
@@ -350,7 +350,7 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
  * 2 adjacent PPIs (8 & 9) and 2 adjacent PPI groups are used for this wiring;
  * <index> must be 0 or 1. <offset> must be a valid TIMER CC register offset.
  */
-#define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE 8
+#define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE 9
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(index) \
 	(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE + index)
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_EVT(chan) \
@@ -376,7 +376,7 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 #error "tIFS Trx SW switch can be used on this SoC only with TIMER0 as the event timer"
 #endif
 #else /* -> !defined(CONFIG_SOC_NRF52805) */
-#define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI 10
+#define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI 11
 #endif
 #define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_EVT \
 	((uint32_t)&(NRF_RADIO->EVENTS_END))
@@ -396,7 +396,7 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 #error "tIFS Trx SW switch can be used on this SoC only with TIMER0 as the event timer"
 #endif
 #else /* -> !defined(CONFIG_SOC_NRF52805) */
-#define HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE 11
+#define HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE 12
 #endif
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI(index) \
 	(HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE + index)
@@ -486,14 +486,14 @@ static inline void hal_radio_sw_switch_cleanup(void)
 /* Wire the SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
  * to RADIO TASKS_TXEN/RXEN task.
  */
-#define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE 16
+#define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE 17
 #define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(index) \
 	(HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE + index)
 
 /* Cancel the SW switch timer running considering S8 timing:
  * wire the RADIO EVENTS_RATEBOOST event to SW_SWITCH_TIMER TASKS_CAPTURE task.
  */
-#define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI 18
+#define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI 19
 #define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_REGISTER_EVT \
 	NRF_PPI->CH[HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI].EEP
 #define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_EVT \
