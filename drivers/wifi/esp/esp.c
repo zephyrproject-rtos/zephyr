@@ -26,9 +26,6 @@ LOG_MODULE_REGISTER(wifi_esp, CONFIG_WIFI_LOG_LEVEL);
 
 #include "esp.h"
 
-#define RX_NET_PKT_ALLOC_TIMEOUT				\
-	K_MSEC(CONFIG_WIFI_ESP_RX_NET_PKT_ALLOC_TIMEOUT)
-
 /* pin settings */
 enum modem_control_pins {
 #if DT_INST_NODE_HAS_PROP(0, power_gpios)
@@ -394,48 +391,6 @@ MODEM_CMD_DEFINE(on_cmd_closed)
 	return 0;
 }
 
-struct net_pkt *esp_prepare_pkt(struct esp_data *dev, struct net_buf *src,
-				size_t offset, size_t len)
-{
-	struct net_buf *frag;
-	struct net_pkt *pkt;
-	size_t to_copy;
-
-	pkt = net_pkt_rx_alloc_with_buffer(dev->net_iface, len, AF_UNSPEC,
-					   0, RX_NET_PKT_ALLOC_TIMEOUT);
-	if (!pkt) {
-		return NULL;
-	}
-
-	frag = src;
-
-	/* find the right fragment to start copying from */
-	while (frag && offset >= frag->len) {
-		offset -= frag->len;
-		frag = frag->frags;
-	}
-
-	/* traverse the fragment chain until len bytes are copied */
-	while (frag && len > 0) {
-		to_copy = MIN(len, frag->len - offset);
-		if (net_pkt_write(pkt, frag->data + offset, to_copy) != 0) {
-			net_pkt_unref(pkt);
-			return NULL;
-		}
-
-		/* to_copy is always <= len */
-		len -= to_copy;
-		frag = frag->frags;
-
-		/* after the first iteration, this value will be 0 */
-		offset = 0;
-	}
-
-	net_pkt_cursor_init(pkt);
-
-	return pkt;
-}
-
 /*
  * Passive mode: "+IPD,<id>,<len>\r\n"
  * Other:        "+IPD,<id>,<len>:<data>"
@@ -512,7 +467,6 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ipd)
 					    cmd_handler_data);
 	struct esp_socket *sock;
 	int data_offset, data_len;
-	struct net_pkt *pkt;
 	uint8_t link_id;
 	char cmd_end;
 	int err;
@@ -553,25 +507,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ipd)
 		return -EAGAIN;
 	}
 
-	if ((sock->flags & (ESP_SOCK_CONNECTED | ESP_SOCK_CLOSE_PENDING)) !=
-							ESP_SOCK_CONNECTED) {
-		LOG_DBG("Received data on closed link %d", sock->link_id);
-		return data_offset + data_len;
-	}
-
-	pkt = esp_prepare_pkt(dev, data->rx_buf, data_offset, data_len);
-	if (!pkt) {
-		LOG_ERR("Failed to get net_pkt: len %d", data_len);
-		if (sock->type == SOCK_STREAM) {
-			sock->flags |= ESP_SOCK_CLOSE_PENDING;
-		}
-		goto submit_work;
-	}
-
-	k_fifo_put(&sock->fifo_rx_pkt, pkt);
-
-submit_work:
-	k_work_submit_to_queue(&dev->workq, &sock->recv_work);
+	esp_socket_rx(sock, data->rx_buf, data_offset, data_len);
 
 	return data_offset + data_len;
 }

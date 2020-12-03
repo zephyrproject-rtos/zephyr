@@ -228,14 +228,14 @@ struct esp_data {
 
 int esp_offload_init(struct net_if *iface);
 
-struct net_pkt *esp_prepare_pkt(struct esp_data *dev, struct net_buf *src,
-				size_t offset, size_t len);
 struct esp_socket *esp_socket_get();
 int esp_socket_put(struct esp_socket *sock);
 struct esp_socket *esp_socket_from_link_id(struct esp_data *data,
 					   uint8_t link_id);
 void esp_socket_init(struct esp_data *data);
 void esp_socket_close(struct esp_socket *sock);
+void esp_socket_rx(struct esp_socket *sock, struct net_buf *buf,
+		   size_t offset, size_t len);
 
 static inline struct esp_data *esp_socket_to_dev(struct esp_socket *sock)
 {
