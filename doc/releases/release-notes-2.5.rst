@@ -311,6 +311,12 @@ MCUBoot
   * Usage of --confirm implies --pad.
   * Fixed 'custom_tlvs' argument handling.
 
+
+Trusted-Firmware-M
+******************
+
+* Synchronized Trusted-Firmware-M module to the upstream v1.2.0 release.
+
 Documentation
 *************
 
