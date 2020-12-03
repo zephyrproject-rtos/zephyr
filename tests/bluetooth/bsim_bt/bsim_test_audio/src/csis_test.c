@@ -52,7 +52,7 @@ static uint8_t sirk_read_req_cb(struct bt_conn *conn)
 }
 
 static struct bt_csis_cb_t csis_cbs = {
-	.locked = csis_lock_changed_cb,
+	.lock_changed = csis_lock_changed_cb,
 	.sirk_read_req = sirk_read_req_cb,
 };
 
