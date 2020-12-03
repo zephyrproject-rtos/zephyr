@@ -36,7 +36,7 @@ __syscall void sys_cache_flush(void *addr, size_t size);
 
 static inline void z_impl_sys_cache_flush(void *addr, size_t size)
 {
-	if (IS_ENABLED(CONFIG_CACHE_FLUSHING)) {
+	if (IS_ENABLED(CONFIG_CACHE_MANAGEMENT)) {
 		arch_dcache_flush(addr, size);
 	}
 }
@@ -61,7 +61,7 @@ __syscall void sys_cache_invd(void *addr, size_t size);
 
 static inline void z_impl_sys_cache_invd(void *addr, size_t size)
 {
-	if (IS_ENABLED(CONFIG_CACHE_FLUSHING)) {
+	if (IS_ENABLED(CONFIG_CACHE_MANAGEMENT)) {
 		arch_dcache_invd(addr, size);
 	}
 }
@@ -76,7 +76,7 @@ static inline void z_impl_sys_cache_invd(void *addr, size_t size)
  */
 static inline size_t sys_cache_line_size_get(void)
 {
-#ifdef CONFIG_CACHE_FLUSHING
+#ifdef CONFIG_CACHE_MANAGEMENT
 #ifdef CONFIG_CACHE_LINE_SIZE
 	return CONFIG_CACHE_LINE_SIZE;
 #else
@@ -84,7 +84,7 @@ static inline size_t sys_cache_line_size_get(void)
 #endif /* CONFIG_CACHE_LINE_SIZE */
 #else
 	return 0;
-#endif /* CONFIG_CACHE_FLUSHING */
+#endif /* CONFIG_CACHE_MANAGEMENT */
 }
 
 #include <syscalls/cache.h>

@@ -730,11 +730,11 @@ config CACHE_LINE_SIZE
 
 	  Detect automatically at runtime by selecting CACHE_LINE_SIZE_DETECT.
 
-config CACHE_FLUSHING
-	bool "Enable cache flushing mechanism"
+config CACHE_MANAGEMENT
+	bool "Enable cache management features"
 	help
-	  This links in the cache flushing functions (d-cache and i-cache where
-	  possible).
+	  This links in the cache management functions (for d-cache and i-cache
+	  where possible).
 
 endmenu
 
