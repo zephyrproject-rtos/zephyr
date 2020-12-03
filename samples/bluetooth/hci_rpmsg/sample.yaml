@@ -5,5 +5,5 @@ sample:
 tests:
   sample.bluetooth.hci_rpmsg:
     harness: bluetooth
-    platform_allow: nrf5340pdk_nrf5340_cpunet
+    platform_allow: nrf5340dk_nrf5340_cpunet
     tags: bluetooth
