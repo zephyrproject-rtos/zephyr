@@ -60,10 +60,16 @@
 	status = "okay";
 };
 
-/* From UM2411 Rev 4:
-   With the default setting, the Ethernet feature is not working because of
-   a conflict between ETH_MDC and SAI4_D1 of the MEMs digital microphone */
-   &mac {
+
+&mac {
+	/*
+	 * From UM2411 Rev 4:
+	 * With the default setting, the Ethernet feature is not working due
+	 * of a pin conflict between ETH_MDC and SAI4_D1 of the MEMs digital
+	 * microphone.
+	 * Cf Ethernet section in board documentation for more information on
+	 * the hw modification to be done to enable it.
+	 */
 	status = "okay";
 	pinctrl-0 = <&eth_ref_clk_pa1
 		     &eth_mdio_pa2
