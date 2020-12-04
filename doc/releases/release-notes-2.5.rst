@@ -86,6 +86,7 @@ Architectures
 
   * Added support for the SPARC architecture, compatible with the SPARC V8
     specification and the SPARC ABI.
+  * FPU is supported in both shared and unshared FP register mode.
 
 * x86
 
