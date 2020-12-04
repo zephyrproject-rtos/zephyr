@@ -478,31 +478,29 @@ void esp_recvdata_work(struct k_work *work)
 
 void esp_recv_work(struct k_work *work)
 {
-	struct esp_socket *sock;
-	struct esp_data *dev;
-	struct net_pkt *pkt;
-
-	sock = CONTAINER_OF(work, struct esp_socket, recv_work);
-	dev = esp_socket_to_dev(sock);
+	struct net_pkt *pkt = CONTAINER_OF(work, struct net_pkt, work);
+	struct net_context *context = pkt->context;
+	struct esp_socket *sock = context->offload_context;
 
 	if (!esp_socket_in_use(sock)) {
 		LOG_DBG("Socket %d not in use", sock->idx);
 		return;
 	}
 
-	pkt = k_fifo_get(&sock->fifo_rx_pkt, K_NO_WAIT);
-	while (pkt) {
-		if (sock->recv_cb) {
-			sock->recv_cb(sock->context, pkt, NULL, NULL,
-				      0, sock->recv_user_data);
-			k_sem_give(&sock->sem_data_ready);
-		} else {
-			/* Discard */
-			net_pkt_unref(pkt);
-		}
-
-		pkt = k_fifo_get(&sock->fifo_rx_pkt, K_NO_WAIT);
+	if (sock->recv_cb) {
+		sock->recv_cb(context, pkt, NULL, NULL,
+			      0, sock->recv_user_data);
+		k_sem_give(&sock->sem_data_ready);
+	} else {
+		/* Discard */
+		net_pkt_unref(pkt);
 	}
+}
+
+void esp_close_work(struct k_work *work)
+{
+	struct esp_socket *sock = CONTAINER_OF(work, struct esp_socket,
+					       close_work);
 
 	if (esp_socket_close_pending(sock)) {
 		if (esp_socket_connected(sock)) {
@@ -553,7 +551,6 @@ static int esp_recv(struct net_context *context,
 static int esp_put(struct net_context *context)
 {
 	struct esp_socket *sock = context->offload_context;
-	struct net_pkt *pkt;
 
 	esp_socket_workq_flush(sock);
 
@@ -563,13 +560,6 @@ static int esp_put(struct net_context *context)
 
 	sock->connect_cb = NULL;
 	sock->recv_cb = NULL;
-
-	/* Drain rxfifo */
-	for (pkt = k_fifo_get(&sock->fifo_rx_pkt, K_NO_WAIT);
-	     pkt != NULL;
-	     pkt = k_fifo_get(&sock->fifo_rx_pkt, K_NO_WAIT)) {
-		net_pkt_unref(pkt);
-	}
 
 	esp_socket_put(sock);
 

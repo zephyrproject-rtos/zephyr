@@ -386,7 +386,7 @@ MODEM_CMD_DEFINE(on_cmd_closed)
 	}
 
 	sock->flags &= ~(ESP_SOCK_CONNECTED);
-	k_work_submit_to_queue(&dev->workq, &sock->recv_work);
+	k_work_submit_to_queue(&dev->workq, &sock->close_work);
 
 	return 0;
 }

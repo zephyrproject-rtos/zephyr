@@ -144,16 +144,13 @@ struct esp_socket {
 	enum net_ip_protocol ip_proto;
 	struct sockaddr dst;
 
-	/* packets */
-	struct k_fifo fifo_rx_pkt;
-
 	/* sem */
 	struct k_sem sem_data_ready;
 
 	/* work */
 	struct k_work connect_work;
-	struct k_work recv_work;
 	struct k_work recvdata_work;
+	struct k_work close_work;
 
 	/* net context */
 	struct net_context *context;
@@ -280,6 +277,7 @@ static inline int esp_cmd_send(struct esp_data *data,
 void esp_connect_work(struct k_work *work);
 void esp_recv_work(struct k_work *work);
 void esp_recvdata_work(struct k_work *work);
+void esp_close_work(struct k_work *work);
 
 #ifdef __cplusplus
 }
