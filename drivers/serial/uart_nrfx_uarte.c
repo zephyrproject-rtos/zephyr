@@ -125,20 +125,30 @@ struct uarte_nrfx_data {
 	gppi_channel_t ppi_ch_endtx;
 };
 
-#define CTS_PIN_SET_MASK BIT(1)
-#define RTS_PIN_SET_MASK BIT(2)
+/* Flag indicating that CTS pin is used. */
+#define UARTE_CFG_FLAG_CTS_PIN_SET BIT(0)
 
-#define IS_CTS_PIN_SET(mask) (mask & CTS_PIN_SET_MASK)
-#define IS_RTS_PIN_SET(mask) (mask & RTS_PIN_SET_MASK)
+/* Flag indicating that RTS pin is used. */
+#define UARTE_CFG_FLAG_RTS_PIN_SET BIT(1)
+
+/* If enabled, pins are managed when going to low power mode. */
+#define UARTE_CFG_FLAG_GPIO_MGMT   BIT(2)
+
+/* If enabled then ENDTX is PPI'ed to TXSTOP */
+#define UARTE_CFG_FLAG_PPI_ENDTX   BIT(3)
+
+#define IS_CTS_PIN_SET(flags) (flags & UARTE_CFG_FLAG_CTS_PIN_SET)
+#define IS_RTS_PIN_SET(flags) (flags & UARTE_CFG_FLAG_RTS_PIN_SET)
+#define IS_HWFC_PINS_USED(flags) \
+	IS_CTS_PIN_SET(flags) | IS_RTS_PIN_SET(flags)
+
 
 /**
  * @brief Structure for UARTE configuration.
  */
 struct uarte_nrfx_config {
 	NRF_UARTE_Type *uarte_regs; /* Instance address */
-	uint8_t rts_cts_pins_set;
-	bool gpio_mgmt;
-	bool ppi_endtx;
+	uint32_t flags;
 #ifdef CONFIG_UART_ASYNC_API
 	nrfx_timer_t timer;
 #endif
@@ -354,7 +364,7 @@ static int uarte_nrfx_configure(const struct device *dev,
 		uarte_cfg.hwfc = NRF_UARTE_HWFC_DISABLED;
 		break;
 	case UART_CFG_FLOW_CTRL_RTS_CTS:
-		if (get_dev_config(dev)->rts_cts_pins_set) {
+		if (IS_HWFC_PINS_USED(get_dev_config(dev)->flags)) {
 			uarte_cfg.hwfc = NRF_UARTE_HWFC_ENABLED;
 		} else {
 			return -ENOTSUP;
@@ -417,7 +427,7 @@ static int uarte_nrfx_err_check(const struct device *dev)
 static bool is_tx_ready(const struct device *dev)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
-	bool ppi_endtx = get_dev_config(dev)->ppi_endtx;
+	bool ppi_endtx = get_dev_config(dev)->flags & UARTE_CFG_FLAG_PPI_ENDTX;
 
 	return nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED) ||
 		(!ppi_endtx ?
@@ -1450,7 +1460,7 @@ static int uarte_instance_init(const struct device *dev,
 	data->pm_state = DEVICE_PM_ACTIVE_STATE;
 #endif
 
-	if (get_dev_config(dev)->ppi_endtx) {
+	if (get_dev_config(dev)->flags & UARTE_CFG_FLAG_PPI_ENDTX) {
 		err = endtx_stoptx_ppi_init(uarte, data);
 		if (err < 0) {
 			return err;
@@ -1478,7 +1488,7 @@ static int uarte_instance_init(const struct device *dev,
 		}
 	}
 
-	if (!get_dev_config(dev)->ppi_endtx) {
+	if (!(get_dev_config(dev)->flags & UARTE_CFG_FLAG_PPI_ENDTX)) {
 		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_ENDTX_MASK);
 	}
 
@@ -1499,7 +1509,7 @@ static int uarte_instance_init(const struct device *dev,
 
 static void uarte_nrfx_pins_enable(const struct device *dev, bool enable)
 {
-	if (!get_dev_config(dev)->gpio_mgmt) {
+	if (!(get_dev_config(dev)->flags & UARTE_CFG_FLAG_GPIO_MGMT)) {
 		return;
 	}
 
@@ -1516,12 +1526,12 @@ static void uarte_nrfx_pins_enable(const struct device *dev, bool enable)
 			nrf_gpio_cfg_input(rx_pin, NRF_GPIO_PIN_NOPULL);
 		}
 
-		if (IS_RTS_PIN_SET(get_dev_config(dev)->rts_cts_pins_set)) {
+		if (IS_RTS_PIN_SET(get_dev_config(dev)->flags)) {
 			nrf_gpio_pin_write(rts_pin, 1);
 			nrf_gpio_cfg_output(rts_pin);
 		}
 
-		if (IS_CTS_PIN_SET(get_dev_config(dev)->rts_cts_pins_set)) {
+		if (IS_CTS_PIN_SET(get_dev_config(dev)->flags)) {
 			nrf_gpio_cfg_input(cts_pin,
 					   NRF_GPIO_PIN_NOPULL);
 		}
@@ -1531,11 +1541,11 @@ static void uarte_nrfx_pins_enable(const struct device *dev, bool enable)
 			nrf_gpio_cfg_default(rx_pin);
 		}
 
-		if (IS_RTS_PIN_SET(get_dev_config(dev)->rts_cts_pins_set)) {
+		if (IS_RTS_PIN_SET(get_dev_config(dev)->flags)) {
 			nrf_gpio_cfg_default(rts_pin);
 		}
 
-		if (IS_CTS_PIN_SET(get_dev_config(dev)->rts_cts_pins_set)) {
+		if (IS_CTS_PIN_SET(get_dev_config(dev)->flags)) {
 			nrf_gpio_cfg_default(cts_pin);
 		}
 	}
@@ -1703,11 +1713,15 @@ static int uarte_nrfx_pm_control(const struct device *dev,
 	};								       \
 	static const struct uarte_nrfx_config uarte_##idx##z_config = {	       \
 		.uarte_regs = (NRF_UARTE_Type *)DT_REG_ADDR(UARTE(idx)),       \
-		.rts_cts_pins_set =					       \
-			(UARTE_HAS_PROP(idx, rts_pin) ? RTS_PIN_SET_MASK : 0) |\
-			(UARTE_HAS_PROP(idx, cts_pin) ? CTS_PIN_SET_MASK : 0), \
-		.gpio_mgmt = IS_ENABLED(CONFIG_UART_##idx##_GPIO_MANAGEMENT),  \
-		.ppi_endtx = IS_ENABLED(CONFIG_UART_##idx##_ENHANCED_POLL_OUT),\
+		.flags =						       \
+			(UARTE_HAS_PROP(idx, rts_pin) ? 		       \
+			 	UARTE_CFG_FLAG_RTS_PIN_SET : 0) |	       \
+			(UARTE_HAS_PROP(idx, cts_pin) ? 		       \
+			 	UARTE_CFG_FLAG_CTS_PIN_SET : 0) | 	       \
+			(IS_ENABLED(CONFIG_UART_##idx##_GPIO_MANAGEMENT) ?     \
+				UARTE_CFG_FLAG_GPIO_MGMT : 0) |		       \
+			(IS_ENABLED(CONFIG_UART_##idx##_ENHANCED_POLL_OUT) ?   \
+				UARTE_CFG_FLAG_PPI_ENDTX : 0),		       \
 		IF_ENABLED(CONFIG_UART_##idx##_NRF_HW_ASYNC,		       \
 			(.timer = NRFX_TIMER_INSTANCE(			       \
 				CONFIG_UART_##idx##_NRF_HW_ASYNC_TIMER),))     \
