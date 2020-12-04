@@ -1373,48 +1373,48 @@ struct bt_uuid_128 {
 /** @def BT_UUID_CSIS_VAL
  *  @brief Coordinated Set Identification Service value
  */
-#define BT_UUID_CSIS_VAL 0x8FD8
+#define BT_UUID_CSIS_VAL 0x1846
 /** @def BT_UUID_CSIS
  *  @brief Coordinated Set Identification Service
  */
 #define BT_UUID_CSIS \
 	BT_UUID_DECLARE_16(BT_UUID_CSIS_VAL)
-/** @def BT_UUID_CSIS_RANK_VAL
- *  @brief Bearer URI Prefixes Supported List value
- */
-#define BT_UUID_CSIS_RANK_VAL 0x8FCC
-/** @def BT_UUID_CSIS_RANK
- *  @brief Bearer URI Prefixes Supported List
- */
-#define BT_UUID_CSIS_RANK \
-	BT_UUID_DECLARE_16(BT_UUID_CSIS_RANK_VAL)
 /** @def BT_UUID_CSIS_SET_SIRK_VAL
  *  @brief Set Identity Resolving Key value
  */
-#define BT_UUID_CSIS_SET_SIRK_VAL 0x8FCD
+#define BT_UUID_CSIS_SET_SIRK_VAL 0x2B84
 /** @def BT_UUID_CSIS_SET_SIRK
  *  @brief Set Identity Resolving Key
  */
 #define BT_UUID_CSIS_SET_SIRK \
 	BT_UUID_DECLARE_16(BT_UUID_CSIS_SET_SIRK_VAL)
 /** @def BT_UUID_CSIS_SET_SIZE_VAL
- *  @brief Bearer UCI value
+ *  @brief Set size value
  */
-#define BT_UUID_CSIS_SET_SIZE_VAL 0x8FCE
+#define BT_UUID_CSIS_SET_SIZE_VAL 0x2B85
 /** @def BT_UUID_CSIS_SET_SIZE
- *  @brief Bearer UCI
+ *  @brief Set size
  */
 #define BT_UUID_CSIS_SET_SIZE \
 	BT_UUID_DECLARE_16(BT_UUID_CSIS_SET_SIZE_VAL)
 /** @def BT_UUID_CSIS_SET_LOCK_VAL
- *  @brief Bearer Technology value
+ *  @brief Set lock value
  */
-#define BT_UUID_CSIS_SET_LOCK_VAL 0x8FCF
+#define BT_UUID_CSIS_SET_LOCK_VAL 0x2B86
 /** @def BT_UUID_CSIS_SET_LOCK
- *  @brief Bearer Technology
+ *  @brief Set lock
  */
 #define BT_UUID_CSIS_SET_LOCK \
 	BT_UUID_DECLARE_16(BT_UUID_CSIS_SET_LOCK_VAL)
+/** @def BT_UUID_CSIS_RANK_VAL
+ *  @brief Rank value
+ */
+#define BT_UUID_CSIS_RANK_VAL 0x2B87
+/** @def BT_UUID_CSIS_RANK
+ *  @brief Rank
+ */
+#define BT_UUID_CSIS_RANK \
+	BT_UUID_DECLARE_16(BT_UUID_CSIS_RANK_VAL)
 
 /** @def BT_UUID_AICS_STATE_VAL
  *  @brief Audio Input Control Service State value
