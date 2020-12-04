@@ -7,137 +7,163 @@ tests:
   bluetooth.audio_shell:
     platform_allow: qemu_cortex_m3 qemu_x86 native_posix native_posix_64 nrf52840dk_nrf52840
   bluetooth.audio_shell.no_mcs:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
       - CONFIG_BT_MCS=n
   bluetooth.audio_shell.no_mcc:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
       - CONFIG_BT_MCC=n
   bluetooth.audio_shell.no_ots:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
       - CONFIG_BT_OTS=n
   bluetooth.audio_shell.no_otc:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
       - CONFIG_BT_OTC=n
   bluetooth.audio_shell.no_otsc:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
       - CONFIG_BT_OTS=n
       - CONFIG_BT_OTC=n
   bluetooth.audio_shell.no_bass:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
       - CONFIG_BT_BASS=n
   bluetooth.audio_shell.no_bass_client:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
       - CONFIG_BT_BASS_CLIENT=n
   bluetooth.audio_shell.no_bass_bass_client:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
       - CONFIG_BT_BASS=n
       - CONFIG_BT_BASS_CLIENT=n
   bluetooth.audio_shell.no_csis:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
       - CONFIG_BT_CSIS=n
   bluetooth.audio_shell.no_csip:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
       - CONFIG_BT_CSIP=n
   bluetooth.audio_shell.no_csis_csip:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
       - CONFIG_BT_CSIS=n
       - CONFIG_BT_CSIP=n
   bluetooth.audio_shell.no_vcs:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
       - CONFIG_BT_VCS=n
   bluetooth.audio_shell.no_vcs_client:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
       - CONFIG_BT_VCS_CLIENT=n
   bluetooth.audio_shell.no_vcs_vcs_client:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
       - CONFIG_BT_VCS=n
       - CONFIG_BT_VCS_CLIENT=n
   bluetooth.audio_shell.no_mics:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
       - CONFIG_BT_MICS=n
   bluetooth.audio_shell.no_mics_client:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
       - CONFIG_BT_MICS_CLIENT=n
   bluetooth.audio_shell.no_mics_mics_client:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
       - CONFIG_BT_MICS=n
       - CONFIG_BT_MICS_CLIENT=n
   bluetooth.audio_shell.no_tbs:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
       - CONFIG_BT_TBS=n
   bluetooth.audio_shell.no_ccp:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
       - CONFIG_BT_CCP=n
   bluetooth.audio_shell.no_tbs_ccp:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
       - CONFIG_BT_TBS=n
       - CONFIG_BT_CCP=n
   bluetooth.audio_shell.no_pacs:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
       - CONFIG_BT_PACS=n
   bluetooth.audio_shell.no_pac_snk:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
       - CONFIG_BT_PAC_SNK=n
   bluetooth.audio_shell.no_pac_src:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
       - CONFIG_BT_PAC_SRC=n
   bluetooth.audio_shell.no_bap:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
       - CONFIG_BT_BAP=n
   bluetooth.audio_shell.no_ascs:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
       - CONFIG_BT_ASCS=n
   bluetooth.audio_shell.no_baps:
+    build_only: true
     integration_platforms:
       - native_posix
     extra_configs:
