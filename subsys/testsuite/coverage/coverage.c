@@ -258,9 +258,9 @@ coverage_dump_end:
 /* Initialize the gcov by calling the required constructors */
 void gcov_static_init(void)
 {
-	extern uint32_t __init_array_start, __init_array_end;
-	uint32_t func_pointer_start = (uint32_t) &__init_array_start;
-	uint32_t func_pointer_end = (uint32_t) &__init_array_end;
+	extern uintptr_t __init_array_start, __init_array_end;
+	uintptr_t func_pointer_start = (uintptr_t) &__init_array_start;
+	uintptr_t func_pointer_end = (uintptr_t) &__init_array_end;
 
 	while (func_pointer_start < func_pointer_end) {
 		void (**p)(void);
