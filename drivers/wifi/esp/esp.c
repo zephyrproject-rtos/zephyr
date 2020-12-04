@@ -21,7 +21,9 @@ LOG_MODULE_REGISTER(wifi_esp, CONFIG_WIFI_LOG_LEVEL);
 #include <drivers/gpio.h>
 #include <drivers/uart.h>
 
+#include <net/dns_resolve.h>
 #include <net/net_if.h>
+#include <net/net_ip.h>
 #include <net/net_offload.h>
 #include <net/wifi_mgmt.h>
 
@@ -254,6 +256,83 @@ MODEM_CMD_DEFINE(on_cmd_cwlap)
 	return 0;
 }
 
+static void esp_dns_work(struct k_work *work)
+{
+	struct esp_data *data = CONTAINER_OF(work, struct esp_data, dns_work);
+	struct dns_resolve_context *dnsctx;
+	struct sockaddr_in *addrs = data->dns_addresses;
+	const struct sockaddr *dns_servers[ESP_MAX_DNS + 1] = {};
+	size_t i;
+	int err;
+
+	for (i = 0; i < ESP_MAX_DNS; i++) {
+		if (!addrs[i].sin_addr.s_addr) {
+			break;
+		}
+		dns_servers[i] = (struct sockaddr *) &addrs[i];
+	}
+
+	dnsctx = dns_resolve_get_default();
+	for (i = 0; i < CONFIG_DNS_NUM_CONCUR_QUERIES; i++) {
+		if (!dnsctx->queries[i].cb) {
+			continue;
+		}
+
+		dns_resolve_cancel(dnsctx, dnsctx->queries[i].id);
+	}
+
+	dns_resolve_close(dnsctx);
+
+	err = dns_resolve_init(dnsctx, NULL, dns_servers);
+	if (err) {
+		LOG_ERR("Could not set DNS servers: %d", err);
+	}
+
+	LOG_DBG("DNS resolver reconfigured");
+}
+
+/* +CIPDNS:enable[,"DNS IP1"[,"DNS IP2"[,"DNS IP3"]]] */
+MODEM_CMD_DEFINE(on_cmd_cipdns)
+{
+	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
+					    cmd_handler_data);
+	struct sockaddr_in *addrs = dev->dns_addresses;
+	char **servers = (char **)argv + 1;
+	size_t num_servers = argc - 1;
+	size_t valid_servers = 0;
+	size_t i;
+	int err;
+
+	for (i = 0; i < ESP_MAX_DNS; i++) {
+		if (i >= num_servers) {
+			addrs[i].sin_addr.s_addr = 0;
+			break;
+		}
+
+		servers[i] = str_unquote(servers[i]);
+		LOG_DBG("DNS[%zu]: %s", i, log_strdup(servers[i]));
+
+		err = net_addr_pton(AF_INET, servers[i], &addrs[i].sin_addr);
+		if (err) {
+			LOG_ERR("Invalid DNS address: %s",
+				log_strdup(servers[i]));
+			addrs[i].sin_addr.s_addr = 0;
+			break;
+		}
+
+		addrs[i].sin_family = AF_INET;
+		addrs[i].sin_port = htons(53);
+
+		valid_servers++;
+	}
+
+	if (valid_servers) {
+		k_work_submit(&dev->dns_work);
+	}
+
+	return 0;
+}
+
 static const struct modem_cmd response_cmds[] = {
 	MODEM_CMD("OK", on_cmd_ok, 0U, ""), /* 3GPP */
 	MODEM_CMD("ERROR", on_cmd_error, 0U, ""), /* 3GPP */
@@ -327,6 +406,9 @@ static void esp_ip_addr_work(struct k_work *work)
 	static const struct modem_cmd cmds[] = {
 		MODEM_CMD("+"_CIPSTA":", on_cmd_cipsta, 2U, ":"),
 	};
+	static const struct modem_cmd dns_cmds[] = {
+		MODEM_CMD_ARGS_MAX("+CIPDNS:", on_cmd_cipdns, 1U, 3U, ","),
+	};
 
 	ret = esp_cmd_send(dev, cmds, ARRAY_SIZE(cmds), "AT+"_CIPSTA"?",
 			   ESP_CMD_TIMEOUT);
@@ -345,6 +427,14 @@ static void esp_ip_addr_work(struct k_work *work)
 #else
 	net_if_ipv4_addr_add(dev->net_iface, &dev->ip, NET_ADDR_DHCP, 0);
 #endif
+
+	if (IS_ENABLED(CONFIG_WIFI_ESP_DNS_USE)) {
+		ret = esp_cmd_send(dev, dns_cmds, ARRAY_SIZE(dns_cmds),
+				   "AT+CIPDNS?", ESP_CMD_TIMEOUT);
+		if (ret) {
+			LOG_WRN("DNS fetch failed: %d", ret);
+		}
+	}
 }
 
 MODEM_CMD_DEFINE(on_cmd_got_ip)
@@ -977,6 +1067,9 @@ static int esp_init(const struct device *dev)
 	k_work_init(&data->scan_work, esp_mgmt_scan_work);
 	k_work_init(&data->connect_work, esp_mgmt_connect_work);
 	k_work_init(&data->mode_switch_work, esp_mode_switch_work);
+	if (IS_ENABLED(CONFIG_WIFI_ESP_DNS_USE)) {
+		k_work_init(&data->dns_work, esp_dns_work);
+	}
 
 	esp_socket_init(data);
 
