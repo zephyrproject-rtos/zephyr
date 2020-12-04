@@ -477,7 +477,7 @@ static int _modem_cmd_send(struct modem_iface *iface,
 	struct modem_cmd_handler_data *data;
 	int ret;
 
-	if (!iface || !handler || !handler->cmd_handler_data || !buf || !sem) {
+	if (!iface || !handler || !handler->cmd_handler_data || !buf) {
 		return -EINVAL;
 	}
 
