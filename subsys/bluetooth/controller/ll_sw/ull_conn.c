@@ -1542,7 +1542,7 @@ uint16_t ull_conn_lll_max_tx_octets_get(struct lll_conn *lll)
 #if defined(CONFIG_BT_CTLR_PHY)
 	switch (lll->phy_tx_time) {
 	default:
-	case BIT(0):
+	case PHY_1M:
 		/* 1M PHY, 1us = 1 bit, hence divide by 8.
 		 * Deduct 10 bytes for preamble (1), access address (4),
 		 * header (2), and CRC (3).
@@ -1550,7 +1550,7 @@ uint16_t ull_conn_lll_max_tx_octets_get(struct lll_conn *lll)
 		max_tx_octets = (lll->max_tx_time >> 3) - 10;
 		break;
 
-	case BIT(1):
+	case PHY_2M:
 		/* 2M PHY, 1us = 2 bits, hence divide by 4.
 		 * Deduct 11 bytes for preamble (2), access address (4),
 		 * header (2), and CRC (3).
@@ -1559,7 +1559,7 @@ uint16_t ull_conn_lll_max_tx_octets_get(struct lll_conn *lll)
 		break;
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	case BIT(2):
+	case PHY_CODED:
 		if (lll->phy_flags & 0x01) {
 			/* S8 Coded PHY, 8us = 1 bit, hence divide by
 			 * 64.
@@ -1636,17 +1636,17 @@ static int init_reset(void)
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	/* Initialize the PHY defaults */
-	default_phy_tx = BIT(0);
-	default_phy_rx = BIT(0);
+	default_phy_tx = PHY_1M;
+	default_phy_rx = PHY_1M;
 
 #if defined(CONFIG_BT_CTLR_PHY_2M)
-	default_phy_tx |= BIT(1);
-	default_phy_rx |= BIT(1);
+	default_phy_tx |= PHY_2M;
+	default_phy_rx |= PHY_2M;
 #endif /* CONFIG_BT_CTLR_PHY_2M */
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	default_phy_tx |= BIT(2);
-	default_phy_rx |= BIT(2);
+	default_phy_tx |= PHY_CODED;
+	default_phy_rx |= PHY_CODED;
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 #endif /* CONFIG_BT_CTLR_PHY */
 
@@ -3514,23 +3514,23 @@ static inline void event_phy_req_prep(struct ll_conn *conn)
 		conn->llcp_phy.ack = conn->llcp_phy.req;
 
 		/* select only one tx phy, prefer 2M */
-		if (conn->llcp_phy.tx & BIT(1)) {
-			conn->llcp_phy.tx = BIT(1);
-		} else if (conn->llcp_phy.tx & BIT(0)) {
-			conn->llcp_phy.tx = BIT(0);
-		} else if (conn->llcp_phy.tx & BIT(2)) {
-			conn->llcp_phy.tx = BIT(2);
+		if (conn->llcp_phy.tx & PHY_2M) {
+			conn->llcp_phy.tx = PHY_2M;
+		} else if (conn->llcp_phy.tx & PHY_1M) {
+			conn->llcp_phy.tx = PHY_1M;
+		} else if (conn->llcp_phy.tx & PHY_CODED) {
+			conn->llcp_phy.tx = PHY_CODED;
 		} else {
 			conn->llcp_phy.tx = 0U;
 		}
 
 		/* select only one rx phy, prefer 2M */
-		if (conn->llcp_phy.rx & BIT(1)) {
-			conn->llcp_phy.rx = BIT(1);
-		} else if (conn->llcp_phy.rx & BIT(0)) {
-			conn->llcp_phy.rx = BIT(0);
-		} else if (conn->llcp_phy.rx & BIT(2)) {
-			conn->llcp_phy.rx = BIT(2);
+		if (conn->llcp_phy.rx & PHY_2M) {
+			conn->llcp_phy.rx = PHY_2M;
+		} else if (conn->llcp_phy.rx & PHY_1M) {
+			conn->llcp_phy.rx = PHY_1M;
+		} else if (conn->llcp_phy.rx & PHY_CODED) {
+			conn->llcp_phy.rx = PHY_CODED;
 		} else {
 			conn->llcp_phy.rx = 0U;
 		}
@@ -5252,8 +5252,9 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 			 * will be restricted to fit current
 			 * connEffectiveMaxTxTime.
 			 */
-			uint8_t phy_tx_time[8] = {BIT(0), BIT(0), BIT(1), BIT(0),
-					       BIT(2), BIT(2), BIT(2), BIT(2)};
+			uint8_t phy_tx_time[8] = {PHY_1M, PHY_1M, PHY_2M,
+						  PHY_1M, PHY_CODED, PHY_CODED,
+						  PHY_CODED, PHY_CODED};
 			struct lll_conn *lll = &conn->lll;
 			uint8_t phys;
 
