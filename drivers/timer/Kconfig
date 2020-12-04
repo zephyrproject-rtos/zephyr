@@ -298,6 +298,16 @@ config LEON_GPTIMER
 	  This module implements a kernel device driver for the GRLIB
 	  GPTIMER which is common in LEON systems.
 
+config NPCX_ITIM_TIMER
+	bool "Nuvoton NPCX series internal 64/32-bit timers"
+	default y
+	depends on SOC_FAMILY_NPCX
+	select TICKLESS_CAPABLE
+	help
+	  This module implements a kernel device driver for the Nuvoton NPCX
+	  series internal 64/32-bit timers and provides the standard "system
+	  clock driver" interfaces.
+
 config SYSTEM_CLOCK_DISABLE
 	bool "API to disable system clock"
 	help
