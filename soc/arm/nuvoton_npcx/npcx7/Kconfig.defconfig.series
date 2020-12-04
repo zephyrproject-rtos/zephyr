@@ -11,6 +11,11 @@ config SOC_SERIES
 config NUM_IRQS
 	default 64
 
+config CORTEX_M_SYSTICK
+	default !NPCX_ITIM_TIMER
+	help
+	  Disable Cortex-M system tick if NPCX_ITIM_TIMER is enabled.
+
 config CLOCK_CONTROL_NPCX
 	default y
 	depends on CLOCK_CONTROL

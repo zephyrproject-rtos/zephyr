@@ -1134,4 +1134,43 @@ struct smb_fifo_reg {
 #define NPCX_SMBRXF_CTL_RX_THR           FIELD(0, 6)
 #define NPCX_SMBRXF_CTL_LAST             7
 
+/*
+ * Internal 32-bit Timer (ITIM32) device registers
+ */
+struct itim32_reg {
+	volatile uint8_t reserved1;
+	/* 0x001: Internal 32-bit Timer Prescaler */
+	volatile uint8_t ITPRE32;
+	volatile uint8_t reserved2[2];
+	/* 0x004: Internal 32-bit Timer Control and Status */
+	volatile uint8_t ITCTS32;
+	volatile uint8_t reserved3[3];
+	/* 0x008: Internal 32-Bit Timer Counter */
+	volatile uint32_t ITCNT32;
+};
+
+/*
+ * Internal 64-bit Timer (ITIM54) device registers
+ */
+struct itim64_reg {
+	volatile uint8_t reserved1;
+	/* 0x001: Internal 64-bit Timer Prescaler */
+	volatile uint8_t ITPRE64;
+	volatile uint8_t reserved2[2];
+	/* 0x004: Internal 64-bit Timer Control and Status */
+	volatile uint8_t ITCTS64;
+	volatile uint8_t reserved3[3];
+	/* 0x008: Internal 32-Bit Timer Counter */
+	volatile uint32_t ITCNT64L;
+	/* 0x00C: Internal 32-Bit Timer Counter */
+	volatile uint32_t ITCNT64H;
+};
+
+/* ITIM register fields */
+#define NPCX_ITCTSXX_TO_STS              0
+#define NPCX_ITCTSXX_TO_IE               2
+#define NPCX_ITCTSXX_TO_WUE              3
+#define NPCX_ITCTSXX_CKSEL               4
+#define NPCX_ITCTSXX_ITEN                7
+
 #endif /* _NUVOTON_NPCX_REG_DEF_H */

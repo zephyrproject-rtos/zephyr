@@ -97,6 +97,17 @@
 	soc {
 		compatible = "syscon";
 
+		itims: timer@400bc000 {
+			compatible = "nuvoton,npcx-itim-timer";
+			reg = <0x400bc000 0x2000
+			       0x400be000 0x2000>;
+			reg-names = "evt_itim", "sys_itim";
+			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL4 3
+				  &pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL7 5>;
+			interrupts = <46 0>; /* Event timer interrupt */
+			label = "ITIM";
+		};
+
 		pcc: clock-controller@4000d000 {
 			compatible = "nuvoton,npcx-pcc";
 			/* Cells for bus type, clock control reg and bit */
