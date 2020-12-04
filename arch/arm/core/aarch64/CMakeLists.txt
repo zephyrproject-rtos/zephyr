@@ -33,3 +33,5 @@ zephyr_library_sources_ifdef(CONFIG_CACHE_MANAGEMENT cache.c)
 if ((CONFIG_MP_NUM_CPUS GREATER 1) OR (CONFIG_SMP))
   zephyr_library_sources(smp.c)
 endif ()
+
+zephyr_cc_option_ifdef(CONFIG_USERSPACE -mno-outline-atomics)
