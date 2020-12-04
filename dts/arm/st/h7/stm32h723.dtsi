@@ -6,6 +6,14 @@
 #include <st/h7/stm32h7.dtsi>
 
 / {
+	soc {
+		flash-controller@52002000 {
+			flash0: flash@8000000 {
+				write-block-size = <32>;
+				erase-block-size = <DT_SIZE_K(128)>;
+			};
+		};
+	};
 	/* DTCM memory directly coppled to CPU */
 	dtcm: memory@20000000 {
 		compatible = "arm,dtcm";
