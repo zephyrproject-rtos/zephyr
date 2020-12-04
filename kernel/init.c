@@ -108,7 +108,7 @@ void z_bss_zero(void)
 #endif	/* CONFIG_CODE_DATA_RELOCATION */
 #ifdef CONFIG_COVERAGE_GCOV
 	(void)memset(&__gcov_bss_start, 0,
-		 ((uint32_t) &__gcov_bss_end - (uint32_t) &__gcov_bss_start));
+		 ((uintptr_t) &__gcov_bss_end - (uintptr_t) &__gcov_bss_start));
 #endif
 }
 
