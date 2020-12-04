@@ -577,9 +577,7 @@ Documentation:
         - samples/drivers/lora/
 
 "Drivers: Modem":
-    status: maintained
-    maintainers:
-        - mike-scott
+    status: orphaned
     files:
         - drivers/modem/
     labels:
