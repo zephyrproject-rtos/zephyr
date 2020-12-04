@@ -103,6 +103,9 @@ static inline int stm32_clock_control_on(const struct device *dev,
 	case STM32_CLOCK_BUS_AHB2:
 		LL_AHB2_GRP1_EnableClock(pclken->enr);
 		break;
+	case STM32_CLOCK_BUS_AHB3:
+        LL_AHB3_GRP1_EnableClock(pclken->enr);
+        break; 
 #endif /* CONFIG_SOC_SERIES_STM32_* */
 	case STM32_CLOCK_BUS_APB1:
 		LL_APB1_GRP1_EnableClock(pclken->enr);
