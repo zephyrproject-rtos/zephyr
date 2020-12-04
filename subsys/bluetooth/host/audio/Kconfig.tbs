@@ -111,21 +111,6 @@ config BT_TBS_SERVICE_COUNT
 	help
 	  Sets the number of TBS service instances that are instantiated
 
-config BT_TBS_MAX_URI_LENGTH
-	int "The maximum length of the call URI supported"
-	default 30
-	range 4 253
-	help
-	  Sets the maximum length of the call URI supported. Note that if this
-	  value is lower than a call URI, the call request will be rejected.
-
-config BT_TBS_MAX_PROVIDER_NAME_LENGTH
-	int "The maximum length of the bearer provider name"
-	default 30
-	range 0 512
-	help
-	  Sets the maximum length of the bearer provider name.
-
 config BT_TBS_MAX_SCHEME_LIST_LENGTH
 	int "The maximum length of the URI scheme list"
 	default 30
@@ -182,15 +167,6 @@ config BT_CCP_MAX_TBS_INSTANCES
 	  Sets the maximum number of Telephone Bearer Service (TBS)
 	  instances to setup and use.
 
-config BT_CCP_MAX_URI_LENGTH
-	int "The maximum length of the call URI supported"
-	default 30
-	range 4 253
-	help
-	  Sets the maximum length of the call URI supported. Note that if
-	  a call URI is longer than this value, the call URI will be
-	  truncated.
-
 ############# DEBUG #############
 
 config BT_DEBUG_CCP
@@ -201,5 +177,26 @@ config BT_DEBUG_CCP
 	  Bluetooth Audio functionality.
 
 endif # BT_CCP
+
+################ Configurations common to TBS and CCP ################
+
+if BT_TBS || BT_CCP
+
+config BT_TBS_MAX_URI_LENGTH
+	int "The maximum length of the call URI supported"
+	default 30
+	range 4 253
+	help
+	  Sets the maximum length of the call URI supported. Note that if this
+	  value is lower than a call URI, the call request will be rejected.
+
+config BT_TBS_MAX_PROVIDER_NAME_LENGTH
+	int "The maximum length of the bearer provider name"
+	default 30
+	range 0 512
+	help
+	  Sets the maximum length of the bearer provider name.
+
+endif # BT_TBS || BT_CCP
 
 endif # BT_AUDIO
