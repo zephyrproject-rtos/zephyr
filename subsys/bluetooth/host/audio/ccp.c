@@ -93,7 +93,7 @@ static uint8_t inst_cnt;
 static bool subscribe_all;
 static bool gtbs_found;
 static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
-static uint8_t write_buf[CONFIG_BT_CCP_MAX_URI_LENGTH + 1];
+static uint8_t write_buf[CONFIG_BT_TBS_MAX_URI_LENGTH + 1];
 
 static void discover_next_instance(struct bt_conn *conn, uint8_t index);
 
@@ -203,7 +203,7 @@ static void call_cp_callback_handler(struct bt_conn *conn, int err,
 static const char *parse_string_value(const void *data, uint16_t length,
 				      uint16_t max_len)
 {
-	static char string_val[CONFIG_BT_CCP_MAX_URI_LENGTH + 1];
+	static char string_val[CONFIG_BT_TBS_MAX_URI_LENGTH + 1];
 	size_t len = MIN(length, max_len);
 
 	if (len) {
@@ -339,7 +339,7 @@ static void incoming_uri_notify_handler(struct bt_conn *conn,
 					      const void *data, uint16_t length)
 {
 	const char *uri = parse_string_value(data, length,
-					     CONFIG_BT_CCP_MAX_URI_LENGTH);
+					     CONFIG_BT_TBS_MAX_URI_LENGTH);
 
 	BT_DBG("%s", log_strdup(uri));
 
@@ -433,7 +433,7 @@ static void in_call_notify_handler(struct bt_conn *conn,
 				   const void *data, uint16_t length)
 {
 	const char *uri = parse_string_value(data, length,
-					     CONFIG_BT_CCP_MAX_URI_LENGTH);
+					     CONFIG_BT_TBS_MAX_URI_LENGTH);
 
 	BT_DBG("%s", log_strdup(uri));
 
@@ -447,7 +447,7 @@ static void friendly_name_notify_handler(struct bt_conn *conn,
 					    const void *data, uint16_t length)
 {
 	const char *name = parse_string_value(data, length,
-					      CONFIG_BT_CCP_MAX_URI_LENGTH);
+					      CONFIG_BT_TBS_MAX_URI_LENGTH);
 
 	BT_DBG("%s", log_strdup(name));
 
@@ -989,7 +989,7 @@ static uint8_t ccp_read_call_uri_cb(struct bt_conn *conn, uint8_t err,
 		} else if (data) {
 			in_target_uri = parse_string_value(
 						data, length,
-						CONFIG_BT_CCP_MAX_URI_LENGTH);
+						CONFIG_BT_TBS_MAX_URI_LENGTH);
 			BT_DBG("%s", log_strdup(in_target_uri));
 		}
 		inst->busy = false;
@@ -1144,7 +1144,7 @@ static uint8_t ccp_read_remote_uri_cb(struct bt_conn *conn, uint8_t err,
 		} else if (data) {
 			remote_uri = parse_string_value(
 					data, length,
-					CONFIG_BT_CCP_MAX_URI_LENGTH);
+					CONFIG_BT_TBS_MAX_URI_LENGTH);
 			BT_DBG("%s", log_strdup(remote_uri));
 		}
 		inst->busy = false;
@@ -1179,7 +1179,7 @@ static uint8_t ccp_read_friendly_name_cb(struct bt_conn *conn, uint8_t err,
 			friendly_name =
 				parse_string_value(
 					data, length,
-					CONFIG_BT_CCP_MAX_URI_LENGTH);
+					CONFIG_BT_TBS_MAX_URI_LENGTH);
 			BT_DBG("%s", log_strdup(friendly_name));
 		}
 		inst->busy = false;
