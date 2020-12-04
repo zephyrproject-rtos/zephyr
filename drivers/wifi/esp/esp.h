@@ -79,6 +79,12 @@ extern "C" {
 #define CONN_CMD_MAX_LEN (sizeof("AT+"_CWJAP"=\"\",\"\"") + \
 			  WIFI_SSID_MAX_LEN + WIFI_PSK_MAX_LEN)
 
+#if defined(CONFIG_WIFI_ESP_DNS_USE)
+#define ESP_MAX_DNS	MIN(3, CONFIG_DNS_RESOLVER_MAX_SERVERS)
+#else
+#define ESP_MAX_DNS	0
+#endif
+
 #define ESP_MAX_SOCKETS 5
 
 /* Maximum amount that can be sent with CIPSEND and read with CIPRECVDATA */
@@ -192,6 +198,7 @@ struct esp_data {
 	struct in_addr gw;
 	struct in_addr nm;
 	uint8_t mac_addr[6];
+	struct sockaddr_in dns_addresses[ESP_MAX_DNS];
 
 	/* modem context */
 	struct modem_context mctx;
@@ -215,6 +222,7 @@ struct esp_data {
 	struct k_work scan_work;
 	struct k_work connect_work;
 	struct k_work mode_switch_work;
+	struct k_work dns_work;
 
 	scan_result_cb_t scan_cb;
 

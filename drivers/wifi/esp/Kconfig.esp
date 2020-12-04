@@ -131,4 +131,11 @@ config WIFI_ESP_AT_VERSION_2_0
 
 endchoice
 
+config WIFI_ESP_DNS_USE
+	bool "Use DNS from ESP"
+	depends on DNS_RESOLVER
+	help
+	  Fetch DNS servers from ESP chip with AT+CIPDNS? command and apply that
+	  list to system DNS resolver.
+
 endif # WIFI_ESP
