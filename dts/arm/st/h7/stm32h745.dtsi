@@ -7,6 +7,14 @@
 #include <st/h7/stm32h7_dualcore.dtsi>
 
 / {
+	soc {
+		flash-controller@52002000 {
+			flash0: flash@8000000 {
+				write-block-size = <32>;
+				erase-block-size = <131072>;
+			};
+		};
+	};
 	/*
 	* The RAM memories placed here can be used by both cores M4/M7
 	* For more information see reference manual and datasheet to STM32H745
