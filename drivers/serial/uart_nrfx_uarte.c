@@ -1259,9 +1259,16 @@ static int uarte_nrfx_irq_tx_ready_complete(const struct device *dev)
 	 * enabled, otherwise this function would always return true no matter
 	 * what would be the source of interrupt.
 	 */
-	return !data->int_driven->disable_tx_irq &&
-	       nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED) &&
-	       nrf_uarte_int_enable_check(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
+	bool ready = !data->int_driven->disable_tx_irq &&
+		     nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED) &&
+		     nrf_uarte_int_enable_check(uarte,
+						NRF_UARTE_INT_TXSTOPPED_MASK);
+
+	if (ready) {
+		data->int_driven->fifo_fill_lock = 0;
+	}
+
+	return ready;
 }
 
 static int uarte_nrfx_irq_rx_ready(const struct device *dev)
