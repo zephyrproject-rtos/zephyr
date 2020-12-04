@@ -117,6 +117,16 @@ static int out_func(int c, void *ctx)
 	return 0;
 }
 
+static int cr_out_func(int c, void *ctx)
+{
+	out_func(c, ctx);
+	if (c == '\n') {
+		out_func((int)'\r', ctx);
+	}
+
+	return 0;
+}
+
 static int print_formatted(const struct log_output *output,
 			   const char *fmt, ...)
 {
@@ -239,7 +249,8 @@ static void color_postfix(const struct log_output *output,
 
 
 static int ids_print(const struct log_output *output, bool level_on,
-		    bool func_on, uint32_t domain_id, uint32_t source_id, uint32_t level)
+		     bool func_on, uint32_t domain_id, int16_t source_id,
+		     uint32_t level)
 {
 	int total = 0;
 
@@ -247,11 +258,13 @@ static int ids_print(const struct log_output *output, bool level_on,
 		total += print_formatted(output, "<%s> ", severity[level]);
 	}
 
-	total += print_formatted(output,
+	if (source_id >= 0) {
+		total += print_formatted(output,
 				(func_on &&
 				((1 << level) & LOG_FUNCTION_PREFIX_MASK)) ?
 				"%s." : "%s: ",
 				log_source_name_get(domain_id, source_id));
+	}
 
 	return total;
 }
@@ -427,6 +440,23 @@ static void hexdump_print(struct log_msg *msg,
 	} while (true);
 }
 
+static void log_msg2_hexdump(const struct log_output *output,
+			     uint8_t *data, uint32_t len,
+			     int prefix_offset, uint32_t flags)
+{
+	size_t length;
+
+	do {
+		length = MIN(len, HEXDUMP_BYTES_IN_LINE);
+
+		hexdump_line_print(output, data, length,
+				   prefix_offset, flags);
+		data += length;
+		len -= length;
+	} while (len);
+}
+
+
 static void raw_string_print(struct log_msg *msg,
 			     const struct log_output *output)
 {
@@ -457,7 +487,7 @@ static void raw_string_print(struct log_msg *msg,
 
 static uint32_t prefix_print(const struct log_output *output,
 			 uint32_t flags, bool func_on, uint32_t timestamp, uint8_t level,
-			 uint8_t domain_id, uint16_t source_id)
+			 uint8_t domain_id, int16_t source_id)
 {
 	uint32_t length = 0U;
 
@@ -499,6 +529,7 @@ static uint32_t prefix_print(const struct log_output *output,
 	length += ids_print(output, level_on, func_on,
 			domain_id, source_id, level);
 
+
 	return length;
 }
 
@@ -518,7 +549,7 @@ void log_output_msg_process(const struct log_output *output,
 	uint32_t timestamp = log_msg_timestamp_get(msg);
 	uint8_t level = (uint8_t)log_msg_level_get(msg);
 	uint8_t domain_id = (uint8_t)log_msg_domain_id_get(msg);
-	uint16_t source_id = (uint16_t)log_msg_source_id_get(msg);
+	int16_t source_id = (int16_t)log_msg_source_id_get(msg);
 	bool raw_string = (level == LOG_LEVEL_INTERNAL_RAW_STRING);
 	int prefix_offset;
 
@@ -547,6 +578,61 @@ void log_output_msg_process(const struct log_output *output,
 	log_output_flush(output);
 }
 
+void log_output_msg2_process(const struct log_output *output,
+			     struct log_msg2 *msg, uint32_t flags)
+{
+	log_timestamp_t timestamp = log_msg2_get_timestamp(msg);
+	uint8_t level = log_msg2_get_level(msg);
+	bool raw_string = (level == LOG_LEVEL_INTERNAL_RAW_STRING);
+	uint32_t prefix_offset;
+
+	if (IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) &&
+	    flags & LOG_OUTPUT_FLAG_FORMAT_SYST) {
+		__ASSERT_NO_MSG(0);
+		/* todo not supported
+		 * log_output_msg_syst_process(output, msg, flags);
+		 */
+		return;
+	}
+
+	if (!raw_string) {
+		void *source = (void *)log_msg2_get_source(msg);
+		uint8_t domain_id = log_msg2_get_domain(msg);
+		int16_t source_id = source ?
+			(IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?
+				log_dynamic_source_id(source) :
+				log_const_source_id(source)) :
+			-1;
+
+		prefix_offset = prefix_print(output, flags, 0, timestamp,
+					 level, domain_id, source_id);
+	} else {
+		prefix_offset = 0;
+	}
+
+	size_t len;
+	uint8_t *data = log_msg2_get_package(msg, &len);
+
+	if (len) {
+		int err = cbpprintf(raw_string ? cr_out_func :  out_func,
+				    (void *)output, data);
+
+		(void)err;
+		__ASSERT_NO_MSG(err >= 0);
+	}
+
+	data = log_msg2_get_data(msg, &len);
+	if (len) {
+		log_msg2_hexdump(output, data, len, prefix_offset, flags);
+	}
+
+	if (!raw_string) {
+		postfix_print(output, flags, level);
+	}
+
+	log_output_flush(output);
+}
+
 static bool ends_with_newline(const char *fmt)
 {
 	char c = '\0';
@@ -566,7 +652,7 @@ void log_output_string(const struct log_output *output,
 	int length;
 	uint8_t level = (uint8_t)src_level.level;
 	uint8_t domain_id = (uint8_t)src_level.domain_id;
-	uint16_t source_id = (uint16_t)src_level.source_id;
+	int16_t source_id = (int16_t)src_level.source_id;
 	bool raw_string = (level == LOG_LEVEL_INTERNAL_RAW_STRING);
 
 	if (IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) &&
@@ -605,7 +691,7 @@ void log_output_hexdump(const struct log_output *output,
 	uint32_t prefix_offset;
 	uint8_t level = (uint8_t)src_level.level;
 	uint8_t domain_id = (uint8_t)src_level.domain_id;
-	uint16_t source_id = (uint16_t)src_level.source_id;
+	int16_t source_id = (int16_t)src_level.source_id;
 
 	if (IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) &&
 	    flags & LOG_OUTPUT_FLAG_FORMAT_SYST) {

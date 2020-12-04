@@ -109,6 +109,18 @@ void log_output_msg_process(const struct log_output *output,
 			    struct log_msg *msg,
 			    uint32_t flags);
 
+/** @brief Process log messages v2 to readable strings.
+ *
+ * Function is using provided context with the buffer and output function to
+ * process formatted string and output the data.
+ *
+ * @param log_output Pointer to the log output instance.
+ * @param msg Log message.
+ * @param flags Optional flags.
+ */
+void log_output_msg2_process(const struct log_output *log_output,
+			     struct log_msg2 *msg, uint32_t flags);
+
 /** @brief Process log string
  *
  * Function is formatting provided string adding optional prefixes and
