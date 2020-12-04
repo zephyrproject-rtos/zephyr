@@ -1096,11 +1096,11 @@ static uint32_t isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	} else if (lll->phy) {
 		switch (lll->phy) {
-		case BIT(0):
+		case PHY_1M:
 			node_rx->hdr.type = NODE_RX_TYPE_EXT_1M_REPORT;
 			break;
 
-		case BIT(2):
+		case PHY_CODED:
 			node_rx->hdr.type = NODE_RX_TYPE_EXT_CODED_REPORT;
 			break;
 

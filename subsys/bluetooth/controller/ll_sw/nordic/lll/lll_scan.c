@@ -1199,11 +1199,11 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
 		struct pdu_adv *pdu_adv_rx;
 
 		switch (lll->phy) {
-		case BIT(0):
+		case PHY_1M:
 			node_rx->hdr.type = NODE_RX_TYPE_EXT_1M_REPORT;
 			break;
 
-		case BIT(2):
+		case PHY_CODED:
 			node_rx->hdr.type = NODE_RX_TYPE_EXT_CODED_REPORT;
 			break;
 

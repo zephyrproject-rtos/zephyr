@@ -185,7 +185,7 @@ uint8_t ll_scan_enable(uint8_t enable)
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	if (!is_coded_phy || (scan->lll.phy & BT_HCI_LE_EXT_SCAN_PHY_1M))
+	if (!is_coded_phy || (scan->lll.phy & PHY_1M))
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	{
 		err = duration_period_setup(scan, duration, period,
@@ -233,7 +233,7 @@ uint8_t ll_scan_enable(uint8_t enable)
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	if (!is_coded_phy || (scan->lll.phy & BT_HCI_LE_EXT_SCAN_PHY_1M))
+	if (!is_coded_phy || (scan->lll.phy & PHY_1M))
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	{
 		err = duration_period_update(scan, is_update_1m);
@@ -255,7 +255,7 @@ uint8_t ll_scan_enable(uint8_t enable)
 	}
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	if (!is_coded_phy || (scan->lll.phy & BT_HCI_LE_EXT_SCAN_PHY_1M))
+	if (!is_coded_phy || (scan->lll.phy & PHY_1M))
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 	{
@@ -525,7 +525,7 @@ void ull_scan_term_dequeue(uint8_t handle)
 		struct ll_scan_set *scan_coded;
 
 		scan_coded = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
-		if (scan_coded->lll.phy & BT_HCI_LE_EXT_SCAN_PHY_CODED) {
+		if (scan_coded->lll.phy & PHY_CODED) {
 			uint8_t err;
 
 			err = disable(SCAN_HANDLE_PHY_CODED);
@@ -535,7 +535,7 @@ void ull_scan_term_dequeue(uint8_t handle)
 		struct ll_scan_set *scan_1m;
 
 		scan_1m = ull_scan_set_get(SCAN_HANDLE_1M);
-		if (scan_1m->lll.phy & BT_HCI_LE_EXT_SCAN_PHY_1M) {
+		if (scan_1m->lll.phy & PHY_1M) {
 			uint8_t err;
 
 			err = disable(SCAN_HANDLE_1M);
