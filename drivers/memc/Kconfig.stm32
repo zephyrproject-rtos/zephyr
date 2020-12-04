@@ -3,7 +3,7 @@
 
 config MEMC_STM32
 	bool "Enable STM32 Flexible Memory Controller (FMC)"
-	depends on SOC_SERIES_STM32H7X
+	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32F4X
 	help
 	  Enable STM32 Flexible Memory Controller.
 
