@@ -229,6 +229,7 @@
 /drivers/lora/                            @Mani-Sadhasivam
 /drivers/memc/                            @gmarull
 /drivers/modem/                           @mike-scott
+/drivers/modem/*gsm*                      @jukkar
 /drivers/modem/hl7800.c                   @rerickson1
 /drivers/modem/Kconfig.hl7800             @rerickson1
 /drivers/pcie/                            @andrewboie
