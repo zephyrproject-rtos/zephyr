@@ -35,6 +35,12 @@ config HAS_MCUX_CCM
 	help
 	  Set if the clock control module (CCM) module is present in the SoC.
 
+config HAS_MCUX_CCM_REV2
+	bool
+	help
+	  Set if the revison 2 of clock control module (CCM) module is present in the SoC.
+	  This is present in SoC's such as RT1170
+
 config HAS_MCUX_SYSCON
 	bool
 	help
