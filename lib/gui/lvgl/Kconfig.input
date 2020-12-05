@@ -44,49 +44,4 @@ config LVGL_POINTER_KSCAN_INVERT_Y
 
 endif # LVGL_POINTER_KSCAN
 
-config LVGL_INDEV_DEF_READ_PERIOD
-	int "Input device refresh period"
-	default 30
-	help
-	  Refresh period for input devices in milliseconds
-
-config LVGL_INDEV_DEF_DRAG_LIMIT
-	int "Drag Threshold"
-	default 10
-	help
-	  Threshold in pixels before entering drag mode
-
-config LVGL_INDEV_DEF_DRAG_THROW
-	int "Drag throw slow-down"
-	default 10
-	range 0 100
-	help
-	  Percentage of slow down of a throw following a drag.
-	  Greater percentage means faster slow-down.
-
-config LVGL_INDEV_DEF_LONG_PRESS_TIME
-	int "Long press time"
-	default 400
-	help
-	  Period in milliseconds before a press is seen as a long press
-
-config LVGL_INDEV_DEF_LONG_PRESS_REP_TIME
-	int "Long press repeat time"
-	default 100
-	help
-	  Period in milliseconds after which a new trigger is generated
-	  for a long press
-
-config LVGL_INDEV_DEF_GESTURE_LIMIT
-	int "Gesture threshold"
-	default 50
-	help
-	  Gesture threshold in pixels
-
-config LVGL_INDEV_DEF_GESTURE_MIN_VELOCITY
-	int "Gesture minimum velocity"
-	default 3
-	help
-	  Gesture min velocity at release before swipe (pixels)
-
 endmenu

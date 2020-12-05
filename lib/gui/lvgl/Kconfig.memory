@@ -4,6 +4,10 @@
 
 menu "Memory manager settings"
 
+config LV_MEM_CUSTOM
+	bool
+	default y
+
 config LVGL_BITS_PER_PIXEL
 	int "Bits per pixel"
 	default 32
