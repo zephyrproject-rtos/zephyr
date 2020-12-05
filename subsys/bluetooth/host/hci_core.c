@@ -47,6 +47,10 @@
 #include "crypto.h"
 #include "settings.h"
 
+#if IS_ENABLED(CONFIG_BT_DF)
+#include "direction_internal.h"
+#endif /* CONFIG_BT_DF */
+
 #if !defined(CONFIG_BT_EXT_ADV_LEGACY_SUPPORT)
 #undef BT_FEAT_LE_EXT_ADV
 #define BT_FEAT_LE_EXT_ADV(feat)  1
@@ -5721,6 +5725,15 @@ static int le_init(void)
 		net_buf_unref(rsp);
 	}
 #endif
+
+#if IS_ENABLED(CONFIG_BT_DF)
+	if (BT_FEAT_LE_CONNECTIONLESS_CTE_TX(bt_dev.le.features)) {
+		err = le_df_init();
+		if (err) {
+			return err;
+		}
+	}
+#endif /* CONFIG_BT_DF */
 
 	return  le_set_event_mask();
 }
