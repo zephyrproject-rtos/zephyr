@@ -1,0 +1,44 @@
+menuconfig LVGL
+	bool "LittlevGL GUI library"
+	help
+	  This option enables the LittlevGL GUI library.
+
+
+if LVGL
+
+config LVGL_DISPLAY_DEV_NAME
+	string "Display device name"
+	default "DISPLAY"
+	help
+	  Name of the display device to use for rendering.
+
+module = LVGL
+module-str = lvgl
+source "subsys/logging/Kconfig.template.log_config"
+
+source "lib/gui/lvgl/Kconfig.memory"
+source "lib/gui/lvgl/Kconfig.input"
+
+config APP_LINK_WITH_LVGL
+	bool "Link 'app' with LVGL"
+	default y
+	help
+	  Add LVGL header files to the 'app' include path. It may be
+	  disabled if the include paths for LVGL are causing aliasing
+	  issues for 'app'.
+
+config LV_USE_USER_DATA
+	bool
+	default y
+
+config LV_USE_LOG
+	bool
+	default y if LOG
+
+config LV_CONF_MINIMAL
+	bool
+	default y
+
+rsource "Kconfig.lvgl-upstream"
+
+endif # LVGL
