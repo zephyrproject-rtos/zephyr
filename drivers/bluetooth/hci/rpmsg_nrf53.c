@@ -263,7 +263,11 @@ int bt_rpmsg_platform_init(void)
 	}
 
 	/* Wait til nameservice ep is setup */
-	k_sem_take(&ready_sem, K_FOREVER);
+	err = k_sem_take(&ready_sem, K_SECONDS(3));
+	if (err) {
+		BT_ERR("No contact with network core EP (err %d)", err);
+		return err;
+	}
 
 	return 0;
 }
