@@ -7,14 +7,39 @@
 #include <assert.h>
 
 #include <bluetooth/hci.h>
+#include <bluetooth/l2cap.h>
 #include <bluetooth/conn.h>
 #include <sys/byteorder.h>
 
 #include "conn_internal.h"
+#include "direction_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_DF)
 #define LOG_MODULE_NAME bt_df
 #include "common/log.h"
+
+/* @brief Antenna information for LE Direction Finding */
+struct bt_le_df_ant_info {
+	/* Bitfield holding optional switching and sampling rates */
+	uint8_t switch_sample_rates;
+	/* Available antennae number */
+	uint8_t num_ant;
+	/* Maximum supported antennae switching pattern length */
+	uint8_t max_switch_pattern_len;
+	/* Maximum length of CTE in 8[us] units */
+	uint8_t max_cte_len;
+};
+
+static struct bt_le_df_ant_info df_ant_info;
+
+#define DF_SUPP_TEST(feat, n)                   ((feat) & BIT((n)))
+
+#define DF_AOD_TX_1US_SUPPORT(supp)             (DF_SUPP_TEST(supp, \
+						BT_HCI_LE_1US_AOD_TX))
+#define DF_AOD_RX_1US_SUPPORT(supp)             (DF_SUPP_TEST(supp, \
+						BT_HCI_LE_1US_AOD_RX))
+#define DF_AOA_RX_1US_SUPPORT(supp)             (DF_SUPP_TEST(supp, \
+						BT_HCI_LE_1US_AOA_RX))
 
 /* @brief Function provides information about DF antennae numer and
  *	  controller capabilities related with Constant Tone Extension.
@@ -130,4 +155,31 @@ static int hci_df_set_conn_cte_tx_param(struct bt_conn *conn, uint8_t cte_types,
 	net_buf_unref(rsp);
 
 	return err;
+}
+
+/* @brief Function initializes Direction Finding in Host
+ *
+ * @return Zero in case of success, other value in case of failure.
+ */
+int le_df_init(void)
+{
+	uint8_t max_switch_pattern_len;
+	uint8_t switch_sample_rates;
+	uint8_t max_cte_len;
+	uint8_t num_ant;
+	int err;
+
+	err = hci_df_read_ant_info(&switch_sample_rates, &num_ant,
+			     &max_switch_pattern_len, &max_cte_len);
+	if (err) {
+		return err;
+	}
+
+	df_ant_info.max_switch_pattern_len = max_switch_pattern_len;
+	df_ant_info.switch_sample_rates = switch_sample_rates;
+	df_ant_info.max_cte_len = max_cte_len;
+	df_ant_info.num_ant = num_ant;
+
+	BT_DBG("DF initialized.");
+	return 0;
 }

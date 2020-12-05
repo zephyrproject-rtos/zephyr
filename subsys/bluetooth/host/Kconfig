@@ -608,6 +608,12 @@ config BT_DF
 	  It will allow to: get information about antennae, configure
 	  Constant Tone Extension, transmit CTE and sample incoming CTE.
 
+config BT_DEBUG_DF
+	bool "Bluetooth Direction Finding debug"
+	depends on BT_DF
+	help
+	  This option enables debug support for Bluetooth Direction Finding
+
 endif # BT_HCI_HOST
 
 config BT_ECC

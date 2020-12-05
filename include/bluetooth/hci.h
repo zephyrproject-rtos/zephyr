@@ -185,6 +185,8 @@ struct bt_hci_cmd_hdr {
 						BT_LE_FEAT_BIT_EXT_ADV)
 #define BT_FEAT_LE_EXT_PER_ADV(feat)            BT_LE_FEAT_TEST(feat, \
 						BT_LE_FEAT_BIT_PER_ADV)
+#define BT_FEAT_LE_CONNECTIONLESS_CTE_TX(feat)  BT_LE_FEAT_TEST(feat, \
+						BT_LE_FEAT_BIT_CONNECTIONLESS_CTE_TX)
 #define BT_FEAT_LE_PAST_SEND(feat)              BT_LE_FEAT_TEST(feat, \
 						BT_LE_FEAT_BIT_PAST_SEND)
 #define BT_FEAT_LE_PAST_RECV(feat)              BT_LE_FEAT_TEST(feat, \
