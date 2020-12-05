@@ -758,8 +758,7 @@ Kconfig:
     status: orphaned
     files:
         - scripts/kconfig/
-    files-regex:
-        - Kconfig[\w._-]*$
+        - doc/guides/kconfig/
     labels:
         - "area: Kconfig"
     description: >-
