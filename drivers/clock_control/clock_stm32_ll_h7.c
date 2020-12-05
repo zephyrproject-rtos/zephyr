@@ -66,20 +66,6 @@
 #define PLLSRC_FREQ 0
 #endif
 
-#define VCO_FREQ	(PLLSRC_FREQ / CONFIG_CLOCK_STM32_PLL_M_DIVISOR)
-
-#if (1000000UL <= VCO_FREQ && VCO_FREQ <= 2000000UL)
-#define VCO_INPUT_RANGE LL_RCC_PLLINPUTRANGE_1_2
-#elif (2000000UL < VCO_FREQ && VCO_FREQ <= 4000000UL)
-#define VCO_INPUT_RANGE LL_RCC_PLLINPUTRANGE_2_4
-#elif (4000000UL < VCO_FREQ && VCO_FREQ <= 8000000UL)
-#define VCO_INPUT_RANGE LL_RCC_PLLINPUTRANGE_4_8
-#elif (8000000UL < VCO_FREQ && VCO_FREQ <= 16000000UL)
-#define VCO_INPUT_RANGE LL_RCC_PLLINPUTRANGE_8_16
-#else
-#error "PLL1 VCO frequency input range out of range"
-#endif
-
 /* Given source clock and dividers, computed the output frequency of PLLP */
 #define PLLP_FREQ(pllsrc_freq, divm, divn, divp)	(((pllsrc_freq)*\
 							(divn))/((divm)*(divp)))
@@ -297,7 +283,28 @@ static int32_t optimize_regulator_voltage_scale(uint32_t sysclk_freq)
 	defined(CONFIG_CLOCK_STM32_PLL_SRC_HSI) || \
 	defined(CONFIG_CLOCK_STM32_PLL_SRC_CSI)
 
-static int32_t get_vco_output_range(uint32_t vco_input_range)
+static int get_vco_input_range(uint32_t m_div, uint32_t *range)
+{
+	uint32_t vco_freq;
+
+	vco_freq = PLLSRC_FREQ / m_div;
+
+	if (1000000UL <= vco_freq && vco_freq <= 2000000UL) {
+		*range = LL_RCC_PLLINPUTRANGE_1_2;
+	} else if (2000000UL < vco_freq && vco_freq <= 4000000UL) {
+		*range = LL_RCC_PLLINPUTRANGE_2_4;
+	} else if (4000000UL < vco_freq && vco_freq <= 8000000UL) {
+		*range = LL_RCC_PLLINPUTRANGE_4_8;
+	} else if (8000000UL < vco_freq && vco_freq <= 16000000UL) {
+		*range = LL_RCC_PLLINPUTRANGE_8_16;
+	} else {
+		return -ERANGE;
+	}
+
+	return 0;
+}
+
+static uint32_t get_vco_output_range(uint32_t vco_input_range)
 {
 	if (vco_input_range == LL_RCC_PLLINPUTRANGE_1_2) {
 		return LL_RCC_PLLVCORANGE_MEDIUM;
@@ -478,7 +485,9 @@ static int stm32_clock_control_init(const struct device *dev)
 	defined(CONFIG_CLOCK_STM32_PLL_SRC_HSI) || \
 	defined(CONFIG_CLOCK_STM32_PLL_SRC_CSI)
 
-	int32_t vco_output_range = 0;
+	int r;
+	uint32_t vco_input_range;
+	uint32_t vco_output_range;
 #endif /* CONFIG_CLOCK_STM32_PLL_SRC_* */
 
 #endif /* ! CONFIG_CPU_CORTEX_M4 */
@@ -561,7 +570,12 @@ static int stm32_clock_control_init(const struct device *dev)
 	defined(CONFIG_CLOCK_STM32_PLL_SRC_HSI) || \
 	defined(CONFIG_CLOCK_STM32_PLL_SRC_CSI)
 
-	vco_output_range = get_vco_output_range(VCO_INPUT_RANGE);
+	r = get_vco_input_range(CONFIG_CLOCK_STM32_PLL_M_DIVISOR, &vco_input_range);
+	if (r < 0) {
+		return r;
+	}
+
+	vco_output_range = get_vco_output_range(vco_input_range);
 
 	/* Configure PLL1 */
 	/* According to the RM0433 datasheet */
@@ -571,7 +585,7 @@ static int stm32_clock_control_init(const struct device *dev)
 	/* Config PLL */
 
 	/* VCO sel, VCO range */
-	LL_RCC_PLL1_SetVCOInputRange(VCO_INPUT_RANGE);
+	LL_RCC_PLL1_SetVCOInputRange(vco_input_range);
 	LL_RCC_PLL1_SetVCOOutputRange(vco_output_range);
 
 	/* FRACN disable DIVP,DIVQ,DIVR enable*/
