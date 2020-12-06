@@ -49,9 +49,9 @@ static void shell_internal_help_print(const struct shell *shell)
 		return;
 	}
 
-	shell_help_cmd_print(shell, &shell->ctx->active_cmd);
-	shell_help_subcmd_print(shell, &shell->ctx->active_cmd,
-				"Subcommands:\n");
+	z_shell_help_cmd_print(shell, &shell->ctx->active_cmd);
+	z_shell_help_subcmd_print(shell, &shell->ctx->active_cmd,
+				  "Subcommands:\n");
 }
 
 /**
@@ -1586,7 +1586,8 @@ static int cmd_help(const struct shell *shell, size_t argc, char **argv)
 
 	if (IS_ENABLED(CONFIG_SHELL_HELP)) {
 		/* For NULL argument function will print all root commands */
-		shell_help_subcmd_print(shell, NULL, "\nAvailable commands:\n");
+		z_shell_help_subcmd_print(shell, NULL,
+					 "\nAvailable commands:\n");
 	} else {
 		const struct shell_static_entry *entry;
 		size_t idx = 0;

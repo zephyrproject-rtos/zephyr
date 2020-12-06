@@ -145,9 +145,9 @@ static void help_item_print(const struct shell *shell, const char *item_name,
 /* Function prints all subcommands of the parent command together with their
  * help string
  */
-void shell_help_subcmd_print(const struct shell *shell,
-			     const struct shell_static_entry *parent,
-			     const char *description)
+void z_shell_help_subcmd_print(const struct shell *shell,
+			       const struct shell_static_entry *parent,
+			       const char *description)
 {
 	const struct shell_static_entry *entry = NULL;
 	struct shell_static_entry dloc;
@@ -176,8 +176,8 @@ void shell_help_subcmd_print(const struct shell *shell,
 	}
 }
 
-void shell_help_cmd_print(const struct shell *shell,
-			  const struct shell_static_entry *cmd)
+void z_shell_help_cmd_print(const struct shell *shell,
+			    const struct shell_static_entry *cmd)
 {
 	static const char cmd_sep[] = " - "; /* commands separator */
 	uint16_t field_width;
