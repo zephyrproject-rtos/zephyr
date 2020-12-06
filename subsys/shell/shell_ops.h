@@ -21,7 +21,7 @@ static inline void shell_raw_fprintf(const struct shell_fprintf *const ctx,
 	va_list args;
 
 	va_start(args, fmt);
-	shell_fprintf_fmt(ctx, fmt, args);
+	z_shell_fprintf_fmt(ctx, fmt, args);
 	va_end(args);
 }
 
@@ -245,10 +245,9 @@ void shell_write(const struct shell *shell, const void *data,
  *
  * @param[in] p_user_ctx    Pointer to the context for the shell instance.
  * @param[in] p_data        Pointer to the data buffer.
- * @param[in] data_len      Data buffer size.
+ * @param[in] len           Data buffer size.
  */
-void shell_print_stream(const void *user_ctx, const char *data,
-			size_t data_len);
+void z_shell_print_stream(const void *user_ctx, const char *data, size_t len);
 
 /** @internal @brief Function for setting font color */
 void shell_vt100_color_set(const struct shell *shell,
@@ -266,13 +265,11 @@ void shell_vt100_colors_restore(const struct shell *shell,
 /* This function can be called only within shell thread but not from command
  * handlers.
  */
-void shell_internal_fprintf(const struct shell *shell,
-			    enum shell_vt100_color color,
-			    const char *fmt, ...);
+void z_shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
+		     const char *fmt, ...);
 
-void shell_internal_vfprintf(const struct shell *shell,
-			     enum shell_vt100_color color, const char *fmt,
-			     va_list args);
+void z_shell_vfprintf(const struct shell *shell, enum shell_vt100_color color,
+		      const char *fmt, va_list args);
 
 #ifdef __cplusplus
 }

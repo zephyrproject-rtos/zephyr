@@ -711,8 +711,8 @@ struct shell {
 	k_thread_stack_t *stack;
 };
 
-extern void shell_print_stream(const void *user_ctx, const char *data,
-			       size_t data_len);
+extern void z_shell_print_stream(const void *user_ctx, const char *data,
+				 size_t data_len);
 /**
  * @brief Macro for defining a shell instance.
  *
@@ -730,14 +730,14 @@ extern void shell_print_stream(const void *user_ctx, const char *data,
 		     _log_queue_size, _log_timeout, _shell_flag)	      \
 	static const struct shell _name;				      \
 	static struct shell_ctx UTIL_CAT(_name, _ctx);			      \
-	static uint8_t _name##_out_buffer[CONFIG_SHELL_PRINTF_BUFF_SIZE];	      \
+	static uint8_t _name##_out_buffer[CONFIG_SHELL_PRINTF_BUFF_SIZE];     \
 	SHELL_LOG_BACKEND_DEFINE(_name, _name##_out_buffer,		      \
 				 CONFIG_SHELL_PRINTF_BUFF_SIZE,		      \
 				 _log_queue_size, _log_timeout);	      \
 	SHELL_HISTORY_DEFINE(_name##_history, CONFIG_SHELL_HISTORY_BUFFER);   \
-	SHELL_FPRINTF_DEFINE(_name##_fprintf, &_name, _name##_out_buffer,     \
+	Z_SHELL_FPRINTF_DEFINE(_name##_fprintf, &_name, _name##_out_buffer,   \
 			     CONFIG_SHELL_PRINTF_BUFF_SIZE,		      \
-			     true, shell_print_stream);			      \
+			     true, z_shell_print_stream);		      \
 	LOG_INSTANCE_REGISTER(shell, _name, CONFIG_SHELL_LOG_LEVEL);	      \
 	SHELL_STATS_DEFINE(_name);					      \
 	static K_KERNEL_STACK_DEFINE(_name##_stack, CONFIG_SHELL_STACK_SIZE); \

@@ -178,7 +178,7 @@ void shell_op_word_remove(const struct shell *shell)
 	/* Update display. */
 	shell_op_cursor_move(shell, -chars_to_delete);
 	cursor_save(shell);
-	shell_internal_fprintf(shell, SHELL_NORMAL, "%s", str + 1);
+	z_shell_fprintf(shell, SHELL_NORMAL, "%s", str + 1);
 	clear_eos(shell);
 	cursor_restore(shell);
 }
@@ -223,7 +223,7 @@ static void reprint_from_cursor(const struct shell *shell, uint16_t diff,
 		clear_eos(shell);
 	}
 
-	shell_internal_fprintf(shell, SHELL_NORMAL, "%s",
+	z_shell_fprintf(shell, SHELL_NORMAL, "%s",
 		      &shell->ctx->cmd_buff[shell->ctx->cmd_buff_pos]);
 	shell->ctx->cmd_buff_pos = shell->ctx->cmd_buff_len;
 
@@ -336,7 +336,7 @@ void shell_cmd_line_erase(const struct shell *shell)
 
 static void print_prompt(const struct shell *shell)
 {
-	shell_internal_fprintf(shell, SHELL_INFO, "%s", shell->ctx->prompt);
+	z_shell_fprintf(shell, SHELL_INFO, "%s", shell->ctx->prompt);
 }
 
 void shell_print_cmd(const struct shell *shell)
@@ -393,10 +393,9 @@ void shell_write(const struct shell *shell, const void *data,
 }
 
 /* Function shall be only used by the fprintf module. */
-void shell_print_stream(const void *user_ctx, const char *data,
-			size_t data_len)
+void z_shell_print_stream(const void *user_ctx, const char *data, size_t len)
 {
-	shell_write((const struct shell *) user_ctx, data, data_len);
+	shell_write((const struct shell *) user_ctx, data, len);
 }
 
 static void vt100_bgcolor_set(const struct shell *shell,
@@ -444,9 +443,8 @@ void shell_vt100_colors_restore(const struct shell *shell,
 	vt100_bgcolor_set(shell, color->bgcol);
 }
 
-void shell_internal_vfprintf(const struct shell *shell,
-			     enum shell_vt100_color color, const char *fmt,
-			     va_list args)
+void z_shell_vfprintf(const struct shell *shell, enum shell_vt100_color color,
+		      const char *fmt, va_list args)
 {
 	if (IS_ENABLED(CONFIG_SHELL_VT100_COLORS) &&
 	    shell->ctx->internal.flags.use_colors &&
@@ -456,15 +454,15 @@ void shell_internal_vfprintf(const struct shell *shell,
 		shell_vt100_colors_store(shell, &col);
 		shell_vt100_color_set(shell, color);
 
-		shell_fprintf_fmt(shell->fprintf_ctx, fmt, args);
+		z_shell_fprintf_fmt(shell->fprintf_ctx, fmt, args);
 
 		shell_vt100_colors_restore(shell, &col);
 	} else {
-		shell_fprintf_fmt(shell->fprintf_ctx, fmt, args);
+		z_shell_fprintf_fmt(shell->fprintf_ctx, fmt, args);
 	}
 }
 
-void shell_internal_fprintf(const struct shell *shell,
+void z_shell_fprintf(const struct shell *shell,
 			    enum shell_vt100_color color,
 			    const char *fmt, ...)
 {
@@ -477,6 +475,6 @@ void shell_internal_fprintf(const struct shell *shell,
 	va_list args;
 
 	va_start(args, fmt);
-	shell_internal_vfprintf(shell, color, fmt, args);
+	z_shell_vfprintf(shell, color, fmt, args);
 	va_end(args);
 }
