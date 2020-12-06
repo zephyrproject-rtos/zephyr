@@ -11,7 +11,7 @@
 
 int shell_log_backend_output_func(uint8_t *data, size_t length, void *ctx)
 {
-	shell_print_stream(ctx, data, length);
+	z_shell_print_stream(ctx, data, length);
 	return length;
 }
 

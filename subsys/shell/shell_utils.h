@@ -86,7 +86,7 @@ void shell_spaces_trim(char *str);
 
 static inline void transport_buffer_flush(const struct shell *shell)
 {
-	shell_fprintf_buffer_flush(shell->fprintf_ctx);
+	z_shell_fprintf_buffer_flush(shell->fprintf_ctx);
 }
 
 void shell_cmd_trim(const struct shell *shell);

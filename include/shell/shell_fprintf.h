@@ -16,8 +16,8 @@ extern "C" {
 #endif
 
 typedef void (*shell_fprintf_fwrite)(const void *user_ctx,
-				      const char *data,
-				      size_t length);
+				     const char *data,
+				     size_t length);
 
 struct shell_fprintf_control_block {
 	size_t buffer_cnt;
@@ -44,7 +44,7 @@ struct shell_fprintf {
  * @param _autoflush	Indicator if buffer shall be automatically flush.
  * @param _fwrite	Pointer to function sending data stream.
  */
-#define SHELL_FPRINTF_DEFINE(_name, _user_ctx, _buf, _size,	\
+#define Z_SHELL_FPRINTF_DEFINE(_name, _user_ctx, _buf, _size,	\
 			    _autoflush, _fwrite)		\
 	static struct shell_fprintf_control_block		\
 				_name##_shell_fprintf_ctx = {	\
@@ -66,15 +66,15 @@ struct shell_fprintf {
  * @param fmt		Format string.
  * @param args		List of parameters to print.
  */
-void shell_fprintf_fmt(const struct shell_fprintf *sh_fprintf,
-		       char const *fmt, va_list args);
+void z_shell_fprintf_fmt(const struct shell_fprintf *sh_fprintf,
+			 char const *fmt, va_list args);
 
 /**
  * @brief function flushing data stored in io_buffer.
  *
  * @param sh_fprintf	fprintf instance
  */
-void shell_fprintf_buffer_flush(const struct shell_fprintf *sh_fprintf);
+void z_shell_fprintf_buffer_flush(const struct shell_fprintf *sh_fprintf);
 
 #ifdef __cplusplus
 }

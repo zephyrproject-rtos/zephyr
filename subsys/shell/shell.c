@@ -68,9 +68,9 @@ static int cmd_precheck(const struct shell *shell,
 			bool arg_cnt_ok)
 {
 	if (!arg_cnt_ok) {
-		shell_internal_fprintf(shell, SHELL_ERROR,
-				       "%s: wrong parameter count\n",
-				       shell->ctx->active_cmd.syntax);
+		z_shell_fprintf(shell, SHELL_ERROR,
+				"%s: wrong parameter count\n",
+				shell->ctx->active_cmd.syntax);
 
 		if (IS_ENABLED(CONFIG_SHELL_HELP_ON_WRONG_ARGUMENT_COUNT)) {
 			shell_internal_help_print(shell);
@@ -89,8 +89,8 @@ static inline void state_set(const struct shell *shell, enum shell_state state)
 	if (state == SHELL_STATE_ACTIVE) {
 		cmd_buffer_clear(shell);
 		if (flag_print_noinit_get(shell)) {
-			shell_internal_fprintf(shell, SHELL_WARNING, "%s",
-					       SHELL_MSG_BACKEND_NOT_ACTIVE);
+			z_shell_fprintf(shell, SHELL_WARNING, "%s",
+					SHELL_MSG_BACKEND_NOT_ACTIVE);
 			flag_print_noinit_set(shell, false);
 		}
 		shell_print_prompt_and_cmd(shell);
@@ -132,10 +132,9 @@ static void tab_item_print(const struct shell *shell, const char *option,
 	diff = longest_option - shell_strlen(option);
 
 	if (shell->ctx->vt100_ctx.printed_cmd++ % columns == 0U) {
-		shell_internal_fprintf(shell, SHELL_OPTION, "\n%s%s", tab,
-				       option);
+		z_shell_fprintf(shell, SHELL_OPTION, "\n%s%s", tab, option);
 	} else {
-		shell_internal_fprintf(shell, SHELL_OPTION, "%s", option);
+		z_shell_fprintf(shell, SHELL_OPTION, "%s", option);
 	}
 
 	shell_op_cursor_horiz_move(shell, diff);
@@ -515,8 +514,8 @@ static int exec_cmd(const struct shell *shell, size_t argc, const char **argv,
 			shell_internal_help_print(shell);
 			return SHELL_CMD_HELP_PRINTED;
 		} else {
-			shell_internal_fprintf(shell, SHELL_ERROR,
-					       SHELL_MSG_SPECIFY_SUBCOMMAND);
+			z_shell_fprintf(shell, SHELL_ERROR,
+					SHELL_MSG_SPECIFY_SUBCOMMAND);
 			return -ENOEXEC;
 		}
 	}
@@ -578,7 +577,7 @@ static bool wildcard_check_report(const struct shell *shell, bool found,
 		shell_op_cursor_end_move(shell);
 		shell_op_cond_next_line(shell);
 
-		shell_internal_fprintf(shell, SHELL_ERROR,
+		z_shell_fprintf(shell, SHELL_ERROR,
 			"Error: requested multiple function executions\n");
 		return false;
 	}
@@ -656,9 +655,8 @@ static int execute(const struct shell *shell)
 		if (argc == 0) {
 			return -ENOEXEC;
 		} else if ((argc == 1) && (quote != 0)) {
-			shell_internal_fprintf(shell, SHELL_ERROR,
-					"not terminated: %c\n",
-					quote);
+			z_shell_fprintf(shell, SHELL_ERROR,
+					"not terminated: %c\n", quote);
 			return -ENOEXEC;
 		}
 
@@ -674,8 +672,8 @@ static int execute(const struct shell *shell)
 				return SHELL_CMD_HELP_PRINTED;
 			}
 
-			shell_internal_fprintf(shell, SHELL_ERROR,
-					       SHELL_MSG_SPECIFY_SUBCOMMAND);
+			z_shell_fprintf(shell, SHELL_ERROR,
+					SHELL_MSG_SPECIFY_SUBCOMMAND);
 			return -ENOEXEC;
 		}
 
@@ -721,9 +719,9 @@ static int execute(const struct shell *shell)
 			if (cmd_lvl == 0 &&
 				(!shell_in_select_mode(shell) ||
 				 shell->ctx->selected_cmd->handler == NULL)) {
-				shell_internal_fprintf(shell, SHELL_ERROR,
-						       "%s%s\n", argv[0],
-						       SHELL_MSG_CMD_NOT_FOUND);
+				z_shell_fprintf(shell, SHELL_ERROR,
+						"%s%s\n", argv[0],
+						SHELL_MSG_CMD_NOT_FOUND);
 			}
 
 			/* last handler found - no need to search commands in
@@ -743,8 +741,8 @@ static int execute(const struct shell *shell)
 		 * there was more characters remaining. It means that number of
 		 * arguments exceeds the limit.
 		 */
-		shell_internal_fprintf(shell, SHELL_ERROR,
-				       "%s\n", SHELL_MSG_TOO_MANY_ARGS);
+		z_shell_fprintf(shell, SHELL_ERROR, "%s\n",
+				SHELL_MSG_TOO_MANY_ARGS);
 		return -ENOEXEC;
 	}
 
@@ -821,7 +819,7 @@ static void alt_metakeys_handle(const struct shell *shell, char data)
 		   IS_ENABLED(CONFIG_SHELL_CMDS_SELECT)) {
 		if (selected_cmd_get(shell) != NULL) {
 			shell_cmd_line_erase(shell);
-			shell_internal_fprintf(shell, SHELL_WARNING,
+			z_shell_fprintf(shell, SHELL_WARNING,
 					"Restored default root commands\n");
 			shell->ctx->selected_cmd = NULL;
 			shell_print_prompt_and_cmd(shell);
@@ -1264,8 +1262,8 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 
 		if (err != 0) {
 			k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
-			shell_internal_fprintf(shell, SHELL_ERROR,
-					       "Shell thread error: %d", err);
+			z_shell_fprintf(shell, SHELL_ERROR,
+					"Shell thread error: %d", err);
 			k_mutex_unlock(&shell->ctx->wr_mtx);
 			return;
 		}
@@ -1424,7 +1422,7 @@ void shell_vfprintf(const struct shell *shell, enum shell_vt100_color color,
 	if (!flag_cmd_ctx_get(shell)) {
 		shell_cmd_line_erase(shell);
 	}
-	shell_internal_vfprintf(shell, color, fmt, args);
+	z_shell_vfprintf(shell, color, fmt, args);
 	if (!flag_cmd_ctx_get(shell)) {
 		shell_print_prompt_and_cmd(shell);
 	}
