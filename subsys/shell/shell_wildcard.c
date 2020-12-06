@@ -103,7 +103,7 @@ static enum shell_wildcard_status commands_expand(const struct shell *shell,
 	return ret_val;
 }
 
-bool shell_wildcard_character_exist(const char *str)
+bool z_shell_has_wildcard(const char *str)
 {
 	uint16_t str_len = shell_strlen(str);
 
@@ -116,7 +116,7 @@ bool shell_wildcard_character_exist(const char *str)
 	return false;
 }
 
-void shell_wildcard_prepare(const struct shell *shell)
+void z_shell_wildcard_prepare(const struct shell *shell)
 {
 	/* Wildcard can be correctly handled under following conditions:
 	 * - wildcard command does not have a handler
@@ -156,7 +156,7 @@ void shell_wildcard_prepare(const struct shell *shell)
 }
 
 
-enum shell_wildcard_status shell_wildcard_process(const struct shell *shell,
+enum shell_wildcard_status z_shell_wildcard_process(const struct shell *shell,
 					const struct shell_static_entry *cmd,
 					const char *pattern)
 {
@@ -166,7 +166,7 @@ enum shell_wildcard_status shell_wildcard_process(const struct shell *shell,
 		return ret_val;
 	}
 
-	if (!shell_wildcard_character_exist(pattern)) {
+	if (!z_shell_has_wildcard(pattern)) {
 		return ret_val;
 	}
 
@@ -182,7 +182,7 @@ enum shell_wildcard_status shell_wildcard_process(const struct shell *shell,
 	return ret_val;
 }
 
-void shell_wildcard_finalize(const struct shell *shell)
+void z_shell_wildcard_finalize(const struct shell *shell)
 {
 	memcpy(shell->ctx->cmd_buff,
 	       shell->ctx->temp_buff,

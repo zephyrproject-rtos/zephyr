@@ -630,7 +630,7 @@ static int execute(const struct shell *shell)
 	}
 
 	if (IS_ENABLED(CONFIG_SHELL_WILDCARD)) {
-		shell_wildcard_prepare(shell);
+		z_shell_wildcard_prepare(shell);
 	}
 
 	/* Parent present means we are in select mode. */
@@ -680,8 +680,8 @@ static int execute(const struct shell *shell)
 		if (IS_ENABLED(CONFIG_SHELL_WILDCARD) && (cmd_lvl > 0)) {
 			enum shell_wildcard_status status;
 
-			status = shell_wildcard_process(shell, entry,
-							argvp[0]);
+			status = z_shell_wildcard_process(shell, entry,
+							  argvp[0]);
 			/* Wildcard character found but there is no matching
 			 * command.
 			 */
@@ -747,7 +747,7 @@ static int execute(const struct shell *shell)
 	}
 
 	if (IS_ENABLED(CONFIG_SHELL_WILDCARD) && wildcard_found) {
-		shell_wildcard_finalize(shell);
+		z_shell_wildcard_finalize(shell);
 		/* cmd_buffer has been overwritten by function finalize function
 		 * with all expanded commands. Hence shell_make_argv needs to
 		 * be called again.
