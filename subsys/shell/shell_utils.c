@@ -316,7 +316,7 @@ const struct shell_static_entry *shell_get_last_command(
 
 		if (IS_ENABLED(CONFIG_SHELL_WILDCARD)) {
 			/* ignore wildcard argument */
-			if (shell_wildcard_character_exist(argv[*match_arg])) {
+			if (z_shell_has_wildcard(argv[*match_arg])) {
 				(*match_arg)++;
 				continue;
 			}
