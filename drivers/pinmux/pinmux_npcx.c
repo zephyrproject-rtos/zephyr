@@ -19,7 +19,7 @@ struct npcx_pinctrl_config {
 
 /* Default io list which default functionality are not IOs */
 #define DT_DRV_COMPAT nuvoton_npcx_pinctrl_def
-static const struct npcx_alt def_alts[] = DT_NPCX_ALT_ITEMS_LIST(0);
+static const struct npcx_alt def_alts[] = NPCX_DT_ALT_ITEMS_LIST(0);
 
 static const struct npcx_pinctrl_config npcx_pinctrl_cfg = {
 	.base = DT_REG_ADDR(DT_NODELABEL(scfg)),

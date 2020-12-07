@@ -388,15 +388,15 @@ static int uart_npcx_init(const struct device *dev)
 	NPCX_UART_IRQ_CONFIG_FUNC_DECL(inst);	                               \
 									       \
 	static const struct npcx_alt uart_alts##inst[] =		       \
-					DT_NPCX_ALT_ITEMS_LIST(inst);	       \
+					NPCX_DT_ALT_ITEMS_LIST(inst);	       \
 									       \
 	static const struct uart_npcx_config uart_npcx_cfg_##inst = {	       \
 		.uconf = {                                                     \
 			.base = (uint8_t *)DT_INST_REG_ADDR(inst),             \
 			NPCX_UART_IRQ_CONFIG_FUNC_INIT(inst)                   \
 		},                                                             \
-		.clk_cfg = DT_NPCX_CLK_CFG_ITEM(inst),                         \
-		.uart_rx_wui = DT_NPCX_WUI_ITEM_BY_NAME(0, uart_rx),           \
+		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(inst),                         \
+		.uart_rx_wui = NPCX_DT_WUI_ITEM_BY_NAME(0, uart_rx),           \
 		.alts_size = ARRAY_SIZE(uart_alts##inst),                      \
 		.alts_list = uart_alts##inst,                                  \
 	};                                                                     \

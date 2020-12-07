@@ -273,8 +273,8 @@ int gpio_npcx_init(const struct device *dev)
 		},                                                             \
 		.base = DT_INST_REG_ADDR(inst),                                \
 		.port = inst,                                                  \
-		.wui_size = DT_NPCX_WUI_ITEMS_LEN(inst),                       \
-		.wui_maps = DT_NPCX_WUI_ITEMS_LIST(inst)                       \
+		.wui_size = NPCX_DT_WUI_ITEMS_LEN(inst),                       \
+		.wui_maps = NPCX_DT_WUI_ITEMS_LIST(inst)                       \
 	};                                                                     \
 									       \
 	static struct gpio_npcx_data gpio_npcx_data_##inst;	               \

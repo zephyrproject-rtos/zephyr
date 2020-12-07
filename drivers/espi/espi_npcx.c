@@ -113,41 +113,41 @@ struct npcx_vw_out_config {
  */
 static const struct npcx_vw_in_config vw_in_tbl[] = {
 	/* index 02h (In)  */
-	DT_NPCX_VW_IN_CONF(ESPI_VWIRE_SIGNAL_SLP_S3, vw_slp_s3),
-	DT_NPCX_VW_IN_CONF(ESPI_VWIRE_SIGNAL_SLP_S4, vw_slp_s4),
-	DT_NPCX_VW_IN_CONF(ESPI_VWIRE_SIGNAL_SLP_S5, vw_slp_s5),
+	NPCX_DT_VW_IN_CONF(ESPI_VWIRE_SIGNAL_SLP_S3, vw_slp_s3),
+	NPCX_DT_VW_IN_CONF(ESPI_VWIRE_SIGNAL_SLP_S4, vw_slp_s4),
+	NPCX_DT_VW_IN_CONF(ESPI_VWIRE_SIGNAL_SLP_S5, vw_slp_s5),
 	/* index 03h (In)  */
-	DT_NPCX_VW_IN_CONF(ESPI_VWIRE_SIGNAL_SUS_STAT, vw_sus_stat),
-	DT_NPCX_VW_IN_CONF(ESPI_VWIRE_SIGNAL_PLTRST, vw_plt_rst),
-	DT_NPCX_VW_IN_CONF(ESPI_VWIRE_SIGNAL_OOB_RST_WARN, vw_oob_rst_warn),
+	NPCX_DT_VW_IN_CONF(ESPI_VWIRE_SIGNAL_SUS_STAT, vw_sus_stat),
+	NPCX_DT_VW_IN_CONF(ESPI_VWIRE_SIGNAL_PLTRST, vw_plt_rst),
+	NPCX_DT_VW_IN_CONF(ESPI_VWIRE_SIGNAL_OOB_RST_WARN, vw_oob_rst_warn),
 	/* index 07h (In)  */
-	DT_NPCX_VW_IN_CONF(ESPI_VWIRE_SIGNAL_HOST_RST_WARN, vw_host_rst_warn),
+	NPCX_DT_VW_IN_CONF(ESPI_VWIRE_SIGNAL_HOST_RST_WARN, vw_host_rst_warn),
 	/* index 41h (In)  */
-	DT_NPCX_VW_IN_CONF(ESPI_VWIRE_SIGNAL_SUS_WARN, vw_sus_warn),
-	DT_NPCX_VW_IN_CONF(ESPI_VWIRE_SIGNAL_SUS_PWRDN_ACK, vw_sus_pwrdn_ack),
-	DT_NPCX_VW_IN_CONF(ESPI_VWIRE_SIGNAL_SLP_A, vw_slp_a),
+	NPCX_DT_VW_IN_CONF(ESPI_VWIRE_SIGNAL_SUS_WARN, vw_sus_warn),
+	NPCX_DT_VW_IN_CONF(ESPI_VWIRE_SIGNAL_SUS_PWRDN_ACK, vw_sus_pwrdn_ack),
+	NPCX_DT_VW_IN_CONF(ESPI_VWIRE_SIGNAL_SLP_A, vw_slp_a),
 	/* index 42h (In)  */
-	DT_NPCX_VW_IN_CONF(ESPI_VWIRE_SIGNAL_SLP_LAN, vw_slp_lan),
-	DT_NPCX_VW_IN_CONF(ESPI_VWIRE_SIGNAL_SLP_WLAN, vw_slp_wlan),
+	NPCX_DT_VW_IN_CONF(ESPI_VWIRE_SIGNAL_SLP_LAN, vw_slp_lan),
+	NPCX_DT_VW_IN_CONF(ESPI_VWIRE_SIGNAL_SLP_WLAN, vw_slp_wlan),
 };
 
 static const struct npcx_vw_out_config vw_out_tbl[] = {
 	/* index 04h (Out) */
-	DT_NPCX_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_OOB_RST_ACK, vw_oob_rst_ack),
-	DT_NPCX_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_WAKE, vw_wake),
-	DT_NPCX_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_PME, vw_pme),
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_OOB_RST_ACK, vw_oob_rst_ack),
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_WAKE, vw_wake),
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_PME, vw_pme),
 	/* index 05h (Out) */
-	DT_NPCX_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE, vw_slv_boot_done),
-	DT_NPCX_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_ERR_FATAL, vw_err_fatal),
-	DT_NPCX_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_ERR_NON_FATAL, vw_err_non_fatal),
-	DT_NPCX_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_BOOT_STS,
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE, vw_slv_boot_done),
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_ERR_FATAL, vw_err_fatal),
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_ERR_NON_FATAL, vw_err_non_fatal),
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SLV_BOOT_STS,
 						vw_slv_boot_sts_with_done),
 	/* index 06h (Out) */
-	DT_NPCX_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SCI, vw_sci),
-	DT_NPCX_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SMI, vw_smi),
-	DT_NPCX_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_HOST_RST_ACK, vw_host_rst_ack),
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SCI, vw_sci),
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SMI, vw_smi),
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_HOST_RST_ACK, vw_host_rst_ack),
 	/* index 40h (Out) */
-	DT_NPCX_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SUS_ACK, vw_sus_ack),
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SUS_ACK, vw_sus_ack),
 };
 
 /* Callbacks for eSPI bus reset and Virtual Wire signals. */
@@ -806,12 +806,12 @@ static const struct espi_driver_api espi_npcx_driver_api = {
 
 static struct espi_npcx_data espi_npcx_data;
 
-static const struct npcx_alt espi_alts[] = DT_NPCX_ALT_ITEMS_LIST(0);
+static const struct npcx_alt espi_alts[] = NPCX_DT_ALT_ITEMS_LIST(0);
 
 static const struct espi_npcx_config espi_npcx_config = {
 	.base = DT_INST_REG_ADDR(0),
-	.espi_rst_wui = DT_NPCX_WUI_ITEM_BY_NAME(0, espi_rst_wui),
-	.clk_cfg = DT_NPCX_CLK_CFG_ITEM(0),
+	.espi_rst_wui = NPCX_DT_WUI_ITEM_BY_NAME(0, espi_rst_wui),
+	.clk_cfg = NPCX_DT_CLK_CFG_ITEM(0),
 	.alts_size = ARRAY_SIZE(espi_alts),
 	.alts_list = espi_alts,
 };

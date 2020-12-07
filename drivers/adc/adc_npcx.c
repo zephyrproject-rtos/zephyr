@@ -307,11 +307,11 @@ static const struct adc_driver_api adc_npcx_driver_api = {
 
 static int adc_npcx_init(const struct device *dev);
 
-static const struct npcx_alt adc_alts[] = DT_NPCX_ALT_ITEMS_LIST(0);
+static const struct npcx_alt adc_alts[] = NPCX_DT_ALT_ITEMS_LIST(0);
 
 static const struct adc_npcx_config adc_npcx_cfg_0 = {
 	.base = DT_INST_REG_ADDR(0),
-	.clk_cfg = DT_NPCX_CLK_CFG_ITEM(0),
+	.clk_cfg = NPCX_DT_CLK_CFG_ITEM(0),
 	.alts_list = adc_alts,
 };
 

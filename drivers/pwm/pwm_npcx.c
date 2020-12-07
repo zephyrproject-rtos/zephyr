@@ -197,11 +197,11 @@ static int pwm_npcx_init(const struct device *dev)
 
 #define NPCX_PWM_INIT(inst)                                                    \
 	static const struct npcx_alt pwm_alts##inst[] =			       \
-					DT_NPCX_ALT_ITEMS_LIST(inst);          \
+					NPCX_DT_ALT_ITEMS_LIST(inst);          \
 									       \
 	static const struct pwm_npcx_config pwm_npcx_cfg_##inst = {            \
 		.base = DT_INST_REG_ADDR(inst),                                \
-		.clk_cfg = DT_NPCX_CLK_CFG_ITEM(inst),                         \
+		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(inst),                         \
 		.alts_size = ARRAY_SIZE(pwm_alts##inst),                       \
 		.alts_list = pwm_alts##inst,                                   \
 	};                                                                     \

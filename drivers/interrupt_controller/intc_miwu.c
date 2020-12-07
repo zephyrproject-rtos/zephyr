@@ -338,8 +338,8 @@ int npcx_miwu_manage_dev_callback(struct miwu_dev_callback *cb, bool set)
 		}                                                              \
 									       \
 		/* Config IRQ and MWIU group directly */                       \
-		DT_FOREACH_CHILD(DT_NODE_FROM_MIWU_MAP(inst),                  \
-			DT_MIWU_IRQ_CONNECT_IMPL_CHILD_FUNC)                   \
+		DT_FOREACH_CHILD(NPCX_DT_NODE_FROM_MIWU_MAP(inst),             \
+			NPCX_DT_MIWU_IRQ_CONNECT_IMPL_CHILD_FUNC)              \
 		return 0;                                                      \
 	}                                                                      \
 
