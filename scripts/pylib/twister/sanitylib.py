@@ -77,8 +77,8 @@ canonical_zephyr_base = os.path.realpath(ZEPHYR_BASE)
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
 
-from sanity_chk import scl
-from sanity_chk import expr_parser
+import scl
+import expr_parser
 
 logger = logging.getLogger('sanitycheck')
 logger.setLevel(logging.DEBUG)
@@ -364,7 +364,7 @@ class ExecutionError(SanityCheckException):
 class HarnessImporter:
 
     def __init__(self, name):
-        sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/sanity_chk"))
+        sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
         module = __import__("harness")
         if name:
             my_class = getattr(module, name)
