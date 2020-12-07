@@ -12,8 +12,8 @@ import sys
 import pytest
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/sanity_chk"))
-from sanitylib import TestInstance, BuildError, TestCase, SanityCheckException
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
+from twisterlib import TestInstance, BuildError, TestCase, SanityCheckException
 
 
 TESTDATA_1 = [
@@ -32,7 +32,7 @@ def test_check_build_or_run(class_testsuite, monkeypatch, all_testcases_dict, pl
     Sceanrio 2: Test if build_only is enabled when the OS is Windows"""
 
     class_testsuite.testcases = all_testcases_dict
-    testcase = class_testsuite.testcases.get('scripts/tests/sanitycheck/test_data/testcases/tests/test_a/test_a.check_1')
+    testcase = class_testsuite.testcases.get('scripts/tests/twister/test_data/testcases/tests/test_a/test_a.check_1')
 
     class_testsuite.platforms = platforms_list
     platform = class_testsuite.get_platform("demo_board_2")
@@ -67,7 +67,7 @@ def test_create_overlay(class_testsuite, all_testcases_dict, platforms_list, ena
     """Test correct content is written to testcase_extra.conf based on if conditions
     TO DO: Add extra_configs to the input list"""
     class_testsuite.testcases = all_testcases_dict
-    testcase = class_testsuite.testcases.get('scripts/tests/sanitycheck/test_data/testcases/samples/test_app/sample_test.app')
+    testcase = class_testsuite.testcases.get('scripts/tests/twister/test_data/testcases/samples/test_app/sample_test.app')
     class_testsuite.platforms = platforms_list
     platform = class_testsuite.get_platform("demo_board_2")
 
@@ -78,7 +78,7 @@ def test_create_overlay(class_testsuite, all_testcases_dict, platforms_list, ena
 def test_calculate_sizes(class_testsuite, all_testcases_dict, platforms_list):
     """ Test Calculate sizes method for zephyr elf"""
     class_testsuite.testcases = all_testcases_dict
-    testcase = class_testsuite.testcases.get('scripts/tests/sanitycheck/test_data/testcases/samples/test_app/sample_test.app')
+    testcase = class_testsuite.testcases.get('scripts/tests/twister/test_data/testcases/samples/test_app/sample_test.app')
     class_testsuite.platforms = platforms_list
     platform = class_testsuite.get_platform("demo_board_2")
     testinstance = TestInstance(testcase, platform, class_testsuite.outdir)
@@ -87,9 +87,9 @@ def test_calculate_sizes(class_testsuite, all_testcases_dict, platforms_list):
         assert testinstance.calculate_sizes() == "Missing/multiple output ELF binary"
 
 TESTDATA_3 = [
-    (ZEPHYR_BASE + '/scripts/tests/sanitycheck/test_data/testcases', ZEPHYR_BASE, '/scripts/tests/sanitycheck/test_data/testcases/tests/test_a/test_a.check_1', '/scripts/tests/sanitycheck/test_data/testcases/tests/test_a/test_a.check_1'),
+    (ZEPHYR_BASE + '/scripts/tests/twister/test_data/testcases', ZEPHYR_BASE, '/scripts/tests/twister/test_data/testcases/tests/test_a/test_a.check_1', '/scripts/tests/twister/test_data/testcases/tests/test_a/test_a.check_1'),
     (ZEPHYR_BASE, '.', 'test_a.check_1', 'test_a.check_1'),
-    (ZEPHYR_BASE, '/scripts/tests/sanitycheck/test_data/testcases/test_b', 'test_b.check_1', '/scripts/tests/sanitycheck/test_data/testcases/test_b/test_b.check_1'),
+    (ZEPHYR_BASE, '/scripts/tests/twister/test_data/testcases/test_b', 'test_b.check_1', '/scripts/tests/twister/test_data/testcases/test_b/test_b.check_1'),
     (os.path.join(ZEPHYR_BASE, '/scripts/tests'), '.', 'test_b.check_1', 'test_b.check_1'),
     (os.path.join(ZEPHYR_BASE, '/scripts/tests'), '.', '.', '.'),
     (ZEPHYR_BASE, '.', 'test_a.check_1.check_2', 'test_a.check_1.check_2'),
@@ -122,7 +122,7 @@ TESTDATA_5 = [
 def test_scan_file(test_data, test_file, expected_warnings, expected_subcases):
     '''Testing scan_file method with different ztest files for warnings and results'''
 
-    testcase = TestCase("/scripts/tests/sanitycheck/test_data/testcases/tests", ".", "test_a.check_1")
+    testcase = TestCase("/scripts/tests/twister/test_data/testcases/tests", ".", "test_a.check_1")
 
     results, warnings = testcase.scan_file(os.path.join(test_data, test_file))
     assert sorted(results) == sorted(expected_subcases)
@@ -137,7 +137,7 @@ TESTDATA_6 = [
 @pytest.mark.parametrize("test_path, expected_subcases", TESTDATA_6)
 def test_subcases(test_data, test_path, expected_subcases):
     '''Testing scan path and parse subcases methods for expected subcases'''
-    testcase = TestCase("/scripts/tests/sanitycheck/test_data/testcases/tests", ".", "test_a.check_1")
+    testcase = TestCase("/scripts/tests/twister/test_data/testcases/tests", ".", "test_a.check_1")
 
     subcases = testcase.scan_path(os.path.join(test_data, test_path))
     assert sorted(subcases) == sorted(expected_subcases)

@@ -17,7 +17,7 @@ pip install -r $ZEPHYR_BASE/scripts/requirements-build-test.txt
 The testcases can be executed from the root directory using
 
 ```
-pytest $ZEPHYR_BASE/scripts/tests/sanitycheck
+pytest $ZEPHYR_BASE/scripts/tests/twister
 ```
 
 ## Sanitycheck Coverage
@@ -25,33 +25,33 @@ pytest $ZEPHYR_BASE/scripts/tests/sanitycheck
 The coverage for all the tests can be run using the command below. This will collect all the tests available.
 
 ```bash
-coverage run -m pytest $ZEPHYR_BASE/scripts/tests/sanitycheck/
+coverage run -m pytest $ZEPHYR_BASE/scripts/tests/twister/
 ```
 
-Then we can generate the coverage report for just sanitylib script using
+Then we can generate the coverage report for just twister script using
 
 ```bash
-coverage report -m $ZEPHYR_BASE/scripts/sanity_chk/sanitylib.py
+coverage report -m $ZEPHYR_BASE/scripts/pylib/twister/twisterlib.py
 ```
 
-To generate the coverage report for sanitycheck script use below command
+To generate the coverage report for twister script use below command
 
 ```bash
-coverage report -m $ZEPHYR_BASE/scripts/sanitycheck
+coverage report -m $ZEPHYR_BASE/scripts/twister
 ```
 
-The html coverage report for sanitycheck can be generated using
+The html coverage report for twister can be generated using
 
 ```bash
-coverage html sanitycheck
+coverage html twister
 ```
 
 If needed,the full coverage html report can be generated in every run of "pytest" in the tests directory using configuration file (setup.cfg).
 
 ## Organization of tests
 
-- conftest.py: Contains common fixtures for use in testing the sanitycheck tool.
-- test_sanitycheck.py : Contains basic testcases for environment variables, verifying testcase & platform schema's.
-- test_testsuite_class.py : Contains testcases for Testsuite class (except reporting functionality) in sanitylib.py.
+- conftest.py: Contains common fixtures for use in testing the twister tool.
+- test_twister.py : Contains basic testcases for environment variables, verifying testcase & platform schema's.
+- test_testsuite_class.py : Contains testcases for Testsuite class (except reporting functionality) in twisterlib.py.
 - test_testinstance.py : Contains testcases for Testinstance and Testcase class.
-- test_reporting_testsuite.py : Contains testcases for reporting fucntionality of Testsuite class of sanitycheck.
+- test_reporting_testsuite.py : Contains testcases for reporting fucntionality of Testsuite class of twister.

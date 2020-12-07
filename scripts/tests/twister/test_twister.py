@@ -11,10 +11,10 @@ import sys
 import pytest
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/sanity_chk"))
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
 import scl
-from sanitylib import SanityConfigParser
+from twisterlib import SanityConfigParser
 
 def test_yamlload():
     """ Test to check if loading the non-existent files raises the errors """
@@ -29,7 +29,7 @@ def test_yamlload():
 def test_correct_schema(filename, schema, test_data):
     """ Test to validate the testcase schema"""
     filename = test_data + filename
-    schema = scl.yaml_load(ZEPHYR_BASE +'/scripts/sanity_chk/' + schema)
+    schema = scl.yaml_load(ZEPHYR_BASE +'/scripts/schemas/twister//' + schema)
     data = SanityConfigParser(filename, schema)
     data.load()
     assert data
@@ -41,7 +41,7 @@ def test_correct_schema(filename, schema, test_data):
 def test_incorrect_schema(filename, schema, test_data):
     """ Test to validate the exception is raised for incorrect testcase schema"""
     filename = test_data + filename
-    schema = scl.yaml_load(ZEPHYR_BASE +'/scripts/sanity_chk/' + schema)
+    schema = scl.yaml_load(ZEPHYR_BASE +'/scripts/schemas/twister//' + schema)
     with pytest.raises(Exception) as exception:
         scl.yaml_load_verify(filename, schema)
         assert str(exception.value) == "Schema validation failed"
