@@ -35,3 +35,4 @@ User and Developer Guides
    optimizations/index
    zephyr_cmake_package.rst
    thread_local_storage.rst
+   logging/index
