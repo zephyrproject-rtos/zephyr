@@ -861,7 +861,7 @@ function(zephyr_check_compiler_flag lang option check)
     # This is racy. As often with race conditions, this one can easily be
     # made worse and demonstrated with a simple delay:
     #    execute_process(COMMAND "sleep" "5")
-    # Delete the cache, add the sleep above and run sanitycheck with a
+    # Delete the cache, add the sleep above and run twister with a
     # large number of JOBS. Once it's done look at the log.txt file
     # below and you will see that concurrent cmake processes created the
     # same files multiple times.
