@@ -66,6 +66,7 @@ int lll_clock_wait(void)
 {
 	struct onoff_manager *mgr;
 	static bool done;
+	int err;
 
 	if (done) {
 		return 0;
@@ -73,7 +74,17 @@ int lll_clock_wait(void)
 	done = true;
 
 	mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_LF);
-	return blocking_on(mgr, LFCLOCK_TIMEOUT_MS);
+	err = blocking_on(mgr, LFCLOCK_TIMEOUT_MS);
+	if (err) {
+		return err;
+	}
+
+	err = onoff_release(mgr);
+	if (err != ONOFF_STATE_ON) {
+		return -EIO;
+	}
+
+	return 0;
 }
 
 int lll_hfclock_on(void)
