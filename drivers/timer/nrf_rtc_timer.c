@@ -141,8 +141,9 @@ int z_nrf_rtc_timer_get_ticks(k_timeout_t t)
 
 	/* absolute timeout */
 	result = abs_ticks - curr_tick;
+
 	if ((result > COUNTER_HALF_SPAN) ||
-		(result < -COUNTER_HALF_SPAN)) {
+	    (result < -(int64_t)COUNTER_HALF_SPAN)) {
 		return -EINVAL;
 	}
 
