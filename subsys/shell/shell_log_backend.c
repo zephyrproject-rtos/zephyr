@@ -274,9 +274,9 @@ static void panic(const struct log_backend *const backend)
 							SHELL_LOG_BACKEND_PANIC;
 
 		/* Move to the start of next line. */
-		shell_multiline_data_calc(&shell->ctx->vt100_ctx.cons,
-						  shell->ctx->cmd_buff_pos,
-						  shell->ctx->cmd_buff_len);
+		z_shell_multiline_data_calc(&shell->ctx->vt100_ctx.cons,
+					    shell->ctx->cmd_buff_pos,
+					    shell->ctx->cmd_buff_len);
 		z_shell_op_cursor_vert_move(shell, -1);
 		z_shell_op_cursor_horiz_move(shell,
 					   -shell->ctx->vt100_ctx.cons.cur_x);
