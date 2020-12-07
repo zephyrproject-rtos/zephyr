@@ -94,6 +94,8 @@ The Zephyr nucleo_g071rb board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | reset and clock control             |
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | independent watchdog                |
@@ -119,6 +121,8 @@ Default Zephyr Peripheral Mapping:
 
 - UART_1 TX/RX : PC4/PC5
 - UART_2 TX/RX : PA2/PA3 (ST-Link Virtual Port Com)
+- I2C1 SCL/SDA : PB8/PB9 (Arduino I2C)
+- I2C2 SCL/SDA : PA11/PA12
 - USER_PB   : PC13
 - LD4       : PA5
 - PWM       : PA6
