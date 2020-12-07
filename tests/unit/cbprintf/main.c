@@ -718,6 +718,87 @@ static void test_fp_value(void)
 	} else {
 		PRF_CHECK("%a 5.562685e-309", rc);
 	}
+
+	/*
+	 * The following tests are tailored to exercise edge cases in
+	 * lib/os/cbprintf_complete.c:encode_float() and related functions.
+	 */
+
+	dv = 0x1.0p-3;
+	rc = TEST_PRF("%.16g", dv);
+	PRF_CHECK("0.125", rc);
+
+	dv = 0x1.0p-4;
+	rc = TEST_PRF("%.16g", dv);
+	PRF_CHECK("0.0625", rc);
+
+	dv = 0x1.8p-4;
+	rc = TEST_PRF("%.16g", dv);
+	PRF_CHECK("0.09375", rc);
+
+	dv = 0x1.cp-4;
+	rc = TEST_PRF("%.16g", dv);
+	PRF_CHECK("0.109375", rc);
+
+	dv = 0x1.9999999ffffffp-8;
+	rc = TEST_PRF("%.16g", dv);
+	PRF_CHECK("0.006250000005820765", rc);
+
+	dv = 0x1.0p+0;
+	rc = TEST_PRF("%.16g", dv);
+	PRF_CHECK("1", rc);
+
+	dv = 0x1.fffffffffffffp-1022;
+	rc = TEST_PRF("%.16g", dv);
+	PRF_CHECK("4.450147717014402e-308", rc);
+
+	dv = 0x1.ffffffffffffep-1022;
+	rc = TEST_PRF("%.16g", dv);
+	PRF_CHECK("4.450147717014402e-308", rc);
+
+	dv = 0x1.ffffffffffffdp-1022;
+	rc = TEST_PRF("%.16g", dv);
+	PRF_CHECK("4.450147717014401e-308", rc);
+
+	dv = 0x1.0000000000001p-1022;
+	rc = TEST_PRF("%.16g", dv);
+	PRF_CHECK("2.225073858507202e-308", rc);
+
+	dv = 0x1p-1022;
+	rc = TEST_PRF("%.16g", dv);
+	PRF_CHECK("2.225073858507201e-308", rc);
+
+	dv = 0x0.fffffffffffffp-1022;
+	rc = TEST_PRF("%.16g", dv);
+	PRF_CHECK("2.225073858507201e-308", rc);
+
+	dv = 0x0.0000000000001p-1022;
+	rc = TEST_PRF("%.16g", dv);
+	PRF_CHECK("4.940656458412465e-324", rc);
+
+	dv = 0x1.1fa182c40c60dp-1019;
+	rc = TEST_PRF("%.16g", dv);
+	PRF_CHECK("2e-307", rc);
+
+	dv = 0x1.fffffffffffffp+1023;
+	rc = TEST_PRF("%.16g", dv);
+	PRF_CHECK("1.797693134862316e+308", rc);
+
+	dv = 0x1.ffffffffffffep+1023;
+	rc = TEST_PRF("%.16g", dv);
+	PRF_CHECK("1.797693134862316e+308", rc);
+
+	dv = 0x1.ffffffffffffdp+1023;
+	rc = TEST_PRF("%.16g", dv);
+	PRF_CHECK("1.797693134862315e+308", rc);
+
+	dv = 0x1.0000000000001p+1023;
+	rc = TEST_PRF("%.16g", dv);
+	PRF_CHECK("8.988465674311582e+307", rc);
+
+	dv = 0x1p+1023;
+	rc = TEST_PRF("%.16g", dv);
+	PRF_CHECK("8.98846567431158e+307", rc);
 }
 
 static void test_fp_length(void)
