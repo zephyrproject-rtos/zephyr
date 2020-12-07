@@ -8,11 +8,6 @@
 #include <string.h>
 #include <sys/math_extras.h>
 
-void z_mem_pool_free(struct k_mem_block *block)
-{
-	z_mem_pool_free_id(&block->id);
-}
-
 void *z_heap_malloc(struct k_heap *heap, size_t size)
 {
 	/*
@@ -34,12 +29,6 @@ void *z_heap_malloc(struct k_heap *heap, size_t size)
 
 	/* return address of the user area part of the block to the caller */
 	return (char *)&blk[1];
-
-}
-
-void *z_mem_pool_malloc(struct k_mem_pool *pool, size_t size)
-{
-	return z_heap_malloc(pool->heap, size);
 }
 
 void k_free(void *ptr)
