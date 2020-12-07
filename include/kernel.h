@@ -4049,19 +4049,6 @@ extern int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg,
  */
 extern void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer);
 
-extern int z_mbox_data_block_get(struct k_mbox_msg *rx_msg,
-				 struct k_mem_pool *pool,
-				 struct k_mem_block *block,
-				 k_timeout_t timeout);
-__deprecated
-static inline int k_mbox_data_block_get(struct k_mbox_msg *rx_msg,
-					struct k_mem_pool *pool,
-					struct k_mem_block *block,
-					k_timeout_t timeout)
-{
-	return z_mbox_data_block_get(rx_msg, pool, block, timeout);
-}
-
 /** @} */
 
 /**
@@ -4519,40 +4506,11 @@ void k_heap_free(struct k_heap *h, void *mem);
 		 },						\
 	}
 
-#define K_MEM_POOL_DEFINE(name, minsz, maxsz, nmax, align) \
-	__DEPRECATED_MACRO \
-	Z_MEM_POOL_DEFINE(name, minsz, maxsz, nmax, align)
-
 extern int z_mem_pool_alloc(struct k_mem_pool *pool, struct k_mem_block *block,
 			    size_t size, k_timeout_t timeout);
-__deprecated
-static inline int k_mem_pool_alloc(struct k_mem_pool *pool,
-				   struct k_mem_block *block,
-				   size_t size, k_timeout_t timeout)
-{
-	return z_mem_pool_alloc(pool, block, size, timeout);
-}
-
 extern void *z_mem_pool_malloc(struct k_mem_pool *pool, size_t size);
-__deprecated
-static inline void *k_mem_pool_malloc(struct k_mem_pool *pool, size_t size)
-{
-	return z_mem_pool_malloc(pool, size);
-}
-
 extern void z_mem_pool_free(struct k_mem_block *block);
-__deprecated
-static inline void k_mem_pool_free(struct k_mem_block *block)
-{
-	return z_mem_pool_free(block);
-}
-
 extern void z_mem_pool_free_id(struct k_mem_block_id *id);
-__deprecated
-static inline void k_mem_pool_free_id(struct k_mem_block_id *id)
-{
-	return z_mem_pool_free_id(id);
-}
 
 /**
  * @}
