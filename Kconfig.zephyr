@@ -4,12 +4,6 @@
 # Copyright (c) 2016 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-menu "Modules"
-
-source "$(KCONFIG_BINARY_DIR)/Kconfig.modules"
-source "modules/Kconfig"
-
-endmenu
 
 # Include Kconfig.defconfig files first so that they can override defaults and
 # other symbol/choice properties by adding extra symbol/choice definitions.
@@ -23,6 +17,13 @@ endmenu
 source "$(KCONFIG_BINARY_DIR)/Kconfig.shield.defconfig"
 source "$(BOARD_DIR)/Kconfig.defconfig"
 source "$(KCONFIG_BINARY_DIR)/Kconfig.soc.defconfig"
+
+menu "Modules"
+
+source "$(KCONFIG_BINARY_DIR)/Kconfig.modules"
+source "modules/Kconfig"
+
+endmenu
 
 source "boards/Kconfig"
 source "soc/Kconfig"
