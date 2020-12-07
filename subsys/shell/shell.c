@@ -280,7 +280,7 @@ static bool tab_prepare(const struct shell *shell,
 
 	/* root command completion */
 	if ((*argc == 0) || ((space == 0) && (*argc == 1))) {
-		*complete_arg_idx = SHELL_CMD_ROOT_LVL;
+		*complete_arg_idx = Z_SHELL_CMD_ROOT_LVL;
 		*cmd = selected_cmd_get(shell);
 		return true;
 	}
