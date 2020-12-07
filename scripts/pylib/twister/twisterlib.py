@@ -80,7 +80,7 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
 import scl
 import expr_parser
 
-logger = logging.getLogger('sanitycheck')
+logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
 
 
@@ -1078,7 +1078,7 @@ class QEMUHandler(Handler):
             except subprocess.TimeoutExpired:
                 # sometimes QEMU can't handle SIGTERM signal correctly
                 # in that case kill -9 QEMU process directly and leave
-                # sanitycheck to judge testing result by console output
+                # twister to judge testing result by console output
 
                 is_timeout = True
                 if os.path.exists(self.pid_fn):
@@ -1476,7 +1476,7 @@ class Platform:
         """
 
         self.name = ""
-        self.sanitycheck = True
+        self.twister = True
         # if no RAM size is specified by the board, take a default of 128K
         self.ram = 128
 
@@ -1501,7 +1501,7 @@ class Platform:
         data = scp.data
 
         self.name = data['identifier']
-        self.sanitycheck = data.get("sanitycheck", True)
+        self.twister = data.get("twister", True)
         # if no RAM size is specified by the board, take a default of 128K
         self.ram = data.get("ram", 128)
         testing = data.get("testing", {})
@@ -1814,11 +1814,11 @@ class TestInstance(DisablePyTestCollectionMixin):
         return testcase_runnable and target_ready
 
     def create_overlay(self, platform, enable_asan=False, enable_ubsan=False, enable_coverage=False, coverage_platform=[]):
-        # Create this in a "sanitycheck/" subdirectory otherwise this
+        # Create this in a "twister/" subdirectory otherwise this
         # will pass this overlay to kconfig.py *twice* and kconfig.cmake
         # will silently give that second time precedence over any
         # --extra-args=CONFIG_*
-        subdir = os.path.join(self.build_dir, "sanitycheck")
+        subdir = os.path.join(self.build_dir, "twister")
 
         content = ""
 
@@ -2039,7 +2039,7 @@ class FilterBuilder(CMake):
     def __init__(self, testcase, platform, source_dir, build_dir):
         super().__init__(testcase, platform, source_dir, build_dir)
 
-        self.log = "config-sanitycheck.log"
+        self.log = "config-twister.log"
 
     def parse_generated(self):
 
@@ -2455,9 +2455,9 @@ class ProjectBuilder(FilterBuilder):
         overlays = extract_overlays(args)
 
         if os.path.exists(os.path.join(instance.build_dir,
-                                       "sanitycheck", "testcase_extra.conf")):
+                                       "twister", "testcase_extra.conf")):
             overlays.append(os.path.join(instance.build_dir,
-                                         "sanitycheck", "testcase_extra.conf"))
+                                         "twister", "testcase_extra.conf"))
 
         if overlays:
             args.append("OVERLAY_CONFIG=\"%s\"" % (" ".join(overlays)))
@@ -2739,7 +2739,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         if name:
             report_name = name
         else:
-            report_name = "sanitycheck"
+            report_name = "twister"
 
         if report_dir:
             os.makedirs(report_dir, exist_ok=True)
@@ -2782,7 +2782,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                     if platform.name in [p.name for p in self.platforms]:
                         logger.error(f"Duplicate platform {platform.name} in {file}")
                         raise Exception(f"Duplicate platform identifier {platform.name} found")
-                    if platform.sanitycheck:
+                    if platform.twister:
                         self.platforms.append(platform)
                         if platform.default:
                             self.default_platforms.append(platform.name)
@@ -3095,7 +3095,7 @@ class TestSuite(DisablePyTestCollectionMixin):
             if not instance_list:
                 continue
 
-            # if sanitycheck was launched with no platform options at all, we
+            # if twister was launched with no platform options at all, we
             # take all default platforms
             if default_platforms and not tc.build_on_all:
                 if tc.platform_allow:
