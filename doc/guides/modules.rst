@@ -330,7 +330,7 @@ Integration tests:
 * should verify basic usage of the module (configuration,
   functional APIs, etc.) that is integrated with Zephyr.
 * shall be built and executed (for example in QEMU) as part of
-  sanitycheck runs in pull requests that introduce changes in module
+  twister runs in pull requests that introduce changes in module
   repositories.
 
   .. note::
@@ -540,10 +540,10 @@ Sanitycheck
 ===========
 
 To execute both tests and samples available in modules, the Zephyr test runner
-(sanitycheck) should be pointed to the directories containing those samples and
+(twister) should be pointed to the directories containing those samples and
 tests. This can be done by specifying the path to both samples and tests in the
 :file:`zephyr/module.yml` file.  Additionally, if a module defines out of tree
-boards, the module file can point sanitycheck to the path where those files
+boards, the module file can point twister to the path where those files
 are maintained in the module. For example:
 
 

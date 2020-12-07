@@ -241,7 +241,7 @@ Updating or restoring ST-Link firmware
 
 ST-Link firmware can be updated using `STM32CubeProgrammer Tool`_.
 It is usually useful when facing flashing issues, for instance when using
-sanitycheck's device-testing option.
+twister's device-testing option.
 
 Once installed, you can update attached board ST-Link firmware with the
 following command
@@ -250,9 +250,9 @@ following command
 
      s java -jar ~/STMicroelectronics/STM32Cube/STM32CubeProgrammer/Drivers/FirmwareUpgrade/STLinkUpgrade.jar -sn <board_uid>
 
-Where board_uid can be obtained using sanitycheck's generate-hardware-map
-option. For more information about sanitycheck and available options, see
-:ref:`sanitycheck_script`.
+Where board_uid can be obtained using twister's generate-hardware-map
+option. For more information about twister and available options, see
+:ref:`twister_script`.
 
 .. _jlink-external-debug-probe:
 
