@@ -204,7 +204,7 @@ try:
 except ImportError:
     print("Install tabulate python module with pip to use --device-testing option.")
 
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/sanity_chk"))
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
 from sanitylib import HardwareMap, TestSuite, SizeCalculator, CoverageTool, ExecutionCounter
 
@@ -534,7 +534,7 @@ Artificially long but functional example:
              "'tests/' directories at the base of the Zephyr tree.")
 
     board_root_list = ["%s/boards" % ZEPHYR_BASE,
-                       "%s/scripts/sanity_chk/boards" % ZEPHYR_BASE]
+                       "%s/scripts/pylib/twister/boards" % ZEPHYR_BASE]
 
     parser.add_argument(
         "-A", "--board-root", action="append", default=board_root_list,
