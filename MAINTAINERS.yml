@@ -170,6 +170,8 @@ Bluetooth controller:
         - thoh-ot
     files:
         - subsys/bluetooth/controller/
+    labels:
+        - "area: Bluetooth Controller"
 
 Bluetooth Mesh:
     status: maintained
@@ -214,6 +216,8 @@ CMSIS API layer:
          - nashif
     files:
          - lib/cmsis_rtos_v*/
+    labels:
+        - "area: Portability"
 
 Common arch:
     status: maintained
@@ -253,6 +257,8 @@ DFU:
         - include/dfu/
         - subsys/dfu/
         - tests/subsys/dfu/
+    labels:
+        - "area: DFU"
 
 Devicetree:
     status: maintained
@@ -324,6 +330,8 @@ Documentation:
     files:
         - drivers/audio/
         - include/audio/
+    labels:
+        - "area: Audio"
 
 "Drivers: CAN":
     status: maintained
@@ -427,6 +435,8 @@ Documentation:
         - include/drivers/entropy.h
         - samples/drivers/entropy/
         - tests/drivers/entropy/
+    labels:
+        - "area: Crypto / RNG"
 
 "Drivers: ESPI":
     status: orphaned
@@ -435,7 +445,7 @@ Documentation:
         - include/drivers/espi.h
         - samples/drivers/espi/
     labels:
-        - "eSPI"
+        - "area: eSPI"
 
 "Drivers: Ethernet":
     status: maintained
@@ -520,6 +530,8 @@ Documentation:
         - jukkar
     files:
         - drivers/ieee802154/
+    labels:
+        - "area: IEEE 802.15.4"
 
 "Drivers: Interrupt controllers":
     status: orphaned
@@ -528,6 +540,8 @@ Documentation:
         - dts/bindings/interrupt-controller/
         - include/drivers/interrupt_controller/
         - include/dt-bindings/interrupt-controller/
+    labels:
+        - "area: Interrupt Controller"
 
 "Drivers: IPM":
     status: maintained
@@ -537,6 +551,8 @@ Documentation:
         - drivers/ipm/
     description: >-
         Inter-processor mailboxes
+    labels:
+        - "area: IPM"
 
 "Drivers: kscan":
     status: orphaned
@@ -545,6 +561,8 @@ Documentation:
         - include/drivers/kscan.h
         - samples/drivers/espi/
         - tests/drivers/kscan/
+    labels:
+        - "area: Kscan"
 
 "Drivers: LED":
     status: maintained
@@ -566,6 +584,8 @@ Documentation:
         - drivers/led_strip/
         - dts/bindings/led_strip/
         - include/drivers/led_strip.h
+    labels:
+        - "area: LED"
 
 "Drivers: lora":
     status: maintained
@@ -575,6 +595,8 @@ Documentation:
         - drivers/lora/
         - include/drivers/lora.h
         - samples/drivers/lora/
+    labels:
+        - "area: LoRa"
 
 "Drivers: Modem":
     status: orphaned
@@ -583,10 +605,12 @@ Documentation:
     labels:
         - "area: Modem"
 
-"Drivers: Neural networking":
+"Drivers: Neural Networks":
     status: orphaned
     files:
         - drivers/neural_net/
+    labels:
+        - "area: Neural Networks"
 
 "Drivers: PCI":
     status: maintained
@@ -600,12 +624,14 @@ Documentation:
     labels:
         - "area: PCI"
 
-"Drivers: peci":
+"Drivers: PECI":
     status: orphaned
     files:
         - drivers/peci/
         - include/drivers/peci.h
         - samples/drivers/peci/
+    labels:
+        - "area: PECI"
 
 "Drivers: Pinmux":
     status: maintained
@@ -625,6 +651,8 @@ Documentation:
     files:
         - drivers/ptp_clock/
         - include/ptp_clock.h
+    labels:
+        - "area: Clocks"
 
 "Drivers: PWM":
     status: maintained
@@ -728,6 +756,9 @@ Documentation:
     description: >-
         Inventek es-WiFi
 
+    labels:
+        - "area: Wifi"
+
 Filesystems:
     status: maintained
     maintainers:
@@ -753,6 +784,9 @@ JSON Web Token:
         - mrfuchs
     files:
         - subsys/jwt/
+
+    labels:
+        - "area: JSON"
 
 Kconfig:
     status: orphaned
@@ -789,6 +823,9 @@ Little FS:
         - tests/subsys/fs/littlefs/
     description: >-
        Little FS
+
+    labels:
+        - "area: File System"
 
 Logging:
     status: maintained
@@ -903,6 +940,9 @@ Networking:
         - subsys/net/buf.c
         - tests/net/buf/
 
+    labels:
+        - "area: Networking"
+
 "Networking: CoAP":
     status: maintained
     maintainers:
@@ -913,7 +953,8 @@ Networking:
         - subsys/net/lib/coap/
         - samples/net/sockets/coap_*/
         - tests/net/lib/coap/
-
+    labels:
+        - "area: Networking"
 "Networking: LWM2M":
     status: maintained
     maintainers:
@@ -936,6 +977,8 @@ Networking:
         - subsys/net/lib/mqtt/
         - tests/net/lib/mqtt_packet/
         - samples/net/mqtt_publisher/
+    labels:
+        - "area: Networking"
 
 NIOS-2 arch:
     status: maintained
@@ -1140,6 +1183,10 @@ VFS:
         - tests/subsys/fs/fat_fs_api/
     description: >-
        VFS implementation
+
+    labels:
+        - "area: File System"
+
 
 West:
     status: maintained
