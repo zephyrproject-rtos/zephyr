@@ -64,8 +64,10 @@ static void fxas21002_convert(struct sensor_value *val, int16_t raw,
 {
 	int32_t micro_rad;
 
-	/* Convert units to micro radians per second.*/
-	micro_rad = (raw * 62500) >> range;
+	/* Convert units to micro radians per second.
+	 * 62500 micro dps * 2*pi/360 = 1091 micro radians per second
+	 */
+	micro_rad = (raw * 1091) >> range;
 
 	val->val1 = micro_rad / 1000000;
 	val->val2 = micro_rad % 1000000;
