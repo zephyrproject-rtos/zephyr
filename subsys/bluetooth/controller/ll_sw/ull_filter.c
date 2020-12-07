@@ -974,7 +974,7 @@ static void rpa_adv_refresh(struct ll_adv_set *adv)
 	prev = lll_adv_data_peek(&adv->lll);
 	pdu = lll_adv_data_alloc(&adv->lll, &idx);
 
-	memcpy(pdu, prev, PDU_AC_LL_HEADER_SIZE + pdu->len);
+	memcpy(pdu, prev, PDU_AC_LL_HEADER_SIZE + prev->len);
 	ull_adv_pdu_update_addrs(adv, pdu);
 
 	lll_adv_data_enqueue(&adv->lll, idx);
