@@ -125,11 +125,11 @@ static void tab_item_print(const struct shell *shell, const char *option,
 		return;
 	}
 
-	longest_option += shell_strlen(tab);
+	longest_option += z_shell_strlen(tab);
 
 	columns = (shell->ctx->vt100_ctx.cons.terminal_wid
-			- shell_strlen(tab)) / longest_option;
-	diff = longest_option - shell_strlen(option);
+			- z_shell_strlen(tab)) / longest_option;
+	diff = longest_option - z_shell_strlen(option);
 
 	if (shell->ctx->vt100_ctx.printed_cmd++ % columns == 0U) {
 		z_shell_fprintf(shell, SHELL_OPTION, "\n%s%s", tab, option);
@@ -196,7 +196,7 @@ static void history_handle(const struct shell *shell, bool up)
 	/* Backup command if history is entered */
 	if (!z_shell_history_active(shell->history)) {
 		if (up) {
-			uint16_t cmd_len = shell_strlen(shell->ctx->cmd_buff);
+			uint16_t cmd_len = z_shell_strlen(shell->ctx->cmd_buff);
 
 			if (cmd_len) {
 				strcpy(shell->ctx->temp_buff,
@@ -217,7 +217,7 @@ static void history_handle(const struct shell *shell, bool up)
 	/* On exiting history mode print backed up command. */
 	if (!history_mode) {
 		strcpy(shell->ctx->cmd_buff, shell->ctx->temp_buff);
-		len = shell_strlen(shell->ctx->cmd_buff);
+		len = z_shell_strlen(shell->ctx->cmd_buff);
 	}
 
 	z_shell_op_cursor_home_move(shell);
@@ -255,8 +255,8 @@ static bool tab_prepare(const struct shell *shell,
 	shell->ctx->temp_buff[shell->ctx->cmd_buff_pos] = '\0';
 
 	/* Create argument list. */
-	(void)shell_make_argv(argc, *argv, shell->ctx->temp_buff,
-			      CONFIG_SHELL_ARGC_MAX);
+	(void)z_shell_make_argv(argc, *argv, shell->ctx->temp_buff,
+				CONFIG_SHELL_ARGC_MAX);
 
 	if (*argc > CONFIG_SHELL_ARGC_MAX) {
 		return false;
@@ -267,7 +267,7 @@ static bool tab_prepare(const struct shell *shell,
 
 	if (IS_ENABLED(CONFIG_SHELL_CMDS_SELECT) && (*argc > 0) &&
 	    (strcmp("select", (*argv)[0]) == 0) &&
-	    !shell_in_select_mode(shell)) {
+	    !z_shell_in_select_mode(shell)) {
 		*argv = *argv + 1;
 		*argc = *argc - 1;
 	}
@@ -287,8 +287,9 @@ static bool tab_prepare(const struct shell *shell,
 
 	search_argc = space ? *argc : *argc - 1;
 
-	*cmd = shell_get_last_command(selected_cmd_get(shell), search_argc,
-				      *argv, complete_arg_idx,	d_entry, false);
+	*cmd = z_shell_get_last_command(selected_cmd_get(shell), search_argc,
+					*argv, complete_arg_idx,	d_entry,
+					false);
 
 	/* if search_argc == 0 (empty command line) shell_get_last_command will
 	 * return NULL tab is allowed, otherwise not.
@@ -317,11 +318,11 @@ static void find_completion_candidates(const struct shell *shell,
 	size_t incompl_cmd_len;
 	size_t idx = 0;
 
-	incompl_cmd_len = shell_strlen(incompl_cmd);
+	incompl_cmd_len = z_shell_strlen(incompl_cmd);
 	*longest = 0U;
 	*cnt = 0;
 
-	while ((candidate = shell_cmd_get(cmd, idx, &dloc)) != NULL) {
+	while ((candidate = z_shell_cmd_get(cmd, idx, &dloc)) != NULL) {
 		bool is_candidate;
 		is_candidate = is_completion_candidate(candidate->syntax,
 						incompl_cmd, incompl_cmd_len);
@@ -344,14 +345,14 @@ static void autocomplete(const struct shell *shell,
 {
 	const struct shell_static_entry *match;
 	uint16_t cmd_len;
-	uint16_t arg_len = shell_strlen(arg);
+	uint16_t arg_len = z_shell_strlen(arg);
 
 	/* shell->ctx->active_cmd can be safely used outside of command context
 	 * to save stack
 	 */
-	match = shell_cmd_get(cmd, subcmd_idx, &shell->ctx->active_cmd);
+	match = z_shell_cmd_get(cmd, subcmd_idx, &shell->ctx->active_cmd);
 	__ASSERT_NO_MSG(match != NULL);
-	cmd_len = shell_strlen(match->syntax);
+	cmd_len = z_shell_strlen(match->syntax);
 
 	if (!IS_ENABLED(CONFIG_SHELL_TAB_AUTOCOMPLETION)) {
 		/* Add a space if the Tab button is pressed when command is
@@ -412,7 +413,7 @@ static void tab_options_print(const struct shell *shell,
 			      uint16_t longest)
 {
 	const struct shell_static_entry *match;
-	size_t str_len = shell_strlen(str);
+	size_t str_len = z_shell_strlen(str);
 	size_t idx = first;
 
 	/* Printing all matching commands (options). */
@@ -422,7 +423,7 @@ static void tab_options_print(const struct shell *shell,
 		/* shell->ctx->active_cmd can be safely used outside of command
 		 * context to save stack
 		 */
-		match = shell_cmd_get(cmd, idx, &shell->ctx->active_cmd);
+		match = z_shell_cmd_get(cmd, idx, &shell->ctx->active_cmd);
 		__ASSERT_NO_MSG(match != NULL);
 		idx++;
 		if (str && match->syntax &&
@@ -450,7 +451,7 @@ static uint16_t common_beginning_find(const struct shell *shell,
 
 	__ASSERT_NO_MSG(cnt > 1);
 
-	match = shell_cmd_get(cmd, first, &dynamic_entry);
+	match = z_shell_cmd_get(cmd, first, &dynamic_entry);
 	__ASSERT_NO_MSG(match);
 	strncpy(shell->ctx->temp_buff, match->syntax,
 			sizeof(shell->ctx->temp_buff) - 1);
@@ -462,7 +463,7 @@ static uint16_t common_beginning_find(const struct shell *shell,
 		const struct shell_static_entry *match2;
 		int curr_common;
 
-		match2 = shell_cmd_get(cmd, idx++, &dynamic_entry2);
+		match2 = z_shell_cmd_get(cmd, idx++, &dynamic_entry2);
 		if (match2 == NULL) {
 			break;
 		}
@@ -484,7 +485,7 @@ static void partial_autocomplete(const struct shell *shell,
 				 size_t first, size_t cnt)
 {
 	const char *completion;
-	uint16_t arg_len = shell_strlen(arg);
+	uint16_t arg_len = z_shell_strlen(arg);
 	uint16_t common = common_beginning_find(shell, cmd, &completion, first,
 					     cnt, arg_len);
 
@@ -624,7 +625,7 @@ static int execute(const struct shell *shell)
 	memset(&shell->ctx->active_cmd, 0, sizeof(shell->ctx->active_cmd));
 
 	if (IS_ENABLED(CONFIG_SHELL_HISTORY)) {
-		shell_cmd_trim(shell);
+		z_shell_cmd_trim(shell);
 		history_put(shell, shell->ctx->cmd_buff,
 			    shell->ctx->cmd_buff_len);
 	}
@@ -649,7 +650,7 @@ static int execute(const struct shell *shell)
 	/* Below loop is analyzing subcommands of found root command. */
 	while ((argc != 1) && (cmd_lvl < CONFIG_SHELL_ARGC_MAX)
 		&& args_left > 0) {
-		quote = shell_make_argv(&argc, argvp, cmd_buf, 2);
+		quote = z_shell_make_argv(&argc, argvp, cmd_buf, 2);
 		cmd_buf = (char *)argvp[1];
 
 		if (argc == 0) {
@@ -700,7 +701,7 @@ static int execute(const struct shell *shell)
 		}
 
 		if (has_last_handler == false) {
-			entry = shell_find_cmd(parent, argvp[0], &dloc);
+			entry = z_shell_find_cmd(parent, argvp[0], &dloc);
 		}
 
 		argvp++;
@@ -717,7 +718,7 @@ static int execute(const struct shell *shell)
 			parent = entry;
 		} else {
 			if (cmd_lvl == 0 &&
-				(!shell_in_select_mode(shell) ||
+				(!z_shell_in_select_mode(shell) ||
 				 shell->ctx->selected_cmd->handler == NULL)) {
 				z_shell_fprintf(shell, SHELL_ERROR,
 						"%s%s\n", argv[0],
@@ -752,10 +753,10 @@ static int execute(const struct shell *shell)
 		 * with all expanded commands. Hence shell_make_argv needs to
 		 * be called again.
 		 */
-		(void)shell_make_argv(&cmd_lvl,
-				      &argv[selected_cmd_get(shell) ? 1 : 0],
-				      shell->ctx->cmd_buff,
-				      CONFIG_SHELL_ARGC_MAX);
+		(void)z_shell_make_argv(&cmd_lvl,
+					&argv[selected_cmd_get(shell) ? 1 : 0],
+					shell->ctx->cmd_buff,
+					CONFIG_SHELL_ARGC_MAX);
 
 		if (selected_cmd_get(shell)) {
 			/* Apart from what is in the command buffer, there is
@@ -1090,7 +1091,7 @@ static void state_collect(const struct shell *shell)
 		}
 	}
 
-	transport_buffer_flush(shell);
+	z_transport_buffer_flush(shell);
 }
 
 static void transport_evt_handler(enum shell_transport_evt evt_type, void *ctx)
@@ -1168,7 +1169,7 @@ static int instance_init(const struct shell *shell, const void *p_config,
 					CONFIG_SHELL_DEFAULT_TERMINAL_WIDTH;
 	shell->ctx->vt100_ctx.cons.terminal_hei =
 					CONFIG_SHELL_DEFAULT_TERMINAL_HEIGHT;
-	shell->ctx->vt100_ctx.cons.name_len = shell_strlen(shell->ctx->prompt);
+	shell->ctx->vt100_ctx.cons.name_len = z_shell_strlen(shell->ctx->prompt);
 	z_flag_use_colors_set(shell, IS_ENABLED(CONFIG_SHELL_VT100_COLORS));
 
 	int ret = shell->iface->api->init(shell->iface, p_config,
@@ -1427,7 +1428,7 @@ void shell_vfprintf(const struct shell *shell, enum shell_vt100_color color,
 	if (!z_flag_cmd_ctx_get(shell)) {
 		z_shell_print_prompt_and_cmd(shell);
 	}
-	transport_buffer_flush(shell);
+	z_transport_buffer_flush(shell);
 	k_mutex_unlock(&shell->ctx->wr_mtx);
 }
 
@@ -1507,7 +1508,7 @@ int shell_prompt_change(const struct shell *shell, const char *prompt)
 		return -EINVAL;
 	}
 	shell->ctx->prompt = prompt;
-	shell->ctx->vt100_ctx.cons.name_len = shell_strlen(prompt);
+	shell->ctx->vt100_ctx.cons.name_len = z_shell_strlen(prompt);
 
 	return 0;
 }
@@ -1521,7 +1522,7 @@ void shell_help(const struct shell *shell)
 
 int shell_execute_cmd(const struct shell *shell, const char *cmd)
 {
-	uint16_t cmd_len = shell_strlen(cmd);
+	uint16_t cmd_len = z_shell_strlen(cmd);
 	int ret_val;
 
 	if (cmd == NULL) {
@@ -1594,7 +1595,7 @@ static int cmd_help(const struct shell *shell, size_t argc, char **argv)
 		size_t idx = 0;
 
 		shell_print(shell, "\nAvailable commands:");
-		while ((entry = shell_cmd_get(NULL, idx++, NULL)) != NULL) {
+		while ((entry = z_shell_cmd_get(NULL, idx++, NULL)) != NULL) {
 			shell_print(shell, "  %s", entry->syntax);
 		}
 	}

@@ -30,14 +30,14 @@ void z_shell_op_cursor_horiz_move(const struct shell *shell, int32_t delta)
  */
 static inline bool full_line_cmd(const struct shell *shell)
 {
-	return ((shell->ctx->cmd_buff_len + shell_strlen(shell->ctx->prompt))
+	return ((shell->ctx->cmd_buff_len + z_shell_strlen(shell->ctx->prompt))
 			% shell->ctx->vt100_ctx.cons.terminal_wid == 0U);
 }
 
 /* Function returns true if cursor is at beginning of an empty line. */
 bool z_shell_cursor_in_empty_line(const struct shell *shell)
 {
-	return ((shell->ctx->cmd_buff_pos + shell_strlen(shell->ctx->prompt))
+	return ((shell->ctx->cmd_buff_pos + z_shell_strlen(shell->ctx->prompt))
 			% shell->ctx->vt100_ctx.cons.terminal_wid == 0U);
 }
 
@@ -53,8 +53,8 @@ void z_shell_op_cursor_position_synchronize(const struct shell *shell)
 	struct shell_multiline_cons *cons = &shell->ctx->vt100_ctx.cons;
 	bool last_line;
 
-	shell_multiline_data_calc(cons, shell->ctx->cmd_buff_pos,
-				  shell->ctx->cmd_buff_len);
+	z_shell_multiline_data_calc(cons, shell->ctx->cmd_buff_pos,
+				    shell->ctx->cmd_buff_len);
 	last_line = (cons->cur_y == cons->cur_y_end);
 
 	/* In case cursor reaches the bottom line of a terminal, it will
@@ -81,17 +81,18 @@ void z_shell_op_cursor_move(const struct shell *shell, int16_t val)
 	int32_t row_span;
 	int32_t col_span;
 
-	shell_multiline_data_calc(cons, shell->ctx->cmd_buff_pos,
-				  shell->ctx->cmd_buff_len);
+	z_shell_multiline_data_calc(cons, shell->ctx->cmd_buff_pos,
+				    shell->ctx->cmd_buff_len);
 
 	/* Calculate the new cursor. */
-	row_span = row_span_with_buffer_offsets_get(&shell->ctx->vt100_ctx.cons,
-						    shell->ctx->cmd_buff_pos,
-						    new_pos);
-	col_span = column_span_with_buffer_offsets_get(
-						    &shell->ctx->vt100_ctx.cons,
-						    shell->ctx->cmd_buff_pos,
-						    new_pos);
+	row_span = z_row_span_with_buffer_offsets_get(
+						&shell->ctx->vt100_ctx.cons,
+						shell->ctx->cmd_buff_pos,
+						new_pos);
+	col_span = z_column_span_with_buffer_offsets_get(
+						&shell->ctx->vt100_ctx.cons,
+						shell->ctx->cmd_buff_pos,
+						new_pos);
 
 	z_shell_op_cursor_vert_move(shell, -row_span);
 	z_shell_op_cursor_horiz_move(shell, col_span);
@@ -323,9 +324,9 @@ void z_shell_op_completion_insert(const struct shell *shell,
 
 void z_shell_cmd_line_erase(const struct shell *shell)
 {
-	shell_multiline_data_calc(&shell->ctx->vt100_ctx.cons,
-				  shell->ctx->cmd_buff_pos,
-				  shell->ctx->cmd_buff_len);
+	z_shell_multiline_data_calc(&shell->ctx->vt100_ctx.cons,
+				    shell->ctx->cmd_buff_pos,
+				    shell->ctx->cmd_buff_len);
 	z_shell_op_cursor_horiz_move(shell,
 				   -(shell->ctx->vt100_ctx.cons.cur_x - 1));
 	z_shell_op_cursor_vert_move(shell, shell->ctx->vt100_ctx.cons.cur_y - 1);

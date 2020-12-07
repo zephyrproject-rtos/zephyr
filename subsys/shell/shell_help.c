@@ -39,13 +39,13 @@ static void formatted_text_print(const struct shell *shell, const char *str,
 	while (true) {
 		size_t idx = 0;
 
-		length = shell_strlen(str) - offset;
+		length = z_shell_strlen(str) - offset;
 
 		if (length <=
 		    shell->ctx->vt100_ctx.cons.terminal_wid - terminal_offset) {
 			for (idx = 0; idx < length; idx++) {
 				if (*(str + offset + idx) == '\n') {
-					transport_buffer_flush(shell);
+					z_transport_buffer_flush(shell);
 					z_shell_write(shell, str + offset, idx);
 					offset += idx + 1;
 					z_cursor_next_line_move(shell);
@@ -88,7 +88,7 @@ static void formatted_text_print(const struct shell *shell, const char *str,
 		/* Writing one line, fprintf IO buffer must be flushed
 		 * before calling shell_write.
 		 */
-		transport_buffer_flush(shell);
+		z_transport_buffer_flush(shell);
 		z_shell_write(shell, str + offset, length);
 		offset += length;
 
@@ -155,8 +155,8 @@ void z_shell_help_subcmd_print(const struct shell *shell,
 	size_t idx = 0;
 
 	/* Searching for the longest subcommand to print. */
-	while ((entry = shell_cmd_get(parent, idx++, &dloc)) != NULL) {
-		longest = Z_MAX(longest, shell_strlen(entry->syntax));
+	while ((entry = z_shell_cmd_get(parent, idx++, &dloc)) != NULL) {
+		longest = Z_MAX(longest, z_shell_strlen(entry->syntax));
 	};
 
 	/* No help to print */
@@ -171,7 +171,7 @@ void z_shell_help_subcmd_print(const struct shell *shell,
 	/* Printing subcommands and help string (if exists). */
 	idx = 0;
 
-	while ((entry = shell_cmd_get(parent, idx++, &dloc)) != NULL) {
+	while ((entry = z_shell_cmd_get(parent, idx++, &dloc)) != NULL) {
 		help_item_print(shell, entry->syntax, longest, entry->help);
 	}
 }
@@ -182,7 +182,7 @@ void z_shell_help_cmd_print(const struct shell *shell,
 	static const char cmd_sep[] = " - "; /* commands separator */
 	uint16_t field_width;
 
-	field_width = shell_strlen(cmd->syntax) + shell_strlen(cmd_sep);
+	field_width = z_shell_strlen(cmd->syntax) + z_shell_strlen(cmd_sep);
 
 	z_shell_fprintf(shell, SHELL_NORMAL, "%s%s", cmd->syntax, cmd_sep);
 

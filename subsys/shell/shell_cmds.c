@@ -81,7 +81,7 @@ static int cursor_position_get(const struct shell *shell, uint16_t *x, uint16_t 
 	/* fprintf buffer needs to be flushed to start sending prepared
 	 * escape code to the terminal.
 	 */
-	transport_buffer_flush(shell);
+	z_transport_buffer_flush(shell);
 
 	/* timeout for terminal response = ~1s */
 	for (uint16_t i = 0; i < 1000; i++) {
@@ -376,9 +376,9 @@ static int cmd_select(const struct shell *shell, size_t argc, char **argv)
 
 	argc--;
 	argv = argv + 1;
-	candidate = shell_get_last_command(shell->ctx->selected_cmd,
-					   argc, (const char **)argv,
-					   &matching_argc, &entry, true);
+	candidate = z_shell_get_last_command(shell->ctx->selected_cmd,
+					     argc, (const char **)argv,
+					     &matching_argc, &entry, true);
 
 	if ((candidate != NULL) && !no_args(candidate)
 	    && (argc == matching_argc)) {

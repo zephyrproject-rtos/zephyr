@@ -31,24 +31,24 @@ static uint32_t col_num_with_buffer_offset_get(struct shell_multiline_cons *cons
 	return (1 + ((buffer_pos + cons->name_len) % cons->terminal_wid));
 }
 
-int32_t column_span_with_buffer_offsets_get(struct shell_multiline_cons *cons,
-					  uint16_t offset1,
-					  uint16_t offset2)
+int32_t z_column_span_with_buffer_offsets_get(struct shell_multiline_cons *cons,
+					      uint16_t offset1,
+					      uint16_t offset2)
 {
 	return col_num_with_buffer_offset_get(cons, offset2)
 			- col_num_with_buffer_offset_get(cons, offset1);
 }
 
-int32_t row_span_with_buffer_offsets_get(struct shell_multiline_cons *cons,
-				       uint16_t offset1,
-				       uint16_t offset2)
+int32_t z_row_span_with_buffer_offsets_get(struct shell_multiline_cons *cons,
+					   uint16_t offset1,
+					   uint16_t offset2)
 {
 	return line_num_with_buffer_offset_get(cons, offset2)
 		- line_num_with_buffer_offset_get(cons, offset1);
 }
 
-void shell_multiline_data_calc(struct shell_multiline_cons *cons,
-			       uint16_t buff_pos, uint16_t buff_len)
+void z_shell_multiline_data_calc(struct shell_multiline_cons *cons,
+				 uint16_t buff_pos, uint16_t buff_len)
 {
 	/* Current cursor position in command.
 	 * +1 -> because home position is (1, 1)
@@ -77,14 +77,14 @@ static char make_argv(char **ppcmd, uint8_t c)
 			switch (c) {
 			case '\\':
 				memmove(cmd, cmd + 1,
-						shell_strlen(cmd));
+						z_shell_strlen(cmd));
 				cmd += 1;
 				continue;
 
 			case '\'':
 			case '\"':
 				memmove(cmd, cmd + 1,
-						shell_strlen(cmd));
+						z_shell_strlen(cmd));
 				quote = c;
 				continue;
 			default:
@@ -93,7 +93,7 @@ static char make_argv(char **ppcmd, uint8_t c)
 		}
 
 		if (quote == c) {
-			memmove(cmd, cmd + 1, shell_strlen(cmd));
+			memmove(cmd, cmd + 1, z_shell_strlen(cmd));
 			quote = 0;
 			continue;
 		}
@@ -103,7 +103,7 @@ static char make_argv(char **ppcmd, uint8_t c)
 
 			if (t == quote) {
 				memmove(cmd, cmd + 1,
-						shell_strlen(cmd));
+						z_shell_strlen(cmd));
 				cmd += 1;
 				continue;
 			}
@@ -124,7 +124,7 @@ static char make_argv(char **ppcmd, uint8_t c)
 
 				if (i > 2) {
 					memmove(cmd, cmd + (i - 1),
-						shell_strlen(cmd) - (i - 2));
+						z_shell_strlen(cmd) - (i - 2));
 					*cmd++ = v;
 					continue;
 				}
@@ -151,7 +151,7 @@ static char make_argv(char **ppcmd, uint8_t c)
 
 				if (i > 2) {
 					memmove(cmd, cmd + (i - 1),
-						shell_strlen(cmd) - (i - 2));
+						z_shell_strlen(cmd) - (i - 2));
 					*cmd++ = v;
 					continue;
 				}
@@ -170,7 +170,8 @@ static char make_argv(char **ppcmd, uint8_t c)
 }
 
 
-char shell_make_argv(size_t *argc, const char **argv, char *cmd, uint8_t max_argc)
+char z_shell_make_argv(size_t *argc, const char **argv, char *cmd,
+		       uint8_t max_argc)
 {
 	char quote = 0;
 	char c;
@@ -197,11 +198,11 @@ char shell_make_argv(size_t *argc, const char **argv, char *cmd, uint8_t max_arg
 	return quote;
 }
 
-void shell_pattern_remove(char *buff, uint16_t *buff_len, const char *pattern)
+void z_shell_pattern_remove(char *buff, uint16_t *buff_len, const char *pattern)
 {
 	char *pattern_addr = strstr(buff, pattern);
 	uint16_t shift;
-	uint16_t pattern_len = shell_strlen(pattern);
+	uint16_t pattern_len = z_shell_strlen(pattern);
 
 	if (!pattern_addr) {
 		return;
@@ -214,7 +215,7 @@ void shell_pattern_remove(char *buff, uint16_t *buff_len, const char *pattern)
 		}
 	}
 
-	shift = shell_strlen(pattern_addr) - pattern_len + 1; /* +1 for EOS */
+	shift = z_shell_strlen(pattern_addr) - pattern_len + 1; /* +1 for EOS */
 	*buff_len -= pattern_len;
 
 	memmove(pattern_addr, pattern_addr + pattern_len, shift);
@@ -243,7 +244,7 @@ static const struct shell_static_entry *root_cmd_find(const char *syntax)
 	return NULL;
 }
 
-const struct shell_static_entry *shell_cmd_get(
+const struct shell_static_entry *z_shell_cmd_get(
 					const struct shell_static_entry *parent,
 					size_t idx,
 					struct shell_static_entry *dloc)
@@ -283,7 +284,7 @@ const struct shell_static_entry *shell_cmd_get(
  *
  * @return		Pointer to found command.
  */
-const struct shell_static_entry *shell_find_cmd(
+const struct shell_static_entry *z_shell_find_cmd(
 					const struct shell_static_entry *parent,
 					const char *cmd_str,
 					struct shell_static_entry *dloc)
@@ -291,7 +292,7 @@ const struct shell_static_entry *shell_find_cmd(
 	const struct shell_static_entry *entry;
 	size_t idx = 0;
 
-	while ((entry = shell_cmd_get(parent, idx++, dloc)) != NULL) {
+	while ((entry = z_shell_cmd_get(parent, idx++, dloc)) != NULL) {
 		if (strcmp(cmd_str, entry->syntax) == 0) {
 			return entry;
 		}
@@ -300,7 +301,7 @@ const struct shell_static_entry *shell_find_cmd(
 	return NULL;
 }
 
-const struct shell_static_entry *shell_get_last_command(
+const struct shell_static_entry *z_shell_get_last_command(
 					const struct shell_static_entry *entry,
 					size_t argc,
 					const char *argv[],
@@ -323,7 +324,7 @@ const struct shell_static_entry *shell_get_last_command(
 		}
 
 		prev_entry = entry;
-		entry = shell_find_cmd(entry, argv[*match_arg], dloc);
+		entry = z_shell_find_cmd(entry, argv[*match_arg], dloc);
 		if (entry) {
 			(*match_arg)++;
 		} else {
@@ -360,9 +361,9 @@ int shell_set_root_cmd(const char *cmd)
 
 
 
-void shell_spaces_trim(char *str)
+void z_shell_spaces_trim(char *str)
 {
-	uint16_t len = shell_strlen(str);
+	uint16_t len = z_shell_strlen(str);
 	uint16_t shift = 0U;
 
 	if (!str) {
@@ -427,7 +428,7 @@ static void buffer_trim(char *buff, uint16_t *buff_len)
 	}
 }
 
-void shell_cmd_trim(const struct shell *shell)
+void z_shell_cmd_trim(const struct shell *shell)
 {
 	buffer_trim(shell->ctx->cmd_buff, &shell->ctx->cmd_buff_len);
 	shell->ctx->cmd_buff_pos = shell->ctx->cmd_buff_len;
