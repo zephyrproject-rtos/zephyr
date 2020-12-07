@@ -661,12 +661,6 @@ static inline void k_thread_heap_assign(struct k_thread *thread,
 	thread->resource_pool = heap;
 }
 
-static inline void z_thread_resource_pool_assign(struct k_thread *thread,
-						 struct k_mem_pool *pool)
-{
-	k_thread_heap_assign(thread, pool ? pool->heap : NULL);
-}
-
 #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
 /**
  * @brief Obtain stack usage information for the specified thread
