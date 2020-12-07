@@ -64,9 +64,15 @@ int lll_clock_init(void)
 
 int lll_clock_wait(void)
 {
-	struct onoff_manager *mgr =
-		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_LF);
+	struct onoff_manager *mgr;
+	static bool done;
 
+	if (done) {
+		return 0;
+	}
+	done = true;
+
+	mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_LF);
 	return blocking_on(mgr, LFCLOCK_TIMEOUT_MS);
 }
 
