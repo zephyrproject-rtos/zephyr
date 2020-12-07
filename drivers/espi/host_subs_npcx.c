@@ -148,7 +148,7 @@ struct host_sub_npcx_data {
 };
 
 static const struct npcx_clk_cfg host_dev_clk_cfg[] =
-					DT_NPCX_CLK_CFG_ITEMS_LIST(0);
+					NPCX_DT_CLK_CFG_ITEMS_LIST(0);
 
 struct host_sub_npcx_config host_sub_cfg = {
 	.inst_mswc = (struct mswc_reg *)DT_INST_REG_ADDR_BY_NAME(0, mswc),
@@ -157,7 +157,7 @@ struct host_sub_npcx_config host_sub_cfg = {
 	.inst_kbc = (struct kbc_reg *)DT_INST_REG_ADDR_BY_NAME(0, kbc),
 	.inst_pm_acpi = (struct pmch_reg *)DT_INST_REG_ADDR_BY_NAME(0, pm_acpi),
 	.inst_pm_hcmd = (struct pmch_reg *)DT_INST_REG_ADDR_BY_NAME(0, pm_hcmd),
-	.host_acc_wui = DT_NPCX_WUI_ITEM_BY_NAME(0, host_acc_wui),
+	.host_acc_wui = NPCX_DT_WUI_ITEM_BY_NAME(0, host_acc_wui),
 	.clks_size = ARRAY_SIZE(host_dev_clk_cfg),
 	.clks_list = host_dev_clk_cfg,
 };
@@ -440,7 +440,7 @@ static void host_port80_init(void)
 #if defined(CONFIG_ESPI_PERIPHERAL_UART)
 /* host uart pinmux configuration */
 static const struct npcx_alt host_uart_alts[] =
-					DT_NPCX_ALT_ITEMS_LIST(0);
+			NPCX_DT_IO_ALT_ITEMS_LIST(nuvoton_npcx_host_uart, 0);
 /* Host UART sub-device local functions */
 void host_uart_init(void)
 {

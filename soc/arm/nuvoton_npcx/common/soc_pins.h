@@ -44,7 +44,7 @@ struct npcx_alt {
  *
  * Example usage:
  *    - Pinmux configuration list
- *         const struct npcx_alt alts_list[] = DT_NPCX_ALT_ITEMS_LIST(inst);
+ *         const struct npcx_alt alts_list[] = NPCX_DT_ALT_ITEMS_LIST(inst);
  *    - Change pinmux to UART:
  *         npcx_pinctrl_mux_configure(alts_list, ARRAY_SIZE(alts_list), 1);
  *    - Change pinmux back to GPIO64.65:
