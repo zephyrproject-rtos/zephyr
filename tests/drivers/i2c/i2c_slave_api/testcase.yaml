@@ -5,4 +5,4 @@ tests:
     harness: ztest
     harness_config:
       fixture: i2c_bus_short
-    platform_allow: nucleo_f091rc stm32f072b_disco
+    platform_allow: nucleo_f091rc stm32f072b_disco nucleo_g071rb
