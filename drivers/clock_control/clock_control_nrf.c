@@ -250,6 +250,18 @@ static void hfclk192m_stop(void)
 }
 #endif
 
+#if NRF_CLOCK_HAS_HFCLKAUDIO
+static void hfclkaudio_start(void)
+{
+	nrfx_clock_start(NRF_CLOCK_DOMAIN_HFCLKAUDIO);
+}
+
+static void hfclkaudio_stop(void)
+{
+	nrfx_clock_stop(NRF_CLOCK_DOMAIN_HFCLKAUDIO);
+}
+#endif
+
 static uint32_t *get_hf_flags(void)
 {
 	struct nrf_clock_control_data *data = CLOCK_DEVICE->data;
@@ -582,6 +594,11 @@ static void clock_event_handler(nrfx_clock_evt_type_t event)
 		clkstarted_handle(dev, CLOCK_CONTROL_NRF_TYPE_HFCLK192M);
 		break;
 #endif
+#if NRF_CLOCK_HAS_HFCLKAUDIO
+	case NRFX_CLOCK_EVT_HFCLKAUDIO_STARTED:
+		clkstarted_handle(dev, CLOCK_CONTROL_NRF_TYPE_HFCLKAUDIO);
+		break;
+#endif
 	case NRFX_CLOCK_EVT_LFCLK_STARTED:
 		if (IS_ENABLED(
 			CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION)) {
@@ -669,6 +686,13 @@ static const struct nrf_clock_control_config config = {
 			.start = hfclk192m_start,
 			.stop = hfclk192m_stop,
 			IF_ENABLED(CONFIG_LOG, (.name = "hfclk192m",))
+		},
+#endif
+#if NRF_CLOCK_HAS_HFCLKAUDIO
+		[CLOCK_CONTROL_NRF_TYPE_HFCLKAUDIO] = {
+			.start = hfclkaudio_start,
+			.stop = hfclkaudio_stop,
+			IF_ENABLED(CONFIG_LOG, (.name = "hfclkaudio",))
 		},
 #endif
 	}
