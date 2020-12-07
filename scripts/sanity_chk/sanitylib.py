@@ -2514,8 +2514,8 @@ class TestSuite(DisablePyTestCollectionMixin):
                        "harness_config": {"type": "map", "default": {}}
                        }
 
-    RELEASE_DATA = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
-                            "sanity_last_release.csv")
+    RELEASE_DATA = os.path.join(ZEPHYR_BASE, "scripts", "release",
+                            "twister_last_release.csv")
 
     SAMPLE_FILENAME = 'sample.yaml'
     TESTCASE_FILENAME = 'testcase.yaml'
