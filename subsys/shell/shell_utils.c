@@ -357,35 +357,8 @@ int shell_set_root_cmd(const char *cmd)
 	return 0;
 }
 
-int shell_command_add(char *buff, uint16_t *buff_len,
-		      const char *new_cmd, const char *pattern)
-{
-	uint16_t cmd_len = shell_strlen(new_cmd);
-	char *cmd_source_addr;
-	uint16_t shift;
 
-	/* +1 for space */
-	if ((*buff_len + cmd_len + 1) > CONFIG_SHELL_CMD_BUFF_SIZE) {
-		return -ENOMEM;
-	}
 
-	cmd_source_addr = strstr(buff, pattern);
-
-	if (!cmd_source_addr) {
-		return -EINVAL;
-	}
-
-	shift = shell_strlen(cmd_source_addr);
-
-	/* make place for new command: + 1 for space + 1 for EOS */
-	memmove(cmd_source_addr + cmd_len + 1, cmd_source_addr, shift + 1);
-	memcpy(cmd_source_addr, new_cmd, cmd_len);
-	cmd_source_addr[cmd_len] = ' ';
-
-	*buff_len += cmd_len + 1; /* + 1 for space */
-
-	return 0;
-}
 
 void shell_spaces_trim(char *str)
 {
