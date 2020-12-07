@@ -310,7 +310,7 @@ const struct shell_static_entry *shell_get_last_command(
 {
 	const struct shell_static_entry *prev_entry = NULL;
 
-	*match_arg = SHELL_CMD_ROOT_LVL;
+	*match_arg = Z_SHELL_CMD_ROOT_LVL;
 
 	while (*match_arg < argc) {
 

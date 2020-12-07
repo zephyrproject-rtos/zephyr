@@ -20,8 +20,6 @@
 extern "C" {
 #endif
 
-#define SHELL_RX_BUFF_SIZE 16
-
 #ifndef CONFIG_SHELL_CMD_BUFF_SIZE
 #define CONFIG_SHELL_CMD_BUFF_SIZE 0
 #endif
@@ -34,7 +32,7 @@ extern "C" {
 #define CONFIG_SHELL_HISTORY_BUFFER 0
 #endif
 
-#define SHELL_CMD_ROOT_LVL		(0u)
+#define Z_SHELL_CMD_ROOT_LVL		(0u)
 
 #define SHELL_HEXDUMP_BYTES_IN_LINE	16
 
@@ -413,7 +411,7 @@ struct shell_static_entry {
 	SHELL_EXPR_CMD_ARG(_expr, _syntax, _subcmd, _help, _handler, 0, 0)
 
 /* Internal macro used for creating handlers for dictionary commands. */
-#define SHELL_CMD_DICT_HANDLER_CREATE(_data, _handler)		\
+#define Z_SHELL_CMD_DICT_HANDLER_CREATE(_data, _handler)		\
 static int UTIL_CAT(cmd_dict_, GET_ARG_N(1, __DEBRACKET _data))(	\
 		const struct shell *shell, size_t argc, char **argv)	\
 {									\
@@ -457,7 +455,7 @@ static int UTIL_CAT(cmd_dict_, GET_ARG_N(1, __DEBRACKET _data))(	\
  *	SHELL_CMD_REGISTER(dictionary, &sub_dict_cmds, NULL, NULL);
  */
 #define SHELL_SUBCMD_DICT_SET_CREATE(_name, _handler, ...)		\
-	FOR_EACH_FIXED_ARG(SHELL_CMD_DICT_HANDLER_CREATE, (),		\
+	FOR_EACH_FIXED_ARG(Z_SHELL_CMD_DICT_HANDLER_CREATE, (),		\
 			   _handler, __VA_ARGS__)			\
 	SHELL_STATIC_SUBCMD_SET_CREATE(_name,				\
 		FOR_EACH(SHELL_CMD_DICT_CREATE, (,), __VA_ARGS__),	\
@@ -591,11 +589,11 @@ struct shell_stats {
 };
 
 #ifdef CONFIG_SHELL_STATS
-#define SHELL_STATS_DEFINE(_name) static struct shell_stats _name##_stats
-#define SHELL_STATS_PTR(_name) (&(_name##_stats))
+#define Z_SHELL_STATS_DEFINE(_name) static struct shell_stats _name##_stats
+#define Z_SHELL_STATS_PTR(_name) (&(_name##_stats))
 #else
-#define SHELL_STATS_DEFINE(_name)
-#define SHELL_STATS_PTR(_name) NULL
+#define Z_SHELL_STATS_DEFINE(_name)
+#define Z_SHELL_STATS_PTR(_name) NULL
 #endif /* CONFIG_SHELL_STATS */
 
 /**
@@ -616,7 +614,6 @@ struct shell_flags {
 
 BUILD_ASSERT((sizeof(struct shell_flags) == sizeof(uint32_t)),
 	     "Structure must fit in 4 bytes");
-
 
 /**
  * @internal @brief Union for internal shell usage.
@@ -739,7 +736,7 @@ extern void z_shell_print_stream(const void *user_ctx, const char *data,
 			     CONFIG_SHELL_PRINTF_BUFF_SIZE,		      \
 			     true, z_shell_print_stream);		      \
 	LOG_INSTANCE_REGISTER(shell, _name, CONFIG_SHELL_LOG_LEVEL);	      \
-	SHELL_STATS_DEFINE(_name);					      \
+	Z_SHELL_STATS_DEFINE(_name);					      \
 	static K_KERNEL_STACK_DEFINE(_name##_stack, CONFIG_SHELL_STACK_SIZE); \
 	static struct k_thread _name##_thread;				      \
 	static const Z_STRUCT_SECTION_ITERABLE(shell, _name) = {	      \
@@ -750,7 +747,7 @@ extern void z_shell_print_stream(const void *user_ctx, const char *data,
 				&_name##_history : NULL,		      \
 		.shell_flag = _shell_flag,				      \
 		.fprintf_ctx = &_name##_fprintf,			      \
-		.stats = SHELL_STATS_PTR(_name),			      \
+		.stats = Z_SHELL_STATS_PTR(_name),			      \
 		.log_backend = Z_SHELL_LOG_BACKEND_PTR(_name),		      \
 		LOG_INSTANCE_PTR_INIT(log, shell, _name)		      \
 		.thread_name = STRINGIFY(_name),			      \
