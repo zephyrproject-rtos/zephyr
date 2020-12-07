@@ -16,7 +16,7 @@ COMMIT is the commit to compare against BASE_COMMIT.
  HEAD in any other case.
 BASE_COMMIT is the commit used as base to compare results.
  Default:
-  sanity_last_release.csv if we don't have git tree.
+  twister_last_release.csv if we don't have git tree.
   HEAD is we have changes in the working tree.
   HEAD~1 if we don't have changes and we have default COMMIT.
   COMMIT~1 if we have a valid COMMIT.
@@ -37,7 +37,7 @@ if "ZEPHYR_BASE" not in os.environ:
 
 logger = None
 GIT_ENABLED = False
-RELEASE_DATA = 'sanity_last_release.csv'
+RELEASE_DATA = 'twister_last_release.csv'
 
 def is_git_enabled():
     global GIT_ENABLED
@@ -74,7 +74,7 @@ def parse_args():
     parser.add_argument('-b', '--base-commit', default=None,
                         help="Commit ID to use as base for footprint "
                                     "compare. Default is parent current commit."
-                                    " or sanity_last_release.csv if we don't have git.")
+                                    " or twister_last_release.csv if we don't have git.")
     parser.add_argument('-c', '--commit', default=None,
                         help="Commit ID to use compare footprint against base. "
                                     "Default is HEAD or working tree.")

@@ -461,7 +461,7 @@ running with -v or examining the discard report
 skipped.
 
 Metrics (such as pass/fail state and binary size) for the last code
-release are stored in scripts/sanity_chk/sanity_last_release.csv.
+release are stored in scripts/release/twister_last_release.csv.
 To update this, pass the --all --release options.
 
 To load arguments from a file, write '+' before the file name, e.g.,
