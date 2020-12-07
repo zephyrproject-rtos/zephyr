@@ -695,22 +695,10 @@ static size_t conversion_arglen(const struct conversion *conv)
 	return words;
 }
 
-/* Ceiling divide by two. */
-static void _rlrshift(uint64_t *v)
-{
-	*v = (*v & 1) + (*v >> 1);
-}
-
 #ifdef CONFIG_64BIT
 
 static void _ldiv5(uint64_t *v)
 {
-	/*
-	 * Usage in this file wants rounded behavior, not truncation.  So add
-	 * two to get the threshold right.
-	 */
-	*v += 2U;
-
 	/* The compiler can optimize this on its own on 64-bit architectures */
 	*v /= 5U;
 }
@@ -735,13 +723,11 @@ static void _ldiv5(uint64_t *v)
  *
  * Here the multiplier is: (1 << 64) / 5 = 0x3333333333333333
  * i.e. a 62 bits value. To compensate for the reduced precision, we
- * add an initial bias of 1 to v. Enlarging the multiplier to 64 bits
- * would also work but a final right shift would be needed, and carry
- * handling on the summing of partial mults would be necessary, requiring
- * more instructions. Given that we already want to add bias of 2 for
- * the result to be rounded to nearest and not truncated, we might  as well
- * combine those together into a bias of 3. This also conveniently allows
- * for keeping the multiplier in a single 32-bit register given its pattern.
+ * add an initial bias of 1 to v. This conveniently allows for keeping
+ * the multiplier in a single 32-bit register given its pattern.
+ * Enlarging the multiplier to 64 bits would also work but carry handling
+ * on the summing of partial mults would be necessary, and a final right
+ * shift would be needed, requiring more instructions.
  */
 static void _ldiv5(uint64_t *v)
 {
@@ -758,12 +744,10 @@ static void _ldiv5(uint64_t *v)
 	__asm__ ("" : "+r" (m));
 
 	/*
-	 * Apply the bias of 3. We can't add it to v as this would overflow
+	 * Apply a bias of 1 to v. We can't add it to v as this would overflow
 	 * it when at max range. Factor it out with the multiplier upfront.
-	 * Here we multiply the low and high parts separately to avoid an
-	 * unnecessary 64-bit add-with-carry.
 	 */
-	result = ((uint64_t)(m * 3U) << 32) | (m * 3U);
+	result = ((uint64_t)m << 32) | m;
 
 	/* The actual multiplication. */
 	result += (uint64_t)v_lo * m;
@@ -777,6 +761,13 @@ static void _ldiv5(uint64_t *v)
 }
 
 #endif /* CONFIG_64BIT */
+
+/* Division by 10 */
+static void _ldiv10(uint64_t *v)
+{
+	*v >>= 1;
+	_ldiv5(v);
+}
 
 /* Extract the next decimal character in the converted representation of a
  * fractional component.
@@ -854,9 +845,6 @@ static char *encode_uint(uint_value_type value,
 
 	return bp;
 }
-
-/* A magic value used in conversion. */
-#define MAX_FP1 UINT32_MAX
 
 /* Number of bits in the fractional part of an IEEE 754-2008 double
  * precision float.
@@ -1110,41 +1098,56 @@ static char *encode_float(double value,
 		fract |= BIT_63;
 	}
 
-
-	/* Magically convert the base-2 exponent to a base-10
-	 * exponent.
+	/*
+	 * Let's consider:
+	 *
+	 *	value = fract * 2^exp * 10^decexp
+	 *
+	 * Initially decexp = 0. The goal is to bring exp between
+	 * 0 and -2 as the magnitude of a fractional decimal digit is 3 bits.
 	 */
 	int decexp = 0;
 
-	while (exp <= -3) {
-		while ((fract >> 32) >= (MAX_FP1 / 5)) {
-			_rlrshift(&fract);
+	while (exp < -2) {
+		/*
+		 * Make roon to allow a multiplication by 5 without overflow.
+		 * We test only the top part for faster code.
+		 */
+		do {
+			fract >>= 1;
 			exp++;
-		}
+		} while ((uint32_t)(fract >> 32) >= (UINT32_MAX / 5U));
+
+		/* Perform fract * 5 * 2 / 10 */
 		fract *= 5U;
 		exp++;
 		decexp--;
-
-		while ((fract >> 32) <= (MAX_FP1 / 2)) {
-			fract <<= 1;
-			exp--;
-		}
 	}
 
 	while (exp > 0) {
+		/*
+		 * Perform fract / 5 / 2 * 10.
+		 * The +2 is there to do round the result of the division
+		 * by 5 not to lose too much precision in extreme cases.
+		 */
+		fract += 2;
 		_ldiv5(&fract);
 		exp--;
 		decexp++;
-		while ((fract >> 32) <= (MAX_FP1 / 2)) {
+
+		/* Bring back our fractional number to full scale */
+		do {
 			fract <<= 1;
 			exp--;
-		}
+		} while (!(fract & BIT_63));
 	}
 
-	while (exp < (0 + 4)) {
-		_rlrshift(&fract);
-		exp++;
-	}
+	/*
+	 * The binary fractional point is located somewhere above bit 63.
+	 * Move it between bits 59 and 60 to give 4 bits of room to the
+	 * integer part.
+	 */
+	fract >>= (4 - exp);
 
 	if ((c == 'g') || (c == 'G')) {
 		/* Use the specified precision and exponent to select the
@@ -1165,32 +1168,31 @@ static char *encode_float(double value,
 		}
 	}
 
+	int decimals;
 	if (c == 'f') {
-		exp = precision + decexp;
-		if (exp < 0) {
-			exp = 0;
+		decimals = precision + decexp;
+		if (decimals < 0) {
+			decimals = 0;
 		}
 	} else {
-		exp = precision + 1;
+		decimals = precision + 1;
 	}
 
 	int digit_count = 16;
 
-	if (exp > 16) {
-		exp = 16;
+	if (decimals > 16) {
+		decimals = 16;
 	}
 
-	uint64_t ltemp = BIT64(59);
-
-	while (exp--) {
-		_ldiv5(&ltemp);
-		_rlrshift(&ltemp);
+	/* Round the value to the last digit being printed. */
+	uint64_t round = BIT64(59); /* 0.5 */
+	while (decimals--) {
+		_ldiv10(&round);
 	}
-
-	fract += ltemp;
-	if ((fract >> 32) & (0x0FU << 28)) {
-		_ldiv5(&fract);
-		_rlrshift(&fract);
+	fract += round;
+	/* Make sure rounding didn't make fract >= 1.0 */
+	if (fract >= BIT64(60)) {
+		_ldiv10(&fract);
 		decexp++;
 	}
 
