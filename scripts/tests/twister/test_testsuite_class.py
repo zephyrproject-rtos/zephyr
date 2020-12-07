@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 '''
-This test file contains testcases for Testsuite class of sanitycheck
+This test file contains testcases for Testsuite class of twister
 '''
 import sys
 import os
@@ -13,17 +13,17 @@ import pytest
 from mock import call, patch, MagicMock
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/sanity_chk"))
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
-from sanitylib import TestCase, TestSuite, TestInstance, Platform
+from twisterlib import TestCase, TestSuite, TestInstance, Platform
 
 def test_testsuite_add_testcases(class_testsuite):
-    """ Testing add_testcase function of Testsuite class in sanitycheck """
+    """ Testing add_testcase function of Testsuite class in twister """
     # Test 1: Check the list of testcases after calling add testcases function is as expected
     class_testsuite.SAMPLE_FILENAME = 'test_sample_app.yaml'
     class_testsuite.TESTCASE_FILENAME = 'test_data.yaml'
     class_testsuite.add_testcases()
-    tests_rel_dir = 'scripts/tests/sanitycheck/test_data/testcases/tests/'
+    tests_rel_dir = 'scripts/tests/twister/test_data/testcases/tests/'
     expected_testcases = ['test_b.check_1',
                           'test_b.check_2',
                           'test_c.check_1',
@@ -90,7 +90,7 @@ def test_load_from_file(test_data, class_testsuite,
     """ Testing load_from_file function of TestSuite class in Sanitycheck """
     # Scenario 1 : Validating the error raised if file to load from doesn't exist
     with pytest.raises(SystemExit):
-        class_testsuite.load_from_file(test_data +"sanitycheck_test.csv")
+        class_testsuite.load_from_file(test_data +"twister_test.csv")
     assert "Couldn't find input file with list of tests." in caplog.text
 
     # Scenario 2: Testing if the 'instances' dictionary in Testsuite class contains
@@ -103,17 +103,17 @@ def test_load_from_file(test_data, class_testsuite,
     class_testsuite.testcases = all_testcases_dict
     instance_name_list = []
     failed_platform_list = []
-    with open(os.path.join(test_data, "sanitycheck.csv"), "r") as filepath:
+    with open(os.path.join(test_data, "twister.csv"), "r") as filepath:
         for row in csv.DictReader(filepath):
             testcase_root = os.path.join(ZEPHYR_BASE,
-                                         "scripts/tests/sanitycheck/test_data/testcases")
+                                         "scripts/tests/twister/test_data/testcases")
             workdir = row['test'].split('/')[-3] + "/" + row['test'].split('/')[-2]
             test_name = os.path.basename(os.path.normpath(row['test']))
             testcase = TestCase(testcase_root, workdir, test_name)
             testcase.build_only = False
             instance_name = row["platform"] + "/" + row["test"]
             instance_name_list.append(instance_name)
-        class_testsuite.load_from_file(test_data + "sanitycheck.csv")
+        class_testsuite.load_from_file(test_data + "twister.csv")
         assert list(class_testsuite.instances.keys()) == instance_name_list
 
         #Scenario 3 : Assert the number of times mock method (get_platform) is called,
@@ -123,7 +123,7 @@ def test_load_from_file(test_data, class_testsuite,
                                 if row["status"] == "failed"]
         for row in failed_platform_list:
             with patch.object(TestSuite, 'get_platform') as mock_method:
-                class_testsuite.load_from_file(class_testsuite.outdir + "sanitycheck.csv",
+                class_testsuite.load_from_file(class_testsuite.outdir + "twister.csv",
                                                filter_status=["Skipped", "Passed"])
                 calls = [call(row)]
                 mock_method.assert_has_calls(calls, any_order=True)
@@ -131,12 +131,12 @@ def test_load_from_file(test_data, class_testsuite,
 
     # Scenario 4 : Assert add_instances function is called from load_from_file function
     class_testsuite.add_instances = MagicMock(side_effect=class_testsuite.add_instances)
-    class_testsuite.load_from_file(test_data + "sanitycheck.csv")
+    class_testsuite.load_from_file(test_data + "twister.csv")
     class_testsuite.add_instances.assert_called()
 
     # Scenario 5 : Validate if the Keyerror is raised in case if a header expected is missing
     with pytest.raises(SystemExit):
-        class_testsuite.load_from_file(test_data + "sanitycheck_keyerror.csv")
+        class_testsuite.load_from_file(test_data + "twister_keyerror.csv")
     assert "Key error while parsing tests file.('status')" in caplog.text
 
 TESTDATA_PART1 = [
@@ -224,7 +224,7 @@ def test_apply_filters_part1(class_testsuite, all_testcases_dict, platforms_list
 TESTDATA_PART2 = [
     ("runnable", "True", "Not runnable on device"),
     ("exclude_tag", ['test_a'], "Command line testcase exclude filter"),
-    ("run_individual_tests", ['scripts/tests/sanitycheck/test_data/testcases/tests/test_a/test_a.check_1'], "Testcase name filter"),
+    ("run_individual_tests", ['scripts/tests/twister/test_data/testcases/tests/test_a/test_a.check_1'], "Testcase name filter"),
     ("arch", ['arm_test'], "Command line testcase arch filter"),
     ("tag", ['test_d'], "Command line testcase tag filter")
     ]

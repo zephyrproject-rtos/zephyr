@@ -3,26 +3,26 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-'''Common fixtures for use in testing the sanitycheck tool.'''
+'''Common fixtures for use in testing the twister tool.'''
 
 import os
 import sys
 import pytest
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/sanity_chk"))
-from sanitylib import TestSuite, TestInstance
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
+from twisterlib import TestSuite, TestInstance
 
 @pytest.fixture(name='test_data')
 def _test_data():
     """ Pytest fixture to load the test data directory"""
-    data = ZEPHYR_BASE + "/scripts/tests/sanitycheck/test_data/"
+    data = ZEPHYR_BASE + "/scripts/tests/twister/test_data/"
     return data
 
 @pytest.fixture(name='testcases_dir')
 def testcases_directory():
     """ Pytest fixture to load the test data directory"""
-    return ZEPHYR_BASE + "/scripts/tests/sanitycheck/test_data/testcases"
+    return ZEPHYR_BASE + "/scripts/tests/twister/test_data/testcases"
 
 @pytest.fixture(name='class_testsuite')
 def testsuite_obj(test_data, testcases_dir, tmpdir_factory):

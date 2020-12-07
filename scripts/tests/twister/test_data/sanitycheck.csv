@@ -1,9 +1,0 @@
-test,arch,platform,passed,status,extra_args,handler,handler_time,ram_size,rom_size
-scripts/tests/sanitycheck/test_data/testcases/samples/test_app/sample_test.app,nios2,demo_board_1,TRUE,Passed,,na,,2,3
-scripts/tests/sanitycheck/test_data/testcases/samples/test_app/sample_test.app,nios2,demo_board_2,TRUE,Passed,,qemu,0,2,3
-scripts/tests/sanitycheck/test_data/testcases/tests/test_a/test_a.check_1,nios2,demo_board_2,FALSE,failed,,qemu,0,2,3
-scripts/tests/sanitycheck/test_data/testcases/tests/test_a/test_a.check_2,nios2,demo_board_2,FALSE,failed,"CONF_FILE=""prj_poll.conf""",qemu,0,2,3
-scripts/tests/sanitycheck/test_data/testcases/tests/test_b/test_b.check_1,nios2,demo_board_1,TRUE,Passed,,qemu,0,2,3
-scripts/tests/sanitycheck/test_data/testcases/tests/test_b/test_b.check_2,nios2,demo_board_2,TRUE,Passed,"CONF_FILE=""prj_poll.conf""",qemu,0,2,3
-scripts/tests/sanitycheck/test_data/testcases/tests/test_c/test_c.check_1,nios2,demo_board_1,TRUE,Passed,,qemu,0,2,3
-scripts/tests/sanitycheck/test_data/testcases/tests/test_c/test_c.check_2,nios2,demo_board_2,TRUE,Passed,"CONF_FILE=""prj_poll.conf""",qemu,0,2,3
