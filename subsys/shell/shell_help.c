@@ -27,7 +27,7 @@ static void formatted_text_print(const struct shell *shell, const char *str,
 	}
 
 	if (offset_first_line) {
-		shell_op_cursor_horiz_move(shell, terminal_offset);
+		z_shell_op_cursor_horiz_move(shell, terminal_offset);
 	}
 
 
@@ -46,17 +46,17 @@ static void formatted_text_print(const struct shell *shell, const char *str,
 			for (idx = 0; idx < length; idx++) {
 				if (*(str + offset + idx) == '\n') {
 					transport_buffer_flush(shell);
-					shell_write(shell, str + offset, idx);
+					z_shell_write(shell, str + offset, idx);
 					offset += idx + 1;
-					cursor_next_line_move(shell);
-					shell_op_cursor_horiz_move(shell,
+					z_cursor_next_line_move(shell);
+					z_shell_op_cursor_horiz_move(shell,
 							terminal_offset);
 					break;
 				}
 			}
 
 			/* String will fit in one line. */
-			shell_raw_fprintf(shell->fprintf_ctx, str + offset);
+			z_shell_raw_fprintf(shell->fprintf_ctx, str + offset);
 
 			break;
 		}
@@ -89,7 +89,7 @@ static void formatted_text_print(const struct shell *shell, const char *str,
 		 * before calling shell_write.
 		 */
 		transport_buffer_flush(shell);
-		shell_write(shell, str + offset, length);
+		z_shell_write(shell, str + offset, length);
 		offset += length;
 
 		/* Calculating text offset to ensure that next line will
@@ -99,11 +99,11 @@ static void formatted_text_print(const struct shell *shell, const char *str,
 			++offset;
 		}
 
-		cursor_next_line_move(shell);
-		shell_op_cursor_horiz_move(shell, terminal_offset);
+		z_cursor_next_line_move(shell);
+		z_shell_op_cursor_horiz_move(shell, terminal_offset);
 
 	}
-	cursor_next_line_move(shell);
+	z_cursor_next_line_move(shell);
 }
 
 static void help_item_print(const struct shell *shell, const char *item_name,
@@ -129,13 +129,13 @@ static void help_item_print(const struct shell *shell, const char *item_name,
 		z_shell_fprintf(shell, SHELL_NORMAL, "%s%s", tabulator,
 				item_name);
 		for (uint16_t i = 0; i < tmp; i++) {
-			shell_write(shell, &space, 1);
+			z_shell_write(shell, &space, 1);
 		}
 		z_shell_fprintf(shell, SHELL_NORMAL, "%s:", tabulator);
 	}
 
 	if (item_help == NULL) {
-		cursor_next_line_move(shell);
+		z_cursor_next_line_move(shell);
 		return;
 	}
 	/* print option help */
