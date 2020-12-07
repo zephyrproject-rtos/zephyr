@@ -616,7 +616,7 @@ void z_x86_dump_page_tables(pentry_t *ptables)
 }
 
 /* Enable to dump out the kernel's page table right before main() starts,
- * sometimes useful for deep debugging. May overwhelm sanitycheck.
+ * sometimes useful for deep debugging. May overwhelm twister.
  */
 #define DUMP_PAGE_TABLES 0
 

@@ -100,8 +100,8 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	unsigned int key = arch_irq_lock();
 	struct k_thread *thread = k_current_get();
 
-	/* sanitycheck looks for the "ZEPHYR FATAL ERROR" string, don't
-	 * change it without also updating sanitycheck
+	/* twister looks for the "ZEPHYR FATAL ERROR" string, don't
+	 * change it without also updating twister
 	 */
 	LOG_ERR(">>> ZEPHYR FATAL ERROR %d: %s on CPU %d", reason,
 		reason_to_str(reason), get_cpu());
