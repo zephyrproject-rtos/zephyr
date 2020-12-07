@@ -2,7 +2,7 @@
 # vim: set syntax=python ts=4 :
 # Copyright (c) 2020 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
-"""Zephyr Sanity Tests
+"""Zephyr Test Runner (twister)
 
 Also check the "User and Developer Guides" at https://docs.zephyrproject.org/
 
@@ -80,7 +80,7 @@ pairs:
     Set of platforms that this test case should not run on.
 
   extra_sections: <list of extra binary sections>
-    When computing sizes, sanitycheck will report errors if it finds
+    When computing sizes, twister will report errors if it finds
     extra, unexpected sections in the Zephyr binary unless they are named
     here. They will not be included in the size calculation.
 
@@ -150,7 +150,7 @@ pairs:
 
 The set of test cases that actually run depends on directives in the testcase
 filed and options passed in on the command line. If there is any confusion,
-running with -v or examining the discard report (sanitycheck_discard.csv)
+running with -v or examining the discard report (twister_discard.csv)
 can help show why particular test cases were skipped.
 
 Metrics (such as pass/fail state and binary size) for the last code
@@ -183,9 +183,9 @@ import queue
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
-    # This file has been zephyr/scripts/sanitycheck for years,
+    # This file has been zephyr/scripts/twister for years,
     # and that is not going to change anytime soon. Let the user
-    # run this script as ./scripts/sanitycheck without making them
+    # run this script as ./scripts/twister without making them
     # set ZEPHYR_BASE.
     ZEPHYR_BASE = str(Path(__file__).resolve().parents[1])
 
@@ -208,7 +208,7 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
 from twisterlib import HardwareMap, TestSuite, SizeCalculator, CoverageTool, ExecutionCounter
 
-logger = logging.getLogger('sanitycheck')
+logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
 
 def size_report(sc):
@@ -254,7 +254,7 @@ def parse_arguments():
     case_select = parser.add_argument_group("Test case selection",
                                             """
 Artificially long but functional example:
-    $ ./scripts/sanitycheck -v     \\
+    $ ./scripts/twister -v     \\
       --testcase-root tests/ztest/base    \\
       --testcase-root tests/kernel   \\
       --test      tests/ztest/base/testing.ztest.verbose_0  \\
@@ -298,7 +298,7 @@ Artificially long but functional example:
         "-f",
         "--only-failed",
         action="store_true",
-        help="Run only those tests that failed the previous sanity check "
+        help="Run only those tests that failed the previous twister run "
              "invocation.")
 
     parser.add_argument(
@@ -335,7 +335,7 @@ Artificially long but functional example:
         help="""Output reports containing results of the test run into the
         specified directory.
         The output will be both in CSV and JUNIT format
-        (sanitycheck.csv and sanitycheck.xml).
+        (twister.csv and twister.xml).
         """)
 
     parser.add_argument(
@@ -374,7 +374,7 @@ Artificially long but functional example:
         help="""Create the filtered list of test cases, but don't actually
         run them. Useful if you're just interested in the discard report
         generated for every run and saved in the specified output
-        directory (sanitycheck_discard.csv).
+        directory (twister_discard.csv).
         """)
 
     parser.add_argument("--list-tags", action="store_true",
@@ -436,14 +436,13 @@ Artificially long but functional example:
     parser.add_argument(
         "-m", "--last-metrics", action="store_true",
         help="Instead of comparing metrics from the last --release, "
-             "compare with the results of the previous sanity check "
+             "compare with the results of the previous twister "
              "invocation")
     parser.add_argument(
         "-u",
         "--no-update",
         action="store_true",
-        help="do not update the results of the last run of the sanity "
-             "checks")
+        help="do not update the results of the last run of the twister run")
 
     parser.add_argument(
         "-G",
@@ -513,9 +512,9 @@ Artificially long but functional example:
              "--footprint-threshold=0")
     parser.add_argument(
         "-O", "--outdir",
-        default=os.path.join(os.getcwd(), "sanity-out"),
+        default=os.path.join(os.getcwd(), "twister-out"),
         help="Output directory for logs and binaries. "
-             "Default is 'sanity-out' in the current directory. "
+             "Default is 'twister-out' in the current directory. "
              "This directory will be cleaned unless '--no-clean' is set. "
              "The '--clobber-output' option controls what cleaning does.")
     parser.add_argument(
@@ -544,7 +543,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
 
     parser.add_argument(
         "-z", "--size", action="append",
-        help="Don't run sanity  checks. Instead, produce a report to "
+        help="Don't run twister. Instead, produce a report to "
              "stdout detailing RAM/ROM sizes on the specified filenames. "
              "All other command line arguments ignored.")
     parser.add_argument(
@@ -580,7 +579,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         prefixed with -D before being passed to CMake.
 
         E.g
-        "sanitycheck -x=USE_CCACHE=0"
+        "twister -x=USE_CCACHE=0"
         will translate to
         "cmake -DUSE_CCACHE=0"
 
@@ -612,7 +611,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                         Sanitycheck believes that it interacts with a terminal
                         when it actually interacts with the script.
 
-                        E.g "sanitycheck --device-testing
+                        E.g "twister --device-testing
                         --device-serial-pty <script>
                         """)
 
@@ -643,7 +642,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         help="""Uses west instead of ninja or make to flash when running with
              --device-testing. Supports comma-separated argument list.
 
-        E.g "sanitycheck --device-testing --device-serial /dev/ttyACM0
+        E.g "twister --device-testing --device-serial /dev/ttyACM0
                          --west-flash="--board-id=foobar,--erase"
         will translate to "west flash -- --board-id=foobar --erase"
 
@@ -655,7 +654,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         help="""Uses the specified west runner instead of default when running
              with --west-flash.
 
-        E.g "sanitycheck --device-testing --device-serial /dev/ttyACM0
+        E.g "twister --device-testing --device-serial /dev/ttyACM0
                          --west-flash --west-runner=pyocd"
         will translate to "west flash --runner pyocd"
 
@@ -732,7 +731,7 @@ def main():
         if os.path.exists(options.outdir):
             print("Keeping artifacts untouched")
     elif options.last_metrics:
-        ls = os.path.join(options.outdir, "sanitycheck.csv")
+        ls = os.path.join(options.outdir, "twister.csv")
         if os.path.exists(ls):
             with open(ls, "r") as fp:
                 previous_results = fp.read()
@@ -761,7 +760,7 @@ def main():
     if options.log_file:
         fh = logging.FileHandler(options.log_file)
     else:
-        fh = logging.FileHandler(os.path.join(options.outdir, "sanitycheck.log"))
+        fh = logging.FileHandler(os.path.join(options.outdir, "twister.log"))
 
     fh.setLevel(logging.DEBUG)
 
@@ -1011,9 +1010,9 @@ def main():
     discards = []
 
     if options.report_suffix:
-        last_run = os.path.join(options.outdir, "sanitycheck_{}.csv".format(options.report_suffix))
+        last_run = os.path.join(options.outdir, "twister_{}.csv".format(options.report_suffix))
     else:
-        last_run = os.path.join(options.outdir, "sanitycheck.csv")
+        last_run = os.path.join(options.outdir, "twister.csv")
 
     if options.only_failed:
         suite.load_from_file(last_run, filter_status=['skipped', 'passed'])
