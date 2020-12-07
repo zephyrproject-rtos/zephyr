@@ -474,12 +474,6 @@
 			interrupt-names = "kbc_ibf", "kbc_obe", "pmch_ibf",
 					  "pmch_obe", "p80_fifo";
 
-			/* Host serial port pinmux PIN75 86 36 33 42 C7 B3 B2 */
-			pinctrl-0 = <&altb_rxd_sl &altb_txd_sl
-						&altb_rts_sl &altb_cts_sl
-						&altb_ri_sl &altb_dtr_bout_sl
-						&altb_dcd_sl &altb_dsr_sl>;
-
 			/* WUI map for accessing host sub-modules */
 			host_acc_wui = <&wui_host_acc>;
 
@@ -490,6 +484,17 @@
 				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 6>,
 				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 7>;
 			label = "HOST_SUBS";
+		};
+
+		host_uart: io_host_uart {
+			compatible = "nuvoton,npcx-host-uart";
+			/* Host serial port pinmux PIN75 86 36 33 42 C7 B3 B2 */
+			pinctrl-0 = <&altb_rxd_sl &altb_txd_sl
+						&altb_rts_sl &altb_cts_sl
+						&altb_ri_sl &altb_dtr_bout_sl
+						&altb_dcd_sl &altb_dsr_sl>;
+			label = "HOST_UART_IO";
+			status = "disabled";
 		};
 	};
 };
