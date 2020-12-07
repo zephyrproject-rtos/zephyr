@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # A script to generate a list of boards that have changed or added and create an
-# arguments file for sanitycheck to allow running more tests for those boards.
+# arguments file for twister to allow running more tests for those boards.
 
 import re, os
 import sh
@@ -43,7 +43,7 @@ def init_logs():
 
 def parse_args():
     parser = argparse.ArgumentParser(
-                description="Generate a sanitycheck argument for for boards "
+                description="Generate a twister argument for for boards "
                             " that have changed")
     parser.add_argument('-c', '--commits', default=None,
             help="Commit range in the form: a..b")

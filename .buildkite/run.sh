@@ -6,13 +6,13 @@ set -eE
 
 function cleanup()
 {
-	# Rename sanitycheck junit xml for use with junit-annotate-buildkite-plugin
-	# create dummy file if sanitycheck did nothing
-	if [ ! -f sanity-out/sanitycheck.xml ]; then
-	   touch sanity-out/sanitycheck.xml
+	# Rename twister junit xml for use with junit-annotate-buildkite-plugin
+	# create dummy file if twister did nothing
+	if [ ! -f twister-out/twister.xml ]; then
+	   touch twister-out/twister.xml
 	fi
-	mv sanity-out/sanitycheck.xml sanitycheck-${BUILDKITE_JOB_ID}.xml
-	buildkite-agent artifact upload sanitycheck-${BUILDKITE_JOB_ID}.xml
+	mv twister-out/twister.xml twister-${BUILDKITE_JOB_ID}.xml
+	buildkite-agent artifact upload twister-${BUILDKITE_JOB_ID}.xml
 
 
 	# Upload test_file to get list of tests that are build/run
@@ -57,7 +57,7 @@ if [ -n "${DAILY_BUILD}" ]; then
    west update 1> west.update.log || west update 1> west.update-2.log
    west forall -c 'git reset --hard HEAD'
    source zephyr-env.sh
-   ./scripts/sanitycheck --subset ${JOB_NUM}/${BUILDKITE_PARALLEL_JOB_COUNT} ${SANITYCHECK_OPTIONS}
+   ./scripts/twister --subset ${JOB_NUM}/${BUILDKITE_PARALLEL_JOB_COUNT} ${SANITYCHECK_OPTIONS}
 else
    if [ -n "${BUILDKITE_PULL_REQUEST_BASE_BRANCH}" ]; then
       ./scripts/ci/run_ci.sh  -c -b ${BUILDKITE_PULL_REQUEST_BASE_BRANCH} -r origin \

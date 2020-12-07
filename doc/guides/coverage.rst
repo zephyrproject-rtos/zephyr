@@ -144,7 +144,7 @@ or::
 
     $ twister --coverage -p native_posix -T tests/bluetooth
 
-which will produce ``sanity-out/coverage/index.html`` with the report.
+which will produce ``twister-out/coverage/index.html`` with the report.
 
 The process differs for unit tests, which are built with the host
 toolchain and require a different board::

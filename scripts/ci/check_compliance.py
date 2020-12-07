@@ -576,7 +576,7 @@ class Codeowners(ComplianceTest):
         """
 
         # TODO: filter out files not in "git ls-files" (e.g.,
-        # sanity-out) _if_ the overhead isn't too high for a clean tree.
+        # twister-out) _if_ the overhead isn't too high for a clean tree.
         #
         # pathlib.match() doesn't support **, so it looks like we can't
         # recursively glob the output of ls-files directly, only real
