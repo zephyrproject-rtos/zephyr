@@ -96,21 +96,17 @@ static uint8_t *mem_pool_data_alloc(struct net_buf *buf, size_t *size,
 				 k_timeout_t timeout)
 {
 	struct net_buf_pool *buf_pool = net_buf_pool_get(buf->pool_id);
-	struct k_mem_pool *pool = buf_pool->alloc->alloc_data;
-	struct k_mem_block block;
+	struct k_heap *pool = buf_pool->alloc->alloc_data;
 	uint8_t *ref_count;
 
-	/* Reserve extra space for k_mem_block_id and ref-count (uint8_t) */
-	if (z_mem_pool_alloc(pool, &block,
-			     sizeof(struct k_mem_block_id) + 1 + *size,
-			     timeout)) {
+	/* Reserve extra space for a ref-count (uint8_t) */
+	void *b = k_heap_alloc(pool, 1 + *size, timeout);
+
+	if (b == NULL) {
 		return NULL;
 	}
 
-	/* save the block descriptor info at the start of the actual block */
-	memcpy(block.data, &block.id, sizeof(block.id));
-
-	ref_count = (uint8_t *)block.data + sizeof(block.id);
+	ref_count = (uint8_t *)b;
 	*ref_count = 1U;
 
 	/* Return pointer to the byte following the ref count */
@@ -119,7 +115,8 @@ static uint8_t *mem_pool_data_alloc(struct net_buf *buf, size_t *size,
 
 static void mem_pool_data_unref(struct net_buf *buf, uint8_t *data)
 {
-	struct k_mem_block_id id;
+	struct net_buf_pool *buf_pool = net_buf_pool_get(buf->pool_id);
+	struct k_heap *pool = buf_pool->alloc->alloc_data;
 	uint8_t *ref_count;
 
 	ref_count = data - 1;
@@ -128,8 +125,7 @@ static void mem_pool_data_unref(struct net_buf *buf, uint8_t *data)
 	}
 
 	/* Need to copy to local variable due to alignment */
-	memcpy(&id, ref_count - sizeof(id), sizeof(id));
-	z_mem_pool_free_id(&id);
+	k_heap_free(pool, ref_count);
 }
 
 const struct net_buf_data_cb net_buf_var_cb = {

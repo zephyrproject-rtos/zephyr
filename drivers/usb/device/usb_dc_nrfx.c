@@ -85,6 +85,10 @@ struct nrf_usbd_ep_cfg {
 
 };
 
+struct usbd_mem_block {
+	void *data;
+};
+
 /**
  * @brief Endpoint buffer
  *
@@ -95,7 +99,7 @@ struct nrf_usbd_ep_cfg {
  */
 struct nrf_usbd_ep_buf {
 	uint32_t len;
-	struct k_mem_block block;
+	struct usbd_mem_block block;
 	uint8_t *data;
 	uint8_t *curr;
 };
@@ -155,7 +159,7 @@ struct usbd_pwr_event {
  */
 struct usbd_event {
 	sys_snode_t node;
-	struct k_mem_block block;
+	struct usbd_mem_block block;
 	union {
 		struct usbd_ep_event ep_evt;
 		struct usbd_pwr_event pwr_evt;
@@ -178,8 +182,8 @@ struct usbd_event {
 #error Invalid USBD event queue size (CONFIG_USB_NRFX_EVT_QUEUE_SIZE).
 #endif
 
-Z_MEM_POOL_DEFINE(fifo_elem_pool, FIFO_ELEM_MIN_SZ, FIFO_ELEM_MAX_SZ,
-		  CONFIG_USB_NRFX_EVT_QUEUE_SIZE, FIFO_ELEM_ALIGN);
+K_HEAP_DEFINE(fifo_elem_pool,
+	      FIFO_ELEM_MAX_SZ * CONFIG_USB_NRFX_EVT_QUEUE_SIZE);
 
 /**
  * @brief Endpoint buffer pool
@@ -233,9 +237,8 @@ Z_MEM_POOL_DEFINE(fifo_elem_pool, FIFO_ELEM_MIN_SZ, FIFO_ELEM_MAX_SZ,
 /** 4 Byte Buffer alignment required by hardware */
 #define EP_BUF_POOL_ALIGNMENT sizeof(unsigned int)
 
-Z_MEM_POOL_DEFINE(ep_buf_pool, EP_BUF_POOL_BLOCK_MIN_SZ,
-		  EP_BUF_POOL_BLOCK_MAX_SZ, EP_BUF_POOL_BLOCK_COUNT,
-		  EP_BUF_POOL_ALIGNMENT);
+K_HEAP_DEFINE(ep_buf_pool,
+	      EP_BUF_POOL_BLOCK_MAX_SZ * EP_BUF_POOL_BLOCK_COUNT);
 
 /**
  * @brief USBD control structure
@@ -406,7 +409,7 @@ static inline void usbd_work_schedule(void)
  */
 static inline void usbd_evt_free(struct usbd_event *ev)
 {
-	z_mem_pool_free(&ev->block);
+	k_heap_free(&fifo_elem_pool, &ev->block);
 }
 
 /**
@@ -451,15 +454,14 @@ static inline void usbd_evt_flush(void)
  */
 static inline struct usbd_event *usbd_evt_alloc(void)
 {
-	int ret;
 	struct usbd_event *ev;
-	struct k_mem_block block;
+	struct usbd_mem_block block;
 
-	ret = z_mem_pool_alloc(&fifo_elem_pool, &block,
-			       sizeof(struct usbd_event),
-			       K_NO_WAIT);
+	block.data = k_heap_alloc(&fifo_elem_pool,
+				  sizeof(struct usbd_event),
+				  K_NO_WAIT);
 
-	if (ret < 0) {
+	if (block.data == NULL) {
 		LOG_ERR("USBD event allocation failed!");
 
 		/*
@@ -470,10 +472,10 @@ static inline struct usbd_event *usbd_evt_alloc(void)
 		 */
 		usbd_evt_flush();
 
-		ret = z_mem_pool_alloc(&fifo_elem_pool, &block,
-					       sizeof(struct usbd_event),
-					       K_NO_WAIT);
-		if (ret < 0) {
+		block.data = k_heap_alloc(&fifo_elem_pool,
+					   sizeof(struct usbd_event),
+					   K_NO_WAIT);
+		if (block.data == NULL) {
 			LOG_ERR("USBD event memory corrupted");
 			__ASSERT_NO_MSG(0);
 			return NULL;
@@ -629,7 +631,6 @@ static void ep_ctx_reset(struct nrf_usbd_ep_ctx *ep_ctx)
 static int eps_ctx_init(void)
 {
 	struct nrf_usbd_ep_ctx *ep_ctx;
-	int err;
 	uint32_t i;
 
 	for (i = 0U; i < CFG_EPIN_CNT; i++) {
@@ -643,9 +644,10 @@ static int eps_ctx_init(void)
 		__ASSERT_NO_MSG(ep_ctx);
 
 		if (!ep_ctx->buf.block.data) {
-			err = z_mem_pool_alloc(&ep_buf_pool, &ep_ctx->buf.block,
-					       EP_BUF_MAX_SZ, K_NO_WAIT);
-			if (err < 0) {
+			ep_ctx->buf.block.data =
+				k_heap_alloc(&ep_buf_pool,
+					     EP_BUF_MAX_SZ, K_NO_WAIT);
+			if (ep_ctx->buf.block.data == NULL) {
 				LOG_ERR("Buffer alloc failed for EP 0x%02x", i);
 				return -ENOMEM;
 			}
@@ -665,10 +667,10 @@ static int eps_ctx_init(void)
 		__ASSERT_NO_MSG(ep_ctx);
 
 		if (!ep_ctx->buf.block.data) {
-			err = z_mem_pool_alloc(&ep_buf_pool, &ep_ctx->buf.block,
-					       ISO_EP_BUF_MAX_SZ,
-					       K_NO_WAIT);
-			if (err < 0) {
+			ep_ctx->buf.block.data = k_heap_alloc(&ep_buf_pool,
+							      ISO_EP_BUF_MAX_SZ,
+							      K_NO_WAIT);
+			if (ep_ctx->buf.block.data == NULL) {
 				LOG_ERR("EP buffer alloc failed for ISOOUT");
 				return -ENOMEM;
 			}
@@ -694,7 +696,7 @@ static void eps_ctx_uninit(void)
 	for (i = 0U; i < CFG_EPOUT_CNT; i++) {
 		ep_ctx = out_endpoint_ctx(i);
 		__ASSERT_NO_MSG(ep_ctx);
-		z_mem_pool_free(&ep_ctx->buf.block);
+		k_heap_free(&ep_buf_pool, ep_ctx->buf.block.data);
 		memset(ep_ctx, 0, sizeof(*ep_ctx));
 	}
 
@@ -707,7 +709,7 @@ static void eps_ctx_uninit(void)
 	if (CFG_EP_ISOOUT_CNT) {
 		ep_ctx = out_endpoint_ctx(NRF_USBD_EPOUT(8));
 		__ASSERT_NO_MSG(ep_ctx);
-		z_mem_pool_free(&ep_ctx->buf.block);
+		k_heap_free(&ep_buf_pool, ep_ctx->buf.block.data);
 		memset(ep_ctx, 0, sizeof(*ep_ctx));
 	}
 }

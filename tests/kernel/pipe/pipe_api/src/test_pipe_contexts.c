@@ -90,23 +90,6 @@ static void tpipe_thread_thread(struct k_pipe *ppipe)
 	k_thread_abort(tid);
 }
 
-static void tpipe_kthread_to_kthread(struct k_pipe *ppipe)
-{
-	/**TESTPOINT: thread-thread data passing via pipe*/
-	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-				      tThread_entry, ppipe, NULL, NULL,
-				      K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
-
-	tpipe_put(ppipe, K_NO_WAIT);
-	k_sem_take(&end_sema, K_FOREVER);
-
-	k_sem_take(&end_sema, K_FOREVER);
-	tpipe_get(ppipe, K_FOREVER);
-
-	/* clear the spawned thread avoid side effect */
-	k_thread_abort(tid);
-}
-
 static void tpipe_put_no_wait(struct k_pipe *ppipe)
 {
 	size_t to_wt, wt_byte = 0;
@@ -227,28 +210,6 @@ void test_half_pipe_get_put(void)
 
 	/* clear the spawned thread avoid side effect */
 	k_thread_abort(tid);
-}
-
-/**
- * @brief Test Initialization and buffer allocation of pipe,
- * with various parameters
- * @see k_pipe_alloc_init(), k_pipe_cleanup()
- */
-void test_pipe_alloc(void)
-{
-	int ret;
-
-	zassert_false(k_pipe_alloc_init(&pipe_test_alloc, PIPE_LEN), NULL);
-
-	tpipe_kthread_to_kthread(&pipe_test_alloc);
-	k_pipe_cleanup(&pipe_test_alloc);
-
-	zassert_false(k_pipe_alloc_init(&pipe_test_alloc, 0), NULL);
-	k_pipe_cleanup(&pipe_test_alloc);
-
-	ret = k_pipe_alloc_init(&pipe_test_alloc, 2048);
-	zassert_true(ret == -ENOMEM,
-		"resource pool max block size is not smaller then requested buffer");
 }
 
 /**

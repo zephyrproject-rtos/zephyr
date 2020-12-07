@@ -511,8 +511,7 @@ K_THREAD_DEFINE(app_thread, STACK_SIZE,
 		start_app, NULL, NULL, NULL,
 		THREAD_PRIORITY, K_USER, -1);
 
-static Z_MEM_POOL_DEFINE(app_mem_pool, sizeof(uintptr_t), 1024,
-			 2, sizeof(uintptr_t));
+static K_HEAP_DEFINE(app_mem_pool, 1024 * 2);
 #endif
 
 void main(void)
@@ -534,7 +533,7 @@ void main(void)
 
 	k_mem_domain_init(&app_domain, ARRAY_SIZE(parts), parts);
 	k_mem_domain_add_thread(&app_domain, app_thread);
-	z_thread_resource_pool_assign(app_thread, &app_mem_pool);
+	k_thread_heap_assign(app_thread, &app_mem_pool);
 
 	k_thread_start(app_thread);
 	k_thread_join(app_thread, K_FOREVER);

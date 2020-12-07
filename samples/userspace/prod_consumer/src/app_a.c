@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(app_a);
 /* Resource pool for allocations made by the kernel on behalf of system
  * calls. Needed for k_queue_alloc_append()
  */
-Z_MEM_POOL_DEFINE(app_a_resource_pool, 32, 256, 5, 4);
+K_HEAP_DEFINE(app_a_resource_pool, 256 * 5 + 128);
 
 /* Define app_a_partition, where all globals for this app will be routed.
  * The partition starting address and size are populated by build system
@@ -213,7 +213,7 @@ void app_a_entry(void *p1, void *p2, void *p3)
 	/* Assign a resource pool to serve for kernel-side allocations on
 	 * behalf of application A. Needed for k_queue_alloc_append().
 	 */
-	z_thread_resource_pool_assign(k_current_get(), &app_a_resource_pool);
+	k_thread_heap_assign(k_current_get(), &app_a_resource_pool);
 
 	/* Set the callback function for the sample driver. This has to be
 	 * done from supervisor mode, as this code will run in supervisor
