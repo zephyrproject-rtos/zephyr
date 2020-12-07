@@ -25,7 +25,4 @@ config ESPI_PERIPHERAL_HOST_IO
 config ESPI_PERIPHERAL_DEBUG_PORT_80
 	default y
 
-config ESPI_PERIPHERAL_UART
-	default y
-
 endif #ESPI_NPCX
