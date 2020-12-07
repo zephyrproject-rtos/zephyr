@@ -25,12 +25,12 @@ dummy_test(test_auto_free);
 #else
 #define MAX_SZ	96
 #endif
-Z_MEM_POOL_DEFINE(test_pool, 16, MAX_SZ, 4, 4);
+K_HEAP_DEFINE(test_pool, MAX_SZ * 4 + 128);
 
 /*test case main entry*/
 void test_main(void)
 {
-	z_thread_resource_pool_assign(k_current_get(), &test_pool);
+	k_thread_heap_assign(k_current_get(), &test_pool);
 
 	ztest_test_suite(queue_api,
 			 ztest_1cpu_unit_test(test_queue_supv_to_user),

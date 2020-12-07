@@ -26,7 +26,7 @@
 struct lfs_file_data {
 	struct lfs_file file;
 	struct lfs_file_config config;
-	struct k_mem_block cache_block;
+	void *cache_block;
 };
 
 #define LFS_FILEP(fp) (&((struct lfs_file_data *)(fp->filep))->file)
@@ -47,10 +47,9 @@ BUILD_ASSERT(CONFIG_FS_LITTLEFS_CACHE_SIZE >= 4);
 #define CONFIG_FS_LITTLEFS_FC_MEM_POOL_NUM_BLOCKS CONFIG_FS_LITTLEFS_NUM_FILES
 #endif
 
-Z_MEM_POOL_DEFINE(file_cache_pool,
-		  CONFIG_FS_LITTLEFS_FC_MEM_POOL_MIN_SIZE,
-		  CONFIG_FS_LITTLEFS_FC_MEM_POOL_MAX_SIZE,
-		  CONFIG_FS_LITTLEFS_FC_MEM_POOL_NUM_BLOCKS, 4);
+K_HEAP_DEFINE(file_cache_pool,
+	      CONFIG_FS_LITTLEFS_FC_MEM_POOL_MAX_SIZE *
+	      CONFIG_FS_LITTLEFS_FC_MEM_POOL_NUM_BLOCKS);
 
 static inline void fs_lock(struct fs_littlefs *fs)
 {
@@ -175,7 +174,7 @@ static void release_file_data(struct fs_file_t *fp)
 	struct lfs_file_data *fdp = fp->filep;
 
 	if (fdp->config.buffer) {
-		z_mem_pool_free(&fdp->cache_block);
+		k_heap_free(&file_cache_pool, fdp->cache_block);
 	}
 
 	k_mem_slab_free(&file_data_pool, &fp->filep);
@@ -213,14 +212,14 @@ static int littlefs_open(struct fs_file_t *fp, const char *path,
 
 	memset(fdp, 0, sizeof(*fdp));
 
-	ret = z_mem_pool_alloc(&file_cache_pool, &fdp->cache_block,
-			       lfs->cfg->cache_size, K_NO_WAIT);
-	LOG_DBG("alloc %u file cache: %d", lfs->cfg->cache_size, ret);
-	if (ret != 0) {
+	fdp->cache_block = k_heap_alloc(&file_cache_pool,
+					lfs->cfg->cache_size, K_NO_WAIT);
+	if (fdp->cache_block == NULL) {
+		ret = -ENOMEM;
 		goto out;
 	}
 
-	fdp->config.buffer = fdp->cache_block.data;
+	fdp->config.buffer = fdp->cache_block;
 	path = fs_impl_strip_prefix(path, fp->mp);
 
 	fs_lock(fs);

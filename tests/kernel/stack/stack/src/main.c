@@ -66,7 +66,7 @@ static struct k_sem end_sema;
 
 
 
-Z_MEM_POOL_DEFINE(test_pool, 128, 128, 2, 4);
+K_HEAP_DEFINE(test_pool, 128 * 3);
 
 extern struct k_stack kstack;
 extern struct k_stack stack;
@@ -335,7 +335,7 @@ void test_main(void)
 			      &end_sema, &threadstack, &kstack, &stack, &thread_data1,
 			      &end_sema1, &threadstack1);
 
-	z_thread_resource_pool_assign(k_current_get(), &test_pool);
+	k_thread_heap_assign(k_current_get(), &test_pool);
 
 	ztest_test_suite(test_stack_usage,
 			 ztest_unit_test(test_stack_thread2thread),

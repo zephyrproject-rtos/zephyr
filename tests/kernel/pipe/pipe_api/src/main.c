@@ -38,18 +38,6 @@ extern struct k_sem end_sema;
 extern struct k_stack tstack;
 extern struct k_thread tdata;
 
-#ifndef CONFIG_USERSPACE
-#define dummy_test(_name) \
-	static void _name(void) \
-	{ \
-		ztest_test_skip(); \
-	}
-
-dummy_test(test_pipe_user_thread2thread);
-dummy_test(test_pipe_user_put_fail);
-dummy_test(test_pipe_user_get_fail);
-#endif /* !CONFIG_USERSPACE */
-
 /*test case main entry*/
 void test_main(void)
 {
@@ -59,13 +47,9 @@ void test_main(void)
 
 	ztest_test_suite(pipe_api,
 			 ztest_1cpu_unit_test(test_pipe_thread2thread),
-			 ztest_1cpu_user_unit_test(test_pipe_user_thread2thread),
-			 ztest_1cpu_user_unit_test(test_pipe_user_put_fail),
-			 ztest_user_unit_test(test_pipe_user_get_fail),
 			 ztest_1cpu_unit_test(test_pipe_put_fail),
 			 ztest_unit_test(test_pipe_get_fail),
 			 ztest_unit_test(test_half_pipe_get_put),
-			 ztest_1cpu_unit_test(test_pipe_alloc),
 			 ztest_unit_test(test_pipe_reader_wait),
 			 ztest_unit_test(test_pipe_avail_r_lt_w),
 			 ztest_unit_test(test_pipe_avail_w_lt_r),
