@@ -1027,7 +1027,6 @@ Shell:
         - include/shell/
         - samples/subsys/shell/
         - subsys/shell/
-        - tests/shell/
         - tests/subsys/shell/
     labels:
         - "area: Shell"
