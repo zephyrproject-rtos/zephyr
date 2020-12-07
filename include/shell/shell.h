@@ -731,7 +731,7 @@ extern void z_shell_print_stream(const void *user_ctx, const char *data,
 	static const struct shell _name;				      \
 	static struct shell_ctx UTIL_CAT(_name, _ctx);			      \
 	static uint8_t _name##_out_buffer[CONFIG_SHELL_PRINTF_BUFF_SIZE];     \
-	SHELL_LOG_BACKEND_DEFINE(_name, _name##_out_buffer,		      \
+	Z_SHELL_LOG_BACKEND_DEFINE(_name, _name##_out_buffer,		      \
 				 CONFIG_SHELL_PRINTF_BUFF_SIZE,		      \
 				 _log_queue_size, _log_timeout);	      \
 	Z_SHELL_HISTORY_DEFINE(_name##_history, CONFIG_SHELL_HISTORY_BUFFER); \
@@ -751,7 +751,7 @@ extern void z_shell_print_stream(const void *user_ctx, const char *data,
 		.shell_flag = _shell_flag,				      \
 		.fprintf_ctx = &_name##_fprintf,			      \
 		.stats = SHELL_STATS_PTR(_name),			      \
-		.log_backend = SHELL_LOG_BACKEND_PTR(_name),		      \
+		.log_backend = Z_SHELL_LOG_BACKEND_PTR(_name),		      \
 		LOG_INSTANCE_PTR_INIT(log, shell, _name)		      \
 		.thread_name = STRINGIFY(_name),			      \
 		.thread = &_name##_thread,				      \

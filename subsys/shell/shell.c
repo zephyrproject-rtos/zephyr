@@ -1114,7 +1114,8 @@ static void shell_log_process(const struct shell *shell)
 		if (!IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
 			shell_cmd_line_erase(shell);
 
-			processed = shell_log_backend_process(shell->log_backend);
+			processed = z_shell_log_backend_process(
+					shell->log_backend);
 		}
 
 		struct k_poll_signal *signal =
@@ -1193,7 +1194,7 @@ static int instance_uninit(const struct shell *shell)
 
 	if (IS_ENABLED(CONFIG_SHELL_LOG_BACKEND)) {
 		/* todo purge log queue */
-		shell_log_backend_disable(shell->log_backend);
+		z_shell_log_backend_disable(shell->log_backend);
 	}
 
 	err = shell->iface->api->uninit(shell->iface);
@@ -1245,8 +1246,8 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 	}
 
 	if (log_backend && IS_ENABLED(CONFIG_SHELL_LOG_BACKEND)) {
-		shell_log_backend_enable(shell->log_backend, (void *)shell,
-					 log_level);
+		z_shell_log_backend_enable(shell->log_backend, (void *)shell,
+					   log_level);
 	}
 
 	/* Enable shell and print prompt. */
