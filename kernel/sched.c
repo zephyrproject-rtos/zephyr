@@ -413,7 +413,7 @@ static void update_cache(int preempt_ok)
 
 static void ready_thread(struct k_thread *thread)
 {
-#ifdef KERNEL_COHERENCE
+#ifdef CONFIG_KERNEL_COHERENCE
 	__ASSERT_NO_MSG(arch_mem_coherent(thread));
 #endif
 
@@ -676,7 +676,7 @@ static void add_thread_timeout(struct k_thread *thread, k_timeout_t timeout)
 static void pend(struct k_thread *thread, _wait_q_t *wait_q,
 		 k_timeout_t timeout)
 {
-#ifdef KERNEL_COHERENCE
+#ifdef CONFIG_KERNEL_COHERENCE
 	__ASSERT_NO_MSG(arch_mem_coherent(wait_q));
 #endif
 
