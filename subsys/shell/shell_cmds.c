@@ -287,8 +287,8 @@ static int cmd_history(const struct shell *shell, size_t argc, char **argv)
 	uint16_t len;
 
 	while (1) {
-		shell_history_get(shell->history, true,
-				  shell->ctx->temp_buff, &len);
+		z_shell_history_get(shell->history, true,
+				    shell->ctx->temp_buff, &len);
 
 		if (len) {
 			shell_print(shell, "[%3d] %s",

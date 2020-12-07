@@ -41,13 +41,13 @@ struct shell_history_item {
 	char data[0];
 };
 
-void shell_history_mode_exit(struct shell_history *history)
+void z_shell_history_mode_exit(struct shell_history *history)
 {
 	history->current = NULL;
 }
 
-bool shell_history_get(struct shell_history *history, bool up,
-		       uint8_t *dst, uint16_t *len)
+bool z_shell_history_get(struct shell_history *history, bool up,
+			 uint8_t *dst, uint16_t *len)
 {
 	struct shell_history_item *h_item; /* history item */
 	sys_dnode_t *l_item; /* list item */
@@ -121,13 +121,14 @@ static bool remove_from_tail(struct shell_history *history)
 	return true;
 }
 
-void shell_history_purge(struct shell_history *history)
+void z_shell_history_purge(struct shell_history *history)
 {
 	while (remove_from_tail(history)) {
 	}
 }
 
-void shell_history_put(struct shell_history *history, uint8_t *line, size_t len)
+void z_shell_history_put(struct shell_history *history, uint8_t *line,
+			 size_t len)
 {
 	sys_dnode_t *l_item; /* list item */
 	struct shell_history_item *h_item;
@@ -143,7 +144,7 @@ void shell_history_put(struct shell_history *history, uint8_t *line, size_t len)
 		return;
 	}
 
-	shell_history_mode_exit(history);
+	z_shell_history_mode_exit(history);
 
 	if (len == 0) {
 		return;
@@ -198,7 +199,7 @@ void shell_history_put(struct shell_history *history, uint8_t *line, size_t len)
 	} while (1);
 }
 
-void shell_history_init(struct shell_history *history)
+void z_shell_history_init(struct shell_history *history)
 {
 	sys_dlist_init(&history->list);
 	history->current = NULL;
