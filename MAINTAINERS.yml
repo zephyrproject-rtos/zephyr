@@ -1036,15 +1036,15 @@ RISCV arch:
     labels:
         - "area: RISCV"
 
-Sanitycheck:
+Twister:
     status: maintained
     maintainers:
         - nashif
     files:
-        - scripts/sanitycheck
-        - scripts/sanity_chk/
+        - scripts/twister
+        - scripts/pylib/twister
     labels:
-        - "area: Sanitycheck"
+        - "area: Twister"
 
 Settings:
     status: maintained
