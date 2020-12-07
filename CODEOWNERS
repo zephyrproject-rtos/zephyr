@@ -478,7 +478,8 @@
 /scripts/coccinelle/                      @himanshujha199640 @JuliaLawall
 /scripts/coredump/                        @dcpleung
 /scripts/kconfig/                         @ulfalizer
-/scripts/sanity_chk/expr_parser.py        @nashif
+/scripts/pylib/twister/expr_parser.py     @nashif
+/scripts/schemas/twister/                 @nashif
 /scripts/gen_app_partitions.py            @andrewboie
 /scripts/get_maintainer.py                @nashif
 /scripts/dts/                             @mbolivar-nordic @galak
@@ -492,11 +493,11 @@
 /scripts/process_gperf.py                 @andrewboie
 /scripts/gen_relocate_app.py              @wentongwu
 /scripts/requirements*.txt                @mbolivar-nordic @galak @nashif
-/scripts/tests/sanitycheck/               @aasthagr
+/scripts/tests/twister/                   @aasthagr
 /scripts/tests/build/test_subfolder_list.py @rmstoi
 /scripts/tracing/                         @wentongwu
-/scripts/sanity_chk/                      @nashif
-/scripts/sanitycheck                      @nashif
+/scripts/pylib/twister/                   @nashif
+/scripts/twister                          @nashif
 /scripts/series-push-hook.sh              @erwango
 /scripts/west_commands/                   @mbolivar-nordic
 /scripts/west-commands.yml                @mbolivar-nordic
