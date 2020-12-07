@@ -9,14 +9,14 @@
 #include "shell_ops.h"
 #include <logging/log_ctrl.h>
 
-int shell_log_backend_output_func(uint8_t *data, size_t length, void *ctx)
+int z_shell_log_backend_output_func(uint8_t *data, size_t length, void *ctx)
 {
 	z_shell_print_stream(ctx, data, length);
 	return length;
 }
 
-void shell_log_backend_enable(const struct shell_log_backend *backend,
-			      void *ctx, uint32_t init_log_level)
+void z_shell_log_backend_enable(const struct shell_log_backend *backend,
+				void *ctx, uint32_t init_log_level)
 {
 	int err = 0;
 
@@ -117,7 +117,7 @@ static void msg_to_fifo(const struct shell *shell,
 	}
 }
 
-void shell_log_backend_disable(const struct shell_log_backend *backend)
+void z_shell_log_backend_disable(const struct shell_log_backend *backend)
 {
 	fifo_flush(backend);
 	log_backend_disable(backend->backend);
@@ -139,7 +139,7 @@ static void msg_process(const struct log_output *log_output,
 	log_msg_put(msg);
 }
 
-bool shell_log_backend_process(const struct shell_log_backend *backend)
+bool z_shell_log_backend_process(const struct shell_log_backend *backend)
 {
 	uint32_t dropped;
 	const struct shell *shell =
@@ -281,11 +281,11 @@ static void panic(const struct log_backend *const backend)
 		shell_op_cursor_horiz_move(shell,
 					   -shell->ctx->vt100_ctx.cons.cur_x);
 
-		while (shell_log_backend_process(shell->log_backend)) {
+		while (z_shell_log_backend_process(shell->log_backend)) {
 			/* empty */
 		}
 	} else {
-		shell_log_backend_disable(shell->log_backend);
+		z_shell_log_backend_disable(shell->log_backend);
 	}
 }
 
