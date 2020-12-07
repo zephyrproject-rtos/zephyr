@@ -5,13 +5,3 @@
  */
 
 #include <st/h7/stm32h7_dualcore.dtsi>
-/ {
-	soc {
-		flash-controller@52002000 {
-			flash0: flash@8000000 {
-				write-block-size = <32>;
-				erase-block-size = <131072>;
-			};
-		};
-	};
-};
