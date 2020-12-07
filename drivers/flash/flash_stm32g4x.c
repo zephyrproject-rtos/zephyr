@@ -111,12 +111,26 @@ static int erase_page(const struct device *dev, unsigned int offset)
 	}
 
 #if defined(FLASH_OPTR_DBANK)
-	if (offset < (FLASH_SIZE / 2)) {
+	bool bank_swap;
+	/* Check whether bank1/2 are swapped */
+	bank_swap = (LL_SYSCFG_GetFlashBankMode() == LL_SYSCFG_BANKMODE_BANK2);
+
+	if ((offset < (FLASH_SIZE / 2)) && !bank_swap) {
 		/* The pages to be erased is in bank 1 */
 		regs->CR &= ~FLASH_CR_BKER_Msk;
 		page = offset / FLASH_PAGE_SIZE;
 		LOG_DBG("Erase page %d on bank 1", page);
-	} else if (offset >= BANK2_OFFSET) {
+	} else if ((offset >= BANK2_OFFSET) && bank_swap) {
+		/* The pages to be erased is in bank 1 */
+		regs->CR &= ~FLASH_CR_BKER_Msk;
+		page = (offset - BANK2_OFFSET) / FLASH_PAGE_SIZE;
+		LOG_DBG("Erase page %d on bank 1", page);
+	} else if ((offset < (FLASH_SIZE / 2)) && bank_swap) {
+		/* The pages to be erased is in bank 2 */
+		regs->CR |= FLASH_CR_BKER;
+		page = offset / FLASH_PAGE_SIZE;
+		LOG_DBG("Erase page %d on bank 2", page);
+	} else if ((offset >= BANK2_OFFSET) && !bank_swap) {
 		/* The pages to be erased is in bank 2 */
 		regs->CR |= FLASH_CR_BKER;
 		page = (offset - BANK2_OFFSET) / FLASH_PAGE_SIZE;
