@@ -832,7 +832,8 @@ config TRACE_SCHED_IPI
 
 config KERNEL_COHERENCE
 	bool "Place all shared data into coherent memory"
-	default y if ARCH_HAS_COHERENCE && SMP && MP_NUM_CPUS > 1
+	depends on ARCH_HAS_COHERENCE
+	default y if SMP && MP_NUM_CPUS > 1
 	select THREAD_STACK_INFO
 	help
 	  When available and selected, the kernel will build in a mode
