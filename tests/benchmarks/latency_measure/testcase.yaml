@@ -1,6 +1,6 @@
 tests:
   benchmark.kernel.latency:
-    arch_allow: x86 arm posix
+    arch_allow: x86 arm
     # FIXME: no DWT and no RTC_TIMER for qemu_cortex_m0
     platform_exclude: qemu_x86_64 qemu_cortex_m0
     filter: CONFIG_PRINTK and not CONFIG_SOC_FAMILY_STM32
