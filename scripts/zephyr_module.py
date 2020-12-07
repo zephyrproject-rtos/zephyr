@@ -11,9 +11,9 @@ used as project list.
 Include file is generated for Kconfig using --kconfig-out.
 A <name>:<path> text file is generated for use with CMake using --cmake-out.
 
-Using --sanitycheck-out <filename> an argument file for sanitycheck script will
+Using --twister-out <filename> an argument file for twister script will
 be generated which would point to test and sample roots available in modules
-that can be included during a sanitycheck run. This allows testing code
+that can be included during a twister run. This allows testing code
 maintained in modules in addition to what is available in the main Zephyr tree.
 '''
 
@@ -177,7 +177,7 @@ def process_kconfig(module, meta):
     else:
         return ""
 
-def process_sanitycheck(module, meta):
+def process_twister(module, meta):
 
     out = ""
     tests = meta.get('tests', [])
@@ -207,8 +207,8 @@ def main():
     parser.add_argument('--kconfig-out',
                         help="""File to write with resulting KConfig import
                              statements.""")
-    parser.add_argument('--sanitycheck-out',
-                        help="""File to write with resulting sanitycheck
+    parser.add_argument('--twister-out',
+                        help="""File to write with resulting twister
                              parameters.""")
     parser.add_argument('--cmake-out',
                         help="""File to write with resulting <name>:<path>
@@ -248,7 +248,7 @@ def main():
     kconfig = ""
     cmake = ""
     settings = ""
-    sanitycheck = ""
+    twister = ""
 
     Module = namedtuple('Module', ['project', 'meta', 'depends'])
     # dep_modules is a list of all modules that has an unresolved dependency
@@ -303,7 +303,7 @@ def main():
         kconfig += process_kconfig(module.project, module.meta)
         cmake += process_cmake(module.project, module.meta)
         settings += process_settings(module.project, module.meta)
-        sanitycheck += process_sanitycheck(module.project, module.meta)
+        twister += process_twister(module.project, module.meta)
 
     if args.kconfig_out:
         with open(args.kconfig_out, 'w', encoding="utf-8") as fp:
@@ -317,9 +317,9 @@ def main():
         with open(args.settings_out, 'w', encoding="utf-8") as fp:
             fp.write(settings)
 
-    if args.sanitycheck_out:
-        with open(args.sanitycheck_out, 'w', encoding="utf-8") as fp:
-            fp.write(sanitycheck)
+    if args.twister_out:
+        with open(args.twister_out, 'w', encoding="utf-8") as fp:
+            fp.write(twister)
 
 
 if __name__ == "__main__":
