@@ -146,7 +146,7 @@ static void history_init(const struct shell *shell)
 		return;
 	}
 
-	shell_history_init(shell->history);
+	z_shell_history_init(shell->history);
 }
 
 static void history_purge(const struct shell *shell)
@@ -155,7 +155,7 @@ static void history_purge(const struct shell *shell)
 		return;
 	}
 
-	shell_history_purge(shell->history);
+	z_shell_history_purge(shell->history);
 }
 
 static void history_mode_exit(const struct shell *shell)
@@ -165,7 +165,7 @@ static void history_mode_exit(const struct shell *shell)
 	}
 
 	flag_history_exit_set(shell, false);
-	shell_history_mode_exit(shell->history);
+	z_shell_history_mode_exit(shell->history);
 }
 
 static void history_put(const struct shell *shell, uint8_t *line, size_t length)
@@ -174,7 +174,7 @@ static void history_put(const struct shell *shell, uint8_t *line, size_t length)
 		return;
 	}
 
-	shell_history_put(shell->history, line, length);
+	z_shell_history_put(shell->history, line, length);
 }
 
 static void history_handle(const struct shell *shell, bool up)
@@ -190,11 +190,11 @@ static void history_handle(const struct shell *shell, bool up)
 	/* Checking if history process has been stopped */
 	if (flag_history_exit_get(shell)) {
 		flag_history_exit_set(shell, false);
-		shell_history_mode_exit(shell->history);
+		z_shell_history_mode_exit(shell->history);
 	}
 
 	/* Backup command if history is entered */
-	if (!shell_history_active(shell->history)) {
+	if (!z_shell_history_active(shell->history)) {
 		if (up) {
 			uint16_t cmd_len = shell_strlen(shell->ctx->cmd_buff);
 
@@ -211,8 +211,8 @@ static void history_handle(const struct shell *shell, bool up)
 	}
 
 	/* Start by checking if history is not empty. */
-	history_mode = shell_history_get(shell->history, up,
-					 shell->ctx->cmd_buff, &len);
+	history_mode = z_shell_history_get(shell->history, up,
+					   shell->ctx->cmd_buff, &len);
 
 	/* On exiting history mode print backed up command. */
 	if (!history_mode) {

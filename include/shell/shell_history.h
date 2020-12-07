@@ -30,16 +30,16 @@ struct shell_history {
  * @param _name History instance name.
  * @param _size Memory dedicated for shell history.
  */
-#define SHELL_HISTORY_DEFINE(_name, _size) \
-	static uint8_t __noinit __aligned(sizeof(void *)) \
-			_name##_ring_buf_data[_size]; \
-	static struct ring_buf _name##_ring_buf = \
-		{ \
-			.size = _size, \
+#define Z_SHELL_HISTORY_DEFINE(_name, _size)			  \
+	static uint8_t __noinit __aligned(sizeof(void *))	  \
+			_name##_ring_buf_data[_size];		  \
+	static struct ring_buf _name##_ring_buf =		  \
+		{						  \
+			.size = _size,				  \
 			.buf =  { .buf8 = _name##_ring_buf_data } \
-		}; \
-	static struct shell_history _name = { \
-		.ring_buf = &_name##_ring_buf \
+		};						  \
+	static struct shell_history _name = {			  \
+		.ring_buf = &_name##_ring_buf			  \
 	}
 
 
@@ -48,7 +48,7 @@ struct shell_history {
  *
  * @param history Shell history instance.
  */
-void shell_history_init(struct shell_history *history);
+void z_shell_history_init(struct shell_history *history);
 
 /**
  * @brief Purge shell history.
@@ -58,14 +58,14 @@ void shell_history_init(struct shell_history *history);
  * @param history Shell history instance.
  *
  */
-void shell_history_purge(struct shell_history *history);
+void z_shell_history_purge(struct shell_history *history);
 
 /**
  * @brief Exit history browsing mode.
  *
  * @param history Shell history instance.
  */
-void shell_history_mode_exit(struct shell_history *history);
+void z_shell_history_mode_exit(struct shell_history *history);
 
 /**
  * @brief Get next entry in shell command history.
@@ -79,8 +79,8 @@ void shell_history_mode_exit(struct shell_history *history);
  *				data (output).
  * @return True if remains in history mode.
  */
-bool shell_history_get(struct shell_history *history, bool up,
-		       uint8_t *dst, uint16_t *len);
+bool z_shell_history_get(struct shell_history *history, bool up,
+			 uint8_t *dst, uint16_t *len);
 
 /**
  * @brief Put line into shell command history.
@@ -92,7 +92,8 @@ bool shell_history_get(struct shell_history *history, bool up,
  * @param len		Data length.
  *
  */
-void shell_history_put(struct shell_history *history, uint8_t *line, size_t len);
+void z_shell_history_put(struct shell_history *history, uint8_t *line,
+			 size_t len);
 
 /**
  * @brief Get state of shell history.
@@ -101,7 +102,7 @@ void shell_history_put(struct shell_history *history, uint8_t *line, size_t len)
  *
  * @return True if in browsing mode.
  */
-static inline bool shell_history_active(struct shell_history *history)
+static inline bool z_shell_history_active(struct shell_history *history)
 {
 	return (history->current) ? true : false;
 }
