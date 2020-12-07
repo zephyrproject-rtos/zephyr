@@ -123,6 +123,20 @@ void test_stdint(void)
 {
 	zassert_true((unsigned_int + unsigned_byte + 1u == 0U), NULL);
 
+#if (UINT8_C(1) == 1)			\
+	&& (INT8_C(-1) == -1)		\
+	&& (UINT16_C(2) == 2)		\
+	&& (INT16_C(-2) == -2)		\
+	&& (UINT32_C(4) == 4)		\
+	&& (INT32_C(-4) == -4)		\
+	&& (UINT64_C(8) == 8)		\
+	&& (INT64_C(-8) == -8)		\
+	&& (UINTMAX_C(11) == 11)	\
+	&& (INTMAX_C(-11) == -11)
+	zassert_true(true, NULL);
+#else
+	zassert_true(false, "const int expr values ...");
+#endif
 }
 
 /*
