@@ -29,7 +29,7 @@ Examples
 Example remaining work
 ======================
 
-- Zephyr's :ref:`sanitycheck_script` currently use :file:`board.yaml` files to
+- Zephyr's :ref:`twister_script` currently use :file:`board.yaml` files to
   determine the hardware supported by a board. This should be obtained from
   devicetree instead.
 

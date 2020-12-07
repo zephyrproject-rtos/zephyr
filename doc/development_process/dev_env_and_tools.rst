@@ -213,7 +213,7 @@ The CI infrastructure currently runs the following tests:
 - Run ''checkpatch'' for code style issues (can vote -1 on errors; see note)
 - Gitlint: Git commit style based on project requirements
 - License Check: Check for conflicting licenses
-- Run ''sanitycheck'' script
+- Run ''twister'' script
 
   - Run kernel tests in QEMU (can vote -1 on errors)
   - Build various samples for different boards (can vote -1 on errors)

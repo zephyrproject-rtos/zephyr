@@ -1,7 +1,7 @@
-.. _sanitycheck_script:
+.. _twister_script:
 
-Sanity Tests
-#############
+Test Runner (Twister)
+#####################
 
 This script scans for the set of unit test applications in the git repository
 and attempts to execute them. By default, it tries to build each test
@@ -11,16 +11,16 @@ The default options will build the majority of the tests on a defined set of
 boards and will run in an emulated environment if available for the
 architecture or configuration being tested.
 
-In normal use, sanitycheck runs a limited set of kernel tests (inside
-an emulator).  Because of its limited test execution coverage, sanitycheck
+In normal use, twister runs a limited set of kernel tests (inside
+an emulator).  Because of its limited test execution coverage, twister
 cannot guarantee local changes will succeed in the full build
 environment, but it does sufficient testing by building samples and
 tests for different boards and different configurations to help keep the
 complete code tree buildable.
 
-When using (at least) one ``-v`` option, sanitycheck's console output
+When using (at least) one ``-v`` option, twister's console output
 shows for every test how the test is run (qemu, native_posix, etc.) or
-whether the binary was just built.  There are a few reasons why sanitycheck
+whether the binary was just built.  There are a few reasons why twister
 only builds a test and doesn't run it:
 
 - The test is marked as ``build_only: true`` in its ``.yaml``
@@ -28,7 +28,7 @@ only builds a test and doesn't run it:
 - The test configuration has defined a ``harness`` but you don't have
   it or haven't set it up.
 - The target device is not connected and not available for flashing
-- You or some higher level automation invoked sanitycheck with
+- You or some higher level automation invoked twister with
   ``--build-only``.
 
 These also affect the outputs of ``--testcase-report`` and
@@ -39,21 +39,21 @@ To run the script in the local tree, follow the steps below:
 ::
 
         $ source zephyr-env.sh
-        $ ./scripts/sanitycheck
+        $ ./scripts/twister
 
 If you have a system with a large number of cores, you can build and run
 all possible tests using the following options:
 
 ::
 
-        $ ./scripts/sanitycheck --all --enable-slow
+        $ ./scripts/twister --all --enable-slow
 
 This will build for all available boards and run all applicable tests in
 a simulated (for example QEMU) environment.
 
-The list of command line options supported by sanitycheck can be viewed using::
+The list of command line options supported by twister can be viewed using::
 
-        $ ./scripts/sanitycheck --help
+        $ ./scripts/twister --help
 
 
 
@@ -149,7 +149,7 @@ testing:
 
   default: [True|False]:
     This is a default board, it will tested with the highest priority and is
-    covered when invoking the simplified sanitycheck without any additional
+    covered when invoking the simplified twister without any additional
     arguments.
   ignore_tags:
     Do not attempt to build (and therefore run) tests marked with this list of
@@ -311,7 +311,7 @@ platform_allow: <list of platforms>
     only be run on the allowed platform and nothing else.
 
 integration_platforms: <YML list of platforms/boards>
-    This option limits the scope to the listed platforms when sanitycheck is
+    This option limits the scope to the listed platforms when twister is
     invoked with the --integration option. Use this instead of
     platform_allow if the goal is to limit scope due to timing or
     resource constraints.
@@ -320,7 +320,7 @@ platform_exclude: <list of platforms>
     Set of platforms that this test case should not run on.
 
 extra_sections: <list of extra binary sections>
-    When computing sizes, sanitycheck will report errors if it finds
+    When computing sizes, twister will report errors if it finds
     extra, unexpected sections in the Zephyr binary unless they are named
     here. They will not be included in the size calculation.
 
@@ -457,7 +457,7 @@ filter: <expression>
 The set of test cases that actually run depends on directives in the testcase
 filed and options passed in on the command line. If there is any confusion,
 running with -v or examining the discard report
-(:file:`sanitycheck_discard.csv`) can help show why particular test cases were
+(:file:`twister_discard.csv`) can help show why particular test cases were
 skipped.
 
 Metrics (such as pass/fail state and binary size) for the last code
@@ -475,7 +475,7 @@ Running in Integration Mode
 
 This mode is used in continuous integration (CI) and other automated
 environments used to give developers fast feedback on changes. The mode can
-be activated using the --integration option of sanitycheck and narrows down
+be activated using the --integration option of twister and narrows down
 the scope of builds and tests if applicable to platforms defined under the
 integration keyword in the testcase definition file (testcase.yaml and
 sample.yaml).
@@ -485,21 +485,21 @@ Running Tests on Hardware
 *************************
 
 Beside being able to run tests in QEMU and other simulated environments,
-sanitycheck supports running most of the tests on real devices and produces
+twister supports running most of the tests on real devices and produces
 reports for each run with detailed FAIL/PASS results.
 
 
 Executing tests on a single device
 ===================================
 
-To use this feature on a single connected device, run sanitycheck with
+To use this feature on a single connected device, run twister with
 the following new options::
 
-	scripts/sanitycheck --device-testing --device-serial /dev/ttyACM0 -p \
+	scripts/twister --device-testing --device-serial /dev/ttyACM0 -p \
 	frdm_k64f  -T tests/kernel
 
 The ``--device-serial`` option denotes the serial device the board is connected to.
-This needs to be accessible by the user running sanitycheck. You can run this on
+This needs to be accessible by the user running twister. You can run this on
 only one board at a time, specified using the ``--platform`` option.
 
 
@@ -511,7 +511,7 @@ hardware map needs to be created with all connected devices and their
 details such as the serial device and their IDs if available. Run the following
 command to produce the hardware map::
 
-    ./scripts/sanitycheck --generate-hardware-map map.yml
+    ./scripts/twister --generate-hardware-map map.yml
 
 The generated hardware map file (map.yml) will have the list of connected
 devices, for example::
@@ -555,9 +555,9 @@ it for every run to get the correct serial devices and status of the devices.
 With the hardware map ready, you can run any tests by pointing to the map
 file::
 
-  ./scripts/sanitycheck --device-testing --hardware-map map.yml -T samples/hello_world/
+  ./scripts/twister --device-testing --hardware-map map.yml -T samples/hello_world/
 
-The above command will result in sanitycheck building tests for the platforms
+The above command will result in twister building tests for the platforms
 defined in the hardware map and subsequently flashing and running the tests
 on those platforms.
 
@@ -588,7 +588,7 @@ Fixtures are defined in the hardware map file as a list::
         runner: pyocd
         serial: /dev/ttyACM9
 
-When running `sanitycheck` with ``--device-testing``, the configured fixture
+When running `twister` with ``--device-testing``, the configured fixture
 in the hardware map file will be matched to testcases requesting the same fixtures
 and these tests will be executed on the boards that provide this fixture.
 

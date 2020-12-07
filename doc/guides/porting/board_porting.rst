@@ -180,7 +180,7 @@ The optional files are:
   of your board. You only need this if you're :ref:`contributing-your-board` to
   Zephyr.
 - :file:`plank.yaml`: a YAML file with miscellaneous metadata used by the
-  :ref:`sanitycheck_script`.
+  :ref:`twister_script`.
 
 .. _default_board_configuration:
 
