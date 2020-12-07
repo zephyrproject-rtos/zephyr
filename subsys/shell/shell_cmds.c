@@ -76,7 +76,7 @@ static int cursor_position_get(const struct shell *shell, uint16_t *x, uint16_t 
 	/* escape code asking terminal about its size */
 	static char const cmd_get_terminal_size[] = "\033[6n";
 
-	shell_raw_fprintf(shell->fprintf_ctx, cmd_get_terminal_size);
+	z_shell_raw_fprintf(shell->fprintf_ctx, cmd_get_terminal_size);
 
 	/* fprintf buffer needs to be flushed to start sending prepared
 	 * escape code to the terminal.
@@ -173,13 +173,13 @@ static int terminal_size_get(const struct shell *shell)
 	uint16_t y; /* vertical position */
 	int ret_val = 0;
 
-	cursor_save(shell);
+	z_cursor_save(shell);
 
 	/* Assumption: terminal width and height < 999. */
 	/* Move to last column. */
-	shell_op_cursor_vert_move(shell, -SHELL_MAX_TERMINAL_SIZE);
+	z_shell_op_cursor_vert_move(shell, -SHELL_MAX_TERMINAL_SIZE);
 	/* Move to last row. */
-	shell_op_cursor_horiz_move(shell, SHELL_MAX_TERMINAL_SIZE);
+	z_shell_op_cursor_horiz_move(shell, SHELL_MAX_TERMINAL_SIZE);
 
 	if (cursor_position_get(shell, &x, &y) == 0) {
 		shell->ctx->vt100_ctx.cons.terminal_wid = x;
@@ -188,7 +188,7 @@ static int terminal_size_get(const struct shell *shell)
 		ret_val = -ENOTSUP;
 	}
 
-	cursor_restore(shell);
+	z_cursor_restore(shell);
 	return ret_val;
 }
 
@@ -196,8 +196,8 @@ static int cmd_clear(const struct shell *shell, size_t argc, char **argv)
 {
 	ARG_UNUSED(argv);
 
-	SHELL_VT100_CMD(shell, SHELL_VT100_CURSORHOME);
-	SHELL_VT100_CMD(shell, SHELL_VT100_CLEARSCREEN);
+	Z_SHELL_VT100_CMD(shell, SHELL_VT100_CURSORHOME);
+	Z_SHELL_VT100_CMD(shell, SHELL_VT100_CLEARSCREEN);
 
 	return 0;
 }
@@ -208,7 +208,7 @@ static int cmd_bacskpace_mode_backspace(const struct shell *shell, size_t argc,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	flag_mode_delete_set(shell, false);
+	z_flag_mode_delete_set(shell, false);
 
 	return 0;
 }
@@ -219,7 +219,7 @@ static int cmd_bacskpace_mode_delete(const struct shell *shell, size_t argc,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	flag_mode_delete_set(shell, true);
+	z_flag_mode_delete_set(shell, true);
 
 	return 0;
 }
@@ -229,7 +229,7 @@ static int cmd_colors_off(const struct shell *shell, size_t argc, char **argv)
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	flag_use_colors_set(shell, false);
+	z_flag_use_colors_set(shell, false);
 
 	return 0;
 }
@@ -239,7 +239,7 @@ static int cmd_colors_on(const struct shell *shell, size_t argc, char **argv)
 	ARG_UNUSED(argv);
 	ARG_UNUSED(argv);
 
-	flag_use_colors_set(shell, true);
+	z_flag_use_colors_set(shell, true);
 
 	return 0;
 }
@@ -249,7 +249,7 @@ static int cmd_echo_off(const struct shell *shell, size_t argc, char **argv)
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	flag_echo_set(shell, false);
+	z_flag_echo_set(shell, false);
 
 	return 0;
 }
@@ -259,7 +259,7 @@ static int cmd_echo_on(const struct shell *shell, size_t argc, char **argv)
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	flag_echo_set(shell, true);
+	z_flag_echo_set(shell, true);
 
 	return 0;
 }
@@ -273,7 +273,7 @@ static int cmd_echo(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	shell_print(shell, "Echo status: %s",
-		    flag_echo_get(shell) ? "on" : "off");
+		    z_flag_echo_get(shell) ? "on" : "off");
 
 	return 0;
 }
@@ -332,7 +332,7 @@ static int cmd_resize_default(const struct shell *shell,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	SHELL_VT100_CMD(shell, SHELL_VT100_SETCOL_80);
+	Z_SHELL_VT100_CMD(shell, SHELL_VT100_SETCOL_80);
 	shell->ctx->vt100_ctx.cons.terminal_wid = SHELL_DEFAULT_TERMINAL_WIDTH;
 	shell->ctx->vt100_ctx.cons.terminal_hei = SHELL_DEFAULT_TERMINAL_HEIGHT;
 
