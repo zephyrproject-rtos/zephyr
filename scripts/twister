@@ -206,7 +206,7 @@ except ImportError:
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
-from sanitylib import HardwareMap, TestSuite, SizeCalculator, CoverageTool, ExecutionCounter
+from twisterlib import HardwareMap, TestSuite, SizeCalculator, CoverageTool, ExecutionCounter
 
 logger = logging.getLogger('sanitycheck')
 logger.setLevel(logging.DEBUG)
