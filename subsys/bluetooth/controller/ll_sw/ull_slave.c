@@ -356,11 +356,7 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 				     HAL_TICKER_US_TO_TICKS(conn_offset_us),
 				     HAL_TICKER_US_TO_TICKS(conn_interval_us),
 				     HAL_TICKER_REMAINDER(conn_interval_us),
-#if defined(CONFIG_BT_CTLR_CONN_META)
-				     TICKER_LAZY_MUST_EXPIRE,
-#else
 				     TICKER_NULL_LAZY,
-#endif /* CONFIG_BT_CTLR_CONN_META */
 				     (conn->evt.ticks_slot +
 				      ticks_slot_overhead),
 				     ull_slave_ticker_cb, conn, ticker_op_cb,

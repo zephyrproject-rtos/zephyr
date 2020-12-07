@@ -30,6 +30,7 @@
 #define TICKER_NULL_SLOT        0
 #define TICKER_NULL_LAZY        0
 #define TICKER_NULL_MUST_EXPIRE 0
+
 /**
  * @}
  */
@@ -66,9 +67,14 @@
 #define TICKER_CALL_ID_PROGRAM  5
 
 /* Use to ensure callback is invoked in all intervals, even when latencies
- * occur
+ * occur.
  */
-#define TICKER_LAZY_MUST_EXPIRE 0xFFFF
+#define TICKER_LAZY_MUST_EXPIRE      0xFFFF
+
+/* Use in ticker_start to set lazy to 0 and do not change the must_expire
+ * state.
+ */
+#define TICKER_LAZY_MUST_EXPIRE_KEEP 0xFFFE
 
 /* Set this priority to ensure ticker node is always scheduled. Only one
  * ticker node can have priority TICKER_PRIORITY_CRITICAL at a time
@@ -158,5 +164,12 @@ uint32_t ticker_start_ext(uint8_t instance_index, uint8_t user_id, uint8_t ticke
 		       ticker_timeout_func fp_timeout_func, void *context,
 		       ticker_op_func fp_op_func, void *op_context,
 		       struct ticker_ext *ext_data);
+uint32_t ticker_update_ext(uint8_t instance_index, uint8_t user_id,
+			   uint8_t ticker_id, uint32_t ticks_drift_plus,
+			   uint32_t ticks_drift_minus,
+			   uint32_t ticks_slot_plus, uint32_t ticks_slot_minus,
+			   uint16_t lazy, uint8_t force,
+			   ticker_op_func fp_op_func, void *op_context,
+			   uint8_t must_expire);
 #endif /* CONFIG_BT_TICKER_EXT */
 #endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
