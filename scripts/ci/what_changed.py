@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2020 Intel Corporation
-# Check if full sanitycheck is needed.
+# Check if full twister is needed.
 
 import os
 import sh
@@ -20,7 +20,7 @@ sh_special_args = {
 
 def parse_args():
     parser = argparse.ArgumentParser(
-                description="Check if change requires full sanitycheck")
+                description="Check if change requires full twister")
     parser.add_argument('-c', '--commits', default=None,
             help="Commit range in the form: a..b")
     return parser.parse_args()
@@ -36,7 +36,7 @@ def main():
     files = set()
     files.update(commit.split("\n"))
 
-    with open("scripts/ci/sanitycheck_ignore.txt", "r") as sc_ignore:
+    with open("scripts/ci/twister_ignore.txt", "r") as sc_ignore:
         ignores = sc_ignore.read().splitlines()
         ignores = filter(lambda x: not x.startswith("#"), ignores)
 

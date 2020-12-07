@@ -25,7 +25,7 @@ steps:
 
   - plugins:
       - junit-annotate#v1.7.0:
-          artifacts: sanitycheck-*.xml
+          artifacts: twister-*.xml
 
 notify:
   - email: "builds+int+399+7809482394022958124@lists.zephyrproject.org"

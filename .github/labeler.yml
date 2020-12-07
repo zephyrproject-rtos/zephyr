@@ -125,8 +125,8 @@
   - "Kconfig"
   - "Kconfig.zephyr"
 "area: Sanitycheck":
-  - "scripts/sanitycheck"
-  - "scripts/sanity_chk/**/*"
+  - "scripts/twister"
+  - "scripts/pylib/twister/**/*"
 "area: Modules":
   - "west.yml"
   - "modules/**/*"

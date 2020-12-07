@@ -25,4 +25,4 @@ steps:
 
   - plugins:
       - junit-annotate#v1.7.0:
-          artifacts: sanitycheck-*.xml
+          artifacts: twister-*.xml
