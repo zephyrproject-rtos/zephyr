@@ -394,7 +394,7 @@ static void app_key_del(struct bt_mesh_model *model,
 
 	BT_DBG("AppIdx 0x%04x NetIdx 0x%04x", key_app_idx, key_net_idx);
 
-	status = bt_mesh_app_key_del(key_net_idx, key_net_idx);
+	status = bt_mesh_app_key_del(key_app_idx, key_net_idx);
 
 	send_app_key_status(model, ctx, status, key_app_idx, key_net_idx);
 }
