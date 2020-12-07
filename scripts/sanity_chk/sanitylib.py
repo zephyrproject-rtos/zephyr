@@ -1468,7 +1468,7 @@ class Platform:
     Maps directly to BOARD when building"""
 
     platform_schema = scl.yaml_load(os.path.join(ZEPHYR_BASE,
-                                                 "scripts", "sanity_chk", "platform-schema.yaml"))
+                                                 "scripts", "schemas", "twister", "platform-schema.yaml"))
 
     def __init__(self):
         """Constructor.
@@ -2487,7 +2487,7 @@ class TestSuite(DisablePyTestCollectionMixin):
 
     tc_schema = scl.yaml_load(
         os.path.join(ZEPHYR_BASE,
-                     "scripts", "sanity_chk", "testcase-schema.yaml"))
+                     "scripts", "schemas", "twister", "testcase-schema.yaml"))
 
     testcase_valid_keys = {"tags": {"type": "set", "required": False},
                        "type": {"type": "str", "default": "integration"},
@@ -3822,7 +3822,7 @@ class DUT(object):
         return f"<{self.platform} ({self.product}) on {self.serial}>"
 
 class HardwareMap:
-    schema_path = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk", "hwmap-schema.yaml")
+    schema_path = os.path.join(ZEPHYR_BASE, "scripts", "schemas", "twister", "hwmap-schema.yaml")
 
     manufacturer = [
         'ARM',
