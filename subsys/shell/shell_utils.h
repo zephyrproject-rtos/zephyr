@@ -77,8 +77,6 @@ const struct shell_static_entry *shell_get_last_command(
 					struct shell_static_entry *dloc,
 					bool only_static);
 
-const struct shell_static_entry *shell_root_cmd_find(const char *syntax);
-
 void shell_spaces_trim(char *str);
 
 static inline void transport_buffer_flush(const struct shell *shell)
