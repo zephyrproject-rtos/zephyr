@@ -67,6 +67,11 @@ config HAS_MCUX_FLEXCOMM
 	help
 	  Set if the flexcomm (FLEXCOMM) module is present in the SoC.
 
+config HAS_MCUX_FLEXSPI
+	bool
+	help
+	  Set if the flexible SPI (FlexSPI) module is present in the SoC.
+
 config HAS_MCUX_FTFX
 	bool
 	help
