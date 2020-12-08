@@ -27,7 +27,7 @@ static int disable_ds_1(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	pm_ctrl_disable_state(POWER_STATE_DEEP_SLEEP_1);
+	pm_ctrl_disable_state(PM_STATE_SOFT_OFF);
 	return 0;
 }
 
@@ -68,7 +68,7 @@ void main(void)
 	 * controlled delay.  Here we need to override that, then
 	 * force entry to deep sleep on any delay.
 	 */
-	pm_power_state_force(POWER_STATE_DEEP_SLEEP_1);
+	pm_power_state_force(PM_STATE_SOFT_OFF);
 	k_sleep(K_MSEC(1));
 
 	printk("ERROR: System off failed\n");

@@ -209,7 +209,7 @@ static int i2c_cc13xx_cc26xx_transfer(const struct device *dev,
 
 #if defined(CONFIG_PM) && \
 	defined(CONFIG_PM_SLEEP_STATES)
-	pm_ctrl_disable_state(POWER_STATE_SLEEP_2);
+	pm_ctrl_disable_state(PM_STATE_STANDBY);
 #endif
 
 	for (int i = 0; i < num_msgs; i++) {
@@ -234,7 +234,7 @@ static int i2c_cc13xx_cc26xx_transfer(const struct device *dev,
 
 #if defined(CONFIG_PM) && \
 	defined(CONFIG_PM_SLEEP_STATES)
-	pm_ctrl_enable_state(POWER_STATE_SLEEP_2);
+	pm_ctrl_enable_state(PM_STATE_STANDBY);
 #endif
 
 	k_sem_give(&get_dev_data(dev)->lock);

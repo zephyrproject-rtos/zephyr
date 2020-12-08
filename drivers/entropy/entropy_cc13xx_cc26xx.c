@@ -110,7 +110,7 @@ static int entropy_cc13xx_cc26xx_get_entropy(const struct device *dev,
 	unsigned int key = irq_lock();
 
 	if (!data->constrained) {
-		pm_ctrl_disable_state(POWER_STATE_SLEEP_2);
+		pm_ctrl_disable_state(PM_STATE_STANDBY);
 		data->constrained = true;
 	}
 	irq_unlock(key);
@@ -157,7 +157,7 @@ static void entropy_cc13xx_cc26xx_isr(const void *arg)
 	defined(CONFIG_PM_SLEEP_STATES)
 			if (data->constrained) {
 				pm_ctrl_enable_state(
-					POWER_STATE_SLEEP_2);
+					PM_STATE_STANDBY);
 				data->constrained = false;
 			}
 #endif
@@ -336,7 +336,7 @@ static int entropy_cc13xx_cc26xx_init(const struct device *dev)
 	Power_setDependency(PowerCC26XX_PERIPH_TRNG);
 #if defined(CONFIG_PM_SLEEP_STATES)
 	/* Stay out of standby until buffer is filled with entropy */
-	pm_ctrl_disable_state(POWER_STATE_SLEEP_2);
+	pm_ctrl_disable_state(PM_STATE_STANDBY);
 	data->constrained = true;
 #endif
 	/* Register notification function */

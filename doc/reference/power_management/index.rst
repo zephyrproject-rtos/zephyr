@@ -111,7 +111,7 @@ The power management subsystem classifies power states into two categories,
 Sleep State and Deep Sleep State, based on whether the CPU loses execution
 context during the power state transition.
 
-The list of available power states is defined by :code:`enum power_states`. In
+The list of available power states is defined by :code:`enum pm_state`. In
 general power states with higher indexes will offer greater power savings and
 have higher wake latencies.
 
@@ -158,7 +158,7 @@ the following function.
 
 .. code-block:: c
 
-   enum power_states pm_policy_next_state(int32_t ticks);
+   enum pm_state pm_policy_next_state(int32_t ticks);
 
 Dummy
 -----
