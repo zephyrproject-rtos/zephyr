@@ -62,7 +62,7 @@
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
  * @return macro function to construct a npcx_clk_cfg structure.
  */
-#define DT_NPCX_CLK_CFG_ITEMS_FUC(child, inst) \
+#define DT_NPCX_CLK_CFG_ITEMS_FUNC(child, inst) \
 					DT_NPCX_CLK_CFG_ITEM_BY_IDX(inst, child)
 
 /**
@@ -87,7 +87,7 @@
  */
 #define DT_NPCX_CLK_CFG_ITEMS_LIST(inst) {             \
 	UTIL_LISTIFY(DT_NPCX_CLK_CFG_ITEMS_LEN(inst),  \
-		     DT_NPCX_CLK_CFG_ITEMS_FUC,        \
+		     DT_NPCX_CLK_CFG_ITEMS_FUNC,       \
 		     inst)                             \
 	}
 
@@ -131,7 +131,7 @@
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
  * @return macro function to construct a npcx_alt structure.
  */
-#define DT_NPCX_ALT_ITEMS_FUC(child, inst) DT_NPCX_ALT_ITEM_BY_IDX(inst, child)
+#define DT_NPCX_ALT_ITEMS_FUNC(child, inst) DT_NPCX_ALT_ITEM_BY_IDX(inst, child)
 
 /**
  * @brief Macro function to construct a list of npcx_alt items by UTIL_LISTIFY
@@ -162,7 +162,7 @@
  */
 #define DT_NPCX_ALT_ITEMS_LIST(inst) {             \
 	UTIL_LISTIFY(DT_NPCX_ALT_ITEMS_LEN(inst),  \
-		     DT_NPCX_ALT_ITEMS_FUC,        \
+		     DT_NPCX_ALT_ITEMS_FUNC,       \
 		     inst)                         \
 	}
 
@@ -231,7 +231,7 @@
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
  * @return macro function to construct a npcx_wui structure.
  */
-#define DT_NPCX_WUI_ITEMS_FUC(child, inst) DT_NPCX_WUI_ITEM_BY_IDX(inst, child)
+#define DT_NPCX_WUI_ITEMS_FUNC(child, inst) DT_NPCX_WUI_ITEM_BY_IDX(inst, child)
 
 /**
  * @brief Macro function to construct a list of npcx_wui items by UTIL_LISTIFY
@@ -260,7 +260,7 @@
  */
 #define DT_NPCX_WUI_ITEMS_LIST(inst) {             \
 	UTIL_LISTIFY(DT_NPCX_WUI_ITEMS_LEN(inst),  \
-		     DT_NPCX_WUI_ITEMS_FUC,        \
+		     DT_NPCX_WUI_ITEMS_FUNC,       \
 		     inst)                         \
 	}
 
