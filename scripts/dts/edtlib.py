@@ -68,9 +68,9 @@ bindings_from_paths() helper function.
 #   variables. See the existing @properties for a template.
 
 from collections import OrderedDict, defaultdict
+import logging
 import os
 import re
-import sys
 
 import yaml
 try:
@@ -145,7 +145,7 @@ class EDT:
     The standard library's pickle module can be used to marshal and
     unmarshal EDT objects.
     """
-    def __init__(self, dts, bindings_dirs, warn_file=None,
+    def __init__(self, dts, bindings_dirs,
                  warn_reg_unit_address_mismatch=True,
                  default_prop_types=True,
                  support_fixed_partitions_on_any_bus=True,
@@ -159,11 +159,8 @@ class EDT:
           List of paths to directories containing bindings, in YAML format.
           These directories are recursively searched for .yaml files.
 
-        warn_file (default: None):
-          'file' object to write warnings to. If None, sys.stderr is used.
-
         warn_reg_unit_address_mismatch (default: True):
-          If True, a warning is printed if a node has a 'reg' property where
+          If True, a warning is logged if a node has a 'reg' property where
           the address of the first entry does not match the unit address of the
           node
 
@@ -182,11 +179,6 @@ class EDT:
           processed.)  Pass none if no nodes should support inferred bindings.
 
         """
-        # Do this indirection with None in case sys.stderr is
-        # deliberately overridden. We'll only hold on to this file
-        # while we're initializing.
-        self._warn_file = sys.stderr if warn_file is None else warn_file
-
         self._warn_reg_unit_address_mismatch = warn_reg_unit_address_mismatch
         self._default_prop_types = default_prop_types
         self._fixed_partitions_no_bus = support_fixed_partitions_on_any_bus
@@ -202,11 +194,6 @@ class EDT:
         self._init_nodes()
         self._init_graph()
         self._init_luts()
-
-        # Drop the reference to the open warn file. This is necessary
-        # to make this object pickleable, but also allows it to get
-        # garbage collected and closed if nobody else is using it.
-        self._warn_file = None
 
     def get_node(self, path):
         """
@@ -339,8 +326,9 @@ class EDT:
                 # representing the file)
                 raw = yaml.load(contents, Loader=_BindingLoader)
             except yaml.YAMLError as e:
-                self._warn("'{}' appears in binding directories but isn't "
-                           "valid YAML: {}".format(binding_path, e))
+                _LOG.warning(
+                        f"'{binding_path}' appears in binding directories "
+                        f"but isn't valid YAML: {e}")
                 continue
 
             # Convert the raw data to a Binding object, erroring out
@@ -388,8 +376,7 @@ class EDT:
             return None
 
         # Initialize and return the Binding object.
-        return Binding(binding_path, self._binding_fname2path, raw=raw,
-                       warn_file=self._warn_file)
+        return Binding(binding_path, self._binding_fname2path, raw=raw)
 
     def _init_nodes(self):
         # Creates a list of edtlib.Node objects from the dtlib.Node objects, in
@@ -411,7 +398,7 @@ class EDT:
             else:
                 node.compats = []
             node.bus_node = node._bus_node(self._fixed_partitions_no_bus)
-            node._init_binding(warn_file=self._warn_file)
+            node._init_binding()
             node._init_regs()
 
             self.nodes.append(node)
@@ -429,9 +416,9 @@ class EDT:
             # This warning matches the simple_bus_reg warning in dtc
             for node in self.nodes:
                 if node.regs and node.regs[0].addr != node.unit_addr:
-                    self._warn("unit address and first address in 'reg' "
-                               f"(0x{node.regs[0].addr:x}) don't match for "
-                               f"{node.path}")
+                    _LOG.warning("unit address and first address in 'reg' "
+                                 f"(0x{node.regs[0].addr:x}) don't match for "
+                                 f"{node.path}")
 
     def _init_luts(self):
         # Initialize node lookup tables (LUTs).
@@ -454,12 +441,6 @@ class EDT:
         for nodeset in self.scc_order:
             node = nodeset[0]
             self.dep_ord2node[node.dep_ordinal] = node
-
-    def _warn(self, msg):
-        if self._warn_file is not None:
-            print("warning: " + msg, file=self._warn_file)
-        else:
-            raise _err("can't _warn() outside of EDT.__init__")
 
 
 class Node:
@@ -742,7 +723,7 @@ class Node:
             "binding " + self.binding_path if self.binding_path
                 else "no binding")
 
-    def _init_binding(self, warn_file=None):
+    def _init_binding(self):
         # Initializes Node.matching_compat, Node._binding, and
         # Node.binding_path.
         #
@@ -755,7 +736,7 @@ class Node:
         # node_iter() order.
 
         if self.path in self.edt._infer_binding_for_paths:
-            self._binding_from_properties(warn_file=warn_file)
+            self._binding_from_properties()
             return
 
         if self.compats:
@@ -785,7 +766,7 @@ class Node:
         # No binding found
         self._binding = self.binding_path = self.matching_compat = None
 
-    def _binding_from_properties(self, warn_file):
+    def _binding_from_properties(self):
         # Sets up a Binding object synthesized from the properties in the node.
 
         if self.compats:
@@ -824,8 +805,7 @@ class Node:
         self.binding_path = None
         self.matching_compat = None
         self.compats = []
-        self._binding = Binding(None, {}, raw=raw, require_compatible=False,
-                                warn_file=warn_file)
+        self._binding = Binding(None, {}, raw=raw, require_compatible=False)
 
     def _binding_from_parent(self):
         # Returns the binding from 'child-binding:' in the parent node's
@@ -952,8 +932,8 @@ class Node:
         prop = node.props.get(name)
 
         if prop and deprecated:
-            self.edt._warn("'{}' is marked as deprecated in 'properties:' in {} "
-                 "for node {}.".format(name, self.binding_path, node.path))
+            _LOG.warning(f"'{name}' is marked as deprecated in 'properties:' "
+                         f"in {self.binding_path} for node {node.path}.")
 
         if not prop:
             if required and self.status == "okay":
@@ -1459,8 +1439,7 @@ class Binding:
     """
 
     def __init__(self, path, fname2path, raw=None,
-                 require_compatible=True, require_description=True,
-                 warn_file=None):
+                 require_compatible=True, require_description=True):
         """
         Binding constructor.
 
@@ -1488,15 +1467,7 @@ class Binding:
           "description:" line. If False, a missing "description:" is
           not an error. Either way, "description:" must be a string
           if it is present in the binding.
-
-        warn_file (default: None):
-          'file' object to write warnings to. If None, sys.stderr is used.
         """
-        # Do this indirection with None in case sys.stderr is
-        # deliberately overridden. We'll only hold on to this file
-        # while we're initializing.
-        self._warn_file = sys.stderr if warn_file is None else warn_file
-
         self.path = path
         self._fname2path = fname2path
 
@@ -1542,11 +1513,6 @@ class Binding:
                 if child.compatible is None:
                     child.compatible = self.compatible
                 child = child.child_binding
-
-        # Drop the reference to the open warn file. This is necessary
-        # to make this object pickleable, but also allows it to get
-        # garbage collected and closed if nobody else is using it.
-        self._warn_file = None
 
     def __repr__(self):
         if self.compatible:
@@ -1737,12 +1703,6 @@ class Binding:
                                                      (int, str)):
                 _err(f"const in {self.path} for property '{prop_name}' "
                      "is not a scalar")
-
-    def _warn(self, msg):
-        if self._warn_file is not None:
-            print("warning: " + msg, file=self._warn_file)
-        else:
-            raise _err("can't _warn() outside of Binding.__init__")
 
 
 def bindings_from_paths(yaml_paths, ignore_errors=False):
@@ -2529,6 +2489,9 @@ def _check_dt(dt):
 def _err(msg):
     raise EDTError(msg)
 
+# Logging object
+_LOG = logging.getLogger(__name__)
+
 # Regular expression for non-alphanumeric-or-underscore characters.
 _NOT_ALPHANUM_OR_UNDERSCORE = re.compile(r'\W', re.ASCII)
 
@@ -2592,7 +2555,7 @@ _DEFAULT_PROP_BINDING = Binding(
             for name in _DEFAULT_PROP_TYPES
         },
     },
-    require_compatible=False, require_description=False, warn_file=None
+    require_compatible=False, require_description=False,
 )
 
 _DEFAULT_PROP_SPECS = {
