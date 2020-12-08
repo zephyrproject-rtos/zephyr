@@ -131,16 +131,25 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 				 I2C_TRANSFER_TIMEOUT_MSEC);
 		if (ret != 0) {
 			/* Whatever the frequency, completion_sync should have
-			 * been give by the event handler.
+			 * been given by the event handler.
 			 *
-			 * If it hasn't it's probably due to an hardware issue
+			 * If it hasn't, it's probably due to an hardware issue
 			 * on the I2C line, for example a short between SDA and
 			 * GND.
+			 * This is issue has also been when trying to use the
+			 * I2C bus during MCU internal flash erase.
 			 *
-			 * Note to fully recover from this issue one should
-			 * reinit nrfx twim.
+			 * In many situation, a retry is sufficient.
+			 * However, some time the I2C device get stuck and need
+			 * help to recover.
+			 * Therefore we always call nrfx_twim_bus_recover() to
+			 * make sure everything has been done to restore the
+			 * bus from this error.
 			 */
 			LOG_ERR("Error on I2C line occurred for message %d", i);
+			nrfx_twim_disable(&get_dev_config(dev)->twim);
+			nrfx_twim_bus_recover(get_dev_config(dev)->config.scl,
+					      get_dev_config(dev)->config.sda);
 			ret = -EIO;
 			break;
 		}
