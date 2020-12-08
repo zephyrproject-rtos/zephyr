@@ -12,6 +12,15 @@
 #define SKIP_EXECUTE_TESTS
 #endif
 
+/* Skip the memory map executing case when coverage enabled in x86_64,
+ * because it will crash due to incorrect address accessing for gcov variables.
+ * See issue#30434 for more details.
+ */
+#if defined(CONFIG_X86_64) && defined(CONFIG_COVERAGE)
+#define SKIP_EXECUTE_TESTS
+#endif
+
+
 #define BASE_FLAGS	(K_MEM_CACHE_WB)
 volatile bool expect_fault;
 
