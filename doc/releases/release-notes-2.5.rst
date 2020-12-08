@@ -244,6 +244,8 @@ Libraries / Subsystems
 
   * MCUmgr
 
+    * Added support for flash devices that have non-0xff erase value.
+
   * updatehub
 
 * Settings
