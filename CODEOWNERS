@@ -330,6 +330,7 @@
 /dts/arm/silabs/efm32pg12b*               @chrta
 /dts/arm/silabs/efm32pg1b*                @rdmeneze
 /dts/arm/silabs/efr32mg21*                @l-alfred
+/dts/riscv/                               @kgugala @pgielda @nategraff-sifive
 /dts/riscv/it8xxx2.dtsi                   @ite
 /dts/riscv/microsemi-miv.dtsi             @galak
 /dts/riscv/rv32m1*                        @MaureenHelm
