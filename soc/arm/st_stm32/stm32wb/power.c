@@ -17,12 +17,10 @@
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 /* Invoke Low Power/System Off specific Tasks */
-void pm_power_state_set(enum power_states state)
+void pm_power_state_set(enum pm_state state)
 {
 	switch (state) {
-#ifdef CONFIG_PM_SLEEP_STATES
-#ifdef CONFIG_HAS_POWER_STATE_SLEEP_1
-	case POWER_STATE_SLEEP_1:
+	case PM_STATE_RUNTIME_IDLE:
 
 		/* this corresponds to the STOP0 mode: */
 #ifdef CONFIG_DEBUG
@@ -37,9 +35,7 @@ void pm_power_state_set(enum power_states state)
 		/* enter SLEEP mode : WFE or WFI */
 		k_cpu_idle();
 		break;
-#endif /* CONFIG_HAS_POWER_STATE_SLEEP_1 */
-#ifdef CONFIG_HAS_POWER_STATE_SLEEP_2
-	case POWER_STATE_SLEEP_2:
+	case PM_STATE_SUSPEND_TO_IDLE:
 		/* this corresponds to the STOP1 mode: */
 #ifdef CONFIG_DEBUG
 		/* Enable the Debug Module during STOP mode */
@@ -52,9 +48,7 @@ void pm_power_state_set(enum power_states state)
 		LL_LPM_EnableDeepSleep();
 		k_cpu_idle();
 		break;
-#endif /* CONFIG_HAS_POWER_STATE_SLEEP_2 */
-#ifdef CONFIG_HAS_POWER_STATE_SLEEP_3
-	case POWER_STATE_SLEEP_3:
+	case PM_STATE_STANDBY:
 		/* this corresponds to the STOP2 mode: */
 #ifdef CONFIG_DEBUG
 		/* Enable the Debug Module during STOP mode */
@@ -70,8 +64,6 @@ void pm_power_state_set(enum power_states state)
 		LL_LPM_EnableDeepSleep();
 		k_cpu_idle();
 		break;
-#endif /* CONFIG_HAS_POWER_STATE_SLEEP_3 */
-#endif /* CONFIG_PM_SLEEP_STATES */
 	default:
 		LOG_DBG("Unsupported power state %u", state);
 		break;
@@ -79,23 +71,17 @@ void pm_power_state_set(enum power_states state)
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-void pm_power_state_exit_post_ops(enum power_states state)
+void pm_power_state_exit_post_ops(enum pm_state state)
 {
 	switch (state) {
-#ifdef CONFIG_PM_SLEEP_STATES
-#ifdef CONFIG_HAS_POWER_STATE_SLEEP_1
-	case POWER_STATE_SLEEP_1:
-#endif /* CONFIG_HAS_POWER_STATE_SLEEP_1 */
-#ifdef CONFIG_HAS_POWER_STATE_SLEEP_2
-	case POWER_STATE_SLEEP_2:
-#endif /* CONFIG_HAS_POWER_STATE_SLEEP_2 */
-#ifdef CONFIG_HAS_POWER_STATE_SLEEP_3
-	case POWER_STATE_SLEEP_3:
-#endif /* CONFIG_HAS_POWER_STATE_SLEEP_3 */
+	case PM_STATE_RUNTIME_IDLE:
+		__fallthrough;
+	case PM_STATE_SUSPEND_TO_IDLE:
+		__fallthrough;
+	case PM_STATE_STANDBY:
 		LL_LPM_DisableSleepOnExit();
 		LL_LPM_EnableSleep();
 		break;
-#endif /* CONFIG_PM_SLEEP_STATES */
 	default:
 		LOG_DBG("Unsupported power state %u", state);
 		break;

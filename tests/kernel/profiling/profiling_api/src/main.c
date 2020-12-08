@@ -26,20 +26,20 @@ static void tdata_dump_callback(const struct k_thread *thread, void *user_data)
  * Weak power hook functions. Used on systems that have not implemented
  * power management.
  */
-__weak void pm_power_state_set(enum power_states state)
+__weak void pm_power_state_set(enum pm_state state)
 {
 	/* Never called. */
 	__ASSERT_NO_MSG(false);
 }
 
-__weak void pm_power_state_exit_post_ops(enum power_states state)
+__weak void pm_power_state_exit_post_ops(enum pm_state state)
 {
 	/* Never called. */
 	__ASSERT_NO_MSG(false);
 }
 
 /* Our PM policy handler */
-enum power_states pm_policy_next_state(int32_t ticks)
+enum pm_state pm_policy_next_state(int32_t ticks)
 {
 	static bool test_flag;
 
@@ -51,7 +51,7 @@ enum power_states pm_policy_next_state(int32_t ticks)
 		test_flag = true;
 	}
 
-	return POWER_STATE_ACTIVE;
+	return PM_STATE_ACTIVE;
 }
 
 /*work handler*/
