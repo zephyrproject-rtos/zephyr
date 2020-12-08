@@ -192,4 +192,6 @@ source "drivers/sensor/wsen_itds/Kconfig"
 
 source "drivers/sensor/mcux_acmp/Kconfig"
 
+source "drivers/sensor/hx711/Kconfig"
+
 endif # SENSOR

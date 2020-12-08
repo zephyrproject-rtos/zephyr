@@ -1,0 +1,58 @@
+# HX711 24-bit analog-to-digital converter device configuration options
+
+# Copyright (c) 2020 Kalyan Sriram <kalyan@coderkalyan.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig HX711
+	bool "HX711 24-Bit Analog-to-digital converter for load cells"
+	depends on GPIO
+	help
+	  Enable driver for Avia HX711 24-bit analog-to-digital converter for load cells device.
+
+if HX711
+
+choice
+	prompt "Trigger mode"
+	default HX711_TRIGGER_GLOBAL_THREAD
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config HX711_TRIGGER_NONE
+	bool "No trigger"
+
+config HX711_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	select HX711_TRIGGER
+
+config HX711_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	select HX711_TRIGGER
+
+endchoice
+
+config HX711_TRIGGER
+	bool
+
+config HX711_THREAD_PRIORITY
+	int "Thread priority"
+	depends on HX711_TRIGGER_OWN_THREAD
+	default 10
+	help
+		Priority of thread used by the driver to handle interrupts.
+
+config HX711_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on HX711_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+config HX711_GAIN
+	int "Sensor input gain"
+	default 128
+	help
+		Sensor input gain.
+		Valid values are 128, 64, and 32.
+		A setting of 32 also selects input channel B instead of A.
+
+endif #HX711

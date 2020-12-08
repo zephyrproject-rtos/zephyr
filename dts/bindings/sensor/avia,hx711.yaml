@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: HX711 analog-to-digital converter for load cells.
+
+compatible: "avia,hx711"
+
+include: base.yaml
+
+properties:
+  label:
+    required: true
+
+  sck-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The GPIO pin for the serial clock output of the sensor.
+
+  dout-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The GPIO pin for the serial data input of the sensor.
