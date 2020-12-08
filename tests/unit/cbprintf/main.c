@@ -740,6 +740,10 @@ static void test_fp_value(void)
 	rc = TEST_PRF("%.16g", dv);
 	PRF_CHECK("0.109375", rc);
 
+	dv = 0x1.9999999800000p-7;
+	rc = TEST_PRF("%.16g", dv);
+	PRF_CHECK("0.01249999999708962", rc);
+
 	dv = 0x1.9999999ffffffp-8;
 	rc = TEST_PRF("%.16g", dv);
 	PRF_CHECK("0.006250000005820765", rc);
