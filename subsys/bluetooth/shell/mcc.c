@@ -15,6 +15,8 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 
+#include "bt.h"
+
 #include "../host/audio/uint48_util.h"
 #include "../host/audio/otc.h"
 
@@ -25,9 +27,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-extern struct bt_conn *default_conn;
-extern const struct shell *ctx_shell;
 
 static struct bt_mcc_cb_t cb;
 
@@ -435,6 +434,10 @@ static void mcc_otc_obj_metadata_cb(struct bt_conn *conn, int err)
 int cmd_mcc_init(const struct shell *shell, size_t argc, char **argv)
 {
 	int result;
+
+	if (!ctx_shell) {
+		ctx_shell = shell;
+	}
 
 	/* Set up the callbacks */
 	cb.init              = &mcc_init_cb;
