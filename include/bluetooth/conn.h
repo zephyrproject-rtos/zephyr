@@ -370,6 +370,19 @@ struct bt_conn_remote_info {
 	};
 };
 
+enum bt_conn_le_tx_power_phy {
+	/** Convenience macro for when no PHY is set. */
+	BT_CONN_LE_TX_POWER_PHY_NONE,
+	/** LE 1M PHY */
+	BT_CONN_LE_TX_POWER_PHY_1M,
+	 /** LE 2M PHY */
+	BT_CONN_LE_TX_POWER_PHY_2M,
+	/** LE Coded PHY using S=8 coding. */
+	BT_CONN_LE_TX_POWER_PHY_CODED_S8,
+	/** LE Coded PHY using S=2 coding. */
+	BT_CONN_LE_TX_POWER_PHY_CODED_S2,
+};
+
 /** LE Transmit Power Level Structure */
 struct bt_conn_le_tx_power {
 
