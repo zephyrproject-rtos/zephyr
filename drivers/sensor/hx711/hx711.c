@@ -198,7 +198,7 @@ int hx711_init(const struct device *dev)
 #endif
 
 	/* default input selection is channel A, gain 128
-	 * we need to shift out one "read" operation in 
+	 * we need to shift out one "read" operation in
 	 * order to be able to set the gain
 	 */
 	hx711_sample_fetch(dev, SENSOR_CHAN_FORCE);

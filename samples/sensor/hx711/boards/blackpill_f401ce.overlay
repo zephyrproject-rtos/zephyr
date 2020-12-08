@@ -1,0 +1,8 @@
+/ {
+    load_cell: hx711 {
+        compatible = "avia,hx711";
+        label = "HX711";
+        sck-gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;
+        dout-gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
+    };
+};
