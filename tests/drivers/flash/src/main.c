@@ -9,6 +9,7 @@
 #include <drivers/flash.h>
 #include <devicetree.h>
 #include <storage/flash_map.h>
+#include <nrfx_nvmc.h>
 
 #if (CONFIG_NORDIC_QSPI_NOR - 0)
 #define FLASH_DEVICE DT_LABEL(DT_INST(0, nordic_qspi_nor))
@@ -16,7 +17,7 @@
 #define TEST_AREA_MAX DT_PROP(DT_INST(0, nordic_qspi_nor), size)
 #else
 
-/* SoC emebded NVM */
+/* SoC embedded NVM */
 #define FLASH_DEVICE DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL
 
 #ifdef CONFIG_TRUSTED_EXECUTION_NONSECURE
@@ -81,19 +82,18 @@ static void test_setup(void)
 				 page_info.size);
 		zassert_equal(rc, 0, "Flash memory not properly erased");
 	}
-
 }
 
 static void test_read_unaligned_address(void)
 {
 	int rc;
-	uint8_t buf[EXPECTED_SIZE];
-
 	rc = flash_write(flash_dev,
 			 page_info.start_offset,
 			 expected, EXPECTED_SIZE);
 	zassert_equal(rc, 0, "Cannot write to flash");
 
+	#if !defined(CONFIG_NORDIC_QSPI_NOR)
+	uint8_t buf[EXPECTED_SIZE];
 	/* read buffer length*/
 	for (off_t len = 0; len < 25; len++) {
 		/* address offset */
@@ -123,13 +123,146 @@ static void test_read_unaligned_address(void)
 			}
 		}
 	}
+	#endif
+
+}
+
+static void test_erase(void)
+{
+	int rc;
+	uint8_t buf[EXPECTED_SIZE];
+	const struct flash_parameters *fp = flash_get_parameters(flash_dev);
+
+	rc = flash_write(flash_dev,
+			 page_info.start_offset,
+			 expected, EXPECTED_SIZE);
+	zassert_equal(rc, 0, "Cannot write to flash");
+
+	rc = flash_erase(flash_dev, page_info.start_offset,
+				 page_info.size);
+	zassert_equal(rc, 0, "Cannot erase flash");
+
+	rc = flash_read(flash_dev, page_info.start_offset,
+			buf, EXPECTED_SIZE);
+	zassert_equal(rc, 0, "Cannot read flash");
+
+	for (off_t i = 0; i < EXPECTED_SIZE; i++) {
+		zassert_equal(buf[i], fp->erase_value,
+				"Flash memory not properly erased");
+	}
+}
+
+static void test_access(void)
+{
+	int rc;
+
+	rc = flash_write_protection_set(flash_dev, true);
+	zassert_equal(rc, 0, NULL);
+
+	/* nRF5x write_protection is no-operation */
+	#if defined(CONFIG_NORDIC_QSPI_NOR)
+	rc = flash_write(flash_dev, page_info.start_offset,
+				 expected, EXPECTED_SIZE);
+	zassert_equal(rc, -EACCES, "Unexpected error code (%d)", rc);
+
+	rc = flash_erase(flash_dev, page_info.start_offset,
+			 4);
+	zassert_equal(rc, -EACCES, "Unexpected error code (%d)", rc);
+	#endif
+}
+
+static void test_write_unaligned(void)
+{
+	int rc;
+	uint8_t data[4] = {0};
+
+	rc = flash_write(flash_dev, page_info.start_offset + 1,
+				 data, 4);
+	zassert_equal(rc, -EINVAL, "Unexpected error code (%d)", rc);
+
+	rc = flash_write(flash_dev, page_info.start_offset + 1,
+				 data, 3);
+	zassert_equal(rc, -EINVAL, "Unexpected error code (%d)", rc);
+}
+
+static void test_out_of_bounds(void)
+{
+	int rc;
+	uint8_t data[8] = {0};
+	size_t flash_size = 0;
+	size_t erase_unit_size = 0;
+
+	rc = flash_write_protection_set(flash_dev, false);
+	#if defined(CONFIG_NORDIC_QSPI_NOR)
+	flash_size = TEST_AREA_MAX;
+	/* QSPI erase must be sector-aligned */
+	erase_unit_size = 0x1000U;
+	#else
+	flash_size = nrfx_nvmc_flash_size_get();
+	/* nRF5x erase can only be done per page */
+	erase_unit_size = nrfx_nvmc_flash_page_size_get();
+	#endif
+
+	rc = flash_write(flash_dev, -1,
+				 data, 4);
+	zassert_equal(rc, -EINVAL, "Unexpected error code (%d)", rc);
+
+	rc = flash_write(flash_dev, flash_size,
+				 data, 4);
+	zassert_equal(rc, -EINVAL, "Unexpected error code (%d)", rc);
+
+	rc = flash_write(flash_dev, flash_size - 4,
+				 data, 8);
+	zassert_equal(rc, -EINVAL, "Unexpected error code (%d)", rc);
+
+	rc = flash_write(flash_dev, page_info.start_offset,
+				 data, flash_size);
+	zassert_equal(rc, -EINVAL, "Unexpected error code (%d)", rc);
+
+	rc = flash_write(flash_dev, page_info.start_offset,
+				 data, erase_unit_size);
+	zassert_equal(rc, 0, "Unexpected error code (%d)", rc);
+
+	rc = flash_erase(flash_dev, flash_size, 4);
+	zassert_equal(rc, -EINVAL, "Unexpected error code (%d)", rc);
+
+	rc = flash_erase(flash_dev, flash_size - 4, 4);
+	zassert_equal(rc, -EINVAL, "Unexpected error code (%d)", rc);
+
+	rc = flash_erase(flash_dev, flash_size - erase_unit_size,
+					2*erase_unit_size);
+	zassert_equal(rc, -EINVAL, "Unexpected error code (%d)", rc);
+
+	rc = flash_erase(flash_dev, page_info.start_offset,
+				 flash_size);
+	zassert_equal(rc, -EINVAL, "Unexpected error code (%d)", rc);
+
+	rc = flash_read(flash_dev, -1,
+				 data, 4);
+	zassert_equal(rc, -EINVAL, "Unexpected error code (%d)", rc);
+
+	rc = flash_read(flash_dev, flash_size,
+				 data, 4);
+	zassert_equal(rc, -EINVAL, "Unexpected error code (%d)", rc);
+
+	rc = flash_read(flash_dev, flash_size - 4,
+				 data, 8);
+	zassert_equal(rc, -EINVAL, "Unexpected error code (%d)", rc);
+
+	rc = flash_read(flash_dev, page_info.start_offset,
+				 data, flash_size);
+	zassert_equal(rc, -EINVAL, "Unexpected error code (%d)", rc);
 }
 
 void test_main(void)
 {
 	ztest_test_suite(flash_driver_test,
 		ztest_unit_test(test_setup),
-		ztest_unit_test(test_read_unaligned_address)
+		ztest_unit_test(test_read_unaligned_address),
+		ztest_unit_test(test_erase),
+		ztest_unit_test(test_access),
+		ztest_unit_test(test_write_unaligned),
+		ztest_unit_test(test_out_of_bounds)
 	);
 
 	ztest_run_test_suite(flash_driver_test);
