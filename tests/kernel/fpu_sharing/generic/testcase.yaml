@@ -21,21 +21,21 @@ tests:
     tags: fpu kernel
     timeout: 600
   kernel.fpu_sharing.generic.riscv32:
-    extra_args: PI_NUM_ITERATIONS=500
+    extra_args: PI_NUM_ITERATIONS=500 DISABLE_INT_TEST=1
     filter: CONFIG_CPU_HAS_FPU
     arch_allow: riscv32
     tags: fpu kernel
     timeout: 600
     min_ram: 16
   kernel.fpu_sharing.generic.riscv64:
-    extra_args: PI_NUM_ITERATIONS=500
+    extra_args: PI_NUM_ITERATIONS=500 DISABLE_INT_TEST=1
     filter: CONFIG_CPU_HAS_FPU
     arch_allow: riscv64
     tags: fpu kernel
     timeout: 600
     min_ram: 16
   kernel.fpu_sharing.generic.sparc:
-    extra_args: PI_NUM_ITERATIONS=70000
+    extra_args: PI_NUM_ITERATIONS=70000 DISABLE_INT_TEST=1
     filter: CONFIG_CPU_HAS_FPU
     arch_allow: sparc
     tags: fpu kernel

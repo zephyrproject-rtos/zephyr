@@ -166,6 +166,22 @@ K_THREAD_DEFINE(pi_low, THREAD_STACK_SIZE, calculate_pi_low, NULL, NULL, NULL,
 K_THREAD_DEFINE(pi_high, THREAD_STACK_SIZE, calculate_pi_high, NULL, NULL, NULL,
 		THREAD_HIGH_PRIORITY, THREAD_FP_FLAGS, K_TICKS_FOREVER);
 
+#if !defined(DISABLE_INT_TEST)
+static float timer_pi = 1.0;
+
+void pi_timer_handler(struct k_timer *dummy)
+{
+	static float divisor = 3.0f;
+	static float sign = -1.0f;
+
+	timer_pi += sign / divisor;
+	divisor += 2.0f;
+	sign *= -1.0f;
+}
+
+K_TIMER_DEFINE(pi_timer, pi_timer_handler, NULL);
+#endif
+
 void test_pi(void)
 {
 	/* Initialise test states */
@@ -176,6 +192,24 @@ void test_pi(void)
 	k_thread_start(pi_low);
 	k_thread_start(pi_high);
 
+#if !defined(DISABLE_INT_TEST)
+	k_timer_start(&pi_timer, K_MSEC(200), K_MSEC(1));
+#endif
+
 	/* Wait for test threads to exit */
 	k_sem_take(&test_exit_sem, K_FOREVER);
+
+#if !defined(DISABLE_INT_TEST)
+	k_timer_stop(&pi_timer);
+
+	/*
+	 * The timer test will not converge as quickly on the reference
+	 * since it does not run as often, so be more lenient on the
+	 * delta between the computed and reference pi values.
+	 */
+	timer_pi *= 4.0f;
+	zassert_within(timer_pi, reference_pi, .0001f,
+			"pi timer error: Computed pi %1.6f, reference pi %1.6f\n",
+			timer_pi, reference_pi);
+#endif
 }

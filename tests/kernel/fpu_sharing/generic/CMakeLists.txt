@@ -13,5 +13,9 @@ project(fpu_sharing)
 set_ifndef(PI_NUM_ITERATIONS 700000)
 zephyr_compile_definitions(PI_NUM_ITERATIONS=${PI_NUM_ITERATIONS})
 
+if(DISABLE_INT_TEST)
+  zephyr_compile_definitions(DISABLE_INT_TEST=${DISABLE_INT_TEST})
+endif()
+
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
