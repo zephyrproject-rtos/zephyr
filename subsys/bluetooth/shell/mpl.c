@@ -14,6 +14,8 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 
+#include "bt.h"
+
 #include "../host/audio/uint48_util.h"
 #include "../host/audio/mpl.h"
 
@@ -24,9 +26,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-extern struct bt_conn *default_conn;
-extern const struct shell *ctx_shell;
 
 #if defined(CONFIG_BT_MCS)
 
@@ -91,6 +90,10 @@ int cmd_mpl_debug_dump_state(const struct shell *shell, size_t argc,
 
 int cmd_mpl_init(const struct shell *shell, size_t argc, char *argv[])
 {
+	if (!ctx_shell) {
+		ctx_shell = shell;
+	}
+
 	int err = mpl_init();
 
 	if (err) {
