@@ -3502,7 +3502,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                 for i in data["test_suite"]:
                     test_details = i["test_details"]
                     for test_data in test_details:
-                        if not (test_data["status"]) == "failed":
+                        if test_data.get("status") != "failed":
                             new_dict = test_data
                             results_dict["test_details"].append(new_dict)
 
