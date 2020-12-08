@@ -10,6 +10,11 @@
 /delete-node/ &flash0;
 
 / {
+	chosen {
+		/* Flash controller support is not yet supported on M4 core */
+		/delete-property/ zephyr,flash-controller;
+	};
+
 	cpus {
 		/delete-node/ cpu@0;
 	};
