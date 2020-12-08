@@ -318,8 +318,8 @@ int z_clock_driver_init(const struct device *device)
 	nrf_rtc_task_trigger(RTC, NRF_RTC_TASK_CLEAR);
 	nrf_rtc_task_trigger(RTC, NRF_RTC_TASK_START);
 
+	int_mask = BIT_MASK(CHAN_COUNT);
 	if (CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT) {
-		int_mask = BIT_MASK(CHAN_COUNT);
 		alloc_mask = BIT_MASK(EXT_CHAN_COUNT) << 1;
 	}
 
