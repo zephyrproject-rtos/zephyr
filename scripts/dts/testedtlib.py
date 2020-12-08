@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import io
+from logging import WARNING
 import os
 from pathlib import Path
 
@@ -25,17 +26,17 @@ def hpath(filename):
     '''Convert 'filename' to the host path syntax.'''
     return os.fspath(Path(filename))
 
-def test_warnings():
+def test_warnings(caplog):
     '''Tests for situations that should cause warnings.'''
-    warnings = io.StringIO()
-    edtlib.EDT("test.dts", ["test-bindings"], warnings)
 
-    assert warnings.getvalue() == f"""\
-warning: 'oldprop' is marked as deprecated in 'properties:' in {hpath('test-bindings/deprecated.yaml')} for node /test-deprecated.
-warning: unit address and first address in 'reg' (0x1) don't match for /reg-zero-size-cells/node
-warning: unit address and first address in 'reg' (0x5) don't match for /reg-ranges/parent/node
-warning: unit address and first address in 'reg' (0x30000000200000001) don't match for /reg-nested-ranges/grandparent/parent/node
-"""
+    edtlib.EDT("test.dts", ["test-bindings"])
+
+    assert caplog.record_tuples == [
+        ('edtlib', WARNING, f"'oldprop' is marked as deprecated in 'properties:' in {hpath('test-bindings/deprecated.yaml')} for node /test-deprecated."),
+        ('edtlib', WARNING, "unit address and first address in 'reg' (0x1) don't match for /reg-zero-size-cells/node"),
+        ('edtlib', WARNING, "unit address and first address in 'reg' (0x5) don't match for /reg-ranges/parent/node"),
+        ('edtlib', WARNING, "unit address and first address in 'reg' (0x30000000200000001) don't match for /reg-nested-ranges/grandparent/parent/node"),
+    ]
 
 def test_interrupts():
     '''Tests for the interrupts property.'''

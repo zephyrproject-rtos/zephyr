@@ -20,6 +20,7 @@
 
 import argparse
 from collections import defaultdict
+import logging
 import os
 import pathlib
 import pickle
@@ -28,11 +29,24 @@ import sys
 
 import edtlib
 
+class LogFormatter(logging.Formatter):
+    '''A log formatter that prints the level name in lower case,
+    for compatibility with earlier versions of edtlib.'''
+
+    def __init__(self):
+        super().__init__(fmt='%(levelnamelower)s: %(message)s')
+
+    def format(self, record):
+        record.levelnamelower = record.levelname.lower()
+        return super().format(record)
+
 def main():
     global header_file
     global flash_area_num
 
     args = parse_args()
+
+    setup_edtlib_logging()
 
     try:
         edt = edtlib.EDT(args.dts, args.bindings_dirs,
@@ -99,6 +113,17 @@ def main():
     if args.edt_pickle_out:
         write_pickled_edt(edt, args.edt_pickle_out)
 
+def setup_edtlib_logging():
+    # The edtlib module emits logs using the standard 'logging' module.
+    # Configure it so that warnings and above are printed to stderr,
+    # using the LogFormatter class defined above to format each message.
+
+    handler = logging.StreamHandler(sys.stderr)
+    handler.setFormatter(LogFormatter())
+
+    logger = logging.getLogger('edtlib')
+    logger.setLevel(logging.WARNING)
+    logger.addHandler(handler)
 
 def node_z_path_id(node):
     # Return the node specific bit of the node's path identifier:
