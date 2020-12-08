@@ -357,6 +357,7 @@ static int flash_stm32h7_write_protection(const struct device *dev, bool enable)
 	return rc;
 }
 
+#ifdef CONFIG_CPU_CORTEX_M7
 static void flash_stm32h7_flush_caches(const struct device *dev,
 				       off_t offset, size_t len)
 {
@@ -364,15 +365,17 @@ static void flash_stm32h7_flush_caches(const struct device *dev,
 	SCB_InvalidateDCache_by_Addr((uint32_t *)(CONFIG_FLASH_BASE_ADDRESS
 						  + offset), len);
 }
-
+#endif /* CONFIG_CPU_CORTEX_M7 */
 
 static int flash_stm32h7_erase(const struct device *dev, off_t offset,
 			       size_t len)
 {
 	int rc;
+#ifdef CONFIG_CPU_CORTEX_M7
 	off_t flush_offset = get_sector(offset) * FLASH_SECTOR_SIZE;
 	size_t flush_len = (((get_sector(offset + len) + 1) * FLASH_SECTOR_SIZE)
 			    - flush_offset);
+#endif /* CONFIG_CPU_CORTEX_M7 */
 
 	if (!flash_stm32_valid_range(dev, offset, len, true)) {
 		LOG_ERR("Erase range invalid. Offset: %ld, len: %zu",
@@ -390,8 +393,10 @@ static int flash_stm32h7_erase(const struct device *dev, off_t offset,
 
 	rc = flash_stm32_block_erase_loop(dev, offset, len);
 
+#ifdef CONFIG_CPU_CORTEX_M7
 	/* Flush cache on all sectors affected by the erase */
 	flash_stm32h7_flush_caches(dev, flush_offset, flush_len);
+#endif /* CONFIG_CPU_CORTEX_M7 */
 
 	flash_stm32_sem_give(dev);
 
