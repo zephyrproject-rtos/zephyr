@@ -107,6 +107,7 @@ SECTIONS
 	*(.rodata)
 	*(.rodata.*)
 
+	MMU_PAGE_ALIGN
 	#include <snippets-rodata.ld>
 
 #ifdef CONFIG_X86_MMU
@@ -140,6 +141,10 @@ SECTIONS
 	_app_smem_num_words = _app_smem_size >> 2;
 #endif /* CONFIG_USERSPACE */
 
+/* This should be put here before BSS section, otherwise the .bss.__gcov will
+ * be put in BSS section. That causes gcov not work properly */
+#include <snippets-ram-sections.ld>
+
 	SECTION_PROLOGUE(_BSS_SECTION_NAME, (NOLOAD), ALIGN(16))
 	{
 	MMU_PAGE_ALIGN
@@ -168,7 +173,6 @@ SECTIONS
 	#include <snippets-rwdata.ld>
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-#include <snippets-ram-sections.ld>
 #include <linker/common-ram.ld>
 #include <linker/cplusplus-ram.ld>
 #include <arch/x86/pagetables.ld>
