@@ -31,12 +31,17 @@ def test_warnings(caplog):
 
     edtlib.EDT("test.dts", ["test-bindings"])
 
-    assert caplog.record_tuples == [
-        ('edtlib', WARNING, f"'oldprop' is marked as deprecated in 'properties:' in {hpath('test-bindings/deprecated.yaml')} for node /test-deprecated."),
-        ('edtlib', WARNING, "unit address and first address in 'reg' (0x1) don't match for /reg-zero-size-cells/node"),
-        ('edtlib', WARNING, "unit address and first address in 'reg' (0x5) don't match for /reg-ranges/parent/node"),
-        ('edtlib', WARNING, "unit address and first address in 'reg' (0x30000000200000001) don't match for /reg-nested-ranges/grandparent/parent/node"),
+    enums_hpath = hpath('test-bindings/enums.yaml')
+    expected_warnings = [
+        f"'oldprop' is marked as deprecated in 'properties:' in {hpath('test-bindings/deprecated.yaml')} for node /test-deprecated.",
+        "unit address and first address in 'reg' (0x1) don't match for /reg-zero-size-cells/node",
+        "unit address and first address in 'reg' (0x5) don't match for /reg-ranges/parent/node",
+        "unit address and first address in 'reg' (0x30000000200000001) don't match for /reg-nested-ranges/grandparent/parent/node",
+        f"compatible 'enums' in binding '{enums_hpath}' has non-tokenizable enum for property 'string-enum': 'foo bar', 'foo_bar'",
+        f"compatible 'enums' in binding '{enums_hpath}' has enum for property 'tokenizable-lower-enum' that is only tokenizable in lowercase: 'bar', 'BAR'",
     ]
+    assert caplog.record_tuples == [('edtlib', WARNING, warning_message)
+                                    for warning_message in expected_warnings]
 
 def test_interrupts():
     '''Tests for the interrupts property.'''

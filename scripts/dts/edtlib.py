@@ -195,6 +195,8 @@ class EDT:
         self._init_graph()
         self._init_luts()
 
+        self._check()
+
     def get_node(self, path):
         """
         Returns the Node at the DT path or alias 'path'. Raises EDTError if the
@@ -442,6 +444,27 @@ class EDT:
             node = nodeset[0]
             self.dep_ord2node[node.dep_ordinal] = node
 
+    def _check(self):
+        # Tree-wide checks and warnings.
+
+        for binding in self._compat2binding.values():
+            for spec in binding.prop2specs.values():
+                if not spec.enum or spec.type != 'string':
+                    continue
+
+                if not spec.enum_tokenizable:
+                    _LOG.warning(
+                        f"compatible '{binding.compatible}' "
+                        f"in binding '{binding.path}' has non-tokenizable enum "
+                        f"for property '{spec.name}': " +
+                        ', '.join(repr(x) for x in spec.enum))
+                elif not spec.enum_upper_tokenizable:
+                    _LOG.warning(
+                        f"compatible '{binding.compatible}' "
+                        f"in binding '{binding.path}' has enum for property "
+                        f"'{spec.name}' that is only tokenizable "
+                        'in lowercase: ' +
+                        ', '.join(repr(x) for x in spec.enum))
 
 class Node:
     """
