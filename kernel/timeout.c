@@ -91,7 +91,7 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 		return;
 	}
 
-#ifdef CONFIG_KERNEL_COHERENCE
+#ifdef KERNEL_COHERENCE
 	__ASSERT_NO_MSG(arch_mem_coherent(to));
 #endif
 
