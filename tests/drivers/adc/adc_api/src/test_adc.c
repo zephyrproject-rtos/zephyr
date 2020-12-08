@@ -452,10 +452,18 @@ void test_adc_asynchronous_call(void)
 /*
  * test_adc_sample_with_interval
  */
+static uint32_t my_sequence_identifier = 0x12345678;
+static void *user_data = &my_sequence_identifier;
+
 static enum adc_action sample_with_interval_callback(const struct device *dev,
 						     const struct adc_sequence *sequence,
 						     uint16_t sampling_index)
 {
+	if (sequence->options->user_data != &my_sequence_identifier) {
+		user_data = sequence->options->user_data;
+		return ADC_ACTION_FINISH;
+	}
+
 	TC_PRINT("%s: sampling %d\n", __func__, sampling_index);
 	return ADC_ACTION_CONTINUE;
 }
@@ -466,6 +474,7 @@ static int test_task_with_interval(void)
 	const struct adc_sequence_options options = {
 		.interval_us     = 100 * 1000UL,
 		.callback        = sample_with_interval_callback,
+		.user_data       = user_data,
 		.extra_samplings = 4,
 	};
 	const struct adc_sequence sequence = {
@@ -484,6 +493,10 @@ static int test_task_with_interval(void)
 
 	ret = adc_read(adc_dev, &sequence);
 	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
+
+	zassert_equal(user_data, sequence.options->user_data,
+		"Invalid user data: %p, expected: %p",
+		user_data, sequence.options->user_data);
 
 	check_samples(1 + options.extra_samplings);
 

@@ -218,8 +218,15 @@ enum adc_action {
  *
  * @param dev             Pointer to the device structure for the driver
  *                        instance.
- * @param sequence        Pointer to the sequence structure that triggered the
- *                        sampling.
+ * @param sequence        Pointer to the sequence structure that triggered
+ *                        the sampling. This parameter points to a copy of
+ *                        the structure that was supplied to the call that
+ *                        started the sampling sequence, thus it cannot be
+ *                        used with the CONTAINER_OF() macro to retrieve
+ *                        some other data associated with the sequence.
+ *                        Instead, the adc_sequence_options::user_data field
+ *                        should be used for such purpose.
+ *
  * @param sampling_index  Index (0-65535) of the sampling done.
  *
  * @returns Action to be performed by the driver. See @ref adc_action.
@@ -248,6 +255,12 @@ struct adc_sequence_options {
 	 * Optional - set to NULL if it is not needed.
 	 */
 	adc_sequence_callback callback;
+
+	/**
+	 * Pointer to user data. It can be used to associate the sequence
+	 * with any other data that is needed in the callback function.
+	 */
+	void *user_data;
 
 	/**
 	 * Number of extra samplings to perform (the total number of samplings
