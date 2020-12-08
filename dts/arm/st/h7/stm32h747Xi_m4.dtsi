@@ -12,12 +12,6 @@
 		/delete-node/ cpu@0;
 	};
 
-	/* system data RAM accessible over over AXI bus */
-	sram1: memory@10000000 {
-		reg = <0x10000000 DT_SIZE_K(288)>;
-		compatible = "mmio-sram";
-	};
-
 	soc {
 		flash-controller@52002000 {
 			flash1: flash@8100000 {
