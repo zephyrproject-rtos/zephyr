@@ -1,0 +1,45 @@
+# ACS71020 line voltage current sensor configuration options
+
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ACS71020
+	bool "ACS71020 i2c isolated line voltage current sensor"
+	depends on I2C
+	help
+	  Enable driver for ACS71020 i2c line voltage current sensor.
+
+if ACS71020
+
+choice
+	prompt "ACS71020 trigger mode"
+	default ACS71020_TRIGGER_NONE
+
+config ACS71020_TRIGGER_NONE
+	bool "No trigger"
+
+config ACS71020_TRIGGER_GLOBAL_THREAD
+	depends on GPIO
+	select ACS71020_TRIGGER
+	bool "Use global thread"
+
+config ACS71020_TRIGGER_OWN_THREAD
+	depends on GPIO
+	select ACS71020_TRIGGER
+	bool "Use own thread"
+
+endchoice
+
+config ACS71020_TRIGGER
+	bool
+
+config ACS71020_THREAD_STACK_SIZE
+	int "Sensor delayed work thread stack size"
+	depends on ACS71020_TRIGGER_OWN_THREAD
+	default 1024
+
+config ACS71020_THREAD_PRIORITY
+	int "ACS71020 thread priority"
+	depends on ACS71020_TRIGGER_OWN_THREAD
+	default 10
+
+endif # ACS71020

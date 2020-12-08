@@ -173,7 +173,15 @@ enum sensor_channel {
 	SENSOR_CHAN_GAUGE_DESIRED_VOLTAGE,
 	/** Desired charging current in mA */
 	SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT,
-
+    /** Thermocouple Temp*/
+    SENSOR_CHAN_THERMOCOUPLE_TEMP,
+    /** Thermocouple Temp*/
+    SENSOR_CHAN_DIFF_TEMP,
+    /** Thermocouple Temp*/
+    SENSOR_CHAN_COLD_TEMP,
+    /** Power in Watts **/
+    SENSOR_CHAN_POWER,
+    
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 
