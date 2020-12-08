@@ -16,10 +16,10 @@
 #include <stdlib.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/bluetooth.h>
-#include "../host/audio/csip.h"
 
-extern struct bt_conn *default_conn;
-extern const struct shell *ctx_shell;
+#include "bt.h"
+
+#include "../host/audio/csip.h"
 
 static void csis_discover_cb(struct bt_conn *conn, int err, uint8_t set_count)
 {
@@ -90,6 +90,10 @@ static int cmd_csip_discover(const struct shell *shell, size_t argc,
 {
 	int result;
 	int subscribe = 1;
+
+	if (!ctx_shell) {
+		ctx_shell = shell;
+	}
 
 	bt_csip_register_cb(&cbs);
 
