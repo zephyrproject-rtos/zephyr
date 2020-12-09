@@ -7,6 +7,12 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_VIRTUALIZATION_IVSHMEM_H_
 #define ZEPHYR_INCLUDE_DRIVERS_VIRTUALIZATION_IVSHMEM_H_
 
+/**
+ * @brief ivshmem reference API
+ * @defgroup ivshmem ivshmem reference API
+ * @{
+ */
+
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <device.h>
@@ -130,5 +136,9 @@ static inline int ivshmem_register_handler(const struct device *dev,
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_VIRTUALIZATION_IVSHMEM_H_ */
