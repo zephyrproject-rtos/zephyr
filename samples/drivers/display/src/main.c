@@ -22,8 +22,8 @@ LOG_MODULE_REGISTER(sample, LOG_LEVEL_INF);
 #define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, solomon_ssd1306fb))
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_INST(0, gooddisplay_gdeh0213b1), okay)
-#define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, gooddisplay_gdeh0213b1))
+#if DT_NODE_HAS_STATUS(DT_INST(0, solomon_ssd16xxfb), okay)
+#define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, solomon_ssd16xxfb))
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_INST(0, sitronix_st7789v), okay)
