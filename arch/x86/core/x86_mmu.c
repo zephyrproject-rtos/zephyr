@@ -861,6 +861,13 @@ static inline pentry_t pte_atomic_update(pentry_t *pte, pentry_t update_val,
 		new_val = pte_finalize_value(new_val, user_table);
 	} while (atomic_pte_cas(pte, old_val, new_val) == false);
 
+#ifdef CONFIG_X86_KPTI
+	if (is_flipped_pte(old_val)) {
+		/* Page was flipped for KPTI. Un-flip it */
+		old_val = ~old_val;
+	}
+#endif /* CONFIG_X86_KPTI */
+
 	return old_val;
 }
 
