@@ -10,6 +10,7 @@
 #include <exc_handle.h>
 #include <logging/log.h>
 #include <x86_mmu.h>
+#include <mmu.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #if defined(CONFIG_BOARD_QEMU_X86) || defined(CONFIG_BOARD_QEMU_X86_64)
@@ -359,6 +360,44 @@ static const struct z_exc_handle exceptions[] = {
 
 void z_x86_page_fault_handler(z_arch_esf_t *esf)
 {
+#ifdef CONFIG_DEMAND_PAGING
+	if ((esf->errorCode & PF_P) == 0) {
+		/* Page was non-present at time exception happened.
+		 * Get faulting virtual address from CR2 register
+		 */
+		void *virt = z_x86_cr2_get();
+		bool was_valid_access;
+
+#ifdef CONFIG_X86_KPTI
+		/* Protection ring is lowest 2 bits in interrupted CS */
+		bool was_user = ((esf->cs & 0x3) != 0U);
+
+		/* Need to check if the interrupted context was a user thread
+		 * that hit a non-present page that was flipped due to KPTI in
+		 * the thread's page tables, in which case this is an access
+		 * violation and we should treat this as an error.
+		 *
+		 * We're probably not locked, but if there is a race, we will
+		 * be fine, the kernel page fault code will later detect that
+		 * the page is present in the kernel's page tables and the
+		 * instruction will just be re-tried, producing another fault.
+		 */
+		if (was_user &&
+		    !z_x86_kpti_is_access_ok(virt, get_ptables(esf))) {
+			was_valid_access = false;
+		} else
+#else
+		{
+			was_valid_access = z_page_fault(virt);
+		}
+#endif /* CONFIG_X86_KPTI */
+		if (was_valid_access) {
+			/* Page fault handled, re-try */
+			return;
+		}
+	}
+#endif /* CONFIG_DEMAND_PAGING */
+
 #if !defined(CONFIG_X86_64) && defined(CONFIG_DEBUG_COREDUMP)
 	z_x86_exception_vector = IV_PAGE_FAULT;
 #endif
