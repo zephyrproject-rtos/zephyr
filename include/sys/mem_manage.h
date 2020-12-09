@@ -204,6 +204,75 @@ void *k_mem_map(size_t size, uint32_t flags);
 size_t k_mem_region_align(uintptr_t *aligned_addr, size_t *aligned_size,
 			  uintptr_t addr, size_t size, size_t align);
 
+#ifdef CONFIG_DEMAND_PAGING
+/**
+ * Evict a page-aligned virtual memory region to the backing store
+ *
+ * Useful if it is known that a memory region will not be used for some time.
+ * All the data pages within the specified region will be evicted to the
+ * backing store if they weren't already, with their associated page frames
+ * marked as available for mappings or page-ins.
+ *
+ * None of the associated page frames mapped to the provided region should
+ * be pinned.
+ *
+ * Note that there are no guarantees how long these pages will be evicted,
+ * they could take page faults immediately.
+ *
+ * If CONFIG_DEMAND_PAGING_ALLOW_IRQ is enabled, this function may not be
+ * called by ISRs as the backing store may be in-use.
+ *
+ * @param addr Base page-aligned virtual address
+ * @param size Page-aligned data region size
+ * @retval 0 Success
+ * @retval -ENOMEM Insufficient space in backing store to satisfy request.
+ *         The region may be partially paged out.
+ */
+int z_mem_page_out(void *addr, size_t size);
+
+/**
+ * Load a virtual data region into memory
+ *
+ * After the function completes, all the page frames associated with this
+ * function will be paged in. However, they are not guaranteed to stay there.
+ * This is useful if the region is known to be used soon.
+ *
+ * If CONFIG_DEMAND_PAGING_ALLOW_IRQ is enabled, this function may not be
+ * called by ISRs as the backing store may be in-use.
+ *
+ * @param addr Base page-aligned virtual address
+ * @param size Page-aligned data region size
+ */
+void z_mem_page_in(void *addr, size_t size);
+
+/**
+ * Pin an aligned virtual data region, paging in as necessary
+ *
+ * After the function completes, all the page frames associated with this
+ * region will be resident in memory and pinned such that they stay that way.
+ * This is a stronger version of z_mem_page_in().
+ *
+ * If CONFIG_DEMAND_PAGING_ALLOW_IRQ is enabled, this function may not be
+ * called by ISRs as the backing store may be in-use.
+ *
+ * @param addr Base page-aligned virtual address
+ * @param size Page-aligned data region size
+ */
+void z_mem_pin(void *addr, size_t size);
+
+/**
+ * Un-pin an aligned virtual data region
+ *
+ * After the function completes, all the page frames associated with this
+ * region will be no longer marked as pinned. This does not evict the region,
+ * follow this with z_mem_page_out() if you need that.
+ *
+ * @param addr Base page-aligned virtual address
+ * @param size Page-aligned data region size
+ */
+void z_mem_unpin(void *addr, size_t size);
+#endif /* CONFIG_DEMAND_PAGING */
+
 #ifdef __cplusplus
 }
 #endif
