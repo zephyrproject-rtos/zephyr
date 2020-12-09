@@ -347,8 +347,6 @@ static inline void tlb_flush_page(void *addr)
 	char *page = (char *)addr;
 
 	__asm__ ("invlpg %0" :: "m" (*page));
-
-	/* TODO: Need to implement TLB shootdown for SMP */
 }
 
 #ifdef CONFIG_X86_KPTI
@@ -388,6 +386,9 @@ void z_x86_tlb_ipi(const void *arg)
 	z_x86_cr3_set(ptables);
 }
 
+/* NOTE: This is not synchronous and the actual flush takes place some short
+ * time after this exits.
+ */
 static inline void tlb_shootdown(void)
 {
 	z_loapic_ipi(0, LOAPIC_ICR_IPI_OTHERS, CONFIG_TLB_IPI_VECTOR);
