@@ -230,9 +230,9 @@ static const struct i2c_driver_api i2c_mcux_driver_api = {
 									\
 	static struct i2c_mcux_data i2c_mcux_data_ ## n;		\
 									\
-	DEVICE_AND_API_INIT(i2c_mcux_ ## n,				\
-			DT_INST_LABEL(n),				\
-			&i2c_mcux_init, &i2c_mcux_data_ ## n,		\
+	DEVICE_DT_INST_DEFINE(n,					\
+			&i2c_mcux_init, device_pm_control_nop,		\
+			&i2c_mcux_data_ ## n,				\
 			&i2c_mcux_config_ ## n, POST_KERNEL,		\
 			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			&i2c_mcux_driver_api);				\
@@ -242,7 +242,7 @@ static const struct i2c_driver_api i2c_mcux_driver_api = {
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			DT_INST_IRQ(n, priority),			\
 			i2c_mcux_isr,					\
-			DEVICE_GET(i2c_mcux_ ## n), 0);			\
+			DEVICE_DT_INST_GET(n), 0);			\
 									\
 		irq_enable(DT_INST_IRQN(n));				\
 	}

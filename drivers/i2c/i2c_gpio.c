@@ -182,8 +182,9 @@ static const struct i2c_gpio_config i2c_gpio_dev_cfg_##_num = {		\
 	.bitrate	= DT_INST_PROP(_num, clock_frequency),		\
 };									\
 									\
-DEVICE_AND_API_INIT(i2c_gpio_##_num, DT_INST_LABEL(_num),		\
+DEVICE_DT_INST_DEFINE(_num,						\
 	    i2c_gpio_init,						\
+	    device_pm_control_nop,					\
 	    &i2c_gpio_dev_data_##_num,					\
 	    &i2c_gpio_dev_cfg_##_num,					\
 	    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &api);

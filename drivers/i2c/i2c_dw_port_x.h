@@ -22,8 +22,7 @@ static const struct i2c_dw_rom_config i2c_config_dw_@NUM@ = {
 
 static struct i2c_dw_dev_config i2c_@NUM@_runtime;
 
-DEVICE_AND_API_INIT(i2c_@NUM@, DT_INST_LABEL(@NUM@),
-		    &i2c_dw_initialize,
+DEVICE_DT_INST_DEFINE(@NUM@, &i2c_dw_initialize, device_pm_control_nop,
 		    &i2c_@NUM@_runtime, &i2c_config_dw_@NUM@,
 		    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
 		    &funcs);
@@ -56,7 +55,7 @@ static void i2c_config_@NUM@(const struct device *port)
 	irq_connect_dynamic(irq,
 			    DT_INST_IRQ(@NUM@, priority),
 			    (void (*)(const void *))i2c_dw_isr,
-			    DEVICE_GET(i2c_@NUM@), INST_@NUM@_IRQ_FLAGS);
+			    DEVICE_DT_INST_GET(@NUM@), INST_@NUM@_IRQ_FLAGS);
 	pcie_irq_enable(DT_INST_REG_ADDR(@NUM@), irq);
 
 #else
@@ -65,7 +64,7 @@ static void i2c_config_@NUM@(const struct device *port)
 
 	IRQ_CONNECT(DT_INST_IRQN(@NUM@),
 		    DT_INST_IRQ(@NUM@, priority),
-		    i2c_dw_isr, DEVICE_GET(i2c_@NUM@),
+		    i2c_dw_isr, DEVICE_DT_INST_GET(@NUM@),
 		    INST_@NUM@_IRQ_FLAGS);
 	pcie_irq_enable(DT_INST_REG_ADDR(@NUM@),
 			DT_INST_IRQN(@NUM@));
@@ -77,7 +76,7 @@ static void i2c_config_@NUM@(const struct device *port)
 
 	IRQ_CONNECT(DT_INST_IRQN(@NUM@),
 		    DT_INST_IRQ(@NUM@, priority),
-		    i2c_dw_isr, DEVICE_GET(i2c_@NUM@),
+		    i2c_dw_isr, DEVICE_DT_INST_GET(@NUM@),
 		    INST_@NUM@_IRQ_FLAGS);
 	irq_enable(DT_INST_IRQN(@NUM@));
 

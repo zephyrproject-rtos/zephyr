@@ -607,13 +607,13 @@ static const struct i2c_driver_api i2c_sam_twim_driver_api = {
 	.hs_data_strength_low = DT_INST_ENUM_IDX(n, hs_data_strength_low)
 
 #define I2C_TWIM_SAM_INIT(n)						\
-	static const struct device DEVICE_NAME_GET(i2c##n##_sam);	\
+	DEVICE_DT_INST_DECLARE(n);					\
 									\
 	static void i2c##n##_sam_irq_config(void)			\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
 			    i2c_sam_twim_isr,				\
-			    DEVICE_GET(i2c##n##_sam), 0);		\
+			    DEVICE_DT_INST_GET(n), 0);			\
 	}								\
 									\
 	static const struct soc_gpio_pin pins_twim##n[] =		\
@@ -633,8 +633,8 @@ static const struct i2c_driver_api i2c_sam_twim_driver_api = {
 									\
 	static struct i2c_sam_twim_dev_data i2c##n##_sam_data;		\
 									\
-	DEVICE_AND_API_INIT(i2c##n##_sam, DT_INST_LABEL(n),		\
-			    &i2c_sam_twim_initialize,			\
+	DEVICE_DT_INST_DEFINE(n, &i2c_sam_twim_initialize,		\
+			    device_pm_control_nop,			\
 			    &i2c##n##_sam_data, &i2c##n##_sam_config,	\
 			    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	\
 			    &i2c_sam_twim_driver_api)

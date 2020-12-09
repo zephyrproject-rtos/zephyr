@@ -165,7 +165,7 @@ static struct i2c_nios2_config i2c_nios2_cfg = {
 	},
 };
 
-DEVICE_AND_API_INIT(i2c_nios2_0, DT_INST_LABEL(0), &i2c_nios2_init,
+DEVICE_DT_INST_DEFINE(0, &i2c_nios2_init, device_pm_control_nop,
 		    NULL, &i2c_nios2_cfg,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_nios2_driver_api);
@@ -190,7 +190,7 @@ static int i2c_nios2_init(const struct device *dev)
 	alt_avalon_i2c_int_clear(&config->i2c_dev,
 			ALT_AVALON_I2C_ISR_ALL_CLEARABLE_INTS_MSK);
 	IRQ_CONNECT(I2C_0_IRQ, CONFIG_I2C_0_IRQ_PRI,
-			i2c_nios2_isr, DEVICE_GET(i2c_nios2_0), 0);
+			i2c_nios2_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(I2C_0_IRQ);
 	return 0;
 }
