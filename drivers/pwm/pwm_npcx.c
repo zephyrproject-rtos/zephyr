@@ -208,8 +208,8 @@ static int pwm_npcx_init(const struct device *dev)
 									       \
 	static struct pwm_npcx_data pwm_npcx_data_##inst;                      \
 									       \
-	DEVICE_AND_API_INIT(pwm_npcx_##inst, DT_INST_LABEL(inst),              \
-			    &pwm_npcx_init,                                    \
+	DEVICE_DT_INST_DEFINE(inst,					       \
+			    &pwm_npcx_init, device_pm_control_nop,             \
 			    &pwm_npcx_data_##inst, &pwm_npcx_cfg_##inst,       \
 			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,  \
 			    &pwm_npcx_driver_api);

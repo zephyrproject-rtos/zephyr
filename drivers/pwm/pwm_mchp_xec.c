@@ -387,9 +387,9 @@ static struct pwm_driver_api pwm_xec_api = {
 		.base_address = DT_INST_REG_ADDR(inst)			\
 	};								\
 									\
-	DEVICE_AND_API_INIT(pwm_xec_##inst,				\
-			    DT_INST_LABEL(inst),			\
+	DEVICE_DT_INST_DEFINE(inst,					\
 			    pwm_xec_init,				\
+			    device_pm_control_nop,			\
 			    NULL,					\
 			    &pwm_xec_dev_config_##inst,			\
 			    POST_KERNEL,				\
