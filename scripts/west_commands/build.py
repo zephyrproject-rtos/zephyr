@@ -94,7 +94,7 @@ class Build(Forceable):
             description=self.description,
             usage=BUILD_USAGE)
 
-        # Remember to update scripts/west-completion.bash if you add or remove
+        # Remember to update west-completion.bash if you add or remove
         # flags
 
         parser.add_argument('-b', '--board', help='board to build for')
@@ -110,8 +110,8 @@ class Build(Forceable):
         group.add_argument('--cmake-only', action='store_true',
                            help="just run cmake; don't build (implies -c)")
         group.add_argument('-t', '--target',
-                           help='''run this build system target (try "-t usage"
-                           or "-t help")''')
+                           help='''run build system target TARGET
+                           (try "-t usage")''')
         group.add_argument('-o', '--build-opt', default=[], action='append',
                            help='''options to pass to the build tool
                            (make or ninja); may be given more than once''')
