@@ -70,6 +70,12 @@ static const struct flash_parameters flash_stm32_parameters = {
 #endif
 };
 
+
+int __weak flash_stm32_check_configuration(void)
+{
+	return 0;
+}
+
 #if defined(CONFIG_MULTITHREADING)
 /*
  * This is named flash_stm32_sem_take instead of flash_stm32_lock (and
@@ -346,6 +352,7 @@ static const struct flash_driver_api flash_stm32_api = {
 
 static int stm32_flash_init(const struct device *dev)
 {
+	int rc;
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32F1X) || \
@@ -382,6 +389,12 @@ static int stm32_flash_init(const struct device *dev)
 
 	LOG_DBG("Flash initialized. BS: %zu",
 		flash_stm32_parameters.write_block_size);
+
+	/* Check Flash configuration */
+	rc = flash_stm32_check_configuration();
+	if (rc < 0) {
+		return rc;
+	}
 
 #if ((CONFIG_FLASH_LOG_LEVEL >= LOG_LEVEL_DBG) && CONFIG_FLASH_PAGE_LAYOUT)
 	const struct flash_pages_layout *layout;
