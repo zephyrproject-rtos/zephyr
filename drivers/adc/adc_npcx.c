@@ -321,8 +321,8 @@ static struct adc_npcx_data adc_npcx_data_0 = {
 	ADC_CONTEXT_INIT_SYNC(adc_npcx_data_0, ctx),
 };
 
-DEVICE_AND_API_INIT(adc_npcx, DT_INST_LABEL(0),
-		    adc_npcx_init,
+DEVICE_DT_INST_DEFINE(0,
+		    adc_npcx_init, device_pm_control_nop,
 		    &adc_npcx_data_0, &adc_npcx_cfg_0,
 		    PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -373,7 +373,7 @@ static int adc_npcx_init(const struct device *dev)
 
 	/* Configure ADC interrupt and enable it */
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), adc_npcx_isr,
-			    DEVICE_GET(adc_npcx), 0);
+			    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 
 	/* Initialize mutex of ADC channels */
