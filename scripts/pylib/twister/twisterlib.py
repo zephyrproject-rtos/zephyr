@@ -3211,8 +3211,13 @@ class TestSuite(DisablePyTestCollectionMixin):
             processes.append(p)
             p.start()
 
-        for p in processes:
-            p.join()
+        try:
+            for p in processes:
+                p.join()
+        except KeyboardInterrupt:
+            logger.info("Execution interrupted")
+            for p in processes:
+                p.terminate()
 
         # FIXME: This needs to move out.
         if self.enable_size_report and not self.cmake_only:
