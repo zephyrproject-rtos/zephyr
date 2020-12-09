@@ -136,33 +136,4 @@ source "subsys/usb/class/hid/Kconfig"
 
 source "subsys/usb/class/audio/Kconfig"
 
-config USB_DFU_CLASS
-	bool "USB DFU Class Driver"
-	select MPU_ALLOW_FLASH_WRITE
-	select POLL
-	depends on IMG_MANAGER
-	select IMG_ERASE_PROGRESSIVELY if SOC_FLASH_NRF
-	help
-	  USB DFU class driver
-
-config USB_DFU_WAIT_DELAY_MS
-	int "wait_for_usb_dfu() timeout"
-	depends on USB_DFU_CLASS
-	default 12000
-	range 1000 120000
-	help
-	  A thread can use wait_for_usb_dfu() call for wait a prescribed
-	  time (in ms) for DFU to begin
-
-config USB_DFU_DETACH_TIMEOUT
-	int
-	depends on USB_DFU_CLASS
-	default 1000
-
-config USB_DFU_DEFAULT_POLLTIMEOUT
-	int "Default value for bwPollTimeout"
-	depends on USB_DFU_CLASS
-	default 256
-	range 0 1000
-	help
-	  Default value for bwPollTimeout (in ms)
+source "subsys/usb/class/dfu/Kconfig"

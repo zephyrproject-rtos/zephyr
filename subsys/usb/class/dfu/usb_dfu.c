@@ -2,6 +2,7 @@
  *
  * Copyright(c) 2015,2016 Intel Corporation.
  * Copyright(c) 2017 PHYTEC Messtechnik GmbH
+ * Copyright(c) 2020 Intel Corporation
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -57,21 +58,17 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_dfu);
 
-#define NUMOF_ALTERNATE_SETTINGS	2
-
-#define USB_DFU_MAX_XFER_SIZE		CONFIG_USB_REQUEST_BUFFER_SIZE
-
-#define FIRMWARE_IMAGE_0_LABEL "image-0"
-#define FIRMWARE_IMAGE_1_LABEL "image-1"
+#define USB_DFU_MAX_XFER_SIZE           CONFIG_USB_REQUEST_BUFFER_SIZE
 
 /* MCUBoot waits for CONFIG_USB_DFU_WAIT_DELAY_MS time in total to let DFU to
  * be commenced. It intermittently checks every INTERMITTENT_CHECK_DELAY
  * milliseconds to see if DFU has started.
  */
-#define INTERMITTENT_CHECK_DELAY	50
+#define INTERMITTENT_CHECK_DELAY        50
 
 static struct k_poll_event dfu_event;
 static struct k_poll_signal dfu_signal;
+static struct k_timer dfu_timer;
 
 static struct k_work dfu_work;
 
@@ -118,18 +115,37 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_dfu_config dfu_cfg = {
 
 /* dfu mode device descriptor */
 
+#define DT_DRV_COMPAT fixed_partitions
+#define DT_EXPAND_CAT(a, b) DT_CAT(a, b)
+
+#define DEFINE_IF(part)	\
+	struct usb_if_descriptor DT_EXPAND_CAT(if, DT_FIXED_PARTITION_ID(part));
+#define DEFINE_IF_FOREACH_PARTITION(n) \
+	DT_FOREACH_CHILD(DT_DRV_INST(n), DEFINE_IF)
+
 struct dev_dfu_mode_descriptor {
 	struct usb_device_descriptor device_descriptor;
 	struct usb_cfg_descriptor cfg_descr;
 	struct usb_sec_dfu_config {
-		struct usb_if_descriptor if0;
-#if FLASH_AREA_LABEL_EXISTS(image_1)
-		struct usb_if_descriptor if1;
-#endif
+		DT_INST_FOREACH_STATUS_OKAY(DEFINE_IF_FOREACH_PARTITION)
 		struct dfu_runtime_descriptor dfu_descr;
 	} __packed sec_dfu_cfg;
 } __packed;
 
+#define INITIALIZE_IF(part)					  \
+	.DT_EXPAND_CAT(if, DT_FIXED_PARTITION_ID(part)) = {	  \
+		.bLength = sizeof(struct usb_if_descriptor),	  \
+		.bDescriptorType = USB_INTERFACE_DESC,		  \
+		.bInterfaceNumber = 0,				  \
+		.bAlternateSetting = DT_FIXED_PARTITION_ID(part), \
+		.bNumEndpoints = 0,				  \
+		.bInterfaceClass = DFU_DEVICE_CLASS,		  \
+		.bInterfaceSubClass = DFU_SUBCLASS,		  \
+		.bInterfaceProtocol = DFU_MODE_PROTOCOL,	  \
+		.iInterface = 4 + DT_FIXED_PARTITION_ID(part),	  \
+	},
+#define INITIALIZE_IF_FOREACH_PARTITION(n) \
+	DT_FOREACH_CHILD(DT_DRV_INST(n), INITIALIZE_IF)
 
 USBD_DEVICE_DESCR_DEFINE(secondary)
 struct dev_dfu_mode_descriptor dfu_mode_desc = {
@@ -142,8 +158,10 @@ struct dev_dfu_mode_descriptor dfu_mode_desc = {
 		.bDeviceSubClass = 0,
 		.bDeviceProtocol = 0,
 		.bMaxPacketSize0 = USB_MAX_CTRL_MPS,
-		.idVendor = sys_cpu_to_le16((uint16_t)CONFIG_USB_DEVICE_VID),
-		.idProduct = sys_cpu_to_le16((uint16_t)CONFIG_USB_DEVICE_PID),
+		.idVendor =
+			sys_cpu_to_le16((uint16_t)CONFIG_USB_DEVICE_DFU_VID),
+		.idProduct =
+			sys_cpu_to_le16((uint16_t)CONFIG_USB_DEVICE_DFU_PID),
 		.bcdDevice = sys_cpu_to_le16(BCDDEVICE_RELNUM),
 		.iManufacturer = 1,
 		.iProduct = 2,
@@ -163,30 +181,7 @@ struct dev_dfu_mode_descriptor dfu_mode_desc = {
 	},
 	.sec_dfu_cfg = {
 		/* Interface descriptor */
-		.if0 = {
-			.bLength = sizeof(struct usb_if_descriptor),
-			.bDescriptorType = USB_INTERFACE_DESC,
-			.bInterfaceNumber = 0,
-			.bAlternateSetting = 0,
-			.bNumEndpoints = 0,
-			.bInterfaceClass = DFU_DEVICE_CLASS,
-			.bInterfaceSubClass = DFU_SUBCLASS,
-			.bInterfaceProtocol = DFU_MODE_PROTOCOL,
-			.iInterface = 4,
-		},
-#if FLASH_AREA_LABEL_EXISTS(image_1)
-		.if1 = {
-			.bLength = sizeof(struct usb_if_descriptor),
-			.bDescriptorType = USB_INTERFACE_DESC,
-			.bInterfaceNumber = 0,
-			.bAlternateSetting = 1,
-			.bNumEndpoints = 0,
-			.bInterfaceClass = DFU_DEVICE_CLASS,
-			.bInterfaceSubClass = DFU_SUBCLASS,
-			.bInterfaceProtocol = DFU_MODE_PROTOCOL,
-			.iInterface = 5,
-		},
-#endif
+		DT_INST_FOREACH_STATUS_OKAY(INITIALIZE_IF_FOREACH_PARTITION)
 		.dfu_descr = {
 			.bLength = sizeof(struct dfu_runtime_descriptor),
 			.bDescriptorType = DFU_FUNC_DESC,
@@ -203,13 +198,23 @@ struct dev_dfu_mode_descriptor dfu_mode_desc = {
 	},
 };
 
+#define DEFINE_STR(part)								 \
+	struct DT_EXPAND_CAT(DT_EXPAND_CAT(partition,					 \
+					    DT_FIXED_PARTITION_ID(part)), _descriptor) { \
+	uint8_t bLength;								 \
+	uint8_t bDescriptorType;							 \
+	uint8_t bString[USB_BSTRING_LENGTH(DT_LABEL(part))];				 \
+} __packed DT_EXPAND_CAT(utf16le_partition, DT_FIXED_PARTITION_ID(part));
+#define DEFINE_STR_FOREACH_PARTITION(n)	\
+	DT_FOREACH_CHILD(DT_DRV_INST(n), DEFINE_STR)
+
 struct usb_string_desription {
 	struct usb_string_descriptor lang_descr;
 	struct usb_mfr_descriptor {
 		uint8_t bLength;
 		uint8_t bDescriptorType;
 		uint8_t bString[USB_BSTRING_LENGTH(
-				CONFIG_USB_DEVICE_MANUFACTURER)];
+					CONFIG_USB_DEVICE_MANUFACTURER)];
 	} __packed utf16le_mfr;
 
 	struct usb_product_descriptor {
@@ -224,20 +229,17 @@ struct usb_string_desription {
 		uint8_t bString[USB_BSTRING_LENGTH(CONFIG_USB_DEVICE_SN)];
 	} __packed utf16le_sn;
 
-	struct image_0_descriptor {
-		uint8_t bLength;
-		uint8_t bDescriptorType;
-		uint8_t bString[USB_BSTRING_LENGTH(FIRMWARE_IMAGE_0_LABEL)];
-	} __packed utf16le_image0;
-
-#if FLASH_AREA_LABEL_EXISTS(image_1)
-	struct image_1_descriptor {
-		uint8_t bLength;
-		uint8_t bDescriptorType;
-		uint8_t bString[USB_BSTRING_LENGTH(FIRMWARE_IMAGE_1_LABEL)];
-	} __packed utf16le_image1;
-#endif
+	DT_INST_FOREACH_STATUS_OKAY(DEFINE_STR_FOREACH_PARTITION)
 } __packed;
+
+#define INITIALIZE_STR(part)						   \
+	.DT_EXPAND_CAT(utf16le_partition, DT_FIXED_PARTITION_ID(part)) = { \
+		.bLength = USB_STRING_DESCRIPTOR_LENGTH(DT_LABEL(part)),   \
+		.bDescriptorType = USB_STRING_DESC,			   \
+		.bString = DT_LABEL(part),				   \
+	},
+#define INITIALIZE_STR_FOREACH_PARTITION(n) \
+	DT_FOREACH_CHILD(DT_DRV_INST(n), INITIALIZE_STR)
 
 USBD_STRING_DESCR_DEFINE(secondary)
 struct usb_string_desription string_descr = {
@@ -249,14 +251,14 @@ struct usb_string_desription string_descr = {
 	/* Manufacturer String Descriptor */
 	.utf16le_mfr = {
 		.bLength = USB_STRING_DESCRIPTOR_LENGTH(
-				CONFIG_USB_DEVICE_MANUFACTURER),
+			CONFIG_USB_DEVICE_MANUFACTURER),
 		.bDescriptorType = USB_STRING_DESC,
 		.bString = CONFIG_USB_DEVICE_MANUFACTURER,
 	},
 	/* Product String Descriptor */
 	.utf16le_product = {
 		.bLength = USB_STRING_DESCRIPTOR_LENGTH(
-				CONFIG_USB_DEVICE_PRODUCT),
+			CONFIG_USB_DEVICE_PRODUCT),
 		.bDescriptorType = USB_STRING_DESC,
 		.bString = CONFIG_USB_DEVICE_PRODUCT,
 	},
@@ -266,22 +268,8 @@ struct usb_string_desription string_descr = {
 		.bDescriptorType = USB_STRING_DESC,
 		.bString = CONFIG_USB_DEVICE_SN,
 	},
-	/* Image 0 String Descriptor */
-	.utf16le_image0 = {
-		.bLength = USB_STRING_DESCRIPTOR_LENGTH(
-				FIRMWARE_IMAGE_0_LABEL),
-		.bDescriptorType = USB_STRING_DESC,
-		.bString = FIRMWARE_IMAGE_0_LABEL,
-	},
-#if FLASH_AREA_LABEL_EXISTS(image_1)
-	/* Image 1 String Descriptor */
-	.utf16le_image1 = {
-		.bLength = USB_STRING_DESCRIPTOR_LENGTH(
-				FIRMWARE_IMAGE_1_LABEL),
-		.bDescriptorType = USB_STRING_DESC,
-		.bString = FIRMWARE_IMAGE_1_LABEL,
-	},
-#endif
+	/* Partition String Descriptors */
+	DT_INST_FOREACH_STATUS_OKAY(INITIALIZE_STR_FOREACH_PARTITION)
 };
 
 /* This element marks the end of the entire descriptor. */
@@ -294,30 +282,19 @@ static struct usb_cfg_data dfu_config;
 
 /* Device data structure */
 struct dfu_data_t {
-	uint8_t flash_area_id;
-	uint32_t flash_upload_size;
+	const struct flash_area *fa;
 	/* Number of bytes sent during upload */
 	uint32_t bytes_sent;
-	uint32_t alt_setting;              /* DFU alternate setting */
 	struct flash_img_context ctx;
-	enum dfu_state state;              /* State of the DFU device */
-	enum dfu_status status;            /* Status of the DFU device */
-	uint16_t block_nr;                 /* DFU block number */
+	enum dfu_state state;                   /* State of the DFU device */
+	enum dfu_status status;                 /* Status of the DFU device */
+	uint16_t block_nr;                      /* DFU block number */
 	uint16_t bwPollTimeout;
 };
-
-#if FLASH_AREA_LABEL_EXISTS(image_1)
-	#define UPLOAD_FLASH_AREA_ID FLASH_AREA_ID(image_1)
-#else
-	#define UPLOAD_FLASH_AREA_ID FLASH_AREA_ID(image_0)
-#endif
-
 
 static struct dfu_data_t dfu_data = {
 	.state = appIDLE,
 	.status = statusOK,
-	.flash_area_id = UPLOAD_FLASH_AREA_ID,
-	.alt_setting = 0,
 	.bwPollTimeout = CONFIG_USB_DFU_DEFAULT_POLLTIMEOUT,
 };
 
@@ -344,13 +321,61 @@ static void dfu_reset_counters(void)
 {
 	dfu_data.bytes_sent = 0U;
 	dfu_data.block_nr = 0U;
-	if (flash_img_init(&dfu_data.ctx)) {
-		LOG_ERR("flash img init error");
-		dfu_data.state = dfuERROR;
-		dfu_data.status = errUNKNOWN;
-	}
 }
 
+#define READONLY(part) \
+	[DT_FIXED_PARTITION_ID(part)] = DT_PROP(part, read_only),
+
+#define READONLY_FOREACH_PARTITION(n) \
+	DT_FOREACH_CHILD(DT_DRV_INST(n), READONLY)
+
+/**
+ * @brief Helper function to check if given partition is read-only
+ *
+ * @param id       id of the partition
+ *
+ * @return  true if read-only, false otherwise.
+ */
+static bool dfu_partition_readonly(uint8_t id)
+{
+	/*
+	 * TODO: For now, use DT to check the read-only property; might want
+	 * different mechanism for stopping writes to dfu partition later, or at
+	 * least read out the read-only property in a nicer way...
+	 */
+	const bool readonly[] = {
+		DT_INST_FOREACH_STATUS_OKAY(READONLY_FOREACH_PARTITION)
+	};
+
+	return readonly[id];
+}
+
+/**
+ * @brief Helper function to open a partition
+ *
+ * @param id       id of the partition
+ *
+ * @return  0 on success, negative errno code on fail.
+ */
+static int dfu_flash_open(uint8_t id)
+{
+	if (dfu_data.fa) {
+		flash_area_close(dfu_data.fa);
+	}
+
+	if (flash_area_open(id, &dfu_data.fa)) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+
+/**
+ * @brief Helper function to write to a partition
+ *
+ * @param id       id of the partition
+ */
 static void dfu_flash_write(uint8_t *data, size_t len)
 {
 	bool flush = false;
@@ -368,7 +393,11 @@ static void dfu_flash_write(uint8_t *data, size_t len)
 		LOG_DBG("flash write done");
 		dfu_data.state = dfuMANIFEST_SYNC;
 		dfu_reset_counters();
-		if (boot_request_upgrade(false)) {
+		/* TODO: Reexamine if there is a nicer way of handling mcuboot
+		 * interface
+		 */
+		if (dfu_data.fa->fa_id == FLASH_AREA_ID(image_1) &&
+		    boot_request_upgrade(BOOT_UPGRADE_TEST)) {
 			dfu_data.state = dfuERROR;
 			dfu_data.status = errWRITE;
 		}
@@ -381,6 +410,12 @@ static void dfu_flash_write(uint8_t *data, size_t len)
 	LOG_DBG("bytes written 0x%x", flash_img_bytes_written(&dfu_data.ctx));
 }
 
+static void dfu_timer_expired(struct k_timer *timer)
+{
+	if (dfu_data.state == appDETACH) {
+		dfu_data.state = appIDLE;
+	}
+}
 
 /**
  * @brief Handler called for DFU Class requests not handled by the USB stack.
@@ -392,10 +427,11 @@ static void dfu_flash_write(uint8_t *data, size_t len)
  * @return  0 on success, negative errno code on fail.
  */
 static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
-		int32_t *data_len, uint8_t **data)
+				int32_t *data_len, uint8_t **data)
 {
 	int ret;
 	uint32_t len, bytes_left;
+	uint16_t timeout;
 
 	switch (pSetup->bRequest) {
 	case DFU_GETSTATUS:
@@ -461,11 +497,10 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 			dfu_reset_counters();
 			k_poll_signal_reset(&dfu_signal);
 
-			if (dfu_data.flash_area_id !=
-			    UPLOAD_FLASH_AREA_ID) {
+			if (dfu_partition_readonly(dfu_data.fa->fa_id)) {
 				dfu_data.status = errWRITE;
 				dfu_data.state = dfuERROR;
-				LOG_ERR("This area can not be overwritten");
+				LOG_ERR("DFU_DNLOAD area is readonly");
 				break;
 			}
 
@@ -515,7 +550,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 			}
 
 			/* Upload in progress */
-			bytes_left = dfu_data.flash_upload_size -
+			bytes_left = dfu_data.fa->fa_size -
 				     dfu_data.bytes_sent;
 			if (bytes_left < pSetup->wLength) {
 				len = bytes_left;
@@ -533,18 +568,10 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 			}
 
 			if (len) {
-				const struct flash_area *fa;
-
-				ret = flash_area_open(dfu_data.flash_area_id,
-						      &fa);
-				if (ret) {
-					dfu_data.state = dfuERROR;
-					dfu_data.status = errFILE;
-					break;
-				}
-				ret = flash_area_read(fa, dfu_data.bytes_sent,
-						      *data, len);
-				flash_area_close(fa);
+				ret = flash_area_read(dfu_data.fa,
+						      dfu_data.bytes_sent,
+						      *data,
+						      len);
 				if (ret) {
 					dfu_data.state = dfuERROR;
 					dfu_data.status = errFILE;
@@ -556,15 +583,12 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 			dfu_data.bytes_sent += len;
 			dfu_data.block_nr++;
 
-			if (dfu_data.bytes_sent == dfu_data.flash_upload_size &&
+			if (dfu_data.bytes_sent == dfu_data.fa->fa_size &&
 			    len < pSetup->wLength) {
-				/* Upload completed when a
-				 * short packet is received
-				 */
-				*data_len = 0;
 				dfu_data.state = dfuIDLE;
-			} else
+			} else {
 				dfu_data.state = dfuUPLOAD_IDLE;
+			}
 
 			break;
 		default:
@@ -579,25 +603,16 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 		LOG_DBG("DFU_DETACH timeout %d, state %d",
 			pSetup->wValue, dfu_data.state);
 
-		if (dfu_data.state != appIDLE) {
-			dfu_data.state = appIDLE;
+		if (!dfu_check_app_state()) {
 			return -EINVAL;
 		}
+
 		/* Move to appDETACH state */
 		dfu_data.state = appDETACH;
 
-		/* We should start a timer here but in order to
-		 * keep things simple and do not increase the size
-		 * we rely on the host to get us out of the appATTACHED
-		 * state if needed.
-		 */
-
-		/* Set the DFU mode descriptors to be used after reset */
-		dfu_config.usb_device_description = (uint8_t *) &dfu_mode_desc;
-		if (usb_set_config(dfu_config.usb_device_description) != 0) {
-			LOG_ERR("usb_set_config failed in DFU_DETACH");
-			return -EIO;
-		}
+		/* Begin detach timeout timer */
+		timeout = MIN(pSetup->wValue, CONFIG_USB_DFU_DETACH_TIMEOUT);
+		k_timer_start(&dfu_timer, K_MSEC(timeout), K_FOREVER);
 		break;
 	default:
 		LOG_WRN("DFU UNKNOWN STATE: %d", pSetup->bRequest);
@@ -628,9 +643,20 @@ static void dfu_status_cb(struct usb_cfg_data *cfg,
 		break;
 	case USB_DC_RESET:
 		LOG_DBG("USB device reset detected, state %d", dfu_data.state);
+		/* Stop the appDETACH timeout timer */
+		k_timer_stop(&dfu_timer);
 		if (dfu_data.state == appDETACH) {
 			dfu_data.state = dfuIDLE;
+
+			/* Set the DFU mode descriptors to be used after reset */
+			dfu_config.usb_device_description =
+				(uint8_t *) &dfu_mode_desc;
+			if (usb_set_config(dfu_config.usb_device_description) != 0) {
+				LOG_ERR("usb_set_config failed during USB device reset");
+			}
 		}
+		/* Open default flash area (associated with alt setting 0) */
+		dfu_flash_open(0);
 		break;
 	case USB_DC_CONNECTED:
 		LOG_DBG("USB device connected");
@@ -669,8 +695,10 @@ static void dfu_status_cb(struct usb_cfg_data *cfg,
  */
 
 static int dfu_custom_handle_req(struct usb_setup_packet *pSetup,
-		int32_t *data_len, uint8_t **data)
+				 int32_t *data_len, uint8_t **data)
 {
+	int ret;
+
 	ARG_UNUSED(data);
 
 	if (REQTYPE_GET_RECIP(pSetup->bmRequestType) ==
@@ -678,32 +706,12 @@ static int dfu_custom_handle_req(struct usb_setup_packet *pSetup,
 		if (pSetup->bRequest == REQ_SET_INTERFACE) {
 			LOG_DBG("DFU alternate setting %d", pSetup->wValue);
 
-			const struct flash_area *fa;
-
-			switch (pSetup->wValue) {
-			case 0:
-				dfu_data.flash_area_id =
-				    FLASH_AREA_ID(image_0);
-				break;
-#if FLASH_AREA_LABEL_EXISTS(image_1)
-			case 1:
-				dfu_data.flash_area_id =
-				    UPLOAD_FLASH_AREA_ID;
-				break;
-#endif
-			default:
-				LOG_WRN("Invalid DFU alternate setting");
-				return -ENOTSUP;
+			ret = dfu_flash_open(pSetup->wValue);
+			if (ret) {
+				LOG_ERR("dfu_flash_open failed to open flash area");
+				return ret;
 			}
 
-			if (flash_area_open(dfu_data.flash_area_id, &fa)) {
-				return -EIO;
-			}
-
-			dfu_data.flash_upload_size = fa->fa_size;
-			flash_area_close(fa);
-
-			dfu_data.alt_setting = pSetup->wValue;
 			*data_len = 0;
 			return 0;
 		}
@@ -741,8 +749,8 @@ USBD_CFG_DATA_DEFINE(primary, dfu) struct usb_cfg_data dfu_config = {
 USBD_CFG_DATA_DEFINE(secondary, dfu) struct usb_cfg_data dfu_mode_config = {
 	.usb_device_description = NULL,
 	.interface_config = NULL,
-	.interface_descriptor = &dfu_mode_desc.sec_dfu_cfg.if0,
-	.cb_usb_status = dfu_status_cb,
+	.interface_descriptor = &dfu_mode_desc.sec_dfu_cfg,
+	.cb_usb_status = NULL,
 	.interface = {
 		.class_handler = dfu_class_handle_req,
 		.custom_handler = dfu_custom_handle_req,
@@ -761,12 +769,17 @@ static void dfu_work_handler(struct k_work *item)
  * image collection, so not erase whole bank at DFU beginning
  */
 #ifndef CONFIG_IMG_ERASE_PROGRESSIVELY
-		if (boot_erase_img_bank(UPLOAD_FLASH_AREA_ID)) {
+		if (flash_area_erase(dfu_data.fa, 0, dfu_data.fa->fa_size)) {
 			dfu_data.state = dfuERROR;
 			dfu_data.status = errERASE;
 			break;
 		}
 #endif
+		if (flash_img_init_id(&dfu_data.ctx, dfu_data.fa->fa_id)) {
+			dfu_data.state = dfuERROR;
+			dfu_data.status = errUNKNOWN;
+			break;
+		}
 	case dfuDNLOAD_IDLE:
 		dfu_flash_write(dfu_data_worker.buf,
 				dfu_data_worker.worker_len);
@@ -779,19 +792,11 @@ static void dfu_work_handler(struct k_work *item)
 
 static int usb_dfu_init(const struct device *dev)
 {
-	const struct flash_area *fa;
-
 	ARG_UNUSED(dev);
 
 	k_work_init(&dfu_work, dfu_work_handler);
 	k_poll_signal_init(&dfu_signal);
-
-	if (flash_area_open(dfu_data.flash_area_id, &fa)) {
-		return -EIO;
-	}
-
-	dfu_data.flash_upload_size = fa->fa_size;
-	flash_area_close(fa);
+	k_timer_init(&dfu_timer, dfu_timer_expired, NULL);
 
 	return 0;
 }
@@ -822,11 +827,11 @@ void wait_for_usb_dfu(void)
 	 * that time, stop waiting and proceed further.
 	 */
 	for (int time = 0;
-		time < (CONFIG_USB_DFU_WAIT_DELAY_MS/INTERMITTENT_CHECK_DELAY);
-		time++) {
+	     time < (CONFIG_USB_DFU_WAIT_DELAY_MS / INTERMITTENT_CHECK_DELAY);
+	     time++) {
 		if (is_dfu_started()) {
 			k_poll_event_init(&dfu_event, K_POLL_TYPE_SIGNAL,
-				K_POLL_MODE_NOTIFY_ONLY, &dfu_signal);
+					  K_POLL_MODE_NOTIFY_ONLY, &dfu_signal);
 
 			/* Wait till DFU is complete */
 			if (k_poll(&dfu_event, 1, K_FOREVER) != 0) {
