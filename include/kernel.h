@@ -4423,7 +4423,7 @@ static inline uint32_t k_mem_slab_num_free_get(struct k_mem_slab *slab)
 /** @} */
 
 /**
- * @addtogroup mem_pool_apis
+ * @addtogroup heap_apis
  * @{
  */
 
@@ -4534,7 +4534,7 @@ extern void z_mem_pool_free_id(struct k_mem_block_id *id);
  */
 
 /**
- * @defgroup heap_apis Heap Memory Pool APIs
+ * @defgroup heap_apis Heap APIs
  * @ingroup kernel_apis
  * @{
  */
