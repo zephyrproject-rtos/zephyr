@@ -340,6 +340,27 @@ static inline bool is_leaf(int level, pentry_t entry)
 	return ((entry & MMU_PS) != 0U);
 }
 
+/* This does NOT (by design) un-flip KPTI PTEs, it's just the raw PTE value */
+static inline void pentry_get(int *paging_level, pentry_t *val,
+			      pentry_t *ptables, void *virt)
+{
+	pentry_t *table = ptables;
+
+	for (int level = 0; level < NUM_LEVELS; level++) {
+		pentry_t entry = get_entry(table, virt, level);
+
+		if ((entry & MMU_P) == 0 || is_leaf(level, entry)) {
+			*val = entry;
+			if (paging_level != NULL) {
+				*paging_level = level;
+			}
+			break;
+		} else {
+			table = next_table(entry, level);
+		}
+	}
+}
+
 static inline void tlb_flush_page(void *addr)
 {
 	/* Invalidate TLB entries corresponding to the page containing the
@@ -629,19 +650,7 @@ static void dump_entry(int level, void *virt, pentry_t entry)
 void z_x86_pentry_get(int *paging_level, pentry_t *val, pentry_t *ptables,
 		      void *virt)
 {
-	pentry_t *table = ptables;
-
-	for (int level = 0; level < NUM_LEVELS; level++) {
-		pentry_t entry = get_entry(table, virt, level);
-
-		if ((entry & MMU_P) == 0 || is_leaf(level, entry)) {
-			*val = entry;
-			*paging_level = level;
-			break;
-		} else {
-			table = next_table(entry, level);
-		}
-	}
+	pentry_get(paging_level, val, ptables, virt);
 }
 
 /*
@@ -653,7 +662,7 @@ void z_x86_dump_mmu_flags(pentry_t *ptables, void *virt)
 	pentry_t entry;
 	int level;
 
-	z_x86_pentry_get(&level, &entry, ptables, virt);
+	pentry_get(&level, &entry, ptables, virt);
 
 	if ((entry & MMU_P) == 0) {
 		LOG_ERR("%sE: not present", paging_levels[level].name);
