@@ -23,10 +23,10 @@ __weak uint8_t x86_cpu_loapics[] = { 0, 1, 2, 3 };
 
 extern char x86_ap_start[];  /* AP entry point in locore.S */
 
-extern uint8_t _exception_stack[];
-extern uint8_t _exception_stack1[];
-extern uint8_t _exception_stack2[];
-extern uint8_t _exception_stack3[];
+extern uint8_t z_x86_exception_stack[];
+extern uint8_t z_x86_exception_stack1[];
+extern uint8_t z_x86_exception_stack2[];
+extern uint8_t z_x86_exception_stack3[];
 
 extern uint8_t z_x86_nmi_stack[];
 extern uint8_t z_x86_nmi_stack1[];
@@ -46,7 +46,7 @@ struct x86_tss64 tss0 = {
 	.ist2 = (uint64_t) z_x86_trampoline_stack + Z_X86_TRAMPOLINE_STACK_SIZE,
 #endif
 	.ist6 = (uint64_t) z_x86_nmi_stack + CONFIG_X86_EXCEPTION_STACK_SIZE,
-	.ist7 = (uint64_t) _exception_stack + CONFIG_X86_EXCEPTION_STACK_SIZE,
+	.ist7 = (uint64_t) z_x86_exception_stack + CONFIG_X86_EXCEPTION_STACK_SIZE,
 	.iomapb = 0xFFFF,
 	.cpu = &(_kernel.cpus[0])
 };
@@ -58,7 +58,7 @@ struct x86_tss64 tss1 = {
 	.ist2 = (uint64_t) z_x86_trampoline_stack1 + Z_X86_TRAMPOLINE_STACK_SIZE,
 #endif
 	.ist6 = (uint64_t) z_x86_nmi_stack1 + CONFIG_X86_EXCEPTION_STACK_SIZE,
-	.ist7 = (uint64_t) _exception_stack1 + CONFIG_X86_EXCEPTION_STACK_SIZE,
+	.ist7 = (uint64_t) z_x86_exception_stack1 + CONFIG_X86_EXCEPTION_STACK_SIZE,
 	.iomapb = 0xFFFF,
 	.cpu = &(_kernel.cpus[1])
 };
@@ -71,7 +71,7 @@ struct x86_tss64 tss2 = {
 	.ist2 = (uint64_t) z_x86_trampoline_stack2 + Z_X86_TRAMPOLINE_STACK_SIZE,
 #endif
 	.ist6 = (uint64_t) z_x86_nmi_stack2 + CONFIG_X86_EXCEPTION_STACK_SIZE,
-	.ist7 = (uint64_t) _exception_stack2 + CONFIG_X86_EXCEPTION_STACK_SIZE,
+	.ist7 = (uint64_t) z_x86_exception_stack2 + CONFIG_X86_EXCEPTION_STACK_SIZE,
 	.iomapb = 0xFFFF,
 	.cpu = &(_kernel.cpus[2])
 };
@@ -84,7 +84,7 @@ struct x86_tss64 tss3 = {
 	.ist2 = (uint64_t) z_x86_trampoline_stack3 + Z_X86_TRAMPOLINE_STACK_SIZE,
 #endif
 	.ist6 = (uint64_t) z_x86_nmi_stack3 + CONFIG_X86_EXCEPTION_STACK_SIZE,
-	.ist7 = (uint64_t) _exception_stack3 + CONFIG_X86_EXCEPTION_STACK_SIZE,
+	.ist7 = (uint64_t) z_x86_exception_stack3 + CONFIG_X86_EXCEPTION_STACK_SIZE,
 	.iomapb = 0xFFFF,
 	.cpu = &(_kernel.cpus[3])
 };
