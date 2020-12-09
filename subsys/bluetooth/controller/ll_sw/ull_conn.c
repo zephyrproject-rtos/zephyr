@@ -1700,6 +1700,11 @@ static void conn_cleanup(struct ll_conn *conn, uint8_t reason)
 	struct node_rx_pdu *rx;
 	uint32_t ticker_status;
 
+	/* reset mutex */
+	if (conn == conn_upd_curr) {
+		ull_conn_upd_curr_reset();
+	}
+
 	/* Only termination structure is populated here in ULL context
 	 * but the actual enqueue happens in the LLL context in
 	 * tx_lll_flush. The reason being to avoid passing the reason
