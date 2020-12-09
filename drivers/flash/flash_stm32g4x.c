@@ -233,3 +233,16 @@ void flash_stm32_page_layout(const struct device *dev,
 	*layout = stm32g4_flash_layout;
 	*layout_size = ARRAY_SIZE(stm32g4_flash_layout);
 }
+
+/* Override weak function */
+int  flash_stm32_check_configuration(void)
+{
+#if defined(FLASH_OPTR_DBANK)
+	if (READ_BIT(FLASH->OPTR, FLASH_OPTR_DBANK) == 0U) {
+		/* Single bank not supported when dualbank is possible */
+		LOG_ERR("Single bank configuration not supported");
+		return -ENOTSUP;
+	}
+#endif
+	return 0;
+}
