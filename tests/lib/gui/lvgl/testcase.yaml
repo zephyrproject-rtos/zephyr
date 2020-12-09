@@ -3,6 +3,7 @@ tests:
     tags: display gui
     platform_allow: native_posix
   libraries.gui.lvgl.dynamic.heap.libc:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
     tags: display gui
     platform_allow: native_posix
     extra_configs:

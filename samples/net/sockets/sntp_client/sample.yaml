@@ -5,6 +5,7 @@ common:
   harness: net
   platform_allow: qemu_x86
   tags: net
+  filter: TOOLCHAIN_HAS_NEWLIB == 1
 tests:
   sample.net.sockets.sntp_client:
     extra_configs:
