@@ -157,3 +157,22 @@ void test_thread_start(void)
 	k_yield();
 	zassert_false(tp2 == 100, NULL);
 }
+
+static void user_start_thread(void *p1, void *p2, void *p3)
+{
+	*(int *)p1 = 100;
+}
+void test_thread_start_user(void)
+{
+	tp2 = 5;
+
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      user_start_thread, &tp2, NULL, NULL,
+				      0,
+				      K_USER, K_FOREVER);
+
+	k_thread_start(tid);
+	k_msleep(100);
+	zassert_true(tp2 == 100, NULL);
+	k_thread_abort(tid);
+}
