@@ -1059,7 +1059,6 @@ static int range_map_ptables(pentry_t *ptables, void *virt, uintptr_t phys,
 static int range_map(void *virt, uintptr_t phys, size_t size,
 		     pentry_t entry_flags, pentry_t mask, uint32_t options)
 {
-	k_spinlock_key_t key;
 	int ret = 0;
 
 	LOG_DBG("%s: %p -> %p (%zu) flags " PRI_ENTRY " mask "
@@ -1085,7 +1084,6 @@ static int range_map(void *virt, uintptr_t phys, size_t size,
 	 *
 	 * Any new mappings need to be applied to all page tables.
 	 */
-	key = k_spin_lock(&x86_mmu_lock);
 #if defined(CONFIG_USERSPACE) && !defined(CONFIG_X86_COMMON_PAGE_TABLE)
 	sys_snode_t *node;
 
@@ -1113,13 +1111,26 @@ out_unlock:
 		LOG_DBG("page pool pages free: %u / %u", pages_free(),
 			CONFIG_X86_MMU_PAGE_POOL_PAGES);
 	}
-	k_spin_unlock(&x86_mmu_lock, key);
 
 #ifdef CONFIG_SMP
 	if ((options & OPTION_FLUSH) != 0U) {
 		tlb_shootdown();
 	}
 #endif /* CONFIG_SMP */
+	return ret;
+}
+
+static inline int range_map_unlocked(void *virt, uintptr_t phys, size_t size,
+				     pentry_t entry_flags, pentry_t mask,
+				     uint32_t options)
+{
+	int ret;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&x86_mmu_lock);
+	ret = range_map(virt, phys, size, entry_flags, mask, options);
+	k_spin_unlock(&x86_mmu_lock, key);
+
 	return ret;
 }
 
@@ -1164,8 +1175,8 @@ static pentry_t flags_to_entry(uint32_t flags)
 /* map new region virt..virt+size to phys with provided arch-neutral flags */
 int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
-	return range_map(virt, phys, size, flags_to_entry(flags), MASK_ALL,
-			 OPTION_ALLOC);
+	return range_map_unlocked(virt, phys, size, flags_to_entry(flags),
+				  MASK_ALL, OPTION_ALLOC);
 }
 
 #if CONFIG_X86_STACK_PROTECTION
@@ -1179,8 +1190,8 @@ void z_x86_set_stack_guard(k_thread_stack_t *stack)
 	 * Guard page is always the first page of the stack object for both
 	 * kernel and thread stacks.
 	 */
-	(void)range_map(stack, 0, CONFIG_MMU_PAGE_SIZE, MMU_P | ENTRY_XD,
-			MASK_PERM, OPTION_FLUSH);
+	(void)range_map_unlocked(stack, 0, CONFIG_MMU_PAGE_SIZE,
+				 MMU_P | ENTRY_XD, MASK_PERM, OPTION_FLUSH);
 }
 #endif /* CONFIG_X86_STACK_PROTECTION */
 
@@ -1282,13 +1293,14 @@ int arch_buffer_validate(void *addr, size_t size, int write)
 
 static inline void reset_region(uintptr_t start, size_t size)
 {
-	(void)range_map((void *)start, 0, size, 0, 0,
-			OPTION_FLUSH | OPTION_RESET);
+	(void)range_map_unlocked((void *)start, 0, size, 0, 0,
+				 OPTION_FLUSH | OPTION_RESET);
 }
 
 static inline void apply_region(uintptr_t start, size_t size, pentry_t attr)
 {
-	(void)range_map((void *)start, 0, size, attr, MASK_PERM, OPTION_FLUSH);
+	(void)range_map_unlocked((void *)start, 0, size, attr, MASK_PERM,
+				 OPTION_FLUSH);
 }
 
 /* Cache of the current memory domain applied to the common page tables and
