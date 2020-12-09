@@ -214,9 +214,9 @@ int spi_oc_simple_init(const struct device *dev)
 		SPI_CONTEXT_INIT_SYNC(spi_oc_simple_data_##inst, ctx),	\
 	};								\
 									\
-	DEVICE_AND_API_INIT(spi_oc_simple_##inst,			\
-			    DT_INST_LABEL(inst),			\
+	DEVICE_DT_INST_DEFINE(inst,					\
 			    spi_oc_simple_init,				\
+			    device_pm_control_nop,			\
 			    &spi_oc_simple_data_##inst,			\
 			    &spi_oc_simple_cfg_##inst,			\
 			    POST_KERNEL,				\
