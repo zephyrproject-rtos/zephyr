@@ -908,7 +908,10 @@ static inline int z_vrfy_k_float_disable(struct k_thread *thread)
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_IRQ_OFFLOAD
-static K_SEM_DEFINE(offload_sem, 1, 1);
+/* Make offload_sem visible outside under testing, in order to release
+ * it outside when error happened.
+ */
+K_SEM_DEFINE(offload_sem, 1, 1);
 
 void irq_offload(irq_offload_routine_t routine, const void *parameter)
 {
