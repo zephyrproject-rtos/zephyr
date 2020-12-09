@@ -365,8 +365,8 @@ static void adc_sam_isr(const struct device *dev)
 		ADC_CONTEXT_INIT_SYNC(adc##n##_sam_data, ctx),		\
 	};								\
 									\
-	DEVICE_AND_API_INIT(adc##n##_sam, DT_INST_LABEL(n),		\
-			    adc_sam_init, &adc##n##_sam_data,		\
+	DEVICE_DT_INST_DEFINE(n, adc_sam_init, device_pm_control_nop,	\
+			    &adc##n##_sam_data,				\
 			    &adc##n##_sam_cfg, POST_KERNEL,		\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &adc_sam_api);				\
@@ -375,7 +375,7 @@ static void adc_sam_isr(const struct device *dev)
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
 			    adc_sam_isr,				\
-			    DEVICE_GET(adc##n##_sam), 0);		\
+			    DEVICE_DT_INST_GET(n), 0);			\
 		irq_enable(DT_INST_IRQN(n));				\
 	}
 
