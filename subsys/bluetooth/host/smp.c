@@ -4287,7 +4287,17 @@ static int bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return 0;
 	}
 
-	if (hdr->code >= ARRAY_SIZE(handlers) || !handlers[hdr->code].func) {
+	/*
+	 * Bluetooth Core Specification Version 5.2, Vol 3, Part H, page 1667:
+	 * If a packet is received with a Code that is reserved for future use
+	 * it shall be ignored.
+	 */
+	if (hdr->code >= ARRAY_SIZE(handlers)) {
+		BT_WARN("Received reserved SMP code 0x%02x", hdr->code);
+		return 0;
+	}
+
+	if (!handlers[hdr->code].func) {
 		BT_WARN("Unhandled SMP code 0x%02x", hdr->code);
 		smp_error(smp, BT_SMP_ERR_CMD_NOTSUPP);
 		return 0;
