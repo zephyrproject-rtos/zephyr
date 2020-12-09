@@ -12,11 +12,11 @@
 	leds {
 		compatible = "gpio-leds";
 		red_led_9: led_9 {
-			gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
 			label = "User LD9";
 		};
 		green_led_10: led_10 {
-			gpios = <&gpiog 12 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiog 12 GPIO_ACTIVE_LOW>;
 			label = "User LD10";
 		};
 	};
