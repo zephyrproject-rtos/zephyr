@@ -318,5 +318,5 @@ static int init_mem_domain_module(const struct device *arg)
 	return 0;
 }
 
-SYS_INIT(init_mem_domain_module, PRE_KERNEL_1,
+SYS_INIT(init_mem_domain_module, PRE_KERNEL_2,
 	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
