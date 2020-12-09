@@ -128,6 +128,13 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		}
 	} break;
 #endif
+
+#ifdef CONFIG_COUNTER_MCUX_GPT
+	case IMX_CCM_GPT_CLK:
+		*rate = CLOCK_GetFreq(kCLOCK_PerClk);
+		break;
+#endif
+
 	}
 
 	return 0;
