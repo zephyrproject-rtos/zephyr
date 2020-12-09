@@ -37,7 +37,9 @@ static void init_zli_timer0(void)
 				NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK);
 
 	IRQ_DIRECT_CONNECT(TIMER0_IRQn, 0,
-			   timer0_isr_wrapper, IRQ_ZERO_LATENCY);
+			   timer0_isr_wrapper,
+			   COND_CODE_1(CONFIG_ZERO_LATENCY_IRQS,
+				   (IRQ_ZERO_LATENCY), (0)));
 	irq_enable(TIMER0_IRQn);
 }
 
@@ -80,8 +82,8 @@ static void test_timeout(uint32_t chan, k_timeout_t t, bool ext_window)
 
 	z_nrf_rtc_timer_compare_set(chan, cc_val, timeout_handler, &test_data);
 
-	/* wait at least 2 ticks. */
-	k_busy_wait(60);
+	/* wait additional arbitrary time. */
+	k_busy_wait(1000);
 	k_sleep(t);
 
 	zassert_equal(test_data.err, 0, "Unexpected err: %d", test_data.err);
@@ -152,6 +154,7 @@ static void test_int_disable_enabled(void)
 	zassert_equal(data.err, -EINVAL, "Unexpected err: %d", data.err);
 
 	z_nrf_rtc_timer_compare_int_unlock(chan, key);
+	k_busy_wait(100);
 	zassert_equal(data.err, 0, "Unexpected err: %d", data.err);
 
 	z_nrf_rtc_timer_chan_free(chan);
