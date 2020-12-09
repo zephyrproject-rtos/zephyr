@@ -618,7 +618,7 @@ int bt_csis_advertise(bool enable)
 			return -EAGAIN;
 		}
 
-		ad[1].type = BT_CSIS_AD_TYPE;
+		ad[1].type = BT_DATA_CSIS_RSI;
 		ad[1].data_len = sizeof(csis_inst.psri);
 		ad[1].data = csis_inst.psri;
 
