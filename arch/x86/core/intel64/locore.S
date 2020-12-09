@@ -1070,9 +1070,9 @@ gdt80:  /* LGDT descriptor for long mode */
 .align 16
 _exception_stack:
 	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
-.global _nmi_stack
+.global z_x86_nmi_stack
 .align 16
-_nmi_stack:
+z_x86_nmi_stack:
 	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
 
 #if CONFIG_MP_NUM_CPUS > 1
@@ -1080,9 +1080,9 @@ _nmi_stack:
 .align 16
 _exception_stack1:
 	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
-.global _nmi_stack1
+.global z_x86_nmi_stack1
 .align 16
-_nmi_stack1:
+z_x86_nmi_stack1:
 	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
 #endif
 
@@ -1091,9 +1091,9 @@ _nmi_stack1:
 .align 16
 _exception_stack2:
 	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
-.global _nmi_stack2
+.global z_x86_nmi_stack2
 .align 16
-_nmi_stack2:
+z_x86_nmi_stack2:
 	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
 #endif
 
@@ -1102,9 +1102,9 @@ _nmi_stack2:
 .align 16
 _exception_stack3:
 	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
-.global _nmi_stack3
+.global z_x86_nmi_stack3
 .align 16
-_nmi_stack3:
+z_x86_nmi_stack3:
 	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
 #endif
 

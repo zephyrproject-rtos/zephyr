@@ -17,19 +17,19 @@
 
 static volatile int int_handler_executed;
 
-extern uint8_t _nmi_stack[];
-extern uint8_t _nmi_stack1[];
-extern uint8_t _nmi_stack2[];
-extern uint8_t _nmi_stack3[];
+extern uint8_t z_x86_nmi_stack[];
+extern uint8_t z_x86_nmi_stack1[];
+extern uint8_t z_x86_nmi_stack2[];
+extern uint8_t z_x86_nmi_stack3[];
 
 uint8_t *nmi_stacks[] = {
-	_nmi_stack,
+	z_x86_nmi_stack,
 #if CONFIG_MP_NUM_CPUS > 1
-	_nmi_stack1,
+	z_x86_nmi_stack1,
 #if CONFIG_MP_NUM_CPUS > 2
-	_nmi_stack2,
+	z_x86_nmi_stack2,
 #if CONFIG_MP_NUM_CPUS > 3
-	_nmi_stack3
+	z_x86_nmi_stack3
 #endif
 #endif
 #endif
