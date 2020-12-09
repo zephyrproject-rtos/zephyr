@@ -357,19 +357,37 @@ foreach(root ${BOARD_ROOT})
 endforeach()
 
 if(NOT BOARD_DIR)
-  message("No board named '${BOARD}' found")
-  print_usage()
+  message("No board named '${BOARD}' found.
+
+Please choose one of the following boards:
+")
+  execute_process(
+    COMMAND
+    ${CMAKE_COMMAND}
+    -DZEPHYR_BASE=${ZEPHYR_BASE}
+    -DBOARD_ROOT=${BOARD_ROOT}
+    -DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}
+    -P ${ZEPHYR_BASE}/cmake/boards.cmake
+    )
   unset(CACHED_BOARD CACHE)
-  message(FATAL_ERROR "Invalid usage")
+  message(FATAL_ERROR "Invalid BOARD; see above.")
 endif()
 
 if(DEFINED SHIELD AND NOT (SHIELD-NOTFOUND STREQUAL ""))
   foreach (s ${SHIELD-NOTFOUND})
     message("No shield named '${s}' found")
   endforeach()
-  print_usage()
+  message("Please choose from among the following shields:")
+  string(REPLACE ";" "\\;" SHIELD_LIST_ESCAPED "${SHIELD_LIST}")
+  execute_process(
+    COMMAND
+    ${CMAKE_COMMAND}
+    -DZEPHYR_BASE=${ZEPHYR_BASE}
+    -DSHIELD_LIST=${SHIELD_LIST_ESCAPED}
+    -P ${ZEPHYR_BASE}/cmake/shields.cmake
+    )
   unset(CACHED_SHIELD CACHE)
-  message(FATAL_ERROR "Invalid usage")
+  message(FATAL_ERROR "Invalid SHIELD; see above.")
 endif()
 
 get_filename_component(BOARD_ARCH_DIR ${BOARD_DIR}      DIRECTORY)

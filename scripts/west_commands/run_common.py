@@ -82,7 +82,7 @@ def add_parser_common(command, parser_adder=None, parser=None):
             help=command.help,
             description=command.description)
 
-    # Remember to update scripts/west-completion.bash if you add or remove
+    # Remember to update west-completion.bash if you add or remove
     # flags
 
     group = parser.add_argument_group('general options',
