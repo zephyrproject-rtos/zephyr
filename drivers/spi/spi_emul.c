@@ -130,9 +130,9 @@ static struct spi_driver_api spi_emul_api = {
 		.num_children = ARRAY_SIZE(emuls_##n), \
 	}; \
 	static struct spi_emul_data spi_emul_data_##n; \
-	DEVICE_AND_API_INIT(spi_##n, \
-			    DT_INST_LABEL(n), \
+	DEVICE_DT_INST_DEFINE(n, \
 			    spi_emul_init, \
+			    device_pm_control_nop, \
 			    &spi_emul_data_##n, \
 			    &spi_emul_cfg_##n, \
 			    POST_KERNEL, \
