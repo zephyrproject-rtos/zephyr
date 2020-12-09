@@ -143,9 +143,9 @@ static struct i2c_driver_api i2c_emul_api = {
 		.num_children = ARRAY_SIZE(emuls_##n), \
 	}; \
 	static struct i2c_emul_data i2c_emul_data_##n; \
-	DEVICE_AND_API_INIT(i2c_##n, \
-			    DT_INST_LABEL(n), \
+	DEVICE_DT_INST_DEFINE(n, \
 			    i2c_emul_init, \
+			    device_pm_control_nop, \
 			    &i2c_emul_data_##n, \
 			    &i2c_emul_cfg_##n, \
 			    POST_KERNEL, \

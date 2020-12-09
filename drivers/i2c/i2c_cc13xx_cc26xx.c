@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(i2c_cc13xx_cc26xx);
 
 #include "i2c-priv.h"
 
-DEVICE_DECLARE(i2c_cc13xx_cc26xx);
+DEVICE_DT_INST_DECLARE(0);
 
 struct i2c_cc13xx_cc26xx_data {
 	struct k_sem lock;
@@ -439,7 +439,7 @@ static int i2c_cc13xx_cc26xx_init(const struct device *dev)
 
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
-		    i2c_cc13xx_cc26xx_isr, DEVICE_GET(i2c_cc13xx_cc26xx), 0);
+		    i2c_cc13xx_cc26xx_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 
 	/* Configure IOC module to route SDA and SCL signals */
@@ -475,7 +475,7 @@ static struct i2c_cc13xx_cc26xx_data i2c_cc13xx_cc26xx_data = {
 	.error = I2C_MASTER_ERR_NONE
 };
 
-DEVICE_DEFINE(i2c_cc13xx_cc26xx, DT_INST_LABEL(0),
+DEVICE_DT_INST_DEFINE(0,
 		i2c_cc13xx_cc26xx_init,
 		i2c_cc13xx_cc26xx_pm_control,
 		&i2c_cc13xx_cc26xx_data, &i2c_cc13xx_cc26xx_config,

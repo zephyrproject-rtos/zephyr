@@ -232,9 +232,9 @@ static const struct i2c_driver_api mcux_flexcomm_driver_api = {
 		.bitrate = DT_INST_PROP(id, clock_frequency),		\
 	};								\
 	static struct mcux_flexcomm_data mcux_flexcomm_data_##id;	\
-	DEVICE_AND_API_INIT(mcux_flexcomm_##id,				\
-			    DT_INST_LABEL(id),				\
+	DEVICE_DT_INST_DEFINE(id,					\
 			    &mcux_flexcomm_init,			\
+			    device_pm_control_nop,			\
 			    &mcux_flexcomm_data_##id,			\
 			    &mcux_flexcomm_config_##id,			\
 			    POST_KERNEL,				\
@@ -245,7 +245,7 @@ static const struct i2c_driver_api mcux_flexcomm_driver_api = {
 		IRQ_CONNECT(DT_INST_IRQN(id),				\
 			    DT_INST_IRQ(id, priority),			\
 			    mcux_flexcomm_isr,				\
-			    DEVICE_GET(mcux_flexcomm_##id),		\
+			    DEVICE_DT_INST_GET(id),			\
 			    0);						\
 		irq_enable(DT_INST_IRQN(id));				\
 	}								\
