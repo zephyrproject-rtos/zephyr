@@ -48,3 +48,18 @@
 		label = "LSM6DSO";
 	};
 };
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pg2 &spi1_miso_pg3 &spi1_mosi_pg4>;
+	cs-gpios = <&gpiog 5 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	status = "okay";
+
+	spbtle-rf@0 {
+		compatible = "zephyr,bt-hci-spi";
+		reg = <0>;
+		irq-gpios = <&gpiog 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		reset-gpios = <&gpiog 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		spi-max-frequency = <2000000>;
+		label = "SPBTLE-RF";
+	};
+};
