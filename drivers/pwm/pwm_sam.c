@@ -106,8 +106,8 @@ static const struct pwm_driver_api sam_pwm_driver_api = {
 		.divider = DT_INST_PROP(inst, divider),			\
 	};								\
 									\
-	DEVICE_AND_API_INIT(sam_pwm_##inst, DT_INST_LABEL(inst),	\
-			    &sam_pwm_init,				\
+	DEVICE_DT_INST_DEFINE(inst,					\
+			    &sam_pwm_init, device_pm_control_nop	\
 			    NULL, &sam_pwm_config_##inst,		\
 			    POST_KERNEL,				\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\

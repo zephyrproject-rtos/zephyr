@@ -350,8 +350,8 @@ static int pwm_stm32_init(const struct device *dev)
 		.pinctrl_len = ARRAY_SIZE(pwm_pins_##index),                   \
 	};                                                                     \
 									       \
-	DEVICE_AND_API_INIT(pwm_stm32_##index, DT_INST_LABEL(index),           \
-			    &pwm_stm32_init, &pwm_stm32_data_##index,          \
+	DEVICE_DT_INST_DEFINE(index, &pwm_stm32_init, device_pm_control_nop,   \
+			    &pwm_stm32_data_##index,                           \
 			    &pwm_stm32_config_##index, POST_KERNEL,            \
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                \
 			    &pwm_stm32_driver_api);

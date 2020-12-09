@@ -229,9 +229,9 @@ static const struct pwm_driver_api pwm_sifive_api = {
 			.f_sys = DT_INST_PROP(n, clock_frequency),  \
 			.cmpwidth = DT_INST_PROP(n, sifive_compare_width), \
 		};	\
-	DEVICE_AND_API_INIT(pwm_##n,	\
-			    DT_INST_LABEL(n),	\
+	DEVICE_DT_INST_DEFINE(n,	\
 			    pwm_sifive_init,	\
+			    device_pm_control_nop,	\
 			    &pwm_sifive_data_##n,	\
 			    &pwm_sifive_cfg_##n,	\
 			    POST_KERNEL,	\

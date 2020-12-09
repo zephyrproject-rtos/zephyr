@@ -105,9 +105,9 @@ static const struct pwm_driver_api pwm_litex_driver_api = {
 		.reg_period_size = DT_INST_REG_SIZE_BY_NAME(n, period) / 4,    \
 	};								       \
 									       \
-	DEVICE_AND_API_INIT(pwm_##n,					       \
-			    DT_INST_LABEL(n),		       \
+	DEVICE_DT_INST_DEFINE(n,					       \
 			    pwm_litex_init,				       \
+			    device_pm_control_nop,			       \
 			    NULL,					       \
 			    &pwm_litex_cfg_##n,				       \
 			    POST_KERNEL,				       \

@@ -414,8 +414,7 @@ static int pwm_nrfx_pm_control(const struct device *dev,
 		.seq.length = NRF_PWM_CHANNEL_COUNT			      \
 	};								      \
 	PWM_NRFX_PM_CONTROL(idx)					      \
-	DEVICE_DEFINE(pwm_nrfx_##idx,					      \
-		      DT_LABEL(PWM(idx)),				      \
+	DEVICE_DT_INST_DEFINE(idx,					      \
 		      pwm_nrfx_init, pwm_##idx##_nrfx_pm_control,	      \
 		      &pwm_nrfx_##idx##_data,				      \
 		      &pwm_nrfx_##idx##config,				      \
