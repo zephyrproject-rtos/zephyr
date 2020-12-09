@@ -678,6 +678,14 @@ static void test_phandles(void)
 			     "TEST_GPIO_2"),
 		     "gpios[1].label");
 
+	/* DT_PROP_BY_PHANDLE_IDX_OR */
+	zassert_true(!strcmp(DT_PROP_BY_PHANDLE_IDX_OR(TEST_PH, phs_or, 0,
+						val, "zero"), "one"),
+		     "phs-or 0");
+	zassert_true(!strcmp(DT_PROP_BY_PHANDLE_IDX_OR(TEST_PH, phs_or, 1,
+						val, "zero"), "zero"),
+		     "phs-or 1");
+
 	/* phandle-array */
 	zassert_true(DT_NODE_HAS_PROP(TEST_PH, gpios), "gpios");
 	zassert_equal(ARRAY_SIZE(gps), 2, "gpios size");
