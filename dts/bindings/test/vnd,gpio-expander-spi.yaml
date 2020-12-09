@@ -5,4 +5,4 @@ description: GPIO expander via SPI
 
 compatible: "vnd,gpio-expander"
 
-include: spi-device.yaml
+include: ["vnd,gpio-expander-common.yaml", spi-device.yaml]

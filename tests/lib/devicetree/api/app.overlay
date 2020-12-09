@@ -155,6 +155,8 @@
 			};
 
 			gpio@11 {
+				gpio-controller;
+				#gpio-cells = <2>;
 				compatible = "vnd,gpio-expander";
 				reg = <0x11>;
 				label = "TEST_EXPANDER_I2C";
@@ -207,6 +209,8 @@
 			};
 
 			gpio@2 {
+				gpio-controller;
+				#gpio-cells = <2>;
 				compatible = "vnd,gpio-expander";
 				reg = <2>;
 				label = "TEST_EXPANDER_SPI";
