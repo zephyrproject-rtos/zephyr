@@ -45,7 +45,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 /* Bit position which is always zero in a PTE. We'll use the PAT bit.
  * This helps disambiguate PTEs that do not have the Present bit set (MMU_P):
  * - If the entire entry is zero, it's an un-mapped virtual page
- * - If MMU_PTE_ZERO is set, we flipped this page due to KPTI
+ * - If PTE_ZERO is set, we flipped this page due to KPTI
  * - Otherwise, this was a page-out
  */
 #define PTE_ZERO	MMU_PAT
