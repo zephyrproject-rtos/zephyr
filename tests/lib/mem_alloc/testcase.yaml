@@ -15,3 +15,4 @@ tests:
     extra_args: CONF_FILE=prj_newlibnano.conf
     toolchain_allow: gnuarmemb
     tags: clib newlib userspace
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
