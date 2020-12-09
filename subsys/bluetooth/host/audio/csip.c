@@ -641,7 +641,7 @@ static bool csis_found(struct bt_data *data, void *user_data)
 	char addr_str[BT_ADDR_LE_STR_LEN];
 	bt_addr_le_t *addr = user_data;
 
-	if (data->type == BT_CSIS_AD_TYPE &&
+	if (data->type == BT_DATA_CSIS_RSI &&
 	    data->data_len == BT_CSIS_PSRI_SIZE) {
 		bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 		BT_DBG("Found CSIS advertiser with address %s",

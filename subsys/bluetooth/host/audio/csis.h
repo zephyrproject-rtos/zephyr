@@ -13,7 +13,6 @@
 #include <stdbool.h>
 #include <bluetooth/conn.h>
 
-#define BT_CSIS_AD_TYPE				0xF0 /* TBD */
 #define BT_CSIS_PSRI_SIZE			6
 
 struct bt_csis_cb_t {
