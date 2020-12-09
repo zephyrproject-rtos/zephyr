@@ -16,7 +16,6 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/bluetooth.h>
 #include "../host/audio/bass.h"
-#include "bt.h"
 
 static inline int cmd_bass_synced(const struct shell *shell, size_t argc,
 				  char **argv)
