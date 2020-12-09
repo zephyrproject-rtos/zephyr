@@ -172,6 +172,7 @@ static const struct paging_level paging_levels[] = {
 };
 
 #define NUM_LEVELS	ARRAY_SIZE(paging_levels)
+#define PTE_LEVEL	(NUM_LEVELS - 1)
 
 /*
  * Macros for reserving space for page tables
@@ -331,7 +332,7 @@ static inline size_t get_table_scope(int level)
  */
 static inline bool is_leaf(int level, pentry_t entry)
 {
-	if (level == NUM_LEVELS - 1) {
+	if (level == PTE_LEVEL) {
 		/* Always true for PTE */
 		return true;
 	}
@@ -540,7 +541,7 @@ static void dump_ptables(pentry_t *table, uint8_t *base, int level)
 	print_entries(table, base, level, info->entries);
 
 	/* Check if we're a page table */
-	if (level == (NUM_LEVELS - 1)) {
+	if (level == PTE_LEVEL) {
 		return;
 	}
 
@@ -742,7 +743,7 @@ static inline pentry_t pte_finalize_value(pentry_t val, bool user_table)
 			(uintptr_t)&z_shared_kernel_page_start;
 
 	if (user_table && (val & MMU_US) == 0 && (val & MMU_P) != 0 &&
-	    get_entry_phys(val, NUM_LEVELS - 1) != shared_phys_addr) {
+	    get_entry_phys(val, PTE_LEVEL) != shared_phys_addr) {
 		val = ~val;
 	}
 #endif
@@ -920,7 +921,7 @@ static int page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
 		entryp = &table[index];
 
 		/* Check if we're a PTE */
-		if (level == (NUM_LEVELS - 1)) {
+		if (level == PTE_LEVEL) {
 			pentry_t old_val = pte_atomic_update(entryp, entry_val,
 							     mask, options);
 			if (old_val_ptr != NULL) {
@@ -1445,7 +1446,7 @@ void arch_mem_domain_destroy(struct k_mem_domain *domain)
  */
 static int copy_page_table(pentry_t *dst, pentry_t *src, int level)
 {
-	if (level == (NUM_LEVELS - 1)) {
+	if (level == PTE_LEVEL) {
 		/* Base case: leaf page table */
 		for (int i = 0; i < get_num_entries(level); i++) {
 			dst[i] = pte_finalize_value(reset_pte(src[i]), true);
