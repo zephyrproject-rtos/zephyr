@@ -144,7 +144,8 @@ static int init_led_device(void)
 	return 0;
 }
 
-static int device_reboot_cb(uint16_t obj_inst_id)
+static int device_reboot_cb(uint16_t obj_inst_id,
+			    uint8_t *args, uint16_t args_len)
 {
 	LOG_INF("DEVICE: REBOOT");
 	/* Add an error for testing */
@@ -155,7 +156,8 @@ static int device_reboot_cb(uint16_t obj_inst_id)
 	return 0;
 }
 
-static int device_factory_default_cb(uint16_t obj_inst_id)
+static int device_factory_default_cb(uint16_t obj_inst_id,
+				     uint8_t *args, uint16_t args_len)
 {
 	LOG_INF("DEVICE: FACTORY DEFAULT");
 	/* Add an error for testing */
@@ -167,7 +169,8 @@ static int device_factory_default_cb(uint16_t obj_inst_id)
 }
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
-static int firmware_update_cb(uint16_t obj_inst_id)
+static int firmware_update_cb(uint16_t obj_inst_id,
+			      uint8_t *args, uint16_t args_len)
 {
 	LOG_DBG("UPDATE");
 

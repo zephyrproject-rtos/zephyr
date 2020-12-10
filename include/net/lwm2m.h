@@ -186,10 +186,9 @@ typedef int (*lwm2m_engine_set_data_cb_t)(uint16_t obj_inst_id,
  *
  * Various object instance and resource-based events in the LwM2M engine
  * can trigger a callback of this function type: object instance create,
- * object instance delete and resource execute.
+ * and object instance delete.
  *
  * Register a function of this type via:
- * lwm2m_engine_register_exec_callback()
  * lwm2m_engine_register_create_callback()
  * lwm2m_engine_register_delete_callback()
  *
@@ -199,6 +198,25 @@ typedef int (*lwm2m_engine_set_data_cb_t)(uint16_t obj_inst_id,
  *         reason of failure or 0 for success.
  */
 typedef int (*lwm2m_engine_user_cb_t)(uint16_t obj_inst_id);
+
+/**
+ * @brief Asynchronous execute notification callback.
+ *
+ * Resource executes trigger a callback of this type.
+ *
+ * Register a function of this type via:
+ * lwm2m_engine_register_exec_callback()
+ *
+ * @param[in] obj_inst_id Object instance ID generating the callback.
+ * @param[in] args Pointer to execute arguments payload. (This can be
+ *            NULL if no arguments are provided)
+ * @param[in] args_len Length of argument payload in bytes.
+ *
+ * @return Callback returns a negative error code (errno.h) indicating
+ *         reason of failure or 0 for success.
+ */
+typedef int (*lwm2m_engine_execute_cb_t)(uint16_t obj_inst_id,
+					 uint8_t *args, uint16_t args_len);
 
 /**
  * @brief Power source types used for the "Available Power Sources" resource of
@@ -308,14 +326,14 @@ lwm2m_engine_set_data_cb_t lwm2m_firmware_get_write_cb(void);
  *
  * @param[in] cb A callback function to receive the execute event.
  */
-void lwm2m_firmware_set_update_cb(lwm2m_engine_user_cb_t cb);
+void lwm2m_firmware_set_update_cb(lwm2m_engine_execute_cb_t cb);
 
 /**
  * @brief Get the event callback for firmware update execute events.
  *
  * @return A registered callback function to receive the execute event.
  */
-lwm2m_engine_user_cb_t lwm2m_firmware_get_update_cb(void);
+lwm2m_engine_execute_cb_t lwm2m_firmware_get_update_cb(void);
 
 /**
  * @brief Get the block context of the current firmware block.
@@ -726,7 +744,7 @@ int lwm2m_engine_register_post_write_callback(char *pathstr,
  * @return 0 for success or negative in case of error.
  */
 int lwm2m_engine_register_exec_callback(char *pathstr,
-					lwm2m_engine_user_cb_t cb);
+					lwm2m_engine_execute_cb_t cb);
 
 /**
  * @brief Set object instance create event callback

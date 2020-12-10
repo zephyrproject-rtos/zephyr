@@ -287,7 +287,8 @@ static void timer_work_cb(struct k_work *work)
 	stop_timer(timer, false);
 }
 
-static int timer_trigger_cb(uint16_t obj_inst_id)
+static int timer_trigger_cb(uint16_t obj_inst_id,
+			    uint8_t *args, uint16_t args_len)
 {
 	int i;
 
