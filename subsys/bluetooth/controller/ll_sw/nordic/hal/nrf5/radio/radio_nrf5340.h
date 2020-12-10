@@ -402,10 +402,25 @@ static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
 static inline void hal_radio_phy_mode_set(uint32_t mode, uint8_t phy,
 					  uint8_t flags)
 {
-	ARG_UNUSED(phy);
 	ARG_UNUSED(flags);
 
 	NRF_RADIO->MODE = (mode << RADIO_MODE_MODE_Pos) & RADIO_MODE_MODE_Msk;
+
+	switch (phy) {
+	case BIT(1):
+		/* nRF5340 Rev 1 Errata [117] RADIO: Changing MODE requires
+		 * additional configuration */
+		*((volatile uint32_t *)0x41008588) =
+			*((volatile uint32_t *)0x01FF0084);
+		break;
+
+	default:
+		/* nRF5340 Rev 1 Errata [117] RADIO: Changing MODE requires
+		 * additional configuration */
+		*((volatile uint32_t *)0x41008588) =
+			*((volatile uint32_t *)0x01FF0080);
+		break;
+	}
 }
 
 static inline uint32_t hal_radio_tx_power_max_get(void)
