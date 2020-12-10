@@ -184,9 +184,18 @@ static void test_disable_mmu_mpu(void)
 		);
 #endif
 #elif defined(CONFIG_ARM)
+#ifndef CONFIG_TRUSTED_EXECUTION_NONSECURE
 	set_fault(K_ERR_CPU_EXCEPTION);
 
 	arm_core_mpu_disable();
+#else
+	/* Disabling MPU from unprivileged code
+	 * generates BusFault which is not banked
+	 * between Security states. Do not execute
+	 * this scenario for Non-Secure Cortex-M.
+	 */
+	return;
+#endif /* !CONFIG_TRUSTED_EXECUTION_NONSECURE */
 #elif defined(CONFIG_ARC)
 	set_fault(K_ERR_CPU_EXCEPTION);
 
