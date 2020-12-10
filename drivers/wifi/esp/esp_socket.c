@@ -145,7 +145,6 @@ void esp_socket_rx(struct esp_socket *sock, struct net_buf *buf,
 		   size_t offset, size_t len)
 {
 	struct net_pkt *pkt;
-	int err;
 	atomic_val_t flags;
 
 	flags = esp_socket_flags(sock);
@@ -168,11 +167,16 @@ void esp_socket_rx(struct esp_socket *sock, struct net_buf *buf,
 		return;
 	}
 
-	k_work_init(&pkt->work, esp_recv_work);
-	err = esp_socket_work_submit(sock, &pkt->work);
-	if (err) {
+	k_mutex_lock(&sock->lock, K_FOREVER);
+	if (sock->recv_cb) {
+		sock->recv_cb(sock->context, pkt, NULL, NULL,
+			      0, sock->recv_user_data);
+		k_sem_give(&sock->sem_data_ready);
+	} else {
+		/* Discard */
 		net_pkt_unref(pkt);
 	}
+	k_mutex_unlock(&sock->lock);
 }
 
 void esp_socket_close(struct esp_socket *sock)
