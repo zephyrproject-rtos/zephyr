@@ -35,10 +35,10 @@ extern "C" {
  * values also adhere to the above formula, but may need special attention.
  * Here are some examples of the value representation:
  *
- *      0.5: val1 =  0, val2 =  500000
- *     -0.5: val1 =  0, val2 = -500000
- *     -1.0: val1 = -1, val2 =  0
- *     -1.5: val1 = -1, val2 = -500000
+ *		0.5: val1 =  0, val2 =	500000
+ *	   -0.5: val1 =  0, val2 = -500000
+ *	   -1.0: val1 = -1, val2 =	0
+ *	   -1.5: val1 = -1, val2 = -500000
  */
 struct sensor_value {
 	/** Integer part of the value. */
@@ -220,7 +220,7 @@ enum sensor_trigger_type {
 	SENSOR_TRIG_NEAR_FAR,
 	/**
 	 * Trigger fires when channel reading transitions configured
-	 * thresholds.  The thresholds are configured via the @ref
+	 * thresholds.	The thresholds are configured via the @ref
 	 * SENSOR_ATTR_LOWER_THRESH and @ref SENSOR_ATTR_UPPER_THRESH
 	 * attributes.
 	 */
@@ -358,8 +358,8 @@ typedef int (*sensor_attr_get_t)(const struct device *dev,
  * See sensor_trigger_set() for argument description
  */
 typedef int (*sensor_trigger_set_t)(const struct device *dev,
-				    const struct sensor_trigger *trig,
-				    sensor_trigger_handler_t handler);
+					const struct sensor_trigger *trig,
+					sensor_trigger_handler_t handler);
 /**
  * @typedef sensor_sample_fetch_t
  * @brief Callback API for fetching data from a sensor
@@ -367,7 +367,7 @@ typedef int (*sensor_trigger_set_t)(const struct device *dev,
  * See sensor_sample_fetch() for argument description
  */
 typedef int (*sensor_sample_fetch_t)(const struct device *dev,
-				     enum sensor_channel chan);
+					 enum sensor_channel chan);
 /**
  * @typedef sensor_channel_get_t
  * @brief Callback API for getting a reading from a sensor
@@ -375,8 +375,8 @@ typedef int (*sensor_sample_fetch_t)(const struct device *dev,
  * See sensor_channel_get() for argument description
  */
 typedef int (*sensor_channel_get_t)(const struct device *dev,
-				    enum sensor_channel chan,
-				    struct sensor_value *val);
+					enum sensor_channel chan,
+					struct sensor_value *val);
 
 __subsystem struct sensor_driver_api {
 	sensor_attr_set_t attr_set;
@@ -399,9 +399,9 @@ __subsystem struct sensor_driver_api {
  * @return 0 if successful, negative errno code if failure.
  */
 __syscall int sensor_attr_set(const struct device *dev,
-			      enum sensor_channel chan,
-			      enum sensor_attribute attr,
-			      const struct sensor_value *val);
+				  enum sensor_channel chan,
+				  enum sensor_attribute attr,
+				  const struct sensor_value *val);
 
 static inline int z_impl_sensor_attr_set(const struct device *dev,
 					 enum sensor_channel chan,
@@ -431,9 +431,9 @@ static inline int z_impl_sensor_attr_set(const struct device *dev,
  * @return 0 if successful, negative errno code if failure.
  */
 __syscall int sensor_attr_get(const struct device *dev,
-			      enum sensor_channel chan,
-			      enum sensor_attribute attr,
-			      struct sensor_value *val);
+				  enum sensor_channel chan,
+				  enum sensor_attribute attr,
+				  struct sensor_value *val);
 
 static inline int z_impl_sensor_attr_get(const struct device *dev,
 					 enum sensor_channel chan,
@@ -455,7 +455,7 @@ static inline int z_impl_sensor_attr_get(const struct device *dev,
  *
  * The handler will be called from a thread, so I2C or SPI operations are
  * safe.  However, the thread's stack is limited and defined by the
- * driver.  It is currently up to the caller to ensure that the handler
+ * driver.	It is currently up to the caller to ensure that the handler
  * does not overflow the stack.
  *
  * This API is not permitted for user threads.
@@ -468,8 +468,8 @@ static inline int z_impl_sensor_attr_get(const struct device *dev,
  * @return 0 if successful, negative errno code if failure.
  */
 static inline int sensor_trigger_set(const struct device *dev,
-				     struct sensor_trigger *trig,
-				     sensor_trigger_handler_t handler)
+					 struct sensor_trigger *trig,
+					 sensor_trigger_handler_t handler)
 {
 	const struct sensor_driver_api *api =
 		(const struct sensor_driver_api *)dev->api;
@@ -527,7 +527,7 @@ static inline int z_impl_sensor_sample_fetch(const struct device *dev)
  * @return 0 if successful, negative errno code if failure.
  */
 __syscall int sensor_sample_fetch_chan(const struct device *dev,
-				       enum sensor_channel type);
+					   enum sensor_channel type);
 
 static inline int z_impl_sensor_sample_fetch_chan(const struct device *dev,
 						  enum sensor_channel type)
@@ -564,8 +564,8 @@ __syscall int sensor_channel_get(const struct device *dev,
 				 struct sensor_value *val);
 
 static inline int z_impl_sensor_channel_get(const struct device *dev,
-					    enum sensor_channel chan,
-					    struct sensor_value *val)
+						enum sensor_channel chan,
+						struct sensor_value *val)
 {
 	const struct sensor_driver_api *api =
 		(const struct sensor_driver_api *)dev->api;
@@ -587,7 +587,7 @@ static inline int z_impl_sensor_channel_get(const struct device *dev,
  * @brief Helper function to convert acceleration from m/s^2 to Gs
  *
  * @param ms2 A pointer to a sensor_value struct holding the acceleration,
- *            in m/s^2.
+ *			  in m/s^2.
  *
  * @return The converted value, in Gs.
  */
@@ -653,6 +653,20 @@ static inline void sensor_degrees_to_rad(int32_t d, struct sensor_value *rad)
 static inline double sensor_value_to_double(struct sensor_value *val)
 {
 	return (double)val->val1 + (double)val->val2 / 1000000;
+}
+
+/**
+ * @brief Helper function for converting a double to struct sensor_value.
+ * Useful for i.e. setting sensor driver attributes.
+ *
+ * @param num The double value to convert.
+ * @param val A pointer to a sensor_value struct to store the converted value.
+ */
+static inline void sensor_double_to_sensor_value(double num,
+		struct sensor_value *val)
+{
+	val->val1 = (int32_t) num;
+	val->val2 = (int32_t) ((num - ((int32_t) num)) * 1000000);
 }
 
 /**
