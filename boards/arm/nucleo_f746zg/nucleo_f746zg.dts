@@ -144,3 +144,7 @@
 		     &eth_txd0_pg13
 		     &eth_txd1_pb13>;
 };
+
+#ifdef DTS_INCLUDE_FIXTURES
+#include "fixtures.dtsi"
+#endif /* DTS_INCLUDE_FIXTURES */

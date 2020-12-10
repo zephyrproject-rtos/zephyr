@@ -74,3 +74,7 @@
 &flexcomm5 {
 	status = "okay";
 };
+
+#ifdef DTS_INCLUDE_FIXTURES
+#include "fixtures_m4.dtsi"
+#endif /* DTS_INCLUDE_FIXTURES */

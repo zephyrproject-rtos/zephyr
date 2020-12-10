@@ -228,3 +228,7 @@ arduino_spi: &spi0 {
 &pit0 {
 	status = "okay";
 };
+
+#ifdef DTS_INCLUDE_FIXTURES
+#include "fixtures.dtsi"
+#endif /* DTS_INCLUDE_FIXTURES */

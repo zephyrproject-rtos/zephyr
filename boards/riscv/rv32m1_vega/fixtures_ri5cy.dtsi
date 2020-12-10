@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2020 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/* For ri5cy */
+	zephyr,fixture {
+		gpio-loopback {
+			compatible = "zephyr,fixture,gpio-loopback";
+			out-gpios = <&arduino_header 6 0>; /* Arduino D0 */
+			in-gpios = <&arduino_header 7 0>;  /* Arduino D1 */
+		};
+	};
+};

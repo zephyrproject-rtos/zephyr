@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2020 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/* For cm33 */
+	zephyr,fixture {
+		gpio-loopback {
+			compatible = "zephyr,fixture,gpio-loopback";
+			out-gpios = <&gpio0 5 0>; /* Arduino A0 */
+			in-gpios  = <&gpio0 6 0>; /* Arduino A1 */
+		};
+	};
+};

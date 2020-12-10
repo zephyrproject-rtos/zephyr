@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2020 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/* For m4 */
+	zephyr,fixture {
+		gpio-loopback {
+			compatible = "zephyr,fixture,gpio-loopback";
+			out-gpios = <&gpio0 8 0>;
+			in-gpios = <&gpio0 9 0>;
+		};
+	};
+};

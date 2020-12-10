@@ -22,13 +22,13 @@
 
 static void board_setup(void)
 {
-#if DT_NODE_HAS_STATUS(DT_INST(0, test_gpio_basic_api), okay)
+#if DT_NODE_HAS_STATUS(LOOPBACK_NODE, okay)
 	/* PIN_IN and PIN_OUT must be on same controller. */
-	if (strcmp(DT_GPIO_LABEL(DT_INST(0, test_gpio_basic_api), out_gpios),
-		   DT_GPIO_LABEL(DT_INST(0, test_gpio_basic_api), in_gpios)) != 0) {
+	if (strcmp(DT_GPIO_LABEL(LOOPBACK_NODE, out_gpios),
+		   DT_GPIO_LABEL(LOOPBACK_NODE, in_gpios)) != 0) {
 		printk("FATAL: output controller %s != input controller %s\n",
-		       DT_GPIO_LABEL(DT_INST(0, test_gpio_basic_api), out_gpios),
-		       DT_GPIO_LABEL(DT_INST(0, test_gpio_basic_api), in_gpios));
+		       DT_GPIO_LABEL(LOOPBACK_NODE, out_gpios),
+		       DT_GPIO_LABEL(LOOPBACK_NODE, in_gpios));
 		k_panic();
 	}
 #endif

@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2020 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,fixture {
+		gpio-loopback {
+			/*
+			 * Remove jumpers on JP31 to disconnect pull-up
+			 * resistor. Also remove jumpers on JP41 (1-2, 3-4)
+			 * as the LEDs are connected to pull-up resistors
+			 * also.
+			 */
+			compatible = "zephyr,fixture,gpio-loopback";
+			/* GPIO_156, JP31 Pin 13 */
+			in-gpios = <&gpio_140_176 14 0>;
+			/* GPIO_157, JP31 Pin 15 */
+			out-gpios = <&gpio_140_176 15 0>;
+		};
+	};
+};

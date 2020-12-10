@@ -133,3 +133,7 @@ arduino_spi: &flexcomm5 {
 &red_led {
 	status = "okay";
 };
+
+#ifdef DTS_INCLUDE_FIXTURES
+#include "fixtures_cm33.dtsi"
+#endif /* DTS_INCLUDE_FIXTURES */

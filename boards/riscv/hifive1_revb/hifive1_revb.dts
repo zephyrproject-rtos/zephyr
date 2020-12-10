@@ -130,3 +130,7 @@ arduino_i2c: &i2c0 {
 	input-frequency = <16000000>;
 	clock-frequency = <100000>;
 };
+
+#ifdef DTS_INCLUDE_FIXTURES
+#include "fixtures.dtsi"
+#endif /* DTS_INCLUDE_FIXTURES */
