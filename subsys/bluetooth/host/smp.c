@@ -2381,6 +2381,11 @@ static uint8_t legacy_pairing_req(struct bt_smp *smp)
 
 	BT_DBG("");
 
+	ret = legacy_request_tk(smp);
+	if (ret) {
+		return ret;
+	}
+
 	/* ask for consent if pairing is not due to sending SecReq*/
 	if ((DISPLAY_FIXED(smp) || smp->method == JUST_WORKS) &&
 	    !atomic_test_bit(smp->flags, SMP_FLAG_SEC_REQ) &&
@@ -2391,13 +2396,7 @@ static uint8_t legacy_pairing_req(struct bt_smp *smp)
 	}
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
-	ret = send_pairing_rsp(smp);
-	if (ret) {
-		return ret;
-	}
-
-
-	return legacy_request_tk(smp);
+	return send_pairing_rsp(smp);
 }
 #endif /* CONFIG_BT_PERIPHERAL */
 
@@ -2609,6 +2608,11 @@ static uint8_t legacy_pairing_rsp(struct bt_smp *smp)
 
 	BT_DBG("");
 
+	ret = legacy_request_tk(smp);
+	if (ret) {
+		return ret;
+	}
+
 	/* ask for consent if this is due to received SecReq */
 	if ((DISPLAY_FIXED(smp) || smp->method == JUST_WORKS) &&
 	    atomic_test_bit(smp->flags, SMP_FLAG_SEC_REQ) &&
@@ -2616,11 +2620,6 @@ static uint8_t legacy_pairing_rsp(struct bt_smp *smp)
 		atomic_set_bit(smp->flags, SMP_FLAG_USER);
 		bt_auth->pairing_confirm(smp->chan.chan.conn);
 		return 0;
-	}
-
-	ret = legacy_request_tk(smp);
-	if (ret) {
-		return ret;
 	}
 
 	if (!atomic_test_bit(smp->flags, SMP_FLAG_USER)) {
