@@ -23,7 +23,7 @@ static int acs71020_reg_write(struct device *dev, uint8_t reg, uint16_t val)
 	const struct acs71020_config *cfg = dev->config;
 	uint8_t buf[3] = {
 		reg,
-		val >> 8,	/* big-endian register storage */
+		val >> 8,       /* big-endian register storage */
 		val & 0xFF,
 	};
 
@@ -31,8 +31,8 @@ static int acs71020_reg_write(struct device *dev, uint8_t reg, uint16_t val)
 }
 
 int acs71020_attr_set(struct device *dev, enum sensor_channel chan,
-		     enum sensor_attribute attr,
-		     const struct sensor_value *val)
+		      enum sensor_attribute attr,
+		      const struct sensor_value *val)
 {
 	uint8_t reg_addr;
 	int temp;
@@ -57,7 +57,7 @@ int acs71020_attr_set(struct device *dev, enum sensor_channel chan,
 	temp += (ACS71020_TEMP_SCALE_CEL * val->val2) / 1000000;
 
 	return acs71020_reg_write(dev, reg_addr,
-				 acs71020_temp_reg_from_signed(temp));
+				  acs71020_temp_reg_from_signed(temp));
 }
 
 static inline void setup_int(struct device *dev,
@@ -99,8 +99,8 @@ static void process_int(struct device *dev)
 }
 
 int acs71020_trigger_set(struct device *dev,
-			const struct sensor_trigger *trig,
-			sensor_trigger_handler_t handler)
+			 const struct sensor_trigger *trig,
+			 sensor_trigger_handler_t handler)
 {
 	struct acs71020_data *data = dev->data;
 	const struct acs71020_config *cfg = dev->config;
@@ -169,10 +169,11 @@ int acs71020_setup_interrupt(struct device *dev)
 	const struct acs71020_config *cfg = dev->config;
 	struct device *gpio;
 	int rc = acs71020_reg_write(dev, ACS71020_REG_CRITICAL,
-				   ACS71020_TEMP_ABS_MASK);
+				    ACS71020_TEMP_ABS_MASK);
+
 	if (rc == 0) {
 		rc = acs71020_reg_write(dev, ACS71020_REG_CONFIG,
-				       ACS71020_CFG_ALERT_ENA);
+					ACS71020_CFG_ALERT_ENA);
 	}
 
 	data->dev = dev;

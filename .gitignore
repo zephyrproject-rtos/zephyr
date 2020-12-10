@@ -12,6 +12,7 @@ build*/
 !tests/drivers/build_all
 cscope.*
 .dir
+.DS_Store
 
 /*.patch
 

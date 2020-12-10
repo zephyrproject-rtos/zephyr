@@ -1,5 +1,6 @@
 # ACS71020 line voltage current sensor configuration options
 
+# Copyright (c) 2020 SER Consulting LLC
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ACS71020

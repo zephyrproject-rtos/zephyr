@@ -1,5 +1,6 @@
 # MCP9600 temperature sensor configuration options
 
+# Copyright (c) 2020 SER Consulting LLC
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig MCP9600

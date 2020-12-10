@@ -41,24 +41,25 @@ static inline const struct acs71020_config *to_config(const struct device *dev)
 
 static int acs71020_reg_read(const struct device *dev, uint8_t start, uint8_t *buf, int size)
 {
-    struct acs71020_data *data = dev->data;
-    const struct acs71020_config *cfg = dev->config;
-    return i2c_burst_read(data->i2c_master, cfg->i2c_addr,
-                  start, buf, size);
+	struct acs71020_data *data = dev->data;
+	const struct acs71020_config *cfg = dev->config;
+
+	return i2c_burst_read(data->i2c_master, cfg->i2c_addr,
+			      start, buf, size);
 }
 
 /*
-static int acs71020_reg_write(const struct device *dev, uint8_t start, uint8_t *buf, int size)
-{
+   static int acs71020_reg_write(const struct device *dev, uint8_t start, uint8_t *buf, int size)
+   {
     struct acs71020_data *data = dev->data;
     const struct acs71020_config *cfg = dev->config;
     return i2c_burst_write(data->i2c_master, cfg->i2c_addr,
                   start, buf, size);
-}
-*/
+   }
+ */
 /*
-static int acs71020_attr_set(struct *dev, enum sensor_channel,  enum sensor_attribute,  const struct *sensor_value)
-{
+   static int acs71020_attr_set(struct *dev, enum sensor_channel,  enum sensor_attribute,  const struct *sensor_value)
+   {
     struct acs71020_data *data = dev->data;
     uint8_t buf[20];
     int size = 20;
@@ -72,18 +73,18 @@ static int acs71020_attr_set(struct *dev, enum sensor_channel,  enum sensor_attr
     }
     data->qvo_fine =  ((buf[0]<<8) | (buf[1])) & 0x01ff;
     data->sns_fine =  ((buf[1]<<8) | (buf[1])) & 0x07fff;
-    
+
     return 0;
-}
-*/
+   }
+ */
 static int acs71020_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
-    struct acs71020_data *data = dev->data;
-    int size=56;
-    uint8_t buf[size];
-    int ret;
+	struct acs71020_data *data = dev->data;
+	int size = 56;
+	uint8_t buf[size];
+	int ret;
 
-    __ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 /*
     memset(buf, 0, size);
     buf[0] = 0x6E;
@@ -120,8 +121,8 @@ static int acs71020_sample_fetch(const struct device *dev, enum sensor_channel c
     } else {
         LOG_DBG("Wrote %02x-%02x%02x%02x%02x", 0x0c, buf[3], buf[2], buf[1], buf[0]);
     }
-*/
-    
+ */
+
 /*
     memset(buf, 0, size);
     ret = acs71020_reg_read(dev, 0x0b, buf, 20);
@@ -133,96 +134,96 @@ static int acs71020_sample_fetch(const struct device *dev, enum sensor_channel c
     for (int i=0;i<5;i++) {
         LOG_DBG("%02x-%02x%02x%02x%02x", i+0x1b, buf[(i*4)+3], buf[(i*4)+2], buf[(i*4)+1], buf[(i*4)+0]);
     }
-*/
-    memset(buf, 0, size);
+ */
+	memset(buf, 0, size);
 	ret = acs71020_reg_read(dev, ACS71020_REG_IV, buf, 4);
-    if (ret < 0) {
-        LOG_DBG("acs71020: i2c error IV %d", ret);
-        data->vrms = 0;
-        data->irms = 0;
-        return ret;
-    }
-    //LOG_DBG("acs71020 IV= 0.%02x 1.%02x 2.%02x 3.%02x", buf[0], buf[1], buf[2], buf[3]);
+	if (ret < 0) {
+		LOG_DBG("acs71020: i2c error IV %d", ret);
+		data->vrms = 0;
+		data->irms = 0;
+		return ret;
+	}
+	// LOG_DBG("acs71020 IV= 0.%02x 1.%02x 2.%02x 3.%02x", buf[0], buf[1], buf[2], buf[3]);
 
-    // 0 1 2 3
-    data->vrms = ((buf[1]<<8) | (buf[0])) & 0x07fff;
-    data->irms = ((buf[3]<<8) | (buf[2])) & 0x07fff;
-    //LOG_DBG("acs71020: vrms %x irms %x",data->vrms,data->irms);
+	// 0 1 2 3
+	data->vrms = ((buf[1] << 8) | (buf[0])) & 0x07fff;
+	data->irms = ((buf[3] << 8) | (buf[2])) & 0x07fff;
+	// LOG_DBG("acs71020: vrms %x irms %x",data->vrms,data->irms);
 
-    ret = acs71020_reg_read(dev, ACS71020_REG_P_ACT, buf, 4);
-    //LOG_DBG("acs71020 PA= 0.%02x 1.%02x 2.%02x 3.%02x", buf[0], buf[1], buf[2], buf[3]);
-    if (ret < 0) {
-        LOG_DBG("acs71020: i2c error PA %d", ret);
-        data->pactive = 0;
-        return ret;
-    }
+	ret = acs71020_reg_read(dev, ACS71020_REG_P_ACT, buf, 4);
+	// LOG_DBG("acs71020 PA= 0.%02x 1.%02x 2.%02x 3.%02x", buf[0], buf[1], buf[2], buf[3]);
+	if (ret < 0) {
+		LOG_DBG("acs71020: i2c error PA %d", ret);
+		data->pactive = 0;
+		return ret;
+	}
 
-    // 4 5 6 7
-    data->pactive = ((buf[2]<<16) | (buf[1]<<8) | buf[0]) & 0x01ffff;
-    if (data->pactive & 0x010000) {
-        data->pactive = data->pactive|0xffff0000;
-    }
-    //LOG_DBG("acs71020: pactive %x %d",data->pactive,data->pactive);
-    // 8 9 10 11
-    //data->papparent = ((buf[10]<<8) | (buf[11])) & 0x07fff;
-    //12 13 14 15
-    //data->pimag = ((buf[14]<<8) | (buf[15])) & 0x07fff;
-    //16 17 18 19
-    //data->pfactor = ((buf[18]<<8) | (buf[19])) & 0x03ff;
-    // 20 21 22 23
-    //data->numptsout = ((buf[21]<<8) | (buf[22])) & 0x01f;
-    //24 25 26 27
-    //data->vrmsavgonesec = ((buf[26]<<8) | (buf[27])) & 0x07fff;
-    //data->irmsavgonesec = ((buf[24]<<8) | (buf[25])) & 0x07fff;
-    //28 29 30 31
-    //data->vrmsavgonemin = ((buf[30]<<8) | (buf[31])) & 0x07fff;
-    //data->irmsavgonemin = ((buf[28]<<8) | (buf[29])) & 0x07fff;
-    // 32 33 34 35
-    //data->pactavgonesec = ((buf[33]<<16) | (buf[34]<<8) | buf[35])&0x1ffff;
-    // 36 37 38 39
-    //data->pactavgonemin = ((buf[37]<<16) | (buf[38]<<8) | buf[39])&0x1ffff;
-    // 40 41 42 43
-    //data->vcodes = ((buf[41]<<16) | (buf[42]<<8) | buf[43])&0x1ffff;
-    // 44 45 46 47
-    //data->icodes = ((buf[45]<<16) | (buf[46]<<8) | buf[47])&0x1ffff;
-    // 48 49 50 51
-    //data->pinstant = ((buf[48]<<24) | (buf[49]<<16) | (buf[50]<<8) | buf[51]);
-    // 52 53 54 55
-    //data->vzerocrossout = buf[55]&&0x01;
-    //data->faultout = buf[55]&&0x02;
-    //data->faultlatched = buf[55]&&0x04;
-    //data->overvoltage = buf[55]&&0x08;
-    //data->undervoltage = buf[55]&&0x10;
-    //data->posangle = buf[55]&&0x20;
-    //data->pospf = buf[55]&&0x40;
+	// 4 5 6 7
+	data->pactive = ((buf[2] << 16) | (buf[1] << 8) | buf[0]) & 0x01ffff;
+	if (data->pactive & 0x010000) {
+		data->pactive = data->pactive | 0xffff0000;
+	}
+	// LOG_DBG("acs71020: pactive %x %d",data->pactive,data->pactive);
+	// 8 9 10 11
+	// data->papparent = ((buf[10]<<8) | (buf[11])) & 0x07fff;
+	// 12 13 14 15
+	// data->pimag = ((buf[14]<<8) | (buf[15])) & 0x07fff;
+	// 16 17 18 19
+	// data->pfactor = ((buf[18]<<8) | (buf[19])) & 0x03ff;
+	// 20 21 22 23
+	// data->numptsout = ((buf[21]<<8) | (buf[22])) & 0x01f;
+	// 24 25 26 27
+	// data->vrmsavgonesec = ((buf[26]<<8) | (buf[27])) & 0x07fff;
+	// data->irmsavgonesec = ((buf[24]<<8) | (buf[25])) & 0x07fff;
+	// 28 29 30 31
+	// data->vrmsavgonemin = ((buf[30]<<8) | (buf[31])) & 0x07fff;
+	// data->irmsavgonemin = ((buf[28]<<8) | (buf[29])) & 0x07fff;
+	// 32 33 34 35
+	// data->pactavgonesec = ((buf[33]<<16) | (buf[34]<<8) | buf[35])&0x1ffff;
+	// 36 37 38 39
+	// data->pactavgonemin = ((buf[37]<<16) | (buf[38]<<8) | buf[39])&0x1ffff;
+	// 40 41 42 43
+	// data->vcodes = ((buf[41]<<16) | (buf[42]<<8) | buf[43])&0x1ffff;
+	// 44 45 46 47
+	// data->icodes = ((buf[45]<<16) | (buf[46]<<8) | buf[47])&0x1ffff;
+	// 48 49 50 51
+	// data->pinstant = ((buf[48]<<24) | (buf[49]<<16) | (buf[50]<<8) | buf[51]);
+	// 52 53 54 55
+	// data->vzerocrossout = buf[55]&&0x01;
+	// data->faultout = buf[55]&&0x02;
+	// data->faultlatched = buf[55]&&0x04;
+	// data->overvoltage = buf[55]&&0x08;
+	// data->undervoltage = buf[55]&&0x10;
+	// data->posangle = buf[55]&&0x20;
+	// data->pospf = buf[55]&&0x40;
 
-    return 0;
+	return 0;
 }
 
 static int acs71020_channel_get(const struct device *dev,
-                  enum sensor_channel chan,
-                  struct sensor_value *val)
+				enum sensor_channel chan,
+				struct sensor_value *val)
 {
-    struct acs71020_data *data = dev->data;
+	struct acs71020_data *data = dev->data;
 
-    switch (chan) {
-    case SENSOR_CHAN_VOLTAGE:
-            val->val1 = ((data->vrms)*ACS71020_VOLTAGE)/0x07fff;
-            val->val2 = (((data->vrms)*ACS71020_VOLTAGE)%0x07fff);
-            break;
-    case SENSOR_CHAN_CURRENT:
-            val->val1 = ((data->irms)*ACS71020_CURRENT*2)/0x06fff;
-            val->val2 = ((data->irms)*ACS71020_CURRENT*2)%0x06fff;
-            break;
-    case SENSOR_CHAN_POWER:
-            val->val1 = ((data->pactive)*ACS71020_VOLTAGE*ACS71020_CURRENT*2)/0x0ffff;
-            val->val2 = ((data->pactive)*ACS71020_VOLTAGE*ACS71020_CURRENT*2)%0x0ffff;
-            break;
-    default:
-            return -EINVAL;
-    }
+	switch (chan) {
+	case SENSOR_CHAN_VOLTAGE:
+		val->val1 = ((data->vrms) * ACS71020_VOLTAGE) / 0x07fff;
+		val->val2 = (((data->vrms) * ACS71020_VOLTAGE) % 0x07fff);
+		break;
+	case SENSOR_CHAN_CURRENT:
+		val->val1 = ((data->irms) * ACS71020_CURRENT * 2) / 0x06fff;
+		val->val2 = ((data->irms) * ACS71020_CURRENT * 2) % 0x06fff;
+		break;
+	case SENSOR_CHAN_POWER:
+		val->val1 = ((data->pactive) * ACS71020_VOLTAGE * ACS71020_CURRENT * 2) / 0x0ffff;
+		val->val2 = ((data->pactive) * ACS71020_VOLTAGE * ACS71020_CURRENT * 2) % 0x0ffff;
+		break;
+	default:
+		return -EINVAL;
+	}
 
-    return 0;
+	return 0;
 }
 
 static const struct sensor_driver_api acs71020_api_funcs = {
@@ -248,9 +249,10 @@ int acs71020_init(const struct device *dev)
 		LOG_DBG("%s: i2c master not found: %s", name, config->i2c_bus);
 		return -EINVAL;
 	}
-        
-    uint8_t buf[4];
-    rc = acs71020_reg_read(dev, ACS71020_REG_IV, buf, 4);
+
+	uint8_t buf[4];
+
+	rc = acs71020_reg_read(dev, ACS71020_REG_IV, buf, 4);
 
 #ifdef CONFIG_ACS71020_TRIGGER
 	rc = acs71020_setup_interrupt(dev);

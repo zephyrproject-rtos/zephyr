@@ -1,4 +1,4 @@
-.. _bme280:
+.. _acs71020:
 
 ACS71020
 ###################################
@@ -17,7 +17,7 @@ This sample application uses an ACS71020 sensor connected to a board via I2C.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/acs71020
-   :board: nrf52840dk_nrf52840
+   :board: frdm_kw41z
    :goals: flash
    :compact:
 
@@ -35,4 +35,4 @@ To check output of this sample , any serial console program can be used. This ex
 
 
 
-.. _bme280 datasheet: https://ae-bst.resource.bosch.com/media/_tech/media/datasheets/BST-BME280-DS002.pdf
+.. _acs71020 datasheet: https://www.allegromicro.com/-/media/files/datasheets/acs71020-datasheet.ashx

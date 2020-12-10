@@ -23,7 +23,7 @@ static int mcp9600_reg_write(struct device *dev, uint8_t reg, uint16_t val)
 	const struct mcp9600_config *cfg = dev->config;
 	uint8_t buf[3] = {
 		reg,
-		val >> 8,	/* big-endian register storage */
+		val >> 8,       /* big-endian register storage */
 		val & 0xFF,
 	};
 
@@ -170,6 +170,7 @@ int mcp9600_setup_interrupt(struct device *dev)
 	struct device *gpio;
 	int rc = mcp9600_reg_write(dev, MCP9600_REG_CRITICAL,
 				   MCP9600_TEMP_ABS_MASK);
+
 	if (rc == 0) {
 		rc = mcp9600_reg_write(dev, MCP9600_REG_CONFIG,
 				       MCP9600_CFG_ALERT_ENA);

@@ -31,69 +31,70 @@ LOG_MODULE_REGISTER(MCP9600, CONFIG_SENSOR_LOG_LEVEL);
 
 static int mcp9600_reg_read(const struct device *dev, uint8_t start, uint8_t *buf, int size)
 {
-    struct mcp9600_data *data = dev->data;
-    const struct mcp9600_config *cfg = dev->config;
-    return i2c_burst_read(data->i2c_master, cfg->i2c_addr,
-                  start, buf, size);
+	struct mcp9600_data *data = dev->data;
+	const struct mcp9600_config *cfg = dev->config;
+
+	return i2c_burst_read(data->i2c_master, cfg->i2c_addr,
+			      start, buf, size);
 }
 
 static int mcp9600_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
-    struct mcp9600_data *data = dev->data;
-    uint8_t buf[8];
-    int size = 6;
-    int ret;
+	struct mcp9600_data *data = dev->data;
+	uint8_t buf[8];
+	int size = 6;
+	int ret;
 
-    __ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-    ret = mcp9600_reg_read(dev, MCP9600_REG_TEMP_HOT, buf, size);
-    if (ret < 0) {
-        return ret;
-    }
-    data->ttemp = (buf[0]<<8) | (buf[1]);
-    data->dtemp = (buf[2]<<8) | (buf[3]);
-    data->ctemp = (buf[4]<<8) | (buf[5]);
+	ret = mcp9600_reg_read(dev, MCP9600_REG_TEMP_HOT, buf, size);
+	if (ret < 0) {
+		return ret;
+	}
+	data->ttemp = (buf[0] << 8) | (buf[1]);
+	data->dtemp = (buf[2] << 8) | (buf[3]);
+	data->ctemp = (buf[4] << 8) | (buf[5]);
 
-    return 0;
+	return 0;
 }
 
 static int mcp9600_channel_get(const struct device *dev,
-                  enum sensor_channel chan,
-                  struct sensor_value *val)
+			       enum sensor_channel chan,
+			       struct sensor_value *val)
 {
-    struct mcp9600_data *data = dev->data;
-    int32_t temp;
+	struct mcp9600_data *data = dev->data;
+	int32_t temp;
 
-    switch (chan) {
-    case SENSOR_CHAN_THERMOCOUPLE_TEMP:
-            temp = data->ttemp>>4;
-            if (temp>2047) {
-                temp -= 4096;
-            }
-            val->val1 = temp;
-        val->val2 = ((data->ttemp)&0x0f)*62500;
-        break;
-    case SENSOR_CHAN_DIFF_TEMP:
-        temp = data->dtemp>>4;
-        if (temp>2047) {
-            temp -= 4096;
-        }
-        val->val1 = temp;
-        val->val2 = ((data->dtemp)&0x0f)*62500;
-        break;
-    case SENSOR_CHAN_COLD_TEMP:
-        temp = data->ctemp>>4;
-        if (temp>2047) {
-            temp -= 4096;
-        }
-        val->val1 = temp;
-        val->val2 = ((data->ctemp)&0x0f)*62500;
-        break;
-    default:
-        return -EINVAL;
-    }
+	switch (chan) {
+	case SENSOR_CHAN_THERMOCOUPLE_TEMP:
+		temp = data->ttemp >> 4;
+		if (temp > 2047) {
+			temp -= 4096;
+		}
+		val->val1 = temp;
+		val->val2 = ((data->ttemp) & 0x0f) * 62500;
+		break;
+	case SENSOR_CHAN_DIFF_TEMP:
+		temp = data->dtemp >> 4;
+		if (temp > 2047) {
+			temp -= 4096;
+		}
+		val->val1 = temp;
+		val->val2 = ((data->dtemp) & 0x0f) * 62500;
+		break;
+	case SENSOR_CHAN_COLD_TEMP:
+		temp = data->ctemp >> 4;
+		if (temp > 2047) {
+			temp -= 4096;
+		}
+		val->val1 = temp;
+		val->val2 = ((data->ctemp) & 0x0f) * 62500;
+		break;
+	default:
+		return -EINVAL;
+	}
 
-    return 0;
+	return 0;
 }
 
 static const struct sensor_driver_api mcp9600_api_funcs = {
@@ -107,11 +108,12 @@ static const struct sensor_driver_api mcp9600_api_funcs = {
 
 static int mcp9600_chip_init(const struct device *dev)
 {
-    uint8_t buf[2];
+	uint8_t buf[2];
 
-    int rc = mcp9600_reg_read(dev, MCP9600_REG_ID_REVISION, buf, 2);
-    LOG_DBG("mcp9600: id=0x%02x version=0x%02x ret=%d", buf[0], buf[1], rc);
-    return rc;
+	int rc = mcp9600_reg_read(dev, MCP9600_REG_ID_REVISION, buf, 2);
+
+	LOG_DBG("mcp9600: id=0x%02x version=0x%02x ret=%d", buf[0], buf[1], rc);
+	return rc;
 }
 
 int mcp9600_init(const struct device *dev)
@@ -125,9 +127,9 @@ int mcp9600_init(const struct device *dev)
 		LOG_DBG("mcp9600: i2c master not found: %s", cfg->i2c_bus);
 		return -EINVAL;
 	}
-    
-    rc = mcp9600_chip_init(dev);
-    
+
+	rc = mcp9600_chip_init(dev);
+
 #ifdef CONFIG_MCP9600_TRIGGER
 	rc = mcp9600_setup_interrupt(dev);
 #endif /* CONFIG_MCP9600_TRIGGER */
