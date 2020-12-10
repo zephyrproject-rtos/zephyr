@@ -339,6 +339,10 @@ Artificially long but functional example:
         """)
 
     parser.add_argument(
+        "--platform-reports", action="store_true",
+        help="""Create individual reports for each platform.
+        """)
+    parser.add_argument(
         "--report-name",
         help="""Create a report with a custom name.
         """)
@@ -1248,7 +1252,9 @@ def main():
                        options.report_dir,
                        options.no_update,
                        options.release,
-                       options.only_failed)
+                       options.only_failed,
+                       options.platform_reports,
+                       )
 
     # FIXME: remove later
     #logger.info(f"failed: {results.failed}, cases: {results.cases}, skipped configurations: {results.skipped_configs}, skipped_cases: {results.skipped_cases}, skipped(runtime): {results.skipped_runtime}, passed: {results.passed}, total: {results.total}, done: {results.done}")
