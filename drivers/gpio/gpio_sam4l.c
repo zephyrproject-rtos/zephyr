@@ -246,7 +246,7 @@ int gpio_sam_init(const struct device *dev)
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, m, irq),		\
 			    DT_INST_IRQ_BY_IDX(n, m, priority),		\
 			    gpio_sam_isr,				\
-			    DEVICE_GET(port_##n##_sam), 0);		\
+			    DEVICE_DT_INST_GET(n), 0);			\
 		irq_enable(DT_INST_IRQ_BY_IDX(n, m, irq));		\
 	} while (0)
 
@@ -264,8 +264,8 @@ int gpio_sam_init(const struct device *dev)
 									\
 	static struct gpio_sam_runtime port_##n##_sam_runtime;		\
 									\
-	DEVICE_AND_API_INIT(port_##n##_sam, DT_INST_LABEL(n),		\
-			    gpio_sam_init, &port_##n##_sam_runtime,	\
+	DEVICE_DT_INST_DEFINE(n, gpio_sam_init, device_pm_control_nop,	\
+			    &port_##n##_sam_runtime,			\
 			    &port_##n##_sam_config, POST_KERNEL,	\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &gpio_sam_api);				\
