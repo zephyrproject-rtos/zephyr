@@ -1,7 +1,7 @@
 tests:
   arch.x86.info:
     arch_allow: x86
-    platform_allow: up_squared up_squared_32
+    platform_allow: ehl_crb up_squared up_squared_32
     harness: console
     harness_config:
         type: one_line
