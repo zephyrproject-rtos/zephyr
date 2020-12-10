@@ -423,7 +423,7 @@ static int cmd_ciprecvdata_parse(struct esp_socket *sock,
 	*data_len = strtol(&cmd_buf[len], &endptr, 10);
 	if (endptr == &cmd_buf[len] ||
 	    (*endptr == 0 && match_len >= CIPRECVDATA_CMD_MAX_LEN) ||
-	    *data_len > sock->bytes_avail) {
+	    *data_len > CIPRECVDATA_MAX_LEN) {
 		LOG_ERR("Invalid cmd: %s", log_strdup(cmd_buf));
 		return -EBADMSG;
 	} else if (*endptr == 0) {
@@ -474,7 +474,7 @@ static void esp_recvdata_work(struct k_work *work)
 {
 	struct esp_socket *sock;
 	struct esp_data *dev;
-	int len = CIPRECVDATA_MAX_LEN, ret;
+	int ret;
 	char cmd[sizeof("AT+CIPRECVDATA=0,"STRINGIFY(CIPRECVDATA_MAX_LEN))];
 	static const struct modem_cmd cmds[] = {
 		MODEM_CMD_DIRECT(_CIPRECVDATA, on_cmd_ciprecvdata),
@@ -488,19 +488,12 @@ static void esp_recvdata_work(struct k_work *work)
 		return;
 	}
 
-	LOG_DBG("%d bytes available on link %d", sock->bytes_avail,
-		sock->link_id);
-
-	if (sock->bytes_avail == 0) {
-		LOG_WRN("No data available on link %d", sock->link_id);
-		return;
-	} else if (len > sock->bytes_avail) {
-		len = sock->bytes_avail;
-	}
+	LOG_DBG("reading available data on link %d", sock->link_id);
 
 	dev->rx_sock = sock;
 
-	snprintk(cmd, sizeof(cmd), "AT+CIPRECVDATA=%d,%d", sock->link_id, len);
+	snprintk(cmd, sizeof(cmd), "AT+CIPRECVDATA=%d,%d", sock->link_id,
+		 CIPRECVDATA_MAX_LEN);
 
 	ret = esp_cmd_send(dev, cmds, ARRAY_SIZE(cmds), cmd, ESP_CMD_TIMEOUT);
 	if (ret < 0) {

@@ -144,9 +144,6 @@ struct esp_socket {
 	enum net_ip_protocol ip_proto;
 	struct sockaddr dst;
 
-	/* for +CIPRECVDATA */
-	size_t bytes_avail;
-
 	/* packets */
 	struct k_fifo fifo_rx_pkt;
 	struct net_pkt *tx_pkt;
