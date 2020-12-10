@@ -39,7 +39,8 @@ static inline const struct acs71020_config *to_config(const struct device *dev)
 	return dev->config;
 }
 
-static int acs71020_reg_read(const struct device *dev, uint8_t start, uint8_t *buf, int size)
+static int acs71020_reg_read(const struct device *dev, uint8_t start,
+                             uint8_t *buf, int size)
 {
 	struct acs71020_data *data = dev->data;
 	const struct acs71020_config *cfg = dev->config;
@@ -58,7 +59,8 @@ static int acs71020_reg_read(const struct device *dev, uint8_t start, uint8_t *b
    }
  */
 /*
-   static int acs71020_attr_set(struct *dev, enum sensor_channel,  enum sensor_attribute,  const struct *sensor_value)
+   static int acs71020_attr_set(struct *dev, enum sensor_channel,
+                                enum sensor_attribute,  const struct *sensor_value)
    {
     struct acs71020_data *data = dev->data;
     uint8_t buf[20];
@@ -86,6 +88,9 @@ static int acs71020_sample_fetch(const struct device *dev, enum sensor_channel c
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 /*
+ * This section of code shows how to unlock the eeprom and write new values
+ * the specific write is to set the I2C address and set the bit to ignore the
+ * pin selection and use the eeprom
     memset(buf, 0, size);
     buf[0] = 0x6E;
     buf[1] = 0x65;
@@ -143,27 +148,26 @@ static int acs71020_sample_fetch(const struct device *dev, enum sensor_channel c
 		data->irms = 0;
 		return ret;
 	}
-	// LOG_DBG("acs71020 IV= 0.%02x 1.%02x 2.%02x 3.%02x", buf[0], buf[1], buf[2], buf[3]);
+	LOG_DBG("acs71020 IV= 0.%02x 1.%02x 2.%02x 3.%02x", buf[0], buf[1], buf[2], buf[3]);
 
-	// 0 1 2 3
 	data->vrms = ((buf[1] << 8) | (buf[0])) & 0x07fff;
 	data->irms = ((buf[3] << 8) | (buf[2])) & 0x07fff;
-	// LOG_DBG("acs71020: vrms %x irms %x",data->vrms,data->irms);
+	LOG_DBG("acs71020: vrms %x irms %x",data->vrms,data->irms);
 
 	ret = acs71020_reg_read(dev, ACS71020_REG_P_ACT, buf, 4);
-	// LOG_DBG("acs71020 PA= 0.%02x 1.%02x 2.%02x 3.%02x", buf[0], buf[1], buf[2], buf[3]);
+	LOG_DBG("acs71020 PA= 0.%02x 1.%02x 2.%02x 3.%02x", buf[0], buf[1], buf[2], buf[3]);
 	if (ret < 0) {
 		LOG_DBG("acs71020: i2c error PA %d", ret);
 		data->pactive = 0;
 		return ret;
 	}
 
-	// 4 5 6 7
 	data->pactive = ((buf[2] << 16) | (buf[1] << 8) | buf[0]) & 0x01ffff;
 	if (data->pactive & 0x010000) {
 		data->pactive = data->pactive | 0xffff0000;
 	}
-	// LOG_DBG("acs71020: pactive %x %d",data->pactive,data->pactive);
+/*
+    // LOG_DBG("acs71020: pactive %x %d",data->pactive,data->pactive);
 	// 8 9 10 11
 	// data->papparent = ((buf[10]<<8) | (buf[11])) & 0x07fff;
 	// 12 13 14 15
@@ -196,7 +200,7 @@ static int acs71020_sample_fetch(const struct device *dev, enum sensor_channel c
 	// data->undervoltage = buf[55]&&0x10;
 	// data->posangle = buf[55]&&0x20;
 	// data->pospf = buf[55]&&0x40;
-
+*/
 	return 0;
 }
 
