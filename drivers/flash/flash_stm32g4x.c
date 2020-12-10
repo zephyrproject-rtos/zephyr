@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <drivers/flash.h>
 #include <init.h>
 #include <soc.h>
+#include <stm32_ll_system.h>
 
 #include "flash_stm32.h"
 
