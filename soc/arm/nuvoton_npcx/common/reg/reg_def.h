@@ -570,6 +570,7 @@ struct espi_reg {
 #define NPCX_VWEVSM_WIRE                 FIELD(0, 4)
 #define NPCX_VWEVSM_VALID                FIELD(4, 4)
 #define NPCX_VWEVSM_BIT_VALID(n)         (4+n)
+#define NPCX_VWEVSM_HW_WIRE              FIELD(24, 4)
 #define NPCX_OOBCTL_OOB_FREE             0
 #define NPCX_OOBCTL_OOB_AVAIL            1
 #define NPCX_OOBCTL_RSTBUFHEADS          2
@@ -731,6 +732,8 @@ struct shm_reg {
 #define NPCX_SMC_CTL_HOSTWAIT            7
 #define NPCX_FLASH_SIZE_STALL_HOST       6
 #define NPCX_FLASH_SIZE_RD_BURST         7
+#define NPCX_WIN_SIZE_RWIN1_SIZE_FIELD   FIELD(0, 4)
+#define NPCX_WIN_SIZE_RWIN2_SIZE_FIELD   FIELD(4, 4)
 #define NPCX_WIN_PROT_RW1L_RP            0
 #define NPCX_WIN_PROT_RW1L_WP            1
 #define NPCX_WIN_PROT_RW1H_RP            2
@@ -837,6 +840,7 @@ struct pmch_reg {
 #define NPCX_HIPMIE_SCIE                 1
 #define NPCX_HIPMIE_SMIE                 2
 #define NPCX_HIPMCTL_IBFIE               0
+#define NPCX_HIPMCTL_OBEIE               1
 #define NPCX_HIPMCTL_SCIPOL              6
 #define NPCX_HIPMST_OBF                  0
 #define NPCX_HIPMST_IBF                  1
