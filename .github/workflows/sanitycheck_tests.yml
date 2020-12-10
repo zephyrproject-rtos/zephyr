@@ -9,11 +9,13 @@ on:
     - 'scripts/pylib/twister/**'
     - 'scripts/twister'
     - 'scripts/tests/twister/**'
+    - '.github/workflows/sanitycheck_tests.yml'
   pull_request:
     paths:
     - 'scripts/pylib/twister/**'
     - 'scripts/twister'
     - 'scripts/tests/twister/**'
+    - '.github/workflows/sanitycheck_tests.yml'
 
 jobs:
   build:
