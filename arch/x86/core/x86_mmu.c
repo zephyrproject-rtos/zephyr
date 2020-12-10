@@ -17,6 +17,7 @@
 #include <x86_mmu.h>
 #include <init.h>
 #include <kernel_internal.h>
+#include <mmu.h>
 #include <drivers/interrupt_controller/loapic.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
@@ -1775,3 +1776,22 @@ void z_x86_current_stack_perms(void)
 #endif
 }
 #endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES
+/* Selected on PC-like targets at the SOC level.
+ *
+ * Best is to do some E820 or similar enumeration to specifically identify
+ * all page frames which are reserved by the hardware or firmware.
+ *
+ * For now, just reserve everything in the first megabyte of physical memory.
+ */
+void arch_reserved_pages_update(void)
+{
+	for (uintptr_t pos = 0; pos < (1024 * 1024);
+	     pos += CONFIG_MMU_PAGE_SIZE) {
+		struct z_page_frame *pf = z_phys_to_page_frame(pos);
+
+		pf->flags |= Z_PAGE_FRAME_RESERVED;
+	}
+}
+#endif /* CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES */
