@@ -25,7 +25,7 @@ struct wdt_xec_data {
 };
 
 
-DEVICE_DECLARE(wdt_xec);
+DEVICE_DT_INST_DECLARE(0);
 
 static int wdt_xec_setup(const struct device *dev, uint8_t options)
 {
@@ -170,7 +170,7 @@ static int wdt_xec_init(const struct device *dev)
 
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
-		    wdt_xec_isr, DEVICE_GET(wdt_xec), 0);
+		    wdt_xec_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 
 	return 0;
@@ -178,7 +178,7 @@ static int wdt_xec_init(const struct device *dev)
 
 static struct wdt_xec_data wdt_xec_dev_data;
 
-DEVICE_AND_API_INIT(wdt_xec, DT_INST_LABEL(0),
-		    wdt_xec_init, &wdt_xec_dev_data, NULL,
+DEVICE_DT_INST_DEFINE(0, wdt_xec_init, device_pm_control_nop,
+		    &wdt_xec_dev_data, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &wdt_xec_api);
