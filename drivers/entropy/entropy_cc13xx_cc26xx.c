@@ -40,7 +40,7 @@ struct entropy_cc13xx_cc26xx_data {
 #endif
 };
 
-DEVICE_DECLARE(entropy_cc13xx_cc26xx);
+DEVICE_DT_INST_DECLARE(0);
 
 static inline struct entropy_cc13xx_cc26xx_data *
 get_dev_data(const struct device *dev)
@@ -376,7 +376,7 @@ static int entropy_cc13xx_cc26xx_init(const struct device *dev)
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
 		    entropy_cc13xx_cc26xx_isr,
-		    DEVICE_GET(entropy_cc13xx_cc26xx), 0);
+		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 
 	return 0;
@@ -392,7 +392,7 @@ static struct entropy_cc13xx_cc26xx_data entropy_cc13xx_cc26xx_data = {
 	.sync = Z_SEM_INITIALIZER(entropy_cc13xx_cc26xx_data.sync, 0, 1),
 };
 
-DEVICE_DEFINE(entropy_cc13xx_cc26xx, DT_INST_LABEL(0),
+DEVICE_DT_INST_DEFINE(0,
 		entropy_cc13xx_cc26xx_init,
 		entropy_cc13xx_cc26xx_pm_control,
 		&entropy_cc13xx_cc26xx_data, NULL,

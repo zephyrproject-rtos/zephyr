@@ -448,8 +448,8 @@ static const struct entropy_driver_api entropy_stm32_rng_api = {
 	.get_entropy_isr = entropy_stm32_rng_get_entropy_isr
 };
 
-DEVICE_AND_API_INIT(entropy_stm32_rng, DT_INST_LABEL(0),
-		    entropy_stm32_rng_init,
+DEVICE_DT_INST_DEFINE(0,
+		    entropy_stm32_rng_init, device_pm_control_nop,
 		    &entropy_stm32_rng_data, &entropy_stm32_rng_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_stm32_rng_api);

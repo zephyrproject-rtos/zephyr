@@ -42,8 +42,9 @@ static struct mcux_entropy_config entropy_mcux_config = {
 
 static int entropy_mcux_trng_init(const struct device *);
 
-DEVICE_AND_API_INIT(entropy_mcux_trng, DT_INST_LABEL(0),
-		    entropy_mcux_trng_init, NULL, &entropy_mcux_config,
+DEVICE_DT_INST_DEFINE(0,
+		    entropy_mcux_trng_init, device_pm_control_nop, NULL,
+		    &entropy_mcux_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_mcux_trng_api_funcs);
 
