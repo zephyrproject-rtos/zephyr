@@ -357,6 +357,12 @@ void __weak gsm_ppp_application_setup(struct modem_context *context,
 static void gsm_finalize_connection(struct gsm_modem *gsm)
 {
 	int ret;
+	static int attach_retry;
+
+	/* If attach check failed, we should not redo every setup step */
+	if (attach_retry) {
+		goto attaching;
+	}
 
 	if (IS_ENABLED(CONFIG_GSM_MUX) && gsm->mux_enabled) {
 		ret = modem_cmd_send_nolock(&gsm->context.iface,
@@ -412,20 +418,36 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 		NULL, 0, "AT+CGDCONT=1,\"IP\",\"" CONFIG_MODEM_GSM_APN "\"",
 		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
 
+attaching:
 	/* Don't initialize PPP until we're attached to packet service */
-	ret = modem_cmd_send_nolock(&gsm->context.iface,
-				    &gsm->context.cmd_handler,
-				    &check_attached_cmd, 1,
-				    "AT+CGATT?",
-				    &gsm->sem_response,
-				    GSM_CMD_SETUP_TIMEOUT);
+	ret = modem_cmd_send_nolock(
+		&gsm->context.iface, &gsm->context.cmd_handler,
+		&check_attached_cmd, 1, "AT+CGATT?", &gsm->sem_response,
+		GSM_CMD_SETUP_TIMEOUT);
 	if (ret < 0) {
+		/*
+		 * attach_retry not set        -> trigger 10 attach retries
+		 * attach_retry set            -> decrement and retry
+		 * attach_retry set, becomes 0 -> trigger full retry
+		 *
+		 * In total, modem gets 60 seconds to ack AT+CGATT which should
+		 * be fine for most RATs but possibly a making num retries
+		 * Kconfigurable would be best eventually.
+		 */
+		if (!attach_retry) {
+			attach_retry = 10;
+		} else {
+			attach_retry--;
+		}
+
 		LOG_DBG("Not attached, %s", "retrying...");
 		(void)k_delayed_work_submit(&gsm->gsm_configure_work,
-					    K_SECONDS(1));
+					    K_SECONDS(3));
 		return;
 	}
 
+	/* Clear attach_retry */
+	attach_retry = 0;
 
 	LOG_DBG("modem setup returned %d, %s", ret, "enable PPP");
 
