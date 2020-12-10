@@ -144,7 +144,8 @@ struct dev_dfu_mode_descriptor dfu_mode_desc = {
 		.bDeviceProtocol = 0,
 		.bMaxPacketSize0 = USB_MAX_CTRL_MPS,
 		.idVendor = sys_cpu_to_le16((uint16_t)CONFIG_USB_DEVICE_VID),
-		.idProduct = sys_cpu_to_le16((uint16_t)CONFIG_USB_DEVICE_PID),
+		.idProduct =
+			sys_cpu_to_le16((uint16_t)CONFIG_USB_DEVICE_DFU_PID),
 		.bcdDevice = sys_cpu_to_le16(BCDDEVICE_RELNUM),
 		.iManufacturer = 1,
 		.iProduct = 2,
