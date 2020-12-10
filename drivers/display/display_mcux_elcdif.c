@@ -193,9 +193,8 @@ static int mcux_elcdif_init(const struct device *dev)
 
 	for (i = 0; i < ARRAY_SIZE(data->fb); i++) {
 		data->fb[i].data = k_heap_alloc(&mcux_elcdif_pool,
-						&data->fb[i],
 						data->fb_bytes, K_NO_WAIT);
-		if (data->fb[i] == NULL) {
+		if (data->fb[i].data == NULL) {
 			LOG_ERR("Could not allocate frame buffer %d", i);
 			return -ENOMEM;
 		}
