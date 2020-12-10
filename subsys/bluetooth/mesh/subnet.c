@@ -592,7 +592,7 @@ bool bt_mesh_net_cred_find(struct bt_mesh_net_rx *rx, struct net_buf_simple *in,
 	BT_DBG("");
 
 #if defined(CONFIG_BT_MESH_LOW_POWER)
-	if (bt_mesh_lpn_established()) {
+	if (bt_mesh_lpn_waiting_update()) {
 		rx->sub = bt_mesh.lpn.sub;
 
 		for (j = 0; j < ARRAY_SIZE(bt_mesh.lpn.cred); j++) {
