@@ -118,6 +118,29 @@ config ESPI_PERIPHERAL_EC_HOST_CMD
 	  Enables Embedded Controller (EC) host command subsystem via eSPI
 	  peripheral channel.
 
+config ESPI_PERIPHERAL_ACPI_SHM_REGION
+	bool "Host peripheral device support shared memory region"
+	help
+	  Enables shared memory region over eSPI peripheral channel to access
+	  the ACPI response data.
+
+config ESPI_PERIPHERAL_ACPI_SHM_REGION_PORT_NUM
+	hex "Host I/O peripheral port number for shared memory region"
+	depends on ESPI_PERIPHERAL_ACPI_SHM_REGION
+	default 0x0900
+	help
+	  This is the port number used by the Host and EC to communicate over
+	  the shared memory region to access the ACPI response data. Please
+	  ensure the Host code is configured to use for accessing ACPI response
+	  data. Also, ensure the port number selected doesn't clash with the
+	  existing ports.
+
+config ESPI_PERIPHERAL_CUSTOM_OPCODE
+	bool "Host peripheral device support customized opcode"
+	help
+	  Enables opcode is customized for certain platforms such as Chromebook
+	  and so on over eSPI peripheral channel.
+
 endif # ESPI_PERIPHERAL_CHANNEL
 
 endif # ESPI

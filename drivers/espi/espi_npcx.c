@@ -326,6 +326,12 @@ static void espi_vw_config_output(const struct device *dev,
 	valid |= config_out->bitmask;
 	SET_FIELD(inst->VWEVSM[idx], NPCX_VWEVSM_VALID, valid);
 
+	/*
+	 * Turn off hardware-wire feature which generates VW events that
+	 * connected to hardware signals. We will set it manually by software.
+	 */
+	SET_FIELD(inst->VWEVSM[idx], NPCX_VWEVSM_HW_WIRE, 0);
+
 	LOG_DBG("VWEVSM%d 0x%08X", idx, inst->VWEVSM[idx]);
 }
 
@@ -628,10 +634,6 @@ static int espi_npcx_read_lpc_request(const struct device *dev,
 				     uint32_t  *data)
 {
 	ARG_UNUSED(dev);
-	struct espi_reg *const inst = HAL_INSTANCE(dev);
-
-	if (!IS_BIT_SET(inst->ESPICFG, NPCX_ESPICFG_PCHANEN))
-		return -ENOTSUP;
 
 	return npcx_host_periph_read_request(op, data);
 }
@@ -641,10 +643,6 @@ static int espi_npcx_write_lpc_request(const struct device *dev,
 				      uint32_t *data)
 {
 	ARG_UNUSED(dev);
-	struct espi_reg *const inst = HAL_INSTANCE(dev);
-
-	if (!IS_BIT_SET(inst->ESPICFG, NPCX_ESPICFG_PCHANEN))
-		return -ENOTSUP;
 
 	return npcx_host_periph_write_request(op, data);
 }
@@ -786,6 +784,33 @@ static int espi_npcx_receive_oob(const struct device *dev,
 	return 0;
 }
 #endif
+
+/* Platform specific espi module functions */
+void npcx_espi_enable_interrupts(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	/* Enable eSPI bus interrupt */
+	irq_enable(DT_INST_IRQN(0));
+
+	/* Turn on all VW inputs' MIWU interrupts */
+	for (int idx = 0; idx < ARRAY_SIZE(vw_in_tbl); idx++) {
+		npcx_miwu_irq_enable(&(vw_in_tbl[idx].vw_wui));
+	}
+}
+
+void npcx_espi_disable_interrupts(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	/* Disable eSPI bus interrupt */
+	irq_disable(DT_INST_IRQN(0));
+
+	/* Turn off all VW inputs' MIWU interrupts */
+	for (int idx = 0; idx < ARRAY_SIZE(vw_in_tbl); idx++) {
+		npcx_miwu_irq_disable(&(vw_in_tbl[idx].vw_wui));
+	}
+}
 
 /* eSPI driver registration */
 static int espi_npcx_init(const struct device *dev);

@@ -137,6 +137,12 @@ enum espi_bus_event {
 #define E8042_START_OPCODE      0x50
 #define E8042_MAX_OPCODE        0x5F
 
+#define EACPI_START_OPCODE      0x60
+#define EACPI_MAX_OPCODE        0x6F
+
+#define ECUSTOM_START_OPCODE    0xF0
+#define ECUSTOM_MAX_OPCODE      0xFF
+
 /** @endcond */
 
 /**
@@ -224,6 +230,22 @@ enum lpc_peripheral_opcode {
 	E8042_READ_KB_STS,
 	E8042_SET_FLAG,
 	E8042_CLEAR_FLAG,
+	/* ACPI read transactions */
+	EACPI_OBF_HAS_CHAR = EACPI_START_OPCODE,
+	EACPI_IBF_HAS_CHAR,
+	/* ACPI write transactions */
+	EACPI_WRITE_CHAR,
+	/* ACPI status transactions */
+	EACPI_READ_STS,
+	EACPI_WRITE_STS,
+#if defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION)
+	/* Shared memory region support to return the ACPI response data */
+	EACPI_GET_SHARED_MEMORY,
+#endif /* CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION */
+#if defined(CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE)
+	/* Other customized transactions */
+	ECUSTOM_HOST_SUBS_INTERRUPT_EN = ECUSTOM_START_OPCODE,
+#endif /* CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE */
 };
 
 /**
