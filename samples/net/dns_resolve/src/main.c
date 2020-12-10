@@ -8,13 +8,15 @@
 LOG_MODULE_REGISTER(net_dns_resolve_client_sample, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
-#include <linker/sections.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <net/net_core.h>
 #include <net/net_if.h>
 #include <net/net_mgmt.h>
+#include <net/net_event.h>
+#include <net/net_conn_mgr.h>
 #include <net/dns_resolve.h>
 
 #if defined(CONFIG_MDNS_RESOLVER)
@@ -28,7 +30,47 @@ static void do_mdns_ipv6_lookup(struct k_work *work);
 #endif
 #endif
 
-#define DNS_TIMEOUT (2 * MSEC_PER_SEC)
+#define DNS_TIMEOUT (4 * MSEC_PER_SEC)
+
+K_SEM_DEFINE(run_app, 0, 1);
+K_SEM_DEFINE(wait_data, 0,
+	     IS_ENABLED(CONFIG_NET_IPV4) + IS_ENABLED(CONFIG_NET_IPV6));
+
+#define EVENT_MASK (NET_EVENT_L4_CONNECTED | \
+		    NET_EVENT_L4_DISCONNECTED)
+
+static bool connected;
+static struct net_mgmt_event_callback mgmt_cb;
+
+static void event_handler(struct net_mgmt_event_callback *cb,
+			  uint32_t mgmt_event, struct net_if *iface)
+{
+	if ((mgmt_event & EVENT_MASK) != mgmt_event) {
+		return;
+	}
+
+	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
+		LOG_INF("Network connected");
+
+		connected = true;
+		k_sem_give(&run_app);
+
+		return;
+	}
+
+	if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
+		if (connected == false) {
+			LOG_INF("Waiting network to be connected");
+		} else {
+			LOG_INF("Network disconnected");
+			connected = false;
+		}
+
+		k_sem_reset(&run_app);
+
+		return;
+	}
+}
 
 void dns_result_cb(enum dns_resolve_status status,
 		   struct dns_addrinfo *info,
@@ -77,6 +119,8 @@ void dns_result_cb(enum dns_resolve_status status,
 		hr_family,
 		log_strdup(net_addr_ntop(info->ai_family, addr,
 					 hr_addr, sizeof(hr_addr))));
+
+	k_sem_give(&wait_data);
 }
 
 void mdns_result_cb(enum dns_resolve_status status,
@@ -126,6 +170,8 @@ void mdns_result_cb(enum dns_resolve_status status,
 		hr_family,
 		log_strdup(net_addr_ntop(info->ai_family, addr,
 					 hr_addr, sizeof(hr_addr))));
+
+	k_sem_give(&wait_data);
 }
 
 #if defined(CONFIG_NET_DHCPV4)
@@ -247,6 +293,7 @@ static void do_mdns_ipv4_lookup(struct k_work *work)
 #error "You need to define an IPv4 address or enable DHCPv4!"
 #endif
 
+#if !defined(CONFIG_MDNS_RESOLVER)
 static void do_ipv4_lookup(void)
 {
 	static const char *query = "www.zephyrproject.org";
@@ -266,16 +313,17 @@ static void do_ipv4_lookup(void)
 
 	LOG_DBG("DNS id %u", dns_id);
 }
+#endif
 
 static void setup_ipv4(struct net_if *iface)
 {
 	ARG_UNUSED(iface);
 
-	do_ipv4_lookup();
-
 #if defined(CONFIG_MDNS_RESOLVER) && defined(CONFIG_NET_IPV4)
 	k_delayed_work_init(&mdns_ipv4_timer, do_mdns_ipv4_lookup);
 	k_delayed_work_submit(&mdns_ipv4_timer, K_NO_WAIT);
+#else
+	do_ipv4_lookup();
 #endif
 }
 
@@ -289,6 +337,7 @@ static void setup_ipv4(struct net_if *iface)
 #error "You need to define an IPv6 address!"
 #endif
 
+#if !defined(CONFIG_MDNS_RESOLVER)
 static void do_ipv6_lookup(void)
 {
 	static const char *query = "www.zephyrproject.org";
@@ -308,16 +357,17 @@ static void do_ipv6_lookup(void)
 
 	LOG_DBG("DNS id %u", dns_id);
 }
+#endif
 
 static void setup_ipv6(struct net_if *iface)
 {
 	ARG_UNUSED(iface);
 
-	do_ipv6_lookup();
-
 #if defined(CONFIG_MDNS_RESOLVER) && defined(CONFIG_NET_IPV6)
 	k_delayed_work_init(&mdns_ipv6_timer, do_mdns_ipv6_lookup);
 	k_delayed_work_submit(&mdns_ipv6_timer, K_NO_WAIT);
+#else
+	do_ipv6_lookup();
 #endif
 }
 
@@ -354,9 +404,28 @@ void main(void)
 
 	LOG_INF("Starting DNS resolve sample");
 
-	setup_ipv4(iface);
+	/* Make sure the network is properly setup before continuing */
+	net_mgmt_init_event_callback(&mgmt_cb,
+				     event_handler, EVENT_MASK);
+	net_mgmt_add_event_callback(&mgmt_cb);
 
-	setup_dhcpv4(iface);
+	net_conn_mgr_resend_status();
 
-	setup_ipv6(iface);
+	/* Wait for the connection. */
+	k_sem_take(&run_app, K_FOREVER);
+
+	if (connected) {
+		setup_ipv4(iface);
+		setup_dhcpv4(iface);
+		setup_ipv6(iface);
+
+		/* Wait for the results from the server */
+		if (k_sem_take(&wait_data, K_MSEC(DNS_TIMEOUT)) == 0) {
+			LOG_INF("DNS resolving ok");
+			exit(0);
+		}
+	}
+
+	LOG_INF("DNS resolving fail");
+	exit(1);
 }
