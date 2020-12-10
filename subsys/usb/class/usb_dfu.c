@@ -597,13 +597,6 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 		/* Begin detach timeout timer */
 		timeout = MIN(pSetup->wValue, CONFIG_USB_DFU_DETACH_TIMEOUT);
 		k_timer_start(&dfu_timer, K_MSEC(timeout), K_FOREVER);
-
-		/* Set the DFU mode descriptors to be used after reset */
-		dfu_config.usb_device_description = (uint8_t *) &dfu_mode_desc;
-		if (usb_set_config(dfu_config.usb_device_description) != 0) {
-			LOG_ERR("usb_set_config failed in DFU_DETACH");
-			return -EIO;
-		}
 		break;
 	default:
 		LOG_WRN("DFU UNKNOWN STATE: %d", pSetup->bRequest);
@@ -638,6 +631,16 @@ static void dfu_status_cb(struct usb_cfg_data *cfg,
 		k_timer_stop(&dfu_timer);
 		if (dfu_data.state == appDETACH) {
 			dfu_data.state = dfuIDLE;
+
+			/* Set the DFU mode descriptors to be used after
+			 * reset
+			 */
+			dfu_config.usb_device_description =
+				(uint8_t *) &dfu_mode_desc;
+			if (usb_set_config(dfu_config.usb_device_description)) {
+				LOG_ERR("usb_set_config failed during USB "
+					"device reset");
+			}
 		}
 		break;
 	case USB_DC_CONNECTED:
