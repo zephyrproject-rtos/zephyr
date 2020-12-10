@@ -79,6 +79,10 @@ enum sensor_channel {
 	SENSOR_CHAN_DIE_TEMP,
 	/** Ambient temperature in degrees Celsius. */
 	SENSOR_CHAN_AMBIENT_TEMP,
+	/** Thermocouple cold temperature in degrees Celsius. */
+	SENSOR_CHAN_COLD_TEMP,
+	/** Thermocouple difference temperature in degrees Celsius. */
+	SENSOR_CHAN_DIFF_TEMP,
 	/** Pressure in kilopascal. */
 	SENSOR_CHAN_PRESS,
 	/**
@@ -121,6 +125,14 @@ enum sensor_channel {
 	SENSOR_CHAN_VOLTAGE,
 	/** Current, in amps **/
 	SENSOR_CHAN_CURRENT,
+	/** Power, in watts **/
+	SENSOR_CHAN_POWER,
+	/** Average voltage, in volts **/
+	SENSOR_CHAN_AVG_VOLTAGE,
+	/** Average current, in amps **/
+	SENSOR_CHAN_AVG_CURRENT,
+	/** Average power, in watts **/
+	SENSOR_CHAN_AVG_POWER,
 	/** Resistance , in Ohm **/
 	SENSOR_CHAN_RESISTANCE,
 
