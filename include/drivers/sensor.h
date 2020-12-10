@@ -292,6 +292,11 @@ enum sensor_attribute {
 	 */
 	SENSOR_ATTR_OFFSET,
 	/**
+	 * The sensor value returned will be scaled by the amount indicated by
+	 * the offset: final_value = sensor_value * multiplier.
+	 */
+	SENSOR_ATTR_MULTIPLIER,
+	/**
 	 * Calibration target. This will be used by the internal chip's
 	 * algorithms to calibrate itself on a certain axis, or all of them.
 	 */
