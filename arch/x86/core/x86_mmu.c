@@ -466,7 +466,8 @@ static char get_entry_code(pentry_t value)
 {
 	char ret;
 
-	if ((value & MMU_P) == 0U) {
+	if (value == 0U) {
+		/* Unmapped entry */
 		ret = '.';
 	} else {
 		if ((value & MMU_RW) != 0U) {
@@ -519,10 +520,36 @@ static void print_entries(pentry_t entries_array[], uint8_t *base, int level,
 					COLOR(GREEN);
 				}
 			} else {
+				/* Intermediate entry */
 				COLOR(MAGENTA);
 			}
 		} else {
-			COLOR(GREY);
+			if (is_leaf(level, entry)) {
+				if (entry == 0U) {
+					/* Unmapped */
+					COLOR(GREY);
+#ifdef CONFIG_X86_KPTI
+				} else if (is_flipped_pte(entry)) {
+					/* KPTI, un-flip it */
+					COLOR(BLUE);
+					entry = ~entry;
+					phys = get_entry_phys(entry, level);
+					if (phys == virt) {
+						/* Identity mapped */
+						COLOR(CYAN);
+					} else {
+						/* Non-identity mapped */
+						COLOR(BLUE);
+					}
+#endif
+				} else {
+					/* Paged out */
+					COLOR(RED);
+				}
+			} else {
+				/* Un-mapped intermediate entry */
+				COLOR(GREY);
+			}
 		}
 
 		printk("%c", get_entry_code(entry));
