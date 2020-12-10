@@ -47,6 +47,14 @@ static void np_timer_isr(const void *arg)
 	z_clock_announce(elapsed_ticks);
 }
 
+/**
+ * This function exists only to enable tests to call into the timer ISR
+ */
+void np_timer_isr_test_hook(const void *arg)
+{
+	np_timer_isr(NULL);
+}
+
 /*
  * @brief Initialize system timer driver
  *
