@@ -7,3 +7,7 @@ tests:
     platform_allow: nrf52840dk_nrf52840
     tags: nrf52 soc_flash_nrf
     extra_args: OVERLAY_CONFIG=boards/nrf52840_flash_soc.conf
+  drivers.flash.soc_flash_nrf:
+    platform_allow: nrf5340dk_nrf5340
+    tags: nrf53 soc_flash_nrf
+    extra_args: OVERLAY_CONFIG=boards/nrf5340_flash_soc.conf
