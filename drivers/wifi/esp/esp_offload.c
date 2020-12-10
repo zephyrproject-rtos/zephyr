@@ -465,8 +465,6 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 		return err;
 	}
 
-	sock->bytes_avail -= data_len;
-
 	esp_socket_rx(sock, data->rx_buf, data_offset, data_len);
 
 	return data_offset + data_len;
@@ -508,8 +506,6 @@ static void esp_recvdata_work(struct k_work *work)
 	if (ret < 0) {
 		LOG_ERR("Error during rx: link %d, ret %d", sock->link_id,
 			ret);
-	} else if (sock->bytes_avail > 0) {
-		k_work_submit_to_queue(&dev->workq, &sock->recvdata_work);
 	}
 }
 
@@ -551,8 +547,7 @@ static void esp_recv_work(struct k_work *work)
 	}
 
 	/* Should we notify that the socket has been closed? */
-	if (!esp_socket_connected(sock) && sock->bytes_avail == 0 &&
-	    sock->recv_cb) {
+	if (!esp_socket_connected(sock) && sock->recv_cb) {
 		sock->recv_cb(sock->context, NULL, NULL, NULL, 0,
 			      sock->recv_user_data);
 		k_sem_give(&sock->sem_data_ready);
