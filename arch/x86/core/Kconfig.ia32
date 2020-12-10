@@ -86,7 +86,8 @@ config X86_PAE
 	  more memory for paging structures.
 
 menu "Architecture Floating Point Options"
-depends on CPU_HAS_FPU
+
+if CPU_HAS_FPU
 
 config SSE
 	bool "SSE registers"
@@ -137,6 +138,15 @@ config LAZY_FPU_SHARING
 	  On Intel Core processors, may be vulnerable to exploits which allows
 	  malware to read the contents of all floating point registers, see
 	  CVE-2018-3665.
+
+endif # CPU_HAS_FPU
+
+config X86_FP_USE_SOFT_FLOAT
+	bool
+	prompt "Use Software Floating Point Operations" if !(NEWLIB_LIBC && !FPU)
+	default y if NEWLIB_LIBC && !FPU
+	help
+	  Enable using software floating point operations.
 
 endmenu
 
