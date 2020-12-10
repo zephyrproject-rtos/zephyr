@@ -10,12 +10,11 @@ For additional detail on paging and x86 memory management, please
 consult the IA Architecture SW Developer Manual, volume 3a, chapter 4.
 
 This script produces the initial page tables installed into the CPU
-at early boot. These pages will have an identity mapping at
-CONFIG_SRAM_BASE_ADDRESS of size CONFIG_SRAM_SIZE. The script takes
-the 'zephyr_prebuilt.elf' as input to obtain region sizes, certain
-memory addresses, and configuration values.
+at early boot. These pages will have an identity mapping of the kernel
+image. The script takes the 'zephyr_prebuilt.elf' as input to obtain region
+sizes, certain memory addresses, and configuration values.
 
-If CONFIG_SRAM_REGION_PERMISSIONS is not enabled, all RAM will be
+If CONFIG_SRAM_REGION_PERMISSIONS is not enabled, the kernel image will be
 mapped with the Present and Write bits set. The linker scripts shouldn't
 add page alignment padding between sections.
 
@@ -436,11 +435,12 @@ def main():
 
     debug("building %s" % pclass.__name__)
 
-    ram_base = syms["CONFIG_SRAM_BASE_ADDRESS"]
-    ram_size = syms["CONFIG_SRAM_SIZE"] * 1024
+    # Identity-mapped Zephyr image in RAM
+    image_base = syms["z_mapped_start"]
+    image_size = syms["z_mapped_size"]
     ptables_phys = syms["z_x86_pagetables_start"]
 
-    debug("Base addresses: physical 0x%x size %d" % (ram_base, ram_size))
+    debug("Base addresses: physical 0x%x size %d" % (image_base, image_size))
 
     is_perm_regions = isdef("CONFIG_SRAM_REGION_PERMISSIONS")
 
@@ -452,7 +452,16 @@ def main():
         map_flags = FLAG_P
 
     pt = pclass(ptables_phys)
-    pt.map(ram_base, ram_size, map_flags | ENTRY_RW)
+    pt.map(image_base, image_size, map_flags | ENTRY_RW)
+
+    if isdef("CONFIG_X86_64"):
+        # 64-bit has a special region in the first 64K to bootstrap other CPUs
+        # from real mode
+        locore_base = syms["_locore_start"]
+        locore_size = syms["_lodata_end"] - locore_base
+        debug("Base addresses: physical 0x%x size %d" % (locore_base,
+                                                         locore_size))
+        pt.map(locore_base, locore_size, map_flags | ENTRY_RW)
 
     if isdef("CONFIG_XIP"):
         # Additionally identity-map all ROM as read-only
