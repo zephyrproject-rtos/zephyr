@@ -15,6 +15,7 @@
 #include <arch/x86/mmustructs.h>
 #include <x86_mmu.h>
 #include <linker/linker-defs.h>
+#include "main.h"
 
 #define VM_BASE		((uint8_t *)CONFIG_KERNEL_VM_BASE)
 #define VM_LIMIT	(VM_BASE + CONFIG_KERNEL_RAM_SIZE)
@@ -146,6 +147,20 @@ void test_null_map(void)
 	zassert_true((entry & MMU_P) == 0, "present NULL entry");
 }
 
+void z_impl_dump_my_ptables(void)
+{
+	struct k_thread *cur = k_current_get();
+
+	printk("Page tables for thread %p\n", cur);
+	z_x86_dump_page_tables(z_x86_thread_page_tables_get(cur));
+}
+
+void z_vrfy_dump_my_ptables(void)
+{
+	z_impl_dump_my_ptables();
+}
+#include <syscalls/dump_my_ptables_mrsh.c>
+
 /**
  * Dump kernel's page tables to console
  *
@@ -162,7 +177,7 @@ void test_dump_ptables(void)
 	 */
 	ztest_test_skip();
 #else
-	z_x86_dump_page_tables(z_x86_page_tables_get());
+	dump_my_ptables();
 #endif
 }
 
@@ -171,7 +186,8 @@ void test_main(void)
 	ztest_test_suite(x86_pagetables,
 			 ztest_unit_test(test_ram_perms),
 			 ztest_unit_test(test_null_map),
-			 ztest_unit_test(test_dump_ptables)
+			 ztest_unit_test(test_dump_ptables),
+			 ztest_user_unit_test(test_dump_ptables)
 			 );
 	ztest_run_test_suite(x86_pagetables);
 }
