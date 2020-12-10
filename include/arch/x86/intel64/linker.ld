@@ -70,7 +70,7 @@ SECTIONS
 	       "shared kernel area is not one memory page");
 #endif /* CONFIG_X86_KPTI */
 
-	MMU_PAGE_ALIGN
+	. = ALIGN(CONFIG_MMU_PAGE_SIZE);
 	_lodata_end = .;
 	} > LOCORE
 
@@ -87,6 +87,7 @@ SECTIONS
 	{
 	_image_rom_start = .;
 	_image_text_start = .;
+	z_mapped_start = .;
 	*(.text)
 	*(.text.*)
 
@@ -179,13 +180,16 @@ SECTIONS
 
 /* Must be last in RAM */
 #include <linker/kobject.ld>
-
+	. = ALIGN(CONFIG_MMU_PAGE_SIZE);
 	_image_ram_end = .;
+	z_mapped_end = .;
 	_end = .;
 
 	/* All unused memory also owned by the kernel for heaps */
 	__kernel_ram_end = KERNEL_BASE_ADDR + KERNEL_RAM_SIZE;
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
+
+	z_mapped_size = z_mapped_end - z_mapped_start;
 
 #include <linker/debug-sections.ld>
 
