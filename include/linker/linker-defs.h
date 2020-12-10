@@ -182,6 +182,13 @@ extern char __data_ram_start[];
 extern char __data_ram_end[];
 #endif /* CONFIG_XIP */
 
+#ifdef CONFIG_MMU
+/* Virtual addresses of page-aligned kernel image mapped into RAM at boot */
+extern char z_mapped_start[];
+extern char z_mapped_end[];
+extern char z_mapped_size[];
+#endif /* CONFIG_MMU */
+
 /* Includes text and rodata */
 extern char _image_rom_start[];
 extern char _image_rom_end[];
