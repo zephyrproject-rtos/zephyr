@@ -1110,6 +1110,7 @@ static void seg_rx_reset(struct seg_rx *rx, bool full_reset)
 static void seg_ack(struct k_work *work)
 {
 	struct seg_rx *rx = CONTAINER_OF(work, struct seg_rx, ack);
+	int32_t timeout;
 
 	BT_DBG("rx %p", rx);
 
@@ -1127,7 +1128,8 @@ static void seg_ack(struct k_work *work)
 	send_ack(rx->sub, rx->dst, rx->src, rx->ttl, &rx->seq_auth,
 		 rx->block, rx->obo);
 
-	k_delayed_work_submit(&rx->ack, K_MSEC(ack_timeout(rx)));
+	timeout = ack_timeout(rx);
+	k_delayed_work_submit(&rx->ack, K_MSEC(timeout));
 }
 
 static inline bool sdu_len_is_ok(bool ctl, uint8_t seg_n)
@@ -1409,7 +1411,9 @@ found_rx:
 
 	if (!k_delayed_work_remaining_get(&rx->ack) &&
 	    !bt_mesh_lpn_established()) {
-		k_delayed_work_submit(&rx->ack, K_MSEC(ack_timeout(rx)));
+		int32_t timeout = ack_timeout(rx);
+
+		k_delayed_work_submit(&rx->ack, K_MSEC(timeout));
 	}
 
 	/* Allocated segment here */
