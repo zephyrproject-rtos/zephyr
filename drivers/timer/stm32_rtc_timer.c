@@ -59,7 +59,7 @@ static struct k_spinlock lock;
 #define RTC_SYNCH_PREDIV           ((uint32_t)0x00FF)
 #endif
 
-#define RTC_CLOCK_HW_CYCLES_PER_SEC (RTC_SYNCH_PREDIV+1)
+#define RTC_CLOCK_HW_CYCLES_PER_SEC ((RTC_SYNCH_PREDIV+1)/ 2U)
 
 #define CYCLES_PER_TICK (RTC_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
@@ -72,7 +72,7 @@ static volatile uint32_t rtc_last;
 
 /* TODO: check whether also right calculation for our impl */
 /* Maximum number of ticks. */
-#define MAX_TICKS (UINT32_MAX / CYCLES_PER_TICK - 2)
+#define MAX_TICKS (UINT32_MAX / CYCLES_PER_TICK - 2U)
 
 /* TODO: check what tick threshold applicable to our rtc */
 #define TICK_THRESHOLD 7
@@ -273,7 +273,6 @@ static uint32_t _tv_to_ms(const struct timeval *to)
 /* TODO:
  * - check if okay changed to timeval (from timespec) > okay range with usec vs nsec?
  * - check whether problem with offsetting
- * - check whether problem using posix function
  * - check ms>ticks conversion formula
  */
 static uint32_t rtc_stm32_read(void)
@@ -310,8 +309,10 @@ static uint32_t rtc_stm32_read(void)
 	/* Subtract offset of RTC (2000>1970), back to UNIX epoch */
 	ts.tv_sec -= T_TIME_OFFSET;
 
-	/*convert subseconds value into ns */
-	/* ns required for timespec struct
+	//printk("rtc_stm32_read: ts.tv_sec = %llu\n", ts.tv_sec);
+
+	/*convert subseconds value into us */
+	/* us required for timeval struct
 	 *
 	 * formula based on stm32l1 ref manual (RM0038, 16) pg 537:
 	 * Second fraction = ( PREDIV_S - SS ) / ( PREDIV_S + 1 )
@@ -321,11 +322,17 @@ static uint32_t rtc_stm32_read(void)
 	 */
 	ts.tv_usec = (RTC_SYNCH_PREDIV - rtc_subsec) * USEC_PER_SEC / (RTC_SYNCH_PREDIV+1);
 
+	//printk("rtc_stm32_read: ts.tv_usec = %u\n", ts.tv_usec);
+
 	/* convert timeval	 */
 	tms = _tv_to_ms(&ts);
 
-	/* TODO: check if okay, still not fully sure it covers everything */
-	ticks = tms * CYCLES_PER_TICK / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	//printk("rtc_stm32_read: tms = %u\n", tms);
+
+	/* TODO: check whether cycles_per_tick used correctly here */
+	ticks = tms / (MSEC_PER_SEC * (uint32_t)(CYCLES_PER_TICK) / (uint32_t)(CONFIG_SYS_CLOCK_TICKS_PER_SEC));
+
+	//printk("rtc_stm32_read: ticks = %u\n", ticks);
 
 	return ticks;
 }
@@ -405,6 +412,8 @@ static uint32_t rtc_stm32_read(void)
  * TODO:
  * - check if okay this way with the subsecond alarm setting separate
  *    (a lot of the protection things are done in the alarm init function)
+ * - !! Change to add timeout/alarm value to current time, not absolute
+ *       time
  */
 static int rtc_stm32_set_idle_alarm(time_t tv_sec)
 {
@@ -460,9 +469,13 @@ static int rtc_stm32_set_idle_alarm(time_t tv_sec)
  *      (see counter's rtc_stm32_cancel_alarm() )
  * - add something that bases the mask on the ticks_per_sec?
  *      for now just smallest possible granularity
+ * - check whether mask [1] always okay, or causes problem with LSI,
+ *     since that bit isn't 1 when 249
  */
 static int rtc_stm32_set_nonidle_alarm(void)
 {
+	//rtc_DeInit(RTC);
+
 	LL_RTC_DisableWriteProtection(RTC);
 	LL_RTC_ALMA_Disable(RTC);
 
@@ -474,6 +487,13 @@ static int rtc_stm32_set_nonidle_alarm(void)
 	LL_RTC_ClearFlag_ALRA(RTC);
 	LL_RTC_EnableIT_ALRA(RTC);
 	LL_RTC_EnableWriteProtection(RTC);
+
+	printk("rtc_stm32_set_nonidle_alarm: LL_RTC_ALMA_GetSubSecond = %u, LL_RTC_ALMA_GetSubSecondMask = %u, LL_RTC_ALMA_GetTime = %u\n", LL_RTC_ALMA_GetSubSecond(RTC), LL_RTC_ALMA_GetSubSecondMask(RTC), LL_RTC_ALMA_GetTime(RTC));
+
+	printk("rtc_stm32_set_nonidle_alarm: RTC alarm interrupt has been enabled = %d\n", ((((RTC->CR) & RTC_IT_ALRA) != 0U) ? 1U : 0U));
+	printk("rtc_stm32_set_nonidle_alarm: RTC alarm flag status = %d\n", ((((RTC->ISR) & RTC_FLAG_ALRAF) != 0U) ? 1U : 0U));
+	printk("rtc_stm32_set_nonidle_alarm: RTC alarm interrupt has occurred = %d\n", (((((RTC->ISR) & (RTC_IT_ALRA >> 4U)) != 0U) ? 1U : 0U)));
+
 
 	return 0;
 }
@@ -487,11 +507,23 @@ static int rtc_stm32_set_nonidle_alarm(void)
  * - check whether to add the CYCLES_PER_TICK
  * - add idle/nonidle case for disable alarm
  */
-static void rtc_stm32_isr(const void *arg)
+static void rtc_stm32_isr_handler(const void *arg)
 {
 	ARG_UNUSED(arg);
 
+	const struct device *clk;
+	clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
+
+	if (stm32_clock_control_real_init(clk) == 0){
+		/* clock reconfiguration successful */
+		printk("Clock reconfig after rtc isr successful\n");
+	}
+
 	uint32_t now_ticks = rtc_stm32_read();
+	//printk("rtc_stm32_isr_handler: now_ticks=%u\n", now_ticks);
+
+	printk("rtc_stm32_isr_handler: LL_EXTI_IsActiveFlag_0_31 = %u, LL_RTC_IsActiveFlag_ALRA = %u\n", LL_EXTI_IsActiveFlag_0_31(RTC_EXTI_LINE), LL_RTC_IsActiveFlag_ALRA(RTC));
+
 
 	if (LL_RTC_IsActiveFlag_ALRA(RTC) != 0) {
 		/* clear flags */
@@ -515,6 +547,9 @@ static void rtc_stm32_isr(const void *arg)
 		z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL)
 				? dticks : (dticks > 0));
 
+		/* TODO: this condition doesn't really apply anymore */
+//		z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL)
+//						? now_ticks : (now_ticks > 0));
 	}
 
 	LL_EXTI_ClearFlag_0_31(RTC_EXTI_LINE);
@@ -529,19 +564,27 @@ int z_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 
+	LL_RTC_InitTypeDef rtc_initstruct;
+
 	/* enable RTC clock source */
+	/* replace with clock_control_on() at some point, like in counter driver */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 	LL_APB1_GRP1_ReleaseReset(LL_APB1_GRP1_PERIPH_PWR);
 
-	LL_RTC_InitTypeDef rtc_initstruct;
-
 	LL_PWR_EnableBkUpAccess();
+
+#if defined(CONFIG_STM32_RTC_TIMER_BACKUP_DOMAIN_RESET)
+	LL_RCC_ForceBackupDomainReset();
+	LL_RCC_ReleaseBackupDomainReset();
+#endif
 
 #if defined(CONFIG_STM32_RTC_TIMER_LSI)
 	LL_RCC_LSI_Enable();
 	while (LL_RCC_LSI_IsReady() != 1) {
 	}
 	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSI);
+	printk("z_clock_driver_init: LSI clock source set\n");
+
 
 #else /* CONFIG_STM32_RTC_TIMER_LSE */
 
@@ -549,15 +592,21 @@ int z_clock_driver_init(const struct device *device)
 	LL_RCC_LSE_EnableBypass();
 #endif /* CONFIG_STM32_RTC_TIMER_LSE_BYPASS */
 
+	printk("z_clock_driver_init: before setting LSE things \n");
 	LL_RCC_LSE_Enable();
 
 	/* Wait until LSE is ready */
 	while (LL_RCC_LSE_IsReady() != 1) {
 	}
 
+
 	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSE);
+	printk("z_clock_driver_init: LSE clock source set\n");
 
 #endif /* CONFIG_STM32_RTC_TIMER_SRC */
+
+	printk("z_clock_driver_init: is LL_RCC_GetRTCClockSource LSI? = %d\n", LL_RCC_GetRTCClockSource() == LL_RCC_RTC_CLKSOURCE_LSI ? 1 : 0);
+	printk("z_clock_driver_init: is LL_RCC_GetRTCClockSource LSE? = %d\n", LL_RCC_GetRTCClockSource() == LL_RCC_RTC_CLKSOURCE_LSE ? 1 : 0);
 
 	LL_RCC_EnableRTC();
 
@@ -573,6 +622,10 @@ int z_clock_driver_init(const struct device *device)
 	if (rtc_Init(RTC, &rtc_initstruct) != SUCCESS) {
 		return -EIO;
 	}
+
+	printk("z_clock_driver_init: 2 is LL_RCC_GetRTCClockSource LSI? = %d\n", LL_RCC_GetRTCClockSource() == LL_RCC_RTC_CLKSOURCE_LSI ? 1 : 0);
+	printk("z_clock_driver_init: 2 is LL_RCC_GetRTCClockSource LSE? = %d\n", LL_RCC_GetRTCClockSource() == LL_RCC_RTC_CLKSOURCE_LSE ? 1 : 0);
+
 
 /* TODO: bypass shadow registers control, where enabled?
  * important because has an influence on correctness of calendar registers
@@ -590,10 +643,13 @@ int z_clock_driver_init(const struct device *device)
 
 	LL_EXTI_EnableRisingTrig_0_31(RTC_EXTI_LINE);
 
+
 	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(rtc)),
 			DT_IRQ(DT_NODELABEL(rtc), priority),
-			rtc_stm32_isr, 0, 0);
+			rtc_stm32_isr_handler, 0, 0);
 	irq_enable(DT_IRQN(DT_NODELABEL(rtc)));
+
+
 
 	return 0;
 }
@@ -604,18 +660,22 @@ int z_clock_driver_init(const struct device *device)
  */
 void z_clock_set_timeout(int32_t ticks, bool idle)
 {
+	struct timeval ts;
+
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
 	}
 
-	struct timeval ts;
-
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
-	ticks = CLAMP(ticks - 1, 0, (int32_t) MAX_TICKS);
+	ticks = CLAMP(ticks - 1, 0, (uint32_t) MAX_TICKS);
 
 	/* Compute number of RTC cycles until the next timeout. */
+	/* timeout is tick value of when timeout occurs, not amount until */
 	uint32_t now_ticks = rtc_stm32_read();
 	uint32_t timeout = ticks * CYCLES_PER_TICK + now_ticks % CYCLES_PER_TICK;
+	printk("z_clock_set_timeout: ticks = %d, now_ticks = %u, timeout = %u, CYCLES_PER_TICK = %d\n", ticks, now_ticks, timeout, CYCLES_PER_TICK);
+	//printk("z_clock_set_timeout: RTC_CLOCK_HW_CYCLES_PER_SEC = %d, CONFIG_SYS_CLOCK_TICKS_PER_SEC = %d\n", RTC_CLOCK_HW_CYCLES_PER_SEC, CONFIG_SYS_CLOCK_TICKS_PER_SEC);
+
 
 	/* Round to the nearest tick boundary. */
 	timeout = (timeout + CYCLES_PER_TICK - 1) / CYCLES_PER_TICK
@@ -624,6 +684,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 	if (timeout < TICK_THRESHOLD) {
 		timeout += CYCLES_PER_TICK;
 	}
+	printk("z_clock_set_timeout: now_ticks = %u, timeout = %u\n", now_ticks, timeout);
 
 	/* ticks to secs & subseconds*/
 
@@ -632,30 +693,44 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 	 *
 	 * ticks_to_us = timeout_ticks * (1/CONFIG_SYS_CLOCK_TICKS_PER_SEC) * USEC_PER_SEC
 	 */
-	uint64_t timeout_us = (timeout * USEC_PER_SEC)/CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	uint64_t timeout_us = (uint64_t)timeout *
+			(uint64_t)USEC_PER_SEC /
+			(uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	printk("z_clock_set_timeout: timeout_us = %llu\n", timeout_us);
+
 
 	/* check how many ticks for calendar, and how many for subseconds */
 	ts.tv_usec = timeout_us % USEC_PER_SEC;
-	ts.tv_sec = timeout_us - ts.tv_usec;
+	ts.tv_sec = (timeout_us - ts.tv_usec) / USEC_PER_SEC;
 
-	printk("z_clock_set_timeout: idle=%d\n", idle);
+	//ts.tv_sec = 20;
 
-	if (idle){
+	printk("z_clock_set_timeout: ts.tv_sec=%llu, ts.tv_usec=%u, idle=%d\n", ts.tv_sec, ts.tv_usec, idle);
+
+//	if (!rtc_stm32_set_idle_alarm(ts.tv_sec)){
+//		printk("calendar alarm set, and clearing ss mask successful\n");
+//		nonidle_alarm_set = 0;
+//	}
+
+	if (idle && ts.tv_sec > 1){
 		if (!rtc_stm32_set_idle_alarm(ts.tv_sec)){
-			/* calendar alarm set, and clearing ss mask successful */
+			printk("calendar alarm set, and clearing ss mask successful\n");
 			nonidle_alarm_set = 0;
 		}
 	}
 	else {
 		/*!idle*/
 		if (nonidle_alarm_set == 0){
-			rtc_stm32_set_nonidle_alarm();
+			if(!rtc_stm32_set_nonidle_alarm()){
+				printk("subsecond alarm & ss mask set\n");
+			}
 			nonidle_alarm_set = 1;
 		}
 		else {
 			/* subsecond alarm mask already set: don't do anything
 			 * subsecond alarm will generate ticks
 			 */
+			printk("subsecond alarm mask already set: don't do anything\n");
 			return;
 		}
 	}
@@ -668,7 +743,16 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
  */
 uint32_t z_clock_elapsed(void)
 {
-	return (rtc_stm32_read() - rtc_last) / CYCLES_PER_TICK;
+	uint32_t now_ticks = rtc_stm32_read();
+	printk("z_clock_elapsed: now_ticks= %u, rtc_last= %u\n", now_ticks, rtc_last);
+
+	uint32_t dticks = (now_ticks - rtc_last);
+
+	//rtc_last += dticks;
+
+	return (dticks / CYCLES_PER_TICK);
+
+	//return (rtc_stm32_read() - rtc_last) / CYCLES_PER_TICK;
 }
 
 /* TODO:

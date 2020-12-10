@@ -127,7 +127,10 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 		}
 
 		if (to == first()) {
-			z_clock_set_timeout(next_timeout(), false);
+			int32_t next_to = next_timeout();
+			printk("z_add_timeout: next_timeout=%d\n", next_to);
+			z_clock_set_timeout(next_to, false);
+			//z_clock_set_timeout(next_timeout(), false);
 		}
 	}
 }
@@ -215,6 +218,7 @@ void z_set_timeout_expiry(int32_t ticks, bool is_idle)
 		 * exit and so can't get the timeslicing clamp folded
 		 * in.
 		 */
+		printk("z_set_timeout_expiry: ticks=%d, next_to=%d, imminent=%d, sooner=%d, is_idle=%d\n", ticks, next_to, imminent, sooner, is_idle);
 		if (!imminent && (sooner || IS_ENABLED(CONFIG_SMP))) {
 			z_clock_set_timeout(ticks, is_idle);
 		}

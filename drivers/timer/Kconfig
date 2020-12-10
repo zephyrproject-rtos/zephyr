@@ -364,6 +364,16 @@ config STM32_RTC_TIMER_LSE_BYPASS
 
 endif # STM32_RTC_TIMER_LSE
 
+config STM32_RTC_TIMER_BACKUP_DOMAIN_RESET
+	bool "Reset RTC clock source before config"
+	default y
+	help
+	   This option resets the RTC clock source configuration
+	   before configuring the clock source. This is important when switching 
+	   clock source, since it won't all you to set another source before it 
+	   has been reset. 
+	   
+
 endif # STM32_RTC_TIMER
 
 

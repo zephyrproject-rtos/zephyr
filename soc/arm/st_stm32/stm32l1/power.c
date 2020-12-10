@@ -64,6 +64,8 @@ void sys_set_power_state(enum power_states state)
 		/* Set SLEEPDEEP bit of Cortex System Control Register */
 		LL_LPM_EnableDeepSleep();
 
+		printk("stm32l1/power.c: attempting going to sleep\n");
+
 		/* enter SLEEP mode : WFE or WFI */
 		k_cpu_idle();
 

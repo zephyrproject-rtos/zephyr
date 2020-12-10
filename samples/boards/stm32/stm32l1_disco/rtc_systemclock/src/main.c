@@ -8,27 +8,21 @@
 #include <soc.h>
 #include <device.h>
 
-#define TIMER DT_LABEL(DT_INST(0, st_stm32_rtc))
-
 /* size of stack area used by each thread */
 #define STACKSIZE 1024
 
 /* scheduling priority used by each thread */
 #define PRIORITY 7
 
-const struct device *rtc = NULL;
-
 void check_rtc_dev(void)
 {
-
 	printk("check_rtc_dev init on %u\n", z_timer_cycle_get_32());
 
-	rtc = device_get_binding(TIMER);
-		if (rtc == NULL) {
-			printk("RTC dev not found\n");
+		if ( irq_is_enabled(DT_IRQN(DT_NODELABEL(rtc))) ) {
+			printk("RTC IRQ enabled\n");
 		}
 		else{
-			printk("RTC dev found\n");
+			printk("RTC IRQ disabled\n");
 		}
 
 	printk("check_rtc_dev terminated on %u\n", z_timer_cycle_get_32());
@@ -64,9 +58,10 @@ void check_sleep(void)
 	printk("check_sleep init on %u\n", z_timer_cycle_get_32());
 
 	while(1){
-		sleep_msec = 5500;
+		sleep_msec = 15500;
 		printk("check_sleep sleep for %u msec on %u\n", sleep_msec, z_timer_cycle_get_32());
-		k_sleep(K_MSEC(sleep_msec));
+		//k_sleep(K_MSEC(sleep_msec));
+		k_msleep(sleep_msec);
 
 		printk("check_sleep awake on %u\n", z_timer_cycle_get_32());
 
