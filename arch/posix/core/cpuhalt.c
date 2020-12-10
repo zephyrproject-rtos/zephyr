@@ -25,6 +25,14 @@
 #include <arch/posix/posix_soc_if.h>
 #include <tracing/tracing.h>
 
+#if !defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)
+#error "The POSIX architecture needs a custom busy_wait implementation. \
+CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT must be selected"
+/* Each POSIX arch board (or SOC) must provide an implementation of
+ * arch_busy_wait()
+ */
+#endif
+
 void arch_cpu_idle(void)
 {
 	sys_trace_idle();
