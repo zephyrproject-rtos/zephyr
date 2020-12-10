@@ -524,7 +524,7 @@ static bool dps310_measure_psr(struct dps310_data *data,
 
 	/* read pressure raw values in one continuous read */
 	int res = i2c_write_read(data->i2c_master, config->i2c_addr,
-				 &REG_ADDR_TMP_B2, 1, &value_raw,
+				 &REG_ADDR_PSR_B2, 1, &value_raw,
 				 sizeof(value_raw));
 	if (res < 0) {
 		LOG_WRN("I2C error: %d", res);
@@ -553,7 +553,7 @@ static bool dps310_measure_tmp(struct dps310_data *data,
 
 	/* read temperature raw values in one continuous read */
 	int res = i2c_write_read(data->i2c_master, config->i2c_addr,
-				 &REG_ADDR_PSR_B2, 1, &value_raw,
+				 &REG_ADDR_TMP_B2, 1, &value_raw,
 				 sizeof(value_raw));
 	if (res < 0) {
 		LOG_WRN("I2C error: %d", res);
