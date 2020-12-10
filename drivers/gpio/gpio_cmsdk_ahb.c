@@ -272,9 +272,9 @@ static int gpio_cmsdk_ahb_init(const struct device *dev)
 										\
 	static struct gpio_cmsdk_ahb_dev_data gpio_cmsdk_port_##n##_data;	\
 										\
-	DEVICE_AND_API_INIT(gpio_cmsdk_port_## n,				\
-			    DT_INST_LABEL(n),					\
+	DEVICE_DT_INST_DEFINE(n,						\
 			    gpio_cmsdk_ahb_init,				\
+			    device_pm_control_nop,				\
 			    &gpio_cmsdk_port_##n##_data,			\
 			    &gpio_cmsdk_port_## n ##_config,			\
 			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
@@ -285,7 +285,7 @@ static int gpio_cmsdk_ahb_init(const struct device *dev)
 		IRQ_CONNECT(DT_INST_IRQN(n),					\
 			    DT_INST_IRQ(n, priority),				\
 			    gpio_cmsdk_ahb_isr,					\
-			    DEVICE_GET(gpio_cmsdk_port_## n), 0);		\
+			    DEVICE_DT_INST_GET(n), 0);				\
 										\
 		irq_enable(DT_INST_IRQN(n));					\
 	}

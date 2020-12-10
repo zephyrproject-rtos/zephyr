@@ -379,8 +379,8 @@ static const struct gpio_mcux_lpc_config gpio_mcux_lpc_port0_config = {
 
 static struct gpio_mcux_lpc_data gpio_mcux_lpc_port0_data;
 
-DEVICE_AND_API_INIT(gpio_mcux_lpc_port0, DT_INST_LABEL(0),
-		    lpc_gpio_0_init, &gpio_mcux_lpc_port0_data,
+DEVICE_DT_INST_DEFINE(0, lpc_gpio_0_init, device_pm_control_nop,
+		    &gpio_mcux_lpc_port0_data,
 		    &gpio_mcux_lpc_port0_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_mcux_lpc_driver_api);
@@ -399,7 +399,7 @@ static int lpc_gpio_0_init(const struct device *dev)
 #if DT_INST_IRQ_HAS_IDX(0, 0)
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 0, irq),
 		    DT_INST_IRQ_BY_IDX(0, 0, priority),
-		    gpio_mcux_lpc_port_isr, DEVICE_GET(gpio_mcux_lpc_port0), 0);
+		    gpio_mcux_lpc_port_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_IDX(0, 0, irq));
 	data->isr_list[data->isr_list_idx++] = DT_INST_IRQ_BY_IDX(0, 0, irq);
 #endif
@@ -407,7 +407,7 @@ static int lpc_gpio_0_init(const struct device *dev)
 #if DT_INST_IRQ_HAS_IDX(0, 1)
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 1, irq),
 		    DT_INST_IRQ_BY_IDX(0, 1, priority),
-		    gpio_mcux_lpc_port_isr, DEVICE_GET(gpio_mcux_lpc_port0), 0);
+		    gpio_mcux_lpc_port_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_IDX(0, 1, irq));
 	data->isr_list[data->isr_list_idx++] = DT_INST_IRQ_BY_IDX(0, 1, irq);
 #endif
@@ -415,7 +415,7 @@ static int lpc_gpio_0_init(const struct device *dev)
 #if DT_INST_IRQ_HAS_IDX(0, 2)
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 2, irq),
 		    DT_INST_IRQ_BY_IDX(0, 2, priority),
-		    gpio_mcux_lpc_port_isr, DEVICE_GET(gpio_mcux_lpc_port0), 0);
+		    gpio_mcux_lpc_port_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_IDX(0, 2, irq));
 	data->isr_list[data->isr_list_idx++] = DT_INST_IRQ_BY_IDX(0, 2, irq);
 #endif
@@ -423,7 +423,7 @@ static int lpc_gpio_0_init(const struct device *dev)
 #if DT_INST_IRQ_HAS_IDX(0, 3)
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 3, irq),
 		    DT_INST_IRQ_BY_IDX(0, 3, priority),
-		    gpio_mcux_lpc_port_isr, DEVICE_GET(gpio_mcux_lpc_port0), 0);
+		    gpio_mcux_lpc_port_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_IDX(0, 3, irq));
 	data->isr_list[data->isr_list_idx++] = DT_INST_IRQ_BY_IDX(0, 3, irq);
 #endif
@@ -453,8 +453,8 @@ static const struct gpio_mcux_lpc_config gpio_mcux_lpc_port1_config = {
 
 static struct gpio_mcux_lpc_data gpio_mcux_lpc_port1_data;
 
-DEVICE_AND_API_INIT(gpio_mcux_lpc_port1, DT_INST_LABEL(1),
-		    lpc_gpio_1_init, &gpio_mcux_lpc_port1_data,
+DEVICE_DT_INST_DEFINE(1, lpc_gpio_1_init, device_pm_control_nop,
+		    &gpio_mcux_lpc_port1_data,
 		    &gpio_mcux_lpc_port1_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_mcux_lpc_driver_api);
@@ -473,7 +473,7 @@ static int lpc_gpio_1_init(const struct device *dev)
 #if DT_INST_IRQ_HAS_IDX(1, 0)
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(1, 0, irq),
 		    DT_INST_IRQ_BY_IDX(1, 0, priority),
-		    gpio_mcux_lpc_port_isr, DEVICE_GET(gpio_mcux_lpc_port1), 0);
+		    gpio_mcux_lpc_port_isr, DEVICE_DT_INST_GET(1), 0);
 	irq_enable(DT_INST_IRQ_BY_IDX(1, 0, irq));
 	data->isr_list[data->isr_list_idx++] = DT_INST_IRQ_BY_IDX(1, 0, irq);
 #endif
@@ -481,7 +481,7 @@ static int lpc_gpio_1_init(const struct device *dev)
 #if DT_INST_IRQ_HAS_IDX(1, 1)
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(1, 1, irq),
 		    DT_INST_IRQ_BY_IDX(1, 1, priority),
-		    gpio_mcux_lpc_port_isr, DEVICE_GET(gpio_mcux_lpc_port1), 0);
+		    gpio_mcux_lpc_port_isr, DEVICE_DT_INST_GET(1), 0);
 	irq_enable(DT_INST_IRQ_BY_IDX(1, 1, irq));
 	data->isr_list[data->isr_list_idx++] = DT_INST_IRQ_BY_IDX(1, 1, irq);
 #endif
@@ -489,7 +489,7 @@ static int lpc_gpio_1_init(const struct device *dev)
 #if DT_INST_IRQ_HAS_IDX(1, 2)
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(1, 2, irq),
 		    DT_INST_IRQ_BY_IDX(1, 2, priority),
-		    gpio_mcux_lpc_port_isr, DEVICE_GET(gpio_mcux_lpc_port1), 0);
+		    gpio_mcux_lpc_port_isr, DEVICE_DT_INST_GET(1), 0);
 	irq_enable(DT_INST_IRQ_BY_IDX(1, 2, irq));
 	data->isr_list[data->isr_list_idx++] = DT_INST_IRQ_BY_IDX(1, 2, irq);
 #endif
@@ -497,7 +497,7 @@ static int lpc_gpio_1_init(const struct device *dev)
 #if DT_INST_IRQ_HAS_IDX(1, 3)
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(1, 3, irq),
 		    DT_INST_IRQ_BY_IDX(1, 3, priority),
-		    gpio_mcux_lpc_port_isr, DEVICE_GET(gpio_mcux_lpc_port1), 0);
+		    gpio_mcux_lpc_port_isr, DEVICE_DT_INST_GET(1), 0);
 	irq_enable(DT_INST_IRQ_BY_IDX(1, 3, irq));
 	data->isr_list[data->isr_list_idx++] = DT_INST_IRQ_BY_IDX(1, 3, irq);
 #endif

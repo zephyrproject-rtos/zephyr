@@ -282,8 +282,9 @@ static const struct gpio_gecko_common_config gpio_gecko_common_config = {
 
 static struct gpio_gecko_common_data gpio_gecko_common_data;
 
-DEVICE_AND_API_INIT(gpio_gecko_common, DT_LABEL(DT_INST(0, silabs_gecko_gpio)),
+DEVICE_DT_DEFINE(DT_INST(0, silabs_gecko_gpio),
 		    gpio_gecko_common_init,
+		    device_pm_control_nop,
 		    &gpio_gecko_common_data, &gpio_gecko_common_config,
 		    POST_KERNEL, CONFIG_GPIO_GECKO_COMMON_INIT_PRIORITY,
 		    &gpio_gecko_common_driver_api);
@@ -293,11 +294,13 @@ static int gpio_gecko_common_init(const struct device *dev)
 	gpio_gecko_common_data.count = 0;
 	IRQ_CONNECT(GPIO_EVEN_IRQn,
 		    DT_IRQ_BY_NAME(DT_INST(0, silabs_gecko_gpio), gpio_even, priority),
-		    gpio_gecko_common_isr, DEVICE_GET(gpio_gecko_common), 0);
+		    gpio_gecko_common_isr,
+		    DEVICE_DT_GET(DT_INST(0, silabs_gecko_gpio)), 0);
 
 	IRQ_CONNECT(GPIO_ODD_IRQn,
 		    DT_IRQ_BY_NAME(DT_INST(0, silabs_gecko_gpio), gpio_odd, priority),
-		    gpio_gecko_common_isr, DEVICE_GET(gpio_gecko_common), 0);
+		    gpio_gecko_common_isr,
+		    DEVICE_DT_GET(DT_INST(0, silabs_gecko_gpio)), 0);
 
 	irq_enable(GPIO_EVEN_IRQn);
 	irq_enable(GPIO_ODD_IRQn);
@@ -317,9 +320,9 @@ static const struct gpio_gecko_config gpio_gecko_port##idx##_config = { \
 \
 static struct gpio_gecko_data gpio_gecko_port##idx##_data; \
 \
-DEVICE_AND_API_INIT(gpio_gecko_port##idx, \
-		    DT_INST_LABEL(idx), \
+DEVICE_DT_INST_DEFINE(idx, \
 		    gpio_gecko_port##idx##_init, \
+		    device_pm_control_nop, \
 		    &gpio_gecko_port##idx##_data, \
 		    &gpio_gecko_port##idx##_config, \
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, \
