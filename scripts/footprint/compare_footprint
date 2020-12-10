@@ -125,7 +125,7 @@ def run_sanity_footprint(commit=None, cwd=os.environ.get('ZEPHYR_BASE'),
 
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                             cwd=cwd, shell=True)
-    output,error=proc.communicate()
+    output,_ = proc.communicate()
     if proc.wait() == 0:
         logger.debug(output)
         return True

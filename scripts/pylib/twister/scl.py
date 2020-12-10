@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Zephyr's Sanity Check library
 #
+# pylint: disable=unused-import
+#
 # Set of code that other projects can also import to do things on
 # Zephyr's sanity check testcases.
 
