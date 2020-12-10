@@ -43,6 +43,10 @@ extern void test_multilib(void);
 extern void test_thread_context(void);
 extern void test_bootdelay(void);
 extern void test_irq_offload(void);
+extern void test_bitarray_declare(void);
+extern void test_bitarray_set_clear(void);
+extern void test_bitarray_alloc_free(void);
+extern void test_bitarray_region_set_clear(void);
 
 /**
  * @defgroup kernel_common_tests Common Tests
@@ -141,6 +145,10 @@ void test_main(void)
 			 ztest_unit_test(test_sys_put_le64),
 			 ztest_user_unit_test(test_atomic),
 			 ztest_unit_test(test_bitfield),
+			 ztest_unit_test(test_bitarray_declare),
+			 ztest_unit_test(test_bitarray_set_clear),
+			 ztest_unit_test(test_bitarray_alloc_free),
+			 ztest_unit_test(test_bitarray_region_set_clear),
 			 ztest_unit_test(test_printk),
 			 ztest_1cpu_unit_test(test_timeout_order),
 			 ztest_1cpu_user_unit_test(test_clock_uptime),
