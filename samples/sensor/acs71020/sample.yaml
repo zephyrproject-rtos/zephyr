@@ -1,0 +1,13 @@
+sample:
+  name: BBTherm
+tests:
+sample.sensor.acs71020:
+  harness: console
+  tags: sensors
+  harness_config:
+      type: one_line
+      regex:
+          - "vrms: (.*); irms: (.*); pactive: (.*)"
+      fixture: fixture_i2c_acs71020
+  depends_on: i2c
+  filter: dt_compat_enabled("allegro,acs71020")

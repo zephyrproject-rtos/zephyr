@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2020, SER Consulting LLC / Steven Riedl
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c1 {
+	acs71020@66 {
+		compatible = "allegro,acs71020";
+		reg = <0x66>;
+		label = "ACS71020";
+	};
+
+};

@@ -1,0 +1,13 @@
+sample:
+  name: BBTherm
+tests:
+  sample.sensor.mcp9600:
+    harness: console
+    tags: sensors
+    harness_config:
+        type: one_line
+        regex:
+            - "ttemp: (.*); dtemp: (.*); ctemp: (.*)"
+        fixture: fixture_i2c_mcp9600
+    depends_on: i2c
+    filter: dt_compat_enabled("microchip,mcp9600")

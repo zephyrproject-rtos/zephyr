@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2020, Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	acs71020@66 {
+		compatible = "allegro,acs71020";
+		reg = <0x66>;
+		label = "ACS71020";
+	};
+};
