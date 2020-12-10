@@ -497,7 +497,6 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ipd)
 	 * command but must be polled with AT+CIPRECVDATA.
 	 */
 	if (ESP_PROTO_PASSIVE(sock->ip_proto)) {
-		sock->bytes_avail = data_len;
 		k_work_submit_to_queue(&dev->workq, &sock->recvdata_work);
 		return data_offset;
 	}
