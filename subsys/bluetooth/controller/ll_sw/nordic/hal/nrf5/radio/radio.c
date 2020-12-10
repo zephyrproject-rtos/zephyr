@@ -125,8 +125,7 @@ void radio_phy_set(uint8_t phy, uint8_t flags)
 	uint32_t mode;
 
 	mode = hal_radio_phy_mode_get(phy, flags);
-
-	NRF_RADIO->MODE = (mode << RADIO_MODE_MODE_Pos) & RADIO_MODE_MODE_Msk;
+	hal_radio_phy_mode_set(mode, phy, flags);
 
 #if defined(CONFIG_BT_CTLR_RADIO_ENABLE_FAST)
 	NRF_RADIO->MODECNF0 |= (RADIO_MODECNF0_RU_Fast <<

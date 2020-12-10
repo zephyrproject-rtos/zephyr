@@ -399,6 +399,15 @@ static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
 	return mode;
 }
 
+static inline void hal_radio_phy_mode_set(uint32_t mode, uint8_t phy,
+					  uint8_t flags)
+{
+	ARG_UNUSED(phy);
+	ARG_UNUSED(flags);
+
+	NRF_RADIO->MODE = (mode << RADIO_MODE_MODE_Pos) & RADIO_MODE_MODE_Msk;
+}
+
 static inline uint32_t hal_radio_tx_power_max_get(void)
 {
 	return RADIO_TXPOWER_TXPOWER_0dBm;
