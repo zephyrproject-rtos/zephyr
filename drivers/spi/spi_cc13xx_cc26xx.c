@@ -330,7 +330,7 @@ static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 #endif
 
 #define SPI_CC13XX_CC26XX_DEVICE_INIT(n)				    \
-	DEVICE_DT_DEFINE(n,						    \
+	DEVICE_DT_INST_DEFINE(n,						    \
 		spi_cc13xx_cc26xx_init_##n,				    \
 		spi_cc13xx_cc26xx_pm_control,				    \
 		&spi_cc13xx_cc26xx_data_##n, &spi_cc13xx_cc26xx_config_##n, \
