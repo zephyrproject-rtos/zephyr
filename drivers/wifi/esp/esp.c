@@ -6,9 +6,8 @@
 
 #define DT_DRV_COMPAT espressif_esp
 
-#define LOG_LEVEL CONFIG_WIFI_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(wifi_esp);
+LOG_MODULE_REGISTER(wifi_esp, CONFIG_WIFI_LOG_LEVEL);
 
 #include <kernel.h>
 #include <ctype.h>
