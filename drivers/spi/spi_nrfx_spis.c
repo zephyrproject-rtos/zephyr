@@ -287,7 +287,7 @@ static int init_spis(const struct device *dev,
 		.spis = NRFX_SPIS_INSTANCE(idx),			       \
 		.max_buf_len = (1 << SPIS##idx##_EASYDMA_MAXCNT_SIZE) - 1,     \
 	};								       \
-	DEVICE_DT_INST_DEFINE(idx,					       \
+	DEVICE_DT_DEFINE(SPIS(idx),					       \
 			    spi_##idx##_init,				       \
 			    device_pm_control_nop,			       \
 			    &spi_##idx##_data,				       \
