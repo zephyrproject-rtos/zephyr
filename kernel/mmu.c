@@ -268,21 +268,49 @@ static void frame_mapped_set(struct z_page_frame *pf, void *addr)
 	pf->addr = addr;
 }
 
+#ifdef CONFIG_DEMAND_PAGING
+static int page_frame_prepare_locked(struct z_page_frame *pf, bool *dirty_ptr,
+				     bool page_in, uintptr_t *location_ptr);
+#endif /* CONFIG_DEMAND_PAGING */
+
 /* Allocate a free page frame, and map it to a specified virtual address
  *
  * TODO: Add optional support for copy-on-write mappings to a zero page instead
  * of allocating, in which case page frames will be allocated lazily as
- * the mappings to the zero page get touched.
+ * the mappings to the zero page get touched. This will avoid expensive
+ * page-ins as memory is mapped and physical RAM or backing store storage will
+ * not be used if the mapped memory is unused. The cost is an empty physical
+ * page of zeroes.
  */
 static int map_anon_page(void *addr, uint32_t flags)
 {
 	struct z_page_frame *pf;
 	uintptr_t phys;
 	bool lock = (flags & K_MEM_MAP_LOCK) != 0;
+	bool uninit = (flags & K_MEM_MAP_UNINIT) != 0;
 
 	pf = free_page_frame_list_get();
 	if (pf == NULL) {
+#ifdef CONFIG_DEMAND_PAGING
+		uintptr_t location;
+		bool dirty;
+		int ret;
+
+		pf = z_eviction_select(&dirty);
+		__ASSERT(pf != NULL, "failed to get a page frame");
+		LOG_DBG("evicting %p at 0x%lx", pf->addr,
+			z_page_frame_to_phys(pf));
+		ret = page_frame_prepare_locked(pf, &dirty, false, &location);
+		if (ret != 0) {
+			return -ENOMEM;
+		}
+		if (dirty) {
+			z_backing_store_page_out(location);
+		}
+		pf->flags = 0;
+#else
 		return -ENOMEM;
+#endif /* CONFIG_DEMAND_PAGING */
 	}
 
 	phys = z_page_frame_to_phys(pf);
@@ -293,6 +321,15 @@ static int map_anon_page(void *addr, uint32_t flags)
 	}
 	frame_mapped_set(pf, addr);
 
+	LOG_DBG("memory mapping anon page %p -> 0x%lx", addr, phys);
+
+	if (!uninit) {
+		/* If we later implement mappings to a copy-on-write
+		 * zero page, won't need this step
+		 */
+		memset(addr, 0, CONFIG_MMU_PAGE_SIZE);
+	}
+
 	return 0;
 }
 
@@ -302,11 +339,11 @@ void *k_mem_map(size_t size, uint32_t flags)
 	size_t total_size = size;
 	int ret;
 	k_spinlock_key_t key;
-	bool uninit = (flags & K_MEM_MAP_UNINIT) != 0;
 	bool guard = (flags & K_MEM_MAP_GUARD) != 0;
 	uint8_t *pos;
 
-	__ASSERT(!(((flags & K_MEM_PERM_USER) != 0) && uninit),
+	__ASSERT(!(((flags & K_MEM_PERM_USER) != 0) &&
+		   ((flags & K_MEM_MAP_UNINIT) != 0)),
 		 "user access to anonymous uninitialized pages is forbidden");
 	__ASSERT(size % CONFIG_MMU_PAGE_SIZE == 0,
 		 "unaligned size %zu passed to %s", size, __func__);
@@ -345,13 +382,6 @@ void *k_mem_map(size_t size, uint32_t flags)
 			dst = NULL;
 			goto out;
 		}
-	}
-
-	if (!uninit) {
-		/* If we later implement mappings to a copy-on-write zero
-		 * page, won't need this step
-		 */
-		memset(dst, 0, size);
 	}
 out:
 	k_spin_unlock(&z_mm_lock, key);
@@ -510,8 +540,422 @@ void z_mem_manage_init(void)
 		}
 	}
 	LOG_DBG("free page frames: %zu", z_free_page_count);
+
+#ifdef CONFIG_DEMAND_PAGING
+	z_backing_store_init();
+	z_eviction_init();
+#endif
 #if __ASSERT_ON
 	page_frames_initialized = true;
 #endif
 	k_spin_unlock(&z_mm_lock, key);
 }
+
+#ifdef CONFIG_DEMAND_PAGING
+/* Current implementation relies on interrupt locking to any prevent page table
+ * access, which falls over if other CPUs are active. Addressing this is not
+ * as simple as using spinlocks as regular memory reads/writes constitute
+ * "access" in this sense.
+ *
+ * Current needs for demand paging are on uniprocessor systems.
+ */
+BUILD_ASSERT(!IS_ENABLED(CONFIG_SMP));
+
+static void virt_region_foreach(void *addr, size_t size,
+				void (*func)(void *))
+{
+	z_mem_assert_virtual_region(addr, size);
+
+	for (size_t offset = 0; offset < size; offset += CONFIG_MMU_PAGE_SIZE) {
+		func((uint8_t *)addr + offset);
+	}
+}
+
+static void page_frame_free_locked(struct z_page_frame *pf)
+{
+	pf->flags = 0;
+	free_page_frame_list_put(pf);
+}
+
+/*
+ * Perform some preparatory steps before paging out. The provided page frame
+ * must be evicted to the backing store immediately after this is called
+ * with a call to z_backing_store_page_out() if it contains a data page.
+ *
+ * - Map page frame to scratch area if requested. This always is true if we're
+ *   doing a page fault, but is only set on manual evictions if the page is
+ *   dirty.
+ * - If mapped:
+ *    - obtain backing store location and populate location parameter
+ *    - Update page tables with location
+ * - Mark page frame as busy
+ *
+ * Returns -ENOMEM if the backing store is full
+ */
+static int page_frame_prepare_locked(struct z_page_frame *pf, bool *dirty_ptr,
+				     bool page_in, uintptr_t *location_ptr)
+{
+	uintptr_t phys;
+	int ret;
+	bool dirty = *dirty_ptr;
+
+	phys = z_page_frame_to_phys(pf);
+	__ASSERT(!z_page_frame_is_pinned(pf), "page frame 0x%lx is pinned",
+		 phys);
+
+	/* If the backing store doesn't have a copy of the page, even if it
+	 * wasn't modified, treat as dirty. This can happen for a few
+	 * reasons:
+	 * 1) Page has never been swapped out before, and the backing store
+	 *    wasn't pre-populated with this data page.
+	 * 2) Page was swapped out before, but the page contents were not
+	 *    preserved after swapping back in.
+	 * 3) Page contents were preserved when swapped back in, but were later
+	 *    evicted from the backing store to make room for other evicted
+	 *    pages.
+	 */
+	if (z_page_frame_is_mapped(pf)) {
+		dirty = dirty || !z_page_frame_is_backed(pf);
+	}
+
+	if (dirty || page_in) {
+		arch_mem_scratch(phys);
+	}
+
+	if (z_page_frame_is_mapped(pf)) {
+		ret = z_backing_store_location_get(pf, location_ptr);
+		if (ret != 0) {
+			LOG_ERR("out of backing store memory");
+			return -ENOMEM;
+		}
+		arch_mem_page_out(pf->addr, *location_ptr);
+	} else {
+		/* Shouldn't happen unless this function is mis-used */
+		__ASSERT(!dirty, "un-mapped page determined to be dirty");
+	}
+#ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
+	/* Mark as busy so that z_page_frame_is_evictable() returns false */
+	__ASSERT(!z_page_frame_is_busy(pf), "page frame 0x%lx is already busy",
+		 phys);
+	pf->flags |= Z_PAGE_FRAME_BUSY;
+#endif
+	/* Update dirty parameter, since we set to true if it wasn't backed
+	 * even if otherwise clean
+	 */
+	*dirty_ptr = dirty;
+
+	return 0;
+}
+
+static int do_mem_evict(void *addr)
+{
+	bool dirty;
+	struct z_page_frame *pf;
+	uintptr_t location;
+	int key, ret;
+	uintptr_t flags, phys;
+
+#if CONFIG_DEMAND_PAGING_ALLOW_IRQ
+	__ASSERT(!k_is_in_isr(),
+		 "%s is unavailable in ISRs with CONFIG_DEMAND_PAGING_ALLOW_IRQ",
+		 __func__);
+	k_sched_lock();
+#endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
+	key = irq_lock();
+	flags = arch_page_info_get(addr, &phys, false);
+	__ASSERT((flags & ARCH_DATA_PAGE_NOT_MAPPED) == 0,
+		 "address %p isn't mapped", addr);
+	if ((flags & ARCH_DATA_PAGE_LOADED) == 0) {
+		/* Un-mapped or already evicted. Nothing to do */
+		ret = 0;
+		goto out;
+	}
+
+	dirty = (flags & ARCH_DATA_PAGE_DIRTY) != 0;
+	pf = z_phys_to_page_frame(phys);
+	__ASSERT(pf->addr == addr, "page frame address mismatch");
+	ret = page_frame_prepare_locked(pf, &dirty, false, &location);
+	if (ret != 0) {
+		goto out;
+	}
+
+	__ASSERT(ret == 0, "failed to prepare page frame");
+#ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
+	irq_unlock(key);
+#endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
+	if (dirty) {
+		z_backing_store_page_out(location);
+	}
+#ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
+	key = irq_lock();
+#endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
+	page_frame_free_locked(pf);
+out:
+	irq_unlock(key);
+#ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
+	k_sched_unlock();
+#endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
+	return ret;
+}
+
+int z_mem_page_out(void *addr, size_t size)
+{
+	__ASSERT(page_frames_initialized, "%s called on %p too early", __func__,
+		 addr);
+	z_mem_assert_virtual_region(addr, size);
+
+	for (size_t offset = 0; offset < size; offset += CONFIG_MMU_PAGE_SIZE) {
+		void *pos = (uint8_t *)addr + offset;
+		int ret;
+
+		ret = do_mem_evict(pos);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+int z_page_frame_evict(uintptr_t phys)
+{
+	int key, ret;
+	struct z_page_frame *pf;
+	bool dirty;
+	uintptr_t flags;
+	uintptr_t location;
+
+	__ASSERT(page_frames_initialized, "%s called on 0x%lx too early",
+		 __func__, phys);
+
+	/* Implementation is similar to do_page_fault() except there is no
+	 * data page to page-in, see comments in that function.
+	 */
+
+#ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
+	__ASSERT(!k_is_in_isr(),
+		 "%s is unavailable in ISRs with CONFIG_DEMAND_PAGING_ALLOW_IRQ",
+		 __func__);
+	k_sched_lock();
+#endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
+	key = irq_lock();
+	pf = z_phys_to_page_frame(phys);
+	if (!z_page_frame_is_mapped(pf)) {
+		/* Nothing to do, free page */
+		ret = 0;
+		goto out;
+	}
+	flags = arch_page_info_get(pf->addr, NULL, false);
+	/* Shouldn't ever happen */
+	__ASSERT((flags & ARCH_DATA_PAGE_LOADED) != 0, "data page not loaded");
+	dirty = (flags & ARCH_DATA_PAGE_DIRTY) != 0;
+	ret = page_frame_prepare_locked(pf, &dirty, false, &location);
+	if (ret != 0) {
+		goto out;
+	}
+
+#ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
+	irq_unlock(key);
+#endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
+	if (dirty) {
+		z_backing_store_page_out(location);
+	}
+#ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
+	key = irq_lock();
+#endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
+	page_frame_free_locked(pf);
+out:
+	irq_unlock(key);
+#ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
+	k_sched_unlock();
+#endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
+	return ret;
+}
+
+static bool do_page_fault(void *addr, bool pin)
+{
+	struct z_page_frame *pf;
+	int key, ret;
+	uintptr_t page_in_location, page_out_location;
+	enum arch_page_location status;
+	bool result;
+	bool dirty = false;
+
+	__ASSERT(page_frames_initialized, "page fault at %p happened too early",
+		 addr);
+
+	LOG_DBG("page fault at %p", addr);
+
+	/*
+	 * TODO: Add performance accounting:
+	 * - Number of pagefaults
+	 *   * gathered on a per-thread basis:
+	 *     . Pagefaults with IRQs locked in faulting thread (bad)
+	 *     . Pagefaults with IRQs unlocked in faulting thread
+	 *   * Pagefaults in ISRs (if allowed)
+	 * - z_eviction_select() metrics
+	 *   * Clean vs dirty page eviction counts
+	 *   * execution time histogram
+	 *   * periodic timer execution time histogram (if implemented)
+	 * - z_backing_store_page_out() execution time histogram
+	 * - z_backing_store_page_in() execution time histogram
+	 */
+
+#ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
+	/* We lock the scheduler so that other threads are never scheduled
+	 * during the page-in/out operation.
+	 *
+	 * We do however re-enable interrupts during the page-in/page-out
+	 * operation iff interrupts were enabled when the exception was taken;
+	 * in this configuration page faults in an ISR are a bug; all their
+	 * code/data must be pinned.
+	 *
+	 * If interrupts were disabled when the exception was taken, the
+	 * arch code is responsible for keeping them that way when entering
+	 * this function.
+	 *
+	 * If this is not enabled, then interrupts are always locked for the
+	 * entire operation. This is far worse for system interrupt latency
+	 * but requires less pinned pages and ISRs may also take page faults.
+	 *
+	 * Support for allowing z_backing_store_page_out() and
+	 * z_backing_store_page_in() to also sleep and allow other threads to
+	 * run (such as in the case where the transfer is async DMA) is not
+	 * implemented. Even if limited to thread context, arbitrary memory
+	 * access triggering exceptions that put a thread to sleep on a
+	 * contended page fault operation will break scheduling assumptions of
+	 * cooperative threads or threads that implement crticial sections with
+	 * spinlocks or disabling IRQs.
+	 */
+	k_sched_lock();
+	__ASSERT(!k_is_in_isr(), "ISR page faults are forbidden");
+#endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
+
+	key = irq_lock();
+	status = arch_page_location_get(addr, &page_in_location);
+	if (status == ARCH_PAGE_LOCATION_BAD) {
+		/* Return false to treat as a fatal error */
+		result = false;
+		goto out;
+	}
+	result = true;
+	if (status == ARCH_PAGE_LOCATION_PAGED_IN) {
+		if (pin) {
+			/* It's a physical memory address */
+			uintptr_t phys = page_in_location;
+
+			pf = z_phys_to_page_frame(phys);
+			pf->flags |= Z_PAGE_FRAME_PINNED;
+		}
+		/* We raced before locking IRQs, re-try */
+		goto out;
+	}
+	__ASSERT(status == ARCH_PAGE_LOCATION_PAGED_OUT,
+		 "unexpected status value %d", status);
+
+	pf = free_page_frame_list_get();
+	if (pf == NULL) {
+		/* Need to evict a page frame */
+		pf = z_eviction_select(&dirty);
+		__ASSERT(pf != NULL, "failed to get a page frame");
+		LOG_DBG("evicting %p at 0x%lx", pf->addr,
+			z_page_frame_to_phys(pf));
+	}
+	ret = page_frame_prepare_locked(pf, &dirty, true, &page_out_location);
+	__ASSERT(ret == 0, "failed to prepare page frame");
+
+#ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
+	irq_unlock(key);
+	/* Interrupts are now unlocked if they were not locked when we entered
+	 * this function, and we may service ISRs. The scheduler is still
+	 * locked.
+	 */
+#endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
+	if (dirty) {
+		z_backing_store_page_out(page_out_location);
+	}
+	z_backing_store_page_in(page_in_location);
+
+#ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
+	key = irq_lock();
+	pf->flags &= ~Z_PAGE_FRAME_BUSY;
+#endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
+	if (pin) {
+		pf->flags |= Z_PAGE_FRAME_PINNED;
+	}
+	pf->flags |= Z_PAGE_FRAME_MAPPED;
+	pf->addr = addr;
+	arch_mem_page_in(addr, z_page_frame_to_phys(pf));
+	z_backing_store_page_finalize(pf, page_in_location);
+out:
+	irq_unlock(key);
+#ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
+	k_sched_unlock();
+#endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
+
+	return result;
+}
+
+static void do_page_in(void *addr)
+{
+	bool ret;
+
+	ret = do_page_fault(addr, false);
+	__ASSERT(ret, "unmapped memory address %p", addr);
+	(void)ret;
+}
+
+void z_mem_page_in(void *addr, size_t size)
+{
+	__ASSERT(!IS_ENABLED(CONFIG_DEMAND_PAGING_ALLOW_IRQ) || !k_is_in_isr(),
+		 "%s may not be called in ISRs if CONFIG_DEMAND_PAGING_ALLOW_IRQ is enabled",
+		 __func__);
+	virt_region_foreach(addr, size, do_page_in);
+}
+
+static void do_mem_pin(void *addr)
+{
+	bool ret;
+
+	ret = do_page_fault(addr, true);
+	__ASSERT(ret, "unmapped memory address %p", addr);
+	(void)ret;
+}
+
+void z_mem_pin(void *addr, size_t size)
+{
+	__ASSERT(!IS_ENABLED(CONFIG_DEMAND_PAGING_ALLOW_IRQ) || !k_is_in_isr(),
+		 "%s may not be called in ISRs if CONFIG_DEMAND_PAGING_ALLOW_IRQ is enabled",
+		 __func__);
+	virt_region_foreach(addr, size, do_mem_pin);
+}
+
+bool z_page_fault(void *addr)
+{
+	return do_page_fault(addr, false);
+}
+
+static void do_mem_unpin(void *addr)
+{
+	struct z_page_frame *pf;
+	int key;
+	uintptr_t flags, phys;
+
+	key = irq_lock();
+	flags = arch_page_info_get(addr, &phys, false);
+	__ASSERT((flags & ARCH_DATA_PAGE_NOT_MAPPED) == 0,
+		 "invalid data page at %p", addr);
+	if ((flags & ARCH_DATA_PAGE_LOADED) != 0) {
+		pf = z_phys_to_page_frame(phys);
+		pf->flags &= ~Z_PAGE_FRAME_PINNED;
+	}
+	irq_unlock(key);
+}
+
+void z_mem_unpin(void *addr, size_t size)
+{
+	__ASSERT(page_frames_initialized, "%s called on %p too early", __func__,
+		 addr);
+	virt_region_foreach(addr, size, do_mem_unpin);
+}
+#endif /* CONFIG_DEMAND_PAGING */
