@@ -568,9 +568,11 @@ static void enqueue_sub_cfm(struct bt_mesh_friend *frnd, uint8_t xact)
 
 static void friend_recv_delay(struct bt_mesh_friend *frnd)
 {
+	int32_t delay = recv_delay(frnd);
+
 	frnd->pending_req = 1U;
-	k_delayed_work_submit(&frnd->timer, K_MSEC(recv_delay(frnd)));
-	BT_DBG("Waiting RecvDelay of %d ms", recv_delay(frnd));
+	k_delayed_work_submit(&frnd->timer, K_MSEC(delay));
+	BT_DBG("Waiting RecvDelay of %d ms", delay);
 }
 
 int bt_mesh_friend_sub_add(struct bt_mesh_net_rx *rx,
@@ -916,6 +918,7 @@ int bt_mesh_friend_req(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 	struct bt_mesh_ctl_friend_req *msg = (void *)buf->data;
 	struct bt_mesh_friend *frnd = NULL;
 	uint32_t poll_to;
+	int32_t delay;
 	int i, err;
 
 	if (rx->net_if == BT_MESH_NET_IF_LOCAL) {
@@ -1005,9 +1008,8 @@ init_friend:
 		clear_procedure_start(frnd);
 	}
 
-	k_delayed_work_submit(&frnd->timer,
-			      K_MSEC(offer_delay(frnd, rx->ctx.recv_rssi,
-						 msg->criteria)));
+	delay = offer_delay(frnd, rx->ctx.recv_rssi, msg->criteria);
+	k_delayed_work_submit(&frnd->timer, K_MSEC(delay));
 
 	enqueue_offer(frnd, rx->ctx.recv_rssi);
 
