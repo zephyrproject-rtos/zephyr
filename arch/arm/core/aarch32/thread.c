@@ -112,6 +112,13 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif /* CONFIG_COMPILER_ISA_THUMB2 */
 #endif /* CONFIG_CPU_CORTEX_M */
 
+#if !defined(CONFIG_CPU_CORTEX_M) \
+	&& defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+	iframe = (struct __basic_sf *)
+		((uintptr_t)iframe - sizeof(struct __fpu_sf));
+	memset(iframe, 0, sizeof(struct __fpu_sf));
+#endif
+
 	thread->callee_saved.psp = (uint32_t)iframe;
 	thread->arch.basepri = 0;
 
@@ -470,7 +477,11 @@ int arch_float_disable(struct k_thread *thread)
 
 	thread->base.user_options &= ~K_FP_REGS;
 
+#if defined(CONFIG_CPU_CORTEX_M)
 	__set_CONTROL(__get_CONTROL() & (~CONTROL_FPCA_Msk));
+#else
+	__set_FPEXC(0);
+#endif
 
 	/* No need to add an ISB barrier after setting the CONTROL
 	 * register; arch_irq_unlock() already adds one.
@@ -483,7 +494,7 @@ int arch_float_disable(struct k_thread *thread)
 
 int arch_float_enable(struct k_thread *thread, unsigned int options)
 {
-	/* This is not supported in Cortex-M and Cortex-R does not have FPU */
+	/* This is not supported in Cortex-M */
 	return -ENOTSUP;
 }
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
@@ -508,7 +519,7 @@ static void z_arm_prepare_switch_to_main(void)
 #else
 	__set_FPSCR(0);
 #endif
-#if defined(CONFIG_FPU_SHARING)
+#if defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_FPU_SHARING)
 	/* In Sharing mode clearing FPSCR may set the CONTROL.FPCA flag. */
 	__set_CONTROL(__get_CONTROL() & (~(CONTROL_FPCA_Msk)));
 	__ISB();
