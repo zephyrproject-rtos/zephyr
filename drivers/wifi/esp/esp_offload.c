@@ -469,24 +469,6 @@ void esp_recvdata_work(struct k_work *work)
 	}
 }
 
-void esp_recv_work(struct k_work *work)
-{
-	struct net_pkt *pkt = CONTAINER_OF(work, struct net_pkt, work);
-	struct net_context *context = pkt->context;
-	struct esp_socket *sock = context->offload_context;
-
-	k_mutex_lock(&sock->lock, K_FOREVER);
-	if (sock->recv_cb) {
-		sock->recv_cb(context, pkt, NULL, NULL,
-			      0, sock->recv_user_data);
-		k_sem_give(&sock->sem_data_ready);
-	} else {
-		/* Discard */
-		net_pkt_unref(pkt);
-	}
-	k_mutex_unlock(&sock->lock);
-}
-
 void esp_close_work(struct k_work *work)
 {
 	struct esp_socket *sock = CONTAINER_OF(work, struct esp_socket,
