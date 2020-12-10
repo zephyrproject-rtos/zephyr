@@ -75,8 +75,9 @@ static const struct entropy_driver_api entropy_native_posix_api_funcs = {
 	.get_entropy_isr = entropy_native_posix_get_entropy_isr
 };
 
-DEVICE_AND_API_INIT(entropy_native_posix, DT_INST_LABEL(0),
-		    entropy_native_posix_init, NULL, NULL,
+DEVICE_DT_INST_DEFINE(0,
+		    entropy_native_posix_init, device_pm_control_nop,
+		    NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_native_posix_api_funcs);
 

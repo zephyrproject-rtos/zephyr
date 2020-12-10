@@ -331,8 +331,9 @@ static const struct entropy_driver_api entropy_nrf5_api_funcs = {
 	.get_entropy_isr = entropy_nrf5_get_entropy_isr
 };
 
-DEVICE_AND_API_INIT(entropy_nrf5, DT_INST_LABEL(0),
-		    entropy_nrf5_init, &entropy_nrf5_data, NULL,
+DEVICE_DT_INST_DEFINE(0,
+		    entropy_nrf5_init, device_pm_control_nop,
+		    &entropy_nrf5_data, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_nrf5_api_funcs);
 
