@@ -2065,7 +2065,7 @@ int lwm2m_engine_register_post_write_callback(char *pathstr,
 }
 
 int lwm2m_engine_register_exec_callback(char *pathstr,
-					lwm2m_engine_user_cb_t cb)
+					lwm2m_engine_execute_cb_t cb)
 {
 	int ret;
 	struct lwm2m_engine_res *res = NULL;
@@ -2839,6 +2839,8 @@ static int lwm2m_exec_handler(struct lwm2m_message *msg)
 	struct lwm2m_engine_obj_inst *obj_inst;
 	struct lwm2m_engine_res *res = NULL;
 	int ret;
+	uint8_t *args;
+	uint16_t args_len;
 
 	if (!msg) {
 		return -EINVAL;
@@ -2849,8 +2851,10 @@ static int lwm2m_exec_handler(struct lwm2m_message *msg)
 		return ret;
 	}
 
+	args = (uint8_t *)coap_packet_get_payload(msg->in.in_cpkt, &args_len);
+
 	if (res->execute_cb) {
-		return res->execute_cb(obj_inst->obj_inst_id);
+		return res->execute_cb(obj_inst->obj_inst_id, args, args_len);
 	}
 
 	/* TODO: something else to handle for execute? */

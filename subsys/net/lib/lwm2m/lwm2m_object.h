@@ -336,7 +336,7 @@ struct lwm2m_engine_res {
 	lwm2m_engine_get_data_cb_t		read_cb;
 	lwm2m_engine_get_data_cb_t		pre_write_cb;
 	lwm2m_engine_set_data_cb_t		post_write_cb;
-	lwm2m_engine_user_cb_t			execute_cb;
+	lwm2m_engine_execute_cb_t		execute_cb;
 
 	struct lwm2m_engine_res_inst *res_instances;
 	uint16_t res_id;

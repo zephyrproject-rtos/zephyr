@@ -99,7 +99,8 @@ static void update_max_measured(uint16_t obj_inst_id, int index)
 			TEMP_MAX_MEASURED_VALUE_ID);
 }
 
-static int reset_min_max_measured_values_cb(uint16_t obj_inst_id)
+static int reset_min_max_measured_values_cb(uint16_t obj_inst_id,
+					    uint8_t *args, uint16_t args_len)
 {
 	int i;
 

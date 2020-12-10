@@ -82,7 +82,7 @@ static struct lwm2m_engine_res res[MAX_INSTANCE_COUNT][SERVER_MAX_ID];
 static struct lwm2m_engine_res_inst
 			res_inst[MAX_INSTANCE_COUNT][RESOURCE_INSTANCE_COUNT];
 
-static int disable_cb(uint16_t obj_inst_id)
+static int disable_cb(uint16_t obj_inst_id, uint8_t *args, uint16_t args_len)
 {
 	int i;
 
@@ -97,7 +97,8 @@ static int disable_cb(uint16_t obj_inst_id)
 	return -ENOENT;
 }
 
-static int update_trigger_cb(uint16_t obj_inst_id)
+static int update_trigger_cb(uint16_t obj_inst_id,
+			     uint8_t *args, uint16_t args_len)
 {
 #ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
 	engine_trigger_update(false);
