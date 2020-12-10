@@ -72,6 +72,7 @@ LOG_MODULE_REGISTER(usb_dfu);
 
 static struct k_poll_event dfu_event;
 static struct k_poll_signal dfu_signal;
+static struct k_timer dfu_timer;
 
 static struct k_work dfu_work;
 
@@ -381,6 +382,12 @@ static void dfu_flash_write(uint8_t *data, size_t len)
 	LOG_DBG("bytes written 0x%x", flash_img_bytes_written(&dfu_data.ctx));
 }
 
+static void dfu_timer_expired(struct k_timer *timer)
+{
+	if (dfu_data.state == appDETACH) {
+		dfu_data.state = appIDLE;
+	}
+}
 
 /**
  * @brief Handler called for DFU Class requests not handled by the USB stack.
@@ -396,6 +403,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 {
 	int ret;
 	uint32_t len, bytes_left;
+	uint16_t timeout;
 
 	switch (pSetup->bRequest) {
 	case DFU_GETSTATUS:
@@ -586,11 +594,9 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 		/* Move to appDETACH state */
 		dfu_data.state = appDETACH;
 
-		/* We should start a timer here but in order to
-		 * keep things simple and do not increase the size
-		 * we rely on the host to get us out of the appATTACHED
-		 * state if needed.
-		 */
+		/* Begin detach timeout timer */
+		timeout = MIN(pSetup->wValue, CONFIG_USB_DFU_DETACH_TIMEOUT);
+		k_timer_start(&dfu_timer, K_MSEC(timeout), K_FOREVER);
 
 		/* Set the DFU mode descriptors to be used after reset */
 		dfu_config.usb_device_description = (uint8_t *) &dfu_mode_desc;
@@ -628,6 +634,8 @@ static void dfu_status_cb(struct usb_cfg_data *cfg,
 		break;
 	case USB_DC_RESET:
 		LOG_DBG("USB device reset detected, state %d", dfu_data.state);
+		/* Stop the appDETACH timeout timer */
+		k_timer_stop(&dfu_timer);
 		if (dfu_data.state == appDETACH) {
 			dfu_data.state = dfuIDLE;
 		}
@@ -785,6 +793,7 @@ static int usb_dfu_init(const struct device *dev)
 
 	k_work_init(&dfu_work, dfu_work_handler);
 	k_poll_signal_init(&dfu_signal);
+	k_timer_init(&dfu_timer, dfu_timer_expired, NULL);
 
 	if (flash_area_open(dfu_data.flash_area_id, &fa)) {
 		return -EIO;
