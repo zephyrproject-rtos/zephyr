@@ -328,6 +328,7 @@ config BT_SMP
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CMAC
 	select BT_RPA
+	select BT_ECC
 	help
 	  This option enables support for the Security Manager Protocol
 	  (SMP), making it possible to pair devices over LE.
