@@ -168,6 +168,12 @@ void test_z_phys_map_side_effect(void)
 /* ztest main entry*/
 void test_main(void)
 {
+#ifdef CONFIG_DEMAND_PAGING
+	/* This test sets up multiple mappings of RAM pages, which is only
+	 * allowed for pinned memory
+	 */
+	z_mem_pin(test_page, sizeof(test_page));
+#endif
 	ztest_test_suite(test_mem_map,
 			ztest_unit_test(test_z_phys_map_rw),
 			ztest_unit_test(test_z_phys_map_exec),
