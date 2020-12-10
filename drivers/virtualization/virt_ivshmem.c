@@ -160,7 +160,7 @@ static bool ivshmem_configure(const struct device *dev)
 
 	z_phys_map((uint8_t **)&data->shmem,
 		   mbar_mem.phys_addr, data->size,
-		   K_MEM_CACHE_WB | K_MEM_PERM_RW);
+		   K_MEM_CACHE_WB | K_MEM_PERM_RW | K_MEM_PERM_USER);
 
 	LOG_DBG("ivshmem configured:");
 	LOG_DBG("- Registers at 0x%lx (mapped to 0x%lx)",

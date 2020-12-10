@@ -35,7 +35,7 @@ typedef int (*ivshmem_register_handler_f)(const struct device *dev,
 					  struct k_poll_signal *signal,
 					  uint16_t vector);
 
-struct ivshmem_driver_api {
+__subsystem struct ivshmem_driver_api {
 	ivshmem_get_mem_f get_mem;
 	ivshmem_get_id_f get_id;
 	ivshmem_get_vectors_f get_vectors;
@@ -51,8 +51,11 @@ struct ivshmem_driver_api {
  *
  * @return the size of the memory mapped, or 0
  */
-static inline size_t ivshmem_get_mem(const struct device *dev,
-				     uintptr_t *memmap)
+__syscall size_t ivshmem_get_mem(const struct device *dev,
+				 uintptr_t *memmap);
+
+static inline size_t z_impl_ivshmem_get_mem(const struct device *dev,
+					    uintptr_t *memmap)
 {
 	const struct ivshmem_driver_api *api =
 		(const struct ivshmem_driver_api *)dev->api;
@@ -67,7 +70,9 @@ static inline size_t ivshmem_get_mem(const struct device *dev,
  *
  * @return our VM ID or 0 if we are not running on doorbell version
  */
-static inline uint32_t ivshmem_get_id(const struct device *dev)
+__syscall uint32_t ivshmem_get_id(const struct device *dev);
+
+static inline uint32_t z_impl_ivshmem_get_id(const struct device *dev)
 {
 	const struct ivshmem_driver_api *api =
 		(const struct ivshmem_driver_api *)dev->api;
@@ -82,7 +87,9 @@ static inline uint32_t ivshmem_get_id(const struct device *dev)
  *
  * @return the number of available interrupt vectors
  */
-static inline uint16_t ivshmem_get_vectors(const struct device *dev)
+__syscall uint16_t ivshmem_get_vectors(const struct device *dev);
+
+static inline uint16_t z_impl_ivshmem_get_vectors(const struct device *dev)
 {
 	const struct ivshmem_driver_api *api =
 		(const struct ivshmem_driver_api *)dev->api;
@@ -99,8 +106,11 @@ static inline uint16_t ivshmem_get_vectors(const struct device *dev)
  *
  * @return 0 on success, a negative errno otherwise
  */
-static inline int ivshmem_int_peer(const struct device *dev,
-				   uint32_t peer_id, uint16_t vector)
+__syscall int ivshmem_int_peer(const struct device *dev,
+			       uint32_t peer_id, uint16_t vector);
+
+static inline int z_impl_ivshmem_int_peer(const struct device *dev,
+					  uint32_t peer_id, uint16_t vector)
 {
 	const struct ivshmem_driver_api *api =
 		(const struct ivshmem_driver_api *)dev->api;
@@ -123,9 +133,13 @@ static inline int ivshmem_int_peer(const struct device *dev,
  *
  * @return 0 on success, a negative errno otherwise
  */
-static inline int ivshmem_register_handler(const struct device *dev,
-					   struct k_poll_signal *signal,
-					   uint16_t vector)
+__syscall int ivshmem_register_handler(const struct device *dev,
+				       struct k_poll_signal *signal,
+				       uint16_t vector);
+
+static inline int z_impl_ivshmem_register_handler(const struct device *dev,
+						  struct k_poll_signal *signal,
+						  uint16_t vector)
 {
 	const struct ivshmem_driver_api *api =
 		(const struct ivshmem_driver_api *)dev->api;
@@ -140,5 +154,7 @@ static inline int ivshmem_register_handler(const struct device *dev,
 /**
  * @}
  */
+
+#include <syscalls/ivshmem.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_VIRTUALIZATION_IVSHMEM_H_ */
