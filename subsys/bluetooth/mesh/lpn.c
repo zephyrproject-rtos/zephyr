@@ -288,13 +288,11 @@ static int send_friend_req(struct bt_mesh_lpn *lpn)
 {
 	const struct bt_mesh_comp *comp = bt_mesh_comp_get();
 	struct bt_mesh_msg_ctx ctx = {
-		.net_idx  = lpn->sub->net_idx,
 		.app_idx  = BT_MESH_KEY_UNUSED,
 		.addr     = BT_MESH_ADDR_FRIENDS,
 		.send_ttl = 0,
 	};
 	struct bt_mesh_net_tx tx = {
-		.sub = bt_mesh.lpn.sub,
 		.ctx = &ctx,
 		.src = bt_mesh_primary_addr(),
 		.xmit = POLL_XMIT,
@@ -309,6 +307,15 @@ static int send_friend_req(struct bt_mesh_lpn *lpn)
 	};
 
 	BT_DBG("");
+
+	lpn->sub = bt_mesh_subnet_next(NULL);
+	if (!lpn->sub) {
+		BT_ERR("No subnets, can't start LPN mode");
+		return -ENOENT;
+	}
+
+	ctx.net_idx = lpn->sub->net_idx;
+	tx.sub = lpn->sub;
 
 	return bt_mesh_ctl_send(&tx, TRANS_CTL_OP_FRIEND_REQ, &req,
 				sizeof(req), &friend_req_sent_cb, NULL);
@@ -528,7 +535,6 @@ int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,
 
 	lpn->frnd_counter = frnd_counter;
 	lpn->frnd = rx->ctx.addr;
-	lpn->sub = rx->sub;
 
 	/* Create friend credentials for each of the valid keys in the
 	 * friendship subnet:
