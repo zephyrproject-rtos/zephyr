@@ -209,8 +209,16 @@ void test_string_nlen(void)
 	 * this address doesn't fault
 	 * Also skip this scenario for em_starterkit_7d, which won't generate
 	 * exceptions when unmapped address is accessed.
+	 *
+	 * In addition to the above, skip the scenario for Non-Secure Cortex-M
+	 * builds; Zephyr running in Non-Secure mode will generate SecureFault
+	 * if it attempts to access any address outside the image Flash or RAM
+	 * boundaries, and the program will hang.
 	 */
-#if !((defined(CONFIG_BOARD_NSIM) && defined(CONFIG_SOC_NSIM_SEM)) || defined(CONFIG_SOC_EMSK_EM7D))
+#if !((defined(CONFIG_BOARD_NSIM) && defined(CONFIG_SOC_NSIM_SEM)) || \
+	defined(CONFIG_SOC_EMSK_EM7D) || \
+	(defined(CONFIG_CPU_CORTEX_M) && \
+		defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)))
 	/* Try to blow up the kernel */
 	ret = string_nlen((char *)FAULTY_ADDRESS, BUF_SIZE, &err);
 	zassert_equal(err, -1, "nonsense string address did not fault");
