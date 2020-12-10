@@ -16,6 +16,7 @@ on:
     - '.known-issues/doc/**'
     - '**/Kconfig*'
     - 'west.yml'
+    - '.github/workflows/doc-build.yml'
 
 jobs:
   build:
