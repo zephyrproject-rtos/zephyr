@@ -9,7 +9,7 @@
 #include "esp.h"
 
 #include <logging/log.h>
-LOG_MODULE_DECLARE(wifi_esp);
+LOG_MODULE_DECLARE(wifi_esp, CONFIG_WIFI_LOG_LEVEL);
 
 /* esp_data->mtx_sock should be held */
 struct esp_socket *esp_socket_get(struct esp_data *data)
