@@ -8,10 +8,12 @@ on:
     paths:
     - 'scripts/west-commands.yml'
     - 'scripts/west_commands/**'
+    - '.github/workflows/west_cmds.yml'
   pull_request:
     paths:
     - 'scripts/west-commands.yml'
     - 'scripts/west_commands/**'
+    - '.github/workflows/west_cmds.yml'
 
 jobs:
   build:
