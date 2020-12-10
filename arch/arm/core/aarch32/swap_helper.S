@@ -19,6 +19,7 @@
 #include <offsets_short.h>
 #include <arch/cpu.h>
 #include <syscall.h>
+#include <kernel.h>
 
 #if defined(CONFIG_CPU_CORTEX_M)
 #include <arch/arm/aarch32/cortex_m/cpu.h>
@@ -126,6 +127,45 @@ out_fp_endif:
     cps #MODE_SYS
     stm r0, {r4-r11, sp}
     cps #MODE_SVC
+
+#if defined(CONFIG_FPU_SHARING)
+    ldrb r0, [r2, #_thread_offset_to_user_options]
+    tst r0, #K_FP_REGS /* _current->base.user_options & K_FP_REGS */
+    beq out_fp_inactive
+
+    mov ip, #FPEXC_EN
+    vmsr fpexc, ip
+
+    /*
+     * If the float context pointer is not null, then the VFP has not been
+     * used since this thread has used it.  Consequently, the caller-saved
+     * float registers have not been saved away, so write them to the
+     * exception stack frame.
+     */
+    ldr r0, [r1, #_kernel_offset_to_fp_ctx]
+    cmp r0, #0
+    beq out_store_thread_context
+
+    vstmia r0!, {s0-s15}
+    vmrs r3, fpscr
+    stm r0, {r3, ip}
+
+out_store_thread_context:
+    /* Store s16-s31 to thread context */
+    add r0, r2, #_thread_offset_to_preempt_float
+    vstmia r0, {s16-s31}
+
+    mov ip, #0
+    vmsr fpexc, ip
+
+out_fp_inactive:
+    /*
+     * The floating context has now been saved to the exception stack
+     * frame, so zero out the global pointer to note this.
+     */
+    mov r0, #0
+    str r0, [r1, #_kernel_offset_to_fp_ctx]
+#endif /* CONFIG_FPU_SHARING */
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
@@ -361,6 +401,24 @@ _thread_irq_disabled:
     cps #MODE_SYS
     ldm r0, {r4-r11, sp}
     cps #MODE_SVC
+
+#if defined(CONFIG_FPU_SHARING)
+    ldrb r0, [r2, #_thread_offset_to_user_options]
+    tst r0, #K_FP_REGS /* _current->base.user_options & K_FP_REGS */
+    beq in_fp_inactive
+
+    mov r3, #FPEXC_EN
+    vmsr fpexc, r3
+
+    /* Restore s16-s31 from thread context */
+    add r0, r2, #_thread_offset_to_preempt_float
+    vldmia r0, {s16-s31}
+
+    mov r3, #0
+    vmsr fpexc, r3
+
+in_fp_inactive:
+#endif /* CONFIG_FPU_SHARING */
 
 #if defined (CONFIG_ARM_MPU)
     /* r2 contains k_thread */
@@ -608,6 +666,12 @@ valid_syscall_id:
 #elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
 	|| defined(CONFIG_ARMV7_A)
 
+#if defined(CONFIG_FPU_SHARING)
+#define FPU_SF_SIZE ___fpu_t_SIZEOF
+#else
+#define FPU_SF_SIZE 0
+#endif
+
 /**
  *
  * @brief Service call handler
@@ -650,7 +714,34 @@ svc_system_thread:
     srsdb #MODE_SYS!
     cps #MODE_SYS
     push {r0-r3, r12, lr}
+
+#if defined(CONFIG_FPU_SHARING)
+    sub sp, sp, #___fpu_t_SIZEOF
+
+    /*
+     * Note that this handler was entered with the VFP unit enabled.
+     * The undefined instruction handler uses this to know that it
+     * needs to save the current floating context.
+     */
+    vmrs r0, fpexc
+    str r0, [sp, #___fpu_t_SIZEOF - 4]
+
+    /* Disable VFP */
+    mov r0, #0
+    vmsr fpexc, r0
+
+    /*
+     * Mark where to store the floating context for the undefined
+     * instruction handler
+     */
+    ldr r2, =_kernel
+    ldr r0, [r2, #_kernel_offset_to_fp_ctx]
+    cmp r0, #0
+    streq sp, [r2, #_kernel_offset_to_fp_ctx]
+#endif /* CONFIG_FPU_SHARING */
+
     mov ip, sp
+
     cps #MODE_SVC
 
     /*
@@ -735,7 +826,7 @@ _oops:
      * the SVC.
      *
      * On SVC exception, the USER/SYSTEM stack looks like the following:
-     * r0 - r1 - r2 - r3 - r12 - LR - { possible FPU space } - PC - SPSR
+     * { possible FPU space } - r0 - r1 - r2 - r3 - r12 - LR - PC - SPSR
      *
      * Registers look like:
      * r0 - arg1
@@ -748,10 +839,11 @@ _oops:
      * r8 - saved link register
      */
 _do_syscall:
-    ldr r8, [ip, #24]   /* grab address of LR from stack frame */
+    /* grab address of LR from stack frame */
+    ldr r8, [ip, #(FPU_SF_SIZE + ___basic_sf_t_pc_OFFSET)]
 
     /* Make the exception return to system state */
-    ldr r1, [ip, #28]
+    ldr r1, [ip, #(FPU_SF_SIZE + ___basic_sf_t_xpsr_OFFSET)]
 
     /* If leaving thumb mode, set the return address to thumb mode */
     tst r1, #T_BIT
@@ -759,14 +851,14 @@ _do_syscall:
 
     bic r1, #(MODE_MASK | T_BIT)
     orr r1, r1, #MODE_SYS
-    str r1, [ip, #28]
+    str r1, [ip, #(FPU_SF_SIZE + ___basic_sf_t_xpsr_OFFSET)]
 
     /*
      * Store the address of z_arm_do_syscall for the exit so the exception
      * return goes there in system state.
      */
     ldr r1, =z_arm_do_syscall
-    str r1, [ip, #24]   /* overwrite the LR to point to z_arm_do_syscall */
+    str r1, [ip, #(FPU_SF_SIZE + ___basic_sf_t_pc_OFFSET)]
 
     /* validate syscall limit, only set priv mode if valid */
     ldr ip, =K_SYSCALL_LIMIT
