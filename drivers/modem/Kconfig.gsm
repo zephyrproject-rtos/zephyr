@@ -62,6 +62,14 @@ config GSM_PPP_AUTOSTART
 	  modem connects to network. See contents of "drivers/gsm_ppp.h"
 	  to get an idea of the API.
 
+config MODEM_GSM_ATTACH_TIMEOUT
+	int "Timeout for attaching to packet service"
+	default 30
+	help
+	  Before activating PPP, attachment to packet service is checked
+	  using AT+CGATT. This setting dictates how much time in seconds
+	  we give the modem before giving up.
+
 config MODEM_GSM_MANUAL_MCCMNO
 	string "MCC/MNO for establishing network connection"
 	help
