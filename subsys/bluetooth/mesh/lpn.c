@@ -354,6 +354,7 @@ static void req_sent(uint16_t duration, int err, void *user_data)
 		k_delayed_work_submit(&lpn->timer,
 				      K_MSEC(LPN_RECV_DELAY - SCAN_LATENCY));
 	} else {
+		lpn_set_state(BT_MESH_LPN_WAIT_UPDATE);
 		k_delayed_work_submit(&lpn->timer,
 				      K_MSEC(LPN_RECV_DELAY + duration +
 					     lpn->recv_win));
