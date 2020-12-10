@@ -441,8 +441,8 @@ struct net_pkt *esp_prepare_pkt(struct esp_data *dev, struct net_buf *src,
  * Passive mode: "+IPD,<id>,<len>\r\n"
  * Other:        "+IPD,<id>,<len>:<data>"
  */
-#define MIN_IPD_LEN (sizeof("+IPD,I,LE") - 1)
-#define MAX_IPD_LEN (sizeof("+IPD,I,LLLLE") - 1)
+#define MIN_IPD_LEN (sizeof("+IPD,I,0E") - 1)
+#define MAX_IPD_LEN (sizeof("+IPD,I,4294967295E") - 1)
 MODEM_CMD_DIRECT_DEFINE(on_cmd_ipd)
 {
 	char *endptr, end, ipd_buf[MAX_IPD_LEN + 1];
