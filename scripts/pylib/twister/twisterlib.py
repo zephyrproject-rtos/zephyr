@@ -2732,10 +2732,11 @@ class TestSuite(DisablePyTestCollectionMixin):
         logger.info(f"{Fore.GREEN}{run}{Fore.RESET} test configurations executed on platforms, \
 {Fore.RED}{results.total - run - results.skipped_configs}{Fore.RESET} test configurations were only built.")
 
-    def save_reports(self, name, suffix, report_dir, no_update, release, only_failed):
+    def save_reports(self, name, suffix, report_dir, no_update, release, only_failed, platform_reports):
         if not self.instances:
             return
 
+        logger.info("Saving reports...")
         if name:
             report_name = name
         else:
@@ -2760,7 +2761,8 @@ class TestSuite(DisablePyTestCollectionMixin):
             self.csv_report(filename + ".csv")
             self.json_report(filename + ".json", append=only_failed, version=self.version)
 
-            self.target_report(outdir, suffix, append=only_failed)
+            if platform_reports:
+                self.target_report(outdir, suffix, append=only_failed)
             if self.discards:
                 self.discard_report(filename + "_discard.csv")
 
