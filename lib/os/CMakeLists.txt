@@ -21,6 +21,7 @@ zephyr_sources(
   work_q.c
   heap.c
   heap-validate.c
+  bitfield.c
   )
 
 zephyr_sources_ifdef(CONFIG_CBPRINTF_COMPLETE cbprintf_complete.c)
