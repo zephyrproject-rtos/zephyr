@@ -175,8 +175,9 @@ static const struct mcux_wdog_config mcux_wdog_config_0 = {
 
 static struct mcux_wdog_data mcux_wdog_data_0;
 
-DEVICE_AND_API_INIT(mcux_wdog_0, DT_INST_LABEL(0),
+DEVICE_DT_INST_DEFINE(0,
 		    &mcux_wdog_init,
+		    device_pm_control_nop,
 		    &mcux_wdog_data_0, &mcux_wdog_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_wdog_api);
@@ -185,7 +186,7 @@ static void mcux_wdog_config_func_0(const struct device *dev)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
-		    mcux_wdog_isr, DEVICE_GET(mcux_wdog_0), 0);
+		    mcux_wdog_isr, DEVICE_DT_INST_GET(0), 0);
 
 	irq_enable(DT_INST_IRQN(0));
 }
