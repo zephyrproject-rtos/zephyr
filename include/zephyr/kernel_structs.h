@@ -126,6 +126,10 @@ struct _cpu {
 
 	uint8_t id;
 
+#if defined(CONFIG_FPU_SHARING)
+	void *fp_ctx;
+#endif
+
 #ifdef CONFIG_SMP
 	/* True when _current is allowed to context switch */
 	uint8_t swap_ok;
