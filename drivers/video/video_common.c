@@ -65,5 +65,7 @@ void video_buffer_release(struct video_buffer *vbuf)
 	}
 
 	vbuf->buffer = NULL;
-	k_heap_free(&video_buffer_pool, block->data);
+	if (block) {
+		k_heap_free(&video_buffer_pool, block->data);
+	}
 }
