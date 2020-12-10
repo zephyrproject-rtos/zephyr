@@ -22,12 +22,14 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 #include "modem_cmd_handler.h"
 #include "../console/gsm_mux.h"
 
-#define GSM_CMD_READ_BUF       128
-#define GSM_CMD_AT_TIMEOUT     K_SECONDS(2)
-#define GSM_CMD_SETUP_TIMEOUT  K_SECONDS(6)
-#define GSM_RX_STACK_SIZE      CONFIG_MODEM_GSM_RX_STACK_SIZE
-#define GSM_RECV_MAX_BUF       30
-#define GSM_RECV_BUF_SIZE      128
+#define GSM_CMD_READ_BUF                128
+#define GSM_CMD_AT_TIMEOUT              K_SECONDS(2)
+#define GSM_CMD_SETUP_TIMEOUT           K_SECONDS(6)
+#define GSM_RX_STACK_SIZE               CONFIG_MODEM_GSM_RX_STACK_SIZE
+#define GSM_RECV_MAX_BUF                30
+#define GSM_RECV_BUF_SIZE               128
+#define GSM_ATTACH_RETRY_DELAY_MSEC     1000
+
 
 /* During the modem setup, we first create DLCI control channel and then
  * PPP and AT channels. Currently the modem does not create possible GNSS
@@ -62,6 +64,7 @@ static struct gsm_modem {
 
 	struct net_if *iface;
 
+	int attach_retries;
 	bool mux_enabled : 1;
 	bool mux_setup_done : 1;
 	bool setup_done : 1;
@@ -350,6 +353,11 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 {
 	int ret;
 
+	/* If attach check failed, we should not redo every setup step */
+	if (gsm->attach_retries) {
+		goto attaching;
+	}
+
 	if (IS_ENABLED(CONFIG_GSM_MUX) && gsm->mux_enabled) {
 		ret = modem_cmd_send_nolock(&gsm->context.iface,
 					    &gsm->context.cmd_handler,
@@ -392,6 +400,7 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 		return;
 	}
 
+attaching:
 	/* Don't initialize PPP until we're attached to packet service */
 	ret = modem_cmd_send_nolock(&gsm->context.iface,
 				    &gsm->context.cmd_handler,
@@ -400,12 +409,26 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 				    &gsm->sem_response,
 				    GSM_CMD_SETUP_TIMEOUT);
 	if (ret < 0) {
+		/*
+		 * attach_retries not set        -> trigger N attach retries
+		 * attach_retries set            -> decrement and retry
+		 * attach_retries set, becomes 0 -> trigger full retry
+		 */
+		if (!gsm->attach_retries) {
+			gsm->attach_retries = CONFIG_MODEM_GSM_ATTACH_TIMEOUT *
+				MSEC_PER_SEC / GSM_ATTACH_RETRY_DELAY_MSEC;
+		} else {
+			gsm->attach_retries--;
+		}
+
 		LOG_DBG("Not attached, %s", "retrying...");
 		(void)k_delayed_work_submit(&gsm->gsm_configure_work,
-					    K_SECONDS(1));
+					    K_MSEC(GSM_ATTACH_RETRY_DELAY_MSEC));
 		return;
 	}
 
+	/* Attached, clear retry counter */
+	gsm->attach_retries = 0;
 
 	LOG_DBG("modem setup returned %d, %s", ret, "enable PPP");
 
