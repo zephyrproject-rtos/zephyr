@@ -1966,8 +1966,6 @@ PREDEFINED             = "CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT" \
                          "CONFIG_BT_USER_PHY_UPDATE" \
                          "CONFIG_BT_SMP" \
                          "CONFIG_BT_SMP_APP_PAIRING_ACCEPT" \
-                         "CONFIG_PM_DEVICE" \
-                         "CONFIG_PM_DEVICE_IDLE" \
                          "CONFIG_ERRNO" \
                          "CONFIG_FLASH_JESD216_API" \
                          "CONFIG_FLASH_PAGE_LAYOUT" \
@@ -1979,6 +1977,9 @@ PREDEFINED             = "CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT" \
                          "CONFIG_NET_MGMT_EVENT" \
                          "CONFIG_NET_TCP" \
                          "CONFIG_NET_UDP" \
+                         "CONFIG_PM" \
+                         "CONFIG_PM_DEVICE" \
+                         "CONFIG_PM_DEVICE_IDLE" \
                          "CONFIG_PWM_CAPTURE" \
                          "CONFIG_SCHED_CPU_MASK" \
                          "CONFIG_SCHED_DEADLINE" \
@@ -1987,7 +1988,6 @@ PREDEFINED             = "CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT" \
                          "CONFIG_SMP" \
                          "CONFIG_SPI_ASYNC" \
                          "CONFIG_SYS_CLOCK_EXISTS" \
-                         "CONFIG_PM" \
                          "CONFIG_THREAD_CUSTOM_DATA" \
                          "CONFIG_THREAD_MONITOR" \
                          "CONFIG_THREAD_STACK_INFO" \
