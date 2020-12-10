@@ -33,3 +33,8 @@ zephyr_library_sources_ifdef(
 
 # Last since we declare default exception handlers here
 zephyr_library_sources(ia32/fatal.c)
+
+zephyr_library_sources_ifdef(
+  CONFIG_X86_FP_USE_SOFT_FLOAT
+  ia32/soft_float_stubs.c
+)
