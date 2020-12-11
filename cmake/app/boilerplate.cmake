@@ -71,9 +71,48 @@ set(__build_dir ${CMAKE_CURRENT_BINARY_DIR}/zephyr)
 
 set(PROJECT_BINARY_DIR ${__build_dir})
 
+if(${CMAKE_VERSION} VERSION_EQUAL 3.19.0 OR
+   ${CMAKE_VERSION} VERSION_EQUAL 3.19.1)
+  message(WARNING "CMake 3.19.0/3.19.1 contains a bug regarding Toolchain/compiler "
+          "testing. Consider switching to a different CMake version.\n"
+          "See more here: \n"
+          "- https://github.com/zephyrproject-rtos/zephyr/issues/30232\n"
+          "- https://gitlab.kitware.com/cmake/cmake/-/issues/21497")
+  # This is a workaround for #30232.
+  # During Zephyr CMake invocation a plain C compiler is used for DTS.
+  # This results in the internal `CheckCompilerFlag.cmake` being included by CMake
+  # Later, when the full toolchain is configured, then `CMakeCheckCompilerFlag.cmake` is included.
+  # This overloads the `cmake_check_compiler_flag()` function, thus causing #30232.
+  # By manualy loading `CMakeCheckCompilerFlag.cmake` then `CheckCompilerFlag.cmake` will overload
+  # the functions (and thus win the battle), and because `include_guard(GLOBAL)` is used in
+  # `CMakeCheckCompilerFlag.cmake` this file will not be re-included later.
+  include(${CMAKE_ROOT}/Modules/Internal/CMakeCheckCompilerFlag.cmake)
+endif()
+
 message(STATUS "Application: ${APPLICATION_SOURCE_DIR}")
 
 add_custom_target(code_data_relocation_target)
+
+# The zephyr/runners.yaml file in the build directory is used to
+# configure the scripts/west_commands/runners Python package used
+# by 'west flash', 'west debug', etc.
+#
+# This is a helper target for setting property:value pairs related to
+# this file:
+#
+# Property         Description
+# --------------   --------------------------------------------------
+# bin_file         "zephyr.bin" file for flashing
+# hex_file         "zephyr.hex" file for flashing
+# elf_file         "zephyr.elf" file for flashing or debugging
+# yaml_contents    generated contents of runners.yaml
+#
+# Note: there are quotes around "zephyr.bin" etc. because the actual
+# paths can be changed, e.g. to flash signed versions of these files
+# for consumption by bootloaders such as MCUboot.
+#
+# See cmake/flash/CMakeLists.txt for more details.
+add_custom_target(runners_yaml_props_target)
 
 # CMake's 'project' concept has proven to not be very useful for Zephyr
 # due in part to how Zephyr is organized and in part to it not fitting well
@@ -284,14 +323,17 @@ set(CACHED_SHIELD ${SHIELD} CACHE STRING "Selected shield")
 
 # 'BOARD_ROOT' is a prioritized list of directories where boards may
 # be found. It always includes ${ZEPHYR_BASE} at the lowest priority.
+zephyr_file(APPLICATION_ROOT BOARD_ROOT)
 list(APPEND BOARD_ROOT ${ZEPHYR_BASE})
 
 # 'SOC_ROOT' is a prioritized list of directories where socs may be
 # found. It always includes ${ZEPHYR_BASE}/soc at the lowest priority.
+zephyr_file(APPLICATION_ROOT SOC_ROOT)
 list(APPEND SOC_ROOT ${ZEPHYR_BASE})
 
 # 'ARCH_ROOT' is a prioritized list of directories where archs may be
 # found. It always includes ${ZEPHYR_BASE} at the lowest priority.
+zephyr_file(APPLICATION_ROOT ARCH_ROOT)
 list(APPEND ARCH_ROOT ${ZEPHYR_BASE})
 
 if(DEFINED SHIELD)
@@ -432,7 +474,6 @@ if(DEFINED SHIELD AND NOT (SHIELD-NOTFOUND STREQUAL ""))
 endif()
 
 get_filename_component(BOARD_ARCH_DIR ${BOARD_DIR}      DIRECTORY)
-get_filename_component(BOARD_FAMILY   ${BOARD_DIR}      NAME)
 get_filename_component(ARCH           ${BOARD_ARCH_DIR} NAME)
 
 foreach(root ${ARCH_ROOT})
@@ -448,10 +489,38 @@ please check your installation. ARCH roots searched: \n\
 ${ARCH_ROOT}")
 endif()
 
-if(CONF_FILE)
+if(DEFINED CONF_FILE)
+  # This ensures that CACHE{CONF_FILE} will be set correctly to current scope
+  # variable CONF_FILE. An already current scope variable will stay the same.
+  set(CONF_FILE ${CONF_FILE})
+
   # CONF_FILE has either been specified on the cmake CLI or is already
   # in the CMakeCache.txt. This has precedence over the environment
   # variable CONF_FILE and the default prj.conf
+
+  # In order to support a `prj_<name>.conf pattern for auto inclusion of board
+  # overlays, then we must first ensure only a single conf file is provided.
+  string(REPLACE " " ";" CONF_FILE_AS_LIST "${CONF_FILE}")
+  list(LENGTH CONF_FILE_AS_LIST CONF_FILE_LENGTH)
+  if(${CONF_FILE_LENGTH} EQUAL 1)
+    # Need the file name to look for match.
+    # Need path in order to check if it is absolute.
+    get_filename_component(CONF_FILE_NAME ${CONF_FILE} NAME)
+    get_filename_component(CONF_FILE_DIR ${CONF_FILE} DIRECTORY)
+    if(${CONF_FILE} MATCHES "prj_(.*).conf")
+      if(NOT IS_ABSOLUTE ${CONF_FILE_DIR})
+        set(CONF_FILE_DIR ${APPLICATION_SOURCE_DIR}/${CONF_FILE_DIR})
+      endif()
+      if(EXISTS ${CONF_FILE_DIR}/boards/${BOARD}_${CMAKE_MATCH_1}.conf)
+        list(APPEND CONF_FILE ${CONF_FILE_DIR}/boards/${BOARD}_${CMAKE_MATCH_1}.conf)
+      endif()
+    endif()
+  endif()
+elseif(CACHED_CONF_FILE)
+  # Cached conf file is present.
+  # That value has precedence over anything else than a new
+  # `cmake -DCONF_FILE=<file>` invocation.
+  set(CONF_FILE ${CACHED_CONF_FILE})
 elseif(DEFINED ENV{CONF_FILE})
   set(CONF_FILE $ENV{CONF_FILE})
 
@@ -469,10 +538,13 @@ elseif(EXISTS   ${APPLICATION_SOURCE_DIR}/prj.conf)
   set(CONF_FILE ${APPLICATION_SOURCE_DIR}/prj.conf)
 endif()
 
-set(CONF_FILE ${CONF_FILE} CACHE STRING "If desired, you can build the application using\
+set(CACHED_CONF_FILE ${CONF_FILE} CACHE STRING "If desired, you can build the application using\
 the configuration settings specified in an alternate .conf file using this parameter. \
 These settings will override the settings in the application’s .config file or its default .conf file.\
-Multiple files may be listed, e.g. CONF_FILE=\"prj1.conf prj2.conf\"")
+Multiple files may be listed, e.g. CONF_FILE=\"prj1.confi;prj2.conf\" \
+The CACHED_CONF_FILE is internal Zephyr variable used between CMake runs. \
+To change CONF_FILE, use the CONF_FILE variable.")
+unset(CONF_FILE CACHE)
 
 if(ZEPHYR_EXTRA_MODULES)
   # ZEPHYR_EXTRA_MODULES has either been specified on the cmake CLI or is
@@ -501,6 +573,13 @@ build the application using the DT configuration settings specified in an \
 alternate .overlay file using this parameter. These settings will override the \
 settings in the board's .dts file. Multiple files may be listed, e.g. \
 DTC_OVERLAY_FILE=\"dts1.overlay dts2.overlay\"")
+
+# Populate USER_CACHE_DIR with a directory that user applications may
+# write cache files to.
+if(NOT DEFINED USER_CACHE_DIR)
+  find_appropriate_cache_directory(USER_CACHE_DIR)
+endif()
+message(STATUS "Cache files will be written to: ${USER_CACHE_DIR}")
 
 # Prevent CMake from testing the toolchain
 set(CMAKE_C_COMPILER_FORCED   1)
@@ -557,6 +636,12 @@ include(${ZEPHYR_BASE}/cmake/target_toolchain.cmake)
 
 project(Zephyr-Kernel VERSION ${PROJECT_VERSION})
 enable_language(C CXX ASM)
+# The setup / configuration of the toolchain itself and the configuration of
+# supported compilation flags are now split, as this allows to use the toolchain
+# for generic purposes, for example DTS, and then test the toolchain for
+# supported flags at stage two.
+# Testing the toolchain flags requires the enable_language() to have been called in CMake.
+include(${ZEPHYR_BASE}/cmake/target_toolchain_flags.cmake)
 
 # 'project' sets PROJECT_BINARY_DIR to ${CMAKE_CURRENT_BINARY_DIR},
 # but for legacy reasons we need it to be set to
@@ -575,13 +660,6 @@ set(KERNEL_S19_NAME   ${KERNEL_NAME}.s19)
 set(KERNEL_EXE_NAME   ${KERNEL_NAME}.exe)
 set(KERNEL_STAT_NAME  ${KERNEL_NAME}.stat)
 set(KERNEL_STRIP_NAME ${KERNEL_NAME}.strip)
-
-# Populate USER_CACHE_DIR with a directory that user applications may
-# write cache files to.
-if(NOT DEFINED USER_CACHE_DIR)
-  find_appropriate_cache_directory(USER_CACHE_DIR)
-endif()
-message(STATUS "Cache files will be written to: ${USER_CACHE_DIR}")
 
 include(${BOARD_DIR}/board.cmake OPTIONAL)
 
@@ -618,6 +696,8 @@ endif()
 #
 # Currently used properties:
 # - COMPILES_OPTIONS: Used by application memory partition feature
+# - ${TARGET}_DEPENDENCIES: additional dependencies for targets that need them
+#   like flash (FLASH_DEPENDENCIES), debug (DEBUG_DEPENDENCIES), etc.
 add_custom_target(zephyr_property_target)
 
 # "app" is a CMake library containing all the application code and is

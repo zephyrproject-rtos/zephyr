@@ -64,7 +64,7 @@
 #include <drivers/interrupt_controller/loapic.h> /* public API declarations and registers */
 #include "intc_ioapic_priv.h"
 
-DEVICE_MMIO_TOPLEVEL_STATIC(ioapic_regs, 0);
+DEVICE_MMIO_TOPLEVEL_STATIC(ioapic_regs, DT_DRV_INST(0));
 
 #define IOAPIC_REG DEVICE_MMIO_TOPLEVEL_GET(ioapic_regs)
 #define BITS_PER_IRQ  4
@@ -92,7 +92,7 @@ DEVICE_MMIO_TOPLEVEL_STATIC(ioapic_regs, 0);
  */
 #define DEFAULT_RTE_DEST	(0xFF << 24)
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 #include <power/power.h>
 uint32_t ioapic_suspend_buf[SUSPEND_BITS_REQD / 32] = {0};
 static uint32_t ioapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
@@ -120,7 +120,7 @@ static void IoApicRedUpdateLo(unsigned int irq, uint32_t value,
  *
  * @return N/A
  */
-int ioapic_init(struct device *unused)
+int ioapic_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 
@@ -179,7 +179,7 @@ void z_ioapic_irq_disable(unsigned int irq)
 }
 
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 
 void store_flags(unsigned int irq, uint32_t flags)
 {
@@ -237,7 +237,7 @@ uint32_t restore_flags(unsigned int irq)
 }
 
 
-int ioapic_suspend(struct device *port)
+int ioapic_suspend(const struct device *port)
 {
 	int irq;
 	uint32_t rte_lo;
@@ -259,7 +259,7 @@ int ioapic_suspend(struct device *port)
 	return 0;
 }
 
-int ioapic_resume_from_suspend(struct device *port)
+int ioapic_resume_from_suspend(const struct device *port)
 {
 	int irq;
 	uint32_t flags;
@@ -293,7 +293,8 @@ int ioapic_resume_from_suspend(struct device *port)
 * Implements the driver control management functionality
 * the *context may include IN data or/and OUT data
 */
-static int ioapic_device_ctrl(struct device *device, uint32_t ctrl_command,
+static int ioapic_device_ctrl(const struct device *device,
+			      uint32_t ctrl_command,
 			      void *context, device_pm_cb cb, void *arg)
 {
 	int ret = 0;
@@ -316,7 +317,7 @@ static int ioapic_device_ctrl(struct device *device, uint32_t ctrl_command,
 }
 
 
-#endif  /*CONFIG_DEVICE_POWER_MANAGEMENT*/
+#endif  /*CONFIG_PM_DEVICE*/
 
 /**
  *
@@ -476,7 +477,7 @@ static void IoApicRedUpdateLo(unsigned int irq,
 }
 
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 SYS_DEVICE_DEFINE("ioapic", ioapic_init, ioapic_device_ctrl, PRE_KERNEL_1,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #else

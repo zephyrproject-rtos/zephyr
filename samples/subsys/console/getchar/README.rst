@@ -6,9 +6,9 @@ console_getchar() Sample Application
 Overview
 ********
 
-This example shows how to use :cpp:func:`console_getchar()` function.
+This example shows how to use :c:func:`console_getchar` function.
 Similar to the well-known ANSI C getchar() function,
-:cpp:func:`console_getchar()` either returns the next available input
+:c:func:`console_getchar` either returns the next available input
 character or blocks waiting for one. Using this function, it should be
 fairly easy to port existing ANSI C, POSIX, or Linux applications which
 process console input character by character. The sample also allows to

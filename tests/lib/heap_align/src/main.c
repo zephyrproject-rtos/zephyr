@@ -60,7 +60,7 @@ static void check_heap_align(struct sys_heap *h,
 static void test_aligned_alloc(void)
 {
 	struct sys_heap heap = {};
-	void *p;
+	void *p, *q;
 
 	sys_heap_init(&heap, heapmem, HEAP_SZ);
 
@@ -81,6 +81,21 @@ static void test_aligned_alloc(void)
 			}
 		}
 	}
+
+	/* corner case on small heaps */
+	p = sys_heap_aligned_alloc(&heap, 8, 12);
+	memset(p, 0, 12);
+	zassert_true(sys_heap_validate(&heap), "heap invalid");
+	sys_heap_free(&heap, p);
+
+	/* corner case with minimizing the overallocation before alignment */
+	p = sys_heap_aligned_alloc(&heap, 16, 16);
+	q = sys_heap_aligned_alloc(&heap, 16, 17);
+	memset(p, 0, 16);
+	memset(q, 0, 17);
+	zassert_true(sys_heap_validate(&heap), "heap invalid");
+	sys_heap_free(&heap, p);
+	sys_heap_free(&heap, q);
 }
 
 void test_main(void)

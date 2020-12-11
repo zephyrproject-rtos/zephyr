@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <sys/ring_buffer.h>
 #include <sys/atomic.h>
 
-#ifdef CONFIG_OPENTHREAD_NCP_SPINEL_ON_UART_ACM
+#ifdef CONFIG_OPENTHREAD_COPROCESSOR_SPINEL_ON_UART_ACM
 #include <usb/usb_device.h>
 #endif
 
@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 struct openthread_uart {
 	struct ring_buf *rx_ringbuf;
-	struct device *dev;
+	const struct device *dev;
 	atomic_t tx_busy;
 	atomic_t tx_finished;
 };
@@ -41,7 +41,7 @@ struct openthread_uart {
 		.rx_ringbuf = &_name##_rx_ringbuf, \
 	}
 
-OT_UART_DEFINE(ot_uart, CONFIG_OPENTHREAD_NCP_UART_RING_BUFFER_SIZE);
+OT_UART_DEFINE(ot_uart, CONFIG_OPENTHREAD_COPROCESSOR_UART_RING_BUFFER_SIZE);
 
 #define RX_FIFO_SIZE 128
 
@@ -49,7 +49,7 @@ static bool is_panic_mode;
 static const uint8_t *write_buffer;
 static uint16_t write_length;
 
-static void uart_rx_handle(struct device *dev)
+static void uart_rx_handle(const struct device *dev)
 {
 	uint8_t *data;
 	uint32_t len;
@@ -85,7 +85,7 @@ static void uart_rx_handle(struct device *dev)
 	}
 }
 
-static void uart_tx_handle(struct device *dev)
+static void uart_tx_handle(const struct device *dev)
 {
 	uint32_t len;
 
@@ -101,7 +101,7 @@ static void uart_tx_handle(struct device *dev)
 	}
 }
 
-static void uart_callback(struct device *dev, void *user_data)
+static void uart_callback(const struct device *dev, void *user_data)
 {
 	ARG_UNUSED(user_data);
 
@@ -148,34 +148,12 @@ void platformUartProcess(otInstance *aInstance)
 otError otPlatUartEnable(void)
 {
 	ot_uart.dev = device_get_binding(
-		CONFIG_OPENTHREAD_NCP_SPINEL_ON_UART_DEV_NAME);
+		CONFIG_OPENTHREAD_COPROCESSOR_SPINEL_ON_UART_DEV_NAME);
 
 	if ((&ot_uart)->dev == NULL) {
 		LOG_ERR("UART device not found");
 		return OT_ERROR_FAILED;
 	}
-
-#ifdef CONFIG_OPENTHREAD_NCP_SPINEL_ON_UART_ACM
-	int ret = usb_enable(NULL);
-	uint32_t baudrate = 0U;
-
-	if (ret != 0) {
-		LOG_ERR("Failed to enable USB");
-		return OT_ERROR_FAILED;
-	}
-
-	LOG_INF("Wait for host to settle");
-	k_sleep(K_SECONDS(1));
-
-	ret = uart_line_ctrl_get(ot_uart.dev,
-				 UART_LINE_CTRL_BAUD_RATE,
-				 &baudrate);
-	if (ret) {
-		LOG_WRN("Failed to get baudrate, ret code %d", ret);
-	} else {
-		LOG_INF("Baudrate detected: %d", baudrate);
-	}
-#endif
 
 	uart_irq_callback_user_data_set(ot_uart.dev,
 					uart_callback,
@@ -187,7 +165,7 @@ otError otPlatUartEnable(void)
 
 otError otPlatUartDisable(void)
 {
-#ifdef CONFIG_OPENTHREAD_NCP_SPINEL_ON_UART_ACM
+#ifdef CONFIG_OPENTHREAD_COPROCESSOR_SPINEL_ON_UART_ACM
 	int ret = usb_disable();
 
 	if (ret) {

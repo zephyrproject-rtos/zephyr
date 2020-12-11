@@ -72,24 +72,24 @@ uintptr_t __abi efi_entry(void *img_handle, struct efi_system_table *sys_tab)
 	printf("*** Zephyr EFI Loader ***\n");
 
 	for (int i = 0; i < sizeof(zefi_zsegs)/sizeof(zefi_zsegs[0]); i++) {
-		int nwords = zefi_zsegs[i].sz;
-		uint32_t *dst = (uint32_t *)zefi_zsegs[i].addr;
+		int bytes = zefi_zsegs[i].sz;
+		uint8_t *dst = (uint8_t *)zefi_zsegs[i].addr;
 
-		printf("Zeroing %d bytes of memory at %p\n", 4 * nwords, dst);
-		for (int j = 0; j < nwords; j++) {
+		printf("Zeroing %d bytes of memory at %p\n", bytes, dst);
+		for (int j = 0; j < bytes; j++) {
 			dst[j] = 0;
 		}
 	}
 
 	for (int i = 0; i < sizeof(zefi_dsegs)/sizeof(zefi_dsegs[0]); i++) {
-		int nwords = zefi_dsegs[i].sz;
+		int bytes = zefi_dsegs[i].sz;
 		int off = zefi_dsegs[i].off;
-		uint32_t *dst = (uint32_t *)zefi_dsegs[i].addr;
-		uint32_t *src = &((uint32_t *)EXT_DATA_START)[off];
+		uint8_t *dst = (uint8_t *)zefi_dsegs[i].addr;
+		uint8_t *src = &((uint8_t *)EXT_DATA_START)[off];
 
 		printf("Copying %d data bytes to %p from image offset %d\n",
-		       4 * nwords, dst, zefi_dsegs[i].off);
-		for (int j = 0; j < nwords; j++) {
+		       bytes, dst, zefi_dsegs[i].off);
+		for (int j = 0; j < bytes; j++) {
 			dst[j] = src[j];
 		}
 	}

@@ -543,11 +543,21 @@ test_i2c_iis2dh: iis2dh@18 {
 	drdy-gpios = <&test_gpio 0 0>;
 };
 
+test_i2c_iis2iclx: iis2iclx@6a {
+	compatible = "st,iis2iclx";
+	label = "IIS2ICLX";
+	reg = <0x6a>;
+	drdy-gpios = <&test_gpio 0 0>;
+	int-pin = <1>;
+};
+
 test_i2c_itds: itds@18 {
 	compatible = "we,wsen-itds";
 	label = "WSEN-ITDS";
 	reg = <0x18>;
 	int-gpios = <&test_gpio 0 0>;
+	odr = "800";
+	op-mode = "high-perf";
 };
 
 test_i2c_max17055: max17055@49 {
@@ -558,4 +568,11 @@ test_i2c_max17055: max17055@49 {
 	desired-voltage = <4400>;
 	desired-charging-current = <2000>;
 	rsense-mohms = <5>;
+};
+
+test_i2c_vcnl4040: vcnl4040@60 {
+	compatible = "vishay,vcnl4040";
+	label = "VCNL4040";
+	reg = <0x60>;
+	int-gpios = <&test_gpio 0 0>;
 };

@@ -8,7 +8,6 @@
 #
 menuconfig I2C
 	bool "I2C Drivers"
-	select HAS_DTS_I2C
 	help
 	  Enable I2C Driver Configuration
 
@@ -32,6 +31,7 @@ source "drivers/i2c/slave/Kconfig"
 source "drivers/i2c/Kconfig.gpio"
 source "drivers/i2c/Kconfig.xec"
 source "drivers/i2c/Kconfig.nrfx"
+source "drivers/i2c/Kconfig.i2c_emul"
 source "drivers/i2c/Kconfig.sbcon"
 source "drivers/i2c/Kconfig.sifive"
 source "drivers/i2c/Kconfig.stm32"
@@ -50,30 +50,6 @@ module = I2C
 module-str = i2c
 source "subsys/logging/Kconfig.template.log_config"
 
-config I2C_0
-	bool "Enable I2C Port 0"
-
-config I2C_1
-	bool "Enable I2C Port 1"
-
-config I2C_2
-	bool "Enable I2C Port 2"
-
-config I2C_3
-	bool "Enable I2C Port 3"
-
-config I2C_4
-	bool "Enable I2C Port 4"
-
-config I2C_5
-	bool "Enable I2C Port 5"
-
-config I2C_6
-	bool "Enable I2C Port 6"
-
-config I2C_7
-	bool "Enable I2C Port 7"
-
 config I2C_GECKO
 	bool "Gecko I2C driver"
 	depends on HAS_SILABS_GECKO
@@ -86,6 +62,12 @@ config I2C_SAM_TWIHS
 	depends on SOC_FAMILY_SAM
 	help
 	  Enable Atmel SAM MCU Family (TWIHS) I2C bus driver.
+
+config I2C_SAM_TWIM
+	bool "Atmel SAM (TWIM) I2C driver"
+	depends on SOC_SERIES_SAM4L
+	help
+	  Enable Atmel SAM MCU Family (TWIM) I2C bus driver.
 
 config I2C_SAM_TWI
 	bool "Atmel SAM (TWI) I2C driver"

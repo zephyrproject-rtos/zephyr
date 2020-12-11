@@ -55,7 +55,7 @@ typedef bool (*test_capability_check_t)(const char *dev_name,
 
 static void setup_instance(const char *dev_name, clock_control_subsys_t subsys)
 {
-	struct device *dev = device_get_binding(dev_name);
+	const struct device *dev = device_get_binding(dev_name);
 	int err;
 	k_busy_wait(1000);
 	do {
@@ -82,7 +82,7 @@ static void tear_down_instance(const char *dev_name,
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_clock)
 	/* Turn on LF clock using onoff service if it is disabled. */
-	struct device *clk =
+	const struct device *clk =
 		device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_clock)));
 	struct onoff_client cli;
 	struct onoff_manager *mgr =
@@ -143,7 +143,7 @@ static void test_on_off_status_instance(const char *dev_name,
 					clock_control_subsys_t subsys,
 					uint32_t startup_us)
 {
-	struct device *dev = device_get_binding(dev_name);
+	const struct device *dev = device_get_binding(dev_name);
 	enum clock_control_status status;
 	int err;
 
@@ -173,7 +173,7 @@ static void test_on_off_status(void)
 	test_all_instances(test_on_off_status_instance, NULL);
 }
 
-static void async_capable_callback(struct device *dev,
+static void async_capable_callback(const struct device *dev,
 				   clock_control_subsys_t subsys,
 				   void *user_data)
 {
@@ -183,13 +183,10 @@ static void async_capable_callback(struct device *dev,
 /* Function checks if clock supports asynchronous starting. */
 static bool async_capable(const char *dev_name, clock_control_subsys_t subsys)
 {
-	struct device *dev = device_get_binding(dev_name);
-	struct clock_control_async_data data = {
-		.cb = async_capable_callback
-	};
+	const struct device *dev = device_get_binding(dev_name);
 	int err;
 
-	err = clock_control_async_on(dev, subsys, &data);
+	err = clock_control_async_on(dev, subsys, async_capable_callback, NULL);
 	if (err < 0) {
 		printk("failed %d", err);
 		return false;
@@ -212,7 +209,7 @@ static bool async_capable(const char *dev_name, clock_control_subsys_t subsys)
 /*
  * Test checks that callbacks are called after clock is started.
  */
-static void clock_on_callback(struct device *dev,
+static void clock_on_callback(const struct device *dev,
 				clock_control_subsys_t subsys,
 				void *user_data)
 {
@@ -225,20 +222,16 @@ static void test_async_on_instance(const char *dev_name,
 				   clock_control_subsys_t subsys,
 				   uint32_t startup_us)
 {
-	struct device *dev = device_get_binding(dev_name);
+	const struct device *dev = device_get_binding(dev_name);
 	enum clock_control_status status;
 	int err;
 	bool executed = false;
-	struct clock_control_async_data data = {
-		.cb = clock_on_callback,
-		.user_data = &executed
-	};
 
 	status = clock_control_get_status(dev, subsys);
 	zassert_equal(CLOCK_CONTROL_STATUS_OFF, status,
 			"%s: Unexpected status (%d)", dev_name, status);
 
-	err = clock_control_async_on(dev, subsys, &data);
+	err = clock_control_async_on(dev, subsys, clock_on_callback, &executed);
 	zassert_equal(0, err, "%s: Unexpected err (%d)", dev_name, err);
 
 	/* wait for clock started. */
@@ -264,15 +257,11 @@ static void test_async_on_stopped_on_instance(const char *dev_name,
 					      clock_control_subsys_t subsys,
 					      uint32_t startup_us)
 {
-	struct device *dev = device_get_binding(dev_name);
+	const struct device *dev = device_get_binding(dev_name);
 	enum clock_control_status status;
 	int err;
 	int key;
 	bool executed = false;
-	struct clock_control_async_data data = {
-		.cb = clock_on_callback,
-		.user_data = &executed
-	};
 
 	status = clock_control_get_status(dev, subsys);
 	zassert_equal(CLOCK_CONTROL_STATUS_OFF, status,
@@ -280,7 +269,7 @@ static void test_async_on_stopped_on_instance(const char *dev_name,
 
 	/* lock to prevent clock interrupt for fast starting clocks.*/
 	key = irq_lock();
-	err = clock_control_async_on(dev, subsys, &data);
+	err = clock_control_async_on(dev, subsys, clock_on_callback, &executed);
 	zassert_equal(0, err, "%s: Unexpected err (%d)", dev_name, err);
 
 	/* Attempt to stop clock while it is being started. */
@@ -306,7 +295,7 @@ static void test_double_start_on_instance(const char *dev_name,
 						clock_control_subsys_t subsys,
 						uint32_t startup_us)
 {
-	struct device *dev = device_get_binding(dev_name);
+	const struct device *dev = device_get_binding(dev_name);
 	enum clock_control_status status;
 	int err;
 
@@ -318,7 +307,7 @@ static void test_double_start_on_instance(const char *dev_name,
 	zassert_equal(0, err, "%s: Unexpected err (%d)", dev_name, err);
 
 	err = clock_control_on(dev, subsys);
-	zassert_equal(-EBUSY, err, "%s: Unexpected err (%d)", dev_name, err);
+	zassert_true(err < 0, "%s: Unexpected return value:%d", dev_name, err);
 }
 
 static void test_double_start(void)
@@ -334,7 +323,7 @@ static void test_double_stop_on_instance(const char *dev_name,
 						clock_control_subsys_t subsys,
 						uint32_t startup_us)
 {
-	struct device *dev = device_get_binding(dev_name);
+	const struct device *dev = device_get_binding(dev_name);
 	enum clock_control_status status;
 	int err;
 

@@ -11,6 +11,8 @@
 #include <drivers/gpio.h>
 #include <zephyr/types.h>
 
+extern const struct gpio_driver_api gpio_mmio32_api;
+
 struct gpio_mmio32_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
@@ -24,7 +26,7 @@ struct gpio_mmio32_context {
 	const struct gpio_mmio32_config *config;
 };
 
-int gpio_mmio32_init(struct device *dev);
+int gpio_mmio32_init(const struct device *dev);
 
 #ifdef CONFIG_GPIO_MMIO32
 
@@ -53,11 +55,12 @@ static const struct gpio_mmio32_config _dev_name##_dev_cfg = {		\
 	.mask	= _mask,						\
 };									\
 									\
-DEVICE_INIT(_dev_name, _drv_name,					\
-	&gpio_mmio32_init,						\
-	&_dev_name##_dev_data,						\
-	&_dev_name##_dev_cfg,						\
-	PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE)
+DEVICE_AND_API_INIT(_dev_name, _drv_name,				\
+		    &gpio_mmio32_init,					\
+		    &_dev_name##_dev_data,				\
+		    &_dev_name##_dev_cfg,				\
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+		    &gpio_mmio32_api)
 
 #else /* CONFIG_GPIO_MMIO32 */
 

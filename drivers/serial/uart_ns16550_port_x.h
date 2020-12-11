@@ -10,14 +10,14 @@
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(@NUM@), okay)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void irq_config_func_@NUM@(struct device *port);
+static void irq_config_func_@NUM@(const struct device *port);
 #endif
 
 static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_@NUM@ = {
 #ifdef UART_NS16550_ACCESS_IOPORT
 	.port = DT_INST_REG_ADDR(@NUM@),
 #elif !DT_INST_PROP(@NUM@, pcie)
-	DEVICE_MMIO_ROM_INIT(@NUM@),
+	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(@NUM@)),
 #endif
 	.sys_clk_freq = DT_INST_PROP(@NUM@, clock_frequency),
 
@@ -66,7 +66,7 @@ DEVICE_AND_API_INIT(uart_ns16550_@NUM@, DT_INST_LABEL(@NUM@),
 #endif
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void irq_config_func_@NUM@(struct device *dev)
+static void irq_config_func_@NUM@(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -80,7 +80,7 @@ static void irq_config_func_@NUM@(struct device *dev)
 
 	unsigned int irq;
 
-	irq = pcie_wired_irq(DT_INST_REG_ADDR(@NUM@));
+	irq = pcie_alloc_irq(DT_INST_REG_ADDR(@NUM@));
 
 	if (irq == PCIE_CONF_INTR_IRQ_NONE) {
 		return;
@@ -88,7 +88,7 @@ static void irq_config_func_@NUM@(struct device *dev)
 
 	irq_connect_dynamic(irq,
 			    DT_INST_IRQ(@NUM@, priority),
-			    uart_ns16550_isr,
+			    (void (*)(const void *))uart_ns16550_isr,
 			    DEVICE_GET(uart_ns16550_@NUM@),
 			    INST_@NUM@_IRQ_FLAGS);
 
@@ -100,7 +100,8 @@ static void irq_config_func_@NUM@(struct device *dev)
 
 	IRQ_CONNECT(DT_INST_IRQN(@NUM@),
 		    DT_INST_IRQ(@NUM@, priority),
-		    uart_ns16550_isr, DEVICE_GET(uart_ns16550_@NUM@),
+		    uart_ns16550_isr,
+		    DEVICE_GET(uart_ns16550_@NUM@),
 		    INST_@NUM@_IRQ_FLAGS);
 
 	pcie_irq_enable(DT_INST_REG_ADDR(@NUM@),
@@ -113,7 +114,8 @@ static void irq_config_func_@NUM@(struct device *dev)
 
 	IRQ_CONNECT(DT_INST_IRQN(@NUM@),
 		    DT_INST_IRQ(@NUM@, priority),
-		    uart_ns16550_isr, DEVICE_GET(uart_ns16550_@NUM@),
+		    uart_ns16550_isr,
+		    DEVICE_GET(uart_ns16550_@NUM@),
 		    INST_@NUM@_IRQ_FLAGS);
 
 	irq_enable(DT_INST_IRQN(@NUM@));

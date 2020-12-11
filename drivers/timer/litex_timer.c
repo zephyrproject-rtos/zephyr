@@ -28,7 +28,7 @@
 #define TIMER_ENABLE	0x1
 #define UPDATE_TOTAL	0x1
 
-static void litex_timer_irq_handler(void *device)
+static void litex_timer_irq_handler(const void *device)
 {
 	ARG_UNUSED(device);
 	int key = irq_lock();
@@ -59,7 +59,7 @@ uint32_t z_clock_elapsed(void)
 	return 0;
 }
 
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 	IRQ_CONNECT(TIMER_IRQ, DT_INST_IRQ(0, priority),

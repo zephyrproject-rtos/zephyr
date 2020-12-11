@@ -63,6 +63,8 @@ void z_sched_abort(struct k_thread *thread);
 void z_sched_ipi(void);
 void z_sched_start(struct k_thread *thread);
 void z_ready_thread(struct k_thread *thread);
+void z_thread_single_abort(struct k_thread *thread);
+FUNC_NORETURN void z_self_abort(void);
 
 static inline void z_pend_curr_unlocked(_wait_q_t *wait_q, k_timeout_t timeout)
 {
@@ -103,6 +105,11 @@ static inline bool z_is_idle_thread_object(struct k_thread *thread)
 #endif /* CONFIG_MULTITHREADING */
 }
 
+static inline bool z_is_thread_suspended(struct k_thread *thread)
+{
+	return (thread->base.thread_state & _THREAD_SUSPENDED) != 0U;
+}
+
 static inline bool z_is_thread_pending(struct k_thread *thread)
 {
 	return (thread->base.thread_state & _THREAD_PENDING) != 0U;
@@ -124,7 +131,7 @@ static inline bool z_is_thread_timeout_active(struct k_thread *thread)
 
 static inline bool z_is_thread_ready(struct k_thread *thread)
 {
-	return !((z_is_thread_prevented_from_running(thread)) != 0 ||
+	return !((z_is_thread_prevented_from_running(thread)) != 0U ||
 		 z_is_thread_timeout_active(thread));
 }
 

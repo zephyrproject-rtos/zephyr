@@ -227,9 +227,12 @@ Supported variations
 ====================
 
 The below table suggests shield variation accordingly with end user
-application.  The default shield atmel_rf2xx expects a board overlay.  The
-remaining configurations should be used based on the board standard headers
-available.
+application.  When a standard connector (arduino, mikrobus, xplained,
+xplained-pro) is available on board, user should select the matching shield
+configuration. When atmel_rf2xx shield is used with a board that doesn't
+feature a standard connector, a dedicated <board>.overlay file should be
+provided.  The remaining configurations should be used based on the board
+standard headers available.
 
 +-----------------------------+------------------------------+-----------+
 | Connector Standard          | Shield Designation           | Variation |
@@ -255,15 +258,11 @@ SPI interface, an interrupt signal and two GPIO. (see :ref:`shields` for more
 details).
 
 .. note::
-	The shield configuration was designed to be used with multiple network
-	interfaces.  This means, boards with any other network interface can
-	be simultaneous enabled.  User must be check network documentation to
-	avoid problem when running samples.  For instance, boards with ethernet
-	automatically define that interface as default.  Make sure to select
-	IEEE 802.15.4 interface as the default interface when build examples.
-	As general rule, keep only IEEE 802.15.4 interface enabled at
-	Networking -> Link Layer Options.  This will ensure samples works as
-	expected.
+	Boards that already have a network interface:  Check network
+	documentation to understand how properly configure both interfaces.
+	To keep simple, make sure IEEE 802.15.4 is the only interface enabled
+	at Networking -> Link Layer Options.  This will avoid problems running
+	Zephyr samples.
 
 Tested Boards
 =============

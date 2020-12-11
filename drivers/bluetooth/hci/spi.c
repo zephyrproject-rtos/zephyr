@@ -68,8 +68,8 @@
 static uint8_t rxmsg[SPI_MAX_MSG_LEN];
 static uint8_t txmsg[SPI_MAX_MSG_LEN];
 
-static struct device		*irq_dev;
-static struct device		*rst_dev;
+static const struct device *irq_dev;
+static const struct device *rst_dev;
 
 static struct gpio_callback	gpio_cb;
 
@@ -105,7 +105,7 @@ void spi_dump_message(const uint8_t *pre, uint8_t *buf, uint8_t size) {}
 #endif
 
 #if defined(CONFIG_BT_SPI_BLUENRG)
-static struct device *cs_dev;
+static const struct device *cs_dev;
 /* Define a limit when reading IRQ high */
 /* It can be required to be increased for */
 /* some particular cases. */
@@ -126,7 +126,7 @@ struct bluenrg_aci_cmd_ll_param {
 static int bt_spi_send_aci_config_data_controller_mode(void);
 #endif /* CONFIG_BT_BLUENRG_ACI */
 
-static struct device *spi_dev;
+static const struct device *spi_dev;
 
 static struct spi_config spi_conf = {
 	.frequency = DT_INST_PROP(0, spi_max_frequency),
@@ -166,7 +166,8 @@ static inline uint16_t bt_spi_get_evt(uint8_t *rxmsg)
 	return (rxmsg[EVT_VENDOR_CODE_MSB] << 8) | rxmsg[EVT_VENDOR_CODE_LSB];
 }
 
-static void bt_spi_isr(struct device *unused1, struct gpio_callback *unused2,
+static void bt_spi_isr(const struct device *unused1,
+		       struct gpio_callback *unused2,
 		       uint32_t unused3)
 {
 	BT_DBG("");
@@ -506,7 +507,7 @@ static int bt_spi_open(void)
 	k_thread_create(&spi_rx_thread_data, spi_rx_stack,
 			K_KERNEL_STACK_SIZEOF(spi_rx_stack),
 			(k_thread_entry_t)bt_spi_rx_thread, NULL, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_RX_PRIO - 1),
+			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
 			0, K_NO_WAIT);
 
 	/* Take BLE out of reset */
@@ -528,7 +529,7 @@ static const struct bt_hci_driver drv = {
 	.send		= bt_spi_send,
 };
 
-static int bt_spi_init(struct device *unused)
+static int bt_spi_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 
@@ -567,4 +568,4 @@ static int bt_spi_init(struct device *unused)
 	return 0;
 }
 
-SYS_INIT(bt_spi_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(bt_spi_init, POST_KERNEL, CONFIG_BT_SPI_INIT_PRIORITY);

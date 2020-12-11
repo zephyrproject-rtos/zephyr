@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/f4/stm32f407Xg.dtsi>
+#include <st/f4/stm32f407z(e-g)tx-pinctrl.dtsi>
 
 / {
 	model = "black_f407zg_pro board";
@@ -56,11 +57,13 @@
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -70,6 +73,7 @@
 
 	pwm2: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim2_ch1_pa0>;
 	};
 };
 
@@ -78,19 +82,23 @@
 };
 
 &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	status = "okay";
 };
 
 &can1 {
+	pinctrl-0 = <&can1_rx_pd0 &can1_tx_pd1>;
 	bus-speed = <125000>;
 	status = "disabled";
 };
 
 &can2 {
+	pinctrl-0 = <&can2_rx_pb12 &can2_tx_pb13>;
 	bus-speed = <125000>;
 	status = "okay";
 };
 
 &spi2 {
+	pinctrl-0 = <&spi2_sck_pb10 &spi2_miso_pc2 &spi2_mosi_pc3>;
 	status = "okay";
 };

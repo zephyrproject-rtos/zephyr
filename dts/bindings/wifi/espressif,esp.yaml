@@ -11,6 +11,17 @@ properties:
     label:
       required: true
 
-    wifi-reset-gpios:
+    power-gpios:
       type: phandle-array
       required: false
+
+    reset-gpios:
+      type: phandle-array
+      required: false
+
+    target-speed:
+      type: int
+      required: false
+      description:
+        UART baudrate which will be requested using AT commands and to which
+        UART interface will be reconfigured during initialization phase.

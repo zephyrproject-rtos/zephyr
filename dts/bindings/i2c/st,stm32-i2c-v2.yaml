@@ -13,3 +13,38 @@ properties:
 
     interrupts:
       required: true
+
+    pinctrl-0:
+      type: phandles
+      required: false
+      description: |
+        GPIO pin configuration for serial signals (SDA, SCL).  We expect
+        that the phandles will reference pinctrl nodes.
+
+        For example the I2C1 would be
+           pinctrl-0 = <&i2c1_sda_pb11 &i2c1_scl_pb10>;
+
+    timings:
+        type: array
+        required: false
+        description: |
+            An optional table of pre-computed i2c timing values with the
+            matching clock configuration.
+
+            Precise timings values for a given Hardware can be pre-computed
+            with a tool like STM32CubeMX or directly from I2C_TIMINGR register
+            description.
+
+            Because timing value is valid for a given I2C peripheral clock
+            frequency and target I2C bus clock, each timing value must be
+            provided with the matching configuration.
+
+            The resulting table entries should look like <periph_clock
+            clock-frequency timing>
+
+            For example timings could be defined as
+
+                timings = <64000000 I2C_BITRATE_STANDARD 0x10707DBC>,
+                          <64000000 I2C_BITRATE_FAST 0x00603D56>,
+                          <56000000 I2C_BITRATE_STANDARD 0x10606DA4>,
+                          <56000000 I2C_BITRATE_FAST 0x00501D63>;

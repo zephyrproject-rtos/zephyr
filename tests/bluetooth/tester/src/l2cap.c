@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "bttester.h"
 
 #define CONTROLLER_INDEX 0
-#define DATA_MTU 230
+#define DATA_MTU 264
 #define CHANNELS 2
 #define SERVERS 1
 
@@ -307,6 +307,14 @@ static void listen(uint8_t *data, uint16_t len)
 
 	server->accept = accept;
 	server->psm = cmd->psm;
+
+	if (server->psm == 0x00F4) {
+		/* TSPX_psm_encryption_key_size_required */
+		server->sec_level = BT_SECURITY_L4;
+	} else if (server->psm == 0x00F2) {
+		/* TSPX_psm_authentication_required */
+		server->sec_level = BT_SECURITY_L3;
+	}
 
 	if (bt_l2cap_server_register(server) < 0) {
 		server->psm = 0U;

@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(grove_temp, CONFIG_SENSOR_LOG_LEVEL);
 #endif
 
 struct gts_data {
-	struct device *adc;
+	const struct device *adc;
 	struct adc_channel_cfg ch_cfg;
 	uint16_t raw;
 };
@@ -47,19 +47,20 @@ static struct adc_sequence adc_table = {
 	.options = &options,
 };
 
-static int gts_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int gts_sample_fetch(const struct device *dev,
+			    enum sensor_channel chan)
 {
-	struct gts_data *drv_data = dev->driver_data;
+	struct gts_data *drv_data = dev->data;
 
 	return adc_read(drv_data->adc, &adc_table);
 }
 
-static int gts_channel_get(struct device *dev,
+static int gts_channel_get(const struct device *dev,
 			   enum sensor_channel chan,
 			   struct sensor_value *val)
 {
-	struct gts_data *drv_data = dev->driver_data;
-	const struct gts_config *cfg = dev->config_info;
+	struct gts_data *drv_data = dev->data;
+	const struct gts_config *cfg = dev->config;
 	double dval;
 
 	/*
@@ -84,10 +85,10 @@ static const struct sensor_driver_api gts_api = {
 	.channel_get = &gts_channel_get,
 };
 
-static int gts_init(struct device *dev)
+static int gts_init(const struct device *dev)
 {
-	struct gts_data *drv_data = dev->driver_data;
-	const struct gts_config *cfg = dev->config_info;
+	struct gts_data *drv_data = dev->data;
+	const struct gts_config *cfg = dev->config;
 
 	drv_data->adc = device_get_binding(cfg->adc_label);
 	if (drv_data->adc == NULL) {

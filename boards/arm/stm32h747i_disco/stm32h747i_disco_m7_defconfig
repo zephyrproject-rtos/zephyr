@@ -33,6 +33,9 @@ CONFIG_CLOCK_STM32_PLL_R_DIVISOR=2
 # Enable MPU
 CONFIG_ARM_MPU=y
 
+# Enable HW stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
 # Disable following to assign serial ports to m4 core
 
 # enable uart driver

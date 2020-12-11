@@ -37,7 +37,7 @@
 #define ZEPHYR_INCLUDE_USB_USBSTRUCT_H_
 
 #define REQTYPE_GET_DIR(x)          (((x)>>7)&0x01)
-#define REQTYPE_GET_TYPE(x)         (((x)>>5)&0x03)
+#define REQTYPE_GET_TYPE(x)         (((x)>>5)&0x03U)
 #define REQTYPE_GET_RECIP(x)        ((x)&0x1F)
 
 #define REQTYPE_DIR_TO_DEVICE       0
@@ -84,7 +84,7 @@ struct usb_desc_header {
 	uint8_t bDescriptorType;       /**< descriptor type */
 };
 
-#define GET_DESC_TYPE(x)            (((x)>>8)&0xFF)
-#define GET_DESC_INDEX(x)           ((x)&0xFF)
+#define GET_DESC_TYPE(x)            (((x)>>8)&0xFFU)
+#define GET_DESC_INDEX(x)           ((x)&0xFFU)
 
 #endif /* ZEPHYR_INCLUDE_USB_USBSTRUCT_H_ */

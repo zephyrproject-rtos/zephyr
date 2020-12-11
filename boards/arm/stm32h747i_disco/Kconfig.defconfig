@@ -38,4 +38,11 @@ config CLOCK_STM32_D3PPRE
 config STM32H7_DUAL_CORE
 	default y
 
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # NETWORKING
+
 endif # BOARD_STM32H747I_DISCO_M7

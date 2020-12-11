@@ -6,11 +6,12 @@
 
 /dts-v1/;
 #include <st/l0/stm32l053X8.dtsi>
+#include <st/l0/stm32l053r(6-8)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32L053R8-NUCLEO board";
-	compatible = "st,stm32l053r8-nucleo", "st,stm32l053";
+	compatible = "st,stm32l053r8-nucleo";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -48,20 +49,24 @@
 &gpioh {status = "disabled";};
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
 	current-speed = <115200>;
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
 	status = "okay";
 };
 

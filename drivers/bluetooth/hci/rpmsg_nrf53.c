@@ -24,8 +24,8 @@ static K_KERNEL_STACK_DEFINE(bt_rpmsg_rx_thread_stack,
 			     CONFIG_BT_RPMSG_NRF53_RX_STACK_SIZE);
 static struct k_thread bt_rpmsg_rx_thread_data;
 
-static struct device *ipm_tx_handle;
-static struct device *ipm_rx_handle;
+static const struct device *ipm_tx_handle;
+static const struct device *ipm_rx_handle;
 
 /* Configuration defines */
 
@@ -115,7 +115,7 @@ const struct virtio_dispatch dispatch = {
 	.notify = virtio_notify,
 };
 
-static void ipm_callback(struct device *dev, void *context,
+static void ipm_callback(const struct device *dev, void *context,
 			 uint32_t id, volatile void *data)
 {
 	BT_DBG("Got callback of id %u", id);
@@ -263,7 +263,11 @@ int bt_rpmsg_platform_init(void)
 	}
 
 	/* Wait til nameservice ep is setup */
-	k_sem_take(&ready_sem, K_FOREVER);
+	err = k_sem_take(&ready_sem, K_SECONDS(3));
+	if (err) {
+		BT_ERR("No contact with network core EP (err %d)", err);
+		return err;
+	}
 
 	return 0;
 }

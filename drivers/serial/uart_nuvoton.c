@@ -13,10 +13,10 @@
 
 /* Device data structure */
 #define DEV_CFG(dev)						\
-	((const struct uart_numicro_config * const)(dev)->config_info)
+	((const struct uart_numicro_config * const)(dev)->config)
 
 #define DRV_DATA(dev)						\
-	((struct uart_numicro_data * const)(dev)->driver_data)
+	((struct uart_numicro_data * const)(dev)->data)
 
 #define UART_STRUCT(dev)					\
 	((UART_T *)(DEV_CFG(dev))->devcfg.base)
@@ -28,11 +28,11 @@ struct uart_numicro_config {
 };
 
 struct uart_numicro_data {
-	struct device *clock;
+	const struct device *clock;
 	struct uart_config ucfg;
 };
 
-static int uart_numicro_poll_in(struct device *dev, unsigned char *c)
+static int uart_numicro_poll_in(const struct device *dev, unsigned char *c)
 {
 	uint32_t count;
 
@@ -44,12 +44,12 @@ static int uart_numicro_poll_in(struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static void uart_numicro_poll_out(struct device *dev, unsigned char c)
+static void uart_numicro_poll_out(const struct device *dev, unsigned char c)
 {
 	UART_Write(UART_STRUCT(dev), &c, 1);
 }
 
-static int uart_numicro_err_check(struct device *dev)
+static int uart_numicro_err_check(const struct device *dev)
 {
 	return 0;
 }
@@ -101,7 +101,7 @@ static inline uint32_t uart_numicro_convert_parity(enum uart_config_parity parit
 	}
 }
 
-static int uart_numicro_configure(struct device *dev,
+static int uart_numicro_configure(const struct device *dev,
 				  const struct uart_config *cfg)
 {
 	struct uart_numicro_data *ddata = DRV_DATA(dev);
@@ -136,7 +136,8 @@ static int uart_numicro_configure(struct device *dev,
 	return 0;
 }
 
-static int uart_numicro_config_get(struct device *dev, struct uart_config *cfg)
+static int uart_numicro_config_get(const struct device *dev,
+				   struct uart_config *cfg)
 {
 	struct uart_numicro_data *ddata = DRV_DATA(dev);
 
@@ -145,7 +146,7 @@ static int uart_numicro_config_get(struct device *dev, struct uart_config *cfg)
 	return 0;
 }
 
-static int uart_numicro_init(struct device *dev)
+static int uart_numicro_init(const struct device *dev)
 {
 	const struct uart_numicro_config *config = DEV_CFG(dev);
 	struct uart_numicro_data *ddata = DRV_DATA(dev);

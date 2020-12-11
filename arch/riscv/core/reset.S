@@ -82,6 +82,8 @@ aa_loop:
 	li t0, CONFIG_ISR_STACK_SIZE
 	add sp, sp, t0
 
+	csrw mscratch, sp
+
 #ifdef CONFIG_WDOG_INIT
 	call _WdogInit
 #endif

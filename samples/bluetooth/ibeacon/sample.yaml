@@ -4,5 +4,5 @@ sample:
 tests:
   sample.bluetooth.ibeacon:
     harness: bluetooth
-    platform_whitelist: bbc_microbit qemu_x86
+    platform_allow: bbc_microbit qemu_x86
     tags: bluetooth

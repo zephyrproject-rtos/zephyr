@@ -17,14 +17,14 @@ static struct hello_world_dev_data {
 	uint32_t foo;
 } data;
 
-static int init(struct device *dev)
+static int init(const struct device *dev)
 {
 	data.foo = 5;
 
 	return 0;
 }
 
-static void print_impl(struct device *dev)
+static void print_impl(const struct device *dev)
 {
 	printk("Hello World from the kernel: %d\n", data.foo);
 
@@ -32,7 +32,7 @@ static void print_impl(struct device *dev)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline void z_vrfy_hello_world_print(struct device *dev)
+static inline void z_vrfy_hello_world_print(const struct device *dev)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_HELLO_WORLD(dev, print));
 

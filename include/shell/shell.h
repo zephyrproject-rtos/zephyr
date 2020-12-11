@@ -121,7 +121,7 @@ struct shell_static_args {
  * devices.  Indexing is done relative to devices with names that
  * start with this text.  Pass null if no prefix match is required.
  */
-struct device *shell_device_lookup(size_t idx,
+const struct device *shell_device_lookup(size_t idx,
 				   const char *prefix);
 
 /**
@@ -138,6 +138,22 @@ struct device *shell_device_lookup(size_t idx,
  */
 typedef int (*shell_cmd_handler)(const struct shell *shell,
 				 size_t argc, char **argv);
+
+/**
+ * @brief Shell dictionary command handler prototype.
+ *
+ * @param shell Shell instance.
+ * @param argc  Arguments count.
+ * @param argv  Arguments.
+ * @param data  Pointer to the user data.
+ *
+ * @retval 0 Successful command execution.
+ * @retval 1 Help printed and command not executed.
+ * @retval -EINVAL Argument validation failed.
+ * @retval -ENOEXEC Command not executed.
+ */
+typedef int (*shell_dict_cmd_handler)(const struct shell *shell, size_t argc,
+				      char **argv, void *data);
 
 /*
  * @brief Shell static command descriptor.
@@ -162,7 +178,7 @@ struct shell_static_entry {
  * @param[in] subcmd	Pointer to a subcommands array.
  * @param[in] help	Pointer to a command help string.
  * @param[in] handler	Pointer to a function handler.
- * @param[in] mandatory	Number of mandatory arguments.
+ * @param[in] mandatory	Number of mandatory arguments includig command name.
  * @param[in] optional	Number of optional arguments.
  */
 #define SHELL_CMD_ARG_REGISTER(syntax, subcmd, help, handler,		   \
@@ -194,7 +210,7 @@ struct shell_static_entry {
  * @param[in] subcmd	Pointer to a subcommands array.
  * @param[in] help	Pointer to a command help string.
  * @param[in] handler	Pointer to a function handler.
- * @param[in] mandatory	Number of mandatory arguments.
+ * @param[in] mandatory	Number of mandatory arguments includig command name.
  * @param[in] optional	Number of optional arguments.
  */
 #define SHELL_COND_CMD_ARG_REGISTER(flag, syntax, subcmd, help, handler, \
@@ -295,7 +311,7 @@ struct shell_static_entry {
  * @param[in] subcmd	 Pointer to a subcommands array.
  * @param[in] help	 Pointer to a command help string.
  * @param[in] handler	 Pointer to a function handler.
- * @param[in] mand	 Number of mandatory arguments.
+ * @param[in] mand	 Number of mandatory arguments includig command name.
  * @param[in] opt	 Number of optional arguments.
  */
 #define SHELL_CMD_ARG(syntax, subcmd, help, handler, mand, opt) \
@@ -317,7 +333,7 @@ struct shell_static_entry {
  * @param[in] subcmd	 Pointer to a subcommands array.
  * @param[in] help	 Pointer to a command help string.
  * @param[in] handler	 Pointer to a function handler.
- * @param[in] mand	 Number of mandatory arguments.
+ * @param[in] mand	 Number of mandatory arguments includig command name.
  * @param[in] opt	 Number of optional arguments.
  */
 #define SHELL_COND_CMD_ARG(flag, syntax, subcmd, help, handler, mand, opt) \
@@ -340,7 +356,7 @@ struct shell_static_entry {
  * @param[in] _subcmd	 Pointer to a subcommands array.
  * @param[in] _help	 Pointer to a command help string.
  * @param[in] _handler	 Pointer to a function handler.
- * @param[in] _mand	 Number of mandatory arguments.
+ * @param[in] _mand	 Number of mandatory arguments includig command name.
  * @param[in] _opt	 Number of optional arguments.
  */
 #define SHELL_EXPR_CMD_ARG(_expr, _syntax, _subcmd, _help, _handler, \
@@ -395,6 +411,58 @@ struct shell_static_entry {
  */
 #define SHELL_EXPR_CMD(_expr, _syntax, _subcmd, _help, _handler) \
 	SHELL_EXPR_CMD_ARG(_expr, _syntax, _subcmd, _help, _handler, 0, 0)
+
+/* Internal macro used for creating handlers for dictionary commands. */
+#define SHELL_CMD_DICT_HANDLER_CREATE(_data, _handler)		\
+static int UTIL_CAT(cmd_dict_, GET_ARG_N(1, __DEBRACKET _data))(	\
+		const struct shell *shell, size_t argc, char **argv)	\
+{									\
+	return _handler(shell, argc, argv,				\
+			(void *)GET_ARG_N(2, __DEBRACKET _data));	\
+}
+
+/* Internal macro used for creating dictionary commands. */
+#define SHELL_CMD_DICT_CREATE(_data)					\
+	SHELL_CMD_ARG(GET_ARG_N(1, __DEBRACKET _data), NULL, NULL,	\
+		UTIL_CAT(cmd_dict_, GET_ARG_N(1, __DEBRACKET _data)), 1, 0)
+
+/**
+ * @brief Initializes shell dictionary commands.
+ *
+ * This is a special kind of static commands. Dictionary commands can be used
+ * every time you want to use a pair: (string <-> corresponding data) in
+ * a command handler. The string is usually a verbal description of a given
+ * data. The idea is to use the string as a command syntax that can be prompted
+ * by the shell and corresponding data can be used to process the command.
+ *
+ * @param[in] _name	Name of the dictionary subcommand set
+ * @param[in] _handler	Command handler common for all dictionary commands.
+ *			@see shell_dict_cmd_handler
+ * @param[in] ...	Dictionary pairs: (command_syntax, value). Value will be
+ *			passed to the _handler as user data.
+ *
+ * Example usage:
+ *	static int my_handler(const struct shell *shell,
+ *			      size_t argc, char **argv, void *data)
+ *	{
+ *		int val = (int)data;
+ *
+ *		shell_print(shell, "(syntax, value) : (%s, %d)", argv[0], val);
+ *		return 0;
+ *	}
+ *
+ *	SHELL_SUBCMD_DICT_SET_CREATE(sub_dict_cmds, my_handler,
+ *		(value_0, 0), (value_1, 1), (value_2, 2), (value_3, 3)
+ *	);
+ *	SHELL_CMD_REGISTER(dictionary, &sub_dict_cmds, NULL, NULL);
+ */
+#define SHELL_SUBCMD_DICT_SET_CREATE(_name, _handler, ...)		\
+	FOR_EACH_FIXED_ARG(SHELL_CMD_DICT_HANDLER_CREATE, (),		\
+			   _handler, __VA_ARGS__)			\
+	SHELL_STATIC_SUBCMD_SET_CREATE(_name,				\
+		FOR_EACH(SHELL_CMD_DICT_CREATE, (,), __VA_ARGS__),	\
+		SHELL_SUBCMD_SET_END					\
+	)
 
 /**
  * @internal @brief Internal shell state in response to data received from the
@@ -541,8 +609,9 @@ struct shell_flags {
 	uint32_t tx_rdy      :1;
 	uint32_t mode_delete :1; /*!< Operation mode of backspace key */
 	uint32_t history_exit:1; /*!< Request to exit history mode */
-	uint32_t cmd_ctx	  :1; /*!< Shell is executing command */
+	uint32_t cmd_ctx     :1; /*!< Shell is executing command */
 	uint32_t last_nl     :8; /*!< Last received new line character */
+	uint32_t print_noinit:1; /*!< Print request from not initialized shell*/
 };
 
 BUILD_ASSERT((sizeof(struct shell_flags) == sizeof(uint32_t)),
@@ -897,17 +966,14 @@ void shell_help(const struct shell *shell);
  * Pass command line to shell to execute.
  *
  * Note: This by no means makes any of the commands a stable interface, so
- * 	 this function should only be used for debugging/diagnostic.
+ *	 this function should only be used for debugging/diagnostic.
  *
  *	 This function must not be called from shell command context!
 
  *
  * @param[in] shell	Pointer to the shell instance.
- *			@rst
- *			It can be NULL when
- *			the :option:`CONFIG_SHELL_BACKEND_DUMMY` option is
- *			enabled.
- *			@endrst
+ *			It can be NULL when the
+ *			@option{CONFIG_SHELL_BACKEND_DUMMY} option is enabled.
  * @param[in] cmd	Command to be executed.
  *
  * @returns		Result of the execution

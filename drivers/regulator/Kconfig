@@ -1,0 +1,18 @@
+# Copyright 2020 Peter Bigot Consulting, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig REGULATOR
+	bool "Regulator drivers"
+	default $(dt_compat_enabled,$(DT_COMPAT_REGULATOR_FIXED))
+	help
+	  Include drivers for current/voltage regulators in system config
+
+if REGULATOR
+
+module = REGULATOR
+module-str = regulator
+source "subsys/logging/Kconfig.template.log_config"
+
+source "drivers/regulator/Kconfig.fixed"
+
+endif # REGULATOR

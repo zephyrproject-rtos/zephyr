@@ -74,5 +74,15 @@ with onoff_monitor_register().  Notification of changes are provided
 before issuing completion notifications associated with the new
 state.
 
+.. note::
+
+   A generic API may be implemented by multiple drivers where the common
+   case is asynchronous.  The on-off client structure may be an
+   appropriate solution for the generic API.  Where drivers that can
+   guarantee synchronous context-independent transitions a driver may
+   use :c:type:`onoff_sync_service` and its supporting API rather than
+   :c:type:`onoff_manager`, with only a small reduction in functionality
+   (primarily no support for the monitor API).
+
 .. doxygengroup:: resource_mgmt_onoff_apis
    :project: Zephyr

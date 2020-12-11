@@ -113,6 +113,12 @@ features:
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
+| RNG       | on-chip    | True Random number generator        |
++-----------+------------+-------------------------------------+
+| ETHERNET  | on-chip    | ethernet                            |
++-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -133,7 +139,9 @@ and a ST morpho connector. Board is configured as follows:
 - LD2 : PB7
 - LD3 : PB14
 - I2C : PB8, PB9
-- ADC12_INP15 : PA3
+- ADC1_INP15 : PA3
+- ETH : PA1, PA2, PA7, PB13, PC1, PC4, PC5, PG11, PG13
+- SPI1 SCK/MISO/MOSI : PA5/PA6/PB5 (Arduino SPI)
 
 System Clock
 ------------
@@ -158,7 +166,8 @@ flashed in the usual way (see :ref:`build_an_application` and
 .. note::
 
    If using OpenOCD you will need a recent development version as the last
-   official release does not support H7 series yet.
+   official release does not support H7 series yet. You can also choose the
+   ``stm32cubeprogrammer`` runner.
 
 Flashing
 ========

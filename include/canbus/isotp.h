@@ -155,7 +155,7 @@ struct isotp_recv_ctx;
  * @retval ISOTP_N_OK on success
  * @retval ISOTP_NO_FREE_FILTER if CAN device has no filters left.
  */
-int isotp_bind(struct isotp_recv_ctx *ctx, struct device *can_dev,
+int isotp_bind(struct isotp_recv_ctx *ctx, const struct device *can_dev,
 	       const struct isotp_msg_id *rx_addr,
 	       const struct isotp_msg_id *tx_addr,
 	       const struct isotp_fc_opts *opts,
@@ -235,7 +235,7 @@ int isotp_recv_net(struct isotp_recv_ctx *ctx, struct net_buf **buffer,
  * @retval ISOTP_N_OK on success
  * @retval ISOTP_N_* on error
  */
-int isotp_send(struct isotp_send_ctx *ctx, struct device *can_dev,
+int isotp_send(struct isotp_send_ctx *ctx, const struct device *can_dev,
 	       const uint8_t *data, size_t len,
 	       const struct isotp_msg_id *tx_addr,
 	       const struct isotp_msg_id *rx_addr,
@@ -260,7 +260,7 @@ int isotp_send(struct isotp_send_ctx *ctx, struct device *can_dev,
  * @retval ISOTP_N_OK on success
  * @retval ISOTP_N_* on error
  */
-int isotp_send_ctx_buf(struct device *can_dev,
+int isotp_send_ctx_buf(const struct device *can_dev,
 		       const uint8_t *data, size_t len,
 		       const struct isotp_msg_id *tx_addr,
 		       const struct isotp_msg_id *rx_addr,
@@ -285,7 +285,7 @@ int isotp_send_ctx_buf(struct device *can_dev,
  * @retval ISOTP_N_OK on success
  * @retval ISOTP_* on error
  */
-int isotp_send_net_ctx_buf(struct device *can_dev,
+int isotp_send_net_ctx_buf(const struct device *can_dev,
 			   struct net_buf *data,
 			   const struct isotp_msg_id *tx_addr,
 			   const struct isotp_msg_id *rx_addr,
@@ -315,7 +315,7 @@ int isotp_send_net_ctx_buf(struct device *can_dev,
  * @retval ISOTP_N_OK on success
  * @retval ISOTP_* on error
  */
-int isotp_send_buf(struct device *can_dev,
+int isotp_send_buf(const struct device *can_dev,
 		   const uint8_t *data, size_t len,
 		   const struct isotp_msg_id *tx_addr,
 		   const struct isotp_msg_id *rx_addr,
@@ -333,7 +333,7 @@ struct isotp_callback {
 struct isotp_send_ctx {
 	int filter_id;
 	uint32_t error_nr;
-	struct device *can_dev;
+	const struct device *can_dev;
 	union {
 		struct net_buf *buf;
 		struct {
@@ -362,7 +362,7 @@ struct isotp_send_ctx {
 
 struct isotp_recv_ctx {
 	int filter_id;
-	struct device *can_dev;
+	const struct device *can_dev;
 	struct net_buf *buf;
 	struct net_buf *act_frag;
 	sys_snode_t alloc_node;

@@ -33,16 +33,16 @@ extern "C" {
  *
  * See entropy_get_entropy() for argument description
  */
-typedef int (*entropy_get_entropy_t)(struct device *dev,
-				    uint8_t *buffer,
-				    uint16_t length);
+typedef int (*entropy_get_entropy_t)(const struct device *dev,
+				     uint8_t *buffer,
+				     uint16_t length);
 /**
  * @typedef entropy_get_entropy_isr_t
  * @brief Callback API to get entropy from an ISR.
  *
  * See entropy_get_entropy_isr() for argument description
  */
-typedef int (*entropy_get_entropy_isr_t)(struct device *dev,
+typedef int (*entropy_get_entropy_isr_t)(const struct device *dev,
 					 uint8_t *buffer,
 					 uint16_t length,
 					 uint32_t flags);
@@ -61,16 +61,16 @@ __subsystem struct entropy_driver_api {
  * @retval 0 on success.
  * @retval -ERRNO errno code on error.
  */
-__syscall int entropy_get_entropy(struct device *dev,
+__syscall int entropy_get_entropy(const struct device *dev,
 				  uint8_t *buffer,
 				  uint16_t length);
 
-static inline int z_impl_entropy_get_entropy(struct device *dev,
-					    uint8_t *buffer,
-					    uint16_t length)
+static inline int z_impl_entropy_get_entropy(const struct device *dev,
+					     uint8_t *buffer,
+					     uint16_t length)
 {
 	const struct entropy_driver_api *api =
-		(const struct entropy_driver_api *)dev->driver_api;
+		(const struct entropy_driver_api *)dev->api;
 
 	__ASSERT(api->get_entropy != NULL,
 		"Callback pointer should not be NULL");
@@ -90,13 +90,13 @@ static inline int z_impl_entropy_get_entropy(struct device *dev,
  * @param flags Flags to modify the behavior of the call.
  * @retval number of bytes filled with entropy or -error.
  */
-static inline int entropy_get_entropy_isr(struct device *dev,
+static inline int entropy_get_entropy_isr(const struct device *dev,
 					  uint8_t *buffer,
 					  uint16_t length,
 					  uint32_t flags)
 {
 	const struct entropy_driver_api *api =
-		(const struct entropy_driver_api *)dev->driver_api;
+		(const struct entropy_driver_api *)dev->api;
 
 	if (unlikely(!api->get_entropy_isr)) {
 		return -ENOTSUP;

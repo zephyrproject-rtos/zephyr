@@ -344,9 +344,20 @@ gpio1: gpio@842800 {
 	status = "disabled";
 };
 
+qspi: qspi@2b000 {
+	compatible = "nordic,nrf-qspi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0x2b000 0x1000>;
+	interrupts = <43 1>;
+	status = "disabled";
+	label = "QSPI";
+};
+
 rtc0: rtc@14000 {
 	compatible = "nordic,nrf-rtc";
 	reg = <0x14000 0x1000>;
+	cc-num = <4>;
 	interrupts = <20 1>;
 	status = "okay";
 	clock-frequency = <32768>;
@@ -357,6 +368,7 @@ rtc0: rtc@14000 {
 rtc1: rtc@15000 {
 	compatible = "nordic,nrf-rtc";
 	reg = <0x15000 0x1000>;
+	cc-num = <4>;
 	interrupts = <21 1>;
 	status = "okay";
 	clock-frequency = <32768>;
@@ -399,6 +411,7 @@ timer0: timer@f000 {
 	compatible = "nordic,nrf-timer";
 	status = "disabled";
 	reg = <0xf000 0x1000>;
+	cc-num = <6>;
 	interrupts = <15 1>;
 	prescaler = <0>;
 	label = "TIMER_0";
@@ -408,6 +421,7 @@ timer1: timer@10000 {
 	compatible = "nordic,nrf-timer";
 	status = "disabled";
 	reg = <0x10000 0x1000>;
+	cc-num = <6>;
 	interrupts = <16 1>;
 	prescaler = <0>;
 	label = "TIMER_1";
@@ -417,7 +431,21 @@ timer2: timer@11000 {
 	compatible = "nordic,nrf-timer";
 	status = "disabled";
 	reg = <0x11000 0x1000>;
+	cc-num = <6>;
 	interrupts = <17 1>;
 	prescaler = <0>;
 	label = "TIMER_2";
+};
+
+usbd: usbd@36000 {
+	compatible = "nordic,nrf-usbd";
+	reg = <0x36000 0x1000>;
+	interrupts = <54 1>;
+	num-bidir-endpoints = <1>;
+	num-in-endpoints = <7>;
+	num-out-endpoints = <7>;
+	num-isoin-endpoints = <1>;
+	num-isoout-endpoints = <1>;
+	status = "disabled";
+	label = "USBD";
 };

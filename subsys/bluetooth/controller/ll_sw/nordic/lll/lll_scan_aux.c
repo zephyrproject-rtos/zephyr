@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/types.h>
+#include <bluetooth/hci.h>
 #include <sys/byteorder.h>
 #include <sys/util.h>
 
@@ -19,6 +20,7 @@
 #include "lll.h"
 #include "lll_vendor.h"
 #include "lll_clock.h"
+#include "lll_filter.h"
 #include "lll_scan.h"
 #include "lll_scan_aux.h"
 
@@ -33,7 +35,7 @@
 #include "hal/debug.h"
 
 static int init_reset(void);
-static int prepare_cb(struct lll_prepare_param *prepare_param);
+static int prepare_cb(struct lll_prepare_param *p);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
 static void isr_rx(void *param);
 static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t rssi_ready);
@@ -68,13 +70,12 @@ int lll_scan_aux_reset(void)
 
 void lll_scan_aux_prepare(void *param)
 {
-	struct lll_prepare_param *p = param;
 	int err;
 
 	err = lll_hfclock_on();
 	LL_ASSERT(err >= 0);
 
-	err = lll_prepare(lll_is_abort_cb, abort_cb, prepare_cb, 0, p);
+	err = lll_prepare(lll_is_abort_cb, abort_cb, prepare_cb, 0, param);
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 
@@ -85,21 +86,25 @@ static int init_reset(void)
 
 static int prepare_cb(struct lll_prepare_param *p)
 {
-	uint32_t aa = sys_cpu_to_le32(PDU_AC_ACCESS_ADDR);
-	struct lll_scan_aux *lll = p->param;
 	struct node_rx_pdu *node_rx;
+	struct lll_scan_aux *lll;
 	uint32_t ticks_at_event;
 	uint32_t ticks_at_start;
 	struct evt_hdr *evt;
 	uint32_t remainder_us;
 	uint32_t remainder;
 	uint32_t hcto;
+	uint32_t aa;
 
 	DEBUG_RADIO_START_O(1);
 
+	/* Start setting up Radio h/w */
+	radio_reset();
+
+	/* Reset Tx/rx count */
 	trx_cnt = 0U;
 
-	radio_reset();
+	lll = p->param;
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	radio_tx_power_set(lll->tx_pwr_lvl);
@@ -107,7 +112,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_tx_power_set(RADIO_TXP_DEFAULT);
 #endif
 
-	/* TODO: if coded we use S8? */
 	radio_phy_set(lll->phy, 1);
 	radio_pkt_configure(8, PDU_AC_PAYLOAD_SIZE_MAX, (lll->phy << 1));
 
@@ -116,6 +120,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	radio_pkt_rx_set(node_rx->pdu);
 
+	aa = sys_cpu_to_le32(PDU_AC_ACCESS_ADDR);
 	radio_aa_set((uint8_t *)&aa);
 	radio_crc_configure(((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16)),
 			    0x555555);
@@ -126,12 +131,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
-
-#if defined(CONFIG_BT_CTLR_PHY)
 	radio_switch_complete_and_tx(lll->phy, 0, lll->phy, 1);
-#else /* !CONFIG_BT_CTLR_PHY */
-	radio_switch_complete_and_tx(0, 0, 0, 0);
-#endif /* !CONFIG_BT_CTLR_PHY */
 
 	/* TODO: privacy */
 
@@ -147,40 +147,26 @@ static int prepare_cb(struct lll_prepare_param *p)
 	remainder_us = radio_tmr_start(0, ticks_at_start, remainder);
 
 	hcto = remainder_us + lll->window_size_us;
-
-#if defined(CONFIG_BT_CTLR_PHY)
 	hcto += radio_rx_ready_delay_get(lll->phy, 1);
 	hcto += addr_us_get(lll->phy);
 	hcto += radio_rx_chain_delay_get(lll->phy, 1);
-#else /* !CONFIG_BT_CTLR_PHY */
-	hcto += radio_rx_ready_delay_get(0, 0);
-	hcto += addr_us_get(0);
-	hcto += radio_rx_chain_delay_get(0, 0);
-#endif /* !CONFIG_BT_CTLR_PHY */
-
 	radio_tmr_hcto_configure(hcto);
+
+	/* capture end of Rx-ed PDU, extended scan to schedule auxiliary
+	 * channel chaining or to create periodic sync.
+	 */
+	radio_tmr_end_capture();
+
+	/* scanner always measures RSSI */
+	radio_rssi_measure();
 
 #if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
 	radio_gpio_lna_setup();
 
-#if defined(CONFIG_BT_CTLR_PHY)
 	radio_gpio_pa_lna_enable(remainder_us +
 				 radio_rx_ready_delay_get(lll->phy, 1) -
 				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
-#else /* !CONFIG_BT_CTLR_PHY */
-	radio_gpio_pa_lna_enable(remainder_us +
-				 radio_rx_ready_delay_get(0, 0) -
-				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
-#endif /* !CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
-
-#if defined(CONFIG_BT_CTLR_PROFILE_ISR) || \
-	defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
-	radio_tmr_end_capture();
-#endif /* CONFIG_BT_CTLR_PROFILE_ISR */
-
-	/* scanner always measures RSSI */
-	radio_rssi_measure();
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
@@ -230,7 +216,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 static void isr_rx(void *param)
 {
-	struct lll_scan_aux *lll = param;
+	struct lll_scan_aux *lll;
 	uint8_t rssi_ready;
 	uint8_t trx_done;
 	uint8_t crc_ok;
@@ -250,6 +236,8 @@ static void isr_rx(void *param)
 
 	/* Clear radio rx status and events */
 	lll_isr_rx_status_reset();
+
+	lll = param;
 
 	/* No Rx */
 	if (!trx_done) {
@@ -296,23 +284,7 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t rssi_ready)
 
 	trx_cnt++;
 
-	switch (lll->phy) {
-	case BIT(0):
-		node_rx->hdr.type = NODE_RX_TYPE_EXT_1M_REPORT;
-		break;
-
-	case BIT(1):
-		node_rx->hdr.type = NODE_RX_TYPE_EXT_2M_REPORT;
-		break;
-
-	case BIT(2):
-		node_rx->hdr.type = NODE_RX_TYPE_EXT_CODED_REPORT;
-		break;
-
-	default:
-		LL_ASSERT(0);
-		break;
-	}
+	node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_REPORT;
 
 	ftr = &(node_rx->hdr.rx_ftr);
 	ftr->param = lll;
@@ -320,7 +292,13 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t rssi_ready)
 	ftr->radio_end_us = radio_tmr_end_get() -
 			    radio_rx_chain_delay_get(lll->phy, 1);
 
-	ftr->rssi = (rssi_ready) ? (radio_rssi_get() & 0x7f) : 0x7f;
+	ftr->rssi = (rssi_ready) ? radio_rssi_get() :
+				   BT_HCI_LE_RSSI_NOT_AVAILABLE;
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	/* TODO: Use correct rl_idx value when privacy support is added */
+	ftr->rl_idx = FILTER_IDX_NONE;
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 	ull_rx_put(node_rx->hdr.link, node_rx);
 	ull_rx_sched();

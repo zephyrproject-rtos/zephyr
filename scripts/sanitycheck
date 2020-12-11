@@ -67,13 +67,13 @@ pairs:
     Length of time to run test in emulator before automatically killing it.
     Default to 60 seconds.
 
-  arch_whitelist: <list of arches, such as x86, arm, arc>
+  arch_allow: <list of arches, such as x86, arm, arc>
     Set of architectures that this test case should only be run for.
 
   arch_exclude: <list of arches, such as x86, arm, arc>
     Set of architectures that this test case should not run on.
 
-  platform_whitelist: <list of platforms>
+  platform_allow: <list of platforms>
     Set of platforms that this test case should only be run for.
 
   platform_exclude: <list of platforms>
@@ -131,7 +131,7 @@ pairs:
         not (right associative)
         all comparison operators (non-associative)
 
-    arch_whitelist, arch_exclude, platform_whitelist, platform_exclude
+    arch_allow, arch_exclude, platform_allow, platform_exclude
     are all syntactic sugar for these expressions. For instance
 
         arch_exclude = x86 arc
@@ -178,7 +178,8 @@ from itertools import islice
 import csv
 from colorama import Fore
 from pathlib import Path
-
+from multiprocessing.managers import BaseManager
+import queue
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
@@ -205,7 +206,7 @@ except ImportError:
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/sanity_chk"))
 
-from sanitylib import HardwareMap, TestSuite, SizeCalculator, CoverageTool
+from sanitylib import HardwareMap, TestSuite, SizeCalculator, CoverageTool, ExecutionCounter
 
 logger = logging.getLogger('sanitycheck')
 logger.setLevel(logging.DEBUG)
@@ -416,6 +417,9 @@ Artificially long but functional example:
     parser.add_argument("-W", "--disable-warnings-as-errors", action="store_true",
                         help="Treat warning conditions as errors")
 
+    parser.add_argument("--overflow-as-errors", action="store_true",
+                        help="Treat RAM/SRAM overflows as errors")
+
     parser.add_argument(
         "-v",
         "--verbose",
@@ -470,9 +474,19 @@ Artificially long but functional example:
         "--test-only", action="store_true",
         help="""Only run device tests with current artifacts, do not build
              the code""")
+
     parser.add_argument(
         "--cmake-only", action="store_true",
         help="Only run cmake, do not build or run.")
+
+    parser.add_argument(
+        "--filter", choices=['buildable', 'runnable'],
+        default='buildable',
+        help="""Filter tests to be built and executed. By default everything is
+        built and if a test is runnable (emulation or a connected device), it
+        is run. This option allows for example to only build tests that can
+        actually be run. Runnable is a subset of buildable.""")
+
 
     parser.add_argument(
         "-M", "--runtime-artifact-cleanup", action="store_true",
@@ -541,7 +555,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     parser.add_argument(
         "-K", "--force-platform", action="store_true",
         help="""Force testing on selected platforms,
-        even if they are excluded in the test configuration"""
+        even if they are excluded in the test configuration (testcase.yaml)"""
     )
 
     parser.add_argument(
@@ -573,6 +587,10 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         which will ultimately disable ccache.
         """
     )
+
+    parser.add_argument(
+        "--emulation-only", action="store_true",
+        help="Only build and run emulation platforms")
 
     parser.add_argument(
         "--device-testing", action="store_true",
@@ -613,6 +631,11 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     parser.add_argument("--hardware-map",
                         help="""Load hardware map from a file. This will be used
                         for testing on hardware that is listed in the file.
+                        """)
+
+    parser.add_argument("--pre-script",
+                        help="""specify a pre script. This will be executed
+                        before device handler open serial port and invoke runner.
                         """)
 
     parser.add_argument(
@@ -693,6 +716,9 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     parser.add_argument("--coverage-tool", choices=['lcov', 'gcovr'], default='lcov',
                         help="Tool to use to generate coverage report.")
 
+    parser.add_argument("--coverage-basedir", default=ZEPHYR_BASE,
+                        help="Base source directory for coverage report.")
+
     return parser.parse_args()
 
 
@@ -700,11 +726,18 @@ def main():
     start_time = time.time()
 
     options = parse_arguments()
-
+    previous_results = None
     # Cleanup
     if options.no_clean or options.only_failed or options.test_only:
         if os.path.exists(options.outdir):
             print("Keeping artifacts untouched")
+    elif options.last_metrics:
+        ls = os.path.join(options.outdir, "sanitycheck.csv")
+        if os.path.exists(ls):
+            with open(ls, "r") as fp:
+                previous_results = fp.read()
+        else:
+            sys.exit(f"Can't compare metrics with non existing file {ls}")
     elif os.path.exists(options.outdir):
         if options.clobber_output:
             print("Deleting output directory {}".format(options.outdir))
@@ -717,7 +750,12 @@ def main():
                     shutil.move(options.outdir, new_out)
                     break
 
+    previous_results_file = None
     os.makedirs(options.outdir, exist_ok=True)
+    if options.last_metrics and previous_results:
+        previous_results_file = os.path.join(options.outdir, "baseline.csv")
+        with open(previous_results_file, "w") as fp:
+            fp.write(previous_results)
 
     # create file handler which logs even debug messages
     if options.log_file:
@@ -752,19 +790,18 @@ def main():
 
     hwm = HardwareMap()
     if options.generate_hardware_map:
-        hwm.scan_hw(persistent=options.persistent_hardware_map)
-        hwm.write_map(options.generate_hardware_map)
+        hwm.scan(persistent=options.persistent_hardware_map)
+        hwm.save(options.generate_hardware_map)
         return
 
     if not options.device_testing and options.hardware_map:
-        hwm.load_hardware_map(options.hardware_map)
-
+        hwm.load(options.hardware_map)
         logger.info("Available devices:")
         table = []
-        hwm.dump(hwmap=hwm.connected_hardware, connected_only=True)
+        hwm.dump(connected_only=True)
         return
 
-    if options.west_runner and not options.west_flash:
+    if options.west_runner and options.west_flash is None:
         logger.error("west-runner requires west-flash to be enabled")
         sys.exit(1)
 
@@ -800,6 +837,9 @@ def main():
 
     suite = TestSuite(options.board_root, options.testcase_root, options.outdir)
 
+    # Check version of zephyr repo
+    suite.check_zephyr_version()
+
     # Set testsuite options from command line.
     suite.build_only = options.build_only
     suite.cmake_only = options.cmake_only
@@ -822,6 +862,7 @@ def main():
     suite.verbose = VERBOSE
     suite.warnings_as_errors = not options.disable_warnings_as_errors
     suite.integration = options.integration
+    suite.overflow_as_errors = options.overflow_as_errors
 
     if options.ninja:
         suite.generator_cmd = "ninja"
@@ -844,31 +885,36 @@ def main():
     if options.test:
         run_individual_tests = options.test
 
-    suite.add_testcases(testcase_filter=run_individual_tests)
+    num = suite.add_testcases(testcase_filter=run_individual_tests)
+    if num == 0:
+        logger.error("No test cases found at the specified location...")
+        sys.exit(1)
     suite.add_configurations()
 
     if options.device_testing:
         if options.hardware_map:
-            hwm.load_hardware_map(options.hardware_map)
-            suite.connected_hardware = hwm.connected_hardware
+            hwm.load(options.hardware_map)
+            suite.duts = hwm.duts
             if not options.platform:
                 options.platform = []
-                for platform in hwm.connected_hardware:
-                    if platform['connected']:
-                        options.platform.append(platform['platform'])
+                for d in hwm.duts:
+                    if d.connected:
+                        options.platform.append(d.platform)
 
         elif options.device_serial or options.device_serial_pty:
             if options.platform and len(options.platform) == 1:
                 if options.device_serial:
-                    hwm.load_device_from_cmdline(options.device_serial,
+                    hwm.add_device(options.device_serial,
                                                  options.platform[0],
+                                                 options.pre_script,
                                                  False)
                 else:
-                    hwm.load_device_from_cmdline(options.device_serial_pty,
+                    hwm.add_device(options.device_serial_pty,
                                                  options.platform[0],
+                                                 options.pre_script,
                                                  True)
 
-                suite.connected_hardware = hwm.connected_hardware
+                suite.duts = hwm.duts
             else:
                 logger.error("""When --device-testing is used with
                              --device-serial or --device-serial-pty,
@@ -952,7 +998,6 @@ def main():
                             subarea = find(area, lambda node: node.name == sec[1] and node.parent == area)
                             if not subarea:
                                 subarea = Node(sec[1], parent=area)
-
                             t = Node(test, parent=subarea)
 
             if options.list_tests:
@@ -974,13 +1019,26 @@ def main():
         suite.load_from_file(last_run, filter_status=['skipped', 'passed'])
         suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
     elif options.load_tests:
-        suite.load_from_file(options.load_tests, filter_status=['skipped'])
+        suite.load_from_file(options.load_tests, filter_status=['skipped', 'error'])
         suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
     elif options.test_only:
-        suite.load_from_file(last_run, filter_status=['skipped'])
+        # Get list of connected hardware and filter tests to only be run on connected hardware
+        # in cases where no platform was specified when runn the tests.
+        # If the platform does not exist in the hardware map, just skip it.
+        connected_list = []
+        if not options.platform:
+            for connected in hwm.connected_hardware:
+                if connected['connected']:
+                    connected_list.append(connected['platform'])
+
+        suite.load_from_file(last_run, filter_status=['skipped', 'error'],
+                             filter_platform=connected_list)
+        suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
+
+
+
     else:
         discards = suite.apply_filters(
-            build_only=options.build_only,
             enable_slow=options.enable_slow,
             platform=options.platform,
             exclude_platform=options.exclude_platform,
@@ -989,8 +1047,9 @@ def main():
             exclude_tag=options.exclude_tag,
             force_toolchain=options.force_toolchain,
             all=options.all,
+            emulation_only=options.emulation_only,
             run_individual_tests=run_individual_tests,
-            device_testing=options.device_testing,
+            runnable=(options.device_testing or options.filter == 'runnable'),
             force_platform=options.force_platform
 
         )
@@ -1049,8 +1108,7 @@ def main():
         return
 
     if options.subset:
-        suite.instances = OrderedDict(sorted(suite.instances.items(),
-                            key=lambda x: x[0][x[0].find("/") + 1:]))
+        suite.instances = OrderedDict(sorted(suite.instances.items()))
 
         subset, sets = options.subset.split("/")
         subset = int(subset)
@@ -1077,12 +1135,12 @@ def main():
         suite.csv_report(options.save_tests)
         return
 
-    logger.info("%d test configurations selected, %d configurations discarded due to filters." %
-                (len(suite.instances), len(discards) - suite.total_skipped))
+    logger.info("%d test suites (%d configurations) selected, %d configurations discarded due to filters." %
+                (len(suite.testcases), len(suite.instances), len(discards)))
 
-    if options.device_testing:
+    if options.device_testing and not options.build_only:
         print("\nDevice testing on:")
-        hwm.dump(suite.connected_hardware, suite.selected_platforms)
+        hwm.dump(filtered=suite.selected_platforms)
         print("")
 
     if options.dry_run:
@@ -1093,7 +1151,15 @@ def main():
     retries = options.retry_failed + 1
     completed = 0
 
-    suite.update()
+    BaseManager.register('LifoQueue', queue.LifoQueue)
+    manager = BaseManager()
+    manager.start()
+
+    results = ExecutionCounter(total=len(suite.instances))
+    pipeline = manager.LifoQueue()
+    done_queue = manager.LifoQueue()
+
+    suite.update_counting(results, initial=True)
     suite.start_time = start_time
 
     while True:
@@ -1102,21 +1168,45 @@ def main():
         if completed > 1:
             logger.info("%d Iteration:" % (completed))
             time.sleep(options.retry_interval)  # waiting for the system to settle down
-            suite.total_done = suite.total_tests - suite.total_failed
-            suite.total_failed = suite.total_errors
+            results.done = results.total - results.failed
+            results.failed = results.error
 
-        suite.execute()
+        results = suite.execute(pipeline, done_queue, results)
+
+        while True:
+            try:
+                inst = done_queue.get_nowait()
+            except queue.Empty:
+                break
+            else:
+                inst.metrics["handler_time"] = inst.handler.duration if inst.handler else 0
+                inst.metrics["unrecognized"] = []
+                suite.instances[inst.name] = inst
+
         print("")
 
         retries = retries - 1
-        if retries == 0 or suite.total_failed == suite.total_errors:
+        if retries == 0 or results.failed == results.error:
             break
 
-    suite.misc_reports(options.compare_report, options.show_footprint,
-                       options.all_deltas, options.footprint_threshold, options.last_metrics)
+    # figure out which report to use for size comparison
+    if options.compare_report:
+        report_to_use = options.compare_report
+    elif options.last_metrics:
+        report_to_use = previous_results_file
+    else:
+        report_to_use = suite.RELEASE_DATA
+
+    suite.footprint_reports(report_to_use,
+                            options.show_footprint,
+                            options.all_deltas,
+                            options.footprint_threshold,
+                            options.last_metrics)
 
     suite.duration = time.time() - start_time
-    suite.summary(options.disable_unrecognized_section_test)
+    suite.update_counting(results)
+
+    suite.summary(results, options.disable_unrecognized_section_test)
 
     if options.coverage:
         if not options.gcov_tool:
@@ -1136,19 +1226,19 @@ def main():
         logger.info("Generating coverage files...")
         coverage_tool = CoverageTool.factory(options.coverage_tool)
         coverage_tool.gcov_tool = options.gcov_tool
-        coverage_tool.base_dir = ZEPHYR_BASE
+        coverage_tool.base_dir = os.path.abspath(options.coverage_basedir)
         coverage_tool.add_ignore_file('generated')
         coverage_tool.add_ignore_directory('tests')
         coverage_tool.add_ignore_directory('samples')
         coverage_tool.generate(options.outdir)
 
-    if options.device_testing:
+    if options.device_testing and not options.build_only:
         print("\nHardware distribution summary:\n")
         table = []
         header = ['Board', 'ID', 'Counter']
-        for p in hwm.connected_hardware:
-            if p['connected'] and p['platform'] in suite.selected_platforms:
-                row = [p['platform'], p.get('id', None), p['counter']]
+        for d in hwm.duts:
+            if d.connected and d.platform in suite.selected_platforms:
+                row = [d.platform, d.id, d.counter]
                 table.append(row)
         print(tabulate(table, headers=header, tablefmt="github"))
 
@@ -1159,7 +1249,10 @@ def main():
                        options.release,
                        options.only_failed)
 
-    if suite.total_failed or (suite.warnings and options.warnings_as_errors):
+    # FIXME: remove later
+    #logger.info(f"failed: {results.failed}, cases: {results.cases}, skipped configurations: {results.skipped_configs}, skipped_cases: {results.skipped_cases}, skipped(runtime): {results.skipped_runtime}, passed: {results.passed}, total: {results.total}, done: {results.done}")
+
+    if results.failed or (suite.warnings and options.warnings_as_errors):
         sys.exit(1)
 
 

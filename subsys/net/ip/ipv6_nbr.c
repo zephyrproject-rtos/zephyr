@@ -1490,6 +1490,7 @@ static void ipv6_nd_reachable_timeout(struct k_work *work)
 				data->state);
 
 			/* Intentionally continuing to probe state */
+			__fallthrough;
 
 		case NET_IPV6_NBR_STATE_PROBE:
 			if (data->ns_count >= MAX_UNICAST_SOLICIT) {

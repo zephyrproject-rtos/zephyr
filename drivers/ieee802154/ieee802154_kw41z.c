@@ -356,7 +356,7 @@ static void kw41z_tmr3_disable(void)
 	ZLL->IRQSTS = irqsts;
 }
 
-static enum ieee802154_hw_caps kw41z_get_capabilities(struct device *dev)
+static enum ieee802154_hw_caps kw41z_get_capabilities(const struct device *dev)
 {
 	return IEEE802154_HW_FCS |
 		IEEE802154_HW_2_4_GHZ |
@@ -364,9 +364,9 @@ static enum ieee802154_hw_caps kw41z_get_capabilities(struct device *dev)
 		IEEE802154_HW_TX_RX_ACK;
 }
 
-static int kw41z_cca(struct device *dev)
+static int kw41z_cca(const struct device *dev)
 {
-	struct kw41z_context *kw41z = dev->driver_data;
+	struct kw41z_context *kw41z = dev->data;
 
 	kw41z_phy_abort();
 
@@ -383,7 +383,7 @@ static int kw41z_cca(struct device *dev)
 	return kw41z->seq_retval;
 }
 
-static int kw41z_set_channel(struct device *dev, uint16_t channel)
+static int kw41z_set_channel(const struct device *dev, uint16_t channel)
 {
 	if (channel < 11 || channel > 26) {
 		return -EINVAL;
@@ -393,7 +393,7 @@ static int kw41z_set_channel(struct device *dev, uint16_t channel)
 	return 0;
 }
 
-static int kw41z_set_pan_id(struct device *dev, uint16_t pan_id)
+static int kw41z_set_pan_id(const struct device *dev, uint16_t pan_id)
 {
 	ZLL->MACSHORTADDRS0 = (ZLL->MACSHORTADDRS0 &
 			       ~ZLL_MACSHORTADDRS0_MACPANID0_MASK) |
@@ -401,7 +401,7 @@ static int kw41z_set_pan_id(struct device *dev, uint16_t pan_id)
 	return 0;
 }
 
-static int kw41z_set_short_addr(struct device *dev, uint16_t short_addr)
+static int kw41z_set_short_addr(const struct device *dev, uint16_t short_addr)
 {
 	ZLL->MACSHORTADDRS0 = (ZLL->MACSHORTADDRS0 &
 			       ~ZLL_MACSHORTADDRS0_MACSHORTADDRS0_MASK) |
@@ -409,7 +409,8 @@ static int kw41z_set_short_addr(struct device *dev, uint16_t short_addr)
 	return 0;
 }
 
-static int kw41z_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
+static int kw41z_set_ieee_addr(const struct device *dev,
+			       const uint8_t *ieee_addr)
 {
 	uint32_t val;
 
@@ -422,7 +423,7 @@ static int kw41z_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
 	return 0;
 }
 
-static int kw41z_filter(struct device *dev,
+static int kw41z_filter(const struct device *dev,
 			bool set,
 			enum ieee802154_filter_type type,
 			const struct ieee802154_filter *filter)
@@ -444,7 +445,7 @@ static int kw41z_filter(struct device *dev,
 	return -ENOTSUP;
 }
 
-static int kw41z_set_txpower(struct device *dev, int16_t dbm)
+static int kw41z_set_txpower(const struct device *dev, int16_t dbm)
 {
 	if (dbm < KW41Z_OUTPUT_POWER_MIN) {
 		LOG_INF("TX-power %d dBm below min of %d dBm, using %d dBm",
@@ -465,7 +466,7 @@ static int kw41z_set_txpower(struct device *dev, int16_t dbm)
 	return 0;
 }
 
-static int kw41z_start(struct device *dev)
+static int kw41z_start(const struct device *dev)
 {
 	irq_enable(Radio_1_IRQn);
 
@@ -475,7 +476,7 @@ static int kw41z_start(struct device *dev)
 	return 0;
 }
 
-static int kw41z_stop(struct device *dev)
+static int kw41z_stop(const struct device *dev)
 {
 	irq_disable(Radio_1_IRQn);
 
@@ -612,10 +613,10 @@ out:
 	net_pkt_unref(ack_pkt);
 }
 
-static int kw41z_tx(struct device *dev, enum ieee802154_tx_mode mode,
+static int kw41z_tx(const struct device *dev, enum ieee802154_tx_mode mode,
 		    struct net_pkt *pkt, struct net_buf *frag)
 {
-	struct kw41z_context *kw41z = dev->driver_data;
+	struct kw41z_context *kw41z = dev->data;
 	uint8_t payload_len = frag->len;
 	uint32_t tx_timeout;
 	uint8_t xcvseq;
@@ -924,9 +925,9 @@ static void kw41z_isr(int unused)
 	}
 }
 
-static inline uint8_t *get_mac(struct device *dev)
+static inline uint8_t *get_mac(const struct device *dev)
 {
-	struct kw41z_context *kw41z = dev->driver_data;
+	struct kw41z_context *kw41z = dev->data;
 
 	/*
 	 * The KW40Z has two 32-bit registers for the MAC address where
@@ -955,9 +956,9 @@ static inline uint8_t *get_mac(struct device *dev)
 	return kw41z->mac_addr;
 }
 
-static int kw41z_init(struct device *dev)
+static int kw41z_init(const struct device *dev)
 {
-	struct kw41z_context *kw41z = dev->driver_data;
+	struct kw41z_context *kw41z = dev->data;
 	xcvrStatus_t xcvrStatus;
 
 	xcvrStatus = XCVR_Init(ZIGBEE_MODE, DR_500KBPS);
@@ -1062,8 +1063,8 @@ static int kw41z_init(struct device *dev)
 
 static void kw41z_iface_init(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
-	struct kw41z_context *kw41z = dev->driver_data;
+	const struct device *dev = net_if_get_device(iface);
+	struct kw41z_context *kw41z = dev->data;
 	uint8_t *mac = get_mac(dev);
 
 #if defined(CONFIG_KW41_DBG_TRACE)
@@ -1075,7 +1076,8 @@ static void kw41z_iface_init(struct net_if *iface)
 	ieee802154_init(iface);
 }
 
-static int kw41z_configure(struct device *dev, enum ieee802154_config_type type,
+static int kw41z_configure(const struct device *dev,
+			   enum ieee802154_config_type type,
 			   const struct ieee802154_config *config)
 {
 	return 0;

@@ -33,11 +33,11 @@ LOG_MODULE_REGISTER(adc_sam_afec);
 
 #define CONF_ADC_PRESCALER ((SOC_ATMEL_SAM_MCK_FREQ_HZ / 15000000) - 1)
 
-typedef void (*cfg_func_t)(struct device *dev);
+typedef void (*cfg_func_t)(const struct device *dev);
 
 struct adc_sam_data {
 	struct adc_context ctx;
-	struct device *dev;
+	const struct device *dev;
 
 	/* Pointer to the buffer in the sequence. */
 	uint16_t *buffer;
@@ -63,12 +63,12 @@ struct adc_sam_cfg {
 };
 
 #define DEV_CFG(dev) \
-	((const struct adc_sam_cfg *const)(dev)->config_info)
+	((const struct adc_sam_cfg *const)(dev)->config)
 
 #define DEV_DATA(dev) \
-	((struct adc_sam_data *)(dev)->driver_data)
+	((struct adc_sam_data *)(dev)->data)
 
-static int adc_sam_channel_setup(struct device *dev,
+static int adc_sam_channel_setup(const struct device *dev,
 				 const struct adc_channel_cfg *channel_cfg)
 {
 	const struct adc_sam_cfg * const cfg = DEV_CFG(dev);
@@ -118,7 +118,7 @@ static int adc_sam_channel_setup(struct device *dev,
 	return 0;
 }
 
-static void adc_sam_start_conversion(struct device *dev)
+static void adc_sam_start_conversion(const struct device *dev)
 {
 	const struct adc_sam_cfg *const cfg = DEV_CFG(dev);
 	struct adc_sam_data *data = DEV_DATA(dev);
@@ -183,7 +183,8 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 	return 0;
 }
 
-static int start_read(struct device *dev, const struct adc_sequence *sequence)
+static int start_read(const struct device *dev,
+		      const struct adc_sequence *sequence)
 {
 	struct adc_sam_data *data = DEV_DATA(dev);
 	int error = 0;
@@ -247,7 +248,7 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 	return error;
 }
 
-static int adc_sam_read(struct device *dev,
+static int adc_sam_read(const struct device *dev,
 			const struct adc_sequence *sequence)
 {
 	struct adc_sam_data *data = DEV_DATA(dev);
@@ -260,7 +261,7 @@ static int adc_sam_read(struct device *dev,
 	return error;
 }
 
-static int adc_sam_init(struct device *dev)
+static int adc_sam_init(const struct device *dev)
 {
 	const struct adc_sam_cfg *const cfg = DEV_CFG(dev);
 	struct adc_sam_data *data = DEV_DATA(dev);
@@ -301,7 +302,7 @@ static int adc_sam_init(struct device *dev)
 }
 
 #ifdef CONFIG_ADC_ASYNC
-static int adc_sam_read_async(struct device *dev,
+static int adc_sam_read_async(const struct device *dev,
 			      const struct adc_sequence *sequence,
 			      struct k_poll_signal *async)
 {
@@ -324,9 +325,8 @@ static const struct adc_driver_api adc_sam_api = {
 #endif
 };
 
-static void adc_sam_isr(void *arg)
+static void adc_sam_isr(const struct device *dev)
 {
-	struct device *dev = (struct device *)arg;
 	struct adc_sam_data *data = DEV_DATA(dev);
 	const struct adc_sam_cfg *const cfg = DEV_CFG(dev);
 	Afec *const afec = cfg->regs;
@@ -350,7 +350,7 @@ static void adc_sam_isr(void *arg)
 }
 
 #define ADC_SAM_INIT(n)							\
-	static void adc##n##_sam_cfg_func(struct device *dev);		\
+	static void adc##n##_sam_cfg_func(const struct device *dev);	\
 									\
 	static const struct adc_sam_cfg adc##n##_sam_cfg = {		\
 		.regs = (Afec *)DT_INST_REG_ADDR(n),			\
@@ -365,17 +365,17 @@ static void adc_sam_isr(void *arg)
 		ADC_CONTEXT_INIT_SYNC(adc##n##_sam_data, ctx),		\
 	};								\
 									\
-	DEVICE_AND_API_INIT(adc##n##_sam, DT_INST_LABEL(n),		\
-			    adc_sam_init, &adc##n##_sam_data,		\
+	DEVICE_DT_INST_DEFINE(n, adc_sam_init, device_pm_control_nop,	\
+			    &adc##n##_sam_data,				\
 			    &adc##n##_sam_cfg, POST_KERNEL,		\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &adc_sam_api);				\
 									\
-	static void adc##n##_sam_cfg_func(struct device *dev)		\
+	static void adc##n##_sam_cfg_func(const struct device *dev)	\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
 			    adc_sam_isr,				\
-			    DEVICE_GET(adc##n##_sam), 0);		\
+			    DEVICE_DT_INST_GET(n), 0);			\
 		irq_enable(DT_INST_IRQN(n));				\
 	}
 

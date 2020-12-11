@@ -101,19 +101,23 @@ enum {
 	BT_ADV_PERSIST,
 	/* Advertiser has been temporarily disabled. */
 	BT_ADV_PAUSED,
+	/* Periodic Advertising has been enabled in the controller. */
+	BT_PER_ADV_ENABLED,
+	/* Periodic Advertising parameters has been set in the controller. */
+	BT_PER_ADV_PARAMS_SET,
 
 	BT_ADV_NUM_FLAGS,
 };
 
 struct bt_le_ext_adv {
 	/* ID Address used for advertising */
-	uint8_t                    id;
+	uint8_t                 id;
 
 	/* Advertising handle */
-	uint16_t			handle;
+	uint8_t                 handle;
 
 	/* Current local Random Address */
-	bt_addr_le_t		random_addr;
+	bt_addr_le_t            random_addr;
 
 	/* Current target address */
 	bt_addr_le_t            target_addr;
@@ -128,6 +132,46 @@ struct bt_le_ext_adv {
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 };
 
+
+enum {
+	/** Periodic Advertising Sync has been created in the host. */
+	BT_PER_ADV_SYNC_CREATED,
+
+	/** Periodic advertising is in sync and can be terminated */
+	BT_PER_ADV_SYNC_SYNCED,
+
+	/** Periodic advertising is attempting sync sync */
+	BT_PER_ADV_SYNC_SYNCING,
+
+	/** Periodic advertising is attempting sync sync */
+	BT_PER_ADV_SYNC_RECV_DISABLED,
+
+	BT_PER_ADV_SYNC_NUM_FLAGS,
+};
+
+struct bt_le_per_adv_sync {
+	/** Periodic Advertiser Address */
+	bt_addr_le_t addr;
+
+	/** Advertiser SID */
+	uint8_t sid;
+
+	/** Sync handle */
+	uint16_t handle;
+
+	/** Periodic advertising interval (N * 1.25MS) */
+	uint16_t interval;
+
+	/** Periodic advertising advertiser clock accuracy (ppm) */
+	uint16_t clock_accuracy;
+
+	/** Advertiser PHY */
+	uint8_t phy;
+
+	/** Flags */
+	ATOMIC_DEFINE(flags, BT_PER_ADV_SYNC_NUM_FLAGS);
+};
+
 struct bt_dev_le {
 	/* LE features */
 	uint8_t			features[8];
@@ -136,8 +180,14 @@ struct bt_dev_le {
 
 #if defined(CONFIG_BT_CONN)
 	/* Controller buffer information */
-	uint16_t			mtu;
+	uint16_t		mtu;
 	struct k_sem		pkts;
+	uint16_t		acl_mtu;
+	struct k_sem		acl_pkts;
+#if defined(CONFIG_BT_ISO)
+	uint16_t		iso_mtu;
+	struct k_sem		iso_pkts;
+#endif /* CONFIG_BT_ISO */
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_SMP)
@@ -251,6 +301,8 @@ struct bt_dev {
 extern struct bt_dev bt_dev;
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 extern const struct bt_conn_auth_cb *bt_auth;
+
+enum bt_security_err bt_security_err_get(uint8_t hci_err);
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
 int bt_hci_disconnect(uint16_t handle, uint8_t reason);
@@ -287,3 +339,17 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 
 void bt_le_adv_resume(void);
 bool bt_le_scan_random_addr_check(void);
+
+void bt_hci_host_num_completed_packets(struct net_buf *buf);
+
+/* HCI event handlers */
+void hci_evt_pin_code_req(struct net_buf *buf);
+void hci_evt_link_key_notify(struct net_buf *buf);
+void hci_evt_link_key_req(struct net_buf *buf);
+void hci_evt_io_capa_resp(struct net_buf *buf);
+void hci_evt_io_capa_req(struct net_buf *buf);
+void hci_evt_ssp_complete(struct net_buf *buf);
+void hci_evt_user_confirm_req(struct net_buf *buf);
+void hci_evt_user_passkey_notify(struct net_buf *buf);
+void hci_evt_user_passkey_req(struct net_buf *buf);
+void hci_evt_auth_complete(struct net_buf *buf);

@@ -55,12 +55,12 @@ void NVIC_SystemReset(void)
  */
 void __enable_irq(void)
 {
-	hw_irq_ctrl_change_lock(true);
+	hw_irq_ctrl_change_lock(false);
 }
 
 void __disable_irq(void)
 {
-	hw_irq_ctrl_change_lock(false);
+	hw_irq_ctrl_change_lock(true);
 }
 
 uint32_t __get_PRIMASK(void)

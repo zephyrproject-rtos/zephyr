@@ -18,7 +18,7 @@
 #include <ti/drivers/dpl/HwiP.h>
 #include <ti/drivers/dpl/SwiP.h>
 
-#define LOG_LEVEL CONFIG_SYS_PM_LOG_LEVEL
+#define LOG_LEVEL CONFIG_PM_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_DECLARE(power);
 
@@ -31,13 +31,13 @@ extern PowerCC26X2_ModuleState PowerCC26X2_module;
 
 /* PM Policy based on SoC/Platform residency requirements */
 static const unsigned int pm_min_residency[] = {
-#ifdef CONFIG_SYS_POWER_SLEEP_STATES
-	CONFIG_SYS_PM_MIN_RESIDENCY_SLEEP_1 * SECS_TO_TICKS / MSEC_PER_SEC,
-	CONFIG_SYS_PM_MIN_RESIDENCY_SLEEP_2 * SECS_TO_TICKS / MSEC_PER_SEC,
-#endif /* CONFIG_SYS_POWER_SLEEP_STATES */
+#ifdef CONFIG_PM_SLEEP_STATES
+	CONFIG_PM_MIN_RESIDENCY_SLEEP_1 * SECS_TO_TICKS / MSEC_PER_SEC,
+	CONFIG_PM_MIN_RESIDENCY_SLEEP_2 * SECS_TO_TICKS / MSEC_PER_SEC,
+#endif /* CONFIG_PM_SLEEP_STATES */
 };
 
-enum power_states sys_pm_policy_next_state(int32_t ticks)
+enum power_states pm_policy_next_state(int32_t ticks)
 {
 	uint32_t constraints;
 	bool disallowed = false;
@@ -51,12 +51,12 @@ enum power_states sys_pm_policy_next_state(int32_t ticks)
 
 	if ((ticks != K_TICKS_FOREVER) && (ticks < pm_min_residency[0])) {
 		LOG_DBG("Not enough time for PM operations: %d", ticks);
-		return SYS_POWER_STATE_ACTIVE;
+		return POWER_STATE_ACTIVE;
 	}
 
 	for (i = ARRAY_SIZE(pm_min_residency) - 1; i >= 0; i--) {
-#ifdef CONFIG_SYS_PM_STATE_LOCK
-		if (!sys_pm_ctrl_is_state_enabled((enum power_states)(i))) {
+#ifdef CONFIG_PM_STATE_LOCK
+		if (!pm_ctrl_is_state_enabled((enum power_states)(i))) {
 			continue;
 		}
 #endif
@@ -79,8 +79,8 @@ enum power_states sys_pm_policy_next_state(int32_t ticks)
 				}
 				/* Set timeout for wakeup event */
 				__ASSERT(
-				    CONFIG_SYS_PM_MIN_RESIDENCY_SLEEP_2 > 1,
-				    "CONFIG_SYS_PM_MIN_RESIDENCY_SLEEP_2 must "
+				    CONFIG_PM_MIN_RESIDENCY_SLEEP_2 > 1,
+				    "CONFIG_PM_MIN_RESIDENCY_SLEEP_2 must "
 				    "be greater than 1.");
 				if (ticks != K_TICKS_FOREVER) {
 					/* NOTE: Ideally we'd like to set a
@@ -94,7 +94,7 @@ enum power_states sys_pm_policy_next_state(int32_t ticks)
 					 * would be at up to (WAKEDELAYSTANDBY
 					 * + 1 ms) ahead of the next timeout.
 					 * This also has the implication that
-					 * SYS_PM_MIN_RESIDENCY_SLEEP_2
+					 * PM_MIN_RESIDENCY_SLEEP_2
 					 * must be greater than 1.
 					 */
 					ticks -= (WAKEDELAYSTANDBY *
@@ -132,13 +132,13 @@ enum power_states sys_pm_policy_next_state(int32_t ticks)
 	}
 
 	LOG_DBG("No suitable power state found!");
-	return SYS_POWER_STATE_ACTIVE;
+	return POWER_STATE_ACTIVE;
 }
 
-__weak bool sys_pm_policy_low_power_devices(enum power_states pm_state)
+__weak bool pm_policy_low_power_devices(enum power_states pm_state)
 {
-#ifdef CONFIG_SYS_POWER_SLEEP_STATES
-	return (pm_state == SYS_POWER_STATE_SLEEP_2);
+#ifdef CONFIG_PM_SLEEP_STATES
+	return (pm_state == POWER_STATE_SLEEP_2);
 #else
 	return false;
 #endif

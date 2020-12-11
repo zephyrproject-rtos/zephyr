@@ -19,6 +19,8 @@
 	};
 
 	chosen {
+		zephyr,sram = &sdram0;
+		zephyr,dtcm = &dtcm;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 	};
@@ -26,7 +28,7 @@
 	sdram0: memory@80000000 {
 		/* Micron MT48LC16M16A2B4-6AIT:G */
 		device_type = "memory";
-		reg = <0x80000000 0x2000000>;
+		reg = <0x80000000 DT_SIZE_M(32)>;
 	};
 
 	leds {
@@ -50,7 +52,7 @@
 
 
 &flexspi {
-	reg = <0x402a8000 0x4000>, <0x60000000 0x800000>;
+	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
 	is25wp064: is25wp064@0 {
 		compatible = "issi,is25wp064", "jedec,spi-nor";
 		size = <67108864>;
@@ -65,6 +67,84 @@
 &lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
+};
+
+&lpuart2 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&lpuart4 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&lpuart6 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&lpuart8 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&lpi2c1 {
+	status = "okay";
+};
+
+&lpi2c3 {
+	status = "okay";
+};
+
+&lpspi3 {
+	status = "okay";
+	pcs-sck-delay = <50>;
+	sck-pcs-delay = <50>;
+	transfer-delay = <50>;
+};
+
+&lpspi4 {
+	status = "okay";
+	pcs-sck-delay = <50>;
+	sck-pcs-delay = <50>;
+	transfer-delay = <50>;
+};
+
+&flexpwm1_pwm3 {
+	status = "okay";
+};
+
+&flexpwm2_pwm0 {
+	status = "okay";
+};
+
+&flexpwm2_pwm1 {
+	status = "okay";
+};
+
+&flexpwm2_pwm2 {
+	status = "okay";
+};
+
+&flexpwm2_pwm3 {
+	status = "okay";
+};
+
+&flexpwm4_pwm0 {
+	status = "okay";
+};
+
+&flexpwm4_pwm1 {
+	status = "okay";
+};
+
+&flexpwm4_pwm2 {
+	status = "okay";
+};
+
+&flexpwm4_pwm3 {
+	status = "okay";
 };
 
 &usb1 {

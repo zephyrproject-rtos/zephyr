@@ -27,6 +27,8 @@
 #include <arch/xtensa/arch.h>
 #elif defined(CONFIG_ARCH_POSIX)
 #include <arch/posix/arch.h>
+#elif defined(CONFIG_SPARC)
+#include <arch/sparc/arch.h>
 #else
 #error "Unknown Architecture"
 #endif

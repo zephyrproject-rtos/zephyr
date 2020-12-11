@@ -13,10 +13,10 @@ LOG_MODULE_REGISTER(net_ethernet_mgmt, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 #include <net/net_if.h>
 #include <net/ethernet_mgmt.h>
 
-static inline bool is_hw_caps_supported(struct device *dev,
+static inline bool is_hw_caps_supported(const struct device *dev,
 					enum ethernet_hw_caps caps)
 {
-	const struct ethernet_api *api = dev->driver_api;
+	const struct ethernet_api *api = dev->api;
 
 	if (!api) {
 		return false;
@@ -30,8 +30,8 @@ static int ethernet_set_config(uint32_t mgmt_request,
 			       void *data, size_t len)
 {
 	struct ethernet_req_params *params = (struct ethernet_req_params *)data;
-	struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api = dev->driver_api;
+	const struct device *dev = net_if_get_device(iface);
+	const struct ethernet_api *api = dev->api;
 	struct ethernet_config config = { 0 };
 	enum ethernet_config_type type;
 
@@ -176,8 +176,8 @@ static int ethernet_get_config(uint32_t mgmt_request,
 			       void *data, size_t len)
 {
 	struct ethernet_req_params *params = (struct ethernet_req_params *)data;
-	struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api = dev->driver_api;
+	const struct device *dev = net_if_get_device(iface);
+	const struct ethernet_api *api = dev->api;
 	struct ethernet_config config = { 0 };
 	int ret = 0;
 	enum ethernet_config_type type;

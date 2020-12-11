@@ -11,7 +11,7 @@ resolution of 320x240 pixels, is based on the ILI9341 controller.
 This shield comes with a resistive (STMPE610 controller)
 or capacitive (FT6206 controller) touchscreen. While the
 Zephyr RTOS supports display output to these screens,
-it currently does not support touchscreen input.
+touchscreen input is supported only on Capacitive Touch version.
 More information about the shield can be found
 at the `Adafruit 2.8" TFT Touch Shield v2 website`_.
 
@@ -22,6 +22,8 @@ Pins Assignment of the Adafruit 2.8" TFT Touch Shield v2
 | Shield Connector Pin  | Function                                    |
 +=======================+=============================================+
 | D4                    | MicroSD SPI CSn                             |
++-----------------------+---------------------------------------------+
+| D7                    | Touch Controller IRQ (see note below)       |
 +-----------------------+---------------------------------------------+
 | D8                    | STMPE610 SPI CSn (Resistive Touch Version)  |
 +-----------------------+---------------------------------------------+
@@ -39,6 +41,11 @@ Pins Assignment of the Adafruit 2.8" TFT Touch Shield v2
 +-----------------------+---------------------------------------------+
 | SCL                   | FT6206 SCL       (Capacitive Touch Version) |
 +-----------------------+---------------------------------------------+
+
+.. note::
+   Touch controller IRQ line is not connected by default. You will need to
+   solder the ``ICSP_SI1`` jumper to use it. You will also need to adjust
+   driver configuration and its Device Tree entry to make use of it.
 
 Requirements
 ************

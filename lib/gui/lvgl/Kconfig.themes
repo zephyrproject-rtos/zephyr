@@ -6,30 +6,30 @@ menu "Themes"
 
 choice
 	prompt "Theme"
-	default LVGL_THEME_EMPTY
+	default LVGL_USE_THEME_EMPTY
 
-	config LVGL_THEME_EMPTY
+	config LVGL_USE_THEME_EMPTY
 		bool "Empty theme"
 		help
 		  No theme, you can apply your styles as you need
 
-	config LVGL_THEME_MATERIAL
+	config LVGL_USE_THEME_MATERIAL
 		bool "Material theme"
 		help
 		  Material theme, flat theme with bold colors and light shadow, support
 
-	config LVGL_THEME_MONO
+	config LVGL_USE_THEME_MONO
 		bool "Mono theme"
 		help
 		  Mono theme, monochrome, support
 
-	config LVGL_THEME_CUSTOM
+	config LVGL_USE_THEME_CUSTOM
 		bool "Custom theme"
 		help
 		  Custom theme.
 endchoice
 
-if LVGL_THEME_MATERIAL
+if LVGL_USE_THEME_MATERIAL
 
 choice
 	prompt "Default material theme flags"
@@ -42,19 +42,29 @@ choice
 		bool "Dark"
 endchoice
 
-endif # LVGL_THEME_MATERIAL
+config LVGL_THEME_MATERIAL_FLAG_NO_TRANSITION
+	bool "Disable transitions"
+	help
+	  Disable transitions in material theme
 
-if LVGL_THEME_CUSTOM
+config LVGL_THEME_MATERIAL_FLAG_NO_FOCUS
+	bool "Disable focus"
+	help
+	  Disable indication of focused state in material theme
+
+endif # LVGL_USE_THEME_MATERIAL
+
+if LVGL_USE_THEME_CUSTOM
 
 config LVGL_THEME_CUSTOM_INIT_FUNCTION
 	string "Custom theme initialization function"
 
-endif # LVGL_THEME_CUSTOM
+endif # LVGL_USE_THEME_CUSTOM
 
 choice
 	prompt "Default theme primary color"
 	default LVGL_THEME_DEFAULT_COLOR_PRIMARY_RED
-	default LVGL_THEME_DEFAULT_COLOR_PRIMARY_BLACK if LVGL_THEME_MONO
+	default LVGL_THEME_DEFAULT_COLOR_PRIMARY_BLACK if LVGL_USE_THEME_MONO
 
 	config LVGL_THEME_DEFAULT_COLOR_PRIMARY_WHITE
 		bool "White"
@@ -142,7 +152,7 @@ endif # LVGL_THEME_DEFAULT_COLOR_PRIMARY_CUSTOM
 choice
 	prompt "Default theme secondary color"
 	default LVGL_THEME_DEFAULT_COLOR_SECONDARY_RED
-	default LVGL_THEME_DEFAULT_COLOR_SECONDARY_BLACK if LVGL_THEME_MONO
+	default LVGL_THEME_DEFAULT_COLOR_SECONDARY_BLACK if LVGL_USE_THEME_MONO
 
 	config LVGL_THEME_DEFAULT_COLOR_SECONDARY_WHITE
 		bool "White"
@@ -230,6 +240,14 @@ endif # LVGL_THEME_DEFAULT_COLOR_SECONDARY_CUSTOM
 choice
 	prompt "Default theme small font"
 	default LVGL_THEME_DEFAULT_FONT_SMALL_UNSCII_8
+
+	config LVGL_THEME_DEFAULT_FONT_SMALL_MONTSERRAT_8
+		bool "Build-in font size 8"
+		depends on LVGL_FONT_MONTSERRAT_8
+
+	config LVGL_THEME_DEFAULT_FONT_SMALL_MONTSERRAT_10
+		bool "Build-in font size 10"
+		depends on LVGL_FONT_MONTSERRAT_10
 
 	config LVGL_THEME_DEFAULT_FONT_SMALL_MONTSERRAT_12
 		bool "Build-in font size 12"
@@ -340,6 +358,14 @@ choice
 	prompt "Default theme normal font"
 	default LVGL_THEME_DEFAULT_FONT_NORMAL_UNSCII_8
 
+	config LVGL_THEME_DEFAULT_FONT_NORMAL_MONTSERRAT_8
+		bool "Build-in font size 8"
+		depends on LVGL_FONT_MONTSERRAT_8
+
+	config LVGL_THEME_DEFAULT_FONT_NORMAL_MONTSERRAT_10
+		bool "Build-in font size 10"
+		depends on LVGL_FONT_MONTSERRAT_10
+
 	config LVGL_THEME_DEFAULT_FONT_NORMAL_MONTSERRAT_12
 		bool "Build-in font size 12"
 		depends on LVGL_FONT_MONTSERRAT_12
@@ -449,6 +475,14 @@ choice
 	prompt "Default theme subtitle font"
 	default LVGL_THEME_DEFAULT_FONT_SUBTITLE_UNSCII_8
 
+	config LVGL_THEME_DEFAULT_FONT_SUBTITLE_MONTSERRAT_8
+		bool "Build-in font size 8"
+		depends on LVGL_FONT_MONTSERRAT_8
+
+	config LVGL_THEME_DEFAULT_FONT_SUBTITLE_MONTSERRAT_10
+		bool "Build-in font size 10"
+		depends on LVGL_FONT_MONTSERRAT_10
+
 	config LVGL_THEME_DEFAULT_FONT_SUBTITLE_MONTSERRAT_12
 		bool "Build-in font size 12"
 		depends on LVGL_FONT_MONTSERRAT_12
@@ -557,6 +591,14 @@ endchoice
 choice
 	prompt "Default theme title font"
 	default LVGL_THEME_DEFAULT_FONT_TITLE_UNSCII_8
+
+	config LVGL_THEME_DEFAULT_FONT_TITLE_MONTSERRAT_8
+		bool "Build-in font size 8"
+		depends on LVGL_FONT_MONTSERRAT_8
+
+	config LVGL_THEME_DEFAULT_FONT_TITLE_MONTSERRAT_10
+		bool "Build-in font size 10"
+		depends on LVGL_FONT_MONTSERRAT_10
 
 	config LVGL_THEME_DEFAULT_FONT_TITLE_MONTSERRAT_12
 		bool "Build-in font size 12"

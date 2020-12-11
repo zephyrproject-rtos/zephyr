@@ -85,8 +85,43 @@ void test_clock_uptime(void)
 /**
  * @brief Test clock cycle functionality
  *
+ * @details
+ * Test Objectve:
+ * - The kernel architecture provide a 32bit monotonically increasing
+ *   cycle counter
+ * - This routine tests the k_cycle_get_32() and k_uptime_get_32()
+ *   k_cycle_get_32() get cycles by accessing hardware clock.
+ *   k_uptime_get_32() return cycles by transforming ticks into cycles.
+ *
+ * Testing techniques
+ * - Functional and black box testing
+ *
+ * Prerequisite Condition:
+ * - N/A
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Expected Test Result:
+ * - The timer increases monotonically
+ *
+ * Pass/Fail criteria:
+ * - Success if cycles increase monotonically, failure otherwise.
+ *
+ * Test Procedure:
+ * -# At mili-second boundary, get cycles repeatedly by k_cycle_get_32()
+ *  till cycles increased
+ * -# At mili-second boundary, get cycles repeatedly by k_uptime_get_32()
+ *  till cycles increased
+ * -# Cross check cycles gotten by k_cycle_get_32() and k_uptime_get_32(),
+ *  the delta cycle should be greater than 1 milli-second.
+ *
+ * Assumptions and Constraints
+ * - N/A
+ *
  * @see k_cycle_get_32(), k_uptime_get_32()
  */
+
 void test_clock_cycle(void)
 {
 	uint32_t c32, c0, c1, t32;
@@ -124,7 +159,6 @@ void test_clock_cycle(void)
 			     (NSEC_PER_SEC / MSEC_PER_SEC), NULL);
 	}
 }
-
 
 /*
  *help function
@@ -172,9 +206,12 @@ void test_ms_time_duration(void)
 	k_timer_start(&ktimer, K_MSEC(100), K_MSEC(50));
 
 	/** TESTPOINT: waiting time more than duration and check the count */
+	k_usleep(1);		/* align to tick */
 	k_busy_wait((DURATION + 1) * 1000);
-	zassert_true(tdata.duration_count == 1, NULL);
-	zassert_true(tdata.stop_count == 0, NULL);
+	zassert_true(tdata.duration_count == 1, "duration %u not 1",
+		     tdata.duration_count);
+	zassert_true(tdata.stop_count == 0,
+		     "stop %u not 0", tdata.stop_count);
 
 	/** cleanup environemtn */
 	k_timer_stop(&ktimer);

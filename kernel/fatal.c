@@ -13,8 +13,9 @@
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
 #include <fatal.h>
+#include <debug/coredump.h>
 
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /* LCOV_EXCL_START */
 FUNC_NORETURN __weak void arch_system_halt(unsigned int reason)
@@ -47,7 +48,7 @@ __weak void k_sys_fatal_error_handler(unsigned int reason,
 
 static const char *thread_name_get(struct k_thread *thread)
 {
-	const char *thread_name = k_thread_name_get(thread);
+	const char *thread_name = thread ? k_thread_name_get(thread) : NULL;
 
 	if (thread_name == NULL || thread_name[0] == '\0') {
 		thread_name = "unknown";
@@ -119,6 +120,8 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 
 	LOG_ERR("Current thread: %p (%s)", thread,
 		log_strdup(thread_name_get(thread)));
+
+	z_coredump(reason, esf, thread);
 
 	k_sys_fatal_error_handler(reason, esf);
 

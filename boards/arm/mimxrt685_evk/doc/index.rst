@@ -73,6 +73,10 @@ features:
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
+| CLOCK     | on-chip    | clock_control                       |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -103,18 +107,26 @@ functionality of a pin.
 +---------+-----------------+----------------------------+
 | PIO1_5  | GPIO            | FXOS8700 TRIGGER           |
 +---------+-----------------+----------------------------+
+| PIO1_5  | SPI             | SPI MOSI                   |
++---------+-----------------+----------------------------+
+| PIO1_4  | SPI             | SPI MISO                   |
++---------+-----------------+----------------------------+
+| PIO1_3  | SPI             | SPI SCK                    |
++---------+-----------------+----------------------------+
+| PIO1_6  | SPI             | SPI SSEL                   |
++---------+-----------------+----------------------------+
 
 System Clock
 ============
 
-The MIMXRT685 SoC is configured to use the internal FRO at 48MHz as a source for
-the system clock. Other sources for the system clock are provided in the SOC,
-depending on your system requirements.
+The MIMXRT685 SoC is configured to use the main system PLL at 250MHz
+as a source for the system clock. Other sources for the system clock
+are provided in the SOC, depending on your system requirements.
 
 Serial Port
 ===========
 
-The MIMXRT685 SoC has 8 FLEXCOMM interfaces for serial communication.  One is
+The MIMXRT685 SoC has 8 FLEXCOMM interfaces for serial communication. One is
 configured as USART for the console and the remaining are not used.
 
 Programming and Debugging

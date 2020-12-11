@@ -9,7 +9,6 @@
 
 import argparse
 import os
-import platform
 import sys
 import re
 from pathlib import Path
@@ -27,6 +26,11 @@ from elftools.dwarf.locationlists import (
 
 if LooseVersion(elftools.__version__) < LooseVersion('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
+
+from colorama import init, Fore
+
+from anytree import RenderTree, NodeMixin, findall_by_attr
+from anytree.exporter import JsonExporter
 
 
 # ELF section flags
@@ -104,29 +108,6 @@ def match_symbol_address(symlist, die, parser, dwarfinfo):
             return sym
 
     return None
-
-
-def parse_args():
-    global args
-
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument("-k", "--kernel", required=True,
-                        help="Zephyr ELF binary")
-    parser.add_argument("-z", "--zephyrbase", required=True,
-                        help="Zephyr base path")
-    parser.add_argument("-o", "--output", required=True,
-                        help="Output path")
-    parser.add_argument("target", choices=['rom', 'ram'])
-    parser.add_argument("-d", "--depth", dest="depth", type=int,
-                        help="How deep should we go into the tree",
-                        metavar="DEPTH")
-    parser.add_argument("-v", "--verbose", action="store_true",
-                        help="Print extra debugging information")
-    parser.add_argument("--nocolor", action="store_true",
-                        help="No color output")
-
-    args = parser.parse_args()
 
 
 # Fetch the symbols from the symbol table and put them
@@ -236,10 +217,17 @@ def get_die_filename(die, lineprog):
 
     # Prepend output path to relative path
     if not path.is_absolute():
-        path = Path(args.output) / path
+        output = Path(args.output)
+        path = output.joinpath(path)
 
     # Change path to relative to Zephyr base
-    path = path.resolve()
+    try:
+        path = path.resolve()
+    except OSError as e:
+        if '<built-in>' in str(path):
+            # This is expected, built-ins can't be resolved
+            return path
+        raise e
     try:
         new_path = path.relative_to(zephyrbase)
         path = new_path
@@ -495,93 +483,111 @@ def set_root_path_for_unmapped_symbols(symbol_dict, addr_range, processed):
     processed['mapped_addr'] = mapped_addresses
     processed['unmapped_symbols'] = unmapped_symbols
 
+class TreeNode(NodeMixin):
+    def __init__(self, name, identifier, size=0, parent=None, children=None):
+        super(TreeNode, self).__init__()
+        self.name = name
+        self.size = size
+        self.parent = parent
+        self.identifier = identifier
+        if children:
+            self.children = children
 
-def generate_tree(symbol_dict):
+    def __repr__(self):
+        return self.name
+
+def generate_any_tree(symbol_dict):
+    root = TreeNode('root', ":")
 
     # A set of helper function for building a simple tree with a path-like
     # hierarchy.
-    def _insert_one_elem(tree, path, size):
+    def _insert_one_elem(root, path, size):
         cur = None
+        node = None
+        parent = root
         for part in path.parts:
             if cur is None:
                 cur = part
             else:
                 cur = str(Path(cur, part))
-            if cur in tree:
-                tree[cur] += size
-            else:
-                tree[cur] = size
 
-    total_size = 0
-    nodes = {}
-    nodes[':'] = 0
+            results = findall_by_attr(root, cur, name="identifier")
+            if results:
+                item = results[0]
+                item.size += size
+                parent = item
+            else:
+                if node:
+                    parent = node
+                node = TreeNode(name=str(part), identifier=cur, size=size, parent=parent)
 
     for name, sym in symbol_dict.items():
         for symbol in sym:
             size = get_symbol_size(symbol['symbol'])
             for file in symbol['mapped_files']:
                 path = Path(file, name)
-                _insert_one_elem(nodes, path, size)
+                if path.is_absolute():
+                    zb = Path(args.zephyrbase)
+                    if zb.parent in path.parents:
+                        path = path.relative_to(zb.parent)
 
-    ret = {'nodes': nodes,
-           'size': total_size}
-    return ret
+                _insert_one_elem(root, path, size)
 
+    return root
 
-def print_tree(data, total, depth):
-    base = args.zephyrbase
-    totp = 0
+def node_sort(items):
+    return sorted(items, key=lambda item: item.name)
 
-    bcolors_ansi = {
-        "HEADER"    : '\033[95m',
-        "OKBLUE"    : '\033[94m',
-        "OKGREEN"   : '\033[92m',
-        "WARNING"   : '\033[93m',
-        "FAIL"      : '\033[91m',
-        "ENDC"      : '\033[0m',
-        "BOLD"      : '\033[1m',
-        "UNDERLINE" : '\033[4m'
-    }
-    if platform.system() == "Windows" or args.nocolor:
-        # Set all color codes to empty string on Windows
-        #
-        # TODO: Use an approach like the pip package 'colorama' to
-        # support colors on Windows
-        bcolors = dict.fromkeys(bcolors_ansi, '')
-    else:
-        bcolors = bcolors_ansi
+def print_any_tree(root, total_size):
 
-    print('{:92s} {:10s} {:8s}'.format(
-        bcolors["FAIL"] + "Path", "Size", "%" + bcolors["ENDC"]))
+    print('{:101s} {:7s} {:8s}'.format(
+        Fore.YELLOW + "Path", "Size", "%" + Fore.RESET))
     print('=' * 110)
-    for i in sorted(data):
-        p = i.split(os.path.sep)
-        if depth and len(p) > depth:
-            continue
+    for row in RenderTree(root, childiter=node_sort):
+        f = len(row.pre) + len(row.node.name)
+        s = str(row.node.size).rjust(100-f)
+        percent = 100 * float(row.node.size) / float(total_size)
 
-        percent = 100 * float(data[i]) / float(total)
-        percent_c = percent
-        if len(p) < 2:
-            totp += percent
+        cc = cr = ""
+        if not row.node.children:
+            cc = Fore.CYAN
+            cr = Fore.RESET
+        elif row.node.name.endswith(".c") or row.node.name.endswith(".h"):
+            cc = Fore.GREEN
+            cr = Fore.RESET
 
-        if len(p) > 1:
-            if not os.path.exists(os.path.join(base, i)):
-                s = bcolors["WARNING"] + p[-1] + bcolors["ENDC"]
-            else:
-                s = bcolors["OKBLUE"] + p[-1] + bcolors["ENDC"]
-            print('{:80s} {:20d} {:8.2f}%'.format(
-                "  " * (len(p) - 1) + s, data[i], percent_c))
-        else:
-            print('{:80s} {:20d} {:8.2f}%'.format(
-                bcolors["OKBLUE"] + i + bcolors["ENDC"], data[i], percent_c))
-
+        print(f"{row.pre}{cc}{row.node.name}{cr} {s} {Fore.BLUE}{percent:.2f}%{Fore.RESET}")
     print('=' * 110)
-    print('{:92d}'.format(total))
-    return totp
+    print(f'{total_size:>101}')
+
+
+
+def parse_args():
+    global args
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-k", "--kernel", required=True,
+                        help="Zephyr ELF binary")
+    parser.add_argument("-z", "--zephyrbase", required=True,
+                        help="Zephyr base path")
+    parser.add_argument("-o", "--output", required=True,
+                        help="Output path")
+    parser.add_argument("target", choices=['rom', 'ram'])
+    parser.add_argument("-d", "--depth", dest="depth", type=int,
+                        help="How deep should we go into the tree",
+                        metavar="DEPTH")
+    parser.add_argument("-v", "--verbose", action="store_true",
+                        help="Print extra debugging information")
+    parser.add_argument("--json", help="store results in a JSON file.")
+    args = parser.parse_args()
 
 
 def main():
     parse_args()
+
+    # Init colorama
+    init()
 
     assert os.path.exists(args.kernel), "{0} does not exist.".format(args.kernel)
 
@@ -623,8 +629,15 @@ def main():
             for sym in processed['unmapped_symbols']:
                 print("INFO: Unmapped symbol: {0}".format(sym))
 
-        tree = generate_tree(symbol_dict)
-        print_tree(tree['nodes'], symsize, args.depth)
+        root = generate_any_tree(symbol_dict)
+        print_any_tree(root, symsize)
+
+        if args.json:
+            exporter = JsonExporter(indent=2, sort_keys=True)
+            data = exporter.export(root)
+            with open(args.json, "w") as fp:
+                fp.write(data)
+
 
 if __name__ == "__main__":
     main()

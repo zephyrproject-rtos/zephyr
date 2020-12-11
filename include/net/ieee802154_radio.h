@@ -26,6 +26,24 @@ extern "C" {
  * @{
  */
 
+/**
+ * @brief IEEE 802.15.4 Channel assignments
+ *
+ * Channel numbering for 868 MHz, 915 MHz, and 2450 MHz bands.
+ *
+ * - Channel 0 is for 868.3 MHz.
+ * - Channels 1-10 are for 906 to 924 MHz with 2 MHz channel spacing.
+ * - Channels 11-26 are for 2405 to 2530 MHz with 5 MHz channel spacing.
+ *
+ * For more information, please refer to 802.15.4-2015 Section 10.1.2.2.
+ */
+enum ieee802154_channel {
+	IEEE802154_SUB_GHZ_CHANNEL_MIN = 0,
+	IEEE802154_SUB_GHZ_CHANNEL_MAX = 10,
+	IEEE802154_2_4_GHZ_CHANNEL_MIN = 11,
+	IEEE802154_2_4_GHZ_CHANNEL_MAX = 26,
+};
+
 enum ieee802154_hw_caps {
 	IEEE802154_HW_FCS	  = BIT(0), /* Frame Check-Sum supported */
 	IEEE802154_HW_PROMISC	  = BIT(1), /* Promiscuous mode supported */
@@ -48,12 +66,21 @@ enum ieee802154_filter_type {
 };
 
 enum ieee802154_event {
-	IEEE802154_EVENT_TX_STARTED /* Data transmission started */
+	IEEE802154_EVENT_TX_STARTED, /* Data transmission started */
+	IEEE802154_EVENT_RX_FAILED   /* Data reception failed */
 };
 
-typedef void (*energy_scan_done_cb_t)(struct device *dev, int16_t max_ed);
+enum ieee802154_rx_fail_reason {
+	IEEE802154_RX_FAIL_NOT_RECEIVED,  /* Nothing received */
+	IEEE802154_RX_FAIL_INVALID_FCS,   /* Frame had invalid checksum */
+	IEEE802154_RX_FAIL_ADDR_FILTERED, /* Address did not match */
+	IEEE802154_RX_FAIL_OTHER	  /* General reason */
+};
 
-typedef void (*ieee802154_event_cb_t)(struct device *dev,
+typedef void (*energy_scan_done_cb_t)(const struct device *dev,
+				      int16_t max_ed);
+
+typedef void (*ieee802154_event_cb_t)(const struct device *dev,
 				      enum ieee802154_event evt,
 				      void *event_params);
 
@@ -168,48 +195,46 @@ struct ieee802154_radio_api {
 	struct net_if_api iface_api;
 
 	/** Get the device capabilities */
-	enum ieee802154_hw_caps (*get_capabilities)(struct device *dev);
+	enum ieee802154_hw_caps (*get_capabilities)(const struct device *dev);
 
 	/** Clear Channel Assesment - Check channel's activity */
-	int (*cca)(struct device *dev);
+	int (*cca)(const struct device *dev);
 
 	/** Set current channel */
-	int (*set_channel)(struct device *dev, uint16_t channel);
+	int (*set_channel)(const struct device *dev, uint16_t channel);
 
 	/** Set/Unset filters (for IEEE802154_HW_FILTER ) */
-	int (*filter)(struct device *dev,
+	int (*filter)(const struct device *dev,
 		      bool set,
 		      enum ieee802154_filter_type type,
 		      const struct ieee802154_filter *filter);
 
 	/** Set TX power level in dbm */
-	int (*set_txpower)(struct device *dev, int16_t dbm);
+	int (*set_txpower)(const struct device *dev, int16_t dbm);
 
 	/** Transmit a packet fragment */
-	int (*tx)(struct device *dev, enum ieee802154_tx_mode mode,
+	int (*tx)(const struct device *dev, enum ieee802154_tx_mode mode,
 		  struct net_pkt *pkt, struct net_buf *frag);
 
 	/** Start the device */
-	int (*start)(struct device *dev);
+	int (*start)(const struct device *dev);
 
 	/** Stop the device */
-	int (*stop)(struct device *dev);
+	int (*stop)(const struct device *dev);
 
 	/** Set specific radio driver configuration. */
-	int (*configure)(struct device *dev,
+	int (*configure)(const struct device *dev,
 			 enum ieee802154_config_type type,
 			 const struct ieee802154_config *config);
 
-#ifdef CONFIG_NET_L2_IEEE802154_SUB_GHZ
 	/** Get the available amount of Sub-GHz channels */
-	uint16_t (*get_subg_channel_count)(struct device *dev);
-#endif /* CONFIG_NET_L2_IEEE802154_SUB_GHZ */
+	uint16_t (*get_subg_channel_count)(const struct device *dev);
 
 	/** Run an energy detection scan.
 	 *  Note: channel must be set prior to request this function.
 	 *  duration parameter is in ms.
 	 */
-	int (*ed_scan)(struct device *dev,
+	int (*ed_scan)(const struct device *dev,
 		       uint16_t duration,
 		       energy_scan_done_cb_t done_cb);
 };

@@ -33,4 +33,14 @@
 #define IPM_CAVS_IDC_MSG_SCHED_IPI_ID		\
 	(CAVS_IDC_TYPE(0x7FU) | CAVS_IDC_HEADER(0x495049U))
 
+static inline uint32_t idc_read(uint32_t reg, uint32_t core_id)
+{
+	return *((volatile uint32_t*)(IPC_DSP_BASE(core_id) + reg));
+}
+
+static inline void idc_write(uint32_t reg, uint32_t core_id, uint32_t val)
+{
+	*((volatile uint32_t*)(IPC_DSP_BASE(core_id) + reg)) = val;
+}
+
 #endif /* ZEPHYR_DRIVERS_IPM_IPM_CAVS_IDC_H_ */

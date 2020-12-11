@@ -22,8 +22,8 @@
  *		      child device (0, 1, or 2).
  * @return 0 if successful, negative errno code on failure.
  */
-int ht16k33_register_keyscan_device(struct device *parent,
-				    struct device *child,
+int ht16k33_register_keyscan_device(const struct device *parent,
+				    const struct device *child,
 				    uint8_t keyscan_idx);
 
 /**
@@ -32,7 +32,7 @@ int ht16k33_register_keyscan_device(struct device *parent,
  * @param  parent HT16K33 parent device.
  * @return status != 0 if an interrupt is pending.
  */
-uint32_t ht16k33_get_pending_int(struct device *parent);
+uint32_t ht16k33_get_pending_int(const struct device *parent);
 
 /**
  * Dispatch keyscan row data from a keyscan event to be handled by a
@@ -41,7 +41,7 @@ uint32_t ht16k33_get_pending_int(struct device *parent);
  * @param child HT16K33 keyscan child device.
  * @param keys  Bitmask of key state for the row.
  */
-void ht16k33_process_keyscan_row_data(struct device *child,
+void ht16k33_process_keyscan_row_data(const struct device *child,
 				      uint32_t keys);
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_LED_HT16K33_H_ */

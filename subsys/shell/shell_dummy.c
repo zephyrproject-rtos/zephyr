@@ -98,7 +98,7 @@ const struct shell_transport_api shell_dummy_transport_api = {
 	.read = read
 };
 
-static int enable_shell_dummy(struct device *arg)
+static int enable_shell_dummy(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 	shell_init(&shell_dummy, NULL, true, true, LOG_LEVEL_INF);
@@ -114,12 +114,19 @@ const struct shell *shell_backend_dummy_get_ptr(void)
 const char *shell_backend_dummy_get_output(const struct shell *shell,
 					   size_t *sizep)
 {
-	struct shell_dummy *sh_dummy;
+	struct shell_dummy *sh_dummy = (struct shell_dummy *)shell->iface->ctx;
 
-	sh_dummy = (struct shell_dummy *)shell->iface->ctx;
 	sh_dummy->buf[sh_dummy->len] = '\0';
 	*sizep = sh_dummy->len;
 	sh_dummy->len = 0;
 
 	return sh_dummy->buf;
+}
+
+void shell_backend_dummy_clear_output(const struct shell *shell)
+{
+	struct shell_dummy *sh_dummy = (struct shell_dummy *)shell->iface->ctx;
+
+	sh_dummy->buf[0] = '\0';
+	sh_dummy->len = 0;
 }

@@ -5,12 +5,11 @@
  */
 
 /dts-v1/;
-#include <st/l5/stm32l552Xe.dtsi>
-#include "arduino_r3_connector.dtsi"
+#include "nucleo_l552ze_q-common.dtsi"
 
 / {
 	model = "STMicroelectronics STM32L552ZE-NUCLEO-Q board";
-	compatible = "st,stm32l552ze-nucleo-q", "st,stm32l552";
+	compatible = "st,stm32l552ze-nucleo-q";
 
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -22,30 +21,6 @@
 		zephyr,flash = &flash0;
 	};
 
-	leds {
-		compatible = "gpio-leds";
-		green_led_1: led_1 {
-			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
-			label = "User LD1";
-		};
-		blue_led_1: led_2 {
-			gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
-			label = "User LD2";
-		};
-		red_led_1: led_3 {
-			gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>;
-			label = "User LD3";
-		};
-	};
-
-	gpio_keys {
-		compatible = "gpio-keys";
-		user_button: button {
-			label = "User";
-			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
-		};
-	};
-
 	aliases {
 		led0 = &blue_led_1;
 		sw0 = &user_button;
@@ -53,6 +28,7 @@
 };
 
 &lpuart1 {
+	pinctrl-0 = <&lpuart1_tx_pg7 &lpuart1_rx_pg8>;
 	current-speed = <115200>;
 	status = "okay";
 };

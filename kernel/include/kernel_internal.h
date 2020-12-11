@@ -126,7 +126,52 @@ extern uint8_t *z_priv_stack_find(k_thread_stack_t *stack);
 
 #ifdef CONFIG_USERSPACE
 bool z_stack_is_user_capable(k_thread_stack_t *stack);
+
+/* Memory domain setup hook, called from z_setup_new_thread() */
+void z_mem_domain_init_thread(struct k_thread *thread);
+
+/* Memory domain teardown hook, called from z_thread_single_abort() */
+void z_mem_domain_exit_thread(struct k_thread *thread);
+
+/* This spinlock:
+ *
+ * - Protects the full set of active k_mem_domain objects and their contents
+ * - Serializes calls to arch_mem_domain_* APIs
+ *
+ * If architecture code needs to access k_mem_domain structures or the
+ * partitions they contain at any other point, this spinlock should be held.
+ * Uniprocessor systems can get away with just locking interrupts but this is
+ * not recommended.
+ */
+extern struct k_spinlock z_mem_domain_lock;
 #endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_GDBSTUB
+struct gdb_ctx;
+
+/* Should be called by the arch layer. This is the gdbstub main loop
+ * and synchronously communicate with gdb on host.
+ */
+extern int z_gdb_main_loop(struct gdb_ctx *ctx, bool start);
+#endif
+
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
+void z_thread_mark_switched_in(void);
+void z_thread_mark_switched_out(void);
+#else
+
+/**
+ * @brief Called after a thread has been selected to run
+ */
+#define z_thread_mark_switched_in()
+
+/**
+ * @brief Called before a thread has been selected to run
+ */
+
+#define z_thread_mark_switched_out()
+
+#endif /* CONFIG_INSTRUMENT_THREAD_SWITCHING */
 
 #ifdef __cplusplus
 }

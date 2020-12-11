@@ -128,7 +128,7 @@ static uint32_t hinnant(int y, int m, int d)
  * This function is long, but linear and easy to follow.
  */
 
-int get_value(struct device *dev, uint32_t *ticks)
+int get_value(const struct device *dev, uint32_t *ticks)
 {
 	struct state state, state2;
 	uint64_t *pun = (uint64_t *) &state;
@@ -192,7 +192,7 @@ int get_value(struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
-static int init(struct device *dev)
+static int init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

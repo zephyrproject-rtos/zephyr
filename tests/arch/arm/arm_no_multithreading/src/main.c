@@ -17,7 +17,7 @@ extern K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 
 static volatile int test_flag;
 
-void arm_isr_handler(void *args)
+void arm_isr_handler(const void *args)
 {
 	ARG_UNUSED(args);
 
@@ -52,11 +52,10 @@ void test_main(void)
 #endif
 
 	int key = arch_irq_lock();
-	__ASSERT(!arch_irq_unlocked(key),
-		"IRQs unlocked in main()");
+	__ASSERT(arch_irq_unlocked(key),
+		"IRQs locked in main()");
 
-	/* Enable interrupts unconditionally */
-	arch_irq_unlock(0);
+	arch_irq_unlock(key);
 
 	/* Determine an NVIC IRQ line that is not currently in use. */
 	int i, flag = test_flag;
@@ -78,9 +77,21 @@ void test_main(void)
 
 			if (NVIC_GetPendingIRQ(i)) {
 				/* If the NVIC line is pending, it is
-				 * guaranteed that it is implemented.
+				 * guaranteed that it is implemented; clear the
+				 * line.
 				 */
-				break;
+				NVIC_ClearPendingIRQ(i);
+
+				if (!NVIC_GetPendingIRQ(i)) {
+					/*
+					 * If the NVIC line can be successfully
+					 * un-pended, it is guaranteed that it
+					 * can be used for software interrupt
+					 * triggering. Trigger it.
+					 */
+					NVIC_SetPendingIRQ(i);
+					break;
+				}
 			}
 		}
 	}

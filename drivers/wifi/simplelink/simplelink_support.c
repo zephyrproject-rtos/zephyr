@@ -15,6 +15,9 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 #include <stdint.h>
 
 #include <ti/drivers/net/wifi/simplelink.h>
+#include <ti/net/slnetif.h>
+#include <ti/net/slnetutils.h>
+#include <ti/drivers/net/wifi/slnetifwifi.h>
 #include <CC3220SF_LAUNCHXL.h>
 
 #include "simplelink_support.h"
@@ -33,6 +36,9 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 
 #define CHANNEL_MASK_ALL	    (0x1FFF)
 #define RSSI_TH_MAX		    (-95)
+
+#define SLNET_IF_WIFI_PRIO                    (5)
+#define SLNET_IF_WIFI_NAME                    "CC32xx"
 
 enum status_bits {
 	/* Network Processor is powered up */
@@ -64,6 +70,20 @@ struct sl_connect_state sl_conn;
 
 /* Network Coprocessor state, including role and connection state: */
 static struct nwp_status nwp;
+
+/* Minimal configuration of SlNetIfWifi for Zephyr */
+static SlNetIf_Config_t slnetifwifi_config_zephyr = {
+	.sockCreate = SlNetIfWifi_socket,
+	.sockClose = SlNetIfWifi_close,
+	.sockSelect = SlNetIfWifi_select,
+	.sockSetOpt = SlNetIfWifi_setSockOpt,
+	.sockGetOpt = SlNetIfWifi_getSockOpt,
+	.sockRecvFrom = SlNetIfWifi_recvFrom,
+	.sockSendTo = SlNetIfWifi_sendTo,
+	.utilGetHostByName = SlNetIfWifi_getHostByName,
+	.ifGetIPAddr = SlNetIfWifi_getIPAddr,
+	.ifGetConnectionStatus = SlNetIfWifi_getConnectionStatus
+};
 
 /* Configure the device to a default state, resetting previous parameters .*/
 static int32_t configure_simplelink(void)
@@ -441,6 +461,23 @@ void SimpleLinkNetAppEventHandler(SlNetAppEvent_t *netapp_event)
 		LOG_ERR("[NETAPP EVENT] Unexpected event [0x%lx]",
 			netapp_event->Id);
 		break;
+	}
+
+	if ((netapp_event->Id == SL_NETAPP_EVENT_IPV4_ACQUIRED) ||
+		(netapp_event->Id == SL_NETAPP_EVENT_IPV6_ACQUIRED)) {
+		/* Initialize SlNetSock layer for getaddrinfo */
+		SlNetIf_init(0);
+		/*
+		 * We are only using SlNetSock to support getaddrinfo()
+		 * for the WiFi interface, so hardcoding the interface
+		 * id to 1 here.
+		 */
+		SlNetIf_add(SLNETIF_ID_1, SLNET_IF_WIFI_NAME,
+			(const SlNetIf_Config_t *)&slnetifwifi_config_zephyr,
+			SLNET_IF_WIFI_PRIO);
+
+		SlNetSock_init(0);
+		SlNetUtil_init(0);
 	}
 }
 

@@ -119,7 +119,7 @@ static uint8_t draw_char_vtmono(const struct char_framebuffer *fb,
 	return fptr->width;
 }
 
-int cfb_print(struct device *dev, char *str, uint16_t x, uint16_t y)
+int cfb_print(const struct device *dev, char *str, uint16_t x, uint16_t y)
 {
 	const struct char_framebuffer *fb = &char_fb;
 	const struct cfb_font *fptr;
@@ -159,7 +159,7 @@ static int cfb_invert(const struct char_framebuffer *fb)
 	return 0;
 }
 
-int cfb_framebuffer_clear(struct device *dev, bool clear_display)
+int cfb_framebuffer_clear(const struct device *dev, bool clear_display)
 {
 	const struct char_framebuffer *fb = &char_fb;
 	struct display_buffer_descriptor desc;
@@ -178,7 +178,7 @@ int cfb_framebuffer_clear(struct device *dev, bool clear_display)
 }
 
 
-int cfb_framebuffer_invert(struct device *dev)
+int cfb_framebuffer_invert(const struct device *dev)
 {
 	struct char_framebuffer *fb = &char_fb;
 
@@ -191,9 +191,9 @@ int cfb_framebuffer_invert(struct device *dev)
 	return 0;
 }
 
-int cfb_framebuffer_finalize(struct device *dev)
+int cfb_framebuffer_finalize(const struct device *dev)
 {
-	const struct display_driver_api *api = dev->driver_api;
+	const struct display_driver_api *api = dev->api;
 	const struct char_framebuffer *fb = &char_fb;
 	struct display_buffer_descriptor desc;
 
@@ -213,7 +213,7 @@ int cfb_framebuffer_finalize(struct device *dev)
 	return api->write(dev, 0, 0, &desc, fb->buf);
 }
 
-int cfb_get_display_parameter(struct device *dev,
+int cfb_get_display_parameter(const struct device *dev,
 			       enum cfb_display_param param)
 {
 	const struct char_framebuffer *fb = &char_fb;
@@ -239,7 +239,7 @@ int cfb_get_display_parameter(struct device *dev,
 	return 0;
 }
 
-int cfb_framebuffer_set_font(struct device *dev, uint8_t idx)
+int cfb_framebuffer_set_font(const struct device *dev, uint8_t idx)
 {
 	struct char_framebuffer *fb = &char_fb;
 
@@ -252,7 +252,8 @@ int cfb_framebuffer_set_font(struct device *dev, uint8_t idx)
 	return 0;
 }
 
-int cfb_get_font_size(struct device *dev, uint8_t idx, uint8_t *width, uint8_t *height)
+int cfb_get_font_size(const struct device *dev, uint8_t idx, uint8_t *width,
+		      uint8_t *height)
 {
 	const struct char_framebuffer *fb = &char_fb;
 
@@ -271,16 +272,16 @@ int cfb_get_font_size(struct device *dev, uint8_t idx, uint8_t *width, uint8_t *
 	return 0;
 }
 
-int cfb_get_numof_fonts(struct device *dev)
+int cfb_get_numof_fonts(const struct device *dev)
 {
 	const struct char_framebuffer *fb = &char_fb;
 
 	return fb->numof_fonts;
 }
 
-int cfb_framebuffer_init(struct device *dev)
+int cfb_framebuffer_init(const struct device *dev)
 {
-	const struct display_driver_api *api = dev->driver_api;
+	const struct display_driver_api *api = dev->api;
 	struct char_framebuffer *fb = &char_fb;
 	struct display_capabilities cfg;
 

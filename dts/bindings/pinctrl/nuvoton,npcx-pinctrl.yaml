@@ -1,0 +1,28 @@
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCX Pin-Controller (Pinmux, 1.8V support and so on) node
+
+compatible: "nuvoton,npcx-pinctrl"
+
+include: [base.yaml]
+
+properties:
+    reg:
+        required: true
+
+    "#alt-cells":
+        type: int
+        required: true
+        description: Number of items to expect in a SCFG ALT (Alternative controllers) specifier
+
+    "#lvol-cells":
+        type: int
+        required: false
+        const: 2
+        description: Number of items to expect in a SCFG LV_GPIO_CTL (Low level IO controllers) specifier
+
+alt-cells:
+    - group
+    - bit
+    - inv

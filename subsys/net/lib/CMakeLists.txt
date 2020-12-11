@@ -23,4 +23,4 @@ if(CONFIG_HTTP_PARSER_URL OR CONFIG_HTTP_PARSER OR CONFIG_HTTP_CLIENT)
 endif()
 
 add_subdirectory_ifdef(CONFIG_WEBSOCKET_CLIENT websocket)
-add_subdirectory_ifdef(CONFIG_OPENTHREAD_PLAT openthread)
+add_subdirectory_ifdef(CONFIG_NET_L2_OPENTHREAD openthread)

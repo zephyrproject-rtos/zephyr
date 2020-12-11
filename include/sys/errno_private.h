@@ -17,6 +17,14 @@ extern "C" {
  * and kernel.h
  */
 
+#ifdef CONFIG_ERRNO_IN_TLS
+extern __thread int z_errno_var;
+
+static inline int *z_errno(void)
+{
+	return &z_errno_var;
+}
+#else
 /**
  * return a pointer to a memory location containing errno
  *
@@ -27,10 +35,14 @@ extern "C" {
  */
 __syscall int *z_errno(void);
 
+#endif /* CONFIG_ERRNO_IN_TLS */
+
 #ifdef __cplusplus
 }
 #endif
 
+#ifndef CONFIG_ERRNO_IN_TLS
 #include <syscalls/errno_private.h>
+#endif /* CONFIG_ERRNO_IN_TLS */
 
 #endif /* ZEPHYR_INCLUDE_SYS_ERRNO_PRIVATE_H_ */

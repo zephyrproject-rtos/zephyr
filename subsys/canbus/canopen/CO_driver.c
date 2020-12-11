@@ -9,9 +9,7 @@
 #include <init.h>
 #include <sys/util.h>
 
-#include <CO_driver.h>
-#include <CO_Emergency.h>
-#include <CO_SDO.h>
+#include <canbus/canopen.h>
 
 #define LOG_LEVEL CONFIG_CANOPEN_LOG_LEVEL
 #include <logging/log.h>
@@ -169,6 +167,7 @@ CO_ReturnError_t CO_CANmodule_init(CO_CANmodule_t *CANmodule,
 				   CO_CANtx_t txArray[], uint16_t txSize,
 				   uint16_t CANbitRate)
 {
+	struct canopen_context *ctx = (struct canopen_context *)CANdriverState;
 	uint16_t i;
 	int err;
 
@@ -193,7 +192,7 @@ CO_ReturnError_t CO_CANmodule_init(CO_CANmodule_t *CANmodule,
 	canopen_detach_all_rx_filters(CANmodule);
 	canopen_tx_queue.CANmodule = CANmodule;
 
-	CANmodule->dev = CANdriverState;
+	CANmodule->dev = ctx->dev;
 	CANmodule->rx_array = rxArray;
 	CANmodule->rx_size = rxSize;
 	CANmodule->tx_array = txArray;
@@ -463,7 +462,7 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule)
 	}
 }
 
-static int canopen_init(struct device *dev)
+static int canopen_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

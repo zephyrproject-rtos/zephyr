@@ -9,6 +9,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_BMI160_BMI160_H_
 
 #include <drivers/gpio.h>
+#include <drivers/sensor.h>
 #include <drivers/spi.h>
 #include <sys/util.h>
 
@@ -95,6 +96,15 @@
 #define BMI160_REG_STEP_CONF0		0x7A
 #define BMI160_REG_STEP_CONF1		0x7B
 #define BMI160_REG_CMD			0x7E
+
+/* This is not a real register; reading it activates SPI on the BMI160 */
+#define BMI160_SPI_START		0x7F
+
+#define BMI160_REG_COUNT		0x80
+
+/* Indicates a read operation; bit 7 is clear on write s*/
+#define BMI160_REG_READ			BIT(7)
+#define BMI160_REG_MASK			0x7f
 
 /* bitfields */
 
@@ -194,6 +204,11 @@
 #define BMI160_CMD_PMU_GYR		0x14
 #define BMI160_CMD_PMU_MAG		0x18
 #define BMI160_CMD_SOFT_RESET		0xB6
+
+#define BMI160_CMD_PMU_BIT		0x10
+#define BMI160_CMD_PMU_MASK		0x0c
+#define BMI160_CMD_PMU_SHIFT		2
+#define BMI160_CMD_PMU_VAL_MASK		0x3
 
 /* BMI160_REG_FOC_CONF */
 #define BMI160_FOC_ACC_Z_POS		0
@@ -383,7 +398,36 @@ struct bmi160_range {
 	uint8_t reg_val;
 };
 
-struct bmi160_device_config {
+#define BMI160_BUS_SPI		DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#define BMI160_BUS_I2C		DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+
+struct bmi160_bus_cfg {
+	union {
+#if BMI160_BUS_SPI
+		const struct spi_config *spi_cfg;
+#endif
+#if BMI160_BUS_I2C
+		uint16_t i2c_addr;
+#endif
+	};
+};
+
+typedef int (*bmi160_reg_read_fn)(const struct device *bus,
+				  const struct bmi160_bus_cfg *bus_cfg,
+				  uint8_t reg_addr, void *data, uint8_t len);
+typedef int (*bmi160_reg_write_fn)(const struct device *bus,
+				   const struct bmi160_bus_cfg *bus_cfg,
+				   uint8_t reg_addr, void *data, uint8_t len);
+
+struct bmi160_reg_io {
+	bmi160_reg_read_fn read;
+	bmi160_reg_write_fn write;
+};
+
+struct bmi160_cfg {
+	struct bmi160_bus_cfg bus_cfg;
+	const struct bmi160_reg_io *reg_io;
+	const char *bus_label;
 #if defined(CONFIG_BMI160_TRIGGER)
 	const char *gpio_port;
 	gpio_pin_t int_pin;
@@ -401,23 +445,34 @@ union bmi160_pmu_status {
 	};
 };
 
+#define BMI160_AXES			3
+
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND) && \
 		!defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
-#	define BMI160_SAMPLE_SIZE		(6 * sizeof(uint16_t))
+#	define BMI160_SAMPLE_SIZE	(2 * BMI160_AXES * sizeof(uint16_t))
 #else
-#	define BMI160_SAMPLE_SIZE		(3 * sizeof(uint16_t))
+#	define BMI160_SAMPLE_SIZE	(BMI160_AXES * sizeof(uint16_t))
+#endif
+
+#if defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
+#	define BMI160_SAMPLE_BURST_READ_ADDR	BMI160_REG_DATA_ACC_X
+#	define BMI160_DATA_READY_BIT_MASK	(1 << 7)
+#else
+#	define BMI160_SAMPLE_BURST_READ_ADDR	BMI160_REG_DATA_GYR_X
+#	define BMI160_DATA_READY_BIT_MASK	(1 << 6)
 #endif
 
 #define BMI160_BUF_SIZE			(BMI160_SAMPLE_SIZE)
+
+/* Each sample has X, Y and Z */
 union bmi160_sample {
 	uint8_t raw[BMI160_BUF_SIZE];
 	struct {
-		uint8_t dummy_byte;
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
-		uint16_t gyr[3];
+		uint16_t gyr[BMI160_AXES];
 #endif
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
-		uint16_t acc[3];
+		uint16_t acc[BMI160_AXES];
 #endif
 	} __packed;
 };
@@ -427,11 +482,11 @@ struct bmi160_scale {
 	uint16_t gyr; /* micro radians/s/lsb */
 };
 
-struct bmi160_device_data {
-	struct device *spi;
-	struct spi_config spi_cfg;
+struct bmi160_data {
+	const struct device *bus;
 #if defined(CONFIG_BMI160_TRIGGER)
-	struct device *gpio;
+	const struct device *dev;
+	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 #endif
 	union bmi160_pmu_status pmu_sts;
@@ -444,7 +499,6 @@ struct bmi160_device_data {
 
 #ifdef CONFIG_BMI160_TRIGGER_GLOBAL_THREAD
 	struct k_work work;
-	struct device *dev;
 #endif
 
 #ifdef CONFIG_BMI160_TRIGGER
@@ -458,23 +512,38 @@ struct bmi160_device_data {
 #endif /* CONFIG_BMI160_TRIGGER */
 };
 
-int bmi160_read(struct device *dev, uint8_t reg_addr,
-		uint8_t *data, uint8_t len);
-int bmi160_byte_read(struct device *dev, uint8_t reg_addr, uint8_t *byte);
-int bmi160_byte_write(struct device *dev, uint8_t reg_addr, uint8_t byte);
-int bmi160_word_write(struct device *dev, uint8_t reg_addr, uint16_t word);
-int bmi160_reg_field_update(struct device *dev, uint8_t reg_addr,
+static inline struct bmi160_data *to_data(const struct device *dev)
+{
+	return dev->data;
+}
+
+static inline const struct bmi160_cfg *to_config(const struct device *dev)
+{
+	return dev->config;
+}
+
+int bmi160_read(const struct device *dev, uint8_t reg_addr,
+		void *data, uint8_t len);
+int bmi160_byte_read(const struct device *dev, uint8_t reg_addr,
+		     uint8_t *byte);
+int bmi160_byte_write(const struct device *dev, uint8_t reg_addr,
+		      uint8_t byte);
+int bmi160_word_write(const struct device *dev, uint8_t reg_addr,
+		      uint16_t word);
+int bmi160_reg_field_update(const struct device *dev, uint8_t reg_addr,
 			    uint8_t pos, uint8_t mask, uint8_t val);
-static inline int bmi160_reg_update(struct device *dev, uint8_t reg_addr,
+static inline int bmi160_reg_update(const struct device *dev,
+				    uint8_t reg_addr,
 				    uint8_t mask, uint8_t val)
 {
 	return bmi160_reg_field_update(dev, reg_addr, 0, mask, val);
 }
-int bmi160_trigger_mode_init(struct device *dev);
-int bmi160_trigger_set(struct device *dev,
+int bmi160_trigger_mode_init(const struct device *dev);
+int bmi160_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);
-int bmi160_acc_slope_config(struct device *dev, enum sensor_attribute attr,
+int bmi160_acc_slope_config(const struct device *dev,
+			    enum sensor_attribute attr,
 			    const struct sensor_value *val);
 int32_t bmi160_acc_reg_val_to_range(uint8_t reg_val);
 int32_t bmi160_gyr_reg_val_to_range(uint8_t reg_val);

@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(PMS7003, CONFIG_SENSOR_LOG_LEVEL);
 #define CFG_PMS7003_SERIAL_TIMEOUT 1000
 
 struct pms7003_data {
-	struct device *uart_dev;
+	const struct device *uart_dev;
 	uint16_t pm_1_0;
 	uint16_t pm_2_5;
 	uint16_t pm_10;
@@ -43,7 +43,8 @@ struct pms7003_data {
  * @param timeout the timeout in milliseconds
  * @return 0 if success; -ETIME if timeout
  */
-static int uart_wait_for(struct device *dev, uint8_t *data, int len, int timeout)
+static int uart_wait_for(const struct device *dev, uint8_t *data, int len,
+			 int timeout)
 {
 	int matched_size = 0;
 	int64_t timeout_time = k_uptime_get() + K_MSEC(timeout);
@@ -80,7 +81,8 @@ static int uart_wait_for(struct device *dev, uint8_t *data, int len, int timeout
  * @param timeout the timeout in milliseconds
  * @return 0 if success; -ETIME if timeout
  */
-static int uart_read_bytes(struct device *dev, uint8_t *data, int len, int timeout)
+static int uart_read_bytes(const struct device *dev, uint8_t *data, int len,
+			   int timeout)
 {
 	int read_size = 0;
 	int64_t timeout_time = k_uptime_get() + K_MSEC(timeout);
@@ -102,9 +104,10 @@ static int uart_read_bytes(struct device *dev, uint8_t *data, int len, int timeo
 	return 0;
 }
 
-static int pms7003_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int pms7003_sample_fetch(const struct device *dev,
+				enum sensor_channel chan)
 {
-	struct pms7003_data *drv_data = dev->driver_data;
+	struct pms7003_data *drv_data = dev->data;
 
 	/* sample output */
 	/* 42 4D 00 1C 00 01 00 01 00 01 00 01 00 01 00 01 01 92
@@ -139,10 +142,11 @@ static int pms7003_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return 0;
 }
 
-static int pms7003_channel_get(struct device *dev, enum sensor_channel chan,
+static int pms7003_channel_get(const struct device *dev,
+			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	struct pms7003_data *drv_data = dev->driver_data;
+	struct pms7003_data *drv_data = dev->data;
 
 	if (chan == SENSOR_CHAN_PM_1_0) {
 		val->val1 = drv_data->pm_1_0;
@@ -164,9 +168,9 @@ static const struct sensor_driver_api pms7003_api = {
 	.channel_get = &pms7003_channel_get,
 };
 
-static int pms7003_init(struct device *dev)
+static int pms7003_init(const struct device *dev)
 {
-	struct pms7003_data *drv_data = dev->driver_data;
+	struct pms7003_data *drv_data = dev->data;
 
 	drv_data->uart_dev = device_get_binding(DT_INST_BUS_LABEL(0));
 

@@ -341,7 +341,7 @@ int cmd_scanx(const struct shell *shell, size_t  argc, char *argv[])
 
 disable:
 	shell_print(shell, "scan enable (%u)...", enable);
-	err = ll_scan_enable(enable);
+	err = ll_scan_enable(enable, 0, 0);
 	if (err) {
 		goto exit;
 	}

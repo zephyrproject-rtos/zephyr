@@ -61,7 +61,7 @@
 		};
 
 		pinctrl: pin-controller@40020000 {
-			compatible = "st,stm32-pinmux";
+			compatible = "st,stm32-pinctrl";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x40020000 0x2400>;
@@ -666,6 +666,7 @@
 		rng: rng@50060800 {
 			compatible = "st,stm32-rng";
 			reg = <0x50060800 0x400>;
+			interrupts = <80 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000040>;
 			status = "disabled";
 			label = "RNG";

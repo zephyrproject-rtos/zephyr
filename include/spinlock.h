@@ -7,23 +7,11 @@
 #define ZEPHYR_INCLUDE_SPINLOCK_H_
 
 #include <sys/atomic.h>
-#include <kernel_structs.h>
-
-/* There's a spinlock validation framework available when asserts are
- * enabled.  It adds a relatively hefty overhead (about 3k or so) to
- * kernel code size, don't use on platforms known to be small.
- */
-#ifdef CONFIG_SPIN_VALIDATE
 #include <sys/__assert.h>
 #include <stdbool.h>
-struct k_spinlock;
-bool z_spin_lock_valid(struct k_spinlock *l);
-bool z_spin_unlock_valid(struct k_spinlock *l);
-void z_spin_lock_set_owner(struct k_spinlock *l);
-BUILD_ASSERT(CONFIG_MP_NUM_CPUS < 4, "Too many CPUs for mask");
-#endif /* CONFIG_SPIN_VALIDATE */
+#include <arch/cpu.h>
 
-struct k_spinlock_key {
+struct z_spinlock_key {
 	int key;
 };
 
@@ -34,7 +22,47 @@ struct k_spinlock_key {
  * k_spin_lock().  Any number of spinlocks may be defined in
  * application code.
  */
-struct k_spinlock;
+struct k_spinlock {
+#ifdef CONFIG_SMP
+	atomic_t locked;
+#endif
+
+#ifdef CONFIG_SPIN_VALIDATE
+	/* Stores the thread that holds the lock with the locking CPU
+	 * ID in the bottom two bits.
+	 */
+	uintptr_t thread_cpu;
+#endif
+
+#if defined(CONFIG_CPLUSPLUS) && !defined(CONFIG_SMP) && \
+	!defined(CONFIG_SPIN_VALIDATE)
+	/* If CONFIG_SMP and CONFIG_SPIN_VALIDATE are both not defined
+	 * the k_spinlock struct will have no members. The result
+	 * is that in C sizeof(k_spinlock) is 0 and in C++ it is 1.
+	 *
+	 * This size difference causes problems when the k_spinlock
+	 * is embedded into another struct like k_msgq, because C and
+	 * C++ will have different ideas on the offsets of the members
+	 * that come after the k_spinlock member.
+	 *
+	 * To prevent this we add a 1 byte dummy member to k_spinlock
+	 * when the user selects C++ support and k_spinlock would
+	 * otherwise be empty.
+	 */
+	char dummy;
+#endif
+};
+
+/* There's a spinlock validation framework available when asserts are
+ * enabled.  It adds a relatively hefty overhead (about 3k or so) to
+ * kernel code size, don't use on platforms known to be small.
+ */
+#ifdef CONFIG_SPIN_VALIDATE
+bool z_spin_lock_valid(struct k_spinlock *l);
+bool z_spin_unlock_valid(struct k_spinlock *l);
+void z_spin_lock_set_owner(struct k_spinlock *l);
+BUILD_ASSERT(CONFIG_MP_NUM_CPUS < 4, "Too many CPUs for mask");
+#endif /* CONFIG_SPIN_VALIDATE */
 
 /**
  * @brief Spinlock key type
@@ -47,7 +75,7 @@ struct k_spinlock;
  * This type is opaque and should not be inspected by application
  * code.
  */
-typedef struct k_spinlock_key k_spinlock_key_t;
+typedef struct z_spinlock_key k_spinlock_key_t;
 
 /**
  * @brief Lock a spinlock
@@ -90,6 +118,9 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 
 #ifdef CONFIG_SPIN_VALIDATE
 	__ASSERT(z_spin_lock_valid(l), "Recursive spinlock %p", l);
+# ifdef KERNEL_COHERENCE
+	__ASSERT_NO_MSG(arch_mem_coherent(l));
+# endif
 #endif
 
 #ifdef CONFIG_SMP

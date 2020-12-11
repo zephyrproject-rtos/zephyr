@@ -19,10 +19,10 @@ extern struct tmp007_data tmp007_driver;
 #include <logging/log.h>
 LOG_MODULE_DECLARE(TMP007, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline void setup_int(struct device *dev,
+static inline void setup_int(const struct device *dev,
 			     bool enable)
 {
-	struct tmp007_data *data = dev->driver_data;
+	struct tmp007_data *data = dev->data;
 
 	gpio_pin_interrupt_configure(data->gpio,
 				     DT_INST_GPIO_PIN(0, int_gpios),
@@ -31,12 +31,12 @@ static inline void setup_int(struct device *dev,
 				     : GPIO_INT_DISABLE);
 }
 
-int tmp007_attr_set(struct device *dev,
+int tmp007_attr_set(const struct device *dev,
 		    enum sensor_channel chan,
 		    enum sensor_attribute attr,
 		    const struct sensor_value *val)
 {
-	struct tmp007_data *drv_data = dev->driver_data;
+	struct tmp007_data *drv_data = dev->data;
 	int64_t value;
 	uint8_t reg;
 
@@ -63,7 +63,7 @@ int tmp007_attr_set(struct device *dev,
 	return 0;
 }
 
-static void tmp007_gpio_callback(struct device *dev,
+static void tmp007_gpio_callback(const struct device *dev,
 				 struct gpio_callback *cb, uint32_t pins)
 {
 	struct tmp007_data *drv_data =
@@ -78,10 +78,9 @@ static void tmp007_gpio_callback(struct device *dev,
 #endif
 }
 
-static void tmp007_thread_cb(void *arg)
+static void tmp007_thread_cb(const struct device *dev)
 {
-	struct device *dev = arg;
-	struct tmp007_data *drv_data = dev->driver_data;
+	struct tmp007_data *drv_data = dev->data;
 	uint16_t status;
 
 	if (tmp007_reg_read(drv_data, TMP007_REG_STATUS, &status) < 0) {
@@ -102,16 +101,11 @@ static void tmp007_thread_cb(void *arg)
 }
 
 #ifdef CONFIG_TMP007_TRIGGER_OWN_THREAD
-static void tmp007_thread(int dev_ptr, int unused)
+static void tmp007_thread(struct tmp007_data *drv_data)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct tmp007_data *drv_data = dev->driver_data;
-
-	ARG_UNUSED(unused);
-
 	while (1) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
-		tmp007_thread_cb(dev);
+		tmp007_thread_cb(drv_data->dev);
 	}
 }
 #endif
@@ -126,11 +120,11 @@ static void tmp007_work_cb(struct k_work *work)
 }
 #endif
 
-int tmp007_trigger_set(struct device *dev,
+int tmp007_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
-	struct tmp007_data *drv_data = dev->driver_data;
+	struct tmp007_data *drv_data = dev->data;
 
 	setup_int(dev, false);
 
@@ -147,9 +141,9 @@ int tmp007_trigger_set(struct device *dev,
 	return 0;
 }
 
-int tmp007_init_interrupt(struct device *dev)
+int tmp007_init_interrupt(const struct device *dev)
 {
-	struct tmp007_data *drv_data = dev->driver_data;
+	struct tmp007_data *drv_data = dev->data;
 
 	if (tmp007_reg_update(drv_data, TMP007_REG_CONFIG,
 			      TMP007_ALERT_EN_BIT, TMP007_ALERT_EN_BIT) < 0) {
@@ -185,8 +179,8 @@ int tmp007_init_interrupt(struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_TMP007_THREAD_STACK_SIZE,
-			(k_thread_entry_t)tmp007_thread, dev,
-			0, NULL, K_PRIO_COOP(CONFIG_TMP007_THREAD_PRIORITY),
+			(k_thread_entry_t)tmp007_thread, drv_data,
+			NULL, NULL, K_PRIO_COOP(CONFIG_TMP007_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_TMP007_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = tmp007_work_cb;

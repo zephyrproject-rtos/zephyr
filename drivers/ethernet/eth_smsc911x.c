@@ -411,7 +411,7 @@ int smsc_init(void)
 
 /* Driver functions */
 
-static enum ethernet_hw_caps eth_smsc911x_get_capabilities(struct device *dev)
+static enum ethernet_hw_caps eth_smsc911x_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -419,9 +419,9 @@ static enum ethernet_hw_caps eth_smsc911x_get_capabilities(struct device *dev)
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static struct net_stats_eth *get_stats(struct device *dev)
+static struct net_stats_eth *get_stats(const struct device *dev)
 {
-	struct eth_context *context = dev->driver_data;
+	struct eth_context *context = dev->data;
 
 	return &context->stats;
 }
@@ -429,8 +429,8 @@ static struct net_stats_eth *get_stats(struct device *dev)
 
 static void eth_initialize(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
-	struct eth_context *context = dev->driver_data;
+	const struct device *dev = net_if_get_device(iface);
+	struct eth_context *context = dev->data;
 
 	LOG_DBG("eth_initialize");
 
@@ -471,7 +471,7 @@ static int smsc_write_tx_fifo(const uint8_t *buf, uint32_t len, bool is_last)
 	return 0;
 }
 
-static int eth_tx(struct device *dev, struct net_pkt *pkt)
+static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	uint16_t total_len = net_pkt_get_len(pkt);
 	static uint8_t tx_buf[NET_ETH_MAX_FRAME_SIZE] __aligned(4);
@@ -553,9 +553,10 @@ static int smsc_read_rx_fifo(struct net_pkt *pkt, uint32_t len)
 	return 0;
 }
 
-static struct net_pkt *smsc_recv_pkt(struct device *dev, uint32_t pkt_size)
+static struct net_pkt *smsc_recv_pkt(const struct device *dev,
+				     uint32_t pkt_size)
 {
-	struct eth_context *context = dev->driver_data;
+	struct eth_context *context = dev->data;
 	struct net_pkt *pkt;
 	uint32_t rem_size;
 
@@ -592,10 +593,10 @@ static struct net_pkt *smsc_recv_pkt(struct device *dev, uint32_t pkt_size)
 	return pkt;
 }
 
-static void eth_smsc911x_isr(struct device *dev)
+static void eth_smsc911x_isr(const struct device *dev)
 {
 	uint32_t int_status = SMSC9220->INT_STS;
-	struct eth_context *context = dev->driver_data;
+	struct eth_context *context = dev->data;
 
 	LOG_DBG("%s: INT_STS=%x INT_EN=%x", __func__,
 		int_status, SMSC9220->INT_EN);
@@ -659,7 +660,7 @@ done:
 
 DEVICE_DECLARE(eth_smsc911x_0);
 
-int eth_init(struct device *dev)
+int eth_init(const struct device *dev)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),

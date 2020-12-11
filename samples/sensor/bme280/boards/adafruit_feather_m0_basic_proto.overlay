@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2020 Jacek Ozimek <jacek.ozmk@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&feather_i2c {
+	bme280@76 {
+		/* 0x76 - SDO <-> GND */
+		/* 0x77 - SDO <-> VCC */
+		compatible = "bosch,bme280";
+		reg = <0x76>;
+		label = "ENVIRONMENTAL_SENSOR";
+	};
+};

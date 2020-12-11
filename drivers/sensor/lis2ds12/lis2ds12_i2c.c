@@ -65,9 +65,9 @@ static const struct lis2ds12_transfer_function lis2ds12_i2c_transfer_fn = {
 	.update_reg = lis2ds12_i2c_update_reg,
 };
 
-int lis2ds12_i2c_init(struct device *dev)
+int lis2ds12_i2c_init(const struct device *dev)
 {
-	struct lis2ds12_data *data = dev->driver_data;
+	struct lis2ds12_data *data = dev->data;
 
 	data->hw_tf = &lis2ds12_i2c_transfer_fn;
 

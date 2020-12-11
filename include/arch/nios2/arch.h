@@ -21,6 +21,7 @@
 #include <arch/common/addr_types.h>
 #include <devicetree.h>
 #include <arch/nios2/nios2.h>
+#include <arch/common/sys_bitops.h>
 #include <arch/common/sys_io.h>
 #include <arch/common/ffs.h>
 
@@ -43,7 +44,7 @@ extern "C" {
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
 }
 
-extern void z_irq_spurious(void *unused);
+extern void z_irq_spurious(const void *unused);
 
 static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {

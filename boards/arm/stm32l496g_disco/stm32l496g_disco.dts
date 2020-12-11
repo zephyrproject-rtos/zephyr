@@ -6,10 +6,11 @@
 
 /dts-v1/;
 #include <st/l4/stm32l496Xg.dtsi>
+#include <st/l4/stm32l496a(e-g)ix-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics STM32L496G-DISCO board";
-	compatible = "st,stm32l496g-disco", "st,stm32l496";
+	compatible = "st,stm32l496g-disco";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -30,23 +31,23 @@
 		compatible = "gpio-keys";
 		joy_sel: joystick_select {
 			label = "joystick select";
-			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		};
 		joy_down: joystick_down {
 			label = "joystick down";
-			gpios = <&gpioi 10 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioi 10 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		};
 		joy_up: joystick_up {
 			label = "joystick up";
-			gpios = <&gpioi 8 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioi 8 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		};
 		joy_left: joystick_left {
 			label = "joystick left";
-			gpios = <&gpioi 9 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioi 9 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		};
 		joy_right: joystick_right {
 			label = "joystick right";
-			gpios = <&gpiof 11 GPIO_ACTIVE_LOW>;
+			gpios = <&gpiof 11 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		};
 	};
 
@@ -61,16 +62,19 @@ arduino_spi: &spi1 {};
 arduino_serial: &lpuart1 {};
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pg10>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pd6>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &lpuart1 {
+	pinctrl-0 = <&lpuart1_tx_pg7 &lpuart1_rx_pg8>;
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -80,15 +84,18 @@ arduino_serial: &lpuart1 {};
 
 	pwm2: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim2_ch1_pa0>;
 	};
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb7>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pb4 &spi1_mosi_pb5>;
 	status = "okay";
 };
 
@@ -97,5 +104,8 @@ arduino_serial: &lpuart1 {};
 };
 
 &sdmmc1 {
+	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
+		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	status = "okay";
 };

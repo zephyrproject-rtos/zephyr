@@ -6,10 +6,11 @@
 
 /dts-v1/;
 #include <st/g0/stm32g031X6.dtsi>
+#include <st/g0/stm32g031j(4-6)mx-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics STM32G0316 Discovery board";
-	compatible = "st,stm32g0316-disco", "st,stm32g031";
+	compatible = "st,stm32g0316-disco";
 
 	aliases {
 		led0 = &green_led_1;
@@ -41,6 +42,7 @@
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pb7>;
 	current-speed = <115200>;
 	status = "okay";
 };

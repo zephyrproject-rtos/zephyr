@@ -211,6 +211,7 @@ static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 				memcpy(&laddr,
 				       &ipv6->unicast[i].address.in6_addr,
 				       sizeof(laddr));
+				break;
 			}
 		}
 	}
@@ -374,24 +375,18 @@ int net_config_init_by_iface(struct net_if *iface, const char *app_info,
 			}
 		}
 
-		/* If the above while() loop timeouted, reset the count so that
-		 * the while() loop below will not wait more.
-		 */
-		if (timeout > 0 && count < 0) {
-			count = 0;
-		}
-
 #if defined(CONFIG_NET_NATIVE)
 		net_mgmt_del_event_callback(&mgmt_iface_cb);
 #endif
-	}
 
-	if (count == 0) {
 		/* Network interface did not come up. We will not try
 		 * to setup things in that case.
 		 */
-		NET_ERR("Timeout while waiting network %s", "interface");
-		return -ENETDOWN;
+		if (timeout > 0 && count < 0) {
+			NET_ERR("Timeout while waiting network %s",
+				"interface");
+			return -ENETDOWN;
+		}
 	}
 
 	setup_ipv4(iface);
@@ -405,7 +400,7 @@ int net_config_init_by_iface(struct net_if *iface, const char *app_info,
 		k_sem_take(&waiter, K_MSEC(loop));
 	}
 
-	if (!count && timeout) {
+	if (count == -1 && timeout > 0) {
 		NET_ERR("Timeout while waiting network %s", "setup");
 		return -ETIMEDOUT;
 	}
@@ -419,17 +414,17 @@ int net_config_init(const char *app_info, uint32_t flags,
 	return net_config_init_by_iface(NULL, app_info, flags, timeout);
 }
 
-int net_config_init_app(struct device *device, const char *app_info)
+int net_config_init_app(const struct device *dev, const char *app_info)
 {
 	struct net_if *iface = NULL;
 	uint32_t flags = 0U;
 	int ret;
 
-	if (device) {
-		iface = net_if_lookup_by_dev(device);
+	if (dev) {
+		iface = net_if_lookup_by_dev(dev);
 		if (iface == NULL) {
 			NET_WARN("No interface for device %p, using default",
-				 device);
+				 dev);
 		}
 	}
 
@@ -484,9 +479,9 @@ int net_config_init_app(struct device *device, const char *app_info)
 }
 
 #if defined(CONFIG_NET_CONFIG_AUTO_INIT)
-static int init_app(struct device *device)
+static int init_app(const struct device *dev)
 {
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 
 	(void)net_config_init_app(NULL, "Initializing network");
 

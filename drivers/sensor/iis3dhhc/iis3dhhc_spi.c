@@ -96,9 +96,9 @@ stmdev_ctx_t iis3dhhc_spi_ctx = {
 	.write_reg = (stmdev_write_ptr) iis3dhhc_spi_write,
 };
 
-int iis3dhhc_spi_init(struct device *dev)
+int iis3dhhc_spi_init(const struct device *dev)
 {
-	struct iis3dhhc_data *data = dev->driver_data;
+	struct iis3dhhc_data *data = dev->data;
 
 	data->ctx = &iis3dhhc_spi_ctx;
 	data->ctx->handle = data;

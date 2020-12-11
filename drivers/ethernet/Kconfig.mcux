@@ -8,7 +8,7 @@ menuconfig ETH_MCUX
 	depends on HAS_MCUX_ENET
 	select NOCACHE_MEMORY if HAS_MCUX_CACHE
 	select ARM_MPU if CPU_CORTEX_M7
-	select NET_POWER_MANAGEMENT if DEVICE_POWER_MANAGEMENT
+	select NET_POWER_MANAGEMENT if PM_DEVICE
 	help
 	  Enable MCUX Ethernet driver.  Note, this driver performs one shot PHY
 	  setup.  There is no support for PHY disconnect, reconnect or
@@ -62,17 +62,6 @@ config ETH_MCUX_TX_BUFFERS
 	help
 	  Set the number of TX buffers provided to the MCUX driver.
 
-config ETH_MCUX_0
-	bool "MCUX Ethernet port 0"
-	help
-	  Include port 0 driver
-
-config ETH_MCUX_1
-	bool "MCUX Ethernet port 1"
-	depends on SOC_MIMXRT1062 || SOC_MIMXRT1064
-	help
-	  Include port 1 driver
-
 config ETH_MCUX_HW_ACCELERATION
 	bool "Enable hardware acceleration"
 	help
@@ -87,20 +76,6 @@ config PTP_CLOCK_MCUX
 	  Enable MCUX PTP clock support.
 
 if PTP_CLOCK_MCUX
-
-config ETH_MCUX_PTP_RX_BUFFERS
-	int "Size of the RX timestamp ring buffer"
-	default 10
-	help
-	  Set the number of RX buffers provided to the MCUX driver
-	  to store timestamps.
-
-config ETH_MCUX_PTP_TX_BUFFERS
-	int "Size of the TX timestamp ring buffer"
-	default 10
-	help
-	  Set the number of TX buffers provided to the MCUX driver
-	  to store timestamps.
 
 config ETH_MCUX_PTP_CLOCK_SRC_HZ
 	int "Frequency of the clock source for the PTP timer"

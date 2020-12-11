@@ -6,10 +6,11 @@
 
 /dts-v1/;
 #include <st/l0/stm32l072Xz.dtsi>
+#include <st/l0/stm32l072c(b-z)tx-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics B-L072Z-LRWAN1 Discovery kit";
-	compatible = "st,stm32l072z-lrwan1", "st,stm32l072";
+	compatible = "st,stm32l072z-lrwan1";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -63,16 +64,20 @@ arduino_spi: &spi2 {};
 arduino_i2c: &i2c1 {};
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &spi1 {
+	pinctrl-0 = <&spi1_nss_pa15 &spi1_sck_pb3
+		     &spi1_miso_pa6 &spi1_mosi_pa7>;
 	status = "okay";
 	cs-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
 
@@ -97,10 +102,13 @@ arduino_i2c: &i2c1 {};
 };
 
 &spi2 {
+	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13
+		     &spi2_miso_pb14 &spi2_mosi_pb15>;
 	status = "okay";
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
@@ -118,6 +126,7 @@ arduino_i2c: &i2c1 {};
 };
 
 &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
 	status = "okay";
 };
 

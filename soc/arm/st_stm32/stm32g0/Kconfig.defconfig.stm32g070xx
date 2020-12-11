@@ -1,0 +1,16 @@
+# STMicroelectronics STM32G070xx MCU
+
+# Copyright (c) 2019 Sierra Wireless
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32G070XX
+
+config SOC
+	string
+	default "stm32g070xx"
+
+config NUM_IRQS
+	int
+	default 30
+
+endif # SOC_STM32G070XX

@@ -1,0 +1,15 @@
+identifier: sam4l_ek
+name: SAM4L-EK
+type: mcu
+arch: arm
+flash: 256
+ram: 32
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - i2c
+  - spi
+  - usart

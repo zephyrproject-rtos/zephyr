@@ -5,4 +5,4 @@ tests:
   sample.net.sockets.coap_server:
     harness: net
     tags: net socket
-    platform_whitelist: qemu_x86
+    platform_allow: qemu_x86

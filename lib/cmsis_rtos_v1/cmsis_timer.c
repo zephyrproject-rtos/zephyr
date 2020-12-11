@@ -22,7 +22,7 @@ struct timer_obj {
 };
 
 K_MEM_SLAB_DEFINE(cmsis_timer_slab, sizeof(struct timer_obj),
-		  CONFIG_CMSIS_TIMER_MAX_COUNT, 4);
+		  CONFIG_CMSIS_TIMER_MAX_COUNT, __alignof__(struct timer_obj));
 
 static void zephyr_timer_wrapper(struct k_timer *timer)
 {

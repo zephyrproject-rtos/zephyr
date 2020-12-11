@@ -58,7 +58,7 @@ struct pll_cfg {
 #define DPORT_CPUPERIOD_SEL_160     1
 #define DPORT_CPUPERIOD_SEL_240     2
 
-#define DEV_CFG(dev)                ((struct esp32_clock_config *)(dev->config_info))
+#define DEV_CFG(dev)                ((struct esp32_clock_config *)(dev->config))
 #define GET_REG_BANK(module_id)     ((uint32_t)module_id / 32U)
 #define GET_REG_OFFSET(module_id)   ((uint32_t)module_id % 32U)
 
@@ -201,7 +201,7 @@ static void cpuclk_pll_configure(uint32_t xtal_freq, uint32_t cpu_freq)
 	REG_WRITE(APB_CTRL_PLL_TICK_CONF_REG, PLL_APB_CLK_FREQ - 1);
 }
 
-static int clock_control_esp32_on(struct device *dev,
+static int clock_control_esp32_on(const struct device *dev,
 				  clock_control_subsys_t sys)
 {
 	ARG_UNUSED(dev);
@@ -215,7 +215,7 @@ static int clock_control_esp32_on(struct device *dev,
 	return 0;
 }
 
-static int clock_control_esp32_off(struct device *dev,
+static int clock_control_esp32_off(const struct device *dev,
 				   clock_control_subsys_t sys)
 {
 	ARG_UNUSED(dev);
@@ -229,7 +229,7 @@ static int clock_control_esp32_off(struct device *dev,
 	return 0;
 }
 
-static enum clock_control_status clock_control_esp32_get_status(struct device *dev,
+static enum clock_control_status clock_control_esp32_get_status(const struct device *dev,
 								clock_control_subsys_t sys)
 {
 	ARG_UNUSED(dev);
@@ -242,7 +242,7 @@ static enum clock_control_status clock_control_esp32_get_status(struct device *d
 	return CLOCK_CONTROL_STATUS_OFF;
 }
 
-static int clock_control_esp32_get_rate(struct device *dev,
+static int clock_control_esp32_get_rate(const struct device *dev,
 					clock_control_subsys_t sub_system,
 					uint32_t *rate)
 {
@@ -264,7 +264,7 @@ static int clock_control_esp32_get_rate(struct device *dev,
 	}
 }
 
-static int clock_control_esp32_init(struct device *dev)
+static int clock_control_esp32_init(const struct device *dev)
 {
 	struct esp32_clock_config *cfg = DEV_CFG(dev);
 

@@ -313,7 +313,8 @@ uint16_t coap_header_get_id(const struct coap_packet *cpkt);
  * @return data pointer and length if payload exists
  *         NULL pointer and length set to 0 in case there is no payload
  */
-const uint8_t *coap_packet_get_payload(const struct coap_packet *cpkt, uint16_t *len);
+const uint8_t *coap_packet_get_payload(const struct coap_packet *cpkt,
+				       uint16_t *len);
 
 /**
  * @brief Parses the CoAP packet in data, validating it and

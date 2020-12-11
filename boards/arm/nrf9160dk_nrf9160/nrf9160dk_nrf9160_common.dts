@@ -143,10 +143,7 @@
 };
 
 &flash0 {
-	/*
-	 * For more information, see:
-	 * https://docs.zephyrproject.org/latest/guides/dts/legacy-macros.html#legacy-flash-partitions
-	 */
+
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -154,18 +151,18 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0xc000>;
+			reg = <0x00000000 0x10000>;
 		};
-		slot0_partition: partition@c000 {
+		slot0_partition: partition@10000 {
 			label = "image-0";
 		};
-		slot0_ns_partition: partition@3e000 {
+		slot0_ns_partition: partition@50000 {
 			label = "image-0-nonsecure";
 		};
-		slot1_partition: partition@7e000 {
+		slot1_partition: partition@80000 {
 			label = "image-1";
 		};
-		slot1_ns_partition: partition@b0000 {
+		slot1_ns_partition: partition@c0000 {
 			label = "image-1-nonsecure";
 		};
 		scratch_partition: partition@f0000 {

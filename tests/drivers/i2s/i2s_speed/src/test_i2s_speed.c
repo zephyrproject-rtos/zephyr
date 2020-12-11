@@ -76,7 +76,7 @@ static int verify_buf(int16_t *rx_block, int att)
 /** Configure I2S TX transfer. */
 void test_i2s_tx_transfer_configure(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	struct i2s_config i2s_cfg;
 	int ret;
 
@@ -102,7 +102,7 @@ void test_i2s_tx_transfer_configure(void)
 /** Configure I2S RX transfer. */
 void test_i2s_rx_transfer_configure(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	struct i2s_config i2s_cfg;
 	int ret;
 
@@ -135,7 +135,7 @@ void test_i2s_rx_transfer_configure(void)
  */
 void test_i2s_transfer_short(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	void *rx_block[3];
 	void *tx_block;
 	size_t rx_size;
@@ -211,7 +211,7 @@ void test_i2s_transfer_short(void)
  */
 void test_i2s_transfer_long(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	void *rx_block[NUM_BLOCKS];
 	void *tx_block[NUM_BLOCKS];
 	size_t rx_size;

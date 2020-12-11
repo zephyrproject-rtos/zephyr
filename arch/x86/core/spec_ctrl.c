@@ -37,7 +37,7 @@ static uint32_t cpuid_extended_features(void)
 	return edx;
 }
 
-static int spec_ctrl_init(struct device *dev)
+static int spec_ctrl_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

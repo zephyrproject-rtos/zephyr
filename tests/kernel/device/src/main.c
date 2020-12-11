@@ -55,7 +55,7 @@ extern void test_mmio_device_map(void);
  */
 void test_dummy_device(void)
 {
-	struct device *dev;
+	const struct device *dev;
 
 	/* Validates device binding for a non-existing device object */
 	dev = device_get_binding(DUMMY_PORT_1);
@@ -84,7 +84,7 @@ void test_dummy_device(void)
  */
 static void test_dynamic_name(void)
 {
-	struct device *mux;
+	const struct device *mux;
 	char name[sizeof(DUMMY_PORT_2)];
 
 	snprintk(name, sizeof(name), "%s", DUMMY_PORT_2);
@@ -102,7 +102,7 @@ static void test_dynamic_name(void)
  */
 static void test_bogus_dynamic_name(void)
 {
-	struct device *mux;
+	const struct device *mux;
 	char name[64];
 
 	snprintk(name, sizeof(name), "ANOTHER_BOGUS_NAME");
@@ -127,22 +127,22 @@ static int add_init_record(bool pre_kernel)
 	return 0;
 }
 
-static int pre1_fn(struct device *dev)
+static int pre1_fn(const struct device *dev)
 {
 	return add_init_record(true);
 }
 
-static int pre2_fn(struct device *dev)
+static int pre2_fn(const struct device *dev)
 {
 	return add_init_record(true);
 }
 
-static int post_fn(struct device *dev)
+static int post_fn(const struct device *dev)
 {
 	return add_init_record(false);
 }
 
-static int app_fn(struct device *dev)
+static int app_fn(const struct device *dev)
 {
 	return add_init_record(false);
 }
@@ -185,7 +185,7 @@ void test_pre_kernel_detection(void)
 	}
 }
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 /**
  * @brief Test system device list query API with PM enabled.
  *
@@ -196,10 +196,51 @@ void test_pre_kernel_detection(void)
  */
 static void test_build_suspend_device_list(void)
 {
-	struct device *devices;
+	struct device const *devices;
 	size_t devcount = z_device_get_all_static(&devices);
 
 	zassert_false((devcount == 0), NULL);
+}
+
+/**
+ * @brief Test APIs to enable and disable automatic idle power management
+ *
+ * @details Test the API enable and disable, cause we do not implement our PM
+ * API here, it will use the default function to handle power status. So when
+ * we try to get power state by device_get_power_state(), it will default
+ * return power state zero. And we check it.
+ *
+ * @ingroup kernel_device_tests
+ */
+static void test_enable_and_disable_automatic_idle_pm(void)
+{
+	const struct device *dev;
+	int ret;
+	unsigned int device_power_state = 0;
+
+	dev = device_get_binding(DUMMY_PORT_2);
+	zassert_false((dev == NULL), NULL);
+
+	/* check its status at first */
+	/* for cases that cannot run IDLE power, we skip it now */
+	ret = device_get_power_state(dev, &device_power_state);
+	if (ret == -ENOTSUP) {
+		TC_PRINT("Power management not supported on device");
+		ztest_test_skip();
+		return;
+	}
+
+	zassert_true((ret == 0),
+		"Unable to get active state to device");
+
+	/* enable automatic idle PM and check its status */
+	device_pm_enable(dev);
+	zassert_not_null((dev->pm), "No device pm");
+	zassert_true((dev->pm->enable), "Pm is not enable");
+
+	/* disable automatic idle PM and check its status */
+	device_pm_disable(dev);
+	zassert_false((dev->pm->enable), "Pm shall not be enable");
 }
 
 /**
@@ -215,23 +256,15 @@ static void test_build_suspend_device_list(void)
  */
 void test_dummy_device_pm(void)
 {
-	struct device *dev;
+	const struct device *dev;
 	int busy, ret;
+	unsigned int device_power_state = 0;
 
 	dev = device_get_binding(DUMMY_PORT_2);
 	zassert_false((dev == NULL), NULL);
 
 	busy = device_any_busy_check();
 	zassert_true((busy == 0), NULL);
-
-	/* Set device state to DEVICE_PM_ACTIVE_STATE */
-	ret = device_set_power_state(dev, DEVICE_PM_ACTIVE_STATE, NULL, NULL);
-	if (ret == -ENOTSUP) {
-		zassert_true((ret == -ENOTSUP),
-			     "Power management not supported on device");
-		return;
-	}
-	zassert_true((ret == 0), "Unable to set active state to device");
 
 	/* Set device state to BUSY*/
 	device_busy_set(dev);
@@ -248,14 +281,43 @@ void test_dummy_device_pm(void)
 	busy = device_busy_check(dev);
 	zassert_true((busy == 0), NULL);
 
+	test_build_suspend_device_list();
+
+	/* Set device state to DEVICE_PM_ACTIVE_STATE */
+	ret = device_set_power_state(dev, DEVICE_PM_ACTIVE_STATE, NULL, NULL);
+	if (ret == -ENOTSUP) {
+		TC_PRINT("Power management not supported on device");
+		ztest_test_skip();
+		return;
+	}
+
+	zassert_true((ret == 0),
+			"Unable to set active state to device");
+
+	ret = device_get_power_state(dev, &device_power_state);
+	zassert_true((ret == 0),
+			"Unable to get active state to device");
+	zassert_true((device_power_state == DEVICE_PM_ACTIVE_STATE),
+			"Error power status");
+
 	/* Set device state to DEVICE_PM_FORCE_SUSPEND_STATE */
 	ret = device_set_power_state(dev,
-			DEVICE_PM_FORCE_SUSPEND_STATE, NULL, NULL);
+		DEVICE_PM_FORCE_SUSPEND_STATE, NULL, NULL);
+
 	zassert_true((ret == 0), "Unable to force suspend device");
 
-	test_build_suspend_device_list();
+	ret = device_get_power_state(dev, &device_power_state);
+	zassert_true((ret == 0),
+			"Unable to get suspend state to device");
+	zassert_true((device_power_state == DEVICE_PM_ACTIVE_STATE),
+			"Error power status");
 }
 #else
+static void test_enable_and_disable_automatic_idle_pm(void)
+{
+	ztest_test_skip();
+}
+
 static void test_build_suspend_device_list(void)
 {
 	ztest_test_skip();
@@ -343,7 +405,7 @@ void test_device_init_priority(void)
  */
 void test_abstraction_driver_common(void)
 {
-	struct device *dev;
+	const struct device *dev;
 	int ret;
 	int foo = 2;
 	int bar = 1;
@@ -381,6 +443,7 @@ void test_main(void)
 			 ztest_unit_test(test_dummy_device_pm),
 			 ztest_unit_test(test_build_suspend_device_list),
 			 ztest_unit_test(test_dummy_device),
+			 ztest_unit_test(test_enable_and_disable_automatic_idle_pm),
 			 ztest_unit_test(test_pre_kernel_detection),
 			 ztest_user_unit_test(test_bogus_dynamic_name),
 			 ztest_user_unit_test(test_dynamic_name),

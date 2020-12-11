@@ -117,7 +117,11 @@ struct net_tcp_hdr *net_tcp_input(struct net_pkt *pkt,
 
 /* No ops, provided for compatibility with the old TCP */
 
+#if defined(CONFIG_NET_NATIVE_TCP)
 void net_tcp_init(void);
+#else
+#define net_tcp_init(...)
+#endif
 int net_tcp_update_recv_wnd(struct net_context *context, int32_t delta);
 int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt);
 int net_tcp_finalize(struct net_pkt *pkt);

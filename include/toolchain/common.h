@@ -68,13 +68,20 @@
 
   #elif defined(CONFIG_ARC)
 
-    #define PERFOPT_ALIGN .balign  4
+    /* .align assembler directive is supposed by all ARC toolchains and it is
+     * implemented in a same way across ARC toolchains.
+     */
+    #define PERFOPT_ALIGN .align  4
 
   #elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) || \
 	  defined(CONFIG_XTENSA)
     #define PERFOPT_ALIGN .balign 4
 
   #elif defined(CONFIG_ARCH_POSIX)
+
+  #elif defined(CONFIG_SPARC)
+
+    #define PERFOPT_ALIGN .align  4
 
   #else
 

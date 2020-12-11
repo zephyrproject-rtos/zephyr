@@ -24,7 +24,7 @@ K_KERNEL_STACK_MEMBER(eswifi_spi_poll_stack, ESWIFI_SPI_THREAD_STACK_SIZE);
 #define SPI_READ_CHUNK_SIZE 32
 
 struct eswifi_spi_data {
-	struct device *spi_dev;
+	const struct device *spi_dev;
 	struct eswifi_gpio csn;
 	struct eswifi_gpio dr;
 	struct k_thread poll_thread;
@@ -272,7 +272,12 @@ int eswifi_spi_init(struct eswifi_dev *eswifi)
 	return 0;
 }
 
-struct eswifi_bus_ops eswifi_bus_ops_spi = {
+static struct eswifi_bus_ops eswifi_bus_ops_spi = {
 	.init = eswifi_spi_init,
 	.request = eswifi_spi_request,
 };
+
+struct eswifi_bus_ops *eswifi_get_bus(void)
+{
+	return &eswifi_bus_ops_spi;
+}

@@ -50,7 +50,8 @@
 /* 0xe0000000 -> 0xe00fffff: private peripheral bus */
 /* 0xe0000000 -> 0xe003ffff: internal [256KB] */
 #define _PPB_INT_BASE_ADDR        0xE0000000
-#if defined(CONFIG_CPU_CORTEX_M0) || defined(CONFIG_CPU_CORTEX_M0PLUS)
+#if defined(CONFIG_CPU_CORTEX_M0) || defined(CONFIG_CPU_CORTEX_M0PLUS) || \
+	defined(CONFIG_CPU_CORTEX_M1)
 #define _PPB_INT_RSVD_0           0xE0000000
 #define _PPB_INT_DWT              0xE0001000
 #define _PPB_INT_BPU              0xE0002000
@@ -78,7 +79,7 @@
 /* 0xe0040000 -> 0xe00fffff: external [768K] */
 #define _PPB_EXT_BASE_ADDR        0xE0040000
 #if defined(CONFIG_CPU_CORTEX_M0) || defined(CONFIG_CPU_CORTEX_M0PLUS) \
-	|| defined(CONFIG_CPU_CORTEX_M23)
+	|| defined(CONFIG_CPU_CORTEX_M1) || defined(CONFIG_CPU_CORTEX_M23)
 #elif defined(CONFIG_CPU_CORTEX_M3) || defined(CONFIG_CPU_CORTEX_M4)
 #define _PPB_EXT_TPIU             0xE0040000
 #define _PPB_EXT_ETM              0xE0041000

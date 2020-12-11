@@ -355,6 +355,7 @@ SECTIONS
     _etext = .;
   } >ram :ram_phdr
 #include <linker/common-rom.ld>
+#include <linker/thread-local-storage.ld>
 
   .noinit :  ALIGN(4)
   {

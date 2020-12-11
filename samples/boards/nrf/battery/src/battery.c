@@ -73,14 +73,14 @@ static const struct divider_config divider_config = {
 	.full_ohm = DT_PROP(VBATT, full_ohms),
 #else /* /vbatt exists */
 	.io_channel = {
-		DT_LABEL(DT_ALIAS(adc_0)),
+		DT_LABEL(DT_NODELABEL(adc)),
 	},
 #endif /* /vbatt exists */
 };
 
 struct divider_data {
-	struct device *adc;
-	struct device *gpio;
+	const struct device *adc;
+	const struct device *gpio;
 	struct adc_channel_cfg adc_cfg;
 	struct adc_sequence adc_seq;
 	int16_t raw;
@@ -157,7 +157,7 @@ static int divider_setup(void)
 
 static bool battery_ok;
 
-static int battery_setup(struct device *arg)
+static int battery_setup(const struct device *arg)
 {
 	int rc = divider_setup();
 

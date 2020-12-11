@@ -1,6 +1,17 @@
 # Copyright (c) 2019 Bolt Innovation Management, LLC
 # Copyright (c) 2019 Peter Bigot Consulting, LLC
+# Copyright (c) 2020 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
+
+config FILE_SYSTEM_LITTLEFS
+	bool "LittleFS support"
+	depends on FILE_SYSTEM
+	depends on FLASH_MAP
+	depends on FLASH_PAGE_LAYOUT
+	help
+	  Enables LittleFS file system support.
+
+if FILE_SYSTEM_LITTLEFS
 
 menu "LittleFS Settings"
 	visible if FILE_SYSTEM_LITTLEFS
@@ -89,3 +100,5 @@ config FS_LITTLEFS_FC_MEM_POOL_NUM_BLOCKS
 endif # FS_LITTLEFS_FC_MEM_POOL
 
 endmenu
+
+endif # FILE_SYSTEM_LITTLEFS

@@ -173,7 +173,7 @@ bool ieee802154_encrypt_auth(struct ieee802154_security_ctx *sec_ctx,
 
 int ieee802154_security_init(struct ieee802154_security_ctx *sec_ctx)
 {
-	struct device *dev;
+	const struct device *dev;
 
 	(void)memset(&sec_ctx->enc, 0, sizeof(struct cipher_ctx));
 	(void)memset(&sec_ctx->dec, 0, sizeof(struct cipher_ctx));

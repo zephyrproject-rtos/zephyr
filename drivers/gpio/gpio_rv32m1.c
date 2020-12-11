@@ -26,7 +26,7 @@ struct gpio_rv32m1_config {
 	unsigned int flags;
 	char *clock_controller;
 	clock_control_subsys_t clock_subsys;
-	int (*irq_config_func)(struct device *dev);
+	int (*irq_config_func)(const struct device *dev);
 };
 
 struct gpio_rv32m1_data {
@@ -36,9 +36,10 @@ struct gpio_rv32m1_data {
 	sys_slist_t callbacks;
 };
 
-static uint32_t get_port_pcr_irqc_value_from_flags(struct device *dev,
-		uint32_t pin, enum gpio_int_mode mode,
-		enum gpio_int_trig trig)
+static uint32_t get_port_pcr_irqc_value_from_flags(const struct device *dev,
+						   uint32_t pin,
+						   enum gpio_int_mode mode,
+						   enum gpio_int_trig trig)
 {
 	port_interrupt_t port_interrupt = 0;
 
@@ -69,10 +70,10 @@ static uint32_t get_port_pcr_irqc_value_from_flags(struct device *dev,
 	return PORT_PCR_IRQC(port_interrupt);
 }
 
-static int gpio_rv32m1_configure(struct device *dev,
+static int gpio_rv32m1_configure(const struct device *dev,
 				 gpio_pin_t pin, gpio_flags_t flags)
 {
-	const struct gpio_rv32m1_config *config = dev->config_info;
+	const struct gpio_rv32m1_config *config = dev->config;
 	GPIO_Type *gpio_base = config->gpio_base;
 	PORT_Type *port_base = config->port_base;
 	uint32_t mask = 0U;
@@ -152,9 +153,9 @@ static int gpio_rv32m1_configure(struct device *dev,
 	return 0;
 }
 
-static int gpio_rv32m1_port_get_raw(struct device *dev, uint32_t *value)
+static int gpio_rv32m1_port_get_raw(const struct device *dev, uint32_t *value)
 {
-	const struct gpio_rv32m1_config *config = dev->config_info;
+	const struct gpio_rv32m1_config *config = dev->config;
 	GPIO_Type *gpio_base = config->gpio_base;
 
 	*value = gpio_base->PDIR;
@@ -162,10 +163,11 @@ static int gpio_rv32m1_port_get_raw(struct device *dev, uint32_t *value)
 	return 0;
 }
 
-static int gpio_rv32m1_port_set_masked_raw(struct device *dev, uint32_t mask,
-		uint32_t value)
+static int gpio_rv32m1_port_set_masked_raw(const struct device *dev,
+					   uint32_t mask,
+					   uint32_t value)
 {
-	const struct gpio_rv32m1_config *config = dev->config_info;
+	const struct gpio_rv32m1_config *config = dev->config;
 	GPIO_Type *gpio_base = config->gpio_base;
 
 	gpio_base->PDOR = (gpio_base->PDOR & ~mask) | (mask & value);
@@ -173,9 +175,10 @@ static int gpio_rv32m1_port_set_masked_raw(struct device *dev, uint32_t mask,
 	return 0;
 }
 
-static int gpio_rv32m1_port_set_bits_raw(struct device *dev, uint32_t mask)
+static int gpio_rv32m1_port_set_bits_raw(const struct device *dev,
+					 uint32_t mask)
 {
-	const struct gpio_rv32m1_config *config = dev->config_info;
+	const struct gpio_rv32m1_config *config = dev->config;
 	GPIO_Type *gpio_base = config->gpio_base;
 
 	gpio_base->PSOR = mask;
@@ -183,9 +186,10 @@ static int gpio_rv32m1_port_set_bits_raw(struct device *dev, uint32_t mask)
 	return 0;
 }
 
-static int gpio_rv32m1_port_clear_bits_raw(struct device *dev, uint32_t mask)
+static int gpio_rv32m1_port_clear_bits_raw(const struct device *dev,
+					   uint32_t mask)
 {
-	const struct gpio_rv32m1_config *config = dev->config_info;
+	const struct gpio_rv32m1_config *config = dev->config;
 	GPIO_Type *gpio_base = config->gpio_base;
 
 	gpio_base->PCOR = mask;
@@ -193,9 +197,10 @@ static int gpio_rv32m1_port_clear_bits_raw(struct device *dev, uint32_t mask)
 	return 0;
 }
 
-static int gpio_rv32m1_port_toggle_bits(struct device *dev, uint32_t mask)
+static int gpio_rv32m1_port_toggle_bits(const struct device *dev,
+					uint32_t mask)
 {
-	const struct gpio_rv32m1_config *config = dev->config_info;
+	const struct gpio_rv32m1_config *config = dev->config;
 	GPIO_Type *gpio_base = config->gpio_base;
 
 	gpio_base->PTOR = mask;
@@ -203,11 +208,12 @@ static int gpio_rv32m1_port_toggle_bits(struct device *dev, uint32_t mask)
 	return 0;
 }
 
-static int gpio_rv32m1_pin_interrupt_configure(struct device *dev,
-		gpio_pin_t pin, enum gpio_int_mode mode,
-		enum gpio_int_trig trig)
+static int gpio_rv32m1_pin_interrupt_configure(const struct device *dev,
+					       gpio_pin_t pin,
+					       enum gpio_int_mode mode,
+					       enum gpio_int_trig trig)
 {
-	const struct gpio_rv32m1_config *config = dev->config_info;
+	const struct gpio_rv32m1_config *config = dev->config;
 	PORT_Type *port_base = config->port_base;
 
 	/* Check for an invalid pin number */
@@ -229,21 +235,21 @@ static int gpio_rv32m1_pin_interrupt_configure(struct device *dev,
 }
 
 
-static int gpio_rv32m1_manage_callback(struct device *dev,
-				     struct gpio_callback *callback, bool set)
+static int gpio_rv32m1_manage_callback(const struct device *dev,
+				       struct gpio_callback *callback,
+				       bool set)
 {
-	struct gpio_rv32m1_data *data = dev->driver_data;
+	struct gpio_rv32m1_data *data = dev->data;
 
 	gpio_manage_callback(&data->callbacks, callback, set);
 
 	return 0;
 }
 
-static void gpio_rv32m1_port_isr(void *arg)
+static void gpio_rv32m1_port_isr(const struct device *dev)
 {
-	struct device *dev = (struct device *)arg;
-	const struct gpio_rv32m1_config *config = dev->config_info;
-	struct gpio_rv32m1_data *data = dev->driver_data;
+	const struct gpio_rv32m1_config *config = dev->config;
+	struct gpio_rv32m1_data *data = dev->data;
 	uint32_t int_status;
 
 	int_status = config->port_base->ISFR;
@@ -254,10 +260,10 @@ static void gpio_rv32m1_port_isr(void *arg)
 	gpio_fire_callbacks(&data->callbacks, dev, int_status);
 }
 
-static int gpio_rv32m1_init(struct device *dev)
+static int gpio_rv32m1_init(const struct device *dev)
 {
-	const struct gpio_rv32m1_config *config = dev->config_info;
-	struct device *clk;
+	const struct gpio_rv32m1_config *config = dev->config;
+	const struct device *clk;
 	int ret;
 
 	if (config->clock_controller) {
@@ -295,7 +301,7 @@ static const struct gpio_driver_api gpio_rv32m1_driver_api = {
 	UTIL_AND(DT_INST_NODE_HAS_PROP(n, clocks), DT_INST_CLOCKS_CELL(n, name))
 
 #define GPIO_RV32M1_INIT(n) \
-	static int gpio_rv32m1_##n##_init(struct device *dev);		\
+	static int gpio_rv32m1_##n##_init(const struct device *dev);	\
 									\
 	static const struct gpio_rv32m1_config gpio_rv32m1_##n##_config = {\
 		.common = {						\
@@ -320,7 +326,7 @@ static const struct gpio_driver_api gpio_rv32m1_driver_api = {
 			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 			    &gpio_rv32m1_driver_api);			\
 									\
-	static int gpio_rv32m1_##n##_init(struct device *dev)		\
+	static int gpio_rv32m1_##n##_init(const struct device *dev)	\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    0,						\

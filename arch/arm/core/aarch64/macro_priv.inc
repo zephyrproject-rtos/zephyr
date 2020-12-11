@@ -9,117 +9,99 @@
 
 #ifdef _ASMLANGUAGE
 
-/**
- * @brief Save volatile registers
+/*
+ * Save volatile registers, x30, SPSR_EL1 and ELR_EL1
  *
  * Save the volatile registers and x30 on the process stack. This is
  * needed if the thread is switched out because they can be clobbered by the
  * ISR and/or context switch.
- *
- * @return N/A
  */
 
-.macro z_arm64_enter_exc
+.macro z_arm64_enter_exc xreg0, xreg1
+	/* Switch to SP_EL0 */
+	msr	spsel, #0
+
 	/*
-	 * Two things can happen:
+	 * Two things can happen to the remaining registers:
 	 *
 	 * - No context-switch: in this case x19-x28 are callee-saved register
 	 *   so we can be sure they are not going to be clobbered by ISR.
 	 * - Context-switch: the callee-saved registers are saved by
-	 *   z_arm64_pendsv() in the kernel structure.
+	 *   z_arm64_context_switch() in the kernel structure.
 	 */
-	stp	x0, x1, [sp, #-16]!
-	stp	x2, x3, [sp, #-16]!
-	stp	x4, x5, [sp, #-16]!
-	stp	x6, x7, [sp, #-16]!
-	stp	x8, x9, [sp, #-16]!
-	stp	x10, x11, [sp, #-16]!
-	stp	x12, x13, [sp, #-16]!
-	stp	x14, x15, [sp, #-16]!
-	stp     x16, x17, [sp, #-16]!
-	stp     x18, x30, [sp, #-16]!
 
-	/*
-	 * Store SPSR_ELn and ELR_ELn. This is needed to support nested
-	 * exception handlers
-	 */
-	switch_el x3, 3f, 2f, 1f
-3:
-	mrs	x0, spsr_el3
-	mrs	x1, elr_el3
-	b	0f
-2:
-	mrs	x0, spsr_el2
-	mrs	x1, elr_el2
-	b	0f
-1:
-	mrs	x0, spsr_el1
-	mrs	x1, elr_el1
-0:
-	stp	x0, x1, [sp, #-16]!
+	sub	sp, sp, ___esf_t_SIZEOF
+
+	stp	x0, x1, [sp, ___esf_t_x0_x1_OFFSET]
+	stp	x2, x3, [sp, ___esf_t_x2_x3_OFFSET]
+	stp	x4, x5, [sp, ___esf_t_x4_x5_OFFSET]
+	stp	x6, x7, [sp, ___esf_t_x6_x7_OFFSET]
+	stp	x8, x9, [sp, ___esf_t_x8_x9_OFFSET]
+	stp	x10, x11, [sp, ___esf_t_x10_x11_OFFSET]
+	stp	x12, x13, [sp, ___esf_t_x12_x13_OFFSET]
+	stp	x14, x15, [sp, ___esf_t_x14_x15_OFFSET]
+	stp	x16, x17, [sp, ___esf_t_x16_x17_OFFSET]
+	stp	x18, x30, [sp, ___esf_t_x18_x30_OFFSET]
+
+	mrs	\xreg0, spsr_el1
+	mrs	\xreg1, elr_el1
+	stp	\xreg0, \xreg1, [sp, ___esf_t_spsr_elr_OFFSET]
 .endm
 
-/**
- * @brief Restore volatile registers and x30
+/*
+ * Restore volatile registers, x30, SPSR_EL1 and ELR_EL1
  *
- * This is the common exit point for z_arm64_pendsv() and _isr_wrapper(). We
- * restore the registers saved on the process stack including X30. The return
- * address used by eret (in ELR_ELn) is either restored by z_arm64_pendsv() if
- * a context-switch happened or not touched at all by the ISR if there was no
- * context-switch.
- *
- * @return N/A
+ * This is the common exit point for z_arm64_sync_exc() and _isr_wrapper().
  */
 
-.macro z_arm64_exit_exc
-	/*
-	 * Restore SPSR_ELn and ELR_ELn. This is needed to support nested
-	 * exception handlers
-	 */
-	ldp	x0, x1, [sp], #16
-	switch_el x3, 3f, 2f, 1f
-3:
-	msr	spsr_el3, x0
-	msr	elr_el3, x1
-	b	0f
-2:
-	msr	spsr_el2, x0
-	msr	elr_el2, x1
-	b	0f
-1:
-	msr	spsr_el1, x0
-	msr	elr_el1, x1
-0:
-	/*
-	 * In x30 we can have:
-	 *
-	 * - The address of irq_unlock() in swap.c when swapping in a thread
-	 *   that was cooperatively swapped out (used by ret in
-	 *   z_arm64_call_svc())
-	 * - A previos generic value if the thread that we are swapping in was
-	 *   swapped out preemptively by the ISR.
-	 */
-	ldp	x18, x30, [sp], #16
-	ldp	x16, x17, [sp], #16
-	ldp	x14, x15, [sp], #16
-	ldp	x12, x13, [sp], #16
-	ldp	x10, x11, [sp], #16
-	ldp	x8, x9, [sp], #16
-	ldp	x6, x7, [sp], #16
-	ldp	x4, x5, [sp], #16
-	ldp	x2, x3, [sp], #16
-	ldp	x0, x1, [sp], #16
+.macro z_arm64_exit_exc xreg0, xreg1
+	ldp	\xreg0, \xreg1, [sp, ___esf_t_spsr_elr_OFFSET]
+	msr	spsr_el1, \xreg0
+	msr	elr_el1, \xreg1
 
+	ldp	x18, x30, [sp, ___esf_t_x18_x30_OFFSET]
+	ldp	x16, x17, [sp, ___esf_t_x16_x17_OFFSET]
+	ldp	x14, x15, [sp, ___esf_t_x14_x15_OFFSET]
+	ldp	x12, x13, [sp, ___esf_t_x12_x13_OFFSET]
+	ldp	x10, x11, [sp, ___esf_t_x10_x11_OFFSET]
+	ldp	x8, x9, [sp, ___esf_t_x8_x9_OFFSET]
+	ldp	x6, x7, [sp, ___esf_t_x6_x7_OFFSET]
+	ldp	x4, x5, [sp, ___esf_t_x4_x5_OFFSET]
+	ldp	x2, x3, [sp, ___esf_t_x2_x3_OFFSET]
+	ldp	x0, x1, [sp, ___esf_t_x0_x1_OFFSET]
+
+	add	sp, sp, ___esf_t_SIZEOF
 	/*
-	 * In general in the  ELR_ELn register we can find:
+	 * In general in the ELR_EL1 register we can find:
 	 *
-	 * - The address of ret in z_arm64_call_svc() in case of arch_swap()
-	 *   (see swap.c)
+	 * - The address of ret in z_arm64_call_svc()
 	 * - The address of the next instruction at the time of the IRQ when the
 	 *   thread was switched out.
 	 * - The address of z_thread_entry() for new threads (see thread.c).
 	 */
 	eret
+.endm
+
+/*
+ * Increment nested counter
+ */
+
+.macro inc_nest_counter xreg0, xreg1
+	ldr	\xreg0, =_kernel
+	ldr	\xreg1, [\xreg0, #_kernel_offset_to_nested]
+	add	\xreg1, \xreg1, #1
+	str	\xreg1, [\xreg0, #_kernel_offset_to_nested]
+.endm
+
+/*
+ * Decrement nested counter
+ */
+
+.macro dec_nest_counter xreg0, xreg1
+	ldr	\xreg0, =_kernel
+	ldr	\xreg1, [\xreg0, #_kernel_offset_to_nested]
+	sub	\xreg1, \xreg1, #1
+	str	\xreg1, [\xreg0, #_kernel_offset_to_nested]
 .endm
 
 #endif /* _ASMLANGUAGE */

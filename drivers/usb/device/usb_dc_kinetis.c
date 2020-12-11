@@ -80,7 +80,11 @@ static struct buf_descriptor __aligned(512) bdt[(NUM_OF_EP_MAX) * 2 * 2];
 
 #define EP_BUF_NUMOF_BLOCKS		(NUM_OF_EP_MAX / 2)
 
-K_MEM_POOL_DEFINE(ep_buf_pool, 16, 512, EP_BUF_NUMOF_BLOCKS, 4);
+K_HEAP_DEFINE(ep_buf_pool, 512 * EP_BUF_NUMOF_BLOCKS + 128);
+
+struct ep_mem_block {
+	void *data;
+};
 
 struct usb_ep_ctrl_data {
 	struct ep_status {
@@ -95,8 +99,8 @@ struct usb_ep_ctrl_data {
 	} status;
 	uint16_t mps_in;
 	uint16_t mps_out;
-	struct k_mem_block mblock_in;
-	struct k_mem_block mblock_out;
+	struct ep_mem_block mblock_in;
+	struct ep_mem_block mblock_out;
 	usb_dc_ep_callback cb_in;
 	usb_dc_ep_callback cb_out;
 };
@@ -325,7 +329,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 {
 	uint8_t ep_idx = USB_EP_GET_IDX(cfg->ep_addr);
 	struct usb_ep_ctrl_data *ep_ctrl;
-	struct k_mem_block *block;
+	struct ep_mem_block *block;
 	uint8_t idx_even;
 	uint8_t idx_odd;
 
@@ -353,14 +357,15 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 	}
 
 	if (bdt[idx_even].buf_addr) {
-		k_mem_pool_free(block);
+		k_heap_free(&ep_buf_pool, block->data);
 	}
 
 	USB0->ENDPOINT[ep_idx].ENDPT = 0;
 	(void)memset(&bdt[idx_even], 0, sizeof(struct buf_descriptor));
 	(void)memset(&bdt[idx_odd], 0, sizeof(struct buf_descriptor));
 
-	if (k_mem_pool_alloc(&ep_buf_pool, block, cfg->ep_mps * 2U, K_MSEC(10)) == 0) {
+	block->data = k_heap_alloc(&ep_buf_pool, cfg->ep_mps * 2U, K_MSEC(10));
+	if (block->data != NULL) {
 		(void)memset(block->data, 0, cfg->ep_mps * 2U);
 	} else {
 		LOG_ERR("Memory allocation time-out");

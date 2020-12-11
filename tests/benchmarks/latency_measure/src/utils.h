@@ -1,85 +1,47 @@
-/* utils.h - utility functions used by latency measurement */
-
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef _LATENCY_MEASURE_UNIT_H
+#define _LATENCY_MEASURE_UNIT_H
 /*
- * DESCRIPTION
- * This file contains function declarations, macroses and inline functions
+ * @brief This file contains function declarations, macroses and inline functions
  * used in latency measurement.
  */
 
-#include "timing_info.h"
+#include <timing/timing.h>
+#include <sys/printk.h>
+#include <stdio.h>
+#include "timestamp.h"
 
 #define INT_IMM8_OFFSET   1
 #define IRQ_PRIORITY      3
 
-#ifdef CONFIG_PRINTK
-#include <sys/printk.h>
-#include <stdio.h>
-#include "timestamp.h"
-extern char tmp_string[];
 extern int error_count;
 
-#define TMP_STRING_SIZE  100
-
-#define PRINT(fmt, ...) printk(fmt, ##__VA_ARGS__)
-#define PRINTF(fmt, ...) printf(fmt, ##__VA_ARGS__)
-
-#define PRINT_FORMAT(fmt, ...)						\
-	do {                                                            \
-		snprintf(tmp_string, TMP_STRING_SIZE, fmt, ##__VA_ARGS__); \
-		PRINTF("|%-77s|\n", tmp_string);				\
-	} while (0)
-
-/**
- *
- * @brief Print dash line
- *
- * @return N/A
- */
-static inline void print_dash_line(void)
-{
-	PRINTF("|-------------------------------------------------------"
-	       "----------------------|\n");
-}
-
-#define PRINT_END_BANNER()						\
-	do {								\
-	PRINTF("|                                    E N D             " \
-	       "                       |\n");				\
-	print_dash_line();						\
-	} while (0)
-
-
-#define PRINT_BANNER()						\
-	do {								\
-	print_dash_line();						\
-	PRINTF("|                            Latency Benchmark         " \
-	       "                       |\n");				\
-	print_dash_line();						\
-	} while (0)
-
-
-#define PRINT_TIME_BANNER()						\
-	do {								\
-	PRINT_FORMAT("  tcs = timer clock cycles: 1 tcs is %u nsec",	\
-		     CYCLES_TO_NS(1));					\
-	print_dash_line();						\
-	} while (0)
-
 #define PRINT_OVERFLOW_ERROR()			\
-	PRINT_FORMAT(" Error: tick occurred")
+	printk(" Error: tick occurred\n")
 
+#ifdef CSV_FORMAT_OUTPUT
+#define FORMAT "%-60s,%8u,%8u\n"
 #else
-#error PRINTK configuration option needs to be enabled
+#define FORMAT "%-60s:%8u cycles , %8u ns\n"
 #endif
 
-void raiseIntFunc(void);
-extern void raiseInt(uint8_t id);
+#define PRINT_F(...)						\
+	{							\
+		char sline[256]; 				\
+		snprintk(sline, 254, FORMAT, ##__VA_ARGS__); 	\
+		printk("%s", sline);			     	\
+	}
 
-/* pointer to the ISR */
-typedef void (*ptestIsr) (void *unused);
+#define PRINT_STATS(x, y) \
+	PRINT_F(x, y, (uint32_t)timing_cycles_to_ns(y))
+
+#define PRINT_STATS_AVG(x, y, counter)	\
+	PRINT_F(x, y / counter, (uint32_t)timing_cycles_to_ns_avg(y, counter));
+
+
+#endif

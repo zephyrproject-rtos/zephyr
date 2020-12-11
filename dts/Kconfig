@@ -13,13 +13,6 @@ config HAS_DTS_GPIO
 	  This option specifies that the target platform supports device tree
 	  configuration for GPIO.
 
-config HAS_DTS_I2C
-	bool
-	depends on HAS_DTS
-	help
-	  This option specifies that the target platform supports device tree
-	  configuration for I2c.
-
 config HAS_DTS_WDT
 	bool
 	depends on HAS_DTS

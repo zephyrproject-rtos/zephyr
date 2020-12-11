@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <init.h>
 #include <fs/fs.h>
+#include <fs/fs_sys.h>
 #include <sys/__assert.h>
 #include <ff.h>
 
@@ -121,17 +122,23 @@ static int fatfs_close(struct fs_file_t *zfp)
 
 static int fatfs_unlink(struct fs_mount_t *mountp, const char *path)
 {
-	FRESULT res;
+	int res = -ENOTSUP;
 
+#if !defined(CONFIG_FS_FATFS_READ_ONLY)
 	res = f_unlink(&path[1]);
 
-	return translate_error(res);
+	res = translate_error(res);
+#endif
+
+	return res;
 }
 
 static int fatfs_rename(struct fs_mount_t *mountp, const char *from,
 			const char *to)
 {
-	FRESULT res;
+	int res = -ENOTSUP;
+
+#if !defined(CONFIG_FS_FATFS_READ_ONLY)
 	FILINFO fno;
 
 	/* Check if 'to' path exists; remove it if it does */
@@ -143,7 +150,10 @@ static int fatfs_rename(struct fs_mount_t *mountp, const char *from,
 	}
 
 	res = f_rename(&from[1], &to[1]);
-	return translate_error(res);
+	res = translate_error(res);
+#endif
+
+	return res;
 }
 
 static ssize_t fatfs_read(struct fs_file_t *zfp, void *ptr, size_t size)
@@ -161,9 +171,12 @@ static ssize_t fatfs_read(struct fs_file_t *zfp, void *ptr, size_t size)
 
 static ssize_t fatfs_write(struct fs_file_t *zfp, const void *ptr, size_t size)
 {
-	FRESULT res = FR_OK;
+	int res = -ENOTSUP;
+
+#if !defined(CONFIG_FS_FATFS_READ_ONLY)
 	unsigned int bw;
 	off_t pos = f_size((FIL *)zfp->filep);
+	res = FR_OK;
 
 	/* FA_APPEND flag means that file has been opened for append.
 	 * The FAT FS write does not support the POSIX append semantics,
@@ -179,10 +192,13 @@ static ssize_t fatfs_write(struct fs_file_t *zfp, const void *ptr, size_t size)
 	}
 
 	if (res != FR_OK) {
-		return translate_error(res);
+		res = translate_error(res);
+	} else {
+		res = bw;
 	}
+#endif
 
-	return bw;
+	return res;
 }
 
 static int fatfs_seek(struct fs_file_t *zfp, off_t offset, int whence)
@@ -220,7 +236,9 @@ static off_t fatfs_tell(struct fs_file_t *zfp)
 
 static int fatfs_truncate(struct fs_file_t *zfp, off_t length)
 {
-	FRESULT res = FR_OK;
+	int res = -ENOTSUP;
+
+#if !defined(CONFIG_FS_FATFS_READ_ONLY)
 	off_t cur_length = f_size((FIL *)zfp->filep);
 
 	/* f_lseek expands file if new position is larger than file size */
@@ -261,25 +279,33 @@ static int fatfs_truncate(struct fs_file_t *zfp, off_t length)
 		}
 	}
 
-	return translate_error(res);
+	res = translate_error(res);
+#endif
+
+	return res;
 }
 
 static int fatfs_sync(struct fs_file_t *zfp)
 {
-	FRESULT res = FR_OK;
+	int res = -ENOTSUP;
 
+#if !defined(CONFIG_FS_FATFS_READ_ONLY)
 	res = f_sync(zfp->filep);
-
-	return translate_error(res);
+	res = translate_error(res);
+#endif
+	return res;
 }
 
 static int fatfs_mkdir(struct fs_mount_t *mountp, const char *path)
 {
-	FRESULT res;
+	int res = -ENOTSUP;
 
+#if !defined(CONFIG_FS_FATFS_READ_ONLY)
 	res = f_mkdir(&path[1]);
+	res = translate_error(res);
+#endif
 
-	return translate_error(res);
+	return res;
 }
 
 static int fatfs_opendir(struct fs_dir_t *zdp, const char *path)
@@ -354,8 +380,9 @@ static int fatfs_stat(struct fs_mount_t *mountp,
 static int fatfs_statvfs(struct fs_mount_t *mountp,
 			 const char *path, struct fs_statvfs *stat)
 {
+	int res = -ENOTSUP;
+#if !defined(CONFIG_FS_FATFS_READ_ONLY)
 	FATFS *fs;
-	FRESULT res;
 
 	res = f_getfree(&mountp->mnt_point[1], &stat->f_bfree, &fs);
 	if (res != FR_OK) {
@@ -370,7 +397,9 @@ static int fatfs_statvfs(struct fs_mount_t *mountp,
 	stat->f_frsize = fs->csize * stat->f_bsize;
 	stat->f_blocks = (fs->n_fatent - 2);
 
-	return translate_error(res);
+	res = translate_error(res);
+#endif
+	return res;
 }
 
 static int fatfs_mount(struct fs_mount_t *mountp)
@@ -379,8 +408,14 @@ static int fatfs_mount(struct fs_mount_t *mountp)
 
 	res = f_mount((FATFS *)mountp->fs_data, &mountp->mnt_point[1], 1);
 
+#if defined(CONFIG_FS_FATFS_MOUNT_MKFS)
+	if (res == FR_NO_FILESYSTEM &&
+	    (mountp->flags & FS_MOUNT_FLAG_READ_ONLY) != 0) {
+		return -EROFS;
+	}
 	/* If no file system found then create one */
-	if (res == FR_NO_FILESYSTEM) {
+	if (res == FR_NO_FILESYSTEM &&
+	    (mountp->flags & FS_MOUNT_FLAG_NO_FORMAT) == 0) {
 		uint8_t work[_MAX_SS];
 
 		res = f_mkfs(&mountp->mnt_point[1],
@@ -390,8 +425,7 @@ static int fatfs_mount(struct fs_mount_t *mountp)
 					&mountp->mnt_point[1], 1);
 		}
 	}
-
-	__ASSERT((res == FR_OK), "FS init failed (%d)", translate_error(res));
+#endif /* CONFIG_FS_FATFS_MOUNT_MKFS */
 
 	return translate_error(res);
 
@@ -407,7 +441,7 @@ static int fatfs_unmount(struct fs_mount_t *mountp)
 }
 
 /* File system interface */
-static struct fs_file_system_t fatfs_fs = {
+static const struct fs_file_system_t fatfs_fs = {
 	.open = fatfs_open,
 	.close = fatfs_close,
 	.read = fatfs_read,
@@ -428,7 +462,7 @@ static struct fs_file_system_t fatfs_fs = {
 	.statvfs = fatfs_statvfs,
 };
 
-static int fatfs_init(struct device *dev)
+static int fatfs_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

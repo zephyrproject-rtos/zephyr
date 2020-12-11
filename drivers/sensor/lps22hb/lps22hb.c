@@ -20,10 +20,10 @@
 
 LOG_MODULE_REGISTER(LPS22HB, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline int lps22hb_set_odr_raw(struct device *dev, uint8_t odr)
+static inline int lps22hb_set_odr_raw(const struct device *dev, uint8_t odr)
 {
-	struct lps22hb_data *data = dev->driver_data;
-	const struct lps22hb_config *config = dev->config_info;
+	struct lps22hb_data *data = dev->data;
+	const struct lps22hb_config *config = dev->config;
 
 	return i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
 				   LPS22HB_REG_CTRL_REG1,
@@ -31,11 +31,11 @@ static inline int lps22hb_set_odr_raw(struct device *dev, uint8_t odr)
 				   odr << LPS22HB_SHIFT_CTRL_REG1_ODR);
 }
 
-static int lps22hb_sample_fetch(struct device *dev,
+static int lps22hb_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
-	struct lps22hb_data *data = dev->driver_data;
-	const struct lps22hb_config *config = dev->config_info;
+	struct lps22hb_data *data = dev->data;
+	const struct lps22hb_config *config = dev->config;
 	uint8_t out[5];
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
@@ -73,11 +73,11 @@ static inline void lps22hb_temp_convert(struct sensor_value *val,
 	val->val2 = ((int32_t)raw_val % 100) * 10000;
 }
 
-static int lps22hb_channel_get(struct device *dev,
+static int lps22hb_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	struct lps22hb_data *data = dev->driver_data;
+	struct lps22hb_data *data = dev->data;
 
 	if (chan == SENSOR_CHAN_PRESS) {
 		lps22hb_press_convert(val, data->sample_press);
@@ -95,10 +95,10 @@ static const struct sensor_driver_api lps22hb_api_funcs = {
 	.channel_get = lps22hb_channel_get,
 };
 
-static int lps22hb_init_chip(struct device *dev)
+static int lps22hb_init_chip(const struct device *dev)
 {
-	struct lps22hb_data *data = dev->driver_data;
-	const struct lps22hb_config *config = dev->config_info;
+	struct lps22hb_data *data = dev->data;
+	const struct lps22hb_config *config = dev->config;
 	uint8_t chip_id;
 
 	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
@@ -131,10 +131,10 @@ err_poweroff:
 	return -EIO;
 }
 
-static int lps22hb_init(struct device *dev)
+static int lps22hb_init(const struct device *dev)
 {
-	const struct lps22hb_config * const config = dev->config_info;
-	struct lps22hb_data *data = dev->driver_data;
+	const struct lps22hb_config * const config = dev->config;
+	struct lps22hb_data *data = dev->data;
 
 	data->i2c_master = device_get_binding(config->i2c_master_dev_name);
 

@@ -55,6 +55,8 @@ elseif("${ARCH}" STREQUAL "riscv")
   include(${CMAKE_CURRENT_LIST_DIR}/target_riscv.cmake)
 elseif("${ARCH}" STREQUAL "x86")
   include(${CMAKE_CURRENT_LIST_DIR}/target_x86.cmake)
+elseif("${ARCH}" STREQUAL "sparc")
+  include(${CMAKE_CURRENT_LIST_DIR}/target_sparc.cmake)
 endif()
 
 if(NOT no_libgcc)
@@ -113,17 +115,3 @@ list(APPEND CMAKE_REQUIRED_FLAGS
   -Wl,--entry=0 # Set an entry point to avoid a warning
   )
 string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
-
-# Load toolchain_cc-family macros
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_freestanding.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_security_fortify.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_security_canaries.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_optimizations.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_cpp.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_asm.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_baremetal.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_warnings.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_imacros.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_base.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_coverage.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_sanitizers.cmake)

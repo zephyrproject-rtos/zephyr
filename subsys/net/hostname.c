@@ -13,16 +13,10 @@ LOG_MODULE_REGISTER(net_hostname, CONFIG_NET_HOSTNAME_LOG_LEVEL);
 
 #include <zephyr.h>
 
+#include <net/hostname.h>
 #include <net/net_core.h>
 
-#if defined(CONFIG_NET_HOSTNAME_UNIQUE)
-/* Allocate extra space to append MAC address to hostname */
-#define EXTRA_SPACE (8 * 2)
-#else
-#define EXTRA_SPACE 0
-#endif /* CONFIG_NET_HOSTNAME_UNIQUE */
-
-static char hostname[sizeof(CONFIG_NET_HOSTNAME) + EXTRA_SPACE];
+static char hostname[NET_HOSTNAME_MAX_LEN + 1];
 
 const char *net_hostname_get(void)
 {
@@ -45,7 +39,7 @@ int net_hostname_set_postfix(const uint8_t *hostname_postfix,
 
 	/* Note that we convert the postfix to hex (2 chars / byte) */
 	if ((postfix_len * 2) >
-	    ((sizeof(hostname) - 1) - (sizeof(CONFIG_NET_HOSTNAME) - 1))) {
+	    (NET_HOSTNAME_MAX_LEN - (sizeof(CONFIG_NET_HOSTNAME) - 1))) {
 		return -EMSGSIZE;
 	}
 
@@ -54,7 +48,7 @@ int net_hostname_set_postfix(const uint8_t *hostname_postfix,
 			 2 + 1, "%02x", hostname_postfix[i]);
 	}
 
-	NET_DBG("New hostname %s", hostname);
+	NET_DBG("New hostname %s", log_strdup(hostname));
 
 	postfix_set = true;
 
@@ -66,5 +60,5 @@ void net_hostname_init(void)
 {
 	memcpy(hostname, CONFIG_NET_HOSTNAME, sizeof(CONFIG_NET_HOSTNAME) - 1);
 
-	NET_DBG("Hostname set to %s", hostname);
+	NET_DBG("Hostname set to %s", CONFIG_NET_HOSTNAME);
 }

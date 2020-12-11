@@ -18,7 +18,9 @@
 #include "hal/ticker.h"
 
 #include "util/util.h"
+#include "util/mem.h"
 #include "util/memq.h"
+#include "util/mfifo.h"
 
 #include "ticker/ticker.h"
 
@@ -75,6 +77,46 @@ static inline bool isr_rx_ci_tgta_check(struct lll_adv *lll,
 static inline bool isr_rx_ci_adva_check(struct pdu_adv *adv,
 					struct pdu_adv *ci);
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#define PAYLOAD_FRAG_COUNT   ((CONFIG_BT_CTLR_ADV_DATA_LEN_MAX + \
+			       PDU_AC_PAYLOAD_SIZE_MAX - 1) / \
+			      PDU_AC_PAYLOAD_SIZE_MAX)
+#define BT_CTLR_ADV_AUX_SET  CONFIG_BT_CTLR_ADV_AUX_SET
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+#define BT_CTLR_ADV_SYNC_SET CONFIG_BT_CTLR_ADV_SYNC_SET
+#else /* !CONFIG_BT_CTLR_ADV_PERIODIC */
+#define BT_CTLR_ADV_SYNC_SET 0
+#endif /* !CONFIG_BT_CTLR_ADV_PERIODIC */
+#else
+#define PAYLOAD_FRAG_COUNT   1
+#define BT_CTLR_ADV_AUX_SET  0
+#define BT_CTLR_ADV_SYNC_SET 0
+#endif
+
+#define PDU_MEM_SIZE       MROUND(PDU_AC_LL_HEADER_SIZE + \
+				  PDU_AC_PAYLOAD_SIZE_MAX)
+#define PDU_MEM_COUNT_MIN  (BT_CTLR_ADV_SET + \
+			    (BT_CTLR_ADV_SET * PAYLOAD_FRAG_COUNT) + \
+			    (BT_CTLR_ADV_AUX_SET * PAYLOAD_FRAG_COUNT) + \
+			    (BT_CTLR_ADV_SYNC_SET * PAYLOAD_FRAG_COUNT))
+#define PDU_MEM_FIFO_COUNT ((BT_CTLR_ADV_SET * PAYLOAD_FRAG_COUNT * 2) + \
+			    (CONFIG_BT_CTLR_ADV_DATA_BUF_MAX * \
+			     PAYLOAD_FRAG_COUNT))
+#define PDU_MEM_COUNT      (PDU_MEM_COUNT_MIN + PDU_MEM_FIFO_COUNT)
+#define PDU_POOL_SIZE      (PDU_MEM_SIZE * PDU_MEM_COUNT)
+
+/* Free AD data PDU buffer pool */
+static struct {
+	void *free;
+	uint8_t pool[PDU_POOL_SIZE];
+} mem_pdu;
+
+/* FIFO to return stale AD data PDU buffers from LLL to thread context */
+static MFIFO_DEFINE(pdu_free, sizeof(void *), PDU_MEM_FIFO_COUNT);
+
+/* Semaphore to wakeup thread waiting for free AD data PDU buffers */
+static struct k_sem sem_pdu_free;
+
 int lll_adv_init(void)
 {
 	int err;
@@ -97,6 +139,166 @@ int lll_adv_reset(void)
 	}
 
 	return 0;
+}
+
+int lll_adv_data_init(struct lll_adv_pdu *pdu)
+{
+	struct pdu_adv *p;
+
+	p = mem_acquire(&mem_pdu.free);
+	if (!p) {
+		return -ENOMEM;
+	}
+
+	pdu->pdu[0] = (void *)p;
+
+	return 0;
+}
+
+int lll_adv_data_reset(struct lll_adv_pdu *pdu)
+{
+	/* NOTE: this function is used on HCI reset to mem-zero the structure
+	 *       members that otherwise was zero-ed by the architecture
+	 *       startup code that zero-ed the .bss section.
+	 *       pdu[0] element in the array is not initialized as subsequent
+	 *       call to lll_adv_data_init will allocate a PDU buffer and
+	 *       assign that.
+	 */
+
+	pdu->first = 0U;
+	pdu->last = 0U;
+	pdu->pdu[1] = NULL;
+
+	return 0;
+}
+
+int lll_adv_data_release(struct lll_adv_pdu *pdu)
+{
+	uint8_t last;
+	void *p;
+
+	last = pdu->last;
+	p = pdu->pdu[last];
+	pdu->pdu[last] = NULL;
+	mem_release(p, &mem_pdu.free);
+
+	last++;
+	if (last == DOUBLE_BUFFER_SIZE) {
+		last = 0U;
+	}
+	p = pdu->pdu[last];
+	if (p) {
+		pdu->pdu[last] = NULL;
+		mem_release(p, &mem_pdu.free);
+	}
+
+	return 0;
+}
+
+struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx)
+{
+	uint8_t first, last;
+	struct pdu_adv *p;
+	int err;
+
+	first = pdu->first;
+	last = pdu->last;
+	if (first == last) {
+		last++;
+		if (last == DOUBLE_BUFFER_SIZE) {
+			last = 0U;
+		}
+	} else {
+		uint8_t first_latest;
+
+		pdu->last = first;
+		/* FIXME: Ensure that data is synchronized so that an ISR
+		 *        vectored, after pdu->last has been updated, does
+		 *        access the latest value. __DSB() is used in ARM
+		 *        Cortex M4 architectures. Use appropriate
+		 *        instructions on other platforms.
+		 *
+		 *        cpu_dsb();
+		 */
+		first_latest = pdu->first;
+		if (first_latest != first) {
+			last++;
+			if (last == DOUBLE_BUFFER_SIZE) {
+				last = 0U;
+			}
+		}
+	}
+
+	*idx = last;
+
+	p = (void *)pdu->pdu[last];
+	if (p) {
+		return p;
+	}
+
+	p = MFIFO_DEQUEUE_PEEK(pdu_free);
+	if (p) {
+		err = k_sem_take(&sem_pdu_free, K_NO_WAIT);
+		LL_ASSERT(!err);
+
+		MFIFO_DEQUEUE(pdu_free);
+		pdu->pdu[last] = (void *)p;
+
+		return p;
+	}
+
+	p = mem_acquire(&mem_pdu.free);
+	if (p) {
+		pdu->pdu[last] = (void *)p;
+
+		return p;
+	}
+
+	err = k_sem_take(&sem_pdu_free, K_FOREVER);
+	LL_ASSERT(!err);
+
+	p = MFIFO_DEQUEUE(pdu_free);
+	LL_ASSERT(p);
+
+	pdu->pdu[last] = (void *)p;
+
+	return p;
+}
+
+struct pdu_adv *lll_adv_pdu_latest_get(struct lll_adv_pdu *pdu,
+				       uint8_t *is_modified)
+{
+	uint8_t first;
+
+	first = pdu->first;
+	if (first != pdu->last) {
+		uint8_t free_idx;
+		uint8_t pdu_idx;
+		void *p;
+
+		if (!MFIFO_ENQUEUE_IDX_GET(pdu_free, &free_idx)) {
+			LL_ASSERT(false);
+
+			return NULL;
+		}
+
+		pdu_idx = first;
+
+		first += 1U;
+		if (first == DOUBLE_BUFFER_SIZE) {
+			first = 0U;
+		}
+		pdu->first = first;
+		*is_modified = 1U;
+
+		p = pdu->pdu[pdu_idx];
+		pdu->pdu[pdu_idx] = NULL;
+
+		MFIFO_BY_IDX_ENQUEUE(pdu_free, free_idx, p);
+		k_sem_give(&sem_pdu_free);
+	}
+
+	return (void *)pdu->pdu[first];
 }
 
 void lll_adv_prepare(void *param)
@@ -149,10 +351,10 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	/* TODO: if coded we use S8? */
 	radio_phy_set(lll->phy_p, 1);
-	radio_pkt_configure(8, PDU_AC_PAYLOAD_SIZE_MAX, (lll->phy_p << 1));
+	radio_pkt_configure(8, PDU_AC_LEG_PAYLOAD_SIZE_MAX, (lll->phy_p << 1));
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 	radio_phy_set(0, 0);
-	radio_pkt_configure(8, PDU_AC_PAYLOAD_SIZE_MAX, 0);
+	radio_pkt_configure(8, PDU_AC_LEG_PAYLOAD_SIZE_MAX, 0);
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 	radio_aa_set((uint8_t *)&aa);

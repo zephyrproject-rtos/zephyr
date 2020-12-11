@@ -136,7 +136,7 @@ the project out directory under ``include/generated/``:
   of the API in uppercase, prefixed with ``K_SYSCALL_``.
 
 * An entry for the system call is created in the dispatch table
-  ``_k_sycall_table``, expressed in ``include/generated/syscall_dispatch.c``
+  ``_k_syscall_table``, expressed in ``include/generated/syscall_dispatch.c``
 
 * A weak verification function is declared, which is just an alias of the
   'unimplemented system call' verifier. This is necessary since the real
@@ -174,11 +174,16 @@ prototype for the implementation function is also automatically generated.
 
 The final layer is the invocation of the system call itself. All architectures
 implementing system calls must implement the seven inline functions
-:c:func:`_arch_syscall_invoke0` through :c:func:`_arch_syscall_invoke6`.  These
+:c:func:`_arch_syscall_invoke0` through :c:func:`_arch_syscall_invoke6`. These
 functions marshal arguments into designated CPU registers and perform the
-necessary privilege elevation. In this layer, all arguments are treated as an
-unsigned 32-bit type. There is always a 32-bit unsigned return value, which
-may or may not be used.
+necessary privilege elevation. Parameters of API inline function, before being
+passed as arguments to system call, are C casted to ``uintptr_t`` which matches
+size of register.
+Exception to above is passing 64-bit parameters on 32-bit systems, in which case
+64-bit parameters are split into lower and higher part and passed as two consecutive
+arguments.
+There is always a ``uintptr_t`` type return value, which may be neglected if
+not needed.
 
 .. figure:: syscall_flow.png
    :alt: System Call execution flow
@@ -187,19 +192,23 @@ may or may not be used.
 
    System Call execution flow
 
-Some system calls may have more than six arguments. The number of
-arguments passed via registers is limited to six for all
-architectures. Additional arguments will need to be passed in an array
-in the source memory space, which needs to be treated as untrusted
-memory in the verification function. This code (packing, unpacking and
-validation) is generated automatically as needed in the stub above and
-in the unmarshalling function.
+Some system calls may have more than six arguments, but number of arguments
+passed via registers is limited to six for all architectures.
+Additional arguments will need to be passed in an array in the source memory
+space, which needs to be treated as untrusted memory in the verification
+function. This code (packing, unpacking and validation) is generated
+automatically as needed in the stub above and in the unmarshalling function.
 
-Some system calls may return a value that will not fit in a 32-bit
-register, such as APIs that return a 64-bit value. In this scenario,
-the return value is populated in a **untrusted** memory buffer that is
-passed in as a final argument.  Likewise, this code is generated
-automatically.
+System calls return ``uintptr_t`` type value that is C casted, by wrapper, to
+a return type of API prototype declaration. This means that 64-bit value may
+not be directly returned, from a system call to its wrapper, on 32-bit systems.
+To solve the problem the automatically generated wrapper function defines 64-bit
+intermediate variable, which is considered **untrusted** buffer, on its stack
+and passes pointer to that variable to the system call, as a final argument.
+Upon return from the system call the value written to that buffer will be
+returned by the wrapper function.
+The problem does not exist on 64-bit systems which are able to return 64-bit
+values directly.
 
 Implementation Function
 ***********************
@@ -210,7 +219,7 @@ kind of checking with assertions. When writing the implementation function,
 validation of any parameters is optional and should be done with assertions.
 
 All implementation functions must follow the naming convention, which is the
-name of the API prefixed with ``_impl_``. Implementation functions may be
+name of the API prefixed with ``z_impl_``. Implementation functions may be
 declared in the same header as the API as a static inline function or
 declared in some C file. There is no prototype needed for implementation
 functions, these are automatically generated.
@@ -241,7 +250,7 @@ passed in.  This includes:
 * Any other arguments that have a limited range of valid values.
 
 Verification functions involve a great deal of boilerplate code which has been
-made simpler by some macros in ``kernel/include/syscall_handlers.h``.
+made simpler by some macros in :zephyr_file:`include/syscall_handler.h`.
 Verification functions should be declared using these macros.
 
 Argument Validation
@@ -409,7 +418,7 @@ bytes processed. This too should use a stack copy:
         return ret;
     }
 
-Many system calls pass in structs, or even linked data structures. All should
+Many system calls pass in structures or even linked data structures. All should
 be copied. Typically this is done by allocating copies on the stack:
 
 .. code-block:: c
@@ -445,10 +454,11 @@ be copied. Typically this is done by allocating copies on the stack:
 In some cases the amount of data isn't known at compile time or may be too
 large to allocate on the stack. In this scenario, it may be necessary to draw
 memory from the caller's resource pool via :c:func:`z_thread_malloc()`. This
-should always be a method of last resort. Functional safety programming
-guidelines heavily discourge the use of heaps, the fact that a resource pool is
-used must be clearly documented, and any issue with allocations must be
-propaged to the caller with a ``-ENOMEM`` return value, never a ``Z_OOPS()``.
+should always be considered last resort. Functional safety programming
+guidelines heavily discourage usage of heap and the fact that a resource pool is
+used must be clearly documented. Any issues with allocation must be
+reported, to a caller, with returning the ``-ENOMEM`` . The ``Z_OOPS()``
+should never be used to verify if resource allocation has been successful.
 
 .. code-block:: c
 
@@ -528,7 +538,7 @@ Verification Return Value Policies
 When verifying system calls, it's important to note which kinds of verification
 failures should propagate a return value to the caller, and which should
 simply invoke :c:macro:`Z_OOPS()` which kills the calling thread. The current
-coventions are as follows:
+conventions are as follows:
 
 #. For system calls that are defined but not compiled, invocations of these
    missing system calls are routed to :c:func:`handler_no_syscall()` which
@@ -598,7 +608,7 @@ APIs
 ****
 
 Helper macros for creating system call verification functions are provided in
-:zephyr_file:`kernel/include/syscall_handler.h`:
+:zephyr_file:`include/syscall_handler.h`:
 
 * :c:macro:`Z_SYSCALL_OBJ()`
 * :c:macro:`Z_SYSCALL_OBJ_INIT()`

@@ -5,4 +5,4 @@ tests:
     harness: sensor
     tags: sensors
     depends_on: i2c
-    platform_whitelist: arduino_due
+    platform_allow: arduino_due

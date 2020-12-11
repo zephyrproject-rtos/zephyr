@@ -3,11 +3,53 @@
 # Copyright (c) 2016-2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+config SOC_NRF52805
+	depends on SOC_SERIES_NRF52X
+	bool
+	select HAS_HW_NRF_BPROT
+	select HAS_HW_NRF_CCM
+	select HAS_HW_NRF_CCM_LFLEN_8BIT
+	select HAS_HW_NRF_CLOCK
+	select HAS_HW_NRF_ECB
+	select HAS_HW_NRF_EGU0
+	select HAS_HW_NRF_EGU1
+	select HAS_HW_NRF_GPIO0
+	select HAS_HW_NRF_GPIOTE
+	select HAS_HW_NRF_NVMC_PE
+	select HAS_HW_NRF_POWER
+	select HAS_HW_NRF_PPI
+	select HAS_HW_NRF_QDEC
+	select HAS_HW_NRF_RADIO_BLE_2M
+	select HAS_HW_NRF_RNG
+	select HAS_HW_NRF_RTC0
+	select HAS_HW_NRF_RTC1
+	select HAS_HW_NRF_SAADC
+	select HAS_HW_NRF_SPI0
+	select HAS_HW_NRF_SPIM0
+	select HAS_HW_NRF_SPIS0
+	select HAS_HW_NRF_SWI0
+	select HAS_HW_NRF_SWI1
+	select HAS_HW_NRF_SWI2
+	select HAS_HW_NRF_SWI3
+	select HAS_HW_NRF_SWI4
+	select HAS_HW_NRF_SWI5
+	select HAS_HW_NRF_TEMP
+	select HAS_HW_NRF_TIMER0
+	select HAS_HW_NRF_TIMER1
+	select HAS_HW_NRF_TIMER2
+	select HAS_HW_NRF_TWI0
+	select HAS_HW_NRF_TWIM0
+	select HAS_HW_NRF_TWIS0
+	select HAS_HW_NRF_UART0
+	select HAS_HW_NRF_UARTE0
+	select HAS_HW_NRF_WDT
+
 config SOC_NRF52810
 	depends on SOC_SERIES_NRF52X
 	bool
 	select HAS_HW_NRF_BPROT
 	select HAS_HW_NRF_CCM
+	select HAS_HW_NRF_CCM_LFLEN_8BIT
 	select HAS_HW_NRF_CLOCK
 	select HAS_HW_NRF_COMP
 	select HAS_HW_NRF_ECB
@@ -21,6 +63,7 @@ config SOC_NRF52810
 	select HAS_HW_NRF_PPI
 	select HAS_HW_NRF_PWM0
 	select HAS_HW_NRF_QDEC
+	select HAS_HW_NRF_RADIO_BLE_2M
 	select HAS_HW_NRF_RNG
 	select HAS_HW_NRF_RTC0
 	select HAS_HW_NRF_RTC1
@@ -50,6 +93,7 @@ config SOC_NRF52811
 	bool
 	select HAS_HW_NRF_BPROT
 	select HAS_HW_NRF_CCM
+	select HAS_HW_NRF_CCM_LFLEN_8BIT
 	select HAS_HW_NRF_CLOCK
 	select HAS_HW_NRF_COMP
 	select HAS_HW_NRF_ECB
@@ -63,6 +107,7 @@ config SOC_NRF52811
 	select HAS_HW_NRF_PPI
 	select HAS_HW_NRF_PWM0
 	select HAS_HW_NRF_QDEC
+	select HAS_HW_NRF_RADIO_BLE_2M
 	select HAS_HW_NRF_RADIO_BLE_CODED
 	select HAS_HW_NRF_RADIO_IEEE802154
 	select HAS_HW_NRF_RNG
@@ -97,6 +142,7 @@ config SOC_NRF52820
 	bool
 	select HAS_HW_NRF_ACL
 	select HAS_HW_NRF_CCM
+	select HAS_HW_NRF_CCM_LFLEN_8BIT
 	select HAS_HW_NRF_CLOCK
 	select HAS_HW_NRF_COMP
 	select HAS_HW_NRF_ECB
@@ -111,6 +157,8 @@ config SOC_NRF52820
 	select HAS_HW_NRF_POWER
 	select HAS_HW_NRF_PPI
 	select HAS_HW_NRF_QDEC
+	select HAS_HW_NRF_RADIO_BLE_2M
+	select HAS_HW_NRF_RADIO_TX_PWR_HIGH
 	select HAS_HW_NRF_RADIO_BLE_CODED
 	select HAS_HW_NRF_RNG
 	select HAS_HW_NRF_RTC0
@@ -150,6 +198,7 @@ config SOC_NRF52832
 	select CPU_HAS_FPU
 	select HAS_HW_NRF_BPROT
 	select HAS_HW_NRF_CCM
+	select HAS_HW_NRF_CCM_LFLEN_8BIT
 	select HAS_HW_NRF_CLOCK
 	select HAS_HW_NRF_COMP
 	select HAS_HW_NRF_ECB
@@ -172,6 +221,7 @@ config SOC_NRF52832
 	select HAS_HW_NRF_PWM1
 	select HAS_HW_NRF_PWM2
 	select HAS_HW_NRF_QDEC
+	select HAS_HW_NRF_RADIO_BLE_2M
 	select HAS_HW_NRF_RNG
 	select HAS_HW_NRF_RTC0
 	select HAS_HW_NRF_RTC1
@@ -215,6 +265,7 @@ config SOC_NRF52833
 	select CPU_HAS_FPU
 	select HAS_HW_NRF_ACL
 	select HAS_HW_NRF_CCM
+	select HAS_HW_NRF_CCM_LFLEN_8BIT
 	select HAS_HW_NRF_CLOCK
 	select HAS_HW_NRF_COMP
 	select HAS_HW_NRF_ECB
@@ -240,8 +291,11 @@ config SOC_NRF52833
 	select HAS_HW_NRF_PWM2
 	select HAS_HW_NRF_PWM3
 	select HAS_HW_NRF_QDEC
+	select HAS_HW_NRF_RADIO_BLE_2M
+	select HAS_HW_NRF_RADIO_TX_PWR_HIGH
 	select HAS_HW_NRF_RADIO_BLE_CODED
 	select HAS_HW_NRF_RADIO_IEEE802154
+	select HAS_HW_NRF_RADIO_BLE_DF
 	select HAS_HW_NRF_RNG
 	select HAS_HW_NRF_RTC0
 	select HAS_HW_NRF_RTC1
@@ -289,6 +343,7 @@ config SOC_NRF52840
 	select HAS_HW_NRF_ACL
 	select HAS_HW_NRF_CC310
 	select HAS_HW_NRF_CCM
+	select HAS_HW_NRF_CCM_LFLEN_8BIT
 	select HAS_HW_NRF_CLOCK
 	select HAS_HW_NRF_COMP
 	select HAS_HW_NRF_ECB
@@ -315,6 +370,8 @@ config SOC_NRF52840
 	select HAS_HW_NRF_PWM3
 	select HAS_HW_NRF_QDEC
 	select HAS_HW_NRF_QSPI
+	select HAS_HW_NRF_RADIO_BLE_2M
+	select HAS_HW_NRF_RADIO_TX_PWR_HIGH
 	select HAS_HW_NRF_RADIO_BLE_CODED
 	select HAS_HW_NRF_RADIO_IEEE802154
 	select HAS_HW_NRF_RNG
@@ -359,6 +416,10 @@ config SOC_NRF52840
 choice
 	prompt "nRF52x MCU Selection"
 	depends on SOC_SERIES_NRF52X
+
+config SOC_NRF52805_CAAA
+	bool "NRF52805_CAAA"
+	select SOC_NRF52805
 
 config SOC_NRF52810_QFAA
 	bool "NRF52810_QFAA"

@@ -31,7 +31,7 @@ extern "C" {
 #endif
 
 #if !defined(CONFIG_LOG) || defined(CONFIG_LOG_MINIMAL)
-#define CONFIG_LOG_DOMAIN_ID 0
+#define CONFIG_LOG_DOMAIN_ID 0U
 #endif
 
 #define LOG_FUNCTION_PREFIX_MASK \
@@ -120,14 +120,14 @@ extern "C" {
  * @brief Macro for getting ID of current module.
  */
 #define LOG_CURRENT_MODULE_ID() (__log_level != 0 ? \
-	log_const_source_id(__log_current_const_data) : 0)
+	log_const_source_id(__log_current_const_data) : 0U)
 
 /**
  * @def LOG_CURRENT_DYNAMIC_DATA_ADDR
  * @brief Macro for getting address of dynamic structure of current module.
  */
 #define LOG_CURRENT_DYNAMIC_DATA_ADDR()	(__log_level ? \
-	__log_current_dynamic_data : (struct log_source_dynamic_data *)0)
+	__log_current_dynamic_data : (struct log_source_dynamic_data *)0U)
 
 /** @brief Macro for getting ID of the element of the section.
  *
@@ -264,8 +264,8 @@ static inline char z_log_minimal_level_to_char(int level)
 									       \
 			if (IS_ENABLED(CONFIG_LOG_MINIMAL)) {		       \
 				Z_LOG_TO_PRINTK(_level, __VA_ARGS__);	       \
-			} else if (is_user_context ||			       \
-				   (_level <= LOG_RUNTIME_FILTER(_filter))) {  \
+			} else if (LOG_CHECK_CTX_LVL_FILTER(is_user_context, \
+					_level, _filter)) {  \
 				struct log_msg_ids src_level = {	       \
 					.level = _level,		       \
 					.domain_id = CONFIG_LOG_DOMAIN_ID,     \
@@ -282,7 +282,8 @@ static inline char z_log_minimal_level_to_char(int level)
 						       src_level,	       \
 						       __VA_ARGS__);	       \
 				}					       \
-			}						       \
+			} else {						       \
+			}					       \
 		}							       \
 		if (false) {						       \
 			/* Arguments checker present but never evaluated.*/    \
@@ -320,8 +321,8 @@ static inline char z_log_minimal_level_to_char(int level)
 				log_minimal_hexdump_print(_level,	       \
 							  (const char *)_data, \
 							  _length);	       \
-			} else if (is_user_context ||			       \
-				   (_level <= LOG_RUNTIME_FILTER(_filter))) {  \
+			} else if (LOG_CHECK_CTX_LVL_FILTER(is_user_context,\
+					_level, _filter)) {  \
 				struct log_msg_ids src_level = {	       \
 					.level = _level,		       \
 					.domain_id = CONFIG_LOG_DOMAIN_ID,     \
@@ -341,6 +342,7 @@ static inline char z_log_minimal_level_to_char(int level)
 						    _length,		       \
 						    src_level);		       \
 				}					       \
+			} else {				       \
 			}						       \
 		}							       \
 	} while (false)
@@ -402,9 +404,12 @@ static inline char z_log_minimal_level_to_char(int level)
 #define LOG_FILTER_FIRST_BACKEND_SLOT_IDX 1
 
 #ifdef CONFIG_LOG_RUNTIME_FILTERING
+#define LOG_CHECK_CTX_LVL_FILTER(ctx, _level, _filter) \
+	(ctx || (_level <= LOG_RUNTIME_FILTER(_filter)))
 #define LOG_RUNTIME_FILTER(_filter) \
 	LOG_FILTER_SLOT_GET(&(_filter)->filters, LOG_FILTER_AGGR_SLOT_IDX)
 #else
+#define LOG_CHECK_CTX_LVL_FILTER(ctx, _level, _filter) (true)
 #define LOG_RUNTIME_FILTER(_filter) LOG_LEVEL_DBG
 #endif
 
@@ -724,8 +729,8 @@ __syscall void z_log_hexdump_from_user(uint32_t src_level_val,
 				} else {				       \
 					vprintk(_str, _valist);		       \
 				}					       \
-			} else if (is_user_context ||			       \
-				   (_level <= LOG_RUNTIME_FILTER(_filter))) {  \
+			} else if (LOG_CHECK_CTX_LVL_FILTER(is_user_context, \
+					_level, _filter)) {  \
 				struct log_msg_ids src_level = {	       \
 					.level = _level,		       \
 					.domain_id = CONFIG_LOG_DOMAIN_ID,     \
@@ -735,6 +740,7 @@ __syscall void z_log_hexdump_from_user(uint32_t src_level_val,
 						src_level,		       \
 						_str, _valist, _argnum,        \
 						_strdup_action);	       \
+			} else {				       \
 			}						       \
 		}							       \
 	} while (false)

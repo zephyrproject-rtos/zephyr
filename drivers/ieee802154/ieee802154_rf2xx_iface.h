@@ -14,14 +14,14 @@
  *
  * @param[in] dev   Transceiver device instance
  */
-void rf2xx_iface_phy_rst(struct device *dev);
+void rf2xx_iface_phy_rst(const struct device *dev);
 
 /**
  * @brief Start TX transmition
  *
  * @param[in] dev   Transceiver device instance
  */
-void rf2xx_iface_phy_tx_start(struct device *dev);
+void rf2xx_iface_phy_tx_start(const struct device *dev);
 
 /**
  * @brief Reads current value from a transceiver register
@@ -34,8 +34,8 @@ void rf2xx_iface_phy_tx_start(struct device *dev);
  *
  * @return value of the register read
  */
-uint8_t rf2xx_iface_reg_read(struct device *dev,
-			  uint8_t addr);
+uint8_t rf2xx_iface_reg_read(const struct device *dev,
+			     uint8_t addr);
 
 /**
  * @brief Writes data into a transceiver register
@@ -47,7 +47,7 @@ uint8_t rf2xx_iface_reg_read(struct device *dev,
  * @param[in] data  Data to be written to trx register
  *
  */
-void rf2xx_iface_reg_write(struct device *dev,
+void rf2xx_iface_reg_write(const struct device *dev,
 			   uint8_t addr,
 			   uint8_t data);
 
@@ -61,10 +61,10 @@ void rf2xx_iface_reg_write(struct device *dev,
  *
  * @return  value of the read bit(s)
  */
-uint8_t rf2xx_iface_bit_read(struct device *dev,
-			  uint8_t addr,
-			  uint8_t mask,
-			  uint8_t pos);
+uint8_t rf2xx_iface_bit_read(const struct device *dev,
+			     uint8_t addr,
+			     uint8_t mask,
+			     uint8_t pos);
 
 /**
  * @brief Subregister write
@@ -75,7 +75,7 @@ uint8_t rf2xx_iface_bit_read(struct device *dev,
  * @param[in]   pos       Bit position of the subregister
  * @param[out]  new_value Data, which is muxed into the register
  */
-void rf2xx_iface_bit_write(struct device *dev,
+void rf2xx_iface_bit_write(const struct device *dev,
 			   uint8_t reg_addr,
 			   uint8_t mask,
 			   uint8_t pos,
@@ -90,7 +90,7 @@ void rf2xx_iface_bit_write(struct device *dev,
  * @param[out]  data    Pointer to the location to store frame
  * @param[in]   length  Number of bytes to be read from the frame
  */
-void rf2xx_iface_frame_read(struct device *dev,
+void rf2xx_iface_frame_read(const struct device *dev,
 			    uint8_t *data,
 			    uint8_t length);
 
@@ -103,7 +103,7 @@ void rf2xx_iface_frame_read(struct device *dev,
  * @param[in] data   Pointer to data to be written into frame buffer
  * @param[in] length Number of bytes to be written into frame buffer
  */
-void rf2xx_iface_frame_write(struct device *dev,
+void rf2xx_iface_frame_write(const struct device *dev,
 			     uint8_t *data,
 			     uint8_t length);
 
@@ -117,7 +117,7 @@ void rf2xx_iface_frame_write(struct device *dev,
  * @param[out]  data    Pointer to the location to store data
  * @param[in]   length  Number of bytes to be read from the sram space
  */
-void rf2xx_iface_sram_read(struct device *dev,
+void rf2xx_iface_sram_read(const struct device *dev,
 			    uint8_t address,
 			    uint8_t *data,
 			    uint8_t length);

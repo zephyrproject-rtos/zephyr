@@ -3,7 +3,7 @@ sample:
 tests:
   sample.sensor.apds9960:
     harness: console
-    platform_whitelist: reel_board
+    platform_allow: reel_board
     tags: sensors
     depends_on: i2c gpio
     harness_config:
@@ -15,7 +15,7 @@ tests:
         fixture: fixture_i2c_apds9960
   sample.sensor.apds9960.trigger:
     harness: console
-    platform_whitelist: reel_board
+    platform_allow: reel_board
     tags: sensors
     depends_on: i2c gpio
     extra_configs:

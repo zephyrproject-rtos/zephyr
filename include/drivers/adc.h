@@ -224,10 +224,9 @@ enum adc_action {
  *
  * @returns Action to be performed by the driver. See @ref adc_action.
  */
-typedef enum adc_action (*adc_sequence_callback)(
-				struct device *dev,
-				const struct adc_sequence *sequence,
-				uint16_t sampling_index);
+typedef enum adc_action (*adc_sequence_callback)(const struct device *dev,
+						 const struct adc_sequence *sequence,
+						 uint16_t sampling_index);
 
 /**
  * @brief Structure defining additional options for an ADC sampling sequence.
@@ -327,14 +326,14 @@ struct adc_sequence {
  * @brief Type definition of ADC API function for configuring a channel.
  * See adc_channel_setup() for argument descriptions.
  */
-typedef int (*adc_api_channel_setup)(struct device *dev,
+typedef int (*adc_api_channel_setup)(const struct device *dev,
 				     const struct adc_channel_cfg *channel_cfg);
 
 /**
  * @brief Type definition of ADC API function for setting a read request.
  * See adc_read() for argument descriptions.
  */
-typedef int (*adc_api_read)(struct device *dev,
+typedef int (*adc_api_read)(const struct device *dev,
 			    const struct adc_sequence *sequence);
 
 #ifdef CONFIG_ADC_ASYNC
@@ -343,7 +342,7 @@ typedef int (*adc_api_read)(struct device *dev,
  *        read request.
  * See adc_read_async() for argument descriptions.
  */
-typedef int (*adc_api_read_async)(struct device *dev,
+typedef int (*adc_api_read_async)(const struct device *dev,
 				  const struct adc_sequence *sequence,
 				  struct k_poll_signal *async);
 #endif
@@ -374,14 +373,14 @@ __subsystem struct adc_driver_api {
  * @retval 0       On success.
  * @retval -EINVAL If a parameter with an invalid value has been provided.
  */
-__syscall int adc_channel_setup(struct device *dev,
+__syscall int adc_channel_setup(const struct device *dev,
 				const struct adc_channel_cfg *channel_cfg);
 
-static inline int z_impl_adc_channel_setup(struct device *dev,
-				const struct adc_channel_cfg *channel_cfg)
+static inline int z_impl_adc_channel_setup(const struct device *dev,
+					   const struct adc_channel_cfg *channel_cfg)
 {
 	const struct adc_driver_api *api =
-				(const struct adc_driver_api *)dev->driver_api;
+				(const struct adc_driver_api *)dev->api;
 
 	return api->channel_setup(dev, channel_cfg);
 }
@@ -407,14 +406,14 @@ static inline int z_impl_adc_channel_setup(struct device *dev,
  *                  in the buffer, but at least some of them were taken with
  *                  an extra delay compared to what was scheduled.
  */
-__syscall int adc_read(struct device *dev,
+__syscall int adc_read(const struct device *dev,
 		       const struct adc_sequence *sequence);
 
-static inline int z_impl_adc_read(struct device *dev,
+static inline int z_impl_adc_read(const struct device *dev,
 				  const struct adc_sequence *sequence)
 {
 	const struct adc_driver_api *api =
-				(const struct adc_driver_api *)dev->driver_api;
+				(const struct adc_driver_api *)dev->api;
 
 	return api->read(dev, sequence);
 }
@@ -436,17 +435,17 @@ static inline int z_impl_adc_read(struct device *dev,
  * @returns 0 on success, negative error code otherwise.
  *
  */
-__syscall int adc_read_async(struct device *dev,
+__syscall int adc_read_async(const struct device *dev,
 			     const struct adc_sequence *sequence,
 			     struct k_poll_signal *async);
 
 
-static inline int z_impl_adc_read_async(struct device *dev,
+static inline int z_impl_adc_read_async(const struct device *dev,
 					const struct adc_sequence *sequence,
 					struct k_poll_signal *async)
 {
 	const struct adc_driver_api *api =
-				(const struct adc_driver_api *)dev->driver_api;
+				(const struct adc_driver_api *)dev->api;
 
 	return api->read_async(dev, sequence, async);
 }
@@ -461,10 +460,10 @@ static inline int z_impl_adc_read_async(struct device *dev,
  * @return a positive value is the reference voltage value.  Returns
  * zero if reference voltage information is not available.
  */
-static inline uint16_t adc_ref_internal(struct device *dev)
+static inline uint16_t adc_ref_internal(const struct device *dev)
 {
 	const struct adc_driver_api *api =
-				(const struct adc_driver_api *)dev->driver_api;
+				(const struct adc_driver_api *)dev->api;
 
 	return api->ref_internal;
 }

@@ -8,7 +8,7 @@
 #include <logging/log_core.h>
 #include <logging/log_msg.h>
 #include <logging/log_output.h>
-#include "log_backend_std.h"
+#include <logging/log_backend_std.h>
 #include <SEGGER_RTT.h>
 
 #ifndef CONFIG_LOG_BACKEND_RTT_BUFFER_SIZE
@@ -201,7 +201,10 @@ static void on_write(int retry_cnt)
 static int data_out_block_mode(uint8_t *data, size_t length, void *ctx)
 {
 	int ret = 0;
-	int retry_cnt = CONFIG_LOG_BACKEND_RTT_RETRY_CNT;
+	/* This function is also called in drop mode for synchronous operation
+	 * in that case retry is undesired */
+	int retry_cnt = IS_ENABLED(CONFIG_LOG_BACKEND_RTT_MODE_BLOCK) ?
+			 CONFIG_LOG_BACKEND_RTT_RETRY_CNT : 1;
 
 	do {
 		if (!is_sync_mode()) {
@@ -219,6 +222,7 @@ static int data_out_block_mode(uint8_t *data, size_t length, void *ctx)
 		} else if (host_present) {
 			retry_cnt--;
 			on_failed_write(retry_cnt);
+		} else {
 		}
 	} while ((ret == 0) && host_present);
 

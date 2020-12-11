@@ -18,4 +18,6 @@ Read more about Bluetooth Mesh on the
    mesh/models.rst
    mesh/provisioning.rst
    mesh/proxy.rst
+   mesh/heartbeat.rst
+   mesh/cfg.rst
    mesh/shell.rst

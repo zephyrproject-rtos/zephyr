@@ -5,8 +5,7 @@
 from runners.core import ZephyrBinaryRunner, MissingProgram
 
 # We import these here to ensure the ZephyrBinaryRunner subclasses are
-# defined; otherwise, ZephyrBinaryRunner.create_for_shell_script()
-# won't work.
+# defined; otherwise, ZephyrBinaryRunner.get_runners() won't work.
 
 # Explicitly silence the unused import warning.
 # flake8: noqa: F401
@@ -30,6 +29,7 @@ from runners import qemu
 from runners import stm32flash
 from runners import xtensa
 from runners import mdb
+from runners import stm32cubeprogrammer
 
 def get_runner_cls(runner):
     '''Get a runner's class object, given its name.'''

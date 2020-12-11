@@ -40,20 +40,21 @@ otInstance *ot = (otInstance *)0xAAAA;
 otMessage *ip_msg = (otMessage *)0xBBBB;
 
 /* forward declarations */
-static int scan_mock(struct device *dev, uint16_t duration,
+static int scan_mock(const struct device *dev, uint16_t duration,
 		     energy_scan_done_cb_t done_cb);
-static enum ieee802154_hw_caps get_capabilities(struct device *dev);
-static int cca_mock(struct device *dev);
-static int set_channel_mock(struct device *dev, uint16_t channel);
-static int filter_mock(struct device *dev, bool set,
+static enum ieee802154_hw_caps get_capabilities(const struct device *dev);
+static int cca_mock(const struct device *dev);
+static int set_channel_mock(const struct device *dev, uint16_t channel);
+static int filter_mock(const struct device *dev, bool set,
 		       enum ieee802154_filter_type type,
 		       const struct ieee802154_filter *filter);
-static int set_txpower_mock(struct device *dev, int16_t dbm);
-static int tx_mock(struct device *dev, enum ieee802154_tx_mode mode,
+static int set_txpower_mock(const struct device *dev, int16_t dbm);
+static int tx_mock(const struct device *dev, enum ieee802154_tx_mode mode,
 		   struct net_pkt *pkt, struct net_buf *frag);
-static int start_mock(struct device *dev);
-static int stop_mock(struct device *dev);
-static int configure_mock(struct device *dev, enum ieee802154_config_type type,
+static int start_mock(const struct device *dev);
+static int stop_mock(const struct device *dev);
+static int configure_mock(const struct device *dev,
+			  enum ieee802154_config_type type,
 			  const struct ieee802154_config *config);
 
 /* mocks */
@@ -73,9 +74,9 @@ static struct ieee802154_radio_api rapi = {
 	.ed_scan = scan_mock
 };
 
-static struct device radio = { .driver_api = &rapi };
+static struct device radio = { .api = &rapi };
 
-static int scan_mock(struct device *dev, uint16_t duration,
+static int scan_mock(const struct device *dev, uint16_t duration,
 		     energy_scan_done_cb_t done_cb)
 {
 	zassert_equal(dev, &radio, "Device handle incorrect.");
@@ -84,7 +85,7 @@ static int scan_mock(struct device *dev, uint16_t duration,
 	return ztest_get_return_value();
 }
 
-static int rssi_scan_mock(struct device *dev, uint16_t duration,
+static int rssi_scan_mock(const struct device *dev, uint16_t duration,
 			  energy_scan_done_cb_t done_cb)
 {
 	zassert_equal(dev, &radio, "Device handle incorrect.");
@@ -97,7 +98,7 @@ static int rssi_scan_mock(struct device *dev, uint16_t duration,
 	return 0;
 }
 
-static int set_channel_mock(struct device *dev, uint16_t channel)
+static int set_channel_mock(const struct device *dev, uint16_t channel)
 {
 	zassert_equal(dev, &radio, "Device handle incorrect.");
 	ztest_check_expected_value(channel);
@@ -143,7 +144,7 @@ void otPlatRadioTxDone(otInstance *aInstance, otRadioFrame *aFrame,
 	ztest_check_expected_value(aError);
 }
 
-static enum ieee802154_hw_caps get_capabilities(struct device *dev)
+static enum ieee802154_hw_caps get_capabilities(const struct device *dev)
 {
 	zassert_equal(dev, &radio, "Device handle incorrect.");
 
@@ -152,14 +153,15 @@ static enum ieee802154_hw_caps get_capabilities(struct device *dev)
 	       IEEE802154_HW_ENERGY_SCAN | IEEE802154_HW_SLEEP_TO_TX;
 }
 
-static enum ieee802154_hw_caps get_capabilities_caps_mock(struct device *dev)
+static enum ieee802154_hw_caps get_capabilities_caps_mock(const struct device *dev)
 {
 	zassert_equal(dev, &radio, "Device handle incorrect.");
 
 	return ztest_get_return_value();
 }
 
-static int configure_mock(struct device *dev, enum ieee802154_config_type type,
+static int configure_mock(const struct device *dev,
+			  enum ieee802154_config_type type,
 			  const struct ieee802154_config *config)
 {
 	zassert_equal(dev, &radio, "Device handle incorrect.");
@@ -170,7 +172,7 @@ static int configure_mock(struct device *dev, enum ieee802154_config_type type,
 	return 0;
 }
 
-static int configure_match_mock(struct device *dev,
+static int configure_match_mock(const struct device *dev,
 				enum ieee802154_config_type type,
 				const struct ieee802154_config *config)
 {
@@ -197,7 +199,7 @@ static int configure_match_mock(struct device *dev,
 	return 0;
 }
 
-static int configure_promiscuous_mock(struct device *dev,
+static int configure_promiscuous_mock(const struct device *dev,
 				      enum ieee802154_config_type type,
 				      const struct ieee802154_config *config)
 {
@@ -209,14 +211,14 @@ static int configure_promiscuous_mock(struct device *dev,
 	return 0;
 }
 
-static int cca_mock(struct device *dev)
+static int cca_mock(const struct device *dev)
 {
 	/* not using assert to verify function called */
 	ztest_check_expected_value(dev);
 	return 0;
 }
 
-static int filter_mock(struct device *dev, bool set,
+static int filter_mock(const struct device *dev, bool set,
 		       enum ieee802154_filter_type type,
 		       const struct ieee802154_filter *filter)
 {
@@ -241,7 +243,7 @@ static int filter_mock(struct device *dev, bool set,
 	return 0;
 }
 
-static int set_txpower_mock(struct device *dev, int16_t dbm)
+static int set_txpower_mock(const struct device *dev, int16_t dbm)
 {
 	zassert_equal(dev, &radio, "Device handle incorrect.");
 	ztest_check_expected_value(dbm);
@@ -249,7 +251,7 @@ static int set_txpower_mock(struct device *dev, int16_t dbm)
 	return 0;
 }
 
-static int tx_mock(struct device *dev, enum ieee802154_tx_mode mode,
+static int tx_mock(const struct device *dev, enum ieee802154_tx_mode mode,
 		   struct net_pkt *pkt, struct net_buf *frag)
 {
 	zassert_equal(dev, &radio, "Device handle incorrect.");
@@ -258,19 +260,19 @@ static int tx_mock(struct device *dev, enum ieee802154_tx_mode mode,
 	return 0;
 }
 
-static int start_mock(struct device *dev)
+static int start_mock(const struct device *dev)
 {
 	ztest_check_expected_value(dev);
 	return 0;
 }
 
-static int stop_mock(struct device *dev)
+static int stop_mock(const struct device *dev)
 {
 	ztest_check_expected_value(dev);
 	return 0;
 }
 
-struct device *device_get_binding_stub(const char *name)
+const struct device *device_get_binding_stub(const char *name)
 {
 	return &radio;
 }
@@ -421,13 +423,15 @@ static void test_tx_test(void)
 
 	zassert_not_null(frm, "Transmit buffer is null.");
 
-	otPlatRadioSetTransmitPower(ot, power);
+	zassert_equal(otPlatRadioSetTransmitPower(ot, power), OT_ERROR_NONE,
+		      "Failed to set TX power.");
 
 	ztest_returns_value(set_channel_mock, 0);
 	ztest_expect_value(set_channel_mock, channel, chan);
 	ztest_expect_value(set_txpower_mock, dbm, power);
 	ztest_expect_value(start_mock, dev, &radio);
-	otPlatRadioReceive(ot, chan);
+	zassert_equal(otPlatRadioReceive(ot, chan), OT_ERROR_NONE,
+		      "Failed to receive.");
 
 	/* ACKed frame */
 	frm->mChannel = chan2;
@@ -488,11 +492,15 @@ static void test_tx_power_test(void)
 {
 	int8_t out_power = 0;
 
-	otPlatRadioSetTransmitPower(ot, -3);
-	otPlatRadioGetTransmitPower(ot, &out_power);
+	zassert_equal(otPlatRadioSetTransmitPower(ot, -3), OT_ERROR_NONE,
+		      "Failed to set TX power.");
+	zassert_equal(otPlatRadioGetTransmitPower(ot, &out_power),
+		      OT_ERROR_NONE, "Failed to obtain TX power.");
 	zassert_equal(out_power, -3, "Got different power than set.");
-	otPlatRadioSetTransmitPower(ot, -6);
-	otPlatRadioGetTransmitPower(ot, &out_power);
+	zassert_equal(otPlatRadioSetTransmitPower(ot, -6), OT_ERROR_NONE,
+		      "Failed to set TX power.");
+	zassert_equal(otPlatRadioGetTransmitPower(ot, &out_power),
+		      OT_ERROR_NONE, "Failed to obtain TX power.");
 	zassert_equal(out_power, -6,
 		      "Second call to otPlatRadioSetTransmitPower failed.");
 }
@@ -568,24 +576,29 @@ static void test_source_match_test(void)
 	sys_put_le16(12345, ext_addr.m8);
 	set_expected_match_values(IEEE802154_CONFIG_ACK_FPB, ext_addr.m8, false,
 				  true);
-	otPlatRadioAddSrcMatchShortEntry(ot, 12345);
+	zassert_equal(otPlatRadioAddSrcMatchShortEntry(ot, 12345),
+		      OT_ERROR_NONE, "Failed to add short src entry.");
+
 
 	for (int i = 0; i < sizeof(ext_addr.m8); i++) {
 		ext_addr.m8[i] = i;
 	}
 	set_expected_match_values(IEEE802154_CONFIG_ACK_FPB, ext_addr.m8, true,
 				  true);
-	otPlatRadioAddSrcMatchExtEntry(ot, &ext_addr);
+	zassert_equal(otPlatRadioAddSrcMatchExtEntry(ot, &ext_addr),
+		      OT_ERROR_NONE, "Failed to add ext src entry.");
 
 	/* Clear */
 	sys_put_le16(12345, ext_addr.m8);
 	set_expected_match_values(IEEE802154_CONFIG_ACK_FPB, ext_addr.m8, false,
 				  false);
-	otPlatRadioClearSrcMatchShortEntry(ot, 12345);
+	zassert_equal(otPlatRadioClearSrcMatchShortEntry(ot, 12345),
+		      OT_ERROR_NONE, "Failed to clear short src entry.");
 
 	set_expected_match_values(IEEE802154_CONFIG_ACK_FPB, ext_addr.m8, true,
 				  false);
-	otPlatRadioClearSrcMatchExtEntry(ot, &ext_addr);
+	zassert_equal(otPlatRadioClearSrcMatchExtEntry(ot, &ext_addr),
+		      OT_ERROR_NONE, "Failed to clear ext src entry.");
 
 	set_expected_match_values(IEEE802154_CONFIG_ACK_FPB, NULL, false,
 				  false);
@@ -722,7 +735,8 @@ static void test_radio_state_test(void)
 	const uint8_t channel = 12;
 	const uint8_t power = 10;
 
-	otPlatRadioSetTransmitPower(ot, power);
+	zassert_equal(otPlatRadioSetTransmitPower(ot, power), OT_ERROR_NONE,
+		      "Failed to set TX power.");
 	zassert_equal(otPlatRadioDisable(ot), OT_ERROR_NONE,
 		      "Failed to disable radio.");
 
@@ -746,7 +760,8 @@ static void test_radio_state_test(void)
 	ztest_expect_value(set_channel_mock, channel, channel);
 	ztest_expect_value(set_txpower_mock, dbm, power);
 	ztest_expect_value(start_mock, dev, &radio);
-	otPlatRadioReceive(ot, channel);
+	zassert_equal(otPlatRadioReceive(ot, channel), OT_ERROR_NONE,
+		      "Failed to receive.");
 	zassert_equal(platformRadioChannelGet(ot), channel,
 		      "Channel number not remembered.");
 
@@ -832,13 +847,15 @@ static void test_receive_test(void)
 	net_pkt_set_ieee802154_lqi(packet, lqi);
 	net_pkt_set_ieee802154_rssi(packet, rssi);
 
-	otPlatRadioSetTransmitPower(ot, power);
+	zassert_equal(otPlatRadioSetTransmitPower(ot, power), OT_ERROR_NONE,
+		      "Failed to set TX power.");
 
 	ztest_returns_value(set_channel_mock, 0);
 	ztest_expect_value(set_channel_mock, channel, channel);
 	ztest_expect_value(set_txpower_mock, dbm, power);
 	ztest_expect_value(start_mock, dev, &radio);
-	otPlatRadioReceive(ot, channel);
+	zassert_equal(otPlatRadioReceive(ot, channel), OT_ERROR_NONE,
+		      "Failed to receive.");
 
 	/*
 	 * Not setting any expect values as nothing shall be called from
@@ -871,13 +888,15 @@ static void test_net_pkt_transmit(void)
 	/* success */
 	len = alloc_pkt(&packet, 2, 'a');
 	buf = packet->buffer;
-	otPlatRadioSetTransmitPower(ot, power);
+	zassert_equal(otPlatRadioSetTransmitPower(ot, power), OT_ERROR_NONE,
+		      "Failed to set TX power.");
 
 	ztest_returns_value(set_channel_mock, 0);
 	ztest_expect_value(set_channel_mock, channel, channel);
 	ztest_expect_value(set_txpower_mock, dbm, power);
 	ztest_expect_value(start_mock, dev, &radio);
-	otPlatRadioReceive(ot, channel);
+	zassert_equal(otPlatRadioReceive(ot, channel), OT_ERROR_NONE,
+		      "Failed to receive.");
 
 	notify_new_tx_frame(packet);
 

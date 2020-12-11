@@ -19,3 +19,5 @@ supported:
   - usb device
   - counter
   - spi
+  - watchdog
+  - adc

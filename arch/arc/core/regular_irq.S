@@ -269,7 +269,7 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	mov r2, r0
 
 /* _rirq_newthread_switch required by exception handling */
-.balign 4
+.align 4
 _rirq_newthread_switch:
 
 	_load_new_thread_callee_regs
@@ -281,7 +281,7 @@ _rirq_newthread_switch:
 
 	/* fall through */
 
-.balign 4
+.align 4
 _rirq_switch_from_coop:
 
 	/* for a cooperative switch, it's not in irq, so
@@ -309,15 +309,29 @@ _rirq_switch_from_coop:
 	 */
 	st_s r13, [sp, ___isf_t_r13_OFFSET]
 
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
+	push_s blink
+
+	bl z_thread_mark_switched_in
+
+	pop_s blink
+#endif
 	/* stack now has the IRQ stack frame layout, pointing to sp */
 	/* rtie will pop the rest from the stack */
 	rtie
 
-.balign 4
+.align 4
 _rirq_switch_from_firq:
 _rirq_switch_from_rirq:
 
 	_set_misc_regs_irq_switch_from_irq
 
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
+	push_s blink
+
+	bl z_thread_mark_switched_in
+
+	pop_s blink
+#endif
 _rirq_no_switch:
 	rtie

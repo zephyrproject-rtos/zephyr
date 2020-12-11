@@ -140,6 +140,8 @@ add_custom_target(
 
 # For incremental builds not to miss any source change this MUST be kept
 # a superset of INPUT= and FILE_PATTERNS= in zephyr.doxyfile.in
+#
+# NOTE: any changes here should be reflected in .github/workflows/doc-build.yml
 file(GLOB_RECURSE  DOXY_SOURCES
   ${ZEPHYR_BASE}/include/*.[c,h,S]
   ${ZEPHYR_BASE}/kernel/include/kernel_arch_interface.h
@@ -197,11 +199,25 @@ else()
   set(SEP :)
 endif()
 
+set(KI_SCRIPT ${ZEPHYR_BASE}/scripts/filter-known-issues.py)
+set(FIX_TEX_SCRIPT ${ZEPHYR_BASE}/doc/scripts/fix_tex.py)
+set(CONF_DIR ${ZEPHYR_BASE}/.known-issues/doc)
+
+#
+# Generated Kconfig .rst documents
+#
+
 file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.soc.defconfig
      "osource \"${ZEPHYR_BASE}/soc/$(ARCH)/*/Kconfig.defconfig\"\n"
 )
 file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.soc
      "osource \"${ZEPHYR_BASE}/soc/$(ARCH)/*/Kconfig.soc\"\n"
+)
+file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.shield.defconfig
+     "osource \"${ZEPHYR_BASE}/boards/shields/*/Kconfig.defconfig\"\n"
+)
+file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.shield
+     "osource \"${ZEPHYR_BASE}/boards/shields/*/Kconfig.shield\"\n"
 )
 file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.soc.arch
      "osource \"${ZEPHYR_BASE}/soc/$(ARCH)/Kconfig\"\n"
@@ -223,7 +239,7 @@ add_custom_target(
   KCONFIG_WARN_UNDEF=y
   KCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}
   KCONFIG_DOC_MODE=1
-    ${PYTHON_EXECUTABLE} scripts/genrest.py ${RST_OUT}/doc/reference/kconfig/
+    ${PYTHON_EXECUTABLE} scripts/gen_kconfig_rest.py ${RST_OUT}/doc/reference/kconfig/
       --separate-all-index
       --keep-module-paths
       --modules Architecture,arch,${ZEPHYR_BASE}/arch
@@ -235,12 +251,59 @@ add_custom_target(
 
   VERBATIM
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-  COMMENT "Running genrest.py Kconfig ${RST_OUT}/doc/reference/kconfig/"
+  COMMENT "Running gen_kconfig_rest.py ${RST_OUT}/doc/reference/kconfig/"
 )
 
-set(KI_SCRIPT ${ZEPHYR_BASE}/scripts/filter-known-issues.py)
-set(FIX_TEX_SCRIPT ${ZEPHYR_BASE}/doc/scripts/fix_tex.py)
-set(CONF_DIR ${ZEPHYR_BASE}/.known-issues/doc)
+#
+# Generated devicetree .rst documents
+#
+# The devicetree bindings discovered in ${DTS_ROOTS} are parsed and
+# documentation for them is generated in the directory
+# ${DTS_BINDINGS_RST_OUT}.
+#
+# The CMake variable GEN_DEVICETREE_REST_ZEPHYR_DOCSET will
+# be passed to the script in the environment. This allows separating
+# the bindings documentation into a standalone Sphinx docset that
+# nonetheless can link to Zephyr documentation using intersphinx.
+# If empty, the variable has no effect on the script.
+#
+# If not set, these are the default values for these variables:
+#
+# - DTS_ROOTS: ZEPHYR_BASE
+# - DTS_BINDINGS_RST_OUT: ${RST_OUT}/doc/reference/devicetree
+#
+
+set(GEN_DEVICETREE_REST_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/scripts/gen_devicetree_rest.py)
+
+if(NOT DTS_ROOTS)
+  set(DTS_ROOTS ${ZEPHYR_BASE})
+endif()
+
+set(DTS_ROOT_ARGS)
+foreach(root ${DTS_ROOTS})
+  list(APPEND DTS_ROOT_ARGS --dts-root ${root})
+endforeach()
+
+if(NOT DTS_BINDINGS_RST_OUT)
+  set(DTS_BINDINGS_RST_OUT ${RST_OUT}/doc/reference/devicetree)
+endif()
+
+add_custom_target(
+  devicetree
+  COMMAND ${CMAKE_COMMAND} -E env
+  PYTHONPATH=${ZEPHYR_BASE}/scripts/dts${SEP}$ENV{PYTHONPATH}
+  ZEPHYR_BASE=${ZEPHYR_BASE}
+  GEN_DEVICETREE_REST_ZEPHYR_DOCSET=${GEN_DEVICETREE_REST_ZEPHYR_DOCSET}
+  ${PYTHON_EXECUTABLE} ${GEN_DEVICETREE_REST_SCRIPT}
+    --vendor-prefixes ${ZEPHYR_BASE}/dts/bindings/vendor-prefixes.txt
+    ${DTS_ROOT_ARGS} ${DTS_BINDINGS_RST_OUT}
+  VERBATIM
+  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+  COMMENT "Running gen_devicetree_rest.py ${DTS_BINDINGS_RST_OUT}"
+  USES_TERMINAL
+)
+
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${GEN_DEVICETREE_REST_SCRIPT})
 
 #
 # HTML section
@@ -259,10 +322,11 @@ set(SPHINX_BUILD_HTML_COMMAND
 add_custom_target(
   sphinx-html
   COMMAND ${SPHINX_BUILD_HTML_COMMAND}
-  DEPENDS ${EXTRACT_CONTENT_OUTPUTS}
   COMMENT "Just re-generating HTML (USE WITH CAUTION)"
+  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
   USES_TERMINAL
 )
+add_dependencies(sphinx-html content)
 
 # "breathe", the sphinx plugin that parses XML output from doxygen, has
 # an "everything on everything" dependency issue reported at:
@@ -294,10 +358,12 @@ set(SPHINX_BUILD_LATEX_COMMAND
 add_custom_target(
   sphinx-latex
   COMMAND ${SPHINX_BUILD_LATEX_COMMAND}
-  DEPENDS ${EXTRACT_CONTENT_OUTPUTS}
   COMMENT "Just re-generating LaTeX (USE WITH CAUTION)"
+  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
   USES_TERMINAL
 )
+add_dependencies(sphinx-latex content)
+
 
 add_custom_command(
   OUTPUT ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
@@ -353,7 +419,7 @@ endif()
 #
 # Dependencies and final targets
 #
-add_dependencies(html content doxy_real_modified_times kconfig)
+add_dependencies(html content doxy_real_modified_times kconfig devicetree)
 
 add_custom_target(
   htmldocs
@@ -366,7 +432,7 @@ add_custom_target(
 )
 add_dependencies(doxygen doxy_real_modified_times)
 
-add_dependencies(latex content doxy_real_modified_times kconfig)
+add_dependencies(latex content doxy_real_modified_times kconfig devicetree)
 
 add_custom_target(
   latexdocs

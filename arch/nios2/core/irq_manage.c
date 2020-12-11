@@ -20,9 +20,9 @@
 #include <kswap.h>
 #include <tracing/tracing.h>
 #include <logging/log.h>
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
-FUNC_NORETURN void z_irq_spurious(void *unused)
+FUNC_NORETURN void z_irq_spurious(const void *unused)
 {
 	ARG_UNUSED(unused);
 	LOG_ERR("Spurious interrupt detected! ipending: %x",
@@ -80,11 +80,6 @@ void _enter_irq(uint32_t ipending)
 {
 	int index;
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	extern void read_timer_start_of_isr(void);
-	read_timer_start_of_isr();
-#endif
-
 	_kernel.cpus[0].nested++;
 
 #ifdef CONFIG_IRQ_OFFLOAD
@@ -103,10 +98,6 @@ void _enter_irq(uint32_t ipending)
 
 		ite = &_sw_isr_table[index];
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-		extern void read_timer_end_of_isr(void);
-		read_timer_end_of_isr();
-#endif
 		ite->isr(ite->arg);
 #ifdef CONFIG_TRACING_ISR
 		sys_trace_isr_exit();
@@ -121,8 +112,8 @@ void _enter_irq(uint32_t ipending)
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			     void (*routine)(void *parameter), void *parameter,
-			     uint32_t flags)
+			     void (*routine)(const void *parameter),
+			     const void *parameter, uint32_t flags)
 {
 	ARG_UNUSED(flags);
 	ARG_UNUSED(priority);

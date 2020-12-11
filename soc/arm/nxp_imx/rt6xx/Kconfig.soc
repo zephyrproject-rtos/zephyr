@@ -16,8 +16,10 @@ config SOC_MIMXRT685S_CM33
 	select ARM_TRUSTZONE_M
 	select CPU_CORTEX_M_HAS_SYSTICK
 	select HAS_MCUX
+	select HAS_MCUX_SYSCON
 	select HAS_MCUX_FLEXCOMM
 	select HAS_MCUX_CACHE
+	select HAS_MCUX_LPC_DMA
 	select INIT_SYS_PLL
 
 endchoice
@@ -49,6 +51,18 @@ config INIT_SYS_PLL
 
 config INIT_AUDIO_PLL
 	bool "Initialize Audio PLL"
+
+config XTAL_SYS_CLK_HZ
+	int "External oscillator frequency"
+	help
+	  Set the external oscillator frequency in Hz. This should be set by the
+	  board's defconfig.
+
+config SYSOSC_SETTLING_US
+	int "System oscillator settling time"
+	help
+	  Set the board system oscillator settling time in us. This should be set by the
+	  board's defconfig.
 
 menuconfig NXP_IMX_RT6XX_BOOT_HEADER
 	bool "Enable the boot header"

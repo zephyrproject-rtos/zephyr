@@ -76,10 +76,6 @@ applications.
    Like :c:func:`DEVICE_DEFINE()` but without support for device power
    management.
 
-:c:func:`DEVICE_INIT()`
-   Like :c:func:`DEVICE_AND_API_INIT()` but without providing an API
-   pointer.
-
 :c:func:`DEVICE_NAME_GET()`
    Converts a device identifier to the global identifier for a device
    object.
@@ -104,21 +100,21 @@ split into read-only and runtime-mutable parts. At a high level we have:
 
   struct device {
 	const char *name;
-	const void *config_info;
-        const void *driver_api;
-        void * const driver_data;
+	const void *config;
+        const void *api;
+        void * const data;
   };
 
-The ``config_info`` member is for read-only configuration data set at build time. For
+The ``config`` member is for read-only configuration data set at build time. For
 example, base memory mapped IO addresses, IRQ line numbers, or other fixed
-physical characteristics of the device. This is the ``config_info`` structure
+physical characteristics of the device. This is the ``config`` pointer
 passed to ``DEVICE_DEFINE()`` and related macros.
 
-The ``driver_data`` struct is kept in RAM, and is used by the driver for
+The ``data`` struct is kept in RAM, and is used by the driver for
 per-instance runtime housekeeping. For example, it may contain reference counts,
 semaphores, scratch buffers, etc.
 
-The ``driver_api`` struct maps generic subsystem APIs to the device-specific
+The ``api`` struct maps generic subsystem APIs to the device-specific
 implementations in the driver. It is typically read-only and populated at
 build time. The next section describes this in more detail.
 
@@ -134,27 +130,27 @@ A subsystem API definition typically looks like this:
 
 .. code-block:: C
 
-  typedef int (*subsystem_do_this_t)(struct device *device, int foo, int bar);
-  typedef void (*subsystem_do_that_t)(struct device *device, void *baz);
+  typedef int (*subsystem_do_this_t)(const struct device *device, int foo, int bar);
+  typedef void (*subsystem_do_that_t)(const struct device *device, void *baz);
 
   struct subsystem_api {
         subsystem_do_this_t do_this;
         subsystem_do_that_t do_that;
   };
 
-  static inline int subsystem_do_this(struct device *device, int foo, int bar)
+  static inline int subsystem_do_this(const struct device *device, int foo, int bar)
   {
         struct subsystem_api *api;
 
-        api = (struct subsystem_api *)device->driver_api;
+        api = (struct subsystem_api *)device->api;
         return api->do_this(device, foo, bar);
   }
 
-  static inline void subsystem_do_that(struct device *device, void *baz)
+  static inline void subsystem_do_that(const struct device *device, void *baz)
   {
         struct subsystem_api *api;
 
-        api = (struct subsystem_api *)device->driver_api;
+        api = (struct subsystem_api *)device->api;
         api->do_that(device, foo, bar);
   }
 
@@ -163,12 +159,12 @@ of these APIs, and populate an instance of subsystem_api structure:
 
 .. code-block:: C
 
-  static int my_driver_do_this(struct device *device, int foo, int bar)
+  static int my_driver_do_this(const struct device *device, int foo, int bar)
   {
         ...
   }
 
-  static void my_driver_do_that(struct device *device, void *baz)
+  static void my_driver_do_that(const struct device *device, void *baz)
   {
         ...
   }
@@ -183,7 +179,7 @@ The driver would then pass ``my_driver_api_funcs`` as the ``api`` argument to
 
 .. note::
 
-        Since pointers to the API functions are referenced in the ``driver_api``
+        Since pointers to the API functions are referenced in the ``api``
         struct, they will always be included in the binary even if unused;
         ``gc-sections`` linker option will always see at least one reference to
         them. Providing for link-time size optimizations with driver APIs in
@@ -205,10 +201,10 @@ A device-specific API definition typically looks like this:
    #include <drivers/subsystem.h>
 
    /* When extensions need not be invoked from user mode threads */
-   int specific_do_that(struct device *device, int foo);
+   int specific_do_that(const struct device *device, int foo);
 
    /* When extensions must be invokable from user mode threads */
-   __syscall int specific_from_user(struct device *device, int bar);
+   __syscall int specific_from_user(const struct device *device, int bar);
 
    /* Only needed when extensions include syscalls */
    #include <syscalls/specific.h>
@@ -218,7 +214,7 @@ implementation of both the subsystem API and the specific APIs:
 
 .. code-block:: C
 
-   static int generic_do_this(struct device *device, void *arg)
+   static int generic_do_this(const struct device *device, void *arg)
    {
       ...
    }
@@ -230,13 +226,13 @@ implementation of both the subsystem API and the specific APIs:
    };
 
    /* supervisor-only API is globally visible */
-   int specific_do_that(struct device *device, int foo)
+   int specific_do_that(const struct device *device, int foo)
    {
       ...
    }
 
    /* syscall API passes through a translation */
-   int z_impl_specific_from_user(struct device *device, int bar)
+   int z_impl_specific_from_user(const struct device *device, int bar)
    {
       ...
    }
@@ -245,7 +241,7 @@ implementation of both the subsystem API and the specific APIs:
 
    #include <syscall_handler.h>
 
-   int z_vrfy_specific_from_user(struct device *device, int bar)
+   int z_vrfy_specific_from_user(const struct device *device, int bar)
    {
        Z_OOPS(Z_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_GENERIC, &api));
        return z_impl_specific_do_that(device, bar)
@@ -269,7 +265,7 @@ Single Driver, Multiple Instances
 
 Some drivers may be instantiated multiple times in a given system. For example
 there can be multiple GPIO banks, or multiple UARTS. Each instance of the driver
-will have a different ``config_info`` struct and ``driver_data`` struct.
+will have a different ``config`` struct and ``data`` struct.
 
 Configuring interrupts for multiple drivers instances is a special case. If each
 instance needs to configure a different interrupt line, this can be accomplished
@@ -281,7 +277,7 @@ with a different interrupt line. In ``drivers/subsystem/subsystem_my_driver.h``:
 
 .. code-block:: C
 
-  typedef void (*my_driver_config_irq_t)(struct device *device);
+  typedef void (*my_driver_config_irq_t)(const struct device *device);
 
   struct my_driver_config {
         DEVICE_MMIO_ROM;
@@ -292,15 +288,15 @@ In the implementation of the common init function:
 
 .. code-block:: C
 
-  void my_driver_isr(struct device *device)
+  void my_driver_isr(const struct device *device)
   {
         /* Handle interrupt */
         ...
   }
 
-  int my_driver_init(struct device *device)
+  int my_driver_init(const struct device *device)
   {
-        const struct my_driver_config *config = device->config_info;
+        const struct my_driver_config *config = device->config;
 
         DEVICE_MMIO_MAP(device, K_MEM_CACHE_NONE);
 
@@ -327,15 +323,15 @@ Then when the particular instance is declared:
   }
 
   const static struct my_driver_config my_driver_config_0 = {
-        DEVICE_MMIO_ROM_INIT(0),
+        DEVICE_MMIO_ROM_INIT(DT_DRV_INST(0)),
         .config_func = my_driver_config_irq_0
   }
 
-  static struct my_driver_data_0;
+  static struct my_data_0;
 
   DEVICE_AND_API_INIT(my_driver_0, MY_DRIVER_0_NAME, my_driver_init,
-                      &my_driver_data_0, &my_driver_config_0, POST_KERNEL,
-                      MY_DRIVER_0_PRIORITY, &my_driver_api_funcs);
+                      &my_data_0, &my_driver_config_0, POST_KERNEL,
+                      MY_DRIVER_0_PRIORITY, &my_api_funcs);
 
   #endif /* CONFIG_MY_DRIVER_0 */
 
@@ -384,7 +380,7 @@ leading zeroes or sign (e.g. 32), or an equivalent symbolic name (e.g.
 ``CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5``).
 
 Drivers and other system utilities can determine whether startup is
-still in pre-kernel states by using the :cpp:func:`k_is_pre_kernel()`
+still in pre-kernel states by using the :c:func:`k_is_pre_kernel`
 function.
 
 System Drivers
@@ -442,7 +438,7 @@ DTS and do not need any RAM-based storage for it.
 
 For drivers that may need to deal with this situation, a set of
 APIs under the DEVICE_MMIO scope are defined, along with a mapping function
-:cpp:func:`device_map()`.
+:c:func:`device_map`.
 
 Device Model Drivers with one MMIO region
 =========================================
@@ -467,18 +463,18 @@ is made within the init function:
    }
 
    const static struct my_driver_config my_driver_config_0 = {
-      DEVICE_MMIO_ROM_INIT(DT_INST(...)),
+      DEVICE_MMIO_ROM_INIT(DT_DRV_INST(...)),
       ...
    }
 
-   int my_driver_init(struct device *device)
+   int my_driver_init(const struct device *device)
    {
       ...
       DEVICE_MMIO_MAP(device, K_MEM_CACHE_NONE);
       ...
    }
 
-   int my_driver_some_function(struct device *device)
+   int my_driver_some_function(const struct device *device)
    {
       ...
       /* Write some data to the MMIO region */
@@ -520,19 +516,19 @@ For example:
    }
 
    #define DEV_CFG(_dev) \
-      ((const struct my_driver_config *)((_dev)->config_info))
+      ((const struct my_driver_config *)((_dev)->config))
 
    #define DEV_DATA(_dev) \
-      ((struct my_driver_dev_data *)((_dev)->driver_data))
+      ((struct my_driver_dev_data *)((_dev)->data))
 
    const static struct my_driver_config my_driver_config_0 = {
       ...
-      DEVICE_MMIO_NAMED_ROM_INIT(courge, DT_INST(...)),
-      DEVICE_MMIO_NAMED_ROM_INIT(grault, DT_INST(...)),
+      DEVICE_MMIO_NAMED_ROM_INIT(courge, DT_DRV_INST(...)),
+      DEVICE_MMIO_NAMED_ROM_INIT(grault, DT_DRV_INST(...)),
       ...
    }
 
-   int my_driver_init(struct device *device)
+   int my_driver_init(const struct device *device)
    {
       ...
       DEVICE_MMIO_NAMED_MAP(device, courge, K_MEM_CACHE_NONE);
@@ -540,7 +536,7 @@ For example:
       ...
    }
 
-   int my_driver_some_function(struct device *device)
+   int my_driver_some_function(const struct device *device)
    {
       ...
       /* Write some data to the MMIO regions */
@@ -561,7 +557,7 @@ for example:
 
 .. code-block:: C
 
-   DEVICE_MMIO_TOPLEVEL_STATIC(my_regs, DT_INST(..));
+   DEVICE_MMIO_TOPLEVEL_STATIC(my_regs, DT_DRV_INST(..));
 
    void some_init_code(...)
    {
@@ -580,7 +576,7 @@ Drivers that do not use DTS
 ===========================
 
 Some drivers may not obtain the MMIO physical address from DTS, such as
-is the case with PCI-E. In this case the :cpp:func:`device_map()` function
+is the case with PCI-E. In this case the :c:func:`device_map` function
 may be used directly:
 
 .. code-block:: C
@@ -588,10 +584,10 @@ may be used directly:
    void some_init_code(...)
    {
       ...
-      uintptr_t phys_addr = pcie_get_mbar(...);
-      size_t size = ...
+      struct pcie_mbar mbar;
+      bool bar_found = pcie_get_mbar(bdf, index, &mbar);
 
-      device_map(DEVICE_MMIO_RAM_PTR(dev), phys_addr, size, K_MEM_CACHE_NONE);
+      device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr, mbar.size, K_MEM_CACHE_NONE);
       ...
    }
 

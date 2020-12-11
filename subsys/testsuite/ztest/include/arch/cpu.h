@@ -6,6 +6,10 @@
 
 /* This file exists as a hack around Zephyr's dependencies */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Architecture thread structure */
 struct _callee_saved {
 };
@@ -37,6 +41,10 @@ static inline bool arch_irq_unlocked(unsigned int key)
 {
 	return 0;
 }
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #include <sys/arch_interface.h>
 

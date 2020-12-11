@@ -1,9 +1,0 @@
-description: Altera JTAG UART
-
-compatible: "altera,jtag-uart"
-
-include: uart-controller.yaml
-
-properties:
-    reg:
-      required: true

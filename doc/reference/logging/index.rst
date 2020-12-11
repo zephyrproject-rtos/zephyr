@@ -133,7 +133,7 @@ of the log macro call. Note that it can lead to errors when logger is used in
 the interrupt context.
 
 :option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`: When number of buffered log
-messages reaches the threshold dedicated thread (see :cpp:func:`log_thread_set`)
+messages reaches the threshold dedicated thread (see :c:func:`log_thread_set`)
 is waken up. If :option:`CONFIG_LOG_PROCESS_THREAD` is enabled then this
 threshold is used by the internal thread.
 
@@ -295,7 +295,7 @@ Logger can be controlled using API defined in
 :zephyr_file:`include/logging/log_ctrl.h`. Logger must be initialized before it can be
 used. Optionally, user can provide function which returns timestamp value. If
 not provided, :c:macro:`k_cycle_get_32` is used for timestamping.
-:cpp:func:`log_process` function is used to trigger processing of one log
+:c:func:`log_process` function is used to trigger processing of one log
 message (if pending). Function returns true if there is more messages pending.
 
 Following snippet shows how logger can be processed in simple forever loop.
@@ -316,7 +316,7 @@ Following snippet shows how logger can be processed in simple forever loop.
    }
 
 Logger controlling API contains also functions for run time reconfiguration of
-the logger. If run time filtering is enabled the :cpp:func:`log_filter_set` can
+the logger. If run time filtering is enabled the :c:func:`log_filter_set` can
 be used to change maximal severity level for given module. Module is identified
 by source ID and domain ID. Source ID can be retrieved if source name is known
 by iterating through all registered sources.
@@ -336,9 +336,9 @@ Logger panic
 In case of error condition system usually can no longer rely on scheduler or
 interrupts. In that situation deferred log message processing is not an option.
 Logger controlling API provides a function for entering into panic mode
-(:cpp:func:`log_panic`) which should be called in such situation.
+(:c:func:`log_panic`) which should be called in such situation.
 
-When :cpp:func:`log_panic()` is called, logger sends _panic_ notification to
+When :c:func:`log_panic` is called, logger sends _panic_ notification to
 all active backends. It is backend responsibility to react. Backend should
 switch to blocking, synchronous mode (stop using interrupts) or disable itself.
 Once all backends are notified, logger flushes all buffered messages. Since
@@ -440,7 +440,7 @@ copies of strings.  The buffer size and count is configurable
 :option:`CONFIG_LOG_STRDUP_BUF_COUNT`).
 
 
-If a string argument is transient, the user must call cpp:func:`log_strdup` to
+If a string argument is transient, the user must call :c:func:`log_strdup` to
 duplicate the passed string into a buffer from the pool. See the examples below.
 If a strdup buffer cannot be allocated, a warning message is logged and an error
 code returned indicating :option:`CONFIG_LOG_STRDUP_BUF_COUNT` should be
@@ -456,7 +456,7 @@ increased. Buffers are freed together with the log message.
 When :option:`CONFIG_LOG_DETECT_MISSED_STRDUP` is enabled logger will scan
 each log message and report if string format specifier is found and string
 address is not in read only memory section or does not belong to memory pool
-dedicated to string duplicates. It indictes that cpp:func:`log_strdup` is
+dedicated to string duplicates. It indictes that :c:func:`log_strdup` is
 missing in a call to log a message, such as ``LOG_INF``.
 
 Logger backends
@@ -465,22 +465,22 @@ Logger backends
 Logger supports up to 9 concurrent backends. Logger backend interface consists
 of two functions:
 
-- :cpp:func:`log_backend_put` - backend gets log message.
-- :cpp:func:`log_backend_panic` - on that call backend is notified that it must
+- :c:func:`log_backend_put` - backend gets log message.
+- :c:func:`log_backend_panic` - on that call backend is notified that it must
   switch to panic (synchronous) mode. If backend cannot support synchronous,
   interrupt-less operation (e.g. network) it should stop any processing.
 
 The log message contains a reference counter tracking how many backends are
 processing the message. On receiving a message backend must claim it by calling
-:cpp:func:`log_msg_get()` on that message which increments a reference counter.
+:c:func:`log_msg_get` on that message which increments a reference counter.
 Once message is processed, backend puts back the message
-(:cpp:func:`log_msg_put()`) decrementing a reference counter. On last
-:cpp:func:`log_msg_put`, when reference counter reaches 0, message is returned
+(:c:func:`log_msg_put`) decrementing a reference counter. On last
+:c:func:`log_msg_put`, when reference counter reaches 0, message is returned
 to the pool. It is up to the backend how message is processed. If backend
 intends to format message into the string, helper function for that are
 available in :zephyr_file:`include/logging/log_output.h`.
 
-Example message formatted using :cpp:func:`log_output_msg_process`.
+Example message formatted using :c:func:`log_output_msg_process`.
 
 .. code-block:: console
 
@@ -489,7 +489,7 @@ Example message formatted using :cpp:func:`log_output_msg_process`.
 .. note::
 
    The message pool can be starved if a backend does not call
-   :cpp:func:`log_msg_put` when it is done processing a message. The logger
+   :c:func:`log_msg_put` when it is done processing a message. The logger
    core has no means to force messages back to the pool if they're still marked
    as in use (with a non-zero reference counter).
 
@@ -510,7 +510,7 @@ Example message formatted using :cpp:func:`log_output_msg_process`.
 Logger backends are registered to the logger using
 :c:macro:`LOG_BACKEND_DEFINE` macro. The macro creates an instance in the
 dedicated memory section. Backends can be dynamically enabled
-(:cpp:func:`log_backend_enable`) and disabled.
+(:c:func:`log_backend_enable`) and disabled.
 
 Limitations
 ***********

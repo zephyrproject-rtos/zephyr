@@ -209,8 +209,8 @@ void test_main(void)
 	k_thread_access_grant(k_current_get(), &thread_preempt, &stack_preempt,
 			      &start_sema, &end_sema);
 #ifdef CONFIG_USERSPACE
-	k_mem_domain_add_thread(&ztest_mem_domain, T_KDEFINE_COOP_THREAD);
-	k_mem_domain_add_thread(&ztest_mem_domain, T_KDEFINE_PREEMPT_THREAD);
+	k_mem_domain_add_thread(&k_mem_domain_default, T_KDEFINE_COOP_THREAD);
+	k_mem_domain_add_thread(&k_mem_domain_default, T_KDEFINE_PREEMPT_THREAD);
 #endif
 
 	ztest_test_suite(thread_init,

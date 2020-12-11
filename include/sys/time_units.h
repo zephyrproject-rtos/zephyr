@@ -81,9 +81,9 @@ static TIME_CONSTEXPR ALWAYS_INLINE uint64_t z_tmcvt(uint64_t t, uint32_t from_h
 						  bool round_off)
 {
 	bool mul_ratio = const_hz &&
-		(to_hz > from_hz) && ((to_hz % from_hz) == 0);
+		(to_hz > from_hz) && ((to_hz % from_hz) == 0U);
 	bool div_ratio = const_hz &&
-		(from_hz > to_hz) && ((from_hz % to_hz) == 0);
+		(from_hz > to_hz) && ((from_hz % to_hz) == 0U);
 
 	if (from_hz == to_hz) {
 		return result32 ? ((uint32_t)t) : t;
@@ -95,9 +95,9 @@ static TIME_CONSTEXPR ALWAYS_INLINE uint64_t z_tmcvt(uint64_t t, uint32_t from_h
 		uint32_t rdivisor = div_ratio ? (from_hz / to_hz) : from_hz;
 
 		if (round_up) {
-			off = rdivisor - 1;
+			off = rdivisor - 1U;
 		} else if (round_off) {
-			off = rdivisor / 2;
+			off = rdivisor / 2U;
 		}
 	}
 

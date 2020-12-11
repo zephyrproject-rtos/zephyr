@@ -22,7 +22,7 @@ extern "C" {
 #endif
 
 struct mdm_receiver_context {
-	struct device *uart_dev;
+	const struct device *uart_dev;
 
 	/* rx data */
 	struct ring_buf rx_rb;
@@ -32,7 +32,11 @@ struct mdm_receiver_context {
 	char *data_manufacturer;
 	char *data_model;
 	char *data_revision;
+#if defined(CONFIG_MODEM_SIM_NUMBERS)
 	char *data_imei;
+	char *data_imsi;
+#endif
+	char *data_iccid;
 	int   data_rssi;
 };
 

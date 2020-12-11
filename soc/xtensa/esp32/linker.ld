@@ -142,7 +142,77 @@ SECTIONS
     _iram_start = ABSOLUTE(0);
   } GROUP_LINK_IN(ROMABLE_REGION)
 
+  SECTION_DATA_PROLOGUE(k_objects,, ALIGN(4))
+  {
+    Z_LINK_ITERABLE(k_timer);
+    . = ALIGN(4);
+    Z_LINK_ITERABLE(k_mem_slab);
+    . = ALIGN(4);
+    Z_LINK_ITERABLE(k_mem_pool);
+    . = ALIGN(4);
+    Z_LINK_ITERABLE(k_heap);
+    . = ALIGN(4);
+    Z_LINK_ITERABLE(k_mutex);
+    . = ALIGN(4);
+    Z_LINK_ITERABLE(k_stack);
+    . = ALIGN(4);
+    Z_LINK_ITERABLE(k_msgq);
+    . = ALIGN(4);
+    Z_LINK_ITERABLE(k_mbox);
+    . = ALIGN(4);
+    Z_LINK_ITERABLE(k_pipe);
+    . = ALIGN(4);
+    Z_LINK_ITERABLE(k_sem);
+    . = ALIGN(4);
+    Z_LINK_ITERABLE(k_queue);
+  } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+  SECTION_DATA_PROLOGUE(net,, ALIGN(4))
+  {
+    _net_buf_pool_list = .;
+    KEEP(*(SORT_BY_NAME("._net_buf_pool.static.*")))
+
+#if defined(CONFIG_NETWORKING)
+    . = ALIGN(4);
+    Z_LINK_ITERABLE(net_if);
+    . = ALIGN(4);
+    Z_LINK_ITERABLE(net_if_dev);
+    . = ALIGN(4);
+    Z_LINK_ITERABLE(net_l2);
+#endif
+
+  } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+  Z_ITERABLE_SECTION_RAM(_static_thread_data, 4)
+
+#pragma push_macro("Z_ITERABLE_SECTION_RAM")
+#undef Z_ITERABLE_SECTION_RAM
+#define Z_ITERABLE_SECTION_RAM(x, y)
 #include <linker/common-ram.ld>
+#pragma pop_macro("Z_ITERABLE_SECTION_RAM")
+
+  SECTION_DATA_PROLOGUE(log_static_section,,)
+  {
+    __log_const_start = .;
+    KEEP(*(SORT(.log_const_*)));
+    __log_const_end = .;
+
+    __log_backends_start = .;
+    KEEP(*("._log_backend.*"));
+    __log_backends_end = .;
+  } GROUP_LINK_IN(ROMABLE_REGION)
+
+  SECTION_DATA_PROLOGUE(shell_static_section,,)
+ {
+    . = ALIGN(4);
+    Z_LINK_ITERABLE(shell);
+    . = ALIGN(4);
+
+    __shell_root_cmds_start = .;
+    KEEP(*(SORT(.shell_root_cmd_*)));
+    __shell_root_cmds_end = .;
+  } GROUP_LINK_IN(ROMABLE_REGION)
+
 #include <linker/common-rom.ld>
 
   SECTION_PROLOGUE(_TEXT_SECTION_NAME, , ALIGN(4))
@@ -230,16 +300,6 @@ SECTIONS
     *(COMMON)
     . = ALIGN (8);
     _bss_end = ABSOLUTE(.);
-  } GROUP_LINK_IN(RAMABLE_REGION)
-
-
-   SECTION_DATA_PROLOGUE(_APP_NOINIT_SECTION_NAME, (NOLOAD),)
-   {
-     . = ALIGN (8);
-     *(.app_noinit)
-     *("app_noinit.*")
-     . = ALIGN (8);
-    _app_end = ABSOLUTE(.);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
 

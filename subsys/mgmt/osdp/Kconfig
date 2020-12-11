@@ -1,0 +1,109 @@
+#
+# Copyright (c) 2020 Siddharth Chandrasekaran <siddharth@embedjournal.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig OSDP
+	bool "Open Supervised Device Protocol (OSDP) driver"
+	select RING_BUFFER
+	imply SERIAL_SUPPORT_INTERRUPT
+	imply UART_INTERRUPT_DRIVEN
+	help
+	  Add support for Open Supervised Device Protocol (OSDP)
+
+if OSDP
+
+choice
+	prompt "OSDP Mode of Operation"
+	config OSDP_MODE_PD
+		bool "Configure OSDP in Peripheral Device mode"
+		help
+		  Configure this device to operate as a PD (Peripheral Device)
+	config OSDP_MODE_CP
+		bool "Configure OSDP in Control Panel mode"
+		help
+		  Configure this device to operate as a CP (Control Panel)
+endchoice
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_OSDP_UART := zephyr,osdp-uart
+
+config OSDP_UART_DEV_NAME
+	string "Device name of UART device for OSDP"
+	default "$(dt_chosen_label,$(DT_CHOSEN_Z_OSDP_UART))" if HAS_DTS
+	default "UART_2"
+	help
+	  This option specifies the name of UART device to be used for
+	  OSDP
+
+config OSDP_UART_BAUD_RATE
+	int "OSDP UART baud rate"
+	default 115200
+	help
+	  OSDP defines that baud rate can be either 9600 or 38400 or
+	  115200.
+
+config OSDP_LOG_LEVEL
+	int "OSDP Logging Level"
+	default 1
+	help
+	  Set the logging level for the OSDP driver
+
+config OSDP_UART_BUFFER_LENGTH
+	int "OSDP UART buffer length"
+	default 256
+	help
+	  OSDP RX and TX buffer FIFO length.
+
+config OSDP_THREAD_STACK_SIZE
+	int "OSDP Thread stack size"
+	default 1024
+	help
+	  Thread stack size for osdp refresh thread
+
+config OSDP_PACKET_TRACE
+	bool "Print bytes sent/received over OSDP to console"
+	help
+	  Prints bytes sent/received over OSDP to console for debugging.
+	  LOG_HEXDUMP_DBG() is used to achieve this and can be very verbose.
+
+config OSDP_SC_ENABLED
+	bool "Enable OSDP Secure Channel"
+	depends on CSPRING_ENABLED
+	default y
+	select CRYPTO
+	select CRYPTO_MBEDTLS_SHIM
+	select MBEDTLS
+	select MBEDTLS_CIPHER_CCM_ENABLED
+	help
+	  Secure the OSDP communication channel with encryption and mutual
+	  authentication.
+
+if OSDP_SC_ENABLED
+
+config OSDP_SC_RETRY_WAIT_SEC
+	int "Retry wait time in seconds after a Secure Channel error"
+	default 600
+	help
+	  Time in seconds to wait after a secure channel failure, and before
+	  retrying to establish it.
+
+config OSDP_CRYPTO_DRV_NAME
+	string "Crypto driver to use with OSDP"
+	default "CRYPTO_MTLS"
+	help
+	  OSDP Secure Channel uses AES-128 to secure communication between
+	  CP and PD. Provide an available crypto driver name here.
+
+endif # OSDP_SC_ENABLED
+
+if OSDP_MODE_PD
+source "subsys/mgmt/osdp/Kconfig.pd"
+endif
+
+if OSDP_MODE_CP
+source "subsys/mgmt/osdp/Kconfig.cp"
+endif
+
+endif # OSDP

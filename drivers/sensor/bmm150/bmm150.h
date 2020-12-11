@@ -118,7 +118,7 @@ struct bmm150_trim_regs {
 } __packed;
 
 struct bmm150_data {
-	struct device *i2c;
+	const struct device *i2c;
 	struct k_sem sem;
 	struct bmm150_trim_regs tregs;
 	int rep_xy, rep_z, odr, max_odr;

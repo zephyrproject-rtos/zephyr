@@ -8,16 +8,48 @@
 
 #include <timer.h>
 
+static void timer_work_handler(struct k_work *work);
+K_WORK_DEFINE(timer_work, timer_work_handler);
+
 static uint32_t saved_time;
+/* TODO: Use Non-volatile memory for backup */
+static volatile uint32_t backup_reg[2];
+
+static void timer_work_handler(struct k_work *work)
+{
+	TimerIrqHandler();
+}
 
 static void timer_callback(struct k_timer *_timer)
 {
 	ARG_UNUSED(_timer);
 
-	TimerIrqHandler();
+	k_work_submit(&timer_work);
 }
 
 K_TIMER_DEFINE(lora_timer, timer_callback, NULL);
+
+void RtcBkupWrite(uint32_t data0, uint32_t data1)
+{
+	backup_reg[0] = data0;
+	backup_reg[1] = data1;
+}
+
+void RtcBkupRead(uint32_t *data0, uint32_t *data1)
+{
+	*data0 = backup_reg[0];
+	*data1 = backup_reg[1];
+}
+
+uint32_t RtcGetCalendarTime(uint16_t *milliseconds)
+{
+	uint32_t now = k_uptime_get_32();
+
+	*milliseconds = now;
+
+	/* Return in seconds */
+	return now / MSEC_PER_SEC;
+}
 
 uint32_t RtcGetTimerValue(void)
 {

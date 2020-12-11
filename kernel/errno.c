@@ -23,6 +23,11 @@
 const int _k_neg_eagain = -EAGAIN;
 
 #ifdef CONFIG_ERRNO
+
+#ifdef CONFIG_ERRNO_IN_TLS
+__thread int z_errno_var;
+#else
+
 #ifdef CONFIG_USERSPACE
 int *z_impl_z_errno(void)
 {
@@ -44,4 +49,7 @@ int *z_impl_z_errno(void)
 	return &_current->errno_var;
 }
 #endif /* CONFIG_USERSPACE */
+
+#endif /* CONFIG_ERRNO_IN_TLS */
+
 #endif /* CONFIG_ERRNO */

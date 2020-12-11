@@ -97,9 +97,9 @@ stmdev_ctx_t iis2dlpc_spi_ctx = {
 	.write_reg = (stmdev_write_ptr) iis2dlpc_spi_write,
 };
 
-int iis2dlpc_spi_init(struct device *dev)
+int iis2dlpc_spi_init(const struct device *dev)
 {
-	struct iis2dlpc_data *data = dev->driver_data;
+	struct iis2dlpc_data *data = dev->data;
 
 	data->ctx = &iis2dlpc_spi_ctx;
 	data->ctx->handle = data;

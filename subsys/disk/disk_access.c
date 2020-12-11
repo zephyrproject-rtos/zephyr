@@ -169,7 +169,7 @@ unreg_err:
 	return rc;
 }
 
-static int disk_init(struct device *dev)
+static int disk_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

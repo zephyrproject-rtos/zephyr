@@ -13,8 +13,8 @@ calling the function specified by the work item. A workqueue is typically
 used by an ISR or a high-priority thread to offload non-urgent processing
 to a lower-priority thread so it does not impact time-sensitive processing.
 
-Any number of workqueues can be defined. Each workqueue is referenced by its
-memory address.
+Any number of workqueues can be defined (limited only by available RAM). Each
+workqueue is referenced by its memory address.
 
 A workqueue has the following key properties:
 
@@ -87,6 +87,13 @@ the processing of other work items in the workqueue's queue.
     handler function needs to perform its work must not be altered until
     the handler function has finished executing.
 
+    There *is no kernel API* that can be used to determine that the handler
+    function has finished executing.  Infrastructure that uses work items and
+    needs to know the work item status must manage state in the handler
+    function.
+
+.. _k_delayed_work:
+
 Delayed Work
 ************
 
@@ -111,24 +118,43 @@ that is triggered after the specified delay has elapsed. Once the timeout
 occurs the kernel submits the delayed work item to the specified workqueue,
 where it remains pending until it is processed in the standard manner.
 
-An ISR or a thread may **cancel** a delayed work item it has submitted,
-providing the work item's timeout is still counting down. The work item's
-timeout is aborted and the specified work is not performed.
+An ISR or a thread may attempt to **cancel** a delayed work item. If
+successful the specified work is not performed.  However, attempting to cancel
+a delayed work item succeeds in only two cases:
 
-Attempting to cancel a delayed work item once its timeout has expired has
-no effect on the work item; the work item remains pending in the workqueue's
-queue, unless the work item has already been removed and processed by the
-workqueue's thread. Consequently, once a work item's timeout has expired
-the work item is always processed by the workqueue and cannot be canceled.
+* its timeout has not yet expired and been processed; or
+* it is still pending and the cancellation successfully removes it from the
+  workqueue before the workqueue's thread gets to it.
+
+Because of the locking used to manage workqueues there are transient states
+that are sometimes not observable, but if observed will cause the cancellation
+will fail.  In those cases the work item may or may not be invoked.  The
+transient states can be observed and cause failure when:
+
+* the workqueue or application threads are preemptible;
+
+* the API is invoked from an ISR; or
+
+* when the code is run on a multiprocessor system.
+
+Note that both :c:func:`k_delayed_work_submit_to_queue()` and
+:c:func:`k_delayed_work_cancel()` attempt to cancel a previously submitted
+item and can fail.  When they fail the work handler of the previous submission
+may or may not be invoked.
+
+.. warning::
+   Because of these race conditions all code that invokes the delayed work API
+   must check return values and be prepared to react when either submission or
+   cancellation fails.
 
 Triggered Work
 **************
 
-The :cpp:func:`k_work_poll_submit()` interface schedules a triggered work
+The :c:func:`k_work_poll_submit` interface schedules a triggered work
 item in response to a **poll event** (see :ref:`polling_v2`), that will
 call a user-defined function when a monitored resource becomes available
 or poll signal is raised, or a timeout occurs.
-In contrast to :cpp:func:`k_poll()`, the triggered work does not require
+In contrast to :c:func:`k_poll`, the triggered work does not require
 a dedicated thread waiting or actively polling for a poll event.
 
 A triggered work item is a standard work item that has the following
@@ -179,9 +205,9 @@ Implementation
 Defining a Workqueue
 ====================
 
-A workqueue is defined using a variable of type :c:type:`k_work_q`.
+A workqueue is defined using a variable of type :c:struct:`k_work_q`.
 The workqueue is initialized by defining the stack area used by its thread
-and then calling :cpp:func:`k_work_q_start()`. The stack area must be defined
+and then calling :c:func:`k_work_q_start`. The stack area must be defined
 using :c:macro:`K_THREAD_STACK_DEFINE` to ensure it is properly set up in
 memory.
 
@@ -202,12 +228,12 @@ The following code defines and initializes a workqueue.
 Submitting a Work Item
 ======================
 
-A work item is defined using a variable of type :c:type:`k_work`.
-It must then be initialized by calling :cpp:func:`k_work_init()`.
+A work item is defined using a variable of type :c:struct:`k_work`.
+It must then be initialized by calling :c:func:`k_work_init`.
 
 An initialized work item can be submitted to the system workqueue by
-calling :cpp:func:`k_work_submit()`, or to a specified workqueue by
-calling :cpp:func:`k_work_submit_to_queue()`.
+calling :c:func:`k_work_submit`, or to a specified workqueue by
+calling :c:func:`k_work_submit_to_queue`.
 
 The following code demonstrates how an ISR can offload the printing
 of error messages to the system workqueue. Note that if the ISR attempts
@@ -250,14 +276,17 @@ Submitting a Delayed Work Item
 ==============================
 
 A delayed work item is defined using a variable of type
-:c:type:`k_delayed_work`. It must then be initialized by calling
-:cpp:func:`k_delayed_work_init()`.
+:c:struct:`k_delayed_work`. It must then be initialized by calling
+:c:func:`k_delayed_work_init`.
 
 An initialized delayed work item can be submitted to the system workqueue by
-calling :cpp:func:`k_delayed_work_submit()`, or to a specified workqueue by
-calling :cpp:func:`k_delayed_work_submit_to_queue()`. A delayed work item
+calling :c:func:`k_delayed_work_submit`, or to a specified workqueue by
+calling :c:func:`k_delayed_work_submit_to_queue`. A delayed work item
 that has been submitted but not yet consumed by its workqueue can be canceled
-by calling :cpp:func:`k_delayed_work_cancel()`.
+by calling :c:func:`k_delayed_work_cancel`.
+
+.. warning::
+   All of these operations can fail as described in :ref:`k_delayed_work`.
 
 Suggested Uses
 **************

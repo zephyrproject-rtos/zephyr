@@ -80,7 +80,7 @@ static inline void beetle_apb_set_clock_off(uint8_t bit,
 			 bit, state);
 }
 
-static inline int beetle_clock_control_on(struct device *dev,
+static inline int beetle_clock_control_on(const struct device *dev,
 					  clock_control_subsys_t sub_system)
 {
 	struct arm_clock_control_t *beetle_cc =
@@ -104,7 +104,7 @@ static inline int beetle_clock_control_on(struct device *dev,
 	return 0;
 }
 
-static inline int beetle_clock_control_off(struct device *dev,
+static inline int beetle_clock_control_off(const struct device *dev,
 					   clock_control_subsys_t sub_system)
 {
 	struct arm_clock_control_t *beetle_cc =
@@ -127,13 +127,13 @@ static inline int beetle_clock_control_off(struct device *dev,
 	return 0;
 }
 
-static int beetle_clock_control_get_subsys_rate(struct device *clock,
-					      clock_control_subsys_t sub_system,
-					      uint32_t *rate)
+static int beetle_clock_control_get_subsys_rate(const struct device *clock,
+						clock_control_subsys_t sub_system,
+						uint32_t *rate)
 {
 #ifdef CONFIG_CLOCK_CONTROL_BEETLE_ENABLE_PLL
 	const struct beetle_clock_control_cfg_t * const cfg =
-						clock->config_info;
+						clock->config;
 	uint32_t nc_mainclk = beetle_round_freq(cfg->freq);
 
 	*rate = nc_mainclk;
@@ -215,11 +215,11 @@ static int beetle_pll_enable(uint32_t mainclk)
 }
 #endif /* CONFIG_CLOCK_CONTROL_BEETLE_ENABLE_PLL */
 
-static int beetle_clock_control_init(struct device *dev)
+static int beetle_clock_control_init(const struct device *dev)
 {
 #ifdef CONFIG_CLOCK_CONTROL_BEETLE_ENABLE_PLL
 	const struct beetle_clock_control_cfg_t * const cfg =
-						dev->config_info;
+						dev->config;
 
 	/*
 	 * Enable PLL if Beetle is configured to run at a different

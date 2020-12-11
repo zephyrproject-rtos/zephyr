@@ -6,11 +6,12 @@
 
 /dts-v1/;
 #include <st/l1/stm32l151Xb-a.dtsi>
+#include <st/l1/stm32l151c(6-8-b)uxa-pinctrl.dtsi>
 #include "96b_lscon.dtsi"
 
 / {
 	model = "RAKWireless 96boards WisTrio board";
-	compatible = "rak,wistrio", "st,stm32l151";
+	compatible = "rak,wistrio";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -39,16 +40,19 @@
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
-&usart3 {
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	status = "okay";
 
 	lis3dh@32 {
@@ -59,6 +63,7 @@
 };
 
 &spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
 	status = "okay";
 	cs-gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
 

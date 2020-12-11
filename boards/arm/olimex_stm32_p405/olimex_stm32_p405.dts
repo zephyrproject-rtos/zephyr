@@ -6,10 +6,11 @@
 
 /dts-v1/;
 #include <st/f4/stm32f405Xg.dtsi>
+#include <st/f4/stm32f405rgtx-pinctrl.dtsi>
 
 / {
 	model = "Olimex STM32-P405 board";
-	compatible = "olimex,stm32-p405", "st,stm32f405";
+	compatible = "olimex,stm32-p405";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -43,6 +44,7 @@
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -52,6 +54,7 @@
 };
 
 &can1 {
+	pinctrl-0 = <&can1_rx_pb8 &can1_tx_pb9>;
 	bus-speed = <125000>;
 	status = "okay";
 };

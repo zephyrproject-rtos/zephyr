@@ -12,13 +12,13 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 /*
  * Power state map:
- * SYS_POWER_STATE_SLEEP_1: EM1 Sleep
- * SYS_POWER_STATE_SLEEP_2: EM2 Deep Sleep
- * SYS_POWER_STATE_SLEEP_3: EM3 Stop
+ * POWER_STATE_SLEEP_1: EM1 Sleep
+ * POWER_STATE_SLEEP_2: EM2 Deep Sleep
+ * POWER_STATE_SLEEP_3: EM3 Stop
  */
 
 /* Invoke Low Power/System Off specific Tasks */
-void sys_set_power_state(enum power_states state)
+void pm_power_state_set(enum power_states state)
 {
 	LOG_DBG("SoC entering power state %d", state);
 
@@ -35,23 +35,23 @@ void sys_set_power_state(enum power_states state)
 	irq_unlock(0);
 
 	switch (state) {
-#ifdef CONFIG_SYS_POWER_SLEEP_STATES
-#ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_1
-	case SYS_POWER_STATE_SLEEP_1:
+#ifdef CONFIG_PM_SLEEP_STATES
+#ifdef CONFIG_HAS_POWER_STATE_SLEEP_1
+	case POWER_STATE_SLEEP_1:
 		EMU_EnterEM1();
 		break;
-#endif /* CONFIG_HAS_SYS_POWER_STATE_SLEEP_1 */
-#ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_2
-	case SYS_POWER_STATE_SLEEP_2:
+#endif /* CONFIG_HAS_POWER_STATE_SLEEP_1 */
+#ifdef CONFIG_HAS_POWER_STATE_SLEEP_2
+	case POWER_STATE_SLEEP_2:
 		EMU_EnterEM2(true);
 		break;
-#endif /* CONFIG_HAS_SYS_POWER_STATE_SLEEP_2 */
-#ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_3
-	case SYS_POWER_STATE_SLEEP_3:
+#endif /* CONFIG_HAS_POWER_STATE_SLEEP_2 */
+#ifdef CONFIG_HAS_POWER_STATE_SLEEP_3
+	case POWER_STATE_SLEEP_3:
 		EMU_EnterEM3(true);
 		break;
-#endif /* CONFIG_HAS_SYS_POWER_STATE_SLEEP_3 */
-#endif /* CONFIG_SYS_POWER_SLEEP_STATES */
+#endif /* CONFIG_HAS_POWER_STATE_SLEEP_3 */
+#endif /* CONFIG_PM_SLEEP_STATES */
 	default:
 		LOG_DBG("Unsupported power state %u", state);
 		break;
@@ -64,7 +64,7 @@ void sys_set_power_state(enum power_states state)
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-void _sys_pm_power_state_exit_post_ops(enum power_states state)
+void _pm_power_state_exit_post_ops(enum power_states state)
 {
 	ARG_UNUSED(state);
 }

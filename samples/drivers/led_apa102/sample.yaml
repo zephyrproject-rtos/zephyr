@@ -3,6 +3,6 @@ sample:
   name: APA102 sample
 tests:
   sample.drivers.led.apa102:
-    platform_whitelist: nucleo_l432kc
+    platform_allow: nucleo_l432kc
     tags: LED
     depends_on: spi

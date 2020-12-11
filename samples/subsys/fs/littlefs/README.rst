@@ -18,7 +18,7 @@ Requirements
 ************
 
 The partition labeled "storage" will be used for the file system; see
-:ref:`legacy_flash_partitions`.  If that area does not already have a
+:ref:`flash_map_api`.  If that area does not already have a
 compatible littlefs file system its contents will be replaced by an
 empty file system.  You will see diagnostics like this::
 

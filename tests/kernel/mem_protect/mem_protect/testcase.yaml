@@ -3,7 +3,15 @@ tests:
     filter: CONFIG_ARCH_HAS_USERSPACE
     platform_exclude: twr_ke18f
     tags: kernel security userspace ignore_faults
-  kernel.memory_protection.gap_filling:
+  kernel.memory_protection.gap_filling.arc:
     filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS
+    arch_allow: arc
+    extra_args: CONFIG_MPU_GAP_FILLING=y
+    tags: kernel security userspace ignore_faults
+  kernel.memory_protection.gap_filling.arm:
+    filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS
+    arch_allow: arm
+    platform_allow: efr32_radio_brd4180a mps2_an521 nrf5340pdk_nrf5340_cpuapp
+     nrf5340pdk_nrf5340_cpunet nrf9160dk_nrf9160
     extra_args: CONFIG_MPU_GAP_FILLING=y
     tags: kernel security userspace ignore_faults

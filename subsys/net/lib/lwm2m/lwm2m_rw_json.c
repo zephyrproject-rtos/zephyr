@@ -235,7 +235,7 @@ static int json_next_token(struct lwm2m_input_context *in,
 				break;
 			}
 
-			/* fallthrough */
+			__fallthrough;
 
 		default:
 			json_add_char(in, fd);
@@ -684,7 +684,9 @@ static size_t get_bool(struct lwm2m_input_context *in, bool *value)
 }
 
 static size_t get_opaque(struct lwm2m_input_context *in,
-			 uint8_t *value, size_t buflen, bool *last_block)
+			 uint8_t *value, size_t buflen,
+			 struct lwm2m_opaque_context *opaque,
+			 bool *last_block)
 {
 	/* TODO */
 	return 0;

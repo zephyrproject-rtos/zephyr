@@ -6,11 +6,12 @@
 
 /dts-v1/;
 #include <st/l4/stm32l475Xg.dtsi>
+#include <st/l4/stm32l475v(c-e-g)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics B-L475E-IOT01Ax board";
-	compatible = "st,stm32l475-disco-iot", "st,stm32l475";
+	compatible = "st,stm32l475-disco-iot";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -50,6 +51,8 @@
 
 &usart1 {
 	current-speed = <115200>;
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
@@ -59,16 +62,19 @@
 };
 
 &uart4 {
+	pinctrl-0 = <&uart4_tx_pa0 &uart4_rx_pa1>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
@@ -106,16 +112,22 @@
 };
 
 &i2c3 {
+	pinctrl-0 = <&i2c3_scl_pc0 &i2c3_sda_pc1>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
 	status = "okay";
 };
 
+&spi3_miso_pc11 { slew-rate = "very-high-speed"; };
+
 &spi3 {
 	status = "okay";
+
+	pinctrl-0 = <&spi3_sck_pc10 &spi3_miso_pc11 &spi3_mosi_pc12>;
 
 	cs-gpios = <&gpiod 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
 		   <&gpioe 0 GPIO_ACTIVE_LOW>;
@@ -142,10 +154,7 @@
 };
 
 &flash0 {
-	/*
-	 * For more information, see:
-	 * https://docs.zephyrproject.org/latest/guides/dts/legacy-macros.html#legacy-flash-partitions
-	 */
+
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -187,6 +196,7 @@
 
 	pwm2: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim2_ch1_pa15>;
 	};
 };
 
@@ -199,6 +209,8 @@
 };
 
 &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12
+		     &usb_otg_fs_id_pa10>;
 	status = "okay";
 };
 
@@ -207,5 +219,12 @@
 };
 
 &rng {
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in5_pa0 &adc1_in3_pc2
+		     &adc1_in4_pc3 &adc1_in13_pc4
+		     &adc1_in14_pc5>;
 	status = "okay";
 };

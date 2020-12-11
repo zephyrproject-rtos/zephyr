@@ -14,8 +14,8 @@ to add and remove data items of any size.
 Concepts
 ********
 
-Any number of FIFOs can be defined. Each FIFO is referenced
-by its memory address.
+Any number of FIFOs can be defined (limited only by available RAM). Each FIFO is
+referenced by its memory address.
 
 A FIFO has the following key properties:
 
@@ -29,7 +29,7 @@ the first word of an item for use as a pointer to the next data item in
 the queue. Consequently, a data item that holds N bytes of application
 data requires N+4 (or N+8) bytes of memory. There are no alignment or
 reserved space requirements for data items if they are added with
-:cpp:func:`k_fifo_alloc_put()`, instead additional memory is temporarily
+:c:func:`k_fifo_alloc_put`, instead additional memory is temporarily
 allocated from the calling thread's resource pool.
 
 A data item may be **added** to a FIFO by a thread or an ISR.
@@ -37,7 +37,7 @@ The item is given directly to a waiting thread, if one exists;
 otherwise the item is added to the FIFO's queue.
 There is no limit to the number of items that may be queued.
 
-A data item may be **removed** from a FIF by a thread. If the FIFO's queue
+A data item may be **removed** from a FIFO by a thread. If the FIFO's queue
 is empty a thread may choose to wait for a data item to be given.
 Any number of threads may wait on an empty FIFO simultaneously.
 When a data item is added, it is given to the highest priority thread
@@ -62,8 +62,8 @@ Implementation
 Defining a FIFO
 ===============
 
-A FIFO is defined using a variable of type :c:type:`k_fifo`.
-It must then be initialized by calling :cpp:func:`k_fifo_init()`.
+A FIFO is defined using a variable of type :c:struct:`k_fifo`.
+It must then be initialized by calling :c:func:`k_fifo_init`.
 
 The following code defines and initializes an empty FIFO.
 
@@ -85,7 +85,7 @@ The following code has the same effect as the code segment above.
 Writing to a FIFO
 =================
 
-A data item is added to a FIFO by calling :cpp:func:`k_fifo_put()`.
+A data item is added to a FIFO by calling :c:func:`k_fifo_put`.
 
 The following code builds on the example above, and uses the FIFO
 to send data to one or more consumer threads.
@@ -113,9 +113,9 @@ to send data to one or more consumer threads.
     }
 
 Additionally, a singly-linked list of data items can be added to a FIFO
-by calling :cpp:func:`k_fifo_put_list()` or :cpp:func:`k_fifo_put_slist()`.
+by calling :c:func:`k_fifo_put_list` or :c:func:`k_fifo_put_slist`.
 
-Finally, a data item can be added to a FIFO with :cpp:func:`k_fifo_alloc_put()`.
+Finally, a data item can be added to a FIFO with :c:func:`k_fifo_alloc_put`.
 With this API, there is no need to reserve space for the kernel's use in
 the data item, instead additional memory will be allocated from the calling
 thread's resource pool until the item is read.
@@ -123,7 +123,7 @@ thread's resource pool until the item is read.
 Reading from a FIFO
 ===================
 
-A data item is removed from a FIFO by calling :cpp:func:`k_fifo_get()`.
+A data item is removed from a FIFO by calling :c:func:`k_fifo_get`.
 
 The following code builds on the example above, and uses the FIFO
 to obtain data items from a producer thread,

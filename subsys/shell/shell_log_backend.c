@@ -199,8 +199,7 @@ static void put(const struct log_backend *const backend, struct log_msg *msg)
 		break;
 
 	case SHELL_LOG_BACKEND_DISABLED:
-		/* fall through */
-		/* no break */
+		__fallthrough;
 	default:
 		/* Discard message. */
 		log_msg_put(msg);

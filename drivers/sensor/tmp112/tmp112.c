@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(TMP112, CONFIG_SENSOR_LOG_LEVEL);
 #define TMP112_TEMP_SCALE		62500
 
 struct tmp112_data {
-	struct device *i2c;
+	const struct device *i2c;
 	int16_t sample;
 };
 
@@ -73,12 +73,12 @@ static int tmp112_reg_update(struct tmp112_data *drv_data, uint8_t reg,
 	return tmp112_reg_write(drv_data, reg, new_val);
 }
 
-static int tmp112_attr_set(struct device *dev,
+static int tmp112_attr_set(const struct device *dev,
 			   enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
 {
-	struct tmp112_data *drv_data = dev->driver_data;
+	struct tmp112_data *drv_data = dev->data;
 	int64_t value;
 	uint16_t cr;
 
@@ -149,9 +149,10 @@ static int tmp112_attr_set(struct device *dev,
 	return 0;
 }
 
-static int tmp112_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int tmp112_sample_fetch(const struct device *dev,
+			       enum sensor_channel chan)
 {
-	struct tmp112_data *drv_data = dev->driver_data;
+	struct tmp112_data *drv_data = dev->data;
 	uint16_t val;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP);
@@ -169,11 +170,11 @@ static int tmp112_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return 0;
 }
 
-static int tmp112_channel_get(struct device *dev,
-		enum sensor_channel chan,
-		struct sensor_value *val)
+static int tmp112_channel_get(const struct device *dev,
+			      enum sensor_channel chan,
+			      struct sensor_value *val)
 {
-	struct tmp112_data *drv_data = dev->driver_data;
+	struct tmp112_data *drv_data = dev->data;
 	int32_t uval;
 
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
@@ -193,9 +194,9 @@ static const struct sensor_driver_api tmp112_driver_api = {
 	.channel_get = tmp112_channel_get,
 };
 
-int tmp112_init(struct device *dev)
+int tmp112_init(const struct device *dev)
 {
-	struct tmp112_data *drv_data = dev->driver_data;
+	struct tmp112_data *drv_data = dev->data;
 
 	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (drv_data->i2c == NULL) {

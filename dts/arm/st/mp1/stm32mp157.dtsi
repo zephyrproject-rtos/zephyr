@@ -42,7 +42,7 @@
 		};
 
 		pinctrl: pin-controller@50002000 {
-			compatible = "st,stm32-pinmux";
+			compatible = "st,stm32-pinctrl";
 			reg = <0x50002000 0x9000>;
 			#address-cells = <1>;
 			#size-cells = <1>;

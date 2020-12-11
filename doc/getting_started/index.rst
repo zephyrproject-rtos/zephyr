@@ -292,14 +292,14 @@ to build Zephyr applications.
          .. code-block:: bash
 
             cd ~
-            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.11.3/zephyr-sdk-0.11.3-setup.run
+            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.11.4/zephyr-sdk-0.11.4-setup.run
 
-      #. Run the installer, installing the SDK in :file:`~/zephyr-sdk-0.11.3`:
+      #. Run the installer, installing the SDK in :file:`~/zephyr-sdk-0.11.4`:
 
          .. code-block:: bash
 
-            chmod +x zephyr-sdk-0.11.3-setup.run
-            ./zephyr-sdk-0.11.3-setup.run -- -d ~/zephyr-sdk-0.11.3
+            chmod +x zephyr-sdk-0.11.4-setup.run
+            ./zephyr-sdk-0.11.4-setup.run -- -d ~/zephyr-sdk-0.11.4
 
          .. note::
             It is recommended to install the Zephyr SDK at one of the following locations:
@@ -312,7 +312,7 @@ to build Zephyr applications.
             * ``/usr/zephyr-sdk[-x.y.z]``
             * ``/usr/local/zephyr-sdk[-x.y.z]``
 
-            where ``[-x.y.z]`` is optional text, and can be any text, for example ``-0.11.3``.
+            where ``[-x.y.z]`` is optional text, and can be any text, for example ``-0.11.4``.
 
             If installing the Zephyr SDK outside any of those locations, please read: :ref:`zephyr_sdk`
 
@@ -323,7 +323,7 @@ to build Zephyr applications.
 
          .. code-block:: bash
 
-            sudo cp ~/zephyr-sdk-0.11.3/sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
+            sudo cp ~/zephyr-sdk-0.11.4/sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
             sudo udevadm control --reload
 
    .. group-tab:: macOS
@@ -398,7 +398,7 @@ Then flash the sample using :ref:`west flash <west-flashing>`:
 
    west flash
 
-You may need to install additional :ref:`host tools <debug-host-tools>`
+You may need to install additional :ref:`host tools <flash-debug-host-tools>`
 required by your board. The ``west flash`` command will print an error if any
 required dependencies are missing.
 
@@ -418,7 +418,7 @@ Here are some next steps for exploring Zephyr:
 * Try other :ref:`samples-and-demos`
 * Learn about :ref:`application` and the :ref:`west <west>` tool
 * Find out about west's :ref:`flashing and debugging <west-build-flash-debug>`
-  features, or more about :ref:`debugging` in general
+  features, or more about :ref:`flashing_and_debugging` in general
 * Check out :ref:`beyond-GSG` for additional setup alternatives and ideas
 * Discover :ref:`project-resources` for getting help from the Zephyr
   community

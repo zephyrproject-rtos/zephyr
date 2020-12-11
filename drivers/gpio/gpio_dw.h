@@ -15,7 +15,7 @@
 extern "C" {
 #endif
 
-typedef void (*gpio_config_irq_t)(struct device *port);
+typedef void (*gpio_config_irq_t)(const struct device *port);
 
 struct gpio_dw_config {
 	/* gpio_driver_config needs to be first */
@@ -38,10 +38,10 @@ struct gpio_dw_runtime {
 	struct gpio_driver_data common;
 	uint32_t base_addr;
 #ifdef CONFIG_GPIO_DW_CLOCK_GATE
-	struct device *clock;
+	const struct device *clock;
 #endif
 	sys_slist_t callbacks;
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	uint32_t device_power_state;
 #endif
 };

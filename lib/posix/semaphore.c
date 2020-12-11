@@ -139,6 +139,7 @@ int sem_trywait(sem_t *semaphore)
  */
 int sem_wait(sem_t *semaphore)
 {
-	k_sem_take(semaphore, K_FOREVER);
+	/* With K_FOREVER, may return only success. */
+	(void)k_sem_take(semaphore, K_FOREVER);
 	return 0;
 }

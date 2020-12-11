@@ -6,24 +6,13 @@
 
 #define ULL_ADV_RANDOM_DELAY HAL_TICKER_US_TO_TICKS(10000)
 
-/* Bitmask values used in is_created field of adv set */
-#define ULL_ADV_CREATED_BITMASK_CREATED  BIT(0)
-#define ULL_ADV_CREATED_BITMASK_EXTENDED BIT(1)
-
 /* Bitmask value returned by ull_adv_is_enabled() */
 #define ULL_ADV_ENABLED_BITMASK_ENABLED  BIT(0)
-#define ULL_ADV_ENABLED_BITMASK_CREATED  (ULL_ADV_CREATED_BITMASK_CREATED << 1)
-#define ULL_ADV_ENABLED_BITMASK_EXTENDED (ULL_ADV_CREATED_BITMASK_EXTENDED << 1)
-
-#if defined(CONFIG_BT_CTLR_ADV_SET)
-#define BT_CTLR_ADV_SET CONFIG_BT_CTLR_ADV_SET
-#else /* CONFIG_BT_CTLR_ADV_SET */
-#define BT_CTLR_ADV_SET 1
-#endif /* CONFIG_BT_CTLR_ADV_SET */
 
 /* Helper functions to initialise and reset ull_adv module */
 int ull_adv_init(void);
 int ull_adv_reset(void);
+int ull_adv_reset_finalize(void);
 
 /* Return ll_adv_set context (unconditional) */
 struct ll_adv_set *ull_adv_set_get(uint8_t handle);
@@ -34,8 +23,8 @@ uint16_t ull_adv_handle_get(struct ll_adv_set *adv);
 /* Return ll_adv_set context if enabled */
 struct ll_adv_set *ull_adv_is_enabled_get(uint8_t handle);
 
-/* Return flags, for now just: enabled */
-uint32_t ull_adv_is_enabled(uint8_t handle);
+/* Return enabled status of a set */
+int ull_adv_is_enabled(uint8_t handle);
 
 /* Return filter policy used */
 uint32_t ull_adv_filter_pol_get(uint8_t handle);
@@ -51,7 +40,15 @@ uint8_t ull_adv_data_set(struct ll_adv_set *adv, uint8_t len,
 uint8_t ull_scan_rsp_set(struct ll_adv_set *adv, uint8_t len,
 			 uint8_t const *const data);
 
+/* Update AdvA and TgtA (if application) in advertising PDU */
+const uint8_t *ull_adv_pdu_update_addrs(struct ll_adv_set *adv,
+					struct pdu_adv *pdu);
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+
+#define ULL_ADV_PDU_HDR_FIELD_ADVA      BIT(0)
+#define ULL_ADV_PDU_HDR_FIELD_SYNC_INFO BIT(5)
+#define ULL_ADV_PDU_HDR_FIELD_AD_DATA   BIT(8)
 
 /* helper function to handle adv done events */
 void ull_adv_done(struct node_rx_event_done *done);
@@ -69,8 +66,7 @@ uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux);
 
 /* helper function to start auxiliary advertising */
 uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
-			   uint32_t ticks_slot_overhead,
-			   uint32_t volatile *ret_cb);
+			   uint32_t ticks_slot_overhead);
 
 /* helper function to stop auxiliary advertising */
 uint8_t ull_adv_aux_stop(struct ll_adv_aux_set *aux);
@@ -84,15 +80,58 @@ void ull_adv_aux_release(struct ll_adv_aux_set *aux);
 /* helper function to schedule a mayfly to get aux offset */
 void ull_adv_aux_offset_get(struct ll_adv_set *adv);
 
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+/* helper function to set/clear common extended header format fields */
+uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
+				  uint16_t sec_hdr_add_fields,
+				  uint16_t sec_hdr_rem_fields,
+				  void *value,
+				  struct pdu_adv_adi *adi,
+				  uint8_t *pri_idx);
+
+/* helper function to calculate common ext adv payload header length and
+ * adjust the data pointer.
+ * NOTE: This function reverts the header data pointer if there is no
+ *       header fields flags set, and hence no header fields have been
+ *       populated.
+ */
+static inline uint8_t
+ull_adv_aux_hdr_len_calc(struct pdu_adv_com_ext_adv *com_hdr, uint8_t **dptr)
+{
+	uint8_t len;
+
+	len = *dptr - (uint8_t *)com_hdr;
+	if (len <= (offsetof(struct pdu_adv_com_ext_adv, ext_hdr_adv_data) +
+		    sizeof(struct pdu_adv_ext_hdr))) {
+		len = offsetof(struct pdu_adv_com_ext_adv,
+			       ext_hdr_adv_data);
+		*dptr = (uint8_t *)com_hdr + len;
+	}
+
+	return len;
+}
+
+/* helper function to fill common ext adv payload header length */
+static inline void
+ull_adv_aux_hdr_len_fill(struct pdu_adv_com_ext_adv *com_hdr, uint8_t len)
+{
+	com_hdr->ext_hdr_len = len - offsetof(struct pdu_adv_com_ext_adv,
+					      ext_hdr_adv_data);
+
+}
+
+/* helper function to fill the aux ptr structure in common ext adv payload */
+void ull_adv_aux_ptr_fill(uint8_t **dptr, uint8_t phy_s);
+
 int ull_adv_sync_init(void);
 int ull_adv_sync_reset(void);
 
 /* helper function to start periodic advertising */
-uint32_t ull_adv_sync_start(struct ll_adv_sync_set *sync, uint32_t ticks_anchor,
-			 uint32_t volatile *ret_cb);
+uint32_t ull_adv_sync_start(struct ll_adv_sync_set *sync,
+			    uint32_t ticks_anchor);
 
 /* helper function to schedule a mayfly to get sync offset */
 void ull_adv_sync_offset_get(struct ll_adv_set *adv);
-#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+
+int ull_adv_iso_init(void);
+int ull_adv_iso_reset(void);
 #endif /* CONFIG_BT_CTLR_ADV_EXT */

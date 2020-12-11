@@ -18,6 +18,11 @@ properties:
     required: true
     description: Flash capacity in bits.
 
+  sector-size:
+    type: int
+    required: true
+    description: Flash sector size in bytes.
+
   block-size:
     type: int
     required: true

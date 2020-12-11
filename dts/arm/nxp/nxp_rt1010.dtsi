@@ -10,21 +10,16 @@
 	clock-frequency = <500000000>;
 };
 
-/* i.MX rt1010 default FlexRAM partition:
- * ITCM: 32KB
- * DTCM: 32KB
- * OCRAM: 64KB
- */
 &itcm {
-	reg = <0x00000000 0x8000>;
+	reg = <0x00000000 DT_SIZE_K(32)>;
 };
 
 &dtcm {
-	reg = <0x20000000 0x8000>;
+	reg = <0x20000000 DT_SIZE_K(32)>;
 };
 
 &ocram {
-	reg = <0x20200000 0x10000>;
+	reg = <0x20200000 DT_SIZE_K(64)>;
 };
 
 &gpio1 {
@@ -72,11 +67,6 @@
 };
 
 / {
-	aliases {
-		/delete-property/ gpio-3;
-		/delete-property/ gpio-4;
-	};
-
 	soc {
 		/* Fixup GPIO2 its a different location on RT1010 */
 		/delete-node/ gpio@401bc000;

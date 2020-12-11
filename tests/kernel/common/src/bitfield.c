@@ -10,7 +10,11 @@
 
 #include <tc_util.h>
 
+#ifdef CONFIG_BIG_ENDIAN
+#define BIT_INDEX(bit)  ((3 - ((bit >> 3) & 0x3)) + 4*(bit >> 5))
+#else
 #define BIT_INDEX(bit)  (bit >> 3)
+#endif
 #define BIT_VAL(bit)    (1 << (bit & 0x7))
 #define BITFIELD_SIZE   512
 

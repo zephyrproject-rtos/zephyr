@@ -65,12 +65,25 @@ config ETH_NATIVE_POSIX_STARTUP_SCRIPT_USER
 
 endif # ETH_NATIVE_POSIX_STARTUP_AUTOMATIC
 
+config ETH_NATIVE_POSIX_INTERFACE_COUNT
+	int "Number of network interfaces created"
+	default NET_GPTP_NUM_PORTS if NET_GPTP
+	default 1
+	range 1 32
+	help
+	  By default only one network interface is created. It is possible
+	  to create multiple interfaces in certain use cases. For example if
+	  multiple ports are defined in gPTP, then multiple network interfaces
+	  must be created here.
+
 config ETH_NATIVE_POSIX_DRV_NAME
 	string "Ethernet driver name"
 	default "zeth"
 	help
 	  This option sets the driver name and name of the network interface
-	  in your host system.
+	  in your host system. If there are multiple network interfaces defined,
+	  then this value is used as a prefix and the interface names will be
+	  zeth0, zeth1, etc.
 
 config ETH_NATIVE_POSIX_DEV_NAME
 	string "Host ethernet TUN/TAP device name"

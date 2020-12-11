@@ -161,9 +161,9 @@ void test_signal_events_signalled(void)
 }
 
 /* IRQ offload function handler to set signal flag */
-static void offload_function(void *param)
+static void offload_function(const void *param)
 {
-	osThreadId tid = param;
+	osThreadId tid = (osThreadId)param;
 	int signals;
 
 	/* Make sure we're in IRQ context */
@@ -176,7 +176,7 @@ static void offload_function(void *param)
 void test_signal_from_isr(void const *thread_id)
 {
 	/**TESTPOINT: Offload to IRQ context*/
-	irq_offload(offload_function, (void *)thread_id);
+	irq_offload(offload_function, (const void *)thread_id);
 }
 
 osThreadDef(test_signal_from_isr, osPriorityHigh, 1, 0);

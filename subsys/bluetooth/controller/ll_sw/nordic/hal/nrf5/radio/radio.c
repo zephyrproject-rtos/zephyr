@@ -6,13 +6,13 @@
  */
 
 #include <sys/dlist.h>
-#include <sys/mempool_base.h>
 #include <toolchain.h>
 
 #include <nrfx/hal/nrf_radio.h>
 #include <nrfx/hal/nrf_rtc.h>
 #include <nrfx/hal/nrf_timer.h>
 #include <nrfx/hal/nrf_ccm.h>
+#include <nrfx/hal/nrf_aar.h>
 
 #include "util/mem.h"
 #include "hal/ccm.h"
@@ -293,11 +293,45 @@ uint32_t radio_rx_chain_delay_get(uint8_t phy, uint8_t flags)
 
 void radio_rx_enable(void)
 {
+#if !defined(CONFIG_BT_CTLR_TIFS_HW)
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+	/* NOTE: Timer clear DPPI configuration is needed only for nRF53
+	 *       because of calls to radio_disable() and
+	 *       radio_switch_complete_and_disable() inside a radio event call
+	 *       hal_radio_sw_switch_disable(), which in the case of nRF53
+	 *       cancels the task subscription.
+	 */
+	/* FIXME: hal_sw_switch_timer_clear_ppi_config() sets both task and
+	 *        event. Consider a new interface to only set the task, or
+	 *        change the design to not clear task subscription inside a
+	 *        radio event but when the radio event is done.
+	 */
+	hal_sw_switch_timer_clear_ppi_config();
+#endif /* CONFIG_SOC_SERIES_NRF53X */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
+
 	nrf_radio_task_trigger(NRF_RADIO, NRF_RADIO_TASK_RXEN);
 }
 
 void radio_tx_enable(void)
 {
+#if !defined(CONFIG_BT_CTLR_TIFS_HW)
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+	/* NOTE: Timer clear DPPI configuration is needed only for nRF53
+	 *       because of calls to radio_disable() and
+	 *       radio_switch_complete_and_disable() inside a radio event call
+	 *       hal_radio_sw_switch_disable(), which in the case of nRF53
+	 *       cancels the task subscription.
+	 */
+	/* FIXME: hal_sw_switch_timer_clear_ppi_config() sets both task and
+	 *        event. Consider a new interface to only set the task, or
+	 *        change the design to not clear task subscription inside a
+	 *        radio event but when the radio event is done.
+	 */
+	hal_sw_switch_timer_clear_ppi_config();
+#endif /* CONFIG_SOC_SERIES_NRF53X */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
+
 	nrf_radio_task_trigger(NRF_RADIO, NRF_RADIO_TASK_TXEN);
 }
 
@@ -739,6 +773,20 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t tick)
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	last_pdu_end_us = 0U;
 #endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+	/* NOTE: Timer clear DPPI configuration is needed only for nRF53
+	 *       because of calls to radio_disable() and
+	 *       radio_switch_complete_and_disable() inside a radio event call
+	 *       hal_radio_sw_switch_disable(), which in the case of nRF53
+	 *       cancels the task subscription.
+	 */
+	/* FIXME: hal_sw_switch_timer_clear_ppi_config() sets both task and
+	 *        event. Consider a new interface to only set the task, or
+	 *        change the design to not clear task subscription inside a
+	 *        radio event but when the radio event is done.
+	 */
+	hal_sw_switch_timer_clear_ppi_config();
+#endif /* CONFIG_SOC_SERIES_NRF53X */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 	return remainder_us;
@@ -756,6 +804,23 @@ uint32_t radio_tmr_start_now(uint8_t trx)
 	uint32_t now, start;
 
 	hal_radio_enable_on_tick_ppi_config_and_enable(trx);
+
+#if !defined(CONFIG_BT_CTLR_TIFS_HW)
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+	/* NOTE: Timer clear DPPI configuration is needed only for nRF53
+	 *       because of calls to radio_disable() and
+	 *       radio_switch_complete_and_disable() inside a radio event call
+	 *       hal_radio_sw_switch_disable(), which in the case of nRF53
+	 *       cancels the task subscription.
+	 */
+	/* FIXME: hal_sw_switch_timer_clear_ppi_config() sets both task and
+	 *        event. Consider a new interface to only set the task, or
+	 *        change the design to not clear task subscription inside a
+	 *        radio event but when the radio event is done.
+	 */
+	hal_sw_switch_timer_clear_ppi_config();
+#endif /* CONFIG_SOC_SERIES_NRF53X */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 	/* Capture the current time */
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CAPTURE1);
@@ -1104,20 +1169,51 @@ uint32_t radio_ccm_mic_is_valid(void)
 
 static uint8_t MALIGN(4) _aar_scratch[3];
 
-void radio_ar_configure(uint32_t nirk, void *irk)
+void radio_ar_configure(uint32_t nirk, void *irk, uint8_t flags)
 {
+	uint32_t addrptr;
+	uint8_t bcc;
+	uint8_t phy;
+
+	/* Flags provide hint on how to setup AAR:
+	 * ....Xb - legacy PDU
+	 * ...X.b - extended PDU
+	 * XXX..b = RX PHY
+	 * 00000b = default case mapped to 00101b (legacy, 1M)
+	 *
+	 * If neither legacy not extended bit is set, legacy PDU is selected for
+	 * 1M PHY and extended PDU otherwise.
+	 */
+
+	phy = flags >> 2;
+
+	/* Check if extended PDU or non-1M and not legacy PDU */
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
+	    ((flags & BIT(1)) || (!(flags & BIT(0)) && (phy > BIT(0))))) {
+		addrptr = NRF_RADIO->PACKETPTR + 1;
+		bcc = 80;
+	} else {
+		addrptr = NRF_RADIO->PACKETPTR - 1;
+		bcc = 64;
+	}
+
+	/* For Coded PHY adjust for CI and TERM1 */
+	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) && (phy == BIT(2))) {
+		bcc += 5;
+	}
+
 	NRF_AAR->ENABLE = (AAR_ENABLE_ENABLE_Enabled << AAR_ENABLE_ENABLE_Pos) &
 			  AAR_ENABLE_ENABLE_Msk;
 	NRF_AAR->NIRK = nirk;
 	NRF_AAR->IRKPTR = (uint32_t)irk;
-	NRF_AAR->ADDRPTR = (uint32_t)NRF_RADIO->PACKETPTR - 1;
+	NRF_AAR->ADDRPTR = addrptr;
 	NRF_AAR->SCRATCHPTR = (uint32_t)&_aar_scratch[0];
 
 	NRF_AAR->EVENTS_END = 0;
 	NRF_AAR->EVENTS_RESOLVED = 0;
 	NRF_AAR->EVENTS_NOTRESOLVED = 0;
 
-	radio_bc_configure(64);
+	radio_bc_configure(bcc);
 	radio_bc_status_reset();
 
 	hal_trigger_aar_ppi_config();
@@ -1135,6 +1231,8 @@ void radio_ar_status_reset(void)
 
 	NRF_AAR->ENABLE = (AAR_ENABLE_ENABLE_Disabled << AAR_ENABLE_ENABLE_Pos) &
 			  AAR_ENABLE_ENABLE_Msk;
+
+	hal_radio_nrf_ppi_channels_disable(BIT(HAL_TRIGGER_AAR_PPI));
 }
 
 uint32_t radio_ar_has_match(void)
@@ -1143,4 +1241,26 @@ uint32_t radio_ar_has_match(void)
 		NRF_AAR->EVENTS_END &&
 		NRF_AAR->EVENTS_RESOLVED &&
 		!NRF_AAR->EVENTS_NOTRESOLVED);
+}
+
+void radio_ar_resolve(uint8_t *addr)
+{
+	NRF_AAR->ENABLE = (AAR_ENABLE_ENABLE_Enabled << AAR_ENABLE_ENABLE_Pos) &
+			  AAR_ENABLE_ENABLE_Msk;
+
+	NRF_AAR->ADDRPTR = (uint32_t)addr - 3;
+
+	NRF_AAR->EVENTS_END = 0;
+	NRF_AAR->EVENTS_RESOLVED = 0;
+	NRF_AAR->EVENTS_NOTRESOLVED = 0;
+
+	nrf_aar_task_trigger(NRF_AAR, NRF_AAR_TASK_START);
+
+	nrf_aar_int_enable(NRF_AAR, AAR_INTENSET_END_Msk);
+	while (NRF_AAR->EVENTS_END == 0) {
+		__WFE();
+		__SEV();
+		__WFE();
+	}
+	nrf_aar_int_disable(NRF_AAR, AAR_INTENCLR_END_Msk);
 }

@@ -94,3 +94,7 @@
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
+
+&systick {
+	status = "disabled";
+};

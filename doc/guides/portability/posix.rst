@@ -261,9 +261,9 @@ This is implemented as part of the minimal C library available in Zephyr.
     isspace(),+
     isupper(),+
     isxdigit(),+
-    labs(),
+    labs(),+
     ldiv(),
-    llabs(),
+    llabs(),+
     lldiv(),
     localeconv(),
     localtime(),+
@@ -283,40 +283,40 @@ This is implemented as part of the minimal C library available in Zephyr.
     snprintf(),+
     sprintf(),+
     srand(),
-    canf(),
+    sscanf(),
     strcat(),+
     strchr(),+
     strcmp(),+
     strcoll(),
     strcpy(),+
-    trcspn(),
+    strcspn(),
     strerror(),
     strerror_r(),
     strftime(),
     strlen(),+
-    trncat(),+
+    strncat(),+
     strncmp(),+
     strncpy(),+
     strpbrk(),
     strrchr(),+
-    trspn(),
+    strspn(),
     strstr(),+
     strtod(),
     strtof(),
     strtoimax(),
-    trtok(),
-    strtok_r(),
+    strtok(),
+    strtok_r(),+
     strtol(),+
     strtold(),
     strtoll(),
-    trtoul(),+
+    strtoul(),+
     strtoull(),
     strtoumax(),
     strxfrm(),
     time(),+
     tolower(),+
     toupper(),+
-    tzname,
+    tzname(),
     tzset(),
     va_arg(),
     va_copy(),

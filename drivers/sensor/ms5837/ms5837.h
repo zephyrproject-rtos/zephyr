@@ -46,7 +46,7 @@
 
 struct ms5837_data {
 
-	struct device *i2c_master;
+	const struct device *i2c_master;
 
 	/* Calibration values */
 	uint16_t sens_t1;

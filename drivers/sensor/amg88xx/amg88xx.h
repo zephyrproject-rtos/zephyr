@@ -77,11 +77,12 @@ struct amg88xx_config {
 };
 
 struct amg88xx_data {
-	struct device *i2c;
+	const struct device *i2c;
 	int16_t sample[64];
 
 #ifdef CONFIG_AMG88XX_TRIGGER
-	struct device *gpio;
+	const struct device *dev;
+	const struct device *gpio;
 	uint8_t gpio_pin;
 	struct gpio_callback gpio_cb;
 
@@ -97,23 +98,22 @@ struct amg88xx_data {
 	struct k_thread thread;
 #elif defined(CONFIG_AMG88XX_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
 #endif
 
 #endif /* CONFIG_AMG88XX_TRIGGER */
 };
 
 #ifdef CONFIG_AMG88XX_TRIGGER
-int amg88xx_attr_set(struct device *dev,
+int amg88xx_attr_set(const struct device *dev,
 		     enum sensor_channel chan,
 		     enum sensor_attribute attr,
 		     const struct sensor_value *val);
 
-int amg88xx_trigger_set(struct device *dev,
+int amg88xx_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler);
 
-int amg88xx_init_interrupt(struct device *dev);
+int amg88xx_init_interrupt(const struct device *dev);
 #endif /* CONFIG_AMG88XX_TRIGGER */
 
 #endif

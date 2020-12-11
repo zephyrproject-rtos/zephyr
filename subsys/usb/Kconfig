@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig USB_DEVICE_STACK
-	bool "USB device stack"
+	bool "USB Device Support"
 	depends on USB_DEVICE_DRIVER || ARCH_POSIX
 	select HWINFO
 	help
@@ -56,11 +56,20 @@ config USB_COMPOSITE_DEVICE
 	help
 	  Enable composite USB device driver.
 
+config USB_MAX_NUM_TRANSFERS
+    int "Set number of USB transfer data buffers"
+    range 1 32
+    default 4
+    help
+        Allocates buffers used for parallel transfers. Increase this number
+        according to USB devices count.
+
 config USB_REQUEST_BUFFER_SIZE
 	int "Set buffer size for Standard, Class and Vendor request handlers"
 	range 256 65536 if USB_DEVICE_NETWORK_RNDIS
 	range 8 65536
 	default 256 if USB_DEVICE_NETWORK_RNDIS
+	default 266 if (BT_RX_BUF_LEN > 127 && USB_DEVICE_BLUETOOTH)
 	default 1024 if USB_DEVICE_LOOPBACK
 	default 128
 
@@ -78,12 +87,6 @@ config USB_DEVICE_REMOTE_WAKEUP
 	bool "Enable support for remote wakeup"
 	help
 	  This option requires USBD peripheral driver to also support remote wakeup.
-
-config USB_DEVICE_DISABLE_ZLP_EPIN_HANDLING
-	bool
-	help
-	  Stack should not handle ZLP for Variable-length Data Stage
-	  because it is taken over by the hardware.
 
 config USB_DEVICE_BOS
 	bool "Enable USB Binary Device Object Store (BOS)"
@@ -105,6 +108,38 @@ config USB_MAX_POWER
 	help
 	  Set bMaxPower value in the Standard Configuration Descriptor,
 	  the result is 2mA times the value provided.
+
+config USB_WORKQUEUE
+	bool "Use a dedicate work queue in the USB subsystem"
+	default y if USB_CDC_ACM
+	help
+	  This option provides a dedicated work queue that is used for
+	  all offloaded operations initiated by the USB subsystem.
+	  This prevents deadlock situations where tasks on the system
+	  workqueue inadvertently initiate operations that block, such
+	  as UART transmission on CDC-ACM, preventing the system work
+	  queue from making progress on the USB tasks that would
+	  release the task.
+
+	  Without this the system work queue is used for all USB
+	  offloaded transfers.
+
+config USB_WORKQUEUE_STACK_SIZE
+	int "USB workqueue stack size"
+	depends on USB_WORKQUEUE
+	default 4096 if COVERAGE
+	default 1024
+
+config USB_WORKQUEUE_PRIORITY
+	int "USB workqueue priority"
+	depends on USB_WORKQUEUE
+	default -2 if COOP_ENABLED && !PREEMPT_ENABLED
+	default  0 if !COOP_ENABLED
+	default -1
+	help
+	  By default, USB work queue priority is the lowest cooperative
+	  priority. This means that any work handler, once started, won't
+	  be preempted by any other thread until finished.
 
 source "subsys/usb/class/Kconfig"
 

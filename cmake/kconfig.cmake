@@ -21,7 +21,20 @@ foreach(root ${SOC_ROOT})
   set(OPERATION APPEND)
 endforeach()
 
+# Support multiple shields in BOARD_ROOT
+set(OPERATION WRITE)
+foreach(root ${BOARD_ROOT})
+  file(${OPERATION} ${KCONFIG_BINARY_DIR}/Kconfig.shield.defconfig
+       "osource \"${root}/boards/shields/*/Kconfig.defconfig\"\n"
+  )
+  file(${OPERATION} ${KCONFIG_BINARY_DIR}/Kconfig.shield
+       "osource \"${root}/boards/shields/*/Kconfig.shield\"\n"
+  )
+  set(OPERATION APPEND)
+endforeach()
+
 if(KCONFIG_ROOT)
+  zephyr_file(APPLICATION_ROOT KCONFIG_ROOT)
   # KCONFIG_ROOT has either been specified as a CMake variable or is
   # already in the CMakeCache.txt. This has precedence.
 elseif(EXISTS   ${APPLICATION_SOURCE_DIR}/Kconfig)
@@ -48,20 +61,36 @@ endif()
 # separated list instead.
 string(REPLACE ";" "?" DTS_ROOT_BINDINGS "${DTS_ROOT_BINDINGS}")
 
-set(ENV{srctree}            ${ZEPHYR_BASE})
-set(ENV{KERNELVERSION}      ${KERNELVERSION})
-set(ENV{KCONFIG_CONFIG}     ${DOTCONFIG})
-set(ENV{PYTHON_EXECUTABLE} ${PYTHON_EXECUTABLE})
+# Export each `ZEPHYR_<module>_MODULE_DIR` to Kconfig.
+# This allows Kconfig files to refer relative from a modules root as:
+# source "$(ZEPHYR_FOO_MODULE_DIR)/Kconfig"
+foreach(module_name ${ZEPHYR_MODULE_NAMES})
+  string(TOUPPER ${module_name} MODULE_NAME_UPPER)
+  list(APPEND
+       ZEPHYR_KCONFIG_MODULES_DIR
+       "ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR=${ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR}"
+  )
+endforeach()
 
-# Set environment variables so that Kconfig can prune Kconfig source
-# files for other architectures
-set(ENV{ARCH}      ${ARCH})
-set(ENV{BOARD_DIR} ${BOARD_DIR})
-set(ENV{SHIELD_AS_LIST} "${SHIELD_AS_LIST}")
-set(ENV{KCONFIG_BINARY_DIR} ${KCONFIG_BINARY_DIR})
-set(ENV{ARCH_DIR}   ${ARCH_DIR})
-set(ENV{TOOLCHAIN_KCONFIG_DIR} "${TOOLCHAIN_KCONFIG_DIR}")
-set(ENV{EDT_PICKLE} ${EDT_PICKLE})
+# A list of common environment settings used when invoking Kconfig during CMake
+# configure time or menuconfig and related build target.
+set(COMMON_KCONFIG_ENV_SETTINGS
+  PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
+  srctree=${ZEPHYR_BASE}
+  KERNELVERSION=${KERNELVERSION}
+  KCONFIG_CONFIG=${DOTCONFIG}
+  # Set environment variables so that Kconfig can prune Kconfig source
+  # files for other architectures
+  ARCH=${ARCH}
+  ARCH_DIR=${ARCH_DIR}
+  BOARD_DIR=${BOARD_DIR}
+  SHIELD_AS_LIST=${SHIELD_AS_LIST}
+  KCONFIG_BINARY_DIR=${KCONFIG_BINARY_DIR}
+  TOOLCHAIN_KCONFIG_DIR=${TOOLCHAIN_KCONFIG_DIR}
+  EDT_PICKLE=${EDT_PICKLE}
+  # Export all Zephyr modules to Kconfig
+  ${ZEPHYR_KCONFIG_MODULES_DIR}
+)
 
 # Allow out-of-tree users to add their own Kconfig python frontend
 # targets by appending targets to the CMake list
@@ -93,27 +122,18 @@ foreach(kconfig_target
   add_custom_target(
     ${kconfig_target}
     ${CMAKE_COMMAND} -E env
-    PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
-    srctree=${ZEPHYR_BASE}
-    KERNELVERSION=${KERNELVERSION}
     ZEPHYR_BASE=${ZEPHYR_BASE}
-    KCONFIG_CONFIG=${DOTCONFIG}
-    ARCH=$ENV{ARCH}
-    BOARD_DIR=$ENV{BOARD_DIR}
-    SHIELD_AS_LIST=$ENV{SHIELD_AS_LIST}
-    KCONFIG_BINARY_DIR=$ENV{KCONFIG_BINARY_DIR}
     ZEPHYR_TOOLCHAIN_VARIANT=${ZEPHYR_TOOLCHAIN_VARIANT}
-    TOOLCHAIN_KCONFIG_DIR=${TOOLCHAIN_KCONFIG_DIR}
-    ARCH_DIR=$ENV{ARCH_DIR}
+    ${COMMON_KCONFIG_ENV_SETTINGS}
     EXTRA_DTC_FLAGS=${EXTRA_DTC_FLAGS}
     DTS_POST_CPP=${DTS_POST_CPP}
     DTS_ROOT_BINDINGS=${DTS_ROOT_BINDINGS}
-    EDT_PICKLE=${EDT_PICKLE}
     ${PYTHON_EXECUTABLE}
     ${EXTRA_KCONFIG_TARGET_COMMAND_FOR_${kconfig_target}}
     ${KCONFIG_ROOT}
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
     USES_TERMINAL
+    COMMAND_EXPAND_LISTS
     )
 endforeach()
 
@@ -211,7 +231,8 @@ else()
 endif()
 
 execute_process(
-  COMMAND
+  COMMAND ${CMAKE_COMMAND} -E env
+  ${COMMON_KCONFIG_ENV_SETTINGS}
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/kconfig/kconfig.py
   --zephyr-base=${ZEPHYR_BASE}

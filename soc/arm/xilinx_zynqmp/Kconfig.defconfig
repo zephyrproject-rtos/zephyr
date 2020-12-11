@@ -15,7 +15,7 @@ config NUM_IRQS
 	default 220
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 12000000
+	default 5000000
 
 endif # SOC_XILINX_ZYNQMP_RPU
 

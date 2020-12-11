@@ -1,0 +1,20 @@
+/*
+ * Copyright 2020 Peter Bigot Consulting, LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "test_common.dtsi"
+
+/ {
+	regulator {
+		enable-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>; /* Arduino D0 */
+	};
+	resources {
+		check-gpios = <&gpio1 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;  /* Arduino D1 */
+	};
+};
+
+&uart1 {
+	/* Default-enabled Arduino UART steals the pins we want. */
+	status = "disabled";
+};

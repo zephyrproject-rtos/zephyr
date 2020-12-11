@@ -27,6 +27,8 @@
 
 #define CHAR_SIZE_MAX           512
 
+extern uint8_t selected_id;
+
 #if defined(CONFIG_BT_GATT_CLIENT)
 static void exchange_func(struct bt_conn *conn, uint8_t err,
 			  struct bt_gatt_exchange_params *params)
@@ -375,23 +377,17 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 	handle = strtoul(argv[1], NULL, 16);
 	offset = strtoul(argv[2], NULL, 16);
 
-	gatt_write_buf[0] = strtoul(argv[3], NULL, 16);
 	write_params.data = gatt_write_buf;
-	write_params.length = 1U;
 	write_params.handle = handle;
 	write_params.offset = offset;
 	write_params.func = write_func;
 
-	if (argc == 5) {
-		size_t len, i;
+	write_params.length = hex2bin(argv[3], strlen(argv[3]),
+				      gatt_write_buf, sizeof(gatt_write_buf));
 
-		len = MIN(strtoul(argv[4], NULL, 16), sizeof(gatt_write_buf));
-
-		for (i = 1; i < len; i++) {
-			gatt_write_buf[i] = gatt_write_buf[0];
-		}
-
-		write_params.length = len;
+	if (write_params.length == 0) {
+		shell_error(shell, "No data set");
+		return -ENOEXEC;
 	}
 
 	err = bt_gatt_write(default_conn, &write_params);
@@ -586,6 +582,44 @@ static int cmd_subscribe(const struct shell *shell, size_t argc, char *argv[])
 	return err;
 }
 
+static int cmd_resubscribe(const struct shell *shell, size_t argc,
+				char *argv[])
+{
+	bt_addr_le_t addr;
+	int err;
+
+	if (subscribe_params.value_handle) {
+		shell_error(shell, "Cannot resubscribe: subscription to %x"
+			    " already exists", subscribe_params.value_handle);
+		return -ENOEXEC;
+	}
+
+	err = bt_addr_le_from_str(argv[1], argv[2], &addr);
+	if (err) {
+		shell_error(shell, "Invalid peer address (err %d)", err);
+		return -ENOEXEC;
+	}
+
+	subscribe_params.ccc_handle = strtoul(argv[3], NULL, 16);
+	subscribe_params.value_handle = strtoul(argv[4], NULL, 16);
+	subscribe_params.value = BT_GATT_CCC_NOTIFY;
+	subscribe_params.notify = notify_func;
+
+	if (argc > 5 && !strcmp(argv[5], "ind")) {
+		subscribe_params.value = BT_GATT_CCC_INDICATE;
+	}
+
+	err = bt_gatt_resubscribe(selected_id, &addr, &subscribe_params);
+	if (err) {
+		subscribe_params.value_handle = 0U;
+		shell_error(shell, "Resubscribe failed (err %d)", err);
+	} else {
+		shell_print(shell, "Resubscribed");
+	}
+
+	return err;
+}
+
 static int cmd_unsubscribe(const struct shell *shell,
 			   size_t argc, char *argv[])
 {
@@ -619,7 +653,8 @@ static struct db_stats {
 	uint16_t ccc_count;
 } stats;
 
-static uint8_t print_attr(const struct bt_gatt_attr *attr, void *user_data)
+static uint8_t print_attr(const struct bt_gatt_attr *attr, uint16_t handle,
+			  void *user_data)
 {
 	const struct shell *shell = user_data;
 	char str[BT_UUID_STR_LEN];
@@ -642,7 +677,7 @@ static uint8_t print_attr(const struct bt_gatt_attr *attr, void *user_data)
 
 	bt_uuid_to_str(attr->uuid, str, sizeof(str));
 	shell_print(shell, "attr %p handle 0x%04x uuid %s perm 0x%02x",
-		    attr, attr->handle, str, attr->perm);
+		    attr, handle, str, attr->perm);
 
 	return BT_GATT_ITER_CONTINUE;
 }
@@ -967,7 +1002,8 @@ static int cmd_metrics(const struct shell *shell, size_t argc, char *argv[])
 }
 #endif /* CONFIG_BT_GATT_DYNAMIC_DB */
 
-static uint8_t get_cb(const struct bt_gatt_attr *attr, void *user_data)
+static uint8_t get_cb(const struct bt_gatt_attr *attr, uint16_t handle,
+		      void *user_data)
 {
 	struct shell *shell = user_data;
 	uint8_t buf[256];
@@ -1016,7 +1052,8 @@ struct set_data {
 	int err;
 };
 
-static uint8_t set_cb(const struct bt_gatt_attr *attr, void *user_data)
+static uint8_t set_cb(const struct bt_gatt_attr *attr, uint16_t handle,
+		      void *user_data)
 {
 	struct set_data *data = user_data;
 	uint8_t buf[256];
@@ -1081,6 +1118,7 @@ int cmd_att_mtu(const struct shell *shell, size_t argc, char *argv[])
 }
 
 #define HELP_NONE "[none]"
+#define HELP_ADDR_LE "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>"
 
 SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
 #if defined(CONFIG_BT_GATT_CLIENT)
@@ -1106,8 +1144,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
 		      cmd_write_without_rsp, 3, 2),
 	SHELL_CMD_ARG(subscribe, NULL, "<CCC handle> <value handle> [ind]",
 		      cmd_subscribe, 3, 1),
-	SHELL_CMD_ARG(write, NULL, "<handle> <offset> <data> [length]",
-		      cmd_write, 4, 1),
+	SHELL_CMD_ARG(resubscribe, NULL, HELP_ADDR_LE" <CCC handle> "
+		      "<value handle> [ind]", cmd_resubscribe, 5, 1),
+	SHELL_CMD_ARG(write, NULL, "<handle> <offset> <data>", cmd_write, 4, 0),
 	SHELL_CMD_ARG(write-without-response, NULL,
 		      "<handle> <data> [length] [repeat]",
 		      cmd_write_without_rsp, 3, 2),

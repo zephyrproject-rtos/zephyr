@@ -41,3 +41,9 @@ config SOC_DEPRECATED_RELEASE
 	  the Zephyr release that the SoC configuration will be removed.
 	  When set, any build for that SoC will generate a clearly visible
 	  deprecation warning.
+
+config SOC_HAS_TIMING_FUNCTIONS
+	bool
+	help
+	  Should be selected if SoC provides custom method for retrieving
+	  timestamps and cycle count.

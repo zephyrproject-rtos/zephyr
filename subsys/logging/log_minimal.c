@@ -12,7 +12,7 @@
 
 static void minimal_hexdump_line_print(const char *data, size_t length)
 {
-	for (int i = 0; i < HEXDUMP_BYTES_IN_LINE; i++) {
+	for (size_t i = 0; i < HEXDUMP_BYTES_IN_LINE; i++) {
 		if (i < length) {
 			printk("%02x ", data[i] & 0xFF);
 		} else {
@@ -22,7 +22,7 @@ static void minimal_hexdump_line_print(const char *data, size_t length)
 
 	printk("|");
 
-	for (int i = 0; i < HEXDUMP_BYTES_IN_LINE; i++) {
+	for (size_t i = 0; i < HEXDUMP_BYTES_IN_LINE; i++) {
 		if (i < length) {
 			char c = data[i];
 

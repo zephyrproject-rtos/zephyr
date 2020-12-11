@@ -1,0 +1,14 @@
+# Copyright (c) 2020, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    This binding provides resources required to build and run the
+    tests/subsys/power/power_states_api test in Zephyr.
+
+compatible: "test,power_states_api"
+
+properties:
+    pm-states:
+       type: phandles
+       required: false
+       description: List of power management states supported by this cpu.

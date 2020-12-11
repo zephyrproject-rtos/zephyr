@@ -297,12 +297,12 @@ validate_mac_command(struct ieee802154_mpdu *mpdu, uint8_t *buf, uint8_t *length
 		break;
 	case IEEE802154_CFI_ASSOCIATION_RESPONSE:
 		len += IEEE802154_CMD_ASSOC_RES_LENGTH;
-		/* Fall through */
+		__fallthrough;
 	case IEEE802154_CFI_DISASSOCIATION_NOTIFICATION:
 		if (c->cfi == IEEE802154_CFI_DISASSOCIATION_NOTIFICATION) {
 			len += IEEE802154_CMD_DISASSOC_NOTE_LENGTH;
 		}
-		/* Fall through */
+		__fallthrough;
 	case IEEE802154_CFI_PAN_ID_CONLICT_NOTIFICATION:
 		ar = 1U;
 		comp = 1U;
@@ -785,7 +785,7 @@ static inline bool cfi_to_fs_settings(enum ieee802154_cfi cfi,
 		fs->fc.ar = 1U;
 		fs->fc.pan_id_comp = 1U;
 
-		/* Fall through for common src/dst addr mode handling */
+		__fallthrough;
 	case IEEE802154_CFI_ASSOCIATION_REQUEST:
 		fs->fc.src_addr_mode = IEEE802154_ADDR_MODE_EXTENDED;
 

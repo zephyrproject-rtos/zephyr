@@ -13,6 +13,7 @@
 #include <offsets_short.h>
 #include <toolchain.h>
 #include <arch/cpu.h>
+#include <arch/arc/tool-compat.h>
 
 #ifdef _ASMLANGUAGE
 
@@ -300,42 +301,42 @@
  * the result will be EQ bit of status32
  * two temp regs are needed
  */
-.macro _check_and_inc_int_nest_counter reg1 reg2
+.macro _check_and_inc_int_nest_counter, reg1, reg2
 #ifdef CONFIG_SMP
-	_get_cpu_id \reg1
-	ld.as \reg1, [@_curr_cpu, \reg1]
-	ld \reg2, [\reg1, ___cpu_t_nested_OFFSET]
+	_get_cpu_id MACRO_ARG(reg1)
+	ld.as MACRO_ARG(reg1), [_curr_cpu, MACRO_ARG(reg1)]
+	ld MACRO_ARG(reg2), [MACRO_ARG(reg1), ___cpu_t_nested_OFFSET]
 #else
-	mov \reg1, _kernel
-	ld \reg2, [\reg1, _kernel_offset_to_nested]
+	mov MACRO_ARG(reg1), _kernel
+	ld MACRO_ARG(reg2), [MACRO_ARG(reg1), _kernel_offset_to_nested]
 #endif
-	add \reg2, \reg2, 1
+	add MACRO_ARG(reg2), MACRO_ARG(reg2), 1
 #ifdef CONFIG_SMP
-	st \reg2, [\reg1, ___cpu_t_nested_OFFSET]
+	st MACRO_ARG(reg2), [MACRO_ARG(reg1), ___cpu_t_nested_OFFSET]
 #else
-	st \reg2, [\reg1, _kernel_offset_to_nested]
+	st MACRO_ARG(reg2), [MACRO_ARG(reg1), _kernel_offset_to_nested]
 #endif
-	cmp \reg2, 1
+	cmp MACRO_ARG(reg2), 1
 .endm
 
 /* decrease interrupt stack nest counter
  * the counter > 0, interrupt stack is used, or
  * not used
  */
-.macro _dec_int_nest_counter reg1 reg2
+.macro _dec_int_nest_counter, reg1, reg2
 #ifdef CONFIG_SMP
-	_get_cpu_id \reg1
-	ld.as \reg1, [@_curr_cpu, \reg1]
-	ld \reg2, [\reg1, ___cpu_t_nested_OFFSET]
+	_get_cpu_id MACRO_ARG(reg1)
+	ld.as MACRO_ARG(reg1), [_curr_cpu, MACRO_ARG(reg1)]
+	ld MACRO_ARG(reg2), [MACRO_ARG(reg1), ___cpu_t_nested_OFFSET]
 #else
-	mov \reg1, _kernel
-	ld \reg2, [\reg1, _kernel_offset_to_nested]
+	mov MACRO_ARG(reg1), _kernel
+	ld MACRO_ARG(reg2), [MACRO_ARG(reg1), _kernel_offset_to_nested]
 #endif
-	sub \reg2, \reg2, 1
+	sub MACRO_ARG(reg2), MACRO_ARG(reg2), 1
 #ifdef CONFIG_SMP
-	st \reg2, [\reg1, ___cpu_t_nested_OFFSET]
+	st MACRO_ARG(reg2), [MACRO_ARG(reg1), ___cpu_t_nested_OFFSET]
 #else
-	st \reg2, [\reg1, _kernel_offset_to_nested]
+	st MACRO_ARG(reg2), [MACRO_ARG(reg1), _kernel_offset_to_nested]
 #endif
 .endm
 
@@ -343,51 +344,51 @@
  * in nest interrupt. The result will be EQ bit of status32
  * need two temp reg to do this
  */
-.macro _check_nest_int_by_irq_act  reg1, reg2
-	lr \reg1, [_ARC_V2_AUX_IRQ_ACT]
+.macro _check_nest_int_by_irq_act, reg1, reg2
+	lr MACRO_ARG(reg1), [_ARC_V2_AUX_IRQ_ACT]
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
-	and \reg1, \reg1, ((1 << ARC_N_IRQ_START_LEVEL) - 1)
+	and MACRO_ARG(reg1), MACRO_ARG(reg1), ((1 << ARC_N_IRQ_START_LEVEL) - 1)
 #else
-	and \reg1, \reg1, 0xffff
+	and MACRO_ARG(reg1), MACRO_ARG(reg1), 0xffff
 #endif
-	ffs \reg2, \reg1
-	fls \reg1, \reg1
-	cmp \reg1, \reg2
+	ffs MACRO_ARG(reg2), MACRO_ARG(reg1)
+	fls MACRO_ARG(reg1), MACRO_ARG(reg1)
+	cmp MACRO_ARG(reg1), MACRO_ARG(reg2)
 .endm
 
 
 /* macro to get id of current cpu
  * the result will be in reg (a reg)
  */
-.macro _get_cpu_id reg
-	lr \reg, [_ARC_V2_IDENTITY]
-	xbfu \reg, \reg, 0xe8
+.macro _get_cpu_id, reg
+	lr MACRO_ARG(reg), [_ARC_V2_IDENTITY]
+	xbfu MACRO_ARG(reg), MACRO_ARG(reg), 0xe8
 .endm
 
 /* macro to get the interrupt stack of current cpu
  * the result will be in irq_sp (a reg)
  */
-.macro _get_curr_cpu_irq_stack irq_sp
+.macro _get_curr_cpu_irq_stack, irq_sp
 #ifdef CONFIG_SMP
-	_get_cpu_id \irq_sp
-	ld.as \irq_sp, [@_curr_cpu, \irq_sp]
-	ld \irq_sp, [\irq_sp, ___cpu_t_irq_stack_OFFSET]
+	_get_cpu_id MACRO_ARG(irq_sp)
+	ld.as MACRO_ARG(irq_sp), [_curr_cpu, MACRO_ARG(irq_sp)]
+	ld MACRO_ARG(irq_sp), [MACRO_ARG(irq_sp), ___cpu_t_irq_stack_OFFSET]
 #else
-	mov \irq_sp, _kernel
-	ld \irq_sp, [\irq_sp, _kernel_offset_to_irq_stack]
+	mov MACRO_ARG(irq_sp), _kernel
+	ld MACRO_ARG(irq_sp), [MACRO_ARG(irq_sp), _kernel_offset_to_irq_stack]
 #endif
 .endm
 
 /* macro to push aux reg through reg */
-.macro PUSHAX reg aux
-	lr \reg, [\aux]
-	st.a \reg, [sp, -4]
+.macro PUSHAX, reg, aux
+	lr MACRO_ARG(reg), [MACRO_ARG(aux)]
+	st.a MACRO_ARG(reg), [sp, -4]
 .endm
 
 /* macro to pop aux reg through reg */
-.macro POPAX reg aux
-	ld.ab \reg, [sp, 4]
-	sr \reg, [\aux]
+.macro POPAX, reg, aux
+	ld.ab MACRO_ARG(reg), [sp, 4]
+	sr MACRO_ARG(reg), [MACRO_ARG(aux)]
 .endm
 
 
@@ -487,17 +488,17 @@
 /* macro to disable stack checking in assembly, need a GPR
  * to do this
  */
-.macro _disable_stack_checking reg
+.macro _disable_stack_checking, reg
 #ifdef CONFIG_ARC_STACK_CHECKING
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
-	lr \reg, [_ARC_V2_SEC_STAT]
-	bclr \reg, \reg, _ARC_V2_SEC_STAT_SSC_BIT
-	sflag \reg
+	lr MACRO_ARG(reg), [_ARC_V2_SEC_STAT]
+	bclr MACRO_ARG(reg), MACRO_ARG(reg), _ARC_V2_SEC_STAT_SSC_BIT
+	sflag MACRO_ARG(reg)
 
 #else
-	lr \reg, [_ARC_V2_STATUS32]
-	bclr \reg, \reg, _ARC_V2_STATUS32_SC_BIT
-	kflag \reg
+	lr MACRO_ARG(reg), [_ARC_V2_STATUS32]
+	bclr MACRO_ARG(reg), MACRO_ARG(reg), _ARC_V2_STATUS32_SC_BIT
+	kflag MACRO_ARG(reg)
 #endif
 #endif
 .endm
@@ -505,16 +506,16 @@
 /* macro to enable stack checking in assembly, need a GPR
  * to do this
  */
-.macro _enable_stack_checking reg
+.macro _enable_stack_checking, reg
 #ifdef CONFIG_ARC_STACK_CHECKING
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
-	lr \reg, [_ARC_V2_SEC_STAT]
-	bset \reg, \reg, _ARC_V2_SEC_STAT_SSC_BIT
-	sflag \reg
+	lr MACRO_ARG(reg), [_ARC_V2_SEC_STAT]
+	bset MACRO_ARG(reg), MACRO_ARG(reg), _ARC_V2_SEC_STAT_SSC_BIT
+	sflag MACRO_ARG(reg)
 #else
-	lr \reg, [_ARC_V2_STATUS32]
-	bset \reg, \reg, _ARC_V2_STATUS32_SC_BIT
-	kflag \reg
+	lr MACRO_ARG(reg), [_ARC_V2_STATUS32]
+	bset MACRO_ARG(reg), MACRO_ARG(reg), _ARC_V2_STATUS32_SC_BIT
+	kflag MACRO_ARG(reg)
 #endif
 #endif
 .endm

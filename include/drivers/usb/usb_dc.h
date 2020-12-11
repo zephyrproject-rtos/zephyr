@@ -22,9 +22,9 @@
 /**
  * USB endpoint direction and number.
  */
-#define USB_EP_DIR_MASK		0x80
-#define USB_EP_DIR_IN		0x80
-#define USB_EP_DIR_OUT		0x00
+#define USB_EP_DIR_MASK		0x80U
+#define USB_EP_DIR_IN		0x80U
+#define USB_EP_DIR_OUT		0x00U
 
 /** Get endpoint index (number) from endpoint address */
 #define USB_EP_GET_IDX(ep) ((ep) & ~USB_EP_DIR_MASK)
@@ -40,7 +40,7 @@
 /**
  * USB endpoint Transfer Type mask.
  */
-#define USB_EP_TRANSFER_TYPE_MASK 0x3
+#define USB_EP_TRANSFER_TYPE_MASK 0x3U
 
 /**
  * USB endpoint Synchronization Type mask.

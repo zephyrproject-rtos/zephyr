@@ -1,15 +1,15 @@
 sample:
   name: LPS22HH Temperature and Pressure Monitor
 tests:
-  sample.sensor.lps22hh.nrf52.iks01a3:
+  sample.sensor.lps22hh:
     harness: console
-    platform_whitelist: nrf52dk_nrf52832
     tags: sensors
     depends_on: i2c
-    extra_args: SHIELD=x_nucleo_iks01a3
+    filter: dt_compat_enabled("st,lps22hh")
     harness_config:
         type: multi_line
         ordered: yes
         regex:
             - "Temperature: (.*)"
             - "Pressure: (.*)"
+        fixture: fixture_i2c_lps22hh

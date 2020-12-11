@@ -34,7 +34,7 @@ static uint32_t ccount(void)
 	return val;
 }
 
-static void ccompare_isr(void *arg)
+static void ccompare_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -57,8 +57,10 @@ static void ccompare_isr(void *arg)
 	z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1);
 }
 
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
+	ARG_UNUSED(device);
+
 	IRQ_CONNECT(TIMER_IRQ, 0, ccompare_isr, 0, 0);
 	set_ccompare(ccount() + CYC_PER_TICK);
 	irq_enable(TIMER_IRQ);
@@ -71,7 +73,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 
 #if defined(CONFIG_TICKLESS_KERNEL)
 	ticks = ticks == K_TICKS_FOREVER ? MAX_TICKS : ticks;
-	ticks = MAX(MIN(ticks - 1, (int32_t)MAX_TICKS), 0);
+	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint32_t curr = ccount(), cyc, adj;

@@ -16,11 +16,14 @@
 
 #include <bluetooth/mesh/access.h>
 #include <bluetooth/mesh/main.h>
+#include <bluetooth/mesh/cfg.h>
 #include <bluetooth/mesh/cfg_srv.h>
 #include <bluetooth/mesh/health_srv.h>
 #include <bluetooth/mesh/cfg_cli.h>
 #include <bluetooth/mesh/health_cli.h>
 #include <bluetooth/mesh/proxy.h>
+#include <bluetooth/mesh/heartbeat.h>
 #include <bluetooth/mesh/cdb.h>
+#include <bluetooth/mesh/cfg.h>
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_H_ */

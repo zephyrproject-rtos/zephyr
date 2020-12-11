@@ -9,12 +9,12 @@
 #include <drivers/entropy.h>
 #include <string.h>
 
-static struct device *entropy_driver;
+static const struct device *entropy_driver;
 
 #if defined(CONFIG_ENTROPY_DEVICE_RANDOM_GENERATOR)
 uint32_t z_impl_sys_rand32_get(void)
 {
-	struct device *dev = entropy_driver;
+	const struct device *dev = entropy_driver;
 	uint32_t random_num;
 	int ret;
 
@@ -48,7 +48,7 @@ uint32_t z_impl_sys_rand32_get(void)
 
 static int rand_get(uint8_t *dst, size_t outlen, bool csrand)
 {
-	struct device *dev = entropy_driver;
+	const struct device *dev = entropy_driver;
 	uint32_t random_num;
 	int ret;
 

@@ -140,12 +140,12 @@ def test_load_from_file(test_data, class_testsuite,
     assert "Key error while parsing tests file.('status')" in caplog.text
 
 TESTDATA_PART1 = [
-    ("toolchain_whitelist", ['gcc'], None, None, "Not in testcase toolchain whitelist"),
-    ("platform_whitelist", ['demo_board_1'], None, None, "Not in testcase platform whitelist"),
+    ("toolchain_allow", ['gcc'], None, None, "Not in testcase toolchain allow list"),
+    ("platform_allow", ['demo_board_1'], None, None, "Not in testcase platform allow list"),
     ("toolchain_exclude", ['zephyr'], None, None, "In test case toolchain exclude"),
     ("platform_exclude", ['demo_board_2'], None, None, "In test case platform exclude"),
     ("arch_exclude", ['x86_demo'], None, None, "In test case arch exclude"),
-    ("arch_whitelist", ['arm'], None, None, "Not in test case arch whitelist"),
+    ("arch_allow", ['arm'], None, None, "Not in test case arch allow list"),
     ("skip", True, None, None, "Skip filter"),
     ("tags", set(['sensor', 'bluetooth']), "ignore_tags", ['bluetooth'], "Excluded tags per platform (exclude_tags)"),
     ("min_flash", "2024", "flash", "1024", "Not enough FLASH"),
@@ -153,7 +153,6 @@ TESTDATA_PART1 = [
     ("None", "None", "env", ['BSIM_OUT_PATH', 'demo_env'], "Environment (BSIM_OUT_PATH, demo_env) not satisfied"),
     ("build_on_all", True, None, None, "Platform is excluded on command line."),
     (None, None, "supported_toolchains", ['gcc'], "Not supported by the toolchain"),
-    (None, None, None, None, "Not a default test platform")
 ]
 
 
@@ -184,18 +183,18 @@ def test_apply_filters_part1(class_testsuite, all_testcases_dict, platforms_list
         if plat_attribute == "supported_toolchains":
             plat.supported_toolchains = plat_value
     for _, testcase in class_testsuite.testcases.items():
-        if tc_attribute == "toolchain_whitelist":
-            testcase.toolchain_whitelist = tc_value
-        if tc_attribute == "platform_whitelist":
-            testcase.platform_whitelist = tc_value
+        if tc_attribute == "toolchain_allow":
+            testcase.toolchain_allow = tc_value
+        if tc_attribute == "platform_allow":
+            testcase.platform_allow = tc_value
         if tc_attribute == "toolchain_exclude":
             testcase.toolchain_exclude = tc_value
         if tc_attribute == "platform_exclude":
             testcase.platform_exclude = tc_value
         if tc_attribute == "arch_exclude":
             testcase.arch_exclude = tc_value
-        if tc_attribute == "arch_whitelist":
-            testcase.arch_whitelist = tc_value
+        if tc_attribute == "arch_allow":
+            testcase.arch_allow = tc_value
         if tc_attribute == "skip":
             testcase.skip = tc_value
         if tc_attribute == "tags":
@@ -218,10 +217,12 @@ def test_apply_filters_part1(class_testsuite, all_testcases_dict, platforms_list
     else:
         discards = class_testsuite.apply_filters(exclude_platform=['demo_board_1'],
                                                  platform=['demo_board_2'])
-    assert all(x in list(discards.values()) for x in [expected_discards])
+
+    for x in [expected_discards]:
+        assert x in discards.values()
 
 TESTDATA_PART2 = [
-    ("device_testing", "True", "Not runnable on device"),
+    ("runnable", "True", "Not runnable on device"),
     ("exclude_tag", ['test_a'], "Command line testcase exclude filter"),
     ("run_individual_tests", ['scripts/tests/sanitycheck/test_data/testcases/tests/test_a/test_a.check_1'], "Testcase name filter"),
     ("arch", ['arm_test'], "Command line testcase arch filter"),
@@ -236,13 +237,22 @@ def test_apply_filters_part2(class_testsuite, all_testcases_dict,
     Part 2 : Response of apply_filters function (discard dictionary) have
              appropriate values according to the filters
     """
+
     class_testsuite.platforms = platforms_list
     class_testsuite.testcases = all_testcases_dict
-    kwargs = {extra_filter : extra_filter_value,
-              "exclude_platform" : ['demo_board_1'], "platform" : ['demo_board_2']}
+    kwargs = {
+        extra_filter : extra_filter_value,
+        "exclude_platform" : [
+            'demo_board_1'
+            ],
+        "platform" : [
+            'demo_board_2'
+            ]
+        }
     discards = class_testsuite.apply_filters(**kwargs)
-    assert type(list(discards.keys())[0]).__name__ == "TestInstance"
-    assert list(dict.fromkeys(discards.values())) == [expected_discards]
+    assert discards
+    for d in discards.values():
+        assert d == expected_discards
 
 
 TESTDATA_PART3 = [

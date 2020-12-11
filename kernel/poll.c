@@ -34,6 +34,11 @@
  */
 static struct k_spinlock lock;
 
+enum POLL_MODE { MODE_NONE, MODE_POLL, MODE_TRIGGERED };
+
+static int signal_poller(struct k_poll_event *event, uint32_t state);
+static int signal_triggered_work(struct k_poll_event *event, uint32_t status);
+
 void k_poll_event_init(struct k_poll_event *event, uint32_t type,
 		       int mode, void *obj)
 {
@@ -56,7 +61,7 @@ static inline bool is_condition_met(struct k_poll_event *event, uint32_t *state)
 {
 	switch (event->type) {
 	case K_POLL_TYPE_SEM_AVAILABLE:
-		if (k_sem_count_get(event->sem) > 0) {
+		if (k_sem_count_get(event->sem) > 0U) {
 			*state = K_POLL_STATE_SEM_AVAILABLE;
 			return true;
 		}
@@ -83,22 +88,27 @@ static inline bool is_condition_met(struct k_poll_event *event, uint32_t *state)
 	return false;
 }
 
+static struct k_thread *poller_thread(struct z_poller *p)
+{
+	return p ? CONTAINER_OF(p, struct k_thread, poller) : NULL;
+}
+
 static inline void add_event(sys_dlist_t *events, struct k_poll_event *event,
-			     struct _poller *poller)
+			     struct z_poller *poller)
 {
 	struct k_poll_event *pending;
 
 	pending = (struct k_poll_event *)sys_dlist_peek_tail(events);
 	if ((pending == NULL) ||
-		z_is_t1_higher_prio_than_t2(pending->poller->thread,
-					    poller->thread)) {
+	    z_is_t1_higher_prio_than_t2(poller_thread(pending->poller),
+					poller_thread(poller))) {
 		sys_dlist_append(events, &event->_node);
 		return;
 	}
 
 	SYS_DLIST_FOR_EACH_CONTAINER(events, pending, _node) {
-		if (z_is_t1_higher_prio_than_t2(poller->thread,
-						pending->poller->thread)) {
+		if (z_is_t1_higher_prio_than_t2(poller_thread(poller),
+					poller_thread(pending->poller))) {
 			sys_dlist_insert(&pending->_node, &event->_node);
 			return;
 		}
@@ -109,7 +119,7 @@ static inline void add_event(sys_dlist_t *events, struct k_poll_event *event,
 
 /* must be called with interrupts locked */
 static inline int register_event(struct k_poll_event *event,
-				 struct _poller *poller)
+				 struct z_poller *poller)
 {
 	switch (event->type) {
 	case K_POLL_TYPE_SEM_AVAILABLE:
@@ -189,7 +199,7 @@ static inline void set_event_ready(struct k_poll_event *event, uint32_t state)
 
 static inline int register_events(struct k_poll_event *events,
 				  int num_events,
-				  struct _poller *poller,
+				  struct z_poller *poller,
 				  bool just_check)
 {
 	int events_registered = 0;
@@ -216,9 +226,9 @@ static inline int register_events(struct k_poll_event *events,
 	return events_registered;
 }
 
-static int k_poll_poller_cb(struct k_poll_event *event, uint32_t state)
+static int signal_poller(struct k_poll_event *event, uint32_t state)
 {
-	struct k_thread *thread = event->poller->thread;
+	struct k_thread *thread = poller_thread(event->poller);
 
 	__ASSERT(thread != NULL, "poller should have a thread\n");
 
@@ -248,15 +258,16 @@ int z_impl_k_poll(struct k_poll_event *events, int num_events,
 {
 	int events_registered;
 	k_spinlock_key_t key;
-	struct _poller poller = { .is_polling = true,
-				  .thread     = _current,
-				  .cb         = k_poll_poller_cb };
+	struct z_poller *poller = &_current->poller;
+
+	poller->is_polling = true;
+	poller->mode = MODE_POLL;
 
 	__ASSERT(!arch_is_in_isr(), "");
 	__ASSERT(events != NULL, "NULL events\n");
 	__ASSERT(num_events >= 0, "<0 events\n");
 
-	events_registered = register_events(events, num_events, &poller,
+	events_registered = register_events(events, num_events, poller,
 					    K_TIMEOUT_EQ(timeout, K_NO_WAIT));
 
 	key = k_spin_lock(&lock);
@@ -266,13 +277,13 @@ int z_impl_k_poll(struct k_poll_event *events, int num_events,
 	 * condition is met, either when looping through the events here or
 	 * because one of the events registered has had its state changed.
 	 */
-	if (!poller.is_polling) {
+	if (!poller->is_polling) {
 		clear_event_registrations(events, events_registered, key);
 		k_spin_unlock(&lock, key);
 		return 0;
 	}
 
-	poller.is_polling = false;
+	poller->is_polling = false;
 
 	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		k_spin_unlock(&lock, key);
@@ -379,12 +390,14 @@ oops_free:
 /* must be called with interrupts locked */
 static int signal_poll_event(struct k_poll_event *event, uint32_t state)
 {
-	struct _poller *poller = event->poller;
+	struct z_poller *poller = event->poller;
 	int retcode = 0;
 
 	if (poller) {
-		if (poller->cb != NULL) {
-			retcode = poller->cb(event, state);
+		if (poller->mode == MODE_POLL) {
+			retcode = signal_poller(event, state);
+		} else if (poller->mode == MODE_TRIGGERED) {
+			retcode = signal_triggered_work(event, state);
 		}
 
 		poller->is_polling = false;
@@ -484,7 +497,6 @@ static inline void z_vrfy_k_poll_signal_reset(struct k_poll_signal *signal)
 
 static void triggered_work_handler(struct k_work *work)
 {
-	k_work_handler_t handler;
 	struct k_work_poll *twork =
 			CONTAINER_OF(work, struct k_work_poll, work);
 
@@ -492,7 +504,7 @@ static void triggered_work_handler(struct k_work *work)
 	 * If callback is not set, the k_work_poll_submit_to_queue()
 	 * already cleared event registrations.
 	 */
-	if (twork->poller.cb != NULL) {
+	if (twork->poller.mode != MODE_NONE) {
 		k_spinlock_key_t key;
 
 		key = k_spin_lock(&lock);
@@ -502,33 +514,28 @@ static void triggered_work_handler(struct k_work *work)
 	}
 
 	/* Drop work ownership and execute real handler. */
-	handler = twork->real_handler;
-	twork->poller.thread = NULL;
-	handler(work);
+	twork->workq = NULL;
+	twork->real_handler(work);
 }
 
 static void triggered_work_expiration_handler(struct _timeout *timeout)
 {
 	struct k_work_poll *twork =
 		CONTAINER_OF(timeout, struct k_work_poll, timeout);
-	struct k_work_q *work_q =
-		CONTAINER_OF(twork->poller.thread, struct k_work_q, thread);
 
 	twork->poller.is_polling = false;
 	twork->poll_result = -EAGAIN;
-
-	k_work_submit_to_queue(work_q, &twork->work);
+	k_work_submit_to_queue(twork->workq, &twork->work);
 }
 
-static int triggered_work_poller_cb(struct k_poll_event *event, uint32_t status)
+static int signal_triggered_work(struct k_poll_event *event, uint32_t status)
 {
-	struct _poller *poller = event->poller;
+	struct z_poller *poller = event->poller;
+	struct k_work_poll *twork =
+		CONTAINER_OF(poller, struct k_work_poll, poller);
 
-	if (poller->is_polling && poller->thread) {
-		struct k_work_poll *twork =
-			CONTAINER_OF(poller, struct k_work_poll, poller);
-		struct k_work_q *work_q =
-			CONTAINER_OF(poller->thread, struct k_work_q, thread);
+	if (poller->is_polling && twork->workq != NULL) {
+		struct k_work_q *work_q = twork->workq;
 
 		z_abort_timeout(&twork->timeout);
 		twork->poll_result = 0;
@@ -542,7 +549,7 @@ static int triggered_work_cancel(struct k_work_poll *work,
 				 k_spinlock_key_t key)
 {
 	/* Check if the work waits for event. */
-	if (work->poller.is_polling && work->poller.cb != NULL) {
+	if (work->poller.is_polling && work->poller.mode != MODE_NONE) {
 		/* Remove timeout associated with the work. */
 		z_abort_timeout(&work->timeout);
 
@@ -550,11 +557,11 @@ static int triggered_work_cancel(struct k_work_poll *work,
 		 * Prevent work execution if event arrives while we will be
 		 * clearing registrations.
 		 */
-		work->poller.cb = NULL;
+		work->poller.mode = MODE_NONE;
 
 		/* Clear registrations and work ownership. */
 		clear_event_registrations(work->events, work->num_events, key);
-		work->poller.thread = NULL;
+		work->workq = NULL;
 		return 0;
 	}
 
@@ -571,9 +578,8 @@ static int triggered_work_cancel(struct k_work_poll *work,
 void k_work_poll_init(struct k_work_poll *work,
 		      k_work_handler_t handler)
 {
+	*work = (struct k_work_poll) {};
 	k_work_init(&work->work, triggered_work_handler);
-	work->events = NULL;
-	work->poller.thread = NULL;
 	work->real_handler = handler;
 	z_init_timeout(&work->timeout);
 }
@@ -594,8 +600,8 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 
 	/* Take overship of the work if it is possible. */
 	key = k_spin_lock(&lock);
-	if (work->poller.thread != NULL) {
-		if (work->poller.thread == &work_q->thread) {
+	if (work->workq != NULL) {
+		if (work->workq == work_q) {
 			int retval;
 
 			retval = triggered_work_cancel(work, key);
@@ -609,9 +615,10 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 		}
 	}
 
+
 	work->poller.is_polling = true;
-	work->poller.thread = &work_q->thread;
-	work->poller.cb = NULL;
+	work->workq = work_q;
+	work->poller.mode = MODE_NONE;
 	k_spin_unlock(&lock, key);
 
 	/* Save list of events. */
@@ -646,15 +653,16 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 		}
 
 		/* From now, any event will result in submitted work. */
-		work->poller.cb = triggered_work_poller_cb;
+		work->poller.mode = MODE_TRIGGERED;
 		k_spin_unlock(&lock, key);
 		return 0;
 	}
 
 	/*
-	 * The K_NO_WAIT timeout was specified or at least one event was ready
-	 * at registration time or changed state since registration. Hopefully,
-	 * the poller->cb was not set, so work was not submitted to workqueue.
+	 * The K_NO_WAIT timeout was specified or at least one event
+	 * was ready at registration time or changed state since
+	 * registration. Hopefully, the poller mode was not set, so
+	 * work was not submitted to workqueue.
 	 */
 
 	/*
@@ -684,7 +692,7 @@ int k_work_poll_cancel(struct k_work_poll *work)
 	int retval;
 
 	/* Check if the work was submitted. */
-	if (work == NULL || work->poller.thread == NULL) {
+	if (work == NULL || work->workq == NULL) {
 		return -EINVAL;
 	}
 

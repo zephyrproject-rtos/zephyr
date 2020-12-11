@@ -3,7 +3,8 @@
 zephyr_library()
 
 if (CONFIG_COVERAGE)
-  toolchain_cc_coverage()
+  zephyr_compile_options($<TARGET_PROPERTY:compiler,coverage>)
+  zephyr_link_libraries($<TARGET_PROPERTY:linker,coverage>)
 endif ()
 
 zephyr_library_sources(
@@ -22,6 +23,7 @@ zephyr_library_sources_ifdef(CONFIG_GEN_SW_ISR_TABLE isr_wrapper.S)
 zephyr_library_sources_ifdef(CONFIG_CPLUSPLUS __aeabi_atexit.c)
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
 zephyr_library_sources_ifdef(CONFIG_SW_VECTOR_RELAY irq_relay.S)
+zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE ../common/tls.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S)
 
 add_subdirectory_ifdef(CONFIG_CPU_CORTEX_M cortex_m)

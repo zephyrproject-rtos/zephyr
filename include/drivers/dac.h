@@ -48,14 +48,14 @@ struct dac_channel_cfg {
  * Type definition of DAC API function for configuring a channel.
  * See dac_channel_setup() for argument descriptions.
  */
-typedef int (*dac_api_channel_setup)(struct device *dev,
-				const struct dac_channel_cfg *channel_cfg);
+typedef int (*dac_api_channel_setup)(const struct device *dev,
+				     const struct dac_channel_cfg *channel_cfg);
 
 /*
  * Type definition of DAC API function for setting a write request.
  * See dac_write_value() for argument descriptions.
  */
-typedef int (*dac_api_write_value)(struct device *dev,
+typedef int (*dac_api_write_value)(const struct device *dev,
 				    uint8_t channel, uint32_t value);
 
 /*
@@ -85,14 +85,14 @@ __subsystem struct dac_driver_api {
  * @retval -EINVAL   If a parameter with an invalid value has been provided.
  * @retval -ENOTSUP  If the requested resolution is not supported.
  */
-__syscall int dac_channel_setup(struct device *dev,
+__syscall int dac_channel_setup(const struct device *dev,
 				const struct dac_channel_cfg *channel_cfg);
 
-static inline int z_impl_dac_channel_setup(struct device *dev,
-				const struct dac_channel_cfg *channel_cfg)
+static inline int z_impl_dac_channel_setup(const struct device *dev,
+					   const struct dac_channel_cfg *channel_cfg)
 {
 	const struct dac_driver_api *api =
-				(const struct dac_driver_api *)dev->driver_api;
+				(const struct dac_driver_api *)dev->api;
 
 	return api->channel_setup(dev, channel_cfg);
 }
@@ -107,13 +107,14 @@ static inline int z_impl_dac_channel_setup(struct device *dev,
  * @retval 0        On success.
  * @retval -EINVAL  If a parameter with an invalid value has been provided.
  */
-__syscall int dac_write_value(struct device *dev, uint8_t channel, uint32_t value);
+__syscall int dac_write_value(const struct device *dev, uint8_t channel,
+			      uint32_t value);
 
-static inline int z_impl_dac_write_value(struct device *dev,
+static inline int z_impl_dac_write_value(const struct device *dev,
 						uint8_t channel, uint32_t value)
 {
 	const struct dac_driver_api *api =
-				(const struct dac_driver_api *)dev->driver_api;
+				(const struct dac_driver_api *)dev->api;
 
 	return api->write_value(dev, channel, value);
 }

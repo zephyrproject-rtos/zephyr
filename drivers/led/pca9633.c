@@ -42,14 +42,14 @@ LOG_MODULE_REGISTER(pca9633);
 #define PCA9633_MASK            0x03
 
 struct pca9633_data {
-	struct device *i2c;
+	const struct device *i2c;
 	struct led_data dev_data;
 };
 
-static int pca9633_led_blink(struct device *dev, uint32_t led,
+static int pca9633_led_blink(const struct device *dev, uint32_t led,
 			     uint32_t delay_on, uint32_t delay_off)
 {
-	struct pca9633_data *data = dev->driver_data;
+	struct pca9633_data *data = dev->data;
 	struct led_data *dev_data = &data->dev_data;
 	uint8_t gdc, gfrq;
 	uint32_t period;
@@ -109,10 +109,10 @@ static int pca9633_led_blink(struct device *dev, uint32_t led,
 	return 0;
 }
 
-static int pca9633_led_set_brightness(struct device *dev, uint32_t led,
+static int pca9633_led_set_brightness(const struct device *dev, uint32_t led,
 				      uint8_t value)
 {
-	struct pca9633_data *data = dev->driver_data;
+	struct pca9633_data *data = dev->data;
 	struct led_data *dev_data = &data->dev_data;
 	uint8_t val;
 
@@ -142,9 +142,9 @@ static int pca9633_led_set_brightness(struct device *dev, uint32_t led,
 	return 0;
 }
 
-static inline int pca9633_led_on(struct device *dev, uint32_t led)
+static inline int pca9633_led_on(const struct device *dev, uint32_t led)
 {
-	struct pca9633_data *data = dev->driver_data;
+	struct pca9633_data *data = dev->data;
 
 	/* Set LED state to ON */
 	if (i2c_reg_update_byte(data->i2c, DT_INST_REG_ADDR(0),
@@ -158,9 +158,9 @@ static inline int pca9633_led_on(struct device *dev, uint32_t led)
 	return 0;
 }
 
-static inline int pca9633_led_off(struct device *dev, uint32_t led)
+static inline int pca9633_led_off(const struct device *dev, uint32_t led)
 {
-	struct pca9633_data *data = dev->driver_data;
+	struct pca9633_data *data = dev->data;
 
 	/* Set LED state to OFF */
 	if (i2c_reg_update_byte(data->i2c, DT_INST_REG_ADDR(0),
@@ -174,9 +174,9 @@ static inline int pca9633_led_off(struct device *dev, uint32_t led)
 	return 0;
 }
 
-static int pca9633_led_init(struct device *dev)
+static int pca9633_led_init(const struct device *dev)
 {
-	struct pca9633_data *data = dev->driver_data;
+	struct pca9633_data *data = dev->data;
 	struct led_data *dev_data = &data->dev_data;
 
 	data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));

@@ -84,7 +84,7 @@ _exc_entry:
 	 * and exception is raised, then here it's guaranteed that
 	 * exception handling has necessary stack to use
 	 */
-	mov_s ilink, sp
+	mov ilink, sp
 	_get_curr_cpu_irq_stack sp
 	sub sp, sp, (CONFIG_ISR_STACK_SIZE - CONFIG_ARC_EXCEPTION_STACK_SIZE)
 
@@ -104,7 +104,7 @@ _exc_entry:
 	/* sp is parameter of _Fault */
 	mov_s r0, sp
 	/* ilink is the thread's original sp */
-	mov_s r1, ilink
+	mov r1, ilink
 	jl _Fault
 
 _exc_return:
@@ -143,7 +143,7 @@ _exc_return:
 	/* save r2 in ilink because of the possible following reg
 	 * bank switch
 	 */
-	mov_s ilink, r2
+	mov ilink, r2
 #endif
 	lr r3, [_ARC_V2_STATUS32]
 	and r3,r3,(~(_ARC_V2_STATUS32_AE | _ARC_V2_STATUS32_RB(7)))
@@ -187,7 +187,7 @@ _exc_return_from_exc:
 	sr r0, [_ARC_V2_ERET]
 
 	_pop_irq_stack_frame
-	mov_s sp, ilink
+	mov sp, ilink
 	rtie
 
 /* separated entry for trap which may be used by irq_offload, USERPSACE */
@@ -199,7 +199,7 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_trap)
 	cmp ilink, _TRAP_S_CALL_SYSTEM_CALL
 	bne _do_non_syscall_trap
 	/* do sys_call */
-	mov_s ilink, K_SYSCALL_LIMIT
+	mov ilink, K_SYSCALL_LIMIT
 	cmp r6, ilink
 	blo valid_syscall_id
 

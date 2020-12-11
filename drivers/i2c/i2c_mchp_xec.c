@@ -146,10 +146,11 @@ static bool check_lines(uint32_t ba)
 		(!(MCHP_I2C_SMB_BB_CTRL(ba) & MCHP_I2C_SMB_BB_DATI_RO)));
 }
 
-static int i2c_xec_configure(struct device *dev, uint32_t dev_config_raw)
+static int i2c_xec_configure(const struct device *dev,
+			     uint32_t dev_config_raw)
 {
 	const struct i2c_xec_config *config =
-		(const struct i2c_xec_config *const) (dev->config_info);
+		(const struct i2c_xec_config *const) (dev->config);
 	uint32_t ba = config->base_addr;
 	uint8_t port_sel = config->port_sel;
 	uint32_t speed_id;
@@ -225,13 +226,13 @@ static int i2c_xec_configure(struct device *dev, uint32_t dev_config_raw)
 	return 0;
 }
 
-static int i2c_xec_poll_write(struct device *dev, struct i2c_msg msg,
+static int i2c_xec_poll_write(const struct device *dev, struct i2c_msg msg,
 			      uint16_t addr)
 {
 	const struct i2c_xec_config *config =
-		(const struct i2c_xec_config *const) (dev->config_info);
+		(const struct i2c_xec_config *const) (dev->config);
 	struct i2c_xec_data *data =
-		(struct i2c_xec_data *const) (dev->driver_data);
+		(struct i2c_xec_data *const) (dev->data);
 	uint32_t ba = config->base_addr;
 	int ret;
 
@@ -288,13 +289,13 @@ static int i2c_xec_poll_write(struct device *dev, struct i2c_msg msg,
 	return 0;
 }
 
-static int i2c_xec_poll_read(struct device *dev, struct i2c_msg msg,
+static int i2c_xec_poll_read(const struct device *dev, struct i2c_msg msg,
 			     uint16_t addr)
 {
 	const struct i2c_xec_config *config =
-		(const struct i2c_xec_config *const) (dev->config_info);
+		(const struct i2c_xec_config *const) (dev->config);
 	struct i2c_xec_data *data =
-		(struct i2c_xec_data *const) (dev->driver_data);
+		(struct i2c_xec_data *const) (dev->data);
 	uint32_t ba = config->base_addr;
 	uint8_t byte, ctrl;
 	int ret;
@@ -365,7 +366,7 @@ static int i2c_xec_poll_read(struct device *dev, struct i2c_msg msg,
 	return 0;
 }
 
-static int i2c_xec_transfer(struct device *dev, struct i2c_msg *msgs,
+static int i2c_xec_transfer(const struct device *dev, struct i2c_msg *msgs,
 				uint8_t num_msgs, uint16_t addr)
 {
 	int ret = 0;
@@ -386,18 +387,18 @@ static int i2c_xec_transfer(struct device *dev, struct i2c_msg *msgs,
 }
 
 #if defined(CONFIG_I2C_SLAVE)
-static int i2c_xec_slave_register(struct device *dev)
+static int i2c_xec_slave_register(const struct device *dev)
 {
 	return -ENOTSUP;
 }
 
-static int i2c_xec_slave_unregister(struct device *dev)
+static int i2c_xec_slave_unregister(const struct device *dev)
 {
 	return -ENOTSUP;
 }
 #endif
 
-static int i2c_xec_init(struct device *dev);
+static int i2c_xec_init(const struct device *dev);
 
 static const struct i2c_driver_api i2c_xec_driver_api = {
 	.configure = i2c_xec_configure,
@@ -408,10 +409,10 @@ static const struct i2c_driver_api i2c_xec_driver_api = {
 #endif
 };
 
-static int i2c_xec_init(struct device *dev)
+static int i2c_xec_init(const struct device *dev)
 {
 	struct i2c_xec_data *data =
-		(struct i2c_xec_data *const) (dev->driver_data);
+		(struct i2c_xec_data *const) (dev->data);
 	data->pending_stop = 0;
 	return 0;
 }
@@ -423,9 +424,8 @@ static int i2c_xec_init(struct device *dev)
 			DT_INST_REG_ADDR(n),	\
 		.port_sel = DT_INST_PROP(n, port_sel),	\
 	};								\
-	DEVICE_AND_API_INIT(i2c_xec_##n,				\
-		DT_INST_LABEL(n),			\
-		&i2c_xec_init, &i2c_xec_data_##n, &i2c_xec_config_##n,	\
+	DEVICE_DT_INST_DEFINE(n, &i2c_xec_init, device_pm_control_nop,	\
+		&i2c_xec_data_##n, &i2c_xec_config_##n,			\
 		POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,			\
 		&i2c_xec_driver_api);
 

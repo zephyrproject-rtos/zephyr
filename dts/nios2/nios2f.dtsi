@@ -10,7 +10,7 @@
 
 		cpu: cpu@0 {
 			device_type = "cpu";
-			compatible = "altera,nios2f";
+			compatible = "altr,nios2f";
 			reg = <0>;
 			interrupt-controller;
 			#interrupt-cells = <1>;

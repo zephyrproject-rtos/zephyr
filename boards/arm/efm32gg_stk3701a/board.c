@@ -11,9 +11,9 @@
 #include <sys/printk.h>
 #include "em_cmu.h"
 
-static int efm32gg_stk3701a_init(struct device *dev)
+static int efm32gg_stk3701a_init(const struct device *dev)
 {
-	struct device *cur_dev;
+	const struct device *cur_dev;
 
 	ARG_UNUSED(dev);
 
@@ -47,6 +47,8 @@ static int efm32gg_stk3701a_init(struct device *dev)
 
 	gpio_pin_configure(cur_dev, ETH_REF_CLK_GPIO_PIN, GPIO_OUTPUT);
 	gpio_pin_set(cur_dev, ETH_REF_CLK_GPIO_PIN, 0);
+
+	CMU_OscillatorEnable(cmuOsc_HFXO, true, true);
 
 	/* enable CMU_CLK2 as RMII reference clock */
 	CMU->CTRL      |= CMU_CTRL_CLKOUTSEL2_HFXO;

@@ -23,7 +23,7 @@
 
 extern void *_VectorTable;
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 #include <power/power.h>
 #include <kernel_structs.h>
 
@@ -60,7 +60,7 @@ static struct arc_v2_irq_unit_ctx ctx;
  *
  * @return 0 for success
  */
-static int arc_v2_irq_unit_init(struct device *unused)
+static int arc_v2_irq_unit_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 	int irq; /* the interrupt index */
@@ -87,7 +87,7 @@ static int arc_v2_irq_unit_init(struct device *unused)
 	return 0;
 }
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 
 /*
  * @brief Suspend the interrupt unit device driver
@@ -97,7 +97,7 @@ static int arc_v2_irq_unit_init(struct device *unused)
  *
  * @return 0 for success
  */
-static int arc_v2_irq_unit_suspend(struct device *dev)
+static int arc_v2_irq_unit_suspend(const struct device *dev)
 {
 	uint8_t irq;
 
@@ -133,7 +133,7 @@ static int arc_v2_irq_unit_suspend(struct device *dev)
  *
  * @return 0 for success
  */
-static int arc_v2_irq_unit_resume(struct device *dev)
+static int arc_v2_irq_unit_resume(const struct device *dev)
 {
 	uint8_t irq;
 
@@ -176,7 +176,7 @@ static int arc_v2_irq_unit_resume(struct device *dev)
  *
  * @return the power state of interrupt unit
  */
-static int arc_v2_irq_unit_get_state(struct device *dev)
+static int arc_v2_irq_unit_get_state(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -191,8 +191,9 @@ static int arc_v2_irq_unit_get_state(struct device *dev)
  *
  * @return operation result
  */
-static int arc_v2_irq_unit_device_ctrl(struct device *device,
-		uint32_t ctrl_command, void *context, device_pm_cb cb, void *arg)
+static int arc_v2_irq_unit_device_ctrl(const struct device *device,
+				       uint32_t ctrl_command, void *context,
+				       device_pm_cb cb, void *arg)
 {
 	int ret = 0;
 	unsigned int key = arch_irq_lock();
@@ -222,4 +223,4 @@ SYS_DEVICE_DEFINE("arc_v2_irq_unit", arc_v2_irq_unit_init,
 #else
 SYS_INIT(arc_v2_irq_unit_init, PRE_KERNEL_1,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-#endif   /* CONFIG_DEVICE_POWER_MANAGEMENT */
+#endif   /* CONFIG_PM_DEVICE */

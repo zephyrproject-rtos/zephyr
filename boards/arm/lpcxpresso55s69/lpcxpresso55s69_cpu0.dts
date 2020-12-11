@@ -75,47 +75,27 @@
 
 &hs_lspi {
 	status = "okay";
+	dmas = <&dma0 2>, <&dma0 3>;
+	dma-names = "rx", "tx";
 };
 
 &wwdt0 {
 	status = "okay";
 };
 
-&flash0 {
-	/*
-	 * For more information, see:
-	 * https://docs.zephyrproject.org/latest/guides/dts/legacy-macros.html#legacy-flash-partitions
-	 */
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
+&adc0 {
+	status = "okay";
+};
 
-		boot_partition: partition@0 {
-			label = "mcuboot";
-			reg = <0x00000000 0x00010000>;
-			read-only;
-		};
-		/*
-		 * The flash starting at 0x10010000 and ending at
-		 * 0x1001ffff (sectors 16-31) is reserved for use
-		 * by the application.
-		 */
-		storage_partition: partition@1e000 {
-			label = "storage";
-			reg = <0x0001e000 0x00002000>;
-		};
-		slot0_partition: partition@20000 {
-			label = "image-0";
-			reg = <0x00020000 0x00020000>;
-		};
-		slot1_partition: partition@40000 {
-			label = "image-1";
-			reg = <0x00040000 0x00020000>;
-		};
-		scratch_partition: partition@60000 {
-			label = "image-scratch";
-			reg = <0x00060000 0x0003d800>;
-		};
-	};
+&dma0 {
+	/*
+	 * The total number of dma channels available is defined by
+	 * FSL_FEATURE_DMA_NUMBER_OF_CHANNELS in the SoC features file.
+	 * Since memory from the heap pool is allocated based on the number
+	 * of DMA channels, set this property to as many channels is needed
+	 * for the platform. Adjust HEAP_MEM_POOL_SIZE in case you need more
+	 * memory.
+	 */
+	dma-channels = <20>;
+	status = "okay";
 };

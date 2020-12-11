@@ -24,14 +24,20 @@ GDATA(z_interrupt_stacks)
 #if defined(CONFIG_PLATFORM_SPECIFIC_INIT)
 GTEXT(z_platform_init)
 #endif
+#if defined(CONFIG_INIT_ARCH_HW_AT_BOOT)
+GTEXT(z_arm_init_arch_hw_at_boot)
+GDATA(z_main_stack)
+#endif
+
 
 /**
  *
  * @brief Reset vector
  *
- * Ran when the system comes out of reset. The processor is in thread mode with
- * privileged level. At this point, the main stack pointer (MSP) is already
- * pointing to a valid area in SRAM.
+ * Ran when the system comes out of reset, or when the firmware image is chain-
+ * loaded by another application (for instance, a bootloader). At minimum, the
+ * processor must be in thread mode with privileged level. At this point, the
+ * main stack pointer (MSP) should be already pointing to a valid area in SRAM.
  *
  * Locking interrupts prevents anything but NMIs and hard faults from
  * interrupting the CPU. A default NMI handler is already in place in the
@@ -58,9 +64,38 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,z_arm_reset)
  */
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
+#if defined(CONFIG_INIT_ARCH_HW_AT_BOOT)
+    /* Reset CONTROL register */
+    movs.n r0, #0
+    msr CONTROL, r0
+    isb
+#if defined(CONFIG_CPU_CORTEX_M_HAS_SPLIM)
+    /* Clear SPLIM registers */
+    movs.n r0, #0
+    msr MSPLIM, r0
+    msr PSPLIM, r0
+#endif /* CONFIG_CPU_CORTEX_M_HAS_SPLIM */
+
+#endif /* CONFIG_INIT_ARCH_HW_AT_BOOT */
+
 #if defined(CONFIG_PLATFORM_SPECIFIC_INIT)
     bl z_platform_init
 #endif
+
+#if defined(CONFIG_INIT_ARCH_HW_AT_BOOT)
+#if defined(CONFIG_CPU_HAS_ARM_MPU)
+    /* Disable MPU */
+    movs.n r0, #0
+    ldr r1, =_SCS_MPU_CTRL
+    str r0, [r1]
+    dsb
+#endif /* CONFIG_CPU_HAS_ARM_MPU */
+    ldr r0, =z_main_stack + CONFIG_MAIN_STACK_SIZE
+    msr msp, r0
+
+    /* Initialize core architecture registers and system blocks */
+    bl z_arm_init_arch_hw_at_boot
+#endif /* CONFIG_INIT_ARCH_HW_AT_BOOT */
 
     /* lock interrupts: will get unlocked when switch to main task */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)

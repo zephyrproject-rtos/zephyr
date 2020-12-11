@@ -42,13 +42,13 @@ unsigned int seq_level_cnt;
 unsigned int seq_priority_cnt;
 
 /* define driver type 1: for testing initialize levels and priorites */
-typedef int (*my_api_configure_t)(struct device *dev, int dev_config);
+typedef int (*my_api_configure_t)(const struct device *dev, int dev_config);
 
 struct my_driver_api {
 	my_api_configure_t configure;
 };
 
-static int my_configure(struct device *dev, int config)
+static int my_configure(const struct device *dev, int config)
 {
 	return 0;
 }
@@ -58,7 +58,7 @@ static const struct my_driver_api funcs_my_drivers = {
 };
 
 /* driver init function of testing level */
-static int my_driver_lv_1_init(struct device *dev)
+static int my_driver_lv_1_init(const struct device *dev)
 {
 	init_level_sequence[seq_level_cnt] = LEVEL_PRE_KERNEL_1;
 	seq_level_cnt++;
@@ -66,7 +66,7 @@ static int my_driver_lv_1_init(struct device *dev)
 	return 0;
 }
 
-static int my_driver_lv_2_init(struct device *dev)
+static int my_driver_lv_2_init(const struct device *dev)
 {
 	init_level_sequence[seq_level_cnt] = LEVEL_PRE_KERNEL_2;
 	seq_level_cnt++;
@@ -74,7 +74,7 @@ static int my_driver_lv_2_init(struct device *dev)
 	return 0;
 }
 
-static int my_driver_lv_3_init(struct device *dev)
+static int my_driver_lv_3_init(const struct device *dev)
 {
 	init_level_sequence[seq_level_cnt] = LEVEL_POST_KERNEL;
 	seq_level_cnt++;
@@ -82,7 +82,7 @@ static int my_driver_lv_3_init(struct device *dev)
 	return 0;
 }
 
-static int my_driver_lv_4_init(struct device *dev)
+static int my_driver_lv_4_init(const struct device *dev)
 {
 	init_level_sequence[seq_level_cnt] = LEVEL_APPLICATION;
 	seq_level_cnt++;
@@ -91,7 +91,7 @@ static int my_driver_lv_4_init(struct device *dev)
 }
 
 /* driver init function of testing priority */
-static int my_driver_pri_1_init(struct device *dev)
+static int my_driver_pri_1_init(const struct device *dev)
 {
 	init_priority_sequence[seq_priority_cnt] = PRIORITY_1;
 	seq_priority_cnt++;
@@ -99,7 +99,7 @@ static int my_driver_pri_1_init(struct device *dev)
 	return 0;
 }
 
-static int my_driver_pri_2_init(struct device *dev)
+static int my_driver_pri_2_init(const struct device *dev)
 {
 	init_priority_sequence[seq_priority_cnt] = PRIORITY_2;
 	seq_priority_cnt++;
@@ -107,7 +107,7 @@ static int my_driver_pri_2_init(struct device *dev)
 	return 0;
 }
 
-static int my_driver_pri_3_init(struct device *dev)
+static int my_driver_pri_3_init(const struct device *dev)
 {
 	init_priority_sequence[seq_priority_cnt] = PRIORITY_3;
 	seq_priority_cnt++;
@@ -115,7 +115,7 @@ static int my_driver_pri_3_init(struct device *dev)
 	return 0;
 }
 
-static int my_driver_pri_4_init(struct device *dev)
+static int my_driver_pri_4_init(const struct device *dev)
 {
 	init_priority_sequence[seq_priority_cnt] = PRIORITY_4;
 	seq_priority_cnt++;

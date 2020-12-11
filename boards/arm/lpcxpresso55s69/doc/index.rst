@@ -70,6 +70,12 @@ features:
 +-----------+------------+-------------------------------------+
 | WWDT      | on-chip    | windowed watchdog timer             |
 +-----------+------------+-------------------------------------+
+| TrustZone | on-chip    | Trusted Firmware-M                  |
++-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
+| CLOCK     | on-chip    | clock_control                       |
++-----------+------------+-------------------------------------+
 
 The default configuration file
 ``boards/arm/lpcxpresso55s69/lpcxpresso55s69_cpu0_defconfig``
@@ -83,6 +89,8 @@ Targets available for this board are:
 - *lpcxpresso55s69_ns* non-secure (NS) address space for CPU0
 - *lpcxpresso55s69_cpu1* CPU1 target, NS only
 
+CPU0 is the only target that can run standalone.
+NS target for CPU0 does not work correctly without a secure image enabling it.
 CPU1 does not work without CPU0 enabling it.
 
 Connections and IOs
@@ -190,6 +198,21 @@ see the following message in the terminal:
 
    ***** Booting Zephyr OS v1.14.0 *****
    Hello World! lpcxpresso55s69_cpu0
+
+Building and flashing secure/non-secure with Arm |reg| TrustZone |reg|
+----------------------------------------------------------------------
+The TF-M integration samples can be run using the ``lpcxpresso55s69_ns`` target.
+To run we need to manually flash the resulting image (``tfm_merged.bin``) with a
+J-Link as follows (reset and erase are for recovering a locked core):
+
+   .. code-block:: console
+
+      JLinkExe -device lpc55s69 -if swd -speed 2000 -autoconnect 1
+      J-Link>r
+      J-Link>erase
+      J-Link>loadfile build/tfm_merged.bin
+
+We need to reset the board manually after flashing the image to run this code.
 
 Debugging
 =========

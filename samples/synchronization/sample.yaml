@@ -10,5 +10,5 @@ tests:
     harness_config:
       type: multi_line
       regex:
-        - "threadA: Hello World from (.*)!"
-        - "threadB: Hello World from (.*)!"
+        - "thread_a: Hello World from (.*)!"
+        - "thread_b: Hello World from (.*)!"

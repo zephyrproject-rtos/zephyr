@@ -12,6 +12,8 @@
 #ifndef ZEPHYR_DRIVERS_SERIAL_UART_STM32_H_
 #define ZEPHYR_DRIVERS_SERIAL_UART_STM32_H_
 
+#include <drivers/pinmux.h>
+
 /* device config */
 struct uart_stm32_config {
 	struct uart_device_config uconf;
@@ -21,6 +23,8 @@ struct uart_stm32_config {
 	bool hw_flow_control;
 	/* initial parity, 0 for none, 1 for odd, 2 for even */
 	int  parity;
+	const struct soc_gpio_pinctrl *pinctrl_list;
+	size_t pinctrl_list_size;
 };
 
 /* driver data */
@@ -28,7 +32,7 @@ struct uart_stm32_data {
 	/* Baud rate */
 	uint32_t baud_rate;
 	/* clock device */
-	struct device *clock;
+	const struct device *clock;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t user_cb;
 	void *user_data;

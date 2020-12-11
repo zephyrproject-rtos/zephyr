@@ -6,11 +6,12 @@
 
 /dts-v1/;
 #include <st/mp1/stm32mp157.dtsi>
+#include <st/mp1/stm32mp157cacx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32MP157-DK2 board";
-	compatible = "st,stm32mp157c-dk2", "st,stm32mp15";
+	compatible = "st,stm32mp157c-dk2";
 	chosen {
 		/*
 		 * By default, Zephyr console and shell are assigned to
@@ -48,20 +49,30 @@
 
 };
 
+&spi4_miso_pe13{ slew-rate = "very-high-speed"; };
+
 &spi4{
+	pinctrl-0 = <&spi4_nss_pe11 &spi4_sck_pe12
+		     &spi4_miso_pe13 &spi4_mosi_pe14>;
 	status = "okay";
 };
 
+&spi5_miso_pf8{ slew-rate = "very-high-speed"; };
+
 &spi5{
+	pinctrl-0 = <&spi5_nss_pf6 &spi5_sck_pf7
+		     &spi5_miso_pf8 &spi5_mosi_pf9>;
 	status = "okay";
 };
 
 &usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb12>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &uart7 {
+	pinctrl-0 = <&uart7_tx_pe8 &uart7_rx_pe7>;
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -71,6 +82,7 @@
 };
 
 &i2c5 {
+	pinctrl-0 = <&i2c5_scl_pa11 &i2c5_sda_pa12>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };

@@ -211,6 +211,7 @@ config LOG_PROCESS_THREAD_STACK_SIZE
 	default 1024 if XTENSA
 	default 4096 if (X86 && X86_64)
 	default 4096 if ARM64
+	default 4096 if SPARC
 	default 768
 	help
 	  Set the internal stack size for log processing thread.
@@ -426,7 +427,7 @@ endif # LOG_BACKEND_RTT
 
 config LOG_BACKEND_SPINEL
 	bool "Enable OpenThread dedicated Spinel protocol backend"
-	depends on (OPENTHREAD_NCP_SPINEL_ON_UART_DEV_NAME!=UART_CONSOLE_ON_DEV_NAME || !LOG_BACKEND_UART)
+	depends on (OPENTHREAD_COPROCESSOR_SPINEL_ON_UART_DEV_NAME!=UART_CONSOLE_ON_DEV_NAME || !LOG_BACKEND_UART)
 	depends on NET_L2_OPENTHREAD
 	help
 	  When enabled, backend will use OpenThread dedicated SPINEL protocol for logging.
@@ -442,32 +443,6 @@ config LOG_BACKEND_SPINEL_BUFFER_SIZE
 	help
 	  Specify reserved size of up-buffer used for logger output.
 
-choice
-	prompt "Spinel backend log level"
-	help
-	  This option selects log level for Spinel backend stack.
-
-config LOG_BACKEND_SPINEL_LEVEL_CRITICAL
-	bool "Critical"
-config LOG_BACKEND_SPINEL_LEVEL_WARNING
-	bool "Warning"
-config LOG_BACKEND_SPINEL_LEVEL_NOTE
-	bool "Note"
-config LOG_BACKEND_SPINEL_LEVEL_INFO
-	bool "Info"
-config LOG_BACKEND_SPINEL_LEVEL_DEBUG
-	bool "Debug"
-endchoice
-
-config LOG_BACKEND_SPINEL_LEVEL
-	int
-	default 1 if LOG_BACKEND_SPINEL_LEVEL_CRITICAL
-	default 2 if LOG_BACKEND_SPINEL_LEVEL_WARNING
-	default 3 if LOG_BACKEND_SPINEL_LEVEL_NOTE
-	default 4 if LOG_BACKEND_SPINEL_LEVEL_INFO
-	default 5 if LOG_BACKEND_SPINEL_LEVEL_DEBUG
-	default 0
-
 endif # LOG_BACKEND_SPINEL
 
 config LOG_BACKEND_NATIVE_POSIX
@@ -478,7 +453,7 @@ config LOG_BACKEND_NATIVE_POSIX
 
 config LOG_BACKEND_XTENSA_SIM
 	bool "Enable xtensa simulator backend"
-	depends on SOC_XTENSA_SAMPLE_CONTROLLER || SOC_INTEL_APL_ADSP
+	depends on SOC_XTENSA_SAMPLE_CONTROLLER || SOC_FAMILY_INTEL_ADSP
 	help
 	  Enable backend in xtensa simulator
 
@@ -490,9 +465,11 @@ config LOG_BACKEND_XTENSA_OUTPUT_BUFFER_SIZE
 	  Buffer is used by log_output module for preparing output data (e.g.
 	  string formatting).
 
+# Immediate mode cannot be used with network backend as it would cause the sent
+# rsyslog message to be malformed.
 config LOG_BACKEND_NET
 	bool "Enable networking backend"
-	depends on NETWORKING
+	depends on NETWORKING && NET_UDP && !LOG_IMMEDIATE
 	select NET_CONTEXT_NET_PKT_POOL
 	help
 	  Send syslog messages to network server.
@@ -541,35 +518,24 @@ config LOG_BACKEND_NET_SYST_ENABLE
 	help
 	  When enabled backend is using networking to output syst format logs.
 
+config LOG_BACKEND_NET_AUTOSTART
+	bool "Automatically start networking backend"
+	default y if NET_CONFIG_NEED_IPV4 || NET_CONFIG_NEED_IPV6
+	help
+	  When enabled automatically start the networking backend on
+	  application start. If no routes to the logging server are available
+	  on application startup, this must be set to n and the backend must be
+	  started by the application later on. Otherwise the logging
+	  thread might block.
+
 endif # LOG_BACKEND_NET
 
-config LOG_BACKEND_RB
-	bool "Enable memory ring buffer backend"
-	select RING_BUFFER
+config LOG_BACKEND_ADSP
+	bool "Enable Intel ADSP buffer backend"
+	depends on SOC_FAMILY_INTEL_ADSP
 	help
-	  Enable backend in memory using ring buffer to keep messages.
-
-if LOG_BACKEND_RB
-
-config LOG_BACKEND_RB_MEM_BASE
-	hex "Ring buffer memory base address"
-	help
-	  Address of the ring buffer in the memory.
-
-config LOG_BACKEND_RB_MEM_SIZE
-	int "Size of the ring buffer"
-	help
-	  Size of the ring buffer. Must be multiply of the message slot
-	  size.
-
-config LOG_BACKEND_RB_SLOT_SIZE
-	int "Size of the message slot"
-	default 64
-	help
-	  Size of the message slot inside ring buffer. All log messages
-	  are split to similar sized logging slots.
-
-endif # LOG_BACKEND_RB
+	  Enable backend for the host trace protocol of the Intel ADSP
+	  family of audio processors
 
 config LOG_BACKEND_SHOW_COLOR
 	bool "Enable colors in the backend"

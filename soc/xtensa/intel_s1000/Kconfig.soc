@@ -7,3 +7,4 @@ config SOC_INTEL_S1000
 	select XTENSA_HAL if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc"
 	select HAS_I2C_DW if I2C
 	select HAS_SPI_DW if SPI
+	select ARCH_HAS_THREAD_LOCAL_STORAGE

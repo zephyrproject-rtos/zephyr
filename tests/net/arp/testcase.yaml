@@ -1,6 +1,11 @@
 common:
   depends_on: netif
+  min_ram: 16
+  tags: net arp
 tests:
   net.arp:
-    min_ram: 16
-    tags: net arp
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+  net.arp.preempt:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_PREEMPTIVE=y

@@ -11,16 +11,18 @@ User and Developer Guides
    bluetooth/index.rst
    build/index
    coding_guidelines/index
+   design_guidelines.rst
    c_library
    ../README.rst
    documentation/index
    coccinelle.rst
    code-relocation.rst
    crypto/index
-   debugging/index
+   flash_debug/index
    device_mgmt/index
    device_mgmt/dfu
    dts/index
+   emulator/index.rst
    env_vars.rst
    coverage.rst
    kconfig/index
@@ -34,3 +36,4 @@ User and Developer Guides
    west/index
    optimizations/index
    zephyr_cmake_package.rst
+   thread_local_storage.rst

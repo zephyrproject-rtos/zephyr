@@ -32,10 +32,11 @@ static const unsigned int itds_sensitivity_scale[][ITDS_ACCL_RANGE_END] = {
 	{244, 488, 976, 1952}
 };
 
-static int itds_get_odr_for_index(struct device *dev, enum itds_odr_const idx,
+static int itds_get_odr_for_index(const struct device *dev,
+				  enum itds_odr_const idx,
 				  uint16_t *freq, uint16_t *mfreq)
 {
-	struct itds_device_data *ddata = dev->driver_data;
+	struct itds_device_data *ddata = dev->data;
 	int start, end;
 	bool hp_mode;
 
@@ -59,10 +60,11 @@ static int itds_get_odr_for_index(struct device *dev, enum itds_odr_const idx,
 	return 0;
 }
 
-static int itds_accl_odr_set(struct device *dev, uint16_t freq, uint16_t mfreq)
+static int itds_accl_odr_set(const struct device *dev, uint16_t freq,
+			     uint16_t mfreq)
 {
-	struct itds_device_data *ddata = dev->driver_data;
-	const struct itds_device_config *cfg = dev->config_info;
+	struct itds_device_data *ddata = dev->data;
+	const struct itds_device_config *cfg = dev->config;
 	int start, end, i;
 	bool hp_mode;
 
@@ -88,10 +90,10 @@ static int itds_accl_odr_set(struct device *dev, uint16_t freq, uint16_t mfreq)
 	return -EINVAL;
 }
 
-static int itds_accl_range_set(struct device *dev, int32_t range)
+static int itds_accl_range_set(const struct device *dev, int32_t range)
 {
-	struct itds_device_data *ddata = dev->driver_data;
-	const struct itds_device_config *cfg = dev->config_info;
+	struct itds_device_data *ddata = dev->data;
+	const struct itds_device_config *cfg = dev->config;
 	int i, ret;
 	bool hp_mode;
 
@@ -119,7 +121,7 @@ static int itds_accl_range_set(struct device *dev, int32_t range)
 	return 0;
 }
 
-static int itds_attr_set(struct device *dev, enum sensor_channel chan,
+static int itds_attr_set(const struct device *dev, enum sensor_channel chan,
 			 enum sensor_attribute attr,
 			 const struct sensor_value *val)
 {
@@ -212,10 +214,11 @@ static int itds_fetch_accel(struct itds_device_data *ddata,
 	return 0;
 }
 
-static int itds_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int itds_sample_fetch(const struct device *dev,
+			     enum sensor_channel chan)
 {
-	struct itds_device_data *ddata = dev->driver_data;
-	const struct itds_device_config *cfg = dev->config_info;
+	struct itds_device_data *ddata = dev->data;
+	const struct itds_device_config *cfg = dev->config;
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
@@ -232,12 +235,12 @@ static int itds_sample_fetch(struct device *dev, enum sensor_channel chan)
 	}
 }
 
-static inline void itds_accl_channel_get(struct device *dev,
+static inline void itds_accl_channel_get(const struct device *dev,
 					 enum sensor_channel chan,
 					 struct sensor_value *val)
 {
 	int i;
-	struct itds_device_data *ddata = dev->driver_data;
+	struct itds_device_data *ddata = dev->data;
 	uint8_t ofs_start, ofs_stop;
 
 	switch (chan) {
@@ -267,10 +270,11 @@ static inline void itds_accl_channel_get(struct device *dev,
 	}
 }
 
-static int itds_temp_channel_get(struct device *dev, struct sensor_value *val)
+static int itds_temp_channel_get(const struct device *dev,
+				 struct sensor_value *val)
 {
 	int32_t temp_processed;
-	struct itds_device_data *ddata = dev->driver_data;
+	struct itds_device_data *ddata = dev->data;
 
 	temp_processed = (ddata->temprature >> 4) * ITDS_TEMP_CONST;
 
@@ -280,7 +284,7 @@ static int itds_temp_channel_get(struct device *dev, struct sensor_value *val)
 	return 0;
 }
 
-static int itds_channel_get(struct device *dev,
+static int itds_channel_get(const struct device *dev,
 			    enum sensor_channel chan,
 			    struct sensor_value *val)
 {
@@ -303,10 +307,10 @@ static int itds_channel_get(struct device *dev,
 	return 0;
 }
 
-static int itds_init(struct device *dev)
+static int itds_init(const struct device *dev)
 {
-	struct itds_device_data *ddata = dev->driver_data;
-	const struct itds_device_config *cfg = dev->config_info;
+	struct itds_device_data *ddata = dev->data;
+	const struct itds_device_config *cfg = dev->config;
 	int ret;
 	uint16_t freq, mfreq;
 	uint8_t rval;

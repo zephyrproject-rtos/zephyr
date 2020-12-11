@@ -7,7 +7,8 @@
 #include <logging/log_output.h>
 #include <logging/log_ctrl.h>
 #include <logging/log.h>
-#include <assert.h>
+#include <sys/__assert.h>
+#include <sys/cbprintf.h>
 #include <ctype.h>
 #include <time.h>
 #include <stdio.h>
@@ -44,11 +45,6 @@ static const char *const colors[] = {
 static uint32_t freq;
 static uint32_t timestamp_div;
 
-typedef int (*out_func_t)(int c, void *ctx);
-
-extern int z_prf(int (*func)(), void *dest, char *format, va_list vargs);
-extern void z_vprintk(out_func_t out, void *log_output,
-		     const char *fmt, va_list ap);
 extern void log_output_msg_syst_process(const struct log_output *log_output,
 				struct log_msg *msg, uint32_t flag);
 extern void log_output_string_syst_process(const struct log_output *log_output,
@@ -129,12 +125,7 @@ static int print_formatted(const struct log_output *log_output,
 	int length = 0;
 
 	va_start(args, fmt);
-#if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_ARCH_POSIX) && \
-    defined(CONFIG_LOG_ENABLE_FANCY_OUTPUT_FORMATTING)
-	length = z_prf(out_func, (void *)log_output, (char *)fmt, args);
-#else
-	z_vprintk(out_func, (void *)log_output, fmt, args);
-#endif
+	length = cbvprintf(out_func, (void *)log_output, fmt, args);
 	va_end(args);
 
 	return length;
@@ -591,12 +582,7 @@ void log_output_string(const struct log_output *log_output,
 				level, domain_id, source_id);
 	}
 
-#if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_ARCH_POSIX) && \
-    defined(CONFIG_LOG_ENABLE_FANCY_OUTPUT_FORMATTING)
-	length = z_prf(out_func, (void *)log_output, (char *)fmt, ap);
-#else
-	z_vprintk(out_func, (void *)log_output, fmt, ap);
-#endif
+	length = cbvprintf(out_func, (void *)log_output, fmt, ap);
 
 	(void)length;
 
@@ -658,14 +644,15 @@ void log_output_dropped_process(const struct log_output *log_output, uint32_t cn
 	static const char postfix[] =
 			" messages dropped ---\r\n" DROPPED_COLOR_POSTFIX;
 	log_output_func_t outf = log_output->func;
-	struct device *dev = (struct device *)log_output->control_block->ctx;
 
 	cnt = MIN(cnt, 9999);
 	len = snprintk(buf, sizeof(buf), "%d", cnt);
 
-	buffer_write(outf, (uint8_t *)prefix, sizeof(prefix) - 1, dev);
-	buffer_write(outf, buf, len, dev);
-	buffer_write(outf, (uint8_t *)postfix, sizeof(postfix) - 1, dev);
+	buffer_write(outf, (uint8_t *)prefix, sizeof(prefix) - 1,
+		     log_output->control_block->ctx);
+	buffer_write(outf, buf, len, log_output->control_block->ctx);
+	buffer_write(outf, (uint8_t *)postfix, sizeof(postfix) - 1,
+		     log_output->control_block->ctx);
 }
 
 void log_output_timestamp_freq_set(uint32_t frequency)

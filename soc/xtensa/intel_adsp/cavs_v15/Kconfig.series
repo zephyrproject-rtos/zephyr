@@ -1,0 +1,13 @@
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_INTEL_CAVS_V15
+	bool "Intel CAVS v1.5"
+	select SOC_FAMILY_INTEL_ADSP
+	select XTENSA
+	select XTENSA_HAL if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc"
+	select XTENSA_RESET_VECTOR
+	select XTENSA_USE_CORE_CRT1
+	select ATOMIC_OPERATIONS_BUILTIN
+	help
+	  Intel CAVS v1.5

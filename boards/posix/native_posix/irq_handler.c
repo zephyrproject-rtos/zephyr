@@ -20,7 +20,7 @@
 #include "soc.h"
 #include <tracing/tracing.h>
 
-typedef void (*normal_irq_f_ptr)(void *);
+typedef void (*normal_irq_f_ptr)(const void *);
 typedef int (*direct_irq_f_ptr)(void);
 
 typedef struct _isr_list isr_table_entry_t;
@@ -43,7 +43,7 @@ static inline void vector_to_irq(int irq_nbr, int *may_swap)
 			*may_swap |= ((direct_irq_f_ptr)
 					irq_vector_table[irq_nbr].func)();
 		} else {
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 			posix_irq_check_idle_exit();
 #endif
 			((normal_irq_f_ptr)irq_vector_table[irq_nbr].func)
@@ -229,8 +229,8 @@ int posix_get_current_irq(void)
  * @param isr_param_p ISR parameter
  * @param flags_p IRQ options
  */
-void posix_isr_declare(unsigned int irq_p, int flags, void isr_p(void *),
-		void *isr_param_p)
+void posix_isr_declare(unsigned int irq_p, int flags, void isr_p(const void *),
+		       const void *isr_param_p)
 {
 	irq_vector_table[irq_p].irq   = irq_p;
 	irq_vector_table[irq_p].func  = isr_p;
@@ -278,13 +278,13 @@ void posix_sw_clear_pending_IRQ(unsigned int IRQn)
 /**
  * Storage for functions offloaded to IRQ
  */
-static void (*off_routine)(void *);
-static void *off_parameter;
+static void (*off_routine)(const void *);
+static const void *off_parameter;
 
 /**
  * IRQ handler for the SW interrupt assigned to irq_offload()
  */
-static void offload_sw_irq_handler(void *a)
+static void offload_sw_irq_handler(const void *a)
 {
 	ARG_UNUSED(a);
 	off_routine(off_parameter);
@@ -295,7 +295,7 @@ static void offload_sw_irq_handler(void *a)
  *
  * Raise the SW IRQ assigned to handled this
  */
-void posix_irq_offload(void (*routine)(void *), void *parameter)
+void posix_irq_offload(void (*routine)(const void *), const void *parameter)
 {
 	off_routine = routine;
 	off_parameter = parameter;

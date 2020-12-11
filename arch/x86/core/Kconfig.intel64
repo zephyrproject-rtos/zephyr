@@ -20,9 +20,9 @@ config TEST_EXTRA_STACKSIZE
 config SYSTEM_WORKQUEUE_STACK_SIZE
 	default 8192
 
-config EXCEPTION_STACK_SIZE
+config X86_EXCEPTION_STACK_SIZE
 	int "Size of the exception stack(s)"
-	default 2048
+	default 4096
 	help
 	  The exception stack(s) (one per CPU) are used both for exception
 	  processing and early kernel/CPU initialization. They need only
@@ -40,6 +40,12 @@ config X86_EXCEPTION_STACK_TRACE
 config SCHED_IPI_VECTOR
 	int "IDT vector to use for scheduler IPI"
 	default 34
+	range 33 255
+	depends on SMP
+
+config TLB_IPI_VECTOR
+	int "IDT vector to use for TLB shootdown IPI"
+	default 35
 	range 33 255
 	depends on SMP
 

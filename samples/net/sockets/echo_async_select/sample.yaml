@@ -4,7 +4,7 @@ sample:
   name: socket_echo_async
 common:
   harness: net
-  platform_whitelist: qemu_x86
+  platform_allow: qemu_x86
   tags: net socket
 tests:
   sample.net.sockets.echo_async_select:

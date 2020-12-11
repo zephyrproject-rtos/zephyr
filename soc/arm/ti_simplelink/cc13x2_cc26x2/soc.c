@@ -8,7 +8,7 @@
 
 #include <driverlib/setup.h>
 
-static int ti_cc13x2_cc26x2_init(struct device *dev)
+static int ti_cc13x2_cc26x2_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

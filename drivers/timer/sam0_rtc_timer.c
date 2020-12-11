@@ -138,7 +138,7 @@ static void rtc_reset(void)
 #endif
 }
 
-static void rtc_isr(void *arg)
+static void rtc_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -175,7 +175,7 @@ static void rtc_isr(void *arg)
 #endif /* CONFIG_TICKLESS_KERNEL */
 }
 
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 
@@ -259,7 +259,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 #ifdef CONFIG_TICKLESS_KERNEL
 
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
-	ticks = MAX(MIN(ticks - 1, (int32_t) MAX_TICKS), 0);
+	ticks = CLAMP(ticks - 1, 0, (int32_t) MAX_TICKS);
 
 	/* Compute number of RTC cycles until the next timeout. */
 	uint32_t count = rtc_count();

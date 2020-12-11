@@ -146,5 +146,12 @@ or::
 
 which will produce ``sanity-out/coverage/index.html`` with the report.
 
+The process differs for unit tests, which are built with the host
+toolchain and require a different board::
+
+    $ sanitycheck --coverage -p unit_testing -T tests/unit
+
+which produces a report in the same location as non-unit testing.
+
 .. _gcov:
    https://gcc.gnu.org/onlinedocs/gcc/Gcov.html

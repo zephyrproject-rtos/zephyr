@@ -13,7 +13,7 @@ Overview
 The Network Management APIs allow applications, as well as network
 layer code itself, to call defined network routines at any level in
 the IP stack, or receive notifications on relevant network events. For
-example, by using these APIs, code can request a scan be done on a
+example, by using these APIs, application code can request a scan be done on a
 Wi-Fi- or Bluetooth-based network interface, or request notification if
 a network interface IP address changes.
 
@@ -22,7 +22,7 @@ by eliminating code at build time for management routines that are not
 used. Distinct and statically defined APIs for network management
 procedures are not used.  Instead, defined procedure handlers are
 registered by using a :c:macro:`NET_MGMT_REGISTER_REQUEST_HANDLER`
-macro. Procedure requests are done through a single :cpp:func:`net_mgmt()` API
+macro. Procedure requests are done through a single :c:func:`net_mgmt` API
 that invokes the registered handler for the corresponding request.
 
 The current implementation is experimental and may change and improve
@@ -38,7 +38,7 @@ implied, and the specific management procedure being requested. The
 available procedure requests depend on what has been implemented in
 the stack.
 
-To avoid extra cost, all :cpp:func:`net_mgmt()` calls are direct. Though this
+To avoid extra cost, all :c:func:`net_mgmt` calls are direct. Though this
 may change in a future release, it will not affect the users of this
 function.
 
@@ -51,11 +51,11 @@ your callback is invoked. The callback  will have to be unique for a
 pair of layer and code, whereas on the command part it will be a mask of
 events.
 
-Two functions are available, :cpp:func:`net_mgmt_add_event_callback()` for
+Two functions are available, :c:func:`net_mgmt_add_event_callback` for
 registering the callback function, and
-:cpp:func:`net_mgmt_del_event_callback()`
+:c:func:`net_mgmt_del_event_callback`
 for unregistering a callback. A helper function,
-:cpp:func:`net_mgmt_init_event_callback()`, can
+:c:func:`net_mgmt_init_event_callback`, can
 be used to ease the initialization of the callback structure.
 
 When an event occurs that matches a callback's event set, the
@@ -69,7 +69,11 @@ same callback function, if desired.
    layer and layer code.  A callback handler function **must** check
    the event code (passed as an argument) against the specific network
    events it will handle, **regardless** of how many events were in the
-   set passed to :cpp:func:`net_mgmt_init_event_callback()`.
+   set passed to :c:func:`net_mgmt_init_event_callback`.
+
+   Note that in order to receive events from multiple layers, one must have
+   multiple listeners registered, one for each layer being listened.
+   The callback handler function can be shared between different layer events.
 
    (False positives can occur for events which have the same layer and
    layer code.)
@@ -82,17 +86,24 @@ An example follows.
 	 * Set of events to handle.
 	 * See e.g. include/net/net_event.h for some NET_EVENT_xxx values.
 	 */
-	#define EVENT_SET (NET_EVENT_xxx | NET_EVENT_yyy)
+	#define EVENT_IFACE_SET (NET_EVENT_IF_xxx | NET_EVENT_IF_yyy)
+	#define EVENT_IPV4_SET (NET_EVENT_IPV4_xxx | NET_EVENT_IPV4_yyy)
 
-	struct net_mgmt_event_callback callback;
+	struct net_mgmt_event_callback iface_callback;
+	struct net_mgmt_event_callback ipv4_callback;
 
-	void callback_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+	void callback_handler(struct net_mgmt_event_callback *cb,
+			      uint32_t mgmt_event,
 			      struct net_if *iface)
 	{
-		if (mgmt_event == NET_EVENT_xxx) {
-			/* Handle NET_EVENT_xxx */
-		} else if (mgmt_event == NET_EVENT_yyy) {
-			/* Handle NET_EVENT_yyy */
+		if (mgmt_event == NET_EVENT_IF_xxx) {
+			/* Handle NET_EVENT_IF_xxx */
+		} else if (mgmt_event == NET_EVENT_IF_yyy) {
+			/* Handle NET_EVENT_IF_yyy */
+		} else if (mgmt_event == NET_EVENT_IPV4_xxx) {
+			/* Handle NET_EVENT_IPV4_xxx */
+		} else if (mgmt_event == NET_EVENT_IPV4_yyy) {
+			/* Handle NET_EVENT_IPV4_yyy */
 		} else {
 			/* Spurious (false positive) invocation. */
 		}
@@ -100,8 +111,12 @@ An example follows.
 
 	void register_cb(void)
 	{
-		net_mgmt_init_event_callback(&callback, callback_handler, EVENT_SET);
-		net_mgmt_add_event_callback(&callback);
+		net_mgmt_init_event_callback(&iface_callback, callback_handler,
+					     EVENT_IFACE_SET);
+		net_mgmt_init_event_callback(&ipv4_callback, callback_handler,
+					     EVENT_IPV4_SET);
+		net_mgmt_add_event_callback(&iface_callback);
+		net_mgmt_add_event_callback(&ipv4_callback);
 	}
 
 See :zephyr_file:`include/net/net_event.h` for available generic core events that
@@ -145,7 +160,7 @@ This new management procedure could then be called by using:
 Signaling a network event
 *************************
 
-You can signal a specific network event using the :cpp:func:`net_mgmt_notify()`
+You can signal a specific network event using the :c:func:`net_mgmt_notify`
 function and provide the network event code. See
 :zephyr_file:`include/net/net_mgmt.h` for details. As for the management request
 code, event code can be also found on specific L2 technology mgmt headers,

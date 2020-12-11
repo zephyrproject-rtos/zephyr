@@ -4,10 +4,6 @@
  */
 
 &flash0 {
-	/*
-	 * For more information, see:
-	 * https://docs.zephyrproject.org/latest/guides/dts/legacy-macros.html#legacy-flash-partitions
-	 */
 
 	partitions {
 		compatible = "fixed-partitions";

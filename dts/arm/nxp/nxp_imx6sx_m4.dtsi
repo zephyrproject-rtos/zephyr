@@ -4,30 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <mem.h>
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/rdc/imx_rdc.h>
 
 / {
-	aliases {
-		epit-1 = &epit1;
-		epit-2 = &epit2;
-		gpio-1 = &gpio1;
-		gpio-2 = &gpio2;
-		gpio-3 = &gpio3;
-		gpio-4 = &gpio4;
-		gpio-5 = &gpio5;
-		gpio-6 = &gpio6;
-		gpio-7 = &gpio7;
-		mu-b = &mub;
-		uart-1 = &uart1;
-		uart-2 = &uart2;
-		uart-3 = &uart3;
-		uart-4 = &uart4;
-		uart-5 = &uart5;
-		uart-6 = &uart6;
-	};
-
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -48,27 +30,27 @@
 
 	tcml:memory@1fff8000 {
 		compatible = "nxp,imx-itcm";
-		reg = <0x1fff8000 0x00008000>;
+		reg = <0x1fff8000 DT_SIZE_K(32)>;
 		label = "TCML";
 	};
 
 	tcmu:memory@20000000 {
 		compatible = "nxp,imx-dtcm";
-		reg = <0x20000000 0x00008000>;
+		reg = <0x20000000 DT_SIZE_K(32)>;
 		label = "TCMU";
 	};
 
 	ocram_s:memory@208f8000 {
 		device_type = "memory";
 		compatible = "nxp,imx-sys-bus";
-		reg = <0x208f8000 0x00004000>;
+		reg = <0x208f8000 DT_SIZE_K(16)>;
 		label = "OCRAM_S";
 	};
 
 	ocram:memory@20900000 {
 		device_type = "memory";
 		compatible = "nxp,imx-sys-bus";
-		reg = <0x20900000 0x00020000>;
+		reg = <0x20900000 DT_SIZE_K(128)>;
 		label = "OCRAM";
 	};
 

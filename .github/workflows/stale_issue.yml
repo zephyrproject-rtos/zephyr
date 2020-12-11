@@ -6,6 +6,7 @@ on:
 jobs:
   stale:
     runs-on: ubuntu-latest
+    if: github.repository == 'zephyrproject-rtos/zephyr'
     steps:
     - uses: actions/stale@v3
       with:
@@ -16,5 +17,6 @@ jobs:
         days-before-close: 14
         stale-issue-label: 'Stale'
         stale-pr-label: 'Stale'
-        exempt-pr-labels: 'DNM,In progress'
+        exempt-pr-labels: 'Blocked,In progress'
         exempt-issue-labels: 'In progress,Enhancement,Feature,Feature Request,RFC,Meta'
+        operations-per-run: 400

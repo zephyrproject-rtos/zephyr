@@ -15,8 +15,8 @@
 #define MCP2515_FRAME_LEN               13
 
 #define DEV_CFG(dev) \
-	((const struct mcp2515_config *const)(dev)->config_info)
-#define DEV_DATA(dev) ((struct mcp2515_data *const)(dev)->driver_data)
+	((const struct mcp2515_config *const)(dev)->config)
+#define DEV_DATA(dev) ((struct mcp2515_data *const)(dev)->data)
 
 struct mcp2515_tx_cb {
 	struct k_sem sem;
@@ -26,14 +26,14 @@ struct mcp2515_tx_cb {
 
 struct mcp2515_data {
 	/* spi device data */
-	struct device *spi;
+	const struct device *spi;
 	struct spi_config spi_cfg;
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	struct spi_cs_control spi_cs_ctrl;
 #endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 
 	/* interrupt data */
-	struct device *int_gpio;
+	const struct device *int_gpio;
 	struct gpio_callback int_gpio_cb;
 	struct k_thread int_thread;
 	k_thread_stack_t *int_thread_stack;

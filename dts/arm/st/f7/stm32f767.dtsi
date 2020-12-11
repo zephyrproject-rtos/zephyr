@@ -81,5 +81,13 @@
 				 <&rcc STM32_CLOCK_BUS_AHB1 0x10000000>;
 			status = "disabled";
 		};
+
+		sdmmc2: sdmmc@40011c00 {
+			compatible = "st,stm32-sdmmc";
+			reg = <0x40011c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000080>;
+			status = "disabled";
+			label = "SDMMC_2";
+		};
 	};
 };

@@ -216,20 +216,6 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     /* restore r0 */
     mov r0, lr
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-    stm sp!,{r0-r3} /* Save regs r0 to r4 on stack */
-    push {r0, lr}
-    bl read_timer_end_of_userspace_enter
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-    pop {r0, r3}
-    mov lr,r3
-#else
-    pop {r0, lr}
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-    ldm sp!,{r0-r3} /* Restore r0 to r3 regs */
-
-#endif /* CONFIG_EXECUTION_BENCHMARKING */
-
     /* change processor mode to unprivileged */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     push {r0, r1, r2, r3}
@@ -388,6 +374,9 @@ SECTION_FUNC(TEXT, z_arm_do_syscall)
     mov r1, lr
     b dispatch_syscall
 valid_syscall:
+    /* push ssf to privileged stack */
+    mov r1, sp
+    push {r1}
     /* push args to complete stack frame */
     push {r4,r5}
 
@@ -410,8 +399,7 @@ dispatch_syscall:
      */
     mov ip, r0
     mov r0, sp
-    adds r0, #12
-    ldr r0, [r0]
+    ldr r0, [r0,#16]
     mov lr, r0
     /* Restore r0 */
     mov r0, ip
@@ -429,7 +417,8 @@ dispatch_syscall:
 
 valid_syscall:
     /* push args to complete stack frame */
-    push {r4,r5}
+    mov ip, sp
+    push {r4,r5,ip}
 
 dispatch_syscall:
     ldr ip, =_k_syscall_table
@@ -440,7 +429,7 @@ dispatch_syscall:
     blx ip
 
     /* restore LR */
-    ldr lr, [sp,#12]
+    ldr lr, [sp,#16]
 #endif
 
 
@@ -481,14 +470,14 @@ dispatch_syscall:
     /* set stack back to unprivileged stack */
     mov ip, r0
     mov r0, sp
-    ldr r0, [r0,#8]
+    ldr r0, [r0,#12]
     msr PSP, r0
     /* Restore r0 */
     mov r0, ip
 
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     /* set stack back to unprivileged stack */
-    ldr ip, [sp,#8]
+    ldr ip, [sp,#12]
     msr PSP, ip
 #endif
 

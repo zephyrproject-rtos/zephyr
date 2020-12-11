@@ -8,3 +8,7 @@
 		label = "SW_PWM";
 	};
 };
+
+&systick {
+	status = "disabled";
+};

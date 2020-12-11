@@ -22,7 +22,8 @@ struct video_mcux_csi_config {
 };
 
 struct video_mcux_csi_data {
-	struct device *sensor_dev;
+	const struct device *dev;
+	const struct device *sensor_dev;
 	csi_config_t csi_config;
 	csi_handle_t csi_handle;
 	struct k_fifo fifo_in;
@@ -49,9 +50,9 @@ static inline unsigned int video_pix_fmt_bpp(uint32_t pixelformat)
 static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle,
 			    status_t status, void *user_data)
 {
-	struct device *dev = user_data;
-	const struct video_mcux_csi_config *config = dev->config_info;
-	struct video_mcux_csi_data *data = dev->driver_data;
+	struct video_mcux_csi_data *data = user_data;
+	const struct device *dev = data->dev;
+	const struct video_mcux_csi_config *config = dev->config;
 	enum video_signal_result result = VIDEO_BUF_DONE;
 	struct video_buffer *vbuf, *vbuf_first = NULL;
 	uint32_t buffer_addr;
@@ -112,11 +113,12 @@ done:
 	return;
 }
 
-static int video_mcux_csi_set_fmt(struct device *dev, enum video_endpoint_id ep,
+static int video_mcux_csi_set_fmt(const struct device *dev,
+				  enum video_endpoint_id ep,
 				  struct video_format *fmt)
 {
-	const struct video_mcux_csi_config *config = dev->config_info;
-	struct video_mcux_csi_data *data = dev->driver_data;
+	const struct video_mcux_csi_config *config = dev->config;
+	struct video_mcux_csi_data *data = dev->data;
 	unsigned int bpp = video_pix_fmt_bpp(fmt->pixelformat);
 	status_t ret;
 
@@ -140,7 +142,7 @@ static int video_mcux_csi_set_fmt(struct device *dev, enum video_endpoint_id ep,
 	}
 
 	ret = CSI_TransferCreateHandle(config->base, &data->csi_handle,
-				       __frame_done_cb, dev);
+				       __frame_done_cb, data);
 	if (ret != kStatus_Success) {
 		return -EIO;
 	}
@@ -152,10 +154,11 @@ static int video_mcux_csi_set_fmt(struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static int video_mcux_csi_get_fmt(struct device *dev, enum video_endpoint_id ep,
+static int video_mcux_csi_get_fmt(const struct device *dev,
+				  enum video_endpoint_id ep,
 				  struct video_format *fmt)
 {
-	struct video_mcux_csi_data *data = dev->driver_data;
+	struct video_mcux_csi_data *data = dev->data;
 
 	if (fmt == NULL || ep != VIDEO_EP_OUT) {
 		return -EINVAL;
@@ -174,10 +177,10 @@ static int video_mcux_csi_get_fmt(struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static int video_mcux_csi_stream_start(struct device *dev)
+static int video_mcux_csi_stream_start(const struct device *dev)
 {
-	const struct video_mcux_csi_config *config = dev->config_info;
-	struct video_mcux_csi_data *data = dev->driver_data;
+	const struct video_mcux_csi_config *config = dev->config;
+	struct video_mcux_csi_data *data = dev->data;
 	status_t ret;
 
 	ret = CSI_TransferStart(config->base, &data->csi_handle);
@@ -192,10 +195,10 @@ static int video_mcux_csi_stream_start(struct device *dev)
 	return 0;
 }
 
-static int video_mcux_csi_stream_stop(struct device *dev)
+static int video_mcux_csi_stream_stop(const struct device *dev)
 {
-	const struct video_mcux_csi_config *config = dev->config_info;
-	struct video_mcux_csi_data *data = dev->driver_data;
+	const struct video_mcux_csi_config *config = dev->config;
+	struct video_mcux_csi_data *data = dev->data;
 	status_t ret;
 
 	if (data->sensor_dev && video_stream_stop(data->sensor_dev)) {
@@ -211,11 +214,12 @@ static int video_mcux_csi_stream_stop(struct device *dev)
 }
 
 
-static int video_mcux_csi_flush(struct device *dev, enum video_endpoint_id ep,
+static int video_mcux_csi_flush(const struct device *dev,
+				enum video_endpoint_id ep,
 				bool cancel)
 {
-	const struct video_mcux_csi_config *config = dev->config_info;
-	struct video_mcux_csi_data *data = dev->driver_data;
+	const struct video_mcux_csi_config *config = dev->config;
+	struct video_mcux_csi_data *data = dev->data;
 	struct video_buf *vbuf;
 	uint32_t buffer_addr;
 	status_t ret;
@@ -245,11 +249,12 @@ static int video_mcux_csi_flush(struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static int video_mcux_csi_enqueue(struct device *dev, enum video_endpoint_id ep,
+static int video_mcux_csi_enqueue(const struct device *dev,
+				  enum video_endpoint_id ep,
 				  struct video_buffer *vbuf)
 {
-	const struct video_mcux_csi_config *config = dev->config_info;
-	struct video_mcux_csi_data *data = dev->driver_data;
+	const struct video_mcux_csi_config *config = dev->config;
+	struct video_mcux_csi_data *data = dev->data;
 	unsigned int to_read;
 	status_t ret;
 
@@ -271,11 +276,12 @@ static int video_mcux_csi_enqueue(struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static int video_mcux_csi_dequeue(struct device *dev, enum video_endpoint_id ep,
+static int video_mcux_csi_dequeue(const struct device *dev,
+				  enum video_endpoint_id ep,
 				  struct video_buffer **vbuf,
 				  k_timeout_t timeout)
 {
-	struct video_mcux_csi_data *data = dev->driver_data;
+	struct video_mcux_csi_data *data = dev->data;
 
 	if (ep != VIDEO_EP_OUT) {
 		return -EINVAL;
@@ -289,10 +295,11 @@ static int video_mcux_csi_dequeue(struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static inline int video_mcux_csi_set_ctrl(struct device *dev, unsigned int cid,
+static inline int video_mcux_csi_set_ctrl(const struct device *dev,
+					  unsigned int cid,
 					  void *value)
 {
-	struct video_mcux_csi_data *data = dev->driver_data;
+	struct video_mcux_csi_data *data = dev->data;
 	int ret = -ENOTSUP;
 
 	/* Forward to sensor dev if any */
@@ -303,10 +310,11 @@ static inline int video_mcux_csi_set_ctrl(struct device *dev, unsigned int cid,
 	return ret;
 }
 
-static inline int video_mcux_csi_get_ctrl(struct device *dev, unsigned int cid,
+static inline int video_mcux_csi_get_ctrl(const struct device *dev,
+					  unsigned int cid,
 					  void *value)
 {
-	struct video_mcux_csi_data *data = dev->driver_data;
+	struct video_mcux_csi_data *data = dev->data;
 	int ret = -ENOTSUP;
 
 	/* Forward to sensor dev if any */
@@ -317,11 +325,11 @@ static inline int video_mcux_csi_get_ctrl(struct device *dev, unsigned int cid,
 	return ret;
 }
 
-static int video_mcux_csi_get_caps(struct device *dev,
+static int video_mcux_csi_get_caps(const struct device *dev,
 				   enum video_endpoint_id ep,
 				   struct video_caps *caps)
 {
-	struct video_mcux_csi_data *data = dev->driver_data;
+	struct video_mcux_csi_data *data = dev->data;
 	int err = -ENODEV;
 
 	if (ep != VIDEO_EP_OUT) {
@@ -341,16 +349,16 @@ static int video_mcux_csi_get_caps(struct device *dev,
 }
 
 extern void CSI_DriverIRQHandler(void);
-static void video_mcux_csi_isr(void *p)
+static void video_mcux_csi_isr(const void *p)
 {
 	ARG_UNUSED(p);
 	CSI_DriverIRQHandler();
 }
 
-static int video_mcux_csi_init(struct device *dev)
+static int video_mcux_csi_init(const struct device *dev)
 {
-	const struct video_mcux_csi_config *config = dev->config_info;
-	struct video_mcux_csi_data *data = dev->driver_data;
+	const struct video_mcux_csi_config *config = dev->config;
+	struct video_mcux_csi_data *data = dev->data;
 
 	k_fifo_init(&data->fifo_in);
 	k_fifo_init(&data->fifo_out);
@@ -369,11 +377,11 @@ static int video_mcux_csi_init(struct device *dev)
 }
 
 #ifdef CONFIG_POLL
-static int video_mcux_csi_set_signal(struct device *dev,
+static int video_mcux_csi_set_signal(const struct device *dev,
 				     enum video_endpoint_id ep,
 				     struct k_poll_signal *signal)
 {
-	struct video_mcux_csi_data *data = dev->driver_data;
+	struct video_mcux_csi_data *data = dev->data;
 
 	if (data->signal && signal != NULL) {
 		return -EALREADY;
@@ -409,12 +417,16 @@ static const struct video_mcux_csi_config video_mcux_csi_config_0 = {
 
 static struct video_mcux_csi_data video_mcux_csi_data_0;
 
-static int video_mcux_csi_init_0(struct device *dev)
+static int video_mcux_csi_init_0(const struct device *dev)
 {
+	struct video_mcux_csi_data *data = dev->data;
+
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    video_mcux_csi_isr, NULL, 0);
 
 	irq_enable(DT_INST_IRQN(0));
+
+	data->dev = dev;
 
 	return video_mcux_csi_init(dev);
 }

@@ -94,9 +94,8 @@ config MINIMAL_LIBC_MALLOC_ARENA_SIZE
 	default 0
 	depends on MINIMAL_LIBC_MALLOC
 	help
-	  Indicate the size of the memory arena used for minimal libc's
-	  malloc() implementation. This size value must be compatible with
-	  a sys_mem_pool definition with nmax of 1 and minsz of 16.
+	  Indicate the size in bytes of the memory arena used for
+	  minimal libc's malloc() implementation.
 
 config MINIMAL_LIBC_CALLOC
 	bool "Enable minimal libc trivial calloc implementation"
@@ -130,5 +129,12 @@ config STDOUT_CONSOLE
 	  This option directs standard output (e.g. printf) to the console
 	  device, rather than suppressing it entirely. See also EARLY_CONSOLE
 	  option.
+
+config NEED_LIBC_MEM_PARTITION
+	bool
+	help
+	  Hidden option to signal that a memory partition is needed for
+	  the C libraray even though it would not have been enabled
+	  otherwise.
 
 endmenu

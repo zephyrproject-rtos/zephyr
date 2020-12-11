@@ -5,6 +5,7 @@
  */
 #include <shell/shell.h>
 #include "shell_utils.h"
+#include "shell_help.h"
 #include "shell_ops.h"
 #include "shell_vt100.h"
 
@@ -277,28 +278,6 @@ static int cmd_echo(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_help(const struct shell *shell, size_t argc, char **argv)
-{
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
-
-	shell_print(shell,
-		"Please press the <Tab> button to see all available commands.\n"
-		"You can also use the <Tab> button to prompt or auto-complete"
-		" all commands or its subcommands.\n"
-		"You can try to call commands with <-h> or <--help> parameter"
-		" for more information.");
-#if defined(CONFIG_SHELL_METAKEYS)
-	shell_print(shell,
-		"Shell supports following meta-keys:\n"
-		"Ctrl+a, Ctrl+b, Ctrl+c, Ctrl+d, Ctrl+e, Ctrl+f, Ctrl+k,"
-		" Ctrl+l, Ctrl+n, Ctrl+p, Ctrl+u, Ctrl+w\nAlt+b, Alt+f.\n"
-		"Please refer to shell documentation for more details.");
-#endif
-
-	return 0;
-}
-
 static int cmd_history(const struct shell *shell, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
@@ -458,7 +437,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_resize,
 
 SHELL_CMD_ARG_REGISTER(clear, NULL, SHELL_HELP_CLEAR, cmd_clear, 1, 0);
 SHELL_CMD_REGISTER(shell, &m_sub_shell, SHELL_HELP_SHELL, NULL);
-SHELL_CMD_ARG_REGISTER(help, NULL, SHELL_HELP_HELP, cmd_help, 1, 0);
 SHELL_COND_CMD_ARG_REGISTER(CONFIG_SHELL_HISTORY, history, NULL,
 			SHELL_HELP_HISTORY, cmd_history, 1, 0);
 SHELL_COND_CMD_ARG_REGISTER(CONFIG_SHELL_CMDS_RESIZE, resize, &m_sub_resize,

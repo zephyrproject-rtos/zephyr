@@ -186,7 +186,7 @@ void test_memalloc_all(void)
  *
  */
 
-void test_memalloc_max(void)
+__no_optimization void test_memalloc_max(void)
 {
 	char *ptr = NULL;
 

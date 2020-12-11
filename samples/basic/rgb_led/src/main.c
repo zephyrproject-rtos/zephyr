@@ -61,7 +61,7 @@
 #define PERIOD_USEC	(USEC_PER_SEC / 50U)
 #define STEPSIZE_USEC	2000
 
-static int pwm_set(struct device *pwm_dev, uint32_t pwm_pin,
+static int pwm_set(const struct device *pwm_dev, uint32_t pwm_pin,
 		     uint32_t pulse_width, pwm_flags_t flags)
 {
 	return pwm_pin_set_usec(pwm_dev, pwm_pin, PERIOD_USEC,
@@ -72,7 +72,7 @@ enum { RED, GREEN, BLUE };
 
 void main(void)
 {
-	struct device *pwm_dev[3];
+	const struct device *pwm_dev[3];
 	uint32_t pulse_red, pulse_green, pulse_blue; /* pulse widths */
 	int ret;
 

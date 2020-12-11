@@ -140,6 +140,7 @@ config NET_SHELL_DYN_CMD_COMPLETION
 config NET_TC_TX_COUNT
 	int "How many Tx traffic classes to have for each network device"
 	default 1
+	range 1 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8
 	range 1 8
 	help
 	  Define how many Tx traffic classes (queues) the system should have
@@ -155,6 +156,7 @@ config NET_TC_TX_COUNT
 config NET_TC_RX_COUNT
 	int "How many Rx traffic classes to have for each network device"
 	default 1
+	range 1 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8
 	range 1 8
 	help
 	  Define how many Rx traffic classes (queues) the system should have
@@ -166,6 +168,31 @@ config NET_TC_RX_COUNT
 	  The default value is 1 which means that all the network traffic is
 	  handled equally. In this implementation, the higher traffic class
 	  value corresponds to lower thread priority.
+
+choice NET_TC_THREAD_TYPE
+	prompt "How the network RX/TX threads should work"
+	help
+	  Please select the RX/TX threads to be either pre-emptive or
+	  co-operative.
+
+config NET_TC_THREAD_COOPERATIVE
+	bool "Use co-operative TX/RX threads"
+	depends on COOP_ENABLED
+	help
+	  With co-operative threads, the thread cannot be pre-empted.
+
+config NET_TC_THREAD_PREEMPTIVE
+	bool "Use pre-emptive TX/RX threads [EXPERIMENTAL]"
+	depends on PREEMPT_ENABLED
+	help
+	  With pre-emptive threads, the thread can be pre-empted.
+
+endchoice
+
+config NET_TC_NUM_PRIORITIES
+	int
+	default NUM_COOP_PRIORITIES if NET_TC_THREAD_COOPERATIVE
+	default NUM_PREEMPT_PRIORITIES if NET_TC_THREAD_PREEMPTIVE
 
 choice
 	prompt "Priority to traffic class mapping"
@@ -265,8 +292,10 @@ config NET_MAX_NEXTHOPS
 	  This determines how many entries can be stored in nexthop table.
 
 config NET_ROUTE_MCAST
-	bool
+	bool "Enable Multicast Routing / Forwarding"
 	depends on NET_ROUTE
+	help
+	  Activates multicast routing/forwarding
 
 config NET_MAX_MCAST_ROUTES
 	int "Max number of multicast routing entries stored."
@@ -375,6 +404,16 @@ config NET_TCP_RETRY_COUNT
 	  Should a retransmission timeout occur, the receive callback is
 	  called with -ECONNRESET error code and the context is dereferenced.
 
+config NET_TCP_MAX_SEND_WINDOW_SIZE
+	int "Maximum sending window size to use"
+	depends on NET_TCP2
+	default 0
+	range 0 65535
+	help
+	  This value affects how the TCP selects the maximum sending window
+	  size. The default value 0 lets the TCP stack select the value
+	  according to amount of network buffers configured in the system.
+
 choice
 	prompt "Select TCP stack"
 	depends on NET_TCP
@@ -388,9 +427,11 @@ config NET_TCP2
 	  Enable new TCP stack for Zephyr 2.4
 
 config NET_TCP1
-	bool "Legacy TCP stack"
+	bool "Legacy TCP stack (DEPRECATED)"
 	help
 	  The legacy TCP stack that has been in use since Zephyr 1.0.
+	  The legacy TCP stack is deprecated and you should use the new TCP
+	  stack instead. The legacy TCP stack will be removed in 2.6 release.
 
 endchoice
 

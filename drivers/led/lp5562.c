@@ -158,7 +158,7 @@ enum lp5562_engine_fade_dirs {
 };
 
 struct lp5562_data {
-	struct device *i2c;
+	const struct device *i2c;
 	struct led_data dev_data;
 };
 
@@ -303,11 +303,11 @@ static void lp5562_ms_to_prescale_and_step(struct led_data *data, uint32_t ms,
  * @retval 0    On success.
  * @retval -EIO If the underlying I2C call fails.
  */
-static int lp5562_set_led_source(struct device *dev,
+static int lp5562_set_led_source(const struct device *dev,
 				 enum lp5562_led_channels channel,
 				 enum lp5562_led_sources source)
 {
-	struct lp5562_data *data = dev->driver_data;
+	struct lp5562_data *data = dev->data;
 
 	if (i2c_reg_update_byte(data->i2c, DT_INST_REG_ADDR(0),
 				LP5562_LED_MAP,
@@ -330,11 +330,11 @@ static int lp5562_set_led_source(struct device *dev,
  * @retval 0    On success.
  * @retval -EIO If the underlying I2C call fails.
  */
-static int lp5562_get_led_source(struct device *dev,
+static int lp5562_get_led_source(const struct device *dev,
 				 enum lp5562_led_channels channel,
 				 enum lp5562_led_sources *source)
 {
-	struct lp5562_data *data = dev->driver_data;
+	struct lp5562_data *data = dev->data;
 	uint8_t led_map;
 
 	if (i2c_reg_read_byte(data->i2c, DT_INST_REG_ADDR(0),
@@ -358,10 +358,10 @@ static int lp5562_get_led_source(struct device *dev,
  * @retval true  If the engine is currently running.
  * @retval false If the engine is not running or an error occurred.
  */
-static bool lp5562_is_engine_executing(struct device *dev,
+static bool lp5562_is_engine_executing(const struct device *dev,
 				       enum lp5562_led_sources engine)
 {
-	struct lp5562_data *data = dev->driver_data;
+	struct lp5562_data *data = dev->data;
 	uint8_t enabled, shift;
 	int ret;
 
@@ -394,7 +394,7 @@ static bool lp5562_is_engine_executing(struct device *dev,
  * @retval 0       On success.
  * @retval -ENODEV If all engines are busy.
  */
-static int lp5562_get_available_engine(struct device *dev,
+static int lp5562_get_available_engine(const struct device *dev,
 				       enum lp5562_led_sources *engine)
 {
 	enum lp5562_led_sources src;
@@ -423,11 +423,11 @@ static int lp5562_get_available_engine(struct device *dev,
  * @retval 0    On success.
  * @retval -EIO If the underlying I2C call fails.
  */
-static int lp5562_set_engine_reg(struct device *dev,
+static int lp5562_set_engine_reg(const struct device *dev,
 				 enum lp5562_led_sources engine,
 				 uint8_t reg, uint8_t val)
 {
-	struct lp5562_data *data = dev->driver_data;
+	struct lp5562_data *data = dev->data;
 	uint8_t shift;
 	int ret;
 
@@ -456,7 +456,7 @@ static int lp5562_set_engine_reg(struct device *dev,
  * @retval 0    On success.
  * @retval -EIO If the underlying I2C call fails.
  */
-static inline int lp5562_set_engine_op_mode(struct device *dev,
+static inline int lp5562_set_engine_op_mode(const struct device *dev,
 					    enum lp5562_led_sources engine,
 					    enum lp5562_engine_op_modes mode)
 {
@@ -473,9 +473,9 @@ static inline int lp5562_set_engine_op_mode(struct device *dev,
  * @retval 0    On success.
  * @retval -EIO If the underlying I2C call fails.
  */
-static inline int lp5562_set_engine_exec_state(struct device *dev,
-					enum lp5562_led_sources engine,
-					enum lp5562_engine_exec_states state)
+static inline int lp5562_set_engine_exec_state(const struct device *dev,
+					       enum lp5562_led_sources engine,
+					       enum lp5562_engine_exec_states state)
 {
 	int ret;
 
@@ -499,7 +499,7 @@ static inline int lp5562_set_engine_exec_state(struct device *dev,
  * @retval 0    On success.
  * @retval -EIO If the underlying I2C call fails.
  */
-static inline int lp5562_start_program_exec(struct device *dev,
+static inline int lp5562_start_program_exec(const struct device *dev,
 					    enum lp5562_led_sources engine)
 {
 	if (lp5562_set_engine_op_mode(dev, engine, LP5562_OP_MODE_RUN)) {
@@ -519,7 +519,7 @@ static inline int lp5562_start_program_exec(struct device *dev,
  * @retval 0    On success.
  * @retval -EIO If the underlying I2C call fails.
  */
-static inline int lp5562_stop_program_exec(struct device *dev,
+static inline int lp5562_stop_program_exec(const struct device *dev,
 					   enum lp5562_led_sources engine)
 {
 	if (lp5562_set_engine_op_mode(dev, engine, LP5562_OP_MODE_DISABLED)) {
@@ -544,13 +544,13 @@ static inline int lp5562_stop_program_exec(struct device *dev,
  *		   engine is passed.
  * @retval -EIO    If the underlying I2C call fails.
  */
-static int lp5562_program_command(struct device *dev,
+static int lp5562_program_command(const struct device *dev,
 				  enum lp5562_led_sources engine,
 				  uint8_t command_index,
 				  uint8_t command_msb,
 				  uint8_t command_lsb)
 {
-	struct lp5562_data *data = dev->driver_data;
+	struct lp5562_data *data = dev->data;
 	uint8_t prog_base_addr;
 	int ret;
 
@@ -593,12 +593,12 @@ static int lp5562_program_command(struct device *dev,
  * @retval -EINVAL If the passed arguments are invalid or out of range.
  * @retval -EIO    If the underlying I2C call fails.
  */
-static int lp5562_program_set_brightness(struct device *dev,
+static int lp5562_program_set_brightness(const struct device *dev,
 					 enum lp5562_led_sources engine,
 					 uint8_t command_index,
 					 uint8_t brightness)
 {
-	struct lp5562_data *data = dev->driver_data;
+	struct lp5562_data *data = dev->data;
 	struct led_data *dev_data = &data->dev_data;
 	uint8_t val;
 
@@ -630,14 +630,14 @@ static int lp5562_program_set_brightness(struct device *dev,
  * @retval -EINVAL If the passed arguments are invalid or out of range.
  * @retval -EIO    If the underlying I2C call fails.
  */
-static int lp5562_program_ramp(struct device *dev,
+static int lp5562_program_ramp(const struct device *dev,
 			       enum lp5562_led_sources engine,
 			       uint8_t command_index,
 			       uint32_t time_per_step,
 			       uint8_t step_count,
 			       enum lp5562_engine_fade_dirs fade_dir)
 {
-	struct lp5562_data *data = dev->driver_data;
+	struct lp5562_data *data = dev->data;
 	struct led_data *dev_data = &data->dev_data;
 	uint8_t prescale, step_time;
 
@@ -666,7 +666,7 @@ static int lp5562_program_ramp(struct device *dev,
  * @retval -EINVAL If the passed arguments are invalid or out of range.
  * @retval -EIO    If the underlying I2C call fails.
  */
-static inline int lp5562_program_wait(struct device *dev,
+static inline int lp5562_program_wait(const struct device *dev,
 				      enum lp5562_led_sources engine,
 				      uint8_t command_index,
 				      uint32_t time)
@@ -693,7 +693,7 @@ static inline int lp5562_program_wait(struct device *dev,
  *		   engine is passed.
  * @retval -EIO    If the underlying I2C call fails.
  */
-static inline int lp5562_program_go_to_start(struct device *dev,
+static inline int lp5562_program_go_to_start(const struct device *dev,
 					     enum lp5562_led_sources engine,
 					     uint8_t command_index)
 {
@@ -723,7 +723,7 @@ static inline int lp5562_program_go_to_start(struct device *dev,
  * @retval -EINVAL If the engine ID or brightness is out of range.
  * @retval -EIO    If the underlying I2C call fails.
  */
-static int lp5562_update_blinking_brightness(struct device *dev,
+static int lp5562_update_blinking_brightness(const struct device *dev,
 					     enum lp5562_led_sources engine,
 					     uint8_t brightness_on)
 {
@@ -754,10 +754,10 @@ static int lp5562_update_blinking_brightness(struct device *dev,
 	return 0;
 }
 
-static int lp5562_led_blink(struct device *dev, uint32_t led,
+static int lp5562_led_blink(const struct device *dev, uint32_t led,
 			    uint32_t delay_on, uint32_t delay_off)
 {
-	struct lp5562_data *data = dev->driver_data;
+	struct lp5562_data *data = dev->data;
 	struct led_data *dev_data = &data->dev_data;
 	int ret;
 	enum lp5562_led_sources engine;
@@ -815,9 +815,10 @@ static int lp5562_led_blink(struct device *dev, uint32_t led,
 	return 0;
 }
 
-static int lp5562_led_set_brightness(struct device *dev, uint32_t led, uint8_t value)
+static int lp5562_led_set_brightness(const struct device *dev, uint32_t led,
+				     uint8_t value)
 {
-	struct lp5562_data *data = dev->driver_data;
+	struct lp5562_data *data = dev->data;
 	struct led_data *dev_data = &data->dev_data;
 	int ret;
 	uint8_t val, reg;
@@ -865,17 +866,17 @@ static int lp5562_led_set_brightness(struct device *dev, uint32_t led, uint8_t v
 	return 0;
 }
 
-static inline int lp5562_led_on(struct device *dev, uint32_t led)
+static inline int lp5562_led_on(const struct device *dev, uint32_t led)
 {
-	struct lp5562_data *data = dev->driver_data;
+	struct lp5562_data *data = dev->data;
 	struct led_data *dev_data = &data->dev_data;
 
 	return lp5562_led_set_brightness(dev, led, dev_data->max_brightness);
 }
 
-static inline int lp5562_led_off(struct device *dev, uint32_t led)
+static inline int lp5562_led_off(const struct device *dev, uint32_t led)
 {
-	struct lp5562_data *data = dev->driver_data;
+	struct lp5562_data *data = dev->data;
 	struct led_data *dev_data = &data->dev_data;
 
 	int ret;
@@ -896,9 +897,9 @@ static inline int lp5562_led_off(struct device *dev, uint32_t led)
 	return lp5562_led_set_brightness(dev, led, dev_data->min_brightness);
 }
 
-static int lp5562_led_init(struct device *dev)
+static int lp5562_led_init(const struct device *dev)
 {
-	struct lp5562_data *data = dev->driver_data;
+	struct lp5562_data *data = dev->data;
 	struct led_data *dev_data = &data->dev_data;
 
 	data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));

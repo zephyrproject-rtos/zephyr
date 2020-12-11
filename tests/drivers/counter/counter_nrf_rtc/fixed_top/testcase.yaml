@@ -2,4 +2,4 @@ tests:
   drivers.counter:
     tags: drivers
     depends_on: counter
-    platform_whitelist: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk_nrf52840

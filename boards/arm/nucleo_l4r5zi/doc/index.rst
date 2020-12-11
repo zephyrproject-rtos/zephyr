@@ -141,6 +141,8 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | usb                                 |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -178,7 +180,7 @@ Default Zephyr Peripheral Mapping:
 - I2C_1_SCL : PB6
 - I2C_1_SDA : PB7
 - SPI_1_NSS : PA4
-- SPI_1_SCK : PB3
+- SPI_1_SCK : PA5
 - SPI_1_MISO : PA6
 - SPI_1_MOSI : PA7
 - SPI_2_NSS : PB12
@@ -196,6 +198,7 @@ Default Zephyr Peripheral Mapping:
 - LD3 : PB14
 - USB DM : PA11
 - USB DP : PA12
+- ADC1 : PC0
 
 System Clock
 ------------

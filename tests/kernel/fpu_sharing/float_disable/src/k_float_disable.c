@@ -14,7 +14,7 @@
  */
 #define PRIORITY  K_PRIO_COOP(0)
 
-#if defined(CONFIG_ARM) || defined(CONFIG_RISCV)
+#if defined(CONFIG_ARM) || defined(CONFIG_RISCV) || defined(CONFIG_SPARC)
 #define K_FP_OPTS K_FP_REGS
 #elif defined(CONFIG_X86)
 #define K_FP_OPTS (K_FP_REGS | K_SSE_REGS)
@@ -96,7 +96,7 @@ void test_k_float_disable_common(void)
 		(usr_fp_thread.base.user_options & K_FP_OPTS) == 0,
 		"usr_fp_thread FP options not clear (0x%0x)",
 		usr_fp_thread.base.user_options);
-#elif defined(CONFIG_X86) && !defined(CONFIG_LAZY_FPU_SHARING)
+#else
 	/* Verify k_float_disable() is not supported */
 	zassert_true((k_float_disable(&usr_fp_thread) == -ENOSYS),
 		"k_float_disable() successful when not supported");
@@ -156,7 +156,7 @@ void test_k_float_disable_syscall(void)
 struct k_thread sup_fp_thread;
 K_THREAD_STACK_DEFINE(sup_fp_thread_stack, STACKSIZE);
 
-void arm_test_isr_handler(void *args)
+void arm_test_isr_handler(const void *args)
 {
 	ARG_UNUSED(args);
 
@@ -248,7 +248,7 @@ void test_k_float_disable_irq(void)
 #else
 void test_k_float_disable_irq(void)
 {
-	TC_PRINT("Skipped for x86 or ARM without support for dynamic IRQs\n");
+	TC_PRINT("This is not an ARM system with DYNAMIC_INTERRUPTS.\n");
 	ztest_test_skip();
 }
 #endif /* CONFIG_ARM && CONFIG_DYNAMIC_INTERRUPTS */

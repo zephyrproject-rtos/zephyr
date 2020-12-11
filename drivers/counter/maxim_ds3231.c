@@ -77,9 +77,9 @@ struct ds3231_config {
 };
 
 struct ds3231_data {
-	struct device *ds3231;
-	struct device *i2c;
-	struct device *isw;
+	const struct device *ds3231;
+	const struct device *i2c;
+	const struct device *isw;
 	struct register_map registers;
 
 	struct k_sem lock;
@@ -144,12 +144,12 @@ struct ds3231_data {
  *
  * Caches and returns the value with the changes applied.
  */
-static int sc_ctrl(struct device *dev,
+static int sc_ctrl(const struct device *dev,
 		   uint8_t set,
 		   uint8_t clear)
 {
-	struct ds3231_data *data = dev->driver_data;
-	const struct ds3231_config *cfg = dev->config_info;
+	struct ds3231_data *data = dev->data;
+	const struct ds3231_config *cfg = dev->config;
 	struct register_map *rp = &data->registers;
 	uint8_t ctrl = (rp->ctrl & ~clear) | set;
 	int rc = ctrl;
@@ -168,11 +168,11 @@ static int sc_ctrl(struct device *dev,
 	return rc;
 }
 
-int maxim_ds3231_ctrl_update(struct device *dev,
+int maxim_ds3231_ctrl_update(const struct device *dev,
 			     uint8_t set_bits,
 			     uint8_t clear_bits)
 {
-	struct ds3231_data *data = dev->driver_data;
+	struct ds3231_data *data = dev->data;
 
 	k_sem_take(&data->lock, K_FOREVER);
 
@@ -194,14 +194,14 @@ int maxim_ds3231_ctrl_update(struct device *dev,
  * Returns the value as originally read (disregarding the effect of
  * clears and sets).
  */
-static inline int rsc_stat(struct device *dev,
+static inline int rsc_stat(const struct device *dev,
 			   uint8_t set,
 			   uint8_t clear)
 {
 	uint8_t const ign = MAXIM_DS3231_REG_STAT_OSF | MAXIM_DS3231_ALARM1
 			 | MAXIM_DS3231_ALARM2;
-	struct ds3231_data *data = dev->driver_data;
-	const struct ds3231_config *cfg = dev->config_info;
+	struct ds3231_data *data = dev->data;
+	const struct ds3231_config *cfg = dev->config;
 	struct register_map *rp = &data->registers;
 	uint8_t addr = offsetof(struct register_map, ctrl_stat);
 	int rc;
@@ -226,11 +226,11 @@ static inline int rsc_stat(struct device *dev,
 	return rc;
 }
 
-int maxim_ds3231_stat_update(struct device *dev,
+int maxim_ds3231_stat_update(const struct device *dev,
 			     uint8_t set_bits,
 			     uint8_t clear_bits)
 {
-	struct ds3231_data *data = dev->driver_data;
+	struct ds3231_data *data = dev->data;
 
 	k_sem_take(&data->lock, K_FOREVER);
 
@@ -245,10 +245,10 @@ int maxim_ds3231_stat_update(struct device *dev,
  * Look for current users of the interrupt/square-wave signal and
  * enable monitoring iff at least one consumer is active.
  */
-static void validate_isw_monitoring(struct device *dev)
+static void validate_isw_monitoring(const struct device *dev)
 {
-	struct ds3231_data *data = dev->driver_data;
-	const struct ds3231_config *cfg = dev->config_info;
+	struct ds3231_data *data = dev->data;
+	const struct ds3231_config *cfg = dev->config;
 	const struct register_map *rp = &data->registers;
 	uint8_t isw_mon_req = 0;
 
@@ -446,10 +446,10 @@ static uint32_t decode_rtc(struct ds3231_data *data)
 	return data->rtc_registers;
 }
 
-static int update_registers(struct device *dev)
+static int update_registers(const struct device *dev)
 {
-	struct ds3231_data *data = dev->driver_data;
-	const struct ds3231_config *cfg = dev->config_info;
+	struct ds3231_data *data = dev->data;
+	const struct ds3231_config *cfg = dev->config;
 	uint32_t syncclock;
 	int rc;
 	uint8_t addr = 0;
@@ -467,12 +467,12 @@ static int update_registers(struct device *dev)
 	return 0;
 }
 
-int maxim_ds3231_get_alarm(struct device *dev,
+int maxim_ds3231_get_alarm(const struct device *dev,
 			   uint8_t id,
 			   struct maxim_ds3231_alarm *cp)
 {
-	struct ds3231_data *data = dev->driver_data;
-	const struct ds3231_config *cfg = dev->config_info;
+	struct ds3231_data *data = dev->data;
+	const struct ds3231_config *cfg = dev->config;
 	int rv = 0;
 	uint8_t addr;
 	uint8_t len;
@@ -514,10 +514,10 @@ out:
 	return rv;
 }
 
-static int cancel_alarm(struct device *dev,
+static int cancel_alarm(const struct device *dev,
 			uint8_t id)
 {
-	struct ds3231_data *data = dev->driver_data;
+	struct ds3231_data *data = dev->data;
 
 	data->alarm_handler[id] = NULL;
 	data->alarm_user_data[id] = NULL;
@@ -525,11 +525,11 @@ static int cancel_alarm(struct device *dev,
 	return sc_ctrl(dev, 0, MAXIM_DS3231_ALARM1 << id);
 }
 
-static int ds3231_counter_cancel_alarm(struct device *dev,
+static int ds3231_counter_cancel_alarm(const struct device *dev,
 				       uint8_t id)
 {
-	struct ds3231_data *data = dev->driver_data;
-	const struct ds3231_config *cfg = dev->config_info;
+	struct ds3231_data *data = dev->data;
+	const struct ds3231_config *cfg = dev->config;
 	int rv = 0;
 
 	if (id >= cfg->generic.channels) {
@@ -552,12 +552,12 @@ out:
 	return rv;
 }
 
-static int set_alarm(struct device *dev,
+static int set_alarm(const struct device *dev,
 		     uint8_t id,
 		     const struct maxim_ds3231_alarm *cp)
 {
-	struct ds3231_data *data = dev->driver_data;
-	const struct ds3231_config *cfg = dev->config_info;
+	struct ds3231_data *data = dev->data;
+	const struct ds3231_config *cfg = dev->config;
 	uint8_t addr;
 	uint8_t len;
 
@@ -601,11 +601,11 @@ static int set_alarm(struct device *dev,
 	return rc;
 }
 
-int maxim_ds3231_set_alarm(struct device *dev,
+int maxim_ds3231_set_alarm(const struct device *dev,
 			   uint8_t id,
 			   const struct maxim_ds3231_alarm *cp)
 {
-	struct ds3231_data *data = dev->driver_data;
+	struct ds3231_data *data = dev->data;
 
 	k_sem_take(&data->lock, K_FOREVER);
 
@@ -616,9 +616,9 @@ int maxim_ds3231_set_alarm(struct device *dev,
 	return rc;
 }
 
-int maxim_ds3231_check_alarms(struct device *dev)
+int maxim_ds3231_check_alarms(const struct device *dev)
 {
-	struct ds3231_data *data = dev->driver_data;
+	struct ds3231_data *data = dev->data;
 	const struct register_map *rp = &data->registers;
 	uint8_t mask = (MAXIM_DS3231_ALARM1 | MAXIM_DS3231_ALARM2);
 
@@ -638,9 +638,9 @@ int maxim_ds3231_check_alarms(struct device *dev)
 	return rv;
 }
 
-static int check_handled_alarms(struct device *dev)
+static int check_handled_alarms(const struct device *dev)
 {
-	struct ds3231_data *data = dev->driver_data;
+	struct ds3231_data *data = dev->data;
 	const struct register_map *rp = &data->registers;
 	uint8_t mask = (MAXIM_DS3231_ALARM1 | MAXIM_DS3231_ALARM2);
 
@@ -659,7 +659,7 @@ static int check_handled_alarms(struct device *dev)
 	return rv;
 }
 
-static void counter_alarm_forwarder(struct device *dev,
+static void counter_alarm_forwarder(const struct device *dev,
 				    uint8_t id,
 				    uint32_t syncclock,
 				    void *ud)
@@ -671,8 +671,8 @@ static void alarm_worker(struct k_work *work)
 {
 	struct ds3231_data *data = CONTAINER_OF(work, struct ds3231_data,
 						alarm_work);
-	struct device *ds3231 = data->ds3231;
-	const struct ds3231_config *cfg = ds3231->config_info;
+	const struct device *ds3231 = data->ds3231;
+	const struct ds3231_config *cfg = ds3231->config;
 
 	k_sem_take(&data->lock, K_FOREVER);
 
@@ -747,11 +747,11 @@ static void sqw_worker(struct k_work *work)
 		syncclock - data->isw_syncclock);
 }
 
-static int read_time(struct device *dev,
+static int read_time(const struct device *dev,
 		     time_t *time)
 {
-	struct ds3231_data *data = dev->driver_data;
-	const struct ds3231_config *cfg = dev->config_info;
+	struct ds3231_data *data = dev->data;
+	const struct ds3231_config *cfg = dev->config;
 	uint8_t addr = 0;
 
 	int rc = i2c_write_read(data->i2c, cfg->addr,
@@ -765,10 +765,10 @@ static int read_time(struct device *dev,
 	return rc;
 }
 
-static int ds3231_counter_get_value(struct device *dev,
+static int ds3231_counter_get_value(const struct device *dev,
 				    uint32_t *ticks)
 {
-	struct ds3231_data *data = dev->driver_data;
+	struct ds3231_data *data = dev->data;
 	time_t time = 0;
 
 	k_sem_take(&data->lock, K_FOREVER);
@@ -784,10 +784,10 @@ static int ds3231_counter_get_value(struct device *dev,
 	return rc;
 }
 
-static void sync_finish(struct device *dev,
+static void sync_finish(const struct device *dev,
 			int rc)
 {
-	struct ds3231_data *data = dev->driver_data;
+	struct ds3231_data *data = dev->data;
 	struct sys_notify *notify = NULL;
 	struct k_poll_signal *signal = NULL;
 
@@ -816,9 +816,9 @@ static void sync_finish(struct device *dev,
 	}
 }
 
-static void sync_prep_read(struct device *dev)
+static void sync_prep_read(const struct device *dev)
 {
-	struct ds3231_data *data = dev->driver_data;
+	struct ds3231_data *data = dev->data;
 	int rc = sc_ctrl(dev, 0U, MAXIM_DS3231_REG_CTRL_INTCN
 			 | MAXIM_DS3231_REG_CTRL_RS_Msk);
 
@@ -830,9 +830,9 @@ static void sync_prep_read(struct device *dev)
 	validate_isw_monitoring(dev);
 }
 
-static void sync_finish_read(struct device *dev)
+static void sync_finish_read(const struct device *dev)
 {
-	struct ds3231_data *data = dev->driver_data;
+	struct ds3231_data *data = dev->data;
 	time_t time = 0;
 
 	(void)read_time(dev, &time);
@@ -851,9 +851,9 @@ static void sync_timer_handler(struct k_timer *tmr)
 	k_work_submit(&data->sync_work);
 }
 
-static void sync_prep_write(struct device *dev)
+static void sync_prep_write(const struct device *dev)
 {
-	struct ds3231_data *data = dev->driver_data;
+	struct ds3231_data *data = dev->data;
 	uint32_t syncclock = maxim_ds3231_read_syncclock(dev);
 	uint32_t offset = syncclock - data->new_sp.syncclock;
 	uint32_t syncclock_Hz = maxim_ds3231_syncclock_frequency(dev);
@@ -883,10 +883,10 @@ static void sync_prep_write(struct device *dev)
 	LOG_INF("sync %u in %u ms after %u", (uint32_t)when, rem_ms, syncclock);
 }
 
-static void sync_finish_write(struct device *dev)
+static void sync_finish_write(const struct device *dev)
 {
-	struct ds3231_data *data = dev->driver_data;
-	const struct ds3231_config *cfg = dev->config_info;
+	struct ds3231_data *data = dev->data;
+	const struct ds3231_config *cfg = dev->config;
 	time_t when = data->new_sp.rtc.tv_sec;
 	struct tm tm;
 	uint8_t buf[8];
@@ -967,7 +967,7 @@ static void sync_worker(struct k_work *work)
 	}
 }
 
-static void isw_gpio_callback(struct device *port,
+static void isw_gpio_callback(const struct device *port,
 			      struct gpio_callback *cb,
 			      uint32_t pins)
 {
@@ -984,10 +984,10 @@ static void isw_gpio_callback(struct device *port,
 	}
 }
 
-int z_impl_maxim_ds3231_get_syncpoint(struct device *dev,
+int z_impl_maxim_ds3231_get_syncpoint(const struct device *dev,
 				      struct maxim_ds3231_syncpoint *syncpoint)
 {
-	struct ds3231_data *data = dev->driver_data;
+	struct ds3231_data *data = dev->data;
 	int rv = 0;
 
 	k_sem_take(&data->lock, K_FOREVER);
@@ -1004,10 +1004,10 @@ int z_impl_maxim_ds3231_get_syncpoint(struct device *dev,
 	return rv;
 }
 
-int maxim_ds3231_synchronize(struct device *dev,
+int maxim_ds3231_synchronize(const struct device *dev,
 			     struct sys_notify *notify)
 {
-	struct ds3231_data *data = dev->driver_data;
+	struct ds3231_data *data = dev->data;
 	int rv = 0;
 
 	if (notify == NULL) {
@@ -1042,10 +1042,10 @@ out:
 	return rv;
 }
 
-int z_impl_maxim_ds3231_req_syncpoint(struct device *dev,
+int z_impl_maxim_ds3231_req_syncpoint(const struct device *dev,
 				      struct k_poll_signal *sig)
 {
-	struct ds3231_data *data = dev->driver_data;
+	struct ds3231_data *data = dev->data;
 	int rv = 0;
 
 	if (data->isw == NULL) {
@@ -1075,11 +1075,11 @@ out:
 	return rv;
 }
 
-int maxim_ds3231_set(struct device *dev,
+int maxim_ds3231_set(const struct device *dev,
 		     const struct maxim_ds3231_syncpoint *syncpoint,
 		     struct sys_notify *notify)
 {
-	struct ds3231_data *data = dev->driver_data;
+	struct ds3231_data *data = dev->data;
 	int rv = 0;
 
 	if ((syncpoint == NULL)
@@ -1115,11 +1115,11 @@ out:
 	return rv;
 }
 
-static int ds3231_init(struct device *dev)
+static int ds3231_init(const struct device *dev)
 {
-	struct ds3231_data *data = dev->driver_data;
-	const struct ds3231_config *cfg = dev->config_info;
-	struct device *i2c = device_get_binding(cfg->bus_name);
+	struct ds3231_data *data = dev->data;
+	const struct ds3231_config *cfg = dev->config;
+	const struct device *i2c = device_get_binding(cfg->bus_name);
 	int rc;
 
 	/* Initialize and take the lock */
@@ -1155,7 +1155,7 @@ static int ds3231_init(struct device *dev)
 	 */
 
 	if (cfg->isw_gpios.ctrl != NULL) {
-		struct device *gpio = device_get_binding(cfg->isw_gpios.ctrl);
+		const struct device *gpio = device_get_binding(cfg->isw_gpios.ctrl);
 
 		if (gpio == NULL) {
 			LOG_WRN("Failed to get INTn/SQW GPIO %s",
@@ -1199,23 +1199,23 @@ out:
 	return rc;
 }
 
-static int ds3231_counter_start(struct device *dev)
+static int ds3231_counter_start(const struct device *dev)
 {
 	return -EALREADY;
 }
 
-static int ds3231_counter_stop(struct device *dev)
+static int ds3231_counter_stop(const struct device *dev)
 {
 	return -ENOTSUP;
 }
 
-int ds3231_counter_set_alarm(struct device *dev,
+int ds3231_counter_set_alarm(const struct device *dev,
 			     uint8_t id,
 			     const struct counter_alarm_cfg *alarm_cfg)
 {
-	struct ds3231_data *data = dev->driver_data;
+	struct ds3231_data *data = dev->data;
 	const struct register_map *rp = &data->registers;
-	const struct ds3231_config *cfg = dev->config_info;
+	const struct ds3231_config *cfg = dev->config;
 	time_t when;
 	int rc = 0;
 
@@ -1265,23 +1265,23 @@ out:
 	return rc;
 }
 
-static uint32_t ds3231_counter_get_top_value(struct device *dev)
+static uint32_t ds3231_counter_get_top_value(const struct device *dev)
 {
 	return UINT32_MAX;
 }
 
-static uint32_t ds3231_counter_get_pending_int(struct device *dev)
+static uint32_t ds3231_counter_get_pending_int(const struct device *dev)
 {
 	return 0;
 }
 
-static int ds3231_counter_set_top_value(struct device *dev,
+static int ds3231_counter_set_top_value(const struct device *dev,
 					const struct counter_top_cfg *cfg)
 {
 	return -ENOTSUP;
 }
 
-static uint32_t ds3231_counter_get_max_relative_alarm(struct device *dev)
+static uint32_t ds3231_counter_get_max_relative_alarm(const struct device *dev)
 {
 	return UINT32_MAX;
 }
@@ -1333,7 +1333,7 @@ DEVICE_AND_API_INIT(ds3231_0, DT_INST_LABEL(0),
 
 #include <syscall_handler.h>
 
-int z_vrfy_maxim_ds3231_get_syncpoint(struct device *dev,
+int z_vrfy_maxim_ds3231_get_syncpoint(const struct device *dev,
 				      struct maxim_ds3231_syncpoint *syncpoint)
 {
 	struct maxim_ds3231_syncpoint value;
@@ -1353,7 +1353,7 @@ int z_vrfy_maxim_ds3231_get_syncpoint(struct device *dev,
 
 #include <syscalls/maxim_ds3231_get_syncpoint_mrsh.c>
 
-int z_vrfy_maxim_ds3231_req_syncpoint(struct device *dev,
+int z_vrfy_maxim_ds3231_req_syncpoint(const struct device *dev,
 				      struct k_poll_signal *sig)
 {
 	Z_OOPS(Z_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_COUNTER, &ds3231_api));

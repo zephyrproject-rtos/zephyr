@@ -97,10 +97,10 @@ static struct transfers transfer_blocks[MAX_TRANSFERS] = {
 		.size = sizeof(tx_data4),
 	},
 };
-static struct device *dma_device;
+static const struct device *dma_device;
 static uint32_t current_block_count, total_block_count;
 
-static void test_done(struct device *dma_dev, void *arg,
+static void test_done(const struct device *dma_dev, void *arg,
 		      uint32_t channel, int error_code)
 {
 	uint32_t src, dst;

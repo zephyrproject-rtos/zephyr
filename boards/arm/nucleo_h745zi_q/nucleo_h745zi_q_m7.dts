@@ -1,17 +1,24 @@
 /*
- * Copyright (c) 2020 Alexander Kozhinov
- * AlexanderKozhinov@yandex.com
+ * Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
 #include <st/h7/stm32h745Xi_m7.dtsi>
+#include <st/h7/stm32h745zitx-pinctrl.dtsi>
 #include "nucleo_h745zi_q.dtsi"
+
+/*
+ * WARNING:
+ * Possible pin conflicts: The pins PA2 and PB13 may conflict on selection of
+ * ETH_STM32_HAL, since they are used in ST Zio or ST morpho connectors. To
+ * avoid conflicting states the jumpers JP6 and JP7 must be in ON state.
+ */
 
 / {
 	model = "STMicroelectronics STM32H745ZI-Q-NUCLEO board";
-	compatible = "st,stm32h745zi-q-nucleo", "st,stm32h745";
+	compatible = "st,stm32h745zi-q-nucleo";
 
 	/* HW resources belonging to CM7 */
 	chosen {
@@ -39,6 +46,7 @@
 };
 
 &usart3 {
+	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -48,6 +56,7 @@
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
@@ -57,11 +66,21 @@
 
 	pwm12: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim12_ch1_pb14>;
 	};
 };
 
 &mac {
 	status = "okay";
+	pinctrl-0 = <&eth_ref_clk_pa1
+		     &eth_mdio_pa2
+		     &eth_crs_dv_pa7
+		     &eth_mdc_pc1
+		     &eth_rxd0_pc4
+		     &eth_rxd1_pc5
+		     &eth_tx_en_pg11
+		     &eth_txd0_pg13
+		     &eth_txd1_pb13>;
 };
 
 &rng {

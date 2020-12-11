@@ -141,22 +141,24 @@ Pristine Builds
 A *pristine* build directory is essentially a new build directory. All
 byproducts from previous builds have been removed.
 
-To have ``west build`` make the build directory pristine before re-running
-CMake to generate a build system, use the ``--pristine`` (or ``-p``)
-option. For example, to switch board and application (which requires a pristine
-build directory) in one command::
+To force ``west build`` make the build directory pristine before re-running
+CMake to generate a build system, use the ``--pristine=always`` (or
+``-p=always``) option.
 
-  west build -b qemu_x86 samples/philosophers
+Giving ``--pristine`` or ``-p`` without a value has the same effect as giving
+it the value ``always``. For example, these commands are equivalent::
+
   west build -p -b reel_board samples/hello_world
+  west build -p=always -b reel_board samples/hello_world
 
-To let west decide for you if a pristine build is needed, use ``-p auto``::
-
-  west build -p auto -b reel_board samples/hello_world
+By default, ``west build`` applies a heuristic to detect if the build directory
+needs to be made pristine. This is the same as using ``--pristine=auto``.
 
 .. tip::
 
-   You can run ``west config build.pristine auto`` to make this setting
-   permanent.
+   You can run ``west config build.pristine always`` to always do a pristine
+   build, or ``west config build.pristine never`` to disable the heuristic.
+   See the ``west build`` :ref:`west-building-config` for details.
 
 .. _west-building-verbose:
 
@@ -531,35 +533,20 @@ For example, to print usage information about the ``jlink`` runner::
 
 .. _west-runner:
 
-runners package API
-*******************
+Flash and debug runners
+***********************
 
-The flash and debug commands are implemented as west *extension
-commands*: that is, they are west commands whose source code lives
-outside the west repository. Some reasons this choice was made are:
+The flash and debug commands use Python wrappers around various
+:ref:`flash-debug-host-tools`. These wrappers are all defined in a Python
+library at :zephyr_file:`scripts/west_commands/runners`. Each wrapper is
+called a *runner*. Runners can flash and/or debug Zephyr programs.
 
-- Their implementations are tightly coupled to the Zephyr build
-  system, e.g. due to their reliance on CMake cache variables.
-
-- Pull requests adding features to them are almost always motivated by
-  a corresponding change to an upstream board, so it makes sense to
-  put them in Zephyr to avoid needing pull requests in multiple
-  repositories.
-
-- Many users find it natural to search for their implementations in
-  the Zephyr source tree.
-
-The extension commands are a thin wrapper around a package called
-``runners`` (this package is also in the Zephyr tree, in
-:zephyr_file:`scripts/west_commands/runners`).
-
-The central abstraction within this library is ``ZephyrBinaryRunner``,
-an abstract class which represents *runner* objects, which can flash
-and/or debug Zephyr programs. The set of available runners is
+The central abstraction within this library is ``ZephyrBinaryRunner``, an
+abstract class which represents runners. The set of available runners is
 determined by the imported subclasses of ``ZephyrBinaryRunner``.
-``ZephyrBinaryRunner`` is available in the ``runners.core`` module;
-individual runner implementations are in other submodules, such as
-``runners.nrfjprog``, ``runners.openocd``, etc.
+``ZephyrBinaryRunner`` is available in the ``runners.core`` module; individual
+runner implementations are in other submodules, such as ``runners.nrfjprog``,
+``runners.openocd``, etc.
 
 Hacking
 *******

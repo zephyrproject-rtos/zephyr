@@ -680,10 +680,10 @@ int ism330dhcx_shub_get_idx(enum sensor_channel type)
 	return -ENOTSUP;
 }
 
-int ism330dhcx_shub_fetch_external_devs(struct device *dev)
+int ism330dhcx_shub_fetch_external_devs(const struct device *dev)
 {
 	uint8_t n;
-	struct ism330dhcx_data *data = dev->driver_data;
+	struct ism330dhcx_data *data = dev->data;
 	struct ism330dhcx_shub_slist *sp;
 
 	/* read data from external slave */
@@ -705,11 +705,11 @@ int ism330dhcx_shub_fetch_external_devs(struct device *dev)
 	return 0;
 }
 
-int ism330dhcx_shub_config(struct device *dev, enum sensor_channel chan,
-			enum sensor_attribute attr,
-			const struct sensor_value *val)
+int ism330dhcx_shub_config(const struct device *dev, enum sensor_channel chan,
+			   enum sensor_attribute attr,
+			   const struct sensor_value *val)
 {
-	struct ism330dhcx_data *data = dev->driver_data;
+	struct ism330dhcx_data *data = dev->data;
 	struct ism330dhcx_shub_slist *sp = NULL;
 	uint8_t n;
 
@@ -733,9 +733,9 @@ int ism330dhcx_shub_config(struct device *dev, enum sensor_channel chan,
 	return sp->dev_conf(data, sp->ext_i2c_addr, chan, attr, val);
 }
 
-int ism330dhcx_shub_init(struct device *dev)
+int ism330dhcx_shub_init(const struct device *dev)
 {
-	struct ism330dhcx_data *data = dev->driver_data;
+	struct ism330dhcx_data *data = dev->data;
 	uint8_t i, n = 0, regn;
 	uint8_t chip_id;
 	struct ism330dhcx_shub_slist *sp;

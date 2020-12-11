@@ -31,11 +31,11 @@ LOG_MODULE_REGISTER(IIS2DLPC, CONFIG_SENSOR_LOG_LEVEL);
  * @dev: Pointer to instance of struct device (I2C or SPI)
  * @range: Full scale range (2, 4, 8 and 16 G)
  */
-static int iis2dlpc_set_range(struct device *dev, uint16_t range)
+static int iis2dlpc_set_range(const struct device *dev, uint16_t range)
 {
 	int err;
-	struct iis2dlpc_data *iis2dlpc = dev->driver_data;
-	const struct iis2dlpc_device_config *cfg = dev->config_info;
+	struct iis2dlpc_data *iis2dlpc = dev->data;
+	const struct iis2dlpc_device_config *cfg = dev->config;
 	uint8_t shift_gain = 0U;
 	uint8_t fs = IIS2DLPC_FS_TO_REG(range);
 
@@ -60,9 +60,9 @@ static int iis2dlpc_set_range(struct device *dev, uint16_t range)
  * @dev: Pointer to instance of struct device (I2C or SPI)
  * @odr: Output data rate
  */
-static int iis2dlpc_set_odr(struct device *dev, uint16_t odr)
+static int iis2dlpc_set_odr(const struct device *dev, uint16_t odr)
 {
-	struct iis2dlpc_data *iis2dlpc = dev->driver_data;
+	struct iis2dlpc_data *iis2dlpc = dev->data;
 	uint8_t val;
 
 	/* check if power off */
@@ -92,13 +92,13 @@ static inline void iis2dlpc_convert(struct sensor_value *val, int raw_val,
 	val->val2 = dval % 1000000LL;
 }
 
-static inline void iis2dlpc_channel_get_acc(struct device *dev,
+static inline void iis2dlpc_channel_get_acc(const struct device *dev,
 					     enum sensor_channel chan,
 					     struct sensor_value *val)
 {
 	int i;
 	uint8_t ofs_start, ofs_stop;
-	struct iis2dlpc_data *iis2dlpc = dev->driver_data;
+	struct iis2dlpc_data *iis2dlpc = dev->data;
 	struct sensor_value *pval = val;
 
 	switch (chan) {
@@ -121,7 +121,7 @@ static inline void iis2dlpc_channel_get_acc(struct device *dev,
 	}
 }
 
-static int iis2dlpc_channel_get(struct device *dev,
+static int iis2dlpc_channel_get(const struct device *dev,
 				 enum sensor_channel chan,
 				 struct sensor_value *val)
 {
@@ -140,7 +140,7 @@ static int iis2dlpc_channel_get(struct device *dev,
 	return -ENOTSUP;
 }
 
-static int iis2dlpc_config(struct device *dev, enum sensor_channel chan,
+static int iis2dlpc_config(const struct device *dev, enum sensor_channel chan,
 			    enum sensor_attribute attr,
 			    const struct sensor_value *val)
 {
@@ -157,7 +157,8 @@ static int iis2dlpc_config(struct device *dev, enum sensor_channel chan,
 	return -ENOTSUP;
 }
 
-static int iis2dlpc_attr_set(struct device *dev, enum sensor_channel chan,
+static int iis2dlpc_attr_set(const struct device *dev,
+			      enum sensor_channel chan,
 			      enum sensor_attribute attr,
 			      const struct sensor_value *val)
 {
@@ -175,15 +176,16 @@ static int iis2dlpc_attr_set(struct device *dev, enum sensor_channel chan,
 	return -ENOTSUP;
 }
 
-static int iis2dlpc_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int iis2dlpc_sample_fetch(const struct device *dev,
+				 enum sensor_channel chan)
 {
-	struct iis2dlpc_data *iis2dlpc = dev->driver_data;
-	const struct iis2dlpc_device_config *cfg = dev->config_info;
+	struct iis2dlpc_data *iis2dlpc = dev->data;
+	const struct iis2dlpc_device_config *cfg = dev->config;
 	uint8_t shift;
-	union axis3bit16_t buf;
+	int16_t buf[3];
 
 	/* fetch raw data sample */
-	if (iis2dlpc_acceleration_raw_get(iis2dlpc->ctx, buf.u8bit) < 0) {
+	if (iis2dlpc_acceleration_raw_get(iis2dlpc->ctx, buf) < 0) {
 		LOG_DBG("Failed to fetch raw data sample");
 		return -EIO;
 	}
@@ -195,9 +197,9 @@ static int iis2dlpc_sample_fetch(struct device *dev, enum sensor_channel chan)
 		shift = IIS2DLPC_SHIFT_PMOTHER;
 	}
 
-	iis2dlpc->acc[0] = sys_le16_to_cpu(buf.i16bit[0]) >> shift;
-	iis2dlpc->acc[1] = sys_le16_to_cpu(buf.i16bit[1]) >> shift;
-	iis2dlpc->acc[2] = sys_le16_to_cpu(buf.i16bit[2]) >> shift;
+	iis2dlpc->acc[0] = sys_le16_to_cpu(buf[0]) >> shift;
+	iis2dlpc->acc[1] = sys_le16_to_cpu(buf[1]) >> shift;
+	iis2dlpc->acc[2] = sys_le16_to_cpu(buf[2]) >> shift;
 
 	return 0;
 }
@@ -211,10 +213,10 @@ static const struct sensor_driver_api iis2dlpc_driver_api = {
 	.channel_get = iis2dlpc_channel_get,
 };
 
-static int iis2dlpc_init_interface(struct device *dev)
+static int iis2dlpc_init_interface(const struct device *dev)
 {
-	struct iis2dlpc_data *iis2dlpc = dev->driver_data;
-	const struct iis2dlpc_device_config *cfg = dev->config_info;
+	struct iis2dlpc_data *iis2dlpc = dev->data;
+	const struct iis2dlpc_device_config *cfg = dev->config;
 
 	iis2dlpc->bus = device_get_binding(cfg->bus_name);
 	if (!iis2dlpc->bus) {
@@ -253,10 +255,10 @@ static int iis2dlpc_set_power_mode(struct iis2dlpc_data *iis2dlpc,
 	return iis2dlpc_write_reg(iis2dlpc->ctx, IIS2DLPC_CTRL1, &regval, 1);
 }
 
-static int iis2dlpc_init(struct device *dev)
+static int iis2dlpc_init(const struct device *dev)
 {
-	struct iis2dlpc_data *iis2dlpc = dev->driver_data;
-	const struct iis2dlpc_device_config *cfg = dev->config_info;
+	struct iis2dlpc_data *iis2dlpc = dev->data;
+	const struct iis2dlpc_device_config *cfg = dev->config;
 	uint8_t wai;
 
 	if (iis2dlpc_init_interface(dev)) {

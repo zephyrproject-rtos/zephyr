@@ -34,7 +34,7 @@ build() {
 
   ./bootstrap
   ./autogen.sh
-  ./configure --with-platform=efi --target=${TARGET_ARCH}
+  ./configure --with-platform=efi --target=${TARGET_ARCH} --disable-werror
 
   make -j${JOBS}
 

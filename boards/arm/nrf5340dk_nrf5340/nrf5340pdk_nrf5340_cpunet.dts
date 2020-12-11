@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf5340_cpunet_qkaa.dtsi>
+#include <nordic/nrf5340_cpunet_qkaa_eng_a.dtsi>
 
 / {
 	model = "Nordic NRF5340 PDK NRF5340 Network";
@@ -109,10 +109,7 @@
 };
 
 &flash1 {
-	/*
-	 * For more information, see:
-	 * https://docs.zephyrproject.org/latest/guides/dts/legacy-macros.html#legacy-flash-partitions
-	 */
+
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;

@@ -21,13 +21,14 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-#include <assert.h>
+#include <sys/__assert.h>
 #include <stddef.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 #include <net/http_parser_url.h>
+#include <toolchain.h>
 
 #ifndef BIT_AT
 # define BIT_AT(a, i)                                                \
@@ -200,7 +201,7 @@ enum state parse_url_char(enum state s, const char ch)
 			return s_dead;
 		}
 
-	/* FALLTHROUGH */
+		__fallthrough;
 	case s_req_server_start:
 	case s_req_server:
 		if (ch == '/') {
@@ -322,7 +323,7 @@ http_parse_host_char(enum http_host_state s, const char ch)
 			return s_http_host;
 		}
 
-	/* FALLTHROUGH */
+		__fallthrough;
 	case s_http_host_v6_end:
 		if (ch == ':') {
 			return s_http_host_port_start;
@@ -335,7 +336,7 @@ http_parse_host_char(enum http_host_state s, const char ch)
 			return s_http_host_v6_end;
 		}
 
-	/* FALLTHROUGH */
+		__fallthrough;
 	case s_http_host_v6_start:
 		if (IS_HEX(ch) || ch == ':' || ch == '.') {
 			return s_http_host_v6;
@@ -351,7 +352,7 @@ http_parse_host_char(enum http_host_state s, const char ch)
 			return s_http_host_v6_end;
 		}
 
-	/* FALLTHROUGH */
+		__fallthrough;
 	case s_http_host_v6_zone_start:
 		/* RFC 6874 Zone ID consists of 1*( unreserved / pct-encoded) */
 		if (IS_ALPHANUM(ch) || ch == '%' || ch == '.' || ch == '-' ||
@@ -384,7 +385,7 @@ int http_parse_host(const char *buf, struct http_parser_url *u,
 	const char *p;
 
 	buflen = u->field_data[UF_HOST].off + u->field_data[UF_HOST].len;
-	assert(u->field_set & (1 << UF_HOST));
+	__ASSERT_NO_MSG(u->field_set & (1 << UF_HOST));
 
 	u->field_data[UF_HOST].len = 0U;
 
@@ -501,8 +502,8 @@ http_parser_parse_url(const char *buf, size_t buflen, int is_connect,
 
 		case s_req_server_with_at:
 			found_at = 1;
+			__fallthrough;
 
-		/* FALLTROUGH */
 		case s_req_server:
 			uf = UF_HOST;
 			break;
@@ -520,7 +521,7 @@ http_parser_parse_url(const char *buf, size_t buflen, int is_connect,
 			break;
 
 		default:
-			assert(!"Unexpected state");
+			__ASSERT_NO_MSG(!"Unexpected state");
 			return 1;
 		}
 

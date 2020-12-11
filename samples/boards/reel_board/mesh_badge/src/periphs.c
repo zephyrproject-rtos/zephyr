@@ -13,7 +13,7 @@
 #include <bluetooth/mesh.h>
 
 struct device_info {
-	struct device *dev;
+	const struct device *dev;
 	char *name;
 };
 
@@ -103,7 +103,8 @@ static void motion_timeout(struct k_work *work)
 	}
 }
 
-static void motion_handler(struct device *dev, struct sensor_trigger *trig)
+static void motion_handler(const struct device *dev,
+			   struct sensor_trigger *trig)
 {
 	int err;
 

@@ -4,16 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <mem.h>
+#include <dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
 
 / {
-	aliases{
-		gpio-0 = &gpio0;
-		gpio-1 = &gpio1;
-		mailbox-0 = &mailbox0;
-	};
-
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -30,29 +26,36 @@
 	};
 
 	soc {
+		syscon: syscon@40000000 {
+			compatible = "nxp,lpc-syscon";
+			reg = <0x40000000 0x4000>;
+			label = "SYSCON";
+			#clock-cells = <1>;
+		};
+
 		sram0:memory@20000000 {
 			compatible = "mmio-sram";
-			reg = <0x20000000 0x10000>;
+			reg = <0x20000000 DT_SIZE_K(64)>;
 		};
 
 		sram1:memory@20010000 {
 			compatible = "mmio-sram";
-			reg = <0x20010000 0x10000>;
+			reg = <0x20010000 DT_SIZE_K(64)>;
 		};
 
 		sram2:memory@20020000 {
 			compatible = "mmio-sram";
-			reg = <0x20020000 0x8000>;
+			reg = <0x20020000 DT_SIZE_K(32)>;
 		};
 
-		sramx:memory@40000000{
+		sramx:memory@4000000{
 			compatible = "mmio-sram";
-			reg = <0x40000000 0x8000>;
+			reg = <0x4000000 DT_SIZE_K(32)>;
 		};
 
 		flash0:flash@0 {
 			compatible = "soc-nv-flash";
-			reg = <0 0x40000>;
+			reg = <0 DT_SIZE_K(256)>;
 		};
 
 		gpio0: gpio@0 {
@@ -85,6 +88,7 @@
 			compatible = "nxp,lpc-flexcomm";
 			reg = <0x40086000 0x1000>;
 			interrupts = <14 0>;
+			clocks = <&syscon MCUX_FLEXCOMM0_CLK>;
 			label = "FLEXCOMM_0";
 			status = "disabled";
 		};
@@ -93,6 +97,7 @@
 			compatible = "nxp,lpc-flexcomm";
 			reg = <0x40087000 0x1000>;
 			interrupts = <15 0>;
+			clocks = <&syscon MCUX_FLEXCOMM1_CLK>;
 			label = "FLEXCOMM_1";
 			status = "disabled";
 		};
@@ -101,6 +106,7 @@
 			compatible = "nxp,lpc-flexcomm";
 			reg = <0x40088000 0x1000>;
 			interrupts = <16 0>;
+			clocks = <&syscon MCUX_FLEXCOMM2_CLK>;
 			label = "FLEXCOMM_2";
 			status = "disabled";
 		};
@@ -109,6 +115,7 @@
 			compatible = "nxp,lpc-flexcomm";
 			reg = <0x40089000 0x1000>;
 			interrupts = <17 0>;
+			clocks = <&syscon MCUX_FLEXCOMM3_CLK>;
 			label = "FLEXCOMM_3";
 			status = "disabled";
 		};
@@ -117,6 +124,7 @@
 			compatible = "nxp,lpc-flexcomm";
 			reg = <0x4008a000 0x1000>;
 			interrupts = <18 0>;
+			clocks = <&syscon MCUX_FLEXCOMM4_CLK>;
 			label = "FLEXCOMM_4";
 			status = "disabled";
 		};
@@ -125,6 +133,7 @@
 			compatible = "nxp,lpc-flexcomm";
 			reg = <0x40096000 0x1000>;
 			interrupts = <19 0>;
+			clocks = <&syscon MCUX_FLEXCOMM5_CLK>;
 			label = "FLEXCOMM_5";
 			status = "disabled";
 		};
@@ -133,6 +142,7 @@
 			compatible = "nxp,lpc-flexcomm";
 			reg = <0x40097000 0x1000>;
 			interrupts = <20 0>;
+			clocks = <&syscon MCUX_FLEXCOMM6_CLK>;
 			label = "FLEXCOMM_6";
 			status = "disabled";
 		};
@@ -141,6 +151,7 @@
 			compatible = "nxp,lpc-flexcomm";
 			reg = <0x40098000 0x1000>;
 			interrupts = <21 0>;
+			clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
 			label = "FLEXCOMM_7";
 			status = "disabled";
 		};

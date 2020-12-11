@@ -253,13 +253,48 @@ void check_results(struct k_poll_event *events, uint32_t event_type,
 /**
  * @brief Test polling with wait
  *
+ * @ingroup kernel_poll_tests
+ *
  * @details
+ * Test Objective:
  * - Test the poll operation which enables waiting concurrently
  * for one/two/all conditions to be fulfilled.
  * - set a single timeout argument indicating
  * the maximum amount of time a thread shall wait.
  *
- * @ingroup kernel_poll_tests
+ * Testing techniques:
+ * - function and block box testing.
+ * - Interface testing.
+ * - Dynamic analysis and testing.
+ *
+ * Prerequisite Conditions:
+ * - CONFIG_TEST_USERSPACE
+ * - CONFIG_DYNAMIC_OBJECTS
+ * - CONFIG_POLL
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Use FIFO/semaphore/signal object to define poll event.
+ * -# Initialize the FIFO/semaphore/signal object.
+ * -# Create a thread to put FIFO,
+ * give semaphore and raise signal.
+ * -# Check the result when signal is raised,
+ * semaphore is givn and fifo is filled.
+ * -# Check the result when no event is satisfied.
+ * -# Check the result when only semaphore is given.
+ * -# Check the result when only FIFO is filled.
+ * -# Check the result when only signal is raised.
+ *
+ * Expected Test Result:
+ * - FIFO/semaphore/signal events available/waitable in poll.
+ *
+ * Pass/Fail Criteria:
+ * - Successful if check points in test procedure are all passed, otherwise failure.
+ *
+ * Assumptions and Constraints:
+ * - N/A
  *
  * @see k_poll_signal_init(), k_poll()
  */
@@ -283,6 +318,9 @@ void test_poll_wait(void)
 			poll_wait_helper, (void *)1, 0, 0,
 			main_low_prio - 1, K_USER | K_INHERIT_PERMS,
 			K_NO_WAIT);
+
+	rc = k_poll(wait_events, ARRAY_SIZE(wait_events), K_NO_WAIT);
+	zassert_equal(rc, -EAGAIN, "should return EAGAIN with K_NO_WAIT");
 
 	rc = k_poll(wait_events, ARRAY_SIZE(wait_events), K_SECONDS(1));
 

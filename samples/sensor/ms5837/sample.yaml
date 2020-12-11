@@ -4,5 +4,5 @@ sample:
 tests:
   sample.sensor.ms5837:
     build_only: true
-    platform_whitelist: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk_nrf52840
     tags: sensors

@@ -40,7 +40,8 @@ static uint32_t ens210_crc7(uint32_t bitstream)
 
 #if defined(CONFIG_ENS210_TEMPERATURE_SINGLE) \
 		|| defined(CONFIG_ENS210_HUMIDITY_SINGLE)
-static int ens210_measure(struct device *i2c_dev, enum sensor_channel chan)
+static int ens210_measure(const struct device *i2c_dev,
+			  enum sensor_channel chan)
 {
 	uint8_t buf;
 	int ret;
@@ -78,9 +79,10 @@ static int ens210_measure(struct device *i2c_dev, enum sensor_channel chan)
 }
 #endif /* Single shot mode */
 
-static int ens210_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int ens210_sample_fetch(const struct device *dev,
+			       enum sensor_channel chan)
 {
-	struct ens210_data *drv_data = dev->driver_data;
+	struct ens210_data *drv_data = dev->data;
 	struct ens210_value_data data[2];
 	int ret, cnt;
 
@@ -157,11 +159,11 @@ static int ens210_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return -EIO;
 }
 
-static int ens210_channel_get(struct device *dev,
+static int ens210_channel_get(const struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	struct ens210_data *drv_data = dev->driver_data;
+	struct ens210_data *drv_data = dev->data;
 	int32_t temp_frac;
 	int32_t humidity_frac;
 
@@ -188,7 +190,7 @@ static int ens210_channel_get(struct device *dev,
 	return 0;
 }
 
-static int ens210_sys_reset(struct device *i2c_dev)
+static int ens210_sys_reset(const struct device *i2c_dev)
 {
 	const struct ens210_sys_ctrl sys_ctrl = {
 			.low_power = 0,
@@ -204,7 +206,7 @@ static int ens210_sys_reset(struct device *i2c_dev)
 	return ret;
 }
 
-static int ens210_sys_enable(struct device *i2c_dev, uint8_t low_power)
+static int ens210_sys_enable(const struct device *i2c_dev, uint8_t low_power)
 {
 	const struct ens210_sys_ctrl sys_ctrl = {
 			.low_power = low_power,
@@ -220,7 +222,7 @@ static int ens210_sys_enable(struct device *i2c_dev, uint8_t low_power)
 	return ret;
 }
 
-static int ens210_wait_boot(struct device *i2c_dev)
+static int ens210_wait_boot(const struct device *i2c_dev)
 {
 	int cnt;
 	int ret;
@@ -263,9 +265,9 @@ static const struct sensor_driver_api en210_driver_api = {
 	.channel_get = ens210_channel_get,
 };
 
-static int ens210_init(struct device *dev)
+static int ens210_init(const struct device *dev)
 {
-	struct ens210_data *drv_data = dev->driver_data;
+	struct ens210_data *drv_data = dev->data;
 	const struct ens210_sens_run sense_run = {
 		.t_run = ENS210_T_RUN,
 		.h_run = ENS210_H_RUN

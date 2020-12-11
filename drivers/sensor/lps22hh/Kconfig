@@ -5,7 +5,7 @@
 
 menuconfig LPS22HH
 	bool "LPS22HH pressure and temperature"
-	depends on (I2C && HAS_DTS_I2C) || SPI
+	depends on I2C || SPI
 	select HAS_STMEMSC
 	select USE_STDC_LPS22HH
 	help

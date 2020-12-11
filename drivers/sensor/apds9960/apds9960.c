@@ -36,8 +36,8 @@ static void apds9960_handle_cb(struct apds9960_data *drv_data)
 #endif
 }
 
-static void apds9960_gpio_callback(struct device *dev,
-				  struct gpio_callback *cb, uint32_t pins)
+static void apds9960_gpio_callback(const struct device *dev,
+				   struct gpio_callback *cb, uint32_t pins)
 {
 	struct apds9960_data *drv_data =
 		CONTAINER_OF(cb, struct apds9960_data, gpio_cb);
@@ -45,10 +45,11 @@ static void apds9960_gpio_callback(struct device *dev,
 	apds9960_handle_cb(drv_data);
 }
 
-static int apds9960_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int apds9960_sample_fetch(const struct device *dev,
+				 enum sensor_channel chan)
 {
-	const struct apds9960_config *config = dev->config_info;
-	struct apds9960_data *data = dev->driver_data;
+	const struct apds9960_config *config = dev->config;
+	struct apds9960_data *data = dev->data;
 	uint8_t tmp;
 
 	if (chan != SENSOR_CHAN_ALL) {
@@ -113,11 +114,11 @@ static int apds9960_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return 0;
 }
 
-static int apds9960_channel_get(struct device *dev,
+static int apds9960_channel_get(const struct device *dev,
 				enum sensor_channel chan,
 				struct sensor_value *val)
 {
-	struct apds9960_data *data = dev->driver_data;
+	struct apds9960_data *data = dev->data;
 
 	switch (chan) {
 #ifdef CONFIG_APDS9960_ENABLE_ALS
@@ -149,10 +150,10 @@ static int apds9960_channel_get(struct device *dev,
 	return 0;
 }
 
-static int apds9960_proxy_setup(struct device *dev)
+static int apds9960_proxy_setup(const struct device *dev)
 {
-	const struct apds9960_config *config = dev->config_info;
-	struct apds9960_data *data = dev->driver_data;
+	const struct apds9960_config *config = dev->config;
+	struct apds9960_data *data = dev->data;
 
 	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
 			       APDS9960_POFFSET_UR_REG,
@@ -221,10 +222,10 @@ static int apds9960_proxy_setup(struct device *dev)
 }
 
 #ifdef CONFIG_APDS9960_ENABLE_ALS
-static int apds9960_ambient_setup(struct device *dev)
+static int apds9960_ambient_setup(const struct device *dev)
 {
-	const struct apds9960_config *config = dev->config_info;
-	struct apds9960_data *data = dev->driver_data;
+	const struct apds9960_config *config = dev->config;
+	struct apds9960_data *data = dev->data;
 	uint16_t th;
 
 	/* ADC value */
@@ -271,10 +272,10 @@ static int apds9960_ambient_setup(struct device *dev)
 }
 #endif
 
-static int apds9960_sensor_setup(struct device *dev)
+static int apds9960_sensor_setup(const struct device *dev)
 {
-	const struct apds9960_config *config = dev->config_info;
-	struct apds9960_data *data = dev->driver_data;
+	const struct apds9960_config *config = dev->config;
+	struct apds9960_data *data = dev->data;
 	uint8_t chip_id;
 
 	if (i2c_reg_read_byte(data->i2c, config->i2c_address,
@@ -356,10 +357,10 @@ static int apds9960_sensor_setup(struct device *dev)
 	return 0;
 }
 
-static int apds9960_init_interrupt(struct device *dev)
+static int apds9960_init_interrupt(const struct device *dev)
 {
-	const struct apds9960_config *config = dev->config_info;
-	struct apds9960_data *drv_data = dev->driver_data;
+	const struct apds9960_config *config = dev->config;
+	struct apds9960_data *drv_data = dev->data;
 
 	/* setup gpio interrupt */
 	drv_data->gpio = device_get_binding(config->gpio_name);
@@ -406,12 +407,13 @@ static int apds9960_init_interrupt(struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static int apds9960_device_ctrl(struct device *dev, uint32_t ctrl_command,
+#ifdef CONFIG_PM_DEVICE
+static int apds9960_device_ctrl(const struct device *dev,
+				uint32_t ctrl_command,
 				void *context, device_pm_cb cb, void *arg)
 {
-	const struct apds9960_config *config = dev->config_info;
-	struct apds9960_data *data = dev->driver_data;
+	const struct apds9960_config *config = dev->config;
+	struct apds9960_data *data = dev->data;
 	int ret = 0;
 
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
@@ -451,10 +453,10 @@ static int apds9960_device_ctrl(struct device *dev, uint32_t ctrl_command,
 }
 #endif
 
-static int apds9960_init(struct device *dev)
+static int apds9960_init(const struct device *dev)
 {
-	const struct apds9960_config *config = dev->config_info;
-	struct apds9960_data *data = dev->driver_data;
+	const struct apds9960_config *config = dev->config;
+	struct apds9960_data *data = dev->data;
 
 	/* Initialize time 5.7ms */
 	k_sleep(K_MSEC(6));
@@ -541,12 +543,6 @@ static const struct apds9960_config apds9960_config = {
 
 static struct apds9960_data apds9960_data;
 
-#ifndef CONFIG_DEVICE_POWER_MANAGEMENT
-DEVICE_AND_API_INIT(apds9960, DT_INST_LABEL(0), &apds9960_init,
-		    &apds9960_data, &apds9960_config, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &apds9960_driver_api);
-#else
 DEVICE_DEFINE(apds9960, DT_INST_LABEL(0), apds9960_init,
 	      apds9960_device_ctrl, &apds9960_data, &apds9960_config,
 	      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &apds9960_driver_api);
-#endif

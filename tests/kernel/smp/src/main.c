@@ -63,6 +63,20 @@ static int curr_cpu(void)
  * @}
  */
 
+/**
+ * @defgroup kernel_smp_integration_tests SMP Tests
+ * @ingroup all_tests
+ * @{
+ * @}
+ */
+
+/**
+ * @defgroup kernel_smp_module_tests SMP Tests
+ * @ingroup all_tests
+ * @{
+ * @}
+ */
+
 static void t2_fn(void *a, void *b, void *c)
 {
 	ARG_UNUSED(a);
@@ -468,13 +482,47 @@ static void thread_get_cpu_entry(void *p1, void *p2, void *p3)
 /**
  * @brief Test get a pointer of CPU
  *
- * @ingroup kernel_smp_tests
+ * @ingroup kernel_smp_module_tests
  *
- * @details Architecture layer provides a mechanism to return a pointer to the
- * current kernel CPU record of the running CPU.
+ * @details
+ * Test Objective:
+ * - To verify architecture layer provides a mechanism to return a pointer to the
+ *   current kernel CPU record of the running CPU.
+ *   We call arch_curr_cpu() and get it's member, both in main and spwaned thread
+ *   speratively, and compare them. They shall be different in SMP enviornment.
  *
- * We call arch_curr_cpu() and get it's member, both in main and spwaned thread
- * speratively, and compare them. They shall be different in SMP enviornment.
+ * Testing techniques:
+ * - Interface testing, function and block box testing,
+ *   dynamic analysis and testing,
+ *
+ * Prerequisite Conditions:
+ * - CONFIG_SMP=y, and the HW platform must support SMP.
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# In main thread, call arch_curr_cpu() to get it's member "id",then store it
+ *  into a variable thread_id.
+ * -# Spawn a thread t2, and pass the stored thread_id to it, then call
+ *  k_busy_wait() 50us to wait for thread run and won't be swapped out.
+ * -# In thread t2, call arch_curr_cpu() to get pointer of current cpu data. Then
+ *  check if it not NULL.
+ * -# Store the member id via accessing pointer of current cpu data to var cpu_id.
+ * -# Check if cpu_id is not equaled to bsp_id that we pass into thread.
+ * -# Call k_busy_wait() and loop forever.
+ * -# In main thread, terminate the thread t2 before exit.
+ *
+ * Expected Test Result:
+ * - The pointer of current cpu data that we got from function call is correct.
+ *
+ * Pass/Fail Criteria:
+ * - Successful if the check of step 3,5 are all passed.
+ * - Failure if one of the check of step 3,5 is failed.
+ *
+ * Assumptions and Constraints:
+ * - This test using for the platform that support SMP, in our current scenario
+ *   , only x86_64, arc and xtensa supported.
  *
  * @see arch_curr_cpu()
  */
@@ -504,24 +552,58 @@ void z_trace_sched_ipi(void)
 {
 	sched_ipi_has_called++;
 }
+#endif
 
 /**
  * @brief Test interprocessor interrupt
  *
- * @ingroup kernel_smp_tests
+ * @ingroup kernel_smp_integration_tests
  *
- * @details Architecture layer provides a mechanism to issue an interprocessor
- * interrupt to all other CPUs in the system that calls the scheduler IPI
- * handler.
+ * @details
+ * Test Objective:
+ * - To verify architecture layer provides a mechanism to issue an interprocessor
+ *   interrupt to all other CPUs in the system that calls the scheduler IPI.
+ *   We simply add a hook in z_sched_ipi(), in order to check if it has been
+ *   called once in another CPU except the caller, when arch_sched_ipi() is
+ *   called.
  *
- * We simply add a hook in z_sched_ipi(), in order to check if it has been
- * called once in another CPU except the caller, when arch_sched_ipi() is
- * called.
+ * Testing techniques:
+ * - Interface testing, function and block box testing,
+ *   dynamic analysis and testing
+ *
+ * Prerequisite Conditions:
+ * - CONFIG_SMP=y, and the HW platform must support SMP.
+ * - CONFIG_TRACE_SCHED_IPI=y was set.
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# In main thread, given a global variable sched_ipi_has_called equaled zero.
+ * -# Call arch_sched_ipi() then sleep for 100ms.
+ * -# In z_sched_ipi() handler, increment the sched_ipi_has_called.
+ * -# In main thread, check the sched_ipi_has_called is not equaled to zero.
+ * -# Repeat step 1 to 4 for 3 times.
+ *
+ * Expected Test Result:
+ * - The pointer of current cpu data that we got from function call is correct.
+ *
+ * Pass/Fail Criteria:
+ * - Successful if the check of step 4 are all passed.
+ * - Failure if one of the check of step 4 is failed.
+ *
+ * Assumptions and Constraints:
+ * - This test using for the platform that support SMP, in our current scenario
+ *   , only x86_64 and arc supported.
  *
  * @see arch_sched_ipi()
  */
 void test_smp_ipi(void)
 {
+#ifndef CONFIG_TRACE_SCHED_IPI
+	ztest_test_skip();
+#endif
+
 	TC_PRINT("cpu num=%d", CONFIG_MP_NUM_CPUS);
 
 	for (int i = 0; i < 3 ; i++) {
@@ -541,12 +623,6 @@ void test_smp_ipi(void)
 				sched_ipi_has_called);
 	}
 }
-#else
-void test_smp_ipi(void)
-{
-	ztest_test_skip();
-}
-#endif
 
 void test_main(void)
 {

@@ -33,7 +33,7 @@ static inline unsigned int prbs_read(volatile uint32_t *reg_status,
 	return result;
 }
 
-static int entropy_prbs_get_entropy(struct device *dev, uint8_t *buffer,
+static int entropy_prbs_get_entropy(const struct device *dev, uint8_t *buffer,
 					 uint16_t length)
 {
 	while (length > 0) {
@@ -50,7 +50,7 @@ static int entropy_prbs_get_entropy(struct device *dev, uint8_t *buffer,
 	return 0;
 }
 
-static int entropy_prbs_init(struct device *dev)
+static int entropy_prbs_init(const struct device *dev)
 {
 	return 0;
 }

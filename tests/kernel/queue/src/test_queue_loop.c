@@ -65,7 +65,7 @@ static void tqueue_find_and_remove(struct k_queue *pqueue)
 }
 
 /*entry of contexts*/
-static void tIsr_entry(void *p)
+static void tIsr_entry(const void *p)
 {
 	TC_PRINT("isr queue find and remove\n");
 	tqueue_find_and_remove((struct k_queue *)p);
@@ -98,7 +98,7 @@ static void tqueue_read_write(struct k_queue *pqueue)
 
 	TC_PRINT("main queue append ---> ");
 	tqueue_append(pqueue);
-	irq_offload(tIsr_entry, pqueue);
+	irq_offload(tIsr_entry, (const void *)pqueue);
 	k_sem_take(&end_sema, K_FOREVER);
 	k_sem_take(&end_sema, K_FOREVER);
 

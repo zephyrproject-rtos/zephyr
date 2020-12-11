@@ -274,7 +274,7 @@ uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp
 #if defined(CONFIG_USERSPACE)
 	if (thread->arch.priv_stack_start) {
 		/* User thread */
-		if ((__get_CONTROL() & CONTROL_nPRIV_Msk) == 0) {
+		if ((__get_CONTROL() & CONTROL_nPRIV_Msk) == 0U) {
 			/* User thread in privilege mode */
 			if (IS_MPU_GUARD_VIOLATION(
 				thread->arch.priv_stack_start - guard_len,
@@ -391,8 +391,8 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 	z_arm_prepare_switch_to_main();
 
 	_current = main_thread;
-#ifdef CONFIG_TRACING
-	sys_trace_thread_switched_in();
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
+	z_thread_mark_switched_in();
 #endif
 
 	/* the ready queue cache already contains the main thread */
@@ -477,6 +477,14 @@ FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(
 	"msr  PSPLIM, %[_psplim]\n\t"
 #endif
 	"msr  PSP, %[_psp]\n\t"       /* __set_PSP(psp) */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	"cpsie i\n\t"         /* enable_irq() */
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	"cpsie if\n\t"		/* __enable_irq(); __enable_fault_irq() */
+	"mov r3, #0\n\t"
+	"msr   BASEPRI, r3\n\t"	/* __set_BASEPRI(0) */
+#endif
+	"isb\n\t"
 	"blx  %[_main_entry]\n\t"     /* main_entry(p1, p2, p3) */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	"cpsid i\n\t"         /* disable_irq() */

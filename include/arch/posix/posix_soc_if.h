@@ -32,7 +32,7 @@ void posix_irq_unlock(unsigned int key);
 void posix_irq_full_unlock(void);
 int  posix_get_current_irq(void);
 #ifdef CONFIG_IRQ_OFFLOAD
-void posix_irq_offload(void (*routine)(void *), void *parameter);
+void posix_irq_offload(void (*routine)(const void *), const void *parameter);
 #endif
 
 #ifdef __cplusplus

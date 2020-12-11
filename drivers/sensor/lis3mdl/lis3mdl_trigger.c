@@ -17,11 +17,11 @@
 
 LOG_MODULE_DECLARE(LIS3MDL, CONFIG_SENSOR_LOG_LEVEL);
 
-int lis3mdl_trigger_set(struct device *dev,
+int lis3mdl_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
-	struct lis3mdl_data *drv_data = dev->driver_data;
+	struct lis3mdl_data *drv_data = dev->data;
 	int16_t buf[3];
 	int ret;
 
@@ -52,7 +52,7 @@ int lis3mdl_trigger_set(struct device *dev,
 	return 0;
 }
 
-static void lis3mdl_gpio_callback(struct device *dev,
+static void lis3mdl_gpio_callback(const struct device *dev,
 				  struct gpio_callback *cb, uint32_t pins)
 {
 	struct lis3mdl_data *drv_data =
@@ -71,10 +71,9 @@ static void lis3mdl_gpio_callback(struct device *dev,
 #endif
 }
 
-static void lis3mdl_thread_cb(void *arg)
+static void lis3mdl_thread_cb(const struct device *dev)
 {
-	struct device *dev = arg;
-	struct lis3mdl_data *drv_data = dev->driver_data;
+	struct lis3mdl_data *drv_data = dev->data;
 
 	if (drv_data->data_ready_handler != NULL) {
 		drv_data->data_ready_handler(dev,
@@ -87,16 +86,11 @@ static void lis3mdl_thread_cb(void *arg)
 }
 
 #ifdef CONFIG_LIS3MDL_TRIGGER_OWN_THREAD
-static void lis3mdl_thread(int dev_ptr, int unused)
+static void lis3mdl_thread(struct lis3mdl_data *drv_data)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct lis3mdl_data *drv_data = dev->driver_data;
-
-	ARG_UNUSED(unused);
-
 	while (1) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
-		lis3mdl_thread_cb(dev);
+		lis3mdl_thread_cb(drv_data->dev);
 	}
 }
 #endif
@@ -111,9 +105,9 @@ static void lis3mdl_work_cb(struct k_work *work)
 }
 #endif
 
-int lis3mdl_init_interrupt(struct device *dev)
+int lis3mdl_init_interrupt(const struct device *dev)
 {
-	struct lis3mdl_data *drv_data = dev->driver_data;
+	struct lis3mdl_data *drv_data = dev->data;
 
 	/* setup data ready gpio interrupt */
 	drv_data->gpio =
@@ -144,17 +138,18 @@ int lis3mdl_init_interrupt(struct device *dev)
 		return -EIO;
 	}
 
+	drv_data->dev = dev;
+
 #if defined(CONFIG_LIS3MDL_TRIGGER_OWN_THREAD)
 	k_sem_init(&drv_data->gpio_sem, 0, UINT_MAX);
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_LIS3MDL_THREAD_STACK_SIZE,
-			(k_thread_entry_t)lis3mdl_thread, dev,
-			0, NULL, K_PRIO_COOP(CONFIG_LIS3MDL_THREAD_PRIORITY),
+			(k_thread_entry_t)lis3mdl_thread, drv_data,
+			NULL, NULL, K_PRIO_COOP(CONFIG_LIS3MDL_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_LIS3MDL_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = lis3mdl_work_cb;
-	drv_data->dev = dev;
 #endif
 
 	gpio_pin_interrupt_configure(drv_data->gpio,

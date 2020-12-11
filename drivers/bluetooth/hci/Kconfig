@@ -85,6 +85,10 @@ config BT_UART_ON_DEV_NAME
 
 if BT_SPI
 
+config BT_SPI_INIT_PRIORITY
+	int "BT SPI init priority"
+	default 75
+
 config BT_BLUENRG_ACI
 	bool "Enable ACI message with with BlueNRG-based devices"
 	help
@@ -102,7 +106,7 @@ endif # BT_SPI
 config BT_STM32_IPM_RX_STACK_SIZE
 	int "STM32 IPM stack size for RX thread"
 	depends on BT_STM32_IPM
-	default 256
+	default 512
 
 config BT_RPMSG_NRF53
 	bool "nRF53 configuration of RPMsg"
@@ -130,3 +134,16 @@ config BT_RPMSG_NRF53_RX_PRIO
 	default 8
 
 endif # BT_RPMSG_NRF53
+
+config BT_DRIVER_QUIRK_NO_AUTO_DLE
+	bool "Host auto-initiated Data Length Update quirk"
+	depends on BT_AUTO_DATA_LEN_UPDATE
+	default y if BT_RPMSG_NRF53
+	help
+	  Enable the quirk wherein BT Host stack will auto-initiate Data Length
+	  Update procedure for new connections for controllers that do not
+	  auto-initiate the procedure if the default data length parameters are
+	  not equal to the initial parameters.
+
+	  This has to be enabled when the BLE controller connected is Zephyr
+	  open source controller.

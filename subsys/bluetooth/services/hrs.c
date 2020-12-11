@@ -21,7 +21,7 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-#define LOG_LEVEL CONFIG_BT_GATT_HRS_LOG_LEVEL
+#define LOG_LEVEL CONFIG_BT_HRS_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(hrs);
 
@@ -56,7 +56,7 @@ BT_GATT_SERVICE_DEFINE(hrs_svc,
 			       BT_GATT_PERM_NONE, NULL, NULL, NULL),
 );
 
-static int hrs_init(struct device *dev)
+static int hrs_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -65,7 +65,7 @@ static int hrs_init(struct device *dev)
 	return 0;
 }
 
-int bt_gatt_hrs_notify(uint16_t heartrate)
+int bt_hrs_notify(uint16_t heartrate)
 {
 	int rc;
 	static uint8_t hrm[2];

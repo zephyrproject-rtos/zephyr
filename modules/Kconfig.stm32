@@ -376,17 +376,6 @@ config USE_STM32_HAL_RAMECC
 	help
 	  Enable STM32Cube RAM ECC monitoring (RAMECC) HAL module driver
 
-config USE_STM32_HAL_RCC
-	bool
-	help
-	  Enable STM32Cube Reset and Clock Control (RCC) HAL module driver
-
-config USE_STM32_HAL_RCC_EX
-	bool
-	help
-	  Enable STM32Cube Extended Reset and Clock Control (RCC) HAL module
-	  driver
-
 config USE_STM32_HAL_RNG
 	bool
 	help

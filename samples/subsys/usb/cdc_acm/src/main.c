@@ -28,7 +28,7 @@ uint8_t ring_buffer[RING_BUF_SIZE];
 
 struct ring_buf ringbuf;
 
-static void interrupt_handler(struct device *dev, void *user_data)
+static void interrupt_handler(const struct device *dev, void *user_data)
 {
 	ARG_UNUSED(user_data);
 
@@ -74,7 +74,7 @@ static void interrupt_handler(struct device *dev, void *user_data)
 
 void main(void)
 {
-	struct device *dev;
+	const struct device *dev;
 	uint32_t baudrate, dtr = 0U;
 	int ret;
 

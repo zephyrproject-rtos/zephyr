@@ -28,5 +28,5 @@
 
 &ttc0 {
 	status = "okay";
-	clock-frequency = <12000000>;
+	clock-frequency = <5000000>;
 };

@@ -92,6 +92,8 @@ The Zephyr nucleo_207zg board configuration supports the following hardware feat
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | ADC Controller                      |
 +-----------+------------+-------------------------------------+
+| DAC       | on-chip    | DAC Controller                      |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -142,6 +144,8 @@ Default Zephyr Peripheral Mapping:
 - LD1 : PB0
 - LD2 : PB7
 - LD3 : PB14
+- DAC: PA4
+- ADC: PA0
 
 System Clock
 ------------

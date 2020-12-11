@@ -20,5 +20,6 @@ supported:
   - nvs
   - vl53l0x
   - watchdog
+  - adc
 ram: 96
 flash: 1024

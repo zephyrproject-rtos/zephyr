@@ -75,7 +75,7 @@ static void delayed_test_items_init(void)
 
 	for (i = 0; i < NUM_TEST_ITEMS; i++) {
 		delayed_tests[i].key = i + 1;
-		k_work_init(&delayed_tests[i].work.work, work_handler);
+		k_delayed_work_init(&delayed_tests[i].work, work_handler);
 	}
 }
 
@@ -102,7 +102,7 @@ static void coop_work_main(int arg1, int arg2)
 
 	for (i = 1; i < NUM_TEST_ITEMS; i += 2) {
 		TC_PRINT(" - Submitting work %d from coop thread\n", i + 1);
-		k_work_submit(&delayed_tests[i].work.work);
+		k_delayed_work_submit(&delayed_tests[i].work, K_NO_WAIT);
 		k_msleep(SUBMIT_WAIT);
 	}
 }
@@ -121,7 +121,7 @@ static void delayed_test_items_submit(void)
 
 	for (i = 0; i < NUM_TEST_ITEMS; i += 2) {
 		TC_PRINT(" - Submitting work %d from preempt thread\n", i + 1);
-		k_work_submit(&delayed_tests[i].work.work);
+		k_delayed_work_submit(&delayed_tests[i].work, K_NO_WAIT);
 		k_msleep(SUBMIT_WAIT);
 	}
 }
@@ -194,10 +194,10 @@ static void test_resubmit(void)
 	TC_PRINT("Starting resubmit test\n");
 
 	delayed_tests[0].key = 1;
-	delayed_tests[0].work.work.handler = resubmit_work_handler;
+	k_delayed_work_init(&delayed_tests[0].work, resubmit_work_handler);
 
 	TC_PRINT(" - Submitting work\n");
-	k_work_submit(&delayed_tests[0].work.work);
+	k_delayed_work_submit(&delayed_tests[0].work, K_NO_WAIT);
 
 	TC_PRINT(" - Waiting for work to finish\n");
 	k_msleep(CHECK_WAIT);
@@ -771,11 +771,32 @@ static void test_triggered_wait_expired(void)
 	check_results(0);
 
 	/* Items should be executed when we will be sleeping here. */
-	k_msleep(SUBMIT_WAIT);
+	k_msleep(SUBMIT_WAIT * 2);
 	TC_PRINT(" - Checking results (after timeout)\n");
 	check_results(NUM_TEST_ITEMS);
 
 	reset_results();
+}
+
+/**
+ * @brief Test delayed work queue define macro.
+ *
+ * The macro should initialize the k_delayed_work exactly the same as
+ * @ref k_delayed_work_init does.
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @see K_DELAYED_WORK_DEFINE()
+ */
+void test_delayed_work_define(void)
+{
+	struct k_delayed_work initialized_by_function = { 0 };
+	K_DELAYED_WORK_DEFINE(initialized_by_macro, delayed_work_handler);
+
+	k_delayed_work_init(&initialized_by_function, delayed_work_handler);
+
+	zassert_mem_equal(&initialized_by_function, &initialized_by_macro,
+			  sizeof(struct k_delayed_work), NULL);
 }
 
 /*test case main entry*/
@@ -796,7 +817,8 @@ void test_main(void)
 			 ztest_1cpu_unit_test(test_triggered_no_wait),
 			 ztest_1cpu_unit_test(test_triggered_no_wait_expired),
 			 ztest_1cpu_unit_test(test_triggered_wait),
-			 ztest_1cpu_unit_test(test_triggered_wait_expired)
+			 ztest_1cpu_unit_test(test_triggered_wait_expired),
+			 ztest_1cpu_unit_test(test_delayed_work_define)
 			 );
 	ztest_run_test_suite(workqueue);
 }

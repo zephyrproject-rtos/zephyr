@@ -87,6 +87,11 @@
 	};
 };
 
+&sim {
+	pllfll-select = <KINETIS_SIM_PLLFLLSEL_MCGPLLCLK>;
+	er32k-select = <KINETIS_SIM_ER32KSEL_RTC>;
+};
+
 &adc0 {
 	status = "okay";
 };
@@ -94,9 +99,9 @@
 &i2c0 {
 	status = "okay";
 
-	fxos8700@1d {
+	fxos8700@1c {
 		compatible = "nxp,fxos8700";
-		reg = <0x1d>;
+		reg = <0x1c>;
 		label = "FXOS8700";
 		int1-gpios = <&gpiod 0 GPIO_ACTIVE_LOW>;
 		int2-gpios = <&gpiod 1 GPIO_ACTIVE_LOW>;
@@ -147,7 +152,7 @@ arduino_spi: &spi0 {
 &flash0 {
 	/*
 	 * For more information, see:
-	 * http://docs.zephyrproject.org/latest/devices/dts/flash_partitions.html
+	 * https://docs.zephyrproject.org/latest/reference/devicetree/index.html#fixed-flash-partitions
 	 */
 	partitions {
 		compatible = "fixed-partitions";

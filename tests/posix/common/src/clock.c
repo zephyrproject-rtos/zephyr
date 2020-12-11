@@ -55,6 +55,8 @@ void test_posix_realtime(void)
 	struct timespec rts, mts;
 	struct timeval tv;
 
+	printk("POSIX clock set APIs\n");
+
 	/* Minimal sleep to align us to the next tick interval. This
 	 * helps with a case that 2 consecutive calls to clock_gettime()
 	 * below return different values. Note that it's still a workaround,
@@ -63,7 +65,6 @@ void test_posix_realtime(void)
 	 */
 	k_usleep(1);
 
-	printk("POSIX clock set APIs\n");
 	ret = clock_gettime(CLOCK_MONOTONIC, &mts);
 	zassert_equal(ret, 0, "Fail to get monotonic clock");
 

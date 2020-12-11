@@ -14,10 +14,13 @@ extern "C" {
 #endif
 
 /* Function is printing command help string. */
-void shell_help_cmd_print(const struct shell *shell);
+void shell_help_cmd_print(const struct shell *shell,
+			  const struct shell_static_entry *cmd);
 
-/* Function is printing subcommands help string. */
-void shell_help_subcmd_print(const struct shell *shell);
+/* Function is printing subcommands and help string. */
+void shell_help_subcmd_print(const struct shell *shell,
+			     const struct shell_static_entry *cmd,
+			     const char *description);
 
 /**
  * @}

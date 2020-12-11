@@ -6,6 +6,12 @@
 # Save off where we started so we can go back there
 WORKDIR=${PWD}
 
+echo "--- $0 disk usage"
+df -h
+du -hs /var/lib/buildkite-agent/*
+docker images -a
+docker system df -v
+
 if [ -n "${BUILDKITE_PULL_REQUEST_BASE_BRANCH}" ]; then
    git fetch -v origin ${BUILDKITE_PULL_REQUEST_BASE_BRANCH}
    git checkout FETCH_HEAD

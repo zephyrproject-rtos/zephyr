@@ -21,18 +21,33 @@ config ARC
 	select ARCH_IS_SET
 	select HAS_DTS
 	imply XIP
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	help
 	  ARC architecture
 
 config ARM
 	bool
 	select ARCH_IS_SET
+	select ARCH_SUPPORTS_COREDUMP if CPU_CORTEX_M
 	select HAS_DTS
 	# FIXME: current state of the code for all ARM requires this, but
 	# is really only necessary for Cortex-M with ARM MPU!
 	select GEN_PRIV_STACKS
+	select ARCH_HAS_THREAD_LOCAL_STORAGE if ARM64 || CPU_CORTEX_R || CPU_CORTEX_M
 	help
 	  ARM architecture
+
+config SPARC
+	bool
+	select ARCH_IS_SET
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	select BIG_ENDIAN
+	select ATOMIC_OPERATIONS_BUILTIN if SPARC_CASA
+	select ATOMIC_OPERATIONS_C if !SPARC_CASA
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	help
+	  SPARC architecture
 
 config X86
 	bool
@@ -40,7 +55,13 @@ config X86
 	select ATOMIC_OPERATIONS_BUILTIN
 	select HAS_DTS
 	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN if !X86_64
+	select ARCH_SUPPORTS_COREDUMP
 	select CPU_HAS_MMU
+	select ARCH_MEM_DOMAIN_DATA if USERSPACE && !X86_COMMON_PAGE_TABLE
+	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
+	select ARCH_HAS_GDBSTUB if !X86_64
+	select ARCH_HAS_TIMING_FUNCTIONS
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	help
 	  x86 architecture
 
@@ -50,6 +71,7 @@ config NIOS2
 	select ATOMIC_OPERATIONS_C
 	select HAS_DTS
 	imply XIP
+	select ARCH_HAS_TIMING_FUNCTIONS
 	help
 	  Nios II Gen 2 architecture
 
@@ -57,6 +79,7 @@ config RISCV
 	bool
 	select ARCH_IS_SET
 	select HAS_DTS
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	imply XIP
 	help
 	  RISCV architecture
@@ -206,6 +229,8 @@ config USERSPACE
 	bool "User mode threads"
 	depends on ARCH_HAS_USERSPACE
 	depends on RUNTIME_ERROR_CHECKS
+	depends on SRAM_REGION_PERMISSIONS
+	select THREAD_STACK_INFO
 	help
 	  When enabled, threads may be created or dropped down to user mode,
 	  which has significantly restricted permissions and must interact
@@ -233,6 +258,7 @@ config KOBJECT_TEXT_AREA
 	int "Size if kobject text area"
 	default 512 if COVERAGE_GCOV
 	default 512 if NO_OPTIMIZATIONS
+	default 512 if STACK_CANARIES && RISCV
 	default 256
 	depends on ARCH_HAS_USERSPACE
 	help
@@ -363,13 +389,43 @@ config IRQ_OFFLOAD
 	  run in interrupt context. Only useful for test cases that need
 	  to validate the correctness of kernel objects in IRQ context.
 
+
+config EXTRA_EXCEPTION_INFO
+	bool "Collect extra exception info"
+	depends on ARCH_HAS_EXTRA_EXCEPTION_INFO
+	help
+	  This option enables the collection of extra information, such as
+	  register state, when a fault occurs. This information can be useful
+	  to collect for post-mortem analysis and debug of issues.
+
 endmenu # Interrupt configuration
+
+config INIT_ARCH_HW_AT_BOOT
+	bool "Initialize internal architecture state at boot"
+	depends on ARCH_SUPPORTS_ARCH_HW_INIT
+	help
+	  This option instructs Zephyr to force the initialization
+	  of the internal architectural state (for example ARCH-level
+	  HW registers and system control blocks) during boot to
+	  the reset values as specified by the corresponding
+	  architecture manual. The option is useful when the Zephyr
+	  firmware image is chain-loaded, for example, by a debugger
+	  or a bootloader, and we need to guarantee that the internal
+	  states of the architecture core blocks are restored to the
+	  reset values (as specified by the architecture).
+
+	  Note: the functionality is architecture-specific. For the
+	  implementation details refer to each architecture where
+	  this feature is supported.
 
 endmenu
 
 #
 # Architecture Capabilities
 #
+
+config ARCH_HAS_TIMING_FUNCTIONS
+	bool
 
 config ARCH_HAS_TRUSTED_EXECUTION
 	bool
@@ -392,53 +448,34 @@ config ARCH_HAS_RAMFUNC_SUPPORT
 config ARCH_HAS_NESTED_EXCEPTION_DETECTION
 	bool
 
+config ARCH_SUPPORTS_COREDUMP
+	bool
+
+config ARCH_SUPPORTS_ARCH_HW_INIT
+	bool
+
+config ARCH_HAS_EXTRA_EXCEPTION_INFO
+	bool
+
+config ARCH_HAS_GDBSTUB
+	bool
+
+config ARCH_HAS_COHERENCE
+	bool
+	help
+	  When selected, the architecture supports the
+	  arch_mem_coherent() API and can link into incoherent/cached
+	  memory using the ".cached" linker section.
+
+config ARCH_HAS_THREAD_LOCAL_STORAGE
+	bool
+
 #
 # Other architecture related options
 #
 
 config ARCH_HAS_THREAD_ABORT
 	bool
-
-#
-# Hidden PM feature configs which are to be selected by
-# individual SoC.
-#
-
-config HAS_SYS_POWER_STATE_SLEEP_1
-	bool
-	help
-	  This option signifies that the target supports the SYS_POWER_STATE_SLEEP_1
-	  configuration option.
-
-config HAS_SYS_POWER_STATE_SLEEP_2
-	bool
-	help
-	  This option signifies that the target supports the SYS_POWER_STATE_SLEEP_2
-	  configuration option.
-
-config HAS_SYS_POWER_STATE_SLEEP_3
-	bool
-	help
-	  This option signifies that the target supports the SYS_POWER_STATE_SLEEP_3
-	  configuration option.
-
-config HAS_SYS_POWER_STATE_DEEP_SLEEP_1
-	bool
-	help
-	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_1
-	  configuration option.
-
-config HAS_SYS_POWER_STATE_DEEP_SLEEP_2
-	bool
-	help
-	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_2
-	  configuration option.
-
-config HAS_SYS_POWER_STATE_DEEP_SLEEP_3
-	bool
-	help
-	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_3
-	  configuration option.
 
 config BOOTLOADER_CONTEXT_RESTORE_SUPPORTED
 	bool
@@ -487,28 +524,95 @@ config CPU_HAS_MMU
 	  This hidden option is selected when the CPU has a Memory Management Unit
 	  (MMU).
 
-config MMU
-	bool
+menuconfig MMU
+	bool "Enable MMU features"
 	depends on CPU_HAS_MMU
 	help
 	  This option is enabled when the CPU's memory management unit is active
 	  and the arch_mem_map() API is available.
 
+if MMU
 config MMU_PAGE_SIZE
 	hex "Size of smallest granularity MMU page"
-	depends on MMU
 	default 0x1000
 	help
 	  Size of memory pages. Varies per MMU but 4K is common. For MMUs that
 	  support multiple page sizes, put the smallest one here.
 
-config MEMORY_PROTECTION
-	bool
+config KERNEL_VM_BASE
+	hex "Base virtual address to link the kernel"
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
 	help
-	  This option is enabled when Memory Protection features are supported.
-	  Memory protection support is currently available on ARC, ARM, and x86
-	  architectures.
+	  Define the base virtual memory address for the core kernel.
 
+	  The kernel expects a mappings for all physical RAM regions starting at
+	  this virtual address, with any unused space up to the size denoted by
+	  KERNEL_VM_SIZE available for memory mappings. This base address denotes
+	  the start of the RAM mapping and may not be the base address of the
+	  kernel itself, but the offset of the kernel here will be the same as the
+	  offset from the beginning of physical memory where it was loaded.
+
+	  If there are multiple physical RAM regions which are discontinuous in
+	  the physical memory map, they should all be mapped in a continuous
+	  virtual region, with bounds defined by KERNEL_RAM_SIZE.
+
+	  By default, this is the same as the DT_CHOSEN_Z_SRAM physical base SRAM
+	  address from DTS, in which case RAM will be identity-mapped. Some
+	  architectures may require RAM to be mapped in this way; they may have
+	  just one RAM region and doing this makes linking much simpler, as
+	  at least when the kernel boots all virtual RAM addresses are the same
+	  as their physical address (demand paging at runtime may later modify
+	  this for some subset of non-pinned pages).
+
+	  Otherwise, if RAM isn't identity-mapped:
+	  1. It is the architecture's responsibility to transition the
+	  instruction pointer to virtual addresses at early boot before
+	  entering the kernel at z_cstart().
+	  2. The underlying architecture may impose constraints on the bounds of
+	  the kernel's address space, such as not overlapping physical RAM
+	  regions if RAM is not identity-mapped, or the virtual and physical
+	  base addresses being aligned to some common value (which allows
+	  double-linking of paging structures to make the instruction pointer
+	  transition simpler).
+
+config KERNEL_RAM_SIZE
+	hex "Total size of RAM mappings in bytes"
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_SRAM))
+	help
+	  Indicates to the kernel the total size of RAM that is mapped. The
+	  kernel expects that all physical RAM has a memory mapping in the virtual
+	  address space, and that these RAM mappings are all within the virtual
+	  region [KERNEL_VM_BASE..KERNEL_VM_BASE + KERNEL_RAM_SIZE).
+
+config KERNEL_VM_SIZE
+	hex "Size of kernel address space in bytes"
+	default 0xC0000000
+	help
+	  Size of the kernel's address space. Constraining this helps control
+	  how much total memory can be used for page tables.
+
+	  The difference between KERNEL_RAM_SIZE and KERNEL_VM_SIZE indicates the
+	  size of the virtual region for runtime memory mappings. This is needed
+	  for mapping driver MMIO regions, as well as special RAM mapping use-cases
+	  such as VSDO pages, memory mapped thread stacks, and anonymous memory
+	  mappings.
+
+	  The system currently assumes all RAM can be mapped in the virtual address
+	  space. Systems with very large amounts of memory (such as 512M or more)
+	  will want to use a 64-bit build of Zephyr, there are no plans to
+	  implement a notion of "high" memory in Zephyr to work around physical
+	  RAM which can't have a boot-time mapping due to a too-small address space.
+
+endif   # MMU
+
+menuconfig MPU
+	bool "Enable MPU features"
+	depends on CPU_HAS_MPU
+	help
+	  This option, when enabled, indicates to the core kernel that an MPU
+	  is enabled.
+
+if MPU
 config MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	bool
 	help
@@ -546,12 +650,46 @@ config MPU_GAP_FILLING
 	  documentation for more information on how this option is
 	  used.
 
+endif # MPU
+
+config SRAM_REGION_PERMISSIONS
+	bool "Assign appropriate permissions to kernel areas in SRAM"
+	depends on MMU || MPU
+	default y
+	help
+	  This option indicates that memory protection hardware
+	  is present, enabled, and regions have been configured at boot for memory
+	  ranges within the kernel image.
+
+	  If this option is turned on, certain areas of the kernel image will
+	  have the following access policies applied for all threads, including
+	  supervisor threads:
+
+	  1) All program text will be have read-only, execute memory permission
+	  2) All read-only data will have read-only permission, and execution
+	     disabled if the hardware supports it.
+	  3) All other RAM addresses will have read-write permission, and
+	     execution disabled if the hardware supports it.
+
+	  Options such as USERSPACE or HW_STACK_PROTECTION may additionally
+	  impose additional policies on the memory map, which may be global
+	  or local to the current running thread.
+
+	  This option may consume additional memory to satisfy memory protection
+	  hardware alignment constraints.
+
+	  If this option is disabled, the entire kernel will have default memory
+	  access permissions set, typically read/write/execute. It may be desirable
+	  to turn this off on MMU systems which are using the MMU for demand
+	  paging, do not need memory protection, and would rather not use up
+	  RAM for the alignment between regions.
+
 menu "Floating Point Options"
 
 config FPU
 	bool "Enable floating point unit (FPU)"
 	depends on CPU_HAS_FPU
-	depends on ARC || ARM || RISCV || X86
+	depends on ARC || ARM || RISCV || SPARC || X86
 	help
 	  This option enables the hardware Floating Point Unit (FPU), in order to
 	  support using the floating point registers and instructions.

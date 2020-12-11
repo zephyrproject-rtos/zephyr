@@ -39,7 +39,7 @@ typedef uint8_t pwm_flags_t;
  * @brief Callback API upon setting the pin
  * See @a pwm_pin_set_cycles() for argument description
  */
-typedef int (*pwm_pin_set_t)(struct device *dev, uint32_t pwm,
+typedef int (*pwm_pin_set_t)(const struct device *dev, uint32_t pwm,
 			     uint32_t period_cycles, uint32_t pulse_cycles,
 			     pwm_flags_t flags);
 
@@ -48,7 +48,8 @@ typedef int (*pwm_pin_set_t)(struct device *dev, uint32_t pwm,
  * @brief Callback API upon getting cycles per second
  * See @a pwm_get_cycles_per_sec() for argument description
  */
-typedef int (*pwm_get_cycles_per_sec_t)(struct device *dev, uint32_t pwm,
+typedef int (*pwm_get_cycles_per_sec_t)(const struct device *dev,
+					uint32_t pwm,
 					uint64_t *cycles);
 
 /** @brief PWM driver API definition. */
@@ -74,16 +75,17 @@ __subsystem struct pwm_driver_api {
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-__syscall int pwm_pin_set_cycles(struct device *dev, uint32_t pwm,
+__syscall int pwm_pin_set_cycles(const struct device *dev, uint32_t pwm,
 				 uint32_t period, uint32_t pulse, pwm_flags_t flags);
 
-static inline int z_impl_pwm_pin_set_cycles(struct device *dev, uint32_t pwm,
+static inline int z_impl_pwm_pin_set_cycles(const struct device *dev,
+					    uint32_t pwm,
 					    uint32_t period, uint32_t pulse,
 					    pwm_flags_t flags)
 {
 	struct pwm_driver_api *api;
 
-	api = (struct pwm_driver_api *)dev->driver_api;
+	api = (struct pwm_driver_api *)dev->api;
 	return api->pin_set(dev, pwm, period, pulse, flags);
 }
 
@@ -99,15 +101,16 @@ static inline int z_impl_pwm_pin_set_cycles(struct device *dev, uint32_t pwm,
  * @retval Negative errno code if failure.
  */
 
-__syscall int pwm_get_cycles_per_sec(struct device *dev, uint32_t pwm,
+__syscall int pwm_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
 				     uint64_t *cycles);
 
-static inline int z_impl_pwm_get_cycles_per_sec(struct device *dev, uint32_t pwm,
-					       uint64_t *cycles)
+static inline int z_impl_pwm_get_cycles_per_sec(const struct device *dev,
+						uint32_t pwm,
+						uint64_t *cycles)
 {
 	struct pwm_driver_api *api;
 
-	api = (struct pwm_driver_api *)dev->driver_api;
+	api = (struct pwm_driver_api *)dev->api;
 	return api->get_cycles_per_sec(dev, pwm, cycles);
 }
 
@@ -123,7 +126,7 @@ static inline int z_impl_pwm_get_cycles_per_sec(struct device *dev, uint32_t pwm
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int pwm_pin_set_usec(struct device *dev, uint32_t pwm,
+static inline int pwm_pin_set_usec(const struct device *dev, uint32_t pwm,
 				   uint32_t period, uint32_t pulse,
 				   pwm_flags_t flags)
 {
@@ -159,7 +162,7 @@ static inline int pwm_pin_set_usec(struct device *dev, uint32_t pwm,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int pwm_pin_set_nsec(struct device *dev, uint32_t pwm,
+static inline int pwm_pin_set_nsec(const struct device *dev, uint32_t pwm,
 				   uint32_t period, uint32_t pulse,
 				   pwm_flags_t flags)
 {

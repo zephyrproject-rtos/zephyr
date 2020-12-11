@@ -15,6 +15,7 @@
 
 #include "mesh.h"
 #include "net.h"
+#include "rpl.h"
 #include "settings.h"
 
 struct bt_mesh_cdb bt_mesh_cdb = {

@@ -9,6 +9,9 @@ CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=84000000
 # Enable MPU
 CONFIG_ARM_MPU=y
 
+# Enable HW stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
 # enable uart driver
 CONFIG_SERIAL=y
 

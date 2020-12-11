@@ -39,6 +39,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #define NAME_IPV6 "2001:db8::1"
 
 #define DNS_TIMEOUT 500 /* ms */
+#define THREAD_SLEEP 10
 
 #if defined(CONFIG_NET_IPV6)
 /* Interface 1 addresses */
@@ -77,14 +78,14 @@ struct net_if_test {
 	struct net_linkaddr ll_addr;
 };
 
-static int net_iface_dev_init(struct device *dev)
+static int net_iface_dev_init(const struct device *dev)
 {
 	return 0;
 }
 
-static uint8_t *net_iface_get_mac(struct device *dev)
+static uint8_t *net_iface_get_mac(const struct device *dev)
 {
-	struct net_if_test *data = dev->driver_data;
+	struct net_if_test *data = dev->data;
 
 	if (data->mac_addr[2] == 0x00) {
 		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
@@ -124,7 +125,7 @@ static inline int get_slot_by_id(struct dns_resolve_context *ctx,
 	return -1;
 }
 
-static int sender_iface(struct device *dev, struct net_pkt *pkt)
+static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 {
 	if (!pkt->frags) {
 		DBG("No data to send!\n");
@@ -132,7 +133,7 @@ static int sender_iface(struct device *dev, struct net_pkt *pkt)
 	}
 
 	if (!timeout_query) {
-		struct net_if_test *data = dev->driver_data;
+		struct net_if_test *data = dev->data;
 		struct dns_resolve_context *ctx;
 		int slot;
 
@@ -209,7 +210,7 @@ static void test_init(void)
 
 	iface1 = net_if_get_by_index(1);
 
-	((struct net_if_test *)net_if_get_device(iface1)->driver_data)->idx =
+	((struct net_if_test *) net_if_get_device(iface1)->data)->idx =
 		net_if_get_by_iface(iface1);
 
 #if defined(CONFIG_NET_IPV6)
@@ -616,7 +617,8 @@ static void test_dns_query_ipv4(void)
 
 	DBG("Query id %u\n", current_dns_id);
 
-	k_yield(); /* mandatory so that net_if send func gets to run */
+	/* Let the network stack to proceed */
+	k_msleep(THREAD_SLEEP);
 
 	if (k_sem_take(&wait_data2, WAIT_TIME)) {
 		zassert_true(false, "Timeout while waiting data");

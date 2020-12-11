@@ -9,8 +9,12 @@
 
 #include <errno.h>
 #include <drivers/spi.h>
+#include <drivers/clock_control.h>
 #include <fsl_spi.h>
 #include <logging/log.h>
+#ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
+#include <drivers/dma.h>
+#endif
 
 LOG_MODULE_REGISTER(spi_mcux_flexcomm, CONFIG_SPI_LOG_LEVEL);
 
@@ -21,19 +25,48 @@ LOG_MODULE_REGISTER(spi_mcux_flexcomm, CONFIG_SPI_LOG_LEVEL);
 
 struct spi_mcux_config {
 	SPI_Type *base;
-	void (*irq_config_func)(struct device *dev);
+	char *clock_name;
+	clock_control_subsys_t clock_subsys;
+	void (*irq_config_func)(const struct device *dev);
 };
 
+#ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
+#define SPI_MCUX_FLEXCOMM_DMA_ERROR_FLAG	0x01
+#define SPI_MCUX_FLEXCOMM_DMA_RX_DONE_FLAG	0x02
+#define SPI_MCUX_FLEXCOMM_DMA_TX_DONE_FLAG	0x04
+#define SPI_MCUX_FLEXCOMM_DMA_DONE_FLAG		\
+	(SPI_MCUX_FLEXCOMM_DMA_RX_DONE_FLAG | SPI_MCUX_FLEXCOMM_DMA_TX_DONE_FLAG)
+
+struct stream {
+	const char *dma_name;
+	const struct device *dma_dev;
+	uint32_t channel; /* stores the channel for dma */
+	struct dma_config dma_cfg;
+	struct dma_block_config dma_blk_cfg[2];
+};
+#endif
+
 struct spi_mcux_data {
+	const struct device *dev;
+	const struct device *dev_clock;
 	spi_master_handle_t handle;
 	struct spi_context ctx;
 	size_t transfer_len;
+#ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
+	volatile uint32_t status_flags;
+	struct stream dma_rx;
+	struct stream dma_tx;
+	/* dummy value used for transferring NOP when tx buf is null */
+	uint32_t dummy_tx_buffer;
+	/* Used to send the last word */
+	uint32_t last_word;
+#endif
 };
 
-static void spi_mcux_transfer_next_packet(struct device *dev)
+static void spi_mcux_transfer_next_packet(const struct device *dev)
 {
-	const struct spi_mcux_config *config = dev->config_info;
-	struct spi_mcux_data *data = dev->driver_data;
+	const struct spi_mcux_config *config = dev->config;
+	struct spi_mcux_data *data = dev->data;
 	SPI_Type *base = config->base;
 	struct spi_context *ctx = &data->ctx;
 	spi_transfer_t transfer;
@@ -92,49 +125,38 @@ static void spi_mcux_transfer_next_packet(struct device *dev)
 	}
 }
 
-static void spi_mcux_isr(void *arg)
+static void spi_mcux_isr(const struct device *dev)
 {
-	struct device *dev = (struct device *)arg;
-	const struct spi_mcux_config *config = dev->config_info;
-	struct spi_mcux_data *data = dev->driver_data;
+	const struct spi_mcux_config *config = dev->config;
+	struct spi_mcux_data *data = dev->data;
 	SPI_Type *base = config->base;
 
 	SPI_MasterTransferHandleIRQ(base, &data->handle);
 }
 
-static void spi_mcux_master_transfer_callback(SPI_Type *base,
+static void spi_mcux_transfer_callback(SPI_Type *base,
 		spi_master_handle_t *handle, status_t status, void *userData)
 {
-	struct device *dev = userData;
-	struct spi_mcux_data *data = dev->driver_data;
+	struct spi_mcux_data *data = userData;
 
 	spi_context_update_tx(&data->ctx, 1, data->transfer_len);
 	spi_context_update_rx(&data->ctx, 1, data->transfer_len);
 
-	spi_mcux_transfer_next_packet(dev);
+	spi_mcux_transfer_next_packet(data->dev);
 }
 
-static int spi_mcux_configure(struct device *dev,
+static int spi_mcux_configure(const struct device *dev,
 			      const struct spi_config *spi_cfg)
 {
-	const struct spi_mcux_config *config = dev->config_info;
-	struct spi_mcux_data *data = dev->driver_data;
+	const struct spi_mcux_config *config = dev->config;
+	struct spi_mcux_data *data = dev->data;
 	SPI_Type *base = config->base;
-	spi_master_config_t master_config;
 	uint32_t clock_freq;
 	uint32_t word_size;
 
 	if (spi_context_configured(&data->ctx, spi_cfg)) {
 		/* This configuration is already in use */
 		return 0;
-	}
-
-	SPI_MasterGetDefaultConfig(&master_config);
-
-	if (spi_cfg->slave > SPI_CHIP_SELECT_COUNT) {
-		LOG_ERR("Slave %d is greater than %d",
-			    spi_cfg->slave, SPI_CHIP_SELECT_COUNT);
-		return -EINVAL;
 	}
 
 	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
@@ -144,57 +166,463 @@ static int spi_mcux_configure(struct device *dev,
 		return -EINVAL;
 	}
 
-	master_config.sselNum = spi_cfg->slave;
-	master_config.sselPol = kSPI_SpolActiveAllLow;
-	master_config.dataWidth = word_size - 1;
-
-	master_config.polarity =
-		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
-		? kSPI_ClockPolarityActiveLow
-		: kSPI_ClockPolarityActiveHigh;
-
-	master_config.phase =
-		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA)
-		? kSPI_ClockPhaseSecondEdge
-		: kSPI_ClockPhaseFirstEdge;
-
-	master_config.direction =
-		(spi_cfg->operation & SPI_TRANSFER_LSB)
-		? kSPI_LsbFirst
-		: kSPI_MsbFirst;
-
-	master_config.baudRate_Bps = spi_cfg->frequency;
-
-	/* The clock frequency is hardcoded CPU's speed to allow SPI to
-	 * function at high speeds. The core clock and flexcomm should
-	 * use the same clock source.
+	/*
+	 * Do master or slave initializastion, depending on the
+	 * mode requested.
 	 */
-	clock_freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_MASTER) {
+		spi_master_config_t master_config;
 
-	SPI_MasterInit(base, &master_config, clock_freq);
+		SPI_MasterGetDefaultConfig(&master_config);
 
-	SPI_MasterTransferCreateHandle(base, &data->handle,
-				       spi_mcux_master_transfer_callback, dev);
+		/* Get the clock frequency */
+		if (clock_control_get_rate(data->dev_clock,
+					   config->clock_subsys, &clock_freq)) {
+			return -EINVAL;
+		}
 
-	SPI_SetDummyData(base, 0);
+		if (spi_cfg->slave > SPI_CHIP_SELECT_COUNT) {
+			LOG_ERR("Slave %d is greater than %d",
+				    spi_cfg->slave, SPI_CHIP_SELECT_COUNT);
+			return -EINVAL;
+		}
 
-	data->ctx.config = spi_cfg;
-	spi_context_cs_configure(&data->ctx);
+		master_config.sselNum = spi_cfg->slave;
+		master_config.sselPol = kSPI_SpolActiveAllLow;
+		master_config.dataWidth = word_size - 1;
+
+		master_config.polarity =
+			(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
+			? kSPI_ClockPolarityActiveLow
+			: kSPI_ClockPolarityActiveHigh;
+
+		master_config.phase =
+			(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA)
+			? kSPI_ClockPhaseSecondEdge
+			: kSPI_ClockPhaseFirstEdge;
+
+		master_config.direction =
+			(spi_cfg->operation & SPI_TRANSFER_LSB)
+			? kSPI_LsbFirst
+			: kSPI_MsbFirst;
+
+		master_config.baudRate_Bps = spi_cfg->frequency;
+
+		SPI_MasterInit(base, &master_config, clock_freq);
+
+		SPI_MasterTransferCreateHandle(base, &data->handle,
+					     spi_mcux_transfer_callback, data);
+		SPI_SetDummyData(base, 0);
+
+		data->ctx.config = spi_cfg;
+		spi_context_cs_configure(&data->ctx);
+	} else {
+		spi_slave_config_t slave_config;
+
+		SPI_SlaveGetDefaultConfig(&slave_config);
+
+		slave_config.polarity =
+			(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
+			? kSPI_ClockPolarityActiveLow
+			: kSPI_ClockPolarityActiveHigh;
+
+		slave_config.phase =
+			(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA)
+			? kSPI_ClockPhaseSecondEdge
+			: kSPI_ClockPhaseFirstEdge;
+
+		slave_config.direction =
+			(spi_cfg->operation & SPI_TRANSFER_LSB)
+			? kSPI_LsbFirst
+			: kSPI_MsbFirst;
+
+		/* SS pin active low */
+		slave_config.sselPol = kSPI_SpolActiveAllLow;
+		slave_config.dataWidth = word_size - 1;
+
+		SPI_SlaveInit(base, &slave_config);
+
+		SPI_SlaveTransferCreateHandle(base, &data->handle,
+					      spi_mcux_transfer_callback, data);
+	}
 
 	return 0;
 }
 
-static int transceive(struct device *dev,
+#ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
+/* Dummy buffer used as a sink when rc buf is null */
+uint32_t dummy_rx_buffer;
+
+/* This function is executed in the interrupt context */
+static void spi_mcux_dma_callback(const struct device *dev, void *arg,
+			 uint32_t channel, int status)
+{
+	/* arg directly holds the spi device */
+	struct spi_mcux_data *data = arg;
+
+	if (status != 0) {
+		LOG_ERR("DMA callback error with channel %d.", channel);
+		data->status_flags |= SPI_MCUX_FLEXCOMM_DMA_ERROR_FLAG;
+	} else {
+		/* identify the origin of this callback */
+		if (channel == data->dma_tx.channel) {
+			/* this part of the transfer ends */
+			data->status_flags |= SPI_MCUX_FLEXCOMM_DMA_TX_DONE_FLAG;
+		} else if (channel == data->dma_rx.channel) {
+			/* this part of the transfer ends */
+			data->status_flags |= SPI_MCUX_FLEXCOMM_DMA_RX_DONE_FLAG;
+		} else {
+			LOG_ERR("DMA callback channel %d is not valid.",
+								channel);
+			data->status_flags |= SPI_MCUX_FLEXCOMM_DMA_ERROR_FLAG;
+		}
+	}
+
+	spi_context_complete(&data->ctx, 0);
+}
+
+
+static void spi_mcux_prepare_txlastword(uint32_t *txLastWord,
+				const uint8_t *buf, const struct spi_config *spi_cfg,
+				size_t len)
+{
+	uint32_t word_size;
+
+	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
+
+	if (word_size > 8) {
+		*txLastWord = (((uint32_t)buf[len - 1U] << 8U) |
+							(buf[len - 2U]));
+	} else {
+		*txLastWord = buf[len - 1U];
+	}
+
+	*txLastWord |= (uint32_t)SPI_FIFOWR_EOT_MASK;
+
+	*txLastWord |= ((uint32_t)SPI_DEASSERT_ALL &
+				(~(uint32_t)SPI_DEASSERTNUM_SSEL((uint32_t)spi_cfg->slave)));
+
+	/* set width of data - range asserted at entry */
+	*txLastWord |= SPI_FIFOWR_LEN(word_size - 1);
+}
+
+static void spi_mcux_prepare_txdummy(uint32_t *dummy, bool last_packet,
+				const struct spi_config *spi_cfg)
+{
+	uint32_t word_size;
+
+	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
+
+	if (last_packet) {
+		*dummy |= (uint32_t)SPI_FIFOWR_EOT_MASK;
+	}
+
+	*dummy |= ((uint32_t)SPI_DEASSERT_ALL &
+				(~(uint32_t)SPI_DEASSERTNUM_SSEL((uint32_t)spi_cfg->slave)));
+
+	/* set width of data - range asserted at entry */
+	*dummy |= SPI_FIFOWR_LEN(word_size - 1);
+}
+
+static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf,
+				 const struct spi_config *spi_cfg, size_t len, bool last_packet)
+{
+	const struct spi_mcux_config *cfg = dev->config;
+	struct spi_mcux_data *data = dev->data;
+	struct dma_block_config *blk_cfg;
+	int ret;
+	SPI_Type *base = cfg->base;
+	uint32_t word_size;
+
+	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
+
+	/* remember active TX DMA channel (used in callback) */
+	struct stream *stream = &data->dma_tx;
+
+	blk_cfg = &stream->dma_blk_cfg[0];
+
+	/* prepare the block for this TX DMA channel */
+	memset(blk_cfg, 0, sizeof(struct dma_block_config));
+
+	/* tx direction has memory as source and periph as dest. */
+	if (buf == NULL) {
+		data->dummy_tx_buffer = 0;
+		data->last_word = 0;
+		spi_mcux_prepare_txdummy(&data->dummy_tx_buffer, last_packet, spi_cfg);
+
+		if (last_packet  &&
+		    ((word_size > 8) ? (len > 2U) : (len > 1U))) {
+			spi_mcux_prepare_txdummy(&data->last_word, last_packet, spi_cfg);
+			blk_cfg->source_gather_en = 1;
+			blk_cfg->source_address = (uint32_t)&data->dummy_tx_buffer;
+			blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
+			blk_cfg->block_size = (word_size > 8) ?
+						(len - 2U) : (len - 1U);
+			blk_cfg->next_block = &stream->dma_blk_cfg[1];
+			blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+			blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+
+			blk_cfg = &stream->dma_blk_cfg[1];
+
+			/* prepare the block for this TX DMA channel */
+			memset(blk_cfg, 0, sizeof(struct dma_block_config));
+			blk_cfg->source_address = (uint32_t)&data->last_word;
+			blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
+			blk_cfg->block_size = sizeof(uint32_t);
+			blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+			blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		} else {
+			blk_cfg->source_address = (uint32_t)&data->dummy_tx_buffer;
+			blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
+			blk_cfg->block_size = len;
+			blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+			blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		}
+	} else {
+		if (last_packet) {
+			spi_mcux_prepare_txlastword(&data->last_word, buf, spi_cfg, len);
+		}
+		/* If last packet and data transfer frame is bigger then 1,
+		 * use dma descriptor to send the last data.
+		 */
+		if (last_packet  &&
+		    ((word_size > 8) ? (len > 2U) : (len > 1U))) {
+			blk_cfg->source_gather_en = 1;
+			blk_cfg->source_address = (uint32_t)buf;
+			blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
+			blk_cfg->block_size = (word_size > 8) ?
+						(len - 2U) : (len - 1U);
+			blk_cfg->next_block = &stream->dma_blk_cfg[1];
+
+			blk_cfg = &stream->dma_blk_cfg[1];
+
+			/* prepare the block for this TX DMA channel */
+			memset(blk_cfg, 0, sizeof(struct dma_block_config));
+			blk_cfg->source_address = (uint32_t)&data->last_word;
+			blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
+			blk_cfg->block_size = sizeof(uint32_t);
+			blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+			blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		} else {
+			blk_cfg->source_address = (uint32_t)buf;
+			blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
+			blk_cfg->block_size = len;
+		}
+	}
+
+	/* Enables the DMA request from SPI txFIFO */
+	base->FIFOCFG |= SPI_FIFOCFG_DMATX_MASK;
+
+	/* direction is given by the DT */
+	stream->dma_cfg.head_block = &stream->dma_blk_cfg[0];
+	/* give the client dev as arg, as the callback comes from the dma */
+	stream->dma_cfg.user_data = data;
+	/* pass our client origin to the dma: data->dma_tx.dma_channel */
+	ret = dma_config(data->dma_tx.dma_dev, data->dma_tx.channel,
+			&stream->dma_cfg);
+	/* the channel is the actual stream from 0 */
+	if (ret != 0) {
+		return ret;
+	}
+
+	uint32_t tmpData = 0U;
+
+	spi_mcux_prepare_txdummy(&tmpData, last_packet, spi_cfg);
+
+	/* Setup the control info.
+	 * Halfword writes to just the control bits (offset 0xE22) doesn't push
+	 * anything into the FIFO. And the data access type of control bits must
+	 * be uint16_t, byte writes or halfword writes to FIFOWR will push the
+	 * data and the current control bits into the FIFO.
+	 */
+	if ((last_packet) &&
+		((word_size > 8) ? (len == 2U) : (len == 1U))) {
+		*((uint16_t *)((uint32_t)&base->FIFOWR) + 1) = (uint16_t)(tmpData >> 16U);
+	} else {
+		/* Clear the SPI_FIFOWR_EOT_MASK bit when data is not the last */
+		tmpData &= (~(uint32_t)SPI_FIFOWR_EOT_MASK);
+		*((uint16_t *)((uint32_t)&base->FIFOWR) + 1) = (uint16_t)(tmpData >> 16U);
+	}
+
+	/* gives the request ID */
+	return dma_start(data->dma_tx.dma_dev, data->dma_tx.channel);
+}
+
+static int spi_mcux_dma_rx_load(const struct device *dev, uint8_t *buf,
+				 size_t len)
+{
+	const struct spi_mcux_config *cfg = dev->config;
+	struct spi_mcux_data *data = dev->data;
+	struct dma_block_config *blk_cfg;
+	int ret;
+	SPI_Type *base = cfg->base;
+
+	/* retrieve active RX DMA channel (used in callback) */
+	struct stream *stream = &data->dma_rx;
+
+	blk_cfg = &stream->dma_blk_cfg[0];
+
+	/* prepare the block for this RX DMA channel */
+	memset(blk_cfg, 0, sizeof(struct dma_block_config));
+	blk_cfg->block_size = len;
+
+	/* rx direction has periph as source and mem as dest. */
+	if (buf == NULL) {
+		/* if rx buff is null, then write data to dummy address. */
+		blk_cfg->dest_address = (uint32_t)&dummy_rx_buffer;
+	} else {
+		blk_cfg->dest_address = (uint32_t)buf;
+	}
+
+	blk_cfg->source_address = (uint32_t)&base->FIFORD;
+
+	/* direction is given by the DT */
+	stream->dma_cfg.head_block = blk_cfg;
+	stream->dma_cfg.user_data = data;
+
+	/* Enables the DMA request from SPI rxFIFO */
+	base->FIFOCFG |= SPI_FIFOCFG_DMARX_MASK;
+
+	/* pass our client origin to the dma: data->dma_rx.channel */
+	ret = dma_config(data->dma_rx.dma_dev, data->dma_rx.channel,
+			&stream->dma_cfg);
+	/* the channel is the actual stream from 0 */
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* gives the request ID */
+	return dma_start(data->dma_rx.dma_dev, data->dma_rx.channel);
+}
+
+static int spi_mcux_dma_move_buffers(const struct device *dev, size_t len,
+			const struct spi_config *spi_cfg, bool last_packet)
+{
+	struct spi_mcux_data *data = dev->data;
+	int ret;
+
+	ret = spi_mcux_dma_rx_load(dev, data->ctx.rx_buf, len);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = spi_mcux_dma_tx_load(dev, data->ctx.tx_buf, spi_cfg,
+							len, last_packet);
+
+	return ret;
+}
+
+static int wait_dma_rx_tx_done(const struct device *dev)
+{
+	struct spi_mcux_data *data = dev->data;
+	int ret = -1;
+
+	while (1) {
+		ret = spi_context_wait_for_completion(&data->ctx);
+		if (data->status_flags & SPI_MCUX_FLEXCOMM_DMA_ERROR_FLAG) {
+			return -EIO;
+		}
+
+		if ((data->status_flags & SPI_MCUX_FLEXCOMM_DMA_DONE_FLAG) ==
+			SPI_MCUX_FLEXCOMM_DMA_DONE_FLAG) {
+			return 0;
+		}
+	}
+}
+
+static int transceive_dma(const struct device *dev,
 		      const struct spi_config *spi_cfg,
 		      const struct spi_buf_set *tx_bufs,
 		      const struct spi_buf_set *rx_bufs,
 		      bool asynchronous,
 		      struct k_poll_signal *signal)
 {
-	struct spi_mcux_data *data = dev->driver_data;
+	const struct spi_mcux_config *config = dev->config;
+	struct spi_mcux_data *data = dev->data;
+	SPI_Type *base = config->base;
+	int ret;
+	uint32_t word_size;
+
+	spi_context_lock(&data->ctx, asynchronous, signal, spi_cfg);
+
+	ret = spi_mcux_configure(dev, spi_cfg);
+	if (ret) {
+		goto out;
+	}
+
+	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+
+	spi_context_cs_control(&data->ctx, true);
+
+	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
+
+	data->dma_rx.dma_cfg.dest_data_size = (word_size > 8) ?
+				(sizeof(uint16_t)) : (sizeof(uint8_t));
+	data->dma_tx.dma_cfg.dest_data_size = data->dma_rx.dma_cfg.dest_data_size;
+
+	while (data->ctx.rx_len > 0 || data->ctx.tx_len > 0) {
+		size_t dma_len;
+		bool last = false;
+
+		if (data->ctx.rx_len == 0) {
+			dma_len = data->ctx.tx_len;
+			last = true;
+		} else if (data->ctx.tx_len == 0) {
+			dma_len = data->ctx.rx_len;
+			last = true;
+		} else if (data->ctx.tx_len == data->ctx.rx_len) {
+			dma_len = data->ctx.rx_len;
+			last = true;
+		} else {
+			dma_len = MIN(data->ctx.tx_len, data->ctx.rx_len);
+			last = false;
+		}
+
+		data->status_flags = 0;
+
+		ret = spi_mcux_dma_move_buffers(dev, dma_len, spi_cfg, last);
+		if (ret != 0) {
+			break;
+		}
+
+		ret = wait_dma_rx_tx_done(dev);
+		if (ret != 0) {
+			break;
+		}
+
+		/* wait until TX FIFO is really empty */
+		while (0U == (base->FIFOSTAT & SPI_FIFOSTAT_TXEMPTY_MASK)) {
+		}
+
+		spi_context_update_tx(&data->ctx, 1, dma_len);
+		spi_context_update_rx(&data->ctx, 1, dma_len);
+	}
+
+	base->FIFOCFG &= ~SPI_FIFOCFG_DMATX_MASK;
+	base->FIFOCFG &= ~SPI_FIFOCFG_DMARX_MASK;
+
+	spi_context_cs_control(&data->ctx, false);
+
+out:
+	spi_context_release(&data->ctx, ret);
+
+	return ret;
+}
+
+#endif
+
+static int transceive(const struct device *dev,
+		      const struct spi_config *spi_cfg,
+		      const struct spi_buf_set *tx_bufs,
+		      const struct spi_buf_set *rx_bufs,
+		      bool asynchronous,
+		      struct k_poll_signal *signal)
+{
+	struct spi_mcux_data *data = dev->data;
 	int ret;
 
-	spi_context_lock(&data->ctx, asynchronous, signal);
+	spi_context_lock(&data->ctx, asynchronous, signal, spi_cfg);
 
 	ret = spi_mcux_configure(dev, spi_cfg);
 	if (ret) {
@@ -214,16 +642,24 @@ out:
 	return ret;
 }
 
-static int spi_mcux_transceive(struct device *dev,
+static int spi_mcux_transceive(const struct device *dev,
 			       const struct spi_config *spi_cfg,
 			       const struct spi_buf_set *tx_bufs,
 			       const struct spi_buf_set *rx_bufs)
 {
+#ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
+	struct spi_mcux_data *data = dev->data;
+
+	if ((data->dma_tx.dma_name != NULL)
+	 && (data->dma_rx.dma_name != NULL)) {
+		return transceive_dma(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL);
+	}
+#endif
 	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_mcux_transceive_async(struct device *dev,
+static int spi_mcux_transceive_async(const struct device *dev,
 				     const struct spi_config *spi_cfg,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs,
@@ -233,22 +669,48 @@ static int spi_mcux_transceive_async(struct device *dev,
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static int spi_mcux_release(struct device *dev,
-		      const struct spi_config *spi_cfg)
+static int spi_mcux_release(const struct device *dev,
+			    const struct spi_config *spi_cfg)
 {
-	struct spi_mcux_data *data = dev->driver_data;
+	struct spi_mcux_data *data = dev->data;
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
 }
 
-static int spi_mcux_init(struct device *dev)
+static int spi_mcux_init(const struct device *dev)
 {
-	const struct spi_mcux_config *config = dev->config_info;
-	struct spi_mcux_data *data = dev->driver_data;
+	const struct spi_mcux_config *config = dev->config;
+	struct spi_mcux_data *data = dev->data;
+
+	data->dev_clock = device_get_binding(config->clock_name);
+	if (data->dev_clock == NULL) {
+		return -ENODEV;
+	}
 
 	config->irq_config_func(dev);
+
+	data->dev = dev;
+
+#ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
+		if (data->dma_tx.dma_name != NULL) {
+			/* Get the binding to the DMA device */
+			data->dma_tx.dma_dev = device_get_binding(data->dma_tx.dma_name);
+			if (!data->dma_tx.dma_dev) {
+				LOG_ERR("%s device not found", data->dma_tx.dma_name);
+				return -ENODEV;
+			}
+		}
+
+		if (data->dma_rx.dma_name != NULL) {
+			data->dma_rx.dma_dev = device_get_binding(data->dma_rx.dma_name);
+			if (!data->dma_rx.dma_dev) {
+				LOG_ERR("%s device not found", data->dma_rx.dma_name);
+				return -ENODEV;
+			}
+		}
+#endif /* CONFIG_SPI_MCUX_FLEXCOMM_DMA */
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
@@ -263,32 +725,73 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 	.release = spi_mcux_release,
 };
 
+#define SPI_MCUX_FLEXCOMM_IRQ_HANDLER_DECL(id)				\
+	static void spi_mcux_config_func_##id(const struct device *dev)
+#define SPI_MCUX_FLEXCOMM_IRQ_HANDLER_FUNC(id)				\
+	.irq_config_func = spi_mcux_config_func_##id,
+#define SPI_MCUX_FLEXCOMM_IRQ_HANDLER(id)				\
+static void spi_mcux_config_func_##id(const struct device *dev) \
+{								\
+	IRQ_CONNECT(DT_INST_IRQN(id),				\
+			DT_INST_IRQ(id, priority),			\
+			spi_mcux_isr, DEVICE_DT_INST_GET(id),	\
+			0);					\
+	irq_enable(DT_INST_IRQN(id));				\
+}
+
+#ifndef CONFIG_SPI_MCUX_FLEXCOMM_DMA
+#define SPI_DMA_CHANNELS(id)
+#else
+#define SPI_DMA_CHANNELS(id)				\
+	.dma_tx = {						\
+		.dma_name = DT_INST_DMAS_LABEL_BY_NAME(id, tx),	\
+		.channel =					\
+			DT_INST_DMAS_CELL_BY_NAME(id, tx, channel),	\
+		.dma_cfg = {					\
+			.channel_direction = MEMORY_TO_PERIPHERAL,	\
+			.dma_callback = spi_mcux_dma_callback,		\
+			.source_data_size = 1,				\
+			.block_count = 2,		\
+		}							\
+	},								\
+	.dma_rx = {						\
+		.dma_name = DT_INST_DMAS_LABEL_BY_NAME(id, rx),	\
+		.channel =					\
+			DT_INST_DMAS_CELL_BY_NAME(id, rx, channel),	\
+		.dma_cfg = {				\
+			.channel_direction = PERIPHERAL_TO_MEMORY,	\
+			.dma_callback = spi_mcux_dma_callback,		\
+			.source_data_size = 1,				\
+			.block_count = 1,		\
+		}							\
+	}
+
+#endif
+
 #define SPI_MCUX_FLEXCOMM_DEVICE(id)					\
-	static void spi_mcux_config_func_##id(struct device *dev);	\
+	SPI_MCUX_FLEXCOMM_IRQ_HANDLER_DECL(id);			\
 	static const struct spi_mcux_config spi_mcux_config_##id = {	\
 		.base =							\
 		(SPI_Type *)DT_INST_REG_ADDR(id),			\
-		.irq_config_func = spi_mcux_config_func_##id,		\
+		.clock_name = DT_INST_CLOCKS_LABEL(id),			\
+		.clock_subsys =					\
+		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),\
+		SPI_MCUX_FLEXCOMM_IRQ_HANDLER_FUNC(id)			\
 	};								\
 	static struct spi_mcux_data spi_mcux_data_##id = {		\
 		SPI_CONTEXT_INIT_LOCK(spi_mcux_data_##id, ctx),		\
 		SPI_CONTEXT_INIT_SYNC(spi_mcux_data_##id, ctx),		\
+		SPI_DMA_CHANNELS(id)		\
 	};								\
-	DEVICE_AND_API_INIT(spi_mcux_##id,				\
-			    DT_INST_LABEL(id),				\
+	DEVICE_DT_INST_DEFINE(id,					\
 			    &spi_mcux_init,				\
+			    device_pm_control_nop,			\
 			    &spi_mcux_data_##id,			\
 			    &spi_mcux_config_##id,			\
 			    POST_KERNEL,				\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &spi_mcux_driver_api);			\
-	static void spi_mcux_config_func_##id(struct device *dev)	\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(id),				\
-			    DT_INST_IRQ(id, priority),			\
-			    spi_mcux_isr, DEVICE_GET(spi_mcux_##id),	\
-			    0);						\
-		irq_enable(DT_INST_IRQN(id));				\
-	}
+	\
+	SPI_MCUX_FLEXCOMM_IRQ_HANDLER(id)
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_MCUX_FLEXCOMM_DEVICE)

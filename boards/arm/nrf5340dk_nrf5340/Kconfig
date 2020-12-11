@@ -42,7 +42,7 @@ config BOARD_ENABLE_CPUNET
 	  the board, the application needs to take into consideration, that the
 	  secure firmware image must already have configured GPIO allocation for the
 	  Network MCU.
-	default y if (BT || NET_L2_IEEE802154)
+	default y if (BT || NRF_802154_SER_HOST)
 
 config DOMAIN_CPUNET_BOARD
 	string
@@ -66,5 +66,14 @@ config BT_CTLR
 
 config BT_ECC
 	default y if BT
+
+config DOMAIN_CPUAPP_BOARD
+	string
+	default "nrf5340pdk_nrf5340_cpuapp" if BOARD_NRF5340PDK_NRF5340_CPUNET
+	default "nrf5340dk_nrf5340_cpuapp" if BOARD_NRF5340DK_NRF5340_CPUNET
+	help
+	  The board which will be used for CPUAPP domain when creating a multi
+	  image application where one or more images should be located on
+	  another board.
 
 endif # BOARD_NRF5340PDK_NRF5340_CPUNET || BOARD_NRF5340DK_NRF5340_CPUNET

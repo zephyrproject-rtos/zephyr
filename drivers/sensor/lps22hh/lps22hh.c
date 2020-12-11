@@ -22,33 +22,33 @@
 
 LOG_MODULE_REGISTER(LPS22HH, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline int lps22hh_set_odr_raw(struct device *dev, uint8_t odr)
+static inline int lps22hh_set_odr_raw(const struct device *dev, uint8_t odr)
 {
-	struct lps22hh_data *data = dev->driver_data;
+	struct lps22hh_data *data = dev->data;
 
 	return lps22hh_data_rate_set(data->ctx, odr);
 }
 
-static int lps22hh_sample_fetch(struct device *dev,
+static int lps22hh_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
-	struct lps22hh_data *data = dev->driver_data;
-	union axis1bit32_t raw_press;
-	union axis1bit16_t raw_temp;
+	struct lps22hh_data *data = dev->data;
+	uint32_t raw_press;
+	int16_t raw_temp;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	if (lps22hh_pressure_raw_get(data->ctx, raw_press.u8bit) < 0) {
+	if (lps22hh_pressure_raw_get(data->ctx, &raw_press) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
-	if (lps22hh_temperature_raw_get(data->ctx, raw_temp.u8bit) < 0) {
+	if (lps22hh_temperature_raw_get(data->ctx, &raw_temp) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
 
-	data->sample_press = raw_press.i32bit;
-	data->sample_temp = raw_temp.i16bit;
+	data->sample_press = raw_press;
+	data->sample_temp = raw_temp;
 
 	return 0;
 }
@@ -71,11 +71,11 @@ static inline void lps22hh_temp_convert(struct sensor_value *val,
 	val->val2 = ((int32_t)raw_val % 100) * 10000;
 }
 
-static int lps22hh_channel_get(struct device *dev,
+static int lps22hh_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	struct lps22hh_data *data = dev->driver_data;
+	struct lps22hh_data *data = dev->data;
 
 	if (chan == SENSOR_CHAN_PRESS) {
 		lps22hh_press_convert(val, data->sample_press);
@@ -90,7 +90,7 @@ static int lps22hh_channel_get(struct device *dev,
 
 static const uint16_t lps22hh_map[] = {0, 1, 10, 25, 50, 75, 100, 200};
 
-static int lps22hh_odr_set(struct device *dev, uint16_t freq)
+static int lps22hh_odr_set(const struct device *dev, uint16_t freq)
 {
 	int odr;
 
@@ -113,7 +113,8 @@ static int lps22hh_odr_set(struct device *dev, uint16_t freq)
 	return 0;
 }
 
-static int lps22hh_attr_set(struct device *dev, enum sensor_channel chan,
+static int lps22hh_attr_set(const struct device *dev,
+			    enum sensor_channel chan,
 			    enum sensor_attribute attr,
 			    const struct sensor_value *val)
 {
@@ -142,9 +143,9 @@ static const struct sensor_driver_api lps22hh_api_funcs = {
 #endif
 };
 
-static int lps22hh_init_chip(struct device *dev)
+static int lps22hh_init_chip(const struct device *dev)
 {
-	struct lps22hh_data *data = dev->driver_data;
+	struct lps22hh_data *data = dev->data;
 	uint8_t chip_id;
 
 	if (lps22hh_device_id_get(data->ctx, &chip_id) < 0) {
@@ -170,10 +171,12 @@ static int lps22hh_init_chip(struct device *dev)
 	return 0;
 }
 
-static int lps22hh_init(struct device *dev)
+static int lps22hh_init(const struct device *dev)
 {
-	const struct lps22hh_config * const config = dev->config_info;
-	struct lps22hh_data *data = dev->driver_data;
+	const struct lps22hh_config * const config = dev->config;
+	struct lps22hh_data *data = dev->data;
+
+	data->dev = dev;
 
 	data->bus = device_get_binding(config->master_dev_name);
 	if (!data->bus) {

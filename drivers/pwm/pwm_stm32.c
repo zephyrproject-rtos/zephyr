@@ -10,12 +10,15 @@
 #include <errno.h>
 
 #include <soc.h>
+#include <stm32_ll_rcc.h>
+#include <stm32_ll_tim.h>
 #include <drivers/pwm.h>
 #include <device.h>
 #include <kernel.h>
 #include <init.h>
 
 #include <drivers/clock_control/stm32_clock_control.h>
+#include <pinmux/stm32/pinmux_stm32.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(pwm_stm32, CONFIG_PWM_LOG_LEVEL);
@@ -34,6 +37,10 @@ struct pwm_stm32_config {
 	uint32_t prescaler;
 	/** Clock configuration. */
 	struct stm32_pclken pclken;
+	/** pinctrl configurations. */
+	const struct soc_gpio_pinctrl *pinctrl;
+	/** Number of pinctrl configurations. */
+	size_t pinctrl_len;
 };
 
 /** Series F3, F7, G0, G4, H7, L4, MP1 and WB have up to 6 channels, others up
@@ -75,16 +82,6 @@ static void (*const set_timer_compare[TIMER_MAX_CH])(TIM_TypeDef *,
 #endif
 };
 
-static inline struct pwm_stm32_data *to_data(struct device *dev)
-{
-	return dev->driver_data;
-}
-
-static inline const struct pwm_stm32_config *to_config(struct device *dev)
-{
-	return dev->config_info;
-}
-
 /**
  * Obtain LL polarity from PWM flags.
  *
@@ -112,7 +109,7 @@ static uint32_t get_polarity(pwm_flags_t flags)
 static int get_tim_clk(const struct stm32_pclken *pclken, uint32_t *tim_clk)
 {
 	int r;
-	struct device *clk;
+	const struct device *clk;
 	uint32_t bus_clk, apb_psc;
 
 	clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
@@ -130,33 +127,6 @@ static int get_tim_clk(const struct stm32_pclken *pclken, uint32_t *tim_clk)
 	} else {
 		apb_psc = CONFIG_CLOCK_STM32_D2PPRE2;
 	}
-
-	/*
-	 * Depending on pre-scaler selection (TIMPRE), timer clock frequency
-	 * is defined as follows:
-	 *
-	 * - TIMPRE=0: If the APB prescaler (PPRE1, PPRE2) is configured to a
-	 *   division factor of 1 then the timer clock equals to APB bus clock.
-	 *   Otherwise the timer clock is set to twice the frequency of APB bus
-	 *   clock.
-	 * - TIMPRE=1: If the APB prescaler (PPRE1, PPRE2) is configured to a
-	 *   division factor of 1, 2 or 4, then the timer clock equals to HCLK.
-	 *   Otherwise, the timer clock frequencies are set to four times to
-	 *   the frequency of the APB domain.
-	 */
-	if (LL_RCC_GetTIMPrescaler() == LL_RCC_TIM_PRESCALER_TWICE) {
-		if (apb_psc == 1u) {
-			*tim_clk = bus_clk;
-		} else {
-			*tim_clk = bus_clk * 2u;
-		}
-	} else {
-		if (apb_psc == 1u || apb_psc == 2u || apb_psc == 4u) {
-			*tim_clk = SystemCoreClock;
-		} else {
-			*tim_clk = bus_clk * 4u;
-		}
-	}
 #else
 	if (pclken->bus == STM32_CLOCK_BUS_APB1) {
 		apb_psc = CONFIG_CLOCK_STM32_APB1_PRESCALER;
@@ -166,7 +136,44 @@ static int get_tim_clk(const struct stm32_pclken *pclken, uint32_t *tim_clk)
 		apb_psc = CONFIG_CLOCK_STM32_APB2_PRESCALER;
 	}
 #endif
+#endif
 
+#if defined(RCC_DCKCFGR_TIMPRE) || defined(RCC_DCKCFGR1_TIMPRE) || \
+	defined(RCC_CFGR_TIMPRE)
+	/*
+	 * There are certain series (some F4, F7 and H7) that have the TIMPRE
+	 * bit to control the clock frequency of all the timers connected to
+	 * APB1 and APB2 domains.
+	 *
+	 * Up to a certain threshold value of APB{1,2} prescaler, timer clock
+	 * equals to HCLK. This threshold value depends on TIMPRE setting
+	 * (2 if TIMPRE=0, 4 if TIMPRE=1). Above threshold, timer clock is set
+	 * to a multiple of the APB domain clock PCLK{1,2} (2 if TIMPRE=0, 4 if
+	 * TIMPRE=1).
+	 */
+
+	if (LL_RCC_GetTIMPrescaler() == LL_RCC_TIM_PRESCALER_TWICE) {
+		/* TIMPRE = 0 */
+		if (apb_psc <= 2u) {
+			LL_RCC_ClocksTypeDef clocks;
+
+			LL_RCC_GetSystemClocksFreq(&clocks);
+			*tim_clk = clocks.HCLK_Frequency;
+		} else {
+			*tim_clk = bus_clk * 2u;
+		}
+	} else {
+		/* TIMPRE = 1 */
+		if (apb_psc <= 4u) {
+			LL_RCC_ClocksTypeDef clocks;
+
+			LL_RCC_GetSystemClocksFreq(&clocks);
+			*tim_clk = clocks.HCLK_Frequency;
+		} else {
+			*tim_clk = bus_clk * 4u;
+		}
+	}
+#else
 	/*
 	 * If the APB prescaler equals 1, the timer clock frequencies
 	 * are set to the same frequency as that of the APB domain.
@@ -183,11 +190,11 @@ static int get_tim_clk(const struct stm32_pclken *pclken, uint32_t *tim_clk)
 	return 0;
 }
 
-static int pwm_stm32_pin_set(struct device *dev, uint32_t pwm,
+static int pwm_stm32_pin_set(const struct device *dev, uint32_t pwm,
 			     uint32_t period_cycles, uint32_t pulse_cycles,
 			     pwm_flags_t flags)
 {
-	const struct pwm_stm32_config *cfg = to_config(dev);
+	const struct pwm_stm32_config *cfg = dev->config;
 
 	uint32_t channel;
 
@@ -233,22 +240,27 @@ static int pwm_stm32_pin_set(struct device *dev, uint32_t pwm,
 			return -EIO;
 		}
 
+		LL_TIM_EnableARRPreload(cfg->timer);
 		LL_TIM_OC_EnablePreload(cfg->timer, channel);
+		LL_TIM_SetAutoReload(cfg->timer, period_cycles - 1u);
+		LL_TIM_GenerateEvent_UPDATE(cfg->timer);
 	} else {
 		LL_TIM_OC_SetPolarity(cfg->timer, channel, get_polarity(flags));
 		set_timer_compare[pwm - 1u](cfg->timer, pulse_cycles);
+		LL_TIM_SetAutoReload(cfg->timer, period_cycles - 1u);
 	}
 
-	LL_TIM_SetAutoReload(cfg->timer, period_cycles - 1u);
+
 
 	return 0;
 }
 
-static int pwm_stm32_get_cycles_per_sec(struct device *dev, uint32_t pwm,
+static int pwm_stm32_get_cycles_per_sec(const struct device *dev,
+					uint32_t pwm,
 					uint64_t *cycles)
 {
-	struct pwm_stm32_data *data = to_data(dev);
-	const struct pwm_stm32_config *cfg = to_config(dev);
+	struct pwm_stm32_data *data = dev->data;
+	const struct pwm_stm32_config *cfg = dev->config;
 
 	*cycles = (uint64_t)(data->tim_clk / (cfg->prescaler + 1));
 
@@ -260,13 +272,13 @@ static const struct pwm_driver_api pwm_stm32_driver_api = {
 	.get_cycles_per_sec = pwm_stm32_get_cycles_per_sec,
 };
 
-static int pwm_stm32_init(struct device *dev)
+static int pwm_stm32_init(const struct device *dev)
 {
-	struct pwm_stm32_data *data = to_data(dev);
-	const struct pwm_stm32_config *cfg = to_config(dev);
+	struct pwm_stm32_data *data = dev->data;
+	const struct pwm_stm32_config *cfg = dev->config;
 
 	int r;
-	struct device *clk;
+	const struct device *clk;
 	LL_TIM_InitTypeDef init;
 
 	/* enable clock and store its speed */
@@ -282,6 +294,15 @@ static int pwm_stm32_init(struct device *dev)
 	r = get_tim_clk(&cfg->pclken, &data->tim_clk);
 	if (r < 0) {
 		LOG_ERR("Could not obtain timer clock (%d)", r);
+		return r;
+	}
+
+	/* configure pinmux */
+	r = stm32_dt_pinctrl_configure(cfg->pinctrl,
+				       cfg->pinctrl_len,
+				       (uint32_t)cfg->timer);
+	if (r < 0) {
+		LOG_ERR("PWM pinctrl setup failed (%d)", r);
 		return r;
 	}
 
@@ -310,22 +331,27 @@ static int pwm_stm32_init(struct device *dev)
 
 #define DT_INST_CLK(index, inst)                                               \
 	{                                                                      \
-		.bus = DT_CLOCKS_CELL(DT_INST(index, st_stm32_timers), bus),   \
-		.enr = DT_CLOCKS_CELL(DT_INST(index, st_stm32_timers), bits)   \
+		.bus = DT_CLOCKS_CELL(DT_PARENT(DT_DRV_INST(index)), bus),     \
+		.enr = DT_CLOCKS_CELL(DT_PARENT(DT_DRV_INST(index)), bits)     \
 	}
 
 #define PWM_DEVICE_INIT(index)                                                 \
 	static struct pwm_stm32_data pwm_stm32_data_##index;                   \
 									       \
+	static const struct soc_gpio_pinctrl pwm_pins_##index[] =	       \
+		ST_STM32_DT_INST_PINCTRL(index, 0);			       \
+									       \
 	static const struct pwm_stm32_config pwm_stm32_config_##index = {      \
 		.timer = (TIM_TypeDef *)DT_REG_ADDR(                           \
-			DT_INST(index, st_stm32_timers)),                      \
+			DT_PARENT(DT_DRV_INST(index))),                        \
 		.prescaler = DT_INST_PROP(index, st_prescaler),                \
-		.pclken = DT_INST_CLK(index, timer)                            \
+		.pclken = DT_INST_CLK(index, timer),                           \
+		.pinctrl = pwm_pins_##index,                                   \
+		.pinctrl_len = ARRAY_SIZE(pwm_pins_##index),                   \
 	};                                                                     \
 									       \
-	DEVICE_AND_API_INIT(pwm_stm32_##index, DT_INST_LABEL(index),           \
-			    &pwm_stm32_init, &pwm_stm32_data_##index,          \
+	DEVICE_DT_INST_DEFINE(index, &pwm_stm32_init, device_pm_control_nop,   \
+			    &pwm_stm32_data_##index,                           \
 			    &pwm_stm32_config_##index, POST_KERNEL,            \
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                \
 			    &pwm_stm32_driver_api);

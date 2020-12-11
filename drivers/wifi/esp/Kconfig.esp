@@ -42,6 +42,24 @@ config WIFI_ESP_WORKQ_THREAD_PRIORITY
 	help
 	  Priority of thread used for processing driver work queue items.
 
+config WIFI_ESP_MDM_RING_BUF_SIZE
+	int "Modem ring buffer size"
+	default 1024
+	help
+	  Ring buffer size used by modem UART interface handler.
+
+config WIFI_ESP_MDM_RX_BUF_COUNT
+	int "Modem RX buffer count"
+	default 30
+	help
+	  Number of preallocated RX buffers used by modem command handler.
+
+config WIFI_ESP_MDM_RX_BUF_SIZE
+	int "Modem RX buffer size"
+	default 128
+	help
+	  Size of preallocated RX buffers used by modem command handler.
+
 config WIFI_ESP_PASSIVE_MODE
 	bool "Use passive mode"
 	help
@@ -56,6 +74,44 @@ config WIFI_ESP_RESET_TIMEOUT
 	  How long to wait for device to become ready after AT+RST has been
 	  sent. This can vary with chipset (ESP8266/ESP32) and firmware
 	  version. This is ignored if a reset pin is configured.
+
+config WIFI_ESP_RX_NET_PKT_ALLOC_TIMEOUT
+	int "Network interface RX packet allocation timeout"
+	default 5000
+	help
+	  Network interface RX net_pkt allocation timeout in milliseconds.
+
+choice
+	prompt "ESP IP Address configuration"
+	default WIFI_ESP_IP_DHCP
+	help
+	  Choose whether to use an IP assigned by DHCP Server or
+	  configure a static IP Address.
+
+config WIFI_ESP_IP_DHCP
+	bool "DHCP"
+	help
+	  Use DHCP to get an IP Address.
+
+config WIFI_ESP_IP_STATIC
+	bool "Static"
+	help
+	  Setup Static IP Address.
+
+endchoice
+
+if WIFI_ESP_IP_STATIC
+
+config WIFI_ESP_IP_ADDRESS
+	string "ESP Station mode IP Address"
+
+config WIFI_ESP_IP_GATEWAY
+	string "Gateway Address"
+
+config WIFI_ESP_IP_MASK
+	string "Network Mask"
+
+endif
 
 choice WIFI_ESP_AT_VERSION
 	prompt "AT version"

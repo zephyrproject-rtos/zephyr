@@ -53,9 +53,6 @@ if NETWORKING
 config NET_L2_ETHERNET
 	default y if !MODEM
 
-config ETH_MCUX_0
-	default y if NET_L2_ETHERNET
-
 endif # NETWORKING
 
 endif # BOARD_FRDM_K64F

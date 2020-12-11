@@ -14,14 +14,22 @@ extern void test_byteorder_memcpy_swap(void);
 extern void test_byteorder_mem_swap(void);
 extern void test_sys_get_be64(void);
 extern void test_sys_put_be64(void);
+extern void test_sys_get_be48(void);
+extern void test_sys_put_be48(void);
 extern void test_sys_get_be32(void);
 extern void test_sys_put_be32(void);
+extern void test_sys_get_be24(void);
+extern void test_sys_put_be24(void);
 extern void test_sys_get_be16(void);
 extern void test_sys_put_be16(void);
 extern void test_sys_get_le16(void);
 extern void test_sys_put_le16(void);
+extern void test_sys_get_le24(void);
+extern void test_sys_put_le24(void);
 extern void test_sys_get_le32(void);
 extern void test_sys_put_le32(void);
+extern void test_sys_get_le48(void);
+extern void test_sys_put_le48(void);
 extern void test_sys_get_le64(void);
 extern void test_sys_put_le64(void);
 extern void test_atomic(void);
@@ -106,14 +114,22 @@ void test_main(void)
 			 ztest_unit_test(test_byteorder_mem_swap),
 			 ztest_unit_test(test_sys_get_be64),
 			 ztest_unit_test(test_sys_put_be64),
+			 ztest_unit_test(test_sys_get_be48),
+			 ztest_unit_test(test_sys_put_be48),
 			 ztest_unit_test(test_sys_get_be32),
 			 ztest_unit_test(test_sys_put_be32),
+			 ztest_unit_test(test_sys_get_be24),
+			 ztest_unit_test(test_sys_put_be24),
 			 ztest_unit_test(test_sys_get_be16),
 			 ztest_unit_test(test_sys_put_be16),
 			 ztest_unit_test(test_sys_get_le16),
 			 ztest_unit_test(test_sys_put_le16),
+			 ztest_unit_test(test_sys_get_le24),
+			 ztest_unit_test(test_sys_put_le24),
 			 ztest_unit_test(test_sys_get_le32),
 			 ztest_unit_test(test_sys_put_le32),
+			 ztest_unit_test(test_sys_get_le48),
+			 ztest_unit_test(test_sys_put_le48),
 			 ztest_unit_test(test_sys_get_le64),
 			 ztest_unit_test(test_sys_put_le64),
 			 ztest_user_unit_test(test_atomic),

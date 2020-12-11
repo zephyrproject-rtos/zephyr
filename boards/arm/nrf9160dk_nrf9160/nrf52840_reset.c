@@ -16,11 +16,11 @@
 BUILD_ASSERT(RESET_PIN > 16 && RESET_PIN < 24,
 	     "Selected pin is not connected to nRF52840");
 
-int bt_hci_transport_setup(struct device *h4)
+int bt_hci_transport_setup(const struct device *h4)
 {
 	int err;
 	char c;
-	struct device *port;
+	const struct device *port;
 
 	port = device_get_binding(DT_LABEL(DT_NODELABEL(gpio0)));
 	if (!port) {

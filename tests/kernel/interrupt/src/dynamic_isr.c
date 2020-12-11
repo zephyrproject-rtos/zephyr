@@ -8,9 +8,9 @@
 
 #if defined(CONFIG_DYNAMIC_INTERRUPTS) && defined(CONFIG_GEN_SW_ISR_TABLE)
 extern struct _isr_table_entry __sw_isr_table _sw_isr_table[];
-extern void z_irq_spurious(void *unused);
+extern void z_irq_spurious(const void *unused);
 
-static void dyn_isr(void *arg)
+static void dyn_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 }
@@ -28,7 +28,7 @@ static void dyn_isr(void *arg)
 void test_isr_dynamic(void)
 {
 	int i;
-	void *argval;
+	const void *argval;
 
 	for (i = 0; i < (CONFIG_NUM_IRQS - CONFIG_GEN_IRQ_START_VECTOR); i++) {
 		if (_sw_isr_table[i].isr == z_irq_spurious) {
@@ -42,9 +42,9 @@ void test_isr_dynamic(void)
 	printk("installing dynamic ISR for IRQ %d\n",
 	       CONFIG_GEN_IRQ_START_VECTOR + i);
 
-	argval = &i;
+	argval = (const void *)&i;
 	arch_irq_connect_dynamic(i + CONFIG_GEN_IRQ_START_VECTOR, 0, dyn_isr,
-				   argval, 0);
+				 argval, 0);
 
 	zassert_true(_sw_isr_table[i].isr == dyn_isr &&
 		     _sw_isr_table[i].arg == argval,

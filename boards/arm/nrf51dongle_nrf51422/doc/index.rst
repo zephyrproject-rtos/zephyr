@@ -33,9 +33,6 @@ More information about the board can be found at the
 `nRF51 Dongle website`_. The `Nordic Semiconductor Infocenter`_
 contains the processor's information and the datasheet.
 
-.. note::
-
-   In previous Zephyr releases this board was named *nrf51_pca10031*.
 
 Hardware
 ********

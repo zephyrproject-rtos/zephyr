@@ -51,7 +51,7 @@ MALLOC_BSS static unsigned char __aligned(CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE)
 #define HEAP_BASE	ROUND_UP(USED_RAM_END_ADDR, \
 				 CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE)
 #elif defined(CONFIG_ARC)
-#define HEAP_BASE	Z_ARC_MPU_SIZE_ALIGN(USED_RAM_END_ADDR)
+#define HEAP_BASE	ROUND_UP(USED_RAM_END_ADDR, Z_ARC_MPU_ALIGN)
 #else
 #error "Unsupported platform"
 #endif /* CONFIG_<arch> */
@@ -61,18 +61,32 @@ MALLOC_BSS static unsigned char __aligned(CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE)
 #define HEAP_BASE	USED_RAM_END_ADDR
 #endif /* Z_MALLOC_PARTITION_EXISTS */
 
-#ifdef CONFIG_XTENSA
+#ifdef CONFIG_MMU
+/* Currently a placeholder, we're just setting up all unused RAM pages
+ * past the end of the kernel as the heap arena. SRAM_BASE_ADDRESS is
+ * a physical address so we can't use that.
+ *
+ * Later, we should do this much more like other VM-enabled operating systems:
+ * - Set up a core kernel ontology of free physical pages
+ * - Allow anonymous memoory mappings drawing from the pool of free physical
+ *   pages
+ * - Have _sbrk() map anonymous pages into the heap arena as needed
+ * - See: https://github.com/zephyrproject-rtos/zephyr/issues/29526
+ */
+#define MAX_HEAP_SIZE	(CONFIG_KERNEL_RAM_SIZE - (HEAP_BASE - \
+						   CONFIG_KERNEL_VM_BASE))
+#elif defined(CONFIG_XTENSA)
 extern void *_heap_sentry;
-#define MAX_HEAP_SIZE  (POINTER_TO_UINT(&_heap_sentry) - HEAP_BASE)
+#define MAX_HEAP_SIZE	(POINTER_TO_UINT(&_heap_sentry) - HEAP_BASE)
 #else
-#define MAX_HEAP_SIZE	(KB(CONFIG_SRAM_SIZE) - \
-			 (HEAP_BASE - CONFIG_SRAM_BASE_ADDRESS))
-#endif
+#define MAX_HEAP_SIZE	(KB(CONFIG_SRAM_SIZE) - (HEAP_BASE - \
+						 CONFIG_SRAM_BASE_ADDRESS))
+#endif /* CONFIG_MMU */
 
 #if Z_MALLOC_PARTITION_EXISTS
 struct k_mem_partition z_malloc_partition;
 
-static int malloc_prepare(struct device *unused)
+static int malloc_prepare(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 
@@ -201,7 +215,7 @@ extern ssize_t write(int file, const char *buffer, size_t count);
 
 int _isatty(int file)
 {
-	return 1;
+	return file <= 2;
 }
 __weak FUNC_ALIAS(_isatty, isatty, int);
 

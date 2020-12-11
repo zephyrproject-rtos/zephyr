@@ -5,8 +5,9 @@
 
 menuconfig IEEE802154_NRF5
 	bool "nRF52 series IEEE 802.15.4 Driver"
-	depends on NETWORKING && HAS_HW_NRF_RADIO_IEEE802154
-	select NRF_802154_RADIO_DRIVER
+	depends on NETWORKING
+	select NRF_802154_RADIO_DRIVER if HAS_HW_NRF_RADIO_IEEE802154
+	select NRF_802154_SER_HOST if !HAS_HW_NRF_RADIO_IEEE802154
 
 if IEEE802154_NRF5
 
@@ -41,5 +42,14 @@ config IEEE802154_NRF5_EXT_IRQ_MGMT
 	  Enable this option when external radio IRQ provider is enabled in
 	  the system. One example of external radio IRQ provider could be
 	  a radio arbiter used in dynamic multiprotocol applications.
+
+config IEEE802154_NRF5_PKT_TXTIME
+	bool "Driver's TX time support"
+	depends on !NRF_802154_SL_OPENSOURCE && !NRF_802154_SER_HOST
+	depends on NET_PKT_TXTIME
+	default y
+	help
+	  Enable TX time support. This is needed when upper layers want
+	  to set the exact time when the packet should be sent.
 
 endif

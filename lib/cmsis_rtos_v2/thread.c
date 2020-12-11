@@ -29,9 +29,11 @@ static struct cv2_thread cv2_thread_pool[CONFIG_CMSIS_V2_THREAD_MAX_COUNT];
 static uint32_t thread_num;
 static uint32_t thread_num_dynamic;
 
+#if CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT != 0
 static K_THREAD_STACK_ARRAY_DEFINE(cv2_thread_stack_pool,		     \
 				   CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT, \
 				   CONFIG_CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE);
+#endif
 
 static inline int _is_thread_cmsis_inactive(struct k_thread *thread)
 {
@@ -108,7 +110,6 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg,
 	void *stack;
 	size_t stack_size;
 	uint32_t this_thread_num;
-	uint32_t this_thread_num_dynamic;
 
 	if (k_is_in_isr()) {
 		return NULL;
@@ -163,14 +164,18 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg,
 	tid = &cv2_thread_pool[this_thread_num];
 	tid->attr_bits = attr->attr_bits;
 
+#if CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT != 0
 	if (attr->stack_mem == NULL) {
+		uint32_t this_thread_num_dynamic;
 		__ASSERT(CONFIG_CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE > 0,
 			 "dynamic stack size must be configured to be non-zero\n");
 		this_thread_num_dynamic =
 			atomic_inc((atomic_t *)&thread_num_dynamic);
 		stack_size = CONFIG_CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE;
 		stack = cv2_thread_stack_pool[this_thread_num_dynamic];
-	} else {
+	} else
+#endif
+	{
 		stack_size = attr->stack_size;
 		stack = attr->stack_mem;
 	}

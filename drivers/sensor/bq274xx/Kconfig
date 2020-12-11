@@ -4,6 +4,6 @@
 
 config BQ274XX
 	bool "BQ274xx Fuel Gauge"
-	depends on (I2C && HAS_DTS_I2C)
+	depends on I2C
 	help
 	  Enable I2C-based driver for BQ274xx Fuel Gauge.

@@ -19,6 +19,12 @@ LOG_MODULE_REGISTER(wpanusb);
 
 #include "wpanusb.h"
 
+#if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
+#define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
+#else
+#define THREAD_PRIORITY K_PRIO_PREEMPT(8)
+#endif
+
 #define WPANUSB_SUBCLASS	0
 #define WPANUSB_PROTOCOL	0
 
@@ -28,7 +34,7 @@ LOG_MODULE_REGISTER(wpanusb);
 #define WPANUSB_IN_EP_IDX		0
 
 static struct ieee802154_radio_api *radio_api;
-static struct device *ieee802154_dev;
+static const struct device *ieee802154_dev;
 
 static struct k_fifo tx_queue;
 
@@ -340,7 +346,7 @@ static void init_tx_queue(void)
 	k_thread_create(&tx_thread_data, tx_stack,
 			K_THREAD_STACK_SIZEOF(tx_stack),
 			(k_thread_entry_t)tx_thread,
-			NULL, NULL, NULL, K_PRIO_COOP(8), 0, K_NO_WAIT);
+			NULL, NULL, NULL, THREAD_PRIORITY, 0, K_NO_WAIT);
 }
 
 /**
@@ -417,7 +423,7 @@ void main(void)
 	/* Initialize transmit queue */
 	init_tx_queue();
 
-	radio_api = (struct ieee802154_radio_api *)ieee802154_dev->driver_api;
+	radio_api = (struct ieee802154_radio_api *)ieee802154_dev->api;
 
 	ret = usb_enable(NULL);
 	if (ret != 0) {

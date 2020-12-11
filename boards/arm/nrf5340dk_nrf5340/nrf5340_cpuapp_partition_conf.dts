@@ -22,25 +22,25 @@
  */
 
 &slot0_partition {
-	reg = <0x0000c000 0x30000>;
+	reg = <0x00010000 0x40000>;
 };
 
 &slot0_ns_partition {
-	reg = <0x0003e000 0x40000>;
+	reg = <0x00050000 0x30000>;
 };
 
 &slot1_partition {
-	reg = <0x0007e000 0x30000>;
+	reg = <0x00080000 0x40000>;
 };
 
 &slot1_ns_partition {
-	reg = <0x000b0000 0x40000>;
+	reg = <0x000c0000 0x30000>;
 };
 
 /* Default SRAM planning when building for nRF5340 with
  * ARM TrustZone-M support
- * - Lowest 64 kB SRAM allocated to Secure image (sram0_s)
- * - Middle 384 kB allocated to Non-Secure image (sram0_ns)
+ * - Lowest 256 kB SRAM allocated to Secure image (sram0_s)
+ * - Middle 192 kB allocated to Non-Secure image (sram0_ns)
  * - Upper 64 kB SRAM allocated as Shared memory (sram0_shared)
  *   (see nrf5340_shared_sram_planning_conf.dts)
  */
@@ -49,11 +49,11 @@
 };
 
 &sram0_s {
-	reg = <0x20000000 0x10000>;
+	reg = <0x20000000 0x40000>;
 };
 
 &sram0_ns {
-	reg = <0x20010000 0x60000>;
+	reg = <0x20040000 0x30000>;
 };
 
 /* Include shared RAM configuration file */

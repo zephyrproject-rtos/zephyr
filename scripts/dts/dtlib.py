@@ -23,11 +23,7 @@ import re
 import sys
 import textwrap
 
-# NOTE: testdtlib.py is the test suite for this library. It can be run directly
-# as a script:
-#
-#   ./testdtlib.py
-
+# NOTE: testdtlib.py is the test suite for this library.
 
 class DT:
     """

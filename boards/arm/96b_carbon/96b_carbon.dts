@@ -6,11 +6,12 @@
 
 /dts-v1/;
 #include <st/f4/stm32f401Xe.dtsi>
+#include <st/f4/stm32f401r(d-e)tx-pinctrl.dtsi>
 #include "96b_lscon.dtsi"
 
 / {
 	model = "Seeed Studio Carbon 96boards";
-	compatible = "seeed,carbon", "st,stm32f401";
+	compatible = "seeed,carbon";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -53,32 +54,40 @@
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart6 {
+	pinctrl-0 = <&usart6_tx_pc6 &usart6_rx_pc7>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb3>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &spi1 {
 	status = "okay";
+
+	pinctrl-0 = <&spi1_miso_pa6 &spi1_mosi_pa7
+		     &spi1_sck_pa5 &spi1_nss_pa4>;
 
 	/* Nordic nRF51822-QFAC */
 	bt-hci@0 {
@@ -92,18 +101,18 @@
 };
 
 &spi2 {
+	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13
+		     &spi2_miso_pb14 &spi2_mosi_pb15>;
 	status = "okay";
 };
 
 &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	status = "okay";
 };
 
 &flash0 {
-	/*
-	 * For more information, see:
-	 * https://docs.zephyrproject.org/latest/guides/dts/legacy-macros.html#legacy-flash-partitions
-	 */
+
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;

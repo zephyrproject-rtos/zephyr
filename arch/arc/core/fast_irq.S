@@ -126,7 +126,7 @@ firq_nest_1:
 firq_nest:
 #endif
 	push_s r0
-	j @_isr_demux
+	j _isr_demux
 
 
 
@@ -163,7 +163,7 @@ SECTION_FUNC(TEXT, _firq_exit)
 
 	/* fall to no switch */
 
-.balign 4
+.align 4
 _firq_no_switch:
 	/* restore interrupted context' sp */
 	pop sp
@@ -176,7 +176,7 @@ _firq_no_switch:
 #endif
 	rtie
 
-.balign 4
+.align 4
 _firq_switch:
 	/* restore interrupted context' sp */
 	pop sp
@@ -261,21 +261,28 @@ _firq_create_irq_stack_frame:
 
 	/* fall through */
 
-.balign 4
+.align 4
 _firq_switch_from_coop:
 
 	_set_misc_regs_irq_switch_from_coop
 
 	/* pc into ilink */
 	pop_s r0
-	mov_s ilink, r0
+	mov ilink, r0
 
 	pop_s r0 /* status32 into r0 */
 	sr r0, [_ARC_V2_STATUS32_P0]
 
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
+	push_s blink
+
+	bl z_thread_mark_switched_in
+
+	pop_s blink
+#endif
 	rtie
 
-.balign 4
+.align 4
 _firq_switch_from_rirq:
 _firq_switch_from_firq:
 
@@ -287,5 +294,12 @@ _firq_switch_from_firq:
 	sr ilink, [_ARC_V2_STATUS32_P0]
 	ld ilink, [sp, -8] /* pc into ilink */
 
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
+	push_s blink
+
+	bl z_thread_mark_switched_in
+
+	pop_s blink
+#endif
 	/* LP registers are already restored, just switch back to bank 0 */
 	rtie

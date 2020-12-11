@@ -36,6 +36,9 @@ static volatile struct soc_dsp_shim_regs *shim_regs =
 
 static void set_compare(uint64_t time)
 {
+	/* Disarm the comparator to prevent spurious triggers */
+	shim_regs->dspwctcs &= ~DSP_WCT_CS_TA(TIMER);
+
 #if (TIMER == 0)
 	/* Set compare register */
 	shim_regs->dspwct0c = time;
@@ -60,7 +63,7 @@ static uint32_t count32(void)
 	return shim_regs->walclk32_lo;
 }
 
-static void compare_isr(void *arg)
+static void compare_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 	uint64_t curr;
@@ -104,7 +107,7 @@ static void compare_isr(void *arg)
 	z_clock_announce(dticks);
 }
 
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
 	uint64_t curr = count();
 
@@ -121,7 +124,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 
 #ifdef CONFIG_TICKLESS_KERNEL
 	ticks = ticks == K_TICKS_FOREVER ? MAX_TICKS : ticks;
-	ticks = MAX(MIN(ticks - 1, (int32_t)MAX_TICKS), 0);
+	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint64_t curr = count();

@@ -34,7 +34,7 @@ struct pwm_sam0_config {
 #endif
 };
 
-#define DEV_CFG(dev) ((const struct pwm_sam0_config *const)(dev)->config_info)
+#define DEV_CFG(dev) ((const struct pwm_sam0_config *const)(dev)->config)
 
 /* Wait for the peripheral to finish all commands */
 static void wait_synchronization(Tcc *regs)
@@ -43,7 +43,7 @@ static void wait_synchronization(Tcc *regs)
 	}
 }
 
-static int pwm_sam0_get_cycles_per_sec(struct device *dev, uint32_t ch,
+static int pwm_sam0_get_cycles_per_sec(const struct device *dev, uint32_t ch,
 				       uint64_t *cycles)
 {
 	const struct pwm_sam0_config *const cfg = DEV_CFG(dev);
@@ -56,7 +56,7 @@ static int pwm_sam0_get_cycles_per_sec(struct device *dev, uint32_t ch,
 	return 0;
 }
 
-static int pwm_sam0_pin_set(struct device *dev, uint32_t ch,
+static int pwm_sam0_pin_set(const struct device *dev, uint32_t ch,
 			    uint32_t period_cycles, uint32_t pulse_cycles,
 			    pwm_flags_t flags)
 {
@@ -100,7 +100,7 @@ static int pwm_sam0_pin_set(struct device *dev, uint32_t ch,
 	return 0;
 }
 
-static int pwm_sam0_init(struct device *dev)
+static int pwm_sam0_init(const struct device *dev)
 {
 	const struct pwm_sam0_config *const cfg = DEV_CFG(dev);
 	Tcc *regs = cfg->regs;
@@ -157,8 +157,8 @@ static const struct pwm_driver_api pwm_sam0_driver_api = {
 		PWM_SAM0_INIT_CLOCKS(inst),				       \
 	};								       \
 									       \
-	DEVICE_AND_API_INIT(pwm_sam0_##inst, DT_INST_LABEL(inst),	       \
-			    &pwm_sam0_init, NULL, &pwm_sam0_config_##inst,     \
+	DEVICE_DT_INST_DEFINE(inst, &pwm_sam0_init, device_pm_control_nop,     \
+			    NULL, &pwm_sam0_config_##inst,		       \
 			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,   \
 			    &pwm_sam0_driver_api);
 

@@ -7,6 +7,8 @@ config CPU_CORTEX_A
 	bool
 	select CPU_CORTEX
 	select HAS_FLASH_LOAD_OFFSET
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
 	help
 	  This option signifies the use of a CPU of the Cortex-A family.
 
@@ -23,13 +25,6 @@ config CPU_CORTEX_A72
 	select ARMV8_A
 	help
 	  This option signifies the use of a Cortex-A72 CPU
-
-config SWITCH_TO_EL1
-	bool "Switch to EL1 at boot"
-	default y
-	help
-	  This option indicates that we want to switch to EL1 at boot. Only
-	  switching to EL1 from EL3 is supported.
 
 config NUM_IRQS
 	int
@@ -93,6 +88,15 @@ config ARM_MMU
 	default y
 	help
 	  Memory Management Unit support.
+
+config EXCEPTION_DEBUG
+	bool "Unhandled exception debugging information"
+	default y
+	depends on LOG
+	help
+	  Print human-readable information about exception vectors, cause codes,
+	  and parameters, at a cost of code/data size for the human-readable
+	  strings.
 
 if ARM_MMU
 

@@ -228,7 +228,7 @@ static int usb_validate_ep_cfg_data(struct usb_ep_descriptor * const ep_descr,
 				    struct usb_cfg_data * const cfg_data,
 				    uint32_t *requested_ep)
 {
-	for (int i = 0; i < cfg_data->num_endpoints; i++) {
+	for (unsigned int i = 0; i < cfg_data->num_endpoints; i++) {
 		struct usb_ep_cfg_data *ep_data = cfg_data->endpoint;
 
 		/*
@@ -238,7 +238,7 @@ static int usb_validate_ep_cfg_data(struct usb_ep_descriptor * const ep_descr,
 			continue;
 		}
 
-		for (uint8_t idx = 1; idx < 16; idx++) {
+		for (uint8_t idx = 1; idx < 16U; idx++) {
 			struct usb_dc_ep_cfg_data ep_cfg;
 
 			ep_cfg.ep_type = (ep_descr->bmAttributes &
@@ -246,13 +246,13 @@ static int usb_validate_ep_cfg_data(struct usb_ep_descriptor * const ep_descr,
 			ep_cfg.ep_mps = ep_descr->wMaxPacketSize;
 			ep_cfg.ep_addr = ep_descr->bEndpointAddress;
 			if (ep_cfg.ep_addr & USB_EP_DIR_IN) {
-				if ((*requested_ep & (1 << (idx + 16)))) {
+				if ((*requested_ep & (1U << (idx + 16U)))) {
 					continue;
 				}
 
 				ep_cfg.ep_addr = (USB_EP_DIR_IN | idx);
 			} else {
-				if ((*requested_ep & (1 << (idx)))) {
+				if ((*requested_ep & (1U << (idx)))) {
 					continue;
 				}
 
@@ -265,9 +265,9 @@ static int usb_validate_ep_cfg_data(struct usb_ep_descriptor * const ep_descr,
 				ep_descr->bEndpointAddress = ep_cfg.ep_addr;
 				ep_data[i].ep_addr = ep_cfg.ep_addr;
 				if (ep_cfg.ep_addr & USB_EP_DIR_IN) {
-					*requested_ep |= (1 << (idx + 16));
+					*requested_ep |= (1U << (idx + 16U));
 				} else {
-					*requested_ep |= (1 << idx);
+					*requested_ep |= (1U << idx);
 				}
 				LOG_DBG("endpoint 0x%x", ep_data[i].ep_addr);
 				return 0;
@@ -484,8 +484,8 @@ struct usb_dev_data *usb_get_dev_data_by_cfg(sys_slist_t *list,
 	struct usb_dev_data *dev_data;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(list, dev_data, node) {
-		struct device *dev = dev_data->dev;
-		const struct usb_cfg_data *cfg_cur = dev->config_info;
+		const struct device *dev = dev_data->dev;
+		const struct usb_cfg_data *cfg_cur = dev->config;
 
 		if (cfg_cur == cfg) {
 			return dev_data;
@@ -503,8 +503,8 @@ struct usb_dev_data *usb_get_dev_data_by_iface(sys_slist_t *list,
 	struct usb_dev_data *dev_data;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(list, dev_data, node) {
-		struct device *dev = dev_data->dev;
-		const struct usb_cfg_data *cfg = dev->config_info;
+		const struct device *dev = dev_data->dev;
+		const struct usb_cfg_data *cfg = dev->config;
 		const struct usb_if_descriptor *if_desc =
 						cfg->interface_descriptor;
 
@@ -523,8 +523,8 @@ struct usb_dev_data *usb_get_dev_data_by_ep(sys_slist_t *list, uint8_t ep)
 	struct usb_dev_data *dev_data;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(list, dev_data, node) {
-		struct device *dev = dev_data->dev;
-		const struct usb_cfg_data *cfg = dev->config_info;
+		const struct device *dev = dev_data->dev;
+		const struct usb_cfg_data *cfg = dev->config;
 		const struct usb_ep_cfg_data *ep_data = cfg->endpoint;
 
 		for (uint8_t i = 0; i < cfg->num_endpoints; i++) {

@@ -132,7 +132,7 @@ static void smp_udp_receive_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static int smp_udp_init(struct device *dev)
+static int smp_udp_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

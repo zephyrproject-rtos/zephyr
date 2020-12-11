@@ -10,9 +10,6 @@
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define MAIL_LEN 64
 
-K_MEM_POOL_DEFINE(mpooltx, 8, MAIL_LEN, 1, 4);
-K_MEM_POOL_DEFINE(mpoolrx, 8, MAIL_LEN, 1, 4);
-
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 
 static struct k_thread tdata;

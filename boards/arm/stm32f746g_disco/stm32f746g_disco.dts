@@ -6,11 +6,12 @@
 
 /dts-v1/;
 #include <st/f7/stm32f746Xg.dtsi>
+#include <st/f7/stm32f746nghx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32F746G DISCOVERY board";
-	compatible = "st,stm32f746g-disco", "st,stm32f746";
+	compatible = "st,stm32f746g-disco";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -44,11 +45,13 @@
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &i2c3 {
+	pinctrl-0 = <&i2c3_scl_ph7 &i2c3_sda_ph8>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
@@ -61,28 +64,34 @@
 };
 
 &spi2 {
+	pinctrl-0 = <&spi2_nss_pi0 &spi2_sck_pi1
+		     &spi2_miso_pb14 &spi2_mosi_pb15>;
 	status = "okay";
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pb7>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart6 {
+	pinctrl-0 = <&usart6_tx_pc6 &usart6_rx_pc7>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	status = "okay";
 };
 
-&timers1 {
+&timers3 {
 	status = "okay";
 
-	pwm1: pwm {
+	pwm3: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim3_ch1_pb4>;
 	};
 };
 
@@ -92,9 +101,21 @@
 
 &sdmmc1 {
 	status = "okay";
+	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
+		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	cd-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 };
 
 &mac {
 	status = "okay";
+	pinctrl-0 = <&eth_mdc_pc1
+		     &eth_rxd0_pc4
+		     &eth_rxd1_pc5
+		     &eth_ref_clk_pa1
+		     &eth_mdio_pa2
+		     &eth_crs_dv_pa7
+		     &eth_tx_en_pg11
+		     &eth_txd0_pg13
+		     &eth_txd1_pg14>;
 };

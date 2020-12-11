@@ -22,18 +22,11 @@ LOG_MODULE_REGISTER(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
  * Use values for low-power mode in DS "Mechanical (Sensor) characteristics",
  * multiplied by 100.
  */
-static const uint32_t lis2dh_reg_val_to_scale[] = {
-#if DT_NODE_HAS_STATUS(DT_INST(0, st_lsm303agr_accel), okay)
-	ACCEL_SCALE(1563),
-	ACCEL_SCALE(3126),
-	ACCEL_SCALE(6252),
-	ACCEL_SCALE(18758),
-#else
+static uint32_t lis2dh_reg_val_to_scale[] = {
 	ACCEL_SCALE(1600),
 	ACCEL_SCALE(3200),
 	ACCEL_SCALE(6400),
 	ACCEL_SCALE(19200),
-#endif
 };
 
 static void lis2dh_convert(int16_t raw_val, uint32_t scale,
@@ -52,11 +45,11 @@ static void lis2dh_convert(int16_t raw_val, uint32_t scale,
 	val->val2 = converted_val % 1000000;
 }
 
-static int lis2dh_channel_get(struct device *dev,
+static int lis2dh_channel_get(const struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	struct lis2dh_data *lis2dh = dev->driver_data;
+	struct lis2dh_data *lis2dh = dev->data;
 	int ofs_start;
 	int ofs_end;
 	int i;
@@ -85,9 +78,10 @@ static int lis2dh_channel_get(struct device *dev,
 	return 0;
 }
 
-static int lis2dh_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int lis2dh_sample_fetch(const struct device *dev,
+			       enum sensor_channel chan)
 {
-	struct lis2dh_data *lis2dh = dev->driver_data;
+	struct lis2dh_data *lis2dh = dev->data;
 	size_t i;
 	int status;
 
@@ -143,12 +137,12 @@ static int lis2dh_freq_to_odr_val(uint16_t freq)
 	return -EINVAL;
 }
 
-static int lis2dh_acc_odr_set(struct device *dev, uint16_t freq)
+static int lis2dh_acc_odr_set(const struct device *dev, uint16_t freq)
 {
 	int odr;
 	int status;
 	uint8_t value;
-	struct lis2dh_data *data = dev->driver_data;
+	struct lis2dh_data *data = dev->data;
 
 	odr = lis2dh_freq_to_odr_val(freq);
 	if (odr < 0) {
@@ -195,9 +189,9 @@ static int lis2dh_range_to_reg_val(uint16_t range)
 	return -EINVAL;
 }
 
-static int lis2dh_acc_range_set(struct device *dev, int32_t range)
+static int lis2dh_acc_range_set(const struct device *dev, int32_t range)
 {
-	struct lis2dh_data *lis2dh = dev->driver_data;
+	struct lis2dh_data *lis2dh = dev->data;
 	int fs;
 
 	fs = lis2dh_range_to_reg_val(range);
@@ -213,9 +207,10 @@ static int lis2dh_acc_range_set(struct device *dev, int32_t range)
 }
 #endif
 
-static int lis2dh_acc_config(struct device *dev, enum sensor_channel chan,
-			    enum sensor_attribute attr,
-			    const struct sensor_value *val)
+static int lis2dh_acc_config(const struct device *dev,
+			     enum sensor_channel chan,
+			     enum sensor_attribute attr,
+			     const struct sensor_value *val)
 {
 	switch (attr) {
 #ifdef CONFIG_LIS2DH_ACCEL_RANGE_RUNTIME
@@ -239,7 +234,7 @@ static int lis2dh_acc_config(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int lis2dh_attr_set(struct device *dev, enum sensor_channel chan,
+static int lis2dh_attr_set(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
 {
@@ -266,10 +261,10 @@ static const struct sensor_driver_api lis2dh_driver_api = {
 	.channel_get = lis2dh_channel_get,
 };
 
-int lis2dh_init(struct device *dev)
+int lis2dh_init(const struct device *dev)
 {
-	struct lis2dh_data *lis2dh = dev->driver_data;
-	const struct lis2dh_config *cfg = dev->config_info;
+	struct lis2dh_data *lis2dh = dev->data;
+	const struct lis2dh_config *cfg = dev->config;
 	int status;
 	uint8_t id;
 	uint8_t raw[6];
@@ -293,7 +288,15 @@ int lis2dh_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(DT_INST_PROP(0, disconnect_sdo_sa0_pull_up))) {
+	/* Fix LSM303AGR_ACCEL device scale values */
+	if (cfg->is_lsm303agr_dev) {
+		lis2dh_reg_val_to_scale[0] = ACCEL_SCALE(1563);
+		lis2dh_reg_val_to_scale[1] = ACCEL_SCALE(3126);
+		lis2dh_reg_val_to_scale[2] = ACCEL_SCALE(6252);
+		lis2dh_reg_val_to_scale[3] = ACCEL_SCALE(18758);
+	}
+
+	if (cfg->disc_pull_up) {
 		status = lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL0,
 						   LIS2DH_SDO_PU_DISC_MASK,
 						   LIS2DH_SDO_PU_DISC_MASK);
@@ -337,7 +340,7 @@ int lis2dh_init(struct device *dev)
 #endif
 
 	LOG_INF("bus=%s fs=%d, odr=0x%x lp_en=0x%x scale=%d",
-		    LIS2DH_BUS_DEV_NAME, 1 << (LIS2DH_FS_IDX + 1),
+		    cfg->bus_name, 1 << (LIS2DH_FS_IDX + 1),
 		    LIS2DH_ODR_IDX, (uint8_t)LIS2DH_LP_EN_BIT, lis2dh->scale);
 
 	/* enable accel measurements and set power mode and data rate */
@@ -346,33 +349,144 @@ int lis2dh_init(struct device *dev)
 					LIS2DH_ODR_BITS);
 }
 
-static struct lis2dh_data lis2dh_data;
-
-static const struct lis2dh_config lis2dh_config = {
-	.bus_name = DT_INST_BUS_LABEL(0),
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	.bus_init = lis2dh_spi_init,
-	.spi_conf.frequency = DT_INST_PROP(0, spi_max_frequency),
-	.spi_conf.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
-			       SPI_MODE_CPHA | SPI_WORD_SET(8) |
-			       SPI_LINES_SINGLE),
-	.spi_conf.slave     = DT_INST_REG_ADDR(0),
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	.gpio_cs_port	    = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
-	.cs_gpio	    = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
-	.cs_gpio_flags	    = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0),
-	.spi_conf.cs        =  &lis2dh_data.cs_ctrl,
-#else
-	.spi_conf.cs        = NULL,
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
+#warning "LIS2DH driver enabled without any devices"
 #endif
-#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	.bus_init = lis2dh_i2c_init,
-	.i2c_slv_addr = DT_INST_REG_ADDR(0),
-#else
-#error "BUS MACRO NOT DEFINED IN DTS"
-#endif
-};
 
-DEVICE_AND_API_INIT(lis2dh, DT_INST_LABEL(0), lis2dh_init, &lis2dh_data,
-		    &lis2dh_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		    &lis2dh_driver_api);
+/*
+ * Device creation macro, shared by LIS2DH_DEFINE_SPI() and
+ * LIS2DH_DEFINE_I2C().
+ */
+
+#define LIS2DH_DEVICE_INIT(inst)					\
+	DEVICE_AND_API_INIT(lis2dh_##inst,				\
+			    DT_INST_LABEL(inst),			\
+			    lis2dh_init,				\
+			    &lis2dh_data_##inst,			\
+			    &lis2dh_config_##inst,			\
+			    POST_KERNEL,				\
+			    CONFIG_SENSOR_INIT_PRIORITY,		\
+			    &lis2dh_driver_api);
+
+#define IS_LSM303AGR_DEV(inst) \
+	DT_NODE_HAS_COMPAT(DT_DRV_INST(inst), st_lsm303agr_accel)
+
+#define DISC_PULL_UP(inst) \
+	DT_INST_PROP(inst, disconnect_sdo_sa0_pull_up)
+
+/*
+ * Instantiation macros used when a device is on a SPI bus.
+ */
+
+#define LIS2DH_HAS_CS(inst) DT_INST_SPI_DEV_HAS_CS_GPIOS(inst)
+
+#define LIS2DH_DATA_SPI_CS(inst)					\
+	{ .cs_ctrl = {							\
+		.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(inst),		\
+		.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(inst),	\
+		},							\
+	}
+
+#define LIS2DH_DATA_SPI(inst)						\
+	COND_CODE_1(LIS2DH_HAS_CS(inst),				\
+		    (LIS2DH_DATA_SPI_CS(inst)),				\
+		    ({}))
+
+#define LIS2DH_SPI_CS_PTR(inst)						\
+	COND_CODE_1(LIS2DH_HAS_CS(inst),				\
+		    (&(lis2dh_data_##inst.cs_ctrl)),			\
+		    (NULL))
+
+#define LIS2DH_SPI_CS_LABEL(inst)					\
+	COND_CODE_1(LIS2DH_HAS_CS(inst),				\
+		    (DT_INST_SPI_DEV_CS_GPIOS_LABEL(inst)), (NULL))
+
+#define LIS2DH_SPI_CFG(inst)						\
+	(&(struct lis2dh_spi_cfg) {					\
+		.spi_conf = {						\
+			.frequency =					\
+				DT_INST_PROP(inst, spi_max_frequency),	\
+			.operation = (SPI_WORD_SET(8) |			\
+				      SPI_OP_MODE_MASTER |		\
+				      SPI_MODE_CPOL |			\
+				      SPI_MODE_CPHA),			\
+			.slave = DT_INST_REG_ADDR(inst),		\
+			.cs = LIS2DH_SPI_CS_PTR(inst),			\
+		},							\
+		.cs_gpios_label = LIS2DH_SPI_CS_LABEL(inst),		\
+	})
+
+#ifdef CONFIG_LIS2DH_TRIGGER
+#define LIS2DH_HAS_IRQ_IDX(inst, idx)					\
+		DT_INST_PROP_HAS_IDX(inst, irq_gpios, idx)
+
+#define LIS2DH_CFG_INT(inst) \
+	.irq1_dev_name = COND_CODE_1(LIS2DH_HAS_IRQ_IDX(inst, 0),	\
+		(DT_INST_GPIO_LABEL_BY_IDX(inst, irq_gpios, 0)),	\
+		(NULL)),						\
+	.irq1_pin = COND_CODE_1(LIS2DH_HAS_IRQ_IDX(inst, 0),		\
+		(DT_INST_GPIO_PIN_BY_IDX(inst, irq_gpios, 0)),		\
+		(0)),						\
+	.irq1_flags = COND_CODE_1(LIS2DH_HAS_IRQ_IDX(inst, 0),		\
+		(DT_INST_GPIO_FLAGS_BY_IDX(inst, irq_gpios, 0)),	\
+		(0)),						\
+	.irq2_dev_name = COND_CODE_1(LIS2DH_HAS_IRQ_IDX(inst, 1),	\
+		(DT_INST_GPIO_LABEL_BY_IDX(inst, irq_gpios, 1)),	\
+		(NULL)),						\
+	.irq2_pin = COND_CODE_1(LIS2DH_HAS_IRQ_IDX(inst, 1),		\
+		(DT_INST_GPIO_PIN_BY_IDX(inst, irq_gpios, 1)),		\
+		(0)),						\
+	.irq2_flags = COND_CODE_1(LIS2DH_HAS_IRQ_IDX(inst, 1),		\
+		(DT_INST_GPIO_FLAGS_BY_IDX(inst, irq_gpios, 1)),	\
+		(0)),
+#else
+#define LIS2DH_CFG_INT(inst)
+#endif /* CONFIG_LIS2DH_TRIGGER */
+
+#define LIS2DH_CONFIG_SPI(inst)						\
+	{								\
+		.bus_name = DT_INST_BUS_LABEL(inst),			\
+		.bus_init = lis2dh_spi_init,				\
+		.bus_cfg = { .spi_cfg = LIS2DH_SPI_CFG(inst)	},	\
+		.is_lsm303agr_dev = IS_LSM303AGR_DEV(inst),		\
+		.disc_pull_up = DISC_PULL_UP(inst),			\
+		LIS2DH_CFG_INT(inst)					\
+	}
+
+#define LIS2DH_DEFINE_SPI(inst)						\
+	static struct lis2dh_data lis2dh_data_##inst =			\
+		LIS2DH_DATA_SPI(inst);					\
+	static const struct lis2dh_config lis2dh_config_##inst =	\
+		LIS2DH_CONFIG_SPI(inst);				\
+	LIS2DH_DEVICE_INIT(inst)
+
+/*
+ * Instantiation macros used when a device is on an I2C bus.
+ */
+
+#define LIS2DH_CONFIG_I2C(inst)						\
+	{								\
+		.bus_name = DT_INST_BUS_LABEL(inst),			\
+		.bus_init = lis2dh_i2c_init,				\
+		.bus_cfg = { .i2c_slv_addr = DT_INST_REG_ADDR(inst), },	\
+		.is_lsm303agr_dev = IS_LSM303AGR_DEV(inst),		\
+		.disc_pull_up = DISC_PULL_UP(inst),			\
+		LIS2DH_CFG_INT(inst)					\
+	}
+
+#define LIS2DH_DEFINE_I2C(inst)						\
+	static struct lis2dh_data lis2dh_data_##inst;			\
+	static const struct lis2dh_config lis2dh_config_##inst =	\
+		LIS2DH_CONFIG_I2C(inst);				\
+	LIS2DH_DEVICE_INIT(inst)
+/*
+ * Main instantiation macro. Use of COND_CODE_1() selects the right
+ * bus-specific macro at preprocessor time.
+ */
+
+#define LIS2DH_DEFINE(inst)						\
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
+		    (LIS2DH_DEFINE_SPI(inst)),				\
+		    (LIS2DH_DEFINE_I2C(inst)))
+
+DT_INST_FOREACH_STATUS_OKAY(LIS2DH_DEFINE)

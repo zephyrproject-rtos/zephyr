@@ -34,8 +34,13 @@
 
 		test_phandles: phandle-holder-0 {
 			compatible = "vnd,phandle-holder";
+			/*
+			 * At least one of these phandles must refer to
+			 * test_gpio_1, or dependency ordinal tests may fail.
+			 */
 			ph = <&test_gpio_1>;
 			phs = <&test_gpio_1 &test_gpio_2 &test_i2c>;
+			phs-or = <&test_enum_default_0 &test_enum_default_1>;
 			gpios = <&test_gpio_1 10 20>, <&test_gpio_2 30 40>;
 			pha-gpios = <&test_gpio_1 50 60>, <&test_gpio_3 70>, <&test_gpio_2 80 90>;
 			foos = <&test_gpio_1 100>, <&test_gpio_2 110>;
@@ -52,6 +57,24 @@
 		test_enum_1: enum-1 {
 			compatible = "vnd,enum-holder";
 			val = "two";
+		};
+
+		test_enum_default_0: enum-2 {
+			compatible = "vnd,enum-required-false-holder";
+			val = "one";
+		};
+
+		test_enum_default_1: enum-3 {
+			compatible = "vnd,enum-required-false-holder";
+		};
+
+		test_enum_int_default_0: enum-4 {
+			compatible = "vnd,enum-int-required-false-holder";
+			val = < 5 >;
+		};
+
+		test_enum_int_default_1: enum-5 {
+			compatible = "vnd,enum-int-required-false-holder";
 		};
 
 		/*
@@ -319,6 +342,7 @@
 			status = "okay";
 		};
 
+		/* there should only be one of these */
 		test_children: test-children {
 			compatible = "vnd,child-bindings";
 

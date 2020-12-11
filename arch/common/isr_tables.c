@@ -60,6 +60,7 @@ uint32_t __irq_vector_table _irq_vector_table[IRQ_TABLE_SIZE] = {
  */
 #ifdef CONFIG_GEN_SW_ISR_TABLE
 struct _isr_table_entry __sw_isr_table _sw_isr_table[IRQ_TABLE_SIZE] = {
-	[0 ...(IRQ_TABLE_SIZE - 1)] = {(void *)0x42, (void *)&z_irq_spurious},
+	[0 ...(IRQ_TABLE_SIZE - 1)] = {(const void *)0x42,
+				       (void *)&z_irq_spurious},
 };
 #endif

@@ -558,6 +558,46 @@ void test_tolower_toupper(void)
 	zassert_equal(strcmp(lw, tolw), 0, "tolower error");
 }
 
+void test_strtok_r_do(char *str, char *sep, int tlen,
+		      const char * const *toks, bool expect)
+{
+	int len = 0;
+	char *state, *tok, buf[64+1] = {0};
+
+	strncpy(buf, str, 64);
+
+	tok = strtok_r(buf, sep, &state);
+	while (tok && len < tlen) {
+		if (strcmp(tok, toks[len]) != 0) {
+			break;
+		}
+		tok = strtok_r(NULL, sep, &state);
+		len++;
+	}
+	if (expect) {
+		zassert_equal(len, tlen,
+			      "strtok_r error '%s' / '%s'", str, sep);
+	} else {
+		zassert_not_equal(len, tlen,
+				  "strtok_r error '%s' / '%s'", str, sep);
+	}
+}
+
+void test_strtok_r(void)
+{
+	static const char * const tc01[] = { "1", "2", "3", "4", "5" };
+
+	test_strtok_r_do("1,2,3,4,5",           ",",  5, tc01, true);
+	test_strtok_r_do(",, 1 ,2  ,3   4,5  ", ", ", 5, tc01, true);
+	test_strtok_r_do("1,,,2 3,,,4 5",       ", ", 5, tc01, true);
+	test_strtok_r_do("1,2 3,,,4 5  ",       ", ", 5, tc01, true);
+	test_strtok_r_do("0,1,,,2 3,,,4 5",     ", ", 5, tc01, false);
+	test_strtok_r_do("1,,,2 3,,,4 5",       ",",  5, tc01, false);
+	test_strtok_r_do("A,,,2,3,,,4 5",       ",",  5, tc01, false);
+	test_strtok_r_do("1,,,2,3,,,",          ",",  5, tc01, false);
+	test_strtok_r_do("1|2|3,4|5",           "| ", 5, tc01, false);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_c_lib,
@@ -580,7 +620,8 @@ void test_main(void)
 			 ztest_unit_test(test_checktype),
 			 ztest_unit_test(test_memstr),
 			 ztest_unit_test(test_str_operate),
-			 ztest_unit_test(test_tolower_toupper)
+			 ztest_unit_test(test_tolower_toupper),
+			 ztest_unit_test(test_strtok_r)
 			 );
 	ztest_run_test_suite(test_c_lib);
 }

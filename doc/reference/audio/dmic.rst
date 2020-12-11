@@ -1,7 +1,7 @@
 .. _audio_dmic_api:
 
-DMIC
-####
+Audio DMIC
+##########
 
 Overview
 ********

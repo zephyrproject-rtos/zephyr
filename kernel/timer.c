@@ -22,7 +22,7 @@ struct k_timer *_trace_list_k_timer;
 /*
  * Complete initialization of statically defined timers.
  */
-static int init_timer_module(struct device *dev)
+static int init_timer_module(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -256,7 +256,7 @@ static inline k_ticks_t z_vrfy_k_timer_expires_ticks(struct k_timer *timer)
 }
 #include <syscalls/k_timer_expires_ticks_mrsh.c>
 
-static inline void *z_vrfy_k_timer_user_data_get(struct k_timer *timer)
+static inline void *z_vrfy_k_timer_user_data_get(const struct k_timer *timer)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(timer, K_OBJ_TIMER));
 	return z_impl_k_timer_user_data_get(timer);

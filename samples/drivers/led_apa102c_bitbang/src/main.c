@@ -49,7 +49,7 @@ uint32_t rgb[] = {
 /* Number of LEDS linked together */
 #define NUM_LEDS	1
 
-void send_rgb(struct device *gpio_dev, uint32_t rgb)
+void send_rgb(const struct device *gpio_dev, uint32_t rgb)
 {
 	int i;
 
@@ -67,7 +67,7 @@ void send_rgb(struct device *gpio_dev, uint32_t rgb)
 
 void main(void)
 {
-	struct device *gpio_dev;
+	const struct device *gpio_dev;
 	int ret;
 	int idx = 0;
 	int leds = 0;

@@ -15,7 +15,7 @@
 static volatile bool alerted;
 struct k_sem sem;
 
-static void trigger_handler(struct device *dev,
+static void trigger_handler(const struct device *dev,
 			    struct sensor_trigger *trig)
 {
 #ifdef CONFIG_ISL29035_TRIGGER
@@ -45,7 +45,7 @@ static const char *now_str(void)
 	return buf;
 }
 
-static void process_sample(struct device *dev)
+static void process_sample(const struct device *dev)
 {
 	static bool last_alerted;
 	struct sensor_value val;
@@ -102,7 +102,7 @@ static void process_sample(struct device *dev)
 
 void main(void)
 {
-	struct device *dev = device_get_binding("ISL29035");
+	const struct device *dev = device_get_binding("ISL29035");
 
 	if (dev == NULL) {
 		printf("Could not get ISL29035 device\n");

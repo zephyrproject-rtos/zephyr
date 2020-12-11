@@ -39,7 +39,8 @@ struct gsm_dlci;
  * @param connected True if DLCI is connected, false otherwise.
  * @param user_data Arbitrary user data.
  */
-typedef void (*uart_mux_attach_cb_t)(struct device *mux, int dlci_address,
+typedef void (*uart_mux_attach_cb_t)(const struct device *mux,
+				     int dlci_address,
 				     bool connected, void *user_data);
 
 /** @brief UART mux driver API structure. */
@@ -55,7 +56,7 @@ __subsystem struct uart_mux_driver_api {
 	 * Attach the mux to this UART. The API will call the callback after
 	 * the DLCI is created or not.
 	 */
-	int (*attach)(struct device *mux, struct device *uart,
+	int (*attach)(const struct device *mux, const struct device *uart,
 		      int dlci_address, uart_mux_attach_cb_t cb,
 		      void *user_data);
 };
@@ -72,12 +73,13 @@ __subsystem struct uart_mux_driver_api {
  * @retval 0 No errors, the attachment was successful
  * @retval <0 Error
  */
-static inline int uart_mux_attach(struct device *mux, struct device *uart,
+static inline int uart_mux_attach(const struct device *mux,
+				  const struct device *uart,
 				  int dlci_address, uart_mux_attach_cb_t cb,
 				  void *user_data)
 {
 	const struct uart_mux_driver_api *api =
-		(const struct uart_mux_driver_api *)mux->driver_api;
+		(const struct uart_mux_driver_api *)mux->api;
 
 	return api->attach(mux, uart, dlci_address, cb, user_data);
 }
@@ -89,7 +91,7 @@ static inline int uart_mux_attach(struct device *mux, struct device *uart,
  *
  * @return UART device if found, NULL otherwise
  */
-__syscall struct device *uart_mux_find(int dlci_address);
+__syscall const struct device *uart_mux_find(int dlci_address);
 
 /**
  * @brief Allocate muxing UART device.
@@ -102,7 +104,7 @@ __syscall struct device *uart_mux_find(int dlci_address);
  * @retval device New UART device that will automatically mux data sent to it.
  * @retval NULL if error
  */
-struct device *uart_mux_alloc(void);
+const struct device *uart_mux_alloc(void);
 
 /**
  * @typedef uart_mux_cb_t
@@ -113,7 +115,8 @@ struct device *uart_mux_alloc(void);
  * @param dlci_address DLCI channel id this UART is muxed
  * @param user_data A valid pointer to user data or NULL
  */
-typedef void (*uart_mux_cb_t)(struct device *uart, struct device *dev,
+typedef void (*uart_mux_cb_t)(const struct device *uart,
+			      const struct device *dev,
 			      int dlci_address, void *user_data);
 
 /**
@@ -124,6 +127,25 @@ typedef void (*uart_mux_cb_t)(struct device *uart, struct device *dev,
  * @param user_data User specified data
  */
 void uart_mux_foreach(uart_mux_cb_t cb, void *user_data);
+
+/**
+ * @brief Disable the mux.
+ *
+ * @details Disable does not re-instate whatever ISRs and configs were present
+ * before the mux was enabled. This must be done by the user.
+ *
+ * @param dev UART mux device pointer
+ */
+void uart_mux_disable(const struct device *dev);
+
+/**
+ * @brief Enable the mux.
+ *
+ * @details Enables the correct ISRs for the UART mux.
+ *
+ * @param dev UART mux device pointer
+ */
+void uart_mux_enable(const struct device *dev);
 
 #ifdef __cplusplus
 }

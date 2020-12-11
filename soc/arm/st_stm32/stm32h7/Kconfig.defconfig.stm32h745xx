@@ -1,7 +1,6 @@
 # ST STM32H745X MCU configuration options
 
-# Copyright (c) 2020 Alexander Kozhinov
-# AlexanderKozhinov@yandex.com
+# Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_STM32H745XX

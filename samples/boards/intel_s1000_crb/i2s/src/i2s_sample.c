@@ -59,9 +59,9 @@ LOG_MODULE_REGISTER(i2s_sample);
 static struct k_mem_slab i2s_mem_slab;
 __attribute__((section(".dma_buffers")))
 static char audio_buffers[AUDIO_FRAME_BUF_BYTES][I2S_PLAY_BUF_COUNT];
-static struct device *spk_i2s_dev;
-static struct device *host_i2s_dev;
-static struct device *codec_device;
+static const struct device *spk_i2s_dev;
+static const struct device *host_i2s_dev;
+static const struct device *codec_device;
 
 #ifndef AUDIO_PLAY_FROM_HOST
 static inline int audio_playback_buffer_fill(float phase_delta, int32_t *buffer,
@@ -208,7 +208,7 @@ static void i2s_start_audio(void)
 	}
 }
 
-static void i2s_prepare_audio(struct device *dev)
+static void i2s_prepare_audio(const struct device *dev)
 {
 	int frame_counter = 0;
 	void *buffer;

@@ -67,7 +67,8 @@ static void bt_timeout_handler(struct k_timer *timer)
 
 K_TIMER_DEFINE(timer1, bt_timeout_handler, NULL);
 
-static void check_hf_status(struct device *dev, bool exp_on, bool sw_check)
+static void check_hf_status(const struct device *dev, bool exp_on,
+			    bool sw_check)
 {
 	nrf_clock_hfclk_t type;
 
@@ -98,9 +99,9 @@ static void check_hf_status(struct device *dev, bool exp_on, bool sw_check)
  */
 static void test_onoff_interrupted(void)
 {
-	struct device *clock_dev =
+	const struct device *clock_dev =
 		device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_clock)));
-	struct device *entropy =
+	const struct device *entropy =
 		device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
 	struct onoff_client cli;
 	uint64_t start_time = k_uptime_get();
@@ -193,9 +194,9 @@ K_TIMER_DEFINE(timer2, onoff_timeout_handler, NULL);
  */
 static void test_bt_interrupted(void)
 {
-	struct device *clock_dev =
+	const struct device *clock_dev =
 		device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_clock)));
-	struct device *entropy =
+	const struct device *entropy =
 		device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
 	uint64_t start_time = k_uptime_get();
 	uint64_t elapsed;

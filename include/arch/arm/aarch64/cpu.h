@@ -20,6 +20,8 @@
 #define DAIF_DBG		BIT(9)
 #define DAIF_MASK		(0xf << 6)
 
+#define SPSR_MODE_EL0T		(0x0)
+#define SPSR_MODE_EL1T		(0x4)
 #define SPSR_MODE_EL1H		(0x5)
 
 #define SCTLR_EL3_RES1		(BIT(29) | BIT(28) | BIT(23) | \
@@ -28,11 +30,11 @@
 
 #define SCTLR_EL1_RES1		(BIT(29) | BIT(28) | BIT(23) | \
 				BIT(22) | BIT(20) | BIT(11))
-#define SCTLR_M_BIT		BIT(0)
-#define SCTLR_A_BIT		BIT(1)
-#define SCTLR_C_BIT		BIT(2)
-#define SCTLR_SA_BIT		BIT(3)
-#define SCTLR_I_BIT		BIT(12)
+#define SCTLR_M			BIT(0)
+#define SCTLR_A			BIT(1)
+#define SCTLR_C			BIT(2)
+#define SCTLR_SA		BIT(3)
+#define SCTLR_I			BIT(12)
 
 #define CPACR_EL1_FPEN_NOTRAP	(0x3 << 20)
 
@@ -159,6 +161,10 @@
 #define MODE_EL0		(0x0)
 
 #define GET_EL(_mode)		(((_mode) >> MODE_EL_SHIFT) & MODE_EL_MASK)
+
+#define ESR_EC(esr)		(((esr) >> 26) & BIT_MASK(6))
+#define ESR_IL(esr)		(((esr) >> 25) & BIT_MASK(1))
+#define ESR_ISS(esr)		((esr) & BIT_MASK(25))
 
 /* mpidr */
 #define MPIDR_AFFLVL_MASK	0xff

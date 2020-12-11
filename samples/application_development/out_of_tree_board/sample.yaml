@@ -4,7 +4,7 @@ sample:
 tests:
   sample.app_dev.out_of_tree:
     tags: out_of_tree
-    platform_whitelist: nrf52840dk_nrf52840 nrf52dk_nrf52832
+    platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
     harness: console
     harness_config:
       type: one_line

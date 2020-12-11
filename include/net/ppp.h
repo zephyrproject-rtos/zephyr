@@ -45,20 +45,20 @@ struct ppp_api {
 	struct net_if_api iface_api;
 
 	/** Start the device */
-	int (*start)(struct device *dev);
+	int (*start)(const struct device *dev);
 
 	/** Stop the device */
-	int (*stop)(struct device *dev);
+	int (*stop)(const struct device *dev);
 
 	/** Send a network packet */
-	int (*send)(struct device *dev, struct net_pkt *pkt);
+	int (*send)(const struct device *dev, struct net_pkt *pkt);
 
 #if defined(CONFIG_NET_STATISTICS_PPP)
 	/** Collect optional PPP specific statistics. This pointer
 	 * should be set by driver if statistics needs to be collected
 	 * for that driver.
 	 */
-	struct net_stats_ppp *(*get_stats)(struct device *dev);
+	struct net_stats_ppp *(*get_stats)(const struct device *dev);
 #endif
 };
 
@@ -80,6 +80,9 @@ enum ppp_protocol_type {
 	PPP_IPV6CP = 0x8057, /**< RFC 5072 */
 	PPP_CCP    = 0x80FD, /**< RFC 1962 */
 	PPP_LCP    = 0xc021, /**< RFC 1661 */
+	PPP_PAP    = 0xc023, /**< RFC 1334 */
+	PPP_CHAP   = 0xc223, /**< RFC 1334 */
+	PPP_EAP    = 0xc227, /**< RFC 2284 */
 };
 
 /**
@@ -342,6 +345,9 @@ struct lcp_options {
 
 	/** Maximum Receive Unit value */
 	uint16_t mru;
+
+	/** Which authentication protocol was negotiated (0 means none) */
+	uint16_t auth_proto;
 };
 
 struct ipcp_options {
@@ -424,6 +430,13 @@ struct ppp_context {
 	} ipv6cp;
 #endif
 
+#if defined(CONFIG_NET_L2_PPP_PAP)
+	struct {
+		/** Finite state machine for PAP */
+		struct ppp_fsm fsm;
+	} pap;
+#endif
+
 #if defined(CONFIG_NET_SHELL)
 	struct {
 		struct {
@@ -487,6 +500,12 @@ struct ppp_context {
 
 	/** IPV6CP open status (open / closed) */
 	uint16_t is_ipv6cp_open : 1;
+
+	/** PAP status (up / down) */
+	uint16_t is_pap_up : 1;
+
+	/** PAP open status (open / closed) */
+	uint16_t is_pap_open : 1;
 };
 
 /**

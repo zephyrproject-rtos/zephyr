@@ -40,7 +40,7 @@
 
 
 struct ak8975_data {
-	struct device *i2c;
+	const struct device *i2c;
 
 	int16_t x_sample;
 	int16_t y_sample;

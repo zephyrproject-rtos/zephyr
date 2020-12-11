@@ -24,4 +24,13 @@ config NRF5340_CPUAPP_ERRATUM19
 	  locked with the SPU.
 	  More info: https://infocenter.nordicsemi.com/topic/errata_nRF5340_EngA/ERR/nRF5340/EngineeringA/latest/anomaly_340_19.html?cp=3_0_1_0_1_15
 
+config IEEE802154_NRF5
+	default IEEE802154
+
+config NET_CONFIG_IEEE802154_DEV_NAME
+	default IEEE802154_NRF5_DRV_NAME
+
+config HEAP_MEM_POOL_SIZE
+	default 4096 if NRF_802154_SER_HOST
+
 endif # SOC_NRF5340_CPUAPP_QKAA

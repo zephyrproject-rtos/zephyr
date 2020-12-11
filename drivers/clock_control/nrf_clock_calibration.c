@@ -7,7 +7,7 @@
 #include <drivers/clock_control.h>
 #include "nrf_clock_calibration.h"
 #include <drivers/clock_control/nrf_clock_control.h>
-#include <hal/nrf_clock.h>
+#include <nrfx_clock.h>
 #include <logging/log.h>
 #include <stdlib.h>
 
@@ -48,7 +48,7 @@ static void cal_lf_callback(struct onoff_manager *mgr,
 static struct onoff_client cli;
 static struct onoff_manager *mgrs;
 
-static struct device *temp_sensor;
+static const struct device *temp_sensor;
 
 static void measure_temperature(struct k_work *work);
 static K_WORK_DEFINE(temp_measure_work, measure_temperature);
@@ -109,7 +109,7 @@ static void start_hw_cal(void)
 		*(volatile uint32_t *)0x40000C34 = 0x00000002;
 	}
 
-	nrf_clock_task_trigger(NRF_CLOCK, NRF_CLOCK_TASK_CAL);
+	nrfx_clock_calibration_start();
 	calib_skip_cnt = CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP;
 }
 
@@ -164,19 +164,6 @@ static void cal_hf_callback(struct onoff_manager *mgr,
 	} else {
 		k_work_submit(&temp_measure_work);
 	}
-}
-
-static void on_hw_cal_done(void)
-{
-	/* Workaround for Errata 192 */
-	if (IS_ENABLED(CONFIG_SOC_SERIES_NRF52X)) {
-		*(volatile uint32_t *)0x40000C34 = 0x00000000;
-	}
-
-	total_cnt++;
-	LOG_DBG("Calibration done.");
-
-	start_cycle();
 }
 
 /* Convert sensor value to 0.25'C units. */
@@ -239,7 +226,7 @@ static void measure_temperature(struct k_work *work)
 #define TEMP_NODE DT_INST(0, nordic_nrf_temp)
 
 #if DT_NODE_HAS_STATUS(TEMP_NODE, okay)
-static inline struct device *temp_device(void)
+static inline const struct device *temp_device(void)
 {
 	return device_get_binding(DT_LABEL(TEMP_NODE));
 }
@@ -249,19 +236,13 @@ static inline struct device *temp_device(void)
 
 void z_nrf_clock_calibration_init(struct onoff_manager *onoff_mgrs)
 {
-	/* Anomaly 36: After watchdog timeout reset, CPU lockup reset, soft
-	 * reset, or pin reset EVENTS_DONE and EVENTS_CTTO are not reset.
-	 */
-	nrf_clock_event_clear(NRF_CLOCK, NRF_CLOCK_EVENT_DONE);
-	nrf_clock_int_enable(NRF_CLOCK, NRF_CLOCK_INT_DONE_MASK);
-
 	mgrs = onoff_mgrs;
 	total_cnt = 0;
 	total_skips_cnt = 0;
 }
 
 #if CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP
-static int temp_sensor_init(struct device *arg)
+static int temp_sensor_init(const struct device *arg)
 {
 	temp_sensor = temp_device();
 
@@ -298,12 +279,12 @@ void z_nrf_clock_calibration_lfclk_stopped(void)
 	LOG_DBG("Calibration stopped");
 }
 
-void z_nrf_clock_calibration_isr(void)
+void z_nrf_clock_calibration_done_handler(void)
 {
-	if (nrf_clock_event_check(NRF_CLOCK, NRF_CLOCK_EVENT_DONE)) {
-		nrf_clock_event_clear(NRF_CLOCK, NRF_CLOCK_EVENT_DONE);
-		on_hw_cal_done();
-	}
+	total_cnt++;
+	LOG_DBG("Calibration done.");
+
+	start_cycle();
 }
 
 int z_nrf_clock_calibration_count(void)

@@ -11,15 +11,32 @@ config SPI
 config ILI9340
 	default y
 
+if KSCAN
+
+config I2C
+	default y
+
+config KSCAN_FT5336
+	default y
+
+# NOTE: Enable if IRQ line is available (requires to solder jumper)
+config KSCAN_FT5336_INTERRUPT
+	default n
+
+config KSCAN_INIT_PRIORITY
+	default 60
+
+endif # KSCAN
+
 if LVGL
 
 config LVGL_DISPLAY_DEV_NAME
 	default "ILI9340"
 
-config LVGL_HOR_RES
+config LVGL_HOR_RES_MAX
 	default 320
 
-config LVGL_VER_RES
+config LVGL_VER_RES_MAX
 	default 240
 
 config LVGL_VDB_SIZE
@@ -28,8 +45,37 @@ config LVGL_VDB_SIZE
 config LVGL_BITS_PER_PIXEL
 	default 24
 
+choice LVGL_COLOR_DEPTH
+	default LVGL_COLOR_DEPTH_32
+endchoice
+
+config KSCAN
+	default y
+
+config LVGL_POINTER_KSCAN
+	default y
+
+config LVGL_POINTER_KSCAN_DEV_NAME
+	default "FT5336"
+
+config LVGL_POINTER_KSCAN_SWAP_XY
+	default y
+
+config LVGL_POINTER_KSCAN_INVERT_X
+	default y
+
+config LVGL_POINTER_KSCAN_INVERT_Y
+	default y
+
 endif # LVGL
 
 endif # DISPLAY
+
+if DISK_ACCESS_SDHC
+
+config DISK_ACCESS_SPI_SDHC
+	default y
+
+endif # DISK_ACCESS_SDHC
 
 endif # SHIELD_ADAFRUIT_2_8_TFT_TOUCH_V2

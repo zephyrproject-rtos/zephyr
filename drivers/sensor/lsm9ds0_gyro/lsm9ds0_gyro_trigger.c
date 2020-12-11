@@ -20,11 +20,11 @@ extern struct lsm9ds0_gyro_data lsm9ds0_gyro_data;
 
 LOG_MODULE_DECLARE(LSM9DS0_GYRO, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline void setup_drdy(struct device *dev,
+static inline void setup_drdy(const struct device *dev,
 			      bool enable)
 {
-	struct lsm9ds0_gyro_data *data = dev->driver_data;
-	const struct lsm9ds0_gyro_config *cfg = dev->config_info;
+	struct lsm9ds0_gyro_data *data = dev->data;
+	const struct lsm9ds0_gyro_config *cfg = dev->config;
 
 	gpio_pin_interrupt_configure(data->gpio_drdy,
 				     cfg->gpio_drdy_int_pin,
@@ -33,13 +33,13 @@ static inline void setup_drdy(struct device *dev,
 				     : GPIO_INT_DISABLE);
 }
 
-int lsm9ds0_gyro_trigger_set(struct device *dev,
+int lsm9ds0_gyro_trigger_set(const struct device *dev,
 			     const struct sensor_trigger *trig,
 			     sensor_trigger_handler_t handler)
 {
-	struct lsm9ds0_gyro_data *data = dev->driver_data;
+	struct lsm9ds0_gyro_data *data = dev->data;
 	const struct lsm9ds0_gyro_config * const config =
-					 dev->config_info;
+					 dev->config;
 	uint8_t state;
 
 	if (trig->type == SENSOR_TRIG_DATA_READY) {
@@ -70,7 +70,7 @@ int lsm9ds0_gyro_trigger_set(struct device *dev,
 	return -ENOTSUP;
 }
 
-static void lsm9ds0_gyro_gpio_drdy_callback(struct device *dev,
+static void lsm9ds0_gyro_gpio_drdy_callback(const struct device *dev,
 					    struct gpio_callback *cb, uint32_t pins)
 {
 	struct lsm9ds0_gyro_data *data =
@@ -81,34 +81,32 @@ static void lsm9ds0_gyro_gpio_drdy_callback(struct device *dev,
 	k_sem_give(&data->sem);
 }
 
-static void lsm9ds0_gyro_thread_main(void *arg1, void *arg2, void *arg3)
+static void lsm9ds0_gyro_thread_main(struct lsm9ds0_gyro_data *data)
 {
-	struct device *dev = (struct device *) arg1;
-	struct lsm9ds0_gyro_data *data = dev->driver_data;
-
 	while (1) {
 		k_sem_take(&data->sem, K_FOREVER);
 
 		if (data->handler_drdy) {
-			data->handler_drdy(dev, &data->trigger_drdy);
+			data->handler_drdy(data->dev, &data->trigger_drdy);
 		}
 
-		setup_drdy(dev, true);
+		setup_drdy(data->dev, true);
 	}
 }
 
-int lsm9ds0_gyro_init_interrupt(struct device *dev)
+int lsm9ds0_gyro_init_interrupt(const struct device *dev)
 {
 	const struct lsm9ds0_gyro_config * const config =
-					   dev->config_info;
-	struct lsm9ds0_gyro_data *data = dev->driver_data;
+					   dev->config;
+	struct lsm9ds0_gyro_data *data = dev->data;
 
+	data->dev = dev;
 	k_sem_init(&data->sem, 0, UINT_MAX);
 
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_LSM9DS0_GYRO_THREAD_STACK_SIZE,
-			lsm9ds0_gyro_thread_main, dev, NULL, NULL,
-			K_PRIO_COOP(10), 0, K_NO_WAIT);
+			(k_thread_entry_t)lsm9ds0_gyro_thread_main,
+			data, NULL, NULL, K_PRIO_COOP(10), 0, K_NO_WAIT);
 
 	data->gpio_drdy = device_get_binding(config->gpio_drdy_dev_name);
 	if (!data->gpio_drdy) {

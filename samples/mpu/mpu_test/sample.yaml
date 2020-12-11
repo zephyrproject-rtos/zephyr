@@ -2,7 +2,7 @@ sample:
   name: MPU Test
 tests:
   sample.mpu.mpu_test:
-    arch_whitelist: arm
+    arch_allow: arm
     filter: CONFIG_CPU_HAS_MPU
     tags: mpu
     harness: keyboard

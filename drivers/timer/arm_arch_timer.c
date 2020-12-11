@@ -18,7 +18,7 @@
 static struct k_spinlock lock;
 static volatile uint64_t last_cycle;
 
-static void arm_arch_timer_compare_isr(void *arg)
+static void arm_arch_timer_compare_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -43,7 +43,7 @@ static void arm_arch_timer_compare_isr(void *arg)
 	z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? delta_ticks : 1);
 }
 
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 

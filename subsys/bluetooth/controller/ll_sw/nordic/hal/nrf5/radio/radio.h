@@ -98,7 +98,8 @@ void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt);
 uint32_t radio_ccm_is_done(void);
 uint32_t radio_ccm_mic_is_valid(void);
 
-void radio_ar_configure(uint32_t nirk, void *irk);
+void radio_ar_configure(uint32_t nirk, void *irk, uint8_t flags);
 uint32_t radio_ar_match_get(void);
 void radio_ar_status_reset(void);
 uint32_t radio_ar_has_match(void);
+void radio_ar_resolve(uint8_t *addr);

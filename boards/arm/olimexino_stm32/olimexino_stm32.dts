@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/f1/stm32f103Xb.dtsi>
+#include <st/f1/stm32f103r(8-b)tx-pinctrl.dtsi>
 
 / {
 	model = "Olimex OLIMEXINO-STM32 board";
@@ -51,33 +52,42 @@ uext_spi: &spi1 {};
 uext_serial: &usart1 {};
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	current-speed = <115200>;
 };
 
 &usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
 	current-speed = <115200>;
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &spi1 {
+	pinctrl-0 = <&spi1_nss_master_pa4 &spi1_sck_master_pa5
+		      &spi1_miso_master_pa6 &spi1_mosi_master_pa7>;
 	status = "okay";
 };
 
 &spi2 {
+	pinctrl-0 = <&spi2_nss_master_pb12 &spi2_sck_master_pb13
+		      &spi2_miso_master_pb14 &spi2_mosi_master_pb15>;
 	status = "okay";
 	cs-gpios = <&gpiod 2 GPIO_ACTIVE_HIGH>;
 
@@ -93,6 +103,7 @@ uext_serial: &usart1 {};
 &usb {
 	status = "okay";
 	disconnect-gpios = <&gpioc 12 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
 };
 
 &timers1 {
@@ -100,6 +111,7 @@ uext_serial: &usart1 {};
 
 	pwm1: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim1_ch1_pwm_pa8>;
 	};
 };
 
@@ -108,6 +120,7 @@ uext_serial: &usart1 {};
 };
 
 &can1 {
+	pinctrl-0 = <&can_rx_pb8 &can_tx_pb9>;
 	bus-speed = <125000>;
 	sjw = <1>;
 	prop-seg = <0>;

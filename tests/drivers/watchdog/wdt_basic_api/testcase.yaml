@@ -8,9 +8,9 @@ tests:
     depends_on: watchdog
     tags: drivers watchdog
     extra_args: CONF_FILE="prj.conf;nucleo_l496zg.conf"
-    platform_whitelist: nucleo_l496zg
+    platform_allow: nucleo_l496zg
   drivers.watchdog.mec15xxevb_assy6853:
     depends_on: watchdog
     tags: drivers watchdog
     build_only: true
-    platform_whitelist: mec15xxevb_assy6853
+    platform_allow: mec15xxevb_assy6853

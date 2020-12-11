@@ -6,11 +6,12 @@
 
 /dts-v1/;
 #include <st/f4/stm32f413Xh.dtsi>
+#include <st/f4/stm32f413z(g-h)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32F413ZH-NUCLEO board";
-	compatible = "st,stm32f413zh-nucleo", "st,stm32f413";
+	compatible = "st,stm32f413zh-nucleo";
 
 	chosen {
 		zephyr,console = &usart3;
@@ -52,25 +53,31 @@
 };
 
 &usart3 {
+	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart6 {
+	pinctrl-0 = <&usart6_tx_pg14 &usart6_rx_pg9>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
+		     &spi1_miso_pa6 &spi1_mosi_pa7>;
 	status = "okay";
 };
 
 &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	status = "okay";
 };
 
@@ -79,6 +86,7 @@
 
 	pwm2: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim2_ch1_pa0>;
 	};
 };
 

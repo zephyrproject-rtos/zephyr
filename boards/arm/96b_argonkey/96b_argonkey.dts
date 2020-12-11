@@ -6,10 +6,11 @@
 
 /dts-v1/;
 #include <st/f4/stm32f412Xg.dtsi>
+#include <st/f4/stm32f412c(e-g)ux-pinctrl.dtsi>
 
 / {
 	model = "Tocoding Argonkey 96boards";
-	compatible = "tocoding,argonkey", "st,stm32f412";
+	compatible = "tocoding,argonkey";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -46,15 +47,24 @@
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
+&spi1_nss_pa4 { slew-rate = "very-high-speed"; };
+
 &spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
+		     &spi1_miso_pa6 &spi1_mosi_pa7>;
 	status = "okay";
 };
 
+&spi2_nss_pb12 { slew-rate = "very-high-speed"; };
+
 &spi2 {
+	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13
+		     &spi2_miso_pb14 &spi2_mosi_pb15>;
 	status = "okay";
 
 	/* ST Microelectronics LSM6DSL accel/gyro sensor */
@@ -73,6 +83,7 @@
 
 &i2s5 {
 	status = "okay";
+	pinctrl-0 = <&i2s5_ck_pb0 &i2s5_sd_pb8>;
 
 	mp34dt05@0 {
 		compatible = "st,mpxxdtyy";
@@ -82,11 +93,13 @@
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb9>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
@@ -111,6 +124,7 @@
 };
 
 &i2c3 {
+	pinctrl-0 = <&i2c3_scl_pa8 &i2c3_sda_pb4>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 

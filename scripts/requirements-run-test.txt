@@ -6,7 +6,7 @@
 pyserial
 
 # used to flash & debug various boards
-pyocd>=0.24.0
+pyocd>=0.28.0
 
 # used by sanitycheck for board/hardware map
 tabulate

@@ -17,3 +17,5 @@ supported:
   - i2c
   - pwm
   - adc
+  - netif:eth
+  - spi

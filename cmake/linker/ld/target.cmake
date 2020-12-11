@@ -51,6 +51,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     -o ${linker_script_gen}
     VERBATIM
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    COMMAND_EXPAND_LISTS
   )
 endmacro()
 

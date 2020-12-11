@@ -259,6 +259,7 @@
 		rtc0: rtc@4000b000 {
 			compatible = "nordic,nrf-rtc";
 			reg = <0x4000b000 0x1000>;
+			cc-num = <3>;
 			interrupts = <11 1>;
 			status = "okay";
 			clock-frequency = <32768>;
@@ -269,6 +270,7 @@
 		rtc1: rtc@40011000 {
 			compatible = "nordic,nrf-rtc";
 			reg = <0x40011000 0x1000>;
+			cc-num = <4>;
 			interrupts = <17 1>;
 			status = "okay";
 			clock-frequency = <32768>;
@@ -279,6 +281,7 @@
 		rtc2: rtc@40024000 {
 			compatible = "nordic,nrf-rtc";
 			reg = <0x40024000 0x1000>;
+			cc-num = <4>;
 			interrupts = <36 1>;
 			status = "okay";
 			clock-frequency = <32768>;
@@ -290,6 +293,7 @@
 			compatible = "nordic,nrf-timer";
 			status = "okay";
 			reg = <0x40008000 0x1000>;
+			cc-num = <4>;
 			interrupts = <8 1>;
 			prescaler = <0>;
 			label = "TIMER_0";
@@ -299,6 +303,7 @@
 			compatible = "nordic,nrf-timer";
 			status = "okay";
 			reg = <0x40009000 0x1000>;
+			cc-num = <4>;
 			interrupts = <9 1>;
 			prescaler = <0>;
 			label = "TIMER_1";
@@ -308,6 +313,7 @@
 			compatible = "nordic,nrf-timer";
 			status = "okay";
 			reg = <0x4000a000 0x1000>;
+			cc-num = <4>;
 			interrupts = <10 1>;
 			prescaler = <0>;
 			label = "TIMER_2";
@@ -317,6 +323,7 @@
 			compatible = "nordic,nrf-timer";
 			status = "okay";
 			reg = <0x4001a000 0x1000>;
+			cc-num = <6>;
 			interrupts = <26 1>;
 			prescaler = <0>;
 			label = "TIMER_3";
@@ -326,6 +333,7 @@
 			compatible = "nordic,nrf-timer";
 			status = "okay";
 			reg = <0x4001b000 0x1000>;
+			cc-num = <6>;
 			interrupts = <27 1>;
 			prescaler = <0>;
 			label = "TIMER_4";

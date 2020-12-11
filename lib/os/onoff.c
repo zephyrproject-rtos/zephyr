@@ -217,7 +217,7 @@ static int process_recheck(struct onoff_manager *mgr)
 	    && !sys_slist_is_empty(&mgr->clients)) {
 		evt = EVT_START;
 	} else if ((state == ONOFF_STATE_ON)
-		   && (mgr->refs == 0)) {
+		   && (mgr->refs == 0U)) {
 		evt = EVT_STOP;
 	} else if ((state == ONOFF_STATE_ERROR)
 		   && !sys_slist_is_empty(&mgr->clients)) {
@@ -597,6 +597,56 @@ int onoff_monitor_unregister(struct onoff_manager *mgr,
 	}
 
 	k_spin_unlock(&mgr->lock, key);
+
+	return rv;
+}
+
+int onoff_sync_lock(struct onoff_sync_service *srv,
+		    k_spinlock_key_t *keyp)
+{
+	*keyp = k_spin_lock(&srv->lock);
+	return srv->count;
+}
+
+int onoff_sync_finalize(struct onoff_sync_service *srv,
+			k_spinlock_key_t key,
+			struct onoff_client *cli,
+			int res,
+			bool on)
+{
+	uint32_t state = ONOFF_STATE_ON;
+
+	/* Clear errors visible when locked.  If they are to be
+	 * preserved the caller must finalize with the previous
+	 * error code.
+	 */
+	if (srv->count < 0) {
+		srv->count = 0;
+	}
+	if (res < 0) {
+		srv->count = res;
+		state = ONOFF_STATE_ERROR;
+	} else if (on) {
+		srv->count += 1;
+	} else {
+		srv->count -= 1;
+		/* state would be either off or on, but since
+		 * callbacks are used only when turning on don't
+		 * bother changing it.
+		 */
+	}
+
+	int rv = srv->count;
+
+	k_spin_unlock(&srv->lock, key);
+
+	if (cli) {
+		/* Detect service mis-use: onoff does not callback on transition
+		 * to off, so no client should have been passed.
+		 */
+		__ASSERT_NO_MSG(on);
+		notify_one(NULL, cli, state, res);
+	}
 
 	return rv;
 }

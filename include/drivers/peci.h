@@ -192,10 +192,10 @@ struct peci_msg {
  *
  * (Internal use only.)
  */
-typedef int (*peci_config_t)(struct device *dev, uint32_t bitrate);
-typedef int (*peci_transfer_t)(struct device *dev, struct peci_msg *msg);
-typedef int (*peci_disable_t)(struct device *dev);
-typedef int (*peci_enable_t)(struct device *dev);
+typedef int (*peci_config_t)(const struct device *dev, uint32_t bitrate);
+typedef int (*peci_transfer_t)(const struct device *dev, struct peci_msg *msg);
+typedef int (*peci_disable_t)(const struct device *dev);
+typedef int (*peci_enable_t)(const struct device *dev);
 
 struct peci_driver_api {
 	peci_config_t config;
@@ -218,13 +218,14 @@ struct peci_driver_api {
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-__syscall int peci_config(struct device *dev, uint32_t bitrate);
+__syscall int peci_config(const struct device *dev, uint32_t bitrate);
 
-static inline int z_impl_peci_config(struct device *dev, uint32_t bitrate)
+static inline int z_impl_peci_config(const struct device *dev,
+				     uint32_t bitrate)
 {
 	struct peci_driver_api *api;
 
-	api = (struct peci_driver_api *)dev->driver_api;
+	api = (struct peci_driver_api *)dev->api;
 	return api->config(dev, bitrate);
 }
 
@@ -236,13 +237,13 @@ static inline int z_impl_peci_config(struct device *dev, uint32_t bitrate)
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-__syscall int peci_enable(struct device *dev);
+__syscall int peci_enable(const struct device *dev);
 
-static inline int z_impl_peci_enable(struct device *dev)
+static inline int z_impl_peci_enable(const struct device *dev)
 {
 	struct peci_driver_api *api;
 
-	api = (struct peci_driver_api *)dev->driver_api;
+	api = (struct peci_driver_api *)dev->api;
 	return api->enable(dev);
 }
 
@@ -254,13 +255,13 @@ static inline int z_impl_peci_enable(struct device *dev)
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-__syscall int peci_disable(struct device *dev);
+__syscall int peci_disable(const struct device *dev);
 
-static inline int z_impl_peci_disable(struct device *dev)
+static inline int z_impl_peci_disable(const struct device *dev)
 {
 	struct peci_driver_api *api;
 
-	api = (struct peci_driver_api *)dev->driver_api;
+	api = (struct peci_driver_api *)dev->api;
 	return api->disable(dev);
 }
 
@@ -274,14 +275,14 @@ static inline int z_impl_peci_disable(struct device *dev)
  * @retval Negative errno code if failure.
  */
 
-__syscall int peci_transfer(struct device *dev, struct peci_msg *msg);
+__syscall int peci_transfer(const struct device *dev, struct peci_msg *msg);
 
-static inline int z_impl_peci_transfer(struct device *dev,
+static inline int z_impl_peci_transfer(const struct device *dev,
 				       struct peci_msg *msg)
 {
 	struct peci_driver_api *api;
 
-	api = (struct peci_driver_api *)dev->driver_api;
+	api = (struct peci_driver_api *)dev->api;
 	return api->transfer(dev, msg);
 }
 

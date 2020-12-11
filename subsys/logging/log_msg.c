@@ -8,8 +8,8 @@
 #include <logging/log_msg.h>
 #include <logging/log_ctrl.h>
 #include <logging/log_core.h>
+#include <sys/__assert.h>
 #include <string.h>
-#include <assert.h>
 
 BUILD_ASSERT((sizeof(struct log_msg_ids) == sizeof(uint16_t)),
 	     "Structure must fit in 2 bytes");
@@ -149,6 +149,7 @@ static void msg_free(struct log_msg *msg)
 		if (log_is_strdup(str)) {
 			log_free((void *)(str));
 		}
+	} else {
 	}
 
 	if (msg->hdr.params.generic.ext == 1) {
@@ -444,7 +445,7 @@ static void log_msg_hexdump_data_op(struct log_msg *msg,
 		}
 	}
 
-	while (req_len > 0) {
+	while ((req_len > 0) && (cont != NULL)) {
 		chunk_len = HEXDUMP_BYTES_CONT_MSG - offset;
 		cpy_len = req_len > chunk_len ? chunk_len : req_len;
 

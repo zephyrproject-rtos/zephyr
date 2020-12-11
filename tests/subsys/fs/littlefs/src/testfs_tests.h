@@ -27,4 +27,7 @@ void test_lfs_perf(void);
 /* Test fs_open flags */
 void test_fs_open_flags_lfs(void);
 
+/* Test fs_mount flags */
+void test_fs_mount_flags(void);
+
 #endif /* _ZEPHYR_TESTS_SUBSYS_FS_LITTLEFS_TESTFS_TESTS_H_ */

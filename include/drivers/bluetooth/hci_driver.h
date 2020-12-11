@@ -66,7 +66,7 @@ static inline uint8_t bt_hci_evt_get_flags(uint8_t evt)
 #if defined(CONFIG_BT_CONN)
 	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
 	case BT_HCI_EVT_DATA_BUF_OVERFLOW:
-		/* fallthrough */
+		__fallthrough;
 #endif /* defined(CONFIG_BT_CONN) */
 	case BT_HCI_EVT_CMD_COMPLETE:
 	case BT_HCI_EVT_CMD_STATUS:
@@ -208,7 +208,7 @@ int bt_hci_driver_register(const struct bt_hci_driver *drv);
  *
  * @return 0 on success, negative error value on failure
  */
-int bt_hci_transport_setup(struct device *dev);
+int bt_hci_transport_setup(const struct device *dev);
 
 /** Allocate an HCI event buffer.
  *

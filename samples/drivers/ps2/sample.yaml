@@ -9,4 +9,5 @@ tests:
         ordered: true
         regex:
             - "mb data(.*)"
+        fixture: fixture_connect_mouse
     depends_on: ps2

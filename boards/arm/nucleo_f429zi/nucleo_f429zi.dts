@@ -6,11 +6,12 @@
 
 /dts-v1/;
 #include <st/f4/stm32f429Xi.dtsi>
+#include <st/f4/stm32f429zitx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32F429ZI-NUCLEO board";
-	compatible = "st,stm32f429zi-nucleo", "st,stm32f429";
+	compatible = "st,stm32f429zi-nucleo";
 
 	chosen {
 		zephyr,console = &usart3;
@@ -53,25 +54,36 @@
 	};
 };
 
+&adc1 {
+	pinctrl-0 = <&adc1_in0_pa0>;
+	status = "okay";
+};
+
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
+		     &spi1_miso_pa6 &spi1_mosi_pa7>;
 	status = "okay";
 };
 
 &usart3 {
+	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
 	current-speed = <115200>;
 	status = "okay";
 };
 &usart6 {
+	pinctrl-0 = <&usart6_tx_pg14 &usart6_rx_pg9>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	status = "okay";
 };
 
@@ -80,6 +92,7 @@
 
 	pwm1: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim1_ch3_pe13>;
 	};
 };
 
@@ -97,12 +110,21 @@
 
 &mac {
 	status = "okay";
+	pinctrl-0 = <&eth_mdc_pc1
+		     &eth_rxd0_pc4
+		     &eth_rxd1_pc5
+		     &eth_ref_clk_pa1
+		     &eth_mdio_pa2
+		     &eth_crs_dv_pa7
+		     &eth_tx_en_pg11
+		     &eth_txd0_pg13
+		     &eth_txd1_pb13>;
 };
 
 &flash0 {
 	/*
 	 * For more information, see:
-	 * http://docs.zephyrproject.org/devices/dts/flash_partitions.html
+	 * https://docs.zephyrproject.org/latest/reference/devicetree/index.html#fixed-flash-partitions
 	 */
 	partitions {
 		compatible = "fixed-partitions";

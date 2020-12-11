@@ -54,6 +54,22 @@ config NET_SOCKETS_SOCKOPT_TLS
 	  Enable TLS socket option support which automatically establishes
 	  a TLS connection to the remote host.
 
+config NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH
+	bool "Set Maximum Fragment Length (MFL)"
+	default y
+	help
+	  Call mbedtls_ssl_conf_max_frag_len() on created TLS context
+	  configuration, so that Maximum Fragment Length (MFL) will be sent to
+	  peer using RFC 6066 max_fragment_length extension.
+
+	  Maximum Fragment Length (MFL) value is automatically chosen based on
+	  MBEDTLS_SSL_OUT_CONTENT_LEN and MBEDTLS_SSL_IN_CONTENT_LEN mbed TLS
+	  macros (which are configured by CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN in
+	  case of default mbed TLS config).
+
+	  This is mostly useful for TLS client side to tell TLS server what is
+	  the maximum supported receive record length.
+
 config NET_SOCKETS_ENABLE_DTLS
 	bool "Enable DTLS socket support [EXPERIMENTAL]"
 	depends on NET_SOCKETS_SOCKOPT_TLS
@@ -100,6 +116,15 @@ config NET_SOCKETS_TLS_MAX_CIPHERSUITES
 	  By default, all ciphersuites that are available in the system are
 	  available to the socket.
 
+config NET_SOCKETS_TLS_MAX_APP_PROTOCOLS
+	int "Maximum number of supported application layer protocols"
+	default 2
+	depends on NET_SOCKETS_SOCKOPT_TLS && MBEDTLS_SSL_ALPN
+	help
+	  This variable sets maximum number of supported application layer
+	  protocols over TLS/DTL that can be set explicitly by a socket option.
+	  By default, no supported application layer protocol is set.
+
 config NET_SOCKETS_OFFLOAD
 	bool "Offload Socket APIs [EXPERIMENTAL]"
 	help
@@ -113,6 +138,15 @@ config NET_SOCKETS_OFFLOAD
 	  See NET_OFFLOAD for a more deeply integrated approach which offloads
 	  from the net_context() API within the Zephyr IP stack.
 
+config NET_SOCKETS_OFFLOAD_TLS
+	bool "Offload TLS socket calls to the offloaded sockets"
+	depends on NET_SOCKETS_OFFLOAD
+	default y
+	help
+	  If enabled, the offloading engine is expected to handle TLS/DTLS
+	  socket calls. Othwerwise, Zephyrs native TLS socket implementation
+	  will be used, and only TCP/UDP socket calls will be offloaded.
+
 config NET_SOCKETS_PACKET
 	bool "Enable packet socket support"
 	depends on NET_L2_ETHERNET
@@ -123,6 +157,17 @@ config NET_SOCKETS_PACKET
 	  responsibility to provide all the headers (e.g L2, L3 and so on)
 	  while sending. While receiving, packets (including all the headers)
 	  will be feed to sockets as it as from the driver.
+
+config NET_SOCKETS_PACKET_DGRAM
+	bool "Enable packet socket SOCK_DGRAM support"
+	depends on NET_SOCKETS_PACKET
+	default y
+	help
+	  For AF_PACKET sockets with SOCK_DGRAM type, the L2 header
+	  is removed before the packet is passed to the user.  Packets sent
+	  through a SOCK_DGRAM packet socket get a suitable L2 header based
+	  on the information in the sockaddr_ll destination address before
+	  they are queued.
 
 config NET_SOCKETS_CAN
 	bool "Enable socket CAN support [EXPERIMENTAL]"

@@ -134,7 +134,7 @@ int riscv_plic_get_irq(void)
 	return save_irq;
 }
 
-static void plic_irq_handler(void *arg)
+static void plic_irq_handler(const void *arg)
 {
 	volatile struct plic_regs_t *regs =
 	    (volatile struct plic_regs_t *) PLIC_REG;
@@ -178,7 +178,7 @@ static void plic_irq_handler(void *arg)
  * @brief Initialize the Platform Level Interrupt Controller
  * @return N/A
  */
-static int plic_init(struct device *dev)
+static int plic_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

@@ -10,13 +10,13 @@
 /* Application main Thread */
 void main(void)
 {
-	struct device *dev;
+	const struct device *dev;
 	struct dummy_driver_api *api;
 	int ret, val;
 
 	printk("Device PM sample app start\n");
 	dev = device_get_binding(DUMMY_DRIVER_NAME);
-	api = (struct dummy_driver_api *)dev->driver_api;
+	api = (struct dummy_driver_api *)dev->api;
 	ret = api->open(dev);
 	val = 10;
 	ret = api->write(dev, val);

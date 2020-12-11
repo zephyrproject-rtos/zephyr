@@ -6,8 +6,10 @@
  */
 
 #include <zephyr.h>
+#include <soc.h>
 #include <bluetooth/hci.h>
 
+#include "hal/cpu.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
@@ -41,13 +43,25 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_scan
 #include "common/log.h"
-#include <soc.h>
 #include "hal/debug.h"
 
 static int init_reset(void);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
 		      void *param);
 static uint8_t disable(uint8_t handle);
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+static uint8_t is_scan_update(uint8_t handle, uint16_t duration,
+			      uint16_t period, struct ll_scan_set **scan,
+			      struct node_rx_pdu **node_rx_scan_term);
+static uint8_t duration_period_setup(struct ll_scan_set *scan,
+				     uint16_t duration, uint16_t period,
+				     struct node_rx_pdu **node_rx_scan_term);
+static uint8_t duration_period_update(struct ll_scan_set *scan,
+				      uint8_t is_update);
+static void ticker_op_ext_stop_cb(uint32_t status, void *param);
+static void ext_disabled_cb(void *param);
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 static struct ll_scan_set ll_scan[BT_CTLR_SCAN_SET];
 
@@ -102,12 +116,20 @@ uint8_t ll_scan_params_set(uint8_t type, uint16_t interval, uint16_t window,
 	return 0;
 }
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+uint8_t ll_scan_enable(uint8_t enable, uint16_t duration, uint16_t period)
+{
+	struct node_rx_pdu *node_rx_scan_term = NULL;
+	uint8_t is_update_coded = 0U;
+	uint8_t is_update_1m = 0U;
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
 uint8_t ll_scan_enable(uint8_t enable)
 {
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 	struct ll_scan_set *scan_coded = NULL;
-	struct ll_scan_set *scan;
 	uint8_t own_addr_type = 0U;
 	uint8_t is_coded_phy = 0U;
+	struct ll_scan_set *scan;
 	uint8_t err;
 
 	if (!enable) {
@@ -128,13 +150,25 @@ uint8_t ll_scan_enable(uint8_t enable)
 
 	scan = ull_scan_is_disabled_get(SCAN_HANDLE_1M);
 	if (!scan) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		is_update_1m = is_scan_update(SCAN_HANDLE_1M, duration, period,
+					      &scan, &node_rx_scan_term);
+		if (!is_update_1m)
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+		{
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
 	}
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_CTLR_PHY_CODED)
 	scan_coded = ull_scan_is_disabled_get(SCAN_HANDLE_PHY_CODED);
 	if (!scan_coded) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
+		is_update_coded = is_scan_update(SCAN_HANDLE_PHY_CODED,
+						 duration, period, &scan_coded,
+						 &node_rx_scan_term);
+		if (!is_update_coded) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
 	}
 
 	own_addr_type = scan_coded->own_addr_type;
@@ -142,13 +176,34 @@ uint8_t ll_scan_enable(uint8_t enable)
 			BT_HCI_LE_EXT_SCAN_PHY_CODED);
 #endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_CTLR_PHY_CODED */
 
-	if ((IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) && is_coded_phy &&
-	     (own_addr_type & 0x1)) ||
-	    (scan->own_addr_type & 0x1)) {
+	if ((is_coded_phy && (own_addr_type & 0x1)) ||
+	    (!is_coded_phy && (scan->own_addr_type & 0x1))) {
 		if (!mem_nz(ll_addr_get(1, NULL), BDADDR_SIZE)) {
 			return BT_HCI_ERR_INVALID_PARAM;
 		}
 	}
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	if (!is_coded_phy || (scan->lll.phy & BT_HCI_LE_EXT_SCAN_PHY_1M))
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
+	{
+		err = duration_period_setup(scan, duration, period,
+					    &node_rx_scan_term);
+		if (err) {
+			return err;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) &&
+	    is_coded_phy) {
+		err = duration_period_setup(scan_coded, duration, period,
+					    &node_rx_scan_term);
+		if (err) {
+			return err;
+		}
+	}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	struct lll_scan *lll;
@@ -174,11 +229,35 @@ uint8_t ll_scan_enable(uint8_t enable)
 		ull_filter_rpa_update(false);
 		lll->rpa_gen = 1;
 	}
-#endif
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_CTLR_PHY_CODED)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
 	if (!is_coded_phy || (scan->lll.phy & BT_HCI_LE_EXT_SCAN_PHY_1M))
-#endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_CTLR_PHY_CODED */
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
+	{
+		err = duration_period_update(scan, is_update_1m);
+		if (err) {
+			return err;
+		} else if (is_update_1m) {
+			return 0;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) &&
+	    is_coded_phy) {
+		err = duration_period_update(scan_coded, is_update_coded);
+		if (err) {
+			return err;
+		} else if (is_update_coded) {
+			return 0;
+		}
+	}
+
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	if (!is_coded_phy || (scan->lll.phy & BT_HCI_LE_EXT_SCAN_PHY_1M))
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 	{
 		err = ull_scan_enable(scan);
 		if (err) {
@@ -187,6 +266,7 @@ uint8_t ll_scan_enable(uint8_t enable)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
+	    IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) &&
 	    is_coded_phy) {
 		err = ull_scan_enable(scan_coded);
 		if (err) {
@@ -258,7 +338,8 @@ void ull_scan_params_set(struct lll_scan *lll, uint8_t type, uint16_t interval,
 	lll->type = type;
 	lll->filter_policy = filter_policy;
 	lll->interval = interval;
-	lll->ticks_window = HAL_TICKER_US_TO_TICKS((uint64_t)window * 625U);
+	lll->ticks_window = HAL_TICKER_US_TO_TICKS((uint64_t)window *
+						   SCAN_INTERVAL_UNIT_US);
 }
 
 uint8_t ull_scan_enable(struct ll_scan_set *scan)
@@ -274,14 +355,11 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 	lll->init_addr_type = scan->own_addr_type;
 	ll_addr_get(lll->init_addr_type, lll->init_addr);
 
-#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
-	lll->tx_pwr_lvl = RADIO_TXP_DEFAULT;
-#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
-
 	ull_hdr_init(&scan->ull);
 	lll_hdr_init(lll, scan);
 
-	ticks_interval = HAL_TICKER_US_TO_TICKS((uint64_t)lll->interval * 625U);
+	ticks_interval = HAL_TICKER_US_TO_TICKS((uint64_t)lll->interval *
+						SCAN_INTERVAL_UNIT_US);
 
 	/* TODO: active_to_start feature port */
 	scan->evt.ticks_active_to_start = 0U;
@@ -297,10 +375,14 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 			(lll->ticks_window +
 			 HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US));
 	} else {
-		scan->evt.ticks_slot =
-			(ticks_interval -
-			 HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US));
-		lll->ticks_window = 0;
+		if (IS_ENABLED(CONFIG_BT_CTLR_SCAN_UNRESERVED)) {
+			scan->evt.ticks_slot = 0U;
+		} else {
+			scan->evt.ticks_slot = ticks_interval -
+				HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
+		}
+
+		lll->ticks_window = 0U;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
@@ -339,7 +421,8 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
 			   TICKER_USER_ID_THREAD, TICKER_ID_SCAN_BASE + handle,
 			   ticks_anchor, 0, ticks_interval,
-			   HAL_TICKER_REMAINDER((uint64_t)lll->interval * 625U),
+			   HAL_TICKER_REMAINDER((uint64_t)lll->interval *
+						SCAN_INTERVAL_UNIT_US),
 			   TICKER_NULL_LAZY,
 			   (scan->evt.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, scan,
@@ -365,33 +448,103 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 
 uint8_t ull_scan_disable(uint8_t handle, struct ll_scan_set *scan)
 {
-	uint32_t volatile ret_cb;
-	void *mark;
-	uint32_t ret;
+	int err;
 
-	mark = ull_disable_mark(scan);
-	LL_ASSERT(mark == scan);
-
-	ret_cb = TICKER_STATUS_BUSY;
-	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
-			  TICKER_ID_SCAN_BASE + handle,
-			  ull_ticker_status_give, (void *)&ret_cb);
-	ret = ull_ticker_status_take(ret, &ret_cb);
-	if (ret) {
-		mark = ull_disable_unmark(scan);
-		LL_ASSERT(mark == scan);
-
+	err = ull_ticker_stop_with_mark(TICKER_ID_SCAN_BASE + handle,
+					scan, &scan->lll);
+	LL_ASSERT(err == 0 || err == -EALREADY);
+	if (err) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	ret = ull_disable(&scan->lll);
-	LL_ASSERT(!ret);
-
-	mark = ull_disable_unmark(scan);
-	LL_ASSERT(mark == scan);
-
 	return 0;
 }
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+void ull_scan_done(struct node_rx_event_done *done)
+{
+	struct node_rx_hdr *rx_hdr;
+	struct ll_scan_set *scan;
+	struct lll_scan *lll;
+	uint8_t handle;
+	uint32_t ret;
+
+	lll = (void *)HDR_ULL2LLL(done->param);
+	scan = (void *)HDR_LLL2EVT(lll);
+	if (likely(scan->duration_lazy || !lll->duration_reload ||
+		   lll->duration_expire)) {
+		return;
+	}
+
+	rx_hdr = (void *)scan->node_rx_scan_term;
+	if (!rx_hdr) {
+		/* Prevent generation if another scan instance already did so.
+		 */
+		return;
+	}
+
+	handle = ull_scan_handle_get(scan);
+	LL_ASSERT(handle < BT_CTLR_SCAN_SET);
+
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	/* Reset the singular node rx buffer, so that it does not get used if
+	 * ull_scan_done get called by the other scan instance.
+	 */
+	struct ll_scan_set *scan_other;
+
+	if (handle == SCAN_HANDLE_1M) {
+		scan_other = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
+	} else {
+		scan_other = ull_scan_set_get(SCAN_HANDLE_1M);
+	}
+	scan_other->node_rx_scan_term = NULL;
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
+
+	rx_hdr->type = NODE_RX_TYPE_EXT_SCAN_TERMINATE;
+	rx_hdr->handle = handle;
+
+	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+			  (TICKER_ID_SCAN_BASE + handle), ticker_op_ext_stop_cb,
+			  scan);
+
+	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+		  (ret == TICKER_STATUS_BUSY));
+}
+
+void ull_scan_term_dequeue(uint8_t handle)
+{
+	struct ll_scan_set *scan;
+
+	scan = ull_scan_set_get(handle);
+	LL_ASSERT(scan);
+
+	scan->is_enabled = 0U;
+
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	if (handle == SCAN_HANDLE_1M) {
+		struct ll_scan_set *scan_coded;
+
+		scan_coded = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
+		if (scan_coded->lll.phy & BT_HCI_LE_EXT_SCAN_PHY_CODED) {
+			uint8_t err;
+
+			err = disable(SCAN_HANDLE_PHY_CODED);
+			LL_ASSERT(!err);
+		}
+	} else {
+		struct ll_scan_set *scan_1m;
+
+		scan_1m = ull_scan_set_get(SCAN_HANDLE_1M);
+		if (scan_1m->lll.phy & BT_HCI_LE_EXT_SCAN_PHY_1M) {
+			uint8_t err;
+
+			err = disable(SCAN_HANDLE_1M);
+			LL_ASSERT(!err);
+		}
+	}
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
+}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 struct ll_scan_set *ull_scan_set_get(uint8_t handle)
 {
@@ -410,6 +563,18 @@ uint8_t ull_scan_handle_get(struct ll_scan_set *scan)
 uint8_t ull_scan_lll_handle_get(struct lll_scan *lll)
 {
 	return ull_scan_handle_get((void *)lll->hdr.parent);
+}
+
+struct ll_scan_set *ull_scan_is_valid_get(struct ll_scan_set *scan)
+{
+	if (((uint8_t *)scan < (uint8_t *)ll_scan) ||
+	    ((uint8_t *)scan > ((uint8_t *)ll_scan +
+				(sizeof(struct ll_scan_set) *
+				 (BT_CTLR_SCAN_SET - 1))))) {
+		return NULL;
+	}
+
+	return scan;
 }
 
 struct ll_scan_set *ull_scan_is_enabled_get(uint8_t handle)
@@ -470,20 +635,74 @@ uint32_t ull_scan_filter_pol_get(uint8_t handle)
 
 static int init_reset(void)
 {
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL) && \
+	!defined(CONFIG_BT_CTLR_ADV_EXT)
+	ll_scan[0].lll.tx_pwr_lvl = RADIO_TXP_DEFAULT;
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL && !CONFIG_BT_CTLR_ADV_EXT */
+
 	return 0;
 }
 
-static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
-		      void *param)
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
+		      uint16_t lazy, void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_scan_prepare};
 	static struct lll_prepare_param p;
-	struct ll_scan_set *scan = param;
+	struct ll_scan_set *scan;
+	struct lll_scan *lll;
 	uint32_t ret;
 	uint8_t ref;
 
 	DEBUG_RADIO_PREPARE_O(1);
+
+	scan = param;
+	lll = &scan->lll;
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	if (lll->duration_expire) {
+		uint16_t elapsed;
+
+		elapsed = lazy + 1;
+		if (lll->duration_expire > elapsed) {
+			lll->duration_expire -= elapsed;
+		} else {
+			if (scan->duration_lazy) {
+				uint8_t handle;
+				uint16_t duration_lazy;
+
+				duration_lazy = lll->duration_expire +
+						scan->duration_lazy - elapsed;
+
+				handle = ull_scan_handle_get(scan);
+				LL_ASSERT(handle < BT_CTLR_SCAN_SET);
+
+				ret = ticker_update(TICKER_INSTANCE_ID_CTLR,
+						    TICKER_USER_ID_ULL_HIGH,
+						    (TICKER_ID_SCAN_BASE +
+						     handle), 0, 0, 0, 0,
+						    duration_lazy, 0,
+						    NULL, NULL);
+				LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+					  (ret == TICKER_STATUS_BUSY));
+			}
+
+			lll->duration_expire = 0U;
+		}
+	} else if (lll->duration_reload && lazy) {
+		uint8_t handle;
+
+		handle = ull_scan_handle_get(scan);
+		LL_ASSERT(handle < BT_CTLR_SCAN_SET);
+
+		lll->duration_expire = lll->duration_reload;
+		ret = ticker_update(TICKER_INSTANCE_ID_CTLR,
+				    TICKER_USER_ID_ULL_HIGH,
+				    (TICKER_ID_SCAN_BASE + handle),
+				    0, 0, 0, 0, 1, 1, NULL, NULL);
+		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+			  (ret == TICKER_STATUS_BUSY));
+	}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	/* Increment prepare reference count */
 	ref = ull_ref_inc(&scan->ull);
@@ -493,7 +712,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t laz
 	p.ticks_at_expire = ticks_at_expire;
 	p.remainder = remainder;
 	p.lazy = lazy;
-	p.param = &scan->lll;
+	p.param = lll;
 	mfy.param = &p;
 
 	/* Kick LLL prepare */
@@ -503,6 +722,166 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t laz
 
 	DEBUG_RADIO_PREPARE_O(1);
 }
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+static uint8_t is_scan_update(uint8_t handle, uint16_t duration,
+			      uint16_t period, struct ll_scan_set **scan,
+			      struct node_rx_pdu **node_rx_scan_term)
+{
+	*scan = ull_scan_set_get(handle);
+	*node_rx_scan_term = (void *)(*scan)->node_rx_scan_term;
+	return duration && period && (*scan)->lll.duration_reload &&
+	       (*scan)->duration_lazy;
+}
+
+static uint8_t duration_period_setup(struct ll_scan_set *scan,
+				     uint16_t duration, uint16_t period,
+				     struct node_rx_pdu **node_rx_scan_term)
+{
+	struct lll_scan *lll;
+
+	lll = &scan->lll;
+	if (duration) {
+		lll->duration_reload =
+			ULL_SCAN_DURATION_TO_EVENTS(duration,
+						    scan->lll.interval);
+		if (period) {
+			if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK) &&
+			    (duration >= ULL_SCAN_PERIOD_TO_DURATION(period))) {
+				return BT_HCI_ERR_INVALID_PARAM;
+			}
+
+			scan->duration_lazy =
+				ULL_SCAN_PERIOD_TO_EVENTS(period,
+							  scan->lll.interval);
+			scan->duration_lazy -= lll->duration_reload;
+			scan->node_rx_scan_term = NULL;
+		} else {
+			struct node_rx_pdu *node_rx;
+			void *link_scan_term;
+
+			scan->duration_lazy = 0U;
+
+			if (*node_rx_scan_term) {
+				scan->node_rx_scan_term =
+					(void *)*node_rx_scan_term;
+
+				return 0;
+			}
+
+			/* The alloc here used for ext scan termination event */
+			link_scan_term = ll_rx_link_alloc();
+			if (!link_scan_term) {
+				return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+			}
+
+			node_rx = ll_rx_alloc();
+			if (!node_rx) {
+				ll_rx_link_release(link_scan_term);
+
+				return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+			}
+
+			node_rx->hdr.link = (void *)link_scan_term;
+			scan->node_rx_scan_term = (void *)node_rx;
+			*node_rx_scan_term = node_rx;
+		}
+	} else {
+		lll->duration_reload = 0U;
+		scan->duration_lazy = 0U;
+		scan->node_rx_scan_term = NULL;
+	}
+
+	return 0;
+}
+
+static uint8_t duration_period_update(struct ll_scan_set *scan,
+				      uint8_t is_update)
+{
+	if (is_update) {
+		uint32_t volatile ret_cb;
+		uint32_t ret;
+
+		scan->lll.duration_expire = 0U;
+
+		ret_cb = TICKER_STATUS_BUSY;
+		ret = ticker_update(TICKER_INSTANCE_ID_CTLR,
+				    TICKER_USER_ID_THREAD,
+				    (TICKER_ID_SCAN_BASE +
+				     ull_scan_handle_get(scan)),
+				    0, 0, 0, 0, 1, 1,
+				    ull_ticker_status_give, (void *)&ret_cb);
+		ret = ull_ticker_status_take(ret, &ret_cb);
+		if (ret != TICKER_STATUS_SUCCESS) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		return 0;
+	} else {
+		scan->lll.duration_expire = scan->lll.duration_reload;
+	}
+
+	return 0;
+}
+
+static void ticker_op_ext_stop_cb(uint32_t status, void *param)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, NULL};
+	struct ll_scan_set *scan;
+	struct ull_hdr *hdr;
+	uint32_t ret;
+
+	/* Ignore if race between thread and ULL */
+	if (status != TICKER_STATUS_SUCCESS) {
+		/* TODO: detect race */
+
+		return;
+	}
+
+	scan = param;
+	hdr = &scan->ull;
+	mfy.param = &scan->lll;
+	if (ull_ref_get(hdr)) {
+		LL_ASSERT(!hdr->disabled_cb);
+		hdr->disabled_param = mfy.param;
+		hdr->disabled_cb = ext_disabled_cb;
+
+		mfy.fp = lll_disable;
+		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+				     TICKER_USER_ID_LLL, 0, &mfy);
+		LL_ASSERT(!ret);
+	} else {
+		mfy.fp = ext_disabled_cb;
+		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+				     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
+		LL_ASSERT(!ret);
+	}
+}
+
+static void ext_disabled_cb(void *param)
+{
+	struct node_rx_hdr *rx_hdr;
+	struct ll_scan_set *scan;
+	struct lll_scan *lll;
+
+	/* Under race condition, if a connection has been established then
+	 * node_rx is already utilized to send terminate event on connection
+	 */
+	lll = (void *)param;
+	scan = (void *)HDR_LLL2EVT(lll);
+	rx_hdr = (void *)scan->node_rx_scan_term;
+	if (!rx_hdr) {
+		return;
+	}
+
+	/* NOTE: parameters are already populated on disable,
+	 * just enqueue here
+	 */
+	ll_rx_put(rx_hdr->link, rx_hdr);
+	ll_rx_sched();
+}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 static uint8_t disable(uint8_t handle)
 {
@@ -526,6 +905,18 @@ static uint8_t disable(uint8_t handle)
 	}
 
 	scan->is_enabled = 0U;
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	if (scan->node_rx_scan_term) {
+		struct node_rx_pdu *node_rx_scan_term =
+			(void *)scan->node_rx_scan_term;
+
+		scan->node_rx_scan_term = NULL;
+
+		ll_rx_link_release(node_rx_scan_term->hdr.link);
+		ll_rx_release(node_rx_scan_term);
+	}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 #if defined(CONFIG_BT_BROADCASTER)

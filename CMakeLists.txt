@@ -84,6 +84,7 @@ foreach(optional_include_dir
   ${SOC_DIR}/${ARCH}/${SOC_PATH}
   ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
   ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/include
+  ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/common/include
   )
   if(EXISTS ${optional_include_dir})
     zephyr_include_directories(${optional_include_dir})
@@ -97,11 +98,11 @@ zephyr_compile_definitions(
 
 # @Intent: Set compiler flags to enable buffer overflow checks in libc functions
 # @config in CONFIG_NO_OPTIMIZATIONS optional : Optimizations may affect security
-toolchain_cc_security_fortify()
+zephyr_compile_definitions($<TARGET_PROPERTY:compiler,security_fortify> )
 
 # @Intent: Set compiler flags to detect general stack overflows across all functions
 if(CONFIG_STACK_CANARIES)
-  toolchain_cc_security_canaries()
+  zephyr_compile_options($<TARGET_PROPERTY:compiler,security_canaries>)
 endif()
 
 if(BUILD_VERSION)
@@ -123,10 +124,10 @@ endif()
 #    1) Using EXTRA_CFLAGS which is applied regardless of kconfig choice, or
 #    2) Rely on override support being implemented by your toolchain_cc_optimize_*()
 #
-toolchain_cc_optimize_for_no_optimizations_flag(OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG)
-toolchain_cc_optimize_for_debug_flag(OPTIMIZE_FOR_DEBUG_FLAG)
-toolchain_cc_optimize_for_speed_flag(OPTIMIZE_FOR_SPEED_FLAG)
-toolchain_cc_optimize_for_size_flag(OPTIMIZE_FOR_SIZE_FLAG)
+get_property(OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG TARGET compiler PROPERTY no_optimization)
+get_property(OPTIMIZE_FOR_DEBUG_FLAG TARGET compiler PROPERTY optimization_debug)
+get_property(OPTIMIZE_FOR_SPEED_FLAG TARGET compiler PROPERTY optimization_speed)
+get_property(OPTIMIZE_FOR_SIZE_FLAG  TARGET compiler PROPERTY optimization_size)
 
 # From kconfig choice, pick the actual OPTIMIZATION_FLAG to use.
 # Kconfig choice ensures only one of these CONFIG_*_OPTIMIZATIONS is set.
@@ -153,93 +154,75 @@ endif()
 zephyr_compile_options(${OPTIMIZATION_FLAG})
 
 # @Intent: Obtain compiler specific flags related to C++ that are not influenced by kconfig
-toolchain_cc_cpp_base_flags(CPP_BASE_FLAGS)
-foreach(flag ${CPP_BASE_FLAGS})
-  zephyr_compile_options(
-    $<$<COMPILE_LANGUAGE:CXX>:${flag}>
-  )
-endforeach()
+zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,required>>)
 
 # @Intent: Obtain compiler specific flags for compiling under different ISO standards of C++
-toolchain_cc_cpp_dialect_std_98_flags(CPP_DIALECT_STD_98_FLAGS)
-toolchain_cc_cpp_dialect_std_11_flags(CPP_DIALECT_STD_11_FLAGS)
-toolchain_cc_cpp_dialect_std_14_flags(CPP_DIALECT_STD_14_FLAGS)
-toolchain_cc_cpp_dialect_std_17_flags(CPP_DIALECT_STD_17_FLAGS)
-toolchain_cc_cpp_dialect_std_2a_flags(CPP_DIALECT_STD_2A_FLAGS)
-
 if(CONFIG_CPLUSPLUS)
   # From kconfig choice, pick a single dialect.
   # Kconfig choice ensures only one of these CONFIG_STD_CPP* is set.
   if(CONFIG_STD_CPP98)
-    set(STD_CPP_DIALECT_FLAGS ${CPP_DIALECT_STD_98_FLAGS})
+    set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp98>)
   elseif(CONFIG_STD_CPP11)
-    set(STD_CPP_DIALECT_FLAGS ${CPP_DIALECT_STD_11_FLAGS}) # Default in kconfig
+    set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp11>) # Default in kconfig
   elseif(CONFIG_STD_CPP14)
-    set(STD_CPP_DIALECT_FLAGS ${CPP_DIALECT_STD_14_FLAGS})
+    set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp14>)
   elseif(CONFIG_STD_CPP17)
-    set(STD_CPP_DIALECT_FLAGS ${CPP_DIALECT_STD_17_FLAGS})
+    set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp17>)
   elseif(CONFIG_STD_CPP2A)
-    set(STD_CPP_DIALECT_FLAGS ${CPP_DIALECT_STD_2A_FLAGS})
+    set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp2a>)
   else()
     assert(0 "Unreachable code. Expected C++ standard to have been chosen. See Kconfig.zephyr.")
   endif()
 
-  foreach(flag ${STD_CPP_DIALECT_FLAGS})
-    zephyr_compile_options(
-      $<$<COMPILE_LANGUAGE:CXX>:${flag}>
-    )
-  endforeach()
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:${STD_CPP_DIALECT_FLAGS}>)
 endif()
 
 if(NOT CONFIG_EXCEPTIONS)
   # @Intent: Obtain compiler specific flags related to C++ Exceptions
-  toolchain_cc_cpp_no_exceptions_flag(CPP_NO_EXCEPTIONS_FLAG)
-  zephyr_compile_options(
-    $<$<COMPILE_LANGUAGE:CXX>:${CPP_NO_EXCEPTIONS_FLAG}>
-  )
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,no_exceptions>>)
 endif()
 
 if(NOT CONFIG_RTTI)
   # @Intent: Obtain compiler specific flags related to C++ Run Time Type Information
-  toolchain_cc_cpp_no_rtti_flag(CPP_NO_RTTI_FLAG)
-  zephyr_compile_options(
-    $<$<COMPILE_LANGUAGE:CXX>:${CPP_NO_RTTI_FLAG}>
-  )
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,no_rtti>>)
 endif()
 
 if(CONFIG_MISRA_SANE)
   # @Intent: Obtain toolchain compiler flags relating to MISRA.
-  toolchain_cc_warning_error_misra_sane(CC_MISRA_SANE_FLAG)
-  toolchain_cc_cpp_warning_error_misra_sane(CPP_MISRA_SANE_FLAG)
-  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:${CC_MISRA_SANE_FLAG}>)
-  zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:${CPP_MISRA_SANE_FLAG}>)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,warning_error_misra_sane>>)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,warning_error_misra_sane>>)
+endif()
+
+# This is intend to be temporary. Once we have fixed the violations that
+# prevents build Zephyr, these flags shall be part of the default flags.
+if(CONFIG_CODING_GUIDELINE_CHECK)
+  # @Intent: Obtain toolchain compiler flags relating to coding guideline
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,warning_error_coding_guideline>>)
 endif()
 
 # @Intent: Set compiler specific macro inclusion of AUTOCONF_H
-toolchain_cc_imacros(${AUTOCONF_H})
+zephyr_compile_options("SHELL: $<TARGET_PROPERTY:compiler,imacros> ${AUTOCONF_H}")
 
 # @Intent: Set compiler specific flag for bare metal freestanding option
-toolchain_cc_freestanding()
+zephyr_compile_options($<TARGET_PROPERTY:compiler,freestanding>)
 
 # @Intent: Set compiler specific flag for tentative definitions, no-common
-toolchain_cc_nocommon()
+zephyr_compile_options($<TARGET_PROPERTY:compiler,no_common>)
 
 # @Intent: Set compiler specific flag for production of debug information
-toolchain_cc_produce_debug_info()
+zephyr_compile_options($<TARGET_PROPERTY:compiler,debug>)
 
 zephyr_compile_options(
   ${TOOLCHAIN_C_FLAGS}
 )
 
 # @Intent: Obtain compiler specific flags related to assembly
-toolchain_cc_asm_base_flags(ASM_BASE_FLAG)
-zephyr_compile_options(
-  $<$<COMPILE_LANGUAGE:ASM>:${ASM_BASE_FLAG}>
-)
+# ToDo: Remember to get feedback from Oticon on this, as they might use the `ASM_BASE_FLAG` since this is done this way.
+zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:$<TARGET_PROPERTY:asm,required>>)
 
 # @Intent: Enforce standard integer type correspondance to match Zephyr usage.
 # (must be after compiler specific flags)
-toolchain_cc_imacros(${ZEPHYR_BASE}/include/toolchain/zephyr_stdint.h)
+zephyr_compile_options("SHELL: $<TARGET_PROPERTY:compiler,imacros> ${ZEPHYR_BASE}/include/toolchain/zephyr_stdint.h")
 
 # Common toolchain-agnostic assembly flags
 zephyr_compile_options(
@@ -265,7 +248,8 @@ if(CONFIG_LIB_CPLUSPLUS)
 endif()
 
 # @Intent: Add the basic toolchain warning flags
-toolchain_cc_warning_base()
+zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,warning_base>>)
+zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,warning_base>>)
 
 # ==========================================================================
 #
@@ -277,22 +261,26 @@ toolchain_cc_warning_base()
 # ==========================================================================
 # @Intent: Add cmake -DW toolchain supported warnings, if any
 if(W MATCHES "1")
-  toolchain_cc_warning_dw_1()
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,warning_dw_1>>)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,warning_dw_1>>)
 endif()
 
 if(W MATCHES "2")
-  toolchain_cc_warning_dw_2()
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,warning_dw_2>>)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,warning_dw_2>>)
 endif()
 
 if(W MATCHES "3")
-  toolchain_cc_warning_dw_3()
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,warning_dw_3>>)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,warning_dw_3>>)
 endif()
 
 # @Intent: Add extended, more specific, toolchain warning flags
-toolchain_cc_warning_extended()
+zephyr_compile_options($<TARGET_PROPERTY:compiler,warning_extended>)
 
 # @Intent: Trigger an error when a declaration does not specify a type
-toolchain_cc_warning_error_implicit_int()
+zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,warning_error_implicit_int>>)
+zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,warning_error_implicit_int>>)
 
 # Allow the user to inject options when calling cmake, e.g.
 # 'cmake -DEXTRA_CFLAGS="-Werror -Wno-deprecated-declarations" ..'
@@ -302,6 +290,11 @@ zephyr_cc_option(-fno-asynchronous-unwind-tables)
 zephyr_cc_option(-fno-pie)
 zephyr_cc_option(-fno-pic)
 zephyr_cc_option(-fno-strict-overflow)
+
+if(CONFIG_THREAD_LOCAL_STORAGE)
+# Only support local exec TLS model at this point.
+zephyr_cc_option(-ftls-model=local-exec)
+endif()
 
 if(CONFIG_OVERRIDE_FRAME_POINTER_DEFAULT)
   if(CONFIG_OMIT_FRAME_POINTER)
@@ -455,38 +448,22 @@ add_subdirectory(subsys)
 add_subdirectory(drivers)
 
 # Include zephyr modules generated CMake file.
-if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
-	file(STRINGS ${CMAKE_BINARY_DIR}/zephyr_modules.txt ZEPHYR_MODULES_TXT
-		ENCODING UTF-8)
-  set(module_names)
-
-  foreach(module ${ZEPHYR_MODULES_TXT})
-    # Match "<name>":"<path>" for each line of file, each corresponding to
-    # one module. The use of quotes is required due to CMake not supporting
-    # lazy regexes (it supports greedy only).
-    string(REGEX REPLACE "\"(.*)\":\".*\"" "\\1" module_name ${module})
-    string(REGEX REPLACE "\".*\":\"(.*)\"" "\\1" module_path ${module})
-
-    list(APPEND module_names ${module_name})
-
-    string(TOUPPER ${module_name} MODULE_NAME_UPPER)
-    set(ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR ${module_path})
-    set(ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR ${module_path} PARENT_SCOPE)
-  endforeach()
-
-  foreach(module_name ${module_names})
-    # Note the second, binary_dir parameter requires the added
-    # subdirectory to have its own, local cmake target(s). If not then
-    # this binary_dir is created but stays empty. Object files land in
-    # the main binary dir instead.
-    # https://cmake.org/pipermail/cmake/2019-June/069547.html
-    string(TOUPPER ${module_name} MODULE_NAME_UPPER)
+foreach(module_name ${ZEPHYR_MODULE_NAMES})
+  # Note the second, binary_dir parameter requires the added
+  # subdirectory to have its own, local cmake target(s). If not then
+  # this binary_dir is created but stays empty. Object files land in
+  # the main binary dir instead.
+  # https://cmake.org/pipermail/cmake/2019-June/069547.html
+  string(TOUPPER ${module_name} MODULE_NAME_UPPER)
+  if(NOT ${ZEPHYR_${MODULE_NAME_UPPER}_CMAKE_DIR} STREQUAL "")
     set(ZEPHYR_CURRENT_MODULE_DIR ${ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR})
-    add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR} ${CMAKE_BINARY_DIR}/modules/${module_name})
-  endforeach()
-  # Done processing modules, clear ZEPHYR_CURRENT_MODULE_DIR.
-  set(ZEPHYR_CURRENT_MODULE_DIR)
-endif()
+    set(ZEPHYR_CURRENT_CMAKE_DIR ${ZEPHYR_${MODULE_NAME_UPPER}_CMAKE_DIR})
+    add_subdirectory(${ZEPHYR_CURRENT_CMAKE_DIR} ${CMAKE_BINARY_DIR}/modules/${module_name})
+  endif()
+endforeach()
+# Done processing modules, clear ZEPHYR_CURRENT_MODULE_DIR and ZEPHYR_CURRENT_CMAKE_DIR.
+set(ZEPHYR_CURRENT_MODULE_DIR)
+set(ZEPHYR_CURRENT_CMAKE_DIR)
 
 set(syscall_list_h   ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscall_list.h)
 set(syscalls_json    ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls.json)
@@ -595,9 +572,12 @@ add_custom_command(
   DEPENDS ${syscalls_subdirs_trigger} ${PARSE_SYSCALLS_HEADER_DEPENDS}
   )
 
-add_custom_target(${SYSCALL_LIST_H_TARGET} DEPENDS             ${syscall_list_h})
+add_custom_target(${SYSCALL_LIST_H_TARGET} DEPENDS ${syscall_list_h})
 add_custom_target(${PARSE_SYSCALLS_TARGET}
-	          DEPENDS ${syscalls_json} ${struct_tags_json})
+  DEPENDS
+  ${syscalls_json}
+  ${struct_tags_json}
+  )
 
 # 64-bit systems do not require special handling of 64-bit system call
 # parameters or return values, indicate this to the system call boilerplate
@@ -623,7 +603,6 @@ add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
   ${SYSCALL_SPLIT_TIMEOUT_ARG}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   DEPENDS ${PARSE_SYSCALLS_TARGET}
-  ${syscalls_json}
   )
 
 # This is passed into all calls to the gen_kobject_list.py script.
@@ -641,7 +620,6 @@ add_custom_command(
   DEPENDS
   ${ZEPHYR_BASE}/scripts/gen_kobject_list.py
   ${PARSE_SYSCALLS_TARGET}
-  ${struct_tags_json}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 add_custom_target(${DRIVER_VALIDATION_H_TARGET} DEPENDS ${DRV_VALIDATION})
@@ -671,7 +649,7 @@ target_include_directories(${OFFSETS_LIB} PRIVATE
   ${ARCH_DIR}/${ARCH}/include
   )
 target_link_libraries(${OFFSETS_LIB} zephyr_interface)
-add_dependencies(     ${OFFSETS_LIB}
+add_dependencies(zephyr_interface
   ${SYSCALL_LIST_H_TARGET}
   ${DRIVER_VALIDATION_H_TARGET}
   ${KOBJ_TYPES_H_TARGET}
@@ -746,18 +724,16 @@ if(CONFIG_GEN_ISR_TABLES)
 
   # isr_tables.c is generated from ${ZEPHYR_PREBUILT_EXECUTABLE} by
   # gen_isr_tables.py
-  set(obj_copy_cmd "")
-  bintools_objcopy(
-    RESULT_CMD_LIST obj_copy_cmd
-    TARGET_INPUT    ${OUTPUT_FORMAT}
-    TARGET_OUTPUT   "binary"
-    SECTION_ONLY    ".intList"
-    FILE_INPUT      $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
-    FILE_OUTPUT     "isrList.bin"
-    )
   add_custom_command(
     OUTPUT isr_tables.c
-    ${obj_copy_cmd}
+    COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_intarget>${OUTPUT_FORMAT}
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>binary
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_only>.intList
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>$<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>isrList.bin
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
     COMMAND ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/arch/common/gen_isr_tables.py
     --output-source isr_tables.c
@@ -767,6 +743,7 @@ if(CONFIG_GEN_ISR_TABLES)
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--debug>
     ${GEN_ISR_TABLE_EXTRA_ARG}
     DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
+    COMMAND_EXPAND_LISTS
     )
   set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES isr_tables.c)
 endif()
@@ -778,9 +755,9 @@ endif()
 
 if(CONFIG_USERSPACE)
   zephyr_get_compile_options_for_lang_as_string(C compiler_flags_priv)
-  string(REPLACE "-ftest-coverage" "" NO_COVERAGE_FLAGS "${compiler_flags_priv}")
-  string(REPLACE "-fprofile-arcs" "" NO_COVERAGE_FLAGS "${NO_COVERAGE_FLAGS}")
-  string(REPLACE "-fno-inline" "" NO_COVERAGE_FLAGS "${NO_COVERAGE_FLAGS}")
+  string(REPLACE "$<TARGET_PROPERTY:compiler,coverage>" ""
+         NO_COVERAGE_FLAGS "${compiler_flags_priv}"
+  )
 
   get_property(include_dir_in_interface TARGET zephyr_interface
     PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
@@ -886,23 +863,19 @@ if(CONFIG_USERSPACE)
 
   set(OUTPUT_OBJ_PATH ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/output_lib.dir/${OUTPUT_OBJ})
 
-  set(obj_copy_cmd "")
-  set(obj_copy_sections_rename
-    .data=.kobject_data.data
-    .text=.kobject_data.text
-    .rodata=.kobject_data.rodata
-    )
-  bintools_objcopy(
-    RESULT_CMD_LIST obj_copy_cmd
-    SECTION_RENAME  ${obj_copy_sections_rename}
-    FILE_INPUT      ${OUTPUT_OBJ_PATH}
-    FILE_OUTPUT     ${OUTPUT_OBJ_RENAMED}
-    )
   add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_OBJ_RENAMED}
-    ${obj_copy_cmd}
+    COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_rename>.data=.kobject_data.data
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_rename>.text=.kobject_data.text
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_rename>.rodata=.kobject_data.rodata
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${OUTPUT_OBJ_PATH}
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${OUTPUT_OBJ_RENAMED}
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
     DEPENDS output_lib
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMAND_EXPAND_LISTS
     )
   add_custom_target(output_obj_renamed DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_OBJ_RENAMED})
 
@@ -929,9 +902,8 @@ get_property(CSTD GLOBAL PROPERTY CSTD)
 set_ifndef(CSTD c99)
 
 # @Intent: Obtain compiler specific flag for specifying the c standard
-toolchain_cc_cstd_flag(CC_CSTD ${CSTD})
 zephyr_compile_options(
-  $<$<COMPILE_LANGUAGE:C>:${CC_CSTD}>
+  $<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,cstd>${CSTD}>
 )
 
 # @Intent: Configure linker scripts, i.e. generate linker scripts with variables substituted
@@ -1110,173 +1082,170 @@ list(APPEND
 
 if(NOT CONFIG_BUILD_NO_GAP_FILL)
   # Use ';' as separator to get proper space in resulting command.
-  set(GAP_FILL "0xff")
+  set(GAP_FILL "$<TARGET_PROPERTY:bintools,elfconvert_flag_gapfill>0xff")
 endif()
 
 if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
-  # @Intent: Use the toolchain bintools method for printing memory usage
-  set(memUsageCmd    "")
-  set(memUsageByProd "")
-  bintools_print_mem_usage(
-    RESULT_CMD_LIST    memUsageCmd
-    RESULT_BYPROD_LIST memUsageByProd
-  )
-  list(APPEND
-    post_build_commands
-    ${memUsageCmd}
-    )
-  list(APPEND
-    post_build_byproducts
-    ${memUsageByProd}
-    )
+  target_link_libraries(${ZEPHYR_PREBUILT_EXECUTABLE} $<TARGET_PROPERTY:linker,memusage>)
+
+  get_property(memusage_build_command TARGET bintools PROPERTY memusage_command)
+  if(memusage_build_command)
+    # Note: The use of generator expressions allows downstream extensions to add/change the post build.
+    # Unfortunately, the BYPRODUCTS does not allow for generator expression, so question is if we
+    # should remove the downstream ability from start.
+    # Or fix the output name, by the use of `get_property`
+    list(APPEND
+      post_build_commands
+      COMMAND $<TARGET_PROPERTY:bintools,memusage_command>
+              $<TARGET_PROPERTY:bintools,memusage_flag>
+              $<TARGET_PROPERTY:bintools,memusage_infile>${KERNEL_ELF_NAME}
+      )
+
+    # For now, the byproduct can only be supported upstream on byproducts name,
+    # cause byproduct does not support generator expressions
+    get_property(memusage_byproducts TARGET bintools PROPERTY memusage_byproducts)
+    list(APPEND
+      post_build_byproducts
+      ${memusage_byproducts}
+      )
+  endif()
 endif()
 
 if(CONFIG_BUILD_OUTPUT_HEX OR BOARD_FLASH_RUNNER STREQUAL openocd)
-  set(out_hex_cmd    "")
-  set(out_hex_byprod "")
-  set(out_hex_sections_remove
-    .comment
-    COMMON
-    .eh_frame
-    )
-  bintools_objcopy(
-    RESULT_CMD_LIST    out_hex_cmd
-    RESULT_BYPROD_LIST out_hex_byprod
-    STRIP_ALL
-    GAP_FILL           ${GAP_FILL}
-    TARGET_OUTPUT      "ihex"
-    SECTION_REMOVE     ${out_hex_sections_remove}
-    FILE_INPUT         ${KERNEL_ELF_NAME}
-    FILE_OUTPUT        ${KERNEL_HEX_NAME}
-    )
-  list(APPEND
-    post_build_commands
-    ${out_hex_cmd}
-    )
-  list(APPEND
-    post_build_byproducts
-    ${KERNEL_HEX_NAME}
-    ${out_hex_byprod}
-    )
+  get_property(elfconvert_formats TARGET bintools PROPERTY elfconvert_formats)
+  if(ihex IN_LIST elfconvert_formats)
+    list(APPEND
+      post_build_commands
+      COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
+              $<TARGET_PROPERTY:bintools,elfconvert_flag>
+              ${GAP_FILL}
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>ihex
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.comment
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>COMMON
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.eh_frame
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${KERNEL_HEX_NAME}
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+      )
+    list(APPEND
+      post_build_byproducts
+      ${KERNEL_HEX_NAME}
+      # ${out_hex_byprod} # Is this needed ?
+      )
+  endif()
 endif()
 
 if(CONFIG_BUILD_OUTPUT_BIN)
-  set(out_bin_cmd    "")
-  set(out_bin_byprod "")
-  set(out_bin_sections_remove
-    .comment
-    COMMON
-    .eh_frame
-    )
-  bintools_objcopy(
-    RESULT_CMD_LIST    out_bin_cmd
-    RESULT_BYPROD_LIST out_bin_byprod
-    STRIP_ALL
-    GAP_FILL           ${GAP_FILL}
-    TARGET_OUTPUT      "binary"
-    SECTION_REMOVE     ${out_bin_sections_remove}
-    FILE_INPUT         ${KERNEL_ELF_NAME}
-    FILE_OUTPUT        ${KERNEL_BIN_NAME}
-    )
-  list(APPEND
-    post_build_commands
-    ${out_bin_cmd}
-    )
-  list(APPEND
-    post_build_byproducts
-    ${KERNEL_BIN_NAME}
-    ${out_bin_byprod}
-    )
+  get_property(elfconvert_formats TARGET bintools PROPERTY elfconvert_formats)
+  if(binary IN_LIST elfconvert_formats)
+    list(APPEND
+      post_build_commands
+      COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
+              $<TARGET_PROPERTY:bintools,elfconvert_flag>
+              ${GAP_FILL}
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>binary
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.comment
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>COMMON
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.eh_frame
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${KERNEL_BIN_NAME}
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+      )
+    list(APPEND
+      post_build_byproducts
+      ${KERNEL_BIN_NAME}
+      # ${out_hex_byprod} # Is this needed ?
+      )
+  endif()
+endif()
+
+
+# Cleanup intermediate files
+if(CONFIG_CLEANUP_INTERMEDIATE_FILES)
+    list(APPEND
+      post_build_commands
+      COMMAND
+      # This file can be very large in some cases, delete it as we do not need it.
+      ${CMAKE_COMMAND} -E remove ${ZEPHYR_PREBUILT_EXECUTABLE}.elf
+      )
 endif()
 
 if(CONFIG_BUILD_OUTPUT_S19)
-  set(out_S19_cmd    "")
-  set(out_S19_byprod "")
-  bintools_objcopy(
-    RESULT_CMD_LIST    out_S19_cmd
-    RESULT_BYPROD_LIST out_S19_byprod
-    GAP_FILL           ${GAP_FILL}
-    TARGET_OUTPUT      "srec"
-    SREC_LEN           1
-    FILE_INPUT         ${KERNEL_ELF_NAME}
-    FILE_OUTPUT        ${KERNEL_S19_NAME}
-    )
-  list(APPEND
-    post_build_commands
-    ${out_S19_cmd}
-    )
-  list(APPEND
-    post_build_byproducts
-    ${KERNEL_S19_NAME}
-    ${out_S19_byprod}
-    )
+  get_property(elfconvert_formats TARGET bintools PROPERTY elfconvert_formats)
+  if(srec IN_LIST elfconvert_formats)
+    # Should we print a warning if case the tools does not support converting to s19 ?
+    list(APPEND
+      post_build_commands
+      COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
+              $<TARGET_PROPERTY:bintools,elfconvert_flag>
+              ${GAP_FILL}
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>srec
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_srec_len>1
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${KERNEL_S19_NAME}
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+      )
+    list(APPEND
+      post_build_byproducts
+      ${KERNEL_S19_NAME}
+      # ${out_S19_byprod} # Is this needed ?
+
+      )
+  endif()
 endif()
 
 if(CONFIG_OUTPUT_DISASSEMBLY)
-  set(out_disassembly_cmd    "")
-  set(out_disassembly_byprod "")
-  if(CONFIG_OUTPUT_DISASSEMBLE_ALL)
-    set(disassembly_type DISASSEMBLE_ALL)
+if(CONFIG_OUTPUT_DISASSEMBLE_ALL)
+    set(disassembly_type "$<TARGET_PROPERTY:bintools,disassembly_flag_all>")
   else()
-    set(disassembly_type DISASSEMBLE_SOURCE)
+    set(disassembly_type "$<TARGET_PROPERTY:bintools,disassembly_flag_inline_source>")
   endif()
-  bintools_objdump(
-    RESULT_CMD_LIST    out_disassembly_cmd
-    RESULT_BYPROD_LIST out_disassembly_byprod
-    ${disassembly_type}
-    FILE_INPUT         ${KERNEL_ELF_NAME}
-    FILE_OUTPUT        ${KERNEL_LST_NAME}
-    )
   list(APPEND
     post_build_commands
-    ${out_disassembly_cmd}
+    COMMAND $<TARGET_PROPERTY:bintools,disassembly_command>
+            $<TARGET_PROPERTY:bintools,disassembly_flag>
+            ${disassembly_type}
+            $<TARGET_PROPERTY:bintools,disassembly_flag_infile>${KERNEL_ELF_NAME}
+            $<TARGET_PROPERTY:bintools,disassembly_flag_outfile>${KERNEL_LST_NAME}
+            $<TARGET_PROPERTY:bintools,disassembly_flag_final>
     )
   list(APPEND
     post_build_byproducts
     ${KERNEL_LST_NAME}
-    ${out_disassembly_byprod}
+#    ${out_disassembly_byprod} # Needed ??
     )
 endif()
 
 if(CONFIG_OUTPUT_STAT)
-  set(out_stat_cmd    "")
-  set(out_stat_byprod "")
-  bintools_readelf(
-    RESULT_CMD_LIST    out_stat_cmd
-    RESULT_BYPROD_LIST out_stat_byprod
-    HEADERS
-    FILE_INPUT         ${KERNEL_ELF_NAME}
-    FILE_OUTPUT        ${KERNEL_STAT_NAME}
-    )
+#  zephyr_post_build(TOOLS bintools COMMAND readelf FLAGS headers INFILE file OUTFILE outfile)
   list(APPEND
     post_build_commands
-    ${out_stat_cmd}
+    COMMAND $<TARGET_PROPERTY:bintools,readelf_command>
+            $<TARGET_PROPERTY:bintools,readelf_flag>
+            $<TARGET_PROPERTY:bintools,readelf_flag_headers>
+            $<TARGET_PROPERTY:bintools,readelf_flag_infile> ${KERNEL_ELF_NAME}
+            $<TARGET_PROPERTY:bintools,readelf_flag_outfile> ${KERNEL_STAT_NAME}
+            $<TARGET_PROPERTY:bintools,readelf_flag_final>
     )
   list(APPEND
     post_build_byproducts
     ${KERNEL_STAT_NAME}
-    ${out_stat_byprod}
     )
 endif()
 
 if(CONFIG_BUILD_OUTPUT_STRIPPED)
-  set(out_stripped_cmd    "")
-  set(out_stripped_byprod "")
-  bintools_strip(
-    RESULT_CMD_LIST    out_stripped_cmd
-    RESULT_BYPROD_LIST out_stripped_byprod
-    STRIP_ALL
-    FILE_INPUT         ${KERNEL_ELF_NAME}
-    FILE_OUTPUT        ${KERNEL_STRIP_NAME}
-    )
   list(APPEND
     post_build_commands
-    ${out_stripped_cmd}
+    COMMAND $<TARGET_PROPERTY:bintools,strip_command>
+            $<TARGET_PROPERTY:bintools,strip_flag>
+            $<TARGET_PROPERTY:bintools,strip_flag_all>
+            $<TARGET_PROPERTY:bintools,strip_flag_infile>${KERNEL_ELF_NAME}
+            $<TARGET_PROPERTY:bintools,strip_flag_outfile>${KERNEL_STRIP_NAME}
+            $<TARGET_PROPERTY:bintools,strip_flag_final>
     )
   list(APPEND
     post_build_byproducts
     ${KERNEL_STRIP_NAME}
-    ${out_stripped_byprod}
     )
 endif()
 
@@ -1290,6 +1259,11 @@ if(CONFIG_BUILD_OUTPUT_EXE)
     post_build_byproducts
     ${KERNEL_EXE_NAME}
     )
+endif()
+
+# Generate and use MCUboot related artifacts as needed.
+if(CONFIG_BOOTLOADER_MCUBOOT)
+  include(${CMAKE_CURRENT_LIST_DIR}/cmake/mcuboot.cmake)
 endif()
 
 get_property(extra_post_build_commands
@@ -1322,6 +1296,7 @@ add_custom_command(
   BYPRODUCTS
   ${post_build_byproducts}
   COMMENT "Generating files from ${KERNEL_ELF_NAME} for board: ${BOARD}"
+  COMMAND_EXPAND_LISTS
   # NB: COMMENT only works for some CMake-Generators
   )
 
@@ -1365,11 +1340,6 @@ add_subdirectory(cmake/flash)
 add_subdirectory(cmake/usage)
 add_subdirectory(cmake/reports)
 
-add_subdirectory_ifdef(
-  CONFIG_MAKEFILE_EXPORTS
-  cmake/makefile_exports
-  )
-
 if(NOT CONFIG_TEST)
 if(CONFIG_ASSERT AND (NOT CONFIG_FORCE_NO_ASSERT))
   message(WARNING "__ASSERT() statements are globally ENABLED")
@@ -1410,4 +1380,12 @@ endif()
 # @Intent: Set compiler specific flags for standard C includes
 # Done at the very end, so any other system includes which may
 # be added by Zephyr components were first in list.
-toolchain_cc_nostdinc()
+# Note, the compile flags are moved, but the system include is still present here.
+zephyr_compile_options($<TARGET_PROPERTY:compiler,nostdinc>)
+target_include_directories(zephyr_interface SYSTEM INTERFACE $<TARGET_PROPERTY:compiler,nostdinc_include>)
+
+# Finally export all build flags from Zephyr
+add_subdirectory_ifdef(
+  CONFIG_MAKEFILE_EXPORTS
+  cmake/makefile_exports
+  )

@@ -21,14 +21,14 @@
 #define BASE_PRIORITY 0
 #define ITRERATION_COUNT 5
 BUILD_ASSERT(NUM_THREAD <= MAX_NUM_THREAD);
-/* slice size in millisecond*/
+/* slice size in millisecond */
 #define SLICE_SIZE 200
-/* busy for more than one slice*/
+/* busy for more than one slice */
 #define BUSY_MS (SLICE_SIZE + 20)
 static struct k_thread t[NUM_THREAD];
 
 static K_SEM_DEFINE(sema1, 0, NUM_THREAD);
-/*elapsed_slice taken by last thread*/
+/* elapsed_slice taken by last thread */
 static int64_t elapsed_slice;
 
 static int thread_idx;
@@ -37,7 +37,7 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 {
 	int idx = POINTER_TO_INT(p1);
 
-	/*Print New line for last thread*/
+	/* Print New line for last thread */
 	int thread_parameter = (idx == (NUM_THREAD - 1)) ? '\n' :
 			       (idx + 'A');
 
@@ -72,14 +72,14 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 	}
 }
 
-/*test cases*/
+/* test cases */
 
 /**
  * @brief Check the behavior of preemptive threads when the
  * time slice is disabled and enabled
  *
  * @details Create multiple preemptive threads with same priorities
- * priorities and few with same priorities and enable the time slice.
+ * and few with same priorities and enable the time slice.
  * Ensure that each thread is given the time slice period to execute.
  *
  * @ingroup kernel_sched_tests
@@ -90,13 +90,13 @@ void test_slice_scheduling(void)
 	int old_prio = k_thread_priority_get(k_current_get());
 	int count = 0;
 
-	/*disable timeslice*/
+	/* disable timeslice */
 	k_sched_time_slice_set(0, K_PRIO_PREEMPT(0));
 
-	/* update priority for current thread*/
+	/* update priority for current thread */
 	k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(BASE_PRIORITY));
 
-	/* create threads with equal preemptive priority*/
+	/* create threads with equal preemptive priority */
 	for (int i = 0; i < NUM_THREAD; i++) {
 		tid[i] = k_thread_create(&t[i], tstacks[i], STACK_SIZE,
 					 thread_tslice,
@@ -105,7 +105,7 @@ void test_slice_scheduling(void)
 					 K_NO_WAIT);
 	}
 
-	/* enable time slice*/
+	/* enable time slice */
 	k_sched_time_slice_set(SLICE_SIZE, K_PRIO_PREEMPT(BASE_PRIORITY));
 
 	while (count < ITRERATION_COUNT) {
@@ -117,7 +117,7 @@ void test_slice_scheduling(void)
 		 */
 		spin_for_ms(BUSY_MS);
 
-		/* relinquish CPU and wait for each thread to complete*/
+		/* relinquish CPU and wait for each thread to complete */
 		for (int i = 0; i < NUM_THREAD; i++) {
 			k_sem_take(&sema1, K_FOREVER);
 		}
@@ -125,12 +125,12 @@ void test_slice_scheduling(void)
 	}
 
 
-	/* test case teardown*/
+	/* test case teardown */
 	for (int i = 0; i < NUM_THREAD; i++) {
 		k_thread_abort(tid[i]);
 	}
 
-	/* disable time slice*/
+	/* disable time slice */
 	k_sched_time_slice_set(0, K_PRIO_PREEMPT(0));
 
 	k_thread_priority_set(k_current_get(), old_prio);

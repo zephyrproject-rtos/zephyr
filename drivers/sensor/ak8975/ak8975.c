@@ -19,9 +19,10 @@
 
 LOG_MODULE_REGISTER(AK8975, CONFIG_SENSOR_LOG_LEVEL);
 
-static int ak8975_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int ak8975_sample_fetch(const struct device *dev,
+			       enum sensor_channel chan)
 {
-	struct ak8975_data *drv_data = dev->driver_data;
+	struct ak8975_data *drv_data = dev->data;
 	uint8_t buf[6];
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
@@ -60,11 +61,11 @@ static void ak8975_convert(struct sensor_value *val, int16_t sample,
 	val->val2 = conv_val % 1000000;
 }
 
-static int ak8975_channel_get(struct device *dev,
+static int ak8975_channel_get(const struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	struct ak8975_data *drv_data = dev->driver_data;
+	struct ak8975_data *drv_data = dev->data;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_MAGN_XYZ ||
 			chan == SENSOR_CHAN_MAGN_X ||
@@ -116,9 +117,9 @@ static int ak8975_read_adjustment_data(struct ak8975_data *drv_data)
 	return 0;
 }
 
-int ak8975_init(struct device *dev)
+int ak8975_init(const struct device *dev)
 {
-	struct ak8975_data *drv_data = dev->driver_data;
+	struct ak8975_data *drv_data = dev->data;
 	uint8_t id;
 
 	drv_data->i2c =

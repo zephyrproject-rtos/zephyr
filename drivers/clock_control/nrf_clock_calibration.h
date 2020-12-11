@@ -20,11 +20,11 @@ extern "C" {
 void z_nrf_clock_calibration_init(struct onoff_manager *mgrs);
 
 /**
- * @brief Calibration interrupts handler
+ * @brief Calibration done handler
  *
- * Must be called from clock interrupt context.
+ * Must be called from clock event handler.
  */
-void z_nrf_clock_calibration_isr(void);
+void z_nrf_clock_calibration_done_handler(void);
 
 /**
  * @brief Notify calibration module about LF clock start

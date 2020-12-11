@@ -16,7 +16,7 @@ static struct tls_credential credentials[CONFIG_TLS_MAX_CREDENTIALS_NUMBER];
 /* A mutex for protecting access to the credentials array. */
 static struct k_mutex credential_lock;
 
-static int credentials_init(struct device *unused)
+static int credentials_init(const struct device *unused)
 {
 	(void)memset(credentials, 0, sizeof(credentials));
 

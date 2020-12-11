@@ -49,7 +49,7 @@ int console_getchar(void)
 
 int console_init(void)
 {
-	struct device *uart_dev;
+	const struct device *uart_dev;
 	int ret;
 
 	uart_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
@@ -62,7 +62,7 @@ int console_init(void)
 	/* Checks device driver supports for interrupt driven data transfers. */
 	if (CONFIG_CONSOLE_GETCHAR_BUFSIZE + CONFIG_CONSOLE_PUTCHAR_BUFSIZE) {
 		const struct uart_driver_api *api =
-			(const struct uart_driver_api *)uart_dev->driver_api;
+			(const struct uart_driver_api *)uart_dev->api;
 		if (!api->irq_callback_set) {
 			return -ENOTSUP;
 		}

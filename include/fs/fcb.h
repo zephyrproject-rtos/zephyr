@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2020 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -86,9 +86,12 @@ struct fcb_entry_ctx {
 struct fcb {
 	/* Caller of fcb_init fills this in */
 	uint32_t f_magic;
-	/**< Magic value. It is placed in the beginning of FCB flash  sector.
-	 * FCB uses this when determining whether sector contains valid data
-	 * or not.
+	/**< Magic value, should not be 0xFFFFFFFF.
+	 * It is xored with inversion of f_erase_value and placed in
+	 * the beginning of FCB flash sector. FCB uses this when determining
+	 * whether sector contains valid data or not.
+	 * Giving it value of 0xFFFFFFFF means leaving bytes of the filed
+	 * in "erased" state.
 	 */
 
 	uint8_t f_version; /**<  Current version number of the data */
@@ -121,6 +124,11 @@ struct fcb {
 	/**< Flash area used by the fcb instance, , internal state.
 	 * This can be transfer to FCB user
 	 */
+
+	uint8_t f_erase_value;
+	/**< The value flash takes when it is erased. This is read from
+	 * flash parameters and initialized upon call to fcb_init.
+	 */
 };
 
 /**
@@ -148,7 +156,7 @@ int fcb_init(int f_area_id, struct fcb *fcb);
  * Appends an entry to circular buffer.
  *
  * When writing the
- * contents for the entry, use loc->fl_sector and loc->fl_data_off with
+ * contents for the entry, use loc->fe_sector and loc->fe_data_off with
  * flash_area_write() to fcb flash_area.
  * When you're finished, call fcb_append_finish() with loc as argument.
  *

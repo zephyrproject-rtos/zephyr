@@ -30,7 +30,7 @@ struct dummy_api {
 	struct net_if_api iface_api;
 
 	/** Send a network packet */
-	int (*send)(struct device *dev, struct net_pkt *pkt);
+	int (*send)(const struct device *dev, struct net_pkt *pkt);
 };
 
 /* Make sure that the network interface API is properly setup inside

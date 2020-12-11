@@ -134,10 +134,8 @@ struct socket_data {
 	struct net_context		*context;
 	net_context_connect_cb_t	connect_cb;
 	net_tcp_accept_cb_t		accept_cb;
-	net_context_send_cb_t		send_cb;
 	net_context_recv_cb_t		recv_cb;
 	void				*connect_user_data;
-	void				*send_user_data;
 	void				*recv_user_data;
 	void				*accept_user_data;
 	struct net_pkt			*rx_pkt;
@@ -298,19 +296,21 @@ static int winc1500_get(sa_family_t family,
 			struct net_context **context)
 {
 	struct socket_data *sd;
+	SOCKET sock;
 
 	if (family != AF_INET) {
 		LOG_ERR("Only AF_INET is supported!");
 		return -1;
 	}
 
-	(*context)->offload_context = (void *)(sint32)socket(family, type, 0);
-	if ((*context)->offload_context < 0) {
+	sock = socket(family, type, 0);
+	if (sock < 0) {
 		LOG_ERR("socket error!");
 		return -1;
 	}
 
-	sd = &w1500_data.socket_data[(int)(*context)->offload_context];
+	(*context)->offload_context = (void *)(intptr_t)sock;
+	sd = &w1500_data.socket_data[sock];
 
 	k_sem_init(&sd->wait_sem, 0, 1);
 
@@ -434,9 +434,6 @@ static int winc1500_accept(struct net_context *context,
 			       K_MSEC(timeout))) {
 			return -ETIMEDOUT;
 		}
-	} else {
-		k_sem_take(&w1500_data.socket_data[socket].wait_sem,
-			   K_FOREVER);
 	}
 
 	return w1500_data.socket_data[socket].ret_code;
@@ -459,9 +456,6 @@ static int winc1500_send(struct net_pkt *pkt,
 	if (!buf) {
 		return -ENOBUFS;
 	}
-
-	w1500_data.socket_data[socket].send_cb = cb;
-	w1500_data.socket_data[socket].send_user_data = user_data;
 
 	if (net_pkt_read(pkt, buf->data, net_pkt_get_len(pkt))) {
 		ret = -ENOBUFS;
@@ -502,9 +496,6 @@ static int winc1500_sendto(struct net_pkt *pkt,
 	if (!buf) {
 		return -ENOBUFS;
 	}
-
-	w1500_data.socket_data[socket].send_cb = cb;
-	w1500_data.socket_data[socket].send_user_data = user_data;
 
 	if (net_pkt_read(pkt, buf->data, net_pkt_get_len(pkt))) {
 		ret = -ENOBUFS;
@@ -939,7 +930,6 @@ static void winc1500_socket_cb(SOCKET sock, uint8 message, void *pvMsg)
 		break;
 	case SOCKET_MSG_ACCEPT:
 		handle_socket_msg_accept(sd, pvMsg);
-		k_sem_give(&sd->wait_sem);
 
 		break;
 	}
@@ -957,7 +947,7 @@ static void winc1500_thread(void)
 	}
 }
 
-static int winc1500_mgmt_scan(struct device *dev, scan_result_cb_t cb)
+static int winc1500_mgmt_scan(const struct device *dev, scan_result_cb_t cb)
 {
 	if (w1500_data.scan_cb) {
 		return -EALREADY;
@@ -974,7 +964,7 @@ static int winc1500_mgmt_scan(struct device *dev, scan_result_cb_t cb)
 	return 0;
 }
 
-static int winc1500_mgmt_connect(struct device *dev,
+static int winc1500_mgmt_connect(const struct device *dev,
 				 struct wifi_connect_req_params *params)
 {
 	uint8_t ssid[M2M_MAX_SSID_LEN];
@@ -1020,7 +1010,7 @@ static int winc1500_mgmt_connect(struct device *dev,
 	return 0;
 }
 
-static int winc1500_mgmt_disconnect(struct device *device)
+static int winc1500_mgmt_disconnect(const struct device *device)
 {
 	if (!w1500_data.connected) {
 		return -EALREADY;
@@ -1055,7 +1045,7 @@ static const struct net_wifi_mgmt_offload winc1500_api = {
 	.disconnect	= winc1500_mgmt_disconnect,
 };
 
-static int winc1500_init(struct device *dev)
+static int winc1500_init(const struct device *dev)
 {
 	tstrWifiInitParam param = {
 		.pfAppWifiCb = winc1500_wifi_cb,

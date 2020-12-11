@@ -49,11 +49,11 @@ struct pwm_xec_config {
 #define PWM_XEC_REG_BASE(_dev)				\
 	((PWM_Type *)			\
 	 ((const struct pwm_xec_config * const)		\
-	  _dev->config_info)->base_address)
+	  _dev->config)->base_address)
 
 #define PWM_XEC_CONFIG(_dev)				\
 	(((const struct pwm_xec_config * const)		\
-	  _dev->config_info))
+	  _dev->config))
 
 struct xec_params {
 	uint32_t on;
@@ -233,7 +233,7 @@ static struct xec_params *xec_compare_params(uint32_t target_freq,
 	return params;
 }
 
-static void xec_compute_and_set_parameters(struct device *dev,
+static void xec_compute_and_set_parameters(const struct device *dev,
 					   uint32_t target_freq,
 					   uint32_t on, uint32_t off)
 {
@@ -306,7 +306,7 @@ done:
 	pwm_regs->CONFIG = reg;
 }
 
-static int pwm_xec_pin_set(struct device *dev, uint32_t pwm,
+static int pwm_xec_pin_set(const struct device *dev, uint32_t pwm,
 			   uint32_t period_cycles, uint32_t pulse_cycles,
 			   pwm_flags_t flags)
 {
@@ -351,7 +351,7 @@ static int pwm_xec_pin_set(struct device *dev, uint32_t pwm,
 	return 0;
 }
 
-static int pwm_xec_get_cycles_per_sec(struct device *dev, uint32_t pwm,
+static int pwm_xec_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
 				      uint64_t *cycles)
 {
 	ARG_UNUSED(dev);
@@ -370,7 +370,7 @@ static int pwm_xec_get_cycles_per_sec(struct device *dev, uint32_t pwm,
 	return 0;
 }
 
-static int pwm_xec_init(struct device *dev)
+static int pwm_xec_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -387,9 +387,9 @@ static struct pwm_driver_api pwm_xec_api = {
 		.base_address = DT_INST_REG_ADDR(inst)			\
 	};								\
 									\
-	DEVICE_AND_API_INIT(pwm_xec_##inst,				\
-			    DT_INST_LABEL(inst),			\
+	DEVICE_DT_INST_DEFINE(inst,					\
 			    pwm_xec_init,				\
+			    device_pm_control_nop,			\
 			    NULL,					\
 			    &pwm_xec_dev_config_##inst,			\
 			    POST_KERNEL,				\

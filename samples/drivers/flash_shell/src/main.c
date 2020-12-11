@@ -10,7 +10,6 @@
 #include <sys/printk.h>
 #include <logging/log.h>
 #include <shell/shell.h>
-#include <shell/shell_uart.h>
 #include <drivers/flash.h>
 #include <device.h>
 #include <soc.h>
@@ -93,7 +92,7 @@ LOG_MODULE_REGISTER(app);
 #error Please increase CONFIG_SHELL_ARGC_MAX parameter.
 #endif
 
-static struct device *flash_device;
+static const struct device *flash_device;
 
 static int check_flash_device(const struct shell *shell)
 {
@@ -372,11 +371,11 @@ free_buffers:
 	k_free(before_data);
 	k_free(after_data);
 
-	ret = flash_write_protection_set(flash_device, true);
-	if (ret) {
+	int ret1 = flash_write_protection_set(flash_device, true);
+	if (ret1) {
 		PR_ERROR(shell, "Failed to enable flash protection (err: %d)."
-				"\n", ret);
-		return ret;
+				"\n", ret1);
+		return ret1;
 	}
 
 	return ret;
@@ -752,7 +751,7 @@ static int cmd_page_write(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_set_dev(const struct shell *shell, size_t argc, char **argv)
 {
-	struct device *dev;
+	const struct device *dev;
 	const char *name;
 
 	name = argv[1];

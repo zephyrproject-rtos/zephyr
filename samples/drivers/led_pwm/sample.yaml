@@ -1,0 +1,9 @@
+sample:
+  description: Demonstration of the PWM LED driver
+  name: PWM LED sample
+tests:
+  sample.drivers.led.led_pwm:
+    filter: dt_compat_enabled("pwm-leds")
+    tags: LED
+    depends_on: pwm
+    platform_exclude: reel_board

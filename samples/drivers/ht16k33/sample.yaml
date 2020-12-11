@@ -3,6 +3,6 @@ sample:
   name: HT16K33 sample
 tests:
   sample.drivers.ht16k33:
-    platform_whitelist: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk_nrf52840
     harness: TBD
     tags: LED

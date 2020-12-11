@@ -8,7 +8,7 @@
 #include <drivers/flash.h>
 #include <logging/log_ctrl.h>
 
-#define FLASH_DEVICE  "DATAFLASH_1"
+#define FLASH_DEVICE        DT_LABEL(DT_INST(0, atmel_at45))
 
 /* Set to 1 to test the chip erase functionality. Please be aware that this
  * operation takes quite a while (it depends on the chip size, but can easily
@@ -28,12 +28,14 @@ void main(void)
 {
 	printk("DataFlash sample on %s\n", CONFIG_BOARD);
 
-	struct device *flash_dev;
+	const struct device *flash_dev;
 	int i;
 	int err;
 	uint8_t data;
+#ifdef CONFIG_FLASH_PAGE_LAYOUT
 	struct flash_pages_info pages_info;
 	size_t page_count, chip_size;
+#endif
 
 	flash_dev = device_get_binding(FLASH_DEVICE);
 	if (!flash_dev) {
@@ -41,11 +43,13 @@ void main(void)
 		return;
 	}
 
+#ifdef CONFIG_FLASH_PAGE_LAYOUT
 	page_count = flash_get_page_count(flash_dev);
 	(void)flash_get_page_info_by_idx(flash_dev, 0, &pages_info);
 	chip_size = page_count * pages_info.size;
 	printk("Using %s, chip size: %u bytes (page: %u)\n",
 	       FLASH_DEVICE, chip_size, pages_info.size);
+#endif
 
 	printk("Reading the first byte of the test region ... ");
 	err = flash_read(flash_dev, TEST_REGION_OFFSET, &data, 1);
@@ -62,10 +66,14 @@ void main(void)
 		write_buf[i] = (uint8_t)(data + i);
 	}
 
-#if !IS_ENABLED(CONFIG_SPI_FLASH_AT45_USE_READ_MODIFY_WRITE)
+#ifndef CONFIG_SPI_FLASH_AT45_USE_READ_MODIFY_WRITE
 	if (ERASE_WHOLE_CHIP) {
+#ifdef CONFIG_FLASH_PAGE_LAYOUT
 		printk("Erasing the whole chip... ");
 		err = flash_erase(flash_dev, 0, chip_size);
+#else
+		#error To full chip erase you need enable flash page layout
+#endif
 	} else {
 		printk("Erasing the test region... ");
 		err = flash_erase(flash_dev,
@@ -97,7 +105,7 @@ void main(void)
 	}
 
 	printk("OK\n");
-#endif /* !IS_ENABLED(CONFIG_SPI_FLASH_AT45_USE_READ_MODIFY_WRITE) */
+#endif /* !CONFIG_SPI_FLASH_AT45_USE_READ_MODIFY_WRITE */
 
 	printk("Writing the first half of the test region... ");
 	err = flash_write(flash_dev, TEST_REGION_OFFSET,
@@ -141,7 +149,7 @@ void main(void)
 
 	printk("OK\n");
 
-#if IS_ENABLED(CONFIG_DEVICE_POWER_MANAGEMENT)
+#if IS_ENABLED(CONFIG_PM_DEVICE)
 	printk("Putting the flash device into low power state... ");
 	err = device_set_power_state(flash_dev, DEVICE_PM_LOW_POWER_STATE,
 				     NULL, NULL);

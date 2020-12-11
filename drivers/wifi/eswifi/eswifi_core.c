@@ -4,7 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if defined(CONFIG_WIFI_ESWIFI_BUS_UART)
+#define DT_DRV_COMPAT inventek_eswifi_uart
+#else
 #define DT_DRV_COMPAT inventek_eswifi
+#endif
+
 #include "eswifi_log.h"
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
@@ -410,9 +415,9 @@ static void eswifi_iface_init(struct net_if *iface)
 
 }
 
-static int eswifi_mgmt_scan(struct device *dev, scan_result_cb_t cb)
+static int eswifi_mgmt_scan(const struct device *dev, scan_result_cb_t cb)
 {
-	struct eswifi_dev *eswifi = dev->driver_data;
+	struct eswifi_dev *eswifi = dev->data;
 
 	LOG_DBG("");
 
@@ -427,9 +432,9 @@ static int eswifi_mgmt_scan(struct device *dev, scan_result_cb_t cb)
 	return 0;
 }
 
-static int eswifi_mgmt_disconnect(struct device *dev)
+static int eswifi_mgmt_disconnect(const struct device *dev)
 {
-	struct eswifi_dev *eswifi = dev->driver_data;
+	struct eswifi_dev *eswifi = dev->data;
 
 	LOG_DBG("");
 
@@ -472,10 +477,10 @@ static int __eswifi_sta_config(struct eswifi_dev *eswifi,
 	return 0;
 }
 
-static int eswifi_mgmt_connect(struct device *dev,
+static int eswifi_mgmt_connect(const struct device *dev,
 			       struct wifi_connect_req_params *params)
 {
-	struct eswifi_dev *eswifi = dev->driver_data;
+	struct eswifi_dev *eswifi = dev->data;
 	int err;
 
 	LOG_DBG("");
@@ -500,10 +505,10 @@ void eswifi_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len)
 }
 
 #if defined(CONFIG_NET_IPV4)
-static int eswifi_mgmt_ap_enable(struct device *dev,
+static int eswifi_mgmt_ap_enable(const struct device *dev,
 				 struct wifi_connect_req_params *params)
 {
-	struct eswifi_dev *eswifi = dev->driver_data;
+	struct eswifi_dev *eswifi = dev->data;
 	struct net_if_ipv4 *ipv4 = eswifi->iface->config.ip.ipv4;
 	struct net_if_addr *unicast = NULL;
 	int err = -EIO, i;
@@ -599,7 +604,7 @@ error:
 	return err;
 }
 #else
-static int eswifi_mgmt_ap_enable(struct device *dev,
+static int eswifi_mgmt_ap_enable(const struct device *dev,
 				 struct wifi_connect_req_params *params)
 {
 	LOG_ERR("IPv4 requested for AP mode");
@@ -607,9 +612,9 @@ static int eswifi_mgmt_ap_enable(struct device *dev,
 }
 #endif /* CONFIG_NET_IPV4 */
 
-static int eswifi_mgmt_ap_disable(struct device *dev)
+static int eswifi_mgmt_ap_disable(const struct device *dev)
 {
-	struct eswifi_dev *eswifi = dev->driver_data;
+	struct eswifi_dev *eswifi = dev->data;
 	char cmd[] = "AE\r";
 	int err;
 
@@ -628,16 +633,16 @@ static int eswifi_mgmt_ap_disable(struct device *dev)
 	return 0;
 }
 
-static int eswifi_init(struct device *dev)
+static int eswifi_init(const struct device *dev)
 {
-	struct eswifi_dev *eswifi = dev->driver_data;
+	struct eswifi_dev *eswifi = dev->data;
 
 	LOG_DBG("");
 
 	eswifi->role = ESWIFI_ROLE_CLIENT;
 	k_mutex_init(&eswifi->mutex);
 
-	eswifi->bus = &eswifi_bus_ops_spi;
+	eswifi->bus = eswifi_get_bus();
 	eswifi->bus->init(eswifi);
 
 	eswifi->resetn.dev = device_get_binding(
@@ -684,6 +689,6 @@ static const struct net_wifi_mgmt_offload eswifi_offload_api = {
 	.ap_disable	= eswifi_mgmt_ap_disable,
 };
 
-NET_DEVICE_OFFLOAD_INIT(eswifi_mgmt, CONFIG_WIFI_ESWIFI_NAME,
+NET_DEVICE_OFFLOAD_INIT(eswifi_mgmt, DT_INST_LABEL(0),
 			eswifi_init, device_pm_control_nop, &eswifi0, NULL,
 			CONFIG_WIFI_INIT_PRIORITY, &eswifi_offload_api, 1500);

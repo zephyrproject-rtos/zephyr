@@ -98,7 +98,7 @@ static void gclk_connect(uint8_t gclk, uint8_t src, uint8_t div)
 				| GCLK_GENCTRL_GENEN;
 }
 
-static int atmel_samd_init(struct device *arg)
+static int atmel_samd_init(const struct device *arg)
 {
 	uint32_t key;
 	uint8_t dfll_div;

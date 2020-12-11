@@ -6,7 +6,26 @@ tests:
     depends_on: spi
     filter: dt_compat_enabled("atmel,at45")
     build_only: true
+  sample.drivers.spi.flash.at45.build.page_layout:
+    extra_args: OVERLAY_CONFIG="overlay-page_layout.conf"
+    tags: spi flash
+    depends_on: spi
+    filter: dt_compat_enabled("atmel,at45")
+    build_only: true
+  sample.drivers.spi.flash.at45.build.pm:
+    extra_args: OVERLAY_CONFIG="overlay-pm.conf"
+    tags: spi flash
+    depends_on: spi
+    filter: dt_compat_enabled("atmel,at45")
+    build_only: true
+  sample.drivers.spi.flash.at45.build.page_layout_pm:
+    extra_args: OVERLAY_CONFIG="overlay-page_layout.conf;overlay-pm.conf"
+    tags: spi flash
+    depends_on: spi
+    filter: dt_compat_enabled("atmel,at45")
+    build_only: true
   sample.drivers.spi.flash.at45:
+    extra_args: OVERLAY_CONFIG="overlay-page_layout.conf;overlay-pm.conf"
     tags: spi flash
     depends_on: spi
     filter: dt_compat_enabled("atmel,at45")

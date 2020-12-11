@@ -26,37 +26,37 @@ struct mcux_gpt_data {
 	void *top_user_data;
 };
 
-static int mcux_gpt_start(struct device *dev)
+static int mcux_gpt_start(const struct device *dev)
 {
-	const struct mcux_gpt_config *config = dev->config_info;
+	const struct mcux_gpt_config *config = dev->config;
 
 	GPT_StartTimer(config->base);
 
 	return 0;
 }
 
-static int mcux_gpt_stop(struct device *dev)
+static int mcux_gpt_stop(const struct device *dev)
 {
-	const struct mcux_gpt_config *config = dev->config_info;
+	const struct mcux_gpt_config *config = dev->config;
 
 	GPT_StopTimer(config->base);
 
 	return 0;
 }
 
-static int mcux_gpt_get_value(struct device *dev, uint32_t *ticks)
+static int mcux_gpt_get_value(const struct device *dev, uint32_t *ticks)
 {
-	const struct mcux_gpt_config *config = dev->config_info;
+	const struct mcux_gpt_config *config = dev->config;
 
 	*ticks = GPT_GetCurrentTimerCount(config->base);
 	return 0;
 }
 
-static int mcux_gpt_set_alarm(struct device *dev, uint8_t chan_id,
+static int mcux_gpt_set_alarm(const struct device *dev, uint8_t chan_id,
 			      const struct counter_alarm_cfg *alarm_cfg)
 {
-	const struct mcux_gpt_config *config = dev->config_info;
-	struct mcux_gpt_data *data = dev->driver_data;
+	const struct mcux_gpt_config *config = dev->config;
+	struct mcux_gpt_data *data = dev->data;
 
 	uint32_t current = GPT_GetCurrentTimerCount(config->base);
 	uint32_t ticks = alarm_cfg->ticks;
@@ -84,10 +84,10 @@ static int mcux_gpt_set_alarm(struct device *dev, uint8_t chan_id,
 	return 0;
 }
 
-static int mcux_gpt_cancel_alarm(struct device *dev, uint8_t chan_id)
+static int mcux_gpt_cancel_alarm(const struct device *dev, uint8_t chan_id)
 {
-	const struct mcux_gpt_config *config = dev->config_info;
-	struct mcux_gpt_data *data = dev->driver_data;
+	const struct mcux_gpt_config *config = dev->config;
+	struct mcux_gpt_data *data = dev->data;
 
 	if (chan_id != 0) {
 		LOG_ERR("Invalid channel id");
@@ -100,11 +100,10 @@ static int mcux_gpt_cancel_alarm(struct device *dev, uint8_t chan_id)
 	return 0;
 }
 
-void mcux_gpt_isr(void *p)
+void mcux_gpt_isr(const struct device *dev)
 {
-	struct device *dev = p;
-	const struct mcux_gpt_config *config = dev->config_info;
-	struct mcux_gpt_data *data = dev->driver_data;
+	const struct mcux_gpt_config *config = dev->config;
+	struct mcux_gpt_data *data = dev->data;
 	uint32_t current = GPT_GetCurrentTimerCount(config->base);
 	uint32_t status;
 
@@ -126,18 +125,18 @@ void mcux_gpt_isr(void *p)
 	}
 }
 
-static uint32_t mcux_gpt_get_pending_int(struct device *dev)
+static uint32_t mcux_gpt_get_pending_int(const struct device *dev)
 {
-	const struct mcux_gpt_config *config = dev->config_info;
+	const struct mcux_gpt_config *config = dev->config;
 
 	return GPT_GetStatusFlags(config->base, kGPT_OutputCompare1Flag);
 }
 
-static int mcux_gpt_set_top_value(struct device *dev,
+static int mcux_gpt_set_top_value(const struct device *dev,
 				  const struct counter_top_cfg *cfg)
 {
-	const struct mcux_gpt_config *config = dev->config_info;
-	struct mcux_gpt_data *data = dev->driver_data;
+	const struct mcux_gpt_config *config = dev->config;
+	struct mcux_gpt_data *data = dev->data;
 
 	if (cfg->ticks != config->info.max_top_value) {
 		LOG_ERR("Wrap can only be set to 0x%x",
@@ -153,23 +152,23 @@ static int mcux_gpt_set_top_value(struct device *dev,
 	return 0;
 }
 
-static uint32_t mcux_gpt_get_top_value(struct device *dev)
+static uint32_t mcux_gpt_get_top_value(const struct device *dev)
 {
-	const struct mcux_gpt_config *config = dev->config_info;
+	const struct mcux_gpt_config *config = dev->config;
 
 	return config->info.max_top_value;
 }
 
-static uint32_t mcux_gpt_get_max_relative_alarm(struct device *dev)
+static uint32_t mcux_gpt_get_max_relative_alarm(const struct device *dev)
 {
-	const struct mcux_gpt_config *config = dev->config_info;
+	const struct mcux_gpt_config *config = dev->config;
 
 	return config->info.max_top_value;
 }
 
-static int mcux_gpt_init(struct device *dev)
+static int mcux_gpt_init(const struct device *dev)
 {
-	const struct mcux_gpt_config *config = dev->config_info;
+	const struct mcux_gpt_config *config = dev->config;
 	gpt_config_t gptConfig;
 	uint32_t clock_freq;
 
@@ -215,7 +214,7 @@ static const struct counter_driver_api mcux_gpt_driver_api = {
 		},							\
 	};								\
 									\
-	static int mcux_gpt_## n ##_init(struct device *dev);		\
+	static int mcux_gpt_## n ##_init(const struct device *dev);	\
 	DEVICE_AND_API_INIT(mcux_gpt ## n,				\
 			    DT_INST_LABEL(n),				\
 			    mcux_gpt_## n ##_init,			\
@@ -225,7 +224,7 @@ static const struct counter_driver_api mcux_gpt_driver_api = {
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &mcux_gpt_driver_api);			\
 									\
-	static int mcux_gpt_## n ##_init(struct device *dev)		\
+	static int mcux_gpt_## n ##_init(const struct device *dev)	\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    DT_INST_IRQ(n, priority),			\

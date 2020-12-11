@@ -26,7 +26,7 @@
 #include <logging/log_core.h>
 #include <logging/log_msg.h>
 #include <logging/log_output.h>
-#include "log_backend_std.h"
+#include <logging/log_backend_std.h>
 #include <soc.h>
 
 /** The stimulus port from which SWO data is received and displayed */

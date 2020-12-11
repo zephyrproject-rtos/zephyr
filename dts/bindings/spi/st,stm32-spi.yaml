@@ -13,3 +13,16 @@ properties:
 
     interrupts:
       required: true
+
+    pinctrl-0:
+      type: phandles
+      required: false
+      description: |
+        Pin configuration for SPI signals (MISO, MOSI, SCK and optional NSS).
+        We expect that the phandles will reference pinctrl nodes.
+
+        For example the SPI3 would be
+           <&spi3_sck_pc10 &spi3_miso_pc11 &spi3_mosi_pc12>;
+
+        Example with NSS Pin
+           <&spi3_sck_pc10 &spi3_miso_pc11 &spi3_mosi_pc12 &spi3_nss_pa15>;

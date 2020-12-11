@@ -16,7 +16,7 @@ back to the driver.
 The goal here is to demonstrate:
 
  - Multiple logical applications, each with their own memory domain
- - Creation of a sys_mem_pool and assignment to a memory partition
+ - Creation of a sys_heap and assignment to a memory partition
  - Use of APIs like ``k_queue_alloc_append()`` which require thread resource
    pools to be configured
  - Management of permissions for kernel objects and drivers

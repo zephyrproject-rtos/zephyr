@@ -1,7 +1,16 @@
-Device tree binding vendor prefix registry.  Keep list in alphabetical order.
+Device tree binding vendor prefix registry. Keep this list in
+alphabetical order.
 
-This isn't an exhaustive list, but you should add new prefixes to it before
-using them to avoid name-space collisions.
+This isn't an exhaustive list, but you should add new prefixes to it
+before using them to avoid name-space collisions.
+
+The contents of this file are parsed during documentation generation.
+Anything above the following line of '-' characters is ignored. Every
+non-empty line after that should contain a line in this format:
+
+<vendor-prefix><TAB><Full name of vendor>
+
+--------------------------------------------------
 
 abilis	Abilis Systems
 abracon	Abracon Corporation
@@ -34,7 +43,7 @@ andestech	Andes Technology Corporation
 apm	Applied Micro Circuits Corporation (APM)
 aptina	Aptina Imaging
 arasan	Arasan Chip Systems
-archermind ArcherMind Technology (Nanjing) Co., Ltd.
+archermind	ArcherMind Technology (Nanjing) Co., Ltd.
 arctic	Arctic Sand
 aries	Aries Embedded GmbH
 arm	ARM Ltd.
@@ -42,19 +51,20 @@ armadeus	ARMadeus Systems SARL
 arrow	Arrow Electronics
 artesyn	Artesyn Embedded Technologies Inc.
 asahi-kasei	Asahi Kasei Corp.
+asmedia	ASMedia Technology Inc.
 aspeed	ASPEED Technology Inc.
 asus	AsusTek Computer Inc.
 atlas	Atlas Scientific LLC
 atmel	Atmel Corporation
 auo	AU Optronics Corporation
-auvidea Auvidea GmbH
+auvidea	Auvidea GmbH
 avago	Avago Technologies
 avia	avia semiconductor
 avic	Shanghai AVIC Optoelectronics Co., Ltd.
 avnet	Avnet, Inc.
 axentia	Axentia Technologies AB
 axis	Axis Communications AB
-bananapi BIPAI KEJI LIMITED
+bananapi	BIPAI KEJI LIMITED
 bhf	Beckhoff Automation GmbH & Co. KG
 bitmain	Bitmain Technologies
 boe	BOE Technology Group Co., Ltd.
@@ -62,7 +72,7 @@ bosch	Bosch Sensortec GmbH
 boundary	Boundary Devices Inc.
 brcm	Broadcom Corporation
 buffalo	Buffalo, Inc.
-bticino Bticino International
+bticino	Bticino International
 cadence	Cadence Design Systems, Inc.
 calxeda	Calxeda
 capella	Capella Microsystems, Inc
@@ -111,7 +121,7 @@ dongwoon	Dongwoon Anatech
 dptechnics	DPTechnics
 dragino	Dragino Technology Co., Limited
 ea	Embedded Artists AB
-ebs-systart EBS-SYSTART GmbH
+ebs-systart	EBS-SYSTART GmbH
 ebv	EBV Elektronik
 eckelmann	Eckelmann AG
 edt	Emerging Display Technologies
@@ -131,7 +141,7 @@ epson	Seiko Epson Corp.
 espressif	Espressif Systems
 est	ESTeem Wireless Modems
 ettus	NI Ettus Research
-eukrea  Eukréa Electromatique
+eukrea	Eukréa Electromatique
 everest	Everest Semiconductor Co. Ltd.
 everspin	Everspin Technologies, Inc.
 exar	Exar Corporation
@@ -148,8 +158,9 @@ focaltech	FocalTech Systems Co.,Ltd
 friendlyarm	Guangzhou FriendlyARM Computer Tech Co., Ltd
 fsl	Freescale Semiconductor
 fujitsu	Fujitsu Ltd.
+gaisler	Gaisler
 gateworks	Gateworks Corporation
-gcw Game Consoles Worldwide
+gcw	Game Consoles Worldwide
 ge	General Electric Company
 geekbuying	GeekBuying
 gef	GE Fanuc Intelligent Platforms Embedded Systems, Inc.
@@ -186,7 +197,7 @@ idt	Integrated Device Technologies, Inc.
 ifi	Ingenieurburo Fur Ic-Technologie (I/F/I)
 ilitek	ILI Technology Corporation (ILITEK)
 img	Imagination Technologies Ltd.
-infineon Infineon Technologies
+infineon	Infineon Technologies
 inforce	Inforce Computing
 ingenic	Ingenic Semiconductor
 innolux	Innolux Corporation
@@ -200,7 +211,7 @@ isee	ISEE 2007 S.L.
 isil	Intersil
 issi	Integrated Silicon Solutions Inc.
 itead	ITEAD Intelligent Systems Co.Ltd
-iwave  iWave Systems Technologies Pvt. Ltd.
+iwave	iWave Systems Technologies Pvt. Ltd.
 jdi	Japan Display Inc.
 jedec	JEDEC Solid State Technology Association
 jianda	Jiandangjing Technology Co., Ltd.
@@ -208,8 +219,8 @@ karo	Ka-Ro electronics GmbH
 keithkoep	Keith & Koep GmbH
 keymile	Keymile GmbH
 khadas	Khadas
-kiebackpeter    Kieback & Peter GmbH
-kinetic Kinetic Technologies
+kiebackpeter	Kieback & Peter GmbH
+kinetic	Kinetic Technologies
 kingdisplay	King & Display Technology Co., Ltd.
 kingnovel	Kingnovel Technology Co., Ltd.
 koe	Kaohsiung Opto-Electronics Inc.
@@ -217,6 +228,7 @@ kosagi	Sutajio Ko-Usagi PTE Ltd.
 kyo	Kyocera Corporation
 lacie	LaCie
 laird	Laird PLC
+lairdconnect	Laird Connectivity
 lantiq	Lantiq Semiconductor
 lattice	Lattice Semiconductor
 lego	LEGO Systems A/S
@@ -252,7 +264,7 @@ micrel	Micrel Inc.
 microchip	Microchip Technology Inc.
 microcrystal	Micro Crystal AG
 micron	Micron Technology Inc.
-mikroe		MikroElektronika d.o.o.
+mikroe	MikroElektronika d.o.o.
 minix	MINIX Technology Ltd.
 miramems	MiraMEMS Sensing Technology Co., Ltd.
 mitsubishi	Mitsubishi Electric Corporation
@@ -271,11 +283,11 @@ mxicy	Macronix International Co., Ltd.
 myir	MYIR Tech Limited
 national	National Semiconductor
 nec	NEC LCD Technologies, Ltd.
-neonode		Neonode Inc.
+neonode	Neonode Inc.
 netgear	NETGEAR
 netlogic	Broadcom Corporation (formerly NetLogic Microsystems)
 netron-dy	Netron DY
-netxeon		Shenzhen Netxeon Technology CO., LTD
+netxeon	Shenzhen Netxeon Technology CO., LTD
 nexbox	Nexbox
 nextthing	Next Thing Co.
 newhaven	Newhaven Display International
@@ -284,7 +296,7 @@ nintendo	Nintendo
 nlt	NLT Technologies, Ltd.
 nokia	Nokia
 nordic	Nordic Semiconductor
-novtech NovTech, Inc.
+novtech	NovTech, Inc.
 nutsboard	NutsBoard
 nuvoton	Nuvoton Technology Corporation
 nvd	New Vision Display
@@ -314,12 +326,12 @@ particle	Particle.io
 pda	Precision Design Associates, Inc.
 pericom	Pericom Technology Inc.
 pervasive	Pervasive Displays, Inc.
-phicomm PHICOMM Co., Ltd.
+phicomm	PHICOMM Co., Ltd.
 phytec	PHYTEC Messtechnik GmbH
 picochip	Picochip Ltd
 pine64	Pine64
-pixcir  PIXCIR MICROELECTRONICS Co., Ltd
-plantower Plantower Co., Ltd
+pixcir	PIXCIR MICROELECTRONICS Co., Ltd
+plantower	Plantower Co., Ltd
 plathome	Plat'Home Co., Ltd.
 plda	PLDA
 plx	Broadcom Corporation (formerly PLX Technology)
@@ -335,6 +347,7 @@ qemu	QEMU, a generic and open source machine emulator and virtualizer
 qi	Qi Hardware
 qiaodian	QiaoDian XianShi Corporation
 qnap	QNAP Systems, Inc.
+quicklogic	QuickLogic Corp.
 radxa	Radxa
 raidsonic	RaidSonic Technology GmbH
 ralink	Mediatek/Ralink Technology Corp.
@@ -342,16 +355,17 @@ ramtron	Ramtron International
 raspberrypi	Raspberry Pi Foundation
 raydium	Raydium Semiconductor Corp.
 rda	Unisoc Communications, Inc.
-realtek Realtek Semiconductor Corp.
+realtek	Realtek Semiconductor Corp.
 renesas	Renesas Electronics Corporation
 richtek	Richtek Technology Corporation
 ricoh	Ricoh Co. Ltd.
 rikomagic	Rikomagic Tech Corp. Ltd
 riscv	RISC-V Foundation
 rockchip	Fuzhou Rockchip Electronics Co., Ltd
+rocktech	Rocktech Displays Limited
 rohm	ROHM Semiconductor Co., Ltd
 roofull	Shenzhen Roofull Technology Co, Ltd
-ruuvi Ruuvi Innovations Ltd (Oy)
+ruuvi	Ruuvi Innovations Ltd (Oy)
 samsung	Samsung Semiconductor
 samtec	Samtec/Softing company
 sancloud	Sancloud Ltd
@@ -359,6 +373,7 @@ sandisk	Sandisk Corporation
 sbs	Smart Battery System
 schindler	Schindler
 seagate	Seagate Technology PLC
+segger	SEGGER Microcontroller GmbH
 semtech	Semtech Corporation
 sensirion	Sensirion AG
 sff	Small Form Factor Committee
@@ -375,7 +390,7 @@ silabs	Silicon Laboratories
 silead	Silead Inc.
 silergy	Silergy Corp.
 siliconmitus	Silicon Mitus, Inc.
-simtek
+simtek	Cypress Semiconductor Corporation (Simtek Corporation)
 sirf	SiRF Technology, Inc.
 sis	Silicon Integrated Systems Corp.
 sitronix	Sitronix Technology Corporation
@@ -384,7 +399,7 @@ smsc	Standard Microsystems Corporation
 snps	Synopsys, Inc.
 socionext	Socionext Inc.
 solidrun	SolidRun
-solomon        Solomon Systech Limited
+solomon	Solomon Systech Limited
 sony	Sony Corporation
 spansion	Spansion Inc.
 sprd	Spreadtrum Communications Inc.
@@ -414,7 +429,7 @@ ti	Texas Instruments
 tianma	Tianma Micro-electronics Co., Ltd.
 tlm	Trusted Logic Mobility
 tmt	Tecon Microprocessor Technologies, LLC.
-topeet  Topeet
+topeet	Topeet
 toradex	Toradex AG
 toshiba	Toshiba Corporation
 toumaz	Toumaz
@@ -443,17 +458,17 @@ vishay	Vishay Intertechnology, Inc
 vitesse	Vitesse Semiconductor Corporation
 vivante	Vivante Corporation
 vnd	A stand-in for a real vendor which can be used in examples and tests
-vocore VoCore Studio
+vocore	VoCore Studio
 voipac	Voipac Technologies s.r.o.
 vot	Vision Optical Technology Co., Ltd.
 wd	Western Digital Corp.
 we	Würth Elektronik GmbH.
-weact WeAct Studio
+weact	WeAct Studio
 wetek	WeTek Electronics, limited.
 wexler	Wexler
-whwave  Shenzhen whwave Electronics, Inc.
+whwave	Shenzhen whwave Electronics, Inc.
 wi2wi	Wi2Wi, Inc.
-winbond Winbond Electronics corp.
+winbond	Winbond Electronics corp.
 winstar	Winstar Display Corp.
 wlf	Wolfson Microelectronics
 wm	Wondermedia Technologies, Inc.

@@ -84,7 +84,7 @@ static void thread_handler(void *p1, void *p2, void *p3)
 	k_timer_start(&timer, DURATION, K_NO_WAIT);
 }
 
-/*test cases*/
+/* test cases */
 
 /**
  * @brief Validate the behavior of cooperative thread

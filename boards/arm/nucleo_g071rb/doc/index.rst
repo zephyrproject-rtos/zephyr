@@ -98,6 +98,8 @@ The Zephyr nucleo_g071rb board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
 
@@ -119,6 +121,7 @@ Default Zephyr Peripheral Mapping:
 - UART_2 TX/RX : PA2/PA3 (ST-Link Virtual Port Com)
 - USER_PB   : PC13
 - LD4       : PA5
+- PWM       : PA6
 
 For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
 
@@ -141,6 +144,7 @@ the following pyocd command:
 
 .. code-block:: console
 
+   $ pyocd pack --update
    $ pyocd pack --install stm32g071rb
 
 Note:

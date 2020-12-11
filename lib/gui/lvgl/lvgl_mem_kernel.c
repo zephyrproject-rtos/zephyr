@@ -7,19 +7,16 @@
 #include "lvgl_mem.h"
 #include <zephyr.h>
 #include <init.h>
-#include <sys/mempool.h>
 
-K_MEM_POOL_DEFINE(lvgl_mem_pool,
-		CONFIG_LVGL_MEM_POOL_MIN_SIZE,
-		CONFIG_LVGL_MEM_POOL_MAX_SIZE,
-		CONFIG_LVGL_MEM_POOL_NUMBER_BLOCKS, 4);
+K_HEAP_DEFINE(lvgl_mem_pool, CONFIG_LVGL_MEM_POOL_MAX_SIZE *
+	      CONFIG_LVGL_MEM_POOL_NUMBER_BLOCKS);
 
 void *lvgl_malloc(size_t size)
 {
-	return k_mem_pool_malloc(&lvgl_mem_pool, size);
+	return k_heap_alloc(&lvgl_mem_pool, size, K_NO_WAIT);
 }
 
 void lvgl_free(void *ptr)
 {
-	k_free(ptr);
+	k_heap_free(&lvgl_mem_pool, ptr);
 }

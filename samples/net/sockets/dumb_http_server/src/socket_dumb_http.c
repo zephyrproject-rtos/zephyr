@@ -119,7 +119,7 @@ void main(void)
 			int sent_len = send(client, data, len, 0);
 
 			if (sent_len == -1) {
-				printf("Error sending data to peer\n");
+				printf("Error sending data to peer, errno: %d\n", errno);
 				break;
 			}
 			data += sent_len;
@@ -141,7 +141,7 @@ close_client:
 
 		net_pkt_get_info(&rx, &tx, &rx_data, &tx_data);
 		printf("rx buf: %d, tx buf: %d\n",
-		       rx_data->avail_count, tx_data->avail_count);
+		       atomic_get(&rx_data->avail_count), atomic_get(&tx_data->avail_count));
 #endif
 
 	}

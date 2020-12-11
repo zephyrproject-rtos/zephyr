@@ -54,7 +54,7 @@ struct stream_flash_ctx {
 	uint8_t *buf; /* Write buffer */
 	size_t buf_len; /* Length of write buffer */
 	size_t buf_bytes; /* Number of bytes currently stored in write buf */
-	struct device *fdev; /* Flash device */
+	const struct device *fdev; /* Flash device */
 	size_t bytes_written; /* Number of bytes written to flash */
 	size_t offset; /* Offset from base of flash device to write area */
 	size_t available; /* Available bytes in write area */
@@ -80,7 +80,7 @@ struct stream_flash_ctx {
  *
  * @return non-negative on success, negative errno code on fail
  */
-int stream_flash_init(struct stream_flash_ctx *ctx, struct device *fdev,
+int stream_flash_init(struct stream_flash_ctx *ctx, const struct device *fdev,
 		      uint8_t *buf, size_t buf_len, size_t offset, size_t size,
 		      stream_flash_callback_t cb);
 /**

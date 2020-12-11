@@ -14,6 +14,15 @@ properties:
     clocks:
       required: true
 
+    pinctrl-0:
+      type: phandles
+      required: false
+      description: |
+        GPIO pin configuration for DAC output. The phandles are
+        expected to reference pinctrl nodes, e.g.
+
+           pinctrl-0 = <&dac_out1_pa4 &dac_out2_pa5>;
+
     "#io-channel-cells":
       const: 1
 

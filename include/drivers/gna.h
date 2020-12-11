@@ -111,12 +111,16 @@ struct gna_inference_resp {
  */
 typedef int (*gna_callback)(struct gna_inference_resp *result);
 
-typedef int (*gna_api_config)(struct device *dev, struct gna_config *cfg);
-typedef int (*gna_api_register)(struct device *dev,
-		struct gna_model_info *model, void **model_handle);
-typedef int (*gna_api_deregister)(struct device *dev, void *model_handle);
-typedef int (*gna_api_infer)(struct device *dev, struct gna_inference_req *req,
-		gna_callback callback);
+typedef int (*gna_api_config)(const struct device *dev,
+			      struct gna_config *cfg);
+typedef int (*gna_api_register)(const struct device *dev,
+				struct gna_model_info *model,
+				void **model_handle);
+typedef int (*gna_api_deregister)(const struct device *dev,
+				  void *model_handle);
+typedef int (*gna_api_infer)(const struct device *dev,
+			     struct gna_inference_req *req,
+			     gna_callback callback);
 
 struct gna_driver_api {
 	gna_api_config		configure;
@@ -141,10 +145,11 @@ struct gna_driver_api {
  * @retval 0 If the configuration is successful
  * @retval A negative error code in case of a failure.
  */
-static inline int gna_configure(struct device *dev, struct gna_config *cfg)
+static inline int gna_configure(const struct device *dev,
+				struct gna_config *cfg)
 {
 	const struct gna_driver_api *api =
-		(const struct gna_driver_api *)dev->driver_api;
+		(const struct gna_driver_api *)dev->api;
 
 	return api->configure(dev, cfg);
 }
@@ -162,11 +167,12 @@ static inline int gna_configure(struct device *dev, struct gna_config *cfg)
  * @retval 0 If registration of the model is successful.
  * @retval A negative error code in case of a failure.
  */
-static inline int gna_register_model(struct device *dev,
-		struct gna_model_info *model, void **model_handle)
+static inline int gna_register_model(const struct device *dev,
+				     struct gna_model_info *model,
+				     void **model_handle)
 {
 	const struct gna_driver_api *api =
-		(const struct gna_driver_api *)dev->driver_api;
+		(const struct gna_driver_api *)dev->api;
 
 	return api->register_model(dev, model, model_handle);
 }
@@ -184,10 +190,10 @@ static inline int gna_register_model(struct device *dev,
  * @retval 0 If de-registration of the model is successful.
  * @retval A negative error code in case of a failure.
  */
-static inline int gna_deregister_model(struct device *dev, void *model)
+static inline int gna_deregister_model(const struct device *dev, void *model)
 {
 	const struct gna_driver_api *api =
-		(const struct gna_driver_api *)dev->driver_api;
+		(const struct gna_driver_api *)dev->api;
 
 	return api->deregister_model(dev, model);
 }
@@ -206,11 +212,12 @@ static inline int gna_deregister_model(struct device *dev, void *model)
  * @retval 0 If the request is accepted
  * @retval A negative error code in case of a failure.
  */
-static inline int gna_infer(struct device *dev, struct gna_inference_req *req,
-	gna_callback callback)
+static inline int gna_infer(const struct device *dev,
+			    struct gna_inference_req *req,
+			    gna_callback callback)
 {
 	const struct gna_driver_api *api =
-		(const struct gna_driver_api *)dev->driver_api;
+		(const struct gna_driver_api *)dev->api;
 
 	return api->infer(dev, req, callback);
 }

@@ -1,30 +1,26 @@
+common:
+  filter: CONFIG_ARMV6_M_ARMV8_M_BASELINE or CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+  tags: arm
+  arch_allow: arm
 tests:
   arch.arm.swap.common:
-    arch_whitelist: arm
-    filter: CONFIG_ARMV6_M_ARMV8_M_BASELINE or CONFIG_ARMV7_M_ARMV8_M_MAINLINE
-    tags: arm
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
   arch.arm.swap.common.no_optimizations:
-    arch_whitelist: arm
-    filter: CONFIG_ARMV6_M_ARMV8_M_BASELINE or CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
     extra_configs:
       - CONFIG_NO_OPTIMIZATIONS=y
       - CONFIG_IDLE_STACK_SIZE=512
-    tags: arm
     min_flash: 192
   arch.arm.swap.common.fpu_sharing:
-    arch_whitelist: arm
-    filter: CONFIG_ARMV7_M_ARMV8_M_FP
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE and CONFIG_ARMV7_M_ARMV8_M_FP
     extra_configs:
       - CONFIG_FPU=y
       - CONFIG_FPU_SHARING=y
-    tags: arm
   arch.arm.swap.common.fpu_sharing.no_optimizations:
-    arch_whitelist: arm
-    filter: CONFIG_ARMV7_M_ARMV8_M_FP
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE and CONFIG_ARMV7_M_ARMV8_M_FP
     extra_configs:
       - CONFIG_FPU=y
       - CONFIG_FPU_SHARING=y
       - CONFIG_NO_OPTIMIZATIONS=y
       - CONFIG_IDLE_STACK_SIZE=512
-    tags: arm
     min_flash: 192

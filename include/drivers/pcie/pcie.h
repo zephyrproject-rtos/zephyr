@@ -7,6 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_PCIE_PCIE_H_
 #define ZEPHYR_INCLUDE_DRIVERS_PCIE_PCIE_H_
 
+#include <stddef.h>
 #include <dt-bindings/pcie/pcie.h>
 #include <zephyr/types.h>
 
@@ -34,6 +35,11 @@ typedef uint32_t pcie_bdf_t;
  * look to PCIE_ID_* macros in include/dt-bindings/pcie/pcie.h for more.
  */
 typedef uint32_t pcie_id_t;
+
+struct pcie_mbar {
+	uintptr_t phys_addr;
+	size_t size;
+};
 
 /*
  * These functions are arch-, board-, or SoC-specific.
@@ -65,7 +71,7 @@ extern void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data);
  * @brief Probe for the presence of a PCI(e) endpoint.
  *
  * @param bdf the endpoint to probe
- * @param id the endpoint ID to expect, or PCI_ID_ANY for "any device"
+ * @param id the endpoint ID to expect, or PCIE_ID_NONE for "any device"
  * @return true if the device is present, false otherwise
  */
 extern bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id);
@@ -74,15 +80,18 @@ extern bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id);
  * @brief Get the nth MMIO address assigned to an endpoint.
  * @param bdf the PCI(e) endpoint
  * @param index (0-based) index
- * @return the address, or PCI_CONF_BAR_NONE if nonexistent.
+ * @param mbar Pointer to struct pcie_mbar
+ * @return true if the mbar was found and is valid, false otherwise
  *
  * A PCI(e) endpoint has 0 or more memory-mapped regions. This function
- * allows the caller to enumerate them by calling with index=0..n. If
- * PCI_CONF_BAR_NONE is returned, there are no further regions. The indices
+ * allows the caller to enumerate them by calling with index=0..n.
+ * Value of n has to be below 6, as there is a maximum of 6 BARs. The indices
  * are order-preserving with respect to the endpoint BARs: e.g., index 0
  * will return the lowest-numbered memory BAR on the endpoint.
  */
-extern uintptr_t pcie_get_mbar(pcie_bdf_t bdf, unsigned int index);
+extern bool pcie_get_mbar(pcie_bdf_t bdf,
+			  unsigned int index,
+			  struct pcie_mbar *mbar);
 
 /**
  * @brief Set or reset bits in the endpoint command/status register.
@@ -94,12 +103,24 @@ extern uintptr_t pcie_get_mbar(pcie_bdf_t bdf, unsigned int index);
 extern void pcie_set_cmd(pcie_bdf_t bdf, uint32_t bits, bool on);
 
 /**
+ * @brief Allocate an IRQ for an endpoint.
+ *
+ * This function first checks the IRQ register and if it contains a valid
+ * value this is returned. If the register does not contain a valid value
+ * allocation of a new one is attempted.
+ *
+ * @param bdf the PCI(e) endpoint
+ * @return the IRQ number, or PCIE_CONF_INTR_IRQ_NONE if allocation failed.
+ */
+extern unsigned int pcie_alloc_irq(pcie_bdf_t bdf);
+
+/**
  * @brief Return the IRQ assigned by the firmware/board to an endpoint.
  *
  * @param bdf the PCI(e) endpoint
  * @return the IRQ number, or PCIE_CONF_INTR_IRQ_NONE if unknown.
  */
-extern unsigned int pcie_wired_irq(pcie_bdf_t bdf);
+extern unsigned int pcie_get_irq(pcie_bdf_t bdf);
 
 /**
  * @brief Enable the PCI(e) endpoint to generate the specified IRQ.
@@ -109,11 +130,35 @@ extern unsigned int pcie_wired_irq(pcie_bdf_t bdf);
  *
  * If MSI is enabled and the endpoint supports it, the endpoint will
  * be configured to generate the specified IRQ via MSI. Otherwise, it
- * is assumed that the IRQ IRQ has been routed by the boot firmware
+ * is assumed that the IRQ has been routed by the boot firmware
  * to the specified IRQ, and the IRQ is enabled (at the I/O APIC, or
  * wherever appropriate).
  */
 extern void pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq);
+
+/**
+ * @brief Find a PCI(e) capability in an endpoint's configuration space.
+ *
+ * @param bdf the PCI endpoint to examine
+ * @param cap_id the capability ID of interest
+ * @return the index of the configuration word, or 0 if no capability.
+ */
+extern uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id);
+
+/*
+ * Configuration word 13 contains the head of the capabilities list.
+ */
+
+#define PCIE_CONF_CAPPTR	13U	/* capabilities pointer */
+#define PCIE_CONF_CAPPTR_FIRST(w)	(((w) >> 2) & 0x3FU)
+
+/*
+ * The first word of every capability contains a capability identifier,
+ * and a link to the next capability (or 0) in configuration space.
+ */
+
+#define PCIE_CONF_CAP_ID(w)		((w) & 0xFFU)
+#define PCIE_CONF_CAP_NEXT(w)		(((w) >> 10) & 0x3FU)
 
 /*
  * Configuration word 0 aligns directly with pcie_id_t.
@@ -171,7 +216,15 @@ extern void pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq);
 #define PCIE_CONF_BAR_MEM(w)		(((w) & 0x00000001U) != 0x00000001U)
 #define PCIE_CONF_BAR_64(w)		(((w) & 0x00000006U) == 0x00000004U)
 #define PCIE_CONF_BAR_ADDR(w)		((w) & ~0xfUL)
+#define PCIE_CONF_BAR_FLAGS(w)		((w) & 0xfUL)
 #define PCIE_CONF_BAR_NONE		0U
+
+#define PCIE_CONF_BAR_INVAL		0xFFFFFFF0U
+#define PCIE_CONF_BAR_INVAL64		0xFFFFFFFFFFFFFFF0UL
+
+#define PCIE_CONF_BAR_INVAL_FLAGS(w)			\
+	((((w) & 0x00000006U) == 0x00000006U) ||	\
+	 (((w) & 0x00000006U) == 0x00000002U))
 
 /*
  * Word 15 contains information related to interrupts.

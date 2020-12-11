@@ -18,6 +18,8 @@
 	};
 
 	chosen {
+		zephyr,sram = &sdram0;
+		zephyr,dtcm = &dtcm;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 	};
@@ -25,7 +27,7 @@
 	sdram0: memory@80000000 {
 		/* ISSI IS42S16160J-6TLI */
 		device_type = "memory";
-		reg = <0x80000000 0x2000000>;
+		reg = <0x80000000 DT_SIZE_M(32)>;
 	};
 
 	leds {
@@ -77,7 +79,7 @@
 arduino_serial: &lpuart2 {};
 
 &flexspi {
-	reg = <0x402a8000 0x4000>, <0x60000000 0x800000>;
+	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
 	is25wp064: is25wp064@0 {
 		compatible = "issi,is25wp064", "jedec,spi-nor";
 		size = <67108864>;

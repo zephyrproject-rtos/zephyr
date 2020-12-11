@@ -1,0 +1,17 @@
+sample:
+  description: Processing multiple queues in
+    a number of threads
+  name: SMP Pktqueue
+common:
+    tags: introduction
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: yes
+      regex:
+        - "RESULT: OK(.*)"
+
+tests:
+  sample.smp.pktqueue:
+    tags: introduction
+    filter: (CONFIG_MP_NUM_CPUS > 1)

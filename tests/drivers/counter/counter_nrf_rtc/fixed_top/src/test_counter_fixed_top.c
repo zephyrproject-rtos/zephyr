@@ -35,7 +35,7 @@ static void counter_setup_instance(const char *dev_name)
 static void counter_tear_down_instance(const char *dev_name)
 {
 	int err;
-	struct device *dev;
+	const struct device *dev;
 
 	dev = device_get_binding(dev_name);
 
@@ -57,7 +57,7 @@ static void test_all_instances(counter_test_func_t func)
 
 void test_set_custom_top_value_fails_on_instance(const char *dev_name)
 {
-	struct device *dev;
+	const struct device *dev;
 	int err;
 	struct counter_top_cfg top_cfg = {
 		.callback = NULL,
@@ -76,14 +76,14 @@ void test_set_custom_top_value_fails(void)
 	test_all_instances(test_set_custom_top_value_fails_on_instance);
 }
 
-static void top_handler(struct device *dev, void *user_data)
+static void top_handler(const struct device *dev, void *user_data)
 {
 	top_cnt++;
 }
 
 void test_top_handler_on_instance(const char *dev_name)
 {
-	struct device *dev;
+	const struct device *dev;
 	uint32_t tmp_top_cnt;
 	int err;
 	struct counter_top_cfg top_cfg = {

@@ -36,7 +36,7 @@ extern "C" {
 #define WEBSOCKET_FLAG_BINARY 0x00000004 /**< Binary data        */
 #define WEBSOCKET_FLAG_CLOSE  0x00000008 /**< Closing connection */
 #define WEBSOCKET_FLAG_PING   0x00000010 /**< Ping message       */
-#define WEBSOCKET_FLAG_PONG   0x00000011 /**< Pong message       */
+#define WEBSOCKET_FLAG_PONG   0x00000020 /**< Pong message       */
 
 enum websocket_opcode  {
 	WEBSOCKET_OPCODE_CONTINUE     = 0x00,
@@ -169,7 +169,8 @@ int websocket_send_msg(int ws_sock, const uint8_t *payload, size_t payload_len,
  * @return <0 if error, >=0 amount of bytes received
  */
 int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
-		       uint32_t *message_type, uint64_t *remaining, int32_t timeout);
+		       uint32_t *message_type, uint64_t *remaining,
+		       int32_t timeout);
 
 /**
  * @brief Close websocket.

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#include <mem.h>
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/clock/kinetis_sim.h>
 #include <dt-bindings/clock/kinetis_mcg.h>
@@ -8,33 +9,6 @@
 
 / {
 	aliases {
-		adc-0 = &adc0;
-		adc-1 = &adc1;
-		can-0 = &flexcan0;
-		eth = &enet;
-		gpio-a = &gpioa;
-		gpio-b = &gpiob;
-		gpio-c = &gpioc;
-		gpio-d = &gpiod;
-		gpio-e = &gpioe;
-		i2c-0 = &i2c0;
-		i2c-1 = &i2c1;
-		i2c-2 = &i2c2;
-		pinmux-a = &porta;
-		pinmux-b = &portb;
-		pinmux-c = &portc;
-		pinmux-d = &portd;
-		pinmux-e = &porte;
-		spi-0 = &spi0;
-		spi-1 = &spi1;
-		spi-2 = &spi2;
-		uart-0 = &uart0;
-		uart-1 = &uart1;
-		uart-2 = &uart2;
-		uart-3 = &uart3;
-		uart-4 = &uart4;
-		uart-5 = &uart5;
-		usbd-0 = &usbotg;
 		watchdog0 = &wdog;
 	};
 
@@ -65,12 +39,12 @@
 	 */
 	sram_l: memory@1fff0000 {
 		compatible = "mmio-sram";
-		reg = <0x1fff0000 0x10000>;
+		reg = <0x1fff0000 DT_SIZE_K(64)>;
 	};
 
 	sram0: memory@20000000 {
 		compatible = "mmio-sram";
-		reg = <0x20000000 0x30000>;
+		reg = <0x20000000 DT_SIZE_K(192)>;
 	};
 
 	temp0: temp0 {
@@ -150,7 +124,7 @@
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				label = "MCUX_FLASH";
-				reg = <0 0x100000>;
+				reg = <0 DT_SIZE_M(1)>;
 				erase-block-size = <4096>;
 				write-block-size = <8>;
 			};
@@ -471,11 +445,11 @@
 			label = "USBD";
 		};
 
-		enet: ethernet@400c0004 {
+		enet: ethernet@400c0000 {
 			compatible = "nxp,kinetis-ethernet";
-			reg = <0x400c0004 0x620>;
+			reg = <0x400c0000 0x620>;
 			interrupts = <83 0>, <84 0>, <85 0>;
-			interrupt-names = "TX", "RX", "ERR_MISC";
+			interrupt-names = "TX", "RX", "ERR";
 			status = "disabled";
 			label = "ETH_0";
 			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0 0>;
@@ -529,6 +503,18 @@
 				<&sim KINETIS_SIM_DMAMUX_CLK 0x103C 0x00000002>;
 			status = "disabled";
 			label = "EDMA0";
+		};
+
+		pit0: pit@40037000 {
+			compatible = "nxp,kinetis-pit";
+			reg = <0x40037000 0x1000>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103c 23>;
+			interrupts = <48 0>, <49 0>, <50 0>, <51 0>;
+			status = "disabled";
+			pit-channel = <0>;
+			pit-period = <1000000>;
+			clock-frequency = <60000000>;
+			label = "PIT0";
 		};
 	};
 };

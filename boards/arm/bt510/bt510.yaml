@@ -1,0 +1,16 @@
+identifier: bt510
+name: BT510
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - ble
+  - ieee802154
+  - pwm
+  - watchdog
+  - i2c
+  - sm351lt

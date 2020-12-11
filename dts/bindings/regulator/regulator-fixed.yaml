@@ -1,0 +1,50 @@
+# Copyright 2019-2020 Peter Bigot Consulting, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: GPIO-controlled regulators
+
+include: regulator.yaml
+
+# NOTE: The driver supports "regulator-fixed-sync" as a specializing
+# variant when it's known that the GPIO state change operations are
+# isr-ok and not sleep, and both startup and off-on delays are zero.
+# This bypasses the asynchronous onoff manager which optimizes both time
+# and memory use.
+#
+# To enable this use both:
+#    compatible = "regulator-fixed-sync", "regulator-fixed";
+#
+
+compatible: "regulator-fixed"
+
+properties:
+  label:
+    required: true
+
+  regulator-name:
+    type: string
+    required: true
+    description: Descriptive name for regulator outputs.
+
+  enable-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO to use to enable/disable the regulator.
+
+      Unlike the gpio property in the Linux bindings this array must
+      provide the GPIO polarity and open-drain status in the phandle
+      selector.  The Linux enable-active-high and gpio-open-drain
+      properties are not valid for Zephyr devicetree files.
+
+  startup-delay-us:
+    type: int
+    required: false
+    default: 0
+    description: Startup time, in microseconds
+
+  off-on-delay-us:
+    type: int
+    required: false
+    default: 0
+    description: Off delay time, in microseconds

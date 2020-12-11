@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2018 Intel Corporation.
+ * Copyright (c) 2020 Peter Bigot Consulting, LLC
+ * Copyright (c) 2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +12,8 @@
 #include <errno.h>
 #include <init.h>
 #include <fs/fs.h>
+#include <fs/fs_sys.h>
+#include <sys/check.h>
 #include <sys/stat.h>
 
 
@@ -23,8 +27,57 @@ static sys_dlist_t fs_mnt_list;
 /* lock to protect mount list operations */
 static struct k_mutex mutex;
 
-/* file system map table */
-static struct fs_file_system_t *fs_map[FS_TYPE_END];
+/* Maps an identifier used in mount points to the file system
+ * implementation.
+ */
+struct registry_entry {
+	int type;
+	const struct fs_file_system_t *fstp;
+};
+static struct registry_entry registry[CONFIG_FILE_SYSTEM_MAX_TYPES];
+
+static inline void registry_clear_entry(struct registry_entry *ep)
+{
+	ep->fstp = NULL;
+}
+
+static int registry_add(int type,
+			const struct fs_file_system_t *fstp)
+{
+	int rv = -ENOSPC;
+
+	for (size_t i = 0; i < ARRAY_SIZE(registry); ++i) {
+		struct registry_entry *ep = &registry[i];
+
+		if (ep->fstp == NULL) {
+			ep->type = type;
+			ep->fstp = fstp;
+			rv = 0;
+			break;
+		}
+	}
+
+	return rv;
+}
+
+static struct registry_entry *registry_find(int type)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(registry); ++i) {
+		struct registry_entry *ep = &registry[i];
+
+		if ((ep->fstp != NULL) && (ep->type == type)) {
+			return ep;
+		}
+	}
+	return NULL;
+}
+
+static const struct fs_file_system_t *fs_type_get(int type)
+{
+	struct registry_entry *ep = registry_find(type);
+
+	return (ep != NULL) ? ep->fstp : NULL;
+}
 
 static int fs_get_mnt_point(struct fs_mount_t **mnt_pntp,
 			    const char *name, size_t *match_len)
@@ -97,13 +150,19 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 	}
 
 	zfp->mp = mp;
+	if (((mp->flags & FS_MOUNT_FLAG_READ_ONLY) != 0) &&
+	    (flags & FS_O_CREATE || flags & FS_O_WRITE)) {
+		return -EROFS;
+	}
 
-	if (zfp->mp->fs->open != NULL) {
-		rc = zfp->mp->fs->open(zfp, file_name, flags);
-		if (rc < 0) {
-			LOG_ERR("file open error (%d)", rc);
-			return rc;
-		}
+	CHECKIF(zfp->mp->fs->open == NULL) {
+		return -ENOTSUP;
+	}
+
+	rc = zfp->mp->fs->open(zfp, file_name, flags);
+	if (rc < 0) {
+		LOG_ERR("file open error (%d)", rc);
+		return rc;
 	}
 
 	return rc;
@@ -117,12 +176,14 @@ int fs_close(struct fs_file_t *zfp)
 		return 0;
 	}
 
-	if (zfp->mp->fs->close != NULL) {
-		rc = zfp->mp->fs->close(zfp);
-		if (rc < 0) {
-			LOG_ERR("file close error (%d)", rc);
-			return rc;
-		}
+	CHECKIF(zfp->mp->fs->close == NULL) {
+		return -ENOTSUP;
+	}
+
+	rc = zfp->mp->fs->close(zfp);
+	if (rc < 0) {
+		LOG_ERR("file close error (%d)", rc);
+		return rc;
 	}
 
 	zfp->mp = NULL;
@@ -138,11 +199,13 @@ ssize_t fs_read(struct fs_file_t *zfp, void *ptr, size_t size)
 		return -EBADF;
 	}
 
-	if (zfp->mp->fs->read != NULL) {
-		rc = zfp->mp->fs->read(zfp, ptr, size);
-		if (rc < 0) {
-			LOG_ERR("file read error (%d)", rc);
-		}
+	CHECKIF(zfp->mp->fs->read == NULL) {
+		return -ENOTSUP;
+	}
+
+	rc = zfp->mp->fs->read(zfp, ptr, size);
+	if (rc < 0) {
+		LOG_ERR("file read error (%d)", rc);
 	}
 
 	return rc;
@@ -156,11 +219,13 @@ ssize_t fs_write(struct fs_file_t *zfp, const void *ptr, size_t size)
 		return -EBADF;
 	}
 
-	if (zfp->mp->fs->write != NULL) {
-		rc = zfp->mp->fs->write(zfp, ptr, size);
-		if (rc < 0) {
-			LOG_ERR("file write error (%d)", rc);
-		}
+	CHECKIF(zfp->mp->fs->write == NULL) {
+		return -ENOTSUP;
+	}
+
+	rc = zfp->mp->fs->write(zfp, ptr, size);
+	if (rc < 0) {
+		LOG_ERR("file write error (%d)", rc);
 	}
 
 	return rc;
@@ -168,17 +233,19 @@ ssize_t fs_write(struct fs_file_t *zfp, const void *ptr, size_t size)
 
 int fs_seek(struct fs_file_t *zfp, off_t offset, int whence)
 {
-	int rc = -EINVAL;
+	int rc = -ENOTSUP;
 
 	if (zfp->mp == NULL) {
 		return -EBADF;
 	}
 
-	if (zfp->mp->fs->lseek != NULL) {
-		rc = zfp->mp->fs->lseek(zfp, offset, whence);
-		if (rc < 0) {
-			LOG_ERR("file seek error (%d)", rc);
-		}
+	CHECKIF(zfp->mp->fs->lseek == NULL) {
+		return -ENOTSUP;
+	}
+
+	rc = zfp->mp->fs->lseek(zfp, offset, whence);
+	if (rc < 0) {
+		LOG_ERR("file seek error (%d)", rc);
 	}
 
 	return rc;
@@ -186,17 +253,19 @@ int fs_seek(struct fs_file_t *zfp, off_t offset, int whence)
 
 off_t fs_tell(struct fs_file_t *zfp)
 {
-	int rc = -EINVAL;
+	int rc = -ENOTSUP;
 
 	if (zfp->mp == NULL) {
 		return -EBADF;
 	}
 
-	if (zfp->mp->fs->tell != NULL) {
-		rc = zfp->mp->fs->tell(zfp);
-		if (rc < 0) {
-			LOG_ERR("file tell error (%d)", rc);
-		}
+	CHECKIF(zfp->mp->fs->tell == NULL) {
+		return -ENOTSUP;
+	}
+
+	rc = zfp->mp->fs->tell(zfp);
+	if (rc < 0) {
+		LOG_ERR("file tell error (%d)", rc);
 	}
 
 	return rc;
@@ -210,11 +279,13 @@ int fs_truncate(struct fs_file_t *zfp, off_t length)
 		return -EBADF;
 	}
 
-	if (zfp->mp->fs->truncate != NULL) {
-		rc = zfp->mp->fs->truncate(zfp, length);
-		if (rc < 0) {
-			LOG_ERR("file truncate error (%d)", rc);
-		}
+	CHECKIF(zfp->mp->fs->truncate == NULL) {
+		return -ENOTSUP;
+	}
+
+	rc = zfp->mp->fs->truncate(zfp, length);
+	if (rc < 0) {
+		LOG_ERR("file truncate error (%d)", rc);
 	}
 
 	return rc;
@@ -228,11 +299,13 @@ int fs_sync(struct fs_file_t *zfp)
 		return -EBADF;
 	}
 
-	if (zfp->mp->fs->sync != NULL) {
-		rc = zfp->mp->fs->sync(zfp);
-		if (rc < 0) {
-			LOG_ERR("file sync error (%d)", rc);
-		}
+	CHECKIF(zfp->mp->fs->sync == NULL) {
+		return -ENOTSUP;
+	}
+
+	rc = zfp->mp->fs->sync(zfp);
+	if (rc < 0) {
+		LOG_ERR("file sync error (%d)", rc);
 	}
 
 	return rc;
@@ -268,13 +341,14 @@ int fs_opendir(struct fs_dir_t *zdp, const char *abs_path)
 		return rc;
 	}
 
-	zdp->mp = mp;
+	CHECKIF(mp->fs->opendir == NULL) {
+		return -ENOTSUP;
+	}
 
-	if (zdp->mp->fs->opendir != NULL) {
-		rc = zdp->mp->fs->opendir(zdp, abs_path);
-		if (rc < 0) {
-			LOG_ERR("directory open error (%d)", rc);
-		}
+	zdp->mp = mp;
+	rc = zdp->mp->fs->opendir(zdp, abs_path);
+	if (rc < 0) {
+		LOG_ERR("directory open error (%d)", rc);
 	}
 
 	return rc;
@@ -286,27 +360,29 @@ int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry)
 		/* Delegate to mounted filesystem */
 		int rc = -EINVAL;
 
-		if (zdp->mp->fs->readdir != NULL) {
-			/* Loop until error or not special directory */
-			while (true) {
-				rc = zdp->mp->fs->readdir(zdp, entry);
-				if (rc < 0) {
-					break;
-				}
-				if (entry->name[0] == 0) {
-					break;
-				}
-				if (entry->type != FS_DIR_ENTRY_DIR) {
-					break;
-				}
-				if ((strcmp(entry->name, ".") != 0)
-				    && (strcmp(entry->name, "..") != 0)) {
-					break;
-				}
-			}
+		CHECKIF(zdp->mp->fs->readdir == NULL) {
+			return  -ENOTSUP;
+		}
+
+		/* Loop until error or not special directory */
+		while (true) {
+			rc = zdp->mp->fs->readdir(zdp, entry);
 			if (rc < 0) {
-				LOG_ERR("directory read error (%d)", rc);
+				break;
 			}
+			if (entry->name[0] == 0) {
+				break;
+			}
+			if (entry->type != FS_DIR_ENTRY_DIR) {
+				break;
+			}
+			if ((strcmp(entry->name, ".") != 0)
+			    && (strcmp(entry->name, "..") != 0)) {
+				break;
+			}
+		}
+		if (rc < 0) {
+			LOG_ERR("directory read error (%d)", rc);
 		}
 
 		return rc;
@@ -369,12 +445,14 @@ int fs_closedir(struct fs_dir_t *zdp)
 		return 0;
 	}
 
-	if (zdp->mp->fs->closedir != NULL) {
-		rc = zdp->mp->fs->closedir(zdp);
-		if (rc < 0) {
-			LOG_ERR("directory close error (%d)", rc);
-			return rc;
-		}
+	CHECKIF(zdp->mp->fs->closedir == NULL) {
+		return -ENOTSUP;
+	}
+
+	rc = zdp->mp->fs->closedir(zdp);
+	if (rc < 0) {
+		LOG_ERR("directory close error (%d)", rc);
+		return rc;
 	}
 
 	zdp->mp = NULL;
@@ -399,11 +477,17 @@ int fs_mkdir(const char *abs_path)
 		return rc;
 	}
 
-	if (mp->fs->mkdir != NULL) {
-		rc = mp->fs->mkdir(mp, abs_path);
-		if (rc < 0) {
-			LOG_ERR("failed to create directory (%d)", rc);
-		}
+	if (mp->flags & FS_MOUNT_FLAG_READ_ONLY) {
+		return -EROFS;
+	}
+
+	CHECKIF(mp->fs->mkdir == NULL) {
+		return -ENOTSUP;
+	}
+
+	rc = mp->fs->mkdir(mp, abs_path);
+	if (rc < 0) {
+		LOG_ERR("failed to create directory (%d)", rc);
 	}
 
 	return rc;
@@ -426,11 +510,17 @@ int fs_unlink(const char *abs_path)
 		return rc;
 	}
 
-	if (mp->fs->unlink != NULL) {
-		rc = mp->fs->unlink(mp, abs_path);
-		if (rc < 0) {
-			LOG_ERR("failed to unlink path (%d)", rc);
-		}
+	if (mp->flags & FS_MOUNT_FLAG_READ_ONLY) {
+		return -EROFS;
+	}
+
+	CHECKIF(mp->fs->unlink == NULL) {
+		return -ENOTSUP;
+	}
+
+	rc = mp->fs->unlink(mp, abs_path);
+	if (rc < 0) {
+		LOG_ERR("failed to unlink path (%d)", rc);
 	}
 
 	return rc;
@@ -454,17 +544,23 @@ int fs_rename(const char *from, const char *to)
 		return rc;
 	}
 
+	if (mp->flags & FS_MOUNT_FLAG_READ_ONLY) {
+		return -EROFS;
+	}
+
 	/* Make sure both files are mounted on the same path */
 	if (strncmp(from, to, match_len) != 0) {
 		LOG_ERR("mount point not same!!");
 		return -EINVAL;
 	}
 
-	if (mp->fs->rename != NULL) {
-		rc = mp->fs->rename(mp, from, to);
-		if (rc < 0) {
-			LOG_ERR("failed to rename file or dir (%d)", rc);
-		}
+	CHECKIF(mp->fs->rename == NULL) {
+		return -ENOTSUP;
+	}
+
+	rc = mp->fs->rename(mp, from, to);
+	if (rc < 0) {
+		LOG_ERR("failed to rename file or dir (%d)", rc);
 	}
 
 	return rc;
@@ -487,11 +583,13 @@ int fs_stat(const char *abs_path, struct fs_dirent *entry)
 		return rc;
 	}
 
-	if (mp->fs->stat != NULL) {
-		rc = mp->fs->stat(mp, abs_path, entry);
-		if (rc < 0) {
-			LOG_ERR("failed get file or dir stat (%d)", rc);
-		}
+	CHECKIF(mp->fs->stat == NULL) {
+		return -ENOTSUP;
+	}
+
+	rc = mp->fs->stat(mp, abs_path, entry);
+	if (rc < 0) {
+		LOG_ERR("failed get file or dir stat (%d)", rc);
 	}
 	return rc;
 }
@@ -526,56 +624,61 @@ int fs_statvfs(const char *abs_path, struct fs_statvfs *stat)
 int fs_mount(struct fs_mount_t *mp)
 {
 	struct fs_mount_t *itr;
-	struct fs_file_system_t *fs;
+	const struct fs_file_system_t *fs;
 	sys_dnode_t *node;
 	int rc = -EINVAL;
+	size_t len = 0;
 
+	/* Do all the mp checks prior to locking the mutex on the file
+	 * subsystem.
+	 */
 	if ((mp == NULL) || (mp->mnt_point == NULL)) {
 		LOG_ERR("mount point not initialized!!");
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&mutex, K_FOREVER);
-	/* Check if requested file system is registered */
-	if (mp->type >= FS_TYPE_END ||  fs_map[mp->type] == NULL) {
-		LOG_ERR("requested file system not registered!!");
-		rc = -ENOENT;
-		goto mount_err;
-	}
+	len = strlen(mp->mnt_point);
 
-	/* Get fs interface from file system map */
-	fs = fs_map[mp->type];
-	mp->mountp_len = strlen(mp->mnt_point);
-
-	if ((mp->mnt_point[0] != '/') ||
-			(strlen(mp->mnt_point) <= 1)) {
+	if ((len <= 1) || (mp->mnt_point[0] != '/')) {
 		LOG_ERR("invalid mount point!!");
-		rc = -EINVAL;
-		goto mount_err;
+		return -EINVAL;
 	}
 
-	if (fs->mount == NULL) {
-		LOG_ERR("fs ops functions not set!!");
-		rc = -EINVAL;
-		goto mount_err;
-	}
+	k_mutex_lock(&mutex, K_FOREVER);
 
 	/* Check if mount point already exists */
 	SYS_DLIST_FOR_EACH_NODE(&fs_mnt_list, node) {
 		itr = CONTAINER_OF(node, struct fs_mount_t, node);
 		/* continue if length does not match */
-		if (mp->mountp_len != itr->mountp_len) {
+		if (len != itr->mountp_len) {
 			continue;
 		}
 
-		if (strncmp(mp->mnt_point, itr->mnt_point,
-					mp->mountp_len) == 0) {
-			LOG_ERR("mount Point already exists!!");
+		if (strncmp(mp->mnt_point, itr->mnt_point, len) == 0) {
+			LOG_ERR("mount point already exists!!");
 			rc = -EBUSY;
 			goto mount_err;
 		}
 	}
 
+	/* Get file system information */
+	fs = fs_type_get(mp->type);
+	if (fs == NULL) {
+		LOG_ERR("requested file system type not registered!!");
+		rc = -ENOENT;
+		goto mount_err;
+	}
+
+	CHECKIF(fs->mount == NULL) {
+		LOG_ERR("fs type %d does not support mounting", mp->type);
+		rc = -ENOTSUP;
+		goto mount_err;
+	}
+
+	if (fs->unmount == NULL) {
+		LOG_WRN("mount path %s is not unmountable",
+			log_strdup(mp->mnt_point));
+	}
 
 	rc = fs->mount(mp);
 	if (rc < 0) {
@@ -583,10 +686,10 @@ int fs_mount(struct fs_mount_t *mp)
 		goto mount_err;
 	}
 
-	/* set mount point fs interface */
+	/* Update mount point data and append it to the list */
+	mp->mountp_len = len;
 	mp->fs = fs;
 
-	/*  append to the mount list */
 	sys_dlist_append(&fs_mnt_list, &mp->node);
 	LOG_DBG("fs mounted at %s", log_strdup(mp->mnt_point));
 
@@ -600,16 +703,20 @@ int fs_unmount(struct fs_mount_t *mp)
 {
 	int rc = -EINVAL;
 
-	if ((mp == NULL) || (mp->mnt_point == NULL) ||
-				(strlen(mp->mnt_point) <= 1)) {
-		LOG_ERR("invalid mount point!!");
-		return -EINVAL;
+	if (mp == NULL) {
+		return rc;
 	}
 
 	k_mutex_lock(&mutex, K_FOREVER);
-	if ((mp->fs == NULL) || mp->fs->unmount == NULL) {
-		LOG_ERR("fs ops functions not set!!");
-		rc = -EINVAL;
+
+	if (mp->fs == NULL) {
+		LOG_ERR("fs not mounted (mp == %p)", mp);
+		goto unmount_err;
+	}
+
+	CHECKIF(mp->fs->unmount == NULL) {
+		LOG_ERR("fs unmount not supported!!");
+		rc = -ENOTSUP;
 		goto unmount_err;
 	}
 
@@ -631,7 +738,7 @@ unmount_err:
 	return rc;
 }
 
-int fs_readmount(int *number, const char **name)
+int fs_readmount(int *index, const char **name)
 {
 	sys_dnode_t *node;
 	int rc = -ENOENT;
@@ -643,7 +750,7 @@ int fs_readmount(int *number, const char **name)
 	k_mutex_lock(&mutex, K_FOREVER);
 
 	SYS_DLIST_FOR_EACH_NODE(&fs_mnt_list, node) {
-		if (*number == cnt) {
+		if (*index == cnt) {
 			itr = CONTAINER_OF(node, struct fs_mount_t, node);
 			break;
 		}
@@ -656,7 +763,7 @@ int fs_readmount(int *number, const char **name)
 	if (itr != NULL) {
 		rc = 0;
 		*name = itr->mnt_point;
-		++(*number);
+		++(*index);
 	}
 
 	return rc;
@@ -664,43 +771,47 @@ int fs_readmount(int *number, const char **name)
 }
 
 /* Register File system */
-int fs_register(enum fs_type type, struct fs_file_system_t *fs)
+int fs_register(int type, const struct fs_file_system_t *fs)
 {
 	int rc = 0;
 
 	k_mutex_lock(&mutex, K_FOREVER);
-	if (type >= FS_TYPE_END) {
-		LOG_ERR("failed to register File system!!");
-		rc = -EINVAL;
-		goto reg_err;
+
+	if (fs_type_get(type) != NULL) {
+		rc = -EALREADY;
+	} else {
+		rc = registry_add(type, fs);
 	}
-	fs_map[type] = fs;
-	LOG_DBG("fs registered of type(%u)", type);
-reg_err:
+
 	k_mutex_unlock(&mutex);
+
+	LOG_DBG("fs register %d: %d", type, rc);
+
 	return rc;
 }
 
 /* Unregister File system */
-int fs_unregister(enum fs_type type, struct fs_file_system_t *fs)
+int fs_unregister(int type, const struct fs_file_system_t *fs)
 {
 	int rc = 0;
+	struct registry_entry *ep;
 
 	k_mutex_lock(&mutex, K_FOREVER);
-	if ((type >= FS_TYPE_END) ||
-			(fs_map[type] != fs)) {
-		LOG_ERR("failed to unregister File system!!");
+
+	ep = registry_find(type);
+	if ((ep == NULL) || (ep->fstp != fs)) {
 		rc = -EINVAL;
-		goto unreg_err;
+	} else {
+		registry_clear_entry(ep);
 	}
-	fs_map[type] = NULL;
-	LOG_DBG("fs unregistered of type(%u)", type);
-unreg_err:
+
 	k_mutex_unlock(&mutex);
+
+	LOG_DBG("fs unregister %d: %d", type, rc);
 	return rc;
 }
 
-static int fs_init(struct device *dev)
+static int fs_init(const struct device *dev)
 {
 	k_mutex_init(&mutex);
 	sys_dlist_init(&fs_mnt_list);

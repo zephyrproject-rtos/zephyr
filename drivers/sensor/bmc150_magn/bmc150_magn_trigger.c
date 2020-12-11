@@ -15,12 +15,12 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(BMC150_MAGN, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline void setup_drdy(struct device *dev,
+static inline void setup_drdy(const struct device *dev,
 			      bool enable)
 {
-	struct bmc150_magn_data *data = dev->driver_data;
+	struct bmc150_magn_data *data = dev->data;
 	const struct bmc150_magn_config *const cfg =
-		dev->config_info;
+		dev->config;
 
 	gpio_pin_interrupt_configure(data->gpio_drdy,
 				     cfg->gpio_drdy_int_pin,
@@ -30,13 +30,13 @@ static inline void setup_drdy(struct device *dev,
 }
 
 
-int bmc150_magn_trigger_set(struct device *dev,
+int bmc150_magn_trigger_set(const struct device *dev,
 			    const struct sensor_trigger *trig,
 			    sensor_trigger_handler_t handler)
 {
-	struct bmc150_magn_data *data = dev->driver_data;
+	struct bmc150_magn_data *data = dev->data;
 	const struct bmc150_magn_config * const config =
-					dev->config_info;
+					dev->config;
 	uint8_t state;
 
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
@@ -68,7 +68,7 @@ int bmc150_magn_trigger_set(struct device *dev,
 	return 0;
 }
 
-static void bmc150_magn_gpio_drdy_callback(struct device *dev,
+static void bmc150_magn_gpio_drdy_callback(const struct device *dev,
 					   struct gpio_callback *cb,
 					   uint32_t pins)
 {
@@ -82,11 +82,9 @@ static void bmc150_magn_gpio_drdy_callback(struct device *dev,
 	k_sem_give(&data->sem);
 }
 
-static void bmc150_magn_thread_main(void *arg1, void *arg2, void *arg3)
+static void bmc150_magn_thread_main(struct bmc150_magn_data *data)
 {
-	struct device *dev = (struct device *) arg1;
-	struct bmc150_magn_data *data = dev->driver_data;
-	const struct bmc150_magn_config *config = dev->config_info;
+	const struct bmc150_magn_config *config = data->dev->config;
 	uint8_t reg_val;
 
 	while (1) {
@@ -100,17 +98,17 @@ static void bmc150_magn_thread_main(void *arg1, void *arg2, void *arg3)
 		}
 
 		if (data->handler_drdy) {
-			data->handler_drdy(dev, &data->trigger_drdy);
+			data->handler_drdy(data->dev, &data->trigger_drdy);
 		}
 
-		setup_drdy(dev, true);
+		setup_drdy(data->dev, true);
 	}
 }
 
-static int bmc150_magn_set_drdy_polarity(struct device *dev, int state)
+static int bmc150_magn_set_drdy_polarity(const struct device *dev, int state)
 {
-	struct bmc150_magn_data *data = dev->driver_data;
-	const struct bmc150_magn_config *config = dev->config_info;
+	struct bmc150_magn_data *data = dev->data;
+	const struct bmc150_magn_config *config = dev->config;
 
 	if (state) {
 		state = 1;
@@ -122,11 +120,11 @@ static int bmc150_magn_set_drdy_polarity(struct device *dev, int state)
 				   state << BMC150_MAGN_SHIFT_DRDY_DR_POLARITY);
 }
 
-int bmc150_magn_init_interrupt(struct device *dev)
+int bmc150_magn_init_interrupt(const struct device *dev)
 {
 	const struct bmc150_magn_config * const config =
-						dev->config_info;
-	struct bmc150_magn_data *data = dev->driver_data;
+						dev->config;
+	struct bmc150_magn_data *data = dev->data;
 
 
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
@@ -150,7 +148,8 @@ int bmc150_magn_init_interrupt(struct device *dev)
 
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_BMC150_MAGN_TRIGGER_THREAD_STACK,
-			bmc150_magn_thread_main, dev, NULL, NULL,
+			(k_thread_entry_t)bmc150_magn_thread_main,
+			data, NULL, NULL,
 			K_PRIO_COOP(10), 0, K_NO_WAIT);
 
 	data->gpio_drdy = device_get_binding(config->gpio_drdy_dev_name);

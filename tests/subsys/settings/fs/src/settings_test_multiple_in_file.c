@@ -8,17 +8,10 @@
 #include "settings_test.h"
 #include "settings/settings_file.h"
 
-#ifdef CONFIG_SETTINGS_USE_BASE64
-#define CF_MFG_TEST1 "\x10\x00myfoo/mybar=AQ=="\
-		     "\x10\x00myfoo/mybar=Dg=="
-#define CF_MFG_TEST2 "\x10\x00myfoo/mybar=AQ=="\
-		     "\x10\x00myfoo/mybar=Dw=="
-#else
 #define CF_MFG_TEST1 "\x0d\x00myfoo/mybar=\x01"\
 		     "\x0d\x00myfoo/mybar=\x0e"
 #define CF_MFG_TEST2 "\x0d\x00myfoo/mybar=\x01"\
 		     "\x0d\x00myfoo/mybar=\x0f"
-#endif
 
 void test_config_multiple_in_file(void)
 {

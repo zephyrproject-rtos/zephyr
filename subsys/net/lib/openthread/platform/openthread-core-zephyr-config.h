@@ -13,6 +13,7 @@
 #ifndef OPENTHREAD_CORE_ZEPHYR_CONFIG_H_
 #define OPENTHREAD_CORE_ZEPHYR_CONFIG_H_
 
+#include <autoconf.h>
 #include <devicetree.h>
 #include <toolchain.h>
 
@@ -22,7 +23,10 @@
  * The number of message buffers in the buffer pool.
  *
  */
-#define OPENTHREAD_CONFIG_NUM_MESSAGE_BUFFERS                   128
+#ifdef CONFIG_OPENTHREAD_NUM_MESSAGE_BUFFERS
+#define OPENTHREAD_CONFIG_NUM_MESSAGE_BUFFERS                                  \
+	CONFIG_OPENTHREAD_NUM_MESSAGE_BUFFERS
+#endif
 
 /**
  * @def OPENTHREAD_CONFIG_MAX_STATECHANGE_HANDLERS
@@ -31,7 +35,10 @@
  * (set using `otSetStateChangedCallback()`).
  *
  */
-#define OPENTHREAD_CONFIG_MAX_STATECHANGE_HANDLERS              2
+#ifdef CONFIG_OPENTHREAD_MAX_STATECHANGE_HANDLERS
+#define OPENTHREAD_CONFIG_MAX_STATECHANGE_HANDLERS                             \
+	CONFIG_OPENTHREAD_MAX_STATECHANGE_HANDLERS
+#endif
 
 /**
  * @def OPENTHREAD_CONFIG_TMF_ADDRESS_CACHE_ENTRIES
@@ -39,7 +46,10 @@
  * The number of EID-to-RLOC cache entries.
  *
  */
-#define OPENTHREAD_CONFIG_TMF_ADDRESS_CACHE_ENTRIES             20
+#ifdef CONFIG_OPENTHREAD_TMF_ADDRESS_CACHE_ENTRIES
+#define OPENTHREAD_CONFIG_TMF_ADDRESS_CACHE_ENTRIES                            \
+	CONFIG_OPENTHREAD_TMF_ADDRESS_CACHE_ENTRIES
+#endif
 
 /**
  * @def OPENTHREAD_CONFIG_LOG_PREPEND_LEVEL
@@ -47,7 +57,9 @@
  * Define to prepend the log level to all log messages.
  *
  */
-#define OPENTHREAD_CONFIG_LOG_PREPEND_LEVEL                     0
+#ifdef CONFIG_OPENTHREAD_LOG_PREPEND_LEVEL_ENABLE
+#define OPENTHREAD_CONFIG_LOG_PREPEND_LEVEL 1
+#endif
 
 /**
  * @def OPENTHREAD_CONFIG_MAC_SOFTWARE_ACK_TIMEOUT_ENABLE
@@ -55,7 +67,9 @@
  * Define to 1 to enable software ACK timeout logic.
  *
  */
-#define OPENTHREAD_CONFIG_MAC_SOFTWARE_ACK_TIMEOUT_ENABLE       1
+#ifdef CONFIG_OPENTHREAD_MAC_SOFTWARE_ACK_TIMEOUT_ENABLE
+#define OPENTHREAD_CONFIG_MAC_SOFTWARE_ACK_TIMEOUT_ENABLE 1
+#endif
 
 /**
  * @def OPENTHREAD_CONFIG_MAC_SOFTWARE_RETRANSMIT_ENABLE
@@ -63,33 +77,19 @@
  * Define to 1 to enable software retransmission logic.
  *
  */
-#define OPENTHREAD_CONFIG_MAC_SOFTWARE_RETRANSMIT_ENABLE        1
+#ifdef CONFIG_OPENTHREAD_MAC_SOFTWARE_RETRANSMIT_ENABLE
+#define OPENTHREAD_CONFIG_MAC_SOFTWARE_RETRANSMIT_ENABLE 1
+#endif
 
 /**
- * @def SETTINGS_CONFIG_BASE_ADDRESS
+ * @def OPENTHREAD_CONFIG_MAC_SOFTWARE_CSMA_BACKOFF_ENABLE
  *
- * The base address of settings.
- *
- */
-#define SETTINGS_CONFIG_BASE_ADDRESS                            0
-
-/**
- * @def SETTINGS_CONFIG_PAGE_SIZE
- *
- * The page size of settings. Ensure that 'erase-block-size'
- * is set in your SOC dts file.
+ * Define to 1 if you want to enable software CSMA-CA backoff logic.
  *
  */
-#define SETTINGS_CONFIG_PAGE_SIZE \
-	DT_PROP(DT_CHOSEN(zephyr_flash), erase_block_size)
-
-/**
- * @def SETTINGS_CONFIG_PAGE_NUM
- *
- * The page number of settings.
- *
- */
-#define SETTINGS_CONFIG_PAGE_NUM                                4
+#ifdef CONFIG_OPENTHREAD_MAC_SOFTWARE_CSMA_BACKOFF_ENABLE
+#define OPENTHREAD_CONFIG_MAC_SOFTWARE_CSMA_BACKOFF_ENABLE 1
+#endif
 
 /**
  * @def OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE
@@ -98,7 +98,9 @@
  * in platform.
  *
  */
-#define OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE            0
+#ifdef CONFIG_OPENTHREAD_PLATFORM_USEC_TIMER_ENABLE
+#define OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE 1
+#endif
 
 /* Zephyr does not use OpenThreads heap. mbedTLS will use heap memory allocated
  * by Zephyr. Here, we use some dummy values to prevent OpenThread warnings.
@@ -131,6 +133,37 @@
 #define RADIO_CONFIG_SRC_MATCH_SHORT_ENTRY_NUM 0
 
 /**
+ * @def OPENTHREAD_CONFIG_PLATFORM_INFO
+ *
+ * The platform-specific string to insert into the OpenThread version string.
+ *
+ */
+#ifdef CONFIG_OPENTHREAD_CONFIG_PLATFORM_INFO
+#define OPENTHREAD_CONFIG_PLATFORM_INFO CONFIG_OPENTHREAD_CONFIG_PLATFORM_INFO
+#endif /* CONFIG_OPENTHREAD_CONFIG_PLATFORM_INFO */
+
+/**
+ * @def OPENTHREAD_CONFIG_MLE_MAX_CHILDREN
+ *
+ * The maximum number of children.
+ *
+ */
+#ifdef CONFIG_OPENTHREAD_MAX_CHILDREN
+#define OPENTHREAD_CONFIG_MLE_MAX_CHILDREN CONFIG_OPENTHREAD_MAX_CHILDREN
+#endif /* CONFIG_OPENTHREAD_MAX_CHILDREN */
+
+/**
+ * @def OPENTHREAD_CONFIG_MLE_IP_ADDRS_PER_CHILD
+ *
+ * The maximum number of supported IPv6 address registrations per child.
+ *
+ */
+#ifdef CONFIG_OPENTHREAD_MAX_IP_ADDR_PER_CHILD
+#define OPENTHREAD_CONFIG_MLE_IP_ADDRS_PER_CHILD \
+	CONFIG_OPENTHREAD_MAX_IP_ADDR_PER_CHILD
+#endif /* CONFIG_OPENTHREAD_MAX_IP_ADDR_PER_CHILD */
+
+/**
  * @def RADIO_CONFIG_SRC_MATCH_EXT_ENTRY_NUM
  *
  * The number of extended source address table entries.
@@ -144,7 +177,9 @@
  * The size of the NCP buffers.
  *
  */
-#define OPENTHREAD_CONFIG_NCP_BUFFER_SIZE 2048
+#ifdef CONFIG_OPENTHREAD_NCP_BUFFER_SIZE
+#define OPENTHREAD_CONFIG_NCP_BUFFER_SIZE CONFIG_OPENTHREAD_NCP_BUFFER_SIZE
+#endif
 
 /**
  * @def OPENTHREAD_CONFIG_PLAT_LOG_FUNCTION

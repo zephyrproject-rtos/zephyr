@@ -1,11 +1,29 @@
-# TF-M/PSA Related
+# Configuration for the TF-M Module
 
 # Copyright (c) 2019, 2020 Linaro Limited
+# Copyright (c) 2020 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-config BUILD_WITH_TFM
+
+config TFM_BOARD
+	string
+	default "nordic_nrf/nrf9160dk_nrf9160" if BOARD_NRF9160DK_NRF9160NS
+	default "nordic_nrf/nrf5340dk_nrf5340_cpuapp" if BOARD_NRF5340DK_NRF5340_CPUAPPNS
+	default "nordic_nrf/nrf5340pdk_nrf5340_cpuapp" if BOARD_NRF5340PDK_NRF5340_CPUAPPNS
+	default "nxp/lpcxpresso55s69" if BOARD_LPCXPRESSO55S69_CPU0
+	default "mps2/an521" if BOARD_MPS2_AN521
+	default "stm/nucleo_l552ze_q" if BOARD_NUCLEO_L552ZE_Q
+	default "musca_b1" if BOARD_MUSCA_B1
+	help
+	  The board name used for building TFM. Building with TFM requires that
+	  TFM has been ported to the given board/SoC.
+
+menuconfig BUILD_WITH_TFM
 	bool "Build with TF-M as the Secure Execution Environment"
 	depends on TRUSTED_EXECUTION_NONSECURE
+	depends on TFM_BOARD != ""
+	depends on ARM_TRUSTZONE_M
+	imply INIT_ARCH_HW_AT_BOOT
 	help
 	  When enabled, this option instructs the Zephyr build process to
 	  additionaly generate a TF-M image for the Secure Execution
@@ -21,10 +39,12 @@ config BUILD_WITH_TFM
 	    "mps2_an521_nonsecure") ensures that
 	    CONFIG_TRUSTED_EXECUTION_NONSECURE ie enabled.
 
+if BUILD_WITH_TFM
+
 config TFM_KEY_FILE_S
 	string "Path to private key used to sign secure firmware images."
 	depends on BUILD_WITH_TFM
-	default "${ZEPHYR_BASE}/../modules/tee/tfm/trusted-firmware-m/bl2/ext/mcuboot/root-rsa-3072.pem"
+	default "${ZEPHYR_BASE}/../modules/tee/tfm/trusted-firmware-m/bl2/ext/mcuboot/root-RSA-3072.pem"
 	help
 	  The path and filename for the .pem file containing the private key
 	  that should be used by the BL2 bootloader when signing secure
@@ -33,8 +53,69 @@ config TFM_KEY_FILE_S
 config TFM_KEY_FILE_NS
 	string "Path to private key used to sign non-secure firmware images."
 	depends on BUILD_WITH_TFM
-	default "${ZEPHYR_BASE}/../modules/tee/tfm/trusted-firmware-m/bl2/ext/mcuboot/root-rsa-3072_1.pem"
+	default "${ZEPHYR_BASE}/../modules/tee/tfm/trusted-firmware-m/bl2/ext/mcuboot/root-RSA-3072_1.pem"
 	help
 	  The path and filename for the .pem file containing the private key
 	  that should be used by the BL2 bootloader when signing non-secure
 	  firmware images.
+
+config TFM_PROFILE
+	string "The build profile used for TFM Secure image."
+	depends on BUILD_WITH_TFM
+	help
+	  Build profile used to build tfm_s image. The available values are
+	  profile_medium and profile_small. The default profile does not need
+	  to have this configuration set.
+
+config TFM_ISOLATION_LEVEL
+	int "Isolation level setting."
+	range 1 3
+	depends on BUILD_WITH_TFM
+	help
+	  Manually set the required TFM isolation level. Possible values are
+	  1,2 or 3; the default is set by build configuration.
+
+choice TFM_BL2
+	prompt "BL2 configuration, should TFM build with MCUboot support"
+	default TFM_BL2_CONFIG_FILE_DEFAULT
+
+config TFM_BL2_CONFIG_FILE_DEFAULT
+	bool "Use TFM BL2 setting from TFM configuration file"
+	help
+	  This option does not set -DBL2 in TFM, which means the TF-M platform's
+	  default is used. Currently all TF-M platforms have BL2=ON as default.
+
+config TFM_BL2_TRUE
+	bool "TFM BL2 enabled"
+
+config TFM_BL2_FALSE
+	bool "TFM BL2 disabled"
+
+endchoice
+
+config TFM_IPC
+	bool "IPC"
+	help
+	  When enabled, this option signifies that the TF-M build supports
+	  the PSA API (IPC mode) instead of the secure library mode.
+
+config TFM_REGRESSION
+	bool "Regression tests"
+	help
+	  When enabled, this option signifies that the TF-M build includes
+	  the Secure and the Non-Secure regression tests.
+
+
+if !TFM_BL2_FALSE
+
+config ROM_START_OFFSET
+	hex "ROM Start Offset accounting for BL2 Header in the NS image"
+	default 0x400
+	help
+	  By default BL2 header size in TF-M is 0x400. ROM_START_OFFSET
+	  needs to be updated if TF-M switches to use a different header
+	  size for BL2.
+
+endif # !TFM_BL2_FALSE
+
+endif # BUILD_WITH_TFM

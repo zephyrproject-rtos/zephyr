@@ -27,6 +27,7 @@
 #include <sw_isr_table.h>
 #include <irq.h>
 #include <tracing/tracing.h>
+#include <power/power.h>
 
 extern void z_arm_reserved(void);
 
@@ -154,14 +155,14 @@ void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
  *
  * @return N/A
  */
-void z_irq_spurious(void *unused)
+void z_irq_spurious(const void *unused)
 {
 	ARG_UNUSED(unused);
 
 	z_arm_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 void _arch_isr_direct_pm(void)
 {
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
@@ -184,7 +185,7 @@ void _arch_isr_direct_pm(void)
 		int32_t idle_val = _kernel.idle;
 
 		_kernel.idle = 0;
-		z_sys_power_save_idle_exit(idle_val);
+		z_pm_save_idle_exit(idle_val);
 	}
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
@@ -211,25 +212,31 @@ void _arch_isr_direct_pm(void)
  * to NVIC.ITNS register is write-ignored(WI), as the ITNS register is not
  * banked between security states and, therefore, has no Non-Secure instance.
  *
- * It shall assert if the operation is not performed successfully.
+ * It shall return the resulting target state of the given IRQ, indicating
+ * whether the operation has been performed successfully.
  *
  * @param irq IRQ line
- * @param secure_state 1 if target state is Secure, 0 otherwise.
+ * @param irq_target_state the desired IRQ target state
  *
- * @return N/A
+ * @return The resulting target state of the given IRQ
  */
-void irq_target_state_set(unsigned int irq, int secure_state)
+irq_target_state_t irq_target_state_set(unsigned int irq,
+	irq_target_state_t irq_target_state)
 {
-	if (secure_state) {
+	uint32_t result;
+
+	if (irq_target_state == IRQ_TARGET_STATE_SECURE) {
 		/* Set target to Secure */
-		if (NVIC_ClearTargetState(irq) != 0) {
-			__ASSERT(0, "NVIC SetTargetState error");
-		}
+		result = NVIC_ClearTargetState(irq);
 	} else {
-		/* Set target state to Non-Secure */
-		if (NVIC_SetTargetState(irq) != 1) {
-			__ASSERT(0, "NVIC SetTargetState error");
-		}
+		/* Set target to Non-Secure */
+		result = NVIC_SetTargetState(irq);
+	}
+
+	if (result) {
+		return IRQ_TARGET_STATE_NON_SECURE;
+	} else {
+		return IRQ_TARGET_STATE_SECURE;
 	}
 }
 
@@ -253,12 +260,44 @@ int irq_target_state_is_secure(unsigned int irq)
 	return NVIC_GetTargetState(irq) == 0;
 }
 
+/**
+ *
+ * @brief Disable and set all interrupt lines to target Non-Secure state.
+ *
+ * The function is used to set all HW NVIC interrupt lines to target the
+ * Non-Secure state. The function shall only be called fron Secure state.
+ *
+ * Notes:
+ * - All NVIC interrupts are disabled before being routed to Non-Secure.
+ * - Bits corresponding to un-implemented interrupts are RES0, so writes
+ *   will be ignored.
+ *
+ * @return N/A
+*/
+void irq_target_state_set_all_non_secure(void)
+{
+	int i;
+
+	/* Disable (Clear) all NVIC interrupt lines. */
+	for (i = 0; i < sizeof(NVIC->ICER) / sizeof(NVIC->ICER[0]); i++) {
+		NVIC->ICER[i] = 0xFFFFFFFF;
+	}
+
+	__DSB();
+	__ISB();
+
+	/* Set all NVIC interrupt lines to target Non-Secure */
+	for (i = 0; i < sizeof(NVIC->ITNS) / sizeof(NVIC->ITNS[0]); i++) {
+		NVIC->ITNS[i] = 0xFFFFFFFF;
+	}
+}
+
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			     void (*routine)(void *parameter), void *parameter,
-			     uint32_t flags)
+			     void (*routine)(const void *parameter),
+			     const void *parameter, uint32_t flags)
 {
 	z_isr_install(irq, routine, parameter);
 	z_arm_irq_priority_set(irq, priority, flags);

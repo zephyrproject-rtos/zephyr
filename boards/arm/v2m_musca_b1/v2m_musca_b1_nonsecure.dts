@@ -42,9 +42,9 @@
 		};
 	};
 
-	flash0: flash@0a070400 {
+	flash0: flash@0a070000 {
 		/* Embedded flash */
-		reg = <0x0a070400 0x19fc00>;
+		reg = <0x0a070000 0x1a0000>;
 	};
 
 	sram0: memory@20040000 {

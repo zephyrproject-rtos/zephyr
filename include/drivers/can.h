@@ -265,29 +265,32 @@ typedef void (*can_rx_callback_t)(struct zcan_frame *msg, void *arg);
 typedef void(*can_state_change_isr_t)(enum can_state state,
 					  struct can_bus_err_cnt err_cnt);
 
-typedef int (*can_configure_t)(struct device *dev, enum can_mode mode,
+typedef int (*can_configure_t)(const struct device *dev, enum can_mode mode,
 				uint32_t bitrate);
 
-typedef int (*can_send_t)(struct device *dev, const struct zcan_frame *msg,
+typedef int (*can_send_t)(const struct device *dev,
+			  const struct zcan_frame *msg,
 			  k_timeout_t timeout, can_tx_callback_t callback_isr,
 			  void *callback_arg);
 
 
-typedef int (*can_attach_msgq_t)(struct device *dev, struct k_msgq *msg_q,
+typedef int (*can_attach_msgq_t)(const struct device *dev,
+				 struct k_msgq *msg_q,
 				 const struct zcan_filter *filter);
 
-typedef int (*can_attach_isr_t)(struct device *dev, can_rx_callback_t isr,
+typedef int (*can_attach_isr_t)(const struct device *dev,
+				can_rx_callback_t isr,
 				void *callback_arg,
 				const struct zcan_filter *filter);
 
-typedef void (*can_detach_t)(struct device *dev, int filter_id);
+typedef void (*can_detach_t)(const struct device *dev, int filter_id);
 
-typedef int (*can_recover_t)(struct device *dev, k_timeout_t timeout);
+typedef int (*can_recover_t)(const struct device *dev, k_timeout_t timeout);
 
-typedef enum can_state (*can_get_state_t)(struct device *dev,
+typedef enum can_state (*can_get_state_t)(const struct device *dev,
 					  struct can_bus_err_cnt *err_cnt);
 
-typedef void(*can_register_state_change_isr_t)(struct device *dev,
+typedef void(*can_register_state_change_isr_t)(const struct device *dev,
 					       can_state_change_isr_t isr);
 
 #ifndef CONFIG_CAN_WORKQ_FRAMES_BUF_CNT
@@ -343,18 +346,18 @@ __subsystem struct can_driver_api {
  * @retval 0 If successful.
  * @retval CAN_TX_* on failure.
  */
-__syscall int can_send(struct device *dev, const struct zcan_frame *msg,
+__syscall int can_send(const struct device *dev, const struct zcan_frame *msg,
 		       k_timeout_t timeout, can_tx_callback_t callback_isr,
 		       void *callback_arg);
 
-static inline int z_impl_can_send(struct device *dev,
-				 const struct zcan_frame *msg,
-				 k_timeout_t timeout,
-				 can_tx_callback_t callback_isr,
-				 void *callback_arg)
+static inline int z_impl_can_send(const struct device *dev,
+				  const struct zcan_frame *msg,
+				  k_timeout_t timeout,
+				  can_tx_callback_t callback_isr,
+				  void *callback_arg)
 {
 	const struct can_driver_api *api =
-		(const struct can_driver_api *)dev->driver_api;
+		(const struct can_driver_api *)dev->api;
 
 	return api->send(dev, msg, timeout, callback_isr, callback_arg);
 }
@@ -379,7 +382,8 @@ static inline int z_impl_can_send(struct device *dev,
  * @retval -EIO General input / output error.
  * @retval -EINVAL if length > 8.
  */
-static inline int can_write(struct device *dev, const uint8_t *data, uint8_t length,
+static inline int can_write(const struct device *dev, const uint8_t *data,
+			    uint8_t length,
 			    uint32_t id, enum can_rtr rtr, k_timeout_t timeout)
 {
 	struct zcan_frame msg;
@@ -426,7 +430,7 @@ static inline int can_write(struct device *dev, const uint8_t *data, uint8_t len
  * @retval filter_id on success.
  * @retval CAN_NO_FREE_FILTER if there is no filter left.
  */
-int can_attach_workq(struct device *dev, struct k_work_q  *work_q,
+int can_attach_workq(const struct device *dev, struct k_work_q  *work_q,
 		     struct zcan_work *work,
 		     can_rx_callback_t callback, void *callback_arg,
 		     const struct zcan_filter *filter);
@@ -450,7 +454,7 @@ int can_attach_workq(struct device *dev, struct k_work_q  *work_q,
  * @retval filter_id on success.
  * @retval CAN_NO_FREE_FILTER if there is no filter left.
  */
-__syscall int can_attach_msgq(struct device *dev, struct k_msgq *msg_q,
+__syscall int can_attach_msgq(const struct device *dev, struct k_msgq *msg_q,
 			      const struct zcan_filter *filter);
 
 /**
@@ -472,13 +476,13 @@ __syscall int can_attach_msgq(struct device *dev, struct k_msgq *msg_q,
  * @retval filter_id on success.
  * @retval CAN_NO_FREE_FILTER if there is no filter left.
  */
-static inline int can_attach_isr(struct device *dev,
+static inline int can_attach_isr(const struct device *dev,
 				       can_rx_callback_t isr,
 				       void *callback_arg,
 				       const struct zcan_filter *filter)
 {
 	const struct can_driver_api *api =
-		(const struct can_driver_api *)dev->driver_api;
+		(const struct can_driver_api *)dev->api;
 
 	return api->attach_isr(dev, isr, callback_arg, filter);
 }
@@ -494,12 +498,12 @@ static inline int can_attach_isr(struct device *dev,
  *
  * @retval none
  */
-__syscall void can_detach(struct device *dev, int filter_id);
+__syscall void can_detach(const struct device *dev, int filter_id);
 
-static inline void z_impl_can_detach(struct device *dev, int filter_id)
+static inline void z_impl_can_detach(const struct device *dev, int filter_id)
 {
 	const struct can_driver_api *api =
-		(const struct can_driver_api *)dev->driver_api;
+		(const struct can_driver_api *)dev->api;
 
 	return api->detach(dev, filter_id);
 }
@@ -514,14 +518,15 @@ static inline void z_impl_can_detach(struct device *dev, int filter_id)
  * @retval 0 If successful.
  * @retval -EIO General input / output error, failed to configure device.
  */
-__syscall int can_configure(struct device *dev, enum can_mode mode,
+__syscall int can_configure(const struct device *dev, enum can_mode mode,
 			    uint32_t bitrate);
 
-static inline int z_impl_can_configure(struct device *dev, enum can_mode mode,
-				      uint32_t bitrate)
+static inline int z_impl_can_configure(const struct device *dev,
+				       enum can_mode mode,
+				       uint32_t bitrate)
 {
 	const struct can_driver_api *api =
-		(const struct can_driver_api *)dev->driver_api;
+		(const struct can_driver_api *)dev->api;
 
 	return api->configure(dev, mode, bitrate);
 }
@@ -536,15 +541,15 @@ static inline int z_impl_can_configure(struct device *dev, enum can_mode mode,
  *
  * @retval  state
  */
-__syscall enum can_state can_get_state(struct device *dev,
+__syscall enum can_state can_get_state(const struct device *dev,
 				       struct can_bus_err_cnt *err_cnt);
 
 static inline
-enum can_state z_impl_can_get_state(struct device *dev,
+enum can_state z_impl_can_get_state(const struct device *dev,
 				    struct can_bus_err_cnt *err_cnt)
 {
 	const struct can_driver_api *api =
-		(const struct can_driver_api *)dev->driver_api;
+		(const struct can_driver_api *)dev->api;
 
 	return api->get_state(dev, err_cnt);
 }
@@ -561,18 +566,20 @@ enum can_state z_impl_can_get_state(struct device *dev,
  * @retval CAN_TIMEOUT on timeout.
  */
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-__syscall int can_recover(struct device *dev, k_timeout_t timeout);
+__syscall int can_recover(const struct device *dev, k_timeout_t timeout);
 
-static inline int z_impl_can_recover(struct device *dev, k_timeout_t timeout)
+static inline int z_impl_can_recover(const struct device *dev,
+				     k_timeout_t timeout)
 {
 	const struct can_driver_api *api =
-		(const struct can_driver_api *)dev->driver_api;
+		(const struct can_driver_api *)dev->api;
 
 	return api->recover(dev, timeout);
 }
 #else
 /* This implementation prevents inking errors for auto recovery */
-static inline int z_impl_can_recover(struct device *dev, k_timeout_t timeout)
+static inline int z_impl_can_recover(const struct device *dev,
+				     k_timeout_t timeout)
 {
 	return 0;
 }
@@ -588,11 +595,11 @@ static inline int z_impl_can_recover(struct device *dev, k_timeout_t timeout)
  * @param isr Pointer to ISR
  */
 static inline
-void can_register_state_change_isr(struct device *dev,
+void can_register_state_change_isr(const struct device *dev,
 				   can_state_change_isr_t isr)
 {
 	const struct can_driver_api *api =
-		(const struct can_driver_api *)dev->driver_api;
+		(const struct can_driver_api *)dev->api;
 
 	return api->register_state_change_isr(dev, isr);
 }

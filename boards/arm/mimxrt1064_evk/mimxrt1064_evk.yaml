@@ -26,3 +26,4 @@ supported:
   - usb_device
   - video
   - kscan:touch
+  - can

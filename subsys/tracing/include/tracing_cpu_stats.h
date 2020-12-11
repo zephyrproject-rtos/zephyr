@@ -44,6 +44,12 @@ void cpu_stats_reset_counters(void);
 
 #define sys_trace_void(id)
 #define sys_trace_end_call(id)
+#define sys_trace_semaphore_init(sem)
+#define sys_trace_semaphore_take(sem)
+#define sys_trace_semaphore_give(sem)
+#define sys_trace_mutex_init(mutex)
+#define sys_trace_mutex_lock(mutex)
+#define sys_trace_mutex_unlock(mutex)
 
 #ifdef __cplusplus
 }

@@ -1,0 +1,87 @@
+/*
+ * Copyright (c) 2019, Manivannan Sadhasivam
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <dt-bindings/clock/imx_ccm.h>
+#include <dt-bindings/rdc/imx_rdc.h>
+#include <mem.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4";
+			reg = <0>;
+		};
+	};
+
+	soc {
+		tcml_code: code@1ffe0000 {
+			compatible = "nxp,imx-itcm";
+			reg = <0x1ffe0000 DT_SIZE_K(128)>;
+			label = "TCML CODE";
+		};
+
+		tcmu_sys: memory@20000000 {
+			compatible = "nxp,imx-dtcm";
+			reg = <0x20000000 DT_SIZE_K(128)>;
+			label = "TCMU SYSTEM";
+		};
+
+		ocram_code: code@900000 {
+			compatible = "nxp,imx-code-bus";
+			reg = <0x00900000 DT_SIZE_K(256)>;
+			label = "OCRAM CODE";
+		};
+
+		ocram_sys: memory@20200000 {
+			device_type = "memory";
+			compatible = "nxp,imx-sys-bus";
+			reg = <0x20200000 DT_SIZE_K(256)>;
+			label = "OCRAM SYSTEM";
+		};
+
+		ocram_s_code: code@180000 {
+			compatible = "nxp,imx-code-bus";
+			reg = <0x00180000 DT_SIZE_K(32)>;
+			label = "OCRAM_S CODE";
+		};
+
+		ocram_s_sys: memory@20180000 {
+			device_type = "memory";
+			compatible = "nxp,imx-sys-bus";
+			reg = <0x20180000 DT_SIZE_K(32)>;
+			label = "OCRAM_S SYSTEM";
+		};
+
+		ccm: ccm@30380000 {
+			compatible = "nxp,imx-ccm";
+			reg = <0x30380000 DT_SIZE_K(64)>;
+			label = "CCM";
+			#clock-cells = <3>;
+		};
+
+		/*
+		 * For now only UART4 is supported and
+		 * tested with the serial driver
+		 */
+		uart4: uart@30a60000 {
+			compatible = "nxp,imx-iuart";
+			reg = <0x30a60000 0x10000>;
+			interrupts = <29 3>;
+			clocks = <&ccm IMX_CCM_UART_CLK 0x6c 24>;
+			label = "UART_4";
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

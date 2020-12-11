@@ -46,19 +46,8 @@ static void work_timeout(struct _timeout *t)
 	k_work_submit_to_queue(w->work_q, &w->work);
 }
 
-void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
-{
-	k_work_init(&work->work, handler);
-	z_init_timeout(&work->timeout);
-	work->work_q = NULL;
-}
-
 static int work_cancel(struct k_delayed_work *work)
 {
-	CHECKIF(work->work_q == NULL) {
-		return -EALREADY;
-	}
-
 	if (k_work_pending(&work->work)) {
 		/* Remove from the queue if already submitted */
 		if (!k_queue_remove(&work->work_q->queue, &work->work)) {
@@ -96,8 +85,10 @@ int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 	/* Cancel if work has been submitted */
 	if (work->work_q == work_q) {
 		err = work_cancel(work);
-		/* -EALREADY indicates the work has already completed so this
-		 * is likely a recurring work.
+		/* -EALREADY may indicate the work has already completed so
+		 * this is likely a recurring work.  It may also indicate that
+		 * the work handler is still executing.  But it's neither
+		 * delayed nor pending, so it can be rescheduled.
 		 */
 		if (err == -EALREADY) {
 			err = 0;
@@ -132,12 +123,12 @@ done:
 
 int k_delayed_work_cancel(struct k_delayed_work *work)
 {
-	if (!work->work_q) {
-		return -EINVAL;
-	}
-
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	int ret = work_cancel(work);
+	int ret = -EINVAL;
+
+	if (work->work_q != NULL) {
+		ret = work_cancel(work);
+	}
 
 	k_spin_unlock(&lock, key);
 	return ret;

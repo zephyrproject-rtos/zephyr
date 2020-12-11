@@ -29,7 +29,18 @@ static int name_(struct modem_cmd_handler_data *data, uint16_t len, \
 	.cmd = cmd_, \
 	.cmd_len = (uint16_t)sizeof(cmd_)-1, \
 	.func = func_cb_, \
-	.arg_count = acount_, \
+	.arg_count_min = acount_, \
+	.arg_count_max = acount_, \
+	.delim = adelim_, \
+	.direct = false, \
+}
+
+#define MODEM_CMD_ARGS_MAX(cmd_, func_cb_, acount_, acountmax_, adelim_) { \
+	.cmd = cmd_, \
+	.cmd_len = (uint16_t)sizeof(cmd_)-1, \
+	.func = func_cb_, \
+	.arg_count_min = acount_, \
+	.arg_count_max = acountmax_, \
 	.delim = adelim_, \
 	.direct = false, \
 }
@@ -40,7 +51,8 @@ static int name_(struct modem_cmd_handler_data *data, uint16_t len, \
 	.cmd = cmd_, \
 	.cmd_len = (uint16_t)sizeof(cmd_)-1, \
 	.func = func_cb_, \
-	.arg_count = 0, \
+	.arg_count_min = 0, \
+	.arg_count_max = 0, \
 	.delim = "", \
 	.direct = true, \
 }
@@ -58,7 +70,8 @@ struct modem_cmd {
 	const char *cmd;
 	const char *delim;
 	uint16_t cmd_len;
-	uint16_t arg_count;
+	uint16_t arg_count_min;
+	uint16_t arg_count_max;
 	bool direct;
 };
 
@@ -77,11 +90,8 @@ struct setup_cmd {
 };
 
 struct modem_cmd_handler_data {
-	struct modem_cmd *cmds[CMD_MAX];
+	const struct modem_cmd *cmds[CMD_MAX];
 	size_t cmds_len[CMD_MAX];
-
-	char *read_buf;
-	size_t read_buf_len;
 
 	char *match_buf;
 	size_t match_buf_len;
@@ -134,7 +144,7 @@ int modem_cmd_handler_set_error(struct modem_cmd_handler_data *data,
  * @retval 0 if ok, < 0 if error.
  */
 int modem_cmd_handler_update_cmds(struct modem_cmd_handler_data *data,
-				  struct modem_cmd *handler_cmds,
+				  const struct modem_cmd *handler_cmds,
 				  size_t handler_cmds_len,
 				  bool reset_error_flag);
 
@@ -151,7 +161,7 @@ int modem_cmd_handler_update_cmds(struct modem_cmd_handler_data *data,
  */
 int modem_cmd_send_nolock(struct modem_iface *iface,
 			  struct modem_cmd_handler *handler,
-			  struct modem_cmd *handler_cmds,
+			  const struct modem_cmd *handler_cmds,
 			  size_t handler_cmds_len,
 			  const uint8_t *buf, struct k_sem *sem,
 			  k_timeout_t timeout);
@@ -169,11 +179,12 @@ int modem_cmd_send_nolock(struct modem_iface *iface,
  */
 int modem_cmd_send(struct modem_iface *iface,
 		   struct modem_cmd_handler *handler,
-		   struct modem_cmd *handler_cmds, size_t handler_cmds_len,
-		   const uint8_t *buf, struct k_sem *sem, k_timeout_t timeout);
+		   const struct modem_cmd *handler_cmds,
+		   size_t handler_cmds_len, const uint8_t *buf,
+		   struct k_sem *sem, k_timeout_t timeout);
 
 /**
- * @brief  send a series of AT commands
+ * @brief  send a series of AT commands w/ a TX lock
  *
  * @param  *iface: interface to use
  * @param  *handler: command handler to use
@@ -186,8 +197,26 @@ int modem_cmd_send(struct modem_iface *iface,
  */
 int modem_cmd_handler_setup_cmds(struct modem_iface *iface,
 				 struct modem_cmd_handler *handler,
-				 struct setup_cmd *cmds, size_t cmds_len,
+				 const struct setup_cmd *cmds, size_t cmds_len,
 				 struct k_sem *sem, k_timeout_t timeout);
+
+/**
+ * @brief  send a series of AT commands w/o locking TX
+ *
+ * @param  *iface: interface to use
+ * @param  *handler: command handler to use
+ * @param  *cmds: array of setup commands to send
+ * @param  cmds_len: size of the setup command array
+ * @param  *sem: wait for response semaphore
+ * @param  timeout: timeout of command
+ *
+ * @retval 0 if ok, < 0 if error.
+ */
+int modem_cmd_handler_setup_cmds_nolock(struct modem_iface *iface,
+					struct modem_cmd_handler *handler,
+					const struct setup_cmd *cmds,
+					size_t cmds_len, struct k_sem *sem,
+					k_timeout_t timeout);
 
 /**
  * @brief  Init command handler
@@ -199,6 +228,25 @@ int modem_cmd_handler_setup_cmds(struct modem_iface *iface,
  */
 int modem_cmd_handler_init(struct modem_cmd_handler *handler,
 			   struct modem_cmd_handler_data *data);
+
+/**
+ * @brief  Lock the modem for sending cmds
+ *
+ * This is semaphore-based rather than mutex based, which means there's no
+ * requirements of thread ownership for the user. These functions are useful
+ * when one needs to prevent threads from sending UART data to the modem for an
+ * extended period of time (for example during modem reset).
+ *
+ * @param  *handler: command handler to lock
+ * @param  lock: set true to lock, false to unlock
+ * @param  timeout: give up after timeout
+ *
+ * @retval 0 if ok, < 0 if error.
+ */
+int modem_cmd_handler_tx_lock(struct modem_cmd_handler *handler,
+			      k_timeout_t timeout);
+void modem_cmd_handler_tx_unlock(struct modem_cmd_handler *handler);
+
 
 #ifdef __cplusplus
 }

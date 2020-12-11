@@ -6,11 +6,12 @@
 
 /dts-v1/;
 #include <st/l1/stm32l152Xe.dtsi>
+#include <st/l1/stm32l152retx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32L152RE-NUCLEO board";
-	compatible = "st,stm32l152re-nucleo", "st,stm32l152";
+	compatible = "st,stm32l152re-nucleo";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -43,11 +44,13 @@
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	status = "okay";
 };
 
@@ -64,9 +67,11 @@
 };
 
 &adc1 {
+	pinctrl-0 = <&adc_in0_pa0>;
 	status = "okay";
 };
 
 &dac1 {
 	status = "okay";
+	pinctrl-0 = <&dac_out1_pa4>;
 };

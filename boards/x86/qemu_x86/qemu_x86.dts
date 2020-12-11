@@ -4,7 +4,9 @@
 
 #include <mem.h>
 
+#ifndef DT_DRAM_SIZE
 #define DT_DRAM_SIZE		DT_SIZE_K(4096)
+#endif
 #define DT_FLASH_SIZE		DT_SIZE_K(4096)
 
 #include <ia32.dtsi>
@@ -88,10 +90,7 @@
 };
 
 &flash_sim0 {
-	/*
-	 * For more information, see:
-	 * https://docs.zephyrproject.org/latest/guides/dts/legacy-macros.html#legacy-flash-partitions
-	 */
+
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;

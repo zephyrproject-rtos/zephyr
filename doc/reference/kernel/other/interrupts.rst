@@ -16,8 +16,8 @@ Thread execution resumes only once all ISR work has been completed.
 Concepts
 ********
 
-Any number of ISRs can be defined, subject to the constraints imposed
-by underlying hardware.
+Any number of ISRs can be defined (limited only by available RAM), subject to
+the constraints imposed by underlying hardware.
 
 An ISR has the following key properties:
 
@@ -53,7 +53,7 @@ nesting support is enabled.
 .. important::
     Many kernel APIs can be used only by threads, and not by ISRs. In cases
     where a routine may be invoked by both threads and ISRs the kernel
-    provides the :cpp:func:`k_is_in_isr()` API to allow the routine to
+    provides the :c:func:`k_is_in_isr` API to allow the routine to
     alter its behavior depending on whether it is executing as part of
     a thread or as part of an ISR.
 
@@ -165,7 +165,10 @@ The kernel addresses such use-cases by allowing interrupts with critical
 latency constraints to execute at a priority level that cannot be blocked
 by interrupt locking. These interrupts are defined as
 *zero-latency interrupts*. The support for zero-latency interrupts requires
-:option:`CONFIG_ZERO_LATENCY_IRQS` to be enabled.
+:option:`CONFIG_ZERO_LATENCY_IRQS` to be enabled. In addition to that, the
+flag :c:macro:`IRQ_ZERO_LATENCY` must be passed to :c:macro:`IRQ_CONNECT` or
+:c:macro:`IRQ_DIRECT_CONNECT` macros to configure the particular interrupt
+with zero latency.
 
 Zero-latency interrupts are expected to be used to manage hardware events
 directly, and not to interoperate with the kernel code at all. They should
@@ -211,7 +214,7 @@ Defining a regular ISR
 ======================
 
 An ISR is defined at runtime by calling :c:macro:`IRQ_CONNECT`. It must
-then be enabled by calling :cpp:func:`irq_enable()`.
+then be enabled by calling :c:func:`irq_enable`.
 
 .. important::
     IRQ_CONNECT() is not a C function and does some inline assembly magic
@@ -227,7 +230,7 @@ The following code defines and enables an ISR.
     #define MY_DEV_PRIO  2       /* device uses interrupt priority 2 */
     /* argument passed to my_isr(), in this case a pointer to the device */
     #define MY_ISR_ARG  DEVICE_GET(my_device)
-    #define MY_IRQ_FLAGS 0       /* IRQ flags. Unused on non-x86 */
+    #define MY_IRQ_FLAGS 0       /* IRQ flags */
 
     void my_isr(void *arg)
     {
@@ -245,7 +248,7 @@ The following code defines and enables an ISR.
 Since the :c:macro:`IRQ_CONNECT` macro requires that all its parameters be
 known at build time, in some cases this may not be acceptable. It is also
 possible to install interrupts at runtime with
-:cpp:func:`irq_connect_dynamic()`. It is used in exactly the same way as
+:c:func:`irq_connect_dynamic`. It is used in exactly the same way as
 :c:macro:`IRQ_CONNECT`:
 
 .. code-block:: c
@@ -293,7 +296,7 @@ The following code demonstrates a direct ISR:
     #define MY_DEV_IRQ  24       /* device uses IRQ 24 */
     #define MY_DEV_PRIO  2       /* device uses interrupt priority 2 */
     /* argument passed to my_isr(), in this case a pointer to the device */
-    #define MY_IRQ_FLAGS 0       /* IRQ flags. Unused on non-x86 */
+    #define MY_IRQ_FLAGS 0       /* IRQ flags */
 
     ISR_DIRECT_DECLARE(my_isr)
     {
@@ -424,7 +427,7 @@ On x86 when an interrupt or exception vector is executed by the CPU, there is
 no foolproof way to determine which vector was fired, so a software ISR table
 indexed by IRQ line is not used. Instead, the :c:macro:`IRQ_CONNECT` call
 creates a small assembly language function which calls the common interrupt
-code in :cpp:func:`_interrupt_enter` with the ISR and parameter as arguments.
+code in :c:func:`_interrupt_enter` with the ISR and parameter as arguments.
 It is the address of this assembly interrupt stub which gets placed in the IDT.
 For interrupts declared with :c:macro:`IRQ_DIRECT_CONNECT` the parameterless
 ISR is placed directly in the IDT.

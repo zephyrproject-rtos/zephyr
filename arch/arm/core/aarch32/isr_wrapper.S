@@ -80,21 +80,17 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	str r0, [r2, #_kernel_offset_to_nested]
 #endif /* CONFIG_CPU_CORTEX_M */
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	bl read_timer_start_of_isr
-#endif
-
 #ifdef CONFIG_TRACING_ISR
 	bl sys_trace_isr_enter
 #endif
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 	/*
 	 * All interrupts are disabled when handling idle wakeup.  For tickless
 	 * idle, this ensures that the calculation and programming of the
 	 * device for the next timer deadline is not interrupted.  For
 	 * non-tickless idle, this ensures that the clearing of the kernel idle
-	 * state is not interrupted.  In each case, z_sys_power_save_idle_exit
+	 * state is not interrupted.  In each case, z_pm_save_idle_exit
 	 * is called with interrupts disabled.
 	 */
 
@@ -119,7 +115,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	movs.n r1, #0
 	/* clear kernel idle state */
 	str r1, [r2, #_kernel_offset_to_idle]
-	bl z_sys_power_save_idle_exit
+	bl z_pm_save_idle_exit
 _idle_state_cleared:
 
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
@@ -127,13 +123,13 @@ _idle_state_cleared:
 	movne	r1, #0
 		/* clear kernel idle state */
 		strne	r1, [r2, #_kernel_offset_to_idle]
-		blne	z_sys_power_save_idle_exit
+		blne	z_pm_save_idle_exit
 #elif defined(CONFIG_ARMV7_R)
 	beq _idle_state_cleared
 	movs r1, #0
 	/* clear kernel idle state */
 	str r1, [r2, #_kernel_offset_to_idle]
-	bl z_sys_power_save_idle_exit
+	bl z_pm_save_idle_exit
 _idle_state_cleared:
 #else
 #error Unknown ARM architecture
@@ -143,7 +139,7 @@ _idle_state_cleared:
 	cpsie i		/* re-enable interrupts (PRIMASK = 0) */
 #endif
 
-#endif /* CONFIG_SYS_POWER_MANAGEMENT */
+#endif /* CONFIG_PM */
 
 #if defined(CONFIG_CPU_CORTEX_M)
 	mrs r0, IPSR	/* get exception number */
@@ -187,11 +183,6 @@ _idle_state_cleared:
 			 * in thumb mode */
 
 	ldm r1!,{r0,r3}	/* arg in r0, ISR in r3 */
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	push {r0, r3}	/* Save r0 and r3 into stack */
-	bl read_timer_end_of_isr
-	pop {r0, r3}	/* Restore r0 and r3 regs */
-#endif /* CONFIG_EXECUTION_BENCHMARKING */
 	blx r3		/* call ISR */
 
 #if defined(CONFIG_CPU_CORTEX_R)

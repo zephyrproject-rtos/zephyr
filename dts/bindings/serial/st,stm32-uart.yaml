@@ -14,5 +14,16 @@ properties:
     parity:
       required: false
       type: int
-      description: Configures the parity of the adapter. Value 0 for none, 1 for odd and 2 for even parity.
-      default: 0
+      description: |
+        Configures the parity of the adapter. Value 0 for none, 1 for odd
+        and 2 for even parity.  Default to none if not specified.
+
+    pinctrl-0:
+      type: phandles
+      required: false
+      description: |
+        GPIO pin configuration for serial signals (RX, TX, RTS, CTS).  We expect
+        that the phandles will reference pinctrl nodes.
+
+        For example the USART1 would be
+           pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;

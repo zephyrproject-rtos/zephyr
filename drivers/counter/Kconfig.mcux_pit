@@ -1,0 +1,10 @@
+# MCUXpresso SDK Periodic Interrupt Timer (PIT)
+
+# Copyright 2020 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_MCUX_PIT
+	bool "MCUX PIT driver"
+	depends on HAS_MCUX_PIT
+	help
+	  Enable support for the MCUX Periodic Interrupt Timer (PIT).

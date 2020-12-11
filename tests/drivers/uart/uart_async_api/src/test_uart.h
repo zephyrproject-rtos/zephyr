@@ -33,6 +33,8 @@
 #define UART_DEVICE_NAME CONFIG_UART_CONSOLE_ON_DEV_NAME
 #endif
 
+void init_test(void);
+
 void test_single_read(void);
 void test_chained_read(void);
 void test_double_buffer(void);

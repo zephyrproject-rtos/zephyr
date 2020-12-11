@@ -1,25 +1,25 @@
-.. _nrf5340pdk_nrf5340:
+.. _nrf5340dk_nrf5340:
 
-nRF5340 PDK
-###########
+nRF5340 DK
+##########
 
 Overview
 ********
 
-The nRF5340 PDK (PCA10095) is a single-board development kit for evaluation
+The nRF5340 DK (PCA10095) is a single-board development kit for evaluation
 and development on the Nordic nRF5340 System-on-Chip (SoC).
 
 The nRF5340 is a dual-core SoC based on the Arm® Cortex®-M33 architecture, with:
 
-* a full-featured ARM Cortex-M33F core with DSP instructions, FPU, and
-  ARMv8-M Security Extension, running at up to 128 MHz, referred to as
-  the **Application MCU**
-* a secondary ARM Cortex-M33 core, with a reduced feature set, running at
-  a fixed 64 MHz, referred to as the **Network MCU**.
+* a full-featured Arm Cortex-M33F core with DSP instructions, FPU, and
+  Armv8-M Security Extension, running at up to 128 MHz, referred to as
+  the **application core**
+* a secondary Arm Cortex-M33 core, with a reduced feature set, running at
+  a fixed 64 MHz, referred to as the **network core**.
 
-The nrf5340pdk_nrf5340_cpuapp provides support for the Application MCU on
-nRF5340 SoC. The nrf5340pdk_nrf5340_cpunet provides support for the Network
-MCU on nRF5340 SoC.
+The nrf5340dk_nrf5340_cpuapp build target provides support for the application
+core on the nRF5340 SoC. The nrf5340dk_nrf5340_cpunet build target provides
+support for the network core on the nRF5340 SoC.
 
 nRF5340 SoC provides support for the following devices:
 
@@ -40,33 +40,36 @@ nRF5340 SoC provides support for the following devices:
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/nrf5340pdk.png
+.. figure:: img/nrf5340dk.jpg
      :width: 711px
      :align: center
-     :alt: nRF5340 PDK
+     :alt: nRF5340 DK
 
-     nRF5340 PDK (Credit: Nordic Semiconductor)
+     nRF5340 DK (Credit: Nordic Semiconductor)
 
 More information about the board can be found at the
-`nRF5340 PDK website`_.
+`nRF5340 DK website`_.
 The `Nordic Semiconductor Infocenter`_
 contains the processor's information and the datasheet.
 
 .. note::
 
-   In previous Zephyr releases this board was named *nrf5340_dk_nrf5340*.
+   nRF5340 PDK (preview development kit) is an earlier version of the
+   nRF5340 DK. nRF5340 PDK board is deprecated and is replaced by nRF5340 DK.
+   The support for nRF5340 PDK will be removed in Zephyr v2.6.0 release.
+
 
 Hardware
 ********
 
-nRF5340 PDK has two external oscillators. The frequency of
+nRF5340 DK has two external oscillators. The frequency of
 the slow clock is 32.768 kHz. The frequency of the main clock
 is 32 MHz.
 
 Supported Features
 ==================
 
-The nrf5340pdk_nrf5340_cpuapp board configuration supports the following
+The nrf5340dk_nrf5340_cpuapp board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -103,14 +106,12 @@ hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-The nrf5340pdk_nrf5340_cpunet board configuration supports the following
+The nrf5340dk_nrf5340_cpunet board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
 | Interface | Controller | Driver/Component     |
 +===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
 | CLOCK     | on-chip    | clock_control        |
 +-----------+------------+----------------------+
 | FLASH     | on-chip    | flash                |
@@ -122,8 +123,6 @@ hardware features:
 | MPU       | on-chip    | arch/arm             |
 +-----------+------------+----------------------+
 | NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
 +-----------+------------+----------------------+
 | RADIO     | on-chip    | Bluetooth,           |
 |           |            | ieee802154           |
@@ -141,7 +140,7 @@ hardware features:
 
 Other hardware features are not supported by the Zephyr kernel.
 See `Nordic Semiconductor Infocenter`_
-for a complete list of nRF5340 Development Kit board hardware features.
+for a complete list of nRF5340 DK board hardware features.
 
 Connections and IOs
 ===================
@@ -166,7 +165,7 @@ Push buttons
 Security components
 ===================
 
-- Implementation Defined Attribution Unit (`IDAU`_) on the Application MCU.
+- Implementation Defined Attribution Unit (`IDAU`_) on the application core.
   The IDAU is implemented with the System Protection Unit and is used to
   define secure and non-secure memory maps.  By default, all of the memory
   space  (Flash, SRAM, and peripheral address space) is defined to be secure
@@ -176,31 +175,75 @@ Security components
 Programming and Debugging
 *************************
 
-nRF5340 Application MCU supports the Armv8m Security Extension.
-Applications build for the nrf5340pdk_nrf5340_cpuapp board by default
+nRF5340 application core supports the Armv8-M Security Extension.
+Applications build for the nrf5340dk_nrf5340_cpuapp board by default
 boot in the Secure state.
 
-nRF5340 Network MCU does not support the Armv8m Security Extension.
-nRF5340 IDAU may configure bus accesses by the nRF5340 Network MCU
+nRF5340 network core does not support the Armv8-M Security Extension.
+nRF5340 IDAU may configure bus accesses by the nRF5340 network core
 to have Secure attribute set; the latter allows to build and run
 Secure only applications on the nRF5340 SoC.
 
-Building Secure/Non-Secure Zephyr applications
-==============================================
+Building Secure/Non-Secure Zephyr applications with Arm |reg| TrustZone |reg|
+=============================================================================
 
-The process requires the following steps:
+Applications on the nRF5340 may contain a Secure and a Non-Secure firmware
+image for the application core. The Secure image can be built using either
+Zephyr or `Trusted Firmware M`_ (TF-M). Non-Secure firmware
+images are always built using Zephyr. The two alternatives are described below.
 
-1. Build the Secure Zephyr application for the Application MCU
-   using ``-DBOARD=nrf5340pdk_nrf5340_cpuapp`` and
-   ``CONFIG_TRUSTED_EXECUTION_SECURE=y`` in the application
-   project configuration file.
-2. Build the Non-Secure Zephyr application for the Application MCU
-   using ``-DBOARD=nrf5340pdk_nrf5340_cpuappns``.
+.. note::
+
+   By default the the Secure image for nRF5340 application core is built
+   using TF-M.
+
+
+Building the Secure firmware with TF-M
+--------------------------------------
+
+The process to build the Secure firmware image using TF-M and the Non-Secure
+firmware image using Zephyr requires the following steps:
+
+1. Build the Non-Secure Zephyr application
+   for the application core using ``-DBOARD=nrf5340dk_nrf5340_cpuappns``.
+   To invoke the building of TF-M the Zephyr build system requires the
+   Kconfig option ``BUILD_WITH_TFM`` to be enabled, which is done by
+   default when building Zephyr as a Non-Secure application.
+   The Zephyr build system will perform the following steps automatically:
+
+      * Build the Non-Secure firmware image as a regular Zephyr application
+      * Build a TF-M (secure) firmware image
+      * Merge the output image binaries together
+      * Optionally build a bootloader image (MCUboot)
+
+.. note::
+
+   Depending on the TF-M configuration, an application DTS overlay may be
+   required, to adjust the Non-Secure image Flash and SRAM starting address
+   and sizes.
+
+2. Build the application firmware for the network core using
+   ``-DBOARD=nrf5340dk_nrf5340_cpunet``.
+
+
+Building the Secure firmware using Zephyr
+-----------------------------------------
+
+The process to build the Secure and the Non-Secure firmware images
+using Zephyr requires the following steps:
+
+1. Build the Secure Zephyr application for the application core
+   using ``-DBOARD=nrf5340dk_nrf5340_cpuapp`` and
+   ``CONFIG_TRUSTED_EXECUTION_SECURE=y`` and ``CONFIG_BUILD_WITH_TFM=n``
+   in the application project configuration file.
+2. Build the Non-Secure Zephyr application for the application core
+   using ``-DBOARD=nrf5340dk_nrf5340_cpuappns``.
 3. Merge the two binaries together.
-4. Build the application firmware for the Network MCU using
-   ``-DBOARD=nrf5340pdk_nrf5340_cpunet``.
+4. Build the application firmware for the network core using
+   ``-DBOARD=nrf5340dk_nrf5340_cpunet``.
 
-When building a Secure/Non-Secure application for the nRF5340 Application MCU,
+
+When building a Secure/Non-Secure application for the nRF5340 application core,
 the Secure application will have to set the IDAU (SPU) configuration to allow
 Non-Secure access to all CPU resources utilized by the Non-Secure application
 firmware. SPU configuration shall take place before jumping to the Non-Secure
@@ -210,22 +253,40 @@ Building a Secure only application
 ==================================
 
 Build the Zephyr app in the usual way (see :ref:`build_an_application`
-and :ref:`application_run`), using ``-DBOARD=nrf5340pdk_nrf5340_cpuapp`` for
-the firmware running on the nRF5340 Application MCU, and using
-``-DBOARD=nrf5340pdk_nrf5340_cpunet`` for the firmware running
-on the nRF5340 Network MCU.
+and :ref:`application_run`), using ``-DBOARD=nrf5340dk_nrf5340_cpuapp`` for
+the firmware running on the nRF5340 application core, and using
+``-DBOARD=nrf5340dk_nrf5340_cpunet`` for the firmware running
+on the nRF5340 network core.
 
 Flashing
 ========
 
 Follow the instructions in the :ref:`nordic_segger` page to install
 and configure all the necessary software. Further information can be
-found in :ref:`nordic_segger_flashing`. Then build and flash
-applications as usual (see :ref:`build_an_application` and
+found in :ref:`nordic_segger_flashing`. Then you can build and flash
+applications as usual (:ref:`build_an_application` and
 :ref:`application_run` for more details).
 
+.. warning::
+
+   The nRF5340 has a flash read-back protection feature. When flash read-back
+   protection is active, you will need to recover the chip before reflashing.
+   If you are flashing with :ref:`west <west-build-flash-debug>`, run
+   this command for more details on the related ``--recover`` option:
+
+   .. code-block:: console
+
+      west flash -H -r nrfjprog --skip-rebuild
+
+.. note::
+
+   Flashing and debugging applications on the nRF5340 DK requires
+   upgrading the nRF Command Line Tools to version 10.12.0. Further
+   information on how to install the nRF Command Line Tools can be
+   found in :ref:`nordic_segger_flashing`.
+
 Here is an example for the :ref:`hello_world` application running on the
-nRF5340 Application MCU.
+nRF5340 application core.
 
 First, run your favorite terminal program to listen for output.
 
@@ -233,14 +294,14 @@ First, run your favorite terminal program to listen for output.
 
    $ minicom -D <tty_device> -b 115200
 
-Replace :code:`<tty_device>` with the port where the board nRF5340 PDK
+Replace :code:`<tty_device>` with the port where the board nRF5340 DK
 can be found. For example, under Linux, :code:`/dev/ttyACM0`.
 
 Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf5340pdk_nrf5340_cpuapp
+   :board: nrf5340dk_nrf5340_cpuapp
    :goals: build flash
 
 Debugging
@@ -250,8 +311,8 @@ Refer to the :ref:`nordic_segger` page to learn about debugging Nordic
 boards with a Segger IC.
 
 
-Testing the LEDs and buttons in the nRF5340 PDK
-***********************************************
+Testing the LEDs and buttons in the nRF5340 DK
+**********************************************
 
 There are 2 samples that allow you to test that the buttons (switches) and
 LEDs on the board are working properly with Zephyr:
@@ -261,7 +322,7 @@ LEDs on the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/arm/nrf5340pdk_nrf5340/nrf5340_cpuapp_common.dts`.
+:zephyr_file:`boards/arm/nrf5340dk_nrf5340/nrf5340_cpuapp_common.dts`.
 
 References
 **********
@@ -270,6 +331,7 @@ References
 
 .. _IDAU:
    https://developer.arm.com/docs/100690/latest/attribution-units-sau-and-idau
-.. _nRF5340 PDK website:
+.. _nRF5340 DK website:
    https://www.nordicsemi.com/Software-and-tools/Development-Kits/nRF5340-PDK
 .. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
+.. _Trusted Firmware M: https://www.trustedfirmware.org/projects/tf-m/

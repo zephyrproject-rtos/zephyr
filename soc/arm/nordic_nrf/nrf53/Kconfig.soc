@@ -9,7 +9,7 @@ config SOC_NRF5340_CPUAPP
 	select CPU_HAS_NRF_IDAU
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
-	select HAS_SYS_POWER_STATE_DEEP_SLEEP_1
+	select HAS_POWER_STATE_DEEP_SLEEP_1
 	select HAS_HW_NRF_CC312
 	select HAS_HW_NRF_CLOCK
 	select HAS_HW_NRF_DPPIC
@@ -32,6 +32,7 @@ config SOC_NRF5340_CPUAPP
 	select HAS_HW_NRF_PWM1
 	select HAS_HW_NRF_PWM2
 	select HAS_HW_NRF_PWM3
+	select HAS_HW_NRF_QSPI
 	select HAS_HW_NRF_RTC0
 	select HAS_HW_NRF_RTC1
 	select HAS_HW_NRF_SAADC
@@ -70,6 +71,8 @@ config SOC_NRF5340_CPUNET
 	bool
 	select HAS_HW_NRF_ACL
 	select HAS_HW_NRF_CLOCK
+	select HAS_HW_NRF_CCM
+	select HAS_HW_NRF_CCM_LFLEN_8BIT
 	select HAS_HW_NRF_DPPIC
 	select HAS_HW_NRF_EGU0
 	select HAS_HW_NRF_GPIO0
@@ -78,6 +81,7 @@ config SOC_NRF5340_CPUNET
 	select HAS_HW_NRF_IPC
 	select HAS_HW_NRF_NVMC_PE
 	select HAS_HW_NRF_POWER
+	select HAS_HW_NRF_RADIO_BLE_2M
 	select HAS_HW_NRF_RADIO_BLE_CODED
 	select HAS_HW_NRF_RADIO_IEEE802154
 	select HAS_HW_NRF_RNG
@@ -125,6 +129,16 @@ config SOC_DCDC_NRF53X_HV
 	bool
 	help
 	  Enable nRF53 series System on Chip High Voltage DC/DC converter.
+
+config SOC_ENABLE_LFXO
+	bool "Enable LFXO"
+	default y
+	help
+	  Enable the low-frequency oscillator (LFXO) functionality on XL1 and
+	  XL2 pins.
+	  This option must be enabled if either application or network core is
+	  to use the LFXO. Otherwise, XL1 and XL2 pins will behave as regular
+	  GPIOs.
 
 endif # SOC_NRF5340_CPUAPP
 

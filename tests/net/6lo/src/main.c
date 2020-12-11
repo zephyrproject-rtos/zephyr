@@ -245,9 +245,9 @@ struct net_6lo_data {
 } __packed;
 
 
-int net_6lo_dev_init(struct device *dev)
+int net_6lo_dev_init(const struct device *dev)
 {
-	struct net_6lo_context *net_6lo_context = dev->driver_data;
+	struct net_6lo_context *net_6lo_context = dev->data;
 
 	net_6lo_context = net_6lo_context;
 
@@ -259,7 +259,7 @@ static void net_6lo_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, src_mac, 8, NET_LINK_IEEE802154);
 }
 
-static int tester_send(struct device *dev, struct net_pkt *pkt)
+static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
 	return 0;
 }
@@ -1145,7 +1145,12 @@ void test_loop(void)
 {
 	int count;
 
-	k_thread_priority_set(k_current_get(), K_PRIO_COOP(7));
+	if (IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)) {
+		k_thread_priority_set(k_current_get(),
+				K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1));
+	} else {
+		k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(9));
+	}
 
 #if defined(CONFIG_NET_6LO_CONTEXT)
 	net_6lo_set_context(net_if_get_default(), &ctx1);

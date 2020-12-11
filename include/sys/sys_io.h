@@ -211,6 +211,28 @@ typedef uintptr_t mem_addr_t;
  * @return the 32 bits read
  */
 
+/**
+ * @fn static inline void sys_write64(uint64_t data, mm_reg_t addr);
+ * @brief Write 64 bits to a memory mapped register
+ *
+ * This function writes 64 bits to the given memory mapped register.
+ *
+ * @param data the 64 bits to write
+ * @param addr the memory mapped register address where to write the 64 bits
+ */
+
+/**
+ * @fn static inline uint64_t sys_read64(mm_reg_t addr);
+ * @brief Read 64 bits from a memory mapped register
+ *
+ * This function reads 64 bits from the given memory mapped register.
+ *
+ * @param addr the memory mapped register address from where to read
+ *        the 64 bits
+ *
+ * @return the 64 bits read
+ */
+
 /* Memory bits manipulation functions */
 
 /**

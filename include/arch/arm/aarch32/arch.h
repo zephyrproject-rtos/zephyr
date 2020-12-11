@@ -31,6 +31,7 @@
 #include <arch/common/ffs.h>
 #include <arch/arm/aarch32/nmi.h>
 #include <arch/arm/aarch32/asm_inline.h>
+#include <arch/common/sys_bitops.h>
 
 #ifdef CONFIG_CPU_CORTEX_M
 #include <arch/arm/aarch32/cortex_m/cpu.h>

@@ -119,6 +119,19 @@ int openthread_start(struct openthread_context *ot_context);
 void openthread_api_mutex_lock(struct openthread_context *ot_context);
 
 /**
+ * @brief Try to lock internal mutex before accessing OT API.
+ *
+ * @details This function behaves like openthread_api_mutex_lock() provided that
+ * the internal mutex is unlocked. Otherwise, it exists immediately and returns
+ * a negative value.
+ *
+ * @param ot_context Context to lock.
+ * @retval 0  On success.
+ * @retval <0 On failure.
+ */
+int openthread_api_mutex_try_lock(struct openthread_context *ot_context);
+
+/**
  * @brief Unlock internal mutex after accessing OT API.
  *
  * @param ot_context Context to unlock.

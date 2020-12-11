@@ -3,6 +3,9 @@
 
 if SOC_V2M_MUSCA_A
 
+config SOC_DEPRECATED_RELEASE
+	default "v2.6.0"
+
 config SOC
 	default "musca_a"
 

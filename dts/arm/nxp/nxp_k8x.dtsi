@@ -12,25 +12,6 @@
 
 / {
 	aliases {
-		adc-0 = &adc0;
-		i2c-0 = &i2c0;
-		i2c-1 = &i2c1;
-		i2c-2 = &i2c2;
-		i2c-3 = &i2c3;
-		pinmux-a = &porta;
-		pinmux-b = &portb;
-		pinmux-c = &portc;
-		pinmux-d = &portd;
-		pinmux-e = &porte;
-		spi-0 = &spi0;
-		spi-1 = &spi1;
-		spi-2 = &spi2;
-		uart-0 = &lpuart0;
-		uart-1 = &lpuart1;
-		uart-2 = &lpuart2;
-		uart-3 = &lpuart3;
-		uart-4 = &lpuart4;
-		usbd-0 = &usbotg;
 		watchdog0 = &wdog;
 	};
 
@@ -381,6 +362,18 @@
 			interrupts = <22 0>;
 			clocks = <&sim KINETIS_SIM_LPO_CLK 0 0>;
 			label = "WDT_0";
+		};
+
+		pit0: pit@40037000 {
+			compatible = "nxp,kinetis-pit";
+			reg = <0x40037000 0x1000>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103c 23>;
+			interrupts = <48 0>, <49 0>, <50 0>, <51 0>;
+			status = "disabled";
+			pit-channel = <0>;
+			pit-period = <1000000>;
+			clock-frequency = <60000000>;
+			label = "PIT0";
 		};
 	};
 };

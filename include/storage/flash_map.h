@@ -14,29 +14,22 @@
 #define ZEPHYR_INCLUDE_STORAGE_FLASH_MAP_H_
 
 /**
- * @brief Abstraction over flash area and its driver which helps to operate on
- * flash regions easily and effectively.
+ * @brief Abstraction over flash partitions/areas and their drivers
  *
  * @defgroup flash_area_api flash area Interface
  * @{
  */
 
+/*
+ * This API makes it possible to operate on flash areas easily and
+ * effectively.
+ *
+ * The system contains global data about flash areas. Every area
+ * contains an ID number, offset, and length.
+ */
+
 /**
  *
- * Provides abstraction of flash regions for type of use,
- * for example,  where's my image?
- *
- * System will contain a map which contains flash areas. Every
- * region will contain flash identifier, offset within flash, and length.
- *
- * 1. This system map could be in a file within filesystem (Initializer
- * must know/figure out where the filesystem is at).
- * 2. Map could be at fixed location for project (compiled to code)
- * 3. Map could be at specific place in flash (put in place at mfg time).
- *
- * Note that the map you use must be valid for BSP it's for,
- * match the linker scripts when platform executes from flash,
- * and match the target offset specified in download script.
  */
 #include <zephyr/types.h>
 #include <stddef.h>
@@ -46,22 +39,32 @@
 extern "C" {
 #endif
 
-#define SOC_FLASH_0_ID 0	/** device_id for SoC flash memory driver   */
-#define SPI_FLASH_0_ID 1	/** device_id for external SPI flash driver */
+/** Provided for compatibility with MCUboot */
+#define SOC_FLASH_0_ID 0
+/** Provided for compatibility with MCUboot */
+#define SPI_FLASH_0_ID 1
 
 /**
- * @brief Structure for store flash partition data
+ * @brief Flash partition
  *
- * It is used as the flash_map array entry or stand-alone user data. Structure
- * contains all data needed to operate on the flash partitions.
+ * This structure represents a fixed-size partition on a flash device.
+ * Each partition contains one or more flash sectors.
  */
 struct flash_area {
-	uint8_t fa_id; /** ID of flash area */
+	/** ID number */
+	uint8_t fa_id;
+	/** Provided for compatibility with MCUboot */
 	uint8_t fa_device_id;
 	uint16_t pad16;
-	off_t fa_off; /** flash partition offset */
-	size_t fa_size; /** flash partition size */
-	const char *fa_dev_name; /** flash device name */
+	/** Start offset from the beginning of the flash device */
+	off_t fa_off;
+	/** Total size */
+	size_t fa_size;
+	/**
+	 * Name of the flash device, suitable for passing to
+	 * device_get_binding().
+	 */
+	const char *fa_dev_name;
 };
 
 /**
@@ -71,9 +74,39 @@ struct flash_area {
  * consumes much less RAM than @ref flash_area
  */
 struct flash_sector {
-	off_t fs_off; /** flash sector offset */
-	size_t fs_size; /** flash sector size */
+	/** Sector offset from the beginning of the flash device */
+	off_t fs_off;
+	/** Sector size in bytes */
+	size_t fs_size;
 };
+
+#if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY)
+/**
+ * @brief Structure for verify flash region integrity
+ *
+ * This is used to pass data to be used to check flash integrity using SHA-256
+ * algorithm.
+ */
+struct flash_area_check {
+	const uint8_t *match;		/** 256 bits match vector */
+	size_t clen;			/** Content len to be compared */
+	size_t off;			/** Start Offset */
+	uint8_t *rbuf;			/** Temporary read buffer  */
+	size_t rblen;			/** Size of read buffer */
+};
+
+/**
+ * Verify flash memory length bytes integrity from a flash area. The start
+ * point is indicated by an offset value.
+ *
+ * @param[in] fa	Flash area
+ * @param[in] fic	Flash area check integrity data
+ *
+ * @return  0 on success, negative errno code on fail
+ */
+int flash_area_check_int_sha256(const struct flash_area *fa,
+				const struct flash_area_check *fac);
+#endif
 
 /**
  * @brief Retrieve partitions flash area from the flash_map.
@@ -83,6 +116,9 @@ struct flash_sector {
  * @param[in]  id ID of the flash partition.
  * @param[out] fa Pointer which has to reference flash_area. If
  * @p ID is unknown, it will be NULL on output.
+ *
+ * @return  0 on success, -EACCES if the flash_map is not available ,
+ * -ENOENT if @p ID is unknown.
  */
 int flash_area_open(uint8_t id, const struct flash_area **fa);
 
@@ -207,7 +243,18 @@ int flash_area_has_driver(const struct flash_area *fa);
  *
  * @return device driver.
  */
-struct device *flash_area_get_device(const struct flash_area *fa);
+const struct device *flash_area_get_device(const struct flash_area *fa);
+
+/**
+ * Get the value expected to be read when accessing any erased
+ * flash byte.
+ * This API is compatible with the MCUBoot's porting layer.
+ *
+ * @param fa Flash area.
+ *
+ * @return Byte value of erase memory.
+ */
+uint8_t flash_area_erased_val(const struct flash_area *fa);
 
 #define FLASH_AREA_LABEL_EXISTS(label) \
 	DT_HAS_FIXED_PARTITION_LABEL(label)

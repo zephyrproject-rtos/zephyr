@@ -1,0 +1,33 @@
+# TI CC1352R SensorTag board
+
+# Copyright (c) 2019 Brett Witherspoon
+# Copyright (c) 2020 Friedt Professional Engineering Services, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_CC1352R_SENSORTAG
+
+config BOARD
+	default "cc1352r_sensortag"
+
+if PM
+
+# Ideally this value could be made to less than 1 ms, as there is
+# essentially no delay to come out of IDLE mode. However Zephyr only
+# supports millisecond precision here, so 1 ms is the best approximation.
+config PM_MIN_RESIDENCY_SLEEP_1
+	default 1
+
+# The default here is deliberately made higher to be less agressive, to
+# accommodate for systems that may wish to do some extra work on resume,
+# which is possible given some power domains without retention are turned
+# out while in STANDBY mode.
+#
+# It is important to set this value to one that is appropriate for a
+# given application, weighing tradeoffs between a lower value that leads to
+# higher power savings vs. a higher value that would accommodate for a higher
+# wakeup latency.
+config PM_MIN_RESIDENCY_SLEEP_2
+	default 5
+
+endif # PM
+endif # BOARD_CC1352R_SENSORTAG

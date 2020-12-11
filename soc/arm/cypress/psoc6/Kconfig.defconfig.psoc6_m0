@@ -8,8 +8,7 @@ if SOC_PSOC6_M0
 config SOC
 	default "psoc6_m0"
 
-config UART_PSOC6
-	default y
-	depends on SERIAL
+config NUM_IRQS
+	default 32
 
 endif # SOC_PSOC6_M0

@@ -1,0 +1,67 @@
+# Nuvoton Cortex-M4 Embedded Controller
+
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_NPCX7
+
+config SOC_SERIES
+	default "npcx7"
+
+config NUM_IRQS
+	default 64
+
+config CLOCK_CONTROL_NPCX
+	default y
+	depends on CLOCK_CONTROL
+	help
+	  Enable support for NPCX clock controller driver.
+
+config PINMUX_NPCX
+	default y
+	depends on PINMUX
+	help
+	  Enable support for NPCX pinmux controller driver.
+
+config UART_NPCX
+	default y
+	depends on SERIAL
+	help
+	  Enable support for NPCX UART driver.
+
+config GPIO_NPCX
+	default y
+	depends on GPIO
+	help
+	  Enable support for NPCX GPIO driver.
+
+config PWM_NPCX
+	default y
+	depends on PWM
+	help
+	  Enable support for NPCX PWM driver.
+
+config ADC_NPCX
+	default y
+	depends on ADC
+	help
+	  Enable support for NPCX ADC driver. In NPCX7 series, it includes a
+	  10-bit resolution Analog-to-Digital Converter (ADC). Up to 10 voltage
+	  inputs can be measured and a internal voltage reference (VREF), 2.816V
+	  (typical) is used for measurement.
+
+config ESPI_NPCX
+	default y
+	depends on ESPI
+	help
+	  Enable support for NPCX ESPI driver. The Intel Enhanced Serial
+	  Peripheral Interface (eSPI) provides a path for migrating host
+	  sub-devices via LPC to a lower pin count, higher bandwidth bus.
+	  So far, this driver supports all of functionalities beside flash
+	  channel support. It will be supported in the future. Please refer
+	  https://www.intel.com/content/www/us/en/support/articles/000020952/
+	  software/chipset-software.html for more detail.
+
+source "soc/arm/nuvoton_npcx/npcx7/Kconfig.defconfig.npcx7*"
+
+endif # SOC_SERIES_NPCX7

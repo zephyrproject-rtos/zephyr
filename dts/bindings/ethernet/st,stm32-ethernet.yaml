@@ -16,3 +16,12 @@ properties:
       required: true
     clock-names:
       required: true
+
+    pinctrl-0:
+      type: phandles
+      required: false
+      description: |
+        GPIO pin configuration for Ethernet signals. We expect that the phandles
+        will reference pinctrl nodes, e.g.
+
+           pinctrl-0 = <&eth_ref_clk_pa1 &eth_mdio_pa2 ...>;

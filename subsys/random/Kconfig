@@ -3,7 +3,7 @@
 # Copyright (c) 2017 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-menu "Random subsystem"
+menu "Random Number Generators"
 
 config TEST_RANDOM_GENERATOR
 	bool "Non-random number generator"

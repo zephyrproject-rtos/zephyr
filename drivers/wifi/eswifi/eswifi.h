@@ -24,7 +24,7 @@
 #define AT_RSP_DELIMITER_LEN 2
 
 struct eswifi_gpio {
-	struct device *dev;
+	const struct device *dev;
 	unsigned int pin;
 };
 
@@ -124,7 +124,7 @@ struct eswifi_dev *eswifi_socket_to_dev(struct eswifi_off_socket *socket)
 	return CONTAINER_OF(socket - socket->index, struct eswifi_dev, socket);
 }
 
-extern struct eswifi_bus_ops eswifi_bus_ops_spi;
+struct eswifi_bus_ops *eswifi_get_bus(void);
 int eswifi_offload_init(struct eswifi_dev *eswifi);
 struct eswifi_dev *eswifi_by_iface_idx(uint8_t iface);
 int eswifi_at_cmd_rsp(struct eswifi_dev *eswifi, char *cmd, char **rsp);

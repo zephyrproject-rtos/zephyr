@@ -6,11 +6,12 @@
 
 /dts-v1/;
 #include <st/l4/stm32l4s5Xi.dtsi>
+#include <st/l4/stm32l4s5vitx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics B-L4S5I-IOT01A discovery kit";
-	compatible = "st,b-l4s5i-iot01a", "st,stm32l4s5";
+	compatible = "st,b-l4s5i-iot01a";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -22,11 +23,11 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led_1: led_1 {
-			gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
 		green_led_2: led_2 {
-			gpios = <&gpiob 14 GPIO_ACTIVE_LOW>;
+			gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
 	};
@@ -46,16 +47,24 @@
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
+&uart4 {
+	pinctrl-0 = <&uart4_tx_pa0 &uart4_rx_pa1>;
+	current-speed = <115200>;
+};
+
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
@@ -93,10 +102,12 @@
 };
 
 &spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
 	status = "okay";
 };
 
 &spi3 {
+	pinctrl-0 = <&spi3_sck_pc10 &spi3_miso_pc11 &spi3_mosi_pc12>;
 	status = "okay";
 
 	cs-gpios = <&gpiod 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
@@ -124,10 +135,7 @@
 };
 
 &flash0 {
-	/*
-	 * For more information, see:
-	 * https://docs.zephyrproject.org/latest/guides/dts/legacy-macros.html#legacy-flash-partitions
-	 */
+
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -169,6 +177,7 @@
 
 	pwm2: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim2_ch1_pa15>;
 	};
 };
 
@@ -181,6 +190,8 @@
 };
 
 &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12
+		     &usb_otg_fs_id_pa10>;
 	status = "okay";
 };
 

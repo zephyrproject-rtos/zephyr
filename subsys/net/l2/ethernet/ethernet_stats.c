@@ -30,7 +30,7 @@ static int eth_stats_get(uint32_t mgmt_request, struct net_if *iface,
 			return -ENOENT;
 		}
 
-		eth = net_if_get_device(iface)->driver_api;
+		eth = net_if_get_device(iface)->api;
 		if (eth == NULL || eth->get_stats == NULL) {
 			return -ENOENT;
 		}

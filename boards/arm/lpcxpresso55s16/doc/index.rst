@@ -71,6 +71,8 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | SENSOR    | off-chip   | fxos8700 trigger                    |
 +-----------+------------+-------------------------------------+
+| CLOCK     | on-chip    | clock_control                       |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently enabled.
 

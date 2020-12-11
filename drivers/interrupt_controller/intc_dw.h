@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-typedef void (*dw_ictl_config_irq_t)(struct device *dev);
+typedef void (*dw_ictl_config_irq_t)(const struct device *dev);
 
 struct dw_ictl_config {
 	uint32_t base_addr;

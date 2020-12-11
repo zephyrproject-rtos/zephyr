@@ -34,7 +34,7 @@ extern void z_arm_nmi_init(void);
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 
-static int nordicsemi_nrf91_init(struct device *arg)
+static int nordicsemi_nrf91_init(const struct device *arg)
 {
 	uint32_t key;
 

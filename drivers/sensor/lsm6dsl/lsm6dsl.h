@@ -16,6 +16,14 @@
 #include <drivers/gpio.h>
 #include <sys/util.h>
 
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#include <drivers/spi.h>
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+#include <drivers/i2c.h>
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
+
 #define LSM6DSL_REG_FUNC_CFG_ACCESS			0x01
 #define LSM6DSL_MASK_FUNC_CFG_EN			BIT(7)
 #define LSM6DSL_SHIFT_FUNC_CFG_EN			7
@@ -603,25 +611,53 @@
 #define LSM6DSL_GYRO_ODR_RUNTIME 1
 #endif
 
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+struct lsm6dsl_spi_cfg {
+	struct spi_config spi_conf;
+	const char *cs_gpios_label;
+};
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
+
+union lsm6dsl_bus_cfg {
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+	uint16_t i2c_slv_addr;
+#endif
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+	const struct lsm6dsl_spi_cfg *spi_cfg;
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
+};
+
 struct lsm6dsl_config {
-	char *comm_master_dev_name;
+	char *bus_name;
+	int (*bus_init)(const struct device *dev);
+	const union lsm6dsl_bus_cfg bus_cfg;
+#ifdef CONFIG_LSM6DSL_TRIGGER
+	char *irq_dev_name;
+	uint32_t irq_pin;
+	int irq_flags;
+#endif
 };
 
 struct lsm6dsl_data;
 
 struct lsm6dsl_transfer_function {
-	int (*read_data)(struct lsm6dsl_data *data, uint8_t reg_addr,
+	int (*read_data)(const struct device *dev, uint8_t reg_addr,
 			 uint8_t *value, uint8_t len);
-	int (*write_data)(struct lsm6dsl_data *data, uint8_t reg_addr,
+	int (*write_data)(const struct device *dev, uint8_t reg_addr,
 			  uint8_t *value, uint8_t len);
-	int (*read_reg)(struct lsm6dsl_data *data, uint8_t reg_addr,
+	int (*read_reg)(const struct device *dev, uint8_t reg_addr,
 			uint8_t *value);
-	int (*update_reg)(struct lsm6dsl_data *data, uint8_t reg_addr,
+	int (*update_reg)(const struct device *dev, uint8_t reg_addr,
 			  uint8_t mask, uint8_t value);
 };
 
 struct lsm6dsl_data {
-	struct device *comm_master;
+	const struct device *bus;
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+	struct spi_cs_control cs_ctrl;
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
+
 	int accel_sample_x;
 	int accel_sample_y;
 	int accel_sample_z;
@@ -650,7 +686,8 @@ struct lsm6dsl_data {
 	uint8_t gyro_fs;
 
 #ifdef CONFIG_LSM6DSL_TRIGGER
-	struct device *gpio;
+	const struct device *dev;
+	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	struct sensor_trigger data_ready_trigger;
@@ -662,25 +699,25 @@ struct lsm6dsl_data {
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_LSM6DSL_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
 #endif
 
 #endif /* CONFIG_LSM6DSL_TRIGGER */
 };
 
-int lsm6dsl_spi_init(struct device *dev);
-int lsm6dsl_i2c_init(struct device *dev);
+int lsm6dsl_spi_init(const struct device *dev);
+int lsm6dsl_i2c_init(const struct device *dev);
 #if defined(CONFIG_LSM6DSL_SENSORHUB)
-int lsm6dsl_shub_init_external_chip(struct device *dev);
-int lsm6dsl_shub_read_external_chip(struct device *dev, uint8_t *buf, uint8_t len);
+int lsm6dsl_shub_init_external_chip(const struct device *dev);
+int lsm6dsl_shub_read_external_chip(const struct device *dev, uint8_t *buf,
+				    uint8_t len);
 #endif
 
 #ifdef CONFIG_LSM6DSL_TRIGGER
-int lsm6dsl_trigger_set(struct device *dev,
+int lsm6dsl_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler);
 
-int lsm6dsl_init_interrupt(struct device *dev);
+int lsm6dsl_init_interrupt(const struct device *dev);
 #endif
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_LSM6DSL_LSM6DSL_H_ */

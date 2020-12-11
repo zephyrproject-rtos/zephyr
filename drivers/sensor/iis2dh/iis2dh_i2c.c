@@ -41,9 +41,9 @@ stmdev_ctx_t iis2dh_i2c_ctx = {
 	.write_reg = (stmdev_write_ptr) iis2dh_i2c_write,
 };
 
-int iis2dh_i2c_init(struct device *dev)
+int iis2dh_i2c_init(const struct device *dev)
 {
-	struct iis2dh_data *data = dev->driver_data;
+	struct iis2dh_data *data = dev->data;
 
 	data->ctx = &iis2dh_i2c_ctx;
 	data->ctx->handle = data;

@@ -159,16 +159,18 @@ struct gptp_priority_vector {
 	/** Identity of the source clock. */
 	struct gptp_root_system_identity root_system_id;
 
-	/** portNumber of the receiving port. */
-	uint16_t port_number;
+	/** Steps removed from the announce message transmitter and the
+	 * master clock. Note that this field must be right after
+	 * root_system_id as we are comparing root system id and steps
+	 * removed in one memcmp()
+	 */
+	uint16_t steps_removed;
 
 	/** Port identity of the transmitting time-aware system. */
 	struct gptp_port_identity src_port_id;
 
-	/** Steps removed from the announce message transmitter and the
-	 * master clock.
-	 */
-	uint16_t steps_removed;
+	/** Port number of the receiving port. */
+	uint16_t port_number;
 } __packed;
 
 /* Pdelay Request state machine variables. */

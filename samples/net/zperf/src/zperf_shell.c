@@ -14,7 +14,6 @@ LOG_MODULE_REGISTER(net_zperf_sample, LOG_LEVEL_DBG);
 #include <zephyr.h>
 #include <sys/printk.h>
 #include <shell/shell.h>
-#include <shell/shell_uart.h>
 
 #include <net/net_ip.h>
 #include <net/net_core.h>

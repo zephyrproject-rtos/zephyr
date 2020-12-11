@@ -20,10 +20,10 @@
 struct mcr20a_context {
 	struct net_if *iface;
 	/**************************/
-	struct device *irq_gpio;
-	struct device *reset_gpio;
+	const struct device *irq_gpio;
+	const struct device *reset_gpio;
 	struct gpio_callback irqb_cb;
-	struct device *spi;
+	const struct device *spi;
 	struct spi_config spi_cfg;
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	struct spi_cs_control cs_ctrl;

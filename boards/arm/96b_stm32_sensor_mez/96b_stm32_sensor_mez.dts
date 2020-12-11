@@ -6,10 +6,11 @@
 
 /dts-v1/;
 #include <st/f4/stm32f446Xe.dtsi>
+#include <st/f4/stm32f446v(c-e)tx-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics 96Boards STM32 Sensor Mezzanine board";
-	compatible = "st,stm32f446-b96b-f446ve", "st,stm32f446";
+	compatible = "st,stm32f446-b96b-f446ve";
 
 	chosen {
 		zephyr,console = &uart4;
@@ -61,6 +62,7 @@
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
@@ -80,6 +82,7 @@
 };
 
 &i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pc12>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
@@ -89,18 +92,31 @@
 };
 
 &i2s2 {
+	pinctrl-0 = <&i2s2_ck_pc7 &i2s2_sd_pc1>;
 	status = "okay";
 };
+
+&spi1_nss_pa4 { slew-rate = "very-high-speed"; };
 
 &spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
+		     &spi1_miso_pa6 &spi1_mosi_pa7>;
 	status = "okay";
 };
+
+&spi2_nss_pb9 { slew-rate = "very-high-speed"; };
 
 &spi2 {
+	pinctrl-0 = <&spi2_nss_pb9 &spi2_sck_pd3
+		     &spi2_miso_pb14 &spi2_mosi_pb15>;
 	status = "okay";
 };
 
+&spi4_nss_pe11 { slew-rate = "very-high-speed"; };
+
 &spi4 {
+	pinctrl-0 = <&spi4_nss_pe11 &spi4_sck_pe12
+		     &spi4_miso_pe13 &spi4_mosi_pe14>;
 	status = "okay";
 };
 
@@ -109,6 +125,7 @@
 
 	pwm3: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim3_ch1_pb4 &tim3_ch3_pc8>;
 	};
 };
 
@@ -117,6 +134,7 @@
 
 	pwm4: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim4_ch3_pd14 &tim4_ch4_pd15>;
 	};
 };
 
@@ -125,25 +143,30 @@
 
 	pwm9: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim9_ch1_pe5 &tim9_ch2_pe6>;
 	};
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart3 {
+	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &uart4 {
+	pinctrl-0 = <&uart4_tx_pc10 &uart4_rx_pc11>;
 	current-speed = <115200>;
 	status = "okay";
 };

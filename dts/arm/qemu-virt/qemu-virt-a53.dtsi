@@ -38,10 +38,15 @@
 	soc {
 		interrupt-parent = <&gic>;
 
+		sram0: memory@40000000 {
+			compatible = "mmio-sram";
+			reg = <0x40000000 DT_SIZE_M(128)>;
+		};
+
 		gic: interrupt-controller@8000000 {
 			compatible = "arm,gic";
-			reg = <0x8000000 0x10000>,
-			      <0x8010000 0x10000>;
+			reg = <0x8000000 0x010000>,
+			      <0x80a0000 0xf60000>;
 			interrupt-controller;
 			#interrupt-cells = <4>;
 			label = "GIC";

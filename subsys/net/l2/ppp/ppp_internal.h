@@ -26,23 +26,11 @@ struct ppp_packet {
 	uint16_t length;
 } __packed;
 
-/** Timeout in milliseconds */
-#define PPP_TIMEOUT K_SECONDS(3)
-
 /** Max Terminate-Request transmissions */
 #define MAX_TERMINATE_REQ  CONFIG_NET_L2_PPP_MAX_TERMINATE_REQ_RETRANSMITS
 
 /** Max Configure-Request transmissions */
 #define MAX_CONFIGURE_REQ CONFIG_NET_L2_PPP_MAX_CONFIGURE_REQ_RETRANSMITS
-
-/** Max number of LCP options */
-#define MAX_LCP_OPTIONS CONFIG_NET_L2_PPP_MAX_OPTIONS
-
-/** Max number of IPCP options */
-#define MAX_IPCP_OPTIONS 4
-
-/** Max number of IPV6CP options */
-#define MAX_IPV6CP_OPTIONS 1
 
 #define PPP_BUF_ALLOC_TIMEOUT	K_MSEC(100)
 
@@ -76,12 +64,15 @@ struct ppp_peer_option_info {
 	uint8_t code;
 	int (*parse)(struct ppp_fsm *fsm, struct net_pkt *pkt,
 		     void *user_data);
+	int (*nack)(struct ppp_fsm *fsm, struct net_pkt *ret_pkt,
+		    void *user_data);
 };
 
-#define PPP_PEER_OPTION(_code, _parse)		\
+#define PPP_PEER_OPTION(_code, _parse, _nack)	\
 	{					\
 		.code = _code,			\
 		.parse = _parse,		\
+		.nack = _nack,			\
 	}
 
 int ppp_config_info_req(struct ppp_fsm *fsm,
@@ -172,6 +163,7 @@ int ppp_parse_options(struct ppp_fsm *fsm, struct net_pkt *pkt,
 		      void *user_data);
 
 void ppp_link_established(struct ppp_context *ctx, struct ppp_fsm *fsm);
+void ppp_link_authenticated(struct ppp_context *ctx);
 void ppp_link_terminated(struct ppp_context *ctx);
 void ppp_link_down(struct ppp_context *ctx);
 void ppp_link_needed(struct ppp_context *ctx);

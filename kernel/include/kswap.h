@@ -64,11 +64,6 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 	ARG_UNUSED(lock);
 	struct k_thread *new_thread, *old_thread;
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	extern void read_timer_start_of_swap(void);
-	read_timer_start_of_swap();
-#endif
-
 	old_thread = _current;
 
 	z_check_stack_sentinel();
@@ -97,7 +92,6 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 #endif
 
 	if (new_thread != old_thread) {
-		sys_trace_thread_switched_out();
 #ifdef CONFIG_TIMESLICING
 		z_reset_time_slice();
 #endif
@@ -106,18 +100,19 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 
 #ifdef CONFIG_SMP
 		_current_cpu->swap_ok = 0;
-
 		new_thread->base.cpu = arch_curr_cpu()->id;
 
 		if (!is_spinlock) {
 			z_smp_release_global_lock(new_thread);
 		}
 #endif
-		_current_cpu->current = new_thread;
+		z_thread_mark_switched_out();
 		wait_for_switch(new_thread);
+		arch_cohere_stacks(old_thread, NULL, new_thread);
+		_current_cpu->current = new_thread;
+
 		arch_switch(new_thread->switch_handle,
 			     &old_thread->switch_handle);
-		sys_trace_thread_switched_in();
 	}
 
 	if (is_spinlock) {
@@ -155,13 +150,7 @@ static inline int z_swap_irqlock(unsigned int key)
 {
 	int ret;
 	z_check_stack_sentinel();
-#ifndef CONFIG_ARM
-	sys_trace_thread_switched_out();
-#endif
 	ret = arch_swap(key);
-#ifndef CONFIG_ARM
-	sys_trace_thread_switched_in();
-#endif
 	return ret;
 }
 
@@ -203,7 +192,7 @@ static inline void z_dummy_thread_init(struct k_thread *dummy_thread)
 	dummy_thread->stack_info.size = 0U;
 #endif
 #ifdef CONFIG_USERSPACE
-	dummy_thread->mem_domain_info.mem_domain = 0;
+	dummy_thread->mem_domain_info.mem_domain = &k_mem_domain_default;
 #endif
 
 	_current_cpu->current = dummy_thread;

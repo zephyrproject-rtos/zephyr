@@ -55,10 +55,12 @@
 #define TICK_IRQ CONFIG_APIC_TIMER_IRQ
 #elif defined(CONFIG_LOAPIC_TIMER)
 #define TICK_IRQ CONFIG_LOAPIC_TIMER_IRQ
-#elif defined(CONFIG_XTENSA)
+#elif defined(CONFIG_XTENSA_TIMER)
 #define TICK_IRQ UTIL_CAT(XCHAL_TIMER,		\
 			  UTIL_CAT(CONFIG_XTENSA_TIMER_ID, _INTERRUPT))
 
+#elif defined(CONFIG_CAVS_TIMER)
+#define TICK_IRQ DSP_WCT_IRQ(0)
 #elif defined(CONFIG_ALTERA_AVALON_TIMER)
 #define TICK_IRQ TIMER_0_IRQ
 #elif defined(CONFIG_ARCV2_TIMER)
@@ -76,6 +78,7 @@
  * The Cortex-M use the SYSTICK exception for the system timer, which is
  * not considered an IRQ by the irq_enable/Disable APIs.
  */
+#elif defined(CONFIG_SPARC)
 #elif defined(CONFIG_ARCH_POSIX)
 #if  defined(CONFIG_BOARD_NATIVE_POSIX)
 #define TICK_IRQ TIMER_TICK_IRQ
@@ -90,10 +93,14 @@
 #error Timer type is not defined for this platform
 #endif
 
-/* Nios II and RISCV without CONFIG_RISCV_HAS_CPU_IDLE
- * do have a power saving instruction, so k_cpu_idle() returns immediately
+/* Cortex-M1, Nios II, and RISCV without CONFIG_RISCV_HAS_CPU_IDLE
+ * do have a power saving instruction, so k_cpu_idle() returns immediately.
+ *
+ * Includes workaround on QEMU aarch64, see
+ * https://github.com/zephyrproject-rtos/sdk-ng/issues/255
  */
-#if !defined(CONFIG_NIOS2) && \
+#if !defined(CONFIG_CPU_CORTEX_M1) && !defined(CONFIG_NIOS2) && \
+	!defined(CONFIG_SOC_QEMU_CORTEX_A53) && \
 	(!defined(CONFIG_RISCV) || defined(CONFIG_RISCV_HAS_CPU_IDLE))
 #define HAS_POWERSAVE_INSTRUCTION
 #endif
@@ -130,6 +137,84 @@ static struct k_thread thread_data3;
 static ISR_INFO isr_info;
 
 /**
+ * @brief Test cpu idle function
+ *
+ * @details
+ * Test Objectve:
+ * - The kernel architecture provide an idle function to be run when the system
+ *   has no work for the current CPU
+ * - This routine tests the k_cpu_idle() routine
+ *
+ * Testing techniques
+ * - Functional and black box testing
+ * - Interface testing
+ *
+ * Prerequisite Condition:
+ * - HAS_POWERSAVE_INSTRUCTION is set
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Record system time before cpu enters idle state
+ * -# Enter cpu idle state by k_cpu_idle()
+ * -# Record system time after cpu idle state is interrupted
+ * -# Compare the two system time values.
+ *
+ * Expected Test Result:
+ * - cpu enters idle state for a given time
+ *
+ * Pass/Fail criteria:
+ * - Success if the cpu enters idle state, failure otherwise.
+ *
+ * Assumptions and Constraints
+ * - N/A
+ *
+ * @see k_cpu_idle()
+ * @ingroup kernel_context_tests
+ */
+static void test_kernel_cpu_idle(void);
+
+/**
+ * @brief Test cpu idle function
+ *
+ * @details
+ * Test Objectve:
+ * - The kernel architecture provide an idle function to be run when the system
+ *   has no work for the current CPU
+ * - This routine tests the k_cpu_atomic_idle() routine
+ *
+ * Testing techniques
+ * - Functional and black box testing
+ * - Interface testing
+ *
+ * Prerequisite Condition:
+ * - HAS_POWERSAVE_INSTRUCTION is set
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Record system time befor cpu enters idle state
+ * -# Enter cpu idle state by k_cpu_atomic_idle()
+ * -# Record system time after cpu idle state is interrupted
+ * -# Compare the two system time values.
+ *
+ * Expected Test Result:
+ * - cpu enters idle state for a given time
+ *
+ * Pass/Fail criteria:
+ * - Success if the cpu enters idle state, failure otherwise.
+ *
+ * Assumptions and Constraints
+ * - N/A
+ *
+ * @see k_cpu_atomic_idle()
+ * @ingroup kernel_context_tests
+ */
+static void test_kernel_cpu_idle_atomic(void);
+
+/**
  * @brief Handler to perform various actions from within an ISR context
  *
  * This routine is the ISR handler for isr_handler_trigger(). It performs
@@ -137,7 +222,7 @@ static ISR_INFO isr_info;
  *
  * @return N/A
  */
-static void isr_handler(void *data)
+static void isr_handler(const void *data)
 {
 	ARG_UNUSED(data);
 
@@ -242,6 +327,12 @@ static void _test_kernel_cpu_idle(int atomic)
 {
 	int tms, tms2;
 	int i;
+
+	/* Align to ticks so the first iteration sleeps long enough
+	 * (k_timer_start() rounds its duration argument down, not up,
+	 * to a tick boundary)
+	 */
+	 k_usleep(1);
 
 	/* Set up a time to trigger events to exit idle mode */
 	k_timer_init(&idle_timer, idle_timer_expiry_function, NULL);
@@ -418,15 +509,51 @@ static void _test_kernel_interrupts(disable_int_func disable_int,
 }
 
 /**
- *
  * @brief Test routines for disabling and enabling interrupts
  *
  * @ingroup kernel_context_tests
  *
- * This routine tests the routines for disabling and enabling interrupts.
- * These include irq_lock() and irq_unlock(), irq_disable() and irq_enable().
+ * @details
+ * Test Objective:
+ * - To verify kernel architecture layer shall provide a mechanism to
+ *   selectively disable and enable specific numeric interrupts.
+ * - This routine tests the routines for disabling and enabling interrupts.
+ *   These include irq_lock() and irq_unlock().
  *
- * @see irq_lock(), irq_unlock(), irq_disable(), irq_enable()
+ * Testing techniques:
+ * - Interface testing, function and black box testing,
+ *   dynamic analysis and testing
+ *
+ * Prerequisite Conditions:
+ * - CONFIG_TICKLESS_KERNEL is not set.
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Do action to align to a tick boundary.
+ * -# Left shift 4 bits for the value of counts.
+ * -# Call irq_lock() and restore its return value to imask.
+ * -# Call z_tick_get_32() and store its return value to tick.
+ * -# Repeat counts of calling z_tick_get_32().
+ * -# Call z_tick_get_32() and store its return value to tick2.
+ * -# Call irq_unlock() with parameter imask.
+ * -# Check if tick is equal to tick2.
+ * -# Repeat counts of calling z_tick_get_32().
+ * -# Call z_tick_get_32() and store its return value to tick2.
+ * -# Check if tick is NOT equal to tick2.
+ *
+ * Expected Test Result:
+ * - The ticks shall not increase while interrupt locked.
+ *
+ * Pass/Fail Criteria:
+ * - Successful if check points in test procedure are all passed, otherwise
+ *   failure.
+ *
+ * Assumptions and Constraints:
+ * - N/A
+ *
+ * @see irq_lock(), irq_unlock()
  */
 static void test_kernel_interrupts(void)
 {
@@ -439,15 +566,52 @@ static void test_kernel_interrupts(void)
 }
 
 /**
- *
  * @brief Test routines for disabling and enabling interrupts (disable timer)
  *
  * @ingroup kernel_context_tests
  *
- * This routine tests the routines for disabling and enabling interrupts.
- * These include irq_lock() and irq_unlock(), irq_disable() and irq_enable().
+ * @details
+ * Test Objective:
+ * - To verify the kernel architecture layer shall provide a mechanism to
+ *   simultenously mask all local CPU interrupts and return the previous mask
+ *   state for restoration.
+ * - This routine tests the routines for disabling and enabling interrupts.
+ *   These include irq_disable() and irq_enable().
  *
- * @see irq_lock(), irq_unlock(), irq_disable(), irq_enable()
+ * Testing techniques:
+ * - Interface testing, function and black box testing,
+ *   dynamic analysis and testing
+ *
+ * Prerequisite Conditions:
+ * - TICK_IRQ is defined.
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Do action to align to a tick boundary.
+ * -# Left shift 4 bit for the value of counts.
+ * -# Call irq_disable() and restore its return value to imask.
+ * -# Call z_tick_get_32() and store its return value to tick.
+ * -# Repeat counts of calling z_tick_get_32().
+ * -# Call z_tick_get_32() and store its return value to tick2.
+ * -# Call irq_enable() with parameter imask.
+ * -# Check if tick is equal to tick2.
+ * -# Repeat counts of calling z_tick_get_32().
+ * -# Call z_tick_get_32() and store its return value to tick2.
+ * -# Check if tick is NOT equal to tick2.
+ *
+ * Expected Test Result:
+ * - The ticks shall not increase while interrupt locked.
+ *
+ * Pass/Fail Criteria:
+ * - Successful if check points in test procedure are all passed, otherwise
+ *   failure.
+ *
+ * Assumptions and Constraints:
+ * - N/A
+ *
+ * @see irq_disable(), irq_enable()
  */
 static void test_kernel_timer_interrupts(void)
 {
@@ -460,16 +624,43 @@ static void test_kernel_timer_interrupts(void)
 }
 
 /**
+ * @brief Test some context routines
  *
- * @brief Test some context routines from a preemptible thread
+ * @details
+ * Test Objectve:
+ * - Thread context handles derived from context switches must be able to be
+ *   restored upon interrupt exit
+ *
+ * Testing techniques
+ * - Functional and black box testing
+ * - Interface testing
+ *
+ * Prerequisite Condition:
+ * - N/A
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Set priority of current thread to 0 as a preemptible thread
+ * -# Trap to interrupt context, get thread id of the interrupted thread and
+ *  pass back to that thread.
+ * -# Return to thread context and make sure this context is interrupted by
+ *  comparing its thread ID and the thread ID passed by isr.
+ * -# Pass command to isr to check whether the isr is executed in interrupt
+ *  context
+ * -# When return to thread context, check the return value of command.
+ *
+ * Expected Test Result:
+ * - Thread context restored upon interrupt exit
+ *
+ * Pass/Fail criteria:
+ * - Success if context of thread restored correctly, failure otherwise.
+ *
+ * Assumptions and Constraints
+ * - N/A
  *
  * @ingroup kernel_context_tests
- *
- * This routines tests the k_current_get() and
- * k_is_in_isr() routines from both a preemptible thread  and an ISR (that
- * interrupted a preemptible thread). Checking those routines with cooperative
- * threads are done elsewhere.
- *
  * @see k_current_get(), k_is_in_isr()
  */
 static void test_kernel_ctx_thread(void)
@@ -953,6 +1144,7 @@ void test_k_yield(void)
  *
  * @see k_thread_create
  */
+
 void test_kernel_thread(void)
 {
 

@@ -136,7 +136,7 @@ enum video_signal_result {
  * @brief Set video format
  * See video_set_format() for argument descriptions.
  */
-typedef int (*video_api_set_format_t)(struct device *dev,
+typedef int (*video_api_set_format_t)(const struct device *dev,
 				      enum video_endpoint_id ep,
 				      struct video_format *fmt);
 
@@ -145,7 +145,7 @@ typedef int (*video_api_set_format_t)(struct device *dev,
  * @brief get current video format
  * See video_get_format() for argument descriptions.
  */
-typedef int (*video_api_get_format_t)(struct device *dev,
+typedef int (*video_api_get_format_t)(const struct device *dev,
 				      enum video_endpoint_id ep,
 				      struct video_format *fmt);
 
@@ -154,7 +154,7 @@ typedef int (*video_api_get_format_t)(struct device *dev,
  * @brief Enqueue a buffer in the driver’s incoming queue.
  * See video_enqueue() for argument descriptions.
  */
-typedef int (*video_api_enqueue_t)(struct device *dev,
+typedef int (*video_api_enqueue_t)(const struct device *dev,
 				   enum video_endpoint_id ep,
 				   struct video_buffer *buf);
 
@@ -163,7 +163,7 @@ typedef int (*video_api_enqueue_t)(struct device *dev,
  * @brief Dequeue a buffer from the driver’s outgoing queue.
  * See video_dequeue() for argument descriptions.
  */
-typedef int (*video_api_dequeue_t)(struct device *dev,
+typedef int (*video_api_dequeue_t)(const struct device *dev,
 				   enum video_endpoint_id ep,
 				   struct video_buffer **buf,
 				   k_timeout_t timeout);
@@ -174,7 +174,7 @@ typedef int (*video_api_dequeue_t)(struct device *dev,
  *        outgoing queue.
  * See video_flush() for argument descriptions.
  */
-typedef int (*video_api_flush_t)(struct device *dev,
+typedef int (*video_api_flush_t)(const struct device *dev,
 				 enum video_endpoint_id ep,
 				 bool cancel);
 
@@ -183,21 +183,22 @@ typedef int (*video_api_flush_t)(struct device *dev,
  * @brief Start the capture or output process.
  * See video_stream_start() for argument descriptions.
  */
-typedef int (*video_api_stream_start_t)(struct device *dev);
+typedef int (*video_api_stream_start_t)(const struct device *dev);
 
 /**
  * @typedef video_api_stream_stop_t
  * @brief Stop the capture or output process.
  * See video_stream_stop() for argument descriptions.
  */
-typedef int (*video_api_stream_stop_t)(struct device *dev);
+typedef int (*video_api_stream_stop_t)(const struct device *dev);
 
 /**
  * @typedef video_api_set_ctrl_t
  * @brief set a video control value.
  * See video_set_ctrl() for argument descriptions.
  */
-typedef int (*video_api_set_ctrl_t)(struct device *dev, unsigned int cid,
+typedef int (*video_api_set_ctrl_t)(const struct device *dev,
+				    unsigned int cid,
 				    void *value);
 
 /**
@@ -205,7 +206,8 @@ typedef int (*video_api_set_ctrl_t)(struct device *dev, unsigned int cid,
  * @brief get a video control value.
  * See video_get_ctrl() for argument descriptions.
  */
-typedef int (*video_api_get_ctrl_t)(struct device *dev, unsigned int cid,
+typedef int (*video_api_get_ctrl_t)(const struct device *dev,
+				    unsigned int cid,
 				    void *value);
 
 /**
@@ -213,7 +215,7 @@ typedef int (*video_api_get_ctrl_t)(struct device *dev, unsigned int cid,
  * @brief Get capabilities of a video endpoint.
  * See video_get_caps() for argument descriptions.
  */
-typedef int (*video_api_get_caps_t)(struct device *dev,
+typedef int (*video_api_get_caps_t)(const struct device *dev,
 				    enum video_endpoint_id ep,
 				    struct video_caps *caps);
 
@@ -222,7 +224,7 @@ typedef int (*video_api_get_caps_t)(struct device *dev,
  * @brief Register/Unregister poll signal for buffer events.
  * See video_set_signal() for argument descriptions.
  */
-typedef int (*video_api_set_signal_t)(struct device *dev,
+typedef int (*video_api_set_signal_t)(const struct device *dev,
 				      enum video_endpoint_id ep,
 				      struct k_poll_signal *signal);
 
@@ -256,12 +258,12 @@ struct video_driver_api {
  * @retval -ENOTSUP If format is not supported.
  * @retval -EIO General input / output error.
  */
-static inline int video_set_format(struct device *dev,
+static inline int video_set_format(const struct device *dev,
 				   enum video_endpoint_id ep,
 				   struct video_format *fmt)
 {
 	const struct video_driver_api *api =
-		(const struct video_driver_api *)dev->driver_api;
+		(const struct video_driver_api *)dev->api;
 
 	__ASSERT(api->set_format, "set_format must be implemented by driver");
 
@@ -279,12 +281,12 @@ static inline int video_set_format(struct device *dev,
  *
  * @retval pointer to video format
  */
-static inline int video_get_format(struct device *dev,
+static inline int video_get_format(const struct device *dev,
 				   enum video_endpoint_id ep,
 				   struct video_format *fmt)
 {
 	const struct video_driver_api *api =
-		(const struct video_driver_api *)dev->driver_api;
+		(const struct video_driver_api *)dev->api;
 
 	__ASSERT(api->get_format, "get_format must be implemented by driver");
 
@@ -305,11 +307,12 @@ static inline int video_get_format(struct device *dev,
  * @retval -EINVAL If parameters are invalid.
  * @retval -EIO General input / output error.
  */
-static inline int video_enqueue(struct device *dev, enum video_endpoint_id ep,
+static inline int video_enqueue(const struct device *dev,
+				enum video_endpoint_id ep,
 				struct video_buffer *buf)
 {
 	const struct video_driver_api *api =
-		(const struct video_driver_api *)dev->driver_api;
+		(const struct video_driver_api *)dev->api;
 
 	if (api->enqueue == NULL) {
 		return -ENOTSUP;
@@ -333,12 +336,13 @@ static inline int video_enqueue(struct device *dev, enum video_endpoint_id ep,
  * @retval -EINVAL If parameters are invalid.
  * @retval -EIO General input / output error.
  */
-static inline int video_dequeue(struct device *dev, enum video_endpoint_id ep,
+static inline int video_dequeue(const struct device *dev,
+				enum video_endpoint_id ep,
 				struct video_buffer **buf,
 				k_timeout_t timeout)
 {
 	const struct video_driver_api *api =
-		(const struct video_driver_api *)dev->driver_api;
+		(const struct video_driver_api *)dev->api;
 
 	if (api->dequeue == NULL) {
 		return -ENOTSUP;
@@ -362,11 +366,12 @@ static inline int video_dequeue(struct device *dev, enum video_endpoint_id ep,
  *
  * @retval 0 Is successful, -ERRNO code otherwise.
  */
-static inline int video_flush(struct device *dev, enum video_endpoint_id ep,
+static inline int video_flush(const struct device *dev,
+			      enum video_endpoint_id ep,
 			      bool cancel)
 {
 	const struct video_driver_api *api =
-		(const struct video_driver_api *)dev->driver_api;
+		(const struct video_driver_api *)dev->api;
 
 	if (api->flush == NULL) {
 		return -ENOTSUP;
@@ -387,10 +392,10 @@ static inline int video_flush(struct device *dev, enum video_endpoint_id ep,
  * @retval 0 Is successful.
  * @retval -EIO General input / output error.
  */
-static inline int video_stream_start(struct device *dev)
+static inline int video_stream_start(const struct device *dev)
 {
 	const struct video_driver_api *api =
-		(const struct video_driver_api *)dev->driver_api;
+		(const struct video_driver_api *)dev->api;
 
 	__ASSERT(api->stream_start,
 		 "stream_start must be implemented by driver");
@@ -407,10 +412,10 @@ static inline int video_stream_start(struct device *dev)
  * @retval 0 Is successful.
  * @retval -EIO General input / output error.
  */
-static inline int video_stream_stop(struct device *dev)
+static inline int video_stream_stop(const struct device *dev)
 {
 	const struct video_driver_api *api =
-		(const struct video_driver_api *)dev->driver_api;
+		(const struct video_driver_api *)dev->api;
 	int ret;
 
 	__ASSERT(api->stream_stop,
@@ -431,12 +436,12 @@ static inline int video_stream_stop(struct device *dev)
  *
  * @retval 0 Is successful, -ERRNO code otherwise.
  */
-static inline int video_get_caps(struct device *dev,
+static inline int video_get_caps(const struct device *dev,
 				 enum video_endpoint_id ep,
 				 struct video_caps *caps)
 {
 	const struct video_driver_api *api =
-		(const struct video_driver_api *)dev->driver_api;
+		(const struct video_driver_api *)dev->api;
 
 	__ASSERT(api->get_caps, "get_caps must be implemented by driver");
 
@@ -458,11 +463,11 @@ static inline int video_get_caps(struct device *dev,
  * @retval -ENOTSUP If format is not supported.
  * @retval -EIO General input / output error.
  */
-static inline int video_set_ctrl(struct device *dev, unsigned int cid,
+static inline int video_set_ctrl(const struct device *dev, unsigned int cid,
 				 void *value)
 {
 	const struct video_driver_api *api =
-		(const struct video_driver_api *)dev->driver_api;
+		(const struct video_driver_api *)dev->api;
 
 	if (api->set_ctrl == NULL) {
 		return -ENOTSUP;
@@ -486,11 +491,11 @@ static inline int video_set_ctrl(struct device *dev, unsigned int cid,
  * @retval -ENOTSUP If format is not supported.
  * @retval -EIO General input / output error.
  */
-static inline int video_get_ctrl(struct device *dev, unsigned int cid,
+static inline int video_get_ctrl(const struct device *dev, unsigned int cid,
 				 void *value)
 {
 	const struct video_driver_api *api =
-		(const struct video_driver_api *)dev->driver_api;
+		(const struct video_driver_api *)dev->api;
 
 	if (api->get_ctrl == NULL) {
 		return -ENOTSUP;
@@ -512,12 +517,12 @@ static inline int video_get_ctrl(struct device *dev, unsigned int cid,
  *
  * @retval 0 Is successful, -ERRNO code otherwise.
  */
-static inline int video_set_signal(struct device *dev,
+static inline int video_set_signal(const struct device *dev,
 				   enum video_endpoint_id ep,
 				   struct k_poll_signal *signal)
 {
 	const struct video_driver_api *api =
-		(const struct video_driver_api *)dev->driver_api;
+		(const struct video_driver_api *)dev->api;
 
 	if (api->set_signal == NULL) {
 		return -ENOTSUP;

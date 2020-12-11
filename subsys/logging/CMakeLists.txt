@@ -50,8 +50,8 @@ if(NOT CONFIG_LOG_MINIMAL)
   )
 
   zephyr_sources_ifdef(
-    CONFIG_LOG_BACKEND_RB
-    log_backend_rb.c
+    CONFIG_LOG_BACKEND_ADSP
+    log_backend_adsp.c
   )
 
   if(CONFIG_LOG_BACKEND_SPINEL)

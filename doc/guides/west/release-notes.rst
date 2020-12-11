@@ -1,6 +1,59 @@
 West Release Notes
 ##################
 
+v0.8.0
+******
+
+This is a feature release which changes the manifest schema by adding support
+for a ``path-prefix:`` key in an ``import:`` mapping, along with some other
+features and fixes.
+
+- Manifest import mappings now support a ``path-prefix:`` key, which places
+  the project and its imported repositories in a subdirectory of the workspace.
+  See :ref:`west-manifest-ex3.4` for an example.
+- The west command line application can now also be run using ``python3 -m
+  west``. This makes it easier to run west under a particular Python
+  interpreter without modifying the :envvar:`PATH` environment variable.
+- :ref:`west manifest --path <west-manifest-path>` prints the absolute path to
+  west.yml
+- ``west init`` now supports an ``--mf foo.yml`` option, which initializes the
+  workspace using :file:`foo.yml` instead of :file:`west.yml`.
+- ``west list`` now prints the manifest repository's path using the
+  ``manifest.path`` :ref:`configuration option <west-config>`, which may differ
+  from the ``self: path:`` value in the manifest data. The old behavior is
+  still available, but requires passing a new ``--manifest-path-from-yaml``
+  option.
+- Various Python API changes; see :ref:`west-apis` for details.
+
+v0.7.3
+******
+
+This is a bugfix release.
+
+- Fix an error where a failed import could leave the workspace in an unusable
+  state (see [PR #415](https://github.com/zephyrproject-rtos/west/pull/415) for
+  details)
+
+v0.7.2
+******
+
+This is a bugfix and minor feature release.
+
+- Filter out duplicate extension commands brought in by manifest imports
+- Fix ``west.Manifest.get_projects()`` when finding the manifest repository by
+  path
+
+v0.7.1
+******
+
+This is a bugfix and minor feature release.
+
+- ``west update --stats`` now prints timing for operations which invoke a
+  subprocess, time spent in west's Python process for each project, and total
+  time updating each project.
+- ``west topdir`` always prints a POSIX style path
+- minor console output changes
+
 v0.7.0
 ******
 

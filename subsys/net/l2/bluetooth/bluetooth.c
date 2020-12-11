@@ -74,7 +74,7 @@ static enum net_verdict net_bt_recv(struct net_if *iface, struct net_pkt *pkt)
 
 static struct bt_if_conn *net_bt_get_conn(struct net_if *iface)
 {
-	struct bt_context *ctxt = net_if_get_device(iface)->driver_data;
+	struct bt_context *ctxt = net_if_get_device(iface)->data;
 	int i;
 
 	for (i = 0; i < CONFIG_BT_MAX_CONN; i++) {
@@ -272,7 +272,7 @@ static struct bt_context bt_context_data = {
 
 static void bt_iface_init(struct net_if *iface)
 {
-	struct bt_context *ctxt = net_if_get_device(iface)->driver_data;
+	struct bt_context *ctxt = net_if_get_device(iface)->data;
 	struct bt_if_conn *conn = NULL;
 	int i;
 
@@ -348,7 +348,7 @@ static struct bt_l2cap_server server = {
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0x20, 0x18),
+	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_IPSS_VAL)),
 };
 
 static const struct bt_data sd[] = {
@@ -602,9 +602,9 @@ static struct bt_conn_cb conn_callbacks = {
 };
 #endif /* CONFIG_NET_L2_BT_MGMT */
 
-static int net_bt_init(struct device *dev)
+static int net_bt_init(const struct device *dev)
 {
-	NET_DBG("dev %p driver_data %p", dev, dev->driver_data);
+	NET_DBG("dev %p driver_data %p", dev, dev->data);
 
 #if defined(CONFIG_NET_L2_BT_MGMT)
 	bt_conn_cb_register(&conn_callbacks);

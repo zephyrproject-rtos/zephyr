@@ -4,14 +4,14 @@ sample:
 tests:
   sample.bluetooth.peripheral_hr:
     harness: bluetooth
-    platform_whitelist: qemu_cortex_m3 qemu_x86
+    platform_allow: qemu_cortex_m3 qemu_x86
     tags: bluetooth
   sample.bluetooth.peripheral_hr_rv32m1_vega_ri5cy:
-    platform_whitelist: rv32m1_vega_ri5cy
+    platform_allow: rv32m1_vega_ri5cy
     tags: bluetooth
     build_only: true
   sample.bluetooth.peripheral_hr.frdm_kw41z_shield:
     harness: bluetooth
-    platform_whitelist: mimxrt1020_evk mimxrt1050_evk mimxrt1060_evk frdm_k64f
+    platform_allow: mimxrt1020_evk mimxrt1050_evk mimxrt1060_evk frdm_k64f
     tags: bluetooth
     extra_args: SHIELD=frdm_kw41z

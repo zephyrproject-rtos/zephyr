@@ -29,6 +29,9 @@ static void put_fail(struct k_pipe *p)
 	zassert_equal(k_pipe_put(p, data, PIPE_LEN, &wt_byte,
 				 1, TIMEOUT), -EAGAIN, NULL);
 	zassert_true(wt_byte < 1, NULL);
+	zassert_equal(k_pipe_put(p, data, PIPE_LEN, &wt_byte,
+				 PIPE_LEN + 1, TIMEOUT), -EINVAL, NULL);
+
 }
 
 /**
@@ -54,6 +57,10 @@ void test_pipe_user_put_fail(void)
 
 	zassert_true(p != NULL, NULL);
 	zassert_false(k_pipe_alloc_init(p, PIPE_LEN), NULL);
+	/* check the number of bytes that may be read from pipe. */
+	zassert_equal(k_pipe_read_avail(p), 0, NULL);
+	/* check the number of bytes that may be written to pipe.*/
+	zassert_equal(k_pipe_write_avail(p), PIPE_LEN, NULL);
 
 	put_fail(p);
 }
@@ -72,6 +79,8 @@ static void get_fail(struct k_pipe *p)
 	zassert_equal(k_pipe_get(p, rx_data, PIPE_LEN, &rd_byte, 1,
 				 TIMEOUT), -EAGAIN, NULL);
 	zassert_true(rd_byte < 1, NULL);
+	zassert_equal(k_pipe_get(p, rx_data, PIPE_LEN, &rd_byte, 1,
+				 TIMEOUT), -EAGAIN, NULL);
 }
 
 /**

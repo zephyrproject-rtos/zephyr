@@ -6,11 +6,12 @@
 
 /dts-v1/;
 #include <st/f3/stm32f303Xe.dtsi>
+#include <st/f3/stm32f303r(d-e)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32F303RE-NUCLEO board";
-	compatible = "st,stm32f303re-nucleo", "st,stm32f303";
+	compatible = "st,stm32f303re-nucleo";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -42,6 +43,7 @@
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	current-speed = <115200>;
 	status = "okay";
 };

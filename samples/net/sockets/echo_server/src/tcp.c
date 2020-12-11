@@ -146,6 +146,8 @@ static void handle_data(void *ptr1, void *ptr2, void *ptr3)
 				errno);
 			ret = -errno;
 			break;
+		} else {
+			atomic_add(&data->tcp.bytes_received, received);
 		}
 
 		offset += received;
@@ -234,6 +236,8 @@ static int process_tcp(struct data *data)
 
 	LOG_INF("TCP (%s): Accepted connection", data->proto);
 
+#define MAX_NAME_LEN sizeof("tcp6[0]")
+
 #if defined(CONFIG_NET_IPV6)
 	if (client_addr.sin_family == AF_INET6) {
 		tcp6_handler_in_use[slot] = true;
@@ -248,6 +252,13 @@ static int process_tcp(struct data *data)
 			IS_ENABLED(CONFIG_USERSPACE) ? K_USER |
 						       K_INHERIT_PERMS : 0,
 			K_NO_WAIT);
+
+		if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+			char name[MAX_NAME_LEN];
+
+			snprintk(name, sizeof(name), "tcp6[%d]", slot);
+			k_thread_name_set(&tcp6_handler_thread[slot], name);
+		}
 	}
 #endif
 
@@ -265,6 +276,13 @@ static int process_tcp(struct data *data)
 			IS_ENABLED(CONFIG_USERSPACE) ? K_USER |
 						       K_INHERIT_PERMS : 0,
 			K_NO_WAIT);
+
+		if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+			char name[MAX_NAME_LEN];
+
+			snprintk(name, sizeof(name), "tcp4[%d]", slot);
+			k_thread_name_set(&tcp4_handler_thread[slot], name);
+		}
 	}
 #endif
 
@@ -286,6 +304,9 @@ static void process_tcp4(void)
 		quit();
 		return;
 	}
+
+	k_delayed_work_submit(&conf.ipv4.tcp.stats_print,
+			      K_SECONDS(STATS_TIMER));
 
 	while (ret == 0) {
 		ret = process_tcp(&conf.ipv4);
@@ -313,6 +334,9 @@ static void process_tcp6(void)
 		return;
 	}
 
+	k_delayed_work_submit(&conf.ipv6.tcp.stats_print,
+			      K_SECONDS(STATS_TIMER));
+
 	while (ret == 0) {
 		ret = process_tcp(&conf.ipv6);
 		if (ret != 0) {
@@ -321,6 +345,26 @@ static void process_tcp6(void)
 	}
 
 	quit();
+}
+
+static void print_stats(struct k_work *work)
+{
+	struct data *data = CONTAINER_OF(work, struct data, tcp.stats_print);
+	int total_received = atomic_get(&data->tcp.bytes_received);
+
+	if (total_received) {
+		if ((total_received / STATS_TIMER) < 1024) {
+			LOG_INF("%s TCP: Received %d B/sec", data->proto,
+				total_received / STATS_TIMER);
+		} else {
+			LOG_INF("%s TCP: Received %d KiB/sec", data->proto,
+				total_received / 1024 / STATS_TIMER);
+		}
+
+		atomic_set(&data->tcp.bytes_received, 0);
+	}
+
+	k_delayed_work_submit(&data->tcp.stats_print, K_SECONDS(STATS_TIMER));
 }
 
 void start_tcp(void)
@@ -351,6 +395,7 @@ void start_tcp(void)
 	}
 #endif
 
+	k_delayed_work_init(&conf.ipv6.tcp.stats_print, print_stats);
 	k_thread_start(tcp6_thread_id);
 #endif
 
@@ -366,6 +411,7 @@ void start_tcp(void)
 	}
 #endif
 
+	k_delayed_work_init(&conf.ipv4.tcp.stats_print, print_stats);
 	k_thread_start(tcp4_thread_id);
 #endif
 }

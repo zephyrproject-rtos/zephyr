@@ -158,27 +158,16 @@ static int publish_retransmit(struct bt_mesh_model *mod)
 {
 	NET_BUF_SIMPLE_DEFINE(sdu, BT_MESH_TX_SDU_MAX);
 	struct bt_mesh_model_pub *pub = mod->pub;
-	struct bt_mesh_app_key *key;
 	struct bt_mesh_msg_ctx ctx = {
 		.addr = pub->addr,
 		.send_ttl = pub->ttl,
+		.app_idx = pub->key,
 	};
 	struct bt_mesh_net_tx tx = {
 		.ctx = &ctx,
 		.src = bt_mesh_model_elem(mod)->addr,
-		.xmit = bt_mesh_net_transmit_get(),
 		.friend_cred = pub->cred,
 	};
-
-	key = bt_mesh_app_key_find(pub->key);
-	if (!key) {
-		return -EADDRNOTAVAIL;
-	}
-
-	tx.sub = bt_mesh_subnet_get(key->net_idx);
-
-	ctx.net_idx = key->net_idx;
-	ctx.app_idx = key->app_idx;
 
 	net_buf_simple_add_mem(&sdu, pub->msg->data, pub->msg->len);
 
@@ -489,7 +478,11 @@ static bool model_has_dst(struct bt_mesh_model *mod, uint16_t dst)
 		return !!bt_mesh_model_find_group(&mod, dst);
 	}
 
-	return (mod->elem_idx == 0 && bt_mesh_fixed_group_match(dst));
+	/* If a message with a fixed group address is sent to the access layer,
+	 * the lower layers have already confirmed that we are subscribing to
+	 * it. All models on the primary element should receive the message.
+	 */
+	return mod->elem_idx == 0;
 }
 
 static const struct bt_mesh_model_op *find_op(struct bt_mesh_model *models,
@@ -550,23 +543,6 @@ static int get_opcode(struct net_buf_simple *buf, uint32_t *opcode)
 	}
 
 	CODE_UNREACHABLE;
-}
-
-bool bt_mesh_fixed_group_match(uint16_t addr)
-{
-	/* Check for fixed group addresses */
-	switch (addr) {
-	case BT_MESH_ADDR_ALL_NODES:
-		return true;
-	case BT_MESH_ADDR_PROXIES:
-		return (bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED);
-	case BT_MESH_ADDR_FRIENDS:
-		return (bt_mesh_friend_get() == BT_MESH_FRIEND_ENABLED);
-	case BT_MESH_ADDR_RELAYS:
-		return (bt_mesh_relay_get() == BT_MESH_RELAY_ENABLED);
-	default:
-		return false;
-	}
 }
 
 void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
@@ -695,24 +671,9 @@ int bt_mesh_model_send(struct bt_mesh_model *model,
 		       struct net_buf_simple *msg,
 		       const struct bt_mesh_send_cb *cb, void *cb_data)
 {
-	struct bt_mesh_app_key *app_key;
-
-	if (!BT_MESH_IS_DEV_KEY(ctx->app_idx)) {
-		app_key = bt_mesh_app_key_find(ctx->app_idx);
-		if (!app_key) {
-			BT_ERR("Unknown app_idx 0x%04x", ctx->app_idx);
-			return -EINVAL;
-		}
-
-		ctx->net_idx = app_key->net_idx;
-	}
-
 	struct bt_mesh_net_tx tx = {
-		.sub = bt_mesh_subnet_get(ctx->net_idx),
 		.ctx = ctx,
 		.src = bt_mesh_model_elem(model)->addr,
-		.xmit = bt_mesh_net_transmit_get(),
-		.friend_cred = 0,
 	};
 
 	return model_send(model, &tx, false, msg, cb, cb_data);
@@ -722,13 +683,15 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 {
 	NET_BUF_SIMPLE_DEFINE(sdu, BT_MESH_TX_SDU_MAX);
 	struct bt_mesh_model_pub *pub = model->pub;
-	struct bt_mesh_app_key *key;
 	struct bt_mesh_msg_ctx ctx = {
+		.addr = pub->addr,
+		.send_ttl = pub->ttl,
+		.send_rel = pub->send_rel,
+		.app_idx = pub->key,
 	};
 	struct bt_mesh_net_tx tx = {
 		.ctx = &ctx,
 		.src = bt_mesh_model_elem(model)->addr,
-		.xmit = bt_mesh_net_transmit_get(),
 	};
 	int err;
 
@@ -739,11 +702,6 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 	}
 
 	if (pub->addr == BT_MESH_ADDR_UNASSIGNED) {
-		return -EADDRNOTAVAIL;
-	}
-
-	key = bt_mesh_app_key_find(pub->key);
-	if (!key) {
 		return -EADDRNOTAVAIL;
 	}
 
@@ -759,14 +717,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 
 	net_buf_simple_add_mem(&sdu, pub->msg->data, pub->msg->len);
 
-	ctx.addr = pub->addr;
-	ctx.send_ttl = pub->ttl;
-	ctx.send_rel = pub->send_rel;
-	ctx.net_idx = key->net_idx;
-	ctx.app_idx = key->app_idx;
-
 	tx.friend_cred = pub->cred;
-	tx.sub = bt_mesh_subnet_get(ctx.net_idx),
 
 	pub->count = BT_MESH_PUB_TRANSMIT_COUNT(pub->retransmit);
 
@@ -833,24 +784,33 @@ void bt_mesh_model_tree_walk(struct bt_mesh_model *root,
 			     void *user_data)
 {
 	struct bt_mesh_model *m = root;
-	uint32_t depth = 0;
+	int depth = 0;
+	/* 'skip' is set to true when we ascend from child to parent node.
+	 * In that case, we want to skip calling the callback on the parent
+	 * node and we don't want to descend onto a child node as those
+	 * nodes have already been visited.
+	 */
+	bool skip = false;
 
 	do {
-		if (cb(m, depth, user_data) == BT_MESH_WALK_STOP) {
+		if (!skip &&
+		    cb(m, (uint32_t)depth, user_data) == BT_MESH_WALK_STOP) {
 			return;
 		}
 #ifdef CONFIG_BT_MESH_MODEL_EXTENSIONS
-		if (m->extends) {
+		if (!skip && m->extends) {
 			m = m->extends;
 			depth++;
 		} else if (m->flags & BT_MESH_MOD_NEXT_IS_PARENT) {
-			m = m->next->next;
+			m = m->next;
 			depth--;
+			skip = true;
 		} else {
 			m = m->next;
+			skip = false;
 		}
 #endif
-	} while (m && m != root);
+	} while (m && depth > 0);
 }
 
 #ifdef CONFIG_BT_MESH_MODEL_EXTENSIONS

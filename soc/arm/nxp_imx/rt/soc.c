@@ -9,6 +9,7 @@
 #include <init.h>
 #include <soc.h>
 #include <linker/sections.h>
+#include <linker/linker-defs.h>
 #include <fsl_clock.h>
 #include <arch/cpu.h>
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
@@ -85,7 +86,7 @@ const __imx_boot_data_section BOOT_DATA_T boot_data = {
 
 const __imx_boot_ivt_section ivt image_vector_table = {
 	.hdr = IVT_HEADER,
-	.entry = CONFIG_FLASH_BASE_ADDRESS + CONFIG_ROM_START_OFFSET,
+	.entry = (uint32_t) _vector_start,
 	.reserved1 = IVT_RSVD,
 #ifdef CONFIG_DEVICE_CONFIGURATION_DATA
 	.dcd = (uint32_t) dcd_data,
@@ -207,6 +208,10 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetDiv(kCLOCK_CsiDiv, 0); /* Set CSI divider to 1 */
 	CLOCK_SetMux(kCLOCK_CsiMux, 0); /* Set CSI source to OSC 24M */
 #endif
+#ifdef CONFIG_CAN_MCUX_FLEXCAN
+	CLOCK_SetDiv(kCLOCK_CanDiv, 1); /* Set CAN_CLK_PODF. */
+	CLOCK_SetMux(kCLOCK_CanMux, 2); /* Set Can clock source. */
+#endif
 
 	/* Keep the system clock running so SYSTICK can wake up the system from
 	 * wfi.
@@ -253,7 +258,7 @@ void imxrt_usdhc_pinmux(uint16_t nusdhc, bool init,
  * @return 0
  */
 
-static int imxrt_init(struct device *arg)
+static int imxrt_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

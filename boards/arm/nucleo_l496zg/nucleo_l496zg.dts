@@ -6,11 +6,12 @@
 
 /dts-v1/;
 #include <st/l4/stm32l496Xg.dtsi>
+#include <st/l4/stm32l496z(e-g)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32L496ZG-NUCLEO board";
-	compatible = "st,stm32l496zg-nucleo", "st,stm32l496";
+	compatible = "st,stm32l496zg-nucleo";
 
 	chosen {
 		zephyr,console = &lpuart1;
@@ -61,6 +62,7 @@
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6>;
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -71,6 +73,7 @@
 };
 
 &lpuart1 {
+	pinctrl-0 = <&lpuart1_tx_pg7 &lpuart1_rx_pg8>;
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -80,6 +83,9 @@
 
 	pwm1: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim1_ch1_pe9
+			     &tim1_ch2_pe11
+			     &tim1_ch3_pe13>;
 	};
 };
 
@@ -88,14 +94,7 @@
 
 	pwm2: pwm {
 		status = "okay";
-	};
-};
-
-&timers4 {
-	status = "okay";
-
-	pwm4: pwm {
-		status = "okay";
+		pinctrl-0 = <&tim2_ch1_pa0>;
 	};
 };
 
@@ -104,15 +103,18 @@
 
 	pwm15: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim15_ch1_pb14>;
 	};
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
 	status = "okay";
 };
 

@@ -1,0 +1,92 @@
+# Copyright (c) 2018-2019 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+# Copyright (c) 2020 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Input device settings"
+
+config LVGL_POINTER_KSCAN
+	bool "Keyboard scan pointer input"
+	depends on KSCAN
+	help
+	  Enable keyboard scan pointer input
+
+if LVGL_POINTER_KSCAN
+
+config LVGL_POINTER_KSCAN_DEV_NAME
+	string "Keyboard scan device name for pointer input"
+	default "KSCAN"
+	help
+	  Name of the keyboard scan device to use for pointer input.
+
+config LVGL_POINTER_KSCAN_MSGQ_COUNT
+	int "Keyboard scan message queue count maximum"
+	default 10
+	help
+	  Maximum number of items in the keyboard scan message queue.
+
+config LVGL_POINTER_KSCAN_SWAP_XY
+	bool "Swap keyboard scan X,Y axes"
+	help
+	  Swap keyboard scan X,Y axes. This option can be used to align keyboard
+	  scan coordinates with the display.
+
+config LVGL_POINTER_KSCAN_INVERT_X
+	bool "Invert keyboard scan X axis"
+	help
+	  Invert keyboard scan X axis. This option can be used to align keyboard
+	  scan coordinates with the display.
+
+config LVGL_POINTER_KSCAN_INVERT_Y
+	bool "Invert keyboard scan Y axis"
+	help
+	  Invert keyboard scan Y axis. This option can be used to align keyboard
+	  scan coordinates with the display.
+
+endif # LVGL_POINTER_KSCAN
+
+config LVGL_INDEV_DEF_READ_PERIOD
+	int "Input device refresh period"
+	default 30
+	help
+	  Refresh period for input devices in milliseconds
+
+config LVGL_INDEV_DEF_DRAG_LIMIT
+	int "Drag Threshold"
+	default 10
+	help
+	  Threshold in pixels before entering drag mode
+
+config LVGL_INDEV_DEF_DRAG_THROW
+	int "Drag throw slow-down"
+	default 10
+	range 0 100
+	help
+	  Percentage of slow down of a throw following a drag.
+	  Greater percentage means faster slow-down.
+
+config LVGL_INDEV_DEF_LONG_PRESS_TIME
+	int "Long press time"
+	default 400
+	help
+	  Period in milliseconds before a press is seen as a long press
+
+config LVGL_INDEV_DEF_LONG_PRESS_REP_TIME
+	int "Long press repeat time"
+	default 100
+	help
+	  Period in milliseconds after which a new trigger is generated
+	  for a long press
+
+config LVGL_INDEV_DEF_GESTURE_LIMIT
+	int "Gesture threshold"
+	default 50
+	help
+	  Gesture threshold in pixels
+
+config LVGL_INDEV_DEF_GESTURE_MIN_VELOCITY
+	int "Gesture minimum velocity"
+	default 3
+	help
+	  Gesture min velocity at release before swipe (pixels)
+
+endmenu

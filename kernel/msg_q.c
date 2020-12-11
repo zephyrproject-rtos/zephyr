@@ -32,7 +32,7 @@ struct k_msgq *_trace_list_k_msgq;
 /*
  * Complete initialization of statically defined message queues.
  */
-static int init_msgq_module(struct device *dev)
+static int init_msgq_module(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -113,7 +113,7 @@ int k_msgq_cleanup(struct k_msgq *msgq)
 }
 
 
-int z_impl_k_msgq_put(struct k_msgq *msgq, void *data, k_timeout_t timeout)
+int z_impl_k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout)
 {
 	__ASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT), "");
 
@@ -150,7 +150,7 @@ int z_impl_k_msgq_put(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 		result = -ENOMSG;
 	} else {
 		/* wait for put message success, failure, or timeout */
-		_current->base.swap_data = data;
+		_current->base.swap_data = (void *) data;
 		return z_pend_curr(&msgq->lock, key, &msgq->wait_q, timeout);
 	}
 
@@ -160,7 +160,7 @@ int z_impl_k_msgq_put(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_msgq_put(struct k_msgq *q, void *data,
+static inline int z_vrfy_k_msgq_put(struct k_msgq *q, const void *data,
 				    k_timeout_t timeout)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(q, K_OBJ_MSGQ));

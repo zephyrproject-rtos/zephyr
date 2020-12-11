@@ -31,8 +31,8 @@
 #define _UNDEFINED_SECTION_NAME undefined
 
 /* Interrupts */
-#define _IRQ_VECTOR_TABLE_SECTION_NAME	.gnu.linkonce.irq_vector_table
-#define _SW_ISR_TABLE_SECTION_NAME	.gnu.linkonce.sw_isr_table
+#define _IRQ_VECTOR_TABLE_SECTION_NAME	.gnu.linkonce.irq_vector_table*
+#define _SW_ISR_TABLE_SECTION_NAME	.gnu.linkonce.sw_isr_table*
 
 /* Architecture-specific sections */
 #if defined(CONFIG_ARM)
@@ -52,6 +52,9 @@
 #define _IMX_BOOT_DATA_SECTION_NAME	.boot_hdr.data
 #define _IMX_BOOT_IVT_SECTION_NAME	.boot_hdr.ivt
 #define _IMX_BOOT_DCD_SECTION_NAME	.boot_hdr.dcd_data
+
+#define _STM32_SDRAM1_SECTION_NAME	.stm32_sdram1
+#define _STM32_SDRAM2_SECTION_NAME	.stm32_sdram2
 
 #ifdef CONFIG_NOCACHE_MEMORY
 #define _NOCACHE_SECTION_NAME nocache

@@ -8,7 +8,7 @@
 #include <fsl_iomuxc.h>
 #include <fsl_gpio.h>
 
-static int mimxrt1015_evk_init(struct device *dev)
+static int mimxrt1015_evk_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

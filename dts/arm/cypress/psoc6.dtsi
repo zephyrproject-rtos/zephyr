@@ -78,6 +78,12 @@
 			status = "disabled";
 			label = "uart_6";
 		};
+
+		uid: device_uid@16000600 {
+			compatible = "cypress,psoc6-uid";
+			reg = <0x16000600 0xb>;
+			status = "okay";
+		};
 	};
 };
 

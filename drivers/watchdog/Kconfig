@@ -44,6 +44,8 @@ source "drivers/watchdog/Kconfig.nrfx"
 
 source "drivers/watchdog/Kconfig.mcux"
 
+source "drivers/watchdog/Kconfig.mcux_imx"
+
 source "drivers/watchdog/Kconfig.xec"
 
 source "drivers/watchdog/Kconfig.gecko"

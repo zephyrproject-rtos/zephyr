@@ -20,6 +20,9 @@ LOG_MODULE_REGISTER(net_coap_server_sample, LOG_LEVEL_DBG);
 #include <net/coap_link_format.h>
 
 #include "net_private.h"
+#if defined(CONFIG_NET_IPV6)
+#include "ipv6.h"
+#endif
 
 #define MAX_COAP_MSG_LEN 256
 
@@ -64,9 +67,9 @@ static bool join_coap_multicast_group(void)
 		.sin6_family = AF_INET6,
 		.sin6_addr = ALL_NODES_LOCAL_COAP_MCAST,
 		.sin6_port = htons(MY_COAP_PORT) };
-	struct net_if_mcast_addr *mcast;
 	struct net_if_addr *ifaddr;
 	struct net_if *iface;
+	int ret;
 
 	iface = net_if_get_default();
 	if (!iface) {
@@ -91,9 +94,10 @@ static bool join_coap_multicast_group(void)
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
-	mcast = net_if_ipv6_maddr_add(iface, &mcast_addr.sin6_addr);
-	if (!mcast) {
-		LOG_ERR("Could not add multicast address to interface\n");
+	ret = net_ipv6_mld_join(iface, &mcast_addr.sin6_addr);
+	if (ret < 0) {
+		LOG_ERR("Cannot join %s IPv6 multicast group (%d)",
+			log_strdup(net_sprint_ipv6_addr(&mcast_addr.sin6_addr)), ret);
 		return false;
 	}
 
@@ -1201,6 +1205,12 @@ static const char * const test_path[] = { "test", NULL };
 
 static const char * const segments_path[] = { "seg1", "seg2", "seg3", NULL };
 
+#if defined(CONFIG_COAP_URI_WILDCARD)
+static const char * const wildcard1_path[] = { "wild1", "+", "wild3", NULL };
+
+static const char * const wildcard2_path[] = { "wild2", "#", NULL };
+#endif /* CONFIG_COAP_URI_WILDCARD */
+
 static const char * const query_path[] = { "query", NULL };
 
 static const char * const separate_path[] = { "separate", NULL };
@@ -1240,6 +1250,14 @@ static struct coap_resource resources[] = {
 	{ .get = piggyback_get,
 	  .path = segments_path,
 	},
+#if defined(CONFIG_COAP_URI_WILDCARD)
+	{ .get = piggyback_get,
+	  .path = wildcard1_path,
+	},
+	{ .get = piggyback_get,
+	  .path = wildcard2_path,
+	},
+#endif /* CONFIG_COAP_URI_WILDCARD */
 	{ .get = query_get,
 	  .path = query_path,
 	},

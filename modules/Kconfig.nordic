@@ -3,7 +3,6 @@
 
 config HAS_NORDIC_DRIVERS
 	bool
-	default y if HAS_HW_NRF_RADIO_IEEE802154
 
 menu "Nordic drivers"
 	depends on HAS_NORDIC_DRIVERS
@@ -11,14 +10,26 @@ menu "Nordic drivers"
 menuconfig NRF_802154_RADIO_DRIVER
 	bool "Enable nRF IEEE 802.15.4 radio driver"
 	depends on HAS_HW_NRF_RADIO_IEEE802154
+	select DYNAMIC_INTERRUPTS
+	select ENTROPY_GENERATOR
 	help
 	  This option enables nRF IEEE 802.15.4 radio driver in Zephyr. Note,
 	  that beside the radio peripheral itself, this drivers occupies several
 	  other peripherals. A complete list can be found in the hal_nordic
 	  repository, within drivers/nrf_radio_802154/nrf_802154_peripherals.h
-	  file.
+	  file. As the nRF IEEE 802.15.4 radio driver defines IRQ configuration
+	  abstraction layer API and its Zephyr-specific implementation uses dynamic
+	  interrupts, the DYNAMIC_INTERRUPTS switch is selected unconditionally.
 
 if NRF_802154_RADIO_DRIVER
+
+config NRF_802154_MULTIPROTOCOL_SUPPORT
+	bool
+	help
+	  In dynamic multiprotocol applications, access to the radio peripheral
+	  must be distributed by an arbiter. To support this arbitration
+	  in the driver, this option must be enabled. Otherwise, the driver
+	  assumes that access to the radio peripheral is granted indefinitely.
 
 choice NRF_802154_CCA_MODE
 	prompt "nRF IEEE 802.15.4 CCA mode"
@@ -40,6 +51,15 @@ config NRF_802154_CCA_MODE_CARRIER_OR_ED
 
 endchoice
 
+choice NRF_802154_SL_TYPE
+	prompt "nRF IEEE 802.15.4 Service Layer Type"
+	default NRF_802154_SL_OPENSOURCE
+
+config NRF_802154_SL_OPENSOURCE
+	bool "nRF IEEE 802.15.4 Open source Service Layer"
+
+endchoice
+
 config NRF_802154_CCA_ED_THRESHOLD
 	int "nRF IEEE 802.15.4 CCA Energy Detection threshold"
 	default 45
@@ -58,13 +78,113 @@ config NRF_802154_CCA_CORR_LIMIT
 	  Limit for occurrences above correlator threshold. When not equal to
 	  zero the correlator based signal detect is enabled.
 
+config NRF_802154_PENDING_SHORT_ADDRESSES
+	int "nRF 802.15.4 pending short addresses"
+	default 16
+	help
+	  Number of slots containing short addresses of nodes for which pending data is stored
+
+config NRF_802154_PENDING_EXTENDED_ADDRESSES
+	int "nRF 802.15.4 pending extended addresses"
+	default 16
+	help
+	  Number of slots containing extended addresses of nodes for which pending data is stored
+
+config NRF_802154_RX_BUFFERS
+	int "nRF 802.15.4 receive buffers"
+	default 16
+	help
+	  Number of buffers in nRF 802.15.4 driver receive queue. If this value is modified,
+	  its serialization host counterpart must be set to the exact same value.
+
 endif # NRF_802154_RADIO_DRIVER
 
-endmenu
+config NRF_802154_SER_HOST
+	bool "nRF IEEE 802.15.4 Driver serialization host"
+	depends on !NRF_802154_RADIO_DRIVER
+	depends on !HAS_HW_NRF_RADIO_IEEE802154
+	select IPM
+	select IPM_NRFX
+	select IPM_MSG_CH_0_ENABLE
+	select IPM_MSG_CH_1_ENABLE
+	select IPM_MSG_CH_0_TX
+	select IPM_MSG_CH_1_RX
+	select OPENAMP
+	select IEEE802154_NRF5_EXT_IRQ_MGMT if IEEE802154_NRF5
+	help
+	  Enable serialization of nRF IEEE 802.15.4 Driver. This option is to be
+	  used if radio is not available in the core, but radio services are
+	  provided by a serialization backend.
+
+menuconfig NRF_802154_SER_RADIO
+	bool "nRF IEEE 802.15.4 Driver serialization radio"
+	depends on HAS_HW_NRF_RADIO_IEEE802154
+	depends on !IEEE802154_NRF5
+	select IPM
+	select IPM_NRFX
+	select IPM_MSG_CH_0_ENABLE
+	select IPM_MSG_CH_1_ENABLE
+	select IPM_MSG_CH_0_RX
+	select IPM_MSG_CH_1_TX
+	select OPENAMP
+	select NRF_802154_RADIO_DRIVER
+	help
+	  Enable serialization of nRF IEEE 802.15.4 Driver. This option is to be
+	  used if radio is available in the core to provide radio services over
+	  a serialization backend.
+
+if NRF_802154_SER_RADIO
+
+config NRF_802154_SER_RADIO_INIT_PRIO
+	int "nRF52 IEEE 802.15.4 serialization initialization priority"
+	default 81
+	help
+	  Set the initialization priority number. Do not mess with it unless
+	  you know what you are doing.
+
+endif
+
+menu "nRF 802.15.4 serialization"
+	depends on NRF_802154_SER_HOST || NRF_802154_SER_RADIO
+
+config NRF_802154_SER_LOG
+	bool "802.15.4 serialization logs"
+	default n
+	help
+	  This option enable debug logs of 802.15.4 serialization module.
+
+config NRF_802154_SER_BUFFER_ALLOCATOR_THREAD_SAFE
+	bool
+	# Hidden option
+	default y
+	help
+	  This option specifies if buffers for 802.15.4 serialization are allocated
+	  in a thread-safe manner.
+
+config NRF_802154_SER_DEFAULT_RESPONSE_TIMEOUT
+	int "Default Spinel serialization response timeout in milliseconds"
+	default 500
+	help
+	  This option specifies default timeout of spinel status response
+	  in milliseconds.
+
+if NRF_802154_SER_HOST
+
+config NRF_802154_RX_BUFFERS
+	int "nRF 802.15.4 receive buffers"
+	default 16
+	help
+	  Number of buffers in nRF 802.15.4 driver serialization host's receive queue.
+	  If this value is modified, its remote counterpart must be set to the exact same value.
+
+endif
+
+endmenu # NRF_802154_SER_HOST || NRF_802154_SER_RADIO
+
+endmenu # HAS_NORDIC_DRIVERS
 
 config HAS_NRFX
 	bool
-	select HAS_CMSIS_CORE
 
 menu "nrfx drivers"
 	depends on HAS_NRFX
@@ -76,6 +196,10 @@ config NRFX_ADC
 config NRFX_CLOCK
 	bool "Enable CLOCK driver"
 	depends on HAS_HW_NRF_CLOCK
+
+config NRFX_CLOCK_LFXO_TWO_STAGE_ENABLED
+	bool "Enable two stage start sequence of the low frequency clock"
+	depends on NRFX_CLOCK
 
 config NRFX_COMP
 	bool "Enable COMP driver"
@@ -152,6 +276,9 @@ config NRFX_PDM
 config NRFX_POWER
 	bool "Enable POWER driver"
 	depends on HAS_HW_NRF_POWER
+	# On SoCs featuring the USBREG peripheral, the POWER driver uses
+	# internally the USBREG driver.
+	select NRFX_USBREG if HAS_HW_NRF_USBREG
 
 config NRFX_PPI
 	bool "Enable PPI allocator"

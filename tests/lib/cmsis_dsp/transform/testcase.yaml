@@ -47,7 +47,7 @@ tests:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_RF32=y
   libraries.cmsis_dsp.transform.cf64:
     min_flash: 1024
-    min_ram: 64
+    min_ram: 96
     extra_args: CONF_FILE=prj_base.conf
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_CF64=y

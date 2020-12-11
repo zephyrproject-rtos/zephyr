@@ -10,7 +10,7 @@
 
 #include "soc.h"
 
-static int board_pinmux_init(struct device *dev)
+static int board_pinmux_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

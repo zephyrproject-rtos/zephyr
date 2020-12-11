@@ -24,12 +24,13 @@ struct pinmux_sifive_regs_t {
 
 #define DEV_CFG(dev)					\
 	((const struct pinmux_sifive_config * const)	\
-	 (dev)->config_info)
+	 (dev)->config)
 
 #define DEV_PINMUX(dev)						\
 	((struct pinmux_sifive_regs_t *)(DEV_CFG(dev))->base)
 
-static int pinmux_sifive_set(struct device *dev, uint32_t pin, uint32_t func)
+static int pinmux_sifive_set(const struct device *dev, uint32_t pin,
+			     uint32_t func)
 {
 	volatile struct pinmux_sifive_regs_t *pinmux = DEV_PINMUX(dev);
 
@@ -48,7 +49,8 @@ static int pinmux_sifive_set(struct device *dev, uint32_t pin, uint32_t func)
 	return 0;
 }
 
-static int pinmux_sifive_get(struct device *dev, uint32_t pin, uint32_t *func)
+static int pinmux_sifive_get(const struct device *dev, uint32_t pin,
+			     uint32_t *func)
 {
 	volatile struct pinmux_sifive_regs_t *pinmux = DEV_PINMUX(dev);
 
@@ -62,17 +64,19 @@ static int pinmux_sifive_get(struct device *dev, uint32_t pin, uint32_t *func)
 	return 0;
 }
 
-static int pinmux_sifive_pullup(struct device *dev, uint32_t pin, uint8_t func)
+static int pinmux_sifive_pullup(const struct device *dev, uint32_t pin,
+				uint8_t func)
 {
 	return -ENOTSUP;
 }
 
-static int pinmux_sifive_input(struct device *dev, uint32_t pin, uint8_t func)
+static int pinmux_sifive_input(const struct device *dev, uint32_t pin,
+			       uint8_t func)
 {
 	return -ENOTSUP;
 }
 
-static int pinmux_sifive_init(struct device *dev)
+static int pinmux_sifive_init(const struct device *dev)
 {
 	volatile struct pinmux_sifive_regs_t *pinmux = DEV_PINMUX(dev);
 

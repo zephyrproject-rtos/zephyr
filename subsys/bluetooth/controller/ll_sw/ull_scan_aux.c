@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
+#include <sys/byteorder.h>
 #include <sys/util.h>
 
 #include "util/mem.h"
@@ -21,11 +21,14 @@
 #include "lll_vendor.h"
 #include "lll_scan.h"
 #include "lll_scan_aux.h"
+#include "lll_sync.h"
 
 #include "ull_scan_types.h"
+#include "ull_sync_types.h"
 
 #include "ull_internal.h"
 #include "ull_scan_internal.h"
+#include "ull_sync_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_scan_aux
@@ -37,6 +40,7 @@ static int init_reset(void);
 static inline struct ll_scan_aux_set *aux_acquire(void);
 static inline void aux_release(struct ll_scan_aux_set *aux);
 static inline uint8_t aux_handle_get(struct ll_scan_aux_set *aux);
+static inline struct ll_sync_set *sync_create_get(struct ll_scan_set *scan);
 static void flush(struct ll_scan_aux_set *aux, struct node_rx_hdr *rx);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, void *param);
@@ -70,32 +74,108 @@ int ull_scan_aux_reset(void)
 	return 0;
 }
 
-void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
+void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 {
 	struct pdu_adv_aux_ptr *aux_ptr;
 	struct pdu_adv_com_ext_adv *p;
-	struct ll_scan_aux_set *aux;
 	uint32_t ticks_slot_overhead;
+	struct ll_scan_aux_set *aux;
 	uint32_t window_widening_us;
-	struct lll_scan_aux *lll;
-	struct node_rx_ftr *ftr;
 	uint32_t ticks_slot_offset;
-	struct pdu_adv_hdr *h;
+	struct ll_scan_set *scan;
+	struct ll_sync_set *sync;
+	struct lll_scan_aux *lll;
+	struct pdu_adv_adi *adi;
+	struct node_rx_ftr *ftr;
 	uint32_t ready_delay_us;
-	struct pdu_adv *pdu;
 	uint32_t aux_offset_us;
 	uint32_t ticker_status;
+	struct pdu_adv_ext_hdr *h;
+	struct pdu_adv *pdu;
 	uint8_t aux_handle;
 	uint8_t *ptr;
+	uint8_t phy;
 
 	ftr = &rx->rx_ftr;
-	lll = ftr->param;
-	aux = lll->hdr.parent;
-	if (((uint8_t *)aux < (uint8_t *)ll_scan_aux_pool) ||
-	    ((uint8_t *)aux > ((uint8_t *)ll_scan_aux_pool +
-			    (sizeof(struct ll_scan_aux_set) *
-			     (CONFIG_BT_CTLR_SCAN_AUX_SET - 1))))) {
+
+	switch (rx->type) {
+	case NODE_RX_TYPE_EXT_1M_REPORT:
+		lll = NULL;
 		aux = NULL;
+		scan = (void *)HDR_LLL2EVT(ftr->param);
+		sync = sync_create_get(scan);
+		phy = BT_HCI_LE_EXT_SCAN_PHY_1M;
+		break;
+	case NODE_RX_TYPE_EXT_CODED_REPORT:
+		lll = NULL;
+		aux = NULL;
+		scan = (void *)HDR_LLL2EVT(ftr->param);
+		sync = sync_create_get(scan);
+		phy = BT_HCI_LE_EXT_SCAN_PHY_CODED;
+		break;
+	case NODE_RX_TYPE_EXT_AUX_REPORT:
+		lll = ftr->param;
+		aux = (void *)HDR_LLL2EVT(lll);
+		scan = (void *)HDR_LLL2EVT(aux->rx_head->rx_ftr.param);
+		sync = (void *)scan;
+		scan = ull_scan_is_valid_get(scan);
+		phy = lll->phy;
+		if (scan) {
+			/* Here we are scanner context */
+			sync = sync_create_get(scan);
+			switch (phy) {
+			case BT_HCI_LE_EXT_SCAN_PHY_1M:
+				rx->type = NODE_RX_TYPE_EXT_1M_REPORT;
+				break;
+			case BT_HCI_LE_EXT_SCAN_PHY_2M:
+				rx->type = NODE_RX_TYPE_EXT_2M_REPORT;
+				break;
+			case BT_HCI_LE_EXT_SCAN_PHY_CODED:
+				rx->type = NODE_RX_TYPE_EXT_CODED_REPORT;
+				break;
+			default:
+				LL_ASSERT(0);
+				return;
+			}
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+		} else {
+			/* Here we are periodic sync context */
+			rx->type = NODE_RX_TYPE_SYNC_REPORT;
+			rx->handle = ull_sync_handle_get(sync);
+
+			/* lll and aux are auxiliary channel context,
+			 * reuse the existing aux context to scan the chain.
+			 * hence lll and aux are not released or set to NULL.
+			 */
+			sync = NULL;
+		}
+		break;
+
+	case NODE_RX_TYPE_SYNC_REPORT:
+		{
+			struct ll_sync_set *ull_sync;
+			struct lll_sync *lll_sync;
+
+			/* set the sync handle corresponding to the LLL context
+			 * passed in the node rx footer field.
+			 */
+			lll_sync = ftr->param;
+			ull_sync = (void *)HDR_LLL2EVT(lll_sync);
+			rx->handle = ull_sync_handle_get(ull_sync);
+
+			lll = NULL;
+			aux = NULL;
+			scan = NULL;
+			sync = NULL;
+			phy =  lll_sync->phy;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+
+		}
+		break;
+	default:
+		LL_ASSERT(0);
+		return;
 	}
 
 	rx->link = link;
@@ -107,14 +187,21 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 		goto ull_scan_aux_rx_flush;
 	}
 
-	h = (void *)p->ext_hdr_adi_adv_data;
-	if (!h->aux_ptr) {
+	h = (void *)p->ext_hdr_adv_data;
+	if (!h->aux_ptr && !sync) {
 		goto ull_scan_aux_rx_flush;
 	}
 
-	ptr = (uint8_t *)h + sizeof(*h);
+	ptr = h->data;
 
 	if (h->adv_addr) {
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+		if (sync && (pdu->tx_addr == scan->per_scan.adv_addr_type) &&
+		    !memcmp(ptr, scan->per_scan.adv_addr, BDADDR_SIZE)) {
+			scan->per_scan.state = LL_SYNC_STATE_ADDR_MATCH;
+		}
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+
 		ptr += BDADDR_SIZE;
 	}
 
@@ -122,15 +209,33 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 		ptr += BDADDR_SIZE;
 	}
 
+	adi = NULL;
 	if (h->adi) {
-		struct pdu_adv_adi *adi;
-
 		adi = (void *)ptr;
 		ptr += sizeof(*adi);
 	}
 
-	aux_ptr = (void *)ptr;
-	if (!aux_ptr->offs) {
+	aux_ptr = NULL;
+	if (h->aux_ptr) {
+		aux_ptr = (void *)ptr;
+		ptr += sizeof(*aux_ptr);
+	}
+
+	if (h->sync_info) {
+		struct pdu_adv_sync_info *si;
+
+		si = (void *)ptr;
+		ptr += sizeof(*si);
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+		if (sync && adi && (adi->sid == scan->per_scan.sid) &&
+		    (scan->per_scan.state == LL_SYNC_STATE_ADDR_MATCH)) {
+			ull_sync_setup(scan, aux, rx, si);
+		}
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+	}
+
+	if (!aux_ptr || !aux_ptr->offs) {
 		goto ull_scan_aux_rx_flush;
 	}
 
@@ -145,14 +250,11 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 
 		ull_hdr_init(&aux->ull);
 		lll_hdr_init(lll, aux);
-	} else {
-		LL_ASSERT(0);
 	}
 
 	/* Enqueue the rx in aux context */
 	if (aux->rx_last) {
-		ftr = &aux->rx_last->rx_ftr;
-		ftr->extra = rx;
+		aux->rx_last->rx_ftr.extra = rx;
 	} else {
 		aux->rx_head = rx;
 	}
@@ -228,6 +330,12 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 	return;
 
 ull_scan_aux_rx_flush:
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+	if (sync) {
+		scan->per_scan.state = LL_SYNC_STATE_IDLE;
+	}
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+
 	if (aux) {
 		flush(aux, rx);
 
@@ -275,6 +383,15 @@ static inline uint8_t aux_handle_get(struct ll_scan_aux_set *aux)
 {
 	return mem_index_get(aux, ll_scan_aux_pool,
 			     sizeof(struct ll_scan_aux_set));
+}
+
+static inline struct ll_sync_set *sync_create_get(struct ll_scan_set *scan)
+{
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+	return scan->per_scan.sync;
+#else /* !CONFIG_BT_CTLR_SYNC_PERIODIC */
+	return NULL;
+#endif /* !CONFIG_BT_CTLR_SYNC_PERIODIC */
 }
 
 static void flush(struct ll_scan_aux_set *aux, struct node_rx_hdr *rx)

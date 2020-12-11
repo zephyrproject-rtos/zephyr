@@ -55,11 +55,11 @@ static inline void mpu6050_convert_temp(struct sensor_value *val,
 	}
 }
 
-static int mpu6050_channel_get(struct device *dev,
+static int mpu6050_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	struct mpu6050_data *drv_data = dev->driver_data;
+	struct mpu6050_data *drv_data = dev->data;
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
@@ -109,10 +109,11 @@ static int mpu6050_channel_get(struct device *dev,
 	return 0;
 }
 
-static int mpu6050_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int mpu6050_sample_fetch(const struct device *dev,
+				enum sensor_channel chan)
 {
-	struct mpu6050_data *drv_data = dev->driver_data;
-	const struct mpu6050_config *cfg = dev->config_info;
+	struct mpu6050_data *drv_data = dev->data;
+	const struct mpu6050_config *cfg = dev->config;
 	int16_t buf[7];
 
 	if (i2c_burst_read(drv_data->i2c, cfg->i2c_addr,
@@ -140,10 +141,10 @@ static const struct sensor_driver_api mpu6050_driver_api = {
 	.channel_get = mpu6050_channel_get,
 };
 
-int mpu6050_init(struct device *dev)
+int mpu6050_init(const struct device *dev)
 {
-	struct mpu6050_data *drv_data = dev->driver_data;
-	const struct mpu6050_config *cfg = dev->config_info;
+	struct mpu6050_data *drv_data = dev->data;
+	const struct mpu6050_config *cfg = dev->config;
 	uint8_t id, i;
 
 	drv_data->i2c = device_get_binding(cfg->i2c_label);

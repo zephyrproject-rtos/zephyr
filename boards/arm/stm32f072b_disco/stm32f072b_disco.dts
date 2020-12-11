@@ -6,10 +6,11 @@
 
 /dts-v1/;
 #include <st/f0/stm32f072Xb.dtsi>
+#include <st/f0/stm32f072r(8-b)tx-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F072B-DISCO board";
-	compatible = "st,stm32f072b-disco", "st,stm32f072";
+	compatible = "st,stm32f072b-disco";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -57,25 +58,30 @@
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &spi1 {
+	pinctrl-0 = <&spi1_sck_pb3 &spi1_miso_pb4 &spi1_mosi_pb5>;
 	status = "okay";
 };
 
 &can1 {
+	pinctrl-0 = <&can_rx_pb8 &can_tx_pb9>;
 	bus-speed = <125000>;
 	status = "okay";
 };

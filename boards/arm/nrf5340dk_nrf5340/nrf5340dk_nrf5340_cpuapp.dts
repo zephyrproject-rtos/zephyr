@@ -28,3 +28,8 @@
 	miso-pin = <46>;
 	mosi-pin = <45>;
 };
+
+&usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};

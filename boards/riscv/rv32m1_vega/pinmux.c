@@ -10,33 +10,33 @@
 #include <fsl_port.h>
 
 #ifdef CONFIG_BT_CTLR_DEBUG_PINS
-struct device *vega_debug_portb;
-struct device *vega_debug_portc;
-struct device *vega_debug_portd;
+const struct device *vega_debug_portb;
+const struct device *vega_debug_portc;
+const struct device *vega_debug_portd;
 #endif
 
-static int rv32m1_vega_pinmux_init(struct device *dev)
+static int rv32m1_vega_pinmux_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(porta), okay)
-	__unused struct device *porta =
+	__unused const struct device *porta =
 		device_get_binding(DT_LABEL(DT_NODELABEL(porta)));
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(portb), okay)
-	__unused struct device *portb =
+	__unused const struct device *portb =
 		device_get_binding(DT_LABEL(DT_NODELABEL(portb)));
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(portc), okay)
-	__unused struct device *portc =
+	__unused const struct device *portc =
 		device_get_binding(DT_LABEL(DT_NODELABEL(portc)));
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(portd), okay)
-	__unused struct device *portd =
+	__unused const struct device *portd =
 		device_get_binding(DT_LABEL(DT_NODELABEL(portd)));
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(porte), okay)
-	__unused struct device *porte =
+	__unused const struct device *porte =
 		device_get_binding(DT_LABEL(DT_NODELABEL(porte)));
 #endif
 
@@ -112,7 +112,7 @@ static int rv32m1_vega_pinmux_init(struct device *dev)
 	pinmux_pin_set(portd, 4, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portd, 5, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
-	struct device *gpio_dev =
+	const struct device *gpio_dev =
 		device_get_binding(DT_LABEL(DT_NODELABEL(gpiob)));
 
 	gpio_pin_configure(gpio_dev, 29, GPIO_OUTPUT);

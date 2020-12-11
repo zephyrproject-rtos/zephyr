@@ -50,6 +50,7 @@ struct net_eth_addr {
 
 #define NET_ETH_PTYPE_ARP		0x0806
 #define NET_ETH_PTYPE_IP		0x0800
+#define NET_ETH_PTYPE_TSN		0x22f0 /* TSN (IEEE 1722) packet */
 #define NET_ETH_PTYPE_IPV6		0x86dd
 #define NET_ETH_PTYPE_VLAN		0x8100
 #define NET_ETH_PTYPE_PTP		0x88f7
@@ -70,6 +71,9 @@ struct net_eth_addr {
 #endif
 #if !defined(ETH_P_8021Q)
 #define ETH_P_8021Q	NET_ETH_PTYPE_VLAN
+#endif
+#if !defined(ETH_P_TSN)
+#define ETH_P_TSN	NET_ETH_PTYPE_TSN
 #endif
 
 #define NET_ETH_MINIMAL_FRAME_SIZE	60
@@ -224,25 +228,25 @@ struct ethernet_api {
 	 * should be set by driver if statistics needs to be collected
 	 * for that driver.
 	 */
-	struct net_stats_eth *(*get_stats)(struct device *dev);
+	struct net_stats_eth *(*get_stats)(const struct device *dev);
 #endif
 
 	/** Start the device */
-	int (*start)(struct device *dev);
+	int (*start)(const struct device *dev);
 
 	/** Stop the device */
-	int (*stop)(struct device *dev);
+	int (*stop)(const struct device *dev);
 
 	/** Get the device capabilities */
-	enum ethernet_hw_caps (*get_capabilities)(struct device *dev);
+	enum ethernet_hw_caps (*get_capabilities)(const struct device *dev);
 
 	/** Set specific hardware configuration */
-	int (*set_config)(struct device *dev,
+	int (*set_config)(const struct device *dev,
 			  enum ethernet_config_type type,
 			  const struct ethernet_config *config);
 
 	/** Get hardware specific configuration */
-	int (*get_config)(struct device *dev,
+	int (*get_config)(const struct device *dev,
 			  enum ethernet_config_type type,
 			  struct ethernet_config *config);
 
@@ -252,17 +256,17 @@ struct ethernet_api {
 	 * if it is false then the tag was removed. The driver can utilize
 	 * this information if needed.
 	 */
-	int (*vlan_setup)(struct device *dev, struct net_if *iface,
+	int (*vlan_setup)(const struct device *dev, struct net_if *iface,
 			  uint16_t tag, bool enable);
 #endif /* CONFIG_NET_VLAN */
 
 #if defined(CONFIG_PTP_CLOCK)
 	/** Return ptp_clock device that is tied to this ethernet device */
-	struct device *(*get_ptp_clock)(struct device *dev);
+	const struct device *(*get_ptp_clock)(const struct device *dev);
 #endif /* CONFIG_PTP_CLOCK */
 
 	/** Send a network packet */
-	int (*send)(struct device *dev, struct net_pkt *pkt);
+	int (*send)(const struct device *dev, struct net_pkt *pkt);
 };
 
 /* Make sure that the network interface API is properly setup inside
@@ -492,7 +496,7 @@ static inline
 enum ethernet_hw_caps net_eth_get_hw_capabilities(struct net_if *iface)
 {
 	const struct ethernet_api *eth =
-		(struct ethernet_api *)net_if_get_device(iface)->driver_api;
+		(struct ethernet_api *)net_if_get_device(iface)->api;
 
 	if (!eth->get_capabilities) {
 		return (enum ethernet_hw_caps)0;
@@ -619,7 +623,7 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
  * @param pm_control_fn Pointer to device_pm_control function.
  * Can be empty function (device_pm_control_nop) if not implemented.
  * @param data Pointer to the device's private data.
- * @param cfg_info The address to the structure containing the
+ * @param cfg The address to the structure containing the
  * configuration information for this instance of the driver.
  * @param prio The initialization level at which configuration occurs.
  * @param api Provides an initial pointer to the API function struct
@@ -628,18 +632,18 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
  */
 #if defined(CONFIG_NET_VLAN)
 #define ETH_NET_DEVICE_INIT(dev_name, drv_name, init_fn, pm_control_fn,	\
-			    data, cfg_info, prio, api, mtu)		\
+			    data, cfg, prio, api, mtu)			\
 	DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn, data,	\
-		      cfg_info, POST_KERNEL, prio, api);		\
+		      cfg, POST_KERNEL, prio, api);			\
 	NET_L2_DATA_INIT(dev_name, 0, NET_L2_GET_CTX_TYPE(ETHERNET_L2)); \
 	NET_IF_INIT(dev_name, 0, ETHERNET_L2, mtu, NET_VLAN_MAX_COUNT)
 
 #else /* CONFIG_NET_VLAN */
 
 #define ETH_NET_DEVICE_INIT(dev_name, drv_name, init_fn, pm_control_fn,	\
-			    data, cfg_info, prio, api, mtu)		\
+			    data, cfg, prio, api, mtu)			\
 	NET_DEVICE_INIT(dev_name, drv_name, init_fn, pm_control_fn,	\
-			data, cfg_info, prio, api, ETHERNET_L2,		\
+			data, cfg, prio, api, ETHERNET_L2,		\
 			NET_L2_GET_CTX_TYPE(ETHERNET_L2), mtu)
 
 #endif /* CONFIG_NET_VLAN */
@@ -680,9 +684,9 @@ int net_eth_promisc_mode(struct net_if *iface, bool enable);
  * ethernet interface does not support PTP.
  */
 #if defined(CONFIG_PTP_CLOCK)
-struct device *net_eth_get_ptp_clock(struct net_if *iface);
+const struct device *net_eth_get_ptp_clock(struct net_if *iface);
 #else
-static inline struct device *net_eth_get_ptp_clock(struct net_if *iface)
+static inline const struct device *net_eth_get_ptp_clock(struct net_if *iface)
 {
 	ARG_UNUSED(iface);
 
@@ -699,7 +703,7 @@ static inline struct device *net_eth_get_ptp_clock(struct net_if *iface)
  * @return Pointer to PTP clock if found, NULL if not found or if this
  * ethernet interface index does not support PTP.
  */
-__syscall struct device *net_eth_get_ptp_clock_by_index(int index);
+__syscall const struct device *net_eth_get_ptp_clock_by_index(int index);
 
 /**
  * @brief Return gPTP port number attached to this interface.

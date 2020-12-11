@@ -49,24 +49,20 @@ def build_elf(elf_file):
             continue
 
         assert h.p_memsz >= h.p_filesz
-        assert (h.p_vaddr % 8) == 0
-        assert (h.p_filesz % 4) == 0
         assert len(seg.data()) == h.p_filesz
 
         if h.p_filesz > 0:
             sd = seg.data()
             verbose("%d bytes of data at 0x%x, data offset %d"
                 % (len(sd), h.p_vaddr, len(data_blob)))
-            data_segs.append((h.p_vaddr, len(sd) / 4, len(data_blob) / 4))
+            data_segs.append((h.p_vaddr, len(sd), len(data_blob)))
             data_blob = data_blob + sd
 
         if h.p_memsz > h.p_filesz:
             bytesz = h.p_memsz - h.p_filesz
-            if bytesz % 4:
-                bytesz += 4 - (bytesz % 4)
             addr = h.p_vaddr + h.p_filesz
             verbose("%d bytes of zero-fill at 0x%x" % (bytesz, addr))
-            zero_segs.append((addr, bytesz / 4))
+            zero_segs.append((addr, bytesz))
 
     verbose(f"{len(data_blob)} bytes of data to include in image")
 

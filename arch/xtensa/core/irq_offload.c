@@ -14,16 +14,16 @@
  */
 
 static irq_offload_routine_t offload_routine;
-static void *offload_param;
+static const void *offload_param;
 
 /* Called by ISR dispatcher */
-void z_irq_do_offload(void *unused)
+void z_irq_do_offload(const void *unused)
 {
 	ARG_UNUSED(unused);
 	offload_routine(offload_param);
 }
 
-void arch_irq_offload(irq_offload_routine_t routine, void *parameter)
+void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 {
 	IRQ_CONNECT(CONFIG_IRQ_OFFLOAD_INTNUM, XCHAL_EXCM_LEVEL,
 		z_irq_do_offload, NULL, 0);

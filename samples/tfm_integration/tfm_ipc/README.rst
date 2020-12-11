@@ -24,7 +24,7 @@ Building and Running
 ********************
 
 This project outputs test status and info to the console. It can be built and
-executed on MPS2+ AN521.
+executed on MPS2+ AN521 and ST Nucleo L552ZE Q.
 
 On MPS2+ AN521:
 ===============
@@ -102,6 +102,94 @@ Or, post build:
    .. code-block:: bash
 
       $ ninja run
+
+On ST Nucleo L552ZE Q:
+======================
+
+This sample was tested on Ubuntu 18.04 with Zephyr SDK 0.11.3.
+
+Build Zephyr with a non-secure configuration:
+
+   .. code-block:: bash
+
+      $ west build -b nucleo_l552ze_q_ns samples/tfm_integration/tfm_ipc/
+
+Two scripts are avalaible in the ``build/tfm`` folder:
+
+  - ``regression.sh``: Sets platform option bytes config and erase platform.
+  - ``TFM_UPDATE.sh``: Writes bl2, secure, and non secure image in target.
+
+Run them in the following order to flash the board:
+
+   .. code-block:: bash
+
+      $ ./build/tfm/regression.sh
+      $ ./build/tfm/TFM_UPDATE.sh
+
+Reset the board.
+
+ .. note::
+      Note that ``arm-none-eabi-gcc`` should be available in the PATH variable and that ``STM32_Programmer_CLI`` is required to run ``regression.sh`` and ``TFM_UPDATE.sh`` (see https://www.st.com/en/development-tools/stm32cubeprog.html). If you are still having trouble running these scripts, check the Programming and Debugging section of the :ref:`nucleo_l552ze_q_board` documentation.
+
+On LPCxpresso55S69:
+===================
+
+Build Zephyr with a non-secure configuration:
+
+   .. code-block:: bash
+
+      $ west build -p -b lpcxpresso55s69_ns samples/tfm_integration/tfm_ipc/ --
+
+Make sure your board is set up with :ref:`lpclink2-jlink-onboard-debug-probe`,
+since this isn't the debug interface boards ship with from the factory;
+
+Next we need to manually flash the resulting image (``tfm_merged.bin``) with a
+J-Link as follows:
+
+   .. code-block:: console
+
+      JLinkExe -device lpc55s69 -if swd -speed 2000 -autoconnect 1
+      J-Link>r
+      J-Link>erase
+      J-Link>loadfile build/tfm_merged.bin
+
+Resetting the board and erasing it will unlock the board, this is useful in case
+it's in an unknown state and can't be flashed.
+
+We need to reset the board manually after flashing the image to run this code.
+
+On nRF5340 and nRF9160:
+=======================
+
+Build Zephyr with a non-secure configuration
+(``-DBOARD=nrf5340pdk_nrf5340_cpuappns`` or ``-DBOARD=nrf9160dk_nrf9160ns``).
+
+   Example, for nRF9160, using ``cmake`` and ``ninja``
+
+   .. code-block:: bash
+
+      cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_level_1/
+      rm -rf build
+      mkdir build && cd build
+      cmake -GNinja -DBOARD=nrf9160dk_nrf9160ns ..
+
+If building with BL2 (MCUboot bootloader) enabled, manually flash
+the MCUboot bootloader image binary (``bl2.hex``).
+
+   Example, using ``nrfjprog`` on nRF9160:
+
+   .. code-block:: bash
+
+      nrfjprg -f NRF91 --program tfm/bin/bl2.hex --sectorerase
+
+Finally, flash the concatenated TF-M + Zephyr binary.
+
+   Example, for nRF9160, using ``cmake`` and ``ninja``
+
+   .. code-block:: bash
+
+      ninja flash
+
 
 Sample Output
 =============

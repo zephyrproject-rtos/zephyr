@@ -133,8 +133,12 @@ Deprecated in this release
   * See :ref:`dt-from-c` for a high-level guide to the new API, and
     :ref:`devicetree_api` for an API reference.
   * Use of the legacy macros now requires explicitly enabling
-    :option:`CONFIG_LEGACY_DEVICETREE_MACROS`. See :ref:`dt-legacy-macros` for
-    more information, including a link to a migration guide to the new API.
+    ``CONFIG_LEGACY_DEVICETREE_MACROS``. See `the Zephyr v2.3 legacy devicetree
+    macro page`_ for more information, including a link to a migration guide to
+    the new API.
+
+.. _the Zephyr v2.3 legacy devicetree macro page:
+   https://docs.zephyrproject.org/2.3.0/guides/dts/legacy-macros.html#dt-legacy-macros
 
 * Other
 
@@ -666,9 +670,12 @@ Build and Infrastructure
 * Devicetree
 
   * A new :ref:`devicetree_api` was added. This API is not generated, but is
-    still included via ``<devicetree.h>``. The :ref:`dt-legacy-macros` are now
-    deprecated; users should replace the generated macros with new API. The
-    :ref:`dt-howtos` page has been extended for the new API, and a new
+    still included via ``<devicetree.h>``.
+
+    See `the Zephyr v2.3 legacy devicetree macro page`_ for more information,
+    including a link to a migration guide to the new API.
+
+    The :ref:`dt-howtos` page has been extended for the new API, and a new
     :ref:`dt-from-c` API usage guide was also added.
 
 Libraries / Subsystems

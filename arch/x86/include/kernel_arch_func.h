@@ -44,20 +44,6 @@ extern FUNC_NORETURN void z_x86_prep_c(void *arg);
 void z_x86_early_serial_init(void);
 #endif /* CONFIG_X86_VERY_EARLY_CONSOLE */
 
-#ifdef CONFIG_X86_MMU
-/* Create all page tables with boot configuration and enable paging */
-void z_x86_paging_init(void);
-
-static inline struct x86_page_tables *
-z_x86_thread_page_tables_get(struct k_thread *thread)
-{
-#ifdef CONFIG_USERSPACE
-	return thread->arch.ptables;
-#else
-	return &z_x86_kernel_ptables;
-#endif
-}
-#endif /* CONFIG_X86_MMU */
 
 /* Called upon CPU exception that is unhandled and hence fatal; dump
  * interesting info and call z_x86_fatal_error()
@@ -102,18 +88,25 @@ extern FUNC_NORETURN void z_x86_userspace_enter(k_thread_entry_t user_entry,
  */
 void *z_x86_userspace_prepare_thread(struct k_thread *thread);
 
-void z_x86_thread_pt_init(struct k_thread *thread);
-
-void z_x86_apply_mem_domain(struct x86_page_tables *ptables,
-			    struct k_mem_domain *mem_domain);
-
 #endif /* CONFIG_USERSPACE */
 
 void z_x86_do_kernel_oops(const z_arch_esf_t *esf);
 
-#ifdef CONFIG_X86_STACK_PROTECTION
-void z_x86_set_stack_guard(k_thread_stack_t *stack);
-#endif
+/*
+ * Find a free IRQ vector at the specified priority, or return -1 if none left.
+ * For multiple vector allocated one after another, prev_vector can be used to
+ * speed up the allocation: it only needs to be filled with the previous
+ * allocated vector, or -1 to start over.
+ */
+int z_x86_allocate_vector(unsigned int priority, int prev_vector);
+
+/*
+ * Connect a vector
+ */
+void z_x86_irq_connect_on_vector(unsigned int irq,
+				 uint8_t vector,
+				 void (*func)(const void *arg),
+				 const void *arg, uint32_t flags);
 
 #endif /* !_ASMLANGUAGE */
 

@@ -5,7 +5,7 @@
 #include <fcntl.h>
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
+LOG_MODULE_DECLARE(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
 #include <string.h>

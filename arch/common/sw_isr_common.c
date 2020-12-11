@@ -70,7 +70,8 @@ unsigned int get_parent_offset(unsigned int parent_irq,
 
 #endif /* CONFIG_MULTI_LEVEL_INTERRUPTS */
 
-void z_isr_install(unsigned int irq, void (*routine)(void *), void *param)
+void z_isr_install(unsigned int irq, void (*routine)(const void *),
+		   const void *param)
 {
 	unsigned int table_idx;
 
@@ -127,8 +128,8 @@ void z_isr_install(unsigned int irq, void (*routine)(void *), void *param)
  */
 int __weak arch_irq_connect_dynamic(unsigned int irq,
 				    unsigned int priority,
-				    void (*routine)(void *),
-				    void *parameter,
+				    void (*routine)(const void *),
+				    const void *parameter,
 				    uint32_t flags)
 {
 	ARG_UNUSED(flags);

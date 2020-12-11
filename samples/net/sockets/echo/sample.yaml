@@ -1,8 +1,12 @@
 sample:
   description: BSD Sockets API TCP echo server sample
   name: socket_echo
+common:
+  harness: net
+  depends_on: netif
 tests:
   sample.net.sockets.echo:
-    harness: net
-    depends_on: netif
     tags: net socket
+  sample.net.sockets.echo.offload.simplelink:
+    platform_allow: cc3220sf_launchxl
+    tags: net socket offload simplelink

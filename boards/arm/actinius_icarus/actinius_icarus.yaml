@@ -9,7 +9,14 @@ toolchain:
 ram: 64
 flash: 256
 supported:
+  - gpio
   - i2c
   - pwm
+  - spi
   - watchdog
   - counter
+  - feather_serial
+  - feather_i2c
+  - feather_spi
+  - arduino_i2c
+  - arduino_spi

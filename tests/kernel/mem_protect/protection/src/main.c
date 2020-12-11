@@ -15,6 +15,16 @@
 
 #include "targets.h"
 
+/* 32-bit IA32 page tables have no mechanism to restrict execution */
+#if defined(CONFIG_X86) && !defined(CONFIG_X86_64) && !defined(CONFIG_X86_PAE)
+#define SKIP_EXECUTE_TESTS
+#endif
+
+/* RISC-V have no mechanism to restrict execution */
+#if defined(CONFIG_RISCV)
+#define SKIP_EXECUTE_TESTS
+#endif
+
 #define INFO(fmt, ...) printk(fmt, ##__VA_ARGS__)
 
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
@@ -42,6 +52,7 @@ static int __attribute__((noinline)) add_one(int i)
 	return (i + 1);
 }
 
+#ifndef SKIP_EXECUTE_TESTS
 static void execute_from_buffer(uint8_t *dst)
 {
 	void *src = FUNC_TO_PTR(add_one);
@@ -68,6 +79,7 @@ static void execute_from_buffer(uint8_t *dst)
 		INFO("Did not get expected return value!\n");
 	}
 }
+#endif /* SKIP_EXECUTE_TESTS */
 
 /**
  * @brief Test write to read only section
@@ -76,7 +88,7 @@ static void execute_from_buffer(uint8_t *dst)
  */
 static void test_write_ro(void)
 {
-	uint32_t *ptr = (uint32_t *)&rodata_var;
+	volatile uint32_t *ptr = (volatile uint32_t *)&rodata_var;
 
 	/*
 	 * Try writing to rodata.  Optimally, this triggers a fault.
@@ -136,8 +148,12 @@ static void test_write_text(void)
  */
 static void test_exec_data(void)
 {
+#ifdef SKIP_EXECUTE_TESTS
+	ztest_test_skip();
+#else
 	execute_from_buffer(data_buf);
 	zassert_unreachable("Execute from data did not fault");
+#endif
 }
 
 /**
@@ -147,10 +163,14 @@ static void test_exec_data(void)
  */
 static void test_exec_stack(void)
 {
+#ifdef SKIP_EXECUTE_TESTS
+	ztest_test_skip();
+#else
 	uint8_t stack_buf[BUF_SIZE] __aligned(sizeof(int));
 
 	execute_from_buffer(stack_buf);
 	zassert_unreachable("Execute from stack did not fault");
+#endif
 }
 
 /**
@@ -158,7 +178,7 @@ static void test_exec_stack(void)
  *
  * @ingroup kernel_memprotect_tests
  */
-#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+#if (CONFIG_HEAP_MEM_POOL_SIZE > 0) && !defined(SKIP_EXECUTE_TESTS)
 static void test_exec_heap(void)
 {
 	uint8_t *heap_buf = k_malloc(BUF_SIZE);

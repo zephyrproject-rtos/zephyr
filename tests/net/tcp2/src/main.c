@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_TCP_LOG_LEVEL);
 #include "ipv6.h"
 #include "tcp2.h"
 #include "tcp2_priv.h"
+#include "net_stats.h"
 
 #include <ztest.h>
 
@@ -87,7 +88,7 @@ static enum test_state t_state;
 static struct k_delayed_work test_server;
 static void test_server_timeout(struct k_work *work);
 
-static int tester_send(struct device *dev, struct net_pkt *pkt);
+static int tester_send(const struct device *dev, struct net_pkt *pkt);
 
 static void handle_client_test(sa_family_t af, struct tcphdr *th);
 static void handle_server_test(sa_family_t af, struct tcphdr *th);
@@ -111,18 +112,18 @@ struct net_tcp_context {
 	struct net_linkaddr ll_addr;
 };
 
-static int net_tcp_dev_init(struct device *dev)
+static int net_tcp_dev_init(const struct device *dev)
 {
-	struct net_tcp_context *net_tcp_context = dev->driver_data;
+	struct net_tcp_context *net_tcp_context = dev->data;
 
 	net_tcp_context = net_tcp_context;
 
 	return 0;
 }
 
-static uint8_t *net_tcp_get_mac(struct device *dev)
+static uint8_t *net_tcp_get_mac(const struct device *dev)
 {
-	struct net_tcp_context *context = dev->driver_data;
+	struct net_tcp_context *context = dev->data;
 
 	if (context->mac_addr[2] == 0x00) {
 		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
@@ -321,6 +322,12 @@ static struct net_pkt *prepare_fin_packet(sa_family_t af, uint16_t src_port,
 	return tester_prepare_tcp_pkt(af, src_port, dst_port, FIN, NULL, 0U);
 }
 
+static struct net_pkt *prepare_rst_packet(sa_family_t af, uint16_t src_port,
+					  uint16_t dst_port)
+{
+	return tester_prepare_tcp_pkt(af, src_port, dst_port, RST, NULL, 0U);
+}
+
 static int read_tcp_header(struct net_pkt *pkt, struct tcphdr *th)
 {
 	int ret;
@@ -346,7 +353,7 @@ fail:
 	return -EINVAL;
 }
 
-static int tester_send(struct device *dev, struct net_pkt *pkt)
+static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct tcphdr th;
 	int ret;
@@ -909,7 +916,7 @@ static void test_client_syn_resend(void)
 	ret = net_context_connect(ctx, (struct sockaddr *)&peer_addr_s,
 				  sizeof(struct sockaddr_in),
 				  NULL,
-				  K_MSEC(1000), NULL);
+				  K_MSEC(300), NULL);
 
 	zassert_true(ret < 0, "Connect on no response from peer");
 
@@ -1165,6 +1172,128 @@ static void test_client_closing_ipv6(void)
 	k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
 }
 
+static struct net_context *create_server_socket(void)
+{
+	struct net_context *ctx;
+	int ret;
+
+	t_state = T_SYN;
+	test_case_no = 5;
+	seq = ack = 0;
+
+	ret = net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP, &ctx);
+	if (ret < 0) {
+		zassert_true(false, "Failed to get net_context");
+	}
+
+	ret = net_context_bind(ctx, (struct sockaddr *)&my_addr_v6_s,
+			       sizeof(struct sockaddr_in6));
+	if (ret < 0) {
+		zassert_true(false, "Failed to bind net_context");
+	}
+
+	ret = net_context_listen(ctx, 1);
+	if (ret < 0) {
+		zassert_true(false, "Failed to listen on net_context");
+	}
+
+	/* Trigger the peer to send SYN  */
+	k_delayed_work_submit(&test_server, K_NO_WAIT);
+
+	ret = net_context_accept(ctx, test_tcp_accept_cb, K_FOREVER, NULL);
+	if (ret < 0) {
+		zassert_true(false, "Failed to set accept on net_context");
+	}
+
+	/* test_tcp_accept_cb will release the semaphone after succesfull
+	 * connection.
+	 */
+	test_sem_take(K_MSEC(100), __LINE__);
+
+	return ctx;
+}
+
+static void check_rst_fail(uint32_t seq_value)
+{
+	struct net_pkt *reply;
+	int rsterr_before, rsterr_after;
+	int ret;
+
+	rsterr_before = GET_STAT(iface, tcp.rsterr);
+
+	/* Invalid seq in the RST packet */
+	seq = seq_value;
+
+	reply = prepare_rst_packet(AF_INET6, htons(MY_PORT), htons(PEER_PORT));
+
+	ret = net_recv_data(iface, reply);
+	zassert_true(ret == 0, "recv data failed (%d)", ret);
+
+	/* Let the receiving thread run */
+	k_msleep(50);
+
+	rsterr_after = GET_STAT(iface, tcp.rsterr);
+
+	zassert_equal(rsterr_before + 1, rsterr_after,
+		      "RST packet not skipped (before %d, after %d)",
+		      rsterr_before, rsterr_after);
+}
+
+static void check_rst_succeed(struct net_context *ctx,
+			      uint32_t seq_value)
+{
+	struct net_pkt *reply;
+	int rsterr_before, rsterr_after;
+	int ret;
+
+	/* Make sure that various other corner cases work */
+	if (ctx == NULL) {
+		ctx = create_server_socket();
+	}
+
+	/* Another valid seq in the RST packet */
+	seq = ack + seq_value;
+
+	reply = prepare_rst_packet(AF_INET6, htons(MY_PORT), htons(PEER_PORT));
+
+	rsterr_before = GET_STAT(iface, tcp.rsterr);
+
+	ret = net_recv_data(iface, reply);
+	zassert_true(ret == 0, "recv data failed (%d)", ret);
+
+	/* Let the receiving thread run */
+	k_msleep(50);
+
+	rsterr_after = GET_STAT(iface, tcp.rsterr);
+
+	zassert_equal(rsterr_before, rsterr_after,
+		      "RST packet skipped (before %d, after %d)",
+		      rsterr_before, rsterr_after);
+
+	net_tcp_put(ctx);
+}
+
+static void test_client_invalid_rst(void)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint16_t wnd;
+
+	ctx = create_server_socket();
+
+	conn = ctx->tcp;
+	wnd = conn->recv_win;
+
+	/* Failure cases, the RST packets should be dropped */
+	check_rst_fail(ack - 1);
+	check_rst_fail(ack + wnd);
+
+	/* Then send a valid seq in the RST packet */
+	check_rst_succeed(ctx, wnd - 1);
+	check_rst_succeed(NULL, 0);
+	check_rst_succeed(NULL, 1);
+}
+
 /** Test case main entry */
 void test_main(void)
 {
@@ -1177,7 +1306,8 @@ void test_main(void)
 			 ztest_unit_test(test_server_ipv6),
 			 ztest_unit_test(test_client_syn_resend),
 			 ztest_unit_test(test_client_fin_wait_2_ipv4),
-			 ztest_unit_test(test_client_closing_ipv6)
+			 ztest_unit_test(test_client_closing_ipv6),
+			 ztest_unit_test(test_client_invalid_rst)
 			 );
 
 	ztest_run_test_suite(test_tcp_fn);

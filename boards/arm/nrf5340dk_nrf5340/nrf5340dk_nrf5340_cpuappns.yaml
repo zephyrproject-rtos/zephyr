@@ -6,9 +6,11 @@ toolchain:
   - gnuarmemb
   - xtools
   - zephyr
-ram: 384
-flash: 256
+ram: 192
+flash: 192
 supported:
   - i2c
   - pwm
   - watchdog
+  - usb_cdc
+  - usb_device

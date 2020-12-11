@@ -35,8 +35,9 @@ GEN_OFFSET_SYM(_thread_arch_t, excNestCount);
 
 #ifdef CONFIG_USERSPACE
 GEN_OFFSET_SYM(_thread_arch_t, psp);
+#ifndef CONFIG_X86_COMMON_PAGE_TABLE
 GEN_OFFSET_SYM(_thread_arch_t, ptables);
-GEN_ABSOLUTE_SYM(Z_X86_PDPT_SIZE, sizeof(struct x86_mmu_pdpt));
+#endif
 #endif
 
 GEN_OFFSET_SYM(_thread_arch_t, preempFloatReg);
@@ -65,9 +66,4 @@ GEN_OFFSET_SYM(z_arch_esf_t, errorCode);
 GEN_OFFSET_SYM(z_arch_esf_t, eip);
 GEN_OFFSET_SYM(z_arch_esf_t, cs);
 GEN_OFFSET_SYM(z_arch_esf_t, eflags);
-
-/* size of the MMU_REGION structure. Used by linker scripts */
-
-GEN_ABSOLUTE_SYM(__MMU_REGION_SIZEOF, sizeof(struct mmu_region));
-
 #endif /* _X86_OFFSETS_INC_ */

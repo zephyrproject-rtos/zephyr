@@ -5,6 +5,6 @@
 
 config OPT3001
 	bool "OPT3001 Light Sensor"
-	depends on (I2C && HAS_DTS_I2C)
+	depends on I2C
 	help
 	  Enable driver for OPT3001 light sensors.

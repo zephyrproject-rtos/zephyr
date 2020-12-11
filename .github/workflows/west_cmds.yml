@@ -54,12 +54,13 @@ jobs:
           ${{ runner.os }}-pip-${{ matrix.python-version }}
     - name: install pytest
       run: |
-        pip3 install pytest west pyelftools canopen progress
+        pip3 install wheel
+        pip3 install pytest west pyelftools canopen progress mypy intelhex psutil
     - name: run pytest-win
       if: runner.os == 'Windows'
       run: |
-        cmd /C "set PYTHONPATH=.\scripts\west_commands && pytest ./scripts/west_commands/tests/"
+        python ./scripts/west_commands/run_tests.py
     - name: run pytest-mac-linux
       if: runner.os != 'Windows'
       run: |
-        PYTHONPATH=./scripts/west_commands pytest ./scripts/west_commands/tests/
+        ./scripts/west_commands/run_tests.py

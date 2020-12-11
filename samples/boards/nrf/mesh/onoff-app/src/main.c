@@ -71,30 +71,6 @@ static void gen_onoff_status(struct bt_mesh_model *model,
 			  struct net_buf_simple *buf);
 
 /*
- * Server Configuration Declaration
- */
-
-static struct bt_mesh_cfg_srv cfg_srv = {
-	.relay = BT_MESH_RELAY_DISABLED,
-	.beacon = BT_MESH_BEACON_ENABLED,
-#if defined(CONFIG_BT_MESH_FRIEND)
-	.frnd = BT_MESH_FRIEND_ENABLED,
-#else
-	.frnd = BT_MESH_FRIEND_NOT_SUPPORTED,
-#endif
-#if defined(CONFIG_BT_MESH_GATT_PROXY)
-	.gatt_proxy = BT_MESH_GATT_PROXY_ENABLED,
-#else
-	.gatt_proxy = BT_MESH_GATT_PROXY_NOT_SUPPORTED,
-#endif
-	.default_ttl = 7,
-
-	/* 3 transmissions with 20ms interval */
-	.net_transmit = BT_MESH_TRANSMIT(2, 20),
-	.relay_retransmit = BT_MESH_TRANSMIT(2, 20),
-};
-
-/*
  * Client Configuration Declaration
  */
 
@@ -170,7 +146,7 @@ struct onoff_state {
 	uint8_t current;
 	uint8_t previous;
 	uint8_t led_gpio_pin;
-	struct device *led_device;
+	const struct device *led_device;
 };
 
 /*
@@ -193,7 +169,7 @@ static struct onoff_state onoff_state[] = {
  */
 
 static struct bt_mesh_model root_models[] = {
-	BT_MESH_MODEL_CFG_SRV(&cfg_srv),
+	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
 	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_onoff_srv_op,
@@ -274,7 +250,7 @@ static const struct bt_mesh_comp comp = {
 	.elem_count = ARRAY_SIZE(elements),
 };
 
-struct device *sw_device;
+const struct device *sw_device;
 
 struct sw {
 	uint8_t sw_num;
@@ -426,7 +402,7 @@ static uint8_t pin_to_sw(uint32_t pin_pos)
 	return 0;
 }
 
-static void button_pressed(struct device *dev, struct gpio_callback *cb,
+static void button_pressed(const struct device *dev, struct gpio_callback *cb,
 			   uint32_t pin_pos)
 {
 	/*

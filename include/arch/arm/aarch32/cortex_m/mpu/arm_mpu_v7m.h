@@ -27,7 +27,7 @@
 #define P_RW_U_RO       0x2
 #define P_RW_U_RO_Msk   ((P_RW_U_RO << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
 /* Privileged Read Write, Unprivileged Read Write */
-#define P_RW_U_RW       0x3
+#define P_RW_U_RW       0x3U
 #define P_RW_U_RW_Msk   ((P_RW_U_RW << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
 /* Privileged Read Write, Unprivileged Read Write */
 #define FULL_ACCESS     0x3

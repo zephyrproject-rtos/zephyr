@@ -36,19 +36,27 @@ void helloLoop(const char *my_name,
 	       struct k_sem *my_sem, struct k_sem *other_sem)
 {
 	const char *tname;
+	uint8_t cpu;
+	struct k_thread *current_thread;
 
 	while (1) {
 		/* take my semaphore */
 		k_sem_take(my_sem, K_FOREVER);
 
+		current_thread = k_current_get();
+		tname = k_thread_name_get(current_thread);
+#if CONFIG_SMP
+		cpu = arch_curr_cpu()->id;
+#else
+		cpu = 0;
+#endif
 		/* say "hello" */
-		tname = k_thread_name_get(k_current_get());
 		if (tname == NULL) {
-			printk("%s: Hello World from %s!\n",
-				my_name, CONFIG_BOARD);
+			printk("%s: Hello World from cpu %d on %s!\n",
+				my_name, cpu, CONFIG_BOARD);
 		} else {
-			printk("%s: Hello World from %s!\n",
-				tname, CONFIG_BOARD);
+			printk("%s: Hello World from cpu %d on %s!\n",
+				tname, cpu, CONFIG_BOARD);
 		}
 
 		/* wait a while, then let other thread have a turn */
@@ -89,9 +97,14 @@ void threadA(void *dummy1, void *dummy2, void *dummy3)
 	/* spawn threadB */
 	k_tid_t tid = k_thread_create(&threadB_data, threadB_stack_area,
 			STACKSIZE, threadB, NULL, NULL, NULL,
-			PRIORITY, 0, K_NO_WAIT);
+			PRIORITY, 0, K_FOREVER);
 
 	k_thread_name_set(tid, "thread_b");
+#if CONFIG_SCHED_CPU_MASK
+	k_thread_cpu_mask_disable(&threadB_data, 1);
+	k_thread_cpu_mask_enable(&threadB_data, 0);
+#endif
+	k_thread_start(&threadB_data);
 
 	/* invoke routine to ping-pong hello messages with threadB */
 	helloLoop(__func__, &threadA_sem, &threadB_sem);

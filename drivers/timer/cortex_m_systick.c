@@ -149,8 +149,10 @@ void z_clock_isr(void *arg)
 	z_arm_int_exit();
 }
 
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
+	ARG_UNUSED(device);
+
 	NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
 	last_load = CYC_PER_TICK - 1;
 	overflow_cyc = 0U;
@@ -181,7 +183,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 	uint32_t delay;
 
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
-	ticks = MAX(MIN(ticks - 1, (int32_t)MAX_TICKS), 0);
+	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 

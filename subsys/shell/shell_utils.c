@@ -194,8 +194,6 @@ char shell_make_argv(size_t *argc, const char **argv, char *cmd, uint8_t max_arg
 		quote = make_argv(&cmd, c);
 	} while (true);
 
-	argv[*argc] = 0;
-
 	return quote;
 }
 
@@ -250,13 +248,14 @@ const struct shell_static_entry *shell_cmd_get(
 					size_t idx,
 					struct shell_static_entry *dloc)
 {
-	__ASSERT_NO_MSG(dloc != NULL);
 	const struct shell_static_entry *res = NULL;
 
 	if (parent == NULL) {
 		return  (idx < shell_root_cmd_count()) ?
 				shell_root_cmd_get(idx)->u.entry : NULL;
 	}
+
+	__ASSERT_NO_MSG(dloc != NULL);
 
 	if (parent->subcmd) {
 		if (parent->subcmd->is_dynamic) {
@@ -461,16 +460,16 @@ void shell_cmd_trim(const struct shell *shell)
 	shell->ctx->cmd_buff_pos = shell->ctx->cmd_buff_len;
 }
 
-struct device *shell_device_lookup(size_t idx,
+const struct device *shell_device_lookup(size_t idx,
 				   const char *prefix)
 {
 	size_t match_idx = 0;
-	struct device *dev;
+	const struct device *dev;
 	size_t len = z_device_get_all_static(&dev);
-	struct device *dev_end = dev + len;
+	const struct device *dev_end = dev + len;
 
 	while (dev < dev_end) {
-		if (z_device_ready(dev)
+		if (device_is_ready(dev)
 		    && (dev->name != NULL)
 		    && (strlen(dev->name) != 0)
 		    && ((prefix == NULL)

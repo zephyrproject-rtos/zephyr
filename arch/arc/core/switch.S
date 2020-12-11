@@ -22,7 +22,7 @@
 #include <v2/irq.h>
 #include <swap_macros.h>
 
-GTEXT(arch_switch)
+GTEXT(z_arc_switch)
 
 /**
  *
@@ -52,19 +52,8 @@ GTEXT(arch_switch)
  *
  */
 
-SECTION_FUNC(TEXT, arch_switch)
+SECTION_FUNC(TEXT, z_arc_switch)
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	push_s r0
-	push_s r1
-	push_s blink
-
-	bl read_timer_start_of_swap
-
-	pop_s blink
-	pop_s r1
-	pop_s r0
-#endif
 	/*
 	 * r0 = new_thread->switch_handle = switch_to thread,
 	 * r1 = &old_thread->switch_handle
@@ -112,7 +101,7 @@ SECTION_FUNC(TEXT, arch_switch)
 
 	/* fall through to _switch_return_from_coop */
 
-.balign 4
+.align 4
 _switch_return_from_coop:
 
 	pop_s blink /* pc into blink */
@@ -125,17 +114,17 @@ _switch_return_from_coop:
 	pop_s r3    /* status32 into r3 */
 	kflag r3    /* write status32 */
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
 	push_s blink
 
-	bl read_timer_end_of_swap
+	bl z_thread_mark_switched_in
 
 	pop_s blink
-#endif /* CONFIG_EXECUTION_BENCHMARKING */
+#endif
 	j_s [blink]
 
 
-.balign 4
+.align 4
 _switch_return_from_rirq:
 _switch_return_from_firq:
 
@@ -160,5 +149,12 @@ _switch_return_from_firq:
 	sjli SJLI_CALL_ARC_SECURE
 #else
 	sr r3, [_ARC_V2_AUX_IRQ_ACT]
+#endif
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
+	push_s blink
+
+	bl z_thread_mark_switched_in
+
+	pop_s blink
 #endif
 	rtie

@@ -17,10 +17,11 @@ struct mcux_entropy_config {
 	RNG_Type *base;
 };
 
-static int entropy_mcux_rng_get_entropy(struct device *dev, uint8_t *buffer,
+static int entropy_mcux_rng_get_entropy(const struct device *dev,
+					 uint8_t *buffer,
 					 uint16_t length)
 {
-	const struct mcux_entropy_config *config = dev->config_info;
+	const struct mcux_entropy_config *config = dev->config;
 	status_t status;
 
 	ARG_UNUSED(dev);
@@ -39,14 +40,14 @@ static const struct mcux_entropy_config entropy_mcux_config = {
 	.base = (RNG_Type *)DT_INST_REG_ADDR(0)
 };
 
-static int entropy_mcux_rng_init(struct device *);
+static int entropy_mcux_rng_init(const struct device *);
 
 DEVICE_AND_API_INIT(entropy_mcux_rng, DT_INST_LABEL(0),
 		    entropy_mcux_rng_init, NULL, &entropy_mcux_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_mcux_rng_api_funcs);
 
-static int entropy_mcux_rng_init(struct device *dev)
+static int entropy_mcux_rng_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

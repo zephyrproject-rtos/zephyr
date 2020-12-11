@@ -14,15 +14,11 @@
  */
 &ocram {
 	compatible = "mmio-sram";
-	reg = <0x20200000 0xC0000>;
+	reg = <0x20200000 DT_SIZE_K(768)>;
 };
 
 /* i.MX rt1060 has a second Ethernet controller. */
 / {
-	aliases {
-		enet2 = &enet2;
-	};
-
 	soc {
 		enet2: ethernet@402d4000 {
 			compatible = "nxp,kinetis-ethernet";

@@ -165,6 +165,7 @@ void test_timer_duration_period(void)
 {
 	init_timer_data();
 	/** TESTPOINT: init timer via k_timer_init */
+	k_usleep(1); /* align to tick */
 	k_timer_start(&duration_timer, K_MSEC(DURATION), K_MSEC(PERIOD));
 	tdata.timestamp = k_uptime_get();
 	busy_wait_ms(DURATION + PERIOD * EXPIRE_TIMES + PERIOD / 2);
@@ -175,6 +176,39 @@ void test_timer_duration_period(void)
 	/* cleanup environemtn */
 	k_timer_stop(&duration_timer);
 }
+
+/**
+ *
+ * @brief Test restart the timer
+ *
+ * @details Validates initial duration and period of timer. Start the timer with
+ * specific duration and period. Then starts the timer again, and check
+ * the status of timer.
+ *
+ * @ingroup kernel_timer_tests
+ *
+ * @see k_timer_init(), k_timer_start(), k_timer_stop, k_uptime_get(),
+ * k_busy_wait()
+ *
+ */
+void test_timer_restart(void)
+{
+	init_timer_data();
+	k_timer_start(&status_anytime_timer, K_MSEC(DURATION),
+		      K_MSEC(PERIOD));
+	busy_wait_ms(DURATION + PERIOD * (EXPIRE_TIMES - 1) + PERIOD / 2);
+
+	/** TESTPOINT: restart the timer */
+	k_timer_start(&status_anytime_timer, K_MSEC(DURATION),
+		      K_MSEC(PERIOD));
+	/* Restart timer, timer's status is reset to zero */
+	TIMER_ASSERT(k_timer_status_get(&status_anytime_timer) == 0,
+		     &status_anytime_timer);
+
+	/* cleanup environment */
+	k_timer_stop(&status_anytime_timer);
+}
+
 
 /**
  * @brief Test Timer with zero period value
@@ -379,6 +413,9 @@ void test_timer_status_get_anytime(void)
 	/** TESTPOINT: status get at any time */
 	TIMER_ASSERT(k_timer_status_get(&status_anytime_timer) == EXPIRE_TIMES,
 		     &status_anytime_timer);
+	busy_wait_ms(PERIOD);
+	TIMER_ASSERT(k_timer_status_get(&status_anytime_timer) == 1,
+		     &status_anytime_timer);
 
 	/* cleanup environment */
 	k_timer_stop(&status_anytime_timer);
@@ -408,7 +445,7 @@ void test_timer_status_sync(void)
 	for (int i = 0; i < EXPIRE_TIMES; i++) {
 		/** TESTPOINT: check timer not expire */
 		TIMER_ASSERT(tdata.expire_cnt == i, &status_sync_timer);
-		/** TESTPOINT： expired times returned by status sync */
+		/** TESTPOINT: expired times returned by status sync */
 		TIMER_ASSERT(k_timer_status_sync(&status_sync_timer) == 1,
 			     &status_sync_timer);
 		/** TESTPOINT: check timer not expire */
@@ -438,6 +475,7 @@ void test_timer_k_define(void)
 {
 	init_timer_data();
 	/** TESTPOINT: init timer via k_timer_init */
+	k_usleep(1); /* align to tick */
 	k_timer_start(&ktimer, K_MSEC(DURATION), K_MSEC(PERIOD));
 	tdata.timestamp = k_uptime_get();
 	busy_wait_ms(DURATION + PERIOD * EXPIRE_TIMES + PERIOD / 2);
@@ -499,6 +537,7 @@ static void user_data_timer_handler(struct k_timer *timer)
 	}
 
 	intptr_t data_retrieved = (intptr_t)k_timer_user_data_get(timer);
+
 	user_data_correct[timer_num] = user_data[timer_num] == data_retrieved;
 }
 
@@ -572,16 +611,18 @@ void test_timer_remaining(void)
 	uint32_t slew_ticks;
 	uint64_t now;
 
-	k_usleep(1); /* align to tick */
 
 	init_timer_data();
+	k_usleep(1); /* align to tick */
 	k_timer_start(&remain_timer, K_MSEC(DURATION), K_NO_WAIT);
 	busy_wait_ms(DURATION / 2);
+	rem_ticks = k_timer_remaining_ticks(&remain_timer);
 	now = k_uptime_ticks();
 	rem_ms = k_timer_remaining_get(&remain_timer);
-	rem_ticks = k_timer_remaining_ticks(&remain_timer);
 	exp_ticks = k_timer_expires_ticks(&remain_timer);
 	k_timer_stop(&remain_timer);
+	TIMER_ASSERT(tdata.expire_cnt == 0, &remain_timer);
+	TIMER_ASSERT(tdata.stop_cnt == 1, &remain_timer);
 
 	/*
 	 * While the busy_wait_ms() works with the maximum possible resolution,
@@ -685,7 +726,7 @@ void test_main(void)
 	timer_init(&status_timer, status_expire, status_stop);
 	timer_init(&status_anytime_timer, NULL, NULL);
 	timer_init(&status_sync_timer, duration_expire, duration_stop);
-	timer_init(&remain_timer, NULL, NULL);
+	timer_init(&remain_timer, duration_expire, duration_stop);
 
 	k_thread_access_grant(k_current_get(), &ktimer, &timer0, &timer1,
 			      &timer2, &timer3, &timer4);
@@ -693,6 +734,7 @@ void test_main(void)
 	ztest_test_suite(timer_api,
 			 ztest_unit_test(test_time_conversions),
 			 ztest_user_unit_test(test_timer_duration_period),
+			 ztest_user_unit_test(test_timer_restart),
 			 ztest_user_unit_test(test_timer_period_0),
 			 ztest_user_unit_test(test_timer_expirefn_null),
 			 ztest_user_unit_test(test_timer_periodicity),

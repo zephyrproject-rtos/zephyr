@@ -88,9 +88,9 @@ static int lsm6dso_gyro_range_to_fs_val(int32_t range)
 }
 #endif
 
-static inline int lsm6dso_reboot(struct device *dev)
+static inline int lsm6dso_reboot(const struct device *dev)
 {
-	struct lsm6dso_data *data = dev->driver_data;
+	struct lsm6dso_data *data = dev->data;
 
 	if (lsm6dso_boot_set(data->ctx, 1) < 0) {
 		return -EIO;
@@ -102,9 +102,9 @@ static inline int lsm6dso_reboot(struct device *dev)
 	return 0;
 }
 
-static int lsm6dso_accel_set_fs_raw(struct device *dev, uint8_t fs)
+static int lsm6dso_accel_set_fs_raw(const struct device *dev, uint8_t fs)
 {
-	struct lsm6dso_data *data = dev->driver_data;
+	struct lsm6dso_data *data = dev->data;
 
 	if (lsm6dso_xl_full_scale_set(data->ctx, fs) < 0) {
 		return -EIO;
@@ -115,9 +115,9 @@ static int lsm6dso_accel_set_fs_raw(struct device *dev, uint8_t fs)
 	return 0;
 }
 
-static int lsm6dso_accel_set_odr_raw(struct device *dev, uint8_t odr)
+static int lsm6dso_accel_set_odr_raw(const struct device *dev, uint8_t odr)
 {
-	struct lsm6dso_data *data = dev->driver_data;
+	struct lsm6dso_data *data = dev->data;
 
 	if (lsm6dso_xl_data_rate_set(data->ctx, odr) < 0) {
 		return -EIO;
@@ -128,9 +128,9 @@ static int lsm6dso_accel_set_odr_raw(struct device *dev, uint8_t odr)
 	return 0;
 }
 
-static int lsm6dso_gyro_set_fs_raw(struct device *dev, uint8_t fs)
+static int lsm6dso_gyro_set_fs_raw(const struct device *dev, uint8_t fs)
 {
-	struct lsm6dso_data *data = dev->driver_data;
+	struct lsm6dso_data *data = dev->data;
 
 	if (lsm6dso_gy_full_scale_set(data->ctx, fs) < 0) {
 		return -EIO;
@@ -139,9 +139,9 @@ static int lsm6dso_gyro_set_fs_raw(struct device *dev, uint8_t fs)
 	return 0;
 }
 
-static int lsm6dso_gyro_set_odr_raw(struct device *dev, uint8_t odr)
+static int lsm6dso_gyro_set_odr_raw(const struct device *dev, uint8_t odr)
 {
-	struct lsm6dso_data *data = dev->driver_data;
+	struct lsm6dso_data *data = dev->data;
 
 	if (lsm6dso_gy_data_rate_set(data->ctx, odr) < 0) {
 		return -EIO;
@@ -151,7 +151,7 @@ static int lsm6dso_gyro_set_odr_raw(struct device *dev, uint8_t odr)
 }
 
 #ifdef LSM6DSO_ACCEL_ODR_RUNTIME
-static int lsm6dso_accel_odr_set(struct device *dev, uint16_t freq)
+static int lsm6dso_accel_odr_set(const struct device *dev, uint16_t freq)
 {
 	int odr;
 
@@ -170,10 +170,10 @@ static int lsm6dso_accel_odr_set(struct device *dev, uint16_t freq)
 #endif
 
 #ifdef LSM6DSO_ACCEL_FS_RUNTIME
-static int lsm6dso_accel_range_set(struct device *dev, int32_t range)
+static int lsm6dso_accel_range_set(const struct device *dev, int32_t range)
 {
 	int fs;
-	struct lsm6dso_data *data = dev->driver_data;
+	struct lsm6dso_data *data = dev->data;
 
 	fs = lsm6dso_accel_range_to_fs_val(range);
 	if (fs < 0) {
@@ -190,9 +190,10 @@ static int lsm6dso_accel_range_set(struct device *dev, int32_t range)
 }
 #endif
 
-static int lsm6dso_accel_config(struct device *dev, enum sensor_channel chan,
-			    enum sensor_attribute attr,
-			    const struct sensor_value *val)
+static int lsm6dso_accel_config(const struct device *dev,
+				enum sensor_channel chan,
+				enum sensor_attribute attr,
+				const struct sensor_value *val)
 {
 	switch (attr) {
 #ifdef LSM6DSO_ACCEL_FS_RUNTIME
@@ -212,7 +213,7 @@ static int lsm6dso_accel_config(struct device *dev, enum sensor_channel chan,
 }
 
 #ifdef LSM6DSO_GYRO_ODR_RUNTIME
-static int lsm6dso_gyro_odr_set(struct device *dev, uint16_t freq)
+static int lsm6dso_gyro_odr_set(const struct device *dev, uint16_t freq)
 {
 	int odr;
 
@@ -231,10 +232,10 @@ static int lsm6dso_gyro_odr_set(struct device *dev, uint16_t freq)
 #endif
 
 #ifdef LSM6DSO_GYRO_FS_RUNTIME
-static int lsm6dso_gyro_range_set(struct device *dev, int32_t range)
+static int lsm6dso_gyro_range_set(const struct device *dev, int32_t range)
 {
 	int fs;
-	struct lsm6dso_data *data = dev->driver_data;
+	struct lsm6dso_data *data = dev->data;
 
 	fs = lsm6dso_gyro_range_to_fs_val(range);
 	if (fs < 0) {
@@ -251,9 +252,10 @@ static int lsm6dso_gyro_range_set(struct device *dev, int32_t range)
 }
 #endif
 
-static int lsm6dso_gyro_config(struct device *dev, enum sensor_channel chan,
-			    enum sensor_attribute attr,
-			    const struct sensor_value *val)
+static int lsm6dso_gyro_config(const struct device *dev,
+			       enum sensor_channel chan,
+			       enum sensor_attribute attr,
+			       const struct sensor_value *val)
 {
 	switch (attr) {
 #ifdef LSM6DSO_GYRO_FS_RUNTIME
@@ -272,9 +274,10 @@ static int lsm6dso_gyro_config(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int lsm6dso_attr_set(struct device *dev, enum sensor_channel chan,
-			   enum sensor_attribute attr,
-			   const struct sensor_value *val)
+static int lsm6dso_attr_set(const struct device *dev,
+			    enum sensor_channel chan,
+			    enum sensor_attribute attr,
+			    const struct sensor_value *val)
 {
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
@@ -295,9 +298,9 @@ static int lsm6dso_attr_set(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int lsm6dso_sample_fetch_accel(struct device *dev)
+static int lsm6dso_sample_fetch_accel(const struct device *dev)
 {
-	struct lsm6dso_data *data = dev->driver_data;
+	struct lsm6dso_data *data = dev->data;
 	union axis3bit16_t buf;
 
 	if (lsm6dso_acceleration_raw_get(data->ctx, buf.u8bit) < 0) {
@@ -312,9 +315,9 @@ static int lsm6dso_sample_fetch_accel(struct device *dev)
 	return 0;
 }
 
-static int lsm6dso_sample_fetch_gyro(struct device *dev)
+static int lsm6dso_sample_fetch_gyro(const struct device *dev)
 {
-	struct lsm6dso_data *data = dev->driver_data;
+	struct lsm6dso_data *data = dev->data;
 	union axis3bit16_t buf;
 
 	if (lsm6dso_angular_rate_raw_get(data->ctx, buf.u8bit) < 0) {
@@ -330,9 +333,9 @@ static int lsm6dso_sample_fetch_gyro(struct device *dev)
 }
 
 #if defined(CONFIG_LSM6DSO_ENABLE_TEMP)
-static int lsm6dso_sample_fetch_temp(struct device *dev)
+static int lsm6dso_sample_fetch_temp(const struct device *dev)
 {
-	struct lsm6dso_data *data = dev->driver_data;
+	struct lsm6dso_data *data = dev->data;
 	union axis1bit16_t buf;
 
 	if (lsm6dso_temperature_raw_get(data->ctx, buf.u8bit) < 0) {
@@ -347,7 +350,7 @@ static int lsm6dso_sample_fetch_temp(struct device *dev)
 #endif
 
 #if defined(CONFIG_LSM6DSO_SENSORHUB)
-static int lsm6dso_sample_fetch_shub(struct device *dev)
+static int lsm6dso_sample_fetch_shub(const struct device *dev)
 {
 	if (lsm6dso_shub_fetch_external_devs(dev) < 0) {
 		LOG_DBG("failed to read ext shub devices");
@@ -358,7 +361,8 @@ static int lsm6dso_sample_fetch_shub(struct device *dev)
 }
 #endif /* CONFIG_LSM6DSO_SENSORHUB */
 
-static int lsm6dso_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int lsm6dso_sample_fetch(const struct device *dev,
+				enum sensor_channel chan)
 {
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
@@ -625,11 +629,11 @@ static inline void lsm6dso_temp_convert(struct sensor_value *val,
 }
 #endif
 
-static int lsm6dso_channel_get(struct device *dev,
+static int lsm6dso_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	struct lsm6dso_data *data = dev->driver_data;
+	struct lsm6dso_data *data = dev->data;
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
@@ -685,9 +689,9 @@ static const struct sensor_driver_api lsm6dso_api_funcs = {
 	.channel_get = lsm6dso_channel_get,
 };
 
-static int lsm6dso_init_chip(struct device *dev)
+static int lsm6dso_init_chip(const struct device *dev)
 {
-	struct lsm6dso_data *lsm6dso = dev->driver_data;
+	struct lsm6dso_data *lsm6dso = dev->data;
 	uint8_t chip_id;
 
 	if (lsm6dso_device_id_get(lsm6dso->ctx, &chip_id) < 0) {
@@ -787,10 +791,12 @@ static const struct lsm6dso_config lsm6dso_config = {
 #endif /* CONFIG_LSM6DSO_TRIGGER */
 };
 
-static int lsm6dso_init(struct device *dev)
+static int lsm6dso_init(const struct device *dev)
 {
-	const struct lsm6dso_config * const config = dev->config_info;
-	struct lsm6dso_data *data = dev->driver_data;
+	const struct lsm6dso_config * const config = dev->config;
+	struct lsm6dso_data *data = dev->data;
+
+	data->dev = dev;
 
 	data->bus = device_get_binding(config->bus_name);
 	if (!data->bus) {

@@ -7,9 +7,11 @@
 #include <string.h>
 
 #include <zephyr.h>
-#include <sys/byteorder.h>
+#include <soc.h>
 #include <bluetooth/hci.h>
+#include <sys/byteorder.h>
 
+#include "hal/cpu.h"
 #include "hal/ccm.h"
 
 #include "util/util.h"
@@ -574,43 +576,29 @@ void ull_filter_rpa_update(bool timeout)
 }
 
 #if defined(CONFIG_BT_BROADCASTER)
-void ull_filter_adv_pdu_update(struct ll_adv_set *adv, struct pdu_adv *pdu)
+const uint8_t *ull_filter_adva_get(struct ll_adv_set *adv)
 {
-	uint8_t *adva = pdu->type == PDU_ADV_TYPE_SCAN_RSP ?
-				  &pdu->scan_rsp.addr[0] :
-				  &pdu->adv_ind.addr[0];
 	uint8_t idx = adv->lll.rl_idx;
 
 	/* AdvA */
 	if (idx < ARRAY_SIZE(rl) && rl[idx].lirk) {
 		LL_ASSERT(rl[idx].rpas_ready);
-		pdu->tx_addr = 1;
-		memcpy(adva, rl[idx].local_rpa->val, BDADDR_SIZE);
-	} else {
-		pdu->tx_addr = adv->own_addr_type & 0x1;
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-		if ((adv->is_created & ULL_ADV_CREATED_BITMASK_EXTENDED) &&
-		    pdu->tx_addr) {
-			ll_adv_aux_random_addr_get(adv, adva);
-		} else
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
-		{
-			ll_addr_get(pdu->tx_addr, adva);
-		}
+		return rl[idx].local_rpa->val;
 	}
 
+	return NULL;
+}
+
+const uint8_t *ull_filter_tgta_get(struct ll_adv_set *adv)
+{
+	uint8_t idx = adv->lll.rl_idx;
+
 	/* TargetA */
-	if (pdu->type == PDU_ADV_TYPE_DIRECT_IND) {
-		if (idx < ARRAY_SIZE(rl) && rl[idx].pirk) {
-			pdu->rx_addr = 1;
-			memcpy(&pdu->direct_ind.tgt_addr[0],
-			       rl[idx].peer_rpa.val, BDADDR_SIZE);
-		} else {
-			pdu->rx_addr = adv->id_addr_type;
-			memcpy(&pdu->direct_ind.tgt_addr[0],
-			       adv->id_addr, BDADDR_SIZE);
-		}
+	if (idx < ARRAY_SIZE(rl) && rl[idx].pirk) {
+		return rl[idx].peer_rpa.val;
 	}
+
+	return NULL;
 }
 #endif /* CONFIG_BT_BROADCASTER */
 
@@ -819,16 +807,16 @@ bool ull_filter_lll_rl_enabled(void)
 #if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
 uint8_t ull_filter_deferred_resolve(bt_addr_t *rpa, resolve_callback_t cb)
 {
-	LL_ASSERT(rl_enable);
+	if (rl_enable) {
+		if (!k_work_pending(&(resolve_work.prpa_work))) {
+			/* copy input param to work variable */
+			memcpy(resolve_work.rpa.val, rpa->val, sizeof(bt_addr_t));
+			resolve_work.cb = cb;
 
-	if (!k_work_pending(&(resolve_work.prpa_work))) {
-		/* copy input param to work variable */
-		memcpy(resolve_work.rpa.val, rpa->val, sizeof(bt_addr_t));
-		resolve_work.cb = cb;
+			k_work_submit(&(resolve_work.prpa_work));
 
-		k_work_submit(&(resolve_work.prpa_work));
-
-		return 1;
+			return 1;
+		}
 	}
 
 	return 0;
@@ -837,19 +825,18 @@ uint8_t ull_filter_deferred_resolve(bt_addr_t *rpa, resolve_callback_t cb)
 uint8_t ull_filter_deferred_targeta_resolve(bt_addr_t *rpa, uint8_t rl_idx,
 					 resolve_callback_t cb)
 {
-	LL_ASSERT(rl_enable);
+	if (rl_enable) {
+		if (!k_work_pending(&(t_work.target_work))) {
+			/* copy input param to work variable */
+			memcpy(t_work.rpa.val, rpa->val, sizeof(bt_addr_t));
+			t_work.cb = cb;
+			t_work.idx = rl_idx;
 
-	if (!k_work_pending(&(t_work.target_work))) {
-		/* copy input param to work variable */
-		memcpy(t_work.rpa.val, rpa->val, sizeof(bt_addr_t));
-		t_work.cb = cb;
-		t_work.idx = rl_idx;
+			k_work_submit(&(t_work.target_work));
 
-		k_work_submit(&(t_work.target_work));
-
-		return 1;
+			return 1;
+		}
 	}
-
 	return 0;
 }
 #endif /* CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY */
@@ -986,20 +973,9 @@ static void rpa_adv_refresh(struct ll_adv_set *adv)
 
 	prev = lll_adv_data_peek(&adv->lll);
 	pdu = lll_adv_data_alloc(&adv->lll, &idx);
-	pdu->type = prev->type;
-	pdu->rfu = 0;
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
-		pdu->chan_sel = prev->chan_sel;
-	} else {
-		pdu->chan_sel = 0;
-	}
-
-	ull_filter_adv_pdu_update(adv, pdu);
-
-	memcpy(&pdu->adv_ind.data[0], &prev->adv_ind.data[0],
-	       prev->len - BDADDR_SIZE);
-	pdu->len = prev->len;
+	memcpy(pdu, prev, PDU_AC_LL_HEADER_SIZE + prev->len);
+	ull_adv_pdu_update_addrs(adv, pdu);
 
 	lll_adv_data_enqueue(&adv->lll, idx);
 }
@@ -1052,7 +1028,7 @@ static uint32_t filter_add(struct lll_filter *filter, uint8_t addr_type,
 {
 	int index;
 
-	if (filter->enable_bitmask == 0xFF) {
+	if (filter->enable_bitmask == LLL_FILTER_BITMASK_ALL) {
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
@@ -1074,7 +1050,7 @@ static uint32_t filter_remove(struct lll_filter *filter, uint8_t addr_type,
 		return BT_HCI_ERR_INVALID_PARAM;
 	}
 
-	index = 8;
+	index = WL_SIZE;
 	while (index--) {
 		if ((filter->enable_bitmask & BIT(index)) &&
 		    (((filter->addr_type_bitmask >> index) & 0x01) ==

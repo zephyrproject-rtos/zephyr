@@ -1,4 +1,4 @@
-# Shell badckends configuration options
+# Shell backends configuration options
 
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
@@ -21,6 +21,14 @@ config SHELL_BACKEND_SERIAL
 
 if SHELL_BACKEND_SERIAL
 
+config SHELL_BACKEND_SERIAL_INIT_PRIORITY
+	int "Initialization priority"
+	default 0
+	range 0 99
+	help
+	  Initialization priority for UART backend. This must be bigger than
+	  the initialization priority of the used serial device.
+
 config SHELL_PROMPT_UART
 	string "Displayed prompt name"
 	default "uart:~$ "
@@ -37,6 +45,9 @@ config UART_SHELL_ON_DEV_NAME
 	help
 	  This option specifies the name of UART device to be used for the
 	  SHELL UART backend.
+	  In case when DTS is enabled (HAS_DTS), the default value is
+	  set from DTS chosen node 'zephyr,shell-uart' but can be overridden
+	  here.
 
 # Internal config to enable UART interrupts if supported.
 config SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN

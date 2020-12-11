@@ -10,7 +10,7 @@
 
 void main(void)
 {
-	struct device *temp_dev;
+	const struct device *temp_dev;
 
 	printf("Thermometer Example! %s\n", CONFIG_ARCH);
 

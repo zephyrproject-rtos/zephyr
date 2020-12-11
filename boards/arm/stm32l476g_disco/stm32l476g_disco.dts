@@ -10,10 +10,11 @@
 
 /dts-v1/;
 #include <st/l4/stm32l476Xg.dtsi>
+#include <st/l4/stm32l476v(c-e-g)tx-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics STM32L476G-DISCO board";
-	compatible = "st,stm32l476g-disco", "st,stm32l476";
+	compatible = "st,stm32l476g-disco";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -38,23 +39,23 @@
 		compatible = "gpio-keys";
 		joy_center: joystick_center {
 			label = "joystick center";
-			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioa 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		};
 		joy_down: joystick_down {
 			label = "joystick down";
-			gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioa 5 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		};
 		joy_up: joystick_up {
 			label = "joystick up";
-			gpios = <&gpioa 3 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioa 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		};
 		joy_left: joystick_left {
 			label = "joystick left";
-			gpios = <&gpioa 1 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioa 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		};
 		joy_right: joystick_right {
 			label = "joystick right";
-			gpios = <&gpioa 2 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioa 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		};
 	};
 
@@ -65,6 +66,7 @@
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6>;
 	current-speed = <115200>;
 	status = "okay";
 };

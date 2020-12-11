@@ -1,0 +1,3 @@
+tests:
+  kernel.k_heap_api:
+    tags: k_heap_api kernel

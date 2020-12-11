@@ -18,7 +18,7 @@
 
 LOG_MODULE_REGISTER(MS5837, CONFIG_SENSOR_LOG_LEVEL);
 
-static int ms5837_get_measurement(struct device *i2c_master,
+static int ms5837_get_measurement(const struct device *i2c_master,
 				  const uint8_t i2c_address, uint32_t *val,
 				  uint8_t cmd, const uint8_t delay)
 {
@@ -97,10 +97,11 @@ static void ms5837_compensate(struct ms5837_data *data,
 	    (((SENS * adc_pressure) / (1ll << 21)) - OFF) / (1ll << 13);
 }
 
-static int ms5837_sample_fetch(struct device *dev, enum sensor_channel channel)
+static int ms5837_sample_fetch(const struct device *dev,
+			       enum sensor_channel channel)
 {
-	struct ms5837_data *data = dev->driver_data;
-	const struct ms5837_config *cfg = dev->config_info;
+	struct ms5837_data *data = dev->data;
+	const struct ms5837_config *cfg = dev->config;
 	int err;
 	uint32_t adc_pressure;
 	uint32_t adc_temperature;
@@ -128,10 +129,11 @@ static int ms5837_sample_fetch(struct device *dev, enum sensor_channel channel)
 	return 0;
 }
 
-static int ms5837_channel_get(struct device *dev, enum sensor_channel chan,
+static int ms5837_channel_get(const struct device *dev,
+			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	struct ms5837_data *data = dev->driver_data;
+	struct ms5837_data *data = dev->data;
 
 	switch (chan) {
 	case SENSOR_CHAN_AMBIENT_TEMP:
@@ -149,11 +151,11 @@ static int ms5837_channel_get(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int ms5837_attr_set(struct device *dev, enum sensor_channel chan,
+static int ms5837_attr_set(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
 {
-	struct ms5837_data *data = dev->driver_data;
+	struct ms5837_data *data = dev->data;
 	uint8_t p_conv_cmd;
 	uint8_t t_conv_cmd;
 	uint8_t conv_delay;
@@ -228,8 +230,9 @@ static const struct sensor_driver_api ms5837_api_funcs = {
 	.channel_get = ms5837_channel_get,
 };
 
-static int ms5837_read_prom(struct device *i2c_master, const uint8_t i2c_address,
-		const uint8_t cmd, uint16_t *val)
+static int ms5837_read_prom(const struct device *i2c_master,
+			    const uint8_t i2c_address,
+			    const uint8_t cmd, uint16_t *val)
 {
 	int err;
 
@@ -243,10 +246,10 @@ static int ms5837_read_prom(struct device *i2c_master, const uint8_t i2c_address
 	return 0;
 }
 
-static int ms5837_init(struct device *dev)
+static int ms5837_init(const struct device *dev)
 {
-	struct ms5837_data *data = dev->driver_data;
-	const struct ms5837_config *cfg = dev->config_info;
+	struct ms5837_data *data = dev->data;
+	const struct ms5837_config *cfg = dev->config;
 	int err;
 	uint8_t cmd;
 

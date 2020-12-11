@@ -9,6 +9,14 @@ from __future__ import unicode_literals
 import re
 from docutils import nodes
 from local_util import run_cmd_get_output
+try:
+    import west.manifest
+    try:
+        west_manifest = west.manifest.Manifest.from_file()
+    except west.util.WestNotFound:
+        west_manifest = None
+except ImportError:
+    west_manifest = None
 
 
 def get_github_rev():
@@ -22,8 +30,17 @@ def get_github_rev():
 def setup(app):
     rev = get_github_rev()
 
-    # links to files or folders on the GitHub
-    baseurl = 'https://github.com/zephyrproject-rtos/zephyr'
+    # try to get url from West; this adds compatibility with repos
+    # located elsewhere
+    if west_manifest is not None:
+        baseurl = west_manifest.get_projects(['zephyr'])[0].url
+    else:
+        baseurl = None
+
+    # or fallback to default
+    if baseurl is None or baseurl == '':
+        baseurl = 'https://github.com/zephyrproject-rtos/zephyr'
+
     app.add_role('zephyr_file', autolink('{}/blob/{}/%s'.format(baseurl, rev)))
     app.add_role('zephyr_raw', autolink('{}/raw/{}/%s'.format(baseurl, rev)))
 

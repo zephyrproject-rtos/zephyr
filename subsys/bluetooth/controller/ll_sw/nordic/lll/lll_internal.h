@@ -12,6 +12,7 @@ int lll_done(void *param);
 bool lll_is_done(void *param);
 int lll_is_abort_cb(void *next, int prio, void *curr,
 			 lll_prepare_cb_t *resume_cb, int *resume_prio);
+void lll_abort_cb(struct lll_prepare_param *prepare_param, void *param);
 
 static inline int lll_is_stop(void *lll)
 {

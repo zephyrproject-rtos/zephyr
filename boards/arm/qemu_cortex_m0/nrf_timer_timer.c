@@ -97,13 +97,13 @@ static void prevent_false_prev_evt(void)
  */
 static void handle_next_tick_case(uint32_t t)
 {
-	set_comparator(t + 2);
+	set_comparator(t + 2U);
 	while (t != counter()) {
 		/* already expired, tick elapsed but event might not be
 		 * generated. Trigger interrupt.
 		 */
 		t = counter();
-		set_comparator(t + 2);
+		set_comparator(t + 2U);
 	}
 }
 
@@ -117,7 +117,7 @@ static void set_absolute_ticks(uint32_t abs_val)
 	uint32_t t = counter();
 
 	diff = counter_sub(abs_val, t);
-	if (diff == 1) {
+	if (diff == 1U) {
 		handle_next_tick_case(t);
 		return;
 	}
@@ -160,7 +160,7 @@ void timer0_nrf_isr(void *arg)
 	z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : (dticks > 0));
 }
 
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 
@@ -195,7 +195,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 	}
 
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
-	ticks = MAX(MIN(ticks - 1, (int32_t)MAX_TICKS), 0);
+	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
 
 	uint32_t unannounced = counter_sub(counter(), last_count);
 

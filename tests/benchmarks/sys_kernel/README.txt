@@ -3,7 +3,7 @@ Title: kernel Object Performance
 Description:
 
 The SysKernel test measures the performance of semaphore,
-lifo, fifo and stack objects.
+lifo, fifo, stack and memslab objects.
 
 --------------------------------------------------------------------------------
 
@@ -172,6 +172,21 @@ TEST RESULT: SUCCESSFUL
 DETAILS: Average time for 1 iteration: NNNN nSec
 END TEST CASE
 
+TEST CASE: Memslab #1
+TEST COVERAGE:
+        k_mem_slab_alloc
+Starting test. Please wait...
+TEST RESULT: SUCCESSFUL
+DETAILS: Average time for 1 iteration: NNNN nSec
+END TEST CASE
+
+TEST CASE: Memslab #2
+TEST COVERAGE:
+        k_mem_slab_free
+Starting test. Please wait...
+TEST RESULT: SUCCESSFUL
+DETAILS: Average time for 1 iteration: NNNN nSec
+END TEST CASE
+
 PROJECT EXECUTION SUCCESSFUL
 QEMU: Terminated
-

@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(main);
 
 static struct k_delayed_work delayed_report_send;
 
-static struct device *hdev;
+static const struct device *hdev;
 
 #define REPORT_TIMEOUT K_SECONDS(2)
 
@@ -72,8 +72,10 @@ static void send_report(struct k_work *work)
 	report_1[1]++;
 }
 
-static void in_ready_cb(void)
+static void in_ready_cb(const struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	k_delayed_work_submit(&delayed_report_send, REPORT_TIMEOUT);
 }
 
@@ -81,7 +83,7 @@ static void status_cb(enum usb_dc_status_code status, const uint8_t *param)
 {
 	switch (status) {
 	case USB_DC_CONFIGURED:
-		in_ready_cb();
+		in_ready_cb(hdev);
 		break;
 	case USB_DC_SOF:
 		break;
@@ -91,17 +93,17 @@ static void status_cb(enum usb_dc_status_code status, const uint8_t *param)
 	}
 }
 
-static void idle_cb(uint16_t report_id)
+static void idle_cb(const struct device *dev, uint16_t report_id)
 {
 	static uint8_t report_1[2] = { 0x00, 0xEB };
 	int ret, wrote;
 
-	ret = hid_int_ep_write(hdev, report_1, sizeof(report_1), &wrote);
+	ret = hid_int_ep_write(dev, report_1, sizeof(report_1), &wrote);
 
 	LOG_DBG("Idle callback: wrote %d bytes with ret %d", wrote, ret);
 }
 
-static void protocol_cb(uint8_t protocol)
+static void protocol_cb(const struct device *dev, uint8_t protocol)
 {
 	LOG_DBG("New protocol: %s", protocol == HID_PROTOCOL_BOOT ?
 		"boot" : "report");
@@ -128,7 +130,7 @@ void main(void)
 	k_delayed_work_init(&delayed_report_send, send_report);
 }
 
-static int composite_pre_init(struct device *dev)
+static int composite_pre_init(const struct device *dev)
 {
 	hdev = device_get_binding("HID_0");
 	if (hdev == NULL) {

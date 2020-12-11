@@ -12,12 +12,10 @@ properties:
       required: true
 
     io-channels:
-      type: phandle-array
       required: true
       description: ADC conversion channels
 
     io-channel-names:
-      type: string-array
       required: true
       description: conversion channel names
 

@@ -7,7 +7,7 @@
 #include <init.h>
 #include "device_imx.h"
 
-static int colibri_imx7d_m4_pinmux_init(struct device *dev)
+static int colibri_imx7d_m4_pinmux_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

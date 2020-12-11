@@ -36,15 +36,15 @@ struct temp_kinetis_config {
 };
 
 struct temp_kinetis_data {
-	struct device *adc;
+	const struct device *adc;
 	uint16_t buffer[TEMP_KINETIS_ADC_SAMPLES];
 };
 
-static int temp_kinetis_sample_fetch(struct device *dev,
+static int temp_kinetis_sample_fetch(const struct device *dev,
 				     enum sensor_channel chan)
 {
-	const struct temp_kinetis_config *config = dev->config_info;
-	struct temp_kinetis_data *data = dev->driver_data;
+	const struct temp_kinetis_config *config = dev->config;
+	struct temp_kinetis_data *data = dev->data;
 #ifdef CONFIG_TEMP_KINETIS_FILTER
 	uint16_t previous[TEMP_KINETIS_ADC_SAMPLES];
 	int i;
@@ -84,12 +84,12 @@ static int temp_kinetis_sample_fetch(struct device *dev,
 	return 0;
 }
 
-static int temp_kinetis_channel_get(struct device *dev,
+static int temp_kinetis_channel_get(const struct device *dev,
 				    enum sensor_channel chan,
 				    struct sensor_value *val)
 {
-	const struct temp_kinetis_config *config = dev->config_info;
-	struct temp_kinetis_data *data = dev->driver_data;
+	const struct temp_kinetis_config *config = dev->config;
+	struct temp_kinetis_data *data = dev->data;
 	uint16_t adcr_vdd = BIT_MASK(config->adc_seq.resolution);
 	uint16_t adcr_temp25;
 	int32_t temp_cc;
@@ -137,10 +137,10 @@ static const struct sensor_driver_api temp_kinetis_driver_api = {
 	.channel_get = temp_kinetis_channel_get,
 };
 
-static int temp_kinetis_init(struct device *dev)
+static int temp_kinetis_init(const struct device *dev)
 {
-	const struct temp_kinetis_config *config = dev->config_info;
-	struct temp_kinetis_data *data = dev->driver_data;
+	const struct temp_kinetis_config *config = dev->config;
+	struct temp_kinetis_data *data = dev->data;
 	int err;
 	int i;
 	const struct adc_channel_cfg ch_cfg[] = {

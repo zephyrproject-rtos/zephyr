@@ -19,6 +19,7 @@ supported:
   - counter
   - watchdog
   - adc
+  - dac
 testing:
   ignore_tags:
     - net

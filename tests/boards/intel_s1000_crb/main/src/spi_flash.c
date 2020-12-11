@@ -51,7 +51,7 @@ int flash_region_is_empty(uint32_t off, void *dst, uint32_t len)
 
 void test_flash(void)
 {
-	struct device *flash_dev;
+	const struct device *flash_dev;
 	uint8_t buf[TEST_DATA_LEN];
 	uint32_t magic[4];
 	int i;

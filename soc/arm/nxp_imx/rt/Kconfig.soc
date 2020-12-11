@@ -59,6 +59,7 @@ config SOC_MIMXRT1021
 	select HAS_MCUX_LPSPI
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_GPT
+	select HAS_MCUX_SEMC
 	select HAS_MCUX_TRNG
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
@@ -69,6 +70,7 @@ config SOC_MIMXRT1021
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
 	select HAS_MCUX_EDMA
+	select HAS_MCUX_FLEXCAN
 
 config SOC_MIMXRT1051
 	bool "SOC_MIMXRT1051"
@@ -81,6 +83,7 @@ config SOC_MIMXRT1051
 	select HAS_MCUX_LPSPI
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_GPT
+	select HAS_MCUX_SEMC
 	select HAS_MCUX_TRNG
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
@@ -92,6 +95,7 @@ config SOC_MIMXRT1051
 	select HAS_MCUX_USDHC2
 	select HAS_MCUX_CSI
 	select HAS_MCUX_EDMA
+	select HAS_MCUX_FLEXCAN
 
 config SOC_MIMXRT1052
 	bool "SOC_MIMXRT1052"
@@ -105,6 +109,7 @@ config SOC_MIMXRT1052
 	select HAS_MCUX_LPSPI
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_GPT
+	select HAS_MCUX_SEMC
 	select HAS_MCUX_TRNG
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
@@ -118,6 +123,8 @@ config SOC_MIMXRT1052
 	select HAS_MCUX_USDHC2
 	select HAS_MCUX_CSI
 	select HAS_MCUX_EDMA
+	select HAS_MCUX_FLEXCAN
+	select HAS_MCUX_PWM
 
 config SOC_MIMXRT1061
 	bool "SOC_MIMXRT1061"
@@ -129,6 +136,7 @@ config SOC_MIMXRT1061
 	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_GPT
+	select HAS_MCUX_SEMC
 	select HAS_MCUX_TRNG
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
@@ -140,6 +148,7 @@ config SOC_MIMXRT1061
 	select HAS_MCUX_USDHC2
 	select HAS_MCUX_CSI
 	select HAS_MCUX_EDMA
+	select HAS_MCUX_FLEXCAN
 
 config SOC_MIMXRT1062
 	bool "SOC_MIMXRT1062"
@@ -153,6 +162,7 @@ config SOC_MIMXRT1062
 	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_GPT
+	select HAS_MCUX_SEMC
 	select HAS_MCUX_TRNG
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
@@ -166,6 +176,7 @@ config SOC_MIMXRT1062
 	select HAS_MCUX_USDHC2
 	select HAS_MCUX_CSI
 	select HAS_MCUX_EDMA
+	select HAS_MCUX_FLEXCAN
 
 config SOC_MIMXRT1064
 	bool "SOC_MIMXRT1064"
@@ -179,6 +190,7 @@ config SOC_MIMXRT1064
 	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_GPT
+	select HAS_MCUX_SEMC
 	select HAS_MCUX_TRNG
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
@@ -192,6 +204,7 @@ config SOC_MIMXRT1064
 	select HAS_MCUX_USDHC2
 	select HAS_MCUX_CSI
 	select HAS_MCUX_EDMA
+	select HAS_MCUX_FLEXCAN
 
 endchoice
 
@@ -373,6 +386,7 @@ config IMAGE_VECTOR_TABLE_OFFSET
 
 config DEVICE_CONFIGURATION_DATA
 	bool "Enable device configuration data"
+	default y if HAS_MCUX_SEMC
 	help
 	  Device configuration data (DCD) provides a sequence of commands to
 	  the boot ROM to initialize components such as an SDRAM.
@@ -396,22 +410,6 @@ config CODE_FLEXSPI
 config CODE_FLEXSPI2
 	bool "Link code into internal FlexSPI-controlled memory"
 	select NXP_IMX_RT_BOOT_HEADER
-
-endchoice
-
-choice DATA_LOCATION
-	prompt "Data location selection"
-	default DATA_DTCM
-
-config DATA_DTCM
-	bool "Link data into internal data tightly coupled memory (DTCM)"
-
-config DATA_SEMC
-	bool "Link data into external SEMC-controlled memory"
-	select DEVICE_CONFIGURATION_DATA if NXP_IMX_RT_BOOT_HEADER
-
-config DATA_OCRAM
-	bool "Link data into On-Chip RAM memory"
 
 endchoice
 

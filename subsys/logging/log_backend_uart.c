@@ -8,17 +8,19 @@
 #include <logging/log_core.h>
 #include <logging/log_msg.h>
 #include <logging/log_output.h>
-#include "log_backend_std.h"
+#include <logging/log_backend_std.h>
 #include <device.h>
 #include <drivers/uart.h>
-#include <assert.h>
+#include <sys/__assert.h>
+
+static const struct device *uart_dev;
 
 static int char_out(uint8_t *data, size_t length, void *ctx)
 {
-	struct device *dev = (struct device *)ctx;
+	ARG_UNUSED(ctx);
 
 	for (size_t i = 0; i < length; i++) {
-		uart_poll_out(dev, data[i]);
+		uart_poll_out(uart_dev, data[i]);
 	}
 
 	return length;
@@ -39,12 +41,8 @@ static void put(const struct log_backend *const backend,
 
 static void log_backend_uart_init(void)
 {
-	struct device *dev;
-
-	dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
-	assert(dev);
-
-	log_output_ctx_set(&log_output_uart, dev);
+	uart_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
+	__ASSERT_NO_MSG((void *)uart_dev);
 }
 
 static void panic(struct log_backend const *const backend)

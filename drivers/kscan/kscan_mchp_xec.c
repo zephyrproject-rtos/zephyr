@@ -62,6 +62,8 @@ static KSCAN_Type *base = (KSCAN_Type *)
 
 static struct kscan_xec_data kbd_data;
 
+DEVICE_DECLARE(kscan_xec);
+
 static void drive_keyboard_column(int data)
 {
 	if (data == KEYBOARD_COLUMN_DRIVE_ALL) {
@@ -143,7 +145,7 @@ static bool read_keyboard_matrix(uint8_t *new_state)
 	return key_event != 0U ? true : false;
 }
 
-static void scan_matrix_xec_isr(void *arg)
+static void scan_matrix_xec_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -153,7 +155,7 @@ static void scan_matrix_xec_isr(void *arg)
 	LOG_DBG(" ");
 }
 
-static bool check_key_events(void *dev)
+static bool check_key_events(const struct device *dev)
 {
 	uint8_t matrix_new_state[MAX_MATRIX_KEY_COLS] = {0U};
 	bool key_pressed = false;
@@ -267,12 +269,16 @@ static bool poll_expired(uint32_t start_cycles, int64_t *timeout)
 
 }
 
-void polling_task(void *dev, void *dummy2, void *dummy3)
+void polling_task(void *dummy1, void *dummy2, void *dummy3)
 {
 	uint32_t current_cycles;
 	uint32_t cycles_diff;
 	uint32_t wait_period;
 	int64_t local_poll_timeout = kbd_data.poll_timeout;
+
+	ARG_UNUSED(dummy1);
+	ARG_UNUSED(dummy2);
+	ARG_UNUSED(dummy3);
 
 	while (true) {
 		base->KSI_STS = MCHP_KSCAN_KSO_SEL_REG_MASK;
@@ -289,7 +295,7 @@ void polling_task(void *dev, void *dummy2, void *dummy3)
 		while (atomic_get(&kbd_data.enable_scan) == 1U) {
 			uint32_t start_period_cycles = k_cycle_get_32();
 
-			if (check_key_events(dev)) {
+			if (check_key_events(DEVICE_GET(kscan_xec))) {
 				local_poll_timeout = kbd_data.poll_timeout;
 				start_poll_cycles = k_cycle_get_32();
 			} else if (!poll_expired(start_poll_cycles,
@@ -326,7 +332,7 @@ void polling_task(void *dev, void *dummy2, void *dummy3)
 	}
 }
 
-static int kscan_xec_configure(struct device *dev,
+static int kscan_xec_configure(const struct device *dev,
 				 kscan_callback_t callback)
 {
 	ARG_UNUSED(dev);
@@ -342,7 +348,7 @@ static int kscan_xec_configure(struct device *dev,
 	return 0;
 }
 
-static int kscan_xec_inhibit_interface(struct device *dev)
+static int kscan_xec_inhibit_interface(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -351,7 +357,7 @@ static int kscan_xec_inhibit_interface(struct device *dev)
 	return 0;
 }
 
-static int kscan_xec_enable_interface(struct device *dev)
+static int kscan_xec_enable_interface(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -366,7 +372,7 @@ static const struct kscan_driver_api kscan_xec_driver_api = {
 	.enable_callback = kscan_xec_enable_interface,
 };
 
-static int kscan_xec_init(struct device *dev);
+static int kscan_xec_init(const struct device *dev);
 
 DEVICE_AND_API_INIT(kscan_xec, DT_INST_LABEL(0),
 		    &kscan_xec_init,
@@ -375,7 +381,7 @@ DEVICE_AND_API_INIT(kscan_xec, DT_INST_LABEL(0),
 		    &kscan_xec_driver_api);
 
 
-static int kscan_xec_init(struct device *dev)
+static int kscan_xec_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -399,7 +405,7 @@ static int kscan_xec_init(struct device *dev)
 
 	k_thread_create(&kbd_data.thread, kbd_data.thread_stack,
 			TASK_STACK_SIZE,
-			polling_task, dev, NULL, NULL,
+			polling_task, NULL, NULL, NULL,
 			K_PRIO_COOP(4), 0, K_NO_WAIT);
 
 	/* Interrupts are enabled in the thread function */

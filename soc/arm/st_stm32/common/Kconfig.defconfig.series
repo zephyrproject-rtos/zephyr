@@ -77,7 +77,12 @@ config DMA_STM32
 
 config HEAP_MEM_POOL_SIZE
 	default 1024
+	depends on DMAMUX_STM32
 
 endif # DMA
+
+config MEMC_STM32
+	default y
+	depends on MEMC
 
 endif # SOC_FAMILY_STM32

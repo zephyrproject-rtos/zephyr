@@ -18,8 +18,7 @@ properties:
 
     odr:
       type: string
-      required: false
-      default: "800"
+      required: true
       description: Output data rate in Hz
       enum:
         - "1.6"
@@ -34,8 +33,7 @@ properties:
 
     op-mode:
       type: string
-      required: false
-      default: "high-perf"
+      required: true
       description: Operating mode of sensor
       enum:
         - "low-power"

@@ -6,7 +6,7 @@
 
 #include <init.h>
 
-static int sam4e_xpro_init(struct device *dev)
+static int sam4e_xpro_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

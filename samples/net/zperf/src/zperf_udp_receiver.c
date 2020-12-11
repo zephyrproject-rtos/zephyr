@@ -125,7 +125,7 @@ static void udp_received(struct net_context *context,
 	struct zperf_udp_datagram *hdr;
 	struct session *session;
 	int32_t transit_time;
-	uint32_t time;
+	int64_t time;
 	int32_t id;
 
 	if (!pkt) {
@@ -139,7 +139,7 @@ static void udp_received(struct net_context *context,
 		goto out;
 	}
 
-	time = k_cycle_get_32();
+	time = k_uptime_ticks();
 
 	session = get_session(pkt, ip_hdr, proto_hdr, SESSION_UDP);
 	if (!session) {
@@ -180,17 +180,18 @@ static void udp_received(struct net_context *context,
 
 			shell_fprintf(shell, SHELL_NORMAL, "End of session!\n");
 
-			duration = HW_CYCLES_TO_USEC(
-				time_delta(session->start_time, time));
+			duration = k_ticks_to_us_ceil32(time -
+							session->start_time);
+
 			/* Update state machine */
 			session->state = STATE_COMPLETED;
 
 			/* Compute baud rate */
 			if (duration != 0U) {
 				rate_in_kbps = (uint32_t)
-					(((uint64_t)session->length * (uint64_t)8 *
+					((session->length * 8ULL *
 					  (uint64_t)USEC_PER_SEC) /
-					 ((uint64_t)duration * 1024U));
+					 ((uint64_t)duration * 1024ULL));
 			} else {
 				rate_in_kbps = 0U;
 			}
@@ -246,10 +247,10 @@ static void udp_received(struct net_context *context,
 			session->length += net_pkt_remaining_data(pkt);
 
 			/* Compute jitter */
-			transit_time = time_delta(HW_CYCLES_TO_USEC(time),
-						  ntohl(hdr->tv_sec) *
-						  USEC_PER_SEC +
-						  ntohl(hdr->tv_usec));
+			transit_time = time_delta(
+				k_ticks_to_us_ceil32(time),
+				ntohl(hdr->tv_sec) * USEC_PER_SEC +
+				ntohl(hdr->tv_usec));
 			if (session->last_transit_time != 0) {
 				int32_t delta_transit = transit_time -
 					session->last_transit_time;
@@ -318,9 +319,10 @@ void zperf_udp_receiver_init(const struct shell *shell, int port)
 			if (ret < 0) {
 				shell_fprintf(shell, SHELL_WARNING,
 					      "Unable to set IPv4\n");
-				return;
+				goto use_existing_ipv4;
 			}
 		} else {
+		use_existing_ipv4:
 			/* Use existing IP */
 			in4_addr = zperf_get_default_if_in4_addr();
 			if (!in4_addr) {
@@ -368,9 +370,10 @@ void zperf_udp_receiver_init(const struct shell *shell, int port)
 			if (ret < 0) {
 				shell_fprintf(shell, SHELL_WARNING,
 					      "Unable to set IPv6\n");
-				return;
+				goto use_existing_ipv6;
 			}
 		} else {
+		use_existing_ipv6:
 			/* Use existing IP */
 			in6_addr = zperf_get_default_if_in6_addr();
 			if (!in6_addr) {

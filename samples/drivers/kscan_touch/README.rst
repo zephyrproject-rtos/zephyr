@@ -1,4 +1,4 @@
-.. kscan-sample:
+.. _kscan-touch-sample:
 
 KSCAN touch panel example
 ####################################

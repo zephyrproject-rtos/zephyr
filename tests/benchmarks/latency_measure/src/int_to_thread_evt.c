@@ -19,17 +19,13 @@
 #include <irq_offload.h>
 
 #include "utils.h"
-#include "timing_info.h"
 
-#include <arch/cpu.h>
-
-static uint32_t timestamp_start;
-static uint32_t timestamp_end;
+static timing_t timestamp_start;
+static timing_t timestamp_end;
 static struct k_work work;
 
 K_SEM_DEFINE(INTSEMA, 0, 1);
 K_SEM_DEFINE(WORKSEMA, 0, 1);
-
 
 /**
  *
@@ -39,23 +35,19 @@ K_SEM_DEFINE(WORKSEMA, 0, 1);
  *
  * @return N/A
  */
-static void latency_test_isr(void *unused)
+static void latency_test_isr(const void *unused)
 {
 	ARG_UNUSED(unused);
 
 	k_work_submit(&work);
-
-	TIMING_INFO_PRE_READ();
-	timestamp_start = TIMING_INFO_OS_GET_TIME();
+	timestamp_start = timing_counter_get();
 }
 
 static void worker(struct k_work *item)
 {
 	(void)item;
 
-	TIMING_INFO_PRE_READ();
-	timestamp_end = TIMING_INFO_OS_GET_TIME();
-
+	timestamp_end = timing_counter_get();
 	k_sem_give(&WORKSEMA);
 }
 
@@ -76,10 +68,8 @@ void int_thread(void)
 	k_thread_suspend(k_current_get());
 }
 
-
-K_THREAD_DEFINE(int_thread_id, 512,
-		(k_thread_entry_t) int_thread, NULL, NULL, NULL,
-		11, 0, 0);
+K_THREAD_DEFINE(int_thread_id, 512, (k_thread_entry_t)int_thread, NULL, NULL,
+		NULL, 11, 0, 0);
 
 /**
  *
@@ -91,19 +81,17 @@ int int_to_thread_evt(void)
 {
 	uint32_t diff;
 
-	PRINT_FORMAT(" 2 - Measure time from ISR to executing a different thread"
-		     " (rescheduled)");
 	k_work_init(&work, worker);
 
-	benchmark_timer_start();
+	timing_start();
 	TICK_SYNCH();
 	k_sem_give(&INTSEMA);
 	k_sem_take(&WORKSEMA, K_FOREVER);
-	benchmark_timer_stop();
+	timing_stop();
 
-	diff = TIMING_INFO_GET_DELTA(timestamp_start, timestamp_end);
+	diff = timing_cycles_get(&timestamp_start, &timestamp_end);
 
-	PRINT_FORMAT(" switch time is %u tcs = %u nsec",
-		     diff, CYCLES_TO_NS(diff));
+	PRINT_STATS("Time from ISR to executing a different thread", diff)
+
 	return 0;
 }

@@ -7,9 +7,9 @@
 #include <init.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <assert.h>
 #include <kernel.h>
 #include <mipi_syst.h>
+#include <sys/__assert.h>
 #include <logging/log.h>
 #include <logging/log_ctrl.h>
 #include <logging/log_output.h>
@@ -18,8 +18,15 @@ static struct mipi_syst_header log_syst_header;
 static struct mipi_syst_handle log_syst_handle;
 
 #if defined(MIPI_SYST_PCFG_ENABLE_PLATFORM_STATE_DATA)
+#if defined(CONFIG_MIPI_SYST_STP)
+static mipi_syst_u16 master = 128;
+static mipi_syst_u16 channel = 1;
+
+static struct stp_writer_data writer_state;
+#elif !defined(CONFIG_MIPI_SYST_RAW_DATA)
 static const char pattern[] = "SYS-T RAW DATA: ";
 static const char valToHex[] = "0123456789ABCDEF";
+#endif
 
 static int out_func(int c, void *ctx)
 {
@@ -37,6 +44,201 @@ static int out_func(int c, void *ctx)
 	return 0;
 }
 
+#if defined(CONFIG_MIPI_SYST_STP)
+static void stp_write_putNibble(struct mipi_syst_handle *systh,
+				struct stp_writer_data *p, mipi_syst_u8 n)
+{
+	p->current |= (n << 4);
+	p->byteDone = !p->byteDone;
+
+	if (p->byteDone) {
+		out_func(p->current, systh->systh_platform.log_output);
+		p->current = 0;
+	} else {
+		p->current >>= 4;
+	}
+}
+
+static void stp_write_flush(struct mipi_syst_handle *systh,
+			    struct stp_writer_data *p)
+{
+	if (!p->byteDone) {
+		stp_write_putNibble(systh, p, 0);
+	}
+}
+
+static void stp_write_d4(struct mipi_syst_handle *systh,
+			 struct stp_writer_data *p, mipi_syst_u8 v)
+{
+	stp_write_putNibble(systh, p, v);
+}
+
+static void stp_write_payload8(struct mipi_syst_handle *systh,
+			       struct stp_writer_data *p, mipi_syst_u8 v)
+{
+	stp_write_d4(systh, p, v);
+	stp_write_d4(systh, p, v>>4);
+}
+
+static void stp_write_payload16(struct mipi_syst_handle *systh,
+				struct stp_writer_data *p, mipi_syst_u16 v)
+{
+	stp_write_payload8(systh, p, (mipi_syst_u8)v);
+	stp_write_payload8(systh, p, (mipi_syst_u8)(v>>8));
+}
+
+static void stp_write_payload32(struct mipi_syst_handle *systh,
+				struct stp_writer_data *p, mipi_syst_u32 v)
+{
+	stp_write_payload16(systh, p, (mipi_syst_u16)v);
+	stp_write_payload16(systh, p, (mipi_syst_u16)(v>>16));
+}
+
+static void stp_write_payload64(struct mipi_syst_handle *systh,
+				struct stp_writer_data *p, mipi_syst_u64 v)
+{
+	stp_write_payload32(systh, p, (mipi_syst_u32)v);
+	stp_write_payload32(systh, p, (mipi_syst_u32)(v>>32));
+}
+
+static mipi_syst_u64 deltaTime(struct stp_writer_data *p)
+{
+	mipi_syst_u64 delta;
+
+	delta = mipi_syst_get_epoch() - p->timestamp;
+	return delta * 60;
+}
+
+static void stp_write_d32mts(struct mipi_syst_handle *systh,
+			     struct stp_writer_data *p, mipi_syst_u32 v)
+{
+	stp_write_d4(systh, p, 0xA);
+	stp_write_payload32(systh, p, v);
+
+	stp_write_d4(systh, p, 0xE);
+	stp_write_payload64(systh, p, deltaTime(p));
+}
+
+static void stp_write_d64mts(struct mipi_syst_handle *systh,
+			     struct stp_writer_data *p, mipi_syst_u64 v)
+{
+	stp_write_d4(systh, p, 0xB);
+	stp_write_payload64(systh, p, v);
+
+	stp_write_d4(systh, p, 0xE);
+	stp_write_payload64(systh, p, deltaTime(p));
+}
+
+static void stp_write_d32ts(struct mipi_syst_handle *systh,
+			    struct stp_writer_data *p, mipi_syst_u32 v)
+{
+	stp_write_d4(systh, p, 0xF);
+	stp_write_d4(systh, p, 0x6);
+
+	stp_write_payload32(systh, p, v);
+
+	stp_write_d4(systh, p, 0xE);
+	stp_write_payload64(systh, p, deltaTime(p));
+}
+
+static void stp_write_d8(struct mipi_syst_handle *systh,
+			 struct stp_writer_data *p, mipi_syst_u8 v)
+{
+	stp_write_d4(systh, p, 0x4);
+	stp_write_payload8(systh, p, v);
+}
+
+static void stp_write_d16(struct mipi_syst_handle *systh,
+			  struct stp_writer_data *p, mipi_syst_u16 v)
+{
+	stp_write_d4(systh, p, 0x5);
+	stp_write_payload16(systh, p, v);
+}
+
+static void stp_write_d32(struct mipi_syst_handle *systh,
+			  struct stp_writer_data *p, mipi_syst_u32 v)
+{
+	stp_write_d4(systh, p, 0x6);
+	stp_write_payload32(systh, p, v);
+}
+
+#if defined(MIPI_SYST_PCFG_ENABLE_64BIT_IO)
+static void stp_write_d64(struct mipi_syst_handle *systh,
+			  struct stp_writer_data *p, mipi_syst_u64 v)
+{
+	stp_write_d4(systh, p, 0x7);
+	stp_write_payload64(systh, p, v);
+}
+#endif
+
+static void stp_write_flag(struct mipi_syst_handle *systh,
+			   struct stp_writer_data *p)
+{
+	stp_write_d4(systh, p, 0xF);
+	stp_write_d4(systh, p, 0xE);
+}
+
+static void stp_write_async(struct mipi_syst_handle *systh,
+			    struct stp_writer_data *p)
+{
+	for (int i = 0; i < 21; ++i) {
+		stp_write_d4(systh, p, 0xF);
+	}
+
+	stp_write_d4(systh, p, 0x0);
+}
+
+static void stp_write_version(struct mipi_syst_handle *systh,
+			      struct stp_writer_data *p)
+{
+	stp_write_d4(systh, p, 0xF);
+	stp_write_d4(systh, p, 0x0);
+	stp_write_d4(systh, p, 0x0);
+
+	stp_write_d4(systh, p, 0x3);
+
+	p->master = 0;
+	p->channel = 0;
+}
+
+static void stp_write_freq(struct mipi_syst_handle *systh,
+			   struct stp_writer_data *p)
+{
+	stp_write_d4(systh, p, 0xF);
+	stp_write_d4(systh, p, 0x0);
+	stp_write_d4(systh, p, 0x8);
+	stp_write_payload32(systh, p,  60 * 1000 * 1000);
+}
+
+static void stp_write_setMC(struct mipi_syst_handle *systh,
+			    struct stp_writer_data *p,
+			    mipi_syst_u16 master,
+			    mipi_syst_u16 channel)
+{
+	if (!(p->recordCount++ % 20)) {
+		stp_write_async(systh, p);
+		stp_write_version(systh, p);
+		stp_write_freq(systh, p);
+	}
+
+	if (p->master != master) {
+		stp_write_d4(systh, p, 0xF);
+		stp_write_d4(systh, p, 0x1);
+		stp_write_payload16(systh, p, master);
+
+		p->master = master;
+		p->channel = 0;
+	}
+
+	if (p->channel != channel) {
+		stp_write_d4(systh, p, 0xF);
+		stp_write_d4(systh, p, 0x3);
+		stp_write_payload16(systh, p, channel);
+
+		p->channel = channel;
+	}
+}
+#else
 static void write_raw(struct mipi_syst_handle *systh, const void *p, int n)
 {
 	int i;
@@ -48,44 +250,132 @@ static void write_raw(struct mipi_syst_handle *systh, const void *p, int n)
 	for (i = 0; i < n; ++i) {
 #endif
 		c = ((const uint8_t *)p)[i];
+#if defined(CONFIG_MIPI_SYST_RAW_DATA)
+		out_func(c, systh->systh_platform.log_output);
+#else
 		out_func(valToHex[c >> 0x4], systh->systh_platform.log_output);
 		out_func(valToHex[c & 0xF], systh->systh_platform.log_output);
+#endif
 	}
 }
+#endif
 
 static void write_d8(struct mipi_syst_handle *systh, uint8_t v)
 {
+#if defined(CONFIG_MIPI_SYST_STP)
+	struct stp_writer_data *writer =
+		systh->systh_header->systh_platform.stpWriter;
+
+	stp_write_d8(systh, writer, v);
+#else
 	write_raw(systh, &v, sizeof(v));
+#endif
 }
 
 static void write_d16(struct mipi_syst_handle *systh, uint16_t v)
 {
+#if defined(CONFIG_MIPI_SYST_STP)
+	struct stp_writer_data *writer =
+		systh->systh_header->systh_platform.stpWriter;
+
+	stp_write_d16(systh, writer, v);
+#else
 	write_raw(systh, &v, sizeof(v));
+#endif
 }
 
 static void write_d32(struct mipi_syst_handle *systh, uint32_t v)
 {
+#if defined(CONFIG_MIPI_SYST_STP)
+	struct stp_writer_data *writer =
+		systh->systh_header->systh_platform.stpWriter;
+
+	stp_write_d32(systh, writer, v);
+#else
 	write_raw(systh, &v, sizeof(v));
+#endif
 }
 
 #if defined(MIPI_SYST_PCFG_ENABLE_64BIT_IO)
 static void write_d64(struct mipi_syst_handle *systh, uint64_t v)
 {
+#if defined(CONFIG_MIPI_SYST_STP)
+	struct stp_writer_data *writer =
+		systh->systh_header->systh_platform.stpWriter;
+
+	stp_write_d64(systh, writer, v);
+#else
 	write_raw(systh, &v, sizeof(v));
+#endif
 }
 #endif
 
 static void write_d32ts(struct mipi_syst_handle *systh, uint32_t v)
 {
+#if defined(CONFIG_MIPI_SYST_STP)
+	struct stp_writer_data *writer =
+		systh->systh_header->systh_platform.stpWriter;
+
+	stp_write_setMC(systh, writer,
+			systh->systh_platform.master,
+			systh->systh_platform.channel);
+	stp_write_d32ts(systh, writer, v);
+#elif defined(CONFIG_MIPI_SYST_RAW_DATA)
+	ARG_UNUSED(systh);
+
+	write_raw(systh, &v, sizeof(v));
+#else
 	for (int i = 0; i < strlen(pattern); i++) {
 		out_func(pattern[i], systh->systh_platform.log_output);
 	}
 
 	write_raw(systh, &v, sizeof(v));
+#endif
+}
+
+static void write_d32mts(struct mipi_syst_handle *systh, mipi_syst_u32 v)
+{
+#if defined(CONFIG_MIPI_SYST_STP)
+	struct stp_writer_data *writer =
+		systh->systh_header->systh_platform.stpWriter;
+
+	stp_write_setMC(systh, writer,
+			systh->systh_platform.master,
+			systh->systh_platform.channel);
+	stp_write_d32mts(systh, writer, v);
+#else
+	ARG_UNUSED(systh);
+	ARG_UNUSED(v);
+#endif
+}
+
+static void write_d64mts(struct mipi_syst_handle *systh, mipi_syst_u64 v)
+{
+#if defined(CONFIG_MIPI_SYST_STP)
+	struct stp_writer_data *writer =
+		systh->systh_header->systh_platform.stpWriter;
+
+	stp_write_setMC(systh, writer,
+			systh->systh_platform.master,
+			systh->systh_platform.channel);
+	stp_write_d64mts(systh, writer, v);
+#else
+	ARG_UNUSED(systh);
+	ARG_UNUSED(v);
+#endif
 }
 
 static void write_flag(struct mipi_syst_handle *systh)
 {
+#if defined(CONFIG_MIPI_SYST_STP)
+	struct stp_writer_data *writer =
+		systh->systh_header->systh_platform.stpWriter;
+
+	stp_write_flag(systh, writer);
+	stp_write_flush(systh, writer);
+#elif defined(CONFIG_MIPI_SYST_RAW_DATA)
+	ARG_UNUSED(systh);
+#else
 	uint32_t flag = systh->systh_platform.flag;
 
 	if ((flag & LOG_OUTPUT_FLAG_CRLF_NONE) != 0U) {
@@ -98,6 +388,7 @@ static void write_flag(struct mipi_syst_handle *systh)
 		out_func('\r', systh->systh_platform.log_output);
 		out_func('\n', systh->systh_platform.log_output);
 	}
+#endif
 }
 #endif
 
@@ -126,6 +417,16 @@ static void update_systh_platform_data(struct mipi_syst_handle *handle,
  */
 static void platform_handle_init(struct mipi_syst_handle *systh)
 {
+#if defined(CONFIG_MIPI_SYST_STP)
+	if (channel > 127) {
+		++master;
+		channel = 1;
+	}
+
+	systh->systh_platform.channel = channel++;
+	systh->systh_platform.master  = master;
+#endif
+
 #if defined(MIPI_SYST_PCFG_LENGTH_FIELD)
 	MIPI_SYST_ENABLE_HANDLE_LENGTH(systh, 1);
 #endif
@@ -151,6 +452,17 @@ static void platform_handle_release(struct mipi_syst_handle *systh)
 static void mipi_syst_platform_init(struct mipi_syst_header *systh,
 				    const void *platform_data)
 {
+#if defined(CONFIG_MIPI_SYST_STP)
+	writer_state.byteDone = 0;
+	writer_state.current = 0;
+	writer_state.master = 0;
+	writer_state.channel = 0;
+	writer_state.recordCount = 0;
+	writer_state.timestamp = mipi_syst_get_epoch();
+
+	systh->systh_platform.stpWriter = &writer_state;
+#endif
+
 #if defined(MIPI_SYST_PCFG_ENABLE_PLATFORM_HANDLE_DATA)
 	systh->systh_inith = platform_handle_init;
 	systh->systh_releaseh = platform_handle_release;
@@ -163,6 +475,8 @@ static void mipi_syst_platform_init(struct mipi_syst_header *systh,
 	systh->systh_platform.write_d64 = write_d64;
 #endif
 	systh->systh_platform.write_d32ts = write_d32ts;
+	systh->systh_platform.write_d32mts = write_d32mts;
+	systh->systh_platform.write_d64mts = write_d64mts;
 	systh->systh_platform.write_flag = write_flag;
 #endif
 }
@@ -370,7 +684,7 @@ void log_output_hexdump_syst_process(const struct log_output *log_output,
 	MIPI_SYST_WRITE(&log_syst_handle, severity, 0x1A, data, length);
 }
 
-static int syst_init(struct device *arg)
+static int syst_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

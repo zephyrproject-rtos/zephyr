@@ -406,7 +406,7 @@ void test_arm_thread_swap(void)
 	/* Clear the thread's floating-point callee-saved registers' container.
 	 * The container will, later, be populated by the swap mechanism.
 	 */
-	memcpy(&_current->arch.preempt_float, 0,
+	memset(&_current->arch.preempt_float, 0,
 		sizeof(struct _preempt_float));
 
 	/* Randomize the FP callee-saved registers at test initialization */

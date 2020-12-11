@@ -61,7 +61,7 @@ def read_intlist(intlist_path, syms):
         /** ISR to call */
         void *func;
         /** Parameter for non-direct IRQs */
-        void *param;
+        const void *param;
     };
     """
 
@@ -139,6 +139,7 @@ source_header = """
 #define ISR_WRAPPER NULL
 #endif
 
+typedef void (* ISR)(const void *);
 """
 
 def write_source_file(fp, vt, swt, intlist, syms):
@@ -175,7 +176,7 @@ def write_source_file(fp, vt, swt, intlist, syms):
             fp.write("\t/* Level 3 interrupts start here (offset: {}) */\n".
                      format(level3_offset))
 
-        fp.write("\t{{(void *){0:#x}, (void *){1}}},\n".format(param, func_as_string))
+        fp.write("\t{{(const void *){0:#x}, (ISR){1}}},\n".format(param, func_as_string))
     fp.write("};\n")
 
 def get_symbols(obj):

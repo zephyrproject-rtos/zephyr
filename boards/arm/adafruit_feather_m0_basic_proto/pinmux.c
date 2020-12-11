@@ -8,11 +8,11 @@
 #include <drivers/pinmux.h>
 #include <soc.h>
 
-static int board_pinmux_init(struct device *dev)
+static int board_pinmux_init(const struct device *dev)
 {
-	struct device *muxa = device_get_binding(DT_LABEL(DT_NODELABEL(pinmux_a)));
+	const struct device *muxa = device_get_binding(DT_LABEL(DT_NODELABEL(pinmux_a)));
 #if (ATMEL_SAM0_DT_SERCOM_CHECK(4, atmel_sam0_spi) && CONFIG_SPI_SAM0)
-	struct device *muxb = device_get_binding(DT_LABEL(DT_NODELABEL(pinmux_b)));
+	const struct device *muxb = device_get_binding(DT_LABEL(DT_NODELABEL(pinmux_b)));
 #endif
 	ARG_UNUSED(dev);
 
@@ -58,6 +58,27 @@ static int board_pinmux_init(struct device *dev)
 #warning Pin mapping may not be configured
 #endif
 #if (ATMEL_SAM0_DT_SERCOM_CHECK(5, atmel_sam0_spi) && CONFIG_SPI_SAM0)
+#warning Pin mapping may not be configured
+#endif
+
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(3, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
+	/* SERCOM3 on SDA=PA22/pad 0, SCL=PA23/pad 1 */
+	pinmux_pin_set(muxa, 22, PINMUX_FUNC_C);
+	pinmux_pin_set(muxa, 23, PINMUX_FUNC_C);
+#endif
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(0, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
+#warning Pin mapping may not be configured
+#endif
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(1, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
+#warning Pin mapping may not be configured
+#endif
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(2, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
+#warning Pin mapping may not be configured
+#endif
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(4, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
+#warning Pin mapping may not be configured
+#endif
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(5, atmel_sam0_i2c) && CONFIG_I2C_SAM0)
 #warning Pin mapping may not be configured
 #endif
 

@@ -1,4 +1,0 @@
-tests:
-  system.settings.fcb.base64:
-    platform_whitelist: nrf52840dk_nrf52840 nrf52dk_nrf52832 native_posix native_posix_64
-    tags: settings_fcb

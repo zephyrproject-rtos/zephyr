@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(dmic_sample);
 static struct k_mem_slab dmic_mem_slab;
 __attribute__((section(".dma_buffers")))
 static char audio_buffers[MIC_FRAME_BYTES][MIC_IN_BUF_COUNT];
-static struct device *dmic_device;
+static const struct device *dmic_device;
 
 static void dmic_init(void)
 {
@@ -99,7 +99,7 @@ static void dmic_receive(void)
 
 	while (frame_counter++ < FRAMES_PER_ITERATION) {
 		ret = dmic_read(dmic_device, 0, (void **)&mic_in_buf, &size,
-				K_FOREVER);
+				SYS_FOREVER_MS);
 		if (ret) {
 			LOG_ERR("dmic_read failed %d", ret);
 		} else {

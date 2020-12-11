@@ -1,7 +1,7 @@
 # Copyright (c) 2020 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: FT5336 capacitive touch panel
+description: FT5XX6/FT6XX6 capacitive touch panels
 
 compatible: "focaltech,ft5336"
 

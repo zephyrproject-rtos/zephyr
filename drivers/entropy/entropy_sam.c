@@ -18,7 +18,7 @@ struct trng_sam_dev_cfg {
 };
 
 #define DEV_CFG(dev) \
-	((const struct trng_sam_dev_cfg *const)(dev)->config_info)
+	((const struct trng_sam_dev_cfg *const)(dev)->config)
 
 static inline bool _ready(Trng * const trng)
 {
@@ -72,8 +72,9 @@ static int entropy_sam_wait_ready(Trng * const trng, uint32_t flags)
 	return 0;
 }
 
-static int entropy_sam_get_entropy_internal(struct device *dev, uint8_t *buffer,
-				   uint16_t length, uint32_t flags)
+static int entropy_sam_get_entropy_internal(const struct device *dev,
+					    uint8_t *buffer,
+					    uint16_t length, uint32_t flags)
 {
 	Trng *const trng = DEV_CFG(dev)->regs;
 
@@ -98,14 +99,15 @@ static int entropy_sam_get_entropy_internal(struct device *dev, uint8_t *buffer,
 	return 0;
 }
 
-static int entropy_sam_get_entropy(struct device *dev, uint8_t *buffer,
+static int entropy_sam_get_entropy(const struct device *dev, uint8_t *buffer,
 				   uint16_t length)
 {
 	return entropy_sam_get_entropy_internal(dev, buffer, length, 0);
 }
 
-static int entropy_sam_get_entropy_isr(struct device *dev, uint8_t *buffer,
-				   uint16_t length, uint32_t flags)
+static int entropy_sam_get_entropy_isr(const struct device *dev,
+				       uint8_t *buffer,
+				       uint16_t length, uint32_t flags)
 {
 	uint16_t cnt = length;
 
@@ -152,7 +154,7 @@ static int entropy_sam_get_entropy_isr(struct device *dev, uint8_t *buffer,
 	}
 }
 
-static int entropy_sam_init(struct device *dev)
+static int entropy_sam_init(const struct device *dev)
 {
 	Trng *const trng = DEV_CFG(dev)->regs;
 

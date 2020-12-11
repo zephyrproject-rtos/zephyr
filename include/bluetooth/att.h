@@ -17,6 +17,7 @@ extern "C" {
 #endif
 
 /* Error codes for Error response PDU */
+#define BT_ATT_ERR_SUCCESS			0x00
 #define BT_ATT_ERR_INVALID_HANDLE		0x01
 #define BT_ATT_ERR_READ_NOT_PERMITTED		0x02
 #define BT_ATT_ERR_WRITE_NOT_PERMITTED		0x03
@@ -42,6 +43,9 @@ extern "C" {
 #define BT_ATT_ERR_CCC_IMPROPER_CONF		0xfd
 #define BT_ATT_ERR_PROCEDURE_IN_PROGRESS	0xfe
 #define BT_ATT_ERR_OUT_OF_RANGE			0xff
+
+/* Version 5.2, Vol 3, Part F, 3.2.9 defines maximum attribute length to 512 */
+#define BT_ATT_MAX_ATTRIBUTE_LEN		512
 
 #ifdef __cplusplus
 }

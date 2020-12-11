@@ -42,11 +42,11 @@ static struct {
 } event;
 
 static struct {
-	struct device *clk;
+	const struct device *clk;
 } lll;
 
 /* Entropy device */
-static struct device *dev_entropy;
+static const struct device *dev_entropy;
 
 static int init_reset(void);
 static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
@@ -66,7 +66,7 @@ static void ticker_op_job_disable(uint32_t status, void *op_context);
 #endif
 #endif /* CONFIG_BT_CTLR_LOW_LAT */
 
-static void rtc0_rv32m1_isr(void *arg)
+static void rtc0_rv32m1_isr(const void *arg)
 {
 	DEBUG_TICKER_ISR(1);
 
@@ -87,7 +87,7 @@ static void rtc0_rv32m1_isr(void *arg)
 	DEBUG_TICKER_ISR(0);
 }
 
-static void swi_lll_rv32m1_isr(void *arg)
+static void swi_lll_rv32m1_isr(const void *arg)
 {
 	DEBUG_RADIO_ISR(1);
 
@@ -98,7 +98,7 @@ static void swi_lll_rv32m1_isr(void *arg)
 
 #if defined(CONFIG_BT_CTLR_LOW_LAT) || \
 	(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
-static void swi_ull_low_rv32m1_isr(void *arg)
+static void swi_ull_low_rv32m1_isr(const void *arg)
 {
 	DEBUG_TICKER_JOB(1);
 
@@ -110,7 +110,7 @@ static void swi_ull_low_rv32m1_isr(void *arg)
 
 int lll_init(void)
 {
-	struct device *clk_k32;
+	const struct device *clk_k32;
 	int err;
 
 	ARG_UNUSED(clk_k32);

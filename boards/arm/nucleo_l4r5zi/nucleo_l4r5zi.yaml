@@ -17,5 +17,6 @@ supported:
   - usb device
   - nvs
   - counter
+  - adc
 ram: 640
 flash: 2048

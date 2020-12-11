@@ -47,7 +47,7 @@ config CDC_ECM_BULK_EP_MPS
 	  CDC ECM class bulk endpoint size
 
 config USB_DEVICE_NETWORK_ECM_MAC
-	string
+	string "USB ECM Host OS MAC Address"
 	default "00005E005301"
 	help
 	  MAC Host OS Address string.

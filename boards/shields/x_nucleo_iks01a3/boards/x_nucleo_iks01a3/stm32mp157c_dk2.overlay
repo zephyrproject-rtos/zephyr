@@ -13,4 +13,12 @@
 	lis2dw12@19 {
 		/delete-property/ irq-gpios;	/* A3 */
 	};
+
+	lis2mdl@1e {
+		/delete-property/ irq-gpios;    /* A3 */
+	};
+
+	lsm6dso@6b {
+		/delete-property/ irq-gpios;    /* A3 */
+	};
 };

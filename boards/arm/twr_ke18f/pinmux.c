@@ -8,29 +8,29 @@
 #include <drivers/pinmux.h>
 #include <fsl_port.h>
 
-static int twr_ke18f_pinmux_init(struct device *dev)
+static int twr_ke18f_pinmux_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 #ifdef CONFIG_PINMUX_MCUX_PORTA
-	__unused struct device *porta =
+	__unused const struct device *porta =
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTA_NAME);
 #endif
 #ifdef CONFIG_PINMUX_MCUX_PORTB
-	__unused struct device *portb =
+	__unused const struct device *portb =
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTB_NAME);
 #endif
 #ifdef CONFIG_PINMUX_MCUX_PORTC
-	__unused struct device *portc =
+	__unused const struct device *portc =
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTC_NAME);
 #endif
 #ifdef CONFIG_PINMUX_MCUX_PORTD
-	__unused struct device *portd =
+	__unused const struct device *portd =
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTD_NAME);
 #endif
 
 #ifdef CONFIG_PINMUX_MCUX_PORTE
-	__unused struct device *porte =
+	__unused const struct device *porte =
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTE_NAME);
 #endif
 

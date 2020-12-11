@@ -1,0 +1,177 @@
+/*
+ * Copyright (c) 2020 Laird Connectivity
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+
+/ {
+	model = "Laird Sentrius BT510 Sensor";
+	compatible = "lairdconnect,bt510";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led1a: led_1a {
+			gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
+			label = "Red LED 1A";
+		};
+		led1b: led_1b {
+			gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+			label = "Green LED 1B";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button1: button_1 {
+			gpios = <&gpio1 10 GPIO_PULL_UP>;
+			label = "Push button switch 1 (SW1)";
+		};
+	};
+
+	ids {
+		compatible = "gpio-keys";
+		id0: id_0 {
+			gpios = <&gpio1 2 GPIO_PULL_UP>;
+			label = "ID 0";
+		};
+		id1: id_1 {
+			gpios = <&gpio1 1 GPIO_PULL_UP>;
+			label = "ID 1";
+		};
+		id2: id_2 {
+			gpios = <&gpio0 25 GPIO_PULL_UP>;
+			label = "ID 2";
+		};
+	};
+
+	tm {
+		compatible = "gpio-keys";
+		tm0: tm_0 {
+			gpios = <&gpio0 3 GPIO_PULL_UP>;
+			label = "Test mode (TM)";
+		};
+	};
+
+	mag {
+		compatible = "gpio-keys";
+		mag0: mag_0 {
+			compatible = "honeywell,sm351lt";
+			gpios = <&gpio1 14 0>;
+			label = "SM351LT_0";
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led1a;
+		led1 = &led1b;
+		sw0 = &button1;
+	};
+};
+
+&adc {
+	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uart";
+	current-speed = <115200>;
+	status = "okay";
+	tx-pin = <6>;
+	rx-pin = <8>;
+};
+
+&i2c0 {
+	compatible = "nordic,nrf-twi";
+	status = "okay";
+	sda-pin = <26>;
+	scl-pin = <27>;
+
+	lis2dh12@18 {
+		compatible = "st,lis2dh12", "st,lis2dh";
+		reg = <0x18>;
+		irq-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>,
+				<&gpio1 12 GPIO_ACTIVE_HIGH>;
+		label = "LIS2DH12";
+	};
+
+	si7055@40 {
+		compatible = "silabs,si7055";
+		reg = <0x40>;
+		label = "SI7055";
+	};
+};
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* 96K */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x000000000 0x00018000>;
+		};
+		/* 396K */
+		slot0_partition: partition@18000 {
+			label = "image-0";
+			reg = <0x00018000 0x000063000>;
+		};
+		/* 396K */
+		slot1_partition: partition@7b000 {
+			label = "image-1";
+			reg = <0x0007b000 0x000063000>;
+		};
+		/* 8K */
+		scratch_partition: partition@de000 {
+			label = "image-scratch";
+			reg = <0x000de000 0x00002000>;
+		};
+
+		/*
+		 * The flash starting at 0x000e0000 and ending at
+		 * 0x000fffff is reserved for use by the application.
+		 */
+
+		/*
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
+		/* 128K */
+		storage_partition: partition@e0000 {
+			label = "storage";
+			reg = <0x000e0000 0x00020000>;
+		};
+	};
+};

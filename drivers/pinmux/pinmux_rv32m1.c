@@ -19,9 +19,10 @@ struct pinmux_rv32m1_config {
 	PORT_Type *base;
 };
 
-static int pinmux_rv32m1_set(struct device *dev, uint32_t pin, uint32_t func)
+static int pinmux_rv32m1_set(const struct device *dev, uint32_t pin,
+			     uint32_t func)
 {
-	const struct pinmux_rv32m1_config *config = dev->config_info;
+	const struct pinmux_rv32m1_config *config = dev->config;
 	PORT_Type *base = config->base;
 
 	base->PCR[pin] = (base->PCR[pin] & ~PORT_PCR_MUX_MASK) | func;
@@ -29,9 +30,10 @@ static int pinmux_rv32m1_set(struct device *dev, uint32_t pin, uint32_t func)
 	return 0;
 }
 
-static int pinmux_rv32m1_get(struct device *dev, uint32_t pin, uint32_t *func)
+static int pinmux_rv32m1_get(const struct device *dev, uint32_t pin,
+			     uint32_t *func)
 {
-	const struct pinmux_rv32m1_config *config = dev->config_info;
+	const struct pinmux_rv32m1_config *config = dev->config;
 	PORT_Type *base = config->base;
 
 	*func = base->PCR[pin] & ~PORT_PCR_MUX_MASK;
@@ -39,19 +41,21 @@ static int pinmux_rv32m1_get(struct device *dev, uint32_t pin, uint32_t *func)
 	return 0;
 }
 
-static int pinmux_rv32m1_pullup(struct device *dev, uint32_t pin, uint8_t func)
+static int pinmux_rv32m1_pullup(const struct device *dev, uint32_t pin,
+				uint8_t func)
 {
 	return -ENOTSUP;
 }
 
-static int pinmux_rv32m1_input(struct device *dev, uint32_t pin, uint8_t func)
+static int pinmux_rv32m1_input(const struct device *dev, uint32_t pin,
+			       uint8_t func)
 {
 	return -ENOTSUP;
 }
 
-static int pinmux_rv32m1_init(struct device *dev)
+static int pinmux_rv32m1_init(const struct device *dev)
 {
-	const struct pinmux_rv32m1_config *config = dev->config_info;
+	const struct pinmux_rv32m1_config *config = dev->config;
 
 	CLOCK_EnableClock(config->clock_ip_name);
 

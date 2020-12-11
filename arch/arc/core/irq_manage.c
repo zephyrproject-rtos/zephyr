@@ -63,17 +63,17 @@ void z_arc_firq_stack_set(void)
 /* only ilink will not be banked, so use ilink as channel
  * between 2 banks
  */
-	"mov ilink, %0		\n\t"
-	"lr %0, [%1]		\n\t"
-	"or %0, %0, %2		\n\t"
-	"kflag %0		\n\t"
-	"mov sp, ilink		\n\t"
+	"mov %%ilink, %0\n\t"
+	"lr %0, [%1]\n\t"
+	"or %0, %0, %2\n\t"
+	"kflag %0\n\t"
+	"mov %%sp, %%ilink\n\t"
 /* switch back to bank0, use ilink to avoid the pollution of
  * bank1's gp regs.
  */
-	"lr ilink, [%1]		\n\t"
-	"and ilink, ilink, %3	\n\t"
-	"kflag ilink		\n\t"
+	"lr %%ilink, [%1]\n\t"
+	"and %%ilink, %%ilink, %3\n\t"
+	"kflag %%ilink\n\t"
 	:
 	: "r"(firq_sp), "i"(_ARC_V2_STATUS32),
 	  "i"(_ARC_V2_STATUS32_RB(1)),
@@ -165,7 +165,7 @@ void z_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
  * @return N/A
  */
 
-void z_irq_spurious(void *unused)
+void z_irq_spurious(const void *unused)
 {
 	ARG_UNUSED(unused);
 	z_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
@@ -173,8 +173,8 @@ void z_irq_spurious(void *unused)
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			     void (*routine)(void *parameter), void *parameter,
-			     uint32_t flags)
+			     void (*routine)(const void *parameter),
+			     const void *parameter, uint32_t flags)
 {
 	z_isr_install(irq, routine, parameter);
 	z_irq_priority_set(irq, priority, flags);

@@ -31,13 +31,13 @@ struct gpio_lmp90xxx_config {
 struct gpio_lmp90xxx_data {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
-	struct device *parent;
+	const struct device *parent;
 };
 
-static int gpio_lmp90xxx_config(struct device *dev,
+static int gpio_lmp90xxx_config(const struct device *dev,
 				gpio_pin_t pin, gpio_flags_t flags)
 {
-	struct gpio_lmp90xxx_data *data = dev->driver_data;
+	struct gpio_lmp90xxx_data *data = dev->data;
 	int err = 0;
 
 	if (pin > LMP90XXX_GPIO_MAX) {
@@ -82,48 +82,48 @@ static int gpio_lmp90xxx_config(struct device *dev,
 	return err;
 }
 
-static int gpio_lmp90xxx_port_get_raw(struct device *dev,
+static int gpio_lmp90xxx_port_get_raw(const struct device *dev,
 				      gpio_port_value_t *value)
 {
-	struct gpio_lmp90xxx_data *data = dev->driver_data;
+	struct gpio_lmp90xxx_data *data = dev->data;
 
 	return lmp90xxx_gpio_port_get_raw(data->parent, value);
 }
 
-static int gpio_lmp90xxx_port_set_masked_raw(struct device *dev,
+static int gpio_lmp90xxx_port_set_masked_raw(const struct device *dev,
 					     gpio_port_pins_t mask,
 					     gpio_port_value_t value)
 {
-	struct gpio_lmp90xxx_data *data = dev->driver_data;
+	struct gpio_lmp90xxx_data *data = dev->data;
 
 	return lmp90xxx_gpio_port_set_masked_raw(data->parent, mask, value);
 }
 
-static int gpio_lmp90xxx_port_set_bits_raw(struct device *dev,
+static int gpio_lmp90xxx_port_set_bits_raw(const struct device *dev,
 					   gpio_port_pins_t pins)
 {
-	struct gpio_lmp90xxx_data *data = dev->driver_data;
+	struct gpio_lmp90xxx_data *data = dev->data;
 
 	return lmp90xxx_gpio_port_set_bits_raw(data->parent, pins);
 }
 
-static int gpio_lmp90xxx_port_clear_bits_raw(struct device *dev,
+static int gpio_lmp90xxx_port_clear_bits_raw(const struct device *dev,
 					     gpio_port_pins_t pins)
 {
-	struct gpio_lmp90xxx_data *data = dev->driver_data;
+	struct gpio_lmp90xxx_data *data = dev->data;
 
 	return lmp90xxx_gpio_port_clear_bits_raw(data->parent, pins);
 }
 
-static int gpio_lmp90xxx_port_toggle_bits(struct device *dev,
+static int gpio_lmp90xxx_port_toggle_bits(const struct device *dev,
 					  gpio_port_pins_t pins)
 {
-	struct gpio_lmp90xxx_data *data = dev->driver_data;
+	struct gpio_lmp90xxx_data *data = dev->data;
 
 	return lmp90xxx_gpio_port_toggle_bits(data->parent, pins);
 }
 
-static int gpio_lmp90xxx_pin_interrupt_configure(struct device *dev,
+static int gpio_lmp90xxx_pin_interrupt_configure(const struct device *dev,
 						 gpio_pin_t pin,
 						 enum gpio_int_mode mode,
 						 enum gpio_int_trig trig)
@@ -136,10 +136,10 @@ static int gpio_lmp90xxx_pin_interrupt_configure(struct device *dev,
 	return -ENOTSUP;
 }
 
-static int gpio_lmp90xxx_init(struct device *dev)
+static int gpio_lmp90xxx_init(const struct device *dev)
 {
-	const struct gpio_lmp90xxx_config *config = dev->config_info;
-	struct gpio_lmp90xxx_data *data = dev->driver_data;
+	const struct gpio_lmp90xxx_config *config = dev->config;
+	struct gpio_lmp90xxx_data *data = dev->data;
 
 	data->parent = device_get_binding(config->parent_dev_name);
 	if (!data->parent) {

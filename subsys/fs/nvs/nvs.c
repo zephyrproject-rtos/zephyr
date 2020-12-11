@@ -49,7 +49,7 @@ static int nvs_flash_al_wrt(struct nvs_fs *fs, uint32_t addr, const void *data,
 	offset += fs->sector_size * (addr >> ADDR_SECT_SHIFT);
 	offset += addr & ADDR_OFFS_MASK;
 
-	rc = flash_write_protection_set(fs->flash_device, 0);
+	rc = flash_write_protection_set(fs->flash_device, false);
 	if (rc) {
 		/* flash protection set error */
 		return rc;
@@ -79,7 +79,7 @@ static int nvs_flash_al_wrt(struct nvs_fs *fs, uint32_t addr, const void *data,
 	}
 
 end:
-	(void) flash_write_protection_set(fs->flash_device, 1);
+	(void) flash_write_protection_set(fs->flash_device, true);
 	return rc;
 }
 
@@ -239,7 +239,7 @@ static int nvs_flash_erase_sector(struct nvs_fs *fs, uint32_t addr)
 	offset = fs->offset;
 	offset += fs->sector_size * (addr >> ADDR_SECT_SHIFT);
 
-	rc = flash_write_protection_set(fs->flash_device, 0);
+	rc = flash_write_protection_set(fs->flash_device, false);
 	if (rc) {
 		/* flash protection set error */
 		return rc;
@@ -251,7 +251,7 @@ static int nvs_flash_erase_sector(struct nvs_fs *fs, uint32_t addr)
 		/* flash erase error */
 		return rc;
 	}
-	(void) flash_write_protection_set(fs->flash_device, 1);
+	(void) flash_write_protection_set(fs->flash_device, true);
 	return 0;
 }
 

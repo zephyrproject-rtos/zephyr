@@ -5,6 +5,7 @@
  */
 
 #include <zephyr.h>
+#include <soc.h>
 #include <bluetooth/hci.h>
 #include <sys/byteorder.h>
 
@@ -12,6 +13,7 @@
 #include "util/memq.h"
 #include "util/mayfly.h"
 
+#include "hal/cpu.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
@@ -23,6 +25,7 @@
 
 #include "lll.h"
 #include "lll_vendor.h"
+#include "lll_clock.h"
 #include "lll_adv.h"
 #include "lll_conn.h"
 #include "lll_slave.h"
@@ -41,11 +44,12 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_slave
 #include "common/log.h"
-#include <soc.h>
 #include "hal/debug.h"
 
 static void ticker_op_stop_adv_cb(uint32_t status, void *param);
 static void ticker_op_cb(uint32_t status, void *param);
+static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
+					       void *params);
 
 void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		     struct node_rx_ftr *ftr, struct lll_conn *lll)
@@ -67,8 +71,6 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	uint16_t interval;
 	uint8_t chan_sel;
 
-	((struct lll_adv *)ftr->param)->conn = NULL;
-
 	adv = ((struct lll_adv *)ftr->param)->hdr.parent;
 	conn = lll->hdr.parent;
 
@@ -87,6 +89,9 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	if ((lll->data_chan_hop < 5) || (lll->data_chan_hop > 16)) {
 		return;
 	}
+
+	((struct lll_adv *)ftr->param)->conn = NULL;
+
 	interval = sys_le16_to_cpu(pdu_adv->connect_ind.interval);
 	lll->interval = interval;
 	lll->latency = sys_le16_to_cpu(pdu_adv->connect_ind.latency);
@@ -97,8 +102,8 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	/* calculate the window widening */
 	conn->slave.sca = pdu_adv->connect_ind.sca;
 	lll->slave.window_widening_periodic_us =
-		(((lll_conn_ppm_local_get() +
-		   lll_conn_ppm_get(conn->slave.sca)) *
+		(((lll_clock_ppm_local_get() +
+		   lll_clock_ppm_get(conn->slave.sca)) *
 		  conn_interval_us) + (1000000 - 1)) / 1000000U;
 	lll->slave.window_widening_max_us = (conn_interval_us >> 1) -
 					    EVENT_IFS_US;
@@ -215,7 +220,9 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	}
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	if (adv->is_created & ULL_ADV_CREATED_BITMASK_EXTENDED) {
+	if (ll_adv_cmds_is_ext()) {
+		uint8_t handle;
+
 		/* Enqueue connection or CSA event */
 		ll_rx_put(link, rx);
 
@@ -225,8 +232,11 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		rx = adv->lll.node_rx_adv_term;
 		link = rx->link;
 
-		rx->handle = ull_adv_handle_get(adv);
+		handle = ull_adv_handle_get(adv);
+		LL_ASSERT(handle < BT_CTLR_ADV_SET);
+
 		rx->type = NODE_RX_TYPE_EXT_ADV_TERMINATE;
+		rx->handle = handle;
 		rx->rx_ftr.param_adv_term.status = 0U;
 		rx->rx_ftr.param_adv_term.conn_handle = lll->handle;
 		rx->rx_ftr.param_adv_term.num_events = 0U;
@@ -324,46 +334,23 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 #endif
 }
 
-/**
- * @brief Extract timing from completed event
- *
- * @param node_rx_event_done[in] Done event containing fresh timing information
- * @param ticks_drift_plus[out]  Positive part of drift uncertainty window
- * @param ticks_drift_minus[out] Negative part of drift uncertainty window
- */
-void ull_slave_done(struct node_rx_event_done *done, uint32_t *ticks_drift_plus,
-		    uint32_t *ticks_drift_minus)
+void ull_slave_latency_cancel(struct ll_conn *conn, uint16_t handle)
 {
-	uint32_t start_to_address_expected_us;
-	uint32_t start_to_address_actual_us;
-	uint32_t window_widening_event_us;
-	uint32_t preamble_to_addr_us;
+	/* break peripheral latency */
+	if (conn->lll.latency_event && !conn->slave.latency_cancel) {
+		uint32_t ticker_status;
 
-	start_to_address_actual_us =
-		done->extra.slave.start_to_address_actual_us;
-	window_widening_event_us =
-		done->extra.slave.window_widening_event_us;
-	preamble_to_addr_us =
-		done->extra.slave.preamble_to_addr_us;
+		conn->slave.latency_cancel = 1U;
 
-	start_to_address_expected_us = EVENT_JITTER_US +
-				       EVENT_TICKER_RES_MARGIN_US +
-				       window_widening_event_us +
-				       preamble_to_addr_us;
-
-	if (start_to_address_actual_us <= start_to_address_expected_us) {
-		*ticks_drift_plus =
-			HAL_TICKER_US_TO_TICKS(window_widening_event_us);
-		*ticks_drift_minus =
-			HAL_TICKER_US_TO_TICKS((start_to_address_expected_us -
-					       start_to_address_actual_us));
-	} else {
-		*ticks_drift_plus =
-			HAL_TICKER_US_TO_TICKS(start_to_address_actual_us);
-		*ticks_drift_minus =
-			HAL_TICKER_US_TO_TICKS(EVENT_JITTER_US +
-					       EVENT_TICKER_RES_MARGIN_US +
-					       preamble_to_addr_us);
+		ticker_status =
+			ticker_update(TICKER_INSTANCE_ID_CTLR,
+				      TICKER_USER_ID_THREAD,
+				      (TICKER_ID_CONN_BASE + handle),
+				      0, 0, 0, 0, 1, 0,
+				      ticker_update_latency_cancel_op_cb,
+				      (void *)conn);
+		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
+			  (ticker_status == TICKER_STATUS_BUSY));
 	}
 }
 
@@ -373,12 +360,24 @@ void ull_slave_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_slave_prepare};
 	static struct lll_prepare_param p;
-	struct ll_conn *conn = param;
+	struct ll_conn *conn;
 	uint32_t err;
 	uint8_t ref;
 
 	DEBUG_RADIO_PREPARE_S(1);
 
+	conn = param;
+
+	/* Check if stopping ticker (on disconnection, race with ticker expiry)
+	 */
+	if (unlikely(conn->lll.handle == 0xFFFF)) {
+		DEBUG_RADIO_CLOSE_S(0);
+		return;
+	}
+
+#if defined(CONFIG_BT_CTLR_CONN_META)
+	conn->common.is_must_expire = (lazy == TICKER_LAZY_MUST_EXPIRE);
+#endif
 	/* If this is a must-expire callback, LLCP state machine does not need
 	 * to know. Will be called with lazy > 0 when scheduled in air.
 	 */
@@ -389,6 +388,7 @@ void ull_slave_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		/* Handle any LL Control Procedures */
 		ret = ull_conn_llcp(conn, ticks_at_expire, lazy);
 		if (ret) {
+			DEBUG_RADIO_CLOSE_S(0);
 			return;
 		}
 	}
@@ -476,4 +476,14 @@ static void ticker_op_cb(uint32_t status, void *param)
 	ARG_UNUSED(param);
 
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+}
+
+static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
+					       void *params)
+{
+	struct ll_conn *conn = params;
+
+	LL_ASSERT(ticker_status == TICKER_STATUS_SUCCESS);
+
+	conn->slave.latency_cancel = 0U;
 }

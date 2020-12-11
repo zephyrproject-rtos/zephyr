@@ -1,0 +1,201 @@
+/*
+ * Copyright (c) 2020 Stephane Dorre <stephane.dorre@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * DTS for Pine64 PineTime DevKit-0 board
+ * Further info: https://wiki.pine64.org/index.php/PineTime
+ *
+ */
+
+/dts-v1/;
+#include <nordic/nrf52832_qfaa.dtsi>
+
+/ {
+	model = "Pine64 PineTime DevKit0";
+	compatible = "pine64,pinetime-devkit0";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	aliases {
+		led0 = &blled0;	/* backlight low */
+		led1 = &blled1;	/* backlight mid */
+		led2 = &blled2;	/* backlight high */
+		led3 = &statusled;	/* status led, may be not populated */
+		sw0 = &key_in;  /* key in */
+		sw1 = &key_out;  /* key out */
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		blled0: bl_led_0 {
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+			label = "Backlight LED 0";
+		};
+		blled1: bl_led_1 {
+			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+			label = "Backlight LED 1";
+		};
+		blled2: bl_led_2 {
+			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+			label = "Backlight LED 2";
+		};
+		statusled: led_3 {
+			gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+			label = "Status Led";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		key_in: button_0 {
+			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+			label = "Key in";
+		};
+		key_out: button_1 {
+			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+			label = "Key out";
+		};
+	};
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uart";
+	current-speed = <115200>;
+	status = "okay";
+	tx-pin = <11>;
+	rx-pin = <30>;
+};
+
+&i2c0 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	sda-pin = <6>;
+	scl-pin = <7>;
+	clock-frequency = <I2C_BITRATE_FAST>; /* 400KHz */
+
+	/* BOSCH BMA421 Triaxial Acceleration Sensor (1000KHz) */
+	bma421: bma421@18 {
+		compatible = "bosch,bma4xx";
+		reg = <0x18>;
+		label = "BMA421";
+		int1-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+	};
+
+	/* TianYiHeXin HRS3300 PPG Hear Rate Sensor (800KHz) */
+	hrs3300: hrs3300@44 {
+		compatible = "tian-yi-he-xin,hrs3300";
+		reg = <0x44>;
+		label = "HRS3300";
+	};
+
+	/* Hynitron CST816S Capacitive Touch Controller (400KHz) */
+	cst816s: cst816s@15 {
+		compatible = "hynitron,cst816s";
+		reg = <0x15>;
+		label = "CST816S";
+		irq-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
+		rst-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&spi1 {
+	compatible = "nordic,nrf-spi";
+	status = "okay";
+	sck-pin = <2>;
+	mosi-pin = <3>;
+	miso-pin = <4>;
+
+	cs-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>, <&gpio0 25 GPIO_ACTIVE_LOW>;
+
+	/* Macronix MX25L CMOS Flash Memory */
+	mx25l: mx25l@0 {
+		compatible = "macronix,cmos-mx25l";
+		reg = <0>;
+		spi-max-frequency = <8000000>; /* 8MHz */
+		label = "CMOS MX25L";
+	};
+
+	/* Sitronix ST7789V LCD */
+	st7789v: st7789v@1 {
+		compatible = "sitronix,st7789v";
+		reg = <1>;
+		spi-max-frequency = <8000000>; /* 8MHz */
+		label = "ST7789V";
+		cmd-data-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;	/* DET */
+		reset-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;	/* RESX reset */
+		width = <240>;
+		height = <240>;
+		x-offset = <0>;
+		y-offset = <0>;
+		vcom = <0x19>;
+		gctrl = <0x35>;
+		vrhs = <0x12>;
+		vdvs = <0x20>;
+		mdac = <0x00>;
+		gamma = <0x01>;
+		colmod = <0x05>;
+		lcm = <0x2c>;
+		porch-param = [0c 0c 00 33 33];
+		cmd2en-param = [5a 69 02 01];
+		pwctrl1-param = [a4 a1];
+		pvgam-param = [D0 04 0D 11 13 2B 3F 54 4C 18 0D 0B 1F 23];
+		nvgam-param = [D0 04 0C 11 13 2C 3F 44 51 2F 1F 1F 20 23];
+		ram-param = [00 F0];
+		rgb-param = [CD 08 14];
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* MCUboot bootloader */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0xc000>;
+		};
+
+		/* main firmware partition */
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x32000>;
+		};
+
+		/* next firmware update */
+		slot1_partition: partition@3e000 {
+			label = "image-1";
+			reg = <0x0003E000 0x32000>;
+		};
+
+		/* needed to slot0-slot1 swapping */
+		scratch_partition: partition@70000 {
+			label = "image-scratch";
+			reg = <0x00070000 0xa000>;
+		};
+
+		/* to be used in firmware */
+		storage_partition: partition@7a000 {
+			label = "storage";
+			reg = <0x0007a000 0x00006000>;
+		};
+	};
+};

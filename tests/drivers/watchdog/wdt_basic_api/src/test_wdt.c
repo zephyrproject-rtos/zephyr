@@ -115,23 +115,39 @@ static struct wdt_timeout_cfg m_cfg_wdt0;
 static struct wdt_timeout_cfg m_cfg_wdt1;
 #endif
 
+#if defined(CONFIG_SOC_SERIES_STM32F7X) || defined(CONFIG_SOC_SERIES_STM32H7X)
+/* STM32H7 and STM32F7 guarantee last write RAM retention over reset,
+ * only for 64bits
+ * See details in Application Note AN5342
+ */
+#define DATATYPE uint64_t
+#else
+#define DATATYPE uint32_t
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
+#define NOINIT_SECTION ".dtcm_noinit.test_wdt"
+#else
+#define NOINIT_SECTION ".noinit.test_wdt"
+#endif
+
 /* m_state indicates state of particular test. Used to check whether testcase
  * should go to reset state or check other values after reset.
  */
-volatile uint32_t m_state __attribute__((section(".noinit.test_wdt")));
+volatile DATATYPE m_state __attribute__((section(NOINIT_SECTION)));
 
 /* m_testcase_index is incremented after each test to make test possible
  * switch to next testcase.
  */
-volatile uint32_t m_testcase_index __attribute__((section(".noinit.test_wdt")));
+volatile DATATYPE m_testcase_index __attribute__((section(NOINIT_SECTION)));
 
 /* m_testvalue contains value set in interrupt callback to point whether
  * first or second interrupt was fired.
  */
-volatile uint32_t m_testvalue __attribute__((section(".noinit.test_wdt")));
+volatile DATATYPE m_testvalue __attribute__((section(NOINIT_SECTION)));
 
 #if TEST_WDT_CALLBACK_1
-static void wdt_int_cb0(struct device *wdt_dev, int channel_id)
+static void wdt_int_cb0(const struct device *wdt_dev, int channel_id)
 {
 	ARG_UNUSED(wdt_dev);
 	ARG_UNUSED(channel_id);
@@ -140,7 +156,7 @@ static void wdt_int_cb0(struct device *wdt_dev, int channel_id)
 #endif
 
 #if TEST_WDT_CALLBACK_2
-static void wdt_int_cb1(struct device *wdt_dev, int channel_id)
+static void wdt_int_cb1(const struct device *wdt_dev, int channel_id)
 {
 	ARG_UNUSED(wdt_dev);
 	ARG_UNUSED(channel_id);
@@ -151,7 +167,7 @@ static void wdt_int_cb1(struct device *wdt_dev, int channel_id)
 static int test_wdt_no_callback(void)
 {
 	int err;
-	struct device *wdt = device_get_binding(WDT_DEV_NAME);
+	const struct device *wdt = device_get_binding(WDT_DEV_NAME);
 
 	if (!wdt) {
 		TC_PRINT("Cannot get WDT device\n");
@@ -192,7 +208,7 @@ static int test_wdt_no_callback(void)
 static int test_wdt_callback_1(void)
 {
 	int err;
-	struct device *wdt = device_get_binding(WDT_DEV_NAME);
+	const struct device *wdt = device_get_binding(WDT_DEV_NAME);
 
 	if (!wdt) {
 		TC_PRINT("Cannot get WDT device\n");
@@ -247,7 +263,7 @@ static int test_wdt_callback_1(void)
 static int test_wdt_callback_2(void)
 {
 	int err;
-	struct device *wdt = device_get_binding(WDT_DEV_NAME);
+	const struct device *wdt = device_get_binding(WDT_DEV_NAME);
 
 	if (!wdt) {
 		TC_PRINT("Cannot get WDT device\n");
@@ -308,7 +324,7 @@ static int test_wdt_callback_2(void)
 static int test_wdt_bad_window_max(void)
 {
 	int err;
-	struct device *wdt = device_get_binding(WDT_DEV_NAME);
+	const struct device *wdt = device_get_binding(WDT_DEV_NAME);
 
 	if (!wdt) {
 		TC_PRINT("Cannot get WDT device\n");

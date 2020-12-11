@@ -1,0 +1,18 @@
+description: Xilinx AXI GPIO IP GPIO2 node
+
+compatible: "xlnx,xps-gpio-1.00.a-gpio2"
+
+include: [gpio-controller.yaml, base.yaml]
+
+on-bus: xlnx,xps-gpio-1.00.a
+
+properties:
+    label:
+      required: true
+
+    "#gpio-cells":
+      const: 2
+
+gpio-cells:
+  - pin
+  - flags

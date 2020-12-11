@@ -3,6 +3,7 @@
 zephyr_sources_ifdef(CONFIG_BASE64 base64.c)
 
 zephyr_sources(
+  cbprintf.c
   crc32_sw.c
   crc16_sw.c
   crc8_sw.c
@@ -10,7 +11,6 @@ zephyr_sources(
   dec.c
   fdtable.c
   hex.c
-  mempool.c
   notify.c
   printk.c
   onoff.c
@@ -22,6 +22,9 @@ zephyr_sources(
   heap.c
   heap-validate.c
   )
+
+zephyr_sources_ifdef(CONFIG_CBPRINTF_COMPLETE cbprintf_complete.c)
+zephyr_sources_ifdef(CONFIG_CBPRINTF_NANO cbprintf_nano.c)
 
 zephyr_sources_ifdef(CONFIG_JSON_LIBRARY json.c)
 

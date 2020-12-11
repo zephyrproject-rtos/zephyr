@@ -66,7 +66,7 @@ etc. is just a call to the corresponding :ref:`west command
 <west-build-flash-debug>`. For example, ``ninja flash`` calls ``west
 flash``\ [#wbninja]_. If you don't have west installed on your system, running
 those targets will fail. You can of course still flash and debug using
-any :ref:`debug-host-tools` which work for your board (and which those
+any :ref:`flash-debug-host-tools` which work for your board (and which those
 west commands wrap).
 
 If you want to use these build system targets but do not want to

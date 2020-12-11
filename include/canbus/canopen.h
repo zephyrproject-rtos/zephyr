@@ -38,6 +38,10 @@ enum canopen_storage {
 	CANOPEN_STORAGE_EEPROM,
 };
 
+struct canopen_context {
+	const struct device *dev;
+};
+
 /**
  * @brief Attach CANopen object dictionary storage handlers.
  *

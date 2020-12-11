@@ -32,13 +32,10 @@
 #include <sys/atomic.h>
 #include <sys/printk.h>
 #ifdef CONFIG_UART_CONSOLE_MCUMGR
-#include "mgmt/serial.h"
-#endif
-#ifdef CONFIG_USB_UART_CONSOLE
-#include <usb/usb_device.h>
+#include "mgmt/mcumgr/serial.h"
 #endif
 
-static struct device *uart_console_dev;
+static const struct device *uart_console_dev;
 
 #ifdef CONFIG_UART_CONSOLE_DEBUG_SERVER_HOOKS
 
@@ -134,7 +131,8 @@ static uint8_t (*completion_cb)(char *line, uint8_t len);
 #define ANSI_HOME          'H'
 #define ANSI_DEL           '~'
 
-static int read_uart(struct device *uart, uint8_t *buf, unsigned int size)
+static int read_uart(const struct device *uart, uint8_t *buf,
+		     unsigned int size)
 {
 	int rx;
 
@@ -434,7 +432,7 @@ static bool handle_mcumgr(struct console_input *cmd, uint8_t byte)
 
 #endif /* CONFIG_UART_CONSOLE_MCUMGR */
 
-static void uart_console_isr(struct device *unused, void *user_data)
+static void uart_console_isr(const struct device *unused, void *user_data)
 {
 	ARG_UNUSED(unused);
 	ARG_UNUSED(user_data);
@@ -593,35 +591,13 @@ static void uart_console_hook_install(void)
  *
  * @return 0 if successful, otherwise failed.
  */
-static int uart_console_init(struct device *arg)
+static int uart_console_init(const struct device *arg)
 {
 
 	ARG_UNUSED(arg);
 
+	/* Claim console device */
 	uart_console_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
-
-	__ASSERT_NO_MSG(uart_console_dev);
-
-#if defined(CONFIG_USB_UART_CONSOLE)
-	int ret;
-
-	ret = usb_enable(NULL);
-	if (ret != 0) {
-		return ret;
-	}
-
-#if defined(CONFIG_USB_UART_DTR_WAIT)
-	while (1) {
-		uint32_t dtr = 0U;
-
-		uart_line_ctrl_get(uart_console_dev, UART_LINE_CTRL_DTR, &dtr);
-		if (dtr) {
-			break;
-		}
-	}
-	k_busy_wait(1000000);
-#endif
-#endif
 
 	uart_console_hook_install();
 

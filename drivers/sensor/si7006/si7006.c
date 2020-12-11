@@ -23,7 +23,7 @@
 LOG_MODULE_REGISTER(si7006, CONFIG_SENSOR_LOG_LEVEL);
 
 struct si7006_data {
-	struct device *i2c_dev;
+	const struct device *i2c_dev;
 	uint16_t temperature;
 	uint16_t humidity;
 };
@@ -33,7 +33,7 @@ struct si7006_data {
  *
  * @return int 0 on success
  */
-static int si7006_get_humidity(struct device *i2c_dev,
+static int si7006_get_humidity(const struct device *i2c_dev,
 			       struct si7006_data *si_data)
 {
 	int retval;
@@ -60,7 +60,7 @@ static int si7006_get_humidity(struct device *i2c_dev,
  * @return int 0 on success
  */
 
-static int si7006_get_old_temperature(struct device *i2c_dev,
+static int si7006_get_old_temperature(const struct device *i2c_dev,
 				      struct si7006_data *si_data)
 {
 	uint8_t temp[2];
@@ -83,10 +83,11 @@ static int si7006_get_old_temperature(struct device *i2c_dev,
  *
  * @return 0
  */
-static int si7006_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int si7006_sample_fetch(const struct device *dev,
+			       enum sensor_channel chan)
 {
 	int retval;
-	struct si7006_data *si_data = dev->driver_data;
+	struct si7006_data *si_data = dev->data;
 
 	retval = si7006_get_humidity(si_data->i2c_dev, si_data);
 	if (retval == 0) {
@@ -101,10 +102,11 @@ static int si7006_sample_fetch(struct device *dev, enum sensor_channel chan)
  *
  * @return -ENOTSUP for unsupported channels
  */
-static int si7006_channel_get(struct device *dev, enum sensor_channel chan,
+static int si7006_channel_get(const struct device *dev,
+			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	struct si7006_data *si_data = dev->driver_data;
+	struct si7006_data *si_data = dev->data;
 
 	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 
@@ -144,9 +146,9 @@ static const struct sensor_driver_api si7006_api = {
  * @return 0 for success
  */
 
-static int si7006_init(struct device *dev)
+static int si7006_init(const struct device *dev)
 {
-	struct si7006_data *drv_data = dev->driver_data;
+	struct si7006_data *drv_data = dev->data;
 
 	drv_data->i2c_dev = device_get_binding(
 		DT_INST_BUS_LABEL(0));

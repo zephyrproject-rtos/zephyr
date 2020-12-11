@@ -5,6 +5,6 @@
 
 config TI_HDC
 	bool "Texas Instruments Temperature and Humidity Sensor (e.g. HDC1008)"
-	depends on I2C && HAS_DTS_I2C
+	depends on I2C
 	help
 	  Enable driver for TI temperature and humidity sensors.

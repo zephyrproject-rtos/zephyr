@@ -825,6 +825,11 @@ void ticker_worker(void *param)
 		ticker_id_head = ticker->next;
 		must_expire_skip = 0U;
 
+		/* Skip if not scheduled to execute */
+		if (((ticker->req - ticker->ack) & 0xff) != 1U) {
+			continue;
+		}
+
 #if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
 		/* Check if node has slot reservation and resolve any collision
 		 * with other ticker nodes
@@ -848,15 +853,20 @@ void ticker_worker(void *param)
 					TICKER_RESCHEDULE_STATE_NONE;
 			}
 #endif /* CONFIG_BT_TICKER_EXT */
+			/* Increment lazy_current to indicate skipped event. In case
+			 * of re-scheduled node, the lazy count will be decremented in
+			 * ticker_job_reschedule_in_window when completed.
+			 */
 			ticker->lazy_current++;
 
 			if ((ticker->must_expire == 0U) ||
 			    (ticker->lazy_periodic >= ticker->lazy_current) ||
 			    TICKER_RESCHEDULE_PENDING(ticker)) {
-				/* Not a must-expire case, this is programmed
+				/* Not a must-expire node or this is periodic
 				 * latency or pending re-schedule. Skip this
-				 * ticker node.
+				 * ticker node. Mark it as elapsed.
 				 */
+				ticker->ack--;
 				continue;
 			}
 			/* Continue but perform shallow expiry */
@@ -872,10 +882,6 @@ void ticker_worker(void *param)
 		}
 #endif /* CONFIG_BT_TICKER_EXT */
 #endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
-		/* Skip if not scheduled to execute */
-		if (((ticker->req - ticker->ack) & 0xff) != 1U) {
-			continue;
-		}
 
 		/* Scheduled timeout is acknowledged to be complete */
 		ticker->ack--;
@@ -1381,10 +1387,11 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 	node = &instance->nodes[0];
 	ticks_expired = 0U;
 	while (instance->ticker_id_head != TICKER_NULL) {
-		uint8_t is_must_expire_skip = 0U;
+		uint8_t skip_collision = 0U;
 		struct ticker_node *ticker;
 		uint32_t ticks_to_expire;
 		uint8_t id_expired;
+		uint8_t state;
 
 		/* auto variable for current ticker node */
 		id_expired = instance->ticker_id_head;
@@ -1404,8 +1411,11 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 #if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
 		ticks_latency -= ticks_to_expire;
 
-		is_must_expire_skip = (ticker->must_expire &&
-				       (ticker->lazy_current != 0U));
+		/* Node with lazy count did not expire with callback, but
+		 * was either a collision or re-scheduled. This node should
+		 * not define the active slot reservation (slot_previous).
+		 */
+		skip_collision = (ticker->lazy_current != 0U);
 #endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
 
 		/* decrement ticks_slot_previous */
@@ -1419,9 +1429,8 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 		/* If a reschedule is set pending, we will need to keep
 		 * the slot_previous information
 		 */
-		if ((ticker->ticks_slot != 0U) &&
-		    (((ticker->req - ticker->ack) & 0xff) == 2U) &&
-		    !is_must_expire_skip &&
+		state = (ticker->req - ticker->ack) & 0xff;
+		if (ticker->ticks_slot && (state == 2U) && !skip_collision &&
 		    !TICKER_RESCHEDULE_PENDING(ticker)) {
 			instance->ticker_id_slot_previous = id_expired;
 			instance->ticks_slot_previous = ticker->ticks_slot;
@@ -1530,7 +1539,11 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 			ticker->req++;
 		} else {
 #if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
-			if ((((ticker->req - ticker->ack) & 0xff) == 1U) &&
+			/* A single-shot ticker in requested or skipped due to
+			 * collision shall generate a operation function
+			 * callback with failure status.
+			 */
+			if (state && ((state == 1U) || skip_collision) &&
 			    ticker->fp_op_func) {
 				ticker->fp_op_func(TICKER_STATUS_FAILURE,
 						   ticker->op_context);
@@ -2073,7 +2086,7 @@ static inline void ticker_job_op_inquire(struct ticker_instance *instance,
 					uop->params.slot_get.ticker_id,
 					uop->params.slot_get.ticks_current,
 					uop->params.slot_get.ticks_to_expire);
-		/* Fall-through */
+		__fallthrough;
 	case TICKER_USER_OP_TYPE_IDLE_GET:
 		uop->status = TICKER_STATUS_SUCCESS;
 		fp_op_func = uop->fp_op_func;

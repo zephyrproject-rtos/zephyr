@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <toolchain.h>
 #include <arch/x86/multiboot.h>
 #include <sys/util.h>
 #include <arch/x86/msr.h>
@@ -10,19 +11,71 @@
 #include <offsets_short.h>
 #include <drivers/interrupt_controller/loapic.h>
 #include <arch/cpu.h>
+#include <sys/mem_manage.h>
 
-.macro read_tsc var_name
-	push %rax
-	push %rdx
-	rdtsc
-	mov %eax,\var_name
-	mov %edx,\var_name+4
-	pop %rdx
-	pop %rax
+/*
+ * Definitions/macros for enabling paging
+ */
+
+/* Long mode, no-execute, syscall */
+#define EFER_BITS (X86_EFER_MSR_LME | X86_EFER_MSR_NXE | X86_EFER_MSR_SCE)
+
+/* Paging, write-protect */
+#define CR0_BITS (CR0_PG | CR0_WP)
+
+/* PAE, SSE */
+#define CR4_BITS (CR4_PAE | CR4_OSFXSR)
+
+.macro set_efer
+	movl $X86_EFER_MSR, %ecx
+	rdmsr
+	orl $EFER_BITS, %eax
+	wrmsr
+.endm
+
+.macro install_pagetables_32
+	movl %cr4, %eax
+	orl $CR4_BITS, %eax
+	movl %eax, %cr4
+	clts
+
+	/* Page tables created at build time by gen_mmu.py */
+	movl $z_x86_kernel_ptables, %eax
+	movl %eax, %cr3
+
+	set_efer
+
+	movl %cr0, %eax
+	orl $CR0_BITS, %eax
+	movl %eax, %cr0
+.endm
+
+.macro install_pagetables_64
+	/* Here, we are already in long mode with paging enabled and
+	 * just need to switch to our own page tables, but let's be
+	 * paranoid and ensure CR4, CR0, and EFER_MSR are set up
+	 * exactly how we expect. Logic is the same as install_pagetables_32
+	 */
+	movq %cr4, %rax
+	orq $CR4_BITS, %rax
+	movq %rax, %cr4
+	clts
+
+	movq $z_x86_kernel_ptables, %rax
+	movq %rax, %cr3
+
+	set_efer
+
+	movq %cr0, %rax
+	/* Use 32-bit instructions due to assembler fussiness with large
+	 * immediate values with `orq`, CR0_PG is bit 31. We don't ever set any
+	 * high bits in cr0 anyway.
+	 */
+	orl $CR0_BITS, %eax
+	movq %rax, %cr0
 .endm
 
 .section .locore,"ax"
-.code32
 
 #if CONFIG_MP_NUM_CPUS > 1
 
@@ -79,7 +132,6 @@ unknown_loapic_id:
 .code32
 .globl __start
 __start:
-
 	/*
 	 * kernel execution begins here in 32-bit mode, with flat-mode
 	 * descriptors in all segment registers, interrupts disabled.
@@ -98,7 +150,6 @@ __start:
 	 * next, clear the BSS. note we're still in 32-bit mode,
 	 * so the BSS must fit entirely in the first 4GB of RAM.
 	 */
-
 	cld
 	xorl %eax, %eax
 	movl $__bss_start, %edi
@@ -108,37 +159,17 @@ __start:
 	movl $x86_cpuboot, %ebp		/* BSP is always logical CPU id 0 */
 	movl %ebx, __x86_cpuboot_t_arg_OFFSET(%ebp)	/* multiboot info */
 
-	/*
-	 * transition to long mode, reload the segment registers,
-	 * and configure per-CPU stuff: GS, task register, stack.
-	 */
 
-go64:	movl %cr4, %eax			/* enable PAE and SSE */
-	orl $(CR4_PAE | CR4_OSFXSR), %eax
-	movl %eax, %cr4
-	clts
-
-#ifdef CONFIG_X86_MMU
-	movl __x86_cpuboot_t_ptables_OFFSET(%ebp), %eax
-#else
-	movl $z_x86_flat_ptables, %eax
-#endif
-	movl %eax, %cr3
-
-	movl $X86_EFER_MSR, %ecx  /* enable long mode, no-execute, syscall */
-	rdmsr
-	orl $(X86_EFER_MSR_LME | X86_EFER_MSR_NXE | X86_EFER_MSR_SCE), %eax
-	wrmsr
-
-	movl %cr0, %eax			/* enable paging */
-	orl $(CR0_PG | CR0_WP), %eax
-	movl %eax, %cr0
-
+go64:	/* Install page tables and transition to long mode */
+	install_pagetables_32
 	jmpl $X86_KERNEL_CS, $enter_code64
 
 	/* Long mode entry point.  Arrive here from the code
 	 * immediately above (shared between main CPU startup and AP
-	 * startup), or from EFI entry in __start64
+	 * startup), or from EFI entry in __start64.
+	 *
+	 * Here we reload the segment registers,
+	 * and configure per-CPU stuff: GS, task register, stack.
 	 */
 	.code64
 enter_code64:
@@ -173,8 +204,9 @@ enter_code64:
 #ifdef CONFIG_INIT_STACKS
 	movq $0xAAAAAAAAAAAAAAAA, %rax
 	movq %rsp, %rdi
-	subq $CONFIG_ISR_STACK_SIZE, %rdi
-	movq $(CONFIG_ISR_STACK_SIZE >> 3), %rcx
+	subq __x86_cpuboot_t_stack_size_OFFSET(%rbp), %rdi
+	movq __x86_cpuboot_t_stack_size_OFFSET(%rbp), %rcx
+	shr $3, %rcx /* moving 8 bytes a time, so fewer repeats */
 	rep stosq
 #endif
 
@@ -200,20 +232,7 @@ __start64:
 	lidt idt80
 	lgdt gdt80
 
-	/* These state and flag settings really should be done later,
-	 * in the shared startup path, they aren't required for mode
-	 * transition and having them in the 32 bit stub means they
-	 * have to be duplicated here.
-	 */
-	movq %cr4, %rax
-	orq $(CR4_PAE | CR4_OSFXSR), %rax
-	movq %rax, %cr4
-	clts
-	movq $X86_EFER_MSR, %rcx
-	rdmsr
-	orq $(X86_EFER_MSR_NXE | X86_EFER_MSR_SCE), %rax
-	wrmsr
-	cld
+	install_pagetables_64
 
 	/* Disable 8259 PIT.  Almost certainly not needed on modern
 	 * UEFI platforms taking this code path, but...
@@ -260,10 +279,6 @@ mxcsr:	.long X86_MXCSR_SANE
 
 .globl z_x86_switch
 z_x86_switch:
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	read_tsc arch_timing_swap_start
-#endif
-
 	/* RSI contains the switch_handle field to which we are
 	 * notionally supposed to store.  Offset it to get back to the
 	 * thread handle instead.
@@ -309,17 +324,24 @@ z_x86_switch:
  */
 
 __resume:
-#ifdef CONFIG_USERSPACE
-#ifndef CONFIG_X86_KPTI
+#if (!defined(CONFIG_X86_KPTI) && defined(CONFIG_USERSPACE)) \
+		|| defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)
+	pushq %rdi	/* Caller-saved, stash it */
+#if !defined(CONFIG_X86_KPTI) && defined(CONFIG_USERSPACE)
 	/* If KPTI is enabled we're always on the kernel's page tables in
 	 * this context and the appropriate page table switch takes place
 	 * when trampolining back to user mode
 	 */
-	pushq %rdi	/* Caller-saved, stash it */
 	call z_x86_swap_update_page_tables
+#endif
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
+	call z_thread_mark_switched_in
+#endif
 	popq %rdi
-#endif /* CONFIG_X86_KPTI */
+#endif /* (!CONFIG_X86_KPTI && CONFIG_USERSPACE) || \
+	   CONFIG_INSTRUMENT_THREAD_SWITCHING */
 
+#ifdef CONFIG_USERSPACE
 	/* Set up exception return stack frame */
 	pushq _thread_offset_to_ss(%rdi)	/* SS */
 #else
@@ -342,6 +364,23 @@ __resume:
 	 * on during routine testing.
 	 */
 	movq $0xB9, _thread_offset_to_rip(%rdi)
+#endif
+
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	/*
+	 * Write the TLS base pointer to FS_BASE MSR,
+	 * where GCC emits code to access TLS data via
+	 * offset to FS.
+	 * Since wrmsr write EDX:EAX to MSR indicated by
+	 * ECX, the high 32-bit needs to be loaded into
+	 * RDX and right shifted by 32 bits so EDX has
+	 * the higher 32-bit value.
+	 */
+	movl $X86_FS_BASE, %ecx
+	movq _thread_offset_to_tls(%rdi), %rax
+	movq _thread_offset_to_tls(%rdi), %rdx
+	shrq $32, %rdx
+	wrmsr
 #endif
 
 	movq _thread_offset_to_rbx(%rdi), %rbx
@@ -387,24 +426,23 @@ __resume:
 	/* swapgs variant of Spectre V1. Disable speculation past this point */
 	lfence
 #endif /* CONFIG_X86_BOUNDS_CHECK_BYPASS_MITIGATION */
-
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	cmp $0x1,arch_timing_value_swap_end
-	jne time_read_not_needed
-	movw $0x2,arch_timing_value_swap_end
-	read_tsc arch_timing_value_swap_common
-	pushq arch_timing_swap_start
-	popq arch_timing_value_swap_temp
-time_read_not_needed:
-#endif
-
 	iretq
 
 
-
-
+#ifdef CONFIG_X86_KPTI
+#define EXCEPT_CODE(nr, ist)						\
+	vector_ ## nr: pushq %gs:__x86_tss64_t_ist ## ist ## _OFFSET;	\
+	pushq $nr;							\
+	jmp except
+#define EXCEPT(nr, ist)							\
+	vector_ ## nr: pushq $0;					\
+	pushq %gs:__x86_tss64_t_ist ## ist ## _OFFSET;			\
+	pushq $nr; \
+	jmp except
+#else
 #define EXCEPT_CODE(nr) vector_ ## nr: pushq $nr; jmp except
 #define EXCEPT(nr)	vector_ ## nr: pushq $0; pushq $nr; jmp except
+#endif
 
 /*
  * When we arrive at 'except' from one of the EXCEPT(X) stubs,
@@ -417,6 +455,7 @@ time_read_not_needed:
  *   CS
  *   RIP
  *   Error Code if pushed by CPU, else 0
+ *   IST index in TSS
  *   Vector number <- RSP points here
  *
  */
@@ -430,7 +469,7 @@ except: /*
 
 #ifdef CONFIG_USERSPACE
 	/* Swap GS register values and page tables if we came from user mode */
-	testb $0x3, 32(%rsp)
+	testb $0x3, 40(%rsp)
 	jz 1f
 	swapgs
 #ifdef CONFIG_X86_KPTI
@@ -447,18 +486,18 @@ except: /*
 	/* Save old trampoline stack pointer in R11 */
 	movq %rsp, %r11
 
-	/* Switch to the exception stack */
-	movq %gs:__x86_tss64_t_ist7_OFFSET, %rsp
+	/* Switch to the correct stack */
+	movq 16(%r11), %rsp
 
 	/* Transplant trampoline stack contents */
-	pushq 56(%r11)	/* SS */
-	pushq 48(%r11)	/* RSP */
-	pushq 40(%r11)	/* RFLAGS */
-	pushq 32(%r11)	/* CS */
-	pushq 24(%r11)	/* RIP */
-	pushq 16(%r11)	/* Error code */
+	pushq 64(%r11)	/* SS */
+	pushq 56(%r11)	/* RSP */
+	pushq 48(%r11)	/* RFLAGS */
+	pushq 40(%r11)	/* CS */
+	pushq 32(%r11)	/* RIP */
+	pushq 24(%r11)	/* Error code */
 	pushq 8(%r11)	/* Vector */
-	pushq (%r11)	/* Stashed R15 */
+	pushq (%r11)	/* Stashed R11 */
 	movq $0, (%r11) /* Cover our tracks */
 
 	/* We're done, it's safe to re-enable interrupts. */
@@ -480,13 +519,13 @@ except: /*
 	pushq %rdx
 	pushq %rcx
 	pushq %rax
+	pushq %rbp
 #ifdef CONFIG_EXCEPTION_DEBUG
 	/* Callee saved regs */
 	pushq %r15
 	pushq %r14
 	pushq %r13
 	pushq %r12
-	pushq %rbp
 	pushq %rbx
 #endif /* CONFIG_EXCEPTION_DEBUG */
 	movq %rsp, %rdi
@@ -498,12 +537,12 @@ except: /*
 	 */
 #ifdef CONFIG_EXCEPTION_DEBUG
 	popq %rbx
-	popq %rbp
 	popq %r12
 	popq %r13
 	popq %r14
 	popq %r15
 #endif /* CONFIG_EXCEPTION_DEBUG */
+	popq %rbp
 	popq %rax
 	popq %rcx
 	popq %rdx
@@ -534,6 +573,21 @@ except: /*
 
 	iretq
 
+#ifdef CONFIG_X86_KPTI
+EXCEPT      ( 0, 7); EXCEPT      ( 1, 7); EXCEPT       (2, 6); EXCEPT      ( 3, 7)
+EXCEPT      ( 4, 7); EXCEPT      ( 5, 7); EXCEPT       (6, 7); EXCEPT      ( 7, 7)
+EXCEPT_CODE ( 8, 7); EXCEPT      ( 9, 7); EXCEPT_CODE (10, 7); EXCEPT_CODE (11, 7)
+EXCEPT_CODE (12, 7); EXCEPT_CODE (13, 7); EXCEPT_CODE (14, 7); EXCEPT      (15, 7)
+EXCEPT      (16, 7); EXCEPT_CODE (17, 7); EXCEPT      (18, 7); EXCEPT      (19, 7)
+EXCEPT      (20, 7); EXCEPT      (21, 7); EXCEPT      (22, 7); EXCEPT      (23, 7)
+EXCEPT      (24, 7); EXCEPT      (25, 7); EXCEPT      (26, 7); EXCEPT      (27, 7)
+EXCEPT      (28, 7); EXCEPT      (29, 7); EXCEPT      (30, 7); EXCEPT      (31, 7)
+
+/* Vector reserved for handling a kernel oops; treat as an exception
+ * and not an interrupt
+ */
+EXCEPT(Z_X86_OOPS_VECTOR, 7);
+#else
 EXCEPT      ( 0); EXCEPT      ( 1); EXCEPT      ( 2); EXCEPT      ( 3)
 EXCEPT      ( 4); EXCEPT      ( 5); EXCEPT      ( 6); EXCEPT      ( 7)
 EXCEPT_CODE ( 8); EXCEPT      ( 9); EXCEPT_CODE (10); EXCEPT_CODE (11)
@@ -547,6 +601,7 @@ EXCEPT      (28); EXCEPT      (29); EXCEPT      (30); EXCEPT      (31)
  * and not an interrupt
  */
 EXCEPT(Z_X86_OOPS_VECTOR);
+#endif /* CONFIG_X86_KPTI */
 
 /*
  * When we arrive at 'irq' from one of the IRQ(X) stubs,
@@ -565,10 +620,6 @@ EXCEPT(Z_X86_OOPS_VECTOR);
 .globl x86_irq_args	/* .. for these definitions */
 
 irq:
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	read_tsc arch_timing_irq_start
-#endif
-
 	pushq %rsi
 
 #ifdef CONFIG_USERSPACE
@@ -684,26 +735,18 @@ irq_enter_unnested: /* Not nested: dump state to thread struct for __resume */
 #endif
 
 irq_dispatch:
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	read_tsc arch_timing_irq_end
-#endif
-
-	movq x86_irq_funcs(,%rcx,8), %rbx
+	movq x86_irq_funcs(,%rcx,8), %rax
 	movq x86_irq_args(,%rcx,8), %rdi
-	call *%rbx
+	call *%rax
 
-	xorl %eax, %eax
+	xorq %rax, %rax
 #ifdef CONFIG_X2APIC
 	xorl %edx, %edx
 	movl $(X86_X2APIC_BASE_MSR + (LOAPIC_EOI >> 4)), %ecx
 	wrmsr
 #else /* xAPIC */
-#ifdef DEVICE_MMIO_IS_IN_RAM
-	movl z_loapic_regs, %edx
-	movl %eax, LOAPIC_EOI(%edx)
-#else
-	movl %eax, (CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI)
-#endif /* DEVICE_MMIO_IS_IN_RAM */
+	movq z_loapic_regs, %rdx
+	movl %eax, LOAPIC_EOI(%rdx)
 #endif /* CONFIG_X2APIC */
 
 	movq %gs:__x86_tss64_t_cpu_OFFSET, %rsi
@@ -805,16 +848,18 @@ IRQ(248); IRQ(249); IRQ(250); IRQ(251); IRQ(252); IRQ(253); IRQ(254); IRQ(255)
 #define	IRQ_STACK	2
 #define EXC_STACK	2
 #define BAD_STACK	2
+#define NMI_STACK	2
 #else
 #define	IRQ_STACK	1
+#define NMI_STACK	6 /* NMI stack */
 #define EXC_STACK	7
-#define BAD_STACK	7 /* Horrible things: NMIs, double faults, MCEs */
+#define BAD_STACK	7 /* Horrible things: double faults, MCEs */
 #endif
 
 .align 16
 idt:
 	IDT(  0, TRAP, EXC_STACK); IDT(  1, TRAP, EXC_STACK)
-	IDT(  2, TRAP, BAD_STACK); IDT(  3, TRAP, EXC_STACK)
+	IDT(  2, TRAP, NMI_STACK); IDT(  3, TRAP, EXC_STACK)
 	IDT(  4, TRAP, EXC_STACK); IDT(  5, TRAP, EXC_STACK)
 	IDT(  6, TRAP, EXC_STACK); IDT(  7, TRAP, EXC_STACK)
 	IDT(  8, TRAP, BAD_STACK); IDT(  9, TRAP, EXC_STACK)
@@ -953,44 +998,6 @@ idt80:  /* LIDT descriptor for 64 bit mode */
 	.word (idt_end - idt - 1)
 	.quad idt
 
-/* Initial page tables for long mode entry.  This generates a second
- * level page full of 512 1G PTE entries of the form:
- *
- * 0x000000nnn0000083
- *
- * Where nnn is an identity-mapped 1G page index in the range
- * 0x000-0x1ff, and 0x83 marks a present, 1G, read/write page
- * entry. It's split up somewhat awkwardly to get around gas's
- * recursion limits in macro expansion.
- *
- * This maps the first 512GB of memory space by default, which will
- * hopefully be enough to reach everything we need before we can
- * bootstrap the real page tables later.
- */
-.macro populate_ptable base, count=64
-	.long 0x00000083
-	.long 64 - \count + \base
-	.long 0x40000083
-	.long 64 - \count + \base
-	.long 0x80000083
-	.long 64 - \count + \base
-	.long 0xC0000083
-	.long 64 - \count + \base
-.if \count > 1
-	populate_ptable \base, (\count - 1)
-.endif
-.endm
-
-.align 4096
-.globl z_x86_flat_ptables
-z_x86_flat_ptables:
-	.long pdp + 0x03		/* 0x03 = R/W, P */
-	.long 0
-	.fill 4088, 1, 0
-pdp:
-	populate_ptable 0
-	populate_ptable 64
-
 .section .gdt,"ad"
 
 /*
@@ -1059,30 +1066,46 @@ gdt80:  /* LGDT descriptor for long mode */
  * Known-good stack for handling CPU exceptions.
  */
 
-.global _exception_stack
+.global z_x86_exception_stack
 .align 16
-_exception_stack:
-	.fill CONFIG_EXCEPTION_STACK_SIZE, 1, 0xAA
+z_x86_exception_stack:
+	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
+.global z_x86_nmi_stack
+.align 16
+z_x86_nmi_stack:
+	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
 
 #if CONFIG_MP_NUM_CPUS > 1
-.global _exception_stack1
+.global z_x86_exception_stack1
 .align 16
-_exception_stack1:
-	.fill CONFIG_EXCEPTION_STACK_SIZE, 1, 0xAA
+z_x86_exception_stack1:
+	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
+.global z_x86_nmi_stack1
+.align 16
+z_x86_nmi_stack1:
+	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
 #endif
 
 #if CONFIG_MP_NUM_CPUS > 2
-.global _exception_stack2
+.global z_x86_exception_stack2
 .align 16
-_exception_stack2:
-	.fill CONFIG_EXCEPTION_STACK_SIZE, 1, 0xAA
+z_x86_exception_stack2:
+	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
+.global z_x86_nmi_stack2
+.align 16
+z_x86_nmi_stack2:
+	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
 #endif
 
 #if CONFIG_MP_NUM_CPUS > 3
-.global _exception_stack3
+.global z_x86_exception_stack3
 .align 16
-_exception_stack3:
-	.fill CONFIG_EXCEPTION_STACK_SIZE, 1, 0xAA
+z_x86_exception_stack3:
+	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
+.global z_x86_nmi_stack3
+.align 16
+z_x86_nmi_stack3:
+	.fill CONFIG_X86_EXCEPTION_STACK_SIZE, 1, 0xAA
 #endif
 
 #ifdef CONFIG_X86_KPTI

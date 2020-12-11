@@ -51,6 +51,8 @@ static void check_trans(uint32_t idx,
 		      idx, xp->res, res, tag);
 }
 
+static struct onoff_manager *callback_srv;
+static struct onoff_client *callback_cli;
 static uint32_t callback_state;
 static int callback_res;
 static onoff_client_callback callback_fn;
@@ -62,6 +64,8 @@ static void callback(struct onoff_manager *srv,
 {
 	onoff_client_callback cb = callback_fn;
 
+	callback_srv = srv;
+	callback_cli = cli;
 	callback_state = state;
 	callback_res = res;
 	callback_fn = NULL;
@@ -215,13 +219,18 @@ static void reset_cli(void)
 	sys_notify_init_callback(&cli.notify, callback);
 }
 
+static void reset_callback(void)
+{
+	callback_state = -1;
+	callback_res = 0;
+	callback_fn = NULL;
+}
+
 static void setup_test(void)
 {
 	int rc;
 
-	callback_state = -1;
-	callback_res = 0;
-	callback_fn = NULL;
+	reset_callback();
 	reset_transit_state(&start_state);
 	reset_transit_state(&stop_state);
 	reset_transit_state(&reset_state);
@@ -383,6 +392,10 @@ static void test_basic_sync(void)
 	zassert_equal(srv.refs, 1U,
 		      "req refs: %u", srv.refs);
 	check_result(start_state.retval, "req");
+	zassert_equal(callback_srv, &srv,
+		      "callback wrong srv");
+	zassert_equal(callback_cli, &cli,
+		      "callback wrong cli");
 	check_callback(ONOFF_STATE_ON, start_state.retval,
 		       "req");
 	zassert_equal(ntrans, 2U,
@@ -1039,6 +1052,134 @@ static void test_cancel_or_release(void)
 		   "trans off");
 }
 
+static void test_sync_basic(void)
+{
+	struct onoff_sync_service srv = {};
+	k_spinlock_key_t key;
+	int res = 5;
+	int rc;
+
+	reset_cli();
+
+	rc = onoff_sync_lock(&srv, &key);
+	zassert_equal(rc, 0,
+		      "init req");
+
+	rc = onoff_sync_finalize(&srv, key, &cli, res, true);
+	zassert_equal(rc, 1,
+		      "req count");
+	zassert_equal(callback_srv, NULL,
+		      "sync cb srv");
+	zassert_equal(callback_cli, &cli,
+		      "sync cb cli");
+	check_callback(ONOFF_STATE_ON, res, "sync req");
+
+	reset_cli();
+	reset_callback();
+
+	rc = onoff_sync_lock(&srv, &key);
+	zassert_equal(rc, 1,
+		      "init rel");
+
+	++res;
+	rc = onoff_sync_finalize(&srv, key, &cli, res, true);
+	zassert_equal(rc, 2,
+		      "req2 count");
+	check_callback(ONOFF_STATE_ON, res, "sync req2");
+
+	reset_cli();
+
+	rc = onoff_sync_lock(&srv, &key);
+	zassert_equal(rc, 2,
+		      "init rel");
+
+	rc = onoff_sync_finalize(&srv, key, NULL, res, false);
+	zassert_equal(rc, 1,
+		      "rel count");
+
+	reset_cli();
+
+	rc = onoff_sync_lock(&srv, &key);
+	zassert_equal(rc, 1,
+		      "init rel2");
+
+	rc = onoff_sync_finalize(&srv, key, NULL, res, false);
+	zassert_equal(rc, 0,
+		      "rel2 count");
+
+	/* Extra release is caught and diagnosed.  May not happen with
+	 * onoff manager, but we can/should do it for sync.
+	 */
+	reset_cli();
+
+	rc = onoff_sync_lock(&srv, &key);
+	zassert_equal(rc, 0,
+		      "init rel2");
+
+	rc = onoff_sync_finalize(&srv, key, NULL, res, false);
+	zassert_equal(rc, -1,
+		      "rel-1 count");
+
+	/* Error state is visible to next lock. */
+	reset_cli();
+	reset_callback();
+
+	rc = onoff_sync_lock(&srv, &key);
+	zassert_equal(rc, -1,
+		      "init req");
+}
+
+static void test_sync_error(void)
+{
+	struct onoff_sync_service srv = {};
+	k_spinlock_key_t key;
+	int res = -EPERM;
+	int rc;
+
+	reset_cli();
+	reset_callback();
+
+	rc = onoff_sync_lock(&srv, &key);
+	zassert_equal(rc, 0,
+		      "init req");
+
+	rc = onoff_sync_finalize(&srv, key, &cli, res, true);
+
+	zassert_equal(rc, res,
+		      "err final");
+	zassert_equal(srv.count, res,
+		      "srv err count");
+	zassert_equal(callback_srv, NULL,
+		      "sync cb srv");
+	zassert_equal(callback_cli, &cli,
+		      "sync cb cli");
+	check_callback(ONOFF_STATE_ERROR, res, "err final");
+
+	/* Error is visible to next operation (the value is the
+	 * negative count)
+	 */
+
+	reset_cli();
+	reset_callback();
+
+	rc = onoff_sync_lock(&srv, &key);
+	zassert_equal(rc, -1,
+		      "init req");
+
+	/* Error is cleared by non-negative finalize result */
+	res = 3;
+	rc = onoff_sync_finalize(&srv, key, &cli, res, true);
+
+	zassert_equal(rc, 1,
+		      "req count %d", rc);
+	check_callback(ONOFF_STATE_ON, res, "sync req");
+
+	rc = onoff_sync_lock(&srv, &key);
+	zassert_equal(rc, 1,
+		      "init rel");
+}
+
+
 void test_main(void)
 {
 	k_sem_init(&isr_sync, 0, 1);
@@ -1067,6 +1208,9 @@ void test_main(void)
 			 ztest_unit_test(test_error),
 			 ztest_unit_test(test_cancel_req),
 			 ztest_unit_test(test_cancel_delayed_req),
-			 ztest_unit_test(test_cancel_or_release));
+			 ztest_unit_test(test_cancel_or_release),
+			 ztest_unit_test(test_sync_basic),
+			 ztest_unit_test(test_sync_error));
+
 	ztest_run_test_suite(onoff_api);
 }

@@ -128,7 +128,7 @@ struct cipher_ctx {
 	/** The device driver instance this crypto context relates to. Will be
 	 * populated by the begin_session() API.
 	 */
-	struct device *device;
+	const struct device *device;
 
 	/** If the driver supports multiple simultaneously crypto sessions, this
 	 * will identify the specific driver state this crypto session relates

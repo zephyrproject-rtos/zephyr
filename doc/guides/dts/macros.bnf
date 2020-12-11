@@ -19,7 +19,7 @@ dt-macro = node-macro / other-macro
 
 ; A macro about a property value
 node-macro =  property-macro
-; EXISTS macro: node has matching binding and "okay" status.
+; EXISTS macro: node exists in the devicetree
 node-macro =/ %s"DT_N" path-id %s"_EXISTS"
 ; Bus macros: the plain BUS is a way to access a node's bus controller.
 ; The additional dt-name suffix is added to match that node's bus type;
@@ -39,22 +39,42 @@ node-macro =/ %s"DT_N" path-id %s"_IRQ_IDX_" DIGIT
               %s"_VAL_" dt-name [ %s"_EXISTS" ]
 node-macro =/ %s"DT_N" path-id %s"_IRQ_NAME_" dt-name
               %s"_VAL_" dt-name [ %s"_EXISTS" ]
-; For fixed-partitions give a unique ordinal value for each partition */
+; Subnodes of the fixed-partitions compatible get macros which contain
+; a unique ordinal value for each partition
 node-macro =/ %s"DT_N" path-id %s"_PARTITION_ID" DIGIT
-; Macros are generated for each of the node's compatibles.
+; Macros are generated for each of a node's compatibles;
+; dt-name in this case is something like "vnd_device".
 node-macro =/ %s"DT_N" path-id %s"_COMPAT_MATCHES_" dt-name
-; The node identifier for the node's parent in the devicetree.
+; Every non-root node gets one of these macros, which expands to the node
+; identifier for that node's parent in the devicetree.
 node-macro =/ %s"DT_N" path-id %s"_PARENT"
 ; These are used internally by DT_FOREACH_CHILD, which iterates over
 ; each child node.
 node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD"
-; The node's status macro
+; The node's status macro; dt-name in this case is something like "okay"
+; or "disabled".
 node-macro =/ %s"DT_N" path-id %s"_STATUS_" dt-name
+; The node's dependency ordinal. This is a non-negative integer
+; value that is used to represent dependency information.
+node-macro =/ %s"DT_N" path-id %s"_ORD"
+; The dependency ordinals of a node's requirements (direct dependencies).
+node-macro =/ %s"DT_N" path-id %s"_REQUIRES_ORDS"
+; The dependency ordinals of a node supports (reverse direct dependencies).
+node-macro =/ %s"DT_N" path-id %s"_SUPPORTS_ORDS"
 
 ; --------------------------------------------------------------------
 ; property-macro: a macro related to a node property
 ;
-; The "plain vanilla" macro for a property's value thus looks like:
+; These combine a node identifier with a "lowercase-and-underscores form"
+; property name. The value expands to something related to the property's
+; value.
+;
+; The optional prop-suf suffix is when there's some specialized
+; subvalue that deserves its own macro, like the macros for an array
+; property's individual elements
+;
+; The "plain vanilla" macro for a property's value, with no prop-suf,
+; looks like this:
 ;
 ;   DT_N_<node path>_P_<property name>
 ;
@@ -68,7 +88,8 @@ property-macro =  %s"DT_N" path-id %s"_P_" prop-id [prop-suf]
 ; --------------------------------------------------------------------
 ; path-id: a node's path-based macro identifier
 ;
-; The path of the node converted to a C token by changing:
+; This in "lowercase-and-underscores" form. I.e. it is
+; the node's devicetree path converted to a C token by changing:
 ;
 ; - each slash (/) to _S_
 ; - all letters to lowercase
@@ -112,8 +133,8 @@ prop-id = dt-name
 ; - that are special to the specification ("reg", "interrupts", etc.)
 ; - with array types (uint8-array, phandle-array, etc.)
 ; - with "enum:" in their bindings
-; - zephyr device API specific macros for phandle-arrays
-; - phandle specifier names ("foo-names")
+; - that have zephyr device API specific macros for phandle-arrays
+; - related to phandle specifier names ("foo-names")
 ;
 ; Here are some examples:
 ;
@@ -143,15 +164,20 @@ other-macro =/ %s"DT_FOREACH_OKAY_INST_" dt-name
 ; E.g.: #define DT_CHOSEN_zephyr_flash
 other-macro =/ %s"DT_CHOSEN_" dt-name
 ; Declares that a compatible has at least one node on a bus.
-;
 ; Example:
 ;
 ;   #define DT_COMPAT_vnd_dev_BUS_spi 1
 other-macro =/ %s"DT_COMPAT_" dt-name %s"_BUS_" dt-name
+; Declares that a compatible has at least one status "okay" node.
+; Example:
+;
 ;   #define DT_COMPAT_HAS_OKAY_vnd_dev 1
 other-macro =/ %s"DT_COMPAT_HAS_OKAY_" dt-name
-; Allows mapping a "label" property to a compatible node
-other-macro =/ %s"DT_COMPAT_" dt-name %s"_LABEL" dt-name
+; Currently used to allow mapping a lowercase-and-underscores "label"
+; property to a fixed-partitions node. See the flash map API docs
+; for an example.
+other-macro =/ %s"DT_COMPAT_" dt-name %s"_LABEL_" dt-name
+
 ; --------------------------------------------------------------------
 ; alternate-id: another way to specify a node besides a path-id
 ;
@@ -202,6 +228,9 @@ alternate-id =/ %s"INST_" 1*DIGIT "_" dt-name
 ; from devicetree to a valid component of a C identifier by
 ; lowercasing letters (in practice, this is a no-op) and converting
 ; non-alphanumeric characters to underscores.
+;
+; You'll see these referred to as "lowercase-and-underscores" forms of
+; various devicetree identifiers throughout the documentation.
 dt-name = 1*( lower / DIGIT / "_" )
 
 ; gen-name is used as a stand-in for a component of a generated macro

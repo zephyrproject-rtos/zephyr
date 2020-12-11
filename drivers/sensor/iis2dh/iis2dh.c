@@ -71,10 +71,10 @@ static int iis2dh_set_fs_raw(struct iis2dh_data *iis2dh, uint8_t fs)
  * @dev: Pointer to instance of struct device (I2C or SPI)
  * @range: Full scale range (2, 4, 8 and 16 G)
  */
-static int iis2dh_set_range(struct device *dev, uint16_t range)
+static int iis2dh_set_range(const struct device *dev, uint16_t range)
 {
 	int err;
-	struct iis2dh_data *iis2dh = dev->driver_data;
+	struct iis2dh_data *iis2dh = dev->data;
 	uint8_t fs = IIS2DH_FS_TO_REG(range);
 
 	err = iis2dh_set_fs_raw(iis2dh, fs);
@@ -89,10 +89,10 @@ static int iis2dh_set_range(struct device *dev, uint16_t range)
  * @dev: Pointer to instance of struct device (I2C or SPI)
  * @odr: Output data rate
  */
-static int iis2dh_set_odr(struct device *dev, uint16_t odr)
+static int iis2dh_set_odr(const struct device *dev, uint16_t odr)
 {
-	struct iis2dh_data *iis2dh = dev->driver_data;
-	const struct iis2dh_device_config *cfg = dev->config_info;
+	struct iis2dh_data *iis2dh = dev->data;
+	const struct iis2dh_device_config *cfg = dev->config;
 	iis2dh_odr_t val;
 
 	val = IIS2DH_ODR_TO_REG_HR(cfg->pm, odr);
@@ -113,13 +113,13 @@ static inline void iis2dh_convert(struct sensor_value *val, int raw_val,
 	val->val2 = dval % 1000000LL;
 }
 
-static inline void iis2dh_channel_get_acc(struct device *dev,
+static inline void iis2dh_channel_get_acc(const struct device *dev,
 					  enum sensor_channel chan,
 					  struct sensor_value *val)
 {
 	int i;
 	uint8_t ofs_start, ofs_stop;
-	struct iis2dh_data *iis2dh = dev->driver_data;
+	struct iis2dh_data *iis2dh = dev->data;
 	struct sensor_value *pval = val;
 
 	switch (chan) {
@@ -142,7 +142,7 @@ static inline void iis2dh_channel_get_acc(struct device *dev,
 	}
 }
 
-static int iis2dh_channel_get(struct device *dev,
+static int iis2dh_channel_get(const struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
@@ -161,7 +161,7 @@ static int iis2dh_channel_get(struct device *dev,
 	return -ENOTSUP;
 }
 
-static int iis2dh_config(struct device *dev, enum sensor_channel chan,
+static int iis2dh_config(const struct device *dev, enum sensor_channel chan,
 			 enum sensor_attribute attr,
 			 const struct sensor_value *val)
 {
@@ -182,7 +182,7 @@ static int iis2dh_config(struct device *dev, enum sensor_channel chan,
 	return -ENOTSUP;
 }
 
-static int iis2dh_attr_set(struct device *dev, enum sensor_channel chan,
+static int iis2dh_attr_set(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
 {
@@ -200,20 +200,21 @@ static int iis2dh_attr_set(struct device *dev, enum sensor_channel chan,
 	return -ENOTSUP;
 }
 
-static int iis2dh_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int iis2dh_sample_fetch(const struct device *dev,
+			       enum sensor_channel chan)
 {
-	struct iis2dh_data *iis2dh = dev->driver_data;
-	union axis3bit16_t buf;
+	struct iis2dh_data *iis2dh = dev->data;
+	int16_t buf[3];
 
 	/* fetch raw data sample */
-	if (iis2dh_acceleration_raw_get(iis2dh->ctx, buf.u8bit) < 0) {
+	if (iis2dh_acceleration_raw_get(iis2dh->ctx, buf) < 0) {
 		LOG_DBG("Failed to fetch raw data sample");
 		return -EIO;
 	}
 
-	iis2dh->acc[0] = sys_le16_to_cpu(buf.i16bit[0]);
-	iis2dh->acc[1] = sys_le16_to_cpu(buf.i16bit[1]);
-	iis2dh->acc[2] = sys_le16_to_cpu(buf.i16bit[2]);
+	iis2dh->acc[0] = sys_le16_to_cpu(buf[0]);
+	iis2dh->acc[1] = sys_le16_to_cpu(buf[1]);
+	iis2dh->acc[2] = sys_le16_to_cpu(buf[2]);
 
 	return 0;
 }
@@ -227,10 +228,10 @@ static const struct sensor_driver_api iis2dh_driver_api = {
 	.channel_get = iis2dh_channel_get,
 };
 
-static int iis2dh_init_interface(struct device *dev)
+static int iis2dh_init_interface(const struct device *dev)
 {
-	struct iis2dh_data *iis2dh = dev->driver_data;
-	const struct iis2dh_device_config *cfg = dev->config_info;
+	struct iis2dh_data *iis2dh = dev->data;
+	const struct iis2dh_device_config *cfg = dev->config;
 
 	iis2dh->bus = device_get_binding(cfg->bus_name);
 	if (!iis2dh->bus) {
@@ -249,10 +250,10 @@ static int iis2dh_init_interface(struct device *dev)
 	return 0;
 }
 
-static int iis2dh_init(struct device *dev)
+static int iis2dh_init(const struct device *dev)
 {
-	struct iis2dh_data *iis2dh = dev->driver_data;
-	const struct iis2dh_device_config *cfg = dev->config_info;
+	struct iis2dh_data *iis2dh = dev->data;
+	const struct iis2dh_device_config *cfg = dev->config;
 	uint8_t wai;
 
 	if (iis2dh_init_interface(dev)) {

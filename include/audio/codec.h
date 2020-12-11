@@ -116,12 +116,15 @@ typedef union {
  * For internal use only, skip these in public documentation.
  */
 struct audio_codec_api {
-	int (*configure)(struct device *dev, struct audio_codec_cfg *cfg);
-	void (*start_output)(struct device *dev);
-	void (*stop_output)(struct device *dev);
-	int (*set_property)(struct device *dev, audio_property_t property,
-			audio_channel_t channel, audio_property_value_t val);
-	int (*apply_properties)(struct device *dev);
+	int (*configure)(const struct device *dev,
+			 struct audio_codec_cfg *cfg);
+	void (*start_output)(const struct device *dev);
+	void (*stop_output)(const struct device *dev);
+	int (*set_property)(const struct device *dev,
+			    audio_property_t property,
+			    audio_channel_t channel,
+			    audio_property_value_t val);
+	int (*apply_properties)(const struct device *dev);
 };
 /**
  * @endcond
@@ -138,11 +141,11 @@ struct audio_codec_api {
  *
  * @return 0 on success, negative error code on failure
  */
-static inline int audio_codec_configure(struct device *dev,
-		struct audio_codec_cfg *cfg)
+static inline int audio_codec_configure(const struct device *dev,
+					struct audio_codec_cfg *cfg)
 {
 	const struct audio_codec_api *api =
-		(const struct audio_codec_api *)dev->driver_api;
+		(const struct audio_codec_api *)dev->api;
 
 	return api->configure(dev, cfg);
 }
@@ -156,10 +159,10 @@ static inline int audio_codec_configure(struct device *dev,
  *
  * @return none
  */
-static inline void audio_codec_start_output(struct device *dev)
+static inline void audio_codec_start_output(const struct device *dev)
 {
 	const struct audio_codec_api *api =
-		(const struct audio_codec_api *)dev->driver_api;
+		(const struct audio_codec_api *)dev->api;
 
 	api->start_output(dev);
 }
@@ -173,10 +176,10 @@ static inline void audio_codec_start_output(struct device *dev)
  *
  * @return none
  */
-static inline void audio_codec_stop_output(struct device *dev)
+static inline void audio_codec_stop_output(const struct device *dev)
 {
 	const struct audio_codec_api *api =
-		(const struct audio_codec_api *)dev->driver_api;
+		(const struct audio_codec_api *)dev->api;
 
 	api->stop_output(dev);
 }
@@ -193,11 +196,13 @@ static inline void audio_codec_stop_output(struct device *dev)
  *
  * @return 0 on success, negative error code on failure
  */
-static inline int audio_codec_set_property(struct device *dev, audio_property_t property,
-		audio_channel_t channel, audio_property_value_t val)
+static inline int audio_codec_set_property(const struct device *dev,
+					   audio_property_t property,
+					   audio_channel_t channel,
+					   audio_property_value_t val)
 {
 	const struct audio_codec_api *api =
-		(const struct audio_codec_api *)dev->driver_api;
+		(const struct audio_codec_api *)dev->api;
 
 	return api->set_property(dev, property, channel, val);
 }
@@ -213,10 +218,10 @@ static inline int audio_codec_set_property(struct device *dev, audio_property_t 
  *
  * @return 0 on success, negative error code on failure
  */
-static inline int audio_codec_apply_properties(struct device *dev)
+static inline int audio_codec_apply_properties(const struct device *dev)
 {
 	const struct audio_codec_api *api =
-		(const struct audio_codec_api *)dev->driver_api;
+		(const struct audio_codec_api *)dev->api;
 
 	return api->apply_properties(dev);
 }

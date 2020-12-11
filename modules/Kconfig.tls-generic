@@ -37,6 +37,10 @@ config MBEDTLS_SSL_EXPORT_KEYS
 	bool "Enable support for exporting SSL key block and master secret"
 	depends on MBEDTLS_TLS_VERSION_1_0 || MBEDTLS_TLS_VERSION_1_1 || MBEDTLS_TLS_VERSION_1_2
 
+config MBEDTLS_SSL_ALPN
+	bool "Enable support for setting the supported Application Layer Protocols"
+	depends on MBEDTLS_TLS_VERSION_1_0 || MBEDTLS_TLS_VERSION_1_1 || MBEDTLS_TLS_VERSION_1_2
+
 endmenu
 
 menu "Ciphersuite configuration"
@@ -339,5 +343,11 @@ config MBEDTLS_USER_CONFIG_FILE
 	help
 	  User config file that can contain mbedTLS configs that were not
 	  covered by the generic config file.
+
+config MBEDTLS_SERVER_NAME_INDICATION
+	bool "Enable support for RFC 6066 server name indication (SNI) in SSL"
+	help
+	  Enable this to support RFC 6066 server name indication (SNI) in SSL.
+	  This requires that MBEDTLS_X509_CRT_PARSE_C is also set.
 
 endmenu

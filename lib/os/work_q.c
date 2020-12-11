@@ -49,7 +49,7 @@ void k_work_q_user_start(struct k_work_q *work_q, k_thread_stack_t *stack,
 	 * domain configuration of the caller
 	 */
 	k_thread_create(&work_q->thread, stack, stack_size, z_work_q_main,
-			work_q, 0, 0, prio, K_USER | K_INHERIT_PERMS,
+			work_q, NULL, NULL, prio, K_USER | K_INHERIT_PERMS,
 			K_FOREVER);
 	k_object_access_grant(&work_q->queue, &work_q->thread);
 	k_thread_name_set(&work_q->thread, WORKQUEUE_THREAD_NAME);

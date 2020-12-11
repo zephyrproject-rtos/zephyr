@@ -8,11 +8,10 @@
  */
 #include <bluetooth/mesh.h>
 #include <bluetooth/conn.h>
-#include "prov.h"
 #include "net.h"
 #include "proxy.h"
 #include "adv.h"
-#include "prov_bearer.h"
+#include "prov.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_PROV)
 #define LOG_MODULE_NAME bt_mesh_pb_gatt

@@ -11,6 +11,11 @@ properties:
     reg:
       required: true
 
+    cc-num:
+      type: int
+      required: true
+      description: Number of capture/compare (CC) registers available
+
     interrupts:
       required: true
 

@@ -14,6 +14,10 @@
 
 #include <net/net_mgmt.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Management part definitions */
 
 #define _NET_BT_LAYER	NET_MGMT_LAYER_L2
@@ -56,5 +60,9 @@ enum net_event_bt_cmd {
 	(_NET_BT_BASE | NET_REQUEST_BT_CMD_DISCONNECT)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_BT_DISCONNECT);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_NET_BT_H_ */

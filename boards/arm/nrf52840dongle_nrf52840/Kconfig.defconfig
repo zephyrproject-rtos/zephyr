@@ -32,6 +32,13 @@ config USB_NRFX
 config USB_DEVICE_STACK
 	default y
 
+# Enable UART driver, needed for CDC ACM
+config SERIAL
+	default USB_CDC_ACM
+
+config UART_INTERRUPT_DRIVEN
+	default USB_CDC_ACM
+
 endif # USB
 
 config BT_CTLR

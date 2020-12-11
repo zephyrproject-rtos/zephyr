@@ -76,7 +76,6 @@ enum evt_t {
 
 struct app_evt_t {
 	sys_snode_t node;
-	struct k_mem_block block;
 	enum evt_t event_type;
 };
 
@@ -85,12 +84,11 @@ struct app_evt_t {
 #define FIFO_ELEM_COUNT         255
 #define FIFO_ELEM_ALIGN         sizeof(unsigned int)
 
-K_MEM_POOL_DEFINE(event_elem_pool, FIFO_ELEM_MIN_SZ, FIFO_ELEM_MAX_SZ,
-		  FIFO_ELEM_COUNT, FIFO_ELEM_ALIGN);
+K_HEAP_DEFINE(event_elem_pool, FIFO_ELEM_MAX_SZ * FIFO_ELEM_COUNT + 256);
 
 static inline void app_evt_free(struct app_evt_t *ev)
 {
-	k_mem_pool_free(&ev->block);
+	k_heap_free(&event_elem_pool, ev);
 }
 
 static inline void app_evt_put(struct app_evt_t *ev)
@@ -117,30 +115,25 @@ static inline void app_evt_flush(void)
 
 static inline struct app_evt_t *app_evt_alloc(void)
 {
-	int ret;
 	struct app_evt_t *ev;
-	struct k_mem_block block;
 
-	ret = k_mem_pool_alloc(&event_elem_pool, &block,
-			       sizeof(struct app_evt_t),
-			       K_NO_WAIT);
-	if (ret < 0) {
+	ev = k_heap_alloc(&event_elem_pool,
+			  sizeof(struct app_evt_t),
+			  K_NO_WAIT);
+	if (ev == NULL) {
 		LOG_ERR("APP event allocation failed!");
 		app_evt_flush();
 
-		ret = k_mem_pool_alloc(&event_elem_pool, &block,
-				       sizeof(struct app_evt_t),
-				       K_NO_WAIT);
-		if (ret < 0) {
+		ev = k_heap_alloc(&event_elem_pool,
+				  sizeof(struct app_evt_t),
+				  K_NO_WAIT);
+		if (ev == NULL) {
 			LOG_ERR("APP event memory corrupted.");
 			__ASSERT_NO_MSG(0);
 			return NULL;
 		}
 		return NULL;
 	}
-
-	ev = (struct app_evt_t *)block.data;
-	ev->block = block;
 
 	return ev;
 }
@@ -192,8 +185,10 @@ static const char *evt_fail	=	"Unknown event detected!\r\n";
 static const char *set_str	=	"String set to: ";
 static const char *endl		=	"\r\n";
 
-static void in_ready_cb(void)
+static void in_ready_cb(const struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	k_sem_give(&usb_sem);
 }
 
@@ -376,7 +371,7 @@ static void flush_buffer_kbd(void)
 	memset(data_buf_kbd, 0, sizeof(data_buf_kbd));
 }
 
-static void write_data(struct device *dev, const char *buf, int len)
+static void write_data(const struct device *dev, const char *buf, int len)
 {
 	uart_irq_tx_enable(dev);
 
@@ -396,7 +391,7 @@ static void write_data(struct device *dev, const char *buf, int len)
 	uart_irq_tx_disable(dev);
 }
 
-static void cdc_mouse_int_handler(struct device *dev, void *user_data)
+static void cdc_mouse_int_handler(const struct device *dev, void *user_data)
 {
 	ARG_UNUSED(user_data);
 
@@ -444,7 +439,7 @@ static void cdc_mouse_int_handler(struct device *dev, void *user_data)
 	}
 }
 
-static void cdc_kbd_int_handler(struct device *dev, void *user_data)
+static void cdc_kbd_int_handler(const struct device *dev, void *user_data)
 {
 	ARG_UNUSED(user_data);
 
@@ -479,7 +474,8 @@ static void cdc_kbd_int_handler(struct device *dev, void *user_data)
 
 /* Devices */
 
-static void btn0(struct device *gpio, struct gpio_callback *cb, uint32_t pins)
+static void btn0(const struct device *gpio, struct gpio_callback *cb,
+		 uint32_t pins)
 {
 	struct app_evt_t *ev = app_evt_alloc();
 
@@ -489,7 +485,8 @@ static void btn0(struct device *gpio, struct gpio_callback *cb, uint32_t pins)
 }
 
 #if DT_NODE_HAS_STATUS(SW1_NODE, okay)
-static void btn1(struct device *gpio, struct gpio_callback *cb, uint32_t pins)
+static void btn1(const struct device *gpio, struct gpio_callback *cb,
+		 uint32_t pins)
 {
 	struct app_evt_t *ev = app_evt_alloc();
 
@@ -500,7 +497,8 @@ static void btn1(struct device *gpio, struct gpio_callback *cb, uint32_t pins)
 #endif
 
 #if DT_NODE_HAS_STATUS(SW2_NODE, okay)
-static void btn2(struct device *gpio, struct gpio_callback *cb, uint32_t pins)
+static void btn2(const struct device *gpio, struct gpio_callback *cb,
+		 uint32_t pins)
 {
 	struct app_evt_t *ev = app_evt_alloc();
 
@@ -511,7 +509,8 @@ static void btn2(struct device *gpio, struct gpio_callback *cb, uint32_t pins)
 #endif
 
 #if DT_NODE_HAS_STATUS(SW3_NODE, okay)
-static void btn3(struct device *gpio, struct gpio_callback *cb, uint32_t pins)
+static void btn3(const struct device *gpio, struct gpio_callback *cb,
+		 uint32_t pins)
 {
 	struct app_evt_t *ev = app_evt_alloc();
 
@@ -521,9 +520,10 @@ static void btn3(struct device *gpio, struct gpio_callback *cb, uint32_t pins)
 }
 #endif
 
-int callbacks_configure(struct device *gpio, uint32_t pin, int flags,
-			void (*handler)(struct device*, struct gpio_callback*,
-			uint32_t), struct gpio_callback *callback)
+int callbacks_configure(const struct device *gpio, uint32_t pin, int flags,
+			void (*handler)(const struct device *, struct gpio_callback*,
+					uint32_t),
+			struct gpio_callback *callback)
 {
 	if (!gpio) {
 		LOG_ERR("Could not find PORT");
@@ -549,7 +549,7 @@ void main(void)
 {
 	int ret;
 
-	struct device *hid0_dev, *hid1_dev, *cdc0_dev, *cdc1_dev;
+	const struct device *hid0_dev, *hid1_dev, *cdc0_dev, *cdc1_dev;
 	uint32_t dtr = 0U;
 	struct app_evt_t *ev;
 

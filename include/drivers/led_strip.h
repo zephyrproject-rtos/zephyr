@@ -57,7 +57,8 @@ struct led_rgb {
  *
  * @see led_strip_update_rgb() for argument descriptions.
  */
-typedef int (*led_api_update_rgb)(struct device *dev, struct led_rgb *pixels,
+typedef int (*led_api_update_rgb)(const struct device *dev,
+				  struct led_rgb *pixels,
 				  size_t num_pixels);
 
 /**
@@ -66,7 +67,8 @@ typedef int (*led_api_update_rgb)(struct device *dev, struct led_rgb *pixels,
  *
  * @see led_strip_update_channels() for argument descriptions.
  */
-typedef int (*led_api_update_channels)(struct device *dev, uint8_t *channels,
+typedef int (*led_api_update_channels)(const struct device *dev,
+				       uint8_t *channels,
 				       size_t num_channels);
 
 /**
@@ -94,11 +96,11 @@ struct led_strip_driver_api {
  * @return 0 on success, negative on error
  * @warning May overwrite @a pixels
  */
-static inline int led_strip_update_rgb(struct device *dev,
+static inline int led_strip_update_rgb(const struct device *dev,
 				       struct led_rgb *pixels,
 				       size_t num_pixels) {
 	const struct led_strip_driver_api *api =
-		(const struct led_strip_driver_api *)dev->driver_api;
+		(const struct led_strip_driver_api *)dev->api;
 
 	return api->update_rgb(dev, pixels, num_pixels);
 }
@@ -120,11 +122,11 @@ static inline int led_strip_update_rgb(struct device *dev,
  * @return 0 on success, negative on error
  * @warning May overwrite @a channels
  */
-static inline int led_strip_update_channels(struct device *dev,
+static inline int led_strip_update_channels(const struct device *dev,
 					    uint8_t *channels,
 					    size_t num_channels) {
 	const struct led_strip_driver_api *api =
-		(const struct led_strip_driver_api *)dev->driver_api;
+		(const struct led_strip_driver_api *)dev->api;
 
 	return api->update_channels(dev, channels, num_channels);
 }

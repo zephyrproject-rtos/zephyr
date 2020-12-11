@@ -9,6 +9,9 @@ CONFIG_NRF5340_CPUAPP_ERRATUM19=y
 # Enable MPU
 CONFIG_ARM_MPU=y
 
+# Enable hardware stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
 # Enable TrustZone-M
 CONFIG_ARM_TRUSTZONE_M=y
 

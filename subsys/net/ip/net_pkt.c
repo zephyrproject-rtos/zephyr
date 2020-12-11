@@ -286,7 +286,7 @@ const char *net_pkt_pool2str(struct net_buf_pool *pool)
 static inline int16_t get_frees(struct net_buf_pool *pool)
 {
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
-	return pool->avail_count;
+	return atomic_get(&pool->avail_count);
 #else
 	return 0;
 #endif

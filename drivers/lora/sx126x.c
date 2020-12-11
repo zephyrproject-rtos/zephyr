@@ -34,6 +34,8 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(semtech_sx1261) +
 #define HAVE_GPIO_CS		DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 #define HAVE_GPIO_ANTENNA_ENABLE			\
 	DT_INST_NODE_HAS_PROP(0, antenna_enable_gpios)
+#define HAVE_GPIO_TX_ENABLE	DT_INST_NODE_HAS_PROP(0, tx_enable_gpios)
+#define HAVE_GPIO_RX_ENABLE	DT_INST_NODE_HAS_PROP(0, rx_enable_gpios)
 
 #define GPIO_CS_LABEL		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0)
 #define GPIO_CS_PIN		DT_INST_SPI_DEV_CS_GPIOS_PIN(0)
@@ -43,11 +45,10 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(semtech_sx1261) +
 #define GPIO_BUSY_PIN		DT_INST_GPIO_PIN(0, busy_gpios)
 #define GPIO_DIO1_PIN		DT_INST_GPIO_PIN(0, dio1_gpios)
 #define GPIO_ANTENNA_ENABLE_PIN	DT_INST_GPIO_PIN(0, antenna_enable_gpios)
+#define GPIO_TX_ENABLE_PIN	DT_INST_GPIO_PIN(0, tx_enable_gpios)
+#define GPIO_RX_ENABLE_PIN	DT_INST_GPIO_PIN(0, rx_enable_gpios)
 
 #define DIO2_TX_ENABLE DT_INST_PROP(0, dio2_tx_enable)
-
-BUILD_ASSERT(DIO2_TX_ENABLE,
-	     "Modules without DIO2 TX control currently unsupported");
 
 #define HAVE_DIO3_TCXO		DT_INST_NODE_HAS_PROP(0, dio3_tcxo_voltage)
 #if HAVE_DIO3_TCXO
@@ -64,24 +65,55 @@ BUILD_ASSERT(DIO2_TX_ENABLE,
 #define SX126X_CALIBRATION_ALL 0x7f
 
 struct sx126x_data {
-	struct device *reset;
-	struct device *busy;
-	struct device *dio1;
+	const struct device *reset;
+	const struct device *busy;
+	const struct device *dio1;
 	struct gpio_callback dio1_irq_callback;
 	struct k_work dio1_irq_work;
 	DioIrqHandler *radio_dio_irq;
 #if HAVE_GPIO_ANTENNA_ENABLE
-	struct device *antenna_enable;
+	const struct device *antenna_enable;
 #endif
-	struct device *spi;
+#if HAVE_GPIO_TX_ENABLE
+	const struct device *tx_enable;
+#endif
+#if HAVE_GPIO_RX_ENABLE
+	const struct device *rx_enable;
+#endif
+	const struct device *spi;
 	struct spi_config spi_cfg;
 #if HAVE_GPIO_CS
 	struct spi_cs_control spi_cs;
 #endif
+	RadioOperatingModes_t mode;
 } dev_data;
 
 
 void SX126xWaitOnBusy(void);
+
+#define MODE(m) [MODE_##m] = #m
+static const char *const mode_names[] = {
+	MODE(SLEEP),
+	MODE(STDBY_RC),
+	MODE(STDBY_XOSC),
+	MODE(FS),
+	MODE(TX),
+	MODE(RX),
+	MODE(RX_DC),
+	MODE(CAD),
+};
+#undef MODE
+
+static const char *sx126x_mode_name(RadioOperatingModes_t m)
+{
+	static const char *unknown_mode = "unknown";
+
+	if (m < ARRAY_SIZE(mode_names) && mode_names[m]) {
+		return mode_names[m];
+	} else {
+		return unknown_mode;
+	}
+}
 
 static int sx126x_spi_transceive(uint8_t *req_tx, uint8_t *req_rx,
 				 size_t req_len, void *data_tx, void *data_rx,
@@ -257,6 +289,55 @@ void SX126xAntSwOff(void)
 #endif
 }
 
+static void sx126x_set_tx_enable(int value)
+{
+#if HAVE_GPIO_TX_ENABLE
+	gpio_pin_set(dev_data.tx_enable, GPIO_TX_ENABLE_PIN, value);
+#endif
+}
+
+static void sx126x_set_rx_enable(int value)
+{
+#if HAVE_GPIO_RX_ENABLE
+	gpio_pin_set(dev_data.rx_enable, GPIO_RX_ENABLE_PIN, value);
+#endif
+}
+
+RadioOperatingModes_t SX126xGetOperatingMode(void)
+{
+	return dev_data.mode;
+}
+
+void SX126xSetOperatingMode(RadioOperatingModes_t mode)
+{
+	LOG_DBG("SetOperatingMode: %s (%i)", sx126x_mode_name(mode), mode);
+
+	dev_data.mode = mode;
+
+	/* To avoid inadvertently putting the RF switch in an
+	 * undefined state, first disable the port we don't want to
+	 * use and then enable the other one.
+	 */
+	switch (mode) {
+	case MODE_TX:
+		sx126x_set_rx_enable(0);
+		sx126x_set_tx_enable(1);
+		break;
+
+	case MODE_RX:
+	case MODE_RX_DC:
+	case MODE_CAD:
+		sx126x_set_tx_enable(0);
+		sx126x_set_rx_enable(1);
+		break;
+
+	default:
+		sx126x_set_rx_enable(0);
+		sx126x_set_tx_enable(0);
+		break;
+	}
+}
+
 uint32_t SX126xGetBoardTcxoWakeupTime(void)
 {
 	return TCXO_POWER_STARTUP_DELAY_MS;
@@ -289,6 +370,12 @@ void SX126xIoTcxoInit(void)
 #else
 	LOG_DBG("No TCXO configured");
 #endif
+}
+
+void SX126xIoRfSwitchInit(void)
+{
+	LOG_DBG("Configuring DIO2");
+	SX126xSetDio2AsRfSwitchCtrl(DIO2_TX_ENABLE);
 }
 
 void SX126xReset(void)
@@ -354,7 +441,7 @@ static void sx126x_dio1_irq_work_handler(struct k_work *work)
 	}
 }
 
-static void sx126x_dio1_irq_callback(struct device *dev,
+static void sx126x_dio1_irq_callback(const struct device *dev,
 				     struct gpio_callback *cb, uint32_t pins)
 {
 	if (pins & BIT(GPIO_DIO1_PIN)) {
@@ -362,7 +449,7 @@ static void sx126x_dio1_irq_callback(struct device *dev,
 	}
 }
 
-static int sx126x_lora_init(struct device *dev)
+static int sx126x_lora_init(const struct device *dev)
 {
 	int ret;
 
@@ -371,7 +458,9 @@ static int sx126x_lora_init(struct device *dev)
 	if (sx12xx_configure_pin(reset, GPIO_OUTPUT_ACTIVE) ||
 	    sx12xx_configure_pin(busy, GPIO_INPUT) ||
 	    sx12xx_configure_pin(dio1, GPIO_INPUT | GPIO_INT_DEBOUNCE) ||
-	    sx12xx_configure_pin(antenna_enable, GPIO_OUTPUT_INACTIVE)) {
+	    sx12xx_configure_pin(antenna_enable, GPIO_OUTPUT_INACTIVE) ||
+	    sx12xx_configure_pin(rx_enable, GPIO_OUTPUT_INACTIVE) ||
+	    sx12xx_configure_pin(tx_enable, GPIO_OUTPUT_INACTIVE)) {
 		return -EIO;
 	}
 
@@ -410,6 +499,8 @@ static int sx126x_lora_init(struct device *dev)
 	dev_data.spi_cfg.operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB;
 	dev_data.spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
 	dev_data.spi_cfg.slave = DT_INST_REG_ADDR(0);
+
+	dev_data.mode = MODE_SLEEP;
 
 	ret = sx12xx_init(dev);
 	if (ret < 0) {

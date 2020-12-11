@@ -11,15 +11,15 @@
 #include <power/power.h>
 #include "policy/pm_policy.h"
 
-#define LOG_LEVEL CONFIG_SYS_PM_LOG_LEVEL
+#define LOG_LEVEL CONFIG_PM_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(power);
 
 static int post_ops_done = 1;
-static enum power_states forced_pm_state = SYS_POWER_STATE_AUTO;
+static enum power_states forced_pm_state = POWER_STATE_AUTO;
 static enum power_states pm_state;
 
-#ifdef CONFIG_SYS_PM_DEBUG
+#ifdef CONFIG_PM_DEBUG
 
 struct pm_debug_info {
 	uint32_t count;
@@ -27,20 +27,20 @@ struct pm_debug_info {
 	uint32_t total_res;
 };
 
-static struct pm_debug_info pm_dbg_info[SYS_POWER_STATE_MAX];
+static struct pm_debug_info pm_dbg_info[POWER_STATE_MAX];
 static uint32_t timer_start, timer_end;
 
-static inline void sys_pm_debug_start_timer(void)
+static inline void pm_debug_start_timer(void)
 {
 	timer_start = k_cycle_get_32();
 }
 
-static inline void sys_pm_debug_stop_timer(void)
+static inline void pm_debug_stop_timer(void)
 {
 	timer_end = k_cycle_get_32();
 }
 
-static void sys_pm_log_debug_info(enum power_states state)
+static void pm_log_debug_info(enum power_states state)
 {
 	uint32_t res = timer_end - timer_start;
 
@@ -49,93 +49,93 @@ static void sys_pm_log_debug_info(enum power_states state)
 	pm_dbg_info[state].total_res += res;
 }
 
-void sys_pm_dump_debug_info(void)
+void pm_dump_debug_info(void)
 {
-	for (int i = 0; i < SYS_POWER_STATE_MAX; i++) {
+	for (int i = 0; i < POWER_STATE_MAX; i++) {
 		LOG_DBG("PM:state = %d, count = %d last_res = %d, "
 			"total_res = %d\n", i, pm_dbg_info[i].count,
 			pm_dbg_info[i].last_res, pm_dbg_info[i].total_res);
 	}
 }
 #else
-static inline void sys_pm_debug_start_timer(void) { }
-static inline void sys_pm_debug_stop_timer(void) { }
-static void sys_pm_log_debug_info(enum power_states state) { }
-void sys_pm_dump_debug_info(void) { }
+static inline void pm_debug_start_timer(void) { }
+static inline void pm_debug_stop_timer(void) { }
+static void pm_log_debug_info(enum power_states state) { }
+void pm_dump_debug_info(void) { }
 #endif
 
-__weak void sys_pm_notify_power_state_entry(enum power_states state)
+__weak void pm_notify_power_state_entry(enum power_states state)
 {
 	/* This function can be overridden by the application. */
 }
 
-__weak void sys_pm_notify_power_state_exit(enum power_states state)
+__weak void pm_notify_power_state_exit(enum power_states state)
 {
 	/* This function can be overridden by the application. */
 }
 
-void sys_pm_force_power_state(enum power_states state)
+void pm_power_state_force(enum power_states state)
 {
-	__ASSERT(state >= SYS_POWER_STATE_AUTO &&
-		 state <  SYS_POWER_STATE_MAX,
+	__ASSERT(state >= POWER_STATE_AUTO &&
+		 state <  POWER_STATE_MAX,
 		 "Invalid power state %d!", state);
 
-#ifdef CONFIG_SYS_PM_DIRECT_FORCE_MODE
+#ifdef CONFIG_PM_DIRECT_FORCE_MODE
 	(void)arch_irq_lock();
 	forced_pm_state = state;
-	_sys_suspend(K_TICKS_FOREVER);
+	pm_system_suspend(K_TICKS_FOREVER);
 #else
 	forced_pm_state = state;
 #endif
 }
 
-enum power_states _sys_suspend(int32_t ticks)
+
+static enum power_states _handle_device_abort(enum power_states state)
+{
+	LOG_DBG("Some devices didn't enter suspend state!");
+	pm_resume_devices();
+	pm_notify_power_state_exit(pm_state);
+	pm_state = POWER_STATE_ACTIVE;
+	return pm_state;
+}
+
+enum power_states pm_policy_mgr(int32_t ticks)
 {
 	bool deep_sleep;
-#if CONFIG_DEVICE_POWER_MANAGEMENT
+#if CONFIG_PM_DEVICE
 	bool low_power = false;
 #endif
 
-	pm_state = (forced_pm_state == SYS_POWER_STATE_AUTO) ?
-		   sys_pm_policy_next_state(ticks) : forced_pm_state;
+	pm_state = (forced_pm_state == POWER_STATE_AUTO) ?
+		   pm_policy_next_state(ticks) : forced_pm_state;
 
-	if (pm_state == SYS_POWER_STATE_ACTIVE) {
-		LOG_DBG("No PM operations done.");
+	if (pm_state == POWER_STATE_ACTIVE) {
+		LOG_DBG("No PM operations to be done.");
 		return pm_state;
 	}
 
-	deep_sleep = IS_ENABLED(CONFIG_SYS_POWER_DEEP_SLEEP_STATES) ?
-		     sys_pm_is_deep_sleep_state(pm_state) : 0;
+	deep_sleep = IS_ENABLED(CONFIG_PM_DEEP_SLEEP_STATES) ?
+		     pm_is_deep_sleep_state(pm_state) : 0;
 
 	post_ops_done = 0;
-	sys_pm_notify_power_state_entry(pm_state);
+	pm_notify_power_state_entry(pm_state);
 
 	if (deep_sleep) {
-#if CONFIG_DEVICE_POWER_MANAGEMENT
 		/* Suspend peripherals. */
-		if (sys_pm_suspend_devices()) {
-			LOG_DBG("Some devices didn't enter suspend state!");
-			sys_pm_resume_devices();
-			sys_pm_notify_power_state_exit(pm_state);
-			pm_state = SYS_POWER_STATE_ACTIVE;
-			return pm_state;
+		if (IS_ENABLED(CONFIG_PM_DEVICE) && pm_suspend_devices()) {
+			return _handle_device_abort(pm_state);
 		}
-#endif
 		/*
 		 * Disable idle exit notification as it is not needed
 		 * in deep sleep mode.
 		 */
-		_sys_pm_idle_exit_notification_disable();
-#if CONFIG_DEVICE_POWER_MANAGEMENT
+		pm_idle_exit_notification_disable();
+#if CONFIG_PM_DEVICE
 	} else {
-		if (sys_pm_policy_low_power_devices(pm_state)) {
+		if (pm_policy_low_power_devices(pm_state)) {
 			/* low power peripherals. */
-			if (sys_pm_low_power_devices()) {
-				LOG_DBG("Someone didn't enter low power state");
-				sys_pm_resume_devices();
-				sys_pm_notify_power_state_exit(pm_state);
-				pm_state = SYS_POWER_STATE_ACTIVE;
-				return pm_state;
+			if (pm_low_power_devices()) {
+				return _handle_device_abort(pm_state);
 			}
 
 			low_power = true;
@@ -143,31 +143,38 @@ enum power_states _sys_suspend(int32_t ticks)
 #endif
 	}
 
+	pm_debug_start_timer();
 	/* Enter power state */
-	sys_pm_debug_start_timer();
-	sys_set_power_state(pm_state);
-	sys_pm_debug_stop_timer();
+	pm_power_state_set(pm_state);
+	pm_debug_stop_timer();
 
-#if CONFIG_DEVICE_POWER_MANAGEMENT
+	/* Wake up sequence starts here */
+#if CONFIG_PM_DEVICE
 	if (deep_sleep || low_power) {
 		/* Turn on peripherals and restore device states as necessary */
-		sys_pm_resume_devices();
+		pm_resume_devices();
 	}
 #endif
-	sys_pm_log_debug_info(pm_state);
+	pm_log_debug_info(pm_state);
 
 	if (!post_ops_done) {
 		post_ops_done = 1;
 		/* clear forced_pm_state */
-		forced_pm_state = SYS_POWER_STATE_AUTO;
-		sys_pm_notify_power_state_exit(pm_state);
-		_sys_pm_power_state_exit_post_ops(pm_state);
+		forced_pm_state = POWER_STATE_AUTO;
+		pm_notify_power_state_exit(pm_state);
+		_pm_power_state_exit_post_ops(pm_state);
 	}
 
 	return pm_state;
 }
 
-void _sys_resume(void)
+
+enum power_states pm_system_suspend(int32_t ticks)
+{
+	return pm_policy_mgr(ticks);
+}
+
+void pm_system_resume(void)
 {
 	/*
 	 * This notification is called from the ISR of the event
@@ -181,24 +188,24 @@ void _sys_resume(void)
 	 * The kernel scheduler will get control after the ISR finishes
 	 * and it may schedule another thread.
 	 *
-	 * Call _sys_pm_idle_exit_notification_disable() if this
+	 * Call pm_idle_exit_notification_disable() if this
 	 * notification is not required.
 	 */
 	if (!post_ops_done) {
 		post_ops_done = 1;
-		sys_pm_notify_power_state_exit(pm_state);
-		_sys_pm_power_state_exit_post_ops(pm_state);
+		pm_notify_power_state_exit(pm_state);
+		_pm_power_state_exit_post_ops(pm_state);
 	}
 }
 
-#if CONFIG_DEVICE_POWER_MANAGEMENT
-static int sys_pm_init(struct device *dev)
+#if CONFIG_PM_DEVICE
+static int pm_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	sys_pm_create_device_list();
+	pm_create_device_list();
 	return 0;
 }
 
-SYS_INIT(sys_pm_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
+SYS_INIT(pm_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif /* CONFIG_PM_DEVICE */

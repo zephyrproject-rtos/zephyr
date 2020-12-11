@@ -42,12 +42,12 @@ static const struct gpio_driver_config gpio_cc13xx_cc26xx_cfg_0 = {
 	.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
 };
 
-static int gpio_cc13xx_cc26xx_port_set_bits_raw(struct device *port,
-	uint32_t mask);
-static int gpio_cc13xx_cc26xx_port_clear_bits_raw(struct device *port,
-	uint32_t mask);
+static int gpio_cc13xx_cc26xx_port_set_bits_raw(const struct device *port,
+						uint32_t mask);
+static int gpio_cc13xx_cc26xx_port_clear_bits_raw(const struct device *port,
+						  uint32_t mask);
 
-static int gpio_cc13xx_cc26xx_config(struct device *port,
+static int gpio_cc13xx_cc26xx_config(const struct device *port,
 				     gpio_pin_t pin,
 				     gpio_flags_t flags)
 {
@@ -70,11 +70,32 @@ static int gpio_cc13xx_cc26xx_config(struct device *port,
 		return -ENOTSUP;
 	}
 
-	config |= IOC_CURRENT_2MA | IOC_STRENGTH_AUTO | IOC_SLEW_DISABLE |
-		 IOC_NO_WAKE_UP;
+	config |= IOC_SLEW_DISABLE | IOC_NO_WAKE_UP;
 
 	config |= (flags & GPIO_INT_DEBOUNCE) ? IOC_HYST_ENABLE :
 							IOC_HYST_DISABLE;
+
+	/*
+	 * The GPIO_DS_ALT_HIGH and GPIO_DS_ALT_LOW flags are for setting
+	 * the highest drive strength for a GPIO in the output HIGH and
+	 * output LOW states, respectively. Since only 1 drive strength
+	 * setting is available for a GPIO (irrespective of output state),
+	 * require both flags to be set for highest drive strength, default
+	 * to low/auto drive strength.
+	 * Not all GPIO support 8ma, but setting that bit will use the highest
+	 * supported drive strength.
+	 */
+	switch (flags & (GPIO_DS_ALT_HIGH | GPIO_DS_ALT_LOW)) {
+	case 0:
+		config |= IOC_CURRENT_2MA | IOC_STRENGTH_AUTO;
+		break;
+	case (GPIO_DS_ALT_HIGH | GPIO_DS_ALT_LOW):
+		config |= IOC_CURRENT_8MA | IOC_STRENGTH_MAX;
+		break;
+	case GPIO_DS_ALT_HIGH:
+	case GPIO_DS_ALT_LOW:
+		return -ENOTSUP;
+	}
 
 	switch (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) {
 	case 0:
@@ -107,7 +128,8 @@ static int gpio_cc13xx_cc26xx_config(struct device *port,
 	return 0;
 }
 
-static int gpio_cc13xx_cc26xx_port_get_raw(struct device *port, uint32_t *value)
+static int gpio_cc13xx_cc26xx_port_get_raw(const struct device *port,
+					   uint32_t *value)
 {
 	__ASSERT_NO_MSG(value != NULL);
 
@@ -116,8 +138,9 @@ static int gpio_cc13xx_cc26xx_port_get_raw(struct device *port, uint32_t *value)
 	return 0;
 }
 
-static int gpio_cc13xx_cc26xx_port_set_masked_raw(struct device *port,
-	uint32_t mask, uint32_t value)
+static int gpio_cc13xx_cc26xx_port_set_masked_raw(const struct device *port,
+						  uint32_t mask,
+						  uint32_t value)
 {
 	GPIO_setMultiDio(mask & value);
 	GPIO_clearMultiDio(mask & ~value);
@@ -125,31 +148,34 @@ static int gpio_cc13xx_cc26xx_port_set_masked_raw(struct device *port,
 	return 0;
 }
 
-static int gpio_cc13xx_cc26xx_port_set_bits_raw(struct device *port, uint32_t mask)
+static int gpio_cc13xx_cc26xx_port_set_bits_raw(const struct device *port,
+						uint32_t mask)
 {
 	GPIO_setMultiDio(mask);
 
 	return 0;
 }
 
-static int gpio_cc13xx_cc26xx_port_clear_bits_raw(struct device *port,
-	uint32_t mask)
+static int gpio_cc13xx_cc26xx_port_clear_bits_raw(const struct device *port,
+						  uint32_t mask)
 {
 	GPIO_clearMultiDio(mask);
 
 	return 0;
 }
 
-static int gpio_cc13xx_cc26xx_port_toggle_bits(struct device *port, uint32_t mask)
+static int gpio_cc13xx_cc26xx_port_toggle_bits(const struct device *port,
+					       uint32_t mask)
 {
 	GPIO_toggleMultiDio(mask);
 
 	return 0;
 }
 
-static int gpio_cc13xx_cc26xx_pin_interrupt_configure(struct device *port,
-		gpio_pin_t pin, enum gpio_int_mode mode,
-		enum gpio_int_trig trig)
+static int gpio_cc13xx_cc26xx_pin_interrupt_configure(const struct device *port,
+						      gpio_pin_t pin,
+						      enum gpio_int_mode mode,
+						      enum gpio_int_trig trig)
 {
 	uint32_t config = 0;
 
@@ -177,26 +203,25 @@ static int gpio_cc13xx_cc26xx_pin_interrupt_configure(struct device *port,
 	return 0;
 }
 
-static int gpio_cc13xx_cc26xx_manage_callback(struct device *port,
+static int gpio_cc13xx_cc26xx_manage_callback(const struct device *port,
 					      struct gpio_callback *callback,
 					      bool set)
 {
-	struct gpio_cc13xx_cc26xx_data *data = port->driver_data;
+	struct gpio_cc13xx_cc26xx_data *data = port->data;
 
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
-static uint32_t gpio_cc13xx_cc26xx_get_pending_int(struct device *dev)
+static uint32_t gpio_cc13xx_cc26xx_get_pending_int(const struct device *dev)
 {
 	return GPIO_getEventMultiDio(GPIO_DIO_ALL_MASK);
 }
 
 DEVICE_DECLARE(gpio_cc13xx_cc26xx);
 
-static void gpio_cc13xx_cc26xx_isr(void *arg)
+static void gpio_cc13xx_cc26xx_isr(const struct device *dev)
 {
-	struct device *dev = arg;
-	struct gpio_cc13xx_cc26xx_data *data = dev->driver_data;
+	struct gpio_cc13xx_cc26xx_data *data = dev->data;
 
 	uint32_t status = GPIO_getEventMultiDio(GPIO_DIO_ALL_MASK);
 
@@ -205,9 +230,9 @@ static void gpio_cc13xx_cc26xx_isr(void *arg)
 	gpio_fire_callbacks(&data->callbacks, dev, status);
 }
 
-static int gpio_cc13xx_cc26xx_init(struct device *dev)
+static int gpio_cc13xx_cc26xx_init(const struct device *dev)
 {
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 	/* Set dependency on gpio resource to turn on power domains */
 	Power_setDependency(PowerCC26XX_PERIPH_GPIO);
 #else

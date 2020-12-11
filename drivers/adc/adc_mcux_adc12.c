@@ -25,11 +25,11 @@ struct mcux_adc12_config {
 	adc12_clock_divider_t clock_div;
 	adc12_reference_voltage_source_t ref_src;
 	uint32_t sample_clk_count;
-	void (*irq_config_func)(struct device *dev);
+	void (*irq_config_func)(const struct device *dev);
 };
 
 struct mcux_adc12_data {
-	struct device *dev;
+	const struct device *dev;
 	struct adc_context ctx;
 	uint16_t *buffer;
 	uint16_t *repeat_buffer;
@@ -37,7 +37,7 @@ struct mcux_adc12_data {
 	uint8_t channel_id;
 };
 
-static int mcux_adc12_channel_setup(struct device *dev,
+static int mcux_adc12_channel_setup(const struct device *dev,
 				    const struct adc_channel_cfg *channel_cfg)
 {
 	uint8_t channel_id = channel_cfg->channel_id;
@@ -70,11 +70,11 @@ static int mcux_adc12_channel_setup(struct device *dev,
 	return 0;
 }
 
-static int mcux_adc12_start_read(struct device *dev,
+static int mcux_adc12_start_read(const struct device *dev,
 				 const struct adc_sequence *sequence)
 {
-	const struct mcux_adc12_config *config = dev->config_info;
-	struct mcux_adc12_data *data = dev->driver_data;
+	const struct mcux_adc12_config *config = dev->config;
+	struct mcux_adc12_data *data = dev->data;
 	adc12_hardware_average_mode_t mode;
 	adc12_resolution_t resolution;
 	ADC_Type *base = config->base;
@@ -130,11 +130,11 @@ static int mcux_adc12_start_read(struct device *dev,
 	return error;
 }
 
-static int mcux_adc12_read_async(struct device *dev,
+static int mcux_adc12_read_async(const struct device *dev,
 				 const struct adc_sequence *sequence,
 				 struct k_poll_signal *async)
 {
-	struct mcux_adc12_data *data = dev->driver_data;
+	struct mcux_adc12_data *data = dev->data;
 	int error;
 
 	adc_context_lock(&data->ctx, async ? true : false, async);
@@ -144,16 +144,16 @@ static int mcux_adc12_read_async(struct device *dev,
 	return error;
 }
 
-static int mcux_adc12_read(struct device *dev,
+static int mcux_adc12_read(const struct device *dev,
 			   const struct adc_sequence *sequence)
 {
 	return mcux_adc12_read_async(dev, sequence, NULL);
 }
 
-static void mcux_adc12_start_channel(struct device *dev)
+static void mcux_adc12_start_channel(const struct device *dev)
 {
-	const struct mcux_adc12_config *config = dev->config_info;
-	struct mcux_adc12_data *data = dev->driver_data;
+	const struct mcux_adc12_config *config = dev->config;
+	struct mcux_adc12_data *data = dev->data;
 
 	adc12_channel_config_t channel_config;
 	uint32_t channel_group = 0U;
@@ -188,11 +188,10 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 	}
 }
 
-static void mcux_adc12_isr(void *arg)
+static void mcux_adc12_isr(const struct device *dev)
 {
-	struct device *dev = (struct device *)arg;
-	const struct mcux_adc12_config *config = dev->config_info;
-	struct mcux_adc12_data *data = dev->driver_data;
+	const struct mcux_adc12_config *config = dev->config;
+	struct mcux_adc12_data *data = dev->data;
 	ADC_Type *base = config->base;
 	uint32_t channel_group = 0U;
 	uint16_t result;
@@ -211,10 +210,10 @@ static void mcux_adc12_isr(void *arg)
 	}
 }
 
-static int mcux_adc12_init(struct device *dev)
+static int mcux_adc12_init(const struct device *dev)
 {
-	const struct mcux_adc12_config *config = dev->config_info;
-	struct mcux_adc12_data *data = dev->driver_data;
+	const struct mcux_adc12_config *config = dev->config;
+	struct mcux_adc12_data *data = dev->data;
 	ADC_Type *base = config->base;
 	adc12_config_t adc_config;
 
@@ -260,7 +259,7 @@ static const struct adc_driver_api mcux_adc12_driver_api = {
 				 (kADC12_ReferenceVoltageSourceVref))
 
 #define ACD12_MCUX_INIT(n)						\
-	static void mcux_adc12_config_func_##n(struct device *dev);	\
+	static void mcux_adc12_config_func_##n(const struct device *dev); \
 									\
 	ASSERT_WITHIN_RANGE(DT_INST_PROP(n, clk_source), 0, 3,		\
 			    "Invalid clock source");			\
@@ -284,17 +283,17 @@ static const struct adc_driver_api mcux_adc12_driver_api = {
 		ADC_CONTEXT_INIT_SYNC(mcux_adc12_data_##n, ctx),	\
 	};								\
 									\
-	DEVICE_AND_API_INIT(mcux_adc12_##n, DT_INST_LABEL(n),		\
-			    &mcux_adc12_init, &mcux_adc12_data_##n,	\
+	DEVICE_DT_INST_DEFINE(n, &mcux_adc12_init,			\
+			    device_pm_control_nop, &mcux_adc12_data_##n,\
 			    &mcux_adc12_config_##n, POST_KERNEL,	\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &mcux_adc12_driver_api);			\
 									\
-	static void mcux_adc12_config_func_##n(struct device *dev)	\
+	static void mcux_adc12_config_func_##n(const struct device *dev) \
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    DT_INST_IRQ(n, priority), mcux_adc12_isr,	\
-			    DEVICE_GET(mcux_adc12_##n), 0);		\
+			    DEVICE_DT_INST_GET(n), 0);			\
 									\
 		irq_enable(DT_INST_IRQN(n));				\
 	}

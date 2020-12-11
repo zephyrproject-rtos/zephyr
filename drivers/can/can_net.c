@@ -16,7 +16,7 @@ struct mcast_filter_mapping {
 };
 
 struct net_can_context {
-	struct device *can_dev;
+	const struct device *can_dev;
 	struct net_if *iface;
 	int recv_filter_id;
 	struct mcast_filter_mapping mcast_mapping[NET_IF_MAX_IPV6_MADDR];
@@ -88,10 +88,11 @@ static inline void can_set_lladdr(struct net_pkt *pkt, struct zcan_frame *frame)
 	net_buf_pull(buf, sizeof(uint16_t));
 }
 
-static int net_can_send(struct device *dev, const struct zcan_frame *frame,
+static int net_can_send(const struct device *dev,
+			const struct zcan_frame *frame,
 			can_tx_callback_t cb, void *cb_arg, k_timeout_t timeout)
 {
-	struct net_can_context *ctx = dev->driver_data;
+	struct net_can_context *ctx = dev->data;
 
 	NET_ASSERT(frame->id_type == CAN_EXTENDED_IDENTIFIER);
 	return can_send(ctx->can_dev, frame, timeout, cb, cb_arg);
@@ -172,8 +173,8 @@ static inline int attach_mcast_filter(struct net_can_context *ctx,
 static void mcast_cb(struct net_if *iface, const struct in6_addr *addr,
 		     bool is_joined)
 {
-	struct device *dev = net_if_get_device(iface);
-	struct net_can_context *ctx = dev->driver_data;
+	const struct device *dev = net_if_get_device(iface);
+	struct net_can_context *ctx = dev->data;
 	struct mcast_filter_mapping *filter_mapping;
 	int filter_id;
 
@@ -205,8 +206,8 @@ static void mcast_cb(struct net_if *iface, const struct in6_addr *addr,
 
 static void net_can_iface_init(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
-	struct net_can_context *ctx = dev->driver_data;
+	const struct device *dev = net_if_get_device(iface);
+	struct net_can_context *ctx = dev->data;
 
 	ctx->iface = iface;
 
@@ -217,18 +218,18 @@ static void net_can_iface_init(struct net_if *iface)
 	net_if_mcast_mon_register(&mcast_monitor, iface, mcast_cb);
 }
 
-static int can_attach_filter(struct device *dev, can_rx_callback_t cb,
+static int can_attach_filter(const struct device *dev, can_rx_callback_t cb,
 			     void *cb_arg,
 			     const struct zcan_filter *filter)
 {
-	struct net_can_context *ctx = dev->driver_data;
+	struct net_can_context *ctx = dev->data;
 
 	return can_attach_isr(ctx->can_dev, cb, cb_arg, filter);
 }
 
-static void can_detach_filter(struct device *dev, int filter_id)
+static void can_detach_filter(const struct device *dev, int filter_id)
 {
-	struct net_can_context *ctx = dev->driver_data;
+	struct net_can_context *ctx = dev->data;
 
 	if (filter_id >= 0) {
 		can_detach(ctx->can_dev, filter_id);
@@ -312,9 +313,9 @@ static inline int can_attach_all_mcast_filter(struct net_can_context *ctx)
 }
 #endif /*CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR*/
 
-static int can_enable(struct device *dev, bool enable)
+static int can_enable(const struct device *dev, bool enable)
 {
-	struct net_can_context *ctx = dev->driver_data;
+	struct net_can_context *ctx = dev->data;
 
 	if (enable) {
 		if (ctx->recv_filter_id == CAN_NET_FILTER_NOT_SET) {
@@ -370,10 +371,10 @@ static struct net_can_api net_can_api_inst = {
 	.enable = can_enable,
 };
 
-static int net_can_init(struct device *dev)
+static int net_can_init(const struct device *dev)
 {
-	struct device *can_dev;
-	struct net_can_context *ctx = dev->driver_data;
+	const struct device *can_dev;
+	struct net_can_context *ctx = dev->data;
 
 	can_dev = device_get_binding(DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL);
 

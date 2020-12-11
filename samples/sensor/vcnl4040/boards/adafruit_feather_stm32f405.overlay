@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2020, Richard Osterloh
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&feather_i2c {
+	vcnl4040@60 {
+		compatible = "vishay,vcnl4040";
+		reg = <0x60>;
+		label = "VCNL4040";
+		int-gpios = <&feather_header 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		led-current = <200>;
+		led-duty-cycle = <320>;
+		proximity-it = "8";
+		proximity-trigger = "close";
+		als-it = <640>;
+	};
+};

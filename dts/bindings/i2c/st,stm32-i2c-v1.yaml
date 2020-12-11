@@ -13,3 +13,13 @@ properties:
 
     interrupts:
       required: true
+
+    pinctrl-0:
+      type: phandles
+      required: false
+      description: |
+        GPIO pin configuration for serial signals (SDA, SCL).  We expect
+        that the phandles will reference pinctrl nodes.
+
+        For example the I2C1 would be
+           pinctrl-0 = <&i2c1_sda_pb11 &i2c1_scl_pb10>;

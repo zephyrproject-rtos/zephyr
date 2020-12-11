@@ -213,7 +213,7 @@ static int pwm_led_esp32_channel_set(int pin, bool speed_mode, int channel,
 	const int pin_mode = GPIO_OUTPUT;
 
 	const char *device_name;
-	struct device *gpio;
+	const struct device *gpio;
 	int ret;
 	uint32_t sig_out_idx;
 
@@ -258,7 +258,7 @@ static int pwm_led_esp32_timer_set(int speed_mode, int timer,
 	int tick_sel = PWM_LED_ESP32_APB_CLK_FREQ;
 	uint32_t precision = (0x1 << bit_num);
 
-	assert(frequency > 0);
+	__ASSERT_NO_MSG(frequency > 0);
 
 	/* This expression comes from ESP32 Espressif's Technical Reference
 	 * Manual chapter 13.2.2 Timers.
@@ -311,7 +311,7 @@ static int pwm_led_esp32_timer_set(int speed_mode, int timer,
 }
 
 /* period_cycles is not used, set frequency on menuconfig instead. */
-static int pwm_led_esp32_pin_set_cycles(struct device *dev,
+static int pwm_led_esp32_pin_set_cycles(const struct device *dev,
 					uint32_t pwm, uint32_t period_cycles,
 					uint32_t pulse_cycles, pwm_flags_t flags)
 {
@@ -320,7 +320,7 @@ static int pwm_led_esp32_pin_set_cycles(struct device *dev,
 	int timer;
 	int ret;
 	const struct pwm_led_esp32_config * const config =
-		(const struct pwm_led_esp32_config *) dev->config_info;
+		(const struct pwm_led_esp32_config *) dev->config;
 
 	ARG_UNUSED(period_cycles);
 
@@ -365,7 +365,8 @@ static int pwm_led_esp32_pin_set_cycles(struct device *dev,
 	return ret;
 }
 
-static int pwm_led_esp32_get_cycles_per_sec(struct device *dev, uint32_t pwm,
+static int pwm_led_esp32_get_cycles_per_sec(const struct device *dev,
+					    uint32_t pwm,
 					    uint64_t *cycles)
 {
 	const struct pwm_led_esp32_config *config;
@@ -373,7 +374,7 @@ static int pwm_led_esp32_get_cycles_per_sec(struct device *dev, uint32_t pwm,
 	int timer;
 	int speed_mode;
 
-	config = (const struct pwm_led_esp32_config *) dev->config_info;
+	config = (const struct pwm_led_esp32_config *) dev->config;
 
 	channel = pwm_led_esp32_get_gpio_config(pwm, config->ch_cfg);
 	if (channel < 0) {
@@ -394,7 +395,7 @@ static const struct pwm_driver_api pwm_led_esp32_api = {
 	.get_cycles_per_sec = pwm_led_esp32_get_cycles_per_sec,
 };
 
-int pwm_led_esp32_init(struct device *dev)
+int pwm_led_esp32_init(const struct device *dev)
 {
 	return 0;
 }

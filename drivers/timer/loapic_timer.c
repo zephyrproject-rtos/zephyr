@@ -106,7 +106,7 @@ static unsigned char timer_mode = TIMER_MODE_PERIODIC;
 #endif
 #endif /* CONFIG_TICKLESS_IDLE */
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 static uint32_t loapic_timer_device_power_state;
 static uint32_t reg_timer_save;
 static uint32_t reg_timer_cfg_save;
@@ -198,12 +198,9 @@ static inline void program_max_cycles(void)
 }
 #endif
 
-void timer_int_handler(void *unused /* parameter is not used */
+void timer_int_handler(const void *unused /* parameter is not used */
 				 )
 {
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	arch_timing_tick_start = z_tsc_read();
-#endif
 	ARG_UNUSED(unused);
 
 #if defined(CONFIG_TICKLESS_KERNEL)
@@ -281,9 +278,6 @@ void timer_int_handler(void *unused /* parameter is not used */
 	z_clock_announce(_sys_idle_elapsed_ticks);
 #endif /*CONFIG_TICKLESS_IDLE*/
 #endif
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	arch_timing_tick_end = z_tsc_read();
-#endif /* CONFIG_EXECUTION_BENCHMARKING */
 }
 
 #ifdef CONFIG_TICKLESS_KERNEL
@@ -553,7 +547,7 @@ void z_clock_idle_exit(void)
  *
  * @return 0
  */
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 
@@ -574,7 +568,7 @@ int z_clock_driver_init(struct device *device)
 	periodic_mode_set();
 #endif
 	initial_count_register_set(cycles_per_tick - 1);
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	loapic_timer_device_power_state = DEVICE_PM_ACTIVE_STATE;
 #endif
 
@@ -585,8 +579,8 @@ int z_clock_driver_init(struct device *device)
 	return 0;
 }
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static int sys_clock_suspend(struct device *dev)
+#ifdef CONFIG_PM_DEVICE
+static int sys_clock_suspend(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -597,7 +591,7 @@ static int sys_clock_suspend(struct device *dev)
 	return 0;
 }
 
-static int sys_clock_resume(struct device *dev)
+static int sys_clock_resume(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -637,7 +631,7 @@ static int sys_clock_resume(struct device *dev)
 * Implements the driver control management functionality
 * the *context may include IN data or/and OUT data
 */
-int z_clock_device_ctrl(struct device *port, uint32_t ctrl_command,
+int z_clock_device_ctrl(const struct device *port, uint32_t ctrl_command,
 			  void *context, device_pm_cb cb, void *arg)
 {
 	int ret = 0;

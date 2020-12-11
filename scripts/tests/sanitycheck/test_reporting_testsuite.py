@@ -106,12 +106,13 @@ def test_xunit_report(class_testsuite, test_data,
     assert filesize != 0
 
     tree = ET.parse(filename)
-    assert int(tree.findall('testsuite')[0].attrib["skip"]) == int(skips)
+    assert int(tree.findall('testsuite')[0].attrib["skipped"]) == int(skips)
     assert int(tree.findall('testsuite')[0].attrib["failures"]) == int(fails)
     assert int(tree.findall('testsuite')[0].attrib["errors"]) == int(errors)
     assert int(tree.findall('testsuite')[0].attrib["tests"]) == int(passes+fails+skips+errors)
 
-    for index in range(0, len(class_testsuite.instances)):
+    for index in range(1, len(class_testsuite.instances)+1):
+        # index=0 corresponds to 'properties'. Test cases start from index=1
         if len(list(tree.findall('testsuite')[0][index])) != 0:
             if tree.findall('testsuite')[0][index][0].attrib["type"] == "failure":
                 assert tree.findall('testsuite')[0][index].attrib["name"] == \

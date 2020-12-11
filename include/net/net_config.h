@@ -94,7 +94,7 @@ int net_config_init_by_iface(struct net_if *iface, const char *app_info,
  *
  * @return 0 if ok, <0 if error.
  */
-int net_config_init_app(struct device *device, const char *app_info);
+int net_config_init_app(const struct device *device, const char *app_info);
 
 /**
  * @}

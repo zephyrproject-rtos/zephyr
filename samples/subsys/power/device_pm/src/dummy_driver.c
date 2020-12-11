@@ -10,9 +10,9 @@
 
 static struct k_poll_event async_evt;
 uint32_t device_power_state;
-static struct device *parent;
+static const struct device *parent;
 
-static int dummy_open(struct device *dev)
+static int dummy_open(const struct device *dev)
 {
 	int ret;
 	int signaled = 0, result;
@@ -52,30 +52,30 @@ static int dummy_open(struct device *dev)
 	return ret;
 }
 
-static int dummy_read(struct device *dev, uint32_t *val)
+static int dummy_read(const struct device *dev, uint32_t *val)
 {
 	struct dummy_parent_api *api;
 	int ret;
 
 	printk("read()\n");
 
-	api = (struct dummy_parent_api *)parent->driver_api;
+	api = (struct dummy_parent_api *)parent->api;
 	ret = api->transfer(parent, DUMMY_PARENT_RD, val);
 	return ret;
 }
 
-static int dummy_write(struct device *dev, uint32_t val)
+static int dummy_write(const struct device *dev, uint32_t val)
 {
 	struct dummy_parent_api *api;
 	int ret;
 
 	printk("write()\n");
-	api = (struct dummy_parent_api *)parent->driver_api;
+	api = (struct dummy_parent_api *)parent->api;
 	ret = api->transfer(parent, DUMMY_PARENT_WR, &val);
 	return ret;
 }
 
-static int dummy_close(struct device *dev)
+static int dummy_close(const struct device *dev)
 {
 	int ret;
 
@@ -93,12 +93,12 @@ static int dummy_close(struct device *dev)
 	return ret;
 }
 
-static uint32_t dummy_get_power_state(struct device *dev)
+static uint32_t dummy_get_power_state(const struct device *dev)
 {
 	return device_power_state;
 }
 
-static int dummy_suspend(struct device *dev)
+static int dummy_suspend(const struct device *dev)
 {
 	printk("child suspending..\n");
 	device_power_state = DEVICE_PM_SUSPEND_STATE;
@@ -106,7 +106,7 @@ static int dummy_suspend(struct device *dev)
 	return 0;
 }
 
-static int dummy_resume_from_suspend(struct device *dev)
+static int dummy_resume_from_suspend(const struct device *dev)
 {
 	printk("child resuming..\n");
 	device_power_state = DEVICE_PM_ACTIVE_STATE;
@@ -114,7 +114,8 @@ static int dummy_resume_from_suspend(struct device *dev)
 	return 0;
 }
 
-static int dummy_device_pm_ctrl(struct device *dev, uint32_t ctrl_command,
+static int dummy_device_pm_ctrl(const struct device *dev,
+				uint32_t ctrl_command,
 				void *context, device_pm_cb cb, void *arg)
 {
 	int ret = 0;
@@ -147,7 +148,7 @@ static const struct dummy_driver_api funcs = {
 	.close = dummy_close,
 };
 
-int dummy_init(struct device *dev)
+int dummy_init(const struct device *dev)
 {
 	parent = device_get_binding(DUMMY_PARENT_NAME);
 	if (!parent) {

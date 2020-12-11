@@ -142,9 +142,6 @@ config BT_RX_STACK_SIZE
 	default 2048 if BT_MESH
 	default 2200 if BT_SETTINGS
 	default 1024
-	range 512 65536 if BT_HCI_RAW
-	range 1100 65536 if BT_MESH
-	range 1024 65536
 	help
 	  Size of the receiving thread stack. This is the context from
 	  which all event callbacks to the application occur. The
@@ -159,7 +156,14 @@ config BT_RX_PRIO
 	depends on BT_HCI_HOST || BT_RECV_IS_RX_THREAD
 	default 8
 
+config BT_DRIVER_RX_HIGH_PRIO
+	# Hidden option for Co-Operative HCI driver RX thread priority
+	int
+	default 6
+
 if BT_HCI_HOST
+
+source "subsys/bluetooth/host/audio/Kconfig"
 
 config BT_HOST_CRYPTO
 	# Hidden option that compiles in random number generation and AES
@@ -519,13 +523,19 @@ config BT_CREATE_CONN_TIMEOUT
 config BT_CONN_PARAM_UPDATE_TIMEOUT
 	int "Peripheral connection parameter update timeout in milliseconds"
 	default 5000
-	range 1 65535
+	range 0 65535
 
 	help
 	  The value is a timeout used by peripheral device to wait until it
-	  starts the connection parameters update procedure to change default
-	  connection parameters. The default value is set to 5s, to comply
-	  with BT protocol specification: Core 4.2 Vol 3, Part C, 9.3.12.2
+	  starts the first connection parameters update procedure after a
+	  connection has been established.
+	  The connection parameters requested will be the parameters set by the
+	  application, or the peripheral preferred connection parameters if
+	  configured.
+	  The default value is set to 5 seconds, to comply with the Bluetooth
+	  Core specification: Core 4.2 Vol 3, Part C, 9.3.12.2:
+	  "The Peripheral device should not perform a Connection Parameter
+	  Update procedure within 5 seconds after establishing a connection."
 
 endif # BT_CONN
 
@@ -591,6 +601,13 @@ config BT_ID_MAX
 	  Maximum number of supported local identity addresses. For most
 	  products this is safe to leave as the default value (1).
 
+config BT_DF
+	bool "Enable Direction Finding support [EXPERIMENTAL]"
+	help
+	  Enable support for Bluetooth 5.1 Direction Finding.
+	  It will allow to: get information about antennae, configure
+	  Constant Tone Extension, transmit CTE and sample incoming CTE.
+
 endif # BT_HCI_HOST
 
 config BT_ECC
@@ -600,11 +617,11 @@ config BT_ECC
 	  This option adds support for ECDH HCI commands.
 
 config BT_TINYCRYPT_ECC
-	bool "Use TinyCrypt library for ECDH"
+	bool "Emulate ECDH in the Host using TinyCrypt library"
 	select TINYCRYPT
 	select TINYCRYPT_ECC_DH
 	depends on BT_ECC && (BT_HCI_RAW || BT_HCI_HOST)
-	default y if BT_CTLR
+	default y if BT_CTLR && !BT_CTLR_ECDH
 	help
 	  If this option is set TinyCrypt library is used for emulating the
 	  ECDH HCI commands and events needed by e.g. LE Secure Connections.

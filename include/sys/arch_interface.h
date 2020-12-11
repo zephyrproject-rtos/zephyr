@@ -144,8 +144,8 @@ static inline uint32_t arch_k_cycle_get_32(void);
  * @brief Power save idle routine
  *
  * This function will be called by the kernel idle loop or possibly within
- * an implementation of z_sys_power_save_idle in the kernel when the
- * '_sys_power_save_flag' variable is non-zero.
+ * an implementation of z_pm_save_idle in the kernel when the
+ * '_pm_save_flag' variable is non-zero.
  *
  * Architectures that do not implement power management instructions may
  * immediately return, otherwise a power-saving instruction should be
@@ -280,8 +280,8 @@ int arch_irq_is_enabled(unsigned int irq);
  * @return The vector assigned to this interrupt
  */
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			     void (*routine)(void *parameter),
-			     void *parameter, uint32_t flags);
+			     void (*routine)(const void *parameter),
+			     const void *parameter, uint32_t flags);
 
 /**
  * @def ARCH_IRQ_CONNECT(irq, pri, isr, arg, flags)
@@ -351,7 +351,7 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
  * @param routine Function to run in interrupt context
  * @param parameter Value to pass to the function when invoked
  */
-void arch_irq_offload(irq_offload_routine_t routine, void *parameter);
+void arch_irq_offload(irq_offload_routine_t routine, const void *parameter);
 #endif /* CONFIG_IRQ_OFFLOAD */
 
 /** @} */
@@ -520,14 +520,41 @@ static inline bool arch_is_user_context(void);
  */
 int arch_mem_domain_max_partitions_get(void);
 
+#ifdef CONFIG_ARCH_MEM_DOMAIN_DATA
+/**
+ *
+ * @brief Architecture-specific hook for memory domain initialization
+ *
+ * Perform any tasks needed to initialize architecture-specific data within
+ * the memory domain, such as reserving memory for page tables. All members
+ * of the provided memory domain aside from `arch` will be initialized when
+ * this is called, but no threads will be a assigned yet.
+ *
+ * This function may fail if initializing the memory domain requires allocation,
+ * such as for page tables.
+ *
+ * The associated function k_mem_domain_init() documents that making
+ * multiple init calls to the same memory domain is undefined behavior,
+ * but has no assertions in place to check this. If this matters, it may be
+ * desirable to add checks for this in the implementation of this function.
+ *
+ * @param domain The memory domain to initialize
+ * @retval 0 Success
+ * @retval -ENOMEM Insufficient memory
+ */
+int arch_mem_domain_init(struct k_mem_domain *domain);
+#endif /* CONFIG_ARCH_MEM_DOMAIN_DATA */
+
+#ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 /**
  * @brief Add a thread to a memory domain (arch-specific)
  *
  * Architecture-specific hook to manage internal data structures or hardware
  * state when the provided thread has been added to a memory domain.
  *
- * The thread's memory domain pointer will be set to the domain to be added
- * to.
+ * The thread->mem_domain_info.mem_domain pointer will be set to the domain to
+ * be added to before this is called. Implementations may assume that the
+ * thread is not already a member of this domain.
  *
  * @param thread Thread which needs to be configured.
  */
@@ -586,6 +613,7 @@ void arch_mem_domain_partition_add(struct k_mem_domain *domain,
  * @param domain The memory domain structure which needs to be deleted.
  */
 void arch_mem_domain_destroy(struct k_mem_domain *domain);
+#endif /* CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API */
 
 /**
  * @brief Check memory region permissions
@@ -669,27 +697,117 @@ FUNC_NORETURN void arch_syscall_oops(void *ssf);
 size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err);
 #endif /* CONFIG_USERSPACE */
 
+/**
+ * @brief Detect memory coherence type
+ *
+ * Required when ARCH_HAS_COHERENCE is true.  This function returns
+ * true if the byte pointed to lies within an architecture-defined
+ * "coherence region" (typically implemented with uncached memory) and
+ * can safely be used in multiprocessor code without explicit flush or
+ * invalidate operations.
+ *
+ * @note The result is for only the single byte at the specified
+ * address, this API is not required to check region boundaries or to
+ * expect aligned pointers.  The expectation is that the code above
+ * will have queried the appropriate address(es).
+ */
+#ifndef CONFIG_ARCH_HAS_COHERENCE
+static inline bool arch_mem_coherent(void *ptr)
+{
+	ARG_UNUSED(ptr);
+	return true;
+}
+#endif
+
+/**
+ * @brief Ensure cache coherence prior to context switch
+ *
+ * Required when ARCH_HAS_COHERENCE is true.  On cache-incoherent
+ * multiprocessor architectures, thread stacks are cached by default
+ * for performance reasons.  They must therefore be flushed
+ * appropriately on context switch.  The rules are:
+ *
+ * 1. The region containing live data in the old stack (generally the
+ *    bytes between the current stack pointer and the top of the stack
+ *    memory) must be flushed to underlying storage so a new CPU that
+ *    runs the same thread sees the correct data.  This must happen
+ *    before the assignment of the switch_handle field in the thread
+ *    struct which signals the completion of context switch.
+ *
+ * 2. Any data areas to be read from the new stack (generally the same
+ *    as the live region when it was saved) should be invalidated (and
+ *    NOT flushed!) in the data cache.  This is because another CPU
+ *    may have run or re-initialized the thread since this CPU
+ *    suspended it, and any data present in cache will be stale.
+ *
+ * @note The kernel will call this function during interrupt exit when
+ * a new thread has been chosen to run, and also immediately before
+ * entering arch_switch() to effect a code-driven context switch.  In
+ * the latter case, it is very likely that more data will be written
+ * to the old_thread stack region after this function returns but
+ * before the completion of the switch.  Simply flushing naively here
+ * is not sufficient on many architectures and coordination with the
+ * arch_switch() implementation is likely required.
+ *
+ * @arg old_thread The old thread to be flushed before being allowed
+ *                 to run on other CPUs.
+ * @arg old_switch_handle The switch handle to be stored into
+ *                        old_thread (it will not be valid until the
+ *                        cache is flushed so is not present yet).
+ *                        This will be NULL if inside z_swap()
+ *                        (because the arch_switch() has not saved it
+ *                        yet).
+ * @arg new_thread The new thread to be invalidated before it runs locally.
+ */
+#ifndef CONFIG_KERNEL_COHERENCE
+static inline void arch_cohere_stacks(struct k_thread *old_thread,
+				      void *old_switch_handle,
+				      struct k_thread *new_thread)
+{
+	ARG_UNUSED(old_thread);
+	ARG_UNUSED(old_switch_handle);
+	ARG_UNUSED(new_thread);
+}
+#endif
+
 /** @} */
 
 /**
- * @defgroup arch-benchmarking Architecture-specific benchmarking globals
+ * @defgroup arch-gdbstub Architecture-specific gdbstub APIs
  * @ingroup arch-interface
  * @{
  */
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-extern uint64_t arch_timing_swap_start;
-extern uint64_t arch_timing_swap_end;
-extern uint64_t arch_timing_irq_start;
-extern uint64_t arch_timing_irq_end;
-extern uint64_t arch_timing_tick_start;
-extern uint64_t arch_timing_tick_end;
-extern uint64_t arch_timing_user_mode_end;
-extern uint32_t arch_timing_value_swap_end;
-extern uint64_t arch_timing_value_swap_common;
-extern uint64_t arch_timing_value_swap_temp;
-#endif /* CONFIG_EXECUTION_BENCHMARKING */
+/**
+ * @def ARCH_GDB_NUM_REGISTERS
+ *
+ * ARCH_GDB_NUM_REGISTERS is architecure specific and
+ * this symbol must be defined in architecure specific header
+ */
 
+#ifdef CONFIG_GDBSTUB
+/**
+ * @brief Architecture layer debug start
+ *
+ * This function is called by @c gdb_init()
+ */
+void arch_gdb_init(void);
+
+/**
+ * @brief Continue running program
+ *
+ * Continue software execution.
+ */
+void arch_gdb_continue(void);
+
+/**
+ * @brief Continue with one step
+ *
+ * Continue software execution until reaches the next statement.
+ */
+void arch_gdb_step(void);
+
+#endif
 /** @} */
 
 /**
@@ -726,6 +844,144 @@ size_t arch_cache_line_size_get(void);
 #endif
 #endif
 /** @} */
+
+#ifdef CONFIG_TIMING_FUNCTIONS
+#include <timing/types.h>
+
+/**
+ * @ingroup arch-interface timing_api
+ */
+
+/**
+ * @brief Initialize the timing subsystem.
+ *
+ * Perform the necessary steps to initialize the timing subsystem.
+ *
+ * @see timing_init()
+ */
+void arch_timing_init(void);
+
+/**
+ * @brief Signal the start of the timing information gathering.
+ *
+ * Signal to the timing subsystem that timing information
+ * will be gathered from this point forward.
+ *
+ * @see timing_start()
+ */
+void arch_timing_start(void);
+
+/**
+ * @brief Signal the end of the timing information gathering.
+ *
+ * Signal to the timing subsystem that timing information
+ * is no longer being gathered from this point forward.
+ *
+ * @see timing_stop()
+ */
+void arch_timing_stop(void);
+
+/**
+ * @brief Return timing counter.
+ *
+ * @return Timing counter.
+ *
+ * @see timing_counter_get()
+ */
+timing_t arch_timing_counter_get(void);
+
+/**
+ * @brief Get number of cycles between @p start and @p end.
+ *
+ * For some architectures or SoCs, the raw numbers from counter
+ * need to be scaled to obtain actual number of cycles.
+ *
+ * @param start Pointer to counter at start of a measured execution.
+ * @param end Pointer to counter at stop of a measured execution.
+ * @return Number of cycles between start and end.
+ *
+ * @see timing_cycles_get()
+ */
+uint64_t arch_timing_cycles_get(volatile timing_t *const start,
+				volatile timing_t *const end);
+
+/**
+ * @brief Get frequency of counter used (in Hz).
+ *
+ * @return Frequency of counter used for timing in Hz.
+ *
+ * @see timing_freq_get()
+ */
+uint64_t arch_timing_freq_get(void);
+
+/**
+ * @brief Convert number of @p cycles into nanoseconds.
+ *
+ * @param cycles Number of cycles
+ * @return Converted time value
+ *
+ * @see timing_cycles_to_ns()
+ */
+uint64_t arch_timing_cycles_to_ns(uint64_t cycles);
+
+/**
+ * @brief Convert number of @p cycles into nanoseconds with averaging.
+ *
+ * @param cycles Number of cycles
+ * @param count Times of accumulated cycles to average over
+ * @return Converted time value
+ *
+ * @see timing_cycles_to_ns_avg()
+ */
+uint64_t arch_timing_cycles_to_ns_avg(uint64_t cycles, uint32_t count);
+
+/**
+ * @brief Get frequency of counter used (in MHz).
+ *
+ * @return Frequency of counter used for timing in MHz.
+ *
+ * @see timing_freq_get_mhz()
+ */
+uint32_t arch_timing_freq_get_mhz(void);
+
+/* @} */
+
+#endif /* CONFIG_TIMING_FUNCTIONS */
+
+#ifdef CONFIG_PCIE_MSI_MULTI_VECTOR
+
+struct msi_vector;
+typedef struct msi_vector msi_vector_t;
+
+/**
+ * @brief Allocate vector(s) for the endpoint MSI message(s).
+ *
+ * @param priority the MSI vectors base interrupt priority
+ * @param vectors an array to fill with allocated MSI vectors
+ * @param n_vector the size of MSI vectors array
+ *
+ * @return The number of allocated MSI vectors
+ */
+uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
+				       msi_vector_t *vectors,
+				       uint8_t n_vector);
+
+/**
+ * @brief Connect an MSI vector to the given routine
+ *
+ * @param vector The MSI vector to connect to
+ * @param routine Interrupt service routine
+ * @param parameter ISR parameter
+ * @param flags Arch-specific IRQ configuration flag
+ *
+ * @return True on success, false otherwise
+ */
+bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
+				  void (*routine)(const void *parameter),
+				  const void *parameter,
+				  uint32_t flags);
+
+#endif /* CONFIG_PCIE_MSI_MULTI_VECTOR */
 
 #ifdef __cplusplus
 }

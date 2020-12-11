@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2020 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&usbd {
+	hp_0 {
+		label = "HEADPHONES";
+		compatible = "usb-audio-hp";
+		feature-mute;
+		channel-l;
+		channel-r;
+	};
+	mic_0 {
+		label = "MICROPHONE";
+		compatible = "usb-audio-mic";
+		feature-mute;
+		channel-l;
+		channel-r;
+	};
+};

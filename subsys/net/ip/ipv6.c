@@ -154,7 +154,7 @@ static inline bool ipv6_drop_on_unknown_option(struct net_pkt *pkt,
 			break;
 		}
 
-		/* passthrough */
+		__fallthrough;
 	case 0x80:
 		net_icmpv6_send_error(pkt, NET_ICMPV6_PARAM_PROBLEM,
 				      NET_ICMPV6_PARAM_PROB_OPTION,
@@ -172,11 +172,15 @@ static inline int ipv6_handle_ext_hdr_options(struct net_pkt *pkt,
 	uint16_t exthdr_len = 0U;
 	uint16_t length = 0U;
 
-	if (net_pkt_read_u8(pkt, (uint8_t *)&exthdr_len)) {
-		return -ENOBUFS;
+	{
+		uint8_t val = 0U;
+
+		if (net_pkt_read_u8(pkt, &val)) {
+			return -ENOBUFS;
+		}
+		exthdr_len = val * 8U + 8;
 	}
 
-	exthdr_len = exthdr_len * 8U + 8;
 	if (exthdr_len > pkt_len) {
 		NET_DBG("Corrupted packet, extension header %d too long "
 			"(max %d bytes)", exthdr_len, pkt_len);
@@ -362,11 +366,37 @@ static inline enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 
 #endif /* CONFIG_NET_ROUTE */
 
+
+static enum net_verdict ipv6_forward_mcast_packet(struct net_pkt *pkt,
+						 struct net_ipv6_hdr *hdr)
+{
+#if defined(CONFIG_NET_ROUTE_MCAST)
+	int routed;
+
+	/* check if routing loop could be created or if the destination is of
+	 * interface local scope or if from link local source
+	 */
+	if (net_ipv6_is_addr_mcast(&hdr->src)  ||
+	      net_ipv6_is_addr_mcast_iface(&hdr->dst) ||
+	       net_ipv6_is_ll_addr(&hdr->src)) {
+		return NET_CONTINUE;
+	}
+
+	routed = net_route_mcast_forward_packet(pkt, hdr);
+
+	if (routed < 0) {
+		return NET_DROP;
+	}
+#endif /*CONFIG_NET_ROUTE_MCAST*/
+	return NET_CONTINUE;
+}
+
 enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
 	NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
 	NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
+	struct net_if *pkt_iface = net_pkt_iface(pkt);
 	enum net_verdict verdict = NET_DROP;
 	int real_len = net_pkt_get_len(pkt);
 	uint8_t ext_bitmap = 0U;
@@ -374,10 +404,11 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	uint8_t nexthdr, next_nexthdr, prev_hdr_offset;
 	union net_proto_header proto_hdr;
 	struct net_ipv6_hdr *hdr;
+	struct net_if_mcast_addr *if_mcast_addr;
 	union net_ip_header ip;
 	int pkt_len;
 
-	net_stats_update_ipv6_recv(net_pkt_iface(pkt));
+	net_stats_update_ipv6_recv(pkt_iface);
 
 	hdr = (struct net_ipv6_hdr *)net_pkt_get_data(pkt, &ipv6_access);
 	if (!hdr) {
@@ -433,27 +464,62 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	net_pkt_set_ipv6_hop_limit(pkt, NET_IPV6_HDR(pkt)->hop_limit);
 	net_pkt_set_family(pkt, PF_INET6);
 
-	if (!net_ipv6_is_my_addr(&hdr->dst) &&
-	    !net_ipv6_is_my_maddr(&hdr->dst) &&
-	    !net_ipv6_is_addr_mcast(&hdr->dst)) {
-		if (ipv6_route_packet(pkt, hdr) == NET_OK) {
-			return NET_OK;
+	if (IS_ENABLED(CONFIG_NET_ROUTE_MCAST) &&
+		net_ipv6_is_addr_mcast(&hdr->dst)) {
+		/* If the packet is a multicast packet and multicast routing
+		 * is activated, we give the packet to the routing engine.
+		 *
+		 * But we only drop the packet if an error occurs, otherwise
+		 * it might be eminent to respond on the packet on application
+		 * layer.
+		 */
+		if (ipv6_forward_mcast_packet(pkt, hdr) == NET_DROP) {
+			goto drop;
 		}
-
-		goto drop;
 	}
 
-	/* If we receive a packet with ll source address fe80: and destination
-	 * address is one of ours, and if the packet would cross interface
-	 * boundary, then drop the packet. RFC 4291 ch 2.5.6
-	 */
-	if (IS_ENABLED(CONFIG_NET_ROUTING) &&
-	    net_ipv6_is_ll_addr(&hdr->src) &&
-	    !net_ipv6_is_addr_mcast(&hdr->dst) &&
-	    !net_if_ipv6_addr_lookup_by_iface(net_pkt_iface(pkt),
-					      &hdr->dst)) {
-		ipv6_no_route_info(pkt, &hdr->src, &hdr->dst);
-		goto drop;
+	if (!net_ipv6_is_addr_mcast(&hdr->dst)) {
+		if (!net_ipv6_is_my_addr(&hdr->dst)) {
+			if (ipv6_route_packet(pkt, hdr) == NET_OK) {
+				return NET_OK;
+			}
+
+			goto drop;
+		}
+
+		/* If we receive a packet with ll source address fe80: and
+		 * destination address is one of ours, and if the packet would
+		 * cross interface boundary, then drop the packet.
+		 * RFC 4291 ch 2.5.6
+		 */
+		if (IS_ENABLED(CONFIG_NET_ROUTING) &&
+		    net_ipv6_is_ll_addr(&hdr->src) &&
+		    !net_if_ipv6_addr_lookup_by_iface(pkt_iface, &hdr->dst)) {
+			ipv6_no_route_info(pkt, &hdr->src, &hdr->dst);
+			goto drop;
+		}
+	}
+
+	if (net_ipv6_is_addr_mcast(&hdr->dst) &&
+	    !(net_ipv6_is_addr_mcast_iface(&hdr->dst) ||
+	      net_ipv6_is_addr_mcast_link_all_nodes(&hdr->dst))) {
+		/* If we receive a packet with a interface-local or
+		 * link-local all-nodes multicast destination address we
+		 * always have to pass it to the upper layer.
+		 *
+		 * For all other destination multicast addresses we have to
+		 * check if one of the joined multicast groups on the
+		 * originating interface of the packet matches. Otherwise the
+		 * packet will be dropped.
+		 * RFC4291 ch 2.7.1, ch 2.8
+		 */
+		if_mcast_addr = net_if_ipv6_maddr_lookup(&hdr->dst, &pkt_iface);
+
+		if (!if_mcast_addr ||
+		    !net_if_ipv6_maddr_is_joined(if_mcast_addr)) {
+			NET_DBG("DROP: packet for unjoined multicast address");
+			goto drop;
+		}
 	}
 
 	net_pkt_acknowledge_data(pkt, &ipv6_access);
@@ -568,7 +634,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	}
 
 drop:
-	net_stats_update_ipv6_drop(net_pkt_iface(pkt));
+	net_stats_update_ipv6_drop(pkt_iface);
 	return NET_DROP;
 
 bad_hdr:
@@ -578,7 +644,7 @@ bad_hdr:
 			      net_pkt_get_current_offset(pkt) - 1);
 
 	NET_DBG("DROP: Unknown/wrong nexthdr type");
-	net_stats_update_ip_errors_protoerr(net_pkt_iface(pkt));
+	net_stats_update_ip_errors_protoerr(pkt_iface);
 
 	return NET_DROP;
 }

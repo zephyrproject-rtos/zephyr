@@ -9,9 +9,9 @@
 #define ETH_STELLARIS_PRIV_H_
 
 #define DEV_DATA(dev) \
-	((struct eth_stellaris_runtime *)(dev)->driver_data)
+	((struct eth_stellaris_runtime *)(dev)->data)
 #define DEV_CFG(dev) \
-	((const struct eth_stellaris_config *const)(dev)->config_info)
+	((const struct eth_stellaris_config *const)(dev)->config)
 /*
  *  Register mapping
  */
@@ -60,7 +60,7 @@ struct eth_stellaris_runtime {
 #endif
 };
 
-typedef void (*eth_stellaris_config_irq_t)(struct device *dev);
+typedef void (*eth_stellaris_config_irq_t)(const struct device *dev);
 
 struct eth_stellaris_config {
 	uint32_t mac_base;

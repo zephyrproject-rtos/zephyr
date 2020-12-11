@@ -1,5 +1,0 @@
-tests:
-  shell.core:
-    min_flash: 64
-    min_ram: 32
-    tags: shell

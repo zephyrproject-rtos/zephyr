@@ -40,7 +40,7 @@
  *   ENABLED:   Z_IS_ENABLED3(_YYYY,    1,    0)
  *   DISABLED   Z_IS_ENABLED3(_XXXX 1,  0)
  */
-#define Z_IS_ENABLED2(one_or_two_args) Z_IS_ENABLED3(one_or_two_args true, false)
+#define Z_IS_ENABLED2(one_or_two_args) Z_IS_ENABLED3(one_or_two_args 1, 0)
 
 /* And our second argument is thus now cooked to be 1 in the case
  * where the value is defined to 1, and 0 if not:

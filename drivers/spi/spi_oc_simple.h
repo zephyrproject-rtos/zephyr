@@ -7,7 +7,7 @@
 #include "spi_context.h"
 
 #define SPI_OC_SIMPLE_DATA(dev) \
-	((struct spi_oc_simple_data *) ((dev)->driver_data))
+	((struct spi_oc_simple_data *) ((dev)->data))
 
 #define SPI_OC_SIMPLE_REG(info, offset) \
 	((mem_addr_t) (info->base + \

@@ -17,6 +17,13 @@
 #include "mgmt/mcumgr/buf.h"
 #include "mgmt/mcumgr/smp.h"
 #include "mgmt/mcumgr/smp_shell.h"
+#include "drivers/uart.h"
+#include "syscalls/uart.h"
+#include "shell/shell.h"
+#include "shell/shell_uart.h"
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(smp_shell);
 
 static struct zephyr_smp_transport smp_shell_transport;
 
@@ -82,53 +89,67 @@ static int read_mcumgr_byte(struct smp_shell_data *data, uint8_t byte)
 	return SMP_SHELL_MCUMGR_STATE_NONE;
 }
 
-bool smp_shell_rx_byte(struct smp_shell_data *data, uint8_t byte)
+size_t smp_shell_rx_bytes(struct smp_shell_data *data, const uint8_t *bytes,
+			  size_t size)
 {
-	int mcumgr_state;
+	size_t consumed = 0;		/* Number of bytes consumed by SMP */
 
-	mcumgr_state = read_mcumgr_byte(data, byte);
-	if (mcumgr_state == SMP_SHELL_MCUMGR_STATE_NONE) {
-		/* Not an mcumgr command; let the shell process the byte. */
-		return false;
+	/* Process all bytes that are accepted as SMP commands. */
+	while (size != consumed) {
+		uint8_t byte = bytes[consumed];
+		int mcumgr_state = read_mcumgr_byte(data, byte);
+
+		if (mcumgr_state == SMP_SHELL_MCUMGR_STATE_NONE) {
+			break;
+		} else if (mcumgr_state == SMP_SHELL_MCUMGR_STATE_HEADER &&
+			   !data->buf) {
+			data->buf = net_buf_alloc(data->buf_pool, K_NO_WAIT);
+			if (!data->buf) {
+				LOG_WRN("Failed to alloc SMP buf");
+			}
+		}
+
+		if (data->buf && net_buf_tailroom(data->buf) > 0) {
+			net_buf_add_u8(data->buf, byte);
+		}
+
+		/* Newline in payload means complete frame */
+		if (mcumgr_state == SMP_SHELL_MCUMGR_STATE_PAYLOAD &&
+		    byte == '\n') {
+			if (data->buf) {
+				net_buf_put(&data->buf_ready, data->buf);
+				data->buf = NULL;
+			}
+			atomic_clear_bit(&data->esc_state, ESC_MCUMGR_PKT_1);
+			atomic_clear_bit(&data->esc_state, ESC_MCUMGR_PKT_2);
+			atomic_clear_bit(&data->esc_state, ESC_MCUMGR_FRAG_1);
+			atomic_clear_bit(&data->esc_state, ESC_MCUMGR_FRAG_2);
+		}
+
+		++consumed;
 	}
 
-	/*
-	 * The received byte is part of an mcumgr command.  Process the byte
-	 * and return true to indicate that shell should ignore it.
-	 */
-	if (data->cur < sizeof(data->mcumgr_buff) - 1) {
-		data->mcumgr_buff[data->cur++] = byte;
-	}
-	if (mcumgr_state == SMP_SHELL_MCUMGR_STATE_PAYLOAD && byte == '\n') {
-		data->mcumgr_buff[data->cur] = '\0';
-		data->cmd_rdy = true;
-		atomic_clear_bit(&data->esc_state, ESC_MCUMGR_PKT_1);
-		atomic_clear_bit(&data->esc_state, ESC_MCUMGR_PKT_2);
-		atomic_clear_bit(&data->esc_state, ESC_MCUMGR_FRAG_1);
-		atomic_clear_bit(&data->esc_state, ESC_MCUMGR_FRAG_2);
-		data->cur = 0U;
-	}
-
-	return true;
+	return consumed;
 }
 
 void smp_shell_process(struct smp_shell_data *data)
 {
-	if (data->cmd_rdy) {
-		data->cmd_rdy = false;
-		struct net_buf *nb;
-		int line_len;
+	struct net_buf *buf;
+	struct net_buf *nb;
 
-		/* Strip the trailing newline. */
-		line_len = strlen(data->mcumgr_buff) - 1;
-
-		nb = mcumgr_serial_process_frag(&smp_shell_rx_ctxt,
-						data->mcumgr_buff,
-						line_len);
-		if (nb != NULL) {
-			zephyr_smp_rx_req(&smp_shell_transport, nb);
-		}
+	buf = net_buf_get(&data->buf_ready, K_NO_WAIT);
+	if (!buf) {
+		return;
 	}
+
+	nb = mcumgr_serial_process_frag(&smp_shell_rx_ctxt,
+					buf->data,
+					buf->len);
+	if (nb != NULL) {
+		zephyr_smp_rx_req(&smp_shell_transport, nb);
+	}
+
+	net_buf_unref(buf);
 }
 
 static uint16_t smp_shell_get_mtu(const struct net_buf *nb)
@@ -138,8 +159,17 @@ static uint16_t smp_shell_get_mtu(const struct net_buf *nb)
 
 static int smp_shell_tx_raw(const void *data, int len, void *arg)
 {
-	/* Cast away const. */
-	k_str_out((void *)data, len);
+	const struct shell *const sh = shell_backend_uart_get_ptr();
+	const struct shell_uart *const su = sh->iface->ctx;
+	const struct shell_uart_ctrl_blk *const scb = su->ctrl_blk;
+	const uint8_t *out = data;
+
+	while ((out != NULL) && (len != 0)) {
+		uart_poll_out(scb->dev, *out);
+		++out;
+		--len;
+	}
+
 	return 0;
 }
 
@@ -154,14 +184,10 @@ static int smp_shell_tx_pkt(struct zephyr_smp_transport *zst,
 	return rc;
 }
 
-static int smp_shell_init(struct device *dev)
+int smp_shell_init(void)
 {
-	ARG_UNUSED(dev);
-
 	zephyr_smp_transport_init(&smp_shell_transport, smp_shell_tx_pkt,
 				  smp_shell_get_mtu, NULL, NULL);
 
 	return 0;
 }
-
-SYS_INIT(smp_shell_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);

@@ -79,7 +79,7 @@ static struct net_if *get_iface(struct e1000_dev *ctx, uint16_t vlan_tag)
 #endif
 }
 
-static enum ethernet_hw_caps e1000_caps(struct device *dev)
+static enum ethernet_hw_caps e1000_caps(const struct device *dev)
 {
 	return
 #if IS_ENABLED(CONFIG_NET_VLAN)
@@ -108,9 +108,9 @@ static int e1000_tx(struct e1000_dev *dev, void *buf, size_t len)
 	return (dev->tx.sta & TDESC_STA_DD) ? 0 : -EIO;
 }
 
-static int e1000_send(struct device *device, struct net_pkt *pkt)
+static int e1000_send(const struct device *device, struct net_pkt *pkt)
 {
-	struct e1000_dev *dev = device->driver_data;
+	struct e1000_dev *dev = device->data;
 	size_t len = net_pkt_get_len(pkt);
 
 	if (net_pkt_read(pkt, dev->txb, len)) {
@@ -160,9 +160,9 @@ out:
 	return pkt;
 }
 
-static void e1000_isr(struct device *device)
+static void e1000_isr(const struct device *device)
 {
-	struct e1000_dev *dev = device->driver_data;
+	struct e1000_dev *dev = device->data;
 	uint32_t icr = ior32(dev, ICR); /* Cleared upon read */
 	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 
@@ -212,25 +212,23 @@ static void e1000_isr(struct device *device)
 
 DEVICE_DECLARE(eth_e1000);
 
-int e1000_probe(struct device *device)
+int e1000_probe(const struct device *device)
 {
 	const pcie_bdf_t bdf = PCIE_BDF(0, 3, 0);
-	struct e1000_dev *dev = device->driver_data;
+	struct e1000_dev *dev = device->data;
 	uint32_t ral, rah;
-	uintptr_t phys_addr;
-	size_t size;
+	struct pcie_mbar mbar;
 
 	if (!pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
 				     PCI_DEVICE_ID_I82540EM))) {
 		return -ENODEV;
 	}
 
-	phys_addr = pcie_get_mbar(bdf, 0);
+	pcie_get_mbar(bdf, 0, &mbar);
 	pcie_set_cmd(bdf, PCIE_CONF_CMDSTAT_MEM |
 		     PCIE_CONF_CMDSTAT_MASTER, true);
-	size = KB(128); /* TODO: get from PCIe */
 
-	device_map(&dev->address, phys_addr, size,
+	device_map(&dev->address, mbar.phys_addr, mbar.size,
 		   K_MEM_CACHE_NONE);
 
 	/* Setup TX descriptor */
@@ -269,7 +267,7 @@ int e1000_probe(struct device *device)
 
 static void e1000_iface_init(struct net_if *iface)
 {
-	struct e1000_dev *dev = net_if_get_device(iface)->driver_data;
+	struct e1000_dev *dev = net_if_get_device(iface)->data;
 
 	/* For VLAN, this value is only used to get the correct L2 driver.
 	 * The iface pointer in device context should contain the main

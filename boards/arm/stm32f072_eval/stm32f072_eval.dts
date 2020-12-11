@@ -6,10 +6,11 @@
 
 /dts-v1/;
 #include <st/f0/stm32f072Xb.dtsi>
+#include <st/f0/stm32f072v(8-b)tx-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F072-EVAL board";
-	compatible = "st,stm32f072-eval", "st,stm32f072";
+	compatible = "st,stm32f072-eval";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -46,23 +47,23 @@
 		};
 		joy_sel: joystick_selection {
 			label = "joystick selection";
-			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioa 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		};
 		joy_down: joystick_down {
 			label = "joystick down";
-			gpios = <&gpiof 10 GPIO_ACTIVE_LOW>;
+			gpios = <&gpiof 10 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		};
 		joy_up: joystick_up {
 			label = "joystick up";
-			gpios = <&gpiof 9 GPIO_ACTIVE_LOW>;
+			gpios = <&gpiof 9 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		};
 		joy_left: joystick_left {
 			label = "joystick left";
-			gpios = <&gpiof 2 GPIO_ACTIVE_LOW>;
+			gpios = <&gpiof 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		};
 		joy_right: joystick_right {
 			label = "joystick right";
-			gpios = <&gpioe 3 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioe 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		};
 	};
 
@@ -76,6 +77,7 @@
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6>;
 	current-speed = <115200>;
 	status = "okay";
 };

@@ -6,10 +6,11 @@
 
 /dts-v1/;
 #include <st/f4/stm32f429Xi.dtsi>
+#include <st/f4/stm32f429zitx-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F429I_DISC1 board";
-	compatible = "st,stm32f4discovery", "st,stm32f429";
+	compatible = "st,stm32f4discovery";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -46,11 +47,13 @@
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -59,12 +62,29 @@
 	status = "okay";
 };
 
-&i2c3 {
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c3 {
+	pinctrl-0 = <&i2c3_scl_pa8 &i2c3_sda_pc9>;
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+
+
 &spi5 {
+	pinctrl-0 = <&spi5_nss_pf6 &spi5_sck_pf7
+		     &spi5_miso_pf8 &spi5_mosi_pf9>;
 	status = "okay";
 	cs-gpios = <&gpioc 2 GPIO_ACTIVE_LOW>;
 	ili9340@0 {

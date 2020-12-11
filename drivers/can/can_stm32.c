@@ -6,6 +6,7 @@
 
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
+#include <pinmux/stm32/pinmux_stm32.h>
 #include <sys/util.h>
 #include <string.h>
 #include <kernel.h>
@@ -173,14 +174,12 @@ void can_stm32_tx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 
 #ifdef CONFIG_SOC_SERIES_STM32F0X
 
-static void can_stm32_isr(void *arg)
+static void can_stm32_isr(const struct device *dev)
 {
-	struct device *dev;
 	struct can_stm32_data *data;
 	const struct can_stm32_config *cfg;
 	CAN_TypeDef *can;
 
-	dev = (struct device *)arg;
 	data = DEV_DATA(dev);
 	cfg = DEV_CFG(dev);
 	can = cfg->can;
@@ -195,14 +194,12 @@ static void can_stm32_isr(void *arg)
 
 #else
 
-static void can_stm32_rx_isr(void *arg)
+static void can_stm32_rx_isr(const struct device *dev)
 {
-	struct device *dev;
 	struct can_stm32_data *data;
 	const struct can_stm32_config *cfg;
 	CAN_TypeDef *can;
 
-	dev = (struct device *)arg;
 	data = DEV_DATA(dev);
 	cfg = DEV_CFG(dev);
 	can = cfg->can;
@@ -210,14 +207,12 @@ static void can_stm32_rx_isr(void *arg)
 	can_stm32_rx_isr_handler(can, data);
 }
 
-static void can_stm32_tx_isr(void *arg)
+static void can_stm32_tx_isr(const struct device *dev)
 {
-	struct device *dev;
 	struct can_stm32_data *data;
 	const struct can_stm32_config *cfg;
 	CAN_TypeDef *can;
 
-	dev = (struct device *)arg;
 	data = DEV_DATA(dev);
 	cfg = DEV_CFG(dev);
 	can = cfg->can;
@@ -225,14 +220,12 @@ static void can_stm32_tx_isr(void *arg)
 	can_stm32_tx_isr_handler(can, data);
 }
 
-static void can_stm32_state_change_isr(void *arg)
+static void can_stm32_state_change_isr(const struct device *dev)
 {
-	struct device *dev;
 	struct can_stm32_data *data;
 	const struct can_stm32_config *cfg;
 	CAN_TypeDef *can;
 
-	dev = (struct device *)arg;
 	data = DEV_DATA(dev);
 	cfg = DEV_CFG(dev);
 	can = cfg->can;
@@ -297,14 +290,14 @@ static int can_leave_sleep_mode(CAN_TypeDef *can)
 	return 0;
 }
 
-int can_stm32_runtime_configure(struct device *dev, enum can_mode mode,
+int can_stm32_runtime_configure(const struct device *dev, enum can_mode mode,
 				uint32_t bitrate)
 {
 	CAN_HandleTypeDef hcan;
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
 	CAN_TypeDef *can = cfg->can;
 	struct can_stm32_data *data = DEV_DATA(dev);
-	struct device *clock;
+	const struct device *clock;
 	uint32_t clock_rate;
 	uint32_t prescaler;
 	uint32_t reg_mode;
@@ -383,7 +376,7 @@ done:
 	return ret;
 }
 
-static int can_stm32_init(struct device *dev)
+static int can_stm32_init(const struct device *dev)
 {
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
 	struct can_stm32_data *data = DEV_DATA(dev);
@@ -391,7 +384,7 @@ static int can_stm32_init(struct device *dev)
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(can2), okay)
 	CAN_TypeDef *master_can = cfg->master_can;
 #endif
-	struct device *clock;
+	const struct device *clock;
 	int ret;
 
 	k_mutex_init(&data->inst_mutex);
@@ -415,6 +408,15 @@ static int can_stm32_init(struct device *dev)
 	if (ret != 0) {
 		LOG_ERR("HAL_CAN_Init clock control on failed: %d", ret);
 		return -EIO;
+	}
+
+	/* Configure dt provided device signals when available */
+	ret = stm32_dt_pinctrl_configure(cfg->pinctrl,
+					 cfg->pinctrl_len,
+					 (uint32_t)cfg->can);
+	if (ret < 0) {
+		LOG_ERR("CAN pinctrl setup failed (%d)", ret);
+		return ret;
 	}
 
 	ret = can_leave_sleep_mode(can);
@@ -458,7 +460,7 @@ static int can_stm32_init(struct device *dev)
 	return 0;
 }
 
-static void can_stm32_register_state_change_isr(struct device *dev,
+static void can_stm32_register_state_change_isr(const struct device *dev,
 						can_state_change_isr_t isr)
 {
 	struct can_stm32_data *data = DEV_DATA(dev);
@@ -474,7 +476,7 @@ static void can_stm32_register_state_change_isr(struct device *dev,
 	}
 }
 
-static enum can_state can_stm32_get_state(struct device *dev,
+static enum can_state can_stm32_get_state(const struct device *dev,
 					  struct can_bus_err_cnt *err_cnt)
 {
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
@@ -500,7 +502,7 @@ static enum can_state can_stm32_get_state(struct device *dev,
 }
 
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-int can_stm32_recover(struct device *dev, k_timeout_t timeout)
+int can_stm32_recover(const struct device *dev, k_timeout_t timeout)
 {
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
 	struct can_stm32_data *data = DEV_DATA(dev);
@@ -541,7 +543,7 @@ done:
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 
 
-int can_stm32_send(struct device *dev, const struct zcan_frame *msg,
+int can_stm32_send(const struct device *dev, const struct zcan_frame *msg,
 		   k_timeout_t timeout, can_tx_callback_t callback,
 		   void *callback_arg)
 {
@@ -951,7 +953,8 @@ done:
 	return filter_nr;
 }
 
-static inline int can_stm32_attach(struct device *dev, can_rx_callback_t cb,
+static inline int can_stm32_attach(const struct device *dev,
+				   can_rx_callback_t cb,
 				   void *cb_arg,
 				   const struct zcan_filter *filter)
 {
@@ -970,7 +973,7 @@ static inline int can_stm32_attach(struct device *dev, can_rx_callback_t cb,
 	return filter_nr;
 }
 
-int can_stm32_attach_isr(struct device *dev, can_rx_callback_t isr,
+int can_stm32_attach_isr(const struct device *dev, can_rx_callback_t isr,
 			 void *cb_arg,
 			 const struct zcan_filter *filter)
 {
@@ -983,7 +986,7 @@ int can_stm32_attach_isr(struct device *dev, can_rx_callback_t isr,
 	return filter_nr;
 }
 
-void can_stm32_detach(struct device *dev, int filter_nr)
+void can_stm32_detach(const struct device *dev, int filter_nr)
 {
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
 	struct can_stm32_data *data = DEV_DATA(dev);
@@ -1049,6 +1052,9 @@ static const struct can_driver_api can_api_funcs = {
 
 static void config_can_1_irq(CAN_TypeDef *can);
 
+static const struct soc_gpio_pinctrl pins_can_1[] =
+	ST_STM32_DT_PINCTRL(can1, 0);
+
 static const struct can_stm32_config can_stm32_cfg_1 = {
 	.can = (CAN_TypeDef *)DT_REG_ADDR(DT_NODELABEL(can1)),
 	.master_can = (CAN_TypeDef *)DT_REG_ADDR(DT_NODELABEL(can1)),
@@ -1061,7 +1067,9 @@ static const struct can_stm32_config can_stm32_cfg_1 = {
 		.enr = DT_CLOCKS_CELL(DT_NODELABEL(can1), bits),
 		.bus = DT_CLOCKS_CELL(DT_NODELABEL(can1), bus),
 	},
-	.config_irq = config_can_1_irq
+	.config_irq = config_can_1_irq,
+	.pinctrl = pins_can_1,
+	.pinctrl_len = ARRAY_SIZE(pins_can_1)
 };
 
 static struct can_stm32_data can_stm32_dev_data_1;
@@ -1103,10 +1111,10 @@ static void config_can_1_irq(CAN_TypeDef *can)
 
 #include "socket_can_generic.h"
 
-static int socket_can_init_1(struct device *dev)
+static int socket_can_init_1(const struct device *dev)
 {
-	struct device *can_dev = DEVICE_GET(can_stm32_1);
-	struct socket_can_context *socket_context = dev->driver_data;
+	const struct device *can_dev = DEVICE_GET(can_stm32_1);
+	struct socket_can_context *socket_context = dev->data;
 
 	LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",
 		dev, dev->name, can_dev, can_dev->name);
@@ -1138,6 +1146,9 @@ NET_DEVICE_INIT(socket_can_stm32_1, SOCKET_CAN_NAME_1, socket_can_init_1,
 
 static void config_can_2_irq(CAN_TypeDef *can);
 
+static const struct soc_gpio_pinctrl pins_can_2[] =
+	ST_STM32_DT_PINCTRL(can2, 0);
+
 static const struct can_stm32_config can_stm32_cfg_2 = {
 	.can = (CAN_TypeDef *)DT_REG_ADDR(DT_NODELABEL(can2)),
 	.master_can = (CAN_TypeDef *)DT_PROP(DT_NODELABEL(can2),
@@ -1151,7 +1162,9 @@ static const struct can_stm32_config can_stm32_cfg_2 = {
 		.enr = DT_CLOCKS_CELL(DT_NODELABEL(can2), bits),
 		.bus = DT_CLOCKS_CELL(DT_NODELABEL(can2), bus),
 	},
-	.config_irq = config_can_2_irq
+	.config_irq = config_can_2_irq,
+	.pinctrl = pins_can_2,
+	.pinctrl_len = ARRAY_SIZE(pins_can_2)
 };
 
 static struct can_stm32_data can_stm32_dev_data_2;
@@ -1186,10 +1199,10 @@ static void config_can_2_irq(CAN_TypeDef *can)
 
 #include "socket_can_generic.h"
 
-static int socket_can_init_2(struct device *dev)
+static int socket_can_init_2(const struct device *dev)
 {
-	struct device *can_dev = DEVICE_GET(can_stm32_2);
-	struct socket_can_context *socket_context = dev->driver_data;
+	const struct device *can_dev = DEVICE_GET(can_stm32_2);
+	struct socket_can_context *socket_context = dev->data;
 
 	LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",
 		dev, dev->name, can_dev, can_dev->name);

@@ -1,0 +1,27 @@
+/* Copyright (c) 2020 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		accel-0 = &bmi_spi;
+		accel-1 = &bmi_i2c;
+	};
+};
+
+&spi0 {
+	bmi_spi: bmi@3 {
+		compatible = "bosch,bmi160";
+		spi-max-frequency = <50000000>;
+		reg = <3>;
+		label = "accel-spi";
+	};
+};
+
+&i2c0 {
+	bmi_i2c: bmi@68 {
+		compatible = "bosch,bmi160";
+		reg = <0x68>;
+		label = "accel-i2c";
+	};
+};

@@ -137,18 +137,18 @@ struct net_icmpv4_context {
 	struct net_linkaddr ll_addr;
 };
 
-static int net_icmpv4_dev_init(struct device *dev)
+static int net_icmpv4_dev_init(const struct device *dev)
 {
-	struct net_icmpv4_context *net_icmpv4_context = dev->driver_data;
+	struct net_icmpv4_context *net_icmpv4_context = dev->data;
 
 	net_icmpv4_context = net_icmpv4_context;
 
 	return 0;
 }
 
-static uint8_t *net_icmpv4_get_mac(struct device *dev)
+static uint8_t *net_icmpv4_get_mac(const struct device *dev)
 {
-	struct net_icmpv4_context *context = dev->driver_data;
+	struct net_icmpv4_context *context = dev->data;
 
 	if (context->mac_addr[2] == 0x00) {
 		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
@@ -286,7 +286,7 @@ static int verify_echo_reply_with_opts(struct net_pkt *pkt)
 	return 0;
 }
 
-static int tester_send(struct device *dev, struct net_pkt *pkt)
+static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
 	if (current == TEST_ICMPV4_ECHO_REQ) {
 		return verify_echo_reply(pkt);

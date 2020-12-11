@@ -34,7 +34,7 @@ config option and implements the following operations: ``socket()``, ``close()``
 
 Based on the namespacing requirements above, these operations are by
 default exposed as functions with ``zsock_`` prefix, e.g.
-:c:func:`zsock_socket()` and :c:func:`zsock_close()`. If the config option
+:c:func:`zsock_socket` and :c:func:`zsock_close`. If the config option
 :option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined, all the functions
 will be also exposed as aliases without the prefix. This includes the
 functions like ``close()`` and ``fcntl()`` (which may conflict with
@@ -66,7 +66,7 @@ Zephyr provides an extension of standard POSIX socket API, allowing to create
 and configure sockets with TLS protocol types, facilitating secure
 communication. Secure functions for the implementation are provided by
 mbedTLS library. Secure sockets implementation allows use of both TLS and DTLS
-protocols with standard socket calls. See :c:type:`net_ip_protocol_secure` type
+protocols with standard socket calls. See :c:enum:`net_ip_protocol_secure` type
 for supported secure protocol versions.
 
 To enable secure sockets, set the :option:`CONFIG_NET_SOCKETS_SOCKOPT_TLS`
@@ -145,6 +145,11 @@ Secure sockets offer the following options for socket management:
 
 API Reference
 *************
+
+Note that current socket API implementation is not thread safe and caller
+should not do socket operations to same socket from multiple threads unless
+protected by a mutex, semaphore or similar.
+
 
 BSD Sockets
 ===========

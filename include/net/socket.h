@@ -119,11 +119,17 @@ struct zsock_pollfd {
  *    - 1 - server
  */
 #define TLS_DTLS_ROLE 6
+/** Socket option for setting the supported Application Layer Protocols.
+ *  It accepts and returns a const char array of NULL terminated strings
+ *  representing the supported application layer protocols listed during
+ *  the TLS handshake.
+ */
+#define TLS_ALPN_LIST 7
 
 /** @} */
 
 /* Valid values for TLS_PEER_VERIFY option */
-#define TLS_PEER_VERIFY_NONE 0 /**< Peer verification disabled. */
+#define TLS_PEER_VERIFY_NONE 0     /**< Peer verification disabled. */
 #define TLS_PEER_VERIFY_OPTIONAL 1 /**< Peer verification optional. */
 #define TLS_PEER_VERIFY_REQUIRED 2 /**< Peer verification required. */
 

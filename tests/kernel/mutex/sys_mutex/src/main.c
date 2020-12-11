@@ -423,13 +423,6 @@ void test_main(void)
 #ifdef CONFIG_USERSPACE
 	k_thread_access_grant(k_current_get(),
 			      &thread_12_thread_data, &thread_12_stack_area);
-
-	k_mem_domain_add_thread(&ztest_mem_domain, THREAD_05);
-	k_mem_domain_add_thread(&ztest_mem_domain, THREAD_06);
-	k_mem_domain_add_thread(&ztest_mem_domain, THREAD_07);
-	k_mem_domain_add_thread(&ztest_mem_domain, THREAD_08);
-	k_mem_domain_add_thread(&ztest_mem_domain, THREAD_09);
-	k_mem_domain_add_thread(&ztest_mem_domain, THREAD_11);
 #endif
 	rv = sys_mutex_lock(&not_my_mutex, K_NO_WAIT);
 	if (rv != 0) {

@@ -63,6 +63,33 @@ typedef enum {
 	BT_MESH_PROV_OOB_ON_DEV    = BIT(15),
 } bt_mesh_prov_oob_info_t;
 
+/** Device Capabilities. */
+struct bt_mesh_dev_capabilities {
+	/** Number of elements supported by the device */
+	uint8_t elem_count;
+
+	/** Supported algorithms and other capabilities */
+	uint16_t algorithms;
+
+	/** Supported public key types */
+	uint8_t pub_key_type;
+
+	/** Supported static OOB Types */
+	uint8_t static_oob;
+
+	/** Supported Output OOB Actions */
+	bt_mesh_output_action_t output_actions;
+
+	/** Supported Input OOB Actions */
+	bt_mesh_input_action_t input_actions;
+
+	/** Maximum size of Output OOB supported */
+	uint8_t output_size;
+
+	/** Maximum size in octets of Input OOB supported */
+	uint8_t input_size;
+};
+
 /** Provisioning properties & capabilities. */
 struct bt_mesh_prov {
 	/** The UUID that's used when advertising as unprovisioned */
@@ -92,6 +119,21 @@ struct bt_mesh_prov {
 	uint8_t        input_size;
 	/** Supported Input OOB Actions */
 	uint16_t       input_actions;
+
+	/** @brief Provisioning Capabilities.
+	 *
+	 *  This callback notifies the application that the provisioning capabilities
+	 *  of the unprovisioned device has been received.
+	 *
+	 *  The application can consequently call bt_mesh_auth_method_set_<*> to
+	 *  select suitable provisioning oob authentication method.
+	 *
+	 *  When this callback returns, the provisioner will start authentication with
+	 *  the chosen method.
+	 *
+	 *  @param cap capabilities supported by device.
+	 */
+	void         (*capabilities)(const struct bt_mesh_dev_capabilities *cap);
 
 	/** @brief Output of a number is requested.
 	 *
@@ -230,6 +272,89 @@ int bt_mesh_input_string(const char *str);
  */
 int bt_mesh_input_number(uint32_t num);
 
+/** @brief Provide Device public key.
+ *
+ *  @param public_key Device public key.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_mesh_prov_remote_pub_key_set(const uint8_t public_key[64]);
+
+/** @brief Use Input OOB authentication.
+ *
+ *  Provisioner only.
+ *
+ *  Instruct the unprovisioned device to use the specified Input OOB
+ *  authentication action. When using @ref BT_MESH_PUSH, @ref BT_MESH_TWIST or
+ *  @ref BT_MESH_ENTER_NUMBER, the @ref bt_mesh_prov::output_number callback is
+ *  called with a random number that has to be entered on the unprovisioned
+ *  device.
+ *
+ *  When using @ref BT_MESH_ENTER_STRING, the @ref bt_mesh_prov::output_string
+ *  callback is called with a random string that has to be entered on the
+ *  unprovisioned device.
+ *
+ *  @param action Authentication action used by the unprovisioned device.
+ *  @param size Authentication size.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_mesh_auth_method_set_input(bt_mesh_input_action_t action, uint8_t size);
+
+/** @brief Use Output OOB authentication.
+ *
+ *  Provisioner only.
+ *
+ *  Instruct the unprovisioned device to use the specified Output OOB
+ *  authentication action. The @ref bt_mesh_prov::input callback will
+ *  be called.
+ *
+ *  When using @ref BT_MESH_BLINK, @ref BT_MESH_BEEP, @ref BT_MESH_VIBRATE
+ *  or @ref BT_MESH_DISPLAY_NUMBER, and the application has to call
+ *  @ref bt_mesh_input_number with the random number indicated by
+ *  the unprovisioned device.
+ *
+ *  When using @ref BT_MESH_DISPLAY_STRING, the application has to call
+ *  @ref bt_mesh_input_string with the random string displayed by the
+ *  unprovisioned device.
+ *
+ *  @param action Authentication action used by the unprovisioned device.
+ *  @param size Authentication size.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_mesh_auth_method_set_output(bt_mesh_output_action_t action, uint8_t size);
+
+/** @brief Use static OOB authentication.
+ *
+ *  Provisioner only.
+ *
+ *  Instruct the unprovisioned device to use static OOB authentication, and use
+ *  the given static authentication value when provisioning.
+ *
+ *  @param static_val Static OOB value.
+ *  @param size Static OOB value size.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_mesh_auth_method_set_static(const uint8_t *static_val, uint8_t size);
+
+/** @brief Don't use OOB authentication.
+ *
+ *  Provisioner only.
+ *
+ *  Don't use any authentication when provisioning new devices. This is the
+ *  default behavior.
+ *
+ *  @warning Not using any authentication exposes the mesh network to
+ *           impersonation attacks, where attackers can pretend to be the
+ *           unprovisioned device to gain access to the network. Authentication
+ *           is strongly encouraged.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_mesh_auth_method_set_none(void);
+
 /** @brief Enable specific provisioning bearers
  *
  *  Enable one or more provisioning bearers.
@@ -307,29 +432,13 @@ bool bt_mesh_is_provisioned(void);
 /* Primary Network Key index */
 #define BT_MESH_NET_PRIMARY                 0x000
 
-#define BT_MESH_RELAY_DISABLED              0x00
-#define BT_MESH_RELAY_ENABLED               0x01
-#define BT_MESH_RELAY_NOT_SUPPORTED         0x02
-
-#define BT_MESH_BEACON_DISABLED             0x00
-#define BT_MESH_BEACON_ENABLED              0x01
-
-#define BT_MESH_GATT_PROXY_DISABLED         0x00
-#define BT_MESH_GATT_PROXY_ENABLED          0x01
-#define BT_MESH_GATT_PROXY_NOT_SUPPORTED    0x02
-
-#define BT_MESH_FRIEND_DISABLED             0x00
-#define BT_MESH_FRIEND_ENABLED              0x01
-#define BT_MESH_FRIEND_NOT_SUPPORTED        0x02
-
-#define BT_MESH_NODE_IDENTITY_STOPPED       0x00
-#define BT_MESH_NODE_IDENTITY_RUNNING       0x01
-#define BT_MESH_NODE_IDENTITY_NOT_SUPPORTED 0x02
-
-/* Features */
+/** Relay feature */
 #define BT_MESH_FEAT_RELAY                  BIT(0)
+/** GATT Proxy feature */
 #define BT_MESH_FEAT_PROXY                  BIT(1)
+/** Friend feature */
 #define BT_MESH_FEAT_FRIEND                 BIT(2)
+/** Low Power Node feature */
 #define BT_MESH_FEAT_LOW_POWER              BIT(3)
 #define BT_MESH_FEAT_SUPPORTED              (BT_MESH_FEAT_RELAY |   \
 					     BT_MESH_FEAT_PROXY |   \
@@ -425,14 +534,107 @@ int bt_mesh_lpn_set(bool enable);
  */
 int bt_mesh_lpn_poll(void);
 
-/** @brief Register a callback for Friendship changes.
+/** Low Power Node callback functions. */
+struct bt_mesh_lpn_cb {
+	/** @brief Friendship established.
+	 *
+	 *  This callback notifies the application that friendship has
+	 *  been successfully established.
+	 *
+	 *  @param net_idx  NetKeyIndex used during friendship establishment.
+	 *  @param friend_addr Friend address.
+	 *  @param queue_size  Friend queue size.
+	 *  @param recv_window Low Power Node's listens duration for
+	 *  Friend response.
+	 */
+	void (*established)(uint16_t net_idx, uint16_t friend_addr,
+			    uint8_t queue_size, uint8_t recv_window);
+
+	/** @brief Friendship terminated.
+	 *
+	 *  This callback notifies the application that friendship has
+	 *  been terminated.
+	 *
+	 *  @param net_idx  NetKeyIndex used during friendship establishment.
+	 *  @param friend_addr Friend address.
+	 */
+	void (*terminated)(uint16_t net_idx, uint16_t friend_addr);
+
+	/** @brief Local Poll Request.
+	 *
+	 *  This callback notifies the application that the local node has
+	 *  polled the friend node.
+	 *
+	 *  This callback will be called before @ref bt_mesh_lpn_cb::established
+	 *  when attempting to establish a friendship.
+	 *
+	 *  @param net_idx  NetKeyIndex used during friendship establishment.
+	 *  @param friend_addr Friend address.
+	 *  @param retry Retry or first poll request for each transaction.
+	 */
+	void (*polled)(uint16_t net_idx, uint16_t friend_addr, bool retry);
+};
+
+/** @def BT_MESH_LPN_CB_DEFINE
  *
- *  Registers a callback that will be called whenever Friendship gets
- *  established or is lost.
+ *  @brief Register a callback structure for Friendship events.
  *
- *  @param cb Function to call when the Friendship status changes.
+ *  @param _name Name of callback structure.
  */
-void bt_mesh_lpn_set_cb(void (*cb)(uint16_t friend_addr, bool established));
+#define BT_MESH_LPN_CB_DEFINE(_name)                                    \
+	static const Z_STRUCT_SECTION_ITERABLE(bt_mesh_lpn_cb,         \
+					       _CONCAT(bt_mesh_lpn_cb, \
+						       _name))
+
+/** Friend Node callback functions. */
+struct bt_mesh_friend_cb {
+	/** @brief Friendship established.
+	 *
+	 *  This callback notifies the application that friendship has
+	 *  been successfully established.
+	 *
+	 *  @param net_idx  NetKeyIndex used during friendship establishment.
+	 *  @param lpn_addr Low Power Node address.
+	 *  @param recv_delay Receive Delay in units of 1 millisecond.
+	 *  @param polltimeout PollTimeout in units of 1 millisecond.
+	 */
+	void (*established)(uint16_t net_idx, uint16_t lpn_addr,
+			    uint8_t recv_delay, uint32_t polltimeout);
+
+	/** @brief Friendship terminated.
+	 *
+	 *  This callback notifies the application that friendship has
+	 *  been terminated.
+	 *
+	 *  @param net_idx  NetKeyIndex used during friendship establishment.
+	 *  @param lpn_addr Low Power Node address.
+	 */
+	void (*terminated)(uint16_t net_idx, uint16_t lpn_addr);
+};
+
+/** @def BT_MESH_FRIEND_CB_DEFINE
+ *
+ *  @brief Register a callback structure for Friendship events.
+ *
+ *  Registers a callback structure that will be called whenever Friendship
+ *  gets established or terminated.
+ *
+ *  @param _name Name of callback structure.
+ */
+#define BT_MESH_FRIEND_CB_DEFINE(_name)                                   \
+	static const Z_STRUCT_SECTION_ITERABLE(bt_mesh_friend_cb,         \
+					       _CONCAT(bt_mesh_friend_cb, \
+						       _name))
+
+/** @brief Terminate Friendship.
+ *
+ *  Terminated Friendship for given LPN.
+ *
+ *  @param lpn_addr Low Power Node address.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_mesh_friend_terminate(uint16_t lpn_addr);
 
 #ifdef __cplusplus
 }

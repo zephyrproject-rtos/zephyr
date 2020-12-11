@@ -21,6 +21,8 @@ extern void test_msgq_purge_when_put(void);
 extern void test_msgq_attrs_get(void);
 extern void test_msgq_alloc(void);
 extern void test_msgq_pend_thread(void);
+extern void test_msgq_empty(void);
+extern void test_msgq_full(void);
 #ifdef CONFIG_USERSPACE
 extern void test_msgq_user_thread(void);
 extern void test_msgq_user_thread_overflow(void);
@@ -48,7 +50,8 @@ dummy_test(test_msgq_user_purge_when_put);
 #else
 #define MAX_SZ	128
 #endif
-K_MEM_POOL_DEFINE(test_pool, 128, MAX_SZ, 2, 4);
+
+K_HEAP_DEFINE(test_pool, MAX_SZ * 2);
 
 extern struct k_msgq kmsgq;
 extern struct k_msgq msgq;
@@ -62,7 +65,7 @@ void test_main(void)
 	k_thread_access_grant(k_current_get(), &kmsgq, &msgq, &end_sema,
 			      &tdata, &tstack);
 
-	k_thread_resource_pool_assign(k_current_get(), &test_pool);
+	k_thread_heap_assign(k_current_get(), &test_pool);
 
 	ztest_test_suite(msgq_api,
 			 ztest_1cpu_unit_test(test_msgq_thread),
@@ -79,6 +82,8 @@ void test_main(void)
 			 ztest_1cpu_unit_test(test_msgq_purge_when_put),
 			 ztest_user_unit_test(test_msgq_user_purge_when_put),
 			 ztest_1cpu_unit_test(test_msgq_pend_thread),
+			 ztest_1cpu_unit_test(test_msgq_empty),
+			 ztest_1cpu_unit_test(test_msgq_full),
 			 ztest_unit_test(test_msgq_alloc));
 	ztest_run_test_suite(msgq_api);
 }

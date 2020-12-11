@@ -49,7 +49,7 @@ void main(void)
 	uint32_t ms;
 	int ret;
 
-	struct device *mic_dev = device_get_binding(DT_LABEL(DT_INST(0, st_mpxxdtyy)));
+	const struct device *mic_dev = device_get_binding(DT_LABEL(DT_INST(0, st_mpxxdtyy)));
 
 	if (!mic_dev) {
 		printk("Could not get pointer to mic device\n");

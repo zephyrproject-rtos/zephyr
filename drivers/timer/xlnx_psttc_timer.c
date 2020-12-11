@@ -65,7 +65,7 @@ static void update_match(uint32_t cycles, uint32_t match)
 	sys_write32(match, TIMER_BASE_ADDR + XTTCPS_MATCH_0_OFFSET);
 }
 
-static void ttc_isr(void *arg)
+static void ttc_isr(const void *arg)
 {
 	uint32_t cycles;
 	uint32_t ticks;
@@ -96,7 +96,7 @@ static void ttc_isr(void *arg)
 	z_clock_announce(ticks);
 }
 
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
 	uint32_t reg_val;
 

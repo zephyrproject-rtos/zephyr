@@ -15,7 +15,6 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 #include <stdio.h>
 #include <stdlib.h>
 #include <shell/shell.h>
-#include <shell/shell_uart.h>
 #include <sys/printk.h>
 #include <init.h>
 
@@ -328,7 +327,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 
 SHELL_CMD_REGISTER(wifi, &wifi_commands, "Wifi commands", NULL);
 
-static int wifi_shell_init(struct device *unused)
+static int wifi_shell_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 

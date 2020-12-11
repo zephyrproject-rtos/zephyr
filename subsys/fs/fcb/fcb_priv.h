@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2020 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -17,6 +17,31 @@ extern "C" {
 
 #define FCB_ID_GT(a, b) (((int16_t)(a) - (int16_t)(b)) > 0)
 
+#define MK32(val) ((((uint32_t)(val)) << 24) |			\
+		   (((uint32_t)((val) & 0xff)) << 16) |		\
+		   (((uint32_t)((val) & 0xff)) << 8) |		\
+		   (((uint32_t)((val) & 0xff))))
+
+
+/* @brief Gets magic value in flash formatted version
+ *
+ * Magic, the fcb->f_magic, prior to being written to flash, is xored with
+ * binary inversion of fcb->f_erase_value to avoid it matching a 4 consecutive
+ * bytes of flash erase value, which is used to recognize end of records,
+ * by accident. Only the value of 0xFFFFFFFF will be always written as
+ * 4 bytes of erase value.
+ *
+ * @param fcb pointer to initialized fcb structure
+ *
+ * @return uin32_t formatted magic value
+ */
+static inline uint32_t fcb_flash_magic(const struct fcb *fcb)
+{
+	const uint8_t ev = fcb->f_erase_value;
+
+	return (fcb->f_magic ^ ~MK32(ev));
+}
+
 struct fcb_disk_area {
 	uint32_t fd_magic;
 	uint8_t fd_ver;
@@ -24,8 +49,8 @@ struct fcb_disk_area {
 	uint16_t fd_id;
 };
 
-int fcb_put_len(uint8_t *buf, uint16_t len);
-int fcb_get_len(uint8_t *buf, uint16_t *len);
+int fcb_put_len(const struct fcb *fcb, uint8_t *buf, uint16_t len);
+int fcb_get_len(const struct fcb *fcb, uint8_t *buf, uint16_t *len);
 
 static inline int fcb_len_in_flash(struct fcb *fcb, uint16_t len)
 {

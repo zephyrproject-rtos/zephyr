@@ -5,7 +5,7 @@
 
 menuconfig FXOS8700
 	bool "FXOS8700 accelerometer/magnetometer driver"
-	depends on I2C && HAS_DTS_I2C && HAS_DTS_GPIO
+	depends on I2C && HAS_DTS_GPIO
 	help
 	  Enable driver for the FXOS8700 accelerometer/magnetometer.
 	  The driver also supports MMA8451Q, MMA8652FC and MMA8653FC
@@ -36,39 +36,6 @@ config FXOS8700_TEMP
 	  Enable the temperature sensor. Note that the temperature sensor is
 	  uncalibrated and its output for a given temperature may vary from one
 	  device to the next.
-
-choice
-	prompt "Range"
-	default FXOS8700_RANGE_8G
-
-config FXOS8700_RANGE_8G
-	bool "8g (0.976 mg/LSB)"
-
-config FXOS8700_RANGE_4G
-	bool "4g (0.488 mg/LSB)"
-
-config FXOS8700_RANGE_2G
-	bool "2g (0.244 mg/LSB)"
-
-endchoice
-
-choice
-	prompt "Power mode"
-	default FXOS8700_PM_NORMAL
-
-config FXOS8700_PM_NORMAL
-	bool "Normal power mode"
-
-config FXOS8700_PM_LOW_NOISE_LOW_POWER
-	bool "Low noise low power mode"
-
-config FXOS8700_PM_HIGH_RESOLUTION
-	bool "High resolution power mode"
-
-config FXOS8700_PM_LOW_POWER
-	bool "Low power mode"
-
-endchoice
 
 choice
 	prompt "Trigger mode"
@@ -121,81 +88,6 @@ config FXOS8700_PULSE_INT1
 	help
 	  Say Y to route pulse interrupt to INT1 pin. Say N to route to INT2 pin.
 
-config FXOS8700_PULSE_CFG
-	hex "Pulse configuration register"
-	range 0 0xff
-	default 0x3f
-
-config FXOS8700_PULSE_THSX
-	hex "Pulse X-axis threshold"
-	range 0 0x7f
-	default 0x20
-	help
-	  Threshold to start the pulse-event detection procedure on the X-axis.
-	  Threshold values for each axis are unsigned 7-bit numbers with a
-	  fixed resolution of 0.063 g/LSB, corresponding to an 8g acceleration
-	  full-scale range.
-
-config FXOS8700_PULSE_THSY
-	hex "Pulse Y-axis threshold"
-	range 0 0x7f
-	default 0x20
-	help
-	  Threshold to start the pulse-event detection procedure on the Y-axis.
-	  Threshold values for each axis are unsigned 7-bit numbers with a
-	  fixed resolution of 0.063 g/LSB, corresponding to an 8g acceleration
-	  full-scale range.
-
-config FXOS8700_PULSE_THSZ
-	hex "Pulse Z-axis threshold"
-	range 0 0x7f
-	default 0x40
-	help
-	  Threshold to start the pulse-event detection procedure on the Z-axis.
-	  Threshold values for each axis are unsigned 7-bit numbers with a
-	  fixed resolution of 0.063 g/LSB, corresponding to an 8g acceleration
-	  full-scale range.
-
-config FXOS8700_PULSE_TMLT
-	hex "Pulse time limit"
-	range 0 0x7f
-	default 0x18
-	help
-	  The maximum time interval that can elapse between the start of the
-	  acceleration on the selected channel exceeding the specified
-	  threshold and the end when the channel acceleration goes back below
-	  the specified threshold. The resolution depends upon the sample rate
-	  (ODR) and the high-pass filter configuration
-	  (HP_FILTER_CUTOFF[pls_hpf_en]). For ODR=800 Hz and pls_hpf_en=0, the
-	  resolution is 0.625 ms/LSB.
-
-config FXOS8700_PULSE_LTCY
-	hex "Pulse latency"
-	range 0 0xff
-	default 0x28
-	help
-	  The time interval that starts after the first pulse detection where
-	  the pulse-detection function ignores the start of a new pulse. The
-	  resolution depends upon the sample rate (ODR) and the high-pass filter
-	  configuration (HP_FILTER_CUTOFF[pls_hpf_en]). For ODR=800 Hz and
-	  pls_hpf_en=0, the resolution is 1.25 ms/LSB.
-
-config FXOS8700_PULSE_WIND
-	hex "Pulse window"
-	range 0 0xff
-	default 0x3c
-	help
-	  The maximum interval of time that can elapse after the end of the
-	  latency interval in which the start of the second pulse event must be
-	  detected provided the device has been configured for double pulse
-	  detection. The detected second pulse width must be shorter than the
-	  time limit constraint specified by the PULSE_TMLT register, but the
-	  end of the double pulse need not finish within the time specified by
-	  the PULSE_WIND register. The resolution depends upon the sample rate
-	  (ODR) and the high-pass filter configuration
-	  (HP_FILTER_CUTOFF[pls_hpf_en]). For ODR=800 Hz and pls_hpf_en=0, the
-	  resolution is 1.25 ms/LSB.
-
 endif # FXOS8700_PULSE
 
 menuconfig FXOS8700_MOTION
@@ -208,6 +100,21 @@ config FXOS8700_MOTION_INT1
 	depends on FXOS8700_MOTION
 	help
 	  Say Y to route motion interrupt to INT1 pin. Say N to route to INT2 pin.
+
+menuconfig FXOS8700_MAG_VECM
+	bool "Magnetic vector-magnitude detection"
+	help
+	  Enable magnetic vector-magnitude detection
+
+if FXOS8700_MAG_VECM
+
+config FXOS8700_MAG_VECM_INT1
+	bool "Magnetic vector-magnitude interrupt to INT1 pin"
+	help
+	  Say Y to route magnetic vector-magnitude interrupt to INT1 pin.
+	  Say N to route to INT2 pin.
+
+endif # FXOS8700_MAG_VECM
 
 endif # FXOS8700_TRIGGER
 

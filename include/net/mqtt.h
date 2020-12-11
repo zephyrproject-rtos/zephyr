@@ -522,7 +522,7 @@ struct mqtt_client {
 	uint8_t will_retain : 1;
 
 	/** Clean session flag indicating a fresh (1) or a retained session (0).
-	 *  Default is 1.
+	 *  Default is CONFIG_MQTT_CLEAN_SESSION.
 	 */
 	uint8_t clean_session : 1;
 };
@@ -571,10 +571,8 @@ int mqtt_client_set_proxy(struct mqtt_client *client,
  * @note Default protocol revision used for connection request is 3.1.1. Please
  *       set client.protocol_version = MQTT_VERSION_3_1_0 to use protocol 3.1.0.
  * @note
- *       @rst
- *          Please modify :option:`CONFIG_MQTT_KEEPALIVE` time to override
- *          default of 1 minute.
- *       @endrst
+ *       Please modify @option{CONFIG_MQTT_KEEPALIVE} time to override default
+ *       of 1 minute.
  */
 int mqtt_connect(struct mqtt_client *client);
 
@@ -729,10 +727,10 @@ int mqtt_live(struct mqtt_client *client);
  * @param[in] client Client instance for which the procedure is requested.
  *
  * @return Time in milliseconds until next keep alive message is expected to
- *         be sent. Function will return UINT32_MAX if keep alive messages are
+ *         be sent. Function will return -1 if keep alive messages are
  *         not enabled.
  */
-uint32_t mqtt_keepalive_time_left(const struct mqtt_client *client);
+int mqtt_keepalive_time_left(const struct mqtt_client *client);
 
 /**
  * @brief Receive an incoming MQTT packet. The registered callback will be

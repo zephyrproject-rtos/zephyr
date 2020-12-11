@@ -23,7 +23,7 @@
 
 #define PECI_SAFE_TEMP          72
 
-static struct device *peci_dev;
+static const struct device *peci_dev;
 static bool peci_initialized;
 static uint8_t tjmax;
 static uint8_t rx_fcs;

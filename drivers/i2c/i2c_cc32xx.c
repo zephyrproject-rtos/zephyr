@@ -39,9 +39,9 @@ LOG_MODULE_REGISTER(i2c_cc32xx);
 #define IS_I2C_MSG_WRITE(flags) ((flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE)
 
 #define DEV_CFG(dev) \
-	((const struct i2c_cc32xx_config *const)(dev)->config_info)
+	((const struct i2c_cc32xx_config *const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct i2c_cc32xx_data *const)(dev)->driver_data)
+	((struct i2c_cc32xx_data *const)(dev)->data)
 #define DEV_BASE(dev) \
 	((DEV_CFG(dev))->base)
 
@@ -82,7 +82,8 @@ struct i2c_cc32xx_data {
 static void configure_i2c_irq(const struct i2c_cc32xx_config *config);
 
 #define I2C_CLK_FREQ(n) DT_PROP(DT_INST_PHANDLE(n, clocks), clock_frequency)
-static int i2c_cc32xx_configure(struct device *dev, uint32_t dev_config_raw)
+static int i2c_cc32xx_configure(const struct device *dev,
+				uint32_t dev_config_raw)
 {
 	uint32_t base = DEV_BASE(dev);
 	uint32_t bitrate_id;
@@ -111,7 +112,8 @@ static int i2c_cc32xx_configure(struct device *dev, uint32_t dev_config_raw)
 	return 0;
 }
 
-static void i2c_cc32xx_prime_transfer(struct device *dev, struct i2c_msg *msg,
+static void i2c_cc32xx_prime_transfer(const struct device *dev,
+				      struct i2c_msg *msg,
 				      uint16_t addr)
 {
 	struct i2c_cc32xx_data *data = DEV_DATA(dev);
@@ -156,7 +158,7 @@ static void i2c_cc32xx_prime_transfer(struct device *dev, struct i2c_msg *msg,
 	}
 }
 
-static int i2c_cc32xx_transfer(struct device *dev, struct i2c_msg *msgs,
+static int i2c_cc32xx_transfer(const struct device *dev, struct i2c_msg *msgs,
 			       uint8_t num_msgs, uint16_t addr)
 {
 	struct i2c_cc32xx_data *data = DEV_DATA(dev);
@@ -259,9 +261,8 @@ static void i2c_cc32xx_isr_handle_read(uint32_t base,
 	}
 }
 
-static void i2c_cc32xx_isr(void *arg)
+static void i2c_cc32xx_isr(const struct device *dev)
 {
-	struct device *dev = (struct device *)arg;
 	uint32_t base = DEV_BASE(dev);
 	struct i2c_cc32xx_data *data = DEV_DATA(dev);
 	uint32_t err_status;
@@ -322,7 +323,7 @@ static void i2c_cc32xx_isr(void *arg)
 	}
 }
 
-static int i2c_cc32xx_init(struct device *dev)
+static int i2c_cc32xx_init(const struct device *dev)
 {
 	uint32_t base = DEV_BASE(dev);
 	const struct i2c_cc32xx_config *config = DEV_CFG(dev);
@@ -381,7 +382,7 @@ static const struct i2c_cc32xx_config i2c_cc32xx_config = {
 
 static struct i2c_cc32xx_data i2c_cc32xx_data;
 
-DEVICE_AND_API_INIT(i2c_cc32xx, DT_INST_LABEL(0), &i2c_cc32xx_init,
+DEVICE_DT_INST_DEFINE(0, &i2c_cc32xx_init, device_pm_control_nop,
 		    &i2c_cc32xx_data, &i2c_cc32xx_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_cc32xx_driver_api);
@@ -390,7 +391,7 @@ static void configure_i2c_irq(const struct i2c_cc32xx_config *config)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
-		    i2c_cc32xx_isr, DEVICE_GET(i2c_cc32xx), 0);
+		    i2c_cc32xx_isr, DEVICE_DT_INST_GET(0), 0);
 
 	irq_enable(config->irq_no);
 }

@@ -79,10 +79,10 @@
 	Z_ITERABLE_SECTION_ROM(z_object_assignment, 4)
 #endif
 
-	SECTION_PROLOGUE(app_shmem_regions,,)
+	SECTION_DATA_PROLOGUE(app_shmem_regions,,)
 	{
 		__app_shmem_regions_start = .;
-		KEEP(*(SORT(".app_regions.*")));
+		KEEP(*(SORT(.app_regions.*)));
 		__app_shmem_regions_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
@@ -102,9 +102,50 @@
 
 	Z_ITERABLE_SECTION_ROM(bt_gatt_service_static, 4)
 
+#if defined(CONFIG_BT_MESH)
+	Z_ITERABLE_SECTION_ROM(bt_mesh_subnet_cb, 4)
+	Z_ITERABLE_SECTION_ROM(bt_mesh_app_key_cb, 4)
+
+	Z_ITERABLE_SECTION_ROM(bt_mesh_hb_cb, 4)
+#endif
+
+#if defined(CONFIG_BT_MESH_FRIEND)
+	Z_ITERABLE_SECTION_ROM(bt_mesh_friend_cb, 4)
+#endif
+
+#if defined(CONFIG_BT_MESH_LOW_POWER)
+	Z_ITERABLE_SECTION_ROM(bt_mesh_lpn_cb, 4)
+#endif
+
+#if defined(CONFIG_EC_HOST_CMD)
+	Z_ITERABLE_SECTION_ROM(ec_host_cmd_handler, 4)
+#endif
+
 #if defined(CONFIG_SETTINGS)
 	Z_ITERABLE_SECTION_ROM(settings_handler_static, 4)
 #endif
+
+#if defined(CONFIG_EMUL)
+	SECTION_DATA_PROLOGUE(emulators_section,,)
+	{
+		__emul_list_start = .;
+		KEEP(*(SORT_BY_NAME(".emulators")));
+		__emul_list_end = .;
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif /* CONFIG_EMUL */
+
+#if defined(CONFIG_DNS_SD)
+	Z_ITERABLE_SECTION_ROM(dns_sd_rec, 4)
+#endif
+
+#if defined(CONFIG_PCIE)
+	SECTION_DATA_PROLOGUE(irq_alloc,,)
+	{
+		__irq_alloc_start = .;
+		KEEP(*(SORT_BY_NAME("._irq_alloc*")));
+		__irq_alloc_end = .;
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif /* CONFIG_PCIE */
 
 	SECTION_DATA_PROLOGUE(log_const_sections,,)
 	{

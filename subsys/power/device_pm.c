@@ -9,7 +9,7 @@
 #include <device.h>
 #include <sys/__assert.h>
 
-#define LOG_LEVEL CONFIG_SYS_PM_LOG_LEVEL /* From power module Kconfig */
+#define LOG_LEVEL CONFIG_PM_LOG_LEVEL /* From power module Kconfig */
 #include <logging/log.h>
 LOG_MODULE_DECLARE(power);
 
@@ -17,7 +17,7 @@ LOG_MODULE_DECLARE(power);
 #define DEVICE_PM_SYNC			(0 << 0)
 #define DEVICE_PM_ASYNC			(1 << 0)
 
-static void device_pm_callback(struct device *dev,
+static void device_pm_callback(const struct device *dev,
 			       int retval, void *context, void *arg)
 {
 	__ASSERT(retval == 0, "Device set power state failed");
@@ -25,10 +25,10 @@ static void device_pm_callback(struct device *dev,
 	/* Set the fsm_state */
 	if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 		atomic_set(&dev->pm->fsm_state,
-			   DEVICE_PM_FSM_STATE_ACTIVE);
+			   DEVICE_PM_STATE_ACTIVE);
 	} else {
 		atomic_set(&dev->pm->fsm_state,
-			   DEVICE_PM_FSM_STATE_SUSPENDED);
+			   DEVICE_PM_STATE_SUSPENDED);
 	}
 
 	k_work_submit(&dev->pm->work);
@@ -38,16 +38,16 @@ static void pm_work_handler(struct k_work *work)
 {
 	struct device_pm *pm = CONTAINER_OF(work,
 					struct device_pm, work);
-	struct device *dev = pm->dev;
+	const struct device *dev = pm->dev;
 	int ret = 0;
 	uint8_t pm_state;
 
 	switch (atomic_get(&dev->pm->fsm_state)) {
-	case DEVICE_PM_FSM_STATE_ACTIVE:
+	case DEVICE_PM_STATE_ACTIVE:
 		if ((atomic_get(&dev->pm->usage) == 0) &&
 					dev->pm->enable) {
 			atomic_set(&dev->pm->fsm_state,
-				   DEVICE_PM_FSM_STATE_SUSPENDING);
+				   DEVICE_PM_STATE_SUSPENDING);
 			ret = device_set_power_state(dev,
 						DEVICE_PM_SUSPEND_STATE,
 						device_pm_callback, NULL);
@@ -56,11 +56,11 @@ static void pm_work_handler(struct k_work *work)
 			goto fsm_out;
 		}
 		break;
-	case DEVICE_PM_FSM_STATE_SUSPENDED:
+	case DEVICE_PM_STATE_SUSPENDED:
 		if ((atomic_get(&dev->pm->usage) > 0) ||
 					!dev->pm->enable) {
 			atomic_set(&dev->pm->fsm_state,
-				   DEVICE_PM_FSM_STATE_RESUMING);
+				   DEVICE_PM_STATE_RESUMING);
 			ret = device_set_power_state(dev,
 						DEVICE_PM_ACTIVE_STATE,
 						device_pm_callback, NULL);
@@ -69,8 +69,8 @@ static void pm_work_handler(struct k_work *work)
 			goto fsm_out;
 		}
 		break;
-	case DEVICE_PM_FSM_STATE_SUSPENDING:
-	case DEVICE_PM_FSM_STATE_RESUMING:
+	case DEVICE_PM_STATE_SUSPENDING:
+	case DEVICE_PM_STATE_RESUMING:
 		/* Do nothing: We are waiting for device_pm_callback() */
 		break;
 	default:
@@ -85,7 +85,7 @@ fsm_out:
 	k_poll_signal_raise(&dev->pm->signal, pm_state);
 }
 
-static int device_pm_request(struct device *dev,
+static int device_pm_request(const struct device *dev,
 			     uint32_t target_state, uint32_t pm_flags)
 {
 	int result, signaled = 0;
@@ -125,29 +125,29 @@ static int device_pm_request(struct device *dev,
 	return result == target_state ? 0 : -EIO;
 }
 
-int device_pm_get(struct device *dev)
+int device_pm_get(const struct device *dev)
 {
 	return device_pm_request(dev,
 			DEVICE_PM_ACTIVE_STATE, DEVICE_PM_ASYNC);
 }
 
-int device_pm_get_sync(struct device *dev)
+int device_pm_get_sync(const struct device *dev)
 {
 	return device_pm_request(dev, DEVICE_PM_ACTIVE_STATE, 0);
 }
 
-int device_pm_put(struct device *dev)
+int device_pm_put(const struct device *dev)
 {
 	return device_pm_request(dev,
 			DEVICE_PM_SUSPEND_STATE, DEVICE_PM_ASYNC);
 }
 
-int device_pm_put_sync(struct device *dev)
+int device_pm_put_sync(const struct device *dev)
 {
 	return device_pm_request(dev, DEVICE_PM_SUSPEND_STATE, 0);
 }
 
-void device_pm_enable(struct device *dev)
+void device_pm_enable(const struct device *dev)
 {
 	k_sem_take(&dev->pm->lock, K_FOREVER);
 	dev->pm->enable = true;
@@ -159,7 +159,7 @@ void device_pm_enable(struct device *dev)
 	if (!dev->pm->dev) {
 		dev->pm->dev = dev;
 		atomic_set(&dev->pm->fsm_state,
-			   DEVICE_PM_FSM_STATE_SUSPENDED);
+			   DEVICE_PM_STATE_SUSPENDED);
 		k_work_init(&dev->pm->work, pm_work_handler);
 	} else {
 		k_work_submit(&dev->pm->work);
@@ -167,7 +167,7 @@ void device_pm_enable(struct device *dev)
 	k_sem_give(&dev->pm->lock);
 }
 
-void device_pm_disable(struct device *dev)
+void device_pm_disable(const struct device *dev)
 {
 	k_sem_take(&dev->pm->lock, K_FOREVER);
 	dev->pm->enable = false;

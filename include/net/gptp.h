@@ -34,7 +34,12 @@ extern "C" {
 
 #define GPTP_PRIORITY1_NON_GM_CAPABLE      255
 #define GPTP_PRIORITY1_GM_CAPABLE          248
+
+#if defined(CONFIG_NET_GPTP_BMCA_PRIORITY2)
+#define GPTP_PRIORITY2_DEFAULT             CONFIG_NET_GPTP_BMCA_PRIORITY2
+#else
 #define GPTP_PRIORITY2_DEFAULT             248
+#endif
 
 /** @endcond */
 

@@ -67,13 +67,44 @@ void common_work_handler(struct k_work *unused)
 /**
  * @brief Test work item can take call back function defined by user
  * @details
- * - Creating a work item, then add handler function to that work item.
- * - Then process that work item.
- * - To check that handler function executed successfully, we use semaphore
- *   sync_sema with initial count 0.
- * - Handler function gives semaphore, then we wait for that semaphore
- *   from the test function body.
- * - If semaphore was obtained successfully, test passed.
+ * Test Objective:
+ * - Test a work item shall be supplied as a user-defined callback
+ * function, and the handler function of a work item shall be able
+ * to utilize any kernel API available to threads.
+ *
+ * Test techniques:
+ * - Dynamic analysis and testing
+ * - Interface testing
+ *
+ * Prerequisite Conditions:
+ * - N/A
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Creating a work item, then add handler function to that work item.
+ * -# Then process that work item.
+ * -# To check that handler function executed successfully, we use semaphore
+ * sync_sema with initial count 0.
+ * -# Handler function gives semaphore, then we wait for that semaphore
+ * from the test function body.
+ * -# Check if semaphore was obtained successfully.
+ * -# Set a work item's flag in pending state and append the item into workqueue.
+ * -# Check if the queue is empty.
+ *
+ * Expected Test Result:
+ * - The work item can be submit to workqueue whenever it is in right state.
+ *
+ * Pass/Fail Criteria:
+ * - Successful if check points in test procedure are all passed,
+ * otherwise failure.
+ *
+ * Assumptions and Constraints:
+ * - N/A
+ *
+ * @see k_work_init()
+ *
  * @ingroup kernel_workqueue_tests
  */
 void test_work_item_supplied_with_func(void)
@@ -89,6 +120,19 @@ void test_work_item_supplied_with_func(void)
 	k_sem_take(&sync_sema, K_FOREVER);
 	sem_count = k_sem_count_get(&sync_sema);
 	zassert_equal(sem_count, COM_SEM_INIT_VAL, NULL);
+
+	/* TESTPOINT: When a work item be added to a workqueue,
+	 * it's flag will be in pending state, before the work item be processed,
+	 * it cannot be append to a workqueue another time.
+	 */
+	zassert_false(k_work_pending(&work_item), NULL);
+	k_work_submit_to_queue(&workq, &work_item);
+	zassert_true(k_work_pending(&work_item), NULL);
+	k_work_submit_to_queue(&workq, &work_item);
+
+	/* Test the work item's callback function can only be invoked once */
+	k_sem_take(&sync_sema, K_FOREVER);
+	zassert_true(k_queue_is_empty(&workq.queue), NULL);
 }
 
 /* Two handler functions fifo_work_first() and fifo_work_second
@@ -135,19 +179,46 @@ void test_process_work_items_fifo(void)
 }
 
 /**
- * @brief Test kernel support scheduling work item that is to be processed
- * after user defined period of time
+ * @brief Test submitting a delayed work item to a workqueue
  * @details
- * - For that test is using semaphore sync_sema, with initial count 0.
- * - In that test we measure actual spent time and compare it with time
+ * Test Objective:
+ * - Test kernel support scheduling work item that is to be processed
+ * after user defined period of time.
+ *
+ * Test techniques:
+ * - Dynamic analysis and testing
+ * - Interface testing
+ *
+ * Prerequisite Conditions:
+ * - N/A
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# For that test is using semaphore sync_sema, with initial count 0.
+ * -# In that test we measure actual spent time and compare it with time
  * which was measured by function k_delayed_work_remaining_get().
- * - Using system clocks we measure actual spent time
+ * -# Using system clocks we measure actual spent time
  * in the period between delayed work submitted and delayed work
  * executed.
- * - To know that delayed work was executed, we use semaphore.
- * - Right after semaphore was given from handler function, we stop
+ * -# To know that delayed work was executed, we use semaphore.
+ * -# Right after semaphore was given from handler function, we stop
  * measuring actual time.
- * - Then compare results.
+ * -# Then compare results.
+ *
+ * Expected Test Result:
+ * - The measured time results are in a very small range.
+ *
+ * Pass/Fail Criteria:
+ * - Successful if check points in test procedure are all passed,
+ * otherwise failure.
+ *
+ * Assumptions and Constraints:
+ * - N/A
+ *
+ * @see k_delayed_work_init()
+ *
  * @ingroup kernel_workqueue_tests
  */
 void test_sched_delayed_work_item(void)
@@ -161,6 +232,8 @@ void test_sched_delayed_work_item(void)
 	 * only after specific period of time
 	 */
 	k_delayed_work_init(&work_item_delayed, common_work_handler);
+	/* align to tick before schedule */
+	k_usleep(1);
 	start_time = k_cycle_get_32();
 	k_delayed_work_submit_to_queue(&workq, &work_item_delayed, TIMEOUT);
 	ms_remain = k_delayed_work_remaining_get(&work_item_delayed);
@@ -174,12 +247,43 @@ void test_sched_delayed_work_item(void)
 }
 
 /**
- * @brief Test application can define workqueues without any limit
+ * @brief Test define any number of workqueues
  * @details
- * - We can define any number of workqueus using a var of type struct k_work_q.
- * - Define and initialize maximum possible real number of the workqueues
- *   available according to the stack size.
- * - Test defines and initializes max number of the workqueues and starts them.
+ * Test Objective:
+ * - Test application can define workqueues without any limit.
+ *
+ * Test techniques:
+ * - Dynamic analysis and testing
+ * - Interface testing
+ *
+ * Prerequisite Conditions:
+ * - N/A
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Define any number of workqueus using a var of type
+ * struct k_work_q.
+ * -# Define and initialize maximum possible real number of the
+ * workqueues available according to the stack size.
+ * -# Test defines and initializes max number of the workqueues
+ * and starts them.
+ * -# Check if the number of workqueues defined is the same as the
+ * number of times the definition operation was performed.
+ *
+ * Expected Test Result:
+ * - The max number of workqueues be created.
+ *
+ * Pass/Fail Criteria:
+ * - Successful if check points in test procedure are all passed,
+ * otherwise failure.
+ *
+ * Assumptions and Constraints:
+ * - N/A
+ *
+ * @see k_work_q_start()
+ *
  * @ingroup kernel_workqueue_tests
  */
 void test_workqueue_max_number(void)
@@ -235,7 +339,7 @@ static void twork_submit_1(struct k_work_q *work_q, struct k_work *w,
 	}
 }
 
-static void twork_submit(void *data)
+static void twork_submit(const void *data)
 {
 	struct k_work_q *work_q = (struct k_work_q *)data;
 
@@ -248,15 +352,61 @@ static void twork_submit_multipleq(void *data)
 {
 	struct k_work_q *work_q = (struct k_work_q *)data;
 
+	if (IS_ENABLED(CONFIG_SOC_QEMU_ARC_HS)) {
+		/* On this platform the wait for first submission to
+		 * timeout returns after the pending work has been
+		 * taken off the work queue.
+		 */
+		ztest_test_skip();
+		return;
+	}
+
 	/**TESTPOINT: init via k_work_init*/
 	k_delayed_work_init(&new_work, new_work_handler);
+	zassert_equal(k_delayed_work_cancel(&new_work),
+		      -EINVAL, NULL);
 
+	/* align to tick before schedule */
+	k_usleep(1);
 	k_delayed_work_submit_to_queue(work_q, &new_work, TIMEOUT);
+	zassert_true(k_delayed_work_pending(&new_work), NULL);
 
 	zassert_equal(k_delayed_work_submit(&new_work, TIMEOUT),
 		      -EADDRINUSE, NULL);
 
-	k_sem_give(&sync_sema);
+	/* wait for first submission to complete timeout, then sleep
+	 * once to ensure the work thread gets to run (depending on
+	 * timing it may or may not be submitted right after the
+	 * timeout sleep returns.
+	 */
+	k_sleep(TIMEOUT);
+	k_usleep(1);
+	zassert_false(k_delayed_work_pending(&new_work), NULL);
+
+	/* confirm legacy behavior that completed work item can't be
+	 * submitted on a new queue.
+	 */
+	zassert_equal(k_delayed_work_submit(&new_work, TIMEOUT),
+		      -EADDRINUSE, NULL);
+
+	/* still can't if the (completed) work item is unsuccessfully
+	 * cancelled
+	 */
+	zassert_equal(k_delayed_work_cancel(&new_work),
+		      -EALREADY, NULL);
+	zassert_equal(k_delayed_work_submit(&new_work, TIMEOUT),
+		      -EADDRINUSE, NULL);
+
+	/* but can if the work item is successfully cancelled */
+	zassert_equal(k_delayed_work_submit_to_queue(work_q, &new_work,
+						     TIMEOUT),
+		      0, NULL);
+	zassert_equal(k_delayed_work_cancel(&new_work),
+		      0, NULL);
+	zassert_equal(k_delayed_work_cancel(&new_work),
+		      -EINVAL, NULL);
+	zassert_equal(k_delayed_work_submit(&new_work, TIMEOUT),
+		      0, NULL);
 }
 
 static void twork_resubmit(void *data)
@@ -282,6 +432,56 @@ static void twork_resubmit(void *data)
 	k_sem_give(&sync_sema);
 }
 
+static void twork_resubmit_nowait(void *data)
+{
+	struct k_work_q *work_q = (struct k_work_q *)data;
+
+	k_delayed_work_init(&delayed_work_sleepy, work_sleepy);
+	k_delayed_work_init(&delayed_work[0], work_handler);
+	k_delayed_work_init(&delayed_work[1], work_handler);
+
+	zassert_equal(k_delayed_work_submit_to_queue(work_q,
+						     &delayed_work_sleepy,
+						     K_NO_WAIT),
+		      0, NULL);
+	zassert_equal(k_delayed_work_submit_to_queue(work_q, &delayed_work[0],
+						     K_NO_WAIT),
+		      0, NULL);
+	zassert_equal(k_delayed_work_submit_to_queue(work_q, &delayed_work[1],
+						     K_NO_WAIT),
+		      0, NULL);
+
+	/* No-wait submissions are pended immediately. */
+	zassert_true(k_work_pending(&delayed_work_sleepy.work), NULL);
+	zassert_true(k_work_pending(&delayed_work[0].work), NULL);
+	zassert_true(k_work_pending(&delayed_work[1].work), NULL);
+
+	/* Release sleeper, check other two still pending */
+	do {
+		k_usleep(1);
+	} while (k_work_pending(&delayed_work_sleepy.work));
+	zassert_false(k_work_pending(&delayed_work_sleepy.work), NULL);
+	zassert_true(k_work_pending(&delayed_work[0].work), NULL);
+	zassert_true(k_work_pending(&delayed_work[1].work), NULL);
+
+	/* Verify order of pending */
+	zassert_equal(k_queue_peek_head(&workq.queue),
+		      &delayed_work[0].work, NULL);
+	zassert_equal(k_queue_peek_tail(&workq.queue),
+		      &delayed_work[1].work, NULL);
+
+	/* Verify that resubmitting moves to end. */
+	zassert_equal(k_delayed_work_submit_to_queue(work_q, &delayed_work[0],
+						     K_NO_WAIT),
+		      0, NULL);
+	zassert_equal(k_queue_peek_head(&workq.queue),
+		      &delayed_work[1].work, NULL);
+	zassert_equal(k_queue_peek_tail(&workq.queue),
+		      &delayed_work[0].work, NULL);
+
+	k_sem_give(&sync_sema);
+}
+
 static void tdelayed_work_submit_1(struct k_work_q *work_q,
 				   struct k_delayed_work *w,
 				   k_work_handler_t handler)
@@ -293,10 +493,15 @@ static void tdelayed_work_submit_1(struct k_work_q *work_q,
 	/**TESTPOINT: init via k_delayed_work_init*/
 	k_delayed_work_init(w, handler);
 	/**TESTPOINT: check pending after delayed work init*/
-	zassert_false(k_work_pending((struct k_work *)w), NULL);
+	zassert_false(k_work_pending(&w->work), NULL);
+	zassert_false(k_delayed_work_pending(w), NULL);
 	/**TESTPOINT: check remaining timeout before submit*/
 	zassert_equal(k_delayed_work_remaining_get(w), 0, NULL);
 
+	/* align to tick before schedule */
+	if (!k_is_in_isr()) {
+		k_usleep(1);
+	}
 	if (work_q) {
 		/**TESTPOINT: delayed work submit to queue*/
 		zassert_true(k_delayed_work_submit_to_queue(work_q, w, TIMEOUT)
@@ -305,6 +510,9 @@ static void tdelayed_work_submit_1(struct k_work_q *work_q,
 		/**TESTPOINT: delayed work submit to system queue*/
 		zassert_true(k_delayed_work_submit(w, TIMEOUT) == 0, NULL);
 	}
+
+	zassert_false(k_work_pending(&w->work), NULL);
+	zassert_true(k_delayed_work_pending(w), NULL);
 
 	time_remaining = k_delayed_work_remaining_get(w);
 	timeout_ticks = z_ms_to_ticks(TIMEOUT_MS);
@@ -319,10 +527,10 @@ static void tdelayed_work_submit_1(struct k_work_q *work_q,
 	zassert_true(time_remaining >= tick_to_ms, NULL);
 
 	/**TESTPOINT: check pending after delayed work submit*/
-	zassert_true(k_work_pending((struct k_work *)w) == 0, NULL);
+	zassert_false(k_work_pending(&w->work), NULL);
 }
 
-static void tdelayed_work_submit(void *data)
+static void tdelayed_work_submit(const void *data)
 {
 	struct k_work_q *work_q = (struct k_work_q *)data;
 
@@ -331,7 +539,7 @@ static void tdelayed_work_submit(void *data)
 	}
 }
 
-static void tdelayed_work_cancel(void *data)
+static void tdelayed_work_cancel(const void *data)
 {
 	struct k_work_q *work_q = (struct k_work_q *)data;
 	int ret;
@@ -340,6 +548,10 @@ static void tdelayed_work_cancel(void *data)
 	k_delayed_work_init(&delayed_work[0], work_handler);
 	k_delayed_work_init(&delayed_work[1], work_handler);
 
+	/* align to tick before schedule */
+	if (!k_is_in_isr()) {
+		k_usleep(1);
+	}
 	if (work_q) {
 		ret = k_delayed_work_submit_to_queue(work_q,
 						     &delayed_work_sleepy,
@@ -365,34 +577,38 @@ static void tdelayed_work_cancel(void *data)
 	 */
 	zassert_true(ret == 0, NULL);
 	/**TESTPOINT: delayed work cancel when countdown*/
+	zassert_false(k_work_pending(&delayed_work[0].work), NULL);
+	zassert_true(k_delayed_work_pending(&delayed_work[0]), NULL);
 	ret = k_delayed_work_cancel(&delayed_work[0]);
 	zassert_true(ret == 0, NULL);
 	/**TESTPOINT: check pending after delayed work cancel*/
-	zassert_false(k_work_pending((struct k_work *)&delayed_work[0]), NULL);
+	zassert_false(k_work_pending(&delayed_work[0].work), NULL);
+	zassert_false(k_delayed_work_pending(&delayed_work[0]), NULL);
 	if (!k_is_in_isr()) {
 		/*wait for handling work_sleepy*/
 		k_sleep(TIMEOUT);
 		/**TESTPOINT: check pending when work pending*/
-		zassert_true(k_work_pending((struct k_work *)&delayed_work[1]),
-			     NULL);
+		zassert_true(k_work_pending(&delayed_work[1].work), NULL);
+		zassert_true(k_delayed_work_pending(&delayed_work[1]), NULL);
 		/**TESTPOINT: delayed work cancel when pending*/
 		ret = k_delayed_work_cancel(&delayed_work[1]);
 		zassert_equal(ret, 0, NULL);
+		zassert_false(k_work_pending(&delayed_work[1].work), NULL);
+		zassert_false(k_delayed_work_pending(&delayed_work[1]), NULL);
 		k_sem_give(&sync_sema);
 		/*wait for completed work_sleepy and delayed_work[1]*/
 		k_sleep(TIMEOUT);
 		/**TESTPOINT: check pending when work completed*/
-		zassert_false(k_work_pending(
-					(struct k_work *)&delayed_work_sleepy),
+		zassert_false(k_work_pending(&delayed_work_sleepy.work),
 					NULL);
-		/**TESTPOINT: delayed work cancel when completed*/
+		/**TESTPOINT: delayed work cancel when completed */
 		ret = k_delayed_work_cancel(&delayed_work_sleepy);
-		zassert_not_equal(ret, 0, NULL);
+		zassert_equal(ret, -EALREADY, NULL);
 	}
 	/*work items not cancelled: delayed_work[1], delayed_work_sleepy*/
 }
 
-static void ttriggered_work_submit(void *data)
+static void ttriggered_work_submit(const void *data)
 {
 	struct k_work_q *work_q = (struct k_work_q *)data;
 
@@ -406,8 +622,7 @@ static void ttriggered_work_submit(void *data)
 		/**TESTPOINT: init via k_work_poll_init*/
 		k_work_poll_init(&triggered_work[i], work_handler);
 		/**TESTPOINT: check pending after triggered work init*/
-		zassert_false(k_work_pending(
-					(struct k_work *)&triggered_work[i]),
+		zassert_false(k_work_pending(&triggered_work[i].work),
 					NULL);
 		if (work_q) {
 			/**TESTPOINT: triggered work submit to queue*/
@@ -425,8 +640,7 @@ static void ttriggered_work_submit(void *data)
 		}
 
 		/**TESTPOINT: check pending after triggered work submit*/
-		zassert_true(k_work_pending(
-				(struct k_work *)&triggered_work[i]) == 0,
+		zassert_false(k_work_pending(&triggered_work[i].work),
 				NULL);
 	}
 
@@ -436,13 +650,12 @@ static void ttriggered_work_submit(void *data)
 				&triggered_work_signal[i], 1) == 0,
 				NULL);
 		/**TESTPOINT: check pending after sending signal */
-		zassert_true(k_work_pending(
-				(struct k_work *)&triggered_work[i]) != 0,
+		zassert_true(k_work_pending(&triggered_work[i].work) != 0,
 				NULL);
 	}
 }
 
-static void ttriggered_work_cancel(void *data)
+static void ttriggered_work_cancel(const void *data)
 {
 	struct k_work_q *work_q = (struct k_work_q *)data;
 	int ret;
@@ -497,7 +710,7 @@ static void ttriggered_work_cancel(void *data)
 	zassert_true(ret == 0, NULL);
 
 	/**TESTPOINT: check pending after triggerd work cancel*/
-	ret = k_work_pending((struct k_work *)&triggered_work[0]);
+	ret = k_work_pending(&triggered_work[0].work);
 	zassert_true(ret == 0, NULL);
 
 	/* Trigger work #1 */
@@ -505,7 +718,7 @@ static void ttriggered_work_cancel(void *data)
 	zassert_true(ret == 0, NULL);
 
 	/**TESTPOINT: check pending after sending signal */
-	ret = k_work_pending((struct k_work *)&triggered_work[1]);
+	ret = k_work_pending(&triggered_work[1].work);
 	zassert_true(ret != 0, NULL);
 
 	/**TESTPOINT: triggered work cancel when pending for event*/
@@ -521,7 +734,7 @@ static void ttriggered_work_cancel(void *data)
 		k_msleep(2 * TIMEOUT_MS);
 
 		/**TESTPOINT: check pending when work completed*/
-		ret = k_work_pending((struct k_work *)&triggered_work_sleepy);
+		ret = k_work_pending(&triggered_work_sleepy.work);
 		zassert_true(ret == 0, NULL);
 
 		/**TESTPOINT: delayed work cancel when completed*/
@@ -533,18 +746,47 @@ static void ttriggered_work_cancel(void *data)
 	/*work items not cancelled: triggered_work[1], triggered_work_sleepy*/
 }
 
-/*test cases*/
 /**
  * @brief Test work queue start before submit
+ * @details
+ * Test Objective:
+ * - Test the workqueue is initialized by defining the stack area used by
+ * its thread and then calling k_work_q_start().
  *
- * @ingroup kernel_workqueue_tests
+ * Test techniques:
+ * - Dynamic analysis and testing
+ * - Interface testing
+ *
+ * Prerequisite Conditions:
+ * - N/A
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Call the k_work_q_start() to create a work queue which has it's own
+ * thread that processes the work items in the queue.
+ *
+ * Expected Test Result:
+ * - The user-defined work queue was created successfully.
+ *
+ * Pass/Fail Criteria:
+ * - Successful if check points in test procedure are all passed,
+ *otherwise failure.
+ *
+ * Assumptions and Constraints:
+ * - N/A
  *
  * @see k_work_q_start()
+ *
+ * @ingroup kernel_workqueue_tests
  */
 void test_workq_start_before_submit(void)
 {
 	k_work_q_start(&workq, tstack, STACK_SIZE,
 		       CONFIG_MAIN_THREAD_PRIORITY);
+	zassert_equal(strcmp(k_thread_name_get(&workq.thread), "workqueue"), 0,
+		"workq thread creat failed");
 }
 
 /**
@@ -650,6 +892,21 @@ void test_work_resubmit_to_queue(void)
 }
 
 /**
+ * @brief Test work queue resubmission behavior without wait
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @see k_queue_remove(), k_delayed_work_init(),
+ * k_delayed_work_submit_to_queue()
+ */
+void test_work_resubmit_nowait_to_queue(void)
+{
+	k_sem_reset(&sync_sema);
+	twork_resubmit_nowait(&workq);
+	k_sem_take(&sync_sema, K_FOREVER);
+}
+
+/**
  * @brief Test work submission to queue from ISR context
  *
  * @ingroup kernel_workqueue_tests
@@ -660,7 +917,7 @@ void test_work_resubmit_to_queue(void)
 void test_work_submit_to_queue_isr(void)
 {
 	k_sem_reset(&sync_sema);
-	irq_offload(twork_submit, (void *)&workq);
+	irq_offload(twork_submit, (const void *)&workq);
 	for (int i = 0; i < NUM_OF_WORK; i++) {
 		k_sem_take(&sync_sema, K_FOREVER);
 	}
@@ -710,20 +967,49 @@ static void work_handler_resubmit(struct k_work *w)
 }
 
 /**
- * @brief Test work submission to queue from handler context, resubmitting
- * a work item during execution of its callback
+ * @brief Test resubmitting work item in callback
  * @details
- * - That test uses sync_sema semaphore with initial count 0.
- * - That test verifies that it is possible during execution of the handler
- *   function, resubmit a work item from that handler function.
- * - twork_submit_1() initializes a work item with handler function.
- * - Then handler function gives a semaphore sync_sema.
- * - Then in test main body using for() loop, we are waiting for that semaphore.
- * - When semaphore obtained, handler function checks count of the semaphore
- *   (now it is again 0) and submits work one more time.
- * @ingroup kernel_workqueue_tests
+ * Test Objective:
+ * - Test work submission to queue from handler context, resubmitting
+ * a work item during execution of its callback.
+ *
+ * Test techniques:
+ * - Dynamic analysis and testing
+ * - Functional and black box testing
+ * - Interface testing
+ *
+ * Prerequisite Conditions:
+ * - N/A
+ *
+ * Input Specifications:
+ * - N/A
+ *
+ * Test Procedure:
+ * -# Uses sync_sema semaphore with initial count 0.
+ * -# Verifies that it is possible during execution of the handler
+ * function, resubmit a work item from that handler function.
+ * -# twork_submit_1() initializes a work item with handler function.
+ * -# Then handler function gives a semaphore sync_sema.
+ * -# Then in test main body using for() loop, we are waiting for that
+ * semaphore.
+ * -# When semaphore given, handler function checks count of the semaphore
+ * and submits work one more time.
+ *
+ * Expected Test Result:
+ * - The work item is recommitted. The callback will normally terminated
+ * according to the exit condition(semaphore count).
+ *
+ * Pass/Fail Criteria:
+ * - Successful if check points in test procedure are all passed,
+ * otherwise failure.
+ *
+ * Assumptions and Constraints:
+ * - N/A
+ *
  * @see k_work_init(), k_work_pending(), k_work_submit_to_queue(),
  * k_work_submit()
+ *
+ * @ingroup kernel_workqueue_tests
  */
 void test_work_submit_handler(void)
 {
@@ -764,7 +1050,7 @@ void test_delayed_work_submit_to_queue_thread(void)
 void test_delayed_work_submit_to_queue_isr(void)
 {
 	k_sem_reset(&sync_sema);
-	irq_offload(tdelayed_work_submit, (void *)&workq);
+	irq_offload(tdelayed_work_submit, (const void *)&workq);
 	for (int i = 0; i < NUM_OF_WORK; i++) {
 		k_sem_take(&sync_sema, K_FOREVER);
 	}
@@ -865,7 +1151,7 @@ void test_delayed_work_cancel_from_queue_thread(void)
 void test_delayed_work_cancel_from_queue_isr(void)
 {
 	k_sem_reset(&sync_sema);
-	irq_offload(tdelayed_work_cancel, &workq);
+	irq_offload(tdelayed_work_cancel, (const void *)&workq);
 	/*wait for work items that could not be cancelled*/
 	for (int i = 0; i < NUM_OF_WORK; i++) {
 		k_sem_take(&sync_sema, K_FOREVER);
@@ -936,7 +1222,7 @@ void test_triggered_work_submit_to_queue_thread(void)
 void test_triggered_work_submit_to_queue_isr(void)
 {
 	k_sem_reset(&sync_sema);
-	irq_offload(ttriggered_work_submit, (void *)&workq);
+	irq_offload(ttriggered_work_submit, (const void *)&workq);
 	for (int i = 0; i < NUM_OF_WORK; i++) {
 		k_sem_take(&sync_sema, K_FOREVER);
 	}
@@ -1005,7 +1291,7 @@ void test_triggered_work_cancel_from_queue_thread(void)
 void test_triggered_work_cancel_from_queue_isr(void)
 {
 	k_sem_reset(&sync_sema);
-	irq_offload(ttriggered_work_cancel, &workq);
+	irq_offload(ttriggered_work_cancel, (const void *)&workq);
 	/*wait for work items that could not be cancelled*/
 	for (int i = 0; i < NUM_OF_WORK; i++) {
 		k_sem_take(&sync_sema, K_FOREVER);
@@ -1101,6 +1387,7 @@ void test_main(void)
 			/* End order-important tests */
 			 ztest_1cpu_unit_test(test_work_submit_to_multipleq),
 			 ztest_unit_test(test_work_resubmit_to_queue),
+			 ztest_unit_test(test_work_resubmit_nowait_to_queue),
 			 ztest_1cpu_unit_test(test_work_submit_to_queue_thread),
 			 ztest_1cpu_unit_test(test_work_submit_to_queue_isr),
 			 ztest_1cpu_unit_test(test_work_submit_thread),

@@ -95,30 +95,30 @@ static const struct sx1276_dio sx1276_dios[] = { SX1276_DIO_GPIO_INIT(0) };
 #define SX1276_MAX_DIO ARRAY_SIZE(sx1276_dios)
 
 static struct sx1276_data {
-	struct device *reset;
+	const struct device *reset;
 #if DT_INST_NODE_HAS_PROP(0, antenna_enable_gpios)
-	struct device *antenna_enable;
+	const struct device *antenna_enable;
 #endif
 #if DT_INST_NODE_HAS_PROP(0, rfi_enable_gpios)
-	struct device *rfi_enable;
+	const struct device *rfi_enable;
 #endif
 #if DT_INST_NODE_HAS_PROP(0, rfo_enable_gpios)
-	struct device *rfo_enable;
+	const struct device *rfo_enable;
 #endif
 #if DT_INST_NODE_HAS_PROP(0, pa_boost_enable_gpios)
-	struct device *pa_boost_enable;
+	const struct device *pa_boost_enable;
 #endif
 #if DT_INST_NODE_HAS_PROP(0, rfo_enable_gpios) &&	\
 	DT_INST_NODE_HAS_PROP(0, pa_boost_enable_gpios)
 	uint8_t tx_power;
 #endif
 #if DT_INST_NODE_HAS_PROP(0, tcxo_power_gpios)
-	struct device *tcxo_power;
+	const struct device *tcxo_power;
 	bool tcxo_power_enabled;
 #endif
-	struct device *spi;
+	const struct device *spi;
 	struct spi_config spi_cfg;
-	struct device *dio_dev[SX1276_MAX_DIO];
+	const struct device *dio_dev[SX1276_MAX_DIO];
 	struct k_work dio_work[SX1276_MAX_DIO];
 } dev_data;
 
@@ -137,6 +137,11 @@ bool SX1276CheckRfFrequency(uint32_t frequency)
 {
 	/* TODO */
 	return true;
+}
+
+uint32_t SX1276GetBoardTcxoWakeupTime(void)
+{
+	return TCXO_POWER_STARTUP_DELAY_MS;
 }
 
 static inline void sx1276_antenna_enable(int val)
@@ -249,7 +254,7 @@ static void sx1276_dio_work_handle(struct k_work *work)
 	(*DioIrq[dio])(NULL);
 }
 
-static void sx1276_irq_callback(struct device *dev,
+static void sx1276_irq_callback(const struct device *dev,
 				struct gpio_callback *cb, uint32_t pins)
 {
 	unsigned int i, pin;
@@ -430,6 +435,8 @@ const struct Radio_s Radio = {
 	.Random = SX1276Random,
 	.SetRxConfig = SX1276SetRxConfig,
 	.SetTxConfig = SX1276SetTxConfig,
+	.CheckRfFrequency = SX1276CheckRfFrequency,
+	.TimeOnAir = SX1276GetTimeOnAir,
 	.Send = SX1276Send,
 	.Sleep = SX1276SetSleep,
 	.Standby = SX1276SetStby,
@@ -439,6 +446,8 @@ const struct Radio_s Radio = {
 	.WriteBuffer = SX1276WriteBuffer,
 	.ReadBuffer = SX1276ReadBuffer,
 	.SetMaxPayloadLength = SX1276SetMaxPayloadLength,
+	.SetPublicNetwork = SX1276SetPublicNetwork,
+	.GetWakeupTime = SX1276GetWakeupTime,
 	.IrqProcess = NULL,
 	.RxBoosted = NULL,
 	.SetRxDutyCycle = NULL,
@@ -472,7 +481,7 @@ static int sx1276_antenna_configure(void)
 	return 0;
 }
 
-static int sx1276_lora_init(struct device *dev)
+static int sx1276_lora_init(const struct device *dev)
 {
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	static struct spi_cs_control spi_cs;

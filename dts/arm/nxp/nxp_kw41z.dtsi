@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <mem.h>
 #include <arm/armv6-m.dtsi>
 #include <dt-bindings/clock/kinetis_sim.h>
 #include <dt-bindings/clock/kinetis_mcg.h>
@@ -11,21 +12,6 @@
 #include <dt-bindings/i2c/i2c.h>
 
 / {
-	aliases {
-		adc-0 = &adc0;
-		i2c-0 = &i2c0;
-		i2c-1 = &i2c1;
-		pinmux-a = &porta;
-		pinmux-b = &portb;
-		pinmux-c = &portc;
-		pwm-0 = &tpm0;
-		pwm-1 = &tpm1;
-		pwm-2 = &tpm2;
-		spi-0 = &spi0;
-		spi-1 = &spi1;
-		uart-0 = &lpuart0;
-	};
-
 	chosen {
 		zephyr,entropy = &trng;
 		zephyr,flash-controller = &ftfa;
@@ -44,7 +30,7 @@
 
 	sram0: memory@20000000 {
 		compatible = "mmio-sram";
-		reg = <0x20000000 0x20000>;
+		reg = <0x20000000 DT_SIZE_K(128)>;
 	};
 
 	soc {
@@ -90,7 +76,7 @@
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				label = "MCUX_FLASH";
-				reg = <0 0x80000>;
+				reg = <0 DT_SIZE_K(512)>;
 				erase-block-size = <2048>;
 				write-block-size = <4>;
 			};

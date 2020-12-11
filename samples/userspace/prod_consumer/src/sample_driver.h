@@ -12,16 +12,17 @@
 #define SAMPLE_DRIVER_NAME_0	"SAMPLE_DRIVER_0"
 #define SAMPLE_DRIVER_MSG_SIZE	128
 
-typedef void (*sample_driver_callback_t)(struct device *dev,
+typedef void (*sample_driver_callback_t)(const struct device *dev,
 					 void *context, void *data);
 
-typedef int (*sample_driver_write_t)(struct device *dev, void *buf);
+typedef int (*sample_driver_write_t)(const struct device *dev, void *buf);
 
-typedef int (*sample_driver_set_callback_t)(struct device *dev,
+typedef int (*sample_driver_set_callback_t)(const struct device *dev,
 					    sample_driver_callback_t cb,
 					    void *context);
 
-typedef int (*sample_driver_state_set_t)(struct device *dev, bool active);
+typedef int (*sample_driver_state_set_t)(const struct device *dev,
+					 bool active);
 
 __subsystem struct sample_driver_api {
 	sample_driver_write_t write;
@@ -39,11 +40,12 @@ __subsystem struct sample_driver_api {
  * @param buf Processed data, of size SAMPLE_DRIVER_MSG_SIZE
  * @return 0 Success, nonzero if an error occurred
  */
-__syscall int sample_driver_write(struct device *dev, void *buf);
+__syscall int sample_driver_write(const struct device *dev, void *buf);
 
-static inline int z_impl_sample_driver_write(struct device *dev, void *buf)
+static inline int z_impl_sample_driver_write(const struct device *dev,
+					     void *buf)
 {
-	const struct sample_driver_api *api = dev->driver_api;
+	const struct sample_driver_api *api = dev->api;
 
 	return api->write(dev, buf);
 }
@@ -54,12 +56,12 @@ static inline int z_impl_sample_driver_write(struct device *dev, void *buf)
  * @param dev Sample driver device
  * @param active Whether to activate/deactivate interrupts
  */
-__syscall int sample_driver_state_set(struct device *dev, bool active);
+__syscall int sample_driver_state_set(const struct device *dev, bool active);
 
-static inline int z_impl_sample_driver_state_set(struct device *dev,
+static inline int z_impl_sample_driver_state_set(const struct device *dev,
 						 bool active)
 {
-	const struct sample_driver_api *api = dev->driver_api;
+	const struct sample_driver_api *api = dev->api;
 
 	return api->state_set(dev, active);
 }
@@ -75,11 +77,11 @@ static inline int z_impl_sample_driver_state_set(struct device *dev,
  * @param context Context passed to callback function, or NULL if not needed
  * @return 0 Success, nonzero if an error occurred
  */
-static inline int sample_driver_set_callback(struct device *dev,
+static inline int sample_driver_set_callback(const struct device *dev,
 					     sample_driver_callback_t cb,
 					     void *context)
 {
-	const struct sample_driver_api *api = dev->driver_api;
+	const struct sample_driver_api *api = dev->api;
 
 	return api->set_callback(dev, cb, context);
 }

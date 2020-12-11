@@ -19,6 +19,7 @@
  */
 #include <device.h>
 #include <soc.h>
+#include <stm32_ll_exti.h>
 #include <sys/__assert.h>
 #include <drivers/interrupt_controller/exti_stm32.h>
 
@@ -222,10 +223,9 @@ void stm32_exti_trigger(int line, int trigger)
  * @param min low end of EXTI# range
  * @param max low end of EXTI# range
  */
-static void __stm32_exti_isr(int min, int max, void *arg)
+static void __stm32_exti_isr(int min, int max, const struct device *dev)
 {
-	struct device *dev = arg;
-	struct stm32_exti_data *data = dev->driver_data;
+	struct stm32_exti_data *data = dev->data;
 	int line;
 
 	/* see which bits are set */
@@ -248,111 +248,111 @@ static void __stm32_exti_isr(int min, int max, void *arg)
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X)
-static inline void __stm32_exti_isr_0_1(void *arg)
+static inline void __stm32_exti_isr_0_1(const void *arg)
 {
 	__stm32_exti_isr(0, 2, arg);
 }
 
-static inline void __stm32_exti_isr_2_3(void *arg)
+static inline void __stm32_exti_isr_2_3(const void *arg)
 {
 	__stm32_exti_isr(2, 4, arg);
 }
 
-static inline void __stm32_exti_isr_4_15(void *arg)
+static inline void __stm32_exti_isr_4_15(const void *arg)
 {
 	__stm32_exti_isr(4, 16, arg);
 }
 
 #else
-static inline void __stm32_exti_isr_0(void *arg)
+static inline void __stm32_exti_isr_0(const void *arg)
 {
 	__stm32_exti_isr(0, 1, arg);
 }
 
-static inline void __stm32_exti_isr_1(void *arg)
+static inline void __stm32_exti_isr_1(const void *arg)
 {
 	__stm32_exti_isr(1, 2, arg);
 }
 
-static inline void __stm32_exti_isr_2(void *arg)
+static inline void __stm32_exti_isr_2(const void *arg)
 {
 	__stm32_exti_isr(2, 3, arg);
 }
 
-static inline void __stm32_exti_isr_3(void *arg)
+static inline void __stm32_exti_isr_3(const void *arg)
 {
 	__stm32_exti_isr(3, 4, arg);
 }
 
-static inline void __stm32_exti_isr_4(void *arg)
+static inline void __stm32_exti_isr_4(const void *arg)
 {
 	__stm32_exti_isr(4, 5, arg);
 }
 
 #if defined(CONFIG_SOC_SERIES_STM32MP1X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X)
-static inline void __stm32_exti_isr_5(void *arg)
+static inline void __stm32_exti_isr_5(const void *arg)
 {
 	__stm32_exti_isr(5, 6, arg);
 }
 
-static inline void __stm32_exti_isr_6(void *arg)
+static inline void __stm32_exti_isr_6(const void *arg)
 {
 	__stm32_exti_isr(6, 7, arg);
 }
 
-static inline void __stm32_exti_isr_7(void *arg)
+static inline void __stm32_exti_isr_7(const void *arg)
 {
 	__stm32_exti_isr(7, 8, arg);
 }
 
-static inline void __stm32_exti_isr_8(void *arg)
+static inline void __stm32_exti_isr_8(const void *arg)
 {
 	__stm32_exti_isr(8, 9, arg);
 }
 
-static inline void __stm32_exti_isr_9(void *arg)
+static inline void __stm32_exti_isr_9(const void *arg)
 {
 	__stm32_exti_isr(9, 10, arg);
 }
 
-static inline void __stm32_exti_isr_10(void *arg)
+static inline void __stm32_exti_isr_10(const void *arg)
 {
 	__stm32_exti_isr(10, 11, arg);
 }
 
-static inline void __stm32_exti_isr_11(void *arg)
+static inline void __stm32_exti_isr_11(const void *arg)
 {
 	__stm32_exti_isr(11, 12, arg);
 }
 
-static inline void __stm32_exti_isr_12(void *arg)
+static inline void __stm32_exti_isr_12(const void *arg)
 {
 	__stm32_exti_isr(12, 13, arg);
 }
 
-static inline void __stm32_exti_isr_13(void *arg)
+static inline void __stm32_exti_isr_13(const void *arg)
 {
 	__stm32_exti_isr(13, 14, arg);
 }
 
-static inline void __stm32_exti_isr_14(void *arg)
+static inline void __stm32_exti_isr_14(const void *arg)
 {
 	__stm32_exti_isr(14, 15, arg);
 }
 
-static inline void __stm32_exti_isr_15(void *arg)
+static inline void __stm32_exti_isr_15(const void *arg)
 {
 	__stm32_exti_isr(15, 16, arg);
 }
 #endif
 
-static inline void __stm32_exti_isr_9_5(void *arg)
+static inline void __stm32_exti_isr_9_5(const void *arg)
 {
 	__stm32_exti_isr(5, 10, arg);
 }
 
-static inline void __stm32_exti_isr_15_10(void *arg)
+static inline void __stm32_exti_isr_15_10(const void *arg)
 {
 	__stm32_exti_isr(10, 16, arg);
 }
@@ -361,41 +361,41 @@ static inline void __stm32_exti_isr_15_10(void *arg)
 	defined(CONFIG_SOC_SERIES_STM32F7X) || \
 	defined(CONFIG_SOC_SERIES_STM32F2X) || \
 	defined(CONFIG_SOC_SERIES_STM32MP1X)
-static inline void __stm32_exti_isr_16(void *arg)
+static inline void __stm32_exti_isr_16(const void *arg)
 {
 	__stm32_exti_isr(16, 17, arg);
 }
 
-static inline void __stm32_exti_isr_18(void *arg)
+static inline void __stm32_exti_isr_18(const void *arg)
 {
 	__stm32_exti_isr(18, 19, arg);
 }
 
-static inline void __stm32_exti_isr_21(void *arg)
+static inline void __stm32_exti_isr_21(const void *arg)
 {
 	__stm32_exti_isr(21, 22, arg);
 }
 
-static inline void __stm32_exti_isr_22(void *arg)
+static inline void __stm32_exti_isr_22(const void *arg)
 {
 	__stm32_exti_isr(22, 23, arg);
 }
 #endif
 #if defined(CONFIG_SOC_SERIES_STM32F7X) || \
 	defined(CONFIG_SOC_SERIES_STM32MP1X)
-static inline void __stm32_exti_isr_23(void *arg)
+static inline void __stm32_exti_isr_23(const void *arg)
 {
 	__stm32_exti_isr(23, 24, arg);
 }
 #endif
 #endif /* CONFIG_SOC_SERIES_STM32F0X */
 
-static void __stm32_exti_connect_irqs(struct device *dev);
+static void __stm32_exti_connect_irqs(const struct device *dev);
 
 /**
  * @brief initialize EXTI device driver
  */
-static int stm32_exti_init(struct device *dev)
+static int stm32_exti_init(const struct device *dev)
 {
 	__stm32_exti_connect_irqs(dev);
 
@@ -403,17 +403,18 @@ static int stm32_exti_init(struct device *dev)
 }
 
 static struct stm32_exti_data exti_data;
-DEVICE_INIT(exti_stm32, STM32_EXTI_NAME, stm32_exti_init,
-	    &exti_data, NULL,
-	    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_DEFINE(exti_stm32, STM32_EXTI_NAME, stm32_exti_init,
+	      NULL, &exti_data, NULL,
+	      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+	      NULL);
 
 /**
  * @brief set & unset for the interrupt callbacks
  */
 int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *arg)
 {
-	struct device *dev = DEVICE_GET(exti_stm32);
-	struct stm32_exti_data *data = dev->driver_data;
+	const struct device *dev = DEVICE_GET(exti_stm32);
+	struct stm32_exti_data *data = dev->data;
 
 	if (data->cb[line].cb) {
 		return -EBUSY;
@@ -427,8 +428,8 @@ int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *arg)
 
 void stm32_exti_unset_callback(int line)
 {
-	struct device *dev = DEVICE_GET(exti_stm32);
-	struct stm32_exti_data *data = dev->driver_data;
+	const struct device *dev = DEVICE_GET(exti_stm32);
+	struct stm32_exti_data *data = dev->data;
 
 	data->cb[line].cb = NULL;
 	data->cb[line].data = NULL;
@@ -437,7 +438,7 @@ void stm32_exti_unset_callback(int line)
 /**
  * @brief connect all interrupts
  */
-static void __stm32_exti_connect_irqs(struct device *dev)
+static void __stm32_exti_connect_irqs(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

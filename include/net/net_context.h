@@ -188,8 +188,6 @@ struct net_tcp;
 
 struct net_conn_handle;
 
-struct tls_context;
-
 /**
  * Note that we do not store the actual source IP address in the context
  * because the address is already be set in the network interface struct.
@@ -277,10 +275,6 @@ __net_socket struct net_context {
 		struct k_fifo accept_q;
 	};
 
-#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
-	/** TLS context information */
-	struct tls_context *tls;
-#endif /* CONFIG_NET_SOCKETS_SOCKOPT_TLS */
 #endif /* CONFIG_NET_SOCKETS */
 
 #if defined(CONFIG_NET_OFFLOAD)
@@ -1130,6 +1124,22 @@ static inline void net_context_setup_pools(struct net_context *context,
 #else
 #define net_context_setup_pools(context, tx_pool, data_pool)
 #endif
+
+/**
+ * @brief Check if a port is in use (bound)
+ *
+ * This function checks if a port is bound with respect to the specified
+ * @p ip_proto and @p local_addr.
+ *
+ * @param ip_proto the IP protocol
+ * @param local_port the port to check
+ * @param local_addr the network address
+ *
+ * @return true if the port is bound
+ * @return false if the port is not bound
+ */
+bool net_context_port_in_use(enum net_ip_protocol ip_proto,
+	uint16_t local_port, const struct sockaddr *local_addr);
 
 #ifdef __cplusplus
 }

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <assert.h>
+#include <sys/__assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
@@ -259,7 +259,7 @@ static void *lexer_json(struct lexer *lexer)
 				return lexer_number;
 			}
 
-			/* fallthrough */
+			__fallthrough;
 		default:
 			if (isspace(chr)) {
 				ignore(lexer);
@@ -343,7 +343,7 @@ static int obj_next(struct json_obj *json,
 			return -EINVAL;
 		}
 
-		/* fallthrough */
+		__fallthrough;
 	case JSON_TOK_STRING:
 		kv->key = token.start;
 		kv->key_len = (size_t)(token.end - token.start);
@@ -512,7 +512,7 @@ static int arr_parse(struct json_obj *obj,
 	size_t *elements = (size_t *)((char *)val + elem_descr->offset);
 	struct token value;
 
-	assert(elem_size > 0);
+	__ASSERT_NO_MSG(elem_size > 0);
 
 	*elements = 0;
 
@@ -589,7 +589,7 @@ int json_obj_parse(char *payload, size_t len,
 	struct json_obj obj;
 	int ret;
 
-	assert(descr_len < (sizeof(ret) * CHAR_BIT - 1));
+	__ASSERT_NO_MSG(descr_len < (sizeof(ret) * CHAR_BIT - 1));
 
 	ret = obj_init(&obj, payload, len);
 	if (ret < 0) {

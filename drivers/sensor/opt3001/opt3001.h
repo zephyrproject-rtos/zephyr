@@ -24,7 +24,7 @@
 #define OPT3001_MANTISSA_MASK 0xfff
 
 struct opt3001_data {
-	struct device *i2c;
+	const struct device *i2c;
 	uint16_t sample;
 };
 

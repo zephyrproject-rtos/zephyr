@@ -7,7 +7,6 @@
 #ifndef ZEPHYR_STM32_PINCTRL_COMMON_H_
 #define ZEPHYR_STM32_PINCTRL_COMMON_H_
 
-
 /**
  * @brief numerical IDs for IO ports
  */

@@ -8,9 +8,13 @@
 #ifndef __SSD1306_REGS_H__
 #define __SSD1306_REGS_H__
 
-#define SSD1306_CONTROL_LAST_BYTE_CMD		0x00
-#define SSD1306_CONTROL_LAST_BYTE_DATA		0x40
+/* All following bytes will contain commands */
+#define SSD1306_CONTROL_ALL_BYTES_CMD		0x00
+/* All following bytes will contain data */
+#define SSD1306_CONTROL_ALL_BYTES_DATA		0x40
+/* The next byte will contain a command */
 #define SSD1306_CONTROL_BYTE_CMD		0x80
+/* The next byte will contain data */
 #define SSD1306_CONTROL_BYTE_DATA		0xc0
 #define SSD1306_READ_STATUS_MASK		0xc0
 #define SSD1306_READ_STATUS_BUSY		0x80

@@ -22,6 +22,8 @@
 			#gpio-cells = <0x2>;
 			label = "TEST_GPIO_1";
 			status = "okay";
+
+			#include "gpio.dtsi"
 		};
 
 		test_i2c: i2c@11112222 {
@@ -93,10 +95,25 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,	/* 0x30 */
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
 
 			#include "spi.dtsi"
+		};
+
+		test_uart: uart@55556666 {
+			compatible = "vnd,serial";
+			reg = <0x55556666 0x1000>;
+			label = "TEST_UART_CTLR";
+			status = "okay";
+
+			#include "uart.dtsi"
 		};
 
 		dht22 {
@@ -184,6 +201,11 @@
 /* setup valid params for the device */
 &test_spi_enc28j60 {
 	local-mac-address = [00 00 00 00 00 00];
+};
+
+/* disable device to conflict with i2c version */
+&test_spi_iis2iclx {
+	status = "disabled";
 };
 
 /* disable device to conflict with i2c version */

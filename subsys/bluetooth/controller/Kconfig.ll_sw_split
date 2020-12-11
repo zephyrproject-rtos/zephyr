@@ -16,21 +16,35 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_CONN_PARAM_REQ_SUPPORT
 	select BT_CTLR_EXT_REJ_IND_SUPPORT
 	select BT_CTLR_SLAVE_FEAT_REQ_SUPPORT
-	select BT_CTLR_DATA_LEN_UPDATE_SUPPORT if !SOC_SERIES_NRF51X || \
+	select BT_CTLR_DATA_LEN_UPDATE_SUPPORT if HAS_HW_NRF_CCM_LFLEN_8BIT || \
 						  BT_CTLR_DATA_LENGTH_CLEAR
 	select BT_CTLR_PRIVACY_SUPPORT if !SOC_SERIES_NRF51X
 	select BT_CTLR_EXT_SCAN_FP_SUPPORT
-	select BT_CTLR_PHY_UPDATE_SUPPORT if !SOC_SERIES_NRF51X || \
-					      BT_CTLR_PHY_2M_NRF
+
+	select BT_CTLR_PHY_2M_SUPPORT if HAS_HW_NRF_RADIO_BLE_2M || \
+					 BT_CTLR_PHY_2M_NRF
+	select BT_CTLR_PHY_CODED_SUPPORT if HAS_HW_NRF_RADIO_BLE_CODED
+	select BT_CTLR_PHY_UPDATE_SUPPORT if BT_CTLR_PHY_2M_SUPPORT || \
+					     BT_CTLR_PHY_CODED_SUPPORT
 	select BT_CTLR_ADV_EXT_SUPPORT
 	select BT_CTLR_ADV_PERIODIC_SUPPORT
+	select BT_CTLR_SYNC_PERIODIC_SUPPORT
+	select BT_CTLR_ADV_ISO_SUPPORT
 	select BT_CTLR_CHAN_SEL_2_SUPPORT
 	select BT_CTLR_MIN_USED_CHAN_SUPPORT
 	select BT_CTLR_DTM_HCI_SUPPORT
+	select BT_CTLR_CONN_RSSI_SUPPORT
 
 	select BT_CTLR_XTAL_ADVANCED_SUPPORT
 	select BT_CTLR_SCHED_ADVANCED_SUPPORT
 	select BT_CTLR_TIFS_HW_SUPPORT
+	# Direction Finding
+	select BT_CTLR_DF_SUPPORT if HAS_HW_NRF_RADIO_BLE_DF
+	select BT_CTLR_DF_CTE_TX_SUPPORT if HAS_HW_NRF_RADIO_BLE_DF
+	select BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT if HAS_HW_NRF_RADIO_BLE_DF
+	# optional ant switching slot mode
+	select BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT if HAS_HW_NRF_RADIO_BLE_DF
+
 	default y
 	help
 	  Use Nordic Lower Link Layer implementation.
@@ -58,15 +72,8 @@ config BT_CTLR_TIFS_HW_SUPPORT
 
 config BT_CTLR_RX_PRIO_STACK_SIZE
 	# Controller's Co-Operative high priority Rx thread stack size.
-	int "High priority Rx thread stack size" if !SOC_COMPATIBLE_NRF
+	int "High priority Rx thread stack size"
 	default 448
-
-config BT_CTLR_RX_PRIO
-	# Hidden option for Controller's Co-Operative high priority Rx thread
-	# priority.
-	int
-	default 6
-
 
 config BT_CTLR_SETTINGS
 	bool "Settings System"
@@ -107,12 +114,6 @@ config BT_CTLR_ADVANCED_FEATURES
 
 menu "Advanced features"
 	visible if BT_CTLR_ADVANCED_FEATURES
-
-config BT_CTLR_FILTER
-	bool "Device Whitelist Support"
-	default y
-	help
-	  Enable support for controller device whitelist feature
 
 config BT_CTLR_SW_DEFERRED_PRIVACY
 	bool "LE Controller-based Software Privacy"
@@ -164,6 +165,22 @@ config BT_CTLR_ADV_SYNC_SET
 	help
 	  Maximum supported periodic advertising sets.
 
+config BT_CTLR_ADV_DATA_BUF_MAX
+	int "Advertising Data Maximum Buffers"
+	depends on BT_BROADCASTER
+	range 1 64 if BT_CTLR_ADV_EXT
+	range 1 1 if !BT_CTLR_ADV_EXT
+	default 1
+	help
+	  Maximum number of buffered Advertising Data payload across enabled
+	  advertising sets.
+
+config BT_CTRL_ADV_ADI_IN_SCAN_RSP
+	bool "Include ADI in AUX_SCAN_RSP PDU"
+	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
+	help
+	  Enable ADI field in AUX_SCAN_RSP PDU
+
 config BT_CTLR_SCAN_AUX_SET
 	int "LE Extended Scanning Auxiliary Sets"
 	depends on BT_OBSERVER && BT_CTLR_ADV_EXT
@@ -171,6 +188,14 @@ config BT_CTLR_SCAN_AUX_SET
 	default 1
 	help
 	  Maximum supported auxiliary channel scan sets.
+
+config BT_CTLR_SCAN_SYNC_SET
+	int "LE Periodic Sync Sets"
+	depends on BT_CTLR_SYNC_PERIODIC
+	range 1 64
+	default 1
+	help
+	  Maximum supported periodic sync sets.
 
 config BT_CTLR_ZLI
 	bool "Use Zero Latency IRQs"
@@ -381,10 +406,45 @@ config BT_CTLR_TX_RETRY_DISABLE
 	  would happen in the next connection event instead of repeated retries
 	  in the current connection event.
 
-config BT_CTLR_CONN_RSSI
-	bool "Connection RSSI"
+config BT_CTLR_THROUGHPUT
+	bool "Measure incoming Tx throughput"
 	help
-	  Enable connection RSSI measurement.
+	  Measure incoming Tx throughput and log the results.
+
+config BT_CTLR_FORCE_MD_COUNT
+	int "Forced MD bit count" if !BT_CTLR_FORCE_MD_AUTO
+	range 0 255
+	default 1 if BT_CTLR_FORCE_MD_AUTO
+	default 0
+	help
+	  No. of times to force MD bit to be set in Tx PDU after a successful
+	  transmission of non-empty PDU.
+
+	  This will prolong the connection event to from being closed in cases
+	  where applications want to send data in same connection event but are
+	  slow in providing new Tx data.
+
+config BT_CTLR_FORCE_MD_AUTO
+	bool "Forced MD bit automatic calculation"
+	select BT_CTLR_THROUGHPUT
+	default y if BT_HCI_RAW
+	help
+	  Force MD bit in transmitted PDU based on runtime incoming transmit
+	  data throughput.
+
+config BT_CTLR_CONN_RANDOM_FORCE
+	bool "Enable random forced scheduling for peripheral on missed anchor point"
+	depends on BT_PERIPHERAL
+	default y
+	help
+	  When enabled, controller will have legacy behavior and randomly force
+	  priority at next ticker scheduling for peripheral role, if anchor point is
+	  missed.
+	  Two or more connections with similar interval on a device connected
+	  to a peer device having two or more connections at its end with same
+	  interval could lock to a round robin pattern where in neither of the central
+	  nor peripheral event would be in sync at either end. Randomness allows
+	  to break this locked round robin pattern permitting an anchor point sync.
 
 config BT_CTLR_CONN_RSSI_EVENT
 	bool "Connection RSSI event"
@@ -417,6 +477,14 @@ config BT_CTLR_SCAN_INDICATION
 	depends on BT_OBSERVER
 	help
 	  Generate events indicating on air scanner events.
+
+config BT_CTLR_SCAN_UNRESERVED
+	bool "Unreserved scan window"
+	depends on BT_OBSERVER
+	default y if BT_MESH
+	help
+	  Scanner will not use time space reservation for scan window when in
+	  continuous scan mode.
 
 config BT_MAYFLY_YIELD_AFTER_CALL
 	bool "Yield from mayfly thread after first call"
@@ -566,7 +634,7 @@ config BT_CTLR_PROFILE_ISR
 
 config BT_CTLR_DEBUG_PINS
 	bool "Bluetooth Controller Debug Pins"
-	depends on BOARD_NRF51DK_NRF51422 || BOARD_NRF52DK_NRF52832 || BOARD_NRF52DK_NRF52810 || BOARD_NRF52840DK_NRF52840 || BOARD_NRF5340PDK_NRF5340_CPUNET || BOARD_RV32M1_VEGA
+	depends on BOARD_NRF51DK_NRF51422 || BOARD_NRF52DK_NRF52832 || BOARD_NRF52DK_NRF52810 || BOARD_NRF52840DK_NRF52840 || BOARD_NRF5340PDK_NRF5340_CPUNET || BOARD_NRF5340DK_NRF5340_CPUNET || BOARD_RV32M1_VEGA
 	help
 	  Turn on debug GPIO toggling for the BLE Controller. This is useful
 	  when debugging with a logic analyzer or profiling certain sections of

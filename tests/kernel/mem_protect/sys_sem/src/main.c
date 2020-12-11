@@ -33,24 +33,24 @@ struct k_thread multiple_tid[TOTAL_THREADS_WAITING];
 
 /******************************************************************************/
 /* Helper functions */
-void isr_sem_give(void *semaphore)
+void isr_sem_give(const void *semaphore)
 {
 	sys_sem_give((struct sys_sem *)semaphore);
 }
 
-void isr_sem_take(void *semaphore)
+void isr_sem_take(const void *semaphore)
 {
 	sys_sem_take((struct sys_sem *)semaphore, K_NO_WAIT);
 }
 
 void sem_give_from_isr(void *semaphore)
 {
-	irq_offload(isr_sem_give, semaphore);
+	irq_offload(isr_sem_give, (const void *)semaphore);
 }
 
 void sem_take_from_isr(void *semaphore)
 {
-	irq_offload(isr_sem_take, semaphore);
+	irq_offload(isr_sem_take, (const void *)semaphore);
 }
 
 void sem_give_task(void *p1, void *p2, void *p3)
@@ -276,6 +276,8 @@ void test_sem_take_timeout(void)
 	ret_value = sys_sem_take(&simple_sem, SEM_TIMEOUT);
 	zassert_true(ret_value == 0,
 		     "sys_sem_take failed when its shouldn't have");
+
+	k_thread_join(&sem_tid, K_FOREVER);
 }
 
 /**
@@ -300,6 +302,8 @@ void test_sem_take_timeout_forever(void)
 	ret_value = sys_sem_take(&simple_sem, K_FOREVER);
 	zassert_true(ret_value == 0,
 		     "sys_sem_take failed when its shouldn't have");
+
+	k_thread_join(&sem_tid, K_FOREVER);
 }
 
 /**
@@ -318,6 +322,8 @@ void test_sem_take_timeout_isr(void)
 	ret_value = sys_sem_take(&simple_sem, SEM_TIMEOUT);
 	zassert_true(ret_value == 0,
 		     "sys_sem_take failed when its shouldn't have");
+
+	k_thread_join(&sem_tid, K_FOREVER);
 }
 
 /**
@@ -418,6 +424,9 @@ void test_sem_take_multiple(void)
 	zassert_true(signal_count == 1U,
 		     "low priority thread didn't get executed");
 
+	k_thread_join(&sem_tid, K_FOREVER);
+	k_thread_join(&sem_tid_1, K_FOREVER);
+	k_thread_join(&sem_tid_2, K_FOREVER);
 }
 
 /**
@@ -546,6 +555,10 @@ void test_sem_multiple_threads_wait(void)
 			     signal_count);
 
 		repeat_count++;
+
+		for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
+			k_thread_join(&multiple_tid[i], K_FOREVER);
+		}
 	} while (repeat_count < 2);
 }
 

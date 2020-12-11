@@ -97,9 +97,9 @@ stmdev_ctx_t lis2dw12_spi_ctx = {
 	.write_reg = (stmdev_write_ptr) lis2dw12_spi_write,
 };
 
-int lis2dw12_spi_init(struct device *dev)
+int lis2dw12_spi_init(const struct device *dev)
 {
-	struct lis2dw12_data *data = dev->driver_data;
+	struct lis2dw12_data *data = dev->data;
 
 	data->ctx = &lis2dw12_spi_ctx;
 	data->ctx->handle = data;

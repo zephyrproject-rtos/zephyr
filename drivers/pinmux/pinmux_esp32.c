@@ -75,7 +75,7 @@ static int set_reg(uint32_t pin, uint32_t clr_mask, uint32_t set_mask)
 	return 0;
 }
 
-static int pinmux_set(struct device *dev, uint32_t pin, uint32_t func)
+static int pinmux_set(const struct device *dev, uint32_t pin, uint32_t func)
 {
 	ARG_UNUSED(dev);
 
@@ -91,7 +91,7 @@ static int pinmux_set(struct device *dev, uint32_t pin, uint32_t func)
 	return set_reg(pin, MCU_SEL_M, func<<MCU_SEL_S | 2<<FUN_DRV_S);
 }
 
-static int pinmux_get(struct device *dev, uint32_t pin, uint32_t *func)
+static int pinmux_get(const struct device *dev, uint32_t pin, uint32_t *func)
 {
 	volatile uint32_t *reg = reg_for_pin(pin);
 
@@ -105,7 +105,7 @@ static int pinmux_get(struct device *dev, uint32_t pin, uint32_t *func)
 	return 0;
 }
 
-static int pinmux_pullup(struct device *dev, uint32_t pin, uint8_t func)
+static int pinmux_pullup(const struct device *dev, uint32_t pin, uint8_t func)
 {
 	switch (func) {
 	case PINMUX_PULLUP_DISABLE:
@@ -119,7 +119,7 @@ static int pinmux_pullup(struct device *dev, uint32_t pin, uint8_t func)
 }
 
 #define CFG(id)   ((GPIO_ ## id ## _REG) & 0xff)
-static int pinmux_input(struct device *dev, uint32_t pin, uint8_t func)
+static int pinmux_input(const struct device *dev, uint32_t pin, uint8_t func)
 {
 	static const uint8_t offs[2][3] = {
 		{ CFG(ENABLE1_W1TC), CFG(ENABLE1_W1TS), 32 },
@@ -165,7 +165,7 @@ static struct pinmux_driver_api api_funcs = {
 	.input = pinmux_input
 };
 
-static int pinmux_initialize(struct device *device)
+static int pinmux_initialize(const struct device *device)
 {
 	uint32_t pin;
 

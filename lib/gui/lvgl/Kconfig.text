@@ -1,0 +1,88 @@
+# Copyright (c) 2018-2019 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+# Copyright (c) 2020 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Text settings"
+
+choice
+	prompt "String character encoding"
+	default LVGL_TXT_ENC_ASCII
+
+config LVGL_TXT_ENC_ASCII
+	bool "ASCII string encoding"
+
+config LVGL_TXT_ENC_UTF8
+	bool "UTF-8 string encoding"
+
+endchoice
+
+config LVGL_TXT_BREAK_CHARS
+	string "Text break characters"
+	default " ,.;:-_"
+	help
+	  Characters on which a text break can take place
+
+config LVGL_TXT_LINE_BREAK_LONG_LEN
+	int "Minimal word length for line break"
+	default 0
+	help
+	  If a word is at least this long, a line break is allowed in the word.
+
+	  If the length is 0, no line break is allowed in the middle of a word.
+
+config LVGL_TXT_LINE_BREAK_LONG_PRE_MIN_LEN
+	int "Minimal number of characters on line before line break"
+	default 3
+	help
+	  Minimal number of characters to place on a line before a line break
+	  in the middle of a word can occur.
+
+config LVGL_TXT_LINE_BREAK_LONG_POST_MIN_LEN
+	int "Minimal number of characters on line after line break"
+	default 3
+	help
+	  Minimal number of characters to place on a line after a line break
+	  occurred in the middle of a word.
+
+config LVGL_TXT_COLOR_CMD
+	string "Text recoloring control character"
+	default "#"
+	help
+	  Control character to use for signalling text recoloring
+
+config LVGL_USE_BIDI
+	bool "Enable bidirectional text support"
+	help
+	  Enable bidirectional text support
+
+	  The direction of the text will be processed according to the
+	  Unicode Bidirectional Algorithm:
+	  https://www.w3.org/International/articles/inline-bidi-markup/uba-basics*/
+
+choice LVGL_BIDI_MODE
+	prompt "Bidirectional text processing direction"
+	default LVGL_BIDI_DIR_AUTO
+	depends on LVGL_USE_BIDI
+	help
+	  Direction of bidirectional text processing
+
+	config LVGL_BIDI_DIR_AUTO
+		bool "Automatically detect direction"
+
+	config LVGL_BIDI_DIR_LTR
+		bool "Left-to-right"
+
+	config LVGL_BIDI_DIR_RTL
+		bool "Right-to-left"
+
+endchoice
+
+config LVGL_USE_ARABIC_PERSIAN_CHARS
+	bool "Enable Arabic/Persian processing"
+	help
+	  Enable Arabic/Persian processing
+
+	  In these languages characters should be replaced with an other form based
+	  on their position in the text
+
+endmenu

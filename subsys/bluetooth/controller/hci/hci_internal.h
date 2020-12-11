@@ -48,3 +48,24 @@ uint8_t hci_vendor_read_static_addr(struct bt_hci_vs_static_addr addrs[],
 void hci_vendor_read_key_hierarchy_roots(uint8_t ir[16], uint8_t er[16]);
 int hci_vendor_cmd_handle_common(uint16_t ocf, struct net_buf *cmd,
 			     struct net_buf **evt);
+uint8_t hci_vendor_read_std_codecs(
+	const struct bt_hci_std_codec_info_v2 **codecs);
+uint8_t hci_vendor_read_vs_codecs(
+	const struct bt_hci_vs_codec_info_v2 **codecs);
+uint8_t hci_vendor_read_codec_capabilities(uint8_t coding_format,
+					   uint16_t company_id,
+					   uint16_t vs_codec_id,
+					   uint8_t transport,
+					   uint8_t direction,
+					   uint8_t *num_capabilities,
+					   size_t *capabilities_bytes,
+					   const uint8_t **capabilities);
+uint8_t hci_vendor_read_ctlr_delay(uint8_t coding_format,
+				   uint16_t company_id,
+				   uint16_t vs_codec_id,
+				   uint8_t transport,
+				   uint8_t direction,
+				   uint8_t codec_config_len,
+				   const uint8_t *codec_config,
+				   uint32_t *min_delay,
+				   uint32_t *max_delay);

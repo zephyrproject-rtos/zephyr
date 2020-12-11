@@ -66,8 +66,14 @@ extern "C" {
 #define _FLOW_CONTROL "0"
 #endif
 
+#if DT_INST_NODE_HAS_PROP(0, target_speed)
+#define _UART_BAUD	DT_INST_PROP(0, target_speed)
+#else
+#define _UART_BAUD	DT_PROP(ESP_BUS, current_speed)
+#endif
+
 #define _UART_CUR \
-	STRINGIFY(DT_PROP(ESP_BUS, current_speed))",8,1,0,"_FLOW_CONTROL
+	STRINGIFY(_UART_BAUD)",8,1,0,"_FLOW_CONTROL
 
 #define CONN_CMD_MAX_LEN (sizeof("AT+"_CWJAP"=\"\",\"\"") + \
 			  WIFI_SSID_MAX_LEN + WIFI_PSK_MAX_LEN)
@@ -80,22 +86,51 @@ extern "C" {
 
 #define INVALID_LINK_ID		255
 
-#define MDM_RING_BUF_SIZE	1024
-#define MDM_RECV_MAX_BUF	30
-#define MDM_RECV_BUF_SIZE	128
-#define CMD_BUF_ALLOC_TIMEOUT	K_SECONDS(1)
+#define MDM_RING_BUF_SIZE	CONFIG_WIFI_ESP_MDM_RING_BUF_SIZE
+#define MDM_RECV_MAX_BUF	CONFIG_WIFI_ESP_MDM_RX_BUF_COUNT
+#define MDM_RECV_BUF_SIZE	CONFIG_WIFI_ESP_MDM_RX_BUF_SIZE
 
 #define ESP_CMD_TIMEOUT		K_SECONDS(10)
 #define ESP_SCAN_TIMEOUT	K_SECONDS(10)
 #define ESP_CONNECT_TIMEOUT	K_SECONDS(20)
 #define ESP_INIT_TIMEOUT	K_SECONDS(10)
 
+#define ESP_MODE_NONE		0
+#define ESP_MODE_STA		1
+#define ESP_MODE_AP		2
+#define ESP_MODE_STA_AP		3
+
+#define ESP_CMD_CWMODE(mode) \
+	"AT+"_CWMODE"="STRINGIFY(_CONCAT(ESP_MODE_, mode))
+
+#define ESP_CWDHCP_MODE_STATION		"1"
+#if defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
+#define ESP_CWDHCP_MODE_SOFTAP		"0"
+#else
+#define ESP_CWDHCP_MODE_SOFTAP		"2"
+#endif
+
+#if defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
+#define _ESP_CMD_DHCP_ENABLE(mode, enable) \
+			  "AT+CWDHCP_CUR=" mode "," STRINGIFY(enable)
+#else
+#define _ESP_CMD_DHCP_ENABLE(mode, enable) \
+			  "AT+CWDHCP=" STRINGIFY(enable) "," mode
+#endif
+
+#define ESP_CMD_DHCP_ENABLE(mode, enable) \
+	_ESP_CMD_DHCP_ENABLE(_CONCAT(ESP_CWDHCP_MODE_, mode), enable)
+
+#define ESP_CMD_SET_IP(ip, gateway, mask) "AT+"_CIPSTA"=\"" \
+			  ip "\",\""  gateway  "\",\""  mask "\""
+
 extern struct esp_data esp_driver_data;
 
 enum esp_socket_flags {
 	ESP_SOCK_IN_USE     = BIT(1),
 	ESP_SOCK_CONNECTING = BIT(2),
-	ESP_SOCK_CONNECTED  = BIT(3)
+	ESP_SOCK_CONNECTED  = BIT(3),
+	ESP_SOCK_CLOSE_PENDING = BIT(4),
 };
 
 struct esp_socket {
@@ -141,7 +176,9 @@ struct esp_socket {
 
 enum esp_data_flag {
 	EDF_STA_CONNECTING = BIT(1),
-	EDF_STA_CONNECTED  = BIT(2)
+	EDF_STA_CONNECTED  = BIT(2),
+	EDF_STA_LOCK       = BIT(3),
+	EDF_AP_ENABLED     = BIT(4),
 };
 
 /* driver data */
@@ -149,6 +186,7 @@ struct esp_data {
 	struct net_if *net_iface;
 
 	uint8_t flags;
+	uint8_t mode;
 
 	char conn_cmd[CONN_CMD_MAX_LEN];
 
@@ -163,12 +201,10 @@ struct esp_data {
 
 	/* modem interface */
 	struct modem_iface_uart_data iface_data;
-	uint8_t iface_isr_buf[MDM_RECV_BUF_SIZE];
 	uint8_t iface_rb_buf[MDM_RING_BUF_SIZE];
 
 	/* modem cmds */
 	struct modem_cmd_handler_data cmd_handler_data;
-	uint8_t cmd_read_buf[MDM_RECV_BUF_SIZE];
 	uint8_t cmd_match_buf[MDM_RECV_BUF_SIZE];
 
 	/* socket data */
@@ -181,6 +217,7 @@ struct esp_data {
 	struct k_delayed_work ip_addr_work;
 	struct k_work scan_work;
 	struct k_work connect_work;
+	struct k_work mode_switch_work;
 
 	scan_result_cb_t scan_cb;
 
@@ -200,6 +237,7 @@ int esp_socket_put(struct esp_socket *sock);
 struct esp_socket *esp_socket_from_link_id(struct esp_data *data,
 					   uint8_t link_id);
 void esp_socket_init(struct esp_data *data);
+void esp_socket_close(struct esp_socket *sock);
 
 static inline struct esp_data *esp_socket_to_dev(struct esp_socket *sock)
 {
@@ -216,22 +254,34 @@ static inline bool esp_socket_connected(struct esp_socket *sock)
 	return (sock->flags & ESP_SOCK_CONNECTED) != 0;
 }
 
-static inline void esp_flag_set(struct esp_data *dev,
-				enum esp_data_flag flag)
+static inline bool esp_socket_close_pending(struct esp_socket *sock)
 {
-	dev->flags |= flag;
+	return (sock->flags & ESP_SOCK_CLOSE_PENDING) != 0;
 }
 
-static inline void esp_flag_clear(struct esp_data *dev,
-				  enum esp_data_flag flag)
+static inline void esp_flags_set(struct esp_data *dev, uint8_t flags)
 {
-	dev->flags &= (~flag);
+	dev->flags |= flags;
 }
 
-static inline bool esp_flag_is_set(struct esp_data *dev,
-				   enum esp_data_flag flag)
+static inline void esp_flags_clear(struct esp_data *dev, uint8_t flags)
 {
-	return (dev->flags & flag) != 0;
+	dev->flags &= (~flags);
+}
+
+static inline bool esp_flags_are_set(struct esp_data *dev, uint8_t flags)
+{
+	return (dev->flags & flags) != 0;
+}
+
+static inline int esp_cmd_send(struct esp_data *data,
+			       const struct modem_cmd *handlers,
+			       size_t handlers_len, const char *buf,
+			       k_timeout_t timeout)
+{
+	return modem_cmd_send(&data->mctx.iface, &data->mctx.cmd_handler,
+			      handlers, handlers_len, buf, &data->sem_response,
+			      timeout);
 }
 
 #ifdef __cplusplus

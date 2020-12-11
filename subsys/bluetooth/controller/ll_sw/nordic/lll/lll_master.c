@@ -35,7 +35,7 @@
 #include "hal/debug.h"
 
 static int init_reset(void);
-static int prepare_cb(struct lll_prepare_param *prepare_param);
+static int prepare_cb(struct lll_prepare_param *p);
 
 int lll_master_init(void)
 {
@@ -63,16 +63,20 @@ int lll_master_reset(void)
 
 void lll_master_prepare(void *param)
 {
-	struct lll_prepare_param *p = param;
-	struct lll_conn *lll = p->param;
+	struct lll_prepare_param *p;
+	struct lll_conn *lll;
 	uint16_t elapsed;
 	int err;
 
 	err = lll_hfclock_on();
 	LL_ASSERT(err >= 0);
 
+	p = param;
+
 	/* Instants elapsed */
 	elapsed = p->lazy + 1;
+
+	lll = p->param;
 
 	/* Save the (latency + 1) for use in event */
 	lll->latency_prepare += elapsed;
@@ -87,18 +91,35 @@ static int init_reset(void)
 	return 0;
 }
 
-static int prepare_cb(struct lll_prepare_param *prepare_param)
+static int prepare_cb(struct lll_prepare_param *p)
 {
-	struct lll_conn *lll = prepare_param->param;
-	uint32_t ticks_at_event, ticks_at_start;
 	struct pdu_data *pdu_data_tx;
-	struct evt_hdr *evt;
+	uint32_t ticks_at_event;
+	uint32_t ticks_at_start;
 	uint16_t event_counter;
 	uint32_t remainder_us;
 	uint8_t data_chan_use;
+	struct lll_conn *lll;
+	struct evt_hdr *evt;
 	uint32_t remainder;
 
 	DEBUG_RADIO_START_M(1);
+
+	lll = p->param;
+
+	/* Check if stopped (on disconnection between prepare and pre-empt)
+	 */
+	if (unlikely(lll->handle == 0xFFFF)) {
+		int err;
+
+		err = lll_hfclock_off();
+		LL_ASSERT(err >= 0);
+
+		lll_done(NULL);
+
+		DEBUG_RADIO_CLOSE_M(0);
+		return 0;
+	}
 
 	/* Reset connection event global variables */
 	lll_conn_prepare_reset();
@@ -165,14 +186,14 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	radio_switch_complete_and_rx(0);
 #endif /* !CONFIG_BT_CTLR_PHY */
 
-	ticks_at_event = prepare_param->ticks_at_expire;
+	ticks_at_event = p->ticks_at_expire;
 	evt = HDR_LLL2EVT(lll);
 	ticks_at_event += lll_evt_offset_get(evt);
 
 	ticks_at_start = ticks_at_event;
 	ticks_at_start += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
-	remainder = prepare_param->remainder;
+	remainder = p->remainder;
 	remainder_us = radio_tmr_start(1, ticks_at_start, remainder);
 
 	/* capture end of Tx-ed PDU, used to calculate HCTO. */

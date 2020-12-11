@@ -6,11 +6,19 @@
 
 /dts-v1/;
 #include <st/f7/stm32f746Xg.dtsi>
+#include <st/f7/stm32f746zgtx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+
+/*
+ * WARNING: The pin PA7 will conflict on selection of SPI_1 and ETH_STM32_HAL.
+ *          If you require both peripherals, and you do not need Arduino Uno v3
+ *          comaptability, the pin PB5 (also on ST Zio connector) can be used
+ *          for the SPI_1 MOSI signal.
+ */
 
 / {
 	model = "STMicroelectronics STM32F746ZG-NUCLEO board";
-	compatible = "st,stm32f746zg-nucleo", "st,stm32f746";
+	compatible = "st,stm32f746zg-nucleo";
 
 	chosen {
 		zephyr,console = &usart3;
@@ -53,21 +61,31 @@
 	};
 };
 
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6
+		     &usart2_rts_pd4 &usart2_cts_pd3>;
+	current-speed = <115200>;
+};
+
 &usart3 {
+	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart6 {
+	pinctrl-0 = <&usart6_tx_pg14 &usart6_rx_pg9>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	status = "okay";
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
@@ -77,14 +95,13 @@
 
 	pwm1: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim1_ch3_pe13>;
 	};
 };
 
 &spi1 {
-	/*
-	 * WARNING: The pin PA7 will conflict on selection of SPI_1 and
-	 *          ETH_STM32_HAL. See pinmux.c for further details.
-	 */
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
+		     &spi1_miso_pa6 &spi1_mosi_pa7>;
 	status = "okay";
 };
 
@@ -97,6 +114,7 @@
 };
 
 &can1 {
+	pinctrl-0 = <&can1_rx_pd0 &can1_tx_pd1>;
 	bus-speed = <125000>;
 	sjw = <1>;
 	prop-seg = <0>;
@@ -106,6 +124,7 @@
 };
 
 &adc1 {
+	pinctrl-0 = <&adc1_in0_pa0>;
 	status = "okay";
 };
 
@@ -115,4 +134,13 @@
 
 &mac {
 	status = "okay";
+	pinctrl-0 = <&eth_mdc_pc1
+		     &eth_rxd0_pc4
+		     &eth_rxd1_pc5
+		     &eth_ref_clk_pa1
+		     &eth_mdio_pa2
+		     &eth_crs_dv_pa7
+		     &eth_tx_en_pg11
+		     &eth_txd0_pg13
+		     &eth_txd1_pb13>;
 };

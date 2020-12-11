@@ -130,18 +130,20 @@ static int do_net_init(void)
 
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		   server_addr.sa_family == AF_INET) {
-		struct net_if_ipv4 *ipv4;
-		struct net_if *iface;
+		const struct in_addr *src;
 
-		iface = net_if_ipv4_select_src_iface(
-					&net_sin(&server_addr)->sin_addr);
-		ipv4 = iface->config.ip.ipv4;
+		src = net_if_ipv4_select_src_addr(
+				  NULL, &net_sin(&server_addr)->sin_addr);
 
-		net_ipaddr_copy(&local_addr4.sin_addr,
-				&ipv4->unicast[0].address.in_addr);
+		if (src) {
+			net_addr_ntop(AF_INET, src, dev_hostname,
+				      MAX_HOSTNAME_LEN);
 
-		net_addr_ntop(AF_INET, &local_addr4.sin_addr, dev_hostname,
-			      MAX_HOSTNAME_LEN);
+			net_ipaddr_copy(&local_addr4.sin_addr, src);
+		} else {
+			goto unknown;
+		}
+
 	} else {
 	unknown:
 		DBG("Cannot setup local context\n");
@@ -250,7 +252,8 @@ const struct log_backend_api log_backend_net_api = {
 /* Note that the backend can be activated only after we have networking
  * subsystem ready so we must not start it immediately.
  */
-LOG_BACKEND_DEFINE(log_backend_net, log_backend_net_api, true);
+LOG_BACKEND_DEFINE(log_backend_net, log_backend_net_api,
+		   IS_ENABLED(CONFIG_LOG_BACKEND_NET_AUTOSTART));
 
 const struct log_backend *log_backend_net_get(void)
 {

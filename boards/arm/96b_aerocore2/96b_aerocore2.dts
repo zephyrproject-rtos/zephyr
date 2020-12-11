@@ -7,10 +7,11 @@
 /dts-v1/;
 
 #include <st/f4/stm32f427vi.dtsi>
+#include <st/f4/stm32f427v(g-i)tx-pinctrl.dtsi>
 
 / {
 	model = "96Boards Gumstix AeroCore 2";
-	compatible = "gumstix,aerocore2", "st,stm32f427";
+	compatible = "gumstix,aerocore2";
 
 	chosen {
 		zephyr,console = &uart7;
@@ -40,52 +41,72 @@
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart3 {
+	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &uart7 {
+	pinctrl-0 = <&uart7_tx_pe8 &uart7_rx_pe7>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &uart8 {
+	pinctrl-0 = <&uart8_tx_pe1 &uart8_rx_pe0>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
+&spi1_nss_pa4 { slew-rate = "very-high-speed"; };
+
 &spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
+		     &spi1_miso_pa6 &spi1_mosi_pa7>;
 	status = "okay";
 };
 
+&spi2_nss_pb12 { slew-rate = "very-high-speed"; };
+
 &spi2 {
+	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13
+		     &spi2_miso_pb14 &spi2_mosi_pb15>;
 	status = "okay";
 };
 
 &spi3 {
+	pinctrl-0 = <&spi3_sck_pc10 &spi3_miso_pc11 &spi3_mosi_pc12>;
 	status = "okay";
 };
 
+&spi4_nss_pe11 { slew-rate = "very-high-speed"; };
+
 &spi4 {
+	pinctrl-0 = <&spi4_nss_pe11 &spi4_sck_pe12
+		     &spi4_miso_pe13 &spi4_mosi_pe14>;
 	status = "okay";
 };
 
 &i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	status = "okay";
 };
 
@@ -94,6 +115,10 @@
 
 	pwm4: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim4_ch1_pd12
+			     &tim4_ch2_pd13
+			     &tim4_ch3_pd14
+			     &tim4_ch4_pd15>;
 	};
 };
 
@@ -102,10 +127,16 @@
 
 	pwm5: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim5_ch1_pa0
+			     &tim5_ch2_pa1
+			     &tim5_ch3_pa2
+			     &tim5_ch4_pa3>;
 	};
 };
 
 &adc1 {
+	pinctrl-0 = <&adc1_in10_pc0 &adc1_in11_pc1
+		     &adc1_in12_pc2 &adc1_in13_pc3>;
 	status = "okay";
 };
 

@@ -195,6 +195,31 @@ config NET_GPTP_PATH_TRACE_ELEMENTS
 	  Announce message. Each array element takes 8 bytes. If this value
 	  is set to 8, then 8 * 8 = 64 bytes of memory is used.
 
+config NET_GPTP_BMCA_PRIORITY1
+	int "BMCA priority1 value"
+	default 248 if NET_GPTP_GM_CAPABLE
+	default 255
+	range 0 255
+	help
+	  The priority1 attribute of the local clock. It is used in the
+	  Best Master Clock selection Algorithm (BMCA), lower values take
+	  precedence. The default value is 255 if the device is non grand
+	  master capable, and 248 if it is GM capable.
+	  See Chapter 8.6.2.1 of IEEE 802.1AS for a more detailed description
+	  of priority1. Note that if the system	is non GM capable, then the
+	  value 255 is used always and this setting is ignored.
+
+config NET_GPTP_BMCA_PRIORITY2
+	int "BMCA priority2 value"
+	default 248
+	range 0 255
+	help
+	  The priority2 attribute of the local clock. It is used in the BMCA
+	  (Best Master Clock selection Algorithm), lower values take
+	  precedence. The default value is 248.
+	  See Chapter 8.6.2.5 of IEEE 802.1AS for a more detailed description
+	  of priority2.
+
 config NET_GPTP_STATISTICS
 	bool "Collect gPTP statistics"
 	help

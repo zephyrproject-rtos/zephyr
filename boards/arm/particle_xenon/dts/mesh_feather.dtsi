@@ -185,7 +185,7 @@ arduino_i2c: &i2c0 { /* feather I2C */
 
 feather_i2c: &i2c0 { };
 
-/* TWI1 used on Boron; also see mesh_feather_spi1_spi1.dtsi */
+/* TWI1 used on Boron; also see mesh_feather_spi_spi1.dtsi */
 
 &spi2 { /* dedicated MX25L */
 	compatible = "nordic,nrf-spi";
@@ -202,11 +202,15 @@ feather_i2c: &i2c0 { };
 		wp-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 		hold-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
 		size = <0x2000000>;
-		has-be32k;
 		has-dpd;
 		t-enter-dpd = <10000>;
 		t-exit-dpd = <100000>;
 		jedec-id = [c2 20 16];
+		sfdp-bfp = [
+			e5 20 f1 ff  ff ff ff 01  44 eb 08 6b  08 3b 04 bb
+			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
+			10 d8 00 ff
+		];
 	};
 };
 

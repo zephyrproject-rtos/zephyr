@@ -221,7 +221,7 @@ static ALWAYS_INLINE void clk_init(void)
 #endif
 }
 
-static int ke1xf_init(struct device *arg)
+static int ke1xf_init(const struct device *arg)
 
 {
 	ARG_UNUSED(arg);

@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(pwrmgmt_test);
 /* Thread properties */
 #define TASK_STACK_SIZE           1024ul
 #define PRIORITY                  K_PRIO_COOP(5)
-/* Sleep time should be lower than CONFIG_SYS_PM_MIN_RESIDENCY_SLEEP_1 */
+/* Sleep time should be lower than CONFIG_PM_MIN_RESIDENCY_SLEEP_1 */
 #define THREAD_A_SLEEP_TIME       100ul
 #define THREAD_B_SLEEP_TIME       1000ul
 
@@ -85,18 +85,18 @@ static void pm_latency_check(void)
 }
 
 /* Hooks to count entry/exit */
-void sys_pm_notify_power_state_entry(enum power_states state)
+void pm_notify_power_state_entry(enum power_states state)
 {
 	if (!checks_enabled) {
 		return;
 	}
 
 	switch (state) {
-	case SYS_POWER_STATE_SLEEP_1:
+	case POWER_STATE_SLEEP_1:
 		GPIO_CTRL_REGS->CTRL_0012 = 0x240ul;
 		pm_counters[0].entry_cnt++;
 		break;
-	case SYS_POWER_STATE_DEEP_SLEEP_1:
+	case POWER_STATE_DEEP_SLEEP_1:
 		GPIO_CTRL_REGS->CTRL_0013 = 0x240ul;
 		pm_counters[1].entry_cnt++;
 		pm_latency_check();
@@ -106,18 +106,18 @@ void sys_pm_notify_power_state_entry(enum power_states state)
 	}
 }
 
-void sys_pm_notify_power_state_exit(enum power_states state)
+void pm_notify_power_state_exit(enum power_states state)
 {
 	if (!checks_enabled) {
 		return;
 	}
 
 	switch (state) {
-	case SYS_POWER_STATE_SLEEP_1:
+	case POWER_STATE_SLEEP_1:
 		GPIO_CTRL_REGS->CTRL_0012 = 0x10240ul;
 		pm_counters[0].exit_cnt++;
 		break;
-	case SYS_POWER_STATE_DEEP_SLEEP_1:
+	case POWER_STATE_DEEP_SLEEP_1:
 		GPIO_CTRL_REGS->CTRL_0013 = 0x10240ul;
 		pm_counters[1].exit_cnt++;
 		break;
@@ -272,7 +272,7 @@ int test_pwr_mgmt_multithread(bool use_logging, uint8_t cycles)
 		LOG_INF("Suspend...");
 		suspend_all_tasks();
 		LOG_INF("About to enter light sleep");
-		k_msleep(CONFIG_SYS_PM_MIN_RESIDENCY_SLEEP_1 +
+		k_msleep(CONFIG_PM_MIN_RESIDENCY_SLEEP_1 +
 			 LT_EXTRA_SLP_TIME);
 		k_busy_wait(100);
 
@@ -292,7 +292,7 @@ int test_pwr_mgmt_multithread(bool use_logging, uint8_t cycles)
 
 		/* GPIO toggle to measure latency for deep sleep */
 		pm_trigger_marker();
-		k_msleep(CONFIG_SYS_PM_MIN_RESIDENCY_DEEP_SLEEP_1 +
+		k_msleep(CONFIG_PM_MIN_RESIDENCY_DEEP_SLEEP_1 +
 			 DP_EXTRA_SLP_TIME);
 		k_busy_wait(100);
 
@@ -328,7 +328,7 @@ int test_pwr_mgmt_singlethread(bool use_logging, uint8_t cycles)
 
 		/* Trigger Light Sleep 1 state. 48MHz PLL stays on */
 		LOG_INF("About to enter light sleep");
-		k_msleep(CONFIG_SYS_PM_MIN_RESIDENCY_SLEEP_1 +
+		k_msleep(CONFIG_PM_MIN_RESIDENCY_SLEEP_1 +
 			 LT_EXTRA_SLP_TIME);
 		k_busy_wait(100);
 
@@ -343,7 +343,7 @@ int test_pwr_mgmt_singlethread(bool use_logging, uint8_t cycles)
 
 		/* GPIO toggle to measure latency */
 		pm_trigger_marker();
-		k_msleep(CONFIG_SYS_PM_MIN_RESIDENCY_DEEP_SLEEP_1 +
+		k_msleep(CONFIG_PM_MIN_RESIDENCY_DEEP_SLEEP_1 +
 			 DP_EXTRA_SLP_TIME);
 		k_busy_wait(100);
 

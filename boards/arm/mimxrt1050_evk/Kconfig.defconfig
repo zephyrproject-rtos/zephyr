@@ -12,10 +12,6 @@ choice CODE_LOCATION
 	default CODE_FLEXSPI
 endchoice
 
-choice DATA_LOCATION
-	default DATA_SEMC
-endchoice
-
 config DISK_ACCESS_USDHC1
 	default y
 	depends on DISK_ACCESS_USDHC
@@ -48,9 +44,6 @@ if NETWORKING
 config NET_L2_ETHERNET
 	default y
 
-config ETH_MCUX_0
-	default y if NET_L2_ETHERNET
-
 endif # NETWORKING
 
 if LVGL
@@ -64,10 +57,10 @@ config LVGL_POINTER_KSCAN
 config LVGL_POINTER_KSCAN_DEV_NAME
 	default "FT5336"
 
-config LVGL_HOR_RES
+config LVGL_HOR_RES_MAX
 	default 480
 
-config LVGL_VER_RES
+config LVGL_VER_RES_MAX
 	default 272
 
 config LVGL_VDB_SIZE

@@ -81,7 +81,7 @@ int verify_buf_const(int16_t *rx_block, int16_t val_l, int16_t val_r)
 	return TC_PASS;
 }
 
-int tx_block_write_slab(struct device *dev_i2s, int att, int err,
+int tx_block_write_slab(const struct device *dev_i2s, int att, int err,
 			struct k_mem_slab *slab)
 {
 	char tx_block[BLOCK_SIZE];
@@ -98,7 +98,7 @@ int tx_block_write_slab(struct device *dev_i2s, int att, int err,
 	return TC_PASS;
 }
 
-int rx_block_read_slab(struct device *dev_i2s, int att,
+int rx_block_read_slab(const struct device *dev_i2s, int att,
 		       struct k_mem_slab *slab)
 {
 	char rx_block[BLOCK_SIZE];

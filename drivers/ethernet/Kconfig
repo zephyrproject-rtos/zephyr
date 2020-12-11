@@ -55,5 +55,6 @@ source "drivers/ethernet/Kconfig.native_posix"
 source "drivers/ethernet/Kconfig.stellaris"
 source "drivers/ethernet/Kconfig.liteeth"
 source "drivers/ethernet/Kconfig.gecko"
+source "drivers/ethernet/Kconfig.w5500"
 
 endmenu # "Ethernet Drivers"

@@ -37,9 +37,6 @@ More information about the board can be found at the
 `nRF9160 DK website`_. The `Nordic Semiconductor Infocenter`_
 contains the processor's information and the datasheet.
 
-.. note::
-
-   In previous Zephyr releases this board was named *nrf9160_pca10090*.
 
 Hardware
 ********
@@ -126,8 +123,16 @@ Programming and Debugging
 nrf9160dk_nrf9160 supports the Armv8m Security Extension, and by default boots
 in the Secure state.
 
-Building Secure/Non-Secure Zephyr applications
-==============================================
+Building Secure/Non-Secure Zephyr applications with Arm |reg| TrustZone |reg|
+=============================================================================
+
+Applications on the nRF9160 may contain a Secure and a Non-Secure firmware
+image. The Secure image can be built using either Zephyr or
+`Trusted Firmware M`_ (TF-M). Non-Secure firmware images are always built
+using Zephyr. The two alternatives are described below.
+
+Building the Secure firmware using Zephyr
+-----------------------------------------
 
 The process requires the following steps:
 
@@ -135,6 +140,28 @@ The process requires the following steps:
    ``CONFIG_TRUSTED_EXECUTION_SECURE=y`` in the the application project configuration file.
 2. Build the Non-Secure Zephyr application using ``-DBOARD=nrf9160dk_nrf9160ns``.
 3. Merge the two binaries together.
+
+Building the Secure firmware with TF-M
+--------------------------------------
+
+The process to build the Secure firmware image using TF-M and the Non-Secure
+firmware image using Zephyr requires the following action:
+
+* Build the Non-Secure Zephyr application
+   using ``-DBOARD=nrf9160dk_nrf9160ns`` and
+   ``CONFIG_BUILD_WITH_TFM=y`` in the application project configuration file.
+   The Zephyr build system will perform the following steps automatically:
+
+      * Build the Non-Secure firmware image as a regular Zephyr application
+      * Build a TF-M (secure) firmware image
+      * Merge the output binaries together
+      * Optionally build a bootloader image (MCUboot)
+
+.. note::
+
+   Depending on the TF-M configuration, an application DTS overlay may be
+   required, to adjust the Non-Secure image Flash and SRAM starting address
+   and sizes.
 
 When building a Secure/Non-Secure application, the Secure application will
 have to set the IDAU (SPU) configuration to allow Non-Secure access to all
@@ -204,3 +231,4 @@ References
    https://developer.arm.com/docs/100690/latest/attribution-units-sau-and-idau
 .. _nRF9160 DK website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF9160-DK
 .. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
+.. _Trusted Firmware M: https://www.trustedfirmware.org/projects/tf-m/

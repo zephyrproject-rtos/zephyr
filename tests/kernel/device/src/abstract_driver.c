@@ -12,12 +12,13 @@
 #define MY_DRIVER_B	"my_driver_B"
 
 /* define indivial driver A */
-static int my_driver_A_do_this(struct device *device, int foo, int bar)
+static int my_driver_A_do_this(const struct device *device, int foo, int bar)
 {
 	return foo + bar;
 }
 
-static void my_driver_A_do_that(struct device *device, unsigned int *baz)
+static void my_driver_A_do_that(const struct device *device,
+				unsigned int *baz)
 {
 	*baz = 1;
 }
@@ -27,18 +28,19 @@ static struct subsystem_api my_driver_A_api_funcs = {
 	.do_that = my_driver_A_do_that
 };
 
-int common_driver_init(struct device *dev)
+int common_driver_init(const struct device *dev)
 {
 	return 0;
 }
 
 /* define indivial driver B */
-static int my_driver_B_do_this(struct device *device, int foo, int bar)
+static int my_driver_B_do_this(const struct device *device, int foo, int bar)
 {
 	return foo - bar;
 }
 
-static void my_driver_B_do_that(struct device *device, unsigned int *baz)
+static void my_driver_B_do_that(const struct device *device,
+				unsigned int *baz)
 {
 	*baz = 2;
 }

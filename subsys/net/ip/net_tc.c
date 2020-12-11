@@ -18,6 +18,12 @@ LOG_MODULE_REGISTER(net_tc, CONFIG_NET_TC_LOG_LEVEL);
 #include "net_stats.h"
 #include "net_tc_mapping.h"
 
+/* Template for thread name. The "xx" is either "TX" denoting transmit thread,
+ * or "RX" denoting receive thread. The "q[y]" denotes the traffic class queue
+ * where y indicates the traffic class id. The value of y can be from 0 to 7.
+ */
+#define MAX_NAME_LEN sizeof("xx_q[y]")
+
 /* Stacks for TX work queue */
 K_KERNEL_STACK_ARRAY_DEFINE(tx_stack, NET_TC_TX_COUNT,
 			    CONFIG_NET_TX_STACK_SIZE);
@@ -69,49 +75,60 @@ int net_rx_priority2tc(enum net_priority prio)
 	return rx_prio2tc_map[prio];
 }
 
+
+#if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
+#define BASE_PRIO_TX (CONFIG_NET_TC_NUM_PRIORITIES - 1)
+#else
+#define BASE_PRIO_TX (CONFIG_NET_TC_TX_COUNT - 1)
+#endif
+
+#define PRIO_TX(i, _) (BASE_PRIO_TX - i),
+
+#if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
+#define BASE_PRIO_RX (CONFIG_NET_TC_NUM_PRIORITIES - 1)
+#else
+#define BASE_PRIO_RX (CONFIG_NET_TC_RX_COUNT - 1)
+#endif
+
+#define PRIO_RX(i, _) (BASE_PRIO_RX - i),
+
 /* Convert traffic class to thread priority */
 static uint8_t tx_tc2thread(uint8_t tc)
 {
 	/* Initial implementation just maps the traffic class to certain queue.
 	 * If there are less queues than classes, then map them into
-	 * some specific queue. In order to make this work same way as before,
-	 * the thread priority 7 is used to map the default traffic class so
-	 * this system works same way as before when TX thread default priority
-	 * was 7.
+	 * some specific queue.
 	 *
 	 * Lower value in this table means higher thread priority. The
-	 * value is used as a parameter to K_PRIO_COOP() which converts it
-	 * to actual thread priority.
+	 * value is used as a parameter to K_PRIO_COOP() or K_PRIO_PREEMPT()
+	 * which converts it to actual thread priority.
 	 *
 	 * Higher traffic class value means higher priority queue. This means
 	 * that thread_priorities[7] value should contain the highest priority
 	 * for the TX queue handling thread.
+	 *
+	 * For example, if NET_TC_TX_COUNT = 8, which is the maximum number of
+	 * traffic classes, then this priority array will contain following
+	 * values if preemptive priorities are used:
+	 *      7, 6, 5, 4, 3, 2, 1, 0
+	 * and
+	 *      14, 13, 12, 11, 10, 9, 8, 7
+	 * if cooperative priorities are used.
+	 *
+	 * Then these will be converted to following thread priorities if
+	 * CONFIG_NET_TC_THREAD_COOPERATIVE is enabled:
+	 *      -1, -2, -3, -4, -5, -6, -7, -8
+	 *
+	 * and if CONFIG_NET_TC_THREAD_PREEMPTIVE is enabled, following thread
+	 * priorities are used:
+	 *       7, 6, 5, 4, 3, 2, 1, 0
+	 *
+	 * This means that the lowest traffic class 1, will have the lowest
+	 * cooperative priority -1 for coop priorities and 7 for preemptive
+	 * priority.
 	 */
 	static const uint8_t thread_priorities[] = {
-#if NET_TC_TX_COUNT == 1
-		7
-#endif
-#if NET_TC_TX_COUNT == 2
-		8, 7
-#endif
-#if NET_TC_TX_COUNT == 3
-		8, 7, 6
-#endif
-#if NET_TC_TX_COUNT == 4
-		8, 7, 6, 5
-#endif
-#if NET_TC_TX_COUNT == 5
-		8, 7, 6, 5, 4
-#endif
-#if NET_TC_TX_COUNT == 6
-		8, 7, 6, 5, 4, 3
-#endif
-#if NET_TC_TX_COUNT == 7
-		8, 7, 6, 5, 4, 3, 2
-#endif
-#if NET_TC_TX_COUNT == 8
-		8, 7, 6, 5, 4, 3, 2, 1
-#endif
+		UTIL_LISTIFY(NET_TC_TX_COUNT, PRIO_TX)
 	};
 
 	BUILD_ASSERT(NET_TC_TX_COUNT <= CONFIG_NUM_COOP_PRIORITIES,
@@ -125,46 +142,8 @@ static uint8_t tx_tc2thread(uint8_t tc)
 /* Convert traffic class to thread priority */
 static uint8_t rx_tc2thread(uint8_t tc)
 {
-	/* Initial implementation just maps the traffic class to certain queue.
-	 * If there are less queues than classes, then map them into
-	 * some specific queue. In order to make this work same way as before,
-	 * the thread priority 7 is used to map the default traffic class so
-	 * this system works same way as before when RX thread default priority
-	 * was 7.
-	 *
-	 * Lower value in this table means higher thread priority. The
-	 * value is used as a parameter to K_PRIO_COOP() which converts it
-	 * to actual thread priority.
-	 *
-	 * Higher traffic class value means higher priority queue. This means
-	 * that thread_priorities[7] value should contain the highest priority
-	 * for the RX queue handling thread.
-	 */
 	static const uint8_t thread_priorities[] = {
-#if NET_TC_RX_COUNT == 1
-		7
-#endif
-#if NET_TC_RX_COUNT == 2
-		8, 7
-#endif
-#if NET_TC_RX_COUNT == 3
-		8, 7, 6
-#endif
-#if NET_TC_RX_COUNT == 4
-		8, 7, 6, 5
-#endif
-#if NET_TC_RX_COUNT == 5
-		8, 7, 6, 5, 4
-#endif
-#if NET_TC_RX_COUNT == 6
-		8, 7, 6, 5, 4, 3
-#endif
-#if NET_TC_RX_COUNT == 7
-		8, 7, 6, 5, 4, 3, 2
-#endif
-#if NET_TC_RX_COUNT == 8
-		8, 7, 6, 5, 4, 3, 2, 1
-#endif
+		UTIL_LISTIFY(NET_TC_RX_COUNT, PRIO_RX)
 	};
 
 	BUILD_ASSERT(NET_TC_RX_COUNT <= CONFIG_NUM_COOP_PRIORITIES,
@@ -232,21 +211,34 @@ void net_tc_tx_init(void)
 
 	for (i = 0; i < NET_TC_TX_COUNT; i++) {
 		uint8_t thread_priority;
+		int priority;
 
 		thread_priority = tx_tc2thread(i);
-		tx_classes[i].tc = thread_priority;
+
+		priority = IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE) ?
+			K_PRIO_COOP(thread_priority) :
+			K_PRIO_PREEMPT(thread_priority);
 
 		NET_DBG("[%d] Starting TX queue %p stack size %zd "
-			"prio %d (%d)", i,
-			&tx_classes[i].work_q.queue,
+			"prio %d %s(%d)", i,
+			&tx_classes[i].work_q,
 			K_KERNEL_STACK_SIZEOF(tx_stack[i]),
-			thread_priority, K_PRIO_COOP(thread_priority));
+			thread_priority,
+			IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE) ?
+							"coop" : "preempt",
+			priority);
 
 		k_work_q_start(&tx_classes[i].work_q,
 			       tx_stack[i],
 			       K_KERNEL_STACK_SIZEOF(tx_stack[i]),
-			       K_PRIO_COOP(thread_priority));
-		k_thread_name_set(&tx_classes[i].work_q.thread, "tx_workq");
+			       priority);
+
+		if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+			char name[MAX_NAME_LEN];
+
+			snprintk(name, sizeof(name), "tx_q[%d]", i);
+			k_thread_name_set(&tx_classes[i].work_q.thread, name);
+		}
 	}
 }
 
@@ -262,20 +254,33 @@ void net_tc_rx_init(void)
 
 	for (i = 0; i < NET_TC_RX_COUNT; i++) {
 		uint8_t thread_priority;
+		int priority;
 
 		thread_priority = rx_tc2thread(i);
-		rx_classes[i].tc = thread_priority;
+
+		priority = IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE) ?
+			K_PRIO_COOP(thread_priority) :
+			K_PRIO_PREEMPT(thread_priority);
 
 		NET_DBG("[%d] Starting RX queue %p stack size %zd "
-			"prio %d (%d)", i,
-			&rx_classes[i].work_q.queue,
+			"prio %d %s(%d)", i,
+			&rx_classes[i].work_q,
 			K_KERNEL_STACK_SIZEOF(rx_stack[i]),
-			thread_priority, K_PRIO_COOP(thread_priority));
+			thread_priority,
+			IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE) ?
+							"coop" : "preempt",
+			priority);
 
 		k_work_q_start(&rx_classes[i].work_q,
 			       rx_stack[i],
 			       K_KERNEL_STACK_SIZEOF(rx_stack[i]),
-			       K_PRIO_COOP(thread_priority));
-		k_thread_name_set(&rx_classes[i].work_q.thread, "rx_workq");
+			       priority);
+
+		if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+			char name[MAX_NAME_LEN];
+
+			snprintk(name, sizeof(name), "rx_q[%d]", i);
+			k_thread_name_set(&rx_classes[i].work_q.thread, name);
+		}
 	}
 }

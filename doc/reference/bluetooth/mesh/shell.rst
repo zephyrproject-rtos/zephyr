@@ -128,10 +128,11 @@ General configuration
 	Initialize the mesh. This command must be run before any other mesh command.
 
 
-``mesh reset``
---------------
+``mesh reset <addr>``
+---------------------
 
-	Reset the mesh node to its initial unprovisioned state.
+	reset the local mesh node to its initial unprovisioned state or reset a remote node and remove it from the network.
+	* ``addr``: address of the node to reset.
 
 
 ``mesh lpn <value: off, on>``
@@ -372,6 +373,15 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 	* ``interval``: Sets the new relay retransmit interval in milliseconds if ``val`` is ``on``. Ignored if ``val`` is ``off``. Defaults to ``20`` if omitted.
 
 
+``mesh net-transmit-param [<count: 0-7> <interval: 10-320>]``
+-------------------------------------------------------------
+
+	Get or set the network transmit parameters.
+
+	* ``count``: Sets the number of additional network transmits for every sent message.
+	* ``interval``: Sets the new network retransmit interval in milliseconds.
+
+
 ``mesh net-key-add <NetKeyIndex> [val]``
 ----------------------------------------
 
@@ -385,6 +395,14 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 --------------------
 
 	Get a list of known network key indexes.
+
+
+``mesh net-key-del <NetKeyIndex>``
+----------------------------------------
+
+	Delete a network key from the target node.
+
+	* ``NetKeyIndex``: The network key index to delete.
 
 
 ``mesh app-key-add <NetKeyIndex> <AppKeyIndex> [val]``
@@ -405,6 +423,15 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 	* ``NetKeyIndex``: Network key indexes to get a list of application key indexes from.
 
 
+``mesh app-key-del <NetKeyIndex> <AppKeyIndex>``
+------------------------------------------------
+
+	Delete an application key from the target node.
+
+	* ``NetKeyIndex``: The network key index the application key is bound to.
+	* ``AppKeyIndex``: The application key index to delete.
+
+
 ``mesh mod-app-bind <addr> <AppIndex> <Model ID> [Company ID]``
 ---------------------------------------------------------------
 
@@ -413,6 +440,18 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 	* ``addr``: Address of the element the model is on.
 	* ``AppIndex``: The application key to bind to the model.
 	* ``Model ID``: The model ID of the model to bind the key to.
+	* ``Company ID``: If present, determines the Company ID of the model. If omitted, the model is a Bluetooth SIG defined model.
+
+
+
+``mesh mod-app-unbind <addr> <AppIndex> <Model ID> [Company ID]``
+-----------------------------------------------------------------
+
+	Unbind an application key from a model.
+
+	* ``addr``: Address of the element the model is on.
+	* ``AppIndex``: The application key to unbind from the model.
+	* ``Model ID``: The model ID of the model to unbind the key from.
 	* ``Company ID``: If present, determines the Company ID of the model. If omitted, the model is a Bluetooth SIG defined model.
 
 
@@ -500,13 +539,6 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 	* ``Company ID``: If present, determines the Company ID of the model. If omitted, the model is a Bluetooth SIG defined model.
 
 
-Heartbeat Client model
-======================
-
-The Mesh Shell module instantiates a Health Client model for configuring itself and other nodes in the mesh network.
-
-The Health Client uses the general messages parameters set by ``mesh dst`` and ``mesh netidx`` to target specific nodes. When the Mesh Shell node is provisioned, the Health Client model targets itself by default. When another node has been provisioned by the Mesh Shell, the Health Client model targets the new node. The Health Client always sends messages using the Device key bound to the destination address, so it will only be able to configure itself and mesh nodes it provisioned.
-
 ``mesh hb-sub [<src> <dst> <period>]``
 --------------------------------------
 
@@ -547,6 +579,13 @@ The Health Client uses the general messages parameters set by ``mesh dst`` and `
 
 	* ``NetKeyIndex``: Index of the network key to publish Heartbeat messages with.
 
+
+Health Client model
+===================
+
+The Mesh Shell module instantiates a Health Client model for configuring itself and other nodes in the mesh network.
+
+The Health Client uses the general messages parameters set by ``mesh dst`` and ``mesh netidx`` to target specific nodes. When the Mesh Shell node is provisioned, the Health Client model targets itself by default. When another node has been provisioned by the Mesh Shell, the Health Client model targets the new node. The Health Client always sends messages using the Device key bound to the destination address, so it will only be able to configure itself and mesh nodes it provisioned.
 
 ``mesh fault-get <Company ID>``
 -------------------------------
@@ -634,8 +673,8 @@ The Health Client uses the general messages parameters set by ``mesh dst`` and `
 	* ``timer``: Duration of the attention state, in seconds (``0`` to ``255``)
 
 
-Heartbeat Server model
-======================
+Health Server model
+===================
 
 ``mesh add-fault <Fault ID>``
 -----------------------------

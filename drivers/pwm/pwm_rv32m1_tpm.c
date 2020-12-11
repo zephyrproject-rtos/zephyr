@@ -38,12 +38,12 @@ struct rv32m1_tpm_data {
 	tpm_chnl_pwm_signal_param_t channel[MAX_CHANNELS];
 };
 
-static int rv32m1_tpm_pin_set(struct device *dev, uint32_t pwm,
+static int rv32m1_tpm_pin_set(const struct device *dev, uint32_t pwm,
 			      uint32_t period_cycles, uint32_t pulse_cycles,
 			      pwm_flags_t flags)
 {
-	const struct rv32m1_tpm_config *config = dev->config_info;
-	struct rv32m1_tpm_data *data = dev->driver_data;
+	const struct rv32m1_tpm_config *config = dev->config;
+	struct rv32m1_tpm_data *data = dev->data;
 	uint8_t duty_cycle;
 
 	if ((period_cycles == 0U) || (pulse_cycles > period_cycles)) {
@@ -115,23 +115,24 @@ static int rv32m1_tpm_pin_set(struct device *dev, uint32_t pwm,
 	return 0;
 }
 
-static int rv32m1_tpm_get_cycles_per_sec(struct device *dev, uint32_t pwm,
+static int rv32m1_tpm_get_cycles_per_sec(const struct device *dev,
+					 uint32_t pwm,
 					 uint64_t *cycles)
 {
-	const struct rv32m1_tpm_config *config = dev->config_info;
-	struct rv32m1_tpm_data *data = dev->driver_data;
+	const struct rv32m1_tpm_config *config = dev->config;
+	struct rv32m1_tpm_data *data = dev->data;
 
 	*cycles = data->clock_freq >> config->prescale;
 
 	return 0;
 }
 
-static int rv32m1_tpm_init(struct device *dev)
+static int rv32m1_tpm_init(const struct device *dev)
 {
-	const struct rv32m1_tpm_config *config = dev->config_info;
-	struct rv32m1_tpm_data *data = dev->driver_data;
+	const struct rv32m1_tpm_config *config = dev->config;
+	struct rv32m1_tpm_data *data = dev->data;
 	tpm_chnl_pwm_signal_param_t *channel = data->channel;
-	struct device *clock_dev;
+	const struct device *clock_dev;
 	tpm_config_t tpm_config;
 	int i;
 
@@ -193,9 +194,8 @@ static const struct pwm_driver_api rv32m1_tpm_driver_api = {
 		.mode = kTPM_EdgeAlignedPwm, \
 	}; \
 	static struct rv32m1_tpm_data rv32m1_tpm_data_##n; \
-	DEVICE_AND_API_INIT(rv32m1_tpm_##n, \
-			    DT_INST_LABEL(n), \
-			    &rv32m1_tpm_init, &rv32m1_tpm_data_##n, \
+	DEVICE_DT_INST_DEFINE(n, &rv32m1_tpm_init, device_pm_control_nop, \
+			    &rv32m1_tpm_data_##n, \
 			    &rv32m1_tpm_config_##n, \
 			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
 			    &rv32m1_tpm_driver_api);

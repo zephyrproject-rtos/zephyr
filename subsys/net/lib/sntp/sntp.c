@@ -170,16 +170,6 @@ int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_len)
 	return 0;
 }
 
-int sntp_request(struct sntp_ctx *ctx, uint32_t timeout, uint64_t *epoch_time)
-{
-	struct sntp_time time;
-	int res = sntp_query(ctx, timeout, &time);
-
-	*epoch_time = time.seconds;
-
-	return res;
-}
-
 int sntp_query(struct sntp_ctx *ctx, uint32_t timeout, struct sntp_time *time)
 {
 	struct sntp_pkt tx_pkt = { 0 };

@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <toolchain.h>
 #include <arch/cpu.h>
 #include <offsets_short.h>
 #include <syscall.h>
+#include <sys/mem_manage.h>
 
 #ifdef CONFIG_X86_KPTI
 /* Copy interrupt return stack context to the trampoline stack, switch back
@@ -284,24 +286,20 @@ z_x86_userspace_enter:
 	 */
 	movq	%r9, %rsp
 
-	/* Need RDI temporarily */
-	pushq	%rdi
-
-	/* Compute size of user stack in 8-byte chunks and put in RCX */
-	movq	%r9, %rdi	/* Start address for rep stosq in RDI */
-	movq	%r8, %rcx	/* Ending address */
-	subq	%rdi, %rcx	/* Subtract starting address */
-	shrq	$3, %rcx	/* Divide by 8 */
-
-	movq	$0xAAAAAAAAAAAAAAAA, %rax	/* Fill value */
-	/* Copy 8 bytes of memory at a time, starting at ES:RDI, with whatever
-	 * is in RAX. Repeat this RCX times.  Stack sizes are always at least
-	 * 8-byte aligned.
+	/* Push callee-saved regs and go back into C code to erase the stack
+	 * buffer and set US bit in page tables for it
 	 */
-	cld
-	rep stosq
-
+	pushq	%rdx
+	pushq	%rsi
+	pushq	%rdi
+	pushq	%r8
+	pushq	%r10
+	callq	z_x86_current_stack_perms
+	popq	%r10
+	popq	%r8
 	popq	%rdi
+	popq	%rsi
+	popq	%rdx
 
 	/* Reset to the beginning of the user stack */
 	movq	%r8, %rsp
@@ -323,19 +321,6 @@ z_x86_userspace_enter:
 	xorq	%r15, %r15
 
 	cli
-
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	/* Save the eax and edx registers before reading the time stamp
-	* once done pop the values.
-	*/
-	push %rax
-	push %rdx
-	rdtsc
-	mov %eax,arch_timing_enter_user_mode_end
-	mov %edx,arch_timing_enter_user_mode_end+4
-	pop %rdx
-	pop %rax
-#endif
 
 #ifdef CONFIG_X86_KPTI
 	/* Switch to thread's page table. We have free registers so no need

@@ -67,20 +67,49 @@ static void do_network(struct ppp_context *ctx)
 	}
 }
 
+static void do_auth(struct ppp_context *ctx)
+{
+	uint16_t auth_proto = 0;
+
+	ppp_change_phase(ctx, PPP_AUTH);
+
+	if (IS_ENABLED(CONFIG_NET_L2_PPP_AUTH_SUPPORT)) {
+		auth_proto = ctx->lcp.peer_options.auth_proto;
+	}
+
+	/* If no authentication is need, then we are done */
+	if (!auth_proto) {
+		ppp_link_authenticated(ctx);
+		return;
+	}
+
+	Z_STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
+		if (proto->protocol == auth_proto) {
+			if (proto->open) {
+				proto->open(ctx);
+			}
+
+			break;
+		}
+	}
+}
+
 void ppp_link_established(struct ppp_context *ctx, struct ppp_fsm *fsm)
 {
 	NET_DBG("[%p] Link established", ctx);
 
 	ppp_change_phase(ctx, PPP_ESTABLISH);
 
-	ppp_change_phase(ctx, PPP_AUTH);
-
-	/* If no authentication is need, then we are done */
-	/* TODO: check here if auth is needed */
-
-	do_network(ctx);
+	do_auth(ctx);
 
 	lcp_up(ctx);
+}
+
+void ppp_link_authenticated(struct ppp_context *ctx)
+{
+	NET_DBG("[%p] Link authenticated", ctx);
+
+	do_network(ctx);
 }
 
 void ppp_link_terminated(struct ppp_context *ctx)
@@ -101,8 +130,6 @@ void ppp_link_down(struct ppp_context *ctx)
 	if (ctx->phase == PPP_DEAD) {
 		return;
 	}
-
-	ppp_change_phase(ctx, PPP_NETWORK);
 
 	ppp_network_all_down(ctx);
 

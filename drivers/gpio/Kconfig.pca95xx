@@ -15,3 +15,12 @@ config GPIO_PCA95XX_INIT_PRIORITY
 	depends on GPIO_PCA95XX
 	help
 	  Device driver initialization priority.
+
+config GPIO_PCA95XX_INTERRUPT
+	bool "Interrupt enable"
+	default n
+	depends on GPIO_PCA95XX
+	help
+	  Enable interrupt support in PCA95XX driver.
+	  Note that the PCA95XX cannot reliably detect
+	  short-pulse interrupts due to its design.

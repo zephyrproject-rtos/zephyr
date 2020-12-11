@@ -21,6 +21,9 @@ if RTOS_TIMER
 config MCHP_XEC_RTOS_TIMER
 	default y
 
+config SOC_HAS_TIMING_FUNCTIONS
+	default y if !CORTEX_M_DWT
+
 config ARCH_HAS_CUSTOM_BUSY_WAIT
 	default y
 

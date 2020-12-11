@@ -22,6 +22,8 @@
 #include "radio_sim_nrfxx.h"
 #elif defined(CONFIG_SOC_SERIES_NRF51X)
 #include "radio_nrf51.h"
+#elif defined(CONFIG_SOC_NRF52805)
+#include "radio_nrf52805.h"
 #elif defined(CONFIG_SOC_NRF52810)
 #include "radio_nrf52810.h"
 #elif defined(CONFIG_SOC_NRF52811)

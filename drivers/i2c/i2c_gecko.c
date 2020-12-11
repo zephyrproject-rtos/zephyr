@@ -21,9 +21,9 @@ LOG_MODULE_REGISTER(i2c_gecko);
 #include "i2c-priv.h"
 
 #define DEV_CFG(dev) \
-	((const struct i2c_gecko_config * const)(dev)->config_info)
+	((const struct i2c_gecko_config * const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct i2c_gecko_data * const)(dev)->driver_data)
+	((struct i2c_gecko_data * const)(dev)->data)
 #define DEV_BASE(dev) \
 	((I2C_TypeDef *)(DEV_CFG(dev))->base)
 
@@ -46,7 +46,7 @@ struct i2c_gecko_data {
 	uint32_t dev_config;
 };
 
-void i2c_gecko_config_pins(struct device *dev,
+void i2c_gecko_config_pins(const struct device *dev,
 			   const struct soc_gpio_pin *pin_sda,
 			   const struct soc_gpio_pin *pin_scl)
 {
@@ -74,7 +74,8 @@ void i2c_gecko_config_pins(struct device *dev,
 #endif
 }
 
-static int i2c_gecko_configure(struct device *dev, uint32_t dev_config_raw)
+static int i2c_gecko_configure(const struct device *dev,
+			       uint32_t dev_config_raw)
 {
 	I2C_TypeDef *base = DEV_BASE(dev);
 	struct i2c_gecko_data *data = DEV_DATA(dev);
@@ -107,7 +108,7 @@ static int i2c_gecko_configure(struct device *dev, uint32_t dev_config_raw)
 	return 0;
 }
 
-static int i2c_gecko_transfer(struct device *dev, struct i2c_msg *msgs,
+static int i2c_gecko_transfer(const struct device *dev, struct i2c_msg *msgs,
 			      uint8_t num_msgs, uint16_t addr)
 {
 	I2C_TypeDef *base = DEV_BASE(dev);
@@ -171,7 +172,7 @@ finish:
 	return ret;
 }
 
-static int i2c_gecko_init(struct device *dev)
+static int i2c_gecko_init(const struct device *dev)
 {
 	const struct i2c_gecko_config *config = DEV_CFG(dev);
 	uint32_t bitrate_cfg;
@@ -223,8 +224,8 @@ static const struct i2c_gecko_config i2c_gecko_config_0 = {
 
 static struct i2c_gecko_data i2c_gecko_data_0;
 
-DEVICE_AND_API_INIT(i2c_gecko_0, DT_INST_LABEL(0),
-		    &i2c_gecko_init, &i2c_gecko_data_0, &i2c_gecko_config_0,
+DEVICE_DT_INST_DEFINE(0, &i2c_gecko_init, device_pm_control_nop,
+		    &i2c_gecko_data_0, &i2c_gecko_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_gecko_driver_api);
 #endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
@@ -256,8 +257,8 @@ static const struct i2c_gecko_config i2c_gecko_config_1 = {
 
 static struct i2c_gecko_data i2c_gecko_data_1;
 
-DEVICE_AND_API_INIT(i2c_gecko_1, DT_INST_LABEL(1),
-		    &i2c_gecko_init, &i2c_gecko_data_1, &i2c_gecko_config_1,
+DEVICE_DT_INST_DEFINE(1, &i2c_gecko_init, device_pm_control_nop,
+		    &i2c_gecko_data_1, &i2c_gecko_config_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_gecko_driver_api);
 #endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) */

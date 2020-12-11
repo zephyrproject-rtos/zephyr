@@ -6,12 +6,16 @@
 
 import argparse
 import os
+import platform
+import re
 import shlex
 import sys
 import tempfile
 
+from packaging import version
 from runners.core import ZephyrBinaryRunner, RunnerCaps, \
     BuildConfiguration
+from subprocess import TimeoutExpired
 
 DEFAULT_JLINK_EXE = 'JLink.exe' if sys.platform == 'win32' else 'JLinkExe'
 DEFAULT_JLINK_GDB_PORT = 2331
@@ -104,6 +108,38 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.logger.info('J-Link GDB server running on port {}'.
                          format(self.gdb_port))
 
+    def read_version(self):
+        '''Read the J-Link Commander version output.
+
+        J-Link Commander does not provide neither a stand-alone version string
+        output nor command line parameter help output. To find the version, we
+        launch it using a bogus command line argument (to get it to fail) and
+        read the version information provided to stdout.
+
+        A timeout is used since the J-Link Commander takes up to a few seconds
+        to exit upon failure.'''
+        if platform.system() == 'Windows':
+            # The check below does not work on Microsoft Windows
+            return ''
+
+        self.require(self.commander)
+        # Match "Vd.dd" substring
+        ver_re = re.compile(r'\s+V([.0-9]+)[a-zA-Z]*\s+', re.IGNORECASE)
+        cmd = ([self.commander] + ['-bogus-argument-that-does-not-exist'])
+        try:
+            self.check_output(cmd, timeout=0.1)
+        except TimeoutExpired as e:
+            ver_m = ver_re.search(e.output.decode('utf-8'))
+            if ver_m:
+                return ver_m.group(1)
+            else:
+                return ''
+
+    def supports_nogui(self):
+        ver = self.read_version()
+        # -nogui was introduced in J-Link Commander v6.80
+        return version.parse(ver) >= version.parse("6.80")
+
     def do_run(self, command, **kwargs):
         server_cmd = ([self.gdbserver] +
                       ['-select', 'usb', # only USB connections supported
@@ -179,7 +215,12 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             with open(fname, 'wb') as f:
                 f.writelines(bytes(line + '\n', 'utf-8') for line in lines)
 
-            cmd = ([self.commander] +
+            if self.supports_nogui():
+                nogui = ['-nogui', '1']
+            else:
+                nogui = []
+
+            cmd = ([self.commander] + nogui +
                    ['-if', self.iface,
                     '-speed', self.speed,
                     '-device', self.device,

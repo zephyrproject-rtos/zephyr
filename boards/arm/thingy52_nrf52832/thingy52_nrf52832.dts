@@ -35,14 +35,17 @@
 		led0: led_0 {
 			gpios = <&sx1509b 5 GPIO_ACTIVE_LOW>;
 			label = "Green LED";
+			//vin-supply = <&vdd_pwr>;
 		};
 		led1: led_1 {
 			gpios = <&sx1509b 6 GPIO_ACTIVE_LOW>;
 			label = "Blue LED";
+			//vin-supply = <&vdd_pwr>;
 		};
 		led2: led_2 {
 			gpios = <&sx1509b 7 GPIO_ACTIVE_LOW>;
 			label = "Red LED";
+			//vin-supply = <&vdd_pwr>;
 		};
 	};
 
@@ -62,6 +65,42 @@
 		full-ohms = <(1500000 + 180000)>;
 		power-gpios = <&sx1509b 4 0>;
 	};
+
+	vdd_pwr: vdd-pwr-ctrl {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "vdd-pwr-ctrl";
+		regulator-name = "vdd-pwr-ctrl";
+		enable-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+
+	spk_pwr: spk-pwr-ctrl {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "spk-pwr-ctrl";
+		regulator-name = "spk-pwr-ctrl";
+		enable-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+	};
+
+	mpu_pwr: mpu-pwr-ctrl {
+		compatible = "regulator-fixed";
+		label = "mpu-pwr-ctrl";
+		regulator-name = "mpu-pwr-ctrl";
+		enable-gpios = <&sx1509b 8 GPIO_ACTIVE_HIGH>;
+	};
+
+	mic_pwr: mic-pwr-ctrl {
+		compatible = "regulator-fixed";
+		label = "mic-pwr-ctrl";
+		regulator-name = "mic-pwr-ctrl";
+		enable-gpios = <&sx1509b 9 GPIO_ACTIVE_HIGH>;
+	};
+
+	ccs_pwr: ccs-pwr-ctrl {
+		compatible = "regulator-fixed";
+		label = "ccs-pwr-ctrl";
+		regulator-name = "ccs-pwr-ctrl";
+		enable-gpios = <&sx1509b 10 GPIO_ACTIVE_HIGH>;
+	};
 };
 
 &adc {
@@ -77,7 +116,7 @@
 };
 
 &uart0 {
-	compatible = "nordic,nrf-uart";
+	compatible = "nordic,nrf-uarte";
 	status = "okay";
 	current-speed = <115200>;
 	tx-pin = <3>;
@@ -95,6 +134,7 @@
 		compatible = "semtech,sx1509b";
 		reg = <0x3e>;
 		label = "GPIO_P0";
+		vin-supply = <&vdd_pwr>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <16>;
@@ -107,12 +147,14 @@
 		compatible = "st,lps22hb-press";
 		reg = <0x5c>;
 		label = "LPS22HB";
+		vin-supply = <&vdd_pwr>;
 	};
 
 	hts221: hts221@5f {
 		compatible = "st,hts221";
 		reg = <0x5f>;
 		label = "HTS221";
+		vin-supply = <&vdd_pwr>;
 		drdy-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
 	};
 
@@ -120,6 +162,7 @@
 		compatible = "ams,ccs811";
 		reg = <0x5a>;
 		label = "CCS811";
+		vin-supply = <&ccs_pwr>;
 		irq-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&sx1509b 11 GPIO_ACTIVE_LOW>;
 		wake-gpios = <&sx1509b 12 GPIO_ACTIVE_LOW>;

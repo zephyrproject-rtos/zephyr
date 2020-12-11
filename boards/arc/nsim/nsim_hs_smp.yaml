@@ -1,10 +1,11 @@
 identifier: nsim_hs_smp
 name: Multi-core HS nSIM simulator
 type: mcu
-simulation: mdb
+simulation: mdb-nsim
 arch: arc
 toolchain:
   - zephyr
+  - arcmwdt
 testing:
   ignore_tags:
     - net

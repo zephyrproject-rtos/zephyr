@@ -1,0 +1,149 @@
+/*
+ * Copyright (c) 2020 Seagate Technology LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_lpc11u67.dtsi>
+#include <dt-bindings/pinctrl/lpc11u6x-pinctrl.h>
+#include <dt-bindings/led/led.h>
+
+/ {
+	model = "Seagate FireCuda Gaming SSD (FaZe)";
+	compatible = "faze", "seagate,faze";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	/* These aliases are provided for compatibility with samples. */
+	aliases {
+		led0 = &sata_led;
+		sw0 = &usb_sleep_button;
+		eeprom-0 = &eeprom0;
+		led-controller-0 = &led_controller_0;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		/* Handle the USB_SLEEP GPIO as a button. */
+		usb_sleep_button: button_0 {
+		gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
+			label = "USB sleep button";
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		sata_led: led_0 {
+			gpios = <&gpio1 23 GPIO_ACTIVE_LOW>;
+			label = "SSD activity LED";
+		};
+	};
+};
+
+&uart0 {
+	pinmuxs = <&pinmux0 18 IOCON_FUNC1>, <&pinmux0 19 IOCON_FUNC1>;
+	pinmux-names = "RXD", "TXD";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c0 {
+	pinmuxs = <&pinmux0 4 IOCON_FUNC1>,
+		  <&pinmux0 5 IOCON_FUNC1>;
+	pinmux-names = "SCL", "SDA";
+	status = "okay";
+
+	asm2364: asm2364@30 {
+		compatible = "asmedia,asm2364";
+		int-gpios = <&gpio0 2 0>;
+		reg = <0x30>;
+	};
+};
+
+&i2c1 {
+	pinmuxs =  <&pinmux0 7 (IOCON_FUNC3| IOCON_OPENDRAIN_EN)>,
+		   <&pinmux1 24 (IOCON_FUNC2 | IOCON_OPENDRAIN_EN)>;
+	pinmux-names = "SCL", "SDA";
+	status = "okay";
+
+	/* TI LP5030 LED controller connected to I2C1. */
+	led_controller_0: lp5030@30 {
+		compatible = "ti,lp5030", "ti,lp503x";
+		reg = <0x30>;
+		label = "LP5030";
+
+		led0: led_0 {
+			label = "LED LP5030 0";
+			index = <0>;
+			color-mapping =
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
+		};
+		led1: led_1 {
+			label = "LED LP5030 1";
+			index = <1>;
+			color-mapping =
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
+		};
+		led2: led_2 {
+			label = "LED LP5030 2";
+			index = <2>;
+			color-mapping =
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
+		};
+		led3: led_3 {
+			label = "LED LP5030 3";
+			index = <3>;
+			color-mapping =
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
+		};
+		led4: led_4 {
+			label = "LED LP5030 4";
+			index = <4>;
+			color-mapping =
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
+		};
+		led5: led_5 {
+			label = "LED LP5030 5";
+			index = <5>;
+			color-mapping =
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};

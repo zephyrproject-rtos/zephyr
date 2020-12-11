@@ -49,7 +49,7 @@ LOG_MODULE_REGISTER(mt9m114);
 #define MT9M114_SYS_STATE_LEAVE_STANDBY			0x54
 
 struct mt9m114_data {
-	struct device *i2c;
+	const struct device *i2c;
 	struct video_format fmt;
 	uint8_t i2c_addr;
 };
@@ -101,7 +101,8 @@ static struct mt9m114_reg mt9m114_vga_24mhz_pll[] = {
 	{ /* NULL terminated */ }
 };
 
-static inline int i2c_burst_read16(struct device *dev, uint16_t dev_addr,
+static inline int i2c_burst_read16(const struct device *dev,
+				   uint16_t dev_addr,
 				   uint16_t start_addr, uint8_t *buf, uint32_t num_bytes)
 {
 	uint8_t addr_buffer[2];
@@ -112,7 +113,8 @@ static inline int i2c_burst_read16(struct device *dev, uint16_t dev_addr,
 			      buf, num_bytes);
 }
 
-static inline int i2c_burst_write16(struct device *dev, uint16_t dev_addr,
+static inline int i2c_burst_write16(const struct device *dev,
+				    uint16_t dev_addr,
 				    uint16_t start_addr, const uint8_t *buf,
 				    uint32_t num_bytes)
 {
@@ -132,10 +134,11 @@ static inline int i2c_burst_write16(struct device *dev, uint16_t dev_addr,
 	return i2c_transfer(dev, msg, 2, dev_addr);
 }
 
-static int mt9m114_write_reg(struct device *dev, uint16_t reg_addr, uint8_t reg_size,
+static int mt9m114_write_reg(const struct device *dev, uint16_t reg_addr,
+			     uint8_t reg_size,
 			     void *value)
 {
-	struct mt9m114_data *drv_data = dev->driver_data;
+	struct mt9m114_data *drv_data = dev->data;
 
 	switch (reg_size) {
 	case 2:
@@ -154,10 +157,11 @@ static int mt9m114_write_reg(struct device *dev, uint16_t reg_addr, uint8_t reg_
 				 value, reg_size);
 }
 
-static int mt9m114_read_reg(struct device *dev, uint16_t reg_addr, uint8_t reg_size,
+static int mt9m114_read_reg(const struct device *dev, uint16_t reg_addr,
+			    uint8_t reg_size,
 			    void *value)
 {
-	struct mt9m114_data *drv_data = dev->driver_data;
+	struct mt9m114_data *drv_data = dev->data;
 	int err;
 
 	if (reg_size > 4) {
@@ -186,7 +190,8 @@ static int mt9m114_read_reg(struct device *dev, uint16_t reg_addr, uint8_t reg_s
 	return 0;
 }
 
-static int mt9m114_write_all(struct device *dev, struct mt9m114_reg *reg)
+static int mt9m114_write_all(const struct device *dev,
+			     struct mt9m114_reg *reg)
 {
 	int i = 0;
 
@@ -205,7 +210,7 @@ static int mt9m114_write_all(struct device *dev, struct mt9m114_reg *reg)
 	return 0;
 }
 
-static int mt9m114_set_state(struct device *dev, uint8_t state)
+static int mt9m114_set_state(const struct device *dev, uint8_t state)
 {
 	uint16_t val;
 	int err;
@@ -254,10 +259,11 @@ static int mt9m114_set_state(struct device *dev, uint8_t state)
 	return 0;
 }
 
-static int mt9m114_set_fmt(struct device *dev, enum video_endpoint_id ep,
+static int mt9m114_set_fmt(const struct device *dev,
+			   enum video_endpoint_id ep,
 			   struct video_format *fmt)
 {
-	struct mt9m114_data *drv_data = dev->driver_data;
+	struct mt9m114_data *drv_data = dev->data;
 	uint16_t output_format;
 	int ret;
 
@@ -296,22 +302,23 @@ static int mt9m114_set_fmt(struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static int mt9m114_get_fmt(struct device *dev, enum video_endpoint_id ep,
+static int mt9m114_get_fmt(const struct device *dev,
+			   enum video_endpoint_id ep,
 			   struct video_format *fmt)
 {
-	struct mt9m114_data *drv_data = dev->driver_data;
+	struct mt9m114_data *drv_data = dev->data;
 
 	*fmt = drv_data->fmt;
 
 	return 0;
 }
 
-static int mt9m114_stream_start(struct device *dev)
+static int mt9m114_stream_start(const struct device *dev)
 {
 	return mt9m114_set_state(dev, MT9M114_SYS_STATE_START_STREAMING);
 }
 
-static int mt9m114_stream_stop(struct device *dev)
+static int mt9m114_stream_stop(const struct device *dev)
 {
 	return mt9m114_set_state(dev, MT9M114_SYS_STATE_ENTER_SUSPEND);
 }
@@ -329,7 +336,8 @@ static const struct video_format_cap fmts[] = {
 	{ 0 }
 };
 
-static int mt9m114_get_caps(struct device *dev, enum video_endpoint_id ep,
+static int mt9m114_get_caps(const struct device *dev,
+			    enum video_endpoint_id ep,
 			    struct video_caps *caps)
 {
 	caps->format_caps = fmts;
@@ -344,7 +352,7 @@ static const struct video_driver_api mt9m114_driver_api = {
 	.stream_stop = mt9m114_stream_stop,
 };
 
-static int mt9m114_init(struct device *dev)
+static int mt9m114_init(const struct device *dev)
 {
 	struct video_format fmt;
 	uint16_t val;
@@ -386,9 +394,9 @@ static int mt9m114_init(struct device *dev)
 
 static struct mt9m114_data mt9m114_data_0;
 
-static int mt9m114_init_0(struct device *dev)
+static int mt9m114_init_0(const struct device *dev)
 {
-	struct mt9m114_data *drv_data = dev->driver_data;
+	struct mt9m114_data *drv_data = dev->data;
 
 	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (drv_data->i2c == NULL) {

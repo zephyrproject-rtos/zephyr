@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2020 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -12,6 +12,8 @@
 #include "fcb_priv.h"
 #include "string.h"
 #include <errno.h>
+#include <device.h>
+#include <drivers/flash.h>
 
 uint8_t
 fcb_get_align(const struct fcb *fcb)
@@ -99,6 +101,8 @@ fcb_init(int f_area_id, struct fcb *fcb)
 	int oldest = -1, newest = -1;
 	struct flash_sector *oldest_sector = NULL, *newest_sector = NULL;
 	struct fcb_disk_area fda;
+	const struct device *dev = NULL;
+	const struct flash_parameters *fparam;
 
 	if (!fcb->f_sectors || fcb->f_sector_cnt - fcb->f_scratch_cnt < 1) {
 		return -EINVAL;
@@ -108,6 +112,10 @@ fcb_init(int f_area_id, struct fcb *fcb)
 	if (rc != 0) {
 		return -EINVAL;
 	}
+
+	dev = device_get_binding(fcb->fap->fa_dev_name);
+	fparam = flash_get_parameters(dev);
+	fcb->f_erase_value = fparam->erase_value;
 
 	align = fcb_get_align(fcb);
 	if (align == 0U) {
@@ -194,16 +202,33 @@ fcb_is_empty(struct fcb *fcb)
 /**
  * Length of an element is encoded in 1 or 2 bytes.
  * 1 byte for lengths < 128 bytes, and 2 bytes for < 16384.
+ *
+ * The storage of length has been originally designed to work with 0xff erasable
+ * flash devices and gives length 0xffff special meaning: that there is no value
+ * written; this is smart way to utilize value in non-written flash to figure
+ * out where data ends. Additionally it sets highest bit of first byte of
+ * the length to 1, to mark that there is second byte to be read.
+ * Above poses some problems when non-0xff erasable flash is used. To solve
+ * the problem all length values are xored with not of erase value for given
+ * flash:
+ *	len' = len ^ ~erase_value;
+ * To obtain original value, the logic is reversed:
+ *	len = len' ^ ~erase_value;
+ *
+ * In case of 0xff erased flash this does not modify data that is written to
+ * flash; in case of other flash devices, e.g. that erase to 0x00, it allows
+ * to correctly use the first bit of byte to figure out how many bytes are there
+ * and if there is any data at all or both bytes are equal to erase value.
  */
 int
-fcb_put_len(uint8_t *buf, uint16_t len)
+fcb_put_len(const struct fcb *fcb, uint8_t *buf, uint16_t len)
 {
 	if (len < 0x80) {
-		buf[0] = len;
+		buf[0] = len ^ ~fcb->f_erase_value;
 		return 1;
 	} else if (len < FCB_MAX_LEN) {
-		buf[0] = (len & 0x7f) | 0x80;
-		buf[1] = len >> 7;
+		buf[0] = (len | 0x80) ^ ~fcb->f_erase_value;
+		buf[1] = (len >> 7) ^ ~fcb->f_erase_value;
 		return 2;
 	} else {
 		return -EINVAL;
@@ -211,18 +236,20 @@ fcb_put_len(uint8_t *buf, uint16_t len)
 }
 
 int
-fcb_get_len(uint8_t *buf, uint16_t *len)
+fcb_get_len(const struct fcb *fcb, uint8_t *buf, uint16_t *len)
 {
 	int rc;
 
-	if (buf[0] & 0x80) {
-		if (buf[0] == 0xff && buf[1] == 0xff) {
+	if ((buf[0] ^ ~fcb->f_erase_value) & 0x80) {
+		if ((buf[0] == fcb->f_erase_value) &&
+		    (buf[1] == fcb->f_erase_value)) {
 			return -ENOTSUP;
 		}
-		*len = (buf[0] & 0x7f) | (buf[1] << 7);
+		*len = ((buf[0] ^ ~fcb->f_erase_value) & 0x7f) |
+			((uint8_t)(buf[1] ^ ~fcb->f_erase_value) << 7);
 		rc = 2;
 	} else {
-		*len = buf[0];
+		*len = (uint8_t)(buf[0] ^ ~fcb->f_erase_value);
 		rc = 1;
 	}
 	return rc;
@@ -237,9 +264,9 @@ fcb_sector_hdr_init(struct fcb *fcb, struct flash_sector *sector, uint16_t id)
 	struct fcb_disk_area fda;
 	int rc;
 
-	fda.fd_magic = fcb->f_magic;
+	fda.fd_magic = fcb_flash_magic(fcb);
 	fda.fd_ver = fcb->f_version;
-	fda._pad = 0xff;
+	fda._pad = fcb->f_erase_value;
 	fda.fd_id = id;
 
 	rc = fcb_flash_write(fcb, sector, 0, &fda, sizeof(fda));
@@ -268,10 +295,10 @@ int fcb_sector_hdr_read(struct fcb *fcb, struct flash_sector *sector,
 	if (rc) {
 		return -EIO;
 	}
-	if (fdap->fd_magic == 0xffffffff) {
+	if (fdap->fd_magic == MK32(fcb->f_erase_value)) {
 		return 0;
 	}
-	if (fdap->fd_magic != fcb->f_magic) {
+	if (fdap->fd_magic != fcb_flash_magic(fcb)) {
 		return -ENOMSG;
 	}
 	return 1;

@@ -176,7 +176,7 @@ static int ipcp_ip_address_parse(struct ppp_fsm *fsm, struct net_pkt *pkt,
 }
 
 static const struct ppp_peer_option_info ipcp_peer_options[] = {
-	PPP_PEER_OPTION(IPCP_OPTION_IP_ADDRESS, ipcp_ip_address_parse),
+	PPP_PEER_OPTION(IPCP_OPTION_IP_ADDRESS, ipcp_ip_address_parse, NULL),
 };
 
 static int ipcp_config_info_req(struct ppp_fsm *fsm,
@@ -349,8 +349,10 @@ static void ipcp_down(struct ppp_fsm *fsm)
 	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
 					       ipcp.fsm);
 
-	if (ctx->is_ipcp_up) {
-		net_if_ipv4_addr_rm(ctx->iface, &ctx->ipcp.my_options.address);
+	/* Ensure address is always removed if it exists */
+	if (ctx->ipcp.my_options.address.s_addr) {
+		(void)net_if_ipv4_addr_rm(
+			ctx->iface, &ctx->ipcp.my_options.address);
 	}
 
 	memset(&ctx->ipcp.my_options.address, 0,

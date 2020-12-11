@@ -219,7 +219,7 @@ static uint32_t elapsed(void)
  *
  * @return N/A
  */
-static void timer_int_handler(void *unused)
+static void timer_int_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
 	uint32_t dticks;
@@ -277,7 +277,7 @@ static void timer_int_handler(void *unused)
  *
  * @return 0
  */
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 

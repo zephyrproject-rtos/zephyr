@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2019 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <xtensa/xtensa.dtsi>
+#include <dt-bindings/i2c/i2c.h>
+#include <mem.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "cadence,tensilica-xtensa-lx4";
+			reg = <0>;
+		};
+	};
+
+	sram0: memory@FF2C0000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0xFF2C0000 DT_SIZE_K(96)>;
+	};
+
+	sram1: memory@FF300000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0xFF300000 DT_SIZE_K(168)>;
+	};
+
+	soc {
+		core_intc: core_intc@0 {
+			compatible = "xtensa,core-intc";
+			reg = <0x00 0x400>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+		};
+
+		mailbox: mailbox@ff340018 {
+			compatible = "intel,intel-adsp-mailbox";
+			reg = <0xFF340018 0x30>;
+			interrupts = <0x7 0 3>;
+			interrupt-parent = <&core_intc>;
+			label = "IPM_0";
+		};
+	};
+};

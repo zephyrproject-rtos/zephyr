@@ -6,10 +6,11 @@
 
 /dts-v1/;
 #include <st/f4/stm32f407Xg.dtsi>
+#include <st/f4/stm32f407z(e-g)tx-pinctrl.dtsi>
 
 / {
 	model = "Olimex STM32-H407 board";
-	compatible = "olimex,stm32-h407", "st,stm32f407";
+	compatible = "olimex,stm32-h407";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -42,16 +43,19 @@
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart6 {
+	pinctrl-0 = <&usart6_tx_pc6 &usart6_rx_pc7>;
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -62,4 +66,8 @@
 
 &rng {
 	status = "okay";
+};
+
+&usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 };

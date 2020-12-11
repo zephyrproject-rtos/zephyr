@@ -35,9 +35,9 @@ typedef unsigned long log_arg_t;
 
 /** @brief Number of arguments in the log entry which fits in one chunk.*/
 #ifdef CONFIG_64BIT
-#define LOG_MSG_NARGS_SINGLE_CHUNK 4
+#define LOG_MSG_NARGS_SINGLE_CHUNK 4U
 #else
-#define LOG_MSG_NARGS_SINGLE_CHUNK 3
+#define LOG_MSG_NARGS_SINGLE_CHUNK 3U
 #endif
 
 /** @brief Number of arguments in the head of extended standard log message..*/
@@ -64,7 +64,7 @@ typedef unsigned long log_arg_t;
 #define ARGS_CONT_MSG (HEXDUMP_BYTES_CONT_MSG / sizeof(log_arg_t))
 
 /** @brief Flag indicating standard log message. */
-#define LOG_MSG_TYPE_STD 0
+#define LOG_MSG_TYPE_STD 0U
 
 /** @brief Flag indicating hexdump log message. */
 #define LOG_MSG_TYPE_HEXDUMP 1

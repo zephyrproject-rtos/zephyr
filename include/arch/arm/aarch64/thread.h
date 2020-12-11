@@ -34,14 +34,13 @@ struct _callee_saved {
 	uint64_t x27;
 	uint64_t x28;
 	uint64_t x29; /* FP */
-	uint64_t x30; /* LR */
 	uint64_t sp;
 };
 
 typedef struct _callee_saved _callee_saved_t;
 
 struct _thread_arch {
-	uint32_t swap_return_value;
+	/* empty */
 };
 
 typedef struct _thread_arch _thread_arch_t;

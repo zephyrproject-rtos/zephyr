@@ -5,7 +5,7 @@
 
 menuconfig STTS751
 	bool "STTS751 temperature sensor"
-	depends on (I2C && HAS_DTS_I2C)
+	depends on I2C
 	select HAS_STMEMSC
 	select USE_STDC_STTS751
 	help

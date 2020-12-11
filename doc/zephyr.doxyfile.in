@@ -223,6 +223,7 @@ TAB_SIZE               = 8
 ALIASES                = "rst=\verbatim embed:rst:leading-asterisk" \
                          "endrst=\endverbatim"
 
+ALIASES += option{1}="\verbatim embed:rst:inline :option:`\1` \endverbatim"
 ALIASES += req{1}="\ref ZEPH_\1 \"ZEPH-\1\" "
 ALIASES += satisfy{1}="\xrefitem satisfy \"Satisfies requirement\" \"Requirement Implementation\" \1"
 ALIASES += verify{1}="\xrefitem verify \"Verifies requirement\" \"Requirement Verification\" \1"
@@ -1965,10 +1966,10 @@ PREDEFINED             = "CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT" \
                          "CONFIG_BT_USER_PHY_UPDATE" \
                          "CONFIG_BT_SMP" \
                          "CONFIG_BT_SMP_APP_PAIRING_ACCEPT" \
-                         "CONFIG_DEVICE_POWER_MANAGEMENT" \
-                         "CONFIG_DEVICE_IDLE_PM" \
+                         "CONFIG_PM_DEVICE" \
+                         "CONFIG_PM_DEVICE_IDLE" \
                          "CONFIG_ERRNO" \
-                         "CONFIG_EXECUTION_BENCHMARKING" \
+                         "CONFIG_FLASH_JESD216_API" \
                          "CONFIG_FLASH_PAGE_LAYOUT" \
                          "CONFIG_FPU" \
                          "CONFIG_FPU_SHARING" \
@@ -1984,7 +1985,7 @@ PREDEFINED             = "CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT" \
                          "CONFIG_SMP" \
                          "CONFIG_SPI_ASYNC" \
                          "CONFIG_SYS_CLOCK_EXISTS" \
-                         "CONFIG_SYS_POWER_MANAGEMENT" \
+                         "CONFIG_PM" \
                          "CONFIG_THREAD_CUSTOM_DATA" \
                          "CONFIG_THREAD_MONITOR" \
                          "CONFIG_THREAD_STACK_INFO" \

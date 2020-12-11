@@ -7,6 +7,11 @@
  */
 
 #include <soc.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_pwr.h>
+#include <stm32_ll_rcc.h>
+#include <stm32_ll_system.h>
+#include <stm32_ll_utils.h>
 #include <drivers/clock_control.h>
 #include <sys/util.h>
 #include <sys/__assert.h>
@@ -43,7 +48,7 @@
  * So, changing this prescaler is not allowed until it is made possible to
  * use them independently in zephyr clock subsystem.
  */
-#error "AHB presacler can't be higher than 1"
+#error "AHB prescaler can't be higher than 1"
 #endif
 
 /**
@@ -77,7 +82,7 @@ static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 	return clock / prescaler;
 }
 
-static inline int stm32_clock_control_on(struct device *dev,
+static inline int stm32_clock_control_on(const struct device *dev,
 					 clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
@@ -129,7 +134,7 @@ static inline int stm32_clock_control_on(struct device *dev,
 }
 
 
-static inline int stm32_clock_control_off(struct device *dev,
+static inline int stm32_clock_control_off(const struct device *dev,
 					  clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
@@ -145,6 +150,7 @@ static inline int stm32_clock_control_off(struct device *dev,
 	defined(CONFIG_SOC_SERIES_STM32F4X) || \
 	defined(CONFIG_SOC_SERIES_STM32F7X) || \
 	defined(CONFIG_SOC_SERIES_STM32F2X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X)
 	case STM32_CLOCK_BUS_AHB2:
 		LL_AHB2_GRP1_DisableClock(pclken->enr);
@@ -167,11 +173,11 @@ static inline int stm32_clock_control_off(struct device *dev,
 		LL_APB2_GRP1_DisableClock(pclken->enr);
 		break;
 #endif /* CONFIG_SOC_SERIES_STM32F0X */
-#ifdef CONFIG_SOC_SERIES_STM32L0X
+#if defined (CONFIG_SOC_SERIES_STM32L0X) || defined (CONFIG_SOC_SERIES_STM32G0X)
 	case STM32_CLOCK_BUS_IOP:
 		LL_IOP_GRP1_DisableClock(pclken->enr);
 		break;
-#endif /* CONFIG_SOC_SERIES_STM32L0X */
+#endif /* CONFIG_SOC_SERIES_STM32L0X || CONFIG_SOC_SERIES_STM32G0X */
 	default:
 		return -ENOTSUP;
 	}
@@ -180,7 +186,7 @@ static inline int stm32_clock_control_off(struct device *dev,
 }
 
 
-static int stm32_clock_control_get_subsys_rate(struct device *clock,
+static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 						clock_control_subsys_t sub_system,
 						uint32_t *rate)
 {
@@ -204,9 +210,9 @@ static int stm32_clock_control_get_subsys_rate(struct device *clock,
 	switch (pclken->bus) {
 	case STM32_CLOCK_BUS_AHB1:
 	case STM32_CLOCK_BUS_AHB2:
-#ifdef CONFIG_SOC_SERIES_STM32L0X
+#if defined (CONFIG_SOC_SERIES_STM32L0X) || defined (CONFIG_SOC_SERIES_STM32G0X)
 	case STM32_CLOCK_BUS_IOP:
-#endif /* CONFIG_SOC_SERIES_STM32L0X */
+#endif /* (CONFIG_SOC_SERIES_STM32L0X) || defined (CONFIG_SOC_SERIES_STM32G0X) */
 		*rate = ahb_clock;
 		break;
 	case STM32_CLOCK_BUS_APB1:
@@ -283,7 +289,7 @@ static inline void stm32_clock_control_mco_init(void)
 #endif /* CONFIG_CLOCK_STM32_MCO2_SRC_NOCLOCK */
 }
 
-static int stm32_clock_control_init(struct device *dev)
+static int stm32_clock_control_init(const struct device *dev)
 {
 	LL_UTILS_ClkInitTypeDef s_ClkInitStruct;
 	uint32_t hclk_prescaler;
@@ -326,6 +332,20 @@ static int stm32_clock_control_init(struct device *dev)
 	 */
 	stm32_clock_switch_to_hsi(LL_RCC_SYSCLK_DIV_1);
 	LL_RCC_PLL_Disable();
+
+#ifdef CONFIG_SOC_SERIES_STM32F7X
+	 /* Assuming we stay on Power Scale default value: Power Scale 1 */
+	 if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > 180000000) {
+		 LL_PWR_EnableOverDriveMode();
+		 while (LL_PWR_IsActiveFlag_OD() != 1) {
+		 /* Wait for OverDrive mode ready */
+		 }
+		 LL_PWR_EnableOverDriveSwitching();
+		 while (LL_PWR_IsActiveFlag_ODSW() != 1) {
+		 /* Wait for OverDrive switch ready */
+		 }
+	 }
+#endif
 
 #ifdef CONFIG_CLOCK_STM32_PLL_Q_DIVISOR
 	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLQ,
@@ -471,6 +491,11 @@ static int stm32_clock_control_init(struct device *dev)
 	LL_RCC_MSI_EnableRangeSelection();
 	LL_RCC_MSI_SetRange(CONFIG_CLOCK_STM32_MSI_RANGE << RCC_CR_MSIRANGE_Pos);
 
+#if defined(CONFIG_CLOCK_STM32_MSI_PLL_MODE)
+	/* Enable MSI hardware auto calibration */
+	LL_RCC_MSI_EnablePLLMode();
+#endif
+
 	/* Enable MSI if not enabled */
 	if (LL_RCC_MSI_IsReady() != 1) {
 		/* Enable MSI */
@@ -478,10 +503,6 @@ static int stm32_clock_control_init(struct device *dev)
 		while (LL_RCC_MSI_IsReady() != 1) {
 		/* Wait for HSI ready */
 		}
-#ifdef CONFIG_CLOCK_STM32_MSI_PLL_MODE
-		/* Enable MSI hardware auto calibration */
-		LL_RCC_MSI_EnablePLLMode();
-#endif
 	}
 
 	/* Set MSI as SYSCLCK source */

@@ -23,17 +23,16 @@ struct imx_epit_data {
 	volatile void *user_data;
 };
 
-static inline const struct imx_epit_config *get_epit_config(struct device *dev)
+static inline const struct imx_epit_config *get_epit_config(const struct device *dev)
 {
-	return CONTAINER_OF(dev->config_info, struct imx_epit_config,
+	return CONTAINER_OF(dev->config, struct imx_epit_config,
 			    info);
 }
 
-static void imx_epit_isr(void *arg)
+static void imx_epit_isr(const struct device *dev)
 {
-	struct device *dev = (struct device *)arg;
 	EPIT_Type *base = get_epit_config(dev)->base;
-	struct imx_epit_data *driver_data = dev->driver_data;
+	struct imx_epit_data *driver_data = dev->data;
 
 	EPIT_ClearStatusFlag(base);
 
@@ -42,7 +41,7 @@ static void imx_epit_isr(void *arg)
 	}
 }
 
-static void imx_epit_init(struct device *dev)
+static void imx_epit_init(const struct device *dev)
 {
 	struct imx_epit_config *config = (struct imx_epit_config *)
 							   get_epit_config(dev);
@@ -61,7 +60,7 @@ static void imx_epit_init(struct device *dev)
 	EPIT_Init(base, &epit_config);
 }
 
-static int imx_epit_start(struct device *dev)
+static int imx_epit_start(const struct device *dev)
 {
 	EPIT_Type *base = get_epit_config(dev)->base;
 
@@ -77,7 +76,7 @@ static int imx_epit_start(struct device *dev)
 	return 0;
 }
 
-static int imx_epit_stop(struct device *dev)
+static int imx_epit_stop(const struct device *dev)
 {
 	EPIT_Type *base = get_epit_config(dev)->base;
 
@@ -87,7 +86,7 @@ static int imx_epit_stop(struct device *dev)
 	return 0;
 }
 
-static int imx_epit_get_value(struct device *dev, uint32_t *ticks)
+static int imx_epit_get_value(const struct device *dev, uint32_t *ticks)
 {
 	EPIT_Type *base = get_epit_config(dev)->base;
 
@@ -96,11 +95,11 @@ static int imx_epit_get_value(struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
-static int imx_epit_set_top_value(struct device *dev,
+static int imx_epit_set_top_value(const struct device *dev,
 				  const struct counter_top_cfg *cfg)
 {
 	EPIT_Type *base = get_epit_config(dev)->base;
-	struct imx_epit_data *driver_data = dev->driver_data;
+	struct imx_epit_data *driver_data = dev->data;
 
 	/* Disable EPIT Output Compare interrupt for consistency */
 	EPIT_SetIntCmd(base, false);
@@ -121,21 +120,21 @@ static int imx_epit_set_top_value(struct device *dev,
 	return 0;
 }
 
-static uint32_t imx_epit_get_pending_int(struct device *dev)
+static uint32_t imx_epit_get_pending_int(const struct device *dev)
 {
 	EPIT_Type *base = get_epit_config(dev)->base;
 
 	return EPIT_GetStatusFlag(base) ? 1U : 0U;
 }
 
-static uint32_t imx_epit_get_top_value(struct device *dev)
+static uint32_t imx_epit_get_top_value(const struct device *dev)
 {
 	EPIT_Type *base = get_epit_config(dev)->base;
 
 	return EPIT_GetCounterLoadValue(base);
 }
 
-static uint32_t imx_epit_get_max_relative_alarm(struct device *dev)
+static uint32_t imx_epit_get_max_relative_alarm(const struct device *dev)
 {
 	return COUNTER_MAX_RELOAD;
 }
@@ -151,7 +150,7 @@ static const struct counter_driver_api imx_epit_driver_api = {
 };
 
 #define COUNTER_IMX_EPIT_DEVICE(idx)					       \
-static int imx_epit_config_func_##idx(struct device *dev);		       \
+static int imx_epit_config_func_##idx(const struct device *dev);	       \
 static const struct imx_epit_config imx_epit_##idx##z_config = {	       \
 	.info = {							       \
 			.max_top_value = COUNTER_MAX_RELOAD,		       \
@@ -168,7 +167,7 @@ DEVICE_AND_API_INIT(epit_##idx, DT_INST_LABEL(idx),			       \
 		    &imx_epit_##idx##_data, &imx_epit_##idx##z_config.info,    \
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	       \
 		    &imx_epit_driver_api);				       \
-static int imx_epit_config_func_##idx(struct device *dev)		       \
+static int imx_epit_config_func_##idx(const struct device *dev)		       \
 {									       \
 	imx_epit_init(dev);						       \
 	IRQ_CONNECT(DT_INST_IRQN(idx),					       \

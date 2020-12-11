@@ -430,14 +430,25 @@ def analyze_die_array(die):
     for child in die.iter_children():
         if child.tag != "DW_TAG_subrange_type":
             continue
-        if "DW_AT_upper_bound" not in child.attributes:
-            continue
 
-        ub = child.attributes["DW_AT_upper_bound"]
-        if not ub.form.startswith("DW_FORM_data"):
-            continue
+        if "DW_AT_upper_bound" in child.attributes:
+            ub = child.attributes["DW_AT_upper_bound"]
 
-        elements.append(ub.value + 1)
+            if not ub.form.startswith("DW_FORM_data"):
+                continue
+
+            elements.append(ub.value + 1)
+        # in DWARF 4, e.g. ARC Metaware toolchain, DW_AT_count is used
+        # not DW_AT_upper_bound
+        elif "DW_AT_count" in child.attributes:
+            ub = child.attributes["DW_AT_count"]
+
+            if not ub.form.startswith("DW_FORM_data"):
+                continue
+
+            elements.append(ub.value)
+        else:
+            continue
 
     if not elements:
         if type_offset in type_env.keys():
@@ -700,7 +711,7 @@ struct z_object;
 # turned into a string, we told gperf to expect binary strings that are not
 # NULL-terminated.
 footer = """%%
-struct z_object *z_object_gperf_find(void *obj)
+struct z_object *z_object_gperf_find(const void *obj)
 {
     return z_object_lookup((const char *)obj, sizeof(void *));
 }
@@ -717,7 +728,7 @@ void z_object_gperf_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 }
 
 #ifndef CONFIG_DYNAMIC_OBJECTS
-struct z_object *z_object_find(void *obj)
+struct z_object *z_object_find(const void *obj)
 	ALIAS_OF(z_object_gperf_find);
 
 void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)

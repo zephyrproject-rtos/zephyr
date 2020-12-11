@@ -31,6 +31,22 @@
 #define _EXCEPTION_SECTION_NAME     exceptions
 #define _RESET_SECTION_NAME         reset
 
+#ifdef CONFIG_RISCV_PMP
+	#define MPU_MIN_SIZE 4
+	#define MPU_MIN_SIZE_ALIGN . = ALIGN(MPU_MIN_SIZE );
+	#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+		#define MPU_ALIGN(region_size) \
+			. = ALIGN(MPU_MIN_SIZE); \
+			. = ALIGN( 1 << LOG2CEIL(region_size))
+	#else
+		#define MPU_ALIGN(region_size) \
+			. = ALIGN(MPU_MIN_SIZE)
+	#endif
+#else
+	#define MPU_MIN_SIZE_ALIGN
+	#define MPU_ALIGN(region_size) . = ALIGN(4)
+#endif
+
 MEMORY
 {
 #ifdef CONFIG_XIP
@@ -106,11 +122,14 @@ SECTIONS
 		*(".text.*")
 		*(.gnu.linkonce.t.*)
 		*(.eh_frame)
+#include <linker/kobject-text.ld>
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
     _image_text_end = .;
 
+	_image_rodata_start = .;
 #include <linker/common-rom.ld>
+#include <linker/thread-local-storage.ld>
 
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 	{
@@ -120,58 +139,47 @@ SECTIONS
 		 *(.rodata)
 		 *(".rodata.*")
 		 *(.gnu.linkonce.r.*)
-
-/* Located in generated directory. This file is populated by the
- * zephyr_linker_sources() Cmake function.
- */
-#include <snippets-rodata.ld>
-
-	} GROUP_LINK_IN(ROMABLE_REGION)
-
-#include <linker/cplusplus-rom.ld>
-
-    _image_rom_end = .;
-    __data_rom_start = .;
-
-    GROUP_END(ROMABLE_REGION)
-
-    GROUP_START(RAMABLE_REGION)
-
-    SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
-	{
-		 . = ALIGN(4);
-		 _image_ram_start = .;
-		 __data_ram_start = .;
-
-		 *(.data)
-		 *(".data.*")
-
-		 *(.sdata .sdata.* .gnu.linkonce.s.*)
 		 *(.sdata2 .sdata2.* .gnu.linkonce.s2.*)
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
-#include <snippets-rwdata.ld>
+#include <snippets-rodata.ld>
+#include <linker/kobject-rom.ld>
+	. = ALIGN(4);
+	} GROUP_LINK_IN(ROMABLE_REGION)
 
-	}  GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#include <linker/cplusplus-rom.ld>
+	_image_rodata_end = .;
+	MPU_ALIGN(_image_rodata_end - _image_rom_start);
+	_image_rom_end = .;
+	_image_rom_size = _image_rom_end - _image_rom_start;
+    GROUP_END(ROMABLE_REGION)
 
-#include <linker/common-ram.ld>
+    GROUP_START(RAMABLE_REGION)
 
-/* Located in generated directory. This file is populated by the
- * zephyr_linker_sources() Cmake function.
- */
-#include <snippets-ram-sections.ld>
-    __data_ram_end = .;
+#if defined(CONFIG_USERSPACE)
+#define APP_SHARED_ALIGN MPU_MIN_SIZE_ALIGN
+#define SMEM_PARTITION_ALIGN MPU_ALIGN
+
+#include <app_smem.ld>
+
+	_image_ram_start = _app_smem_start;
+	_app_smem_size = _app_smem_end - _app_smem_start;
+	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
+#endif /* CONFIG_USERSPACE */
 
     SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
 	{
+		MPU_MIN_SIZE_ALIGN
 		/*
 		 * For performance, BSS section is assumed to be 4 byte aligned and
 		 * a multiple of 4 bytes
 		 */
 		 . = ALIGN(4);
 		 __bss_start = .;
+		 _image_ram_start = .;
+		__kernel_ram_start = .;
 		 *(.sbss)
 		 *(".sbss.*")
 		 *(.bss)
@@ -185,11 +193,44 @@ SECTIONS
 	}  GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
 #include <linker/common-noinit.ld>
-
 #include <linker/cplusplus-ram.ld>
+
+    SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
+	{
+		 . = ALIGN(4);
+		/* _image_ram_start = .; */
+		 __data_ram_start = .;
+
+		 *(.data)
+		 *(".data.*")
+
+		 *(.sdata .sdata.* .gnu.linkonce.s.*)
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-rwdata.ld>
+
+	}  GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	__data_rom_start = LOADADDR(_DATA_SECTION_NAME);
+
+#include <linker/common-ram.ld>
+#include <linker/kobject.ld>
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-ram-sections.ld>
+    __data_ram_end = .;
+
+    MPU_MIN_SIZE_ALIGN
 
      _image_ram_end = .;
      _end = .; /* end of image */
+
+	__kernel_ram_end = .;
+	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.

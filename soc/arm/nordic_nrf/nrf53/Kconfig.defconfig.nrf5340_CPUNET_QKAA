@@ -11,4 +11,11 @@ config SOC
 config NUM_IRQS
 	default 30
 
+config IEEE802154_NRF5
+	default y
+	depends on IEEE802154
+
+config HEAP_MEM_POOL_SIZE
+	default 4096 if NRF_802154_SER_RADIO
+
 endif # SOC_NRF5340_CPUNET_QKAA

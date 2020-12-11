@@ -47,13 +47,13 @@ static uint8_t dev_short_addr[SHORT_ADDRESS_SIZE];  /* Device Short Address */
 static uint8_t dev_ext_addr[EXTENDED_ADDRESS_SIZE]; /* Device Extended Address */
 
 /** Singleton device used in uart pipe callback */
-static struct device *upipe_dev;
+static const struct device *upipe_dev;
 
 #if defined(CONFIG_IEEE802154_UPIPE_HW_FILTER)
 
 static bool received_dest_addr_matched(uint8_t *rx_buffer)
 {
-	struct upipe_context *upipe = upipe_dev->driver_data;
+	struct upipe_context *upipe = upipe_dev->data;
 
 	/* Check destination PAN Id */
 	if (memcmp(&rx_buffer[PAN_ID_OFFSET],
@@ -108,7 +108,7 @@ static uint8_t *upipe_rx(uint8_t *buf, size_t *off)
 		goto done;
 	}
 
-	upipe = upipe_dev->driver_data;
+	upipe = upipe_dev->data;
 	if (!upipe->rx && *buf == UART_PIPE_RADIO_15_4_FRAME_TYPE) {
 		upipe->rx = true;
 		goto done;
@@ -177,16 +177,16 @@ done:
 	return buf;
 }
 
-static enum ieee802154_hw_caps upipe_get_capabilities(struct device *dev)
+static enum ieee802154_hw_caps upipe_get_capabilities(const struct device *dev)
 {
 	return IEEE802154_HW_FCS |
 		IEEE802154_HW_2_4_GHZ |
 		IEEE802154_HW_FILTER;
 }
 
-static int upipe_cca(struct device *dev)
+static int upipe_cca(const struct device *dev)
 {
-	struct upipe_context *upipe = dev->driver_data;
+	struct upipe_context *upipe = dev->data;
 
 	if (upipe->stopped) {
 		return -EIO;
@@ -195,7 +195,7 @@ static int upipe_cca(struct device *dev)
 	return 0;
 }
 
-static int upipe_set_channel(struct device *dev, uint16_t channel)
+static int upipe_set_channel(const struct device *dev, uint16_t channel)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(channel);
@@ -203,7 +203,7 @@ static int upipe_set_channel(struct device *dev, uint16_t channel)
 	return 0;
 }
 
-static int upipe_set_pan_id(struct device *dev, uint16_t pan_id)
+static int upipe_set_pan_id(const struct device *dev, uint16_t pan_id)
 {
 	uint8_t pan_id_le[2];
 
@@ -215,7 +215,7 @@ static int upipe_set_pan_id(struct device *dev, uint16_t pan_id)
 	return 0;
 }
 
-static int upipe_set_short_addr(struct device *dev, uint16_t short_addr)
+static int upipe_set_short_addr(const struct device *dev, uint16_t short_addr)
 {
 	uint8_t short_addr_le[2];
 
@@ -227,7 +227,8 @@ static int upipe_set_short_addr(struct device *dev, uint16_t short_addr)
 	return 0;
 }
 
-static int upipe_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
+static int upipe_set_ieee_addr(const struct device *dev,
+			       const uint8_t *ieee_addr)
 {
 	ARG_UNUSED(dev);
 
@@ -236,7 +237,7 @@ static int upipe_set_ieee_addr(struct device *dev, const uint8_t *ieee_addr)
 	return 0;
 }
 
-static int upipe_filter(struct device *dev,
+static int upipe_filter(const struct device *dev,
 			bool set,
 			enum ieee802154_filter_type type,
 			const struct ieee802154_filter *filter)
@@ -258,7 +259,7 @@ static int upipe_filter(struct device *dev,
 	return -ENOTSUP;
 }
 
-static int upipe_set_txpower(struct device *dev, int16_t dbm)
+static int upipe_set_txpower(const struct device *dev, int16_t dbm)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(dbm);
@@ -266,12 +267,12 @@ static int upipe_set_txpower(struct device *dev, int16_t dbm)
 	return 0;
 }
 
-static int upipe_tx(struct device *dev,
+static int upipe_tx(const struct device *dev,
 		    enum ieee802154_tx_mode mode,
 		    struct net_pkt *pkt,
 		    struct net_buf *frag)
 {
-	struct upipe_context *upipe = dev->driver_data;
+	struct upipe_context *upipe = dev->data;
 	uint8_t *pkt_buf = frag->data;
 	uint8_t len = frag->len;
 	uint8_t i, data;
@@ -300,9 +301,9 @@ static int upipe_tx(struct device *dev,
 	return 0;
 }
 
-static int upipe_start(struct device *dev)
+static int upipe_start(const struct device *dev)
 {
-	struct upipe_context *upipe = dev->driver_data;
+	struct upipe_context *upipe = dev->data;
 
 	if (!upipe->stopped) {
 		return -EALREADY;
@@ -313,9 +314,9 @@ static int upipe_start(struct device *dev)
 	return 0;
 }
 
-static int upipe_stop(struct device *dev)
+static int upipe_stop(const struct device *dev)
 {
-	struct upipe_context *upipe = dev->driver_data;
+	struct upipe_context *upipe = dev->data;
 
 	if (upipe->stopped) {
 		return -EALREADY;
@@ -326,9 +327,9 @@ static int upipe_stop(struct device *dev)
 	return 0;
 }
 
-static int upipe_init(struct device *dev)
+static int upipe_init(const struct device *dev)
 {
-	struct upipe_context *upipe = dev->driver_data;
+	struct upipe_context *upipe = dev->data;
 
 	(void)memset(upipe, 0, sizeof(struct upipe_context));
 
@@ -339,9 +340,9 @@ static int upipe_init(struct device *dev)
 	return 0;
 }
 
-static inline uint8_t *get_mac(struct device *dev)
+static inline uint8_t *get_mac(const struct device *dev)
 {
-	struct upipe_context *upipe = dev->driver_data;
+	struct upipe_context *upipe = dev->data;
 
 	upipe->mac_addr[0] = 0x00;
 	upipe->mac_addr[1] = 0x10;
@@ -363,8 +364,8 @@ static inline uint8_t *get_mac(struct device *dev)
 
 static void upipe_iface_init(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
-	struct upipe_context *upipe = dev->driver_data;
+	const struct device *dev = net_if_get_device(iface);
+	struct upipe_context *upipe = dev->data;
 	uint8_t *mac = get_mac(dev);
 
 	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);

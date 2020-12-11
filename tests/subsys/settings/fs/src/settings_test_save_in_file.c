@@ -8,13 +8,8 @@
 #include "settings_test.h"
 #include "settings/settings_file.h"
 
-#ifdef CONFIG_SETTINGS_USE_BASE64
-#define CF_FILE_CONTENT_1 "\x10\x00myfoo/mybar=CA=="
-#define CF_FILE_CONTENT_2 "\x10\x00myfoo/mybar=Kw=="
-#else
 #define CF_FILE_CONTENT_1 "\x0d\x00myfoo/mybar=\x08"
 #define CF_FILE_CONTENT_2 "\x0d\x00myfoo/mybar=\x2b"
-#endif
 
 void test_config_save_in_file(void)
 {

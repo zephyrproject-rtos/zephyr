@@ -6,10 +6,11 @@
 
 /dts-v1/;
 #include <st/f4/stm32f407Xg.dtsi>
+#include <st/f4/stm32f407v(e-g)tx-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F4DISCOVERY board";
-	compatible = "st,stm32f4discovery", "st,stm32f407";
+	compatible = "st,stm32f4discovery";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -44,7 +45,7 @@
 		compatible = "gpio-keys";
 		user_button: button {
 			label = "Key";
-			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -58,11 +59,13 @@
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -72,6 +75,7 @@
 
 	pwm2: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim2_ch1_pa0>;
 	};
 };
 
@@ -80,15 +84,18 @@
 };
 
 &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	status = "okay";
 };
 
 &can1 {
+	pinctrl-0 = <&can1_rx_pb8 &can1_tx_pb9>;
 	bus-speed = <125000>;
 	status = "disabled";
 };
 
 &can2 {
+	pinctrl-0 = <&can2_rx_pb5 &can2_tx_pb13>;
 	bus-speed = <125000>;
 	status = "okay";
 };

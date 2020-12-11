@@ -17,10 +17,10 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(BMA280, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline void setup_int1(struct device *dev,
+static inline void setup_int1(const struct device *dev,
 			      bool enable)
 {
-	struct bma280_data *data = dev->driver_data;
+	struct bma280_data *data = dev->data;
 
 	gpio_pin_interrupt_configure(data->gpio,
 				     DT_INST_GPIO_PIN(0, int1_gpios),
@@ -29,12 +29,12 @@ static inline void setup_int1(struct device *dev,
 				      : GPIO_INT_DISABLE));
 }
 
-int bma280_attr_set(struct device *dev,
+int bma280_attr_set(const struct device *dev,
 		    enum sensor_channel chan,
 		    enum sensor_attribute attr,
 		    const struct sensor_value *val)
 {
-	struct bma280_data *drv_data = dev->driver_data;
+	struct bma280_data *drv_data = dev->data;
 	uint64_t slope_th;
 
 	if (chan != SENSOR_CHAN_ACCEL_XYZ) {
@@ -67,7 +67,7 @@ int bma280_attr_set(struct device *dev,
 	return 0;
 }
 
-static void bma280_gpio_callback(struct device *dev,
+static void bma280_gpio_callback(const struct device *dev,
 				 struct gpio_callback *cb, uint32_t pins)
 {
 	struct bma280_data *drv_data =
@@ -84,10 +84,9 @@ static void bma280_gpio_callback(struct device *dev,
 #endif
 }
 
-static void bma280_thread_cb(void *arg)
+static void bma280_thread_cb(const struct device *dev)
 {
-	struct device *dev = arg;
-	struct bma280_data *drv_data = dev->driver_data;
+	struct bma280_data *drv_data = dev->data;
 	uint8_t status = 0U;
 	int err = 0;
 
@@ -126,16 +125,11 @@ static void bma280_thread_cb(void *arg)
 }
 
 #ifdef CONFIG_BMA280_TRIGGER_OWN_THREAD
-static void bma280_thread(int dev_ptr, int unused)
+static void bma280_thread(struct bma280_data *drv_data)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct bma280_data *drv_data = dev->driver_data;
-
-	ARG_UNUSED(unused);
-
 	while (1) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
-		bma280_thread_cb(dev);
+		bma280_thread_cb(drv_data->dev);
 	}
 }
 #endif
@@ -150,11 +144,11 @@ static void bma280_work_cb(struct k_work *work)
 }
 #endif
 
-int bma280_trigger_set(struct device *dev,
+int bma280_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
-	struct bma280_data *drv_data = dev->driver_data;
+	struct bma280_data *drv_data = dev->data;
 
 	if (trig->type == SENSOR_TRIG_DATA_READY) {
 		/* disable data ready interrupt while changing trigger params */
@@ -209,9 +203,9 @@ int bma280_trigger_set(struct device *dev,
 	return 0;
 }
 
-int bma280_init_interrupt(struct device *dev)
+int bma280_init_interrupt(const struct device *dev)
 {
-	struct bma280_data *drv_data = dev->driver_data;
+	struct bma280_data *drv_data = dev->data;
 
 	/* set latched interrupts */
 	if (i2c_reg_write_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
@@ -285,8 +279,8 @@ int bma280_init_interrupt(struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_BMA280_THREAD_STACK_SIZE,
-			(k_thread_entry_t)bma280_thread, dev,
-			0, NULL, K_PRIO_COOP(CONFIG_BMA280_THREAD_PRIORITY),
+			(k_thread_entry_t)bma280_thread, drv_data,
+			NULL, NULL, K_PRIO_COOP(CONFIG_BMA280_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_BMA280_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = bma280_work_cb;

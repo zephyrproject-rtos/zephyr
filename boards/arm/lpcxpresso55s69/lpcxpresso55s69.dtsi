@@ -45,10 +45,10 @@
 				<5 0 &gpio0 26 0>,	/* MOSI */
 							/* +3.3V */
 							/* GND */
-				<6 0 &gpio1 15 0>,	/* PWM  */
+				<6 0 &gpio1 5 0>,	/* PWM  */
 				<7 0 &gpio1 18 0>,	/* INT  */
-				<8 0 &gpio0 27 0>,	/* RX   */
-				<9 0 &gpio1 24 0>,	/* TX   */
+				<8 0 &gpio1 24 0>,	/* RX   */
+				<9 0 &gpio0 27 0>,	/* TX   */
 				<10 0 &gpio1 20 0>,	/* SCL  */
 				<11 0 &gpio1 21 0>;	/* SDA  */
 							/* +5V */
@@ -60,7 +60,7 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0 0 &gpio0 15 0>,	/* A0 */
+		gpio-map =	<0 0 &gpio0 16 0>,	/* A0 */
 				<1 0 &gpio0 23 0>,	/* A1 */
 				<2 0 &gpio0 0 0>,	/* A2 */
 				<3 0 &gpio1 31 0>,	/* A3 */
@@ -69,13 +69,13 @@
 				<6 0 &gpio1 24 0>,	/* D0 */
 				<7 0 &gpio0 27 0>,	/* D1 */
 				<8 0 &gpio0 15 0>,	/* D2 */
-				<9 0 &gpio1 15 0>,	/* D3 */
-				<10 0 &gpio1 17 0>,	/* D4 */
-				<11 0 &gpio1 14 0>,	/* D5 */
+				<9 0 &gpio1 6 0>,	/* D3 */
+				<10 0 &gpio1 7 0>,	/* D4 */
+				<11 0 &gpio1 4 0>,	/* D5 */
 				<12 0 &gpio1 10 0>,	/* D6 */
 				<13 0 &gpio1 9 0>,	/* D7 */
-				<14 0 &gpio1 5 0>,	/* D8 */
-				<15 0 &gpio1 8 0>,	/* D9 */
+				<14 0 &gpio1 8 0>,	/* D8 */
+				<15 0 &gpio1 5 0>,	/* D9 */
 				<16 0 &gpio1 1 0>,	/* D10 */
 				<17 0 &gpio0 26 0>,	/* D11 */
 				<18 0 &gpio1 3 0>,	/* D12 */
@@ -88,6 +88,65 @@
 &flexcomm0 {
 	compatible = "nxp,lpc-usart";
 	current-speed = <115200>;
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		/* Please enable mcuboot's swap move, no scratch */
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00008000>;
+			read-only;
+		};
+		slot0_partition: partition@8000 {
+			label = "image-0";
+			reg = <0x00008000 0x00028000>;
+		};
+		slot1_partition: partition@30000 {
+			label = "image-1";
+			reg = <0x00030000 0x00018000>;
+		};
+		slot2_partition: partition@48000 {
+			label = "image-2";
+			reg = <0x00048000 0x00028000>;
+		};
+		slot3_partition: partition@70000 {
+			label = "image-3";
+			reg = <0x00070000 0x00018000>;
+		};
+		/*
+		 * The flash starting at 0x88000 and ending at
+		 * 0x949FF is reserved for the application.
+		 */
+		storage_partition: partition@88000 {
+			label = "storage";
+			reg = <0x00088000 0x0000ca00>;
+		};
+	};
+};
+
+&sram {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* RAM split used by TFM */
+		secure_ram: partition@20000000 {
+			label = "secure-memory";
+			reg = <0x20000000 DT_SIZE_K(136)>;
+		};
+
+		non_secure_ram: partition@20022000 {
+			label = "non-secure-memory";
+			reg = <0x20022000 DT_SIZE_K(136)>;
+		};
+	};
 };
 
 arduino_i2c: &flexcomm4 {

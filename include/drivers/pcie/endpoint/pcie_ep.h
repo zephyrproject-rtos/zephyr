@@ -57,16 +57,23 @@ enum pcie_reset {
 typedef void (*pcie_ep_reset_callback_t)(void *arg);
 
 struct pcie_ep_driver_api {
-	int (*conf_read)(struct device *dev, uint32_t offset, uint32_t *data);
-	void (*conf_write)(struct device *dev, uint32_t offset, uint32_t data);
-	int (*map_addr)(struct device *dev, uint64_t pcie_addr,
+	int (*conf_read)(const struct device *dev, uint32_t offset,
+			 uint32_t *data);
+	void (*conf_write)(const struct device *dev, uint32_t offset,
+			   uint32_t data);
+	int (*map_addr)(const struct device *dev, uint64_t pcie_addr,
 			uint64_t *mapped_addr, uint32_t size,
 			enum pcie_ob_mem_type ob_mem_type);
-	void (*unmap_addr)(struct device *dev, uint64_t mapped_addr);
-	int (*raise_irq)(struct device *dev, enum pci_ep_irq_type irq_type,
+	void (*unmap_addr)(const struct device *dev, uint64_t mapped_addr);
+	int (*raise_irq)(const struct device *dev,
+			 enum pci_ep_irq_type irq_type,
 			 uint32_t irq_num);
-	int (*register_reset_cb)(struct device *dev, enum pcie_reset reset,
+	int (*register_reset_cb)(const struct device *dev,
+				 enum pcie_reset reset,
 				 pcie_ep_reset_callback_t cb, void *arg);
+	int (*dma_xfer)(const struct device *dev, uint64_t mapped_addr,
+			uintptr_t local_addr, uint32_t size,
+			enum xfer_direction dir);
 };
 
 /**
@@ -81,11 +88,11 @@ struct pcie_ep_driver_api {
  * @return 0 if successful, negative errno code if failure.
  */
 
-static inline int pcie_ep_conf_read(struct device *dev,
+static inline int pcie_ep_conf_read(const struct device *dev,
 				    uint32_t offset, uint32_t *data)
 {
 	const struct pcie_ep_driver_api *api =
-			(const struct pcie_ep_driver_api *)dev->driver_api;
+			(const struct pcie_ep_driver_api *)dev->api;
 
 	return api->conf_read(dev, offset, data);
 }
@@ -102,11 +109,11 @@ static inline int pcie_ep_conf_read(struct device *dev,
  * @return N/A
  */
 
-static inline void pcie_ep_conf_write(struct device *dev,
+static inline void pcie_ep_conf_write(const struct device *dev,
 				      uint32_t offset, uint32_t data)
 {
 	const struct pcie_ep_driver_api *api =
-			(const struct pcie_ep_driver_api *)dev->driver_api;
+			(const struct pcie_ep_driver_api *)dev->api;
 
 	api->conf_write(dev, offset, data);
 }
@@ -136,12 +143,13 @@ static inline void pcie_ep_conf_write(struct device *dev,
  * @return Negative errno code if failure.
  */
 
-static inline int pcie_ep_map_addr(struct device *dev, uint64_t pcie_addr,
+static inline int pcie_ep_map_addr(const struct device *dev,
+				   uint64_t pcie_addr,
 				   uint64_t *mapped_addr, uint32_t size,
 				   enum pcie_ob_mem_type ob_mem_type)
 {
 	const struct pcie_ep_driver_api *api =
-			(const struct pcie_ep_driver_api *)dev->driver_api;
+			(const struct pcie_ep_driver_api *)dev->api;
 
 	return api->map_addr(dev, pcie_addr, mapped_addr, size, ob_mem_type);
 }
@@ -159,10 +167,11 @@ static inline int pcie_ep_map_addr(struct device *dev, uint64_t pcie_addr,
  * @return      N/A
  */
 
-static inline void pcie_ep_unmap_addr(struct device *dev, uint64_t mapped_addr)
+static inline void pcie_ep_unmap_addr(const struct device *dev,
+				      uint64_t mapped_addr)
 {
 	const struct pcie_ep_driver_api *api =
-			(const struct pcie_ep_driver_api *)dev->driver_api;
+			(const struct pcie_ep_driver_api *)dev->api;
 
 	api->unmap_addr(dev, mapped_addr);
 }
@@ -179,12 +188,12 @@ static inline void pcie_ep_unmap_addr(struct device *dev, uint64_t mapped_addr)
  * @return 0 if successful, negative errno code if failure.
  */
 
-static inline int pcie_ep_raise_irq(struct device *dev,
+static inline int pcie_ep_raise_irq(const struct device *dev,
 				    enum pci_ep_irq_type irq_type,
 				    uint32_t irq_num)
 {
 	const struct pcie_ep_driver_api *api =
-			(const struct pcie_ep_driver_api *)dev->driver_api;
+			(const struct pcie_ep_driver_api *)dev->api;
 	return api->raise_irq(dev, irq_type, irq_num);
 }
 
@@ -203,16 +212,51 @@ static inline int pcie_ep_raise_irq(struct device *dev,
  * @return 0 if successful, negative errno code if failure.
  */
 
-static inline int pcie_ep_register_reset_cb(struct device *dev,
+static inline int pcie_ep_register_reset_cb(const struct device *dev,
 					    enum pcie_reset reset,
 					    pcie_ep_reset_callback_t cb,
 					    void *arg)
 {
 	const struct pcie_ep_driver_api *api =
-			(const struct pcie_ep_driver_api *)dev->driver_api;
+			(const struct pcie_ep_driver_api *)dev->api;
 
 	if (api->register_reset_cb) {
 		return api->register_reset_cb(dev, reset, cb, arg);
+	}
+
+	return -ENOTSUP;
+}
+
+/**
+ * @brief Data transfer between mapped Host memory and device memory with
+ *	  "System DMA". The term "System DMA" is used to clarify that we
+ *	  are not talking about dedicated "PCIe DMA"; rather the one
+ *	  which does not understand PCIe address directly, and
+ *	  uses the mapped Host memory.
+ *
+ * @details If DMA controller is available in the EP device, this API can be
+ *	    used to achieve data transfer between mapped Host memory,
+ *	    i.e. outbound memory and EP device's local memory with DMA
+ *
+ * @param   dev         Pointer to the device structure for the driver instance
+ * @param   mapped_addr Mapped Host memory address
+ * @param   local_addr  Device memory address
+ * @param   size        DMA transfer length (bytes)
+ * @param   dir         Direction of DMA transfer
+ *
+ * @return 0 if successful, negative errno code if failure.
+ */
+
+static inline int pcie_ep_dma_xfer(const struct device *dev,
+				   uint64_t mapped_addr,
+				   uintptr_t local_addr, uint32_t size,
+				   const enum xfer_direction dir)
+{
+	const struct pcie_ep_driver_api *api =
+			(const struct pcie_ep_driver_api *)dev->api;
+
+	if (api->dma_xfer) {
+		return api->dma_xfer(dev, mapped_addr, local_addr, size, dir);
 	}
 
 	return -ENOTSUP;
@@ -223,10 +267,44 @@ static inline int pcie_ep_register_reset_cb(struct device *dev,
  *
  * @details Helper API to achieve data transfer with memcpy
  *          through PCIe outbound memory
+ *
+ * @param dev         Pointer to the device structure for the driver instance
+ * @param pcie_addr   Host memory buffer address
+ * @param local_addr  Local memory buffer address
+ * @param size        Data transfer size (bytes)
+ * @param ob_mem_type Hint if lowmem/highmem outbound region has to be used
+ *                    (PCIE_OB_LOWMEM / PCIE_OB_HIGHMEM / PCIE_OB_ANYMEM),
+ *                    should be PCIE_OB_LOWMEM if bus master cannot generate
+ *                    more than 32-bit address
+ * @param dir         Data transfer direction (HOST_TO_DEVICE / DEVICE_TO_HOST)
+ *
+ * @return 0 if successful, negative errno code if failure.
  */
-int pcie_ep_xfer_data_memcpy(struct device *dev, uint64_t pcie_addr,
+int pcie_ep_xfer_data_memcpy(const struct device *dev, uint64_t pcie_addr,
 			     uintptr_t *local_addr, uint32_t size,
 			     enum pcie_ob_mem_type ob_mem_type,
 			     enum xfer_direction dir);
+
+/**
+ * @brief Data transfer using system DMA
+ *
+ * @details Helper API to achieve data transfer with system DMA through PCIe
+ *          outbound memory, this API is based off pcie_ep_xfer_data_memcpy,
+ *          here we use "system dma" instead of memcpy
+ *
+ * @param dev         Pointer to the device structure for the driver instance
+ * @param pcie_addr   Host memory buffer address
+ * @param local_addr  Local memory buffer address
+ * @param size        Data transfer size (bytes)
+ * @param ob_mem_type Hint if lowmem/highmem outbound region has to be used
+ *                    (PCIE_OB_LOWMEM / PCIE_OB_HIGHMEM / PCIE_OB_ANYMEM)
+ * @param dir         Data transfer direction (HOST_TO_DEVICE / DEVICE_TO_HOST)
+ *
+ * @return 0 if successful, negative errno code if failure.
+ */
+int pcie_ep_xfer_data_dma(const struct device *dev, uint64_t pcie_addr,
+			  uintptr_t *local_addr, uint32_t size,
+			  enum pcie_ob_mem_type ob_mem_type,
+			  enum xfer_direction dir);
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_PCIE_EP_H_ */

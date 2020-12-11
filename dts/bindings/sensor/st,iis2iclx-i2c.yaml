@@ -1,0 +1,30 @@
+# Copyright (c) 2020 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STMicroelectronics IIS2ICLX 2-axis accelerometer sensor
+    accessed through I2C bus
+
+compatible: "st,iis2iclx"
+
+include: i2c-device.yaml
+
+properties:
+    drdy-gpios:
+      type: phandle-array
+      required: false
+      description: DRDY pin
+
+        This pin defaults to active high when produced by the sensor.
+        The property value should ensure the flags properly describe
+        the signal that is presented to the driver.
+
+    int-pin:
+      type: int
+      required: false
+      default: 1
+      description: Device INT pin number (1 or 2)
+
+        This number represents which of the two interrupt pins
+        (INT1 or INT2) the line is attached to. This property is not
+        mandatory and if not present it defaults to 1.

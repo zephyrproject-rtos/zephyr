@@ -75,11 +75,12 @@ static void set_millis(struct sensor_value *val, int val_millis)
  * @return 0 if successful
  * @return -ENOTSUP for unsupported channels
  */
-static int max17055_channel_get(struct device *dev, enum sensor_channel chan,
+static int max17055_channel_get(const struct device *dev,
+				enum sensor_channel chan,
 				struct sensor_value *valp)
 {
-	const struct max17055_config *const config = dev->config_info;
-	struct max17055_data *const priv = dev->driver_data;
+	const struct max17055_config *const config = dev->config;
+	struct max17055_data *const priv = dev->data;
 	unsigned int tmp;
 
 	switch (chan) {
@@ -158,9 +159,10 @@ static int max17055_channel_get(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int max17055_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int max17055_sample_fetch(const struct device *dev,
+				 enum sensor_channel chan)
 {
-	struct max17055_data *priv = dev->driver_data;
+	struct max17055_data *priv = dev->data;
 	struct {
 		int reg_addr;
 		int16_t *dest;
@@ -197,10 +199,10 @@ static int max17055_sample_fetch(struct device *dev, enum sensor_channel chan)
  * @return 0 for success
  * @return -EINVAL if the I2C controller could not be found
  */
-static int max17055_gauge_init(struct device *dev)
+static int max17055_gauge_init(const struct device *dev)
 {
-	struct max17055_data *priv = dev->driver_data;
-	const struct max17055_config *const config = dev->config_info;
+	struct max17055_data *priv = dev->data;
+	const struct max17055_config *const config = dev->config;
 
 	priv->i2c = device_get_binding(config->bus_name);
 	if (!priv->i2c) {

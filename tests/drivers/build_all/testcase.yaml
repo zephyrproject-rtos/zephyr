@@ -18,43 +18,43 @@ tests:
     build_only: true
     extra_args: CONF_FILE=sensors_trigger_a_h.conf
     min_ram: 32
-    platform_exclude:  frdm_kw41z
+    platform_exclude:  frdm_kw41z serpente
     tags: drivers
     depends_on: adc spi
   sensors.build.trigger_i_z:
     build_only: true
     extra_args: CONF_FILE=sensors_trigger_i_z.conf
     min_ram: 32
-    platform_exclude:  frdm_kw41z
+    platform_exclude:  frdm_kw41z serpente
     tags: drivers
-    depends_on: adc spi
+    depends_on: gpio adc spi
   sensors.build.a_h:
     build_only: true
     extra_args: CONF_FILE=sensors_a_h.conf
     min_flash: 44
     min_ram: 32
-    platform_exclude:  frdm_kw41z
+    platform_exclude:  frdm_kw41z serpente
     tags: drivers
     depends_on: adc spi
   sensors.build.i_z:
     build_only: true
     extra_args: CONF_FILE=sensors_i_z.conf
     min_ram: 32
-    platform_exclude:  frdm_kw41z
+    platform_exclude:  frdm_kw41z serpente
     tags: drivers
-    depends_on: adc spi
+    depends_on: gpio adc spi
   sensors.build.stmemsc:
     build_only: true
     extra_args: CONF_FILE=sensors_stmemsc.conf
     min_ram: 32
-    platform_exclude:  frdm_kw41z
+    platform_exclude:  frdm_kw41z serpente
     tags: drivers
     depends_on: adc spi
   sensors.build.stmemsc_trigger:
     build_only: true
     extra_args: CONF_FILE=sensors_stmemsc_trigger.conf
     min_ram: 32
-    platform_exclude:  frdm_kw41z
+    platform_exclude:  frdm_kw41z serpente
     tags: drivers
     depends_on: adc spi
   drivers.clock.build:
@@ -65,9 +65,42 @@ tests:
     build_only: true
     extra_args: CONF_FILE=gpio.conf
     min_ram: 32
+    platform_exclude: serpente
     depends_on: gpio spi
   drivers.eeprom.build:
     build_only: true
     extra_args: CONF_FILE=eeprom.conf
     min_ram: 32
+    platform_exclude: serpente
     depends_on: gpio i2c spi
+  drivers.adc.build:
+    build_only: true
+    extra_args: CONF_FILE=adc.conf
+    min_ram: 32
+    depends_on: adc spi
+    platform_exclude: serpente
+  drivers.dac.build:
+    build_only: true
+    extra_args: CONF_FILE=dac.conf
+    min_ram: 32
+    depends_on: dac spi
+  drivers.modem.build:
+    build_only: true
+    extra_args: CONF_FILE=modem.conf
+    platform_exclude: serpente particle_boron
+    tags: drivers
+  drivers.modem.ublox_sara.build:
+    build_only: true
+    extra_args: CONF_FILE=modem_ublox_sara.conf
+    platform_exclude: serpente pinnacle_100_dvk
+    tags: drivers
+  drivers.modem.quectel_bg9x.build:
+    build_only: true
+    extra_args: CONF_FILE=modem_quectel_bg9x.conf
+    platform_exclude: serpente pinnacle_100_dvk
+    tags: drivers
+  drivers.xlnx.build:
+    build_only: true
+    extra_args: CONF_FILE=xlnx.conf
+    platform_allow: arty_a7_arm_designstart_m1
+    tags: drivers

@@ -14,8 +14,8 @@ to add and remove a limited number of integer data values.
 Concepts
 ********
 
-Any number of stacks can be defined. Each stack is referenced
-by its memory address.
+Any number of stacks can be defined (limited only by available RAM). Each stack
+is referenced by its memory address.
 
 A stack has the following key properties:
 
@@ -55,9 +55,9 @@ Implementation
 Defining a Stack
 ================
 
-A stack is defined using a variable of type :c:type:`k_stack`.
-It must then be initialized by calling :cpp:func:`k_stack_init()` or
-:cpp:func:`k_stack_alloc_init()`. In the latter case, a buffer is not
+A stack is defined using a variable of type :c:struct:`k_stack`.
+It must then be initialized by calling :c:func:`k_stack_init` or
+:c:func:`k_stack_alloc_init`. In the latter case, a buffer is not
 provided and it is instead allocated from the calling thread's resource
 pool.
 
@@ -86,7 +86,7 @@ that the macro defines both the stack and its array of data values.
 Pushing to a Stack
 ==================
 
-A data item is added to a stack by calling :cpp:func:`k_stack_push()`.
+A data item is added to a stack by calling :c:func:`k_stack_push`.
 
 The following code builds on the example above, and shows how a thread
 can create a pool of data structures by saving their memory addresses
@@ -109,7 +109,7 @@ in a stack.
 Popping from a Stack
 ====================
 
-A data item is taken from a stack by calling :cpp:func:`k_stack_pop()`.
+A data item is taken from a stack by calling :c:func:`k_stack_pop`.
 
 The following code builds on the example above, and shows how a thread
 can dynamically allocate an unused data structure.

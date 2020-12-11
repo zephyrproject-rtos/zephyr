@@ -22,10 +22,10 @@ LOG_MODULE_REGISTER(BMG160, CONFIG_SENSOR_LOG_LEVEL);
 
 struct bmg160_device_data bmg160_data;
 
-static inline int bmg160_bus_config(struct device *dev)
+static inline int bmg160_bus_config(const struct device *dev)
 {
-	const struct bmg160_device_config *dev_cfg = dev->config_info;
-	struct bmg160_device_data *bmg160 = dev->driver_data;
+	const struct bmg160_device_config *dev_cfg = dev->config;
+	struct bmg160_device_data *bmg160 = dev->data;
 	uint32_t i2c_cfg;
 
 	i2c_cfg = I2C_MODE_MASTER | I2C_SPEED_SET(dev_cfg->i2c_speed);
@@ -33,11 +33,11 @@ static inline int bmg160_bus_config(struct device *dev)
 	return i2c_configure(bmg160->i2c, i2c_cfg);
 }
 
-int bmg160_read(struct device *dev, uint8_t reg_addr, uint8_t *data,
+int bmg160_read(const struct device *dev, uint8_t reg_addr, uint8_t *data,
 		uint8_t len)
 {
-	const struct bmg160_device_config *dev_cfg = dev->config_info;
-	struct bmg160_device_data *bmg160 = dev->driver_data;
+	const struct bmg160_device_config *dev_cfg = dev->config;
+	struct bmg160_device_data *bmg160 = dev->data;
 	int ret = 0;
 
 	bmg160_bus_config(dev);
@@ -54,16 +54,18 @@ int bmg160_read(struct device *dev, uint8_t reg_addr, uint8_t *data,
 	return ret;
 }
 
-int bmg160_read_byte(struct device *dev, uint8_t reg_addr, uint8_t *byte)
+int bmg160_read_byte(const struct device *dev, uint8_t reg_addr,
+		     uint8_t *byte)
 {
 	return bmg160_read(dev, reg_addr, byte, 1);
 }
 
-static int bmg160_write(struct device *dev, uint8_t reg_addr, uint8_t *data,
+static int bmg160_write(const struct device *dev, uint8_t reg_addr,
+			uint8_t *data,
 			uint8_t len)
 {
-	const struct bmg160_device_config *dev_cfg = dev->config_info;
-	struct bmg160_device_data *bmg160 = dev->driver_data;
+	const struct bmg160_device_config *dev_cfg = dev->config;
+	struct bmg160_device_data *bmg160 = dev->data;
 	int ret = 0;
 
 	bmg160_bus_config(dev);
@@ -80,16 +82,18 @@ static int bmg160_write(struct device *dev, uint8_t reg_addr, uint8_t *data,
 	return ret;
 }
 
-int bmg160_write_byte(struct device *dev, uint8_t reg_addr, uint8_t byte)
+int bmg160_write_byte(const struct device *dev, uint8_t reg_addr,
+		      uint8_t byte)
 {
 	return bmg160_write(dev, reg_addr, &byte, 1);
 }
 
-int bmg160_update_byte(struct device *dev, uint8_t reg_addr, uint8_t mask,
+int bmg160_update_byte(const struct device *dev, uint8_t reg_addr,
+		       uint8_t mask,
 		       uint8_t value)
 {
-	const struct bmg160_device_config *dev_cfg = dev->config_info;
-	struct bmg160_device_data *bmg160 = dev->driver_data;
+	const struct bmg160_device_config *dev_cfg = dev->config;
+	struct bmg160_device_data *bmg160 = dev->data;
 	int ret = 0;
 
 	bmg160_bus_config(dev);
@@ -128,11 +132,11 @@ static int bmg160_is_val_valid(int16_t val, const int16_t *val_map,
 	return -1;
 }
 
-static int bmg160_attr_set(struct device *dev, enum sensor_channel chan,
+static int bmg160_attr_set(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
 {
-	struct bmg160_device_data *bmg160 = dev->driver_data;
+	struct bmg160_device_data *bmg160 = dev->data;
 	int idx;
 	uint16_t range_dps;
 
@@ -188,9 +192,10 @@ static int bmg160_attr_set(struct device *dev, enum sensor_channel chan,
 	}
 }
 
-static int bmg160_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int bmg160_sample_fetch(const struct device *dev,
+			       enum sensor_channel chan)
 {
-	struct bmg160_device_data *bmg160 = dev->driver_data;
+	struct bmg160_device_data *bmg160 = dev->data;
 	union {
 		uint8_t raw[7];
 		struct {
@@ -229,10 +234,11 @@ static void bmg160_to_fixed_point(struct bmg160_device_data *bmg160,
 	}
 }
 
-static int bmg160_channel_get(struct device *dev, enum sensor_channel chan,
+static int bmg160_channel_get(const struct device *dev,
+			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	struct bmg160_device_data *bmg160 = dev->driver_data;
+	struct bmg160_device_data *bmg160 = dev->data;
 	int16_t raw_val;
 	int i;
 
@@ -271,10 +277,10 @@ static const struct sensor_driver_api bmg160_api = {
 	.channel_get = bmg160_channel_get,
 };
 
-int bmg160_init(struct device *dev)
+int bmg160_init(const struct device *dev)
 {
-	const struct bmg160_device_config *cfg = dev->config_info;
-	struct bmg160_device_data *bmg160 = dev->driver_data;
+	const struct bmg160_device_config *cfg = dev->config;
+	struct bmg160_device_data *bmg160 = dev->data;
 	uint8_t chip_id = 0U;
 	uint16_t range_dps;
 

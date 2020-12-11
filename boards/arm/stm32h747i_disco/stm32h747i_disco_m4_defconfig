@@ -18,10 +18,12 @@ CONFIG_CLOCK_CONTROL=y
 # Enable MPU
 CONFIG_ARM_MPU=y
 
-# By default SERIAL peripherals are assigned to m7
+# Enable HW stack protection
+CONFIG_HW_STACK_PROTECTION=y
 
 # enable uart driver
-#CONFIG_SERIAL=y
-# console
+CONFIG_SERIAL=y
+
+# By default CONSOLE is assigned to m7
 #CONFIG_CONSOLE=y
 #CONFIG_UART_CONSOLE=y

@@ -8,6 +8,7 @@ config SOC_SERIES_LPC55XXX
 	select ARM
 	select HAS_MCUX
 	select HAS_MCUX_FLEXCOMM
+	select HAS_MCUX_SYSCON
 	select HAS_MCUX_RNG
 	select HAS_MCUX_WWDT
 	select SOC_FAMILY_LPC

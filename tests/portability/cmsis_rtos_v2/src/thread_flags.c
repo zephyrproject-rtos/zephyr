@@ -126,7 +126,7 @@ void test_thread_flags_signalled(void)
 }
 
 /* IRQ offload function handler to set Thread flag */
-static void offload_function(void *param)
+static void offload_function(const void *param)
 {
 	int flags;
 
@@ -143,7 +143,7 @@ void test_thread_flags_from_isr(void *thread_id)
 	uint32_t flags;
 
 	/**TESTPOINT: Offload to IRQ context*/
-	irq_offload(offload_function, (void *)osThreadGetId());
+	irq_offload(offload_function, (const void *)osThreadGetId());
 
 	flags = osThreadFlagsWait(ISR_FLAG, osFlagsWaitAll, TIMEOUT_TICKS);
 	zassert_equal((flags & ISR_FLAG),

@@ -45,7 +45,7 @@ static int16_t in_event;
 static int16_t out_event;
 
 static inline void mgmt_push_event(uint32_t mgmt_event, struct net_if *iface,
-				   void *info, size_t length)
+				   const void *info, size_t length)
 {
 	int16_t i_idx;
 
@@ -335,7 +335,7 @@ void net_mgmt_del_event_callback(struct net_mgmt_event_callback *cb)
 }
 
 void net_mgmt_event_notify_with_info(uint32_t mgmt_event, struct net_if *iface,
-				     void *info, size_t length)
+				     const void *info, size_t length)
 {
 	if (mgmt_is_event_handled(mgmt_event)) {
 		NET_DBG("Notifying Event layer %u code %u type %u",
@@ -389,8 +389,7 @@ void net_mgmt_event_init(void)
 	k_thread_create(&mgmt_thread_data, mgmt_stack,
 			K_KERNEL_STACK_SIZEOF(mgmt_stack),
 			(k_thread_entry_t)mgmt_thread, NULL, NULL, NULL,
-			K_PRIO_COOP(CONFIG_NET_MGMT_EVENT_THREAD_PRIO), 0,
-			K_NO_WAIT);
+			CONFIG_NET_MGMT_EVENT_THREAD_PRIO, 0, K_NO_WAIT);
 	k_thread_name_set(&mgmt_thread_data, "net_mgmt");
 
 	NET_DBG("Net MGMT initialized: queue of %u entries, stack size of %u",

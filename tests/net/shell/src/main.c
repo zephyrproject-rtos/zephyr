@@ -58,18 +58,18 @@ struct net_udp_context {
 	struct net_linkaddr ll_addr;
 };
 
-int net_udp_dev_init(struct device *dev)
+int net_udp_dev_init(const struct device *dev)
 {
-	struct net_udp_context *net_udp_context = dev->driver_data;
+	struct net_udp_context *net_udp_context = dev->data;
 
 	net_udp_context = net_udp_context;
 
 	return 0;
 }
 
-static uint8_t *net_udp_get_mac(struct device *dev)
+static uint8_t *net_udp_get_mac(const struct device *dev)
 {
-	struct net_udp_context *context = dev->driver_data;
+	struct net_udp_context *context = dev->data;
 
 	if (context->mac_addr[2] == 0x00) {
 		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
@@ -93,7 +93,7 @@ static void net_udp_iface_init(struct net_if *iface)
 
 static int send_status = -EINVAL;
 
-static int tester_send(struct device *dev, struct net_pkt *pkt)
+static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
 	if (!pkt->frags) {
 		DBG("No data to send!\n");

@@ -279,7 +279,7 @@ struct adxl372_xyz_accel_data {
 };
 
 struct adxl372_data {
-	struct device *bus;
+	const struct device *bus;
 #ifdef CONFIG_ADXL372_SPI
 	struct spi_config spi_cfg;
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
@@ -290,14 +290,14 @@ struct adxl372_data {
 	struct adxl372_fifo_config fifo_config;
 
 #ifdef CONFIG_ADXL372_TRIGGER
-	struct device *gpio;
+	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	sensor_trigger_handler_t th_handler;
 	struct sensor_trigger th_trigger;
 	sensor_trigger_handler_t drdy_handler;
 	struct sensor_trigger drdy_trigger;
-	struct device *dev;
+	const struct device *dev;
 
 #if defined(CONFIG_ADXL372_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ADXL372_THREAD_STACK_SIZE);
@@ -355,17 +355,17 @@ struct adxl372_dev_config {
 };
 
 #ifdef CONFIG_ADXL372_TRIGGER
-int adxl372_get_status(struct device *dev,
+int adxl372_get_status(const struct device *dev,
 		       uint8_t *status1, uint8_t *status2, uint16_t *fifo_entries);
 
-int adxl372_reg_write_mask(struct device *dev,
+int adxl372_reg_write_mask(const struct device *dev,
 			   uint8_t reg_addr, uint32_t mask, uint8_t data);
 
-int adxl372_trigger_set(struct device *dev,
+int adxl372_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler);
 
-int adxl372_init_interrupt(struct device *dev);
+int adxl372_init_interrupt(const struct device *dev);
 #endif /* CONFIG_ADT7420_TRIGGER */
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ADXL372_ADXL372_H_ */

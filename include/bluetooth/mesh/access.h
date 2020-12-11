@@ -41,6 +41,7 @@ extern "C" {
 #define BT_MESH_ADDR_RELAYS       0xfffe
 
 #define BT_MESH_KEY_UNUSED        0xffff
+#define BT_MESH_KEY_ANY           0xffff
 #define BT_MESH_KEY_DEV           0xfffe
 #define BT_MESH_KEY_DEV_LOCAL     BT_MESH_KEY_DEV
 #define BT_MESH_KEY_DEV_REMOTE    0xfffd

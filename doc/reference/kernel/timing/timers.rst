@@ -16,8 +16,8 @@ to read its status.
 Concepts
 ********
 
-Any number of timers can be defined. Each timer is referenced by its
-memory address.
+Any number of timers can be defined (limited only by available RAM). Each timer
+is referenced by its memory address.
 
 A timer has the following key properties:
 
@@ -35,11 +35,11 @@ A timer has the following key properties:
 
 * An :dfn:`expiry function` that is executed each time the timer expires.
   The function is executed by the system clock interrupt handler.
-  If no expiry function is required a :c:macro:`NULL` function can be specified.
+  If no expiry function is required a ``NULL`` function can be specified.
 
 * A :dfn:`stop function` that is executed if the timer is stopped prematurely
   while running. The function is executed by the thread that stops the timer.
-  If no stop function is required a :c:macro:`NULL` function can be specified.
+  If no stop function is required a ``NULL`` function can be specified.
 
 * A :dfn:`status` value that indicates how many times the timer has expired
   since the status value was last read.
@@ -103,8 +103,8 @@ Implementation
 Defining a Timer
 ================
 
-A timer is defined using a variable of type :c:type:`k_timer`.
-It must then be initialized by calling :cpp:func:`k_timer_init()`.
+A timer is defined using a variable of type :c:struct:`k_timer`.
+It must then be initialized by calling :c:func:`k_timer_init`.
 
 The following code defines and initializes a timer.
 
@@ -222,7 +222,7 @@ amount of time.
 Use a timer to determine whether or not a specified amount of time has
 elapsed.  In particular, timers should be used when higher precision
 and/or unit control is required than that afforded by the simpler
-``k_sleep()`` and ``k_usleep()`` calls.
+:c:func:`k_sleep` and :c:func:`k_usleep` calls.
 
 Use a timer to perform other work while carrying out operations
 involving time limits.

@@ -6,18 +6,16 @@
 
 #include <init.h>
 #include <soc.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_system.h>
 
 #include <pinmux/stm32/pinmux_stm32.h>
 
 /* pin assignments for STM32G0316-DISCO board */
 static const struct pin_config pinconf[] = {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usart1), okay) && CONFIG_SERIAL
-	{STM32_PIN_PA9, STM32G0_PINMUX_FUNC_PA9_USART1_TX},
-	{STM32_PIN_PB7, STM32G0_PINMUX_FUNC_PB7_USART1_RX},
-#endif
 };
 
-static int pinmux_stm32_init(struct device *port)
+static int pinmux_stm32_init(const struct device *port)
 {
 	ARG_UNUSED(port);
 

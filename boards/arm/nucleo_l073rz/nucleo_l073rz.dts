@@ -6,11 +6,12 @@
 
 /dts-v1/;
 #include <st/l0/stm32l073Xz.dtsi>
+#include <st/l0/stm32l073r(b-z)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32L073RZ-NUCLEO board";
-	compatible = "st,stm32l073rz-nucleo", "st,stm32l073";
+	compatible = "st,stm32l073rz-nucleo";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -42,20 +43,24 @@
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
 	current-speed = <115200>;
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
 	status = "okay";
 };
 
@@ -64,9 +69,11 @@
 };
 
 &adc1 {
+	pinctrl-0 = <&adc_in0_pa0>;
 	status = "okay";
 };
 
 &dac1 {
 	status = "okay";
+	pinctrl-0 = <&dac_out1_pa4>;
 };

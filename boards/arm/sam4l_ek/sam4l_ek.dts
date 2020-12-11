@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <atmel/sam4lx4.dtsi>
+
+/ {
+	model = "Atmel SAM4L-EK Board with an Atmel SAM4LC4C SoC";
+	compatible = "atmel,sam4l_ek";
+
+	aliases {
+		led0 = &user_led;
+		sw0 = &sw0_dfu;
+	};
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		user_led: led_0 {
+			gpios = <&gpioc 10 GPIO_ACTIVE_HIGH>;
+			label = "LED_0";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		sw0_dfu: button_1 {
+			label = "SW0_DFU";
+			gpios = <&gpioc 3 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
+&usart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&pc11b_usart2_rxd2 &pc12b_usart2_txd2>;
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&pc4a_spi_miso
+		     &pc5a_spi_mosi
+		     &pc6a_spi_sck
+		     &pa2b_spi_npcs0
+		     &pc0a_spi_npcs2>;
+	cs-gpios = <&gpioa 2 GPIO_ACTIVE_LOW>,
+		   <&gpioc 0 GPIO_ACTIVE_LOW>;
+};
+
+&twim0 {
+	status = "okay";
+
+	std-clk-slew-lim = <0>;
+	std-clk-strength-low = "0.5";
+	std-data-slew-lim = <0>;
+	std-data-strength-low = "0.5";
+
+	hs-clk-slew-lim = <0>;
+	hs-clk-strength-high = "0.5";
+	hs-clk-strength-low = "0.5";
+	hs-data-slew-lim = <0>;
+	hs-data-strength-low = "0.5";
+
+	hs-master-code = <0>;
+};

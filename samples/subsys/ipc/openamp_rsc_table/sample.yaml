@@ -5,5 +5,5 @@ sample:
 tests:
     sample.subsys.ipc.openamp_rs_table:
         build_only: true
-        platform_whitelist: stm32mp157c_dk2
+        platform_allow: stm32mp157c_dk2
         tags: ipm

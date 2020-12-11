@@ -16,11 +16,11 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(ADT7420, CONFIG_SENSOR_LOG_LEVEL);
 
-static void setup_int(struct device *dev,
+static void setup_int(const struct device *dev,
 		      bool enable)
 {
-	struct adt7420_data *drv_data = dev->driver_data;
-	const struct adt7420_dev_config *cfg = dev->config_info;
+	struct adt7420_data *drv_data = dev->data;
+	const struct adt7420_dev_config *cfg = dev->config;
 	gpio_flags_t flags = enable
 		? GPIO_INT_EDGE_TO_ACTIVE
 		: GPIO_INT_DISABLE;
@@ -28,9 +28,9 @@ static void setup_int(struct device *dev,
 	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_pin, flags);
 }
 
-static void handle_int(struct device *dev)
+static void handle_int(const struct device *dev)
 {
-	struct adt7420_data *drv_data = dev->driver_data;
+	struct adt7420_data *drv_data = dev->data;
 
 	setup_int(dev, false);
 
@@ -41,10 +41,10 @@ static void handle_int(struct device *dev)
 #endif
 }
 
-static void process_int(struct device *dev)
+static void process_int(const struct device *dev)
 {
-	struct adt7420_data *drv_data = dev->driver_data;
-	const struct adt7420_dev_config *cfg = dev->config_info;
+	struct adt7420_data *drv_data = dev->data;
+	const struct adt7420_dev_config *cfg = dev->config;
 	uint8_t status;
 
 	/* Clear the status */
@@ -67,7 +67,7 @@ static void process_int(struct device *dev)
 	}
 }
 
-static void adt7420_gpio_callback(struct device *dev,
+static void adt7420_gpio_callback(const struct device *dev,
 				  struct gpio_callback *cb, uint32_t pins)
 {
 	struct adt7420_data *drv_data =
@@ -77,16 +77,11 @@ static void adt7420_gpio_callback(struct device *dev,
 }
 
 #if defined(CONFIG_ADT7420_TRIGGER_OWN_THREAD)
-static void adt7420_thread(int dev_ptr, int unused)
+static void adt7420_thread(struct adt7420_data *drv_data)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct adt7420_data *drv_data = dev->driver_data;
-
-	ARG_UNUSED(unused);
-
 	while (true) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
-		process_int(dev);
+		process_int(drv_data->dev);
 	}
 }
 
@@ -100,12 +95,12 @@ static void adt7420_work_cb(struct k_work *work)
 }
 #endif
 
-int adt7420_trigger_set(struct device *dev,
+int adt7420_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
-	struct adt7420_data *drv_data = dev->driver_data;
-	const struct adt7420_dev_config *cfg = dev->config_info;
+	struct adt7420_data *drv_data = dev->data;
+	const struct adt7420_dev_config *cfg = dev->config;
 
 	setup_int(dev, false);
 
@@ -131,10 +126,10 @@ int adt7420_trigger_set(struct device *dev,
 	return 0;
 }
 
-int adt7420_init_interrupt(struct device *dev)
+int adt7420_init_interrupt(const struct device *dev)
 {
-	struct adt7420_data *drv_data = dev->driver_data;
-	const struct adt7420_dev_config *cfg = dev->config_info;
+	struct adt7420_data *drv_data = dev->data;
+	const struct adt7420_dev_config *cfg = dev->config;
 
 	drv_data->gpio = device_get_binding(cfg->int_name);
 	if (drv_data->gpio == NULL) {
@@ -165,8 +160,8 @@ int adt7420_init_interrupt(struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_ADT7420_THREAD_STACK_SIZE,
-			(k_thread_entry_t)adt7420_thread, dev,
-			0, NULL, K_PRIO_COOP(CONFIG_ADT7420_THREAD_PRIORITY),
+			(k_thread_entry_t)adt7420_thread, drv_data,
+			NULL, NULL, K_PRIO_COOP(CONFIG_ADT7420_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_ADT7420_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = adt7420_work_cb;

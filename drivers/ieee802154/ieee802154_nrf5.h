@@ -8,8 +8,6 @@
 #ifndef ZEPHYR_DRIVERS_IEEE802154_IEEE802154_NRF5_H_
 #define ZEPHYR_DRIVERS_IEEE802154_IEEE802154_NRF5_H_
 
-#include "nrf_802154_config.h"
-
 #define NRF5_FCS_LENGTH   (2)
 #define NRF5_PSDU_LENGTH  (125)
 #define NRF5_PHR_LENGTH   (1)
@@ -42,7 +40,7 @@ struct nrf5_802154_data {
 	/* Buffers for passing received frame pointers and data to the
 	 * RX thread via rx_fifo object.
 	 */
-	struct nrf5_802154_rx_frame rx_frames[NRF_802154_RX_BUFFERS];
+	struct nrf5_802154_rx_frame rx_frames[CONFIG_NRF_802154_RX_BUFFERS];
 
 	/* Frame pending bit value in ACK sent for the last received frame. */
 	bool last_frame_ack_fpb;

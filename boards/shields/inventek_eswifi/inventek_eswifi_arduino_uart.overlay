@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2020 ATL Electronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_serial {
+	status = "okay";
+
+	wifi0: iwin {
+		status = "okay";
+		compatible = "inventek,eswifi-uart";
+
+		/* D7 */
+		wakeup-gpios = <&arduino_header 13 GPIO_ACTIVE_HIGH>;
+		/* D6 */
+		resetn-gpios = <&arduino_header 12 GPIO_ACTIVE_HIGH>;
+
+		label = "ESWIFI0";
+	};
+};

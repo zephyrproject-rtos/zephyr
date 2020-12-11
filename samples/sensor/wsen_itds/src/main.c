@@ -17,7 +17,7 @@
 #define MAX_TEST_TIME	5000
 #define SLEEPTIME	300
 
-static void print_accl_data(struct device *itds)
+static void print_accl_data(const struct device *itds)
 {
 	struct sensor_value val[3];
 
@@ -32,7 +32,7 @@ static void print_accl_data(struct device *itds)
 		sensor_value_to_double(&val[2]));
 }
 
-static void print_temp_data(struct device *itds)
+static void print_temp_data(const struct device *itds)
 {
 	struct sensor_value val;
 
@@ -45,7 +45,7 @@ static void print_temp_data(struct device *itds)
 		sensor_value_to_double(&val));
 }
 
-static void test_polling_mode(struct device *itds)
+static void test_polling_mode(const struct device *itds)
 {
 	int32_t remaining_test_time = MAX_TEST_TIME;
 
@@ -66,7 +66,7 @@ static void test_polling_mode(struct device *itds)
 }
 
 #if defined(CONFIG_ITDS_TRIGGER)
-static void trigger_handler(struct device *itds,
+static void trigger_handler(const struct device *itds,
 			    struct sensor_trigger *trigger)
 {
 	switch (trigger->type) {
@@ -86,7 +86,7 @@ static void trigger_handler(struct device *itds,
 }
 #endif
 
-static void test_trigger_mode(struct device *itds)
+static void test_trigger_mode(const struct device *itds)
 {
 #if defined(CONFIG_ITDS_TRIGGER)
 	struct sensor_trigger trig;
@@ -127,7 +127,7 @@ static void test_trigger_mode(struct device *itds)
 
 void main(void)
 {
-	struct device *itds;
+	const struct device *itds;
 	struct sensor_value attr;
 
 	printf("get device wsen-itds\n");

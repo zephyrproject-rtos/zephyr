@@ -413,7 +413,7 @@ void net_if_stats_reset_all(void)
 
 static inline void init_iface(struct net_if *iface)
 {
-	const struct net_if_api *api = net_if_get_device(iface)->driver_api;
+	const struct net_if_api *api = net_if_get_device(iface)->api;
 
 	if (!api || !api->init) {
 		NET_ERR("Iface %p driver API init NULL", iface);
@@ -520,7 +520,7 @@ struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr)
 	return NULL;
 }
 
-struct net_if *net_if_lookup_by_dev(struct device *dev)
+struct net_if *net_if_lookup_by_dev(const struct device *dev)
 {
 	Z_STRUCT_SECTION_FOREACH(net_if, iface) {
 		if (net_if_get_device(iface) == dev) {

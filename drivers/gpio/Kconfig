@@ -17,6 +17,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config GPIO_SHELL
 	bool "Enable GPIO Shell"
+	depends on SHELL
 	help
 	  Enable GPIO Shell for testing.
 
@@ -73,5 +74,9 @@ source "drivers/gpio/Kconfig.lmp90xxx"
 source "drivers/gpio/Kconfig.litex"
 
 source "drivers/gpio/Kconfig.lpc11u6x"
+
+source "drivers/gpio/Kconfig.xlnx"
+
+source "drivers/gpio/Kconfig.npcx"
 
 endif # GPIO

@@ -45,6 +45,10 @@ static void __process_received(struct net_context *context,
 {
 	struct eswifi_off_socket *socket = user_data;
 
+	if (!pkt) {
+		return;
+	}
+
 	eswifi_lock(eswifi);
 	k_fifo_put(&socket->fifo, pkt);
 	eswifi_unlock(eswifi);
@@ -350,8 +354,9 @@ static ssize_t eswifi_socket_recvfrom(void *obj, void *buf, size_t len,
 	return eswifi_socket_recv(obj, buf, len, flags);
 }
 
-static int eswifi_socket_close(int sock)
+static int eswifi_socket_close(void *obj)
 {
+	int sock = OBJ_TO_SD(obj);
 	struct eswifi_off_socket *socket;
 	struct net_pkt *pkt;
 	int ret;
@@ -419,7 +424,7 @@ static int eswifi_socket_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 	int sock, ret;
 	void *obj;
 
-	if (nfds > 1) {
+	if (nfds != 1) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -440,6 +445,11 @@ static int eswifi_socket_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 		return -1;
 	}
 
+	if (!(fds[0].events & ZSOCK_POLLIN)) {
+		errno = ENOTSUP;
+		return -1;
+	}
+
 	eswifi_lock(eswifi);
 	socket = &eswifi->socket[sock];
 	eswifi_unlock(eswifi);
@@ -448,8 +458,16 @@ static int eswifi_socket_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 		return -1;
 	}
 
-	ret = k_sem_take(&socket->read_sem, K_MSEC(msecs));
-	return ret;
+	ret = k_sem_take(&socket->read_sem, K_MSEC(msecs*10));
+	if (ret) {
+		errno = ETIMEDOUT;
+		return -1;
+	}
+
+	fds[0].revents = ZSOCK_POLLIN;
+
+	/* Report one event */
+	return 1;
 }
 
 static int eswifi_socket_bind(void *obj, const struct sockaddr *addr,
@@ -501,13 +519,7 @@ static int eswifi_socket_create(int family, int type, int proto)
 
 static int eswifi_socket_ioctl(void *obj, unsigned int request, va_list args)
 {
-	int sd = OBJ_TO_SD(obj);
-
 	switch (request) {
-	/* Handle close specifically. */
-	case ZFD_IOCTL_CLOSE:
-		return eswifi_socket_close(sd);
-
 	case ZFD_IOCTL_POLL_PREPARE:
 		return -EXDEV;
 
@@ -547,6 +559,7 @@ static const struct socket_op_vtable eswifi_socket_fd_op_vtable = {
 	.fd_vtable = {
 		.read = eswifi_socket_read,
 		.write = eswifi_socket_write,
+		.close = eswifi_socket_close,
 		.ioctl = eswifi_socket_ioctl,
 	},
 	.bind = eswifi_socket_bind,
@@ -562,8 +575,102 @@ NET_SOCKET_REGISTER(eswifi, AF_UNSPEC, eswifi_socket_is_supported,
 		    eswifi_socket_create);
 #endif
 
+static int eswifi_off_getaddrinfo(const char *node, const char *service,
+				  const struct zsock_addrinfo *hints,
+				  struct zsock_addrinfo **res)
+{
+	struct sockaddr_in *ai_addr;
+	struct zsock_addrinfo *ai;
+	unsigned long port = 0;
+	char *rsp;
+	int err;
+
+	if (!node) {
+		return DNS_EAI_NONAME;
+	}
+
+	if (service) {
+		port = strtol(service, NULL, 10);
+		if (port < 1 || port > USHRT_MAX) {
+			return DNS_EAI_SERVICE;
+		}
+	}
+
+	if (!res) {
+		return DNS_EAI_NONAME;
+	}
+
+	if (hints && hints->ai_family != AF_INET) {
+		return DNS_EAI_FAIL;
+	}
+
+	eswifi_lock(eswifi);
+
+	/* DNS lookup */
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "D0=%s\r", node);
+	err = eswifi_at_cmd_rsp(eswifi, eswifi->buf, &rsp);
+	if (err < 0) {
+		err = DNS_EAI_FAIL;
+		goto done_unlock;
+	}
+
+	/* Allocate out res (addrinfo) struct.	Just one. */
+	*res = calloc(1, sizeof(struct zsock_addrinfo));
+	ai = *res;
+	if (!ai) {
+		err = DNS_EAI_MEMORY;
+		goto done_unlock;
+	}
+
+	/* Now, alloc the embedded sockaddr struct: */
+	ai_addr = calloc(1, sizeof(*ai_addr));
+	if (!ai_addr) {
+		free(*res);
+		err = DNS_EAI_MEMORY;
+		goto done_unlock;
+	}
+
+	ai->ai_family = AF_INET;
+	ai->ai_socktype = hints ? hints->ai_socktype : SOCK_STREAM;
+	ai->ai_protocol = ai->ai_socktype == SOCK_STREAM ? IPPROTO_UDP : IPPROTO_TCP;
+
+	ai_addr->sin_family = ai->ai_family;
+	ai_addr->sin_port = htons(port);
+
+	if (!net_ipaddr_parse(rsp, strlen(rsp), (struct sockaddr *)ai_addr)) {
+		free(ai_addr);
+		free(*res);
+		err = DNS_EAI_FAIL;
+		goto done_unlock;
+	}
+
+	ai->ai_addrlen = sizeof(*ai_addr);
+	ai->ai_addr = (struct sockaddr *)ai_addr;
+	err = 0;
+
+done_unlock:
+	eswifi_unlock(eswifi);
+	return err;
+}
+
+static void eswifi_off_freeaddrinfo(struct zsock_addrinfo *res)
+{
+	__ASSERT_NO_MSG(res);
+
+	free(res->ai_addr);
+	free(res);
+}
+
+const struct socket_dns_offload eswifi_dns_ops = {
+	.getaddrinfo = eswifi_off_getaddrinfo,
+	.freeaddrinfo = eswifi_off_freeaddrinfo,
+};
+
 int eswifi_socket_offload_init(struct eswifi_dev *leswifi)
 {
 	eswifi = leswifi;
+
+	socket_offload_dns_register(&eswifi_dns_ops);
+
 	return 0;
 }

@@ -28,7 +28,7 @@
  */
 static atomic_val_t _rand32_counter;
 
-#define _RAND32_INC 1000000013
+#define _RAND32_INC 1000000013U
 
 /**
  *

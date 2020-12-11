@@ -64,6 +64,11 @@ extern "C" {
 #define ARC_CONNECT_CMD_DEBUG_READ_CMD			0x39
 #define ARC_CONNECT_CMD_DEBUG_READ_CORE			0x3a
 
+#define ARC_CONNECT_CMD_DEBUG_MASK_SH			0x08    /* if a self-halt occurs, a global halt is triggered */
+#define ARC_CONNECT_CMD_DEBUG_MASK_BH			0x04    /* if a breakpoint caused halt occurs, a global halt is triggered */
+#define ARC_CONNECT_CMD_DEBUG_MASK_AH			0x02    /* if an actionpoint caused halt occurs, a global halt is triggered */
+#define ARC_CONNECT_CMD_DEBUG_MASK_H			0x01    /* whenever the core is halted, a global halt is triggered */
+
 #define ARC_CONNECT_CMD_GFRC_CLEAR			0x41
 #define ARC_CONNECT_CMD_GFRC_READ_LO			0x42
 #define ARC_CONNECT_CMD_GFRC_READ_HI			0x43

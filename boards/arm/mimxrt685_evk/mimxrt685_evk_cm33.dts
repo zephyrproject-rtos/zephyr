@@ -84,11 +84,33 @@ arduino_i2c: &flexcomm2 {
 	};
 };
 
+arduino_spi: &flexcomm5 {
+	compatible = "nxp,lpc-spi";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	dmas = <&dma0 10>, <&dma0 11>;
+	dma-names = "rx", "tx";
+};
+
 &gpio0 {
 	status = "okay";
 };
 
 &gpio1 {
+	status = "okay";
+};
+
+&dma0 {
+	/*
+	 * The total number of dma channels available is defined by
+	 * FSL_FEATURE_DMA_NUMBER_OF_CHANNELS in the SoC features file.
+	 * Since memory from the heap pool is allocated based on the number
+	 * of DMA channels, set this property to as many channels is needed
+	 * for the platform. Adjust HEAP_MEM_POOL_SIZE in case you need more
+	 * memory.
+	 */
+	dma-channels = <20>;
 	status = "okay";
 };
 

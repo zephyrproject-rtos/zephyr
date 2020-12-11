@@ -68,6 +68,8 @@ features:
 +-----------+------------+-------------------------------------+
 | USART     | on-chip    | serial port-polling                 |
 +-----------+------------+-------------------------------------+
+| CLOCK     | on-chip    | clock_control                       |
++-----------+------------+-------------------------------------+
 
 The default configuration for each core can be found in the defconfig files:
 

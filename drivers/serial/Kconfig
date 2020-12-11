@@ -70,6 +70,8 @@ source "drivers/serial/Kconfig.mcux"
 
 source "drivers/serial/Kconfig.mcux_flexcomm"
 
+source "drivers/serial/Kconfig.mcux_iuart"
+
 source "drivers/serial/Kconfig.mcux_lpsci"
 
 source "drivers/serial/Kconfig.mcux_lpuart"
@@ -127,5 +129,9 @@ source "drivers/serial/Kconfig.xlnx"
 source "drivers/serial/Kconfig.xmc4xxx"
 
 source "drivers/serial/Kconfig.lpc11u6x"
+
+source "drivers/serial/Kconfig.npcx"
+
+source "drivers/serial/Kconfig.apbuart"
 
 endif # SERIAL

@@ -20,12 +20,25 @@ menuconfig SOC_FLASH_NRF
 
 if SOC_FLASH_NRF
 
-config SOC_FLASH_NRF_RADIO_SYNC
-	bool "Nordic nRFx flash driver synchronized with radio"
-	default y
-	depends on BT_CTLR
+choice SOC_FLASH_NRF_RADIO_SYNC_CHOICE
+	prompt "Nordic nRFx flash driver synchronization"
+	default SOC_FLASH_NRF_RADIO_SYNC_TICKER if BT_LL_SW_SPLIT
+	default SOC_FLASH_NRF_RADIO_SYNC_NONE
 	help
-	  Enable synchronization between flash memory driver and radio.
+	  synchronization between flash memory driver and radio.
+
+config SOC_FLASH_NRF_RADIO_SYNC_TICKER
+	bool "Nordic nRFx flash driver synchronized with radio"
+	depends on BT_LL_SW_SPLIT
+	help
+	  Enable synchronization between flash memory driver and radio using
+	  BLE LL controller ticker API.
+
+config SOC_FLASH_NRF_RADIO_SYNC_NONE
+	bool "none"
+	help
+	  disable synchronization between flash memory driver and radio.
+endchoice
 
 config SOC_FLASH_NRF_PARTIAL_ERASE
 	bool "Nordic nRFx flash driver partial erase"
@@ -37,7 +50,7 @@ config SOC_FLASH_NRF_PARTIAL_ERASE
 	  This allows interrupting flash erase between operations
 	  to perform other task by MCU.
 	  This feature may also be used for better syncing flash erase
-	  operations, when compiled with SOC_FLASH_NRF_RADIO_SYNC,
+	  operations, when compiled with SOC_FLASH_NRF_RADIO_SYNC_TICKER,
 	  with Bluetooth.
 
 config SOC_FLASH_NRF_PARTIAL_ERASE_MS

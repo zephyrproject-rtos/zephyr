@@ -6,10 +6,11 @@
 DT_CHOSEN_Z_CONSOLE := zephyr,console
 
 config TRACING
-	bool "Enabling Tracing"
+	bool "Tracing Support"
 	imply THREAD_NAME
 	imply THREAD_STACK_INFO
 	imply THREAD_MONITOR
+	select INSTRUMENT_THREAD_SWITCHING
 	help
 	  Enable system tracing. This requires a backend such as SEGGER
 	  Systemview to be enabled as well.
@@ -36,6 +37,7 @@ config SEGGER_SYSTEMVIEW
 	select CONSOLE
 	select RTT_CONSOLE
 	select USE_SEGGER_RTT
+	select THREAD_MONITOR
 
 config TRACING_CTF
 	bool "Tracing via Common Trace Format support"
@@ -145,7 +147,7 @@ choice
 config TRACING_BACKEND_UART
 	bool "Enable UART backend"
 	depends on UART_CONSOLE
-	depends on TRACING_ASYNC
+
 	help
 	  Use UART to output tracing data.
 

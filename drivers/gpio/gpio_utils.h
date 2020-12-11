@@ -59,7 +59,7 @@ static inline int gpio_manage_callback(sys_slist_t *callbacks,
  * @param pins The actual pin mask that triggered the interrupt
  */
 static inline void gpio_fire_callbacks(sys_slist_t *list,
-					struct device *port,
+					const struct device *port,
 					uint32_t pins)
 {
 	struct gpio_callback *cb, *tmp;

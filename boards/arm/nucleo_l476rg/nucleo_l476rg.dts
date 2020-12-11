@@ -6,11 +6,12 @@
 
 /dts-v1/;
 #include <st/l4/stm32l476Xg.dtsi>
+#include <st/l4/stm32l476r(c-e-g)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32L476RG-NUCLEO board";
-	compatible = "st,stm32l476rg-nucleo", "st,stm32l476";
+	compatible = "st,stm32l476rg-nucleo";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -42,34 +43,60 @@
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
+	current-speed = <115200>;
+};
+
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &i2c3 {
+	pinctrl-0 = <&i2c3_scl_pc0 &i2c3_sda_pc1>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pb3
+		     &spi1_miso_pa6 &spi1_mosi_pa7>;
 	status = "okay";
 };
+
+&spi2 {
+	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13
+		     &spi2_miso_pb14 &spi2_mosi_pb15>;
+	status = "okay";
+};
+
+&spi3 {
+	/* SPI3 on the ST Morpho Connector CN7 pins 17, 1, 2, 3*/
+	pinctrl-0 = <&spi3_nss_pa15 &spi3_sck_pc10
+		     &spi3_miso_pc11 &spi3_mosi_pc12>;
+	status = "okay";
+};
+
 
 &timers2 {
 	status = "okay";
 
 	pwm2: pwm {
 		status = "okay";
+		pinctrl-0 = <&tim2_ch1_pa0>;
 	};
 };
 
@@ -78,5 +105,6 @@
 };
 
 &adc1 {
+	pinctrl-0 = <&adc1_in1_pc0>;
 	status = "okay";
 };

@@ -18,6 +18,8 @@
 #if defined(_LINKER)
 #if defined(__GCC_LINKER_CMD__)
 #include <linker/linker-tool-gcc.h>
+#elif defined(__MWDT_LINKER_CMD__)
+#include <linker/linker-tool-mwdt.h>
 #else
 #error "Unknown toolchain"
 #endif

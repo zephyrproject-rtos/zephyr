@@ -21,7 +21,7 @@ element instantiating all the models required for a single aspect of the
 supported behavior.
 
 The node's element and model structure is specified in the node composition
-data, which is passed to :cpp:func:`bt_mesh_init()` during initialization. The
+data, which is passed to :c:func:`bt_mesh_init` during initialization. The
 Bluetooth SIG have defined a set of foundation models (see
 :ref:`bluetooth_mesh_models`) and a set of models for implementing common
 behavior in the `Bluetooth Mesh Model Specification
@@ -79,12 +79,12 @@ Model publication
 
 The models may send messages in two ways:
 
-* By specifying a set of message parameters in a :cpp:type:`bt_mesh_msg_ctx`,
-  and calling :cpp:func:`bt_mesh_model_send()`.
-* By setting up a :cpp:type:`bt_mesh_model_pub` structure and calling
-  :cpp:func:`bt_mesh_model_publish()`.
+* By specifying a set of message parameters in a :c:struct:`bt_mesh_msg_ctx`,
+  and calling :c:func:`bt_mesh_model_send`.
+* By setting up a :c:struct:`bt_mesh_model_pub` structure and calling
+  :c:func:`bt_mesh_model_publish`.
 
-When publishing messages with :cpp:func:`bt_mesh_model_publish()`, the model
+When publishing messages with :c:func:`bt_mesh_model_publish`, the model
 will use the publication parameters configured by the
 :ref:`bluetooth_mesh_models_cfg_srv`. This is the recommended way to send
 unprompted model messages, as it passes the responsibility of selecting
@@ -93,10 +93,10 @@ the mesh network than the individual nodes will.
 
 To support publishing with the publication parameters, the model must allocate
 a packet buffer for publishing, and pass it to
-:cpp:var:`bt_mesh_model_pub::msg`. The Config Server may also set up period
+:c:member:`bt_mesh_model_pub.msg`. The Config Server may also set up period
 publication for the publication message. To support this, the model must
-populate the :cpp:var:`bt_mesh_model_pub::update` callback. The
-:cpp:var:`bt_mesh_model_pub::update` callback will be called right before the
+populate the :c:member:`bt_mesh_model_pub.update` callback. The
+:c:member:`bt_mesh_model_pub.update` callback will be called right before the
 message is published, allowing the model to change the payload to reflect its
 current state.
 
@@ -115,7 +115,7 @@ in total. Models may extend models that extend others, creating an "extension
 tree". All models in an extension tree share a single subscription list per
 element it spans.
 
-Model extensions are done by calling :cpp:func:`bt_mesh_model_extend()` during
+Model extensions are done by calling :c:func:`bt_mesh_model_extend` during
 initialization. A model can only be extended by one other model, and
 extensions cannot be circular. Note that binding of node states and other
 relationships between the models must be defined by the model implementations.
@@ -131,9 +131,9 @@ Mesh models may have data associated with each model instance that needs to be
 stored persistently. The access API provides a mechanism for storing this
 data, leveraging the internal model instance encoding scheme. Models can store
 one user defined data entry per instance by calling
-:cpp:func:`bt_mesh_model_data_store()`. To be able to read out the data the
+:c:func:`bt_mesh_model_data_store`. To be able to read out the data the
 next time the device reboots, the model's
-:cpp:var:`bt_mesh_model_cb::settings_set()` callback must be populated. This
+:c:member:`bt_mesh_model_cb.settings_set` callback must be populated. This
 callback gets called when model specific data is found in the persistent
 storage. The model can retrieve the data by calling the ``read_cb`` passed as
 a parameter to the callback. See the :ref:`settings_api` module documentation for

@@ -19,14 +19,9 @@ static uint32_t accumulated_cycle_count;
 
 static int32_t _sys_idle_elapsed_ticks = 1;
 
-static void timer_irq_handler(void *unused)
+static void timer_irq_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
-
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	extern void read_timer_start_of_tick_handler(void);
-	read_timer_start_of_tick_handler();
-#endif
 
 	accumulated_cycle_count += k_ticks_to_cyc_floor32(1);
 
@@ -34,14 +29,9 @@ static void timer_irq_handler(void *unused)
 	alt_handle_irq((void *)TIMER_0_BASE, TIMER_0_IRQ);
 
 	z_clock_announce(_sys_idle_elapsed_ticks);
-
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	extern void read_timer_end_of_tick_handler(void);
-	read_timer_end_of_tick_handler();
-#endif
 }
 
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 

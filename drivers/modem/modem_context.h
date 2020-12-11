@@ -31,7 +31,7 @@ extern "C" {
 }
 
 struct modem_iface {
-	struct device *dev;
+	const struct device *dev;
 
 	int (*read)(struct modem_iface *iface, uint8_t *buf, size_t size,
 		    size_t *bytes_read);
@@ -50,7 +50,7 @@ struct modem_cmd_handler {
 };
 
 struct modem_pin {
-	struct device *gpio_port_dev;
+	const struct device *gpio_port_dev;
 	char *dev_name;
 	gpio_pin_t pin;
 	gpio_flags_t init_flags;
@@ -62,6 +62,10 @@ struct modem_context {
 	char *data_model;
 	char *data_revision;
 	char *data_imei;
+#if defined(CONFIG_MODEM_SIM_NUMBERS)
+	char *data_imsi;
+	char *data_iccid;
+#endif
 	int   data_rssi;
 
 	/* pin config */
@@ -113,7 +117,7 @@ struct modem_context *modem_context_from_id(int id);
  *
  * @retval Modem context or NULL.
  */
-struct modem_context *modem_context_from_iface_dev(struct device *dev);
+struct modem_context *modem_context_from_iface_dev(const struct device *dev);
 
 /**
  * @brief  Registers modem context.

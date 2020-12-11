@@ -39,7 +39,12 @@
 #ifdef _LINKER
 #define Z_LINK_ITERABLE(struct_type) \
 	_CONCAT(_##struct_type, _list_start) = .; \
-	KEEP(*(SORT_BY_NAME(._##struct_type##.static.*))); \
+	KEEP(*(SORT_BY_NAME(._##struct_type.static.*))); \
+	_CONCAT(_##struct_type, _list_end) = .
+
+#define Z_LINK_ITERABLE_GC_ALLOWED(struct_type) \
+	_CONCAT(_##struct_type, _list_start) = .; \
+	*(SORT_BY_NAME(._##struct_type.static.*)); \
 	_CONCAT(_##struct_type, _list_end) = .
 
 /* Define an output section which will set up an iterable area
@@ -47,6 +52,10 @@
  * Input sections will be sorted by name, per ld's SORT_BY_NAME.
  *
  * This macro should be used for read-only data.
+ *
+ * Note that this keeps the symbols in the image even though
+ * they are not being directly referenced. Use this when symbols
+ * are indirectly referenced by iterating through the section.
  */
 #define Z_ITERABLE_SECTION_ROM(struct_type, subalign) \
 	SECTION_PROLOGUE(struct_type##_area,,SUBALIGN(subalign)) \
@@ -58,12 +67,45 @@
  * of equally-sized data structures. For use with Z_STRUCT_SECTION_ITERABLE.
  * Input sections will be sorted by name, per ld's SORT_BY_NAME.
  *
+ * This macro should be used for read-only data.
+ *
+ * Note that the symbols within the section can be garbage collected.
+ */
+#define Z_ITERABLE_SECTION_ROM_GC_ALLOWED(struct_type, subalign) \
+	SECTION_PROLOGUE(struct_type##_area,,SUBALIGN(subalign)) \
+	{ \
+		Z_LINK_ITERABLE_GC_ALLOWED(struct_type); \
+	} GROUP_LINK_IN(ROMABLE_REGION)
+
+/* Define an output section which will set up an iterable area
+ * of equally-sized data structures. For use with Z_STRUCT_SECTION_ITERABLE.
+ * Input sections will be sorted by name, per ld's SORT_BY_NAME.
+ *
  * This macro should be used for read-write data that is modified at runtime.
+ *
+ * Note that this keeps the symbols in the image even though
+ * they are not being directly referenced. Use this when symbols
+ * are indirectly referenced by iterating through the section.
  */
 #define Z_ITERABLE_SECTION_RAM(struct_type, subalign) \
 	SECTION_DATA_PROLOGUE(struct_type##_area,,SUBALIGN(subalign)) \
 	{ \
 		Z_LINK_ITERABLE(struct_type); \
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+
+/* Define an output section which will set up an iterable area
+ * of equally-sized data structures. For use with Z_STRUCT_SECTION_ITERABLE.
+ * Input sections will be sorted by name, per ld's SORT_BY_NAME.
+ *
+ * This macro should be used for read-write data that is modified at runtime.
+ *
+ * Note that the symbols within the section can be garbage collected.
+ */
+#define Z_ITERABLE_SECTION_RAM_GC_ALLOWED(struct_type, subalign) \
+	SECTION_DATA_PROLOGUE(struct_type##_area,,SUBALIGN(subalign)) \
+	{ \
+		Z_LINK_ITERABLE_GC_ALLOWED(struct_type); \
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 /*
@@ -74,8 +116,8 @@
  */
 #define CREATE_OBJ_LEVEL(object, level)				\
 		__##object##_##level##_start = .;		\
-		KEEP(*(SORT(.##object##_##level[0-9])));	\
-		KEEP(*(SORT(.##object##_##level[1-9][0-9])));
+		KEEP(*(SORT(.object##_##level[0-9]*)));		\
+		KEEP(*(SORT(.object##_##level[1-9][0-9]*)));
 
 /*
  * link in shell initialization objects for all modules that use shell and
@@ -248,6 +290,18 @@ extern char z_priv_stacks_ram_end[];
 extern char z_user_stacks_start[];
 extern char z_user_stacks_end[];
 #endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+extern char __tdata_start[];
+extern char __tdata_end[];
+extern char __tdata_size[];
+extern char __tbss_start[];
+extern char __tbss_end[];
+extern char __tbss_size[];
+extern char __tls_start[];
+extern char __tls_end[];
+extern char __tls_size[];
+#endif /* CONFIG_THREAD_LOCAL_STORAGE */
 
 #endif /* ! _ASMLANGUAGE */
 

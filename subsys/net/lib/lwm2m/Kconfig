@@ -120,6 +120,23 @@ config LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP
 	help
 	  Enabling this setting allows the RD client to support bootstrap mode.
 
+config LWM2M_RD_CLIENT_ENDPOINT_NAME_MAX_LENGTH
+	int "Maximum length of client endpoint name"
+	depends on LWM2M_RD_CLIENT_SUPPORT
+	default 33
+	help
+	  Default: room for 32 hexadeciaml digits (UUID) + NULL
+
+config LWM2M_RD_CLIENT_MAX_RETRIES
+	int "Specify maximum number of registration retries"
+	default 5
+	help
+	  Specify maximum number of registration retries, before the application
+	  is notified about the network failure. Once application is notified,
+	  it's up to the application to handle this situation in a way
+	  appropriate for the specific use-case (for instance by waiting for
+	  LTE link to be re-established).
+
 config LWM2M_PEER_PORT
 	int "LWM2M server port"
 	depends on LWM2M_RD_CLIENT_SUPPORT

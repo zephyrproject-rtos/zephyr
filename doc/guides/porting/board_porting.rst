@@ -432,7 +432,10 @@ while porting.
 
 - It is recommended to enable the MPU by default, if there is support for it
   in hardware. For boards with limited memory resources it is acceptable to
-  disable it.
+  disable it. When the MPU is enabled, it is recommended to also enable
+  hardware stack protection (CONFIG_HW_STACK_PROTECTION=y) and, thus, allow the
+  kernel to detect stack overflows when the system is running in privileged
+  mode.
 
 .. _flash-and-debug-support:
 
@@ -447,7 +450,7 @@ to configure a "runner" for your board. (There's nothing special you need to
 do to get ``west build`` support for your board.)
 
 "Runners" are Zephyr-specific Python classes that wrap :ref:`flash and debug
-host tools <debug-host-tools>` and integrate with west and the zephyr build
+host tools <flash-debug-host-tools>` and integrate with west and the zephyr build
 system to support ``west flash`` and related commands. Each runner supports
 flashing, debugging, or both. You need to configure the arguments to these
 Python scripts in your :file:`board.cmake` to support those commands like this

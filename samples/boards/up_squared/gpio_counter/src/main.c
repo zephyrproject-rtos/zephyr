@@ -41,7 +41,7 @@ struct _pin {
 	uint32_t		hat_num;
 	uint32_t		pin;
 	const char	*gpio_dev_name;
-	struct device	*gpio_dev;
+	const struct device *gpio_dev;
 };
 
 struct _pin counter_pins[] = {
@@ -82,7 +82,8 @@ K_SEM_DEFINE(counter_sem, 0, 1);
 #define NUM_PINS	ARRAY_SIZE(counter_pins)
 #define MASK		(BIT(NUM_PINS) - 1)
 
-void button_cb(struct device *gpiodev, struct gpio_callback *cb, uint32_t pin)
+void button_cb(const struct device *gpiodev, struct gpio_callback *cb,
+	       uint32_t pin)
 {
 	counter++;
 	k_sem_give(&counter_sem);

@@ -10,6 +10,6 @@ tests:
     extra_configs:
      - CONFIG_WDT_DISABLE_AT_BOOT=y
   kernel.workqueue.nsim:
-    platform_whitelist: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard
+    platform_allow: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard
     extra_configs:
       - CONFIG_TEST_HW_STACK_PROTECTION=n

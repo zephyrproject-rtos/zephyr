@@ -7,8 +7,17 @@
 #include <kernel.h>
 #include <kernel_structs.h>
 #include <inttypes.h>
+#include <exc_handle.h>
 #include <logging/log.h>
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
+
+#ifdef CONFIG_USERSPACE
+Z_EXC_DECLARE(z_riscv_user_string_nlen);
+
+static const struct z_exc_handle exceptions[] = {
+	Z_EXC_HANDLE(z_riscv_user_string_nlen),
+};
+#endif /* CONFIG_USERSPACE */
 
 FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 				       const z_arch_esf_t *esf)
@@ -52,8 +61,23 @@ static char *cause_str(ulong_t cause)
 	}
 }
 
-FUNC_NORETURN void _Fault(const z_arch_esf_t *esf)
+void _Fault(z_arch_esf_t *esf)
 {
+#ifdef CONFIG_USERSPACE
+	/*
+	 * Perform an assessment whether an PMP fault shall be
+	 * treated as recoverable.
+	 */
+	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
+		uint32_t start = (uint32_t)exceptions[i].start;
+		uint32_t end = (uint32_t)exceptions[i].end;
+
+		if (esf->mepc >= start && esf->mepc < end) {
+			esf->mepc = (uint32_t)exceptions[i].fixup;
+			return;
+		}
+	}
+#endif /* CONFIG_USERSPACE */
 	ulong_t mcause;
 
 	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
@@ -63,3 +87,30 @@ FUNC_NORETURN void _Fault(const z_arch_esf_t *esf)
 
 	z_riscv_fatal_error(K_ERR_CPU_EXCEPTION, esf);
 }
+
+#ifdef CONFIG_USERSPACE
+FUNC_NORETURN void arch_syscall_oops(void *ssf_ptr)
+{
+	user_fault(K_ERR_KERNEL_OOPS);
+	CODE_UNREACHABLE;
+}
+
+void z_impl_user_fault(unsigned int reason)
+{
+	z_arch_esf_t *oops_esf = _current->syscall_frame;
+
+	if (((_current->base.user_options & K_USER) != 0) &&
+		reason != K_ERR_STACK_CHK_FAIL) {
+		reason = K_ERR_KERNEL_OOPS;
+	}
+	z_riscv_fatal_error(reason, oops_esf);
+}
+
+static void z_vrfy_user_fault(unsigned int reason)
+{
+	z_impl_user_fault(reason);
+}
+
+#include <syscalls/user_fault_mrsh.c>
+
+#endif /* CONFIG_USERSPACE */

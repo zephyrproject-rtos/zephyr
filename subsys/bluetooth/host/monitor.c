@@ -45,7 +45,7 @@
 /* Maximum (string) length of a log message */
 #define MONITOR_MSG_MAX 128
 
-static struct device *monitor_dev;
+static const struct device *monitor_dev;
 
 enum {
 	BT_LOG_BUSY,
@@ -65,9 +65,6 @@ static struct {
 #endif
 	atomic_t other;
 } drops;
-
-extern int z_prf(int (*func)(), void *dest,
-		const char *format, va_list vargs);
 
 static void monitor_send(const void *data, size_t len)
 {
@@ -322,7 +319,7 @@ static const struct log_backend_api monitor_log_api = {
 LOG_BACKEND_DEFINE(bt_monitor, monitor_log_api, true);
 #endif /* CONFIG_LOG_MINIMAL */
 
-static int bt_monitor_init(struct device *d)
+static int bt_monitor_init(const struct device *d)
 {
 	ARG_UNUSED(d);
 

@@ -4,13 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if defined(CONFIG_BT_CTLR_ADV_SET)
+#define BT_CTLR_ADV_SET CONFIG_BT_CTLR_ADV_SET
+#else /* CONFIG_BT_CTLR_ADV_SET */
+#define BT_CTLR_ADV_SET 1
+#endif /* CONFIG_BT_CTLR_ADV_SET */
+
+/* Structure used to double buffer pointers of AD Data PDU buffer.
+ * The first and last members are used to make modification to AD data to be
+ * context safe. Thread always appends or updates the buffer pointed to
+ * the array element indexed by the member last.
+ * LLL in the ISR context, checks, traverses to the valid pointer indexed
+ * by the member first, such that the buffer is the latest committed by
+ * the thread context.
+ */
 struct lll_adv_pdu {
-	uint8_t           first;
-	uint8_t           last;
-	/* TODO: use,
-	 * struct pdu_adv *pdu[DOUBLE_BUFFER_SIZE];
-	 */
-	uint8_t pdu[DOUBLE_BUFFER_SIZE][PDU_AC_LL_SIZE_MAX];
+	uint8_t volatile first;
+	uint8_t          last;
+	uint8_t          *pdu[DOUBLE_BUFFER_SIZE];
 };
 
 struct lll_adv_aux {
@@ -26,9 +37,16 @@ struct lll_adv_aux {
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 };
 
+struct lll_adv_iso {
+	struct lll_hdr hdr;
+};
+
 struct lll_adv_sync {
 	struct lll_hdr hdr;
 	struct lll_adv *adv;
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	struct lll_adv_iso *adv_iso;
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 
 	uint8_t access_addr[4];
 	uint8_t crc_init[3];
@@ -68,6 +86,10 @@ struct lll_adv {
 	uint8_t phy_s:3;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
+#if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
+	uint8_t scan_req_notify:1;
+#endif
+
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	uint8_t is_mesh:1;
 #endif /* CONFIG_BT_HCI_MESH_EXT */
@@ -98,27 +120,11 @@ struct lll_adv {
 
 int lll_adv_init(void);
 int lll_adv_reset(void);
-
+int lll_adv_data_init(struct lll_adv_pdu *pdu);
+int lll_adv_data_reset(struct lll_adv_pdu *pdu);
+int lll_adv_data_release(struct lll_adv_pdu *pdu);
+struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx);
 void lll_adv_prepare(void *param);
-
-static inline struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu,
-						uint8_t *idx)
-{
-	uint8_t last;
-
-	if (pdu->first == pdu->last) {
-		last = pdu->last + 1;
-		if (last == DOUBLE_BUFFER_SIZE) {
-			last = 0U;
-		}
-	} else {
-		last = pdu->last;
-	}
-
-	*idx = last;
-
-	return (void *)pdu->pdu[last];
-}
 
 static inline void lll_adv_pdu_enqueue(struct lll_adv_pdu *pdu, uint8_t idx)
 {

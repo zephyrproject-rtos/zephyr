@@ -278,8 +278,8 @@ struct net_route_entry *net_route_lookup(struct net_if *iface,
 		route = net_route_data(nbr);
 
 		if (route->prefix_len >= longest_match &&
-		    net_ipv6_is_prefix((uint8_t *)dst,
-				       (uint8_t *)&route->addr,
+		    net_ipv6_is_prefix(dst->s6_addr,
+				       route->addr.s6_addr,
 				       route->prefix_len)) {
 			found = route;
 			longest_match = route->prefix_len;
@@ -644,6 +644,48 @@ int net_route_foreach(net_route_cb_t cb, void *user_data)
 static
 struct net_route_entry_mcast route_mcast_entries[CONFIG_NET_MAX_MCAST_ROUTES];
 
+int net_route_mcast_forward_packet(struct net_pkt *pkt,
+				   const struct net_ipv6_hdr *hdr)
+{
+	int i, ret = 0, err = 0;
+
+	for (i = 0; i < CONFIG_NET_MAX_MCAST_ROUTES; ++i) {
+		struct net_route_entry_mcast *route = &route_mcast_entries[i];
+		struct net_pkt *pkt_cpy = NULL;
+
+		if (!route->is_used) {
+			continue;
+		}
+
+		if (!net_if_flag_is_set(route->iface,
+					NET_IF_FORWARD_MULTICASTS) ||
+		    !net_ipv6_is_prefix(hdr->dst.s6_addr,
+					route->group.s6_addr,
+					route->prefix_len)         ||
+		    (pkt->iface == route->iface)) {
+			continue;
+		}
+
+		pkt_cpy = net_pkt_shallow_clone(pkt, K_NO_WAIT);
+
+		if (pkt_cpy == NULL) {
+			err--;
+			continue;
+		}
+
+		net_pkt_set_forwarding(pkt_cpy, true);
+		net_pkt_set_iface(pkt_cpy, route->iface);
+
+		if (net_send_data(pkt_cpy) >= 0) {
+			++ret;
+		} else {
+			--err;
+		}
+	}
+
+	return (err == 0) ? ret : err;
+}
+
 int net_route_mcast_foreach(net_route_mcast_cb_t cb,
 			    struct in6_addr *skip,
 			    void *user_data)
@@ -654,7 +696,9 @@ int net_route_mcast_foreach(net_route_mcast_cb_t cb,
 		struct net_route_entry_mcast *route = &route_mcast_entries[i];
 
 		if (route->is_used) {
-			if (skip && net_ipv6_addr_cmp(skip, &route->group)) {
+			if (skip && net_ipv6_is_prefix(skip->s6_addr,
+						       route->group.s6_addr,
+						       route->prefix_len)) {
 				continue;
 			}
 
@@ -668,9 +712,17 @@ int net_route_mcast_foreach(net_route_mcast_cb_t cb,
 }
 
 struct net_route_entry_mcast *net_route_mcast_add(struct net_if *iface,
-						  struct in6_addr *group)
+						  struct in6_addr *group,
+						  uint8_t prefix_len)
 {
 	int i;
+
+	if ((!net_if_flag_is_set(iface, NET_IF_FORWARD_MULTICASTS)) ||
+			(!net_ipv6_is_addr_mcast(group)) ||
+			(net_ipv6_is_addr_mcast_iface(group)) ||
+			(net_ipv6_is_addr_mcast_link(group))) {
+		return NULL;
+	}
 
 	for (i = 0; i < CONFIG_NET_MAX_MCAST_ROUTES; i++) {
 		struct net_route_entry_mcast *route = &route_mcast_entries[i];
@@ -678,6 +730,7 @@ struct net_route_entry_mcast *net_route_mcast_add(struct net_if *iface,
 		if (!route->is_used) {
 			net_ipaddr_copy(&route->group, group);
 
+			route->prefix_len = prefix_len;
 			route->iface = iface;
 			route->is_used = true;
 
@@ -713,9 +766,13 @@ net_route_mcast_lookup(struct in6_addr *group)
 		struct net_route_entry_mcast *route = &route_mcast_entries[i];
 
 		if (!route->is_used) {
-			if (net_ipv6_addr_cmp(group, &route->group)) {
-				return route;
-			}
+			continue;
+		}
+
+		if (net_ipv6_is_prefix(group->s6_addr,
+					route->group.s6_addr,
+					route->prefix_len)) {
+			return route;
 		}
 	}
 

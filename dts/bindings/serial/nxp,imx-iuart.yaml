@@ -1,0 +1,16 @@
+description: >
+    This binding gives a base representation of the NXP iMX IUART
+
+compatible: "nxp,imx-iuart"
+
+include: uart-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: false
+
+    clocks:
+      required: true

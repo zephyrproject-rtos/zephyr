@@ -9,6 +9,17 @@
 #include <sys/fdtable.h>
 #include <errno.h>
 
+/* The thread will test that the refcounting of fd object will
+ * work as expected.
+ */
+static struct k_thread fd_thread;
+static int shared_fd;
+
+#define VTABLE_INIT ((const struct fd_op_vtable *)1)
+
+K_THREAD_STACK_DEFINE(fd_thread_stack, CONFIG_ZTEST_STACKSIZE +
+		      CONFIG_TEST_EXTRA_STACKSIZE);
+
 void test_z_reserve_fd(void)
 {
 	int fd = z_reserve_fd(); /* function being tested */
@@ -28,7 +39,7 @@ void test_z_get_fd_obj_and_vtable(void)
 	int *obj;
 	obj = z_get_fd_obj_and_vtable(fd, &vtable); /* function being tested */
 
-	zassert_equal(obj != NULL, true, "obj is NULL");
+	zassert_is_null(obj, "obj is not NULL");
 
 	z_free_fd(fd);
 }
@@ -44,10 +55,15 @@ void test_z_get_fd_obj(void)
 
 	int *obj = z_get_fd_obj(fd, vtable, err); /* function being tested */
 
-	zassert_equal(obj != NULL, true, "obj is NULL");
-	zassert_equal(errno != EBADF && errno != ENFILE, true, "errno not set");
-
 	/* take branch -- if (_check_fd(fd) < 0) */
+	zassert_is_null(obj, "obj not is NULL");
+
+	obj = (void *)1;
+	vtable = (const struct fd_op_vtable *)1;
+
+	/* This will set obj and vtable properly */
+	z_finalize_fd(fd, obj, vtable);
+
 	obj = z_get_fd_obj(-1, vtable, err); /* function being tested */
 
 	zassert_equal_ptr(obj, NULL, "obj is not NULL when fd < 0");
@@ -114,15 +130,58 @@ void test_z_free_fd(void)
 	zassert_equal_ptr(obj, NULL, "obj is not NULL after freeing");
 }
 
+static void test_cb(void *fd_ptr)
+{
+	int fd = POINTER_TO_INT(fd_ptr);
+	const struct fd_op_vtable *vtable;
+	int *obj;
+
+	obj = z_get_fd_obj_and_vtable(fd, &vtable);
+
+	zassert_not_null(obj, "obj is null");
+	zassert_not_null(vtable, "vtable is null");
+
+	z_free_fd(fd);
+
+	obj = z_get_fd_obj_and_vtable(fd, &vtable);
+	zassert_is_null(obj, "obj is still there");
+	zassert_equal(errno, EBADF, "fd was found");
+}
+
+void test_z_fd_multiple_access(void)
+{
+	const struct fd_op_vtable *vtable = VTABLE_INIT;
+	void *obj = (void *)vtable;
+
+	shared_fd = z_reserve_fd();
+	zassert_true(shared_fd >= 0, "fd < 0");
+
+	z_finalize_fd(shared_fd, obj, vtable);
+
+	k_thread_create(&fd_thread, fd_thread_stack,
+			K_THREAD_STACK_SIZEOF(fd_thread_stack),
+			(k_thread_entry_t)test_cb,
+			INT_TO_POINTER(shared_fd), NULL, NULL,
+			CONFIG_ZTEST_THREAD_PRIORITY, 0, K_NO_WAIT);
+
+	k_thread_join(&fd_thread, K_FOREVER);
+
+	/* should be null since freed in the other thread */
+	obj = z_get_fd_obj_and_vtable(shared_fd, &vtable);
+	zassert_is_null(obj, "obj is still there");
+	zassert_equal(errno, EBADF, "fd was found");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_fdtable,
-				ztest_unit_test(test_z_reserve_fd),
-				ztest_unit_test(test_z_get_fd_obj_and_vtable),
-				ztest_unit_test(test_z_get_fd_obj),
-				ztest_unit_test(test_z_finalize_fd),
-				ztest_unit_test(test_z_alloc_fd),
-				ztest_unit_test(test_z_free_fd)
-				);
+			 ztest_unit_test(test_z_reserve_fd),
+			 ztest_unit_test(test_z_get_fd_obj_and_vtable),
+			 ztest_unit_test(test_z_get_fd_obj),
+			 ztest_unit_test(test_z_finalize_fd),
+			 ztest_unit_test(test_z_alloc_fd),
+			 ztest_unit_test(test_z_free_fd),
+			 ztest_unit_test(test_z_fd_multiple_access)
+		);
 	ztest_run_test_suite(test_fdtable);
 }

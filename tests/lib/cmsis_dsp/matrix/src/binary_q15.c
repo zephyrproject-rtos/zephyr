@@ -38,6 +38,9 @@ static void test_op2(int op, const q15_t *input1, const q15_t *input2,
 	arm_matrix_instance_q15 mat_out;
 
 	/* Allocate buffers */
+	output = malloc(length * sizeof(q15_t));
+	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
+
 	tmp1 = malloc(MAX_MATRIX_DIM * MAX_MATRIX_DIM * sizeof(q15_t));
 	zassert_not_null(tmp1, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
@@ -46,9 +49,6 @@ static void test_op2(int op, const q15_t *input1, const q15_t *input2,
 
 	scratch = malloc(MAX_MATRIX_DIM * MAX_MATRIX_DIM * sizeof(q15_t));
 	zassert_not_null(scratch, ASSERT_MSG_BUFFER_ALLOC_FAILED);
-
-	output = malloc(length * sizeof(q15_t));
-	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Initialise contexts */
 	mat_in1.pData = tmp1;
@@ -127,6 +127,9 @@ static void test_op2c(int op, const q15_t *input1, const q15_t *input2,
 	arm_matrix_instance_q15 mat_out;
 
 	/* Allocate buffers */
+	output = malloc(2 * length * sizeof(q15_t));
+	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
+
 	tmp1 = malloc(2 * MAX_MATRIX_DIM * MAX_MATRIX_DIM * sizeof(q15_t));
 	zassert_not_null(tmp1, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
@@ -135,9 +138,6 @@ static void test_op2c(int op, const q15_t *input1, const q15_t *input2,
 
 	scratch = malloc(2 * MAX_MATRIX_DIM * MAX_MATRIX_DIM * sizeof(q15_t));
 	zassert_not_null(scratch, ASSERT_MSG_BUFFER_ALLOC_FAILED);
-
-	output = malloc(2 * length * sizeof(q15_t));
-	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Initialise contexts */
 	mat_in1.pData = tmp1;
@@ -206,8 +206,8 @@ DEFINE_TEST_VARIANT5(
 void test_matrix_binary_q15(void)
 {
 	ztest_test_suite(matrix_binary_q15,
-		ztest_unit_test(test_op2_arm_mat_mult_q15),
-		ztest_unit_test(test_op2c_arm_mat_cmplx_mult_q15)
+		ztest_unit_test(test_op2c_arm_mat_cmplx_mult_q15),
+		ztest_unit_test(test_op2_arm_mat_mult_q15)
 		);
 
 	ztest_run_test_suite(matrix_binary_q15);

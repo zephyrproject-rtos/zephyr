@@ -37,7 +37,7 @@ void spin_for_ms(int ms)
  * @{
  * @}
  */
-/*test case main entry*/
+/* test case main entry */
 void test_main(void)
 {
 #ifdef CONFIG_USERSPACE
@@ -49,6 +49,7 @@ void test_main(void)
 			 ztest_unit_test(test_bad_priorities),
 			 ztest_unit_test(test_priority_cooperative),
 			 ztest_unit_test(test_priority_preemptible),
+			 ztest_1cpu_unit_test(test_priority_preemptible_wait_prio),
 			 ztest_unit_test(test_yield_cooperative),
 			 ztest_unit_test(test_sleep_cooperative),
 			 ztest_unit_test(test_sleep_wakeup_preemptible),

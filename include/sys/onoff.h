@@ -49,7 +49,7 @@ extern "C" {
 /**
  * @brief Value exposed by ONOFF_STATE_MASK when service is off.
  */
-#define ONOFF_STATE_OFF 0
+#define ONOFF_STATE_OFF 0U
 
 /**
  * @brief Value exposed by ONOFF_STATE_MASK when service is on.
@@ -229,9 +229,10 @@ struct onoff_client;
  *
  * These functions may be invoked from any context including
  * pre-kernel, ISR, or cooperative or pre-emptible threads.
- * Compatible functions must be isr-callable and non-suspendable.
+ * Compatible functions must be isr-ok and not sleep.
  *
- * @param mgr the manager for which the operation was initiated.
+ * @param mgr the manager for which the operation was initiated.  This may be
+ * null if the on-off service uses synchronous transitions.
  *
  * @param cli the client structure passed to the function that
  * initiated the operation.
@@ -489,7 +490,7 @@ int onoff_reset(struct onoff_manager *mgr,
  *
  * These functions may be invoked from any context including
  * pre-kernel, ISR, or cooperative or pre-emptible threads.
- * Compatible functions must be isr-callable and non-suspendable.
+ * Compatible functions must be isr-ok and not sleep.
  *
  * The callback is permitted to unregister itself from the manager,
  * but must not register or unregister any other monitors.
@@ -559,6 +560,81 @@ int onoff_monitor_register(struct onoff_manager *mgr,
  */
 int onoff_monitor_unregister(struct onoff_manager *mgr,
 			     struct onoff_monitor *mon);
+
+/**
+ * @brief State used when a driver uses the on-off service API for synchronous
+ * operations.
+ *
+ * This is useful when a subsystem API uses the on-off API to support
+ * asynchronous operations but the transitions required by a
+ * particular driver are isr-ok and not sleep.  It serves as a
+ * substitute for #onoff_manager, with locking and persisted state
+ * updates supported by onoff_sync_lock() and onoff_sync_finalize().
+ */
+struct onoff_sync_service {
+	/* Mutex protection for other fields. */
+	struct k_spinlock lock;
+
+	/* Negative is error, non-negative is reference count. */
+	int32_t count;
+};
+
+/**
+ * @brief Lock a synchronous onoff service and provide its state.
+ *
+ * @note If an error state is returned it is the caller's responsibility to
+ * decide whether to preserve it (finalize with the same error state) or clear
+ * the error (finalize with a non-error result).
+ *
+ * @param srv pointer to the synchronous service state.
+ *
+ * @param keyp pointer to where the lock key should be stored
+ *
+ * @return negative if the service is in an error state, otherwise the
+ * number of active requests at the time the lock was taken.  The lock
+ * is held on return regardless of whether a negative state is
+ * returned.
+ */
+int onoff_sync_lock(struct onoff_sync_service *srv,
+		    k_spinlock_key_t *keyp);
+
+/**
+ * @brief Process the completion of a transition in a synchronous
+ * service and release lock.
+ *
+ * This function updates the service state on the @p res and @p on parameters
+ * then releases the lock.  If @p cli is not null it finalizes the client
+ * notification using @p res.
+ *
+ * If the service was in an error state when locked, and @p res is non-negative
+ * when finalized, the count is reset to zero before completing finalization.
+ *
+ * @param srv pointer to the synchronous service state
+ *
+ * @param key the key returned by the preceding invocation of onoff_sync_lock().
+ *
+ * @param cli pointer to the onoff client through which completion
+ * information is returned.  If a null pointer is passed only the
+ * state of the service is updated.  For compatibility with the
+ * behavior of callbacks used with the manager API @p cli must be null
+ * when @p on is false (the manager does not support callbacks when
+ * turning off devices).
+ *
+ * @param res the result of the transition.  A negative value places the service
+ * into an error state.  A non-negative value increments or decrements the
+ * reference count as specified by @p on.
+ *
+ * @param on Only when @p res is non-negative, the service reference count will
+ * be incremented if@p on is @c true, and decremented if @p on is @c false.
+ *
+ * @return negative if the service is left or put into an error state, otherwise
+ * the number of active requests at the time the lock was released.
+ */
+int onoff_sync_finalize(struct onoff_sync_service *srv,
+			 k_spinlock_key_t key,
+			 struct onoff_client *cli,
+			 int res,
+			 bool on);
 
 /** @} */
 

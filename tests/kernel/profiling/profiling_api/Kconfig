@@ -3,7 +3,7 @@
 config KERNEL_PROFILING_API_TEST
 	bool
 	default y
-	select HAS_SYS_POWER_STATE_SLEEP_1
+	select HAS_POWER_STATE_SLEEP_1
 	help
 	  Hidden option enabling LPS_0 power state regardless of hardware
 	  support. This ensures that power management hooks used in this

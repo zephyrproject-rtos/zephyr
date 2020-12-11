@@ -624,8 +624,9 @@ int gptp_handle_follow_up(int port, struct net_pkt *pkt)
 	hdr = GPTP_HDR(pkt);
 
 	if (sync_hdr->sequence_id != hdr->sequence_id) {
-		NET_WARN("%s sequence id %d does not match %s %d",
+		NET_WARN("%s sequence id %d %s %s %d",
 			 "FOLLOWUP", ntohs(hdr->sequence_id),
+			 "does not match",
 			 "SYNC", ntohs(sync_hdr->sequence_id));
 		return -EINVAL;
 	}
@@ -697,7 +698,7 @@ int gptp_handle_pdelay_resp(int port, struct net_pkt *pkt)
 	/* Check clock identity. */
 	if (memcmp(default_ds->clk_id, resp->requesting_port_id.clk_id,
 		   GPTP_CLOCK_ID_LEN)) {
-		NET_WARN("Requesting Clock Identity does not match");
+		NET_WARN("Requesting Clock Identity %s", "does not match");
 		goto reset;
 	}
 	if (memcmp(default_ds->clk_id, hdr->port_id.clk_id,
@@ -708,14 +709,16 @@ int gptp_handle_pdelay_resp(int port, struct net_pkt *pkt)
 
 	/* Check port number. */
 	if (resp->requesting_port_id.port_number != htons(port)) {
-		NET_WARN("Requesting Port Number does not match");
+		NET_WARN("Requesting Port Number %s", "does not match");
 		goto reset;
 	}
 
 	/* Check sequence id. */
 	if (hdr->sequence_id != req_hdr->sequence_id) {
-		NET_WARN("Sequence Id %d does not match %d",
-			 ntohs(hdr->sequence_id), ntohs(req_hdr->sequence_id));
+		NET_WARN("Sequence Id %d %s %d",
+			 ntohs(hdr->sequence_id),
+			 "does not match",
+			 ntohs(req_hdr->sequence_id));
 		goto reset;
 	}
 
@@ -758,7 +761,7 @@ int gptp_handle_pdelay_follow_up(int port, struct net_pkt *pkt)
 	/* Check clock identity. */
 	if (memcmp(default_ds->clk_id, follow_up->requesting_port_id.clk_id,
 		   GPTP_CLOCK_ID_LEN)) {
-		NET_WARN("Requesting Clock Identity does not match");
+		NET_WARN("Requesting Clock Identity %s", "does not match");
 		goto reset;
 	}
 
@@ -770,21 +773,24 @@ int gptp_handle_pdelay_follow_up(int port, struct net_pkt *pkt)
 
 	/* Check port number. */
 	if (follow_up->requesting_port_id.port_number != htons(port)) {
-		NET_WARN("Requesting Port Number does not match");
+		NET_WARN("Requesting Port Number %s", "does not match");
 		goto reset;
 	}
 
 	/* Check sequence id. */
 	if (hdr->sequence_id != req_hdr->sequence_id) {
-		NET_WARN("Sequence Id %d does not match %d",
-			 ntohs(hdr->sequence_id), ntohs(req_hdr->sequence_id));
+		NET_WARN("Sequence Id %d %s %d",
+			 ntohs(hdr->sequence_id),
+			 "does not match",
+			 ntohs(req_hdr->sequence_id));
 		goto reset;
 	}
 
 	/* Check source port. */
 	if (memcmp(&hdr->port_id, &resp_hdr->port_id,
 		   sizeof(hdr->port_id)) != 0) {
-		NET_WARN("pDelay response and follow up port IDs do not match");
+		NET_WARN("pDelay response and follow up port IDs %s",
+			"does not match");
 		goto reset;
 	}
 

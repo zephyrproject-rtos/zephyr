@@ -20,9 +20,9 @@
 
 static struct counter_alarm_cfg pending_alarm;
 static bool is_alarm_pending;
-static struct device *device;
+static const struct device *device;
 
-static void counter_isr(void *arg)
+static void counter_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 	uint32_t current_value = hw_counter_get_value();
@@ -34,7 +34,7 @@ static void counter_isr(void *arg)
 	}
 }
 
-static int ctr_init(struct device *dev)
+static int ctr_init(const struct device *dev)
 {
 	device = dev;
 	is_alarm_pending = false;
@@ -47,7 +47,7 @@ static int ctr_init(struct device *dev)
 	return 0;
 }
 
-static int ctr_start(struct device *dev)
+static int ctr_start(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -55,7 +55,7 @@ static int ctr_start(struct device *dev)
 	return 0;
 }
 
-static int ctr_stop(struct device *dev)
+static int ctr_stop(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -63,7 +63,7 @@ static int ctr_stop(struct device *dev)
 	return 0;
 }
 
-static int ctr_get_value(struct device *dev, uint32_t *ticks)
+static int ctr_get_value(const struct device *dev, uint32_t *ticks)
 {
 	ARG_UNUSED(dev);
 
@@ -71,13 +71,13 @@ static int ctr_get_value(struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
-static uint32_t ctr_get_pending_int(struct device *dev)
+static uint32_t ctr_get_pending_int(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	return 0;
 }
 
-static int ctr_set_top_value(struct device *dev,
+static int ctr_set_top_value(const struct device *dev,
 			     const struct counter_top_cfg *cfg)
 {
 	ARG_UNUSED(dev);
@@ -87,17 +87,17 @@ static int ctr_set_top_value(struct device *dev,
 	return -ENOTSUP;
 }
 
-static uint32_t ctr_get_top_value(struct device *dev)
+static uint32_t ctr_get_top_value(const struct device *dev)
 {
 	return TOP_VALUE;
 }
 
-static uint32_t ctr_get_max_relative_alarm(struct device *dev)
+static uint32_t ctr_get_max_relative_alarm(const struct device *dev)
 {
 	return TOP_VALUE;
 }
 
-static int ctr_set_alarm(struct device *dev, uint8_t chan_id,
+static int ctr_set_alarm(const struct device *dev, uint8_t chan_id,
 			 const struct counter_alarm_cfg *alarm_cfg)
 {
 	ARG_UNUSED(dev);
@@ -121,7 +121,7 @@ static int ctr_set_alarm(struct device *dev, uint8_t chan_id,
 	return 0;
 }
 
-static int ctr_cancel_alarm(struct device *dev, uint8_t chan_id)
+static int ctr_cancel_alarm(const struct device *dev, uint8_t chan_id)
 {
 	ARG_UNUSED(dev);
 

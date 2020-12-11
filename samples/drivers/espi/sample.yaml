@@ -1,10 +1,15 @@
 sample:
+  description: A basic demo to showcase eSPI driver usage and handshake with
+    eSPI master
   name: eSPI driver sample
 tests:
   sample.drivers.espi:
-    tags: drivers
+    tags: drivers espi
+    filter: dt_compat_enabled("microchip,mec15xx-board-power")
+    depends_on: espi
     harness: console
     harness_config:
+        fixture: espi_device_connect
         type: multi_line
         ordered: true
         regex:
@@ -39,4 +44,3 @@ tests:
             - "espi: Postcode fe"
             - "espi: Postcode 7f"
             - "espi: eSPI sample completed"
-    depends_on: espi

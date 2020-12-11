@@ -75,7 +75,7 @@ static uint32_t irq_line_1;
 static uint32_t isr0_result;
 static uint32_t isr1_result;
 
-void isr1(void *param)
+void isr1(const void *param)
 {
 	ARG_UNUSED(param);
 
@@ -87,7 +87,7 @@ void isr1(void *param)
 	printk("isr1: Leave\n");
 }
 
-void isr0(void *param)
+void isr0(const void *param)
 {
 	ARG_UNUSED(param);
 

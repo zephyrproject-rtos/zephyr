@@ -7,11 +7,12 @@
 
 /dts-v1/;
 #include "nucleo_l452re_common.dtsi"
+#include <st/l4/stm32l452retxp-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32L452RE-P-NUCLEO board";
-	compatible = "st,stm32l452re-nucleo", "st,stm32l452";
+	compatible = "st,stm32l452re-nucleo";
 
 	leds {
 		compatible = "gpio-leds";

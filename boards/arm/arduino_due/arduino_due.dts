@@ -52,3 +52,7 @@
 	status = "okay";
 	current-speed = <115200>;
 };
+
+&pa8a_uart_urxd {
+	bias-pull-up;
+};

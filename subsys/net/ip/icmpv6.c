@@ -193,6 +193,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 	const struct in6_addr *src;
 	struct net_pkt *pkt;
 	size_t copy_len;
+	int ret;
 
 	net_pkt_cursor_init(orig);
 
@@ -230,6 +231,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 	}
 
 	pkt = net_pkt_alloc_with_buffer(net_pkt_iface(orig),
+					net_pkt_lladdr_src(orig)->len * 2 +
 					copy_len + NET_ICMPV6_UNUSED_LEN,
 					AF_INET6, IPPROTO_ICMPV6,
 					PKT_WAIT_TIME);
@@ -237,6 +239,50 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 		err = -ENOMEM;
 		goto drop_no_pkt;
 	}
+
+	/* We created above a new packet that contains some extra space that we
+	 * will use to store the destination and source link addresses. This is
+	 * needed because we cannot use the original pkt, which contains the
+	 * link address where the new packet will be sent, as that pkt might
+	 * get re-used before we have managed to set the link addresses in L2
+	 * as that (link address setting) happens in a different thread (TX)
+	 * than this one.
+	 * So we copy the destination and source link addresses here, then set
+	 * the link address pointers correctly, and skip the needed space
+	 * as the link address will be set in the pkt when the packet is
+	 * constructed in L2. So basically all this for just to create some
+	 * extra space for link addresses so that we can set the lladdr
+	 * pointers in net_pkt.
+	 */
+	net_pkt_set_overwrite(pkt, true);
+
+	ret = net_pkt_write(pkt, net_pkt_lladdr_src(orig)->addr,
+			    net_pkt_lladdr_src(orig)->len);
+	if (ret < 0) {
+		err = ret;
+		goto drop;
+	}
+
+	net_pkt_lladdr_dst(pkt)->addr = pkt->buffer->data;
+
+	ret = net_pkt_write(pkt, net_pkt_lladdr_dst(orig)->addr,
+			    net_pkt_lladdr_dst(orig)->len);
+	if (ret < 0) {
+		err = ret;
+		goto drop;
+	}
+
+	net_buf_pull_mem(pkt->buffer, net_pkt_lladdr_dst(orig)->len);
+
+	net_pkt_lladdr_src(pkt)->addr = pkt->buffer->data;
+
+	net_buf_pull_mem(pkt->buffer, net_pkt_lladdr_src(orig)->len);
+
+	net_pkt_lladdr_src(pkt)->len = net_pkt_lladdr_dst(orig)->len;
+	net_pkt_lladdr_dst(pkt)->len = net_pkt_lladdr_src(orig)->len;
+
+	net_pkt_set_overwrite(pkt, false);
+	net_pkt_cursor_init(pkt);
 
 	if (net_ipv6_is_addr_mcast(&ip_hdr->dst)) {
 		src = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
@@ -266,11 +312,6 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 	if (err || net_pkt_copy(pkt, orig, copy_len)) {
 		goto drop;
 	}
-
-	net_pkt_lladdr_src(pkt)->addr = net_pkt_lladdr_dst(orig)->addr;
-	net_pkt_lladdr_src(pkt)->len = net_pkt_lladdr_dst(orig)->len;
-	net_pkt_lladdr_dst(pkt)->addr = net_pkt_lladdr_src(orig)->addr;
-	net_pkt_lladdr_dst(pkt)->len = net_pkt_lladdr_src(orig)->len;
 
 	net_pkt_cursor_init(pkt);
 	net_ipv6_finalize(pkt, IPPROTO_ICMPV6);

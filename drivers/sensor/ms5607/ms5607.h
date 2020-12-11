@@ -62,7 +62,7 @@
 #endif
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-int ms5607_spi_init(struct device *dev);
+int ms5607_spi_init(const struct device *dev);
 #else
 /* I2c Interface not implemented yet */
 BUILD_ASSERT(1, "I2c interface not implemented yet");
@@ -73,7 +73,7 @@ struct ms5607_config {
 };
 
 struct ms5607_data {
-	struct device *ms5607_device;
+	const struct device *ms5607_device;
 	const struct ms5607_transfer_function *tf;
 	/* Calibration values */
 	uint16_t sens_t1;

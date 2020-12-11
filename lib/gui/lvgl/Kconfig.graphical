@@ -1,0 +1,140 @@
+# Copyright (c) 2018-2019 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+# Copyright (c) 2020 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Graphical settings"
+
+config LVGL_DISPLAY_DEV_NAME
+	string "Display device name"
+	default "DISPLAY"
+	help
+	  Name of the display device to use for rendering.
+
+config LVGL_HOR_RES_MAX
+	int "Horizontal Screen Resolution"
+	default 480
+	help
+	  Horizontal screen resolution in pixels
+
+config LVGL_VER_RES_MAX
+	int "Vertical Screen Resolution"
+	default 320
+	help
+	  Vertical screen resolution in pixels
+
+choice LVGL_COLOR_DEPTH
+	prompt "Color Depth"
+	default LVGL_COLOR_DEPTH_32
+	help
+	  Color depth to be used by library
+
+	config LVGL_COLOR_DEPTH_32
+		bool "32-bit"
+
+	config LVGL_COLOR_DEPTH_16
+		bool "16-bit"
+
+	config LVGL_COLOR_DEPTH_8
+		bool "8-bit"
+
+	config LVGL_COLOR_DEPTH_1
+		bool "1-bit"
+
+endchoice
+
+config LVGL_COLOR_16_SWAP
+	bool "RGB565 byte swap"
+	depends on LVGL_COLOR_DEPTH_16
+	help
+	  Swap the 2 bytes of a RGB565 pixel.
+
+config LVGL_COLOR_SCREEN_TRANSP
+	bool "Transparency support"
+	depends on LVGL_COLOR_DEPTH_32
+	help
+	  Enable screen transparency. Useful for OSD or other overlapping GUISs.
+
+choice
+	prompt "Chroma key color"
+	default LVGL_COLOR_TRANSP_GREEN
+	help
+	  Color to to use as chroma key
+
+	config LVGL_COLOR_TRANSP_RED
+		bool "Red"
+
+	config LVGL_COLOR_TRANSP_GREEN
+		bool "Green"
+
+	config LVGL_COLOR_TRANSP_BLUE
+		bool "Blue"
+
+	config LVGL_COLOR_TRANSP_CUSTOM
+		bool "Custom"
+
+endchoice
+
+if LVGL_COLOR_TRANSP_CUSTOM
+
+config LVGL_CUSTOM_COLOR_TRANSP_RED
+	hex "Chroma Key Red"
+	range 0x00 0xFF
+	default 0x00
+	help
+	  Value of the color red to be used in the chroma key
+
+config LVGL_CUSTOM_COLOR_TRANSP_GREEN
+	hex "Chroma Key Green"
+	range 0x00 0xFF
+	default 0xFF
+	help
+	  Value of the color green to be used in the chroma key
+
+config LVGL_CUSTOM_COLOR_TRANSP_BLUE
+	hex "Chroma Key Blue"
+	range 0x00 0xFF
+	default 0x00
+	help
+	  Value of the color blue to be used in the chroma key
+
+endif # LVGL_COLOR_TRANSP_CUSTOM
+
+config LVGL_ANTIALIAS
+	bool "Enable anti-aliasing"
+	help
+	  Enable anti-aliasing
+
+config LVGL_DISP_DEF_REFR_PERIOD
+	int "Screen refresh period"
+	default 30
+	help
+	  Screen refresh period in milliseconds
+
+config LVGL_DPI
+	int "DPI"
+	default 130
+	help
+	  Dots per inch (DPI)
+
+config LVGL_DISP_SMALL_LIMIT
+	int "Small display limit"
+	default 30
+	help
+	  According to the width of the display (hor. res. / dpi) the displays fall
+	  in 4 categories. This limit is the threshold for small displays.
+
+config LVGL_DISP_MEDIUM_LIMIT
+	int "Medium display limit"
+	default 50
+	help
+	  According to the width of the display (hor. res. / dpi) the displays fall
+	  in 4 categories. This limit is the threshold for medium displays.
+
+config LVGL_DISP_LARGE_LIMIT
+	int "Large display limit"
+	default 70
+	help
+	  According to the width of the display (hor. res. / dpi) the displays fall
+	  in 4 categories. This limit is the threshold for large displays.
+
+endmenu

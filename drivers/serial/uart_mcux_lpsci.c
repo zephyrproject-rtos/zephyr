@@ -19,7 +19,7 @@ struct mcux_lpsci_config {
 	clock_control_subsys_t clock_subsys;
 	uint32_t baud_rate;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	void (*irq_config_func)(struct device *dev);
+	void (*irq_config_func)(const struct device *dev);
 #endif
 };
 
@@ -30,9 +30,9 @@ struct mcux_lpsci_data {
 #endif
 };
 
-static int mcux_lpsci_poll_in(struct device *dev, unsigned char *c)
+static int mcux_lpsci_poll_in(const struct device *dev, unsigned char *c)
 {
-	const struct mcux_lpsci_config *config = dev->config_info;
+	const struct mcux_lpsci_config *config = dev->config;
 	uint32_t flags = LPSCI_GetStatusFlags(config->base);
 	int ret = -1;
 
@@ -44,9 +44,9 @@ static int mcux_lpsci_poll_in(struct device *dev, unsigned char *c)
 	return ret;
 }
 
-static void mcux_lpsci_poll_out(struct device *dev, unsigned char c)
+static void mcux_lpsci_poll_out(const struct device *dev, unsigned char c)
 {
-	const struct mcux_lpsci_config *config = dev->config_info;
+	const struct mcux_lpsci_config *config = dev->config;
 
 	while (!(LPSCI_GetStatusFlags(config->base)
 		& kLPSCI_TxDataRegEmptyFlag)) {
@@ -55,9 +55,9 @@ static void mcux_lpsci_poll_out(struct device *dev, unsigned char c)
 	LPSCI_WriteByte(config->base, c);
 }
 
-static int mcux_lpsci_err_check(struct device *dev)
+static int mcux_lpsci_err_check(const struct device *dev)
 {
-	const struct mcux_lpsci_config *config = dev->config_info;
+	const struct mcux_lpsci_config *config = dev->config;
 	uint32_t flags = LPSCI_GetStatusFlags(config->base);
 	int err = 0;
 
@@ -81,10 +81,11 @@ static int mcux_lpsci_err_check(struct device *dev)
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static int mcux_lpsci_fifo_fill(struct device *dev, const uint8_t *tx_data,
+static int mcux_lpsci_fifo_fill(const struct device *dev,
+				const uint8_t *tx_data,
 				int len)
 {
-	const struct mcux_lpsci_config *config = dev->config_info;
+	const struct mcux_lpsci_config *config = dev->config;
 	uint8_t num_tx = 0U;
 
 	while ((len - num_tx > 0) &&
@@ -97,10 +98,10 @@ static int mcux_lpsci_fifo_fill(struct device *dev, const uint8_t *tx_data,
 	return num_tx;
 }
 
-static int mcux_lpsci_fifo_read(struct device *dev, uint8_t *rx_data,
+static int mcux_lpsci_fifo_read(const struct device *dev, uint8_t *rx_data,
 				const int len)
 {
-	const struct mcux_lpsci_config *config = dev->config_info;
+	const struct mcux_lpsci_config *config = dev->config;
 	uint8_t num_rx = 0U;
 
 	while ((len - num_rx > 0) &&
@@ -113,33 +114,33 @@ static int mcux_lpsci_fifo_read(struct device *dev, uint8_t *rx_data,
 	return num_rx;
 }
 
-static void mcux_lpsci_irq_tx_enable(struct device *dev)
+static void mcux_lpsci_irq_tx_enable(const struct device *dev)
 {
-	const struct mcux_lpsci_config *config = dev->config_info;
+	const struct mcux_lpsci_config *config = dev->config;
 	uint32_t mask = kLPSCI_TxDataRegEmptyInterruptEnable;
 
 	LPSCI_EnableInterrupts(config->base, mask);
 }
 
-static void mcux_lpsci_irq_tx_disable(struct device *dev)
+static void mcux_lpsci_irq_tx_disable(const struct device *dev)
 {
-	const struct mcux_lpsci_config *config = dev->config_info;
+	const struct mcux_lpsci_config *config = dev->config;
 	uint32_t mask = kLPSCI_TxDataRegEmptyInterruptEnable;
 
 	LPSCI_DisableInterrupts(config->base, mask);
 }
 
-static int mcux_lpsci_irq_tx_complete(struct device *dev)
+static int mcux_lpsci_irq_tx_complete(const struct device *dev)
 {
-	const struct mcux_lpsci_config *config = dev->config_info;
+	const struct mcux_lpsci_config *config = dev->config;
 	uint32_t flags = LPSCI_GetStatusFlags(config->base);
 
 	return (flags & kLPSCI_TransmissionCompleteFlag) != 0U;
 }
 
-static int mcux_lpsci_irq_tx_ready(struct device *dev)
+static int mcux_lpsci_irq_tx_ready(const struct device *dev)
 {
-	const struct mcux_lpsci_config *config = dev->config_info;
+	const struct mcux_lpsci_config *config = dev->config;
 	uint32_t mask = kLPSCI_TxDataRegEmptyInterruptEnable;
 	uint32_t flags = LPSCI_GetStatusFlags(config->base);
 
@@ -147,42 +148,42 @@ static int mcux_lpsci_irq_tx_ready(struct device *dev)
 		&& (flags & kLPSCI_TxDataRegEmptyFlag);
 }
 
-static void mcux_lpsci_irq_rx_enable(struct device *dev)
+static void mcux_lpsci_irq_rx_enable(const struct device *dev)
 {
-	const struct mcux_lpsci_config *config = dev->config_info;
+	const struct mcux_lpsci_config *config = dev->config;
 	uint32_t mask = kLPSCI_RxDataRegFullInterruptEnable;
 
 	LPSCI_EnableInterrupts(config->base, mask);
 }
 
-static void mcux_lpsci_irq_rx_disable(struct device *dev)
+static void mcux_lpsci_irq_rx_disable(const struct device *dev)
 {
-	const struct mcux_lpsci_config *config = dev->config_info;
+	const struct mcux_lpsci_config *config = dev->config;
 	uint32_t mask = kLPSCI_RxDataRegFullInterruptEnable;
 
 	LPSCI_DisableInterrupts(config->base, mask);
 }
 
-static int mcux_lpsci_irq_rx_full(struct device *dev)
+static int mcux_lpsci_irq_rx_full(const struct device *dev)
 {
-	const struct mcux_lpsci_config *config = dev->config_info;
+	const struct mcux_lpsci_config *config = dev->config;
 	uint32_t flags = LPSCI_GetStatusFlags(config->base);
 
 	return (flags & kLPSCI_RxDataRegFullFlag) != 0U;
 }
 
-static int mcux_lpsci_irq_rx_ready(struct device *dev)
+static int mcux_lpsci_irq_rx_ready(const struct device *dev)
 {
-	const struct mcux_lpsci_config *config = dev->config_info;
+	const struct mcux_lpsci_config *config = dev->config;
 	uint32_t mask = kLPSCI_RxDataRegFullInterruptEnable;
 
 	return (LPSCI_GetEnabledInterrupts(config->base) & mask)
 		&& mcux_lpsci_irq_rx_full(dev);
 }
 
-static void mcux_lpsci_irq_err_enable(struct device *dev)
+static void mcux_lpsci_irq_err_enable(const struct device *dev)
 {
-	const struct mcux_lpsci_config *config = dev->config_info;
+	const struct mcux_lpsci_config *config = dev->config;
 	uint32_t mask = kLPSCI_NoiseErrorInterruptEnable |
 			kLPSCI_FramingErrorInterruptEnable |
 			kLPSCI_ParityErrorInterruptEnable;
@@ -190,9 +191,9 @@ static void mcux_lpsci_irq_err_enable(struct device *dev)
 	LPSCI_EnableInterrupts(config->base, mask);
 }
 
-static void mcux_lpsci_irq_err_disable(struct device *dev)
+static void mcux_lpsci_irq_err_disable(const struct device *dev)
 {
-	const struct mcux_lpsci_config *config = dev->config_info;
+	const struct mcux_lpsci_config *config = dev->config;
 	uint32_t mask = kLPSCI_NoiseErrorInterruptEnable |
 			kLPSCI_FramingErrorInterruptEnable |
 			kLPSCI_ParityErrorInterruptEnable;
@@ -200,31 +201,30 @@ static void mcux_lpsci_irq_err_disable(struct device *dev)
 	LPSCI_DisableInterrupts(config->base, mask);
 }
 
-static int mcux_lpsci_irq_is_pending(struct device *dev)
+static int mcux_lpsci_irq_is_pending(const struct device *dev)
 {
 	return (mcux_lpsci_irq_tx_ready(dev)
 		|| mcux_lpsci_irq_rx_ready(dev));
 }
 
-static int mcux_lpsci_irq_update(struct device *dev)
+static int mcux_lpsci_irq_update(const struct device *dev)
 {
 	return 1;
 }
 
-static void mcux_lpsci_irq_callback_set(struct device *dev,
-				       uart_irq_callback_user_data_t cb,
-				       void *cb_data)
+static void mcux_lpsci_irq_callback_set(const struct device *dev,
+					uart_irq_callback_user_data_t cb,
+					void *cb_data)
 {
-	struct mcux_lpsci_data *data = dev->driver_data;
+	struct mcux_lpsci_data *data = dev->data;
 
 	data->callback = cb;
 	data->cb_data = cb_data;
 }
 
-static void mcux_lpsci_isr(void *arg)
+static void mcux_lpsci_isr(const struct device *dev)
 {
-	struct device *dev = arg;
-	struct mcux_lpsci_data *data = dev->driver_data;
+	struct mcux_lpsci_data *data = dev->data;
 
 	if (data->callback) {
 		data->callback(dev, data->cb_data);
@@ -232,11 +232,11 @@ static void mcux_lpsci_isr(void *arg)
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static int mcux_lpsci_init(struct device *dev)
+static int mcux_lpsci_init(const struct device *dev)
 {
-	const struct mcux_lpsci_config *config = dev->config_info;
+	const struct mcux_lpsci_config *config = dev->config;
 	lpsci_config_t uart_config;
-	struct device *clock_dev;
+	const struct device *clock_dev;
 	uint32_t clock_freq;
 
 	clock_dev = device_get_binding(config->clock_name);
@@ -287,7 +287,7 @@ static const struct uart_driver_api mcux_lpsci_driver_api = {
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 #define MCUX_LPSCI_CONFIG_FUNC(n)					\
-	static void mcux_lpsci_config_func_##n(struct device *dev)	\
+	static void mcux_lpsci_config_func_##n(const struct device *dev)	\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    DT_INST_IRQ(n, priority),			\

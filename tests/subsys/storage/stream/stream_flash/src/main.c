@@ -24,7 +24,7 @@
 #define FLASH_BASE (64*1024)
 #define FLASH_AVAILABLE (FLASH_SIZE-FLASH_BASE)
 
-static struct device *fdev;
+static const struct device *fdev;
 static const struct flash_driver_api *api;
 static const struct flash_pages_layout *layout;
 static size_t layout_size;
@@ -378,7 +378,7 @@ static void test_stream_flash_buffered_write_whole_page(void)
 void test_main(void)
 {
 	fdev = device_get_binding(FLASH_NAME);
-	api = fdev->driver_api;
+	api = fdev->api;
 	api->page_layout(fdev, &layout, &layout_size);
 
 	page_size = layout->pages_size;
