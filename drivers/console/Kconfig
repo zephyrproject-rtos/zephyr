@@ -338,10 +338,11 @@ config UART_MUX
 	  UART. The GSM 07.10 muxing protocol is used to separate the data
 	  between these muxed UARTs.
 
+if UART_MUX
+
 config UART_MUX_INIT_PRIORITY
 	int "Init priority"
 	default 95
-	depends on UART_MUX
 	help
 	  Device driver initialization priority. UART mux has to be
 	  initialized after the UART driver it uses.
@@ -349,7 +350,6 @@ config UART_MUX_INIT_PRIORITY
 config UART_MUX_DEVICE_NAME
 	string "UART mux device name template"
 	default "GSM"
-	depends on UART_MUX
 	help
 	  Device name template for the UART mux Devices. First device would
 	  have name $(UART_MUX_DEVICE_NAME)_0, etc. User will access muxed
@@ -358,7 +358,6 @@ config UART_MUX_DEVICE_NAME
 config UART_MUX_RINGBUF_SIZE
 	int "UART mux ring buffer size"
 	default 256
-	depends on UART_MUX
 	help
 	  UART mux ring buffer size when passing data from RX ISR to worker
 	  thread that will do the unmuxing.
@@ -366,14 +365,12 @@ config UART_MUX_RINGBUF_SIZE
 config UART_MUX_TEMP_BUF_SIZE
 	int "Size of the temp buffer when reading data from real UART"
 	default 32
-	depends on UART_MUX
 	help
 	  Size of the temporary RX buffer in receiving ISR.
 
 config UART_MUX_DEVICE_COUNT
 	int "Number of UART mux devices (DLCIs)"
 	default GSM_MUX_DLCI_MAX
-	depends on UART_MUX
 	range 1 64
 	help
 	  Number of instances of UART muxes. Default value is set by
@@ -383,7 +380,6 @@ config UART_MUX_DEVICE_COUNT
 config UART_MUX_REAL_DEVICE_COUNT
 	int "Number of real UART devices"
 	default 1
-	depends on UART_MUX
 	help
 	  Tells how many real UART devices there are. Typically there is
 	  only one UART and the muxed UARTs are run on top of that. If you have
@@ -405,6 +401,8 @@ module = UART_MUX
 module-str = UART mux
 source "subsys/logging/Kconfig.template.log_config"
 
+endif # UART_MUX
+
 config UART_MUX_VERBOSE_DEBUG
 	bool "Print hexdump of sent and received packets"
 	depends on UART_MUX_LOG_LEVEL_DBG
@@ -413,4 +411,4 @@ config UART_MUX_VERBOSE_DEBUG
 	  this if really needed.
 
 
-endif
+endif # CONSOLE
