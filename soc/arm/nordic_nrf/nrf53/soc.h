@@ -12,14 +12,7 @@
 #ifndef _NORDICSEMI_NRF53_SOC_H_
 #define _NORDICSEMI_NRF53_SOC_H_
 
-#ifndef _ASMLANGUAGE
-
-#include <nrfx.h>
-
-/* Add include for DTS generated information */
-#include <devicetree.h>
-
-#endif /* !_ASMLANGUAGE */
+#include "../soc_nrf_common.h"
 
 #if defined(CONFIG_SOC_NRF5340_CPUAPP)
 #define FLASH_PAGE_ERASE_MAX_TIME_US  89700UL
