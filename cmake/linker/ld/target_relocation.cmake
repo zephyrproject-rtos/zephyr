@@ -10,6 +10,7 @@ macro(toolchain_ld_relocation)
        "${PROJECT_BINARY_DIR}/include/generated/linker_sram_bss_relocate.ld")
   set(MEM_RELOCATION_CODE "${PROJECT_BINARY_DIR}/code_relocation.c")
 
+  # using VERBATIM would be better, but this breaks the "--verbose" argument
   add_custom_command(
     OUTPUT ${MEM_RELOCATION_CODE} ${MEM_RELOCATION_LD}
     COMMAND
@@ -17,7 +18,7 @@ macro(toolchain_ld_relocation)
     ${ZEPHYR_BASE}/scripts/gen_relocate_app.py
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     -d ${APPLICATION_BINARY_DIR}
-    -i '$<TARGET_PROPERTY:code_data_relocation_target,COMPILE_DEFINITIONS>'
+    -i "\"$<TARGET_PROPERTY:code_data_relocation_target,COMPILE_DEFINITIONS>\""
     -o ${MEM_RELOCATION_LD}
     -s ${MEM_RELOCATION_SRAM_DATA_LD}
     -b ${MEM_RELOCATION_SRAM_BSS_LD}
