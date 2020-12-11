@@ -275,8 +275,10 @@ static void gicv3_dist_init(void)
 }
 
 /* TODO: add arm_gic_secondary_init() for multicore support */
-int arm_gic_init(void)
+int arm_gic_init(const struct device *unused)
 {
+	ARG_UNUSED(unused);
+
 	gicv3_dist_init();
 
 	/* Fixme: populate each redistributor */
@@ -288,3 +290,5 @@ int arm_gic_init(void)
 
 	return 0;
 }
+
+SYS_INIT(arm_gic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
