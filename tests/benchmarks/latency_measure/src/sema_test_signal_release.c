@@ -44,6 +44,8 @@ void thread_sema_test1(void *p1, void *p2, void *p3)
 int sema_context_switch(void)
 {
 	uint32_t diff;
+
+	bench_test_start();
 	timing_start();
 
 	k_thread_create(&thread_one_data, thread_one_stack,
@@ -62,6 +64,8 @@ int sema_context_switch(void)
 	k_sem_give(&sem_bench);
 	diff = timing_cycles_get(&timestamp_start_sema_g_c, &timestamp_end_sema_g_c);
 	PRINT_STATS("Semaphore give time (context switch)", diff);
+
+	timing_stop();
 
 	return 0;
 }
@@ -121,6 +125,6 @@ int sema_test_signal(void)
 		error_count++;
 		PRINT_OVERFLOW_ERROR();
 	}
-	timing_stop();
+
 	return 0;
 }
