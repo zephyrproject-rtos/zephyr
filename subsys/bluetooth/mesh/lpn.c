@@ -297,6 +297,9 @@ static int send_friend_req(struct bt_mesh_lpn *lpn)
 		.src = bt_mesh_primary_addr(),
 		.xmit = POLL_XMIT,
 	};
+
+	lpn->lpn_counter++;
+
 	struct bt_mesh_ctl_friend_req req = {
 		.criteria    = LPN_CRITERIA,
 		.recv_delay  = LPN_RECV_DELAY,
@@ -567,8 +570,6 @@ int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,
 		return err;
 	}
 
-	lpn->lpn_counter++;
-
 	return 0;
 }
 
@@ -794,7 +795,7 @@ static void lpn_timeout(struct k_work *work)
 		if (IS_ENABLED(CONFIG_BT_MESH_LPN_ESTABLISHMENT)) {
 			bt_mesh_scan_disable();
 		}
-		lpn->lpn_counter++;
+
 		lpn_set_state(BT_MESH_LPN_ENABLED);
 		lpn->sent_req = 0U;
 		k_delayed_work_submit(&lpn->timer, FRIEND_REQ_RETRY_TIMEOUT);

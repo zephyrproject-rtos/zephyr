@@ -178,6 +178,7 @@ static void friend_clear(struct bt_mesh_friend *frnd)
 		}
 	}
 
+	frnd->counter++;
 	frnd->subnet = NULL;
 	frnd->established = 0U;
 	frnd->pending_buf = 0U;
@@ -863,6 +864,10 @@ static void enqueue_offer(struct bt_mesh_friend *frnd, int8_t rssi)
 	off->queue_size = CONFIG_BT_MESH_FRIEND_QUEUE_SIZE,
 	off->sub_list_size = ARRAY_SIZE(frnd->sub_list),
 	off->rssi = rssi,
+
+	/* The Counter may be used in the later key update procedure. Therefore
+	 * we should postpone the update of counter until we terminated friendship.
+	 */
 	off->frnd_counter = sys_cpu_to_be16(frnd->counter);
 
 	buf = encode_friend_ctl(frnd, TRANS_CTL_OP_FRIEND_OFFER, &sdu);
@@ -874,8 +879,6 @@ static void enqueue_offer(struct bt_mesh_friend *frnd, int8_t rssi)
 	if (encrypt_friend_pdu(frnd, buf, true)) {
 		return;
 	}
-
-	frnd->counter++;
 
 	if (frnd->last) {
 		net_buf_unref(frnd->last);
