@@ -1,0 +1,35 @@
+/ {
+	gpio_ext {
+		compatible = "gpio-led";
+		gpioex0_p0: gpioex0_p0 {gpios = <&gpioex0 0 GPIO_ACTIVE_HIGH>; label = "gpioex0_p0"; };
+		gpioex0_p1: gpioex0_p1 {gpios = <&gpioex0 1 GPIO_ACTIVE_HIGH>; label = "gpioex0_p1"; };
+		gpioex0_p2: gpioex0_p2 {gpios = <&gpioex0 2 GPIO_ACTIVE_HIGH>; label = "gpioex0_p2"; };
+		gpioex0_p3: gpioex0_p3 {gpios = <&gpioex0 3 GPIO_ACTIVE_HIGH>; label = "gpioex0_p3"; };
+		gpioex0_p4: gpioex0_p4 {gpios = <&gpioex0 4 GPIO_ACTIVE_HIGH>; label = "gpioex0_p4"; };
+		gpioex0_p5: gpioex0_p5 {gpios = <&gpioex0 5 GPIO_ACTIVE_HIGH>; label = "gpioex0_p5"; };
+		gpioex0_p6: gpioex0_p6 {gpios = <&gpioex0 6 GPIO_ACTIVE_HIGH>; label = "gpioex0_p6"; };
+		gpioex0_p7: gpioex0_p7 {gpios = <&gpioex0 7 GPIO_ACTIVE_HIGH>; label = "gpioex0_p7"; };
+		gpioex0_p8: gpioex0_p8 {gpios = <&gpioex0 8 GPIO_ACTIVE_HIGH>; label = "gpioex0_p8"; };
+		gpioex0_p9: gpioex0_p9 {gpios = <&gpioex0 9 GPIO_ACTIVE_HIGH>; label = "gpioex0_p9"; };
+		gpioex0_p10: gpioex0_p10 {gpios = <&gpioex0 10 GPIO_ACTIVE_HIGH>; label = "gpioex0_p10"; };
+		gpioex0_p11: gpioex0_p11 {gpios = <&gpioex0 11 GPIO_ACTIVE_HIGH>; label = "gpioex0_p11"; };
+		gpioex0_p12: gpioex0_p12 {gpios = <&gpioex0 12 GPIO_ACTIVE_HIGH>; label = "gpioex0_p12"; };
+		gpioex0_p13: gpioex0_p13 {gpios = <&gpioex0 13 GPIO_ACTIVE_HIGH>; label = "gpioex0_p13"; };
+		gpioex0_p14: gpioex0_p14 {gpios = <&gpioex0 14 GPIO_ACTIVE_HIGH>; label = "gpioex0_p14"; };
+		gpioex0_p15: gpioex0_p15 {gpios = <&gpioex0 15 GPIO_ACTIVE_HIGH>; label = "gpioex0_p15"; };
+	};
+};
+
+&spi0 {
+	status = "ok";
+
+	gpioex0:mcp23x17@20 {
+		compatible = "microchip,mcp23x17";
+		reg = <0x20>;
+		label = "GPIO_EX0";
+		ngpios = <16>;
+		spi-max-frequency = <10000>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+};

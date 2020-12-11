@@ -25,7 +25,7 @@ source "drivers/gpio/Kconfig.dw"
 
 source "drivers/gpio/Kconfig.pca95xx"
 
-source "drivers/gpio/Kconfig.mcp23s17"
+source "drivers/gpio/Kconfig.mcp23x17"
 
 source "drivers/gpio/Kconfig.mcux"
 

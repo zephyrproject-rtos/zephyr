@@ -1,15 +1,16 @@
 /*
  * Copyright (c) 2020 Geanix ApS
+ * Copyright (c) 2020 Prevas A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
- * @file Header file for the MCP23S17 driver.
+ * @file Header file for the MCP23X17 driver.
  */
 
-#ifndef ZEPHYR_DRIVERS_GPIO_GPIO_MCP23S17_H_
-#define ZEPHYR_DRIVERS_GPIO_GPIO_MCP23S17_H_
+#ifndef ZEPHYR_DRIVERS_GPIO_GPIO_MCP23X17_H_
+#define ZEPHYR_DRIVERS_GPIO_GPIO_MCP23X17_H_
 
 #include <kernel.h>
 
@@ -42,11 +43,11 @@ extern "C" {
 #define REG_OLAT_PORTA                  0x14
 #define REG_OLAT_PORTB                  0x15
 
-#define MCP23S17_ADDR                   0x40
-#define MCP23S17_READBIT                0x01
+#define MCP23X17_ADDR                   0x40
+#define MCP23X17_READBIT                0x01
 
 /** Configuration data */
-struct mcp23s17_config {
+struct mcp23x17_config {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_config common;
 
@@ -59,14 +60,14 @@ struct mcp23s17_config {
 };
 
 /** Runtime driver data */
-struct mcp23s17_drv_data {
+struct mcp23x17_drv_data {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_config data;
 
 	/** Master SPI device */
 	const struct device *spi;
 	struct spi_config spi_cfg;
-	struct spi_cs_control mcp23s17_cs_ctrl;
+	struct spi_cs_control mcp23x17_cs_ctrl;
 
 	struct k_sem lock;
 
@@ -89,4 +90,4 @@ struct mcp23s17_drv_data {
 }
 #endif
 
-#endif  /* ZEPHYR_DRIVERS_GPIO_GPIO_MCP23S17_H_ */
+#endif  /* ZEPHYR_DRIVERS_GPIO_GPIO_MCP23X17_H_ */
