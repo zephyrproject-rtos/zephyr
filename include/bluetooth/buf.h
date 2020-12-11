@@ -130,7 +130,8 @@ static inline void bt_buf_set_type(struct net_buf *buf, enum bt_buf_type type)
  */
 static inline enum bt_buf_type bt_buf_get_type(struct net_buf *buf)
 {
-	return ((struct bt_buf_data *)net_buf_user_data(buf))->type;
+	return (enum bt_buf_type)((struct bt_buf_data *)net_buf_user_data(buf))
+		->type;
 }
 
 /**
