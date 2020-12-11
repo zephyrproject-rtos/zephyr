@@ -81,6 +81,10 @@ static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 	ret = esp_cmd_send(dev, NULL, 0, connect_msg, ESP_CMD_TIMEOUT);
 	if (ret == 0) {
 		sock->flags |= ESP_SOCK_CONNECTED;
+		if (sock->type == SOCK_STREAM) {
+			net_context_set_state(sock->context,
+					      NET_CONTEXT_CONNECTED);
+		}
 	} else if (ret == -ETIMEDOUT) {
 		/* FIXME:
 		 * What if the connection finishes after we return from
