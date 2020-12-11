@@ -1539,7 +1539,7 @@ int bt_hci_disconnect(uint16_t handle, uint8_t reason)
 	disconn->handle = sys_cpu_to_le16(handle);
 	disconn->reason = reason;
 
-	return bt_hci_cmd_send(BT_HCI_OP_DISCONNECT, buf);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_DISCONNECT, buf, NULL);
 }
 
 static void hci_disconn_complete_prio(struct net_buf *buf)
