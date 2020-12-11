@@ -1660,7 +1660,9 @@ static int offload_connect(struct net_context *context,
 		 sock->socket_id, wncm14a2a_sprint_ip_addr(addr),
 		 dst_port, timeout_sec);
 	ret = send_at_cmd(sock, buf, MDM_CMD_CONN_TIMEOUT);
-	if (ret < 0) {
+	if (!ret) {
+		net_context_set_state(sock->context, NET_CONTEXT_CONNECTED);
+	} else {
 		LOG_ERR("AT@SOCKCONN ret:%d", ret);
 	}
 
