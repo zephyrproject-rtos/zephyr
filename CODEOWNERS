@@ -560,6 +560,7 @@
 /subsys/testsuite/                        @nashif
 /subsys/timing/                           @nashif @dcpleung
 /subsys/usb/                              @jfischer-no @finikorg
+/subsys/usb/class/usb_dfu.c               @nvlsianpu
 /tests/                                   @nashif
 /tests/application_development/libcxx/    @pabigot
 /tests/arch/arm/                          @ioannisg @stephanosio
