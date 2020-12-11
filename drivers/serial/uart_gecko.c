@@ -425,10 +425,10 @@ static const struct uart_driver_api uart_gecko_driver_api = {
 	{								       \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(idx, rx, irq),		       \
 			    DT_INST_IRQ_BY_NAME(idx, rx, priority),	       \
-			    uart_gecko_isr, DEVICE_GET(uart_##idx), 0);	       \
+			    uart_gecko_isr, DEVICE_DT_INST_GET(idx), 0);       \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(idx, tx, irq),		       \
 			    DT_INST_IRQ_BY_NAME(idx, tx, priority),	       \
-			    uart_gecko_isr, DEVICE_GET(uart_##idx), 0);	       \
+			    uart_gecko_isr, DEVICE_DT_INST_GET(idx), 0);       \
 									       \
 		irq_enable(DT_INST_IRQ_BY_NAME(idx, rx, irq));		       \
 		irq_enable(DT_INST_IRQ_BY_NAME(idx, tx, irq));		       \
@@ -546,8 +546,8 @@ static const struct uart_driver_api uart_gecko_driver_api = {
 									       \
 	static struct uart_gecko_data uart_gecko_data_##idx;		       \
 									       \
-	DEVICE_AND_API_INIT(uart_##idx, DT_INST_LABEL(idx),		       \
-			    &uart_gecko_init, &uart_gecko_data_##idx,	       \
+	DEVICE_DT_INST_DEFINE(idx, &uart_gecko_init, 			       \
+			    device_pm_control_nop, &uart_gecko_data_##idx,     \
 			    &uart_gecko_cfg_##idx, PRE_KERNEL_1,	       \
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		       \
 			    &uart_gecko_driver_api);			       \
@@ -570,10 +570,10 @@ DT_INST_FOREACH_STATUS_OKAY(GECKO_UART_INIT)
 	{								       \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(idx, rx, irq),		       \
 			    DT_INST_IRQ_BY_NAME(idx, rx, priority),	       \
-			    uart_gecko_isr, DEVICE_GET(usart_##idx), 0);       \
+			    uart_gecko_isr, DEVICE_DT_INST_GET(idx), 0);       \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(idx, tx, irq),		       \
 			    DT_INST_IRQ_BY_NAME(idx, tx, priority),	       \
-			    uart_gecko_isr, DEVICE_GET(usart_##idx), 0);       \
+			    uart_gecko_isr, DEVICE_DT_INST_GET(idx), 0);       \
 									       \
 		irq_enable(DT_INST_IRQ_BY_NAME(idx, rx, irq));		       \
 		irq_enable(DT_INST_IRQ_BY_NAME(idx, tx, irq));		       \
@@ -604,8 +604,8 @@ DT_INST_FOREACH_STATUS_OKAY(GECKO_UART_INIT)
 									       \
 	static struct uart_gecko_data usart_gecko_data_##idx;		       \
 									       \
-	DEVICE_AND_API_INIT(usart_##idx, DT_INST_LABEL(idx),		       \
-			    &uart_gecko_init, &usart_gecko_data_##idx,	       \
+	DEVICE_DT_INST_DEFINE(idx, &uart_gecko_init, device_pm_control_nop,    \
+			    &usart_gecko_data_##idx,			       \
 			    &usart_gecko_cfg_##idx, PRE_KERNEL_1,	       \
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		       \
 			    &uart_gecko_driver_api);			       \

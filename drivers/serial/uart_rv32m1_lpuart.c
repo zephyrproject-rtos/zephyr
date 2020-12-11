@@ -314,7 +314,7 @@ static const struct uart_driver_api rv32m1_lpuart_driver_api = {
 	static void rv32m1_lpuart_config_func_##n(const struct device *dev)	\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n), 0, rv32m1_lpuart_isr,	\
-			    DEVICE_GET(uart_0), 0);			\
+			    DEVICE_DT_INST_GET(n), 0);			\
 									\
 		irq_enable(DT_INST_IRQN(n));				\
 	}
@@ -334,8 +334,9 @@ static const struct uart_driver_api rv32m1_lpuart_driver_api = {
 									\
 	static const struct rv32m1_lpuart_config rv32m1_lpuart_##n##_cfg;\
 									\
-	DEVICE_AND_API_INIT(uart_##n, DT_INST_LABEL(n),			\
+	DEVICE_DT_INST_DEFINE(n,					\
 			    &rv32m1_lpuart_init,			\
+			    device_pm_control_nop,			\
 			    &rv32m1_lpuart_##n##_data,			\
 			    &rv32m1_lpuart_##n##_cfg,			\
 			    PRE_KERNEL_1,				\

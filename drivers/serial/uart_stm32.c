@@ -761,7 +761,7 @@ static void uart_stm32_irq_config_func_##index(const struct device *dev)	\
 {									\
 	IRQ_CONNECT(DT_INST_IRQN(index),				\
 		DT_INST_IRQ(index, priority),				\
-		uart_stm32_isr, DEVICE_GET(uart_stm32_##index),		\
+		uart_stm32_isr, DEVICE_DT_INST_GET(index),		\
 		0);							\
 	irq_enable(DT_INST_IRQN(index));				\
 }
@@ -795,8 +795,9 @@ static struct uart_stm32_data uart_stm32_data_##index = {		\
 	.baud_rate = DT_INST_PROP(index, current_speed),		\
 };									\
 									\
-DEVICE_AND_API_INIT(uart_stm32_##index, DT_INST_LABEL(index),		\
+DEVICE_DT_INST_DEFINE(index,						\
 		    &uart_stm32_init,					\
+		    device_pm_control_nop,				\
 		    &uart_stm32_data_##index, &uart_stm32_cfg_##index,	\
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
 		    &uart_stm32_driver_api);				\

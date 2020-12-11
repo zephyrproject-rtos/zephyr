@@ -158,8 +158,8 @@ static const struct cypress_psoc6_config cypress_psoc6_uart5_config = {
 	.scb_clock = PCLK_SCB5_CLOCK,
 };
 
-DEVICE_AND_API_INIT(uart_5, DT_LABEL(DT_NODELABEL(uart5)),
-			uart_psoc6_init, NULL,
+DEVICE_DT_DEFINE(DT_NODELABEL(uart5),
+			uart_psoc6_init, device_pm_control_nop, NULL,
 			&cypress_psoc6_uart5_config,
 			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 			(void *)&uart_psoc6_driver_api);
@@ -176,8 +176,8 @@ static const struct cypress_psoc6_config cypress_psoc6_uart6_config = {
 	.scb_clock = PCLK_SCB6_CLOCK,
 };
 
-DEVICE_AND_API_INIT(uart_6, DT_LABEL(DT_NODELABEL(uart6)),
-			uart_psoc6_init, NULL,
+DEVICE_DT_DEFINE(DT_NODELABEL(uart6),
+			uart_psoc6_init, device_pm_control_nop, NULL,
 			&cypress_psoc6_uart6_config,
 			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 			(void *)&uart_psoc6_driver_api);

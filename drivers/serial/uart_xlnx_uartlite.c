@@ -340,7 +340,7 @@ static const struct uart_driver_api xlnx_uartlite_driver_api = {
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, i, irq),		\
 			    DT_INST_IRQ_BY_IDX(n, i, priority),		\
 			    xlnx_uartlite_isr,				\
-			    DEVICE_GET(xlnx_uartlite_##n), 0);		\
+			    DEVICE_DT_INST_GET(n), 0);			\
 									\
 		irq_enable(DT_INST_IRQ_BY_IDX(n, i, irq));		\
 	} while (0)
@@ -373,8 +373,9 @@ static const struct xlnx_uartlite_config xlnx_uartlite_##n##_config = {	\
 									\
 	static const struct xlnx_uartlite_config xlnx_uartlite_##n##_config;\
 									\
-	DEVICE_AND_API_INIT(xlnx_uartlite_##n, DT_INST_LABEL(n),	\
+	DEVICE_DT_INST_DEFINE(n,					\
 			    &xlnx_uartlite_init,			\
+			    device_pm_control_nop,			\
 			    &xlnx_uartlite_##n##_data,			\
 			    &xlnx_uartlite_##n##_config,		\
 			    PRE_KERNEL_1,				\

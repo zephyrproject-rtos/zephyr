@@ -556,7 +556,7 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 				DT_INST_IRQ(n, priority),		\
 				uart_cc13xx_cc26xx_isr,			\
-				DEVICE_GET(uart_cc13xx_cc26xx_##n),	\
+				DEVICE_DT_INST_GET(n),			\
 				0);					\
 		irq_enable(DT_INST_IRQN(n));				\
 		/* Causes an initial TX ready INT when TX INT enabled */\
@@ -572,18 +572,11 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #define UART_CC13XX_CC26XX_DEVICE_DEFINE(n)				     \
-	DEVICE_DEFINE(uart_cc13xx_cc26xx_##n, DT_INST_LABEL(n),		     \
+	DEVICE_DT_INST_DEFINE(n,					     \
 		uart_cc13xx_cc26xx_init_##n,				     \
 		uart_cc13xx_cc26xx_pm_control,				     \
 		&uart_cc13xx_cc26xx_data_##n, &uart_cc13xx_cc26xx_config_##n,\
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	     \
-		&uart_cc13xx_cc26xx_driver_api)
-
-#define UART_CC13XX_CC26XX_DEVICE_API_INIT(n)				     \
-	DEVICE_AND_API_INIT(uart_cc13xx_cc26xx_##n, DT_INST_LABEL(n),	     \
-		uart_cc13xx_cc26xx_init_##n, &uart_cc13xx_cc26xx_data_##n,   \
-		&uart_cc13xx_cc26xx_config_##n, PRE_KERNEL_1,		     \
-		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			     \
 		&uart_cc13xx_cc26xx_driver_api)
 
 #ifdef CONFIG_PM_DEVICE
@@ -625,7 +618,7 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 
 
 #define UART_CC13XX_CC26XX_INIT(n)				     \
-	DEVICE_DECLARE(uart_cc13xx_cc26xx_##n);			     \
+	DEVICE_DT_INST_DECLARE(n);				     \
 								     \
 	UART_CC13XX_CC26XX_INIT_FUNC(n);			     \
 								     \

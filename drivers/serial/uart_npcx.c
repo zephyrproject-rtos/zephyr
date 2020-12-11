@@ -374,7 +374,7 @@ static int uart_npcx_init(const struct device *dev)
 		IRQ_CONNECT(DT_INST_IRQN(inst),		                       \
 			DT_INST_IRQ(inst, priority),                           \
 			uart_npcx_isr,                                         \
-			DEVICE_GET(uart_npcx_##inst),                          \
+			DEVICE_DT_INST_GET(inst),                              \
 			0);                                                    \
 		irq_enable(DT_INST_IRQN(inst));		                       \
 	}
@@ -405,8 +405,9 @@ static int uart_npcx_init(const struct device *dev)
 		.baud_rate = DT_INST_PROP(inst, current_speed)                 \
 	};                                                                     \
 									       \
-	DEVICE_AND_API_INIT(uart_npcx_##inst, DT_INST_LABEL(inst),             \
+	DEVICE_DT_INST_DEFINE(inst,					       \
 			&uart_npcx_init,                                       \
+			device_pm_control_nop,				       \
 			&uart_npcx_data_##inst, &uart_npcx_cfg_##inst,         \
 			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,      \
 			&uart_npcx_driver_api);                                \

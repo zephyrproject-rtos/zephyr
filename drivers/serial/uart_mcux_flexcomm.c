@@ -304,7 +304,7 @@ static const struct uart_driver_api mcux_flexcomm_driver_api = {
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    DT_INST_IRQ(n, priority),			\
-			    mcux_flexcomm_isr, DEVICE_GET(uart_##n), 0);\
+			    mcux_flexcomm_isr, DEVICE_DT_INST_GET(n), 0);\
 									\
 		irq_enable(DT_INST_IRQN(n));				\
 	}
@@ -336,8 +336,9 @@ static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {	\
 									\
 	static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config;\
 									\
-	DEVICE_AND_API_INIT(uart_##n, DT_INST_LABEL(n),			\
+	DEVICE_DT_INST_DEFINE(n,					\
 			    &mcux_flexcomm_init,			\
+			    device_pm_control_nop,			\
 			    &mcux_flexcomm_##n##_data,			\
 			    &mcux_flexcomm_##n##_config,		\
 			    PRE_KERNEL_1,				\
