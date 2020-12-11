@@ -99,7 +99,7 @@ feature. The ``twister`` script can parse the testcases in all
 test projects or a subset of them, and can generate reports on a granular
 level, i.e. if cases have passed or failed or if they were blocked or skipped.
 
-Sanitycheck parses the source files looking for test case names, so you
+Twister parses the source files looking for test case names, so you
 can list all kernel test cases, for example, by entering::
 
         twister --list-tests -T tests/kernel

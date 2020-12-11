@@ -221,7 +221,7 @@ every Pull Request (PR) in order to verify several aspects of the PR:
 
 * Git commit formatting
 * Coding Style
-* Sanity Check builds for multiple architectures and boards
+* Twister builds for multiple architectures and boards
 * Documentation build to verify any doc changes
 
 CI is run on the ``shippable`` cloud service and it uses the same tools

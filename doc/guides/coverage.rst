@@ -129,8 +129,8 @@ You may postprocess these with your preferred tools. For example:
 
    Alternatively, you can use gcovr (at least version 4.2).
 
-Sanitycheck coverage reports
-****************************
+Coverage reports using Twister
+******************************
 
 Zephyr's :ref:`twister script <twister_script>` can automatically
 generate a coverage report from the tests which were executed.
