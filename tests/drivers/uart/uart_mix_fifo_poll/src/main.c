@@ -14,7 +14,7 @@
 #include <drivers/uart.h>
 #include <ztest.h>
 #include <drivers/counter.h>
-
+#include <random/rand32.h>
 /* RX and TX pins have to be connected together*/
 
 #if defined(CONFIG_BOARD_NRF52840DK_NRF52840)
@@ -203,14 +203,16 @@ static void async_callback(const struct device *dev,
 	}
 }
 
-static void bulk_poll_out(struct test_data *data, k_timeout_t wait)
+static void bulk_poll_out(struct test_data *data, int wait_base, int wait_range)
 {
 	for (int i = 0; i < data->max; i++) {
 
 		data->cnt++;
 		uart_poll_out(uart_dev, data->buf[i % sizeof(data->buf)]);
-		if (!K_TIMEOUT_EQ(wait, K_NO_WAIT)) {
-			k_sleep(wait);
+		if (wait_base) {
+			int r = sys_rand32_get();
+
+			k_sleep(K_USEC(wait_base + (r % wait_range)));
 		}
 	}
 
@@ -219,7 +221,7 @@ static void bulk_poll_out(struct test_data *data, k_timeout_t wait)
 
 static void poll_out_thread(void *data, void *unused0, void *unused1)
 {
-	bulk_poll_out((struct test_data *)data, K_USEC(200));
+	bulk_poll_out((struct test_data *)data, 200, 600);
 }
 
 K_THREAD_STACK_DEFINE(high_poll_out_thread_stack, 1024);
@@ -228,9 +230,11 @@ static struct k_thread high_poll_out_thread;
 K_THREAD_STACK_DEFINE(int_async_thread_stack, 1024);
 static struct k_thread int_async_thread;
 
-static void int_async_thread_func(void *p_data, void *unused0, void *unused1)
+static void int_async_thread_func(void *p_data, void *base, void *range)
 {
 	struct test_data *data = p_data;
+	int wait_base = (int)base;
+	int wait_range = (int)range;
 
 	k_sem_init(&async_tx_sem, 1, 1);
 
@@ -251,7 +255,9 @@ static void int_async_thread_func(void *p_data, void *unused0, void *unused1)
 			uart_irq_tx_enable(uart_dev);
 		}
 
-		k_sleep(K_USEC(200));
+		int r = sys_rand32_get();
+
+		k_sleep(K_USEC(wait_base + (r % wait_range)));
 	}
 
 	k_sem_give(&data->sem);
@@ -267,6 +273,9 @@ static void poll_out_timer_handler(struct k_timer *timer)
 	if (data->cnt == data->max) {
 		k_timer_stop(timer);
 		k_sem_give(&data->sem);
+	} else {
+		k_timer_start(timer, K_USEC(250 + (sys_rand32_get() % 800)),
+				K_NO_WAIT);
 	}
 }
 
@@ -307,7 +316,7 @@ static void test_mixed_uart_access(void)
 		(void)k_thread_create(&int_async_thread,
 				int_async_thread_stack, 1024,
 				int_async_thread_func,
-				int_async_data, NULL, NULL,
+				int_async_data, (void *)300, (void *)400,
 				2, 0, K_NO_WAIT);
 	} else {
 		/* async/int driven context not used. */
@@ -315,9 +324,9 @@ static void test_mixed_uart_access(void)
 	}
 
 	k_timer_user_data_set(&poll_out_timer, &test_data[1]);
-	k_timer_start(&poll_out_timer, K_USEC(250), K_USEC(250));
+	k_timer_start(&poll_out_timer, K_USEC(250), K_NO_WAIT);
 
-	bulk_poll_out(&test_data[2], K_NO_WAIT);
+	bulk_poll_out(&test_data[2], 300, 500);
 
 	k_msleep(1);
 
