@@ -20,8 +20,8 @@ Generic APIs
 The APIs in this section can be used anywhere and do not require
 ``DT_DRV_COMPAT`` to be defined.
 
-Node identifiers
-================
+Node identifiers and helpers
+============================
 
 A *node identifier* is a way to refer to a devicetree node at C preprocessor
 time. While node identifiers are not C values, you can use them to access
@@ -35,6 +35,8 @@ identifiers for other devicetree nodes using :c:func:`DT_PATH`,
 There are also :c:func:`DT_PARENT` and :c:func:`DT_CHILD` macros which can be
 used to create node identifiers for a given node's parent node or a particular
 child node, respectively.
+
+The following macros create or operate on node identifiers.
 
 .. doxygengroup:: devicetree-generic-id
    :project: Zephyr
