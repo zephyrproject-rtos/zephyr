@@ -20,6 +20,16 @@ config ESPI_NPCX_PERIPHERAL_ACPI_SHD_MEM_SIZE
 	  notice the valid value in npcx ec series for this option is 8/16/32/
 	  64/128/256/512/1024/2048/4096 bytes.
 
+config ESPI_NPCX_PERIPHERAL_HOST_CMD_PARAM_SIZE
+	int "Host I/O peripheral port size for ec host command in npcx series"
+	depends on ESPI_NPCX || ESPI_PERIPHERAL_EC_HOST_CMD
+	default 256
+	help
+	  This is the port size used by the Host and EC to communicate over
+	  the shared memory region to return the host command parameter data.
+	  Please notice the valid value in npcx ec series for this option is
+	  8/16/32/64/128/256/512/1024/2048/4096 bytes.
+
 # The default value 'y' for the existing options if ESPI_NPCX is selected.
 if ESPI_NPCX
 

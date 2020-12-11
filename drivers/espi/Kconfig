@@ -141,6 +141,28 @@ config ESPI_PERIPHERAL_CUSTOM_OPCODE
 	  Enables opcode is customized for certain platforms such as Chromebook
 	  and so on over eSPI peripheral channel.
 
+config ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM
+	hex "Host I/O peripheral port number for ec host command data"
+	depends on ESPI_PERIPHERAL_EC_HOST_CMD
+	default 0x0200
+	help
+	  This is the port number used by the Host and EC to communicate over
+	  the eSPI peripheral channel to send EC host command data and its
+	  result. Please ensure the Host code is configured to use for accessing
+	  host command data and result. Also, ensure the port number selected
+	  doesn't clash with the existing ports.
+
+config ESPI_PERIPHERAL_HOST_CMD_PARAM_PORT_NUM
+	hex "Host I/O peripheral port number for ec host command parameters"
+	depends on ESPI_PERIPHERAL_EC_HOST_CMD
+	default 0x0800
+	help
+	  This is the port number used by the Host and EC to communicate over
+	  the eSPI peripheral channel to access the host command request and
+	  response data. Please ensure the Host code is configured to use for
+	  accessing these package data. Also, ensure the port number selected
+	  doesn't clash with the existing ports.
+
 endif # ESPI_PERIPHERAL_CHANNEL
 
 endif # ESPI

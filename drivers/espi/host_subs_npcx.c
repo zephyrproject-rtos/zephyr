@@ -340,17 +340,26 @@ static void host_acpi_init(void)
 
 #if defined(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD)
 /* Host command argument and memory map buffers */
-static uint8_t	shm_mem_host_cmd[256] __aligned(8);
+static uint8_t	shm_host_cmd[CONFIG_ESPI_NPCX_PERIPHERAL_HOST_CMD_PARAM_SIZE]
+	__aligned(8);
 /* Host command sub-device local functions */
 static void host_hcmd_process_input_data(uint8_t data)
 {
-	/* TODO: Handle host request data here */
+	struct espi_event evt = { ESPI_BUS_PERIPHERAL_NOTIFICATION,
+		ESPI_PERIPHERAL_EC_HOST_CMD, ESPI_PERIPHERAL_NODATA
+	};
+
+	evt.evt_data = data;
+	LOG_DBG("%s: host cmd data 0x%02x", __func__, evt.evt_data);
+	espi_send_callbacks(host_sub_data.callbacks, host_sub_data.host_bus_dev,
+							evt);
 }
 
 static void host_hcmd_init(void)
 {
 	struct pmch_reg *const inst_hcmd = host_sub_cfg.inst_pm_hcmd;
 	struct shm_reg *const inst_shm = host_sub_cfg.inst_shm;
+	uint32_t win_size = CONFIG_ESPI_NPCX_PERIPHERAL_HOST_CMD_PARAM_SIZE;
 
 	/* Don't stall SHM transactions */
 	inst_shm->SHM_CTL &= ~0x40;
@@ -358,9 +367,10 @@ static void host_hcmd_init(void)
 	inst_shm->WIN1_WR_PROT = 0;
 	inst_shm->WIN1_RD_PROT = 0;
 
-	/* Configure Win1 for Host CMD and MEMMAP. Their sizes are 256B */
-	SET_FIELD(inst_shm->WIN_SIZE, NPCX_WIN_SIZE_RWIN1_SIZE_FIELD, 0x08);
-	inst_shm->WIN_BASE1 = (uint32_t)shm_mem_host_cmd;
+	/* Configure Win1 size for ec host command. */
+	SET_FIELD(inst_shm->WIN_SIZE, NPCX_WIN_SIZE_RWIN1_SIZE_FIELD,
+		host_shd_mem_wnd_size_sl(win_size));
+	inst_shm->WIN_BASE1 = (uint32_t)shm_host_cmd;
 
 	/*
 	 * Clear processing flag before enabling host's interrupts in case
@@ -750,6 +760,9 @@ int npcx_host_periph_read_request(enum lpc_peripheral_opcode op,
 	else if (op >= ECUSTOM_START_OPCODE && op <= ECUSTOM_MAX_OPCODE) {
 		/* Other customized op codes */
 		switch (op) {
+		case ECUSTOM_HOST_CMD_GET_PARAM_MEMORY:
+			*data = (uint32_t)shm_host_cmd;
+			break;
 		default:
 			return -EINVAL;
 		}
@@ -843,6 +856,8 @@ int npcx_host_periph_write_request(enum lpc_peripheral_opcode op,
 #if defined(CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE)
 	else if (op >= ECUSTOM_START_OPCODE && op <= ECUSTOM_MAX_OPCODE) {
 		/* Other customized op codes */
+		struct pmch_reg *const inst_hcmd = host_sub_cfg.inst_pm_hcmd;
+
 		switch (op) {
 		case ECUSTOM_HOST_SUBS_INTERRUPT_EN:
 			if (*data != 0) {
@@ -850,6 +865,15 @@ int npcx_host_periph_write_request(enum lpc_peripheral_opcode op,
 			} else {
 				host_cus_opcode_disable_interrupts();
 			}
+			break;
+		case ECUSTOM_HOST_CMD_SEND_RESULT:
+			/*
+			 * Write result to the data byte.  This sets the TOH
+			 * status bit.
+			 */
+			inst_hcmd->HIPMDO = (*data & 0xff);
+			/* Clear processing flag */
+			inst_hcmd->HIPMST &= ~BIT(NPCX_HIPMST_F0);
 			break;
 		default:
 			return -EINVAL;
@@ -895,12 +919,18 @@ void npcx_host_init_subs_host_domain(void)
 	|| defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION)
 	/* Select 'Host Command' bank which LDN are 0x12 (PM Channel 2) */
 	host_c2h_write_io_cfg_reg(EC_CFG_IDX_LDN, EC_CFG_LDN_HCMD);
+#if defined(CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM)
 	/* Configure IO address of CMD port (0x200) */
-	host_c2h_write_io_cfg_reg(EC_CFG_IDX_CMD_IO_ADDR_H, 0x02);
-	host_c2h_write_io_cfg_reg(EC_CFG_IDX_CMD_IO_ADDR_L, 0x00);
+	host_c2h_write_io_cfg_reg(EC_CFG_IDX_CMD_IO_ADDR_H,
+	    (CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM >> 8) & 0xff);
+	host_c2h_write_io_cfg_reg(EC_CFG_IDX_CMD_IO_ADDR_L,
+	    CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM & 0xff);
 	/* Configure IO address of Data port (0x204) */
-	host_c2h_write_io_cfg_reg(EC_CFG_IDX_DATA_IO_ADDR_H, 0x02);
-	host_c2h_write_io_cfg_reg(EC_CFG_IDX_DATA_IO_ADDR_L, 0x04);
+	host_c2h_write_io_cfg_reg(EC_CFG_IDX_DATA_IO_ADDR_H,
+	    ((CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM + 4) >> 8) & 0xff);
+	host_c2h_write_io_cfg_reg(EC_CFG_IDX_DATA_IO_ADDR_L,
+	    (CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM + 4) & 0xff);
+#endif
 	/* Enable 'Host Command' io port (PM Channel 2) */
 	host_c2h_write_io_cfg_reg(EC_CFG_IDX_CTRL, 0x01);
 
@@ -910,8 +940,12 @@ void npcx_host_init_subs_host_domain(void)
 	host_c2h_write_io_cfg_reg(0xF1,
 			host_c2h_read_io_cfg_reg(0xF1) | 0x30);
 	/* WIN1 as Host Command on the IO address 0x0800 */
-	host_c2h_write_io_cfg_reg(EC_CFG_IDX_SHM_WND1_ADDR_1, 0x08);
-	host_c2h_write_io_cfg_reg(EC_CFG_IDX_SHM_WND1_ADDR_0, 0x00);
+#if defined(CONFIG_ESPI_PERIPHERAL_HOST_CMD_PARAM_PORT_NUM)
+	host_c2h_write_io_cfg_reg(EC_CFG_IDX_SHM_WND1_ADDR_1,
+	    (CONFIG_ESPI_PERIPHERAL_HOST_CMD_PARAM_PORT_NUM >> 8) & 0xff);
+	host_c2h_write_io_cfg_reg(EC_CFG_IDX_SHM_WND1_ADDR_0,
+	    CONFIG_ESPI_PERIPHERAL_HOST_CMD_PARAM_PORT_NUM & 0xff);
+#endif
 	/* Set WIN2 as MEMMAP on the configured IO address */
 #if defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION_PORT_NUM)
 	host_c2h_write_io_cfg_reg(EC_CFG_IDX_SHM_WND2_ADDR_1,
