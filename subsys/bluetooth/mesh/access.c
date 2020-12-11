@@ -673,15 +673,15 @@ static int get_opcode(struct net_buf_simple *buf, uint32_t *opcode)
 	CODE_UNREACHABLE;
 }
 
-void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
+void bt_mesh_model_recv(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
 {
 	struct bt_mesh_model *model;
 	const struct bt_mesh_model_op *op;
 	uint32_t opcode;
 	int i;
 
-	LOG_DBG("app_idx 0x%04x src 0x%04x dst 0x%04x", rx->ctx.app_idx, rx->ctx.addr,
-		rx->ctx.recv_dst);
+	LOG_DBG("app_idx 0x%04x src 0x%04x dst 0x%04x", ctx->app_idx, ctx->addr,
+		ctx->recv_dst);
 	LOG_DBG("len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
 	if (get_opcode(buf, &opcode) < 0) {
@@ -700,11 +700,11 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 			continue;
 		}
 
-		if (!bt_mesh_model_has_key(model, rx->ctx.app_idx)) {
+		if (!bt_mesh_model_has_key(model, ctx->app_idx)) {
 			continue;
 		}
 
-		if (!model_has_dst(model, rx->ctx.recv_dst)) {
+		if (!model_has_dst(model, ctx->recv_dst)) {
 			continue;
 		}
 
@@ -721,12 +721,12 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 		 * receive the message.
 		 */
 		net_buf_simple_save(buf, &state);
-		(void)op->func(model, &rx->ctx, buf);
+		(void)op->func(model, ctx, buf);
 		net_buf_simple_restore(buf, &state);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_ACCESS_LAYER_MSG) && msg_cb) {
-		msg_cb(opcode, &rx->ctx, buf);
+		msg_cb(opcode, ctx, buf);
 	}
 }
 
