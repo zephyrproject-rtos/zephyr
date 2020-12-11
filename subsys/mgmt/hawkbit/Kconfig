@@ -23,25 +23,23 @@ menuconfig HAWKBIT
 	  software updates to constrained edge devices as well as more powerful
 	  controllers and gateways connected to IP based networking infrastructure.
 
+if HAWKBIT
 config HAWKBIT_POLL_INTERVAL
 	int "Time to poll interval (in minutes)"
 	default 5
 	range 1 43200
-	depends on HAWKBIT
 	help
 	  Set the interval that the hawkbit update server will be polled.
 	  This time interval is zero and 43200 minutes(30 days).
 
 config HAWKBIT_SHELL
 	bool "Enable Hawkbit shell utilities"
-	depends on HAWKBIT
 	depends on SHELL
 	help
 	  Activate shell module that provides Hawkbit commands.
 
 config HAWKBIT_SERVER
 	string "User address for the hawkbit server"
-	depends on HAWKBIT
 	default ""
 	help
 	  Configure the hawkbit server address.
@@ -49,7 +47,6 @@ config HAWKBIT_SERVER
 config HAWKBIT_PORT
 	string "Port address for the hawkbit server"
 	default "8080"
-	depends on HAWKBIT
 	help
 	  Configure the hawkbit port number.
 
@@ -57,3 +54,5 @@ module = HAWKBIT
 module-str = Log Level for hawkbit
 module-help = Enables logging for Hawkbit code.
 source "subsys/logging/Kconfig.template.log_config"
+
+endif
