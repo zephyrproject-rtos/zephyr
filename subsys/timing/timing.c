@@ -46,7 +46,22 @@ void timing_start(void)
 
 void timing_stop(void)
 {
-	if (atomic_dec(&started_ref) > 1) {
+	atomic_t old_value, new_value;
+
+	/* Make sure this does decrement past zero. */
+	do {
+		old_value = atomic_get(&started_ref);
+		if (old_value <= 0) {
+			break;
+		}
+
+		new_value = old_value - 1;
+	} while (atomic_cas(&started_ref, old_value, new_value) == 0);
+
+	/*
+	 * new_value may be uninitialized, so use old_value here.
+	 */
+	if (old_value > 1) {
 		return;
 	}
 
