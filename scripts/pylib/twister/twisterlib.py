@@ -3525,7 +3525,6 @@ class TestSuite(DisablePyTestCollectionMixin):
                     testcases = list(filter(lambda d: not (d.get('testcase') == k and d.get('platform') == p), testcases ))
                     testcase = {"testcase": k,
                                 "arch": instance.platform.arch,
-                                "type": instance.testcase.type,
                                 "platform": p,
                                 }
                     if instance.results[k] in ["PASS"]:
