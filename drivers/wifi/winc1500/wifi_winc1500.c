@@ -763,6 +763,10 @@ static void handle_socket_msg_connect(struct socket_data *sd, void *pvMsg)
 	LOG_ERR("CONNECT: socket %d error %d",
 		strConnMsg->sock, strConnMsg->s8Error);
 
+	if (!strConnMsg->s8Error) {
+		net_context_set_state(sd->context, NET_CONTEXT_CONNECTED);
+	}
+
 	if (sd->connect_cb) {
 		sd->connect_cb(sd->context,
 			       strConnMsg->s8Error,
