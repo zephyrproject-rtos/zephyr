@@ -11,6 +11,7 @@
 #include <kernel_internal.h>
 #include <kswap.h>
 #include <_soc_inthandlers.h>
+#include <toolchain.h>
 #include <logging/log.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
@@ -136,9 +137,12 @@ static inline unsigned int get_bits(int offset, int num_bits, unsigned int val)
 /* The wrapper code lives here instead of in the python script that
  * generates _xtensa_handle_one_int*().  Seems cleaner, still kind of
  * ugly.
+ *
+ * This may be unused depending on number of interrupt levels
+ * supported by the SoC.
  */
 #define DEF_INT_C_HANDLER(l)				\
-void *xtensa_int##l##_c(void *interrupted_stack)	\
+__unused void *xtensa_int##l##_c(void *interrupted_stack)	\
 {							   \
 	uint32_t irqs, intenable, m;			   \
 	__asm__ volatile("rsr.interrupt %0" : "=r"(irqs)); \

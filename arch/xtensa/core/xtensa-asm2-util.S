@@ -5,6 +5,7 @@
  */
 #include <xtensa-asm2-s.h>
 #include <offsets.h>
+#include <toolchain.h>
 
 /*
  * xtensa_spill_reg_windows
@@ -145,14 +146,18 @@ _high_restore_done:
  * should test to be able to support hardware with less than 6 levels,
  * though...
  */
+
+#define RCTX_EPC_REG		_CONCAT(EPC, XCHAL_NUM_INTLEVELS)
+#define RCTX_EPS_REG		_CONCAT(EPS, XCHAL_NUM_INTLEVELS)
+
 .global _restore_context
 _restore_context:
 	call0 xtensa_restore_high_regs
 
 	l32i a0, a1, BSA_PC_OFF
-	wsr.EPC6 a0
+	wsr.RCTX_EPC_REG a0
 	l32i a0, a1, BSA_PS_OFF
-	wsr.EPS6 a0
+	wsr.RCTX_EPS_REG a0
 
 	l32i a0, a1, BSA_SAR_OFF
 	wsr.SAR a0
@@ -179,7 +184,7 @@ _restore_context:
 	l32i a3, a1, BSA_A3_OFF
 	addi a1, a1, BASE_SAVE_AREA_SIZE
 
-	rfi 6
+	rfi XCHAL_NUM_INTLEVELS
 
 /*
  * void xtensa_switch(void *new, void **old_return);
