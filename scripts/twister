@@ -1259,6 +1259,7 @@ def main():
     # FIXME: remove later
     #logger.info(f"failed: {results.failed}, cases: {results.cases}, skipped configurations: {results.skipped_configs}, skipped_cases: {results.skipped_cases}, skipped(runtime): {results.skipped_runtime}, passed: {results.passed}, total: {results.total}, done: {results.done}")
 
+    logger.info("Run completed")
     if results.failed or (suite.warnings and options.warnings_as_errors):
         sys.exit(1)
 

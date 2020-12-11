@@ -3278,11 +3278,12 @@ class TestSuite(DisablePyTestCollectionMixin):
 
     def xunit_report(self, filename, platform=None, full_report=False, append=False, version="NA"):
         total = 0
+        fails = passes = errors = skips = 0
         if platform:
             selected = [platform]
-            logger.debug(f"Writing target report for {platform}...")
+            logger.info(f"Writing target report for {platform}...")
         else:
-            logger.debug(f"Writing xunit report {filename}...")
+            logger.info(f"Writing xunit report {filename}...")
             selected = self.selected_platforms
 
         if os.path.exists(filename) and append:
@@ -3483,6 +3484,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                 cw.writerow(rowdict)
 
     def json_report(self, filename, platform=None, append=False, version="NA"):
+        logger.info(f"Writing JSON report {filename}")
         rowdict = {}
         results_dict = {}
         rowdict["test_suite"] = []
