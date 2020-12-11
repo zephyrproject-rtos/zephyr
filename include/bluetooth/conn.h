@@ -476,6 +476,18 @@ int bt_conn_le_phy_update(struct bt_conn *conn,
  *  Disconnect an active connection with the specified reason code or cancel
  *  pending outgoing connection.
  *
+ *  The disconnect reason for a normal disconnect should be:
+ *  @ref BT_HCI_ERR_REMOTE_USER_TERM_CONN.
+ *
+ *  The following disconnect reasons are accepted:
+ *   - @ref BT_HCI_ERR_AUTH_FAIL
+ *   - @ref BT_HCI_ERR_REMOTE_USER_TERM_CONN
+ *   - @ref BT_HCI_ERR_REMOTE_LOW_RESOURCES
+ *   - @ref BT_HCI_ERR_REMOTE_POWER_OFF
+ *   - @ref BT_HCI_ERR_UNSUPP_REMOTE_FEATURE
+ *   - @ref BT_HCI_ERR_PAIRING_NOT_SUPPORTED
+ *   - @ref BT_HCI_ERR_UNACCEPT_CONN_PARAM
+ *
  *  @param conn Connection to disconnect.
  *  @param reason Reason code for the disconnection.
  *
