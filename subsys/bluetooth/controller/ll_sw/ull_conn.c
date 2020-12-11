@@ -51,6 +51,18 @@
 #include "ull_vendor.h"
 #endif /* CONFIG_BT_CTLR_USER_EXT */
 
+/**
+ *  User CPR Interval
+ */
+#if !defined(CONFIG_BT_CTLR_USER_CPR_INTERVAL_MIN)
+/* Bluetooth defined CPR Interval Minimum (7.5ms) */
+#define CONN_INTERVAL_MIN(x) (6)
+#else /* CONFIG_BT_CTLR_USER_CPR_INTERVAL_MIN */
+/* Proprietary user defined CPR Interval Minimum */
+extern uint16_t ull_conn_interval_min_get(struct ll_conn *conn);
+#define CONN_INTERVAL_MIN(x) (MAX(ull_conn_interval_min_get(x), 1))
+#endif /* CONFIG_BT_CTLR_USER_CPR_INTERVAL_MIN */
+
 inline void ull_conn_upd_curr_reset(void);
 
 static int init_reset(void);
@@ -5697,7 +5709,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 					cpr->preferred_periodicity;
 
 				/* Invalid parameters */
-				if ((interval_min < 6) ||
+				if ((interval_min < CONN_INTERVAL_MIN(conn)) ||
 				    (interval_max > 3200) ||
 				    (interval_min > interval_max) ||
 				    (latency > 499) ||
@@ -5803,7 +5815,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				cpr->preferred_periodicity;
 
 			/* Invalid parameters */
-			if ((interval_min < 6) ||
+			if ((interval_min < CONN_INTERVAL_MIN(conn)) ||
 			    (interval_max > 3200) ||
 			    (interval_min > interval_max) ||
 			    (latency > 499) ||
@@ -5899,7 +5911,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				cpr->preferred_periodicity;
 
 			/* Invalid parameters */
-			if ((interval_min < 6) ||
+			if ((interval_min < CONN_INTERVAL_MIN(conn)) ||
 			    (interval_max > 3200) ||
 			    (interval_min > interval_max) ||
 			    (latency > 499) ||
