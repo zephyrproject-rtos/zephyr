@@ -125,6 +125,9 @@ void test_event_flags_signalled(void)
 	id1 = osThreadNew(thread1, evt_id, &thread1_attr);
 	zassert_true(id1 != NULL, "Failed creating thread1");
 
+	/* Let id1 run to trigger FLAG1 */
+	osDelay(2);
+
 	id2 = osThreadNew(thread2, evt_id, &thread2_attr);
 	zassert_true(id2 != NULL, "Failed creating thread2");
 
