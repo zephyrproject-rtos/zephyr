@@ -215,8 +215,8 @@ static const struct uart_driver_api uart_rtt_driver_api = {
 #define UART_RTT_INIT(idx, config)					      \
 	struct uart_rtt_data uart_rtt##idx##_data;			      \
 									      \
-	DEVICE_AND_API_INIT(uart_rtt##idx, DT_LABEL(UART_RTT(idx)),	      \
-			    uart_rtt_init, &uart_rtt##idx##_data, config,     \
+	DEVICE_DT_DEFINE(UART_RTT(idx), uart_rtt_init, device_pm_control_nop, \
+			    &uart_rtt##idx##_data, config,		      \
 			    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
 			    &uart_rtt_driver_api)
 

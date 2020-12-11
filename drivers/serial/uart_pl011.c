@@ -425,9 +425,9 @@ static struct pl011_data pl011_data_port_0 = {
 	.baud_rate = DT_INST_PROP(0, current_speed),
 };
 
-DEVICE_AND_API_INIT(pl011_port_0,
-		    DT_INST_LABEL(0),
+DEVICE_DT_INST_DEFINE(0,
 		    &pl011_init,
+		    device_pm_control_nop,
 		    &pl011_data_port_0,
 		    &pl011_cfg_port_0, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -440,28 +440,28 @@ static void pl011_irq_config_func_0(const struct device *dev)
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
 		    pl011_isr,
-		    DEVICE_GET(pl011_port_0),
+		    DEVICE_DT_INST_GET(0),
 		    0);
 	irq_enable(DT_INST_IRQN(0));
 #else
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, tx, irq),
 		    DT_INST_IRQ_BY_NAME(0, tx, priority),
 		    pl011_isr,
-		    DEVICE_GET(pl011_port_0),
+		    DEVICE_DT_INST_GET(0),
 		    0);
 	irq_enable(DT_INST_IRQ_BY_NAME(0, tx, irq));
 
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, rx, irq),
 		    DT_INST_IRQ_BY_NAME(0, rx, priority),
 		    pl011_isr,
-		    DEVICE_GET(pl011_port_0),
+		    DEVICE_DT_INST_GET(0),
 		    0);
 	irq_enable(DT_INST_IRQ_BY_NAME(0, rx, irq));
 
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, rxtim, irq),
 		    DT_INST_IRQ_BY_NAME(0, rxtim, priority),
 		    pl011_isr,
-		    DEVICE_GET(pl011_port_0),
+		    DEVICE_DT_INST_GET(0),
 		    0);
 	irq_enable(DT_INST_IRQ_BY_NAME(0, rxtim, irq));
 #endif
@@ -488,9 +488,9 @@ static struct pl011_data pl011_data_port_1 = {
 	.baud_rate = DT_INST_PROP(1, current_speed),
 };
 
-DEVICE_AND_API_INIT(pl011_port_1,
-		    DT_INST_LABEL(1),
+DEVICE_DT_INST_DEFINE(1,
 		    &pl011_init,
+		    device_pm_control_nop,
 		    &pl011_data_port_1,
 		    &pl011_cfg_port_1, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -503,28 +503,28 @@ static void pl011_irq_config_func_1(const struct device *dev)
 	IRQ_CONNECT(DT_INST_IRQN(1),
 		    DT_INST_IRQ(1, priority),
 		    pl011_isr,
-		    DEVICE_GET(pl011_port_1),
+		    DEVICE_DT_INST_GET(1),
 		    0);
 	irq_enable(DT_INST_IRQN(1));
 #else
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, tx, irq),
 		    DT_INST_IRQ_BY_NAME(1, tx, priority),
 		    pl011_isr,
-		    DEVICE_GET(pl011_port_1),
+		    DEVICE_DT_INST_GET(1),
 		    0);
 	irq_enable(DT_INST_IRQ_BY_NAME(1, tx, irq));
 
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, rx, irq),
 		    DT_INST_IRQ_BY_NAME(1, rx, priority),
 		    pl011_isr,
-		    DEVICE_GET(pl011_port_1),
+		    DEVICE_DT_INST_GET(1),
 		    0);
 	irq_enable(DT_INST_IRQ_BY_NAME(1, rx, irq));
 
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, rxtim, irq),
 		    DT_INST_IRQ_BY_NAME(1, rxtim, priority),
 		    pl011_isr,
-		    DEVICE_GET(pl011_port_1),
+		    DEVICE_DT_INST_GET(1),
 		    0);
 	irq_enable(DT_INST_IRQ_BY_NAME(1, rxtim, irq));
 #endif

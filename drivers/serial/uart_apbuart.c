@@ -482,9 +482,9 @@ static const struct uart_driver_api apbuart_driver_api = {
 		.usefifo        = 0,					\
 	};								\
 									\
-	DEVICE_AND_API_INIT(uart_apbuart_##index,			\
-			    DT_INST_LABEL(index),			\
+	DEVICE_DT_INST_DEFINE(index,					\
 			    &apbuart_init,				\
+			    device_pm_control_nop,			\
 			    &apbuart##index##_data,			\
 			    &apbuart##index##_config,			\
 			    PRE_KERNEL_1,				\

@@ -364,8 +364,8 @@ static int np_uart_tty_poll_in(const struct device *dev,
 	return 0;
 }
 
-DEVICE_AND_API_INIT(uart_native_posix0,
-	    DT_INST_LABEL(0), &np_uart_0_init,
+DEVICE_DT_INST_DEFINE(0,
+	    &np_uart_0_init, device_pm_control_nop,
 	    (void *)&native_uart_status_0, NULL,
 	    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 	    &np_uart_driver_api_0);

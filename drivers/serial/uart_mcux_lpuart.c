@@ -403,7 +403,7 @@ static const struct uart_driver_api mcux_lpuart_driver_api = {
 	do {								\
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, i, irq),		\
 			    DT_INST_IRQ_BY_IDX(n, i, priority),		\
-			    mcux_lpuart_isr, DEVICE_GET(uart_##n), 0);	\
+			    mcux_lpuart_isr, DEVICE_DT_INST_GET(n), 0);	\
 									\
 		irq_enable(DT_INST_IRQ_BY_IDX(n, i, irq));		\
 	} while (0)
@@ -441,8 +441,9 @@ static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {	\
 									\
 	static const struct mcux_lpuart_config mcux_lpuart_##n##_config;\
 									\
-	DEVICE_AND_API_INIT(uart_##n, DT_INST_LABEL(n),			\
+	DEVICE_DT_INST_DEFINE(n,					\
 			    &mcux_lpuart_init,				\
+			    device_pm_control_nop,			\
 			    &mcux_lpuart_##n##_data,			\
 			    &mcux_lpuart_##n##_config,			\
 			    PRE_KERNEL_1,				\

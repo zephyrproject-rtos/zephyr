@@ -279,7 +279,7 @@ static const struct uart_driver_api mcux_iuart_driver_api = {
 	do {								\
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, i, irq),		\
 			    DT_INST_IRQ_BY_IDX(n, i, priority),		\
-			    mcux_iuart_isr, DEVICE_GET(uart_##n), 0);	\
+			    mcux_iuart_isr, DEVICE_DT_INST_GET(n), 0);	\
 									\
 		irq_enable(DT_INST_IRQ_BY_IDX(n, i, irq));		\
 	} while (0)
@@ -317,8 +317,9 @@ static const struct mcux_iuart_config mcux_iuart_##n##_config = {	\
 									\
 	static const struct mcux_iuart_config mcux_iuart_##n##_config;\
 									\
-	DEVICE_AND_API_INIT(uart_##n, DT_INST_LABEL(n),			\
+	DEVICE_DT_INST_DEFINE(n,					\
 			    &mcux_iuart_init,				\
+			    device_pm_control_nop,			\
 			    &mcux_iuart_##n##_data,			\
 			    &mcux_iuart_##n##_config,			\
 			    PRE_KERNEL_1,				\

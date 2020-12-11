@@ -317,8 +317,9 @@ static const struct uart_liteuart_device_config uart_liteuart_dev_cfg_0 = {
 	.baud_rate	= DT_INST_PROP(0, current_speed)
 };
 
-DEVICE_AND_API_INIT(uart_liteuart_0, DT_INST_LABEL(0),
+DEVICE_DT_INST_DEFINE(0,
 		uart_liteuart_init,
+		device_pm_control_nop,
 		&uart_liteuart_data_0, &uart_liteuart_dev_cfg_0,
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		(void *)&uart_liteuart_driver_api);
@@ -329,7 +330,7 @@ static int uart_liteuart_init(const struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	IRQ_CONNECT(UART_IRQ, DT_INST_IRQ(0, priority),
-			liteuart_uart_irq_handler, DEVICE_GET(uart_liteuart_0),
+			liteuart_uart_irq_handler, DEVICE_DT_INST_GET(0),
 			0);
 	irq_enable(UART_IRQ);
 #endif

@@ -483,7 +483,7 @@ static const struct uart_driver_api uart_esp32_api = {
 		IRQ_CONNECT(INST_##idx##_ESPRESSIF_ESP32_UART_IRQ_0,	     \
 			    1,						     \
 			    uart_esp32_isr,				     \
-			    DEVICE_GET(uart_esp32_##idx),		     \
+			    DEVICE_DT_INST_GET(idx),			     \
 			    0);						     \
 		irq_enable(INST_##idx##_ESPRESSIF_ESP32_UART_IRQ_0);	     \
 	}
@@ -540,9 +540,9 @@ static struct uart_esp32_data uart_esp32_data_##idx = {			       \
 	}								       \
 };									       \
 									       \
-DEVICE_AND_API_INIT(uart_esp32_##idx,					       \
-		    DT_INST_LABEL(idx),		       \
+DEVICE_DT_INST_DEFINE(idx,						       \
 		    uart_esp32_init,					       \
+		    device_pm_control_nop,				       \
 		    &uart_esp32_data_##idx,				       \
 		    &uart_esp32_cfg_port_##idx,				       \
 		    PRE_KERNEL_1,					       \

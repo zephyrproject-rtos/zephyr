@@ -374,13 +374,13 @@ static const struct uart_mcux_config uart_mcux_##n##_config = {		\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, status, irq),	\
 			    DT_INST_IRQ_BY_NAME(n, status, priority),	\
-			    uart_mcux_isr, DEVICE_GET(uart_##n), 0);	\
+			    uart_mcux_isr, DEVICE_DT_INST_GET(n), 0);	\
 									\
 		irq_enable(DT_INST_IRQ_BY_NAME(n, status, irq));	\
 									\
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, error, irq),		\
 			    DT_INST_IRQ_BY_NAME(n, error, priority),	\
-			    uart_mcux_isr, DEVICE_GET(uart_##n), 0);	\
+			    uart_mcux_isr, DEVICE_DT_INST_GET(n), 0);	\
 									\
 		irq_enable(DT_INST_IRQ_BY_NAME(n, error, irq));		\
 	}
@@ -410,8 +410,9 @@ static const struct uart_mcux_config uart_mcux_##n##_config = {		\
 									\
 	static const struct uart_mcux_config uart_mcux_##n##_config;	\
 									\
-	DEVICE_AND_API_INIT(uart_##n, DT_INST_LABEL(n),			\
+	DEVICE_DT_INST_DEFINE(n,					\
 			    &uart_mcux_init,				\
+			    device_pm_control_nop,			\
 			    &uart_mcux_##n##_data,			\
 			    &uart_mcux_##n##_config,			\
 			    PRE_KERNEL_1,				\

@@ -297,7 +297,7 @@ static const struct uart_driver_api uart_imx_driver_api = {
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 				DT_INST_IRQ(n, priority),		\
 				uart_imx_isr,				\
-				DEVICE_GET(uart_##n), 0);		\
+				DEVICE_DT_INST_GET(n), 0);		\
 		irq_enable(DT_INST_IRQN(n));				\
 	}
 #define UART_IMX_IRQ_CFG_FUNC_INIT(n)					\
@@ -316,7 +316,7 @@ static const struct uart_driver_api uart_imx_driver_api = {
 									\
 	static const struct imx_uart_config imx_uart_##n##_config;	\
 									\
-	DEVICE_AND_API_INIT(uart_##n, DT_INST_LABEL(n), &uart_imx_init,	\
+	DEVICE_DT_INST_DEFINE(n, &uart_imx_init, device_pm_control_nop,	\
 			&imx_uart_##n##_data, &imx_uart_##n##_config,	\
 			PRE_KERNEL_1,					\
 			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
