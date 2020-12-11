@@ -410,9 +410,29 @@ uint8_t ll_chm_get(uint16_t handle, uint8_t *chm)
 	return 0;
 }
 
+static bool is_valid_disconnect_reason(uint8_t reason)
+{
+	switch (reason) {
+	case BT_HCI_ERR_AUTH_FAIL:
+	case BT_HCI_ERR_REMOTE_USER_TERM_CONN:
+	case BT_HCI_ERR_REMOTE_LOW_RESOURCES:
+	case BT_HCI_ERR_REMOTE_POWER_OFF:
+	case BT_HCI_ERR_UNSUPP_REMOTE_FEATURE:
+	case BT_HCI_ERR_PAIRING_NOT_SUPPORTED:
+	case BT_HCI_ERR_UNACCEPT_CONN_PARAM:
+		return true;
+	default:
+		return false;
+	}
+}
+
 uint8_t ll_terminate_ind_send(uint16_t handle, uint8_t reason)
 {
 	struct ll_conn *conn;
+
+	if (!is_valid_disconnect_reason(reason)) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
