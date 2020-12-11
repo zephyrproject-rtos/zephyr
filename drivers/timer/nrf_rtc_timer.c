@@ -234,7 +234,7 @@ static void sys_clock_timeout_handler(uint32_t chan,
 		/* protection is not needed because we are in the RTC interrupt
 		 * so it won't get preempted by the interrupt.
 		 */
-		z_nrf_rtc_timer_compare_set(chan, last_count + CYC_PER_TICK,
+		compare_set(chan, last_count + CYC_PER_TICK,
 					  sys_clock_timeout_handler, NULL);
 	}
 
