@@ -56,6 +56,8 @@ void bt_csis_print_sirk(void);
 /**
  * @brief Starts advertising the PRSI value.
  *
+ * This cannot be used with other connectable advertising sets.
+ *
  * @param enable	If true start advertising, if false stop advertising
  * @return int		0 if on success, ERRNO on error.
  */
