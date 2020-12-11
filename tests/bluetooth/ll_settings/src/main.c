@@ -35,14 +35,17 @@ void test_company_id(void)
 void test_subversion_number(void)
 {
 	uint16_t svn;
+	int err;
 
 	svn = 0x1234;
-	settings_runtime_set("bt/ctlr/subver", &svn, sizeof(svn));
+	err = settings_runtime_set("bt/ctlr/subver", &svn, sizeof(svn));
+	zassert_equal(err, 0, "Setting Subversion number failed");
 	zassert_equal(ll_settings_subversion_number(), svn,
 		      "Subversion number does not match");
 
 	svn = 0x5678;
-	settings_runtime_set("bt/ctlr/subver", &svn, sizeof(svn));
+	err = settings_runtime_set("bt/ctlr/subver", &svn, sizeof(svn));
+	zassert_equal(err, 0, "Changing Subversion number failed");
 	zassert_equal(ll_settings_subversion_number(), svn,
 		      "Subversion number does not match");
 }
