@@ -612,7 +612,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
 
     serial.add_argument("--device-serial-pty",
                         help="""Script for controlling pseudoterminal.
-                        Sanitycheck believes that it interacts with a terminal
+                        Twister believes that it interacts with a terminal
                         when it actually interacts with the script.
 
                         E.g "twister --device-testing

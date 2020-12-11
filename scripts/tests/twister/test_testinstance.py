@@ -13,7 +13,7 @@ import pytest
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
-from twisterlib import TestInstance, BuildError, TestCase, SanityCheckException
+from twisterlib import TestInstance, BuildError, TestCase, TwisterException
 
 
 TESTDATA_1 = [
@@ -108,7 +108,7 @@ TESTDATA_4 = [
 def test_get_unique_exception(testcase_root, workdir, name, exception):
     '''Test to check if tests reference the category and subsystem with a dot as a separator'''
 
-    with pytest.raises(SanityCheckException):
+    with pytest.raises(TwisterException):
         unique = TestCase(testcase_root, workdir, name)
         assert unique == exception
 

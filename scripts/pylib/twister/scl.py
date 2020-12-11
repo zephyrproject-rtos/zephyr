@@ -1,7 +1,7 @@
 #! /usr/bin/python
 #
 # SPDX-License-Identifier: Apache-2.0
-# Zephyr's Sanity Check library
+# Zephyr's Twister library
 #
 # pylint: disable=unused-import
 #

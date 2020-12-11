@@ -1,8 +1,8 @@
-# Sanitycheck Testing
+# Twister Testing
 
 Running the tests require the environment variable ZEPHYR_BASE to be set.
 
-Sanitycheck Testsuite are located in $ZEPHYR_BASE/scripts/tests directory with all the data files in $ZEPHYR_BASE/scripts/test_data directory.
+Twister Testsuite are located in $ZEPHYR_BASE/scripts/tests directory with all the data files in $ZEPHYR_BASE/scripts/test_data directory.
 
 ## Dependencies
 
@@ -20,7 +20,7 @@ The testcases can be executed from the root directory using
 pytest $ZEPHYR_BASE/scripts/tests/twister
 ```
 
-## Sanitycheck Coverage
+## Twister Coverage
 
 The coverage for all the tests can be run using the command below. This will collect all the tests available.
 

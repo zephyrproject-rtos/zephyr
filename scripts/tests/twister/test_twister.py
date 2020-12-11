@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 """
-This test file contains foundational testcases for Sanitycheck tool
+This test file contains foundational testcases for Twister tool
 """
 
 import os
@@ -14,7 +14,7 @@ ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
 import scl
-from twisterlib import SanityConfigParser
+from twisterlib import TwisterConfigParser
 
 def test_yamlload():
     """ Test to check if loading the non-existent files raises the errors """
@@ -30,7 +30,7 @@ def test_correct_schema(filename, schema, test_data):
     """ Test to validate the testcase schema"""
     filename = test_data + filename
     schema = scl.yaml_load(ZEPHYR_BASE +'/scripts/schemas/twister//' + schema)
-    data = SanityConfigParser(filename, schema)
+    data = TwisterConfigParser(filename, schema)
     data.load()
     assert data
 
