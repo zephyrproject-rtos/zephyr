@@ -278,13 +278,6 @@ void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
  */
 
 /**
- * @brief Initialise ARM GIC driver
- *
- * @return 0 if successful
- */
-int arm_gic_init(void);
-
-/**
  * @brief Enable interrupt
  *
  * @param irq interrupt ID
