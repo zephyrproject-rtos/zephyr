@@ -19,6 +19,11 @@
 #include <sys/util.h>
 #include <sys/cbprintf.h>
 
+/* newlib doesn't declare this function unless __POSIX_VISIBLE >= 200809.  No
+ * idea how to make that happen, so lets put it right here.
+ */
+size_t strnlen(const char *, size_t);
+
 /* Provide typedefs used for signed and unsigned integral types
  * capable of holding all convertable integral values.
  */
@@ -342,8 +347,9 @@ static inline const char *extract_flags(struct conversion *conv,
 static inline const char *extract_width(struct conversion *conv,
 					const char *sp)
 {
+	conv->width_present = true;
+
 	if (*sp == '*') {
-		conv->width_present = true;
 		conv->width_star = true;
 		return ++sp;
 	}
@@ -375,27 +381,24 @@ static inline const char *extract_width(struct conversion *conv,
 static inline const char *extract_prec(struct conversion *conv,
 				       const char *sp)
 {
-	if (*sp != '.') {
+	conv->prec_present = (*sp == '.');
+
+	if (!conv->prec_present) {
 		return sp;
 	}
 	++sp;
 
 	if (*sp == '*') {
-		conv->prec_present = true;
 		conv->prec_star = true;
 		return ++sp;
 	}
 
-	const char *wp = sp;
 	size_t prec = extract_decimal(&sp);
 
-	if (sp != wp) {
-		conv->prec_present = true;
-		conv->prec_value = prec;
-		if (prec != conv->prec_value) {
-			/* Lost precision data */
-			conv->unsupported = true;
-		}
+	conv->prec_value = prec;
+	if (prec != conv->prec_value) {
+		/* Lost precision data */
+		conv->unsupported = true;
 	}
 
 	return sp;
@@ -1579,11 +1582,12 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		case 's': {
 			bps = (const char *)value->ptr;
 
-			size_t len = strlen(bps);
+			size_t len;
 
-			if ((precision >= 0)
-			    && ((size_t)precision < len)) {
-				len = (size_t)precision;
+			if (precision >= 0) {
+				len = strnlen(bps, precision);
+			} else {
+				len = strlen(bps);
 			}
 
 			bpe = bps + len;
