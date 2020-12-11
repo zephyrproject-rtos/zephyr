@@ -551,6 +551,13 @@ config BT_RX_USER_PDU_LEN
 	  header and payload. It does not account for HCI event headers as these
 	  PDUs are assumed to not go across HCI.
 
+config BT_CTLR_USER_CPR_INTERVAL_MIN
+	bool "Enable proprietary Connection Parameter Request minimum interval"
+	depends on BT_CTLR_USER_EXT
+	help
+	  When enabled, controller will accept Connection Parameter Request
+	  intervals down to a proprietary minimum value.
+
 endmenu
 
 comment "BLE Controller hardware configuration"
