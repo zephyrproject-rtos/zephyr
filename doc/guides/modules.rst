@@ -536,8 +536,8 @@ requires the following folder structure:
 
 
 
-Sanitycheck
-===========
+Twister (Test Runner)
+=====================
 
 To execute both tests and samples available in modules, the Zephyr test runner
 (twister) should be pointed to the directories containing those samples and
