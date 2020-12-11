@@ -5,12 +5,18 @@
 '''Runners for Synopsys Metaware Debugger(mdb).'''
 
 
-import time
 import shutil
-import psutil
+import time
 import os
 from os import path
+
 from runners.core import ZephyrBinaryRunner, RunnerCaps
+
+try:
+    import psutil
+    MISSING_REQUIREMENTS = False
+except ImportError:
+    MISSING_REQUIREMENTS = True
 
 # normally we should create class with common functionality inherited from
 # ZephyrBinaryRunner and inherit MdbNsimBinaryRunner and MdbHwBinaryRunner
@@ -205,4 +211,9 @@ class MdbHwBinaryRunner(ZephyrBinaryRunner):
             dig_device=args.dig_device)
 
     def do_run(self, command, **kwargs):
+        if MISSING_REQUIREMENTS:
+            raise RuntimeError('one or more Python dependencies were missing; '
+                               "see the getting started guide for details on "
+                               "how to fix")
+
         mdb_do_run(self, command)
