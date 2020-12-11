@@ -803,7 +803,8 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
 
 static void ivu_refresh(struct k_work *work)
 {
-	bt_mesh.ivu_duration += BT_MESH_IVU_HOURS;
+	bt_mesh.ivu_duration = MIN(UINT8_MAX,
+	       bt_mesh.ivu_duration + BT_MESH_IVU_HOURS);
 
 	BT_DBG("%s for %u hour%s",
 	       atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS) ?
