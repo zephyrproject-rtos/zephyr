@@ -341,8 +341,8 @@ static void test_s(void)
 		return;
 	}
 
-	rc = TEST_PRF("/%.6s/%.2s/", s, s);
-	PRF_CHECK("/123/12/", rc);
+	rc = TEST_PRF("/%.6s/%.2s/%.s/", s, s, s);
+	PRF_CHECK("/123/12//", rc);
 
 	rc = TEST_PRF("%ls", ws);
 	if (IS_ENABLED(USE_LIBC)) {
