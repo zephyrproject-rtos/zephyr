@@ -686,8 +686,8 @@ void z_x86_pentry_get(int *paging_level, pentry_t *val, pentry_t *ptables,
  */
 void z_x86_dump_mmu_flags(pentry_t *ptables, void *virt)
 {
-	pentry_t entry;
-	int level;
+	pentry_t entry = 0;
+	int level = 0;
 
 	pentry_get(&level, &entry, ptables, virt);
 
