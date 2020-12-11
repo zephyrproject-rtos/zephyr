@@ -43,7 +43,7 @@ def test_testsuite_add_testcases(class_testsuite):
 
 @pytest.mark.parametrize("board_root_dir", [("board_config_file_not_exist"), ("board_config")])
 def test_add_configurations(test_data, class_testsuite, board_root_dir):
-    """ Testing add_configurations function of TestSuite class in Sanitycheck
+    """ Testing add_configurations function of TestSuite class in Twister
     Test : Asserting on default platforms list
     """
     class_testsuite.board_roots = os.path.abspath(test_data + board_root_dir)
@@ -56,7 +56,7 @@ def test_add_configurations(test_data, class_testsuite, board_root_dir):
         assert sorted(suite.default_platforms) != sorted(['demo_board_1'])
 
 def test_get_all_testcases(class_testsuite, all_testcases_dict):
-    """ Testing get_all_testcases function of TestSuite class in Sanitycheck """
+    """ Testing get_all_testcases function of TestSuite class in Twister """
     class_testsuite.testcases = all_testcases_dict
     expected_tests = ['sample_test.app', 'test_a.check_1.1a', 'test_a.check_1.1c',
                     'test_a.check_1.2a', 'test_a.check_1.2b', 'test_a.check_1.Unit_1c', 'test_a.check_1.unit_1a', 'test_a.check_1.unit_1b', 'test_a.check_2.1a', 'test_a.check_2.1c', 'test_a.check_2.2a', 'test_a.check_2.2b', 'test_a.check_2.Unit_1c', 'test_a.check_2.unit_1a', 'test_a.check_2.unit_1b', 'test_b.check_1', 'test_b.check_2', 'test_c.check_1', 'test_c.check_2']
@@ -64,7 +64,7 @@ def test_get_all_testcases(class_testsuite, all_testcases_dict):
     assert sorted(class_testsuite.get_all_tests()) == sorted(expected_tests)
 
 def test_get_toolchain(class_testsuite, monkeypatch, capsys):
-    """ Testing get_toolchain function of TestSuite class in Sanitycheck
+    """ Testing get_toolchain function of TestSuite class in Twister
     Test 1 : Test toolchain returned by get_toolchain function is same as in the environment.
     Test 2 : Monkeypatch to delete the  ZEPHYR_TOOLCHAIN_VARIANT env var
     and check if appropriate error is raised"""
@@ -79,7 +79,7 @@ def test_get_toolchain(class_testsuite, monkeypatch, capsys):
     assert out == "E: Variable ZEPHYR_TOOLCHAIN_VARIANT is not defined\n"
 
 def test_get_platforms(class_testsuite, platforms_list):
-    """ Testing get_platforms function of TestSuite class in Sanitycheck """
+    """ Testing get_platforms function of TestSuite class in Twister """
     class_testsuite.platforms = platforms_list
     platform = class_testsuite.get_platform("demo_board_1")
     assert isinstance(platform, Platform)
@@ -87,7 +87,7 @@ def test_get_platforms(class_testsuite, platforms_list):
 
 def test_load_from_file(test_data, class_testsuite,
                         platforms_list, all_testcases_dict, caplog, tmpdir_factory):
-    """ Testing load_from_file function of TestSuite class in Sanitycheck """
+    """ Testing load_from_file function of TestSuite class in Twister """
     # Scenario 1 : Validating the error raised if file to load from doesn't exist
     with pytest.raises(SystemExit):
         class_testsuite.load_from_file(test_data +"twister_test.csv")
@@ -160,7 +160,7 @@ TESTDATA_PART1 = [
                          TESTDATA_PART1)
 def test_apply_filters_part1(class_testsuite, all_testcases_dict, platforms_list,
                              tc_attribute, tc_value, plat_attribute, plat_value, expected_discards):
-    """ Testing apply_filters function of TestSuite class in Sanitycheck
+    """ Testing apply_filters function of TestSuite class in Twister
     Part 1: Response of apply_filters function (discard dictionary) have
             appropriate values according to the filters
     """
@@ -233,7 +233,7 @@ TESTDATA_PART2 = [
 @pytest.mark.parametrize("extra_filter, extra_filter_value, expected_discards", TESTDATA_PART2)
 def test_apply_filters_part2(class_testsuite, all_testcases_dict,
                              platforms_list, extra_filter, extra_filter_value, expected_discards):
-    """ Testing apply_filters function of TestSuite class in Sanitycheck
+    """ Testing apply_filters function of TestSuite class in Twister
     Part 2 : Response of apply_filters function (discard dictionary) have
              appropriate values according to the filters
     """
@@ -265,7 +265,7 @@ TESTDATA_PART3 = [
                          TESTDATA_PART3)
 def test_apply_filters_part3(class_testsuite, all_testcases_dict, platforms_list,
                              tc_min_flash, plat_flash, tc_min_ram, plat_ram):
-    """ Testing apply_filters function of TestSuite class in Sanitycheck
+    """ Testing apply_filters function of TestSuite class in Twister
     Part 3 : Testing edge cases for ram and flash values of platforms & testcases
     """
     class_testsuite.platforms = platforms_list
@@ -282,7 +282,7 @@ def test_apply_filters_part3(class_testsuite, all_testcases_dict, platforms_list
     assert not discards
 
 def test_add_instances(test_data, class_testsuite, all_testcases_dict, platforms_list):
-    """ Testing add_instances() function of TestSuite class in Sanitycheck
+    """ Testing add_instances() function of TestSuite class in Twister
     Test 1: instances dictionary keys have expected values (Platform Name + Testcase Name)
     Test 2: Values of 'instances' dictionary in Testsuite class are an
 	        instance of 'TestInstance' class

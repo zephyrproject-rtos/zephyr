@@ -340,24 +340,24 @@ class CMakeCache:
         return iter(self._entries.values())
 
 
-class SanityCheckException(Exception):
+class TwisterException(Exception):
     pass
 
 
-class SanityRuntimeError(SanityCheckException):
+class TwisterRuntimeError(TwisterException):
     pass
 
 
-class ConfigurationError(SanityCheckException):
+class ConfigurationError(TwisterException):
     def __init__(self, cfile, message):
-        SanityCheckException.__init__(self, cfile + ": " + message)
+        TwisterException.__init__(self, cfile + ": " + message)
 
 
-class BuildError(SanityCheckException):
+class BuildError(TwisterException):
     pass
 
 
-class ExecutionError(SanityCheckException):
+class ExecutionError(TwisterException):
     pass
 
 
@@ -1219,7 +1219,7 @@ class SizeCalculator:
 
         try:
             if magic != b'\x7fELF':
-                raise SanityRuntimeError("%s is not an ELF binary" % filename)
+                raise TwisterRuntimeError("%s is not an ELF binary" % filename)
         except Exception as e:
             print(str(e))
             sys.exit(2)
@@ -1234,7 +1234,7 @@ class SizeCalculator:
             "utf-8").strip()
         try:
             if is_xip_output.endswith("no symbols"):
-                raise SanityRuntimeError("%s has no symbol information" % filename)
+                raise TwisterRuntimeError("%s has no symbol information" % filename)
         except Exception as e:
             print(str(e))
             sys.exit(2)
@@ -1330,12 +1330,12 @@ class SizeCalculator:
 
 
 
-class SanityConfigParser:
+class TwisterConfigParser:
     """Class to read test case files with semantic checking
     """
 
     def __init__(self, filename, schema):
-        """Instantiate a new SanityConfigParser object
+        """Instantiate a new TwisterConfigParser object
 
         @param filename Source .yaml file to read
         """
@@ -1496,7 +1496,7 @@ class Platform:
         self.filter_data = dict()
 
     def load(self, platform_file):
-        scp = SanityConfigParser(platform_file, self.platform_schema)
+        scp = TwisterConfigParser(platform_file, self.platform_schema)
         scp.load()
         data = scp.data
 
@@ -1605,7 +1605,7 @@ class TestCase(DisablePyTestCollectionMixin):
         unique = os.path.normpath(os.path.join(relative_tc_root, workdir, name))
         check = name.split(".")
         if len(check) < 2:
-            raise SanityCheckException(f"""bad test name '{name}' in {testcase_root}/{workdir}. \
+            raise TwisterException(f"""bad test name '{name}' in {testcase_root}/{workdir}. \
 Tests should reference the category and subsystem with a dot as a separator.
                     """
                     )
@@ -1683,7 +1683,7 @@ Tests should reference the category and subsystem with a dot as a separator.
                 _subcases, warnings = self.scan_file(filename)
                 if warnings:
                     logger.error("%s: %s" % (filename, warnings))
-                    raise SanityRuntimeError("%s: %s" % (filename, warnings))
+                    raise TwisterRuntimeError("%s: %s" % (filename, warnings))
                 if _subcases:
                     subcases += _subcases
             except ValueError as e:
@@ -2812,7 +2812,7 @@ class TestSuite(DisablePyTestCollectionMixin):
 
         try:
             if not toolchain:
-                raise SanityRuntimeError("E: Variable ZEPHYR_TOOLCHAIN_VARIANT is not defined")
+                raise TwisterRuntimeError("E: Variable ZEPHYR_TOOLCHAIN_VARIANT is not defined")
         except Exception as e:
             print(str(e))
             sys.exit(2)
@@ -2839,7 +2839,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                 tc_path = os.path.join(dirpath, filename)
 
                 try:
-                    parsed_data = SanityConfigParser(tc_path, self.tc_schema)
+                    parsed_data = TwisterConfigParser(tc_path, self.tc_schema)
                     parsed_data.load()
 
                     tc_path = os.path.dirname(tc_path)
@@ -3239,7 +3239,7 @@ class TestSuite(DisablePyTestCollectionMixin):
 
         try:
             if not self.discards:
-                raise SanityRuntimeError("apply_filters() hasn't been run!")
+                raise TwisterRuntimeError("apply_filters() hasn't been run!")
         except Exception as e:
             logger.error(str(e))
             sys.exit(2)
