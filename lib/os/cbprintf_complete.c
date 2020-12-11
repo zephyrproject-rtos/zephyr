@@ -307,6 +307,38 @@ struct conversion {
 	};
 };
 
+/* State used for processing format conversions with values taken from
+ * varargs.
+ */
+struct cbprintf_state {
+	/* A copy of the captured arguments on the call stack.
+	 *
+	 * See https://stackoverflow.com/a/8048892 for why we can't
+	 * just pass a pointer to the passed ap argument.
+	 */
+	va_list ap;
+
+	/* A conversion specifier extracted with
+	 * extract_conversion()
+	 */
+	struct conversion conv;
+
+	/* The value from ap extracted with data from conv. */
+	union argument_value value;
+
+	/* The width to use when emitting the value.
+	 *
+	 * Negative values indicate this is not used.
+	 */
+	int width;
+
+	/* The precision to use when emitting the value.
+	 *
+	 * Negative values indicate this is not used.
+	 */
+	int precision;
+};
+
 /** Get a size represented as a sequence of decimal digits.
  *
  * @param[inout] str where to read from.  Updated to point to the first
@@ -1319,11 +1351,178 @@ static int outs(cbprintf_cb out,
 	return (int)count;
 }
 
+/* Pull from the stack all information related to the conversion
+ * specified in state.
+ */
+static void pull_va_args(struct cbprintf_state *state)
+{
+	struct conversion *const conv = &state->conv;
+	union argument_value *const value = &state->value;
+
+	state->width = -1;
+	state->precision = -1;
+
+	/* If dynamic width is specified, process it, otherwise set
+	 * with if present.
+	 */
+	if (conv->width_star) {
+		state->width = va_arg(state->ap, int);
+
+		if (state->width < 0) {
+			conv->flag_dash = true;
+			state->width = -state->width;
+		}
+	} else if (conv->width_present) {
+		state->width = conv->width_value;
+	}
+
+	/* If dynamic precision is specified, process it, otherwise
+	 * set precision if present.  For floating point where
+	 * precision is not present use 6.
+	 */
+	if (conv->prec_star) {
+		int arg = va_arg(state->ap, int);
+
+		if (arg < 0) {
+			conv->prec_present = false;
+		} else {
+			state->precision = arg;
+		}
+	} else if (conv->prec_present) {
+		state->precision = conv->prec_value;
+	}
+
+	/* Reuse width and precision memory in conv for value
+	 * padding counts.
+	 */
+	conv->pad0_value = 0;
+	conv->pad0_pre_exp = 0;
+
+	/* FP conversion requires knowing the precision. */
+	if (IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)
+	    && (conv->specifier_cat == SPECIFIER_FP)
+	    && !conv->prec_present) {
+		if (conv->specifier_a) {
+			state->precision = FRACTION_HEX;
+		} else {
+			state->precision = 6;
+		}
+	}
+
+	enum specifier_cat_enum specifier_cat
+		= (enum specifier_cat_enum)conv->specifier_cat;
+	enum length_mod_enum length_mod
+		= (enum length_mod_enum)conv->length_mod;
+
+	/* Extract the value based on the argument category and length.
+	 *
+	 * Note that the length modifier doesn't affect the value of a
+	 * pointer argument.
+	 */
+	if (specifier_cat == SPECIFIER_SINT) {
+		switch (length_mod) {
+		default:
+		case LENGTH_NONE:
+		case LENGTH_HH:
+		case LENGTH_H:
+			value->sint = va_arg(state->ap, int);
+			break;
+		case LENGTH_L:
+			if (WCHAR_IS_SIGNED && (conv->specifier == 'c')) {
+				value->sint = (wchar_t)va_arg(state->ap,
+							      WINT_TYPE);
+			} else {
+				value->sint = va_arg(state->ap, long);
+			}
+			break;
+		case LENGTH_LL:
+			value->sint =
+				(sint_value_type)va_arg(state->ap, long long);
+			break;
+		case LENGTH_J:
+			value->sint =
+				(sint_value_type)va_arg(state->ap, intmax_t);
+			break;
+		case LENGTH_Z:		/* size_t */
+		case LENGTH_T:		/* ptrdiff_t */
+			/* Though ssize_t is the signed equivalent of
+			 * size_t for POSIX, there is no uptrdiff_t.
+			 * Assume that size_t and ptrdiff_t are the
+			 * unsigned and signed equivalents of each
+			 * other.  This can be checked in a platform
+			 * test.
+			 */
+			value->sint =
+				(sint_value_type)va_arg(state->ap, ptrdiff_t);
+			break;
+		}
+		if (length_mod == LENGTH_HH) {
+			value->sint = (char)value->sint;
+		} else if (length_mod == LENGTH_H) {
+			value->sint = (short)value->sint;
+		}
+	} else if (specifier_cat == SPECIFIER_UINT) {
+		switch (length_mod) {
+		default:
+		case LENGTH_NONE:
+		case LENGTH_HH:
+		case LENGTH_H:
+			value->uint = va_arg(state->ap, unsigned int);
+			break;
+		case LENGTH_L:
+			if ((!WCHAR_IS_SIGNED) && (conv->specifier == 'c')) {
+				value->uint = (wchar_t)va_arg(state->ap,
+							      WINT_TYPE);
+			} else {
+				value->uint = va_arg(state->ap, unsigned long);
+			}
+			break;
+		case LENGTH_LL:
+			value->uint =
+				(uint_value_type)va_arg(state->ap,
+							unsigned long long);
+			break;
+		case LENGTH_J:
+			value->uint =
+				(uint_value_type)va_arg(state->ap,
+							uintmax_t);
+			break;
+		case LENGTH_Z:		/* size_t */
+		case LENGTH_T:		/* ptrdiff_t */
+			value->uint =
+				(uint_value_type)va_arg(state->ap, size_t);
+			break;
+		}
+		if (length_mod == LENGTH_HH) {
+			value->uint = (unsigned char)value->uint;
+		} else if (length_mod == LENGTH_H) {
+			value->uint = (unsigned short)value->uint;
+		}
+	} else if (specifier_cat == SPECIFIER_FP) {
+		if (length_mod == LENGTH_UPPER_L) {
+			value->ldbl = va_arg(state->ap, long double);
+		} else {
+			value->dbl = va_arg(state->ap, double);
+		}
+	} else if (specifier_cat == SPECIFIER_PTR) {
+		value->ptr = va_arg(state->ap, void *);
+	}
+}
+
 int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 {
 	char buf[CONVERTED_BUFLEN];
 	size_t count = 0;
 	sint_value_type sint;
+	struct cbprintf_state state;
+	struct conversion *const conv = &state.conv;
+	union argument_value *const value = &state.value;
+
+	/* Make a copy of the arguments, because we can't pass ap to
+	 * subroutines by value (caller wouldn't see the changes) nor
+	 * by address (va_list may be an array type).
+	 */
+	va_copy(state.ap, ap);
 
 /* Output character, returning EOF if output failed, otherwise
  * updating count.
@@ -1358,181 +1557,10 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 			continue;
 		}
 
-		/* Force union into RAM with conversion state to
-		 * mitigate LLVM code generation bug.
-		 */
-		struct {
-			union argument_value value;
-			struct conversion conv;
-		} state = {
-			.value = {
-				.uint = 0,
-			},
-		};
-		struct conversion *const conv = &state.conv;
-		union argument_value *const value = &state.value;
 		const char *sp = fp;
-		int width = -1;
-		int precision = -1;
-		const char *bps = NULL;
-		const char *bpe = buf + sizeof(buf);
-		char sign = 0;
 
 		fp = extract_conversion(conv, sp);
-
-		/* If dynamic width is specified, process it,
-		 * otherwise set with if present.
-		 */
-		if (conv->width_star) {
-			width = va_arg(ap, int);
-
-			if (width < 0) {
-				conv->flag_dash = true;
-				width = -width;
-			}
-		} else if (conv->width_present) {
-			width = conv->width_value;
-		}
-
-		/* If dynamic precision is specified, process it, otherwise
-		 * set precision if present.  For floating point where
-		 * precision is not present use 6.
-		 */
-		if (conv->prec_star) {
-			int arg = va_arg(ap, int);
-
-			if (arg < 0) {
-				conv->prec_present = false;
-			} else {
-				precision = arg;
-			}
-		} else if (conv->prec_present) {
-			precision = conv->prec_value;
-		}
-
-		/* Reuse width and precision memory in conv for value
-		 * padding counts.
-		 */
-		conv->pad0_value = 0;
-		conv->pad0_pre_exp = 0;
-
-		/* FP conversion requires knowing the precision. */
-		if (IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)
-		    && (conv->specifier_cat == SPECIFIER_FP)
-		    && !conv->prec_present) {
-			if (conv->specifier_a) {
-				precision = FRACTION_HEX;
-			} else {
-				precision = 6;
-			}
-		}
-
-		/* Get the value to be converted from the args.
-		 *
-		 * This can't be extracted to a helper function because
-		 * passing a pointer to va_list doesn't work on x86_64.  See
-		 * https://stackoverflow.com/a/8048892.
-		 */
-		enum specifier_cat_enum specifier_cat
-			= (enum specifier_cat_enum)conv->specifier_cat;
-		enum length_mod_enum length_mod
-			= (enum length_mod_enum)conv->length_mod;
-
-		/* Extract the value based on the argument category and length.
-		 *
-		 * Note that the length modifier doesn't affect the value of a
-		 * pointer argument.
-		 */
-		if (specifier_cat == SPECIFIER_SINT) {
-			switch (length_mod) {
-			default:
-			case LENGTH_NONE:
-			case LENGTH_HH:
-			case LENGTH_H:
-				value->sint = va_arg(ap, int);
-				break;
-			case LENGTH_L:
-				if (WCHAR_IS_SIGNED
-				    && (conv->specifier == 'c')) {
-					value->sint = (wchar_t)va_arg(ap,
-							      WINT_TYPE);
-				} else {
-					value->sint = va_arg(ap, long);
-				}
-				break;
-			case LENGTH_LL:
-				value->sint =
-					(sint_value_type)va_arg(ap, long long);
-				break;
-			case LENGTH_J:
-				value->sint =
-					(sint_value_type)va_arg(ap, intmax_t);
-				break;
-			case LENGTH_Z:		/* size_t */
-			case LENGTH_T:		/* ptrdiff_t */
-				/* Though ssize_t is the signed equivalent of
-				 * size_t for POSIX, there is no uptrdiff_t.
-				 * Assume that size_t and ptrdiff_t are the
-				 * unsigned and signed equivalents of each
-				 * other.  This can be checked in a platform
-				 * test.
-				 */
-				value->sint =
-					(sint_value_type)va_arg(ap, ptrdiff_t);
-				break;
-			}
-			if (length_mod == LENGTH_HH) {
-				value->sint = (char)value->sint;
-			} else if (length_mod == LENGTH_H) {
-				value->sint = (short)value->sint;
-			}
-		} else if (specifier_cat == SPECIFIER_UINT) {
-			switch (length_mod) {
-			default:
-			case LENGTH_NONE:
-			case LENGTH_HH:
-			case LENGTH_H:
-				value->uint = va_arg(ap, unsigned int);
-				break;
-			case LENGTH_L:
-				if ((!WCHAR_IS_SIGNED)
-				    && (conv->specifier == 'c')) {
-					value->uint = (wchar_t)va_arg(ap,
-							      WINT_TYPE);
-				} else {
-					value->uint = va_arg(ap, unsigned long);
-				}
-				break;
-			case LENGTH_LL:
-				value->uint =
-					(uint_value_type)va_arg(ap,
-						unsigned long long);
-				break;
-			case LENGTH_J:
-				value->uint =
-					(uint_value_type)va_arg(ap,
-								uintmax_t);
-				break;
-			case LENGTH_Z:		/* size_t */
-			case LENGTH_T:		/* ptrdiff_t */
-				value->uint =
-					(uint_value_type)va_arg(ap, size_t);
-				break;
-			}
-			if (length_mod == LENGTH_HH) {
-				value->uint = (unsigned char)value->uint;
-			} else if (length_mod == LENGTH_H) {
-				value->uint = (unsigned short)value->uint;
-			}
-		} else if (specifier_cat == SPECIFIER_FP) {
-			if (length_mod == LENGTH_UPPER_L) {
-				value->ldbl = va_arg(ap, long double);
-			} else {
-				value->dbl = va_arg(ap, double);
-			}
-		} else if (specifier_cat == SPECIFIER_PTR) {
-			value->ptr = va_arg(ap, void *);
-		}
+		pull_va_args(&state);
 
 		/* We've now consumed all arguments related to this
 		 * specification.  If the conversion is invalid, or is
@@ -1543,6 +1571,12 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 			OUTS(sp, fp);
 			continue;
 		}
+
+		int width = state.width;
+		int precision = state.precision;
+		const char *bps = NULL;
+		const char *bpe = buf + sizeof(buf);
+		char sign = 0;
 
 		/* Do formatting, either into the buffer or
 		 * referencing external data.
