@@ -292,7 +292,7 @@ static void test_c(void)
 	PRF_CHECK("a", rc);
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		TC_PRINT("short test for nano");
+		TC_PRINT("short test for nano\n");
 		return;
 	}
 
@@ -337,7 +337,7 @@ static void test_s(void)
 	}
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		TC_PRINT("short test for nano");
+		TC_PRINT("short test for nano\n");
 		return;
 	}
 
@@ -414,7 +414,7 @@ static void test_d_length(void)
 	}
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		TC_PRINT("short test for nano");
+		TC_PRINT("short test for nano\n");
 		return;
 	}
 
@@ -450,7 +450,7 @@ static void test_d_flags(void)
 	int rc;
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		TC_PRINT("skipped test for nano");
+		TC_PRINT("skipped test for nano\n");
 		return;
 	}
 
@@ -509,7 +509,7 @@ static void test_x_length(void)
 	}
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		TC_PRINT("short test for nano");
+		TC_PRINT("short test for nano\n");
 		return;
 	}
 
@@ -569,7 +569,7 @@ static void test_x_flags(void)
 	int rc;
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		TC_PRINT("skipped test for nano");
+		TC_PRINT("skipped test for nano\n");
 		return;
 	}
 
@@ -602,7 +602,7 @@ static void test_o(void)
 	int rc;
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		TC_PRINT("skipped test for nano");
+		TC_PRINT("skipped test for nano\n");
 		return;
 	}
 
@@ -615,7 +615,7 @@ static void test_o(void)
 static void test_fp_value(void)
 {
 	if (!IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)) {
-		TC_PRINT("skipping unsupported feature");
+		TC_PRINT("skipping unsupported feature\n");
 		return;
 	}
 
@@ -808,7 +808,7 @@ static void test_fp_value(void)
 static void test_fp_length(void)
 {
 	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		TC_PRINT("skipped test for nano");
+		TC_PRINT("skipped test for nano\n");
 		return;
 	}
 
@@ -849,7 +849,7 @@ static void test_fp_length(void)
 static void test_fp_flags(void)
 {
 	if (!IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)) {
-		TC_PRINT("skipping unsupported feature");
+		TC_PRINT("skipping unsupported feature\n");
 		return;
 	}
 
@@ -882,7 +882,7 @@ static void test_fp_flags(void)
 static void test_star_width(void)
 {
 	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		TC_PRINT("skipped test for nano");
+		TC_PRINT("skipped test for nano\n");
 		return;
 	}
 
@@ -898,7 +898,7 @@ static void test_star_width(void)
 static void test_star_precision(void)
 {
 	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		TC_PRINT("skipped test for nano");
+		TC_PRINT("skipped test for nano\n");
 		return;
 	}
 
@@ -927,11 +927,11 @@ static void test_star_precision(void)
 static void test_n(void)
 {
 	if (!IS_ENABLED(CONFIG_CBPRINTF_N_SPECIFIER)) {
-		TC_PRINT("skipping unsupported feature");
+		TC_PRINT("skipping unsupported feature\n");
 		return;
 	}
 	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
-		TC_PRINT("skipped test for nano");
+		TC_PRINT("skipped test for nano\n");
 		return;
 	}
 
@@ -1008,7 +1008,7 @@ static void test_arglen(void)
 static void test_p(void)
 {
 	if (IS_ENABLED(USE_LIBC)) {
-		TC_PRINT("skipping on libc");
+		TC_PRINT("skipping on libc\n");
 		return;
 	}
 
