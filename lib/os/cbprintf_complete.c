@@ -54,15 +54,15 @@ typedef uint32_t uint_value_type;
 
 /* The allowed types of length modifier. */
 enum length_mod_enum {
-	LENGTH_NONE,
-	LENGTH_HH,
-	LENGTH_H,
-	LENGTH_L,
-	LENGTH_LL,
-	LENGTH_J,
-	LENGTH_Z,
-	LENGTH_T,
-	LENGTH_UPPER_L,
+	LENGTH_NONE,		/* int */
+	LENGTH_HH,		/* char */
+	LENGTH_H,		/* short */
+	LENGTH_L,		/* long */
+	LENGTH_LL,		/* long long */
+	LENGTH_J,		/* intmax */
+	LENGTH_Z,		/* size_t */
+	LENGTH_T,		/* ptrdiff_t */
+	LENGTH_UPPER_L,		/* long double */
 };
 
 /* Categories of conversion specifiers. */
