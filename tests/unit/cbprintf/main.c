@@ -17,10 +17,10 @@
 #include <sys/util.h>
 
 /* Unit testing doesn't use Kconfig, so if we're not building from
- * sanitycheck force selection of all features.  If we are use flags
- * to determine which features are desired.  Yes, this is a mess.
+ * twister force selection of all features.  If we are use flags to
+ * determine which features are desired.  Yes, this is a mess.
  */
-#ifndef VIA_SANITYCHECK
+#ifndef VIA_TWISTER
 /* Set this to truthy to use libc's snprintf as external validation.
  * This should be used with all options enabled.
  */
@@ -58,34 +58,34 @@
 #define CONFIG_CBPRINTF_REDUCED_INTEGRAL 1
 #endif
 
-#else /* VIA_SANITYCHECK */
-#if (VIA_SANITYCHECK & 0x01) != 0
+#else /* VIA_TWISTER */
+#if (VIA_TWISTER & 0x01) != 0
 #define CONFIG_CBPRINTF_FULL_INTEGRAL 1
 #else
 #define CONFIG_CBPRINTF_REDUCED_INTEGRAL 1
 #endif
-#if (VIA_SANITYCHECK & 0x02) != 0
+#if (VIA_TWISTER & 0x02) != 0
 #define CONFIG_CBPRINTF_FP_SUPPORT 1
 #endif
-#if (VIA_SANITYCHECK & 0x04) != 0
+#if (VIA_TWISTER & 0x04) != 0
 #define CONFIG_CBPRINTF_FP_A_SUPPORT 1
 #endif
-#if (VIA_SANITYCHECK & 0x08) != 0
+#if (VIA_TWISTER & 0x08) != 0
 #define CONFIG_CBPRINTF_N_SPECIFIER 1
 #endif
-#if (VIA_SANITYCHECK & 0x40) != 0
+#if (VIA_TWISTER & 0x40) != 0
 #define CONFIG_CBPRINTF_FP_ALWAYS_A 1
 #endif
-#if (VIA_SANITYCHECK & 0x80) != 0
+#if (VIA_TWISTER & 0x80) != 0
 #define CONFIG_CBPRINTF_NANO 1
 #else /* 0x80 */
 #define CONFIG_CBPRINTF_COMPLETE 1
 #endif /* 0x80 */
-#if (VIA_SANITYCHECK & 0x100) != 0
+#if (VIA_TWISTER & 0x100) != 0
 #define CONFIG_CBPRINTF_LIBC_SUBSTS 1
 #endif
 
-#endif /* VIA_SANITYCHECK */
+#endif /* VIA_TWISTER */
 
 #include "../../../lib/os/cbprintf.c"
 
