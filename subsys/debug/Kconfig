@@ -17,6 +17,7 @@ menuconfig THREAD_ANALYZER
 	select INIT_STACKS
 	select THREAD_MONITOR
 	select THREAD_STACK_INFO
+	select THREAD_RUNTIME_STATS
 	help
 	  Enable thread analyzer functionality and all the required modules.
 	  This module may be used to debug thread configuration issues, e.g.

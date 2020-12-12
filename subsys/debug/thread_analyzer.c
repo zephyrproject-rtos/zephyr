@@ -38,18 +38,32 @@ LOG_MODULE_REGISTER(thread_analyzer, CONFIG_THREAD_ANALYZER_LOG_LEVEL);
 static void thread_print_cb(struct thread_analyzer_info *info)
 {
 	unsigned int pcnt = (info->stack_used * 100U) / info->stack_size;
-
+#ifdef CONFIG_THREAD_RUNTIME_STATS
+	THREAD_ANALYZER_PRINT(
+		THREAD_ANALYZER_FMT(
+			" %-20s: STACK: unused %zu usage %zu / %zu (%zu %%); CPU: %zu %%"),
+		THREAD_ANALYZER_VSTR(info->name),
+		info->stack_size - info->stack_used, info->stack_used,
+		info->stack_size, pcnt,
+		info->utilization);
+#else
 	THREAD_ANALYZER_PRINT(
 		THREAD_ANALYZER_FMT(
 			" %-20s: unused %zu usage %zu / %zu (%zu %%)"),
 		THREAD_ANALYZER_VSTR(info->name),
 		info->stack_size - info->stack_used, info->stack_used,
 		info->stack_size, pcnt);
+#endif
 }
 
 static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 {
 	struct k_thread *thread = (struct k_thread *)cthread;
+#ifdef CONFIG_THREAD_RUNTIME_STATS
+	k_thread_runtime_stats_t rt_stats_all;
+	k_thread_runtime_stats_t rt_stats_thread;
+	int ret;
+#endif
 	size_t size = thread->stack_info.size;
 	thread_analyzer_cb cb = user_data;
 	struct thread_analyzer_info info;
@@ -57,6 +71,8 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 	const char *name;
 	size_t unused;
 	int err;
+
+
 
 	name = k_thread_name_get((k_tid_t)thread);
 	if (!name || name[0] == '\0') {
@@ -77,6 +93,22 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 	info.name = name;
 	info.stack_size = size;
 	info.stack_used = size - unused;
+
+#ifdef CONFIG_THREAD_RUNTIME_STATS
+	ret = 0;
+
+	if (k_thread_runtime_stats_get(thread, &rt_stats_thread) != 0) {
+		ret++;
+	};
+
+	if (k_thread_runtime_stats_all_get(&rt_stats_all) != 0) {
+		ret++;
+	}
+	if (ret == 0) {
+		info.utilization = (rt_stats_thread.execution_cycles * 100U) /
+			rt_stats_all.execution_cycles;
+	}
+#endif
 	cb(&info);
 }
 
