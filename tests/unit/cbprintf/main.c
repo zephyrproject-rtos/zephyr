@@ -16,6 +16,8 @@
 #include <sys/cbprintf.h>
 #include <sys/util.h>
 
+#define CBPRINTF_VIA_UNIT_TEST
+
 /* Unit testing doesn't use Kconfig, so if we're not building from
  * twister force selection of all features.  If we are use flags to
  * determine which features are desired.  Yes, this is a mess.
@@ -25,6 +27,7 @@
  * This should be used with all options enabled.
  */
 #define USE_LIBC 0
+#define USE_PACKAGED 0
 #define CONFIG_CBPRINTF_COMPLETE 1
 #define CONFIG_CBPRINTF_FULL_INTEGRAL 1
 #define CONFIG_CBPRINTF_FP_SUPPORT 1
@@ -84,6 +87,9 @@
 #if (VIA_TWISTER & 0x100) != 0
 #define CONFIG_CBPRINTF_LIBC_SUBSTS 1
 #endif
+#if (VIA_TWISTER & 0x200) != 0
+#define USE_PACKAGED 1
+#endif
 
 #endif /* VIA_TWISTER */
 
@@ -94,6 +100,12 @@
 #define ENABLED_USE_LIBC true
 #else
 #define ENABLED_USE_LIBC false
+#endif
+
+#if USE_PACKAGED
+#define ENABLED_USE_PACKAGED true
+#else
+#define ENABLED_USE_PACKAGED false
 #endif
 
 #include "../../../lib/os/cbprintf.c"
@@ -114,6 +126,11 @@ static const char *pfx_str = pfx_str64;
 static const unsigned int sfx_val = (unsigned int)0xe7e6e5e4e3e2e1e0;
 static const char sfx_str64[] = "e7e6e5e4e3e2e1e0";
 static const char *sfx_str = sfx_str64;
+
+/* Buffer adequate to hold packaged state for all tested
+ * configurations.
+ */
+static uint8_t packaged[256];
 
 #define WRAP_FMT(_fmt) "%x" _fmt "%x"
 #define PASS_ARG(...) pfx_val, __VA_ARGS__, sfx_val
@@ -172,8 +189,18 @@ static int prf(const char *format, ...)
 #if USE_LIBC
 	rv = vsnprintf(buf, sizeof(buf), format, ap);
 #else
-	reset_out();
+#if USE_PACKAGED
+	size_t len = sizeof(packaged);
+
+	rv = cbvprintf_package(packaged, &len, format, ap);
+	if (len > sizeof(packaged)) {
+		rv = -ENOSPC;
+	} else {
+		rv = cbpprintf(out, NULL, packaged);
+	}
+#else
 	rv = cbvprintf(out, NULL, format, ap);
+#endif
 	if (bp == (buf + ARRAY_SIZE(buf))) {
 		--bp;
 	}
@@ -189,7 +216,18 @@ static int rawprf(const char *format, ...)
 	int rv;
 
 	va_start(ap, format);
+#if USE_PACKAGED
+	size_t len = sizeof(packaged);
+
+	rv = cbvprintf_package(packaged, &len, format, ap);
+	if (len > sizeof(packaged)) {
+		rv = -ENOSPC;
+	} else {
+		rv = cbpprintf(out, NULL, packaged);
+	}
+#else
 	rv = cbvprintf(out, NULL, format, ap);
+#endif
 	va_end(ap);
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)
@@ -1090,6 +1128,72 @@ static void test_libc_substs(void)
 	}
 }
 
+static void test_cbprintf_package(void)
+{
+	if (!IS_ENABLED(CONFIG_CBPRINTF_COMPLETE)) {
+		TC_PRINT("skipped on nano\n");
+		return;
+	}
+
+	size_t len = 0;
+	int rc;
+	char fmt[] = "/%i/";	/* not const */
+
+	/* Verify we can calculate length without storing */
+	rc = cbprintf_package(NULL, &len, fmt, 3);
+
+	zassert_equal(rc, 0, NULL);
+	zassert_true(len > sizeof(int), NULL);
+
+	/* We can't tell whether the fmt will be stored inline (6
+	 * bytes) or as a pointer (1 + sizeof(void*)), but we know
+	 * both of those will be at least 4 bytes.
+	 */
+	zassert_true(len >= (sizeof(int) + 4), NULL);
+
+	/* Capture the base package information for future tests. */
+	size_t lenp = len;
+
+	/* Verify we get same length when storing */
+	len = sizeof(packaged);
+	rc = cbprintf_package(packaged, &len, fmt, 3);
+	zassert_equal(rc, lenp, NULL);
+	zassert_equal(len, lenp, NULL);
+
+	/* Verify we get an error if can't store */
+	len = 1;
+	rc = cbprintf_package(packaged, &len, fmt, 3);
+	zassert_equal(rc, -ENOSPC, NULL);
+	zassert_equal(len, lenp, NULL);
+
+	/* Verify we get an error if can't store */
+	len = lenp - sizeof(int);
+	rc = cbprintf_package(packaged, &len, fmt, 3);
+	zassert_equal(rc, -ENOSPC, NULL);
+	zassert_equal(len, lenp, NULL);
+
+	len = sizeof(fmt);
+	rc = cbprintf_package(packaged, &len, "%s", fmt);
+}
+
+static void test_cbpprintf(void)
+{
+	if (!IS_ENABLED(CONFIG_CBPRINTF_COMPLETE)) {
+		TC_PRINT("skipped on nano\n");
+		return;
+	}
+
+	int rc;
+
+	/* This only checks error conditions.  Formatting is checked
+	 * by diverting prf() and related helpers to use the packaged
+	 * version.
+	 */
+	reset_out();
+	rc = cbpprintf(out, NULL, NULL);
+	zassert_equal(rc, -EINVAL, NULL);
+}
+
 static void test_nop(void)
 {
 }
@@ -1107,7 +1211,12 @@ void test_main(void)
 		TC_PRINT(" LIBC");
 	}
 	if (IS_ENABLED(CONFIG_CBPRINTF_COMPLETE)) {
-		TC_PRINT(" COMPLETE\n");
+		TC_PRINT(" COMPLETE");
+		if (ENABLED_USE_PACKAGED) {
+			TC_PRINT(" PACKAGED\n");
+		} else {
+			TC_PRINT(" VA_LIST\n");
+		}
 	} else {
 		TC_PRINT(" NANO\n");
 	}
@@ -1153,6 +1262,8 @@ void test_main(void)
 			 ztest_unit_test(test_n),
 			 ztest_unit_test(test_p),
 			 ztest_unit_test(test_libc_substs),
+			 ztest_unit_test(test_cbprintf_package),
+			 ztest_unit_test(test_cbpprintf),
 			 ztest_unit_test(test_nop)
 			 );
 	ztest_run_test_suite(test_prf);

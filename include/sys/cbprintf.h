@@ -9,6 +9,7 @@
 
 #include <stdarg.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <toolchain.h>
 
 #ifdef CONFIG_CBPRINTF_LIBC_SUBSTS
@@ -43,6 +44,108 @@ extern "C" {
  * cbprintf().
  */
 typedef int (*cbprintf_cb)(/* int c, void *ctx */);
+
+/** @brief Capture state required to output formatted data later.
+ *
+ * Like cbprintf() but instead of processing the arguments and emitting the
+ * formatted results immediately all arguments are captured so this can be
+ * done in a different context, e.g. when the output function can block.
+ *
+ * In addition to the values extracted from arguments this will ensure that
+ * copies are made of the necessary portions of any string parameters that are
+ * not confirmed to be stored in read-only memory (hence assumed to be safe to
+ * refer to directly later).
+ *
+ * @note This function is available only when `CONFIG_CBPRINTF_COMPLETE` is
+ * selected.
+ *
+ * @param packaged pointer to where the packaged data can be stored.  Pass a
+ * null pointer to store nothing but still calculate the total space required.
+ * The data stored here is relocatable, that is it can be moved to another
+ * contiguous block of memory.
+ *
+ * @param len on input this must be set to the number of bytes available at @p
+ * packaged.  If @p packaged is NULL the input value is ignored.  On output
+ * the referenced value will be updated to the number of bytes required to
+ * completely store the packed information.  The @p len parameter must not be
+ * null.
+ *
+ * @param format a standard ISO C format string with characters and conversion
+ * specifications.
+ *
+ * @param ... arguments corresponding to the conversion specifications found
+ * within @p format.
+ *
+ * @retval nonegative the number of bytes successfully stored at @p packaged.
+ * This will not exceed the input value of @p *len.
+ * @retval -EINVAL if @p format or @p len are not acceptable
+ * @retval -ENOSPC if @p packaged was not null and the space required to store
+ * exceed the input value of @p *len.
+ */
+__printf_like(3, 4)
+int cbprintf_package(uint8_t *packaged,
+		     size_t *len,
+		     const char *format,
+		     ...);
+
+/** @brief Capture state required to output formatted data later.
+ *
+ * Like cbprintf() but instead of processing the arguments and emitting the
+ * formatted results immediately all arguments are captured so this can be
+ * done in a different context, e.g. when the output function can block.
+ *
+ * In addition to the values extracted from arguments this will ensure that
+ * copies are made of the necessary portions of any string parameters that are
+ * not confirmed to be stored in read-only memory (hence assumed to be safe to
+ * refer to directly later).
+ *
+ * @note This function is available only when `CONFIG_CBPRINTF_COMPLETE` is
+ * selected.
+ *
+ * @param packaged pointer to where the packaged data can be stored.  Pass a
+ * null pointer to store nothing but still calculate the total space required.
+ * The data stored here is relocatable, that is it can be moved to another
+ * contiguous block of memory.
+ *
+ * @param len on input this must be set to the number of bytes available at @p
+ * packaged.  If @p packaged is NULL the input value is ignored.  On output
+ * the referenced value will be updated to the number of bytes required to
+ * completely store the packed information.  The @p len parameter must not be
+ * null.
+ *
+ * @param format a standard ISO C format string with characters and conversion
+ * specifications.
+ *
+ * @param ap captured stack arguments corresponding to the conversion
+ * specifications found within @p format.
+ *
+ * @retval nonegative the number of bytes successfully stored at @p packaged.
+ * This will not exceed the input value of @p *len.
+ * @retval -EINVAL if @p format or @p len are not acceptable
+ * @retval -ENOSPC if @p packaged was not null and the space required to store
+ * exceed the input value of @p *len.
+ */
+int cbvprintf_package(uint8_t *packaged,
+		      size_t *len,
+		      const char *format,
+		      va_list ap);
+
+/** @brief Generate the output for a previously captured format
+ * operation.
+ *
+ * @param out the function used to emit each generated character.
+ *
+ * @param ctx context provided when invoking out
+ *
+ * @param packaged the data required to generate the formatted output, as
+ * captured by cbprintf_package() or cbvprintf_package().
+ *
+ * @return the number of characters printed, or a negative error value
+ * returned from invoking @p out.
+ */
+int cbpprintf(cbprintf_cb out,
+	      void *ctx,
+	      const uint8_t *packaged);
 
 /** @brief *printf-like output through a callback.
  *

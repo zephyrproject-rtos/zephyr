@@ -18,6 +18,7 @@
 #include <sys/types.h>
 #include <sys/util.h>
 #include <sys/cbprintf.h>
+#include <sys/__assert.h>
 
 /* newlib doesn't declare this function unless __POSIX_VISIBLE >= 200809.  No
  * idea how to make that happen, so lets put it right here.
@@ -178,6 +179,7 @@ union argument_value {
 
 	/* For PTR conversions */
 	void *ptr;
+	const void *const_ptr;
 };
 
 /* Structure capturing all attributes of a conversion
@@ -311,12 +313,20 @@ struct conversion {
  * varargs.
  */
 struct cbprintf_state {
-	/* A copy of the captured arguments on the call stack.
-	 *
-	 * See https://stackoverflow.com/a/8048892 for why we can't
-	 * just pass a pointer to the passed ap argument.
-	 */
-	va_list ap;
+	/* Alternative sources for converison data. */
+	union {
+		/* Arguments are extracted from the call stack.
+		 *
+		 * Use this member when #is_packaged is false.
+		 */
+		va_list ap;
+
+		/* Arguments have been packaged into a contiguous region.
+		 *
+		 * Use this member when #is_packaged is true.
+		 */
+		const uint8_t *packaged;
+	};
 
 	/* A conversion specifier extracted with
 	 * extract_conversion()
@@ -337,6 +347,11 @@ struct cbprintf_state {
 	 * Negative values indicate this is not used.
 	 */
 	int precision;
+
+	/* Indicates whether the ap or packaged fields are used as the
+	 * source of format data.
+	 */
+	bool is_packaged;
 };
 
 /** Get a size represented as a sequence of decimal digits.
@@ -1471,6 +1486,577 @@ static void pull_va_args(struct cbprintf_state *state)
 	}
 }
 
+/**
+ * @brief Check if address is in read only section.
+ *
+ * @param addr Address.
+ *
+ * @return True if address identified within read only section.
+ */
+static inline bool ptr_in_rodata(const char *addr)
+{
+#if defined(CBPRINTF_VIA_UNIT_TEST)
+	/* Unit test is X86 (or other host) but not using Zephyr
+	 * linker scripts.
+	 */
+#define RO_START 0
+#define RO_END 0
+#elif defined(CONFIG_ARC) || defined(CONFIG_ARM) || defined(CONFIG_X86) \
+	|| defined(CONFIG_RISCV)
+	extern char _image_rodata_start[];
+	extern char _image_rodata_end[];
+#define RO_START _image_rodata_start
+#define RO_END _image_rodata_end
+#elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV)
+	extern char _image_rom_start[];
+	extern char _image_rom_end[];
+#define RO_START _image_rom_start
+#define RO_END _image_rom_end
+#elif defined(CONFIG_XTENSA)
+	extern char _rodata_start[];
+	extern char _rodata_end[];
+#define RO_START _rodata_start
+#define RO_END _rodata_end
+#else
+#define RO_START 0
+#define RO_END 0
+#endif
+
+	return ((addr >= (const char *)RO_START) &&
+		(addr < (const char *)RO_END));
+}
+
+/* Structure capturing formatter state along with additional information
+ * required to package up the material necessary to perform the conversion.
+ */
+struct package_state {
+	/* Standard formatting state */
+	struct cbprintf_state state;
+
+	/* Pointer into a region where packaged data can be stored.
+	 *
+	 * This becomes null if packaging the arguments would overrun the
+	 * capacity.
+	 */
+	uint8_t *pp;
+
+	/* Number of bytes that can be stored at the originally provided
+	 * buffer.
+	 *
+	 * This is not adjusted along with pp.
+	 */
+	size_t capacity;
+
+	/* Number of bytes required to completely store the packaged data.
+	 */
+	size_t length;
+};
+
+/* Store a sequence of bytes into the package buffer, as long as there is room
+ * for it.
+ *
+ * @param pst pointer to the state.
+ *
+ * @param sp where the data comes from
+ *
+ * @param number of bytes to store.
+ */
+static void pack_sequence(struct package_state *pst,
+			  const void *sp,
+			  size_t len)
+{
+	/* If we're going to be asked to write more than there's room
+	 * for the write will fail, so don't bother doing it, and
+	 * prevent further writes.
+	 */
+	if ((pst->pp != NULL)
+	    && ((pst->length + len) > pst->capacity)) {
+		pst->pp = NULL;
+	}
+
+	/* Aggregate the full length. */
+	pst->length += len;
+
+	/* If we can write it, do so */
+	if (pst->pp) {
+		memcpy(pst->pp, sp, len);
+		pst->pp += len;
+	}
+}
+
+/* Pull data out of the package structure.
+ *
+ * @param state provides the pointer to the remaining packaged data.
+ *
+ * @param dp where the decoded data should be stored
+ *
+ * @param len number of bytes to be copied out.
+ */
+static void unpack_sequence(struct cbprintf_state *state,
+			    void *dp,
+			    size_t len)
+{
+	__ASSERT_NO_MSG(state->is_packaged);
+
+	/* By construction, validation, and use we know the packaged state has
+	 * the values, so we don't need to check for capacity or whether
+	 * there's a valid source pointer.  We just need to maintain the
+	 * pointer to the unconsumed data.
+	 */
+	memcpy(dp, state->packaged, len);
+	state->packaged += len;
+}
+
+/* Pack a single value of scalar type.
+ *
+ * @param _pst pointer to a package_state object.
+ *
+ * @param _val reference to a scalar value providing type, size, and value to
+ * be packed.
+ */
+#define PACK_VALUE(_pst, _val) pack_sequence((_pst), &(_val), sizeof(_val))
+
+/* Pack a single value of scalar type after casting it to a target type.
+ *
+ * @param _pst pointer to a package_state object.
+ *
+ * @param _val reference to a scalar value
+ *
+ * @param _type the type to which _val should be cast prior to storing it.
+ */
+#define PACK_CAST_VALUE(_pst, _val, _type) do { \
+	_type v = (_type)(_val); \
+\
+	PACK_VALUE(_pst, v); \
+} while (0)
+
+/* Unpack a single value of scalar type.
+ *
+ * @param _state pointer to a cbprintf_state object.
+ *
+ * @param _val reference to a scalar value providing type, size, and
+ * destination for unpacked value.
+ */
+#define UNPACK_VALUE(_state, _val) \
+	unpack_sequence((_state), &(_val), sizeof(_val))
+
+/* Unpack a typed signed integral value into the argument value sint field.
+ *
+ * @param _state pointer to a cbprintf_state object.
+ *
+ * @param _type the type of the packaged signed value.
+ */
+#define UNPACK_CAST_SINT_VALUE(_state, _type) do { \
+	_type v; \
+\
+	UNPACK_VALUE(_state, v); \
+	(_state)->value.sint = (sint_value_type)v; \
+} while (0)
+
+/* Unpack a typed unsigned integral value into the argument value uint field.
+ *
+ * @param _state pointer to a cbprintf_state object.
+ *
+ * @param _type the type of the packaged signed value.
+ */
+#define UNPACK_CAST_UINT_VALUE(_state, _type) do { \
+	_type v; \
+\
+	UNPACK_VALUE(_state, v); \
+	(_state)->value.uint = (uint_value_type)v; \
+} while (0)
+
+/* Package a string value.
+ *
+ * String values are the only ones that are deferenced in the process of
+ * formatting.  Where a string can be shown to be persistent (i.e. lives in a
+ * read-only memory) we need only store the pointer.  Otherwise we can't rely
+ * on the pointed-to memory being accessible after the call returns, so we
+ * need to copy out the portion of the string that will be formatted.  That
+ * would be the full ASCIIZ value unless a precision is provided, in which
+ * case the precision caps the maximum output.
+ *
+ * @param pst pointer to package state.  The string to be formatted is present
+ * in the contained argument value.
+ */
+static void pack_str(struct package_state *pst)
+{
+	union argument_value *const value = &pst->state.value;
+	const struct cbprintf_state *const state = &pst->state;
+	const char *str = (const char *)value->ptr;
+	uint8_t inlined = !ptr_in_rodata(str);
+
+	PACK_VALUE(pst, inlined);
+	if (inlined) {
+		uint8_t nul = 0;
+		size_t len;
+
+		if (state->precision >= 0) {
+			len = strnlen(str, state->precision);
+		} else {
+			len = strlen(str);
+		}
+
+		pack_sequence(pst, str, len);
+		PACK_VALUE(pst, nul);
+	} else {
+		PACK_VALUE(pst, value->ptr);
+	}
+}
+
+/* Extract a pointer from packaged data.
+ *
+ * @param state pointer to the state, which contains a pointer to the
+ * unconsumed data.
+ *
+ * @return a pointer to the string, which is either inline in the packaged
+ * data or is a pointer extracted from the packaged data.
+ */
+static const char *unpack_str(struct cbprintf_state *state)
+{
+	const char *str;
+	uint8_t inlined;
+
+	UNPACK_VALUE(state, inlined);
+	if (inlined) {
+		str = (const char *)state->packaged;
+		state->packaged += 1 + strlen(str);
+	} else {
+		UNPACK_VALUE(state, str);
+	}
+
+	return str;
+}
+
+/* Given a conversion and its argument store everything necessary to
+ * reconstruct the conversion and argument in another context.
+ *
+ * @param pst pointer to the package state, including the conversion, the
+ * argument value, and information about where to store the data.
+ */
+static void pack_conversion(struct package_state *pst)
+{
+	struct cbprintf_state *const state = &pst->state;
+	struct conversion *const conv = &state->conv;
+	union argument_value *const value = &state->value;
+	enum specifier_cat_enum specifier_cat
+		= (enum specifier_cat_enum)conv->specifier_cat;
+	enum length_mod_enum length_mod
+		= (enum length_mod_enum)conv->length_mod;
+
+	/* If we got width and precision from the stack, it needs to go into
+	 * the package.
+	 */
+	if (conv->width_star) {
+		PACK_VALUE(pst, state->width);
+	}
+
+	if (conv->prec_star) {
+		PACK_VALUE(pst, state->precision);
+	}
+
+	/* We package the argument in its native form, not the promoted form
+	 * that was pushed on the stack nor the promoted form stored as the
+	 * argument value.
+	 */
+	switch (specifier_cat) {
+	case SPECIFIER_SINT:
+		switch (length_mod) {
+		case LENGTH_NONE:
+			PACK_CAST_VALUE(pst, value->sint, int);
+			break;
+		case LENGTH_HH:
+			PACK_CAST_VALUE(pst, value->sint, signed char);
+			break;
+		case LENGTH_H:
+			PACK_CAST_VALUE(pst, value->sint, short);
+			break;
+		case LENGTH_L:
+			if (WCHAR_IS_SIGNED && (conv->specifier == 'c')) {
+				PACK_CAST_VALUE(pst, value->sint, WINT_TYPE);
+			} else {
+				PACK_CAST_VALUE(pst, value->sint, long);
+			}
+			break;
+		case LENGTH_LL:
+			PACK_CAST_VALUE(pst, value->sint, long long);
+			break;
+		case LENGTH_J:
+			PACK_CAST_VALUE(pst, value->sint, intmax_t);
+			break;
+		case LENGTH_Z:		/* size_t */
+		case LENGTH_T:		/* ptrdiff_t */
+			/* Though ssize_t is the signed equivalent of
+			 * size_t for POSIX, there is no uptrdiff_t.
+			 * Assume that size_t and ptrdiff_t are the
+			 * unsigned and signed equivalents of each
+			 * other.  This can be checked in a platform
+			 * test.
+			 */
+			PACK_CAST_VALUE(pst, value->sint, ptrdiff_t);
+			break;
+		default:
+			__ASSERT_NO_MSG(false);
+		}
+		break;
+	case SPECIFIER_UINT:
+		switch (length_mod) {
+		case LENGTH_NONE:
+			PACK_CAST_VALUE(pst, value->uint, unsigned int);
+			break;
+		case LENGTH_HH:
+			PACK_CAST_VALUE(pst, value->uint, unsigned char);
+			break;
+		case LENGTH_H:
+			PACK_CAST_VALUE(pst, value->uint, unsigned short);
+			break;
+		case LENGTH_L:
+			if ((!WCHAR_IS_SIGNED) && (conv->specifier == 'c')) {
+				/* NB: If wchar_t has lesser rank than
+				 * WINT_TYPE the value here may be wrong as
+				 * the pack macro won't cast through wchar_t
+				 * as is done with pull_va_args.  We don't
+				 * care because we're not going to format the
+				 * value anyway: we just need to correctly
+				 * extract any following arguments.
+				 */
+				PACK_CAST_VALUE(pst, value->uint, WINT_TYPE);
+			} else {
+				PACK_CAST_VALUE(pst, value->uint,
+						unsigned long);
+			}
+			break;
+		case LENGTH_LL:
+			PACK_CAST_VALUE(pst, value->uint, unsigned long long);
+			break;
+		case LENGTH_J:
+			PACK_CAST_VALUE(pst, value->uint, uintmax_t);
+			break;
+		case LENGTH_Z:		/* size_t */
+		case LENGTH_T:		/* ptrdiff_t */
+			PACK_CAST_VALUE(pst, value->uint, size_t);
+			break;
+		default:
+			__ASSERT_NO_MSG(false);
+		}
+		break;
+	case SPECIFIER_PTR:
+		if (conv->specifier == 's') {
+			pack_str(pst);
+		} else {
+			PACK_VALUE(pst, value->ptr);
+		}
+		break;
+	case SPECIFIER_FP:
+		if (length_mod == LENGTH_UPPER_L) {
+			PACK_VALUE(pst, value->ldbl);
+		} else {
+			PACK_VALUE(pst, value->dbl);
+		}
+		break;
+	case SPECIFIER_INVALID:
+		/* No arguments */
+		break;
+	default:
+		__ASSERT_NO_MSG(false);
+		break;
+	}
+}
+
+/* Extract the arguments for a specific conversion from packaged data.
+ *
+ * On exit the argument_value in the state and other metadata has been updated
+ * based on material that was passed on the stack when the arguments were
+ * packaged.
+ *
+ * @param state pointer to the state, which contains the initial decoded
+ * conversion specifier and the unconsumed packaged data.
+ */
+static void pull_pkg_args(struct cbprintf_state *state)
+{
+	struct conversion *const conv = &state->conv;
+	union argument_value *const value = &state->value;
+	enum specifier_cat_enum specifier_cat
+		= (enum specifier_cat_enum)conv->specifier_cat;
+	enum length_mod_enum length_mod
+		= (enum length_mod_enum)conv->length_mod;
+
+	if (conv->width_star) {
+		UNPACK_VALUE(state, state->width);
+	} else {
+		state->width = -1;
+	}
+
+	if (conv->prec_star) {
+		UNPACK_VALUE(state, state->precision);
+	} else {
+		state->precision = -1;
+	}
+
+	switch (specifier_cat) {
+	case SPECIFIER_SINT:
+		switch (length_mod) {
+		case LENGTH_NONE:
+			UNPACK_CAST_SINT_VALUE(state, int);
+			break;
+		case LENGTH_HH:
+			UNPACK_CAST_SINT_VALUE(state, signed char);
+			break;
+		case LENGTH_H:
+			UNPACK_CAST_SINT_VALUE(state, short);
+			break;
+		case LENGTH_L:
+			if (WCHAR_IS_SIGNED && (conv->specifier == 'c')) {
+				UNPACK_CAST_SINT_VALUE(state, WINT_TYPE);
+			} else {
+				UNPACK_CAST_SINT_VALUE(state, long);
+			}
+			break;
+		case LENGTH_LL:
+			UNPACK_CAST_SINT_VALUE(state, long long);
+			break;
+		case LENGTH_J:
+			UNPACK_CAST_SINT_VALUE(state, intmax_t);
+			break;
+		case LENGTH_Z:		/* size_t */
+		case LENGTH_T:		/* ptrdiff_t */
+			UNPACK_CAST_SINT_VALUE(state, ptrdiff_t);
+			break;
+		default:
+			__ASSERT_NO_MSG(false);
+		}
+		break;
+	case SPECIFIER_UINT:
+		switch (length_mod) {
+		case LENGTH_NONE:
+			UNPACK_CAST_UINT_VALUE(state, unsigned int);
+			break;
+		case LENGTH_HH:
+			UNPACK_CAST_UINT_VALUE(state, unsigned char);
+			break;
+		case LENGTH_H:
+			if ((!WCHAR_IS_SIGNED) && (conv->specifier == 'c')) {
+				UNPACK_CAST_UINT_VALUE(state, WINT_TYPE);
+			} else {
+				UNPACK_CAST_UINT_VALUE(state, unsigned short);
+			}
+			break;
+		case LENGTH_L:
+			UNPACK_CAST_UINT_VALUE(state, unsigned long);
+			break;
+		case LENGTH_LL:
+			UNPACK_CAST_UINT_VALUE(state, unsigned long long);
+			break;
+		case LENGTH_J:
+			UNPACK_CAST_UINT_VALUE(state, uintmax_t);
+			break;
+		case LENGTH_Z:		/* size_t */
+		case LENGTH_T:		/* ptrdiff_t */
+			UNPACK_CAST_UINT_VALUE(state, size_t);
+			break;
+		default:
+			__ASSERT_NO_MSG(false);
+		}
+		break;
+	case SPECIFIER_PTR:
+		if (conv->specifier == 's') {
+			value->const_ptr = unpack_str(state);
+		} else {
+			UNPACK_VALUE(state, value->ptr);
+		}
+		break;
+	case SPECIFIER_FP:
+		if (length_mod == LENGTH_UPPER_L) {
+			UNPACK_VALUE(state, value->ldbl);
+		} else {
+			UNPACK_VALUE(state, value->dbl);
+		}
+		break;
+	case SPECIFIER_INVALID:
+		/* No arguments */
+		break;
+	default:
+		__ASSERT_NO_MSG(false);
+		break;
+	}
+}
+
+int cbvprintf_package(uint8_t *packaged,
+		      size_t *len,
+		      const char *format,
+		      va_list ap)
+{
+	if ((len == NULL) || (format == NULL)) {
+		return -EINVAL;
+	}
+
+	struct package_state pstate = {
+		.pp = packaged,
+		.capacity = (packaged == NULL) ? 0 : *len,
+	};
+	struct package_state *const pst = &pstate;
+	struct cbprintf_state *const state = &pst->state;
+	struct conversion *const conv = &state->conv;
+	union argument_value *const value = &state->value;
+	const char *fp = format;
+	int rv = 0;
+
+	/* Make a copy of the arguments, because we can't pass ap to
+	 * subroutines by value (caller wouldn't see the changes) nor
+	 * by address (va_list may be an array type).
+	 */
+	va_copy(state->ap, ap);
+
+	/* Synthesize a %s for the format itself. */
+	*conv = (struct conversion){
+		.specifier_cat = SPECIFIER_PTR,
+		.specifier = 's',
+	};
+	*value = (union argument_value){
+		.const_ptr = format,
+	};
+	state->precision = -1;
+
+	while (true) {
+		pack_conversion(pst);
+
+		while ((*fp != 0)
+		       && (*fp != '%')) {
+			++fp;
+		}
+
+		if (*fp == 0) {
+			break;
+		}
+
+		fp = extract_conversion(conv, fp);
+		pull_va_args(state);
+	}
+
+	*len = pstate.length;
+
+	if (packaged != NULL) {
+		rv = (pstate.pp == NULL) ? -ENOSPC : (pstate.pp - packaged);
+	}
+
+	return rv;
+}
+
+int cbprintf_package(uint8_t *packaged,
+		     size_t *len,
+		     const char *format,
+		     ...)
+{
+	va_list ap;
+	int rc;
+
+	va_start(ap, format);
+	rc = cbvprintf_package(packaged, len, format, ap);
+	va_end(ap);
+
+	return rc;
+}
+
 static int process_conversion(cbprintf_cb out, void *ctx, const char *fp,
 			      struct cbprintf_state *state)
 {
@@ -1516,7 +2102,11 @@ static int process_conversion(cbprintf_cb out, void *ctx, const char *fp,
 		const char *sp = fp;
 
 		fp = extract_conversion(conv, sp);
-		pull_va_args(state);
+		if (state->is_packaged) {
+			pull_pkg_args(state);
+		} else {
+			pull_va_args(state);
+		}
 
 		/* Apply flag changes for negative width argument or
 		 * copy out format value.
@@ -1848,4 +2438,24 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 	va_copy(state.ap, ap);
 
 	return process_conversion(out, ctx, fp, &state);
+}
+
+int cbpprintf(cbprintf_cb out,
+	      void *ctx,
+	      const uint8_t *packaged)
+{
+	if (packaged == NULL) {
+		return -EINVAL;
+	}
+
+	/* Zero-initialized state. */
+	struct cbprintf_state state = {
+		.width = 0,
+		.packaged = packaged,
+		.is_packaged = true,
+	};
+
+	const char *format = unpack_str(&state);
+
+	return process_conversion(out, ctx, format, &state);
 }
