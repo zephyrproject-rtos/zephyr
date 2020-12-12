@@ -1359,54 +1359,16 @@ static void pull_va_args(struct cbprintf_state *state)
 	struct conversion *const conv = &state->conv;
 	union argument_value *const value = &state->value;
 
-	state->width = -1;
-	state->precision = -1;
-
-	/* If dynamic width is specified, process it, otherwise set
-	 * with if present.
-	 */
 	if (conv->width_star) {
 		state->width = va_arg(state->ap, int);
-
-		if (state->width < 0) {
-			conv->flag_dash = true;
-			state->width = -state->width;
-		}
-	} else if (conv->width_present) {
-		state->width = conv->width_value;
+	} else {
+		state->width = -1;
 	}
 
-	/* If dynamic precision is specified, process it, otherwise
-	 * set precision if present.  For floating point where
-	 * precision is not present use 6.
-	 */
 	if (conv->prec_star) {
-		int arg = va_arg(state->ap, int);
-
-		if (arg < 0) {
-			conv->prec_present = false;
-		} else {
-			state->precision = arg;
-		}
-	} else if (conv->prec_present) {
-		state->precision = conv->prec_value;
-	}
-
-	/* Reuse width and precision memory in conv for value
-	 * padding counts.
-	 */
-	conv->pad0_value = 0;
-	conv->pad0_pre_exp = 0;
-
-	/* FP conversion requires knowing the precision. */
-	if (IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)
-	    && (conv->specifier_cat == SPECIFIER_FP)
-	    && !conv->prec_present) {
-		if (conv->specifier_a) {
-			state->precision = FRACTION_HEX;
-		} else {
-			state->precision = 6;
-		}
+		state->precision = va_arg(state->ap, int);
+	} else {
+		state->precision = -1;
 	}
 
 	enum specifier_cat_enum specifier_cat
@@ -1561,6 +1523,45 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 
 		fp = extract_conversion(conv, sp);
 		pull_va_args(&state);
+
+		/* Apply flag changes for negative width argument or
+		 * copy out format value.
+		 */
+		if (conv->width_star) {
+			if (state.width < 0) {
+				conv->flag_dash = true;
+				state.width = -state.width;
+			}
+		} else if (conv->width_present) {
+			state.width = conv->width_value;
+		}
+
+		/* Apply flag changes for negative precision argument */
+		if (conv->prec_star) {
+			if (state.precision < 0) {
+				conv->prec_present = false;
+				state.precision = -1;
+			}
+		} else if (conv->prec_present) {
+			state.precision = conv->prec_value;
+		}
+
+		/* Reuse width and precision memory in conv for value
+		 * padding counts.
+		 */
+		conv->pad0_value = 0;
+		conv->pad0_pre_exp = 0;
+
+		/* FP conversion requires knowing the precision. */
+		if (IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)
+		    && (conv->specifier_cat == SPECIFIER_FP)
+		    && !conv->prec_present) {
+			if (conv->specifier_a) {
+				state.precision = FRACTION_HEX;
+			} else {
+				state.precision = 6;
+			}
+		}
 
 		/* We've now consumed all arguments related to this
 		 * specification.  If the conversion is invalid, or is
