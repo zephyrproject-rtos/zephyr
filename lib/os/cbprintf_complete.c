@@ -360,10 +360,8 @@ static inline const char *extract_width(struct conversion *conv,
 	if (sp != wp) {
 		conv->width_present = true;
 		conv->width_value = width;
-		if (width != conv->width_value) {
-			/* Lost width data */
-			conv->unsupported = true;
-		}
+		conv->unsupported |= ((conv->width_value < 0)
+				      || (width != (size_t)conv->width_value));
 	}
 
 	return sp;
@@ -396,10 +394,8 @@ static inline const char *extract_prec(struct conversion *conv,
 	size_t prec = extract_decimal(&sp);
 
 	conv->prec_value = prec;
-	if (prec != conv->prec_value) {
-		/* Lost precision data */
-		conv->unsupported = true;
-	}
+	conv->unsupported |= ((conv->prec_value < 0)
+			      || (prec != (size_t)conv->prec_value));
 
 	return sp;
 }
