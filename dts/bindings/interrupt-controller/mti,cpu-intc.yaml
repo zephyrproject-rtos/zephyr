@@ -1,0 +1,16 @@
+# Copyright (c) 2020 Antony Pavlov <antonynpavlov@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: MIPS CPU interrupt controller
+
+compatible: "mti,cpu-intc"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  "#interrupt-cells":
+      const: 1
+
+interrupt-cells:
+  - irq
