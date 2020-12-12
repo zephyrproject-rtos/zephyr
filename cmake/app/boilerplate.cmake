@@ -158,6 +158,14 @@ include(${ZEPHYR_BASE}/cmake/west.cmake)
 include(${ZEPHYR_BASE}/cmake/git.cmake)  # depends on version.cmake
 include(${ZEPHYR_BASE}/cmake/ccache.cmake)
 
+if(ZEPHYR_EXTRA_MODULES)
+  # ZEPHYR_EXTRA_MODULES has either been specified on the cmake CLI or is
+  # already in the CMakeCache.txt. This has precedence over the environment
+  # variable ZEPHYR_EXTRA_MODULES
+elseif(DEFINED ENV{ZEPHYR_EXTRA_MODULES})
+  set(ZEPHYR_EXTRA_MODULES $ENV{ZEPHYR_EXTRA_MODULES})
+endif()
+
 #
 # Find Zephyr modules.
 # Those may contain additional DTS, BOARD, SOC, ARCH ROOTs.
@@ -545,14 +553,6 @@ Multiple files may be listed, e.g. CONF_FILE=\"prj1.confi;prj2.conf\" \
 The CACHED_CONF_FILE is internal Zephyr variable used between CMake runs. \
 To change CONF_FILE, use the CONF_FILE variable.")
 unset(CONF_FILE CACHE)
-
-if(ZEPHYR_EXTRA_MODULES)
-  # ZEPHYR_EXTRA_MODULES has either been specified on the cmake CLI or is
-  # already in the CMakeCache.txt. This has precedence over the environment
-  # variable ZEPHYR_EXTRA_MODULES
-elseif(DEFINED ENV{ZEPHYR_EXTRA_MODULES})
-  set(ZEPHYR_EXTRA_MODULES $ENV{ZEPHYR_EXTRA_MODULES})
-endif()
 
 if(DTC_OVERLAY_FILE)
   # DTC_OVERLAY_FILE has either been specified on the cmake CLI or is already
