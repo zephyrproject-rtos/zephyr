@@ -984,36 +984,6 @@ static void test_n(void)
 #define EXPECTED_1ARG(_t) (IS_ENABLED(CONFIG_CBPRINTF_NANO) \
 			   ? 1U : (sizeof(_t) / sizeof(int)))
 
-static void test_arglen(void)
-{
-	zassert_equal(cbprintf_arglen("/%hhd/"), 1U, NULL);
-	zassert_equal(cbprintf_arglen("/%hd/"), 1U, NULL);
-	zassert_equal(cbprintf_arglen("/%d/"), 1U, NULL);
-	zassert_equal(cbprintf_arglen("/%ld/"),
-		      EXPECTED_1ARG(long), NULL);
-	zassert_equal(cbprintf_arglen("/%lld/"),
-		      EXPECTED_1ARG(long long), NULL);
-	zassert_equal(cbprintf_arglen("/%jd/"),
-		      EXPECTED_1ARG(intmax_t), NULL);
-	zassert_equal(cbprintf_arglen("/%zd/"),
-		      EXPECTED_1ARG(size_t), NULL);
-	zassert_equal(cbprintf_arglen("/%td/"),
-		      EXPECTED_1ARG(ptrdiff_t), NULL);
-	zassert_equal(cbprintf_arglen("/%f/"),
-		      EXPECTED_1ARG(double), NULL);
-	zassert_equal(cbprintf_arglen("/%Lf/"),
-		      EXPECTED_1ARG(long double), NULL);
-	zassert_equal(cbprintf_arglen("/%p/"),
-		      EXPECTED_1ARG(void *), NULL);
-
-	zassert_equal(cbprintf_arglen("/%%/"), 0U, NULL);
-	zassert_equal(cbprintf_arglen("/%*d%/"), 2U, NULL);
-	zassert_equal(cbprintf_arglen("/%.*d%/"), 2U, NULL);
-	zassert_equal(cbprintf_arglen("/%*.*d%/"),
-		      IS_ENABLED(CONFIG_CBPRINTF_NANO) ? 2U : 3U,
-		      NULL);
-}
-
 static void test_p(void)
 {
 	if (ENABLED_USE_LIBC) {
@@ -1182,7 +1152,6 @@ void test_main(void)
 			 ztest_unit_test(test_star_precision),
 			 ztest_unit_test(test_n),
 			 ztest_unit_test(test_p),
-			 ztest_unit_test(test_arglen),
 			 ztest_unit_test(test_libc_substs),
 			 ztest_unit_test(test_nop)
 			 );

@@ -294,22 +294,3 @@ still_might_format:
 
 	return count;
 }
-
-size_t cbprintf_arglen(const char *format)
-{
-	size_t rv = 0;
-	bool last_pct = false;
-
-	while (*format != 0) {
-		if (*format == '%') {
-			last_pct = !last_pct;
-		} else if (last_pct) {
-			++rv;
-			last_pct = false;
-		} else {
-		}
-		++format;
-	}
-
-	return rv;
-}

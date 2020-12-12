@@ -616,84 +616,6 @@ static inline const char *extract_conversion(struct conversion *conv,
 	return sp;
 }
 
-
-/* Get the number of int-sized objects required to provide the arguments for
- * the conversion.
- *
- * This has a role in the logging subsystem where the arguments must
- * be captured for formatting in another thread.
- *
- * If the conversion specifier is invalid the calculated length may
- * not match what was actually passed as arguments.
- */
-static size_t conversion_arglen(const struct conversion *conv)
-{
-	enum specifier_cat_enum specifier_cat
-		= (enum specifier_cat_enum)conv->specifier_cat;
-	enum length_mod_enum length_mod
-		= (enum length_mod_enum)conv->length_mod;
-	size_t words = 0;
-
-	/* If the conversion is invalid behavior is undefined.  What
-	 * this does is try to consume the argument anyway, in hopes
-	 * that subsequent valid arguments will format correctly.
-	 */
-
-	/* Percent has no arguments */
-	if (conv->specifier == '%') {
-		return words;
-	}
-
-	if (conv->width_star) {
-		words += sizeof(int) / sizeof(int);
-	}
-
-	if (conv->prec_star) {
-		words += sizeof(int) / sizeof(int);
-	}
-
-	if ((specifier_cat == SPECIFIER_SINT)
-	    || (specifier_cat == SPECIFIER_UINT)) {
-		/* The size of integral values is the same regardless
-		 * of signedness.
-		 */
-		switch (length_mod) {
-		case LENGTH_NONE:
-		case LENGTH_HH:
-		case LENGTH_H:
-			words += sizeof(int) / sizeof(int);
-			break;
-		case LENGTH_L:
-			words += sizeof(long) / sizeof(int);
-			break;
-		case LENGTH_LL:
-			words += sizeof(long long) / sizeof(int);
-			break;
-		case LENGTH_J:
-			words += sizeof(intmax_t) / sizeof(int);
-			break;
-		case LENGTH_Z:
-			words += sizeof(size_t) / sizeof(int);
-			break;
-		case LENGTH_T:
-			words += sizeof(ptrdiff_t) / sizeof(int);
-			break;
-		default:
-			break;
-		}
-	} else if (specifier_cat == SPECIFIER_FP) {
-		if (length_mod == LENGTH_UPPER_L) {
-			words += sizeof(long double) / sizeof(int);
-		} else {
-			words += sizeof(double) / sizeof(int);
-		}
-	} else if (specifier_cat == SPECIFIER_PTR) {
-		words += sizeof(void *) / sizeof(int);
-	}
-
-	return words;
-}
-
 #ifdef CONFIG_64BIT
 
 static void _ldiv5(uint64_t *v)
@@ -1822,21 +1744,4 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 	return count;
 #undef OUTS
 #undef OUTC
-}
-
-size_t cbprintf_arglen(const char *format)
-{
-	size_t rv = 0;
-	struct conversion conv;
-
-	while (*format) {
-		if (*format == '%') {
-			format = extract_conversion(&conv, format);
-			rv += conversion_arglen(&conv);
-		} else {
-			++format;
-		}
-	}
-
-	return rv;
 }
