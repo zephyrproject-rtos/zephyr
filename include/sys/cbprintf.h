@@ -69,26 +69,6 @@ typedef int (*cbprintf_cb)(/* int c, void *ctx */);
 __printf_like(3, 4)
 int cbprintf(cbprintf_cb out, void *ctx, const char *format, ...);
 
-/** @brief Calculate the number of words required for arguments to a cbprintf
- * format specification.
- *
- * This can be used in cases where the arguments must be copied off the stack
- * into separate storage for processing the conversion in another context.
- *
- * @note The length returned does not count bytes.  It counts native words
- * defined as the size of an `int`.
- *
- * @note If `CONFIG_CBPRINTF_NANO` is selected the count will be incorrect if
- * any passed arguments require more than one `int`.
- *
- * @param format a standard ISO C format string with characters and conversion
- * specifications.
- *
- * @return the number of `int` elements required to provide all arguments
- * required for the conversion.
- */
-size_t cbprintf_arglen(const char *format);
-
 /** @brief varargs-aware *printf-like output through a callback.
  *
  * This is essentially vsprintf() except the output is generated
