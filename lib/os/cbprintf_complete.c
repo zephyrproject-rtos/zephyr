@@ -1471,20 +1471,14 @@ static void pull_va_args(struct cbprintf_state *state)
 	}
 }
 
-int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
+static int process_conversion(cbprintf_cb out, void *ctx, const char *fp,
+			      struct cbprintf_state *state)
 {
 	char buf[CONVERTED_BUFLEN];
 	size_t count = 0;
 	sint_value_type sint;
-	struct cbprintf_state state;
-	struct conversion *const conv = &state.conv;
-	union argument_value *const value = &state.value;
-
-	/* Make a copy of the arguments, because we can't pass ap to
-	 * subroutines by value (caller wouldn't see the changes) nor
-	 * by address (va_list may be an array type).
-	 */
-	va_copy(state.ap, ap);
+	struct conversion *const conv = &state->conv;
+	union argument_value *const value = &state->value;
 
 /* Output character, returning EOF if output failed, otherwise
  * updating count.
@@ -1522,28 +1516,28 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		const char *sp = fp;
 
 		fp = extract_conversion(conv, sp);
-		pull_va_args(&state);
+		pull_va_args(state);
 
 		/* Apply flag changes for negative width argument or
 		 * copy out format value.
 		 */
 		if (conv->width_star) {
-			if (state.width < 0) {
+			if (state->width < 0) {
 				conv->flag_dash = true;
-				state.width = -state.width;
+				state->width = -state->width;
 			}
 		} else if (conv->width_present) {
-			state.width = conv->width_value;
+			state->width = conv->width_value;
 		}
 
 		/* Apply flag changes for negative precision argument */
 		if (conv->prec_star) {
-			if (state.precision < 0) {
+			if (state->precision < 0) {
 				conv->prec_present = false;
-				state.precision = -1;
+				state->precision = -1;
 			}
 		} else if (conv->prec_present) {
-			state.precision = conv->prec_value;
+			state->precision = conv->prec_value;
 		}
 
 		/* Reuse width and precision memory in conv for value
@@ -1557,9 +1551,9 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		    && (conv->specifier_cat == SPECIFIER_FP)
 		    && !conv->prec_present) {
 			if (conv->specifier_a) {
-				state.precision = FRACTION_HEX;
+				state->precision = FRACTION_HEX;
 			} else {
-				state.precision = 6;
+				state->precision = 6;
 			}
 		}
 
@@ -1573,8 +1567,8 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 			continue;
 		}
 
-		int width = state.width;
-		int precision = state.precision;
+		int width = state->width;
+		int precision = state->precision;
 		const char *bps = NULL;
 		const char *bpe = buf + sizeof(buf);
 		char sign = 0;
@@ -1838,4 +1832,20 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 	return count;
 #undef OUTS
 #undef OUTC
+}
+
+int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
+{
+	/* Zero-initialized state. */
+	struct cbprintf_state state = {
+		.width = 0,
+	};
+
+	/* Make a copy of the arguments, because we can't pass ap to
+	 * subroutines by value (caller wouldn't see the changes) nor
+	 * by address (va_list may be an array type).
+	 */
+	va_copy(state.ap, ap);
+
+	return process_conversion(out, ctx, fp, &state);
 }
