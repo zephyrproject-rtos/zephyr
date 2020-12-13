@@ -16,6 +16,82 @@
 #include <toolchain.h>
 
 /**
+ * @brief Get a PSEL value out of a foo-gpios or foo-pin devicetree property
+ *
+ * Many Nordic bindings have 'foo-pin' properties to specify a pin
+ * configuration as a PSEL value directly instead of using a 'foo-gpios'
+ * <&gpioX Y flags> style controller phandle + GPIO specifier.
+ *
+ * It would be better to use 'foo-gpios' properties instead. This type
+ * of property is more in line with the recommended DT encoding for GPIOs.
+ *
+ * To allow for a smooth migration from 'foo-pin' to 'foo-gpios', this
+ * helper macro can be used to get a PSEL value out of the devicetree
+ * using whichever one of 'foo-gpios' or 'foo-pin' is in the DTS.
+ *
+ * Note that you can also use:
+ *
+ *   - NRF_DT_PSEL_CHECK_*() to check the property configuration at build time
+ *   - NRF_DT_GPIOS_TO_PSEL() if you only have a 'foo-gpios'
+ *
+ * @param node_id node identifier
+ * @param psel_prop lowercase-and-underscores old-style 'foo-pin' property
+ * @param gpios_prop new-style 'foo-gpios' property
+ * @param default_val the value returned if neither is set
+ * @return PSEL register value taken from psel_prop or gpios_prop, whichever
+ *         is present in the DTS. If gpios_prop is present, it is converted
+ *         to a PSEL register value first.
+ */
+#define NRF_DT_PSEL(node_id, psel_prop, gpios_prop, default_val)	\
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, psel_prop),		\
+		    (DT_PROP(node_id, psel_prop)),			\
+		    (COND_CODE_1(					\
+			    DT_NODE_HAS_PROP(node_id, gpios_prop),	\
+			    (NRF_DT_GPIOS_TO_PSEL(node_id,		\
+						  gpios_prop)),		\
+			    (default_val))))
+
+/**
+ * Error out the build if the devicetree node with identifier
+ * 'node_id' has both a legacy psel-style property and a gpios
+ * property.
+ *
+ * Otherwise, do nothing.
+ *
+ * @param node_id node identifier
+ * @param psel_prop lowercase-and-underscores PSEL style property
+ * @param psel_prop_name human-readable string name of psel_prop
+ * @param gpios_prop lowercase-and-underscores foo-gpios style property
+ * @param gpio_prop_name human-readable string name of gpios_prop
+ */
+#define NRF_DT_PSEL_CHECK_NOT_BOTH(node_id, psel_prop, psel_prop_name,	\
+				   gpios_prop, gpios_prop_name)		\
+	BUILD_ASSERT(							\
+		!(DT_NODE_HAS_PROP(node_id, psel_prop) &&		\
+		  DT_NODE_HAS_PROP(node_id, gpios_prop)),		\
+		"Devicetree node " DT_NODE_PATH(node_id)		\
+		" has both of the " psel_prop_name			\
+		" and " gpios_prop_name					\
+		" properties set; you must remove one. "		\
+		"Note: you can use /delete-property/ to delete properties.")
+
+/**
+ * Like NRF_DT_PSEL_CHECK_NOT_BOTH, but instead checks that exactly one
+ * of the properties is set.
+ */
+#define NRF_DT_PSEL_CHECK_EXACTLY_ONE(node_id,				\
+				      psel_prop, psel_prop_name,	\
+				      gpios_prop, gpios_prop_name)	\
+	BUILD_ASSERT(							\
+		(DT_NODE_HAS_PROP(node_id, psel_prop) ^			\
+		 DT_NODE_HAS_PROP(node_id, gpios_prop)),		\
+		"Devicetree node " DT_NODE_PATH(node_id)		\
+		" must have exactly one of the " psel_prop_name		\
+		" and " gpios_prop_name					\
+		" properties set. "					\
+		"Note: you can use /delete-property/ to delete properties.")
+
+/**
  * @brief Convert a devicetree GPIO phandle+specifier to PSEL value
  *
  * Various peripherals in nRF SoCs have pin select registers, which
