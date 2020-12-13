@@ -118,7 +118,7 @@ void *reallocarray(void *ptr, size_t nmemb, size_t size)
 		errno = ENOMEM;
 		return NULL;
 	}
-	return sys_heap_realloc(&z_malloc_heap, ptr, size);
+	return realloc(ptr, size);
 #else
 	return NULL;
 #endif
