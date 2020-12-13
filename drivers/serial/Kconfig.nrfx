@@ -85,6 +85,15 @@ config UART_0_NRF_HW_ASYNC
 	  It is recommended to use hardware byte counting in such scenarios.
 	  Hardware RX byte counting requires timer instance and one PPI channel
 
+config UART_0_NRF_ASYNC_LOW_POWER
+	bool "Low power mode"
+	depends on UART_0_NRF_UARTE
+	depends on UART_ASYNC_API
+	help
+	  When enabled, UARTE is enabled before each TX or RX usage and disabled
+	  when not used. Disabling UARTE while in idle allows to achieve lowest
+	  power consumption. It is only feasible if receiver is not always on.
+
 config UART_0_NRF_HW_ASYNC_TIMER
 	int "Timer instance"
 	depends on UART_0_NRF_HW_ASYNC
@@ -156,6 +165,14 @@ config UART_1_NRF_HW_ASYNC
 	  It is recommended to use hardware byte counting in such scenarios.
 	  Hardware RX byte counting requires timer instance and one PPI channel
 
+config UART_1_NRF_ASYNC_LOW_POWER
+	bool "Low power mode"
+	depends on UART_ASYNC_API
+	help
+	  When enabled, UARTE is enabled before each TX or RX usage and disabled
+	  when not used. Disabling UARTE while in idle allows to achieve lowest
+	  power consumption. It is only feasible if receiver is not always on.
+
 config UART_1_NRF_HW_ASYNC_TIMER
 	int "Timer instance"
 	depends on UART_1_NRF_HW_ASYNC
@@ -226,6 +243,14 @@ config UART_2_NRF_HW_ASYNC
 	  It is recommended to use hardware byte counting in such scenarios.
 	  Hardware RX byte counting requires timer instance and one PPI channel
 
+config UART_2_NRF_ASYNC_LOW_POWER
+	bool "Low power mode"
+	depends on UART_ASYNC_API
+	help
+	  When enabled, UARTE is enabled before each TX or RX usage and disabled
+	  when not used. Disabling UARTE while in idle allows to achieve lowest
+	  power consumption. It is only feasible if receiver is not always on.
+
 config UART_2_NRF_HW_ASYNC_TIMER
 	int "Timer instance"
 	depends on UART_2_NRF_HW_ASYNC
@@ -295,6 +320,14 @@ config UART_3_NRF_HW_ASYNC
 	  that with higher speeds and/or high cpu load some data can be lost.
 	  It is recommended to use hardware byte counting in such scenarios.
 	  Hardware RX byte counting requires timer instance and one PPI channel
+
+config UART_3_NRF_ASYNC_LOW_POWER
+	bool "Low power mode"
+	depends on UART_ASYNC_API
+	help
+	  When enabled, UARTE is enabled before each TX or RX usage and disabled
+	  when not used. Disabling UARTE while in idle allows to achieve lowest
+	  power consumption. It is only feasible if receiver is not always on.
 
 config UART_3_NRF_HW_ASYNC_TIMER
 	int "Timer instance"
