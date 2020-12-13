@@ -78,6 +78,9 @@
 /**
  * @brief Get a node identifier for a devicetree path
  *
+ * (This macro returns a node identifier from path components. To get
+ * a path string from a node identifier, use DT_NODE_PATH() instead.)
+ *
  * The arguments to this macro are the names of non-root nodes in the
  * tree required to reach the desired node, starting from the root.
  * Non-alphanumeric characters in each name must be converted to
@@ -370,6 +373,31 @@
  * @return node identifier for the node with the name referred to by 'child'
  */
 #define DT_CHILD(node_id, child) UTIL_CAT(node_id, DT_S_PREFIX(child))
+
+/**
+ * @brief Get a devicetree node's full path as a string literal
+ *
+ * This returns the path to a node from a node identifier. To get a
+ * node identifier from path components instead, use DT_PATH().
+ *
+ * Example devicetree fragment:
+ *
+ *     / {
+ *             soc {
+ *                     node: my-node@12345678 { ... };
+ *             };
+ *     };
+ *
+ * Example usage:
+ *
+ *    DT_NODE_PATH(DT_NODELABEL(node)) // "/soc/my-node@12345678"
+ *    DT_NODE_PATH(DT_PATH(soc))       // "/soc"
+ *    DT_NODE_PATH(DT_ROOT)            // "/"
+ *
+ * @param node_id node identifier
+ * @return the node's full path in the devicetree
+ */
+#define DT_NODE_PATH(node_id) DT_CAT(node_id, _PATH)
 
 /**
  * @}
