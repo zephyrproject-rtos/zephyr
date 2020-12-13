@@ -153,3 +153,9 @@
 	status = "okay";
 	cd-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
 };
+
+
+&csi {
+	status = "okay";
+	sensor-label = "OV7725";
+};

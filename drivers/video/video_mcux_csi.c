@@ -369,7 +369,7 @@ static int video_mcux_csi_init(const struct device *dev)
 	if (config->sensor_label) {
 		data->sensor_dev = device_get_binding(config->sensor_label);
 		if (data->sensor_dev == NULL) {
-			return -ENODEV;
+			//return -ENODEV;
 		}
 	}
 
