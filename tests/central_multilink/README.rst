@@ -1,6 +1,6 @@
 .. _bluetooth_central_hr:
 
-Bluetooth: Central / Heart-rate Monitor
+Bluetooth: Central / one central to 5 peripherals
 #######################################
 
 Overview
