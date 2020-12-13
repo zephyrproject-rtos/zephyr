@@ -17,12 +17,12 @@ struct mem_block {
 	void *data;
 };
 
-static mem_block video_block[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX];
+static struct mem_block video_block[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX];
 
 struct video_buffer *video_buffer_alloc(size_t size)
 {
 	struct video_buffer *vbuf = NULL;
-	struct k_mem_block *block;
+	struct mem_block *block;
 	int i;
 
 	/* find available video buffer */
@@ -57,7 +57,7 @@ void video_buffer_release(struct video_buffer *vbuf)
 	int i;
 
 	/* vbuf to block */
-	for (i = 0; i < ARRAY_SIZE(video_buf); i++) {
+	for (i = 0; i < ARRAY_SIZE(video_block); i++) {
 		if (video_block[i].data == vbuf->buffer) {
 			block = &video_block[i];
 			break;
