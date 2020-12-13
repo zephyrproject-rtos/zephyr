@@ -95,6 +95,9 @@ def main():
         for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
             write_node_comment(node)
 
+            out_comment(f"Node's full path:")
+            out_dt_define(f"{node.z_path_id}_PATH", f'"{escape(node.path)}"')
+
             if node.parent is not None:
                 out_comment(f"Node parent ({node.parent.path}) identifier:")
                 out_dt_define(f"{node.z_path_id}_PARENT",
