@@ -17,6 +17,10 @@
 #include <arch/cpu.h>
 #include <sys/util.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Using typedef deliberately here, this is quite intended to be an opaque
  * type.
  *
@@ -399,6 +403,12 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 {
 	return (char *)sym + K_THREAD_STACK_RESERVED;
 }
+
 #endif /* CONFIG_USERSPACE */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* _ASMLANGUAGE */
 #endif /* ZEPHYR_INCLUDE_SYS_THREAD_STACK_H */
