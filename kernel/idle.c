@@ -171,12 +171,14 @@ void idle(void *p1, void *unused2, void *unused3)
 			z_reschedule_unlocked();
 			continue;
 		}
-		arch_irq_unlock(key);
+
 #if SMP_FALLBACK
+		arch_irq_unlock(key);
+
 		k_busy_wait(100);
 		k_yield();
 #else
-		(void)arch_irq_lock();
+
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 		int32_t ticks = z_get_next_timeout_expiry();
 
