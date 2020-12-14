@@ -1,0 +1,24 @@
+# Copyright (c) 2019 Laczen
+# SPDX-License-Identifier: Apache-2.0
+
+description: Zephyr Emulated EEPROM device
+
+compatible: "zephyr,emu-eeprom"
+
+include: eeprom-base.yaml
+
+properties:
+    size:
+      required: true
+    pagesize:
+      type: int
+      required: true
+      description: Size of a page used to emulate EEPROM in flash
+    partition:
+      type: phandle
+      required: true
+      description: Flash partition used to store the emulated EEPROM data
+    rambuf:
+      type: boolean
+      required: false
+      description: Enable a ram buffer of EEPROM size for improved read speed
