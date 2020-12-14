@@ -118,20 +118,37 @@ static int exec_query(const char *host, int family,
 static int getaddrinfo_null_host(int port, const struct zsock_addrinfo *hints,
 				struct zsock_addrinfo *res)
 {
-	if (hints && (hints->ai_flags & AI_PASSIVE)) {
-		struct sockaddr_in *addr =
-		    (struct sockaddr_in *)&res->_ai_addr;
+	if (!hints || !(hints->ai_flags & AI_PASSIVE)) {
+		return DNS_EAI_FAIL;
+	}
+
+	/* For AF_UNSPEC, should we default to IPv6 or IPv4? */
+	if (hints->ai_family == AF_INET || hints->ai_family == AF_UNSPEC) {
+		struct sockaddr_in *addr = net_sin(&res->_ai_addr);
 		addr->sin_addr.s_addr = INADDR_ANY;
 		addr->sin_port = htons(port);
 		addr->sin_family = AF_INET;
 		INIT_ADDRINFO(res, addr);
 		res->ai_family = AF_INET;
-		res->ai_socktype = SOCK_STREAM;
-		res->ai_protocol = IPPROTO_TCP;
-		return 0;
+	} else if (hints->ai_family == AF_INET6) {
+		struct sockaddr_in6 *addr6 = net_sin6(&res->_ai_addr);
+		addr6->sin6_addr = in6addr_any;
+		addr6->sin6_port = htons(port);
+		addr6->sin6_family = AF_INET6;
+		INIT_ADDRINFO(res, addr6);
+		res->ai_family = AF_INET6;
+	} else {
+		return DNS_EAI_FAIL;
 	}
 
-	return DNS_EAI_FAIL;
+	if (hints->ai_socktype == SOCK_DGRAM) {
+		res->ai_socktype = SOCK_DGRAM;
+		res->ai_protocol = IPPROTO_UDP;
+	} else {
+		res->ai_socktype = SOCK_STREAM;
+		res->ai_protocol = IPPROTO_TCP;
+	}
+	return 0;
 }
 
 int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
@@ -145,10 +162,16 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 	struct sockaddr *ai_addr;
 	int ret;
 	struct getaddrinfo_state ai_state;
+	int socktype = SOCK_STREAM;
+	int protocol = IPPROTO_TCP;
 
 	if (hints) {
 		family = hints->ai_family;
 		ai_flags = hints->ai_flags;
+		if (hints->ai_socktype == SOCK_DGRAM) {
+			socktype = SOCK_DGRAM;
+			protocol = IPPROTO_UDP;
+		}
 	}
 
 	if (service) {
@@ -185,8 +208,8 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 		addr->sin_family = AF_INET;
 		INIT_ADDRINFO(res, addr);
 		res->ai_family = AF_INET;
-		res->ai_socktype = SOCK_STREAM;
-		res->ai_protocol = IPPROTO_TCP;
+		res->ai_socktype = socktype;
+		res->ai_protocol = protocol;
 		return 0;
 	}
 
