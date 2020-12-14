@@ -113,7 +113,8 @@ static uint8_t notify_func(struct bt_conn *conn,
 		int err;
 
 		/* Disconnect before actually passing */
-		err = bt_conn_disconnect(default_conn, BT_HCI_ERR_SUCCESS);
+		err = bt_conn_disconnect(default_conn,
+					 BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 		if (err) {
 			FAIL("Disconnection failed (err %d)\n", err);
 			return BT_GATT_ITER_STOP;
