@@ -26,9 +26,15 @@ config BT_CTLR
 	default y
 	depends on BT
 
+if DISPLAY
+
 config SSD16XX
 	default y
-	depends on DISPLAY
+
+config SPI
+	default y
+
+endif # DISPLAY
 
 if LVGL
 
