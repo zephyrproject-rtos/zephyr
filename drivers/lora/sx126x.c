@@ -518,7 +518,6 @@ static const struct lora_driver_api sx126x_lora_api = {
 	.test_cw = sx12xx_lora_test_cw,
 };
 
-DEVICE_AND_API_INIT(sx126x_lora, DT_INST_LABEL(0),
-		    &sx126x_lora_init, NULL,
+DEVICE_DT_INST_DEFINE(0, &sx126x_lora_init, device_pm_control_nop, NULL,
 		    NULL, POST_KERNEL, CONFIG_LORA_INIT_PRIORITY,
 		    &sx126x_lora_api);
