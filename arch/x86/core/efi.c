@@ -9,16 +9,19 @@
 
 static struct efi_system_table *efi;
 static struct efi_configuration_table *ect;
+static void *zephyr_img_handle;
 
 static inline int efi_guid_compare(efi_guid_t *s1, efi_guid_t *s2)
 {
 	return memcmp(s1, s2, sizeof(efi_guid_t));
 }
 
-void efi_init(struct efi_system_table *efi_sys_table)
+void efi_init(struct efi_system_table *efi_sys_table, void *image_handle)
 {
 	z_phys_map((uint8_t **)&efi, (uintptr_t)efi_sys_table,
 		   sizeof(struct efi_system_table), K_MEM_PERM_RW);
+
+	zephyr_img_handle = image_handle;
 
 	/* ToDo: Verify sys_table (size, crc...) */
 

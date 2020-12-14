@@ -258,7 +258,9 @@ __start64:
 		 __x86_boot_arg_t_boot_type_OFFSET)(%rbp)
 	/* and EFI system table */
 	movq %rbx, (__x86_cpuboot_t_arg_OFFSET + \
-		    __x86_boot_arg_t_arg_OFFSET)(%rbp)
+		 __x86_boot_arg_t_arg_OFFSET)(%rbp)
+	movq %r8, (__x86_cpuboot_t_arg_OFFSET + \
+		 __x86_boot_arg_t_handle_OFFSET)(%rbp)
 	mov jmpdesc, %rax
 	jmp *%rax
 jmpdesc:

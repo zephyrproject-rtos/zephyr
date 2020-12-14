@@ -62,6 +62,7 @@
 struct x86_boot_arg {
 	int boot_type;
 	void *arg;
+	void *handle;
 };
 
 typedef struct x86_boot_arg x86_boot_arg_t;

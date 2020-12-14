@@ -580,9 +580,9 @@ struct efi_system_table {
  *
  * @param efi_sys_table The actual EFI system table pointer provided by the
  *        UEFI subsystem at boot time.
+ * @param image_handle The running image handle value given by EFI
  */
-void efi_init(struct efi_system_table *efi_sys_table);
-
+void efi_init(struct efi_system_table *efi_sys_table, void *image_handle);
 
 /** @brief Look up for a vendor table via its EFI GUID
  *

@@ -109,8 +109,8 @@ uintptr_t __abi efi_entry(void *img_handle, struct efi_system_table *sys_tab)
 	for (volatile int i = 0; i < 50000000; i++) {
 	}
 
-	__asm__ volatile("cli; movq %0, %%rbx; jmp *%1"
-			 :: "r"(efi), "r"(code) : );
+	__asm__ volatile("cli; movq %0, %%rbx; movq %1, %%r8; jmp *%2"
+			 :: "r"(efi), "r"(img_handle), "r"(code) : );
 
 	return 0;
 }
