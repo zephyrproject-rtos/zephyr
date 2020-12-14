@@ -335,7 +335,7 @@ static struct gpio_esp32_data gpio_1_data = { /* 32..39 */
 	static struct gpio_driver_config gpio_##_id##_cfg = { \
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(_id),  \
 	}; \
-	DEVICE_DT_INST_DEFINE(id,					\
+	DEVICE_DT_INST_DEFINE(_id,					\
 			    gpio_esp32_init,				\
 			    device_pm_control_nop,			\
 			    &gpio_##_id##_data, &gpio_##_id##_cfg,	\
