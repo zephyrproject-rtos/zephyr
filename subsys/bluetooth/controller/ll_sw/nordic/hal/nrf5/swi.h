@@ -18,10 +18,10 @@
 #endif
 
 /* nRF53 Series IRQ mapping */
-#elif defined(CONFIG_SOC_SERIES_NRF53X)
+#elif defined(CONFIG_SOC_SERIES_NRF53X) || defined(CONFIG_SOC_COMPATIBLE_NRF53X_CPUNET)
 
 /* nRF53 Series Engineering D and Revision 1 IRQ mapping */
-#if defined(CONFIG_SOC_NRF5340_CPUNET) && \
+#if (defined(CONFIG_SOC_NRF5340_CPUNET) || defined(CONFIG_SOC_COMPATIBLE_NRF53X_CPUNET)) && \
 	!defined(CONFIG_BOARD_NRF5340PDK_NRF5340_CPUNET)
 
 #define HAL_SWI_RADIO_IRQ  SWI2_IRQn

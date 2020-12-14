@@ -206,7 +206,8 @@ void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags)
 		bits_len = 5U;
 	}
 #elif defined(CONFIG_SOC_COMPATIBLE_NRF52X) || \
-	defined(CONFIG_SOC_SERIES_NRF53X)
+	defined(CONFIG_SOC_SERIES_NRF53X) || \
+	defined(CONFIG_SOC_COMPATIBLE_NRF53X_CPUNET)
 	extra = 0U;
 
 	phy = (flags >> 1) & 0x07; /* phy */

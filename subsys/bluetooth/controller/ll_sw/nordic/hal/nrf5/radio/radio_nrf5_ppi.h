@@ -603,7 +603,7 @@ static inline void hal_radio_sw_switch_ppi_group_setup(void)
 
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
-#elif defined(CONFIG_SOC_NRF5340_CPUNET)
+#elif defined(CONFIG_SOC_COMPATIBLE_NRF53X_CPUNET)
 
 #include <hal/nrf_dppi.h>
 
