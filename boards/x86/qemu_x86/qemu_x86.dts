@@ -27,6 +27,7 @@
 		uart-0 = &uart0;
 		uart-1 = &uart1;
 		eeprom-0 = &eeprom0;
+		eeprom-1 = &eeprom1;
 	};
 
 	chosen {
@@ -70,12 +71,23 @@
 		};
 	};
 
-	eeprom0: eeprom {
+	eeprom1: eeprom1 {
+		status = "okay";
+		compatible = "zephyr,emu-eeprom";
+		label = "EEPROM_1";
+		size = <DT_SIZE_K(4)>;
+		pagesize = <DT_SIZE_K(8)>;
+		partition = <&eepromemu_partition>;
+		rambuf;
+	};
+
+	eeprom0: eeprom0 {
 		status = "okay";
 		compatible = "zephyr,sim-eeprom";
 		label = "EEPROM_0";
-		size = <DT_SIZE_K(32)>;
+		size = <DT_SIZE_K(4)>;
 	};
+
 };
 
 &uart0 {
@@ -115,6 +127,10 @@
 		slot1_partition: partition@21000 {
 			label = "image-1";
 			reg = <0x00021000 0x00010000>;
+		};
+		eepromemu_partition: partition@31000 {
+			label = "eeprom-emu";
+			reg = <0x00031000 0x00010000>;
 		};
 	};
 };
