@@ -10,7 +10,7 @@ if BT_AUDIO
 
 #### Object Transfer Service ################################
 
-config BT_OTS
+config BT_OTS_TEMP
 	bool "Object Transfer Service Support"
 	select BT_L2CAP_DYNAMIC_CHANNEL
 	select BT_GATT_DYNAMIC_DB
@@ -18,9 +18,9 @@ config BT_OTS
 	help
 	  This option enables support for the Object Transfer Service.
 
-if BT_OTS
+if BT_OTS_TEMP
 
-config BT_OTS_SERVICE_COUNT
+config BT_OTS_TEMP_SERVICE_COUNT
 	int "Object Transfer Service count"
 	range 1 5
 	default 1
@@ -35,7 +35,7 @@ config BT_DEBUG_OTS
 	  Use this option to enable Object Transfer Service debug logs for the
 	  Bluetooth Audio functionality.
 
-endif # BT_OTS
+endif # BT_OTS_TEMP
 
 
 #### Object Transfer Service Client ################################

@@ -941,10 +941,10 @@ static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 #if defined(CONFIG_BT_BROADCASTER)
 static const struct bt_data ad_discov[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-#if defined(CONFIG_BT_OTS)
+#if defined(CONFIG_BT_OTS_TEMP)
 	/* Object Transfer Service */
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0x25, 0x18),
-#endif /* defined(CONFIG_BT_OTS) */
+#endif /* defined(CONFIG_BT_OTS_TEMP) */
 };
 
 static int cmd_advertise(const struct shell *sh, size_t argc, char *argv[])
