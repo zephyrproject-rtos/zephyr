@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT st_stm32h7_flash_controller
 
+#include <sys/util.h>
 #include <kernel.h>
 #include <device.h>
 #include <string.h>
@@ -13,6 +14,7 @@
 #include <init.h>
 #include <soc.h>
 #include <stm32h7xx_ll_bus.h>
+#include <stm32h7xx_ll_utils.h>
 
 #include "flash_stm32.h"
 #include "stm32_hsem.h"
@@ -33,11 +35,29 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #error Flash driver on M4 core is not supported yet
 #endif
 
-#if defined(CONFIG_MULTITHREADING)
+#define REAL_FLASH_SIZE_KB	KB(LL_GetFlashSize())
+#define SECTOR_PER_BANK		((REAL_FLASH_SIZE_KB / FLASH_SECTOR_SIZE) / 2)
+#if defined(DUAL_BANK)
+#define STM32H7_SERIES_MAX_FLASH_KB	KB(2048)
+#define BANK2_OFFSET	(STM32H7_SERIES_MAX_FLASH_KB / 2)
+/* When flash is dual bank and flash size is smaller than Max flash size of
+ * the serie, there is a discontinuty between bank1 and bank2.
+ */
+#define DISCONTINUOUS_BANKS (REAL_FLASH_SIZE_KB < STM32H7_SERIES_MAX_FLASH_KB)
+#endif
+
+struct flash_stm32_sector_t {
+	int sector_index;
+	int bank;
+	volatile uint32_t *cr;
+	volatile uint32_t *sr;
+};
+
+#if defined(CONFIG_MULTITHREADING) || defined(CONFIG_STM32H7_DUAL_CORE)
 /*
  * This is named flash_stm32_sem_take instead of flash_stm32_lock (and
  * similarly for flash_stm32_sem_give) to avoid confusion with locking
- * actual flash pages.
+ * actual flash sectors.
  */
 static inline void _flash_stm32_sem_take(const struct device *dev)
 {
@@ -60,11 +80,25 @@ static inline void _flash_stm32_sem_give(const struct device *dev)
 #define flash_stm32_sem_give(dev)
 #endif
 
-
 bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 			     uint32_t len,
 			     bool write)
 {
+#if defined(DUAL_BANK)
+	if (DISCONTINUOUS_BANKS) {
+		/*
+		 * In case of bank1/2 discontinuity, the range should not
+		 * start before bank2 and end beyond bank1 at the same time.
+		 * Locations beyond bank2 are caught by flash_stm32_range_exists
+		 */
+		if ((offset < BANK2_OFFSET)
+		    && (offset + len > REAL_FLASH_SIZE_KB / 2)) {
+			LOG_ERR("Range ovelaps flash bank discontinuity");
+			return false;
+		}
+	}
+#endif
+
 	if (write) {
 		if ((offset % FLASH_NB_32BITWORD_IN_FLASHWORD * 4) != 0) {
 			LOG_ERR("Write offset not aligned on flashword length. "
@@ -126,25 +160,73 @@ int flash_stm32_wait_flash_idle(const struct device *dev)
 	return 0;
 }
 
-static int erase_sector(const struct device *dev, uint32_t sector)
+static struct flash_stm32_sector_t get_sector(const struct device *dev,
+					      off_t offset)
 {
+	struct flash_stm32_sector_t sector;
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+
+#ifdef DUAL_BANK
+	bool bank_swap;
+	/* Check whether bank1/2 are swapped */
+	bank_swap = (READ_BIT(FLASH->OPTCR, FLASH_OPTCR_SWAP_BANK)
+			== FLASH_OPTCR_SWAP_BANK);
+	sector.sector_index = offset / FLASH_SECTOR_SIZE;
+	if ((offset < (REAL_FLASH_SIZE_KB / 2)) && !bank_swap) {
+		sector.bank = 1;
+		sector.cr = &regs->CR1;
+		sector.sr = &regs->SR1;
+	} else if ((offset >= BANK2_OFFSET) && bank_swap) {
+		sector.sector_index -= BANK2_OFFSET / FLASH_SECTOR_SIZE;
+		sector.bank = 1;
+		sector.cr = &regs->CR2;
+		sector.sr = &regs->SR2;
+	} else if ((offset < (REAL_FLASH_SIZE_KB / 2)) && bank_swap) {
+		sector.bank = 2;
+		sector.cr = &regs->CR1;
+		sector.sr = &regs->SR1;
+	} else if ((offset >= BANK2_OFFSET) && !bank_swap) {
+		sector.sector_index -= BANK2_OFFSET / FLASH_SECTOR_SIZE;
+		sector.bank = 2;
+		sector.cr = &regs->CR2;
+		sector.sr = &regs->SR2;
+	} else {
+		sector.sector_index = 0;
+		sector.bank = 0;
+		sector.cr = NULL;
+		sector.sr = NULL;
+	}
+#else
+	if (offset < REAL_FLASH_SIZE_KB) {
+		sector.sector_index = offset / FLASH_SECTOR_SIZE;
+		sector.bank = 1;
+		sector.cr = &regs->CR1;
+		sector.sr = &regs->SR1;
+	} else {
+		sector.sector_index = 0;
+		sector.bank = 0;
+		sector.cr = NULL;
+		sector.sr = NULL;
+	}
+#endif
+
+	return sector;
+}
+
+static int erase_sector(const struct device *dev, int offset)
+{
 	int rc;
 	uint32_t tmp;
-	volatile uint32_t *cr;
+	struct flash_stm32_sector_t sector = get_sector(dev, offset);
 
-	if (sector < FLASH_SECTOR_TOTAL) {
-		cr = &regs->CR1;
-#ifdef DUAL_BANK
-	} else if (sector < 2 * FLASH_SECTOR_TOTAL) {
-		cr = &regs->CR2;
-#endif
-	} else {
+	if (sector.bank == 0) {
+
+		LOG_ERR("Offset %d does not exist", offset);
 		return -EINVAL;
 	}
 
 	/* if the control register is locked, do not fail silently */
-	if (*cr & FLASH_CR_LOCK) {
+	if (*(sector.cr) & FLASH_CR_LOCK) {
 		return -EIO;
 	}
 
@@ -153,33 +235,28 @@ static int erase_sector(const struct device *dev, uint32_t sector)
 		return rc;
 	}
 
-	*cr &= FLASH_CR_SNB;
-	*cr |= (FLASH_CR_SER
-		| ((sector << FLASH_CR_SNB_Pos) & FLASH_CR_SNB));
-	*cr |= FLASH_CR_START;
+	*(sector.cr) &= FLASH_CR_SNB;
+	*(sector.cr) |= (FLASH_CR_SER
+		| ((sector.sector_index << FLASH_CR_SNB_Pos) & FLASH_CR_SNB));
+	*(sector.cr) |= FLASH_CR_START;
 	/* flush the register write */
-	tmp = *cr;
+	tmp = *(sector.cr);
 
 	rc = flash_stm32_wait_flash_idle(dev);
-	*cr &= ~(FLASH_CR_SER | FLASH_CR_SNB);
+	*(sector.cr) &= ~(FLASH_CR_SER | FLASH_CR_SNB);
 
 	return rc;
 }
 
-static unsigned int get_sector(off_t offset)
-{
-	return offset / FLASH_SECTOR_SIZE;
-}
 
 int flash_stm32_block_erase_loop(const struct device *dev,
 				 unsigned int offset,
 				 unsigned int len)
 {
-	int i;
-	int rc = 0;
+	unsigned int address = offset, rc = 0;
 
-	for (i = get_sector(offset); i <= get_sector(offset + len - 1); ++i) {
-		rc = erase_sector(dev, i);
+	for (; address <= offset + len - 1 ; address += FLASH_SECTOR_SIZE) {
+		rc = erase_sector(dev, address);
 		if (rc < 0) {
 			break;
 		}
@@ -190,21 +267,14 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 static int wait_write_queue(const struct device *dev, off_t offset)
 {
 	int64_t timeout_time = k_uptime_get() + 100;
-	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-	uint32_t sector = get_sector(offset);
-	volatile uint32_t *sr;
+	struct flash_stm32_sector_t sector = get_sector(dev, offset);
 
-	if (sector < FLASH_SECTOR_TOTAL) {
-		sr = &regs->SR1;
-#ifdef DUAL_BANK
-	} else if (sector < 2 * FLASH_SECTOR_TOTAL) {
-		sr = &regs->SR2;
-#endif
-	} else {
+	if (sector.bank == 0) {
+		LOG_ERR("Offset %d does not exist", offset);
 		return -EINVAL;
 	}
 
-	while (*sr & FLASH_SR_QW) {
+	while (*(sector.sr) & FLASH_SR_QW) {
 		if (k_uptime_get() > timeout_time) {
 			LOG_ERR("Timeout! val: %d", 100);
 			return -EIO;
@@ -220,25 +290,18 @@ static int write_ndwords(const struct device *dev,
 {
 	volatile uint64_t *flash = (uint64_t *)(offset
 						+ CONFIG_FLASH_BASE_ADDRESS);
-	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-	volatile uint32_t *cr;
 	uint32_t tmp;
 	int rc;
 	int i;
-	uint32_t sector = get_sector(offset);
+	struct flash_stm32_sector_t sector = get_sector(dev, offset);
 
-	if (sector < FLASH_SECTOR_TOTAL) {
-		cr = &regs->CR1;
-#ifdef DUAL_BANK
-	} else if (sector < 2 * FLASH_SECTOR_TOTAL) {
-		cr = &regs->CR2;
-#endif
-	} else {
+	if (sector.bank == 0) {
+		LOG_ERR("Offset %d does not exist", offset);
 		return -EINVAL;
 	}
 
 	/* if the control register is locked, do not fail silently */
-	if (*cr & FLASH_CR_LOCK) {
+	if (*(sector.cr) & FLASH_CR_LOCK) {
 		return -EIO;
 	}
 
@@ -256,10 +319,10 @@ static int write_ndwords(const struct device *dev,
 	}
 
 	/* Set the PG bit */
-	*cr |= FLASH_CR_PG;
+	*(sector.cr) |= FLASH_CR_PG;
 
 	/* Flush the register write */
-	tmp = *cr;
+	tmp = *(sector.cr);
 
 	/* Perform the data write operation at the desired memory address */
 	for (i = 0; i < n; ++i) {
@@ -271,7 +334,7 @@ static int write_ndwords(const struct device *dev,
 	rc = flash_stm32_wait_flash_idle(dev);
 
 	/* Clear the PG bit */
-	*cr &= (~FLASH_CR_PG);
+	*(sector.cr) &= (~FLASH_CR_PG);
 
 	return rc;
 }
@@ -376,9 +439,10 @@ static int flash_stm32h7_erase(const struct device *dev, off_t offset,
 {
 	int rc;
 #ifdef CONFIG_CPU_CORTEX_M7
-	off_t flush_offset = get_sector(offset) * FLASH_SECTOR_SIZE;
-	size_t flush_len = (((get_sector(offset + len) + 1) * FLASH_SECTOR_SIZE)
-			    - flush_offset);
+	/* Flush whole sectors */
+	off_t flush_offset = ROUND_DOWN(offset, FLASH_SECTOR_SIZE);
+	size_t flush_len = ROUND_UP(offset + len - 1, FLASH_SECTOR_SIZE)
+		 - flush_offset;
 #endif /* CONFIG_CPU_CORTEX_M7 */
 
 	if (!flash_stm32_valid_range(dev, offset, len, true)) {
@@ -400,6 +464,11 @@ static int flash_stm32h7_erase(const struct device *dev, off_t offset,
 #ifdef CONFIG_CPU_CORTEX_M7
 	/* Flush cache on all sectors affected by the erase */
 	flash_stm32h7_flush_caches(dev, flush_offset, flush_len);
+#elif CONFIG_CPU_CORTEX_M4
+	if (LL_AHB1_GRP1_IsEnabledClock(LL_AHB1_GRP1_PERIPH_ART)
+		&& LL_ART_IsEnabled()) {
+		LOG_ERR("Cortex M4: ART enabled not supported by flash driver");
+	}
 #endif /* CONFIG_CPU_CORTEX_M7 */
 
 	flash_stm32_sem_give(dev);
@@ -469,12 +538,6 @@ flash_stm32h7_get_parameters(const struct device *dev)
 	return &flash_stm32h7_parameters;
 }
 
-static const struct flash_pages_layout stm32h7_flash_layout[] = {
-	{ .pages_count = FLASH_SECTOR_TOTAL, .pages_size = FLASH_SECTOR_SIZE },
-#ifdef DUAL_BANK
-	{ .pages_count = FLASH_SECTOR_TOTAL, .pages_size = FLASH_SECTOR_SIZE },
-#endif
-};
 
 void flash_stm32_page_layout(const struct device *dev,
 			     const struct flash_pages_layout **layout,
@@ -482,8 +545,45 @@ void flash_stm32_page_layout(const struct device *dev,
 {
 	ARG_UNUSED(dev);
 
-	*layout = stm32h7_flash_layout;
+#if defined(DUAL_BANK)
+	static struct flash_pages_layout stm32h7_flash_layout[3];
+
+	if (DISCONTINUOUS_BANKS) {
+		if (stm32h7_flash_layout[0].pages_count == 0) {
+			/* Bank1 */
+			stm32h7_flash_layout[0].pages_count = SECTOR_PER_BANK;
+			stm32h7_flash_layout[0].pages_size = FLASH_SECTOR_SIZE;
+			/*
+			 * Dummy page corresponding to discontinuity
+			 * between bank1/2
+			 */
+			stm32h7_flash_layout[1].pages_count = 1;
+			stm32h7_flash_layout[1].pages_size = BANK2_OFFSET
+					- (SECTOR_PER_BANK * FLASH_SECTOR_SIZE);
+			/* Bank2 */
+			stm32h7_flash_layout[2].pages_count = SECTOR_PER_BANK;
+			stm32h7_flash_layout[2].pages_size = FLASH_SECTOR_SIZE;
+		}
+		*layout_size = ARRAY_SIZE(stm32h7_flash_layout);
+	} else {
+		if (stm32h7_flash_layout[0].pages_count == 0) {
+			stm32h7_flash_layout[0].pages_count =
+				REAL_FLASH_SIZE_KB / FLASH_SECTOR_SIZE;
+			stm32h7_flash_layout[0].pages_size = FLASH_SECTOR_SIZE;
+		}
+		*layout_size = 1;
+	}
+#else
+	static struct flash_pages_layout stm32h7_flash_layout[1];
+
+	if (stm32h7_flash_layout[0].pages_count == 0) {
+		stm32h7_flash_layout[0].pages_count =
+				REAL_FLASH_SIZE / FLASH_SECTOR_SIZE;
+		stm32h7_flash_layout[0].pages_size = FLASH_SECTOR_SIZE;
+	}
 	*layout_size = ARRAY_SIZE(stm32h7_flash_layout);
+#endif
+	*layout = stm32h7_flash_layout;
 }
 
 static struct flash_stm32_priv flash_data = {
