@@ -126,6 +126,16 @@ config BT_HCI_RESERVE
 	  Headroom that the driver needs for sending and receiving buffers. Add a
 	  new 'default' entry for each new driver.
 
+config BT_HCI_ACL_DATA_SIZE
+	int
+	prompt "ACL data buffer size" if !BT_CTLR
+	depends on BT_HCI_RAW
+	range 27 251
+	default BT_CTLR_DATA_LENGTH_MAX if BT_CTLR
+	default 27
+	help
+	  Maximum ACL data payload in HCI packets, excluding HCI header.
+
 config BT_RECV_IS_RX_THREAD
 	# Hidden option set by the HCI driver to indicate that there's
 	# no need for the host to have its own RX thread.
