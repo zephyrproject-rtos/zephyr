@@ -164,6 +164,17 @@ config IMG_MGMT_DUMMY_HDR
 	help
 	  Returns dummy image header data for imgr functions,
 	  useful when there are no images present, Eg: unit tests.
+
+config IMG_MGMT_REJECT_DIRECT_XIP_MISMATCHED_SLOT
+	bool "Reject Direct-XIP applications with mismatched address"
+	help
+	  When enabled, the mcumgr will compare base address of application,
+	  encoded into .bin file header with use of imgtool, on upload and will
+	  reject binaries that would not be able to start from available
+	  Direct-XIP address.
+	  The base address can be set, to an image binary header, with imgtool,
+	  using the --rom-fixed command line option.
+
 endif
 
 
