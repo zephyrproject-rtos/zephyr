@@ -3,6 +3,13 @@
 # Copyright (c) 2016 ARM Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
+config TEMP_NRF5_FORCE_ALT
+	bool
+	depends on SOC_COMPATIBLE_NRF
+	help
+	  This option can be enabled to force an alternative implementation
+	  of the temperature sensor driver.
+
 config TEMP_NRF5
 	bool "nRF5 Temperature Sensor"
 	depends on HAS_HW_NRF_TEMP
