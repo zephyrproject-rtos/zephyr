@@ -52,7 +52,7 @@ static void player_name_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_DBG("value 0x%04x", value);
 }
 
-#ifdef CONFIG_BT_OTS
+#ifdef CONFIG_BT_OTS_TEMP
 static ssize_t icon_id_read(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr, void *buf,
 			    uint16_t len, uint16_t offset)
@@ -69,7 +69,7 @@ static ssize_t icon_id_read(struct bt_conn *conn,
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &icon_id,
 				 UINT48_LEN);
 }
-#endif /* CONFIG_BT_OTS */
+#endif /* CONFIG_BT_OTS_TEMP */
 
 static ssize_t icon_uri_read(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
@@ -226,7 +226,7 @@ static void seeking_speed_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_DBG("value 0x%04x", value);
 }
 
-#ifdef CONFIG_BT_OTS
+#ifdef CONFIG_BT_OTS_TEMP
 static ssize_t track_segments_id_read(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
 				      void *buf, uint16_t len, uint16_t offset)
@@ -415,7 +415,7 @@ static void parent_group_id_cfg_changed(const struct bt_gatt_attr *attr,
 {
 	BT_DBG("value 0x%04x", value);
 }
-#endif /* CONFIG_BT_OTS */
+#endif /* CONFIG_BT_OTS_TEMP */
 
 static ssize_t playing_order_read(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr, void *buf,
@@ -547,7 +547,7 @@ static void opcodes_supported_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_DBG("value 0x%04x", value);
 }
 
-#ifdef CONFIG_BT_OTS
+#ifdef CONFIG_BT_OTS_TEMP
 static ssize_t search_control_point_write(struct bt_conn *conn,
 					  const struct bt_gatt_attr *attr,
 					  const void *buf, uint16_t len,
@@ -615,7 +615,7 @@ static void search_results_id_cfg_changed(const struct bt_gatt_attr *attr,
 {
 	BT_DBG("value 0x%04x", value);
 }
-#endif /* CONFIG_BT_OTS */
+#endif /* CONFIG_BT_OTS_TEMP */
 
 static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 				    const struct bt_gatt_attr *attr, void *buf,
@@ -630,7 +630,7 @@ static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 }
 
 /* Defines for OTS-dependent characteristics - empty if no OTS */
-#ifdef CONFIG_BT_OTS
+#ifdef CONFIG_BT_OTS_TEMP
 #define ICON_OBJ_ID_CHARACTERISTIC_IF_OTS  \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_ICON_OBJ_ID,	\
 	BT_GATT_CHRC_READ, BT_GATT_PERM_READ_ENCRYPT, \
@@ -693,7 +693,7 @@ static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 #define ICON_OBJ_ID_CHARACTERISTIC_IF_OTS
 #define SEGMENTS_TRACK_GROUP_ID_CHARACTERISTICS_IF_OTS
 #define SEARCH_CHARACTERISTICS_IF_OTS
-#endif /* CONFIG_BT_OTS */
+#endif /* CONFIG_BT_OTS_TEMP */
 
 /* Media control service attributes */
 #define BT_MCS_SERVICE_DEFINITION \
@@ -808,7 +808,7 @@ int bt_mcs_init(struct bt_ots_cb *ots_cbs)
 	int err;
 	mcs = (struct bt_gatt_service)BT_GATT_SERVICE(svc_attrs);
 
-#ifdef CONFIG_BT_OTS
+#ifdef CONFIG_BT_OTS_TEMP
 	struct bt_ots_service_register_t service_reg;
 
 	service_reg.cb = ots_cbs;
@@ -828,15 +828,15 @@ int bt_mcs_init(struct bt_ots_cb *ots_cbs)
 			mcs.attrs[i].user_data = bt_ots_get_incl(ots_svc_inst);
 		}
 	}
-#endif /* CONFIG_BT_OTS */
+#endif /* CONFIG_BT_OTS_TEMP */
 
 	err = bt_gatt_service_register(&mcs);
 
 	if (err) {
 		BT_ERR("Could not register the MCS service");
-#ifdef CONFIG_BT_OTS
+#ifdef CONFIG_BT_OTS_TEMP
 		bt_ots_unregister_service(ots_svc_inst);
-#endif /* CONFIG_BT_OTS */
+#endif /* CONFIG_BT_OTS_TEMP */
 		return -ENOEXEC;
 	}
 

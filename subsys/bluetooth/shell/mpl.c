@@ -40,7 +40,7 @@ int cmd_mpl_test_set_media_state(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-#ifdef CONFIG_BT_OTS
+#ifdef CONFIG_BT_OTS_TEMP
 int cmd_mpl_test_unset_parent_group(const struct shell *shell, size_t argc,
 				    char *argv[])
 {
@@ -48,7 +48,7 @@ int cmd_mpl_test_unset_parent_group(const struct shell *shell, size_t argc,
 
 	return 0;
 }
-#endif /* CONFIG_BT_OTS */
+#endif /* CONFIG_BT_OTS_TEMP */
 
 /* Interface to _local_ control point, for testing and debugging */
 int cmd_mpl_test_set_operation(const struct shell *shell, size_t argc,
@@ -152,7 +152,7 @@ int cmd_mpl_seeking_speed_changed_cb(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-#ifdef CONFIG_BT_OTS
+#ifdef CONFIG_BT_OTS_TEMP
 int cmd_mpl_current_track_id_changed_cb(const struct shell *shell, size_t argc,
 					char *argv[])
 {
@@ -184,7 +184,7 @@ int cmd_mpl_parent_group_id_changed_cb(const struct shell *shell, size_t argc,
 
 	return 0;
 }
-#endif /* CONFIG_BT_OTS */
+#endif /* CONFIG_BT_OTS_TEMP */
 
 int cmd_mpl_playing_order_changed_cb(const struct shell *shell, size_t argc,
 				     char *argv[])
@@ -210,7 +210,7 @@ int cmd_mpl_media_opcodes_changed_cb(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-#ifdef CONFIG_BT_OTS
+#ifdef CONFIG_BT_OTS_TEMP
 int cmd_mpl_search_results_changed_cb(const struct shell *shell, size_t argc,
 				      char *argv[])
 {
@@ -218,7 +218,7 @@ int cmd_mpl_search_results_changed_cb(const struct shell *shell, size_t argc,
 
 	return 0;
 }
-#endif /* CONFIG_BT_OTS */
+#endif /* CONFIG_BT_OTS_TEMP */
 
 static int cmd_mpl(const struct shell *shell, size_t argc, char **argv)
 {
@@ -232,11 +232,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mpl_cmds,
 	SHELL_CMD_ARG(test_set_media_state, NULL,
 		      "Set the media player state (test) <state>",
 		      cmd_mpl_test_set_media_state, 2, 0),
-#if CONFIG_BT_OTS
+#if CONFIG_BT_OTS_TEMP
 	SHELL_CMD_ARG(test_unset_parent_group, NULL,
 		      "Set current group to be its own parent (test)",
 		      cmd_mpl_test_unset_parent_group, 1, 0),
-#endif /* CONFIG_BT_OTS */
+#endif /* CONFIG_BT_OTS_TEMP */
 	SHELL_CMD_ARG(test_set_operation, NULL,
 		      "Write opcode to local control point (test) <opcode> [argument]",
 		      cmd_mpl_test_set_operation, 2, 1),
@@ -267,7 +267,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mpl_cmds,
 	SHELL_CMD_ARG(seeking_speed_changed_cb, NULL,
 		      "Send Seeking Speed notification",
 		      cmd_mpl_seeking_speed_changed_cb, 1, 0),
-#ifdef CONFIG_BT_OTS
+#ifdef CONFIG_BT_OTS_TEMP
 	SHELL_CMD_ARG(current_track_id_changed_cb, NULL,
 		      "Send Current Track notification",
 		      cmd_mpl_current_track_id_changed_cb, 1, 0),
@@ -280,7 +280,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mpl_cmds,
 	SHELL_CMD_ARG(parent_group_id_changed_cb, NULL,
 		      "Send Parent Group notification",
 		      cmd_mpl_parent_group_id_changed_cb, 1, 0),
-#endif /* CONFIG_BT_OTS */
+#endif /* CONFIG_BT_OTS_TEMP */
 	SHELL_CMD_ARG(playing_order_changed_cb, NULL,
 		      "Send Playing Order notification",
 		      cmd_mpl_playing_order_changed_cb, 1, 0),
@@ -290,11 +290,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mpl_cmds,
 	SHELL_CMD_ARG(media_opcodes_changed_cb, NULL,
 		      "Send Supported Opcodes notfication",
 		      cmd_mpl_media_opcodes_changed_cb, 1, 0),
-#ifdef CONFIG_BT_OTS
+#ifdef CONFIG_BT_OTS_TEMP
 	SHELL_CMD_ARG(search_results_changed_cb, NULL,
 		      "Send Search Results Object ID notification",
 		      cmd_mpl_search_results_changed_cb, 1, 0),
-#endif /* CONFIG_BT_OTS */
+#endif /* CONFIG_BT_OTS_TEMP */
 	SHELL_SUBCMD_SET_END
 );
 
