@@ -29,6 +29,42 @@ static struct _isr_list irq_vector_table[NRF_HW_NBR_IRQs];
 
 static int currently_running_irq = -1;
 
+#if defined(CONFIG_SOC_SERIES_NRF53X) || \
+    defined(CONFIG_SOC_COMPATIBLE_NRF53X_CPUNET) || \
+    defined(NRF53_SERIES)
+const char *irqnames[] = { /*just for the traces*/
+	"", /*0 */
+	"", /*1 */
+	"", /*2 */
+	"", /*3 */
+	"", /*4 */
+	"POWER_CLOCK", /*5 */
+	"", /*6 */
+	"", /*7 */
+	"RADIO",       /*8 */
+	"RNG",         /*9 */
+	"GPIOTE",      /*10*/
+	"WDT",         /*11*/
+	"TIMER0",      /*12*/
+	"ECB",         /*13*/
+	"CCM_AAR",     /*14*/
+	"", /*15*/
+	"TEMP",        /*16*/
+	"RTC0",        /*17*/
+	"IPC", /*18*/
+	"UART0, SPI0, SPI1, TWI0, TWI1", /*19*/
+	"EGU0", /*20*/
+	"", /*21*/
+	"RTC1",        /*22*/
+	"", /*23*/
+	"TIMER1",      /*24*/
+	"TIMER2",      /*25*/
+	"SWI0",        /*26*/
+	"SWI1",        /*27*/
+	"SWI2",        /*28*/
+	"SWI3"         /*29*/
+};
+#else
 const char *irqnames[] = { /*just for the traces*/
 	"POWER_CLOCK", /*0 */
 	"RADIO",       /*1 */
@@ -68,6 +104,7 @@ const char *irqnames[] = { /*just for the traces*/
 	"I2S",         /*35*/
 	"FPU"          /*36*/
 };
+#endif /*nrf53*/
 
 static inline void vector_to_irq(int irq_nbr, int *may_swap)
 {
