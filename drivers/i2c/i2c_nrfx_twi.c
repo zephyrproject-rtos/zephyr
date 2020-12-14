@@ -8,6 +8,7 @@
 #include <drivers/i2c.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <nrfx_twi.h>
+#include <soc.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(i2c_nrfx_twi, CONFIG_I2C_LOG_LEVEL);
@@ -276,6 +277,14 @@ static int twi_nrfx_pm_control(const struct device *dev,
 	BUILD_ASSERT(I2C_FREQUENCY(idx)	!=				       \
 		     I2C_NRFX_TWI_INVALID_FREQUENCY,			       \
 		     "Wrong I2C " #idx " frequency setting in dts");	       \
+	NRF_DT_PSEL_CHECK_EXACTLY_ONE(I2C(idx),				       \
+				      sda_pin, "sda-pin",		       \
+				      sda_gpios, "sda-gpios");		       \
+	NRF_DT_PSEL_CHECK_EXACTLY_ONE(I2C(idx),				       \
+				      scl_pin, "scl-pin",		       \
+				      scl_gpios, "scl-gpios");		       \
+	NRF_DT_CHECK_GPIO_CTLR_IS_SOC(I2C(idx), sda_gpios, "sda-gpios");       \
+	NRF_DT_CHECK_GPIO_CTLR_IS_SOC(I2C(idx), scl_gpios, "scl-gpios");       \
 	static int twi_##idx##_init(const struct device *dev)		\
 	{								       \
 		IRQ_CONNECT(DT_IRQN(I2C(idx)), DT_IRQ(I2C(idx), priority),     \
@@ -291,8 +300,8 @@ static int twi_nrfx_pm_control(const struct device *dev,
 	static const struct i2c_nrfx_twi_config twi_##idx##z_config = {	       \
 		.twi = NRFX_TWI_INSTANCE(idx),				       \
 		.config = {						       \
-			.scl       = DT_PROP(I2C(idx), scl_pin),	       \
-			.sda       = DT_PROP(I2C(idx), sda_pin),	       \
+			.scl = NRF_DT_PSEL(I2C(idx), scl_pin, scl_gpios, 0),   \
+			.sda = NRF_DT_PSEL(I2C(idx), sda_pin, sda_gpios, 0),   \
 			.frequency = I2C_FREQUENCY(idx),		       \
 		}							       \
 	};								       \
