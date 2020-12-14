@@ -268,6 +268,10 @@ Libraries / Subsystems
   * MCUmgr
 
     * Added support for flash devices that have non-0xff erase value.
+    * Added optional verification, enabled via
+      :option:`CONFIG_IMG_MGMT_REJECT_DIRECT_XIP_MISMATCHED_SLOT`, of an uploaded
+      Direct-XIP binary, which will reject any binary that is not able to boot
+      from base address of offered upload slot.
 
   * updatehub
 
