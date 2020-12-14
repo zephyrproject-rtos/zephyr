@@ -8,6 +8,7 @@
 
 #include <device.h>
 #include <lorawan/lorawan.h>
+#include <sys/util.h>
 #include <zephyr.h>
 
 #define DEFAULT_RADIO_NODE DT_ALIAS(lora0)
@@ -25,12 +26,26 @@ BUILD_ASSERT(DT_NODE_HAS_STATUS(DEFAULT_RADIO_NODE, okay),
 					  0x09, 0xCF, 0x4F, 0x3C }
 
 #define DELAY K_MSEC(10000)
+#define DL_MSG_LEN 256
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(lorawan_class_a);
 
 char data[] = {'h', 'e', 'l', 'l', 'o', 'w', 'o', 'r', 'l', 'd'};
+
+void downlink_printer(uint8_t port, uint8_t length, uint8_t *payload)
+{
+	char hex_str[DL_MSG_LEN*2+1];
+	int ret;
+	ret = bin2hex(hex_str, DL_MSG_LEN*2+1, payload, length);
+	if (ret != length) {
+		LOG_ERR("Error reading DL message recived at port %d", port);
+	} else {
+		LOG_INF("Received %dB DL message at port %d: 0x%s",
+			length, port, log_strdup(hex_str));
+	}
+}
 
 void main(void)
 {
@@ -46,6 +61,8 @@ void main(void)
 		LOG_ERR("%s Device not found", DEFAULT_RADIO);
 		return;
 	}
+
+	lorawan_register_dl_callback(&downlink_printer);
 
 	ret = lorawan_start();
 	if (ret < 0) {

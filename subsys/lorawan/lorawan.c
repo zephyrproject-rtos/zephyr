@@ -67,6 +67,15 @@ static LoRaMacEventInfoStatus_t last_mlme_confirm_status;
 static LoRaMacEventInfoStatus_t last_mcps_indication_status;
 static LoRaMacEventInfoStatus_t last_mlme_indication_status;
 
+/**
+ * The downlink callback function takes three parameters:
+ *	- port - port number of incoming message (uint8_t)
+ *	- length - length of the incoming in bytes (uint8_t)
+ *	- payload - uint8_t array containing the incoming message
+ *
+ */
+void (*downlink_cb)(uint8_t port, uint8_t length, uint8_t *payload);
+
 static void OnMacProcessNotify(void)
 {
 	LoRaMacProcess();
@@ -103,6 +112,11 @@ static void McpsIndication(McpsIndication_t *mcpsIndication)
 		if (mcpsIndication->BufferSize != 0) {
 			LOG_DBG("Rx Data: %s",
 				log_strdup(mcpsIndication->Buffer));
+			if (downlink_cb != NULL) {
+				downlink_cb(mcpsIndication->Port,
+					mcpsIndication->BufferSize,
+					mcpsIndication->Buffer);
+			}
 		}
 	}
 
@@ -147,6 +161,11 @@ static void MlmeIndication(MlmeIndication_t *mlmeIndication)
 {
 	LOG_DBG("Received MlmeIndication %d", mlmeIndication->MlmeIndication);
 	last_mlme_indication_status = mlmeIndication->Status;
+}
+
+void lorawan_register_dl_callback(void (*dl_cb)(uint8_t, uint8_t, uint8_t*))
+{
+	downlink_cb = dl_cb;
 }
 
 static LoRaMacStatus_t lorawan_join_otaa(

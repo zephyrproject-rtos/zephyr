@@ -100,6 +100,20 @@ struct lorawan_join_config {
 };
 
 /**
+ * @brief Register a callback to be called in the case of a downlink message
+ *
+ * The callback function takes three parameters:
+ *	- port - port number of incoming message (uint8_t)
+ *	- length - length of the incoming in bytes (uint8_t)
+ *	- payload - uint8_t array containing the incoming message
+ *
+ * It should execute for as short of a time as possible as it blocks the
+ * LoRaWAN subsystem.
+ *
+ */
+void lorawan_register_dl_callback(void (*dl_cb)(uint8_t, uint8_t, uint8_t*));
+
+/**
  * @brief Join the LoRaWAN network
  *
  * Join the LoRaWAN network using OTAA or AWB.
@@ -163,7 +177,7 @@ int lorawan_set_conf_msg_tries(uint8_t tries);
  * @brief Enable Adaptive Data Rate (ADR)
  *
  * Control whether adaptive data rate (ADR) is enabled. When ADR is enabled,
- * the data rate is treated as a default data rate that wil be used if the
+ * the data rate is treated as a default data rate that will be used if the
  * ADR algorithm has not established a data rate. ADR should normally only
  * be enabled for devices with stable RF conditions (i.e., devices in a mostly
  * static location).
