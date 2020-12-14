@@ -31,6 +31,8 @@ static int tcp_window = NET_IPV6_MTU;
 
 static sys_slist_t tcp_conns = SYS_SLIST_STATIC_INIT(&tcp_conns);
 
+static K_MUTEX_DEFINE(tcp_lock);
+
 static K_MEM_SLAB_DEFINE(tcp_conns_slab, sizeof(struct tcp),
 				CONFIG_NET_MAX_CONTEXTS, 4);
 
@@ -327,7 +329,7 @@ static void tcp_send_queue_flush(struct tcp *conn)
 
 static int tcp_conn_unref(struct tcp *conn)
 {
-	int key, ref_count = atomic_get(&conn->ref_count);
+	int ref_count = atomic_get(&conn->ref_count);
 	struct net_pkt *pkt;
 
 	NET_DBG("conn: %p, ref_count=%d", conn, ref_count);
@@ -348,7 +350,7 @@ static int tcp_conn_unref(struct tcp *conn)
 		goto out;
 	}
 
-	key = irq_lock();
+	k_mutex_lock(&tcp_lock, K_FOREVER);
 
 	/* If there is any pending data, pass that to application */
 	while ((pkt = k_fifo_get(&conn->recv_data, K_NO_WAIT)) != NULL) {
@@ -385,7 +387,7 @@ static int tcp_conn_unref(struct tcp *conn)
 
 	k_mem_slab_free(&tcp_conns_slab, (void **)&conn);
 
-	irq_unlock(key);
+	k_mutex_unlock(&tcp_lock);
 out:
 	return ref_count;
 }
@@ -1058,8 +1060,10 @@ out:
 
 int net_tcp_get(struct net_context *context)
 {
-	int ret = 0, key = irq_lock();
+	int ret = 0;
 	struct tcp *conn;
+
+	k_mutex_lock(&tcp_lock, K_FOREVER);
 
 	conn = tcp_conn_alloc();
 	if (conn == NULL) {
@@ -1071,7 +1075,7 @@ int net_tcp_get(struct net_context *context)
 	conn->context = context;
 	context->tcp = conn;
 out:
-	irq_unlock(key);
+	k_mutex_unlock(&tcp_lock);
 
 	return ret;
 }
@@ -2246,20 +2250,19 @@ void net_tcp_foreach(net_tcp_cb_t cb, void *user_data)
 {
 	struct tcp *conn;
 	struct tcp *tmp;
-	int key;
 
-	key = irq_lock();
+	k_mutex_lock(&tcp_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&tcp_conns, conn, tmp, next) {
 
 		if (atomic_get(&conn->ref_count) > 0) {
-			irq_unlock(key);
+			k_mutex_unlock(&tcp_lock);
 			cb(conn, user_data);
-			key = irq_lock();
+			k_mutex_lock(&tcp_lock, K_FOREVER);
 		}
 	}
 
-	irq_unlock(key);
+	k_mutex_unlock(&tcp_lock);
 }
 
 uint16_t net_tcp_get_recv_mss(const struct tcp *conn)
