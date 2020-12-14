@@ -13,10 +13,36 @@ properties:
     interrupts:
       required: true
 
+    sda-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        The SDA pin to use. The value is "<&gpioX Y flags>".
+        Pin PX.Y will be used for SDA. The "flags" portion currently
+        has no effect, but must be set to zero.
+
+        For example, to use P0.16 for SDA, set:
+
+          sda-gpios = <&gpio0 16 0>;
+
+        To use P1.2 for SDA, set:
+
+          sda-gpios = <&gpio1 2 0>;
+
+    scl-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        The SCL pin to use. The value should be set in the same
+        way as the sda-gpios property.
+
     sda-pin:
       type: int
-      required: true
+      required: false
+      deprecated: true
       description: |
+        Deprecated; use sda-gpios instead.
+
         The SDA pin to use.
 
         For pins P0.0 through P0.31, use the pin number. For example,
@@ -31,7 +57,10 @@ properties:
 
     scl-pin:
       type: int
-      required: true
+      required: false
+      deprecated: true
       description: |
+        Deprecated; use scl-gpios instead.
+
         The SCL pin to use. The pin numbering scheme is the same as
         the sda-pin property's.
