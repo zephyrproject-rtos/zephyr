@@ -211,7 +211,8 @@ static void lfclk_start(void)
 
 static void lfclk_stop(void)
 {
-	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION)) {
+	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION) &&
+	    !IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_FORCE_ALT)) {
 		z_nrf_clock_calibration_lfclk_stopped();
 	}
 
@@ -598,14 +599,15 @@ static void clock_event_handler(nrfx_clock_evt_type_t event)
 		break;
 #endif
 	case NRFX_CLOCK_EVT_LFCLK_STARTED:
-		if (IS_ENABLED(
-			CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION)) {
+		if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION) &&
+		    !IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_FORCE_ALT)) {
 			z_nrf_clock_calibration_lfclk_started();
 		}
 		clkstarted_handle(dev, CLOCK_CONTROL_NRF_TYPE_LFCLK);
 		break;
 	case NRFX_CLOCK_EVT_CAL_DONE:
-		if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION)) {
+		if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION) &&
+		    !IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_FORCE_ALT)) {
 			z_nrf_clock_calibration_done_handler();
 		}
 		break;
@@ -633,7 +635,8 @@ static int clk_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION)) {
+	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION) &&
+	    !IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_FORCE_ALT)) {
 		struct nrf_clock_control_data *data = dev->data;
 
 		z_nrf_clock_calibration_init(data->mgr);
