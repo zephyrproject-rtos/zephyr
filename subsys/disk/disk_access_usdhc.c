@@ -2845,9 +2845,9 @@ static int disk_usdhc_init(const struct device *dev)
 									\
 	static struct usdhc_priv usdhc_priv_##n;			\
 									\
-	DEVICE_AND_API_INIT(usdhc_dev##n,				\
-			    DT_INST_LABEL(n),				\
+	DEVICE_DT_INST_DEFINE(n,					\
 			    &disk_usdhc_init,				\
+			    device_pm_control_nop,			\
 			    &usdhc_priv_##n,				\
 			    &usdhc_config_##n,				\
 			    APPLICATION,				\
