@@ -20,9 +20,9 @@ interactively.
 Using the call control client
 =============================
 
-When the btaudio stack has been initialized (:code:`btaudio init`),
+When the Bluetooth stack has been initialized (:code:`bt init`),
 and a device has been connected, the call control client can discover TBS on the
-connected device calling :code:`btaudio ccp discover`, which will start a
+connected device calling :code:`ccp discover`, which will start a
 discovery for the TBS UUIDs and store the handles, and optionally subscribe to
 all notifications (default is to subscribe to all).
 
@@ -46,7 +46,7 @@ Setup
 
 .. code-block:: console
 
-   uart:~$ btaudio init
+   uart:~$ bt init
    uart:~$ bt advertise on
    Advertising started
 
@@ -57,11 +57,11 @@ Placing a call:
 
 .. code-block:: console
 
-   uart:~$ btaudio ccp discover
+   uart:~$ ccp discover
    <dbg> bt_ccp.primary_discover_func: Discover complete, found 1 instances (GTBS found)
    <dbg> bt_ccp.discover_func: Setup complete for 1 / 1 TBS
    <dbg> bt_ccp.discover_func: Setup complete GTBS
-   uart:~$ btaudio ccp originate 0 tel:123
+   uart:~$ ccp originate 0 tel:123
    <dbg> bt_ccp.notify_handler: Index 0
    <dbg> bt_ccp.current_calls_notify_handler: Call 0x01 is in the dialing state with URI tel:123
    <dbg> bt_ccp.call_cp_notify_handler: Status: success for the originate opcode for call 0x00
@@ -75,7 +75,7 @@ Placing a call on GTBS:
 
 .. code-block:: console
 
-   uart:~$ btaudio ccp originate 0 tel:123
+   uart:~$ ccp originate 0 tel:123
    <dbg> bt_ccp.notify_handler: Index 0
    <dbg> bt_ccp.current_calls_notify_handler: Call 0x01 is in the dialing state with URI tel:123
    <dbg> bt_ccp.call_cp_notify_handler: Status: success for the originate opcode for call 0x00
@@ -94,7 +94,7 @@ Accepting incoming call from peer device:
    <dbg> bt_ccp.in_call_notify_handler: tel:456
    <dbg> bt_ccp.friendly_name_notify_handler: Peter
    <dbg> bt_ccp.current_calls_notify_handler: Call 0x05 is in the incoming state with URI tel:456
-   uart:~$ btaudio ccp accept 0 5
+   uart:~$ ccp accept 0 5
    <dbg> bt_ccp.call_cp_callback_handler: Status: success for the accept opcode for call 0x05
    <dbg> bt_ccp.current_calls_notify_handler: Call 0x05 is in the active state with URI tel
 
@@ -102,7 +102,7 @@ Accepting incoming call from peer device:
 Terminate call:
 
 .. code-block:: console
-   uart:~$ btaudio ccp terminate 0 5
+   uart:~$ ccp terminate 0 5
    <dbg> bt_ccp.termination_reason_notify_handler: ID 0x05, reason 0x06
    <dbg> bt_ccp.call_cp_notify_handler: Status: success for the terminate opcode for call 0x05
    <dbg> bt_ccp.current_calls_notify_handler:
@@ -131,7 +131,7 @@ Setup
 
 .. code-block:: console
 
-   uart:~$ btaudio init
+   uart:~$ bt init
    uart:~$ bt connect xx:xx:xx:xx:xx:xx public
 
 When connected
@@ -144,14 +144,14 @@ Answering a call for a peer device originated by a client:
    <dbg> bt_tbs.write_call_cp: Index 0: Processing the originate opcode
    <dbg> bt_tbs.originate_call: New call with call index 1
    <dbg> bt_tbs.write_call_cp: Index 0: Processed the originate opcode with status success for call index 1
-   uart:~$ btaudio tbs remote_answer 1
+   uart:~$ tbs remote_answer 1
    TBS succeeded for call_id: 1
 
 Incoming call from a peer device, accepted by client:
 
 .. code-block:: console
 
-   uart:~$ btaudio tbs incoming 0 tel:123 tel:456 Peter
+   uart:~$ tbs incoming 0 tel:123 tel:456 Peter
    TBS succeeded for call_id: 4
    <dbg> bt_tbs.bt_tbs_remote_incoming: New call with call index 4
    <dbg> bt_tbs.write_call_cp: Index 0: Processed the accept opcode with status success for call index 4
