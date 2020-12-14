@@ -382,10 +382,11 @@ const bt_addr_le_t *bt_lookup_id_addr(uint8_t id, const bt_addr_le_t *addr)
 #if defined(CONFIG_BT_EXT_ADV)
 uint8_t bt_le_ext_adv_get_index(struct bt_le_ext_adv *adv)
 {
-	uint8_t index = adv - adv_pool;
+	ptrdiff_t index = adv - adv_pool;
 
-	__ASSERT(index < ARRAY_SIZE(adv_pool), "Invalid bt_adv pointer");
-	return index;
+	__ASSERT(0 <= index && index < ARRAY_SIZE(adv_pool),
+		 "Invalid bt_adv pointer");
+	return (uint8_t)index;
 }
 
 static struct bt_le_ext_adv *adv_new(void)
@@ -7287,12 +7288,11 @@ int bt_le_per_adv_set_info_transfer(const struct bt_le_ext_adv *adv,
 #if defined(CONFIG_BT_PER_ADV_SYNC)
 uint8_t bt_le_per_adv_sync_get_index(struct bt_le_per_adv_sync *per_adv_sync)
 {
-	uintptr_t index = per_adv_sync - per_adv_sync_pool;
+	ptrdiff_t index = per_adv_sync - per_adv_sync_pool;
 
-	__ASSERT(per_adv_sync >= per_adv_sync_pool &&
-			index < ARRAY_SIZE(per_adv_sync_pool),
+	__ASSERT(0 <= index && index < ARRAY_SIZE(per_adv_sync_pool),
 		 "Invalid per_adv_sync pointer");
-	return index;
+	return (uint8_t)index;
 }
 
 int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,

@@ -2685,30 +2685,31 @@ int bt_conn_auth_pairing_confirm(struct bt_conn *conn)
 
 uint8_t bt_conn_index(struct bt_conn *conn)
 {
-	uint8_t index;
+	ptrdiff_t index;
 
 	switch (conn->type) {
 #if defined(CONFIG_BT_ISO)
 	case BT_CONN_TYPE_ISO:
 		index = conn - iso_conns;
-		__ASSERT(index < CONFIG_BT_MAX_ISO_CONN,
+		__ASSERT(0 <= index && index < ARRAY_SIZE(iso_conns),
 			"Invalid bt_conn pointer");
 		break;
 #endif
 #if defined(CONFIG_BT_BREDR)
 	case BT_CONN_TYPE_SCO:
 		index = conn - sco_conns;
-		__ASSERT(index < CONFIG_BT_MAX_SCO_CONN,
+		__ASSERT(0 <= index && index < ARRAY_SIZE(sco_conns),
 			"Invalid bt_conn pointer");
 		break;
 #endif
 	default:
 		index = conn - acl_conns;
-		__ASSERT(index < CONFIG_BT_MAX_CONN, "Invalid bt_conn pointer");
+		__ASSERT(0 <= index && index < ARRAY_SIZE(acl_conns),
+			 "Invalid bt_conn pointer");
 		break;
 	}
 
-	return index;
+	return (uint8_t)index;
 }
 
 struct bt_conn *bt_conn_lookup_index(uint8_t index)
