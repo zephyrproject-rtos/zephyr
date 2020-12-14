@@ -92,7 +92,7 @@ struct ots_svc_inst_t {
 
 /** Global OTS data and states */
 struct ots_inst_t {
-	struct ots_svc_inst_t       svc_insts[CONFIG_BT_OTS_SERVICE_COUNT];
+	struct ots_svc_inst_t       svc_insts[CONFIG_BT_OTS_TEMP_SERVICE_COUNT];
 	struct ots_svc_inst_t       *active_inst;
 	bool                        l2cap_is_channel_available;
 	uint32_t                    remaining_len;
@@ -175,23 +175,24 @@ static void olcp_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value);
 		BT_GATT_CHRC_READ, BT_GATT_PERM_READ,                       \
 		obj_size_read, NULL, &ots_inst.svc_insts[i])
 
-#if CONFIG_BT_OTS_SERVICE_COUNT > 0
-static struct bt_gatt_attr ots_svc_attrs[CONFIG_BT_OTS_SERVICE_COUNT][19] = {
+#if CONFIG_BT_OTS_TEMP_SERVICE_COUNT > 0
+static struct bt_gatt_attr ots_svc_attrs[
+	CONFIG_BT_OTS_TEMP_SERVICE_COUNT][19] = {
 	{ BT_OTS_SERVICE_DEFINITION(0) },
-#if CONFIG_BT_OTS_SERVICE_COUNT > 1
+#if CONFIG_BT_OTS_TEMP_SERVICE_COUNT > 1
 	{ BT_OTS_SERVICE_DEFINITION(1) },
-#if CONFIG_BT_OTS_SERVICE_COUNT > 2
+#if CONFIG_BT_OTS_TEMP_SERVICE_COUNT > 2
 	{ BT_OTS_SERVICE_DEFINITION(2) },
-#if CONFIG_BT_OTS_SERVICE_COUNT > 3
+#if CONFIG_BT_OTS_TEMP_SERVICE_COUNT > 3
 	{ BT_OTS_SERVICE_DEFINITION(3) },
-#if CONFIG_BT_OTS_SERVICE_COUNT > 4
+#if CONFIG_BT_OTS_TEMP_SERVICE_COUNT > 4
 	{ BT_OTS_SERVICE_DEFINITION(4) },
-#endif /* CONFIG_BT_OTS_SERVICE_COUNT > 4 */
-#endif /* CONFIG_BT_OTS_SERVICE_COUNT > 3 */
-#endif /* CONFIG_BT_OTS_SERVICE_COUNT > 2 */
-#endif /* CONFIG_BT_OTS_SERVICE_COUNT > 1 */
+#endif /* CONFIG_BT_OTS_TEMP_SERVICE_COUNT > 4 */
+#endif /* CONFIG_BT_OTS_TEMP_SERVICE_COUNT > 3 */
+#endif /* CONFIG_BT_OTS_TEMP_SERVICE_COUNT > 2 */
+#endif /* CONFIG_BT_OTS_TEMP_SERVICE_COUNT > 1 */
 };
-#endif /* CONFIG_BT_OTS_SERVICE_COUNT > 0 */
+#endif /* CONFIG_BT_OTS_TEMP_SERVICE_COUNT > 0 */
 
 
 
