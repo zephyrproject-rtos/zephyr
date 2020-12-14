@@ -24,9 +24,9 @@ client interactively.
 Using the BASS client
 =====================
 
-When the btaudio stack has been initialized (:code:`btaudio init`),
+When the Bluetooth stack has been initialized (:code:`bt init`),
 and a device has been connected, the BASS client can discover BASS on
-the connected device calling :code:`btaudio bass_client discover`, which will
+the connected device calling :code:`bass_client discover`, which will
 start a discovery for the BASS UUIDs and store the handles, and optionally
 subscribe to all notifications (default is to subscribe to all).
 
@@ -42,7 +42,7 @@ Setup
 
 .. code-block:: console
 
-   uart:~$ btaudio init
+   uart:~$ bt init
    uart:~$ bt connect xx:xx:xx:xx:xx:xx public
 
 When connected
@@ -56,17 +56,17 @@ Start scanning for periodic advertisements for a server:
 
 .. code-block:: console
 
-   uart:~$ btaudio bass_client discover
+   uart:~$ bass_client discover
    <dbg> bt_bass_client.char_discover_func: Found 1 BASS receive states
    <dbg> bt_bass_client.read_recv_state_cb: src_id 0, PA 0, BIS 0, encrypt 0, addr 00:00:00:00:00:00 (public), sid 0, metadata_len 0
-   uart:~$ btaudio bass_client scan_start
+   uart:~$ bass_client scan_start
    <dbg> bt_bass_client.write_func: err: 0x00, handle 0x001e
 
 Adding a source to the receive state:
 
 .. code-block:: console
 
-   uart:~$ btaudio bass_client add_src 11:22:33:44:55:66 public 5 1 1
+   uart:~$ bass_client add_src 11:22:33:44:55:66 public 5 1 1
    [00:00:58.460,000] <dbg> bt_bass_client.notify_handler: src_id 0, PA 4, BIS 0, encrypt 0, addr 11:22:33:44:55:66 (public), sid 5, metadata_len 0
    [00:00:58.460,000] <dbg> bt_bass_client.write_func: err: 0x00, handle 0x001e
 
@@ -90,7 +90,7 @@ Setup
 
 .. code-block:: console
 
-   uart:~$ btaudio init
+   uart:~$ bt init
    uart:~$ bt advertise on
    Advertising started
 
@@ -101,5 +101,5 @@ Set sync state for a source:
 
 .. code-block:: console
 
-   uart:~$ btaudio bass synced 0 1 3 0 1
+   uart:~$ bass synced 0 1 3 0 1
    [00:09:51.640,000] <dbg> bt_bass.bt_bass_synced: Index 0: Source ID 0x00 synced, BIS 3, encrypt 0

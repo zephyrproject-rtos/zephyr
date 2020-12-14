@@ -25,9 +25,9 @@ set members, make sure that :code:`BT_MAX_PAIRED` is correctly configured.
 Using the Set Coordinator
 =========================
 
-When the btaudio stack has been initialized (:code:`btaudio init`),
+When the Bluetooth stack has been initialized (:code:`bt init`),
 and a set member device has been connected, the call control client can be
-initialized by calling :code:`btaudio csip init`, which will start a discovery
+initialized by calling :code:`csip init`, which will start a discovery
 for the TBS uuids and store the handles, and optionally subscribe to all
 notifications (default is to subscribe to all).
 
@@ -47,7 +47,7 @@ Setup
 
 .. code-block:: console
 
-   uart:~$ btaudio init
+   uart:~$ init
    uart:~$ bt connect xx:xx:xx:xx:xx:xx public
 
 When connected
@@ -57,12 +57,12 @@ Discovering sets on a device:
 
 .. code-block:: console
 
-   uart:~$ btaudio csip init
+   uart:~$ csip init
    <dbg> bt_csip.primary_discover_func: [ATTRIBUTE] handle 0x0048
    <dbg> bt_csip.primary_discover_func: Discover complete, found 1 instances
    <dbg> bt_csip.discover_func: Setup complete for 1 / 1
    Found 1 sets on device
-   uart:~$ btaudio csip discover_sets
+   uart:~$ csip discover_sets
    <dbg> bt_csip.Set SIRK
    36 04 9a dc 66 3a a1 a1 |6...f:..
    1d 9a 2f 41 01 73 3e 01 |../A.s>.
@@ -75,7 +75,7 @@ Discover set members, based on the set pointer above:
 
 .. code-block:: console
 
-   uart:~$ btaudio csip discover_members 0x566fdfe8
+   uart:~$ csip discover_members 0x566fdfe8
    <dbg> bt_csip.csis_found: Found CSIS advertiser with address 34:02:86:03:86:c0 (public)
    <dbg> bt_csip.is_set_member: hash: 0x33ccb1, prand 0x5bfe6a
    <dbg> bt_csip.is_discovered: 34:02:86:03:86:c0 (public)
@@ -87,7 +87,7 @@ Lock set members:
 
 .. code-block:: console
 
-   uart:~$ btaudio csip lock_set
+   uart:~$ csip lock_set
    <dbg> bt_csip.bt_csip_lock_set: Connecting to 34:02:86:03:86:c0 (public)
    <dbg> bt_csip.csip_connected: Connected to 34:02:86:03:86:c0 (public)
    <dbg> bt_csip.discover_func: Setup complete for 1 / 1
@@ -108,7 +108,7 @@ Release set members:
 
 .. code-block:: console
 
-   uart:~$ btaudio csip release_set
+   uart:~$ csip release_set
    <dbg> bt_csip.csip_release_highest_rank: Releasing member with rank 2
    <dbg> bt_csip.notify_func: Instance 0 lock was released
    <dbg> bt_csip.csip_release_highest_rank: Releasing member with rank 1
@@ -119,7 +119,7 @@ Disconnect set members:
 
 .. code-block:: console
 
-   uart:~$ btaudio csip disconnect
+   uart:~$ csip disconnect
    <dbg> bt_csip.bt_csip_disconnect: member 0
    <dbg> bt_csip.bt_csip_disconnect: Disconnecting 34:13:e8:b3:7f:9e (public)
    <dbg> bt_csip.bt_csip_disconnect: member 1
@@ -143,5 +143,5 @@ Setup
 
 .. code-block:: console
 
-   uart:~$ btaudio init
-   uart:~$ btaudio csis advertise on
+   uart:~$ bt init
+   uart:~$ csis advertise on

@@ -55,24 +55,20 @@ Commands
 
 .. code-block:: console
 
-   btaudio - Bluetooth Audio shell commands
-   Subcommands:
-     init         :
-     tbs          :TBS related commands
-     ccp          :CCP related commands
-     csis         :CSIS related commands
-     csip         :CSIP related commands
-     raas         :RAAS related commands
-     raap         :RAAP related commands
-     mpc          :MCC related commands
-     mpl          :MCP related commands
-     bass         :BASS related commands
-     bass_client  :BASS client related commands
-     mics         :MICS related commands
-     micp         :MICP related commands
-
-   bap - BAP commands
-   iso - ISO commands
+   tbs          :TBS related commands
+   ccp          :CCP related commands
+   csis         :CSIS related commands
+   csip         :CSIP related commands
+   mpc          :MCC related commands
+   mpl          :MCP related commands
+   bass         :BASS related commands
+   bass_client  :BASS client related commands
+   mics         :MICS related commands
+   mics_client  :MICS client related commands
+   vcs          :VCS related commands
+   vcs_client   :VCS client related commands
+   bap          :BAP related commands
+   iso          :ISO related commands
 
 Common steps:
 
