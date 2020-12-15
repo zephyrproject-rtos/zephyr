@@ -442,9 +442,9 @@ static const struct counter_driver_api counter_sam0_tc32_driver_api = {
 									\
 	static struct counter_sam0_tc32_data counter_sam0_tc32_dev_data_##n;\
 									\
-	DEVICE_AND_API_INIT(counter_sam0_tc32_##n,			\
-			    DT_INST_LABEL(n),				\
+	DEVICE_DT_INST_DEFINE(n,					\
 			    &counter_sam0_tc32_initialize,		\
+			    device_pm_control_nop,			\
 			    &counter_sam0_tc32_dev_data_##n,		\
 			    &counter_sam0_tc32_dev_config_##n,		\
 			    PRE_KERNEL_1,				\
@@ -456,7 +456,7 @@ static const struct counter_driver_api counter_sam0_tc32_driver_api = {
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    DT_INST_IRQ(n, priority),			\
 			    counter_sam0_tc32_isr,			\
-			    DEVICE_GET(counter_sam0_tc32_##n), 0);	\
+			    DEVICE_DT_INST_GET(n), 0);			\
 		irq_enable(DT_INST_IRQN(n));				\
 	}
 
