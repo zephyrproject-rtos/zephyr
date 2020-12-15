@@ -85,6 +85,8 @@ z_x86_syscall_entry_stub:
 
 	/* Load kernel's page table */
 	pushq	%rax
+
+	/* NOTE: Presumes phys=virt */
 	movq	$z_x86_kernel_ptables, %rax
 	movq	%rax, %cr3
 	popq	%rax

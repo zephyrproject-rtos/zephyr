@@ -39,7 +39,9 @@
 	movl %eax, %cr4
 	clts
 
-	/* Page tables created at build time by gen_mmu.py */
+	/* Page tables created at build time by gen_mmu.py
+	 * NOTE: Presumes phys=virt
+	 */
 	movl $z_x86_kernel_ptables, %eax
 	movl %eax, %cr3
 
@@ -61,6 +63,7 @@
 	movq %rax, %cr4
 	clts
 
+	/* NOTE: Presumes phys=virt */
 	movq $z_x86_kernel_ptables, %rax
 	movq %rax, %cr3
 
@@ -473,7 +476,7 @@ except: /*
 	jz 1f
 	swapgs
 #ifdef CONFIG_X86_KPTI
-	/* Load kernel's page table */
+	/* Load kernel's page table. NOTE: Presumes phys=virt */
 	movq $z_x86_kernel_ptables, %r11
 	movq %r11, %cr3
 #endif /* CONFIG_X86_KPTI */
@@ -628,7 +631,7 @@ irq:
 	jz 1f
 	swapgs
 #ifdef CONFIG_X86_KPTI
-	/* Load kernel's page table */
+	/* Load kernel's page table. NOTE: presumes phys=virt */
 	movq $z_x86_kernel_ptables, %rsi
 	movq %rsi, %cr3
 #endif /* CONFIG_X86_KPTI */
