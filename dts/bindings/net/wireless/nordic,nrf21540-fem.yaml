@@ -29,6 +29,13 @@ properties:
         required: false
         description: >
             Gpio of the SOC controlling ANT-SEL pin of the nRF21540
+    spi-if:
+        type: phandle
+        required: false
+        description: >
+            Reference to the nordic,nrf21540-fem-spi SPI bus interface.
+
+            This must be present to support SPI control of the FEM.
     tx-en-settle-time-us:
         type: int
         default: 11
