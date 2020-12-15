@@ -42,6 +42,7 @@ FUNC_NORETURN void z_x86_prep_c(void *arg)
 		   cpu_arg->boot_type == EFI_BOOT_TYPE) {
 		efi_init((struct efi_system_table *)cpu_arg->arg,
 			 cpu_arg->handle);
+		efi_exit();
 	} else {
 		ARG_UNUSED(cpu_arg);
 	}

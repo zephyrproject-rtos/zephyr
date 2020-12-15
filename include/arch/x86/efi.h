@@ -622,6 +622,14 @@ struct efi_system_table {
  */
 void efi_init(struct efi_system_table *efi_sys_table, void *image_handle);
 
+/** @brief Exit EFI boot services and let Zephyr run the system alone
+ *
+ * On error, there won't be much to do besides logging.
+ *
+ * @return 0 on success, -1 otherwise
+ */
+int efi_exit(void);
+
 /** @brief Look up for a vendor table via its EFI GUID
  *
  * @param guid The Vendor EFI GUID too look for
@@ -633,6 +641,8 @@ void *efi_config_get_vendor_table_by_guid(efi_guid_t *guid);
 #else /* CONFIG_X86_EFI_SYSTEM_TABLE */
 
 #define efi_init(...)
+
+#define efi_exit()
 
 static inline void * efi_config_get_vendor_table_by_guid(efi_guid_t *guid)
 {
