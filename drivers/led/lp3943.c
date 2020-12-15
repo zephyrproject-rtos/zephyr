@@ -279,7 +279,7 @@ static const struct led_driver_api lp3943_led_api = {
 	.off = lp3943_led_off,
 };
 
-DEVICE_AND_API_INIT(lp3943_led, DT_INST_LABEL(0),
-		    &lp3943_led_init, &lp3943_led_data,
+DEVICE_DT_INST_DEFINE(0, &lp3943_led_init, device_pm_control_nop,
+		    &lp3943_led_data,
 		    NULL, POST_KERNEL, CONFIG_LED_INIT_PRIORITY,
 		    &lp3943_led_api);
