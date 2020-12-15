@@ -451,7 +451,7 @@ void ull_cp_priv_rr_new(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
 {
 	struct proc_ctx *ctx;
 	struct pdu_data *pdu;
-	uint8_t proc;
+	uint8_t proc = PROC_UNKNOWN;
 
 	pdu = (struct pdu_data *) rx->pdu;
 
