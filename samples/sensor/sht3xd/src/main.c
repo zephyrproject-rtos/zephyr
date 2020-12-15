@@ -50,6 +50,10 @@ void main(void)
 	}
 	if (rc == 0) {
 		rc = sensor_trigger_set(dev, &trig, trigger_handler);
+		if (rc != 0) {
+			printf("Failed to set trigger: %d\n", rc);
+			return;
+		}
 	}
 	printf("Alert outside %d..%d %%RH got %d\n", lo_thr.val1,
 	       hi_thr.val1, rc);
