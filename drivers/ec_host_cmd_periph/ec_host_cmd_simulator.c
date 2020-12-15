@@ -80,6 +80,6 @@ static int ec_host_cmd_sim_init(const struct device *dev)
 }
 
 /* Assume only one simulator */
-DEVICE_AND_API_INIT(ec_host_cmd_simulator, DT_INST_LABEL(0),
-		    ec_host_cmd_sim_init, NULL, NULL, POST_KERNEL,
+DEVICE_DT_INST_DEFINE(0, ec_host_cmd_sim_init, device_pm_control_nop,
+		    NULL, NULL, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ec_host_cmd_api);
