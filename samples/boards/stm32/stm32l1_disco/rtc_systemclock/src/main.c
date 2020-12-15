@@ -60,8 +60,7 @@ void check_sleep(void)
 	while(1){
 		sleep_msec = 15500;
 		printk("check_sleep sleep for %u msec on %u\n", sleep_msec, z_timer_cycle_get_32());
-		//k_sleep(K_MSEC(sleep_msec));
-		k_msleep(sleep_msec);
+		k_sleep(K_MSEC(sleep_msec));
 
 		printk("check_sleep awake on %u\n", z_timer_cycle_get_32());
 

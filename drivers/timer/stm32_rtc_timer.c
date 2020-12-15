@@ -31,6 +31,8 @@
  *
  * - in zephyr/soc/arm/st_stm32/common/Kconfig.defconfig.series:
  *     SYS_CLOCK_TICKS_PER_SEC=((RTC_SYNCH_PREDIV+1)/2)
+ *
+ * - subsecond granularity in read is 2x the subsec interrupt granularity (due to subsec alarm masks)
  */
 
 
@@ -39,6 +41,12 @@
  * - problems with also having the rtc counter driver / having a rtc device (devicetree)?
  * - for CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC should i use the max ss alarm resolution, or max ss resolution?
  * 		the actual granularity of the rtc (so also for read) is (RTC_SYNCH_PREDIV+1), so should use that probably
+ */
+
+/*
+ * TODO:
+ * - fix LSI/LSE config (in board config)
+ * - add something for CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC ?
  */
 
 #define RTC_EXTI_LINE	LL_EXTI_LINE_17
@@ -65,7 +73,6 @@ static struct k_spinlock lock;
 
 /* Seconds from 1970-01-01T00:00:00 to 2000-01-01T00:00:00 */
 #define T_TIME_OFFSET 946684800
-//#define NSEC_PER_SEC (NSEC_PER_USEC * USEC_PER_MSEC * MSEC_PER_SEC)
 
 /* Tick/cycle count of the last announce call. */
 static volatile uint32_t rtc_last;
@@ -77,8 +84,6 @@ static volatile uint32_t rtc_last;
 /* TODO: check what tick threshold applicable to our rtc */
 #define TICK_THRESHOLD 7
 
-static bool nonidle_alarm_set = false;
-
 
 ////////// VALUES FROM STM32CUBE'S STM32L1XX_LL_RTC.C /////
 /* Default values used for prescaler */
@@ -88,11 +93,6 @@ static bool nonidle_alarm_set = false;
 /* Values used for timeout */
 #define RTC_INITMODE_TIMEOUT         1000U /* 1s when tick set to 1ms */
 //#define RTC_SYNCHRO_TIMEOUT          1000U /* 1s when tick set to 1ms */
-
-//static struct stm32_pclken pclken = {
-//	.enr = DT_INST_CLOCKS_CELL(0, bits),
-//	.bus = DT_INST_CLOCKS_CELL(0, bus)
-//};
 
 
 /* own implementation of LL_RTC_EnterInitMode(RTC_TypeDef *RTCx),
@@ -309,118 +309,36 @@ static uint32_t rtc_stm32_read(void)
 	/* Subtract offset of RTC (2000>1970), back to UNIX epoch */
 	ts.tv_sec -= T_TIME_OFFSET;
 
-	//printk("rtc_stm32_read: ts.tv_sec = %llu\n", ts.tv_sec);
-
 	/*convert subseconds value into us */
-	/* us required for timeval struct
-	 *
+	/*
 	 * formula based on stm32l1 ref manual (RM0038, 16) pg 537:
 	 * Second fraction = ( PREDIV_S - SS ) / ( PREDIV_S + 1 )
 	 *
 	 * also see LL_RTC_TIME_GetSubSecond in stm32cube's stm32l1xx_ll_rtc.h:
-	 * formula for seconds, but for timespec tv_usec microsecs required, so * time_unit
+	 * formula for seconds, but for timeval tv_usec microsecs required, so * time_unit
 	 */
 	ts.tv_usec = (RTC_SYNCH_PREDIV - rtc_subsec) * USEC_PER_SEC / (RTC_SYNCH_PREDIV+1);
-
-	//printk("rtc_stm32_read: ts.tv_usec = %u\n", ts.tv_usec);
 
 	/* convert timeval	 */
 	tms = _tv_to_ms(&ts);
 
-	//printk("rtc_stm32_read: tms = %u\n", tms);
-
 	/* TODO: check whether cycles_per_tick used correctly here */
 	ticks = tms / (MSEC_PER_SEC * (uint32_t)(CYCLES_PER_TICK) / (uint32_t)(CONFIG_SYS_CLOCK_TICKS_PER_SEC));
 
-	//printk("rtc_stm32_read: ticks = %u\n", ticks);
 
 	return ticks;
 }
 
-
-//static int rtc_stm32_set_calendar_alarm(time_t tv_sec)
-//{
-//	struct tm alarm_tm;
-//	LL_RTC_AlarmTypeDef rtc_alarm;
-//
-//	gmtime_r(&tv_sec, &alarm_tm);
-//
-//	/* Apply ALARM_A */
-//	rtc_alarm.AlarmTime.TimeFormat = LL_RTC_TIME_FORMAT_AM_OR_24;
-//	rtc_alarm.AlarmTime.Hours = alarm_tm.tm_hour;
-//	rtc_alarm.AlarmTime.Minutes = alarm_tm.tm_min;
-//	rtc_alarm.AlarmTime.Seconds = alarm_tm.tm_sec;
-//
-//	rtc_alarm.AlarmMask = LL_RTC_ALMA_MASK_NONE;
-//	rtc_alarm.AlarmDateWeekDaySel = LL_RTC_ALMA_DATEWEEKDAYSEL_DATE;
-//	rtc_alarm.AlarmDateWeekDay = alarm_tm.tm_mday;
-//
-//	LL_RTC_DisableWriteProtection(RTC);
-//	LL_RTC_ALMA_Disable(RTC);
-//	LL_RTC_EnableWriteProtection(RTC);
-//
-//	if (LL_RTC_ALMA_Init(RTC, LL_RTC_FORMAT_BIN, &rtc_alarm) != SUCCESS) {
-//		return -EIO;
-//	}
-//
-//	LL_RTC_DisableWriteProtection(RTC);
-//	LL_RTC_ALMA_Enable(RTC);
-//	LL_RTC_ClearFlag_ALRA(RTC);
-//	LL_RTC_EnableIT_ALRA(RTC);
-//	LL_RTC_EnableWriteProtection(RTC);
-//
-//	return 0;
-//}
-
-
 /*
  * TODO:
  * - add error returns
- * - check whether this enough to safely set ss alarm
- * - check whether this will clear the calendar alarm
+ * - think about whether to keep subsec alarm here as well (is it && for alarm flag or ||?)
+ * - !! Check if need to change to add timeout/alarm value to current time,
+ * 			not absolute time (variable type limitations)
+ * - !! check if problem when >1 year
  */
-//static int rtc_stm32_set_subsecond_alarm(suseconds_t timeout_usec)
-//{
-//	/* convert usecs to subsecond register values
-//	 * formula adapted from subsecond>us formula, see rtc_stm32_read()
-//	*/
-//	uint32_t subsecond = RTC_SYNCH_PREDIV - ( (timeout_usec * (RTC_SYNCH_PREDIV+1))
-//			/ USEC_PER_SEC );
-//
-//	LL_RTC_DisableWriteProtection(RTC);
-//	LL_RTC_ALMA_Disable(RTC);
-//	LL_RTC_EnableWriteProtection(RTC);
-//
-//	/* check whether subsecond is between min and max data/prescaler
-//	 * and set subsecond alarm a
-//	 */
-//	LL_RTC_ALMA_SetSubSecond(RTC, subsecond <= RTC_SYNCH_PREDIV ? subsecond : RTC_SYNCH_PREDIV);
-//
-//	/* set [1] mask so that smallest possible granularity is achieved */
-//	LL_RTC_ALMA_SetSubSecondMask(RTC, 1);
-//
-//	LL_RTC_DisableWriteProtection(RTC);
-//	LL_RTC_ALMA_Enable(RTC);
-//	LL_RTC_ClearFlag_ALRA(RTC);
-//	LL_RTC_EnableIT_ALRA(RTC);
-//	LL_RTC_EnableWriteProtection(RTC);
-//
-//	return 0;
-//}
-
-/*
- * TODO:
- * - check if okay this way with the subsecond alarm setting separate
- *    (a lot of the protection things are done in the alarm init function)
- * - !! Change to add timeout/alarm value to current time, not absolute
- *       time
- */
-static int rtc_stm32_set_idle_alarm(time_t tv_sec)
+static int rtc_stm32_set_calendar_alarm(time_t tv_sec, suseconds_t tv_usec)
 {
-	/* set calendar alarm
-	* and clear subsecond mask, otherwise will still tick
-	*/
-
 	struct tm alarm_tm;
 	LL_RTC_AlarmTypeDef rtc_alarm;
 
@@ -447,40 +365,19 @@ static int rtc_stm32_set_idle_alarm(time_t tv_sec)
 
 	LL_RTC_DisableWriteProtection(RTC);
 
-	/* Clear subsecond alarm A / set mask to [0] */
-	/* TODO: think whether to set the ss alarm register here: is it needed, smart, etc? */
-	LL_RTC_ALMA_SetSubSecond(RTC, 0x00);
-	LL_RTC_ALMA_SetSubSecondMask(RTC, 0);
+//	LL_RTC_ALMA_SetSubSecond(RTC, 0);
+//	LL_RTC_ALMA_SetSubSecondMask(RTC, 0);
 
-	LL_RTC_ALMA_Enable(RTC);
-	LL_RTC_ClearFlag_ALRA(RTC);
-	LL_RTC_EnableIT_ALRA(RTC);
-	LL_RTC_EnableWriteProtection(RTC);
+	/* convert usecs to subsecond register values
+	 * formula adapted from subsecond>us formula, see rtc_stm32_read()
+	*/
+	uint32_t subsecond = RTC_SYNCH_PREDIV - ( (tv_usec * (RTC_SYNCH_PREDIV+1)) / USEC_PER_SEC );
 
-	return 0;
-}
-
-/*
- * TODO:
- * - check whether accuracy is good enough without setting the alarm value to a specific value,
- *     use rtc_stm32_set_subsecond_alarm() for comparison?
- * - check whether calendar alarm can still be generated this way,
- *      or need to also add clear alarm flag & disable IT?
- *      (see counter's rtc_stm32_cancel_alarm() )
- * - add something that bases the mask on the ticks_per_sec?
- *      for now just smallest possible granularity
- * - check whether mask [1] always okay, or causes problem with LSI,
- *     since that bit isn't 1 when 249
- */
-static int rtc_stm32_set_nonidle_alarm(void)
-{
-	//rtc_DeInit(RTC);
-
-	LL_RTC_DisableWriteProtection(RTC);
-	LL_RTC_ALMA_Disable(RTC);
-
-	/* Set subsecond alarm A / set mask to [1] */
-	LL_RTC_ALMA_SetSubSecond(RTC, RTC_SYNCH_PREDIV);
+	/* check whether subsecond is between min and max data/prescaler
+	 * and set subsecond alarm a
+	 */
+	LL_RTC_ALMA_SetSubSecond(RTC, subsecond <= RTC_SYNCH_PREDIV ? subsecond : RTC_SYNCH_PREDIV);
+	//LL_RTC_ALMA_SetSubSecond(RTC, RTC_SYNCH_PREDIV);
 	LL_RTC_ALMA_SetSubSecondMask(RTC, 1);
 
 	LL_RTC_ALMA_Enable(RTC);
@@ -488,42 +385,88 @@ static int rtc_stm32_set_nonidle_alarm(void)
 	LL_RTC_EnableIT_ALRA(RTC);
 	LL_RTC_EnableWriteProtection(RTC);
 
-	printk("rtc_stm32_set_nonidle_alarm: LL_RTC_ALMA_GetSubSecond = %u, LL_RTC_ALMA_GetSubSecondMask = %u, LL_RTC_ALMA_GetTime = %u\n", LL_RTC_ALMA_GetSubSecond(RTC), LL_RTC_ALMA_GetSubSecondMask(RTC), LL_RTC_ALMA_GetTime(RTC));
+	return 0;
 
-	printk("rtc_stm32_set_nonidle_alarm: RTC alarm interrupt has been enabled = %d\n", ((((RTC->CR) & RTC_IT_ALRA) != 0U) ? 1U : 0U));
-	printk("rtc_stm32_set_nonidle_alarm: RTC alarm flag status = %d\n", ((((RTC->ISR) & RTC_FLAG_ALRAF) != 0U) ? 1U : 0U));
-	printk("rtc_stm32_set_nonidle_alarm: RTC alarm interrupt has occurred = %d\n", (((((RTC->ISR) & (RTC_IT_ALRA >> 4U)) != 0U) ? 1U : 0U)));
+}
+
+/* TODO:
+ * - add error returns?
+ * - check whether this best way to do subsecond alarm setting (based on tv_usec + mask)
+ *     or whether it screws with granularity / tick boundaries
+ * - check whether mask [1] always okay, or causes problem with LSI,
+ *     since that bit isn't 1 when 249
+ * - add something that bases the mask on the ticks_per_sec?
+ *      for now just smallest possible granularity
+
+ */
+static int rtc_stm32_set_subsec_alarm(suseconds_t tv_usec)
+{
+
+	LL_RTC_AlarmTypeDef rtc_alarm;
+
+//	printk("rtc_stm32_set_subsec_alarm: RTC alarm interrupt has been enabled = %d\n", ((((RTC->CR) & RTC_IT_ALRA) != 0U) ? 1U : 0U));
+//	printk("rtc_stm32_set_subsec_alarm: RTC alarm flag status = %d\n", ((((RTC->ISR) & RTC_FLAG_ALRAF) != 0U) ? 1U : 0U));
+//	printk("rtc_stm32_set_subsec_alarm: RTC alarm interrupt has occurred = %d\n", (((((RTC->ISR) & (RTC_IT_ALRA >> 4U)) != 0U) ? 1U : 0U)));
 
 
+	/* Apply ALARM_A */
+	rtc_alarm.AlarmTime.TimeFormat = LL_RTC_TIME_FORMAT_AM_OR_24;
+	rtc_alarm.AlarmTime.Hours = 0;
+	rtc_alarm.AlarmTime.Minutes = 0;
+	rtc_alarm.AlarmTime.Seconds = 0;
+
+	rtc_alarm.AlarmMask = LL_RTC_ALMA_MASK_ALL;
+	rtc_alarm.AlarmDateWeekDaySel = LL_RTC_ALMA_DATEWEEKDAYSEL_DATE;
+	rtc_alarm.AlarmDateWeekDay = 0;
+
+	LL_RTC_DisableWriteProtection(RTC);
+	LL_RTC_ALMA_Disable(RTC);
+	LL_RTC_EnableWriteProtection(RTC);
+
+	/* Set calendar alarm A */
+	if (LL_RTC_ALMA_Init(RTC, LL_RTC_FORMAT_BIN, &rtc_alarm) != SUCCESS) {
+		return -EIO;
+	}
+
+	LL_RTC_DisableWriteProtection(RTC);
+
+	/* convert usecs to subsecond register values
+	 * formula adapted from subsecond>us formula, see rtc_stm32_read()
+	*/
+	uint32_t subsecond = RTC_SYNCH_PREDIV - ( (tv_usec * (RTC_SYNCH_PREDIV+1)) / USEC_PER_SEC );
+	//printk("rtc_stm32_set_subsec_alarm: subsec = %u\n", subsecond);
+
+	/* check whether subsecond is between min and max data/prescaler
+	 * and set subsecond alarm a
+	 */
+	LL_RTC_ALMA_SetSubSecond(RTC, subsecond <= RTC_SYNCH_PREDIV ? subsecond : RTC_SYNCH_PREDIV);
+	//LL_RTC_ALMA_SetSubSecond(RTC, RTC_SYNCH_PREDIV);
+	LL_RTC_ALMA_SetSubSecondMask(RTC, 1);
+
+	LL_RTC_ALMA_Enable(RTC);
+	LL_RTC_ClearFlag_ALRA(RTC);
+	LL_RTC_EnableIT_ALRA(RTC);
+	LL_RTC_EnableWriteProtection(RTC);
+
+//	printk("rtc_stm32_set_subsec_alarm: RTC alarm interrupt has been enabled = %d\n", ((((RTC->CR) & RTC_IT_ALRA) != 0U) ? 1U : 0U));
+//	printk("rtc_stm32_set_subsec_alarm: RTC alarm flag status = %d\n", ((((RTC->ISR) & RTC_FLAG_ALRAF) != 0U) ? 1U : 0U));
+//	printk("rtc_stm32_set_subsec_alarm: RTC alarm interrupt has occurred = %d\n", (((((RTC->ISR) & (RTC_IT_ALRA >> 4U)) != 0U) ? 1U : 0U)));
+//
 	return 0;
 }
 
 
-
 /* TODO
- * - check if rtc value okay (that is usable for the subtraction)
- * - check whether order for read (before flags are cleared etc) is okay (fe with shadow registers etc)
  * - check edge cases like other rtc timers (if non-tickless, if z_clock_set_timeout invokes isr?)
  * - check whether to add the CYCLES_PER_TICK
- * - add idle/nonidle case for disable alarm
  */
 static void rtc_stm32_isr_handler(const void *arg)
 {
 	ARG_UNUSED(arg);
 
-	const struct device *clk;
-	clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
-
-	if (stm32_clock_control_real_init(clk) == 0){
-		/* clock reconfiguration successful */
-		printk("Clock reconfig after rtc isr successful\n");
-	}
-
 	uint32_t now_ticks = rtc_stm32_read();
-	//printk("rtc_stm32_isr_handler: now_ticks=%u\n", now_ticks);
 
 	printk("rtc_stm32_isr_handler: LL_EXTI_IsActiveFlag_0_31 = %u, LL_RTC_IsActiveFlag_ALRA = %u\n", LL_EXTI_IsActiveFlag_0_31(RTC_EXTI_LINE), LL_RTC_IsActiveFlag_ALRA(RTC));
-
 
 	if (LL_RTC_IsActiveFlag_ALRA(RTC) != 0) {
 		/* clear flags */
@@ -546,10 +489,6 @@ static void rtc_stm32_isr_handler(const void *arg)
 
 		z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL)
 				? dticks : (dticks > 0));
-
-		/* TODO: this condition doesn't really apply anymore */
-//		z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL)
-//						? now_ticks : (now_ticks > 0));
 	}
 
 	LL_EXTI_ClearFlag_0_31(RTC_EXTI_LINE);
@@ -557,7 +496,6 @@ static void rtc_stm32_isr_handler(const void *arg)
 }
 
 /* TODO:
- * - subseconds support > seems like i don't have to add anything for it?
  * - bypass registers control enable?
  */
 int z_clock_driver_init(const struct device *device)
@@ -583,7 +521,6 @@ int z_clock_driver_init(const struct device *device)
 	while (LL_RCC_LSI_IsReady() != 1) {
 	}
 	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSI);
-	printk("z_clock_driver_init: LSI clock source set\n");
 
 
 #else /* CONFIG_STM32_RTC_TIMER_LSE */
@@ -592,21 +529,15 @@ int z_clock_driver_init(const struct device *device)
 	LL_RCC_LSE_EnableBypass();
 #endif /* CONFIG_STM32_RTC_TIMER_LSE_BYPASS */
 
-	printk("z_clock_driver_init: before setting LSE things \n");
 	LL_RCC_LSE_Enable();
 
 	/* Wait until LSE is ready */
 	while (LL_RCC_LSE_IsReady() != 1) {
 	}
 
-
 	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSE);
-	printk("z_clock_driver_init: LSE clock source set\n");
 
 #endif /* CONFIG_STM32_RTC_TIMER_SRC */
-
-	printk("z_clock_driver_init: is LL_RCC_GetRTCClockSource LSI? = %d\n", LL_RCC_GetRTCClockSource() == LL_RCC_RTC_CLKSOURCE_LSI ? 1 : 0);
-	printk("z_clock_driver_init: is LL_RCC_GetRTCClockSource LSE? = %d\n", LL_RCC_GetRTCClockSource() == LL_RCC_RTC_CLKSOURCE_LSE ? 1 : 0);
 
 	LL_RCC_EnableRTC();
 
@@ -623,8 +554,8 @@ int z_clock_driver_init(const struct device *device)
 		return -EIO;
 	}
 
-	printk("z_clock_driver_init: 2 is LL_RCC_GetRTCClockSource LSI? = %d\n", LL_RCC_GetRTCClockSource() == LL_RCC_RTC_CLKSOURCE_LSI ? 1 : 0);
-	printk("z_clock_driver_init: 2 is LL_RCC_GetRTCClockSource LSE? = %d\n", LL_RCC_GetRTCClockSource() == LL_RCC_RTC_CLKSOURCE_LSE ? 1 : 0);
+	printk("z_clock_driver_init: is LL_RCC_GetRTCClockSource LSI? = %d\n", LL_RCC_GetRTCClockSource() == LL_RCC_RTC_CLKSOURCE_LSI ? 1 : 0);
+	printk("z_clock_driver_init: is LL_RCC_GetRTCClockSource LSE? = %d\n", LL_RCC_GetRTCClockSource() == LL_RCC_RTC_CLKSOURCE_LSE ? 1 : 0);
 
 
 /* TODO: bypass shadow registers control, where enabled?
@@ -649,14 +580,12 @@ int z_clock_driver_init(const struct device *device)
 			rtc_stm32_isr_handler, 0, 0);
 	irq_enable(DT_IRQN(DT_NODELABEL(rtc)));
 
-
-
 	return 0;
 }
 
 /* TODO:
  * - check whether to use differentiation of tickless/non-tickless
- * - check whether calculations go alright (cycles_per_tick calc very important)
+ * - calculate and add max_cyc, max_tick
  */
 void z_clock_set_timeout(int32_t ticks, bool idle)
 {
@@ -671,22 +600,20 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 
 	/* Compute number of RTC cycles until the next timeout. */
 	/* timeout is tick value of when timeout occurs, not amount until */
-	uint32_t now_ticks = rtc_stm32_read();
-	uint32_t timeout = ticks * CYCLES_PER_TICK + now_ticks % CYCLES_PER_TICK;
-	printk("z_clock_set_timeout: ticks = %d, now_ticks = %u, timeout = %u, CYCLES_PER_TICK = %d\n", ticks, now_ticks, timeout, CYCLES_PER_TICK);
-	//printk("z_clock_set_timeout: RTC_CLOCK_HW_CYCLES_PER_SEC = %d, CONFIG_SYS_CLOCK_TICKS_PER_SEC = %d\n", RTC_CLOCK_HW_CYCLES_PER_SEC, CONFIG_SYS_CLOCK_TICKS_PER_SEC);
 
+	uint32_t now_ticks = rtc_stm32_read();
+
+	uint32_t timeout = ticks * (uint32_t)(CYCLES_PER_TICK) + (now_ticks - rtc_last);
+	printk("z_clock_set_timeout: ticks = %d, now_ticks = %u, timeout = %u, CYCLES_PER_TICK = %d\n", ticks, now_ticks, timeout, CYCLES_PER_TICK);
 
 	/* Round to the nearest tick boundary. */
 	timeout = (timeout + CYCLES_PER_TICK - 1) / CYCLES_PER_TICK
 		  * CYCLES_PER_TICK;
 
-	if (timeout < TICK_THRESHOLD) {
-		timeout += CYCLES_PER_TICK;
-	}
-	printk("z_clock_set_timeout: now_ticks = %u, timeout = %u\n", now_ticks, timeout);
+	//timeout = MIN(timeout, MAX_CYC);
 
-	/* ticks to secs & subseconds*/
+	timeout += rtc_last;
+	printk("z_clock_set_timeout: now_ticks = %u, timeout = %u\n", now_ticks, timeout);
 
 	/* ticks to us, some accuracy loss,
 	 * but this is the best way with also long enough timeout length
@@ -703,34 +630,23 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 	ts.tv_usec = timeout_us % USEC_PER_SEC;
 	ts.tv_sec = (timeout_us - ts.tv_usec) / USEC_PER_SEC;
 
-	//ts.tv_sec = 20;
-
 	printk("z_clock_set_timeout: ts.tv_sec=%llu, ts.tv_usec=%u, idle=%d\n", ts.tv_sec, ts.tv_usec, idle);
 
-//	if (!rtc_stm32_set_idle_alarm(ts.tv_sec)){
-//		printk("calendar alarm set, and clearing ss mask successful\n");
-//		nonidle_alarm_set = 0;
-//	}
-
-	if (idle && ts.tv_sec > 1){
-		if (!rtc_stm32_set_idle_alarm(ts.tv_sec)){
-			printk("calendar alarm set, and clearing ss mask successful\n");
-			nonidle_alarm_set = 0;
+	if (ticks >= CONFIG_SYS_CLOCK_TICKS_PER_SEC){
+		if (!rtc_stm32_set_calendar_alarm(ts.tv_sec, ts.tv_usec)){
+			printk("calendar and ss alarm set \n");
+		}
+		else{
+			/* error */
+			return;
 		}
 	}
 	else {
-		/*!idle*/
-		if (nonidle_alarm_set == 0){
-			if(!rtc_stm32_set_nonidle_alarm()){
-				printk("subsecond alarm & ss mask set\n");
-			}
-			nonidle_alarm_set = 1;
+		if(!rtc_stm32_set_subsec_alarm(ts.tv_usec)){
+			printk("subsecond alarm, ss mask, calendar mask [1,1,1,1] set\n");
 		}
-		else {
-			/* subsecond alarm mask already set: don't do anything
-			 * subsecond alarm will generate ticks
-			 */
-			printk("subsecond alarm mask already set: don't do anything\n");
+		else{
+			/* error */
 			return;
 		}
 	}
