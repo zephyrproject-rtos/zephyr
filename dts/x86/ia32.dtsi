@@ -29,7 +29,7 @@
 
 	dram0: memory@0 {
 		device_type = "memory";
-		reg = <0x0 DT_DRAM_SIZE>;
+		reg = <DT_DRAM_BASE DT_DRAM_SIZE>;
 	};
 
 	soc {
