@@ -5,8 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
-
 /*
  * PDU fields sizes
  */

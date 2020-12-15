@@ -8,9 +8,8 @@
 #include <string.h>
 
 #include <toolchain.h>
-#include <zephyr/types.h>
+
 #include <soc.h>
-#include <drivers/clock_control.h>
 
 #include "hal/cpu.h"
 #include "hal/cntr.h"

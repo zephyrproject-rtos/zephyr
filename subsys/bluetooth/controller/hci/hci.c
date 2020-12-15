@@ -6,21 +6,21 @@
  */
 
 #include <stddef.h>
-#include <zephyr/types.h>
 #include <string.h>
-#include <version.h>
 
-#include <soc.h>
-#include <toolchain.h>
+#include <version.h>
 #include <errno.h>
+
+#include <sys/util.h>
+#include <sys/byteorder.h>
 #include <sys/atomic.h>
+
+#include <drivers/bluetooth/hci_driver.h>
+
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_vs.h>
 #include <bluetooth/buf.h>
 #include <bluetooth/bluetooth.h>
-#include <drivers/bluetooth/hci_driver.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
 
 #include "util/util.h"
 #include "util/memq.h"

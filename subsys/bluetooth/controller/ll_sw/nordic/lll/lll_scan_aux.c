@@ -4,10 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
-#include <bluetooth/hci.h>
+#include <stdint.h>
+
 #include <sys/byteorder.h>
 #include <sys/util.h>
+
+#include <bluetooth/hci.h>
 
 #include "hal/ccm.h"
 #include "hal/radio.h"

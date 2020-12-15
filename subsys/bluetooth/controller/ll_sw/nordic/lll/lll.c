@@ -4,14 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
+#include <stdbool.h>
 #include <errno.h>
-#include <zephyr/types.h>
-#include <device.h>
-#include <drivers/entropy.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/nrf_clock_control.h>
+
+#include <toolchain.h>
 
 #include <soc.h>
+#include <device.h>
+
+#include <drivers/entropy.h>
 
 #include "hal/swi.h"
 #include "hal/ccm.h"

@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
 #include <string.h>
 
 #include <settings/settings.h>
 
 #include <bluetooth/bluetooth.h>
+
 #include "ll_settings.h"
 
 #define LOG_MODULE_NAME bt_ctlr_ll_settings
