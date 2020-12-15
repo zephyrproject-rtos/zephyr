@@ -1,0 +1,78 @@
+/*
+ * Copyright (c) 2020 Sebastian Schwabe <sebastian.schwabe@mailbox.tu-dresden.de>
+ *                    Fabian Paschke <fabian.paschke@eas.iis.fraunhofer.de>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f3/stm32f303X8.dtsi>
+#include <st/f3/stm32f303k(6-8)tx-pinctrl.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32F303K8-NUCLEO board";
+	compatible = "st,stm32f303k8-nucleo";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_3: green_led_3 {
+			gpios = <&gpiob 3 GPIO_ACTIVE_HIGH>;
+			label = "LD3";
+		};
+	};
+	pwmleds {
+		compatible = "pwm-leds";
+		green_pwm_led: green_pwm_led {
+			pwms = <&pwm2 2 0 PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_3;
+		pwm-led0 = &green_pwm_led;
+	};
+};
+
+&timers2 {
+	status = "okay";
+
+	pwm2: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim2_ch2_pb3>;
+	};
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa15>;
+	current-speed = <115200>;
+	status = "okay";
+};
+
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
+		     &spi1_miso_pa6 &spi1_mosi_pa7>;
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in1_pa0>;
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
