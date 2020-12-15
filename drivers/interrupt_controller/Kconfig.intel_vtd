@@ -15,6 +15,12 @@ menuconfig INTEL_VTD_ICTL
 
 if INTEL_VTD_ICTL
 
+config INTEL_VTD_ICTL_XAPIC_PASSTHROUGH
+	bool "XAPIC mode pass-through"
+	depends on !X2APIC
+	help
+	  If XAPIC mode is enabled, it will avoid remapping all interrupts.
+
 config INTEL_VTD_ICTL_INIT_PRIORITY
 	int "Initialization priority"
 	default 0
