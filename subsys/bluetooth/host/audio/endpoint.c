@@ -30,7 +30,11 @@
 #define EP_ISO(_iso) CONTAINER_OF(_iso, struct bt_audio_ep, iso)
 
 static struct bt_audio_ep cache[CONFIG_BT_MAX_CONN][CACHE_SIZE];
+
+#if defined(CONFIG_BT_BAP)
 static struct bt_gatt_subscribe_params cp_subscribe[CONFIG_BT_MAX_CONN];
+static struct bt_gatt_discover_params cp_disc[CONFIG_BT_MAX_CONN];
+#endif
 
 static void ep_iso_recv(struct bt_iso_chan *chan, struct net_buf *buf)
 {
@@ -726,6 +730,7 @@ void bt_audio_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 	}
 }
 
+#if defined(CONFIG_BT_BAP)
 static uint8_t cp_notify(struct bt_conn *conn,
 			 struct bt_gatt_subscribe_params *params,
 			 const void *data, uint16_t length)
@@ -804,10 +809,12 @@ int bt_audio_ep_subscribe(struct bt_conn *conn, struct bt_audio_ep *ep)
 	}
 
 	ep->subscribe.value_handle = ep->handle;
-	/* TODO: Should not assume handles are contiguous */
-	ep->subscribe.ccc_handle = ep->handle + 1;
+	ep->subscribe.ccc_handle = 0x0000;
+	ep->subscribe.end_handle = 0xffff;
+	ep->subscribe.disc_params = &ep->discover;
 	ep->subscribe.notify = ep_notify;
 	ep->subscribe.value = BT_GATT_CCC_NOTIFY;
+	atomic_set(ep->subscribe.flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
 
 	return bt_gatt_subscribe(conn, &ep->subscribe);
 }
@@ -822,10 +829,13 @@ void bt_audio_ep_set_cp(struct bt_conn *conn, uint16_t handle)
 
 	if (!cp_subscribe[index].value_handle) {
 		cp_subscribe[index].value_handle = handle;
-		/* TODO: Should not assume handles are contiguous */
-		cp_subscribe[index].ccc_handle = handle + 1;
+		cp_subscribe[index].ccc_handle = 0x0000;
+		cp_subscribe[index].end_handle = 0xffff;
+		cp_subscribe[index].disc_params = &cp_disc[index];
 		cp_subscribe[index].notify = cp_notify;
 		cp_subscribe[index].value = BT_GATT_CCC_NOTIFY;
+		atomic_set(cp_subscribe[index].flags,
+			   BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
 
 		bt_gatt_subscribe(conn, &cp_subscribe[index]);
 	}
@@ -839,6 +849,7 @@ void bt_audio_ep_set_cp(struct bt_conn *conn, uint16_t handle)
 		}
 	}
 }
+#endif /* CONFIG_BT_BAP */
 
 void bt_audio_ep_reset(struct bt_conn *conn)
 {
@@ -847,9 +858,6 @@ void bt_audio_ep_reset(struct bt_conn *conn)
 	BT_DBG("conn %p", conn);
 
 	index = bt_conn_index(conn);
-
-	/* Reset CP subscription */
-	cp_subscribe[index].value_handle = 0x0000;
 
 	for (i = 0; i < CACHE_SIZE; i++) {
 		struct bt_audio_ep *ep = &cache[index][i];
