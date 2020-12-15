@@ -1,0 +1,9 @@
+# I2C EEPROM Slave configuration options
+
+# Copyright (c) 2017 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_EEPROM_SLAVE
+	bool "I2C Slave EEPROM driver"
+	help
+	  Enable virtual I2C Slave EEPROM driver
