@@ -208,6 +208,7 @@
 /drivers/i2c/i2c_emul.c                   @sjg20
 /drivers/i2c/i2c_shell.c                  @nashif
 /drivers/i2c/Kconfig.i2c_emul             @sjg20
+/drivers/i2c/slave/*eeprom*               @henrikbrixandersen
 /drivers/i2s/*litex*                      @mateusz-holenko @kgugala @pgielda
 /drivers/ieee802154/                      @jukkar @tbursztyka
 /drivers/ieee802154/ieee802154_rf2xx*     @jukkar @tbursztyka @nandojve

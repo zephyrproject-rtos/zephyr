@@ -11,11 +11,11 @@
 #include <errno.h>
 #include <drivers/i2c.h>
 #include <string.h>
-#include "eeprom.h"
+#include <drivers/i2c/slave/eeprom.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(eeprom_slave);
+LOG_MODULE_REGISTER(i2c_slave);
 
 struct i2c_eeprom_slave_data {
 	const struct device *i2c_controller;
@@ -225,8 +225,8 @@ static int i2c_eeprom_slave_init(const struct device *dev)
 			    &i2c_eeprom_slave_init,			\
 			    &i2c_eeprom_slave_##inst##_dev_data,	\
 			    &i2c_eeprom_slave_##inst##_cfg,		\
-			    APPLICATION,				\
-			    0,						\
+			    POST_KERNEL,				\
+			    CONFIG_I2C_SLAVE_INIT_PRIORITY,		\
 			    &api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_EEPROM_INIT)
