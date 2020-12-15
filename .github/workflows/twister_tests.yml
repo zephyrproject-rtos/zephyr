@@ -18,7 +18,8 @@ on:
     - '.github/workflows/twister_tests.yml'
 
 jobs:
-  build:
+  twister-tests:
+    name: Twister Unit Tests
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

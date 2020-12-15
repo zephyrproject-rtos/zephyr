@@ -16,7 +16,8 @@ on:
     - '.github/workflows/west_cmds.yml'
 
 jobs:
-  build:
+  west-commnads:
+    name: West Command Tests
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

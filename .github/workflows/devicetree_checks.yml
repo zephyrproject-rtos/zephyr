@@ -15,7 +15,8 @@ on:
     - '.github/workflows/devicetree_checks.yml'
 
 jobs:
-  build:
+  devicetree-checks:
+    name: Devicetree script tests
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
