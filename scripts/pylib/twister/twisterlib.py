@@ -3830,6 +3830,16 @@ class DUT(object):
         with self._counter.get_lock():
             self._counter.value = value
 
+    def to_dict(self):
+        d = {}
+        exclude = ['_available', '_counter', 'match']
+        v = vars(self)
+        for k in v.keys():
+            if k not in exclude and v[k]:
+                d[k] = v[k]
+        return d
+
+
     def __repr__(self):
         return f"<{self.platform} ({self.product}) on {self.serial}>"
 
@@ -3963,26 +3973,34 @@ class HardwareMap:
 
     def save(self, hwm_file):
         # use existing map
+        self.detected.sort(key=lambda x: x.serial or '')
         if os.path.exists(hwm_file):
             with open(hwm_file, 'r') as yaml_file:
                 hwm = yaml.load(yaml_file, Loader=SafeLoader)
-                hwm.sort(key=lambda x: x['serial'] or '')
+                if hwm:
+                    hwm.sort(key=lambda x: x['serial'] or '')
 
-                # disconnect everything
-                for h in hwm:
-                    h['connected'] = False
-                    h['serial'] = None
-
-                self.detected.sort(key=lambda x: x.serial or '')
-                for _detected in self.detected:
+                    # disconnect everything
                     for h in hwm:
-                        if _detected.id == h['id'] and _detected.product == h['product'] and not h['connected'] and not _detected.match:
-                            h['connected'] = True
-                            h['serial'] = _detected.serial
-                            _detected.match = True
+                        h['connected'] = False
+                        h['serial'] = None
 
-                new = list(filter(lambda d: not d.match, self.detected))
-                hwm = hwm + new
+                    for _detected in self.detected:
+                        for h in hwm:
+                            if _detected.id == h['id'] and _detected.product == h['product'] and not _detected.match:
+                                h['connected'] = True
+                                h['serial'] = _detected.serial
+                                _detected.match = True
+
+                new_duts = list(filter(lambda d: not d.match, self.detected))
+                new = []
+                for d in new_duts:
+                    new.append(d.to_dict())
+
+                if hwm:
+                    hwm = hwm + new
+                else:
+                    hwm = new
 
             with open(hwm_file, 'w') as yaml_file:
                 yaml.dump(hwm, yaml_file, Dumper=Dumper, default_flow_style=False)
