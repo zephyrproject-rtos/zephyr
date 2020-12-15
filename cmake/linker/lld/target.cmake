@@ -20,8 +20,8 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
   else()
     # TODO: How would the linker script dependencies work for non-linker
     # script generators.
-    message(STATUS "Warning; this generator is not well supported. The
-  Linker script may not be regenerated when it should.")
+    message(WARNING "This generator is not well supported. The
+                    Linker script may not be regenerated when it should.")
     set(linker_script_dep "")
   endif()
 
