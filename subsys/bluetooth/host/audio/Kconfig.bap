@@ -8,6 +8,7 @@
 config BT_BAP
 	bool "Basic Audio Profile Support [d09r07]"
 	depends on BT_PACS
+	select BT_GATT_AUTO_DISCOVER_CCC
 	default n
 	help
 	  This option enables support for Basic Audio Profile.
