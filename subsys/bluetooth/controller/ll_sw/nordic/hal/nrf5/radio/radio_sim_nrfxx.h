@@ -10,7 +10,7 @@
  * This header needs lots of types and macros, instead of relaying on
  * good inclusion order let's pull them through soc.h
  */
-#include "soc.h"
+#include <soc.h>
 
 /* NRF Radio HW timing constants
  * - provided in US and NS (for higher granularity)
