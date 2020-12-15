@@ -25,7 +25,3 @@
 		zephyr,bt-mon-uart = &uart1;
 	};
 };
-
-&vtd {
-	status = "okay";
-};
