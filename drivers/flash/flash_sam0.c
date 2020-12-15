@@ -440,6 +440,6 @@ static const struct flash_driver_api flash_sam0_api = {
 
 static struct flash_sam0_data flash_sam0_data_0;
 
-DEVICE_AND_API_INIT(flash_sam0, DT_INST_LABEL(0),
-		    flash_sam0_init, &flash_sam0_data_0, NULL, POST_KERNEL,
+DEVICE_DT_INST_DEFINE(0, flash_sam0_init, device_pm_control_nop,
+		    &flash_sam0_data_0, NULL, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_sam0_api);
