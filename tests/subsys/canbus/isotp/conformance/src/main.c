@@ -634,6 +634,7 @@ static void test_send_timeouts(void)
 	ret = isotp_send(&send_ctx, can_dev, random_data, sizeof(random_data),
 			 &tx_addr, &rx_addr, send_complette_cb,
 			 (void *)ISOTP_N_TIMEOUT_BS);
+	zassert_equal(ret, ISOTP_N_OK, "Send returned %d", ret);
 
 	send_frame_series(&fc_cts_frame, 1, rx_addr.std_id);
 
@@ -650,6 +651,7 @@ static void test_send_timeouts(void)
 	ret = isotp_send(&send_ctx, can_dev, random_data, sizeof(random_data),
 			 &tx_addr, &rx_addr, send_complette_cb,
 			 (void *)ISOTP_N_TIMEOUT_BS);
+	zassert_equal(ret, ISOTP_N_OK, "Send returned %d", ret);
 
 	ret = k_sem_take(&send_compl_sem, K_MSEC(800));
 	zassert_equal(ret, -EAGAIN, "Timeout too early");
@@ -823,6 +825,7 @@ void test_sender_fc_errors(void)
 	ret = isotp_send(&send_ctx, can_dev, random_data, DATA_SEND_LENGTH,
 			 &tx_addr, &rx_addr, send_complette_cb,
 			 (void *)ISOTP_N_INVALID_FS);
+	zassert_equal(ret, ISOTP_N_OK, "Send returned %d", ret);
 
 	check_frame_series(&ff_frame, 1, &frame_msgq);
 	send_frame_series(&fc_frame, 1, rx_addr.std_id);
