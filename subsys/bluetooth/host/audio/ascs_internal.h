@@ -188,7 +188,7 @@ struct bt_ascs_disable_op {
 } __packed;
 
 #define BT_ASCS_STOP_OP			0x06
-struct bt_ascs_switch_op {
+struct bt_ascs_stop_op {
 	uint8_t  num_ases;		/* Num of ASEs */
 	uint8_t  ase[0];		/* Ase IDs */
 } __packed;
