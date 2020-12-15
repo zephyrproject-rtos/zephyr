@@ -35,7 +35,7 @@ static void find_rsdp(void)
 	}
 
 	if (zero_page_base == NULL) {
-		z_mem_map(&zero_page_base, 0, 4096, K_MEM_PERM_RW);
+		z_phys_map(&zero_page_base, 0, 4096, K_MEM_PERM_RW);
 	}
 
 	/* Physical (real mode!) address 0000:040e stores a (real

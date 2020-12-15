@@ -79,13 +79,13 @@ extern "C" {
  * This API is part of infrastructure still under development and may
  * change.
  *
- * @param linear_addr [out] Output linear address storage location
- * @param phys_addr Physical address base of the memory region
+ * @param virt [out] Output virtual address storage location
+ * @param phys Physical address base of the memory region
  * @param size Size of the memory region
  * @param flags Caching mode and access flags, see K_MAP_* macros
  */
-void z_mem_map(uint8_t **linear_addr, uintptr_t phys_addr, size_t size,
-	       uint32_t flags);
+void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size,
+		uint32_t flags);
 
 /**
  * Given an arbitrary region, provide a aligned region that covers it

@@ -48,7 +48,7 @@ static struct k_spinlock mm_lock;
 
  /* Current position for memory mappings in kernel memory.
   * At the moment, all kernel memory mappings are permanent.
-  * z_mem_map() mappings start at the end of the address space, and grow
+  * Memory mappings start at the end of the address space, and grow
   * downward.
   *
   * All of this is under heavy development and is subject to change.
@@ -79,8 +79,7 @@ size_t k_mem_region_align(uintptr_t *aligned_addr, size_t *aligned_size,
 	return addr_offset;
 }
 
-void z_mem_map(uint8_t **virt_addr, uintptr_t phys_addr, size_t size,
-	       uint32_t flags)
+void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32_t flags)
 {
 	uintptr_t aligned_addr, addr_offset;
 	size_t aligned_size;
@@ -89,7 +88,7 @@ void z_mem_map(uint8_t **virt_addr, uintptr_t phys_addr, size_t size,
 	uint8_t *dest_virt;
 
 	addr_offset = k_mem_region_align(&aligned_addr, &aligned_size,
-					 phys_addr, size,
+					 phys, size,
 					 CONFIG_MMU_PAGE_SIZE);
 
 	key = k_spin_lock(&mm_lock);
@@ -120,7 +119,7 @@ void z_mem_map(uint8_t **virt_addr, uintptr_t phys_addr, size_t size,
 	k_spin_unlock(&mm_lock, key);
 
 	if (ret == 0) {
-		*virt_addr = dest_virt + addr_offset;
+		*virt_ptr = dest_virt + addr_offset;
 	} else {
 		/* This happens if there is an insurmountable problem
 		 * with the selected cache modes or access flags
@@ -133,6 +132,6 @@ void z_mem_map(uint8_t **virt_addr, uintptr_t phys_addr, size_t size,
 	return;
 fail:
 	LOG_ERR("memory mapping 0x%lx (size %zu, flags 0x%x) failed",
-		phys_addr, size, flags);
+		phys, size, flags);
 	k_panic();
 }
