@@ -199,8 +199,9 @@ static const struct ps2_xec_config ps2_xec_config_0 = {
 
 static struct ps2_xec_data ps2_xec_port_data_0;
 
-DEVICE_AND_API_INIT(ps2_xec_0, DT_INST_LABEL(0),
+DEVICE_DT_INST_DEFINE(0,
 		    &ps2_xec_init_0,
+		    device_pm_control_nop,
 		    &ps2_xec_port_data_0, &ps2_xec_config_0,
 		    POST_KERNEL, CONFIG_PS2_INIT_PRIORITY,
 		    &ps2_xec_driver_api);
@@ -216,7 +217,7 @@ static int ps2_xec_init_0(const struct device *dev)
 
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
-		    ps2_xec_isr, DEVICE_GET(ps2_xec_0), 0);
+		    ps2_xec_isr, DEVICE_DT_INST_GET(0), 0);
 
 	irq_enable(DT_INST_IRQN(0));
 
@@ -237,8 +238,9 @@ static const struct ps2_xec_config ps2_xec_config_1 = {
 
 static struct ps2_xec_data ps2_xec_port_data_1;
 
-DEVICE_AND_API_INIT(ps2_xec_1, DT_INST_LABEL(1),
+DEVICE_DT_INST_DEFINE(1,
 		    &ps2_xec_init_1,
+		    device_pm_control_nop,
 		    &ps2_xec_port_data_1, &ps2_xec_config_1,
 		    POST_KERNEL, CONFIG_PS2_INIT_PRIORITY,
 		    &ps2_xec_driver_api);
@@ -253,7 +255,7 @@ static int ps2_xec_init_1(const struct device *dev)
 
 	IRQ_CONNECT(DT_INST_IRQN(1),
 		    DT_INST_IRQ(1, priority),
-		    ps2_xec_isr, DEVICE_GET(ps2_xec_1), 0);
+		    ps2_xec_isr, DEVICE_DT_INST_GET(1), 0);
 
 	irq_enable(DT_INST_IRQN(1));
 
