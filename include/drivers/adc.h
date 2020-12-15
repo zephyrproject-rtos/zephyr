@@ -336,7 +336,6 @@ typedef int (*adc_api_channel_setup)(const struct device *dev,
 typedef int (*adc_api_read)(const struct device *dev,
 			    const struct adc_sequence *sequence);
 
-#ifdef CONFIG_ADC_ASYNC
 /**
  * @brief Type definition of ADC API function for setting an asynchronous
  *        read request.
@@ -345,7 +344,6 @@ typedef int (*adc_api_read)(const struct device *dev,
 typedef int (*adc_api_read_async)(const struct device *dev,
 				  const struct adc_sequence *sequence,
 				  struct k_poll_signal *async);
-#endif
 
 /**
  * @brief ADC driver API
@@ -418,7 +416,6 @@ static inline int z_impl_adc_read(const struct device *dev,
 	return api->read(dev, sequence);
 }
 
-#ifdef CONFIG_ADC_ASYNC
 /**
  * @brief Set an asynchronous read request.
  *
@@ -433,6 +430,7 @@ static inline int z_impl_adc_read(const struct device *dev,
  *                  or not).
  *
  * @returns 0 on success, negative error code otherwise.
+ *          See adc_read() for a list of possible error codes.
  *
  */
 __syscall int adc_read_async(const struct device *dev,
@@ -444,12 +442,19 @@ static inline int z_impl_adc_read_async(const struct device *dev,
 					const struct adc_sequence *sequence,
 					struct k_poll_signal *async)
 {
+#ifdef CONFIG_ADC_ASYNC
 	const struct adc_driver_api *api =
 				(const struct adc_driver_api *)dev->api;
 
 	return api->read_async(dev, sequence, async);
-}
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(sequence);
+	ARG_UNUSED(async);
+
+	return -ENOTSUP;
 #endif /* CONFIG_ADC_ASYNC */
+}
 
 /**
  * @brief Get the internal reference voltage.
