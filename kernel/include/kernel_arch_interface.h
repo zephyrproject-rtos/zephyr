@@ -244,8 +244,6 @@ static inline bool arch_is_in_isr(void);
  * This API is part of infrastructure still under development and may
  * change.
  *
- * @see z_mem_map()
- *
  * @param dest Page-aligned Destination virtual address to map
  * @param addr Page-aligned Source physical address to map
  * @param size Page-aligned size of the mapped memory region in bytes
