@@ -25,6 +25,7 @@ struct bt_audio_ep {
 	uint8_t  cis;
 	struct bt_ascs_ase_status status;
 	struct bt_gatt_subscribe_params subscribe;
+	struct bt_gatt_discover_params discover;
 	struct bt_audio_cap *cap;
 	struct bt_audio_chan *chan;
 	struct bt_codec codec;
