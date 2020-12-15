@@ -109,6 +109,11 @@ static int vtd_ictl_init(const struct device *dev)
 
 	vtd_write_reg64(dev, VTD_IRTA_REG, irta);
 
+	if (!IS_ENABLED(CONFIG_X2APIC) &&
+	    IS_ENABLED(CONFIG_INTEL_VTD_ICTL_XAPIC_PASSTHROUGH)) {
+		vtd_send_cmd(dev, VTD_GCMD_CFI, VTD_GSTS_CFIS);
+	}
+
 	vtd_send_cmd(dev, VTD_GCMD_SIRTP, VTD_GSTS_SIRTPS);
 	vtd_send_cmd(dev, VTD_GCMD_IRE, VTD_GSTS_IRES);
 
