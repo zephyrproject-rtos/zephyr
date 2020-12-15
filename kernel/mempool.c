@@ -37,11 +37,6 @@ static void *z_heap_aligned_alloc(struct k_heap *heap, size_t align, size_t size
 	return mem + excess;
 }
 
-static void *z_heap_malloc(struct k_heap *heap, size_t size)
-{
-	return z_heap_aligned_alloc(heap, sizeof(void *), size);
-}
-
 void k_free(void *ptr)
 {
 	struct k_heap **heap_ref;
@@ -98,7 +93,7 @@ void k_thread_system_pool_assign(struct k_thread *thread)
 #define _SYSTEM_HEAP	NULL
 #endif
 
-void *z_thread_malloc(size_t size)
+void *z_thread_aligned_alloc(size_t align, size_t size)
 {
 	void *ret;
 	struct k_heap *heap;
@@ -110,7 +105,7 @@ void *z_thread_malloc(size_t size)
 	}
 
 	if (heap) {
-		ret = z_heap_malloc(heap, size);
+		ret = z_heap_aligned_alloc(heap, align, size);
 	} else {
 		ret = NULL;
 	}

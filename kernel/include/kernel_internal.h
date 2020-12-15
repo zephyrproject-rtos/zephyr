@@ -47,6 +47,22 @@ extern char *z_setup_new_thread(struct k_thread *new_thread,
 				int prio, uint32_t options, const char *name);
 
 /**
+ * @brief Allocate aligned memory from the current thread's resource pool
+ *
+ * Threads may be assigned a resource pool, which will be used to allocate
+ * memory on behalf of certain kernel and driver APIs. Memory reserved
+ * in this way should be freed with k_free().
+ *
+ * If called from an ISR, the k_malloc() system heap will be used if it exists.
+ *
+ * @param align Required memory alignment
+ * @param size Memory allocation size
+ * @return A pointer to the allocated memory, or NULL if there is insufficient
+ * RAM in the pool or there is no pool to draw memory from
+ */
+void *z_thread_aligned_alloc(size_t align, size_t size);
+
+/**
  * @brief Allocate some memory from the current thread's resource pool
  *
  * Threads may be assigned a resource pool, which will be used to allocate
@@ -59,7 +75,10 @@ extern char *z_setup_new_thread(struct k_thread *new_thread,
  * @return A pointer to the allocated memory, or NULL if there is insufficient
  * RAM in the pool or there is no pool to draw memory from
  */
-void *z_thread_malloc(size_t size);
+static inline void *z_thread_malloc(size_t size)
+{
+	return z_thread_aligned_alloc(0, size);
+}
 
 /* set and clear essential thread flag */
 
