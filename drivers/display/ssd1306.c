@@ -412,6 +412,11 @@ static int ssd1306_init(const struct device *dev)
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	driver->cs_ctrl.gpio_dev = device_get_binding(
 				   DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
+	if (driver->cs_ctrl.gpio_dev == NULL) {
+		LOG_ERR("Failed to get pointer to %s device!",
+			    DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
+		return ENODEV;
+	}
 	driver->cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
 	driver->cs_ctrl.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
 	driver->cs_ctrl.delay = 0U;
