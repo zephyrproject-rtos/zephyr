@@ -296,7 +296,7 @@ static inline uintptr_t get_entry_phys(pentry_t entry, int level)
 /* Return the virtual address of a linked table stored in the provided entry */
 static inline pentry_t *next_table(pentry_t entry, int level)
 {
-	return (pentry_t *)(get_entry_phys(entry, level));
+	return z_x86_virt_addr(get_entry_phys(entry, level));
 }
 
 /* Number of table entries at this level */
@@ -381,7 +381,7 @@ static inline bool is_flipped_pte(pentry_t pte)
 #if defined(CONFIG_SMP)
 void z_x86_tlb_ipi(const void *arg)
 {
-	uintptr_t ptables;
+	uintptr_t ptables_phys;
 
 	ARG_UNUSED(arg);
 
@@ -389,13 +389,13 @@ void z_x86_tlb_ipi(const void *arg)
 	/* We're always on the kernel's set of page tables in this context
 	 * if KPTI is turned on
 	 */
-	ptables = z_x86_cr3_get();
-	__ASSERT(ptables == (uintptr_t)&z_x86_kernel_ptables, "");
+	ptables_phys = z_x86_cr3_get();
+	__ASSERT(ptables_phys == z_x86_phys_addr(&z_x86_kernel_ptables), "");
 #else
 	/* We might have been moved to another memory domain, so always invoke
 	 * z_x86_thread_page_tables_get() instead of using current CR3 value.
 	 */
-	ptables = (uintptr_t)z_x86_thread_page_tables_get(_current);
+	ptables_phys = z_x86_phys_addr(z_x86_thread_page_tables_get(_current));
 #endif
 	/*
 	 * In the future, we can consider making this smarter, such as
@@ -405,7 +405,7 @@ void z_x86_tlb_ipi(const void *arg)
 	 */
 	LOG_DBG("%s on CPU %d\n", __func__, arch_curr_cpu()->id);
 
-	z_x86_cr3_set(ptables);
+	z_x86_cr3_set(ptables_phys);
 }
 
 /* NOTE: This is not synchronous and the actual flush takes place some short
@@ -774,9 +774,8 @@ static inline pentry_t reset_pte(pentry_t old_val)
 static inline pentry_t pte_finalize_value(pentry_t val, bool user_table)
 {
 #ifdef CONFIG_X86_KPTI
-	/* Ram is identity-mapped at boot, so phys=virt for this pinned page */
 	static const uintptr_t shared_phys_addr =
-			(uintptr_t)&z_shared_kernel_page_start;
+		(uintptr_t)Z_X86_PHYS_ADDR(&z_shared_kernel_page_start);
 
 	if (user_table && (val & MMU_US) == 0 && (val & MMU_P) != 0 &&
 	    get_entry_phys(val, PTE_LEVEL) != shared_phys_addr) {
@@ -981,7 +980,9 @@ static int page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
 			if (new_table == NULL) {
 				return -ENOMEM;
 			}
-			*entryp = ((pentry_t)(uintptr_t)new_table) | INT_FLAGS;
+
+			*entryp = ((pentry_t)z_x86_phys_addr(new_table) |
+				   INT_FLAGS);
 			table = new_table;
 		} else {
 			/* We fail an assertion here due to no support for
@@ -1513,7 +1514,8 @@ static int copy_page_table(pentry_t *dst, pentry_t *src, int level)
 			 * cast needed for PAE case where sizeof(void *) and
 			 * sizeof(pentry_t) are not the same.
 			 */
-			dst[i] = ((pentry_t)(uintptr_t)child_dst) | INT_FLAGS;
+			dst[i] = ((pentry_t)z_x86_phys_addr(child_dst) |
+				  INT_FLAGS);
 
 			ret = copy_page_table(child_dst,
 					      next_table(src[i], level),
@@ -1699,7 +1701,7 @@ void arch_mem_domain_thread_add(struct k_thread *thread)
 	/* This is only set for threads that were migrating from some other
 	 * memory domain; new threads this is NULL
 	 */
-	pentry_t *old_ptables = (pentry_t *)thread->arch.ptables;
+	pentry_t *old_ptables = z_x86_virt_addr(thread->arch.ptables);
 	bool is_user = (thread->base.user_options & K_USER) != 0;
 	bool is_migration = (old_ptables != NULL) && is_user;
 
@@ -1711,7 +1713,7 @@ void arch_mem_domain_thread_add(struct k_thread *thread)
 		set_stack_perms(thread, domain->arch.ptables);
 	}
 
-	thread->arch.ptables = (uintptr_t)domain->arch.ptables;
+	thread->arch.ptables = z_x86_phys_addr(domain->arch.ptables);
 	LOG_DBG("set thread %p page tables to %p", thread,
 		(void *)thread->arch.ptables);
 

@@ -16,6 +16,7 @@
 #include <kernel_arch_data.h>
 #include <arch/cpu.h>
 #include <arch/x86/multiboot.h>
+#include <x86_mmu.h>
 
 	/* exports (private APIs) */
 
@@ -231,7 +232,7 @@ __csSet:
 
 #ifdef CONFIG_X86_MMU
 	/* Install page tables */
-	movl $z_x86_kernel_ptables, %eax
+	movl $Z_X86_PHYS_ADDR(z_x86_kernel_ptables), %eax
 	movl %eax, %cr3
 
 #ifdef CONFIG_X86_PAE
