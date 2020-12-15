@@ -116,6 +116,7 @@
 		rx-en-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
 		pdn-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
 		ant-sel-gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
+		spi-if = <&nrf_radio_fem_spi>;
 	};
 
 	/* These aliases are provided for compatibility with samples */
@@ -211,12 +212,20 @@ arduino_i2c: &i2c0 {
 	miso-pin = <21>;
 };
 
-arduino_spi: &spi3 {
+fem_spi: &spi3 {
 	status = "okay";
 	sck-pin = <47>;
 	miso-pin = <46>;
 	mosi-pin = <45>;
-	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
+	cs-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+
+	nrf_radio_fem_spi: nrf21540_fem_spi@0 {
+		compatible = "nordic,nrf21540-fem-spi";
+		status = "okay";
+		reg = <0>;
+		label = "FEM_SPI_IF";
+		spi-max-frequency = <8000000>;
+	};
 };
 
 &flash0 {
