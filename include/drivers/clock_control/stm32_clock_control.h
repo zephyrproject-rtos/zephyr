@@ -20,4 +20,8 @@ struct stm32_pclken {
 	uint32_t enr;
 };
 
+/* function to make reconfiguration of clock after wake up from low power mode possible */
+int stm32_clock_control_real_init(const struct device *dev);
+
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_STM32_CLOCK_CONTROL_H_ */

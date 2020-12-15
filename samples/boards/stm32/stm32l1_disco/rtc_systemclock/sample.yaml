@@ -1,7 +1,7 @@
 sample:
-  name: Low Power State Sample for TI CC13x2/CC26x2
+  name: RTC Timer driver Sample for STM32L1_disco
 tests:
-  sample.boards.ti.cc13x2_cc26x2.system_off:
+  sample.boards.stm32.stm32l1_disco.rtc_systemclock:
     build_only: true
-    platform_allow: cc1352r1_launchxl
+    platform_allow: stm32l1_disco
     tags: power

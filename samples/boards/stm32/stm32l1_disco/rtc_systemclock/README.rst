@@ -1,25 +1,48 @@
 TODOOOOOOOO (if you read this I definitely forgot it)
 
-.. _ti-cc13x2_cc26x2-system-off-sample:
+.. _stm32-stm32l1_disco-rtc_systemclock-sample:
 
-cc13x2_cc26x2 System Off demo
+stm32l1_disco RTC system clock demo
 #############################
 
 Overview
 ********
 
-This sample can be used for basic power measurement and as an example of
-the various sleep modes on TI CC13x2/CC26x2 platforms.  The functional
-behavior is:
+This sample demonstrates the use of the STM32 RTC timer driver. The RTC is used 
+as the kernel system clock. This is useful especially when combined with power 
+management functionalities, but for this a separate sample will be made available.
 
-* Busy-wait for 5 seconds
-* Sleep for 2 milliseconds (Idle mode)
-* Sleep for 3 seconds (Standby mode)
-* Turn the system off after enabling wakeup through a button press
-  (Shutdown mode)
+By using the RTC as the kernel system clock, the kernel's system clock is continuous 
+(since the RTC doesn't shut off during sleep), and monotonic (if configuration isn't changed, 
+e.g. no timezone change is implemented). 
 
-A power monitor (e.g. `EnergyTrace <http://www.ti.com/tool/ENERGYTRACE>`_)
-can be used to distinguish among these states.
+The driver configures the RTC's prescalers depending on the source chosen (LSI/LSE, both 
+available on stm32l1_disco board), to have 1Hz frequency. This is required for correct 
+'time-passing'. 
+The prescaler configuration has a large influence on the correct workings of the timer driver, 
+so please take caution if you change it. See 'AN4759 Rev 5' and 'RM0038 Rev 16' for more 
+information. 
+CONFIG_SYS_CLOCK_TICKS_PER_SEC and CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC are set according to the 
+highest granularity possible (depending on the RTC source and prescaler configuration). This 
+is heavily dependent on the sub-second functionality, since without it the highest granularity 
+would be 1 (1 tick per second). By including the sub-second alarm functionality, this is 
+increased to the highest sub-second alarm frequency (dependent on the synchronous prescaler 
+value) and sub-second alarm bit mask chosen ([1] in our case). 
+
+
+#something about ticks per sec default (prescaler+1)/2, but can be any /2 of that?
+#something about all the default configs (ticks_per_sec, prescalers, rtc source, ...?), 
+#    for board, soc, driver, sample?
+#something about combined used with counter driver? (maybe works, not tested, but shouldn't 
+#  change the epoch/time of the rtc
+
+The sample will run multiple threads to test whether scheduling is managed properly.
+
+
+The functional behavior is:
+* ...
+* ...
+
 
 Requirements
 ************

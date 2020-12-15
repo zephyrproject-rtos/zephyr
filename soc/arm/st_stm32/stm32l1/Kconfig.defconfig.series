@@ -1,6 +1,7 @@
 # ST Microelectronics STM32L1 MCU line
 
 # Copyright (c) 2019 Linaro Ltd.
+# Copyright (c) 2020 Abel Sensors
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_STM32L1X
@@ -9,5 +10,10 @@ source "soc/arm/st_stm32/stm32l1/Kconfig.defconfig.stm32l1*"
 
 config SOC_SERIES
 	default "stm32l1"
+
+config STM32_RTC_TIMER
+	bool
+	default y if SOC_STM32L151XBA || SOC_STM32L151XC || SOC_STM32L152XC || SOC_STM32L152XE
+	depends on SYS_POWER_MANAGEMENT
 
 endif # SOC_SERIES_STM32L1X

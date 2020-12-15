@@ -4,13 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/clock_control.h>
+#include <time.h>
+
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/timer/system_timer.h>
+#include <soc.h>
+
+#include <stm32_ll_rtc.h>
+#include <stm32_ll_exti.h>
+#include <stm32_ll_pwr.h>
+
+#include <sys/_timeval.h>
+#include <sys/timeutil.h>
 
 /*
  * assumptions/notes/limitations:
- * - only for stm32l1 atm
+ * - (currently) only for stm32l1
  * - only for LSI / LSE (prescalers set for 1hz rtc > (see RTC application note table 7)
  * 		LSI 32kHz async 127, sync 249
  * 		LSE 32.768kHz async 127, sync 255
@@ -19,14 +28,11 @@
  * 		for LSI 1/125 sec (8ms)
  * 		for LSE 1/128 sec (7,8125ms)
  * - highly advised to choose CONFIG_SYS_CLOCK_TICKS_PER_SEC that is CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC or /2 of it
+ *
+ * - in zephyr/soc/arm/st_stm32/common/Kconfig.defconfig.series:
+ *     SYS_CLOCK_TICKS_PER_SEC=((RTC_SYNCH_PREDIV+1)/2)
  */
 
-/* TODO config to add
- * - CONFIG_TIMER_STM32_RTC_SRC
- * - CONFIG_TIMER_STM32_RTC_LSI
- * - CONFIG_TIMER_STM32_RTC_LSE
- * - CONFIG_TIMER_STM32_RTC_LSE_BYPASS
- */
 
 /*
  * questions:
@@ -35,14 +41,18 @@
  * 		the actual granularity of the rtc (so also for read) is (RTC_SYNCH_PREDIV+1), so should use that probably
  */
 
-#ifdef CONFIG_TIMER_STM32_RTC_LSI
+#define RTC_EXTI_LINE	LL_EXTI_LINE_17
+static struct k_spinlock lock;
+
+
+#ifdef CONFIG_STM32_RTC_TIMER_LSI
 /* ck_apre=LSIFreq/(ASYNC prediv + 1) with LSIFreq=32 kHz RC */
 #define RTC_ASYNCH_PREDIV          ((uint32_t)0x7F)
 /* ck_spre=ck_apre/(SYNC prediv + 1) = 1 Hz */
 #define RTC_SYNCH_PREDIV           ((uint32_t)0x00F9)
 #endif
 
-#ifdef CONFIG_TIMER_STM32_RTC_LSE
+#ifdef CONFIG_STM32_RTC_TIMER_LSE
 /* ck_apre=LSEFreq/(ASYNC prediv + 1) = 256Hz with LSEFreq=32768Hz */
 #define RTC_ASYNCH_PREDIV          ((uint32_t)0x7F)
 /* ck_spre=ck_apre/(SYNC prediv + 1) = 1 Hz */
@@ -51,21 +61,16 @@
 
 #define RTC_CLOCK_HW_CYCLES_PER_SEC (RTC_SYNCH_PREDIV+1)
 
-#define TEMPORARY_CONFIG_SYS_CLOCK_TICKS_PER_SEC ((RTC_SYNCH_PREDIV+1)/2)
-/* TODO: prob should also do the LSI/LSE config options */
+#define CYCLES_PER_TICK (RTC_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
-#define CYCLES_PER_TICK RTC_CLOCK_HW_CYCLES_PER_SEC / \
-			TEMPORARY_CONFIG_SYS_CLOCK_TICKS_PER_SEC
-
-//#define CYCLES_PER_TICK (RTC_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-
+/* Seconds from 1970-01-01T00:00:00 to 2000-01-01T00:00:00 */
 #define T_TIME_OFFSET 946684800
-#define NSEC_PER_SEC (NSEC_PER_USEC * USEC_PER_MSEC * MSEC_PER_SEC)
+//#define NSEC_PER_SEC (NSEC_PER_USEC * USEC_PER_MSEC * MSEC_PER_SEC)
 
 /* Tick/cycle count of the last announce call. */
 static volatile uint32_t rtc_last;
 
-/* TODO: check whether also right calculation for our impl
+/* TODO: check whether also right calculation for our impl */
 /* Maximum number of ticks. */
 #define MAX_TICKS (UINT32_MAX / CYCLES_PER_TICK - 2)
 
@@ -75,22 +80,207 @@ static volatile uint32_t rtc_last;
 static bool nonidle_alarm_set = false;
 
 
+////////// VALUES FROM STM32CUBE'S STM32L1XX_LL_RTC.C /////
+/* Default values used for prescaler */
+//#define RTC_ASYNCH_PRESC_DEFAULT     0x0000007FU
+#define RTC_SYNCH_PRESC_DEFAULT      0x000000FFU
 
+/* Values used for timeout */
+#define RTC_INITMODE_TIMEOUT         1000U /* 1s when tick set to 1ms */
+//#define RTC_SYNCHRO_TIMEOUT          1000U /* 1s when tick set to 1ms */
+
+//static struct stm32_pclken pclken = {
+//	.enr = DT_INST_CLOCKS_CELL(0, bits),
+//	.bus = DT_INST_CLOCKS_CELL(0, bus)
+//};
+
+
+/* own implementation of LL_RTC_EnterInitMode(RTC_TypeDef *RTCx),
+ * since in that function use of LL_SYSTICK_IsActiveCounterFlag(),
+ * which causes a infinite while loop (since SYSTICK not used)
+ */
+/**
+  * @brief  Enters the RTC Initialization mode.
+  * @note   The RTC Initialization mode is write protected, use the
+  *         @ref LL_RTC_DisableWriteProtection before calling this function.
+  * @param  RTCx RTC Instance
+  * @retval An ErrorStatus enumeration value:
+  *          - SUCCESS: RTC is in Init mode
+  *          - ERROR: RTC is not in Init mode
+  */
+ErrorStatus rtc_EnterInitMode(RTC_TypeDef *RTCx)
+{
+  __IO uint32_t timeout = RTC_INITMODE_TIMEOUT;
+  ErrorStatus status = SUCCESS;
+  uint32_t tmp;
+
+  /* Check the parameter */
+  assert_param(IS_RTC_ALL_INSTANCE(RTCx));
+
+  /* Check if the Initialization mode is set */
+  if (LL_RTC_IsActiveFlag_INIT(RTCx) == 0U)
+  {
+    /* Set the Initialization mode */
+    LL_RTC_EnableInitMode(RTCx);
+
+    /* Wait till RTC is in INIT state and if Time out is reached exit */
+    tmp = LL_RTC_IsActiveFlag_INIT(RTCx);
+    while ((timeout != 0U) && (tmp != 1U))
+    {
+      timeout --;
+      tmp = LL_RTC_IsActiveFlag_INIT(RTCx);
+      if (timeout == 0U)
+      {
+        status = ERROR;
+      }
+    }
+  }
+  return status;
+}
+
+/* own implementation of LL_RTC_Init(RTC_TypeDef *RTCx,
+ *          LL_RTC_InitTypeDef *RTC_InitStruct),
+ * to avoid use of LL_RTC_EnterInitMode(RTC_TypeDef *RTCx),
+ * since in that function use of LL_SYSTICK_IsActiveCounterFlag(),
+ * which causes a infinite while loop (since SYSTICK not used)
+ */
+
+/**
+  * @brief  Initializes the RTC registers according to the specified parameters
+  *         in RTC_InitStruct.
+  * @param  RTCx RTC Instance
+  * @param  RTC_InitStruct pointer to a @ref LL_RTC_InitTypeDef structure that contains
+  *         the configuration information for the RTC peripheral.
+  * @note   The RTC Prescaler register is write protected and can be written in
+  *         initialization mode only.
+  * @retval An ErrorStatus enumeration value:
+  *          - SUCCESS: RTC registers are initialized
+  *          - ERROR: RTC registers are not initialized
+  */
+ErrorStatus rtc_Init(RTC_TypeDef *RTCx, LL_RTC_InitTypeDef *RTC_InitStruct)
+{
+  ErrorStatus status = ERROR;
+
+  /* Check the parameters */
+  assert_param(IS_RTC_ALL_INSTANCE(RTCx));
+  assert_param(IS_LL_RTC_HOURFORMAT(RTC_InitStruct->HourFormat));
+  assert_param(IS_LL_RTC_ASYNCH_PREDIV(RTC_InitStruct->AsynchPrescaler));
+  assert_param(IS_LL_RTC_SYNCH_PREDIV(RTC_InitStruct->SynchPrescaler));
+
+  /* Disable the write protection for RTC registers */
+  LL_RTC_DisableWriteProtection(RTCx);
+
+  /* Set Initialization mode */
+  if (rtc_EnterInitMode(RTCx) != ERROR)
+  {
+    /* Set Hour Format */
+    LL_RTC_SetHourFormat(RTCx, RTC_InitStruct->HourFormat);
+
+    /* Configure Synchronous and Asynchronous prescaler factor */
+    LL_RTC_SetSynchPrescaler(RTCx, RTC_InitStruct->SynchPrescaler);
+    LL_RTC_SetAsynchPrescaler(RTCx, RTC_InitStruct->AsynchPrescaler);
+
+    /* Exit Initialization mode */
+    LL_RTC_DisableInitMode(RTCx);
+
+    status = SUCCESS;
+  }
+  /* Enable the write protection for RTC registers */
+  LL_RTC_EnableWriteProtection(RTCx);
+
+  return status;
+}
+
+
+/* own implementation of LL_RTC_DeInit(RTC_TypeDef *RTCx),
+ * to avoid use of LL_RTC_EnterInitMode(RTC_TypeDef *RTCx),
+ * since in that function use of LL_SYSTICK_IsActiveCounterFlag(),
+ * which causes a infinite while loop (since SYSTICK not used)
+ */
+/**
+  * @brief  De-Initializes the RTC registers to their default reset values.
+  * @note   This function does not reset the RTC Clock source and RTC Backup Data
+  *         registers.
+  * @param  RTCx RTC Instance
+  * @retval An ErrorStatus enumeration value:
+  *          - SUCCESS: RTC registers are de-initialized
+  *          - ERROR: RTC registers are not de-initialized
+  */
+ErrorStatus rtc_DeInit(RTC_TypeDef *RTCx)
+{
+  ErrorStatus status = ERROR;
+
+  /* Check the parameter */
+  assert_param(IS_RTC_ALL_INSTANCE(RTCx));
+
+  /* Disable the write protection for RTC registers */
+  LL_RTC_DisableWriteProtection(RTCx);
+
+  /* Set Initialization mode */
+  if (rtc_EnterInitMode(RTCx) != ERROR)
+  {
+    /* Reset TR, DR and CR registers */
+    LL_RTC_WriteReg(RTCx, TR,       0x00000000U);
+#if defined(RTC_WAKEUP_SUPPORT)
+    LL_RTC_WriteReg(RTCx, WUTR,     RTC_WUTR_WUT);
+#endif /* RTC_WAKEUP_SUPPORT */
+    LL_RTC_WriteReg(RTCx, DR, (RTC_DR_WDU_0 | RTC_DR_MU_0 | RTC_DR_DU_0));
+    /* Reset All CR bits except CR[2:0] */
+#if defined(RTC_WAKEUP_SUPPORT)
+    LL_RTC_WriteReg(RTCx, CR, (LL_RTC_ReadReg(RTCx, CR) & RTC_CR_WUCKSEL));
+#else
+    LL_RTC_WriteReg(RTCx, CR, 0x00000000U);
+#endif /* RTC_WAKEUP_SUPPORT */
+    LL_RTC_WriteReg(RTCx, PRER, (RTC_PRER_PREDIV_A | RTC_SYNCH_PRESC_DEFAULT));
+    LL_RTC_WriteReg(RTCx, ALRMAR,   0x00000000U);
+    LL_RTC_WriteReg(RTCx, ALRMBR,   0x00000000U);
+#if defined(RTC_SHIFTR_ADD1S)
+    LL_RTC_WriteReg(RTCx, SHIFTR,   0x00000000U);
+#endif /* RTC_SHIFTR_ADD1S */
+#if defined(RTC_SMOOTHCALIB_SUPPORT)
+    LL_RTC_WriteReg(RTCx, CALR,     0x00000000U);
+#endif /* RTC_SMOOTHCALIB_SUPPORT */
+#if defined(RTC_SUBSECOND_SUPPORT)
+    LL_RTC_WriteReg(RTCx, ALRMASSR, 0x00000000U);
+    LL_RTC_WriteReg(RTCx, ALRMBSSR, 0x00000000U);
+#endif /* RTC_SUBSECOND_SUPPORT */
+
+    /* Reset ISR register and exit initialization mode */
+    LL_RTC_WriteReg(RTCx, ISR,      0x00000000U);
+
+    /* Reset Tamper and alternate functions configuration register */
+    LL_RTC_WriteReg(RTCx, TAFCR, 0x00000000U);
+
+    /* Wait till the RTC RSF flag is set */
+    status = LL_RTC_WaitForSynchro(RTCx);
+  }
+
+  /* Enable the write protection for RTC registers */
+  LL_RTC_EnableWriteProtection(RTCx);
+
+  return status;
+}
+
+
+
+
+static uint32_t _tv_to_ms(const struct timeval *to)
+{
+	return (to->tv_sec * MSEC_PER_SEC) + (to->tv_usec / USEC_PER_MSEC);
+}
 
 
 /* TODO:
- * - change to timeval!!
+ * - check if okay changed to timeval (from timespec) > okay range with usec vs nsec?
  * - check whether problem with offsetting
  * - check whether problem using posix function
  * - check ms>ticks conversion formula
  */
-static uint32_t rtc_stm32_read(const void *arg)
+static uint32_t rtc_stm32_read(void)
 {
-	struct tm now = { 0 };
-	/* timespec struct? timesecs dan tv_sec, subseconds dan tv_nsec */
-	struct timespec ts = { 0 };
-	int32_t tms = 0;
-	//time_t timesecs;
+	struct tm now;
+	struct timeval ts;
+	uint32_t tms = 0;
 
 	uint32_t rtc_date, rtc_time, rtc_subsec, ticks;
 
@@ -104,8 +294,7 @@ static uint32_t rtc_stm32_read(const void *arg)
 
 	/* Convert calendar datetime to UNIX timestamp */
 	/* RTC start time: 1st, Jan, 2000 */
-	/* according to counter_ll_stm32_rtc: time_t start:   1st, Jan, 1900 */
-	/* according to documentation + pabigot: time_t start:   1st, Jan, 1970 */
+	/* time_t start:   1st, Jan, 1970 */
 	now.tm_year = 100 +
 			__LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_YEAR(rtc_date));
 	/* tm_mon allowed values are 0-11 */
@@ -116,7 +305,7 @@ static uint32_t rtc_stm32_read(const void *arg)
 	now.tm_min = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_MINUTE(rtc_time));
 	now.tm_sec = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_SECOND(rtc_time));
 
-	ts.tv_sec = mktime(&now);
+	ts.tv_sec = timeutil_timegm(&now);
 
 	/* Subtract offset of RTC (2000>1970), back to UNIX epoch */
 	ts.tv_sec -= T_TIME_OFFSET;
@@ -128,53 +317,54 @@ static uint32_t rtc_stm32_read(const void *arg)
 	 * Second fraction = ( PREDIV_S - SS ) / ( PREDIV_S + 1 )
 	 *
 	 * also see LL_RTC_TIME_GetSubSecond in stm32cube's stm32l1xx_ll_rtc.h:
-	 * formula for seconds, but for timespec tv_nsec nanosecs required, so * time_unit
+	 * formula for seconds, but for timespec tv_usec microsecs required, so * time_unit
 	 */
-	ts.tv_nsec = (RTC_SYNCH_PREDIV - rtc_subsec) / (RTC_SYNCH_PREDIV+1) * NSEC_PER_SEC;
+	ts.tv_usec = (RTC_SYNCH_PREDIV - rtc_subsec) * USEC_PER_SEC / (RTC_SYNCH_PREDIV+1);
 
-	/* convert timespec	 */
-	/* NOTE: use of zephyr/include/posix/time.h function, problem?	 */
-	tms = _ts_to_ms(ts);
+	/* convert timeval	 */
+	tms = _tv_to_ms(&ts);
 
 	/* TODO: check if okay, still not fully sure it covers everything */
-	ticks = tms * CYCLES_PER_TICK / TEMPORARY_CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	ticks = tms * CYCLES_PER_TICK / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
 	return ticks;
 }
 
-static int rtc_stm32_set_calendar_alarm(time_t tv_sec)
-{
-	struct tm alarm_tm;
-	LL_RTC_AlarmTypeDef rtc_alarm;
 
-	gmtime_r(&tv_sec, &alarm_tm);
+//static int rtc_stm32_set_calendar_alarm(time_t tv_sec)
+//{
+//	struct tm alarm_tm;
+//	LL_RTC_AlarmTypeDef rtc_alarm;
+//
+//	gmtime_r(&tv_sec, &alarm_tm);
+//
+//	/* Apply ALARM_A */
+//	rtc_alarm.AlarmTime.TimeFormat = LL_RTC_TIME_FORMAT_AM_OR_24;
+//	rtc_alarm.AlarmTime.Hours = alarm_tm.tm_hour;
+//	rtc_alarm.AlarmTime.Minutes = alarm_tm.tm_min;
+//	rtc_alarm.AlarmTime.Seconds = alarm_tm.tm_sec;
+//
+//	rtc_alarm.AlarmMask = LL_RTC_ALMA_MASK_NONE;
+//	rtc_alarm.AlarmDateWeekDaySel = LL_RTC_ALMA_DATEWEEKDAYSEL_DATE;
+//	rtc_alarm.AlarmDateWeekDay = alarm_tm.tm_mday;
+//
+//	LL_RTC_DisableWriteProtection(RTC);
+//	LL_RTC_ALMA_Disable(RTC);
+//	LL_RTC_EnableWriteProtection(RTC);
+//
+//	if (LL_RTC_ALMA_Init(RTC, LL_RTC_FORMAT_BIN, &rtc_alarm) != SUCCESS) {
+//		return -EIO;
+//	}
+//
+//	LL_RTC_DisableWriteProtection(RTC);
+//	LL_RTC_ALMA_Enable(RTC);
+//	LL_RTC_ClearFlag_ALRA(RTC);
+//	LL_RTC_EnableIT_ALRA(RTC);
+//	LL_RTC_EnableWriteProtection(RTC);
+//
+//	return 0;
+//}
 
-	/* Apply ALARM_A */
-	rtc_alarm.AlarmTime.TimeFormat = LL_RTC_TIME_FORMAT_AM_OR_24;
-	rtc_alarm.AlarmTime.Hours = alarm_tm.tm_hour;
-	rtc_alarm.AlarmTime.Minutes = alarm_tm.tm_min;
-	rtc_alarm.AlarmTime.Seconds = alarm_tm.tm_sec;
-
-	rtc_alarm.AlarmMask = LL_RTC_ALMA_MASK_NONE;
-	rtc_alarm.AlarmDateWeekDaySel = LL_RTC_ALMA_DATEWEEKDAYSEL_DATE;
-	rtc_alarm.AlarmDateWeekDay = alarm_tm.tm_mday;
-
-	LL_RTC_DisableWriteProtection(RTC);
-	LL_RTC_ALMA_Disable(RTC);
-	LL_RTC_EnableWriteProtection(RTC);
-
-	if (LL_RTC_ALMA_Init(RTC, LL_RTC_FORMAT_BIN, &rtc_alarm) != SUCCESS) {
-		return -EIO;
-	}
-
-	LL_RTC_DisableWriteProtection(RTC);
-	LL_RTC_ALMA_Enable(RTC);
-	LL_RTC_ClearFlag_ALRA(RTC);
-	LL_RTC_EnableIT_ALRA(RTC);
-	LL_RTC_EnableWriteProtection(RTC);
-
-	return 0;
-}
 
 /*
  * TODO:
@@ -182,34 +372,34 @@ static int rtc_stm32_set_calendar_alarm(time_t tv_sec)
  * - check whether this enough to safely set ss alarm
  * - check whether this will clear the calendar alarm
  */
-static int rtc_stm32_set_subsecond_alarm(susecond_t timeout_usec)
-{
-	/* convert usecs to subsecond register values
-	 * formula adapted from subsecond>us formula, see rtc_stm32_read()
-	*/
-	uint32_t subsecond = RTC_SYNCH_PREDIV - ( (timeout_usec * (RTC_SYNCH_PREDIV+1))
-			/ USEC_PER_SEC );
-
-	LL_RTC_DisableWriteProtection(RTC);
-	LL_RTC_ALMA_Disable(RTC);
-	LL_RTC_EnableWriteProtection(RTC);
-
-	/* check whether subsecond is between min and max data/prescaler
-	 * and set subsecond alarm a
-	 */
-	LL_RTC_ALMA_SetSubSecond(RTC, subsecond <= RTC_SYNCH_PREDIV ? subsecond : RTC_SYNCH_PREDIV);
-
-	/* set [1] mask so that smallest possible granularity is achieved */
-	LL_RTC_ALMA_SetSubSecondMask(RTC, 1);
-
-	LL_RTC_DisableWriteProtection(RTC);
-	LL_RTC_ALMA_Enable(RTC);
-	LL_RTC_ClearFlag_ALRA(RTC);
-	LL_RTC_EnableIT_ALRA(RTC);
-	LL_RTC_EnableWriteProtection(RTC);
-
-	return 0;
-}
+//static int rtc_stm32_set_subsecond_alarm(suseconds_t timeout_usec)
+//{
+//	/* convert usecs to subsecond register values
+//	 * formula adapted from subsecond>us formula, see rtc_stm32_read()
+//	*/
+//	uint32_t subsecond = RTC_SYNCH_PREDIV - ( (timeout_usec * (RTC_SYNCH_PREDIV+1))
+//			/ USEC_PER_SEC );
+//
+//	LL_RTC_DisableWriteProtection(RTC);
+//	LL_RTC_ALMA_Disable(RTC);
+//	LL_RTC_EnableWriteProtection(RTC);
+//
+//	/* check whether subsecond is between min and max data/prescaler
+//	 * and set subsecond alarm a
+//	 */
+//	LL_RTC_ALMA_SetSubSecond(RTC, subsecond <= RTC_SYNCH_PREDIV ? subsecond : RTC_SYNCH_PREDIV);
+//
+//	/* set [1] mask so that smallest possible granularity is achieved */
+//	LL_RTC_ALMA_SetSubSecondMask(RTC, 1);
+//
+//	LL_RTC_DisableWriteProtection(RTC);
+//	LL_RTC_ALMA_Enable(RTC);
+//	LL_RTC_ClearFlag_ALRA(RTC);
+//	LL_RTC_EnableIT_ALRA(RTC);
+//	LL_RTC_EnableWriteProtection(RTC);
+//
+//	return 0;
+//}
 
 /*
  * TODO:
@@ -246,12 +436,13 @@ static int rtc_stm32_set_idle_alarm(time_t tv_sec)
 		return -EIO;
 	}
 
+	LL_RTC_DisableWriteProtection(RTC);
+
 	/* Clear subsecond alarm A / set mask to [0] */
 	/* TODO: think whether to set the ss alarm register here: is it needed, smart, etc? */
 	LL_RTC_ALMA_SetSubSecond(RTC, 0x00);
 	LL_RTC_ALMA_SetSubSecondMask(RTC, 0);
 
-	LL_RTC_DisableWriteProtection(RTC);
 	LL_RTC_ALMA_Enable(RTC);
 	LL_RTC_ClearFlag_ALRA(RTC);
 	LL_RTC_EnableIT_ALRA(RTC);
@@ -270,23 +461,21 @@ static int rtc_stm32_set_idle_alarm(time_t tv_sec)
  * - add something that bases the mask on the ticks_per_sec?
  *      for now just smallest possible granularity
  */
-static int rtc_stm32_set_nonidle_alarm(const void *arg)
+static int rtc_stm32_set_nonidle_alarm(void)
 {
-	ARG_UNUSED(arg);
-
 	LL_RTC_DisableWriteProtection(RTC);
 	LL_RTC_ALMA_Disable(RTC);
-	LL_RTC_EnableWriteProtection(RTC);
 
 	/* Set subsecond alarm A / set mask to [1] */
 	LL_RTC_ALMA_SetSubSecond(RTC, RTC_SYNCH_PREDIV);
 	LL_RTC_ALMA_SetSubSecondMask(RTC, 1);
 
-	LL_RTC_DisableWriteProtection(RTC);
 	LL_RTC_ALMA_Enable(RTC);
 	LL_RTC_ClearFlag_ALRA(RTC);
 	LL_RTC_EnableIT_ALRA(RTC);
 	LL_RTC_EnableWriteProtection(RTC);
+
+	return 0;
 }
 
 
@@ -296,15 +485,17 @@ static int rtc_stm32_set_nonidle_alarm(const void *arg)
  * - check whether order for read (before flags are cleared etc) is okay (fe with shadow registers etc)
  * - check edge cases like other rtc timers (if non-tickless, if z_clock_set_timeout invokes isr?)
  * - check whether to add the CYCLES_PER_TICK
+ * - add idle/nonidle case for disable alarm
  */
 static void rtc_stm32_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
-	uint32_t now_ticks = rtc_stm32_read(dev);
+	uint32_t now_ticks = rtc_stm32_read();
 
 	if (LL_RTC_IsActiveFlag_ALRA(RTC) != 0) {
 		/* clear flags */
+
 		k_spinlock_key_t key = k_spin_lock(&lock);
 
 		LL_RTC_DisableWriteProtection(RTC);
@@ -338,23 +529,25 @@ int z_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 
-	LL_RTC_InitTypeDef rtc_initstruct;
+	/* enable RTC clock source */
+	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+	LL_APB1_GRP1_ReleaseReset(LL_APB1_GRP1_PERIPH_PWR);
 
-	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+	LL_RTC_InitTypeDef rtc_initstruct;
 
 	LL_PWR_EnableBkUpAccess();
 
-#if defined(CONFIG_TIMER_STM32_RTC_CLOCK_LSI)
+#if defined(CONFIG_STM32_RTC_TIMER_LSI)
 	LL_RCC_LSI_Enable();
 	while (LL_RCC_LSI_IsReady() != 1) {
 	}
 	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSI);
 
-#else /* CONFIG_TIMER_STM32_RTC_CLOCK_LSE */
+#else /* CONFIG_STM32_RTC_TIMER_LSE */
 
-#if defined(CONFIG_TIMER_STM32_RTC_CLOCK_LSE_BYPASS)
+#if defined(CONFIG_STM32_RTC_TIMER_LSE_BYPASS)
 	LL_RCC_LSE_EnableBypass();
-#endif /* CONFIG_COUNTER_RTC_STM32_LSE_BYPASS */
+#endif /* CONFIG_STM32_RTC_TIMER_LSE_BYPASS */
 
 	LL_RCC_LSE_Enable();
 
@@ -364,13 +557,11 @@ int z_clock_driver_init(const struct device *device)
 
 	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSE);
 
-#endif /* CONFIG_TIMER_STM32_RTC_CLOCK_SRC */
+#endif /* CONFIG_STM32_RTC_TIMER_SRC */
 
 	LL_RCC_EnableRTC();
 
-	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
-
-	if (LL_RTC_DeInit(RTC) != SUCCESS) {
+	if (rtc_DeInit(RTC) != SUCCESS) {
 		return -EIO;
 	}
 
@@ -379,7 +570,7 @@ int z_clock_driver_init(const struct device *device)
 	rtc_initstruct.AsynchPrescaler = RTC_ASYNCH_PREDIV;
 	rtc_initstruct.SynchPrescaler  = RTC_SYNCH_PREDIV;
 
-	if (LL_RTC_Init(RTC, &rtc_initstruct) != SUCCESS) {
+	if (rtc_Init(RTC, &rtc_initstruct) != SUCCESS) {
 		return -EIO;
 	}
 
@@ -399,11 +590,10 @@ int z_clock_driver_init(const struct device *device)
 
 	LL_EXTI_EnableRisingTrig_0_31(RTC_EXTI_LINE);
 
-/* same as stm32 rtc counter driver, problem? */
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    rtc_stm32_isr, DEVICE_GET(rtc_stm32), 0);
-	irq_enable(DT_INST_IRQN(0));
+	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(rtc)),
+			DT_IRQ(DT_NODELABEL(rtc), priority),
+			rtc_stm32_isr, 0, 0);
+	irq_enable(DT_IRQN(DT_NODELABEL(rtc)));
 
 	return 0;
 }
@@ -418,13 +608,13 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 
-	struct timeval ts = { 0 };
+	struct timeval ts;
 
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
 	ticks = CLAMP(ticks - 1, 0, (int32_t) MAX_TICKS);
 
 	/* Compute number of RTC cycles until the next timeout. */
-	uint32_t now_ticks = stm32_rtc_read();
+	uint32_t now_ticks = rtc_stm32_read();
 	uint32_t timeout = ticks * CYCLES_PER_TICK + now_ticks % CYCLES_PER_TICK;
 
 	/* Round to the nearest tick boundary. */
@@ -448,15 +638,19 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 	ts.tv_usec = timeout_us % USEC_PER_SEC;
 	ts.tv_sec = timeout_us - ts.tv_usec;
 
+	printk("z_clock_set_timeout: idle=%d\n", idle);
+
 	if (idle){
 		if (!rtc_stm32_set_idle_alarm(ts.tv_sec)){
 			/* calendar alarm set, and clearing ss mask successful */
+			nonidle_alarm_set = 0;
 		}
 	}
 	else {
 		/*!idle*/
 		if (nonidle_alarm_set == 0){
 			rtc_stm32_set_nonidle_alarm();
+			nonidle_alarm_set = 1;
 		}
 		else {
 			/* subsecond alarm mask already set: don't do anything
@@ -472,7 +666,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
  * - check whether to add the tickless kernel ifs
  * - check whether to keep the cycles_per_tick
  */
-u32_t z_clock_elapsed(void)
+uint32_t z_clock_elapsed(void)
 {
 	return (rtc_stm32_read() - rtc_last) / CYCLES_PER_TICK;
 }
@@ -480,7 +674,7 @@ u32_t z_clock_elapsed(void)
 /* TODO:
  * - check when this used, and whether additional stuff is required
  */
-u32_t z_timer_cycle_get_32(void)
+uint32_t z_timer_cycle_get_32(void)
 {
 	return rtc_stm32_read();
 }
