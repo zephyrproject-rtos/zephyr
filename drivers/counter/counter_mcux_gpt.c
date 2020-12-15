@@ -215,9 +215,9 @@ static const struct counter_driver_api mcux_gpt_driver_api = {
 	};								\
 									\
 	static int mcux_gpt_## n ##_init(const struct device *dev);	\
-	DEVICE_AND_API_INIT(mcux_gpt ## n,				\
-			    DT_INST_LABEL(n),				\
+	DEVICE_DT_INST_DEFINE(n,					\
 			    mcux_gpt_## n ##_init,			\
+			    device_pm_control_nop,			\
 			    &mcux_gpt_data_ ## n,			\
 			    &mcux_gpt_config_ ## n,			\
 			    POST_KERNEL,				\
@@ -228,7 +228,7 @@ static const struct counter_driver_api mcux_gpt_driver_api = {
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    DT_INST_IRQ(n, priority),			\
-			    mcux_gpt_isr, DEVICE_GET(mcux_gpt ## n), 0);\
+			    mcux_gpt_isr, DEVICE_DT_INST_GET(n), 0);	\
 		irq_enable(DT_INST_IRQN(n));				\
 		return mcux_gpt_init(dev);				\
 	}								\

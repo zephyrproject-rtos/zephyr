@@ -241,8 +241,8 @@ static struct mcux_lptmr_config mcux_lptmr_config_0 = {
 	.irq_config_func = mcux_lptmr_irq_config_0,
 };
 
-DEVICE_AND_API_INIT(mcux_lptmr_0, DT_INST_LABEL(0),
-		    &mcux_lptmr_init, &mcux_lptmr_data_0,
+DEVICE_DT_INST_DEFINE(0, &mcux_lptmr_init, device_pm_control_nop,
+		    &mcux_lptmr_data_0,
 		    &mcux_lptmr_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_lptmr_driver_api);
@@ -250,7 +250,7 @@ DEVICE_AND_API_INIT(mcux_lptmr_0, DT_INST_LABEL(0),
 static void mcux_lptmr_irq_config_0(const struct device *dev)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-		    mcux_lptmr_isr, DEVICE_GET(mcux_lptmr_0), 0);
+		    mcux_lptmr_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 }
 #endif	/* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */

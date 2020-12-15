@@ -345,8 +345,9 @@ static const struct counter_driver_api xlnx_axi_timer_driver_api = {
 									\
 	static struct xlnx_axi_timer_data xlnx_axi_timer_data_##n;	\
 									\
-	DEVICE_AND_API_INIT(xlnx_axi_timer_##n, DT_INST_LABEL(n),	\
-			&xlnx_axi_timer_init, &xlnx_axi_timer_data_##n,	\
+	DEVICE_DT_INST_DEFINE(n, &xlnx_axi_timer_init,			\
+			device_pm_control_nop,				\
+			&xlnx_axi_timer_data_##n,			\
 			&xlnx_axi_timer_config_##n,			\
 			POST_KERNEL,					\
 			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
@@ -356,7 +357,7 @@ static const struct counter_driver_api xlnx_axi_timer_driver_api = {
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
 			    xlnx_axi_timer_isr,				\
-			    DEVICE_GET(xlnx_axi_timer_##n), 0);		\
+			    DEVICE_DT_INST_GET(n), 0);			\
 		irq_enable(DT_INST_IRQN(n));				\
 	}
 
