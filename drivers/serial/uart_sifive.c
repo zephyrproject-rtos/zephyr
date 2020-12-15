@@ -402,8 +402,7 @@ DEVICE_DT_INST_DEFINE(0,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_sifive_irq_cfg_func_0(void)
 {
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    CONFIG_UART_SIFIVE_PORT_0_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    uart_sifive_irq_handler, DEVICE_DT_INST_GET(0),
 		    0);
 
@@ -442,8 +441,7 @@ DEVICE_DT_INST_DEFINE(1,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_sifive_irq_cfg_func_1(void)
 {
-	IRQ_CONNECT(DT_INST_IRQN(1),
-		    CONFIG_UART_SIFIVE_PORT_1_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(1), DT_INST_IRQ(1, priority),
 		    uart_sifive_irq_handler, DEVICE_DT_INST_GET(1),
 		    0);
 
