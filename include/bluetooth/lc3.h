@@ -24,7 +24,7 @@ extern "C" {
 /** @def BT_CODEC_LC3_ID
  *  @brief LC3 codec ID
  */
-#define BT_CODEC_LC3_ID			0x01
+#define BT_CODEC_LC3_ID			0x06
 
 /* TODO: Remove base once LTV types are defined */
 #define BT_CODEC_LC3_CAP_BASE		0x01
