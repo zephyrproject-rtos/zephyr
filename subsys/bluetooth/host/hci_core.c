@@ -6716,10 +6716,14 @@ int bt_set_id_addr(const bt_addr_le_t *addr)
 
 void bt_id_get(bt_addr_le_t *addrs, size_t *count)
 {
-	size_t to_copy = MIN(*count, bt_dev.id_count);
+	if (addrs) {
+		size_t to_copy = MIN(*count, bt_dev.id_count);
 
-	memcpy(addrs, bt_dev.id_addr, to_copy * sizeof(bt_addr_le_t));
-	*count = to_copy;
+		memcpy(addrs, bt_dev.id_addr, to_copy * sizeof(bt_addr_le_t));
+		*count = to_copy;
+	} else {
+		*count = bt_dev.id_count;
+	}
 }
 
 static int id_find(const bt_addr_le_t *addr)

@@ -182,6 +182,10 @@ __deprecated int bt_set_id_addr(const bt_addr_le_t *addr);
  * identifier that some APIs expect (such as advertising parameters) is
  * simply the index of the identity in the @a addrs array.
  *
+ * If @a addrs is passed as NULL, then returned @a count contains the
+ * count of all available identities that can be retrieved with a
+ * subsequent call to this function with non-NULL @a addrs parameter.
+ *
  * @note Deleted identities may show up as BT_LE_ADDR_ANY in the returned
  * array.
  *
