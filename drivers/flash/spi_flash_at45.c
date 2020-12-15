@@ -706,7 +706,7 @@ static const struct flash_driver_api spi_flash_at45_api = {
 			"Page size specified for instance " #idx " of "	     \
 			"atmel,at45 is not compatible with its "	     \
 			"total size");))				     \
-	DEVICE_DEFINE(inst_##idx, DT_INST_LABEL(idx),			     \
+	DEVICE_DT_INST_DEFINE(idx,					     \
 		      spi_flash_at45_init, spi_flash_at45_pm_control,	     \
 		      &inst_##idx##_data, &inst_##idx##_config,		     \
 		      POST_KERNEL, CONFIG_SPI_FLASH_AT45_INIT_PRIORITY,      \

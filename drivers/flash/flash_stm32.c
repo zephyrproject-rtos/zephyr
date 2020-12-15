@@ -415,6 +415,6 @@ static int stm32_flash_init(const struct device *dev)
 	return flash_stm32_write_protection(dev, false);
 }
 
-DEVICE_AND_API_INIT(stm32_flash, DT_INST_LABEL(0),
-		    stm32_flash_init, &flash_data, NULL, POST_KERNEL,
+DEVICE_DT_INST_DEFINE(0, stm32_flash_init, device_pm_control_nop,
+		    &flash_data, NULL, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_stm32_api);

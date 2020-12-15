@@ -534,6 +534,6 @@ static int stm32h7_flash_init(const struct device *dev)
 }
 
 
-DEVICE_AND_API_INIT(stm32h7_flash, DT_INST_LABEL(0),
-		    stm32h7_flash_init, &flash_data, NULL, POST_KERNEL,
+DEVICE_DT_INST_DEFINE(0, stm32h7_flash_init, device_pm_control_nop,
+		    &flash_data, NULL, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_stm32h7_api);
