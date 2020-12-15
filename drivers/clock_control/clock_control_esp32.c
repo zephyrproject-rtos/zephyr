@@ -308,8 +308,9 @@ static const struct esp32_clock_config esp32_clock_config0 = {
 	.xtal_div =  DT_INST_PROP(0, xtal_div),
 };
 
-DEVICE_AND_API_INIT(clk_esp32, DT_INST_LABEL(0),
+DEVICE_DT_INST_DEFINE(0,
 		    &clock_control_esp32_init,
+		    device_pm_control_nop,
 		    NULL, &esp32_clock_config0,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,
 		    &clock_control_esp32_api);
