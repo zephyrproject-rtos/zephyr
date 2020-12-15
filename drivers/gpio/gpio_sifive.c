@@ -366,7 +366,7 @@ DEVICE_DT_INST_DEFINE(0,
 
 #define		IRQ_INIT(n)					\
 IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, n, irq),			\
-		CONFIG_GPIO_SIFIVE_##n##_PRIORITY,		\
+		DT_INST_IRQ_BY_IDX(0, n, priority),		\
 		gpio_sifive_irq_handler,			\
 		DEVICE_DT_INST_GET(0),				\
 		0);
