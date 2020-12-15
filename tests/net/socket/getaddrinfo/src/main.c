@@ -269,15 +269,38 @@ void test_getaddrinfo_num_ipv4(void)
 	struct sockaddr_in *saddr;
 	int ret;
 
+	struct zsock_addrinfo hints = {
+		.ai_family = AF_INET,
+		.ai_socktype = SOCK_STREAM
+	};
+
 	ret = zsock_getaddrinfo("1.2.3.255", "65534", NULL, &res);
 
 	zassert_equal(ret, 0, "Invalid result");
 	zassert_not_null(res, "");
 	zassert_is_null(res->ai_next, "");
-
 	zassert_equal(res->ai_family, AF_INET, "");
 	zassert_equal(res->ai_socktype, SOCK_STREAM, "");
 	zassert_equal(res->ai_protocol, IPPROTO_TCP, "");
+	zsock_freeaddrinfo(res);
+
+	ret = zsock_getaddrinfo("1.2.3.255", "65534", &hints, &res);
+	zassert_equal(ret, 0, "Invalid result");
+	zassert_not_null(res, "");
+	zassert_is_null(res->ai_next, "");
+	zassert_equal(res->ai_family, AF_INET, "");
+	zassert_equal(res->ai_socktype, SOCK_STREAM, "");
+	zassert_equal(res->ai_protocol, IPPROTO_TCP, "");
+	zsock_freeaddrinfo(res);
+
+	hints.ai_socktype = SOCK_DGRAM;
+	ret = zsock_getaddrinfo("1.2.3.255", "65534", &hints, &res);
+	zassert_equal(ret, 0, "Invalid result");
+	zassert_not_null(res, "");
+	zassert_is_null(res->ai_next, "");
+	zassert_equal(res->ai_family, AF_INET, "");
+	zassert_equal(res->ai_socktype, SOCK_DGRAM, "");
+	zassert_equal(res->ai_protocol, IPPROTO_UDP, "");
 
 	saddr = (struct sockaddr_in *)res->ai_addr;
 	zassert_equal(saddr->sin_family, AF_INET, "");
@@ -286,7 +309,6 @@ void test_getaddrinfo_num_ipv4(void)
 	zassert_equal(saddr->sin_addr.s4_addr[1], 2, "");
 	zassert_equal(saddr->sin_addr.s4_addr[2], 3, "");
 	zassert_equal(saddr->sin_addr.s4_addr[3], 255, "");
-
 	zsock_freeaddrinfo(res);
 }
 
@@ -335,6 +357,86 @@ static void test_getaddrinfo_ipv6_hints_ipv4(void)
 	zassert_is_null(res, "");
 }
 
+static void test_getaddrinfo_port_invalid(void)
+{
+	int ret;
+	struct zsock_addrinfo *res = NULL;
+	ret = zsock_getaddrinfo("192.0.2.1", "70000", NULL, &res);
+	zassert_equal(ret, DNS_EAI_NONAME, "Invalid result (%d)", ret);
+	zassert_is_null(res, "");
+}
+
+static void test_getaddrinfo_null_host(void)
+{
+	struct sockaddr_in *saddr;
+	struct sockaddr_in6 *saddr6;
+	struct zsock_addrinfo *res = NULL;
+	struct zsock_addrinfo hints = {
+		.ai_family = AF_INET,
+		.ai_socktype = SOCK_STREAM,
+		.ai_flags = AI_PASSIVE
+	};
+	int ret;
+
+	/* Test IPv4 TCP */
+	ret = zsock_getaddrinfo(NULL, "80", &hints, &res);
+	zassert_equal(ret, 0, "Invalid result");
+	zassert_not_null(res, "");
+	zassert_is_null(res->ai_next, "");
+	zassert_equal(res->ai_family, AF_INET, "");
+	zassert_equal(res->ai_socktype, SOCK_STREAM, "");
+	zassert_equal(res->ai_protocol, IPPROTO_TCP, "");
+	saddr = net_sin(res->ai_addr);
+	zassert_equal(saddr->sin_family, AF_INET, "");
+	zassert_equal(saddr->sin_port, htons(80), "");
+	zassert_equal(saddr->sin_addr.s_addr, INADDR_ANY, "");
+	zsock_freeaddrinfo(res);
+
+	/* Test IPv6 TCP */
+	hints.ai_family = AF_INET6;
+	ret = zsock_getaddrinfo(NULL, "80", &hints, &res);
+	zassert_equal(ret, 0, "Invalid result");
+	zassert_not_null(res, "");
+	zassert_is_null(res->ai_next, "");
+	zassert_equal(res->ai_family, AF_INET6, "");
+	zassert_equal(res->ai_socktype, SOCK_STREAM, "");
+	zassert_equal(res->ai_protocol, IPPROTO_TCP, "");
+	saddr6 = net_sin6(res->ai_addr);
+	zassert_equal(saddr6->sin6_family, AF_INET6, "");
+	zassert_equal(saddr6->sin6_port, htons(80), "");
+	zassert_equal(0, memcmp(&saddr6->sin6_addr, &in6addr_any, sizeof(in6addr_any)), "");
+	zsock_freeaddrinfo(res);
+
+	/* Test IPv6 UDP */
+	hints.ai_socktype = SOCK_DGRAM;
+	ret = zsock_getaddrinfo(NULL, "80", &hints, &res);
+	zassert_equal(ret, 0, "Invalid result");
+	zassert_not_null(res, "");
+	zassert_is_null(res->ai_next, "");
+	zassert_equal(res->ai_family, AF_INET6, "");
+	zassert_equal(res->ai_socktype, SOCK_DGRAM, "");
+	zassert_equal(res->ai_protocol, IPPROTO_UDP, "");
+	saddr6 = (struct sockaddr_in6 *)res->ai_addr;
+	zassert_equal(saddr6->sin6_family, AF_INET6, "");
+	zassert_equal(saddr6->sin6_port, htons(80), "");
+	zsock_freeaddrinfo(res);
+
+	/* Test IPv4 UDP */
+	hints.ai_family = AF_INET;
+	ret = zsock_getaddrinfo(NULL, "80", &hints, &res);
+	zassert_equal(ret, 0, "Invalid result");
+	zassert_not_null(res, "");
+	zassert_is_null(res->ai_next, "");
+	zassert_equal(res->ai_family, AF_INET, "");
+	zassert_equal(res->ai_socktype, SOCK_DGRAM, "");
+	zassert_equal(res->ai_protocol, IPPROTO_UDP, "");
+	saddr = (struct sockaddr_in *)res->ai_addr;
+	zassert_equal(saddr->sin_family, AF_INET, "");
+	zassert_equal(saddr->sin_port, htons(80), "");
+	zsock_freeaddrinfo(res);
+}
+
+
 void test_main(void)
 {
 	k_thread_system_pool_assign(k_current_get());
@@ -347,7 +449,9 @@ void test_main(void)
 			 ztest_unit_test(test_getaddrinfo_num_ipv4),
 			 ztest_unit_test(test_getaddrinfo_flags_numerichost),
 			 ztest_unit_test(test_getaddrinfo_ipv4_hints_ipv6),
-			 ztest_unit_test(test_getaddrinfo_ipv6_hints_ipv4));
+			 ztest_unit_test(test_getaddrinfo_ipv6_hints_ipv4),
+			 ztest_unit_test(test_getaddrinfo_port_invalid),
+			 ztest_unit_test(test_getaddrinfo_null_host));
 
 	ztest_run_test_suite(socket_getaddrinfo);
 }
