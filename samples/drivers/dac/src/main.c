@@ -70,7 +70,11 @@ void main(void)
 			4096 / dac_values : 1;
 
 		for (int i = 0; i < dac_values; i++) {
-			dac_write_value(dac_dev, DAC_CHANNEL_ID, i);
+			ret = dac_write_value(dac_dev, DAC_CHANNEL_ID, i);
+			if (ret != 0) {
+				printk("dac_write_value() failed with code %d\n", ret);
+				return;
+			}
 			k_sleep(K_MSEC(sleep_time));
 		}
 	}
