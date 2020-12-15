@@ -240,7 +240,22 @@ static struct bt_conn_cb conn_callbacks = {
 #endif
 };
 
-int init_central(void)
+void disconnect(struct bt_conn *conn, void *data)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+	int err;
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Disconnecting %s...\n", addr);
+	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	if (err) {
+		printk("Failed disconnection %s.\n", addr);
+	}
+	printk("success.\n");
+}
+
+int init_central(uint8_t iterations)
 {
 	int err;
 
@@ -256,8 +271,23 @@ int init_central(void)
 
 	start_scan();
 
-	while (conn_count < CONFIG_BT_MAX_CONN) {
-		k_sleep(K_SECONDS(1));
+	while (true) {
+		while (conn_count < CONFIG_BT_MAX_CONN) {
+			k_sleep(K_SECONDS(1));
+		}
+
+		k_sleep(K_SECONDS(10));
+
+		if (!iterations) {
+			break;
+		}
+		iterations--;
+
+		bt_conn_foreach(BT_CONN_TYPE_LE, disconnect, NULL);
+
+		while (conn_count == CONFIG_BT_MAX_CONN) {
+			k_sleep(K_SECONDS(1));
+		}
 	}
 
 	return 0;

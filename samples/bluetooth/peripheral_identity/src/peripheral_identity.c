@@ -16,6 +16,7 @@
 static struct k_work work_adv_start;
 static uint8_t volatile conn_count;
 static uint8_t id_current;
+static bool volatile is_disconnecting;
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -93,7 +94,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	printk("Disconnected %s (reason 0x%02x)\n", addr, reason);
 
-	if (conn_count == CONFIG_BT_MAX_CONN) {
+	if (conn_count == CONFIG_BT_MAX_CONN && !is_disconnecting) {
 		k_work_submit(&work_adv_start);
 	}
 	conn_count--;
@@ -180,7 +181,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 }
 #endif /* CONFIG_BT_OBSERVER */
 
-int init_peripheral(void)
+int init_peripheral(uint8_t iterations)
 {
 	size_t id_count;
 	int err;
@@ -224,11 +225,28 @@ int init_peripheral(void)
 	/* rotate identities so reconnections are attempted in case of any
 	 * disconnections
 	 */
+	uint8_t prev_count = conn_count;
 	while (1) {
 		k_sleep(K_SECONDS(1));
 
 		if (conn_count == CONFIG_BT_MAX_CONN) {
-			break;
+			if (!iterations) {
+				break;
+			}
+			iterations--;
+
+			printk("Wait for disconnections...\n");
+			is_disconnecting = true;
+			while (conn_count != 0) {
+				k_sleep(K_SECONDS(1));
+			}
+			is_disconnecting = false;
+			printk("All disconnected.\n");
+		}
+
+		if (prev_count != conn_count) {
+			prev_count = conn_count;
+			continue;
 		}
 
 		printk("Stop advertising...\n");
