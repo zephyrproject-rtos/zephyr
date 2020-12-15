@@ -8,6 +8,7 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(tester)
 
 zephyr_library_include_directories(${ZEPHYR_BASE}/samples/bluetooth)
+zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/bluetooth/mesh)
 target_sources(app PRIVATE
     src/main.c
     src/bttester.c
