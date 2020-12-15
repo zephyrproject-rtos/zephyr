@@ -129,7 +129,7 @@
 /boards/nios2/altera_max10/               @nashif
 /boards/arm/stm32_min_dev/                @cbsiddharth
 /boards/posix/                            @aescolar @daor-oti
-/boards/posix/nrf52_bsim/                 @aescolar @wopu-ot
+/boards/posix/nrf5x_bsim/                 @aescolar @wopu-ot
 /boards/riscv/                            @kgugala @pgielda
 /boards/riscv/rv32m1_vega/                @MaureenHelm
 /boards/shields/                          @erwango
