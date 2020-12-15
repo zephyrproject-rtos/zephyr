@@ -1293,8 +1293,8 @@ static const struct espi_xec_config espi_xec_config = {
 	.pc_girq_id = DT_INST_PROP(0, pc_girq),
 };
 
-DEVICE_AND_API_INIT(espi_xec_0, DT_INST_LABEL(0),
-		    &espi_xec_init, &espi_xec_data, &espi_xec_config,
+DEVICE_DT_INST_DEFINE(0, &espi_xec_init, device_pm_control_nop,
+		    &espi_xec_data, &espi_xec_config,
 		    PRE_KERNEL_2, CONFIG_ESPI_INIT_PRIORITY,
 		    &espi_xec_driver_api);
 
@@ -1391,7 +1391,7 @@ static int espi_xec_init(const struct device *dev)
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
 		    espi_xec_bus_isr,
-		    DEVICE_GET(espi_xec_0), 0);
+		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 
 	/* Enable aggregated interrupt block for eSPI VWire events */
@@ -1399,7 +1399,7 @@ static int espi_xec_init(const struct device *dev)
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 1, irq),
 		    DT_INST_IRQ_BY_IDX(0, 1, priority),
 		    espi_xec_vw_isr,
-		    DEVICE_GET(espi_xec_0), 0);
+		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_IDX(0, 1, irq));
 
 	/* Enable aggregated interrupt block for eSPI peripheral channel */
@@ -1407,7 +1407,7 @@ static int espi_xec_init(const struct device *dev)
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 2, irq),
 		    DT_INST_IRQ_BY_IDX(0, 2, priority),
 		    espi_xec_periph_isr,
-		    DEVICE_GET(espi_xec_0), 0);
+		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_IDX(0, 2, irq));
 
 	return 0;

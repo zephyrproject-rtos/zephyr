@@ -816,8 +816,8 @@ static const struct espi_npcx_config espi_npcx_config = {
 	.alts_list = espi_alts,
 };
 
-DEVICE_AND_API_INIT(espi_npcx_0, DT_INST_LABEL(0),
-		    &espi_npcx_init, &espi_npcx_data, &espi_npcx_config,
+DEVICE_DT_INST_DEFINE(0, &espi_npcx_init, device_pm_control_nop,
+		    &espi_npcx_data, &espi_npcx_config,
 		    PRE_KERNEL_2, CONFIG_ESPI_INIT_PRIORITY,
 		    &espi_npcx_driver_api);
 
@@ -874,7 +874,7 @@ static int espi_npcx_init(const struct device *dev)
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
 		    espi_bus_generic_isr,
-		    DEVICE_GET(espi_npcx_0), 0);
+		    DEVICE_DT_INST_GET(0), 0);
 
 	/* Enable eSPI bus interrupt */
 	irq_enable(DT_INST_IRQN(0));
