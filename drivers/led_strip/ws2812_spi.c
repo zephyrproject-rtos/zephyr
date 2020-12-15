@@ -170,8 +170,6 @@ static const struct led_strip_driver_api ws2812_spi_api = {
 	.update_channels = ws2812_strip_update_channels,
 };
 
-#define WS2812_SPI_LABEL(idx) \
-	(DT_INST_LABEL(idx))
 #define WS2812_SPI_NUM_PIXELS(idx) \
 	(DT_INST_PROP(idx, chain_length))
 #define WS2812_SPI_HAS_WHITE(idx) \
@@ -223,9 +221,9 @@ static const struct led_strip_driver_api ws2812_spi_api = {
 		return 0;						\
 	}								\
 									\
-	DEVICE_AND_API_INIT(ws2812_spi_##idx,				\
-			    WS2812_SPI_LABEL(idx),			\
+	DEVICE_DT_INST_DEFINE(idx,					\
 			    ws2812_spi_##idx##_init,			\
+			    device_pm_control_nop,			\
 			    &ws2812_spi_##idx##_data,			\
 			    &ws2812_spi_##idx##_cfg,			\
 			    POST_KERNEL,				\
