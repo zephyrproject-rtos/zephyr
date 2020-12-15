@@ -1,0 +1,12 @@
+# NUCLEO-32 F303k8 board configuration
+
+# Copyright (c) 2020 Sebastian Schwabe <sebastian.schwabe@mailbox.tu-dresden.de>
+#                    	Fabian Paschke <fabian.paschke@eas.iis.fraunhofer.de>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_F303K8
+
+config BOARD
+	default "nucleo_f303k8"
+
+endif # BOARD_NUCLEO_F303K8

@@ -1,0 +1,16 @@
+identifier: nucleo_f303k8
+name: ST Nucleo F303k8
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 12
+flash: 64
+supported:
+  - i2c
+  - spi
+  - gpio
+  - pwm
+  - counter

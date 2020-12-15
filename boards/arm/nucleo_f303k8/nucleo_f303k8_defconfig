@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_SOC_SERIES_STM32F3X=y
+CONFIG_SOC_STM32F303X8=y
+# 72 MHz system clock
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=72000000
+
+CONFIG_SERIAL=y
+
+# console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# enable pinmux
+CONFIG_PINMUX=y
+
+# enable GPIO
+CONFIG_GPIO=y
+
+# clock configuration
+CONFIG_CLOCK_CONTROL=y
+
+# Clock configuration for Cube Clock control driver
+CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL=y
+# use HSI as PLL input
+CONFIG_CLOCK_STM32_PLL_SRC_HSI=y
+# however, the board does not have an external oscillator, so just use
+# the 8MHz clock signal coming from integrated STLink
+# produce 72MHz clock at PLL output
+CONFIG_CLOCK_STM32_PLL_PREDIV=1
+CONFIG_CLOCK_STM32_PLL_MULTIPLIER=9
+CONFIG_CLOCK_STM32_AHB_PRESCALER=1
+CONFIG_CLOCK_STM32_APB1_PRESCALER=2
+CONFIG_CLOCK_STM32_APB2_PRESCALER=1
