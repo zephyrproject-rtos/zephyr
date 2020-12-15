@@ -1,6 +1,7 @@
 common:
   tags: net cloud dns http ppp modem gsm wifi
   min_ram: 64
+  harness: net
 sample:
   description: TagoIO HTTP(S) client sample
   name: tagoio_http_post
