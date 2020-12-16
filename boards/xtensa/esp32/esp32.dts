@@ -71,6 +71,26 @@
 	scl-pin = <5>;
 };
 
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	miso-pin = <12>;
+	mosi-pin = <13>;
+	sclk-pin = <14>;
+	csel-pin = <15>;
+};
+
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	miso-pin = <19>;
+	mosi-pin = <23>;
+	sclk-pin = <18>;
+	csel-pin = <5>;
+};
+
 &trng0 {
 	status = "okay";
 };

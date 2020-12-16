@@ -1,0 +1,20 @@
+# ESP32 SPI configuration
+
+# Copyright (c) 2020 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ESP32_SPIM
+	bool "ESP32 SPI Master driver"
+	depends on SOC_ESP32
+	default y
+	help
+	  Enables support for ESP32 SPI Master driver.
+
+if ESP32_SPIM
+
+config SPI_ESP32_INTERRUPT
+	bool "ESP32 SPI interrupt mode"
+	help
+	  Enables interrupt support for ESP32 SPI driver.
+
+endif # ESP32_SPIM
