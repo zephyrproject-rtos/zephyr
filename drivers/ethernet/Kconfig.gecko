@@ -9,13 +9,6 @@ menuconfig ETH_GECKO
 
 if ETH_GECKO
 
-config ETH_GECKO_NAME
-	string "Device name"
-	default "ETH_0"
-	help
-	  Device name allows user to obtain a handle to the device object
-	  required by all driver API functions. Device name has to be unique.
-
 config ETH_GECKO_IRQ_PRI
 	int "Interrupt priority"
 	default 0
