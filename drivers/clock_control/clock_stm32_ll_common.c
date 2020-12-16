@@ -293,6 +293,11 @@ int stm32_clock_control_real_init(const struct device *dev)
 {
 	LL_UTILS_ClkInitTypeDef s_ClkInitStruct;
 	uint32_t hclk_prescaler;
+#if defined(CONFIG_CLOCK_STM32_SYSCLK_SRC_HSE) || \
+	defined(CONFIG_CLOCK_STM32_SYSCLK_SRC_MSI)
+	uint32_t old_hclk_freq;
+	uint32_t new_hclk_freq;
+#endif
 
 	ARG_UNUSED(dev);
 
@@ -327,6 +332,20 @@ int stm32_clock_control_real_init(const struct device *dev)
 	 */
 	stm32_clock_switch_to_hsi(LL_RCC_SYSCLK_DIV_1);
 	LL_RCC_PLL_Disable();
+
+#ifdef CONFIG_SOC_SERIES_STM32F7X
+	 /* Assuming we stay on Power Scale default value: Power Scale 1 */
+	 if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > 180000000) {
+		 LL_PWR_EnableOverDriveMode();
+		 while (LL_PWR_IsActiveFlag_OD() != 1) {
+		 /* Wait for OverDrive mode ready */
+		 }
+		 LL_PWR_EnableOverDriveSwitching();
+		 while (LL_PWR_IsActiveFlag_ODSW() != 1) {
+		 /* Wait for OverDrive switch ready */
+		 }
+	 }
+#endif
 
 #ifdef CONFIG_CLOCK_STM32_PLL_Q_DIVISOR
 	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLQ,
@@ -388,6 +407,22 @@ int stm32_clock_control_real_init(const struct device *dev)
 
 #elif CONFIG_CLOCK_STM32_SYSCLK_SRC_HSE
 
+	old_hclk_freq = HAL_RCC_GetHCLKFreq();
+
+	/* Calculate new SystemCoreClock variable based on HSE freq */
+	new_hclk_freq = __LL_RCC_CALC_HCLK_FREQ(CONFIG_CLOCK_STM32_HSE_CLOCK,
+						hclk_prescaler);
+#if defined(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC)
+	__ASSERT(new_hclk_freq == CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+			 "Config mismatch HCLK frequency %u %u",
+			 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, new_hclk_freq);
+#endif
+
+	/* If freq increases, set flash latency before any clock setting */
+	if (new_hclk_freq > old_hclk_freq) {
+		LL_SetFlashLatency(new_hclk_freq);
+	}
+
 	/* Enable HSE if not enabled */
 	if (LL_RCC_HSE_IsReady() != 1) {
 		/* Check if need to enable HSE bypass feature or not */
@@ -411,9 +446,7 @@ int stm32_clock_control_real_init(const struct device *dev)
 	}
 
 	/* Update SystemCoreClock variable */
-	LL_SetSystemCoreClock(__LL_RCC_CALC_HCLK_FREQ(
-						  CONFIG_CLOCK_STM32_HSE_CLOCK,
-						  hclk_prescaler));
+	LL_SetSystemCoreClock(new_hclk_freq);
 
 	/* Set APB1 & APB2 prescaler*/
 	LL_RCC_SetAPB1Prescaler(s_ClkInitStruct.APB1CLKDivider);
@@ -421,9 +454,10 @@ int stm32_clock_control_real_init(const struct device *dev)
 	LL_RCC_SetAPB2Prescaler(s_ClkInitStruct.APB2CLKDivider);
 #endif /* CONFIG_SOC_SERIES_STM32F0X && CONFIG_SOC_SERIES_STM32G0X */
 
-	/* Set flash latency */
-	/* HSI used as SYSCLK, set latency to 0 */
-	LL_FLASH_SetLatency(LL_FLASH_LATENCY_0);
+	/* If freq not increased, set flash latency after all clock setting */
+	if (new_hclk_freq <= old_hclk_freq) {
+		LL_SetFlashLatency(new_hclk_freq);
+	}
 
 	/* Disable other clocks */
 	LL_RCC_HSI_Disable();
@@ -432,9 +466,35 @@ int stm32_clock_control_real_init(const struct device *dev)
 
 #elif CONFIG_CLOCK_STM32_SYSCLK_SRC_MSI
 
+	old_hclk_freq = HAL_RCC_GetHCLKFreq();
+
+	/* Calculate new SystemCoreClock variable with MSI freq */
+	/* MSI freq is defined from RUN range selection */
+	new_hclk_freq =
+		__LL_RCC_CALC_HCLK_FREQ(
+			__LL_RCC_CALC_MSI_FREQ(LL_RCC_MSIRANGESEL_RUN,
+			CONFIG_CLOCK_STM32_MSI_RANGE << RCC_CR_MSIRANGE_Pos),
+			hclk_prescaler);
+
+#if defined(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC)
+	__ASSERT(new_hclk_freq == CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+			 "Config mismatch HCLK frequency %u %u",
+			 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, new_hclk_freq);
+#endif
+
+	/* If freq increases, set flash latency before any clock setting */
+	if (new_hclk_freq > old_hclk_freq) {
+		LL_SetFlashLatency(new_hclk_freq);
+	}
+
 	/* Set MSI Range */
 	LL_RCC_MSI_EnableRangeSelection();
 	LL_RCC_MSI_SetRange(CONFIG_CLOCK_STM32_MSI_RANGE << RCC_CR_MSIRANGE_Pos);
+
+#if defined(CONFIG_CLOCK_STM32_MSI_PLL_MODE)
+	/* Enable MSI hardware auto calibration */
+	LL_RCC_MSI_EnablePLLMode();
+#endif
 
 	/* Enable MSI if not enabled */
 	if (LL_RCC_MSI_IsReady() != 1) {
@@ -443,10 +503,6 @@ int stm32_clock_control_real_init(const struct device *dev)
 		while (LL_RCC_MSI_IsReady() != 1) {
 		/* Wait for HSI ready */
 		}
-#ifdef CONFIG_CLOCK_STM32_MSI_PLL_MODE
-		/* Enable MSI hardware auto calibration */
-		LL_RCC_MSI_EnablePLLMode();
-#endif
 	}
 
 	/* Set MSI as SYSCLCK source */
@@ -455,10 +511,8 @@ int stm32_clock_control_real_init(const struct device *dev)
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_MSI) {
 	}
 
-	/* Update SystemCoreClock variable with MSI freq */
-	/* MSI freq is defined from RUN range selection */
-	LL_SetSystemCoreClock(__LL_RCC_CALC_MSI_FREQ(LL_RCC_MSIRANGESEL_RUN,
-							 LL_RCC_MSI_GetRange()));
+	/* Update SystemCoreClock variable */
+	LL_SetSystemCoreClock(new_hclk_freq);
 
 	/* Set APB1 & APB2 prescaler*/
 	LL_RCC_SetAPB1Prescaler(s_ClkInitStruct.APB1CLKDivider);
@@ -469,9 +523,10 @@ int stm32_clock_control_real_init(const struct device *dev)
 	LL_RCC_SetAHB4Prescaler(s_ClkInitStruct->AHB4CLKDivider);
 #endif /* CONFIG_SOC_SERIES_STM32WBX */
 
-	/* Set flash latency */
-	/* MSI used as SYSCLK (16MHz), set latency to 0 */
-	LL_FLASH_SetLatency(LL_FLASH_LATENCY_0);
+	/* If freq not increased, set flash latency after all clock setting */
+	if (new_hclk_freq <= old_hclk_freq) {
+		LL_SetFlashLatency(new_hclk_freq);
+	}
 
 	/* Disable other clocks */
 	LL_RCC_HSE_Disable();
@@ -507,7 +562,6 @@ int stm32_clock_control_real_init(const struct device *dev)
 	stm32_clock_control_mco_init();
 
 	return 0;
-
 }
 
 

@@ -12,11 +12,10 @@
 #include <drivers/counter.h>
 #include <drivers/timer/system_timer.h>
 
-//#include <stm32l1xx_ll_bus.h>
+#include <stm32l1xx_ll_bus.h>
 #include <stm32l1xx_ll_cortex.h>
 #include <stm32l1xx_ll_pwr.h>
-//#include <stm32l1xx_ll_rcc.h>
-//#include <stm32l1xx_ll_rtc.h>
+#include <stm32l1xx_ll_rcc.h>
 
 #include <logging/log.h>
 
@@ -25,25 +24,23 @@ LOG_MODULE_DECLARE(power, CONFIG_LOG_DEFAULT_LEVEL);
 const struct device *clk;
 
 
-
 /**
  * @brief Put processor into a power state.
  *
  * This function implements the SoC specific details necessary
  * to put the processor into available power states.
  */
-void sys_set_power_state(enum power_states state)
+void pm_power_state_set(enum power_states state)
 {
 	switch (state) {
-#ifdef CONFIG_SYS_POWER_SLEEP_STATES
-#ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_1
-	case SYS_POWER_STATE_SLEEP_1:
+#ifdef CONFIG_PM_SLEEP_STATES
+#ifdef CONFIG_HAS_POWER_STATE_SLEEP_1
+	case POWER_STATE_SLEEP_1:
 
 #ifdef CONFIG_DEBUG
 		/* Enable the Debug Module during STOP mode */
 		LL_DBGMCU_EnableDBGStopMode();
 #endif /* CONFIG_DEBUG */
-
 
 		/** Request to enter STOP mode
 		* Following procedure described in STM32L1xx Reference Manual
@@ -71,15 +68,14 @@ void sys_set_power_state(enum power_states state)
 
 		break;
 
-
-#endif /* CONFIG_HAS_SYS_POWER_STATE_SLEEP_1 */
-#ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_2
-	case SYS_POWER_STATE_SLEEP_2:
-#endif /* CONFIG_HAS_SYS_POWER_STATE_SLEEP_2 */
-#ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_3
-	case SYS_POWER_STATE_SLEEP_3:
-#endif /* CONFIG_HAS_SYS_POWER_STATE_SLEEP_3 */
-#endif /* CONFIG_SYS_POWER_SLEEP_STATES */
+#endif /* CONFIG_HAS_POWER_STATE_SLEEP_1 */
+#ifdef CONFIG_HAS_POWER_STATE_SLEEP_2
+	case POWER_STATE_SLEEP_2:
+#endif /* CONFIG_HAS_POWER_STATE_SLEEP_2 */
+#ifdef CONFIG_SYS_POWER_STATE_SLEEP_3
+	case POWER_STATE_SLEEP_3:
+#endif /* CONFIG_HAS_POWER_STATE_SLEEP_3 */
+#endif /* CONFIG_PM_SLEEP_STATES */
 	default:
 		LOG_DBG("Unsupported power state %u", state);
 		break;
@@ -87,14 +83,12 @@ void sys_set_power_state(enum power_states state)
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-void _sys_pm_power_state_exit_post_ops(enum power_states state)
+void _pm_power_state_exit_post_ops(enum power_states state)
 {
-
-
 	switch (state) {
-#ifdef CONFIG_SYS_POWER_SLEEP_STATES
-#ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_1
-	case SYS_POWER_STATE_SLEEP_1:
+#ifdef CONFIG_PM_SLEEP_STATES
+#ifdef CONFIG_HAS_POWER_STATE_SLEEP_1
+	case POWER_STATE_SLEEP_1:
 		/* if use stm32l1x stop mode with rtc */
 
 		/*reconfigure clock settings, so UART works properly
@@ -108,16 +102,16 @@ void _sys_pm_power_state_exit_post_ops(enum power_states state)
 		}
 
 
-#endif /* CONFIG_HAS_SYS_POWER_STATE_SLEEP_1 */
-#ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_2
-	case SYS_POWER_STATE_SLEEP_2:
-#endif /* CONFIG_HAS_SYS_POWER_STATE_SLEEP_2 */
-#ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_3
-	case SYS_POWER_STATE_SLEEP_3:
-#endif /* CONFIG_HAS_SYS_POWER_STATE_SLEEP_3 */
+#endif /* CONFIG_HAS_POWER_STATE_SLEEP_1 */
+#ifdef CONFIG_HAS_POWER_STATE_SLEEP_2
+	case POWER_STATE_SLEEP_2:
+#endif /* CONFIG_HAS_POWER_STATE_SLEEP_2 */
+#ifdef CONFIG_HAS_POWER_STATE_SLEEP_3
+	case POWER_STATE_SLEEP_3:
+#endif /* CONFIG_HAS_POWER_STATE_SLEEP_3 */
 		LL_LPM_DisableSleepOnExit();
 		break;
-#endif /* CONFIG_SYS_POWER_SLEEP_STATES */
+#endif /* CONFIG_PM_SLEEP_STATES */
 	default:
 		LOG_DBG("Unsupported power state %u", state);
 		break;

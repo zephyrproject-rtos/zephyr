@@ -6,13 +6,17 @@
 
 #include <time.h>
 
-#include <drivers/clock_control/stm32_clock_control.h>
-#include <drivers/timer/system_timer.h>
+
 #include <soc.h>
 
+#include <stm32_ll_bus.h>
+#include <stm32_ll_rcc.h>
 #include <stm32_ll_rtc.h>
 #include <stm32_ll_exti.h>
 #include <stm32_ll_pwr.h>
+
+#include <drivers/clock_control/stm32_clock_control.h>
+#include <drivers/timer/system_timer.h>
 
 #include <sys/_timeval.h>
 #include <sys/timeutil.h>

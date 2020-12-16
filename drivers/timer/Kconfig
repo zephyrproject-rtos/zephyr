@@ -329,9 +329,6 @@ config STM32_RTC_TIMER
 	depends on CLOCK_CONTROL && SYS_POWER_MANAGEMENT
 	select TICKLESS_CAPABLE
 	select USE_STM32_LL_RTC
-	select USE_STM32_LL_PWR
-	select USE_STM32_LL_RCC
-	select USE_STM32_LL_EXTI
 	help
 	  This module implements a kernel device driver for using the 
 	  STM32 RTC as the system clock. Currently only tested on STM32L1x SoCs 
