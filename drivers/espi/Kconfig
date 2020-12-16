@@ -14,6 +14,8 @@ source "drivers/espi/Kconfig.xec"
 
 source "drivers/espi/Kconfig.npcx"
 
+source "drivers/espi/Kconfig.espi_emul"
+
 module = ESPI
 module-str = espi
 source "subsys/logging/Kconfig.template.log_config"
