@@ -611,6 +611,25 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 }
 #endif
 
+#if defined(CONFIG_NET_VLAN)
+#define Z_ETH_NET_DEVICE_INIT(node_id, dev_name, drv_name, init_fn,	\
+			      pm_control_fn, data, cfg, prio, api, mtu)	\
+	Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn,		\
+			pm_control_fn, data, cfg, POST_KERNEL,		\
+			prio, api);					\
+	NET_L2_DATA_INIT(dev_name, 0, NET_L2_GET_CTX_TYPE(ETHERNET_L2));\
+	NET_IF_INIT(dev_name, 0, ETHERNET_L2, mtu, NET_VLAN_MAX_COUNT)
+
+#else /* CONFIG_NET_VLAN */
+
+#define Z_ETH_NET_DEVICE_INIT(node_id, dev_name, drv_name, init_fn,	\
+			      pm_control_fn, data, cfg, prio, api, mtu)	\
+	Z_NET_DEVICE_INIT(node_id, dev_name, drv_name, init_fn,		\
+			  pm_control_fn, data, cfg, prio, api,		\
+			  ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2),\
+			  mtu)
+#endif /* CONFIG_NET_VLAN */
+
 /**
  * @def ETH_NET_DEVICE_INIT
  *
@@ -630,23 +649,49 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
  * used by the driver. Can be NULL.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#if defined(CONFIG_NET_VLAN)
 #define ETH_NET_DEVICE_INIT(dev_name, drv_name, init_fn, pm_control_fn,	\
 			    data, cfg, prio, api, mtu)			\
-	DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn, data,	\
-		      cfg, POST_KERNEL, prio, api);			\
-	NET_L2_DATA_INIT(dev_name, 0, NET_L2_GET_CTX_TYPE(ETHERNET_L2)); \
-	NET_IF_INIT(dev_name, 0, ETHERNET_L2, mtu, NET_VLAN_MAX_COUNT)
+	Z_ETH_NET_DEVICE_INIT(DT_INVALID_NODE, dev_name, drv_name,	\
+			      init_fn, pm_control_fn, data, cfg, prio,	\
+			      api, mtu)
 
-#else /* CONFIG_NET_VLAN */
+/**
+ * @def ETH_NET_DEVICE_DT_DEFINE
+ *
+ * @brief Like ETH_NET_DEVICE_INIT but taking metadata from a devicetree.
+ * Create an Ethernet network interface and bind it to network device.
+ *
+ * @param node_id The devicetree node identifier.
+ * @param init_fn Address to the init function of the driver.
+ * @param pm_control_fn Pointer to device_pm_control function.
+ * Can be empty function (device_pm_control_nop) if not implemented.
+ * @param data Pointer to the device's private data.
+ * @param cfg The address to the structure containing the
+ * configuration information for this instance of the driver.
+ * @param prio The initialization level at which configuration occurs.
+ * @param api Provides an initial pointer to the API function struct
+ * used by the driver. Can be NULL.
+ * @param mtu Maximum transfer unit in bytes for this network interface.
+ */
+#define ETH_NET_DEVICE_DT_DEFINE(node_id, init_fn, pm_control_fn, data,	\
+			       cfg, prio, api, mtu)			\
+	Z_ETH_NET_DEVICE_INIT(node_id, node_id, DT_LABEL(node_id),	\
+			      init_fn, pm_control_fn, data, cfg, prio,	\
+			      api, mtu)
 
-#define ETH_NET_DEVICE_INIT(dev_name, drv_name, init_fn, pm_control_fn,	\
-			    data, cfg, prio, api, mtu)			\
-	NET_DEVICE_INIT(dev_name, drv_name, init_fn, pm_control_fn,	\
-			data, cfg, prio, api, ETHERNET_L2,		\
-			NET_L2_GET_CTX_TYPE(ETHERNET_L2), mtu)
-
-#endif /* CONFIG_NET_VLAN */
+/**
+ * @def ETH_NET_DEVICE_DT_INST_DEFINE
+ *
+ * @brief Like ETH_NET_DEVICE_DT_DEFINE for an instance of a DT_DRV_COMPAT
+ * compatible
+ *
+ * @param inst instance number.  This is replaced by
+ * <tt>DT_DRV_COMPAT(inst)</tt> in the call to ETH_NET_DEVICE_DT_DEFINE.
+ *
+ * @param ... other parameters as expected by ETH_NET_DEVICE_DT_DEFINE.
+ */
+#define ETH_NET_DEVICE_DT_INST_DEFINE(inst, ...) \
+	ETH_NET_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
  * @brief Inform ethernet L2 driver that ethernet carrier is detected.
