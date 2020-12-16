@@ -19,6 +19,7 @@
 
 #include <arch/x86/intel_vtd.h>
 #include <drivers/interrupt_controller/intel_vtd.h>
+#include <drivers/interrupt_controller/ioapic.h>
 
 #include "intc_intel_vtd.h"
 
@@ -76,14 +77,15 @@ static uint32_t vtd_ictl_remap_msi(const struct device *dev,
 }
 
 static int vtd_ictl_remap(const struct device *dev,
-			  msi_vector_t *vector)
+			  uint8_t irte_idx,
+			  uint16_t vector,
+			  uint32_t flags)
 {
 	struct vtd_ictl_data *data = dev->data;
-	uint8_t irte_idx = vector->arch.irte;
 
 	memset(&data->irte[irte_idx], 0, sizeof(struct vtd_irte));
 
-	data->irte[irte_idx].l.vector = vector->arch.vector;
+	data->irte[irte_idx].l.vector = vector;
 
 	if (IS_ENABLED(CONFIG_X2APIC)) {
 		data->irte[irte_idx].l.dst_id = arch_curr_cpu()->id;
@@ -91,6 +93,12 @@ static int vtd_ictl_remap(const struct device *dev,
 		data->irte[irte_idx].l.dst_id = arch_curr_cpu()->id << 8;
 	}
 
+	data->irte[irte_idx].l.trigger_mode =
+		(flags & IOAPIC_TRIGGER_MASK) >> 15;
+	data->irte[irte_idx].l.delivery_mode =
+		(flags & IOAPIC_DELIVERY_MODE_MASK) >> 8;
+	data->irte[irte_idx].l.dst_mode = 1;
+	data->irte[irte_idx].l.redirection_hint = 1;
 	data->irte[irte_idx].l.present = 1;
 
 	return 0;
