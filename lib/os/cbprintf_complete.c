@@ -1781,9 +1781,9 @@ static void pack_conversion(struct package_state *pst)
 		break;
 	case SPECIFIER_FP:
 		if (length_mod == LENGTH_UPPER_L) {
-			PACK_VALUE(pst, value->dbl);
-		} else {
 			PACK_VALUE(pst, value->ldbl);
+		} else {
+			PACK_VALUE(pst, value->dbl);
 		}
 		break;
 	case SPECIFIER_INVALID:
@@ -1891,9 +1891,9 @@ static void pull_pkg_args(struct cbprintf_state *state)
 		break;
 	case SPECIFIER_FP:
 		if (length_mod == LENGTH_UPPER_L) {
-			UNPACK_VALUE(state, value->dbl);
-		} else {
 			UNPACK_VALUE(state, value->ldbl);
+		} else {
+			UNPACK_VALUE(state, value->dbl);
 		}
 		break;
 	case SPECIFIER_INVALID:
