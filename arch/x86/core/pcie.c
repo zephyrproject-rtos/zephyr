@@ -290,7 +290,7 @@ bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
 			return false;
 		}
 
-		vtd_remap(vtd, vector);
+		vtd_remap(vtd, vector->arch.irte, vector->arch.vector, flags);
 	}
 #endif /* CONFIG_INTEL_VTD_ICTL */
 

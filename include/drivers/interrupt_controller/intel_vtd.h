@@ -16,7 +16,9 @@ typedef uint32_t (*vtd_remap_msi_f)(const struct device *dev,
 				    uint8_t n_vector);
 
 typedef int (*vtd_remap_f)(const struct device *dev,
-			   msi_vector_t *vector);
+			   uint8_t irte_idx,
+			   uint16_t vector,
+			   uint32_t flags);
 
 struct vtd_driver_api {
 	vtd_alloc_entries_f allocate_entries;
@@ -66,17 +68,21 @@ static inline uint32_t vtd_remap_msi(const struct device *dev,
  * @brief Remap the given vector
  *
  * @param dev Pointer to the device structure for the driver instance
- * @param vector A valid allocated MSI vector
+ * @param irte_idx A previoulsy allocated irte entry index number
+ * @param vector An allocated interrupt vector
+ * @param flags interrupt flags
  *
  * @return 0 on success, a negative errno otherwise
  */
 static inline int vtd_remap(const struct device *dev,
-			    msi_vector_t *vector)
+			    uint8_t irte_idx,
+			    uint16_t vector,
+			    uint32_t flags)
 {
 	const struct vtd_driver_api *api =
 		(const struct vtd_driver_api *)dev->api;
 
-	return api->remap(dev, vector);
+	return api->remap(dev, irte_idx, vector, flags);
 }
 
 
