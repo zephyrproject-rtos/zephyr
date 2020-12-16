@@ -316,8 +316,8 @@ enum sensor_attribute {
  * @typedef sensor_trigger_handler_t
  * @brief Callback API upon firing of a trigger
  *
- * @param "struct device *dev" Pointer to the sensor device
- * @param "struct sensor_trigger *trigger" The trigger
+ * @param dev Pointer to the sensor device
+ * @param trigger The trigger
  */
 typedef void (*sensor_trigger_handler_t)(const struct device *dev,
 					 struct sensor_trigger *trigger);

@@ -21,7 +21,7 @@ struct net_buf;
  *
  * The supplied net_buf is always consumed, regardless of return code.
  *
- * @param mst                   The transport to send via.
+ * @param zst                   The transport to send via.
  * @param nb                    The net_buf to transmit.
  *
  * @return                      0 on success, MGMT_ERR_[...] code on failure.
@@ -67,7 +67,7 @@ typedef int zephyr_smp_transport_ud_copy_fn(struct net_buf *dst,
  * connection-specific information in the net_buf user data (e.g., the BLE
  * transport stores the connection reference that has to be decreased).
  *
- * @param nb                    Contains a user_data pointer to be freed.
+ * @param ud                    Contains a user_data pointer to be freed.
  */
 typedef void zephyr_smp_transport_ud_free_fn(void *ud);
 

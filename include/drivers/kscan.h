@@ -35,10 +35,9 @@ extern "C" {
  * @brief Keyboard scan callback called when user press/release
  * a key on a matrix keyboard.
  *
- * @param dev   Pointer to the device structure for the driver instance.
- * @param data  Data byte passed pack to the user.
- * @param col	Describes column change.
- * @param row	Describes row change.
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param row Describes row change.
+ * @param column Describes column change.
  * @param pressed Describes the kind of key event.
  */
 typedef void (*kscan_callback_t)(const struct device *dev, uint32_t row,

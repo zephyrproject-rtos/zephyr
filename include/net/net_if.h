@@ -999,10 +999,10 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *addr,
  * @brief Define callback that is called whenever IPv6 multicast address group
  * is joined or left.
 
- * @param "struct net_if *iface" A pointer to a struct net_if to which the
- *        multicast address is attached.
- * @param "const struct in6_addr *addr" IPv6 multicast address.
- * @param "bool is_joined" True if the address is joined, false if left.
+ * @param iface A pointer to a struct net_if to which the multicast address is
+ *        attached.
+ * @param addr IPv6 multicast address.
+ * @param is_joined True if the address is joined, false if left.
  */
 typedef void (*net_if_mcast_callback_t)(struct net_if *iface,
 					const struct in6_addr *addr,
@@ -1855,11 +1855,9 @@ struct net_if *net_if_select_src_iface(const struct sockaddr *dst);
  * @typedef net_if_link_callback_t
  * @brief Define callback that is called after a network packet
  *        has been sent.
- * @param "struct net_if *iface" A pointer to a struct net_if to which the
- *        the net_pkt was sent to.
- * @param "struct net_linkaddr *dst" Link layer address of the destination
- *        where the network packet was sent.
- * @param "int status" Send status, 0 is ok, < 0 error.
+ * @param iface A pointer to a struct net_if to which the the net_pkt was sent to.
+ * @param dst Link layer address of the destination where the network packet was sent.
+ * @param status Send status, 0 is ok, < 0 error.
  */
 typedef void (*net_if_link_callback_t)(struct net_if *iface,
 				       struct net_linkaddr *dst,

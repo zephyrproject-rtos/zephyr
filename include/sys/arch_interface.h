@@ -190,7 +190,7 @@ void arch_cpu_atomic_idle(unsigned int key);
 /**
  * Per-cpu entry function
  *
- * @param context parameter, implementation specific
+ * @param data context parameter, implementation specific
  */
 typedef FUNC_NORETURN void (*arch_cpustart_t)(void *data);
 
