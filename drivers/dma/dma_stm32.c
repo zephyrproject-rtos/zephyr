@@ -574,8 +574,8 @@ static int dma_stm32_init(const struct device *dev)
 	return 0;
 }
 
-static int dma_stm32_get_status(const struct device *dev, uint32_t id,
-				struct dma_status *stat)
+DMA_STM32_EXPORT_API int dma_stm32_get_status(const struct device *dev,
+				uint32_t id, struct dma_status *stat)
 {
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);

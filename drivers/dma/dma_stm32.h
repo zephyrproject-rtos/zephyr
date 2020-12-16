@@ -106,6 +106,8 @@ int dma_stm32_reload(const struct device *dev, uint32_t id,
 			uint32_t src, uint32_t dst, size_t size);
 int dma_stm32_start(const struct device *dev, uint32_t id);
 int dma_stm32_stop(const struct device *dev, uint32_t id);
+int dma_stm32_get_status(const struct device *dev, uint32_t id,
+				struct dma_status *stat);
 #else
 #define DMA_STM32_EXPORT_API static
 #endif /* CONFIG_DMAMUX_STM32 */
