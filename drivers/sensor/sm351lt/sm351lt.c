@@ -255,9 +255,9 @@ static int sm351lt_init(const struct device *dev)
 		.gpio_flags = DT_INST_GPIO_FLAGS(inst, gpios),	     \
 	};							     \
 								     \
-	DEVICE_AND_API_INIT(sm351lt_##inst,			     \
-			    DT_INST_LABEL(inst),		     \
+	DEVICE_DT_INST_DEFINE(inst,				     \
 			    sm351lt_init,			     \
+			    device_pm_control_nop,		     \
 			    &sm351lt_data_##inst,		     \
 			    &sm351lt_config_##inst,		     \
 			    POST_KERNEL,			     \

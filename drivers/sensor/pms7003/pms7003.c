@@ -185,6 +185,6 @@ static int pms7003_init(const struct device *dev)
 
 static struct pms7003_data pms7003_data;
 
-DEVICE_AND_API_INIT(gts_dev, DT_INST_LABEL(0), &pms7003_init,
+DEVICE_DT_INST_DEFINE(0, &pms7003_init, device_pm_control_nop,
 		    &pms7003_data, NULL, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &pms7003_api);

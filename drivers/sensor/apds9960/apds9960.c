@@ -543,6 +543,6 @@ static const struct apds9960_config apds9960_config = {
 
 static struct apds9960_data apds9960_data;
 
-DEVICE_DEFINE(apds9960, DT_INST_LABEL(0), apds9960_init,
+DEVICE_DT_INST_DEFINE(0, apds9960_init,
 	      apds9960_device_ctrl, &apds9960_data, &apds9960_config,
 	      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &apds9960_driver_api);

@@ -405,6 +405,6 @@ const struct iis2dlpc_device_config iis2dlpc_cfg = {
 
 struct iis2dlpc_data iis2dlpc_data;
 
-DEVICE_AND_API_INIT(iis2dlpc, DT_INST_LABEL(0), iis2dlpc_init,
+DEVICE_DT_INST_DEFINE(0, iis2dlpc_init, device_pm_control_nop,
 	     &iis2dlpc_data, &iis2dlpc_cfg, POST_KERNEL,
 	     CONFIG_SENSOR_INIT_PRIORITY, &iis2dlpc_driver_api);

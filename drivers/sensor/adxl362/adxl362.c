@@ -809,6 +809,6 @@ static const struct adxl362_config adxl362_config = {
 #endif
 };
 
-DEVICE_AND_API_INIT(adxl362, DT_INST_LABEL(0), adxl362_init,
+DEVICE_DT_INST_DEFINE(0, adxl362_init, device_pm_control_nop,
 		    &adxl362_data, &adxl362_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &adxl362_api_funcs);

@@ -328,9 +328,9 @@ static const struct sensor_driver_api ms5607_api_funcs = {
 
 static struct ms5607_data ms5607_data;
 
-DEVICE_AND_API_INIT(ms5607,
-		    DT_INST_LABEL(0),
+DEVICE_DT_INST_DEFINE(0,
 		    ms5607_init,
+		    device_pm_control_nop,
 		    &ms5607_data,
 		    &ms5607_config,
 		    POST_KERNEL,

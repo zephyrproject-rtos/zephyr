@@ -210,5 +210,5 @@ int tmp112_init(const struct device *dev)
 
 static struct tmp112_data tmp112_driver;
 
-DEVICE_AND_API_INIT(tmp112, DT_INST_LABEL(0), tmp112_init, &tmp112_driver,
+DEVICE_DT_INST_DEFINE(0, tmp112_init, device_pm_control_nop, &tmp112_driver,
 	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &tmp112_driver_api);

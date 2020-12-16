@@ -165,5 +165,5 @@ static int si7006_init(const struct device *dev)
 
 static struct si7006_data si_data;
 
-DEVICE_AND_API_INIT(si7006, DT_INST_LABEL(0), si7006_init,
+DEVICE_DT_INST_DEFINE(0, si7006_init, device_pm_control_nop,
 	&si_data, NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &si7006_api);
