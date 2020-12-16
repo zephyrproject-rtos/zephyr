@@ -4,7 +4,7 @@
 if BOARD_QEMU_CORTEX_A53
 
 config BUILD_OUTPUT_BIN
-	default n
+	default y if XIP
 
 config BOARD
 	default "qemu_cortex_a53"

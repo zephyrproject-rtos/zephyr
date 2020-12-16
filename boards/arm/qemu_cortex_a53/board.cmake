@@ -17,4 +17,14 @@ set(QEMU_FLAGS_${ARCH}
   -nographic
   -machine ${QEMU_MACH}
   )
+
+if(CONFIG_XIP)
+  # This should be equivalent to
+  #   ... -drive if=pflash,file=build/zephyr/zephyr.bin,format=raw
+  # without having to pad the binary file to the FLASH size
+  set(QEMU_KERNEL_OPTION
+  -bios ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.bin
+  )
+endif()
+
 board_set_debugger_ifnset(qemu)
