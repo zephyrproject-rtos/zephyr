@@ -797,7 +797,7 @@ endfunction()
 #
 # FORMAT <LETTER | MAJOR.MINOR.PATCH>: Specify the revision format.
 #         LETTER:             Revision format is a single letter from A - Z.
-#         MAJOR.MINOR.PATCH:  Revision format is three digits, separated by `.`,
+#         MAJOR.MINOR.PATCH:  Revision format is three numbers, separated by `.`,
 #                             `x.y.z`. Trailing zeroes may be omitted on the
 #                             command line, which means:
 #                             1.0.0 == 1.0 == 1
@@ -859,10 +859,10 @@ function(board_check_revision)
   if(BOARD_REV_FORMAT STREQUAL LETTER)
     set(revision_regex "([A-Z])")
   elseif(BOARD_REV_FORMAT MATCHES "^MAJOR\.MINOR\.PATCH$")
-    set(revision_regex "((0|[1-9]+)(\.[0-9]+)(\.[0-9]+))")
+    set(revision_regex "((0|[1-9][0-9]*)(\.[0-9]+)(\.[0-9]+))")
     # We allow loose <board>@<revision> typing on command line.
     # so append missing zeroes.
-    if(BOARD_REVISION MATCHES "((0|[1-9]+)(\.[0-9]+)?(\.[0-9]+)?)")
+    if(BOARD_REVISION MATCHES "((0|[1-9][0-9]*)(\.[0-9]+)?(\.[0-9]+)?)")
       if(NOT CMAKE_MATCH_3)
         set(BOARD_REVISION ${BOARD_REVISION}.0)
         set(BOARD_REVISION ${BOARD_REVISION} PARENT_SCOPE)
@@ -874,7 +874,7 @@ function(board_check_revision)
     endif()
   else()
     message(FATAL_ERROR "Invalid format specified for \
-    `zephyr_check_board_revision(FORMAT <LETTER | MAJOR.MINOR.PATCH>)`")
+    `board_check_revision(FORMAT <LETTER | MAJOR.MINOR.PATCH>)`")
   endif()
 
   if(NOT (BOARD_REVISION MATCHES "^${revision_regex}$"))
