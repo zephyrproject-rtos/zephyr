@@ -40,6 +40,9 @@ static inline void z_arm64_bss_zero(void)
 void z_arm64_prep_c(void)
 {
 	z_arm64_bss_zero();
+#ifdef CONFIG_XIP
+	z_data_copy();
+#endif
 	z_arm64_interrupt_init();
 	z_cstart();
 
