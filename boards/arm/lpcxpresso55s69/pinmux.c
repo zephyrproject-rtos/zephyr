@@ -13,6 +13,8 @@ static int lpcxpresso_55s69_pinmux_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
+#ifdef CONFIG_BOARD_LPCXPRESSO55S69_CPU0
+/* Only CPU0 configures GPIO port inputs. */
 #ifdef CONFIG_PINMUX_MCUX_LPC_PORT0
 	const struct device *port0 =
 		device_get_binding(CONFIG_PINMUX_MCUX_LPC_PORT0_NAME);
@@ -21,6 +23,7 @@ static int lpcxpresso_55s69_pinmux_init(const struct device *dev)
 #ifdef CONFIG_PINMUX_MCUX_LPC_PORT1
 	const struct device *port1 =
 		device_get_binding(CONFIG_PINMUX_MCUX_LPC_PORT1_NAME);
+#endif
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_usart, okay) && CONFIG_SERIAL
