@@ -1,17 +1,17 @@
 [
   {
     "section": "High Priority Bugs",
-    "labels": ["bug", "prio: high"],
+    "labels": ["bug", "priority: high"],
     "threshold": 0
   },
   {
     "section": "Medium Priority Bugs",
-    "labels": ["bug", "prio: medium"],
+    "labels": ["bug", "priority: medium"],
     "threshold": 20
   },
   {
     "section": "Low Priority Bugs",
-    "labels": ["bug", "prio: low"],
+    "labels": ["bug", "priority: low"],
     "threshold": 100
   },
   {
