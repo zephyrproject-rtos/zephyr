@@ -115,7 +115,6 @@ static const struct eeprom_lpc11u6x_config eeprom_config = {
 	.size = DT_INST_PROP(0, size),
 };
 
-DEVICE_AND_API_INIT(eeprom_lpc11u6x, DT_INST_LABEL(0),
-		    &eeprom_lpc11u6x_init, NULL,
+DEVICE_DT_INST_DEFINE(0, &eeprom_lpc11u6x_init, device_pm_control_nop, NULL,
 		    &eeprom_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &eeprom_lpc11u6x_api);

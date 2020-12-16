@@ -267,8 +267,8 @@ static int eeprom_sim_init(const struct device *dev)
 	return eeprom_mock_init(dev);
 }
 
-DEVICE_AND_API_INIT(eeprom_sim_0, DT_INST_LABEL(0),
-		    &eeprom_sim_init, NULL, &eeprom_sim_config_0, POST_KERNEL,
+DEVICE_DT_INST_DEFINE(0, &eeprom_sim_init, device_pm_control_nop,
+		    NULL, &eeprom_sim_config_0, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &eeprom_sim_api);
 
 #ifdef CONFIG_ARCH_POSIX
