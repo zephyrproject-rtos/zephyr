@@ -204,7 +204,13 @@ extern void k_thread_foreach_unlocked(
 
 #if defined(CONFIG_FPU_SHARING)
 /**
- * @brief thread uses floating point registers
+ * @brief FPU registers are managed by context switch
+ *
+ * @details
+ * This option indicates that the thread uses the CPU's floating point
+ * registers. This instructs the kernel to take additional steps to save
+ * and restore the contents of these registers when scheduling the thread.
+ * No effect if @option{CONFIG_FPU_SHARING} is not enabled.
  */
 #define K_FP_REGS (BIT(1))
 #endif
