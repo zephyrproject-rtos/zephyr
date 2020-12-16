@@ -104,6 +104,82 @@ static int vtd_ictl_remap(const struct device *dev,
 	return 0;
 }
 
+static int vtd_ictl_set_irte_vector(const struct device *dev,
+				    uint8_t irte_idx,
+				    uint16_t vector)
+{
+	struct vtd_ictl_data *data = dev->data;
+
+	data->vectors[irte_idx] = vector;
+
+	return 0;
+}
+
+static int vtd_ictl_get_irte_by_vector(const struct device *dev,
+				       uint16_t vector)
+{
+	struct vtd_ictl_data *data = dev->data;
+	int irte_idx;
+
+	for (irte_idx = 0; irte_idx < IRTE_NUM; irte_idx++) {
+		if (data->vectors[irte_idx] == vector) {
+			return irte_idx;
+		}
+	}
+
+	return -EINVAL;
+}
+
+static uint16_t vtd_ictl_get_irte_vector(const struct device *dev,
+					 uint8_t irte_idx)
+{
+	struct vtd_ictl_data *data = dev->data;
+
+	return data->vectors[irte_idx];
+}
+
+static int vtd_ictl_set_irte_irq(const struct device *dev,
+				 uint8_t irte_idx,
+				 unsigned int irq)
+{
+	struct vtd_ictl_data *data = dev->data;
+
+	data->irqs[irte_idx] = irq;
+
+	return 0;
+}
+
+static int vtd_ictl_get_irte_by_irq(const struct device *dev,
+				    unsigned int irq)
+{
+	struct vtd_ictl_data *data = dev->data;
+	int irte_idx;
+
+	for (irte_idx = 0; irte_idx < IRTE_NUM; irte_idx++) {
+		if (data->irqs[irte_idx] == irq) {
+			return irte_idx;
+		}
+	}
+
+	return -EINVAL;
+}
+
+static void vtd_ictl_set_irte_msi(const struct device *dev,
+				  uint8_t irte_idx, bool msi)
+{
+	struct vtd_ictl_data *data = dev->data;
+
+	data->msi[irte_idx] = msi;
+}
+
+static bool vtd_ictl_irte_is_msi(const struct device *dev,
+				 uint8_t irte_idx)
+{
+	struct vtd_ictl_data *data = dev->data;
+
+	return data->msi[irte_idx];
+}
+
 static int vtd_ictl_init(const struct device *dev)
 {
 	struct vtd_ictl_data *data = dev->data;
@@ -142,9 +218,19 @@ static const struct vtd_driver_api vtd_api = {
 	.allocate_entries = vtd_ictl_allocate_entries,
 	.remap_msi = vtd_ictl_remap_msi,
 	.remap = vtd_ictl_remap,
+	.set_irte_vector = vtd_ictl_set_irte_vector,
+	.get_irte_by_vector = vtd_ictl_get_irte_by_vector,
+	.get_irte_vector = vtd_ictl_get_irte_vector,
+	.set_irte_irq = vtd_ictl_set_irte_irq,
+	.get_irte_by_irq = vtd_ictl_get_irte_by_irq,
+	.set_irte_msi = vtd_ictl_set_irte_msi,
+	.irte_is_msi = vtd_ictl_irte_is_msi
 };
 
-static struct vtd_ictl_data vtd_ictl_data_0;
+static struct vtd_ictl_data vtd_ictl_data_0 = {
+	.irqs = { -EINVAL },
+	.vectors = { -EINVAL },
+};
 
 static const struct vtd_ictl_cfg vtd_ictl_cfg_0 = {
 	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(0)),
