@@ -42,6 +42,18 @@ tests:
   utilities.prf.m32v208: # PACKAGED %n
     extra_args: M64_MODE=0 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x208
 
+  utilities.prf.m32v600: # PACKAGED REDUCED + FMT_AS_PTR
+    extra_args: M64_MODE=0 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x600
+
+  utilities.prf.m32v601: # PACKAGED FULL + FMT_AS_PTR
+    extra_args: M64_MODE=0 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x601
+
+  utilities.prf.m32v607: # PACKAGED FULL + FMT_AS_PTR + FP + FP_A
+    extra_args: M64_MODE=0 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x607
+
+  utilities.prf.m32v608: # PACKAGED %n + FMT_AS_PTR
+    extra_args: M64_MODE=0 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x608
+
   utilities.prf.m64v00: # m64
     extra_args: M64_MODE=1 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x00
 
@@ -74,3 +86,16 @@ tests:
 
   utilities.prf.m64v208: # PACKAGED %n
     extra_args: M64_MODE=1 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x208
+
+  utilities.prf.m64v600: # PACKAGED REDUCED + FMT_AS_PTR
+    extra_args: M64_MODE=1 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x600
+
+  utilities.prf.m64v601: # PACKAGED FULL + FMT_AS_PTR
+    extra_args: M64_MODE=1 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x601
+
+  utilities.prf.m64v607: # PACKAGED FULL + FMT_AS_PTR + FP + FP_A
+    extra_args: M64_MODE=1 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x607
+
+  utilities.prf.m64v608: # PACKAGED %n + FMT_AS_PTR
+    extra_args: M64_MODE=1 EXTRA_CPPFLAGS=-DVIA_TWISTER=0x608
+
