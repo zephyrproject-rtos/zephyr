@@ -1571,10 +1571,14 @@ static void unpack_sequence(struct cbprintf_state *state,
  *
  * @param _val reference to a scalar value
  *
- * @param _type the type to which _val should be cast prior to storing it.
+ * @param ... Consist of mandatory type to which _val should be cast prior to
+ * storing it, optionally followed by the second argument to indicate type
+ * which is used to store the value. It must be provided if storage type size
+ * is different size than cast type.
  */
-#define PACK_CAST_VALUE(_pst, _val, _type) do { \
-	_type v = (_type)(_val); \
+#define PACK_CAST_VALUE(_pst, _val, ... /* _type, _storage_type */) do { \
+	GET_ARG_N(COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), (1), (2)), \
+		   __VA_ARGS__) v = (GET_ARG_N(1, __VA_ARGS__))(_val); \
 \
 	PACK_VALUE(_pst, v); \
 } while (0)
@@ -1593,26 +1597,34 @@ static void unpack_sequence(struct cbprintf_state *state,
  *
  * @param _state pointer to a cbprintf_state object.
  *
- * @param _type the type of the packaged signed value.
+ * @param ... Consist of mandatory type to which _val should be cast after
+ * fetching it, optionally followed by the second argument to indicate type
+ * which was used to store the value. It must be provided if storage type size
+ * is different size than cast type.
  */
-#define UNPACK_CAST_SINT_VALUE(_state, _type) do { \
-	_type v; \
+#define UNPACK_CAST_SINT_VALUE(_state, ... /*_type, _storage_type(opt) */) do {\
+	GET_ARG_N(COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), (1), (2)), \
+		   __VA_ARGS__) v; \
 \
 	UNPACK_VALUE(_state, v); \
-	(_state)->value.sint = (sint_value_type)v; \
+	(_state)->value.sint = (sint_value_type)((GET_ARG_N(1, __VA_ARGS__))v);\
 } while (0)
 
 /* Unpack a typed unsigned integral value into the argument value uint field.
  *
  * @param _state pointer to a cbprintf_state object.
  *
- * @param _type the type of the packaged signed value.
+ * @param ... Consist of mandatory type to which _val should be cast after
+ * fetching it, optionally followed by the second argument to indicate type
+ * which was used to store the value. It must be provided if storage type size
+ * is different size than cast type.
  */
-#define UNPACK_CAST_UINT_VALUE(_state, _type) do { \
-	_type v; \
+#define UNPACK_CAST_UINT_VALUE(_state, ... /*_type, _storage_type(opt) */) do {\
+	GET_ARG_N(COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), (1), (2)), \
+		   __VA_ARGS__) v; \
 \
 	UNPACK_VALUE(_state, v); \
-	(_state)->value.uint = (uint_value_type)v; \
+	(_state)->value.uint = (uint_value_type)((GET_ARG_N(1, __VA_ARGS__))v);\
 } while (0)
 
 /* Package a string value.
@@ -1715,10 +1727,10 @@ static void pack_conversion(struct package_state *pst)
 			PACK_CAST_VALUE(pst, value->sint, int);
 			break;
 		case LENGTH_HH:
-			PACK_CAST_VALUE(pst, value->sint, signed char);
+			PACK_CAST_VALUE(pst, value->sint, signed char, int);
 			break;
 		case LENGTH_H:
-			PACK_CAST_VALUE(pst, value->sint, short);
+			PACK_CAST_VALUE(pst, value->sint, short, int);
 			break;
 		case LENGTH_L:
 			PACK_CAST_VALUE(pst, value->sint, long);
@@ -1750,10 +1762,10 @@ static void pack_conversion(struct package_state *pst)
 			PACK_CAST_VALUE(pst, value->uint, unsigned int);
 			break;
 		case LENGTH_HH:
-			PACK_CAST_VALUE(pst, value->uint, unsigned char);
+			PACK_CAST_VALUE(pst, value->uint, unsigned char, int);
 			break;
 		case LENGTH_H:
-			PACK_CAST_VALUE(pst, value->uint, unsigned short);
+			PACK_CAST_VALUE(pst, value->uint, unsigned short, int);
 			break;
 		case LENGTH_L:
 			PACK_CAST_VALUE(pst, value->uint, unsigned long);
@@ -1832,10 +1844,10 @@ static void pull_pkg_args(struct cbprintf_state *state)
 			UNPACK_CAST_SINT_VALUE(state, int);
 			break;
 		case LENGTH_HH:
-			UNPACK_CAST_SINT_VALUE(state, signed char);
+			UNPACK_CAST_SINT_VALUE(state, signed char, int);
 			break;
 		case LENGTH_H:
-			UNPACK_CAST_SINT_VALUE(state, short);
+			UNPACK_CAST_SINT_VALUE(state, short, int);
 			break;
 		case LENGTH_L:
 			UNPACK_CAST_SINT_VALUE(state, long);
@@ -1860,10 +1872,10 @@ static void pull_pkg_args(struct cbprintf_state *state)
 			UNPACK_CAST_UINT_VALUE(state, unsigned int);
 			break;
 		case LENGTH_HH:
-			UNPACK_CAST_UINT_VALUE(state, unsigned char);
+			UNPACK_CAST_UINT_VALUE(state, unsigned char, int);
 			break;
 		case LENGTH_H:
-			UNPACK_CAST_UINT_VALUE(state, unsigned short);
+			UNPACK_CAST_UINT_VALUE(state, unsigned short, int);
 			break;
 		case LENGTH_L:
 			UNPACK_CAST_UINT_VALUE(state, unsigned long);
