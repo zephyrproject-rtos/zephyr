@@ -126,6 +126,32 @@ struct emul_espi_driver_api {
 int espi_emul_register(const struct device *dev, const char *name,
 		       struct espi_emul *emul);
 
+/**
+ * Sets the eSPI virtual wire on the host side, which will
+ * trigger a proper event(and callbacks) on the emulated eSPI controller
+ *
+ * @param espi_dev eSPI emulation controller device
+ * @param vw The signal to be set.
+ * @param level The level of the signal to be set.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input / output error.
+ */
+int emul_espi_host_send_vw(const struct device *espi_dev,
+			   enum espi_vwire_signal vw, uint8_t level);
+
+/**
+ * Perform port80 write on the emulated host side, which will
+ * trigger a proper event(and callbacks) on the emulated eSPI controller
+ *
+ * @param espi_dev eSPI emulation controller device
+ * @param data The date to be written.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input / output error.
+ */
+int emul_espi_host_port80_write(const struct device *espi_dev, uint32_t data);
+
 #ifdef __cplusplus
 }
 #endif
