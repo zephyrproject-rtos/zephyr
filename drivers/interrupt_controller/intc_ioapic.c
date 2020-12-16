@@ -116,6 +116,31 @@ static uint32_t ioApicRedGetLo(unsigned int irq);
 static void IoApicRedUpdateLo(unsigned int irq, uint32_t value,
 					uint32_t mask);
 
+#if defined(CONFIG_INTEL_VTD_ICTL) &&				\
+	!defined(CONFIG_INTEL_VTD_ICTL_XAPIC_PASSTHROUGH)
+
+#include <drivers/interrupt_controller/intel_vtd.h>
+
+static const struct device *vtd;
+
+static bool get_vtd(void)
+{
+	if (vtd != NULL) {
+		return true;
+	}
+
+#define DRV_COMPAT_BAK DT_DRV_COMPAT
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT intel_vt_d
+	vtd = device_get_binding(DT_INST_LABEL(0));
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT DRV_COMPAT_BAK
+#undef DRV_COMPAT_BAK
+
+	return vtd == NULL ? false : true;
+}
+#endif /* CONFIG_INTEL_VTD_ICTL && !INTEL_VTD_ICTL_XAPIC_PASSTHROUGH */
+
 /*
  * The functions irq_enable() and irq_disable() are implemented in the
  * interrupt controller driver due to the IRQ virtualization imposed by
@@ -346,12 +371,49 @@ __boot_func
 void z_ioapic_irq_set(unsigned int irq, unsigned int vector, uint32_t flags)
 {
 	uint32_t rteValue;   /* value to copy into redirection table entry */
+#if defined(CONFIG_INTEL_VTD_ICTL) &&				\
+	!defined(CONFIG_INTEL_VTD_ICTL_XAPIC_PASSTHROUGH)
+	int irte_idx;
 
-	/* the delivery mode is determined by the flags passed from drivers */
-	rteValue = IOAPIC_INT_MASK | IOAPIC_LOGICAL |
-		   (vector & IOAPIC_VEC_MASK) | flags;
-	ioApicRedSetHi(irq, DEFAULT_RTE_DEST);
-	ioApicRedSetLo(irq, rteValue);
+	if (!get_vtd()) {
+		goto no_vtd;
+	}
+
+	irte_idx = vtd_get_irte_by_vector(vtd, vector);
+	if (irte_idx < 0) {
+		irte_idx = vtd_get_irte_by_irq(vtd, irq);
+	}
+
+	if (irte_idx >= 0 && !vtd_irte_is_msi(vtd, irte_idx)) {
+		/* Enable interrupt remapping format and set the irte index */
+		rteValue = IOAPIC_VTD_REMAP_FORMAT |
+			IOAPIC_VTD_INDEX(irte_idx);
+		ioApicRedSetHi(irq, rteValue);
+
+		/* Remapped: delivery mode is Fixed (000) and
+		 * destination mode is no longer present as it is replaced by
+		 * the 15th bit of irte index, which is always 0 in our case.
+		 */
+		rteValue = IOAPIC_INT_MASK |
+			(vector & IOAPIC_VEC_MASK) |
+			(flags & IOAPIC_TRIGGER_MASK) |
+			(flags & IOAPIC_POLARITY_MASK);
+		ioApicRedSetLo(irq, rteValue);
+
+		vtd_remap(vtd, irte_idx, vector, flags);
+	} else {
+no_vtd:
+#else
+	{
+#endif /* CONFIG_INTEL_VTD_ICTL && !CONFIG_INTEL_VTD_ICTL_XAPIC_PASSTHROUGH */
+		/* the delivery mode is determined by the flags
+		 * passed from drivers
+		 */
+		rteValue = IOAPIC_INT_MASK | IOAPIC_LOGICAL |
+			(vector & IOAPIC_VEC_MASK) | flags;
+		ioApicRedSetHi(irq, DEFAULT_RTE_DEST);
+		ioApicRedSetLo(irq, rteValue);
+	}
 }
 
 /**
