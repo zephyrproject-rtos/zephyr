@@ -66,3 +66,18 @@ config OPENTHREAD_MAX_IP_ADDR_PER_CHILD
 config OPENTHREAD_CONFIG_PLATFORM_INFO
 	string "The platform-specific string to insert into the OpenThread version string"
 	default "Zephyr"
+
+config OPENTHREAD_RADIO_LINK_IEEE_802_15_4_ENABLE
+	bool "Enable support for IEEE802.15.4 radio link"
+	default y
+
+config OPENTHREAD_RADIO_LINK_TREL_ENABLE
+	bool "Thread Radio Encapsulation Link (TREL)"
+
+config OPENTHREAD_CSL_SAMPLE_WINDOW
+	int "CSL sample window in units of 10 symbols"
+	default 30
+
+config OPENTHREAD_CSL_RECEIVE_TIME_AHEAD
+	int "CSL receiver wake up margin in units of 10 symbols"
+	default 3
