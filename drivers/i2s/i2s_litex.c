@@ -624,8 +624,8 @@ static const struct i2s_driver_api i2s_litex_driver_api = {
 		.fifo_depth = DT_PROP(DT_NODELABEL(i2s_##dir), fifo_depth),    \
 		.irq_config = i2s_litex_irq_config_func_##dir                  \
 	};                                                                     \
-	DEVICE_AND_API_INIT(i2s_##dir, DT_LABEL(DT_NODELABEL(i2s_##dir)),      \
-				i2s_litex_initialize, &i2s_litex_data_##dir,   \
+	DEVICE_DT_DEFINE(DT_NODELABEL(i2s_##dir), i2s_litex_initialize,        \
+				device_pm_control_nop, &i2s_litex_data_##dir,  \
 				&i2s_litex_cfg_##dir, POST_KERNEL,             \
 				CONFIG_I2S_INIT_PRIORITY,		       \
 				&i2s_litex_driver_api);			       \
@@ -636,7 +636,7 @@ static const struct i2s_driver_api i2s_litex_driver_api = {
 					DT_IRQ(DT_NODELABEL(i2s_##dir),	       \
 						priority),		       \
 					i2s_litex_isr_##dir,		       \
-					DEVICE_GET(i2s_##dir), 0);	       \
+					DEVICE_DT_GET(DT_NODELABEL(i2s_##dir)), 0);\
 		irq_enable(DT_IRQN(DT_NODELABEL(i2s_##dir)));                  \
 	}
 
