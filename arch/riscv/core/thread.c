@@ -85,10 +85,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	}
 #endif /* CONFIG_PMP_STACK_GUARD */
 
+#if defined(CONFIG_FPU)
+	stack_init->mstatus |= MSTATUS_FS_INIT;
+#endif
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	if ((thread->base.user_options & K_FP_REGS) != 0) {
-		stack_init->mstatus |= MSTATUS_FS_INIT;
-	}
 	stack_init->fp_state = 0;
 #endif
 
