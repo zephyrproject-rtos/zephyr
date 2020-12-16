@@ -112,6 +112,15 @@
 		label = "SPI_0";
 	};
 
+	espi0: espi@300 {
+		status = "okay";
+		compatible = "zephyr,espi-emul-controller";
+		reg = <0x300 4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		label = "ESPI_0";
+	};
+
 	uart0: uart {
 		status = "okay";
 		compatible = "zephyr,native-posix-uart";

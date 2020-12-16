@@ -85,6 +85,9 @@ Zephyr includes the following emulators:
 
 * SPI emulator driver, which does the same for SPI
 
+* eSPI emulator driver, which does the same for eSPI. The emulator is being
+  developed to support more functionalities.
+
 A GPIO emulator is planned but is not yet complete.
 
 Samples
