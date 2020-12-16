@@ -56,7 +56,7 @@ static __aligned(64) union {
 	uint32_t cache_pad[16];
 } data_rec;
 
-#define data ((struct metadata *)UNCACHED_PTR(&data_rec.meta))
+#define data ((volatile struct metadata *)UNCACHED_PTR(&data_rec.meta))
 
 static inline struct slot *slot(int i)
 {
@@ -65,9 +65,18 @@ static inline struct slot *slot(int i)
 	return &slots[i];
 }
 
+static int slot_incr(int s)
+{
+	return (s + 1) % NSLOTS;
+}
+
 void intel_adsp_trace_out(int8_t *str, size_t len)
 {
-	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	if (len == 0) {
+		return;
+	}
+
+	k_spinlock_key_t key = k_spin_lock((void *)&data->lock);
 
 	if (!data->initialized) {
 		slot(0)->hdr.magic = 0;
@@ -77,8 +86,8 @@ void intel_adsp_trace_out(int8_t *str, size_t len)
 	}
 
 	/* We work with a local copy of the global data for
-	 * performance reasons (*data is uncached!) and put it back at
-	 * the end.
+	 * performance reasons (The memory behind the "data" pointer
+	 * is uncached and volatile!) and put it back at the end.
 	 */
 	uint32_t curr_slot = data->curr_slot;
 	uint32_t n_bytes = data->n_bytes;
@@ -89,22 +98,40 @@ void intel_adsp_trace_out(int8_t *str, size_t len)
 
 		s->msg[n_bytes++] = c;
 
+		/* Are we done with this slot?  Terminate it and flag
+		 * it for consumption on the other side
+		 */
 		if (c == '\n' || n_bytes >= MSGSZ) {
-			curr_slot = (curr_slot + 1) % NSLOTS;
-			n_bytes = 0;
-			slot(curr_slot)->hdr.magic = 0;
-			slot(curr_slot)->hdr.id = s->hdr.id + 1;
-			s->hdr.magic = SLOT_MAGIC;
-		}
-	}
+			if (n_bytes < MSGSZ) {
+				s->msg[n_bytes] = 0;
+			}
 
-	if (n_bytes < MSGSZ) {
-		slot(curr_slot)->msg[n_bytes] = 0;
+			/* Make sure the next slot has a magic number
+			 * (so the reader can distinguish between
+			 * no-new-data and system-reset), but does NOT
+			 * have the correct successor ID (so can never
+			 * be picked up as valid data).  We'll
+			 * increment it later when we terminate that
+			 * slot.
+			 */
+			int next_slot = slot_incr(curr_slot);
+			uint16_t new_id = s->hdr.id + 1;
+
+			slot(next_slot)->hdr.id = new_id;
+			slot(next_slot)->hdr.magic = SLOT_MAGIC;
+			slot(next_slot)->msg[0] = 0;
+
+			s->hdr.id = new_id;
+			s->hdr.magic = SLOT_MAGIC;
+
+			curr_slot = next_slot;
+			n_bytes = 0;
+		}
 	}
 
 	data->curr_slot = curr_slot;
 	data->n_bytes = n_bytes;
-	k_spin_unlock(&data->lock, key);
+	k_spin_unlock((void *)&data->lock, key);
 }
 
 int arch_printk_char_out(int c)
