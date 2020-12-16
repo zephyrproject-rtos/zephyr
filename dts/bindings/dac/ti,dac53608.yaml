@@ -1,0 +1,8 @@
+# Copyright (c) 2020 Matija Tudan
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI DAC53608 10-bit 8 channel DAC
+
+compatible: "ti,dac53608"
+
+include: ti,dacx3608-base.yaml
