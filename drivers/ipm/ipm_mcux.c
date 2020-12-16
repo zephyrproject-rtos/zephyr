@@ -16,12 +16,22 @@
 #define MCUX_IPM_DATA_REGS 1
 #define MCUX_IPM_MAX_ID_VAL 0
 
+#if (defined(LPC55S69_cm33_core0_SERIES) || defined(LPC55S69_cm33_core1_SERIES))
+#ifdef LPC55S69_cm33_core0_SERIES
+#define MAILBOX_ID_THIS_CPU kMAILBOX_CM33_Core0
+#define MAILBOX_ID_OTHER_CPU kMAILBOX_CM33_Core1
+#else
+#define MAILBOX_ID_THIS_CPU kMAILBOX_CM33_Core1
+#define MAILBOX_ID_OTHER_CPU kMAILBOX_CM33_Core0
+#endif
+#else
 #if defined(__CM4_CMSIS_VERSION)
 #define MAILBOX_ID_THIS_CPU kMAILBOX_CM4
 #define MAILBOX_ID_OTHER_CPU kMAILBOX_CM0Plus
 #else
 #define MAILBOX_ID_THIS_CPU kMAILBOX_CM0Plus
 #define MAILBOX_ID_OTHER_CPU kMAILBOX_CM4
+#endif
 #endif
 
 struct mcux_mailbox_config {
