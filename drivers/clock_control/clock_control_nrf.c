@@ -9,6 +9,7 @@
 #include <sys/onoff.h>
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/nrf_clock_control.h>
+#include <drivers/timer/nrf_rtc_timer.h>
 #include "nrf_clock_calibration.h"
 #include <nrfx_clock.h>
 #include <logging/log.h>
@@ -81,8 +82,13 @@ struct nrf_clock_control_config {
 };
 
 static atomic_t hfclk_users;
-static uint64_t hf_start_tstamp;
-static uint64_t hf_stop_tstamp;
+
+/* RTC is read directly to avoid interrupt locking when using kernel api.
+ * RTC wraps so results printed by shell may be incorrect if high frequency
+ * clock is infrequently started and stopped.
+ */
+static uint32_t hf_start_tstamp;
+static uint32_t hf_stop_tstamp;
 
 static struct nrf_clock_control_sub_data *get_sub_data(const struct device *dev,
 						       enum clock_control_nrf_type type)
@@ -222,8 +228,9 @@ static void lfclk_stop(void)
 
 static void hfclk_start(void)
 {
-	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_SHELL)) {
-		hf_start_tstamp = k_uptime_get();
+	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_SHELL) &&
+	    IS_ENABLED(CONFIG_NRF_RTC_TIMER)) {
+		hf_start_tstamp = z_nrf_rtc_timer_read();
 	}
 
 	nrfx_clock_hfclk_start();
@@ -231,8 +238,9 @@ static void hfclk_start(void)
 
 static void hfclk_stop(void)
 {
-	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_SHELL)) {
-		hf_stop_tstamp = k_uptime_get();
+	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_SHELL) &&
+	    IS_ENABLED(CONFIG_NRF_RTC_TIMER)) {
+		hf_stop_tstamp = z_nrf_rtc_timer_read();
 	}
 
 	nrfx_clock_hfclk_stop();
@@ -714,24 +722,30 @@ static int cmd_status(const struct shell *shell, size_t argc, char **argv)
 	struct onoff_manager *lf_mgr =
 				get_onoff_manager(CLOCK_DEVICE,
 						  CLOCK_CONTROL_NRF_TYPE_LFCLK);
-	uint32_t abs_start, abs_stop;
+	uint32_t rel_start, rel_stop;
 	int key = irq_lock();
-	uint64_t now = k_uptime_get();
+	uint32_t now = z_nrf_rtc_timer_read();
 
 	(void)nrfx_clock_is_running(NRF_CLOCK_DOMAIN_HFCLK, (void *)&hfclk_src);
 	hf_status = (hfclk_src == NRF_CLOCK_HFCLK_HIGH_ACCURACY);
 
-	abs_start = hf_start_tstamp;
-	abs_stop = hf_stop_tstamp;
+	rel_start = (now - hf_start_tstamp) & Z_NRF_RTC_TIMER_MAX;
+	rel_stop = (now - hf_stop_tstamp) & Z_NRF_RTC_TIMER_MAX;
 	irq_unlock(key);
+
+	/* Convert to ms */
+	rel_start = (rel_start * 1000) / CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+	rel_stop = (rel_stop * 1000) / CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 
 	shell_print(shell, "HF clock:");
 	shell_print(shell, "\t- %srunning (users: %u)",
 			hf_status ? "" : "not ", hf_mgr->refs);
-	shell_print(shell, "\t- last start: %u ms (%u ms ago)",
-			(uint32_t)abs_start, (uint32_t)(now - abs_start));
-	shell_print(shell, "\t- last stop: %u ms (%u ms ago)",
-			(uint32_t)abs_stop, (uint32_t)(now - abs_stop));
+
+	if (IS_ENABLED(CONFIG_NRF_RTC_TIMER)) {
+		shell_print(shell, "\t- last start: %u ms ago", rel_start);
+		shell_print(shell, "\t- last stop: %u ms ago", rel_stop);
+	}
+
 	shell_print(shell, "LF clock:");
 	shell_print(shell, "\t- %srunning (users: %u)",
 			lf_status ? "" : "not ", lf_mgr->refs);
