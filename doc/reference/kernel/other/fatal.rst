@@ -117,6 +117,26 @@ reports the failed test and its location, but lacks additional debugging
 information provided to assist the user in diagnosing the problem; its use is
 discouraged.
 
+__ASSERT_EXPR()
+---------------
+
+The ``__ASSERT_EXPR()`` macro is functionally equivalent to ``__ASSERT()`` if
+assertions are enabled.
+
+The provided test expression is still evaluated even if assertions
+are disabled, but in that case it is simply cast to ``void`` with no actions
+taken based on the result of the evaluation.
+
+This is useful for tests that have side effects which should be consistent
+regardless of assertion level, or to silence compiler warnings about checks
+against local variables containing return values which would otherwise be seen
+as assigned but not used.
+
+.. code-block:: c
+
+  int ret = do_something();
+  __ASSERT_EXPR(ret == 0, "something didn't happen");
+
 Build Assertions
 ================
 

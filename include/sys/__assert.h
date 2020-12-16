@@ -104,6 +104,8 @@ void assert_post_action(const char *file, unsigned int line);
 		__ASSERT(test, fmt, ##__VA_ARGS__);                \
 	} while (false)
 
+#define __ASSERT_EXPR(test, fmt, ...)	__ASSERT(test, fmt, ##__VA_ARGS__)
+
 #if (__ASSERT_ON == 1)
 #warning "__ASSERT() statements are ENABLED"
 #endif
@@ -111,11 +113,19 @@ void assert_post_action(const char *file, unsigned int line);
 #define __ASSERT(test, fmt, ...) { }
 #define __ASSERT_EVAL(expr1, expr2, test, fmt, ...) expr1
 #define __ASSERT_NO_MSG(test) { }
+#define __ASSERT_EXPR(test, fmt, ...)					\
+	do {								\
+		(void)(test);						\
+	} while (false)
 #endif
 #else
 #define __ASSERT(test, fmt, ...) { }
 #define __ASSERT_EVAL(expr1, expr2, test, fmt, ...) expr1
 #define __ASSERT_NO_MSG(test) { }
+#define __ASSERT_EXPR(test, fmt, ...)					\
+	do {								\
+		(void)(test);						\
+	} while (false)
 #endif
 
 #endif /* ZEPHYR_INCLUDE_SYS___ASSERT_H_ */
