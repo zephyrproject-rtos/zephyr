@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <mem.h>
 #include <xtensa/xtensa.dtsi>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
@@ -142,6 +143,22 @@
 			reg = <0x3ff60048 0x20>;
 			/* interrupts = <25>; - FIXME: Enable interrupts when interrupt-controller got supported in device tree */
 			label = "WDT_1";
+			status = "disabled";
+		};
+
+		spi2: spi@3ff64000 {
+			compatible = "espressif,esp32-spi";
+			reg = <0x3ff64000 DT_SIZE_K(4)>;
+			label = "SPI_2";
+			clocks = <&rtc ESP32_SPI2_MODULE>;
+			status = "disabled";
+		};
+
+		spi3: spi@3ff65000 {
+			compatible = "espressif,esp32-spi";
+			reg = <0x3ff65000 DT_SIZE_K(4)>;
+			label = "SPI_3";
+			clocks = <&rtc ESP32_SPI3_MODULE>;
 			status = "disabled";
 		};
 	};

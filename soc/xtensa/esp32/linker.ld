@@ -39,6 +39,9 @@ PROVIDE ( crc32_le = 0x4005cfec );
 PROVIDE ( Cache_Read_Disable_rom = 0x40009ab8 );
 PROVIDE ( Cache_Read_Enable_rom = 0x40009a84 );
 PROVIDE ( Cache_Read_Init_rom = 0x40009950 );
+PROVIDE ( SPI1 = 0x3ff42fff );
+PROVIDE ( SPI2 = 0x3ff64fff );
+PROVIDE ( SPI3 = 0x3ff65fff );
 
 PROVIDE ( esp32_rom_uart_tx_one_char = 0x40009200 );
 PROVIDE ( esp32_rom_uart_rx_one_char = 0x400092d0 );
