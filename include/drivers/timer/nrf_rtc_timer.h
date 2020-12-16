@@ -11,6 +11,15 @@
 extern "C" {
 #endif
 
+/** @brief RTC counter bit width. */
+#define Z_NRF_RTC_TIMER_BITS 24
+
+/** @brief RTC counter span. */
+#define Z_NRF_RTC_TIMER_SPAN BIT(Z_NRF_RTC_TIMER_BITS)
+
+/** @brief RTC counter mask. */
+#define Z_NRF_RTC_TIMER_MAX BIT_MASK(Z_NRF_RTC_TIMER_BITS)
+
 typedef void (*z_nrf_rtc_timer_compare_handler_t)(uint32_t id,
 						uint32_t cc_value,
 						void *user_data);

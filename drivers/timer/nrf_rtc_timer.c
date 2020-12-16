@@ -25,9 +25,7 @@
 
 BUILD_ASSERT(CHAN_COUNT <= RTC_CH_COUNT, "Not enough compare channels");
 
-#define COUNTER_SPAN BIT(24)
-#define COUNTER_MAX (COUNTER_SPAN - 1U)
-#define COUNTER_HALF_SPAN (COUNTER_SPAN / 2U)
+#define COUNTER_HALF_SPAN (Z_NRF_RTC_TIMER_SPAN / 2U)
 #define CYC_PER_TICK (sys_clock_hw_cycles_per_sec()	\
 		      / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 #define MAX_TICKS ((COUNTER_HALF_SPAN - CYC_PER_TICK) / CYC_PER_TICK)
@@ -48,12 +46,12 @@ static atomic_t alloc_mask;
 
 static uint32_t counter_sub(uint32_t a, uint32_t b)
 {
-	return (a - b) & COUNTER_MAX;
+	return (a - b) & Z_NRF_RTC_TIMER_MAX;
 }
 
 static void set_comparator(uint32_t chan, uint32_t cyc)
 {
-	nrf_rtc_cc_set(RTC, chan, cyc & COUNTER_MAX);
+	nrf_rtc_cc_set(RTC, chan, cyc & Z_NRF_RTC_TIMER_MAX);
 }
 
 static uint32_t get_comparator(uint32_t chan)
@@ -136,7 +134,8 @@ int z_nrf_rtc_timer_get_ticks(k_timeout_t t)
 	if (abs_ticks < 0) {
 		/* relative timeout */
 		return (t.ticks > COUNTER_HALF_SPAN) ?
-			-EINVAL : ((curr_count + t.ticks) & COUNTER_MAX);
+			-EINVAL :
+			((curr_count + t.ticks) & Z_NRF_RTC_TIMER_MAX);
 	}
 
 	/* absolute timeout */
@@ -147,7 +146,7 @@ int z_nrf_rtc_timer_get_ticks(k_timeout_t t)
 		return -EINVAL;
 	}
 
-	return (curr_count + result) & COUNTER_MAX;
+	return (curr_count + result) & Z_NRF_RTC_TIMER_MAX;
 }
 
 /* Function safely sets absolute alarm. It assumes that provided value is
@@ -158,7 +157,7 @@ static void set_absolute_alarm(uint32_t chan, uint32_t abs_val)
 {
 	uint32_t now;
 	uint32_t now2;
-	uint32_t cc_val = abs_val & COUNTER_MAX;
+	uint32_t cc_val = abs_val & Z_NRF_RTC_TIMER_MAX;
 	uint32_t prev_cc = get_comparator(chan);
 
 	do {
