@@ -799,10 +799,10 @@ static bool update_debug_keys_check(struct bt_smp *smp)
 	}
 
 	if (conn->le.keys->flags & BT_KEYS_DEBUG) {
-		return false;
+		return true;
 	}
 
-	return true;
+	return false;
 }
 
 #if defined(CONFIG_BT_PRIVACY) || defined(CONFIG_BT_SIGNING) || \
