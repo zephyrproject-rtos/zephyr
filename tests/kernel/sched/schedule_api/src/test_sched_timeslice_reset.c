@@ -14,7 +14,17 @@
 BUILD_ASSERT(NUM_THREAD <= MAX_NUM_THREAD);
 
 /* slice size in millisecond */
+#if defined(CONFIG_SOC_FAMILY_STM32)
+/*
+ * Tests may fail with low system frequency.
+ * SLICE_SIZE = 600 allows to pass tests with frequency greater than 32MHZ.
+ * But this value is not valid for all chips: buildkite detected issue on
+ * several platforms like mps2_an521, native_posix_64, nrf52_bsim ...
+ */
+#define SLICE_SIZE 600
+#else
 #define SLICE_SIZE 200
+#endif
 /* busy for more than one slice */
 #define BUSY_MS (SLICE_SIZE + 20)
 /* a half timeslice */
