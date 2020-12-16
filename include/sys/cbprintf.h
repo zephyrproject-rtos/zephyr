@@ -11,6 +11,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <toolchain.h>
+#include <sys/cbprintf_internal.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,6 +22,14 @@ extern "C" {
  * @ingroup support_apis
  * @{
  */
+
+/**@defgroup CBPRINTF_PACKAGE_FLAGS packaging flags.
+ * @{ */
+
+/** @brief Indicate that format string is packaged as pointer. */
+#define CBPRINTF_PACKAGE_FMT_AS_PTR BIT(0)
+
+/**@} */
 
 /** @brief Signature for a cbprintf callback function.
  *
@@ -40,6 +49,62 @@ extern "C" {
  * cbprintf().
  */
 typedef int (*cbprintf_cb)(/* int c, void *ctx */);
+
+/** @brief Determine if string must be packaged in run time.
+ *
+ * Static packaging can be applied if size and of the package can be determined
+ * at compile time. In general, package size can be determined at compile time
+ * if there are no string arguments which might be copied into package body if
+ * they are considered transient.
+ *
+ * @param skip number of read only string arguments in the parameter list. It
+ * shall be non-zero if there are known read only string arguments present
+ * in the string (e.g. function name).
+ * @param ... String with arguments.
+ *
+ * @retval 1 if string must be packaged in run time.
+ * @retval 0 string can be statically packaged.
+ */
+#define CBPRINTF_MUST_RUNTIME_PACKAGE(skip, .../* fmt, ... */) \
+	Z_CBPRINTF_MUST_RUNTIME_PACKAGE(skip, __VA_ARGS__)
+
+/** @brief Statically package string.
+ *
+ * Build string package based on formatted string. Macro produces same package
+ * as if @ref cbprintf_package was used with CBPRINTF_PACKAGE_FMT_AS_PTR set.
+ *
+ * @param packaged pointer to where the packaged data can be stored.  Pass a
+ * null pointer to store nothing but still calculate the total space required.
+ * The data stored here is relocatable, that is it can be moved to another
+ * contiguous block of memory.
+
+ * @param len on input this must be set to the number of bytes available at @p
+ * packaged. If @p packaged is NULL the input value is ignored.  On output
+ * the referenced value will be updated to the number of bytes required to
+ * completely store the packed information.  The @p len parameter must not be
+ * null.
+ *
+ * @param fmt_as_ptr Set to 1 to package format string as void pointer without
+ * header. It optimizes package size for read only strings. It must be a
+ * constant value at compile time.
+ *
+ * @param ... formatted string with arguments. Format string must be constant.
+ */
+#define CBPRINTF_STATIC_PACKAGE(packaged, len, fmt_as_ptr, ... /* fmt, ... */) \
+	Z_CBPRINTF_STATIC_PACKAGE(packaged, len, fmt_as_ptr, __VA_ARGS__)
+
+/** @brief Calculate package size at compile time.
+ *
+ * @param fmt_as_ptr Set to 1 to package format string as void pointer without
+ * header. It optimizes package size for read only strings.
+ *
+ * @param ... String with arguments.
+ *
+ * @return Calculated package size. As it is determined at compile time it can
+ * be assigned to a const variable.
+ */
+#define CBPRINTF_STATIC_PACKAGE_SIZE(fmt_as_ptr, ... /* fmt, ... */) \
+	Z_CBPRINTF_STATIC_PACKAGE_SIZE(fmt_as_ptr, __VA_ARGS__)
 
 /** @brief Capture state required to output formatted data later.
  *
@@ -66,6 +131,8 @@ typedef int (*cbprintf_cb)(/* int c, void *ctx */);
  * completely store the packed information.  The @p len parameter must not be
  * null.
  *
+ * @param flags Flags. See @ref CBPRINTF_PACKAGE_FLAGS.
+ *
  * @param format a standard ISO C format string with characters and conversion
  * specifications.
  *
@@ -78,9 +145,10 @@ typedef int (*cbprintf_cb)(/* int c, void *ctx */);
  * @retval -ENOSPC if @p packaged was not null and the space required to store
  * exceed the input value of @p *len.
  */
-__printf_like(3, 4)
+__printf_like(4, 5)
 int cbprintf_package(uint8_t *packaged,
 		     size_t *len,
+		     uint32_t flags,
 		     const char *format,
 		     ...);
 
@@ -109,6 +177,8 @@ int cbprintf_package(uint8_t *packaged,
  * completely store the packed information.  The @p len parameter must not be
  * null.
  *
+ * @param flags Flags. See @ref CBPRINTF_PACKAGE_FLAGS.
+ *
  * @param format a standard ISO C format string with characters and conversion
  * specifications.
  *
@@ -123,6 +193,7 @@ int cbprintf_package(uint8_t *packaged,
  */
 int cbvprintf_package(uint8_t *packaged,
 		      size_t *len,
+		      uint32_t flags,
 		      const char *format,
 		      va_list ap);
 
@@ -133,6 +204,8 @@ int cbvprintf_package(uint8_t *packaged,
  *
  * @param ctx context provided when invoking out
  *
+ * @param flags Flags. See @ref CBPRINTF_PACKAGE_FLAGS.
+ *
  * @param packaged the data required to generate the formatted output, as
  * captured by cbprintf_package() or cbvprintf_package().
  *
@@ -141,6 +214,7 @@ int cbvprintf_package(uint8_t *packaged,
  */
 int cbpprintf(cbprintf_cb out,
 	      void *ctx,
+	      uint32_t flags,
 	      const uint8_t *packaged);
 
 /** @brief *printf-like output through a callback.

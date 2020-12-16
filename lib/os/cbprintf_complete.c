@@ -1673,12 +1673,17 @@ static void pack_str(struct package_state *pst)
  * @return a pointer to the string, which is either inline in the packaged
  * data or is a pointer extracted from the packaged data.
  */
-static const char *unpack_str(struct cbprintf_state *state)
+static const char *unpack_str(struct cbprintf_state *state, bool as_ptr)
 {
 	const char *str;
 	uint8_t inlined;
 
-	UNPACK_VALUE(state, inlined);
+	if (as_ptr) {
+		inlined = 0;
+	} else {
+		UNPACK_VALUE(state, inlined);
+	}
+
 	if (inlined) {
 		str = (const char *)state->packaged;
 		state->packaged += 1 + strlen(str);
@@ -1905,7 +1910,7 @@ static void pull_pkg_args(struct cbprintf_state *state)
 		break;
 	case SPECIFIER_PTR:
 		if (conv->specifier == 's') {
-			value->const_ptr = unpack_str(state);
+			value->const_ptr = unpack_str(state, false);
 		} else {
 			UNPACK_VALUE(state, value->ptr);
 		}
@@ -1928,6 +1933,7 @@ static void pull_pkg_args(struct cbprintf_state *state)
 
 int cbvprintf_package(uint8_t *packaged,
 		      size_t *len,
+		      uint32_t flags,
 		      const char *format,
 		      va_list ap)
 {
@@ -1955,7 +1961,10 @@ int cbvprintf_package(uint8_t *packaged,
 	/* Synthesize a %s for the format itself. */
 	*conv = (struct conversion){
 		.specifier_cat = SPECIFIER_PTR,
-		.specifier = 's',
+		/* If fmt can be forced to be stored as pointer, otherwise it
+		 * can be inlined if determined to be in rw memory.
+		 */
+		.specifier = flags & CBPRINTF_PACKAGE_FMT_AS_PTR ? 'p' : 's'
 	};
 	*value = (union argument_value){
 		.const_ptr = format,
@@ -1989,6 +1998,7 @@ int cbvprintf_package(uint8_t *packaged,
 
 int cbprintf_package(uint8_t *packaged,
 		     size_t *len,
+		     uint32_t flags,
 		     const char *format,
 		     ...)
 {
@@ -1996,7 +2006,7 @@ int cbprintf_package(uint8_t *packaged,
 	int rc;
 
 	va_start(ap, format);
-	rc = cbvprintf_package(packaged, len, format, ap);
+	rc = cbvprintf_package(packaged, len, flags, format, ap);
 	va_end(ap);
 
 	return rc;
@@ -2381,6 +2391,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 
 int cbpprintf(cbprintf_cb out,
 	      void *ctx,
+	      uint32_t flags,
 	      const uint8_t *packaged)
 {
 	if (packaged == NULL) {
@@ -2394,7 +2405,8 @@ int cbpprintf(cbprintf_cb out,
 		.is_packaged = true,
 	};
 
-	const char *format = unpack_str(&state);
+	const char *format = unpack_str(&state,
+					flags & CBPRINTF_PACKAGE_FMT_AS_PTR);
 
 	return process_conversion(out, ctx, format, &state);
 }
