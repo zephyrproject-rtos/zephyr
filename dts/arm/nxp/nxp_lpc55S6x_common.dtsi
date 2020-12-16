@@ -150,6 +150,14 @@
 		#dma-cells = <1>;
 	};
 
+	mailbox0:mailbox@8b000 {
+		compatible = "nxp,lpc-mailbox";
+		reg = <0x8b000 0xEC>;
+		interrupts = <31 0>;
+		label = "MAILBOX_0";
+		status = "disabled";
+	};
+
 	flexcomm0: flexcomm@86000 {
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x86000 0x1000>;
