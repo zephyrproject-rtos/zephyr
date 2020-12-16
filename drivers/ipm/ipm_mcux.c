@@ -162,8 +162,9 @@ static const struct mcux_mailbox_config mcux_mailbox_0_config = {
 
 static struct mcux_mailbox_data mcux_mailbox_0_data;
 
-DEVICE_AND_API_INIT(mailbox_0, DT_INST_LABEL(0),
+DEVICE_DT_INST_DEFINE(0,
 		    &mcux_mailbox_init,
+		    device_pm_control_nop,
 		    &mcux_mailbox_0_data, &mcux_mailbox_0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &mcux_mailbox_driver_api);
@@ -173,7 +174,7 @@ static void mcux_mailbox_config_func_0(const struct device *dev)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
-		    mcux_mailbox_isr, DEVICE_GET(mailbox_0), 0);
+		    mcux_mailbox_isr, DEVICE_DT_INST_GET(0), 0);
 
 	irq_enable(DT_INST_IRQN(0));
 }
