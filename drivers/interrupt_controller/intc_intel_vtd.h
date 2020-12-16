@@ -48,6 +48,9 @@ struct vtd_irte {
 
 struct vtd_ictl_data {
 	struct vtd_irte irte[IRTE_NUM];
+	int irqs[IRTE_NUM];
+	int vectors[IRTE_NUM];
+	bool msi[IRTE_NUM];
 	int irte_num_used;
 };
 
