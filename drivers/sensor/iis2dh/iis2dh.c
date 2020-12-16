@@ -311,6 +311,6 @@ const struct iis2dh_device_config iis2dh_cfg = {
 
 struct iis2dh_data iis2dh_data;
 
-DEVICE_AND_API_INIT(iis2dh, DT_INST_LABEL(0), iis2dh_init,
+DEVICE_DT_INST_DEFINE(0, iis2dh_init, device_pm_control_nop,
 	     &iis2dh_data, &iis2dh_cfg, POST_KERNEL,
 	     CONFIG_SENSOR_INIT_PRIORITY, &iis2dh_driver_api);

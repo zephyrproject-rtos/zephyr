@@ -230,8 +230,9 @@ static const struct sensor_driver_api max17055_battery_driver_api = {
 			DT_INST_PROP(index, desired_charging_current),	\
 	};								\
 									\
-	DEVICE_AND_API_INIT(max17055_##index, DT_INST_LABEL(index),	\
-			    &max17055_gauge_init, &max17055_driver_##index, \
+	DEVICE_DT_INST_DEFINE(index, &max17055_gauge_init,		\
+			    device_pm_control_nop,			\
+			    &max17055_driver_##index,			\
 			    &max17055_config_##index, POST_KERNEL,	\
 			    CONFIG_SENSOR_INIT_PRIORITY,		\
 			    &max17055_battery_driver_api)

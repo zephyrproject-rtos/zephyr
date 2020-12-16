@@ -642,9 +642,9 @@ static int iis2iclx_init(const struct device *dev)
  */
 
 #define IIS2ICLX_DEVICE_INIT(inst)					\
-	DEVICE_AND_API_INIT(iis2iclx_##inst,				\
-			    DT_INST_LABEL(inst),			\
+	DEVICE_DT_INST_DEFINE(inst,					\
 			    iis2iclx_init,				\
+			    device_pm_control_nop,			\
 			    &iis2iclx_data_##inst,			\
 			    &iis2iclx_config_##inst,			\
 			    POST_KERNEL,				\

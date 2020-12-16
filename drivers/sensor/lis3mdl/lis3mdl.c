@@ -166,6 +166,6 @@ int lis3mdl_init(const struct device *dev)
 
 struct lis3mdl_data lis3mdl_driver;
 
-DEVICE_AND_API_INIT(lis3mdl, DT_INST_LABEL(0), lis3mdl_init,
+DEVICE_DT_INST_DEFINE(0, lis3mdl_init, device_pm_control_nop,
 		    &lis3mdl_driver, NULL, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &lis3mdl_driver_api);

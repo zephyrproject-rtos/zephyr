@@ -823,9 +823,9 @@ static int lsm6dsl_init(const struct device *dev)
  */
 
 #define LSM6DSL_DEVICE_INIT(inst)					\
-	DEVICE_AND_API_INIT(lsm6dsl_##inst,				\
-			    DT_INST_LABEL(inst),			\
+	DEVICE_DT_INST_DEFINE(inst,					\
 			    lsm6dsl_init,				\
+			    device_pm_control_nop,			\
 			    &lsm6dsl_data_##inst,			\
 			    &lsm6dsl_config_##inst,			\
 			    POST_KERNEL,				\

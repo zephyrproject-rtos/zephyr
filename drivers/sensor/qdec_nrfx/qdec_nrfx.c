@@ -32,7 +32,7 @@ struct qdec_nrfx_data {
 
 static struct qdec_nrfx_data qdec_nrfx_data;
 
-DEVICE_DECLARE(qdec_nrfx);
+DEVICE_DT_INST_DECLARE(0);
 
 
 static void accumulate(struct qdec_nrfx_data *data, int16_t acc)
@@ -151,7 +151,7 @@ static void qdec_nrfx_event_handler(nrfx_qdec_event_t event)
 				.chan = SENSOR_CHAN_ROTATION,
 			};
 
-			handler(DEVICE_GET(qdec_nrfx), &trig);
+			handler(DEVICE_DT_INST_GET(0), &trig);
 		}
 		break;
 
@@ -308,6 +308,6 @@ static const struct sensor_driver_api qdec_nrfx_driver_api = {
 	.trigger_set  = qdec_nrfx_trigger_set,
 };
 
-DEVICE_DEFINE(qdec_nrfx, DT_INST_LABEL(0), qdec_nrfx_init,
+DEVICE_DT_INST_DEFINE(0, qdec_nrfx_init,
 		qdec_nrfx_pm_control, NULL, NULL, POST_KERNEL,
 		CONFIG_SENSOR_INIT_PRIORITY, &qdec_nrfx_driver_api);

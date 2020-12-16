@@ -159,6 +159,6 @@ static const struct lps22hb_config lps22hb_config = {
 
 static struct lps22hb_data lps22hb_data;
 
-DEVICE_AND_API_INIT(lps22hb, DT_INST_LABEL(0), lps22hb_init,
+DEVICE_DT_INST_DEFINE(0, lps22hb_init, device_pm_control_nop,
 		    &lps22hb_data, &lps22hb_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &lps22hb_api_funcs);

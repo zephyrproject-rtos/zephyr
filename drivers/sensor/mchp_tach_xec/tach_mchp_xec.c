@@ -124,9 +124,9 @@ static const struct sensor_driver_api tach_xec_driver_api = {
 									\
 	static struct tach_xec_data tach_xec_dev_data##id;		\
 									\
-	DEVICE_AND_API_INIT(tach##id,					\
-			    DT_INST_LABEL(id),	\
+	DEVICE_DT_INST_DEFINE(id,					\
 			    tach_xec_init,				\
+			    device_pm_control_nop,			\
 			    &tach_xec_dev_data##id,			\
 			    &tach_xec_dev_config##id,			\
 			    POST_KERNEL,				\

@@ -359,9 +359,9 @@ int lis2dh_init(const struct device *dev)
  */
 
 #define LIS2DH_DEVICE_INIT(inst)					\
-	DEVICE_AND_API_INIT(lis2dh_##inst,				\
-			    DT_INST_LABEL(inst),			\
+	DEVICE_DT_INST_DEFINE(inst,					\
 			    lis2dh_init,				\
+			    device_pm_control_nop,			\
 			    &lis2dh_data_##inst,			\
 			    &lis2dh_config_##inst,			\
 			    POST_KERNEL,				\

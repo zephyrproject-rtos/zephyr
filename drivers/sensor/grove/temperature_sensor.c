@@ -125,6 +125,6 @@ static const struct gts_config gts_cfg = {
 	.adc_channel = DT_INST_IO_CHANNELS_INPUT(0),
 };
 
-DEVICE_AND_API_INIT(gts_dev, DT_INST_LABEL(0), &gts_init,
+DEVICE_DT_INST_DEFINE(0, &gts_init, device_pm_control_nop,
 		&gts_data, &gts_cfg, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		&gts_api);

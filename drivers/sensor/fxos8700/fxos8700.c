@@ -616,9 +616,9 @@ static const struct sensor_driver_api fxos8700_driver_api = {
 									\
 	static struct fxos8700_data fxos8700_data_##n;			\
 									\
-	DEVICE_AND_API_INIT(fxos8700_##n,				\
-			    DT_INST_LABEL(n),				\
+	DEVICE_DT_INST_DEFINE(n,					\
 			    fxos8700_init,				\
+			    device_pm_control_nop,			\
 			    &fxos8700_data_##n,				\
 			    &fxos8700_config_##n,			\
 			    POST_KERNEL,				\

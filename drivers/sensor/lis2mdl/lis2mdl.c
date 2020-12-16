@@ -432,6 +432,6 @@ static int lis2mdl_pm_control(const struct device *dev, uint32_t ctrl_command,
 }
 #endif /* CONFIG_PM_DEVICE */
 
-DEVICE_DEFINE(lis2mdl, DT_INST_LABEL(0), lis2mdl_init,
+DEVICE_DT_INST_DEFINE(0, lis2mdl_init,
 		lis2mdl_pm_control, &lis2mdl_data, &lis2mdl_dev_config,
 		POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &lis2mdl_driver_api);

@@ -234,6 +234,6 @@ static const struct lps22hh_config lps22hh_config = {
 #endif
 };
 
-DEVICE_AND_API_INIT(lps22hh, DT_INST_LABEL(0), lps22hh_init,
+DEVICE_DT_INST_DEFINE(0, lps22hh_init, device_pm_control_nop,
 		    &lps22hh_data, &lps22hh_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &lps22hh_api_funcs);

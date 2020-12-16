@@ -590,9 +590,9 @@ done:
  */
 
 #define BME280_DEVICE_INIT(inst)					\
-	DEVICE_AND_API_INIT(bme280_##inst,				\
-			    DT_INST_LABEL(inst),			\
+	DEVICE_DT_INST_DEFINE(inst,					\
 			    bme280_init,				\
+			    device_pm_control_nop,			\
 			    &bme280_data_##inst,			\
 			    &bme280_config_##inst,			\
 			    POST_KERNEL,				\
