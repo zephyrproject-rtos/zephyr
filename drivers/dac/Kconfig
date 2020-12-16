@@ -32,4 +32,6 @@ source "drivers/dac/Kconfig.sam0"
 
 source "drivers/dac/Kconfig.dacx0508"
 
+source "drivers/dac/Kconfig.dacx3608"
+
 endif # DAC
