@@ -109,12 +109,63 @@ static void test_ibecc_error_inject_api(void)
 }
 #endif
 
+#if defined(CONFIG_EDAC_ERROR_INJECT)
+static void test_ibecc_error_inject_test(void)
+{
+	uint64_t test_addr;
+	uint32_t test_value;
+	int ret;
+
+	ret = edac_notify_callback_set(dev, callback);
+	zassert_equal(ret, 0, "Error setting notification callback");
+
+	ret = edac_inject_addr_set(dev, TEST_ADDRESS);
+	zassert_equal(ret, 0, "Error setting inject address");
+
+	ret = edac_inject_addr_mask_set(dev, TEST_ADDRESS_MASK);
+	zassert_equal(ret, 0, "Error setting inject address mask");
+
+	ret = edac_inject_ctrl_set(dev, 0x1);
+	zassert_equal(ret, 0, "Error setting ctrl");
+
+	device_map((mm_reg_t *)&test_addr, TEST_ADDRESS, 0x100,
+		   K_MEM_CACHE_NONE);
+	TC_PRINT("Mapped 0x%x to 0x%llx\n", TEST_ADDRESS, test_addr);
+
+	test_value = sys_read32(test_addr);
+	TC_PRINT("Read value 0x%llx: 0x%x\n", test_addr, test_value);
+
+	/* Write to this test address some data */
+	sys_write32(TEST_DATA, test_addr);
+	TC_PRINT("Wrote value 0x%x at 0x%llx\n", TEST_DATA, test_addr);
+
+	/* Read back, triggering interrupt and notification */
+	test_value = sys_read32(test_addr);
+	TC_PRINT("Read value 0x%llx: 0x%x\n", test_addr, test_value);
+
+	/* Wait for interrupt if needed */
+	k_busy_wait(USEC_PER_MSEC * DURATION);
+
+	zassert_not_equal(interrupt, 0, "Interrupt handler did not execute");
+	zassert_equal(interrupt, 1,
+		      "Interrupt handler executed more than once! (%d)\n",
+		      interrupt);
+
+}
+#else
+static void test_ibecc_error_inject_test(void)
+{
+	ztest_test_skip();
+}
+#endif
+
 void test_main(void)
 {
 	ztest_test_suite(ibecc,
 			 ztest_unit_test(test_ibecc_initialized),
 			 ztest_unit_test(test_ibecc_api),
-			 ztest_unit_test(test_ibecc_error_inject_api)
+			 ztest_unit_test(test_ibecc_error_inject_api),
+			 ztest_unit_test(test_ibecc_error_inject_test)
 			);
 	ztest_run_test_suite(ibecc);
 }
