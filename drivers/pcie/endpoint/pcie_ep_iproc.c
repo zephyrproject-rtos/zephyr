@@ -299,7 +299,7 @@ static void iproc_pcie_flr(const struct device *dev)
 }
 #endif
 
-DEVICE_DECLARE(iproc_pcie_ep_0);
+DEVICE_DT_INST_DECLARE(0);
 
 static void iproc_pcie_reset_config(const struct device *dev)
 {
@@ -493,8 +493,8 @@ static struct pcie_ep_driver_api iproc_pcie_ep_api = {
 	.dma_xfer = iproc_pcie_pl330_dma_xfer,
 };
 
-DEVICE_AND_API_INIT(iproc_pcie_ep_0, DT_INST_LABEL(0),
-		    &iproc_pcie_ep_init, &iproc_pcie_ep_ctx_0,
+DEVICE_DT_INST_DEFINE(0, &iproc_pcie_ep_init, device_pm_control_nop,
+		    &iproc_pcie_ep_ctx_0,
 		    &iproc_pcie_ep_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &iproc_pcie_ep_api);
