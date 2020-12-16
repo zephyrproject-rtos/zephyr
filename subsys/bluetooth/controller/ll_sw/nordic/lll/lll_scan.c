@@ -336,6 +336,10 @@ static int is_abort_cb(void *next, int prio, void *curr,
 		}
 	}
 
+	if (unlikely(lll_is_stop(lll))) {
+		return 0;
+	}
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	if (unlikely(lll->duration_reload && !lll->duration_expire)) {
 		radio_isr_set(isr_done_cleanup, lll);
@@ -774,8 +778,6 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		uint32_t conn_interval_us;
 		uint32_t conn_offset_us;
 		uint32_t conn_space_us;
-		struct evt_hdr *evt;
-		uint32_t pdu_end_us;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		bt_addr_t *lrpa;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
@@ -789,21 +791,6 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 
 		if (!rx) {
 			return -ENOBUFS;
-		}
-
-		pdu_end_us = radio_tmr_end_get();
-		if (!lll->ticks_window) {
-			uint32_t scan_interval_us;
-
-			/* FIXME: is this correct for continuous scanning? */
-			scan_interval_us = lll->interval * 625U;
-			pdu_end_us %= scan_interval_us;
-		}
-		evt = HDR_LLL2EVT(lll);
-		if (pdu_end_us > (HAL_TICKER_TICKS_TO_US(evt->ticks_slot) -
-				  EVENT_IFS_US - 352 - EVENT_OVERHEAD_START_US -
-				  EVENT_TICKER_RES_MARGIN_US)) {
-			return -ETIME;
 		}
 
 		radio_switch_complete_and_disable();
