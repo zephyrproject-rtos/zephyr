@@ -28,7 +28,7 @@ static ALWAYS_INLINE void sys_write64(uint64_t data, mm_reg_t addr)
 			 : "memory");
 }
 
-static ALWAYS_INLINE uint32_t sys_read64(mm_reg_t addr)
+static ALWAYS_INLINE uint64_t sys_read64(mm_reg_t addr)
 {
 	uint64_t ret;
 
