@@ -1768,7 +1768,12 @@ static void pack_conversion(struct package_state *pst)
 			PACK_CAST_VALUE(pst, value->uint, unsigned short, int);
 			break;
 		case LENGTH_L:
-			PACK_CAST_VALUE(pst, value->uint, unsigned long);
+			if (conv->specifier == 'c' ) {
+				PACK_CAST_VALUE(pst, value->uint, wint_t);
+			} else {
+				PACK_CAST_VALUE(pst, value->uint,
+						unsigned long);
+			}
 			break;
 		case LENGTH_LL:
 			PACK_CAST_VALUE(pst, value->uint, unsigned long long);
@@ -1878,7 +1883,11 @@ static void pull_pkg_args(struct cbprintf_state *state)
 			UNPACK_CAST_UINT_VALUE(state, unsigned short, int);
 			break;
 		case LENGTH_L:
-			UNPACK_CAST_UINT_VALUE(state, unsigned long);
+			if (conv->specifier == 'c') {
+				UNPACK_CAST_UINT_VALUE(state, wint_t);
+			} else {
+				UNPACK_CAST_UINT_VALUE(state, unsigned long);
+			}
 			break;
 		case LENGTH_LL:
 			UNPACK_CAST_UINT_VALUE(state, unsigned long long);
