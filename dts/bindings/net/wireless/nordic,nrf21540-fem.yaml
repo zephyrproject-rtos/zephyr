@@ -29,6 +29,11 @@ properties:
         required: false
         description: >
             Gpio of the SOC controlling ANT-SEL pin of the nRF21540
+    mode-gpios:
+        type: phandle-array
+        required: false
+        description: >
+            Gpio of the SOC controlling MODE pin of the nRF21540
     spi-if:
         type: phandle
         required: false
