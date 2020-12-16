@@ -1210,7 +1210,7 @@ static void eth_mcux_err_isr(const struct device *dev)
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, name, irq),		\
 			    DT_INST_IRQ_BY_NAME(n, name, priority),	\
 			    eth_mcux_##name##_isr,			\
-			    DEVICE_GET(eth_mcux_##n),			\
+			    DEVICE_DT_INST_GET(n),			\
 			    0);						\
 		irq_enable(DT_INST_IRQ_BY_NAME(n, name, irq));		\
 	} while (0)
@@ -1228,7 +1228,7 @@ static void eth_mcux_err_isr(const struct device *dev)
 		IRQ_CONNECT(DT_IRQ_BY_NAME(PTP_INST_NODEID(n), ieee1588_tmr, irq),	\
 			    DT_IRQ_BY_NAME(PTP_INST_NODEID(n), ieee1588_tmr, priority),	\
 			    eth_mcux_ptp_isr,						\
-			    DEVICE_GET(eth_mcux_##n),					\
+			    DEVICE_DT_INST_GET(n),					\
 			    0);								\
 		irq_enable(DT_IRQ_BY_NAME(PTP_INST_NODEID(n), ieee1588_tmr, irq));	\
 	} while (0)
@@ -1367,8 +1367,7 @@ static void eth_mcux_err_isr(const struct device *dev)
 		ETH_MCUX_PTP_FRAMEINFO(n)				\
 	};								\
 									\
-	ETH_NET_DEVICE_INIT(eth_mcux_##n,				\
-			    DT_INST_LABEL(n),				\
+	ETH_NET_DEVICE_DT_INST_DEFINE(n,					\
 			    eth_init,					\
 			    ETH_MCUX_PM_FUNC,				\
 			    &eth##n##_context,				\
@@ -1509,7 +1508,7 @@ static const struct ptp_clock_driver_api api = {
 
 static int ptp_mcux_init(const struct device *port)
 {
-	const struct device *eth_dev = DEVICE_GET(eth_mcux_0);
+	const struct device *eth_dev = DEVICE_DT_GET(DT_NODELABEL(enet));
 	struct eth_context *context = eth_dev->data;
 	struct ptp_context *ptp_context = port->data;
 

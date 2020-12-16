@@ -54,9 +54,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define LITEETH_IRQ		DT_INST_IRQN(0)
 #define LITEETH_IRQ_PRIORITY	CONFIG_ETH_LITEETH_0_IRQ_PRI
 
-/* label */
-#define LITEETH_LABEL		DT_INST_LABEL(0)
-
 struct eth_liteeth_dev_data {
 	struct net_if *iface;
 	uint8_t mac_addr[6];
@@ -244,14 +241,14 @@ static const struct ethernet_api eth_api = {
 	.send = eth_tx
 };
 
-NET_DEVICE_INIT(eth0, LITEETH_LABEL, eth_initialize, device_pm_control_nop,
+NET_DEVICE_DT_INST_DEFINE(0, eth_initialize, device_pm_control_nop,
 		&eth_data, &eth_config, CONFIG_ETH_INIT_PRIORITY, &eth_api,
 		ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
 
 static void eth_irq_config(void)
 {
 	IRQ_CONNECT(LITEETH_IRQ, LITEETH_IRQ_PRIORITY, eth_irq_handler,
-		    DEVICE_GET(eth0), 0);
+		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(LITEETH_IRQ);
 	sys_write8(1, LITEETH_RX_EV_ENABLE);
 }
