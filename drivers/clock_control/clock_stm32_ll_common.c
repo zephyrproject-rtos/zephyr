@@ -289,7 +289,12 @@ static inline void stm32_clock_control_mco_init(void)
 #endif /* CONFIG_CLOCK_STM32_MCO2_SRC_NOCLOCK */
 }
 
-static int stm32_clock_control_init(const struct device *dev)
+/* now available outside of driver, required for clock
+ * reconfiguration after sleep
+ * (when power management enabled for stm32l1x SoCs)
+ * see issue #28572
+ */
+int stm32_clock_control_real_init(const struct device *dev)
 {
 	LL_UTILS_ClkInitTypeDef s_ClkInitStruct;
 	uint32_t hclk_prescaler;
@@ -562,6 +567,11 @@ static int stm32_clock_control_init(const struct device *dev)
 	stm32_clock_control_mco_init();
 
 	return 0;
+}
+
+static int stm32_clock_control_init(const struct device *dev)
+{
+	return stm32_clock_control_real_init(dev);
 }
 
 /**
