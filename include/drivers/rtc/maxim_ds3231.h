@@ -221,10 +221,9 @@ extern "C" {
  * callback is permitted to invoke operations on the device.
  *
  * @param dev the device from which the callback originated
- *
+ * @param id the alarm id
  * @param syncclock the value from maxim_ds3231_read_syncclock() at the
  * time the alarm interrupt was processed.
- *
  * @param user_data the corresponding parameter from
  * maxim_ds3231_alarm::user_data.
  */

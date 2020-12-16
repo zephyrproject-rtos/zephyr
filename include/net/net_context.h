@@ -121,7 +121,7 @@ typedef void (*net_context_send_cb_t)(struct net_context *context,
  * context is used here. Keep processing in the callback minimal to reduce the
  * time spent blocked while handling packets.
  *
- * @param context The context to use.
+ * @param new_context The context to use.
  * @param addr The peer address.
  * @param addrlen Length of the peer address.
  * @param status The status code, 0 on success, < 0 otherwise

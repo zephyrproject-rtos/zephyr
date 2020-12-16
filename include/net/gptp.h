@@ -199,14 +199,14 @@ struct gptp_hdr {
  * @typedef gptp_phase_dis_callback_t
  * @brief Define callback that is called after a phase discontinuity has been
  *        sent by the grandmaster.
- * @param "uint8_t *gm_identity" A pointer to first element of a
- *        ClockIdentity array. The size of the array is GPTP_CLOCK_ID_LEN.
- * @param "uint16_t *gm_time_base" A pointer to the value of timeBaseIndicator
- *        of the current grandmaster.
- * @param "struct scaled_ns *last_gm_ph_change" A pointer to the value of
- *        lastGmPhaseChange received from grandmaster.
- * @param "double *last_gm_freq_change" A pointer to the value of
- *        lastGmFreqChange received from the grandmaster.
+ * @param gm_identity A pointer to first element of a ClockIdentity array.
+ *        The size of the array is GPTP_CLOCK_ID_LEN.
+ * @param time_base A pointer to the value of timeBaseIndicator of the current
+ *        grandmaster.
+ * @param last_gm_ph_change A pointer to the value of lastGmPhaseChange received
+ *        from grandmaster.
+ * @param last_gm_freq_change A pointer to the value of lastGmFreqChange
+ *        received from the grandmaster.
  */
 typedef void (*gptp_phase_dis_callback_t)(
 	uint8_t *gm_identity,

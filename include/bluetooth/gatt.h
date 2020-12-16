@@ -880,6 +880,7 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
 /** @brief Notification complete result callback.
  *
  *  @param conn Connection object.
+ *  @param user_data Data passed in by the user.
  */
 typedef void (*bt_gatt_complete_func_t) (struct bt_conn *conn, void *user_data);
 
