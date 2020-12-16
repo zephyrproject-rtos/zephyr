@@ -87,3 +87,7 @@
 		     &spi2_miso_pb14 &spi2_mosi_pb15>;
 	status = "okay";
 };
+
+&rtc {
+	status = "okay";
+};

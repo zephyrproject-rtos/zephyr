@@ -1,0 +1,7 @@
+sample:
+  name: Power Management & RTC Timer driver sample for STM32L1_disco
+tests:
+  sample.boards.stm32.stm32l1_disco.pm_rtc:
+    build_only: true
+    platform_allow: stm32l1_disco
+    tags: power
