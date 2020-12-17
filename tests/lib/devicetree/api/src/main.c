@@ -602,11 +602,20 @@ static void test_phandles(void)
 	/* DT_PHA_HAS_CELL_AT_IDX */
 	zassert_true(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, gpios, 1, pin), "");
 	zassert_true(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, gpios, 1, flags), "");
-	zassert_true(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, pha_gpios, 1, pin), "");
-	/* index 1 only has pin, no flags */
-	zassert_false(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, pha_gpios, 1, flags), "");
+	/* pha-gpios index 1 has nothing, not even a phandle */
+	zassert_false(DT_PROP_HAS_IDX(TEST_PH, pha_gpios, 1), "");
+	zassert_false(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, pha_gpios, 1, pin), "");
+	zassert_false(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, pha_gpios, 1, flags),
+		      "");
+	/* index 2 only has a pin cell, no flags */
 	zassert_true(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, pha_gpios, 2, pin), "");
-	zassert_true(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, pha_gpios, 2, flags), "");
+	zassert_false(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, pha_gpios, 2, flags),
+		      "");
+	/* index 3 has both pin and flags cells*/
+	zassert_true(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, pha_gpios, 3, pin), "");
+	zassert_true(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, pha_gpios, 3, flags), "");
+	/* even though index 1 has nothing, the length is still 4 */
+	zassert_equal(DT_PROP_LEN(TEST_PH, pha_gpios), 4, "");
 
 	/* DT_PHA_HAS_CELL */
 	zassert_true(DT_PHA_HAS_CELL(TEST_PH, gpios, flags), "");
@@ -690,11 +699,18 @@ static void test_phandles(void)
 	/* DT_INST_PHA_HAS_CELL_AT_IDX */
 	zassert_true(DT_INST_PHA_HAS_CELL_AT_IDX(0, gpios, 1, pin), "");
 	zassert_true(DT_INST_PHA_HAS_CELL_AT_IDX(0, gpios, 1, flags), "");
-	zassert_true(DT_INST_PHA_HAS_CELL_AT_IDX(0, pha_gpios, 1, pin), "");
-	/* index 1 only has pin, no flags */
+	/* index 1 has nothing, not even a phandle */
+	zassert_false(DT_INST_PROP_HAS_IDX(0, pha_gpios, 1), "");
+	zassert_false(DT_INST_PHA_HAS_CELL_AT_IDX(0, pha_gpios, 1, pin), "");
 	zassert_false(DT_INST_PHA_HAS_CELL_AT_IDX(0, pha_gpios, 1, flags), "");
+	/* index 2 only has pin, no flags */
 	zassert_true(DT_INST_PHA_HAS_CELL_AT_IDX(0, pha_gpios, 2, pin), "");
-	zassert_true(DT_INST_PHA_HAS_CELL_AT_IDX(0, pha_gpios, 2, flags), "");
+	zassert_false(DT_INST_PHA_HAS_CELL_AT_IDX(0, pha_gpios, 2, flags), "");
+	/* index 3 has both pin and flags */
+	zassert_true(DT_INST_PHA_HAS_CELL_AT_IDX(0, pha_gpios, 3, pin), "");
+	zassert_true(DT_INST_PHA_HAS_CELL_AT_IDX(0, pha_gpios, 3, flags), "");
+	/* even though index 1 has nothing, the length is still 4 */
+	zassert_equal(DT_INST_PROP_LEN(0, pha_gpios), 4, "");
 
 	/* DT_INST_PHA_HAS_CELL */
 	zassert_true(DT_INST_PHA_HAS_CELL(0, gpios, flags), "");
