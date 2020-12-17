@@ -52,7 +52,7 @@ union axis3bit16_t {
  * @pm: Power mode (lis2dh_powermode).
  * @int_gpio_port: Pointer to GPIO PORT identifier.
  * @int_gpio_pin: GPIO pin number connecter to sensor int pin.
- * @int_pin: Sensor int pin (int1/int2).
+ * @drdy_int: Sensor drdy int (int1/int2).
  */
 struct iis2dlpc_device_config {
 	const char *bus_name;
@@ -62,7 +62,7 @@ struct iis2dlpc_device_config {
 	const char *int_gpio_port;
 	uint8_t int_gpio_pin;
 	uint8_t int_gpio_flags;
-	uint8_t int_pin;
+	uint8_t drdy_int;
 #ifdef CONFIG_IIS2DLPC_PULSE
 	uint8_t pulse_trigger;
 	uint8_t pulse_ths[3];

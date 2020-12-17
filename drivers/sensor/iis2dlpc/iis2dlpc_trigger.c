@@ -29,7 +29,7 @@ static int iis2dlpc_enable_int(const struct device *dev,
 	struct iis2dlpc_data *iis2dlpc = dev->data;
 	iis2dlpc_reg_t int_route;
 
-	if (cfg->int_pin == 1U) {
+	if (cfg->drdy_int == 1U) {
 		/* set interrupt for pin INT1 */
 		iis2dlpc_pin_int1_route_get(iis2dlpc->ctx,
 				&int_route.ctrl4_int1_pad_ctrl);
