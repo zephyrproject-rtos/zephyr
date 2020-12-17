@@ -27,7 +27,7 @@ static mm_reg_t mmio;
 /* Still other devices use a MMIO region containing packed byte
  * registers
  */
-#if DEVICE_MMIO_IS_IN_RAM
+#ifdef DEVICE_MMIO_IS_IN_RAM
 static mm_reg_t mmio;
 #define BASE mmio
 #else
