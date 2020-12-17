@@ -291,6 +291,7 @@
 /drivers/watchdog/*gecko*                 @oanerer
 /drivers/watchdog/wdt_handlers.c          @andrewboie
 /drivers/wifi/                            @jukkar @tbursztyka @pfalcon
+/drivers/wifi/esp/                        @mniestroj
 /drivers/wifi/eswifi/                     @loicpoulain @nandojve
 /drivers/wifi/winc1500/                   @kludentwo
 /drivers/virtualization/		  @tbursztyka
@@ -339,6 +340,7 @@
 /dts/bindings/adc/st*stm32-adc.yaml       @cybertale
 /dts/bindings/modem/*hl7800.yaml          @rerickson1
 /dts/bindings/serial/ns16550.yaml         @andrewboie
+/dts/bindings/wifi/*esp.yaml              @mniestroj
 /dts/bindings/*/*npcx*                    @MulinChao
 /dts/bindings/*/nordic*                   @anangl
 /dts/bindings/*/nxp*                      @MaureenHelm
