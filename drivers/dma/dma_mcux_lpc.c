@@ -442,7 +442,7 @@ static const struct dma_driver_api dma_mcux_lpc_api = {
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    DT_INST_IRQ(n, priority),			\
-			    dma_mcux_lpc_irq_handler, DEVICE_GET(dma_mcux_lpc_##n), 0);\
+			    dma_mcux_lpc_irq_handler, DEVICE_DT_INST_GET(n), 0);\
 									\
 		irq_enable(DT_INST_IRQN(n));				\
 	}
@@ -467,8 +467,9 @@ static const struct dma_mcux_lpc_config dma_##n##_config = {	\
 		.data_cb = NULL,					\
 	};								\
 									\
-	DEVICE_AND_API_INIT(dma_mcux_lpc_##n, DT_INST_LABEL(n),	\
+	DEVICE_DT_INST_DEFINE(n,					\
 			    &dma_mcux_lpc_init,				\
+			    device_pm_control_nop,			\
 			    &dma_data_##n, &dma_##n##_config,\
 			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,\
 			    &dma_mcux_lpc_api);			\
