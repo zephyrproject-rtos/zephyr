@@ -628,8 +628,9 @@ const struct dma_stm32_config dma_stm32_config_##index = {		\
 static struct dma_stm32_data dma_stm32_data_##index = {			\
 };									\
 									\
-DEVICE_AND_API_INIT(dma_stm32_##index##_dev, DT_INST_LABEL(index),	\
+DEVICE_DT_INST_DEFINE(index,						\
 		    &dma_stm32_init,					\
+		    device_pm_control_nop,				\
 		    &dma_stm32_data_##index, &dma_stm32_config_##index,	\
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 		    &dma_funcs)
@@ -643,7 +644,7 @@ DEVICE_AND_API_INIT(dma_stm32_##index##_dev, DT_INST_LABEL(index),	\
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(dma, chan, irq),		\
 			    DT_INST_IRQ_BY_IDX(dma, chan, priority),	\
 			    dma_stm32_shared_irq_handler,		\
-			    DEVICE_GET(dma_stm32_##dma##_dev), 0);	\
+			    DEVICE_DT_INST_GET(dma), 0);		\
 		irq_enable(DT_INST_IRQ_BY_IDX(dma, chan, irq));		\
 	} while (0)
 
@@ -662,7 +663,7 @@ static void dma_stm32_irq_##dma##_##chan(const struct device *dev)	\
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(dma, chan, irq),		\
 			    DT_INST_IRQ_BY_IDX(dma, chan, priority),	\
 			    dma_stm32_irq_##dma##_##chan,		\
-			    DEVICE_GET(dma_stm32_##dma##_dev), 0);	\
+			    DEVICE_DT_INST_GET(dma), 0);		\
 		irq_enable(DT_INST_IRQ_BY_IDX(dma, chan, irq));		\
 	} while (0)
 
@@ -671,7 +672,7 @@ static void dma_stm32_irq_##dma##_##chan(const struct device *dev)	\
 
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
 
-DEVICE_DECLARE(dma_stm32_0_dev);
+DEVICE_DT_INST_DECLARE(0);
 
 DMA_STM32_DEFINE_IRQ_HANDLER(0, 0);
 DMA_STM32_DEFINE_IRQ_HANDLER(0, 1);
@@ -720,7 +721,7 @@ DMA_STM32_INIT_DEV(0);
 
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
 
-DEVICE_DECLARE(dma_stm32_1_dev);
+DEVICE_DT_INST_DECLARE(1);
 
 DMA_STM32_DEFINE_IRQ_HANDLER(1, 0);
 DMA_STM32_DEFINE_IRQ_HANDLER(1, 1);

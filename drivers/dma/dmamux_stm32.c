@@ -202,8 +202,9 @@ static struct dmamux_stm32_data dmamux_stm32_data_##index = {	\
 	.mux_channels = NULL,					\
 };								\
 								\
-DEVICE_AND_API_INIT(dmamux_##index, DT_INST_LABEL(index),	\
+DEVICE_DT_INST_DEFINE(index,					\
 		    &dmamux_stm32_init,				\
+		    device_pm_control_nop,			\
 		    &dmamux_stm32_data_##index, &dmamux_stm32_config_##index,\
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,\
 		    &dma_funcs);
