@@ -380,12 +380,6 @@ const struct iis2dlpc_device_config iis2dlpc_cfg = {
 	.int_gpio_port = DT_INST_GPIO_LABEL(0, drdy_gpios),
 	.int_gpio_pin = DT_INST_GPIO_PIN(0, drdy_gpios),
 	.int_gpio_flags = DT_INST_GPIO_FLAGS(0, drdy_gpios),
-#if defined(CONFIG_IIS2DLPC_INT_PIN_1)
-	.int_pin = 1,
-#elif defined(CONFIG_IIS2DLPC_INT_PIN_2)
-	.int_pin = 2,
-#endif /* CONFIG_IIS2DLPC_INT_PIN_* */
-
 #ifdef CONFIG_IIS2DLPC_PULSE
 #if defined(CONFIG_IIS2DLPC_ONLY_SINGLE)
 	.pulse_trigger = IIS2DLPC_ONLY_SINGLE,
@@ -399,6 +393,8 @@ const struct iis2dlpc_device_config iis2dlpc_cfg = {
 	.pulse_ltncy = CONFIG_IIS2DLPC_PULSE_LTNCY,
 	.pulse_quiet = CONFIG_IIS2DLPC_PULSE_QUIET,
 #endif /* CONFIG_IIS2DLPC_PULSE */
+	.drdy_int = DT_INST_PROP(0, drdy_int),
+
 #endif /* CONFIG_IIS2DLPC_TRIGGER */
 };
 

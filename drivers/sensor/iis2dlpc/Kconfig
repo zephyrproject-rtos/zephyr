@@ -52,20 +52,6 @@ config IIS2DLPC_THREAD_STACK_SIZE
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
-choice
-	prompt "Sensor INT pin number"
-	default IIS2DLPC_INT_PIN_1
-	help
-	  The number of IIS2DLPC int pin used to generate interrupt to cpu.
-	  Supported values are int1 or int2
-
-config IIS2DLPC_INT_PIN_1
-	bool "int1"
-
-config IIS2DLPC_INT_PIN_2
-	bool "int2"
-endchoice
-
 menuconfig IIS2DLPC_PULSE
 	bool "Pulse detection"
 	help
