@@ -183,43 +183,28 @@ static bool get_vtd(void)
 uint32_t pcie_msi_map(unsigned int irq,
 		      msi_vector_t *vector)
 {
-	uint32_t map;
-
 	ARG_UNUSED(irq);
-#if defined(CONFIG_INTEL_VTD_ICTL)
-#if !defined(CONFIG_PCIE_MSI_X)
-	if (vector != NULL) {
-		map = vtd_remap_msi(vtd, vector);
-	} else
-#else
-	if (vector != NULL && !vector->msix) {
-		map = vtd_remap_msi(vtd, vector);
-	} else
-#endif
-#endif
-	{
-		map = 0xFEE00000U; /* standard delivery to BSP local APIC */
-	}
 
-	return map;
+#if defined(CONFIG_INTEL_VTD_ICTL)
+	return vtd_remap_msi(vtd, vector);
+#else
+	return 0xFEE00000U; /* standard delivery to BSP local APIC */
+#endif
 }
 
 uint16_t pcie_msi_mdr(unsigned int irq,
 		      msi_vector_t *vector)
 {
-#ifdef CONFIG_PCIE_MSI_X
-	if ((vector != NULL) && (vector->msix)) {
+	if (IS_ENABLED(CONFIG_INTEL_VTD_ICTL)) {
+		return 0;
+	}
+
+#if defined(CONFIG_PCIE_MSI_X)
+	if (vector->msix) {
 		return 0x4000U | vector->arch.vector;
 	}
 #endif
-
-	if (vector == NULL) {
-		/* edge triggered */
-		return 0x4000U | Z_IRQ_TO_INTERRUPT_VECTOR(irq);
-	}
-
-	/* VT-D requires it to be 0, so let's return 0 by default */
-	return 0;
+	return 0x4000U | Z_IRQ_TO_INTERRUPT_VECTOR(irq);
 }
 
 #if defined(CONFIG_INTEL_VTD_ICTL) || defined(CONFIG_PCIE_MSI_X)
@@ -232,9 +217,6 @@ uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
 		int prev_vector = -1;
 		int i;
 #ifdef CONFIG_INTEL_VTD_ICTL
-#ifdef CONFIG_PCIE_MSI_X
-		if (!vectors[0].msix)
-#endif
 		{
 			int irte;
 
