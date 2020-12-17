@@ -454,7 +454,10 @@ class BinaryHandler(Handler):
         # work.  Newer ninja's don't seem to pass SIGTERM down to the children
         # so we need to use try_kill_process_by_pid.
         for child in psutil.Process(proc.pid).children(recursive=True):
-            os.kill(child.pid, signal.SIGTERM)
+            try:
+                os.kill(child.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
         proc.terminate()
         # sleep for a while before attempting to kill
         time.sleep(0.5)
