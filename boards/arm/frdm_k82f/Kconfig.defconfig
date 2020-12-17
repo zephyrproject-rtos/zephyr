@@ -34,25 +34,6 @@ config FXOS8700_DRDY_INT1
 	default y
 	depends on FXOS8700_TRIGGER
 
-if PINMUX_MCUX
-
-config PINMUX_MCUX_PORTA
-	default y
-
-config PINMUX_MCUX_PORTB
-	default y
-
-config PINMUX_MCUX_PORTC
-	default y
-
-config PINMUX_MCUX_PORTD
-	default y
-
-config PINMUX_MCUX_PORTE
-	default y
-
-endif # PINMUX_MCUX
-
 config SPI_1
 	default y
 	depends on SPI

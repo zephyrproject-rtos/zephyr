@@ -17,7 +17,7 @@ static int tagoio_pinmux_init(const struct device *dev)
 
 #if defined(CONFIG_BOARD_FRDM_K64F)
 	const struct device *portc =
-		device_get_binding(CONFIG_PINMUX_MCUX_PORTC_NAME);
+		device_get_binding(DT_LABEL(DT_NODELABEL(portc)));
 
 	pinmux_pin_set(portc, 2, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portc, 3, PORT_PCR_MUX(kPORT_MuxAsGpio));

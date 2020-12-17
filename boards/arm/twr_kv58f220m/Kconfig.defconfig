@@ -20,23 +20,4 @@ config MCG_VDIV0
 config MCG_FCRDIV
 	default 1
 
-if PINMUX_MCUX
-
-config PINMUX_MCUX_PORTA
-	default y
-
-config PINMUX_MCUX_PORTB
-	default y
-
-config PINMUX_MCUX_PORTC
-	default y
-
-config PINMUX_MCUX_PORTD
-	default y
-
-config PINMUX_MCUX_PORTE
-	default y
-
-endif # PINMUX_MCUX
-
 endif # BOARD_TWR_KV58F220M

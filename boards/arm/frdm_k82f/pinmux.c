@@ -12,25 +12,25 @@ static int frdm_k82f_pinmux_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-#ifdef CONFIG_PINMUX_MCUX_PORTA
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(porta), okay)
 	__unused const struct device *porta =
-		device_get_binding(CONFIG_PINMUX_MCUX_PORTA_NAME);
+		device_get_binding(DT_LABEL(DT_NODELABEL(porta)));
 #endif
-#ifdef CONFIG_PINMUX_MCUX_PORTB
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(portb), okay)
 	__unused const struct device *portb =
-		device_get_binding(CONFIG_PINMUX_MCUX_PORTB_NAME);
+		device_get_binding(DT_LABEL(DT_NODELABEL(portb)));
 #endif
-#ifdef CONFIG_PINMUX_MCUX_PORTC
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(portc), okay)
 	__unused const struct device *portc =
-		device_get_binding(CONFIG_PINMUX_MCUX_PORTC_NAME);
+		device_get_binding(DT_LABEL(DT_NODELABEL(portc)));
 #endif
-#ifdef CONFIG_PINMUX_MCUX_PORTD
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(portd), okay)
 	__unused const struct device *portd =
-		device_get_binding(CONFIG_PINMUX_MCUX_PORTD_NAME);
+		device_get_binding(DT_LABEL(DT_NODELABEL(portd)));
 #endif
-#ifdef CONFIG_PINMUX_MCUX_PORTE
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(porte), okay)
 	__unused const struct device *porte =
-		device_get_binding(CONFIG_PINMUX_MCUX_PORTE_NAME);
+		device_get_binding(DT_LABEL(DT_NODELABEL(porte)));
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ftm3), nxp_kinetis_ftm_pwm, okay) && CONFIG_PWM
