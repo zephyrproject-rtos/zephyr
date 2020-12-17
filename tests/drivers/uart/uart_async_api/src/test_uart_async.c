@@ -564,7 +564,7 @@ void test_long_buffers(void)
 	memset(long_rx_buf, 0, sizeof(long_rx_buf));
 	memset(long_tx_buf, 1, sizeof(long_tx_buf));
 
-	uart_rx_enable(uart_dev, long_rx_buf, sizeof(long_rx_buf), 10);
+	uart_rx_enable(uart_dev, long_rx_buf, sizeof(long_rx_buf), 150);
 
 	uart_tx(uart_dev, long_tx_buf, 500, 200);
 	zassert_equal(k_sem_take(&tx_done, K_MSEC(200)), 0, "TX_DONE timeout");
@@ -576,8 +576,8 @@ void test_long_buffers(void)
 
 	evt_num = 0;
 	uart_tx(uart_dev, long_tx_buf, 1000, 200);
-	zassert_equal(k_sem_take(&tx_done, K_MSEC(200)), 0, "TX_DONE timeout");
 	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(200)), 0, "RX_RDY timeout");
+	zassert_equal(k_sem_take(&tx_done, K_MSEC(200)), 0, "TX_DONE timeout");
 	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(200)), 0, "RX_RDY timeout");
 	zassert_equal(long_received[0], 524, "Wrong number of bytes received.");
 	zassert_equal(long_received[1], 476, "Wrong number of bytes received.");
