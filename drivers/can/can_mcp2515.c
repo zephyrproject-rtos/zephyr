@@ -969,7 +969,7 @@ static const struct mcp2515_config mcp2515_config_1 = {
 	.sample_point = DT_INST_PROP_OR(0, sample_point, 0)
 };
 
-DEVICE_AND_API_INIT(can_mcp2515_1, DT_INST_LABEL(0), &mcp2515_init,
+DEVICE_DT_INST_DEFINE(0, &mcp2515_init, device_pm_control_nop,
 		    &mcp2515_data_1, &mcp2515_config_1, POST_KERNEL,
 		    CONFIG_CAN_MCP2515_INIT_PRIORITY, &can_api_funcs);
 
@@ -979,7 +979,7 @@ DEVICE_AND_API_INIT(can_mcp2515_1, DT_INST_LABEL(0), &mcp2515_init,
 
 static int socket_can_init(const struct device *dev)
 {
-	const struct device *can_dev = DEVICE_GET(can_mcp2515_1);
+	const struct device *can_dev = DEVICE_DT_INST_GET(1);
 	struct socket_can_context *socket_context = dev->data;
 
 	LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",

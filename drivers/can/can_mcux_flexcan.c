@@ -765,7 +765,7 @@ static const struct can_driver_api mcux_flexcan_driver_api = {
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(id, name, irq),		\
 		DT_INST_IRQ_BY_NAME(id, name, priority),		\
 		mcux_flexcan_isr,					\
-		DEVICE_GET(can_mcux_flexcan_##id), id);			\
+		DEVICE_DT_INST_GET(id), id);				\
 		irq_enable(DT_INST_IRQ_BY_NAME(id, name, irq));		\
 	} while (0)
 
@@ -793,9 +793,8 @@ static const struct can_driver_api mcux_flexcan_driver_api = {
 									\
 	static struct mcux_flexcan_data mcux_flexcan_data_##id;		\
 									\
-	DEVICE_AND_API_INIT(can_mcux_flexcan_##id,			\
-			DT_INST_LABEL(id),				\
-			&mcux_flexcan_init, &mcux_flexcan_data_##id,	\
+	DEVICE_DT_INST_DEFINE(id, &mcux_flexcan_init,			\
+			device_pm_control_nop, &mcux_flexcan_data_##id,	\
 			&mcux_flexcan_config_##id, POST_KERNEL,		\
 			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			&mcux_flexcan_driver_api);			\
@@ -819,7 +818,7 @@ DT_INST_FOREACH_STATUS_OKAY(FLEXCAN_DEVICE_INIT_MCUX)
 #define FLEXCAN_DEVICE_SOCKET_CAN(id)					\
 	static int socket_can_init_##id(const struct device *dev)	\
 	{								\
-		struct device *can_dev = DEVICE_GET(DT_INST_LABEL(id));	\
+		struct device *can_dev = DEVICE_DT_INST_GET(id);	\
 		struct socket_can_context *socket_context = dev->data;	\
 		LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)", \
 			dev, dev->name, can_dev, can_dev->name);	\
