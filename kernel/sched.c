@@ -389,11 +389,6 @@ static void update_cache(int preempt_ok)
 	struct k_thread *thread = next_up();
 
 	if (should_preempt(thread, preempt_ok)) {
-#ifdef CONFIG_TIMESLICING
-		if (thread != _current) {
-			z_reset_time_slice();
-		}
-#endif
 		update_metairq_preempt(thread);
 		_kernel.ready_q.cache = thread;
 	} else {
@@ -935,9 +930,6 @@ void *z_get_next_switch_handle(void *interrupted)
 			wait_for_switch(new_thread);
 			arch_cohere_stacks(old_thread, interrupted, new_thread);
 
-#ifdef CONFIG_TIMESLICING
-			z_reset_time_slice();
-#endif
 			_current_cpu->swap_ok = 0;
 			set_current(new_thread);
 

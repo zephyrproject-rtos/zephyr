@@ -92,10 +92,6 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 #endif
 
 	if (new_thread != old_thread) {
-#ifdef CONFIG_TIMESLICING
-		z_reset_time_slice();
-#endif
-
 		old_thread->swap_retval = -EAGAIN;
 
 #ifdef CONFIG_SMP
