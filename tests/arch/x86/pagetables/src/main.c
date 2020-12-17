@@ -15,10 +15,8 @@
 #include <arch/x86/mmustructs.h>
 #include <x86_mmu.h>
 #include <linker/linker-defs.h>
+#include <mmu.h>
 #include "main.h"
-
-#define VM_BASE		((uint8_t *)CONFIG_KERNEL_VM_BASE)
-#define VM_LIMIT	(VM_BASE + CONFIG_KERNEL_RAM_SIZE)
 
 #ifdef CONFIG_X86_64
 #define PT_LEVEL	3
@@ -45,12 +43,31 @@ extern char _locore_start[];
 extern char _locore_size[];
 extern char _lorodata_start[];
 extern char _lorodata_size[];
+extern char _lodata_end[];
+
+#define LOCORE_START	((uint8_t *)&_locore_start)
+#define LOCORE_END	((uint8_t *)&_lodata_end)
 #endif
 
 #ifdef CONFIG_COVERAGE_GCOV
 extern char __gcov_bss_start[];
 extern char __gcov_bss_size[];
 #endif
+
+static pentry_t get_entry(pentry_t *flags, void *addr)
+{
+	int level;
+	pentry_t entry;
+
+	z_x86_pentry_get(&level, &entry, z_x86_page_tables_get(), addr);
+
+	zassert_true((entry & MMU_P) != 0,
+		     "non-present RAM entry");
+	zassert_equal(level, PT_LEVEL, "bigpage found");
+	*flags = entry & FLAGS_MASK;
+
+	return entry;
+}
 
 /**
  * Test that MMU flags on RAM virtual address range are set properly
@@ -61,21 +78,16 @@ void test_ram_perms(void)
 {
 	uint8_t *pos;
 
-	for (pos = VM_BASE; pos < VM_LIMIT; pos += CONFIG_MMU_PAGE_SIZE) {
-		int level;
-		pentry_t entry, flags, expected;
+	pentry_t entry, flags, expected;
 
+	for (pos = Z_KERNEL_VIRT_START; pos < Z_KERNEL_VIRT_END;
+	     pos += CONFIG_MMU_PAGE_SIZE) {
 		if (pos == NULL) {
 			/* We have another test specifically for NULL page */
 			continue;
 		}
 
-		z_x86_pentry_get(&level, &entry, z_x86_page_tables_get(), pos);
-
-		zassert_true((entry & MMU_P) != 0,
-			     "non-present RAM entry");
-		zassert_equal(level, PT_LEVEL, "bigpage found");
-		flags = entry & FLAGS_MASK;
+		entry = get_entry(&flags, pos);
 
 		if (!IS_ENABLED(CONFIG_SRAM_REGION_PERMISSIONS)) {
 			expected = MMU_P | MMU_RW;
@@ -87,20 +99,6 @@ void test_ram_perms(void)
 		} else if (IN_REGION(__gcov_bss, pos)) {
 			expected = MMU_P | MMU_RW | MMU_US | MMU_XD;
 #endif
-#ifdef CONFIG_X86_64
-		} else if (IN_REGION(_locore, pos)) {
-			if (IS_ENABLED(CONFIG_X86_KPTI)) {
-				expected = MMU_P | MMU_US;
-			} else {
-				expected = MMU_P;
-			}
-		} else if (IN_REGION(_lorodata, pos)) {
-			if (IS_ENABLED(CONFIG_X86_KPTI)) {
-				expected = MMU_P | MMU_US | MMU_XD;
-			} else {
-				expected = MMU_P | MMU_XD;
-			}
-#endif /* CONFIG_X86_64 */
 #if !defined(CONFIG_X86_KPTI) && !defined(CONFIG_X86_COMMON_PAGE_TABLE) && \
 				  defined(CONFIG_USERSPACE)
 		} else if (IN_REGION(_app_smem, pos)) {
@@ -125,12 +123,42 @@ void test_ram_perms(void)
 			 */
 			expected = MMU_P | MMU_RW | MMU_XD;
 		}
-
 		zassert_equal(flags, expected,
 			      "bad flags " PRI_ENTRY " at %p, expected "
 			      PRI_ENTRY, flags, pos, expected);
 	}
 
+#ifdef CONFIG_X86_64
+	/* Check the locore too */
+	for (pos = LOCORE_START; pos < LOCORE_END;
+	     pos += CONFIG_MMU_PAGE_SIZE) {
+		if (pos == NULL) {
+			/* We have another test specifically for NULL page */
+			continue;
+		}
+
+		entry = get_entry(&flags, pos);
+
+		if (IN_REGION(_locore, pos)) {
+			if (IS_ENABLED(CONFIG_X86_KPTI)) {
+				expected = MMU_P | MMU_US;
+			} else {
+				expected = MMU_P;
+			}
+		} else if (IN_REGION(_lorodata, pos)) {
+			if (IS_ENABLED(CONFIG_X86_KPTI)) {
+				expected = MMU_P | MMU_US | MMU_XD;
+			} else {
+				expected = MMU_P | MMU_XD;
+			}
+		} else {
+			expected = MMU_P | MMU_RW | MMU_XD;
+		}
+		zassert_equal(flags, expected,
+			      "bad flags " PRI_ENTRY " at %p, expected "
+			      PRI_ENTRY, flags, pos, expected);
+	}
+#endif /* CONFIG_X86_64 */
 }
 
 /**
