@@ -308,6 +308,11 @@ uint8_t bt_mesh_hb_sub_set(uint16_t src, uint16_t dst, uint32_t period)
 	return STATUS_SUCCESS;
 }
 
+void bt_mesh_hb_sub_reset_count(void)
+{
+	sub.count = 0;
+}
+
 void bt_mesh_hb_sub_get(struct bt_mesh_hb_sub *get)
 {
 	*get = sub;

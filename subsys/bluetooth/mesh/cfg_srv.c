@@ -2323,11 +2323,19 @@ static void heartbeat_sub_set(struct bt_mesh_model *model,
 	/* MESH/NODE/CFG/HBS/BV-01-C expects the MinHops to be 0x7f after
 	 * disabling subscription, but 0x00 for subsequent Get requests.
 	 */
-	if (!period_log) {
+	if (sub.src == BT_MESH_ADDR_UNASSIGNED || !period_log) {
 		sub.min_hops = BT_MESH_TTL_MAX;
 	}
 
 	hb_sub_send_status(model, ctx, &sub);
+
+	/* MESH/NODE/CFG/HBS/BV-02-C expects us to return previous
+	 * count value and then reset it to 0.
+	 */
+	if (sub.src != BT_MESH_ADDR_UNASSIGNED &&
+	    sub.dst != BT_MESH_ADDR_UNASSIGNED && !period) {
+		bt_mesh_hb_sub_reset_count();
+	}
 }
 
 const struct bt_mesh_model_op bt_mesh_cfg_srv_op[] = {
