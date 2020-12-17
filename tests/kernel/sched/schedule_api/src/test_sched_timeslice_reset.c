@@ -51,6 +51,7 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
 {
 	uint32_t t = cycles_delta(&elapsed_slice);
 	uint32_t expected_slice_min, expected_slice_max;
+	uint32_t switch_tolerance = k_ms_to_ticks_ceil32(TASK_SWITCH_TOLERANCE);
 
 	if (thread_idx == 0) {
 		/*
@@ -70,11 +71,11 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
 		 */
 		expected_slice_min =
 			(k_ms_to_ticks_ceil32(SLICE_SIZE)
-			 - TASK_SWITCH_TOLERANCE)
+			 - switch_tolerance)
 			* k_ticks_to_cyc_floor32(1);
 		expected_slice_max =
 			(k_ms_to_ticks_ceil32(SLICE_SIZE)
-			 + TASK_SWITCH_TOLERANCE)
+			 + switch_tolerance)
 			* k_ticks_to_cyc_floor32(1);
 	}
 
