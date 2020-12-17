@@ -129,7 +129,7 @@ static const struct vtd_ictl_cfg vtd_ictl_cfg_0 = {
 	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(0)),
 };
 
-DEVICE_DEFINE(vtd_ictl, DT_INST_LABEL(0),
+DEVICE_DT_INST_DEFINE(0,
 	      vtd_ictl_init, device_pm_control_nop,
 	      &vtd_ictl_data_0, &vtd_ictl_cfg_0,
 	      PRE_KERNEL_1, CONFIG_INTEL_VTD_ICTL_INIT_PRIORITY, &vtd_api);
