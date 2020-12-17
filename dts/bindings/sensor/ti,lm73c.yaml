@@ -1,0 +1,23 @@
+# Copyright (c) 2021, SER Consulting LLC / Steven Riedl
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    TI lm73c 11- to 14-Bit Digital Temperature Sensor. See
+    https://www.ti.com/lit/ds/symlink/lm73.pdf
+
+compatible: "ti,lm73c"
+
+include: i2c-device.yaml
+
+properties:
+    temp-prec:
+      type: int
+      required: false
+      default: 14
+      # default to 14 bits .03125 deg C
+      description: Bits of temperature precision
+      enum:
+        - 11
+        - 12
+        - 13
+        - 14

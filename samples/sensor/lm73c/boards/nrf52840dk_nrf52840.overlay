@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2020, Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	lm73c@48 {
+		compatible = "ti,lm73c";
+		reg = <0x48>;
+		label = "LM73C";
+	};
+};

@@ -116,6 +116,8 @@ source "drivers/sensor/lis2mdl/Kconfig"
 
 source "drivers/sensor/lis3mdl/Kconfig"
 
+source "drivers/sensor/lm73c/Kconfig"
+
 source "drivers/sensor/lps22hb/Kconfig"
 
 source "drivers/sensor/lps22hh/Kconfig"
