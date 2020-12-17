@@ -1723,32 +1723,6 @@ static inline void rx_alloc(uint8_t max)
 {
 	uint8_t idx;
 
-#if defined(CONFIG_BT_CONN)
-	while (mem_link_rx.quota_pdu &&
-	       MFIFO_ENQUEUE_IDX_GET(ll_pdu_rx_free, &idx)) {
-		memq_link_t *link;
-		struct node_rx_hdr *rx;
-
-		link = mem_acquire(&mem_link_rx.free);
-		if (!link) {
-			break;
-		}
-
-		rx = mem_acquire(&mem_pdu_rx.free);
-		if (!rx) {
-			mem_release(link, &mem_link_rx.free);
-			break;
-		}
-
-		link->mem = NULL;
-		rx->link = link;
-
-		MFIFO_BY_IDX_ENQUEUE(ll_pdu_rx_free, idx, rx);
-
-		ll_rx_link_inc_quota(-1);
-	}
-#endif /* CONFIG_BT_CONN */
-
 	if (max > mem_link_rx.quota_pdu) {
 		max = mem_link_rx.quota_pdu;
 	}
@@ -1759,13 +1733,13 @@ static inline void rx_alloc(uint8_t max)
 
 		link = mem_acquire(&mem_link_rx.free);
 		if (!link) {
-			break;
+			return;
 		}
 
 		rx = mem_acquire(&mem_pdu_rx.free);
 		if (!rx) {
 			mem_release(link, &mem_link_rx.free);
-			break;
+			return;
 		}
 
 		rx->link = link;
@@ -1774,6 +1748,39 @@ static inline void rx_alloc(uint8_t max)
 
 		ll_rx_link_inc_quota(-1);
 	}
+
+#if defined(CONFIG_BT_CONN)
+	if (!max) {
+		return;
+	}
+
+	/* Replenish the ULL to LL/HCI free Rx PDU queue after LLL to ULL free
+	 * Rx PDU queue has been filled.
+	 */
+	while (mem_link_rx.quota_pdu &&
+	       MFIFO_ENQUEUE_IDX_GET(ll_pdu_rx_free, &idx)) {
+		memq_link_t *link;
+		struct node_rx_hdr *rx;
+
+		link = mem_acquire(&mem_link_rx.free);
+		if (!link) {
+			return;
+		}
+
+		rx = mem_acquire(&mem_pdu_rx.free);
+		if (!rx) {
+			mem_release(link, &mem_link_rx.free);
+			return;
+		}
+
+		link->mem = NULL;
+		rx->link = link;
+
+		MFIFO_BY_IDX_ENQUEUE(ll_pdu_rx_free, idx, rx);
+
+		ll_rx_link_inc_quota(-1);
+	}
+#endif /* CONFIG_BT_CONN */
 }
 
 static void rx_demux(void *param)
