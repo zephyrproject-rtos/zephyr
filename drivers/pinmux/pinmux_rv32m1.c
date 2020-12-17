@@ -75,8 +75,9 @@ static const struct pinmux_driver_api pinmux_rv32m1_driver_api = {
 		.clock_ip_name = INST_DT_CLOCK_IP_NAME(n),		\
 	};								\
 									\
-	DEVICE_AND_API_INIT(pinmux_rv32m1_##n, DT_INST_LABEL(n),	\
+	DEVICE_DT_INST_DEFINE(n,					\
 			    &pinmux_rv32m1_init,			\
+			    device_pm_control_nop,			\
 			    NULL, &pinmux_rv32m1_##n##_config,		\
 			    PRE_KERNEL_1,				\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\

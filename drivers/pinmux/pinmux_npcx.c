@@ -81,9 +81,9 @@ static int npcx_pinctrl_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(npcx_pinctrl,
-		    DT_LABEL(DT_NODELABEL(scfg)),
+DEVICE_DT_DEFINE(DT_NODELABEL(scfg),
 		    &npcx_pinctrl_init,
+		    device_pm_control_nop,
 		    NULL, &npcx_pinctrl_cfg,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    NULL);

@@ -108,8 +108,8 @@ static const struct pinmux_lpc11u6x_config			\
 	.npins = DT_INST_REG_SIZE(id) / 4,			\
 };								\
 								\
-DEVICE_AND_API_INIT(pinmux_lpc11u6x_##id, DT_INST_LABEL(id),	\
-		    &pinmux_lpc11u6x_init, NULL,		\
+DEVICE_DT_INST_DEFINE(id, &pinmux_lpc11u6x_init,		\
+		    device_pm_control_nop, NULL,		\
 		    &pinmux_lpc11u6x_config_##id, PRE_KERNEL_1,	\
 		    CONFIG_PINMUX_INIT_PRIORITY,		\
 		    &pinmux_lpc11u6x_driver_api);
