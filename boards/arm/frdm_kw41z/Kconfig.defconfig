@@ -17,20 +17,6 @@ config MCG_FRDIV
 config MCG_FCRDIV
 	default 0
 
-if PINMUX_MCUX
-
-config PINMUX_MCUX_PORTA
-	default y
-
-config PINMUX_MCUX_PORTB
-	default y if "$(dt_nodelabel_enabled,adc0)" && ADC
-	default y if "$(dt_nodelabel_enabled,tpm1)" && PWM
-
-config PINMUX_MCUX_PORTC
-	default y
-
-endif # PINMUX_MCUX
-
 config FXOS8700_DRDY_INT1
 	default y
 	depends on FXOS8700_TRIGGER

@@ -36,17 +36,4 @@ config ETH_MCUX_NO_PHY_SMI
 
 endif # NETWORKING
 
-if PINMUX_MCUX
-
-config PINMUX_MCUX_PORTA
-	default y
-
-config PINMUX_MCUX_PORTB
-	default y if "$(dt_nodelabel_enabled,spi1)" && SPI
-
-config PINMUX_MCUX_PORTE
-	default y if "$(dt_nodelabel_enabled,enet)" && NET_L2_ETHERNET
-
-endif # PINMUX_MCUX
-
 endif # BOARD_IP_K66F
