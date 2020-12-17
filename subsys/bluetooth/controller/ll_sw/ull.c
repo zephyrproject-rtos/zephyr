@@ -199,13 +199,25 @@ static struct {
 	uint8_t pool[sizeof(memq_link_t) * EVENT_DONE_MAX];
 } mem_link_done;
 
+/* Minimum number of node rx for ULL to LL/HCI thread per connection.
+ * Increasing this by times the max. simultaneous connection count will permit
+ * simultaneous parallel PHY update or Connection Update procedures amongst
+ * active connections.
+ */
 #if defined(CONFIG_BT_CTLR_PHY) && defined(CONFIG_BT_CTLR_DATA_LENGTH)
 #define LL_PDU_RX_CNT 3
 #else
 #define LL_PDU_RX_CNT 2
 #endif
 
+/* No. of node rx for LLL to ULL.
+ * Reserve 3, 1 for adv data, 1 for scan response and 1 for empty PDU reception.
+ */
 #define PDU_RX_CNT    (CONFIG_BT_CTLR_RX_BUFFERS + 3)
+
+/* Part sum of LLL to ULL and ULL to LL/HCI thread node rx count.
+ * Will be used below in allocating node rx pool.
+ */
 #define RX_CNT        (PDU_RX_CNT + LL_PDU_RX_CNT)
 
 static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
