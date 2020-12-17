@@ -51,7 +51,7 @@ extern void test_mmio_device_map(void);
  * @ingroup kernel_device_tests
  *
  * @see device_get_binding(), device_busy_set(), device_busy_clear(),
- * DEVICE_AND_API_INIT()
+ * DEVICE_DEFINE()
  */
 void test_dummy_device(void)
 {
@@ -80,7 +80,7 @@ void test_dummy_device(void)
  *
  * Validates device binding for an existing device object.
  *
- * @see device_get_binding(), DEVICE_AND_API_INIT()
+ * @see device_get_binding(), DEVICE_DEFINE()
  */
 static void test_dynamic_name(void)
 {
@@ -98,7 +98,7 @@ static void test_dynamic_name(void)
  * Validates binding of a random device driver(non-defined driver) named
  * "ANOTHER_BOGUS_NAME".
  *
- * @see device_get_binding(), DEVICE_AND_API_INIT()
+ * @see device_get_binding(), DEVICE_DEFINE()
  */
 static void test_bogus_dynamic_name(void)
 {

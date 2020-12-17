@@ -1324,9 +1324,9 @@ static const struct gpio_driver_api test_api;
 		.reg_addr = DT_REG_ADDR(INST(num)),		\
 		.reg_len = DT_REG_SIZE(INST(num)),		\
 	};							\
-	DEVICE_AND_API_INIT(test_gpio_dev_##num,		\
-			    DT_LABEL(INST(num)),		\
+	DEVICE_DT_DEFINE(INST(num),				\
 			    test_gpio_init,			\
+			    device_pm_control_nop,		\
 			    &gpio_data_##num,			\
 			    &gpio_info_##num,			\
 			    POST_KERNEL,			\
