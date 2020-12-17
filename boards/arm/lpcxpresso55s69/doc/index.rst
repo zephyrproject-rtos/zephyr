@@ -76,22 +76,28 @@ features:
 +-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | clock_control                       |
 +-----------+------------+-------------------------------------+
+| MAILBOX   | on-chip    | ipm                                 |
++-----------+------------+-------------------------------------+
+
+Targets available
+==================
 
 The default configuration file
 ``boards/arm/lpcxpresso55s69/lpcxpresso55s69_cpu0_defconfig``
 only enables the first core.
-
-Other hardware features are not currently enabled such as dual core or secure/non-secure.
-
-Targets available for this board are:
+CPU0 is the only target that can run standalone.
 
 - *lpcxpresso55s69_cpu0* secure (S) address space for CPU0
 - *lpcxpresso55s69_ns* non-secure (NS) address space for CPU0
-- *lpcxpresso55s69_cpu1* CPU1 target, NS only
+- *lpcxpresso55s69_cpu1* CPU1 target, no security extensions
 
-CPU0 is the only target that can run standalone.
 NS target for CPU0 does not work correctly without a secure image enabling it.
+To enable it, run any of the ``tfm_integration`` samples.
+
 CPU1 does not work without CPU0 enabling it.
+To enable it, run one of the following samples in ``subsys\ipc``:
+ - ``ipm_mcux``
+ - ``openamp``
 
 Connections and IOs
 ===================
@@ -211,6 +217,23 @@ J-Link as follows (reset and erase are for recovering a locked core):
       J-Link>r
       J-Link>erase
       J-Link>loadfile build/tfm_merged.bin
+
+We need to reset the board manually after flashing the image to run this code.
+
+Building a dual-core image
+--------------------------
+The dual-core samples are run using ``lpcxpresso55s69_cpu0`` target,
+``lpcxpresso55s69_cpu1`` will be automatically built and merged in a single
+image when ``SECOND_CORE_MCUX`` is selected.
+To run we need to manually flash the resulting image (``multicore.bin``) with a
+J-Link as follows (reset and erase are for recovering a locked core):
+
+   .. code-block:: console
+
+      JLinkExe -device lpc55s69 -if swd -speed 2000 -autoconnect 1
+      J-Link>r
+      J-Link>erase
+      J-Link>loadfile build/multicore.bin
 
 We need to reset the board manually after flashing the image to run this code.
 
