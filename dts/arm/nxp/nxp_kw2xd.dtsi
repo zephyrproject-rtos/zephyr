@@ -139,34 +139,39 @@
 			status = "disabled";
 		};
 
-		pinmux_a: pinmux@40049000 {
+		porta: pinmux@40049000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x40049000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
+			label = "porta";
 		};
 
-		pinmux_b: pinmux@4004a000 {
+		portb: pinmux@4004a000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004a000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
+			label = "portb";
 		};
 
-		pinmux_c: pinmux@4004b000 {
+		portc: pinmux@4004b000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004b000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 11>;
+			label = "portc";
 		};
 
-		pinmux_d: pinmux@4004c000 {
+		portd: pinmux@4004c000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004c000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 12>;
+			label = "portd";
 		};
 
-		pinmux_e: pinmux@4004d000 {
+		porte: pinmux@4004d000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004d000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 13>;
+			label = "porte";
 		};
 
 		gpioa: gpio@400ff000 {
@@ -177,7 +182,7 @@
 			label = "GPIO_0";
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&pinmux_a>;
+			nxp,kinetis-port = <&porta>;
 		};
 
 		gpiob: gpio@400ff040 {
@@ -188,7 +193,7 @@
 			label = "GPIO_1";
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&pinmux_b>;
+			nxp,kinetis-port = <&portb>;
 		};
 
 		gpioc: gpio@400ff080 {
@@ -199,7 +204,7 @@
 			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&pinmux_c>;
+			nxp,kinetis-port = <&portc>;
 		};
 
 		gpiod: gpio@400ff0c0 {
@@ -210,7 +215,7 @@
 			label = "GPIO_3";
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&pinmux_d>;
+			nxp,kinetis-port = <&portd>;
 		};
 
 		gpioe: gpio@400ff100 {
@@ -221,7 +226,7 @@
 			label = "GPIO_4";
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&pinmux_e>;
+			nxp,kinetis-port = <&porte>;
 		};
 
 		spi0: spi@4002c000 {
