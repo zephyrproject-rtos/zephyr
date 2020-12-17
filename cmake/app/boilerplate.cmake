@@ -166,6 +166,13 @@ elseif(DEFINED ENV{ZEPHYR_EXTRA_MODULES})
   set(ZEPHYR_EXTRA_MODULES $ENV{ZEPHYR_EXTRA_MODULES})
 endif()
 
+# 'MODULE_EXT_ROOT' is a prioritized list of directories where module glue code
+# may be found. It always includes ${ZEPHYR_BASE} at the lowest priority.
+# For module roots, later entries may overrule module settings already defined
+# by processed module roots, hence first in list means lowest priority.
+zephyr_file(APPLICATION_ROOT MODULE_EXT_ROOT)
+list(INSERT MODULE_EXT_ROOT 0 ${ZEPHYR_BASE})
+
 #
 # Find Zephyr modules.
 # Those may contain additional DTS, BOARD, SOC, ARCH ROOTs.
@@ -189,6 +196,9 @@ add_custom_target(
 
 # Dummy add to generate files.
 zephyr_linker_sources(SECTIONS)
+
+zephyr_file(APPLICATION_ROOT BOARD_ROOT)
+list(APPEND BOARD_ROOT ${ZEPHYR_BASE})
 
 # 'BOARD_ROOT' is a prioritized list of directories where boards may
 # be found. It always includes ${ZEPHYR_BASE} at the lowest priority.

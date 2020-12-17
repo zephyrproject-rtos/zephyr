@@ -74,6 +74,13 @@ foreach(module_name ${ZEPHYR_MODULE_NAMES})
        ZEPHYR_KCONFIG_MODULES_DIR
        "ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR=${ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR}"
   )
+
+  if(ZEPHYR_${MODULE_NAME_UPPER}_KCONFIG)
+    list(APPEND
+         ZEPHYR_KCONFIG_MODULES_DIR
+         "ZEPHYR_${MODULE_NAME_UPPER}_KCONFIG=${ZEPHYR_${MODULE_NAME_UPPER}_KCONFIG}"
+  )
+  endif()
 endforeach()
 
 # A list of common environment settings used when invoking Kconfig during CMake
