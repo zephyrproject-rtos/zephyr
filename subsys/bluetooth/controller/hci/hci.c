@@ -5025,6 +5025,7 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 	uint8_t data_len = 0U;
 	uint8_t *data = NULL;
 	int8_t rssi;
+	uint8_t cte_type = 0U;
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    !(le_event_mask & BT_EVT_MASK_LE_PER_ADVERTISING_REPORT)) {
@@ -5065,6 +5066,14 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 
 		/* No AdvA */
 		/* No TargetA */
+
+		if (h->cte_info) {
+			cte_type = *(int8_t *)ptr;
+			ptr++;
+
+			BT_DBG("    CTE type= %d", cte_type);
+		}
+
 		/* No ADI */
 
 		/* AuxPtr */
@@ -5202,7 +5211,7 @@ no_ext_hdr:
 	sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
 	sep->tx_power = tx_pwr;
 	sep->rssi = rssi;
-	sep->cte_type = 0U; /* TODO */
+	sep->cte_type = cte_type;
 	sep->data_status = data_status;
 	sep->length = data_len;
 	memcpy(&sep->data[0], data, data_len);
