@@ -25,7 +25,7 @@ static int intel_s1000_pinmux_init(const struct device *dev)
 {
 	const struct device *pinmux;
 
-	pinmux = device_get_binding(CONFIG_PINMUX_NAME);
+	pinmux = device_get_binding(DT_LABEL(DT_INST(0, intel_s1000_pinmux)));
 
 	if (pinmux == NULL) {
 		return -ENXIO;

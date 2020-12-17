@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 /**
  * @brief PINMUX driver for the IT8xxx2
  */
@@ -98,8 +97,7 @@ static const struct pinmux_it8xxx2_config pinmux_it8xxx2_0_config = {
 	.base = DT_INST_REG_ADDR(0),
 };
 
-DEVICE_AND_API_INIT(pinmux_it8xxx2, CONFIG_PINMUX_ITE_IT8XXX2_NAME,
-		    &pinmux_it8xxx2_init, NULL,
-		    &pinmux_it8xxx2_0_config,
+DEVICE_DT_INST_DEFINE(0, &pinmux_it8xxx2_init, device_pm_control_nop,
+		    NULL, &pinmux_it8xxx2_0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &pinmux_it8xxx2_driver_api);
