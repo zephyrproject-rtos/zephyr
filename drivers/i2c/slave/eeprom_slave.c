@@ -220,9 +220,9 @@ static int i2c_eeprom_slave_init(const struct device *dev)
 		.buffer = i2c_eeprom_slave_##inst##_buffer		\
 	};								\
 									\
-	DEVICE_AND_API_INIT(i2c_eeprom_slave_##inst,			\
-			    DT_INST_LABEL(inst),			\
+	DEVICE_DT_INST_DEFINE(inst,					\
 			    &i2c_eeprom_slave_init,			\
+			    device_pm_control_nop,			\
 			    &i2c_eeprom_slave_##inst##_dev_data,	\
 			    &i2c_eeprom_slave_##inst##_cfg,		\
 			    POST_KERNEL,				\
