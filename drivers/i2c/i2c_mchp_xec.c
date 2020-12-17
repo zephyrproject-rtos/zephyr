@@ -124,7 +124,7 @@ static int xec_spin_yield(int *counter)
 {
 	*counter = *counter + 1;
 
-	if (*counter > TIMEOUT) {
+	if (*counter > WAIT_COUNT) {
 		return -ETIMEDOUT;
 	}
 
