@@ -268,7 +268,7 @@ static void prov_recv(const struct prov_bearer *bearer, void *cb_data,
 
 	if (type >= ARRAY_SIZE(bt_mesh_prov_link.role->op)) {
 		BT_ERR("Unknown provisioning PDU type 0x%02x", type);
-		bt_mesh_prov_link.role->error(PROV_ERR_NVAL_FMT);
+		bt_mesh_prov_link.role->error(PROV_ERR_NVAL_PDU);
 		return;
 	}
 
