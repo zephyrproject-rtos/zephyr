@@ -1150,7 +1150,7 @@ static const struct can_stm32_config can_stm32_cfg_1 = {
 
 static struct can_stm32_data can_stm32_dev_data_1;
 
-DEVICE_AND_API_INIT(can_stm32_1, DT_LABEL(DT_NODELABEL(can1)), &can_stm32_init,
+DEVICE_DT_DEFINE(DT_NODELABEL(can1), &can_stm32_init, device_pm_control_nop,
 		    &can_stm32_dev_data_1, &can_stm32_cfg_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &can_api_funcs);
@@ -1161,22 +1161,23 @@ static void config_can_1_irq(CAN_TypeDef *can)
 #ifdef CONFIG_SOC_SERIES_STM32F0X
 	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(can1)),
 		    DT_IRQ(DT_NODELABEL(can1), priority),
-		    can_stm32_isr, DEVICE_GET(can_stm32_1), 0);
+		    can_stm32_isr, DEVICE_DT_GET(DT_NODELABEL(can1)), 0);
 	irq_enable(DT_IRQN(DT_NODELABEL(can1)));
 #else
 	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(can1), rx0, irq),
 		    DT_IRQ_BY_NAME(DT_NODELABEL(can1), rx0, priority),
-		    can_stm32_rx_isr, DEVICE_GET(can_stm32_1), 0);
+		    can_stm32_rx_isr, DEVICE_DT_GET(DT_NODELABEL(can1)), 0);
 	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(can1), rx0, irq));
 
 	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(can1), tx, irq),
 		    DT_IRQ_BY_NAME(DT_NODELABEL(can1), tx, priority),
-		    can_stm32_tx_isr, DEVICE_GET(can_stm32_1), 0);
+		    can_stm32_tx_isr, DEVICE_DT_GET(DT_NODELABEL(can1)), 0);
 	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(can1), tx, irq));
 
 	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(can1), sce, irq),
 		    DT_IRQ_BY_NAME(DT_NODELABEL(can1), sce, priority),
-		    can_stm32_state_change_isr, DEVICE_GET(can_stm32_1), 0);
+		    can_stm32_state_change_isr,
+		    DEVICE_DT_GET(DT_NODELABEL(can1)), 0);
 	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(can1), sce, irq));
 #endif
 	can->IER |= CAN_IER_TMEIE | CAN_IER_ERRIE | CAN_IER_FMPIE0 |
@@ -1189,7 +1190,7 @@ static void config_can_1_irq(CAN_TypeDef *can)
 
 static int socket_can_init_1(const struct device *dev)
 {
-	const struct device *can_dev = DEVICE_GET(can_stm32_1);
+	const struct device *can_dev = DEVICE_DT_GET(DT_NODELABEL(can1));
 	struct socket_can_context *socket_context = dev->data;
 
 	LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",
@@ -1246,7 +1247,7 @@ static const struct can_stm32_config can_stm32_cfg_2 = {
 
 static struct can_stm32_data can_stm32_dev_data_2;
 
-DEVICE_AND_API_INIT(can_stm32_2, DT_LABEL(DT_NODELABEL(can2)), &can_stm32_init,
+DEVICE_DT_DEFINE(DT_NODELABEL(can2), &can_stm32_init, device_pm_control_nop,
 		    &can_stm32_dev_data_2, &can_stm32_cfg_2,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &can_api_funcs);
@@ -1256,17 +1257,18 @@ static void config_can_2_irq(CAN_TypeDef *can)
 	LOG_DBG("Enable CAN2 IRQ");
 	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(can2), rx0, irq),
 		    DT_IRQ_BY_NAME(DT_NODELABEL(can2), rx0, priority),
-		    can_stm32_rx_isr, DEVICE_GET(can_stm32_2), 0);
+		    can_stm32_rx_isr, DEVICE_DT_GET(DT_NODELABEL(can2)), 0);
 	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(can2), rx0, irq));
 
 	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(can2), tx, irq),
 		    DT_IRQ_BY_NAME(DT_NODELABEL(can2), tx, priority),
-		    can_stm32_tx_isr, DEVICE_GET(can_stm32_2), 0);
+		    can_stm32_tx_isr, DEVICE_DT_GET(DT_NODELABEL(can2)), 0);
 	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(can2), tx, irq));
 
 	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(can2), sce, irq),
 		    DT_IRQ_BY_NAME(DT_NODELABEL(can2), sce, priority),
-		    can_stm32_state_change_isr, DEVICE_GET(can_stm32_2), 0);
+		    can_stm32_state_change_isr,
+		    DEVICE_DT_GET(DT_NODELABEL(can2)), 0);
 	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(can2), sce, irq));
 	can->IER |= CAN_IER_TMEIE | CAN_IER_ERRIE | CAN_IER_FMPIE0 |
 		    CAN_IER_FMPIE1 | CAN_IER_BOFIE;
@@ -1278,7 +1280,7 @@ static void config_can_2_irq(CAN_TypeDef *can)
 
 static int socket_can_init_2(const struct device *dev)
 {
-	const struct device *can_dev = DEVICE_GET(can_stm32_2);
+	const struct device *can_dev = DEVICE_DT_GET(DT_NODELABEL(can2));
 	struct socket_can_context *socket_context = dev->data;
 
 	LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",
