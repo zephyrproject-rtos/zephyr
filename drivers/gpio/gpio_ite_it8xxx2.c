@@ -379,9 +379,9 @@ static const struct gpio_ite_cfg gpio_ite_cfg_##n##_##idx = { \
 	.reg_addr = DT_INST_REG_ADDR(idx),\
 	.gpio_irq[0] = DT_INST_IRQ_BY_IDX(idx, 0, irq),	\
 	}; \
-DEVICE_AND_API_INIT(gpio_it8xxx2_dev_##n##_##idx, \
-		DT_PROP(DT_NODELABEL(n), label), \
+DEVICE_DT_DEFINE(DT_NODELABEL(n), \
 		gpio_ite_init, \
+		device_pm_control_nop, \
 		&gpio_ite_data_##n##_##idx, \
 		&gpio_ite_cfg_##n##_##idx, \
 		POST_KERNEL, \
