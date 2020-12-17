@@ -20,7 +20,6 @@ source "$(KCONFIG_BINARY_DIR)/Kconfig.soc.defconfig"
 
 menu "Modules"
 
-source "$(KCONFIG_BINARY_DIR)/Kconfig.modules"
 source "modules/Kconfig"
 
 endmenu
