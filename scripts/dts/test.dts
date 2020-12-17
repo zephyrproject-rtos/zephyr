@@ -262,7 +262,8 @@
 
 	props-2 {
 		compatible = "props";
-		phandle-array-foos = < &{/ctrl-0-1} &{/ctrl-0-2} >;
+		phandle-array-foos = < &{/ctrl-0-1} 0 &{/ctrl-0-2} >;
+		phandle-array-foo-names = "a", "missing", "b";
 	};
 
 	ctrl-0-1 {

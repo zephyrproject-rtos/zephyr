@@ -587,6 +587,13 @@ def phandle_macros(prop, macro):
             ret[f"{macro}_IDX_{i}_EXISTS"] = 1
     elif prop.type == "phandle-array":
         for i, entry in enumerate(prop.val):
+            if entry is None:
+                # Unspecified element. The phandle-array at this index
+                # does not point at a ControllerAndData value, but
+                # subsequent indices in the array may.
+                ret[f"{macro}_IDX_{i}_EXISTS"] = 0
+                continue
+
             ret.update(controller_and_data_macros(entry, i, macro))
 
     return ret

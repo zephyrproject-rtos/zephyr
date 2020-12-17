@@ -42,7 +42,7 @@
 			phs = <&test_gpio_1 &test_gpio_2 &test_i2c>;
 			phs-or = <&test_enum_default_0 &test_enum_default_1>;
 			gpios = <&test_gpio_1 10 20>, <&test_gpio_2 30 40>;
-			pha-gpios = <&test_gpio_1 50 60>, <&test_gpio_3 70>, <&test_gpio_2 80 90>;
+			pha-gpios = <&test_gpio_1 50 60>, <0>, <&test_gpio_3 70>, <&test_gpio_2 80 90>;
 			foos = <&test_gpio_1 100>, <&test_gpio_2 110>;
 			foo-names = "A", "b-c";
 			pwms = <&test_pwm1 8 200 3>, <&test_pwm2 5 100 1>;

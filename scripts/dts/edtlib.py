@@ -274,6 +274,8 @@ class EDT:
                         self._graph.add_edge(node, phandle_node)
                 elif prop.type == 'phandle-array':
                     for cd in prop.val:
+                        if cd is None:
+                            continue
                         self._graph.add_edge(node, cd.controller)
 
             # A Node depends on whatever supports the interrupts it
@@ -1144,7 +1146,9 @@ class Node:
         #
         #     <name>-names = "...", "...", ...
         #
-        # Returns a list of ControllerAndData instances.
+        # Returns a list of Optional[ControllerAndData] instances.
+        # An index is None if the underlying phandle-array element
+        # is unspecified.
 
         if prop.name.endswith("gpios"):
             # There's some slight special-casing for *-gpios properties in that
@@ -1158,7 +1162,12 @@ class Node:
 
         res = []
 
-        for controller_node, data in _phandle_val_list(prop, basename):
+        for item in _phandle_val_list(prop, basename):
+            if item is None:
+                res.append(None)
+                continue
+
+            controller_node, data = item
             mapped_controller, mapped_data = \
                 _map_phandle_array_entry(prop.node, controller_node, data,
                                          basename)
@@ -2130,10 +2139,13 @@ def _add_names(node, names_ident, objs):
                          len(names), len(objs)))
 
         for obj, name in zip(objs, names):
+            if obj is None:
+                continue
             obj.name = name
     else:
         for obj in objs:
-            obj.name = None
+            if obj is not None:
+                obj.name = None
 
 
 def _interrupt_parent(node):
@@ -2401,8 +2413,11 @@ def _phandle_val_list(prop, n_cells_name):
     #   The <name> part of the #<name>-cells property to look for on the nodes
     #   the phandles point to, e.g. "gpio" for #gpio-cells.
     #
-    # Returns a list of (<node>, <value>) tuples, where <node> is the node
-    # pointed at by <phandle>.
+    # Returns a list[Optional[tuple]].
+    #
+    # Each tuple in the list is a (<node>, <value>) pair, where <node>
+    # is the node pointed at by <phandle>. If <phandle> does not refer
+    # to a node, the entire list element is None.
 
     full_n_cells_name = "#{}-cells".format(n_cells_name)
 
@@ -2418,7 +2433,10 @@ def _phandle_val_list(prop, n_cells_name):
 
         node = prop.node.dt.phandle2node.get(phandle)
         if not node:
-            _err("bad phandle in " + repr(prop))
+            # Unspecified phandle-array element. This is valid; a 0
+            # phandle value followed by no cells is an empty element.
+            res.append(None)
+            continue
 
         if full_n_cells_name not in node.props:
             _err("{!r} lacks {}".format(node, full_n_cells_name))
