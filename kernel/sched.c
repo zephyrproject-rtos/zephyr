@@ -1282,7 +1282,7 @@ static int32_t z_tick_sleep(k_ticks_t ticks)
 	timeout = Z_TIMEOUT_TICKS(ticks);
 #else
 	ticks += _TICK_ALIGN;
-	timeout = Z_TIMEOUT_TICKS(ticks);
+	timeout = ticks;
 #endif
 
 	expected_wakeup_ticks = ticks + z_tick_get_32();
