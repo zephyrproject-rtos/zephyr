@@ -107,4 +107,6 @@ source "drivers/virtualization/Kconfig"
 
 source "drivers/psci/Kconfig"
 
+source "drivers/edac/Kconfig"
+
 endmenu
