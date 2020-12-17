@@ -71,6 +71,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	struct lll_conn *conn_lll;
 	struct ll_scan_set *scan;
 	uint32_t conn_interval_us;
+	uint32_t ready_delay_us;
 	struct lll_scan *lll;
 	struct ll_conn *conn;
 	memq_link_t *link;
@@ -290,6 +291,24 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 
 	conn->tx_head = conn->tx_ctrl = conn->tx_ctrl_last =
 	conn->tx_data = conn->tx_data_last = 0;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	ready_delay_us = lll_radio_tx_ready_delay_get(conn_lll->phy_tx,
+						      conn_lll->phy_flags);
+#else
+	ready_delay_us = lll_radio_tx_ready_delay_get(0, 0);
+#endif
+
+	/* TODO: active_to_start feature port */
+	conn->evt.ticks_active_to_start = 0U;
+	conn->evt.ticks_xtal_to_start =
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
+	conn->evt.ticks_preempt_to_start =
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
+	conn->evt.ticks_slot =
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
+				       ready_delay_us +
+				       328 + EVENT_IFS_US + 328);
 
 	lll->conn = conn_lll;
 
@@ -546,7 +565,6 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	struct pdu_adv *pdu_tx;
 	struct node_rx_cc *cc;
 	struct ll_conn *conn;
-	uint32_t ready_delay_us;
 	uint8_t peer_addr_type;
 	uint32_t ticker_status;
 	uint8_t chan_sel;
@@ -648,24 +666,6 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	ll_rx_put(link, rx);
 	ll_rx_sched();
 
-#if defined(CONFIG_BT_CTLR_PHY)
-	ready_delay_us = lll_radio_tx_ready_delay_get(lll->phy_tx,
-						      lll->phy_flags);
-#else
-	ready_delay_us = lll_radio_tx_ready_delay_get(0, 0);
-#endif
-
-	/* TODO: active_to_start feature port */
-	conn->evt.ticks_active_to_start = 0U;
-	conn->evt.ticks_xtal_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	conn->evt.ticks_preempt_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	conn->evt.ticks_slot =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
-				       ready_delay_us +
-				       328 + EVENT_IFS_US + 328);
-
 	ticks_slot_offset = MAX(conn->evt.ticks_active_to_start,
 				conn->evt.ticks_xtal_to_start);
 
@@ -679,7 +679,14 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	conn_offset_us = ftr->radio_end_us;
 	conn_offset_us += HAL_TICKER_TICKS_TO_US(1);
 	conn_offset_us -= EVENT_OVERHEAD_START_US;
-	conn_offset_us -= ready_delay_us;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	conn_offset_us -= lll_radio_tx_ready_delay_get(lll->phy_tx,
+						      lll->phy_flags);
+#else
+	conn_offset_us -= lll_radio_tx_ready_delay_get(0, 0);
+#endif
+
 
 #if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	/* disable ticker job, in order to chain stop and start to avoid RTC
