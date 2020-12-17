@@ -351,8 +351,9 @@ int npcx_miwu_manage_dev_callback(struct miwu_dev_callback *cb, bool set)
 		.index = DT_PROP(DT_NODELABEL(miwu##inst), index),             \
 	};                                                                     \
 									       \
-	DEVICE_AND_API_INIT(intc_miwu_##inst, DT_INST_LABEL(inst),             \
+	DEVICE_DT_INST_DEFINE(inst,					       \
 			    NPCX_MIWU_INIT_FUNC(inst),                         \
+			    device_pm_control_nop,			       \
 			    NULL, &miwu_config_##inst,                         \
 			    PRE_KERNEL_1,                                      \
 			    CONFIG_KERNEL_INIT_PRIORITY_OBJECTS, NULL);        \
@@ -364,7 +365,7 @@ int npcx_miwu_manage_dev_callback(struct miwu_dev_callback *cb, bool set)
 DT_INST_FOREACH_STATUS_OKAY(NPCX_MIWU_INIT)
 
 /* MIWU module instances */
-#define NPCX_MIWU_DEV(inst) DEVICE_GET(intc_miwu_##inst),
+#define NPCX_MIWU_DEV(inst) DEVICE_DT_INST_GET(inst),
 
 static const struct device *miwu_devs[] = {
 	DT_INST_FOREACH_STATUS_OKAY(NPCX_MIWU_DEV)
