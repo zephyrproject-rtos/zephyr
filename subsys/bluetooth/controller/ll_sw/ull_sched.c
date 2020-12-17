@@ -116,9 +116,7 @@ void ull_sched_after_mstr_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 			}
 #endif
 
-			ticks_slot_abs_curr +=
-				conn->evt.ticks_slot +
-				HAL_TICKER_US_TO_TICKS(EVENT_JITTER_US << 3);
+			ticks_slot_abs_curr += conn->evt.ticks_slot;
 
 			if ((ticker_id_prev != 0xff) &&
 			    (ticker_ticks_diff_get(ticks_to_expire_normal,
