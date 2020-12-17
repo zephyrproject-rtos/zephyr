@@ -25,11 +25,6 @@ set(DTS_POST_CPP                ${PROJECT_BINARY_DIR}/${BOARD}.dts.pre.tmp)
 
 set_ifndef(DTS_SOURCE ${BOARD_DIR}/${BOARD}.dts)
 
-if(DEFINED DTS_COMMON_OVERLAYS)
-  # TODO: remove this warning in version 1.16
-  message(FATAL_ERROR "DTS_COMMON_OVERLAYS is no longer supported. Use DTC_OVERLAY_FILE instead.")
-endif()
-
 zephyr_file(APPLICATION_ROOT DTS_ROOT)
 
 # 'DTS_ROOT' is a list of directories where a directory tree with DT
