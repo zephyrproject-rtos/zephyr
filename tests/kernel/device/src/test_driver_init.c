@@ -128,40 +128,40 @@ static int my_driver_pri_4_init(const struct device *dev)
  *
  * @details Test that kernel shall provide control over device driver
  * initalization order, using initialization level and priority for each
- * instance. We use DEVICE_AND_API_INIT to define device instances and set
+ * instance. We use DEVICE_DEFINE to define device instances and set
  * it's level and priority here, then we run check function later after
  * all of this instance finish their initialization.
  *
  * @ingroup kernel_device_tests
  */
-DEVICE_AND_API_INIT(my_driver_level_1, MY_DRIVER_LV_1, &my_driver_lv_1_init,
-		NULL, NULL, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		&funcs_my_drivers);
+DEVICE_DEFINE(my_driver_level_1, MY_DRIVER_LV_1, &my_driver_lv_1_init,
+		device_pm_control_nop, NULL, NULL, PRE_KERNEL_1,
+		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs_my_drivers);
 
-DEVICE_AND_API_INIT(my_driver_level_2, MY_DRIVER_LV_2, &my_driver_lv_2_init,
-		NULL, NULL, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		&funcs_my_drivers);
+DEVICE_DEFINE(my_driver_level_2, MY_DRIVER_LV_2, &my_driver_lv_2_init,
+		device_pm_control_nop, NULL, NULL, PRE_KERNEL_2,
+		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs_my_drivers);
 
-DEVICE_AND_API_INIT(my_driver_level_3, MY_DRIVER_LV_3, &my_driver_lv_3_init,
-		NULL, NULL, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		&funcs_my_drivers);
+DEVICE_DEFINE(my_driver_level_3, MY_DRIVER_LV_3, &my_driver_lv_3_init,
+		device_pm_control_nop, NULL, NULL, POST_KERNEL,
+		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs_my_drivers);
 
-DEVICE_AND_API_INIT(my_driver_level_4, MY_DRIVER_LV_4, &my_driver_lv_4_init,
-		NULL, NULL, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		&funcs_my_drivers);
+DEVICE_DEFINE(my_driver_level_4, MY_DRIVER_LV_4, &my_driver_lv_4_init,
+		device_pm_control_nop, NULL, NULL, APPLICATION,
+		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs_my_drivers);
 
-DEVICE_AND_API_INIT(my_driver_priority_1, MY_DRIVER_PRI_1,
-		&my_driver_pri_1_init, NULL, NULL, POST_KERNEL, 1,
-		&funcs_my_drivers);
+DEVICE_DEFINE(my_driver_priority_1, MY_DRIVER_PRI_1,
+		&my_driver_pri_1_init, device_pm_control_nop,
+		NULL, NULL, POST_KERNEL, 1, &funcs_my_drivers);
 
-DEVICE_AND_API_INIT(my_driver_priority_2, MY_DRIVER_PRI_2,
-		&my_driver_pri_2_init, NULL, NULL, POST_KERNEL, 2,
-		&funcs_my_drivers);
+DEVICE_DEFINE(my_driver_priority_2, MY_DRIVER_PRI_2,
+		&my_driver_pri_2_init, device_pm_control_nop,
+		NULL, NULL, POST_KERNEL, 2, &funcs_my_drivers);
 
-DEVICE_AND_API_INIT(my_driver_priority_3, MY_DRIVER_PRI_3,
-		&my_driver_pri_3_init, NULL, NULL, POST_KERNEL, 3,
-		&funcs_my_drivers);
+DEVICE_DEFINE(my_driver_priority_3, MY_DRIVER_PRI_3,
+		&my_driver_pri_3_init, device_pm_control_nop,
+		NULL, NULL, POST_KERNEL, 3, &funcs_my_drivers);
 
-DEVICE_AND_API_INIT(my_driver_priority_4, MY_DRIVER_PRI_4,
-		&my_driver_pri_4_init, NULL, NULL, POST_KERNEL, 4,
-		&funcs_my_drivers);
+DEVICE_DEFINE(my_driver_priority_4, MY_DRIVER_PRI_4,
+		&my_driver_pri_4_init, device_pm_control_nop,
+		NULL, NULL, POST_KERNEL, 4, &funcs_my_drivers);
