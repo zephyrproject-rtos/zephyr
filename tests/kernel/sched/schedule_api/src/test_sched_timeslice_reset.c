@@ -85,6 +85,12 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
 		 thread_idx, t, expected_slice_min, expected_slice_max);
 #endif
 
+	/* Before the assert, otherwise in case of fail the output
+	 * will give the impression that the same thread ran more than
+	 * once
+	 */
+	thread_idx = (thread_idx + 1) % NUM_THREAD;
+
 	/** TESTPOINT: timeslice should be reset for each preemptive thread */
 #ifndef CONFIG_COVERAGE
 	zassert_true(t >= expected_slice_min,
@@ -96,7 +102,6 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
 #else
 	(void)t;
 #endif /* CONFIG_COVERAGE */
-	thread_idx = (thread_idx + 1) % NUM_THREAD;
 
 	/* Keep the current thread busy for more than one slice, even though,
 	 * when timeslice used up the next thread should be scheduled in.
