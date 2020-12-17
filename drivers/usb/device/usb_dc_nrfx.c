@@ -466,14 +466,50 @@ static inline struct usbd_event *usbd_evt_alloc(void)
 	return ev;
 }
 
+static void submit_dc_power_event(enum usbd_periph_state state)
+{
+	struct usbd_event *ev = usbd_evt_alloc();
+
+	if (!ev) {
+		return;
+	}
+
+	ev->evt_type = USBD_EVT_POWER;
+	ev->evt.pwr_evt.state = state;
+
+	usbd_evt_put(ev);
+
+	if (usbd_ctx.attached) {
+		usbd_work_schedule();
+	}
+}
+
+#if CONFIG_USB_NRFX_ATTACHED_EVENT_DELAY
+static void attached_evt_delay_handler(struct k_timer *timer)
+{
+	LOG_DBG("ATTACHED event delay done");
+	submit_dc_power_event(USBD_ATTACHED);
+}
+
+static K_TIMER_DEFINE(delay_timer, attached_evt_delay_handler, NULL);
+#endif
+
 static void usb_dc_power_event_handler(nrfx_power_usb_evt_t event)
 {
 	enum usbd_periph_state new_state;
 
 	switch (event) {
 	case NRFX_POWER_USB_EVT_DETECTED:
+#if !CONFIG_USB_NRFX_ATTACHED_EVENT_DELAY
 		new_state = USBD_ATTACHED;
 		break;
+#else
+		LOG_DBG("ATTACHED event delayed");
+		k_timer_start(&delay_timer,
+			      K_MSEC(CONFIG_USB_NRFX_ATTACHED_EVENT_DELAY),
+			      K_NO_WAIT);
+		return;
+#endif
 	case NRFX_POWER_USB_EVT_READY:
 		new_state = USBD_POWERED;
 		break;
@@ -485,21 +521,7 @@ static void usb_dc_power_event_handler(nrfx_power_usb_evt_t event)
 		return;
 	}
 
-	struct usbd_event *ev = usbd_evt_alloc();
-
-	if (!ev) {
-		return;
-	}
-
-	ev->evt_type = USBD_EVT_POWER;
-	ev->evt.pwr_evt.state = new_state;
-
-
-	usbd_evt_put(ev);
-
-	if (usbd_ctx.attached) {
-		usbd_work_schedule();
-	}
+	submit_dc_power_event(new_state);
 }
 
 /* Stopping HFXO, algorithm supports case when stop comes before clock is
