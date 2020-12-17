@@ -72,9 +72,16 @@ Loading image to Audio DSP
 `SOF Diagnostic Driver`_ provide interface for firmware loading. Python tools
 in the board support directory use the interface to load firmware to ``ADSP``.
 
+Note that the ``/dev/hda`` device file created by the diagnostic
+driver must be readable and writable by the process.  This can be
+accomplished via a simple chmod, via a udev handler that associates
+the device with a particular user or group, or simply by running the
+loader script as root:
+
 .. code-block:: console
 
-   $ sudo boards/xtensa/intel_adsp_cavs15/tools/fw_loader.py -f <path to zephyr.ri>
+   $ sudo chmod 777 /dev/hda
+   $ boards/xtensa/intel_adsp_cavs15/tools/fw_loader.py -f <path to zephyr.ri>
 
 Debugging
 =========
@@ -83,13 +90,34 @@ The only way to debug application is using logging. Logging and ADSP logging
 backend needs to be enabled in the application configuration.
 
 ADSP logging backend writes logs to the ring buffer in the shared memory.
-Python tools are using `SOF Diagnostic Driver`_ interface to get logs.
+
+As above, the ``adsplog`` tool requires appropriate permissions, in
+this case to the sysfs "resource4" device on the appropriate PCI
+device.  This can likewise be managed via any filesystem, setuid or
+udev trick the operator prefers.
 
 .. code-block:: console
 
-   $ sudo boards/xtensa/intel_adsp_cavs15/tools/dump_trace.py
-   Open HDA device: /dev/hda
-   0 : Hello World! intel_adsp_cavs15
+   $ boards/xtensa/intel_adsp_cavs15/tools/adsplog.py
+   ERROR: Cannot open /sys/bus/pci/devices/0000:00:0e.0/resource4 for reading
+
+   $ sudo chmod 666 /sys/bus/pci/devices/0000:00:0e.0/resource4
+   $ boards/xtensa/intel_adsp_cavs15/tools/adsplog.py
+   Hello World! intel_adsp_cavs15
+
+Integration Testing With Twister
+================================
+
+The ADSP hardware also has integration for testing using the twister
+tool.  The ``adsplog`` script can be used unmodified as the
+``--device-serial-pty`` handler, and the west flash script should take
+a path to the same key file used above.
+
+.. code-block:: console
+
+    $ZEPHYR_BASE/scripts/twister --device-testing -p intel_adsp_cavs15 \
+      --device-serial-pty $ZEPHYR_BASE/boards/xtensa/intel_adsp_cavs15/tools/adsplog.py \
+      --west-flash $ZEPHYR_BASE/boards/xtensa/intel_adsp_cavs15/tools/flash.sh,$PATH_TO_KEYFILE.pem
 
 .. target-notes::
 
