@@ -66,7 +66,7 @@ NET_BUF_POOL_DEFINE(prep_pool, CONFIG_BT_ATT_PREPARE_COUNT, BT_ATT_MTU,
 #endif /* CONFIG_BT_ATT_PREPARE_COUNT */
 
 K_MEM_SLAB_DEFINE(req_slab, sizeof(struct bt_att_req),
-		  CONFIG_BT_ATT_TX_MAX, 16);
+		  CONFIG_BT_ATT_TX_MAX, __alignof__(struct bt_att_req));
 
 enum {
 	ATT_PENDING_RSP,
@@ -107,9 +107,10 @@ struct bt_att {
 };
 
 K_MEM_SLAB_DEFINE(att_slab, sizeof(struct bt_att),
-		  CONFIG_BT_MAX_CONN, 16);
+		  CONFIG_BT_MAX_CONN, __alignof__(struct bt_att));
 K_MEM_SLAB_DEFINE(chan_slab, sizeof(struct bt_att_chan),
-		  CONFIG_BT_MAX_CONN * ATT_CHAN_MAX, 16);
+		  CONFIG_BT_MAX_CONN * ATT_CHAN_MAX,
+		  __alignof__(struct bt_att_chan));
 static struct bt_att_req cancel;
 
 static void att_req_destroy(struct bt_att_req *req)
