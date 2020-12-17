@@ -445,6 +445,25 @@ extern struct task_state_segment _main_tss;
 	CODE_UNREACHABLE; \
 } while (false)
 
+/*
+ * Dynamic thread object memory alignment.
+ *
+ * If support for SSEx extensions is enabled a 16 byte boundary is required,
+ * since the 'fxsave' and 'fxrstor' instructions require this. In all other
+ * cases a 4 byte boundary is sufficient.
+ */
+#if defined(CONFIG_EAGER_FPU_SHARING) || defined(CONFIG_LAZY_FPU_SHARING)
+#ifdef CONFIG_SSE
+#define ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT	16
+#else
+#define ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT	(sizeof(void *))
+#endif
+#else
+/* No special alignment requirements, simply align on pointer size. */
+#define ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT	(sizeof(void *))
+#endif /* CONFIG_*_FP_SHARING */
+
+
 #ifdef __cplusplus
 }
 #endif
