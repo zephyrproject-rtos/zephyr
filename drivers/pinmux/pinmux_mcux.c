@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_kinetis_pinmux
+
 #include <errno.h>
 #include <device.h>
 #include <drivers/pinmux.h>
@@ -65,67 +67,27 @@ static const struct pinmux_driver_api pinmux_mcux_driver_api = {
 	.input = pinmux_mcux_input,
 };
 
-#ifdef CONFIG_PINMUX_MCUX_PORTA
-static const struct pinmux_mcux_config pinmux_mcux_porta_config = {
-	.base = PORTA,
-	.clock_ip_name = kCLOCK_PortA,
-};
-
-DEVICE_AND_API_INIT(pinmux_porta, CONFIG_PINMUX_MCUX_PORTA_NAME,
-		    &pinmux_mcux_init,
-		    NULL, &pinmux_mcux_porta_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &pinmux_mcux_driver_api);
+#if DT_NODE_HAS_STATUS(DT_INST(0, nxp_kinetis_ke1xf_sim), okay)
+#define INST_DT_CLOCK_IP_NAME(n) \
+	DT_REG_ADDR(DT_INST_PHANDLE(n, clocks)) + DT_INST_CLOCKS_CELL(n, name)
+#else
+#define INST_DT_CLOCK_IP_NAME(n) \
+	CLK_GATE_DEFINE(DT_INST_CLOCKS_CELL(n, offset), \
+			DT_INST_CLOCKS_CELL(n, bits))
 #endif
 
-#ifdef CONFIG_PINMUX_MCUX_PORTB
-static const struct pinmux_mcux_config pinmux_mcux_portb_config = {
-	.base = PORTB,
-	.clock_ip_name = kCLOCK_PortB,
-};
+#define PINMUX_MCUX_INIT(n)						\
+	static const struct pinmux_mcux_config pinmux_mcux_##n##_config = {\
+		.base = (PORT_Type *)DT_INST_REG_ADDR(n),		\
+		.clock_ip_name = INST_DT_CLOCK_IP_NAME(n),		\
+	};								\
+									\
+	DEVICE_DT_INST_DEFINE(n,					\
+			    &pinmux_mcux_init,				\
+			    device_pm_control_nop,			\
+			    NULL, &pinmux_mcux_##n##_config,		\
+			    PRE_KERNEL_1,				\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
+			    &pinmux_mcux_driver_api);
 
-DEVICE_AND_API_INIT(pinmux_portb, CONFIG_PINMUX_MCUX_PORTB_NAME,
-		    &pinmux_mcux_init,
-		    NULL, &pinmux_mcux_portb_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &pinmux_mcux_driver_api);
-#endif
-
-#ifdef CONFIG_PINMUX_MCUX_PORTC
-static const struct pinmux_mcux_config pinmux_mcux_portc_config = {
-	.base = PORTC,
-	.clock_ip_name = kCLOCK_PortC,
-};
-
-DEVICE_AND_API_INIT(pinmux_portc, CONFIG_PINMUX_MCUX_PORTC_NAME,
-		    &pinmux_mcux_init,
-		    NULL, &pinmux_mcux_portc_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &pinmux_mcux_driver_api);
-#endif
-
-#ifdef CONFIG_PINMUX_MCUX_PORTD
-static const struct pinmux_mcux_config pinmux_mcux_portd_config = {
-	.base = PORTD,
-	.clock_ip_name = kCLOCK_PortD,
-};
-
-DEVICE_AND_API_INIT(pinmux_portd, CONFIG_PINMUX_MCUX_PORTD_NAME,
-		    &pinmux_mcux_init,
-		    NULL, &pinmux_mcux_portd_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &pinmux_mcux_driver_api);
-#endif
-
-#ifdef CONFIG_PINMUX_MCUX_PORTE
-static const struct pinmux_mcux_config pinmux_mcux_porte_config = {
-	.base = PORTE,
-	.clock_ip_name = kCLOCK_PortE,
-};
-
-DEVICE_AND_API_INIT(pinmux_porte, CONFIG_PINMUX_MCUX_PORTE_NAME,
-		    &pinmux_mcux_init,
-		    NULL, &pinmux_mcux_porte_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &pinmux_mcux_driver_api);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(PINMUX_MCUX_INIT)
