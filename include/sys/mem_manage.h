@@ -14,13 +14,13 @@
  */
 
 /** No caching. Most drivers want this. */
-#define K_MEM_CACHE_NONE	0
+#define K_MEM_CACHE_NONE	2
 
 /** Write-through caching. Used by certain drivers. */
 #define K_MEM_CACHE_WT		1
 
 /** Full write-back caching. Any RAM mapped wants this. */
-#define K_MEM_CACHE_WB		2
+#define K_MEM_CACHE_WB		0
 
 /** Reserved bits for cache modes in k_map() flags argument */
 #define K_MEM_CACHE_MASK	(BIT(3) - 1)
@@ -93,6 +93,87 @@ extern "C" {
  */
 void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size,
 		uint32_t flags);
+
+/*
+ * k_mem_map() control flags
+ */
+
+/**
+ * @def K_MEM_MAP_UNINIT
+ *
+ * @brief The mapped region is not guaranteed to be zeroed.
+ *
+ * This may improve performance. The associated page frames may contain
+ * indeterminate data, zeroes, or even sensitive information.
+ *
+ * This may not be used with K_MEM_PERM_USER as there are no circumstances
+ * where this is safe.
+ */
+#define K_MEM_MAP_UNINIT	BIT(16)
+
+/**
+ * @def K_MEM_MAP_LOCK
+ *
+ * Region will be pinned in memory and never paged
+ *
+ * Such memory is guaranteed to never produce a page fault due to page-outs
+ * or copy-on-write once the mapping call has returned. Physical page frames
+ * will be pre-fetched as necessary and pinned.
+ */
+#define K_MEM_MAP_LOCK		BIT(17)
+
+/**
+ * @def K_MEM_MAP_GUARD
+ *
+ * A un-mapped virtual guard page will be placed in memory immediately preceding
+ * the mapped region. This page will still be noted as being used by the
+ * virtual memory manager. The total size of the allocation will be the
+ * requested size plus the size of this guard page. The returned address
+ * pointer will not include the guard page immediately below it. The typical
+ * use-case is downward-growing thread stacks.
+ *
+ * Zephyr treats page faults on this guard page as a fatal K_ERR_STACK_CHK_FAIL
+ * if it determines it immediately precedes a stack buffer, this is
+ * implemented in the architecture layer.
+ */
+#define K_MEM_MAP_GUARD		BIT(18)
+
+/**
+ * Map anonymous memory into Zephyr's address space
+ *
+ * This function effectively increases the data space available to Zephyr.
+ * The kernel will choose a base virtual address and return it to the caller.
+ * The memory will have access permissions for all contexts set per the
+ * provided flags argument.
+ *
+ * If user thread access control needs to be managed in any way, do not enable
+ * K_MEM_PERM_USER flags here; instead manage the region's permissions
+ * with memory domain APIs after the mapping has been established. Setting
+ * K_MEM_PERM_USER here will allow all user threads to access this memory
+ * which is usually undesirable.
+ *
+ * Unless K_MEM_MAP_UNINIT is used, the returned memory will be zeroed.
+ *
+ * The mapped region is not guaranteed to be physically contiguous in memory.
+ * Physically contiguous buffers should be allocated statically and pinned
+ * at build time.
+ *
+ * Pages mapped in this way have write-back cache settings.
+ *
+ * The returned virtual memory pointer will be page-aligned. The size
+ * parameter, and any base address for re-mapping purposes must be page-
+ * aligned.
+ *
+ * Many K_MEM_MAP_* flags have been implemented to alter the behavior of this
+ * function, with details in the documentation for these flags.
+ *
+ * @param size Size of the memory mapping. This must be page-aligned.
+ * @param flags K_MEM_PERM_*, K_MEM_MAP_* control flags.
+ * @return The mapped memory location, or NULL if insufficient virtual address
+ *         space, insufficient physical memory to establish the mapping,
+ *         or insufficient memory for paging structures.
+ */
+void *k_mem_map(size_t size, uint32_t flags);
 
 /**
  * Given an arbitrary region, provide a aligned region that covers it
