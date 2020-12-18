@@ -197,6 +197,9 @@ void z_thread_mark_switched_out(void);
  */
 void z_mem_manage_init(void);
 
+/* Workaround for build-time page table mapping of the kernel */
+void z_kernel_map_fixup(void);
+
 #ifdef __cplusplus
 }
 #endif
