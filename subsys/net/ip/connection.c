@@ -505,6 +505,45 @@ static bool conn_are_end_points_valid(struct net_pkt *pkt,
 	return !(my_src_addr && (src_port == dst_port));
 }
 
+static enum net_verdict conn_raw_socket(struct net_pkt *pkt,
+					struct net_conn *conn)
+{
+	if (conn->flags & NET_CONN_LOCAL_ADDR_SET) {
+		struct net_if *pkt_iface = net_pkt_iface(pkt);
+		uint8_t proto = ETH_P_ALL;
+		struct sockaddr_ll *local;
+		struct net_pkt *raw_pkt;
+
+		local = (struct sockaddr_ll *)&conn->local_addr;
+
+		if (local->sll_ifindex !=
+		    net_if_get_by_iface(pkt_iface)) {
+			return NET_CONTINUE;
+		}
+
+		NET_DBG("[%p] raw match found cb %p ud %p", conn,
+			conn->cb, conn->user_data);
+
+		raw_pkt = net_pkt_clone(pkt, CLONE_TIMEOUT);
+		if (!raw_pkt) {
+			net_stats_update_per_proto_drop(pkt_iface, proto);
+			return NET_DROP;
+		}
+
+		if (conn->cb(conn, raw_pkt, NULL, NULL, conn->user_data)
+		    == NET_DROP) {
+			net_stats_update_per_proto_drop(pkt_iface, proto);
+			net_pkt_unref(raw_pkt);
+		} else {
+			net_stats_update_per_proto_recv(pkt_iface, proto);
+		}
+
+		return NET_OK;
+	}
+
+	return NET_CONTINUE;
+}
+
 enum net_verdict net_conn_input(struct net_pkt *pkt,
 				union net_ip_header *ip_hdr,
 				uint8_t proto,
@@ -517,6 +556,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	bool raw_pkt_delivered = false;
 	int16_t best_rank = -1;
 	struct net_conn *conn;
+	enum net_verdict ret;
 	uint16_t src_port;
 	uint16_t dst_port;
 
@@ -681,36 +721,12 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 				mcast_pkt_delivered = true;
 			}
 		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET)) {
-			if (conn->flags & NET_CONN_LOCAL_ADDR_SET) {
-				struct sockaddr_ll *local;
-				struct net_pkt *raw_pkt;
-
-				local = (struct sockaddr_ll *)&conn->local_addr;
-
-				if (local->sll_ifindex !=
-				    net_if_get_by_iface(net_pkt_iface(pkt))) {
-					continue;
-				}
-
-				NET_DBG("[%p] raw match found cb %p ud %p",
-					conn, conn->cb,	conn->user_data);
-
-				raw_pkt = net_pkt_clone(pkt, CLONE_TIMEOUT);
-				if (!raw_pkt) {
-					goto drop;
-				}
-
-				if (conn->cb(conn, raw_pkt, ip_hdr,
-					     proto_hdr, conn->user_data) ==
-								NET_DROP) {
-					net_stats_update_per_proto_drop(
-							pkt_iface, proto);
-					net_pkt_unref(raw_pkt);
-				} else {
-					net_stats_update_per_proto_recv(
-						pkt_iface, proto);
-				}
-
+			ret = conn_raw_socket(pkt, conn);
+			if (ret == NET_DROP) {
+				goto drop;
+			} else if (ret == NET_CONTINUE) {
+				continue;
+			} else if (ret == NET_OK) {
 				raw_pkt_delivered = true;
 			}
 		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN)) {
