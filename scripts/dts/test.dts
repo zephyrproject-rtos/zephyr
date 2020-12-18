@@ -249,7 +249,6 @@
 		path = &{/ctrl-1};
 	};
 
-
 	ctrl-1 {
 		compatible = "phandle-array-controller-1";
 		#phandle-array-foo-cells = <1>;
@@ -265,7 +264,6 @@
 		compatible = "props";
 		phandle-array-foos = < &{/ctrl-0-1} &{/ctrl-0-2} >;
 	};
-
 
 	ctrl-0-1 {
 		compatible = "phandle-array-controller-0";
