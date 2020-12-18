@@ -765,9 +765,10 @@ NET_DEVICE_INIT(ieee802154_cc13xx_cc26xx_subg,
 		&ieee802154_cc13xx_cc26xx_subg_radio_api, IEEE802154_L2,
 		NET_L2_GET_CTX_TYPE(IEEE802154_L2), IEEE802154_MTU);
 #else
-DEVICE_AND_API_INIT(ieee802154_cc13xx_cc26xx_subg,
+DEVICE_DEFINE(ieee802154_cc13xx_cc26xx_subg,
 		CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_DRV_NAME,
 		ieee802154_cc13xx_cc26xx_subg_init,
+		device_pm_control_nop,
 		&ieee802154_cc13xx_cc26xx_subg_data, NULL, POST_KERNEL,
 		CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_INIT_PRIO,
 		&ieee802154_cc13xx_cc26xx_subg_radio_api);
