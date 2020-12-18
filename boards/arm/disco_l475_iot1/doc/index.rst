@@ -125,6 +125,8 @@ The Zephyr Disco L475 IoT board configuration supports the following hardware fe
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
+| QSPI NOR  | on-chip    | flash                               |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
