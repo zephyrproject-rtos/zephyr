@@ -297,6 +297,15 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 
 void *sys_heap_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 {
+	/* special realloc semantics */
+	if (ptr == NULL) {
+		return sys_heap_alloc(heap, bytes);
+	}
+	if (bytes == 0) {
+		sys_heap_free(heap, ptr);
+		return NULL;
+	}
+
 	struct z_heap *h = heap->heap;
 	chunkid_t c = mem_to_chunkid(h, ptr);
 	chunkid_t rc = right_chunk(h, c);
