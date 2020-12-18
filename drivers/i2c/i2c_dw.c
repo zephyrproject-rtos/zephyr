@@ -696,3 +696,19 @@ static int i2c_dw_initialize(const struct device *dev)
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(7), okay)
 #include <i2c_dw_port_7.h>
 #endif
+
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(8), okay)
+#include <i2c_dw_port_8.h>
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(9), okay)
+#include <i2c_dw_port_9.h>
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(10), okay)
+#include <i2c_dw_port_10.h>
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(11), okay)
+#include <i2c_dw_port_11.h>
+#endif

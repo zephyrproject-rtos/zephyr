@@ -40,7 +40,7 @@ zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V2
 
 if(CONFIG_I2C_DW)
   zephyr_library_sources(i2c_dw.c)
-  foreach(NUM RANGE 0 7)
+  foreach(NUM RANGE 0 11)
     configure_file(
       i2c_dw_port_x.h
       ${PROJECT_BINARY_DIR}/include/generated/i2c_dw_port_${NUM}.h
