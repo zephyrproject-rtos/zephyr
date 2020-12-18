@@ -34,7 +34,7 @@ int stream_flash_erase_page(struct stream_flash_ctx *ctx, off_t off)
 	}
 
 	ctx->last_erased_page_start_offset = page.start_offset;
-	LOG_INF("Erasing page at offset 0x%08lx", (long)page.start_offset);
+	LOG_DBG("Erasing page at offset 0x%08lx", (long)page.start_offset);
 
 	flash_write_protection_set(ctx->fdev, false);
 	rc = flash_erase(ctx->fdev, page.start_offset, page.size);
