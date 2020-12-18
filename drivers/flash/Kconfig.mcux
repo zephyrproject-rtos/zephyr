@@ -23,3 +23,16 @@ config CHECK_BEFORE_READING
 	  devices will crash when reading an erased or wrongly programmed area.
 
 endif # SOC_FLASH_MCUX
+
+if HAS_MCUX_FLEXSPI
+
+config FLASH_MCUX_FLEXSPI_NOR
+	bool "MCUX FlexSPI NOR driver"
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_MCUX_FLEXSPI
+
+config FLASH_MCUX_FLEXSPI
+	bool
+
+endif # HAS_MCUX_FLEXSPI
