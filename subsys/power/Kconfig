@@ -13,6 +13,7 @@ config SYS_POWER_MANAGEMENT
 menuconfig PM
 	bool "System Power management"
 	select TICKLESS_IDLE
+	depends on SYS_CLOCK_EXISTS
 	help
 	  This option enables the board to implement extra power management
 	  policies whenever the kernel becomes idle. The kernel informs the
