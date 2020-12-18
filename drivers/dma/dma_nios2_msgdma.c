@@ -234,7 +234,6 @@ static struct nios2_msgdma_dev_cfg dma0_nios2_config = {
 	.msgdma_dev = &msgdma_dev0,
 };
 
-DEVICE_AND_API_INIT(dma0_nios2, CONFIG_DMA_0_NAME, &nios2_msgdma0_initialize,
-		    NULL, &dma0_nios2_config, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &nios2_msgdma_driver_api);
+DEVICE_DEFINE(dma0_nios2, CONFIG_DMA_0_NAME, &nios2_msgdma0_initialize,
+		device_pm_control_nop, NULL, &dma0_nios2_config, POST_KERNEL,
+		CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &nios2_msgdma_driver_api);
