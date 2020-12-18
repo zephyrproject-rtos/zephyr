@@ -23,6 +23,25 @@ LOG_MODULE_REGISTER(gpio_emul);
 	 GPIO_INT_EDGE | GPIO_INT_LOW_0 | GPIO_INT_HIGH_1)
 
 /**
+ * @brief GPIO Emulator interrupt capabilities
+ *
+ * These enumerations are used as a bitmask and allow the GPIO Emulator to
+ * model GPIO interrupt controllers with varying interrupt trigger support.
+ *
+ * For example, some controllers to not support level interrupts,
+ * some controllers do not support rising and falling edge simultaneously,
+ * etc.
+ *
+ * This primarily affects the behaviour of @ref gpio_pin_interrupt_configure.
+ */
+enum gpio_emul_interrupt_cap {
+	GPIO_EMUL_INT_CAP_EDGE_RISING = 1,
+	GPIO_EMUL_INT_CAP_EDGE_FALLING = 2,
+	GPIO_EMUL_INT_CAP_LEVEL_HIGH = 16,
+	GPIO_EMUL_INT_CAP_LEVEL_LOW = 32,
+};
+
+/**
  * @brief Emulated GPIO controller configuration data
  *
  * This structure contains all of the state for a given emulated GPIO
@@ -42,6 +61,8 @@ struct gpio_emul_config {
 	const struct gpio_driver_config common;
 	/** Number of pins available in the given GPIO controller instance */
 	const gpio_pin_t num_pins;
+	/** Supported interrupts */
+	const enum gpio_emul_interrupt_cap interrupt_caps;
 };
 
 /**
@@ -113,6 +134,8 @@ get_pins_with_flags(const struct device *port, gpio_port_pins_t mask,
  * The caller must ensure that @ref gpio_emul_data.mu is locked.
  *
  * @param port The emulated GPIO device pointer
+ *
+ * @return a mask of pins that are configured as @ref GPIO_INPUT
  */
 static inline gpio_port_pins_t get_input_pins(const struct device *port)
 {
@@ -125,16 +148,34 @@ static inline gpio_port_pins_t get_input_pins(const struct device *port)
  * The caller must ensure that @ref gpio_emul_data.mu is locked.
  *
  * @param port The emulated GPIO device pointer
+ *
+ * @return a mask of pins that are configured as @ref GPIO_OUTPUT
  */
 static inline gpio_port_pins_t get_output_pins(const struct device *port)
 {
 	return get_pins_with_flags(port, GPIO_OUTPUT, GPIO_OUTPUT);
 }
 
+/**
+ * Check if @p port has capabilities specified in @p caps
+ *
+ * @param port The emulated GPIO device pointer
+ * @param caps A bitmask of @ref gpio_emul_interrupt_cap
+ *
+ * @return true if all @p caps are present, otherwise false
+ */
+static inline bool gpio_emul_config_has_caps(const struct device *port,
+		int caps) {
+
+	const struct gpio_emul_config *config =
+		(const struct gpio_emul_config *)port->config;
+
+	return (caps & config->interrupt_caps) == caps;
+}
+
 /*
  * GPIO backend API (for setting input pin values)
  */
-
 static void gpio_emul_gen_interrupt_bits(const struct device *port,
 					gpio_port_pins_t mask,
 					gpio_port_value_t prev_values,
@@ -161,28 +202,39 @@ static void gpio_emul_gen_interrupt_bits(const struct device *port,
 
 		switch (drv_data->flags[i] & GPIO_EMUL_INT_BITMASK) {
 		case GPIO_INT_EDGE_RISING:
-			if (detect_edge && !prev_bit && bit) {
-				*interrupts |= BIT(i);
+			if (gpio_emul_config_has_caps(port, GPIO_EMUL_INT_CAP_EDGE_RISING)) {
+				if (detect_edge && !prev_bit && bit) {
+					*interrupts |= BIT(i);
+				}
 			}
 			break;
 		case GPIO_INT_EDGE_FALLING:
-			if (detect_edge && prev_bit && !bit) {
-				*interrupts |= BIT(i);
+			if (gpio_emul_config_has_caps(port, GPIO_EMUL_INT_CAP_EDGE_FALLING)) {
+				if (detect_edge && prev_bit && !bit) {
+					*interrupts |= BIT(i);
+				}
 			}
 			break;
 		case GPIO_INT_EDGE_BOTH:
-			if (detect_edge && prev_bit != bit) {
-				*interrupts |= BIT(i);
+			if (gpio_emul_config_has_caps(port,
+				GPIO_EMUL_INT_CAP_EDGE_RISING | GPIO_EMUL_INT_CAP_EDGE_FALLING)) {
+				if (detect_edge && prev_bit != bit) {
+					*interrupts |= BIT(i);
+				}
 			}
 			break;
 		case GPIO_INT_LEVEL_LOW:
-			if (!bit) {
-				*interrupts |= BIT(i);
+			if (gpio_emul_config_has_caps(port, GPIO_EMUL_INT_CAP_LEVEL_LOW)) {
+				if (!bit) {
+					*interrupts |= BIT(i);
+				}
 			}
 			break;
 		case GPIO_INT_LEVEL_HIGH:
-			if (bit) {
-				*interrupts |= BIT(i);
+			if (gpio_emul_config_has_caps(port, GPIO_EMUL_INT_CAP_LEVEL_HIGH)) {
+				if (bit) {
+					*interrupts |= BIT(i);
+				}
 			}
 			break;
 		case 0:
@@ -478,6 +530,38 @@ static int gpio_emul_port_toggle_bits(const struct device *port, gpio_port_pins_
 	return 0;
 }
 
+static bool gpio_emul_level_trigger_supported(const struct device *port,
+					     enum gpio_int_trig trig)
+{
+	switch (trig) {
+	case GPIO_INT_TRIG_LOW:
+		return gpio_emul_config_has_caps(port, GPIO_EMUL_INT_CAP_LEVEL_LOW);
+	case GPIO_INT_TRIG_HIGH:
+		return gpio_emul_config_has_caps(port, GPIO_EMUL_INT_CAP_LEVEL_HIGH);
+	case GPIO_INT_TRIG_BOTH:
+		return gpio_emul_config_has_caps(port, GPIO_EMUL_INT_CAP_LEVEL_LOW
+			| GPIO_EMUL_INT_CAP_LEVEL_HIGH);
+	default:
+		return false;
+	}
+}
+
+static bool gpio_emul_edge_trigger_supported(const struct device *port,
+					    enum gpio_int_trig trig)
+{
+	switch (trig) {
+	case GPIO_INT_TRIG_LOW:
+		return gpio_emul_config_has_caps(port, GPIO_EMUL_INT_CAP_EDGE_FALLING);
+	case GPIO_INT_TRIG_HIGH:
+		return gpio_emul_config_has_caps(port, GPIO_EMUL_INT_CAP_EDGE_RISING);
+	case GPIO_INT_TRIG_BOTH:
+		return gpio_emul_config_has_caps(port, GPIO_EMUL_INT_CAP_EDGE_FALLING
+			| GPIO_EMUL_INT_CAP_EDGE_RISING);
+	default:
+		return false;
+	}
+}
+
 static int gpio_emul_pin_interrupt_configure(const struct device *port, gpio_pin_t pin,
 					    enum gpio_int_mode mode,
 					    enum gpio_int_trig trig)
@@ -492,8 +576,6 @@ static int gpio_emul_pin_interrupt_configure(const struct device *port, gpio_pin
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&drv_data->mu, K_FOREVER);
-
 	if (mode != GPIO_INT_MODE_DISABLED) {
 		switch (trig) {
 		case GPIO_INT_TRIG_LOW:
@@ -501,10 +583,23 @@ static int gpio_emul_pin_interrupt_configure(const struct device *port, gpio_pin
 		case GPIO_INT_TRIG_BOTH:
 			break;
 		default:
-			ret = -EINVAL;
-			goto unlock;
+			return -EINVAL;
 		}
 	}
+
+	if (mode == GPIO_INT_MODE_LEVEL) {
+		if (!gpio_emul_level_trigger_supported(port, trig)) {
+			return -ENOTSUP;
+		}
+	}
+
+	if (mode == GPIO_INT_MODE_EDGE) {
+		if (!gpio_emul_edge_trigger_supported(port, trig)) {
+			return -ENOTSUP;
+		}
+	}
+
+	k_mutex_lock(&drv_data->mu, K_FOREVER);
 
 	switch (mode) {
 	case GPIO_INT_MODE_DISABLED:
@@ -571,6 +666,17 @@ static int gpio_emul_init(const struct device *dev)
  * Device Initialization
  */
 
+#define GPIO_EMUL_INT_CAPS(_num) (0					\
+	+ DT_INST_PROP(_num, rising_edge)				\
+		* GPIO_EMUL_INT_CAP_EDGE_RISING				\
+	+ DT_INST_PROP(_num, falling_edge)				\
+		* GPIO_EMUL_INT_CAP_EDGE_FALLING			\
+	+ DT_INST_PROP(_num, high_level)				\
+		* GPIO_EMUL_INT_CAP_LEVEL_HIGH				\
+	+ DT_INST_PROP(_num, low_level)					\
+		* GPIO_EMUL_INT_CAP_LEVEL_LOW				\
+	)
+
 #define DEFINE_GPIO_EMUL(_num)						\
 									\
 	static gpio_flags_t						\
@@ -582,6 +688,7 @@ static int gpio_emul_init(const struct device *dev)
 				GPIO_PORT_PIN_MASK_FROM_DT_INST(_num),	\
 		},							\
 		.num_pins = DT_INST_PROP(_num, ngpios),			\
+		.interrupt_caps = GPIO_EMUL_INT_CAPS(_num)		\
 	};								\
 									\
 	static struct gpio_emul_data gpio_emul_data_##_num = {		\

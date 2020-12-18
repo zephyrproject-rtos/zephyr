@@ -147,10 +147,8 @@
 		reg = <0x800 0x4>;
 		rising-edge;
 		falling-edge;
-		dual-edge;
 		high-level;
 		low-level;
-		dual-level;
 		gpio-controller;
 		#gpio-cells = <2>;
 	};
