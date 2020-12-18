@@ -1890,6 +1890,8 @@ void bt_conn_unref(struct bt_conn *conn)
 	BT_DBG("handle %u ref %u -> %u", conn->handle, old,
 	       atomic_get(&conn->ref));
 
+	__ASSERT(old > 0, "Conn reference counter is 0");
+
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
 	    atomic_get(&conn->ref) == 0) {
 		bt_le_adv_resume();
