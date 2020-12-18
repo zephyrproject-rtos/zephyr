@@ -303,6 +303,7 @@ extern char z_priv_stacks_ram_start[];
 extern char z_priv_stacks_ram_end[];
 extern char z_user_stacks_start[];
 extern char z_user_stacks_end[];
+extern char z_kobject_data_begin[];
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
