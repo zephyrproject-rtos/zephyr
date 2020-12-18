@@ -468,7 +468,7 @@ static struct crypto_driver_api mtls_crypto_funcs = {
 	.query_hw_caps = mtls_query_caps,
 };
 
-DEVICE_AND_API_INIT(crypto_mtls, CONFIG_CRYPTO_MBEDTLS_SHIM_DRV_NAME,
-		    &mtls_shim_init, NULL, NULL,
+DEVICE_DEFINE(crypto_mtls, CONFIG_CRYPTO_MBEDTLS_SHIM_DRV_NAME,
+		    &mtls_shim_init, device_pm_control_nop, NULL, NULL,
 		    POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY,
 		    (void *)&mtls_crypto_funcs);
