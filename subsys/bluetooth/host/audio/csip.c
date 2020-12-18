@@ -1304,6 +1304,7 @@ void bt_csip_register_cb(struct bt_csip_cb_t *cb)
 int bt_csip_discover(struct bt_conn *conn, bool subscribe)
 {
 	int err;
+	static bool conn_cb_registered;
 
 	if (!conn) {
 		return -ENOTCONN;
@@ -1311,7 +1312,11 @@ int bt_csip_discover(struct bt_conn *conn, bool subscribe)
 		return -EBUSY;
 	}
 
-	bt_conn_cb_register(&csip_conn_callbacks);
+	if (!conn_cb_registered) {
+		bt_conn_cb_register(&csip_conn_callbacks);
+		conn_cb_registered = true;
+	}
+
 	memset(&set_members, 0, sizeof(set_members));
 
 	k_work_init_delayable(&discover_members_timer,
