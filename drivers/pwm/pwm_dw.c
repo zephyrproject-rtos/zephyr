@@ -17,8 +17,12 @@
  * Accessing load count 2 registers, thus, requires some special treatment.
  */
 
+#define DT_DRV_COMPAT snps_designware_pwm
+
 #include <errno.h>
 
+#include <device.h>
+#include <init.h>
 #include <kernel.h>
 #include <drivers/pwm.h>
 
@@ -147,7 +151,6 @@ static int pwm_dw_pin_set_cycles(const struct device *dev,
 {
 	const struct pwm_dw_config * const cfg =
 	    (const struct pwm_dw_config *)dev->config;
-	int i;
 	uint32_t on, off;
 
 	/* make sure the PWM port exists */
@@ -191,18 +194,15 @@ int pwm_dw_init(const struct device *dev)
 }
 
 /* Initialization for PWM_DW */
-#if defined(CONFIG_PWM_DW)
-#include <device.h>
-#include <init.h>
+#define SNPS_DW_PWM_INIT(n)							\
+	static struct pwm_dw_config pwm_dw_cfg_##n = {				\
+		.addr = DT_INST_REG_ADDR(n),					\
+		.num_ports = DT_INST_PROP(n, channels),				\
+	};									\
+										\
+	DEVICE_DT_INST_DEFINE(n, pwm_dw_init, device_pm_control_nop,		\
+			      NULL, &pwm_dw_cfg_##n,				\
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+			      &pwm_dw_drv_api_funcs);
 
-static struct pwm_dw_config pwm_dw_cfg = {
-	.addr = PWM_DW_BASE_ADDR,
-	.num_ports = PWM_DW_NUM_PORTS,
-};
-
-DEVICE_DEFINE(pwm_dw_0, CONFIG_PWM_DW_0_DRV_NAME, pwm_dw_init,
-		device_pm_control_nop, NULL, &pwm_dw_cfg,
-		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		&pwm_dw_drv_api_funcs);
-
-#endif /* CONFIG_PWM_DW */
+DT_INST_FOREACH_STATUS_OKAY(SNPS_DW_PWM_INIT)
