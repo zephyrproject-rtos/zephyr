@@ -69,6 +69,8 @@ The current Zephyr stm32h747i_disco board configuration supports the following h
 +-----------+------------+-------------------------------------+
 | FMC       | on-chip    | memc (SDRAM)                        |
 +-----------+------------+-------------------------------------+
+| SDMMC     | on-chip    | SDMMC 4 wire mode                   |
++-----------+------------+-------------------------------------+
 
 (*) From UM2411 Rev 4:
    With the default setting, the Ethernet feature is not working because of
