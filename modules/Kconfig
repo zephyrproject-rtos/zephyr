@@ -29,7 +29,6 @@ source "modules/Kconfig.sof"
 source "modules/Kconfig.st"
 source "modules/Kconfig.stm32"
 source "modules/Kconfig.syst"
-source "modules/Kconfig.tfm"
 source "modules/Kconfig.tinycbor"
 source "modules/Kconfig.tinycrypt"
 source "modules/Kconfig.vega"
@@ -51,6 +50,9 @@ comment "Unavailable modules, please install those via the project manifest."
 
 comment "hal_nordic module not available."
 	depends on !ZEPHYR_HAL_NORDIC_MODULE
+
+comment "Trusted-firmware-m module not available."
+	depends on !ZEPHYR_TRUSTED_FIRMWARE_M_MODULE
 
 # This ensures that symbols are available in Kconfig for dependency checking
 # and referencing, while keeping the settings themselves unavailable when the

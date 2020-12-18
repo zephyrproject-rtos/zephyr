@@ -4,6 +4,8 @@
 # Copyright (c) 2020 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+config ZEPHYR_TRUSTED_FIRMWARE_M_MODULE
+	bool
 
 config TFM_BOARD
 	string
