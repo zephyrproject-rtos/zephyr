@@ -95,6 +95,21 @@
 
 &lpi2c3 {
 	status = "okay";
+
+	ov7725@21 {
+		compatible = "ovti,ov7725";
+		reg = <0x21>;
+		label = "OV7725";
+		status = "okay";
+
+		reset-gpios = <&gpio2 20 GPIO_ACTIVE_HIGH>;
+
+		port {
+			ov7725_ep_out: endpoint {
+				remote-endpoint = <&csi_ep_in>;
+			};
+		};
+	};
 };
 
 &lpspi3 {
@@ -154,4 +169,15 @@
 &usdhc1 {
 	status = "okay";
 	cd-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
+};
+
+&csi {
+	status = "okay";
+	sensor-label = "OV7725";
+
+	port {
+		csi_ep_in: endpoint {
+			remote-endpoint = <&ov7725_ep_out>;
+		};
+	};
 };
