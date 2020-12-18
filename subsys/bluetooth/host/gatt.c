@@ -1900,8 +1900,11 @@ static void gatt_indicate_rsp(struct bt_conn *conn, uint8_t err,
 {
 	struct bt_gatt_indicate_params *params = user_data;
 
+	if (params->func) {
+		params->func(conn, params, err);
+	}
+
 	params->_ref--;
-	params->func(conn, params, err);
 	if (params->destroy && (params->_ref == 0)) {
 		params->destroy(params);
 	}
@@ -1975,10 +1978,6 @@ static int gatt_indicate(struct bt_conn *conn, uint16_t handle,
 
 	net_buf_add(buf, params->len);
 	memcpy(ind->value, params->data, params->len);
-
-	if (!params->func) {
-		return gatt_send(conn, buf, NULL, NULL, NULL);
-	}
 
 	return gatt_send(conn, buf, gatt_indicate_rsp, params, NULL);
 }
