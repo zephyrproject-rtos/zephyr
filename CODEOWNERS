@@ -461,7 +461,7 @@
 /lib/cmsis_rtos_v1/                       @nashif
 /lib/libc/                                @nashif
 /modules/                                 @nashif
-/modules/Kconfig.tfm                      @ioannisg @microbuilder
+/modules/trusted-firmware-m/              @ioannisg @microbuilder
 /kernel/device.c                          @andyross @nashif
 /kernel/idle.c                            @andyross @nashif
 /samples/                                 @nashif
