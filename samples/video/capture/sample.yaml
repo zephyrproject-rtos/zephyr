@@ -4,5 +4,5 @@ tests:
   sample.video.capture:
     build_only: true
     tags: video
-    platform_allow: mimxrt1064_evk
+    platform_allow: mimxrt1064_evk mm_swiftio
     depends_on: video
