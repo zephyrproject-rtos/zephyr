@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Amarula Solutions.
+ * Copyright (c) 2021 Filip Zawadiak <fzawadiak@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,11 +19,16 @@
 
 LOG_MODULE_REGISTER(stm32_sdmmc);
 
+typedef void (*irq_config_func_t)(const struct device *dev);
+
 struct stm32_sdmmc_priv {
 	SD_HandleTypeDef hsd;
+	struct k_sem sem;
+	struct k_sem sync;
 	int status;
 	struct k_work work;
 	struct gpio_callback cd_cb;
+	irq_config_func_t irq_config;
 	struct {
 		const char *name;
 		const struct device *port;
@@ -64,6 +70,12 @@ static int stm32_sdmmc_clock_enable(struct stm32_sdmmc_priv *priv)
 		;
 
 	LL_RCC_SetSDMMCClockSource(LL_RCC_SDMMC1_CLKSOURCE_PLLSAI1);
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
+#if defined(CONFIG_DISK_ACCESS_STM32_CLOCK_SOURCE_PLL1_Q)
+	LL_RCC_SetSDMMCClockSource(LL_RCC_SDMMC_CLKSOURCE_PLL1Q);
+#elif defined(CONFIG_DISK_ACCESS_STM32_CLOCK_SOURCE_PLL2_R)
+	LL_RCC_SetSDMMCClockSource(LL_RCC_SDMMC_CLKSOURCE_PLL2R);
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
 #endif
 
 	clock = device_get_binding(STM32_CLOCK_CONTROL_NAME);
@@ -108,12 +120,41 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 		return err;
 	}
 
+	/* Initialize semaphore */
+	k_sem_init(&priv->sem, 1, 1);
+	k_sem_init(&priv->sync, 0, 1);
+
+	/* Run IRQ init */
+	priv->irq_config(dev);
+
+	priv->hsd.Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING;
+	priv->hsd.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE;
+	priv->hsd.Init.BusWide = SDMMC_BUS_WIDE_4B;
+	priv->hsd.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
+	priv->hsd.Init.ClockDiv = 1;
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+	priv->hsd.Init.TranceiverPresent = SDMMC_TRANSCEIVER_NOT_PRESENT;
+#endif
+
 	err = HAL_SD_Init(&priv->hsd);
 	if (err != HAL_OK) {
 		LOG_ERR("failed to init stm32_sdmmc");
 		return -EIO;
 	}
 
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+	err = HAL_SD_ConfigWideBusOperation(&priv->hsd, SDMMC_BUS_WIDE_4B);
+	if (err != HAL_OK) {
+		LOG_ERR("failed to enable wide bus stm32_sdmmc");
+		return -EIO;
+	}
+
+	err = HAL_SD_ConfigSpeedBusOperation(&priv->hsd, SDMMC_SPEED_MODE_HIGH);
+	if (err != HAL_OK) {
+		LOG_ERR("failed to enable high speed bus stm32_sdmmc");
+		return -EIO;
+	}
+#endif
 	priv->status = DISK_STATUS_OK;
 	return 0;
 }
@@ -139,15 +180,43 @@ static int stm32_sdmmc_access_read(struct disk_info *disk, uint8_t *data_buf,
 	struct stm32_sdmmc_priv *priv = dev->data;
 	int err;
 
-	err = HAL_SD_ReadBlocks(&priv->hsd, data_buf, start_sector,
-				num_sector, 30000);
+	k_sem_take(&priv->sem, K_FOREVER);
+
+#ifdef STM32_SDMMC_USE_DMA
+	/* Clean cache first to be secure when buffers are not */
+	/* 32 byte aligned and allocated on stack */
+	uint32_t aligned_buf = (uint32_t)data_buf & ~0x1F;
+
+	SCB_CleanDCache_by_Addr((uint32_t *)aligned_buf,
+		num_sector*512 + ((uint32_t)data_buf - aligned_buf));
+
+	err = HAL_SD_ReadBlocks_DMA(&priv->hsd, data_buf, start_sector,
+				num_sector);
+#else
+	err = HAL_SD_ReadBlocks_IT(&priv->hsd, data_buf, start_sector,
+				num_sector);
+#endif /* STM32_SDMMC_USE_DMA */
+
 	if (err != HAL_OK) {
+		k_sem_give(&priv->sem);
 		LOG_ERR("sd read block failed %d", err);
 		return -EIO;
 	}
 
-	while (HAL_SD_GetCardState(&priv->hsd) != HAL_SD_CARD_TRANSFER)
-		;
+	k_sem_take(&priv->sync, K_FOREVER);
+
+#ifdef STM32_SDMMC_USE_DMA
+	/* Invalidate buffers */
+	SCB_InvalidateDCache_by_Addr((uint32_t *)aligned_buf,
+		num_sector*512 + ((uint32_t)data_buf - aligned_buf));
+#endif /* STM32_SDMMC_USE_DMA */
+
+	if (HAL_SD_GetCardState(&priv->hsd) != HAL_SD_CARD_TRANSFER) {
+		k_sem_give(&priv->sem);
+		return -EIO;
+	}
+
+	k_sem_give(&priv->sem);
 
 	return 0;
 }
@@ -160,14 +229,35 @@ static int stm32_sdmmc_access_write(struct disk_info *disk,
 	struct stm32_sdmmc_priv *priv = dev->data;
 	int err;
 
-	err = HAL_SD_WriteBlocks(&priv->hsd, (uint8_t *)data_buf, start_sector,
-				 num_sector, 30000);
+	k_sem_take(&priv->sem, K_FOREVER);
+
+#ifdef STM32_SDMMC_USE_DMA
+	/* Flush cache to RAM to make sure DMA sees the same data */
+	uint32_t aligned_buf = (uint32_t)data_buf & ~0x1F;
+
+	SCB_CleanDCache_by_Addr((uint32_t *)aligned_buf,
+		num_sector*512 + ((uint32_t)data_buf - aligned_buf));
+
+	err = HAL_SD_WriteBlocks_DMA(&priv->hsd, (uint8_t *)data_buf, start_sector,
+				     num_sector);
+#else
+	err = HAL_SD_WriteBlocks_IT(&priv->hsd, (uint8_t *)data_buf, start_sector,
+				     num_sector);
+#endif
 	if (err != HAL_OK) {
+		k_sem_give(&priv->sem);
 		LOG_ERR("sd write block failed %d", err);
 		return -EIO;
 	}
-	while (HAL_SD_GetCardState(&priv->hsd) != HAL_SD_CARD_TRANSFER)
-		;
+
+	k_sem_take(&priv->sync, K_FOREVER);
+
+	if (HAL_SD_GetCardState(&priv->hsd) != HAL_SD_CARD_TRANSFER) {
+		k_sem_give(&priv->sem);
+		return -EIO;
+	}
+
+	k_sem_give(&priv->sem);
 
 	return 0;
 }
@@ -182,14 +272,18 @@ static int stm32_sdmmc_access_ioctl(struct disk_info *disk, uint8_t cmd,
 
 	switch (cmd) {
 	case DISK_IOCTL_GET_SECTOR_COUNT:
+		k_sem_take(&priv->sem, K_FOREVER);
 		err = HAL_SD_GetCardInfo(&priv->hsd, &info);
+		k_sem_give(&priv->sem);
 		if (err != HAL_OK) {
 			return -EIO;
 		}
 		*(uint32_t *)buff = info.LogBlockNbr;
 		break;
 	case DISK_IOCTL_GET_SECTOR_SIZE:
+		k_sem_take(&priv->sem, K_FOREVER);
 		err = HAL_SD_GetCardInfo(&priv->hsd, &info);
+		k_sem_give(&priv->sem);
 		if (err != HAL_OK) {
 			return -EIO;
 		}
@@ -401,41 +495,81 @@ err_card_detect:
 	return err;
 }
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
+static void disk_stm32_sdmmc_isr(const struct device *dev)
+{
+	struct stm32_sdmmc_priv *priv = dev->data;
 
-static const struct soc_gpio_pinctrl sdmmc_pins_1[] =
-						ST_STM32_DT_INST_PINCTRL(0, 0);
+	HAL_SD_IRQHandler(&priv->hsd);
+}
 
-static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
-	.hsd = {
-		.Instance = (SDMMC_TypeDef *)DT_INST_REG_ADDR(0),
-	},
-#if DT_INST_NODE_HAS_PROP(0, cd_gpios)
-	.cd = {
-		.name = DT_INST_GPIO_LABEL(0, cd_gpios),
-		.pin = DT_INST_GPIO_PIN(0, cd_gpios),
-		.flags = DT_INST_GPIO_FLAGS(0, cd_gpios),
-	},
-#endif
-#if DT_INST_NODE_HAS_PROP(0, pwr_gpios)
-	.pe = {
-		.name = DT_INST_GPIO_LABEL(0, pwr_gpios),
-		.pin = DT_INST_GPIO_PIN(0, pwr_gpios),
-		.flags = DT_INST_GPIO_FLAGS(0, pwr_gpios),
-	},
-#endif
-	.pclken = {
-		.bus = DT_INST_CLOCKS_CELL(0, bus),
-		.enr = DT_INST_CLOCKS_CELL(0, bits),
-	},
-	.pinctrl = {
-		.list = sdmmc_pins_1,
-		.len = ARRAY_SIZE(sdmmc_pins_1)
+void HAL_SD_RxCpltCallback(SD_HandleTypeDef *hsd)
+{
+	struct stm32_sdmmc_priv *priv =
+	CONTAINER_OF(hsd, struct stm32_sdmmc_priv, hsd);
+
+	k_sem_give(&priv->sync);
+}
+
+void HAL_SD_TxCpltCallback(SD_HandleTypeDef *hsd)
+{
+	struct stm32_sdmmc_priv *priv =
+	CONTAINER_OF(hsd, struct stm32_sdmmc_priv, hsd);
+
+	k_sem_give(&priv->sync);
+}
+
+void HAL_SD_ErrorCallback(SD_HandleTypeDef *hsd)
+{
+	struct stm32_sdmmc_priv *priv =
+	CONTAINER_OF(hsd, struct stm32_sdmmc_priv, hsd);
+
+	k_sem_give(&priv->sync);
+}
+
+#define STM32_SDMMC_GPIO_CONFIG(id, func)				\
+		.name = DT_INST_GPIO_LABEL(id, func##_gpios),		\
+		.pin = DT_INST_GPIO_PIN(id, func##_gpios),		\
+		.flags = DT_INST_GPIO_FLAGS(id, func##_gpios),		\
+
+#define STM32_SDMMC_GPIO(id, func)					\
+	.func = {							\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(id, func##_gpios),	\
+		(STM32_SDMMC_GPIO_CONFIG(id, func)),			\
+		(NULL))							\
 	}
-};
 
-DEVICE_DT_INST_DEFINE(0, disk_stm32_sdmmc_init, device_pm_control_nop,
-		    &stm32_sdmmc_priv_1, NULL, APPLICATION,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    NULL);
-#endif
+#define STM32_SDMMC_INIT(id)						\
+									\
+static void sdmmc_irqconfig_##id(const struct device *dev)		\
+{									\
+	IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority),	\
+		    disk_stm32_sdmmc_isr, DEVICE_DT_INST_GET(id), 0);	\
+	irq_enable(DT_INST_IRQN(0));					\
+}									\
+									\
+static const struct soc_gpio_pinctrl sdmmc_pins_##id[] =		\
+	ST_STM32_DT_INST_PINCTRL(id, 0);				\
+									\
+static struct stm32_sdmmc_priv stm32_sdmmc_priv_##id = {		\
+	.hsd = {							\
+		.Instance = (SDMMC_TypeDef *)DT_INST_REG_ADDR(id),	\
+	},								\
+	.pclken = {							\
+		.bus = DT_INST_CLOCKS_CELL(id, bus),			\
+		.enr = DT_INST_CLOCKS_CELL(id, bits),			\
+	},								\
+	.pinctrl = {							\
+		.list = sdmmc_pins_##id,				\
+		.len = ARRAY_SIZE(sdmmc_pins_##id)			\
+	},								\
+	.irq_config = sdmmc_irqconfig_##id,				\
+	STM32_SDMMC_GPIO(id, cd),					\
+	STM32_SDMMC_GPIO(id, pe),					\
+};									\
+									\
+DEVICE_DT_INST_DEFINE(id, disk_stm32_sdmmc_init, device_pm_control_nop,	\
+		    &stm32_sdmmc_priv_##id, NULL, APPLICATION,		\
+		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
+		    NULL)
+
+DT_INST_FOREACH_STATUS_OKAY(STM32_SDMMC_INIT);

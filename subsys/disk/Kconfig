@@ -144,10 +144,36 @@ config DISK_ACCESS_STM32_SDMMC
 	bool "STM32 SDMMC driver"
 	depends on HAS_STM32CUBE
 	select USE_STM32_HAL_SD
+	select USE_STM32_HAL_DMA if SOC_SERIES_STM32F7X
 	select USE_STM32_LL_SDMMC
+	select USE_STM32_LL_DELAYBLOCK
 	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_SDMMC))
 	help
 	  File system on sdmmc accessed through stm32 sdmmc.
+
+config DISK_ACCESS_STM32_SDMMC_USE_DMA
+	bool "STM32 SDMMC with DMA"
+	depends on DISK_ACCESS_STM32_SDMMC
+	default y if SOC_SERIES_STM32H7X
+	help
+	  Use build-it DMA engine of STM32H7
+
+choice DISK_ACCESS_STM32_CLOCK_SOURCE
+	prompt "STM32 SDMMC Clock Source"
+	depends on DISK_ACCESS_STM32_SDMMC
+	default DISK_ACCESS_STM32_CLOCK_SOURCE_PLL1_Q
+	help
+	  Both sdmmc peripherials can be clocked either by PLL1 Q or PLL2 R.
+
+config DISK_ACCESS_STM32_CLOCK_SOURCE_PLL1_Q
+	bool "PLL1 Q"
+
+config DISK_ACCESS_STM32_CLOCK_SOURCE_PLL2_R
+	select CLOCK_STM32_PLL2_ENABLE
+	select CLOCK_STM32_PLL2_R_ENABLE
+	bool "PLL2 R"
+
+endchoice
 
 config DISK_STM32_SDMMC_VOLUME_NAME
 	string "SDMMC Disk mount point or drive name"
