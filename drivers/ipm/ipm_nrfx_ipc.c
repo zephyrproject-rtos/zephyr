@@ -227,8 +227,8 @@ static const struct ipm_driver_api vipm_nrf_##_idx##_driver_api = {	\
 	.set_enabled = vipm_nrf_##_idx##_set_enabled			\
 };									\
 									\
-DEVICE_AND_API_INIT(vipm_nrf_##_idx, "IPM_"#_idx,			\
-		    vipm_nrf_init, NULL, NULL,				\
+DEVICE_DEFINE(vipm_nrf_##_idx, "IPM_"#_idx,				\
+		    vipm_nrf_init, device_pm_control_nop, NULL, NULL,	\
 		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 		    &vipm_nrf_##_idx##_driver_api)
 
