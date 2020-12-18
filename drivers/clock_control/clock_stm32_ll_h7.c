@@ -282,6 +282,7 @@ static int32_t optimize_regulator_voltage_scale(uint32_t sysclk_freq)
 #if defined(CONFIG_CLOCK_STM32_PLL_SRC_HSE) || \
 	defined(CONFIG_CLOCK_STM32_PLL_SRC_HSI) || \
 	defined(CONFIG_CLOCK_STM32_PLL_SRC_CSI) || \
+	defined(CONFIG_CLOCK_STM32_PLL2_ENABLE) || \
 	defined(CONFIG_CLOCK_STM32_PLL3_ENABLE)
 
 static int get_vco_input_range(uint32_t m_div, uint32_t *range)
@@ -310,7 +311,6 @@ static uint32_t get_vco_output_range(uint32_t vco_input_range)
 	if (vco_input_range == LL_RCC_PLLINPUTRANGE_1_2) {
 		return LL_RCC_PLLVCORANGE_MEDIUM;
 	}
-
 	return LL_RCC_PLLVCORANGE_WIDE;
 }
 #endif /* CONFIG_CLOCK_STM32_PLL_SRC_* */
@@ -485,6 +485,7 @@ static int stm32_clock_control_init(const struct device *dev)
 #if defined(CONFIG_CLOCK_STM32_PLL_SRC_HSE) || \
 	defined(CONFIG_CLOCK_STM32_PLL_SRC_HSI) || \
 	defined(CONFIG_CLOCK_STM32_PLL_SRC_CSI) || \
+	defined(CONFIG_CLOCK_STM32_PLL2_ENABLE) || \
 	defined(CONFIG_CLOCK_STM32_PLL3_ENABLE)
 
 	int r;
@@ -685,9 +686,46 @@ static int stm32_clock_control_init(const struct device *dev)
 
 #endif /* CONFIG_CPU_CORTEX_M4 */
 
+#if defined(CONFIG_CLOCK_STM32_PLL2_ENABLE)
+	/* Initialize PLL 2 */
+	r = get_vco_input_range(CONFIG_CLOCK_STM32_PLL2_M_DIVISOR,
+				&vco_input_range);
+	if (r < 0) {
+		return r;
+	}
+
+	vco_output_range = get_vco_output_range(vco_input_range);
+
+	LL_RCC_PLL2FRACN_Disable();
+
+	LL_RCC_PLL2_SetM(CONFIG_CLOCK_STM32_PLL2_M_DIVISOR);
+	LL_RCC_PLL2_SetN(CONFIG_CLOCK_STM32_PLL2_N_MULTIPLIER);
+
+	LL_RCC_PLL2_SetVCOInputRange(vco_input_range);
+	LL_RCC_PLL2_SetVCOOutputRange(vco_output_range);
+
+#if defined(CONFIG_CLOCK_STM32_PLL2_P_ENABLE)
+	LL_RCC_PLL2P_Enable();
+	LL_RCC_PLL2_SetP(CONFIG_CLOCK_STM32_PLL2_P_DIVISOR);
+#endif /* CONFIG_CLOCK_STM32_PLL2_P_ENABLE */
+#if defined(CONFIG_CLOCK_STM32_PLL2_Q_ENABLE)
+	LL_RCC_PLL2Q_Enable();
+	LL_RCC_PLL2_SetQ(CONFIG_CLOCK_STM32_PLL2_Q_DIVISOR);
+#endif /* CONFIG_CLOCK_STM32_PLL2_Q_ENABLE */
+#if defined(CONFIG_CLOCK_STM32_PLL2_R_ENABLE)
+	LL_RCC_PLL2R_Enable();
+	LL_RCC_PLL2_SetR(CONFIG_CLOCK_STM32_PLL2_R_DIVISOR);
+#endif /* CONFIG_CLOCK_STM32_PLL2_R_ENABLE */
+
+	LL_RCC_PLL2_Enable();
+	while (LL_RCC_PLL2_IsReady() != 1U) {
+	}
+#endif /* CONFIG_CLOCK_STM32_PLL2_ENABLE */
+
 #if defined(CONFIG_CLOCK_STM32_PLL3_ENABLE)
 	/* Initialize PLL 3 */
-	r = get_vco_input_range(CONFIG_CLOCK_STM32_PLL3_M_DIVISOR, &vco_input_range);
+	r = get_vco_input_range(CONFIG_CLOCK_STM32_PLL3_M_DIVISOR,
+				&vco_input_range);
 	if (r < 0) {
 		return r;
 	}

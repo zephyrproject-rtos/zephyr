@@ -104,6 +104,70 @@ config CLOCK_STM32_PLL_R_DIVISOR
 	help
 	  PLL R Output divisor, allowed values: 1-128.
 
+# PLL2 settings
+
+config CLOCK_STM32_PLL2_ENABLE
+	bool "Enable PLL2"
+	help
+	  Enable PLL2. It is used to generate the kernel clock for some peripherals.
+
+if CLOCK_STM32_PLL2_ENABLE
+
+config CLOCK_STM32_PLL2_M_DIVISOR
+	int "PLL2 divisor"
+	default 32
+	range 1 63
+	help
+	  PLL divisor, allowed values: 1-63.
+
+config CLOCK_STM32_PLL2_N_MULTIPLIER
+	int "PLL2 VCO multiplier"
+	default 129
+	range 4 512
+	help
+	  PLL2 multiplier, allowed values: 4-512.
+
+config CLOCK_STM32_PLL2_P_ENABLE
+	bool "Enable PLL2 P output"
+	help
+	  Enable PLL2 P output.
+
+config CLOCK_STM32_PLL2_P_DIVISOR
+	int "PLL2 P Divisor"
+	depends on CLOCK_STM32_PLL2_P_ENABLE
+	default 2
+	range 1 128
+	help
+	  PLL2 P Output divisor, allowed values: 1-128.
+
+config CLOCK_STM32_PLL2_Q_ENABLE
+	bool "Enable PLL2 Q output"
+	help
+	  Enable PLL2 Q output.
+
+config CLOCK_STM32_PLL2_Q_DIVISOR
+	int "PLL2 Q Divisor"
+	depends on CLOCK_STM32_PLL2_Q_ENABLE
+	default 2
+	range 1 128
+	help
+	  PLL2 Q Output divisor, allowed values: 1-128.
+
+config CLOCK_STM32_PLL2_R_ENABLE
+	bool "Enable PLL2 R output"
+	help
+	  Enable PLL2 R output.
+
+config CLOCK_STM32_PLL2_R_DIVISOR
+	int "PLL2 R Divisor"
+	depends on CLOCK_STM32_PLL2_R_ENABLE
+	default 2
+	range 1 128
+	help
+	  PLL2 R Output divisor, allowed values: 1-128.
+
+endif # CLOCK_STM32_PLL2_ENABLE
+
 # PLL3 settings
 
 config CLOCK_STM32_PLL3_ENABLE
