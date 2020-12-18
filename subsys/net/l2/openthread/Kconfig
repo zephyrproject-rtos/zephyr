@@ -142,7 +142,7 @@ endmenu # "Zephyr optimizations"
 config OPENTHREAD_SHELL
 	bool "Enable OpenThread shell"
 	depends on !OPENTHREAD_COPROCESSOR
-	select SHELL
+	depends on SHELL
 	default y
 
 config OPENTHREAD_MBEDTLS
