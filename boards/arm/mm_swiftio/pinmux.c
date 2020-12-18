@@ -192,6 +192,44 @@ static int mm_swiftio_init(const struct device *dev)
 	imxrt_usdhc_pinmux_cb_register(mm_swiftio_usdhc_pinmux);
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(csi), okay) && CONFIG_VIDEO
+	IOMUXC_SetPinMux(
+		IOMUXC_GPIO_AD_B1_04_CSI_PIXCLK,
+		0U);
+	IOMUXC_SetPinMux(
+		IOMUXC_GPIO_AD_B1_05_CSI_MCLK,
+		0U);
+	IOMUXC_SetPinMux(
+		IOMUXC_GPIO_AD_B0_14_CSI_VSYNC,
+		0U);
+	IOMUXC_SetPinMux(
+		IOMUXC_GPIO_AD_B0_15_CSI_HSYNC,
+		0U);
+	IOMUXC_SetPinMux(
+		IOMUXC_GPIO_AD_B1_08_CSI_DATA09,
+		0U);
+	IOMUXC_SetPinMux(
+		IOMUXC_GPIO_AD_B1_09_CSI_DATA08,
+		0U);
+	IOMUXC_SetPinMux(
+		IOMUXC_GPIO_AD_B1_10_CSI_DATA07,
+		0U);
+	IOMUXC_SetPinMux(
+		IOMUXC_GPIO_AD_B1_11_CSI_DATA06,
+		0U);
+	IOMUXC_SetPinMux(
+		IOMUXC_GPIO_AD_B1_12_CSI_DATA05,
+		0U);
+	IOMUXC_SetPinMux(
+		IOMUXC_GPIO_AD_B1_13_CSI_DATA04,
+		0U);
+	IOMUXC_SetPinMux(
+		IOMUXC_GPIO_AD_B1_14_CSI_DATA03,
+		0U);
+	IOMUXC_SetPinMux(
+		IOMUXC_GPIO_AD_B1_15_CSI_DATA02,
+		0U);
+#endif
 	return 0;
 }
 
