@@ -69,7 +69,7 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 	/* Check if this double word is erased */
 	if (flash[0] != 0xFFFFFFFFUL ||
 	    flash[1] != 0xFFFFFFFFUL) {
-		LOG_ERR("Word at offs %d not erased", offset);
+		LOG_ERR("Word at offs %ld not erased", (long)offset);
 		return -EIO;
 	}
 
