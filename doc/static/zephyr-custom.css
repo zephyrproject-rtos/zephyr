@@ -157,6 +157,9 @@ th,td {
   border-left: none !important; */
 }
 
+ol li {
+	margin-bottom: 5px;
+}
 
 /* tweak display of option tables to make first column wider */
 col.option {
