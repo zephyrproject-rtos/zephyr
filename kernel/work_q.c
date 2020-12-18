@@ -109,10 +109,6 @@ int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 		return 0;
 	}
 
-#ifdef CONFIG_LEGACY_TIMEOUT_API
-	delay = _TICK_ALIGN + k_ms_to_ticks_ceil32(delay);
-#endif
-
 	/* Add timeout */
 	z_add_timeout(&work->timeout, work_timeout, delay);
 

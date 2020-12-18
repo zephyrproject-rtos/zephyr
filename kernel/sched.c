@@ -666,9 +666,6 @@ static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
 static void add_thread_timeout(struct k_thread *thread, k_timeout_t timeout)
 {
 	if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-#ifdef CONFIG_LEGACY_TIMEOUT_API
-		timeout = _TICK_ALIGN + k_ms_to_ticks_ceil32(timeout);
-#endif
 		z_add_thread_timeout(thread, timeout);
 	}
 }
@@ -1276,14 +1273,7 @@ static int32_t z_tick_sleep(k_ticks_t ticks)
 		return 0;
 	}
 
-	k_timeout_t timeout;
-
-#ifndef CONFIG_LEGACY_TIMEOUT_API
-	timeout = Z_TIMEOUT_TICKS(ticks);
-#else
-	ticks += _TICK_ALIGN;
-	timeout = ticks;
-#endif
+	k_timeout_t timeout = Z_TIMEOUT_TICKS(ticks);
 
 	expected_wakeup_ticks = ticks + z_tick_get_32();
 
@@ -1322,11 +1312,7 @@ int32_t z_impl_k_sleep(k_timeout_t timeout)
 		return (int32_t) K_TICKS_FOREVER;
 	}
 
-#ifdef CONFIG_LEGACY_TIMEOUT_API
-	ticks = k_ms_to_ticks_ceil32(timeout);
-#else
 	ticks = timeout.ticks;
-#endif
 
 	ticks = z_tick_sleep(ticks);
 	sys_trace_end_call(SYS_TRACE_ID_SLEEP);

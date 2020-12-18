@@ -95,15 +95,11 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 	__ASSERT_NO_MSG(arch_mem_coherent(to));
 #endif
 
-#ifdef CONFIG_LEGACY_TIMEOUT_API
-	k_ticks_t ticks = timeout;
-#else
 	k_ticks_t ticks = timeout.ticks + 1;
 
 	if (IS_ENABLED(CONFIG_TIMEOUT_64BIT) && Z_TICK_ABS(ticks) >= 0) {
 		ticks = Z_TICK_ABS(ticks) - (curr_tick + elapsed());
 	}
-#endif
 
 	__ASSERT(!sys_dnode_is_linked(&to->node), "");
 	to->fn = fn;
@@ -304,14 +300,10 @@ uint64_t z_timeout_end_calc(k_timeout_t timeout)
 		return z_tick_get();
 	}
 
-#ifdef CONFIG_LEGACY_TIMEOUT_API
-	dt = k_ms_to_ticks_ceil32(timeout);
-#else
 	dt = timeout.ticks;
 
 	if (IS_ENABLED(CONFIG_TIMEOUT_64BIT) && Z_TICK_ABS(dt) >= 0) {
 		return Z_TICK_ABS(dt);
 	}
-#endif
 	return z_tick_get() + MAX(1, dt);
 }
