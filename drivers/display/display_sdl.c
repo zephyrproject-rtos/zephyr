@@ -415,9 +415,9 @@ static const struct display_driver_api sdl_display_api = {
 	.set_pixel_format = sdl_display_set_pixel_format,
 };
 
-DEVICE_AND_API_INIT(sdl_display, CONFIG_SDL_DISPLAY_DEV_NAME, &sdl_display_init,
-		    &sdl_display_data, NULL, APPLICATION,
-		    CONFIG_APPLICATION_INIT_PRIORITY, &sdl_display_api);
+DEVICE_DEFINE(sdl_display, CONFIG_SDL_DISPLAY_DEV_NAME, &sdl_display_init,
+		device_pm_control_nop, &sdl_display_data, NULL, APPLICATION,
+		CONFIG_APPLICATION_INIT_PRIORITY, &sdl_display_api);
 
 
 NATIVE_TASK(sdl_display_cleanup, ON_EXIT, 1);
