@@ -19,6 +19,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,flash-controller = &mx25r6435f;
 	};
 
 	leds {
@@ -173,20 +174,12 @@
 
 		slot0_partition: partition@20000 {
 			label = "image-0";
-			reg = <0x00020000 0x0006C000>;
+			reg = <0x00020000 0x000D8000>;
 		};
-		slot1_partition: partition@8c000 {
-			label = "image-1";
-			reg = <0x0008C000 0x0006C000>;
-		};
+
 		scratch_partition: partition@f8000 {
 			label = "image-scratch";
 			reg = <0x000F8000 0x00004000>;
-		};
-
-		storage_partition: partition@fc000 {
-			label = "storage";
-			reg = <0x000fc000 0x00004000>;
 		};
 	};
 };
@@ -227,4 +220,44 @@
 		     &adc1_in4_pc3 &adc1_in13_pc4
 		     &adc1_in14_pc5>;
 	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&quadspi {
+	pinctrl-0 = <&quadspi_clk_pe10 &quadspi_ncs_pe11
+		     &quadspi_bk1_io0_pe12 &quadspi_bk1_io1_pe13
+		     &quadspi_bk1_io2_pe14 &quadspi_bk1_io3_pe15>;
+	dmas = <&dma1 5 5 0x0000 0x03>;
+	dma-names = "tx_rx";
+
+	status = "okay";
+
+	mx25r6435f: qspi-nor-flash@0 {
+		compatible = "st,stm32-qspi-nor";
+		label = "MX25R6435F";
+		reg = <0>;
+		qspi-max-frequency = <50000000>;
+		/* 64 Megabits = 8 Megabytes */
+		size = <0x4000000>;
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			slot1_partition: partition@0 {
+				label = "image-1";
+				reg = <0x00000000 0x000D8000>;
+				};
+
+			storage_partition: partition@D8000 {
+				label = "storage";
+				reg = <0x000D8000 DT_SIZE_M(7)>;
+			};
+		};
+	};
 };
