@@ -61,7 +61,7 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 	 * Store r0-r3, r12, lr, lr_und and spsr_und into the stack to
 	 * construct an exception stack frame.
 	 */
-	srsdb sp, #MODE_UND!
+	srsdb sp!, #MODE_UND
 	stmfd sp, {r0-r3, r12, lr}^
 	sub sp, #24
 
@@ -95,7 +95,7 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_prefetch_abort)
 	 * Store r0-r3, r12, lr, lr_abt and spsr_abt into the stack to
 	 * construct an exception stack frame.
 	 */
-	srsdb sp, #MODE_ABT!
+	srsdb sp!, #MODE_ABT
 	stmfd sp, {r0-r3, r12, lr}^
 	sub sp, #24
 
@@ -130,7 +130,7 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_data_abort)
 	 * Store r0-r3, r12, lr, lr_abt and spsr_abt into the stack to
 	 * construct an exception stack frame.
 	 */
-	srsdb sp, #MODE_ABT!
+	srsdb sp!, #MODE_ABT
 	stmfd sp, {r0-r3, r12, lr}^
 	sub sp, #24
 
