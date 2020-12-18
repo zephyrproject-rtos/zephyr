@@ -29,8 +29,6 @@ extern "C" {
 
 #if defined(CONFIG_NET_OFFLOAD)
 
-#ifndef CONFIG_LEGACY_TIMEOUT_API
-
 /** @cond INTERNAL_HIDDEN */
 
 static inline int32_t timeout_to_int32(k_timeout_t timeout)
@@ -45,8 +43,6 @@ static inline int32_t timeout_to_int32(k_timeout_t timeout)
 }
 
 /** @endcond */
-
-#endif /* CONFIG_LEGACY_TIMEOUT_API */
 
 /** For return parameters and return values of the elements in this
  * struct, see similarly named functions in net_context.h
@@ -247,11 +243,7 @@ static inline int net_offload_connect(struct net_if *iface,
 
 	return net_if_offload(iface)->connect(
 		context, addr, addrlen, cb,
-#ifdef CONFIG_LEGACY_TIMEOUT_API
-		Z_TIMEOUT_MS(timeout),
-#else
 		timeout_to_int32(timeout),
-#endif
 		user_data);
 }
 
@@ -294,11 +286,7 @@ static inline int net_offload_accept(struct net_if *iface,
 
 	return net_if_offload(iface)->accept(
 		context, cb,
-#ifdef CONFIG_LEGACY_TIMEOUT_API
-		Z_TIMEOUT_MS(timeout),
-#else
 		timeout_to_int32(timeout),
-#endif
 		user_data);
 }
 
@@ -340,11 +328,7 @@ static inline int net_offload_send(struct net_if *iface,
 
 	return net_if_offload(iface)->send(
 		pkt, cb,
-#ifdef CONFIG_LEGACY_TIMEOUT_API
-		Z_TIMEOUT_MS(timeout),
-#else
 		timeout_to_int32(timeout),
-#endif
 		user_data);
 }
 
@@ -390,11 +374,7 @@ static inline int net_offload_sendto(struct net_if *iface,
 
 	return net_if_offload(iface)->sendto(
 		pkt, dst_addr, addrlen, cb,
-#ifdef CONFIG_LEGACY_TIMEOUT_API
-		Z_TIMEOUT_MS(timeout),
-#else
 		timeout_to_int32(timeout),
-#endif
 		user_data);
 }
 
@@ -443,11 +423,7 @@ static inline int net_offload_recv(struct net_if *iface,
 
 	return net_if_offload(iface)->recv(
 		context, cb,
-#ifdef CONFIG_LEGACY_TIMEOUT_API
-		Z_TIMEOUT_MS(timeout),
-#else
 		timeout_to_int32(timeout),
-#endif
 		user_data);
 }
 

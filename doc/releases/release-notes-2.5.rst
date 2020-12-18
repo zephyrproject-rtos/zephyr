@@ -54,6 +54,10 @@ API Changes
 * The :c:func:`mqtt_keepalive_time_left` function now returns -1 if keep alive
   messages are disabled by setting ``CONFIG_MQTT_KEEPALIVE`` to 0.
 
+* The ``CONFIG_LEGACY_TIMEOUT_API`` mode has been removed.  All kernel
+  timeout usage must use the new-style k_timeout_t type and not the
+  legacy/deprecated millisecond counts.
+
 Deprecated in this release
 ==========================
 

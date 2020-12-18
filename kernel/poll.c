@@ -641,10 +641,6 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 		__ASSERT(num_events == events_registered,
 			 "Some events were not registered!\n");
 
-#ifdef CONFIG_LEGACY_TIMEOUT_API
-		timeout = k_ms_to_ticks_ceil32(timeout);
-#endif
-
 		/* Setup timeout if such action is requested */
 		if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 			z_add_timeout(&work->timeout,

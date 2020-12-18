@@ -50,8 +50,6 @@ typedef uint32_t k_ticks_t;
 
 #define K_TICKS_FOREVER ((k_ticks_t) -1)
 
-#ifndef CONFIG_LEGACY_TIMEOUT_API
-
 /**
  * @brief Kernel timeout type
  *
@@ -106,21 +104,6 @@ typedef struct {
  * the same value in both spaces!  Clever, huh?
  */
 #define Z_TICK_ABS(t) (K_TICKS_FOREVER - 1 - (t))
-
-#else
-
-/* Legacy timeout API */
-typedef int32_t k_timeout_t;
-#define K_TIMEOUT_EQ(a, b) ((a) == (b))
-#define Z_TIMEOUT_NO_WAIT 0
-#define Z_TIMEOUT_TICKS(t) k_ticks_to_ms_ceil32(t)
-#define Z_FOREVER K_TICKS_FOREVER
-#define Z_TIMEOUT_MS(t) (t)
-#define Z_TIMEOUT_US(t) ((999 + (t)) / 1000)
-#define Z_TIMEOUT_NS(t) ((999999 + (t)) / 1000000)
-#define Z_TIMEOUT_CYC(t) k_cyc_to_ms_ceil32(MAX((t), 0))
-
-#endif
 
 /** @} */
 
