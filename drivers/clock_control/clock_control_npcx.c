@@ -160,8 +160,9 @@ const struct npcx_pcc_config pcc_config = {
 	.base_pmc  = DT_INST_REG_ADDR_BY_NAME(0, pmc),
 };
 
-DEVICE_AND_API_INIT(npcx_cdcg, NPCX_CLK_CTRL_NAME,
+DEVICE_DEFINE(npcx_cdcg, NPCX_CLK_CTRL_NAME,
 		    &npcx_clock_control_init,
+		    device_pm_control_nop,
 		    NULL, &pcc_config,
 		    PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,
