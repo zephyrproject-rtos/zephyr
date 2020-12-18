@@ -81,8 +81,9 @@ struct nrf_clock_control_config {
 };
 
 static atomic_t hfclk_users;
-static uint64_t hf_start_tstamp;
-static uint64_t hf_stop_tstamp;
+static bool hf_started;
+static uint32_t hf_start_tstamp;
+static uint32_t hf_stop_tstamp;
 
 static struct nrf_clock_control_sub_data *get_sub_data(const struct device *dev,
 						       enum clock_control_nrf_type type)
@@ -221,17 +222,18 @@ static void lfclk_stop(void)
 
 static void hfclk_start(void)
 {
-	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_SHELL)) {
-		hf_start_tstamp = k_uptime_get();
-	}
-
 	nrfx_clock_hfclk_start();
+
+	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_SHELL)) {
+		hf_start_tstamp = k_cycle_get_32();
+		hf_started = true;
+	}
 }
 
 static void hfclk_stop(void)
 {
 	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_SHELL)) {
-		hf_stop_tstamp = k_uptime_get();
+		hf_stop_tstamp = k_cycle_get_32();
 	}
 
 	nrfx_clock_hfclk_stop();
@@ -718,24 +720,32 @@ static int cmd_status(const struct shell *shell, size_t argc, char **argv)
 	struct onoff_manager *lf_mgr =
 				get_onoff_manager(CLOCK_DEVICE,
 						  CLOCK_CONTROL_NRF_TYPE_LFCLK);
-	uint32_t abs_start, abs_stop;
+	uint32_t diff_start, diff_stop;
 	int key = irq_lock();
-	uint64_t now = k_uptime_get();
+	uint32_t now = k_cycle_get_32();
+	uint64_t now_ms = k_uptime_get();
 
 	(void)nrfx_clock_is_running(NRF_CLOCK_DOMAIN_HFCLK, (void *)&hfclk_src);
 	hf_status = (hfclk_src == NRF_CLOCK_HFCLK_HIGH_ACCURACY);
 
-	abs_start = hf_start_tstamp;
-	abs_stop = hf_stop_tstamp;
 	irq_unlock(key);
 
+	diff_start = k_cyc_to_ms_floor32(now - hf_start_tstamp);
+	diff_stop = k_cyc_to_ms_floor32(now - hf_stop_tstamp);
+
 	shell_print(shell, "HF clock:");
-	shell_print(shell, "\t- %srunning (users: %u)",
-			hf_status ? "" : "not ", hf_mgr->refs);
-	shell_print(shell, "\t- last start: %u ms (%u ms ago)",
-			(uint32_t)abs_start, (uint32_t)(now - abs_start));
-	shell_print(shell, "\t- last stop: %u ms (%u ms ago)",
-			(uint32_t)abs_stop, (uint32_t)(now - abs_stop));
+
+	if (hf_started) {
+		shell_print(shell, "\t- %srunning (users: %u)",
+			    hf_status ? "" : "not ", hf_mgr->refs);
+		shell_print(shell, "\t- last start: %u ms (%u ms ago)",
+			    (uint32_t)now_ms - diff_start, diff_start);
+		shell_print(shell, "\t- last stop: %u ms (%u ms ago)",
+			    (uint32_t)now_ms - diff_stop, diff_stop);
+	} else {
+		shell_print(shell, "\t - never started");
+	}
+
 	shell_print(shell, "LF clock:");
 	shell_print(shell, "\t- %srunning (users: %u)",
 			lf_status ? "" : "not ", lf_mgr->refs);
@@ -744,7 +754,10 @@ static int cmd_status(const struct shell *shell, size_t argc, char **argv)
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(subcmds,
-	SHELL_CMD_ARG(status, NULL, "Status", cmd_status, 1, 0),
+	SHELL_CMD_ARG(status, NULL, "Print clock control status. Note that "
+		"timing report may be invalid if high frequency clock state "
+		"changes are too far in the past (e.g. exceeds 36h when RTC "
+		"is used as system clock", cmd_status, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
 
