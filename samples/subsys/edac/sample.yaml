@@ -11,4 +11,5 @@ common:
 
 tests:
   sample.subsys.edac:
+    platform_allow: ehl_crb
     tags: edac
