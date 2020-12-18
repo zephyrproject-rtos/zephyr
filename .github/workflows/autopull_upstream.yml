@@ -1,0 +1,32 @@
+name: Pull Zephyr
+
+on:
+  schedule:
+  - cron: "0 0 * * *"
+
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+    - name: clone repo
+      run: |
+        git clone -b upstream git@github.com:${{ github.repository }}.git ${{ github.repository }}
+
+    - name: rebase to upstream
+      run: |
+        cd ${{ github.repository }}
+        git remote add upstream https://github.com/zephyrproject-rtos/zephyr.git
+        git fetch upstream
+        git rebase upstream/master
+        cd ..
+
+    - name: push back to upstream
+      run: |
+        cd ${{ github.repository }}
+        git push origin upstream -f
+        cd ..
+
+    - name: post cleanup
+      if: always()
+      run: |
+        rm -rf ${{ github.repository }}
