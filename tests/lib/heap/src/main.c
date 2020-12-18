@@ -275,6 +275,21 @@ static void test_realloc(void)
 		     "Realloc should have shrunk in place %p -> %p",
 		     p1, p2);
 	zassert_true(realloc_check_block(p2, p1, 64), "data changed");
+
+	/* Allocate two blocks, then expand the first within a chunk.
+	 * validate that it doesn't move. We assume CHUNK_UNIT == 8.
+	 */
+	p1 = sys_heap_alloc(&heap, 61);
+	realloc_fill_block(p1, 61);
+	p2 = sys_heap_alloc(&heap, 80);
+	realloc_fill_block(p2, 80);
+	p3 = sys_heap_realloc(&heap, p1, 64);
+
+	zassert_true(sys_heap_validate(&heap), "invalid heap");
+	zassert_true(p1 == p3,
+		     "Realloc should have expanded in place %p -> %p",
+		     p1, p3);
+	zassert_true(realloc_check_block(p3, p1, 61), "data changed");
 }
 
 void test_main(void)
