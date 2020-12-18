@@ -730,9 +730,10 @@ static const struct ptp_clock_driver_api api = {
 UTIL_LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, PTP_INIT_FUNC, _)
 
 #define DEFINE_PTP_DEVICE(x, _)						\
-	DEVICE_AND_API_INIT(eth_native_posix_ptp_clock_##x,		\
+	DEVICE_DEFINE(eth_native_posix_ptp_clock_##x,			\
 			    PTP_CLOCK_NAME "_" #x,			\
 			    ptp_init_##x,				\
+			    device_pm_control_nop,			\
 			    &ptp_context_##x,				\
 			    NULL,					\
 			    POST_KERNEL,				\
