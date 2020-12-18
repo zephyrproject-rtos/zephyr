@@ -14,6 +14,22 @@ properties:
     label:
       required: true
 
+    rising-edge:
+      description: Enables support for rising edge interrupt detection
+      type: boolean
+
+    falling-edge:
+      description: Enables support for falling edge interrupt detection
+      type: boolean
+
+    high-level:
+      description: Enables support for high level interrupt detection
+      type: boolean
+
+    low-level:
+      description: Enables support for low level interrupt detection
+      type: boolean
+
     "#gpio-cells":
       const: 2
 
