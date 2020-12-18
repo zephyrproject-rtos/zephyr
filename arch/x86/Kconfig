@@ -189,29 +189,6 @@ config X86_MMU
 	  and creates a set of page tables at boot time that is runtime-
 	  mutable.
 
-config X86_MMU_PAGE_POOL_PAGES
-	int "Number of pages to reserve for building page tables"
-	default 0
-	depends on X86_MMU
-	help
-	  Define the number of pages in the pool used to allocate page table
-	  data structures at runtime.
-
-	  Pages might need to be drawn from the pool during memory mapping
-	  operations, unless the address space has been completely pre-allocated.
-
-	  Pages will need to drawn from the pool to initialize memory domains.
-	  This does not include the default memory domain if KPTI=n.
-
-	  The specific value used here depends on the size of physical RAM,
-	  how much additional virtual memory will be mapped at runtime, and
-	  how many memory domains need to be initialized.
-
-	  The current suite of Zephyr test cases may initialize at most two
-	  additional memory domains besides the default domain.
-
-	  Unused pages in this pool cannot be used for other purposes.
-
 config X86_COMMON_PAGE_TABLE
 	bool "Use a single page table for all threads"
 	default n
@@ -223,6 +200,18 @@ config X86_COMMON_PAGE_TABLE
 	  own page tables. Instead, context switching operations will modify
 	  page tables in place. This is much slower, but uses much less RAM
 	  for page tables.
+
+config X86_MAX_ADDITIONAL_MEM_DOMAINS
+	int "Maximum number of memory domains"
+	default 3
+	depends on X86_MMU && USERSPACE && !X86_COMMON_PAGE_TABLE
+	help
+	  The initial page tables at boot are pre-allocated, and used for the
+	  default memory domain. Instantiation of additional memory domains
+	  if common page tables are in use requires a pool of free pinned
+	  memory pages for constructing page tables.
+
+	  Zephyr test cases assume 3 additional domains can be instantiated.
 
 config X86_NO_MELTDOWN
 	bool
