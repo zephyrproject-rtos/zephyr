@@ -43,78 +43,55 @@
 
 static void test_path_props(void)
 {
-	zassert_true(!strcmp(DT_LABEL(TEST_DEADBEEF), "TEST_GPIO_1"),
-		     "deadbeef label != TEST_GPIO_1");
-	zassert_equal(DT_NUM_REGS(TEST_DEADBEEF), 1,
-		      "deadbeef num reg");
-	zassert_equal(DT_REG_ADDR(TEST_DEADBEEF), 0xdeadbeef,
-		      "deadbeef reg[0] addr");
-	zassert_equal(DT_REG_SIZE(TEST_DEADBEEF), 0x1000,
-		      "deadbeef reg[0] len");
-	zassert_equal(DT_PROP(TEST_DEADBEEF, gpio_controller), 1,
-		      "deadbeef gpio-controller");
-	zassert_equal(DT_PROP(TEST_DEADBEEF, ngpios), 32, "deadbeef ngpios");
-	zassert_true(!strcmp(DT_PROP(TEST_DEADBEEF, status), "okay"),
-		     "deadbeef status");
-	zassert_equal(DT_PROP_LEN(TEST_DEADBEEF, compatible), 1,
-		      "deadbeef compatible len");
+	zassert_true(!strcmp(DT_LABEL(TEST_DEADBEEF), "TEST_GPIO_1"), "");
+	zassert_equal(DT_NUM_REGS(TEST_DEADBEEF), 1, "");
+	zassert_equal(DT_REG_ADDR(TEST_DEADBEEF), 0xdeadbeef, "");
+	zassert_equal(DT_REG_SIZE(TEST_DEADBEEF), 0x1000, "");
+	zassert_equal(DT_PROP(TEST_DEADBEEF, gpio_controller), 1, "");
+	zassert_equal(DT_PROP(TEST_DEADBEEF, ngpios), 32, "");
+	zassert_true(!strcmp(DT_PROP(TEST_DEADBEEF, status), "okay"), "");
+	zassert_equal(DT_PROP_LEN(TEST_DEADBEEF, compatible), 1, "");
 	zassert_true(!strcmp(DT_PROP_BY_IDX(TEST_DEADBEEF, compatible, 0),
-			     "vnd,gpio"),
-		     "deadbeef compatible[0]");
-	zassert_true(DT_NODE_HAS_PROP(TEST_DEADBEEF, status),
-		     "deadbeef status");
-	zassert_false(DT_NODE_HAS_PROP(TEST_DEADBEEF, foobar),
-		      "deadbeef foobar");
+			     "vnd,gpio"), "");
+	zassert_true(DT_NODE_HAS_PROP(TEST_DEADBEEF, status), "");
+	zassert_false(DT_NODE_HAS_PROP(TEST_DEADBEEF, foobar), "");
 
-	zassert_true(!strcmp(DT_LABEL(TEST_ABCD1234), "TEST_GPIO_2"),
-		     "abcd1234 label != TEST_GPIO_2");
-	zassert_equal(DT_NUM_REGS(TEST_ABCD1234), 2,
-		      "abcd1234 num regs");
-	zassert_equal(DT_PROP(TEST_ABCD1234, gpio_controller), 1,
-		     "abcd1234 gpio-controller");
-	zassert_equal(DT_PROP(TEST_ABCD1234, ngpios), 32, "abcd1234 ngpios");
-	zassert_true(!strcmp(DT_PROP(TEST_ABCD1234, status), "okay"),
-		     "abcd1234 status");
-	zassert_equal(DT_PROP_LEN(TEST_ABCD1234, compatible), 1,
-		      "abcd1234 compatible len");
+	zassert_true(!strcmp(DT_LABEL(TEST_ABCD1234), "TEST_GPIO_2"), "");
+	zassert_equal(DT_NUM_REGS(TEST_ABCD1234), 2, "");
+	zassert_equal(DT_PROP(TEST_ABCD1234, gpio_controller), 1, "");
+	zassert_equal(DT_PROP(TEST_ABCD1234, ngpios), 32, "");
+	zassert_true(!strcmp(DT_PROP(TEST_ABCD1234, status), "okay"), "");
+	zassert_equal(DT_PROP_LEN(TEST_ABCD1234, compatible), 1, "");
 	zassert_true(!strcmp(DT_PROP_BY_IDX(TEST_ABCD1234, compatible, 0),
-			     "vnd,gpio"),
-		     "abcd1234 compatible[0]");
+			     "vnd,gpio"), "");
 }
 
 static void test_alias_props(void)
 {
-	zassert_equal(DT_NUM_REGS(TEST_ALIAS), 1, "num regs");
-	zassert_equal(DT_REG_ADDR(TEST_ALIAS), 0xdeadbeef, "reg[0] addr");
-	zassert_equal(DT_REG_SIZE(TEST_ALIAS), 0x1000, "reg[0] len");
-	zassert_true(!strcmp(DT_LABEL(TEST_ALIAS), "TEST_GPIO_1"), "label");
-	zassert_equal(DT_PROP(TEST_ALIAS, gpio_controller), 1,
-		      "gpio-controller");
-	zassert_equal(DT_PROP(TEST_ALIAS, ngpios), 32, "ngpios");
-	zassert_true(!strcmp(DT_PROP(TEST_ALIAS, status), "okay"), "status");
-	zassert_equal(DT_PROP_LEN(TEST_ALIAS, compatible), 1,
-		      "compatible len");
+	zassert_equal(DT_NUM_REGS(TEST_ALIAS), 1, "");
+	zassert_equal(DT_REG_ADDR(TEST_ALIAS), 0xdeadbeef, "");
+	zassert_equal(DT_REG_SIZE(TEST_ALIAS), 0x1000, "");
+	zassert_true(!strcmp(DT_LABEL(TEST_ALIAS), "TEST_GPIO_1"), "");
+	zassert_equal(DT_PROP(TEST_ALIAS, gpio_controller), 1, "");
+	zassert_equal(DT_PROP(TEST_ALIAS, ngpios), 32, "");
+	zassert_true(!strcmp(DT_PROP(TEST_ALIAS, status), "okay"), "");
+	zassert_equal(DT_PROP_LEN(TEST_ALIAS, compatible), 1, "");
 	zassert_true(!strcmp(DT_PROP_BY_IDX(TEST_ALIAS, compatible, 0),
-			     "vnd,gpio"),
-		     "compatible[0]");
+			     "vnd,gpio"), "");
 }
 
 static void test_nodelabel_props(void)
 {
-	zassert_equal(DT_NUM_REGS(TEST_NODELABEL), 1, "num regs");
-	zassert_equal(DT_REG_ADDR(TEST_NODELABEL), 0xdeadbeef, "reg[0] addr");
-	zassert_equal(DT_REG_SIZE(TEST_NODELABEL), 0x1000, "reg[0] len");
-	zassert_true(!strcmp(DT_LABEL(TEST_NODELABEL), "TEST_GPIO_1"), "label");
-	zassert_equal(DT_PROP(TEST_NODELABEL, gpio_controller), 1,
-		      "gpio-controller");
-	zassert_equal(DT_PROP(TEST_NODELABEL, ngpios), 32, "ngpios");
-	zassert_true(!strcmp(DT_PROP(TEST_NODELABEL, status), "okay"),
-		     "status");
-	zassert_equal(DT_PROP_LEN(TEST_NODELABEL, compatible), 1,
-		      "compatible len");
+	zassert_equal(DT_NUM_REGS(TEST_NODELABEL), 1, "");
+	zassert_equal(DT_REG_ADDR(TEST_NODELABEL), 0xdeadbeef, "");
+	zassert_equal(DT_REG_SIZE(TEST_NODELABEL), 0x1000, "");
+	zassert_true(!strcmp(DT_LABEL(TEST_NODELABEL), "TEST_GPIO_1"), "");
+	zassert_equal(DT_PROP(TEST_NODELABEL, gpio_controller), 1, "");
+	zassert_equal(DT_PROP(TEST_NODELABEL, ngpios), 32, "");
+	zassert_true(!strcmp(DT_PROP(TEST_NODELABEL, status), "okay"), "");
+	zassert_equal(DT_PROP_LEN(TEST_NODELABEL, compatible), 1, "");
 	zassert_true(!strcmp(DT_PROP_BY_IDX(TEST_NODELABEL, compatible, 0),
-			     "vnd,gpio"),
-		     "compatible[0]");
+			     "vnd,gpio"), "");
 }
 
 #undef DT_DRV_COMPAT
@@ -131,34 +108,23 @@ static void test_inst_props(void)
 	 * with status "disabled".
 	 */
 
-	zassert_equal(DT_PROP(TEST_INST, gpio_controller), 1,
-		      "gpio-controller");
+	zassert_equal(DT_PROP(TEST_INST, gpio_controller), 1, "");
 	zassert_true(!strcmp(DT_PROP(TEST_INST, status), "okay") ||
-		     !strcmp(DT_PROP(TEST_INST, status), "disabled"),
-		     "status");
-	zassert_equal(DT_PROP_LEN(TEST_INST, compatible), 1,
-		      "compatible len");
+		     !strcmp(DT_PROP(TEST_INST, status), "disabled"), "");
+	zassert_equal(DT_PROP_LEN(TEST_INST, compatible), 1, "");
 	zassert_true(!strcmp(DT_PROP_BY_IDX(TEST_INST, compatible, 0),
-			     "vnd,gpio"),
-		     "compatible[0]");
+			     "vnd,gpio"), "");
 
-	zassert_equal(DT_INST_NODE_HAS_PROP(0, gpio_controller), 1,
-		      "inst 0 has no gpio-controller");
-	zassert_equal(DT_INST_PROP(0, gpio_controller), 1,
-		      "inst 0 gpio-controller is not 1");
-	zassert_equal(DT_INST_NODE_HAS_PROP(0, xxxx), 0,
-		      "inst 0 has xxxx prop");
+	zassert_equal(DT_INST_NODE_HAS_PROP(0, gpio_controller), 1, "");
+	zassert_equal(DT_INST_PROP(0, gpio_controller), 1, "");
+	zassert_equal(DT_INST_NODE_HAS_PROP(0, xxxx), 0, "");
 	zassert_true(!strcmp(DT_INST_PROP(0, status), "okay") ||
-		     !strcmp(DT_PROP(TEST_INST, status), "disabled"),
-		     "inst 0 status");
-	zassert_equal(DT_INST_PROP_LEN(0, compatible), 1,
-		      "inst 0 compatible len");
+		     !strcmp(DT_PROP(TEST_INST, status), "disabled"), "");
+	zassert_equal(DT_INST_PROP_LEN(0, compatible), 1, "");
 	zassert_true(!strcmp(DT_INST_PROP_BY_IDX(0, compatible, 0),
-			     "vnd,gpio"),
-		     "inst 0 compatible[0]");
+			     "vnd,gpio"), "");
 	zassert_true(!strncmp(label_startswith, DT_INST_LABEL(0),
-			      strlen(label_startswith)),
-		     "inst 0 label");
+			      strlen(label_startswith)), "");
 }
 
 static void test_default_prop_access(void)
@@ -214,83 +180,73 @@ static void test_default_prop_access(void)
 
 static void test_has_path(void)
 {
-	zassert_equal(DT_NODE_HAS_STATUS(DT_PATH(test, gpio_0), okay), 0,
-		      "gpio@0");
+	zassert_equal(DT_NODE_HAS_STATUS(DT_PATH(test, gpio_0), okay), 0, "");
 	zassert_equal(DT_NODE_HAS_STATUS(DT_PATH(test, gpio_deadbeef), okay), 1,
-		      "gpio@deadbeef");
+		      "");
 	zassert_equal(DT_NODE_HAS_STATUS(DT_PATH(test, gpio_abcd1234), okay), 1,
-		      "gpio@abcd1234");
+		      "");
 }
 
 static void test_has_alias(void)
 {
-	zassert_equal(DT_NODE_HAS_STATUS(DT_ALIAS(test_alias), okay), 1,
-		      "test-alias");
-	zassert_equal(DT_NODE_HAS_STATUS(DT_ALIAS(test_undef), okay), 0,
-		      "test-undef");
+	zassert_equal(DT_NODE_HAS_STATUS(DT_ALIAS(test_alias), okay), 1, "");
+	zassert_equal(DT_NODE_HAS_STATUS(DT_ALIAS(test_undef), okay), 0, "");
 }
 
 static void test_inst_checks(void)
 {
-	zassert_equal(DT_NODE_EXISTS(DT_INST(0, vnd_gpio)), 1,
-		      "vnd,gpio #0");
-	zassert_equal(DT_NODE_EXISTS(DT_INST(1, vnd_gpio)), 1,
-		      "vnd,gpio #1");
-	zassert_equal(DT_NODE_EXISTS(DT_INST(2, vnd_gpio)), 1,
-		      "vnd,gpio #2");
+	zassert_equal(DT_NODE_EXISTS(DT_INST(0, vnd_gpio)), 1, "");
+	zassert_equal(DT_NODE_EXISTS(DT_INST(1, vnd_gpio)), 1, "");
+	zassert_equal(DT_NODE_EXISTS(DT_INST(2, vnd_gpio)), 1, "");
 
-	zassert_equal(DT_NUM_INST_STATUS_OKAY(vnd_gpio), 2, "num. vnd,gpio");
-	zassert_equal(DT_NUM_INST_STATUS_OKAY(xxxx), 0, "num. xxxx");
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(vnd_gpio), 2, "");
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(xxxx), 0, "");
 }
 
 static void test_has_nodelabel(void)
 {
 	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(disabled_gpio), okay), 0,
-		      "disabled_gpio");
+		      "");
 	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_nodelabel), okay), 1,
-		      "test_nodelabel");
+		      "");
 	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_nodelabel_allcaps),
 					 okay),
-		      1,
-		      "TEST_NODELABEL_ALLCAPS");
+		      1, "");
 }
 
 static void test_has_compat(void)
 {
 	unsigned int compats;
 
-	zassert_true(DT_HAS_COMPAT_STATUS_OKAY(vnd_gpio), "vnd,gpio");
-	zassert_true(DT_HAS_COMPAT_STATUS_OKAY(vnd_gpio), "vnd,i2c");
-	zassert_false(DT_HAS_COMPAT_STATUS_OKAY(vnd_disabled_compat),
-		      "vnd,disabled-compat");
+	zassert_true(DT_HAS_COMPAT_STATUS_OKAY(vnd_gpio), "");
+	zassert_true(DT_HAS_COMPAT_STATUS_OKAY(vnd_gpio), "");
+	zassert_false(DT_HAS_COMPAT_STATUS_OKAY(vnd_disabled_compat), "");
 
-	zassert_equal(TA_HAS_COMPAT(vnd_array_holder), 1, "vnd,array-holder");
-	zassert_equal(TA_HAS_COMPAT(vnd_undefined_compat), 1,
-		      "vnd,undefined-compat");
-	zassert_equal(TA_HAS_COMPAT(vnd_not_a_test_array_compat), 0,
-		      "not present");
+	zassert_equal(TA_HAS_COMPAT(vnd_array_holder), 1, "");
+	zassert_equal(TA_HAS_COMPAT(vnd_undefined_compat), 1, "");
+	zassert_equal(TA_HAS_COMPAT(vnd_not_a_test_array_compat), 0, "");
 	compats = ((TA_HAS_COMPAT(vnd_array_holder) << 0) |
 		   (TA_HAS_COMPAT(vnd_undefined_compat) << 1) |
 		   (TA_HAS_COMPAT(vnd_not_a_test_array_compat) << 2));
-	zassert_equal(compats, 0x3, "as bit array");
+	zassert_equal(compats, 0x3, "");
 }
 
 static void test_has_status(void)
 {
 	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_gpio_1), okay),
-		      1, "vnd,gpio okay");
+		      1, "");
 	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_gpio_1), disabled),
-		      0, "vnd,gpio not disabled");
+		      0, "");
 
 	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_no_status), okay),
-		      1, "vnd,gpio okay");
+		      1, "");
 	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_no_status), disabled),
-		      0, "vnd,gpio not disabled");
+		      0, "");
 
 	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(disabled_gpio), disabled),
-		      1, "vnd,disabled-compat disabled");
+		      1, "");
 	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(disabled_gpio), okay),
-		      0, "vnd,disabled-compat not okay");
+		      0, "");
 }
 
 static void test_bus(void)
@@ -303,20 +259,17 @@ static void test_bus(void)
 	const char *gpio = "TEST_GPIO_";
 	int pin, flags;
 
-	zassert_true(!strcmp(DT_LABEL(TEST_I2C_BUS), "TEST_I2C_CTLR"), "i2c");
-	zassert_true(!strcmp(DT_LABEL(TEST_SPI_BUS_0), "TEST_SPI_CTLR"),
-		     "spi 0");
-	zassert_true(!strcmp(DT_LABEL(TEST_SPI_BUS_1), "TEST_SPI_CTLR"),
-		     "spi 1");
+	zassert_true(!strcmp(DT_LABEL(TEST_I2C_BUS), "TEST_I2C_CTLR"), "");
+	zassert_true(!strcmp(DT_LABEL(TEST_SPI_BUS_0), "TEST_SPI_CTLR"), "");
+	zassert_true(!strcmp(DT_LABEL(TEST_SPI_BUS_1), "TEST_SPI_CTLR"), "");
 
-	zassert_equal(DT_SPI_DEV_HAS_CS_GPIOS(TEST_SPI_DEV_0), 1, "no cs");
-	zassert_equal(DT_SPI_DEV_HAS_CS_GPIOS(TEST_SPI_DEV_NO_CS), 0, "has cs");
+	zassert_equal(DT_SPI_DEV_HAS_CS_GPIOS(TEST_SPI_DEV_0), 1, "");
+	zassert_equal(DT_SPI_DEV_HAS_CS_GPIOS(TEST_SPI_DEV_NO_CS), 0, "");
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_spi_device_2
 	/* there is only one instance, and it has no CS */
-	zassert_equal(DT_INST_SPI_DEV_HAS_CS_GPIOS(0), 0,
-		      "inst of vnd,spi-device-2 with cs");
+	zassert_equal(DT_INST_SPI_DEV_HAS_CS_GPIOS(0), 0, "");
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_spi_device
@@ -324,59 +277,52 @@ static void test_bus(void)
 	 * DT_INST_SPI_DEV: use with care here. We could be matching
 	 * either vnd,spi-device.
 	 */
-	zassert_equal(DT_INST_SPI_DEV_HAS_CS_GPIOS(0), 1,
-		      "inst of vnd,spi-device without cs");
+	zassert_equal(DT_INST_SPI_DEV_HAS_CS_GPIOS(0), 1, "");
 
 	zassert_true(!strncmp(gpio, DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
-			      strlen(gpio)),
-		     "inst 0 cs label");
+			      strlen(gpio)), "");
 
 	pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
-	zassert_true((pin == 0x10) || (pin == 0x30), "inst 0 cs pin");
+	zassert_true((pin == 0x10) || (pin == 0x30), "");
 
 	flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
-	zassert_true((flags == 0x20) || (flags == 0x40), "inst 0 cs flags");
+	zassert_true((flags == 0x20) || (flags == 0x40), "");
 
-	zassert_equal(DT_ON_BUS(TEST_SPI_DEV_0, spi), 1, "spidev not on spi");
-	zassert_equal(DT_ON_BUS(TEST_SPI_DEV_0, i2c), 0, "spidev on i2c");
+	zassert_equal(DT_ON_BUS(TEST_SPI_DEV_0, spi), 1, "");
+	zassert_equal(DT_ON_BUS(TEST_SPI_DEV_0, i2c), 0, "");
 
-	zassert_equal(DT_ON_BUS(TEST_I2C_DEV, i2c), 1, "i2cdev not on i2c");
-	zassert_equal(DT_ON_BUS(TEST_I2C_DEV, spi), 0, "i2cdev on spi");
+	zassert_equal(DT_ON_BUS(TEST_I2C_DEV, i2c), 1, "");
+	zassert_equal(DT_ON_BUS(TEST_I2C_DEV, spi), 0, "");
 
-	zassert_true(!strcmp(DT_BUS_LABEL(TEST_I2C_DEV), "TEST_I2C_CTLR"),
-		     "bus label");
+	zassert_true(!strcmp(DT_BUS_LABEL(TEST_I2C_DEV), "TEST_I2C_CTLR"), "");
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_spi_device
-	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 2,
-		      "spi device count");
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 2, "");
 
-	zassert_equal(DT_INST_ON_BUS(0, spi), 1, "spi inst 0 not on spi");
-	zassert_equal(DT_INST_ON_BUS(0, i2c), 0, "spi inst 0 on i2c");
+	zassert_equal(DT_INST_ON_BUS(0, spi), 1, "");
+	zassert_equal(DT_INST_ON_BUS(0, i2c), 0, "");
 
-	zassert_equal(DT_ANY_INST_ON_BUS_STATUS_OKAY(spi), 1, "no spi is on spi");
-	zassert_equal(DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c), 0, "a spi is on i2c");
+	zassert_equal(DT_ANY_INST_ON_BUS_STATUS_OKAY(spi), 1, "");
+	zassert_equal(DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c), 0, "");
 
-	zassert_true(!strncmp(spi_dev, DT_INST_LABEL(0), strlen(spi_dev)),
-		     "inst 0 spi dev label");
+	zassert_true(!strncmp(spi_dev, DT_INST_LABEL(0), strlen(spi_dev)), "");
 	zassert_true(!strncmp(spi_bus, DT_INST_BUS_LABEL(0), strlen(spi_bus)),
-		     "inst 0 spi bus label");
+		     "");
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_i2c_device
-	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 2,
-		      "i2c device count");
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 2, "");
 
-	zassert_equal(DT_INST_ON_BUS(0, i2c), 1, "i2c inst 0 not on i2c");
-	zassert_equal(DT_INST_ON_BUS(0, spi), 0, "i2c inst 0 on spi");
+	zassert_equal(DT_INST_ON_BUS(0, i2c), 1, "");
+	zassert_equal(DT_INST_ON_BUS(0, spi), 0, "");
 
-	zassert_equal(DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c), 1, "no i2c is on i2c");
-	zassert_equal(DT_ANY_INST_ON_BUS_STATUS_OKAY(spi), 0, "an i2c is on spi");
+	zassert_equal(DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c), 1, "");
+	zassert_equal(DT_ANY_INST_ON_BUS_STATUS_OKAY(spi), 0, "");
 
-	zassert_true(!strncmp(i2c_dev, DT_INST_LABEL(0), strlen(i2c_dev)),
-		     "inst 0 i2c dev label");
+	zassert_true(!strncmp(i2c_dev, DT_INST_LABEL(0), strlen(i2c_dev)), "");
 	zassert_true(!strncmp(i2c_bus, DT_INST_BUS_LABEL(0), strlen(i2c_bus)),
-		     "inst 0 i2c bus label");
+		     "");
 
 #undef DT_DRV_COMPAT
 	/*
@@ -400,82 +346,61 @@ static void test_bus(void)
 static void test_reg(void)
 {
 	/* DT_REG_HAS_IDX */
-	zassert_true(DT_REG_HAS_IDX(TEST_ABCD1234, 0), "has idx 0");
-	zassert_true(DT_REG_HAS_IDX(TEST_ABCD1234, 1), "has idx 1");
-	zassert_false(DT_REG_HAS_IDX(TEST_ABCD1234, 2), "!has idx 2");
+	zassert_true(DT_REG_HAS_IDX(TEST_ABCD1234, 0), "");
+	zassert_true(DT_REG_HAS_IDX(TEST_ABCD1234, 1), "");
+	zassert_false(DT_REG_HAS_IDX(TEST_ABCD1234, 2), "");
 
 	/* DT_REG_ADDR_BY_IDX */
-	zassert_equal(DT_REG_ADDR_BY_IDX(TEST_ABCD1234, 0), 0xabcd1234,
-		      "abcd1234 reg[1] addr");
-	zassert_equal(DT_REG_ADDR_BY_IDX(TEST_ABCD1234, 1), 0x98765432,
-		      "abcd1234 reg[1] addr");
+	zassert_equal(DT_REG_ADDR_BY_IDX(TEST_ABCD1234, 0), 0xabcd1234, "");
+	zassert_equal(DT_REG_ADDR_BY_IDX(TEST_ABCD1234, 1), 0x98765432, "");
 
 	/* DT_REG_SIZE_BY_IDX */
-	zassert_equal(DT_REG_SIZE_BY_IDX(TEST_ABCD1234, 0), 0x500,
-		      "abcd1234 reg[1] size");
-	zassert_equal(DT_REG_SIZE_BY_IDX(TEST_ABCD1234, 1), 0xff,
-		      "abcd1234 reg[1] size");
+	zassert_equal(DT_REG_SIZE_BY_IDX(TEST_ABCD1234, 0), 0x500, "");
+	zassert_equal(DT_REG_SIZE_BY_IDX(TEST_ABCD1234, 1), 0xff, "");
 
 	/* DT_REG_ADDR */
-	zassert_equal(DT_REG_ADDR(TEST_ABCD1234), 0xabcd1234,
-		      "abcd1234 reg[0] addr");
+	zassert_equal(DT_REG_ADDR(TEST_ABCD1234), 0xabcd1234, "");
 
 	/* DT_REG_SIZE */
-	zassert_equal(DT_REG_SIZE(TEST_ABCD1234), 0x500,
-		      "abcd1234 reg[0] size");
+	zassert_equal(DT_REG_SIZE(TEST_ABCD1234), 0x500, "");
 
 	/* DT_REG_ADDR_BY_NAME */
-	zassert_equal(DT_REG_ADDR_BY_NAME(TEST_ABCD1234, one), 0xabcd1234,
-		      "abcd1234 reg[one] addr");
-	zassert_equal(DT_REG_ADDR_BY_NAME(TEST_ABCD1234, two), 0x98765432,
-		      "abcd1234 reg[two] addr");
+	zassert_equal(DT_REG_ADDR_BY_NAME(TEST_ABCD1234, one), 0xabcd1234, "");
+	zassert_equal(DT_REG_ADDR_BY_NAME(TEST_ABCD1234, two), 0x98765432, "");
 
 	/* DT_REG_SIZE_BY_NAME */
-	zassert_equal(DT_REG_SIZE_BY_NAME(TEST_ABCD1234, one), 0x500,
-		      "abcd1234 reg[one] size");
-	zassert_equal(DT_REG_SIZE_BY_NAME(TEST_ABCD1234, two), 0xff,
-		      "abcd1234 reg[two] size");
+	zassert_equal(DT_REG_SIZE_BY_NAME(TEST_ABCD1234, one), 0x500, "");
+	zassert_equal(DT_REG_SIZE_BY_NAME(TEST_ABCD1234, two), 0xff, "");
 
 	/* DT_INST */
-	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1,
-		      "one instance");
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1, "");
 
 	/* DT_INST_REG_HAS_IDX */
-	zassert_true(DT_INST_REG_HAS_IDX(0, 0), "has idx 0");
-	zassert_true(DT_INST_REG_HAS_IDX(0, 1), "has idx 1");
-	zassert_false(DT_INST_REG_HAS_IDX(0, 2), "!has idx 2");
+	zassert_true(DT_INST_REG_HAS_IDX(0, 0), "");
+	zassert_true(DT_INST_REG_HAS_IDX(0, 1), "");
+	zassert_false(DT_INST_REG_HAS_IDX(0, 2), "");
 
 	/* DT_INST_REG_ADDR_BY_IDX */
-	zassert_equal(DT_INST_REG_ADDR_BY_IDX(0, 0), 0x9999aaaa,
-		      "abcd1234 reg[1] addr");
-	zassert_equal(DT_INST_REG_ADDR_BY_IDX(0, 1), 0xbbbbcccc,
-		      "abcd1234 reg[1] addr");
+	zassert_equal(DT_INST_REG_ADDR_BY_IDX(0, 0), 0x9999aaaa, "");
+	zassert_equal(DT_INST_REG_ADDR_BY_IDX(0, 1), 0xbbbbcccc, "");
 
 	/* DT_INST_REG_SIZE_BY_IDX */
-	zassert_equal(DT_INST_REG_SIZE_BY_IDX(0, 0), 0x1000,
-		      "abcd1234 reg[1] size");
-	zassert_equal(DT_INST_REG_SIZE_BY_IDX(0, 1), 0x3f,
-		      "abcd1234 reg[1] size");
+	zassert_equal(DT_INST_REG_SIZE_BY_IDX(0, 0), 0x1000, "");
+	zassert_equal(DT_INST_REG_SIZE_BY_IDX(0, 1), 0x3f, "");
 
 	/* DT_INST_REG_ADDR */
-	zassert_equal(DT_INST_REG_ADDR(0), 0x9999aaaa,
-		      "abcd1234 reg[0] addr");
+	zassert_equal(DT_INST_REG_ADDR(0), 0x9999aaaa, "");
 
 	/* DT_INST_REG_SIZE */
-	zassert_equal(DT_INST_REG_SIZE(0), 0x1000,
-		      "abcd1234 reg[0] size");
+	zassert_equal(DT_INST_REG_SIZE(0), 0x1000, "");
 
 	/* DT_INST_REG_ADDR_BY_NAME */
-	zassert_equal(DT_INST_REG_ADDR_BY_NAME(0, first), 0x9999aaaa,
-		      "abcd1234 reg[one] addr");
-	zassert_equal(DT_INST_REG_ADDR_BY_NAME(0, second), 0xbbbbcccc,
-		      "abcd1234 reg[two] addr");
+	zassert_equal(DT_INST_REG_ADDR_BY_NAME(0, first), 0x9999aaaa, "");
+	zassert_equal(DT_INST_REG_ADDR_BY_NAME(0, second), 0xbbbbcccc, "");
 
 	/* DT_INST_REG_SIZE_BY_NAME */
-	zassert_equal(DT_INST_REG_SIZE_BY_NAME(0, first), 0x1000,
-		      "abcd1234 reg[one] size");
-	zassert_equal(DT_INST_REG_SIZE_BY_NAME(0, second), 0x3f,
-		      "abcd1234 reg[two] size");
+	zassert_equal(DT_INST_REG_SIZE_BY_NAME(0, first), 0x1000, "");
+	zassert_equal(DT_INST_REG_SIZE_BY_NAME(0, second), 0x3f, "");
 }
 
 #undef DT_DRV_COMPAT
@@ -483,128 +408,113 @@ static void test_reg(void)
 static void test_irq(void)
 {
 	/* DT_NUM_IRQS */
-	zassert_equal(DT_NUM_IRQS(TEST_DEADBEEF), 1, "deadbeef num_irqs");
-	zassert_equal(DT_NUM_IRQS(TEST_I2C_BUS), 2, "TEST_I2C_BUS num_irqs");
-	zassert_equal(DT_NUM_IRQS(TEST_SPI), 3, "TEST_SPI num_irqs");
+	zassert_equal(DT_NUM_IRQS(TEST_DEADBEEF), 1, "");
+	zassert_equal(DT_NUM_IRQS(TEST_I2C_BUS), 2, "");
+	zassert_equal(DT_NUM_IRQS(TEST_SPI), 3, "");
 
 	/* DT_IRQ_HAS_IDX */
-	zassert_true(DT_IRQ_HAS_IDX(TEST_SPI_BUS_0, 0), "spi has idx 0");
-	zassert_true(DT_IRQ_HAS_IDX(TEST_SPI_BUS_0, 1), "spi has idx 1");
-	zassert_true(DT_IRQ_HAS_IDX(TEST_SPI_BUS_0, 2), "spi has idx 2");
-	zassert_false(DT_IRQ_HAS_IDX(TEST_SPI_BUS_0, 3), "!spi has idx 3");
+	zassert_true(DT_IRQ_HAS_IDX(TEST_SPI_BUS_0, 0), "");
+	zassert_true(DT_IRQ_HAS_IDX(TEST_SPI_BUS_0, 1), "");
+	zassert_true(DT_IRQ_HAS_IDX(TEST_SPI_BUS_0, 2), "");
+	zassert_false(DT_IRQ_HAS_IDX(TEST_SPI_BUS_0, 3), "");
 
-	zassert_true(DT_IRQ_HAS_IDX(TEST_DEADBEEF, 0), "deadbeef has idx 0");
-	zassert_false(DT_IRQ_HAS_IDX(TEST_DEADBEEF, 1), "!deadbeef has idx 1");
+	zassert_true(DT_IRQ_HAS_IDX(TEST_DEADBEEF, 0), "");
+	zassert_false(DT_IRQ_HAS_IDX(TEST_DEADBEEF, 1), "");
 
-	zassert_true(DT_IRQ_HAS_IDX(TEST_I2C_BUS, 0), "i2c has idx 0");
-	zassert_true(DT_IRQ_HAS_IDX(TEST_I2C_BUS, 1), "i2c has idx 1");
-	zassert_false(DT_IRQ_HAS_IDX(TEST_I2C_BUS, 2), "!i2c has idx 2");
+	zassert_true(DT_IRQ_HAS_IDX(TEST_I2C_BUS, 0), "");
+	zassert_true(DT_IRQ_HAS_IDX(TEST_I2C_BUS, 1), "");
+	zassert_false(DT_IRQ_HAS_IDX(TEST_I2C_BUS, 2), "");
 
 	/* DT_IRQ_BY_IDX */
-	zassert_equal(DT_IRQ_BY_IDX(TEST_SPI_BUS_0, 0, irq), 8, "irq 0");
-	zassert_equal(DT_IRQ_BY_IDX(TEST_SPI_BUS_0, 1, irq), 9, "irq 1");
-	zassert_equal(DT_IRQ_BY_IDX(TEST_SPI_BUS_0, 2, irq), 10, "irq 2");
-	zassert_equal(DT_IRQ_BY_IDX(TEST_SPI_BUS_0, 0, priority), 3, "irq 0 pri");
-	zassert_equal(DT_IRQ_BY_IDX(TEST_SPI_BUS_0, 1, priority), 0, "irq 1 pri");
-	zassert_equal(DT_IRQ_BY_IDX(TEST_SPI_BUS_0, 2, priority), 1, "irq 2 pri");
+	zassert_equal(DT_IRQ_BY_IDX(TEST_SPI_BUS_0, 0, irq), 8, "");
+	zassert_equal(DT_IRQ_BY_IDX(TEST_SPI_BUS_0, 1, irq), 9, "");
+	zassert_equal(DT_IRQ_BY_IDX(TEST_SPI_BUS_0, 2, irq), 10, "");
+	zassert_equal(DT_IRQ_BY_IDX(TEST_SPI_BUS_0, 0, priority), 3, "");
+	zassert_equal(DT_IRQ_BY_IDX(TEST_SPI_BUS_0, 1, priority), 0, "");
+	zassert_equal(DT_IRQ_BY_IDX(TEST_SPI_BUS_0, 2, priority), 1, "");
 
 	/* DT_IRQ_BY_NAME */
-	zassert_equal(DT_IRQ_BY_NAME(TEST_I2C_BUS, status, irq), 6, "irq status");
-	zassert_equal(DT_IRQ_BY_NAME(TEST_I2C_BUS, error, irq), 7, "irq error");
-	zassert_equal(DT_IRQ_BY_NAME(TEST_I2C_BUS, status, priority), 2,
-		      "irq status pri");
-	zassert_equal(DT_IRQ_BY_NAME(TEST_I2C_BUS, error, priority), 1,
-		       "irq error pri");
+	zassert_equal(DT_IRQ_BY_NAME(TEST_I2C_BUS, status, irq), 6, "");
+	zassert_equal(DT_IRQ_BY_NAME(TEST_I2C_BUS, error, irq), 7, "");
+	zassert_equal(DT_IRQ_BY_NAME(TEST_I2C_BUS, status, priority), 2, "");
+	zassert_equal(DT_IRQ_BY_NAME(TEST_I2C_BUS, error, priority), 1, "");
 
 	/* DT_IRQ_HAS_CELL_AT_IDX */
-	zassert_true(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 0, irq), "no irq 0");
-	zassert_true(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 0, priority),
-		     "no irq 0 pri");
-	zassert_false(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 0, foo), 0,
-		      "has irq 0 foo");
-	zassert_true(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 2, irq), "no irq 2");
-	zassert_true(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 2, priority),
-		     "no irq 2 pri");
-	zassert_false(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 2, foo),
-		      "has irq 2 foo");
+	zassert_true(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 0, irq), "");
+	zassert_true(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 0, priority), "");
+	zassert_false(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 0, foo), 0, "");
+	zassert_true(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 2, irq), "");
+	zassert_true(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 2, priority), "");
+	zassert_false(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 2, foo), "");
 
 	/* DT_IRQ_HAS_CELL */
-	zassert_true(DT_IRQ_HAS_CELL(TEST_IRQ, irq), "no irq");
-	zassert_true(DT_IRQ_HAS_CELL(TEST_IRQ, priority), "no irq pri");
-	zassert_false(DT_IRQ_HAS_CELL(TEST_IRQ, foo), "has irq foo");
+	zassert_true(DT_IRQ_HAS_CELL(TEST_IRQ, irq), "");
+	zassert_true(DT_IRQ_HAS_CELL(TEST_IRQ, priority), "");
+	zassert_false(DT_IRQ_HAS_CELL(TEST_IRQ, foo), "");
 
 	/* DT_IRQ_HAS_NAME */
-	zassert_true(DT_IRQ_HAS_NAME(TEST_IRQ, err), "no err irq");
-	zassert_true(DT_IRQ_HAS_NAME(TEST_IRQ, stat), "no stat irq");
-	zassert_true(DT_IRQ_HAS_NAME(TEST_IRQ, done), "no done irq");
-	zassert_false(DT_IRQ_HAS_NAME(TEST_IRQ, alpha), "no err irq");
+	zassert_true(DT_IRQ_HAS_NAME(TEST_IRQ, err), "");
+	zassert_true(DT_IRQ_HAS_NAME(TEST_IRQ, stat), "");
+	zassert_true(DT_IRQ_HAS_NAME(TEST_IRQ, done), "");
+	zassert_false(DT_IRQ_HAS_NAME(TEST_IRQ, alpha), "");
 
 	/* DT_IRQ */
-	zassert_equal(DT_IRQ(TEST_I2C_BUS, irq), 6, "irq");
-	zassert_equal(DT_IRQ(TEST_I2C_BUS, priority), 2, "irq pri");
+	zassert_equal(DT_IRQ(TEST_I2C_BUS, irq), 6, "");
+	zassert_equal(DT_IRQ(TEST_I2C_BUS, priority), 2, "");
 
 	/* DT_IRQN */
-	zassert_equal(DT_IRQN(TEST_I2C_BUS), 6, "irqn");
+	zassert_equal(DT_IRQN(TEST_I2C_BUS), 6, "");
 
 	/* DT_INST */
-	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1,
-		      "one instance");
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1, "");
 
 	/* DT_INST_IRQ_HAS_IDX */
-	zassert_equal(DT_INST_IRQ_HAS_IDX(0, 0), 1, "inst 0 irq 0 missing");
-	zassert_equal(DT_INST_IRQ_HAS_IDX(0, 1), 1, "inst 0 irq 1 missing");
-	zassert_equal(DT_INST_IRQ_HAS_IDX(0, 2), 1, "inst 0 irq 2 missing");
-	zassert_equal(DT_INST_IRQ_HAS_IDX(0, 3), 0, "inst 0 irq 3 present");
+	zassert_equal(DT_INST_IRQ_HAS_IDX(0, 0), 1, "");
+	zassert_equal(DT_INST_IRQ_HAS_IDX(0, 1), 1, "");
+	zassert_equal(DT_INST_IRQ_HAS_IDX(0, 2), 1, "");
+	zassert_equal(DT_INST_IRQ_HAS_IDX(0, 3), 0, "");
 
 	/* DT_INST_IRQ_BY_IDX */
-	zassert_equal(DT_INST_IRQ_BY_IDX(0, 0, irq), 30, "inst 0 irq 0");
-	zassert_equal(DT_INST_IRQ_BY_IDX(0, 1, irq), 40, "inst 0 irq 1");
-	zassert_equal(DT_INST_IRQ_BY_IDX(0, 2, irq), 60, "inst 0 irq 2");
-	zassert_equal(DT_INST_IRQ_BY_IDX(0, 0, priority), 3, "inst 0 irq 0 pri");
-	zassert_equal(DT_INST_IRQ_BY_IDX(0, 1, priority), 5, "inst 0 irq 1 pri");
-	zassert_equal(DT_INST_IRQ_BY_IDX(0, 2, priority), 7, "inst 0 irq 2 pri");
+	zassert_equal(DT_INST_IRQ_BY_IDX(0, 0, irq), 30, "");
+	zassert_equal(DT_INST_IRQ_BY_IDX(0, 1, irq), 40, "");
+	zassert_equal(DT_INST_IRQ_BY_IDX(0, 2, irq), 60, "");
+	zassert_equal(DT_INST_IRQ_BY_IDX(0, 0, priority), 3, "");
+	zassert_equal(DT_INST_IRQ_BY_IDX(0, 1, priority), 5, "");
+	zassert_equal(DT_INST_IRQ_BY_IDX(0, 2, priority), 7, "");
 
 	/* DT_INST_IRQ_BY_NAME */
-	zassert_equal(DT_INST_IRQ_BY_NAME(0, err, irq), 30, "inst 0 irq error");
-	zassert_equal(DT_INST_IRQ_BY_NAME(0, stat, irq), 40, "inst 0 irq status");
-	zassert_equal(DT_INST_IRQ_BY_NAME(0, done, irq), 60, "inst 0 done error");
-	zassert_equal(DT_INST_IRQ_BY_NAME(0, err, priority), 3,
-		       "inst 0 irq error pri");
-	zassert_equal(DT_INST_IRQ_BY_NAME(0, stat, priority), 5,
-		      "inst 0 irq status pri");
-	zassert_equal(DT_INST_IRQ_BY_NAME(0, done, priority), 7,
-		       "inst 0 irq done pri");
+	zassert_equal(DT_INST_IRQ_BY_NAME(0, err, irq), 30, "");
+	zassert_equal(DT_INST_IRQ_BY_NAME(0, stat, irq), 40, "");
+	zassert_equal(DT_INST_IRQ_BY_NAME(0, done, irq), 60, "");
+	zassert_equal(DT_INST_IRQ_BY_NAME(0, err, priority), 3, "");
+	zassert_equal(DT_INST_IRQ_BY_NAME(0, stat, priority), 5, "");
+	zassert_equal(DT_INST_IRQ_BY_NAME(0, done, priority), 7, "");
 
 	/* DT_INST_IRQ */
-	zassert_equal(DT_INST_IRQ(0, irq), 30, "inst 0 irq");
-	zassert_equal(DT_INST_IRQ(0, priority), 3, "inst 0 irq pri");
+	zassert_equal(DT_INST_IRQ(0, irq), 30, "");
+	zassert_equal(DT_INST_IRQ(0, priority), 3, "");
 
 	/* DT_INST_IRQN */
-	zassert_equal(DT_INST_IRQN(0), 30, "inst 0 irqn");
+	zassert_equal(DT_INST_IRQN(0), 30, "");
 
 	/* DT_INST_IRQ_HAS_CELL_AT_IDX */
-	zassert_true(DT_INST_IRQ_HAS_CELL_AT_IDX(0, 0, irq), "no inst irq 0");
-	zassert_true(DT_INST_IRQ_HAS_CELL_AT_IDX(0, 0, priority),
-		      "no inst irq 0 pri");
-	zassert_false(DT_INST_IRQ_HAS_CELL_AT_IDX(0, 0, foo),
-		      "has inst irq 0 foo");
-	zassert_true(DT_INST_IRQ_HAS_CELL_AT_IDX(0, 2, irq), "no inst irq 2");
-	zassert_true(DT_INST_IRQ_HAS_CELL_AT_IDX(0, 2, priority),
-		      "no inst irq 2 pri");
-	zassert_false(DT_INST_IRQ_HAS_CELL_AT_IDX(0, 2, foo),
-		      "has inst irq 2 foo");
+	zassert_true(DT_INST_IRQ_HAS_CELL_AT_IDX(0, 0, irq), "");
+	zassert_true(DT_INST_IRQ_HAS_CELL_AT_IDX(0, 0, priority), "");
+	zassert_false(DT_INST_IRQ_HAS_CELL_AT_IDX(0, 0, foo), "");
+	zassert_true(DT_INST_IRQ_HAS_CELL_AT_IDX(0, 2, irq), "");
+	zassert_true(DT_INST_IRQ_HAS_CELL_AT_IDX(0, 2, priority), "");
+	zassert_false(DT_INST_IRQ_HAS_CELL_AT_IDX(0, 2, foo), "");
 
 	/* DT_INST_IRQ_HAS_CELL */
-	zassert_true(DT_INST_IRQ_HAS_CELL(0, irq), "no inst 0 irq");
-	zassert_true(DT_INST_IRQ_HAS_CELL(0, priority), "no inst 0 irq pri");
-	zassert_false(DT_INST_IRQ_HAS_CELL(0, foo), "has inst 0 irq foo");
+	zassert_true(DT_INST_IRQ_HAS_CELL(0, irq), "");
+	zassert_true(DT_INST_IRQ_HAS_CELL(0, priority), "");
+	zassert_false(DT_INST_IRQ_HAS_CELL(0, foo), "");
 
 	/* DT_INST_IRQ_HAS_NAME */
-	zassert_true(DT_INST_IRQ_HAS_NAME(0, err), "no inst err irq");
-	zassert_true(DT_INST_IRQ_HAS_NAME(0, stat), "no inst err irq");
-	zassert_true(DT_INST_IRQ_HAS_NAME(0, done), "no inst err irq");
-	zassert_false(DT_INST_IRQ_HAS_NAME(0, alpha), "no inst err irq");
-
+	zassert_true(DT_INST_IRQ_HAS_NAME(0, err), "");
+	zassert_true(DT_INST_IRQ_HAS_NAME(0, stat), "");
+	zassert_true(DT_INST_IRQ_HAS_NAME(0, done), "");
+	zassert_false(DT_INST_IRQ_HAS_NAME(0, alpha), "");
 }
 
 struct gpios_struct {
@@ -645,220 +555,181 @@ static void test_phandles(void)
 	struct gpios_struct gps[] = DT_GPIO_LISTIFY(TEST_PH, gpios);
 
 	/* phandle */
-	zassert_true(DT_NODE_HAS_PROP(TEST_PH, ph), "ph");
+	zassert_true(DT_NODE_HAS_PROP(TEST_PH, ph), "");
 	/* DT_PROP_BY_PHANDLE */
-	zassert_true(!strcmp(ph_label, "TEST_GPIO_1"), "ph label");
+	zassert_true(!strcmp(ph_label, "TEST_GPIO_1"), "");
 
 	/* phandles */
-	zassert_true(DT_NODE_HAS_PROP(TEST_PH, phs), "phs");
-	zassert_equal(ARRAY_SIZE(phs_labels), 3, "phs size");
-	zassert_equal(DT_PROP_LEN(TEST_PH, phs), 3, "phs len");
+	zassert_true(DT_NODE_HAS_PROP(TEST_PH, phs), "");
+	zassert_equal(ARRAY_SIZE(phs_labels), 3, "");
+	zassert_equal(DT_PROP_LEN(TEST_PH, phs), 3, "");
 
 	/* DT_PROP_BY_PHANDLE_IDX */
 	zassert_true(!strcmp(DT_PROP_BY_PHANDLE_IDX(TEST_PH, phs, 0, label),
-		     "TEST_GPIO_1"), "phs 0");
+			     "TEST_GPIO_1"), "");
 	zassert_true(!strcmp(DT_PROP_BY_PHANDLE_IDX(TEST_PH, phs, 1, label),
-		     "TEST_GPIO_2"), "phs 1");
+			     "TEST_GPIO_2"), "");
 	zassert_true(!strcmp(DT_PROP_BY_PHANDLE_IDX(TEST_PH, phs, 2, label),
-		     "TEST_I2C_CTLR"), "phs 2");
-	zassert_true(!strcmp(phs_labels[0], "TEST_GPIO_1"), "phs_labels[0]");
-	zassert_true(!strcmp(phs_labels[1], "TEST_GPIO_2"), "phs_labels[1]");
-	zassert_true(!strcmp(phs_labels[2], "TEST_I2C_CTLR"), "phs_labels[2]");
+			     "TEST_I2C_CTLR"), "");
+	zassert_true(!strcmp(phs_labels[0], "TEST_GPIO_1"), "");
+	zassert_true(!strcmp(phs_labels[1], "TEST_GPIO_2"), "");
+	zassert_true(!strcmp(phs_labels[2], "TEST_I2C_CTLR"), "");
 	zassert_equal(DT_PROP_BY_PHANDLE_IDX(TEST_PH, gpios, 0,
-					     gpio_controller),
-		      1,
-		      "gpios[0].gpio_controller");
+					     gpio_controller), 1, "");
 	zassert_equal(DT_PROP_BY_PHANDLE_IDX(TEST_PH, gpios, 1,
-					     gpio_controller),
-		      1,
-		      "gpios[1].gpio_controller");
+					     gpio_controller), 1, "");
 	zassert_true(!strcmp(DT_PROP_BY_PHANDLE_IDX(TEST_PH, gpios, 0, label),
-			     "TEST_GPIO_1"),
-		     "gpios[0].label");
+			     "TEST_GPIO_1"), "");
 	zassert_true(!strcmp(DT_PROP_BY_PHANDLE_IDX(TEST_PH, gpios, 1, label),
-			     "TEST_GPIO_2"),
-		     "gpios[1].label");
+			     "TEST_GPIO_2"), "");
 
 	/* DT_PROP_BY_PHANDLE_IDX_OR */
 	zassert_true(!strcmp(DT_PROP_BY_PHANDLE_IDX_OR(TEST_PH, phs_or, 0,
-						val, "zero"), "one"),
-		     "phs-or 0");
+						val, "zero"), "one"), "");
 	zassert_true(!strcmp(DT_PROP_BY_PHANDLE_IDX_OR(TEST_PH, phs_or, 1,
-						val, "zero"), "zero"),
-		     "phs-or 1");
+						val, "zero"), "zero"), "");
 
 	/* phandle-array */
-	zassert_true(DT_NODE_HAS_PROP(TEST_PH, gpios), "gpios");
-	zassert_equal(ARRAY_SIZE(gps), 2, "gpios size");
-	zassert_equal(DT_PROP_LEN(TEST_PH, gpios), 2, "pha len");
+	zassert_true(DT_NODE_HAS_PROP(TEST_PH, gpios), "");
+	zassert_equal(ARRAY_SIZE(gps), 2, "");
+	zassert_equal(DT_PROP_LEN(TEST_PH, gpios), 2, "");
 
 	/* DT_PROP_HAS_IDX */
-	zassert_true(DT_PROP_HAS_IDX(TEST_PH, gpios, 0), "has idx 0");
-	zassert_true(DT_PROP_HAS_IDX(TEST_PH, gpios, 1), "has idx 1");
-	zassert_false(DT_PROP_HAS_IDX(TEST_PH, gpios, 2), "!has idx 2");
+	zassert_true(DT_PROP_HAS_IDX(TEST_PH, gpios, 0), "");
+	zassert_true(DT_PROP_HAS_IDX(TEST_PH, gpios, 1), "");
+	zassert_false(DT_PROP_HAS_IDX(TEST_PH, gpios, 2), "");
 
 	/* DT_PHA_HAS_CELL_AT_IDX */
-	zassert_true(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, gpios, 1, pin),
-		     "has gpio 1 pin");
-	zassert_true(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, gpios, 1, flags),
-		     "has gpio 1 flags");
-	zassert_true(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, pha_gpios, 1, pin),
-		      "no pha-gpio 1 pin");
+	zassert_true(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, gpios, 1, pin), "");
+	zassert_true(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, gpios, 1, flags), "");
+	zassert_true(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, pha_gpios, 1, pin), "");
 	/* index 1 only has pin, no flags */
-	zassert_false(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, pha_gpios, 1, flags),
-		      "no pha-gpio 1 flags");
-	zassert_true(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, pha_gpios, 2, pin),
-		      "no pha-gpio 2 pin");
-	zassert_true(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, pha_gpios, 2, flags),
-		      "no pha-gpio 2 flags");
+	zassert_false(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, pha_gpios, 1, flags), "");
+	zassert_true(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, pha_gpios, 2, pin), "");
+	zassert_true(DT_PHA_HAS_CELL_AT_IDX(TEST_PH, pha_gpios, 2, flags), "");
 
 	/* DT_PHA_HAS_CELL */
-	zassert_true(DT_PHA_HAS_CELL(TEST_PH, gpios, flags), "has gpio flags");
-	zassert_false(DT_PHA_HAS_CELL(TEST_PH, gpios, bar), "no gpio bar");
+	zassert_true(DT_PHA_HAS_CELL(TEST_PH, gpios, flags), "");
+	zassert_false(DT_PHA_HAS_CELL(TEST_PH, gpios, bar), "");
 
 	/* DT_PHANDLE_BY_IDX */
 	zassert_true(!strcmp(DT_LABEL(DT_PHANDLE_BY_IDX(TEST_PH, gpios, 0)),
-			     "TEST_GPIO_1"),
-		     "gpios 0");
+			     "TEST_GPIO_1"), "");
 	zassert_true(!strcmp(DT_LABEL(DT_PHANDLE_BY_IDX(TEST_PH, gpios, 1)),
-			     "TEST_GPIO_2"),
-		     "gpios 1");
+			     "TEST_GPIO_2"), "");
 
 	/* DT_PHANDLE */
 	zassert_true(!strcmp(DT_LABEL(DT_PHANDLE(TEST_PH, gpios)),
-			     "TEST_GPIO_1"),
-		     "gpios");
+			     "TEST_GPIO_1"), "");
 
 	/* DT_PHA */
-	zassert_equal(DT_PHA(TEST_PH, gpios, pin), 10, "pin 0 implicit");
-	zassert_equal(DT_PHA(TEST_PH, gpios, flags), 20, "flags 0 implicit");
+	zassert_equal(DT_PHA(TEST_PH, gpios, pin), 10, "");
+	zassert_equal(DT_PHA(TEST_PH, gpios, flags), 20, "");
 
 	/* DT_PHA_BY_IDX */
-	zassert_equal(DT_PHA_BY_IDX(TEST_PH, gpios, 0, pin), 10, "pin 0");
-	zassert_equal(DT_PHA_BY_IDX(TEST_PH, gpios, 0, flags), 20, "flags 0");
+	zassert_equal(DT_PHA_BY_IDX(TEST_PH, gpios, 0, pin), 10, "");
+	zassert_equal(DT_PHA_BY_IDX(TEST_PH, gpios, 0, flags), 20, "");
 
-	zassert_equal(DT_PHA_BY_IDX(TEST_PH, gpios, 1, pin), 30, "pin 1");
-	zassert_equal(DT_PHA_BY_IDX(TEST_PH, gpios, 1, flags), 40, "flags 1");
+	zassert_equal(DT_PHA_BY_IDX(TEST_PH, gpios, 1, pin), 30, "");
+	zassert_equal(DT_PHA_BY_IDX(TEST_PH, gpios, 1, flags), 40, "");
 
 	/* DT_PHA_BY_NAME */
-	zassert_equal(DT_PHA_BY_NAME(TEST_PH, foos, a, foocell), 100,
-		      "foocell A");
-	zassert_equal(DT_PHA_BY_NAME(TEST_PH, foos, b_c, foocell), 110,
-		      "foocell b-c");
+	zassert_equal(DT_PHA_BY_NAME(TEST_PH, foos, a, foocell), 100, "");
+	zassert_equal(DT_PHA_BY_NAME(TEST_PH, foos, b_c, foocell), 110, "");
 
 	/* DT_PHANDLE_BY_NAME */
 	zassert_true(!strcmp(DT_LABEL(DT_PHANDLE_BY_NAME(TEST_PH, foos, a)),
-			     "TEST_GPIO_1"),
-		      "phandle A");
+			     "TEST_GPIO_1"), "");
 	zassert_true(!strcmp(DT_LABEL(DT_PHANDLE_BY_NAME(TEST_PH, foos, b_c)),
-			     "TEST_GPIO_2"),
-		      "phandle b-c");
+			     "TEST_GPIO_2"), "");
 
 	/* array initializers */
-	zassert_true(!strcmp(gps[0].name, "TEST_GPIO_1"), "gps[0].name");
-	zassert_equal(gps[0].pin, 10, "gps[0].pin");
-	zassert_equal(gps[0].flags, 20, "gps[0].flags");
+	zassert_true(!strcmp(gps[0].name, "TEST_GPIO_1"), "");
+	zassert_equal(gps[0].pin, 10, "");
+	zassert_equal(gps[0].flags, 20, "");
 
-	zassert_true(!strcmp(gps[1].name, "TEST_GPIO_2"), "gps[1].name");
-	zassert_equal(gps[1].pin, 30, "gps[1].pin");
-	zassert_equal(gps[1].flags, 40, "gps[1].flags");
+	zassert_true(!strcmp(gps[1].name, "TEST_GPIO_2"), "");
+	zassert_equal(gps[1].pin, 30, "");
+	zassert_equal(gps[1].flags, 40, "");
 
 	/* DT_INST */
-	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1,
-		      "one instance");
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1, "");
 
 	/* DT_INST_PROP_BY_PHANDLE */
 	zassert_true(!strcmp(DT_INST_PROP_BY_PHANDLE(0, ph, label),
-			     "TEST_GPIO_1"), "ph label");
+			     "TEST_GPIO_1"), "");
 
-	zassert_true(!strcmp(ph_label, "TEST_GPIO_1"), "ph label");
+	zassert_true(!strcmp(ph_label, "TEST_GPIO_1"), "");
 
 	/* DT_INST_PROP_BY_PHANDLE_IDX */
 	zassert_true(!strcmp(DT_INST_PROP_BY_PHANDLE_IDX(0, phs, 0, label),
-		     "TEST_GPIO_1"), "phs 0");
+			     "TEST_GPIO_1"), "");
 	zassert_true(!strcmp(DT_INST_PROP_BY_PHANDLE_IDX(0, phs, 1, label),
-		     "TEST_GPIO_2"), "phs 1");
+			     "TEST_GPIO_2"), "");
 	zassert_true(!strcmp(DT_INST_PROP_BY_PHANDLE_IDX(0, phs, 2, label),
-		     "TEST_I2C_CTLR"), "phs 2");
-	zassert_true(!strcmp(phs_labels[0], "TEST_GPIO_1"), "phs_labels[0]");
-	zassert_true(!strcmp(phs_labels[1], "TEST_GPIO_2"), "phs_labels[1]");
-	zassert_true(!strcmp(phs_labels[2], "TEST_I2C_CTLR"), "phs_labels[2]");
+			     "TEST_I2C_CTLR"), "");
+	zassert_true(!strcmp(phs_labels[0], "TEST_GPIO_1"), "");
+	zassert_true(!strcmp(phs_labels[1], "TEST_GPIO_2"), "");
+	zassert_true(!strcmp(phs_labels[2], "TEST_I2C_CTLR"), "");
 	zassert_equal(DT_INST_PROP_BY_PHANDLE_IDX(0, gpios, 0,
 					     gpio_controller),
-		      1,
-		      "gpios[0].gpio_controller");
+		      1, "");
 	zassert_equal(DT_INST_PROP_BY_PHANDLE_IDX(0, gpios, 1,
 					     gpio_controller),
-		      1,
-		      "gpios[1].gpio_controller");
+		      1, "");
 	zassert_true(!strcmp(DT_INST_PROP_BY_PHANDLE_IDX(0, gpios, 0, label),
-			     "TEST_GPIO_1"),
-		     "gpios[0].label");
+			     "TEST_GPIO_1"), "");
 	zassert_true(!strcmp(DT_INST_PROP_BY_PHANDLE_IDX(0, gpios, 1, label),
-			     "TEST_GPIO_2"),
-		     "gpios[1].label");
+			     "TEST_GPIO_2"), "");
 
 	/* DT_INST_PROP_HAS_IDX */
-	zassert_true(DT_INST_PROP_HAS_IDX(0, gpios, 0), "has idx 0");
-	zassert_true(DT_INST_PROP_HAS_IDX(0, gpios, 1), "has idx 1");
-	zassert_false(DT_INST_PROP_HAS_IDX(0, gpios, 2), "!has idx 2");
+	zassert_true(DT_INST_PROP_HAS_IDX(0, gpios, 0), "");
+	zassert_true(DT_INST_PROP_HAS_IDX(0, gpios, 1), "");
+	zassert_false(DT_INST_PROP_HAS_IDX(0, gpios, 2), "");
 
 	/* DT_INST_PHA_HAS_CELL_AT_IDX */
-	zassert_true(DT_INST_PHA_HAS_CELL_AT_IDX(0, gpios, 1, pin),
-		     "has gpio 1 pin");
-	zassert_true(DT_INST_PHA_HAS_CELL_AT_IDX(0, gpios, 1, flags),
-		     "has gpio 1 flags");
-	zassert_true(DT_INST_PHA_HAS_CELL_AT_IDX(0, pha_gpios, 1, pin),
-		      "no pha-gpio 1 pin");
+	zassert_true(DT_INST_PHA_HAS_CELL_AT_IDX(0, gpios, 1, pin), "");
+	zassert_true(DT_INST_PHA_HAS_CELL_AT_IDX(0, gpios, 1, flags), "");
+	zassert_true(DT_INST_PHA_HAS_CELL_AT_IDX(0, pha_gpios, 1, pin), "");
 	/* index 1 only has pin, no flags */
-	zassert_false(DT_INST_PHA_HAS_CELL_AT_IDX(0, pha_gpios, 1, flags),
-		      "no pha-gpio 1 flags");
-	zassert_true(DT_INST_PHA_HAS_CELL_AT_IDX(0, pha_gpios, 2, pin),
-		      "no pha-gpio 2 pin");
-	zassert_true(DT_INST_PHA_HAS_CELL_AT_IDX(0, pha_gpios, 2, flags),
-		      "no pha-gpio 2 flags");
+	zassert_false(DT_INST_PHA_HAS_CELL_AT_IDX(0, pha_gpios, 1, flags), "");
+	zassert_true(DT_INST_PHA_HAS_CELL_AT_IDX(0, pha_gpios, 2, pin), "");
+	zassert_true(DT_INST_PHA_HAS_CELL_AT_IDX(0, pha_gpios, 2, flags), "");
 
 	/* DT_INST_PHA_HAS_CELL */
-	zassert_true(DT_INST_PHA_HAS_CELL(0, gpios, flags), "has gpio flags");
-	zassert_false(DT_INST_PHA_HAS_CELL(0, gpios, bar), "no gpio bar");
+	zassert_true(DT_INST_PHA_HAS_CELL(0, gpios, flags), "");
+	zassert_false(DT_INST_PHA_HAS_CELL(0, gpios, bar), "");
 
 	/* DT_INST_PHANDLE_BY_IDX */
 	zassert_true(!strcmp(DT_LABEL(DT_INST_PHANDLE_BY_IDX(0, gpios, 0)),
-			     "TEST_GPIO_1"),
-		     "gpios 0");
+			     "TEST_GPIO_1"), "");
 	zassert_true(!strcmp(DT_LABEL(DT_INST_PHANDLE_BY_IDX(0, gpios, 1)),
-			     "TEST_GPIO_2"),
-		     "gpios 1");
+			     "TEST_GPIO_2"), "");
 
 	/* DT_INST_PHANDLE */
 	zassert_true(!strcmp(DT_LABEL(DT_INST_PHANDLE(0, gpios)),
-			     "TEST_GPIO_1"),
-		     "gpios");
+			     "TEST_GPIO_1"), "");
 
 	/* DT_INST_PHA */
-	zassert_equal(DT_INST_PHA(0, gpios, pin), 10, "pin 0 implicit");
-	zassert_equal(DT_INST_PHA(0, gpios, flags), 20, "flags 0 implicit");
+	zassert_equal(DT_INST_PHA(0, gpios, pin), 10, "");
+	zassert_equal(DT_INST_PHA(0, gpios, flags), 20, "");
 
 	/* DT_INST_PHA_BY_IDX */
-	zassert_equal(DT_INST_PHA_BY_IDX(0, gpios, 0, pin), 10, "pin 0");
-	zassert_equal(DT_INST_PHA_BY_IDX(0, gpios, 0, flags), 20, "flags 0");
+	zassert_equal(DT_INST_PHA_BY_IDX(0, gpios, 0, pin), 10, "");
+	zassert_equal(DT_INST_PHA_BY_IDX(0, gpios, 0, flags), 20, "");
 
-	zassert_equal(DT_INST_PHA_BY_IDX(0, gpios, 1, pin), 30, "pin 1");
-	zassert_equal(DT_INST_PHA_BY_IDX(0, gpios, 1, flags), 40, "flags 1");
+	zassert_equal(DT_INST_PHA_BY_IDX(0, gpios, 1, pin), 30, "");
+	zassert_equal(DT_INST_PHA_BY_IDX(0, gpios, 1, flags), 40, "");
 
 	/* DT_INST_PHA_BY_NAME */
-	zassert_equal(DT_INST_PHA_BY_NAME(0, foos, a, foocell), 100,
-		      "foocell A");
-	zassert_equal(DT_INST_PHA_BY_NAME(0, foos, b_c, foocell), 110,
-		      "foocell b-c");
+	zassert_equal(DT_INST_PHA_BY_NAME(0, foos, a, foocell), 100, "");
+	zassert_equal(DT_INST_PHA_BY_NAME(0, foos, b_c, foocell), 110, "");
 
 	/* DT_INST_PHANDLE_BY_NAME */
 	zassert_true(!strcmp(DT_LABEL(DT_INST_PHANDLE_BY_NAME(0, foos, a)),
-			     "TEST_GPIO_1"),
-		      "phandle A");
+			     "TEST_GPIO_1"), "");
 	zassert_true(!strcmp(DT_LABEL(DT_INST_PHANDLE_BY_NAME(0, foos, b_c)),
-			     "TEST_GPIO_2"),
-		      "phandle b-c");
+			     "TEST_GPIO_2"), "");
 }
 
 #undef DT_DRV_COMPAT
@@ -867,78 +738,62 @@ static void test_gpio(void)
 {
 	/* DT_GPIO_CTLR_BY_IDX */
 	zassert_true(!strcmp(TO_STRING(DT_GPIO_CTLR_BY_IDX(TEST_PH, gpios, 0)),
-			     TO_STRING(DT_NODELABEL(test_gpio_1))),
-		     "gpio 0 ctlr idx");
+			     TO_STRING(DT_NODELABEL(test_gpio_1))), "");
 	zassert_true(!strcmp(TO_STRING(DT_GPIO_CTLR_BY_IDX(TEST_PH, gpios, 1)),
-			     TO_STRING(DT_NODELABEL(test_gpio_2))),
-		     "gpio 1 ctlr idx");
+			     TO_STRING(DT_NODELABEL(test_gpio_2))), "");
 
 	/* DT_GPIO_CTLR */
 	zassert_true(!strcmp(TO_STRING(DT_GPIO_CTLR(TEST_PH, gpios)),
-			     TO_STRING(DT_NODELABEL(test_gpio_1))),
-		     "gpio 0 ctlr");
+			     TO_STRING(DT_NODELABEL(test_gpio_1))), "");
 
 	/* DT_GPIO_LABEL_BY_IDX */
 	zassert_true(!strcmp(DT_GPIO_LABEL_BY_IDX(TEST_PH, gpios, 0),
-			     "TEST_GPIO_1"),
-		     "gpio 0 name idx");
+			     "TEST_GPIO_1"), "");
 	zassert_true(!strcmp(DT_GPIO_LABEL_BY_IDX(TEST_PH, gpios, 1),
-			     "TEST_GPIO_2"),
-		     "gpio 1 name idx");
+			     "TEST_GPIO_2"), "");
 
 	/* DT_GPIO_LABEL */
-	zassert_true(!strcmp(DT_GPIO_LABEL(TEST_PH, gpios), "TEST_GPIO_1"),
-		     "gpio 0 name");
+	zassert_true(!strcmp(DT_GPIO_LABEL(TEST_PH, gpios), "TEST_GPIO_1"), "");
 
 	/* DT_GPIO_PIN_BY_IDX */
-	zassert_equal(DT_GPIO_PIN_BY_IDX(TEST_PH, gpios, 0), 10, "gpio 0 pin idx");
-	zassert_equal(DT_GPIO_PIN_BY_IDX(TEST_PH, gpios, 1), 30, "gpio 1 pin idx");
+	zassert_equal(DT_GPIO_PIN_BY_IDX(TEST_PH, gpios, 0), 10, "");
+	zassert_equal(DT_GPIO_PIN_BY_IDX(TEST_PH, gpios, 1), 30, "");
 
 	/* DT_GPIO_PIN */
-	zassert_equal(DT_GPIO_PIN(TEST_PH, gpios), 10, "gpio 0 pin");
+	zassert_equal(DT_GPIO_PIN(TEST_PH, gpios), 10, "");
 
 	/* DT_GPIO_FLAGS_BY_IDX */
-	zassert_equal(DT_GPIO_FLAGS_BY_IDX(TEST_PH, gpios, 0),
-		      20, "gpio 0 flags idx");
-	zassert_equal(DT_GPIO_FLAGS_BY_IDX(TEST_PH, gpios, 1),
-		      40, "gpio 1 flags idx");
+	zassert_equal(DT_GPIO_FLAGS_BY_IDX(TEST_PH, gpios, 0), 20, "");
+	zassert_equal(DT_GPIO_FLAGS_BY_IDX(TEST_PH, gpios, 1), 40, "");
 
 	/* DT_GPIO_FLAGS */
-	zassert_equal(DT_GPIO_FLAGS(TEST_PH, gpios), 20, "gpio 0 flags");
+	zassert_equal(DT_GPIO_FLAGS(TEST_PH, gpios), 20, "");
 
 	/* DT_INST */
-	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1,
-		      "one instance");
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1, "");
 
 	/* DT_INST_GPIO_LABEL_BY_IDX */
 	zassert_true(!strcmp(DT_INST_GPIO_LABEL_BY_IDX(0, gpios, 0),
-			     "TEST_GPIO_1"),
-		     "gpio inst 0 name idx");
+			     "TEST_GPIO_1"), "");
 	zassert_true(!strcmp(DT_INST_GPIO_LABEL_BY_IDX(0, gpios, 1),
-			     "TEST_GPIO_2"),
-		     "gpio inst 1 name idx");
+			     "TEST_GPIO_2"), "");
 
 	/* DT_INST_GPIO_LABEL */
-	zassert_true(!strcmp(DT_INST_GPIO_LABEL(0, gpios), "TEST_GPIO_1"),
-		     "gpio inst 0 name");
+	zassert_true(!strcmp(DT_INST_GPIO_LABEL(0, gpios), "TEST_GPIO_1"), "");
 
 	/* DT_INST_GPIO_PIN_BY_IDX */
-	zassert_equal(DT_INST_GPIO_PIN_BY_IDX(0, gpios, 0),
-		      10, "gpio inst 0 pin idx");
-	zassert_equal(DT_INST_GPIO_PIN_BY_IDX(0, gpios, 1),
-		      30, "gpio inst 1 pin idx");
+	zassert_equal(DT_INST_GPIO_PIN_BY_IDX(0, gpios, 0), 10, "");
+	zassert_equal(DT_INST_GPIO_PIN_BY_IDX(0, gpios, 1), 30, "");
 
 	/* DT_INST_GPIO_PIN */
-	zassert_equal(DT_INST_GPIO_PIN(0, gpios), 10, "gpio inst 0 pin");
+	zassert_equal(DT_INST_GPIO_PIN(0, gpios), 10, "");
 
 	/* DT_INST_GPIO_FLAGS_BY_IDX */
-	zassert_equal(DT_INST_GPIO_FLAGS_BY_IDX(0, gpios, 0),
-		      20, "gpio inst 0 flags idx");
-	zassert_equal(DT_INST_GPIO_FLAGS_BY_IDX(0, gpios, 1),
-		      40, "gpio inst 1 flags idx");
+	zassert_equal(DT_INST_GPIO_FLAGS_BY_IDX(0, gpios, 0), 20, "");
+	zassert_equal(DT_INST_GPIO_FLAGS_BY_IDX(0, gpios, 1), 40, "");
 
 	/* DT_INST_GPIO_FLAGS */
-	zassert_equal(DT_INST_GPIO_FLAGS(0, gpios), 20, "gpio inst 0 flags");
+	zassert_equal(DT_INST_GPIO_FLAGS(0, gpios), 20, "");
 }
 
 #undef DT_DRV_COMPAT
@@ -946,50 +801,38 @@ static void test_gpio(void)
 static void test_io_channels(void)
 {
 	zassert_true(!strcmp(DT_IO_CHANNELS_LABEL_BY_IDX(TEST_TEMP, 0),
-			     "TEST_ADC_1"),
-		     "label 0");
+			     "TEST_ADC_1"), "");
 	zassert_true(!strcmp(DT_IO_CHANNELS_LABEL_BY_IDX(TEST_TEMP, 1),
-			     "TEST_ADC_2"),
-		     "label 1");
+			     "TEST_ADC_2"), "");
 	zassert_true(!strcmp(DT_IO_CHANNELS_LABEL_BY_NAME(TEST_TEMP, ch1),
-			     "TEST_ADC_1"),
-		     "label ch1");
+			     "TEST_ADC_1"), "");
 	zassert_true(!strcmp(DT_IO_CHANNELS_LABEL_BY_NAME(TEST_TEMP, ch2),
-			     "TEST_ADC_2"),
-		     "label ch2");
+			     "TEST_ADC_2"), "");
 	zassert_true(!strcmp(DT_IO_CHANNELS_LABEL(TEST_TEMP),
-			     "TEST_ADC_1"),
-		     "label 0 implicit");
+			     "TEST_ADC_1"), "");
 
 	zassert_true(!strcmp(DT_INST_IO_CHANNELS_LABEL_BY_IDX(0, 0),
-			     "TEST_ADC_1"),
-		     "inst label 0");
+			     "TEST_ADC_1"), "");
 	zassert_true(!strcmp(DT_INST_IO_CHANNELS_LABEL_BY_IDX(0, 1),
-			     "TEST_ADC_2"),
-		     "inst label 1");
+			     "TEST_ADC_2"), "");
 	zassert_true(!strcmp(DT_INST_IO_CHANNELS_LABEL_BY_NAME(0, ch1),
-			     "TEST_ADC_1"),
-		     "inst ch1");
+			     "TEST_ADC_1"), "");
 	zassert_true(!strcmp(DT_INST_IO_CHANNELS_LABEL_BY_NAME(0, ch2),
-			     "TEST_ADC_2"),
-		     "inst ch2");
+			     "TEST_ADC_2"), "");
 	zassert_true(!strcmp(DT_INST_IO_CHANNELS_LABEL(0),
-			     "TEST_ADC_1"),
-		     "inst ch1 implicit");
+			     "TEST_ADC_1"), "");
 
-	zassert_equal(DT_IO_CHANNELS_INPUT_BY_IDX(TEST_TEMP, 0), 10, "input 0");
-	zassert_equal(DT_IO_CHANNELS_INPUT_BY_IDX(TEST_TEMP, 1), 20, "input 1");
-	zassert_equal(DT_IO_CHANNELS_INPUT_BY_NAME(TEST_TEMP, ch1), 10,
-		      "input ch1");
-	zassert_equal(DT_IO_CHANNELS_INPUT_BY_NAME(TEST_TEMP, ch2), 20,
-		      "input ch2");
-	zassert_equal(DT_IO_CHANNELS_INPUT(TEST_TEMP), 10, "input 0 implicit");
+	zassert_equal(DT_IO_CHANNELS_INPUT_BY_IDX(TEST_TEMP, 0), 10, "");
+	zassert_equal(DT_IO_CHANNELS_INPUT_BY_IDX(TEST_TEMP, 1), 20, "");
+	zassert_equal(DT_IO_CHANNELS_INPUT_BY_NAME(TEST_TEMP, ch1), 10, "");
+	zassert_equal(DT_IO_CHANNELS_INPUT_BY_NAME(TEST_TEMP, ch2), 20, "");
+	zassert_equal(DT_IO_CHANNELS_INPUT(TEST_TEMP), 10, "");
 
-	zassert_equal(DT_INST_IO_CHANNELS_INPUT_BY_IDX(0, 0), 10, "input 0");
-	zassert_equal(DT_INST_IO_CHANNELS_INPUT_BY_IDX(0, 1), 20, "input 1");
-	zassert_equal(DT_INST_IO_CHANNELS_INPUT_BY_NAME(0, ch1), 10, "input ch1");
-	zassert_equal(DT_INST_IO_CHANNELS_INPUT_BY_NAME(0, ch2), 20, "input ch2");
-	zassert_equal(DT_INST_IO_CHANNELS_INPUT(0), 10, "input 0 implicit");
+	zassert_equal(DT_INST_IO_CHANNELS_INPUT_BY_IDX(0, 0), 10, "");
+	zassert_equal(DT_INST_IO_CHANNELS_INPUT_BY_IDX(0, 1), 20, "");
+	zassert_equal(DT_INST_IO_CHANNELS_INPUT_BY_NAME(0, ch1), 10, "");
+	zassert_equal(DT_INST_IO_CHANNELS_INPUT_BY_NAME(0, ch2), 20, "");
+	zassert_equal(DT_INST_IO_CHANNELS_INPUT(0), 10, "");
 }
 
 #undef DT_DRV_COMPAT
@@ -997,66 +840,42 @@ static void test_io_channels(void)
 static void test_dma(void)
 {
 	zassert_true(!strcmp(DT_DMAS_LABEL_BY_NAME(TEST_TEMP, rx),
-			     "TEST_DMA_CTRL_2"),
-		     "dma-controller label rx channel");
+			     "TEST_DMA_CTRL_2"), "");
 	zassert_true(!strcmp(DT_INST_DMAS_LABEL_BY_NAME(0, rx),
-			     "TEST_DMA_CTRL_2"),
-		     "dma-controller label rx channel");
+			     "TEST_DMA_CTRL_2"), "");
 	zassert_true(!strcmp(DT_DMAS_LABEL_BY_NAME(TEST_TEMP, tx),
-			     "TEST_DMA_CTRL_1"),
-		     "dma-controller label tx channel");
+			     "TEST_DMA_CTRL_1"), "");
 	zassert_true(!strcmp(DT_INST_DMAS_LABEL_BY_NAME(0, tx),
-			     "TEST_DMA_CTRL_1"),
-		     "dma-controller label tx channel");
+			     "TEST_DMA_CTRL_1"), "");
 
 	zassert_true(!strcmp(DT_DMAS_LABEL_BY_IDX(TEST_TEMP, 1),
-			     "TEST_DMA_CTRL_2"),
-		     "dma-controller label channel idx 1");
+			     "TEST_DMA_CTRL_2"), "");
 	zassert_true(!strcmp(DT_INST_DMAS_LABEL_BY_IDX(0, 1),
-			     "TEST_DMA_CTRL_2"),
-		     "dma-controller label channel idx 1");
+			     "TEST_DMA_CTRL_2"), "");
 	zassert_true(!strcmp(DT_DMAS_LABEL_BY_IDX(TEST_TEMP, 0),
-			     "TEST_DMA_CTRL_1"),
-		     "dma-controller label channel idx 0");
+			     "TEST_DMA_CTRL_1"), "");
 	zassert_true(!strcmp(DT_INST_DMAS_LABEL_BY_IDX(0, 0),
-			     "TEST_DMA_CTRL_1"),
-		     "dma-controller label channel idx 0");
+			     "TEST_DMA_CTRL_1"), "");
 
-	zassert_equal(DT_DMAS_CELL_BY_NAME(TEST_TEMP, rx, channel), 3,
-		      "channel cell of rx dma channel");
-	zassert_equal(DT_INST_DMAS_CELL_BY_NAME(0, rx, channel), 3,
-		      "channel cell of rx dma channel");
-	zassert_equal(DT_DMAS_CELL_BY_NAME(TEST_TEMP, rx, slot), 4,
-		      "slot cell of rx dma channel");
-	zassert_equal(DT_INST_DMAS_CELL_BY_NAME(0, rx, slot), 4,
-		      "slot cell of rx dma channel");
+	zassert_equal(DT_DMAS_CELL_BY_NAME(TEST_TEMP, rx, channel), 3, "");
+	zassert_equal(DT_INST_DMAS_CELL_BY_NAME(0, rx, channel), 3, "");
+	zassert_equal(DT_DMAS_CELL_BY_NAME(TEST_TEMP, rx, slot), 4, "");
+	zassert_equal(DT_INST_DMAS_CELL_BY_NAME(0, rx, slot), 4, "");
 
-	zassert_equal(DT_DMAS_CELL_BY_IDX(TEST_TEMP, 1, channel), 3,
-		      "channel cell of idx 1 dma channel");
-	zassert_equal(DT_INST_DMAS_CELL_BY_IDX(0, 1, channel), 3,
-		      "channel cell of idx 1 dma channel");
-	zassert_equal(DT_DMAS_CELL_BY_IDX(TEST_TEMP, 1, slot), 4,
-		      "slot cell of idx 1 dma channel");
-	zassert_equal(DT_INST_DMAS_CELL_BY_IDX(0, 1, slot), 4,
-		      "slot cell of idx 1 dma channel");
+	zassert_equal(DT_DMAS_CELL_BY_IDX(TEST_TEMP, 1, channel), 3, "");
+	zassert_equal(DT_INST_DMAS_CELL_BY_IDX(0, 1, channel), 3, "");
+	zassert_equal(DT_DMAS_CELL_BY_IDX(TEST_TEMP, 1, slot), 4, "");
+	zassert_equal(DT_INST_DMAS_CELL_BY_IDX(0, 1, slot), 4, "");
 
-	zassert_true(DT_DMAS_HAS_NAME(TEST_TEMP, tx),
-		     "tx dma channel available");
-	zassert_true(DT_INST_DMAS_HAS_NAME(0, tx),
-		     "tx dma channel available");
-	zassert_false(DT_DMAS_HAS_NAME(TEST_TEMP, output),
-		      "output dma channel not available");
-	zassert_false(DT_INST_DMAS_HAS_NAME(0, output),
-		      "output dma channel not available");
+	zassert_true(DT_DMAS_HAS_NAME(TEST_TEMP, tx), "");
+	zassert_true(DT_INST_DMAS_HAS_NAME(0, tx), "");
+	zassert_false(DT_DMAS_HAS_NAME(TEST_TEMP, output), "");
+	zassert_false(DT_INST_DMAS_HAS_NAME(0, output), "");
 
-	zassert_true(DT_DMAS_HAS_IDX(TEST_TEMP, 1),
-		     "Idx 1 dma channel available");
-	zassert_true(DT_INST_DMAS_HAS_IDX(0, 1),
-		     "Idx 1 dma channel available");
-	zassert_false(DT_DMAS_HAS_IDX(TEST_TEMP, 2),
-		      "Idx 2 dma channel not available");
-	zassert_false(DT_INST_DMAS_HAS_IDX(0, 2),
-		      "Idx 2 dma channel not available");
+	zassert_true(DT_DMAS_HAS_IDX(TEST_TEMP, 1), "");
+	zassert_true(DT_INST_DMAS_HAS_IDX(0, 1), "");
+	zassert_false(DT_DMAS_HAS_IDX(TEST_TEMP, 2), "");
+	zassert_false(DT_INST_DMAS_HAS_IDX(0, 2), "");
 }
 
 #undef DT_DRV_COMPAT
@@ -1065,157 +884,131 @@ static void test_pwms(void)
 {
 	/* DT_PWMS_LABEL_BY_IDX */
 	zassert_true(!strcmp(DT_PWMS_LABEL_BY_IDX(TEST_PH, 0),
-			     "TEST_PWM_CTRL_1"),
-		     "label 0");
+			     "TEST_PWM_CTRL_1"), "");
 
 	/* DT_PWMS_LABEL_BY_NAME */
 	zassert_true(!strcmp(DT_PWMS_LABEL_BY_NAME(TEST_PH, red),
-			     "TEST_PWM_CTRL_1"),
-		     "label red");
+			     "TEST_PWM_CTRL_1"), "");
 
 	/* DT_PWMS_LABEL */
-	zassert_true(!strcmp(DT_PWMS_LABEL(TEST_PH), "TEST_PWM_CTRL_1"),
-		     "label 0");
+	zassert_true(!strcmp(DT_PWMS_LABEL(TEST_PH), "TEST_PWM_CTRL_1"), "");
 
 	/* DT_PWMS_CELL_BY_IDX */
-	zassert_equal(DT_PWMS_CELL_BY_IDX(TEST_PH, 1, channel), 5,
-		      "pwm 2 channel");
-	zassert_equal(DT_PWMS_CELL_BY_IDX(TEST_PH, 1, period), 100,
-		      "pwm 2 period");
-	zassert_equal(DT_PWMS_CELL_BY_IDX(TEST_PH, 1, flags), 1,
-		      "pwm 2 flags");
+	zassert_equal(DT_PWMS_CELL_BY_IDX(TEST_PH, 1, channel), 5, "");
+	zassert_equal(DT_PWMS_CELL_BY_IDX(TEST_PH, 1, period), 100, "");
+	zassert_equal(DT_PWMS_CELL_BY_IDX(TEST_PH, 1, flags), 1, "");
 
 	/* DT_PWMS_CELL_BY_NAME */
-	zassert_equal(DT_PWMS_CELL_BY_NAME(TEST_PH, red, channel), 8,
-		      "pwm-red channel");
-	zassert_equal(DT_PWMS_CELL_BY_NAME(TEST_PH, red, period), 200,
-		      "pwm-red period");
-	zassert_equal(DT_PWMS_CELL_BY_NAME(TEST_PH, red, flags), 3,
-		      "pwm-red flags");
+	zassert_equal(DT_PWMS_CELL_BY_NAME(TEST_PH, red, channel), 8, "");
+	zassert_equal(DT_PWMS_CELL_BY_NAME(TEST_PH, red, period), 200, "");
+	zassert_equal(DT_PWMS_CELL_BY_NAME(TEST_PH, red, flags), 3, "");
 
 	/* DT_PWMS_CELL */
-	zassert_equal(DT_PWMS_CELL(TEST_PH, channel), 8, "pwm channel");
-	zassert_equal(DT_PWMS_CELL(TEST_PH, period), 200, "pwm period");
-	zassert_equal(DT_PWMS_CELL(TEST_PH, flags), 3, "pwm flags");
+	zassert_equal(DT_PWMS_CELL(TEST_PH, channel), 8, "");
+	zassert_equal(DT_PWMS_CELL(TEST_PH, period), 200, "");
+	zassert_equal(DT_PWMS_CELL(TEST_PH, flags), 3, "");
 
 	/* DT_PWMS_CHANNEL_BY_IDX */
-	zassert_equal(DT_PWMS_CHANNEL_BY_IDX(TEST_PH, 1), 5, "pwm channel");
+	zassert_equal(DT_PWMS_CHANNEL_BY_IDX(TEST_PH, 1), 5, "");
 
 	/* DT_PWMS_CHANNEL_BY_NAME */
-	zassert_equal(DT_PWMS_CHANNEL_BY_NAME(TEST_PH, green), 5,
-		      "pwm channel");
+	zassert_equal(DT_PWMS_CHANNEL_BY_NAME(TEST_PH, green), 5, "");
 
 	/* DT_PWMS_CHANNEL */
-	zassert_equal(DT_PWMS_CHANNEL(TEST_PH), 8, "pwm channel");
+	zassert_equal(DT_PWMS_CHANNEL(TEST_PH), 8, "");
 
 	/* DT_PWMS_PERIOD_BY_IDX */
-	zassert_equal(DT_PWMS_PERIOD_BY_IDX(TEST_PH, 1), 100, "pwm period");
+	zassert_equal(DT_PWMS_PERIOD_BY_IDX(TEST_PH, 1), 100, "");
 
 	/* DT_PWMS_PERIOD_BY_NAME */
-	zassert_equal(DT_PWMS_PERIOD_BY_NAME(TEST_PH, green), 100,
-		      "pwm period");
+	zassert_equal(DT_PWMS_PERIOD_BY_NAME(TEST_PH, green), 100, "");
 
 	/* DT_PWMS_PERIOD */
-	zassert_equal(DT_PWMS_PERIOD(TEST_PH), 200, "pwm period");
+	zassert_equal(DT_PWMS_PERIOD(TEST_PH), 200, "");
 
 	/* DT_PWMS_FLAGS_BY_IDX */
-	zassert_equal(DT_PWMS_FLAGS_BY_IDX(TEST_PH, 1), 1, "pwm flags");
+	zassert_equal(DT_PWMS_FLAGS_BY_IDX(TEST_PH, 1), 1, "");
 
 	/* DT_PWMS_FLAGS_BY_NAME */
-	zassert_equal(DT_PWMS_FLAGS_BY_NAME(TEST_PH, green), 1,
-		      "pwm flags");
+	zassert_equal(DT_PWMS_FLAGS_BY_NAME(TEST_PH, green), 1, "");
 
 	/* DT_PWMS_FLAGS */
-	zassert_equal(DT_PWMS_FLAGS(TEST_PH), 3, "pwm flags");
+	zassert_equal(DT_PWMS_FLAGS(TEST_PH), 3, "");
 
 	/* DT_INST */
-	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1,
-		      "one instance");
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1, "");
 
 	/* DT_INST_PWMS_LABEL_BY_IDX */
 	zassert_true(!strcmp(DT_INST_PWMS_LABEL_BY_IDX(0, 0),
-			     "TEST_PWM_CTRL_1"),
-		     "label 0");
+			     "TEST_PWM_CTRL_1"), "");
 
 	/* DT_INST_PWMS_LABEL_BY_NAME */
 	zassert_true(!strcmp(DT_INST_PWMS_LABEL_BY_NAME(0, green),
-			     "TEST_PWM_CTRL_2"),
-		     "label green");
+			     "TEST_PWM_CTRL_2"), "");
 
 	/* DT_INST_PWMS_LABEL */
-	zassert_true(!strcmp(DT_INST_PWMS_LABEL(0), "TEST_PWM_CTRL_1"),
-		     "label 0");
+	zassert_true(!strcmp(DT_INST_PWMS_LABEL(0), "TEST_PWM_CTRL_1"), "");
 
 	/* DT_INST_PWMS_CELL_BY_IDX */
-	zassert_equal(DT_INST_PWMS_CELL_BY_IDX(0, 1, channel), 5,
-		      "pwm 2 channel");
-	zassert_equal(DT_INST_PWMS_CELL_BY_IDX(0, 1, period), 100,
-		      "pwm 2 period");
-	zassert_equal(DT_INST_PWMS_CELL_BY_IDX(0, 1, flags), 1,
-		      "pwm 2 flags");
+	zassert_equal(DT_INST_PWMS_CELL_BY_IDX(0, 1, channel), 5, "");
+	zassert_equal(DT_INST_PWMS_CELL_BY_IDX(0, 1, period), 100, "");
+	zassert_equal(DT_INST_PWMS_CELL_BY_IDX(0, 1, flags), 1, "");
 
 	/* DT_INST_PWMS_CELL_BY_NAME */
-	zassert_equal(DT_INST_PWMS_CELL_BY_NAME(0, green, channel), 5,
-		      "pwm-green channel");
-	zassert_equal(DT_INST_PWMS_CELL_BY_NAME(0, green, period), 100,
-		      "pwm-green period");
-	zassert_equal(DT_INST_PWMS_CELL_BY_NAME(0, green, flags), 1,
-		      "pwm-green flags");
+	zassert_equal(DT_INST_PWMS_CELL_BY_NAME(0, green, channel), 5, "");
+	zassert_equal(DT_INST_PWMS_CELL_BY_NAME(0, green, period), 100, "");
+	zassert_equal(DT_INST_PWMS_CELL_BY_NAME(0, green, flags), 1, "");
 
 	/* DT_INST_PWMS_CELL */
-	zassert_equal(DT_INST_PWMS_CELL(0, channel), 8, "pwm channel");
-	zassert_equal(DT_INST_PWMS_CELL(0, period), 200, "pwm period");
-	zassert_equal(DT_INST_PWMS_CELL(0, flags), 3, "pwm flags");
+	zassert_equal(DT_INST_PWMS_CELL(0, channel), 8, "");
+	zassert_equal(DT_INST_PWMS_CELL(0, period), 200, "");
+	zassert_equal(DT_INST_PWMS_CELL(0, flags), 3, "");
 
 	/* DT_INST_PWMS_CHANNEL_BY_IDX */
-	zassert_equal(DT_INST_PWMS_CHANNEL_BY_IDX(0, 1), 5, "pwm channel");
+	zassert_equal(DT_INST_PWMS_CHANNEL_BY_IDX(0, 1), 5, "");
 
 	/* DT_INST_PWMS_CHANNEL_BY_NAME */
-	zassert_equal(DT_INST_PWMS_CHANNEL_BY_NAME(0, green), 5, "pwm channel");
+	zassert_equal(DT_INST_PWMS_CHANNEL_BY_NAME(0, green), 5, "");
 
 	/* DT_INST_PWMS_CHANNEL */
-	zassert_equal(DT_INST_PWMS_CHANNEL(0), 8, "pwm channel");
+	zassert_equal(DT_INST_PWMS_CHANNEL(0), 8, "");
 
 	/* DT_INST_PWMS_PERIOD_BY_IDX */
-	zassert_equal(DT_INST_PWMS_PERIOD_BY_IDX(0, 1), 100, "pwm period");
+	zassert_equal(DT_INST_PWMS_PERIOD_BY_IDX(0, 1), 100, "");
 
 	/* DT_INST_PWMS_PERIOD_BY_NAME */
-	zassert_equal(DT_INST_PWMS_PERIOD_BY_NAME(0, red), 200, "pwm periodx");
+	zassert_equal(DT_INST_PWMS_PERIOD_BY_NAME(0, red), 200, "");
 
 	/* DT_INST_PWMS_PERIOD */
-	zassert_equal(DT_INST_PWMS_PERIOD(0), 200, "pwm period");
+	zassert_equal(DT_INST_PWMS_PERIOD(0), 200, "");
 
 	/* DT_INST_PWMS_FLAGS_BY_IDX */
-	zassert_equal(DT_INST_PWMS_FLAGS_BY_IDX(0, 1), 1, "pwm channel");
+	zassert_equal(DT_INST_PWMS_FLAGS_BY_IDX(0, 1), 1, "");
 
 	/* DT_INST_PWMS_FLAGS_BY_NAME */
-	zassert_equal(DT_INST_PWMS_FLAGS_BY_NAME(0, red), 3, "pwm channel");
+	zassert_equal(DT_INST_PWMS_FLAGS_BY_NAME(0, red), 3, "");
 
 	/* DT_INST_PWMS_FLAGS */
-	zassert_equal(DT_INST_PWMS_FLAGS(0), 3, "pwm channel");
+	zassert_equal(DT_INST_PWMS_FLAGS(0), 3, "");
 }
 
 static void test_macro_names(void)
 {
 	/* white box */
 	zassert_true(!strcmp(TO_STRING(DT_PATH(test, gpio_deadbeef)),
-			     "DT_N_S_test_S_gpio_deadbeef"),
-		     "path");
+			     "DT_N_S_test_S_gpio_deadbeef"), "");
 	zassert_true(!strcmp(TO_STRING(DT_ALIAS(test_alias)),
-			     "DT_N_S_test_S_gpio_deadbeef"),
-		     "alias");
+			     "DT_N_S_test_S_gpio_deadbeef"), "");
 	zassert_true(!strcmp(TO_STRING(DT_NODELABEL(test_nodelabel)),
-			     "DT_N_S_test_S_gpio_deadbeef"),
-		     "nodelabel");
+			     "DT_N_S_test_S_gpio_deadbeef"), "");
 	zassert_true(!strcmp(TO_STRING(DT_NODELABEL(test_nodelabel_allcaps)),
-			     "DT_N_S_test_S_gpio_deadbeef"),
-		     "nodelabel (all caps)");
+			     "DT_N_S_test_S_gpio_deadbeef"), "");
 
 #define CHILD_NODE_ID DT_CHILD(DT_PATH(test, i2c_11112222), test_i2c_dev_10)
 #define FULL_PATH_ID DT_PATH(test, i2c_11112222, test_i2c_dev_10)
 
-	zassert_true(!strcmp(TO_STRING(CHILD_NODE_ID), TO_STRING(FULL_PATH_ID)),
-		     "child");
+	zassert_true(!strcmp(TO_STRING(CHILD_NODE_ID),
+			     TO_STRING(FULL_PATH_ID)), "");
 
 #undef CHILD_NODE_ID
 #undef FULL_PATH_ID
@@ -1229,18 +1022,18 @@ static void test_arrays(void)
 {
 	int ok;
 
-	zassert_equal(ARRAY_SIZE(a), 3, "a size");
-	zassert_equal(ARRAY_SIZE(b), 4, "b size");
-	zassert_equal(ARRAY_SIZE(c), 2, "c size");
+	zassert_equal(ARRAY_SIZE(a), 3, "");
+	zassert_equal(ARRAY_SIZE(b), 4, "");
+	zassert_equal(ARRAY_SIZE(c), 2, "");
 
-	zassert_equal(a[0], 1000, "a[0]");
-	zassert_equal(a[1], 2000, "a[1]");
-	zassert_equal(a[2], 3000, "a[2]");
+	zassert_equal(a[0], 1000, "");
+	zassert_equal(a[1], 2000, "");
+	zassert_equal(a[2], 3000, "");
 
-	zassert_true(DT_PROP_HAS_IDX(TEST_ARRAYS, a, 0), "a idx 0");
-	zassert_true(DT_PROP_HAS_IDX(TEST_ARRAYS, a, 1), "a idx 1");
-	zassert_true(DT_PROP_HAS_IDX(TEST_ARRAYS, a, 2), "a idx 2");
-	zassert_false(DT_PROP_HAS_IDX(TEST_ARRAYS, a, 3), "!a idx 3");
+	zassert_true(DT_PROP_HAS_IDX(TEST_ARRAYS, a, 0), "");
+	zassert_true(DT_PROP_HAS_IDX(TEST_ARRAYS, a, 1), "");
+	zassert_true(DT_PROP_HAS_IDX(TEST_ARRAYS, a, 2), "");
+	zassert_false(DT_PROP_HAS_IDX(TEST_ARRAYS, a, 3), "");
 
 	/*
 	 * Verify that DT_PROP_HAS_IDX can be used with COND_CODE_1()
@@ -1249,46 +1042,46 @@ static void test_arrays(void)
 	 */
 	ok = 0;
 	COND_CODE_1(DT_PROP_HAS_IDX(TEST_ARRAYS, a, 0), (ok = 1;), ());
-	zassert_equal(ok, 1, "a idx 0 as a literal 1");
+	zassert_equal(ok, 1, "");
 	ok = 0;
 	COND_CODE_0(DT_PROP_HAS_IDX(TEST_ARRAYS, a, 3), (ok = 1;), ());
-	zassert_equal(ok, 1, "a idx 3 as a literal 0");
+	zassert_equal(ok, 1, "");
 
-	zassert_equal(DT_PROP_BY_IDX(TEST_ARRAYS, a, 0), a[0], "a 0");
-	zassert_equal(DT_PROP_BY_IDX(TEST_ARRAYS, a, 1), a[1], "a 1");
-	zassert_equal(DT_PROP_BY_IDX(TEST_ARRAYS, a, 2), a[2], "a 2");
+	zassert_equal(DT_PROP_BY_IDX(TEST_ARRAYS, a, 0), a[0], "");
+	zassert_equal(DT_PROP_BY_IDX(TEST_ARRAYS, a, 1), a[1], "");
+	zassert_equal(DT_PROP_BY_IDX(TEST_ARRAYS, a, 2), a[2], "");
 
-	zassert_equal(DT_PROP_LEN(TEST_ARRAYS, a), 3, "a len");
+	zassert_equal(DT_PROP_LEN(TEST_ARRAYS, a), 3, "");
 
-	zassert_equal(b[0], 0xaa, "b[0]");
-	zassert_equal(b[1], 0xbb, "b[1]");
-	zassert_equal(b[2], 0xcc, "b[2]");
-	zassert_equal(b[3], 0xdd, "b[3]");
+	zassert_equal(b[0], 0xaa, "");
+	zassert_equal(b[1], 0xbb, "");
+	zassert_equal(b[2], 0xcc, "");
+	zassert_equal(b[3], 0xdd, "");
 
-	zassert_true(DT_PROP_HAS_IDX(TEST_ARRAYS, b, 0), "b idx 0");
-	zassert_true(DT_PROP_HAS_IDX(TEST_ARRAYS, b, 1), "b idx 1");
-	zassert_true(DT_PROP_HAS_IDX(TEST_ARRAYS, b, 2), "b idx 2");
-	zassert_true(DT_PROP_HAS_IDX(TEST_ARRAYS, b, 3), "b idx 3");
-	zassert_false(DT_PROP_HAS_IDX(TEST_ARRAYS, b, 4), "!b idx 4");
+	zassert_true(DT_PROP_HAS_IDX(TEST_ARRAYS, b, 0), "");
+	zassert_true(DT_PROP_HAS_IDX(TEST_ARRAYS, b, 1), "");
+	zassert_true(DT_PROP_HAS_IDX(TEST_ARRAYS, b, 2), "");
+	zassert_true(DT_PROP_HAS_IDX(TEST_ARRAYS, b, 3), "");
+	zassert_false(DT_PROP_HAS_IDX(TEST_ARRAYS, b, 4), "");
 
-	zassert_equal(DT_PROP_BY_IDX(TEST_ARRAYS, b, 0), b[0], "b 0");
-	zassert_equal(DT_PROP_BY_IDX(TEST_ARRAYS, b, 1), b[1], "b 0");
-	zassert_equal(DT_PROP_BY_IDX(TEST_ARRAYS, b, 2), b[2], "b 0");
-	zassert_equal(DT_PROP_BY_IDX(TEST_ARRAYS, b, 3), b[3], "b 0");
+	zassert_equal(DT_PROP_BY_IDX(TEST_ARRAYS, b, 0), b[0], "");
+	zassert_equal(DT_PROP_BY_IDX(TEST_ARRAYS, b, 1), b[1], "");
+	zassert_equal(DT_PROP_BY_IDX(TEST_ARRAYS, b, 2), b[2], "");
+	zassert_equal(DT_PROP_BY_IDX(TEST_ARRAYS, b, 3), b[3], "");
 
-	zassert_equal(DT_PROP_LEN(TEST_ARRAYS, b), 4, "b len");
+	zassert_equal(DT_PROP_LEN(TEST_ARRAYS, b), 4, "");
 
-	zassert_true(!strcmp(c[0], "bar"), "c[0]");
-	zassert_true(!strcmp(c[1], "baz"), "c[1]");
+	zassert_true(!strcmp(c[0], "bar"), "");
+	zassert_true(!strcmp(c[1], "baz"), "");
 
-	zassert_true(DT_PROP_HAS_IDX(TEST_ARRAYS, c, 0), "c idx 0");
-	zassert_true(DT_PROP_HAS_IDX(TEST_ARRAYS, c, 1), "c idx 1");
-	zassert_false(DT_PROP_HAS_IDX(TEST_ARRAYS, c, 2), "!c idx 2");
+	zassert_true(DT_PROP_HAS_IDX(TEST_ARRAYS, c, 0), "");
+	zassert_true(DT_PROP_HAS_IDX(TEST_ARRAYS, c, 1), "");
+	zassert_false(DT_PROP_HAS_IDX(TEST_ARRAYS, c, 2), "");
 
-	zassert_true(!strcmp(DT_PROP_BY_IDX(TEST_ARRAYS, c, 0), c[0]), "c 0");
-	zassert_true(!strcmp(DT_PROP_BY_IDX(TEST_ARRAYS, c, 1), c[1]), "c 1");
+	zassert_true(!strcmp(DT_PROP_BY_IDX(TEST_ARRAYS, c, 0), c[0]), "");
+	zassert_true(!strcmp(DT_PROP_BY_IDX(TEST_ARRAYS, c, 1), c[1]), "");
 
-	zassert_equal(DT_PROP_LEN(TEST_ARRAYS, c), 2, "c len");
+	zassert_equal(DT_PROP_LEN(TEST_ARRAYS, c), 2, "");
 }
 
 struct test_gpio_info {
@@ -1352,8 +1145,7 @@ static void test_devices(void)
 	const struct device *dev_abcd;
 	unsigned int val;
 
-	zassert_equal(DT_NUM_INST_STATUS_OKAY(vnd_gpio), 2,
-		      "wrong number of gpio devs");
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(vnd_gpio), 2, "");
 
 	devs[i] = device_get_binding(DT_LABEL(INST(0)));
 	if (devs[i]) {
@@ -1368,19 +1160,19 @@ static void test_devices(void)
 		i++;
 	}
 
-	zassert_not_null(devs[0], "null devs[0]");
-	zassert_not_null(devs[1], "null devs[1]");
-	zassert_true(devs[2] == NULL, "non-null devs[2]");
+	zassert_not_null(devs[0], "");
+	zassert_not_null(devs[1], "");
+	zassert_true(devs[2] == NULL, "");
 
-	zassert_true(to_data(devs[0])->is_gpio_ctlr, "devs[0] not a gpio");
-	zassert_true(to_data(devs[1])->is_gpio_ctlr, "devs[1] not a gpio");
-	zassert_true(to_data(devs[0])->init_called, "devs[0] not initialized");
-	zassert_true(to_data(devs[1])->init_called, "devs[1] not initialized");
+	zassert_true(to_data(devs[0])->is_gpio_ctlr, "");
+	zassert_true(to_data(devs[1])->is_gpio_ctlr, "");
+	zassert_true(to_data(devs[0])->init_called, "");
+	zassert_true(to_data(devs[1])->init_called, "");
 
 	dev_abcd = device_get_binding(DT_LABEL(TEST_ABCD1234));
-	zassert_not_null(dev_abcd, "abcd");
-	zassert_equal(to_info(dev_abcd)->reg_addr, 0xabcd1234, "abcd addr");
-	zassert_equal(to_info(dev_abcd)->reg_len, 0x500, "abcd len");
+	zassert_not_null(dev_abcd, "");
+	zassert_equal(to_info(dev_abcd)->reg_addr, 0xabcd1234, "");
+	zassert_equal(to_info(dev_abcd)->reg_len, 0x500, "");
 
 	/*
 	 * Make sure DT_INST_FOREACH_STATUS_OKAY can be called from functions
@@ -1389,7 +1181,7 @@ static void test_devices(void)
 	val = 0;
 #define INC(inst_ignored) do { val++; } while (0);
 	DT_INST_FOREACH_STATUS_OKAY(INC)
-	zassert_equal(val, 2, "foreach okay vnd_gpio");
+	zassert_equal(val, 2, "");
 
 	/*
 	 * Make sure DT_INST_FOREACH_STATUS_OKAY works with 0 instances, and does
@@ -1403,28 +1195,24 @@ static void test_devices(void)
 
 static void test_cs_gpios(void)
 {
-	zassert_equal(DT_SPI_HAS_CS_GPIOS(TEST_SPI_NO_CS), 0, "unexpected cs");
-	zassert_equal(DT_SPI_NUM_CS_GPIOS(TEST_SPI_NO_CS), 0, "wrong no. of cs");
+	zassert_equal(DT_SPI_HAS_CS_GPIOS(TEST_SPI_NO_CS), 0, "");
+	zassert_equal(DT_SPI_NUM_CS_GPIOS(TEST_SPI_NO_CS), 0, "");
 
-	zassert_equal(DT_SPI_HAS_CS_GPIOS(TEST_SPI), 1, "missing cs");
-	zassert_equal(DT_SPI_NUM_CS_GPIOS(TEST_SPI), 3, "wrong no. of cs");
+	zassert_equal(DT_SPI_HAS_CS_GPIOS(TEST_SPI), 1, "");
+	zassert_equal(DT_SPI_NUM_CS_GPIOS(TEST_SPI), 3, "");
 
 	zassert_true(!strcmp(DT_SPI_DEV_CS_GPIOS_LABEL(TEST_SPI_DEV_0),
-			     "TEST_GPIO_1"),
-		     "dev 0 cs gpio name");
-	zassert_equal(DT_SPI_DEV_CS_GPIOS_PIN(TEST_SPI_DEV_0), 0x10,
-		      "dev 0 cs gpio pin");
-	zassert_equal(DT_SPI_DEV_CS_GPIOS_FLAGS(TEST_SPI_DEV_0), 0x20,
-		      "dev 0 cs gpio flags");
+			     "TEST_GPIO_1"), "");
+	zassert_equal(DT_SPI_DEV_CS_GPIOS_PIN(TEST_SPI_DEV_0), 0x10, "");
+	zassert_equal(DT_SPI_DEV_CS_GPIOS_FLAGS(TEST_SPI_DEV_0), 0x20, "");
 }
 
 static void test_chosen(void)
 {
-	zassert_equal(DT_HAS_CHOSEN(ztest_xxxx), 0, "ztest_xxxx");
-	zassert_equal(DT_HAS_CHOSEN(ztest_gpio), 1, "ztest_gpio");
+	zassert_equal(DT_HAS_CHOSEN(ztest_xxxx), 0, "");
+	zassert_equal(DT_HAS_CHOSEN(ztest_gpio), 1, "");
 	zassert_true(!strcmp(TO_STRING(DT_CHOSEN(ztest_gpio)),
-			     "DT_N_S_test_S_gpio_deadbeef"),
-		     "chosen");
+			     "DT_N_S_test_S_gpio_deadbeef"), "");
 }
 
 #define TO_MY_ENUM(token) TO_MY_ENUM_2(token) /* force another expansion */
@@ -1437,10 +1225,9 @@ static void test_enums(void)
 	};
 
 	zassert_equal(DT_ENUM_IDX(TEST_ENUM_0, val), 0, "0");
-	zassert_equal(TO_MY_ENUM(DT_ENUM_TOKEN(TEST_ENUM_0, val)),
-		      0xff, "zero as token");
+	zassert_equal(TO_MY_ENUM(DT_ENUM_TOKEN(TEST_ENUM_0, val)), 0xff, "");
 	zassert_equal(TO_MY_ENUM(DT_ENUM_UPPER_TOKEN(TEST_ENUM_0, val)),
-		      0xaa, "zero as uppercase token");
+		      0xaa, "");
 }
 #undef TO_MY_ENUM
 #undef TO_MY_ENUM_2
@@ -1449,16 +1236,16 @@ static void test_enums_required_false(void)
 {
 	/* DT_ENUM_IDX_OR on string value */
 	zassert_equal(DT_ENUM_IDX_OR(DT_NODELABEL(test_enum_default_0), val, 2),
-		      1, "1");
+		      1, "");
 	zassert_equal(DT_ENUM_IDX_OR(DT_NODELABEL(test_enum_default_1), val, 2),
-		      2, "2");
+		      2, "");
 	/* DT_ENUM_IDX_OR on int value */
 	zassert_equal(DT_ENUM_IDX_OR(DT_NODELABEL(test_enum_int_default_0),
 				     val, 4),
-		      0, "0");
+		      0, "");
 	zassert_equal(DT_ENUM_IDX_OR(DT_NODELABEL(test_enum_int_default_1),
 				     val, 4),
-		      4, "4");
+		      4, "");
 }
 
 #undef DT_DRV_COMPAT
@@ -1467,91 +1254,76 @@ static void test_clocks(void)
 {
 	/* DT_CLOCKS_LABEL_BY_IDX */
 	zassert_true(!strcmp(DT_CLOCKS_LABEL_BY_IDX(TEST_TEMP, 0),
-			     "TEST_CLOCK"),
-		     "label 0");
+			     "TEST_CLOCK"), "");
 
 	/* DT_CLOCKS_LABEL_BY_NAME */
 	zassert_true(!strcmp(DT_CLOCKS_LABEL_BY_NAME(TEST_TEMP, clk_b),
-			     "TEST_CLOCK"),
-		     "label b");
+			     "TEST_CLOCK"), "");
 
 	/* DT_CLOCKS_LABEL */
-	zassert_true(!strcmp(DT_CLOCKS_LABEL(TEST_TEMP), "TEST_CLOCK"),
-		     "label 0");
+	zassert_true(!strcmp(DT_CLOCKS_LABEL(TEST_TEMP), "TEST_CLOCK"), "");
 
 	/* DT_CLOCKS_CELL_BY_IDX */
-	zassert_equal(DT_CLOCKS_CELL_BY_IDX(TEST_TEMP, 2, bits), 2,
-		      "clk 2 bits");
-	zassert_equal(DT_CLOCKS_CELL_BY_IDX(TEST_TEMP, 2, bus), 8, "clk 2 bus");
+	zassert_equal(DT_CLOCKS_CELL_BY_IDX(TEST_TEMP, 2, bits), 2, "");
+	zassert_equal(DT_CLOCKS_CELL_BY_IDX(TEST_TEMP, 2, bus), 8, "");
 
 	/* DT_CLOCKS_CELL_BY_NAME */
-	zassert_equal(DT_CLOCKS_CELL_BY_NAME(TEST_TEMP, clk_a, bits), 7,
-		      "clk-a bits");
-	zassert_equal(DT_CLOCKS_CELL_BY_NAME(TEST_TEMP, clk_b, bus), 8,
-		      "clk-b bus");
+	zassert_equal(DT_CLOCKS_CELL_BY_NAME(TEST_TEMP, clk_a, bits), 7, "");
+	zassert_equal(DT_CLOCKS_CELL_BY_NAME(TEST_TEMP, clk_b, bus), 8, "");
 
 	/* DT_CLOCKS_CELL */
-	zassert_equal(DT_CLOCKS_CELL(TEST_TEMP, bits), 7, "clk bits");
-	zassert_equal(DT_CLOCKS_CELL(TEST_TEMP, bus), 3, "clk bus");
+	zassert_equal(DT_CLOCKS_CELL(TEST_TEMP, bits), 7, "");
+	zassert_equal(DT_CLOCKS_CELL(TEST_TEMP, bus), 3, "");
 
 	/* clock-freq on fixed clock */
 	zassert_equal(DT_PROP_BY_PHANDLE_IDX(TEST_TEMP, clocks, 1,
-					     clock_frequency), 25000000,
-		      "fixed clk freq");
+					     clock_frequency),
+		      25000000, "");
 
 	/* DT_INST */
-	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1,
-		      "one instance");
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1, "");
 
 	/* DT_INST_CLOCKS_LABEL_BY_IDX */
 	zassert_true(!strcmp(DT_INST_CLOCKS_LABEL_BY_IDX(0, 0),
-			     "TEST_CLOCK"),
-		     "label 0");
+			     "TEST_CLOCK"), "");
 
 	/* DT_INST_CLOCKS_LABEL_BY_NAME */
 	zassert_true(!strcmp(DT_INST_CLOCKS_LABEL_BY_NAME(0, clk_b),
-			     "TEST_CLOCK"),
-		     "label b");
+			     "TEST_CLOCK"), "");
 
 	/* DT_INST_CLOCKS_LABEL */
-	zassert_true(!strcmp(DT_INST_CLOCKS_LABEL(0), "TEST_CLOCK"),
-		     "label 0");
+	zassert_true(!strcmp(DT_INST_CLOCKS_LABEL(0), "TEST_CLOCK"), "");
 
 	/* DT_INST_CLOCKS_CELL_BY_IDX */
-	zassert_equal(DT_INST_CLOCKS_CELL_BY_IDX(0, 2, bits), 2,
-		      "clk 2 bits");
-	zassert_equal(DT_INST_CLOCKS_CELL_BY_IDX(0, 2, bus), 8, "clk 2 bus");
+	zassert_equal(DT_INST_CLOCKS_CELL_BY_IDX(0, 2, bits), 2, "");
+	zassert_equal(DT_INST_CLOCKS_CELL_BY_IDX(0, 2, bus), 8, "");
 
 	/* DT_INST_CLOCKS_CELL_BY_NAME */
-	zassert_equal(DT_INST_CLOCKS_CELL_BY_NAME(0, clk_a, bits), 7,
-		      "clk-a bits");
-	zassert_equal(DT_INST_CLOCKS_CELL_BY_NAME(0, clk_b, bus), 8,
-		      "clk-b bus");
+	zassert_equal(DT_INST_CLOCKS_CELL_BY_NAME(0, clk_a, bits), 7, "");
+	zassert_equal(DT_INST_CLOCKS_CELL_BY_NAME(0, clk_b, bus), 8, "");
 
 	/* DT_INST_CLOCKS_CELL */
-	zassert_equal(DT_INST_CLOCKS_CELL(0, bits), 7, "clk bits");
-	zassert_equal(DT_INST_CLOCKS_CELL(0, bus), 3, "clk bus");
+	zassert_equal(DT_INST_CLOCKS_CELL(0, bits), 7, "");
+	zassert_equal(DT_INST_CLOCKS_CELL(0, bus), 3, "");
 
 	/* clock-freq on fixed clock */
 	zassert_equal(DT_INST_PROP_BY_PHANDLE_IDX(0, clocks, 1,
-					     clock_frequency), 25000000,
-		      "fixed clk freq");
+						  clock_frequency),
+		      25000000, "");
 }
 
 static void test_parent(void)
 {
 	/* The label of a child node's parent is the label of the parent. */
 	zassert_true(!strcmp(DT_LABEL(DT_PARENT(TEST_SPI_DEV_0)),
-			     DT_LABEL(TEST_SPI_BUS_0)),
-		     "dev 0 parent");
+			     DT_LABEL(TEST_SPI_BUS_0)), "");
 	/*
 	 * We should be able to use DT_PARENT() even with nodes, like /test,
 	 * that have no matching compatible.
 	 */
 	zassert_true(!strcmp(DT_LABEL(DT_CHILD(DT_PARENT(TEST_SPI_BUS_0),
 					       spi_33334444)),
-			     DT_LABEL(TEST_SPI_BUS_0)),
-		     "round trip through node with no compatible");
+			     DT_LABEL(TEST_SPI_BUS_0)), "");
 }
 
 #undef DT_DRV_COMPAT
@@ -1573,20 +1345,17 @@ static void test_child_nodes_list(void)
 		DT_INST_FOREACH_CHILD(0, TEST_FUNC)
 	};
 
-	zassert_equal(ARRAY_SIZE(vals), 3,
-		      "Bad number of children");
-	zassert_equal(ARRAY_SIZE(vals_inst), 3,
-		      "Bad number of children");
+	zassert_equal(ARRAY_SIZE(vals), 3, "");
+	zassert_equal(ARRAY_SIZE(vals_inst), 3, "");
 
-	zassert_false(strlen(STRINGIFY(TEST_PARENT)) == 0,
-		      "TEST_PARENT evaluated to empty string");
+	zassert_false(strlen(STRINGIFY(TEST_PARENT)) == 0, "");
 
-	zassert_equal(vals[0].val, 0, "Child 0 did not match");
-	zassert_equal(vals[1].val, 1, "Child 1 did not match");
-	zassert_equal(vals[2].val, 2, "Child 2 did not match");
-	zassert_equal(vals_inst[0].val, 0, "Child 0 did not match");
-	zassert_equal(vals_inst[1].val, 1, "Child 1 did not match");
-	zassert_equal(vals_inst[2].val, 2, "Child 2 did not match");
+	zassert_equal(vals[0].val, 0, "");
+	zassert_equal(vals[1].val, 1, "");
+	zassert_equal(vals[2].val, 2, "");
+	zassert_equal(vals_inst[0].val, 0, "");
+	zassert_equal(vals_inst[1].val, 1, "");
+	zassert_equal(vals_inst[2].val, 2, "");
 
 	#undef TEST_PARENT
 	#undef TEST_FUNC
@@ -1594,8 +1363,7 @@ static void test_child_nodes_list(void)
 
 static void test_great_grandchild(void)
 {
-	zassert_equal(DT_PROP(DT_NODELABEL(test_ggc), ggc_prop),
-		      42, "great-grandchild bindings returned wrong value");
+	zassert_equal(DT_PROP(DT_NODELABEL(test_ggc), ggc_prop), 42, "");
 }
 
 static bool ord_in_array(unsigned int ord, unsigned int *array,
@@ -1656,30 +1424,21 @@ static void test_dep_ord(void)
 	size_t i;
 
 	/* DT_DEP_ORD */
-	zassert_equal(root_ord, 0,
-		      "the root node has dependency ordinal 0");
+	zassert_equal(root_ord, 0, "");
 	zassert_true(DT_DEP_ORD(DT_NODELABEL(test_child_a)) >
-		     DT_DEP_ORD(DT_NODELABEL(test_children)),
-		     "children depend on parents");
+		     DT_DEP_ORD(DT_NODELABEL(test_children)), "");
 	zassert_true(DT_DEP_ORD(DT_NODELABEL(test_irq)) >
-		     DT_DEP_ORD(DT_NODELABEL(test_intc)),
-		     "nodes depend on their interrupt controllers");
+		     DT_DEP_ORD(DT_NODELABEL(test_intc)), "");
 	zassert_true(DT_DEP_ORD(DT_NODELABEL(test_phandles)) >
-		     DT_DEP_ORD(DT_NODELABEL(test_gpio_1)),
-		     "nodes depend on anything their properties "
-		     "refer to by phandle");
+		     DT_DEP_ORD(DT_NODELABEL(test_gpio_1)), "");
 
 	/* DT_REQUIRES_DEP_ORDS */
-	zassert_equal(ARRAY_SIZE(root_requires), 0,
-		      "the root node doesn't depend on anything");
-	zassert_true(ORD_IN_ARRAY(root_ord, test_requires),
-		     "/test depends on the root node");
+	zassert_equal(ARRAY_SIZE(root_requires), 0, "");
+	zassert_true(ORD_IN_ARRAY(root_ord, test_requires), "");
 
 	/* DT_SUPPORTS_DEP_ORDS */
-	zassert_true(ORD_IN_ARRAY(test_ord, root_supports),
-		     "the root node supports /test");
-	zassert_false(ORD_IN_ARRAY(root_ord, test_supports),
-		      "the /test node doesn't support the root");
+	zassert_true(ORD_IN_ARRAY(test_ord, root_supports), "");
+	zassert_false(ORD_IN_ARRAY(root_ord, test_supports), "");
 
 	unsigned int children_combined_ords_expected[] = {
 		/*
@@ -1749,18 +1508,15 @@ static void test_dep_ord(void)
 	/* DT_INST_REQUIRES_DEP_ORDS */
 	unsigned int inst_requires[] = { DT_INST_REQUIRES_DEP_ORDS(0) };
 
-	zassert_equal(ARRAY_SIZE(inst_requires), 1,
-		      "/test/test-children depends only on /test");
+	zassert_equal(ARRAY_SIZE(inst_requires), 1, "");
 	zassert_equal(inst_requires[0], test_ord, "");
 
 	/* DT_INST_SUPPORTS_DEP_ORDS */
 	unsigned int inst_supports[] = { DT_INST_SUPPORTS_DEP_ORDS(0) };
 
-	zassert_equal(ARRAY_SIZE(inst_supports), 3,
-		      "/test/test-children only supports its children");
+	zassert_equal(ARRAY_SIZE(inst_supports), 3, "");
 	for (i = 0; i < ARRAY_SIZE(inst_supports); i++) {
-		zassert_true(ORD_IN_ARRAY(inst_supports[i], children_ords),
-			     "");
+		zassert_true(ORD_IN_ARRAY(inst_supports[i], children_ords), "");
 	}
 }
 
