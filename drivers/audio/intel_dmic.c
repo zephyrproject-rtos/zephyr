@@ -10,6 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT intel_dmic
+
 #include <errno.h>
 #include <zephyr.h>
 #include <device.h>
@@ -1445,5 +1447,7 @@ static struct _dmic_ops dmic_ops = {
 	.read = dmic_read_device,
 };
 
-DEVICE_AND_API_INIT(dmic, "PDM", &dmic_initialize_device, NULL, NULL,
-		POST_KERNEL, CONFIG_AUDIO_DMIC_INIT_PRIORITY, &dmic_ops);
+DEVICE_DT_INST_DEFINE(0, &dmic_initialize_device, device_pm_control_nop,
+		      NULL, NULL,
+		      POST_KERNEL, CONFIG_AUDIO_DMIC_INIT_PRIORITY,
+		      &dmic_ops);
