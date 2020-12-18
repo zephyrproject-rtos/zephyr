@@ -248,7 +248,7 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 {
 	struct z_heap *h = heap->heap;
 
-	CHECK((align & (align - 1)) == 0);
+	__ASSERT((align & (align - 1)) == 0, "align must be a power of 2");
 
 	if (align <= chunk_header_bytes(h)) {
 		return sys_heap_alloc(heap, bytes);
