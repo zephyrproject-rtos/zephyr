@@ -44,70 +44,16 @@ jobs:
 
     - name: check-warns
       run: |
-        if [ -s Nits.txt ]; then
-           errors=$(cat Nits.txt)
-           errors="${errors//'%'/'%25'}"
-           errors="${errors//$'\n'/'%0A'}"
-           errors="${errors//$'\r'/'%0D'}"
-           echo "::error file=Nits.txt::$errors"
-           exit=1
-        fi
-        if [ -s checkpatch.txt ]; then
-           errors=$(cat checkpatch.txt)
-           errors="${errors//'%'/'%25'}"
-           errors="${errors//$'\n'/'%0A'}"
-           errors="${errors//$'\r'/'%0D'}"
-           echo "::error file=Checkpatch.txt::$errors"
-           exit=1
-        fi
-        if [ -s Identity.txt ]; then
-           errors=$(cat Identity.txt)
-           errors="${errors//'%'/'%25'}"
-           errors="${errors//$'\n'/'%0A'}"
-           errors="${errors//$'\r'/'%0D'}"
-           echo "::error file=Identity.txt::$errors"
-           exit=1
-        fi
-        if [ -s Gitlint.txt ]; then
-           errors=$(cat Gitlint.txt)
-           errors="${errors//'%'/'%25'}"
-           errors="${errors//$'\n'/'%0A'}"
-           errors="${errors//$'\r'/'%0D'}"
-           echo "::error file=Gitlint.txt::$errors"
-           exit=1
-        fi
-        if [ -s pylint.txt ]; then
-           errors=$(cat pylint.txt)
-           errors="${errors//'%'/'%25'}"
-           errors="${errors//$'\n'/'%0A'}"
-           errors="${errors//$'\r'/'%0D'}"
-           echo "::error file=pylint.txt::$errors"
-           exit=1
-        fi
-        if [ -s Devicetree.txt ]; then
-           errors=$(cat Devicetree.txt)
-           errors="${errors//'%'/'%25'}"
-           errors="${errors//$'\n'/'%0A'}"
-           errors="${errors//$'\r'/'%0D'}"
-           echo "::error file=Devicetree.txt::$errors"
-           exit=1
-        fi
-        if [ -s Kconfig.txt ]; then
-           errors=$(cat Kconfig.txt)
-           errors="${errors//'%'/'%25'}"
-           errors="${errors//$'\n'/'%0A'}"
-           errors="${errors//$'\r'/'%0D'}"
-           echo "::error file=Kconfig.txt::$errors"
-           exit=1
-        fi
-        if [ -s Codeowners.txt ]; then
-           errors=$(cat Codeowners.txt)
-           errors="${errors//'%'/'%25'}"
-           errors="${errors//$'\n'/'%0A'}"
-           errors="${errors//$'\r'/'%0D'}"
-           echo "::error file=Codeowners.txt::$errors"
-           exit=1
-        fi
+        for file in Nits.txt checkpatch.txt Identity.txt Gitlint.txt pylint.txt Devicetree.txt Kconfig.txt Codeowners.txt; do
+          if [[ -s $file ]]; then
+            errors=$(cat $file)
+            errors="${errors//'%'/'%25'}"
+            errors="${errors//$'\n'/'%0A'}"
+            errors="${errors//$'\r'/'%0D'}"
+            echo "::error file=${file}::$errors"
+            exit=1
+          fi
+        done
 
         if [ ${exit} == 1 ]; then
           exit 1;
