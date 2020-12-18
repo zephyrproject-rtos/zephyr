@@ -554,6 +554,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	bool is_mcast_pkt = false, mcast_pkt_delivered = false;
 	bool is_bcast_pkt = false;
 	bool raw_pkt_delivered = false;
+	bool raw_pkt_continue = false;
 	int16_t best_rank = -1;
 	struct net_conn *conn;
 	enum net_verdict ret;
@@ -638,6 +639,36 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 
 		if (conn->family != AF_UNSPEC &&
 		    conn->family != net_pkt_family(pkt)) {
+			/* If there are other listening connections than
+			 * AF_PACKET, the packet shall be also passed back to
+			 * net_conn_input() in IPv4/6 processing in order to
+			 * re-check if there is any listening socket interested
+			 * in this packet.
+			 */
+			if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
+			    conn->family != AF_PACKET) {
+				raw_pkt_continue = true;
+			}
+
+			continue;
+		}
+
+		/* The code below shall be only executed when one enters
+		 * the net_conn_input() from net_packet_socket() which
+		 * is executed for e.g. AF_PACKET && SOCK_RAW
+		 *
+		 * Here we do need to check if we have ANY connection which
+		 * was setup with AF_PACKET
+		 */
+		if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
+		    conn->family == AF_PACKET) {
+			ret = conn_raw_socket(pkt, conn);
+			if (ret == NET_DROP) {
+				goto drop;
+			} else if (ret == NET_OK) {
+				raw_pkt_delivered = true;
+			}
+
 			continue;
 		}
 
@@ -720,15 +751,6 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 
 				mcast_pkt_delivered = true;
 			}
-		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET)) {
-			ret = conn_raw_socket(pkt, conn);
-			if (ret == NET_DROP) {
-				goto drop;
-			} else if (ret == NET_CONTINUE) {
-				continue;
-			} else if (ret == NET_OK) {
-				raw_pkt_delivered = true;
-			}
 		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN)) {
 			best_rank = 0;
 			best_match = conn;
@@ -736,14 +758,21 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	}
 
 	if ((is_mcast_pkt && mcast_pkt_delivered) || raw_pkt_delivered) {
-		/* As one or more multicast or raw socket packets have already
-		 * been delivered in the loop above, we shall not call the
-		 * callback again here.
-		 */
+		if (raw_pkt_continue) {
+			/* When there is open connection different than
+			 * AF_PACKET this packet shall be also handled in
+			 * the upper net stack layers.
+			 */
+			return NET_CONTINUE;
+		} else {
+			/* As one or more multicast or raw socket packets
+			 * have already been delivered in the loop above,
+			 * we shall not call the callback again here.
+			 */
+			net_pkt_unref(pkt);
 
-		net_pkt_unref(pkt);
-
-		return NET_OK;
+			return NET_OK;
+		}
 	}
 
 	conn = best_match;
