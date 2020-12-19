@@ -1,0 +1,5 @@
+tests:
+  arch.arm64.psci:
+    arch_allow: arm
+    tags: arm psci drivers userspace
+    filter: CONFIG_ARM_PSCI
