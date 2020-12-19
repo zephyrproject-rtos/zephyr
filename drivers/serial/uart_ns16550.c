@@ -57,12 +57,8 @@
 #define UART_NS16550_DLF_ENABLED
 #endif
 
-#if DT_INST_PROP(0, pcie) || \
-	DT_INST_PROP(1, pcie) || \
-	DT_INST_PROP(2, pcie) || \
-	DT_INST_PROP(3, pcie)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
-#define UART_NS16550_PCIE_ENABLED
 #include <drivers/pcie/pcie.h>
 #endif
 
@@ -268,7 +264,7 @@ struct uart_ns16550_device_config {
 #ifdef UART_NS16550_PCP_ENABLED
 	uint32_t pcp;
 #endif
-#ifdef UART_NS16550_PCIE_ENABLED
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 	bool pcie;
 	pcie_bdf_t pcie_bdf;
 	pcie_id_t pcie_id;
@@ -350,7 +346,7 @@ static int uart_ns16550_configure(const struct device *dev,
 	ARG_UNUSED(dev_cfg);
 
 #ifndef UART_NS16550_ACCESS_IOPORT
-#ifdef UART_NS16550_PCIE_ENABLED
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 	if (dev_cfg->pcie) {
 		struct pcie_mbar mbar;
 
@@ -365,7 +361,7 @@ static int uart_ns16550_configure(const struct device *dev,
 		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr, mbar.size,
 			   K_MEM_CACHE_NONE);
 	} else
-#endif /* UART_NS16550_PCIE_ENABLED */
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie) */
 	{
 		/* Map directly from DTS */
 		DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
