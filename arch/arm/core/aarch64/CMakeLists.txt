@@ -30,5 +30,6 @@ endif ()
 zephyr_library_sources_ifdef(CONFIG_GEN_SW_ISR_TABLE isr_wrapper.S)
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
 zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE ../common/tls.c)
+zephyr_library_sources_ifdef(CONFIG_ARM_PSCI smccc-call.S)
 
 add_subdirectory_ifdef(CONFIG_ARM_MMU mmu)
