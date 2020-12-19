@@ -123,6 +123,13 @@ config DISK_ACCESS_USDHC2
 	  File system on a SDHC card accessed over
 	  USDHC instance 2.
 
+config DISK_ACCESS_USDHC_DISABLE_V180
+	bool "NXP i.MXRT USDHC disable 1.8V support"
+		depends on (HAS_MCUX_USDHC1 || HAS_MCUX_USDHC2)
+		default n
+		help
+		SDHC access disable 1.8V for NXP USDHC.
+
 endif # DISK_ACCESS_USDHC
 
 config DISK_SDHC_VOLUME_NAME
