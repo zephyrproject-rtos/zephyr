@@ -54,9 +54,6 @@ static void mm_swiftio_usdhc_pinmux(
 				IOMUXC_GPIO_B1_12_GPIO2_IO28,
 				0U);
 			IOMUXC_SetPinMux(
-				IOMUXC_GPIO_B1_14_USDHC1_VSELECT,
-				0U);
-			IOMUXC_SetPinMux(
 				IOMUXC_GPIO_SD_B0_00_USDHC1_CMD,
 				0U);
 			IOMUXC_SetPinMux(
@@ -81,9 +78,6 @@ static void mm_swiftio_usdhc_pinmux(
 			IOMUXC_SetPinConfig(/*SD0_CD_SW*/
 				IOMUXC_GPIO_B1_12_GPIO2_IO28,
 				0x017089u);
-			IOMUXC_SetPinConfig(/*SD0_VSELECT*/
-				IOMUXC_GPIO_B1_14_USDHC1_VSELECT,
-				0x0170A1u);
 		}
 
 		IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B0_00_USDHC1_CMD,
