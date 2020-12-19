@@ -38,24 +38,13 @@
 
 #include "uart_ns16550.h"
 
-/*
- * If PCP is set for any of the ports, enable support.
- * Ditto for DLF and PCI(e).
- */
+#define INST_HAS_PCP_HELPER(inst) DT_INST_NODE_HAS_PROP(inst, pcp) ||
+#define INST_HAS_DLF_HELPER(inst) DT_INST_NODE_HAS_PROP(inst, dlf) ||
 
-#if DT_INST_NODE_HAS_PROP(0, pcp) || \
-	DT_INST_NODE_HAS_PROP(1, pcp) || \
-	DT_INST_NODE_HAS_PROP(2, pcp) || \
-	DT_INST_NODE_HAS_PROP(3, pcp)
-#define UART_NS16550_PCP_ENABLED
-#endif
-
-#if DT_INST_NODE_HAS_PROP(0, dlf) || \
-	DT_INST_NODE_HAS_PROP(1, dlf) || \
-	DT_INST_NODE_HAS_PROP(2, dlf) || \
-	DT_INST_NODE_HAS_PROP(3, dlf)
-#define UART_NS16550_DLF_ENABLED
-#endif
+#define UART_NS16550_PCP_ENABLED \
+	(DT_INST_FOREACH_STATUS_OKAY(INST_HAS_PCP_HELPER) 0)
+#define UART_NS16550_DLF_ENABLED \
+	(DT_INST_FOREACH_STATUS_OKAY(INST_HAS_DLF_HELPER) 0)
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
@@ -261,7 +250,7 @@ struct uart_ns16550_device_config {
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
 	uart_irq_config_func_t	irq_config_func;
 #endif
-#ifdef UART_NS16550_PCP_ENABLED
+#if UART_NS16550_PCP_ENABLED
 	uint32_t pcp;
 #endif
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
@@ -285,7 +274,7 @@ struct uart_ns16550_dev_data_t {
 	void *cb_data;	/**< Callback function arg */
 #endif
 
-#ifdef UART_NS16550_DLF_ENABLED
+#if UART_NS16550_DLF_ENABLED
 	uint8_t dlf;		/**< DLF value */
 #endif
 };
@@ -372,11 +361,11 @@ static int uart_ns16550_configure(const struct device *dev,
 	dev_data->iir_cache = 0U;
 #endif
 
-#ifdef UART_NS16550_DLF_ENABLED
+#if UART_NS16550_DLF_ENABLED
 	OUTBYTE(DLF(dev), dev_data->dlf);
 #endif
 
-#ifdef UART_NS16550_PCP_ENABLED
+#if UART_NS16550_PCP_ENABLED
 	uint32_t pcp = dev_cfg->pcp;
 
 	if (pcp) {
@@ -919,7 +908,7 @@ static int uart_ns16550_line_ctrl_set(const struct device *dev,
 static int uart_ns16550_drv_cmd(const struct device *dev, uint32_t cmd,
 				uint32_t p)
 {
-#ifdef UART_NS16550_DLF_ENABLED
+#if UART_NS16550_DLF_ENABLED
 	if (cmd == CMD_SET_DLF) {
 		struct uart_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
 		k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
