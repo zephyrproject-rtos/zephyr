@@ -84,3 +84,8 @@
 		     &spi2_miso_pb14 &spi2_mosi_pb15>;
 	status = "okay";
 };
+
+&dac1 {
+	status = "okay";
+	pinctrl-0 = <&dac1_out1_pa4>;
+};
