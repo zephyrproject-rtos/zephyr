@@ -12,6 +12,12 @@
 	model = "QEMU Cortex-A53";
 	compatible = "qemu,arm-cortex-a53";
 
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "hvc";
+		label = "PSCI";
+	};
+
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,console = &uart0;

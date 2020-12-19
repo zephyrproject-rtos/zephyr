@@ -1,0 +1,22 @@
+# PSCI driver configuration options
+
+# Copyright (c) 2020 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config ARM_PSCI
+	bool "Support for the ARM Power State Coordination Interface (PSCI)"
+	depends on ARMV8_A
+	help
+	  Say Y here if you want Zephyr to communicate with system firmware
+	  implementing the PSCI specification for CPU-centric power
+	  management operations described in ARM document number ARM DEN
+	  0022A ("Power State Coordination Interface System Software on
+	  ARM processors").
+
+if ARM_PSCI
+
+module = PSCI
+module-str = psci
+source "subsys/logging/Kconfig.template.log_config"
+
+endif

@@ -654,6 +654,17 @@ Documentation:
     labels:
         - "area: Clocks"
 
+"Drivers: PSCI":
+    status: maintained
+    maintainers:
+        - carlocaione
+    files:
+        - drivers/psci/
+        - include/drivers/psci.h
+        - include/arch/arm/arm-smccc.h
+    labels:
+        - "area: PSCI"
+
 "Drivers: PWM":
     status: maintained
     maintainers:
