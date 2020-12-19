@@ -281,7 +281,8 @@ static int32_t optimize_regulator_voltage_scale(uint32_t sysclk_freq)
 
 #if defined(CONFIG_CLOCK_STM32_PLL_SRC_HSE) || \
 	defined(CONFIG_CLOCK_STM32_PLL_SRC_HSI) || \
-	defined(CONFIG_CLOCK_STM32_PLL_SRC_CSI)
+	defined(CONFIG_CLOCK_STM32_PLL_SRC_CSI) || \
+	defined(CONFIG_CLOCK_STM32_PLL3_ENABLE)
 
 static int get_vco_input_range(uint32_t m_div, uint32_t *range)
 {
@@ -289,13 +290,13 @@ static int get_vco_input_range(uint32_t m_div, uint32_t *range)
 
 	vco_freq = PLLSRC_FREQ / m_div;
 
-	if (1000000UL <= vco_freq && vco_freq <= 2000000UL) {
+	if (MHZ(1) <= vco_freq && vco_freq <= MHZ(2)) {
 		*range = LL_RCC_PLLINPUTRANGE_1_2;
-	} else if (2000000UL < vco_freq && vco_freq <= 4000000UL) {
+	} else if (MHZ(2) < vco_freq && vco_freq <= MHZ(4)) {
 		*range = LL_RCC_PLLINPUTRANGE_2_4;
-	} else if (4000000UL < vco_freq && vco_freq <= 8000000UL) {
+	} else if (MHZ(4) < vco_freq && vco_freq <= MHZ(8)) {
 		*range = LL_RCC_PLLINPUTRANGE_4_8;
-	} else if (8000000UL < vco_freq && vco_freq <= 16000000UL) {
+	} else if (MHZ(8) < vco_freq && vco_freq <= MHZ(16)) {
 		*range = LL_RCC_PLLINPUTRANGE_8_16;
 	} else {
 		return -ERANGE;
@@ -483,7 +484,8 @@ static int stm32_clock_control_init(const struct device *dev)
 
 #if defined(CONFIG_CLOCK_STM32_PLL_SRC_HSE) || \
 	defined(CONFIG_CLOCK_STM32_PLL_SRC_HSI) || \
-	defined(CONFIG_CLOCK_STM32_PLL_SRC_CSI)
+	defined(CONFIG_CLOCK_STM32_PLL_SRC_CSI) || \
+	defined(CONFIG_CLOCK_STM32_PLL3_ENABLE)
 
 	int r;
 	uint32_t vco_input_range;
@@ -682,6 +684,41 @@ static int stm32_clock_control_init(const struct device *dev)
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 
 #endif /* CONFIG_CPU_CORTEX_M4 */
+
+#if defined(CONFIG_CLOCK_STM32_PLL3_ENABLE)
+	/* Initialize PLL 3 */
+	r = get_vco_input_range(CONFIG_CLOCK_STM32_PLL3_M_DIVISOR, &vco_input_range);
+	if (r < 0) {
+		return r;
+	}
+
+	vco_output_range = get_vco_output_range(vco_input_range);
+
+	LL_RCC_PLL3FRACN_Disable();
+
+	LL_RCC_PLL3_SetM(CONFIG_CLOCK_STM32_PLL3_M_DIVISOR);
+	LL_RCC_PLL3_SetN(CONFIG_CLOCK_STM32_PLL3_N_MULTIPLIER);
+
+	LL_RCC_PLL3_SetVCOInputRange(vco_input_range);
+	LL_RCC_PLL3_SetVCOOutputRange(vco_output_range);
+
+#if defined(CONFIG_CLOCK_STM32_PLL3_P_ENABLE)
+	LL_RCC_PLL3P_Enable();
+	LL_RCC_PLL3_SetP(CONFIG_CLOCK_STM32_PLL3_P_DIVISOR);
+#endif /* CONFIG_CLOCK_STM32_PLL3_P_ENABLE */
+#if defined(CONFIG_CLOCK_STM32_PLL3_Q_ENABLE)
+	LL_RCC_PLL3Q_Enable();
+	LL_RCC_PLL3_SetQ(CONFIG_CLOCK_STM32_PLL3_Q_DIVISOR);
+#endif /* CONFIG_CLOCK_STM32_PLL3_Q_ENABLE */
+#if defined(CONFIG_CLOCK_STM32_PLL3_R_ENABLE)
+	LL_RCC_PLL3R_Enable();
+	LL_RCC_PLL3_SetR(CONFIG_CLOCK_STM32_PLL3_R_DIVISOR);
+#endif /* CONFIG_CLOCK_STM32_PLL3_R_ENABLE */
+
+	LL_RCC_PLL3_Enable();
+	while (LL_RCC_PLL3_IsReady() != 1U) {
+	}
+#endif /* CONFIG_CLOCK_STM32_PLL3_ENABLE */
 
 	/* Set systick to 1ms */
 	SysTick_Config(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 1000);
