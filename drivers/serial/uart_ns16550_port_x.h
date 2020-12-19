@@ -29,6 +29,10 @@ static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_@NUM@ = {
 	.pcp = DT_INST_PROP(@NUM@, pcp),
 #endif
 
+#if DT_INST_NODE_HAS_PROP(@NUM@, reg_shift)
+	.reg_interval = (1 <<  DT_INST_PROP(@NUM@, reg_shift))
+#endif
+
 #if DT_INST_ON_BUS(@NUM@, pcie)
 	.pcie = true,
 	.pcie_bdf = DT_INST_REG_ADDR(@NUM@),
