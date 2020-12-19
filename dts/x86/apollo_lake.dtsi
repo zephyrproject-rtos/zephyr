@@ -34,25 +34,16 @@
 		#interrupt-cells = <3>;
 	};
 
-	soc {
+	pcie0 {
+		label = "PCIE_0";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "simple-bus";
+		compatible = "intel,pcie";
 		ranges;
-
-		vtd: vtd@fed65000 {
-			compatible = "intel,vt-d";
-
-			label = "VTD_0";
-			reg = <0xfed65000 0x1000>;
-
-			status = "disabled";
-		};
 
 		uart0: uart@c000 {
 			compatible = "ns16550";
 
-			pcie;
 			reg = <PCIE_BDF(0,0x18,0) PCIE_ID(0x8086,0x5abc)>;
 
 			label = "UART_0";
@@ -66,7 +57,6 @@
 		uart1: uart@c100 {
 			compatible = "ns16550";
 
-			pcie;
 			reg = <PCIE_BDF(0,0x18,1) PCIE_ID(0x8086,0x5abe)>;
 
 			label = "UART_1";
@@ -81,7 +71,6 @@
 		uart2: uart@c200 {
 			compatible = "ns16550";
 
-			pcie;
 			reg = <PCIE_BDF(0,0x18,2) PCIE_ID(0x8086,0x5ac0)>;
 
 			label = "UART_2";
@@ -96,7 +85,6 @@
 		uart3: uart@c300 {
 			compatible = "ns16550";
 
-			pcie;
 			reg = <PCIE_BDF(0,0x18,3) PCIE_ID(0x8086,0x5aee)>;
 
 			label = "UART_3";
@@ -106,6 +94,22 @@
 
 			status = "okay";
 			current-speed = <115200>;
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		vtd: vtd@fed65000 {
+			compatible = "intel,vt-d";
+
+			label = "VTD_0";
+			reg = <0xfed65000 0x1000>;
+
+			status = "disabled";
 		};
 
 		i2c0: i2c@b000 {

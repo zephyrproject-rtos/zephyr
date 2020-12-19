@@ -22,8 +22,3 @@ properties:
       type: int
       required: false
       description: divisor latch fraction (DLF, if supported)
-
-    pcie:
-      type: boolean
-      required: false
-      description: attached via PCI(e) bus

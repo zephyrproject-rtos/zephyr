@@ -34,16 +34,16 @@
 		#interrupt-cells = <3>;
 	};
 
-	soc {
+	pcie0 {
+		label = "PCIE_0";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "simple-bus";
+		compatible = "intel,pcie";
 		ranges;
 
 		uart0: uart@f000 {
 			compatible = "ns16550";
 
-			pcie;
 			reg = <PCIE_BDF(0,0x1e,0) PCIE_ID(0x8086,0x4b28)>;
 
 			label = "UART_0";
@@ -57,7 +57,6 @@
 		uart1: uart@f100 {
 			compatible = "ns16550";
 
-			pcie;
 			reg = <PCIE_BDF(0,0x1e,1) PCIE_ID(0x8086,0x4b29)>;
 
 			label = "UART_1";
@@ -72,7 +71,6 @@
 		uart2: uart@ca00 {
 			compatible = "ns16550";
 
-			pcie;
 			reg = <PCIE_BDF(0,0x19,2) PCIE_ID(0x8086,0x4b4d)>;
 
 			label = "UART_2";
@@ -87,7 +85,6 @@
 		uart_pse_0: uart@8800 {
 			compatible = "ns16550";
 
-			pcie;
 			reg = <PCIE_BDF(0,0x11,0) PCIE_ID(0x8086,0x4b96)>;
 
 			label = "UART_PSE_0";
@@ -102,7 +99,6 @@
 		uart_pse_1: uart@8900 {
 			compatible = "ns16550";
 
-			pcie;
 			reg = <PCIE_BDF(0,0x11,1) PCIE_ID(0x8086,0x4b97)>;
 
 			label = "UART_PSE_1";
@@ -117,7 +113,6 @@
 		uart_pse_2: uart@8a00 {
 			compatible = "ns16550";
 
-			pcie;
 			reg = <PCIE_BDF(0,0x11,2) PCIE_ID(0x8086,0x4b98)>;
 
 			label = "UART_PSE_2";
@@ -132,7 +127,6 @@
 		uart_pse_3: uart@8b00 {
 			compatible = "ns16550";
 
-			pcie;
 			reg = <PCIE_BDF(0,0x11,3) PCIE_ID(0x8086,0x4b99)>;
 
 			label = "UART_PSE_3";
@@ -147,7 +141,6 @@
 		uart_pse_4: uart@8c00 {
 			compatible = "ns16550";
 
-			pcie;
 			reg = <PCIE_BDF(0,0x11,4) PCIE_ID(0x8086,0x4b9a)>;
 
 			label = "UART_PSE_4";
@@ -162,7 +155,6 @@
 		uart_pse_5: uart@8d00 {
 			compatible = "ns16550";
 
-			pcie;
 			reg = <PCIE_BDF(0,0x11,5) PCIE_ID(0x8086,0x4b9b)>;
 
 			label = "UART_PSE_5";
@@ -173,6 +165,13 @@
 			status = "okay";
 			current-speed = <115200>;
 		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
 
 		i2c0: i2c@a800 {
 			compatible = "snps,designware-i2c";
