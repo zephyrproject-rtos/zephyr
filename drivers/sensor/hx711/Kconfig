@@ -1,0 +1,81 @@
+# HX711 Weight Scale interface Sensor configuration options
+# Copyright (c) 2020, George Gkinis
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig HX711
+	bool "HX711 Weight Scale Sensor"
+	depends on GPIO
+	help
+	  Enable driver for the HX711 Weight Scale Sensor.
+
+if HX711
+
+config HX711_OFFSET
+	int "Initial Offset"
+	default 0
+	help
+	  Sensor offset.
+
+config HX711_SLOPE_INTEGER
+	int "Initial Slope. Integer part."
+	default 1
+	help
+	  Sensor slope, integer part.
+
+config HX711_SLOPE_DECIMAL
+	int "Initial Slope. Decimal part."
+	default 0
+	help
+	  Sensor slope, decimal part.
+
+config HX711_CALIBRATION_WEIGHT
+	int "Calibration weight."
+	default 0
+	help
+	  Known weight for calibration purposes.
+
+choice
+	prompt "HX711 sampling rate"
+	default HX711_RATE_10HZ
+	help
+	  Select sampling rate.
+config HX711_RATE_10HZ
+	bool "10Hz"
+config HX711_RATE_80HZ
+	bool "80Hz"
+endchoice
+
+config HX711_SAMPLING_RATE
+	int "HX711 sampling rate"
+	default 0
+	default 0 if HX711_RATE_10HZ
+	default 1 if HX711_RATE_80HZ
+
+choice
+	prompt "HX711 gain"
+	default HX711_GAIN_128X
+	help
+	  Select HX711 gain.
+config HX711_GAIN_32X
+	bool "32x"
+config HX711_GAIN_64X
+	bool "64x"
+config HX711_GAIN_128X
+	bool "128x"
+endchoice
+
+config HX711_DISABLE_INTERRUPTS_WHILE_POLLING
+	bool "Disable interrupts while polling"
+	help
+	  Disable interrupts while polling for data.
+
+
+config HX711_GAIN
+	int
+	default 1
+	default 1 if HX711_GAIN_128X
+	default 2 if HX711_GAIN_32X
+	default 3 if HX711_GAIN_64X
+
+
+endif # HX711

@@ -116,6 +116,15 @@
 			#include "uart.dtsi"
 		};
 
+		hx711 {
+        	compatible = "avia,hx711";
+        	status = "okay";
+        	label = "HX711";
+        	dout-gpios = <&test_gpio 30 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP) >;
+        	sck-gpios = <&test_gpio 29 GPIO_ACTIVE_HIGH>;
+        	rate-gpios = <&test_gpio 28 GPIO_ACTIVE_HIGH>;
+        	};
+
 		dht22 {
 			compatible = "aosong,dht";
 			status = "okay";
