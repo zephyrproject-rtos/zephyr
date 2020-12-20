@@ -156,7 +156,11 @@ Bluetooth:
         - include/bluetooth/
         - include/drivers/bluetooth/
         - samples/bluetooth/
-        - subsys/bluetooth/
+        - subsys/bluetooth/*
+        - subsys/bluetooth/common/
+        - subsys/bluetooth/host/
+        - subsys/bluetooth/services/
+        - subsys/bluetooth/shell/
         - tests/bluetooth/
     labels:
         - "area: Bluetooth"
@@ -182,6 +186,7 @@ Bluetooth Mesh:
     files:
         - subsys/bluetooth/mesh/
         - include/bluetooth/mesh/
+        - tests/bluetooth/mesh*/
     labels:
         - "area: Bluetooth Mesh"
 
@@ -193,9 +198,10 @@ Build system:
         - nashif
     files:
         - cmake/
-    files-regex:
-        - CMakeLists.txt$
-        - \.cmake$
+        - CMakeLists.txt
+        - scripts/zephyr_module.py
+        - doc/guides/build/
+        - doc/guides/modules.rst
     labels:
         - "area: Build System"
 
@@ -243,11 +249,30 @@ Debug:
     status: maintained
     maintainers:
         - nashif
+    collaborators:
+        - dcpleung
     files:
         - include/debug/
         - subsys/debug/
+        - tests/subsys/debug/
     labels:
         - "area: Debugging"
+
+Device Driver Model:
+    status: maintained
+    maintainers:
+        - tbursztyka
+    collaborators:
+        - dcpleung
+        - nashif
+    files:
+        - include/device.h
+        - kernel/device.c
+        - include/init.h
+        - tests/kernel/device/
+        - doc/reference/drivers/
+    labels:
+        - "area: Device Model"
 
 DFU:
     status: maintained
@@ -270,8 +295,11 @@ Devicetree:
         - scripts/dts/
         - dts/bindings/
         - dts/common/
+        - tests/lib/devicetree/
+        - dts/bindings/test/
+        - doc/guides/dts/
     labels:
-        - "area: Device Tree"
+        - "area: Devicetree"
 
 Disk:
     status: orphaned
@@ -295,6 +323,7 @@ Display drivers:
         - include/drivers/display.h
         - lib/gui/
         - subsys/fb/
+        - samples/display/
     labels:
         - "area: Display"
 
@@ -304,11 +333,15 @@ Documentation:
         - carlescufi
     collaborators:
         - nashif
+        - utzig
     files:
-        - doc/
-    files-regex:
-        - \.rst$
-        - /doc/
+        - doc/*
+        - doc/static/
+        - doc/templates/
+        - doc/custom-doxygen/
+        - doc/scripts/
+        - README.rst
+        - Makefile
     labels:
         - "area: Documentation"
 
@@ -320,16 +353,22 @@ Documentation:
         - drivers/adc/
         - include/drivers/adc.h
         - tests/drivers/adc/
+        - samples/drivers/adc/
     labels:
         - "area: ADC"
 
 "Drivers: Audio":
     status: maintained
     maintainers:
-        - Vudentz
+        - andyross
+    collaborators:
+        - nashif
+        - lyakh
+        - lgirdwood
     files:
         - drivers/audio/
         - include/audio/
+        - samples/audio/
     labels:
         - "area: Audio"
 
@@ -342,10 +381,15 @@ Documentation:
         - karstenkoenig
     files:
         - drivers/can/
+        - include/canbus/
+        - subsys/canbus/
+        - subsys/net/l2/canbus/
+        - tests/subsys/canbus/
         - dts/bindings/can/
         - include/drivers/can.h
         - samples/drivers/can/
         - tests/drivers/can/
+        - samples/subsys/canbus/
     labels:
         - "area: CAN"
 
@@ -402,6 +446,7 @@ Documentation:
         - drivers/dac/
         - include/drivers/dac.h
         - tests/drivers/dac/
+        - samples/drivers/dac/
     labels:
         - "area: DAC"
 
@@ -439,7 +484,12 @@ Documentation:
         - "area: Crypto / RNG"
 
 "Drivers: ESPI":
-    status: orphaned
+    status: maintained
+    maintainers:
+      - albertofloyd
+    collaborators:
+      - VenkatKotakonda
+      - scottwcpg
     files:
         - drivers/espi/
         - include/drivers/espi.h
@@ -468,6 +518,7 @@ Documentation:
         - dts/bindings/flash_controller/
         - include/drivers/flash.h
         - samples/drivers/flash_shell/
+        - tests/drivers/flash/
     labels:
         - "area: Flash"
 
@@ -595,6 +646,9 @@ Documentation:
         - drivers/lora/
         - include/drivers/lora.h
         - samples/drivers/lora/
+        - include/lorawan/
+        - subsys/lorawan/
+        - samples/lorawan/
     labels:
         - "area: LoRa"
 
@@ -685,7 +739,10 @@ Documentation:
         - dcpleung
     files:
         - drivers/serial/
+        - include/drivers/uart.h
+        - include/drivers/uart/
         - dts/bindings/serial/
+        - tests/drivers/uart/
     labels:
         - "area: UART"
 
@@ -699,6 +756,8 @@ Documentation:
         - drivers/sensor/
         - include/drivers/sensor.h
         - samples/sensor/
+        - tests/drivers/sensor/
+        - dts/bindings/sensor/
     labels:
         - "area: Sensors"
 
@@ -782,7 +841,6 @@ Filesystems:
         - nashif
         - pabigot
         - vanwinkeljan
-        - wentongwu
     files:
         - include/fs/
         - samples/subsys/fs/
@@ -823,8 +881,22 @@ Kernel:
         - include/kernel*.h
         - kernel/
         - tests/kernel/
+        - include/sys_clock.h
     labels:
         - "area: Kernel"
+
+Base OS:
+    status: maintained
+    maintainers:
+        - andyross
+    collaborators:
+        - andrewboie
+        - nashif
+    files:
+        - include/sys/
+        - lib/os/
+    labels:
+        - "area: Base OS"
 
 Little FS:
     status: maintained
@@ -1026,11 +1098,15 @@ POSIX API layer:
 Power management:
     status: maintained
     maintainers:
-        - wentongwu
+        - ceolin
+    collaborators:
+        - nashif
+        - pabigot
     files:
         - include/power/power.h
         - samples/subsys/power/
         - subsys/power/
+        - tests/subsys/power/
     labels:
         - "area: Power Management"
 
@@ -1055,7 +1131,8 @@ Twister:
         - nashif
     files:
         - scripts/twister
-        - scripts/pylib/twister
+        - scripts/pylib/twister/
+        - scripts/tests/twister/
     labels:
         - "area: Twister"
 
@@ -1093,6 +1170,7 @@ Shields:
         - jfischer-no
     files:
         - boards/shields/
+        - doc/guides/porting/shields.rst
     labels:
         - "area: Shields"
 
@@ -1106,7 +1184,93 @@ SPARC arch:
     labels:
         - "area: SPARC"
 
-STM32:
+Synopsys Platforms:
+    status: maintained
+    maintainers:
+        - ruudw
+    collaborators:
+        - abrodkin
+        - evgeniy-paltsev
+        - IRISZZW
+    files:
+        - soc/arc/
+        - boards/arc/
+    labels:
+        - "platform: Synopsys"
+
+Intel Platforms (X86):
+    status: maintained
+    maintainers:
+        - jenmwms
+    collaborators:
+        - jhedberg
+        - aasthagr
+    files:
+        - boards/x86/
+        - soc/x86/
+    labels:
+        - "platform: X86"
+
+Intel Platforms (Xtensa):
+    status: maintained
+    maintainers:
+        - nashif
+    collaborators:
+        - andyross
+        - dcpleung
+    files:
+        - boards/xtensa/intel_*/
+        - soc/xtensa/intel_*/
+        - samples/boards/intel_s1000_crb/
+    labels:
+        - "platform: Intel CAVS"
+
+NXP Platforms:
+  status: maintained
+  maintainers:
+    - MaureenHelm
+  files:
+    - boards/arm/mimx*/
+    - boards/arm/frdm_k*/
+    - boards/arm/lpcxpress*/
+    - boards/arm/twr_*
+    - soc/arm/nxp_*/
+    - drivers/*/*imx*
+    - drivers/*/*lpc*
+    - drivers/*/*mcux*
+    - dts/arm/nxp/
+  labels:
+    - "platform: NXP"
+
+Microchip Platforms:
+  status: maintained
+  maintainers:
+    - scottwcpg
+  collaborators:
+    - VenkatKotakonda
+    - albertofloyd
+  files:
+    - boards/arm/mec*/
+    - dts/arm/microchip/
+    - soc/arm/microchip_mec/
+    - drivers/*/*mchp*
+  labels:
+    - "platform: Microchip"
+
+nRF Platforms:
+    status: maintained
+    maintainers:
+        - ioannisg
+    files:
+        - boards/arm/nrf*/
+        - drivers/*/*nrfx*
+        - soc/arm/nordic_nrf/
+        - samples/boards/nrf/
+        - dts/arm/nordic/
+    labels:
+        - "platform: nRF"
+
+STM32 Platforms:
     status: maintained
     maintainers:
         - erwango
@@ -1115,6 +1279,7 @@ STM32:
         - boards/arm/stm32*_disco/
         - boards/arm/stm32*_eval/
         - drivers/*/*stm32*/
+        - drivers/*/*stm32*
         - drivers/*/*/*stm32*
         - dts/arm/st/
         - dts/bindings/*/*stm32*
@@ -1151,11 +1316,12 @@ Tracing:
     status: maintained
     maintainers:
         - nashif
-    collaborators:
-        - wentongwu
     files:
         - subsys/tracing/
         - include/tracing/
+        - subsys/timing/
+        - samples/subsys/tracing/
+        - doc/guides/tracing/
     labels:
         - "area: tracing"
 
@@ -1184,6 +1350,10 @@ Userspace:
         - doc/reference/usermode/kernelobjects.rst
         - include/app_memory/
         - include/linker/app_smem*.ld
+        - tests/kernel/mem_protect/
+        - samples/userspace/
+        - include/syscall.h
+        - kernel/userspace*
     labels:
         - "area: Userspace"
 
@@ -1231,15 +1401,32 @@ Xtensa arch:
 x86 arch:
     status: maintained
     maintainers:
-        - ceolin
+        - jhedberg
     collaborators:
         - andyross
+        - nashif
+        - andrewboie
+        - ceolin
+        - jenmwms
+        - aasthagr
     files:
         - arch/x86/
         - include/arch/x86/
         - tests/arch/x86/
     labels:
         - "area: X86"
+
+CI:
+    status: maintained
+    maintainers:
+        - nashif
+        - galak
+    files:
+        - .github/
+        - .buildkite/
+        - scripts/ci/
+    labels:
+        - "area: Continuous Integration"
 
 ZTest:
     status: maintained
