@@ -155,8 +155,8 @@ static struct led_pwm_data					\
 								\
 DEVICE_DEFINE(led_pwm_##id,					\
 		    DT_INST_PROP_OR(id, label, "LED_PWM_"#id),	\
-		    device_pm_control_nop,			\
 		    &led_pwm_init,				\
+		    device_pm_control_nop,			\
 		    &led_pwm_data_##id,				\
 		    &led_pwm_config_##id,			\
 		    POST_KERNEL, CONFIG_LED_INIT_PRIORITY,	\
