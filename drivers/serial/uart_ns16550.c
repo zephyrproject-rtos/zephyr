@@ -976,7 +976,8 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 #endif
 };
 
+/* The instance-specific header files are chained together (each instance
+ * includes the next one, unless it's the last instance) so we only need to
+ * include the first instance.
+ */
 #include <uart_ns16550_port_0.h>
-#include <uart_ns16550_port_1.h>
-#include <uart_ns16550_port_2.h>
-#include <uart_ns16550_port_3.h>

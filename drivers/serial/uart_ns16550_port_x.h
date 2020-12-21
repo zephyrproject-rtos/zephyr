@@ -130,3 +130,8 @@ static void irq_config_func_@NUM@(const struct device *dev)
 #endif
 
 #endif
+
+/* Include subsequent instances */
+#if @NUM@ < (CONFIG_UART_NS16550_MAX_INSTANCES - 1)
+#include <uart_ns16550_port_@NEXT_NUM@.h>
+#endif
