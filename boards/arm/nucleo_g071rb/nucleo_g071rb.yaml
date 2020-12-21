@@ -18,4 +18,5 @@ supported:
   - spi
   - watchdog
   - pwm
+  - adc
   - dac
