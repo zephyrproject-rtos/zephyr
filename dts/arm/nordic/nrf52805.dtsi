@@ -98,8 +98,6 @@
 			label = "I2C_0";
 		};
 
-/* Disabled until MDK is updated to provide QDEC definition and bitfields. */
-#if 0
 		qdec: qdec@40012000 {
 			compatible = "nordic,nrf-qdec";
 			reg = <0x40012000 0x1000>;
@@ -107,7 +105,6 @@
 			status = "disabled";
 			label = "QDEC";
 		};
-#endif
 
 		rng: random@4000d000 {
 			compatible = "nordic,nrf-rng";
