@@ -768,13 +768,22 @@ class Node:
             on_bus = self.on_bus
 
             for compat in self.compats:
+                # When matching, respect the order of the 'compatible' entries,
+                # and for each one first try to match against an explicitly
+                # specified bus (if any) and then against any bus. This is so
+                # that matching against bindings which do not specify a bus
+                # works the same way in Zephyr as it does elsewhere.
                 if (compat, on_bus) in self.edt._compat2binding:
-                    # Binding found
                     binding = self.edt._compat2binding[compat, on_bus]
-                    self.binding_path = binding.path
-                    self.matching_compat = compat
-                    self._binding = binding
-                    return
+                elif (compat, None) in self.edt._compat2binding:
+                    binding = self.edt._compat2binding[compat, None]
+                else:
+                    continue
+
+                self.binding_path = binding.path
+                self.matching_compat = compat
+                self._binding = binding
+                return
         else:
             # No 'compatible' property. See if the parent binding has
             # a compatible. This can come from one or more levels of

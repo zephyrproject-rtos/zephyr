@@ -69,8 +69,12 @@ bus: <string describing bus type, e.g. "i2c">
 #
 # When looking for a binding for a node, the code checks if the binding for the
 # parent node contains 'bus: <bus type>'. If it does, then only bindings with a
-# matching 'on-bus: <bus type>' are considered. This allows the same type of
-# device to have different bindings depending on what bus it appears on.
+# matching 'on-bus: <bus type>' and bindings without an explicit 'on-bus'
+# are considered. Bindings with an explicit 'on-bus: <bus type>' are looked
+# for first, and if none is found bindings without an explicit `on-bus` are
+# attempted. These two tests are done for each item in the `compatible` array
+# in the order specified. This allows the same type of device to have different
+# bindings depending on what bus it appears on.
 on-bus: <string describing bus type, e.g. "i2c">
 
 # 'properties' describes properties on the node, e.g.

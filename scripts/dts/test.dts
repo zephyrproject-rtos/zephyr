@@ -332,11 +332,14 @@
 		// they appear on different buses
 		foo-bus {
 			compatible = "foo-bus";
-			node {
-				compatible = "on-bus";
+			node1 {
+				compatible = "on-bus", "on-any-bus";
 				nested {
 					compatible = "on-bus";
 				};
+			};
+			node2 {
+				compatible = "on-any-bus", "on-bus";
 			};
 		};
 		bar-bus {
@@ -344,6 +347,9 @@
 			node {
 				compatible = "on-bus";
 			};
+		};
+		no-bus-node {
+			compatible = "on-any-bus";
 		};
 	};
 
