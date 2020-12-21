@@ -969,6 +969,41 @@ struct mesh_invalid_bearer_ev {
 
 #define MESH_EV_INCOMP_TIMER_EXP	0x88
 
+#define MESH_EV_FRND_ESTABLISHED	0x89
+struct mesh_frnd_established_ev {
+	uint16_t net_idx;
+	uint16_t lpn_addr;
+	uint8_t recv_delay;
+	uint32_t polltimeout;
+} __packed;
+
+#define MESH_EV_FRND_TERMINATED		0x8a
+struct mesh_frnd_terminated_ev {
+	uint16_t net_idx;
+	uint16_t lpn_addr;
+} __packed;
+
+#define MESH_EV_LPN_ESTABLISHED		0x8b
+struct mesh_lpn_established_ev {
+	uint16_t net_idx;
+	uint16_t friend_addr;
+	uint8_t queue_size;
+	uint8_t recv_win;
+} __packed;
+
+#define MESH_EV_LPN_TERMINATED		0x8c
+struct mesh_lpn_terminated_ev {
+	uint16_t net_idx;
+	uint16_t friend_addr;
+} __packed;
+
+#define MESH_EV_LPN_POLLED			0x8d
+struct mesh_lpn_polled_ev {
+	uint16_t net_idx;
+	uint16_t friend_addr;
+	uint8_t retry;
+} __packed;
+
 void tester_init(void);
 void tester_rsp(uint8_t service, uint8_t opcode, uint8_t index, uint8_t status);
 void tester_send(uint8_t service, uint8_t opcode, uint8_t index, uint8_t *data,

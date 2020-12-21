@@ -904,6 +904,78 @@ static struct bt_test_cb bt_test_cb = {
 	.mesh_trans_incomp_timer_exp = incomp_timer_exp_cb,
 };
 
+static void friend_established(uint16_t net_idx, uint16_t lpn_addr,
+			       uint8_t recv_delay, uint32_t polltimeout)
+{
+	struct mesh_frnd_established_ev ev = { net_idx, lpn_addr, recv_delay,
+					       polltimeout };
+
+	LOG_DBG("Friendship (as Friend) established with "
+			"LPN 0x%04x Receive Delay %u Poll Timeout %u",
+			lpn_addr, recv_delay, polltimeout);
+
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_FRND_ESTABLISHED,
+		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+}
+
+static void friend_terminated(uint16_t net_idx, uint16_t lpn_addr)
+{
+	struct mesh_frnd_terminated_ev ev = { net_idx, lpn_addr };
+
+	LOG_DBG("Friendship (as Friend) lost with LPN "
+			"0x%04x", lpn_addr);
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_FRND_TERMINATED,
+		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+}
+
+BT_MESH_FRIEND_CB_DEFINE(friend_cb) = {
+	.established = friend_established,
+	.terminated = friend_terminated,
+};
+
+static void lpn_established(uint16_t net_idx, uint16_t friend_addr,
+					uint8_t queue_size, uint8_t recv_win)
+{
+	struct mesh_lpn_established_ev ev = { net_idx, friend_addr, queue_size,
+					      recv_win };
+
+	LOG_DBG("Friendship (as LPN) established with "
+			"Friend 0x%04x Queue Size %d Receive Window %d",
+			friend_addr, queue_size, recv_win);
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_LPN_ESTABLISHED,
+		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+}
+
+static void lpn_terminated(uint16_t net_idx, uint16_t friend_addr)
+{
+	struct mesh_lpn_polled_ev ev = { net_idx, friend_addr };
+
+	LOG_DBG("Friendship (as LPN) lost with Friend "
+			"0x%04x", friend_addr);
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_LPN_TERMINATED,
+		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+}
+
+static void lpn_polled(uint16_t net_idx, uint16_t friend_addr, bool retry)
+{
+	struct mesh_lpn_polled_ev ev = { net_idx, friend_addr, (uint8_t)retry };
+
+	LOG_DBG("LPN polled 0x%04x %s", friend_addr, retry ? "(retry)" : "");
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_LPN_POLLED,
+		    CONTROLLER_INDEX, (uint8_t *) &ev, sizeof(ev));
+}
+
+BT_MESH_LPN_CB_DEFINE(lpn_cb) = {
+	.established = lpn_established,
+	.terminated = lpn_terminated,
+	.polled = lpn_polled,
+};
+
 uint8_t tester_init_mesh(void)
 {
 	if (IS_ENABLED(CONFIG_BT_TESTING)) {
