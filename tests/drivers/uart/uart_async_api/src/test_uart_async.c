@@ -305,6 +305,14 @@ void test_read_abort(void)
 		      "RX_DISABLED timeout");
 	zassert_false(failed_in_isr, "Unexpected order of uart events");
 	zassert_not_equal(memcmp(tx_buf, rx_buf, 100), 0, "Buffers equal");
+
+	/* Read out possible other RX bytes
+	 * that may affect following test on RX
+	 */
+	uart_rx_enable(uart_dev, rx_buf, sizeof(rx_buf), 50);
+	while (k_sem_take(&rx_rdy, K_MSEC(1000)) != -EAGAIN)
+		;
+	uart_rx_disable(uart_dev);
 }
 
 ZTEST_BMEM volatile size_t sent;
