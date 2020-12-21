@@ -72,6 +72,14 @@
 			label = "DPPIC";
 		};
 
+		ecb: ecb@4100d000 {
+			compatible = "nordic,nrf-ecb";
+			reg = <0x4100d000 0x1000>;
+			interrupts = <13 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+			label = "ECB";
+		};
+
 		egu0: egu@41014000 {
 			compatible = "nordic,nrf-egu";
 			reg = <0x41014000 0x1000>;
