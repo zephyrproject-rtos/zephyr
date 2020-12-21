@@ -31,11 +31,6 @@ typedef int  FILE;
 #define stdout ((FILE *) 2)
 #define stderr ((FILE *) 3)
 
-/*
- * NOTE: This libc implementation does not define the routines
- * declared below.
- */
-
 int __printf_like(1, 2) printf(const char *_MLIBC_RESTRICT fmt, ...);
 int __printf_like(3, 4) snprintf(char *_MLIBC_RESTRICT s, size_t len,
 				 const char *_MLIBC_RESTRICT fmt, ...);
