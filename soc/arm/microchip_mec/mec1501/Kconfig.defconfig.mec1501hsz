@@ -62,7 +62,7 @@ config SPI_XEC_QMSPI
 if SOC_POWER_MANAGEMENT
 
 config PM
-	default y
+	default y if SYS_CLOCK_EXISTS
 
 config PM_SLEEP_STATES
 	default y
