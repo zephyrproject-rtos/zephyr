@@ -216,6 +216,13 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetMux(kCLOCK_CanMux, 2); /* Set Can clock source. */
 #endif
 
+#if defined(CONFIG_FLASH_MCUX_FLEXSPI) && DT_NODE_HAS_STATUS(DT_NODELABEL(flexspi), okay)
+	CLOCK_DisableClock(kCLOCK_FlexSpi);
+	CLOCK_InitUsb1Pfd(kCLOCK_Pfd0, 24);
+	CLOCK_SetMux(kCLOCK_FlexspiMux, 3);
+	CLOCK_SetDiv(kCLOCK_FlexspiDiv, 2);
+#endif
+
 	/* Keep the system clock running so SYSTICK can wake up the system from
 	 * wfi.
 	 */
