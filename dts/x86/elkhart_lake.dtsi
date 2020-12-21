@@ -92,7 +92,7 @@
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
-			status = "okay";
+			status = "disabled";
 			current-speed = <115200>;
 		};
 
@@ -106,7 +106,7 @@
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
-			status = "okay";
+			status = "disabled";
 			current-speed = <115200>;
 		};
 
@@ -120,7 +120,7 @@
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
-			status = "okay";
+			status = "disabled";
 			current-speed = <115200>;
 		};
 
@@ -134,7 +134,7 @@
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
-			status = "okay";
+			status = "disabled";
 			current-speed = <115200>;
 		};
 
@@ -148,7 +148,7 @@
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
-			status = "okay";
+			status = "disabled";
 			current-speed = <115200>;
 		};
 
@@ -162,7 +162,7 @@
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
-			status = "okay";
+			status = "disabled";
 			current-speed = <115200>;
 		};
 	};
@@ -172,6 +172,36 @@
 		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
+
+		uart1_fixed: uart@fe040000 {
+			compatible = "ns16550";
+
+			reg = <0xfe040000 0x1000>;
+			reg-shift = <0>;
+
+			label = "UART_1_FIXED";
+			clock-frequency = <1843200>;
+			interrupts = <3 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "disabled";
+			current-speed = <115200>;
+		};
+
+		uart2_fixed: uart@fe042000 {
+			compatible = "ns16550";
+
+			reg = <0xfe042000 0x1000>;
+			reg-shift = <0>;
+
+			label = "UART_2_FIXED";
+			clock-frequency = <1843200>;
+			interrupts = <4 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			status = "disabled";
+			current-speed = <115200>;
+		};
 
 		i2c0: i2c@a800 {
 			compatible = "snps,designware-i2c";
