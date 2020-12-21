@@ -1769,7 +1769,7 @@ static void pack_conversion(struct package_state *pst)
 			break;
 		case LENGTH_L:
 			if (conv->specifier == 'c' ) {
-				PACK_CAST_VALUE(pst, value->uint, wint_t);
+				PACK_CAST_VALUE(pst, value->uint, wchar_t);
 			} else {
 				PACK_CAST_VALUE(pst, value->uint,
 						unsigned long);
@@ -1884,7 +1884,7 @@ static void pull_pkg_args(struct cbprintf_state *state)
 			break;
 		case LENGTH_L:
 			if (conv->specifier == 'c') {
-				UNPACK_CAST_UINT_VALUE(state, wint_t);
+				UNPACK_CAST_UINT_VALUE(state, wchar_t);
 			} else {
 				UNPACK_CAST_UINT_VALUE(state, unsigned long);
 			}
