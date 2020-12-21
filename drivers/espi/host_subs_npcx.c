@@ -410,9 +410,9 @@ static void host_shared_mem_region_init(void)
 	inst_shm->WIN2_WR_PROT = 0xFF;
 
 	/*
-	 * TODO: Initialize shm_acpi_mmap buffer for host command flags. We might
-	 * use EACPI_GET_SHARED_MEMORY in espi_api_lpc_read_request() intead of
-	 * setting host command flags here directly.
+	 * TODO: Initialize shm_acpi_mmap buffer for host command flags. We
+	 * might use EACPI_GET_SHARED_MEMORY in espi_api_lpc_read_request()
+	 * instead of setting host command flags here directly.
 	 */
 }
 #endif
@@ -502,51 +502,51 @@ static void host_port80_init(void)
 static void host_cus_opcode_enable_interrupts(void)
 {
 	/* Enable host KBC sub-device interrupt */
-#if defined(CONFIG_ESPI_PERIPHERAL_8042_KBC)
-	irq_enable(DT_INST_IRQ_BY_NAME(0, kbc_ibf, irq));
-	irq_enable(DT_INST_IRQ_BY_NAME(0, kbc_obe, irq));
-#endif
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_8042_KBC)) {
+		irq_enable(DT_INST_IRQ_BY_NAME(0, kbc_ibf, irq));
+		irq_enable(DT_INST_IRQ_BY_NAME(0, kbc_obe, irq));
+	}
 
 	/* Enable host PM channel (Host IO) sub-device interrupt */
-#if defined(CONFIG_ESPI_PERIPHERAL_HOST_IO) || \
-				defined(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD)
-	irq_enable(DT_INST_IRQ_BY_NAME(0, pmch_ibf, irq));
-#endif
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_HOST_IO) ||
+	    IS_ENABLED(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD)) {
+		irq_enable(DT_INST_IRQ_BY_NAME(0, pmch_ibf, irq));
+	}
 
 	/* Enable host Port80 sub-device interrupt installation */
-#if defined(CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80)
-	irq_enable(DT_INST_IRQ_BY_NAME(0, p80_fifo, irq));
-#endif
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80)) {
+		irq_enable(DT_INST_IRQ_BY_NAME(0, p80_fifo, irq));
+	}
 
 	/* Enable host interface interrupts if its interface is eSPI */
-#if defined(CONFIG_ESPI)
-	npcx_espi_enable_interrupts(host_sub_data.host_bus_dev);
-#endif
+	if (IS_ENABLED(CONFIG_ESPI)) {
+		npcx_espi_enable_interrupts(host_sub_data.host_bus_dev);
+	}
 }
 
 static void host_cus_opcode_disable_interrupts(void)
 {
 	/* Disable host KBC sub-device interrupt */
-#if defined(CONFIG_ESPI_PERIPHERAL_8042_KBC)
-	irq_disable(DT_INST_IRQ_BY_NAME(0, kbc_ibf, irq));
-	irq_disable(DT_INST_IRQ_BY_NAME(0, kbc_obe, irq));
-#endif
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_8042_KBC)) {
+		irq_disable(DT_INST_IRQ_BY_NAME(0, kbc_ibf, irq));
+		irq_disable(DT_INST_IRQ_BY_NAME(0, kbc_obe, irq));
+	}
 
 	/* Disable host PM channel (Host IO) sub-device interrupt */
-#if defined(CONFIG_ESPI_PERIPHERAL_HOST_IO) || \
-				defined(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD)
-	irq_disable(DT_INST_IRQ_BY_NAME(0, pmch_ibf, irq));
-#endif
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_HOST_IO) ||
+		IS_ENABLED(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD)) {
+		irq_disable(DT_INST_IRQ_BY_NAME(0, pmch_ibf, irq));
+	}
 
 	/* Disable host Port80 sub-device interrupt installation */
-#if defined(CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80)
-	irq_disable(DT_INST_IRQ_BY_NAME(0, p80_fifo, irq));
-#endif
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80)) {
+		irq_disable(DT_INST_IRQ_BY_NAME(0, p80_fifo, irq));
+	}
 
 	/* Disable host interface interrupts if its interface is eSPI */
-#if defined(CONFIG_ESPI)
-	npcx_espi_disable_interrupts(host_sub_data.host_bus_dev);
-#endif
+	if (IS_ENABLED(CONFIG_ESPI)) {
+		npcx_espi_disable_interrupts(host_sub_data.host_bus_dev);
+	}
 }
 #endif /* CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE */
 
@@ -894,68 +894,69 @@ void npcx_host_init_subs_host_domain(void)
 	/* Enable Core-to-Host access module */
 	inst_c2h->SIBCTRL |= BIT(NPCX_SIBCTRL_CSAE);
 
-#if defined(CONFIG_ESPI_PERIPHERAL_8042_KBC)
-	/*
-	 * Select Keyboard/Mouse banks which LDN are 0x06/05 and enable modules
-	 * by setting bit 0 in its Control (index is 0x30) register.
-	 */
-	host_c2h_write_io_cfg_reg(EC_CFG_IDX_LDN, EC_CFG_LDN_KBC);
-	host_c2h_write_io_cfg_reg(EC_CFG_IDX_CTRL, 0x01);
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_8042_KBC)) {
+		/*
+		 * Select Keyboard/Mouse banks which LDN are 0x06/05 and enable
+		 * modules by setting bit 0 in its Control (index is 0x30) reg.
+		 */
+		host_c2h_write_io_cfg_reg(EC_CFG_IDX_LDN, EC_CFG_LDN_KBC);
+		host_c2h_write_io_cfg_reg(EC_CFG_IDX_CTRL, 0x01);
 
-	host_c2h_write_io_cfg_reg(EC_CFG_IDX_LDN, EC_CFG_LDN_MOUSE);
-	host_c2h_write_io_cfg_reg(EC_CFG_IDX_CTRL, 0x01);
-#endif
+		host_c2h_write_io_cfg_reg(EC_CFG_IDX_LDN, EC_CFG_LDN_MOUSE);
+		host_c2h_write_io_cfg_reg(EC_CFG_IDX_CTRL, 0x01);
+	}
 
-#if defined(CONFIG_ESPI_PERIPHERAL_HOST_IO)
-	/*
-	 * Select ACPI bank which LDN are 0x11 (PM Channel 1) and enable
-	 * module by setting bit 0 in its Control (index is 0x30) register.
-	 */
-	host_c2h_write_io_cfg_reg(EC_CFG_IDX_LDN, EC_CFG_LDN_ACPI);
-	host_c2h_write_io_cfg_reg(EC_CFG_IDX_CTRL, 0x01);
-#endif
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_HOST_IO)) {
+		/*
+		 * Select ACPI bank which LDN are 0x11 (PM Channel 1) and enable
+		 * module by setting bit 0 in its Control (index is 0x30) reg.
+		 */
+		host_c2h_write_io_cfg_reg(EC_CFG_IDX_LDN, EC_CFG_LDN_ACPI);
+		host_c2h_write_io_cfg_reg(EC_CFG_IDX_CTRL, 0x01);
+	}
 
-#if defined(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD) \
-	|| defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION)
-	/* Select 'Host Command' bank which LDN are 0x12 (PM Channel 2) */
-	host_c2h_write_io_cfg_reg(EC_CFG_IDX_LDN, EC_CFG_LDN_HCMD);
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD) ||
+	    IS_ENABLED(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION)) {
+		/* Select 'Host Command' bank which LDN are 0x12 (PM chan 2) */
+		host_c2h_write_io_cfg_reg(EC_CFG_IDX_LDN, EC_CFG_LDN_HCMD);
 #if defined(CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM)
-	/* Configure IO address of CMD port (0x200) */
-	host_c2h_write_io_cfg_reg(EC_CFG_IDX_CMD_IO_ADDR_H,
-	    (CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM >> 8) & 0xff);
-	host_c2h_write_io_cfg_reg(EC_CFG_IDX_CMD_IO_ADDR_L,
-	    CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM & 0xff);
-	/* Configure IO address of Data port (0x204) */
-	host_c2h_write_io_cfg_reg(EC_CFG_IDX_DATA_IO_ADDR_H,
-	    ((CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM + 4) >> 8) & 0xff);
-	host_c2h_write_io_cfg_reg(EC_CFG_IDX_DATA_IO_ADDR_L,
-	    (CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM + 4) & 0xff);
+		/* Configure IO address of CMD portt (default: 0x200) */
+		host_c2h_write_io_cfg_reg(EC_CFG_IDX_CMD_IO_ADDR_H,
+		 (CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM >> 8) & 0xff);
+		host_c2h_write_io_cfg_reg(EC_CFG_IDX_CMD_IO_ADDR_L,
+		 CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM & 0xff);
+		/* Configure IO address of Data portt (default: 0x204) */
+		host_c2h_write_io_cfg_reg(EC_CFG_IDX_DATA_IO_ADDR_H,
+		 ((CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM + 4) >> 8)
+		 & 0xff);
+		host_c2h_write_io_cfg_reg(EC_CFG_IDX_DATA_IO_ADDR_L,
+		 (CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM + 4) & 0xff);
 #endif
-	/* Enable 'Host Command' io port (PM Channel 2) */
-	host_c2h_write_io_cfg_reg(EC_CFG_IDX_CTRL, 0x01);
+		/* Enable 'Host Command' io port (PM Channel 2) */
+		host_c2h_write_io_cfg_reg(EC_CFG_IDX_CTRL, 0x01);
 
-	/* Select 'Shared Memory' bank which LDN are 0x0F */
-	host_c2h_write_io_cfg_reg(EC_CFG_IDX_LDN, EC_CFG_LDN_SHM);
-	/* WIN 1 & 2 mapping to IO space */
-	host_c2h_write_io_cfg_reg(0xF1,
-			host_c2h_read_io_cfg_reg(0xF1) | 0x30);
-	/* WIN1 as Host Command on the IO address 0x0800 */
+		/* Select 'Shared Memory' bank which LDN are 0x0F */
+		host_c2h_write_io_cfg_reg(EC_CFG_IDX_LDN, EC_CFG_LDN_SHM);
+		/* WIN 1 & 2 mapping to IO space */
+		host_c2h_write_io_cfg_reg(0xF1,
+				host_c2h_read_io_cfg_reg(0xF1) | 0x30);
+		/* WIN1 as Host Command on the IO address (default: 0x0800) */
 #if defined(CONFIG_ESPI_PERIPHERAL_HOST_CMD_PARAM_PORT_NUM)
-	host_c2h_write_io_cfg_reg(EC_CFG_IDX_SHM_WND1_ADDR_1,
-	    (CONFIG_ESPI_PERIPHERAL_HOST_CMD_PARAM_PORT_NUM >> 8) & 0xff);
-	host_c2h_write_io_cfg_reg(EC_CFG_IDX_SHM_WND1_ADDR_0,
-	    CONFIG_ESPI_PERIPHERAL_HOST_CMD_PARAM_PORT_NUM & 0xff);
+		host_c2h_write_io_cfg_reg(EC_CFG_IDX_SHM_WND1_ADDR_1,
+		(CONFIG_ESPI_PERIPHERAL_HOST_CMD_PARAM_PORT_NUM >> 8) & 0xff);
+		host_c2h_write_io_cfg_reg(EC_CFG_IDX_SHM_WND1_ADDR_0,
+		CONFIG_ESPI_PERIPHERAL_HOST_CMD_PARAM_PORT_NUM & 0xff);
 #endif
-	/* Set WIN2 as MEMMAP on the configured IO address */
+		/* Set WIN2 as MEMMAP on the configured IO address */
 #if defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION_PORT_NUM)
-	host_c2h_write_io_cfg_reg(EC_CFG_IDX_SHM_WND2_ADDR_1,
-	    (CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION_PORT_NUM >> 8) & 0xff);
-	host_c2h_write_io_cfg_reg(EC_CFG_IDX_SHM_WND2_ADDR_0,
-	    CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION_PORT_NUM & 0xff);
+		host_c2h_write_io_cfg_reg(EC_CFG_IDX_SHM_WND2_ADDR_1,
+		(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION_PORT_NUM >> 8) & 0xff);
+		host_c2h_write_io_cfg_reg(EC_CFG_IDX_SHM_WND2_ADDR_0,
+		CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION_PORT_NUM & 0xff);
 #endif
 	/* Enable SHM direct memory access */
 	host_c2h_write_io_cfg_reg(EC_CFG_IDX_CTRL, 0x01);
-#endif
+	}
 	LOG_DBG("Hos sub-modules configurations are done!");
 }
 
