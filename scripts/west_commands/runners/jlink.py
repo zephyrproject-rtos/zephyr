@@ -37,7 +37,9 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                  commander=DEFAULT_JLINK_EXE,
                  flash_addr=0x0, erase=True, reset_after_load=False,
                  iface='swd', speed='auto',
-                 gdbserver='JLinkGDBServer', gdb_port=DEFAULT_JLINK_GDB_PORT,
+                 gdbserver='JLinkGDBServer',
+                 gdb_host='',
+                 gdb_port=DEFAULT_JLINK_GDB_PORT,
                  tui=False, tool_opt=[]):
         super().__init__(cfg)
         self.hex_name = cfg.hex_file
@@ -52,6 +54,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.gdbserver = gdbserver
         self.iface = iface
         self.speed = speed
+        self.gdb_host = gdb_host
         self.gdb_port = gdb_port
         self.tui_arg = ['-tui'] if tui else []
 
@@ -82,6 +85,9 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                             help='if given, GDB uses -tui')
         parser.add_argument('--gdbserver', default='JLinkGDBServer',
                             help='GDB server, default is JLinkGDBServer')
+        parser.add_argument('--gdb-host', default='',
+                            help='custom gdb host, defaults to the empty string '
+                            'and runs a gdb server')
         parser.add_argument('--gdb-port', default=DEFAULT_JLINK_GDB_PORT,
                             help='pyocd gdb port, defaults to {}'.format(
                                 DEFAULT_JLINK_GDB_PORT))
@@ -107,6 +113,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                                  reset_after_load=args.reset_after_load,
                                  iface=args.iface, speed=args.speed,
                                  gdbserver=args.gdbserver,
+                                 gdb_host=args.gdb_host,
                                  gdb_port=args.gdb_port,
                                  tui=args.tui, tool_opt=args.tool_opt)
 
@@ -165,11 +172,12 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         if command == 'flash':
             self.flash(**kwargs)
         elif command == 'debugserver':
+            if self.gdb_host:
+                raise ValueError('Cannot run debugserver with --gdb-host')
             self.require(self.gdbserver)
             self.print_gdbserver_message()
             self.check_call(server_cmd)
         else:
-            self.require(self.gdbserver)
             if self.gdb_cmd is None:
                 raise ValueError('Cannot debug; gdb is missing')
             if self.elf_name is None:
@@ -177,16 +185,19 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             client_cmd = (self.gdb_cmd +
                           self.tui_arg +
                           [self.elf_name] +
-                          ['-ex', 'target remote :{}'.format(self.gdb_port)])
+                          ['-ex', 'target remote {}:{}'.format(self.gdb_host, self.gdb_port)])
             if command == 'debug':
                 client_cmd += ['-ex', 'monitor halt',
                                '-ex', 'monitor reset',
                                '-ex', 'load']
                 if self.reset_after_load:
                     client_cmd += ['-ex', 'monitor reset']
-
-            self.print_gdbserver_message()
-            self.run_server_and_client(server_cmd, client_cmd)
+            if not self.gdb_host:
+                self.require(self.gdbserver)
+                self.print_gdbserver_message()
+                self.run_server_and_client(server_cmd, client_cmd)
+            else:
+                self.run_client(client_cmd)
 
     def flash(self, **kwargs):
         self.require(self.commander)
