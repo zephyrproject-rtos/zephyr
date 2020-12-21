@@ -66,7 +66,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 
 #if defined(CONFIG_TICKLESS_KERNEL)
 
-	if (idle) {
+	if (ticks == K_TICKS_FOREVER && idle) {
 		return;
 	}
 
