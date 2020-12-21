@@ -189,7 +189,6 @@ void idle(void *p1, void *unused2, void *unused3)
 		 * API we need to honor...
 		 */
 		z_set_timeout_expiry((ticks < IDLE_THRESH) ? 1 : ticks, true);
-#endif /* CONFIG_SYS_CLOCK_EXISTS */
 #ifdef CONFIG_PM
 		_kernel.idle = ticks;
 		/* Check power policy and decide if we are going to sleep or
@@ -198,9 +197,12 @@ void idle(void *p1, void *unused2, void *unused3)
 		if (pm_save_idle(ticks) == POWER_STATE_ACTIVE) {
 			k_cpu_idle();
 		}
-#else
+#else /* CONFIG_PM */
 		k_cpu_idle();
 #endif /* CONFIG_PM */
+#else /* CONFIG_SYS_CLOCK_EXISTS */
+		k_cpu_idle();
+#endif /* CONFIG_SYS_CLOCK_EXISTS */
 
 		IDLE_YIELD_IF_COOP();
 #endif /* SMP_FALLBACK */
