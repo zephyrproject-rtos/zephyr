@@ -2580,7 +2580,7 @@ class TestSuite(DisablePyTestCollectionMixin):
 
     def check_zephyr_version(self):
         try:
-            subproc = subprocess.run(["git", "describe"],
+            subproc = subprocess.run(["git", "describe", "--abbrev=12"],
                                      stdout=subprocess.PIPE,
                                      universal_newlines=True,
                                      cwd=ZEPHYR_BASE)
