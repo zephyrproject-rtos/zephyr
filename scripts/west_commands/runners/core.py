@@ -514,13 +514,19 @@ class ZephyrBinaryRunner(abc.ABC):
 
         It's useful to e.g. open a GDB server and client.'''
         server_proc = self.popen_ignore_int(server)
+        try:
+            self.run_client(client)
+        finally:
+            server_proc.terminate()
+            server_proc.wait()
+
+    def run_client(self, client):
+        '''Run a client that handles SIGINT.'''
         previous = signal.signal(signal.SIGINT, signal.SIG_IGN)
         try:
             self.check_call(client)
         finally:
             signal.signal(signal.SIGINT, previous)
-            server_proc.terminate()
-            server_proc.wait()
 
     def _log_cmd(self, cmd: List[str]):
         escaped = ' '.join(shlex.quote(s) for s in cmd)
