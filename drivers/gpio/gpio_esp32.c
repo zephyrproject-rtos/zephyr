@@ -265,12 +265,19 @@ static void gpio_esp32_fire_callbacks(const struct device *device)
 
 static void gpio_esp32_isr(const void *param);
 
+DEVICE_DT_DECLARE(DT_NODELABEL(pinmux));
+
 static int gpio_esp32_init(const struct device *device)
 {
 	struct gpio_esp32_data *data = device->data;
 	static bool isr_connected;
 
 	data->pinmux = DEVICE_DT_GET(DT_NODELABEL(pinmux));
+	if ((data->pinmux != NULL)
+	    && !device_is_ready(data->pinmux)) {
+		data->pinmux = NULL;
+	}
+
 	if (!data->pinmux) {
 		return -ENOTSUP;
 	}
