@@ -64,6 +64,14 @@
 			label = "CLOCK";
 		};
 
+		ecb: ecb@4000e000 {
+			compatible = "nordic,nrf-ecb";
+			reg = <0x4000e000 0x1000>;
+			interrupts = <14 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+			label = "ECB";
+		};
+
 		gpio0: gpio@50000000 {
 			compatible = "nordic,nrf-gpio";
 			gpio-controller;
