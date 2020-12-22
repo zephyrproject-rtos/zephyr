@@ -91,9 +91,8 @@ SECTIONS
 	_image_rom_start = .;
 	_image_text_start = .;
 	z_mapped_start = .;
-	*(.text)
-	*(.text.*)
 
+	#include <snippets-text.ld>
 	#include <linker/kobject-text.ld>
 
 	MMU_PAGE_ALIGN_PERM
@@ -109,11 +108,8 @@ SECTIONS
 	SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 	{
 	. = ALIGN(16);
-	*(.rodata)
-	*(.rodata.*)
-
-	MMU_PAGE_ALIGN
 	#include <snippets-rodata.ld>
+	MMU_PAGE_ALIGN
 
 #ifdef CONFIG_X86_MMU
 	. = ALIGN(8);

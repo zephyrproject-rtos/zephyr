@@ -17,6 +17,8 @@ zephyr_library_sources(
   ia32/thread.c
   )
 
+zephyr_linker_sources(RODATA SORT_KEY core6 ia32/dynamic_interrupts.ld)
+
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD		ia32/irq_offload.c)
 zephyr_library_sources_ifdef(CONFIG_X86_USERSPACE	ia32/userspace.S)
 zephyr_library_sources_ifdef(CONFIG_LAZY_FPU_SHARING	ia32/float.c)

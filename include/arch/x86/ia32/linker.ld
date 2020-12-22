@@ -111,9 +111,12 @@ SECTIONS
 	/* Needs KEEP() as ENTRY() is given a physical address */
 	KEEP(*(.text_start))
 	KEEP(*(".text_start.*"))
-	*(.text)
-	*(".text.*")
-	*(.gnu.linkonce.t.*)
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-text.ld>
+
 	*(.eh_frame_hdr)
 	*(.eh_frame)
 	*(.init)
@@ -134,28 +137,6 @@ SECTIONS
 
 	SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 	{
-	*(.rodata)
-	*(".rodata.*")
-	*(.gnu.linkonce.r.*)
-
-#ifndef CONFIG_DYNAMIC_INTERRUPTS
-	. = ALIGN(8);
-	_idt_base_address = .;
-#ifdef LINKER_PASS2
-	KEEP(*(staticIdt))
-#else
-	. += CONFIG_IDT_NUM_VECTORS * 8;
-#endif /* LINKER_PASS2 */
-
-	. = ALIGN(4);
-	_irq_to_interrupt_vector = .;
-#ifdef LINKER_PASS2
-	KEEP(*(irq_int_vector_map))
-#else
-	. += CONFIG_MAX_IRQ_LINES;
-#endif
-#endif /* CONFIG_DYNAMIC_INTERRUPTS */
-
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
