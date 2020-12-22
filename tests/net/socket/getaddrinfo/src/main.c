@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -312,6 +312,215 @@ void test_getaddrinfo_num_ipv4(void)
 	zsock_freeaddrinfo(res);
 }
 
+void test_getaddrinfo_num_ipv6(void)
+{
+	struct zsock_addrinfo *res = NULL;
+	struct sockaddr_in6 *saddr;
+	int ret;
+
+	struct zsock_addrinfo hints = {
+		.ai_family = AF_INET6,
+		.ai_socktype = SOCK_STREAM
+	};
+
+	ret = zsock_getaddrinfo("[FEDC:BA98:7654:3210:FEDC:BA98:7654:3210]",
+			"65534", NULL, &res);
+
+	zassert_equal(ret, 0, "Invalid result");
+	zassert_not_null(res, "");
+	zassert_is_null(res->ai_next, "");
+	zassert_equal(res->ai_family, AF_INET6, "");
+	zassert_equal(res->ai_socktype, SOCK_STREAM, "");
+	zassert_equal(res->ai_protocol, IPPROTO_TCP, "");
+
+	saddr = (struct sockaddr_in6 *)res->ai_addr;
+	zassert_equal(saddr->sin6_family, AF_INET6, "");
+	zassert_equal(saddr->sin6_port, htons(65534), "");
+	zassert_equal(saddr->sin6_addr.s6_addr[0], 0xFE, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[1], 0xDC, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[2], 0xBA, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[3], 0x98, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[4], 0x76, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[5], 0x54, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[6], 0x32, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[7], 0x10, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[8], 0xFE, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[9], 0xDC, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[10], 0xBA, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[11], 0x98, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[12], 0x76, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[13], 0x54, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[14], 0x32, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[15], 0x10, "");
+	zsock_freeaddrinfo(res);
+
+
+	ret = zsock_getaddrinfo("[1080:0:0:0:8:800:200C:417A]",
+			"65534", &hints, &res);
+	zassert_equal(ret, 0, "Invalid result");
+	zassert_not_null(res, "");
+	zassert_is_null(res->ai_next, "");
+	zassert_equal(res->ai_family, AF_INET6, "");
+	zassert_equal(res->ai_socktype, SOCK_STREAM, "");
+	zassert_equal(res->ai_protocol, IPPROTO_TCP, "");
+
+	saddr = (struct sockaddr_in6 *)res->ai_addr;
+	zassert_equal(saddr->sin6_family, AF_INET6, "");
+	zassert_equal(saddr->sin6_port, htons(65534), "");
+	zassert_equal(saddr->sin6_addr.s6_addr[0], 0x10, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[1], 0x80, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[2], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[3], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[4], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[5], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[6], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[7], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[8], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[9], 0x08, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[10], 0x08, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[11], 0x00, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[12], 0x20, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[13], 0x0C, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[14], 0x41, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[15], 0x7A, "");
+	zsock_freeaddrinfo(res);
+
+
+	hints.ai_socktype = SOCK_DGRAM;
+	ret = zsock_getaddrinfo("[3ffe:2a00:100:7031::1]",
+			"65534", &hints, &res);
+	zassert_equal(ret, 0, "Invalid result");
+	zassert_not_null(res, "");
+	zassert_is_null(res->ai_next, "");
+	zassert_equal(res->ai_family, AF_INET6, "");
+	zassert_equal(res->ai_socktype, SOCK_DGRAM, "");
+	zassert_equal(res->ai_protocol, IPPROTO_UDP, "");
+
+	saddr = (struct sockaddr_in6 *)res->ai_addr;
+	zassert_equal(saddr->sin6_family, AF_INET6, "");
+	zassert_equal(saddr->sin6_port, htons(65534), "");
+	zassert_equal(saddr->sin6_addr.s6_addr[0], 0x3f, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[1], 0xfe, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[2], 0x2a, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[3], 0x00, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[4], 0x01, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[5], 0x00, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[6], 0x70, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[7], 0x31, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[8], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[9], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[10], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[11], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[12], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[13], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[14], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[15], 0x1, "");
+	zsock_freeaddrinfo(res);
+
+
+	ret = zsock_getaddrinfo("[1080::8:800:200C:417A]",
+			"65534", &hints, &res);
+	zassert_equal(ret, 0, "Invalid result");
+
+	saddr = (struct sockaddr_in6 *)res->ai_addr;
+	zassert_equal(saddr->sin6_family, AF_INET6, "");
+	zassert_equal(saddr->sin6_port, htons(65534), "");
+	zassert_equal(saddr->sin6_addr.s6_addr[0], 0x10, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[1], 0x80, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[2], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[3], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[4], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[5], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[6], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[7], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[8], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[9], 0x8, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[10], 0x08, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[11], 0x00, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[12], 0x20, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[13], 0x0C, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[14], 0x41, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[15], 0x7A, "");
+	zsock_freeaddrinfo(res);
+
+
+	ret = zsock_getaddrinfo("[::192.9.5.5]", "65534", &hints, &res);
+	zassert_equal(ret, 0, "Invalid result");
+
+	saddr = (struct sockaddr_in6 *)res->ai_addr;
+	zassert_equal(saddr->sin6_family, AF_INET6, "");
+	zassert_equal(saddr->sin6_port, htons(65534), "");
+	zassert_equal(saddr->sin6_addr.s6_addr[0], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[1], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[2], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[3], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[4], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[5], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[6], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[7], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[8], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[9], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[10], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[11], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[12], 192, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[13], 9, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[14], 5, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[15], 5, "");
+	zsock_freeaddrinfo(res);
+
+
+	ret = zsock_getaddrinfo("[::FFFF:129.144.52.38]",
+			"65534", &hints, &res);
+	zassert_equal(ret, 0, "Invalid result");
+
+	saddr = (struct sockaddr_in6 *)res->ai_addr;
+	zassert_equal(saddr->sin6_family, AF_INET6, "");
+	zassert_equal(saddr->sin6_port, htons(65534), "");
+	zassert_equal(saddr->sin6_addr.s6_addr[0], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[1], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[2], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[3], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[4], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[5], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[6], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[7], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[8], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[9], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[10], 0xFF, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[11], 0xFF, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[12], 129, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[13], 144, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[14], 52, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[15], 38, "");
+	zsock_freeaddrinfo(res);
+
+
+	ret = zsock_getaddrinfo("[2010:836B:4179::836B:4179]",
+			"65534", &hints, &res);
+	zassert_equal(ret, 0, "Invalid result");
+
+	saddr = (struct sockaddr_in6 *)res->ai_addr;
+	zassert_equal(saddr->sin6_family, AF_INET6, "");
+	zassert_equal(saddr->sin6_port, htons(65534), "");
+	zassert_equal(saddr->sin6_addr.s6_addr[0], 0x20, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[1], 0x10, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[2], 0x83, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[3], 0x6B, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[4], 0x41, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[5], 0x79, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[6], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[7], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[8], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[9], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[10], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[11], 0x0, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[12], 0x83, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[13], 0x6B, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[14], 0x41, "");
+	zassert_equal(saddr->sin6_addr.s6_addr[15], 0x79, "");
+	zsock_freeaddrinfo(res);
+}
+
 void test_getaddrinfo_flags_numerichost(void)
 {
 	int ret;
@@ -447,6 +656,7 @@ void test_main(void)
 			 ztest_unit_test(test_getaddrinfo_cancelled),
 			 ztest_unit_test(test_getaddrinfo_no_host),
 			 ztest_unit_test(test_getaddrinfo_num_ipv4),
+			 ztest_unit_test(test_getaddrinfo_num_ipv6),
 			 ztest_unit_test(test_getaddrinfo_flags_numerichost),
 			 ztest_unit_test(test_getaddrinfo_ipv4_hints_ipv6),
 			 ztest_unit_test(test_getaddrinfo_ipv6_hints_ipv4),
