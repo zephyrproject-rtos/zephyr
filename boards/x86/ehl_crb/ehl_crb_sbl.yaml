@@ -1,0 +1,11 @@
+identifier: ehl_crb_sbl
+name: Elkhart Lake CRB with Slim Bootloader
+type: mcu
+arch: x86
+toolchain:
+  - zephyr
+ram: 2048
+testing:
+  ignore_tags:
+     - net
+     - bluetooth
