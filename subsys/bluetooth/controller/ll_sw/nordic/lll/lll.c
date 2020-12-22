@@ -177,6 +177,8 @@ int lll_init(void)
 	irq_enable(HAL_SWI_JOB_IRQ);
 #endif
 
+	radio_setup();
+
 	return 0;
 }
 
