@@ -461,6 +461,12 @@ config ARCH_HAS_EXTRA_EXCEPTION_INFO
 config ARCH_HAS_GDBSTUB
 	bool
 
+config ARCH_USE_CORE_SNIPPETS
+	bool
+
+config ARCH_USE_GNU_LINKONCE
+	bool
+
 config ARCH_HAS_COHERENCE
 	bool
 	help
