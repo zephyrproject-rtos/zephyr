@@ -110,9 +110,7 @@ SECTIONS
 
         _vector_end = .;
 
-        *(.text)
-        *(".text.*")
-        *(.gnu.linkonce.t.*)
+#include <snippets-text.ld>
 
         /*
          * These are here according to 'arm-zephyr-elf-ld --verbose',
@@ -161,10 +159,6 @@ SECTIONS
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
     {
         KEEP(*(_IRQ_VECTOR_TABLE_SECTION_SYMS))
-
-        *(.rodata)
-        *(".rodata.*")
-        *(.gnu.linkonce.r.*)
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.

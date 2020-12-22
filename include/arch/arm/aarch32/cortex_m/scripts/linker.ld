@@ -185,12 +185,11 @@ SECTIONS
 	{
 	_image_text_start = .;
 
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
 #include <linker/kobject-text.ld>
-
-	*(.text)
-	*(".text.*")
-	*(".TEXT.*")
-	*(.gnu.linkonce.t.*)
+#include <snippets-text.ld>
 
 	/*
 	 * These are here according to 'arm-zephyr-elf-ld --verbose',
@@ -234,10 +233,6 @@ SECTIONS
 
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 	{
-	*(.rodata)
-	*(".rodata.*")
-	*(.gnu.linkonce.r.*)
-
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
