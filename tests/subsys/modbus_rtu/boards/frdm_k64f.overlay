@@ -11,6 +11,8 @@
 		compatible = "zephyr,modbus-serial";
 		label = "MODBUS";
 		status = "okay";
+		de-gpios = <&gpiob 22 GPIO_ACTIVE_LOW>;	/* red LED */
+		re-gpios = <&gpioe 26 GPIO_ACTIVE_LOW>;	/* green LED */
 	};
 };
 
