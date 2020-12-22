@@ -218,7 +218,7 @@ uint32_t ht16k33_get_pending_int(const struct device *dev)
 	err = i2c_write_read(data->i2c, config->i2c_addr, &cmd, sizeof(cmd),
 			     &flag, sizeof(flag));
 	if (err) {
-		LOG_ERR("Failed to to read HT16K33 IRQ flag");
+		LOG_ERR("Failed to read HT16K33 IRQ flag");
 		return 0;
 	}
 
