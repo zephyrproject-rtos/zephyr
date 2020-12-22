@@ -23,8 +23,11 @@
 #include <random/rand32.h>
 #endif
 
+#if DT_ON_BUS(DT_CHOSEN(zephyr_console), pcie)
 #include <drivers/pcie/pcie.h>
-
 #define X86_SOC_EARLY_SERIAL_PCIDEV DT_REG_ADDR(DT_CHOSEN(zephyr_console))
+#else
+#define X86_SOC_EARLY_SERIAL_MMIO8_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_console))
+#endif
 
 #endif /* __SOC_H_ */
