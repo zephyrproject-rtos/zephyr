@@ -81,7 +81,7 @@ void entry_cpu_exception(void *p1, void *p2, void *p3)
 	__asm__ volatile ("swi");
 #else
 	/* Triggers usage fault on ARM, illegal instruction on RISCV
-	 * and xtensa
+	 * and xtensa, TLB exception (instruction fetch) on MIPS.
 	 */
 	{
 		volatile long illegal = 0;
@@ -114,7 +114,7 @@ void entry_cpu_exception_extend(void *p1, void *p2, void *p3)
 #elif defined(CONFIG_ARC)
 	__asm__ volatile ("swi");
 #else
-	/* used to create a divide by zero error on X86 */
+	/* used to create a divide by zero error on X86 and MIPS */
 	volatile int error;
 	volatile int zero = 0;
 
