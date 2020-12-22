@@ -99,7 +99,7 @@ static enum power_states _handle_device_abort(enum power_states state)
 	return pm_state;
 }
 
-enum power_states pm_policy_mgr(int32_t ticks)
+static enum power_states pm_policy_mgr(int32_t ticks)
 {
 	bool deep_sleep;
 #if CONFIG_PM_DEVICE
