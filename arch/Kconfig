@@ -76,6 +76,8 @@ config NIOS2
 	select HAS_DTS
 	imply XIP
 	select ARCH_HAS_TIMING_FUNCTIONS
+	select ARCH_USE_CORE_SNIPPETS
+	select ARCH_USE_GNU_LINKONCE
 	help
 	  Nios II Gen 2 architecture
 

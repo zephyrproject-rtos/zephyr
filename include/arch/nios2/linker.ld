@@ -121,9 +121,11 @@ SECTIONS
 
         _image_text_start = .;
 
-        *(.text)
-        *(".text.*")
-        *(.gnu.linkonce.t.*)
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-text.ld>
+
         } GROUP_LINK_IN(ROMABLE_REGION)
 
     _image_text_end = .;
@@ -138,10 +140,6 @@ SECTIONS
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
         {
         . = ALIGN(4);
-
-        *(.rodata)
-        *(".rodata.*")
-        *(.gnu.linkonce.r.*)
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
