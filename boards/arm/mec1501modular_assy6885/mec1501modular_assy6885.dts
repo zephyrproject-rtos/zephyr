@@ -27,6 +27,24 @@
 		i2c1 = &i2c_smb_1;
 		kscan0 = &kscan0;
 	};
+
+	idle-states {
+		idle: idle {
+			compatible = "zephyr,idle-state";
+			idle-state-name = "runtime-idle";
+			min-residency-us = <1000000>;
+		};
+
+		suspend_to_ram: suspend_to_ram {
+			compatible = "zephyr,idle-state";
+			idle-state-name = "suspend-to-ram";
+			min-residency-us = <2000000>;
+		};
+	};
+};
+
+&cpu0 {
+	cpu-idle-states = <&idle &suspend_to_ram>;
 };
 
 &uart1 {
