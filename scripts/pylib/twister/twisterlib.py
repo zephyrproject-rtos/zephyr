@@ -554,14 +554,13 @@ class BinaryHandler(Handler):
                 t.join()
             proc.wait()
             self.returncode = proc.returncode
+            self.try_kill_process_by_pid()
 
         handler_time = time.time() - start_time
 
         if self.coverage:
             subprocess.call(["GCOV_PREFIX=" + self.build_dir,
                              "gcov", self.sourcedir, "-b", "-s", self.build_dir], shell=True)
-
-        self.try_kill_process_by_pid()
 
         # FIXME: This is needed when killing the simulator, the console is
         # garbled and needs to be reset. Did not find a better way to do that.
