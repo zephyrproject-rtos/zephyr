@@ -1394,7 +1394,20 @@ static int uarte_instance_init(const struct device *dev,
 	data->dev = dev;
 
 	nrf_gpio_pin_write(config->pseltxd, 1);
-	nrf_gpio_cfg_output(config->pseltxd);
+
+	// FIXME: This is a cheap workaround needed because Ninebot made the
+	// Scooter UART multi-drop. We should make it prettier, somehow.
+	if (config->pseltxd == DT_PROP(DT_NODELABEL(uart1), tx_pin)) {
+		nrf_gpio_cfg(
+			DT_PROP(DT_NODELABEL(uart1), tx_pin),
+			NRF_GPIO_PIN_DIR_OUTPUT,
+			NRF_GPIO_PIN_INPUT_DISCONNECT,
+			NRF_GPIO_PIN_PULLUP,
+			NRF_GPIO_PIN_S0D1,
+			NRF_GPIO_PIN_NOSENSE);
+	} else {
+		nrf_gpio_cfg_output(config->pseltxd);
+	}
 
 	if (config->pselrxd !=  NRF_UARTE_PSEL_DISCONNECTED) {
 		nrf_gpio_cfg_input(config->pselrxd, NRF_GPIO_PIN_NOPULL);
@@ -1483,7 +1496,22 @@ static void uarte_nrfx_pins_enable(const struct device *dev, bool enable)
 
 	if (enable) {
 		nrf_gpio_pin_write(tx_pin, 1);
-		nrf_gpio_cfg_output(tx_pin);
+
+		// FIXME: This is a cheap workaround needed because Ninebot made the
+		// Scooter UART multi-drop. We should make it prettier, somehow.
+		if (tx_pin == DT_PROP(DT_NODELABEL(uart1), tx_pin)) {
+			nrf_gpio_cfg(
+				DT_PROP(DT_NODELABEL(uart1), tx_pin),
+				NRF_GPIO_PIN_DIR_OUTPUT,
+				NRF_GPIO_PIN_INPUT_DISCONNECT,
+				NRF_GPIO_PIN_PULLUP,
+				NRF_GPIO_PIN_S0D1,
+				NRF_GPIO_PIN_NOSENSE);
+		} else {
+			nrf_gpio_cfg_output(tx_pin);
+		}
+
+
 		if (rx_pin != NRF_UARTE_PSEL_DISCONNECTED) {
 			nrf_gpio_cfg_input(rx_pin, NRF_GPIO_PIN_NOPULL);
 		}
