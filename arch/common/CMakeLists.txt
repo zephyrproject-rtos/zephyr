@@ -34,6 +34,18 @@ zephyr_linker_sources_ifdef(CONFIG_NOCACHE_MEMORY
   nocache.ld
 )
 
+zephyr_linker_sources_ifdef(CONFIG_ARCH_USE_CORE_SNIPPETS
+  RODATA
+  SORT_KEY core5
+  core_rodata.ld
+)
+
+zephyr_linker_sources_ifdef(CONFIG_ARCH_USE_CORE_SNIPPETS
+  TEXT
+  SORT_KEY core5
+  core_text.ld
+)
+
 # Only ARM, X86 and OPENISA_RV32M1_RISCV32 use ROM_START_OFFSET.
 if (DEFINED CONFIG_ARM OR DEFINED CONFIG_X86
     OR DEFINED CONFIG_SOC_OPENISA_RV32M1_RISCV32)
