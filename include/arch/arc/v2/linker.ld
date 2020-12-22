@@ -87,8 +87,7 @@ SECTIONS {
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-rom-start.ld>
-		*(.text .text.*)
-		*(.gnu.linkonce.t.*)
+#include <snippets-text.ld>
 
 	. = ALIGN(4);
 #include <linker/kobject-text.ld>
@@ -101,10 +100,6 @@ SECTIONS {
 #include <linker/thread-local-storage.ld>
 
 	SECTION_PROLOGUE(_RODATA_SECTION_NAME,,) {
-		*(".rodata")
-		*(".rodata.*")
-		*(.gnu.linkonce.r.*)
-
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
