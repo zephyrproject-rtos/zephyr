@@ -71,7 +71,7 @@ static void z_power_soc_deep_sleep(void)
 	soc_deep_sleep_periph_restore();
 
 	/*
-	 * _pm_power_state_exit_post_ops() is not being called
+	 * pm_power_state_exit_post_ops() is not being called
 	 * after exiting deep sleep, so need to unmask exceptions
 	 * and interrupts here.
 	 */
@@ -125,7 +125,7 @@ void pm_power_state_set(enum power_states state)
 	}
 }
 
-void _pm_power_state_exit_post_ops(enum power_states state)
+void pm_power_state_exit_post_ops(enum power_states state)
 {
 	switch (state) {
 #if (defined(CONFIG_PM_SLEEP_STATES))

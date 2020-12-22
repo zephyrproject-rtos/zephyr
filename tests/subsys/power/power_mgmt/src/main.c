@@ -51,7 +51,7 @@ __weak void pm_power_state_set(enum power_states state)
 		      "Entering low power state with a wrong parameter");
 }
 
-__weak void _pm_power_state_exit_post_ops(enum power_states state)
+__weak void pm_power_state_exit_post_ops(enum power_states state)
 {
 	/* pm_system_suspend is entered with irq locked
 	 * unlock irq before leave pm_system_suspend

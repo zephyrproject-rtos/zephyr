@@ -296,7 +296,7 @@ enum power_states pm_system_suspend(int32_t ticks);
  * interrupts after resuming from sleep state. In future, the enabling
  * of interrupts may be moved into the kernel.
  */
-void _pm_power_state_exit_post_ops(enum power_states state);
+void pm_power_state_exit_post_ops(enum power_states state);
 
 /**
  * @brief Application defined function for power state entry
