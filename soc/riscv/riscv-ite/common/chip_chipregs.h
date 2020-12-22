@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2020 ITE Corporation. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1209,6 +1209,11 @@
 #define HOSTA_DVER		BIT(2)
 #define HOSTA_FINTR		BIT(1)
 #define HOSTA_HOBY		BIT(0)
+#define HOSTA_ANY_ERROR		(HOSTA_DVER | HOSTA_BSER | \
+				HOSTA_FAIL | HOSTA_NACK | HOSTA_TMOE)
+#define HOSTA_NEXT_BYTE		HOSTA_BDS
+#define HOSTA_ALL_WC_BIT		(HOSTA_FINTR | \
+				HOSTA_ANY_ERROR | HOSTA_BDS)
 
 #define HOCTL_A			ECREG(EC_REG_BASE_ADDR + 0x1C41)
 #define HOCTL_B			ECREG(EC_REG_BASE_ADDR + 0x1C81)
@@ -1935,5 +1940,82 @@
 
 #define CE_CTRL_1ST		ECREG(EC_REG_BASE_ADDR + 0x3C00)
 #define CE_RNG			ECREG(EC_REG_BASE_ADDR + 0x3C20)
+
+
+
+/*
+ * Clock and Power Management (ECPM)
+ */
+#define IT83XX_ECPM_BASE  0x00F01E00
+
+#define IT83XX_ECPM_CGCTRL4R_OFF 0x09
+
+#define CGC_OFFSET_SMBF		((IT83XX_ECPM_CGCTRL4R_OFF << 8) | 0x80)
+#define CGC_OFFSET_SMBE		((IT83XX_ECPM_CGCTRL4R_OFF << 8) | 0x40)
+#define CGC_OFFSET_SMBD		((IT83XX_ECPM_CGCTRL4R_OFF << 8) | 0x20)
+#define CGC_OFFSET_SMBC		((IT83XX_ECPM_CGCTRL4R_OFF << 8) | 0x10)
+#define CGC_OFFSET_SMBB		((IT83XX_ECPM_CGCTRL4R_OFF << 8) | 0x08)
+#define CGC_OFFSET_SMBA		((IT83XX_ECPM_CGCTRL4R_OFF << 8) | 0x04)
+
+/*
+ * The count number of the counter for 25 ms register.
+ * The 25 ms register is calculated by (count number *1.024 kHz).
+ */
+
+#define I2C_CLK_LOW_TIMEOUT		255 /* ~=249 ms */
+
+/* SMBus/I2C Interface (SMB/I2C) */
+#define IT83XX_SMB_BASE		0x00F01C00
+#define IT83XX_SMB_4P7USL		ECREG(IT83XX_SMB_BASE+0x00)
+#define IT83XX_SMB_4P0USL		ECREG(IT83XX_SMB_BASE+0x01)
+#define IT83XX_SMB_300NS		ECREG(IT83XX_SMB_BASE+0x02)
+#define IT83XX_SMB_250NS		ECREG(IT83XX_SMB_BASE+0x03)
+#define IT83XX_SMB_25MS			ECREG(IT83XX_SMB_BASE+0x04)
+#define IT83XX_SMB_45P3USL		ECREG(IT83XX_SMB_BASE+0x05)
+#define IT83XX_SMB_45P3USH		ECREG(IT83XX_SMB_BASE+0x06)
+#define IT83XX_SMB_4P7A4P0H		ECREG(IT83XX_SMB_BASE+0x07)
+#define IT83XX_SMB_SLVISELR		ECREG(IT83XX_SMB_BASE+0x08)
+#define IT83XX_SMB_SCLKTS(ch)	ECREG(IT83XX_SMB_BASE+0x09+ch)
+#define IT83XX_SMB_CHSEF		ECREG(IT83XX_SMB_BASE+0x11)
+#define IT83XX_SMB_CHSAB		ECREG(IT83XX_SMB_BASE+0x20)
+#define IT83XX_SMB_CHSCD		ECREG(IT83XX_SMB_BASE+0x21)
+#define IT83XX_SMB_HOSTA(base)	ECREG(base+0x00)
+#define IT83XX_SMB_HOCTL(base)	ECREG(base+0x01)
+#define IT83XX_SMB_HOCMD(base)	ECREG(base+0x02)
+#define IT83XX_SMB_TRASLA(base)	ECREG(base+0x03)
+#define IT83XX_SMB_D0REG(base)	ECREG(base+0x04)
+#define IT83XX_SMB_D1REG(base)	ECREG(base+0x05)
+#define IT83XX_SMB_HOBDB(base)	ECREG(base+0x06)
+#define IT83XX_SMB_PECERC(base)	ECREG(base+0x07)
+#define IT83XX_SMB_SMBPCTL(base)	ECREG(base+0x0A)
+#define IT83XX_SMB_HOCTL2(base)	ECREG(base+0x10)
+
+/**
+ * Enhanced SMBus/I2C Interface
+ * Ch_D: 0x00F03680, Ch_E: 0x00F03500, Ch_F: 0x00F03580
+ * Ch_D: ch = 0x03, Ch_E: ch = 0x00, Ch_F: ch = 0x01
+ */
+#define IT83XX_I2C_DRR(base)		ECREG(base+0x00)
+#define IT83XX_I2C_PSR(base)		ECREG(base+0x01)
+#define IT83XX_I2C_HSPR(base)		ECREG(base+0x02)
+#define IT83XX_I2C_STR(base)		ECREG(base+0x03)
+#define IT83XX_I2C_DHTR(base)		ECREG(base+0x04)
+#define IT83XX_I2C_TOR(base)		ECREG(base+0x05)
+#define IT83XX_I2C_DTR(base)		ECREG(base+0x08)
+#define IT83XX_I2C_CTR(base)		ECREG(base+0x09)
+#define IT83XX_I2C_CTR1(base)		ECREG(base+0x0A)
+#define IT83XX_I2C_BYTE_CNT_L(base)	ECREG(base+0x0C)
+#define IT83XX_I2C_IRQ_ST(base)		ECREG(base+0x0D)
+#define IT83XX_I2C_IDR(base)		ECREG(base+0x06)
+#define IT83XX_I2C_TOS(base)		ECREG(base+0x07)
+#define IT83XX_I2C_IDR2(base)		ECREG(base+0x1F)
+#define IT83XX_I2C_RAMHA(base)		ECREG(base+0x23)
+#define IT83XX_I2C_RAMLA(base)		ECREG(base+0x24)
+#define IT83XX_I2C_RAMHA2(base)		ECREG(base+0x2B)
+#define IT83XX_I2C_RAMLA2(base)		ECREG(base+0x2C)
+#define IT83XX_I2C_CMD_ADDH(base)	ECREG(base+0x25)
+#define IT83XX_I2C_CMD_ADDL(base)	ECREG(base+0x26)
+#define IT83XX_I2C_RAMH2A(base)		ECREG(base+0x50)
+#define IT83XX_I2C_CMD_ADDH2(base)	ECREG(base+0x52)
 
 #endif /* CHIP_CHIPREGS_H */
