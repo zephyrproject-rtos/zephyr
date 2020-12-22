@@ -20,6 +20,7 @@ config LOG_BACKEND_UART_SYST_ENABLE
 config LOG_BACKEND_SWO
 	bool "Enable Serial Wire Output (SWO) backend"
 	depends on HAS_SWO
+	depends on !LOG2
 	help
 	  When enabled, backend will use SWO for logging.
 
@@ -51,6 +52,7 @@ endif # LOG_BACKEND_SWO
 config LOG_BACKEND_RTT
 	bool "Enable Segger J-Link RTT backend"
 	depends on USE_SEGGER_RTT
+	depends on !LOG2
 	default y if !SHELL_BACKEND_RTT
 	help
 	  When enabled, backend will use RTT for logging. This backend works on a per
@@ -152,6 +154,7 @@ config LOG_BACKEND_SPINEL
 	bool "Enable OpenThread dedicated Spinel protocol backend"
 	depends on (OPENTHREAD_COPROCESSOR_SPINEL_ON_UART_DEV_NAME!=UART_CONSOLE_ON_DEV_NAME || !LOG_BACKEND_UART)
 	depends on NET_L2_OPENTHREAD
+	depends on !LOG2
 	help
 	  When enabled, backend will use OpenThread dedicated SPINEL protocol for logging.
 	  This protocol is byte oriented and wrapps given messages into serial frames.
@@ -171,12 +174,14 @@ endif # LOG_BACKEND_SPINEL
 config LOG_BACKEND_NATIVE_POSIX
 	bool "Enable native backend"
 	depends on ARCH_POSIX
+	depends on !LOG2
 	help
 	  Enable backend in native_posix
 
 config LOG_BACKEND_XTENSA_SIM
 	bool "Enable xtensa simulator backend"
 	depends on SOC_XTENSA_SAMPLE_CONTROLLER || SOC_FAMILY_INTEL_ADSP
+	depends on !LOG2
 	help
 	  Enable backend in xtensa simulator
 
@@ -192,6 +197,7 @@ config LOG_BACKEND_XTENSA_OUTPUT_BUFFER_SIZE
 # rsyslog message to be malformed.
 config LOG_BACKEND_NET
 	bool "Enable networking backend"
+	depends on !LOG2
 	depends on NETWORKING && NET_UDP && !LOG_IMMEDIATE
 	select NET_CONTEXT_NET_PKT_POOL
 	help
@@ -256,6 +262,7 @@ endif # LOG_BACKEND_NET
 config LOG_BACKEND_ADSP
 	bool "Enable Intel ADSP buffer backend"
 	depends on SOC_FAMILY_INTEL_ADSP
+	depends on !LOG2
 	help
 	  Enable backend for the host trace protocol of the Intel ADSP
 	  family of audio processors
