@@ -949,33 +949,6 @@ static inline void hal_radio_sw_switch_setup(
 	HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_TASK(ppi_group_index) =
 	    HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_TASK;
 
-	/* Sanity build-time check that
-	 * - SW SWITCH Timer Clear
-	 * - Radio End Capture, and
-	 * - Group Enable
-	 *  tasks are all going to be subscribed on the same PPI.
-	 */
-	BUILD_ASSERT(
-		&HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_EVT ==
-			&HAL_SW_SWITCH_TIMER_CLEAR_PPI_REGISTER_EVT,
-		"SW SWitch Timer Clear and Group Disable"
-		" not on the same PPI channel.");
-	BUILD_ASSERT(
-		HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_EVT ==
-			HAL_SW_SWITCH_TIMER_CLEAR_PPI_EVT,
-		"SW SWitch Timer Clear and Group Disable"
-		" not on the same PPI channel.");
-	BUILD_ASSERT(
-		&HAL_RADIO_END_TIME_CAPTURE_PPI_REGISTER_EVT ==
-			&HAL_SW_SWITCH_TIMER_CLEAR_PPI_REGISTER_EVT,
-		"Radio End Timer Capture and Group Disable"
-		" not on the same PPI channel.");
-	BUILD_ASSERT(
-		HAL_RADIO_END_TIME_CAPTURE_PPI_EVT ==
-			HAL_SW_SWITCH_TIMER_CLEAR_PPI_EVT,
-		"Radio End Timer Capture and Group Disable"
-		" not on the same PPI channel.");
-
 	/* We need to un-subscribe the other group from the PPI channel. */
 	if (ppi_group_index == 0) {
 		HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_TASK(1)	= 0;
@@ -1115,8 +1088,8 @@ static inline void hal_radio_sw_switch_ppi_group_setup(void)
 		"Radio enable and Group disable not on the same PPI channels.");
 
 	/* Address nRF5340 Engineering A Errata 16 */
-	HAL_RADIO_ENABLE_ON_TICK_PPI_REGISTER_TASK_TX = 0;
-	HAL_RADIO_ENABLE_ON_TICK_PPI_REGISTER_TASK_RX = 0;
+	nrf_radio_subscribe_clear(NRF_RADIO, NRF_RADIO_TASK_TXEN);
+	nrf_radio_subscribe_clear(NRF_RADIO, NRF_RADIO_TASK_RXEN);
 }
 
 static inline void hal_radio_group_task_disable_ppi_setup(void)
