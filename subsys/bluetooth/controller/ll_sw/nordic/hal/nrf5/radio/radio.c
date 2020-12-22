@@ -118,6 +118,10 @@ void radio_reset(void)
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 	hal_radio_sw_switch_ppi_group_setup();
 #endif
+
+#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN) || defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+	hal_palna_ppi_setup();
+#endif
 }
 
 void radio_phy_set(uint8_t phy, uint8_t flags)
@@ -1023,9 +1027,6 @@ void radio_gpio_lna_off(void)
 void radio_gpio_pa_lna_enable(uint32_t trx_us)
 {
 	nrf_timer_cc_set(EVENT_TIMER, 2, trx_us);
-
-	hal_enable_palna_ppi_config();
-	hal_disable_palna_ppi_config();
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_ENABLE_PALNA_PPI) |
 				BIT(HAL_DISABLE_PALNA_PPI));
 }
