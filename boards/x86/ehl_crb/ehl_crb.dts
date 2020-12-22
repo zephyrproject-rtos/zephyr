@@ -20,8 +20,5 @@
 		zephyr,sram = &dram0;
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
-		zephyr,bt-uart = &uart1;
-		zephyr,uart-pipe = &uart1;
-		zephyr,bt-mon-uart = &uart1;
 	};
 };
