@@ -91,6 +91,13 @@ config PRIVILEGED_STACK_SIZE
 config KOBJECT_TEXT_AREA
 	default 512 if TEST
 
+config WAIT_AT_RESET_VECTOR
+	bool "Wait at reset vector"
+	default n
+	help
+	  Spin at reset vector waiting for debugger to attach and resume
+	  execution
+
 if CPU_CORTEX_A
 
 config ARMV8_A_NS

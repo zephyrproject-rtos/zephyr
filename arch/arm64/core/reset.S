@@ -102,6 +102,13 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__reset)
 
 GTEXT(__start)
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
+
+#ifdef CONFIG_WAIT_AT_RESET_VECTOR
+resetwait:
+	wfe
+	b       resetwait
+#endif
+
 	/* Mask all exceptions */
 	msr	DAIFSet, #0xf
 
