@@ -13,6 +13,7 @@
 #include <hal/nrf_rtc.h>
 #include <hal/nrf_ccm.h>
 #include <hal/nrf_aar.h>
+#include <hal/nrf_gpiote.h>
 
 static inline void hal_radio_nrf_ppi_channels_enable(uint32_t mask)
 {
@@ -167,6 +168,27 @@ static inline void hal_trigger_rateoverride_ppi_config(void)
 	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_RATEBOOST, HAL_TRIGGER_RATEOVERRIDE_PPI);
 	nrf_ccm_subscribe_set(NRF_CCM, NRF_CCM_TASK_RATEOVERRIDE, HAL_TRIGGER_RATEOVERRIDE_PPI);
 }
+
+/******************************************************************************/
+#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN) || defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+
+#define HAL_ENABLE_PALNA_PPI 5
+#define HAL_DISABLE_PALNA_PPI HAL_ENABLE_PALNA_PPI
+
+static inline void hal_palna_ppi_setup(void)
+{
+	nrf_gpiote_task_t task;
+
+	nrf_timer_publish_set(EVENT_TIMER, NRF_TIMER_EVENT_COMPARE2,
+			      HAL_ENABLE_PALNA_PPI);
+	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_DISABLED,
+			      HAL_DISABLE_PALNA_PPI);
+
+	task = nrf_gpiote_out_task_get(CONFIG_BT_CTLR_PA_LNA_GPIOTE_CHAN);
+	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_PALNA_PPI);
+}
+
+#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN || CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
 /******************************************************************************/
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
