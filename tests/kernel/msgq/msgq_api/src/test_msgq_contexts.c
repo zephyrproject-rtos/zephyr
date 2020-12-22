@@ -399,6 +399,13 @@ void test_msgq_empty(void)
 	k_sem_take(&end_sema, K_FOREVER);
 	/* that getting thread is being blocked now */
 	zassert_equal(tid->base.thread_state, _THREAD_PENDING, NULL);
+	/* since there is a thread is waiting for message, this queue
+	 * can't be cleanup
+	 */
+	ret = k_msgq_cleanup(&msgq1);
+	zassert_equal(ret, -EBUSY, NULL);
+	/* put a message to wake that getting thread */
+	k_msgq_put(&msgq1, &data[0], K_NO_WAIT);
 	k_thread_abort(tid);
 }
 
