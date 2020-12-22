@@ -1083,15 +1083,16 @@ endfunction(zephyr_check_compiler_flag_hardcoded)
 #    RAM_SECTIONS Inside the RAMABLE_REGION GROUP.
 #    SECTIONS     Near the end of the file. Don't use this when linking into
 #                 RAMABLE_REGION, use RAM_SECTIONS instead.
+#    TEXT         Inside the text output section.
 # <sort_key> is an optional key to sort by inside of each location. The key must
 #    be alphanumeric, and the keys are sorted alphabetically. If no key is
 #    given, the key 'default' is used. Keys are case-sensitive.
 #
-# Use NOINIT, RWDATA, and RODATA unless they don't work for your use case.
+# Use NOINIT, RWDATA, RODATA and TEXT unless they don't work for your use case.
 #
-# When placing into NOINIT, RWDATA, RODATA, ROM_START, the contents of the files
-# will be placed inside an output section, so assume the section definition is
-# already present, e.g.:
+# When placing into NOINIT, RWDATA, RODATA, ROM_START and TEXT the contents of
+# the files will be placed inside an output section, so assume the section
+# definition is already present, e.g.:
 #    _mysection_start = .;
 #    KEEP(*(.mysection));
 #    _mysection_end = .;
@@ -1123,6 +1124,7 @@ function(zephyr_linker_sources location)
   set(noinit_path       "${snippet_base}/snippets-noinit.ld")
   set(rwdata_path       "${snippet_base}/snippets-rwdata.ld")
   set(rodata_path       "${snippet_base}/snippets-rodata.ld")
+  set(text_path         "${snippet_base}/snippets-text.ld")
 
   # Clear destination files if this is the first time the function is called.
   get_property(cleared GLOBAL PROPERTY snippet_files_cleared)
@@ -1133,6 +1135,7 @@ function(zephyr_linker_sources location)
     file(WRITE ${noinit_path} "")
     file(WRITE ${rwdata_path} "")
     file(WRITE ${rodata_path} "")
+    file(WRITE ${text_path} "")
     set_property(GLOBAL PROPERTY snippet_files_cleared true)
   endif()
 
@@ -1149,6 +1152,8 @@ function(zephyr_linker_sources location)
     set(snippet_path "${rwdata_path}")
   elseif("${location}" STREQUAL "RODATA")
     set(snippet_path "${rodata_path}")
+  elseif("${location}" STREQUAL "TEXT")
+    set(snippet_path "${text_path}")
   else()
     message(fatal_error "Must choose valid location for linker snippet.")
   endif()
