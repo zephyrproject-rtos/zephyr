@@ -11,5 +11,6 @@
 		compatible = "zephyr,modbus-serial";
 		label = "MODBUS";
 		status = "okay";
+		de-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
 	};
 };

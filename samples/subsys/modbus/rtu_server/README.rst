@@ -19,9 +19,12 @@ Additionally the board should have three LEDs.
 RTU server example is running on an evaluation board. Client is running
 on a PC or laptop.
 In addition to the evaluation board, an USB to RS-485 bus adapter and
-a RS-485 shield are required. Shield converts the UART TX, RX signals to
-RS-485 and does not need a specific overlay, an Arduino header compatible
-shield like `joy-it RS-485 shield for Arduino`_ can be used.
+a RS-485 shield are required. The shield converts UART TX, RX signals to RS-485.
+An Arduino header compatible shield like `joy-it RS-485 shield for Arduino`_
+can be used. This example uses DE signal, which is controlled by pin D9
+on the JOY-IT shield. For other shields, ``de-gpios`` property must be adapted
+or removed in the application overlay file
+:zephyr_file:`samples/subsys/modbus/rtu_server/app.overlay`
 
 The USB to RS-485 adapter connects to the USB port of a computer.
 The two A+, B- lines should be connected to the RS-485 shield.

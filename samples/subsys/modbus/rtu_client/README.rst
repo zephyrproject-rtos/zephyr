@@ -19,12 +19,15 @@ RTU client example is running on an evaluation board and communicates
 with another board that has been prepared according to the description
 `modbus-rtu-server-sample`.
 
-In addition to the evaluation board, an USB to RS-485 bus adapter and
-a RS-485 shield are required. Shield converts the UART TX, RX signals to
-RS-485 and does not need a specific overlay, an Arduino header compatible
-shield like `joy-it RS-485 shield for Arduino`_ can be used.
+In addition to the evaluation board a RS-485 shield may be used.
+The shield converts UART TX, RX signals to RS-485.
+An Arduino header compatible shield like `joy-it RS-485 shield for Arduino`_
+can be used. This example uses DE signal, which is controlled by pin D9
+on the JOY-IT shield. For other shields, ``de-gpios`` property must be adapted
+or removed in the application overlay file
+:zephyr_file:`samples/subsys/modbus/rtu_client/app.overlay`
 
-The A+, B- lines of the RS-485 shield should be connected together.
+The A+, B- lines of the RS-485 shields should be connected together.
 
 Alternatively UART RX,TX signals of two boards can be connected crosswise.
 
