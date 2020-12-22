@@ -26,7 +26,7 @@
 #define NRF_GPIO_PA     NRF_P1
 #define NRF_GPIO_PA_PIN ((CONFIG_BT_CTLR_GPIO_PA_PIN) - 32)
 #else
-#define NRF_GPIO_PA     NRF_GPIO
+#define NRF_GPIO_PA     NRF_P0
 #define NRF_GPIO_PA_PIN CONFIG_BT_CTLR_GPIO_PA_PIN
 #endif
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
@@ -36,7 +36,7 @@
 #define NRF_GPIO_LNA     NRF_P1
 #define NRF_GPIO_LNA_PIN ((CONFIG_BT_CTLR_GPIO_LNA_PIN) - 32)
 #else
-#define NRF_GPIO_LNA     NRF_GPIO
+#define NRF_GPIO_LNA     NRF_P0
 #define NRF_GPIO_LNA_PIN CONFIG_BT_CTLR_GPIO_LNA_PIN
 #endif
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
