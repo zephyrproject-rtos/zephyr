@@ -252,9 +252,12 @@ extern "C" {
  * @param fmt Formatted string to output.
  * @param ap  Variable parameters.
  */
-void log_printk(const char *fmt, va_list ap);
+void z_log_printk(const char *fmt, va_list ap);
+static inline void log_printk(const char *fmt, va_list ap)
+{
+	z_log_printk(fmt, ap);
+}
 
-#ifndef CONFIG_LOG_MINIMAL
 /** @brief Copy transient string to a buffer from internal, logger pool.
  *
  * Function should be used when transient string is intended to be logged.
@@ -272,14 +275,15 @@ void log_printk(const char *fmt, va_list ap);
  *	   a buffer from the pool (see CONFIG_LOG_STRDUP_MAX_STRING). In
  *	   some configurations, the original string pointer is returned.
  */
-char *log_strdup(const char *str);
-#else
-
+char *z_log_strdup(const char *str);
 static inline char *log_strdup(const char *str)
 {
-	return (char *)str;
+	if (IS_ENABLED(CONFIG_LOG_MINIMAL) || IS_ENABLED(CONFIG_LOG2)) {
+		return (char *)str;
+	}
+
+	return z_log_strdup(str);
 }
-#endif /* CONFIG_LOG_MINIMAL */
 
 #ifdef __cplusplus
 }
