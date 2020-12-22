@@ -18,3 +18,7 @@ zephyr_library_sources(
 
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
 zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE tls.c)
+
+zephyr_linker_sources(TEXT SORT_KEY core4 traptable.ld)
+
+zephyr_linker_sources(RODATA SORT_KEY core6 rodata1.ld)

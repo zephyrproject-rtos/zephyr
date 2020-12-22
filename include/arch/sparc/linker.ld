@@ -32,11 +32,11 @@ SECTIONS
 		. = ALIGN(0x1000);
 		_image_text_start = .;
 
-		*(.text.traptable)
-		*(.text)
-		*(.text.*)
-		*(.stub)
-		*(.gnu.linkonce.t.*)
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-text.ld>
+
 	} GROUP_LINK_IN(REGION_TEXT)
 
     _image_text_end = .;
@@ -47,10 +47,6 @@ SECTIONS
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 	{
 		 . = ALIGN(8);
-		 *(.rodata)
-		 *(.rodata.*)
-		 *(.gnu.linkonce.r.*)
-		 *(.rodata1)
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
