@@ -29,11 +29,68 @@ LOG_MODULE_REGISTER(mb_rtu, CONFIG_MODBUS_RTU_LOG_LEVEL);
 
 #define DT_DRV_COMPAT zephyr_modbus_serial
 
-#define MODBUS_DT_GET_DEV(port) {.dev_name = DT_INST_BUS_LABEL(port),},
+#define MB_RTU_DEFINE_GPIO_CFG(n, d)				\
+	static struct mb_rtu_gpio_config d##_cfg_##n = {	\
+		.name = DT_INST_GPIO_LABEL(n, d),		\
+		.pin = DT_INST_GPIO_PIN(n, d),			\
+		.flags = DT_INST_GPIO_FLAGS(n,  d),		\
+	};
+
+#define MB_RTU_DEFINE_GPIO_CFGS(n)				\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, de_gpios),		\
+		    (MB_RTU_DEFINE_GPIO_CFG(n, de_gpios)), ())	\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, re_gpios),		\
+		    (MB_RTU_DEFINE_GPIO_CFG(n, re_gpios)), ())
+
+DT_INST_FOREACH_STATUS_OKAY(MB_RTU_DEFINE_GPIO_CFGS)
+
+#define MB_RTU_ASSIGN_GPIO_CFG(n, d)				\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, d),		\
+		    (&d##_cfg_##n), (NULL))
+
+#define MODBUS_DT_GET_DEV(n) {					\
+		.dev_name = DT_INST_BUS_LABEL(n),		\
+		.de = MB_RTU_ASSIGN_GPIO_CFG(n, de_gpios),	\
+		.re = MB_RTU_ASSIGN_GPIO_CFG(n, re_gpios),	\
+	},
 
 static struct mb_rtu_context mb_ctx_tbl[] = {
 	DT_INST_FOREACH_STATUS_OKAY(MODBUS_DT_GET_DEV)
 };
+
+static void mb_tx_enable(struct mb_rtu_context *ctx)
+{
+	if (ctx->de != NULL) {
+		gpio_pin_set(ctx->de->dev, ctx->de->pin, 1);
+	}
+
+	uart_irq_tx_enable(ctx->dev);
+}
+
+static void mb_tx_disable(struct mb_rtu_context *ctx)
+{
+	uart_irq_tx_disable(ctx->dev);
+	if (ctx->de != NULL) {
+		gpio_pin_set(ctx->de->dev, ctx->de->pin, 0);
+	}
+}
+
+static void mb_rx_enable(struct mb_rtu_context *ctx)
+{
+	if (ctx->re != NULL) {
+		gpio_pin_set(ctx->re->dev, ctx->re->pin, 1);
+	}
+
+	uart_irq_rx_enable(ctx->dev);
+}
+
+static void mb_rx_disable(struct mb_rtu_context *ctx)
+{
+	uart_irq_rx_disable(ctx->dev);
+	if (ctx->re != NULL) {
+		gpio_pin_set(ctx->re->dev, ctx->re->pin, 0);
+	}
+}
 
 #ifdef CONFIG_MODBUS_RTU_ASCII_MODE
 /* The function calculates an 8-bit Longitudinal Redundancy Check. */
@@ -192,8 +249,8 @@ static void mb_tx_ascii_frame(struct mb_rtu_context *ctx)
 	ctx->uart_buf_ptr = &ctx->uart_buf[0];
 
 	LOG_DBG("Start frame transmission");
-	uart_irq_rx_disable(ctx->dev);
-	uart_irq_tx_enable(ctx->dev);
+	mb_rx_disable(ctx);
+	mb_tx_enable(ctx);
 }
 #else
 static int mb_rx_ascii_frame(struct mb_rtu_context *ctx)
@@ -300,8 +357,8 @@ static void mb_tx_rtu_frame(struct mb_rtu_context *ctx)
 
 	LOG_HEXDUMP_DBG(ctx->uart_buf, ctx->uart_buf_ctr, "uart_buf");
 	LOG_DBG("Start frame transmission");
-	uart_irq_rx_disable(ctx->dev);
-	uart_irq_tx_enable(ctx->dev);
+	mb_rx_disable(ctx);
+	mb_tx_enable(ctx);
 }
 
 void mb_tx_frame(struct mb_rtu_context *ctx)
@@ -372,8 +429,8 @@ static void mb_cb_handler_tx(struct mb_rtu_context *ctx)
 	} else {
 		/* Disable transmission */
 		ctx->uart_buf_ptr = &ctx->uart_buf[0];
-		uart_irq_tx_disable(ctx->dev);
-		uart_irq_rx_enable(ctx->dev);
+		mb_tx_disable(ctx);
+		mb_rx_enable(ctx);
 	}
 }
 
@@ -408,7 +465,7 @@ static void mb_rx_handler(struct k_work *item)
 		return;
 	}
 
-	uart_irq_rx_disable(ctx->dev);
+	mb_rx_disable(ctx);
 
 	if (IS_ENABLED(CONFIG_MODBUS_RTU_ASCII_MODE) &&
 	    (ctx->ascii_mode == true)) {
@@ -422,7 +479,7 @@ static void mb_rx_handler(struct k_work *item)
 	} else if (IS_ENABLED(CONFIG_MODBUS_RTU_SERVER)) {
 		if (mbs_rx_handler(ctx) == false) {
 			/* Server does not send response, re-enable RX */
-			uart_irq_rx_enable(ctx->dev);
+			mb_rx_enable(ctx);
 		}
 	}
 }
@@ -487,7 +544,7 @@ static int mb_configure_uart(struct mb_rtu_context *ctx,
 	}
 
 	uart_irq_callback_user_data_set(ctx->dev, mb_uart_cb_handler, ctx);
-	uart_irq_rx_enable(ctx->dev);
+	mb_rx_enable(ctx);
 
 	if (baudrate <= 38400) {
 		ctx->rtu_timeout = (numof_bits * if_delay_max) / baudrate;
@@ -517,6 +574,36 @@ struct mb_rtu_context *mb_get_context(const uint8_t iface)
 	}
 
 	return ctx;
+}
+
+static int mb_configure_gpio(struct mb_rtu_context *ctx)
+{
+	if (ctx->de != NULL) {
+		ctx->de->dev = device_get_binding(ctx->de->name);
+		if (ctx->de->dev == NULL) {
+			return -ENODEV;
+		}
+
+		if (gpio_pin_configure(ctx->de->dev, ctx->de->pin,
+				       GPIO_OUTPUT_INACTIVE | ctx->de->flags)) {
+			return -EIO;
+		}
+	}
+
+
+	if (ctx->re != NULL) {
+		ctx->re->dev = device_get_binding(ctx->re->name);
+		if (ctx->re->dev == NULL) {
+			return -ENODEV;
+		}
+
+		if (gpio_pin_configure(ctx->re->dev, ctx->re->pin,
+				       GPIO_OUTPUT_INACTIVE | ctx->re->flags)) {
+			return -EIO;
+		}
+	}
+
+	return 0;
 }
 
 static struct mb_rtu_context *mb_cfg_iface(const uint8_t iface,
@@ -563,6 +650,10 @@ static struct mb_rtu_context *mb_cfg_iface(const uint8_t iface,
 
 	if (IS_ENABLED(CONFIG_MODBUS_RTU_FC08_DIAGNOSTIC)) {
 		mbs_reset_statistics(ctx);
+	}
+
+	if (mb_configure_gpio(ctx) != 0) {
+		return NULL;
 	}
 
 	if (mb_configure_uart(ctx, baud, parity) != 0) {
@@ -638,8 +729,8 @@ int mb_rtu_disable_iface(const uint8_t iface)
 
 	ctx = &mb_ctx_tbl[iface];
 
-	uart_irq_tx_disable(ctx->dev);
-	uart_irq_rx_disable(ctx->dev);
+	mb_tx_disable(ctx);
+	mb_rx_disable(ctx);
 	k_timer_stop(&ctx->rtu_timer);
 
 	ctx->rxwait_to = 0;

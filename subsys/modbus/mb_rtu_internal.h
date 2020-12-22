@@ -23,6 +23,7 @@
 #define ZEPHYR_INCLUDE_MODBUS_RTU_INTERNAL_H_
 
 #include <zephyr.h>
+#include <drivers/gpio.h>
 #include <modbus/modbus_rtu.h>
 
 #ifdef CONFIG_MODBUS_RTU_FP_EXTENSIONS
@@ -78,6 +79,13 @@ struct mb_rtu_frame {
 	uint16_t crc;
 };
 
+struct mb_rtu_gpio_config {
+	const char *name;
+	const struct device *dev;
+	gpio_pin_t pin;
+	gpio_dt_flags_t flags;
+};
+
 #define MB_RTU_STATE_CONFIGURED		0
 
 struct mb_rtu_context {
@@ -99,6 +107,10 @@ struct mb_rtu_context {
 	atomic_t state;
 	/* Pointer to current position in buffer */
 	uint8_t *uart_buf_ptr;
+	/* Pointer to driver enable (DE) pin config */
+	struct mb_rtu_gpio_config *de;
+	/* Pointer to receiver enable (nRE) pin config */
+	struct mb_rtu_gpio_config *re;
 
 	/* Client's mutually exclusive access */
 	struct k_mutex iface_lock;
