@@ -154,7 +154,8 @@ static inline void get_evt_hdr(void)
 
 	if (!rx.remaining) {
 		if (rx.evt.evt == BT_HCI_EVT_LE_META_EVENT &&
-		    rx.hdr[sizeof(*hdr)] == BT_HCI_EVT_LE_ADVERTISING_REPORT) {
+		    (rx.hdr[sizeof(*hdr)] == BT_HCI_EVT_LE_ADVERTISING_REPORT ||
+		     rx.hdr[sizeof(*hdr)] == BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT)) {
 			BT_DBG("Marking adv report as discardable");
 			rx.discardable = true;
 		}

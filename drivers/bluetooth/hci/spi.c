@@ -307,6 +307,8 @@ static int bt_spi_send_aci_config_data_controller_mode(void)
 
 static void bt_spi_rx_thread(void)
 {
+	bool discardable = false;
+	k_timeout_t timeout = K_FOREVER;
 	struct net_buf *buf;
 	uint8_t header_master[5] = { SPI_READ, 0x00, 0x00, 0x00, 0x00 };
 	uint8_t header_slave[5];
@@ -367,9 +369,19 @@ static void bt_spi_rx_thread(void)
 					bt_spi_handle_vendor_evt(rxmsg);
 					continue;
 				default:
+					if (rxmsg[1] == BT_HCI_EVT_LE_META_EVENT &&
+					    (rxmsg[3] == BT_HCI_EVT_LE_ADVERTISING_REPORT ||
+					     rxmsg[3] == BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT)) {
+						discardable = true;
+						timeout = K_NO_WAIT;
+					}
+
 					buf = bt_buf_get_evt(rxmsg[EVT_HEADER_EVENT],
-							     false, K_FOREVER);
-					break;
+							     discardable, timeout);
+					if (!buf) {
+						BT_DBG("Discard adv report due to insufficient buf");
+						continue;
+					}
 				}
 
 				net_buf_add_mem(buf, &rxmsg[1],

@@ -152,10 +152,13 @@ void TM_EvtReceivedCb(TL_EvtPacket_t *hcievt)
 static void bt_ipm_rx_thread(void)
 {
 	while (true) {
+		bool discardable = false;
+		k_timeout_t timeout = K_FOREVER;
 		static TL_EvtPacket_t *hcievt;
 		struct net_buf *buf = NULL;
 		struct bt_hci_acl_hdr acl_hdr;
 		TL_AclDataSerial_t *acl;
+		struct bt_hci_evt_le_meta_event *mev;
 
 		hcievt = k_fifo_get(&ipm_rx_events_fifo, K_FOREVER);
 
@@ -173,10 +176,23 @@ static void bt_ipm_rx_thread(void)
 				TL_MM_EvtDone(hcievt);
 				goto end_loop;
 			default:
+				mev = (void *)&hcievt->evtserial.evt.payload;
+				if (hcievt->evtserial.evt.evtcode == BT_HCI_EVT_LE_META_EVENT &&
+				    (mev->subevent == BT_HCI_EVT_LE_ADVERTISING_REPORT ||
+				     mev->subevent == BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT)) {
+					discardable = true;
+					timeout = K_NO_WAIT;
+				}
+
 				buf = bt_buf_get_evt(
 					hcievt->evtserial.evt.evtcode,
-					false, K_FOREVER);
+					discardable, timeout);
+				if (!buf) {
+					BT_DBG("Discard adv report due to insufficient buf");
+					goto end_loop;
+				}
 			}
+
 			tryfix_event(&hcievt->evtserial.evt);
 			net_buf_add_mem(buf, &hcievt->evtserial.evt,
 					hcievt->evtserial.evt.plen + 2);
