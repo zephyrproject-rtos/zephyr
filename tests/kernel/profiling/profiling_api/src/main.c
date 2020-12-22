@@ -32,7 +32,7 @@ __weak void pm_power_state_set(enum power_states state)
 	__ASSERT_NO_MSG(false);
 }
 
-__weak void _pm_power_state_exit_post_ops(enum power_states state)
+__weak void pm_power_state_exit_post_ops(enum power_states state)
 {
 	/* Never called. */
 	__ASSERT_NO_MSG(false);

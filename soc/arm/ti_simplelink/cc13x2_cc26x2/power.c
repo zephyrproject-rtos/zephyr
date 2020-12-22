@@ -127,7 +127,7 @@ void pm_power_state_set(enum power_states state)
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-void _pm_power_state_exit_post_ops(enum power_states state)
+void pm_power_state_exit_post_ops(enum power_states state)
 {
 	/*
 	 * System is now in active mode. Reenable interrupts which were disabled
