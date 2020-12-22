@@ -73,6 +73,26 @@
 	_pkt;								\
 })
 
+#define tcp_rx_pkt_alloc(_conn, _len)					\
+({									\
+	struct net_pkt *_pkt;						\
+									\
+	if ((_len) > 0) {						\
+		_pkt = net_pkt_rx_alloc_with_buffer(			\
+			(_conn)->iface,					\
+			(_len),						\
+			net_context_get_family((_conn)->context),	\
+			IPPROTO_TCP,					\
+			TCP_PKT_ALLOC_TIMEOUT);				\
+	} else {							\
+		_pkt = net_pkt_rx_alloc(TCP_PKT_ALLOC_TIMEOUT);		\
+	}								\
+									\
+	tp_pkt_alloc(_pkt, tp_basename(__FILE__), __LINE__);		\
+									\
+	_pkt;								\
+})
+
 
 #if IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)
 #define conn_seq(_conn, _req) \
@@ -187,6 +207,7 @@ struct tcp { /* TCP connection */
 	sys_snode_t next;
 	struct net_context *context;
 	struct net_pkt *send_data;
+	struct net_pkt *queue_recv_data;
 	struct net_if *iface;
 	void *recv_user_data;
 	sys_slist_t send_queue;
@@ -199,6 +220,7 @@ struct tcp { /* TCP connection */
 	struct k_fifo recv_data;  /* temp queue before passing data to app */
 	struct tcp_options recv_options;
 	struct k_delayed_work send_timer;
+	struct k_delayed_work recv_queue_timer;
 	struct k_delayed_work send_data_timer;
 	struct k_delayed_work timewait_timer;
 	struct k_delayed_work fin_timer;

@@ -414,6 +414,23 @@ config NET_TCP_MAX_SEND_WINDOW_SIZE
 	  size. The default value 0 lets the TCP stack select the value
 	  according to amount of network buffers configured in the system.
 
+config NET_TCP_RECV_QUEUE_TIMEOUT
+	int "How long to queue received data (in ms)"
+	depends on NET_TCP2
+	default 100
+	range 0 10000
+	help
+	  If we receive out-of-order TCP data, we queue it. This value tells
+	  how long the data is kept before it is discarded if we have not been
+	  able to pass the data to the application. If set to 0, then receive
+	  queing is not enabled. The value is in milliseconds.
+	  Note that we only queue data sequentially in current version i.e.,
+	  there should be no holes in the queue. For example, if we receive
+	  SEQs 5,4,3,6 and are waiting SEQ 2, the data in segments 3,4,5,6 is
+	  queued (in this order), and then given to application when we receive
+	  SEQ 2. But if we receive SEQs 5,4,3,7 then the SEQ 7 is discarded
+	  because the list would not be sequential as number 6 is be missing.
+
 choice
 	prompt "Select TCP stack"
 	depends on NET_TCP
