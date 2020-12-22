@@ -208,8 +208,10 @@
 /drivers/i2s/i2s_ll_stm32*                @avisconti
 /drivers/i2c/i2c_common.c                 @sjg20
 /drivers/i2c/i2c_emul.c                   @sjg20
+/drivers/i2c/i2c_ite_it8xxx2.c            @GTLin08
 /drivers/i2c/i2c_shell.c                  @nashif
 /drivers/i2c/Kconfig.i2c_emul             @sjg20
+/drivers/i2c/Kconfig.it8xxx2              @GTLin08
 /drivers/i2c/slave/*eeprom*               @henrikbrixandersen
 /drivers/i2s/*litex*                      @mateusz-holenko @kgugala @pgielda
 /drivers/ieee802154/                      @jukkar @tbursztyka

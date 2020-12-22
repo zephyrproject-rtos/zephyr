@@ -7,6 +7,7 @@
 
 #include <mem.h>
 #include <dt-bindings/irq.h>
+#include <dt-bindings/i2c/i2c.h>
 
 / {
 	#address-cells = <1>;
@@ -154,6 +155,72 @@
 			interrupts = <37 IRQ_TYPE_EDGE_RISING>;
 			interrupt-parent = <&intc>;
 			status = "okay";
+		};
+		i2c0: i2c@f01c40 {
+			compatible = "ite,it8xxx2-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f01c40 0x0040>;
+			interrupts = <9 IRQ_TYPE_EDGE_FALLING>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			label = "I2C_0";
+			port-num = <0>;
+		};
+		i2c1: i2c@f01c80 {
+			compatible = "ite,it8xxx2-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f01c80 0x0040>;
+			interrupts = <10 IRQ_TYPE_EDGE_FALLING>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			label = "I2C_1";
+			port-num = <1>;
+		};
+		i2c2: i2c@f01cc0 {
+			compatible = "ite,it8xxx2-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f01cc0 0x0040>;
+			interrupts = <16 IRQ_TYPE_EDGE_FALLING>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			label = "I2C_2";
+			port-num = <2>;
+		};
+		i2c3: i2c@f03680 {
+			compatible = "ite,it8xxx2-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f03680 0x0080>;
+			interrupts = <4 IRQ_TYPE_EDGE_FALLING>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			label = "I2C_3";
+			port-num = <3>;
+		};
+		i2c4: i2c@f03500 {
+			compatible = "ite,it8xxx2-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f03500 0x0080>;
+			interrupts = <152 IRQ_TYPE_EDGE_FALLING>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			label = "I2C_4";
+			port-num = <4>;
+		};
+		i2c5: i2c@f03580 {
+			compatible = "ite,it8xxx2-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f03580 0x0080>;
+			interrupts = <153 IRQ_TYPE_EDGE_FALLING>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			label = "I2C_5";
+			port-num = <5>;
 		};
 	};
 };
