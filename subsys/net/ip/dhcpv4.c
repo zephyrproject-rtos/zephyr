@@ -445,29 +445,29 @@ static void dhcpv4_enter_selecting(struct net_if *iface)
 		net_dhcpv4_state_name(iface->config.dhcpv4.state));
 }
 
-static bool dhcpv4_check_timeout(int64_t start, uint32_t time, int64_t timeout)
+static bool dhcpv4_check_timeout(int64_t start, uint32_t time, int64_t now)
 {
-	start += MSEC_PER_SEC * time;
+	int64_t deadline = start + MSEC_PER_SEC * time;
 
-	if (start > timeout) {
+	if (deadline > now) {
 		return false;
 	}
 
 	return true;
 }
 
-static bool dhcpv4_request_timedout(struct net_if *iface, int64_t timeout)
+static bool dhcpv4_request_timedout(struct net_if *iface, int64_t now)
 {
 	return dhcpv4_check_timeout(iface->config.dhcpv4.timer_start,
 				    iface->config.dhcpv4.request_time,
-				    timeout);
+				    now);
 }
 
-static bool dhcpv4_renewal_timedout(struct net_if *iface, int64_t timeout)
+static bool dhcpv4_renewal_timedout(struct net_if *iface, int64_t now)
 {
 	if (!dhcpv4_check_timeout(iface->config.dhcpv4.timer_start,
 				  iface->config.dhcpv4.renewal_time,
-				  timeout)) {
+				  now)) {
 		return false;
 	}
 
@@ -479,11 +479,11 @@ static bool dhcpv4_renewal_timedout(struct net_if *iface, int64_t timeout)
 	return true;
 }
 
-static bool dhcpv4_rebinding_timedout(struct net_if *iface, int64_t timeout)
+static bool dhcpv4_rebinding_timedout(struct net_if *iface, int64_t now)
 {
 	if (!dhcpv4_check_timeout(iface->config.dhcpv4.timer_start,
 				  iface->config.dhcpv4.rebinding_time,
-				  timeout)) {
+				  now)) {
 		return false;
 	}
 
@@ -539,12 +539,12 @@ static void dhcpv4_enter_bound(struct net_if *iface)
 					sizeof(iface->config.dhcpv4));
 }
 
-static uint32_t dhcph4_manage_timers(struct net_if *iface, int64_t timeout)
+static uint32_t dhcpv4_manage_timers(struct net_if *iface, int64_t now)
 {
 	NET_DBG("iface %p state=%s", iface,
 		net_dhcpv4_state_name(iface->config.dhcpv4.state));
 
-	if (!dhcpv4_request_timedout(iface, timeout)) {
+	if (!dhcpv4_request_timedout(iface, now)) {
 		return iface->config.dhcpv4.request_time;
 	}
 
@@ -570,8 +570,8 @@ static uint32_t dhcph4_manage_timers(struct net_if *iface, int64_t timeout)
 
 		return dhcpv4_send_request(iface);
 	case NET_DHCPV4_BOUND:
-		if (dhcpv4_renewal_timedout(iface, timeout) ||
-		    dhcpv4_rebinding_timedout(iface, timeout)) {
+		if (dhcpv4_renewal_timedout(iface, now) ||
+		    dhcpv4_rebinding_timedout(iface, now)) {
 			return dhcpv4_send_request(iface);
 		}
 
@@ -604,7 +604,7 @@ static uint32_t dhcph4_manage_timers(struct net_if *iface, int64_t timeout)
 static void dhcpv4_timeout(struct k_work *work)
 {
 	uint32_t timeout_update = UINT32_MAX;
-	int64_t timeout = k_uptime_get();
+	int64_t now = k_uptime_get();
 	struct net_if_dhcpv4 *current, *next;
 
 	ARG_UNUSED(work);
@@ -615,7 +615,7 @@ static void dhcpv4_timeout(struct k_work *work)
 			struct net_if, config);
 		uint32_t next_timeout;
 
-		next_timeout = dhcph4_manage_timers(iface, timeout);
+		next_timeout = dhcpv4_manage_timers(iface, now);
 		if (next_timeout < timeout_update) {
 			timeout_update = next_timeout;
 		}
