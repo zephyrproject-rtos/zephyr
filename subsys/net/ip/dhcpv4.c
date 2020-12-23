@@ -440,9 +440,6 @@ static void dhcpv4_enter_selecting(struct net_if *iface)
 static bool dhcpv4_check_timeout(int64_t start, uint32_t time, int64_t timeout)
 {
 	start += MSEC_PER_SEC * time;
-	if (start < 0) {
-		start = -start;
-	}
 
 	if (start > timeout) {
 		return false;
