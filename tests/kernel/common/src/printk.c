@@ -100,6 +100,10 @@ void test_printk(void)
 {
 	int count;
 
+	if (IS_ENABLED(CONFIG_LOG_PRINTK)) {
+		ztest_test_skip();
+	}
+
 	_old_char_out = __printk_get_hook();
 	__printk_hook_install(ram_console_out);
 
