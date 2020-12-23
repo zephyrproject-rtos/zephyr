@@ -276,6 +276,28 @@ fail:
 	return NULL;
 }
 
+static void dhcpv4_immediate_timeout(struct net_if_dhcpv4 *dhcpv4)
+{
+	NET_DBG("force timeout dhcpv4=%p", dhcpv4);
+	dhcpv4->timer_start = k_uptime_get() - 1;
+	dhcpv4->request_time = 0U;
+	k_delayed_work_submit(&timeout_work, K_NO_WAIT);
+}
+
+static void dhcpv4_set_timeout(struct net_if_dhcpv4 *dhcpv4,
+			       uint32_t timeout)
+{
+	NET_DBG("sched timeout dhcvp4=%p timeout=%us", dhcpv4, timeout);
+	dhcpv4->timer_start = k_uptime_get();
+	dhcpv4->request_time = timeout;
+
+	/* NB: This interface may not be providing the next timeout
+	 * event; also this timeout may replace the current timeout
+	 * event.  Delegate scheduling to the timeout manager.
+	 */
+	k_delayed_work_submit(&timeout_work, K_NO_WAIT);
+}
+
 static uint32_t dhcpv4_update_message_timeout(struct net_if_dhcpv4 *dhcpv4)
 {
 	uint32_t timeout;
@@ -291,8 +313,7 @@ static uint32_t dhcpv4_update_message_timeout(struct net_if_dhcpv4 *dhcpv4)
 	timeout += (sys_rand32_get() % 3U) - 1;
 
 	dhcpv4->attempts++;
-	dhcpv4->timer_start = k_uptime_get();
-	dhcpv4->request_time = timeout;
+	dhcpv4_set_timeout(dhcpv4, timeout);
 
 	return timeout;
 }
@@ -419,11 +440,6 @@ fail:
 			DHCPV4_INITIAL_DELAY_MIN;
 }
 
-static void dhcpv4_update_timeout_work(uint32_t timeout)
-{
-	k_delayed_work_submit(&timeout_work, K_SECONDS(timeout));
-}
-
 static void dhcpv4_enter_selecting(struct net_if *iface)
 {
 	struct in_addr any = INADDR_ANY_INIT;
@@ -505,7 +521,7 @@ static void dhcpv4_enter_requesting(struct net_if *iface)
 	NET_DBG("enter state=%s",
 		net_dhcpv4_state_name(iface->config.dhcpv4.state));
 
-	dhcpv4_update_timeout_work(dhcpv4_send_request(iface));
+	dhcpv4_send_request(iface);
 }
 
 static void dhcpv4_enter_bound(struct net_if *iface)
@@ -532,10 +548,8 @@ static void dhcpv4_enter_bound(struct net_if *iface)
 		net_dhcpv4_state_name(iface->config.dhcpv4.state),
 		renewal_time, rebinding_time);
 
-	iface->config.dhcpv4.timer_start = k_uptime_get();
-	iface->config.dhcpv4.request_time = MIN(renewal_time, rebinding_time);
-
-	dhcpv4_update_timeout_work(iface->config.dhcpv4.request_time);
+	dhcpv4_set_timeout(&iface->config.dhcpv4,
+			   MIN(renewal_time, rebinding_time));
 
 	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_DHCP_BOUND, iface,
 					&iface->config.dhcpv4,
@@ -546,7 +560,8 @@ static uint32_t dhcpv4_manage_timers(struct net_if *iface, int64_t now)
 {
 	uint32_t timeleft = dhcpv4_request_timeleft(iface, now);
 
-	NET_DBG("iface %p state=%s timeleft=%u", iface,
+	NET_DBG("iface %p dhcpv4=%p state=%s timeleft=%u", iface,
+		&iface->config.dhcpv4,
 		net_dhcpv4_state_name(iface->config.dhcpv4.state), timeleft);
 
 	if (timeleft != 0U) {
@@ -1083,11 +1098,7 @@ static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
 		 * enough. Instead we can force a request timeout
 		 * which will then call dhcpv4_send_request() automatically.
 		 */
-		iface->config.dhcpv4.timer_start = k_uptime_get() - 1;
-		iface->config.dhcpv4.request_time = 0U;
-
-		k_delayed_work_cancel(&timeout_work);
-		k_delayed_work_submit(&timeout_work, K_NO_WAIT);
+		dhcpv4_immediate_timeout(&iface->config.dhcpv4);
 	}
 }
 
@@ -1151,10 +1162,7 @@ void net_dhcpv4_start(struct net_if *iface)
 		sys_slist_append(&dhcpv4_ifaces,
 				 &iface->config.dhcpv4.node);
 
-		iface->config.dhcpv4.timer_start = k_uptime_get();
-		iface->config.dhcpv4.request_time = timeout;
-
-		dhcpv4_update_timeout_work(timeout);
+		dhcpv4_set_timeout(&iface->config.dhcpv4, timeout);
 
 		break;
 	case NET_DHCPV4_INIT:
