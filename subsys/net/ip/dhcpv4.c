@@ -449,54 +449,58 @@ static void dhcpv4_enter_selecting(struct net_if *iface)
 		net_dhcpv4_state_name(iface->config.dhcpv4.state));
 }
 
-static bool dhcpv4_check_timeout(int64_t start, uint32_t time, int64_t now)
+static uint32_t dhcpv4_get_timeleft(int64_t start, uint32_t time, int64_t now)
 {
 	int64_t deadline = start + MSEC_PER_SEC * time;
+	uint32_t ret = 0U;
 
+	/* If we haven't reached the deadline, calculate the
+	 * rounded-up whole seconds until the deadline.
+	 */
 	if (deadline > now) {
-		return false;
+		ret = (uint32_t)ceiling_fraction(deadline - now, MSEC_PER_SEC);
 	}
 
-	return true;
+	return ret;
 }
 
-static bool dhcpv4_request_timedout(struct net_if *iface, int64_t now)
+static uint32_t dhcpv4_request_timeleft(struct net_if *iface, int64_t now)
 {
-	return dhcpv4_check_timeout(iface->config.dhcpv4.timer_start,
-				    iface->config.dhcpv4.request_time,
-				    now);
+	uint32_t request_time = iface->config.dhcpv4.request_time;
+
+	return dhcpv4_get_timeleft(iface->config.dhcpv4.timer_start,
+				   request_time, now);
 }
 
-static bool dhcpv4_renewal_timedout(struct net_if *iface, int64_t now)
+static uint32_t dhcpv4_renewal_timeleft(struct net_if *iface, int64_t now)
 {
-	if (!dhcpv4_check_timeout(iface->config.dhcpv4.timer_start,
-				  iface->config.dhcpv4.renewal_time,
-				  now)) {
-		return false;
+	uint32_t rem = dhcpv4_get_timeleft(iface->config.dhcpv4.timer_start,
+					   iface->config.dhcpv4.renewal_time,
+					   now);
+
+	if (rem == 0U) {
+		iface->config.dhcpv4.state = NET_DHCPV4_RENEWING;
+		NET_DBG("enter state=%s",
+			net_dhcpv4_state_name(iface->config.dhcpv4.state));
+		iface->config.dhcpv4.attempts = 0U;
 	}
 
-	iface->config.dhcpv4.state = NET_DHCPV4_RENEWING;
-	NET_DBG("enter state=%s",
-		net_dhcpv4_state_name(iface->config.dhcpv4.state));
-	iface->config.dhcpv4.attempts = 0U;
-
-	return true;
+	return rem;
 }
 
-static bool dhcpv4_rebinding_timedout(struct net_if *iface, int64_t now)
+static uint32_t dhcpv4_rebinding_timeleft(struct net_if *iface, int64_t now)
 {
-	if (!dhcpv4_check_timeout(iface->config.dhcpv4.timer_start,
-				  iface->config.dhcpv4.rebinding_time,
-				  now)) {
-		return false;
+	uint32_t rem = dhcpv4_get_timeleft(iface->config.dhcpv4.timer_start,
+					   iface->config.dhcpv4.rebinding_time,
+					   now);
+	if (rem == 0U) {
+		iface->config.dhcpv4.state = NET_DHCPV4_REBINDING;
+		NET_DBG("enter state=%s",
+			net_dhcpv4_state_name(iface->config.dhcpv4.state));
+		iface->config.dhcpv4.attempts = 0U;
 	}
 
-	iface->config.dhcpv4.state = NET_DHCPV4_REBINDING;
-	NET_DBG("enter state=%s",
-		net_dhcpv4_state_name(iface->config.dhcpv4.state));
-	iface->config.dhcpv4.attempts = 0U;
-
-	return true;
+	return rem;
 }
 
 static void dhcpv4_enter_requesting(struct net_if *iface)
@@ -545,11 +549,13 @@ static void dhcpv4_enter_bound(struct net_if *iface)
 
 static uint32_t dhcpv4_manage_timers(struct net_if *iface, int64_t now)
 {
-	NET_DBG("iface %p state=%s", iface,
-		net_dhcpv4_state_name(iface->config.dhcpv4.state));
+	uint32_t timeleft = dhcpv4_request_timeleft(iface, now);
 
-	if (!dhcpv4_request_timedout(iface, now)) {
-		return iface->config.dhcpv4.request_time;
+	NET_DBG("iface %p state=%s timeleft=%u", iface,
+		net_dhcpv4_state_name(iface->config.dhcpv4.state), timeleft);
+
+	if (timeleft != 0U) {
+		return timeleft;
 	}
 
 	switch (iface->config.dhcpv4.state) {
@@ -574,13 +580,16 @@ static uint32_t dhcpv4_manage_timers(struct net_if *iface, int64_t now)
 
 		return dhcpv4_send_request(iface);
 	case NET_DHCPV4_BOUND:
-		if (dhcpv4_renewal_timedout(iface, now) ||
-		    dhcpv4_rebinding_timedout(iface, now)) {
+		timeleft = dhcpv4_renewal_timeleft(iface, now);
+		if (timeleft != 0U) {
+			timeleft = MIN(timeleft,
+				       dhcpv4_rebinding_timeleft(iface, now));
+		}
+		if (timeleft == 0U) {
 			return dhcpv4_send_request(iface);
 		}
 
-		return MIN(iface->config.dhcpv4.renewal_time,
-			   iface->config.dhcpv4.rebinding_time);
+		return timeleft;
 	case NET_DHCPV4_RENEWING:
 	case NET_DHCPV4_REBINDING:
 		if (iface->config.dhcpv4.attempts >=
