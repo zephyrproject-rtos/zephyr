@@ -305,7 +305,7 @@ static uint32_t dhcpv4_send_request(struct net_if *iface)
 	const struct in_addr *src_addr = NULL;
 	bool with_server_id = false;
 	bool with_requested_ip = false;
-	struct net_pkt *pkt;
+	struct net_pkt *pkt = NULL;
 	uint32_t timeout;
 
 	iface->config.dhcpv4.xid++;
@@ -318,6 +318,7 @@ static uint32_t dhcpv4_send_request(struct net_if *iface)
 		/* Not possible */
 		NET_ASSERT(0, "Invalid state %s",
 			   net_dhcpv4_state_name(iface->config.dhcpv4.state));
+		goto fail;
 		break;
 	case NET_DHCPV4_REQUESTING:
 		with_server_id = true;
