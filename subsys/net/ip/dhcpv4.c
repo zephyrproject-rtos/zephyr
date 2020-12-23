@@ -297,7 +297,11 @@ static uint32_t dhcpv4_update_message_timeout(struct net_if_dhcpv4 *dhcpv4)
 	return timeout;
 }
 
-/* Prepare DHCPv4 Message request and send it to peer */
+/* Prepare DHCPv4 Message request and send it to peer.
+ *
+ * Returns the number of seconds until the next time-triggered event,
+ * or UINT32_MAX if the client is in an invalid state.
+ */
 static uint32_t dhcpv4_send_request(struct net_if *iface)
 {
 	const struct in_addr *server_addr = net_ipv4_broadcast_address();
@@ -306,7 +310,7 @@ static uint32_t dhcpv4_send_request(struct net_if *iface)
 	bool with_server_id = false;
 	bool with_requested_ip = false;
 	struct net_pkt *pkt = NULL;
-	uint32_t timeout;
+	uint32_t timeout = UINT32_MAX;
 
 	iface->config.dhcpv4.xid++;
 
@@ -346,6 +350,8 @@ static uint32_t dhcpv4_send_request(struct net_if *iface)
 		break;
 	}
 
+	timeout = dhcpv4_update_message_timeout(&iface->config.dhcpv4);
+
 	pkt = dhcpv4_create_message(iface, DHCPV4_MSG_TYPE_REQUEST,
 				    ciaddr, src_addr, server_addr,
 				    with_server_id, with_requested_ip);
@@ -356,8 +362,6 @@ static uint32_t dhcpv4_send_request(struct net_if *iface)
 	if (net_send_data(pkt) < 0) {
 		goto fail;
 	}
-
-	timeout = dhcpv4_update_message_timeout(&iface->config.dhcpv4);
 
 	NET_DBG("send request dst=%s xid=0x%x ciaddr=%s%s%s timeout=%us",
 		log_strdup(net_sprint_ipv4_addr(server_addr)),
@@ -375,7 +379,7 @@ fail:
 		net_pkt_unref(pkt);
 	}
 
-	return UINT32_MAX;
+	return timeout;
 }
 
 /* Prepare DHCPv4 Discover message and broadcast it */
