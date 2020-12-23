@@ -42,6 +42,8 @@
 static uint8_t lll_adv_connect_rsp_pdu[PDU_AC_LL_HEADER_SIZE +
 				       offsetof(struct pdu_adv_com_ext_adv,
 						ext_hdr_adv_data) +
+				       offsetof(struct pdu_adv_ext_hdr,
+						data) +
 				       ADVA_SIZE + TARGETA_SIZE];
 
 static int init_reset(void);
