@@ -9,6 +9,7 @@
 #include <sys/ring_buffer.h>
 #include <string.h>
 
+/* LCOV_EXCL_START */
 /* The weak function used to allow overwriting it in the test and trigger
  * rewinding earlier.
  */
@@ -16,6 +17,7 @@ uint32_t __weak ring_buf_get_rewind_threshold(void)
 {
 	return RING_BUFFER_MAX_SIZE;
 }
+/* LCOV_EXCL_STOP */
 
 /**
  * Internal data structure for a buffer header.
