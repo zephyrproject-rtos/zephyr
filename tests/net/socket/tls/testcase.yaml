@@ -1,0 +1,8 @@
+common:
+  tags: net socket tls
+  filter: TOOLCHAIN_HAS_NEWLIB == 1
+  # these platforms exhibited out of memory conditions
+  platform_exclude: qemu_cortex_r5 litex_vexriscv qemu_leon3
+tests:
+  net.socket.tls:
+    min_ram: 65536
