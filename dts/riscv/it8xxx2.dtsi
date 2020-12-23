@@ -156,6 +156,15 @@
 			interrupt-parent = <&intc>;
 			status = "okay";
 		};
+		adc0: adc@F01900 {
+			compatible = "ite,it8xxx2-adc";
+			reg = <0xF01900 0x45>;
+			interrupts = <8 IRQ_TYPE_NONE>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			label = "ADC_0";
+			#io-channel-cells = <1>;
+		};
 		i2c0: i2c@f01c40 {
 			compatible = "ite,it8xxx2-i2c";
 			#address-cells = <1>;

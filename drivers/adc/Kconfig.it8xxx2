@@ -1,0 +1,10 @@
+# ADC configuration options
+
+# Copyright (c) 2020 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_ITE_IT8XXX2
+	bool "ITE IT8XXX2 ADC driver"
+	help
+	  Enable ADC support on it8xxx2_evb.
+	  Support 8 channels: ch0~ch7.
