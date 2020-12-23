@@ -80,6 +80,19 @@ void npcx_pinctrl_mux_configure(const struct npcx_alt *alts_list,
  */
 void npcx_pinctrl_i2c_port_sel(int controller, int port);
 
+/**
+ * @brief Force the internal SPI flash write-protect pin (WP) to low level to
+ * protect the flash Status registers.
+ */
+int npcx_pinctrl_flash_write_protect_set(void);
+
+/**
+ * @brief Get write protection status
+ *
+ * @return 1 if write protection is set, 0 otherwise.
+ */
+bool npcx_pinctrl_flash_write_protect_is_set(void);
+
 #ifdef __cplusplus
 }
 #endif

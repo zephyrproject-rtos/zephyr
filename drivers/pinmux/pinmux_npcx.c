@@ -100,6 +100,25 @@ void npcx_pinctrl_i2c_port_sel(int controller, int port)
 	}
 }
 
+int npcx_pinctrl_flash_write_protect_set(void)
+{
+	struct scfg_reg *inst_scfg = HAL_SFCG_INST();
+
+	inst_scfg->DEV_CTL4 |= BIT(NPCX_DEV_CTL4_WP_IF);
+	if (!IS_BIT_SET(inst_scfg->DEV_CTL4, NPCX_DEV_CTL4_WP_IF)) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+bool npcx_pinctrl_flash_write_protect_is_set(void)
+{
+	struct scfg_reg *inst_scfg = HAL_SFCG_INST();
+
+	return IS_BIT_SET(inst_scfg->DEV_CTL4, NPCX_DEV_CTL4_WP_IF);
+}
+
 /* Pin-control driver registration */
 static int npcx_pinctrl_init(const struct device *dev)
 {
