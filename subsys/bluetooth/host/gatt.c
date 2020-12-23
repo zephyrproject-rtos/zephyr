@@ -4129,10 +4129,7 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 
 #if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
 		if (!params->ccc_handle) {
-			err = gatt_ccc_discover(conn, params);
-			if (err) {
-				return err;
-			}
+			return gatt_ccc_discover(conn, params);
 		}
 #endif
 		err = gatt_write_ccc(conn, params->ccc_handle, params->value,
