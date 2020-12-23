@@ -426,11 +426,18 @@ static void dhcpv4_update_timeout_work(uint32_t timeout)
 
 static void dhcpv4_enter_selecting(struct net_if *iface)
 {
+	struct in_addr any = INADDR_ANY_INIT;
+
 	iface->config.dhcpv4.attempts = 0U;
 
 	iface->config.dhcpv4.lease_time = 0U;
 	iface->config.dhcpv4.renewal_time = 0U;
 	iface->config.dhcpv4.rebinding_time = 0U;
+
+	iface->config.dhcpv4.server_id.s_addr = INADDR_ANY;
+	iface->config.dhcpv4.requested_ip.s_addr = INADDR_ANY;
+
+	net_if_ipv4_set_gw(iface, &any);
 
 	iface->config.dhcpv4.state = NET_DHCPV4_SELECTING;
 	NET_DBG("enter state=%s",
@@ -1103,13 +1110,6 @@ void net_dhcpv4_start(struct net_if *iface)
 		iface->config.dhcpv4.state = NET_DHCPV4_INIT;
 		NET_DBG("iface %p state=%s", iface,
 			net_dhcpv4_state_name(iface->config.dhcpv4.state));
-
-		iface->config.dhcpv4.attempts = 0U;
-		iface->config.dhcpv4.lease_time = 0U;
-		iface->config.dhcpv4.renewal_time = 0U;
-
-		iface->config.dhcpv4.server_id.s_addr = 0U;
-		iface->config.dhcpv4.requested_ip.s_addr = 0U;
 
 		/* We need entropy for both an XID and a random delay
 		 * before sending the initial discover message.
