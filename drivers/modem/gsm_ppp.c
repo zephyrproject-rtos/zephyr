@@ -238,6 +238,8 @@ static struct setup_cmd setup_cmds[] = {
 	/* extender errors in numeric form */
 	SETUP_CMD_NOHANDLE("AT+CMEE=1"),
 
+	SETUP_CMD_NOHANDLE("AT+QCFG=\"nwscanmode\""),
+	SETUP_CMD_NOHANDLE("AT+QCFG=\"band\""),
 	SETUP_CMD("AT+CGMM", "", on_cmd_atcmdinfo_model, 0U, ""),
 };
 
@@ -449,7 +451,20 @@ attaching:
 	/* Clear attach_retry */
 	attach_retry = 0;
 
-	LOG_DBG("modem setup returned %d, %s", ret, "enable PPP");
+	/* For Quectel, dump the network info (LTE/WCDMA/etc) for debugging */
+	ret = modem_cmd_send_nolock(
+		&gsm->context.iface, &gsm->context.cmd_handler, NULL, 0,
+		"AT+QNWINFO", &gsm->sem_response, K_SECONDS(2));
+
+	/* Ensure PDP context is activated. This is likely a NOP for most
+	 * modem/SIM combos, but it is required for certain setups.
+	 */
+	(void)modem_cmd_send_nolock(
+		&gsm->context.iface, &gsm->context.cmd_handler,
+		NULL, 0, "AT+CGACT=1,1",
+		&gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+
+	LOG_DBG("modem setup complete, %s", "enable PPP");
 
 	ret = modem_cmd_handler_setup_cmds_nolock(&gsm->context.iface,
 						  &gsm->context.cmd_handler,
