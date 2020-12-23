@@ -602,7 +602,7 @@ static uint32_t dhcph4_manage_timers(struct net_if *iface, int64_t timeout)
 
 static void dhcpv4_timeout(struct k_work *work)
 {
-	uint32_t timeout_update = UINT32_MAX - 1;
+	uint32_t timeout_update = UINT32_MAX;
 	int64_t timeout = k_uptime_get();
 	struct net_if_dhcpv4 *current, *next;
 
