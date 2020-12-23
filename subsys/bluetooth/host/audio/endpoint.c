@@ -742,6 +742,12 @@ static uint8_t cp_notify(struct bt_conn *conn,
 
 	BT_DBG("conn %p len %u", conn, length);
 
+	if (!data) {
+		BT_DBG("Unsubscribed");
+		params->value_handle = 0x0000;
+		return BT_GATT_ITER_STOP;
+	}
+
 	net_buf_simple_init_with_data(&buf, (void *)data, length);
 
 	if (buf.len < sizeof(*rsp)) {
