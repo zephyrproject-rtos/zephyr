@@ -7,23 +7,23 @@
 / {
 	power_states: power_states {
 		compatible = "test,power_states_api";
-		pm-states = <&state0 &state1 &state2>;
+		cpu-power-states = <&state0 &state1 &state2>;
 	};
 
 	state0: state0 {
-		compatible = "pm-state";
-		pm-state = "suspend-to-idle";
+		compatible = "zephyr,power-state";
+		power-state-name = "suspend-to-idle";
 		min-residency-us = <1>;
 	};
 
 	state1: state1 {
-		compatible = "pm-state";
-		pm-state = "suspend-to-ram";
+		compatible = "zephyr,power-state";
+		power-state-name = "suspend-to-ram";
 		min-residency-us = <5>;
 	};
 
 	state2: state2 {
-		compatible = "pm-state";
-		pm-state = "standby";
+		compatible = "zephyr,power-state";
+		power-state-name = "standby";
 	};
 };

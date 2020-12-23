@@ -119,34 +119,34 @@ struct pm_state_info {
 };
 
 /**
- * @brief Construct a pm_state_info from 'pm_states' property at index 'i'
+ * @brief Construct a pm_state_info from 'cpu-power-states' property at index 'i'
  *
- * @param node_id A node identifier compatible with pm-states
- * @param i index of pm_states prop which type is 'phandles'
- * @return pm_state_info item from 'pm_states' property at index 'i'
+ * @param node_id A node identifier with compatible zephyr,power-state
+ * @param i index into cpu-power-states property
+ * @return pm_state_info item from 'cpu-power-states' property at index 'i'
  */
 #define PM_STATE_INFO_DT_ITEM_BY_IDX(node_id, i)                    \
 	{                                                           \
 		.state = DT_ENUM_IDX(DT_PHANDLE_BY_IDX(node_id,     \
-					pm_states, i), pm_state),    \
+				cpu_power_states, i), power_state_name),\
 		.min_residency_us = DT_PROP_BY_PHANDLE_IDX_OR(node_id, \
-				pm_states, i, min_residency_us, 0),   \
+				cpu_power_states, i, min_residency_us, 0),\
 	},
 
 /**
- * @brief Length of 'pm-states' property which type is 'phandles'
+ * @brief Length of 'cpu-power-states' property
  *
- * @param node_id A node identifier compatible with pm-states
- * @return length of 'pm-states' property which type is 'phandles'
+ * @param node_id A node identifier with compatible zephyr,power-state
+ * @return length of 'cpu-power-states' property
  */
-#define PM_STATE_DT_ITEMS_LEN(node_id) DT_PROP_LEN(node_id, pm_states)
+#define PM_STATE_DT_ITEMS_LEN(node_id) DT_PROP_LEN(node_id, cpu_power_states)
 
 /**
  * @brief Macro function to construct enum pm_state item in UTIL_LISTIFY
  * extension.
  *
  * @param child child index in UTIL_LISTIFY extension.
- * @param node_id A node identifier compatible with pm-states
+ * @param node_id A node identifier with compatible zephyr,power-state
  * @return macro function to construct a pm_state_info
  */
 #define PM_STATE_INFO_DT_ITEMS_LISTIFY_FUNC(child, node_id) \
@@ -162,28 +162,30 @@ struct pm_state_info {
  *		cpu0: cpu@0 {
  *			device_type = "cpu";
  *			...
- *			pm-states = <&state0 &state1>;
+ *			cpu-power-states = <&state0 &state1>;
  *		};
  *	};
  *
  *	...
- *	state0: state0 {
- *		compatible = "pm-state";
- *		pm-state = "suspend-to-idle";
- *		min-residency-us = <1>;
- *	};
+ *      power-states {
+ *		state0: state0 {
+ *			compatible = "zephyr,power-state";
+ *			power-state-name = "suspend-to-idle";
+ *			min-residency-us = <1>;
+ *		};
  *
- *	state1: state1 {
- *		compatible = "pm-state";
- *		pm-state = "suspend-to-ram";
- *		min-residency-us = <5>;
+ *		state1: state1 {
+ *			compatible = "zephyr,power-state";
+ *			power-state-name = "suspend-to-ram";
+ *			min-residency-us = <5>;
+ *		};
  *	};
  *
  * Example usage: *
  *    const enum pm_state states[] =
  *		PM_STATE_DT_INFO_ITEMS_LIST(DT_NODELABEL(cpu0));
  *
- * @param node_id A node identifier compatible with pm-states
+ * @param node_id A node identifier with compatible zephyr,power-state
  * @return an array of struct pm_state_info.
  */
 #define PM_STATE_INFO_DT_ITEMS_LIST(node_id) {         \
@@ -193,15 +195,16 @@ struct pm_state_info {
 	}
 
 /**
- * @brief Construct a pm_state enum from 'pm_states' property at index 'i'
+ * @brief Construct a pm_state enum from 'cpu-power-states' property
+ *        at index 'i'
  *
- * @param node_id A node identifier compatible with pm-states
- * @param i index of pm_states prop which type is 'phandles'
- * @return pm_state item from 'pm_states' property at index 'i'
+ * @param node_id A node identifier with compatible zephyr,power-state
+ * @param i index into cpu-power-states property
+ * @return pm_state item from 'cpu-power-states' property at index 'i'
  */
 #define PM_STATE_DT_ITEM_BY_IDX(node_id, i)                \
 		DT_ENUM_IDX(DT_PHANDLE_BY_IDX(node_id,     \
-				pm_states, i), pm_state),
+				cpu_power_states, i), power_state_name),
 
 
 /**
@@ -209,7 +212,7 @@ struct pm_state_info {
  * extension.
  *
  * @param child child index in UTIL_LISTIFY extension.
- * @param node_id A node identifier compatible with pm-states
+ * @param node_id A node identifier with compatible zephyr,power-state
  * @return macro function to construct a pm_state enum
  */
 #define PM_STATE_DT_ITEMS_LISTIFY_FUNC(child, node_id) \
@@ -225,27 +228,27 @@ struct pm_state_info {
  *		cpu0: cpu@0 {
  *			device_type = "cpu";
  *			...
- *			pm-states = <&state0 &state1>;
+ *			cpu-power-states = <&state0 &state1>;
  *		};
  *	};
  *
  *	...
  *	state0: state0 {
- *		compatible = "pm-state";
- *		pm-state = "suspend-to-idle";
+ *		compatible = "zephyr,power-state";
+ *		power-state-name = "suspend-to-idle";
  *		min-residency-us = <1>;
  *	};
  *
  *	state1: state1 {
- *		compatible = "pm-state";
- *		pm-state = "suspend-to-ram";
+ *		compatible = "zephyr,power-state";
+ *		power-state-name = "suspend-to-ram";
  *		min-residency-us = <5>;
  *	};
  *
  * Example usage: *
  *    const enum pm_state states[] = PM_STATE_DT_ITEMS_LIST(DT_NODELABEL(cpu0));
  *
- * @param node_id A node identifier compatible with pm-states
+ * @param node_id A node identifier with compatible zephyr,power-state
  * @return an array of enum pm_state items.
  */
 #define PM_STATE_DT_ITEMS_LIST(node_id) {           \
