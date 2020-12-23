@@ -109,14 +109,17 @@ Integration Testing With Twister
 ================================
 
 The ADSP hardware also has integration for testing using the twister
-tool.  The ``adsplog`` script can be used unmodified as the
+tool.  The ``adsplog`` script can be used as the
 ``--device-serial-pty`` handler, and the west flash script should take
-a path to the same key file used above.
+a path to the same key file used above.  Remember to pass the
+``--no-history`` argument to ``adsplog.py``, because by default it
+will dump the current log buffer, which may contain output from a
+previous test run.
 
 .. code-block:: console
 
     $ZEPHYR_BASE/scripts/twister --device-testing -p intel_adsp_cavs15 \
-      --device-serial-pty $ZEPHYR_BASE/boards/xtensa/intel_adsp_cavs15/tools/adsplog.py \
+      --device-serial-pty $ZEPHYR_BASE/boards/xtensa/intel_adsp_cavs15/tools/adsplog.py,--no-history \
       --west-flash $ZEPHYR_BASE/boards/xtensa/intel_adsp_cavs15/tools/flash.sh,$PATH_TO_KEYFILE.pem
 
 .. target-notes::
