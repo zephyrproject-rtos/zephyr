@@ -421,12 +421,7 @@ fail:
 
 static void dhcpv4_update_timeout_work(uint32_t timeout)
 {
-	if (!k_delayed_work_remaining_get(&timeout_work) ||
-	    (MSEC_PER_SEC * timeout) <
-	    k_delayed_work_remaining_get(&timeout_work)) {
-		k_delayed_work_cancel(&timeout_work);
-		k_delayed_work_submit(&timeout_work, K_SECONDS(timeout));
-	}
+	k_delayed_work_submit(&timeout_work, K_SECONDS(timeout));
 }
 
 static void dhcpv4_enter_selecting(struct net_if *iface)
