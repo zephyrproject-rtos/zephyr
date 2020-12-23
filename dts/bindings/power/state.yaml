@@ -3,10 +3,10 @@
 
 description: Properties for power management state
 
-compatible: "pm-state"
+compatible: "zephyr,idle-state"
 
 properties:
-    pm-state:
+    idle-state-name:
         type: string
         required: true
         description: indicates a power state
