@@ -135,6 +135,51 @@ void test_work_item_supplied_with_func(void)
 	zassert_true(k_queue_is_empty(&workq.queue), NULL);
 }
 
+
+/**
+ * @brief Test k_work_submit_to_user_queue API
+ *
+ * @details Funcion k_work_submit_to_user_queue() will return
+ * -EBUSY: if the work item was already in some workqueue and
+ * -ENOMEM: if no memory for thread resource pool allocation.
+ * Create two situation to meet the error return value.
+ *
+ * @see k_work_submit_to_user_queue()
+ * @ingroup kernel_workqueue_tests
+ */
+void test_k_work_submit_to_user_queue_fail(void)
+{
+	int ret = 0;
+
+	k_sem_reset(&sync_sema);
+	k_work_init(&work[0], common_work_handler);
+	k_work_init(&work[1], common_work_handler);
+
+	/* TESTPOINT: When a work item be added to a workqueue,
+	 * it's flag will be in pending state, before the work item be processed,
+	 * it cannot be append to a workqueue another time.
+	 */
+	k_work_submit_to_user_queue(&user_workq, &work[0]);
+	k_work_submit_to_user_queue(&user_workq, &work[0]);
+
+	/* Test the work item's callback function can only be invoked once */
+	k_sem_take(&sync_sema, K_FOREVER);
+	zassert_true(k_queue_is_empty(&user_workq.queue), NULL);
+
+	/* use up the memory in resource pool */
+	for (int i = 0; i < 100; i++) {
+		ret = k_queue_alloc_append(&user_workq.queue, &work[1]);
+		if (ret == -ENOMEM) {
+			break;
+		}
+	}
+
+	k_work_submit_to_user_queue(&user_workq, &work[0]);
+	/* if memory is used up, the work cannot be append into the workqueue */
+	zassert_false(k_work_pending(&work[0]), NULL);
+}
+
+
 /* Two handler functions fifo_work_first() and fifo_work_second
  * are made for two work items to test first in, first out.
  * It tests workqueue thread process work items
@@ -1412,6 +1457,7 @@ void test_main(void)
 			 ztest_1cpu_unit_test(test_triggered_work_cancel_thread),
 			 ztest_1cpu_unit_test(test_triggered_work_cancel_isr),
 			 ztest_unit_test(test_work_item_supplied_with_func),
+			 ztest_user_unit_test(test_k_work_submit_to_user_queue_fail),
 			 ztest_unit_test(test_process_work_items_fifo),
 			 ztest_unit_test(test_sched_delayed_work_item),
 			 ztest_unit_test(test_workqueue_max_number),
