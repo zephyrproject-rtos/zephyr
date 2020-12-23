@@ -11,6 +11,13 @@ import mmap
 
 # Log reader for the trace output buffer on a ADSP device.
 #
+# When run with no arguments, it will detect the device, dump the
+# contents of the trace buffer and continue to poll for more output.
+# The "--no-history" argument can be passed to suppress emission of the
+# history, and emit only new output.  This can be useful for test
+# integration where the user does not want to see any previous runs in
+# the log output.
+#
 # The trace buffer is inside a shared memory region exposed by the
 # audio PCI device as a BAR at index 4.  The hardware provides 4 128k
 # "windows" starting at 512kb in the BAR which the DSP firmware can
@@ -170,7 +177,13 @@ def trace_history():
 # polling.
 def main():
     next_slot, next_id, last_hist = trace_history()
-    sys.stdout.write(last_hist)
+
+    # We only have one command line argument, to suppress the history
+    # dump at the start (so CI runs don't see e.g. a previous device
+    # state containing logs from another test, and get confused)
+    if len(sys.argv) < 2 or sys.argv[1] != "--no-history":
+        sys.stdout.write(last_hist)
+
     while True:
         id, smsg = read_slot(next_slot, mem)
 
