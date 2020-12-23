@@ -20,6 +20,9 @@
 		zephyr,code-partition = &slot0_partition;
 	};
 };
+&adc0 {
+	status = "okay";
+};
 &gpiob {
 	status = "okay";
 };
