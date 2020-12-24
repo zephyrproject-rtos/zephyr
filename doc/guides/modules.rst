@@ -510,6 +510,8 @@ Build settings supported in the :file:`module.yml` file are:
 - ``arch_root``: Contains additional architectures that are available to the
   build system. Additional architectures must be located in a
   :file:`<arch_root>/arch` folder.
+- ``syscall_includes``: Sequence of additional directories to look for system
+  calls. All directories are relative to the root of the module.
 
 Example of a :file:`module.yaml` file containing additional roots, and the
 corresponding file system layout.
@@ -522,6 +524,8 @@ corresponding file system layout.
        dts_root: .
        soc_root: .
        arch_root: .
+       syscall_includes:
+         - include
 
 
 requires the following folder structure:
@@ -532,6 +536,7 @@ requires the following folder structure:
    ├── arch
    ├── boards
    ├── dts
+   ├── include
    └── soc
 
 
