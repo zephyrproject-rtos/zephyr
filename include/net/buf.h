@@ -1131,6 +1131,9 @@ struct net_buf *net_buf_alloc_with_data(struct net_buf_pool *pool,
 /**
  * @brief Get a buffer from a FIFO.
  *
+ * This function is NOT thread-safe if the buffers in the FIFO contain
+ * fragments.
+ *
  * @param fifo Which FIFO to take the buffer from.
  * @param timeout Affects the action taken should the FIFO be empty.
  *        If K_NO_WAIT, then return immediately. If K_FOREVER, then wait as
@@ -1197,7 +1200,8 @@ void net_buf_slist_put(sys_slist_t *list, struct net_buf *buf);
  * @brief Get a buffer from a list.
  *
  * If the buffer had any fragments, these will automatically be recovered from
- * the list as well and be placed to the buffer's fragment list.
+ * the list as well and be placed to the buffer's fragment list. This function
+ * is NOT thread-safe when recovering fragments.
  *
  * @param list Which list to take the buffer from.
  *
