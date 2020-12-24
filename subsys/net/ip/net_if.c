@@ -982,12 +982,13 @@ static void join_mcast_nodes(struct net_if *iface, struct in6_addr *addr)
 #endif /* CONFIG_NET_IPV6_MLD */
 
 #if defined(CONFIG_NET_IPV6_DAD)
-#define DAD_TIMEOUT 100 /* ms */
+#define DAD_TIMEOUT 100U /* ms */
 
 static void dad_timeout(struct k_work *work)
 {
 	uint32_t current_time = k_uptime_get_32();
 	struct net_if_addr *ifaddr, *next;
+	int32_t delay = -1;
 
 	ARG_UNUSED(work);
 
@@ -996,8 +997,12 @@ static void dad_timeout(struct k_work *work)
 		struct net_if_addr *tmp;
 		struct net_if *iface;
 
-		if ((int32_t)(ifaddr->dad_start +
-			    DAD_TIMEOUT - current_time) > 0) {
+		/* DAD entries are ordered by construction.  Stop when
+		 * we find one that hasn't expired.
+		 */
+		delay = (int32_t)(ifaddr->dad_start +
+				  DAD_TIMEOUT - current_time);
+		if (delay > 0) {
 			break;
 		}
 
@@ -1031,10 +1036,8 @@ static void dad_timeout(struct k_work *work)
 		ifaddr = NULL;
 	}
 
-	if (ifaddr) {
-		k_delayed_work_submit(&dad_timer,
-				      K_MSEC(ifaddr->dad_start +
-					     DAD_TIMEOUT - current_time));
+	if ((ifaddr != NULL) && (delay > 0)) {
+		k_delayed_work_submit(&dad_timer, K_MSEC((uint32_t)delay));
 	}
 }
 
@@ -1058,6 +1061,7 @@ static void net_if_ipv6_start_dad(struct net_if *iface,
 			ifaddr->dad_start = k_uptime_get_32();
 			sys_slist_append(&active_dad_timers, &ifaddr->dad_node);
 
+			/* FUTURE: use schedule, not reschedule. */
 			if (!k_delayed_work_remaining_get(&dad_timer)) {
 				k_delayed_work_submit(&dad_timer,
 						      K_MSEC(DAD_TIMEOUT));
@@ -1148,13 +1152,14 @@ static inline void net_if_ipv6_start_dad(struct net_if *iface,
 #endif /* CONFIG_NET_IPV6_DAD */
 
 #if defined(CONFIG_NET_IPV6_ND)
-#define RS_TIMEOUT (1 * MSEC_PER_SEC)
+#define RS_TIMEOUT (1U * MSEC_PER_SEC)
 #define RS_COUNT 3
 
 static void rs_timeout(struct k_work *work)
 {
 	uint32_t current_time = k_uptime_get_32();
 	struct net_if_ipv6 *ipv6, *next;
+	int32_t delay = -1;
 
 	ARG_UNUSED(work);
 
@@ -1162,7 +1167,11 @@ static void rs_timeout(struct k_work *work)
 					  ipv6, next, rs_node) {
 		struct net_if *iface = NULL;
 
-		if ((int32_t)(ipv6->rs_start + RS_TIMEOUT - current_time) > 0) {
+		/* RS entries are ordered by construction.  Stop when
+		 * we find one that hasn't expired.
+		 */
+		delay = (int32_t)(ipv6->rs_start + RS_TIMEOUT - current_time);
+		if (delay > 0) {
 			break;
 		}
 
@@ -1192,7 +1201,7 @@ static void rs_timeout(struct k_work *work)
 		ipv6 = NULL;
 	}
 
-	if (ipv6) {
+	if ((ipv6 != NULL) && (delay > 0)) {
 		k_delayed_work_submit(&rs_timer,
 				      K_MSEC(ipv6->rs_start +
 					     RS_TIMEOUT - current_time));
@@ -1213,6 +1222,7 @@ void net_if_start_rs(struct net_if *iface)
 		ipv6->rs_start = k_uptime_get_32();
 		sys_slist_append(&active_rs_timers, &ipv6->rs_node);
 
+		/* FUTURE: use schedule, not reschedule. */
 		if (!k_delayed_work_remaining_get(&rs_timer)) {
 			k_delayed_work_submit(&rs_timer, K_MSEC(RS_TIMEOUT));
 		}
