@@ -394,6 +394,18 @@
 				label = "CRYPTOCELL310";
 			};
 		};
+
+		ficr: ficr@10000000 {
+			compatible = "nordic,nrf-ficr";
+			reg = <0x10000000 0x1000>;
+			status = "okay";
+		};
+
+		uicr: uicr@10001000 {
+			compatible = "nordic,nrf-uicr";
+			reg = <0x10001000 0x1000>;
+			status = "okay";
+		};
 	};
 
 	sw_pwm: sw-pwm {
