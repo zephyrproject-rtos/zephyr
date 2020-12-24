@@ -64,6 +64,11 @@ mapping:
           arch_root:
             required: false
             type: str
+          syscall_includes:
+            required: false
+            type: seq
+            sequence:
+              - type: str
   tests:
     required: false
     type: seq
@@ -155,6 +160,11 @@ def process_settings(module, meta):
             if setting is not None:
                 root_path = PurePath(module) / setting
                 out_text += f'"{root.upper()}_ROOT":"{root_path.as_posix()}"\n'
+
+        syscall_includes = build_settings.get('syscall_includes', [])
+        for include in  syscall_includes:
+            include_path = PurePath(module) / include
+            out_text += f'"SYSCALL_INCLUDE_DIRS":"{include_path.as_posix()}"\n'
 
     return out_text
 
