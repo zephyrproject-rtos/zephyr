@@ -50,8 +50,8 @@ Z_GENERIC_SECTION(.irq_info) struct int_list_header _iheader = {
 #define IRQ_VECTOR_TABLE_DEFAULT_ISR	z_irq_spurious
 #endif /* CONFIG_GEN_SW_ISR_TABLE */
 
-uint32_t __irq_vector_table _irq_vector_table[IRQ_TABLE_SIZE] = {
-	[0 ...(IRQ_TABLE_SIZE - 1)] = (uint32_t)&IRQ_VECTOR_TABLE_DEFAULT_ISR,
+uintptr_t __irq_vector_table _irq_vector_table[IRQ_TABLE_SIZE] = {
+	[0 ...(IRQ_TABLE_SIZE - 1)] = (uintptr_t)&IRQ_VECTOR_TABLE_DEFAULT_ISR,
 };
 #endif /* CONFIG_GEN_IRQ_VECTOR_TABLE */
 

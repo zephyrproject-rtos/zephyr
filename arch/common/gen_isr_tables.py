@@ -134,7 +134,7 @@ source_header = """
 #include <arch/cpu.h>
 
 #if defined(CONFIG_GEN_SW_ISR_TABLE) && defined(CONFIG_GEN_IRQ_VECTOR_TABLE)
-#define ISR_WRAPPER ((uint32_t)&_isr_wrapper)
+#define ISR_WRAPPER ((uintptr_t)&_isr_wrapper)
 #else
 #define ISR_WRAPPER NULL
 #endif
@@ -148,7 +148,7 @@ def write_source_file(fp, vt, swt, intlist, syms):
     nv = intlist["num_vectors"]
 
     if vt:
-        fp.write("uint32_t __irq_vector_table _irq_vector_table[%d] = {\n" % nv)
+        fp.write("uintptr_t __irq_vector_table _irq_vector_table[%d] = {\n" % nv)
         for i in range(nv):
             fp.write("\t{},\n".format(vt[i]))
         fp.write("};\n")
