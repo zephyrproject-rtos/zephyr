@@ -172,7 +172,7 @@ static chunkid_t alloc_chunk(struct z_heap *h, size_t sz)
 	int bi = bucket_idx(h, sz);
 	struct z_heap_bucket *b = &h->buckets[bi];
 
-	if (bi > bucket_idx(h, h->len)) {
+	if (sz == 0U || bi > bucket_idx(h, h->len)) {
 		return 0;
 	}
 
@@ -262,8 +262,15 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	 * We over-allocate to account for alignment and then free
 	 * the extra allocations afterwards.
 	 */
-	size_t padded_sz =
-		bytes_to_chunksz(h, bytes + align - chunk_header_bytes(h));
+	size_t padded_sz;
+
+	if (size_add_overflow(bytes, align - chunk_header_bytes(h),
+			&padded_sz)) {
+		return NULL;
+	}
+
+	padded_sz = bytes_to_chunksz(h, padded_sz);
+
 	chunkid_t c0 = alloc_chunk(h, padded_sz);
 
 	if (c0 == 0) {

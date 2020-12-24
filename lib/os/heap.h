@@ -6,6 +6,8 @@
 #ifndef ZEPHYR_INCLUDE_LIB_OS_HEAP_H_
 #define ZEPHYR_INCLUDE_LIB_OS_HEAP_H_
 
+#include <sys/math_extras.h>
+
 /*
  * Internal heap APIs
  */
@@ -210,12 +212,24 @@ static inline size_t heap_footer_bytes(size_t size)
 
 static inline size_t chunksz(size_t bytes)
 {
-	return (bytes + CHUNK_UNIT - 1U) / CHUNK_UNIT;
+	size_t ret;
+
+	if (size_add_overflow(CHUNK_UNIT - 1U, bytes, &ret)) {
+		return 0U;
+	}
+
+	return ret / CHUNK_UNIT;
 }
 
 static inline size_t bytes_to_chunksz(struct z_heap *h, size_t bytes)
 {
-	return chunksz(chunk_header_bytes(h) + bytes);
+	size_t ret;
+
+	if (size_add_overflow(chunk_header_bytes(h), bytes, &ret)) {
+		return 0U;
+	}
+
+	return chunksz(ret);
 }
 
 static inline int min_chunk_size(struct z_heap *h)
