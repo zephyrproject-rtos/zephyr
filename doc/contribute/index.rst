@@ -498,6 +498,10 @@ workflow here:
    agreement with the `DCO`_.  See the `Commit Guidelines`_ section for
    specific guidelines for writing your commit messages.
 
+#. Check your commit::
+
+     gitlint
+
 #. Push your topic branch with your changes to your fork in your personal
    GitHub account::
 
