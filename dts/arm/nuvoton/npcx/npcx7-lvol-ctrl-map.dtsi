@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2020 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	def_lvol_conf_list {
+		compatible = "nuvoton,npcx-lvolctrl-conf";
+
+		/* Low-Voltage IO Control 0 */
+		lvol_iob5: lvol00 { lvols = <&scfg 0x0b 5 0 0>; };
+		lvol_iob4: lvol01 { lvols = <&scfg 0x0b 4 0 1>; };
+		lvol_iob3: lvol02 { lvols = <&scfg 0x0b 3 0 2>; };
+		lvol_iob2: lvol03 { lvols = <&scfg 0x0b 2 0 3>; };
+		lvol_io90: lvol04 { lvols = <&scfg 0x09 0 0 4>; };
+		lvol_io87: lvol05 { lvols = <&scfg 0x08 7 0 5>; };
+		lvol_io00: lvol06 { lvols = <&scfg 0x00 0 0 6>; };
+		lvol_io33: lvol07 { lvols = <&scfg 0x03 3 0 7>; };
+		/* Low-Voltage IO Control 1 */
+		lvol_io92: lvol10 { lvols = <&scfg 0x09 2 1 0>; };
+		lvol_io91: lvol11 { lvols = <&scfg 0x09 1 1 1>; };
+		lvol_iod1: lvol12 { lvols = <&scfg 0x0d 1 1 2>; };
+		lvol_iod0: lvol13 { lvols = <&scfg 0x0d 0 1 3>; };
+		lvol_io36: lvol14 { lvols = <&scfg 0x03 6 1 4>; };
+		lvol_io64: lvol15 { lvols = <&scfg 0x06 4 1 5>; };
+		/* Low-Voltage IO Control 2 */
+		lvol_io74: lvol20 { lvols = <&scfg 0x07 4 2 0>; };
+		lvol_io73: lvol23 { lvols = <&scfg 0x07 3 2 3>; };
+		lvol_ioc1: lvol24 { lvols = <&scfg 0x0c 1 2 4>; };
+		lvol_ioc7: lvol25 { lvols = <&scfg 0x0c 7 2 5>; };
+		lvol_io34: lvol27 { lvols = <&scfg 0x03 4 2 7>; };
+		/* Low-Voltage IO Control 3 */
+		lvol_ioc6: lvol30 { lvols = <&scfg 0x0c 6 3 0>; };
+		lvol_io37: lvol31 { lvols = <&scfg 0x03 7 3 1>; };
+		lvol_io40: lvol32 { lvols = <&scfg 0x04 0 3 2>; };
+		lvol_io82: lvol34 { lvols = <&scfg 0x08 2 3 4>; };
+		lvol_io75: lvol35 { lvols = <&scfg 0x07 5 3 5>; };
+		lvol_io80: lvol36 { lvols = <&scfg 0x08 0 3 6>; };
+		lvol_ioc5: lvol37 { lvols = <&scfg 0x0c 5 3 7>; };
+		/* Low-Voltage IO Control 4 */
+		lvol_io86: lvol40 { lvols = <&scfg 0x08 6 4 0>; };
+		lvol_ioc2: lvol41 { lvols = <&scfg 0x0c 2 4 1>; };
+		lvol_iof3: lvol42 { lvols = <&scfg 0x0f 3 4 2>; };
+		lvol_iof2: lvol43 { lvols = <&scfg 0x0f 2 4 3>; };
+		lvol_iof5: lvol44 { lvols = <&scfg 0x0f 5 4 4>; };
+		lvol_iof4: lvol45 { lvols = <&scfg 0x0f 4 4 5>; };
+		lvol_ioe4: lvol46 { lvols = <&scfg 0x0e 4 4 6>; };
+		lvol_ioe6: lvol47 { lvols = <&scfg 0x0e 6 4 7>; };
+		/* Low-Voltage IO Control 5 */
+		lvol_io72: lvol50 { lvols = <&scfg 0x07 2 5 0>; };
+		lvol_io50: lvol53 { lvols = <&scfg 0x05 0 5 3>; };
+	};
+};

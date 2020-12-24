@@ -33,6 +33,12 @@
 			label = "User D7 green";
 		};
 	};
+
+	def_lvol_io_list {
+		compatible = "nuvoton,npcx-lvolctrl-def";
+		lvol_io_pads = <>; /* Put low-voltage io pads here */
+	};
+
 };
 
 /* Overwirte default device properties with overlays in board dt file here. */

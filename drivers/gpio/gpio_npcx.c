@@ -102,7 +102,7 @@ static int gpio_npcx_config(const struct device *dev,
 		inst->PPULL &= ~mask;
 	}
 
-	/* Set level 0:low 1:high*/
+	/* Set level 0:low 1:high */
 	if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0)
 		inst->PDOUT |= mask;
 	else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0)

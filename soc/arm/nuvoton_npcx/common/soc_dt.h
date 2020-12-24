@@ -19,7 +19,7 @@
  *		};
  *	};
  *
- * Example usage: *
+ * Example usage:
  *      const struct npcx_clk_cfg clk_cfg = NPCX_DT_CLK_CFG_ITEM(inst);
  *
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
@@ -79,7 +79,7 @@
  *				 <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 7>;
  *			...
  *		};
- * Example usage: *
+ * Example usage:
  *	const struct npcx_clk_cfg clk_cfg[] = NPCX_DT_CLK_CFG_ITEMS_LIST(0);
  *
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
@@ -145,7 +145,7 @@
  *		};
  *	};
  *
- * Example usage: *
+ * Example usage:
  *      const struct npcx_alt uart_alts[] = NPCX_DT_ALT_ITEMS_LIST(inst);
  *
  * @param inst instance number for compatible defined in DT_DRV_COMPAT.
@@ -252,7 +252,7 @@
  *		};
  *	};
  *
- * Example usage: *
+ * Example usage:
  *      const struct npcx_alt host_uart_alts[] =
  *                   NPCX_DT_IO_ALT_ITEMS_LIST(nuvoton_npcx_host_uart, 0);
  * @param io_comp compatible string in devicetree file for io-pads device
@@ -353,7 +353,7 @@
  *		};
  *	};
  *
- * Example usage: *
+ * Example usage:
  * const struct npcx_wui wui_map = NPCX_DT_PHANDLE_FROM_WUI_NAME(inst, uart_rx);
  * const struct npcx_wui wui_maps[] = NPCX_DT_WUI_ITEMS_LIST(inst);
  *
@@ -471,6 +471,75 @@
 									0),    \
 	  .bitmask = DT_PROP_BY_IDX(NPCX_DT_NODE_FROM_VWTABLE(name), vw_reg,   \
 									1),    \
+	}
+
+/**
+ * @brief Get a node from path '/def_lvol_io_list' which has a property
+ *        'lvol_io_pads' contains low-voltage configurations and need to set
+ *        by default.
+ *
+ * @return node identifier with that path.
+ */
+#define NPCX_DT_NODE_DEF_LVOL_LIST  DT_PATH(def_lvol_io_list)
+
+/**
+ * @brief Length of npcx_lvol structures in 'lvol_io_pads' property
+ *
+ * @return length of 'lvol_io_pads' prop which type is 'phandles'
+ */
+#define NPCX_DT_LVOL_ITEMS_LEN DT_PROP_LEN(NPCX_DT_NODE_DEF_LVOL_LIST, \
+								lvol_io_pads)
+
+/**
+ * @brief Get phandle from 'lvol_io_pads' prop which type is 'phandles' at index
+ *        'i'
+ *
+ * @param i index of 'lvol_io_pads' prop which type is 'phandles'
+ * @return phandle from 'lvol_io_pads' prop at index 'i'
+ */
+#define NPCX_DT_PHANDLE_FROM_LVOL_IO_PADS(i) \
+	DT_PHANDLE_BY_IDX(NPCX_DT_NODE_DEF_LVOL_LIST, lvol_io_pads, i)
+
+/**
+ * @brief Construct a npcx_lvol structure from 'lvol_io_pads' property at index
+ *        'i'.
+ *
+ * @param i index of 'lvol_io_pads' prop which type is 'phandles'
+ * @return npcx_lvol item from 'lvol_io_pads' property at index 'i'
+ */
+#define NPCX_DT_LVOL_ITEMS_BY_IDX(i, _)                                        \
+	{                                                                      \
+	  .io_port = DT_PHA(NPCX_DT_PHANDLE_FROM_LVOL_IO_PADS(i),              \
+							lvols, io_port),       \
+	  .io_bit = DT_PHA(NPCX_DT_PHANDLE_FROM_LVOL_IO_PADS(i),               \
+							lvols, io_bit),        \
+	  .ctrl = DT_PHA(NPCX_DT_PHANDLE_FROM_LVOL_IO_PADS(i),                 \
+							lvols, ctrl),          \
+	  .bit = DT_PHA(NPCX_DT_PHANDLE_FROM_LVOL_IO_PADS(i),                  \
+							lvols, bit),           \
+	},
+
+/**
+ * @brief Macro function to construct a list of npcx_lvol items by UTIL_LISTIFY
+ *        func.
+ *
+ * Example devicetree fragment:
+ *    / {
+ *          def_lvol_io_list {
+ *              compatible = "nuvoton,npcx-lvolctrl-def";
+ *              lvol_io_pads = <&lvol_io90   // I2C1_SCL0 1.8V support
+ *                              &lvol_io87>; // I2C1_SDA0 1,8V support
+ *          };
+ *	};
+ *
+ * Example usage:
+ * static const struct npcx_lvol def_lvols[] = NPCX_DT_IO_LVOL_ITEMS_DEF_LIST;
+ *
+ * @return an array of npcx_lvol items which configure low-voltage support
+ */
+#define NPCX_DT_IO_LVOL_ITEMS_DEF_LIST {                \
+		UTIL_LISTIFY(NPCX_DT_LVOL_ITEMS_LEN,    \
+			NPCX_DT_LVOL_ITEMS_BY_IDX, _)   \
 	}
 
 #endif /* _NUVOTON_NPCX_SOC_DT_H_ */

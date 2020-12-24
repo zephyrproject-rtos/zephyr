@@ -20,6 +20,8 @@
 #include "npcx/npcx7-miwus-int-map.dtsi"
 /* NPCX7 series eSPI VW mapping table */
 #include "npcx/npcx7-espi-vws-map.dtsi"
+/* NPCX7 series low-voltage io controls mapping table */
+#include "npcx/npcx7-lvol-ctrl-map.dtsi"
 
 / {
 	cpus {
@@ -114,7 +116,7 @@
 			       0x400a5000 0x2000>;
 			reg-names = "scfg", "glue";
 			#alt-cells = <3>;
-			#lvol-cells = <2>;
+			#lvol-cells = <4>;
 			label = "SCFG";
 		};
 

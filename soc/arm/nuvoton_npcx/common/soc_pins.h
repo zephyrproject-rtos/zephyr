@@ -24,6 +24,19 @@ struct npcx_alt {
 };
 
 /**
+ * @brief NPCX low-voltage configuration structure
+ *
+ * Used to indicate the device's corresponding LV_GPIO_CTL register/bit for
+ * low-voltage detection.
+ */
+struct npcx_lvol {
+	uint16_t io_port:5; /** A io pad's port which support low-voltage. */
+	uint16_t io_bit:3; /** A io pad's bit which support low-voltage. */
+	uint16_t ctrl:5; /** Related register index for low-voltage conf. */
+	uint16_t bit:3; /** Related register bit for low-voltage conf. */
+};
+
+/**
  * @brief Select device pin-mux to I/O or its alternative functionality
  *
  * Example devicetree fragment:
