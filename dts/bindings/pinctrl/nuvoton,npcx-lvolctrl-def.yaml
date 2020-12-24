@@ -1,0 +1,14 @@
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCX Default Low-Voltage Configurations
+
+compatible: "nuvoton,npcx-lvolctrl-def"
+
+include: [base.yaml]
+
+properties:
+    lvol_io_pads:
+        type: phandles
+        required: false
+        description: list of low-voltage configurations that need to set by default

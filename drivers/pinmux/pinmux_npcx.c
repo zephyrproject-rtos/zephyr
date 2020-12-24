@@ -34,6 +34,8 @@ struct npcx_pinctrl_config {
 static const struct npcx_alt def_alts[] =
 			NPCX_DT_IO_ALT_ITEMS_LIST(nuvoton_npcx_pinctrl_def, 0);
 
+static const struct npcx_lvol def_lvols[] = NPCX_DT_IO_LVOL_ITEMS_DEF_LIST;
+
 static const struct npcx_pinctrl_config npcx_pinctrl_cfg = {
 	.base_scfg = DT_INST_REG_ADDR_BY_NAME(0, scfg),
 	.base_glue = DT_INST_REG_ADDR_BY_NAME(0, glue),
@@ -75,6 +77,18 @@ void npcx_pinctrl_mux_configure(const struct npcx_alt *alts_list,
 	}
 }
 
+void npcx_lvol_pads_configure(void)
+{
+	const uint32_t scfg_base = npcx_pinctrl_cfg.base_scfg;
+
+	for (int i = 0; i < ARRAY_SIZE(def_lvols); i++) {
+		NPCX_LV_GPIO_CTL(scfg_base, def_lvols[i].ctrl)
+					|= BIT(def_lvols[i].bit);
+		LOG_DBG("IO%x%x turn on low-voltage", def_lvols[i].io_port,
+							def_lvols[i].io_bit);
+	}
+}
+
 void npcx_pinctrl_i2c_port_sel(int controller, int port)
 {
 	struct glue_reg *const inst_glue = HAL_GLUE_INST();
@@ -101,6 +115,9 @@ static int npcx_pinctrl_init(const struct device *dev)
 
 	/* Change all pads whose default functionality isn't IO to GPIO */
 	npcx_pinctrl_mux_configure(def_alts, ARRAY_SIZE(def_alts), 0);
+
+	/* Configure default low-voltage pads */
+	npcx_lvol_pads_configure();
 
 	return 0;
 }
