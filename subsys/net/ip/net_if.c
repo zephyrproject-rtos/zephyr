@@ -674,26 +674,38 @@ static void iface_router_notify_deletion(struct net_if_router *router,
 	}
 }
 
+static inline int32_t iface_router_ends(const struct net_if_router *router,
+					uint32_t now)
+{
+	uint32_t ends = router->life_start;
 
-static void iface_router_run_timer(uint32_t current_time)
+	ends += MSEC_PER_SEC * router->lifetime;
+
+	/* Signed number of ms until router lifetime ends */
+	return (int32_t)(ends - now);
+}
+
+static void iface_router_update_timer(uint32_t now)
 {
 	struct net_if_router *router, *next;
-	uint32_t new_timer = UINT_MAX;
-
-	if (k_delayed_work_remaining_get(&router_timer)) {
-		k_delayed_work_cancel(&router_timer);
-	}
+	uint32_t new_delay = UINT32_MAX;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&active_router_timers,
 					 router, next, node) {
-		uint32_t current_timer = router->life_start +
-			(MSEC_PER_SEC * router->lifetime) - current_time;
+		int32_t ends = iface_router_ends(router, now);
 
-		new_timer = MIN(current_timer, new_timer);
+		if (ends <= 0) {
+			new_delay = 0;
+			break;
+		}
+
+		new_delay = MIN((uint32_t)ends, new_delay);
 	}
 
-	if (new_timer != UINT_MAX) {
-		k_delayed_work_submit(&router_timer, K_MSEC(new_timer));
+	if (new_delay == UINT32_MAX) {
+		k_delayed_work_cancel(&router_timer);
+	} else {
+		k_delayed_work_submit(&router_timer, K_MSEC(new_delay));
 	}
 }
 
@@ -707,10 +719,9 @@ static void iface_router_expired(struct k_work *work)
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&active_router_timers,
 					  router, next, node) {
+		int32_t ends = iface_router_ends(router, current_time);
 
-		if ((int32_t)(router->life_start +
-			    (MSEC_PER_SEC * router->lifetime) -
-			    current_time) > 0) {
+		if (ends > 0) {
 			/* We have to loop on all active routers as their
 			 * lifetime differ from each other.
 			 */
@@ -724,7 +735,7 @@ static void iface_router_expired(struct k_work *work)
 		router->is_used = false;
 	}
 
-	iface_router_run_timer(current_time);
+	iface_router_update_timer(current_time);
 }
 
 static struct net_if_router *iface_router_add(struct net_if *iface,
@@ -752,7 +763,7 @@ static struct net_if_router *iface_router_add(struct net_if *iface,
 			sys_slist_append(&active_router_timers,
 					 &routers[i].node);
 
-			iface_router_run_timer(routers[i].life_start);
+			iface_router_update_timer(routers[i].life_start);
 		} else {
 			routers[i].is_default = false;
 			routers[i].is_infinite = true;
@@ -805,7 +816,7 @@ static bool iface_router_rm(struct net_if_router *router)
 
 	/* We recompute the timer if only the router was time limited */
 	if (sys_slist_find_and_remove(&active_router_timers, &router->node)) {
-		iface_router_run_timer(k_uptime_get_32());
+		iface_router_update_timer(k_uptime_get_32());
 	}
 
 	router->is_used = false;
@@ -2139,7 +2150,7 @@ void net_if_ipv6_router_update_lifetime(struct net_if_router *router,
 	router->life_start = k_uptime_get_32();
 	router->lifetime = lifetime;
 
-	iface_router_run_timer(router->life_start);
+	iface_router_update_timer(router->life_start);
 }
 
 struct net_if_router *net_if_ipv6_router_add(struct net_if *iface,
