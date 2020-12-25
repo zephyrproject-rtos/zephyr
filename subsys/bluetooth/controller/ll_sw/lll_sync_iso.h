@@ -6,5 +6,4 @@
 
 struct lll_sync_iso {
 	struct lll_hdr hdr;
-	uint8_t is_enabled:1;
 };
