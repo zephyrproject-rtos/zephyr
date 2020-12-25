@@ -27,6 +27,12 @@
 			compatible = "arm,cortex-a53";
 			reg = <0>;
 		};
+
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <1>;
+		};
 	};
 
 	timer {
