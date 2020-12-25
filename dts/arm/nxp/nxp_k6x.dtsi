@@ -507,7 +507,7 @@
 			clocks = <&sim KINETIS_SIM_DMA_CLK 0x1040 0x00000002>,
 				<&sim KINETIS_SIM_DMAMUX_CLK 0x103C 0x00000002>;
 			status = "disabled";
-			label = "EDMA0";
+			label = "DMA_0";
 		};
 
 		pit0: pit@40037000 {
