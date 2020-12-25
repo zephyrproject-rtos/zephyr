@@ -263,6 +263,12 @@ static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 #define BT_CTLR_SCAN_SYNC_SET 0
 #endif
 
+#if defined(CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET)
+#define BT_CTLR_SCAN_SYNC_ISO_SET CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET
+#else
+#define BT_CTLR_SCAN_SYNC_ISO_SET 0
+#endif
+
 #define PDU_RX_POOL_SIZE (PDU_RX_NODE_POOL_ELEMENT_SIZE * \
 			  (RX_CNT + BT_CTLR_MAX_CONNECTABLE + \
 			   BT_CTLR_ADV_SET + BT_CTLR_SCAN_SYNC_SET))
@@ -280,10 +286,10 @@ static struct {
  * happen due to supervision timeout and other reasons that dont have an
  * incoming Rx-ed PDU).
  */
-#define LINK_RX_POOL_SIZE (sizeof(memq_link_t) * (RX_CNT + 2 + \
-						  BT_CTLR_MAX_CONN + \
-						  BT_CTLR_ADV_SET + \
-						  (BT_CTLR_SCAN_SYNC_SET * 2)))
+#define LINK_RX_POOL_SIZE (sizeof(memq_link_t) * \
+			   (RX_CNT + 2 + BT_CTLR_MAX_CONN + BT_CTLR_ADV_SET + \
+			    (BT_CTLR_SCAN_SYNC_SET * 2) + \
+			    (BT_CTLR_SCAN_SYNC_ISO_SET * 2)))
 static struct {
 	uint8_t quota_pdu; /* Number of un-utilized buffers */
 
