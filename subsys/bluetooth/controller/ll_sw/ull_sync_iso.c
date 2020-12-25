@@ -92,7 +92,6 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 	/* Initialise ULL and LLL headers */
 	ull_hdr_init(&sync_iso->ull);
 	lll_hdr_init(lll_sync, sync);
-	lll_sync->is_enabled = true;
 
 	return BT_HCI_ERR_SUCCESS;
 }
@@ -109,11 +108,6 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle)
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
 
-	if (!sync_iso->lll.is_enabled) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
-
-	/* TODO: Stop ticker */
 	err = ull_ticker_stop_with_mark(
 		TICKER_ID_SCAN_SYNC_ISO_BASE + big_handle,
 		sync_iso, &sync_iso->lll);
@@ -128,7 +122,6 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle)
 	big_sync_estab = sync_iso->node_rx_estab.link;
 	ll_rx_link_release(big_sync_estab);
 
-	sync_iso->lll.is_enabled = false;
 	ull_sync_iso_release(sync_iso);
 
 	return BT_HCI_ERR_SUCCESS;
