@@ -1672,6 +1672,44 @@ struct wdt_it8xxx2_regs {
 #define CE_RNG			ECREG(EC_REG_BASE_ADDR + 0x3C20)
 
 
+/* Shared Memory Flash Interface Bridge (SMFI) registers */
+
+#ifndef __ASSEMBLER__
+struct flash_it8xxx2_regs {
+	volatile uint8_t reserved1[59];
+	/* 0x3B: EC-Indirect memory address 0 */
+	volatile uint8_t SMFI_ECINDAR0;
+	/* 0x3C: EC-Indirect memory address 1 */
+	volatile uint8_t SMFI_ECINDAR1;
+	/* 0x3D: EC-Indirect memory address 2 */
+	volatile uint8_t SMFI_ECINDAR2;
+	/* 0x3E: EC-Indirect memory address 3 */
+	volatile uint8_t SMFI_ECINDAR3;
+	/* 0x3F: EC-Indirect memory data */
+	volatile uint8_t SMFI_ECINDDR;
+	/* 0x40: Scratch SRAM 0 address low byte */
+	volatile uint8_t SMFI_SCAR0L;
+	/* 0x41: Scratch SRAM 0 address middle byte */
+	volatile uint8_t SMFI_SCAR0M;
+	/* 0x42: Scratch SRAM 0 address high byte */
+	volatile uint8_t SMFI_SCAR0H;
+	volatile uint8_t reserved2[95];
+	/* 0xA2: Flash control 6 */
+	volatile uint8_t SMFI_FLHCTRL6R;
+};
+#endif /* !__ASSEMBLER__ */
+
+/* SMFI register fields */
+
+/* EC-Indirect read internal flash */
+#define EC_INDIRECT_READ_INTERNAL_FLASH BIT(6)
+/* Enable EC-indirect page program command */
+#define IT8XXX2_SMFI_MASK_ECINDPP BIT(3)
+/* Scratch SRAM 0 address(BIT(19)) */
+#define IT8XXX2_SMFI_SC0A19 BIT(7)
+/* Scratch SRAM enable */
+#define IT8XXX2_SMFI_SCAR0H_ENABLE BIT(3)
+
 /* --- GPIO --- */
 #define IT8XXX2_GPIO_BASE  0x00F01600
 #define IT8XXX2_GPIO2_BASE 0x00F03E00
@@ -1829,9 +1867,11 @@ struct adc_it8xxx2_regs {
 #define IT83XX_GCTRL_SPISLVPFE             BIT(6)
 #define IT83XX_GCTRL_RSTC5           ECREG(IT83XX_GCTRL_BASE + 0x21)
 #define IT83XX_GCTRL_MCCR            ECREG(IT83XX_GCTRL_BASE + 0x30)
+#define IT83XX_GCTRL_ICACHE_RESET          BIT(4)
 #define IT83XX_GCTRL_PMER1           ECREG(IT83XX_GCTRL_BASE + 0x32)
 #define IT83XX_GCTRL_PMER2           ECREG(IT83XX_GCTRL_BASE + 0x33)
 #define IT83XX_GCTRL_EPLR            ECREG(IT83XX_GCTRL_BASE + 0x37)
+#define IT83XX_GCTRL_EPLR_ENABLE           BIT(0)
 #define IT83XX_GCTRL_IVTBAR          ECREG(IT83XX_GCTRL_BASE + 0x41)
 #define IT83XX_GCTRL_MCCR2           ECREG(IT83XX_GCTRL_BASE + 0x44)
 #define IT83XX_GCTRL_PIN_MUX0        ECREG(IT83XX_GCTRL_BASE + 0x46)
