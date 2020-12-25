@@ -28,6 +28,8 @@ extern void test_mbox_async_put_to_waiting_get(void);
 extern void test_mbox_get_waiting_put_incorrect_tid(void);
 extern void test_mbox_async_multiple_put(void);
 extern void test_mbox_multiple_waiting_get(void);
+extern void test_mbox_data_get_null(void);
+extern void test_mbox_get_put_block_data(void);
 
 /*test case main entry*/
 void test_main(void)
@@ -50,6 +52,8 @@ void test_main(void)
 			 ztest_unit_test(
 				test_mbox_get_waiting_put_incorrect_tid),
 			 ztest_1cpu_unit_test(test_mbox_async_multiple_put),
+			 ztest_unit_test(test_mbox_data_get_null),
+			 ztest_unit_test(test_mbox_get_put_block_data),
 			 ztest_1cpu_unit_test(test_mbox_multiple_waiting_get));
 	ztest_run_test_suite(mbox_api);
 }
