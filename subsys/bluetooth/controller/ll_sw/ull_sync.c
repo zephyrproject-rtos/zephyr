@@ -150,7 +150,7 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	lll_sync->window_widening_event_us = 0U;
 
 	/* Reporting initially enabled/disabled */
-	lll_sync->is_enabled = options & BIT(1);
+	lll_sync->is_rx_enabled = options & BIT(1);
 
 	/* sync_lost node_rx */
 	sync->node_rx_lost.hdr.link = link_sync_lost;
