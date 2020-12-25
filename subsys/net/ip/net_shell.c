@@ -3105,10 +3105,6 @@ static int cmd_net_iface_down(const struct shell *shell, size_t argc,
 }
 
 #if defined(CONFIG_NET_NATIVE_IPV6)
-static uint32_t time_diff(uint32_t time1, uint32_t time2)
-{
-	return (uint32_t)abs((int32_t)time1 - (int32_t)time2);
-}
 
 static void address_lifetime_cb(struct net_if *iface, void *user_data)
 {
@@ -3142,11 +3138,8 @@ static void address_lifetime_cb(struct net_if *iface, void *user_data)
 			continue;
 		}
 
-		remaining = (uint64_t)ipv6->unicast[i].lifetime.timer_timeout +
-			(uint64_t)ipv6->unicast[i].lifetime.wrap_counter *
-			(uint64_t)NET_TIMEOUT_MAX_VALUE -
-			(uint64_t)time_diff(k_uptime_get_32(),
-				ipv6->unicast[i].lifetime.timer_start);
+		remaining = net_timeout_remaining(&ipv6->unicast[i].lifetime,
+						  k_uptime_get_32());
 
 		prefix = net_if_ipv6_prefix_get(iface,
 					   &ipv6->unicast[i].address.in6_addr);
