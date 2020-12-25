@@ -47,7 +47,6 @@ extern enum bst_result_t bst_result;
 static void test_iso_main(void)
 {
 	struct bt_le_ext_adv *adv;
-	struct bt_le_adv_param param = { 0 };
 	int err;
 	int index;
 	uint8_t bis_count = 1; /* TODO: Add support for multiple BIS per BIG */
@@ -63,26 +62,36 @@ static void test_iso_main(void)
 	printk("success.\n");
 
 	printk("Create advertising set...\n");
-
-	param.interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
-	param.interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
-	param.options |= BT_LE_ADV_OPT_EXT_ADV;
-	err = bt_le_ext_adv_create(&param, NULL, &adv);
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN_NAME, NULL, &adv);
 	if (err) {
-		FAIL("Could not create advertising set: %d\n", err);
+		FAIL("Failed to create advertising set (err %d)\n", err);
 		return;
 	}
 	printk("success.\n");
 
 
-	printk("Setting PA parameters...\n");
+	printk("Setting Periodic Advertising parameters...\n");
 	err = bt_le_per_adv_set_param(adv, BT_LE_PER_ADV_DEFAULT);
 	if (err) {
-		FAIL("Could not set PA set parameters: %d\n", err);
+		FAIL("Failed to set periodic advertising parameters (err %d)\n",
+		     err);
 		return;
 	}
 	printk("success.\n");
 
+	printk("Enable Periodic Advertising...\n");
+	err = bt_le_per_adv_start(adv);
+	if (err) {
+		FAIL("Failed to enable periodic advertising (err %d)\n", err);
+		return;
+	}
+
+	/* Start extended advertising */
+	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err) {
+		printk("Failed to start extended advertising (err %d)\n", err);
+		return;
+	}
 
 #if !IS_ENABLED(USE_HOST_API)
 	uint8_t big_handle = 0;
@@ -129,8 +138,10 @@ static void test_iso_main(void)
 }
 
 
-static volatile uint8_t per_sid;
+static bool is_periodic;
+static uint8_t per_sid;
 static bt_addr_le_t per_addr;
+static bool volatile is_sync;
 
 static void pa_sync_cb(struct bt_le_per_adv_sync *sync,
 		     struct bt_le_per_adv_sync_synced_info *info)
@@ -141,6 +152,8 @@ static void pa_sync_cb(struct bt_le_per_adv_sync *sync,
 
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s synced\n",
 	       bt_le_per_adv_sync_get_index(sync), le_addr);
+
+	is_sync = true;
 }
 
 static void pa_terminated_cb(struct bt_le_per_adv_sync *sync,
@@ -214,8 +227,11 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	       info->interval, info->interval * 5 / 4, info->sid);
 
 	if (info->interval) {
-		per_sid = info->sid;
-		bt_addr_le_copy(&per_addr, info->addr);
+		if (!is_periodic) {
+			is_periodic = true;
+			per_sid = info->sid;
+			bt_addr_le_copy(&per_addr, info->addr);
+		}
 	}
 }
 
@@ -246,6 +262,7 @@ static void test_iso_recv_main(void)
 	printk("Success.\n");
 
 	printk("Start scanning...");
+	is_periodic = false;
 	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
 	if (err) {
 		FAIL("Could not start scan: %d\n", err);
@@ -253,13 +270,12 @@ static void test_iso_recv_main(void)
 	}
 	printk("success.\n");
 
-#if 0
 	struct bt_le_per_adv_sync *sync;
 	uint8_t bis_count = 1; /* TODO: Add support for multiple BIS per BIG */
 	uint8_t bis_handle = 0;
 	struct bt_le_per_adv_sync_param sync_create_param = { 0 };
 
-	while (!per_sid) {
+	while (!is_periodic) {
 		k_sleep(K_MSEC(100));
 	}
 	printk("PA SID found %u\n", per_sid);
@@ -275,6 +291,7 @@ static void test_iso_recv_main(void)
 	printk("Creating Periodic Advertising Sync...");
 	bt_addr_le_copy(&sync_create_param.addr, &per_addr);
 	sync_create_param.sid = per_sid;
+	sync_create_param.timeout = 0xa;
 	err = bt_le_per_adv_sync_create(&sync_create_param, &sync);
 	if (err) {
 		FAIL("Could not create sync: %d\n", err);
@@ -317,8 +334,6 @@ static void test_iso_recv_main(void)
 
 	k_sleep(K_MSEC(5000));
 #endif /* !USE_HOST_API */
-
-#endif
 
 	PASS("ISO recv test Passed\n");
 
