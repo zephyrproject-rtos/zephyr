@@ -592,7 +592,7 @@
 				<16 0>;
 			clocks = <&ccm IMX_CCM_EDMA_CLK 0x7C 0x000000C0>;
 			status = "disabled";
-			label = "EDMA0";
+			label = "DMA_0";
 		};
 
 		flexcan1: can@401d0000 {
