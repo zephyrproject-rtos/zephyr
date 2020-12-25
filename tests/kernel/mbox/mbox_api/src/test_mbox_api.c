@@ -13,6 +13,15 @@
 #define STACK_SIZE (640 + CONFIG_TEST_EXTRA_STACKSIZE)
 #endif
 #define MAIL_LEN 64
+
+/**
+ * @brief Tests for the mailbox kernel object
+ * @defgroup kernel_mbox_api Mailbox
+ * @ingroup all_tests
+ * @{
+ * @}
+ */
+
 /**TESTPOINT: init via K_MBOX_DEFINE*/
 K_MBOX_DEFINE(kmbox);
 
@@ -21,9 +30,10 @@ static struct k_mbox mbox;
 static k_tid_t sender_tid, receiver_tid, random_tid;
 
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
+static K_THREAD_STACK_DEFINE(rtstack, STACK_SIZE);
 static K_THREAD_STACK_DEFINE(tstack_1, STACK_SIZE);
 static K_THREAD_STACK_ARRAY_DEFINE(waiting_get_stack, 5, STACK_SIZE);
-static struct k_thread tdata, async_tid, waiting_get_tid[5];
+static struct k_thread tdata, rtdata, async_tid, waiting_get_tid[5];
 
 static struct k_sem end_sema, sync_sema;
 
@@ -423,6 +433,126 @@ void test_mbox_kdefine(void)
 	tmbox(&kmbox);
 }
 
+K_MBOX_DEFINE(send_mbox);
+static void thread_mbox_data_get_null(void *p1, void *p2, void *p3)
+{
+	struct k_mbox_msg get_msg = {0};
+	char str_data[] = "it string for get msg test";
+
+	get_msg.size = 16;
+	get_msg.rx_source_thread = K_ANY;
+	get_msg.tx_block.data = str_data;
+	get_msg._syncing_thread = receiver_tid;
+
+	k_mbox_data_get(&get_msg, NULL);
+
+	get_msg._syncing_thread = NULL;
+	k_mbox_data_get(&get_msg, NULL);
+	k_sem_give(&end_sema);
+}
+
+/**
+ *
+ * @brief Test k_mbox_data_get() API
+ *
+ * @details
+ * - Init a mbox and just invoke k_mbox_data_get() with different
+ *   input to check robust of API.
+ *
+ * @see k_mbox_data_get()
+ *
+ * @ingroup kernel_mbox_api
+ */
+void test_mbox_data_get_null(void)
+{
+	k_sem_reset(&end_sema);
+
+	receiver_tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+					thread_mbox_data_get_null,
+					NULL, NULL, NULL,
+					K_PRIO_PREEMPT(0), 0,
+					K_NO_WAIT);
+	k_sem_take(&end_sema, K_FOREVER);
+	/*test case teardown*/
+	k_thread_abort(receiver_tid);
+}
+
+static void thread_mbox_get_block_data(void *p1, void *p2, void *p3)
+{
+	k_sem_take(&sync_sema, K_FOREVER);
+	struct k_mbox_msg bdmsg;
+
+	bdmsg.size = MAIL_LEN;
+	bdmsg.rx_source_thread = sender_tid;
+	bdmsg.tx_target_thread = receiver_tid;
+	bdmsg.tx_data = NULL;
+	bdmsg.tx_block.data = data;
+	bdmsg.tx_data = data;
+
+	zassert_equal(k_mbox_get((struct k_mbox *)p1, &bdmsg, p2, K_FOREVER),
+			0, NULL);
+
+	k_sem_give(&end_sema);
+}
+
+/* give a block data to API k_mbox_async_put */
+static void thread_mbox_put_block_data(void *p1, void *p2, void *p3)
+{
+	struct k_mbox_msg put_msg;
+
+	put_msg.size = MAIL_LEN;
+	put_msg.tx_data = NULL;
+	put_msg.tx_block.data = p2;
+	put_msg.tx_target_thread = receiver_tid;
+	put_msg.rx_source_thread = sender_tid;
+
+	k_mbox_async_put((struct k_mbox *)p1, &put_msg, NULL);
+}
+
+/**
+ *
+ * @brief Test put and get mailbox with block data
+ *
+ * @details
+ * - Create two threads to put and get block data with
+ *   specify thread ID and K_FOREVER for each other.
+ * - Check the result after finished exchange.
+ *
+ * @see k_mbox_init() k_mbox_async_put() k_mbox_get()
+ *
+ * @ingroup kernel_mbox_api
+ */
+void test_mbox_get_put_block_data(void)
+{
+	struct k_mbox bdmbox;
+	/*test case setup*/
+	k_sem_reset(&end_sema);
+	k_sem_reset(&sync_sema);
+	k_mbox_init(&bdmbox);
+	char buff[MAIL_LEN];
+	char data_put[] = "mbox put data";
+
+	/**TESTPOINT: thread-thread data passing via mbox*/
+	sender_tid = k_current_get();
+	receiver_tid = k_thread_create(&rtdata, rtstack, STACK_SIZE,
+				       thread_mbox_get_block_data,
+				       &bdmbox, buff, NULL,
+				       K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
+
+	sender_tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      thread_mbox_put_block_data,
+				      &bdmbox, data_put, NULL,
+				       K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
+	k_sem_give(&sync_sema);
+	k_sem_take(&end_sema, K_FOREVER);
+	/*abort receiver thread*/
+	k_thread_abort(receiver_tid);
+	k_thread_abort(sender_tid);
+
+	zassert_equal(memcmp(buff, data_put, sizeof(data_put)), 0,
+			     NULL);
+}
+
 /**
  *
  * @brief Test mailbox enhance capabilities
@@ -432,13 +562,16 @@ void test_mbox_kdefine(void)
  * - Verify the capability of message queue and mailbox
  * - with same data.
  *
+ * @ingroup kernel_mbox_api
+ *
+ * @see k_msgq_init() k_msgq_put() k_mbox_async_put() k_mbox_get()
  */
+static ZTEST_BMEM char __aligned(4) buffer[8];
 void test_enhance_capability(void)
 {
 	info_type = ASYNC_PUT_GET_BUFFER;
 	struct k_msgq msgq;
 
-	ZTEST_BMEM char __aligned(4) buffer[8];
 	k_msgq_init(&msgq, buffer, 4, 2);
 	/* send buffer with message queue */
 	int ret = k_msgq_put(&msgq, &data[info_type], K_NO_WAIT);
