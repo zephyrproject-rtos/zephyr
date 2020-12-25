@@ -42,14 +42,14 @@
 #include "ull_sync_internal.h"
 #include "ull_sync_iso_internal.h"
 
-static struct ll_sync_iso ll_sync_iso_pool[CONFIG_BT_CTLR_SCAN_SYNC_ISO_MAX];
-static void *sync_iso_free;
-
 static int init_reset(void);
 static inline struct ll_sync_iso *sync_iso_acquire(void);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, void *param);
 static void ticker_op_cb(uint32_t status, void *param);
+
+static struct ll_sync_iso ll_sync_iso_pool[CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET];
+static void *sync_iso_free;
 
 uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 			   uint8_t encryption, uint8_t *bcode, uint8_t mse,
@@ -153,7 +153,7 @@ int ull_sync_iso_reset(void)
 
 struct ll_sync_iso *ull_sync_iso_get(uint8_t handle)
 {
-	if (handle >= CONFIG_BT_CTLR_SCAN_SYNC_ISO_MAX) {
+	if (handle >= CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET) {
 		return NULL;
 	}
 
