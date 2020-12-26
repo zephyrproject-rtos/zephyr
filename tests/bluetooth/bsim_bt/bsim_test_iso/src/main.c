@@ -294,6 +294,7 @@ static void test_iso_recv_main(void)
 	uint8_t encryption = 0;
 	uint8_t bcode[16] = { 0 };
 	uint16_t sync_timeout = 0;
+	struct node_rx_hdr *node_rx;
 
 	printk("Creating BIG...\n");
 	err = ll_big_sync_create(big_handle, sync->handle, encryption, bcode,
@@ -307,7 +308,7 @@ static void test_iso_recv_main(void)
 	k_sleep(K_MSEC(5000));
 
 	printk("Terminating BIG...\n");
-	err = ll_big_sync_terminate(big_handle);
+	err = ll_big_sync_terminate(big_handle, (void **)&node_rx);
 	if (err) {
 		FAIL("Could not terminate BIG sync: %d\n", err);
 		return;

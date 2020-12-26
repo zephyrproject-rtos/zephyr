@@ -147,7 +147,7 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 			   uint8_t encryption, uint8_t *bcode, uint8_t mse,
 			   uint16_t sync_timeout, uint8_t num_bis,
 			   uint8_t *bis);
-uint8_t ll_big_sync_terminate(uint8_t big_handle);
+uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx);
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 uint8_t ll_scan_enable(uint8_t enable);
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
