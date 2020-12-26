@@ -109,7 +109,6 @@ endfunction(toolchain_ld_link_elf)
 macro(toolchain_ld_baremetal)
   zephyr_ld_options(
     -Hlld
-    -Hnocopyr
     -Hnosdata
     -Hnocrt
     -Xtimer0 # to suppress the warning message
