@@ -108,9 +108,9 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
-	scan->per_scan.state = LL_SYNC_STATE_IDLE;
 	node_rx->link = link_sync_estab;
 	scan->per_scan.node_rx_estab = node_rx;
+	scan->per_scan.state = LL_SYNC_STATE_IDLE;
 	scan->per_scan.filter_policy = options & BIT(0);
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		scan_coded->per_scan.state = LL_SYNC_STATE_IDLE;
@@ -145,7 +145,7 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 	/* Reset Broadcast Isochronous Group Sync Establishment */
-	sync->sync_iso = NULL;
+	sync->iso.sync_iso = NULL;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 
 	/* Initialize sync LLL context */

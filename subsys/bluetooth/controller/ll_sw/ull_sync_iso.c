@@ -56,42 +56,60 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 			   uint16_t sync_timeout, uint8_t num_bis,
 			   uint8_t *bis)
 {
-	memq_link_t *big_sync_estab;
-	memq_link_t *big_sync_lost;
-	struct lll_sync_iso *lll_sync;
-	struct ll_sync_set *sync;
 	struct ll_sync_iso *sync_iso;
+	memq_link_t *link_sync_estab;
+	memq_link_t *link_sync_lost;
+	struct node_rx_hdr *node_rx;
+	struct ll_sync_set *sync;
 
 	sync = ull_sync_is_enabled_get(sync_handle);
-	if (!sync || sync->sync_iso) {
+	if (!sync || sync->iso.sync_iso) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	link_sync_estab = ll_rx_link_alloc();
+	if (!link_sync_estab) {
+		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+	}
+
+	link_sync_lost = ll_rx_link_alloc();
+	if (!link_sync_lost) {
+		ll_rx_link_release(link_sync_estab);
+
+		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+	}
+
+	node_rx = ll_rx_alloc();
+	if (!node_rx) {
+		ll_rx_link_release(link_sync_lost);
+		ll_rx_link_release(link_sync_estab);
+
+		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
 	sync_iso = sync_iso_acquire();
 	if (!sync_iso) {
-		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
-	}
-
-	big_sync_estab = ll_rx_link_alloc();
-	if (!big_sync_estab) {
-		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
-	}
-
-	big_sync_lost = ll_rx_link_alloc();
-	if (!big_sync_lost) {
-		ll_rx_link_release(big_sync_estab);
+		ll_rx_release(node_rx);
+		ll_rx_link_release(link_sync_lost);
+		ll_rx_link_release(link_sync_estab);
 
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
-	sync_iso->node_rx_lost.link = big_sync_lost;
-	sync_iso->node_rx_estab.link = big_sync_estab;
+	/* Initialize the ISO sync ULL context */
+	sync_iso->sync = sync;
+	sync_iso->node_rx_lost.hdr.link = link_sync_lost;
 
-	lll_sync = &sync_iso->lll;
+	/* Setup the periodic sync to establish ISO sync */
+	node_rx->link = link_sync_estab;
+	sync->iso.node_rx_estab = node_rx;
 
-	/* Initialise ULL and LLL headers */
+	/* Initialize ULL and LLL headers */
 	ull_hdr_init(&sync_iso->ull);
-	lll_hdr_init(lll_sync, sync);
+	lll_hdr_init(&sync_iso->lll, sync);
+
+	/* Enable periodic advertising to establish ISO sync */
+	sync->iso.sync_iso = sync_iso;
 
 	return BT_HCI_ERR_SUCCESS;
 }
