@@ -109,7 +109,7 @@ struct mcux_flexcan_data {
 	struct mcux_flexcan_tx_callback tx_cbs[MCUX_FLEXCAN_MAX_TX];
 	enum can_state state;
 	can_state_change_isr_t state_change_isr;
-	flexcan_timing_config_t timing;
+	struct can_timing timing;
 };
 
 static int mcux_flexcan_get_core_clock(const struct device *dev, uint32_t *rate)
@@ -132,18 +132,21 @@ static int mcux_flexcan_set_timing(const struct device *dev,
 	ARG_UNUSED(timing_data);
 	struct mcux_flexcan_data *data = dev->data;
 	const struct mcux_flexcan_config *config = dev->config;
+	flexcan_timing_config_t timing_tmp;
 
 	if (!timing) {
 		return -EINVAL;
 	}
 
-	data->timing.preDivider = timing->prescaler;
-	data->timing.rJumpwidth = timing->sjw;
-	data->timing.phaseSeg1 = timing->phase_seg1;
-	data->timing.phaseSeg2 = timing->phase_seg2;
-	data->timing.propSeg = timing->prop_seg;
+	data->timing = *timing;
 
-	FLEXCAN_SetTimingConfig(config->base, &data->timing);
+	timing_tmp.preDivider = data->timing.prescaler - 1U;
+	timing_tmp.rJumpwidth = data->timing.sjw - 1U;
+	timing_tmp.phaseSeg1 = data->timing.phase_seg1 - 1U;
+	timing_tmp.phaseSeg2 = data->timing.phase_seg2 - 1U;
+	timing_tmp.propSeg = data->timing.prop_seg - 1U;
+
+	FLEXCAN_SetTimingConfig(config->base, &timing_tmp);
 
 	return 0;
 }
@@ -164,14 +167,14 @@ static int mcux_flexcan_set_mode(const struct device *dev, enum can_mode mode)
 	FLEXCAN_GetDefaultConfig(&flexcan_config);
 	flexcan_config.clkSrc = config->clk_source;
 	flexcan_config.baudRate = clock_freq /
-	      (1U + data->timing.propSeg + data->timing.phaseSeg1 +
-	       data->timing.phaseSeg2) / data->timing.preDivider;
+	      (1U + data->timing.prop_seg + data->timing.phase_seg1 +
+	       data->timing.phase_seg2) / data->timing.prescaler;
 	flexcan_config.enableIndividMask = true;
 
-	flexcan_config.timingConfig.rJumpwidth = data->timing.rJumpwidth;
-	flexcan_config.timingConfig.propSeg = data->timing.propSeg;
-	flexcan_config.timingConfig.phaseSeg1 = data->timing.phaseSeg1;
-	flexcan_config.timingConfig.phaseSeg2 = data->timing.phaseSeg2;
+	flexcan_config.timingConfig.rJumpwidth = data->timing.sjw - 1U;
+	flexcan_config.timingConfig.propSeg = data->timing.prop_seg - 1U;
+	flexcan_config.timingConfig.phaseSeg1 = data->timing.phase_seg1 - 1U;
+	flexcan_config.timingConfig.phaseSeg2 = data->timing.phase_seg2 - 1U;
 
 	if (mode == CAN_LOOPBACK_MODE || mode == CAN_SILENT_LOOPBACK_MODE) {
 		flexcan_config.enableLoopBack = true;
@@ -674,7 +677,6 @@ static int mcux_flexcan_init(const struct device *dev)
 {
 	const struct mcux_flexcan_config *config = dev->config;
 	struct mcux_flexcan_data *data = dev->data;
-	struct can_timing timing;
 	int err;
 	int i;
 
@@ -685,32 +687,27 @@ static int mcux_flexcan_init(const struct device *dev)
 		k_sem_init(&data->tx_cbs[i].done, 0, 1);
 	}
 
-	timing.sjw = config->sjw;
+	data->timing.sjw = config->sjw;
 	if (config->sample_point && USE_SP_ALGO) {
-		err = can_calc_timing(dev, &timing, config->bitrate,
+		err = can_calc_timing(dev, &data->timing, config->bitrate,
 				      config->sample_point);
 		if (err == -EINVAL) {
 			LOG_ERR("Can't find timing for given param");
 			return -EIO;
 		}
 		LOG_DBG("Presc: %d, Seg1S1: %d, Seg2: %d",
-			timing.prescaler, timing.phase_seg1, timing.phase_seg2);
+			data->timing.prescaler, data->timing.phase_seg1,
+			data->timing.phase_seg2);
 		LOG_DBG("Sample-point err : %d", err);
 	} else {
-		timing.prop_seg = config->prop_seg;
-		timing.phase_seg1 = config->phase_seg1;
-		timing.phase_seg2 = config->phase_seg2;
-		err = can_calc_prescaler(dev, &timing, config->bitrate);
+		data->timing.prop_seg = config->prop_seg;
+		data->timing.phase_seg1 = config->phase_seg1;
+		data->timing.phase_seg2 = config->phase_seg2;
+		err = can_calc_prescaler(dev, &data->timing, config->bitrate);
 		if (err) {
 			LOG_WRN("Bitrate error: %d", err);
 		}
 	}
-
-	data->timing.preDivider = timing.prescaler;
-	data->timing.rJumpwidth = timing.sjw;
-	data->timing.phaseSeg1 = timing.phase_seg1;
-	data->timing.phaseSeg2 = timing.phase_seg2;
-	data->timing.propSeg = timing.prop_seg;
 
 	err = mcux_flexcan_set_mode(dev, CAN_NORMAL_MODE);
 	if (err) {
