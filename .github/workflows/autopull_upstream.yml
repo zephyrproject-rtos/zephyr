@@ -10,23 +10,33 @@ jobs:
     steps:
     - name: clone repo
       run: |
-        git clone -b upstream git@github.com:${{ github.repository }}.git ${{ github.repository }}
+        git clone -b ${{ env.branch }} git@github.com:phytec-labs/${{ env.repository_name }}.git ${{ env.repository_name }}
+      env:
+        repository_name: elements-zephyr
+        branch: upstream
 
     - name: rebase to upstream
       run: |
-        cd ${{ github.repository }}
+        cd ${{ env.repository_name }}
         git remote add upstream https://github.com/zephyrproject-rtos/zephyr.git
         git fetch upstream
         git rebase upstream/master
-        cd ..
+        cd ../
+      env:
+        repository_name: elements-zephyr
 
-    - name: push back to upstream
+    - name: push back to branch
       run: |
-        cd ${{ github.repository }}
-        git push origin upstream -f
-        cd ..
+        cd ${{ env.repository_name }}
+        git push origin HEAD:${{ env.branch }} -f
+        cd ../
+      env:
+        repository_name: elements-zephyr
+        branch: upstream
 
     - name: post cleanup
       if: always()
       run: |
-        rm -rf ${{ github.repository }}
+        rm -rf ${{ env.repository_name }}
+      env:
+        repository_name: elements-zephyr

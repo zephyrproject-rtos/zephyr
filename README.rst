@@ -5,7 +5,8 @@ A sub-project of the `Elements SDK`_. Visit this site to get more information ab
 
 This branch is intentionally left blank. You'll find the sources in the branches
 
-- stable: Stable branch with project-related patches applied
+- stable: Stable branch with project-related patches applied and linear history
+- stable-next: Stable next branch with project-related patches applied and linear history
 - stable-rebased: Stable branch with all these patches applied on top
 - upstream: Nightly synced upstream
 
