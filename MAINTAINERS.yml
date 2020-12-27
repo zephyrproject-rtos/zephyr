@@ -658,6 +658,8 @@ Documentation:
     status: maintained
     maintainers:
         - anangl
+    collaborators:
+        - henrikbrixandersen
     files:
         - drivers/pwm/
         - dts/bindings/pwm/
