@@ -72,7 +72,7 @@ static int setup_iface(struct net_if *iface, const char *ipv6_addr,
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		if (net_addr_pton(AF_INET, ipv4_addr, &addr4)) {
-			LOG_ERR("Invalid address: %s", ipv6_addr);
+			LOG_ERR("Invalid address: %s", ipv4_addr);
 			return -EINVAL;
 		}
 
