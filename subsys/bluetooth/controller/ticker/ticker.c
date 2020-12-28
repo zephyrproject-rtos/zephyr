@@ -2276,11 +2276,19 @@ void ticker_job(void *param)
 
 	DEBUG_TICKER_JOB(1);
 
-	/* Defer worker, as job is now running */
+	/* Prevent running job if worker is still running */
 	if (instance->worker_trigger) {
 		DEBUG_TICKER_JOB(0);
 		return;
 	}
+
+	/* Prevent running job if already running (re-entrance) */
+	if (instance->job_guard) {
+		DEBUG_TICKER_JOB(0);
+		return;
+	}
+
+	/* Defer worker, as job is now running */
 	instance->job_guard = 1U;
 
 	/* Back up the previous known tick */
@@ -2357,13 +2365,13 @@ void ticker_job(void *param)
 		ticker_job_list_inquire(instance);
 	}
 
-	/* Permit worker job to run */
-	instance->job_guard = 0U;
-
 	/* update compare if head changed */
 	if (flag_compare_update) {
 		ticker_job_compare_update(instance, ticker_id_old_head);
 	}
+
+	/* Permit worker job to run */
+	instance->job_guard = 0U;
 
 	/* trigger worker if deferred */
 	if (instance->worker_trigger) {
