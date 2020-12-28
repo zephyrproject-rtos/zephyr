@@ -33,11 +33,13 @@
 void test_server_rtu_setup_low_none(void);
 void test_server_rtu_setup_low_odd(void);
 void test_server_rtu_setup_high_even(void);
+void test_server_rtu_setup_ascii(void);
 void test_server_rtu_disable(void);
 
 void test_client_rtu_setup_low_none(void);
 void test_client_rtu_setup_low_odd(void);
 void test_client_rtu_setup_high_even(void);
+void test_client_rtu_setup_ascii(void);
 void test_rtu_coil_wr_rd(void);
 void test_rtu_di_rd(void);
 void test_rtu_input_reg(void);

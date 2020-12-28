@@ -35,6 +35,15 @@ void test_main(void)
 			 ztest_unit_test(test_rtu_holding_reg),
 			 ztest_unit_test(test_rtu_diagnostic),
 			 ztest_unit_test(test_client_rtu_disable),
+			 ztest_unit_test(test_server_rtu_disable),
+			 ztest_unit_test(test_server_rtu_setup_ascii),
+			 ztest_unit_test(test_client_rtu_setup_ascii),
+			 ztest_unit_test(test_rtu_coil_wr_rd),
+			 ztest_unit_test(test_rtu_di_rd),
+			 ztest_unit_test(test_rtu_input_reg),
+			 ztest_unit_test(test_rtu_holding_reg),
+			 ztest_unit_test(test_rtu_diagnostic),
+			 ztest_unit_test(test_client_rtu_disable),
 			 ztest_unit_test(test_server_rtu_disable)
 			 );
 	ztest_run_test_suite(modbus_client_test);
