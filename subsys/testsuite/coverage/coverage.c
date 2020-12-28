@@ -223,6 +223,7 @@ void gcov_coverage_dump(void)
 	uint8_t *buffer;
 	size_t size;
 	size_t written_size;
+	struct gcov_info *gcov_list_first = gcov_info_head;
 	struct gcov_info *gcov_list = gcov_info_head;
 
 	k_sched_lock();
@@ -247,6 +248,9 @@ void gcov_coverage_dump(void)
 
 		k_heap_free(&gcov_heap, buffer);
 		gcov_list = gcov_list->next;
+		if (gcov_list_first == gcov_list) {
+			goto coverage_dump_end;
+		}
 	}
 coverage_dump_end:
 	printk("\nGCOV_COVERAGE_DUMP_END\n");
