@@ -226,6 +226,16 @@ void test_client_rtu_setup_high_even(void)
 	zassert_equal(err, 0, "Failed to configure RTU client");
 }
 
+void test_client_rtu_setup_ascii(void)
+{
+	int err;
+
+	err = mb_rtu_cfg_client(iface, MB_TEST_BAUDRATE_HIGH,
+				UART_CFG_PARITY_EVEN,
+				MB_TEST_RESPONSE_TO, true);
+	zassert_equal(err, 0, "Failed to configure RTU client");
+}
+
 void test_client_rtu_disable(void)
 {
 	int err;
@@ -247,6 +257,11 @@ void test_client_rtu_setup_low_odd(void)
 }
 
 void test_client_rtu_setup_high_even(void)
+{
+	ztest_test_skip();
+}
+
+void test_client_rtu_setup_ascii(void)
 {
 	ztest_test_skip();
 }

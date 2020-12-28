@@ -209,6 +209,21 @@ void test_server_rtu_setup_high_even(void)
 	}
 }
 
+void test_server_rtu_setup_ascii(void)
+{
+	int err;
+
+	if (IS_ENABLED(CONFIG_MODBUS_RTU_SERVER)) {
+		err = mb_rtu_cfg_server(MB_TEST_IFACE_SERVER, MB_TEST_NODE_ADDR,
+					MB_TEST_BAUDRATE_HIGH,
+					UART_CFG_PARITY_EVEN,
+					&mbs_cbs, true);
+		zassert_equal(err, 0, "Failed to configure RTU server");
+	} else {
+		ztest_test_skip();
+	}
+}
+
 void test_server_rtu_disable(void)
 {
 	int err;
