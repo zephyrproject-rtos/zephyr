@@ -134,7 +134,7 @@ static int mb_rx_ascii_frame(struct mb_rtu_context *ctx)
 		return -EMSGSIZE;
 	}
 
-	if (rx_size > MODBUS_ASCII_MIN_MSG_SIZE) {
+	if (rx_size < MODBUS_ASCII_MIN_MSG_SIZE) {
 		LOG_WRN("Frame length error");
 		return -EMSGSIZE;
 	}
@@ -169,8 +169,6 @@ static int mb_rx_ascii_frame(struct mb_rtu_context *ctx)
 		ctx->rx_frame.length++;
 	}
 
-	/* Subtract the Address and function code */
-	ctx->rx_frame.length -= 2;
 	/* Extract the message's LRC */
 	hex2bin(pmsg, 2, &frame_lrc, 1);
 	ctx->rx_frame.crc = frame_lrc;
