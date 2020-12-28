@@ -102,8 +102,16 @@ static struct mbs_rtu_user_callbacks mbs_cbs = {
 
 static int init_modbus_server(void)
 {
-	const uint8_t iface = 0;
 	const uint32_t mb_rtu_br = 19200;
+	const char iface_name[] = {DT_PROP(DT_INST(0, zephyr_modbus_serial), label)};
+	int iface;
+
+	iface = mb_rtu_iface_get_by_name(iface_name);
+
+	if (iface < 0) {
+		LOG_ERR("Failed to get iface index for %s", iface_name);
+		return iface;
+	}
 
 	return mb_rtu_cfg_server(iface, 1, mb_rtu_br, UART_CFG_PARITY_NONE,
 				 &mbs_cbs, false);

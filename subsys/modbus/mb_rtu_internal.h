@@ -89,6 +89,8 @@ struct mb_rtu_gpio_config {
 #define MB_RTU_STATE_CONFIGURED		0
 
 struct mb_rtu_context {
+	/* Interface name */
+	const char *iface_name;
 	/* UART device name */
 	const char *dev_name;
 	/* UART device */
