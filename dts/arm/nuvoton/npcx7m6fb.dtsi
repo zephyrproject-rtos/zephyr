@@ -491,7 +491,6 @@
 				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 6>,
 				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 7>;
 			label = "HOST_SUBS";
-			status = "disabled";
 		};
 
 		host_uart: io_host_uart {
@@ -502,6 +501,7 @@
 						&altb_ri_sl &altb_dtr_bout_sl
 						&altb_dcd_sl &altb_dsr_sl>;
 			label = "HOST_UART_IO";
+			status = "disabled";
 		};
 
 		/* I2c Controllers - Do not use them as i2c node directly */
