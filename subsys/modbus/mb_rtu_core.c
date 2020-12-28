@@ -49,6 +49,7 @@ DT_INST_FOREACH_STATUS_OKAY(MB_RTU_DEFINE_GPIO_CFGS)
 		    (&d##_cfg_##n), (NULL))
 
 #define MODBUS_DT_GET_DEV(n) {					\
+		.iface_name = DT_INST_LABEL(n),			\
 		.dev_name = DT_INST_BUS_LABEL(n),		\
 		.de = MB_RTU_ASSIGN_GPIO_CFG(n, de_gpios),	\
 		.re = MB_RTU_ASSIGN_GPIO_CFG(n, re_gpios),	\
@@ -663,6 +664,7 @@ static struct mb_rtu_context *mb_cfg_iface(const uint8_t iface,
 
 	k_timer_init(&ctx->rtu_timer, mb_rtu_tmr_handler, NULL);
 	k_timer_user_data_set(&ctx->rtu_timer, ctx);
+	LOG_DBG("Modbus interface %s initialized", ctx->iface_name);
 
 	return ctx;
 }
@@ -694,6 +696,17 @@ int mb_rtu_cfg_server(const uint8_t iface, const uint8_t node_addr,
 	ctx->mbs_user_cb = cb;
 
 	return 0;
+}
+
+int mb_rtu_iface_get_by_name(const char *iface_name)
+{
+	for (int i = 0; i < ARRAY_SIZE(mb_ctx_tbl); i++) {
+		if (strcmp(iface_name, mb_ctx_tbl[i].iface_name) == 0) {
+			return i;
+		}
+	}
+
+	return -ENODEV;
 }
 
 int mb_rtu_cfg_client(const uint8_t iface,

@@ -335,6 +335,18 @@ struct mbs_rtu_user_callbacks {
 };
 
 /**
+ * @brief Get Modbus RTU interface index according to interface name
+ *
+ * If there is more than one interface, it can be used to clearly
+ * identify interfaces in the application.
+ *
+ * @param iface_name Modbus RTU interface name
+ *
+ * @retval           Modbus RTU interface index or negative error value.
+ */
+int mb_rtu_iface_get_by_name(const char *iface_name);
+
+/**
  * @brief Configure Modbus Interface as server
  *
  * @param iface      Modbus RTU interface index
