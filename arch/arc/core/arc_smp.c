@@ -66,6 +66,32 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	}
 }
 
+#ifdef CONFIG_SMP
+static void arc_slave_irq_init(void)
+{
+	int irq; /* the interrupt index */
+
+	/* Interrupts from 0 to 15 are exceptions and they are ignored
+	 * by IRQ auxiliary registers. For that reason we skip those
+	 * values in this loop.
+	 */
+	for (irq = 16; irq < CONFIG_NUM_IRQS; irq++) {
+
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
+			 (CONFIG_NUM_IRQ_PRIO_LEVELS-1) |
+			 _ARC_V2_IRQ_PRIORITY_SECURE); /* lowest priority */
+#else
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
+			 (CONFIG_NUM_IRQ_PRIO_LEVELS-1)); /* lowest priority */
+#endif
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_ENABLE, _ARC_V2_INT_DISABLE);
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER, _ARC_V2_INT_LEVEL);
+	}
+}
+#endif
+
 /* the C entry of slave cores */
 void z_arc_slave_start(int cpu_num)
 {
@@ -74,6 +100,7 @@ void z_arc_slave_start(int cpu_num)
 #ifdef CONFIG_SMP
 	z_icache_setup();
 	z_irq_setup();
+	arc_slave_irq_init();
 
 	z_arc_connect_ici_clear();
 	z_irq_priority_set(IRQ_ICI, ARCV2_ICI_IRQ_PRIORITY, 0);
