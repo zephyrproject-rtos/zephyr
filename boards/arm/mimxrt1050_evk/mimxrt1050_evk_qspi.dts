@@ -6,7 +6,7 @@
 
 #include "mimxrt1050_evk.dts"
 
-/delete-node/ &hyperflash0;
+/delete-node/ &s26ks512s0;
 
 &flexspi {
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
