@@ -174,6 +174,27 @@ static void summarize_dw14(const struct jesd216_param_header *php,
 	       dw14.exit_delay_ns, dw14.poll_options);
 }
 
+static void summarize_dw15(const struct jesd216_param_header *php,
+			   const struct jesd216_bfp *bfp)
+{
+	struct jesd216_bfp_dw15 dw15;
+
+	if (jesd216_bfp_decode_dw15(php, bfp, &dw15) != 0) {
+		return;
+	}
+	printf("HOLD or RESET Disable: %ssupported\n",
+	       dw15.hold_reset_disable ? "" : "un");
+	printf("QER: %u\n", dw15.qer);
+	if (dw15.support_044) {
+		printf("0-4-4 Mode methods: entry 0x%01x ; exit 0x%02x\n",
+		       dw15.entry_044, dw15.exit_044);
+	} else {
+		printf("0-4-4 Mode: not supported");
+	}
+	printf("4-4-4 Mode sequences: enable 0x%02x ; disable 0x%01x\n",
+	       dw15.enable_444, dw15.disable_444);
+}
+
 /* Indexed from 1 to match JESD216 data word numbering */
 static const dw_extractor extractor[] = {
 	[1] = summarize_dw1,
@@ -182,6 +203,7 @@ static const dw_extractor extractor[] = {
 	[11] = summarize_dw11,
 	[12] = summarize_dw12,
 	[14] = summarize_dw14,
+	[15] = summarize_dw15,
 };
 
 static void dump_bfp(const struct jesd216_param_header *php,
