@@ -34,6 +34,8 @@ void test_main(void)
 		ztest_unit_test(test_mem_domain_boot_threads),
 		ztest_unit_test(test_mem_domain_migration),
 		ztest_unit_test(test_mem_part_overlap),
+		ztest_unit_test(test_mem_domain_init_fail),
+		ztest_unit_test(test_mem_domain_remove_part_fail),
 
 		/* mem_partition.c */
 		ztest_user_unit_test(test_mem_part_assign_bss_vars_zero),
