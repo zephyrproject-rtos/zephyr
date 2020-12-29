@@ -138,6 +138,9 @@ static void tmslab_used_get(void *data)
  */
 void test_mslab_kinit(void)
 {
+	/* if a block_size is not word aligned, slab init return error */
+	zassert_equal(k_mem_slab_init(&mslab, tslab, BLK_SIZE + 1, BLK_NUM),
+				-EINVAL, NULL);
 	k_mem_slab_init(&mslab, tslab, BLK_SIZE, BLK_NUM);
 	zassert_equal(k_mem_slab_num_used_get(&mslab), 0, NULL);
 	zassert_equal(k_mem_slab_num_free_get(&mslab), BLK_NUM, NULL);
