@@ -573,6 +573,19 @@ test_i2c_max17055: max17055@49 {
 	v-empty = <3300>;
 };
 
+test_i2c_max17262: max17262@36 {
+	compatible = "maxim,max17262";
+	label = "MAX17262";
+	reg = <0x36>;
+	design-voltage = <3600>;
+	desired-voltage = <3600>;
+	desired-charging-current = <2000>;
+	design-cap = <17000>;
+	empty-voltage = <3300>;
+	recovery-voltage = <3880>;
+	charge-voltage = <3600>;
+};
+
 test_i2c_vcnl4040: vcnl4040@60 {
 	compatible = "vishay,vcnl4040";
 	label = "VCNL4040";
