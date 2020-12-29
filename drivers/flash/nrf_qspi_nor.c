@@ -26,8 +26,6 @@ struct qspi_nor_config {
        uint32_t size;
 };
 
-#define QSPI_NOR_MAX_ID_LEN SPI_NOR_MAX_ID_LEN
-
 /* Status register bits */
 #define QSPI_SECTOR_SIZE SPI_NOR_SECTOR_SIZE
 #define QSPI_BLOCK_SIZE SPI_NOR_BLOCK_SIZE
@@ -601,10 +599,10 @@ static int qspi_nrfx_configure(const struct device *dev)
 static inline int qspi_nor_read_id(const struct device *dev,
 				   const struct qspi_nor_config *const flash_id)
 {
-	uint8_t rx_b[QSPI_NOR_MAX_ID_LEN];
+	uint8_t rx_b[SPI_NOR_MAX_ID_LEN];
 	const struct qspi_buf q_rx_buf = {
 		.buf = rx_b,
-		.len = QSPI_NOR_MAX_ID_LEN
+		.len = sizeof(rx_b),
 	};
 	const struct qspi_cmd cmd = {
 		.op_code = SPI_NOR_CMD_RDID,
@@ -616,7 +614,7 @@ static inline int qspi_nor_read_id(const struct device *dev,
 		return -EIO;
 	}
 
-	if (memcmp(flash_id->id, rx_b, QSPI_NOR_MAX_ID_LEN) != 0) {
+	if (memcmp(flash_id->id, rx_b, SPI_NOR_MAX_ID_LEN) != 0) {
 		LOG_ERR("flash id error. Extected: [%d %d %d], got: [%d %d %d]",
 			flash_id->id[0], flash_id->id[1], flash_id->id[2],
 			rx_b[0], rx_b[1], rx_b[2]);
