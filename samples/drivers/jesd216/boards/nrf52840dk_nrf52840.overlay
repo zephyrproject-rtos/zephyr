@@ -29,7 +29,6 @@
 		];
 
 		size = <67108864>;
-		has-be32k;
 		has-dpd;
 		t-enter-dpd = <10000>;
 		dpd-wakeup-sequence = <30000 20 45000>;

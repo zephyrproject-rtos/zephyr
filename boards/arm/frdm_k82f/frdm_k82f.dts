@@ -198,7 +198,6 @@
 		wp-gpios = <&gpioe 3 0>;
 		reset-gpios = <&gpioe 0 0>;
 		size = <0x2000000>;
-		has-be32k;
 		jedec-id = [c2 25 36];
 	};
 };
