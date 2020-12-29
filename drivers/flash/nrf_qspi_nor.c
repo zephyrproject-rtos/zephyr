@@ -114,7 +114,7 @@ static inline int qspi_get_mode(bool cpol, bool cpha)
 	return ret;
 }
 
-static inline bool qspi_is_used_write_quad_mode(nrf_qspi_writeoc_t lines)
+static inline bool qspi_write_is_quad(nrf_qspi_writeoc_t lines)
 {
 	switch (lines) {
 	case NRF_QSPI_WRITEOC_PP4IO:
@@ -125,7 +125,7 @@ static inline bool qspi_is_used_write_quad_mode(nrf_qspi_writeoc_t lines)
 	}
 }
 
-static inline bool qspi_is_used_read_quad_mode(nrf_qspi_readoc_t lines)
+static inline bool qspi_read_is_quad(nrf_qspi_readoc_t lines)
 {
 	switch (lines) {
 	case NRF_QSPI_READOC_READ4IO:
@@ -494,8 +494,8 @@ static int qspi_nrfx_configure(const struct device *dev)
 
 	if (res == NRFX_SUCCESS) {
 		/* If quad transfer was chosen - enable it now */
-		if ((qspi_is_used_write_quad_mode(QSPIconfig.prot_if.writeoc))
-		    || (qspi_is_used_read_quad_mode(QSPIconfig.prot_if.readoc))) {
+		if ((qspi_write_is_quad(QSPIconfig.prot_if.writeoc))
+		    || (qspi_read_is_quad(QSPIconfig.prot_if.readoc))) {
 			uint8_t tx = BIT(CONFIG_NORDIC_QSPI_NOR_QE_BIT);
 			const struct qspi_buf tx_buff = {
 				.buf = &tx,
