@@ -1,8 +1,8 @@
 name: Merge stable-next branch
 
 on:
-  push:
-    branches: [ upstream ]
+  schedule:
+  - cron: "0 1 * * *"
 
 jobs:
   prepare:
