@@ -303,7 +303,8 @@ static void qspi_handler(nrfx_qspi_evt_t event, void *p_context)
 
 
 /* QSPI send custom command */
-static int qspi_send_cmd(const struct device *dev, const struct qspi_cmd *cmd)
+static int qspi_send_cmd(const struct device *dev, const struct qspi_cmd *cmd,
+			 bool wren)
 {
 	/* Check input parameters */
 	if (!cmd) {
@@ -317,7 +318,7 @@ static int qspi_send_cmd(const struct device *dev, const struct qspi_cmd *cmd)
 		.io2_level = true,
 		.io3_level = true,
 		.wipwait = false,
-		.wren = true,
+		.wren = wren,
 	};
 	cinstr_cfg.length = sizeof(cmd->op_code);
 	if ((cmd->tx_buf != 0) && (cmd->rx_buf != 0)) {
@@ -466,23 +467,17 @@ static int qspi_nrfx_configure(const struct device *dev)
 		/* If quad transfer was chosen - enable it now */
 		if ((qspi_is_used_write_quad_mode(QSPIconfig.prot_if.writeoc))
 		    || (qspi_is_used_read_quad_mode(QSPIconfig.prot_if.readoc))) {
-
-			/* WRITE ENABLE has to be sent before QUAR ENABLE */
-			struct qspi_cmd cmd = { .op_code = SPI_NOR_CMD_WREN };
-
-			if (qspi_send_cmd(dev, &cmd) != 0) {
-				return -EIO;
-			}
-
 			uint8_t tx = BIT(CONFIG_NORDIC_QSPI_NOR_QE_BIT);
+			const struct qspi_buf tx_buff = {
+				.buf = &tx,
+				.len = sizeof(tx),
+			};
+			struct qspi_cmd cmd = {
+				.op_code = SPI_NOR_CMD_WRSR,
+				.tx_buf = &tx_buff,
+			};
 
-			const struct qspi_buf tx_buff = { .buf = &tx, .len = sizeof(tx), };
-
-			cmd.op_code = SPI_NOR_CMD_WRSR;
-			cmd.tx_buf = &tx_buff;
-			cmd.rx_buf = NULL;
-
-			if (qspi_send_cmd(dev, &cmd) != 0) {
+			if (qspi_send_cmd(dev, &cmd, true) != 0) {
 				return -EIO;
 			}
 		}
@@ -513,7 +508,7 @@ static inline int qspi_nor_read_id(const struct device *dev,
 		.tx_buf = NULL
 	};
 
-	if (qspi_send_cmd(dev, &cmd) != 0) {
+	if (qspi_send_cmd(dev, &cmd, false) != 0) {
 		return -EIO;
 	}
 
@@ -779,7 +774,7 @@ static int qspi_nor_write_protection_set(const struct device *dev,
 
 	driver_data->write_protection = write_protect;
 
-	if (qspi_send_cmd(dev, &cmd) != 0) {
+	if (qspi_send_cmd(dev, &cmd, false) != 0) {
 		ret = -EIO;
 	}
 
