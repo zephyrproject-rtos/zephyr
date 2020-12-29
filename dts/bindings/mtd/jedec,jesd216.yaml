@@ -43,3 +43,22 @@ properties:
     required: false
     deprecated: true
     description: Not used after Zephyr 2.3.0
+
+  quad-enable-requirements:
+    type: string
+    enum:
+      - "NONE"
+      - "S2B1v1"
+      - "S1B6"
+      - "S2B7"
+      - "S2B1v4"
+      - "S2B1v5"
+      - "S2B1v6"
+    required: false
+    description: |
+      Quad Enable Requirements value from JESD216 BFP DW15.
+
+      Use NONE if the device detects 1-1-4 and 1-4-4 modes by the
+      instruction.  Use S1B6 if QE is bit 6 of the first status register
+      byte, and can be configured by reading then writing one byte with
+      RDSR and WRSR.  For other fields see the specification.
