@@ -143,7 +143,6 @@
 		t-enter-dpd = <4000>;
 		t-exit-dpd = <25000>;
 		jedec-id = [ef 40 15];
-		has-be32k;
 	};
 };
 

@@ -138,7 +138,6 @@ test_spi_spi_nor: spi-nor@d {
 	hold-gpios = <&test_gpio 0 0>;
 	reset-gpios = <&test_gpio 0 0>;
 	jedec-id = [];
-	/* has-be32k; */
 	/* requires-ulbpr; */
 	/* has-dpd; */
 	size = <0>;
