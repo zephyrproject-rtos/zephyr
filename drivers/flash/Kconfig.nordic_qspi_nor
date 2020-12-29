@@ -11,10 +11,6 @@ menuconfig NORDIC_QSPI_NOR
 
 if NORDIC_QSPI_NOR
 
-config NORDIC_QSPI_NOR_QE_BIT
-	int "Quad Enable bit number in Status Register"
-	default 6
-
 config NORDIC_QSPI_NOR_INIT_PRIORITY
 	int
 	default 80

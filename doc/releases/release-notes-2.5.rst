@@ -167,6 +167,9 @@ Drivers and Sensors
 
 * Flash
 
+  * CONFIG_NORDIC_QSPI_NOR_QE_BIT has been removed.  The
+    quad-enable-requirements devicetree property should be used instead.
+
 * GPIO
 
 * Hardware Info
