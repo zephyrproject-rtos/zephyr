@@ -588,6 +588,69 @@ static int qspi_nrfx_configure(const struct device *dev)
 	return ret;
 }
 
+static int qspi_read_jedec_id(const struct device *dev,
+				     uint8_t *id)
+{
+	const struct qspi_buf rx_buf = {
+		.buf = id,
+		.len = 3
+	};
+	const struct qspi_cmd cmd = {
+		.op_code = SPI_NOR_CMD_RDID,
+		.rx_buf = &rx_buf,
+	};
+
+	return qspi_send_cmd(dev, &cmd, false);
+}
+
+#if defined(CONFIG_FLASH_JESD216_API)
+
+static int qspi_sfdp_read(const struct device *dev, off_t offset,
+			  void *data, size_t len)
+{
+	__ASSERT(data != NULL, "null destination");
+
+	uint8_t addr_buf[] = {
+		offset >> 16,
+		offset >> 8,
+		offset,
+		0,		/* wait state */
+	};
+	nrf_qspi_cinstr_conf_t cinstr_cfg = {
+		.opcode = JESD216_CMD_READ_SFDP,
+		.length = NRF_QSPI_CINSTR_LEN_1B,
+		.io2_level = true,
+		.io3_level = true,
+	};
+
+	qspi_lock(dev);
+
+	int res = nrfx_qspi_lfm_start(&cinstr_cfg);
+
+	if (res != NRFX_SUCCESS) {
+		LOG_DBG("lfm_start: %x", res);
+		goto out;
+	}
+
+	res = nrfx_qspi_lfm_xfer(addr_buf, NULL, sizeof(addr_buf), false);
+	if (res != NRFX_SUCCESS) {
+		LOG_DBG("lfm_xfer addr: %x", res);
+		goto out;
+	}
+
+	res = nrfx_qspi_lfm_xfer(NULL, data, len, true);
+	if (res != NRFX_SUCCESS) {
+		LOG_DBG("lfm_xfer read: %x", res);
+		goto out;
+	}
+
+out:
+	qspi_unlock(dev);
+	return qspi_get_zephyr_ret_code(res);
+}
+
+#endif /* CONFIG_FLASH_JESD216_API */
+
 /**
  * @brief Retrieve the Flash JEDEC ID and compare it with the one expected
  *
@@ -599,25 +662,17 @@ static int qspi_nrfx_configure(const struct device *dev)
 static inline int qspi_nor_read_id(const struct device *dev,
 				   const struct qspi_nor_config *const flash_id)
 {
-	uint8_t rx_b[SPI_NOR_MAX_ID_LEN];
-	const struct qspi_buf q_rx_buf = {
-		.buf = rx_b,
-		.len = sizeof(rx_b),
-	};
-	const struct qspi_cmd cmd = {
-		.op_code = SPI_NOR_CMD_RDID,
-		.rx_buf = &q_rx_buf,
-		.tx_buf = NULL
-	};
+	uint8_t id[SPI_NOR_MAX_ID_LEN];
+	int ret = qspi_read_jedec_id(dev, id);
 
-	if (qspi_send_cmd(dev, &cmd, false) != 0) {
+	if (ret != 0) {
 		return -EIO;
 	}
 
-	if (memcmp(flash_id->id, rx_b, SPI_NOR_MAX_ID_LEN) != 0) {
-		LOG_ERR("flash id error. Extected: [%d %d %d], got: [%d %d %d]",
-			flash_id->id[0], flash_id->id[1], flash_id->id[2],
-			rx_b[0], rx_b[1], rx_b[2]);
+	if (memcmp(flash_id->id, id, SPI_NOR_MAX_ID_LEN) != 0) {
+		LOG_ERR("JEDEC id [%02x %02x %02x] expect [%02x %02x %02x]",
+			id[0], id[1], id[2],
+			flash_id->id[0], flash_id->id[1], flash_id->id[2]);
 		return -ENODEV;
 	}
 
@@ -972,6 +1027,10 @@ static const struct flash_driver_api qspi_nor_api = {
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = qspi_nor_pages_layout,
 #endif
+#if defined(CONFIG_FLASH_JESD216_API)
+	.sfdp_read = qspi_sfdp_read,
+	.read_jedec_id = qspi_read_jedec_id,
+#endif /* CONFIG_FLASH_JESD216_API */
 };
 
 
