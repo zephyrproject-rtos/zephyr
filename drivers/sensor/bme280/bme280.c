@@ -76,6 +76,10 @@ struct bme280_data {
 	int32_t t_fine;
 
 	uint8_t chip_id;
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uint32_t pm_state; /* Current power state */
+#endif
 };
 
 struct bme280_spi_cfg {
@@ -317,6 +321,12 @@ static int bme280_sample_fetch(const struct device *dev,
 	int ret;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	/* Do not allow sample fetching from OFF state */
+	if (data->pm_state == DEVICE_PM_OFF_STATE)
+		return -EIO;
+#endif
 
 #ifdef CONFIG_BME280_MODE_FORCED
 	ret = bme280_reg_write(dev, BME280_REG_CTRL_MEAS, BME280_CTRL_MEAS_VAL);
@@ -575,6 +585,11 @@ int bme280_init(const struct device *dev)
 
 	rc = 0;
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	/* Set power state to ACTIVE */
+	data->pm_state = DEVICE_PM_ACTIVE_STATE;
+#endif
+
 done:
 	if (rc == 0) {
 		LOG_DBG("%s OK", name);
@@ -584,6 +599,59 @@ done:
 	return rc;
 }
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+int bme280_pm_ctrl(const struct device *dev, uint32_t ctrl_command,
+				void *context, device_pm_cb cb, void *arg)
+{
+	struct bme280_data *data = to_data(dev);
+
+	int ret = 0;
+
+	/* Set power state */
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		uint32_t new_pm_state = *((const uint32_t *)context);
+
+		if (new_pm_state != data->pm_state) {
+
+			/* Switching from OFF to any */
+			if (data->pm_state == DEVICE_PM_OFF_STATE) {
+
+				/* Re-initialize the chip */
+				ret = bme280_chip_init(dev);
+			}
+			/* Switching to OFF from any */
+			else if (new_pm_state == DEVICE_PM_OFF_STATE) {
+
+				/* Put the chip into sleep mode */
+				ret = bme280_reg_write(dev,
+					BME280_REG_CTRL_MEAS,
+					BME280_CTRL_MEAS_OFF_VAL);
+
+				if (ret < 0)
+					LOG_DBG("CTRL_MEAS write failed: %d",
+						ret);
+			}
+
+			/* Store the new state */
+			if (!ret)
+				data->pm_state = new_pm_state;
+		}
+	}
+	/* Get power state */
+	else {
+		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
+		*((uint32_t *)context) = data->pm_state;
+	}
+
+	/* Invoke callback if any */
+	if (cb)
+		cb(dev, ret, context, arg);
+
+	return ret;
+}
+#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
+
+
 /*
  * Device creation macro, shared by BME280_DEFINE_SPI() and
  * BME280_DEFINE_I2C().
@@ -592,7 +660,7 @@ done:
 #define BME280_DEVICE_INIT(inst)					\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			    bme280_init,				\
-			    device_pm_control_nop,			\
+			    bme280_pm_ctrl,				\
 			    &bme280_data_##inst,			\
 			    &bme280_config_##inst,			\
 			    POST_KERNEL,				\
