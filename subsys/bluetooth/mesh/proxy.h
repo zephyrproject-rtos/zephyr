@@ -12,13 +12,8 @@
 #define BT_MESH_PROXY_PROV      0x03
 
 
-struct bt_mesh_proxy_idle_cb {
-	sys_snode_t n;
-	void (*cb)(void);
-};
-
-int bt_mesh_proxy_send(struct bt_conn *conn, uint8_t type,
-		       struct net_buf_simple *msg);
+int bt_mesh_pb_gatt_send(struct bt_conn *conn, struct net_buf_simple *msg,
+			 const struct bt_mesh_send_cb *cb, void *user_data);
 
 int bt_mesh_proxy_prov_enable(void);
 int bt_mesh_proxy_prov_disable(bool disconnect);
@@ -36,8 +31,8 @@ int bt_mesh_proxy_adv_start(void);
 void bt_mesh_proxy_identity_start(struct bt_mesh_subnet *sub);
 void bt_mesh_proxy_identity_stop(struct bt_mesh_subnet *sub);
 
-bool bt_mesh_proxy_relay(struct net_buf_simple *buf, uint16_t dst);
+bool bt_mesh_proxy_relay(struct net_buf_simple *buf, uint16_t dst,
+			 const struct bt_mesh_send_cb *cb, void *user_data);
 void bt_mesh_proxy_addr_add(struct net_buf_simple *buf, uint16_t addr);
 
 int bt_mesh_proxy_init(void);
-void bt_mesh_proxy_on_idle(struct bt_mesh_proxy_idle_cb *cb);

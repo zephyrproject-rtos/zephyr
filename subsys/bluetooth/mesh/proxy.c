@@ -83,6 +83,16 @@ static void proxy_send_beacons(struct k_work *work);
 static bool prov_fast_adv;
 #endif
 
+static struct bt_mesh_proxy {
+	const struct bt_mesh_send_cb *cb;
+	void *cb_data;
+	atomic_t ref;
+} proxy_pool[CONFIG_BT_MESH_ADV_BUF_COUNT] = {
+	[0 ... (CONFIG_BT_MESH_ADV_BUF_COUNT - 1)] = {
+		.ref = ATOMIC_INIT(0),
+	},
+};
+
 static struct bt_mesh_proxy_client {
 	struct bt_conn *conn;
 	uint16_t filter[CONFIG_BT_MESH_PROXY_FILTER_SIZE];
@@ -106,8 +116,6 @@ static struct bt_mesh_proxy_client {
 	},
 };
 
-static sys_slist_t idle_waiters;
-static atomic_t pending_notifications;
 static uint8_t __noinit client_buf_data[CLIENT_BUF_SIZE * CONFIG_BT_MAX_CONN];
 
 /* Track which service is enabled */
@@ -116,6 +124,22 @@ static enum {
 	MESH_GATT_PROV,
 	MESH_GATT_PROXY,
 } gatt_svc = MESH_GATT_NONE;
+
+static struct bt_mesh_proxy *proxy_alloc(const struct bt_mesh_send_cb *cb,
+					void *cb_data)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(proxy_pool); i++) {
+		if (!atomic_get(&proxy_pool[i].ref)) {
+			proxy_pool[i].cb = cb;
+			proxy_pool[i].cb_data = cb_data;
+			return &proxy_pool[i];
+		}
+	}
+
+	return NULL;
+}
 
 static struct bt_mesh_proxy_client *find_client(struct bt_conn *conn)
 {
@@ -148,7 +172,8 @@ static void proxy_sar_timeout(struct k_work *work)
 static struct bt_mesh_subnet *beacon_sub;
 
 static int proxy_segment_and_send(struct bt_conn *conn, uint8_t type,
-				  struct net_buf_simple *msg);
+				  struct net_buf_simple *msg,
+				  struct bt_mesh_proxy *proxy);
 
 static int filter_set(struct bt_mesh_proxy_client *client,
 		      struct net_buf_simple *buf)
@@ -264,7 +289,8 @@ static void send_filter_status(struct bt_mesh_proxy_client *client,
 		return;
 	}
 
-	err = proxy_segment_and_send(client->conn, BT_MESH_PROXY_CONFIG, buf);
+	err = proxy_segment_and_send(client->conn, BT_MESH_PROXY_CONFIG,
+				     buf, NULL);
 	if (err) {
 		BT_ERR("Failed to send proxy cfg message (err %d)", err);
 	}
@@ -339,7 +365,7 @@ static int beacon_send(struct bt_conn *conn, struct bt_mesh_subnet *sub)
 	net_buf_simple_reserve(&buf, 1);
 	bt_mesh_beacon_create(sub, &buf);
 
-	return proxy_segment_and_send(conn, BT_MESH_PROXY_BEACON, &buf);
+	return proxy_segment_and_send(conn, BT_MESH_PROXY_BEACON, &buf, NULL);
 }
 
 static int send_beacon_cb(struct bt_mesh_subnet *sub, void *cb_data)
@@ -880,12 +906,22 @@ static bool client_filter_match(struct bt_mesh_proxy_client *client,
 	return false;
 }
 
-bool bt_mesh_proxy_relay(struct net_buf_simple *buf, uint16_t dst)
+bool bt_mesh_proxy_relay(struct net_buf_simple *buf, uint16_t dst,
+			 const struct bt_mesh_send_cb *cb, void *user_data)
 {
+	struct bt_mesh_proxy *proxy = NULL;
 	bool relayed = false;
 	int i;
 
 	BT_DBG("%u bytes to dst 0x%04x", buf->len, dst);
+
+	if (cb) {
+		proxy = proxy_alloc(cb, user_data);
+		if (!proxy) {
+			BT_ERR("No Proxy Object available");
+			return -ENOBUFS;
+		}
+	}
 
 	for (i = 0; i < ARRAY_SIZE(clients); i++) {
 		struct bt_mesh_proxy_client *client = &clients[i];
@@ -899,13 +935,20 @@ bool bt_mesh_proxy_relay(struct net_buf_simple *buf, uint16_t dst)
 			continue;
 		}
 
+		if (client->filter_type == PROV) {
+			BT_ERR("Invalid PDU type for Proxy Client");
+			return -EINVAL;
+		}
+
 		/* Proxy PDU sending modifies the original buffer,
 		 * so we need to make a copy.
 		 */
 		net_buf_simple_reserve(&msg, 1);
 		net_buf_simple_add_mem(&msg, buf->data, buf->len);
 
-		bt_mesh_proxy_send(client->conn, BT_MESH_PROXY_NET_PDU, &msg);
+		proxy_segment_and_send(client->conn, BT_MESH_PROXY_NET_PDU,
+					&msg, proxy);
+
 		relayed = true;
 	}
 
@@ -916,25 +959,26 @@ bool bt_mesh_proxy_relay(struct net_buf_simple *buf, uint16_t dst)
 
 static void notify_complete(struct bt_conn *conn, void *user_data)
 {
-	sys_snode_t *n;
+	struct bt_mesh_proxy *proxy = user_data;
 
-	if (atomic_dec(&pending_notifications) > 1) {
+	if (!proxy || atomic_dec(&proxy->ref) > 1) {
 		return;
 	}
 
 	BT_DBG("");
 
-	while ((n = sys_slist_get(&idle_waiters))) {
-		CONTAINER_OF(n, struct bt_mesh_proxy_idle_cb, n)->cb();
+	if (proxy->cb && proxy->cb->end) {
+		proxy->cb->end(0, proxy->cb_data);
 	}
 }
 
 static int proxy_send(struct bt_conn *conn, const void *data,
-		      uint16_t len)
+		      uint16_t len, struct bt_mesh_proxy *proxy)
 {
 	struct bt_gatt_notify_params params = {
 		.data = data,
 		.len = len,
+		.user_data = proxy,
 		.func = notify_complete,
 	};
 	int err;
@@ -953,19 +997,26 @@ static int proxy_send(struct bt_conn *conn, const void *data,
 #endif
 
 	if (!params.attr) {
-		return 0;
+		return -ENOENT;
 	}
 
 	err = bt_gatt_notify_cb(conn, &params);
-	if (!err) {
-		atomic_inc(&pending_notifications);
+	if (!err && proxy) {
+		if (atomic_inc(&proxy->ref)) {
+			return 0;
+		}
+
+		if (proxy->cb && proxy->cb->start) {
+			proxy->cb->start(0, 0, proxy->cb_data);
+		}
 	}
 
 	return err;
 }
 
 static int proxy_segment_and_send(struct bt_conn *conn, uint8_t type,
-				  struct net_buf_simple *msg)
+				  struct net_buf_simple *msg,
+				  struct bt_mesh_proxy *proxy)
 {
 	uint16_t mtu;
 
@@ -976,44 +1027,53 @@ static int proxy_segment_and_send(struct bt_conn *conn, uint8_t type,
 	mtu = bt_gatt_get_mtu(conn) - 3;
 	if (mtu > msg->len) {
 		net_buf_simple_push_u8(msg, PDU_HDR(SAR_COMPLETE, type));
-		return proxy_send(conn, msg->data, msg->len);
+		return proxy_send(conn, msg->data, msg->len, proxy);
 	}
 
 	net_buf_simple_push_u8(msg, PDU_HDR(SAR_FIRST, type));
-	proxy_send(conn, msg->data, mtu);
+	proxy_send(conn, msg->data, mtu, proxy);
 	net_buf_simple_pull(msg, mtu);
 
 	while (msg->len) {
 		if (msg->len + 1 < mtu) {
 			net_buf_simple_push_u8(msg, PDU_HDR(SAR_LAST, type));
-			proxy_send(conn, msg->data, msg->len);
+			proxy_send(conn, msg->data, msg->len, proxy);
 			break;
 		}
 
 		net_buf_simple_push_u8(msg, PDU_HDR(SAR_CONT, type));
-		proxy_send(conn, msg->data, mtu);
+		proxy_send(conn, msg->data, mtu, proxy);
 		net_buf_simple_pull(msg, mtu);
 	}
 
 	return 0;
 }
 
-int bt_mesh_proxy_send(struct bt_conn *conn, uint8_t type,
-		       struct net_buf_simple *msg)
+int bt_mesh_pb_gatt_send(struct bt_conn *conn, struct net_buf_simple *msg,
+			 const struct bt_mesh_send_cb *cb, void *user_data)
 {
+	struct bt_mesh_proxy *proxy = NULL;
 	struct bt_mesh_proxy_client *client = find_client(conn);
+
+	if (cb) {
+		proxy = proxy_alloc(cb, user_data);
+		if (!proxy) {
+			BT_ERR("No Proxy Object available");
+			return -ENOBUFS;
+		}
+	}
 
 	if (!client) {
 		BT_ERR("No Proxy Client found");
 		return -ENOTCONN;
 	}
 
-	if ((client->filter_type == PROV) != (type == BT_MESH_PROXY_PROV)) {
+	if (client->filter_type != PROV) {
 		BT_ERR("Invalid PDU type for Proxy Client");
 		return -EINVAL;
 	}
 
-	return proxy_segment_and_send(conn, type, msg);
+	return proxy_segment_and_send(conn, BT_MESH_PROXY_PROV, msg, proxy);
 }
 
 #if defined(CONFIG_BT_MESH_PB_GATT)
@@ -1362,14 +1422,4 @@ int bt_mesh_proxy_init(void)
 	bt_conn_cb_register(&conn_callbacks);
 
 	return 0;
-}
-
-void bt_mesh_proxy_on_idle(struct bt_mesh_proxy_idle_cb *cb)
-{
-	if (!atomic_get(&pending_notifications)) {
-		cb->cb();
-		return;
-	}
-
-	sys_slist_append(&idle_waiters, &cb->n);
 }

@@ -17,10 +17,16 @@
 #define LOG_MODULE_NAME bt_mesh_pb_gatt
 #include "common/log.h"
 
+struct prov_bearer_send_cb {
+	prov_bearer_send_complete_t cb;
+	void *cb_data;
+};
+
 struct prov_link {
 	struct bt_conn *conn;
 	const struct prov_bearer_cb *cb;
 	void *cb_data;
+	struct prov_bearer_send_cb comp;
 	struct net_buf_simple *rx_buf;
 	struct k_delayed_work prot_timer;
 };
@@ -118,16 +124,30 @@ static int link_accept(const struct prov_bearer_cb *cb, void *cb_data)
 	return 0;
 }
 
+static void pb_gatt_send_end(int err, void *cb_data)
+{
+	if (link.comp.cb) {
+		link.comp.cb(err, cb_data);
+	}
+}
+
 static int buf_send(struct net_buf_simple *buf, prov_bearer_send_complete_t cb,
 		    void *cb_data)
 {
+	static const struct bt_mesh_send_cb pb_gatt_send_cb = {
+		.end = pb_gatt_send_end,
+	};
+
 	if (!link.conn) {
 		return -ENOTCONN;
 	}
 
+	link.comp.cb = cb;
+	link.comp.cb_data = cb_data;
+
 	k_delayed_work_submit(&link.prot_timer, PROTOCOL_TIMEOUT);
 
-	return bt_mesh_proxy_send(link.conn, BT_MESH_PROXY_PROV, buf);
+	return bt_mesh_pb_gatt_send(link.conn, buf, &pb_gatt_send_cb, cb_data);
 }
 
 static void clear_tx(void)

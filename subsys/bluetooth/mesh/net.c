@@ -495,14 +495,13 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 	}
 
 	/* Deliver to GATT Proxy Clients if necessary. */
-	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
-	    bt_mesh_proxy_relay(&buf->b, tx->ctx->addr) &&
-	    BT_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
-		/* Notify completion if this only went through the Mesh Proxy */
-		send_cb_finalize(cb, cb_data);
-
-		err = 0;
-		goto done;
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
+		if (!BT_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
+			bt_mesh_proxy_relay(&buf->b, tx->ctx->addr, NULL, NULL);
+		} else if (bt_mesh_proxy_relay(&buf->b, tx->ctx->addr,
+						cb, cb_data)) {
+			goto done;
+		}
 	}
 
 	bt_mesh_adv_send(buf, cb, cb_data);
@@ -666,7 +665,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
 	    (rx->friend_cred ||
 	     bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED)) {
-		bt_mesh_proxy_relay(&buf->b, rx->ctx.recv_dst);
+		bt_mesh_proxy_relay(&buf->b, rx->ctx.recv_dst, NULL, NULL);
 	}
 
 	if (relay_to_adv(rx->net_if) || rx->friend_cred) {
