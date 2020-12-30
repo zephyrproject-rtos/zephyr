@@ -173,6 +173,8 @@ void test_timer_duration_period(void)
 	TIMER_ASSERT(tdata.expire_cnt == EXPIRE_TIMES, &duration_timer);
 	TIMER_ASSERT(tdata.stop_cnt == 1, &duration_timer);
 
+	k_timer_start(&duration_timer, K_FOREVER, K_MSEC(PERIOD));
+	TIMER_ASSERT(tdata.stop_cnt == 1, &duration_timer);
 	/* cleanup environemtn */
 	k_timer_stop(&duration_timer);
 }
@@ -452,8 +454,13 @@ void test_timer_status_sync(void)
 		TIMER_ASSERT(tdata.expire_cnt == (i + 1), &status_sync_timer);
 	}
 
+	k_timer_start(&status_sync_timer, K_MSEC(DURATION), K_MSEC(PERIOD));
+	busy_wait_ms(PERIOD*2);
+	zassert_true(k_timer_status_sync(&status_sync_timer), NULL);
+
 	/* cleanup environment */
 	k_timer_stop(&status_sync_timer);
+	zassert_false(k_timer_status_sync(&status_sync_timer), NULL);
 }
 
 /**
