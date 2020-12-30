@@ -6,11 +6,9 @@
 if SOC_STM32G070XX
 
 config SOC
-	string
 	default "stm32g070xx"
 
 config NUM_IRQS
-	int
 	default 30
 
 endif # SOC_STM32G070XX
