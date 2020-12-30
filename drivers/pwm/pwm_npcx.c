@@ -99,15 +99,15 @@ static int pwm_npcx_pin_set(const struct device *dev, uint32_t pwm,
 	/* Disable PWM before configuring */
 	inst->PWMCTL &= ~BIT(NPCX_PWMCTL_PWR);
 
-	/* If pulse_cycles is 0, return directly since PWM is already off */
-	if (pulse_cycles == 0)
-		return 0;
-
 	/* Select PWM inverted polarity (ie. active-low pulse). */
 	if (flags & PWM_POLARITY_INVERTED)
 		inst->PWMCTL |= BIT(NPCX_PWMCTL_INVP);
 	else
 		inst->PWMCTL &= ~BIT(NPCX_PWMCTL_INVP);
+
+	/* If pulse_cycles is 0, return directly since PWM is already off */
+	if (pulse_cycles == 0)
+		return 0;
 
 	/*
 	 * Calculate PWM prescaler that let period_cycles map to
