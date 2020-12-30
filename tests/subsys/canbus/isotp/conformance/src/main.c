@@ -110,6 +110,20 @@ const struct isotp_msg_id tx_addr_ext = {
 	.ext_addr = EXT_ADDR
 };
 
+const struct isotp_msg_id rx_addr_fixed = {
+	.ext_id = 0x18DA0201,
+	.id_type = CAN_EXTENDED_IDENTIFIER,
+	.use_ext_addr = 0,
+	.use_fixed_addr = 1
+};
+
+const struct isotp_msg_id tx_addr_fixed = {
+	.ext_id = 0x18DA0102,
+	.id_type = CAN_EXTENDED_IDENTIFIER,
+	.use_ext_addr = 0,
+	.use_fixed_addr = 1
+};
+
 const struct device *can_dev;
 struct isotp_recv_ctx recv_ctx;
 struct isotp_send_ctx send_ctx;
@@ -173,8 +187,6 @@ static void get_sf(struct isotp_recv_ctx *recv_ctx, size_t data_size)
 	zassert_equal(ret, 0, "Data differ");
 }
 
-#ifdef CONFIG_ISOTP_REQUIRE_RX_PADDING
-
 static void get_sf_ignore(struct isotp_recv_ctx *recv_ctx)
 {
 	int ret;
@@ -182,8 +194,6 @@ static void get_sf_ignore(struct isotp_recv_ctx *recv_ctx)
 	ret = isotp_recv(recv_ctx, data_buf, sizeof(data_buf), K_MSEC(200));
 	zassert_equal(ret, ISOTP_RECV_TIMEOUT, "recv returned %d", ret);
 }
-
-#endif
 
 static void send_test_data(const uint8_t *data, size_t len)
 {
@@ -229,7 +239,8 @@ static void send_frame_series(struct frame_desired *frames, size_t length,
 {
 	int i, ret;
 	struct zcan_frame frame = {
-		.id_type = CAN_STANDARD_IDENTIFIER,
+		.id_type = (id > 0x7FF) ? CAN_EXTENDED_IDENTIFIER :
+			CAN_STANDARD_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.id = id
 	};
@@ -274,15 +285,16 @@ static void check_frame_series(struct frame_desired *frames, size_t length,
 	zassert_equal(ret, -EAGAIN, "Expected timeout, but received %d", ret);
 }
 
-static int attach_msgq(uint32_t id)
+static int attach_msgq(uint32_t id, uint32_t mask)
 {
 	int filter_id;
 	struct zcan_filter filter = {
-		.id_type = CAN_STANDARD_IDENTIFIER,
+		.id_type = (id > 0x7FF) ? CAN_EXTENDED_IDENTIFIER :
+			CAN_STANDARD_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.id = id,
 		.rtr_mask = 1,
-		.id_mask = CAN_STD_ID_MASK
+		.id_mask = mask
 	};
 
 	filter_id = can_attach_msgq(can_dev, &frame_msgq, &filter);
@@ -326,7 +338,7 @@ static void test_send_sf(void)
 	memcpy(&des_frame.data[1], random_data, DATA_SIZE_SF);
 	des_frame.length = DATA_SIZE_SF + 1;
 
-	filter_id = attach_msgq(rx_addr.std_id);
+	filter_id = attach_msgq(rx_addr.std_id, CAN_STD_ID_MASK);
 	zassert_true((filter_id >= 0), "Negative filter number [%d]",
 		     filter_id);
 
@@ -378,7 +390,7 @@ static void test_send_sf_ext(void)
 	memcpy(&des_frame.data[2], random_data, DATA_SIZE_SF_EXT);
 	des_frame.length = DATA_SIZE_SF_EXT + 2;
 
-	filter_id = attach_msgq(rx_addr_ext.std_id);
+	filter_id = attach_msgq(rx_addr_ext.std_id, CAN_STD_ID_MASK);
 	zassert_true((filter_id >= 0), "Negative filter number [%d]",
 		     filter_id);
 
@@ -424,6 +436,62 @@ static void test_receive_sf_ext(void)
 	isotp_unbind(&recv_ctx);
 }
 
+static void test_send_sf_fixed(void)
+{
+	int filter_id, ret;
+	struct frame_desired des_frame;
+
+	des_frame.data[0] = SF_PCI_BYTE_1;
+	memcpy(&des_frame.data[1], random_data, DATA_SIZE_SF);
+	des_frame.length = DATA_SIZE_SF + 1;
+
+	/* mask to allow any priority and source address (SA) */
+	filter_id = attach_msgq(rx_addr_fixed.ext_id, 0x03FFFF00);
+	zassert_true((filter_id >= 0), "Negative filter number [%d]",
+		     filter_id);
+
+	ret = isotp_send(&send_ctx, can_dev, random_data, DATA_SIZE_SF,
+			 &rx_addr_fixed, &tx_addr_fixed, send_complette_cb,
+			 ISOTP_N_OK);
+	zassert_equal(ret, 0, "Send returned %d", ret);
+
+	check_frame_series(&des_frame, 1, &frame_msgq);
+
+	can_detach(can_dev, filter_id);
+}
+
+static void test_receive_sf_fixed(void)
+{
+	int ret;
+	struct frame_desired single_frame;
+
+	single_frame.data[0] = SF_PCI_BYTE_1;
+	memcpy(&single_frame.data[1], random_data, DATA_SIZE_SF);
+	single_frame.length  = DATA_SIZE_SF + 1;
+
+	ret = isotp_bind(&recv_ctx, can_dev, &rx_addr_fixed, &tx_addr_fixed,
+			 &fc_opts_single, K_NO_WAIT);
+	zassert_equal(ret, ISOTP_N_OK, "Binding failed [%d]", ret);
+
+	/* default source address */
+	send_frame_series(&single_frame, 1, rx_addr_fixed.ext_id);
+	get_sf(&recv_ctx, DATA_SIZE_SF);
+
+	/* different source address */
+	send_frame_series(&single_frame, 1, rx_addr_fixed.ext_id | 0xFF);
+	get_sf(&recv_ctx, DATA_SIZE_SF);
+
+	/* different priority */
+	send_frame_series(&single_frame, 1, rx_addr_fixed.ext_id | (7U << 26));
+	get_sf(&recv_ctx, DATA_SIZE_SF);
+
+	/* different target address (should fail) */
+	send_frame_series(&single_frame, 1, rx_addr_fixed.ext_id | 0xFF00);
+	get_sf_ignore(&recv_ctx);
+
+	isotp_unbind(&recv_ctx);
+}
+
 static void test_send_data(void)
 {
 	struct frame_desired fc_frame, ff_frame;
@@ -446,7 +514,7 @@ static void test_send_data(void)
 	prepare_cf_frames(des_frames, ARRAY_SIZE(des_frames), data_ptr,
 			  remaining_length);
 
-	filter_id = attach_msgq(rx_addr.std_id);
+	filter_id = attach_msgq(rx_addr.std_id, CAN_STD_ID_MASK);
 	zassert_true((filter_id >= 0), "Negative filter number [%d]",
 		     filter_id);
 
@@ -487,7 +555,7 @@ static void test_send_data_blocks(void)
 
 	remaining_length = DATA_SEND_LENGTH;
 
-	filter_id = attach_msgq(rx_addr.std_id);
+	filter_id = attach_msgq(rx_addr.std_id, CAN_STD_ID_MASK);
 	zassert_true((filter_id >= 0), "Negative filter number [%d]",
 		     filter_id);
 
@@ -548,7 +616,7 @@ static void test_receive_data(void)
 	prepare_cf_frames(des_frames, ARRAY_SIZE(des_frames), data_ptr,
 			  remaining_length);
 
-	filter_id = attach_msgq(tx_addr.std_id);
+	filter_id = attach_msgq(tx_addr.std_id, CAN_STD_ID_MASK);
 
 	ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr,
 			 &fc_opts_single, K_NO_WAIT);
@@ -594,7 +662,7 @@ static void test_receive_data_blocks(void)
 
 	remaining_frames = CEIL(remaining_length, DATA_SIZE_CF);
 
-	filter_id = attach_msgq(tx_addr.std_id);
+	filter_id = attach_msgq(tx_addr.std_id, CAN_STD_ID_MASK);
 	zassert_true((filter_id >= 0), "Negative filter number [%d]",
 		     filter_id);
 
@@ -741,7 +809,7 @@ static void test_stmin(void)
 	fc_frame.data[2] = FC_PCI_BYTE_3(STMIN_VAL_1);
 	fc_frame.length = DATA_SIZE_FC;
 
-	filter_id = attach_msgq(rx_addr.std_id);
+	filter_id = attach_msgq(rx_addr.std_id, CAN_STD_ID_MASK);
 	zassert_true((filter_id >= 0), "Negative filter number [%d]",
 		     filter_id);
 
@@ -796,7 +864,7 @@ void test_receiver_fc_errors(void)
 	fc_frame.data[2] = FC_PCI_BYTE_3(fc_opts.stmin);
 	fc_frame.length = DATA_SIZE_FC;
 
-	filter_id = attach_msgq(tx_addr.std_id);
+	filter_id = attach_msgq(tx_addr.std_id, CAN_STD_ID_MASK);
 	zassert_true((filter_id >= 0), "Negative filter number [%d]",
 		     filter_id);
 
@@ -836,7 +904,7 @@ void test_sender_fc_errors(void)
 	memcpy(&ff_frame.data[2], random_data, DATA_SIZE_FF);
 	ff_frame.length = DATA_SIZE_FF + 2;
 
-	filter_id = attach_msgq(tx_addr.std_id);
+	filter_id = attach_msgq(tx_addr.std_id, CAN_STD_ID_MASK);
 
 	/* invalid flow status */
 	fc_frame.data[0] = FC_PCI_BYTE_1(3);
@@ -866,7 +934,7 @@ void test_sender_fc_errors(void)
 	zassert_equal(ret, ISOTP_N_BUFFER_OVERFLW,
 		      "Expected overflow but got %d", ret);
 	isotp_unbind(&recv_ctx);
-	filter_id = attach_msgq(tx_addr.std_id);
+	filter_id = attach_msgq(tx_addr.std_id, CAN_STD_ID_MASK);
 
 	k_sem_reset(&send_compl_sem);
 	ret = isotp_send(&send_ctx, can_dev, random_data, DATA_SEND_LENGTH,
@@ -918,6 +986,8 @@ void test_main(void)
 			 ztest_unit_test(test_receive_sf),
 			 ztest_unit_test(test_send_sf_ext),
 			 ztest_unit_test(test_receive_sf_ext),
+			 ztest_unit_test(test_send_sf_fixed),
+			 ztest_unit_test(test_receive_sf_fixed),
 			 ztest_unit_test(test_send_data),
 			 ztest_unit_test(test_send_data_blocks),
 			 ztest_unit_test(test_receive_data),
