@@ -391,11 +391,25 @@ static void process_ff_sf(struct isotp_recv_ctx *ctx, struct zcan_frame *frame)
 {
 	int index = 0;
 	uint8_t payload_len;
+	uint32_t rx_sa;		/* ISO-TP fixed source address (if used) */
 
 	if (ctx->rx_addr.use_ext_addr) {
 		if (frame->data[index++] != ctx->rx_addr.ext_addr) {
 			return;
 		}
+	}
+
+	if (ctx->rx_addr.use_fixed_addr) {
+		/* store actual CAN ID used by the sender */
+		ctx->rx_addr.ext_id = frame->id;
+		/* replace TX target address with RX source address */
+		rx_sa = (frame->id & ISOTP_FIXED_ADDR_SA_MASK) >>
+		     ISOTP_FIXED_ADDR_SA_POS;
+		ctx->tx_addr.ext_id &= ~(ISOTP_FIXED_ADDR_TA_MASK);
+		ctx->tx_addr.ext_id |= rx_sa << ISOTP_FIXED_ADDR_TA_POS;
+		/* use same priority for TX as in received message */
+		ctx->tx_addr.ext_id &= ~(ISOTP_FIXED_ADDR_PRIO_MASK);
+		ctx->tx_addr.ext_id |= frame->id & ISOTP_FIXED_ADDR_PRIO_MASK;
 	}
 
 	switch (frame->data[index] & ISOTP_PCI_TYPE_MASK) {
@@ -558,12 +572,20 @@ static void receive_can_rx_isr(struct zcan_frame *frame, void *arg)
 
 static inline int attach_ff_filter(struct isotp_recv_ctx *ctx)
 {
+	uint32_t mask;
+
+	if (ctx->rx_addr.use_fixed_addr) {
+		mask = ISOTP_FIXED_ADDR_RX_MASK;
+	} else {
+		mask = CAN_EXT_ID_MASK;
+	}
+
 	struct zcan_filter filter = {
 		.id_type = ctx->rx_addr.id_type,
 		.rtr = CAN_DATAFRAME,
 		.id = ctx->rx_addr.ext_id,
 		.rtr_mask = 1,
-		.id_mask = CAN_EXT_ID_MASK
+		.id_mask = mask
 	};
 
 	ctx->filter_id = can_attach_isr(ctx->can_dev, receive_can_rx_isr, ctx,
