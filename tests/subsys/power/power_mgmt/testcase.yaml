@@ -1,10 +1,21 @@
 tests:
   subsys.power.device_pm:
-    # arch_irq_unlock(0) can't work correctly on these arch
+    ## arch_irq_unlock(0) can't work correctly on these arch
     arch_exclude: arc xtensa
-    platform_exclude: rv32m1_vega_ri5cy rv32m1_vega_zero_riscy litex_vexriscv
-       nrf5340dk_nrf5340_cpunet
+    ## When TICKLESS_IDLE enable, some of these platforms don't
+    ## provide a timer driver.  Other platforms are excluded because
+    ## they lack some other required feature.
+    platform_exclude: rv32m1_vega_ri5cy rv32m1_vega_zero_riscy litex_vexriscv nrf5340dk_nrf5340_cpunet
+    filter: CONFIG_PM
     integration_platforms:
       - qemu_x86
       - mps2_an385
+    tags: power
+  subsys.power.interface:
+    arch_exclude: arc xtensa
+    platform_exclude: rv32m1_vega_ri5cy rv32m1_vega_zero_riscy litex_vexriscv qemu_cortex_m0
+    extra_configs:
+      - CONFIG_MAIN_STACK_SIZE=2048
+    extra_args: CONF_FILE=interface_prj.conf TEST_INTERFACES=1
+    filter: CONFIG_PM
     tags: power
