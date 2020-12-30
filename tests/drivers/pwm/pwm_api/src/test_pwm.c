@@ -94,12 +94,17 @@
 #define UNIT_USECS	1
 #define UNIT_NSECS	2
 
+const struct device *get_pwm_device(void)
+{
+	return device_get_binding(PWM_DEV_NAME);
+}
+
 static int test_task(uint32_t port, uint32_t period, uint32_t pulse, uint8_t unit)
 {
 	TC_PRINT("[PWM]: %" PRIu8 ", [period]: %" PRIu32 ", [pulse]: %" PRIu32 "\n",
 		port, period, pulse);
 
-	const struct device *pwm_dev = device_get_binding(PWM_DEV_NAME);
+	const struct device *pwm_dev = get_pwm_device();
 
 	if (!pwm_dev) {
 		TC_PRINT("Cannot get PWM device\n");
