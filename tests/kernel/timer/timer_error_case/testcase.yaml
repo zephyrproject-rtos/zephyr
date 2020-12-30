@@ -1,0 +1,3 @@
+tests:
+  kernel.timer:
+    tags: kernel timer userspace ignore_faults
