@@ -250,6 +250,35 @@ void z_ztest_check_expected_data(const char *fn, const char *name, void *data,
 	}
 }
 
+void z_ztest_return_data(const char *fn, const char *name, void *val)
+{
+	insert_value(&parameter_list, fn, name, (uintptr_t)val);
+}
+
+void z_ztest_copy_return_data(const char *fn, const char *name, void *data,
+			      uint32_t length)
+{
+	struct parameter *param;
+	void *return_data;
+
+	if (data == NULL) {
+		PRINT("%s:%s received null pointer\n", fn, name);
+		ztest_test_fail();
+		return;
+	}
+
+	param = find_and_delete_value(&parameter_list, fn, name);
+	if (!param) {
+		PRINT("Failed to find parameter %s for %s\n", name, fn);
+		memset(data, 0, length);
+		ztest_test_fail();
+	} else {
+		return_data = (void *)param->value;
+		free_parameter(param);
+		memcpy(data, return_data, length);
+	}
+}
+
 void z_ztest_returns_value(const char *fn, uintptr_t value)
 {
 	insert_value(&return_value_list, fn, "", value);
