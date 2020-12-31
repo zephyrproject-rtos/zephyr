@@ -1,4 +1,5 @@
 # Copyright (c) 2018 Foundries.io
+# Copyright (c) 2020 The Linux Foundation
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -7,6 +8,7 @@ import os
 import pathlib
 import shlex
 import sys
+import uuid
 
 from west import log
 from west.configuration import config
@@ -15,6 +17,7 @@ from build_helpers import is_zephyr_build, find_build_dir, \
     FIND_BUILD_DIR_DESCRIPTION
 
 from zephyr_ext_common import Forceable
+from spdx.sbom import setupCmakeQuery, makeSpdxFromCmakeReply, findIndexFile
 
 _ARG_SEPARATOR = '--'
 
@@ -125,6 +128,12 @@ class Build(Forceable):
                             'never'], action=AlwaysIfMissing, nargs='?',
                             help='pristine build folder setting')
 
+        group = parser.add_argument_group('spdx document creation')
+        group.add_argument('--spdx', action='store_true',
+                            help="create SPDX sources and build documents")
+        group.add_argument('--spdx-prefix',
+                            help="prefix to use for SPDX Document Namespace URIs")
+
         return parser
 
     def do_run(self, args, remainder):
@@ -175,6 +184,13 @@ class Build(Forceable):
         self.source_dir = self._find_source_dir()
         self._sanity_check()
 
+        if self.args.spdx:
+            # make sure cmake api directory and query file are set up
+            query_ready = setupCmakeQuery(self.build_dir)
+            if not query_ready:
+                log.err('skipping SPDX document creation')
+                self.args.spdx = False
+
         board, origin = self._find_board()
         self._run_cmake(board, origin, self.args.cmake_opts)
         if args.cmake_only:
@@ -184,6 +200,9 @@ class Build(Forceable):
         self._update_cache()
 
         self._run_build(args.target)
+
+        if self.args.spdx:
+            self._make_spdx()
 
     def _find_board(self):
         board, origin = None, None
@@ -458,3 +477,33 @@ class Build(Forceable):
             if add_dashes:
                 extra_args.append('--')
             extra_args.append('VERBOSE=1')
+
+    def _make_spdx(self):
+        # make sure we can get the cmake api reply index path
+        indexPath = findIndexFile(self.build_dir)
+        if not indexPath:
+            log.err('skipping SPDX document creation')
+            return
+
+        # set up spdx output directory if it isn't already
+        spdxOutputDir = os.path.join(self.build_dir, "spdx")
+        if os.path.exists(spdxOutputDir):
+            if not os.path.isdir(spdxOutputDir):
+                log.err(f'spdx output directory {spdxOutputDir} exists and is not a directory')
+                log.err('skipping SPDX document creation')
+                return
+        else:
+            os.makedirs(spdxOutputDir, exist_ok=False)
+
+        # create default namespace prefix if one wasn't specified
+        if self.args.spdx_prefix:
+            namespacePrefix = self.args.spdx_prefix
+        else:
+            # create default namespace according to SPDX spec
+            # note that this is intentionally _not_ an actual URL where
+            # this document will be stored
+            uuidstr = str(uuid.uuid4())
+            namespacePrefix = f"http://spdx.org/spdxdocs/zephyr-{uuidstr}"
+
+        # and create the document
+        makeSpdxFromCmakeReply(indexPath, spdxOutputDir, namespacePrefix)

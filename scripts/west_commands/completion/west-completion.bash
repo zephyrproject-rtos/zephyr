@@ -607,6 +607,7 @@ __comp_west_build()
 		--cmake-only
 		-n --just-print --dry-run --recon
 		--force -f
+		--spdx
 	"
 
 	local build_args_opts="
@@ -615,6 +616,7 @@ __comp_west_build()
 		--target -t
 		--pristine -p
 		--build-opt -o
+		--spdx-prefix
 	"
 
 	case "$prev" in
