@@ -1,0 +1,13 @@
+sample:
+  name: lm73c
+tests:
+  sample.sensor.lm73c:
+    harness: console
+    tags: sensors
+    harness_config:
+        type: one_line
+        regex:
+            - "ttemp: (.*)"
+        fixture: fixture_i2c_lm73c
+    depends_on: i2c
+    filter: dt_compat_enabled("ti,lm73c")

@@ -1,0 +1,27 @@
+# Copyright (c) 2020 SER Consulting LLC
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LM73C
+	bool "LM73C Temperature Sensor"
+	depends on I2C
+	help
+	  Enable I2C-based driver for LM73C Temperature Sensor.
+
+if LM73C
+
+choice
+	prompt "LM73C temperature precision"
+	default LM73C_TEMP_PREC_1_32
+	help
+	  Select temperature precision for the LM73C sensor.
+config LM73C_TEMP_PREC_1_4
+	bool "0.25"
+config LM73C_TEMP_PREC_1_8
+	bool "0.125"
+config LM73C_TEMP_PREC_1_16
+	bool "0.0625"
+config LM73C_TEMP_PREC_1_32
+	bool "0.03125"
+endchoice
+
+endif # LM73C

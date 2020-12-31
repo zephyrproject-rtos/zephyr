@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2020, SER Consulting LLC / Steven Riedl
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c1 {
+	lm73c@48 {
+		compatible = "ti,lm73c";
+		reg = <0x48>;
+		label = "LM73C";
+	};
+};
