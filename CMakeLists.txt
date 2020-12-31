@@ -1152,6 +1152,22 @@ if(CONFIG_BUILD_OUTPUT_BIN)
   endif()
 endif()
 
+if(CONFIG_BUILD_OUTPUT_BIN AND CONFIG_BUILD_OUTPUT_UF2)
+  list(APPEND
+    post_build_commands
+    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/uf2conv.py
+            -c
+            -f ${CONFIG_BUILD_OUTPUT_UF2_FAMILY_ID}
+            -b ${CONFIG_FLASH_LOAD_OFFSET}
+            -o ${KERNEL_UF2_NAME}
+            ${KERNEL_BIN_NAME}
+  )
+  list(APPEND
+    post_build_byproducts
+    ${KERNEL_UF2_NAME}
+  )
+endif()
+
 if(CONFIG_BUILD_OUTPUT_S19)
   get_property(elfconvert_formats TARGET bintools PROPERTY elfconvert_formats)
   if(srec IN_LIST elfconvert_formats)
