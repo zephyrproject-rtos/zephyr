@@ -1465,9 +1465,9 @@ struct bt_hci_cp_le_set_cl_cte_tx_enable {
 #define BT_HCI_LE_CTE_LEN_MIN                  0x2
 #define BT_HCI_LE_CTE_LEN_MAX                  0x14
 
-#define BT_HCI_LE_AOA_CTE                      0x1
-#define BT_HCI_LE_AOD_CTE_1US                  0x2
-#define BT_HCI_LE_AOD_CTE_2US                  0x3
+#define BT_HCI_LE_AOA_CTE                      0x0
+#define BT_HCI_LE_AOD_CTE_1US                  0x1
+#define BT_HCI_LE_AOD_CTE_2US                  0x2
 
 #define BT_HCI_LE_CTE_COUNT_MIN                0x1
 #define BT_HCI_LE_CTE_COUNT_MAX                0x10
