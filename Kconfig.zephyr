@@ -377,6 +377,24 @@ config BUILD_OUTPUT_S19
 	  Build an S19 binary zephyr/zephyr.s19 in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
+config BUILD_OUTPUT_UF2
+	bool "Build a binary in UF2 format"
+	depends on BUILD_OUTPUT_BIN
+	help
+	  Build a UF2 binary zephyr/zephyr.uf2 in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+if BUILD_OUTPUT_UF2
+
+config BUILD_OUTPUT_UF2_FAMILY_ID
+	string "UF2 Device Family"
+	help
+	  UF2 bootloaders only accept UF2 files with a matching family ID.
+	  This can be either a hex, e.g. 0x68ed2b88, or well-known family
+	  name string.
+
+endif # BUILD_OUTPUT_UF2
+
 config BUILD_OUTPUT_STRIPPED
 	bool "Build a stripped binary"
 	help

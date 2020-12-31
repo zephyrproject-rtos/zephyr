@@ -528,6 +528,7 @@
 /scripts/west_commands/                   @mbolivar-nordic
 /scripts/west-commands.yml                @mbolivar-nordic
 /scripts/zephyr_module.py                 @tejlmand
+/scripts/uf2conv.py                       @petejohanson
 /scripts/user_wordsize.py                 @cfriedt
 /scripts/valgrind.supp                    @aescolar @daor-oti
 /share/zephyr-package/                    @tejlmand
