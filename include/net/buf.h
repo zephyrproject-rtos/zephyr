@@ -357,6 +357,21 @@ void net_buf_simple_add_be64(struct net_buf_simple *buf, uint64_t val);
 void *net_buf_simple_push(struct net_buf_simple *buf, size_t len);
 
 /**
+ * @brief Copy given number of bytes from memory to the start of the buffer.
+ *
+ * Modifies the data pointer and buffer length to account for more data
+ * in the beginning of the buffer.
+ *
+ * @param buf Buffer to update.
+ * @param mem Location of data to be added.
+ * @param len Length of data to be added.
+ *
+ * @return The new beginning of the buffer data.
+ */
+void *net_buf_simple_push_mem(struct net_buf_simple *buf, const void *mem,
+			      size_t len);
+
+/**
  * @brief Push 16-bit value to the beginning of the buffer
  *
  * Adds 16-bit value in little endian format to the beginning of the
@@ -1466,6 +1481,22 @@ static inline void *net_buf_user_data(const struct net_buf *buf)
  * @return The new beginning of the buffer data.
  */
 #define net_buf_push(buf, len) net_buf_simple_push(&(buf)->b, len)
+
+/**
+ * @def net_buf_push_mem
+ * @brief Copies the given number of bytes to the start of the buffer
+ *
+ * Modifies the data pointer and buffer length to account for more data
+ * in the beginning of the buffer.
+ *
+ * @param buf Buffer to update.
+ * @param mem Location of data to be added.
+ * @param len Length of data to be added.
+ *
+ * @return The new beginning of the buffer data.
+ */
+#define net_buf_push_mem(buf, mem, len) net_buf_simple_push_mem(&(buf)->b, \
+								mem, len)
 
 /**
  * @def net_buf_push_le16

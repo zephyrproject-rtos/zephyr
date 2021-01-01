@@ -893,6 +893,14 @@ void *net_buf_simple_push(struct net_buf_simple *buf, size_t len)
 	return buf->data;
 }
 
+void *net_buf_simple_push_mem(struct net_buf_simple *buf, const void *mem,
+			      size_t len)
+{
+	NET_BUF_SIMPLE_DBG("buf %p len %zu", buf, len);
+
+	return memcpy(net_buf_simple_push(buf, len), mem, len);
+}
+
 void net_buf_simple_push_le16(struct net_buf_simple *buf, uint16_t val)
 {
 	NET_BUF_SIMPLE_DBG("buf %p val %u", buf, val);
