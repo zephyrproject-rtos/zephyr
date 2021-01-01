@@ -882,6 +882,145 @@ void net_buf_simple_add_be64(struct net_buf_simple *buf, uint64_t val)
 	sys_put_be64(val, net_buf_simple_add(buf, sizeof(val)));
 }
 
+void *net_buf_simple_remove_mem(struct net_buf_simple *buf, size_t len)
+{
+	NET_BUF_SIMPLE_DBG("buf %p len %zu", buf, len);
+
+	__ASSERT_NO_MSG(buf->len >= len);
+
+	buf->len -= len;
+	return buf->data + buf->len;
+}
+
+uint8_t net_buf_simple_remove_u8(struct net_buf_simple *buf)
+{
+	uint8_t val;
+	void *ptr;
+
+	ptr = net_buf_simple_remove_mem(buf, sizeof(val));
+	val = *(uint8_t *)ptr;
+
+	return val;
+}
+
+uint16_t net_buf_simple_remove_le16(struct net_buf_simple *buf)
+{
+	uint16_t val;
+	void *ptr;
+
+	ptr = net_buf_simple_remove_mem(buf, sizeof(val));
+	val = UNALIGNED_GET((uint16_t *)ptr);
+
+	return sys_le16_to_cpu(val);
+}
+
+uint16_t net_buf_simple_remove_be16(struct net_buf_simple *buf)
+{
+	uint16_t val;
+	void *ptr;
+
+	ptr = net_buf_simple_remove_mem(buf, sizeof(val));
+	val = UNALIGNED_GET((uint16_t *)ptr);
+
+	return sys_be16_to_cpu(val);
+}
+
+uint32_t net_buf_simple_remove_le24(struct net_buf_simple *buf)
+{
+	struct uint24 {
+		uint32_t u24 : 24;
+	} __packed val;
+	void *ptr;
+
+	ptr = net_buf_simple_remove_mem(buf, sizeof(val));
+	val = UNALIGNED_GET((struct uint24 *)ptr);
+
+	return sys_le24_to_cpu(val.u24);
+}
+
+uint32_t net_buf_simple_remove_be24(struct net_buf_simple *buf)
+{
+	struct uint24 {
+		uint32_t u24 : 24;
+	} __packed val;
+	void *ptr;
+
+	ptr = net_buf_simple_remove_mem(buf, sizeof(val));
+	val = UNALIGNED_GET((struct uint24 *)ptr);
+
+	return sys_be24_to_cpu(val.u24);
+}
+
+uint32_t net_buf_simple_remove_le32(struct net_buf_simple *buf)
+{
+	uint32_t val;
+	void *ptr;
+
+	ptr = net_buf_simple_remove_mem(buf, sizeof(val));
+	val = UNALIGNED_GET((uint32_t *)ptr);
+
+	return sys_le32_to_cpu(val);
+}
+
+uint32_t net_buf_simple_remove_be32(struct net_buf_simple *buf)
+{
+	uint32_t val;
+	void *ptr;
+
+	ptr = net_buf_simple_remove_mem(buf, sizeof(val));
+	val = UNALIGNED_GET((uint32_t *)ptr);
+
+	return sys_be32_to_cpu(val);
+}
+
+uint64_t net_buf_simple_remove_le48(struct net_buf_simple *buf)
+{
+	struct uint48 {
+		uint64_t u48 : 48;
+	} __packed val;
+	void *ptr;
+
+	ptr = net_buf_simple_remove_mem(buf, sizeof(val));
+	val = UNALIGNED_GET((struct uint48 *)ptr);
+
+	return sys_le48_to_cpu(val.u48);
+}
+
+uint64_t net_buf_simple_remove_be48(struct net_buf_simple *buf)
+{
+	struct uint48 {
+		uint64_t u48 : 48;
+	} __packed val;
+	void *ptr;
+
+	ptr = net_buf_simple_remove_mem(buf, sizeof(val));
+	val = UNALIGNED_GET((struct uint48 *)ptr);
+
+	return sys_be48_to_cpu(val.u48);
+}
+
+uint64_t net_buf_simple_remove_le64(struct net_buf_simple *buf)
+{
+	uint64_t val;
+	void *ptr;
+
+	ptr = net_buf_simple_remove_mem(buf, sizeof(val));
+	val = UNALIGNED_GET((uint64_t *)ptr);
+
+	return sys_le64_to_cpu(val);
+}
+
+uint64_t net_buf_simple_remove_be64(struct net_buf_simple *buf)
+{
+	uint64_t val;
+	void *ptr;
+
+	ptr = net_buf_simple_remove_mem(buf, sizeof(val));
+	val = UNALIGNED_GET((uint64_t *)ptr);
+
+	return sys_be64_to_cpu(val);
+}
+
 void *net_buf_simple_push(struct net_buf_simple *buf, size_t len)
 {
 	NET_BUF_SIMPLE_DBG("buf %p len %zu", buf, len);

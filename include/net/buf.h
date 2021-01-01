@@ -344,7 +344,151 @@ void net_buf_simple_add_le64(struct net_buf_simple *buf, uint64_t val);
 void net_buf_simple_add_be64(struct net_buf_simple *buf, uint64_t val);
 
 /**
- * @brief Push data to the beginning of the buffer.
+ * @brief Remove data from the end of the buffer.
+ *
+ * Removes data from the end of the buffer by modifying the buffer length.
+ *
+ * @param buf Buffer to update.
+ * @param len Number of bytes to remove.
+ *
+ * @return New end of the buffer data.
+ */
+void *net_buf_simple_remove_mem(struct net_buf_simple *buf, size_t len);
+
+/**
+ * @brief Remove a 8-bit value from the end of the buffer
+ *
+ * Same idea as with net_buf_simple_remove_mem(), but a helper for operating
+ * on 8-bit values.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return The 8-bit removed value
+ */
+uint8_t net_buf_simple_remove_u8(struct net_buf_simple *buf);
+
+/**
+ * @brief Remove and convert 16 bits from the end of the buffer.
+ *
+ * Same idea as with net_buf_simple_remove_mem(), but a helper for operating
+ * on 16-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 16-bit value converted from little endian to host endian.
+ */
+uint16_t net_buf_simple_remove_le16(struct net_buf_simple *buf);
+
+/**
+ * @brief Remove and convert 16 bits from the end of the buffer.
+ *
+ * Same idea as with net_buf_simple_remove_mem(), but a helper for operating
+ * on 16-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 16-bit value converted from big endian to host endian.
+ */
+uint16_t net_buf_simple_remove_be16(struct net_buf_simple *buf);
+
+/**
+ * @brief Remove and convert 24 bits from the end of the buffer.
+ *
+ * Same idea as with net_buf_simple_remove_mem(), but a helper for operating
+ * on 24-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 24-bit value converted from little endian to host endian.
+ */
+uint32_t net_buf_simple_remove_le24(struct net_buf_simple *buf);
+
+/**
+ * @brief Remove and convert 24 bits from the end of the buffer.
+ *
+ * Same idea as with net_buf_simple_remove_mem(), but a helper for operating
+ * on 24-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 24-bit value converted from big endian to host endian.
+ */
+uint32_t net_buf_simple_remove_be24(struct net_buf_simple *buf);
+
+/**
+ * @brief Remove and convert 32 bits from the end of the buffer.
+ *
+ * Same idea as with net_buf_simple_remove_mem(), but a helper for operating
+ * on 32-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 32-bit value converted from little endian to host endian.
+ */
+uint32_t net_buf_simple_remove_le32(struct net_buf_simple *buf);
+
+/**
+ * @brief Remove and convert 32 bits from the end of the buffer.
+ *
+ * Same idea as with net_buf_simple_remove_mem(), but a helper for operating
+ * on 32-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 32-bit value converted from big endian to host endian.
+ */
+uint32_t net_buf_simple_remove_be32(struct net_buf_simple *buf);
+
+/**
+ * @brief Remove and convert 48 bits from the end of the buffer.
+ *
+ * Same idea as with net_buf_simple_remove_mem(), but a helper for operating
+ * on 48-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 48-bit value converted from little endian to host endian.
+ */
+uint64_t net_buf_simple_remove_le48(struct net_buf_simple *buf);
+
+/**
+ * @brief Remove and convert 48 bits from the end of the buffer.
+ *
+ * Same idea as with net_buf_simple_remove_mem(), but a helper for operating
+ * on 48-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 48-bit value converted from big endian to host endian.
+ */
+uint64_t net_buf_simple_remove_be48(struct net_buf_simple *buf);
+
+/**
+ * @brief Remove and convert 64 bits from the end of the buffer.
+ *
+ * Same idea as with net_buf_simple_remove_mem(), but a helper for operating
+ * on 64-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 64-bit value converted from little endian to host endian.
+ */
+uint64_t net_buf_simple_remove_le64(struct net_buf_simple *buf);
+
+/**
+ * @brief Remove and convert 64 bits from the end of the buffer.
+ *
+ * Same idea as with net_buf_simple_remove_mem(), but a helper for operating
+ * on 64-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 64-bit value converted from big endian to host endian.
+ */
+uint64_t net_buf_simple_remove_be64(struct net_buf_simple *buf);
+
+/**
+ * @brief Prepare data to be added to the start of the buffer
  *
  * Modifies the data pointer and buffer length to account for more data
  * in the beginning of the buffer.
@@ -1469,8 +1613,164 @@ static inline void *net_buf_user_data(const struct net_buf *buf)
 #define net_buf_add_be64(buf, val) net_buf_simple_add_be64(&(buf)->b, val)
 
 /**
+ * @def net_buf_remove_mem
+ * @brief Remove data from the end of the buffer.
+ *
+ * Removes data from the end of the buffer by modifying the buffer length.
+ *
+ * @param buf Buffer to update.
+ * @param len Number of bytes to remove.
+ *
+ * @return New end of the buffer data.
+ */
+#define net_buf_remove_mem(buf, len) net_buf_simple_remove_mem(&(buf)->b, len)
+
+/**
+ * @def net_buf_remove_u8
+ * @brief Remove a 8-bit value from the end of the buffer
+ *
+ * Same idea as with net_buf_remove_mem(), but a helper for operating on
+ * 8-bit values.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return The 8-bit removed value
+ */
+#define net_buf_remove_u8(buf) net_buf_simple_remove_u8(&(buf)->b)
+
+/**
+ * @def net_buf_remove_le16
+ * @brief Remove and convert 16 bits from the end of the buffer.
+ *
+ * Same idea as with net_buf_remove_mem(), but a helper for operating on
+ * 16-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 16-bit value converted from little endian to host endian.
+ */
+#define net_buf_remove_le16(buf) net_buf_simple_remove_le16(&(buf)->b)
+
+/**
+ * @def net_buf_remove_be16
+ * @brief Remove and convert 16 bits from the end of the buffer.
+ *
+ * Same idea as with net_buf_remove_mem(), but a helper for operating on
+ * 16-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 16-bit value converted from big endian to host endian.
+ */
+#define net_buf_remove_be16(buf) net_buf_simple_remove_be16(&(buf)->b)
+
+/**
+ * @def net_buf_remove_be24
+ * @brief Remove and convert 24 bits from the end of the buffer.
+ *
+ * Same idea as with net_buf_remove_mem(), but a helper for operating on
+ * 24-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 24-bit value converted from big endian to host endian.
+ */
+#define net_buf_remove_be24(buf) net_buf_simple_remove_be24(&(buf)->b)
+
+/**
+ * @def net_buf_remove_le24
+ * @brief Remove and convert 24 bits from the end of the buffer.
+ *
+ * Same idea as with net_buf_remove_mem(), but a helper for operating on
+ * 24-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 24-bit value converted from little endian to host endian.
+ */
+#define net_buf_remove_le24(buf) net_buf_simple_remove_le24(&(buf)->b)
+
+/**
+ * @def net_buf_remove_le32
+ * @brief Remove and convert 32 bits from the end of the buffer.
+ *
+ * Same idea as with net_buf_remove_mem(), but a helper for operating on
+ * 32-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 32-bit value converted from little endian to host endian.
+ */
+#define net_buf_remove_le32(buf) net_buf_simple_remove_le32(&(buf)->b)
+
+/**
+ * @def net_buf_remove_be32
+ * @brief Remove and convert 32 bits from the end of the buffer.
+ *
+ * Same idea as with net_buf_remove_mem(), but a helper for operating on
+ * 32-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer
+ *
+ * @return 32-bit value converted from big endian to host endian.
+ */
+#define net_buf_remove_be32(buf) net_buf_simple_remove_be32(&(buf)->b)
+
+/**
+ * @def net_buf_remove_le48
+ * @brief Remove and convert 48 bits from the end of the buffer.
+ *
+ * Same idea as with net_buf_remove_mem(), but a helper for operating on
+ * 48-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 48-bit value converted from little endian to host endian.
+ */
+#define net_buf_remove_le48(buf) net_buf_simple_remove_le48(&(buf)->b)
+
+/**
+ * @def net_buf_remove_be48
+ * @brief Remove and convert 48 bits from the end of the buffer.
+ *
+ * Same idea as with net_buf_remove_mem(), but a helper for operating on
+ * 48-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer
+ *
+ * @return 48-bit value converted from big endian to host endian.
+ */
+#define net_buf_remove_be48(buf) net_buf_simple_remove_be48(&(buf)->b)
+
+/**
+ * @def net_buf_remove_le64
+ * @brief Remove and convert 64 bits from the end of the buffer.
+ *
+ * Same idea as with net_buf_remove_mem(), but a helper for operating on
+ * 64-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 64-bit value converted from little endian to host endian.
+ */
+#define net_buf_remove_le64(buf) net_buf_simple_remove_le64(&(buf)->b)
+
+/**
+ * @def net_buf_remove_be64
+ * @brief Remove and convert 64 bits from the end of the buffer.
+ *
+ * Same idea as with net_buf_remove_mem(), but a helper for operating on
+ * 64-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer
+ *
+ * @return 64-bit value converted from big endian to host endian.
+ */
+#define net_buf_remove_be64(buf) net_buf_simple_remove_be64(&(buf)->b)
+
+/**
  * @def net_buf_push
- * @brief Push data to the beginning of the buffer.
+ * @brief Prepare data to be added at the start of the buffer
  *
  * Modifies the data pointer and buffer length to account for more data
  * in the beginning of the buffer.
