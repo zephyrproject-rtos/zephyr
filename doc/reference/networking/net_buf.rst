@@ -89,6 +89,7 @@ Push
   .. code-block:: c
 
      void *net_buf_push(struct net_buf *buf, size_t len);
+     void *net_buf_push_mem(struct net_buf *buf, const void *mem, size_t len);
      void net_buf_push_u8(struct net_buf *buf, uint8_t value);
      void net_buf_push_le16(struct net_buf *buf, uint16_t value);
 
