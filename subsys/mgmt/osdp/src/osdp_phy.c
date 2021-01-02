@@ -10,8 +10,6 @@ LOG_MODULE_DECLARE(osdp, CONFIG_OSDP_LOG_LEVEL);
 #include <string.h>
 #include "osdp_common.h"
 
-#define TAG "PHY: "
-
 #define OSDP_PKT_MARK                  0xFF
 #define OSDP_PKT_SOM                   0x53
 #define PKT_CONTROL_SQN                0x03
@@ -95,7 +93,7 @@ int osdp_phy_packet_init(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	pd_mode = ISSET_FLAG(pd, PD_FLAG_PD_MODE);
 	exp_len = sizeof(struct osdp_packet_header) + 64; /* 64 is estimated */
 	if (max_len < exp_len) {
-		LOG_INF(TAG "packet_init: out of space! CMD: %02x", pd->cmd_id);
+		LOG_ERR("packet_init: out of space! CMD: %02x", pd->cmd_id);
 		return OSDP_ERR_PKT_FMT;
 	}
 
@@ -136,8 +134,7 @@ int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 
 	/* Do a sanity check only as we expect expect header to be prefilled */
 	if (buf[0] != OSDP_PKT_MARK || buf[1] != OSDP_PKT_SOM) {
-		LOG_ERR(TAG "packet_finalize: header validation failed! "
-			"CMD: %02x", pd->cmd_id);
+		LOG_ERR("PKT_F: Invalid header");
 		return OSDP_ERR_PKT_FMT;
 	}
 	pkt = (struct osdp_packet_header *)buf;
@@ -209,8 +206,7 @@ int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 	return len;
 
 out_of_space_error:
-	LOG_ERR(TAG "packet_finalize: Out of buffer space! "
-		"CMD: %02x", pd->cmd_id);
+	LOG_ERR("PKT_F: Out of buffer space! CMD(%02x)", pd->cmd_id);
 	return OSDP_ERR_PKT_FMT;
 }
 
@@ -232,12 +228,12 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 
 	/* validate packet header */
 	if (pkt->mark != OSDP_PKT_MARK || pkt->som != OSDP_PKT_SOM) {
-		LOG_ERR(TAG "invalid MARK/SOM");
+		LOG_ERR("invalid MARK/SOM");
 		return OSDP_ERR_PKT_FMT;
 	}
 
 	if (!pd_mode && !(pkt->pd_address & 0x80)) {
-		LOG_ERR(TAG "reply without MSB set 0x%02x", pkt->pd_address);
+		LOG_ERR("Reply without address MSB set!");
 		return OSDP_ERR_PKT_FMT;
 	}
 
@@ -253,10 +249,10 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 	if (pd_addr != pd->address && pd_addr != 0x7F) {
 		/* not addressed to us and was not broadcasted */
 		if (!pd_mode) {
-			LOG_ERR(TAG "invalid pd address %d", pd_addr);
+			LOG_ERR("Invalid pd address %d", pd_addr);
 			return OSDP_ERR_PKT_FMT;
 		}
-		LOG_DBG(TAG "cmd for PD[%d] discarded", pd_addr);
+		LOG_DBG("cmd for PD[%d] discarded", pd_addr);
 		return OSDP_ERR_PKT_SKIP;
 	}
 
@@ -278,14 +274,14 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 		 * TODO: PD must resend the last response if CP send the same
 		 * sequence number again.
 		 */
-		LOG_ERR(TAG "seq-repeat reply-resend feature not supported!");
+		LOG_ERR("seq-repeat/reply-resend feature not supported!");
 		pd->reply_id = REPLY_NAK;
 		pd->cmd_data[0] = OSDP_PD_NAK_SEQ_NUM;
 		return OSDP_ERR_PKT_FMT;
 	}
 	comp = osdp_phy_get_seq_number(pd, pd_mode);
 	if (comp != cur && !ISSET_FLAG(pd, PD_FLAG_SKIP_SEQ_CHECK)) {
-		LOG_ERR(TAG "packet seq mismatch %d/%d", comp, cur);
+		LOG_ERR("packet seq mismatch %d/%d", comp, cur);
 		pd->reply_id = REPLY_NAK;
 		pd->cmd_data[0] = OSDP_PD_NAK_SEQ_NUM;
 		return OSDP_ERR_PKT_FMT;
@@ -297,7 +293,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 		cur = (buf[pkt_len] << 8) | buf[pkt_len - 1];
 		comp = osdp_compute_crc16(buf + 1, pkt_len - 2);
 		if (comp != cur) {
-			LOG_ERR(TAG "invalid crc 0x%04x/0x%04x", comp, cur);
+			LOG_ERR("invalid crc 0x%04x/0x%04x", comp, cur);
 			pd->reply_id = REPLY_NAK;
 			pd->cmd_data[0] = OSDP_PD_NAK_MSG_CHK;
 			return OSDP_ERR_PKT_FMT;
@@ -307,7 +303,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 	} else {
 		comp = osdp_compute_checksum(buf + 1, pkt_len - 1);
 		if (comp != buf[len - 1]) {
-			LOG_ERR(TAG "invalid checksum %02x/%02x", comp, cur);
+			LOG_ERR("invalid checksum %02x/%02x", comp, cur);
 			pd->reply_id = REPLY_NAK;
 			pd->cmd_data[0] = OSDP_PD_NAK_MSG_CHK;
 			return OSDP_ERR_PKT_FMT;
@@ -324,13 +320,13 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 
 	if (pkt->control & PKT_CONTROL_SCB) {
 		if (pd_mode && !ISSET_FLAG(pd, PD_FLAG_SC_CAPABLE)) {
-			LOG_ERR(TAG "PD is not SC capable");
+			LOG_ERR("PD is not SC capable");
 			pd->reply_id = REPLY_NAK;
 			pd->cmd_data[0] = OSDP_PD_NAK_SC_UNSUP;
 			return OSDP_ERR_PKT_FMT;
 		}
 		if (pkt->data[1] < SCS_11 || pkt->data[1] > SCS_18) {
-			LOG_ERR(TAG "invalid SB Type");
+			LOG_ERR("Invalid SB Type");
 			pd->reply_id = REPLY_NAK;
 			pd->cmd_data[0] = OSDP_PD_NAK_SC_COND;
 			return OSDP_ERR_PKT_FMT;
@@ -352,7 +348,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 		len -= pkt->data[0]; /* consume security block */
 	} else {
 		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
-			LOG_ERR(TAG "Received plain-text message in SC");
+			LOG_ERR("Received plain-text message in SC");
 			pd->reply_id = REPLY_NAK;
 			pd->cmd_data[0] = OSDP_PD_NAK_SC_COND;
 			return OSDP_ERR_PKT_FMT;
@@ -367,7 +363,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 		osdp_compute_mac(pd, is_cmd, buf + 1, mac_offset);
 		mac = is_cmd ? pd->sc.c_mac : pd->sc.r_mac;
 		if (memcmp(buf + 1 + mac_offset, mac, 4) != 0) {
-			LOG_ERR(TAG "invalid MAC");
+			LOG_ERR("Invalid MAC; discarding SC");
 			pd->reply_id = REPLY_NAK;
 			pd->cmd_data[0] = OSDP_PD_NAK_SC_COND;
 			return OSDP_ERR_PKT_FMT;
@@ -388,7 +384,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 			 */
 			len = osdp_decrypt_data(pd, is_cmd, data + 1, len - 1);
 			if (len <= 0) {
-				LOG_ERR(TAG "failed at decrypt");
+				LOG_ERR("Failed at decrypt; discarding SC");
 				pd->reply_id = REPLY_NAK;
 				pd->cmd_data[0] = OSDP_PD_NAK_SC_COND;
 				return OSDP_ERR_PKT_FMT;
