@@ -557,7 +557,7 @@ int isotp_bind(struct isotp_recv_ctx *ctx, const struct device *can_dev,
 
 	__ASSERT(ctx, "ctx is NULL");
 	__ASSERT(can_dev, "CAN device is NULL");
-	__ASSERT(rx_addr && rx_addr, "RX or TX addr is NULL");
+	__ASSERT(rx_addr && tx_addr, "RX or TX addr is NULL");
 	__ASSERT(opts, "OPTS is NULL");
 
 	ctx->can_dev = can_dev;
@@ -1106,7 +1106,7 @@ static int send(struct isotp_send_ctx *ctx, const struct device *can_dev,
 
 	__ASSERT_NO_MSG(ctx);
 	__ASSERT_NO_MSG(can_dev);
-	__ASSERT_NO_MSG(rx_addr && rx_addr);
+	__ASSERT_NO_MSG(rx_addr && tx_addr);
 
 	if (complete_cb) {
 		ctx->fin_cb.cb = complete_cb;
