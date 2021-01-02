@@ -13,6 +13,7 @@
 
 #include <autoconf.h>
 #include <linker/sections.h>
+#include <linker/devicetree_regions.h>
 #include <devicetree.h>
 
 #include <linker/linker-defs.h>
@@ -48,7 +49,8 @@
 #if CONFIG_FLASH_LOAD_SIZE > 0
 #define ROM_SIZE CONFIG_FLASH_LOAD_SIZE
 #else
-#define ROM_SIZE (CONFIG_FLASH_SIZE*1K - CONFIG_FLASH_LOAD_OFFSET)
+#define ROM_USABLE_END DT_PARTITION_REGIONS_START(CONFIG_FLASH_SIZE*1K)
+#define ROM_SIZE (ROM_USABLE_END - CONFIG_FLASH_LOAD_OFFSET)
 #endif
 #endif
 
@@ -116,6 +118,8 @@ MEMORY
 #endif
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx)      : ORIGIN = (RAM_ADDR + RAM_SIZE), LENGTH = 2K
+    /* Add custom memory regions requested from devicetree */
+    DT_PARTITION_REGIONS()
     }
 
 ENTRY(CONFIG_KERNEL_ENTRY)
