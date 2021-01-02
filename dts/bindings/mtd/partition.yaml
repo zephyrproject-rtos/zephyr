@@ -24,6 +24,10 @@ child-binding:
           type: boolean
           required: false
           description: if the partition is read-only or not
+       linker-region:
+          type: boolean
+          required: false
+          description: generate a MEMORY region for this partition in the linker
        reg:
           type: array
           description: register space
