@@ -527,6 +527,35 @@ extern "C" {
 			F, fixed_arg, __VA_ARGS__)
 
 /**
+ * @brief Call a macro @p F on each provided argument in a nested fashion
+ *
+ * For each argument provided evaluates a two input macro where the second
+ * parameter is the result of the evaluation on the previous argument.
+ *
+ * Example:
+ *
+ *     // Find the smallest number in a list
+ *     FOR_EACH_NESTED(MIN, INT_MAX, 4, 5, 6);
+ *
+ * This expands to:
+ *
+ *     MIN(6, MIN(5, MIN(4, INT_MAX)))
+ *
+ * @param F Macro to invoke.
+ * @param term Final argument provided to the last invocation of @p F.
+ * @param ... Variable argument list.
+ * @return Result of macro invocation, or @p term if argument list is empty.
+ */
+#define FOR_EACH_NESTED(F, term, ...) \
+	COND_CODE_0(							\
+		/* are there zero non-empty arguments ? */		\
+		NUM_VA_ARGS_LESS_1(LIST_DROP_EMPTY(__VA_ARGS__, _)),	\
+		/* if so, expand to term */				\
+		(term),							\
+		/* otherwise, expand to: */				\
+		(_Z_FOR_EACH_NESTED(F, term, LIST_DROP_EMPTY(__VA_ARGS__))))
+
+/**
  * @brief Number of arguments in the variable arguments list minus one.
  *
  * @param ... List of arguments

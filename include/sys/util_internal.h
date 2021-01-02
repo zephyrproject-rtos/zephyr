@@ -704,6 +704,43 @@
 #define Z_FOR_EACH_SWALLOW_INDEX_FIXED_ARG(F, fixed_arg, index, arg) F(arg)
 #define Z_FOR_EACH_SWALLOW_INDEX(F, fixed_arg, index, arg) F(arg, fixed_arg)
 
+/* Internal macros used by FOR_EACH_NESTED */
+#define _Z_FEN_1(F, term, ...)  F(GET_ARG_N(1, __VA_ARGS__), term)
+#define _Z_FEN_2(F, term, ...)  F(GET_ARG_N(2, __VA_ARGS__), \
+				  _Z_FEN_1(F, term, __VA_ARGS__))
+#define _Z_FEN_3(F, term, ...)  F(GET_ARG_N(3, __VA_ARGS__), \
+				  _Z_FEN_2(F, term, __VA_ARGS__))
+#define _Z_FEN_4(F, term, ...)  F(GET_ARG_N(4, __VA_ARGS__), \
+				  _Z_FEN_3(F, term, __VA_ARGS__))
+#define _Z_FEN_5(F, term, ...)  F(GET_ARG_N(5, __VA_ARGS__), \
+				  _Z_FEN_4(F, term, __VA_ARGS__))
+#define _Z_FEN_6(F, term, ...)  F(GET_ARG_N(6, __VA_ARGS__), \
+				  _Z_FEN_5(F, term, __VA_ARGS__))
+#define _Z_FEN_7(F, term, ...)  F(GET_ARG_N(7, __VA_ARGS__), \
+				  _Z_FEN_6(F, term, __VA_ARGS__))
+#define _Z_FEN_8(F, term, ...)  F(GET_ARG_N(8, __VA_ARGS__), \
+				  _Z_FEN_7(F, term, __VA_ARGS__))
+#define _Z_FEN_9(F, term, ...)  F(GET_ARG_N(9, __VA_ARGS__), \
+				  _Z_FEN_8(F, term, __VA_ARGS__))
+#define _Z_FEN_10(F, term, ...) F(GET_ARG_N(10, __VA_ARGS__), \
+				  _Z_FEN_9(F, term, __VA_ARGS__))
+#define _Z_FEN_11(F, term, ...) F(GET_ARG_N(11, __VA_ARGS__), \
+				  _Z_FEN_10(F, term, __VA_ARGS__))
+#define _Z_FEN_12(F, term, ...) F(GET_ARG_N(12, __VA_ARGS__), \
+				  _Z_FEN_11(F, term, __VA_ARGS__))
+#define _Z_FEN_13(F, term, ...) F(GET_ARG_N(13, __VA_ARGS__), \
+				  _Z_FEN_12(F, term, __VA_ARGS__))
+#define _Z_FEN_14(F, term, ...) F(GET_ARG_N(14, __VA_ARGS__), \
+				  _Z_FEN_13(F, term, __VA_ARGS__))
+#define _Z_FEN_15(F, term, ...) F(GET_ARG_N(15, __VA_ARGS__), \
+				  _Z_FEN_14(F, term, __VA_ARGS__))
+#define _Z_FEN_16(F, term, ...) F(GET_ARG_N(16, __VA_ARGS__), \
+				  _Z_FEN_15(F, term, __VA_ARGS__))
+
+#define _Z_FOR_EACH_NESTED(F, term, ...) \
+	UTIL_CAT(_Z_FEN_, NUM_VA_ARGS_LESS_1(__VA_ARGS__, _)) \
+	(F, term, __VA_ARGS__)
+
 /* This is a workaround to enable mixing GET_ARG_N with FOR_EACH macros. If
  * same UTIL_EVAL macro is used then macro is incorrectly resolved.
  */
