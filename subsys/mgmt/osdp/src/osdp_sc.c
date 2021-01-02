@@ -10,8 +10,6 @@ LOG_MODULE_DECLARE(osdp, CONFIG_OSDP_LOG_LEVEL);
 #include <string.h>
 #include "osdp_common.h"
 
-#define TAG "SC: "
-
 #define OSDP_SC_EOM_MARKER             0x80  /* End of Message Marker */
 
 /* Default key as specified in OSDP specification */
@@ -146,7 +144,7 @@ int osdp_decrypt_data(struct osdp_pd *pd, int is_cmd, uint8_t *data, int length)
 	uint8_t iv[16];
 
 	if (length % 16 != 0) {
-		LOG_ERR(TAG "decrypt_pkt invalid len:%d", length);
+		LOG_ERR("decrypt_pkt invalid len:%d", length);
 		return -1;
 	}
 
