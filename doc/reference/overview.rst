@@ -98,7 +98,7 @@ current :ref:`stability level <api_lifecycle>`.
      - 2.4
 
    * - :ref:`eeprom_api`
-     - Unstable
+     - Stable
      - 2.1
      - 2.1
 
