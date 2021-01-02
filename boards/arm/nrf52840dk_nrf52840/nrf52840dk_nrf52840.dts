@@ -274,6 +274,7 @@ arduino_spi: &spi3 {
 		storage_partition: partition@f8000 {
 			label = "storage";
 			reg = <0x000f8000 0x00008000>;
+			linker-region;
 		};
 	};
 };

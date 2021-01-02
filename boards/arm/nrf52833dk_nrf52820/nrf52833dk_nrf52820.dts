@@ -148,6 +148,7 @@
 		storage_partition: partition@3a000 {
 			label = "storage";
 			reg = <0x0003a000 0x00006000>;
+			linker-region;
 		};
 	};
 };

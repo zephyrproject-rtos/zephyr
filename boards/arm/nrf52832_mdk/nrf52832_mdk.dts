@@ -150,6 +150,7 @@
 		storage_partition: partition@7a000 {
 			label = "storage";
 			reg = <0x0007a000 0x00006000>;
+			linker-region;
 		};
 	};
 };
