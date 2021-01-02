@@ -346,6 +346,24 @@ static void test_FOR_EACH_IDX_FIXED_ARG(void)
 	zassert_equal(a2, 3, "Unexpected value %d", a2);
 }
 
+static void test_FOR_EACH_NESTED(void)
+{
+	#undef FOO
+	/* MAX operation */
+	#define FOO(a, b) (((a) > (b)) ? (a) : (b))
+
+	zassert_equal(FOR_EACH_NESTED(FOO, 10), 10,
+			"Empty invocation failed");
+	zassert_equal(FOR_EACH_NESTED(FOO, 10, 1, 2, 3), 10,
+			"Term condition not selected");
+	zassert_equal(FOR_EACH_NESTED(FOO, 10, 20, 2, 3), 20,
+			"Largest value not selected");
+	zassert_equal(FOR_EACH_NESTED(FOO, 10, 1, 20, 3), 20,
+			"Largest value not selected");
+	zassert_equal(FOR_EACH_NESTED(FOO, 10, 1, 2, 20), 20,
+			"Largest value not selected");
+}
+
 static void test_IS_EMPTY(void)
 {
 	#define test_IS_EMPTY_REAL_EMPTY
@@ -465,6 +483,7 @@ void test_cc(void)
 			 ztest_unit_test(test_FOR_EACH_FIXED_ARG),
 			 ztest_unit_test(test_FOR_EACH_IDX),
 			 ztest_unit_test(test_FOR_EACH_IDX_FIXED_ARG),
+			 ztest_unit_test(test_FOR_EACH_NESTED),
 			 ztest_unit_test(test_IS_EMPTY),
 			 ztest_unit_test(test_LIST_DROP_EMPTY),
 			 ztest_unit_test(test_nested_FOR_EACH),
