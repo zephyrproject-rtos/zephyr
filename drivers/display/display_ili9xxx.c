@@ -343,6 +343,13 @@ static int ili9xxx_configure(const struct device *dev)
 		return r;
 	}
 
+	if (config->inversion) {
+		r = ili9xxx_transmit(dev, ILI9XXX_DINVON, NULL, 0U);
+		if (r < 0) {
+			return r;
+		}
+	}
+
 	r = config->regs_init_fn(dev);
 	if (r < 0) {
 		return r;
@@ -471,6 +478,7 @@ static const struct display_driver_api ili9xxx_api = {
 		.rotation = DT_PROP(INST_DT_ILI9XXX(n, t), rotation),          \
 		.x_resolution = ILI##t##_X_RES,                                \
 		.y_resolution = ILI##t##_Y_RES,                                \
+		.inversion = DT_PROP(INST_DT_ILI9XXX(n, t), display_inversion),\
 		.regs = &ili9xxx_regs_##n,                                     \
 		.regs_init_fn = ili##t##_regs_init,                            \
 	};                                                                     \

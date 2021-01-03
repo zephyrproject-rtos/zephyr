@@ -13,6 +13,7 @@
 
 /* Commands/registers. */
 #define ILI9XXX_SLPOUT 0x11
+#define ILI9XXX_DINVON 0x21
 #define ILI9XXX_GAMSET 0x26
 #define ILI9XXX_DISPOFF 0x28
 #define ILI9XXX_DISPON 0x29
@@ -67,6 +68,7 @@ struct ili9xxx_config {
 	uint16_t rotation;
 	uint16_t x_resolution;
 	uint16_t y_resolution;
+	bool inversion;
 	const void *regs;
 	int (*regs_init_fn)(const struct device *dev);
 };
