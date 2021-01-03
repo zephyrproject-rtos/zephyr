@@ -46,3 +46,9 @@ properties:
         - 270
       description:
         Display rotation (CW) in degrees.
+
+    display-inversion:
+      type: boolean
+      description:
+        Display inversion mode. Every bit is inverted from the frame memory to
+        the display.
