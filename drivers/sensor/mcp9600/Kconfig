@@ -1,0 +1,47 @@
+# MCP9600 temperature sensor configuration options
+
+# Copyright (c) 2020 SER Consulting LLC / Steven Riedl
+
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MCP9600
+	bool "MCP9600 i2c thermocouple temperature sensor"
+	depends on I2C
+	help
+	  Enable driver for MCP9600 i2c thermocouple temperature sensor.
+
+if MCP9600
+
+choice
+	prompt "MCP9600 trigger mode"
+	default MCP9600_TRIGGER_NONE
+
+config MCP9600_TRIGGER_NONE
+	bool "No trigger"
+
+config MCP9600_TRIGGER_GLOBAL_THREAD
+	depends on GPIO
+	select MCP9600_TRIGGER
+	bool "Use global thread"
+
+config MCP9600_TRIGGER_OWN_THREAD
+	depends on GPIO
+	select MCP9600_TRIGGER
+	bool "Use own thread"
+
+endchoice
+
+config MCP9600_TRIGGER
+	bool
+
+config MCP9600_THREAD_STACK_SIZE
+	int "Sensor delayed work thread stack size"
+	depends on MCP9600_TRIGGER_OWN_THREAD
+	default 1024
+
+config MCP9600_THREAD_PRIORITY
+	int "MCP9600 thread priority"
+	depends on MCP9600_TRIGGER_OWN_THREAD
+	default 10
+
+endif # MCP9600
