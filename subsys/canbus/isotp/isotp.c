@@ -1068,11 +1068,11 @@ static void send_state_machine(struct isotp_send_ctx *ctx)
 	switch (ctx->state) {
 
 	case ISOTP_TX_SEND_FF:
-		LOG_DBG("SM send FF");
 		send_ff(ctx);
 		z_add_timeout(&ctx->timeout, send_timeout_handler,
 			      K_MSEC(ISOTP_BS));
 		ctx->state = ISOTP_TX_WAIT_FC;
+		LOG_DBG("SM send FF");
 		break;
 
 	case ISOTP_TX_SEND_CF:
@@ -1094,11 +1094,11 @@ static void send_state_machine(struct isotp_send_ctx *ctx)
 			}
 
 			if (ctx->opts.bs && !ctx->bs) {
-				LOG_DBG("BS reached. Wait for FC again");
-				ctx->state = ISOTP_TX_WAIT_FC;
 				z_add_timeout(&ctx->timeout,
 					      send_timeout_handler,
 					      K_MSEC(ISOTP_BS));
+				ctx->state = ISOTP_TX_WAIT_FC;
+				LOG_DBG("BS reached. Wait for FC again");
 				break;
 			} else if (ctx->opts.stmin) {
 				ctx->state = ISOTP_TX_WAIT_ST;
@@ -1109,10 +1109,10 @@ static void send_state_machine(struct isotp_send_ctx *ctx)
 		break;
 
 	case ISOTP_TX_WAIT_ST:
-		LOG_DBG("SM wait ST");
 		z_add_timeout(&ctx->timeout, send_timeout_handler,
 			      stmin_to_ticks(ctx->opts.stmin));
 		ctx->state = ISOTP_TX_SEND_CF;
+		LOG_DBG("SM wait ST");
 		break;
 
 	case ISOTP_TX_ERR:
