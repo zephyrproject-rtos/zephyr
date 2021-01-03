@@ -96,7 +96,7 @@ static int mcp9600_chip_init(const struct device *dev)
 
 	int rc = mcp9600_reg_read(dev, MCP9600_REG_ID_REVISION,
 			buf, 2);
-	
+
 	LOG_DBG("mcp9600: id=0x%02x version=0x%02x ret=%d",
 			buf[0], buf[1], rc);
 	return rc;
