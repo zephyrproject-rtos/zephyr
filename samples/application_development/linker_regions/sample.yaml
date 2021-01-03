@@ -1,0 +1,21 @@
+sample:
+  name: Linker regions
+tests:
+  sample.app_dev.linker_regions:
+    tags: linker
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "First @ 0x38000: 0xdeadbeef"
+    platform_allow: qemu_cortex_m3
+  sample.app_dev.linker_regions_multiple:
+    tags: linker
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "First @ 0x3c000: 0xdeadbeef"
+        - "Second @ 0x38000: 0xf00dcafe"
+    platform_allow: qemu_cortex_m3
+    extra_args: SECOND_REGION DTC_OVERLAY_FILE=boards/qemu_cortex_m3_multiple.overlay
