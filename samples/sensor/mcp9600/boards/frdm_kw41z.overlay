@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2020, SER Consulting LLC / Steven Riedl
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c1 {
+	mcp9600@60 {
+		compatible = "microchip,mcp9600";
+		reg = <0x60>;
+		label = "MCP9600";
+	};
+};

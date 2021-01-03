@@ -142,6 +142,8 @@ source "drivers/sensor/max44009/Kconfig"
 
 source "drivers/sensor/mchp_tach_xec/Kconfig"
 
+source "drivers/sensor/mcp9600/Kconfig"
+
 source "drivers/sensor/mcp9808/Kconfig"
 
 source "drivers/sensor/mpr/Kconfig"
