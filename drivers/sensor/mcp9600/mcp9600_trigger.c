@@ -124,7 +124,8 @@ int mcp9600_trigger_set(struct device *dev,
 	return rv;
 }
 
-static void alert_cb(struct device *dev, struct gpio_callback *cb, uint32_t pins)
+static void alert_cb(struct device *dev, struct gpio_callback *cb,
+	uint32_t pins)
 {
 	struct mcp9600_data *data =
 		CONTAINER_OF(cb, struct mcp9600_data, alert_cb);
@@ -149,7 +150,8 @@ static void mcp9600_thread_main(int arg1, int arg2)
 	}
 }
 
-static K_KERNEL_STACK_DEFINE(mcp9600_thread_stack, CONFIG_MCP9600_THREAD_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(mcp9600_thread_stack,
+	CONFIG_MCP9600_THREAD_STACK_SIZE);
 static struct k_thread mcp9600_thread;
 #else /* CONFIG_MCP9600_TRIGGER_GLOBAL_THREAD */
 
@@ -183,7 +185,8 @@ int mcp9600_setup_interrupt(struct device *dev)
 	k_thread_create(&mcp9600_thread, mcp9600_thread_stack,
 			CONFIG_MCP9600_THREAD_STACK_SIZE,
 			(k_thread_entry_t)mcp9600_thread_main, dev, 0, NULL,
-			K_PRIO_COOP(CONFIG_MCP9600_THREAD_PRIORITY), 0, K_NO_WAIT);
+			K_PRIO_COOP(CONFIG_MCP9600_THREAD_PRIORITY),
+				0, K_NO_WAIT);
 #else /* CONFIG_MCP9600_TRIGGER_GLOBAL_THREAD */
 	data->work.handler = mcp9600_gpio_thread_cb;
 #endif /* trigger type */
@@ -201,7 +204,8 @@ int mcp9600_setup_interrupt(struct device *dev)
 	}
 
 	if (rc == 0) {
-		gpio_init_callback(&data->alert_cb, alert_cb, BIT(cfg->alert_pin));
+		gpio_init_callback(&data->alert_cb, alert_cb,
+			BIT(cfg->alert_pin));
 
 		rc = gpio_add_callback(gpio, &data->alert_cb);
 	}

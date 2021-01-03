@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(MCP9600, CONFIG_SENSOR_LOG_LEVEL);
 #endif
 
 static int mcp9600_reg_read(const struct device *dev, uint8_t start,
-							uint8_t *buf, int size)
+			uint8_t *buf, int size)
 {
 	struct mcp9600_data *data = dev->data;
 	const struct mcp9600_config *cfg = dev->config;
@@ -38,7 +38,7 @@ static int mcp9600_reg_read(const struct device *dev, uint8_t start,
 }
 
 static int mcp9600_sample_fetch(const struct device *dev,
-								enum sensor_channel chan)
+			enum sensor_channel chan)
 {
 	struct mcp9600_data *data = dev->data;
 	uint8_t buf[8];
@@ -59,8 +59,8 @@ static int mcp9600_sample_fetch(const struct device *dev,
 }
 
 static int mcp9600_channel_get(const struct device *dev,
-								enum sensor_channel chan,
-								struct sensor_value *val)
+			enum sensor_channel chan,
+			struct sensor_value *val)
 {
 	struct mcp9600_data *data = dev->data;
 	int32_t temp;
@@ -68,28 +68,12 @@ static int mcp9600_channel_get(const struct device *dev,
 	switch (chan) {
 	case SENSOR_CHAN_AMBIENT_TEMP:
 			temp = data->ttemp>>4;
-			if (temp>2047) {
+			if (temp > 2047) {
 				temp -= 4096;
 			}
 			val->val1 = temp;
 			val->val2 = ((data->ttemp)&0x0f)*62500;
 			break;
-	/*case SENSOR_CHAN_DIFF_TEMP:
-			temp = data->dtemp>>4;
-			if (temp>2047) {
-				temp -= 4096;
-			}
-			val->val1 = temp;
-			val->val2 = ((data->dtemp)&0x0f)*62500;
-			break;
-	case SENSOR_CHAN_COLD_TEMP:
-		temp = data->ctemp>>4;
-		if (temp>2047) {
-			temp -= 4096;
-		}
-		val->val1 = temp;
-		val->val2 = ((data->ctemp)&0x0f)*62500;
-		break;*/
 	default:
 		return -EINVAL;
 	}
@@ -110,9 +94,11 @@ static int mcp9600_chip_init(const struct device *dev)
 {
 	uint8_t buf[2];
 
-	int rc = mcp9600_reg_read(dev, MCP9600_REG_ID_REVISION, buf, 2);
+	int rc = mcp9600_reg_read(dev, MCP9600_REG_ID_REVISION,
+			buf, 2);
 	
-	LOG_DBG("mcp9600: id=0x%02x version=0x%02x ret=%d", buf[0], buf[1], rc);
+	LOG_DBG("mcp9600: id=0x%02x version=0x%02x ret=%d",
+			buf[0], buf[1], rc);
 	return rc;
 }
 
@@ -149,5 +135,5 @@ static const struct mcp9600_config mcp9600_cfg = {
 };
 
 DEVICE_AND_API_INIT(mcp9600, DT_INST_LABEL(0), mcp9600_init,
-					&mcp9600_data, &mcp9600_cfg, POST_KERNEL,
-					CONFIG_SENSOR_INIT_PRIORITY, &mcp9600_api_funcs);
+	&mcp9600_data, &mcp9600_cfg, POST_KERNEL,
+	CONFIG_SENSOR_INIT_PRIORITY, &mcp9600_api_funcs);
