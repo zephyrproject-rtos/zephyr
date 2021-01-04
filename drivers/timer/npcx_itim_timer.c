@@ -66,6 +66,10 @@ static struct k_spinlock lock;
 static uint64_t cyc_sys_announced;
 /* Current target cycles of time-out signal in event timer */
 static uint32_t cyc_evt_timeout;
+/* Total cycles of system timer stopped in "sleep/deep sleep" mode */
+__unused static uint64_t cyc_sys_compensated;
+/* Current cycles in event timer when ec entered "sleep/deep sleep" mode */
+__unused static uint32_t cyc_evt_enter_deep_idle;
 
 /* ITIM local inline functions */
 static inline uint64_t npcx_itim_get_sys_cyc64(void)
@@ -83,7 +87,12 @@ static inline uint64_t npcx_itim_get_sys_cyc64(void)
 	cnt64l = NPCX_ITIM64_MAX_HALF_CNT - cnt64l + 1;
 
 	/* Return current value of 64-bit counter value of system timer */
-	return (((uint64_t)cnt64h) << 32) | cnt64l;
+	if (IS_ENABLED(CONFIG_PM)) {
+		return ((((uint64_t)cnt64h) << 32) | cnt64l) +
+							cyc_sys_compensated;
+	} else {
+		return (((uint64_t)cnt64h) << 32) | cnt64l;
+	}
 }
 
 static inline void npcx_itim_evt_enable(void)
@@ -166,6 +175,41 @@ static void npcx_itim_evt_isr(const struct device *dev)
 		z_clock_announce(1);
 	}
 }
+
+#if defined(CONFIG_PM)
+static inline uint32_t npcx_itim_get_evt_cyc32(void)
+{
+	uint32_t cnt1, cnt2;
+
+	cnt1 = evt_tmr->ITCNT32;
+	/*
+	 * Wait for two consecutive equal values are read since the source clock
+	 * of event timer is 32KHz.
+	 */
+	while ((cnt2 = evt_tmr->ITCNT32) != cnt1)
+		cnt1 = cnt2;
+
+	/* Return current value of 32-bit counter of event timer  */
+	return cnt2;
+}
+
+static uint32_t npcx_itim_evt_elapsed_cyc32(void)
+{
+	uint32_t cnt1 = npcx_itim_get_evt_cyc32();
+	uint8_t  sys_cts = evt_tmr->ITCTS32;
+	uint16_t cnt2 = npcx_itim_get_evt_cyc32();
+
+	/* Event has been triggered but timer ISR doesn't handle it */
+	if (IS_BIT_SET(sys_cts, NPCX_ITCTSXX_TO_STS) || (cnt2 > cnt1)) {
+		cnt2 = cyc_evt_timeout;
+	} else {
+		cnt2 = cyc_evt_timeout - cnt2;
+	}
+
+	/* Return elapsed cycles of 32-bit counter of event timer  */
+	return cnt2;
+}
+#endif /* CONFIG_PM */
 
 /* System timer api functions */
 void z_clock_set_timeout(int32_t ticks, bool idle)
@@ -270,3 +314,27 @@ int z_clock_driver_init(const struct device *device)
 
 	return 0;
 }
+
+/* Platform specific systme timer functions */
+#if defined(CONFIG_PM)
+void npcx_clock_capture_low_freq_timer(void)
+{
+	cyc_evt_enter_deep_idle = npcx_itim_evt_elapsed_cyc32();
+}
+
+void npcx_clock_compensate_system_timer(void)
+{
+	uint32_t cyc_evt_elapsed_in_deep = npcx_itim_evt_elapsed_cyc32() -
+							cyc_evt_enter_deep_idle;
+
+	cyc_sys_compensated += ((uint64_t)cyc_evt_elapsed_in_deep *
+			sys_clock_hw_cycles_per_sec()) / EVT_CYCLES_PER_SEC;
+}
+
+#if defined(CONFIG_SOC_POWER_MANAGEMENT_TRACE)
+uint64_t npcx_clock_get_sleep_ticks(void)
+{
+	return  cyc_sys_compensated / SYS_CYCLES_PER_TICK;
+}
+#endif /* CONFIG_SOC_POWER_MANAGEMENT_TRACE */
+#endif /* CONFIG_PM */

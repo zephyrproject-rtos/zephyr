@@ -88,6 +88,21 @@ config I2C_NPCX
 	  both Intel SMBus and Philips I2C physical layer. There are 8 SMBus
 	  modules and 10 buses in NPCX7 series.
 
+if SOC_POWER_MANAGEMENT
+
+config PM
+	default y if SYS_CLOCK_EXISTS
+	help
+	  Enable the kernel handles extra power management policies whenever
+	  system enters idle state.
+
+config PM_DEVICE
+	default n
+	help
+	  Disable device power management so far.
+
+endif # SOC_POWER_MANAGEMENT
+
 source "soc/arm/nuvoton_npcx/npcx7/Kconfig.defconfig.npcx7*"
 
 endif # SOC_SERIES_NPCX7

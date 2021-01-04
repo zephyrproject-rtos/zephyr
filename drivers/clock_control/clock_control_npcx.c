@@ -100,6 +100,37 @@ static int npcx_clock_control_get_subsys_rate(const struct device *dev,
 	return 0;
 }
 
+/* Platform specific clock controller functions */
+#if defined(CONFIG_PM)
+void npcx_clock_control_turn_on_system_sleep(bool is_deep, bool is_instant)
+{
+	const struct device *const clk_dev =
+					device_get_binding(NPCX_CLK_CTRL_NAME);
+	struct pmc_reg *const inst_pmc = HAL_PMC_INST(clk_dev);
+	/* Configure that ec enters system sleep mode if receiving 'wfi' */
+	uint8_t pm_flags = BIT(NPCX_PMCSR_IDLE);
+
+	/* Add 'Disable High-Frequency' flag (ie. 'deep sleep' mode) */
+	if (is_deep) {
+		pm_flags |= BIT(NPCX_PMCSR_DHF);
+		/* Add 'Instant Wake-up' flag if sleep time is within 200 ms */
+		if (is_instant)
+			pm_flags |= BIT(NPCX_PMCSR_DI_INSTW);
+	}
+
+	inst_pmc->PMCSR = pm_flags;
+}
+
+void npcx_clock_control_turn_off_system_sleep(void)
+{
+	const struct device *const clk_dev =
+					device_get_binding(NPCX_CLK_CTRL_NAME);
+	struct pmc_reg *const inst_pmc = HAL_PMC_INST(clk_dev);
+
+	inst_pmc->PMCSR = 0;
+}
+#endif /* CONFIG_PM */
+
 /* Clock controller driver registration */
 static struct clock_control_driver_api npcx_clock_control_api = {
 	.on = npcx_clock_control_on,

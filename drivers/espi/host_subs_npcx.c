@@ -1054,5 +1054,17 @@ int npcx_host_init_subs_core_domain(const struct device *host_bus_dev,
 	irq_enable(DT_INST_IRQ_BY_NAME(0, p80_fifo, irq));
 #endif
 
+	if (IS_ENABLED(CONFIG_PM)) {
+		/*
+		 * Configure the host access wake-up event triggered from a host
+		 * transaction on eSPI/LPC bus. No need for callback function.
+		 */
+		npcx_miwu_interrupt_configure(&host_sub_cfg.host_acc_wui,
+				NPCX_MIWU_MODE_EDGE, NPCX_MIWU_TRIG_HIGH);
+
+		/* Enable irq of interrupt-input module */
+		npcx_miwu_irq_enable(&host_sub_cfg.host_acc_wui);
+	}
+
 	return 0;
 }

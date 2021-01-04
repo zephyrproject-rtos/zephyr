@@ -120,6 +120,42 @@ struct npcx_clk_cfg {
 #error "Unsupported OSC_CLK Frequency"
 #endif
 
+/**
+ * @brief Function to notify clock driver that backup the counter value of
+ *        low-frequency timer before ec entered deep idle state.
+ */
+void npcx_clock_capture_low_freq_timer(void);
+
+/**
+ * @brief Function to notify clock driver that compensate the counter value of
+ *        system timer by low-frequency timer after ec left deep idle state.
+ *
+ */
+void npcx_clock_compensate_system_timer(void);
+
+/**
+ * @brief Function to get time ticks in system sleep/deep sleep state. The unit
+ *        is ticks.
+ *
+ */
+uint64_t npcx_clock_get_sleep_ticks(void);
+
+/**
+ * @brief Function to configure system sleep settings. After ec received "wfi"
+ *        instruction, ec will enter sleep/deep sleep state for better power
+ *        consumption.
+ *
+ * @param is_deep A boolean indicating ec enters deep sleep or sleep state
+ * @param is_instant A boolean indicating 'Instant Wake-up' from deep idle is
+ *                   enabled
+ */
+void npcx_clock_control_turn_on_system_sleep(bool is_deep, bool is_instant);
+
+/**
+ * @brief Function to turn off system sleep mode.
+ */
+void npcx_clock_control_turn_off_system_sleep(void);
+
 #ifdef __cplusplus
 }
 #endif
