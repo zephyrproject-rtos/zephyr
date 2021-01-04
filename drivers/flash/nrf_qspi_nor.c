@@ -302,7 +302,11 @@ static void qspi_handler(nrfx_qspi_evt_t event, void *p_context)
 }
 
 
-/* QSPI send custom command */
+/* QSPI send custom command.
+ *
+ * If this is used for both send and receive the buffer sizes must be
+ * equal and cover the whole transaction.
+ */
 static int qspi_send_cmd(const struct device *dev, const struct qspi_cmd *cmd,
 			 bool wren)
 {
@@ -311,26 +315,51 @@ static int qspi_send_cmd(const struct device *dev, const struct qspi_cmd *cmd,
 		return -EINVAL;
 	}
 
-	qspi_lock(dev);
+	const void *tx_buf = NULL;
+	size_t tx_len = 0;
+	void *rx_buf = NULL;
+	size_t rx_len = 0;
+	size_t xfer_len = sizeof(cmd->op_code);
+
+	if (cmd->tx_buf) {
+		tx_buf = cmd->tx_buf->buf;
+		tx_len = cmd->tx_buf->len;
+	}
+
+	if (cmd->rx_buf) {
+		rx_buf = cmd->rx_buf->buf;
+		rx_len = cmd->rx_buf->len;
+	}
+
+	if ((rx_len != 0) && (tx_len != 0)) {
+		if (rx_len != tx_len) {
+			return -EINVAL;
+		}
+
+		xfer_len += tx_len;
+	} else {
+		/* At least one of these is zero. */
+		xfer_len += tx_len + rx_len;
+	}
+
+	if (xfer_len > NRF_QSPI_CINSTR_LEN_9B) {
+		LOG_WRN("cinstr %02x transfer too long: %zu",
+			cmd->op_code, xfer_len);
+		return -EINVAL;
+	}
 
 	nrf_qspi_cinstr_conf_t cinstr_cfg = {
 		.opcode = cmd->op_code,
+		.length = xfer_len,
 		.io2_level = true,
 		.io3_level = true,
 		.wipwait = false,
 		.wren = wren,
 	};
-	cinstr_cfg.length = sizeof(cmd->op_code);
-	if ((cmd->tx_buf != 0) && (cmd->rx_buf != 0)) {
-		cinstr_cfg.length += cmd->tx_buf->len + cmd->rx_buf->len;
-	} else if ((cmd->tx_buf != 0) && (cmd->rx_buf == 0)) {
-		cinstr_cfg.length += cmd->tx_buf->len;
-	} else if ((cmd->tx_buf == 0) && (cmd->rx_buf != 0)) {
-		cinstr_cfg.length += cmd->rx_buf->len;
-	}
 
-	int res = nrfx_qspi_cinstr_xfer(&cinstr_cfg, cmd->tx_buf->buf,
-					cmd->rx_buf->buf);
+	qspi_lock(dev);
+
+	int res = nrfx_qspi_cinstr_xfer(&cinstr_cfg, tx_buf, rx_buf);
 
 	qspi_unlock(dev);
 	return qspi_get_zephyr_ret_code(res);
