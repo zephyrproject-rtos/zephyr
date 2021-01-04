@@ -467,4 +467,42 @@ int jesd216_bfp_decode_dw15(const struct jesd216_param_header *php,
 			    const struct jesd216_bfp *bfp,
 			    struct jesd216_bfp_dw15 *res);
 
+/* Decoded data from JESD216_DW16 */
+struct jesd216_bfp_dw16 {
+	/* Bits specifying supported modes of entering 4-byte
+	 * addressing.
+	 */
+	unsigned int enter_4ba: 8;
+
+	/* Bits specifying supported modes of exiting 4-byte
+	 * addressing.
+	 */
+	unsigned int exit_4ba: 10;
+
+	/* Bits specifying the soft reset and rescue sequence to
+	 * restore the device to its power-on state.
+	 */
+	unsigned int srrs_support: 6;
+
+	/* Bits specifying how to modify status register 1, and which
+	 * bits are non-volatile.
+	 */
+	unsigned int sr1_interface: 7;
+};
+
+/* Get data from BFP DW16.
+ *
+ * @param php pointer to the BFP header.
+ *
+ * @param bfp pointer to the BFP table.
+ *
+ * @param res pointer to where to store the decoded data.
+ *
+ * @retval -ENOTSUP if this information is not available from this BFP table.
+ * @retval 0 on successful storage into @c *res.
+ */
+int jesd216_bfp_decode_dw16(const struct jesd216_param_header *php,
+			    const struct jesd216_bfp *bfp,
+			    struct jesd216_bfp_dw16 *res);
+
 #endif /* ZEPHYR_DRIVERS_FLASH_JESD216_H_ */
