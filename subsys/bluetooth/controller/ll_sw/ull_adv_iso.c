@@ -51,9 +51,11 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		      uint8_t packing, uint8_t framing, uint8_t encryption,
 		      uint8_t *bcode)
 {
+	struct lll_adv_sync *lll_adv_sync;
+	struct lll_adv_iso *lll_adv_iso;
+	struct node_rx_pdu *node_rx;
 	struct ll_adv_iso *adv_iso;
 	struct ll_adv_set *adv;
-	struct node_rx_pdu *node_rx;
 
 	adv_iso = ull_adv_iso_get(big_handle);
 
@@ -67,7 +69,8 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	 * the periodic advertising trains is already associated
 	 * with another BIG.
 	 */
-	if (!adv || !adv->lll.sync || adv->lll.sync->adv_iso) {
+	lll_adv_sync = adv->lll.sync;
+	if (!adv || !lll_adv_sync || lll_adv_sync->iso) {
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
 
@@ -136,6 +139,13 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	/* TODO: start sending BIS empty data packet for each BIS */
 	ull_adv_iso_start(adv_iso, 0 /* TODO: Calc ticks_anchor */);
 
+	/* Associate the ISO instance with a Periodic Advertising and
+	 * an Extended Advertising instance
+	 */
+	lll_adv_iso = &adv_iso->lll;
+	lll_adv_sync->iso = lll_adv_iso;
+	lll_adv_iso->adv = &adv->lll;
+
 	/* Prepare BIG complete event */
 	/* TODO: Implement custom node_rx struct for optimization */
 	node_rx = (void *)&adv_iso->node_rx_complete;
@@ -143,6 +153,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	node_rx->hdr.handle = big_handle;
 	node_rx->hdr.rx_ftr.param = adv_iso;
 
+	/* FIXME: instead of is_created use lll_adv_iso->adv being set */
 	adv_iso->is_created = true;
 
 	return BT_HCI_ERR_SUCCESS;
@@ -178,15 +189,25 @@ uint8_t ll_big_test_create(uint8_t big_handle, uint8_t adv_handle,
 
 uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 {
-	struct ll_adv_iso *adv_iso;
+	struct lll_adv_sync *lll_adv_sync;
+	struct lll_adv_iso *lll_adv_iso;
 	struct node_rx_pdu *node_rx;
+	struct ll_adv_iso *adv_iso;
+	struct lll_adv *lll_adv;
 	uint32_t ret;
 
 	adv_iso = ull_adv_iso_get(big_handle);
-
 	if (!adv_iso) {
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
+
+	lll_adv_iso = &adv_iso->lll;
+	lll_adv = lll_adv_iso->adv;
+	if (!lll_adv) {
+		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+	}
+
+	lll_adv_sync = lll_adv->sync;
 
 	/* TODO: Terminate all BIS data paths */
 
@@ -195,6 +216,8 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 			  ticker_op_stop_cb, adv_iso);
 
 	adv_iso->is_created = 0U;
+	lll_adv_iso->adv = NULL;
+	lll_adv_sync->iso = NULL;
 
 	/* Prepare BIG terminate event */
 	node_rx = (void *)&adv_iso->node_rx_terminate;
