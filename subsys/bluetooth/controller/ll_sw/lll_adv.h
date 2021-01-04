@@ -8,6 +8,7 @@
 
 struct lll_adv_iso {
 	struct lll_hdr hdr;
+	struct lll_adv *adv;
 };
 
 struct lll_adv_sync {
@@ -30,7 +31,7 @@ struct lll_adv_sync {
 	struct lll_adv_pdu data;
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
-	struct lll_adv_iso *adv_iso;
+	struct lll_adv_iso *iso;
 #endif /* CONFIG_BT_CTLR_ADV_ISO */
 
 #if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
