@@ -14,6 +14,8 @@
 
 #if DT_NODE_HAS_STATUS(DT_INST(0, jedec_spi_nor), okay)
 #define FLASH_DEVICE DT_LABEL(DT_INST(0, jedec_spi_nor))
+#elif DT_NODE_HAS_STATUS(DT_INST(0, nordic_qspi_nor), okay)
+#define FLASH_DEVICE DT_LABEL(DT_INST(0, nordic_qspi_nor))
 #else
 #error Unsupported flash driver
 #define FLASH_DEVICE ""
