@@ -97,11 +97,12 @@
 /* low power ram where DMA buffers are typically placed */
 #define LPRAM_BASE (DT_REG_ADDR(DT_NODELABEL(sram1)))
 #define LPRAM_SIZE (DT_REG_SIZE(DT_NODELABEL(sram1)))
+#define SRAM_BANK_SIZE	(64 * 1024)
 
 /* bootloader */
 
 #define HP_SRAM_BASE	0xbe000000
-#define HP_SRAM_SIZE	(3008 * 1024)
+#define HP_SRAM_SIZE	(30 * SRAM_BANK_SIZE)
 #define SOF_STACK_BASE	(HP_SRAM_BASE + HP_SRAM_SIZE)
 
 /* boot loader in IMR */
@@ -223,8 +224,6 @@
 
 /* Host page size */
 #define HOST_PAGE_SIZE		4096
-
-#define SRAM_BANK_SIZE                  (64 * 1024)
 
 /* LP SRAM */
 #define LP_SRAM_BASE			0xBE800000
