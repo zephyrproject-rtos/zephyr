@@ -139,7 +139,10 @@ static int net_bt_enable(struct net_if *iface, bool state)
 
 static enum net_l2_flags net_bt_flags(struct net_if *iface)
 {
-	return NET_L2_MULTICAST | NET_L2_MULTICAST_SKIP_JOIN_SOLICIT_NODE;
+	/* TODO: add NET_L2_MULTICAST_SKIP_JOIN_SOLICIT_NODE once the stack
+	 * supports Address Registration Option for neighbor discovery.
+	 */
+	return NET_L2_MULTICAST;
 }
 
 NET_L2_INIT(BLUETOOTH_L2, net_bt_recv, net_bt_send,
