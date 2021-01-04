@@ -188,7 +188,7 @@ static void dump_bfp(const struct jesd216_param_header *php,
 		     const struct jesd216_bfp *bfp)
 {
 	uint8_t dw = 1;
-	uint8_t limit = MIN(php->len_dw, ARRAY_SIZE(extractor));
+	uint8_t limit = MIN(1U + php->len_dw, ARRAY_SIZE(extractor));
 
 	printf("Summary of BFP content:\n");
 	while (dw < limit) {
