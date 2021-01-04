@@ -63,6 +63,8 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	struct node_rx_pdu *node_rx;
 	struct ll_adv_iso *adv_iso;
 	struct ll_adv_set *adv;
+	uint8_t *acad;
+	uint8_t err;
 
 	adv_iso = ull_adv_iso_get(big_handle);
 
@@ -130,6 +132,17 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	if (num_bis != 1) {
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
+
+	/* Add ACAD to AUX_SYNC_IND */
+	err = ull_adv_sync_acad_enable(lll_adv_sync,
+				       (sizeof(struct pdu_big_info) + 2),
+				       (void **)&acad);
+	if (err) {
+		return err;
+	}
+	acad[0] = sizeof(struct pdu_big_info) + 1;
+	acad[1] = BT_DATA_BIG_INFO;
+
 	/* TODO: For now we can just use the unique BIG handle as the BIS
 	 * handle until we support multiple BIS
 	 */
@@ -145,8 +158,6 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	adv_iso->framing = framing;
 	adv_iso->encryption = encryption;
 	memcpy(adv_iso->bcode, bcode, sizeof(adv_iso->bcode));
-
-	/* TODO: Add ACAD to AUX_SYNC_IND */
 
 	/* TODO: start sending BIS empty data packet for each BIS */
 	ull_adv_iso_start(adv_iso, 0 /* TODO: Calc ticks_anchor */);
@@ -204,6 +215,7 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 	struct ll_adv_iso *adv_iso;
 	struct lll_adv *lll_adv;
 	uint32_t ret;
+	uint8_t err;
 
 	adv_iso = ull_adv_iso_get(big_handle);
 	if (!adv_iso) {
@@ -217,6 +229,12 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 	}
 
 	lll_adv_sync = lll_adv->sync;
+
+	/* Remove ACAD to AUX_SYNC_IND */
+	err = ull_adv_sync_acad_enable(lll_adv_sync, 0, NULL);
+	if (err) {
+		return err;
+	}
 
 	/* TODO: Terminate all BIS data paths */
 
