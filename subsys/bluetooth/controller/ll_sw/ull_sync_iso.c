@@ -232,7 +232,7 @@ void ull_sync_iso_release(struct ll_sync_iso *sync_iso)
 
 void ull_sync_iso_setup(struct ll_sync_iso *sync_iso,
 			struct node_rx_hdr *node_rx,
-			struct pdu_biginfo *biginfo)
+			struct pdu_big_info *big_info)
 {
 	uint32_t ticks_slot_overhead;
 	struct node_rx_sync_iso *se;
@@ -249,7 +249,7 @@ void ull_sync_iso_setup(struct ll_sync_iso *sync_iso,
 	lll = &sync_iso->lll;
 	handle = ull_sync_iso_handle_get(sync_iso);
 
-	interval = sys_le16_to_cpu(biginfo->iso_interval);
+	interval = sys_le16_to_cpu(big_info->iso_interval);
 	interval_us = interval * CONN_INT_UNIT_US;
 
 	/* TODO: Populate LLL with information from the BIGINFO */

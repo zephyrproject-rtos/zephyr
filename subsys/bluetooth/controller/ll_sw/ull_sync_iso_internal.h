@@ -12,4 +12,4 @@ uint8_t ull_sync_iso_lll_handle_get(struct lll_sync_iso *lll);
 void ull_sync_iso_release(struct ll_sync_iso *sync_iso);
 void ull_sync_iso_setup(struct ll_sync_iso *sync_iso,
 			struct node_rx_hdr *node_rx,
-			struct pdu_biginfo *biginfo);
+			struct pdu_big_info *big_info);
