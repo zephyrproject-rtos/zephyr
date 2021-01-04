@@ -187,6 +187,10 @@ void ull_adv_sync_update(struct ll_adv_sync_set *sync, uint32_t slot_plus_us,
 /* helper function to schedule a mayfly to get sync offset */
 void ull_adv_sync_offset_get(struct ll_adv_set *adv);
 
+/* helper function to reserve ACAD field in PDU buffer */
+uint8_t ull_adv_sync_acad_enable(struct lll_adv_sync *lll_sync,
+				 uint8_t acad_len, void **acad);
+
 int ull_adv_iso_init(void);
 int ull_adv_iso_reset(void);
 
