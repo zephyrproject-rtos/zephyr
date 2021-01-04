@@ -356,7 +356,6 @@ static int uart_npcx_init(const struct device *dev)
 	npcx_miwu_irq_enable(&config->uart_rx_wui);
 #endif
 
-
 	/* Configure pin-mux for uart device */
 	npcx_pinctrl_mux_configure(config->alts_list, config->alts_size, 1);
 
