@@ -8,6 +8,13 @@ config BOARD
 config MP_NUM_CPUS
 	default 2 if BOARD_UP_SQUARED
 
+if PCIE_MSI_MULTI_VECTOR
+
+config INTEL_VTD_ICTL
+	default y
+
+endif # PCIE_MSI_MULTI_VECTOR
+
 config BUILD_OUTPUT_STRIPPED
 	default y
 
