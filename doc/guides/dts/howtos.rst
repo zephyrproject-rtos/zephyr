@@ -199,6 +199,9 @@ Here are some ways to set it:
 #. with the CMake ``set()`` command in the application ``CMakeLists.txt``,
    before including zephyr's :file:`boilerplate.cmake` file
 #. using a ``DTC_OVERLAY_FILE`` environment variable (deprecated)
+#. create a ``boards/<BOARD>_<revision>.overlay`` file in the application
+   folder for the current board revision. This requires that the board supports
+   multiple revisions, see :ref:`porting_board_revisions`.
 #. create a ``boards/<BOARD>.overlay`` file in the application
    folder, for the current board
 #. create a ``<BOARD>.overlay`` file in the application folder
