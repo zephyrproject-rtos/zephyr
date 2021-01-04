@@ -84,10 +84,6 @@ config IPM_CAVS_IDC
 config SCHED_IPI_SUPPORTED
 	default y if IPM_CAVS_IDC
 
-config IPM_INTEL_ADSP
-	default y
-	depends on IPM
-
 config IPM_CONSOLE
 	default y
 	depends on CONSOLE
