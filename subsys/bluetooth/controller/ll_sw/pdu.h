@@ -825,7 +825,7 @@ struct pdu_bis {
 	} __packed;
 } __packed;
 
-struct pdu_biginfo {
+struct pdu_big_info {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	uint32_t offset:14;
 	uint32_t offset_units:1;
