@@ -405,8 +405,8 @@ A module can be described using a file named :file:`zephyr/module.yml`.
 The format of :file:`zephyr/module.yml` is described in the following:
 
 
-Build files
-===========
+Module integration files (in-module)
+====================================
 
 Inclusion of build files, :file:`CMakeLists.txt` and :file:`Kconfig`, can be
 described as:
@@ -432,7 +432,6 @@ module:
    build:
      cmake: .
      kconfig: Kconfig
-
 
 Build system integration
 ========================
@@ -487,6 +486,113 @@ variables. For example:
 
   include(${ZEPHYR_CURRENT_MODULE_DIR}/cmake/code.cmake)
 
+.. _modules_module_ext_root:
+
+Module integration files (external)
+===================================
+
+Module integration files can be located externally to the Zephyr module itself.
+The ``MODULE_EXT_ROOT`` variable holds a list of roots containing integration
+files located externally to Zephyr modules.
+
+Module integration files in Zephyr
+----------------------------------
+
+The Zephyr repository contain :file:`CMakeLists.txt` and :file:`Kconfig` build
+files for certain known Zephyr modules.
+
+Those files are located under
+
+.. code-block:: none
+
+   <ZEPHYR_BASE>
+   └── modules
+       └── <module_name>
+           ├── CMakeLists.txt
+           └── Kconfig
+
+Module integration files in a custom location
+---------------------------------------------
+
+You can create a similar ``MODULE_EXT_ROOT`` for additional modules, and make
+those modules known to Zephyr build system.
+
+Create a ``MODULE_EXT_ROOT`` with the following structure
+
+.. code-block:: none
+
+   <MODULE_EXT_ROOT>
+   └── modules
+       ├── modules.cmake
+       └── <module_name>
+           ├── CMakeLists.txt
+           └── Kconfig
+
+and then build your application by specifying ``-DMODULE_EXT_ROOT`` parameter to
+the CMake build system. The ``MODULE_EXT_ROOT`` accepts a CMake list of roots as
+argument.
+
+A Zephyr module can automatically be added to the ``MODULE_EXT_ROOT``
+list using the module description file :file:`zephyr/module.yml`, see
+:ref:`modules_build_settings`.
+
+.. note::
+
+   ``ZEPHYR_BASE`` is always added as a ``MODULE_EXT_ROOT`` with the lowest
+   priority.
+   This allows you to overrule any integration files under
+   ``<ZEPHYR_BASE>/modules/<module_name>`` with your own implementation your own
+   ``MODULE_EXT_ROOT``.
+
+The :file:`modules.cmake` file must contain the logic that specifies the
+integration files for Zephyr modules via specifically named CMake variables.
+
+To include a module's CMake file, set the variable ``ZEPHYR_<MODULE_NAME>_CMAKE_DIR``
+to the path containing the CMake file.
+
+To include a module's Kconfig file, set the variable ``ZEPHYR_<MODULE_NAME>_KCONFIG``
+to the path to the Kconfig file.
+
+The following is an example on how to add support the the ``FOO`` module.
+
+Create the following structure
+
+.. code-block:: none
+
+   <MODULE_EXT_ROOT>
+   └── modules
+       ├── modules.cmake
+       └── foo
+           ├── CMakeLists.txt
+           └── Kconfig
+
+and inside the :file:`modules.cmake` file, add the following content
+
+.. code-block:: cmake
+
+   set(ZEPHYR_FOO_CMAKE_DIR ${CMAKE_CURRENT_LIST_DIR}/foo)
+   set(ZEPHYR_FOO_KCONFIG   ${CMAKE_CURRENT_LIST_DIR}/foo/Kconfig)
+
+Module integration files (zephyr/module.yml)
+--------------------------------------------
+
+The module description file :file:`zephyr/module.yml` can be used to specify
+that the build files, :file:`CMakeLists.txt` and :file:`Kconfig`, are located
+in a :ref:`modules_module_ext_root`.
+
+Build files located in a ``MODULE_EXT_ROOT`` can be described as:
+
+.. code-block:: yaml
+
+   build:
+     cmake-ext: True
+     kconfig-ext: True
+
+This allows control of the build inclusion to be described externally to the
+Zephyr module.
+
+The Zephyr repository itself is always added as a Zephyr module ext root.
+
 .. _modules_build_settings:
 
 Build settings
@@ -510,6 +616,8 @@ Build settings supported in the :file:`module.yml` file are:
 - ``arch_root``: Contains additional architectures that are available to the
   build system. Additional architectures must be located in a
   :file:`<arch_root>/arch` folder.
+- ``module_ext_root``: Contains :file:`CMakeLists.txt` and :file:`Kconfig` files
+  for Zephyr modules, see also :ref:`modules_module_ext_root`.
 
 Example of a :file:`module.yaml` file containing additional roots, and the
 corresponding file system layout.
@@ -522,16 +630,18 @@ corresponding file system layout.
        dts_root: .
        soc_root: .
        arch_root: .
+       module_ext_root: .
 
 
 requires the following folder structure:
 
 .. code-block:: none
 
-   <module-root>
+   <zephyr-module-root>
    ├── arch
    ├── boards
    ├── dts
+   ├── modules
    └── soc
 
 
