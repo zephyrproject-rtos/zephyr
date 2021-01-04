@@ -12,19 +12,6 @@
 
 #include "lll_adv_pdu.h"
 
-struct lll_adv_aux {
-	struct lll_hdr hdr;
-	struct lll_adv *adv;
-
-	uint32_t ticks_offset;
-
-	struct lll_adv_pdu data;
-
-#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
-	int8_t tx_pwr_lvl;
-#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
-};
-
 struct lll_adv_iso {
 	struct lll_hdr hdr;
 };
@@ -32,9 +19,6 @@ struct lll_adv_iso {
 struct lll_adv_sync {
 	struct lll_hdr hdr;
 	struct lll_adv *adv;
-#if defined(CONFIG_BT_CTLR_ADV_ISO)
-	struct lll_adv_iso *adv_iso;
-#endif /* CONFIG_BT_CTLR_ADV_ISO */
 
 	uint8_t access_addr[4];
 	uint8_t crc_init[3];
@@ -51,9 +35,9 @@ struct lll_adv_sync {
 
 	struct lll_adv_pdu data;
 
-#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
-	int8_t tx_pwr_lvl;
-#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	struct lll_adv_iso *adv_iso;
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
 
 #if IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	/* This flag is used only by LLL. It holds information if CTE
@@ -61,6 +45,23 @@ struct lll_adv_sync {
 	 */
 	uint8_t cte_started:1;
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+	int8_t tx_pwr_lvl;
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
+};
+
+struct lll_adv_aux {
+	struct lll_hdr hdr;
+	struct lll_adv *adv;
+
+	uint32_t ticks_offset;
+
+	struct lll_adv_pdu data;
+
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+	int8_t tx_pwr_lvl;
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 };
 
 struct lll_adv {
@@ -97,6 +98,7 @@ struct lll_adv {
 	struct lll_adv_pdu scan_rsp;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+	struct node_rx_hdr *node_rx_adv_term;
 	struct lll_adv_aux *aux;
 
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
@@ -107,10 +109,6 @@ struct lll_adv {
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	int8_t tx_pwr_lvl;
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
-
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-	struct node_rx_hdr *node_rx_adv_term;
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
 };
 
 int lll_adv_init(void);
