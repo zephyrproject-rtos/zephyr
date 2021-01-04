@@ -7,8 +7,14 @@ jobs:
     runs-on: ubuntu-latest
     name: Run compliance checks on patch series (PR)
     steps:
+    - name: Update PATH for west
+      run: |
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+
     - name: Checkout the code
-      uses: actions/checkout@v1
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ github.base_ref }}
 
     - name: cache-pip
       uses: actions/cache@v1
@@ -23,15 +29,21 @@ jobs:
         pip3 install python-magic junitparser gitlint pylint pykwalify
         pip3 install west
 
+    - name: west setup
+      run: |
+        west init -l . || true
+        west update
+
     - name: Run Compliance Tests
       id: compliance
       env:
         BASE_REF: ${{ github.base_ref }}
       run: |
-        export PATH=$PATH:~/.local/bin
         export ZEPHYR_BASE=$PWD
         git config --global user.email "you@example.com"
         git config --global user.name "Your Name"
+        ls -la
+        git remote -v
         git rebase origin/${BASE_REF}
         ./scripts/ci/check_compliance.py -m Codeowners -m Devicetree -m Gitlint -m Identity -m Nits -m pylint -m checkpatch -m Kconfig -c origin/${BASE_REF}.. || true
 
