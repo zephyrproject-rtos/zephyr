@@ -10,4 +10,7 @@ config BOARD
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 20000000
 
+config UART_INTERRUPT_DRIVEN
+	default y
+
 endif
