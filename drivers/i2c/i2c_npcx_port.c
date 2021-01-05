@@ -172,8 +172,9 @@ static const struct i2c_driver_api i2c_port_npcx_driver_api = {
 									       \
 	static struct i2c_npcx_port_data i2c_npcx_port_data_##inst;            \
 									       \
-	DEVICE_AND_API_INIT(i2c_npcx_port_##inst, DT_INST_LABEL(inst),         \
+	DEVICE_DT_INST_DEFINE(inst,                                            \
 			    NPCX_I2C_PORT_INIT_FUNC(inst),                     \
+			    device_pm_control_nop,                             \
 			    &i2c_npcx_port_data_##inst,                        \
 			    &i2c_npcx_port_cfg_##inst,                         \
 			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,  \
