@@ -92,11 +92,11 @@ loading/flashing on the desired target board (:file:`zephyr.elf`,
 into four stages: the pre-build, first-pass binary, final binary, and
 post-processing.
 
-Pre-build occurs before any source files are compiled, because during
-this phase header files used by the source files are generated.
-
 Pre-build
 =========
+
+Pre-build occurs before any source files are compiled, because during
+this phase header files used by the source files are generated.
 
 Offset generation
    Access to high-level data structures and members is sometimes
