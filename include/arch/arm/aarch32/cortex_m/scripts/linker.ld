@@ -66,6 +66,16 @@
 #define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay)
+#define CCM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_ccm))
+#define CCM_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_ccm))
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
+#define DTCM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_dtcm))
+#define DTCM_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_dtcm))
+#endif
+
 #if defined(CONFIG_CUSTOM_SECTION_ALIGN)
 _region_min_align = CONFIG_CUSTOM_SECTION_MIN_ALIGN_SIZE;
 #else
@@ -96,10 +106,10 @@ MEMORY
     FLASH_CCFG            (rwx): ORIGIN = CCFG_ADDR, LENGTH = CCFG_SIZE
 #endif
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay)
-    CCM                   (rw) : ORIGIN = DT_REG_ADDR(DT_CHOSEN(zephyr_ccm)), LENGTH = DT_REG_SIZE(DT_CHOSEN(zephyr_ccm))
+    CCM                   (rw) : ORIGIN = CCM_ADDR, LENGTH = CCM_SIZE
 #endif
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
-    DTCM                  (rw) : ORIGIN = DT_REG_ADDR(DT_CHOSEN(zephyr_dtcm)), LENGTH = DT_REG_SIZE(DT_CHOSEN(zephyr_dtcm))
+    DTCM                  (rw) : ORIGIN = DTCM_ADDR, LENGTH = DTCM_SIZE
 #endif
     SRAM                  (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
 #ifdef CONFIG_BT_STM32_IPM
@@ -418,27 +428,25 @@ GROUP_START(DTCM)
 		__dtcm_bss_start = .;
 		*(.dtcm_bss)
 		*(".dtcm_bss.*")
+		__dtcm_bss_end = .;
 	} GROUP_LINK_IN(DTCM)
-
-	__dtcm_bss_end = .;
 
 	SECTION_PROLOGUE(_DTCM_NOINIT_SECTION_NAME, (NOLOAD),SUBALIGN(4))
 	{
 		__dtcm_noinit_start = .;
 		*(.dtcm_noinit)
 		*(".dtcm_noinit.*")
+		__dtcm_noinit_end = .;
 	} GROUP_LINK_IN(DTCM)
-
-	__dtcm_noinit_end = .;
 
 	SECTION_PROLOGUE(_DTCM_DATA_SECTION_NAME,,SUBALIGN(4))
 	{
 		__dtcm_data_start = .;
 		*(.dtcm_data)
 		*(".dtcm_data.*")
+		__dtcm_data_end = .;
 	} GROUP_LINK_IN(DTCM AT> ROMABLE_REGION)
 
-	__dtcm_data_end = .;
 	__dtcm_end = .;
 
 	__dtcm_data_rom_start = LOADADDR(_DTCM_DATA_SECTION_NAME);
