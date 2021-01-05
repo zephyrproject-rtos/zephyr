@@ -5,6 +5,7 @@
  */
 
 #include <ztest.h>
+#include <irq_offload.h>
 #include "test_kheap.h"
 
 K_HEAP_DEFINE(k_heap_test, HEAP_SIZE);
@@ -12,6 +13,16 @@ K_HEAP_DEFINE(k_heap_test, HEAP_SIZE);
 #define ALLOC_SIZE_1 1024
 #define ALLOC_SIZE_2 1536
 #define ALLOC_SIZE_3 2049
+
+static void tIsr_kheap_alloc_nowait(void *data)
+{
+	ARG_UNUSED(data);
+
+	char *p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_1, K_NO_WAIT);
+
+	zassert_not_null(p, "k_heap_alloc operation failed");
+	k_heap_free(&k_heap_test, p);
+}
 
 /*test cases*/
 
@@ -27,7 +38,6 @@ K_HEAP_DEFINE(k_heap_test, HEAP_SIZE);
  */
 void test_k_heap_alloc(void)
 {
-
 	k_timeout_t timeout = Z_TIMEOUT_US(TIMEOUT);
 	char *p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_1, timeout);
 
@@ -90,4 +100,14 @@ void test_k_heap_free(void)
 		p[i] = '0';
 	}
 	k_heap_free(&k_heap_test, p);
+}
+
+/**
+ * @brief Validate allocation and free heap memory in isr context.
+ *
+ * @ingroup kernel_heap_tests
+ */
+void test_kheap_alloc_in_isr_nowait(void)
+{
+	irq_offload((irq_offload_routine_t)tIsr_kheap_alloc_nowait, NULL);
 }
