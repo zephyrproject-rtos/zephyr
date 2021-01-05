@@ -166,6 +166,8 @@ The Zephyr stm32l562e_dk board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| TrustZone | on-chip    | Trusted Firmware-M                  |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -253,6 +255,20 @@ You should see the following message on the console:
 .. code-block:: console
 
    Hello World! stm32l562e_dk
+
+Building Secure/Non-Secure Zephyr applications with Arm |reg| TrustZone |reg|
+-----------------------------------------------------------------------------
+
+The TF-M integration sample :ref:`tfm_ipc` can be run on a STM32L562E-DK Discovery,
+using the ``stm32l562e_dk_ns`` target. When building a ``*_ns`` image with TF-M,
+a ``build/tfm/postbuild.sh`` bash script will be run automatically as a post-build step
+to make some required flash layout changes. The ``build/tfm/regression.sh`` script will
+need to be run to perform device initialization, and then run ``west flash --hex-file build/tfm_merged.hex``
+to flash the board.
+
+Check the ``build/tfm`` directory to ensure that the commands required by these scripts
+(``readlink``, etc.) are available on your system. Please also check ``STM32_Programmer_CLI``
+used for initialization is available in the PATH.
 
 Debugging
 =========
