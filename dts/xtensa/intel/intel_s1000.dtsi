@@ -253,5 +253,14 @@
 
 			status = "okay";
 		};
+
+		gna: gna@e800 {
+			compatible = "intel,gna";
+			reg = <0x0000E800 0x100>;
+			interrupt-controller;
+			interrupts = <5 0 0>;
+			interrupt-parent = <&cavs0>;
+			label = "GNA0";
+		};
 	};
 };
