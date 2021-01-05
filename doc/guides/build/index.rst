@@ -127,7 +127,7 @@ generated during the configuration phase and the pre-build stage).
 If memory protection is enabled, then:
 
 Partition grouping
-   The gen_app_partitions.py script scans all the
+   The *gen_app_partitions.py* script scans all the
    generated archives and outputs linker scripts to ensure that
    application partitions are properly grouped and aligned for the
    target’s memory protection hardware.
