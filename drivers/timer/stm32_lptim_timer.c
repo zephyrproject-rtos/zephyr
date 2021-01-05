@@ -10,6 +10,7 @@
 #include <stm32_ll_bus.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_pwr.h>
+#include <stm32_ll_system.h>
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/timer/system_timer.h>
