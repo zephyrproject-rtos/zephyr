@@ -7,4 +7,7 @@ if BOARD_QEMU_LEON3
 config BOARD
 	default "qemu_leon3"
 
+config UART_INTERRUPT_DRIVEN
+	default y
+
 endif
