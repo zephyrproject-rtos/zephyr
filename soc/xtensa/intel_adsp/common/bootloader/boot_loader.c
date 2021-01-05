@@ -252,9 +252,7 @@ static uint32_t hp_sram_power_on_memory(uint32_t memory_size)
 	/* calculate total number of used SRAM banks (EBB)
 	 * to power up only necessary banks
 	 */
-	ebb_in_use = (!(memory_size % SRAM_BANK_SIZE)) ?
-	(memory_size / SRAM_BANK_SIZE) :
-	(memory_size / SRAM_BANK_SIZE) + 1;
+	ebb_in_use = ceiling_fraction(memory_size, SRAM_BANK_SIZE);
 
 	return hp_sram_pm_banks(ebb_in_use);
 }
