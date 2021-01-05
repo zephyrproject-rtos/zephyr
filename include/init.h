@@ -67,7 +67,7 @@ void z_sys_init_run_level(int32_t _level);
  * configured by the kernel during system initialization. Note that
  * init entries will not be accessible from user mode. Also this macro should
  * not be used directly, use relevant macro such as SYS_INIT() or
- * DEVICE_AND_API_INIT() instead.
+ * DEVICE_DEFINE() instead.
  *
  * @param _entry_name Init entry name. It is the name this instance exposes to
  * the system.

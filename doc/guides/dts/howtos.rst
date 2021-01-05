@@ -431,9 +431,9 @@ using instance numbers. Do this after defining ``my_api_funcs``.
    	static const struct my_dev_cfg my_cfg_##inst = {		\
    		/* initialize ROM values as needed. */			\
    	};								\
-   	DEVICE_AND_API_INIT(my_dev_##inst,				\
-   			    DT_INST_LABEL(inst),			\
+   	DEVICE_DT_INST_DEFINE(inst,					\
    			    my_dev_init_function,			\
+   			    device_pm_control_nop,                      \
    			    &my_data_##inst,				\
    			    &my_cfg_##inst,				\
    			    MY_DEV_INIT_LEVEL, MY_DEV_INIT_PRIORITY,	\
@@ -508,9 +508,9 @@ devicetree to operate on specific device nodes:
 		.freq = DT_PROP(MYDEV(idx), clock_frequency),		\
 	};								\
 	static const struct my_dev_cfg my_cfg_##idx = { /* ... */ };	\
-	DEVICE_AND_API_INIT(my_dev_##idx,				\
-			    DT_LABEL(MYDEV(idx)),			\
+	DEVICE_DT_INST_DEFINE(idx,					\
 			    my_dev_init_function,			\
+			    device_pm_control_nop,                      \
 			    &my_data_##idx,				\
 			    &my_cfg_##idx,				\
 			    MY_DEV_INIT_LEVEL, MY_DEV_INIT_PRIORITY,	\

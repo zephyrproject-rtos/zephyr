@@ -80,6 +80,7 @@ extern "C" {
  */
 #define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn,		\
 			    data_ptr, cfg_ptr, level, prio, api_ptr)	\
+	__DEPRECATED_MACRO						\
 	DEVICE_DEFINE(dev_name, drv_name, init_fn,			\
 		      NULL,						\
 		      data_ptr, cfg_ptr, level, prio, api_ptr)
@@ -95,8 +96,7 @@ extern "C" {
  * @details This macro defines a device object that is automatically
  * configured by the kernel during system initialization. Note that
  * devices set up with this macro will not be accessible from user mode
- * since the API is not specified; whenever possible, use DEVICE_AND_API_INIT
- * instead.
+ * since the API is not specified;
  *
  * @param dev_name Device name. This must be less than Z_DEVICE_MAX_NAME_LEN
  * characters in order to be looked up from user mode with device_get_binding().

@@ -72,10 +72,6 @@ applications.
    Create device object and related data structures including setting it
    up for boot-time initialization.
 
-:c:func:`DEVICE_AND_API_INIT()`
-   Like :c:func:`DEVICE_DEFINE()` but without support for device power
-   management.
-
 :c:func:`DEVICE_NAME_GET()`
    Converts a device identifier to the global identifier for a device
    object.
@@ -175,7 +171,7 @@ of these APIs, and populate an instance of subsystem_api structure:
   };
 
 The driver would then pass ``my_driver_api_funcs`` as the ``api`` argument to
-``DEVICE_AND_API_INIT()``.
+``DEVICE_DEFINE()``.
 
 .. note::
 
@@ -329,9 +325,9 @@ Then when the particular instance is declared:
 
   static struct my_data_0;
 
-  DEVICE_AND_API_INIT(my_driver_0, MY_DRIVER_0_NAME, my_driver_init,
-                      &my_data_0, &my_driver_config_0, POST_KERNEL,
-                      MY_DRIVER_0_PRIORITY, &my_api_funcs);
+  DEVICE_DEFINE(my_driver_0, MY_DRIVER_0_NAME, my_driver_init,
+                device_pm_control_nop, &my_data_0, &my_driver_config_0,
+                POST_KERNEL, MY_DRIVER_0_PRIORITY, &my_api_funcs);
 
   #endif /* CONFIG_MY_DRIVER_0 */
 
