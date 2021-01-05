@@ -89,9 +89,6 @@
 /* size of the Interrupt Descriptor Table (IDT) */
 #define IDT_SIZE				0x2000
 
-/* low power ram where DMA buffers are typically placed */
-#define LPRAM_BASE (DT_REG_ADDR(DT_NODELABEL(sram1)))
-#define LPRAM_SIZE (DT_REG_SIZE(DT_NODELABEL(sram1)))
 #define SRAM_BANK_SIZE	(64 * 1024)
 
 /* bootloader */
@@ -220,10 +217,9 @@
 /* Host page size */
 #define HOST_PAGE_SIZE		4096
 
-/* LP SRAM */
-#define LP_SRAM_BASE			0xBE800000
-
-#define LP_SRAM_SIZE		(0x10000 * 2)
+/* low power RAM where DMA buffers are typically placed, used by linker.ld */
+#define LP_SRAM_BASE (DT_REG_ADDR(DT_NODELABEL(sram1)))
+#define LP_SRAM_SIZE (DT_REG_SIZE(DT_NODELABEL(sram1)))
 
 /* alternate reset vector */
 #define LP_SRAM_ALT_RESET_VEC_BASE	LP_SRAM_BASE
