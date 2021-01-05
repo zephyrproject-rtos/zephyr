@@ -62,6 +62,9 @@ Deprecated in this release
 
 * DEVICE_INIT was deprecated in favor of utilizing DEVICE_DEFINE directly.
 
+* DEVICE_AND_API_INIT was deprecated in favor of DEVICE_DT_INST_DEFINE and
+  DEVICE_DEFINE.
+
 Removed APIs in this release
 ============================
 
