@@ -12,7 +12,10 @@ config BOARD
 # force building with TF-M as the Secure Execution Environment.
 
 config BUILD_WITH_TFM
-	default y if BOARD_NRF5340DK_NRF5340_CPUAPP_NS
+	# Temporarily disable building Non-Secure images with TF-M support by
+	# default.
+	# default y if BOARD_NRF5340DK_NRF5340_CPUAPP_NS
+	default n
 
 if BUILD_WITH_TFM
 
