@@ -16,6 +16,7 @@ supported:
   - spi
   - i2c
   - counter
+  - lptim
   - adc
 ram: 96
 flash: 1024

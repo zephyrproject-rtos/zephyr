@@ -17,6 +17,7 @@ supported:
   - pwm
   - adc
   - watchdog
+  - lptim
   - arduino_gpio
   - arduino_i2c
   - arduino_spi
