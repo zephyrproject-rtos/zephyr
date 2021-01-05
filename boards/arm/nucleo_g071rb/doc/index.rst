@@ -100,6 +100,8 @@ The Zephyr nucleo_g071rb board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | reset and clock control             |
 +-----------+------------+-------------------------------------+
+| COUNTER   | on-chip    | rtc                                 |
++-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
