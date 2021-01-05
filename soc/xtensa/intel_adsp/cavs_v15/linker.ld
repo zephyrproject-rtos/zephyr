@@ -25,7 +25,7 @@ OUTPUT_ARCH(xtensa)
 PROVIDE(__memctl_default = 0x00000000);
 PROVIDE(_MemErrorHandler = 0x00000000);
 
-#define LPRAM_REGION lpram
+#define LP_SRAM_REGION lpram
 
 /* DSP RAM regions (all of them) are mapped twice on the DSP: once in
  * a 512MB region from 0x80000000-0x9fffffff and again from
@@ -123,8 +123,8 @@ MEMORY
 	len = IDT_SIZE
 #endif
   lpram :
-	org = LPRAM_BASE,
-	len = LPRAM_SIZE
+	org = LP_SRAM_BASE,
+	len = LP_SRAM_SIZE
 
   static_uuid_entries_seg (!ari) :
         org = UUID_ENTRY_ELF_BASE,
@@ -509,7 +509,7 @@ SECTIONS
     _dma_buf_start = ABSOLUTE(.);
     *(.dma_buffers)
     _dma_buf_end = ABSOLUTE(.);
-  } >LPRAM_REGION
+  } >LP_SRAM_REGION
   _heap_sentry = L2_SRAM_BASE + L2_SRAM_SIZE;
   .comment  0 :  { *(.comment) }
   .debug 0 : { *(.debug) }

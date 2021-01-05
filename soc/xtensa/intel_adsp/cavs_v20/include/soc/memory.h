@@ -89,10 +89,6 @@
 /* size of the Interrupt Descriptor Table (IDT) */
 #define IDT_SIZE				0x2000
 
-/* low power ram where DMA buffers are typically placed */
-#define LPRAM_BASE (DT_REG_ADDR(DT_NODELABEL(sram1)))
-#define LPRAM_SIZE (DT_REG_SIZE(DT_NODELABEL(sram1)))
-
 /* bootloader */
 
 #define HP_SRAM_BASE	0xbe000000
@@ -220,5 +216,9 @@
 #define HOST_PAGE_SIZE		4096
 
 #define SRAM_BANK_SIZE                  (64 * 1024)
+
+/* low power ram where DMA buffers are typically placed */
+#define LP_SRAM_BASE (DT_REG_ADDR(DT_NODELABEL(sram1)))
+#define LP_SRAM_SIZE (DT_REG_SIZE(DT_NODELABEL(sram1)))
 
 #endif /* __INC_MEMORY_H */
