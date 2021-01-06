@@ -48,7 +48,6 @@ static void vtd_send_cmd(const struct device *dev,
 			     status_bit)) {
 		/* Do nothing */
 	}
-
 }
 
 static int vtd_ictl_allocate_entries(const struct device *dev,
