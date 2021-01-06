@@ -1911,8 +1911,7 @@ static void gatt_indicate_rsp(struct bt_conn *conn, uint8_t err,
 }
 
 static int gatt_send(struct bt_conn *conn, struct net_buf *buf,
-		     bt_att_func_t func, void *params,
-		     bt_att_destroy_t destroy)
+		     bt_att_func_t func, void *params)
 {
 	int err;
 
@@ -1927,7 +1926,6 @@ static int gatt_send(struct bt_conn *conn, struct net_buf *buf,
 
 		req->buf = buf;
 		req->func = func;
-		req->destroy = destroy;
 		req->user_data = params;
 
 		err = bt_att_req_send(conn, req);
@@ -1979,7 +1977,7 @@ static int gatt_indicate(struct bt_conn *conn, uint16_t handle,
 	net_buf_add(buf, params->len);
 	memcpy(ind->value, params->data, params->len);
 
-	return gatt_send(conn, buf, gatt_indicate_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_indicate_rsp, params);
 }
 
 static uint8_t notify_cb(const struct bt_gatt_attr *attr, uint16_t handle,
@@ -2752,7 +2750,7 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn,
 	req = net_buf_add(buf, sizeof(*req));
 	req->mtu = sys_cpu_to_le16(mtu);
 
-	return gatt_send(conn, buf, gatt_mtu_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_mtu_rsp, params);
 }
 
 static void gatt_discover_next(struct bt_conn *conn, uint16_t last_handle,
@@ -2882,7 +2880,7 @@ static int gatt_find_type(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	return gatt_send(conn, buf, gatt_find_type_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_find_type_rsp, params);
 }
 
 static void read_included_uuid_cb(struct bt_conn *conn, uint8_t err,
@@ -2947,7 +2945,7 @@ static int read_included_uuid(struct bt_conn *conn,
 
 	BT_DBG("handle 0x%04x", params->_included.start_handle);
 
-	return gatt_send(conn, buf, read_included_uuid_cb, params, NULL);
+	return gatt_send(conn, buf, read_included_uuid_cb, params);
 }
 
 static uint16_t parse_include(struct bt_conn *conn, const void *pdu,
@@ -3169,7 +3167,7 @@ static int gatt_read_type(struct bt_conn *conn,
 	BT_DBG("start_handle 0x%04x end_handle 0x%04x", params->start_handle,
 	       params->end_handle);
 
-	return gatt_send(conn, buf, gatt_read_type_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_read_type_rsp, params);
 }
 
 static uint16_t parse_service(struct bt_conn *conn, const void *pdu,
@@ -3303,7 +3301,7 @@ static int gatt_read_group(struct bt_conn *conn,
 	BT_DBG("start_handle 0x%04x end_handle 0x%04x", params->start_handle,
 	       params->end_handle);
 
-	return gatt_send(conn, buf, gatt_read_group_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_read_group_rsp, params);
 }
 
 static void gatt_find_info_rsp(struct bt_conn *conn, uint8_t err,
@@ -3437,7 +3435,7 @@ static int gatt_find_info(struct bt_conn *conn,
 	BT_DBG("start_handle 0x%04x end_handle 0x%04x", params->start_handle,
 	       params->end_handle);
 
-	return gatt_send(conn, buf, gatt_find_info_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_find_info_rsp, params);
 }
 
 int bt_gatt_discover(struct bt_conn *conn,
@@ -3594,7 +3592,7 @@ static int gatt_read_blob(struct bt_conn *conn,
 	BT_DBG("handle 0x%04x offset 0x%04x", params->single.handle,
 	       params->single.offset);
 
-	return gatt_send(conn, buf, gatt_read_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_read_rsp, params);
 }
 
 static int gatt_read_uuid(struct bt_conn *conn,
@@ -3622,7 +3620,7 @@ static int gatt_read_uuid(struct bt_conn *conn,
 		params->by_uuid.start_handle, params->by_uuid.end_handle,
 		bt_uuid_str(params->by_uuid.uuid));
 
-	return gatt_send(conn, buf, gatt_read_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_read_rsp, params);
 }
 
 #if defined(CONFIG_BT_GATT_READ_MULTIPLE)
@@ -3660,7 +3658,7 @@ static int gatt_read_mult(struct bt_conn *conn,
 		net_buf_add_le16(buf, params->handles[i]);
 	}
 
-	return gatt_send(conn, buf, gatt_read_mult_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_read_mult_rsp, params);
 }
 
 #if defined(CONFIG_BT_EATT)
@@ -3723,7 +3721,7 @@ static int gatt_read_mult_vl(struct bt_conn *conn,
 		net_buf_add_le16(buf, params->handles[i]);
 	}
 
-	return gatt_send(conn, buf, gatt_read_mult_vl_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_read_mult_vl_rsp, params);
 }
 #endif /* CONFIG_BT_EATT */
 
@@ -3779,7 +3777,7 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 
 	BT_DBG("handle 0x%04x", params->single.handle);
 
-	return gatt_send(conn, buf, gatt_read_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_read_rsp, params);
 }
 
 static void gatt_write_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
@@ -3858,7 +3856,7 @@ static int gatt_exec_write(struct bt_conn *conn,
 
 	BT_DBG("");
 
-	return gatt_send(conn, buf, gatt_write_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_write_rsp, params);
 }
 
 static void gatt_prepare_write_rsp(struct bt_conn *conn, uint8_t err,
@@ -3918,7 +3916,7 @@ static int gatt_prepare_write(struct bt_conn *conn,
 	BT_DBG("handle 0x%04x offset %u len %u", params->handle, params->offset,
 	       params->length);
 
-	return gatt_send(conn, buf, gatt_prepare_write_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_prepare_write_rsp, params);
 }
 
 int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params)
@@ -3959,7 +3957,7 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params)
 
 	BT_DBG("handle 0x%04x length %u", params->handle, params->length);
 
-	return gatt_send(conn, buf, gatt_write_rsp, params, NULL);
+	return gatt_send(conn, buf, gatt_write_rsp, params);
 }
 
 static void gatt_write_ccc_rsp(struct bt_conn *conn, uint8_t err,
@@ -4021,7 +4019,7 @@ static int gatt_write_ccc(struct bt_conn *conn, uint16_t handle, uint16_t value,
 
 	atomic_set_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING);
 
-	return gatt_send(conn, buf, func, params, NULL);
+	return gatt_send(conn, buf, func, params);
 }
 
 #if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
