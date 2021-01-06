@@ -149,7 +149,7 @@ v0.6.1
 
 The user-visible features in this point release are:
 
-- The `west update <west-multi-repo-cmds>` command has a new ``--fetch``
+- The :ref:`west-update` command has a new ``--fetch``
   command line flag and ``update.fetch`` :ref:`configuration option
   <west-config>`. The default value, "smart", skips fetching SHAs and tags
   which are available locally.
