@@ -328,8 +328,9 @@ config SYSTEM_CLOCK_INIT_PRIORITY
 	  the clock to be running already, you should let the default value as it
 	  is (0).
 
+# Hidden option to be selected by individual SoC.
 config TICKLESS_CAPABLE
-	bool "Timer driver supports tickless operation"
+	bool
 	help
 	  Timer drivers should select this flag if they are capable of
 	  supporting tickless operation.  That is, a call to
