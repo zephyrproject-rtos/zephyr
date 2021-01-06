@@ -23,6 +23,7 @@
 #define __ccm_data_section Z_GENERIC_SECTION(_CCM_DATA_SECTION_NAME)
 #define __ccm_bss_section Z_GENERIC_SECTION(_CCM_BSS_SECTION_NAME)
 #define __ccm_noinit_section Z_GENERIC_SECTION(_CCM_NOINIT_SECTION_NAME)
+#define __itcm_section Z_GENERIC_SECTION(_ITCM_SECTION_NAME)
 #define __dtcm_data_section Z_GENERIC_SECTION(_DTCM_DATA_SECTION_NAME)
 #define __dtcm_bss_section Z_GENERIC_SECTION(_DTCM_BSS_SECTION_NAME)
 #define __dtcm_noinit_section Z_GENERIC_SECTION(_DTCM_NOINIT_SECTION_NAME)

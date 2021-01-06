@@ -351,6 +351,8 @@ the source code to specify a device name.
      - A node whose ``reg`` is used by the OpenAMP subsystem to determine the
        base address and size of the shared memory (SHM) usable for
        interprocess-communication (IPC)
+   * - zephyr,itcm
+     - Instruction Tightly Coupled Memory node on some Arm SoCs
    * - zephyr,shell-uart
      - Sets default :option:`CONFIG_UART_SHELL_ON_DEV_NAME`
    * - zephyr,sram
