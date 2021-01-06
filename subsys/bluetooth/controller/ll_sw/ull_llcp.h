@@ -94,17 +94,17 @@ uint8_t ull_cp_phy_update(struct ll_conn *conn);
 /**
  * @brief Initiate a Connection Parameter Request Procedure or Connection Update Procedure
  */
-uint8_t ull_cp_conn_update(struct ull_cp_conn *conn, uint16_t interval_min, uint16_t interval_max, uint16_t latency, uint16_t timeout);
+uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t interval_max, uint16_t latency, uint16_t timeout);
 
 /**
  * @brief Accept the remote device’s request to change connection parameters.
  */
-void ull_cp_conn_param_req_reply(struct ull_cp_conn *conn);
+void ull_cp_conn_param_req_reply(struct ll_conn *conn);
 
 /**
  * @brief Reject the remote device’s request to change connection parameters.
  */
-void ull_cp_conn_param_req_neg_reply(struct ull_cp_conn *conn);
+void ull_cp_conn_param_req_neg_reply(struct ll_conn *conn);
 
 /**
  * @brief Initiate a Termination Procedure.
