@@ -88,6 +88,37 @@ enum specifier_cat_enum {
 #define CASE_UINT_CHAR case 'c':
 #endif
 
+/* We need two pieces of information about wchar_t:
+ * * WCHAR_IS_SIGNED: whether it's signed or unsigned;
+ * * WINT_TYPE: the type to use when extracting it from va_args
+ *
+ * The former can be determined from the value of WCHAR_MIN if it's defined.
+ * It's not for minimal libc, so treat it as whatever char is.
+ *
+ * The latter should be wint_t, but minimal libc doesn't provide it.  We can
+ * substitute wchar_t as long as that type does not undergo default integral
+ * promotion as an argument.  But it does for at least one toolchain (xtensa),
+ * and where it does we need to use the promoted type in va_arg() to avoid
+ * build errors, otherwise we can use the base type.  We can tell that
+ * integral promotion occurs if WCHAR_MAX is strictly less than INT_MAX.
+ */
+#ifndef WCHAR_MIN
+#define WCHAR_IS_SIGNED CHAR_IS_SIGNED
+#if WCHAR_IS_SIGNED
+#define WINT_TYPE int
+#else /* wchar signed */
+#define WINT_TYPE unsigned int
+#endif /* wchar signed */
+#else /* WCHAR_MIN defined */
+#define WCHAR_IS_SIGNED ((WCHAR_MIN - 0) != 0)
+#if WCHAR_MAX < INT_MAX
+/* Signed or unsigned, it'll be int */
+#define WINT_TYPE int
+#else /* wchar rank vs int */
+#define WINT_TYPE wchar_t
+#endif /* wchar rank vs int */
+#endif /* WCHAR_MIN defined */
+
 /* Case label to identify conversions for signed integral values.  The
  * corresponding argument_value tag is sint and category is
  * SPECIFIER_SINT.
@@ -499,7 +530,7 @@ int_conv:
 		}
 
 		/* For c LENGTH_NONE and LENGTH_L would be ok,
-		 * but we don't support wide characters.
+		 * but we don't support formatting wide characters.
 		 */
 		if (conv->specifier == 'c') {
 			unsupported = (conv->length_mod != LENGTH_NONE);
@@ -1420,7 +1451,13 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 				value->sint = va_arg(ap, int);
 				break;
 			case LENGTH_L:
-				value->sint = va_arg(ap, long);
+				if (WCHAR_IS_SIGNED
+				    && (conv->specifier == 'c')) {
+					value->sint = (wchar_t)va_arg(ap,
+							      WINT_TYPE);
+				} else {
+					value->sint = va_arg(ap, long);
+				}
 				break;
 			case LENGTH_LL:
 				value->sint =
@@ -1457,7 +1494,13 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 				value->uint = va_arg(ap, unsigned int);
 				break;
 			case LENGTH_L:
-				value->uint = va_arg(ap, unsigned long);
+				if ((!WCHAR_IS_SIGNED)
+				    && (conv->specifier == 'c')) {
+					value->uint = (wchar_t)va_arg(ap,
+							      WINT_TYPE);
+				} else {
+					value->uint = va_arg(ap, unsigned long);
+				}
 				break;
 			case LENGTH_LL:
 				value->uint =
