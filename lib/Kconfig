@@ -19,4 +19,6 @@ source "lib/open-amp/Kconfig"
 
 source "lib/util/Kconfig"
 
+source "lib/auth/Kconfig"
+
 endmenu

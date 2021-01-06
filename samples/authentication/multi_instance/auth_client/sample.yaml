@@ -1,0 +1,8 @@
+sample:
+  description: Auth Multi Instance Client sample app
+  name: Auth Client Multi Instance
+tests:
+  sample.auth_client_multi:
+    harness: bluetooth
+    platform_allow:  qemu_x86
+    tags: bluetooth authentication

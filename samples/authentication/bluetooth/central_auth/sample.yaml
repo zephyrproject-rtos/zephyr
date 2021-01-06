@@ -1,0 +1,8 @@
+sample:
+  description: Auth central sample app
+  name: Auth Central
+tests:
+  sample.central_auth:
+    harness: bluetooth
+    platform_allow:  qemu_x86
+    tags: bluetooth authentication

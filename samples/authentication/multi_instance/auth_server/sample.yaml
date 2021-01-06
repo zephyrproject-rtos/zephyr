@@ -1,0 +1,8 @@
+sample:
+  description: Auth Multi Instance Server sample app
+  name: Auth Server Multi Instance
+tests:
+  sample.auth_server_multi:
+    harness: bluetooth
+    platform_allow:  qemu_x86
+    tags: bluetooth authentication

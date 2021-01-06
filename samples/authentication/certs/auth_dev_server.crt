@@ -1,0 +1,48 @@
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 8193 (0x2001)
+        Signature Algorithm: ecdsa-with-SHA256
+        Issuer: C=US, ST=California, O=Auth Company Test, OU=Authentication TEST, CN=Auth Intermediate TEST
+        Validity
+            Not Before: Aug 26 20:38:38 2020 GMT
+            Not After : Sep  5 20:38:38 2021 GMT
+        Subject: C=US, ST=California, L=San Diego, O=Auth Company Test, OU=Authentication TEST, CN=Auth Server TEST
+        Subject Public Key Info:
+            Public Key Algorithm: id-ecPublicKey
+                Public-Key: (256 bit)
+                pub:
+                    04:b8:7a:e3:97:a6:8c:25:36:2c:32:a3:8f:e9:c7:
+                    73:43:6d:a9:27:00:65:dc:2c:ba:f7:c0:a8:4a:91:
+                    fa:12:4e:4d:31:32:5b:4a:98:46:8b:64:1d:48:26:
+                    90:14:37:2a:f9:3e:47:e7:58:fd:0a:1e:a6:ef:eb:
+                    1b:95:20:ee:a6
+                ASN1 OID: prime256v1
+                NIST CURVE: P-256
+        X509v3 extensions:
+            X509v3 Basic Constraints: 
+                CA:FALSE
+            X509v3 Authority Key Identifier: 
+                keyid:36:1F:70:3A:68:8A:0D:81:79:00:21:5C:DA:CF:ED:7D:F4:96:85:2A
+
+            X509v3 Key Usage: critical
+                Digital Signature
+    Signature Algorithm: ecdsa-with-SHA256
+         30:44:02:20:02:d5:f3:cd:3c:db:11:cf:f9:c8:8e:00:53:af:
+         9c:16:83:b0:69:fd:d1:2b:bf:c4:f2:43:ac:c4:68:9e:98:d1:
+         02:20:22:e8:8e:a1:8f:e4:ef:ed:6f:91:7f:c5:f2:18:8e:e1:
+         af:ae:47:40:95:8d:b2:91:bd:5b:b6:ff:43:a0:c5:20
+-----BEGIN CERTIFICATE-----
+MIICNjCCAd2gAwIBAgICIAEwCgYIKoZIzj0EAwIwfTELMAkGA1UEBhMCVVMxEzAR
+BgNVBAgMCkNhbGlmb3JuaWExGjAYBgNVBAoMEUF1dGggQ29tcGFueSBUZXN0MRww
+GgYDVQQLDBNBdXRoZW50aWNhdGlvbiBURVNUMR8wHQYDVQQDDBZBdXRoIEludGVy
+bWVkaWF0ZSBURVNUMB4XDTIwMDgyNjIwMzgzOFoXDTIxMDkwNTIwMzgzOFowgYsx
+CzAJBgNVBAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRIwEAYDVQQHDAlTYW4g
+RGllZ28xGjAYBgNVBAoMEUF1dGggQ29tcGFueSBUZXN0MRwwGgYDVQQLDBNBdXRo
+ZW50aWNhdGlvbiBURVNUMRkwFwYDVQQDDBBBdXRoIFNlcnZlciBURVNUMFkwEwYH
+KoZIzj0CAQYIKoZIzj0DAQcDQgAEuHrjl6aMJTYsMqOP6cdzQ22pJwBl3Cy698Co
+SpH6Ek5NMTJbSphGi2QdSCaQFDcq+T5H51j9Ch6m7+sblSDupqM+MDwwCQYDVR0T
+BAIwADAfBgNVHSMEGDAWgBQ2H3A6aIoNgXkAIVzaz+199JaFKjAOBgNVHQ8BAf8E
+BAMCB4AwCgYIKoZIzj0EAwIDRwAwRAIgAtXzzTzbEc/5yI4AU6+cFoOwaf3RK7/E
+8kOsxGiemNECICLojqGP5O/tb5F/xfIYjuGvrkdAlY2ykb1btv9DoMUg
+-----END CERTIFICATE-----

@@ -24,6 +24,8 @@ Samples and Demos
    posix/*
    kernel/*
    tfm_integration/tfm_integration.rst
+   debug/*
+   authentication/*
 
 .. comment
    To add a new sample document, please use the template available under

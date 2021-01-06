@@ -1,0 +1,4 @@
+tests:
+  authentication.auth:
+    tags: authentication
+    platform_allow: qemu_cortex_m3 qemu_x86

@@ -1,0 +1,77 @@
+# SPDX-License-Identifier: Apache-2.0
+
+
+
+menuconfig AUTH_LIB
+	bool "Authentication library"
+	help
+	  This option enables the Authentication library.
+
+if AUTH_LIB
+	config AUTH_CHALLENGE_RESPONSE
+		bool "Challenge Response (Must use TINYCRYPT and TINYCRYPT_SHA256)"
+		help
+		Selects the Challenge Response authentication method.
+		Must use TINYCRYPT and TINYCRYPT_SHA256
+
+	config AUTH_DTLS
+		bool "DTLS Authentication"
+		help
+		Selects the DTLS authentication method.
+
+    config AUTH_LOG_LEVEL
+        int "Authentication log level"
+        depends on LOG
+        range 0 4
+        default 0
+        help
+          Sets authentication log level
+          Levels are:
+          0 OFF, do not write
+          1 ERROR, only write LOG_ERR
+          2 WARNING, write LOG_WRN in addition to previous level
+          3 INFO, write LOG_INF in addition to previous levels
+          4 DEBUG, write LOG_DBG in addition to previous levels
+
+    config BT_XPORT
+		bool "Bluetooth Transport"
+		help
+		If using Bluetooth to authenticate peer.
+
+
+	config BT_ALT_AUTH_BT_UUIDS
+	    bool "Authentication service alternate Bluetooth UUIDs"
+	    depends on BT_XPORT
+	    help
+	    To use alternate Bluetooth Auth service UUIDs.  Alternative UUIDs should be
+	    set in authlib_alt_bt_uuids.h header and included with firmware app.  See
+	    auth_xport.h header file for details.
+
+
+    config SERIAL_XPORT
+		bool "Serial Transport"
+		help
+		If using serial port to authenticate peer.
+
+
+	config NUM_AUTH_INSTANCES
+	    int "Number of authentication instances"
+	    range 1 2
+	    default 1
+	    help
+	    Each authentication instance uses a thread to authenticate with
+	    a peer over the lower transport.  It is possible to have multiple
+	    authentication instances where one instance authenticates a peer
+	    over Bluetooth and another authenticates over a serial link.  Another example
+	    would be a Bluetooth Central needing to authenticate multiple
+	    connected Peripherals.
+
+    config AUTH_THREAD_PRIORITY
+        int "Authentication thread priority."
+        default 0
+        help
+        The priority of the authentication thread.
+
+
+endif
+

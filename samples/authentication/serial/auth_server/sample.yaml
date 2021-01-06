@@ -1,0 +1,8 @@
+sample:
+  description: Auth Server serial transport sample app
+  name: Auth Server Serial
+tests:
+  sample.auth_server_serial:
+    harness: bluetooth
+    platform_allow:  qemu_x86
+    tags: authentication
