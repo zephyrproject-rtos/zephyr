@@ -41,12 +41,12 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
-static struct ll_adv_iso ll_adv_iso[BT_CTLR_ADV_SET];
+static struct ll_adv_iso_set ll_adv_iso[BT_CTLR_ADV_SET];
 static void *adv_iso_free;
 
-static uint32_t ull_adv_iso_start(struct ll_adv_iso *adv_iso,
+static uint32_t ull_adv_iso_start(struct ll_adv_iso_set *adv_iso,
 				  uint32_t ticks_anchor);
-static inline struct ll_adv_iso *ull_adv_iso_get(uint8_t handle);
+static inline struct ll_adv_iso_set *ull_adv_iso_get(uint8_t handle);
 static int init_reset(void);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
@@ -63,9 +63,9 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	uint8_t hdr_data[1 + sizeof(uint8_t *)];
 	struct lll_adv_sync *lll_adv_sync;
 	struct lll_adv_iso *lll_adv_iso;
+	struct ll_adv_iso_set *adv_iso;
 	struct pdu_adv *pdu_prev, *pdu;
 	struct node_rx_pdu *node_rx;
-	struct ll_adv_iso *adv_iso;
 	struct ll_adv_set *adv;
 	uint8_t ter_idx;
 	uint8_t *acad;
@@ -227,9 +227,9 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 {
 	struct lll_adv_sync *lll_adv_sync;
 	struct lll_adv_iso *lll_adv_iso;
+	struct ll_adv_iso_set *adv_iso;
 	struct pdu_adv *pdu_prev, *pdu;
 	struct node_rx_pdu *node_rx;
-	struct ll_adv_iso *adv_iso;
 	struct lll_adv *lll_adv;
 	struct ll_adv_set *adv;
 	uint8_t ter_idx;
@@ -312,7 +312,7 @@ int ull_adv_iso_reset(void)
 #if defined(CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING)
 uint8_t ll_adv_iso_by_hci_handle_get(uint8_t hci_handle, uint8_t *handle)
 {
-	struct ll_adv_iso *adv_iso;
+	struct ll_adv_iso_set *adv_iso;
 	uint8_t idx;
 
 	adv_iso =  &ll_adv_iso[0];
@@ -330,7 +330,7 @@ uint8_t ll_adv_iso_by_hci_handle_get(uint8_t hci_handle, uint8_t *handle)
 
 uint8_t ll_adv_iso_by_hci_handle_new(uint8_t hci_handle, uint8_t *handle)
 {
-	struct ll_adv_iso *adv_iso, *adv_iso_empty;
+	struct ll_adv_iso_set *adv_iso, *adv_iso_empty;
 	uint8_t idx;
 
 	adv_iso = &ll_adv_iso[0];
@@ -357,7 +357,7 @@ uint8_t ll_adv_iso_by_hci_handle_new(uint8_t hci_handle, uint8_t *handle)
 }
 #endif /* CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING */
 
-static uint32_t ull_adv_iso_start(struct ll_adv_iso *adv_iso,
+static uint32_t ull_adv_iso_start(struct ll_adv_iso_set *adv_iso,
 				  uint32_t ticks_anchor)
 {
 	uint32_t ticks_slot_overhead;
@@ -399,15 +399,15 @@ static uint32_t ull_adv_iso_start(struct ll_adv_iso *adv_iso,
 			   HAL_TICKER_US_TO_TICKS(iso_interval_us),
 			   HAL_TICKER_REMAINDER(iso_interval_us),
 			   TICKER_NULL_LAZY,
-			   (ll_adv_iso->ull.ticks_slot + ticks_slot_overhead),
-			   ticker_cb, ll_adv_iso,
+			   (adv_iso->ull.ticks_slot + ticks_slot_overhead),
+			   ticker_cb, adv_iso,
 			   ull_ticker_status_give, (void *)&ret_cb);
 	ret = ull_ticker_status_take(ret, &ret_cb);
 
 	return 0;
 }
 
-static inline struct ll_adv_iso *ull_adv_iso_get(uint8_t handle)
+static inline struct ll_adv_iso_set *ull_adv_iso_get(uint8_t handle)
 {
 	if (handle >= BT_CTLR_ADV_SET) {
 		return NULL;
@@ -419,8 +419,9 @@ static inline struct ll_adv_iso *ull_adv_iso_get(uint8_t handle)
 static int init_reset(void)
 {
 	/* Initialize pool. */
-	mem_init(ll_adv_iso, sizeof(struct ll_adv_iso),
-		 sizeof(ll_adv_iso) / sizeof(struct ll_adv_iso), &adv_iso_free);
+	mem_init(ll_adv_iso, sizeof(struct ll_adv_iso_set),
+		 sizeof(ll_adv_iso) / sizeof(struct ll_adv_iso_set),
+		 &adv_iso_free);
 
 	return 0;
 }
@@ -435,14 +436,11 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_iso_prepare};
 	static struct lll_prepare_param p;
-	struct ll_adv_iso *adv_iso = param;
-	struct lll_adv_iso *lll;
+	struct ll_adv_iso_set *adv_iso = param;
 	uint32_t ret;
 	uint8_t ref;
 
 	DEBUG_RADIO_PREPARE_A(1);
-
-	lll = &adv_iso->lll;
 
 	/* Increment prepare reference count */
 	ref = ull_ref_inc(&adv_iso->ull);
@@ -453,7 +451,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	p.remainder = remainder;
 	p.lazy = lazy;
 	p.force = force;
-	p.param = lll;
+	p.param = &adv_iso->lll;
 	mfy.param = &p;
 
 	/* Kick LLL prepare */
@@ -471,7 +469,7 @@ static void tx_lll_flush(void *param)
 	/* TODO: Send terminate complete event to host */
 #if 0
 	/* TODO: Flush TX */
-	struct ll_adv_iso *lll = param;
+	struct lll_adv_iso *lll = param;
 #endif
 }
 

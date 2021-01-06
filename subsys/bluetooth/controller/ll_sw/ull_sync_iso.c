@@ -44,13 +44,13 @@
 #include "hal/debug.h"
 
 static int init_reset(void);
-static inline struct ll_sync_iso *sync_iso_acquire(void);
+static inline struct ll_sync_iso_set *sync_iso_acquire(void);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param);
 static void ticker_op_cb(uint32_t status, void *param);
 
-static struct ll_sync_iso ll_sync_iso_pool[CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET];
+static struct ll_sync_iso_set ll_sync_iso[CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET];
 static void *sync_iso_free;
 
 uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
@@ -58,7 +58,7 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 			   uint16_t sync_timeout, uint8_t num_bis,
 			   uint8_t *bis)
 {
-	struct ll_sync_iso *sync_iso;
+	struct ll_sync_iso_set *sync_iso;
 	memq_link_t *link_sync_estab;
 	memq_link_t *link_sync_lost;
 	struct node_rx_hdr *node_rx;
@@ -118,7 +118,7 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 
 uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 {
-	struct ll_sync_iso *sync_iso;
+	struct ll_sync_iso_set *sync_iso;
 	struct node_rx_pdu *node_rx;
 	memq_link_t *link_sync_estab;
 	memq_link_t *link_sync_lost;
@@ -207,19 +207,19 @@ int ull_sync_iso_reset(void)
 	return 0;
 }
 
-struct ll_sync_iso *ull_sync_iso_get(uint8_t handle)
+struct ll_sync_iso_set *ull_sync_iso_get(uint8_t handle)
 {
 	if (handle >= CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET) {
 		return NULL;
 	}
 
-	return &ll_sync_iso_pool[handle];
+	return &ll_sync_iso[handle];
 }
 
-uint8_t ull_sync_iso_handle_get(struct ll_sync_iso *sync)
+uint8_t ull_sync_iso_handle_get(struct ll_sync_iso_set *sync)
 {
-	return mem_index_get(sync, ll_sync_iso_pool,
-			     sizeof(struct ll_sync_iso));
+	return mem_index_get(sync, ll_sync_iso,
+			     sizeof(struct ll_sync_iso_set));
 }
 
 uint8_t ull_sync_iso_lll_handle_get(struct lll_sync_iso *lll)
@@ -227,12 +227,12 @@ uint8_t ull_sync_iso_lll_handle_get(struct lll_sync_iso *lll)
 	return ull_sync_handle_get(HDR_LLL2ULL(lll));
 }
 
-void ull_sync_iso_release(struct ll_sync_iso *sync_iso)
+void ull_sync_iso_release(struct ll_sync_iso_set *sync_iso)
 {
 	mem_release(sync_iso, &sync_iso_free);
 }
 
-void ull_sync_iso_setup(struct ll_sync_iso *sync_iso,
+void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 			struct node_rx_hdr *node_rx,
 			struct pdu_big_info *big_info)
 {
@@ -295,14 +295,14 @@ void ull_sync_iso_setup(struct ll_sync_iso *sync_iso,
 static int init_reset(void)
 {
 	/* Initialize sync pool. */
-	mem_init(ll_sync_iso_pool, sizeof(struct ll_sync_iso),
-		 sizeof(ll_sync_iso_pool) / sizeof(struct ll_sync_iso),
+	mem_init(ll_sync_iso, sizeof(struct ll_sync_iso_set),
+		 sizeof(ll_sync_iso) / sizeof(struct ll_sync_iso_set),
 		 &sync_iso_free);
 
 	return 0;
 }
 
-static inline struct ll_sync_iso *sync_iso_acquire(void)
+static inline struct ll_sync_iso_set *sync_iso_acquire(void)
 {
 	return mem_acquire(&sync_iso_free);
 }

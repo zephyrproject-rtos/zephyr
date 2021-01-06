@@ -9,7 +9,7 @@
 #define LL_SYNC_STATE_CREATED    0x02
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
-struct ll_sync_iso;
+struct ll_sync_iso_set;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 
 struct ll_sync_set {
@@ -69,7 +69,7 @@ struct ll_sync_set {
 		 * synchronisation state and checked in Thread context when
 		 * cancelling sync create, hence the volatile keyword.
 		 */
-		struct ll_sync_iso *volatile sync_iso;
+		struct ll_sync_iso_set *volatile sync_iso;
 	} iso;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 };
@@ -82,7 +82,7 @@ struct node_rx_sync {
 };
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
-struct ll_sync_iso {
+struct ll_sync_iso_set {
 	struct ull_hdr ull;
 	struct lll_sync_iso lll;
 
