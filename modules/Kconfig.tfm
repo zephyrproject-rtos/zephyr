@@ -21,6 +21,12 @@ config TFM_BOARD
 
 menuconfig BUILD_WITH_TFM
 	bool "Build with TF-M as the Secure Execution Environment"
+	select CMSIS_RTOS_V2
+	imply POLL
+	imply THREAD_NAME
+	imply THREAD_STACK_INFO
+	imply INIT_STACKS
+	imply THREAD_MONITOR
 	depends on TRUSTED_EXECUTION_NONSECURE
 	depends on TFM_BOARD != ""
 	depends on ARM_TRUSTZONE_M
@@ -41,6 +47,10 @@ menuconfig BUILD_WITH_TFM
 	    CONFIG_TRUSTED_EXECUTION_NONSECURE ie enabled.
 
 if BUILD_WITH_TFM
+
+config NUM_PREEMPT_PRIORITIES
+	int
+	default 56
 
 config TFM_KEY_FILE_S
 	string "Path to private key used to sign secure firmware images."
