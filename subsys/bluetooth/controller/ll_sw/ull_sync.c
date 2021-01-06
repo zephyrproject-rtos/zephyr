@@ -197,17 +197,17 @@ uint8_t ll_sync_create_cancel(void **rx)
 		}
 	}
 
-	sync = scan->per_scan.sync;
-	scan->per_scan.sync = NULL;
-	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
-		scan_coded->per_scan.sync = NULL;
-	}
-
 	/* Check for race condition where in sync is established when sync
 	 * context was set to NULL.
 	 */
+	sync = scan->per_scan.sync;
 	if (!sync || sync->timeout_reload) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	scan->per_scan.sync = NULL;
+	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
+		scan_coded->per_scan.sync = NULL;
 	}
 
 	node_rx = (void *)scan->per_scan.node_rx_estab;
