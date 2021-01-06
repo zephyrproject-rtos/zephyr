@@ -213,48 +213,66 @@ uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
 				       msi_vector_t *vectors,
 				       uint8_t n_vector)
 {
-	if (n_vector > 1) {
-		int prev_vector = -1;
-		int i;
+	int prev_vector = -1;
+	int i, irq, vector;
+
+	if (vectors == NULL || n_vector == 0) {
+		return 0;
+	}
+
+
 #ifdef CONFIG_INTEL_VTD_ICTL
-		{
-			int irte;
+	{
+		int irte;
 
-			if (!get_vtd()) {
-				return 0;
-			}
-
-			irte = vtd_allocate_entries(vtd, n_vector);
-			if (irte < 0) {
-				return 0;
-			}
-
-			for (i = 0; i < n_vector; i++, irte++) {
-				vectors[i].arch.irte = irte;
-				vectors[i].arch.remap = true;
-			}
+		if (!get_vtd()) {
+			return 0;
 		}
+
+		irte = vtd_allocate_entries(vtd, n_vector);
+		if (irte < 0) {
+			return 0;
+		}
+
+		for (i = 0; i < n_vector; i++, irte++) {
+			vectors[i].arch.irte = irte;
+			vectors[i].arch.remap = true;
+		}
+	}
 #endif /* CONFIG_INTEL_VTD_ICTL */
 
-		for (i = 0; i < n_vector; i++) {
-			vectors[i].arch.irq = arch_irq_allocate();
-			vectors[i].arch.vector =
-				z_x86_allocate_vector(priority, prev_vector);
-			if (vectors[i].arch.vector < 0) {
-				return 0;
-			}
+	for (i = 0; i < n_vector; i++) {
+		if (n_vector == 1) {
+			/* This path is taken by PCIE device with fixed
+			 * or single MSI: IRQ has been already allocated
+			 * and/or set on the PCIe bus. Thus we only require
+			 * to get it.
+			 */
+			irq = pcie_get_irq(vectors->bdf);
+		} else {
+			irq = arch_irq_allocate();
+		}
+
+		if ((irq == PCIE_CONF_INTR_IRQ_NONE) || (irq == -1)) {
+			return -1;
+		}
+
+		vector = z_x86_allocate_vector(priority, prev_vector);
+		if (vector < 0) {
+			return 0;
+		}
+
+		vectors[i].arch.irq = irq;
+		vectors[i].arch.vector = vector;
 
 #ifdef CONFIG_INTEL_VTD_ICTL
-			vtd_set_irte_vector(vtd, vectors[i].arch.irte,
-					    vectors[i].arch.vector);
-			vtd_set_irte_irq(vtd, vectors[i].arch.irte,
-					 vectors[i].arch.irq);
-			vtd_set_irte_msi(vtd, vectors[i].arch.irte, true);
+		vtd_set_irte_vector(vtd, vectors[i].arch.irte,
+				    vectors[i].arch.vector);
+		vtd_set_irte_irq(vtd, vectors[i].arch.irte,
+				 vectors[i].arch.irq);
+		vtd_set_irte_msi(vtd, vectors[i].arch.irte, true);
 #endif
-			prev_vector = vectors[i].arch.vector;
-		}
-	} else {
-		vectors[0].arch.vector = z_x86_allocate_vector(priority, -1);
+		prev_vector = vectors[i].arch.vector;
 	}
 
 	return n_vector;

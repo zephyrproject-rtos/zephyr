@@ -167,6 +167,10 @@ uint8_t pcie_msi_vectors_allocate(pcie_bdf_t bdf,
 		n_vector = req_vectors;
 	}
 
+	for (req_vectors = 0; req_vectors < n_vector; req_vectors++) {
+		vectors[req_vectors].bdf = bdf;
+	}
+
 	return arch_pcie_msi_vectors_allocate(priority, vectors, n_vector);
 }
 
@@ -182,8 +186,6 @@ bool pcie_msi_vector_connect(pcie_bdf_t bdf,
 	if (base == 0U) {
 		return false;
 	}
-
-	vector->bdf = bdf;
 
 	return arch_pcie_msi_vector_connect(vector, routine, parameter, flags);
 }
