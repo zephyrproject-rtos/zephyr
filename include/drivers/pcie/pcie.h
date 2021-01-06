@@ -124,17 +124,22 @@ extern bool pcie_probe_mbar(pcie_bdf_t bdf,
  */
 extern void pcie_set_cmd(pcie_bdf_t bdf, uint32_t bits, bool on);
 
+#ifndef CONFIG_PCIE_CONTROLLER
 /**
  * @brief Allocate an IRQ for an endpoint.
  *
  * This function first checks the IRQ register and if it contains a valid
  * value this is returned. If the register does not contain a valid value
  * allocation of a new one is attempted.
+ * Such function is only exposed if CONFIG_PCIE_CONTROLLER is unset.
+ * It is thus available where architecture tied dynamic IRQ allocation for
+ * PCIe device makes sense.
  *
  * @param bdf the PCI(e) endpoint
  * @return the IRQ number, or PCIE_CONF_INTR_IRQ_NONE if allocation failed.
  */
 extern unsigned int pcie_alloc_irq(pcie_bdf_t bdf);
+#endif /* CONFIG_PCIE_CONTROLLER */
 
 /**
  * @brief Return the IRQ assigned by the firmware/board to an endpoint.
