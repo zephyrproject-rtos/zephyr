@@ -343,6 +343,39 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
  * @see ISR_DIRECT_DECLARE()
  */
 
+#ifndef CONFIG_PCIE_CONTROLLER
+/**
+ * @brief Arch-specific hook for allocating IRQs
+ *
+ * Note: disable/enable IRQ relevantly inside the implementation of such
+ * function to avoid concurrency issues. Also, an allocated IRQ is assumed
+ * to be used thus a following @see arch_irq_is_used() should return true.
+ *
+ * @return The newly allocated IRQ or UINT_MAX on error.
+ */
+unsigned int arch_irq_allocate(void);
+
+/**
+ * @brief Arch-specific hook for declaring an IRQ being used
+ *
+ * Note: disable/enable IRQ relevantly inside the implementation of such
+ * function to avoid concurrency issues.
+ *
+ * @param irq the IRQ to declare being used
+ */
+void arch_irq_set_used(unsigned int irq);
+
+/**
+ * @brief Arch-specific hook for checking if an IRQ is being used already
+ *
+ * @param irq the IRQ to check
+ *
+ * @return true if being, false otherwise
+ */
+bool arch_irq_is_used(unsigned int irq);
+
+#endif /* CONFIG_PCIE_CONTROLLER */
+
 /**
  * @def ARCH_EXCEPT(reason_p)
  *
