@@ -84,7 +84,13 @@ static int vtd_ictl_remap(const struct device *dev,
 	memset(&data->irte[irte_idx], 0, sizeof(struct vtd_irte));
 
 	data->irte[irte_idx].l.vector = vector->arch.vector;
-	data->irte[irte_idx].l.dst_id = arch_curr_cpu()->id;
+
+	if (IS_ENABLED(CONFIG_X2APIC)) {
+		data->irte[irte_idx].l.dst_id = arch_curr_cpu()->id;
+	} else {
+		data->irte[irte_idx].l.dst_id = arch_curr_cpu()->id << 8;
+	}
+
 	data->irte[irte_idx].l.present = 1;
 
 	return 0;
