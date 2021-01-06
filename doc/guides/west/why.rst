@@ -36,6 +36,10 @@ The basic requirements are:
 Rationale for a custom tool
 ***************************
 
+Some of west's features are similar to those provided by
+`Git Submodules <https://git-scm.com/book/en/v2/Git-Tools-Submodules>`_ and
+Google's `repo <https://gerrit.googlesource.com/git-repo/>`_.
+
 Existing tools were considered during west's initial design and development.
 None were found suitable for Zephyr's requirements. In particular, these were
 examined in detail:

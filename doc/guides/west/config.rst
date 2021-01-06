@@ -142,7 +142,7 @@ commands are documented in the pages for those commands.
    * - ``update.fetch``
      - String, one of ``"smart"`` (the default behavior starting in v0.6.1) or
        ``"always"`` (the previous behavior). If set to ``"smart"``, the
-       :ref:`west update <west-multi-repo-cmds>` command will skip fetching
+       :ref:`west-update` command will skip fetching
        from project remotes when those projects' revisions in the manifest file
        are SHAs or tags which are already available locally. The ``"always"``
        behavior is to unconditionally fetch from the remote.
