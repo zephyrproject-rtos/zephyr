@@ -92,7 +92,7 @@ struct ll_adv_sync_set {
 	uint8_t is_started:1;
 };
 
-struct ll_adv_iso {
+struct ll_adv_iso_set {
 	struct ull_hdr        ull;
 	struct lll_adv_iso    lll;
 
