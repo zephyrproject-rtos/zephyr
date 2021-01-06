@@ -38,7 +38,7 @@
 #include "lll_filter.h"
 #include "lll/lll_df_types.h"
 
-#if (!defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACYa))
+#if (!defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY))
 #include "ll_sw/ull_tx_queue.h"
 #endif
 
