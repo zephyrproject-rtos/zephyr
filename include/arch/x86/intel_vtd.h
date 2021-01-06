@@ -109,7 +109,7 @@
 
 /* Interrupt Remapping Table Address Register details */
 #define VTD_IRTA_SIZE_MASK	0x00000000000000FF
-#define VTD_IRTA_EIME		11
+#define VTD_IRTA_EIME		BIT(11)
 #define VTD_IRTA_ADDR_SHIFT	12
 
 #define VTD_IRTA_REG_GEN_CONTENT(addr, size, mode) \
