@@ -217,17 +217,21 @@ def getHashes(filePath):
 
     Arguments:
         - filePath: path to file to scan.
-    Returns: tuple of (SHA1, SHA256, MD5) hashes for filePath.
+    Returns: tuple of (SHA1, SHA256, MD5) hashes for filePath, or
+             None if file is not found.
     """
     hSHA1 = hashlib.sha1()
     hSHA256 = hashlib.sha256()
     hMD5 = hashlib.md5()
 
-    with open(filePath, 'rb') as f:
-        buf = f.read()
-        hSHA1.update(buf)
-        hSHA256.update(buf)
-        hMD5.update(buf)
+    try:
+        with open(filePath, 'rb') as f:
+            buf = f.read()
+            hSHA1.update(buf)
+            hSHA256.update(buf)
+            hMD5.update(buf)
+    except FileNotFoundError:
+        return None
 
     return (hSHA1.hexdigest(), hSHA256.hexdigest(), hMD5.hexdigest())
 
@@ -314,7 +318,7 @@ def makeFileData(filePath, pkgCfg, timesSeen):
         - pkgCfg: BuilderPackageConfig for this scan.
         - timesSeen: dict of all filename-only (converted to SPDX-ID-safe)
                      to number of times seen.
-    Returns: BuilderFile
+    Returns: BuilderFile, or None if error reading file
     """
     bf = BuilderFile()
     bf.name = os.path.join(".", os.path.relpath(filePath, pkgCfg.scandir))
@@ -322,7 +326,12 @@ def makeFileData(filePath, pkgCfg, timesSeen):
     filenameOnly = os.path.basename(filePath)
     bf.spdxID = getUniqueID(filenameOnly, timesSeen)
 
-    (sha1, sha256, md5) = getHashes(filePath)
+    retval = getHashes(filePath)
+    if retval is None:
+        log.wrn(f"{filePath} found in tree but unable to open to calculate hashes; skipping")
+        return None
+
+    (sha1, sha256, md5) = retval
     bf.sha1 = sha1
     if pkgCfg.doSHA256:
         bf.sha256 = sha256
@@ -350,7 +359,8 @@ def makeAllFileData(filePaths, pkgCfg, timesSeen):
     bfs = []
     for filePath in filePaths:
         bf = makeFileData(filePath, pkgCfg, timesSeen)
-        bfs.append(bf)
+        if bf is not None:
+            bfs.append(bf)
 
     return bfs
 
