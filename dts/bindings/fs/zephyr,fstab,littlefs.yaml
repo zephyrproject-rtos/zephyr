@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    Description of pre-defined file systems.
+    Description of pre-defined littlefs file systems.
 
 compatible: "zephyr,fstab,littlefs"
 
