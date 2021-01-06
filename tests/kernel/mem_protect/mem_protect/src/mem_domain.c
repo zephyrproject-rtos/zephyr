@@ -379,3 +379,88 @@ void test_mem_part_overlap(void)
 
 	k_mem_domain_add_partition(&test_domain, &overlap_part);
 }
+
+/* below code is an example of unlocking held spinlock when caught
+ * fatal error.
+ */
+extern struct k_spinlock z_mem_domain_lock;
+static ZTEST_BMEM int case_type;
+
+
+/* enumerate our error case scenario */
+enum {
+	MEM_DOMAIN_INIT_THREAD_NULL = 1,
+	MEM_DOMAIN_EXIT_THREAD_NULL,
+	NOT_DEFINE
+} mem_domain_error_case;
+
+/* do action we want in fatal error handler */
+void post_fatal_error_hook(unsigned int reason, const z_arch_esf_t *pEsf)
+{
+	switch (case_type) {
+	case MEM_DOMAIN_INIT_THREAD_NULL:
+	case MEM_DOMAIN_EXIT_THREAD_NULL:
+		/* unlock the held spinlock after fatal error happened */
+		k_spin_unlock_without_key(&z_mem_domain_lock);
+		break;
+	default:
+		break;
+	}
+}
+
+static void tThread_error_entry(void *p1, void *p2, void *p3)
+{
+	switch (case_type) {
+	case MEM_DOMAIN_INIT_THREAD_NULL:
+		set_fault_valid(true);
+		z_mem_domain_init_thread(NULL);
+		break;
+	case MEM_DOMAIN_EXIT_THREAD_NULL:
+		set_fault_valid(true);
+		z_mem_domain_exit_thread(NULL);
+		break;
+	default:
+		TC_PRINT("should not be here!\n");
+		break;
+	}
+}
+
+static int spwan_child_error_thread(int choice)
+{
+	int ret;
+
+	case_type = choice;
+
+	k_tid_t tid = k_thread_create(&child_thread, child_stack,
+			K_THREAD_STACK_SIZEOF(child_stack),
+			(k_thread_entry_t)tThread_error_entry,
+			NULL, NULL, NULL,
+			PRIO, K_INHERIT_PERMS, K_NO_WAIT);
+
+	ret = k_thread_join(tid, K_FOREVER);
+
+	case_type = NOT_DEFINE;
+
+	return ret;
+}
+
+/**
+ * @brief error case for mem domain init / exit thread api
+ *
+ * This is an error test case that tries to trigger a assertion.
+ * Start a thread then pass NULL to it, then an excepted fatal
+ * error will be triggered.
+ *
+ * One point here is when assertion happened after the spinlock
+ * was held, we call a internal function k_spin_unlock_without_key()
+ * to unlock the spinlock in our fatal error handler.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_mem_domain_init_thread(), k_mem_domain_init_thread()
+ */
+void test_mem_domain_error_case_spin_unlock(void)
+{
+	spwan_child_error_thread(MEM_DOMAIN_INIT_THREAD_NULL);
+	spwan_child_error_thread(MEM_DOMAIN_EXIT_THREAD_NULL);
+}
