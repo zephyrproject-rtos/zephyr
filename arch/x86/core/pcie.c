@@ -187,24 +187,28 @@ uint32_t pcie_msi_map(unsigned int irq,
 	ARG_UNUSED(irq);
 
 #if defined(CONFIG_INTEL_VTD_ICTL)
-	return vtd_remap_msi(vtd, vector, n_vector);
-#else
-	return 0xFEE00000U; /* standard delivery to BSP local APIC */
+	if (vector != NULL && n_vector > 0) {
+		return vtd_remap_msi(vtd, vector, n_vector);
+	}
 #endif
+	return 0xFEE00000U; /* standard delivery to BSP local APIC */
 }
 
 uint16_t pcie_msi_mdr(unsigned int irq,
 		      msi_vector_t *vector)
 {
-	if (IS_ENABLED(CONFIG_INTEL_VTD_ICTL)) {
-		return 0;
-	}
+	if (vector != NULL) {
+		if (IS_ENABLED(CONFIG_INTEL_VTD_ICTL)) {
+			return 0;
+		}
 
 #if defined(CONFIG_PCIE_MSI_X)
-	if (vector->msix) {
-		return 0x4000U | vector->arch.vector;
-	}
+		if (vector->msix) {
+			return 0x4000U | vector->arch.vector;
+		}
 #endif
+	}
+
 	return 0x4000U | Z_IRQ_TO_INTERRUPT_VECTOR(irq);
 }
 
