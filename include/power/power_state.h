@@ -139,7 +139,8 @@ struct pm_state_info {
  * @param node_id A node identifier with compatible zephyr,power-state
  * @return length of 'cpu-power-states' property
  */
-#define PM_STATE_DT_ITEMS_LEN(node_id) DT_PROP_LEN(node_id, cpu_power_states)
+#define PM_STATE_DT_ITEMS_LEN(node_id) \
+	DT_PROP_LEN_OR(node_id, cpu_power_states, 0)
 
 /**
  * @brief Macro function to construct enum pm_state item in UTIL_LISTIFY
