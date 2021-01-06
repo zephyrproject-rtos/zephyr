@@ -329,6 +329,29 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
  */
 
 /**
+ * Arch-specific hook for allocating IRQs
+ *
+ * @return The newly allocated IRQ or UINT_MAX on error.
+ */
+unsigned int arch_irq_allocate(void);
+
+/**
+ * Arch-specific hook for declaring an IRQ being used
+ *
+ * @param irq the IRQ to declare being used
+ */
+void arch_irq_set_used(unsigned int irq);
+
+/**
+ * Arch-specific hook for checking if an IRQ is being used already
+ *
+ * @param irq the IRQ to check
+ *
+ * @return true if being, false otherwise
+ */
+bool arch_irq_is_used(unsigned int irq);
+
+/**
  * @def ARCH_EXCEPT(reason_p)
  *
  * Generate a software induced fatal error.
