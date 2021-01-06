@@ -67,6 +67,9 @@ struct ll_conn {
 #if defined(CONFIG_BT_PERIPHERAL)
 		struct {
 			uint8_t  fex_valid:1;
+#if defined(CONFIG_BT_CTLR_CONN_META)
+			uint8_t  is_must_expire:1;
+#endif /* CONFIG_BT_CTLR_CONN_META */
 			uint8_t  latency_cancel:1;
 			uint8_t  sca:3;
 			uint32_t force;
@@ -77,6 +80,9 @@ struct ll_conn {
 #if defined(CONFIG_BT_CENTRAL)
 		struct {
 			uint8_t fex_valid:1;
+#if defined(CONFIG_BT_CTLR_CONN_META)
+			uint8_t is_must_expire:1;
+#endif /* CONFIG_BT_CTLR_CONN_META */
 			uint8_t terminate_ack:1;
 		} master;
 #endif /* CONFIG_BT_CENTRAL */
