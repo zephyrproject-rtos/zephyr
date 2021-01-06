@@ -2502,7 +2502,7 @@ static int cmd_cdb_node_add(const struct shell *shell, size_t argc,
 	memcpy(node->dev_key, dev_key, 16);
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
-		bt_mesh_store_cdb_node(node);
+		bt_mesh_cdb_node_store(node);
 	}
 
 	shell_print(shell, "Added node 0x%04x", addr);
@@ -2558,7 +2558,7 @@ static int cmd_cdb_subnet_add(const struct shell *shell, size_t argc,
 	memcpy(sub->keys[0].net_key, net_key, 16);
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
-		bt_mesh_store_cdb_subnet(sub);
+		bt_mesh_cdb_subnet_store(sub);
 	}
 
 	shell_print(shell, "Added Subnet 0x%03x", net_idx);
@@ -2615,7 +2615,7 @@ static int cmd_cdb_app_key_add(const struct shell *shell, size_t argc,
 	memcpy(key->keys[0].app_key, app_key, 16);
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
-		bt_mesh_store_cdb_app_key(key);
+		bt_mesh_cdb_app_key_store(key);
 	}
 
 	shell_print(shell, "Added AppKey 0x%03x", app_idx);

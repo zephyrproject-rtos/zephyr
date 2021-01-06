@@ -14,6 +14,21 @@
 #include "friend.h"
 #include "cfg.h"
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_CFG)
+#define LOG_MODULE_NAME bt_mesh_cfg
+#include "common/log.h"
+
+/* Miscellaneous configuration server model states */
+struct cfg_val {
+	uint8_t net_transmit;
+	uint8_t relay;
+	uint8_t relay_retransmit;
+	uint8_t beacon;
+	uint8_t gatt_proxy;
+	uint8_t frnd;
+	uint8_t default_ttl;
+};
+
 void bt_mesh_beacon_set(bool beacon)
 {
 	if (atomic_test_bit(bt_mesh.flags, BT_MESH_BEACON) == beacon) {
@@ -30,7 +45,7 @@ void bt_mesh_beacon_set(bool beacon)
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
 	    atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
-		bt_mesh_store_cfg();
+		bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_CFG_PENDING);
 	}
 }
 
@@ -81,7 +96,7 @@ int bt_mesh_gatt_proxy_set(enum bt_mesh_feat_state gatt_proxy)
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
 	    atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
-		bt_mesh_store_cfg();
+		bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_CFG_PENDING);
 	}
 
 	return 0;
@@ -110,7 +125,7 @@ int bt_mesh_default_ttl_set(uint8_t default_ttl)
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
 	    atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
-		bt_mesh_store_cfg();
+		bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_CFG_PENDING);
 	}
 
 	return 0;
@@ -138,7 +153,7 @@ int bt_mesh_friend_set(enum bt_mesh_feat_state friendship)
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
 	    atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
-		bt_mesh_store_cfg();
+		bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_CFG_PENDING);
 	}
 
 	if (friendship == BT_MESH_FEATURE_DISABLED) {
@@ -167,7 +182,7 @@ void bt_mesh_net_transmit_set(uint8_t xmit)
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
 	    atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
-		bt_mesh_store_cfg();
+		bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_CFG_PENDING);
 	}
 }
 
@@ -198,7 +213,7 @@ int bt_mesh_relay_set(enum bt_mesh_feat_state relay, uint8_t xmit)
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
 	    atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
-		bt_mesh_store_cfg();
+		bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_CFG_PENDING);
 	}
 
 	return 0;
@@ -262,5 +277,79 @@ void bt_mesh_cfg_init(void)
 
 	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND_ENABLED)) {
 		atomic_set_bit(bt_mesh.flags, BT_MESH_FRIEND);
+	}
+}
+
+static int cfg_set(const char *name, size_t len_rd,
+		   settings_read_cb read_cb, void *cb_arg)
+{
+	struct cfg_val cfg;
+	int err;
+
+	if (len_rd == 0) {
+		BT_DBG("Cleared configuration state");
+		return 0;
+	}
+
+	err = bt_mesh_settings_set(read_cb, cb_arg, &cfg, sizeof(cfg));
+	if (err) {
+		BT_ERR("Failed to set \'cfg\'");
+		return err;
+	}
+
+	bt_mesh_net_transmit_set(cfg.net_transmit);
+	bt_mesh_relay_set(cfg.relay, cfg.relay_retransmit);
+	bt_mesh_beacon_set(cfg.beacon);
+	bt_mesh_gatt_proxy_set(cfg.gatt_proxy);
+	bt_mesh_friend_set(cfg.frnd);
+	bt_mesh_default_ttl_set(cfg.default_ttl);
+
+	BT_DBG("Restored configuration state");
+
+	return 0;
+}
+
+BT_MESH_SETTINGS_DEFINE(cfg, "Cfg", cfg_set);
+
+static void clear_cfg(void)
+{
+	int err;
+
+	err = settings_delete("bt/mesh/Cfg");
+	if (err) {
+		BT_ERR("Failed to clear configuration");
+	} else {
+		BT_DBG("Cleared configuration");
+	}
+}
+
+static void store_pending_cfg(void)
+{
+	struct cfg_val val;
+	int err;
+
+	val.net_transmit = bt_mesh_net_transmit_get();
+	val.relay = bt_mesh_relay_get();
+	val.relay_retransmit = bt_mesh_relay_retransmit_get();
+	val.beacon = bt_mesh_beacon_enabled();
+	val.gatt_proxy = bt_mesh_gatt_proxy_get();
+	val.frnd = bt_mesh_friend_get();
+	val.default_ttl = bt_mesh_default_ttl_get();
+
+	err = settings_save_one("bt/mesh/Cfg", &val, sizeof(val));
+	if (err) {
+		BT_ERR("Failed to store configuration value");
+	} else {
+		BT_DBG("Stored configuration value");
+		BT_HEXDUMP_DBG(&val, sizeof(val), "raw value");
+	}
+}
+
+void bt_mesh_cfg_pending_store(void)
+{
+	if (atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
+		store_pending_cfg();
+	} else {
+		clear_cfg();
 	}
 }

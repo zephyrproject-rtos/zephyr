@@ -818,6 +818,12 @@ config BT_MESH_DEBUG_CDB
 	help
 	  Use this option to enable configuration database debug logs.
 
+config BT_MESH_DEBUG_CFG
+	bool "Configuration debug"
+	help
+	  Use this option to enable node configuration debug logs for the
+	  Bluetooth Mesh functionality.
+
 endif # BT_MESH_DEBUG
 
 endif # BT_MESH
