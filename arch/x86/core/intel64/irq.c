@@ -29,6 +29,27 @@ unsigned char _irq_to_interrupt_vector[CONFIG_MAX_IRQ_LINES];
 void (*x86_irq_funcs[NR_IRQ_VECTORS])(const void *);
 const void *x86_irq_args[NR_IRQ_VECTORS];
 
+#if defined(CONFIG_INTEL_VTD_ICTL)
+
+#include <device.h>
+#include <drivers/interrupt_controller/intel_vtd.h>
+
+static const struct device *vtd;
+
+static bool get_vtd(void)
+{
+	if (vtd != NULL) {
+		return true;
+	}
+#define DT_DRV_COMPAT intel_vt_d
+	vtd = device_get_binding(DT_INST_LABEL(0));
+#undef DT_DRV_COMPAT
+
+	return vtd == NULL ? false : true;
+}
+
+#endif /* CONFIG_INTEL_VTD_ICTL */
+
 static void irq_spurious(const void *arg)
 {
 	LOG_ERR("Spurious interrupt, vector %d\n", (uint32_t)(uint64_t)arg);
@@ -109,6 +130,17 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 
 	vector = z_x86_allocate_vector(priority, -1);
 	if (vector >= 0) {
+#if defined(CONFIG_INTEL_VTD_ICTL)
+		if (get_vtd()) {
+			int irte = vtd_allocate_entries(vtd, 1);
+
+			__ASSERT(irte >= 0, "IRTE allocation must succeed");
+
+			vtd_set_irte_vector(vtd, irte, vector);
+			vtd_set_irte_irq(vtd, irte, irq);
+		}
+#endif /* CONFIG_INTEL_VTD_ICTL */
+
 		z_irq_controller_irq_config(vector, irq, flags);
 		z_x86_irq_connect_on_vector(irq, vector, func, arg);
 	}
