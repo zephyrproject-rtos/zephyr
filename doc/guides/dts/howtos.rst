@@ -88,12 +88,13 @@ works best for your requirements. Here are some examples:
    /* Option 4: by path */
    #define MY_SERIAL DT_PATH(soc, serial_40002000)
 
-Once you have a node identifier, get the ``struct device`` by combining
+Once you have a node identifier there are two ways to proceed.  The
+classic way is to get the ``struct device`` by combining
 :c:func:`DT_LABEL` with :c:func:`device_get_binding`:
 
 .. code-block:: c
 
-   struct device *uart_dev = device_get_binding(DT_LABEL(MY_SERIAL));
+   const struct device *uart_dev = device_get_binding(DT_LABEL(MY_SERIAL));
 
 You can then use ``uart_dev`` with :ref:`uart_api` API functions like
 :c:func:`uart_configure`. Similar code will work for other device types; just
@@ -103,6 +104,23 @@ There's no need to override the ``label`` property to something else: just make
 a node identifier and pass it to ``DT_LABEL`` to get the right string to pass
 to ``device_get_binding()``.
 
+The second way to get a device is to use :c:func:`DEVICE_DT_GET`:
+
+.. code-block:: c
+
+   const struct device *uart_dev = DEVICE_DT_GET(MY_SERIAL);
+
+   if (!device_is_ready(uart_dev)) {
+           /* Not ready, do not use */
+           return -ENODEV;
+   }
+
+This idiom fetches the device pointer at build-time, which is useful when you
+want to store the device pointer as configuration data.  But because the
+device may not be initialized, or may have failed to initialize, you must
+verify that the device is ready to be used before passing it to any API
+functions.  (This check is done for you by :c:func:`device_get_binding`.)
+
 If you're having trouble, see :ref:`dt-trouble`. The first thing to check is
 that the node has ``status = "okay"``, like this:
 
@@ -111,7 +129,7 @@ that the node has ``status = "okay"``, like this:
    #define MY_SERIAL DT_NODELABEL(my_serial)
 
    #if DT_NODE_HAS_STATUS(MY_SERIAL, okay)
-   struct device *uart_dev = device_get_binding(DT_LABEL(MY_SERIAL));
+   const struct device *uart_dev = device_get_binding(DT_LABEL(MY_SERIAL));
    #else
    #error "Node is disabled"
    #endif
@@ -432,17 +450,17 @@ using instance numbers. Do this after defining ``my_api_funcs``.
    		/* initialize ROM values as needed. */			\
    	};								\
    	DEVICE_DT_INST_DEFINE(inst,					\
-   			    my_dev_init_function,			\
-   			    device_pm_control_nop,                      \
-   			    &my_data_##inst,				\
-   			    &my_cfg_##inst,				\
-   			    MY_DEV_INIT_LEVEL, MY_DEV_INIT_PRIORITY,	\
-   			    &my_api_funcs);
+   			      my_dev_init_function,			\
+			      device_pm_control_nop,			\
+   			      &my_data_##inst,				\
+   			      &my_cfg_##inst,				\
+   			      MY_DEV_INIT_LEVEL, MY_DEV_INIT_PRIORITY,	\
+   			      &my_api_funcs);
 
-Notice the use of APIs like :c:func:`DT_INST_LABEL` and :c:func:`DT_INST_PROP`
-to access devicetree node data. These APIs retrieve data from the devicetree
-for instance number ``inst`` of the node with compatible determined by
-``DT_DRV_COMPAT``.
+Notice the use of APIs like :c:func:`DT_INST_PROP` and
+:c:func:`DEVICE_DT_INST_DEFINE` to access devicetree node data. These
+APIs retrieve data from the devicetree for instance number ``inst`` of
+the node with compatible determined by ``DT_DRV_COMPAT``.
 
 Finally, pass the instantiation macro to :c:func:`DT_INST_FOREACH_STATUS_OKAY`:
 
@@ -508,16 +526,16 @@ devicetree to operate on specific device nodes:
 		.freq = DT_PROP(MYDEV(idx), clock_frequency),		\
 	};								\
 	static const struct my_dev_cfg my_cfg_##idx = { /* ... */ };	\
-	DEVICE_DT_INST_DEFINE(idx,					\
-			    my_dev_init_function,			\
-			    device_pm_control_nop,                      \
-			    &my_data_##idx,				\
-			    &my_cfg_##idx,				\
-			    MY_DEV_INIT_LEVEL, MY_DEV_INIT_PRIORITY,	\
-			    &my_api_funcs)
+   	DEVICE_DT_DEFINE(MYDEV(idx),					\
+   			my_dev_init_function,				\
+			device_pm_control_nop,				\
+			&my_data_##idx,					\
+			&my_cfg_##idx,					\
+			MY_DEV_INIT_LEVEL, MY_DEV_INIT_PRIORITY,	\
+			&my_api_funcs)
 
-Notice the use of APIs like :c:func:`DT_LABEL` and :c:func:`DT_PROP` to access
-devicetree node data.
+Notice the use of APIs like :c:func:`DT_PROP` and
+:c:func:`DEVICE_DT_DEFINE` to access devicetree node data.
 
 Finally, manually detect each enabled devicetree node and use
 ``CREATE_MY_DEVICE`` to instantiate each ``struct device``:
