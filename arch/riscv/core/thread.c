@@ -37,7 +37,9 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif
 
 	/* Initial stack frame for thread */
-	stack_init = Z_STACK_PTR_TO_FRAME(struct __esf, stack_ptr);
+	stack_init = (struct __esf *)Z_STACK_PTR_ALIGN(
+				Z_STACK_PTR_TO_FRAME(struct __esf, stack_ptr)
+				);
 
 	/* Setup the initial stack frame */
 	stack_init->a0 = (ulong_t)entry;
