@@ -14,6 +14,10 @@
 #include <fs/fs_sys.h>
 #include <sys/__assert.h>
 #include <ff.h>
+#include <device.h>
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(fatfs, CONFIG_FS_LOG_LEVEL);
 
 #define FATFS_MAX_FILE_NAME 12 /* Uses 8.3 SFN */
 
@@ -462,11 +466,59 @@ static const struct fs_file_system_t fatfs_fs = {
 	.statvfs = fatfs_statvfs,
 };
 
+#define DT_DRV_COMPAT zephyr_fstab_fatfs
+#define FS_PARTITION(inst) DT_PHANDLE_BY_IDX(DT_DRV_INST(inst), partition, 0)
+
+#define DEFINE_FS(inst) \
+static FATFS fs_data_##inst; \
+struct fs_mount_t FS_FSTAB_ENTRY(DT_DRV_INST(inst)) = { \
+	.type = FS_FATFS, \
+	.mnt_point = DT_INST_PROP(inst, mount_point), \
+	.fs_data = &fs_data_##inst, \
+	.storage_dev = (void *)DT_FIXED_PARTITION_ID(FS_PARTITION(inst)), \
+	.flags = FSTAB_ENTRY_DT_MOUNT_FLAGS(DT_DRV_INST(inst)), \
+};
+
+DT_INST_FOREACH_STATUS_OKAY(DEFINE_FS)
+
+#define REFERENCE_MOUNT(inst) (&FS_FSTAB_ENTRY(DT_DRV_INST(inst))),
+
+static void mount_init(struct fs_mount_t *mp)
+{
+
+	LOG_INF("FatFs partition at %s", mp->mnt_point);
+	if ((mp->flags & FS_MOUNT_FLAG_AUTOMOUNT) != 0) {
+		int rc = fs_mount(mp);
+
+		if (rc < 0) {
+			LOG_ERR("Automount %s failed: %d\n",
+				mp->mnt_point, rc);
+		} else {
+			LOG_INF("Automount %s succeeded\n",
+				mp->mnt_point);
+		}
+	}
+}
+
 static int fatfs_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return fs_register(FS_FATFS, &fatfs_fs);
+	static struct fs_mount_t *partitions[] = {
+		DT_INST_FOREACH_STATUS_OKAY(REFERENCE_MOUNT)
+	};
+
+	int rc = fs_register(FS_FATFS, &fatfs_fs);
+
+	if (rc == 0) {
+		struct fs_mount_t **mpi = partitions;
+
+		while (mpi < (partitions + ARRAY_SIZE(partitions))) {
+			mount_init(*mpi++);
+		}
+	}
+
+	return rc;
 }
 
 SYS_INIT(fatfs_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

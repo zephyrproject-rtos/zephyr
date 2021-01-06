@@ -1,0 +1,11 @@
+# Copyright (C) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Description of pre-defined FatFs file systems.
+
+compatible: "zephyr,fstab,fatfs"
+
+include: "zephyr,fstab-common.yaml"
+
+# FatFs does not support filesystem-specific configuration
