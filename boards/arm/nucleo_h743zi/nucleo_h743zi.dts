@@ -28,8 +28,8 @@
 			gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
-		blue_led: led_1 {
-			gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
+		yellow_led: led_1 {
+			gpios = <&gpioe 1 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
 	};
@@ -52,7 +52,7 @@
 
 	aliases {
 		led0 = &green_led;
-		led1 = &blue_led;
+		led1 = &yellow_led;
 		pwm-led0 = &red_pwm_led;
 		sw0 = &user_button;
 	};
