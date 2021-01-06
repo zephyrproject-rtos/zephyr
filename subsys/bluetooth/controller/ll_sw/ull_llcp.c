@@ -477,7 +477,7 @@ void ull_cp_ltk_req_neq_reply(struct ll_conn *conn)
 	}
 }
 
-uint8_t ull_cp_conn_update(struct ull_cp_conn *conn, uint16_t interval_min, uint16_t interval_max, uint16_t latency, uint16_t timeout)
+uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t interval_max, uint16_t latency, uint16_t timeout)
 {
 	struct proc_ctx *ctx;
 
@@ -500,7 +500,7 @@ uint8_t ull_cp_conn_update(struct ull_cp_conn *conn, uint16_t interval_min, uint
 	return BT_HCI_ERR_SUCCESS;
 }
 
-void ull_cp_conn_param_req_reply(struct ull_cp_conn *conn)
+void ull_cp_conn_param_req_reply(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
@@ -510,7 +510,7 @@ void ull_cp_conn_param_req_reply(struct ull_cp_conn *conn)
 	}
 }
 
-void ull_cp_conn_param_req_neg_reply(struct ull_cp_conn *conn)
+void ull_cp_conn_param_req_neg_reply(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
