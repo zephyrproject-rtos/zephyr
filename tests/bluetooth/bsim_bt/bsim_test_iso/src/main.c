@@ -59,7 +59,6 @@ static void test_iso_main(void)
 {
 	struct bt_le_ext_adv *adv;
 	int err;
-	int index;
 	uint8_t bis_count = 1; /* TODO: Add support for multiple BIS per BIG */
 
 	printk("\n*ISO broadcast test*\n");
@@ -108,6 +107,7 @@ static void test_iso_main(void)
 
 #if !IS_ENABLED(USE_HOST_API)
 	uint8_t big_handle = 0;
+	uint8_t adv_handle;
 	uint32_t sdu_interval = 0x10000; /*us */
 	uint16_t max_sdu = 0x10;
 	uint16_t max_latency = 0x0A;
@@ -119,10 +119,10 @@ static void test_iso_main(void)
 	uint8_t bcode[16] = { 0 };
 
 	/* Assume that index == handle */
-	index = bt_le_ext_adv_get_index(adv);
+	adv_handle = bt_le_ext_adv_get_index(adv);
 
 	printk("Creating BIG...");
-	err = ll_big_create(big_handle, index, bis_count, sdu_interval, max_sdu,
+	err = ll_big_create(big_handle, adv_handle, bis_count, sdu_interval, max_sdu,
 			    max_latency, rtn, phy, packing, framing, encryption,
 			    bcode);
 	if (err) {
