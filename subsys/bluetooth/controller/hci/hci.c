@@ -6358,7 +6358,7 @@ static void le_big_complete(struct pdu_data *pdu_data,
 			    struct net_buf *buf)
 {
 	struct bt_hci_evt_le_big_complete *sep;
-	struct ll_adv_iso *adv_iso;
+	struct ll_adv_iso_set *adv_iso;
 	struct node_rx_sync *se;
 	size_t evt_size;
 
