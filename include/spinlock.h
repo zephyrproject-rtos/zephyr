@@ -51,6 +51,15 @@ struct k_spinlock {
 	 */
 	char dummy;
 #endif
+
+#if defined(CONFIG_ZTEST)
+	/* For testing purpose, we need to save the key for unlocking it later
+	 * in other place. It's in the case if there is a assert fail or a
+	 * fatal error happened after it was locked, then it can be unlock and
+	 * keep working properly.
+	 */
+	int key;
+#endif
 };
 
 /* There's a spinlock validation framework available when asserts are
@@ -131,6 +140,11 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 #ifdef CONFIG_SPIN_VALIDATE
 	z_spin_lock_set_owner(l);
 #endif
+
+#ifdef CONFIG_ZTEST
+	l->key = k.key;
+#endif
+
 	return k;
 }
 
@@ -174,7 +188,25 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
 	atomic_clear(&l->locked);
 #endif
 	arch_irq_unlock(key.key);
+
+#ifdef CONFIG_ZTEST
+	l->key = 0;
+#endif
 }
+
+/* Internal function for testing purpose: unlock the spinlock without a
+ * a key, it can be used when you don't have the key.
+ */
+#if defined(CONFIG_ZTEST)
+static ALWAYS_INLINE void k_spin_unlock_without_key(struct k_spinlock *l)
+{
+	ARG_UNUSED(l);
+	k_spinlock_key_t k;
+
+	k.key = l->key;
+	k_spin_unlock(l, k);
+}
+#endif
 
 /* Internal function: releases the lock, but leaves local interrupts
  * disabled
