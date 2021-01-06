@@ -87,6 +87,15 @@
 
 #endif /* VIA_TWISTER */
 
+/* Can't use IS_ENABLED on symbols that don't start with CONFIG_
+ * without checkpatch complaints, so do something else.
+ */
+#if USE_LIBC
+#define ENABLED_USE_LIBC true
+#else
+#define ENABLED_USE_LIBC false
+#endif
+
 #include "../../../lib/os/cbprintf.c"
 
 #if defined(CONFIG_CBPRINTF_COMPLETE)
@@ -297,7 +306,7 @@ static void test_c(void)
 	}
 
 	rc = TEST_PRF("%lc", (wint_t)'a');
-	if (IS_ENABLED(USE_LIBC)) {
+	if (ENABLED_USE_LIBC) {
 		PRF_CHECK("a", rc);
 	} else {
 		PRF_CHECK("%lc", rc);
@@ -345,7 +354,7 @@ static void test_s(void)
 	PRF_CHECK("/123/12//", rc);
 
 	rc = TEST_PRF("%ls", ws);
-	if (IS_ENABLED(USE_LIBC)) {
+	if (ENABLED_USE_LIBC) {
 		PRF_CHECK("abc", rc);
 	} else {
 		PRF_CHECK("%ls", rc);
@@ -361,7 +370,7 @@ static void test_v_c(void)
 	rc = rawprf("%c", 'a');
 	zassert_equal(rc, 1, NULL);
 	zassert_equal(buf[0], 'a', NULL);
-	if (!IS_ENABLED(USE_LIBC)) {
+	if (!ENABLED_USE_LIBC) {
 		zassert_equal(buf[1], 'b', "wth %x", buf[1]);
 	}
 }
@@ -830,7 +839,7 @@ static void test_fp_length(void)
 	}
 
 	rc = TEST_PRF("/%Lg/", (long double)dv);
-	if (IS_ENABLED(USE_LIBC)) {
+	if (ENABLED_USE_LIBC) {
 		PRF_CHECK("/1.2345/", rc);
 	} else {
 		PRF_CHECK("/%Lg/", rc);
@@ -1007,7 +1016,7 @@ static void test_arglen(void)
 
 static void test_p(void)
 {
-	if (IS_ENABLED(USE_LIBC)) {
+	if (ENABLED_USE_LIBC) {
 		TC_PRINT("skipping on libc\n");
 		return;
 	}
@@ -1124,7 +1133,7 @@ void test_main(void)
 	}
 
 	TC_PRINT("Opts: " COND_CODE_1(M64_MODE, ("m64"), ("m32")) "\n");
-	if (IS_ENABLED(USE_LIBC)) {
+	if (ENABLED_USE_LIBC) {
 		TC_PRINT(" LIBC");
 	}
 	if (IS_ENABLED(CONFIG_CBPRINTF_COMPLETE)) {
