@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Buildkite Tests purpose. DO NOT MERGE  */
+
 #include <ztest.h>
 #include "test_sched.h"
 
