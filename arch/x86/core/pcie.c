@@ -247,8 +247,8 @@ uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
 				return 0;
 			}
 
-			for (i = irte; i < (irte + n_vector); i++) {
-				vectors[i].arch.irte = i;
+			for (i = 0; i < n_vector; i++, irte++) {
+				vectors[i].arch.irte = irte;
 				vectors[i].arch.remap = true;
 			}
 		}
