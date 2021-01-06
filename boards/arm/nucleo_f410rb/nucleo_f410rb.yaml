@@ -1,0 +1,18 @@
+identifier: nucleo_f410rb
+name: ST Nucleo F410RB
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - counter
+  - gpio
+  - spi
+  - i2c
+ram: 32
+flash: 128
