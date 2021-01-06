@@ -377,9 +377,9 @@ static inline void lp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *p
 /*
  * LLCP Local Procedure Connection Update
  */
-void ull_cp_priv_lp_cu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+void ull_cp_priv_lp_cu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 
-static inline void lp_cu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+static inline void lp_cu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	return ull_cp_priv_lp_cu_rx(conn, ctx, rx);
 }
@@ -391,9 +391,9 @@ static inline void lp_cu_init_proc(struct proc_ctx *ctx)
 	return ull_cp_priv_lp_cu_init_proc(ctx);
 }
 
-void ull_cp_priv_lp_cu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param);
+void ull_cp_priv_lp_cu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 
-static inline void lp_cu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param)
+static inline void lp_cu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	return ull_cp_priv_lp_cu_run(conn, ctx, param);
 }
@@ -426,9 +426,9 @@ static inline void rp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *p
 /*
  * LLCP Remote Procedure Connection Update
  */
-void ull_cp_priv_rp_cu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+void ull_cp_priv_rp_cu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 
-static inline void rp_cu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+static inline void rp_cu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	return ull_cp_priv_rp_cu_rx(conn, ctx, rx);
 }
@@ -440,23 +440,23 @@ static inline void rp_cu_init_proc(struct proc_ctx *ctx)
 	return ull_cp_priv_rp_cu_init_proc(ctx);
 }
 
-void ull_cp_priv_rp_cu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param);
+void ull_cp_priv_rp_cu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 
-static inline void rp_cu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, void *param)
+static inline void rp_cu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	return ull_cp_priv_rp_cu_run(conn, ctx, param);
 }
 
-void ull_cp_priv_rp_conn_param_req_reply(struct ull_cp_conn *conn, struct proc_ctx *ctx);
+void ull_cp_priv_rp_conn_param_req_reply(struct ll_conn *conn, struct proc_ctx *ctx);
 
-static inline void rp_conn_param_req_reply(struct ull_cp_conn *conn, struct proc_ctx *ctx)
+static inline void rp_conn_param_req_reply(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	return ull_cp_priv_rp_conn_param_req_reply(conn, ctx);
 }
 
-void ull_cp_priv_rp_conn_param_req_neg_reply(struct ull_cp_conn *conn, struct proc_ctx *ctx);
+void ull_cp_priv_rp_conn_param_req_neg_reply(struct ll_conn *conn, struct proc_ctx *ctx);
 
-static inline void rp_conn_param_req_neg_reply(struct ull_cp_conn *conn, struct proc_ctx *ctx)
+static inline void rp_conn_param_req_neg_reply(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	return ull_cp_priv_rp_conn_param_req_neg_reply(conn, ctx);
 }
