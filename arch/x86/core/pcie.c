@@ -244,6 +244,13 @@ uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
 				return 0;
 			}
 
+#ifdef CONFIG_INTEL_VTD_ICTL
+			vtd_set_irte_vector(vtd, vectors[i].arch.irte,
+					    vectors[i].arch.vector);
+			vtd_set_irte_irq(vtd, vectors[i].arch.irte,
+					 vectors[i].arch.irq);
+			vtd_set_irte_msi(vtd, vectors[i].arch.irte, true);
+#endif
 			prev_vector = vectors[i].arch.vector;
 		}
 	} else {
