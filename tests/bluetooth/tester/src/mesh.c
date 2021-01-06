@@ -573,7 +573,7 @@ static void net_send(uint8_t *data, uint16_t len)
 	LOG_DBG("ttl 0x%02x dst 0x%04x payload_len %d", ctx.send_ttl,
 		ctx.addr, cmd->payload_len);
 
-	if (!bt_mesh_app_key_get(vnd_app_key_idx)) {
+	if (!bt_mesh_app_key_exists(vnd_app_key_idx)) {
 		(void)bt_mesh_app_key_add(vnd_app_key_idx, net.net_idx,
 					  vnd_app_key);
 		vnd_models[0].keys[0] = vnd_app_key_idx;

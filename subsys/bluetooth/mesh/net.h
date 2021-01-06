@@ -163,17 +163,6 @@ enum {
 	BT_MESH_IVU_TEST,        /* IV Update test mode */
 	BT_MESH_IVU_PENDING,     /* Update blocked by SDU in progress */
 
-	/* pending storage actions, must reside within first 32 flags */
-	BT_MESH_RPL_PENDING,
-	BT_MESH_KEYS_PENDING,
-	BT_MESH_NET_PENDING,
-	BT_MESH_IV_PENDING,
-	BT_MESH_SEQ_PENDING,
-	BT_MESH_HB_PUB_PENDING,
-	BT_MESH_CFG_PENDING,
-	BT_MESH_MOD_PENDING,
-	BT_MESH_VA_PENDING,
-
 	/* Feature flags */
 	BT_MESH_RELAY,
 	BT_MESH_BEACON,
@@ -283,6 +272,11 @@ uint32_t bt_mesh_next_seq(void);
 void bt_mesh_net_init(void);
 void bt_mesh_net_header_parse(struct net_buf_simple *buf,
 			      struct bt_mesh_net_rx *rx);
+void bt_mesh_net_pending_net_store(void);
+void bt_mesh_net_pending_iv_store(void);
+void bt_mesh_net_pending_seq_store(void);
+void bt_mesh_net_clear(void);
+void bt_mesh_net_settings_commit(void);
 
 static inline void send_cb_finalize(const struct bt_mesh_send_cb *cb,
 				    void *cb_data)

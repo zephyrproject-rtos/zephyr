@@ -37,3 +37,4 @@ void bt_mesh_hb_feature_changed(uint16_t features);
 uint8_t bt_mesh_hb_pub_set(struct bt_mesh_hb_pub *hb_pub);
 uint8_t bt_mesh_hb_sub_set(uint16_t src, uint16_t dst, uint32_t period);
 void bt_mesh_hb_sub_reset_count(void);
+void bt_mesh_hb_pub_pending_store(void);

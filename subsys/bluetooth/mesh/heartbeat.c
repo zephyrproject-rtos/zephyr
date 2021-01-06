@@ -18,6 +18,16 @@
 #define LOG_MODULE_NAME bt_mesh_hb
 #include "common/log.h"
 
+/* Heartbeat Publication information for persistent storage. */
+struct hb_pub_val {
+	uint16_t dst;
+	uint8_t  period;
+	uint8_t  ttl;
+	uint16_t feat;
+	uint16_t net_idx:12,
+		 indefinite:1;
+};
+
 static struct bt_mesh_hb_pub pub;
 static struct bt_mesh_hb_sub sub;
 static struct k_delayed_work sub_timer;
@@ -216,7 +226,8 @@ uint8_t bt_mesh_hb_pub_set(struct bt_mesh_hb_pub *new_pub)
 
 		if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
 		    bt_mesh_is_provisioned()) {
-			bt_mesh_store_hb_pub();
+			bt_mesh_settings_store_schedule(
+					BT_MESH_SETTINGS_HB_PUB_PENDING);
 		}
 
 		return STATUS_SUCCESS;
@@ -245,7 +256,8 @@ uint8_t bt_mesh_hb_pub_set(struct bt_mesh_hb_pub *new_pub)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		bt_mesh_store_hb_pub();
+		bt_mesh_settings_store_schedule(
+					BT_MESH_SETTINGS_HB_PUB_PENDING);
 	}
 
 	return STATUS_SUCCESS;
@@ -357,5 +369,66 @@ void bt_mesh_hb_resume(void)
 	if (pub.period && pub.count) {
 		BT_DBG("Starting heartbeat publication");
 		k_delayed_work_submit(&pub_timer, K_NO_WAIT);
+	}
+}
+
+static int hb_pub_set(const char *name, size_t len_rd,
+		      settings_read_cb read_cb, void *cb_arg)
+{
+	struct bt_mesh_hb_pub pub;
+	struct hb_pub_val hb_val;
+	int err;
+
+	err = bt_mesh_settings_set(read_cb, cb_arg, &hb_val, sizeof(hb_val));
+	if (err) {
+		BT_ERR("Failed to set \'hb_val\'");
+		return err;
+	}
+
+	pub.dst = hb_val.dst;
+	pub.period = bt_mesh_hb_pwr2(hb_val.period);
+	pub.ttl = hb_val.ttl;
+	pub.feat = hb_val.feat;
+	pub.net_idx = hb_val.net_idx;
+
+	if (hb_val.indefinite) {
+		pub.count = 0xffff;
+	} else {
+		pub.count = 0U;
+	}
+
+	(void)bt_mesh_hb_pub_set(&pub);
+
+	BT_DBG("Restored heartbeat publication");
+
+	return 0;
+}
+
+BT_MESH_SETTINGS_DEFINE(pub, "HBPub", hb_pub_set);
+
+void bt_mesh_hb_pub_pending_store(void)
+{
+	struct bt_mesh_hb_pub pub;
+	struct hb_pub_val val;
+	int err;
+
+	bt_mesh_hb_pub_get(&pub);
+	if (pub.dst == BT_MESH_ADDR_UNASSIGNED) {
+		err = settings_delete("bt/mesh/HBPub");
+	} else {
+		val.indefinite = (pub.count == 0xffff);
+		val.dst = pub.dst;
+		val.period = bt_mesh_hb_log(pub.period);
+		val.ttl = pub.ttl;
+		val.feat = pub.feat;
+		val.net_idx = pub.net_idx;
+
+		err = settings_save_one("bt/mesh/HBPub", &val, sizeof(val));
+	}
+
+	if (err) {
+		BT_ERR("Failed to store Heartbeat Publication");
+	} else {
+		BT_DBG("Stored Heartbeat Publication");
 	}
 }
