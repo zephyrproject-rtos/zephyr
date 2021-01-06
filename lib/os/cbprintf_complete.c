@@ -79,12 +79,22 @@ enum specifier_cat_enum {
 	SPECIFIER_FP,
 };
 
+#define CHAR_IS_SIGNED (CHAR_MIN != 0)
+#if CHAR_IS_SIGNED
+#define CASE_SINT_CHAR case 'c':
+#define CASE_UINT_CHAR
+#else
+#define CASE_SINT_CHAR
+#define CASE_UINT_CHAR case 'c':
+#endif
+
 /* Case label to identify conversions for signed integral values.  The
  * corresponding argument_value tag is sint and category is
  * SPECIFIER_SINT.
  */
 #define SINT_CONV_CASES				\
 	'd':					\
+	CASE_SINT_CHAR				\
 	case 'i'
 
 /* Case label to identify conversions for signed integral arguments.
@@ -92,8 +102,8 @@ enum specifier_cat_enum {
  * SPECIFIER_UINT.
  */
 #define UINT_CONV_CASES				\
-	'c':					\
-	case 'o':				\
+	'o':					\
+	CASE_UINT_CHAR				\
 	case 'u':				\
 	case 'x':				\
 	case 'X'
@@ -1515,7 +1525,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		}
 		case 'c':
 			bps = buf;
-			buf[0] = value->uint;
+			buf[0] = CHAR_IS_SIGNED ? value->sint : value->uint;
 			bpe = buf + 1;
 			break;
 		case 'd':
