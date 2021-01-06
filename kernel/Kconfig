@@ -855,6 +855,7 @@ config TICKLESS_IDLE_THRESH
 config TICKLESS_KERNEL
 	bool "Tickless kernel"
 	default y if TICKLESS_CAPABLE
+	depends on TICKLESS_CAPABLE
 	help
 	  This option enables a fully event driven kernel. Periodic system
 	  clock interrupt generation would be stopped at all times.
