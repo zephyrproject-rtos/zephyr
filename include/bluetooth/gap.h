@@ -53,6 +53,8 @@ extern "C" {
 #define BT_DATA_MESH_PROV               0x29 /* Mesh Provisioning PDU */
 #define BT_DATA_MESH_MESSAGE            0x2a /* Mesh Networking PDU */
 #define BT_DATA_MESH_BEACON             0x2b /* Mesh Beacon */
+#define BT_DATA_BIG_INFO                0x2c /* BIGInfo */
+#define BT_DATA_BROADCAST_CODE          0x2d /* Broadcast Code */
 
 #define BT_DATA_MANUFACTURER_DATA       0xff /* Manufacturer Specific Data */
 
