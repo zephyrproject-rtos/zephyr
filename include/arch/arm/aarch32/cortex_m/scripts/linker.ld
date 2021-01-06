@@ -71,6 +71,11 @@
 #define CCM_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_ccm))
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay)
+#define ITCM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_itcm))
+#define ITCM_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_itcm))
+#endif
+
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
 #define DTCM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_dtcm))
 #define DTCM_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_dtcm))
@@ -107,6 +112,9 @@ MEMORY
 #endif
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay)
     CCM                   (rw) : ORIGIN = CCM_ADDR, LENGTH = CCM_SIZE
+#endif
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay)
+    ITCM                  (rw) : ORIGIN = ITCM_ADDR, LENGTH = ITCM_SIZE
 #endif
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
     DTCM                  (rw) : ORIGIN = DTCM_ADDR, LENGTH = DTCM_SIZE
@@ -418,6 +426,23 @@ SECTIONS
     __kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 
     GROUP_END(RAMABLE_REGION)
+
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay)
+GROUP_START(ITCM)
+
+	SECTION_PROLOGUE(_ITCM_SECTION_NAME,,SUBALIGN(4))
+	{
+		__itcm_start = .;
+		*(.itcm)
+		*(".itcm.*")
+		__itcm_end = .;
+	} GROUP_LINK_IN(ITCM AT> ROMABLE_REGION)
+
+	__itcm_size = __itcm_end - __itcm_start;
+	__itcm_rom_start = LOADADDR(_ITCM_SECTION_NAME);
+
+GROUP_END(ITCM)
+#endif
 
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
 GROUP_START(DTCM)

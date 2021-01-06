@@ -35,6 +35,10 @@ void z_data_copy(void)
 	(void)memcpy(&__ccm_data_start, &__ccm_data_rom_start,
 		 __ccm_data_end - __ccm_data_start);
 #endif
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay)
+	(void)memcpy(&__itcm_start, &__itcm_rom_start,
+		 (uintptr_t) &__itcm_size);
+#endif
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
 	(void)memcpy(&__dtcm_data_start, &__dtcm_data_rom_start,
 		 __dtcm_data_end - __dtcm_data_start);

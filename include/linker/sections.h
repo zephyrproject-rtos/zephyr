@@ -43,6 +43,8 @@
 #define _CCM_BSS_SECTION_NAME		.ccm_bss
 #define _CCM_NOINIT_SECTION_NAME	.ccm_noinit
 
+#define _ITCM_SECTION_NAME		.itcm
+
 #define _DTCM_DATA_SECTION_NAME	.dtcm_data
 #define _DTCM_BSS_SECTION_NAME		.dtcm_bss
 #define _DTCM_NOINIT_SECTION_NAME	.dtcm_noinit
