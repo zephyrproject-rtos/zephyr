@@ -50,7 +50,7 @@ void main(void)
 
 				sensor_channel_get(mcp,
 					SENSOR_CHAN_AMBIENT_TEMP, &ttemp);
-#ifdef CONFIG_NEWLIB_LIBC_FLOAT_PRINTF
+#ifdef CONFIG_CBPRINTF_FP_SUPPORT
 				printf("Temperature: %.4f C\n",
 					sensor_value_to_double(&ttemp));
 #else

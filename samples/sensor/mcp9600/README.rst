@@ -27,7 +27,8 @@ available at `MCP9600 Datasheet`_
 Sample Output
 =============
 To check output of this sample , any serial console program can be used.
-This example uses screen on OS X with a frdm_kw41z development board.
+This example uses screen on OS X with a frdm_kw41z development board. On
+other OS's this is usually ACM0.
 
 .. code-block:: console
 
@@ -46,4 +47,4 @@ This example uses screen on OS X with a frdm_kw41z development board.
         Temperature: 20.8750 C
         Temperature: 20.6250 C
 
-.. _`MCP9600 Datasheet`: https://ae-bst.resource.bosch.com/media/_tech/media/datasheets/BST-BME280-DS002.pdf
+.. _`MCP9600 Datasheet`: https://www.microchip.com/wwwproducts/en/MCP9600
