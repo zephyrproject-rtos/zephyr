@@ -357,7 +357,7 @@ void bt_mesh_cdb_app_key_del(struct bt_mesh_cdb_app_key *key, bool store)
 		bt_mesh_clear_cdb_app_key(key);
 	}
 
-	key->net_idx = BT_MESH_ADDR_UNASSIGNED;
+	key->net_idx = BT_MESH_KEY_UNUSED;
 	memset(key->keys, 0, sizeof(key->keys));
 }
 
