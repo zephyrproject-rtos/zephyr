@@ -230,7 +230,7 @@ def getHashes(filePath):
             hSHA1.update(buf)
             hSHA256.update(buf)
             hMD5.update(buf)
-    except FileNotFoundError:
+    except:
         return None
 
     return (hSHA1.hexdigest(), hSHA256.hexdigest(), hMD5.hexdigest())
