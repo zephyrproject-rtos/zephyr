@@ -140,8 +140,8 @@ static int tcp_endpoint_set(union tcp_endpoint *ep, struct net_pkt *pkt,
 
 			memset(ep, 0, sizeof(*ep));
 
-			ep->sin.sin_port = src == TCP_EP_SRC ? th->th_sport :
-							       th->th_dport;
+			ep->sin.sin_port = src == TCP_EP_SRC ? th_sport(th) :
+							       th_dport(th);
 			net_ipaddr_copy(&ep->sin.sin_addr,
 					src == TCP_EP_SRC ?
 							&ip->src : &ip->dst);
@@ -164,8 +164,8 @@ static int tcp_endpoint_set(union tcp_endpoint *ep, struct net_pkt *pkt,
 
 			memset(ep, 0, sizeof(*ep));
 
-			ep->sin6.sin6_port = src == TCP_EP_SRC ? th->th_sport :
-								 th->th_dport;
+			ep->sin6.sin6_port = src == TCP_EP_SRC ? th_sport(th) :
+								 th_dport(th);
 			net_ipaddr_copy(&ep->sin6.sin6_addr,
 					src == TCP_EP_SRC ?
 							&ip->src : &ip->dst);
@@ -221,7 +221,7 @@ static const char *tcp_flags(uint8_t flags)
 static size_t tcp_data_len(struct net_pkt *pkt)
 {
 	struct tcphdr *th = th_get(pkt);
-	size_t tcp_options_len = (th->th_off - 5) * 4;
+	size_t tcp_options_len = (th_off(th) - 5) * 4;
 	int len = net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) -
 		net_pkt_ip_opts_len(pkt) - sizeof(*th) - tcp_options_len;
 
@@ -237,16 +237,16 @@ static const char *tcp_th(struct net_pkt *pkt)
 
 	buf[0] = '\0';
 
-	if (th->th_off < 5) {
+	if (th_off(th) < 5) {
 		len += snprintk(buf + len, BUF_SIZE - len,
-				"bogus th_off: %hu", (uint16_t)th->th_off);
+				"bogus th_off: %hu", (uint16_t)th_off(th));
 		goto end;
 	}
 
 	len += snprintk(buf + len, BUF_SIZE - len,
-			"%s Seq=%u", tcp_flags(th->th_flags), th_seq(th));
+			"%s Seq=%u", tcp_flags(th_flags(th)), th_seq(th));
 
-	if (th->th_flags & ACK) {
+	if (th_flags(th) & ACK) {
 		len += snprintk(buf + len, BUF_SIZE - len,
 				" Ack=%u", th_ack(th));
 	}
@@ -689,16 +689,15 @@ static int tcp_header_add(struct tcp *conn, struct net_pkt *pkt, uint8_t flags,
 
 	memset(th, 0, sizeof(struct tcphdr));
 
-	th->th_sport = conn->src.sin.sin_port;
-	th->th_dport = conn->dst.sin.sin_port;
-
+	UNALIGNED_PUT(conn->src.sin.sin_port, &th->th_sport);
+	UNALIGNED_PUT(conn->dst.sin.sin_port, &th->th_dport);
 	th->th_off = 5;
-	th->th_flags = flags;
-	th->th_win = htons(conn->recv_win);
-	th->th_seq = htonl(seq);
+	UNALIGNED_PUT(flags, &th->th_flags);
+	UNALIGNED_PUT(htons(conn->recv_win), &th->th_win);
+	UNALIGNED_PUT(htonl(seq), &th->th_seq);
 
 	if (ACK & flags) {
-		th->th_ack = htonl(conn->ack);
+		UNALIGNED_PUT(htonl(conn->ack), &th->th_ack);
 	}
 
 	return net_pkt_set_data(pkt, &tcp_access);
@@ -1136,7 +1135,7 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 
 	th = th_get(pkt);
 
-	if (th->th_flags & SYN && !(th->th_flags & ACK)) {
+	if (th_flags(th) & SYN && !(th_flags(th) & ACK)) {
 		struct tcp *conn_old = ((struct net_context *)user_data)->tcp;
 
 		conn = tcp_conn_new(pkt);
@@ -1266,7 +1265,7 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 	struct tcphdr *th = pkt ? th_get(pkt) : NULL;
 	uint8_t next = 0, fl = 0;
 	bool do_close = false;
-	size_t tcp_options_len = th ? (th->th_off - 5) * 4 : 0;
+	size_t tcp_options_len = th ? (th_off(th) - 5) * 4 : 0;
 	struct net_conn *conn_handler = NULL;
 	struct net_pkt *recv_pkt;
 	void *recv_user_data;
@@ -1276,14 +1275,14 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 
 	if (th) {
 		/* Currently we ignore ECN and CWR flags */
-		fl = th->th_flags & ~(ECN | CWR);
+		fl = th_flags(th) & ~(ECN | CWR);
 	}
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
 	NET_DBG("%s", log_strdup(tcp_conn_state(conn, pkt)));
 
-	if (th && th->th_off < 5) {
+	if (th && th_off(th) < 5) {
 		tcp_out(conn, RST);
 		conn_state(conn, TCP_CLOSED);
 		goto next_state;
@@ -1313,7 +1312,7 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 	if (th) {
 		size_t max_win;
 
-		conn->send_win = ntohs(th->th_win);
+		conn->send_win = ntohs(th_win(th));
 
 #if IS_ENABLED(CONFIG_NET_TCP_MAX_SEND_WINDOW_SIZE)
 		if (CONFIG_NET_TCP_MAX_SEND_WINDOW_SIZE) {
@@ -2009,7 +2008,7 @@ static enum net_verdict tcp_input(struct net_conn *net_conn,
 	if (th) {
 		struct tcp *conn = tcp_conn_search(pkt);
 
-		if (conn == NULL && SYN == th->th_flags) {
+		if (conn == NULL && SYN == th_flags(th)) {
 			struct net_context *context =
 				tcp_calloc(1, sizeof(struct net_context));
 			net_tcp_get(context);
