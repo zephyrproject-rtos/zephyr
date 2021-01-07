@@ -11,8 +11,4 @@ config SOC
 config NUM_IRQS
 	default 63
 
-config DMAMUX_STM32
-	default y
-	depends on DMA_STM32
-
 endif # SOC_STM32WB55XX

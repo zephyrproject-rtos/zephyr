@@ -4,6 +4,10 @@
 # Copyright (c) 2019 Song Qiang <songqiang1304521@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
+DT_COMPAT_ST_STM32_DMA_V1 := st,stm32-dma-v1
+DT_COMPAT_ST_STM32_DMA_V2 := st,stm32-dma-v2
+DT_COMPAT_ST_STM32_DMAMUX := st,stm32-dmamux
+
 config DMA_STM32
 	bool "Enable STM32 DMA driver"
 	select USE_STM32_LL_DMA
@@ -15,22 +19,22 @@ if DMA_STM32
 
 config DMA_STM32_V1
 	bool
-	depends on SOC_SERIES_STM32F2X || SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X
+	default y if $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_DMA_V1))
 	help
-	  Enable DMA support on F2/F4/F7 series SoCs.
+	  Enable DMA V1 support.
 
 config DMA_STM32_V2
 	bool
-	depends on SOC_SERIES_STM32F0X || SOC_SERIES_STM32F1X || SOC_SERIES_STM32F3X || SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32WBX
+	default y if $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_DMA_V2))
 	help
-	  Enable DMA support on F0/F1/F3/L0/L4/WB series SoCs.
+	  Enable DMA V2 support.
 
 config DMAMUX_STM32
 	bool
 	depends on DMA_STM32_V2
-	depends on SOC_STM32L4R5XX || SOC_SERIES_STM32WBX
+	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_DMAMUX))
 	help
-	  Enable DMAMUX support on L4R/WB series SoCs.
+	  Enable DMAMUX support.
 
 config DMA_STM32_SHARED_IRQS
 	bool
