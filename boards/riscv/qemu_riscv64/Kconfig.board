@@ -3,6 +3,6 @@
 
 config BOARD_QEMU_RISCV64
 	bool "QEMU RISCV64 target"
-	depends on SOC_RISCV_SIFIVE_FREEDOM
+	depends on SOC_RISCV_VIRT
 	select QEMU_TARGET
 	select 64BIT
