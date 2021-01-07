@@ -1,6 +1,6 @@
 sample:
-  name: nrfx usage sample
+  name: nrfx use example
 tests:
-  sample.board.nrf91.nrfx:
-    platform_allow: nrf9160dk_nrf9160
+  sample.boards.nrf.nrfx:
+    platform_allow: nrf52840dk_nrf52840 nrf9160dk_nrf9160
     tags: board

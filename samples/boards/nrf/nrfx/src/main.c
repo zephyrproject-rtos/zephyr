@@ -7,7 +7,12 @@
 #include <zephyr.h>
 
 #include <nrfx_gpiote.h>
+#include <helpers/nrfx_gppi.h>
+#if defined(DPPI_PRESENT)
 #include <nrfx_dppi.h>
+#else
+#include <nrfx_ppi.h>
+#endif
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(nrfx_sample, LOG_LEVEL_INF);
@@ -77,35 +82,39 @@ void main(void)
 
 	LOG_INF("nrfx_gpiote initialized");
 
-	/* Initialize DPPI channel */
+	/* Allocate a (D)PPI channel. */
+#if defined(DPPI_PRESENT)
 	uint8_t channel;
-
 	err = nrfx_dppi_channel_alloc(&channel);
+#else
+	nrf_ppi_channel_t channel;
+	err = nrfx_ppi_channel_alloc(&channel);
+#endif
 	if (err != NRFX_SUCCESS) {
-		LOG_ERR("nrfx_dppi_channel_alloc error: %08x", err);
+		LOG_ERR("(D)PPI channel allocation error: %08x", err);
 		return;
 	}
 
-	/* Configure input pin to publish to the DPPI channel and output pin to
-	 * receive events from the DPPI channel. Note that output pin is
-	 * subscribed using the OUT task. This means that each time the button
-	 * is pressed, the LED pin will be toggled.
+	/* Configure endpoints of the channel so that the input pin event is
+	 * connected with the output pin OUT task. This means that each time
+	 * the button is pressed, the LED pin will be toggled.
 	 */
-	nrf_gpiote_publish_set(
-		NRF_GPIOTE,
-		nrfx_gpiote_in_event_get(INPUT_PIN),
-		channel);
-	nrf_gpiote_subscribe_set(
-		NRF_GPIOTE,
-		nrfx_gpiote_out_task_get(OUTPUT_PIN),
-		channel);
+	nrfx_gppi_channel_endpoints_setup(channel,
+		nrf_gpiote_event_address_get(NRF_GPIOTE,
+			nrfx_gpiote_in_event_get(INPUT_PIN)),
+		nrf_gpiote_task_address_get(NRF_GPIOTE,
+			nrfx_gpiote_in_event_get(OUTPUT_PIN)));
 
-	/* Enable DPPI channel */
+	/* Enable (D)PPI channel. */
+#if defined(DPPI_PRESENT)
 	err = nrfx_dppi_channel_enable(channel);
+#else
+	err = nrfx_ppi_channel_enable(channel);
+#endif
 	if (err != NRFX_SUCCESS) {
-		LOG_ERR("nrfx_dppi_channel_enable error: %08x", err);
+		LOG_ERR("Failed to enable (D)PPI channel, error: %08x", err);
 		return;
 	}
 
-	LOG_INF("DPPI configured, leaving main()");
+	LOG_INF("(D)PPI configured, leaving main()");
 }
