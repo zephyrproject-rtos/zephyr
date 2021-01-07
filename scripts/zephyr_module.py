@@ -33,6 +33,9 @@ METADATA_SCHEMA = '''
 # the build system.
 type: map
 mapping:
+  name:
+    required: false
+    type: str
   build:
     required: false
     type: map
@@ -124,11 +127,13 @@ def process_module(module):
             sys.exit('ERROR: Malformed "build" section in file: {}\n{}'
                      .format(module_yml.as_posix(), e))
 
+        meta['name'] = meta.get('name', module_path.name)
         return meta
 
     if Path(module_path.joinpath('zephyr/CMakeLists.txt')).is_file() and \
        Path(module_path.joinpath('zephyr/Kconfig')).is_file():
-        return {'build': {'cmake': 'zephyr', 'kconfig': 'zephyr/Kconfig'}}
+        return {'name': module_path.name,
+                'build': {'cmake': 'zephyr', 'kconfig': 'zephyr/Kconfig'}}
 
     return None
 
@@ -155,12 +160,12 @@ def process_cmake(module, meta):
     cmake_file = os.path.join(cmake_path, 'CMakeLists.txt')
     if os.path.isfile(cmake_file):
         return('\"{}\":\"{}\":\"{}\"\n'
-               .format(module_path.name,
+               .format(meta['name'],
                        module_path.as_posix(),
                        Path(cmake_path).resolve().as_posix()))
     else:
         return('\"{}\":\"{}\":\"\"\n'
-               .format(module_path.name,
+               .format(meta['name'],
                        module_path.as_posix()))
 
 
@@ -315,7 +320,7 @@ def main():
     while start_modules:
         node = start_modules.pop(0)
         sorted_modules.append(node)
-        node_name = PurePath(node.project).name
+        node_name = node.meta['name']
         to_remove = []
         for module in dep_modules:
             if node_name in module.depends:
