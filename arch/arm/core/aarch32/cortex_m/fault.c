@@ -230,9 +230,10 @@ static uint32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
 		 * Software must follow this sequence because another higher
 		 * priority exception might change the MMFAR value.
 		 */
-		mmfar = SCB->MMFAR;
+		uint32_t temp = SCB->MMFAR;
 
 		if ((SCB->CFSR & SCB_CFSR_MMARVALID_Msk) != 0) {
+			mmfar = temp;
 			PR_EXC("  MMFAR Address: 0x%x", mmfar);
 			if (from_hard_fault) {
 				/* clear SCB_MMAR[VALID] to reset */
@@ -248,7 +249,7 @@ static uint32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
 		PR_FAULT_INFO(
 			"  Floating-point lazy state preservation error");
 	}
-#endif /* !defined(CONFIG_ARMV7_M_ARMV8_M_FP) */
+#endif /* CONFIG_ARMV7_M_ARMV8_M_FP */
 
 	/* When stack protection is enabled, we need to assess
 	 * if the memory violation error is a stack corruption.
