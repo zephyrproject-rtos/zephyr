@@ -1132,6 +1132,11 @@ void ll_rx_dequeue(void)
 		/* fall through */
 	case NODE_RX_TYPE_SYNC:
 	case NODE_RX_TYPE_SYNC_LOST:
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+		/* fall through */
+	case NODE_RX_TYPE_SYNC_ISO:
+	case NODE_RX_TYPE_SYNC_ISO_LOST:
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_OBSERVER */
 
@@ -1439,6 +1444,32 @@ void ll_rx_mem_release(void **node_rx)
 		}
 		break;
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+		case NODE_RX_TYPE_SYNC_ISO:
+		{
+			struct node_rx_sync_iso *se =
+				(void *)((struct node_rx_pdu *)rx_free)->pdu;
+
+			if (!se->status) {
+				mem_release(rx_free, &mem_pdu_rx.free);
+
+				break;
+			}
+		}
+		/* Pass through */
+
+		case NODE_RX_TYPE_SYNC_ISO_LOST:
+		{
+			struct ll_sync_iso_set *sync_iso =
+				(void *)rx_free->rx_ftr.param;
+
+			sync_iso->timeout_reload = 0U;
+
+			ull_sync_iso_release(sync_iso);
+		}
+		break;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 #if defined(CONFIG_BT_CONN)
