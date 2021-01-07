@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(edac_ibecc, CONFIG_EDAC_LOG_LEVEL);
 struct ibecc_data {
 	mem_addr_t mchbar;
 	edac_notify_callback_f cb;
+	uint32_t error_type;
 
 	/* Error count */
 	unsigned int errors_cor;
@@ -202,9 +203,39 @@ static uint64_t inject_get_param2(const struct device *dev)
 				       IBECC_INJ_ADDR_MASK));
 }
 
-static int inject_ctrl_set(const struct device *dev, uint32_t ctrl)
+static int inject_set_error_type(const struct device *dev,
+				 uint32_t error_type)
 {
 	struct ibecc_data *data = dev->data;
+
+	data->error_type = error_type;
+
+	return 0;
+}
+
+static uint32_t inject_get_error_type(const struct device *dev)
+{
+	struct ibecc_data *data = dev->data;
+
+	return data->error_type;
+}
+
+static int inject_error_trigger(const struct device *dev)
+{
+	struct ibecc_data *data = dev->data;
+	uint32_t ctrl = 0;
+
+	switch (data->error_type) {
+	case EDAC_ERROR_TYPE_DRAM_COR:
+		ctrl |= INJ_CTRL_COR;
+		break;
+	case EDAC_ERROR_TYPE_DRAM_UC:
+		ctrl |= INJ_CTRL_UC;
+		break;
+	default:
+		/* This would clear error injection */
+		break;
+	}
 
 	sys_write32(ctrl, (mem_addr_t)((uint8_t *)data->mchbar +
 				       IBECC_INJ_ADDR_CTRL));
@@ -288,7 +319,9 @@ static const struct edac_driver_api api = {
 	.inject_get_param1 = inject_get_param1,
 	.inject_set_param2 = inject_set_param2,
 	.inject_get_param2 = inject_get_param2,
-	.inject_ctrl_set = inject_ctrl_set,
+	.inject_set_error_type = inject_set_error_type,
+	.inject_get_error_type = inject_get_error_type,
+	.inject_error_trigger = inject_error_trigger,
 #endif /* CONFIG_EDAC_ERROR_INJECT */
 
 	/* Error reporting & clearing functions */

@@ -94,6 +94,8 @@
 #define INJ_ADDR_BASE_MASK_MASK	GENMASK(38, 6)
 
 #define IBECC_INJ_ADDR_CTRL	0xdd98
+#define INJ_CTRL_COR		0x1
+#define INJ_CTRL_UC		0x5
 
 /* Error Logging Registers */
 

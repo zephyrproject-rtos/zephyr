@@ -172,7 +172,9 @@ static int cmd_inject_ctrl(const struct shell *shell, size_t argc, char **argv)
 	shell_fprintf(shell, SHELL_NORMAL, "Set injection control to: 0x%x\n",
 		      value);
 
-	edac_inject_ctrl_set(dev, value);
+	edac_inject_set_error_type(dev, value);
+
+	edac_inject_error_trigger(dev);
 
 	return 0;
 }

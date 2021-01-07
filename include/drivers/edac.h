@@ -12,6 +12,9 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_EDAC_H_
 #define ZEPHYR_INCLUDE_DRIVERS_EDAC_H_
 
+#define EDAC_ERROR_TYPE_DRAM_COR	BIT(3)
+#define EDAC_ERROR_TYPE_DRAM_UC		BIT(4)
+
 #include <sys/types.h>
 
 typedef int (*edac_api_inject_set_param1_f)(const struct device *dev,
@@ -22,8 +25,11 @@ typedef int (*edac_api_inject_set_param2_f)(const struct device *dev,
 					     uint64_t mask);
 typedef uint64_t (*edac_api_inject_get_param2_f)(const struct device *dev);
 
-typedef int (*edac_api_inject_ctrl_set_f)(const struct device *dev,
-					  uint32_t ctrl);
+typedef int (*edac_api_inject_set_error_type_f)(const struct device *dev,
+						uint32_t error_type);
+typedef uint32_t (*edac_api_inject_get_error_type_f)(const struct device *dev);
+
+typedef int (*edac_api_inject_error_trigger_f)(const struct device *dev);
 
 typedef uint64_t (*edac_api_ecc_error_log_get_f)(const struct device *dev);
 typedef void (*edac_api_ecc_error_log_clear_f)(const struct device *dev);
@@ -46,7 +52,9 @@ __subsystem struct edac_driver_api {
 	edac_api_inject_get_param1_f inject_get_param1;
 	edac_api_inject_set_param2_f inject_set_param2;
 	edac_api_inject_get_param2_f inject_get_param2;
-	edac_api_inject_ctrl_set_f inject_ctrl_set;
+	edac_api_inject_get_error_type_f inject_get_error_type;
+	edac_api_inject_set_error_type_f inject_set_error_type;
+	edac_api_inject_error_trigger_f inject_error_trigger;
 #endif /* CONFIG_EDAC_ERROR_INJECT */
 
 	/* Error Logging  API */
@@ -134,6 +142,40 @@ static inline uint64_t edac_inject_get_param2(const struct device *dev)
 }
 
 /**
+ * @brief Set error type value
+ *
+ * Set the value of error type to be injected
+ *
+ * @param dev Pointer to the device structure
+ * @param error_type Error type value
+ * @return 0 on success, error code otherwise
+ */
+static inline int edac_inject_set_error_type(const struct device *dev,
+					     uint32_t error_type)
+{
+	const struct edac_driver_api *api =
+		(const struct edac_driver_api *)dev->api;
+
+	return api->inject_set_error_type(dev, error_type);
+}
+
+/**
+ * @brief Get error type value
+ *
+ * Get the value of error type to be injected
+ *
+ * @param dev Pointer to the device structure
+ * @return error_type Error type value
+ */
+static inline uint32_t edac_inject_get_error_type(const struct device *dev)
+{
+	const struct edac_driver_api *api =
+		(const struct edac_driver_api *)dev->api;
+
+	return api->inject_get_error_type(dev);
+}
+
+/**
  * @brief Set injection control
  *
  * Set injection control register to the value provided.
@@ -142,12 +184,12 @@ static inline uint64_t edac_inject_get_param2(const struct device *dev)
  * @param addr Injection control value
  * @return 0 on success, error code otherwise
  */
-static inline int edac_inject_ctrl_set(const struct device *dev, uint32_t ctrl)
+static inline int edac_inject_error_trigger(const struct device *dev)
 {
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	return api->inject_ctrl_set(dev, ctrl);
+	return api->inject_error_trigger(dev);
 }
 
 #endif /* CONFIG_EDAC_ERROR_INJECT */
