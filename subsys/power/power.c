@@ -68,6 +68,22 @@ static void pm_log_debug_info(enum pm_state state) { }
 void pm_dump_debug_info(void) { }
 #endif
 
+__weak void pm_power_state_exit_post_ops(enum pm_state state)
+{
+	/*
+	 * This function is supposed to be overridden to do SoC or
+	 * architecture specific post ops after sleep state exits.
+	 */
+}
+
+__weak void pm_power_state_set(enum pm_state state)
+{
+	/*
+	 * This function is supposed to be overridden to do SoC or
+	 * architecture specific post ops after sleep state exits.
+	 */
+}
+
 void pm_power_state_force(enum pm_state state)
 {
 	__ASSERT(state <  PM_STATES_LEN,
