@@ -102,7 +102,7 @@ def show_latest():
 def update(git_tree, is_weekly=False):
     g = Git(git_tree)
     today = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')
-    version = g.describe()
+    version = g.describe("--abbrev=12")
     published = False
     data = get_versions()
 
