@@ -277,9 +277,15 @@ def main():
         # if user is providing a specific modules list.
         from west.manifest import Manifest
         from west.util import WestNotFound
+        from west.version import __version__ as WestVersion
+        from packaging import version
         try:
             manifest = Manifest.from_file()
-            projects = [p.posixpath for p in manifest.get_projects([])]
+            if version.parse(WestVersion) >= version.parse('0.9.0'):
+                projects = [p.posixpath for p in manifest.get_projects([])
+                            if manifest.is_active(p)]
+            else:
+                projects = [p.posixpath for p in manifest.get_projects([])]
         except WestNotFound:
             # Only accept WestNotFound, meaning we are not in a west
             # workspace. Such setup is allowed, as west may be installed
