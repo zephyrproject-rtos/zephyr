@@ -59,4 +59,6 @@ source "drivers/pwm/Kconfig.npcx"
 
 source "drivers/pwm/Kconfig.xlnx"
 
+source "drivers/pwm/Kconfig.mcux_pwt"
+
 endif # PWM

@@ -50,6 +50,10 @@ config PWM_MCUX_FTM
 	default y
 	depends on PWM
 
+config PWM_MCUX_PWT
+	default y
+	depends on PWM_CAPTURE
+
 config PINMUX_MCUX
 	default y
 	depends on PINMUX
