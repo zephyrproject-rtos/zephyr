@@ -125,7 +125,10 @@ static void test_ibecc_error_inject_test(void)
 	ret = edac_inject_set_param2(dev, TEST_ADDRESS_MASK);
 	zassert_equal(ret, 0, "Error setting inject address mask");
 
-	ret = edac_inject_ctrl_set(dev, 0x1);
+	ret = edac_inject_set_error_type(dev, EDAC_ERROR_TYPE_DRAM_COR);
+	zassert_equal(ret, 0, "Error setting inject error type");
+
+	ret = edac_inject_error_trigger(dev);
 	zassert_equal(ret, 0, "Error setting ctrl");
 
 	device_map((mm_reg_t *)&test_addr, TEST_ADDRESS, 0x100,
