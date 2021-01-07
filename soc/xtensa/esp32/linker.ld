@@ -57,6 +57,9 @@ PROVIDE ( esp32_rom_g_ticks_per_us_app = g_ticks_per_us_app );
 PROVIDE ( esp32_rom_g_ticks_per_us_pro = g_ticks_per_us_app );
 PROVIDE ( esp32_rom_ets_delay_us = ets_delay_us );
 
+/* __udivdi3 is exported using assignment, which declares strong symbols */
+__udivdi3 = 0x4000cff8;
+
 MEMORY
 {
   iram0_0_seg(RX): org = 0x40080000, len = 0x20000
@@ -236,10 +239,33 @@ _net_buf_pool_list = _esp_net_buf_pool_list;
 #pragma pop_macro("Z_ITERABLE_SECTION_RAM_GC_ALLOWED")
 #pragma pop_macro("Z_ITERABLE_SECTION_RAM")
 
-  SECTION_PROLOGUE(_RODATA_SECTION_NAME,,ALIGN(20))
+  .dram0.data :
+  {
+    _data_start = ABSOLUTE(.);
+    *(.data)
+    *(.data.*)
+    *(.gnu.linkonce.d.*)
+    *(.data1)
+    *(.sdata)
+    *(.sdata.*)
+    *(.gnu.linkonce.s.*)
+    *(.sdata2)
+    *(.sdata2.*)
+    *(.gnu.linkonce.s2.*)
+    /* rodata for panic handler(libarch__xtensa__core.a) and all
+     * dependent functions should be placed in DRAM to avoid issue
+     * when flash cache is disabled */
+    *libarch__xtensa__core.a:(.rodata .rodata.*)
+    *libkernel.a:fatal.*(.rodata .rodata.*)
+    KEEP(*(.jcr))
+    *(.dram1 .dram1.*)
+    _data_end = ABSOLUTE(.);
+    . = ALIGN(4);
+  } GROUP_LINK_IN(RAMABLE_REGION)
+
+ SECTION_PROLOGUE(_RODATA_SECTION_NAME,,ALIGN(20))
   {
     _rodata_start = ABSOLUTE(.);
-
 #if defined(CONFIG_NET_SOCKETS)
     . = ALIGN(4);
     Z_LINK_ITERABLE(net_socket_register);
@@ -334,12 +360,17 @@ __shell_root_cmds_end = __esp_shell_root_cmds_end;
     *libsubsys__net__lib__config.a:(.literal .text .literal.* .text.*)
     *libsubsys__net__ip.a:(.literal .text .literal.* .text.*)
     *libsubsys__net.a:(.literal .text .literal.* .text.*)
+    *libarch__xtensa__core.a:(.literal .text .literal.* .text.*)
     *libkernel.a:(.literal .text .literal.* .text.*)
     *libsoc.a:rtc_*.*(.literal .text .literal.* .text.*)
     *libsoc.a:cpu_util.*(.literal .text .literal.* .text.*)
     *libhal.a:(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
-    *libspi_flash.a:spi_flash_rom_patch.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:spi_flash_rom_patch.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:log_noos.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:xtensa_sys_timer.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:log_core.*(.literal .text .literal.* .text.*)
+    *liblib__libc__minimal.a:string.*(.literal .text .literal.* .text.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
     *libnet80211.a:( .wifi0iram  .wifi0iram.*)
     *libpp.a:( .wifi0iram  .wifi0iram.*)
@@ -347,25 +378,6 @@ __shell_root_cmds_end = __esp_shell_root_cmds_end;
     *libpp.a:( .wifirxiram  .wifirxiram.*)
     _iram_text_end = ABSOLUTE(.);
   } GROUP_LINK_IN(IRAM_REGION)
-
-  .dram0.data :
-  {
-    _data_start = ABSOLUTE(.);
-    *(.data)
-    *(.data.*)
-    *(.gnu.linkonce.d.*)
-    *(.data1)
-    *(.sdata)
-    *(.sdata.*)
-    *(.gnu.linkonce.s.*)
-    *(.sdata2)
-    *(.sdata2.*)
-    *(.gnu.linkonce.s2.*)
-    KEEP(*(.jcr))
-    *(.dram1 .dram1.*)
-    _data_end = ABSOLUTE(.);
-    . = ALIGN(4);
-  } GROUP_LINK_IN(RAMABLE_REGION)
 
   .flash.text :
   {
