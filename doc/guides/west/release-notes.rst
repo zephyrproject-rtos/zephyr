@@ -1,6 +1,71 @@
 West Release Notes
 ##################
 
+v0.9.0
+******
+
+.. warning::
+
+   The ``west config`` fix described below comes at a cost: any comments or
+   other manual edits in configuration files will be removed when setting a
+   configuration option via that command or the ``west.configuration`` API.
+
+New features:
+
+- West manifests now support :ref:`west-manifest-submodules`. This allows you
+  to clone `Git submodules
+  <https://git-scm.com/book/en/v2/Git-Tools-Submodules>`_ into a west project
+  repository in addition to the project repository itself.
+
+- West manifests now support :ref:`west-manifest-groups`. Project groups can be
+  enabled and disabled to determine what projects are "active", and therefore
+  will be acted upon by the following commands: ``west update``, ``west list``,
+  ``west diff``, ``west status``, ``west forall``.
+
+- ``west update`` no longer updates inactive projects by default. It now
+  supports a ``--group-filter`` option which allows for one-time modifications
+  to the set of enabled and disabled project groups.
+
+- Running ``west list``, ``west diff``, ``west status``, or ``west forall``
+  with no arguments does not print information for inactive projects by
+  default. If the user specifies a list of projects explicitly at the command
+  line, output for them is included regardless of whether they are active.
+
+  These commands also now support ``--all`` arguments to include all
+  projects, even inactive ones.
+
+- ``west list`` now supports a ``{groups}`` format string key in its
+  ``--format`` argument.
+
+Bug fixes:
+
+- The ``west config`` command and ``west.configuration`` API did not correctly
+  store some configuration values, such as strings which contain commas. This
+  has been fixed; see `commit 36f3f91e
+  <https://github.com/zephyrproject-rtos/west/commit/36f3f91e270782fb05f6da13800f433a9c48f130>`_
+  for details.
+
+- A manifest file with an empty ``manifest: self: path:`` value is invalid, but
+  west used to let it pass silently. West now rejects such manifests.
+
+- A bug affecting the behavior of the ``west init -l .`` command was fixed; see
+  `issue #435 <https://github.com/zephyrproject-rtos/west/issues/435>`_.
+
+:ref:`API <west-apis>` changes:
+
+- added ``west.manifest.Manifest.is_active()``
+- added ``west.manifest.Manifest.group_filter``
+- added ``submodules`` attribute to ``west.manifest.Project``, which has
+  newly added type ``west.manifest.Submodule``
+
+Other changes:
+
+- The :ref:`west-manifest-import` feature now supports the terms ``allowlist``
+  and ``blocklist`` instead of ``whitelist`` and ``blacklist``, respectively.
+
+  The old terms are still supported for compatibility, but the documentation
+  has been updated to use the new ones exclusively.
+
 v0.8.0
 ******
 
