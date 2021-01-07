@@ -127,7 +127,7 @@
 		gpio: gpio@4000a400 {
 			compatible = "silabs,gecko-gpio";
 			reg = <0x4000a400 0xc00>;
-			interrupts = <9 2 17 2>;
+			interrupts = <10 2 18 2>;
 			interrupt-names = "GPIO_EVEN", "GPIO_ODD";
 			label = "GPIO";
 
