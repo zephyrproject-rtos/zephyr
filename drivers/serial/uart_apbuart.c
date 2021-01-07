@@ -304,6 +304,8 @@ static int apbuart_config_get(const struct device *dev, struct uart_config *cfg)
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void apbuart_isr(const struct device *dev);
+
 static int apbuart_fifo_fill(const struct device *dev, const uint8_t *tx_data,
 			     int size)
 {
@@ -333,8 +335,23 @@ static int apbuart_fifo_read(const struct device *dev, uint8_t *rx_data,
 static void apbuart_irq_tx_enable(const struct device *dev)
 {
 	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+	unsigned int key;
 
 	regs->ctrl |= APBUART_CTRL_TI;
+	/*
+	 * The "TI" interrupt is an edge interrupt.  It fires each time the TX
+	 * holding register (or FIFO if implemented) moves from non-empty to
+	 * empty.
+	 *
+	 * When the APBUART is implemented _without_ FIFO, the TI interrupt is
+	 * the only TX interrupt we have. When the APBUART is implemented
+	 * _with_ FIFO, the TI will fire on each TX byte.
+	 */
+	regs->ctrl |= APBUART_CTRL_TI;
+	/* Fire the first "TI" edge interrupt to get things going. */
+	key = irq_lock();
+	apbuart_isr(dev);
+	irq_unlock(key);
 }
 
 static void apbuart_irq_tx_disable(const struct device *dev)
