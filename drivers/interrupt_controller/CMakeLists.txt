@@ -28,3 +28,7 @@ zephyr_library_sources_ifdef(CONFIG_INTC_ESP32C3            intc_esp32c3.c)
 zephyr_library_sources_ifdef(CONFIG_SWERV_PIC               intc_swerv_pic.c)
 zephyr_library_sources_ifdef(CONFIG_VEXRISCV_LITEX_IRQ      intc_vexriscv_litex.c)
 zephyr_library_sources_ifdef(CONFIG_NUCLEI_ECLIC            intc_nuclei_eclic.c)
+
+if(CONFIG_INTEL_VTD_ICTL)
+  zephyr_library_include_directories(${ZEPHYR_BASE}/arch/x86/include)
+endif()
