@@ -163,6 +163,18 @@
 			label = "WDT_0";
 		};
 
+		pwt: pwt@40056000 {
+			compatible = "nxp,kinetis-pwt";
+			reg = <0x40056000 0x1000>;
+			interrupts = <29 0>;
+			clocks = <&scg KINETIS_SCG_BUS_CLK>;
+			prescaler = <1>;
+			label = "PWT_0";
+			status = "disabled";
+
+			#pwm-cells = <3>;
+		};
+
 		ftfe: flash-controller@40020000 {
 			compatible = "nxp,kinetis-ftfe";
 			label = "FLASH_CTRL";
