@@ -256,8 +256,16 @@ static uint32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
 	 *
 	 * By design, being a Stacking MemManage fault is a necessary
 	 * and sufficient condition for a thread stack corruption.
+	 * [Cortex-M process stack pointer is always descending and
+	 * is never modified by code (except for the context-switch
+	 * routine), therefore, a stacking error implies the PSP has
+	 * crossed into an area beyond the thread stack.]
+	 *
+	 * Data Access Violation errors may or may not be caused by
+	 * thread stack overflows.
 	 */
-	if (SCB->CFSR & SCB_CFSR_MSTKERR_Msk) {
+	if ((SCB->CFSR & SCB_CFSR_MSTKERR_Msk) ||
+		(SCB->CFSR & SCB_CFSR_DACCVIOL_Msk)) {
 #if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
 		/* MemManage Faults are always banked between security
 		 * states. Therefore, we can safely assume the fault
@@ -310,7 +318,7 @@ static uint32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
 
 				reason = K_ERR_STACK_CHK_FAIL;
 			} else {
-				__ASSERT(0,
+				__ASSERT(!(SCB->CFSR & SCB_CFSR_MSTKERR_Msk),
 					"Stacking error not a stack fail\n");
 			}
 		}
