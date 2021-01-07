@@ -643,7 +643,7 @@
 		};
 
 		dma1: dma@40026000 {
-			compatible = "st,stm32-dma";
+			compatible = "st,stm32-dma-v1";
 			#dma-cells = <4>;
 			reg = <0x40026000 0x400>;
 			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0 17 0 47 0>;
@@ -653,7 +653,7 @@
 		};
 
 		dma2: dma@40026400 {
-			compatible = "st,stm32-dma";
+			compatible = "st,stm32-dma-v1";
 			#dma-cells = <4>;
 			reg = <0x40026400 0x400>;
 			interrupts = <56 0 57 0 58 0 59 0 60 0 68 0 69 0 70 0>;
