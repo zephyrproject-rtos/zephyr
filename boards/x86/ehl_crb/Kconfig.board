@@ -5,6 +5,7 @@ config BOARD_EHL_CRB
 	bool "Elkhart Lake CRB"
 	depends on SOC_ELKHART_LAKE
 	select X86_64
+	select HAS_COVERAGE_SUPPORT
 
 config BOARD_EHL_CRB_SBL
 	bool "Elkhart Lake CRB (with Slim Bootloader)"
