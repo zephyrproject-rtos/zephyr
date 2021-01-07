@@ -9,7 +9,6 @@ tests:
     filter: CONFIG_CPU_HAS_FPU
     arch_allow: riscv32
     tags: kernel userspace
-    build_only: true
   kernel.fpu_sharing.float_disable.riscv64:
     filter: CONFIG_CPU_HAS_FPU
     arch_allow: riscv64

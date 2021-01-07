@@ -16,16 +16,13 @@ tests:
   kernel.fpu_sharing.generic.riscv32:
     extra_args: PI_NUM_ITERATIONS=500
     filter: CONFIG_CPU_HAS_FPU
-    slow: true
     arch_allow: riscv32
     tags: kernel
     timeout: 600
     min_ram: 16
-    build_only: true
   kernel.fpu_sharing.generic.riscv64:
     extra_args: PI_NUM_ITERATIONS=500
     filter: CONFIG_CPU_HAS_FPU
-    slow: true
     arch_allow: riscv64
     tags: kernel
     timeout: 600
