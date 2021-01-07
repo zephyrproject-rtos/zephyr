@@ -135,8 +135,7 @@ static enum pm_state pm_policy_mgr(int32_t ticks)
 		return z_power_state;
 	}
 
-	deep_sleep = IS_ENABLED(CONFIG_PM_DEEP_SLEEP_STATES) ?
-		     pm_is_deep_sleep_state(z_power_state) : 0;
+	deep_sleep = pm_is_deep_sleep_state(z_power_state);
 
 	post_ops_done = 0;
 	pm_state_notify(true);

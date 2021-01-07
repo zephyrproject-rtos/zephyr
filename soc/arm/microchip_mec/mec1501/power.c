@@ -12,8 +12,6 @@
 #include <soc.h>
 #include "device_power.h"
 
-#if defined(CONFIG_PM_DEEP_SLEEP_STATES)
-
 /*
  * Deep Sleep
  * Pros:
@@ -77,9 +75,6 @@ static void z_power_soc_deep_sleep(void)
 	 */
 	__set_PRIMASK(0);
 }
-#endif
-
-#ifdef CONFIG_PM_SLEEP_STATES
 
 /*
  * Light Sleep
@@ -100,7 +95,6 @@ static void z_power_soc_sleep(void)
 	__NOP();
 	__NOP();
 }
-#endif
 
 /*
  * Called from pm_system_suspend(int32_t ticks) in subsys/power.c

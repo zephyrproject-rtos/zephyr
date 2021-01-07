@@ -105,8 +105,7 @@ static int entropy_cc13xx_cc26xx_get_entropy(const struct device *dev,
 	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(dev);
 	uint32_t cnt;
 
-#if defined(CONFIG_PM) && \
-	defined(CONFIG_PM_SLEEP_STATES)
+#ifdef CONFIG_PM
 	unsigned int key = irq_lock();
 
 	if (!data->constrained) {
@@ -153,8 +152,7 @@ static void entropy_cc13xx_cc26xx_isr(const void *arg)
 
 		/* When pool is full disable interrupt and stop reading numbers */
 		if (cnt != sizeof(num)) {
-#if defined(CONFIG_PM) && \
-	defined(CONFIG_PM_SLEEP_STATES)
+#ifdef CONFIG_PM
 			if (data->constrained) {
 				pm_ctrl_enable_state(
 					PM_STATE_STANDBY);
@@ -334,11 +332,9 @@ static int entropy_cc13xx_cc26xx_init(const struct device *dev)
 
 #if defined(CONFIG_PM)
 	Power_setDependency(PowerCC26XX_PERIPH_TRNG);
-#if defined(CONFIG_PM_SLEEP_STATES)
 	/* Stay out of standby until buffer is filled with entropy */
 	pm_ctrl_disable_state(PM_STATE_STANDBY);
 	data->constrained = true;
-#endif
 	/* Register notification function */
 	Power_registerNotify(&data->post_notify,
 		PowerCC26XX_AWAKE_STANDBY,

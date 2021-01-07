@@ -58,10 +58,8 @@ extern PowerCC26X2_ModuleState PowerCC26X2_module;
 /* Invoke Low Power/System Off specific Tasks */
 void pm_power_state_set(enum pm_state state)
 {
-#ifdef CONFIG_PM_SLEEP_STATES
 	uint32_t modeVIMS;
 	uint32_t constraints;
-#endif
 
 	LOG_DBG("SoC entering power state %d", state);
 
