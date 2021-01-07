@@ -58,6 +58,10 @@ struct vtd_ictl_data {
 	int vectors[IRTE_NUM];
 	bool msi[IRTE_NUM];
 	int irte_num_used;
+	unsigned int fault_irq;
+	uintptr_t fault_record_reg;
+	uint16_t fault_record_num;
+	uint8_t fault_vector;
 };
 
 struct vtd_ictl_cfg {
