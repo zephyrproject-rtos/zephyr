@@ -45,6 +45,11 @@ static int twr_ke18f_pinmux_init(const struct device *dev)
 	pinmux_pin_set(portd, 16, PORT_PCR_MUX(kPORT_MuxAsGpio));
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ftm2), nxp_kinetis_ftm_pwm, okay) && CONFIG_PWM
+	/* PWM output on J20 pin 5 */
+	pinmux_pin_set(porte, 15, PORT_PCR_MUX(kPORT_MuxAlt4));
+#endif
+
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ftm3), nxp_kinetis_ftm_pwm, okay) && CONFIG_PWM
 	/* User LEDs as PWM */
 	pinmux_pin_set(portc, 10, PORT_PCR_MUX(kPORT_MuxAlt2));
@@ -57,6 +62,11 @@ static int twr_ke18f_pinmux_init(const struct device *dev)
 	pinmux_pin_set(portc, 11, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portc, 12, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portc, 13, PORT_PCR_MUX(kPORT_MuxAsGpio));
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwt), okay) && CONFIG_PWM_CAPTURE
+	/* PWM capture input on J20 pin 8 */
+	pinmux_pin_set(porte, 11, PORT_PCR_MUX(kPORT_MuxAlt2));
 #endif
 
 	/* Buttons */
