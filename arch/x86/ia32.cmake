@@ -21,7 +21,18 @@ if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
     )
 endif()
 
-zephyr_cc_option_ifndef(CONFIG_SSE_FP_MATH -mno-sse)
+if(CONFIG_SSE)
+  zephyr_cc_option(-msse)
+
+  if(CONFIG_SSE_FP_MATH)
+      zephyr_cc_option(-mfpmath=sse)
+  else()
+      zephyr_cc_option(-mfpmath=387)
+  endif()
+
+else()
+  zephyr_cc_option(-mno-sse)
+endif()
 
 if(CMAKE_VERBOSE_MAKEFILE)
   set(GENIDT_EXTRA_ARGS --verbose)
