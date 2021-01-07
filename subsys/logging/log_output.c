@@ -280,7 +280,7 @@ static void std_print(struct log_msg *msg,
 {
 	const char *str = log_msg_str_get(msg);
 	uint32_t nargs = log_msg_nargs_get(msg);
-	uint32_t *args = alloca(sizeof(uint32_t)*nargs);
+	log_arg_t *args = alloca(sizeof(log_arg_t)*nargs);
 	int i;
 
 	for (i = 0; i < nargs; i++) {
