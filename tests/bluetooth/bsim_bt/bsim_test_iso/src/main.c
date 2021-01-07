@@ -41,8 +41,10 @@ extern enum bst_result_t bst_result;
 #define USE_HOST_API 0
 
 #if !IS_ENABLED(USE_HOST_API)
-#include "ll.h"
 #include "subsys/bluetooth/host/hci_core.h"
+#include "subsys/bluetooth/controller/include/ll.h"
+#include "subsys/bluetooth/controller/util/memq.h"
+#include "subsys/bluetooth/controller/ll_sw/lll.h"
 #endif /* !USE_HOST_API */
 
 static uint8_t mfg_data1[] = { 0xff, 0xff, 0x01, 0x02, 0x03, 0x04 };
@@ -349,7 +351,7 @@ static void test_iso_recv_main(void)
 	uint16_t sync_timeout = 0;
 	struct node_rx_hdr *node_rx;
 
-	printk("Creating BIG...");
+	printk("Creating BIG Sync...");
 	err = ll_big_sync_create(big_handle, sync->handle, encryption, bcode,
 				 mse, sync_timeout, bis_count, &bis_handle);
 	if (err) {
@@ -360,7 +362,8 @@ static void test_iso_recv_main(void)
 
 	k_sleep(K_MSEC(13800));
 
-	printk("Terminating BIG...");
+	printk("Terminating BIG Sync...");
+	node_rx = NULL;
 	err = ll_big_sync_terminate(big_handle, (void **)&node_rx);
 	if (err) {
 		FAIL("Could not terminate BIG sync: %d\n", err);
@@ -368,7 +371,35 @@ static void test_iso_recv_main(void)
 	}
 	printk("success.\n");
 
+	if (node_rx) {
+		node_rx->next = NULL;
+		ll_rx_mem_release((void **)&node_rx);
+	}
+
 	k_sleep(K_MSEC(5000));
+
+	printk("Creating BIG Sync after terminate...\n");
+	err = ll_big_sync_create(big_handle, sync->handle, encryption, bcode,
+				 mse, sync_timeout, bis_count, &bis_handle);
+	if (err) {
+		FAIL("Could not create BIG sync: %d\n", err);
+		return;
+	}
+	printk("success.\n");
+
+	printk("Terminating BIG Sync...\n");
+	node_rx = NULL;
+	err = ll_big_sync_terminate(big_handle, (void **)&node_rx);
+	if (err) {
+		FAIL("Could not terminate BIG sync: %d\n", err);
+		return;
+	}
+	printk("success.\n");
+
+	if (node_rx) {
+		node_rx->next = NULL;
+		ll_rx_mem_release((void **)&node_rx);
+	}
 #endif /* !USE_HOST_API */
 
 	PASS("ISO recv test Passed\n");
