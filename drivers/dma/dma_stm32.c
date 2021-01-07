@@ -5,8 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT st_stm32_dma
-
 /**
  * @brief Common part of DMA drivers for stm32.
  * @note  Functions named with stm32_dma_* are SoCs related functions
@@ -20,6 +18,12 @@
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v1)
+#define DT_DRV_COMPAT st_stm32_dma_v1
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v2)
+#define DT_DRV_COMPAT st_stm32_dma_v2
+#endif
 
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
 #if DT_INST_IRQ_HAS_IDX(0, 7)
@@ -610,6 +614,13 @@ static const struct dma_driver_api dma_funcs = {
 #define DMA_STM32_OFFSET_INIT(index)
 #endif /* CONFIG_DMAMUX_STM32 */
 
+#ifdef CONFIG_DMA_STM32_V1
+#define DMA_STM32_MEM2MEM_INIT(index)					\
+	.support_m2m = DT_INST_PROP(index, st_mem2mem),
+#else
+#define DMA_STM32_MEM2MEM_INIT(index)
+#endif /* CONFIG_DMA_STM32_V1 */					\
+
 #define DMA_STM32_INIT_DEV(index)					\
 static struct dma_stm32_stream						\
 	dma_stm32_streams_##index[DMA_STM32_##index##_STREAM_COUNT];	\
@@ -619,7 +630,7 @@ const struct dma_stm32_config dma_stm32_config_##index = {		\
 		    .enr = DT_INST_CLOCKS_CELL(index, bits) },		\
 	.config_irq = dma_stm32_config_irq_##index,			\
 	.base = DT_INST_REG_ADDR(index),				\
-	.support_m2m = DT_INST_PROP(index, st_mem2mem),			\
+	DMA_STM32_MEM2MEM_INIT(index)					\
 	.max_streams = DMA_STM32_##index##_STREAM_COUNT,		\
 	.streams = dma_stm32_streams_##index,				\
 	DMA_STM32_OFFSET_INIT(index)					\
