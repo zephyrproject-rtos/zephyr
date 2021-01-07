@@ -5,6 +5,39 @@ tests:
     min_ram: 32
     tags: benchmark
     timeout: 300
+  benchmark.kernel.application.fp.arm:
+    extra_args: CONF_FILE=prj_fp.conf
+    arch_allow: arm
+    filter: CONFIG_ARMV7_M_ARMV8_M_FP
+    min_flash: 34
+    min_ram: 32
+    tags: benchmark
+    slow: true
+    timeout: 300
+  benchmark.kernel.application.fp.x86.fpu:
+    extra_args: CONF_FILE=prj_fp.conf
+    extra_configs:
+      - CONFIG_SSE=y
+      - CONFIG_SSE_FP_MATH=n
+    arch_allow: x86
+    filter: CONFIG_CPU_HAS_FPU
+    min_flash: 34
+    min_ram: 32
+    tags: benchmark
+    slow: true
+    timeout: 300
+  benchmark.kernel.application.fp.x86.sse:
+    extra_args: CONF_FILE=prj_fp.conf
+    extra_configs:
+      - CONFIG_SSE=y
+      - CONFIG_SSE_FP_MATH=y
+    arch_allow: x86
+    filter: CONFIG_CPU_HAS_FPU
+    min_flash: 34
+    min_ram: 32
+    tags: benchmark
+    slow: true
+    timeout: 300
   benchmark.kernel.application.posix:
     arch_allow: posix
     min_ram: 32
