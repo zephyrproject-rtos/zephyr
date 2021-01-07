@@ -212,6 +212,7 @@ config LOG_PROCESS_THREAD_STACK_SIZE
 	default 4096 if (X86 && X86_64)
 	default 4096 if ARM64
 	default 4096 if SPARC
+	default 2048 if (RISCV && 64BIT)
 	default 768
 	help
 	  Set the internal stack size for log processing thread.
