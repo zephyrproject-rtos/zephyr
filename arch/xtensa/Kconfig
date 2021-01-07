@@ -71,4 +71,11 @@ config XTENSA_KERNEL_CPU_PTR_SR
 	  Specify which special register to store the pointer to
 	  _kernel.cpus[] for the current CPU.
 
+config XTENSA_ENABLE_BACKTRACE
+	bool "Enable backtrace on panic exception"
+	default y
+	depends on SOC_ESP32
+	help
+	  Enable this config option to print backtrace on panic exception
+
 endmenu
