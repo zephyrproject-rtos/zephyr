@@ -17,8 +17,6 @@
 
 #define DT_DRV_COMPAT microchip_mcp9600
 
-#define MCP9600_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-
 LOG_MODULE_REGISTER(MCP9600, CONFIG_SENSOR_LOG_LEVEL);
 
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
@@ -40,16 +38,17 @@ static int mcp9600_sample_fetch(const struct device *dev,
 {
 	struct mcp9600_data *data = dev->data;
 	uint8_t buf[2];
-	int size = 2;
 	int ret;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	ret = mcp9600_reg_read(dev, MCP9600_REG_TEMP_HOT, buf, size);
+	ret = mcp9600_reg_read(dev, MCP9600_REG_TEMP_HOT, buf, sizeof(buf));
 	if (ret < 0) {
+		data->ttemp = 1;
 		return ret;
 	}
-	data->ttemp = (buf[0] << 8) | buf[1];
+	data->ttemp = (int32_t)(int16_t)(buf[0] << 8) | buf[1];
+	data->ttemp *= 62500;
 
 	return 0;
 }
@@ -59,14 +58,14 @@ static int mcp9600_channel_get(const struct device *dev,
 			struct sensor_value *val)
 {
 	struct mcp9600_data *data = dev->data;
-	int32_t temp;
 
 	switch (chan) {
 	case SENSOR_CHAN_AMBIENT_TEMP:
-		temp = (int32_t)(int16_t)data->ttemp;
-		temp *= 62500;
-		val->val1 = temp / 1000000;
-		val->val2 = temp % 1000000;
+		if (data->ttemp == 1) {
+			return -EINVAL;
+		}
+		val->val1 = data->ttemp / 1000000;
+		val->val2 = data->ttemp % 1000000;
 		break;
 	default:
 		return -EINVAL;
@@ -85,7 +84,7 @@ static int mcp9600_chip_init(const struct device *dev)
 	uint8_t buf[2];
 
 	int rc = mcp9600_reg_read(dev, MCP9600_REG_ID_REVISION,
-			buf, 2);
+			buf, sizeof(buf));
 
 	LOG_DBG("mcp9600: id=0x%02x version=0x%02x ret=%d",
 			buf[0], buf[1], rc);

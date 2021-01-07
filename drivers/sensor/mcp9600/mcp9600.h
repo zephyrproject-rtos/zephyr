@@ -47,7 +47,7 @@
 
 struct mcp9600_data {
 	const struct device *i2c_master;
-	int16_t ttemp;
+	int32_t ttemp;
 };
 
 struct mcp9600_config {

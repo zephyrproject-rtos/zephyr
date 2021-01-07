@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    Microchip MCP9600 Thermocouple EMF to Temperature Converter. See
+    Microchip MCP9600 I2C Thermocouple EMF to Temperature Converter. See
     https://www.microchip.com/wwwproducts/en/MCP9600.
 
 compatible: "microchip,mcp9600"
