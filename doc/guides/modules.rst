@@ -515,6 +515,36 @@ variables. For example:
 
   include(${ZEPHYR_CURRENT_MODULE_DIR}/cmake/code.cmake)
 
+Zephyr module dependencies
+==========================
+
+A Zephyr module may be dependent on other Zephyr modules to be present in order
+to function correctly. Or it might be that a given Zephyr module must be
+processed after another Zephyr module, due to dependencies of certain CMake
+targets.
+
+Such a dependency can be described using the ``depends`` field.
+
+.. code-block:: yaml
+
+   build:
+     depends:
+       - <module>
+
+Here is an example for the Zephyr module ``foo`` that is dependent on the Zephyr
+module ``bar`` to be present in the build system:
+
+.. code-block:: yaml
+
+   name: foo
+   build:
+     depends:
+     - bar
+
+This example will ensure that ``bar`` is present when ``foo`` is included into
+the build system, and it will also ensure that ``bar`` is processed before
+``foo``.
+
 .. _modules_module_ext_root:
 
 Module integration files (external)
