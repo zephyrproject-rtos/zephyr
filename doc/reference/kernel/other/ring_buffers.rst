@@ -301,6 +301,13 @@ operations on the ring buffer's memory.  For example:
 	...
     }
 
+Configuration Options
+*********************
+
+Related configuration options:
+
+* :option:`CONFIG_RING_BUFFER`: Enable ring buffer.
+
 API Reference
 *************
 
