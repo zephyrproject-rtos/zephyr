@@ -1,17 +1,17 @@
-.. _nrf91_nrfx:
+.. _nrfx_sample:
 
-nRF91 nrfx example
-##################
+nrfx use example
+################
 
 Overview
 ********
 
 This sample demonstrates the usage of nrfx library in Zephyr.
-GPIOTE and DPPI are used as examples of nrfx drivers.
+GPIOTE and DPPI/PPI are used as examples of nrfx drivers.
 
 The code shows how to initialize the GPIOTE interrupt in Zephyr
 so that the nrfx_gpiote driver can use it. Additionally, it shows
-how the DPPI subsystem can be used to connect tasks and events of
+how the DPPI/PPI subsystem can be used to connect tasks and events of
 nRF peripherals, enabling those peripherals to interact with each
 other without any intervention from the CPU.
 
@@ -24,7 +24,7 @@ Requirements
 ************
 
 This sample has been tested on the NordicSemiconductor nRF9160 DK
-(nrf9160dk_nrf9160) board.
+(nrf9160dk_nrf9160) and nRF52840 DK (nrf52840dk_nrf52840) boards.
 
 Building and Running
 ********************
