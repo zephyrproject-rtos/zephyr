@@ -291,7 +291,7 @@ uint32_t z_clock_elapsed(void)
 	/* gives the value of LPTIM1 counter (ms)
 	 * since the previous 'announce'
 	 */
-	uint64_t ret = (lp_time * CONFIG_SYS_CLOCK_TICKS_PER_SEC) / LPTIM_CLOCK;
+	uint64_t ret = ((uint64_t)lp_time * CONFIG_SYS_CLOCK_TICKS_PER_SEC) / LPTIM_CLOCK;
 
 	return (uint32_t)(ret);
 }
@@ -315,7 +315,7 @@ uint32_t z_timer_cycle_get_32(void)
 	lp_time += accumulated_lptim_cnt;
 
 	/* convert lptim count in a nb of hw cycles with precision */
-	uint64_t ret = lp_time * (sys_clock_hw_cycles_per_sec() / LPTIM_CLOCK);
+	uint64_t ret = ((uint64_t)lp_time * sys_clock_hw_cycles_per_sec()) / LPTIM_CLOCK;
 
 	k_spin_unlock(&lock, key);
 
