@@ -62,6 +62,8 @@ static void test_path_props(void)
 	zassert_equal(DT_PROP(TEST_ABCD1234, ngpios), 32, "");
 	zassert_true(!strcmp(DT_PROP(TEST_ABCD1234, status), "okay"), "");
 	zassert_equal(DT_PROP_LEN(TEST_ABCD1234, compatible), 1, "");
+	zassert_equal(DT_PROP_LEN_OR(TEST_ABCD1234, compatible, 4), 1, "");
+	zassert_equal(DT_PROP_LEN_OR(TEST_ABCD1234, invalid_property, 0), 0, "");
 	zassert_true(!strcmp(DT_PROP_BY_IDX(TEST_ABCD1234, compatible, 0),
 			     "vnd,gpio"), "");
 }
