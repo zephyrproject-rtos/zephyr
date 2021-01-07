@@ -54,6 +54,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define LITEETH_IRQ		DT_INST_IRQN(0)
 #define LITEETH_IRQ_PRIORITY	CONFIG_ETH_LITEETH_0_IRQ_PRI
 
+#define MAX_TX_FAILURE 100
+
 struct eth_liteeth_dev_data {
 	struct net_if *iface;
 	uint8_t mac_addr[6];
@@ -85,6 +87,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	struct eth_liteeth_dev_data *context = dev->data;
 
 	key = irq_lock();
+	int attempts = 0;
 
 	/* get data from packet and send it */
 	len = net_pkt_get_len(pkt);
@@ -96,7 +99,10 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 	/* wait for the device to be ready to transmit */
 	while (sys_read8(LITEETH_TX_READY) == 0) {
-		;
+		if (attempts++ == MAX_TX_FAILURE) {
+			goto error;
+		}
+		k_sleep(K_MSEC(1));
 	}
 
 	/* start transmitting */
@@ -108,6 +114,10 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	irq_unlock(key);
 
 	return 0;
+error:
+	irq_unlock(key);
+	LOG_ERR("TX fifo failed");
+	return -1;
 }
 
 static void eth_rx(const struct device *port)
