@@ -18,8 +18,4 @@ config STM32_LPTIM_TIMER
 	default y
 	depends on PM
 
-config DMA_STM32_V2
-	default y
-	depends on DMA_STM32
-
 endif # SOC_SERIES_STM32L4X
