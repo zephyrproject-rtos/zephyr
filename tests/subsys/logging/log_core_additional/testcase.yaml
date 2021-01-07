@@ -1,6 +1,5 @@
 tests:
   logging.add.async:
-    platform_exclude: qemu_riscv64
     tags: logging
   logging.add.sync:
     tags: logging

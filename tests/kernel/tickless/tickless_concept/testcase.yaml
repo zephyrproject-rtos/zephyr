@@ -1,9 +1,9 @@
 tests:
   kernel.tickless.concept:
-    arch_exclude: riscv32 nios2
+    arch_exclude: nios2
     # FIXME: This test fails sporadically on all QEMU platforms, but fails
     # consistently when coverage is enabled. Disable until 14173 is fixed.
     # This test fails on qemu_arc_{em|hs} consistently. Disable until "icount"
     # is implemented for ARC in QEMU.
-    platform_exclude: qemu_x86_coverage qemu_arc_em qemu_arc_hs
+    platform_exclude: qemu_x86_coverage qemu_arc_em qemu_arc_hs litex_vexriscv rv32m1_vega_zero_riscy rv32m1_vega_ri5cy
     tags: kernel
