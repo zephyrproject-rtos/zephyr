@@ -100,11 +100,14 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 
 	/* Initialize the ISO sync ULL context */
 	sync_iso->sync = sync;
-	sync_iso->node_rx_lost.hdr.link = link_sync_lost;
+	sync_iso->timeout = sync_timeout;
+	sync_iso->timeout_reload = 0U;
+	sync_iso->timeout_expire = 0U;
 
 	/* Setup the periodic sync to establish ISO sync */
 	node_rx->link = link_sync_estab;
 	sync->iso.node_rx_estab = node_rx;
+	sync_iso->node_rx_lost.hdr.link = link_sync_lost;
 
 	/* Initialize ULL and LLL headers */
 	ull_hdr_init(&sync_iso->ull);
