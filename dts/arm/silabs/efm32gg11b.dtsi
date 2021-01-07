@@ -289,15 +289,14 @@
 				#gpio-cells = <2>;
 				status = "disabled";
 			};
+		};
 
-
-			trng0: trng@4001d000 {
-				compatible = "silabs,gecko-trng";
-				reg = <0x4001d000 0x400>;
-				interrupts = <66 0>;
-				label = "TRNG0";
-				status = "disabled";
-			};
+		trng0: trng@4001d000 {
+			compatible = "silabs,gecko-trng";
+			reg = <0x4001d000 0x400>;
+			interrupts = <66 0>;
+			label = "TRNG0";
+			status = "disabled";
 		};
 
 		wdog0: wdog@40052000 {
