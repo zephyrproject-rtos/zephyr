@@ -833,7 +833,7 @@
 
 #define GCR2			ECREG(EC_REG_BASE_ADDR + 0x16F1)
 #define CK32OE			BIT(6)
-#define SMB4E			BIT(5)
+#define SMB3E			BIT(5)
 #define PECIE			BIT(4)
 
 #define GCR3			ECREG(EC_REG_BASE_ADDR + 0x16F2)
