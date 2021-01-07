@@ -17,7 +17,6 @@ config FLOAT_HARD
 	bool "Enable hard-float calling convention"
 	default y
 	depends on FPU
-	select COMPRESSED_ISA
 	help
 	  This option enables the hard-float calling convention.
 
