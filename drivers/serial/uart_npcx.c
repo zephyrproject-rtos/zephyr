@@ -344,7 +344,7 @@ static int uart_npcx_init(const struct device *dev)
 	config->uconf.irq_config_func(dev);
 #endif
 
-#if defined(CONFIG_PM_DEEP_SLEEP_STATES)
+#if defined(CONFIG_PM)
 	/*
 	 * Configure the UART wake-up event triggered from a falling edge
 	 * on CR_SIN pin. No need for callback function.

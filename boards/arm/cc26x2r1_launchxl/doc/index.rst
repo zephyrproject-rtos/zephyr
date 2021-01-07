@@ -211,9 +211,7 @@ Power Management and UART
 
 System and device power management are supported on this platform, and
 can be enabled via the standard Kconfig options in Zephyr, such as
-:option:`CONFIG_PM`, :option:`CONFIG_PM_DEVICE`,
-:option:`CONFIG_PM_SLEEP_STATES`, and
-:option:`CONFIG_PM_DEEP_SLEEP_STATES`.
+:option:`CONFIG_PM`, :option:`CONFIG_PM_DEVICE`.
 
 When system power management is turned on (CONFIG_PM=y),
 sleep state 2 (standby mode) is allowed, and polling is used to retrieve input

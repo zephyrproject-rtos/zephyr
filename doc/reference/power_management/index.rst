@@ -499,14 +499,6 @@ the following configuration flags.
 
    This flag enables the tickless idle power saving feature.
 
-:option:`CONFIG_PM_SLEEP_STATES`
-
-   This flag enables support for the Sleep states.
-
-:option:`CONFIG_PM_DEEP_SLEEP_STATES`
-
-   This flag enables support for the Deep Sleep states.
-
 :option:`CONFIG_PM_DEVICE`
 
    This flag is enabled if the SOC interface and the devices support device power

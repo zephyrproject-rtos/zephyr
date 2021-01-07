@@ -231,8 +231,7 @@ static int uart_cc13xx_cc26xx_fifo_read(const struct device *dev,
 
 static void uart_cc13xx_cc26xx_irq_tx_enable(const struct device *dev)
 {
-#if defined(CONFIG_PM) && \
-	defined(CONFIG_PM_SLEEP_STATES)
+#ifdef CONFIG_PM
 	if (!get_dev_data(dev)->tx_constrained) {
 		/*
 		 * When tx irq is enabled, it is implicit that we are expecting
@@ -256,8 +255,7 @@ static void uart_cc13xx_cc26xx_irq_tx_disable(const struct device *dev)
 {
 	UARTIntDisable(get_dev_conf(dev)->regs, UART_INT_TX);
 
-#if defined(CONFIG_PM) && \
-	defined(CONFIG_PM_SLEEP_STATES)
+#ifdef CONFIG_PM
 	if (get_dev_data(dev)->tx_constrained) {
 		pm_ctrl_enable_state(PM_STATE_STANDBY);
 		get_dev_data(dev)->tx_constrained = false;
@@ -272,8 +270,7 @@ static int uart_cc13xx_cc26xx_irq_tx_ready(const struct device *dev)
 
 static void uart_cc13xx_cc26xx_irq_rx_enable(const struct device *dev)
 {
-#if defined(CONFIG_PM) && \
-	defined(CONFIG_PM_SLEEP_STATES)
+#ifdef CONFIG_PM
 	/*
 	 * When rx is enabled, it is implicit that we are expecting
 	 * to receive from the uart, hence we can no longer go into
@@ -290,8 +287,7 @@ static void uart_cc13xx_cc26xx_irq_rx_enable(const struct device *dev)
 
 static void uart_cc13xx_cc26xx_irq_rx_disable(const struct device *dev)
 {
-#if defined(CONFIG_PM) && \
-	defined(CONFIG_PM_SLEEP_STATES)
+#ifdef CONFIG_PM
 	if (get_dev_data(dev)->rx_constrained) {
 		pm_ctrl_enable_state(PM_STATE_STANDBY);
 		get_dev_data(dev)->rx_constrained = false;
