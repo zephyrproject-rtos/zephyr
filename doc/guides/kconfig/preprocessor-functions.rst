@@ -39,6 +39,7 @@ while the ``*_hex`` version returns a hexadecimal value starting with ``0x``.
    $(dt_compat_enabled,<compatible string>)
    $(dt_chosen_enabled,<property in /chosen>)
    $(dt_node_has_bool_prop,<node path>,<prop>)
+   $(dt_node_has_prop,<node path>,<prop>)
 
 
 Example Usage
