@@ -32,6 +32,8 @@ LOG_MODULE_REGISTER(flash_stm32_qspi, CONFIG_FLASH_LOG_LEVEL);
 #define STM32_QSPI_FIFO_THRESHOLD         8
 #define STM32_QSPI_CLOCK_PRESCALER_MAX  255
 
+#define STM32_QSPI_USE_DMA DT_NODE_HAS_PROP(DT_PARENT(DT_DRV_INST(0)), dmas)
+
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_qspi_nor)
 
 uint32_t table_m_size[] = {
@@ -151,7 +153,11 @@ static int qspi_read_access(const struct device *dev, QSPI_CommandTypeDef *cmd,
 		return -EIO;
 	}
 
+#if STM32_QSPI_USE_DMA
 	hal_ret = HAL_QSPI_Receive_DMA(&dev_data->hqspi, data);
+#else
+	hal_ret = HAL_QSPI_Receive_IT(&dev_data->hqspi, data);
+#endif
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("%d: Failed to read data", hal_ret);
 		return -EIO;
@@ -186,7 +192,11 @@ static int qspi_write_access(const struct device *dev, QSPI_CommandTypeDef *cmd,
 		return -EIO;
 	}
 
+#if STM32_QSPI_USE_DMA
 	hal_ret = HAL_QSPI_Transmit_DMA(&dev_data->hqspi, (uint8_t *)data);
+#else
+	hal_ret = HAL_QSPI_Transmit_IT(&dev_data->hqspi, (uint8_t *)data);
+#endif
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("%d: Failed to read data", hal_ret);
 		return -EIO;
@@ -454,6 +464,7 @@ static void flash_stm32_qspi_isr(const struct device *dev)
 }
 
 /* This function is executed in the interrupt context */
+#if STM32_QSPI_USE_DMA
 static void qspi_dma_callback(const struct device *dev, void *arg,
 			 uint32_t channel, int status)
 {
@@ -466,6 +477,7 @@ static void qspi_dma_callback(const struct device *dev, void *arg,
 
 	HAL_DMA_IRQHandler(hdma);
 }
+#endif
 
 __weak HAL_StatusTypeDef HAL_DMA_Abort_IT(DMA_HandleTypeDef *hdma)
 {
@@ -658,8 +670,6 @@ static int flash_stm32_qspi_init(const struct device *dev)
 {
 	const struct flash_stm32_qspi_config *dev_cfg = DEV_CFG(dev);
 	struct flash_stm32_qspi_data *dev_data = DEV_DATA(dev);
-	struct dma_config dma_cfg = dev_data->dma.cfg;
-	static DMA_HandleTypeDef hdma;
 	uint32_t ahb_clock_freq;
 	uint32_t prescaler = 0;
 	int ret;
@@ -673,6 +683,7 @@ static int flash_stm32_qspi_init(const struct device *dev)
 		return ret;
 	}
 
+#if STM32_QSPI_USE_DMA
 	/*
 	 * DMA configuration
 	 * Due to use of QSPI HAL API in current driver,
@@ -681,7 +692,6 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	 * the minimum information to inform the DMA slot will be in used and
 	 * how to route callbacks.
 	 */
-
 	struct dma_config dma_cfg = dev_data->dma.cfg;
 	static DMA_HandleTypeDef hdma;
 
@@ -691,6 +701,8 @@ static int flash_stm32_qspi_init(const struct device *dev)
 			LOG_ERR("%s device not found", dev_data->dma.name);
 			return -ENODEV;
 		}
+	} else {
+		return -EINVAL;
 	}
 
 	/* Proceed to the minimum Zephyr DMA driver init */
@@ -738,6 +750,8 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	__HAL_LINKDMA(&dev_data->hqspi, hdma, hdma);
 	HAL_DMA_Init(&hdma);
 
+#endif /* STM32_QSPI_USE_DMA */
+
 	/* Clock configuration */
 	__ASSERT_NO_MSG(device_get_binding(STM32_CLOCK_CONTROL_NAME));
 
@@ -762,7 +776,6 @@ static int flash_stm32_qspi_init(const struct device *dev)
 		}
 	}
 	__ASSERT_NO_MSG(prescaler <= STM32_QSPI_CLOCK_PRESCALER_MAX);
-
 	/* Initialize QSPI HAL */
 	dev_data->hqspi.Init.ClockPrescaler = prescaler;
 	dev_data->hqspi.Init.FlashSize = find_lsb_set(dev_cfg->flash_size);

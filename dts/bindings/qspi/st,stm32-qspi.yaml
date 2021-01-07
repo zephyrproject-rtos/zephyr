@@ -30,19 +30,17 @@ properties:
       required: true
 
     dmas:
-      required: true
       description: |
-        DMA channel specifier. Specifier will have a phandle
-        reference to the dma controller, the channel number, the slot number,
-        channel configuration and finally features.
+        Optional DMA channel specifier. If DMA should be used, specifier should
+        hold a phandle reference to the dma controller, the channel number,
+        the slot number, channel configuration and finally features.
 
         For example dmas for TX/RX on QSPI
            dmas = <&dma1 5 5 0x0000 0x03>;
 
     dma-names:
-      required: true
       description: |
-        DMA channel name. Expected value "tx_rx".
+        DMA channel name. If DMA should be used, expected value is "tx_rx".
 
         For example
            dma-names = "tx_rx";
