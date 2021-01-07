@@ -7,5 +7,6 @@ tests:
   sample.audio.sof:
     tags: sof
     build_only: true
+    platform_allow: intel_adsp_cavs15
     integration_platforms:
       - intel_adsp_cavs15
