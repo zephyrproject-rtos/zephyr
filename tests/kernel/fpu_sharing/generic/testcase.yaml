@@ -33,8 +33,18 @@ tests:
     arch_allow: sparc
     tags: kernel
     timeout: 600
-  kernel.fpu_sharing.generic.x86:
+  kernel.fpu_sharing.generic.x86.fpu:
     extra_args: CONF_FILE=prj_x86.conf
+    extra_configs:
+      - CONFIG_SSE_FP_MATH=n
+    platform_allow: qemu_x86
+    slow: true
+    tags: kernel
+    timeout: 600
+  kernel.fpu_sharing.generic.x86.sse:
+    extra_args: CONF_FILE=prj_x86.conf
+    extra_configs:
+      - CONFIG_SSE_FP_MATH=y
     platform_allow: qemu_x86
     slow: true
     tags: kernel
