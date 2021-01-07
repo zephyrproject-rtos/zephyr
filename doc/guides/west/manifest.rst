@@ -749,15 +749,15 @@ The ``import`` key can also contain a mapping with the following keys:
 
 - ``file``: Optional. The name of the manifest file or directory to import.
   This defaults to :file:`west.yml` if not present.
-- ``name-whitelist``: Optional. If present, a name or sequence of project names
+- ``name-allowlist``: Optional. If present, a name or sequence of project names
   to include.
-- ``path-whitelist``: Optional. If present, a path or sequence of project paths
+- ``path-allowlist``: Optional. If present, a path or sequence of project paths
   to match against. This is a shell-style globbing pattern, currently
   implemented with `pathlib`_. Note that this means case sensitivity is
   platform specific.
-- ``name-blacklist``: Optional. Like ``name-whitelist``, but contains project
+- ``name-blocklist``: Optional. Like ``name-allowlist``, but contains project
   names to exclude rather than include.
-- ``path-blacklist``: Optional. Like ``path-whitelist``, but contains project
+- ``path-blocklist``: Optional. Like ``path-allowlist``, but contains project
   paths to exclude rather than include.
 - ``path-prefix``: Optional (new in v0.8.0). If given, this will be prepended
   to the project's path in the workspace, as well as the paths of any imported
@@ -768,12 +768,12 @@ The ``import`` key can also contain a mapping with the following keys:
 .. _pathlib:
    https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.match
 
-Whitelists override blacklists if both are given. For example, if a project is
-blacklisted by path, then whitelisted by name, it will still be imported.
+Allowlists override blocklists if both are given. For example, if a project is
+blocked by path, then allowed by name, it will still be imported.
 
 .. _west-manifest-ex3.1:
 
-Example 3.1: Downstream with name whitelist
+Example 3.1: Downstream with name allowlist
 -------------------------------------------
 
 Here is a pair of manifest files, representing a mainline and a
@@ -802,7 +802,7 @@ hosted at ``https://git.example.com/mainline/manifest``.
        - name: mainline
          url: https://git.example.com/mainline/manifest
          import:
-           name-whitelist:
+           name-allowlist:
              - mainline-app
              - lib2
        - name: downstream-app
@@ -831,16 +831,16 @@ An equivalent manifest in a single file would be:
          path: libraries/lib2
          url: https://git.example.com/mainline/lib2
 
-If a whitelist had not been used, the ``lib`` project from the mainline
+If an allowlist had not been used, the ``lib`` project from the mainline
 manifest would have been imported.
 
 .. _west-manifest-ex3.2:
 
-Example 3.2: Downstream with path whitelist
+Example 3.2: Downstream with path allowlist
 -------------------------------------------
 
-Here is an example showing how to whitelist mainline's libraries only,
-using ``path-whitelist``.
+Here is an example showing how to allowlist mainline's libraries only,
+using ``path-allowlist``.
 
 .. code-block:: yaml
 
@@ -863,7 +863,7 @@ using ``path-whitelist``.
        - name: mainline
          url: https://git.example.com/mainline/manifest
          import:
-           path-whitelist: libraries/*
+           path-allowlist: libraries/*
        - name: app
          url: https://git.example.com/downstream/app
        - name: lib3
@@ -892,10 +892,10 @@ An equivalent manifest in a single file would be:
 
 .. _west-manifest-ex3.3:
 
-Example 3.3: Downstream with path blacklist
+Example 3.3: Downstream with path blocklist
 -------------------------------------------
 
-Here's an example showing how to blacklist all vendor HALs from mainline by
+Here's an example showing how to block all vendor HALs from mainline by
 common path prefix in the workspace, add your own version for the chip
 you're targeting, and keep everything else.
 
@@ -927,7 +927,7 @@ you're targeting, and keep everything else.
        - name: mainline
          url: https://git.example.com/mainline/manifest
          import:
-           path-blacklist: modules/hals/*
+           path-blocklist: modules/hals/*
        - name: hal_foo
          path: modules/hals/foo
          url: https://git.example.com/downstream/hal_foo
