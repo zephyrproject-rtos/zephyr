@@ -404,6 +404,35 @@ Module yaml file description
 A module can be described using a file named :file:`zephyr/module.yml`.
 The format of :file:`zephyr/module.yml` is described in the following:
 
+Module name
+===========
+
+Each Zephyr module is given a name by which it can be referred to in the build
+system.
+
+The name may be specified in the :file:`zephyr/module.yml` file:
+
+.. code-block:: yaml
+
+   name: <name>
+
+In CMake the location of the Zephyr module can then be referred to using the
+CMake variable ``ZEPHYR_<MODULE_NAME>_MODULE_DIR`` and the variable
+``ZEPHYR_<MODULE_NAME>_CMAKE_DIR`` holds the location of the directory
+containing the module's :file:`CMakeLists.txt` file.
+
+Here is an example for the Zephyr module ``foo``:
+
+.. code-block:: yaml
+
+   name: foo
+
+.. note::
+   If the ``name`` field is not specified then the Zephyr module name will be
+   set to the name of the module folder.
+   As example, the Zephyr module located in :file:`<workspace>/modules/bar` will
+   use ``bar`` as its module name if nothing is specified in
+   :file:`zephyr/module.yml`.
 
 Module integration files (in-module)
 ====================================
@@ -440,10 +469,10 @@ When a module has a :file:`module.yml` file, it will automatically be included i
 the Zephyr build system. The path to the module is then accessible through Kconfig
 and CMake variables.
 
-In both Kconfig and CMake, the variable ``ZEPHYR_<module-name>_MODULE_DIR``
+In both Kconfig and CMake, the variable ``ZEPHYR_<MODULE_NAME>_MODULE_DIR``
 contains the absolute path to the module.
 
-In CMake, ``ZEPHYR_<module-name>_CMAKE_DIR`` contains the
+In CMake, ``ZEPHYR_<MODULE_NAME>_CMAKE_DIR`` contains the
 absolute path to the directory containing the :file:`CMakeLists.txt` file that
 is included into CMake build system. This variable's value is empty if the
 module.yml file does not specify a CMakeLists.txt.
