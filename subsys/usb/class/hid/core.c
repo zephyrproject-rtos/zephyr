@@ -138,10 +138,9 @@ struct hid_device_info {
 	size_t report_size;
 	const struct hid_ops *ops;
 #ifdef CONFIG_USB_DEVICE_SOF
-	uint32_t sof_cnt[CONFIG_USB_HID_REPORTS + 1];
+	uint32_t sof_cnt[CONFIG_USB_HID_REPORTS];
 	bool idle_on;
-	bool idle_id_report;
-	uint8_t idle_rate[CONFIG_USB_HID_REPORTS + 1];
+	uint8_t idle_rate[CONFIG_USB_HID_REPORTS];
 #endif
 #ifdef CONFIG_USB_HID_BOOT_PROTOCOL
 	uint8_t protocol;
@@ -165,12 +164,21 @@ static int hid_on_get_idle(struct hid_device_info *dev_data,
 		return -ENOTSUP;
 	}
 
-	uint32_t size = sizeof(dev_data->idle_rate[report_id]);
-
 	LOG_DBG("Get Idle callback, report_id: %d", report_id);
 
-	*data = &dev_data->idle_rate[report_id];
-	*len = size;
+	if (report_id == 0U) {
+		/*
+		 * Common value, stored on Set Idle request with Report ID 0,
+		 * can be outdated because the duration can also
+		 * be set individually for each Report ID.
+		 */
+		*data = &dev_data->idle_rate[0];
+		*len = sizeof(dev_data->idle_rate[0]);
+	} else {
+		*data = &dev_data->idle_rate[report_id - 1];
+		*len = sizeof(dev_data->idle_rate[report_id - 1]);
+	}
+
 	return 0;
 #else
 	return -ENOTSUP;
@@ -225,38 +233,18 @@ static int hid_on_set_idle(struct hid_device_info *dev_data,
 
 	LOG_DBG("Set Idle callback, rate: %d, report_id: %d", rate, report_id);
 
-	dev_data->idle_rate[report_id] = rate;
-
-	if (rate == 0U) {
-		/* Clear idle */
-		bool clear = true;
-
-		for (uint16_t i = 1; i <= CONFIG_USB_HID_REPORTS; i++) {
-			if (dev_data->idle_rate[i] != 0U) {
-				/* Report with non-zero id has idle rate. */
-				clear = false;
-				break;
-			}
-		}
-		if (clear) {
-			dev_data->idle_id_report = false;
-			LOG_DBG("Non-zero report idle rate OFF.");
-
-			if (dev_data->idle_rate[0] == 0U) {
-				dev_data->idle_on = false;
-				LOG_DBG("Idle rate OFF.");
-			}
+	if (report_id == 0U) {
+		for (uint16_t i = 0; i < CONFIG_USB_HID_REPORTS; i++) {
+			dev_data->idle_rate[i] = rate;
+			dev_data->sof_cnt[i] = 0U;
 		}
 	} else {
-		/* Set idle */
-		dev_data->idle_on = true;
-		LOG_DBG("Idle rate ON.");
-		if (report_id != 0U) {
-			/* Report with non-zero id has idle rate set now. */
-			dev_data->idle_id_report = true;
-			LOG_DBG("Non-zero report idle rate ON.");
-		}
+		dev_data->idle_rate[report_id - 1] = rate;
+		dev_data->sof_cnt[report_id - 1] = 0U;
 	}
+
+	dev_data->idle_on = (bool)setup->wValue;
+
 	return 0;
 #else
 	return -ENOTSUP;
@@ -318,8 +306,7 @@ static void usb_set_hid_report_size(const struct usb_cfg_data *cfg, uint16_t siz
 void hid_clear_idle_ctx(struct hid_device_info *dev_data)
 {
 	dev_data->idle_on = false;
-	dev_data->idle_id_report = false;
-	for (uint16_t i = 0; i <= CONFIG_USB_HID_REPORTS; i++) {
+	for (uint16_t i = 0; i < CONFIG_USB_HID_REPORTS; i++) {
 		dev_data->sof_cnt[i] = 0U;
 		dev_data->idle_rate[i] = 0U;
 	}
@@ -328,27 +315,34 @@ void hid_clear_idle_ctx(struct hid_device_info *dev_data)
 void hid_sof_handler(struct hid_device_info *dev_data)
 {
 	const struct device *dev = dev_data->common.dev;
+	bool reported = false;
 
-	for (uint16_t i = 0; i <= CONFIG_USB_HID_REPORTS; i++) {
+	if (dev_data->ops == NULL || dev_data->ops->on_idle == NULL) {
+		return;
+	}
+
+	for (uint16_t i = 0; i < CONFIG_USB_HID_REPORTS; i++) {
 		if (dev_data->idle_rate[i]) {
 			dev_data->sof_cnt[i]++;
+		} else {
+			continue;
 		}
 
-		uint32_t diff = abs((dev_data->idle_rate[i] * 4U)
-				 - dev_data->sof_cnt[i]);
+		uint32_t diff = abs(dev_data->idle_rate[i] * 4U -
+				    dev_data->sof_cnt[i]);
 
-		if (diff < (2 + (dev_data->idle_rate[i] / 10U))) {
+		if (diff < 2 && reported == false) {
 			dev_data->sof_cnt[i] = 0U;
-			if (dev_data->ops && dev_data->ops->on_idle) {
-				dev_data->ops->on_idle(dev, i);
-			}
-		}
-
-		if (!dev_data->idle_id_report) {
-			/* Only report with 0 id has idle rate.
-			 * No need to check the whole array.
+			/*
+			 * We can submit only one report at a time
+			 * because we have only one endpoint and
+			 * there is no queue for the packets/reports.
 			 */
-			break;
+			reported = true;
+			dev_data->ops->on_idle(dev, i + 1);
+		} else if (diff == 0 && reported == true) {
+			/* Delay it once until it has spread. */
+			dev_data->sof_cnt[i]--;
 		}
 	}
 }
