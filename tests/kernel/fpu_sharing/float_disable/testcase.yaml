@@ -17,7 +17,15 @@ tests:
     filter: CONFIG_CPU_HAS_FPU
     arch_allow: sparc
     tags: kernel userspace
-  kernel.fpu_sharing.float_disable.x86:
+  kernel.fpu_sharing.float_disable.x86.fpu:
     extra_args: CONF_FILE=prj_x86.conf
+    extra_configs:
+      - CONFIG_SSE_FP_MATH=n
+    platform_allow: qemu_x86
+    tags: kernel userspace
+  kernel.fpu_sharing.float_disable.x86.sse:
+    extra_args: CONF_FILE=prj_x86.conf
+    extra_configs:
+      - CONFIG_SSE_FP_MATH=y
     platform_allow: qemu_x86
     tags: kernel userspace
