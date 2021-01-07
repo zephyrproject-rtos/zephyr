@@ -1,13 +1,10 @@
 /*
- * Copyright (c) 2016-2018 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2020 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef BIT64
-#define BIT64(n) (1ULL << (n))
-#endif
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 #define LL_FEAT_BIT_ENC BIT64(BT_LE_FEAT_BIT_ENC)
