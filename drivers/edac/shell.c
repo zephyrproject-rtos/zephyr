@@ -102,7 +102,7 @@ static int cmd_inject_addr(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	if (argc == 1) {
-		uint64_t addr = edac_inject_addr_get(dev);
+		uint64_t addr = edac_inject_get_param1(dev);
 
 		shell_fprintf(shell, SHELL_NORMAL,
 			      "Injection address base: 0x%lx\n", addr);
@@ -111,7 +111,7 @@ static int cmd_inject_addr(const struct shell *shell, size_t argc, char **argv)
 
 		shell_fprintf(shell, SHELL_NORMAL,
 			      "Set injection address base to: %s\n", argv[1]);
-		edac_inject_addr_set(dev, value);
+		edac_inject_set_param1(dev, value);
 	}
 
 	return 0;
@@ -135,7 +135,7 @@ static int cmd_inject_mask(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	if (argc == 1) {
-		uint64_t mask = edac_inject_addr_mask_get(dev);
+		uint64_t mask = edac_inject_get_param2(dev);
 
 		shell_fprintf(shell, SHELL_NORMAL,
 			      "Injection address mask: 0x%lx\n", mask);
@@ -145,7 +145,7 @@ static int cmd_inject_mask(const struct shell *shell, size_t argc, char **argv)
 		shell_fprintf(shell, SHELL_NORMAL,
 			      "Set injection address mask to %lx\n", value);
 
-		return edac_inject_addr_mask_set(dev, value);
+		return edac_inject_set_param2(dev, value);
 	}
 
 	return 0;

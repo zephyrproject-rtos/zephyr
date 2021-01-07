@@ -14,13 +14,13 @@
 
 #include <sys/types.h>
 
-typedef int (*edac_api_inject_addr_set_f)(const struct device *dev,
+typedef int (*edac_api_inject_set_param1_f)(const struct device *dev,
 					uint64_t addr);
-typedef uint64_t (*edac_api_inject_addr_get_f)(const struct device *dev);
+typedef uint64_t (*edac_api_inject_get_param1_f)(const struct device *dev);
 
-typedef int (*edac_api_inject_addr_mask_set_f)(const struct device *dev,
+typedef int (*edac_api_inject_set_param2_f)(const struct device *dev,
 					     uint64_t mask);
-typedef uint64_t (*edac_api_inject_addr_mask_get_f)(const struct device *dev);
+typedef uint64_t (*edac_api_inject_get_param2_f)(const struct device *dev);
 
 typedef int (*edac_api_inject_ctrl_set_f)(const struct device *dev,
 					  uint32_t ctrl);
@@ -42,10 +42,10 @@ typedef int (*edac_api_notify_cb_set_f)(const struct device *dev,
 __subsystem struct edac_driver_api {
 #if defined(CONFIG_EDAC_ERROR_INJECT)
 	/* Error Injection API is disabled by default */
-	edac_api_inject_addr_set_f inject_addr_set;
-	edac_api_inject_addr_get_f inject_addr_get;
-	edac_api_inject_addr_mask_set_f inject_addr_mask_set;
-	edac_api_inject_addr_mask_get_f inject_addr_mask_get;
+	edac_api_inject_set_param1_f inject_set_param1;
+	edac_api_inject_get_param1_f inject_get_param1;
+	edac_api_inject_set_param2_f inject_set_param2;
+	edac_api_inject_get_param2_f inject_get_param2;
 	edac_api_inject_ctrl_set_f inject_ctrl_set;
 #endif /* CONFIG_EDAC_ERROR_INJECT */
 
@@ -66,64 +66,70 @@ __subsystem struct edac_driver_api {
 #if defined(CONFIG_EDAC_ERROR_INJECT)
 
 /**
- * @brief Set injection address base
+ * @brief Set injection parameter param1
+ *
+ * This parameter is used to set first error injection parameter value.
  *
  * @param dev Pointer to the device structure
  * @param addr Injection address base
  * @return 0 on success, error code otherwise
  */
-static inline int edac_inject_addr_set(const struct device *dev,
-				       uint64_t addr)
+static inline int edac_inject_set_param1(const struct device *dev,
+					 uint64_t addr)
 {
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	return api->inject_addr_set(dev, addr);
+	return api->inject_set_param1(dev, addr);
 }
 
 /**
- * @brief Get injection adrress base
+ * @brief Get injection parameter param1
+ *
+ * Get first error injection parameter value.
  *
  * @param dev Pointer to the device structure
- * @return Injection address base
+ * @return Injection parameter param1
  */
-static inline uint64_t edac_inject_addr_get(const struct device *dev)
+static inline uint64_t edac_inject_get_param1(const struct device *dev)
 {
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	return api->inject_addr_get(dev);
+	return api->inject_get_param1(dev);
 
 }
 
 /**
- * @brief Set injection address mask
+ * @brief Set injection parameter param2
+ *
+ * This parameter is used to set second error injection parameter value.
  *
  * @param dev Pointer to the device structure
  * @param addr Injection address mask
  * @return 0 on success, error code otherwise
  */
-static inline int edac_inject_addr_mask_set(const struct device *dev,
-					    uint64_t mask)
+static inline int edac_inject_set_param2(const struct device *dev,
+					 uint64_t mask)
 {
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	return api->inject_addr_mask_set(dev, mask);
+	return api->inject_set_param2(dev, mask);
 }
 
 /**
- * @brief Get injection adrress mask
+ * @brief Get injection parameter param2
  *
  * @param dev Pointer to the device structure
- * @return Injection address mask
+ * @return Injection parameter param2
  */
-static inline uint64_t edac_inject_addr_mask_get(const struct device *dev)
+static inline uint64_t edac_inject_get_param2(const struct device *dev)
 {
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	return api->inject_addr_mask_get(dev);
+	return api->inject_get_param2(dev);
 
 }
 
