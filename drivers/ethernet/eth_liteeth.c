@@ -218,8 +218,11 @@ static void eth_iface_init(struct net_if *iface)
 #endif
 
 	/* set MAC address */
-	net_if_set_link_addr(iface, context->mac_addr, sizeof(context->mac_addr),
-			     NET_LINK_ETHERNET);
+	if (net_if_set_link_addr(iface, context->mac_addr, sizeof(context->mac_addr),
+			     NET_LINK_ETHERNET) < 0) {
+		LOG_ERR("setting mac failed");
+		return;
+	}
 
 	/* clear pending events */
 	sys_write8(LITEETH_EV_TX, LITEETH_TX_EV_PENDING);
